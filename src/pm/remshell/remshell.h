@@ -78,11 +78,14 @@ typedef struct {
     const char    *wdir;             /* Working directory */
     int            nArgs;            /* Number of args (list is *not* null
 					terminated) */
+
     int            rank;             /* rank in comm_world (or universe) */
+
     int            pmiGroup;         /* PMI group index (into array of 
 					PMI Groups */
     int            pmiKVS;           /* PMI kvs index (into array of 
 					key-value-spaces) */
+
     exit_state_t   exitReason;       /* how/why did the process exit */
     int            exitSig;          /* exit signal, if any */
     int            exitStatus;       /* exit statue */

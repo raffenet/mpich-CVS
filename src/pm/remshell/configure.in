@@ -34,6 +34,12 @@ AC_ARG_ENABLE(g,
 implementation.  option may be a list of common separated names including
     none  - No debugging
     all   - All of the above choices],,enable_g=none)
+AC_ARG_ENABLE(onsig,
+[--enable-onsig - Control the handling of processes that signal (e.g., SEGV)
+ using ptrace.  Enabled by default],,enable_onsig=yes)
+AC_ARG_ENABLE(newsession,
+[--enable-newsession - Create a new process group session if standard in is
+                      not connected to a terminal],,enable_newsession=yes)
 dnl
 dnl
 dnl First check that we have a clean build if we are doing a VPATH build
@@ -88,6 +94,27 @@ AC_C_INLINE
 dnl
 dnl check for library functions
 AC_CHECK_FUNCS(strtol time gettimeofday)
+if test "$enable_onsig" = "yes" ; then
+    AC_CHECK_FUNCS(ptrace)
+    # It isn't enough to find ptrace.  We also need the ptrace 
+    # parameters, which some systems, such as IRIX, do not define.
+    if test "$ac_cv_func_ptrace" = yes ; then
+        AC_CACHE_CHECK([for ptrace named parameters],
+pac_cv_has_ptrace_parms,[
+        AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/ptrace.h>],[int i = PTRACE_CONT;],pac_cv_has_ptrace_parms=yes,
+pac_cv_has_ptrace_parms=no)])
+        if test "$pac_cv_has_ptrace_parms" = "yes" ; then
+	    AC_DEFINE(HAVE_PTRACE_CONT,,[Define if ptrace parameters available])
+	fi
+    fi
+fi
+# Check for the functions needed to create a new session.
+AC_CHECK_FUNCS(setsid isatty)
+if test "$enable_newsession" = "yes" ; then
+    AC_DEFINE(USE_NEW_SESSION,1,[Define if mpiexec should create a new process group session])
+fi
 dnl
 dnl Check for special compile characteristics
 dnl
@@ -132,7 +159,6 @@ fi
 dnl Setup other replaceable values
 MPILIBNAME=${MPILIBNAME:-"mpich"}
 AC_SUBST(MPILIBNAME)
-
 AC_SUBST(CC)
 AC_SUBST(CFLAGS)
 AC_SUBST(CC_SHL)

@@ -52,57 +52,10 @@ extern char *strdup( const char * );
 
 ProcessTable_t processTable;
 
-/* Eventually, we'd like to move the PMI state into a separate file, along 
-   with the PMI calls */
-   
-/* ----------------------------------------------------------------------- */
-/* PMIState                                                                */
-/* Many of the objects here are preallocated rather than being dynamically */
-/* allocated as needed.  This ensures that no program fails because a      */
-/* malloc fails.                                                           */
-/* ----------------------------------------------------------------------- */
-#define MAXGROUPS   256		/* max number of groups */
-#define MAXKEYLEN    64		/* max length of key in keyval space */
-#define MAXVALLEN   128		/* max length of value in keyval space */
-#define MAXPAIRS   1024		/* max number of pairs in a keyval space */
-#define MAXKVSS      16		/* max number of keyval spaces */
-
-/* Each group has a size, name, and supports a barrier operation that
-   is implemented by counting the number in the barrier */
-typedef struct {
-    int  groupsize;
-    int  num_in_barrier;
-    char kvsname[MAXNAMELEN];
-} PMIGroup;
-
-/* key-value pairs are used to communicate information between processes. */
-typedef struct {
-    char key[MAXKEYLEN];
-    char val[MAXVALLEN];
-} PMIKeyVal;
-
-/* There can be multiple key-value spaces, each with its own set of 
-   PMIKeyVal pairs */
-typedef struct {
-    int active;
-    char kvsname[MAXNAMELEN];
-    PMIKeyVal pairs[MAXPAIRS];
-} PMIKeyValSpace;
-
-/* */
-typedef struct {
-    int            nextnewgroup;
-    int            kvsid;
-    PMIGroup       grouptable[MAXGROUPS];
-    PMIKeyValSpace kvstable[MAXKVSS];
-} PMIState;
-
-static PMIState pmi = { 0, 0, };   /* Arrays are uninitialized */
-
 /* ----------------------------------------------------------------------- */
 /* Debugging                                                               */
 /* ----------------------------------------------------------------------- */
-/* (this is exten in remshell.h) */
+/* (this is extern in remshell.h) */
 int debug = 1;
 /* ----------------------------------------------------------------------- */
 /* Prototypes                                                              */
@@ -567,41 +520,21 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
     }
 }
 
-/*
- * Provide a simple timeout capability.  Initialize the time with 
- * InitTimeout.  Call GetRemainingTime to get the time in seconds left.
- */
-int end_time = -1;  /* Time of timeout in seconds */
-void InitTimeout( int seconds )
+/* ------------------------------------------------------------------------ */
+/* On some systems (SGI IRIX 6), process exit sometimes kills all processes
+ * in the process GROUP.  This code attempts to fix that.  
+ * We DON'T do it if stdin (0) is connected to a terminal, because that
+ * disconnects the process from the terminal.
+/* ------------------------------------------------------------------------ */
+void CreateNewSession( void )
 {
-#ifdef HAVE_TIME
-    time_t t;
-    t = time( NULL );
-    end_time = seconds + t;
-#elif defined(HAVE_GETTIMEOFDAY)
-    struct timeval tp;
-    gettimeofday( &tp, NULL );
-    end_time = seconds + tp.tv_sec;
-#else
-#   error 'No timer available'
+#if defined(HAVE_SETSID) && defined(HAVE_ISATTY) && defined(USE_NEW_SESSION)
+if (!isatty(0)) {
+    pid_t rc;
+    rc = setsid();
+    if (rc < 0) {
+	MPIU_Internal_error_printf( "Could not create new process group\n" );
+	}
+    }
 #endif
-}
-
-/* Return remaining time in seconds */
-int GetRemainingTime( void )
-{
-    int time_left;
-#ifdef HAVE_TIME
-    time_t t;
-    t = time( NULL );
-    time_left = end_time - t;
-#elif defined(HAVE_GETTIMEOFDAY)
-    struct timeval tp;
-    gettimeofday( &tp, NULL );
-    time_left = end_time - tp.tv_sec;
-#else
-#   error 'No timer available'
-#endif
-    if (time_left < 0) time_left = 0;
-    return time_left;
 }
