@@ -144,7 +144,7 @@ int CH3U_Describe_timer_states()
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 	MPID_STATE_IBU_CREATEQP,
-	"iub_createqp",
+	"ibu_createqp",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 	MPID_STATE_IB_MALLOC_REGISTER,
@@ -224,7 +224,7 @@ int CH3U_Describe_timer_states()
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 	MPID_STATE_IBU_POST_WRITEV,
-	"iub_post_writev",
+	"ibu_post_writev",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 	MPID_STATE_IBU_GET_LID,
