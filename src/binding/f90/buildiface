@@ -473,6 +473,15 @@ print MAKEFD "install_ETC     = mpif90.conf\n";
 print MAKEFD "install_INCLUDE = mpi.\$(MOD) mpi_constants.\$(MOD) mpi_base.\$(MOD)\n";
 print MAKEFD "optinstall_INCLUDE = mpimod.pcl mpimod.pc\n";
 
+    # Add the documentation
+    print MAKEFD "# Documentation sources
+doc_sources = mpif90.txt
+DOCDESTDIRS = html:www/www1,man:man/man1,latex:refman
+doc_HTML_SOURCES  = \${doc_sources}
+doc_MAN_SOURCES   = \${doc_sources}
+doc_LATEX_SOURCES = \${doc_sources}
+";
+
 # ----------------------------------------------------------------------------
 # FIXME: Add the steps to handle the choice arguments.  They should be
 # selected by configure from a list of possible choices, with an 

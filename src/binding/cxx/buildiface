@@ -1092,6 +1092,15 @@ install_INCLUDE = mpicxx.h\
 install_BIN     = mpicxx\
 install_ETC     = mpicxx.conf\n";
 
+    # Add the documentation
+    print MAKEFD "# Documentation sources
+doc_sources = mpicxx.txt
+DOCDESTDIRS = html:www/www1,man:man/man1,latex:refman
+doc_HTML_SOURCES  = \${doc_sources}
+doc_MAN_SOURCES   = \${doc_sources}
+doc_LATEX_SOURCES = \${doc_sources}
+";
+
 # Since configure copies mpicxx to the bin dir, we need to remove it
 # in a distclean step.  
 print MAKEFD "distclean-local:\n";
