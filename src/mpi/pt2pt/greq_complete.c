@@ -76,6 +76,7 @@ int MPI_Grequest_complete( MPI_Request request )
 
     /* ... body of routine ...  */
     MPID_Request_set_completed( request_ptr );
+    MPID_Request_release(request_ptr);
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_COMPLETE);

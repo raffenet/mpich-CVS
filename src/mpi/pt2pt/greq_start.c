@@ -86,13 +86,18 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
 	return mpi_errno;
     }
     lrequest_ptr->kind                 = MPID_UREQUEST;
+    lrequest_ptr->ref_count            = 2;
+    lrequest_ptr->cc_ptr               = &lrequest_ptr->cc;
+    lrequest_ptr->cc                   = 1;
     lrequest_ptr->cancel_fn            = cancel_fn;
     lrequest_ptr->free_fn              = free_fn;
     lrequest_ptr->query_fn             = query_fn;
     lrequest_ptr->grequest_extra_state = extra_state;
-    lrequest_ptr->cc_ptr               = &lrequest_ptr->cc;
-    lrequest_ptr->cc                   = 1;
 
+    /* NOTE: the request is given a ref_count of 2 so that the object is not
+       destroyed until both MPI_Grequest_complete() and a communication
+       completion routine (e.g., MPI_Wait()) is called. */
+    
     *request = lrequest_ptr->handle;
     /* ... end of body of routine ... */
 
