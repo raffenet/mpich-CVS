@@ -36,9 +36,14 @@ AC_CHECK_HEADERS(sys/stat.h sys/ptrace.h sys/wait.h errno.h ctype.h process.h sy
 AC_CHECK_FUNCS(msgget yield mutex_init shmget shmat shmdt shmctl usleep sleep getcwd gethostname gettimeofday putenv select socket sched_yield)
 AC_CHECK_FUNCS(sysconf pthread_mutexattr_setpshared pthread_mutexattr_init)
 AC_CHECK_FUNCS( mmap shm_unlink )
+AC_SEARCH_LIBS( mq_open, rt, AC_DEFINE(HAVE_MQ_OPEN,,[Define if mq_open is available]) )
 AC_SEARCH_LIBS( shm_open, rt, AC_DEFINE(HAVE_SHM_OPEN,,[Define if shm_open is available]) )
 if test "$ac_cv_search_shm_open" != "none required" ; then
     SSM_LIBS="$SSM_LIBS $ac_cv_search_shm_open" 
+else
+ if test "$ac_cv_search_mq_open" != "none required" ; then
+     SSM_LIBS="$SSM_LIBS $ac_cv_search_mq_open" 
+ fi
 fi
 
 cpu_gcc_x86_cycle=no
