@@ -82,6 +82,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
 		    pszIP = strtok(NULL, ":\r\n");
 		    pszPort = strtok(NULL, ":\r\n");
 		    ip = GetIP(pszIP);
+		    msg_printf("masking '%s'\n", pszIP);
 		    if ((ip & nNicMask) == nNicNet)
 		    {
 			/* the current ip address matches the requested network so return these values */
@@ -165,6 +166,7 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 	MPIDI_FUNC_EXIT(MPID_STATE_TCP_POST_CONNECT);
 	return -1;
     }
+    msg_printf("GetHostAndPort returned %s:%d\n", host, port);
 
     if (beasy_create(&vc_ptr->data.tcp.bfd, ADDR_ANY, INADDR_ANY) == SOCKET_ERROR)
     {
