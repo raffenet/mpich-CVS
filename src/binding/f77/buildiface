@@ -502,7 +502,7 @@ if ($definition_file) {
 
 $arg_string = join( ' ', @ARGV );
 if ($build_prototypes) {
-    open( PROTOFD, ">$prototype_header_file" ) || die "Cannot open $prototype_header_file\n";
+    open( PROTOFD, ">$prototype_header_file.new" ) || die "Cannot open $prototype_header_file.new\n";
     print PROTOFD "/* -*- Mode: C; c-basic-offset:4 ; -*- */\
 /*  \
  *  (C) 2001 by Argonne National Laboratory.\
@@ -547,10 +547,16 @@ else {
     }
 }
 
+if ($build_prototypes) {
+    close PROTOFD;
+    &ReplaceIfDifferent( $prototype_header_file, 
+			 $prototype_header_file . ".new" );
+}
+
 #
 # This block can be used to create the Makefile
 if ("$buildMakefile") {
-    open ( MAKEFD, ">Makefile.sm" ) || die "Cannot create Makefile.sm";
+    open ( MAKEFD, ">Makefile.sm.new" ) || die "Cannot create Makefile.sm.new";
     print MAKEFD "# DO NOT EDIT\n# This file created by buildiface $arg_string\n";
 
     # Check to see if autoconf works.  Autoconf 2.13 has a bug in the Fortran 
@@ -629,6 +635,7 @@ doc_LATEX_SOURCES = \${doc_sources}
     
 
     close( MAKEFD );
+    &ReplaceIfDifferent( "Makefile.sm", "Makefile.sm.new" );
 }
 
 #
@@ -1950,7 +1957,7 @@ if ( -s "../../mpi/romio/include/mpio.h.in" && $build_io) {
 if ($write_mpif) {
 
     $cchar = "C";
-    open ( MPIFFD, ">mpif.h.in" ) || die "Could not open mpif.h.in\n";
+    open ( MPIFFD, ">mpif.h.in.new" ) || die "Could not open mpif.h.in.new\n";
 
     
     # Now, write out the file
@@ -2174,6 +2181,7 @@ if ($write_mpif) {
        SAVE   /MPIPRIVC/\n";
 
     close( MPIFFD );
+    &ReplaceIfDifferent( "mpif.h.in", "mpif.h.in.new" );
 } # if write_mpif
 
 #
@@ -2220,13 +2228,15 @@ sub print_routine_type_decl {
 #
 # Build the special routines
 sub build_specials {
+    my $filename = "";
     # The init routine contains some configure-time values.
     # We may not want to do this if we are supporting multiple
     # Fortran compilers with different values for Fortran .TRUE. and
     # .FALSE., but to get started, this is easiest.
     $OUTFD = "INITFFD";
-    open( $OUTFD, ">initf.c" ) || die "Cannot open initf.c\n";
-    $files[$#files+1] = "initf.c";
+    $filename = "initf.c";
+    open( $OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     &print_header( "MPI_Init", "init", "" );
 
     &print_routine_type_decl( $OUTFD, "init" );
@@ -2251,11 +2261,13 @@ sub build_specials {
     #     
     print $OUTFD "}\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
     &AddPrototype( "init", $args );
 
     $OUTFD = "INITFFD";
-    open( $OUTFD, ">initthreadf.c" ) || die "Cannot open initthreadf.c\n";
-    $files[$#files+1] = "initthreadf.c";
+    $filename = "initthreadf.c";
+    open( $OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     $args = "int, int *";
     &print_header( "MPI_Init_thread", "init_thread", $args );
 
@@ -2265,13 +2277,15 @@ sub build_specials {
     print $OUTFD "    *ierr = MPI_Init_thread( 0, 0, *v1, v2 );\n";
     print $OUTFD "}\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
     &AddPrototype( "init_thread", $args );
 
     # Functions used by the C init process, but that must be called 
     # from C
     $OUTFD = "FORTTOC";
-    open( $OUTFD, ">setbot.c" ) || die "Cannot open setbot.c\n";
-    $files[$#files+1] = "setbot.c";
+    $filename = "setbot.c";
+    open( $OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     &print_copyright;
 
     print $OUTFD "
@@ -2336,10 +2350,12 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
 }
 ";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
     
     $OUTFD = "PCONTROLFFD";
-    open( $OUTFD, ">pcontrolf.c" ) || die "Cannot open pcontrolf.c\n";
-    $files[$#files+1] = "pcontrolf.c";
+    $filename = "pcontrolf.c";
+    open( $OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     $args = "int";
     &print_header( "MPI_Pcontrol", "pcontrol", $args );
     &print_routine_type_decl( $OUTFD, "pcontrol" );
@@ -2349,11 +2365,13 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
     print $OUTFD "    *ierr = MPI_Pcontrol( (int)*v1 );\n";
     print $OUTFD "}\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
     &AddPrototype( "pcontrol", $args );
 
     $OUTFD = "ADDRESSFFD";
-    open ($OUTFD, ">addressf.c" ) || die "Cannot open addressf.c\n";
-    $files[$#files+1] = "addressf.c";
+    $filename = "addressf.c";
+    open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     $args = "void *, int *";
     &print_header( "MPI_Address", "address", $args );
     # Add the definitions needed for error reporting
@@ -2384,11 +2402,13 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
 #endif
 }\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
     &AddPrototype( "address", $args );
 
     $OUTFD = "GETADDRESSFFD";
-    open ($OUTFD, ">getaddressf.c" ) || die "Cannot open getaddressf.c\n";
-    $files[$#files+1] = "getaddressf.c";
+    $filename = "getaddressf.c";
+    open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     $args = "void *, MPI_Aint *";
     $saveAINT = $tof77{"MPI_Aint*"};
     undef $tof77{"MPI_Aint*"};
@@ -2411,12 +2431,14 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
     *v2 =  a;
 }\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
     &AddPrototype( "get_address", $args );
     $tof77{"MPI_Aint*"} =  $saveAINT;
 
     $OUTFD = "WTIMEFD";
-    open( $OUTFD, ">wtimef.c" ) || die "Cannot open wtimef.c\n";
-    $files[$#files+1] = "wtimef.c";
+    $filename = "wtimef.c";
+    open( $OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     $returnType = "double";
     &set_weak_decl( "MPI_Wtime", "void", "double" );
     &set_weak_decl( "PMPI_Wtime", "void", "double" );
@@ -2434,6 +2456,8 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
     return d;\n";
     print $OUTFD "}\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
+
     if ($build_prototypes) {
         print PROTOFD "extern ";
         &print_routine_type_decl( PROTOFD, "wtime" );
@@ -2444,8 +2468,9 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
     $returnType = "void";
 
     $OUTFD = "WTICKFD";
-    open( $OUTFD, ">wtickf.c" ) || die "Cannot open wtickf.c\n";
-    $files[$#files+1] = "wtickf.c";
+    $filename = "wtickf.c";
+    open( $OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     $returnType = "double";
     &set_weak_decl( "MPI_Wtick", "void", "double" );
     &set_weak_decl( "PMPI_Wtick", "void", "double" );
@@ -2462,6 +2487,8 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
     return d;\n";
     print $OUTFD "}\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
+    
     if ($build_prototypes) {
         print PROTOFD "extern ";
         &print_routine_type_decl( PROTOFD, "wtick" );
@@ -2472,8 +2499,9 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
     $returnType = "void";
 
     $OUTFD = "KEYVALCREATEF";
-    open ($OUTFD, ">keyval_createf.c" ) || die "Cannot open keyval_createf.c\n";
-    $files[$#files+1] = "keyval_createf.c";
+    $filename = "keyval_createf.c";
+    open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     $args = "MPI_Copy_function , MPI_Delete_function , int *, void *";
     &print_header( "MPI_Keyval_create", "keyval_create", $args );
     &print_routine_type_decl( $OUTFD, "keyval_create" );
@@ -2486,6 +2514,7 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
         }
 }\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
     &AddPrototype( "keyval_create", $args );
 
     # Default attribute functions.  
@@ -2494,8 +2523,9 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
     # OPTION: we could use weak symbols where available to
     # reduce the number of files.
     $OUTFD = "DUPFN";
-    open ($OUTFD, ">dup_fnf.c" ) || die "Cannot open dup_fnf.c\n";
-    $files[$#files+1] = "dup_fnf.c";
+    $filename = "dup_fnf.c";
+    open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     $args = "MPI_Fint, MPI_Fint *, void *, void **, void **, MPI_Fint *";
     &print_header( "mpi_dup_fn", "dup_fn", $args );
     &print_routine_type_decl( $OUTFD, "dup_fn" );
@@ -2507,11 +2537,13 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
         *ierr = MPI_SUCCESS;
 }\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
     &AddPrototype( "dup_fn", $args );
 
     $OUTFD = "NULLDELFN";
-    open ($OUTFD, ">null_del_fnf.c" ) || die "Cannot open null_del_fnf.c\n";
-    $files[$#files+1] = "null_del_fnf.c";
+    $filename = "null_del_fnf.c";
+    open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     $args = "MPI_Fint *, MPI_Fint *, void *, void *";
     &print_header( "mpi_null_delete_fn", "null_delete_fn", $args );
     &print_routine_type_decl( $OUTFD, "null_delete_fn" );
@@ -2521,11 +2553,13 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
         *ierr = MPI_SUCCESS;
 }\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
     &AddPrototype( "null_delete_fn", $args );
 
     $OUTFD = "NULLCOPYFN";
-    open ($OUTFD, ">null_copy_fnf.c" ) || die "Cannot open null_copy_fnf.c\n";
-    $files[$#files+1] = "null_copy_fnf.c";
+    $filename = "null_copy_fnf.c";
+    open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     $args = "MPI_Fint *, MPI_Fint *, void *, void *, void *, int *";
     &print_header( "mpi_null_copy_fn", "null_copy_fn", $args );
     &print_routine_type_decl( $OUTFD, "null_copy_fn" );
@@ -2535,6 +2569,7 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
         *v6 = MPIR_TO_FLOG(0);
 }\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
     &AddPrototype( "null_copy_fn", $args );
 
     &WriteAttrDefaults( "comm_" );
@@ -2549,8 +2584,9 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
     # know how Fortran stores a status (e.g., if C and Fortran integers 
     # are the same size).
     $OUTFD = "STATUSF2C";
-    open ($OUTFD, ">statusf2c.c" ) || die "Cannot open statusf2c.c\n";
-    $files[$#files+1] = "statusf2c.c";
+    $filename = "statusf2c.c";
+    open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     print $OUTFD "
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*  
@@ -2599,10 +2635,12 @@ int MPI_Status_f2c( MPI_Fint *f_status, MPI_Status *c_status )
     return MPI_SUCCESS;  
 }\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
 
     $OUTFD = "STATUSC2F";
-    open ($OUTFD, ">statusc2f.c" ) || die "Cannot open statusc2f.c\n";
-    $files[$#files+1] = "statusc2f.c";
+    $filename = "statusc2f.c";
+    open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     print $OUTFD "
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*  
@@ -2652,6 +2690,7 @@ int MPI_Status_c2f( MPI_Status *c_status, MPI_Fint *f_status )
     return MPI_SUCCESS;
 }\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
 
 }
 
@@ -2686,6 +2725,8 @@ sub print_mpif_int {
 sub ReadAndProcessInterface {
     my $prototype_file = $_[0];
     my $linecount = 0;
+    my $newfilename = "";
+    my $filename = "";
 
     open( FD, "<$prototype_file" ) || die "Cannot open $prototype_file\n";
 
@@ -2772,7 +2813,8 @@ sub ReadAndProcessInterface {
 			$filename = $lcname . "f.c";
 		    }
 		    $OUTFD = OUTPUTFILED;   # Needed for pre 5.6 versions of perl
-		    open ($OUTFD, ">$filename" ) || die "Cannot open $filename\n";
+		    $newfilename = $filename . ".new";
+		    open ($OUTFD, ">$newfilename" ) || die "Cannot open $newfilename\n";
 		    # Add the name to the list of files"
 		    $files[$#files+1] = $filename;
 		}
@@ -2810,6 +2852,7 @@ sub ReadAndProcessInterface {
 		print $OUTFD "}\n";
 		if ($buildfiles) {
 		    close ($OUTFD);
+		    &ReplaceIfDifferent( $filename, $newfilename );
 		}
 		if ($build_prototypes) {
 		    if ($do_subdecls) {
@@ -3033,8 +3076,9 @@ sub WriteAttrDefaults {
     my $prefix =$_[0];
     my $ucprefix = uc($prefix);
     
-    open ($OUTFD, ">dup_${prefix}fnf.c" ) || die "Cannot open dup_${prefix}fnf.c\n";
-    $files[$#files+1] = "dup_${prefix}fnf.c";
+    my $filename = "dup_${prefix}fnf.c";
+    open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     $args = "MPI_Fint, MPI_Fint *, void *, void **, void **, MPI_Fint *";
     &print_header( "mpi_${prefix}dup_fn", "${prefix}dup_fn", $args,
 	   "#ifdef MPI_${ucprefix}DUP_FN\n#undef MPI_${ucprefix}DUP_FN\n#endif\n" );
@@ -3047,11 +3091,13 @@ sub WriteAttrDefaults {
         *ierr = MPI_SUCCESS;
 }\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
     &AddPrototype( "${prefix}dup_fn", $args );
 
     $OUTFD = "NULLDELFN";
-    open ($OUTFD, ">null_${prefix}del_fnf.c" ) || die "Cannot open null_${prefix}del_fnf.c\n";
-    $files[$#files+1] = "null_${prefix}del_fnf.c";
+    $filename = "null_${prefix}del_fnf.c";
+    open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     $args = "MPI_Fint *, MPI_Fint *, void *, void *";
     &print_header( "mpi_${prefix}null_delete_fn", "${prefix}null_delete_fn", $args,
 	   "#ifdef MPI_${ucprefix}NULL_DELETE_FN\n#undef MPI_${ucprefix}NULL_DELETE_FN\n#endif\n" );
@@ -3062,11 +3108,13 @@ sub WriteAttrDefaults {
         *ierr = MPI_SUCCESS;
 }\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
     &AddPrototype( "${prefix}null_delete_fn", $args );
 
     $OUTFD = "NULLCOPYFN";
-    open ($OUTFD, ">null_${prefix}copy_fnf.c" ) || die "Cannot open null_${prefix}copy_fnf.c\n";
-    $files[$#files+1] = "null_${prefix}copy_fnf.c";
+    $filename = "null_${prefix}copy_fnf.c";
+    open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
     $args = "MPI_Fint *, MPI_Fint *, void *, void *, void *, int *";
     &print_header( "mpi_${prefix}null_copy_fn", "${prefix}null_copy_fn", $args,
 	   "#ifdef MPI_${ucprefix}NULL_COPY_FN\n#undef MPI_${ucprefix}NULL_COPY_FN\n#endif\n" );
@@ -3077,6 +3125,32 @@ sub WriteAttrDefaults {
         *v6 = MPIR_TO_FLOG(0);
 }\n";
     close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
 
     &AddPrototype( "${prefix}null_copy_fn", $args );
+}
+
+#
+# Replace old file with new file only if new file is different
+# Otherwise, remove new filename 
+sub ReplaceIfDifferent {
+    my ($oldfilename,$newfilename) = @_;
+    my $rc = 1;
+    if (-s $oldfilename) { 
+	$rc = system "cmp -s $newfilename $oldfilename";
+	$rc >>= 8;   # Shift right to get exit status
+    }
+    if ($rc != 0) {
+	print STDERR "Replacing $oldfilename\n";
+	# The files differ.  Replace the old file 
+	# with the new one
+	if (-s $oldfilename) {
+	    unlink $oldfilename;
+	}
+	rename $newfilename, $oldfilename || 
+	    die "Could not replace $oldfilename";
+    }
+    else {
+	unlink $newfilename;
+    }
 }
