@@ -1138,13 +1138,14 @@ sub print_post_call {
 	$rule = $special_args{"${routine_name}-$count"};
 	($direction,$method,$Array_size) = split(/:/,$rule);
 	print STDERR "$routine_name: dir = $direction, method = $method\n" if $debug;
-        $processing_routine = "${method}_ctof";
+        $processing_in_routine = "${method}_in_ctof";
 	if ($direction eq "out") {
+            $processing_routine = "${method}_ctof";
 	    &$processing_routine( "l$count", "v$count" );
 	}
-	elsif (defined(&$processing_routine)) {
+	elsif (defined(&$processing_in_routine)) {
 	    # Invoke even for "in" args incase we need to free a temp
-	    &$processing_routine( "l$count", "v$count" );
+	    &$processing_in_routine( "l$count", "v$count" );
 	}
 	if ($clean_up ne "") {
 	    print $OUTFD $clean_up;
@@ -1348,7 +1349,8 @@ sub intToAintArr_in_arg {
     my $count = $_[0];
     print $OUTFD "l$count";
 }
-sub intToAintArr_ctof {
+# This routine is invoked even for the in case (to free the result)
+sub intToAintArr_in_ctof {
     my $lname = $_[0];
     my $vname = $_[1];
     print $OUTFD "
