@@ -78,14 +78,14 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	    {
 		if (vc_ptr->ch.send_active != NULL)
 		{
-		    mpi_errno = MPIDI_CH3I_SHM_write_progress(vc_ptr);
-		    if (mpi_errno == MPI_SUCCESS)
+		    rc = MPIDI_CH3I_SHM_write_progress(vc_ptr);
+		    if (rc == MPI_SUCCESS)
 		    {
 			bShmProgressMade = TRUE;
 		    }
-		    else if (mpi_errno != SHM_WAIT_TIMEOUT)
+		    else if (rc != SHM_WAIT_TIMEOUT)
 		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
+			mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
 			goto fn_exit;
 		    }
 		}
@@ -323,10 +323,10 @@ int MPIDI_CH3_Progress_test()
 	{
 	    if (vc_ptr->ch.send_active != NULL)
 	    {
-		mpi_errno = MPIDI_CH3I_SHM_write_progress(vc_ptr);
-		if (mpi_errno != MPI_SUCCESS && mpi_errno != SHM_WAIT_TIMEOUT)
+		rc = MPIDI_CH3I_SHM_write_progress(vc_ptr);
+		if (rc != MPI_SUCCESS && rc != SHM_WAIT_TIMEOUT)
 		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
+		    mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
 		    goto fn_exit;
 		}
 	    }
@@ -477,8 +477,8 @@ int MPIDI_CH3_Progress_wait()
 		{
 		    if (vc_ptr->ch.send_active != NULL)
 		    {
-			mpi_errno = MPIDI_CH3I_SHM_write_progress(vc_ptr);
-			if (mpi_errno == MPI_SUCCESS)
+			rc = MPIDI_CH3I_SHM_write_progress(vc_ptr);
+			if (rc == MPI_SUCCESS)
 			{
 			    /*active = active | MPID_CH3I_SHM_BIT;*/
 			    if (completions != MPIDI_CH3I_progress_completions)
@@ -490,9 +490,9 @@ int MPIDI_CH3_Progress_wait()
 				goto after_shm_loop;
 			    }
 			}
-			else if (mpi_errno != SHM_WAIT_TIMEOUT)
+			else if (rc != SHM_WAIT_TIMEOUT)
 			{
-			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
+			    mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
 			    goto fn_exit;
 			}
 		    }
@@ -839,8 +839,8 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		{
 		    if (vc_ptr->ch.send_active != NULL)
 		    {
-			mpi_errno = MPIDI_CH3I_SHM_write_progress(vc_ptr);
-			if (mpi_errno == MPI_SUCCESS)
+			rc = MPIDI_CH3I_SHM_write_progress(vc_ptr);
+			if (rc == MPI_SUCCESS)
 			{
 			    /*active = active | MPID_CH3I_SHM_BIT;*/
 			    if (completions != MPIDI_CH3I_progress_completions)
@@ -852,9 +852,9 @@ int MPIDI_CH3I_Progress(int is_blocking)
 				goto after_shm_loop;
 			    }
 			}
-			else if (mpi_errno != SHM_WAIT_TIMEOUT)
+			else if (rc != SHM_WAIT_TIMEOUT)
 			{
-			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
+			    mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
 			    goto fn_exit;
 			}
 		    }
