@@ -865,6 +865,7 @@ int smpd_get_default_hosts()
 {
     char hosts[8192];
     char *host;
+    char *ncpu;
     smpd_host_node_t *cur_host, *iter;
 #ifdef HAVE_WINDOWS_H
     DWORD len;
@@ -971,6 +972,15 @@ int smpd_get_default_hosts()
 	    /*printf("default host: %s\n", host);*/
 	    strcpy(cur_host->host, host);
 	    cur_host->nproc = 1;
+	    ncpu = strstr(cur_host->host, ":");
+	    if (ncpu)
+	    {
+		*ncpu = '\0';
+		ncpu++;
+		cur_host->nproc = atoi(ncpu);
+		if (cur_host->nproc < 1)
+		    cur_host->nproc = 1;
+	    }
 	    cur_host->connected = SMPD_FALSE;
 	    cur_host->next = NULL;
 	    if (smpd_process.default_host_list == NULL)
