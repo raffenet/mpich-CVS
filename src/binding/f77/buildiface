@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#! /usr/bin/perl -w
 #
 # This file builds candidate interface files from the descriptions in 
 # mpi.h
@@ -312,7 +312,7 @@ while (<FD>) {
 		$OUTFD = OUTPUTFILED;   # Needed for pre 5.6 versions of perl
 		open ($OUTFD, ">$filename" ) || die "Cannot open $filename\n";
 		# Add the name to the list of files"
-		@files[$#files+1] = $filename;
+		$files[$#files+1] = $filename;
 	    }
 	    else {
 		$OUTFD = STDOUT;
@@ -627,6 +627,7 @@ sub print_call_args {
 	    else {
 		# Since MPICH objects are ints, we don't need to do 
 		# anything unless MPI_Fint and int are different.
+# print STDERR "XXX $count $#arg_addresses XXX\n";
 		if ($arg_addresses[$count] > 0) {
 		    print $OUTFD "*";
 		}
@@ -942,7 +943,7 @@ sub print_mpif_int {
     }
     # Remove any surrounding ()
     if ($value =~ /\(\s*[-a-fx0-9]*\)/) {
-	$value =~ s/\(\s*([-a-fx0-9]*)\s*\)/\1/;
+	$value =~ s/\(\s*([-a-fx0-9]*)\s*\)/$1/;
 	print "paren removal: $value\n" if $debug;
     }
     # Convert hex to decimal
@@ -1090,8 +1091,9 @@ sub build_specials {
     # We may not want to do this if we are supporting multiple
     # Fortran compilers with different values for Fortran .TRUE. and
     # .FALSE., but to get started, this is easiest.
+    $OUTFD = "INITFFD";
     open( $OUTFD, ">initf.c" ) || die "Cannot open initf.c\n";
-    @files[$#files+1] = "initf.c";
+    $files[$#files+1] = "initf.c";
     &print_header( "MPI_Init", "init" );
     # This is temporary.  Eventually, these should move into
     # support file.
@@ -1138,10 +1140,10 @@ void *MPIR_F_MPI_BOTTOM = 0;
 	&print_args( PROTOFD, $args );
 	print PROTOFD ";\n";
     }
-    close( $OUTFD );
     
+    $OUTFD = "PCONTROLFFD";
     open( $OUTFD, ">pcontrolf.c" ) || die "Cannot open pcontrolf.c\n";
-    @files[$#files+1] = "pcontrolf.c";
+    $files[$#files+1] = "pcontrolf.c";
     &print_header( "MPI_Pcontrol", "pcontrol" );
     &print_routine_type_decl( $OUTFD, "pcontrol" );
     $args = "int";
@@ -1156,10 +1158,10 @@ void *MPIR_F_MPI_BOTTOM = 0;
 	&print_args( PROTOFD, $args );
 	print PROTOFD ";\n";
     }
-    close( $OUTFD );
 
+    $OUTFD = "ADDRESSFFD";
     open ($OUTFD, ">addressf.c" ) || die "Cannot open addressf.c\n";
-    @files[$#files+1] = "addressf.c";
+    $files[$#files+1] = "addressf.c";
     &print_header( "MPI_Address", "address" );
     &print_routine_type_decl( $OUTFD, "address" );
     $args = "void *, int *";
@@ -1184,8 +1186,6 @@ void *MPIR_F_MPI_BOTTOM = 0;
 	&print_args( PROTOFD, $args );
 	print PROTOFD ";\n";
     }
-
-    close( $OUTFD );
 }
 #
 # ISSUES NOT YET HANDLED
