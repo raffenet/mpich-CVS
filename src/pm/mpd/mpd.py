@@ -544,7 +544,8 @@ def _handle_new_connection():
     randHiRange = 10000
     (newConnSocket,newConnAddr) = g.mySocket.accept()
     msg = mpd_recv_one_msg(newConnSocket)
-    if (not msg.has_key('cmd')) or (not msg.has_key('host')) or  \
+    if (not msg) or \
+       (not msg.has_key('cmd')) or (not msg.has_key('host')) or  \
        (not msg.has_key('port')):
         mpd_print(1, 'INVALID msg from new connection :%s: msg=:%s:' % (newConnAddr,msg) )
         newConnSocket.close()
@@ -678,7 +679,8 @@ def _enter_existing_ring():
                   'mpd_version' : mpd_version }
     mpd_send_one_msg(g.lhsSocket,msgToSend)
     msg = mpd_recv_one_msg(g.lhsSocket)
-    if (not msg.has_key('cmd')) or  \
+    if (not msg) or  \
+       (not msg.has_key('cmd')) or  \
        (msg['cmd'] != 'challenge') or (not msg.has_key('randnum')) or  \
        (not msg.has_key('g.generation')):
         mpd_raise('invalid challenge msg: %s' % (msg) )
@@ -696,7 +698,8 @@ def _enter_existing_ring():
                   'port' : g.myPort }
     mpd_send_one_msg(g.lhsSocket,msgToSend)
     msg = mpd_recv_one_msg(g.lhsSocket)
-    if (not msg.has_key('cmd')) or (msg['cmd'] != 'OK_to_enter_as_rhs'):
+    if (not msg) or  \
+       (not msg.has_key('cmd')) or (msg['cmd'] != 'OK_to_enter_as_rhs'):
         mpd_raise('NOT OK to enter ring')
     if (not msg.has_key('rhshost'))  or (not msg.has_key('rhsport')):
         mpd_raise('invalid OK msg: %s' % (msg) )
@@ -710,7 +713,8 @@ def _enter_existing_ring():
                   'port' : g.myPort }
     mpd_send_one_msg(g.rhsSocket,msgToSend)
     msg = mpd_recv_one_msg(g.rhsSocket)
-    if (not msg.has_key('cmd')) or  \
+    if (not msg) or  \
+       (not msg.has_key('cmd')) or  \
        (msg['cmd'] != 'challenge') or (not msg.has_key('randnum')):
         mpd_raise('failed to recv challenge from rhs; msg=:%s:' % (msg) )
     response = new(''.join([g.configParams['password'],msg['randnum']])).digest()
@@ -720,7 +724,8 @@ def _enter_existing_ring():
                   'port' : g.myPort }
     mpd_send_one_msg(g.rhsSocket,msgToSend)
     msg = mpd_recv_one_msg(g.rhsSocket)
-    if (not msg.has_key('cmd')) or  \
+    if (not msg) or  \
+       (not msg.has_key('cmd')) or  \
        (msg['cmd'] != 'OK_to_enter_as_lhs'):
         mpd_raise('NOT OK to enter ring; msg=:%s:' % (msg) )
     return 0

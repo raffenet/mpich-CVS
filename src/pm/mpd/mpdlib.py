@@ -170,10 +170,10 @@ def mpd_recv_one_msg(sock):
             msg = loads(pickledMsg)
     except StandardError, errmsg:    # any built-in exceptions
         mpd_print_tb(1, 'mpd_recv_one_msg: errmsg=:%s:' % (errmsg) )
-        msg = ''
+        msg = {}
     except:
         mpd_print_tb(1, 'mpd_recv_one_msg failed on sock %s' % sock)
-        msg = ''
+        msg = {}
     return msg
 
 def mpd_get_inet_listen_socket(host,port):
