@@ -339,7 +339,7 @@ if [ -x maint/getstates ] ; then
                     -namefile=src/util/logging/lwlog/lwnames.h src
 fi
 if [ -x maint/genstates -a $do_genstates = "yes" ] ; then
-    echo "generating logging states enumeration..."
+    echo "Creating the enumeration of logging states into src/include/mpiallstates.h"
     maint/genstates
 fi
 
@@ -649,6 +649,18 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
     # either be fixed or removed in the 1.0 release
     # Added src/pm/winmpd because there are too many errors in this
     # code.  Fix or delete in the 1.0 release
+    # Here are the directories that were being skipped but are now
+    # required to pass the coding check
+    #		      -skipfile=./src/pm/winmpd \
+    #		      -skipfile=./src/pm/smpd \
+    #		      -skipfile=./src/pmi/smpd \
+    #		      -skipfile=./src/pmi/winmpd \
+    #		      -skipfile=./src/util/logging/dlog \
+    #		      -skipfile=./src/util/logging/dlog2slog \
+    # FIXME: there are too many separate crypt.[ch] and des.[ch] versions.
+    # make sure that there is only one.
+    # FIXME: Local programs should use style/allow for needed routines.
+    #
     maint/codingcheck -skipfile=./src/pmi/winmpd/crypt.c \
 		      -skipfile=./src/pmi/winmpd/crypt.h \
 		      -skipfile=./src/pm/winmpd/crypt.h \
@@ -657,11 +669,18 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
 		      -skipfile=./src/pm/winmpd/spmd/des.h \
 		      -skipfile=./src/pmi/winmpd/des.c \
 		      -skipfile=./src/pmi/winmpd/des.h \
-		      -skipfile=./src/pm/winmpd \
                       -skipfile=./src/pm/smpd/crypt.c \
 		      -skipfile=./src/pm/smpd/crypt.h \
 		      -skipfile=./src/pm/smpd/des.c \
 		      -skipfile=./src/pm/smpd/des.h \
+                      -skipfile=./src/pm/winmpd/smpd/crypt.c \
+		      -skipfile=./src/pm/winmpd/smpd/crypt.h \
+		      -skipfile=./src/pm/winmpd/smpd/des.c \
+		      -skipfile=./src/pm/winmpd/smpd/des.h \
+                      -skipfile=./src/pm/winmpd/mpd/crypt.c \
+		      -skipfile=./src/pm/winmpd/mpd/crypt.h \
+		      -skipfile=./src/pm/winmpd/mpd/des.c \
+		      -skipfile=./src/pm/winmpd/mpd/des.h \
 		      -skipfile=./src/pm/mpd/proxy.c \
 		      -skipfile=./src/pm/mpd/sigcatcher.c \
 		      -skipfile=./src/pm/mpd/sleeploop.c \
@@ -678,11 +697,6 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
 		      -skipfile=./src/mpe \
 		      -skipfile=./src/mpe/include \
 		      -skipfile=./src/mpid/mm \
-		      -skipfile=./src/pm/smpd \
-		      -skipfile=./src/pmi/smpd \
-		      -skipfile=./src/pmi/winmpd \
-		      -skipfile=./src/util/logging/dlog \
-		      -skipfile=./src/util/logging/dlog2slog \
 		      -skipfile=./src/mpid/common/sock/poll/mpidu_sock_poll.h \
 		      -skipfile=./src/mpid/common/sock/poll/poll.c \
 			$codecheck_args src
