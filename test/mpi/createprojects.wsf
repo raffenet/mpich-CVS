@@ -102,6 +102,9 @@ Function TestsToProjects(filename, dotdot)
 			if count = 2 And last_project <> twostrings(0) then
 				' Create the project file
 				project_name = twostrings(0)
+				If Left(project_name, 1) = "#" Then
+					project_name = Right(project_name, Len(project_name) - 1)
+				End If
 				last_project = project_name
 				project_filename = Replace( filename, "testlist", project_name + ".vcproj" )
 				project_relative_filename = Replace( project_filename, path_to_remove, "" )
