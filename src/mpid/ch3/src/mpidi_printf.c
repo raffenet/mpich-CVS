@@ -138,7 +138,7 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 		break;
 	    case MPIDI_CH3_PKT_PUT:
 		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_PUT\n"));
-		MPIU_DBG_PRINTF((" addr ......... 0x%08X\n", pkt->put.addr));
+		MPIU_DBG_PRINTF((" addr ......... %p\n", pkt->put.addr));
 		MPIU_DBG_PRINTF((" count ........ %d\n", pkt->put.count));
 		MPIU_DBG_PRINTF((" datatype ..... 0x%08X\n", pkt->put.datatype));
 		MPIU_DBG_PRINTF((" dataloop_size. 0x%08X\n", pkt->put.dataloop_size));
@@ -148,7 +148,7 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 		break;
 	    case MPIDI_CH3_PKT_GET:
 		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_GET\n"));
-		MPIU_DBG_PRINTF((" addr ......... 0x%08X\n", pkt->get.addr));
+		MPIU_DBG_PRINTF((" addr ......... %p\n", pkt->get.addr));
 		MPIU_DBG_PRINTF((" count ........ %d\n", pkt->get.count));
 		MPIU_DBG_PRINTF((" datatype ..... 0x%08X\n", pkt->get.datatype));
 		MPIU_DBG_PRINTF((" dataloop_size. %d\n", pkt->get.dataloop_size));
@@ -167,7 +167,7 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 		break;
 	    case MPIDI_CH3_PKT_ACCUMULATE:
 		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_ACCUMULATE\n"));
-		MPIU_DBG_PRINTF((" addr ......... 0x%08X\n", pkt->accum.addr));
+		MPIU_DBG_PRINTF((" addr ......... %p\n", pkt->accum.addr));
 		MPIU_DBG_PRINTF((" count ........ %d\n", pkt->accum.count));
 		MPIU_DBG_PRINTF((" datatype ..... 0x%08X\n", pkt->accum.datatype));
 		MPIU_DBG_PRINTF((" dataloop_size. %d\n", pkt->accum.dataloop_size));
@@ -237,3 +237,21 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 #endif
 
 
+const char * MPIDI_VC_Get_state_description(int state)
+{
+    switch (state)
+    {
+	case MPIDI_VC_STATE_INACTIVE:
+	    return "MPIDI_VC_STATE_INACTIVE";
+	case MPIDI_VC_STATE_ACTIVE:
+	    return "MPIDI_VC_STATE_ACTIVE";
+	case MPIDI_VC_STATE_LOCAL_CLOSE:
+	    return "MPIDI_VC_STATE_LOCAL_CLOSE";
+	case MPIDI_VC_STATE_REMOTE_CLOSE:
+	    return "MPIDI_VC_STATE_REMOTE_CLOSE";
+	case MPIDI_VC_STATE_CLOSE_ACKED:
+	    return "MPIDI_VC_STATE_CLOSE_ACKED";
+	default:
+	    return "unknown";
+    }
+}

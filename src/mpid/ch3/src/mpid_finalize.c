@@ -6,25 +6,6 @@
 
 #include "mpidimpl.h"
 
-/*
-static const char * get_state_str(int state)
-{
-    switch (state)
-    {
-    case MPIDI_VC_STATE_INACTIVE:
-	return "MPIDI_VC_STATE_INACTIVE";
-    case MPIDI_VC_STATE_ACTIVE:
-	return "MPIDI_VC_STATE_ACTIVE";
-    case MPIDI_VC_STATE_LOCAL_CLOSE:
-	return "MPIDI_VC_STATE_LOCAL_CLOSE";
-    case MPIDI_VC_STATE_REMOTE_CLOSE:
-	return "MPIDI_VC_STATE_REMOTE_CLOSE";
-    case MPIDI_VC_STATE_CLOSE_ACKED:
-	return "MPIDI_VC_STATE_CLOSE_ACKED";
-    }
-    return "unknown";
-}
-*/
 
 #undef FUNCNAME
 #define FUNCNAME MPID_Finalize
@@ -34,6 +15,8 @@ int MPID_Finalize()
 {
     MPID_Progress_state progress_state;
     int mpi_errno = MPI_SUCCESS;
+    
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
 
     /*
@@ -100,11 +83,8 @@ int MPID_Finalize()
 
 		/* MT: this is not thread safe */
 		MPIDI_Outstanding_close_ops += 1;
-		/*
-		printf("[%d] finalize close(%s) to %d, ops = %d\n", MPIDI_Process.my_pg_rank,
-		    close_pkt->ack ? "TRUE" : "FALSE", i, MPIDI_Outstanding_close_ops);
-		fflush(stdout);
-		*/
+		MPIDI_DBG_PRINTF((30, FCNAME, "sending close(%s) to %d, ops = %d", close_pkt->ack ? "TRUE" : "FALSE",
+				       i, MPIDI_Outstanding_close_ops));
 		    
 		if (vc->state == MPIDI_VC_STATE_ACTIVE)
 		{ 
@@ -115,13 +95,11 @@ int MPID_Finalize()
 		    vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		}
 	    }
-	    /*
 	    else
 	    {
-		printf("[%d] finalize not sending a close to %d, vc in state %s\n", MPIDI_Process.my_pg_rank, i, get_state_str(vc->state));
-		fflush(stdout);
+		MPIDI_DBG_PRINTF((30, FCNAME, "not sending a close to %d, vc in state %s", i,
+				  MPIDI_VC_Get_state_description(vc->state)));
 	    }
-	    */
 	}
     }
 
@@ -153,5 +131,6 @@ int MPID_Finalize()
     MPIU_Free(MPIDI_Process.processor_name);
 
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
     return mpi_errno;
 }

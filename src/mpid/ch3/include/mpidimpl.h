@@ -555,6 +555,8 @@ void MPIDI_err_printf(char *, char *, ...);
 #else
 #   define MPIDI_DBG_Print_packet(a)
 #endif
+
+const char * MPIDI_VC_Get_state_description(int state);
 /*--------------------------
   END DEBUGGING TOOL SECTION
   --------------------------*/
