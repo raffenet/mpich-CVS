@@ -362,7 +362,7 @@ static int smpd_easy_send(SOCKET sock, char *buffer, int length)
 
 int smpd_piothread(smpd_piothread_arg_t *p)
 {
-    char buffer[1024];
+    char buffer[8192];
     int num_read;
     HANDLE hIn;
     SOCKET hOut;
@@ -375,7 +375,7 @@ int smpd_piothread(smpd_piothread_arg_t *p)
     smpd_dbg_printf("*** entering smpd_piothread ***\n");
     while (1)
     {
-	if (!ReadFile(hIn, buffer, 1024, &num_read, NULL))
+	if (!ReadFile(hIn, buffer, 8192, &num_read, NULL))
 	{
 	    smpd_dbg_printf("ReadFile failed, error %d\n", GetLastError());
 	    break;

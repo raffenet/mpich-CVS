@@ -682,7 +682,7 @@ int smpd_state_reading_stdouterr(smpd_context_t *context, MPIDU_Sock_event_t *ev
     smpd_dbg_printf("read from %s\n", smpd_get_context_str(context));
 
     /* one byte read, attempt to read up to the buffer size */
-    result = MPIDU_Sock_read(context->sock, &context->read_cmd.cmd[1], SMPD_MAX_CMD_LENGTH/2-100, &num_read);
+    result = MPIDU_Sock_read(context->sock, &context->read_cmd.cmd[1], SMPD_MAX_STDOUT_LENGTH/2, &num_read);
     if (result != MPI_SUCCESS)
     {
 	num_read = 0;

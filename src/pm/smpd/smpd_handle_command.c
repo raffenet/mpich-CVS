@@ -2596,8 +2596,6 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	return SMPD_FAIL;
     }
 
-    printf("I am a loser and I cannot believe the world really exists.\n");fflush(stdout);
-    ExitProcess(0);
     smpd_exit_fn("smpd_handle_spawn_command");
     return result;
 }
