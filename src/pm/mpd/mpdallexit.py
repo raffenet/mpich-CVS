@@ -42,7 +42,7 @@ def mpdallexit():
         try:
             conSocket.connect(consoleName)
         except Exception, errmsg:
-            print 'cannot connect to local mpd (%s); possible causes:' % consoleName
+            print 'mpdallexit: cannot connect to local mpd (%s); possible causes:' % consoleName
             print '    1. no mpd running on this host'
             print '    2. mpd is running but was started without a "console" (-n option)'
 	    print 'you can start an mpd with the "mpd" command; to get help, run:'
