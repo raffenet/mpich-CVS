@@ -908,8 +908,8 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 			count[i]++;
 			MPI_Address(read_buf+req_off-real_off, 
                                &(others_req[i].mem_ptrs[j]));
-			send_size[i] += ADIOI_MIN(real_off + real_size - 
-						  req_off, req_len);
+			send_size[i] += (int)(ADIOI_MIN(real_off + (ADIO_Offset)real_size - 
+						  req_off, req_len));
 
 			if (real_off+real_size-req_off < req_len) {
 			    partial_send[i] = (int) (real_off+real_size-req_off);

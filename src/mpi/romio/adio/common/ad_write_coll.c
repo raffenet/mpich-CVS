@@ -412,8 +412,8 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 			count[i]++;
 			MPI_Address(write_buf+req_off-off, 
                                &(others_req[i].mem_ptrs[j]));
-			recv_size[i] += ADIOI_MIN(off + size - 
-						  req_off, req_len);
+			recv_size[i] += (int)(ADIOI_MIN(off + (ADIO_Offset)size - 
+						  req_off, req_len));
 
 			if (off+size-req_off < req_len) {
 			    partial_recv[i] = (int) (off + size - req_off);
