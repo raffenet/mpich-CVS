@@ -956,7 +956,28 @@ int sock_writev(sock_t sock, SOCK_IOV * iov, int n, sock_size_t * num_written)
 #define FCNAME SOCKI_QUOTE(FUNCNAME)
 int sock_getid(sock_t sock)
 {
-    return sock->fd;
+    int ret_val;
+    MPIDI_STATE_DECL(MPID_STATE_SOCK_GETID);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_GETID);
+    ret_val = (int)sock->fd;
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_GETID);
+    return ret_val;
+}
+
+#undef FUNCNAME
+#define FUNCNAME sock_getsetid
+#undef FCNAME
+#define FCNAME SOCKI_QUOTE(FUNCNAME)
+int sock_getsetid(sock_set_t set)
+{
+    int ret_val;
+    MPIDI_STATE_DECL(MPID_STATE_SOCK_GETSETID);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_GETSETID);
+    ret_val = (int)set;
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_GETSETID);
+    return ret_val;
 }
 
 #undef FUNCNAME
