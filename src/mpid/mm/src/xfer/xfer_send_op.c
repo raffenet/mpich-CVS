@@ -11,13 +11,23 @@ static void get_xfer_send_request(MPID_Request *request_ptr, int dest, MPID_Requ
     MM_Car *pCarIter;
     MPID_Request *pRequestIter;
 
+    /* *pbNeedHeader must be set to TRUE before calling this function */
+
+    /* allocate a new request structure */
     *ppRequest = mm_request_alloc();
+
+    /* Find out if the write car in this request needs to be put at the end of a car chain or not.
+     * If there already is a send operation to the same destination then this send_op gets put at the
+     * end of that chain.  Otherwise this send_op starts a new chain and pbNeedHeader is set to TRUE
+     */
     pRequestIter = request_ptr;
+    /* iterate through the car list on the first request */
     pCarIter = pRequestIter->mm.write_list;
     while (pCarIter)
     {
 	if (pCarIter->dest == dest)
 	{
+	    /* the destination matches so add this send_op to the end of the matched chain */
 	    while (pCarIter->next_ptr)
 	    {
 		pCarIter = pCarIter->next_ptr;
@@ -28,16 +38,21 @@ static void get_xfer_send_request(MPID_Request *request_ptr, int dest, MPID_Requ
 	}
 	pCarIter = pCarIter->opnext_ptr;
     }
+    /* iterate through the rest of the request list */
     while (pRequestIter->mm.next_ptr)
     {
 	pRequestIter = pRequestIter->mm.next_ptr;
+	/* if the car has been matched (*pbNeedHeader == FALSE), skip this matching block and 
+	   simply iterate to the end of the list of requests */
 	if (*pbNeedHeader)
 	{
+	    /* iterate through the car list */
 	    pCarIter = pRequestIter->mm.write_list;
 	    while (pCarIter)
 	    {
 		if (pCarIter->dest == dest)
 		{
+		    /* the destination matches so add this send_op to the end of the matched chain */
 		    while (pCarIter->next_ptr)
 		    {
 			pCarIter = pCarIter->next_ptr;
@@ -50,6 +65,8 @@ static void get_xfer_send_request(MPID_Request *request_ptr, int dest, MPID_Requ
 	    }
 	}
     }
+
+    /* add the newly allocated request to the end of the list */
     pRequestIter->mm.next_ptr = (*ppRequest);
 }
 
@@ -89,6 +106,8 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
 	 * common case faster?  The code used to be inline here.  Having a
 	 * function call makes the else jump shorter.
 	 * Does this prevent speculative branch execution down the else block?
+	 * Does this do nothing for the common case and therefore only slow
+	 * down the collective case?
 	 */
 	get_xfer_send_request(request_ptr, dest, &pRequest, &bNeedHeader);
     }

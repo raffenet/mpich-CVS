@@ -11,13 +11,23 @@ static void get_xfer_recv_request(MPID_Request *request_ptr, int src, MPID_Reque
     MM_Car *pCarIter;
     MPID_Request *pRequestIter;
 
+    /* *pbNeedHeader must be set to TRUE before calling this function */
+
+    /* allocate a new request structure */
     *ppRequest = mm_request_alloc();
+
+    /* Find out if the read car in this request needs to be put at the end of a car chain or not.
+     * If there already is a receive operation from the same source then this recv_op gets put at the
+     * end of that chain.  Otherwise this recv_op starts a new chain and pbNeedHeader is set to TRUE
+     */
     pRequestIter = request_ptr;
+    /* check the receive car in the first request */
     pCarIter = pRequestIter->mm.rcar;
     if (pCarIter->type & MM_HEAD_CAR)
     {
 	if (pCarIter->src == src)
 	{
+	    /* the source matches so add this recv_op to the end of the matched chain */
 	    while (pCarIter->next_ptr)
 	    {
 		pCarIter = pCarIter->next_ptr;
@@ -26,9 +36,12 @@ static void get_xfer_recv_request(MPID_Request *request_ptr, int src, MPID_Reque
 	    *pbNeedHeader = FALSE;
 	}
     }
+    /* iterate through the rest of the request list */
     while (pRequestIter->mm.next_ptr)
     {
 	pRequestIter = pRequestIter->mm.next_ptr;
+	/* if the car has been matched (*pbNeedHeader == FALSE), skip this matching block and 
+	   simply iterate to the end of the list of requests */
 	if (*pbNeedHeader)
 	{
 	    pCarIter = pRequestIter->mm.rcar;
@@ -36,6 +49,7 @@ static void get_xfer_recv_request(MPID_Request *request_ptr, int src, MPID_Reque
 	    {
 		if (pCarIter->src == src)
 		{
+		    /* the source matches so add this recv_op to the end of the matched chain */
 		    while (pCarIter->next_ptr)
 		    {
 			pCarIter = pCarIter->next_ptr;
@@ -46,6 +60,8 @@ static void get_xfer_recv_request(MPID_Request *request_ptr, int src, MPID_Reque
 	    }
 	}
     }
+
+    /* add the newly allocated request to the end of the list */
     pRequestIter->mm.next_ptr = (*ppRequest);
 }
 
@@ -84,6 +100,9 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
 	/* Will putting the uncommon case in a function call make the 
 	 * common case faster?  The code used to be inline here.  Having a
 	 * function call makes the else jump shorter.
+	 * Does this prevent speculative branch execution down the else block?
+	 * Does this do nothing for the common case and therefore only slow
+	 * down the collective case?
 	 */
 	get_xfer_recv_request(request_ptr, src, &pRequest, &bNeedHeader);
     }

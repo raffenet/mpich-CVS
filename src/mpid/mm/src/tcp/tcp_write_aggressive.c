@@ -44,17 +44,24 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
 
     /* check to see that there is data available and space in the vector to put it */
     if ((*cur_pos_ptr == MPID_VECTOR_LIMIT) ||
-        (car_ptr->data.tcp.buf.vec_write.num_read_copy == buf_ptr->vec.num_read))
+	(car_ptr->data.tcp.buf.vec_write.num_read_copy == buf_ptr->vec.num_read))
     {
+	/* cur_pos has run off the end of the vector
+	   or
+	   If num_read_copy is equal to num_read then there is no data available to write. */
 	MM_EXIT_FUNC(TCP_STUFF_VECTOR_VEC);
 	return FALSE;
     }
     
     cur_pos = *cur_pos_ptr;
     cur_index = car_ptr->data.tcp.buf.vec_write.cur_index;
+    /* The amount available is the amount read minus the amount previously written. */
     num_avail = buf_ptr->vec.num_read - car_ptr->data.tcp.buf.vec_write.cur_num_written;
+    /* If the amount available for writing plus the total amount previously written is equal to the total size
+       of the segment (segment_last) then set final_segment to TRUE */
     final_segment = (num_avail + car_ptr->data.tcp.buf.vec_write.total_num_written) == buf_ptr->vec.segment_last;
 
+    /* set the first vector to be the buf_ptr vector offset by the amount previously written */
     vec[cur_pos].MPID_VECTOR_BUF = 
 	(char*)buf_ptr->vec.vec[cur_index].MPID_VECTOR_BUF + car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
     vec[cur_pos].MPID_VECTOR_LEN = buf_ptr->vec.vec[cur_index].MPID_VECTOR_LEN - car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
@@ -62,6 +69,7 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
     cur_pos++;
     cur_index++;
 
+    /* copy the rest of the vectors until the segment is completely copied or cur_pos runs off the end of the array */
     while ((cur_pos < MPID_VECTOR_LIMIT) && num_avail)
     {
 	vec[cur_pos].MPID_VECTOR_BUF = buf_ptr->vec.vec[cur_index].MPID_VECTOR_BUF;
@@ -72,8 +80,15 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
     }
     *cur_pos_ptr = cur_pos;
 
+    /* return TRUE if this segment is completely copied into the vec array */
+    if (num_avail == 0 && final_segment)
+    {
+	MM_EXIT_FUNC(TCP_STUFF_VECTOR_VEC);
+	return TRUE;
+    }
+
     MM_EXIT_FUNC(TCP_STUFF_VECTOR_VEC);
-    return (num_avail == 0 && final_segment);
+    return FALSE;
 }
 
 int tcp_stuff_vector_tmp(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
@@ -85,6 +100,9 @@ int tcp_stuff_vector_tmp(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Seg
         (car_ptr->data.tcp.buf.tmp.num_written == buf_ptr->tmp.num_read) ||
 	(buf_ptr->tmp.num_read == 0))
     {
+	/* cur_pos has run off the end of the vector OR
+	   If num_written is equal to num_read then there is no data available to write. OR
+	   No data has been read */
 	MM_EXIT_FUNC(TCP_STUFF_VECTOR_TMP);
 	return FALSE;
     }
@@ -141,7 +159,7 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 #endif
     case MM_VEC_BUFFER:
 	num_written = min(
-	    /* the amout of buffer space available to have been written */
+	    /* the maximum amout of buffer space in this buffer that could have been written */
 	    buf_ptr->vec.segment_last - car_ptr->data.tcp.buf.vec_write.cur_num_written,
 	    /* the actual amount written */
 	    num_written);
@@ -166,13 +184,16 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	    i = car_ptr->data.tcp.buf.vec_write.cur_index;
 	    while (num_left > 0)
 	    {
+		/* subtract the length of the current vector */
 		num_left -= car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN;
 		if (num_left > 0)
 		{
+		    /* the entire vector was written so move to the next index */
 		    i++;
 		}
 		else
 		{
+		    /* this vector was only partially written, so update the buf and len fields */
 		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_BUF = 
 			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_BUF +
 			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN + 
@@ -182,7 +203,7 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	    }
 	    car_ptr->data.tcp.buf.vec_write.cur_index = i;
 	}
-	
+
 	/* if the entire mpi segment has been written, enqueue the car in the completion queue */
 	if (car_ptr->data.tcp.buf.vec_write.total_num_written == buf_ptr->vec.segment_last)
 	{
@@ -191,7 +212,7 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	    {
 		/* if this is the last car written and it has a next car pointer,
 		 * enqueue the next car for writing */
-		car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
+		car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr); /*** danger will rogers, is this correct? ***/
 	    }
 	    /*printf("dec cc: written vec: %d\n", num_written);fflush(stdout);*/
 	    mm_dec_cc(car_ptr->request_ptr);
@@ -218,7 +239,7 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	    {
 		/* if this is the last car written and it has a next car pointer,
 		 * enqueue the next car for writing */
-		car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
+		car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr); /*** danger will rogers, is this correct? ***/
 	    }
 	    /*printf("dec cc: written tmp buffer: %d\n", num_written);fflush(stdout);*/
 	    mm_dec_cc(car_ptr->request_ptr);
@@ -315,7 +336,13 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 	}
 	if (stop)
 	    break;
+#ifdef REALLY_AGGRESSIVE_WRITE
+	car_ptr = (car_ptr->next_ptr) ? 
+	    car_ptr->next_ptr : /* go to the next car in the list */
+	    car_ptr->vcqnext_ptr; /* else go to the next enqueued list */
+#else
 	car_ptr = car_ptr->next_ptr;
+#endif
     } while (car_ptr);
 
     if (cur_pos > 0)
@@ -350,16 +377,22 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 	    }
 	}
 
-	/* update all the cars and buffers affected */
+	/* update all the cars and buffers affected by the bwrite action */
 	car_ptr = vc_ptr->writeq_head;
 	while (num_written)
 	{
-	    next_car_ptr = car_ptr->next_ptr;
+	    /* Save the next pointer because it might not be available after updating the current car. */
+	    /* The vc queue has the heads of car chains enqueued in it. */
+	    /* Iteration is down the chain of cars and then over to the next chain in the queue. */
+	    /* So, set next_car_ptr to either the next_ptr or if that doesn't exist, the vcqnext_ptr. */
+	    next_car_ptr = car_ptr->next_ptr ? car_ptr->next_ptr : car_ptr->vcqnext_ptr;
+	    /* update the current car */
 	    if (tcp_update_car_num_written(car_ptr, &num_written) != MPI_SUCCESS)
 	    {
 		err_printf("tcp_write_aggressive:tcp_update_car_num_written failed.\n");
 		return -1;
 	    }
+	    /* move to the next one */
 	    car_ptr = next_car_ptr;
 	}
     }
