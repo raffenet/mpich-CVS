@@ -1808,27 +1808,6 @@ int MPID_Irsend( const void *buf, int count, MPID_Datatype *datatype,
 }
 
 /*@
-  MPID_Irecv - MPID entry point for MPI_Irecv
-
-  Notes:
-  The only difference between this and 'MPI_Irecv' is that the basic
-  error checks (e.g., valid communicator, datatype, rank, and tag)
-  have been made, the MPI opaque objects have been replaced by
-  MPID objects, and a context id offset is provided in addition to the 
-  communicator.  This offset is added to the context of the communicator
-  to get the context it used by the message.
-
-  Module:
-  Communication
-
-  @*/
-int MPID_Irecv( void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, int context_offset,
-		MPID_Request **request )
-{
-}
-
-/*@
   MPID_Recv - MPID entry point for MPI_Recv
 
   Notes:
@@ -1839,7 +1818,29 @@ int MPID_Irecv( void *buf, int count, MPID_Datatype *datatype,
   communicator, and a request may be returned.  The context offset is added 
   to the context of the communicator to get the context it used by the message.
   As in 'MPID_Send', the request is returned only if the operation did not
-  complete.
+  complete.  Conversely, the status object is populated with valid information
+  only if the operation completed.
+
+  Module:
+  Communication
+
+  @*/
+int MPID_Recv( void *buf, int count, MPID_Datatype *datatype,
+	       int tag, int rank, MPID_Comm *comm, int context_offset,
+	       MPI_Status *status, MPID_Request **request )
+{
+}
+
+/*@
+  MPID_Irecv - MPID entry point for MPI_Irecv
+
+  Notes:
+  The only difference between this and 'MPI_Irecv' is that the basic
+  error checks (e.g., valid communicator, datatype, rank, and tag)
+  have been made, the MPI opaque objects have been replaced by
+  MPID objects, and a context id offset is provided in addition to the 
+  communicator.  This offset is added to the context of the communicator
+  to get the context it used by the message.
 
   Module:
   Communication
