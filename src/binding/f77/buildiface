@@ -35,6 +35,8 @@ $malloc = "MPIU_Malloc";
 $free   = "MPIU_Free";
 $header_file = "mpi_fortimpl.h";
 $debug = 0;
+$writeRoutineList = 0;   # Set to 1 to get a list of MPI routines
+
 @arg_addresses = ();
 #
 # Error return handling
@@ -521,6 +523,15 @@ if ( -s "../../mpi/romio/include/mpio.h.in" && $build_io) {
 		    'MPICH2' => 1 );
     &ReadAndProcessInterface( "../../mpi/romio/include/mpio.h.in" );
     %skipBlocks = ();
+}
+
+# Write a list of the routines that we've found.
+if ($writeRoutineList) {
+    open LFD, ">mpi.dat" || die "Cannot open mpi.dat\n";
+    foreach my $name (sort(keys(%mpi_routines))) {
+	print LFD "$name\n";
+    }
+    close LFD;
 }
 
 if ($is_MPI) {
@@ -2001,9 +2012,10 @@ if ($write_mpif) {
     # Missing - max processor name!
     # Handle max processor name here.
     $mpidef{"MPI_MAX_PROCESSOR_NAME"} = "\@MPI_MAX_PROCESSOR_NAME\@";
+    # Other maximum values
     foreach $key (MAX_ERROR_STRING, MAX_NAME_STRING, MAX_PORT_NAME, 
 		  MAX_OBJECT_NAME, MAX_INFO_KEY, MAX_INFO_VAL,
-		  MAX_PROCESSOR_NAME ) {
+		  MAX_PROCESSOR_NAME, MAX_DATAREP_STRING ) {
 	&print_mpif_int( "MPI_$key" );
     }
     
@@ -2025,6 +2037,10 @@ if ($write_mpif) {
     # version
     &print_mpif_int( "MPI_VERSION" );
     &print_mpif_int( "MPI_SUBVERSION" );
+
+    # Special RMA values
+    &print_mpif_int( "MPI_LOCK_EXCLUSIVE" );
+    &print_mpif_int( "MPI_LOCK_SHARED" );
     #
     # Datatypes
     # These are determined and set at configure time
@@ -2091,7 +2107,7 @@ if ($write_mpif) {
     }
     # 
     # Finally, the special symbols
-    print MPIFFD "       INTEGER MPI_BOTTOM\n";
+    print MPIFFD "       INTEGER MPI_BOTTOM, MPI_IN_PLACE\n";
 
     # And the external names.  This are necessary to 
     # ensure that these are passed as routines, not implicitly-defined 
@@ -2107,7 +2123,7 @@ if ($write_mpif) {
 
     # Add the common block for the special constants
     print MPIFFD "\
-       COMMON /MPIPRIV/ MPI_BOTTOM, MPI_STATUS_IGNORE,                    &\n";
+       COMMON /MPIPRIV/ MPI_BOTTOM, MPI_IN_PLACE, MPI_STATUS_IGNORE,          &\n";
     print MPIFFD "     &      MPI_STATUSES_IGNORE, MPI_ERRCODES_IGNORE\n";
     print MPIFFD "       SAVE /MPIPRIV/\n";
 
@@ -2247,6 +2263,7 @@ const MPI_Fint MPIR_F_FALSE=F77_FALSE_VALUE;
     print $OUTFD "
 #ifndef USE_POINTER_FOR_BOTTOM
 void *MPIR_F_MPI_BOTTOM     = 0;
+void *MPIR_F_MPI_IN_PLACE   = 0;
 void *MPI_F_STATUS_IGNORE   = 0;
 void *MPI_F_STATUSES_IGNORE = 0;
 int  *MPI_F_ERRCODES_IGNORE = 0;
@@ -2256,12 +2273,13 @@ void *MPI_F_ARGVS_NULL      = 0;
 
 
     print $OUTFD "
-FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d )
+FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void * e )
 {
     MPIR_F_MPI_BOTTOM     = a;
-    MPI_F_STATUS_IGNORE   = b;
-    MPI_F_STATUSES_IGNORE = c;
-    MPI_F_ERRCODES_IGNORE = (int *)d;
+    MPIR_F_MPI_IN_PLACE   = b;
+    MPI_F_STATUS_IGNORE   = d;
+    MPI_F_STATUSES_IGNORE = d;
+    MPI_F_ERRCODES_IGNORE = (int *)e;
 }
 ";
     close ($OUTFD);

@@ -104,6 +104,7 @@ extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
 #else
 /* MPIR_F_MPI_BOTTOM is the address of the Fortran MPI_BOTTOM value */
 extern void *MPIR_F_MPI_BOTTOM;
+extern void *MPIR_F_MPI_IN_PLACE;
 extern void *MPI_F_STATUS_IGNORE;
 extern void *MPI_F_STATUSES_IGNORE;
 extern int  *MPI_F_ERRCODES_IGNORE;
