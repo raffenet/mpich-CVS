@@ -250,6 +250,15 @@ int main(int argc, char* argv[])
 	int port;
 	smpd_context_t *rc_context;
 
+	/* The local_root option is implemented by having mpiexec act as the smpd
+	 * and launch the smpd manager.  Then mpiexec connects to this manager just
+	 * as if it had been created by a real smpd.  This causes all the processes
+	 * destined for the first smpd host to be launched by this child process of
+	 * mpiexec and not the smpd service.  This allows for these processes to
+	 * create windows that are visible to the interactive user.  It also means 
+	 * that the job cannot be run in the context of a user other than the user
+	 * running mpiexec. */
+
 	/* get the path to smpd.exe because pszExe is currently mpiexec.exe */
 	smpd_get_smpd_data("binary", smpd_process.pszExe, SMPD_MAX_EXE_LENGTH);
 
@@ -263,7 +272,6 @@ int main(int argc, char* argv[])
 
 	/* connect to the manager */
 	smpd_dbg_printf("connecting a new socket.\n");
-	/* reconnect */
 	port = atol(context->port_str);
 	if (port < 1)
 	{
@@ -283,7 +291,6 @@ int main(int argc, char* argv[])
 	rc_context->connect_return_id = context->connect_return_id;
 	rc_context->connect_return_tag = context->connect_return_tag;
 	strcpy(rc_context->host, context->host);
-	/* replace the old context with the new */
 	smpd_process.left_context = rc_context;
 	smpd_dbg_printf("posting a re-connect to %s:%d in %s context.\n", rc_context->connect_to->host, port, smpd_get_context_str(rc_context));
 	result = MPIDU_Sock_post_connect(rc_context->set, rc_context, rc_context->connect_to->host, port, &rc_context->sock);
