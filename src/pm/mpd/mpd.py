@@ -628,6 +628,7 @@ def _handle_rhs_input():
 def _handle_new_connection():
     randHiRange = 10000
     (newConnSocket,newConnAddr) = g.mySocket.accept()
+    # print 'newConnSocket = ', newConnSocket.getsockname() 
     msg = mpd_recv_one_msg(newConnSocket)
     if (not msg) or \
        (not msg.has_key('cmd')) or (not msg.has_key('host')) or  \
