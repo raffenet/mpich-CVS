@@ -76,7 +76,7 @@ $(TARGET): $(OBJ)
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
 	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
 	done ; \
-	$(JAR) uvf $${jarfile} images applet.html
+	$(JAR) uvf $${jarfile} images/*.gif applet.html
 
 # Only need base/drawable/TimeBoundingBox.class from base/drawable
 $(TS_TARGET): $(OBJ) $(TS_OBJ)
@@ -89,7 +89,7 @@ $(TS_TARGET): $(OBJ) $(TS_OBJ)
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
 	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
 	done ; \
-	$(JAR) uvf $${jarfile} images applet.html
+	$(JAR) uvf $${jarfile} images/*.gif applet.html
 
 clean:
 	cd $(CLASSDIR) ; \
