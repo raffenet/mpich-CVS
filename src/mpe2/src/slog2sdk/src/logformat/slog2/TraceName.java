@@ -13,6 +13,7 @@ import java.util.StringTokenizer;
 
 public class TraceName
 {
+    public static final String CLOG2_EXT   = ".clog2";
     public static final String CLOG_EXT    = ".clog";
     public static final String RLOG_EXT    = ".rlog";
     public static final String UTE_EXT     = ".ute";
@@ -22,7 +23,9 @@ public class TraceName
 
     public static String getLogFormatExtension( String tracename )
     {
-        if ( tracename.endsWith( CLOG_EXT ) )
+        if ( tracename.endsWith( CLOG2_EXT ) )
+            return CLOG2_EXT;
+        else if ( tracename.endsWith( CLOG_EXT ) )
             return CLOG_EXT;
         else if ( tracename.endsWith( RLOG_EXT ) )
             return RLOG_EXT ;
@@ -67,7 +70,10 @@ public class TraceName
 
     public static String getDefaultSLOG2Name( String tracename )
     {
-        if ( tracename.endsWith( CLOG_EXT ) )
+        if ( tracename.endsWith( CLOG2_EXT ) )
+            return tracename.substring( 0, tracename.lastIndexOf( CLOG2_EXT ) )
+                 + SLOG2_EXT ;
+        else if ( tracename.endsWith( CLOG_EXT ) )
             return tracename.substring( 0, tracename.lastIndexOf( CLOG_EXT ) )
                  + SLOG2_EXT ;
         else if ( tracename.endsWith( RLOG_EXT ) )
