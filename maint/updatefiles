@@ -158,7 +158,7 @@ on a platform different that the one you ran $0 on.
 EOF
     error_summary="$error_summary\
 Your do not have a usable version of autoconf (either no version found\
-or version 2.57 or later"
+or version 2.57 or later)"
     acIncDirFlag=-B
     acVersion=2-57
 fi
@@ -437,7 +437,7 @@ EOF
 		if grep endEOF .ctmp/configure >/dev/null 2>&1 ; then
 		    echo " "
    echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-		    echo "The available version of configure has a bug"
+		    echo "The available version of autoconf has a bug"
 		    echo "in handling Fortran programs and should not be used."
 		    echo "This bug is an improper placement of the EOF"
 		    echo "token used to implement AC_TRY_COMPILE for Fortran."
@@ -661,7 +661,7 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
 fi
 if [ -n "$error_summary" ] ; then
     echo " "
-    echo "Problems encountered while running updatefiles"
-    echo "These may cause problems when configuring or building MPICH2"
+    echo "Problems encountered while running updatefiles."
+    echo "These may cause problems when configuring or building MPICH2."
     echo "$error_summary"
 fi
