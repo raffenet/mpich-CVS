@@ -1056,10 +1056,14 @@ dnl check for library functions
 if test -n "$thread_type" ; then
     case $thread_type in 
         pthread|posix)
-	AC_SEARCH_LIBS(pthread_create,pthread,
-	    AC_DEFINE(HAVE_PTHREAD_CREATE,1,[Define for pthreads]))
+	AC_CHECK_HEADERS(pthread.h)
+	# OSF1 has __pthread_create but not pthread_create (because of 
+	# inconsistencies in the pthread spec).  Thus, we look for pthread_key_create
+	AC_SEARCH_LIBS(pthread_key_create,pthread,
+	    AC_DEFINE(HAVE_PTHREAD_CREATE,,[Define for pthreads]))
 	;;
 	solaris|thr)
+	AC_CHECK_HEADERS(thread.h)
 	AC_SEARCH_LIBS(thr_create,thread,
 	    AC_DEFINE(HAVE_THR_CREATE,1,[Define for Solaris threads]))
 	;;
@@ -1067,9 +1071,12 @@ if test -n "$thread_type" ; then
 	AC_MSG_WARN([Unknown thread type $thread type]) 
 	;;
     esac
+
+    AC_CHECK_FUNCS(thr_yield sched_yield yield)
 fi
 dnl
 dnl Check for special compile characteristics
+if test "$ac_cv_prog_gcc" = "yes" ; then
 AC_MSG_CHECKING([for gcc __asm__ and pentium cmpxchgl instruction])
 AC_TRY_RUN([
 int main(int argc, char *argv[])
@@ -1085,9 +1092,14 @@ __asm__ __volatile__ ("lock; cmpxchgl %3, %1; sete %0"
 	: "r" (newval), "m" (*p), "a" (oldval));
 return (compval == 20) ? 0 : -1;
 }
-], AC_MSG_RESULT(yes); AC_DEFINE(HAVE_GCC_AND_PENTIUM_ASM, 1,[
-Define if using gcc on a system with an Intel Pentium class chip]), 
+], AC_MSG_RESULT(yes)
+   AC_DEFINE(HAVE_GCC_AND_PENTIUM_ASM, 1,[Define if using gcc on a system with an Intel Pentium class chip])
+   lac_cv_use_atomic_updates="yes", 
 AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
+fi
+if test "$lac_cv_use_atomic_updates" = "yes" ; then
+    AC_DEFINE(USE_ATOMIC_UPDATES,, [Define if assembly language atomic update macros should be used (if available)])
+fi
 dnl
 dnl Check for support of enable-coverage.  Put this near the end of the tests
 dnl because the coverage options may affect the other tests.
@@ -1106,7 +1118,7 @@ AC_HEADER_STDC
 # Check for a specific header
 # Grrr.  OS/X fails the test for sys/uio.h because uio *requires* sys/types.h
 # to compile.  Thus, we'll make that a separate test
-AC_CHECK_HEADERS(stdarg.h sys/types.h pthread.h)
+AC_CHECK_HEADERS(stdarg.h sys/types.h)
 AC_CACHE_CHECK([for sys/uio.h],ac_cv_header_sys_uio_h,[
 AC_TRY_COMPILE([
 #include <sys/types.h>
