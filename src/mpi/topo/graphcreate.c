@@ -44,12 +44,16 @@ int MPIR_Graph_create( const MPID_Comm *comm_ptr, int nnodes,
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     if (reorder) {
+	int nrank;
 	/* Allow the cart map routine to remap the assignment of ranks to 
 	   processes */
 	MPIR_Nest_incr();
 	mpi_errno = NMPI_Graph_map( comm_ptr->handle, nnodes, index, edges, 
-				   &comm_ptr->rank );
+				    &nrank );
 	MPIR_Nest_decr();
+	/* Handle the case where the new location is undefined */
+	if (nrank >= 0) 
+	    comm_ptr->rank = nrank;
     }
     /* Else we can use the copied rank */
 

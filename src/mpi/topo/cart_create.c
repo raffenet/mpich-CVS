@@ -35,7 +35,7 @@ int MPIR_Cart_create( const MPID_Comm *comm_ptr, int ndims, const int dims[],
 		      const int periods[], int reorder, MPI_Comm *comm_cart )
 {
     static const char FCNAME[] = "MPIR_Cart_create";
-    int       i, newsize, rank, nranks, mpi_errno;
+    int       i, newsize, rank, nranks, mpi_errno = MPI_SUCCESS;
     MPID_Comm *newcomm_ptr;
     MPIR_Topology *cart_ptr;
     MPIU_CHKPMEM_DECL(4);
@@ -63,6 +63,8 @@ int MPIR_Cart_create( const MPID_Comm *comm_ptr, int ndims, const int dims[],
 	mpi_errno = NMPI_Cart_map( comm_ptr->handle, ndims, dims, periods, 
 				   &rank );
 	MPIR_Nest_decr();
+	if (rank == MPI_UNDEFINED)
+	    rank = comm_ptr->rank;
     }
     else {
 	rank   = comm_ptr->rank;
