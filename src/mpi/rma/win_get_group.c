@@ -47,22 +47,33 @@ int MPI_Win_get_group(MPI_Win win, MPI_Group *group)
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_GET_GROUP);
+    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_GET_GROUP);
+
+    /* Verify that MPI has been initialized */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) {
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+            }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
     /* Get handles to MPI objects. */
     MPID_Win_get_ptr( win, win_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
 	    /* If win_ptr is not value, it will be reset to null */
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_GROUP);
+                MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_GROUP);
                 return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
             }
         }
@@ -70,6 +81,16 @@ int MPI_Win_get_group(MPI_Win win, MPI_Group *group)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_GROUP);
-    return MPI_SUCCESS;
+    mpi_errno = NMPI_Comm_group(win_ptr->comm, group);
+
+    if (mpi_errno == MPI_SUCCESS)
+    {
+        MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_GROUP);
+	return MPI_SUCCESS;
+    }
+    else
+    {
+        MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_GROUP);
+	return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+    }
 }

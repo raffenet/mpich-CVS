@@ -52,10 +52,14 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+            if (mpi_errno) {
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLOC_MEM);
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
+            if (size < 0)
+                mpi_errno = MPIR_Err_create_code(MPI_ERR_ARG,
+                               "**argneg", "**argneg %s %d", "size", size);  
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLOC_MEM);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -64,6 +68,12 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    baseptr = MPIU_Malloc(size);
+    if (!baseptr) {
+        mpi_errno = MPIR_Err_create_code( MPI_ERR_NO_MEM, "**allocmem", 0 );
+        return mpi_errno;
+    }
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLOC_MEM);
     return MPI_SUCCESS;
