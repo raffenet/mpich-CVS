@@ -1,6 +1,13 @@
+mpi_sources = bsend.c bsend_init.c bufattach.c buffree.c \
+ cancel.c commreq_free.c create_recv.c create_send.c ibsend.c iprobe.c \
+ irecv.c irsend.c isend.c issend.c probe.c recv.c rsend.c rsend_init.c \
+ send.c sendrecv.c sendrecv_rep.c ssend.c ssend_init.c start.c startall.c \
+ test.c testall.c testany.c testsome.c wait.c waitall.c waitany.c waitsome.c \
+ request_get_status.c status_set_cancelled.c test_cancelled.c
 lib${MPILIBNAME}_a_SOURCES = \
-    send.c recv.c wait.c \
-    mpir_wait.c irecv.c isend.c
+    send.c recv.c wait.c test.c testany.c \
+    mpir_wait.c mpir_test.c irecv.c isend.c \
+    bufattach.c buffree.c bsendutil.c 
 # As routines are implemented, add there files to the list.
 #lib${MPILIBNAME}_a_SOURCES = bsend.c bsend_init.c bufattach.c buffree.c \
  cancel.c commreq_free.c create_recv.c create_send.c ibsend.c iprobe.c \
