@@ -92,9 +92,10 @@ static int ReadFileData(char *pBuffer, int length, FILE *fin)
     return 0;
 }
 
-static int WriteFileData(const char *pBuffer, int length, FILE *fout)
+static int WriteFileData(const void *pvBuffer, int length, FILE *fout)
 {
     int num_written;
+    const char *pBuffer = pvBuffer;
 
     while (length)
     {
@@ -234,7 +235,8 @@ void SaveArrow(RLOG_IARROW *pArrow)
 	arrow.end_time = pArrow->timestamp;
 	arrow.tag = pArrow->tag;
 	arrow.leftright = RLOG_ARROW_LEFT;
-	fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow);
+	//fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow);
+	WriteFileData(&arrow, sizeof(RLOG_ARROW), g_fArrow);
 	free(pEnd);
     }
     else
@@ -253,7 +255,8 @@ void SaveArrow(RLOG_IARROW *pArrow)
 	    arrow.length = pStart->length; /* the sender length is more accurate than the receiver length */
 	    arrow.leftright = RLOG_ARROW_RIGHT;
 	    free(pStart);
-	    fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow);
+	    //fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow);
+	    WriteFileData(&arrow, sizeof(RLOG_ARROW), g_fArrow);
 	}
 	else
 	{
@@ -278,110 +281,6 @@ void SaveArrow(RLOG_IARROW *pArrow)
 
     /* fwrite(pArrow, sizeof(RLOG_IARROW), 1, g_fArrow); */
 }
-
-#ifdef FOO
-void SaveArrow(RLOG_IARROW *pArrow)
-{
-    ArrowNode *pNode;
-    StartArrowStruct *pStart, *pStartIter;
-    EndArrowStruct *pEnd, *pEndIter;
-    RLOG_ARROW arrow;
-    long file_pos;
-
-    if (g_fArrow == NULL)
-    {
-	strcpy(g_pszArrowFilename, "ArrowFile.tmp");
-	g_fArrow = fopen(g_pszArrowFilename, "w+b");
-	if (g_fArrow == NULL)
-	{
-	    printf("unable to open ArrowFile.tmp\n");
-	    return;
-	}
-    }
-
-    if (pArrow->sendrecv == RLOG_SENDER)
-    {
-	pNode = GetArrowNode(pArrow->remote);
-	pEnd = ExtractEndNode(pNode, pArrow->rank, pArrow->tag);
-	if (pEnd == NULL)
-	{
-	    pStart = (StartArrowStruct *)malloc(sizeof(StartArrowStruct));
-	    pStart->src = pArrow->rank;
-	    pStart->tag = pArrow->tag;
-	    pStart->length = pArrow->length;
-	    pStart->start_time = pArrow->timestamp;
-	    pStart->next = NULL;
-	    if (pNode->pStartList == NULL)
-	    {
-		pNode->pStartList = pStart;
-	    }
-	    else
-	    {
-		pStartIter = pNode->pStartList;
-		while (pStartIter->next != NULL)
-		    pStartIter = pStartIter->next;
-		pStartIter->next = pStart;
-	    }
-	    return;
-	}
-	/* save the file position */
-	file_pos = ftell(g_fArrow);
-	/* read the previously written arrow */
-	fseek(g_fArrow, pEnd->file_pos, SEEK_SET);
-	fread(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow);
-	arrow.src = pArrow->rank;
-	arrow.length = pArrow->length;
-	arrow.start_time = pArrow->timestamp;
-	/* write the updated arrow back */
-	fseek(g_fArrow, pEnd->file_pos, SEEK_SET);
-	fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow);
-	/* return the the current position */
-	fseek(g_fArrow, file_pos, SEEK_SET);
-	free(pEnd);
-    }
-    else
-    {
-	arrow.dest = pArrow->rank;
-	arrow.end_time = pArrow->timestamp;
-	arrow.tag = pArrow->tag;
-	arrow.length = pArrow->length;
-
-	pNode = GetArrowNode(pArrow->rank);
-	pStart = ExtractStartNode(pNode, pArrow->remote, pArrow->tag);
-	if (pStart != NULL)
-	{
-	    arrow.src = pStart->src;
-	    arrow.start_time = pStart->start_time;
-	    arrow.length = pStart->length; /* the sender length is more accurate than the receiver length */
-	    free(pStart);
-	}
-	else
-	{
-	    arrow.src = -1;
-	    arrow.start_time = -1.0;
-	    pEnd = (EndArrowStruct *)malloc(sizeof(EndArrowStruct));
-	    pEnd->src = pArrow->remote;
-	    pEnd->tag = pArrow->tag;
-	    pEnd->file_pos = ftell(g_fArrow);
-	    pEnd->next = NULL;
-	    if (pNode->pEndList == NULL)
-	    {
-		pNode->pEndList = pEnd;
-	    }
-	    else
-	    {
-		pEndIter = pNode->pEndList;
-		while (pEndIter->next != NULL)
-		    pEndIter = pEndIter->next;
-		pEndIter->next = pEnd;
-	    }
-	}
-	fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow);
-    }
-
-    /* fwrite(pArrow, sizeof(RLOG_IARROW), 1, g_fArrow); */
-}
-#endif
 
 RecursionStruct *GetLevel(int rank, int recursion)
 {
@@ -414,7 +313,8 @@ void SaveEvent(RLOG_EVENT *pEvent)
 
     pLevel = GetLevel(pEvent->rank, pEvent->recursion);
     pLevel->num_events++;
-    fwrite(pEvent, sizeof(RLOG_EVENT), 1, pLevel->fout);
+    //fwrite(pEvent, sizeof(RLOG_EVENT), 1, pLevel->fout);
+    WriteFileData(pEvent, sizeof(RLOG_EVENT), pLevel->fout);
 }
 
 void SaveState(RLOG_STATE *pState)
@@ -828,9 +728,12 @@ int main(int argc, char *argv[])
     printf("writing header.\n");fflush(stdout);
     type = RLOG_HEADER_SECTION;
     length = sizeof(RLOG_FILE_HEADER);
-    fwrite(&type, sizeof(int), 1, fout);
-    fwrite(&length, sizeof(int), 1, fout);
-    fwrite(&header, sizeof(RLOG_FILE_HEADER), 1, fout);
+    //fwrite(&type, sizeof(int), 1, fout);
+    WriteFileData(&type, sizeof(int), fout);
+    //fwrite(&length, sizeof(int), 1, fout);
+    WriteFileData(&length, sizeof(int), fout);
+    //fwrite(&header, sizeof(RLOG_FILE_HEADER), 1, fout);
+    WriteFileData(&header, sizeof(RLOG_FILE_HEADER), fout);
 
     /* write states */
     if (g_pList)
@@ -845,12 +748,15 @@ int main(int argc, char *argv[])
     }
     type = RLOG_STATE_SECTION;
     length = nNumStates * sizeof(RLOG_STATE);
-    fwrite(&type, sizeof(int), 1, fout);
-    fwrite(&length, sizeof(int), 1, fout);
+    //fwrite(&type, sizeof(int), 1, fout);
+    WriteFileData(&type, sizeof(int), fout);
+    //fwrite(&length, sizeof(int), 1, fout);
+    WriteFileData(&length, sizeof(int), fout);
     pState = g_pList;
     while (pState)
     {
-	fwrite(pState, sizeof(RLOG_STATE), 1, fout);
+	//fwrite(pState, sizeof(RLOG_STATE), 1, fout);
+	WriteFileData(pState, sizeof(RLOG_STATE), fout);
 	pState = pState->next;
     }
 
@@ -860,8 +766,10 @@ int main(int argc, char *argv[])
 	printf("writing arrows.\n");fflush(stdout);
 	type = RLOG_ARROW_SECTION;
 	length = ftell(g_fArrow);
-	fwrite(&type, sizeof(int), 1, fout);
-	fwrite(&length, sizeof(int), 1, fout);
+	//fwrite(&type, sizeof(int), 1, fout);
+	WriteFileData(&type, sizeof(int), fout);
+	//fwrite(&length, sizeof(int), 1, fout);
+	WriteFileData(&length, sizeof(int), fout);
 	AppendFile(fout, g_fArrow);
     }
 
@@ -882,14 +790,19 @@ int main(int argc, char *argv[])
 	/* write an event section for this rank */
 	type = RLOG_EVENT_SECTION;
 	length = sizeof(int) + sizeof(int) + (nNumLevels * sizeof(int)) + (nNumEvents * sizeof(RLOG_EVENT));
-	fwrite(&type, sizeof(int), 1, fout);
-	fwrite(&length, sizeof(int), 1, fout);
-	fwrite(&nRank, sizeof(int), 1, fout);
-	fwrite(&nNumLevels, sizeof(int), 1, fout);
+	//fwrite(&type, sizeof(int), 1, fout);
+	WriteFileData(&type, sizeof(int), fout);
+	//fwrite(&length, sizeof(int), 1, fout);
+	WriteFileData(&length, sizeof(int), fout);
+	//fwrite(&nRank, sizeof(int), 1, fout);
+	WriteFileData(&nRank, sizeof(int), fout);
+	//fwrite(&nNumLevels, sizeof(int), 1, fout);
+	WriteFileData(&nNumLevels, sizeof(int), fout);
 	for (i=0; i<nNumLevels; i++)
 	{
 	    pLevel = GetLevel(nRank, i);
-	    fwrite(&pLevel->num_events, sizeof(int), 1, fout);
+	    //fwrite(&pLevel->num_events, sizeof(int), 1, fout);
+	    WriteFileData(&pLevel->num_events, sizeof(int), fout);
 	}
 	for (i=0; i<nNumLevels; i++)
 	{

@@ -185,6 +185,218 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
     return pInput;
 }
 
+static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int n)
+{
+    RLOG_ARROW arrow;
+    int i, index, bModified;
+    int num_bytes;
+
+    printf("Modifying %d arrows\n", nNumArrows);
+    for (i=0; i<nNumArrows; i++)
+    {
+	num_bytes = fread(&arrow, 1, sizeof(RLOG_ARROW), f);
+	if (num_bytes != sizeof(RLOG_ARROW))
+	{
+	    printf("reading arrow failed - num_bytes %d != %d, error %d\n", num_bytes, sizeof(RLOG_ARROW), ferror(f));
+	    return -1;
+	}
+	bModified = FALSE;
+	index = (arrow.leftright == RLOG_ARROW_RIGHT) ? arrow.src - nMin : arrow.dest - nMin;
+	if (index >= 0 && index < n && pOffsets[index] != 0)
+	{
+	    arrow.start_time += pOffsets[index];
+	    bModified = TRUE;
+	}
+	index = (arrow.leftright == RLOG_ARROW_RIGHT) ? arrow.dest - nMin : arrow.src - nMin;
+	if (index >= 0 && index < n && pOffsets[index] != 0)
+	{
+	    arrow.end_time += pOffsets[index];
+	    bModified = TRUE;
+	}
+	if (bModified)
+	{
+	    fseek(f, -(int)sizeof(RLOG_ARROW), SEEK_CUR);
+	    if (fwrite(&arrow, 1, sizeof(RLOG_ARROW), f) != sizeof(RLOG_ARROW))
+	    {
+		printf("writing modified arrow failed - error %d\n", ferror(f));
+		return -1;
+	    }
+	    fseek(f, 0, SEEK_CUR);
+	}
+    }
+    return 0;
+}
+
+int ModifyEvents(FILE *f, int nNumEvents, int nMin, double *pOffsets, int n)
+{
+    RLOG_EVENT event;
+    int i, index;
+    int num_bytes;
+
+    printf("Modifying %d events\n", nNumEvents);
+    for (i=0; i<nNumEvents; i++)
+    {
+	num_bytes = fread(&event, 1, sizeof(RLOG_EVENT), f);
+	if (num_bytes != sizeof(RLOG_EVENT))
+	{
+	    printf("reading event failed - num_bytes %d != %d, error %d\n", num_bytes, sizeof(RLOG_EVENT), ferror(f));
+	    return -1;
+	}
+	index = event.rank - nMin;
+	if (index >= 0 && index < n && pOffsets[index] != 0)
+	{
+	    event.start_time += pOffsets[index];
+	    event.end_time += pOffsets[index];
+	    fseek(f, -(int)sizeof(RLOG_EVENT), SEEK_CUR);
+	    if (fwrite(&event, 1, sizeof(RLOG_EVENT), f) != sizeof(RLOG_EVENT))
+	    {
+		printf("writing modified event failed - error %d\n", ferror(f));
+		return -1;
+	    }
+	    fseek(f, 0, SEEK_CUR);
+	}
+    }
+    return 0;
+}
+
+int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
+{
+    int i, rank_index, cur_rank, min_rank = 0;
+    /*int j;*/
+    RLOG_IOStruct *pInput;
+    int type, length;
+
+    /* allocate an input structure */
+    pInput = (RLOG_IOStruct*)malloc(sizeof(RLOG_IOStruct));
+    if (pInput == NULL)
+    {
+	printf("malloc failed - %s\n", strerror(errno));
+	return -1;
+    }
+    pInput->ppCurEvent = NULL;
+    pInput->ppCurGlobalEvent = NULL;
+    pInput->gppCurEvent = NULL;
+    pInput->gppPrevEvent = NULL;
+    pInput->ppEventOffset = NULL;
+    pInput->ppNumEvents = NULL;
+    /* open the input rlog file */
+    pInput->f = fopen(filename, "rb+");
+    if (pInput->f == NULL)
+    {
+	printf("fopen(%s) failed, error: %s\n", filename, strerror(errno));
+	free(pInput);
+	return -1;
+    }
+    pInput->nNumRanks = 0;
+    /* read the sections */
+    while (fread(&type, sizeof(int), 1, pInput->f))
+    {
+	fread(&length, sizeof(int), 1, pInput->f);
+	switch (type)
+	{
+	case RLOG_HEADER_SECTION:
+	    /*printf("type: RLOG_HEADER_SECTION, length: %d\n", length);*/
+	    if (length != sizeof(RLOG_FILE_HEADER))
+	    {
+		printf("error in header size %d != %d\n", length, sizeof(RLOG_FILE_HEADER));
+	    }
+	    ReadFileData((char*)&pInput->header, sizeof(RLOG_FILE_HEADER), pInput->f);
+	    
+	    pInput->nNumRanks = pInput->header.nMaxRank + 1 - pInput->header.nMinRank;
+	    min_rank = pInput->header.nMinRank;
+	    
+	    pInput->pRank = (int*)malloc(pInput->nNumRanks * sizeof(int));
+	    pInput->pNumEventRecursions = (int*)malloc(pInput->nNumRanks * sizeof(int));
+	    pInput->ppNumEvents = (int**)malloc(pInput->nNumRanks * sizeof(int*));
+	    pInput->ppCurEvent = (int**)malloc(pInput->nNumRanks * sizeof(int*));
+	    pInput->ppCurGlobalEvent = (int**)malloc(pInput->nNumRanks * sizeof(int*));
+	    pInput->gppCurEvent = (RLOG_EVENT**)malloc(pInput->nNumRanks * sizeof(RLOG_EVENT*));
+	    pInput->gppPrevEvent = (RLOG_EVENT**)malloc(pInput->nNumRanks * sizeof(RLOG_EVENT*));
+	    pInput->ppEventOffset = (long**)malloc(pInput->nNumRanks * sizeof(long*));
+	    for (i=0; i<pInput->nNumRanks; i++)
+	    {
+		pInput->pRank[i] = -1;
+		pInput->pNumEventRecursions[i] = 0;
+		pInput->ppNumEvents[i] = NULL;
+		pInput->ppCurEvent[i] = NULL;
+		pInput->ppCurGlobalEvent[i] = NULL;
+		pInput->gppCurEvent[i] = NULL;
+		pInput->gppPrevEvent[i] = NULL;
+		pInput->ppEventOffset[i] = NULL;
+	    }
+	    break;
+	case RLOG_STATE_SECTION:
+	    /*printf("type: RLOG_STATE_SECTION, length: %d\n", length);*/
+	    pInput->nNumStates = length / sizeof(RLOG_STATE);
+	    pInput->nStateOffset = ftell(pInput->f);
+	    fseek(pInput->f, length, SEEK_CUR);
+	    break;
+	case RLOG_ARROW_SECTION:
+	    /*printf("type: RLOG_ARROW_SECTION, length: %d\n", length);*/
+	    pInput->nNumArrows = length / sizeof(RLOG_ARROW);
+	    pInput->nArrowOffset = ftell(pInput->f);
+	    ModifyArrows(pInput->f, pInput->nNumArrows, pInput->header.nMinRank, pOffsets, n);
+	    //fseek(pInput->f, length, SEEK_CUR);
+	    break;
+	case RLOG_EVENT_SECTION:
+	    /*printf("type: RLOG_EVENT_SECTION, length: %d, ", length);*/
+	    fread(&cur_rank, sizeof(int), 1, pInput->f);
+	    if (cur_rank - min_rank >= pInput->nNumRanks)
+	    {
+		printf("Error: event section out of range - %d <= %d <= %d\n", pInput->header.nMinRank, cur_rank, pInput->header.nMaxRank);
+		free(pInput);
+		return -1;
+	    }
+	    rank_index = cur_rank - min_rank;
+	    fread(&pInput->pNumEventRecursions[rank_index], sizeof(int), 1, pInput->f);
+	    /*printf("levels: %d\n", pInput->nNumEventRecursions);*/
+	    if (pInput->pNumEventRecursions[rank_index])
+	    {
+		pInput->ppCurEvent[rank_index] = (int*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
+		pInput->ppCurGlobalEvent[rank_index] = (int*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
+		pInput->gppCurEvent[rank_index] = (RLOG_EVENT*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(RLOG_EVENT));
+		pInput->gppPrevEvent[rank_index] = (RLOG_EVENT*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(RLOG_EVENT));
+		pInput->ppNumEvents[rank_index] = (int*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(int));
+		pInput->ppEventOffset[rank_index] = (long*)malloc(pInput->pNumEventRecursions[rank_index] * sizeof(long));
+	    }
+	    for (i=0; i<pInput->pNumEventRecursions[rank_index]; i++)
+	    {
+		fread(&pInput->ppNumEvents[rank_index][i], sizeof(int), 1, pInput->f);
+		/*printf(" level %2d: %d events\n", i, pInput->pNumEvents[i]);*/
+	    }
+	    if (pInput->pNumEventRecursions[rank_index])
+	    {
+		pInput->ppEventOffset[rank_index][0] = ftell(pInput->f);
+		for (i=1; i<pInput->pNumEventRecursions[rank_index]; i++)
+		{
+		    pInput->ppEventOffset[rank_index][i] = pInput->ppEventOffset[rank_index][i-1] + (pInput->ppNumEvents[rank_index][i-1] * sizeof(RLOG_EVENT));
+		}
+	    }
+	    length -= ((pInput->pNumEventRecursions[rank_index] + 2) * sizeof(int));
+	    ModifyEvents(pInput->f, length / sizeof(RLOG_EVENT), pInput->header.nMinRank, pOffsets, n);
+	    //fseek(pInput->f, length, SEEK_CUR);
+	    break;
+	default:
+	    /*printf("unknown section: type %d, length %d\n", type, length);*/
+	    fseek(pInput->f, length, SEEK_CUR);
+	    break;
+	}
+    }
+    /* reset the iterators */
+    /*
+    RLOG_ResetStateIter(pInput);
+    RLOG_ResetArrowIter(pInput);
+    for (j=0; j<pInput->nNumRanks; j++)
+    {
+	for (i=0; i<pInput->pNumEventRecursions[j]; i++)
+	    RLOG_ResetEventIter(pInput, j+pInput->header.nMinRank, i);
+    }
+    RLOG_ResetGlobalIter(pInput);
+    */
+    RLOG_CloseInputStruct(&pInput);
+    return 0;
+}
+
 int RLOG_CloseInputStruct(RLOG_IOStruct **ppInput)
 {
     int i;
@@ -387,6 +599,29 @@ int RLOG_FindEventBeforeTimestamp(RLOG_IOStruct *pInput, int rank, int recursion
     if (pIndex != NULL)
 	*pIndex = low;
     return RLOG_GetEvent(pInput, rank, recursion_level, low, pEvent);
+}
+
+int RLOG_FindAnyEventBeforeTimestamp(RLOG_IOStruct *pInput, int rank, double timestamp, RLOG_EVENT *pEvent)
+{
+    RLOG_EVENT event, cur_event;
+    int index, i, rank_index;
+
+    if (pInput == NULL || pEvent == NULL || rank < pInput->header.nMinRank || rank > pInput->header.nMaxRank)
+	return -1;
+    rank_index = rank - pInput->header.nMinRank;
+
+    if (RLOG_FindEventBeforeTimestamp(pInput, rank, 0, timestamp, &event, &index) == -1)
+	return -1;
+    for (i=1; i<pInput->pNumEventRecursions[rank_index]; i++)
+    {
+	if (RLOG_FindEventBeforeTimestamp(pInput, rank, i, timestamp, &cur_event, &index) != -1)
+	{
+	    if (cur_event.start_time > event.start_time)
+		event = cur_event;
+	}
+    }
+    *pEvent = event;
+    return 0;
 }
 
 int RLOG_ResetEventIter(RLOG_IOStruct *pInput, int rank, int recursion_level)
