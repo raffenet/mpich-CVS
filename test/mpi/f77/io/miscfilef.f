@@ -176,7 +176,9 @@ C of the first block of 20 ints)
      $        ", should be 1000"
       endif
       
-      call mpi_file_preallocate(fh, 8192, ierr )
+      offset = 8192
+      call mpi_file_preallocate(fh, offset, ierr )
+      offset = 0
       call mpi_file_get_size( fh, offset, ierr )
       if (offset .lt. 8192) then
          errs = errs + 1
