@@ -143,16 +143,22 @@ sub CountUncoveredLines {
 
     # Note that linecount is relative to the foo.c.gcov file, not the
     # original foo.c file.
+    # Gcc 3.x changed the output format (including a line number and
+    # a - for unexecuted lines, i.e.,
+    # ^\s*-:\s*\d+:original-text-line
+    
     while (<FD>) {
 	$linecount++;
 	# Coverage messages appear to always begin in the first column.
 	if (/^\s/) { $fileline++; }
 	# Skip any error checking block
-	if (/^\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
+	if (/^\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/ ||
+	    /^\s*-:\s*\d+:\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
 	    while (<FD>) {
 		$linecount++;
 		if (/^\s/) { $fileline++; }
-		if (/^\s+#\s*endif/ || /^\s*#\s*els/) { 
+		if (/^\s+#\s*endif/ || /^\s*#\s*els/
+		    /^\s*-:\s*\d+:#\s*endif/ || /^\s*-:\s*\d+:#\s*els/) { 
 		    last; 
 		}
 	    }
@@ -160,17 +166,20 @@ sub CountUncoveredLines {
 	}
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
-	if (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
+	if (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\// ||
+	    /^\s*-:\s*d+:\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
 	    while (<FD>) {
 		$linecount++;
 		if (/^\s/) { $fileline++; }
-		if (/^\s*\/\*\s+--BEGIN/) {
+		if (/^\s*\/\*\s+--BEGIN/ ||
+		    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN/) {
 		    my $cleanline = $_;
 		    $cleanline =~ s/^\s*//;
 		    chop $cleanline;
 		    print STDERR "Possible missing END DEBUG in $filename at $linecount; saw $cleanline\n";
 		}
-		if (/^\s*\/\*\s+--END DEBUG--\s+\*\//) {
+		if (/^\s*\/\*\s+--END DEBUG--\s+\*\// ||
+		    /^\s*-:\s*\d+:\s*\/\*\s+--END DEBUG--\s+\*\//) {
 		    last; 
 		}
 	    }
@@ -337,7 +346,8 @@ sub AnnotateUncoveredLines {
 	# the same state as currently in (e.g., it is probably a 
 	# continuation line).
 	# Determine what state this line is in
-	if (/^\s*\#\#\#\#\#\#/) {
+	# (gcc 3.3 only outputs 5 sharps, earlier versions use 6)
+	if (/^\s*\#\#\#\#\#\#?/) {
 	    $newstate = "unex";
 	}
 	elsif (/^\s*[0-9]+\s/) {
