@@ -1204,7 +1204,7 @@ skip_12_trial:
 		    fprintf(out, "%f\t%0.9f\n", bwdata012[n-index012].bps, bwdata012[n-index012].t);
 #endif
 		}
-#ifdef CREATE_DIFFERENC_CURVES
+#ifdef CREATE_DIFFERENCE_CURVES
 		for (itrial = 0; itrial < ntrials && dtrials[itrial] != LONGTIME; itrial++)
 		{
 		    fprintf(out, "%0.9f\t", dtrials[itrial]);
