@@ -71,6 +71,7 @@ $autoconf_version = ""; # Require a specific version
 $configure_has_config_headers = "no";
 #
 $quietmake = "@";       # set to "" for echo commands, @ to suppress them
+$quietLine = "@";       # set to "" to make the clean targets echo commands
 #
 # Defaults for building MPICH
 $doc_heading = "MPI";
@@ -704,7 +705,7 @@ sub WriteMfile {
     }
     if ($do_profilelibs && $found_profilelib) {
 	&print_make_endline( FD );
-	&print_make_line( FD, "@" . "NO_WEAK_SYM_TARGET\@:" );
+	&print_make_line_nobreak( FD, "@" . "NO_WEAK_SYM_TARGET\@:" );
 	foreach $lib (keys(%profile_libraries)) {
 	    $libloc = &GetLibLoc( $lib );
 	    $proflib_name = $profile_libraries{$lib};
@@ -1355,7 +1356,9 @@ sub ListTargets {
     if ($found_profilelib) { 
 	# Add the special configure name that is used for building extra
 	# code when weak symbols are not supported.
-	print_make_line( FD,  " @" . "NO_WEAK_SYM@" );
+	# Special case: we do not want this alone on a line (so we 
+	# force the print routine to NOT flush the line
+	print_make_line_nobreak( FD,  " @" . "NO_WEAK_SYM@" );
     }
 }			       
 
@@ -1551,15 +1554,18 @@ sub TargetPostamble {
 # Produces clean: and distclean: .
 # If clean-local or distclean-local were defined, they are included in
 # the dependency lists
+# 
+# The default for quietLine makes the clean lines quiet (no echo of the
+# command).
 sub TargetClean {
     $programnames = join( ' ', keys(%programs));
     print FD "clean:";
     if (defined($usertargets{"clean-local"})) { print FD " clean-local"; }
     print FD "$newline";
-    print FD "\t-rm -f *.o \${srcdir}/*.o $programnames$newline";
+    print FD "\t-${quietLine}rm -f *.o \${srcdir}/*.o $programnames$newline";
     # Add Windows names of executables
     if ($programnames ne "") {
-	print FD "\t-rm -f";
+	print FD "\t-${quietLine}rm -f";
 	foreach $name (split(/\s+/,$programnames)) {
 	    print FD " $name.exe";
 	}
@@ -1568,10 +1574,10 @@ sub TargetClean {
 
     #if ($do_sharedlibs) {
         # Output this in all cases to clear any old files.  
-	print FD "\t-rm -f *.lo \${srcdir}/*.lo$newline";
+	print FD "\t-${quietLine}rm -f *.lo \${srcdir}/*.lo$newline";
     #}
     if ($do_profilelibs && $found_profilelib) {
-	print FD "\t-rm -f *.pf \${srcdir}/*.pf$newline";
+	print FD "\t-${quietLine}rm -f *.pf \${srcdir}/*.pf$newline";
     }
     # Clean coverage analysis files
     &GcovClean;
@@ -1589,20 +1595,20 @@ sub TargetClean {
     $lcurdir =~ s/\/$//;
     if (defined($autoconf_files_by_dir{$lcurdir})) {
 	$rmfile = $autoconf_files_by_dir{$lcurdir};
-	print FD "\t-rm -f $rmfile$newline";
+	print FD "\t-${quietLine}rm -f $rmfile$newline";
 	# Remove the configure cache that autoconf 2.57 adds
-	print FD "\t-rm -rf autom4te.cache$newline";
+	print FD "\t-${quietLine}rm -rf autom4te.cache$newline";
     }
     if ($configure_has_config_headers ne "no") {
 	# Add the AC_CONFIG_HEADER file, if any.
-	print FD "\t-rm -f $configure_has_config_headers$newline";
+	print FD "\t-${quietLine}rm -f $configure_has_config_headers$newline";
     }
     &DistCleanDependencies;
 
     if ($distcleanfiles ne "") {
-	print FD "\t-rm -f $distcleanfiles$newline";
+	print FD "\t-${quietLine}rm -f $distcleanfiles$newline";
     }
-    print FD "\t-rm -f TAGS$newline";
+    print FD "\t-${quietLine}rm -f TAGS$newline";
 
     if ($maint_targets) {
 	# Should maintainerclean also perform a distclean?
@@ -2646,6 +2652,17 @@ sub print_make_line {
 	print $FD "\\$newline\t";
 	$linelen = 8;
     }
+    print $FD $line;
+    $linelen += $len;
+    }
+# print_make_line_nobreak is like print_make_line, but it never breaks a line
+# This is needed when the output is a configure variable that may end 
+# up being replaced with blanks; if this occurs alone on a line, some
+# make programs become confused.
+sub print_make_line_nobreak {
+    my $FD = $_[0];
+    my $line = "$_[1]";
+    my $len = length($line);
     print $FD $line;
     $linelen += $len;
     }
