@@ -98,6 +98,9 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt
   request is complete.
   
   If the send completes immediately, the channel implementation shold return NULL and must not call MPIDI_CH3U_Handle_send_req().
+
+  DESIGNERS:
+  No mechanism exists for returning an error if the error is that a request could not be allocated.
 E*/
 MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int iov_n);
 
