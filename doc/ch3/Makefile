@@ -68,30 +68,9 @@ ch3.pdf: $(CH3_FILES)
 	mv -f ch3pdf.pdf ch3.pdf
 
 clean:
-	rm -f *.log *.aux *.dvi ch3.ps *.bbl findmod 
-	rm -f *.ilg ch3.ind *.blg *.toc
+	rm -f *.log *.aux *.dvi ch3.ps *.bbl
+	rm -f *.ilg *.ind *.idx *.blg *.toc
 	rm -f ch3man/*.tex
-
-#
-# The following are helpers for assembling the reference manual
-findmod: adi3.c adi3.h Makefile
-	rm -f .findmod
-	@(cd adi3man ; \
-	for file in *.tex ; do \
-	if [ $$file = "adi3man.tex" ] ; then continue ; fi ; \
-	awk '{if (pnext == 1) { printf("%s",$$0); pnext=2; exit;} };\
-	/\{Module\}/ {pnext = 1;}; \
-	END{if (pnext != 2) printf("None");}' $$file | \
-	sed 's/{.*\\_}/_/g' >> ../.findmod ;\
-	echo " $$file" >> ../.findmod;\
-	done )
-	sort .findmod > findmod
-	rm -f .findmod
-lists: findmod
-	cd adi3man ; \
-	awk 'BEGIN{module=""};{if ($$1 != module) { \
-	file=$$1 "-list.tex"; module=$$1; };\
-	print "\\input " $$2>>file;}' ../findmod
 
 # Handle older fig2dev programs
 .fig.eps:

@@ -1,0 +1,12 @@
+*.log
+*.aux
+*.blg
+*.bbl
+*.dvi
+*.toc
+*.ind
+*.idx
+*.ilg
+ch3.ps
+ch3.pdf
+ch3man
