@@ -10,6 +10,21 @@
 /* Known MPI object types.  These are used for both the error handlers 
    and for the handles.  This is a 4 bit value.  0 is reserved for so 
    that all-zero handles can be flagged as an error. */
+/*E
+  MPID_Object_kind - Object kind (communicator, window, or file)
+
+  Notes:
+  This enum is used by keyvals and errhandlers to indicate the type of
+  object for which MPI opaque types the data is valid.  These are defined
+  as bits to allow future expansion to the case where an object is value for
+  multiple types (for example, we may want a universal error handler for 
+  errors return).  This is also used to indicate the type of MPI object a 
+  MPI handle represents.  It is an enum because only this applies only the
+  the MPI objects.
+
+  Module:
+  Attribute-DS
+  E*/
 typedef enum MPID_Object_kind { 
   MPID_COMM       = 0x1, 
   MPID_GROUP      = 0x2,

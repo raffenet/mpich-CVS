@@ -25,10 +25,108 @@ int MPIU_Strnapp( char *, const char *, size_t );
 char *MPIU_Strdup( const char * );
 
 #ifdef USE_MEMORY_TRACING
+/*M
+  MPIU_Malloc - Allocate memory
+
+  Synopsis:
+.vb
+  void *MPIU_Malloc( size_t len )
+.ve
+
+  Input Parameter:
+. len - Length of memory to allocate in bytes
+
+  Return Value:
+  Pointer to allocated memory, or null if memory could not be allocated.
+
+  Notes:
+  This routine will often be implemented as the simple macro
+.vb
+  #define MPIU_Malloc(n) malloc(n)
+.ve
+  However, it can also be defined as 
+.vb
+  #define MPIU_Malloc(n) MPIU_trmalloc(n,__FILE__,__LINE__)
+.ve
+  where 'MPIU_trmalloc' is a tracing version of 'malloc' that is included with 
+  MPICH.
+
+  Module:
+  Utility
+  M*/
 #define MPIU_Malloc(a)    MPIU_trmalloc((unsigned)(a),__LINE__,__FILE__)
+/*M
+  MPIU_Calloc - Allocate memory that is initialized to zero.
+
+  Synopsis:
+.vb
+    void *MPIU_Calloc( size_t nelm, size_t elsize )
+.ve
+
+  Input Parameters:
++ nelm - Number of elements to allocate
+- elsize - Size of each element.
+
+  Notes:
+  Like 'MPIU_Malloc' and 'MPIU_Free', this will often be implemented as a 
+  macro but may use 'MPIU_trcalloc' to provide a tracing version.
+
+  Module:
+  Utility
+  M*/
 #define MPIU_Calloc(a,b)  \
     MPIU_trcalloc((unsigned)(a),(unsigned)(b),__LINE__,__FILE__)
+/*M
+  MPIU_Free - Free memory
+
+  Synopsis:
+.vb
+   void MPIU_Free( void *ptr )
+.ve
+
+  Input Parameter:
+. ptr - Pointer to memory to be freed.  This memory must have been allocated
+  with 'MPIU_Malloc'.
+
+  Notes:
+  This routine will often be implemented as the simple macro
+.vb
+  #define MPIU_Free(n) free(n)
+.ve
+  However, it can also be defined as 
+.vb
+  #define MPIU_Free(n) MPIU_trfree(n,__FILE__,__LINE__)
+.ve
+  where 'MPIU_trfree' is a tracing version of 'free' that is included with 
+  MPICH.
+
+  Module:
+  Utility
+  M*/
 #define MPIU_Free(a)      MPIU_trfree(a,__LINE__,__FILE__)
+
+/*M 
+  MPIU_Strdup - Duplicate a string
+
+  Synopsis:
+.vb
+    char *MPIU_Strdup( const char *str )
+.ve
+
+  Input Parameter:
+. str - null-terminated string to duplicate
+
+  Return value:
+  A pointer to a copy of the string, including the terminating null.  A
+  null pointer is returned on error, such as out-of-memory.
+
+  Notes:
+  Like 'MPIU_Malloc' and 'MPIU_Free', this will often be implemented as a 
+  macro but may use 'MPIU_trstrdup' to provide a tracing version.
+
+  Module:
+  Utility
+  M*/
 #define MPIU_Strdup(a)    MPIU_trstrdup(a,__LINE__,__FILE__)
 /* Define these as invalid C to catch their use in the code */
 #define malloc(a)         'Error use MPIU_Malloc'

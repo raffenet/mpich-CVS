@@ -44,7 +44,8 @@ ADI3FILES = adi3man.tex adi3.c adi3.h Makefile
 # This list of files gets us the old versions first and the new
 # versions last, so that the newest versions will override the old versions
 # Eventually, the old versions will be removed.
-ADI3IMPLFILES = adi3.c adi3.h $(MPICH2)/src/include/mpiimpl.h 
+ADI3IMPLFILES = adi3.c adi3.h $(MPICH2)/src/include/mpiimpl.h \
+	$(MPICH2)/src/include/mpihandlemem.h
 adi3man/MPID_Init.tex: $(ADI3IMPLFILES) Makefile
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
 	-rm -f adi3man/*.tex adi3man/tmp.*
