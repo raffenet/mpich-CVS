@@ -178,24 +178,51 @@ if test "$cache_file" = "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" ; the
     dnl for the cache.
     ac_cv_env_CC_set=set
     ac_cv_env_CC_value=$CC
-    ac_cv_env_CFLAGS_set=set
+    ac_cv_env_CFLAGS_set=${CFLAGS+set}
     ac_cv_env_CFLAGS_value=$CFLAGS
     ac_cv_env_CPP_set=set
     ac_cv_env_CPP_value=$CPP
-    ac_cv_env_CPPFLAGS_set=set
+    ac_cv_env_CPPFLAGS_set=${CPPFLAGS+set}
     ac_cv_env_CPPFLAGS_value=$CPPFLAGS
-    ac_cv_env_LDFLAGS_set=set
+    ac_cv_env_LDFLAGS_set=${LDFLAGS+set}
     ac_cv_env_LDFLAGS_value=$LDFLAGS
-    ac_cv_env_LIBS_set=set
+    ac_cv_env_LIBS_set=${LIBS+set}
     ac_cv_env_LIBS_value=$LIBS
-    ac_cv_env_FC_set=set
+    ac_cv_env_FC_set=${FS+set}
     ac_cv_env_FC_value=$FC
-    ac_cv_env_F77_set=set
+    ac_cv_env_F77_set=${F77+set}
     ac_cv_env_F77_value=$F77
-    ac_cv_env_FFLAGS_set=set
+    ac_cv_env_FFLAGS_set=${FFLAGS+set}
     ac_cv_env_FFLAGS_value=$FFLAGS
-    ac_cv_env_CXX_set=set
+    ac_cv_env_CXX_set=${CXX+set}
     ac_cv_env_CXX_value=$CXX
+
+#     dnl For Autoconf 2.57+, we also need to look at these.  This does 
+#     dnl disable a sometimes useful check in autoconf, but I don't see
+#     dnl a way arount it
+#     ac_env_CC_set=set
+#     ac_env_CC_value=$CC
+#     ac_env_CFLAGS_set=set
+#     ac_env_CFLAGS_value=$CFLAGS
+#     ac_env_CPP_set=set
+#     ac_env_CPP_value=$CPP
+#     ac_env_CPPFLAGS_set=set
+#     ac_env_CPPFLAGS_value=$CPPFLAGS
+#     ac_env_LDFLAGS_set=set
+#     ac_env_LDFLAGS_value=$LDFLAGS
+#     ac_env_LIBS_set=set
+#     ac_env_LIBS_value=$LIBS
+#     ac_env_FC_set=set
+#     ac_env_FC_value=$FC
+#     ac_env_F77_set=set
+#     ac_env_F77_value=$F77
+#     ac_env_FFLAGS_set=set
+#     ac_env_FFLAGS_value=$FFLAGS
+#     ac_env_CXX_set=set
+#     ac_env_CXX_value=$CXX
+
+#	export ac_env_LDFLAGS_set
+#	export ac_env_LDFLAGS_value   
     dnl other parameters are
     dnl build_alias, host_alias, target_alias
 
