@@ -259,6 +259,7 @@ sub CheckForBadSubs {
 	       'ROMIO_[A-Za-z0-9_]*', 
 	       'MPIO_[A-Za-z0-9_]*', 
 	       'DBG_[A-Z0-9_]*',
+	       '_H_INCLUDED',           # Ok for header files
 	       'DEBUG_[A-Z0-9_]*',
 	       'F77_[A-Z_]*',
 	       'MPI_BUILD_PROFILING',
