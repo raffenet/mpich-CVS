@@ -2004,7 +2004,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 	sock = NULL;
 	ovl = NULL;
 	num_bytes = 0;
-	if (GetQueuedCompletionStatus(set, &num_bytes, (DWORD*)&sock, &ovl, timeout))
+	if (GetQueuedCompletionStatus(set, &num_bytes, (PULONG_PTR)&sock, &ovl, timeout))
 	{
 	    MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
 	    if (sock->type == SOCKI_SOCKET)
