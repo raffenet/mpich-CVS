@@ -36,6 +36,8 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         /* local lock. release the lock on the window, grant the next one
          * in the queue, and return. */
         mpi_errno = MPIDI_CH3I_Release_lock(win_ptr);
+        if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+        mpi_errno = MPID_Progress_poke();
         goto fn_exit;
     }
 
