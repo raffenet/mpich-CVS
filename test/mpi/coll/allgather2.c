@@ -17,7 +17,7 @@ int main( int argc, char **argv )
     double *vecout;
     MPI_Comm comm;
     int    count, minsize = 2;
-    int    i, n, errs = 0;
+    int    i, errs = 0;
     int    rank, size;
 
     MTest_Init( &argc, &argv );
@@ -28,16 +28,15 @@ int main( int argc, char **argv )
 	MPI_Comm_rank( comm, &rank );
 	MPI_Comm_size( comm, &size );
 	
-        for (count = 1; count < 65000; count = count * 2) {
-            n = 12;
-            vecout = (double *)malloc( size * n * sizeof(double) );
+        for (count = 1; count < 9000; count = count * 2) {
+            vecout = (double *)malloc( size * count * sizeof(double) );
             
-            for (i=0; i<n; i++) {
-                vecout[rank*n+i] = rank*n+i;
+            for (i=0; i<count; i++) {
+                vecout[rank*count+i] = rank*count+i;
             }
             MPI_Allgather( MPI_IN_PLACE, -1, MPI_DATATYPE_NULL, 
-                           vecout, n, MPI_DOUBLE, comm );
-            for (i=0; i<n*size; i++) {
+                           vecout, count, MPI_DOUBLE, comm );
+            for (i=0; i<count*size; i++) {
                 if (vecout[i] != i) {
                     errs++;
                     if (errs < 10) {
