@@ -31,7 +31,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     MPIDI_Process.recvq_posted_tail = NULL;
     MPIDI_Process.recvq_unexpected_head = NULL;
     MPIDI_Process.recvq_unexpected_tail = NULL;
-    MPID_Thread_lock_init(MPIDI_Process.recvq_mutex);
+    MPID_Thread_lock_init(&MPIDI_Process.recvq_mutex);
     
     /*
      * Initialize the collective operations for the MPI_COMM_WORLD and MPI_COMM_SELF

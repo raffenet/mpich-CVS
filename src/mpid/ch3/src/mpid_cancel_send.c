@@ -76,11 +76,15 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	    MPID_Request * rts_sreq;
 	    /* The cancellation of the RTS request needs to be atomic through the destruction of the RTS request to avoid
                conflict with release of the RTS request if the CTS is received (see handling of a rendezvous CTS packet in
-               MPIDI_CH3U_Handle_recv_pkt()).  MPID_Request_fetch_rts_and_clear() is used to gurantee that atomicity. */
-	    MPIDI_Request_fetch_rts_sreq_and_clear(sreq, &rts_sreq);
+               MPIDI_CH3U_Handle_recv_pkt()).  MPID_Request_fetch_and_clear_rts_sreq() is used to gurantee that atomicity. */
+	    MPIDI_Request_fetch_and_clear_rts_sreq(sreq, &rts_sreq);
 	    if (rts_sreq != NULL) 
 	    {
 		mpi_errno = MPIDI_CH3_Cancel_send(vc, rts_sreq, &cancelled);
+		
+		/* since we attempted to cancel a RTS request, then we are responsible for releasing that request */
+		MPID_Request_release(rts_sreq);
+		
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
@@ -96,9 +100,6 @@ int MPID_Cancel_send(MPID_Request * sreq)
 		    MPIU_Object_set_ref(sreq, 1);
 		    goto fn_exit;
 		}
-		
-		/* since we attempted to cancel a RTS request, then we are responsible for releasing that request */
-		MPID_Request_release(rts_sreq);
 	    }
 	}
 	else
@@ -119,7 +120,6 @@ int MPID_Cancel_send(MPID_Request * sreq)
 		goto fn_exit;
 	    }
 	}
-	
     }
 
     /* Part or all of the message has already been sent, so we need to send a cancellation request to the receiver in an attempt

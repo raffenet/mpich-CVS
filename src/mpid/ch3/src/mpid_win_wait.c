@@ -15,29 +15,42 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Win_wait(MPID_Win *win_ptr)
 {
-    int mpi_errno, err;
+    int mpi_errno;
 
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_WAIT);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_WAIT);
 
-#ifdef MPICH_SINGLE_THREADED
-    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**needthreads", 0 );
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_WAIT);
-    return mpi_errno;
-#endif
-
-#ifdef HAVE_PTHREAD_H
-    pthread_join(win_ptr->wait_thread_id, (void **) &err);
-#elif defined(HAVE_WINTHREADS)
-    if (WaitForSingleObject(win_ptr->wait_thread_id, INFINITE) == WAIT_OBJECT_0)
-	err = GetExitCodeThread(win_ptr->wait_thread_id, &err);
-    else
-	err = GetLastError();
-#else
-#error Error: No thread package specified.
-#endif
-    mpi_errno = err;
+#   ifdef MPICH_SINGLE_THREADED
+    {
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**needthreads", 0 );
+    }
+#   else
+    {
+	int err;
+	
+#       ifdef HAVE_PTHREAD_H
+	{
+	    pthread_join(win_ptr->wait_thread_id, (void **) &err);
+	}
+#       elif defined(HAVE_WINTHREADS)
+	{
+	    if (WaitForSingleObject(win_ptr->wait_thread_id, INFINITE) == WAIT_OBJECT_0)
+	    { 
+		err = GetExitCodeThread(win_ptr->wait_thread_id, &err);
+	    }
+	    else
+	    { 
+		err = GetLastError();
+	    }
+	}
+#       else
+#           error Error: No thread package specified.
+#       endif
+	
+	mpi_errno = err;
+    }
+#   endif /* defined(MPICH_SINGLE_THREADED) */    
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);
     return mpi_errno;

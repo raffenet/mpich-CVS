@@ -413,10 +413,10 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPID_Request_get_ptr(cts_pkt->sender_req_id, sreq);
 	    MPIU_DBG_PRINTF(("received cts, count=%d\n", sreq->ch3.user_count));
 
-	    /* Release the RTS request if one exists.  MPID_Request_fetch_rts_and_clear() needs to be atomic to prevent cancel
-               send from cancelling the wrong request.  If MPID_Request_fetch_rts_and_clear() returns a NULL rts_sreq, then
-	       MPID_Cancel_send() is responsible for releasing the RTS request object. */
-	    MPIDI_Request_fetch_rts_sreq_and_clear(sreq, &rts_sreq);
+	    /* Release the RTS request if one exists.  MPID_Request_fetch_and_clear_rts_sreq() needs to be atomic to prevent
+               cancel send from cancelling the wrong (future) request.  If MPID_Request_fetch_and_clear_rts_sreq() returns a NULL
+               rts_sreq, then MPID_Cancel_send() is responsible for releasing the RTS request object. */
+	    MPIDI_Request_fetch_and_clear_rts_sreq(sreq, &rts_sreq);
 	    if (rts_sreq != NULL)
 	    {
 		MPID_Request_release(rts_sreq);
@@ -448,7 +448,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
 		if (mpi_errno != MPI_SUCCESS)
 		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadsendiov", 0);
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						     "**ch3|loadsendiov", 0);
 		    goto fn_exit;
 		}
 		iov_n += 1;
