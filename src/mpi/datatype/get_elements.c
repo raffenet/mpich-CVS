@@ -36,7 +36,7 @@
  *
  * TODO: MOVE THIS INTO THE MPID TREE?
  */
-static int MPIR_Type_get_elements(int *bytes_p, int count, MPI_Datatype datatype)
+PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p, int count, MPI_Datatype datatype)
 {
     int m_rem, m_count, type_size, type_elements, type_element_size;
     MPID_Datatype *datatype_ptr = NULL;

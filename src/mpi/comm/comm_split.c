@@ -34,6 +34,7 @@ typedef struct {
 } splittype;
 
 PMPI_LOCAL void MPIU_Sort_inttable( splittype *, int );
+#ifndef MPICH_MPI_FROM_PMPI
 PMPI_LOCAL void MPIU_Sort_inttable( splittype *keytable, int size )
 {
     splittype tmp;
@@ -50,6 +51,7 @@ PMPI_LOCAL void MPIU_Sort_inttable( splittype *keytable, int size )
 	}
     }
 }
+#endif
 
 /*@
    MPI_Comm_split - split a communicator

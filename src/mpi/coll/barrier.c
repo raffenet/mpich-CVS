@@ -21,7 +21,6 @@
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Barrier PMPI_Barrier
-#endif
 
 /* This is the default implementation of the barrier operation.  The
    algorithm is:
@@ -122,6 +121,7 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 
     return MPI_SUCCESS;
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Barrier
