@@ -29,12 +29,15 @@ void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
     }
 
 #ifdef AIO_SUN
-    tmp = (aio_result_t *) (*request)->handle;
     if ((*request)->queued) {  /* dequeue it */
+	tmp = (aio_result_t *) (*request)->handle;
 	while (tmp->aio_return == AIO_INPROGRESS) usleep(1000); 
 	/* sleep for 1 ms., until done. Is 1 ms. a good number? */
 	/* when done, dequeue any one request */
 	result = (aio_result_t *) aiowait(0);
+
+        (*request)->nbytes = tmp->aio_return;
+
 #ifdef PRINT_ERR_MSG
 	*error_code = (tmp->aio_return == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
@@ -55,8 +58,8 @@ void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
     else *error_code = MPI_SUCCESS;
 
 #ifdef HAVE_STATUS_SET_BYTES
-    if (tmp->aio_return != -1)
-	MPIR_Status_set_bytes(status, (*request)->datatype, tmp->aio_return);
+    if ((*request)->nbytes != -1)
+	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
 #endif
 
 #endif

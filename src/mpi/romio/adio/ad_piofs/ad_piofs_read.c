@@ -11,7 +11,7 @@
 #endif
 
 void ADIOI_PIOFS_ReadContig(ADIO_File fd, void *buf, int count, 
-                     MPI_Datatype datatype, int len, int file_ptr_type,
+                     MPI_Datatype datatype, int file_ptr_type,
 		     ADIO_Offset offset, ADIO_Status *status, int *error_code)
 {
     int err=-1, datatype_size, len;

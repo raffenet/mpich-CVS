@@ -42,8 +42,8 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 #endif    
 
 #ifdef AIO_SUN
-    tmp = (aio_result_t *) (*request)->handle;
     if ((*request)->queued) {
+	tmp = (aio_result_t *) (*request)->handle;
 	if (tmp->aio_return == AIO_INPROGRESS) {
 	    done = 0;
 	    *error_code = MPI_SUCCESS;
@@ -51,6 +51,7 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 	else if (tmp->aio_return != -1) {
 	    result = (aio_result_t *) aiowait(0); /* dequeue any one request */
 	    done = 1;
+	    (*request)->nbytes = tmp->aio_return;
 	    *error_code = MPI_SUCCESS;
 	}
 	else {
@@ -70,8 +71,8 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 	*error_code = MPI_SUCCESS;
     }
 #ifdef HAVE_STATUS_SET_BYTES
-    if (tmp->aio_return != -1)
-	MPIR_Status_set_bytes(status, (*request)->datatype, tmp->aio_return);
+    if (done && ((*request)->nbytes != -1))
+	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
 #endif
 
 #endif

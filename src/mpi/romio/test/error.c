@@ -8,10 +8,9 @@
 
 int main(int argc, char **argv)
 {
-    int i, rank, nints, len, err;
+    int i, rank, len, err;
     char *filename, *tmp;
     MPI_File fh;
-    MPI_Status status;
     char string[MPI_MAX_ERROR_STRING];
 
     MPI_Init(&argc,&argv);
