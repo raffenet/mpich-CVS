@@ -10,8 +10,8 @@
 
 void check_error(int error, char *fcname)
 {
-    char err_string[1024];
-    int length = 1024;
+    char err_string[MPI_MAX_ERROR_STRING];
+    int length;
     if (error != MPI_SUCCESS)
     {
 	MPI_Error_string(error, err_string, &length);
@@ -46,6 +46,13 @@ int main( int argc, char *argv[] )
     if (verbose) { printf("rank.\n");fflush(stdout); }
     error = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     check_error(error, "MPI_Comm_rank");
+
+    /* TEMPORARY FIX
+       This test hangs.  Cause it to abort so that we remember to fix it 
+    */
+    fprintf( stderr, "Aborting test because it may hang.\n" );
+    MPI_Abort( MPI_COMM_WORLD, 1 );
+    /* END OF TEMPORARY FIX */
 
     if (size < 2)
     {
