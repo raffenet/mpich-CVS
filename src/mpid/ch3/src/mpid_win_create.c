@@ -135,15 +135,15 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     }
     /* --END ERROR HANDLING-- */
 
-    /* FIXME: This cannot be right?  It assumes that ints can be stored in void*s.
-       Then it assumes that void*s can be passed to MPI_Allgather as MPI_LONGs.
-    */
+    /* FIXME: This needs to be fixed for heterogeneous systems */
     tmp_buf[3*rank] = base;
     tmp_buf[3*rank+1] = (void *) disp_unit;
     tmp_buf[3*rank+2] = (void *) (*win_ptr)->handle; 
 
     mpi_errno = NMPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
-                               tmp_buf, 3, MPI_LONG, comm_ptr->handle);
+                               tmp_buf, 3 * sizeof(void *), MPI_BYTE, 
+                               comm_ptr->handle);   
+
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
