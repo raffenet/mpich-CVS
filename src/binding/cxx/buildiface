@@ -997,29 +997,6 @@ $files[$#files+1] = "mpicxx.h";
 print $OUTFD "namespace MPI {\n";
 
 
-print $OUTFD "
-// #define MPIX_TRACE_MEMORY
-#ifdef MPIX_TRACE_MEMORY
-// We need stdlib.h for size_t
-#include <stdlib.h>
-extern \"C\" void *MPIU_trmalloc( unsigned int, int, const char [] );
-extern \"C\" void MPIU_trfree( void *, int, const char [] );
-extern \"C\" void MPIU_trSummary( void *, int );
-void *operator new(size_t size) {
-    void *p = MPIU_trmalloc( (unsigned int) size, __LINE__, __FILE__ );
-    return p;}
-void operator delete(void *p) {
-    MPIU_trfree( p, __LINE__, __FILE__ );}
-void *operator new[]( size_t size) {
-    void *p = MPIU_trmalloc( (unsigned int) size, __LINE__, __FILE__ );
-    return p;}
-void operator delete[](void *p) {
-    MPIU_trfree( p, __LINE__, __FILE__ );}
-#define MPIX_TRSummary() MPIU_trSummary( 0, 0 );
-#else
-#define MPIX_TRSummary()
-#endif\n";
-
 print $OUTFD "#if \@HAVE_CXX_EXCEPTIONS\@
 #define MPIX_CALL( fnc ) \\
 {int err; err = fnc ; if (err) throw Exception(err);}
@@ -1790,6 +1767,32 @@ sub build_specials {
 
     # The coverage header is included in mpicxx.h.in
     #&printCoverageHeader( $OUTFD, 0 );
+
+    print $OUTFD "
+// #define MPIX_TRACE_MEMORY
+#ifdef MPIX_TRACE_MEMORY
+// We need stdlib.h for size_t.  But that can cause problems if the
+// header isn't C++ clean.  Instead, we just include a definition
+// for size_t.  If this is not the correct size, then edit this line
+// (Note that this is needed only when memory tracing is enabled)
+typedef unsigned int size_t;
+extern \"C\" void *MPIU_trmalloc( unsigned int, int, const char [] );
+extern \"C\" void MPIU_trfree( void *, int, const char [] );
+extern \"C\" void MPIU_trdump( void *, int );
+void *operator new(size_t size) {
+    void *p = MPIU_trmalloc( (unsigned int) size, __LINE__, __FILE__ );
+    return p;}
+void operator delete(void *p) {
+    MPIU_trfree( p, __LINE__, __FILE__ );}
+void *operator new[]( size_t size) {
+    void *p = MPIU_trmalloc( (unsigned int) size, __LINE__, __FILE__ );
+    return p;}
+void operator delete[](void *p) {
+    MPIU_trfree( p, __LINE__, __FILE__ );}
+#define MPIX_TRSummary() MPIU_trdump( 0, -1 )
+#else
+#define MPIX_TRSummary()
+#endif\n";
 
     # Start the namespace
     print $OUTFD "namespace MPI {\n";
