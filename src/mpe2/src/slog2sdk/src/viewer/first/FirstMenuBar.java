@@ -23,7 +23,7 @@ public class FirstMenuBar extends JMenuBar
                                   implements ActionListener
 {
     private static String        about_str = "Jumpshot-4, the SLOG-2 viewer\n"
-                                           + "Questions: chan@mcs.anl.gov";
+                                 + "bug-reports/questions: chan@mcs.anl.gov";
     private static String        manuel_pathname  = "manuel_index.html";
     private static String        faq_pathname     = "faq_index.html";
     private static String        js_icon_pathname = "/images/jumpshot.gif";
