@@ -1013,7 +1013,7 @@ sub DefaultRules {
 	# 
 	# With Autoconf 2.57, there is a "cache" that like all automake
 	# caches, isn't reliable and must be removed 
-	&print_make_longline( FD, "\tif [ -d autom4te.cache ] ; then rm -rf autom4te.cache ; fi$newline" );
+	&print_make_longline( FD, "\t\@if [ -d autom4te.cache ] ; then rm -rf autom4te.cache ; fi$newline" );
 	if ($configure_has_config_headers ne "no") {
 	    &print_make_longline( FD,  "\t(cd \${srcdir} && $autoheader_prog $aargs && \\$newline\t$autoconf $aargs )" );
 	}
