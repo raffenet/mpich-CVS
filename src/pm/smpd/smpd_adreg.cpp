@@ -258,7 +258,7 @@ static DWORD ScpCreate(
     /* Complete the action. */
     _sntprintf(szRelativeDistinguishedName, MAX_PATH, TEXT("cn=%s"), TEXT(SMPD_SERVICE_NAME));
     /* Delete the previous object if it exists */
-    pComp->DeleteDSObject(szRelativeDistinguishedName);
+    hr = pComp->DeleteDSObject(szRelativeDistinguishedName);
     /* Create a new object */
     hr = pComp->CreateDSObject(szRelativeDistinguishedName, ScpAttribs, dwAttr, &pDisp);
     if (FAILED(hr))
@@ -534,13 +534,101 @@ SMPD_BOOL smpd_setup_scp()
 	if (dwStatus != NO_ERROR)
 	{
 	    ReportError(TEXT("SpnRegister failed"), dwStatus);
+	    delete pwszComputerName;
 	    result = SMPD_FALSE;
 	    goto fn_exit;
 	}
     }
+    delete pwszComputerName;
 
 fn_exit:
     CoUninitialize();
+    return result;
+}
+
+SMPD_BOOL smpd_remove_scp()
+{
+    DWORD dwStatus;
+    LPWSTR pwszComputerName = NULL;
+    LPWSTR pwszDnsComputerName = NULL;
+    char *pszDnsComputerName = NULL;
+    DWORD dwLen, dwMaxLen;
+    SMPD_BOOL result = SMPD_TRUE;
+    char spn[SMPD_MAX_NAME_LENGTH] = "";
+    WCHAR wspn[SMPD_MAX_NAME_LENGTH] = L"";
+
+    /* FIXME: Insert code here to remove the information created by ScpCreate */
+
+    /* Get the size required for the DN account name. */
+    dwLen = 0;
+    GetComputerObjectNameW(NameFullyQualifiedDN, NULL, &dwLen);
+
+    pwszComputerName = new WCHAR[dwLen + 1];
+    if(NULL == pwszComputerName)
+    {
+	result = SMPD_FALSE;
+	goto fn_exit;
+    }
+
+    /* Get the DN account name of the computer object for the server. */
+    if(!GetComputerObjectNameW(NameFullyQualifiedDN, pwszComputerName, &dwLen))
+    {
+	result = SMPD_FALSE;
+	goto fn_exit;
+    }
+    /*wprintf(L"GetComputerObjectName: %s\n", pwszComputerName);*/
+
+    /* Get the size required for the DNS account name. */
+    dwLen = 0;
+    GetComputerNameExW(ComputerNameDnsFullyQualified, NULL, &dwLen);
+
+    dwMaxLen = dwLen+1;
+    pwszDnsComputerName = new WCHAR[dwLen + 1];
+    if (NULL == pwszDnsComputerName)
+    {
+	result = SMPD_FALSE;
+	goto fn_exit;
+    }
+    pszDnsComputerName = new char[dwLen + 1];
+    if (NULL == pszDnsComputerName)
+    {
+	result = SMPD_FALSE;
+	goto fn_exit;
+    }
+
+    /* Get the DNS account name of the computer object for the server. */
+    if (!GetComputerNameExW(ComputerNameDnsFullyQualified, pwszDnsComputerName, &dwLen))
+    {
+	result = SMPD_FALSE;
+	goto fn_exit;
+    }
+    wcstombs(pszDnsComputerName, pwszDnsComputerName, dwMaxLen);
+    /*wprintf(L"GetComputerNameEx: %s\n", pwszDnsComputerName);*/
+
+    result = smpd_lookup_spn(spn, SMPD_MAX_NAME_LENGTH, pszDnsComputerName, SMPD_LISTENER_PORT);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to lookup the smpd SPN for %s.\n", pszDnsComputerName);
+	result = SMPD_FALSE;
+	goto fn_exit;
+    }
+    mbstowcs(wspn, spn, SMPD_MAX_NAME_LENGTH);
+
+    /* This file in its current state must be compiled for UNICODE so cast the wchar** to a tchar** here to satisfy the compiler */
+    dwStatus = SpnRegister(pwszComputerName, (TCHAR**)&wspn, 1, DS_SPN_DELETE_SPN_OP);
+    if (dwStatus != NO_ERROR)
+    {
+	ReportError(TEXT("SpnRegister failed"), dwStatus);
+	result = SMPD_FALSE;
+    }
+
+fn_exit:
+    if (pwszComputerName)
+	delete pwszComputerName;
+    if (pwszDnsComputerName)
+	delete pwszDnsComputerName;
+    if (pszDnsComputerName)
+	delete pszDnsComputerName;
     return result;
 }
 

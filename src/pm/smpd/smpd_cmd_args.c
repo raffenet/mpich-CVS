@@ -63,7 +63,8 @@ void smpd_print_options(void)
     printf(" -remove  or -unregserver or -uninstall\n");
     printf(" -start\n");
     printf(" -stop\n");
-    printf(" -register_spn");
+    printf(" -register_spn\n");
+    printf(" -remove_spn\n");
     printf("\n");
     printf("bracketed [] items are optional\n");
     printf("\n");
@@ -412,6 +413,18 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	printf(" 1) This host is trusted for delegation in Active Directory\n");
 	printf(" 2) All users who will run jobs are trusted for delegation.\n");
 	printf("Domain administrators can enable these options for hosts and users\nin Active Directory on the domain controller.\n");
+	ExitProcess(0);
+    }
+    if (smpd_get_opt(argcp, argvp, "-remove_spn"))
+    {
+	if (smpd_remove_scp())
+	{
+	    printf("Service Principal Name removed from the domain controller.\n");
+	}
+	else
+	{
+	    printf("Error: Failed to remove the Service Principal Name from the domain controller.\n");
+	}
 	ExitProcess(0);
     }
 
