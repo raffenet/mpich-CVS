@@ -268,7 +268,7 @@ int CH3U_Describe_timer_states()
 		       "MPIDI_CH3I_Get_business_card",
 		       get_random_color_str());
 
-    return Sock_describe_timer_states();
+    return 0;
 }
 
 #endif /* USE_LOGGING == MPID_LOGGING_RLOG */
