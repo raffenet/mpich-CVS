@@ -84,7 +84,10 @@ def mpdman():
 
     # set up pmi stuff early in case I was spawned
     KVSs = {}
-    kvsname_template = 'kvs_' + host0 + '_' + str(port0) + '_'
+    if singinitPID:
+        kvsname_template = 'singinit_kvs_'
+    else:
+        kvsname_template = 'kvs_' + host0 + '_' + str(port0) + '_'
     default_kvsname = kvsname_template + '0'
     default_kvsname = sub('\.','_',default_kvsname)  # chg magpie.cs to magpie_cs
     default_kvsname = sub('\-','_',default_kvsname)  # chg node-0 to node_0
