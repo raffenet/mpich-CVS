@@ -72,7 +72,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     mpi_errno = PMI_KVS_Get_name_length_max(&name_sz);
     if (mpi_errno != PMI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAMe, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);
 	return mpi_errno;
     }
     pg->kvs_name = MPIU_Malloc(name_sz + 1);
