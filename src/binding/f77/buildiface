@@ -659,8 +659,12 @@ sub print_header {
     my $routine_name = $_[0];
     my $lcname = $_[1];
     my $args = $_[2];
+    my $extra = $_[3];
  
     &print_copyright( );
+    if ($extra ne "") {
+	print $OUTFD $extra;
+    }
     &print_profiling_block( $routine_name, $lcname, $args );
     &print_name_map_block( $routine_name, $lcname );
 }
@@ -2970,7 +2974,8 @@ sub WriteAttrDefaults {
     open ($OUTFD, ">dup_${prefix}fnf.c" ) || die "Cannot open dup_${prefix}fnf.c\n";
     $files[$#files+1] = "dup_${prefix}fnf.c";
     $args = "MPI_Fint, MPI_Fint *, void *, void **, void **, MPI_Fint *";
-    &print_header( "mpi_${prefix}dup_fn", "${prefix}dup_fn", $args );
+    &print_header( "mpi_${prefix}dup_fn", "${prefix}dup_fn", $args,
+	   "#ifdef MPI_${ucprefix}DUP_FN\n#undef MPI_${ucprefix}DUP_FN\n#endif\n" );
     &print_routine_type_decl( $OUTFD, "${prefix}dup_fn" );
     &print_args( $OUTFD, $args, 0, "${prefix}dup_fn" );
     #&print_attr;
@@ -2986,7 +2991,8 @@ sub WriteAttrDefaults {
     open ($OUTFD, ">null_${prefix}del_fnf.c" ) || die "Cannot open null_${prefix}del_fnf.c\n";
     $files[$#files+1] = "null_${prefix}del_fnf.c";
     $args = "MPI_Fint *, MPI_Fint *, void *, void *";
-    &print_header( "mpi_${prefix}null_delete_fn", "${prefix}null_delete_fn", $args );
+    &print_header( "mpi_${prefix}null_delete_fn", "${prefix}null_delete_fn", $args,
+	   "#ifdef MPI_${ucprefix}NULL_DELETE_FN\n#undef MPI_${ucprefix}NULL_DELETE_FN\n#endif\n" );
     &print_routine_type_decl( $OUTFD, "${prefix}null_delete_fn" );
     &print_args( $OUTFD, $args, 0, "${prefix}null_delete_fn" );
     #&print_attr;
@@ -3000,7 +3006,8 @@ sub WriteAttrDefaults {
     open ($OUTFD, ">null_${prefix}copy_fnf.c" ) || die "Cannot open null_${prefix}copy_fnf.c\n";
     $files[$#files+1] = "null_${prefix}copy_fnf.c";
     $args = "MPI_Fint *, MPI_Fint *, void *, void *, void *, int *";
-    &print_header( "mpi_${prefix}null_copy_fn", "${prefix}null_copy_fn", $args );
+    &print_header( "mpi_${prefix}null_copy_fn", "${prefix}null_copy_fn", $args,
+	   "#ifdef MPI_${ucprefix}NULL_COPY_FN\n#undef MPI_${ucprefix}NULL_COPY_FN\n#endif\n" );
     &print_routine_type_decl( $OUTFD, "${prefix}null_copy_fn" );
     &print_args( $OUTFD, $args, 0, "${prefix}null_copy_fn" );
     print $OUTFD "{
