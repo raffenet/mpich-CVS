@@ -9,6 +9,7 @@ from select          import select
 from signal          import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from exceptions      import Exception
 from xml.dom.minidom import parseString
+from re              import findall
 from mpdlib          import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
                             mpd_get_inet_listen_socket, mpd_get_my_username, \
                             mpd_raise, mpdError, mpd_version
@@ -101,6 +102,7 @@ def mpdrun():
             defaultArgs = createReq.getAttribute('args')
 	else:
             defaultArgs = ''
+	defaultArgs = findall(r'\S+',defaultArgs)
         argsElements = createReq.getElementsByTagName('args')
         for elem in argsElements:
             ranks = elem.getAttribute('range').split('-')
