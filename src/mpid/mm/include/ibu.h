@@ -11,11 +11,7 @@ extern "C" {
 #endif
 
 /* config header file */
-#ifdef USE_WINCONF_H
-#include "winmpichconf.h"
-#else
 #include "mpichconf.h"
-#endif
 #include "iba.h"
 #include "psc_iba.h"
 
