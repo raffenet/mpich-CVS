@@ -72,8 +72,7 @@ static mpi_names_t mpi_names[] = {
     { MPI_2REAL, "MPI_2REAL" },
     { MPI_2DOUBLE_PRECISION, "MPI_2DOUBLE_PRECISION" },
     { MPI_CHARACTER, "MPI_CHARACTER" },
-#if 0
-    /* Size-specific types */
+    /* Size-specific types (C, Fortran, and C++) */
     { MPI_REAL4, "MPI_REAL4" },
     { MPI_REAL8, "MPI_REAL8" },
     { MPI_REAL16, "MPI_REAL16" },
@@ -85,7 +84,6 @@ static mpi_names_t mpi_names[] = {
     { MPI_INTEGER4, "MPI_INTEGER4" },
     { MPI_INTEGER8, "MPI_INTEGER8" },
     { MPI_INTEGER16, "MPI_INTEGER16" },
-#endif
     { 0, (char *)0 },  /* Sentinal used to indicate the last element */
 };
 
