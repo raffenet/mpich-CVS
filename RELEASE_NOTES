@@ -1,0 +1,18 @@
+-------------------------------------------------------------------------------
+                              Known Deficiencies
+-------------------------------------------------------------------------------
+
+- MPI_IRECV operations that are not explicitly completed before MPI_FINALIZE is
+  called may fail to complete before MPI_FINALIZE returns, and thus never
+  complete.  Furthermore, any matching send operations may erroneously fail.
+  By explicitly completed, we mean that the request associated with the
+  operation is completed by one of the MPI_TEST or MPI_WAIT routines.
+
+- MPI_INTERCOMM_CREATE does not work correctly when the union of the local and
+  remote communicators are not already part of an existing (intra or inter)
+  communicator.  For example, if communicator A spawns a set of processes whose
+  MPI_COMM_WORLD we will refer to as communicator B.  Likewise, communicator B
+  spawns a set of processes whose MPI_COMM_WORLD we will refer to as
+  communicator C.  Despite being a legal request, MPI_INTERCOMM_CREATE will
+  fail to create a new intercommunicator between A and C using a commom process
+  in B.
