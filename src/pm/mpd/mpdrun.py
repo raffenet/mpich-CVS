@@ -737,7 +737,11 @@ def get_args_from_file():
                 print 'These hosts are not in the mpd ring:'
                 for host in  msg['host_list']:
                     if host[0].isdigit():
-                        print '    %s (%s)' % (gethostbyaddr(host)[0],host)  # ip addr
+                        print '    %s' % (host),
+                        try:
+                            print ' (%s)' % (gethostbyaddr(host)[0])
+                        except:
+                            print ''
                     else:
                         print '    %s' % (host)
                 myExitStatus = -1  # used in main
@@ -806,7 +810,12 @@ def get_args_from_file():
             if host.startswith('_any_'):
                 hosts[(loRange,hiRange)] = host
             else:
-                hosts[(loRange,hiRange)] = gethostbyname_ex(host)[2][0]
+                try:
+                    hosts[(loRange,hiRange)] = gethostbyname_ex(host)[2][0]
+                except:
+                    print 'unable to do find info for host %s' % (host)
+                    myExitStatus = -1  # used in main
+                    exit(myExitStatus) # really forces jump back into main
         else:
             if hostList:
                 hosts[(loRange,hiRange)] = '_any_from_pool_'
