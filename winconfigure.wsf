@@ -23,6 +23,9 @@ For arg = 0 To argCount - 1
     bUseCycleCounter = True
   ElseIf argValue = "--enable-hptiming=no" Then
     bUseCycleCounter = False
+'  ElseIf argValue = "--help" Then
+'    Print help stuff
+'    Exit
   End If
 Next
 
@@ -320,6 +323,36 @@ fout.WriteLine("")
 fout.WriteLine("#endif")
 
 fout.Close()
+
+'
+' Generate mpcxx.h
+'
+
+If Not f.FileExists("src\binding\cxx\mpicxx.h.in") Then
+
+  Dim WshShell, oExec
+  Set WshShell = CreateObject("WScript.Shell")
+  WshShell.CurrentDirectory = "src\binding\cxx"
+  WshShell.Run "perl buildiface -nosep -noromio", 0, true
+  WshShell.CurrentDirectory = "..\..\.."
+
+End If
+
+If f.FileExists("src\binding\cxx\mpicxx.h.in") Then
+
+  set fin = f.OpenTextFile("src\binding\cxx\mpicxx.h.in")
+  set fout = f.CreateTextFile("src\include\mpicxx.h")
+  contents = fin.ReadAll()
+  contents = Replace(contents, "@HAVE_CXX_EXCEPTIONS@", "1")
+  fout.Write(contents)
+  fin.Close()
+  fout.Close()
+
+Else
+
+  WScript.Echo("Run ""perl -nosep -noromio"" from the src\binding\cxx directory before running winconfigure")
+  
+End IF
 
 </script>
 </job>
