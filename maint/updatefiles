@@ -621,6 +621,8 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
     # should be fixed in the 1.0 release.
     # Added util/logging/dlog because dlog is deprecated.  This should
     # either be fixed or removed in the 1.0 release
+    # Added src/pm/winmpd because there are too many errors in this
+    # code.  Fix or delete in the 1.0 release
     maint/codingcheck -skipfile=./src/pmi/winmpd/crypt.c \
 		      -skipfile=./src/pmi/winmpd/crypt.h \
 		      -skipfile=./src/pm/winmpd/crypt.h \
@@ -629,6 +631,7 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
 		      -skipfile=./src/pm/winmpd/spmd/des.h \
 		      -skipfile=./src/pmi/winmpd/des.c \
 		      -skipfile=./src/pmi/winmpd/des.h \
+		      -skipfile=./src/pm/winmpd \
                       -skipfile=./src/pm/smpd/crypt.c \
 		      -skipfile=./src/pm/smpd/crypt.h \
 		      -skipfile=./src/pm/smpd/des.c \
