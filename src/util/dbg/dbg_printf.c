@@ -47,9 +47,9 @@ static void dbg_init(void)
      *   sequencing information ???
      */
     if (strstr(envstr, "stdout"))
-	MPIUI_dbg_state |= DBG_STATE_STDOUT;
+	MPIUI_dbg_state |= MPIU_DBG_STATE_STDOUT;
     if (strstr(envstr, "memlog"))
-	MPIUI_dbg_state |= DBG_STATE_MEMLOG;
+	MPIUI_dbg_state |= MPIU_DBG_STATE_MEMLOG;
 
     /* If memlog is enabled, the we need to allocate some memory for it */
     if (MPIUI_dbg_state & MPIU_DBG_STATE_MEMLOG)
