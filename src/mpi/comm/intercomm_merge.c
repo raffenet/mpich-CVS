@@ -47,6 +47,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     static const char FCNAME[] = "MPI_Intercomm_merge";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_INTERCOMM_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INTERCOMM_MERGE);
     /* Get handles to MPI objects. */
@@ -55,13 +56,10 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -71,6 +69,13 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* Temporary for some of the test suites. */
+    mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, 
+				      "**notimpl", "**notimpl %s", 
+				      "MPI_Intercomm_merge" );
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
     return MPI_SUCCESS;
 }
