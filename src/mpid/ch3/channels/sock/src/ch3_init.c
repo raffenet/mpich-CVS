@@ -280,10 +280,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     *has_args = TRUE;
     *has_env = TRUE;
 
-    if (*has_parent) {
+    if (*has_parent)
+    {
         /* This process was spawned. Create intercommunicator with parents. */
 
-        if (pg_rank == 0) {
+        if (pg_rank == 0)
+	{
             /* get the port name of the root of the parents */
             mpi_errno = PMI_KVS_Get(pg->kvs_name, "PARENT_ROOT_PORT_NAME", val, val_max_sz);
             if (mpi_errno != 0)
@@ -296,7 +298,11 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         /* do a connect with the root */
         MPID_Comm_get_ptr(MPI_COMM_WORLD, commworld);
         mpi_errno = MPIDI_CH3_Comm_connect(val, 0, commworld, &intercomm);
-        if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+        if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "spawned group unable to connect back to the parent");
+	    return mpi_errno;
+	}
 
         MPIR_Process.comm_parent = intercomm;
 
