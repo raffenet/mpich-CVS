@@ -3808,7 +3808,11 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 		    /* don't print errors from the pmi context because processes that don't 
 		       call PMI_Finalize will get read errors that don't need to be printed.
 		       */
-		    if (context->type != SMPD_CONTEXT_PMI && context->type != SMPD_CONTEXT_STDOUT_RSH && context->type != SMPD_CONTEXT_STDERR_RSH && context->type != SMPD_CONTEXT_MPIEXEC_STDIN_RSH)
+		    if (context->type != SMPD_CONTEXT_PMI &&
+			context->type != SMPD_CONTEXT_STDOUT_RSH &&
+			context->type != SMPD_CONTEXT_STDERR_RSH &&
+			context->type != SMPD_CONTEXT_MPIEXEC_STDIN_RSH &&
+			context->type != SMPD_CONTEXT_MPIEXEC_STDIN)
 		    {
 			smpd_err_printf("op_read error on %s context: %s\n", smpd_get_context_str(context), get_sock_error_string(event.error));
 		    }
@@ -3827,6 +3831,11 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 		    smpd_err_printf("connection to my parent broken, aborting.\n");
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
+		}
+		if (context->type == SMPD_CONTEXT_MPIEXEC_STDIN || context->type == SMPD_CONTEXT_MPIEXEC_STDIN_RSH)
+		{
+		    smpd_dbg_printf("stdin to mpiexec closed.\n");
+		    /* FIXME: should we send a message to the root process manager to close stdin to the root process? */
 		}
 		smpd_dbg_printf("SOCK_OP_READ failed - result = %d, closing %s context.\n", result, smpd_get_context_str(context));
 		context->state = SMPD_CLOSING;
