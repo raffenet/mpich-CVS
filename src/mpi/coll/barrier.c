@@ -112,7 +112,8 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
     int size, rank;
     int twon_within, n2, remaining, gap, partner;
     MPID_Request *request_ptr;
-
+    int mpi_errno = MPI_SUCCESS;
+    
     size = comm_ptr->remote_size;
     rank = comm_ptr->rank;
 
@@ -137,8 +138,12 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 		       comm_ptr, MPID_CONTEXT_INTRA_COLL, MPI_STATUS_IGNORE,
 		       &request_ptr );
 	    if (request_ptr) {
-		MPIR_Wait(request_ptr);
+		mpi_errno = MPIC_Wait(request_ptr);
 		MPID_Request_release(request_ptr);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    goto fn_exit;
+		}
 	    }
 	}
 	/* Second step: recursive doubling exchange */
@@ -154,8 +159,12 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 	    MPID_Send( 0, 0, MPI_BYTE, rank + twon_within, MPIR_BARRIER_TAG,
 		       comm_ptr, MPID_CONTEXT_INTRA_COLL, &request_ptr );
 	    if (request_ptr) {
-		MPIR_Wait(request_ptr);
+		mpi_errno = MPIC_Wait(request_ptr);
 		MPID_Request_release(request_ptr);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    goto fn_exit;
+		}
 	    }
 	}
     }
@@ -164,22 +173,31 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 	MPID_Send( 0, 0, MPI_BYTE, rank - twon_within, MPIR_BARRIER_TAG,
 		   comm_ptr, MPID_CONTEXT_INTRA_COLL, &request_ptr );
 	if (request_ptr) {
-	    MPIR_Wait(request_ptr);
+	    mpi_errno = MPIR_Wait(request_ptr);
 	    MPID_Request_release(request_ptr);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		goto fn_exit;
+	    }
 	}
 	/* There is no second step; for the third step, recv */
 	MPID_Recv( 0, 0, MPI_BYTE, rank - twon_within, MPIR_BARRIER_TAG, 
 		   comm_ptr, MPID_CONTEXT_INTRA_COLL, MPI_STATUS_IGNORE,
 		   &request_ptr );
 	if (request_ptr) {
-	    MPIR_Wait(request_ptr);
+	    mpi_errno = MPIC_Wait(request_ptr);
 	    MPID_Request_release(request_ptr);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		goto fn_exit;
+	    }
 	}
     }
 
+  fn_exit:
     MPID_Comm_thread_unlock( comm_ptr );
 
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 #endif
 

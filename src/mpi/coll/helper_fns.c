@@ -39,7 +39,7 @@ int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	return mpi_errno;
     }
     if (request_ptr) {
-        MPIR_Wait(request_ptr);
+        mpi_errno = MPIC_Wait(request_ptr);
         MPID_Request_release(request_ptr);
     }
     MPID_MPI_PT2PT_FUNC_EXIT_FRONT(MPID_STATE_MPIC_SEND);
@@ -68,10 +68,15 @@ int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	return mpi_errno;
     }
     if (request_ptr) {
-        MPIR_Wait(request_ptr);
-        if (status != MPI_STATUS_IGNORE)
-            *status = request_ptr->status;
-        mpi_errno = request_ptr->status.MPI_ERROR;
+        mpi_errno = MPIC_Wait(request_ptr);
+	if (mpi_errno == MPI_SUCCESS)
+	{
+	    if (status != MPI_STATUS_IGNORE)
+	    {
+		*status = request_ptr->status;
+	    }
+	    mpi_errno = request_ptr->status.MPI_ERROR;
+	}
         MPID_Request_release(request_ptr);
     }
     MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_RECV);
@@ -109,15 +114,24 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 	return mpi_errno;
     }
 
-    MPIR_Wait(send_req_ptr); 
-    MPID_Request_release(send_req_ptr);
-
-    MPIR_Wait(recv_req_ptr);
+    mpi_errno = MPIC_Wait(send_req_ptr); 
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	goto fn_exit;
+    }
+    
+    mpi_errno = MPIC_Wait(recv_req_ptr);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	goto fn_exit;
+    }
     if (status != MPI_STATUS_IGNORE)
         *status = recv_req_ptr->status;
     mpi_errno = recv_req_ptr->status.MPI_ERROR;
-    MPID_Request_release(recv_req_ptr);
 
+  fn_exit:
+    MPID_Request_release(send_req_ptr);
+    MPID_Request_release(recv_req_ptr);
     MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPIC_SENDRECV);
     return mpi_errno;
 }
@@ -204,4 +218,30 @@ int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int
 
     MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_IRECV);
     return mpi_errno;
+}
+
+int MPIC_Wait(MPID_Request * request_ptr)
+{
+    while((*(request_ptr)->cc_ptr) != 0)
+    {
+	MPID_Progress_start();
+		
+	if ((*(request_ptr)->cc_ptr) != 0)
+	{
+	    int mpi_errno;
+    
+	    mpi_errno = MPID_Progress_wait();
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		return mpi_errno;
+	    }
+	}
+	else
+	{
+	    MPID_Progress_end();
+	    break;
+	}
+    }
+
+    return MPI_SUCCESS;
 }
