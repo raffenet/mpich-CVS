@@ -103,15 +103,20 @@ install: all
 	    ${INSTALL} -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd.py; \
 	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
 	done
-	( cd ${bindir} && @LN_S@ -f mpd.py mpd ; )
-	( cd ${bindir} && @LN_S@ -f mpdboot.py mpdboot ; )
+	-@cd ${bindir} && rm -f mpd
+	-@cd ${bindir} && @LN_S@ mpd.py mpd
+	-@cd ${bindir} && rm -f mpdboot
+	-@cd ${bindir} && @LN_S@ mpdboot.py mpdboot
 	-@for cmd in ${CMDS} ; do \
-	    ( cd ${bindir} && @LN_S@ -f mpdroot $$cmd ; ) \
+	    ( cd ${bindir} && rm -f $$cmd ; ) ; \
+	    ( cd ${bindir} && @LN_S@ mpdroot $$cmd ; ) \
 	done
 	-@${INSTALL} -m 755 ${srcdir}/mpigdb.sh ${bindir}/mpigdb
 	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
-	-@cd ${bindir} && @LN_S@ -f mpdrun mpirun
-	-@cd ${bindir} && @LN_S@ -f mpdrun.py mpirun.py
+	-@cd ${bindir} && rm -f mpirun
+	-@cd ${bindir} && @LN_S@ mpdrun mpirun
+	-@cd ${bindir} && rm -f mpirun.py
+	-@cd ${bindir} && @LN_S@ mpdrun.py mpirun.py
 
 
 mpich2-build-install: mpich2-mpdroot install
