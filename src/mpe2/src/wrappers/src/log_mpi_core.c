@@ -273,9 +273,11 @@ static int trace_on = 0;
 
 #include "requests.h"
 
+/*  LOGFILENAME_LEN == CLOG_PATH_STRLEN  */
+#define LOGFILENAME_STRLEN  256
 static request_list *requests_head_0, *requests_tail_0, *requests_avail_0=0;
 static int procid_0;
-static char logFileName_0[256];
+static char logFileName_0[LOGFILENAME_STRLEN];
 
 /* This is used for the multiple-completion test/wait functions */
 #define MPE_MAX_REQUESTS 1024
