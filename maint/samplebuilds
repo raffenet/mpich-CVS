@@ -62,6 +62,8 @@ fi
 #    config_args - arguments to pass to configure
 #    do_tests    - yes or no; controls tests
 #    srcdir,instdir - directories for source, installation
+#    use_mpd     - yes if mpd demon needs to be started.  The demon
+#                  will be terminated at the end of the tests
 # This uses XML-style tags to mark the various segments, but does not
 # filter the output from the individual steps for XML/SGML characters (e.g.,
 # the <,>,& characters aren't handled).
@@ -71,96 +73,141 @@ fi
 #
 BuildMPICH2 () {
 echo "<BUILDTEST NAME=\"$testname\">"
-echo "<CONFIGURE>"
+echo "<CONFIG>"
 if $srcdir/configure --prefix=$instdir $config_args ; then
-    echo "</CONFIGURE>"
+    echo "</CONFIG>"
     echo "<MAKE>"
     # Remove any lingering libraries
     rm -f lib/libmpich*.a lib/libpmpich*.a lib/libfmpich*.a 
     rm -f lib/libmpich*.so lib/libpmpich*.so lib/libfmpich*.so
     if make ; then
         echo "</MAKE>"
-	echo "<INSTALL>"
+	echo "<MAKEINST>"
 	if make install ; then
-	    echo "</INSTALL>"
+	    echo "</MAKEINST>"
 	    if [ "$do_tests" = "yes" ] ; then
-	        echo "<TEST>"
+	        echo "<RUNTEST>"
+		if [ "$use_mpd" = "yes" ] ; then
+		    if [ -x $instdir/bin/mpd ] ; then
+			$instdir/bin/mpd -d
+		    else
+		        echo "Cannot find $instdir/bin/mpd!"
+		    fi
+		fi
 	        if make testing ; then
 		    echo "Tests completed in test/summary.xml"
 		    # Really should copy failures if any
 	        else
 		    echo "Tests failed ($testname)"
 	        fi
-	        echo "</TEST>"
+		if [ "$use_mpd" = "yes" ] ; then
+		    if [ -x $instdir/bin/mpdallexit ] ; then
+		        $instdir/bin/mpdallexit
+		    else
+		        echo "Cannot file $instdir/bin/mpdallexit!"
+		    fi
+		fi
+	        echo "</RUNTEST>"
 	    fi
 	else
+	    rc=$?
 	    echo "Install failed ($testname)"
-	    echo "</INSTALL>"
+	    echo "</MAKEINST STATUS=\"$rc\">"
 	fi
     else 
+        rc = $?
 	echo "make failed ($testname)"
-	echo "</MAKE>"
+	echo "</MAKE STATUS=\"$rc\">"
     fi
 else
+    rc=$?
     echo "Configure failed ($testname)"
-    echo "</CONFIGURE>"
+    echo "</CONFIG STATUS=\"$rc\">"
 fi
 echo "</BUILDTEST>"
 }
 # ---------------------------------------------------------------------------
+# Preamble
+echo "<MPICH2BUILD>"
+echo "<DATE>"
+date
+echo "</DATE>"
+# ---------------------------------------------------------------------------
 # Basic test
 testname="basic"
 config_args=""
+use_mpd=yes
 BuildMPICH2
 
 #
 # No Fortran or C++
 testname="no f77/c++"
 config_args="--disable-f77 --disable-cxx"
+use_mpd=yes
 BuildMPICH2
 
 #
 # No Weak symbols
 testname="no weak symbols"
 config_args="--disable-weak-symbols"
+use_mpd=yes
 BuildMPICH2
 
 #
 # --enable-fast
 testname="fast"
 config_args="--enable-fast"
+use_mpd=yes
 BuildMPICH2
 
 #
 # forker pm, strict
 testname="strict and forker"
 config_args="--enable-strict --with-pm=forker"
+use_mpd=no
 BuildMPICH2
 
 #
 # Build and link with a logging library
 testname="logging with lwlog"
 config_args="--with-logging=lwlog --with-pm=forker"
+use_mpd=no
 BuildMPICH2
 
 #
 # Build with memory checking
 testname="memory tests"
 config_args="--enable-g=all --enable-strict"
+use_mpd=yes
 BuildMPICH2
 
 #
 # Build with shared libraries
 testname="sharedlibs"
 config_args="--enable-sharedlibs=gcc"
+use_mpd=yes
 BuildMPICH2
 
 #
 # Build shared libraries using libtool
 if [ "$LOGNAME" = "gropp" ] ; then
-echo "The following is known not to work yet"
-echo "It is here to spur the support for libtool and shared libraries"
-testname="sharedlibs with libtool"
-config_args="--enable-sharedlibs=libtool"
-BuildMPICH2
+    echo "The following is known not to work yet"
+    echo "It is here to spur the support for libtool and shared libraries"
+    testname="sharedlibs with libtool"
+    config_args="--enable-sharedlibs=libtool"
+    use_mpd=yes
+    BuildMPICH2
 fi
+
+#
+# Build with PVFS if available
+# --with-romio=--with-file-system=ufs+nfs+testfs+pvfs
+if [ -d /pvfs ] ; then
+    testname="pvfs"
+    config_args="--with-romio=--with-file-system=ufs+nfs+testfs+pvfs"
+    use_mpd=yes
+    BuildMPICH2
+fi
+# ---------------------------------------------------------------------------
+# Postamble
+echo "</MPICH2BUILD>"
