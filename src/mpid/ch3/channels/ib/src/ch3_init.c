@@ -67,6 +67,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	vc_table[p].ib.pg_rank = p;
 	vc_table[p].ib.sendq_head = NULL;
 	vc_table[p].ib.sendq_tail = NULL;
+	vc_table[p].ib.req = (MPID_Request*)MPIU_Malloc(sizeof(MPID_Request));
 	vc_table[p].ib.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
     }
     pg->vc_table = vc_table;

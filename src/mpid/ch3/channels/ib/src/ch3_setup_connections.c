@@ -16,6 +16,7 @@ int MPIDI_CH3I_Setup_connections()
     int val_max_sz;
     int rc;
     int i, dlid;
+    MPIDI_VC *vc;
 
     key_max_sz = PMI_KVS_Get_key_length_max();
     key = MPIU_Malloc(key_max_sz);
@@ -27,20 +28,32 @@ int MPIDI_CH3I_Setup_connections()
     /* create a queue pair connection to each process */
     for (i=0; i<MPIDI_CH3I_Process.pg->size; i++)
     {
-	if (MPIDI_CH3I_Process.pg->vc_table[i].ib.pg_rank == MPIR_Process.comm_world->rank)
+	vc = &MPIDI_CH3I_Process.pg->vc_table[i];
+
+	if (vc->ib.pg_rank == MPIR_Process.comm_world->rank)
 	    continue;
 	/* get the destination lid from the pmi database */
-	rc = snprintf(key, key_max_sz, "P%d-lid", MPIDI_CH3I_Process.pg->vc_table[i].ib.pg_rank);
+	rc = snprintf(key, key_max_sz, "P%d-lid", vc->ib.pg_rank);
 	assert(rc > -1 && rc < key_max_sz);
-	rc = PMI_KVS_Get(MPIDI_CH3I_Process.pg->vc_table[i].ib.pg->kvs_name, key, val);
+	rc = PMI_KVS_Get(vc->ib.pg->kvs_name, key, val);
 	assert(rc == 0);
 	dlid = atoi(val);
 	assert(dlid >= 0);
 	/* connect to the dlid */
-	MPIDI_CH3I_Process.pg->vc_table[i].ib.ibu =
+	vc->ib.ibu =
 	    ibu_create_qp(MPIDI_CH3I_Process.set, dlid);
-	assert(MPIDI_CH3I_Process.pg->vc_table[i].ib.ibu != NULL);
-	MPIDI_CH3I_Process.pg->vc_table[i].ib.state = MPIDI_CH3I_VC_STATE_CONNECTED;
+	assert(vc->ib.ibu != NULL);
+	/* set the user pointer to be a pointer to the VC */
+	ibu_set_user_ptr(vc->ib.ibu, &MPIDI_CH3I_Process.pg->vc_table[i]);
+	/* set the state to connected */
+	vc->ib.state = MPIDI_CH3I_VC_STATE_CONNECTED;
+	/* post a read of the first packet */
+	vc->ib.req->ch3.iov[0].MPID_IOV_BUF = (void *)&vc->ib.req->ib.pkt;
+	vc->ib.req->ch3.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
+	vc->ib.req->ch3.iov_count = 1;
+	vc->ib.req->ib.iov_offset = 0;
+	vc->ib.req->ch3.ca = MPIDI_CH3I_CA_HANDLE_PKT;
+	vc->ib.recv_active = vc->ib.req;
     }
 
     MPIU_Free(val);

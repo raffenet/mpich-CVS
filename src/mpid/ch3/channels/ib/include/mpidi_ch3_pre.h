@@ -7,45 +7,8 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
-#include "ib_types.h"
-#include "ib_defs.h" 
+#include "ibu.h"
 #include "blockallocator.h"
-
-typedef struct IB_Info
-{
-    ib_uint32_t   m_mtu_size;
-    ib_uint32_t   m_max_wqes;
-    ib_uint32_t   m_dlid;
-    ib_uint32_t   m_polling;
-
-    ib_mr_handle_t   m_mr_handle;
-    ib_uint32_t      m_lkey;
-    ib_qp_handle_t   m_qp_handle;
-    BlockAllocator   m_allocator;
-    ib_uint32_t      m_dest_qp_num;
-    /*
-    ib_int64_t       m_snd_work_id;
-    ib_int64_t       m_rcv_work_id;
-    */
-    
-    ib_address_handle_t m_address_handle;
-    
-    /*
-    ib_uint32_t      m_snd_completion_counter;
-    ib_uint32_t      m_rcv_completion_counter;
-    ib_uint32_t      m_snd_posted;
-    ib_uint32_t      m_rcv_posted;
-    */
-} IB_Info;
-
-typedef union ib_work_id_handle_t
-{
-    ib_uint64_t id;
-    struct data
-    {
-	ib_uint32_t vc, mem;
-    } data;
-} ib_work_id_handle_t;
 
 typedef struct MPIDI_Process_group_s
 {
@@ -56,49 +19,13 @@ typedef struct MPIDI_Process_group_s
 }
 MPIDI_CH3I_Process_group_t;
 
-#define MPIDI_CH3_PKT_ENUM			\
-MPIDI_CH3I_PKT_TCP_OPEN_REQ,			\
-MPIDI_CH3I_PKT_TCP_OPEN_RESP,			\
-MPIDI_CH3I_PKT_TCP_CLOSE
-
-#define MPIDI_CH3_PKT_DEFS						    \
-typedef struct								    \
-{									    \
-    MPIDI_CH3_Pkt_type_t type;						    \
-    /* XXX - We need a little security here to avoid having a random port   \
-       scan crash the process.  Perhaps a "secret" value for each process   \
-       could be published in the key-val space and subsequently sent in the \
-       open pkt. */							    \
-									    \
-    /* XXX - We need some notion of a global process group ID so that we    \
-       can tell the remote process which process is connecting to it */	    \
-    int pg_id;								    \
-    int pg_rank;							    \
-}									    \
-MPIDI_CH3I_Pkt_TCP_open_req_t;						    \
-									    \
-typedef struct								    \
-{									    \
-    MPIDI_CH3_Pkt_type_t type;						    \
-    int ack;								    \
-}									    \
-MPIDI_CH3I_Pkt_TCP_open_resp_t;						    \
-									    \
-typedef struct								    \
-{									    \
-    MPIDI_CH3_Pkt_type_t type;						    \
-}									    \
-MPIDI_CH3I_Pkt_TCP_close_t;
-
-#define MPIDI_CH3_PKT_DECL			\
-MPIDI_CH3I_Pkt_TCP_open_req_t tcp_open_req;	\
-MPIDI_CH3I_Pkt_TCP_open_resp_t tcp_open_resp;	\
-MPIDI_CH3I_Pkt_TCP_close_t tcp_close;
+#define MPIDI_CH3_PKT_ENUM
+#define MPIDI_CH3_PKT_DEFS
+#define MPIDI_CH3_PKT_DECL
 
 typedef enum
 {
     MPIDI_CH3I_VC_STATE_UNCONNECTED,
-    MPIDI_CH3I_VC_STATE_CONNECTING,
     MPIDI_CH3I_VC_STATE_CONNECTED,
     MPIDI_CH3I_VC_STATE_FAILED
 }
@@ -112,6 +39,9 @@ struct MPIDI_CH3I_VC				\
     struct MPID_Request * sendq_head;		\
     struct MPID_Request * sendq_tail;		\
     ibu_t ibu;                                  \
+    struct MPID_Request * send_active;          \
+    struct MPID_Request * recv_active;          \
+    struct MPID_Request * req;                  \
     MPIDI_CH3I_VC_state_t state;		\
 } ib;
 
@@ -124,7 +54,7 @@ struct MPIDI_CH3I_VC				\
  */
 #define MPIDI_CH3_CA_ENUM			\
 MPIDI_CH3I_CA_HANDLE_PKT,			\
-MPIDI_CH3I_CA_END_TCP,
+MPIDI_CH3I_CA_END_IB,
 
 
 /*
