@@ -17,11 +17,11 @@ int main( int argc, char *argv[] )
     MPI_Group g1, g2, g4, g5, g45, selfgroup;
     int ranks[16], size, rank, myrank, range[1][3];
     int errs = 0;
-    int i, rin[3], rout[3], result;
+    int i, rin[16], rout[16], result;
 
     MPI_Init(0,0);
 
-#define MPIR_TEST_GROUPS
+/* #define MPIR_TEST_GROUPS */
 #ifdef MPIR_TEST_GROUPS
     /* Process for each rank in the group */
     for (myrank=0; myrank<16; myrank++) {
@@ -75,6 +75,22 @@ int main( int argc, char *argv[] )
 			 rout[0], myrank );
 	    errs++;
 	}
+
+	for (i=0; i<size; i++) 
+	    rin[i] = i;
+	MPI_Group_translate_ranks( g1, size, rin, selfgroup, rout );
+	for (i=0; i<size; i++) {
+	    if (i == myrank && rout[i] != 0) {
+		fprintf( stderr, "translated world to self of %d is %d\n",
+			 i, rout[i] );
+		errs++;
+	    }
+	    else if (i != myrank && rout[i] != MPI_UNDEFINED) {
+		fprintf( stderr, "translated world to self of %d should be undefined, is %d\n",
+			 i, rout[i] );
+		errs++;
+	    }
+	}
 	
 	/* Add tests for additional group operations */
 	/* 
@@ -121,12 +137,19 @@ int main( int argc, char *argv[] )
     }
 #endif
     
-    if (errs == 0) {
-	printf( "No errors\n" );
+#ifdef MPIR_TEST_GROUPS
+#else
+    if (myrank == 0)
+#endif
+    {
+	if (errs == 0) {
+	    printf( "No errors\n" );
+	}
+	else {
+	    printf( "Found %d errors\n", errs );
+	}
     }
-    else {
-	printf( "Found %d errors\n", errs );
-    }
+
     MPI_Finalize();
     return 0;
 }
