@@ -10,7 +10,6 @@
 /*#define MPICH_DBG_OUTPUT*/
 
 #include "ibu.h"
-#include "blockallocator.h"
 
 typedef struct MPIDI_Process_group_s
 {

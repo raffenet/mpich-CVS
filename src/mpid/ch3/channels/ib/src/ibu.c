@@ -7,8 +7,7 @@
 #include "mpidimpl.h"
 #include "ibu.h"
 #include <stdio.h>
-
-#define err_printf printf
+#include <malloc.h>
 
 struct ibuBlockAllocator_struct
 {
@@ -105,12 +104,12 @@ typedef struct ibu_state_t
 
 #define IBU_ERROR_MSG_LENGTH       255
 #define IBU_PACKET_SIZE            (1024 * 64)
-#define IBU_PACKET_COUNT           512
-#define IBU_NUM_PREPOSTED_RECEIVES (IBU_ACK_WATER_LEVEL*2)
+#define IBU_PACKET_COUNT           128
+#define IBU_NUM_PREPOSTED_RECEIVES (IBU_ACK_WATER_LEVEL*3)
 #define IBU_MAX_CQ_ENTRIES         255
 #define IBU_MAX_POSTED_SENDS       8192
 #define IBU_MAX_DATA_SEGMENTS      100
-#define IBU_ACK_WATER_LEVEL        16
+#define IBU_ACK_WATER_LEVEL        32
 
 typedef struct IBU_Global {
     VAPI_hca_hndl_t  hca_handle;
@@ -147,12 +146,12 @@ static int ibui_post_ack_write(ibu_t ibu);
 
 /* utility allocator functions */
 
-static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p));
+static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p));
 static int ibuBlockAllocFinalize(ibuBlockAllocator *p);
 static void * ibuBlockAlloc(ibuBlockAllocator p);
 static int ibuBlockFree(ibuBlockAllocator p, void *pBlock);
 
-static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p))
+static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p))
 {
     ibuBlockAllocator p;
     void **ppVoid;
@@ -336,7 +335,7 @@ static VAPI_ret_t createQP(ibu_t ibu, ibu_set_t set)
     status = VAPI_create_qp(IBU_Process.hca_handle, &qp_init_attr, &ibu->qp_handle, &qp_prop);
     if (status != VAPI_OK)
     {
-	printf("VAPI_create_qp failed, error %s\n", VAPI_strerror(status));
+	MPIU_Internal_error_printf("VAPI_create_qp failed, error %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATEQP);
 	return status;
     }
@@ -352,7 +351,7 @@ static VAPI_ret_t createQP(ibu_t ibu, ibu_set_t set)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static VAPI_mr_hndl_t s_mr_handle;
 static VAPI_lkey_t    s_lkey;
-static void *ib_malloc_register(unsigned int size)
+static void *ib_malloc_register(size_t size)
 {
     VAPI_ret_t status;
     void *ptr;
@@ -362,6 +361,9 @@ static void *ib_malloc_register(unsigned int size)
     MPIDI_FUNC_ENTER(MPID_STATE_IB_MALLOC_REGISTER);
 
     MPIU_DBG_PRINTF(("entering ib_malloc_register\n"));
+
+    printf("ib_malloc_register(%d) called\n", size);
+
     ptr = MPIU_Malloc(size);
     if (ptr == NULL)
     {
@@ -429,6 +431,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
 	return NULL;
     }
 
+    p->state = 0;
     p->dlid = dlid;
     /* In ibuBlockAllocInit, ib_malloc_register is called which sets the global variable s_mr_handle */
     p->allocator = ibuBlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT, IBU_PACKET_COUNT, ib_malloc_register, ib_free_deregister);
@@ -692,7 +695,7 @@ static int ibui_post_ack_write(ibu_t ibu)
 /* ibu functions */
 
 #undef FUNCNAME
-#define FUNCNAME ibui_post_write
+#define FUNCNAME ibu_write
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int ibu_write(ibu_t ibu, void *buf, int len)
@@ -714,6 +717,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 
 	if (ibu->nAvailRemote < 1)
 	{
+	    /*printf("ibu_write: no remote packets available\n");fflush(stdout);*/
 	    MPIDI_DBG_PRINTF((60, FCNAME, "no more remote packets available"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return total;
@@ -793,7 +797,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 }
 
 #undef FUNCNAME
-#define FUNCNAME ibui_post_writev
+#define FUNCNAME ibu_writev
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
@@ -821,6 +825,7 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
     {
 	if (ibu->nAvailRemote < 1)
 	{
+	    /*printf("ibu_writev: no remote packets available\n");fflush(stdout);*/
 	    MPIDI_DBG_PRINTF((60, FCNAME, "no more remote packets available."));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return total;
@@ -1287,7 +1292,7 @@ int ibui_readv_unex(ibu_t ibu)
 
 char * op2str(int opcode)
 {
-    static str[20];
+    static char str[20];
     switch(opcode)
     {
     case VAPI_CQE_SQ_SEND_DATA:
