@@ -24,7 +24,7 @@ PAC_ARG_CACHING
 
 AC_ARG_ENABLE(pmiport,
 [--enable-pmiport - Allow PMI interface to use a host-port pair to contact
-                   for PMI services],,enable-pmiport=default)
+                   for PMI services],,enable_pmiport=default)
 
 PAC_PROG_MAKE
 
