@@ -119,10 +119,15 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 	    (*elements) = status->count / datatype_ptr->element_size;
 	}
 	else {
+	    /* element_size < 0 indicates that there was more than one basic type used */
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**notimpl", 0 );
+	    MPIR_Err_return_comm( 0, "Get_elements", mpi_errno );
+#if 0
 	    /* This is the hard case */
 	    (*elements) = m_count * datatype_ptr->n_elements;
 	    /* Recusively handle the remaining (m_rem) bytes. */
 	    *elements += MPIR_Type_get_elements( m_rem, datatype_ptr );
+#endif
 	}
     }
     /* ... end of body of routine ... */
