@@ -101,6 +101,19 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
   T*/
 
 /*E
+  MPID_Obj_kind - Object kind (communicator, window, or file)
+
+  Notes:
+  This enum is used by keyvals and errhandlers to indicate the type of
+  object for which MPI opaque types the data is valid.  These are defined
+  as bits to allow future expansion to the case where an object is value for
+  multiple types (for example, we may want a universal error handler for 
+  errors return).
+  E*/
+typedef enum { 
+  MPID_COMM=1, MPID_WIN=2, MPID_FILE=4, MPID_DATATYPE=8 } MPID_Obj_kind;
+
+/*E
   MPID_Copy_function - MPID Structure to hold an attribute copy function
 
   Notes:
@@ -115,11 +128,14 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
 
   E*/
 typedef union {
-  int  (*C_CopyFunction)  (MPI_Comm, int, void *, void *, void *, int *)
+  int  (*C_CommCopyFunction)  (MPI_Comm, int, void *, void *, void *, int *);
   void (*F77_CopyFunction)( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
 			   MPI_Fint *, MPI_Fint *, MPI_Fint *);
   void (*F90_CopyFunction)( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *
 			   MPI_Aint *, MPI_Fint *, MPI_Fint *);
+  int (*C_FileCopyFunction)  (MPI_Comm, int, void *, void *, void *, int *);
+  int (*C_TypeCopyFunction)  (MPI_Datatype, int, 
+			      void *, void *, void *, int *);
   /* The C++ function is the same as the C function */
 } MPID_Copy_function;
 
@@ -140,6 +156,8 @@ typedef union {
 			      MPI_Fint * );
   void (*F90_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *, 
 			      MPI_Fint * );
+  int  (*C_FileDeleteFunction)  ( MPI_File, int, void *, void * );
+  int  (*C_TypeDeleteFunction)  ( MPI_Datatype, int, void *, void * );
   
 } MPID_Delete_function;
 
@@ -154,6 +172,7 @@ typedef struct {
     int                  id;
     volatile int         ref_count;
     MPID_Lang_t          language;
+    MPID_Object_kind     kind;
     void                 *extra_state;
     MPID_Copy_function   copyfn;
     MPID_Delete_function delfn;
@@ -513,6 +532,52 @@ typedef struct {
   /* other, device-specific information */
 } MPID_Group;
 
+/*E
+  MPID_Errhander_fn - MPID Structure to hold an error handler function
+
+  Notes:
+  The MPI-1 Standard declared only the C version of this, implicitly 
+  assuming that 'int' and 'MPI_Fint' were the same. 
+
+  Questions:
+  What do we want to do about C++?  Do we want a hook for a routine that can
+  be called to throw an exception in C++, particularly if we give C++ access
+  to this structure?  Does the C++ handler need to be different (not part
+  of the union)?
+
+  What is the interface for the Fortran version of the error handler?  
+  E*/
+typdef union {
+   void (C_Comm_Handler_function) ( MPI_Comm *, int *, ... );
+   void (F77_Handler_function) ( MPI_Fint *, MPI_Fint *, ... );
+   void (C_Win_Handler_function) ( MPI_Win *, int *, ... );
+   void (C_File_Handler_function) ( MPI_File *, int *, ... );
+} MPID_Errhandler_fn;
+
+/*S
+  MPID_Errhandler - Description of the error handler structure
+
+  Notes:
+  Device-specific information may indicate whether the error handler is active;
+  this can help prevent infinite recursion in error handlers caused by 
+  user-error without requiring the user to be as careful.  We might want to 
+  make this part of the interface so that the 'MPI_xxx_call_errhandler' 
+  routines would check.
+
+  It is useful to have a way to indicate that the errhandler is no longer
+  valid, to help catch the case where the user has freed the errhandler but
+  is still using a copy of the 'MPI_Errhandler' value.  We may want to 
+  define the 'id' value for deleted errhandlers.
+  S*/
+typedef struct {
+  int                id;
+  volatile int       ref_count;
+  MPID_Lang_t        language;
+  MPID_Object_kind   kind;
+  MPID_Errhandler_fn errfn;
+  /* Other, device-specific information */
+} MPID_Errhandler;
+
 /*S
   MPID_Comm - Description of the Communicator data structure
 
@@ -581,6 +646,10 @@ typedef struct {
   Should a win be defined after 'MPID_Segment' in case the device wants to 
   store a queue of pending put/get operations, described with 'MPID_Segment'
   (or 'MPID_Request')s?
+   
+  What is the communicator of the window?  Is this the same communicator passed
+  to 'MPI_Win_create'?  Is it a (shallow) copy; that is, a dup without 
+  carrying the (user) attributes?
   S*/
 typedef struct {
     int  id;                     /* value of MPI_Win for this structure */

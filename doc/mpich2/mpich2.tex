@@ -68,6 +68,19 @@ To date, this document contains primarily comments on the rules for
 writing the code.  Few comments on the use of ADI-3 routines have been
 added yet.  No part of this document is final.
 
+A major challenge is developing an interface that requires fewer (or
+at least simpler) routines to implement.  This is particularly
+difficult since the MPI standard is defined to encourage efficient
+implementations.  While it is possible to meet the functional
+definitions of MPI with fewer routines, achieving performance requires
+something relatively close to what MPI defines.
+
+One possibility is to consider a few classes of systems.  Pure
+distributed memory is one important case.  Another is shared memory,
+or at least some common shared memory.  Of course, multi-method
+devices make this more difficult.  Some more discussion of this is in
+the RMA section.
+
 % Outline:
 \section{General}
 This section contains general recommendations are requirements for
@@ -286,12 +299,26 @@ the MPI Standard.
 
 \subsubsection{\mpifunc{MPI_TYPE_DELETE_ATTR}}
 \subsubsection{\mpifunc{MPI_TYPE_FREE_KEYVAL}}
-%\subsubsection{\mpifunc{MPI_TYPE_NULL_COPY_FN}}
+\subsubsection{\mpifunc{MPI_TYPE_NULL_COPY_FN}}
+%\subsubsection{\mpifunc{MPI_TYPE_DUP_FN}}
 
 \subsubsection{\mpifunc{MPI_WIN_CREATE_KEYVAL}}
 \subsubsection{\mpifunc{MPI_WIN_FREE_KEYVAL}}
 \subsubsection{\mpifunc{MPI_WIN_SET_ATTR}}
 %\subsubsection{\mpifunc{MPI_WIN_NULL_COPY_FN}}
+
+\subsubsection{\mpifunc{MPI_INFO_CREATE}}
+\subsubsection{\mpifunc{MPI_INFO_DELETE}}
+\subsubsection{\mpifunc{MPI_INFO_DUP}}
+\subsubsection{\mpifunc{MPI_INFO_FREE}}
+\subsubsection{\mpifunc{MPI_INFO_GET}}
+\subsubsection{\mpifunc{MPI_INFO_GET_NKEYS}}
+\subsubsection{\mpifunc{MPI_INFO_GET_NTHKEY}}
+Question:  Do we want to have this return an error if the info list is 
+modified by another thread?  Is there any way to actually do this?
+
+\subsubsection{\mpifunc{MPI_INFO_GET_VALUELEN}}
+\subsubsection{\mpifunc{MPI_INFO_SET}}
 
 \mpiconst{MPI_ERR_INFO_KEY}
 \mpiconst{MPI_ERR_KEYVAL}
@@ -301,6 +328,10 @@ the MPI Standard.
 The ADI defines a datatype structure that is believed to be a good
 choice for implementing operatoins that involve datatypes, such as
 \mpifunc{MPI_Pack} and \mpifunc{MPI_Unpack}.
+
+\subsubsection{\mpifunc{MPI_ADDRESS}}
+
+\subsubsection{\mpifunc{MPI_GET_ADDRESS}}
 
 \subsubsection{\mpifunc{MPI_TYPE_CONTIGUOUS}}
 
@@ -540,10 +571,24 @@ the collective routine, not the routine called, may be used.
 \subsubsection{\mpifunc{MPI_COMM_DUP}}
 \subsubsection{\mpifunc{MPI_COMM_FREE}}
 \subsubsection{\mpifunc{MPI_COMM_GROUP}}
+Return a duplicate (shallow copy) of the local group.
+
 \subsubsection{\mpifunc{MPI_COMM_RANK}}
+Return the \code{rank} field.
+
 \subsubsection{\mpifunc{MPI_COMM_REMOTE_GROUP}}
+Return a duplicate (shallow copy) of the remote group.
+
 \subsubsection{\mpifunc{MPI_COMM_REMOTE_SIZE}}
+See \code{MPI_COMM_SIZE}/
+
 \subsubsection{\mpifunc{MPI_COMM_SIZE}}
+Return the \code{size} field.  This is really the size of the local
+group, which for an intercommunicator may be different from the remote
+size.  Note that for point-to-point communication, error checking for
+destination or source ranks must look at the remote size.  Should
+there be a \code{local_size} field in the communicator?
+
 \subsubsection{\mpifunc{MPI_COMM_SPLIT}}
 \subsubsection{\mpifunc{MPI_COMM_TEST_INTER}}
 \subsubsection{\mpifunc{MPI_INTERCOMM_CREATE}}
@@ -552,14 +597,18 @@ the collective routine, not the routine called, may be used.
 \subsubsection{\mpifunc{MPI_COMM_C2F}}
 \subsubsection{\mpifunc{MPI_COMM_F2C}}
 \subsubsection{\mpifunc{MPI_COMM_CLONE}}
+This is a special C++ function.
 
 \subsubsection{\mpifunc{MPI_COMM_CALL_ERRHANDLER}}
 \subsubsection{\mpifunc{MPI_COMM_CREATE_ERRHANDLER}}
 \subsubsection{\mpifunc{MPI_COMM_GET_ERRHANDLER}}
 \subsubsection{\mpifunc{MPI_COMM_SET_ERRHANDLER}}
 
-\subsubsection{\mpifunc{MPI_COMM_GET_NAME }}
-\subsubsection{\mpifunc{MPI_COMM_SET_NAME }}
+\subsubsection{\mpifunc{MPI_COMM_GET_NAME}}
+Return a copy of the \code{name} field.
+
+\subsubsection{\mpifunc{MPI_COMM_SET_NAME}}
+Set the \code{name} field.
 
 \subsection{Point to Point Communication}
 
@@ -576,6 +625,8 @@ requests?
 \subsubsection{\mpifunc{MPI_BUFFER_ATTACH}}
 \subsubsection{\mpifunc{MPI_BUFFER_DETACH}}
 \subsubsection{\mpifunc{MPI_CANCEL}}
+\subsubsection{\mpifunc{MPI_GET_COUNT}}
+\subsubsection{\mpifunc{MPI_GET_ELEMENTS}}
 \subsubsection{\mpifunc{MPI_IBSEND}}
 \subsubsection{\mpifunc{MPI_IPROBE}}
 \subsubsection{\mpifunc{MPI_IRECV}}
@@ -584,6 +635,7 @@ requests?
 \subsubsection{\mpifunc{MPI_ISSEND}}
 \subsubsection{\mpifunc{MPI_RECV}}
 \subsubsection{\mpifunc{MPI_RECV_INIT}}
+\subsubsection{\mpifunc{MPI_REQUEST_GET_STATUS}}
 \subsubsection{\mpifunc{MPI_REQUEST_FREE}}
 \subsubsection{\mpifunc{MPI_RSEND}}
 \subsubsection{\mpifunc{MPI_RSEND_INIT}}
@@ -595,6 +647,8 @@ requests?
 \subsubsection{\mpifunc{MPI_SSEND_INIT}}
 \subsubsection{\mpifunc{MPI_START}}
 \subsubsection{\mpifunc{MPI_STARTALL}}
+\subsubsection{\mpifunc{MPI_STATUS_SET_CANCELLED}}
+\subsubsection{\mpifunc{MPI_STATUS_SET_ELEMENTS}}
 \subsubsection{\mpifunc{MPI_TEST}}
 \subsubsection{\mpifunc{MPI_TESTALL}}
 \subsubsection{\mpifunc{MPI_TESTANY}}
@@ -738,12 +792,16 @@ For short data, use an MST.
 \subsubsection{\mpifunc{MPI_BARRIER}}
 \subsubsection{\mpifunc{MPI_BCAST}}
 \subsubsection{\mpifunc{MPI_ALLREDUCE}}
+\subsubsection{\mpifunc{MPI_REDUCE}}
 \subsubsection{\mpifunc{MPI_EXSCAN}}
 \subsubsection{\mpifunc{MPI_GATHER}}
 \subsubsection{\mpifunc{MPI_GATHERV}}
 \subsubsection{\mpifunc{MPI_SCAN}}
 \subsubsection{\mpifunc{MPI_SCATTER}}
 \subsubsection{\mpifunc{MPI_SCATTERV}}
+
+\subsubsection{\mpifunc{MPI_OP_CREATE}}
+\subsubsection{\mpifunc{MPI_OP_FREE}}
 
 \subsection{Topology}
 
@@ -760,6 +818,18 @@ topology routines a separate module so that, at the MPI level, it is easy to
 substitute for these routines?  How do we define the routine called by
 \mpifunc{MPI_Init} to initialize these routines (e.g., acquire attribute keys
 for the topology information)?
+
+One advantage to using attributes (or equivalently a pointer to a
+structure) is it allows any information to be saved in with the
+communicator, not just some predefined fields.  
+
+If attributes are used for holding topology information, we need to
+\emph{add} a routine to initialize the corresponding keyval; this will
+allow the topology routines to be replaced as a module.
+
+Question: how do we define routines needed to support the MPI (not
+MPID) calls?  Should we have \code{MPIi} routines?  For topology, we
+could have \code{MPIi_Topo_init}.
 
 \subsubsection{\mpifunc{MPI_CARTDIM_GET}}
 \subsubsection{\mpifunc{MPI_CART_CREATE}}
@@ -793,7 +863,7 @@ would allow processes to avoid caching the description?  How would
 this work in the multi-method case where some processes might have
 shared memory and others might not?
 
-For systems with ordered deliverery, we may want a simpler completion
+For systems with ordered delivery, we may want a simpler completion
 model, one that has completion per destination process (or per process
 per window) rather than per RMA operation.  This is a further reason
 to require that completion flags be created, and that this creation
@@ -818,27 +888,73 @@ support for the group-based window completion (\code{MPI_Win_post}
 etc.), nor is there simple support for systems like the Cray T3E that
 have (roughly) hardware support for \mpifunc{MPI_Win_fence}.
 
+
 \subsubsection{\mpifunc{MPI_ACCUMULATE}}
 \subsubsection{\mpifunc{MPI_PUT}}
 \subsubsection{\mpifunc{MPI_GET}}
-\subsubsection{\mpifunc{MPI_WIN_C2F}}
-\subsubsection{\mpifunc{MPI_WIN_CALL_ERRHANDLER }}
-\subsubsection{\mpifunc{MPI_WIN_COMPLETE}}
-\subsubsection{\mpifunc{MPI_WIN_CREATE}}
-\subsubsection{\mpifunc{MPI_WIN_CREATE_ERRHANDLER}}
-\subsubsection{\mpifunc{MPI_WIN_F2C}}
+
 \subsubsection{\mpifunc{MPI_WIN_FENCE}}
+
+\subsubsection{\mpifunc{MPI_ALLOC_MEM}}
+\subsubsection{\mpifunc{MPI_FREE_MEM}}
+
+\subsubsection{\mpifunc{MPI_WIN_C2F}}
+Question:  are there any special values similar to the ones considered
+for datatypes and communicators?  For example, one bit could indicate
+whether all windows are in shared memory.
+
+\subsubsection{\mpifunc{MPI_WIN_F2C}}
+
+\subsubsection{\mpifunc{MPI_WIN_CREATE}}
 \subsubsection{\mpifunc{MPI_WIN_FREE}}
+
+\subsubsection{\mpifunc{MPI_WIN_CREATE_ERRHANDLER}}
+\subsubsection{\mpifunc{MPI_WIN_CALL_ERRHANDLER}}
 \subsubsection{\mpifunc{MPI_WIN_GET_ERRHANDLER}}
-\subsubsection{\mpifunc{MPI_WIN_GET_GROUP}}
-\subsubsection{\mpifunc{MPI_WIN_GET_NAME }}
-\subsubsection{\mpifunc{MPI_WIN_LOCK}}
-\subsubsection{\mpifunc{MPI_WIN_POST}}
 \subsubsection{\mpifunc{MPI_WIN_SET_ERRHANDLER}}
+
+\subsubsection{\mpifunc{MPI_WIN_GET_GROUP}}
+
+\subsubsection{\mpifunc{MPI_WIN_GET_NAME }}
 \subsubsection{\mpifunc{MPI_WIN_SET_NAME }}
+
+\subsubsection{\mpifunc{MPI_WIN_LOCK} and \mpifunc{MPI_WIN_UNLOCK}}
+There are two types of lock and unlock implementations.  In the most
+obvious, based on the name, \code{MPI_WIN_LOCK} waits until the
+request process acknowledges the lock.. This is appropriate when the
+window is in memory that is shared among the processes in the window
+object, such as a fully shared-memory implementation or a distributed
+shared memory implementation.
+
+For systems without direct access to the memory, an alternate but
+equally valid approach is to make the lock a local operation, and wait
+to issue it until the first RMA operation.  This is particularly
+appropriate when the RMA operation (e.g., the put or accumulate)
+involves a small amount of data and the interprocess communications
+have high latency.  In fact, in the high-latency case, we may prefer
+to hold all operations until the \code{MPI_WIN_UNLOCK} and then issue
+them in a single communication.  I believe this is similar to what BSP
+does, but for fence operations (I need the same discussion under fence).
+
+Question.  For the nonblocking lock case, should we have an info key
+for \mpifunc{MPI_WIN_CREATE} that asks for the blocking lock?  
+
+\subsubsection{\mpifunc{MPI_WIN_POST}}
 \subsubsection{\mpifunc{MPI_WIN_START}}
-\subsubsection{\mpifunc{MPI_WIN_UNLOCK}}
+\subsubsection{\mpifunc{MPI_WIN_COMPLETE}}
 \subsubsection{\mpifunc{MPI_WIN_WAIT}}
+
+\subsection{Starting and Ending MPI}
+
+\subsubsection{\mpifunc{MPI_ABORT}}
+\subsubsection{\mpifunc{MPI_INIT_THREAD}}
+\subsubsection{\mpifunc{MPI_QUERY_THREAD}}
+\subsubsection{\mpifunc{MPI_IS_THREAD_MAIN}}
+\subsubsection{\mpifunc{MPI_FINALIZED}}
+\subsubsection{\mpifunc{MPI_INIT}}
+\subsubsection{\mpifunc{MPI_INITIALIZED}}
+\subsubsection{\mpifunc{MPI_FINALIZE}}
+
 
 \subsection{Dynamic Processes}
 
@@ -854,6 +970,8 @@ of the MPICH routines.
 \subsubsection{\mpifunc{MPI_COMM_SPAWN}}
 \subsubsection{\mpifunc{MPI_COMM_SPAWN_MULTIPLE}}
 \subsubsection{\mpifunc{MPI_LOOKUP_NAME}}
+\subsubsection{\mpifunc{MPI_PUBLISH_NAME}}
+\subsubsection{\mpifunc{MPI_UNPUBLISH_NAME}}
 \subsubsection{\mpifunc{MPI_OPEN_PORT}}
 
 \subsection{User-Defined Requests}
@@ -869,7 +987,46 @@ Note that a user-defined request is started with callbacks (functions
 to call for query, cancel, and free); these need to be associated with
 the request.  
 
-\code{MPI_GREQUEST_COMPLETE}\\
+\subsubsection{\mpifunc{MPI_GREQUEST_START}}
+\subsubsection{\mpifunc{MPI_GREQUEST_COMPLETE}}
+
+\subsection{Error Handlers}
+
+
+\subsubsection{\mpifunc{MPI_ERRHANDLER_CREATE}}
+
+\subsubsection{\mpifunc{MPI_ERRHANDLER_FREE}}
+
+\subsubsection{\mpifunc{MPI_ERRHANDLER_GET}}
+
+\subsubsection{\mpifunc{MPI_ERRHANDLER_SET}}
+
+\subsubsection{\mpifunc{MPI_ERROR_CLASS}}
+
+\subsubsection{\mpifunc{MPI_ERROR_STRING}}
+
+\subsubsection{\mpifunc{MPI_ADD_ERROR_CLASS}}
+
+\subsubsection{\mpifunc{MPI_ADD_ERROR_CODE}}
+
+\subsubsection{\mpifunc{MPI_ADD_ERROR_STRING}}
+
+\subsection{Handle Transfers}
+
+\subsubsection{\mpifunc{MPI_ERRHANDLER_F2C}}
+\subsubsection{\mpifunc{MPI_ERRHANDLER_C2F}}
+\subsubsection{\mpifunc{MPI_GROUP_F2C}}
+\subsubsection{\mpifunc{MPI_GROUP_C2F}}
+\subsubsection{\mpifunc{MPI_INFO_F2C}}
+\subsubsection{\mpifunc{MPI_INFO_C2F}}
+\subsubsection{\mpifunc{MPI_OP_F2C}}
+\subsubsection{\mpifunc{MPI_OP_C2F}}
+\subsubsection{\mpifunc{MPI_REQUEST_F2C}}
+\subsubsection{\mpifunc{MPI_REQUEST_C2F}}
+\subsubsection{\mpifunc{MPI_STATUS_F2C}}
+\subsubsection{\mpifunc{MPI_STATUS_C2F}}
+\subsubsection{\mpifunc{MPI_TYPE_C2F}}
+\subsubsection{\mpifunc{MPI_TYPE_F2C}}
 
 \subsection{I/O}
 MPI I/O will be provided by ROMIO.  We expect to update ROMIO to exploit both
@@ -1358,22 +1515,7 @@ cache these items.
 \code{write_mostly}\\
 
 \subsection{MPI-1 Functions}
-\code{MPI_ABORT}\\
-\code{MPI_ADDRESS}\\
-\code{MPI_ERRHANDLER_CREATE}\\
-\code{MPI_ERRHANDLER_FREE}\\
-\code{MPI_ERRHANDLER_GET}\\
-\code{MPI_ERRHANDLER_SET}\\
-\code{MPI_ERROR_CLASS}\\
-\code{MPI_ERROR_STRING}\\
-\code{MPI_FINALIZE}\\
-\code{MPI_GET_COUNT}\\
-\code{MPI_GET_ELEMENTS}\\
 \code{MPI_GET_PROCESSOR_NAME}\\
-\code{MPI_INIT}\\
-\code{MPI_INITIALIZED}\\
-\code{MPI_OP_CREATE}\\
-\code{MPI_OP_FREE}\\
 \code{MPI_PCONTROL}\\
 \code{MPI_WTICK}\\
 \code{MPI_WTIME}\\
@@ -1383,46 +1525,19 @@ This also includes MPI-1 functions with significant new functionality,
 such as the collective communication routines that are extended, in
 MPI-2, from intracommunicators to intercommunicators.
 
-\code{MPI_ADD_ERROR_CLASS}\\
-\code{MPI_ALLOC_MEM}\\
-\code{MPI_FINALIZED}\\
-\code{MPI_FREE_MEM}\\
-\code{MPI_GET_ADDRESS}\\
 \code{MPI_GET_VERSION}\\
-\code{MPI_GROUP_C2F}\\
-\code{MPI_INFO_CREATE}\\
-\code{MPI_INFO_F2C}\\
-\code{MPI_INFO_FREE}\\
-\code{MPI_INIT_THREAD}\\
 \\
-\code{MPI_OP_C2F}\\
 \code{MPI_PACK_EXTERNAL}\\
-\\
-\code{MPI_PUBLISH_NAME}\\
-\code{MPI_UNPUBLISH_NAME}\\
-\\
-\code{MPI_QUERY_THREAD}\\
-\\
-\code{MPI_REDUCE}\\
+\code{MPI_PACK_EXTERNAL_SIZE}\\
+\code{MPI_UNPACK_EXTERNAL}\\
 \\
 \code{MPI_REGISTER_DATAREP}\\
 \\
-\code{MPI_REQUEST_C2F}\\
-\code{MPI_REQUEST_GET_STATUS}\\
-\\
 \code{MPI_SIZEOF}\\
 \\
-\code{MPI_STATUS_C2F}\\
-\code{MPI_STATUS_SET_CANCELLED}\\
-\\
 \code{MPI_TYPE_DUP}\\
-\code{MPI_TYPE_DUP_FN}\\
-\code{MPI_TYPE_C2F}\\
-\code{MPI_TYPE_F2C}\\
 \code{MPI_TYPE_MATCH_SIZE}\\
 \\
-\code{MPI_UNPACK_EXTERNAL}\\
-
 
 
 \subsection{Typedefs}

@@ -2937,11 +2937,30 @@ int MPID_Attr_delete( MPID_List *list, int keyval )
   key strings, and returning a pointer to an 'MPID_Info' structure 
   rather than an attribute.
 
+  One reason for the difference between these routines and the ones in
+  the MPI Standard is tha these allow the programmer direct access to the
+  contents of the 'MPID_Info' structure.  Thus, the various routines to 
+  discover the length of values and the number of keys are not
+  necessary.
+
   Questions
   
   The routines listed here assume that an info is just a linked list of 
   info items.  Another implementation would make 'MPI_Info' an 'MPID_List',
   and hang 'MPID_Info' records off of the list.  
+
+  Thread Safety
+
+  The info interface is not thread safe.  In particular, the routines
+  'MPI_INFO_GET_NKEYS' and 'MPI_INFO_GET_NTHKEY' assume that no other 
+  thread modifies the info key.  Further, 'MPI_INFO_DUP', while not 
+  explicitly advising implementers to be careful of one thread modifying the
+  'MPI_Info' structure while 'MPI_INFO_DUP' is copying it, requires that the
+  operation take place in a thread-safe manner.
+
+  We may want to have 'MPID_Info_find' fail if the list is modified by 
+  any thread after the initial 'MPID_Info' value is passed and until it 
+  returns the last element in the list.  
   T*/
 /*@
   MPID_Info_find - Find a info value for a given key string
@@ -2979,6 +2998,11 @@ MPID_Info *MPID_Info_find( MPID_Info *info, const char key[], int insert )
   Notes:
   This routine returns each element of an info list in turn.
   The first call should use 'NULL' for the value of 'prev'.  
+
+  Thread Safety:
+  This routine is not thread-safe.  If the 'MPID_Info' returned by 
+  'MPID_Info_list_walk' in one thread is deleted by 'MPID_Info_delete' in 
+  another thread, the behavior is undefined.  
 
   Module:
   Attribute
