@@ -588,6 +588,7 @@ int smpd_err_printf(char *str, ...)
 	}
 	else
 	{
+	    setvbuf(fout, NULL, _IONBF, 0);
 	    fprintf(fout, "%s", smpd_process.printf_buffer);
 	    fclose(fout);
 	}
@@ -664,6 +665,7 @@ int smpd_dbg_printf(char *str, ...)
 	}
 	else
 	{
+	    setvbuf(fout, NULL, _IONBF, 0);
 	    fprintf(fout, "%s", smpd_process.printf_buffer);
 	    fclose(fout);
 	}
