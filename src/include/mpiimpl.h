@@ -194,6 +194,35 @@ int MPIU_Internal_sys_error_printf( const char *, int, const char *str, ... ) AT
 /* end of mpimsg.h */
 /* ------------------------------------------------------------------------- */
 
+/*
+ * Use MPIU_SYSCALL to wrap system calls; this provides a convenient point
+ * for timing the calls and keeping track of the use of system calls.
+ * This macro simply invokes the system call and does not even handle
+ * EINTR.
+ * To use, 
+ *    MPIU_SYSCALL( return-value, name-of-call, args-in-parenthesis )
+ * e.g., change "n = read(fd,buf,maxn);" into
+ *    MPIU_SYSCALL( n,read,(fd,buf,maxn) );
+ * An example that prints each syscall to stdout is shown below. 
+ */
+#ifdef USE_LOG_SYSCALLS
+#define MPIU_SYSCALL(a_,b_,c_) { \
+    printf( "[%d]about to call %s\n", MPIR_Process.comm_world->rank,#b_);\
+          fflush(stdout); errno = 0;\
+    a_ = b_ c_; \
+    if ((a_)>=0 || errno==0) {\
+    printf( "[%d]%s returned %d\n", \
+          MPIR_Process.comm_world->rank, #b_, a_ );\
+    } \
+ else { \
+    printf( "[%d]%s returned %d (errno = %d,%s)\n", \
+          MPIR_Process.comm_world->rank, \
+          #b_, a_, errno, strerror(errno));\
+    };           fflush(stdout);}
+#else
+#define MPIU_SYSCALL(a_,b_,c_) a_ = b_ c_
+#endif
+
 /*TDSOverview.tex
   
   MPI has a number of data structures, most of which are represented by 
