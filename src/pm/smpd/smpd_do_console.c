@@ -95,7 +95,7 @@ int smpd_do_console()
 
 quit_job:
 
-    if (smpd_process.do_status && no_smpd)
+    if (smpd_process.do_status && (no_smpd || smpd_process.state_machine_ret_val != SMPD_SUCCESS))
     {
 	printf("no smpd running on %s\n", smpd_process.console_host);
 	smpd_process.dbg_state = saved_state;

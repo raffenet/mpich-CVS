@@ -446,6 +446,7 @@ typedef struct smpd_global_t
     HANDLE hSMPDDataMutex;
 #endif
     char printf_buffer[SMPD_MAX_DBG_PRINTF_LENGTH];
+    int state_machine_ret_val;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;

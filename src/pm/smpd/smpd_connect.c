@@ -129,7 +129,8 @@ smpd_global_t smpd_process =
 #ifdef HAVE_WINDOWS_H
       NULL,             /* hSMPDDataMutex          */
 #endif
-      ""                /* printf_buffer           */
+      "",               /* printf_buffer           */
+      SMPD_SUCCESS      /* state_machine_ret_val   */
     };
 
 int smpd_post_abort_command(char *fmt, ...)

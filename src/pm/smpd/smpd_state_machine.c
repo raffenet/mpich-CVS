@@ -3532,6 +3532,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 	    result = smpd_handle_op_connect(context, &event);
 	    if (result != SMPD_SUCCESS || event.error != SOCK_SUCCESS)
 	    {
+		smpd_process.state_machine_ret_val = (result != SMPD_SUCCESS) ? result : event.error;
 		smpd_dbg_printf("SOCK_OP_CONNECT failed, closing %s context.\n", smpd_get_context_str(context));
 		context->state = SMPD_CLOSING;
 		result = sock_post_close(context->sock);
