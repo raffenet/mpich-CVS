@@ -98,11 +98,10 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
 
     /* Create the shared memory object */
 #ifdef USE_POSIX_SHM
-    srand(getpid());
     for (i=0; i<10; i++)
     {
 	generate_shm_string(pOutput->key);
-	pOutput->id = shm_open(pOutput->key, O_RDWR | O_CREAT, 0600);
+	pOutput->id = shm_open(pOutput->key, O_EXCL | O_RDWR | O_CREAT, 0600);
 	if (pOutput->id != -1)
 	    break;
     }
@@ -366,6 +365,8 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
     pOutput->id = shm_open(pInput->key, O_RDWR, 0600);
     if (pOutput->id == -1)
     {
+	pOutput->error = errno;
+	/* printf("shm_open(%s) failed, error %d\n", pInput->key, errno); */
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_open", "**shm_open %s %d", pInput->key, errno);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ATTACH_TO_MEM);
 	return mpi_errno;
@@ -466,7 +467,7 @@ int MPIDI_CH3I_SHM_Unlink_mem(MPIDI_CH3I_Shmem_block_request_result *p)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_UNLINK_MEM);
 
 #ifdef USE_POSIX_SHM
-    /*printf("unlinking '%s'\n", p->name);*/
+    /* printf("[%d] unlinking '%s'\n", MPIR_Process.comm_world->rank, p->name); */
     ret_val = shm_unlink(p->name);
     if (ret_val == -1)
     {

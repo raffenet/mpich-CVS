@@ -200,10 +200,10 @@ fn_exit:
 #define MPID_SINGLE_ACTIVE_FACTOR      100
 
 #undef FUNCNAME
-#define FUNCNAME MPID_CH3I_Message_queue_progress
+#define FUNCNAME MPIDI_CH3I_Message_queue_progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_CH3I_Message_queue_progress()
+int MPIDI_CH3I_Message_queue_progress()
 {
     MPIDI_CH3I_Shmem_queue_info info;
     int num_bytes;
@@ -224,11 +224,12 @@ int MPID_CH3I_Message_queue_progress()
     if (num_bytes)
     {
 	vc_ptr = &MPIDI_CH3I_Process.pg->vc_table[info.pg_rank];
+	/* printf("rank %d attaching to shm(%s) from rank %d\n", MPIR_Process.comm_world->rank, info.info.name, info.pg_rank); */
 	rc = MPIDI_CH3I_SHM_Attach_to_mem(
 	    &info.info, &vc_ptr->ssm.shm_read_queue_info);
 	if (rc != MPI_SUCCESS)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MPIDI_CH3I_SHM_Attach_to_mem", "**MPIDI_CH3I_SHM_Attach_to_mem %d", vc_ptr->ssm.shm_read_queue_info.error); /*"MPIDI_CH3I_SHM_Attach_to_mem failed, error %d\n", vc_ptr->ssm.shm_read_queue_info.error);*/
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MPIDI_CH3I_SHM_Attach_to_mem", "**MPIDI_CH3I_SHM_Attach_to_mem %d", vc_ptr->ssm.shm_read_queue_info.error);
 	    return mpi_errno;
 	}
 	MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
@@ -314,10 +315,18 @@ int MPIDI_CH3_Progress_test()
     {
 	msgqIter = 0;
 	/*printf("[%d] calling message queue progress from test.\n", MPIR_Process.comm_world->rank);fflush(stdout);*/
-	MPID_CH3I_Message_queue_progress();
+	mpi_errno = MPID_CH3I_Message_queue_progress();
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**mqp_failure", 0);
+	}
     }
 #else
-    MPID_CH3I_Message_queue_progress();
+    mpi_errno = MPIDI_CH3I_Message_queue_progress();
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**mqp_failure", 0);
+    }
 #endif
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_TEST);
@@ -567,7 +576,13 @@ skip_sock_loop:
 	{
 	    msgqIter = 0;
 	    /*printf("[%d] calling message queue progress\n", MPIR_Process.comm_world->rank);fflush(stdout);*/
-	    MPID_CH3I_Message_queue_progress();
+	    mpi_errno = MPIDI_CH3I_Message_queue_progress();
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						 "**mqp_failure", 0);
+		goto fn_exit;
+	    }
 	}
     }
     while (completions == MPIDI_CH3I_progress_completions);
@@ -586,10 +601,10 @@ fn_exit:
 #define MPID_SINGLE_ACTIVE_FACTOR      100
 
 #undef FUNCNAME
-#define FUNCNAME MPID_CH3I_Message_queue_progress
+#define FUNCNAME MPIDI_CH3I_Message_queue_progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_CH3I_Message_queue_progress()
+int MPIDI_CH3I_Message_queue_progress()
 {
     MPIDI_CH3I_Shmem_queue_info info;
     int num_bytes;
@@ -873,7 +888,13 @@ skip_sock_loop:
 	if (msgqIter++ == MPIDI_CH3I_MSGQ_ITERATIONS)
 	{
 	    msgqIter = 0;
-	    MPID_CH3I_Message_queue_progress();
+	    mpi_errno = MPIDI_CH3I_Message_queue_progress();
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						 "**mqp_failure", 0);
+		goto fn_exit;
+	    }
 	}
     }
     while (completions == MPIDI_CH3I_progress_completions && is_blocking);

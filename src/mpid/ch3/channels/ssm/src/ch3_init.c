@@ -37,6 +37,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     int val_max_sz;
     char queue_name[100];
 
+    srand(getpid());
+    
     /*
      * Extract process group related information from PMI and initialize structures that track the process group connections,
      * MPI_COMM_WORLD, and MPI_COMM_SELF

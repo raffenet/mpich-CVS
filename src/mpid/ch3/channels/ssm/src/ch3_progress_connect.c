@@ -213,6 +213,9 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmconnect_getmem", 0);
 	return mpi_errno;
     }
+    /* printf("rank %d sending queue(%s) to rank %d\n", MPIR_Process.comm_world->rank, vc->ssm.shm_write_queue_info.name,
+       vc->ssm.pg_rank); */
+    
     vc->ssm.write_shmq = vc->ssm.shm_write_queue_info.addr;
     vc->ssm.write_shmq->head_index = 0;
     vc->ssm.write_shmq->tail_index = 0;
