@@ -1346,6 +1346,7 @@ void MPIR_WaitForDebugger( void );
 #define MPIR_ALLTOALL_SHORT_MSG       128
 #define MPIR_ALLTOALL_MEDIUM_MSG      262144
 #define MPIR_REDUCE_SCATTER_SHORT_MSG 512  
+#define MPIR_ALLGATHERV_MEDIUM_MSG    262144
 #define MPIR_SCATTER_SHORT_MSG        2048  /* for intercommunicator scatter */
 #define MPIR_GATHER_SHORT_MSG         2048  /* for intercommunicator scatter */
 
