@@ -5,7 +5,7 @@ C      See COPYRIGHT in top-level directory.
 C
       program main
       include 'mpif.h'
-      integer v, value;
+      integer v, value
       logical flag
       integer ierr, errs
       integer base(1024)
@@ -13,7 +13,7 @@ C
       integer win
       integer baseadd
       integer commsize
-      errs = 0;
+      errs = 0
       
       call mpi_init( ierr )
       call mpi_comm_size( MPI_COMM_WORLD, commsize, ierr )
@@ -77,6 +77,6 @@ C         endif
          print *, " Found ", errs, " errors"
       endif
 
-      call MPI_Finalize( ierr );
+      call MPI_Finalize( ierr )
 
       end
