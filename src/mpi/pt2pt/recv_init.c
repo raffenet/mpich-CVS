@@ -138,7 +138,7 @@ int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, int t
 	}
 	
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_RECV_INIT);
-	return MPI_ERR_NOMEM;
+	return MPIR_ERR_MEMALLOCFAILED;
     }
 
     mpi_errno = MPID_Recv_init(buf, count, datatype, source, tag, comm_ptr,

@@ -137,7 +137,7 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, in
 	request_ptrs = MPIU_Malloc(incount * sizeof(MPID_Request *));
 	if (request_ptrs == NULL)
 	{
-	    mpi_errno = MPI_ERR_NOMEM;
+	    mpi_errno = MPIR_ERR_MEMALLOCFAILED;
 	    goto fn_exit;
 	}
     }

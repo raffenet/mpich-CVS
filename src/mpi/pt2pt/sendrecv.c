@@ -142,7 +142,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 	if (reqs[0] == NULL)
 	{
 	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
-	    return MPI_ERR_NOMEM;
+	    return MPIR_ERR_MEMALLOCFAILED;
 	}
 	
 	reqs[0]->status.MPI_SOURCE = MPI_PROC_NULL;
@@ -163,7 +163,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 	    }
 	    
 	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
-	    return MPI_ERR_NOMEM;
+	    return MPIR_ERR_MEMALLOCFAILED;
 	}
 
 	reqs[1]->kind = MPID_REQUEST_SEND;
