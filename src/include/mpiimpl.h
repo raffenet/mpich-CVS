@@ -627,6 +627,9 @@ typedef struct MPID_Group_pmap_t {
     int          flag;      /* marker, used to implement group operations */
 } MPID_Group_pmap_t;
 
+/* Any changes in the MPID_Group structure must be made to the
+   predefined value in MPID_Group_builtin for MPI_GROUP_EMPTY in 
+   src/mpi/group/grouputil.c */
 typedef struct MPID_Group {
     int          handle;
     volatile int ref_count;
