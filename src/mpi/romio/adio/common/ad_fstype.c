@@ -18,6 +18,8 @@
 #include <sys/vfs.h>
 /* #include <linux/nfs_fs.h> this file is broken in newer versions of linux */
 #define NFS_SUPER_MAGIC 0x6969
+/* XXX: any way to do this so we don't need the magic number here? */
+#define PVFS2_SUPER_MAGIC 0x20030528
 #endif
 #ifdef FREEBSD
 #include <sys/param.h>
@@ -218,8 +220,9 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	if (fsbuf.f_type == NFS_SUPER_MAGIC) *fstype = ADIO_NFS;
 # if defined(ROMIO_PVFS)
 	else if (fsbuf.f_type == PVFS_SUPER_MAGIC) *fstype = ADIO_PVFS;
-# elif defined(ROMIO_PVFS2)
-	else if (1) fprintf(stderr, "specify 'pvfs2': for now!!!\n");
+# endif
+# if defined(ROMIO_PVFS2)
+	else if (fsbuf.f_type == PVFS2_SUPER_MAGIC) fprintf(stderr, "specify 'pvfs2': for now!!!\n");
 #endif
 	else *fstype = ADIO_UFS;
     }
