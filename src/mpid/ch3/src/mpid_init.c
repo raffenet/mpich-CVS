@@ -36,11 +36,10 @@ int MPID_Init(int * argc, char *** argp, int requested, int * provided,
        MPI_Comm_spawn_multiple. */
     if (has_parent)
     {
-	assert(!has_parent);
-	abort();  /* XXX - this functionality is not yet supported; also this
-		     should be a MPID_Abort() but we don't have support for
-		     that yet either.  Fortunately, every process should
-		     fail the same condition. */
+	/* XXX - functionality is not yet supported */
+	MPID_err_printf(FCNAME, "initialization of parent communicator is "
+			"UNIMPLEMENTED");
+	MPI_Abort(MPI_COMM_NULL, MPI_ERR_INTERN);
     }
     
     /* MT - only single threaded applications are supported at the moment... */
