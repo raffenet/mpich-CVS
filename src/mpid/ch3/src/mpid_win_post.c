@@ -9,7 +9,15 @@
 #include <pthread.h>
 #endif
 
-void *MPIDI_Win_wait_thread(void *arg);
+#ifdef HAVE_PTHREAD_H
+#define THREAD_RETURN_TYPE void *
+#elif defined(HAVE_WINTHREADS)
+#define THREAD_RETURN_TYPE DWORD
+#else
+#define THREAD_RETURN_TYPE int
+#endif
+
+THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg);
 
 int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 {
@@ -36,8 +44,7 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
     return MPI_SUCCESS;
 }
 
-
-void *MPIDI_Win_wait_thread(void *arg)
+THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
 {
     int comm_size, src, *nops_from_proc, rank, i, j, *tags;
     MPI_Comm comm;
@@ -93,7 +100,7 @@ void *MPIDI_Win_wait_thread(void *arg)
     nops_from_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
     if (!nops_from_proc) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-        return (void*)mpi_errno;
+        return (THREAD_RETURN_TYPE)mpi_errno;
     }
 
     /* We need to translate the ranks of the processes in
@@ -106,12 +113,12 @@ void *MPIDI_Win_wait_thread(void *arg)
     ranks_in_post_grp = (int *) MPIU_Malloc(post_grp_size * sizeof(int));
     if (!ranks_in_post_grp) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-        return (void*)mpi_errno;
+        return (THREAD_RETURN_TYPE)mpi_errno;
     }
     ranks_in_win_grp = (int *) MPIU_Malloc(post_grp_size * sizeof(int));
     if (!ranks_in_win_grp) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-        return (void*)mpi_errno;
+        return (THREAD_RETURN_TYPE)mpi_errno;
     }
 
     for (i=0; i<post_grp_size; i++)
@@ -124,20 +131,20 @@ void *MPIDI_Win_wait_thread(void *arg)
     reqs = (MPI_Request *)  MPIU_Malloc(post_grp_size*sizeof(MPI_Request));
     if (!reqs) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-        return (void*)mpi_errno;
+        return (THREAD_RETURN_TYPE)mpi_errno;
     }
     
     tags = (int *) MPIU_Calloc(comm_size, sizeof(int)); 
     if (!tags) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-        return (void*)mpi_errno;
+        return (THREAD_RETURN_TYPE)mpi_errno;
     }
 
     for (i=0; i<post_grp_size; i++) {
         src = ranks_in_win_grp[i];
         mpi_errno = NMPI_Irecv(&nops_from_proc[src], 1, MPI_INT, src,
                                tags[src], comm, &reqs[i]);
-        if (mpi_errno) return (void*)mpi_errno;
+        if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
         tags[src]++;
     }
 
@@ -145,7 +152,7 @@ void *MPIDI_Win_wait_thread(void *arg)
     MPIU_Free(ranks_in_post_grp);
 
     mpi_errno = NMPI_Waitall(post_grp_size, reqs, MPI_STATUSES_IGNORE);
-    if (mpi_errno) return (void*)mpi_errno;
+    if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
 
     /* Now for each op for which this process is a target, first
        get the info regarding that op and then post an isend or
@@ -161,7 +168,7 @@ void *MPIDI_Win_wait_thread(void *arg)
                                   sizeof(MPIU_RMA_op_info), MPI_BYTE, 
                                   src, tags[src], comm,
                                   MPI_STATUS_IGNORE);
-            if (mpi_errno) return (void*)mpi_errno;
+            if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
             tags[src]++;
             
             if (rma_op_info.datatype_kind == MPID_RMA_DATATYPE_DERIVED) {
@@ -171,20 +178,20 @@ void *MPIDI_Win_wait_thread(void *arg)
                                       sizeof(MPIU_RMA_dtype_info),
                                       MPI_BYTE, src, tags[src], comm,
                                       MPI_STATUS_IGNORE);
-                if (mpi_errno) return (void*)mpi_errno;
+                if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
                 tags[src]++;
 
                 /* recv dataloop */
                 dataloop = (void *) MPIU_Malloc(dtype_info.loopsize);
                 if (!dataloop) {
                     mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-                    return (void*)mpi_errno;
+                    return (THREAD_RETURN_TYPE)mpi_errno;
                 }
 
                 mpi_errno = NMPI_Recv(dataloop, dtype_info.loopsize,
                                        MPI_BYTE, src, tags[src], comm,
                                        MPI_STATUS_IGNORE);
-                if (mpi_errno) return (void*)mpi_errno;
+                if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
                 tags[src]++;
 
                 /* create derived datatype */
@@ -193,7 +200,7 @@ void *MPIDI_Win_wait_thread(void *arg)
                 new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
                 if (!new_dtp) {
                     mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**nomem", 0);
-                    return (void*)mpi_errno;
+                    return (THREAD_RETURN_TYPE)mpi_errno;
                 }
                     
                 /* Note: handle is filled in by MPIU_Handle_obj_alloc() */
@@ -240,7 +247,7 @@ void *MPIDI_Win_wait_thread(void *arg)
                                       rma_op_info.datatype,
                                       src, tags[src], comm,
                                       MPI_STATUS_IGNORE);
-                if (mpi_errno) return (void*)mpi_errno;
+                if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
                 break;
             case MPID_REQUEST_GET:
                 /* send the get */
@@ -250,7 +257,7 @@ void *MPIDI_Win_wait_thread(void *arg)
                                       rma_op_info.count,
                                       rma_op_info.datatype,
                                       src, tags[src], comm);
-                if (mpi_errno) return (void*)mpi_errno;
+                if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
                 break;
             case MPID_REQUEST_ACCUMULATE:
                 /* recv the data into a temp buffer and perform
@@ -258,7 +265,7 @@ void *MPIDI_Win_wait_thread(void *arg)
                 mpi_errno =
                     NMPI_Type_get_true_extent(rma_op_info.datatype, 
                                               &true_lb, &true_extent);  
-                if (mpi_errno) return (void*)mpi_errno;
+                if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
 
                 MPID_Datatype_get_extent_macro(rma_op_info.datatype, 
                                                extent); 
@@ -266,7 +273,7 @@ void *MPIDI_Win_wait_thread(void *arg)
                                       (MPIR_MAX(extent,true_extent)));  
                 if (!tmp_buf) {
                     mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-                    return (void*)mpi_errno;
+                    return (THREAD_RETURN_TYPE)mpi_errno;
                 }
                 /* adjust for potential negative lower bound in datatype */
                 tmp_buf = (void *)((char*)tmp_buf - true_lb);
@@ -276,7 +283,7 @@ void *MPIDI_Win_wait_thread(void *arg)
                                       rma_op_info.datatype,
                                       src, tags[src], comm,
                                       MPI_STATUS_IGNORE);
-                if (mpi_errno) return (void*)mpi_errno;
+                if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
                 
                 op = rma_op_info.op;
                 if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
@@ -286,7 +293,7 @@ void *MPIDI_Win_wait_thread(void *arg)
                 else {
                     mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
                                                       "**opundefined","**opundefined %s", "only predefined ops valid for MPI_Accumulate" );
-                    return (void*)mpi_errno;
+                    return (THREAD_RETURN_TYPE)mpi_errno;
                 }
 
                 win_buf_addr = (char *) win_ptr->base +
@@ -321,7 +328,7 @@ void *MPIDI_Win_wait_thread(void *arg)
                     if (!dloop_vec) {
                         mpi_errno = MPIR_Err_create_code(
                             MPI_ERR_OTHER, "**nomem", 0 ); 
-                        return (void*)mpi_errno;
+                        return (THREAD_RETURN_TYPE)mpi_errno;
                     }
                     
                     MPID_Segment_pack_vector(segp, first, &last,
@@ -345,7 +352,7 @@ void *MPIDI_Win_wait_thread(void *arg)
             default:
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
                                                   "****intern","**opundefined %s", "RMA target received unknown RMA operation" );
-                return (void*)mpi_errno;
+                return (THREAD_RETURN_TYPE)mpi_errno;
             }
             tags[src]++;
 
@@ -366,5 +373,5 @@ void *MPIDI_Win_wait_thread(void *arg)
     MPIR_Group_release(win_ptr->post_group_ptr);
     win_ptr->post_group_ptr = NULL; 
 
-    return (void*)mpi_errno;
+    return (THREAD_RETURN_TYPE)mpi_errno;
 }
