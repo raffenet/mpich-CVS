@@ -488,5 +488,19 @@ int MPIR_Type_flatten(MPI_Datatype type,
 		      MPI_Aint *off_array,
 		      int *size_array,
 		      MPI_Aint *array_len_p);
+
+void MPID_Segment_pack_external32(struct DLOOP_Segment *segp,
+				  DLOOP_Offset first,
+				  DLOOP_Offset *lastp, 
+				  void *pack_buffer);
+
+void MPID_Segment_unpack_external32(struct DLOOP_Segment *segp,
+				    DLOOP_Offset first,
+				    DLOOP_Offset *lastp,
+				    DLOOP_Buffer unpack_buffer);
+
+MPI_Aint MPID_Datatype_size_external32(MPI_Datatype type);
+MPI_Aint MPIDI_Datatype_get_basic_size_external32(MPI_Datatype el_type);
+
 /* end of file */
 #endif
