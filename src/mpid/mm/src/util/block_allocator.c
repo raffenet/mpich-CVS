@@ -11,7 +11,7 @@ struct BlockAllocator_struct
     struct BlockAllocator_struct *pNextAllocation;
     unsigned int nBlockSize;
     int nCount, nIncrementSize;
-#ifdef ALLOCATOR_LOCKING
+#ifdef WITH_ALLOCATOR_LOCKING
     MPIDU_Lock_t lock;
 #endif
 };
@@ -33,7 +33,7 @@ BlockAllocator BlockAllocInit(unsigned int blocksize, int count, int incrementsi
     p->nCount = count;
     p->nBlockSize = blocksize;
     p->pNextFree = (void**)(p + 1);
-#ifdef ALLOCATOR_LOCKING
+#ifdef WITH_ALLOCATOR_LOCKING
     MPIDU_Init_lock(&p->lock);
 #endif
 
@@ -63,7 +63,7 @@ void * BlockAlloc(BlockAllocator p)
 {
     void *pVoid;
     
-#ifdef ALLOCATOR_LOCKING
+#ifdef WITH_ALLOCATOR_LOCKING
     MPIDU_Lock(&p->lock);
 #endif
 
@@ -80,7 +80,7 @@ void * BlockAlloc(BlockAllocator p)
     else
 	p->pNextFree = *(p->pNextFree);
 
-#ifdef ALLOCATOR_LOCKING
+#ifdef WITH_ALLOCATOR_LOCKING
     MPIDU_Unlock(&p->lock);
 #endif
 
@@ -89,7 +89,7 @@ void * BlockAlloc(BlockAllocator p)
 
 int BlockFree(BlockAllocator p, void *pBlock)
 {
-#ifdef ALLOCATOR_LOCKING
+#ifdef WITH_ALLOCATOR_LOCKING
     MPIDU_Lock(&p->lock);
 #endif
 
@@ -97,7 +97,7 @@ int BlockFree(BlockAllocator p, void *pBlock)
     *((void**)pBlock) = p->pNextFree;
     p->pNextFree = pBlock;
 
-#ifdef ALLOCATOR_LOCKING
+#ifdef WITH_ALLOCATOR_LOCKING
     MPIDU_Unlock(&p->lock);
 #endif
 
