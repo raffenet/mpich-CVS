@@ -60,7 +60,13 @@ cpi_trace: cpi.o
 cpilog: cpilog.o
 	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm 
 
+cpilog_pack: cpilog_pack.o
+	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm 
+
 fpilog: fpilog.o
+	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(FLIB_PATH) $(DEBUG_LIBS) -lm
+
+fpilog_pack: fpilog_pack.o
 	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(FLIB_PATH) $(DEBUG_LIBS) -lm
 
 srtest: srtest.o

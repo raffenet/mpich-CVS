@@ -20,6 +20,9 @@ int main( int argc, char *argv[])
         event3a, event3b, event4a, event4b;
     char processor_name[ MPI_MAX_PROCESSOR_NAME ];
 
+    MPE_LOG_BYTES  bytebuf;
+    int            bytebuf_pos;
+
     MPI_Init( &argc,&argv );
         
         MPI_Pcontrol( 0 );
@@ -51,9 +54,12 @@ int main( int argc, char *argv[])
 
     if ( myid == 0 ) {
         MPE_Describe_state( event1a, event1b, "Broadcast", "red" );
-        MPE_Describe_state( event2a, event2b, "Sync", "orange" );
-        MPE_Describe_state( event3a, event3b, "Compute", "blue" );
-        MPE_Describe_state( event4a, event4b, "Reduce", "green" );
+        MPE_Describe_info_state( event2a, event2b, "Sync", "orange",
+                                 "comment = %s" );
+        MPE_Describe_info_state( event3a, event3b, "Compute", "blue",
+                                 "mypi = %E computed at iteration %d." );
+        MPE_Describe_info_state( event4a, event4b, "Reduce", "green",
+                                 "final pi = %E at iteration %d." );
     }
 
     if ( myid == 0 ) {
@@ -74,7 +80,9 @@ int main( int argc, char *argv[])
     
         MPE_Log_event( event2a, 0, NULL );
         MPI_Barrier( MPI_COMM_WORLD );
-        MPE_Log_event( event2b, 0, NULL );
+            bytebuf_pos = 0;
+            MPE_Log_pack( bytebuf, &bytebuf_pos, 's', 11, "cpilog sync" );
+        MPE_Log_event( event2b, 0, bytebuf );
 
         MPE_Log_event( event3a, 0, NULL );
         h   = 1.0 / (double) n;
@@ -84,12 +92,18 @@ int main( int argc, char *argv[])
             sum += f(x);
         }
         mypi = h * sum;
-        MPE_Log_event( event3b, 0, NULL );
+            bytebuf_pos = 0;
+            MPE_Log_pack( bytebuf, &bytebuf_pos, 'E', 1, &mypi );
+            MPE_Log_pack( bytebuf, &bytebuf_pos, 'd', 1, &jj );
+        MPE_Log_event( event3b, 0, bytebuf );
 
         pi = 0.0;
         MPE_Log_event( event4a, 0, NULL );
         MPI_Reduce( &mypi, &pi, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD );
-        MPE_Log_event( event4b, 0, NULL );
+            bytebuf_pos = 0;
+            MPE_Log_pack( bytebuf, &bytebuf_pos, 'E', 1, &pi );
+            MPE_Log_pack( bytebuf, &bytebuf_pos, 'd', 1, &jj );
+        MPE_Log_event( event4b, 0, bytebuf );
     }
 /*
     MPE_Finish_log( "cpilog" );
