@@ -33,6 +33,13 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#else
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+#ifdef HAVE_STDARG_H
+#include <stdarg.h>
+#endif
 #endif
 
 #ifdef HAVE_SYS_TYPES_H
@@ -147,8 +154,8 @@ int err_printf(char *str, ...);
 #ifdef HAVE_STRDUP
 #define MPIU_Strdup(a)    strdup(a)
 #else
-#define MPIU_Strdup(a)    ?????
-#error 'No Strdup available - need to provide one'
+/* Don't define MPIU_Strdup, provide it in safestr.c */
+char *MPIU_Strdup( const char *a )
 #endif
 #endif
 void MPIU_trinit ( int );
@@ -168,6 +175,9 @@ void MPIU_TrSetMaxMem ( int );
 void MPIU_trdump ( FILE * );
 void MPIU_trSummary ( FILE * );
 void MPIU_trdumpGrouped ( FILE * );
+
+/* Safer string routines */
+int MPIU_Strncpy( char *, const char *, size_t );
 
 /* Memory allocation stack */
 #define MAX_MEM_STACK 16
@@ -974,6 +984,8 @@ extern MPICH_PerThread_t MPIR_Thread;
 #define MPID_Comm_thread_unlock( ptr )
 #define MPID_Common_thread_lock()
 #define MPID_Common_thread_unlock()
+#define MPID_Thread_lock( ptr )
+#define MPID_Thread_unlock( ptr )
 #else
 #define MPID_Comm_thread_lock() MPID_Thread_lock( &ptr->access_lock)
 #define MPID_Comm_thread_unlock() MPID_Thread_unlock( &ptr->access_lock )
@@ -1098,6 +1110,9 @@ extern int MPID_THREAD_LEVEL;
 #define MPIR_ERRTEST_ARGNULL(arg,arg_name,err) \
    if (!arg) {\
        err = MPIR_Err_create_code( MPI_ERR_ARG, "**nullptr", "**nullptr %s", arg_name ); } 
+#define MPIR_ERRTEST_ARGNEG(arg,arg_name,err) \
+   if (!arg) {\
+       err = MPIR_Err_create_code( MPI_ERR_ARG, "**argneg", "**argneg %s %d", arg_name, arg ); } 
 #define MPIR_ERRTEST_INTRA_ROOT(comm_ptr,root,err) \
   if ((root) <= MPI_PROC_NULL || (root) >= (comm_ptr)->local_size) {\
       err = MPIR_Err_create_code( MPI_ERR_ROOT, "**root", "**root %d", root );}

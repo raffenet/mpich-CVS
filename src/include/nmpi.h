@@ -17,5 +17,8 @@
 #define NMPI_Wait PMPI_Wait
 #define NMPI_Allreduce PMPI_Allreduce
 #define NMPI_Allgather PMPI_Allgather
-
+#define NMPI_Comm_get_attr PMPI_Comm_get_attr
+#define NMPI_Comm_set_attr PMPI_Comm_set_attr
+#define NMPI_Comm_create_keyval PMPI_Comm_create_keyval 
+#define NMPI_Comm_free_keyval PMPI_Comm_free_keyval 
 #endif /* MPICH_NMPI_H_INCLUDED */
