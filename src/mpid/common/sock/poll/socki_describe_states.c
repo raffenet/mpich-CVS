@@ -135,10 +135,12 @@ int MPIDU_Socki_describe_timer_states()
 		       MPID_STATE_MPIDU_SOCKI_READ,
 		       "socki_handle_read",
 		       get_random_color_str());
+/*
     RLOG_DescribeState(g_pRLOG,
 		       MPID_STATE_MPIDU_SOCKI_WRITE,
 		       "socki_handle_write",
 		       get_random_color_str());
+*/
     RLOG_DescribeState(g_pRLOG,
 		       MPID_STATE_MPIDU_SOCKI_SOCK_ALLOC,
 		       "socki_alloc",
@@ -147,6 +149,7 @@ int MPIDU_Socki_describe_timer_states()
 		       MPID_STATE_MPIDU_SOCKI_SOCK_FREE,
 		       "socki_free",
 		       get_random_color_str());
+/*
     RLOG_DescribeState(g_pRLOG,
 		       MPID_STATE_MPIDU_SOCKI_EVENT_ENQUEUE,
 		       "socki_event_enqueue",
@@ -159,6 +162,7 @@ int MPIDU_Socki_describe_timer_states()
 		       MPID_STATE_MPIDU_SOCKI_ADJUST_IOV,
 		       "socki_adjust_iov",
 		       get_random_color_str());
+*/
     RLOG_DescribeState(g_pRLOG,
 		       MPID_STATE_READ,
 		       "read",
