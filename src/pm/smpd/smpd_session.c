@@ -285,11 +285,13 @@ SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, c
     if (exists(exe_path))
     {
 	*namepart = strrchr(exe_path, '/');
-	*(*namepart - 1) = '\0'; /* separate the path from the executable */
+	**namepart = '\0'; /* separate the path from the executable */
+	*namepart = *namepart + 1;
 	return SMPD_TRUE;
     }
     *namepart = strrchr(exe_path, '/');
-    *(*namepart - 1) = '\0'; /* separate the path from the executable */
+    **namepart = '\0'; /* separate the path from the executable */
+    *namepart = *namepart + 1;
 
     /* add searching of the path and verifying file exists */
     path = getenv("PATH");
@@ -297,7 +299,8 @@ SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, c
     if (search_path(path, temp_str, maxlen, exe_path))
     {
 	*namepart = strrchr(exe_path, '/');
-	*(*namepart - 1) = '\0';
+	**namepart = '\0';
+	*namepart = *namepart + 1;
 	return SMPD_TRUE;
     }
     return SMPD_FALSE;

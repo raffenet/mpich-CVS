@@ -903,13 +903,43 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     char str[1024];
     const char *str_iter;
     int total, num_chars;
+    char *actual_exe, exe_data[SMPD_MAX_EXE_LENGTH];
+    const char *args;
+    char temp_exe[SMPD_MAX_EXE_LENGTH];
+    int num_chars;
 
     smpd_enter_fn("smpd_launch_process");
+
+    /* resolve the executable name */
+    if (process->path[0] != '\0')
+    {
+	args = smpd_get_string(process->exe, temp_exe, SMPD_MAX_EXE_LENGTH, &num_chars);
+	smpd_dbg_printf("searching for '%s' in '%s'\n", temp_exe, process->path);
+	if (smpd_search_path(process->path, temp_exe, SMPD_MAX_EXE_LENGTH, exe_data))
+	{
+	    if (args != NULL)
+	    {
+		strncat(exe_data, " ", SMPD_MAX_EXE_LENGTH - strlen(exe_data));
+		strncat(exe_data, args, SMPD_MAX_EXE_LENGTH - strlen(exe_data));
+		exe_data[SMPD_MAX_EXE_LENGTH-1] = '\0';
+	    }
+	    actual_exe = exe_data;
+	}
+	else
+	{
+	    actual_exe = process->exe;
+	}
+    }
+    else
+    {
+	actual_exe = process->exe;
+    }
 
     /* create argv from the command */
     i = 0;
     total = 0;
-    str_iter = process->exe;
+    /*str_iter = process->exe;*/
+    str_iter = actual_exe;
     while (str_iter)
     {
 	str_iter = smpd_get_string(str_iter, &args[total],
