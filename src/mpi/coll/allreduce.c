@@ -423,6 +423,11 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
                 MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             }
 
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
+		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    }
+
             if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {
                 MPID_Op_get_ptr(op, op_ptr);
                 MPID_Op_valid_ptr( op_ptr, mpi_errno );
