@@ -73,63 +73,16 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
 	if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	{
 	    /* Read operation complete */
-	    MPIDI_CA_t ca = req->dev.ca;
-	    
 	    vc->ch.recv_active = NULL;
 	    mpi_errno = MPIDI_CH3U_Handle_recv_req(vc, req);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    }
-	    if (req->dev.iov_count == 0)
+	    if (req->dev.iov_count == 0 && vc->ch.recv_active == NULL)
 	    {
 		vc->ch.shm_reading_pkt = TRUE;
 	    }
-
-#if 0
-	    if (ca == MPIDI_CH3_CA_COMPLETE)
-	    {
-		MPIDI_DBG_PRINTF((65, FCNAME, "received requested data, decrementing CC"));
-		/* mark data transfer as complete adn decrment CC */
-		req->dev.iov_count = 0;
-		MPIDI_CH3U_Request_complete(req);
-		vc->ch.shm_reading_pkt = TRUE;
-		MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
-		MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
-		return MPI_SUCCESS;
-	    }
-	    else if (ca < MPIDI_CH3_CA_END_CH3)
-	    {
-		/* XXX - This code assumes that if another read is not posted by the device during the callback, then the
-		   device is not expecting any more data for request.  As a result, the channels posts a read for another
-		   packet */
-		MPIDI_DBG_PRINTF((65, FCNAME, "finished receiving iovec, calling CH3U_Handle_recv_req()"));
-		MPIDI_CH3U_Handle_recv_req(vc, req);
-		if (req->dev.iov_count == 0)
-		{
-		    MPIDI_DBG_PRINTF((65, FCNAME, "request (assumed) complete, posting new recv packet"));
-		    vc->ch.shm_reading_pkt = TRUE;
-		    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
-		    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
-		    return MPI_SUCCESS;
-		}
-	    }
-	    else
-	    {
-#ifdef MPICH_DBG_OUTPUT
-		/*
-		assert(ca != MPIDI_CH3I_CA_HANDLE_PKT);
-		assert(ca < MPIDI_CH3_CA_END_CH3);
-		*/
-		if (ca == MPIDI_CH3I_CA_HANDLE_PKT || ca >= MPIDI_CH3_CA_END_CH3)
-		{
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ca", "**ca %d", ca);
-		    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
-		    return mpi_errno;
-		}
-#endif
-	    }
-#endif
 	}
 	else
 	{
@@ -148,7 +101,6 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
 	    req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset));
     }
     
-    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
     return mpi_errno;
 }
@@ -201,8 +153,6 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 	    if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	    {
 		/* Write operation complete */
-		MPIDI_CA_t ca = req->dev.ca;
-			
 		vc->ch.send_active = NULL;
 
 		mpi_errno = MPIDI_CH3U_Handle_send_req(vc, req);
