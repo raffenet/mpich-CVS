@@ -1197,6 +1197,9 @@ dnl PAC_CHECK_SIZEOF_DERIVED - Get the size of a user-defined type,
 dnl such as a struct
 dnl
 dnl PAC_CHECK_SIZEOF_DERIVED(shortname,definition,defaultsize)
+dnl Like AC_CHECK_SIZEOF, but handles arbitrary types.
+dnl Unlike AC_CHECK_SIZEOF, does not define SIZEOF_xxx (because
+dnl autoheader can't handle this case)
 dnl D*/
 AC_DEFUN(PAC_CHECK_SIZEOF_DERIVED,[
 changequote(<<,>>)dnl
@@ -1215,6 +1218,6 @@ main()
   exit(0);
 }],AC_CV_NAME=`cat conftestval`,AC_CV_NAME=0,ifelse([$3],,,AC_CV_NAME=$3))])
 AC_MSG_RESULT($AC_CV_NAME)
-AC_DEFINE_UNQUOTED(AC_TYPE_NAME,$AC_CV_NAME)
+dnl AC_DEFINE_UNQUOTED(AC_TYPE_NAME,$AC_CV_NAME)
 undefine([AC_TYPE_NAME])undefine([AC_CV_NAME])
 ])
