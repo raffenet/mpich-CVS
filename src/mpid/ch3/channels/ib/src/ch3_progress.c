@@ -517,12 +517,14 @@ static inline void handle_written(MPIDI_VC * vc)
 	    }
 	    else
 	    {
+		MPIDI_DBG_PRINTF((65, FCNAME, "iovec updated by %d bytes but not complete\n", nb));
 		assert(req->ib.iov_offset < req->ch3.iov_count);
 		break;
 	    }
 	}
 	else
 	{
+	    MPIDI_DBG_PRINTF((65, FCNAME, "ibu_post_writev returned %d bytes\n", nb));
 	    break;
 	}
     }
