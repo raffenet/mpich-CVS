@@ -72,7 +72,13 @@ sub ProcessFile {
 		# also extract the name from the state
 		$funcname = $state_name;
 		$funcname =~ s/MPI.*_STATE_//g;
-		$statenames{$state_name} = "$filename:$funcname";
+		if (defined($statenames{$state_name})) {
+		    # Override the name with 
+		    $statenames{$state_name} = "many:$funcname";
+		}
+		else {
+		    $statenames{$state_name} = "$filename:$funcname";
+		}
 	    }
 	    else {
 		$statenames{$state_name} = $fcname;
