@@ -239,7 +239,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
     DLOOP_SEGMENT_LOAD_LOCAL_VALUES;
 
     /* first we ensure that stream_off and first are in the same spot */
-    if (first != stream_off) {
+    if (first != (int)stream_off) {
 	int tmp_last;
 
 #ifdef M_VERBOSE
