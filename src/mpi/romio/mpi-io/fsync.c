@@ -54,7 +54,7 @@ int MPI_File_sync(MPI_File fh)
     ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
-    ADIOI_TEST_DEFERRED(fh, myname);
+    ADIOI_TEST_DEFERRED(fh, "MPI_File_sync");
 
     ADIO_Flush(fh, &error_code);
 #ifdef MPI_hpux
