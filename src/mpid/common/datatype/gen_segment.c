@@ -72,8 +72,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	DLOOP_Handle_get_size_macro(handle, elmsize);
 
 	/* NOTE: ELMSIZE IS WRONG */
-	segp->builtin_loop.kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK 
-	    | (elmsize << DLOOP_ELMSIZE_SHIFT);
+	segp->builtin_loop.kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK | (elmsize << DLOOP_ELMSIZE_SHIFT);
 	segp->builtin_loop.handle = handle;
 	segp->builtin_loop.loop_params.c_t.count = count;
 	segp->builtin_loop.loop_params.c_t.dataloop = 0;
@@ -98,8 +97,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 
 	DLOOP_Handle_get_size_macro(handle, elmsize);
 	/* NOTE: ELMSIZE IS WRONG */
-	segp->builtin_loop.kind = DLOOP_KIND_CONTIG 
-	    | (elmsize << DLOOP_ELMSIZE_SHIFT);
+	segp->builtin_loop.kind = DLOOP_KIND_CONTIG | (elmsize << DLOOP_ELMSIZE_SHIFT);
 	segp->builtin_loop.loop_params.c_t.count = count;
 	DLOOP_Handle_get_loopptr_macro(handle, segp->builtin_loop.loop_params.c_t.dataloop);
 	segp->builtin_loop.el_size = elmsize;
@@ -121,8 +119,18 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
      * maximum value.
      */
     elmp = &(segp->stackelm[0]);
-    elmp->loop_p      = dlp;
-    elmp->orig_count  = dlp->loop_params.count;
+    elmp->loop_p = dlp;
+
+    /* NOTE: It's easier later to use blksize for the size of a contig rather than count,
+     * because in every other case blksize is the size of a contiguous set of types.
+     */
+    if ((dlp->kind & DLOOP_KIND_MASK) == DLOOP_KIND_CONTIG) {
+	elmp->orig_count = 1;
+    }
+    else {
+	elmp->orig_count = dlp->loop_params.count;
+    }
+    
     elmp->curcount    = elmp->orig_count;
     elmp->orig_offset = 0;
 
@@ -142,11 +150,19 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	/* for the rest of the elements, we only fill in loop_p, orig_count, and
 	 * orig_block.  the rest are filled in as we process the type (and for
 	 * indexed case orig_block will be overwritten as well).
+	 *
+	 * except that we need to fill in curcount for the blocksize calculation
+	 * to work correctly.
 	 */
 	elmp = &(segp->stackelm[i]);
-	elmp->curcount   = dlp->loop_params.count;
 	elmp->loop_p     = dlp; /* DO NOT MOVE THIS BELOW THE Stackelm CALLS! */
-	elmp->orig_count = elmp->curcount;
+	if ((dlp->kind & DLOOP_KIND_MASK) == DLOOP_KIND_CONTIG) {
+	    elmp->orig_count = 1;
+	}
+	else {
+	    elmp->orig_count = dlp->loop_params.count;
+	}
+	elmp->curcount   = elmp->orig_count; /* NEEDED FOR BLOCKSIZE CALCULATION */
 	elmp->orig_block = DLOOP_Stackelm_blocksize(elmp);
 
 	if (i < depth-1) {
@@ -323,8 +339,6 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
 	    switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		case DLOOP_KIND_CONTIG:
-		    piece_size = cur_elmp->curcount * basic_size;
-		    break;
          	case DLOOP_KIND_BLOCKINDEXED:
 		case DLOOP_KIND_INDEXED:
 		    piece_size = cur_elmp->curblock * basic_size;
@@ -377,8 +391,6 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		/* NOTE: THIS CODE ASSUMES THAT WE STOP ON WHOLE BASIC SIZES!!! */
 		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		    case DLOOP_KIND_CONTIG:
-			cur_elmp->curcount -= piece_size / basic_size;
-			break;
 		    case DLOOP_KIND_BLOCKINDEXED:
 		    case DLOOP_KIND_INDEXED:
 			cur_elmp->curblock -= piece_size / basic_size;
@@ -509,7 +521,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		case DLOOP_KIND_CONTIG:
 		    next_elmp->orig_offset = cur_elmp->curoffset +
-			count_index * cur_elmp->loop_p->el_extent;
+			block_index * cur_elmp->loop_p->el_extent;
 		    break;
 		case DLOOP_KIND_VECTOR:
 		    /* NOTE: stride is in bytes */
@@ -597,7 +609,10 @@ static inline int DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp)
        
     switch(dlp->kind & DLOOP_KIND_MASK) {
 	case DLOOP_KIND_CONTIG:
-	    return 1;
+	    return dlp->loop_params.c_t.count; /* NOTE: we're dropping the count into the
+						* blksize field for contigs, as described
+						* in the init call.
+						*/
 	    break;
 	case DLOOP_KIND_VECTOR:
 	    return dlp->loop_params.v_t.blocksize;

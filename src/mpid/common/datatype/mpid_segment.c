@@ -163,7 +163,6 @@ static int MPID_Segment_piece_pack_vector(DLOOP_Handle handle,
 		    size);
 #endif
     
-    /* for now we'll just be stupid about this */
     if (paramp->u.pack_vector.index > 0 && ((char *)dbufp + dbufoff) ==
 	(((char *) paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_BUF) +
 	 paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_LEN))
