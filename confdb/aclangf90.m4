@@ -754,28 +754,47 @@ cat >conftest.$ac_ext <<EOF
 EOF
 if AC_TRY_EVAL(ac_compile) ; then
    dnl Look for module name
-   pac_MOD=`ls conftest* AS_MESSAGE_LOG_FD>&1 2>&1 | grep -v conftest.$ac_ext | grep -v conftest.o`
-   pac_MOD=`echo $pac_MOD | sed -e 's/conftest\.//g'`
-   pac_cv_f90_module_case="lower"
-   if test "X$pac_MOD" = "X" ; then
-	for file in CONFTEST* ; do
-	    if test "x$file" = "xCONFTEST.$ac_ext" ; then continue ; fi
-	    if test "x$file" = "xCONFTEST.o" ; then continue ; fi
-	    if test -s "$file" ; then 
-	        pac_MOD=$file
-	        break
-	    fi
-	done
-        pac_MOD=`echo $pac_MOD | sed -e 's/CONFTEST\.//g'`
-	if test -n "$pac_MOD" ; then
-	    testname="CONFTEST"
-	    pac_cv_f90_module_case="upper"
-	fi
-    fi
-    if test -z "$pac_MOD" ; then 
-	pac_cv_f90_module_ext="unknown"
-    else
-	pac_cv_f90_module_ext=$pac_MOD
+   dnl First, try to find known names.  This avoids confusion caused by
+   dnl additional files (like <name>.stb created by some versions of pgf90)
+   for name in conftest CONFTEST ; do
+       for ext in mod MOD ; do
+           if test -s $name.$ext ; then
+               if test $name = conftest ; then
+                   pac_cv_f90_module_case=lower
+               else
+                   pac_cv_f90_module_case=upper
+               fi
+               pac_cv_f90_module_ext=$ext
+               pac_MOD=$ext
+               break
+           fi
+       done
+       if test -n "$pac_cv_f90_module_ext" ; then break ; fi
+   done
+   if test -z "$pac_MOD" ; then
+      pac_MOD=`ls conftest* AS_MESSAGE_LOG_FD>&1 2>&1 | grep -v conftest.$ac_ext | grep -v conftest.o`
+      pac_MOD=`echo $pac_MOD | sed -e 's/conftest\.//g'`
+      pac_cv_f90_module_case="lower"
+      if test "X$pac_MOD" = "X" ; then
+	   for file in CONFTEST* ; do
+	       if test "x$file" = "xCONFTEST.$ac_ext" ; then continue ; fi
+	       if test "x$file" = "xCONFTEST.o" ; then continue ; fi
+	       if test -s "$file" ; then 
+	           pac_MOD=$file
+	           break
+	       fi
+	   done
+           pac_MOD=`echo $pac_MOD | sed -e 's/CONFTEST\.//g'`
+	   if test -n "$pac_MOD" ; then
+	       testname="CONFTEST"
+	       pac_cv_f90_module_case="upper"
+	   fi
+       fi
+       if test -z "$pac_MOD" ; then 
+	   pac_cv_f90_module_ext="unknown"
+       else
+	   pac_cv_f90_module_ext=$pac_MOD
+       fi
     fi
 else
     echo "configure: failed program was:" >&AC_FD_CC
