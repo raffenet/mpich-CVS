@@ -449,6 +449,9 @@ if test -z "$master_top_srcdir" ; then
 fi
 AC_SUBST(master_top_srcdir)
 export master_top_srcdir
+master_top_builddir="`pwd`"
+AC_SUBST(master_top_builddir)
+export master_top_builddir
 dnl
 dnl This goes here because we need the top_srcdir
 if test "$enable_romio" = "yes" ; then
@@ -536,10 +539,7 @@ for pm_name in `echo $with_pm | sed -e 's/:/ /g'` ; do
         pm_name=""
     else
         subsystems="$subsystems src/pm/$pm_name"
-	if test -f src/pm/$pm_name/setup_pm ; then
-	    echo sourcing src/pm/$pm_name/setup_pm
-	    . src/pm/$pm_name/setup_pm
-        elif test -f $use_top_srcdir/src/pm/$pm_name/setup_pm ; then 
+        if test -f $use_top_srcdir/src/pm/$pm_name/setup_pm ; then 
 	    echo sourcing $use_top_srcdir/src/pm/$pm_name/setup_pm
 	    . $use_top_srcdir/src/pm/$pm_name/setup_pm
 	fi
