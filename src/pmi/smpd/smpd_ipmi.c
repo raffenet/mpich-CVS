@@ -49,6 +49,8 @@ typedef struct pmi_process_t
     smpd_context_t *context;
     int clique_size;
     int *clique_ranks;
+    char host[100];
+    int port;
 } pmi_process_t;
 
 static int root_smpd(void *p);
@@ -78,7 +80,9 @@ static pmi_process_t pmi_process =
     0,                   /* smpd_key       */
     NULL,                /* context        */
     0,                   /* clique_size    */
-    NULL                 /* clique_ranks   */
+    NULL,                /* clique_ranks   */
+    "",                  /* host           */
+    -1                   /* port           */
 };
 
 static int pmi_err_printf(char *str, ...)
@@ -749,6 +753,54 @@ int iPMI_Init(int *spawned)
 	{
 	    pmi_err_printf("unable to create a pmi context.\n");
 	    return PMI_FAIL;
+	}
+    }
+
+    p = getenv("PMI_HOST");
+    if (p != NULL)
+    {
+	strncpy(pmi_process.host, p, 100);
+	p = getenv("PMI_PORT");
+	if (p != NULL)
+	{
+	    pmi_process.port = atoi(p);
+	    
+	    result = MPIDU_Sock_create_set(&pmi_process.set);
+	    if (result != MPI_SUCCESS)
+	    {
+		pmi_err_printf("PMI_Init failed: unable to create a sock set, error: %d\n", result);
+		return PMI_FAIL;
+	    }
+
+	    /*printf("posting a connect to %s:%d\n", pmi_process.host, pmi_process.port);*/
+	    result = MPIDU_Sock_post_connect(pmi_process.set, NULL, pmi_process.host, pmi_process.port, &pmi_process.sock);
+	    if (result != MPI_SUCCESS)
+	    {
+		pmi_err_printf("PMI_Init failed: unable to post a connect to the process manager, error: %d\n", result);
+		return PMI_FAIL;
+	    }
+
+	    result = smpd_create_context(SMPD_CONTEXT_PMI, pmi_process.set, pmi_process.sock, smpd_process.id, &pmi_process.context);
+	    if (result != SMPD_SUCCESS)
+	    {
+		pmi_err_printf("unable to create a context to connect to the process manager with.\n");
+		return PMI_FAIL;
+	    }
+	    pmi_process.context->state = SMPD_CONNECTING_PMI;
+
+	    result = MPIDU_Sock_set_user_ptr(pmi_process.sock, pmi_process.context);
+	    if (result != MPI_SUCCESS)
+	    {
+		pmi_mpi_err_printf(result, "unable to set the connect sock user pointer.\n");
+		return PMI_FAIL;
+	    }
+
+	    result = smpd_enter_at_state(pmi_process.set, SMPD_CONNECTING_PMI);
+	    if (result != MPI_SUCCESS)
+	    {
+		pmi_mpi_err_printf(result, "PMI_Init failed: unable to connect to the process manager.\n");
+		return PMI_FAIL;
+	    }
 	}
     }
 
