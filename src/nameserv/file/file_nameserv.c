@@ -15,6 +15,8 @@
 #include <sys/stat.h>
 #include "mpiimpl.h"
 
+/* style: allow:fprintf:1 sig:0 */   /* For writing the name/service pair */
+
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
 #endif
