@@ -619,7 +619,7 @@ are organized by method.
 The following sample implementation assumes a homogeneous system (all
 processes use the same data representation).  
 
-\paragraph{\tcpname}
+\paragraph{\tcpname.}
 This method is a prototype for a TCP method.  
 
 The basic communication is provided by
@@ -639,6 +639,7 @@ may not be in contiguous locations.  Roughly, a stream used for
     \item when all bytes are written, a completion routine is called
     that may, for example, free the buffer used to pack data.
     \end{enumerate}
+
     All of this happens without any further action by the upper levels
     of the code.  A special case of a stream is one in which the data
     is contiguous; in this case, no intermediate copy of the data is
@@ -678,6 +679,7 @@ may not be in contiguous locations.  Roughly, a stream used for
     will happen when the agent is called.
 
 \end{enumerate}
+
 These are the low-level communication services that are used to
 implemement a TCP version of a two-sided communication method.
 These can be implemented with an ``active queue'' system.  In this
@@ -698,7 +700,7 @@ special case of the \code{NULL} handler with a non-null argument.
 For a stream involving a noncontiguous datatype, it could call a true
 routine to free up any temporary buffers.
 
-\implementation{\mpifunc{MPI_Irecv}}
+\implementation{{MPI_Irecv}}
 \begin{verbatim}
 err = MPI_SUCCESS;
 /* Error checking */
@@ -722,7 +724,7 @@ if (found) {
             memcpy( buffer, request->data_avail, request->data_size );
         else {
             /* Do we need a special unpack for this?  */
-	    /* We don't use MPID_Unpack, because that is specifically
+            /* We don't use MPID_Unpack, because that is specifically
                for data packed with MPID_Pack */
             MPID_Segment_unpack( request_ptr->data_avail, 
                                  request_ptr->data_size, 
@@ -730,7 +732,7 @@ if (found) {
         }
         /* release data_avail (includes flow control) */
         MPID_EagerFree( rank, comm_ptr, request_ptr->data_avail,
-	                request_ptr->data_size );
+                        request_ptr->data_size );
         MPID_MemWrite_ordered( request_ptr->complete = 1 );
     }
     else {
@@ -743,13 +745,13 @@ if (found) {
          vector[0].iov_len  = sizeof(MPID_Hid_ok_to_send_t);
          packet->recv_request_id = request_ptr->self;
          ... other packet fields, such as ...
-	 packet->send_request_id = request_ptr->send_request_id;
+         packet->send_request_id = request_ptr->send_request_id;
          MPID_Rhcv_tcp( request_ptr->sender_rank, comm_ptr,
-	                MPID_Hid_ok_to_send, vector, 1, NULL );
-	 /* Note that MPID_Rhcv_tcp must remember vector if is can't
-	    send the data immediately (e.g., because the socket is full).
-	    However, if it can send it immediately, no copy needs ever
-	    be made */
+                        MPID_Hid_ok_to_send, vector, 1, NULL );
+         /* Note that MPID_Rhcv_tcp must remember vector if is can't
+            send the data immediately (e.g., because the socket is full).
+            However, if it can send it immediately, no copy needs ever
+            be made */
     }
 }
 else {
@@ -765,7 +767,7 @@ return err;
 \end{verbatim}
 
 
-\implementation{\mpifunc{MPI_Isend}}
+\implementation{{MPI_Isend}}
 \begin{verbatim}
 /* Error checking */
 ...
@@ -790,8 +792,8 @@ if (count * datatype->size > eager_limit ||
     ... other fields (??) ...
     vector[0].iov_base = packet;
     vector[0].iov_len  = sizeof(MPID_Hid_request_to_send_t);
-    MPID_Rhcv( rank, comm_ptr, MPID_Hid_request_to_send, vector, 1, 
-               NULL );  /* No completion flag needed here */
+    MPID_Rhcv_tcp( rank, comm_ptr, MPID_Hid_request_to_send, vector, 1, 
+                   NULL );  /* No completion flag needed here */
 }
 else {
     /* Note that the flow limit test takes length, rank, and communicator.
@@ -807,26 +809,27 @@ else {
         vector[1].iov_base = buffer;
         }
     else {
-        vector[1].iov_base = ??? (MPID_LocalBufferAlloc?)
-        MPID_Segment_pack( buffer, count, datatype, vector[1].iov_base, 
+        MPID_Segment_pack( buffer, count, datatype, &request_ptr->segment, 
                            count*datatype->size );
-        ?? How do we free this buffer ??
-        /* Remember buffer where we can free is */
-        request_ptr->local_buffer = vector[1].iov_base;
+        vector[1].iov_base = request_ptr->segment.local_buffer; ???
+        /* The fact that the segment has been initialized remembers that the
+           storage is allocated */
     }
     vector[1].iov_len  = count * datatype->size;
-    MPID_Rhcv( rank, comm_ptr, MPID_Hid_eager, vector, 2, 
-               &request_ptr->complete );
-    /* MPID_Rhcv sets complete when the message is sent. */
+    MPID_Rhcv_tcp( rank, comm_ptr, MPID_Hid_eager, vector, 2, 
+                   &request_ptr->complete );
+    /* MPID_Rhcv_tcp sets complete when the message is sent. */
     /* In the non-contig case we could check for completion immediately
        and free the local buffer if the message has been sent, rather than 
        saving the buffer and waiting to free later.
        In this case, what does ``complete'' mean?  Do we want
-       ``complete'' to mean ``communication complete,'' but not ``done''? */
+       ``complete'' to mean ``communication complete,'' but not ``done''? 
+       Do we want the ``complete'' field to be an enum where 1 means locally
+       complete, zero means in progress, and 2 means done? */
 }
 \end{verbatim}
 
-\implementation{\texttt{Communication Agent}}
+\implementation{{Communication Agent}}
 In a multi-method device, it is often easiest if each method's communication 
 agent runs in a separate thread.  That allows the operating system to 
 schedule the threads.  If the agents are running in the same thread (and 
@@ -845,7 +848,7 @@ EXPECTING) mode.
    NONBLOCKING, but may use a short wait (e.g., the round-trip time) 
    instead. 
  */
-enum { BLOCKING, NOTBLOCKING, EXPECTING } MPID_Blocking_t;
+enum { BLOCKING=0, NOTBLOCKING=1, EXPECTING=2 } MPID_Blocking_t;
 
 #ifdef AGENT_IN_THREAD
 /* If the communication agent runs in a separate thread, run it
@@ -921,7 +924,7 @@ while (1)
         break;
 
         case MPID_Hid_ok_to_send:
-	MPID_Hid_ok_to_send_t *lpacket = (MPID_Hid_ok_to_send *)packet;
+        MPID_Hid_ok_to_send_t *lpacket = (MPID_Hid_ok_to_send *)packet;
 
         request_ptr = &global_request[lpacket->request_id];
         if (request_ptr->datatype->is_contig) {
@@ -963,7 +966,7 @@ while (1)
 }
 \end{verbatim}
 
-\mpifunc{MPI_Wait}
+\implementation{{MPI_Wait}}
 \begin{verbatim}
 while (1) {
 #ifdef SINGLE_THREADED_DEVICE
