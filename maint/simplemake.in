@@ -902,7 +902,7 @@ sub TargetAll {
 		# May be a replaced variable
 		print FD "\tfor dir in $dir - ; do\\$newline";
 		print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ; \\$newline";
-		print FD "\t\tif cd \$\$dir && \${MAKE} all ; then : ; else exit 1; fi\\$newline";
+		print FD "\t\tif ( cd \$\$dir && \${MAKE} all ) ; then : ; else exit 1; fi\\$newline";
 		print FD "\tdone$newline";
 	    }
 	    else {
