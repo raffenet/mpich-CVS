@@ -187,24 +187,28 @@ sub CountUncoveredLines {
 	}
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
-	if (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
+	if (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\// ||
+	    /^\s*-:\s*\d+:\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
 	    while (<FD>) {
 		$linecount++;
 		if (/^\s/) { $fileline++; }
-		if (/^\s*\/\*\s+--BEGIN/) {
+		if (/^\s*\/\*\s+--BEGIN/ ||
+		    /^\s*-:\s*\d+:\/\*\s+--BEGIN/) {
 		    my $cleanline = $_;
 		    $cleanline =~ s/^\s*//;
 		    chop $cleanline;
 		    print STDERR "Possible missing END ERROR HANDLING in $filename at $linecount; saw \"$cleanline\"\n";
 		}
-		if (/^\s*\/\*\s+--END ERROR HANDLING--\s+\*\/\s*/) {
+		if (/^\s*\/\*\s+--END ERROR HANDLING--\s+\*\/\s*/ ||
+		    /^\s*-:\s*\d+:\/\*\s+--END ERROR HANDLING--\s+\*\/\s*/) {
 		    last; 
 		}
 	    }
 	    next;	       
 	}
 	# Skip any blocks marked as experimental
-	if (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
+	if (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\// ||
+	    /^\s*-:\s*\d+:\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
 	    while (<FD>) {
 		$linecount++;
 		if (/^\s/) { $fileline++; }
@@ -213,16 +217,19 @@ sub CountUncoveredLines {
 		# experimental code, at the cost of possibly missing
                 # an 'end experimental'.  See the if at the bottom
 		# of the loop for a partial catch
-# 		if (/^\s*\/\*\s+--BEGIN/) {
+# 		if (/^\s*\/\*\s+--BEGIN/ ||
+#		    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN/) {
 # 		    my $cleanline = $_;
 # 		    $cleanline =~ s/^\s*//;
 # 		    chop $cleanline;
 # 		    print STDERR "Possible missing END EXPERIMENTAL in $filename at $linecount; saw \"$cleanline\"\n";
 # 		}
-		if (/^\s*\/\*\s+--END\sEXPERIMENTAL--\s+\*\/\s*/) {
+		if (/^\s*\/\*\s+--END\sEXPERIMENTAL--\s+\*\/\s*/ ||
+		    /^\s*-:\s*\d+:\s*\/\*\s+--END\sEXPERIMENTAL--\s+\*\/\s*/) {
 		    last; 
 		}
-		if (/^\s*\/\*\s*--\s*END\s+EXPERIMENTAL\s*--\s*\*\/\s*/) {
+		if (/^\s*\/\*\s*--\s*END\s+EXPERIMENTAL\s*--\s*\*\/\s*/ ||
+		    /^\s*-:\s*\d+:\/\*\s*--\s*END\s+EXPERIMENTAL\s*--\s*\*\/\s*/) {
 		    print STDERR "Mangled line: $_";
 		    last; 
 		}
@@ -237,7 +244,7 @@ sub CountUncoveredLines {
 	}
 	# Gcc 3.3 generates a different output form (!) with only
 	# 5 sharps instead of 6.  It does mark lines that are not 
-	# executable with a -.
+	# executable with a -, which is an improvement
 	if (/^\s*######?/) {
 	    if (! /^\s*######?\s*\}\s*/) {
 		$missed_lines++;
@@ -364,19 +371,23 @@ sub AnnotateUncoveredLines {
 	}
 
 	# Special cases for blocks that we skip (mark them as executed) 
-	if (/^\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
+	if (/^\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/ ||
+	    /^\s*-:\s*\d+:\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
 	    $newstate = "skip";
 	    $substate = "errcheck";
 	}
-	elsif (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
+	elsif (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\// ||
+	       /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
 	    $newstate = "skip";
 	    $substate = "debug";
 	}
-	elsif (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
+	elsif (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\// ||
+	       /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
 	    $newstate = "skip";
 	    $substate = "errhandle";
 	}
-	elsif (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
+	elsif (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\// ||
+	       /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
 	    $newstate = "skip";
 	    $substate = "exper";
 	}
@@ -405,12 +416,15 @@ sub AnnotateUncoveredLines {
 	# Now, for the blocks that we skip, read them until we reach the
 	# end of the block
 	# Skip any error checking block
-	if (/^\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
+	if (/^\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/ ||
+	    /^\s*-:\s*\d+:\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
 	    my $sawend = 0;
 	    while (<FD>) {
 		if (!/^\s/) { next; }
 	        print $outfile &HTMLify($_);
-		if (/^\s+\#\s*endif/ || /^\s*\#\s*els/) { 
+		if (/^\s+\#\s*endif/ || /^\s*\#\s*els/ ||
+		    /^\s*-:\s*\d+:\s+\#\s*endif/ || 
+		    /^\s*-:\s*\d+:\s*\#\s*els/) { 
 		    $sawend = 1;
 		    last; 
 		}
@@ -422,11 +436,13 @@ sub AnnotateUncoveredLines {
 	}
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
-	if (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
+	if (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\// ||
+	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
 	    my $sawend=0;
 	    while (<FD>) {
 		if (/^\s/) { print $outfile &HTMLify($_); }
-		if (/^\s*\/\*\s+--END DEBUG--\s+\*\//) {
+		if (/^\s*\/\*\s+--END DEBUG--\s+\*\// ||
+		    /^\s*-:\s*\d+:\s*\/\*\s+--END DEBUG--\s+\*\//) {
 		    $sawend = 1;
 		    last; 
 		}
@@ -438,11 +454,13 @@ sub AnnotateUncoveredLines {
 	}
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
-	if (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
+	if (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\// ||
+	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
 	    my $sawend = 0;
 	    while (<FD>) {
 		if (/^\s/) { print $outfile &HTMLify($_); }
-		if (/^\s*\/\*\s+--END ERROR HANDLING--\s+\*\//) {
+		if (/^\s*\/\*\s+--END ERROR HANDLING--\s+\*\// ||
+		    /^\s*-:\s*\d+:\s*\/\*\s+--END ERROR HANDLING--\s+\*\//) {
 		    $sawend = 1;
 		    last; 
 		}
@@ -453,11 +471,13 @@ sub AnnotateUncoveredLines {
 	    next;	       
 	}
 
-	if (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
+	if (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\// ||
+	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
 	    my $sawend = 0;
 	    while (<FD>) {
 		if (/^\s/) { print $outfile &HTMLify($_); }
-		if (/^\s*\/\*\s+--END EXPERIMENTAL--\s+\*\//) {
+		if (/^\s*\/\*\s+--END EXPERIMENTAL--\s+\*\// ||
+		    /^\s*-:\s*\d+:\s*\/\*\s+--END EXPERIMENTAL--\s+\*\//) {
 		    $sawend = 1;
 		    last; 
 		}
