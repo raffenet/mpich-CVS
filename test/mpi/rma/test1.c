@@ -9,8 +9,9 @@ int main(int argc, char *argv[])
 { 
     int rank, nprocs, A[SIZE], B[SIZE], i;
     MPI_Win win;
+    int errs = 0;
  
-    MPI_Init(&argc,&argv); 
+    MTest_Init(&argc,&argv); 
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs); 
     MPI_Comm_rank(MPI_COMM_WORLD,&rank); 
 
@@ -49,17 +50,21 @@ int main(int argc, char *argv[])
 
     if (rank == 1) {
         for (i=0; i<SIZE-1; i++) {
-            if (A[i] != B[i])
+            if (A[i] != B[i]) {
                 printf("Put/Get Error: A[i]=%d, B[i]=%d\n", A[i], B[i]);
+                errs++;
+	    }
         }
     }
     else {
-        if (B[SIZE-1] != SIZE - 1 - 3*(SIZE-1)) 
+        if (B[SIZE-1] != SIZE - 1 - 3*(SIZE-1)) {
             printf("Accumulate Error: B[SIZE-1] is %d, should be %d\n", B[SIZE-1], SIZE - 1 - 3*(SIZE-1));
+            errs++;
+	}
     }
 
     MPI_Win_free(&win); 
-    if (rank==0) printf("Done\n");
+    MTest_Finalize(errs);
     MPI_Finalize(); 
     return 0; 
 } 

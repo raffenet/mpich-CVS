@@ -11,8 +11,9 @@ int main(int argc, char *argv[])
     int rank, destrank, nprocs, A[SIZE2], B[SIZE2], i;
     MPI_Group comm_group, group;
     MPI_Win win;
+    int errs = 0;
  
-    MPI_Init(&argc,&argv); 
+    MTest_Init(&argc,&argv); 
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs); 
     MPI_Comm_rank(MPI_COMM_WORLD,&rank); 
 
@@ -37,8 +38,10 @@ int main(int argc, char *argv[])
         MPI_Win_complete(win);
 
         for (i=0; i<SIZE1; i++) 
-            if (B[i] != (-4)*(i+SIZE1)) 
+            if (B[i] != (-4)*(i+SIZE1)) {
                 printf("Get Error: B[i] is %d, should be %d\n", B[i], (-4)*(i+SIZE1));
+                errs++;
+            }
     }
 
     else {  /* rank=1 */
@@ -51,15 +54,17 @@ int main(int argc, char *argv[])
         MPI_Win_wait(win);
     
         for (i=0; i<SIZE1; i++) {
-            if (B[i] != i)
+            if (B[i] != i) {
                 printf("Put Error: B[i] is %d, should be %d\n", B[i], i);
+	        errs++;
+            }
         }
     }
 
     MPI_Group_free(&group);
     MPI_Group_free(&comm_group);
     MPI_Win_free(&win); 
-    if (rank==0) printf("Done\n");
+    MTest_Finalize(errs);
     MPI_Finalize();
     return 0; 
 } 

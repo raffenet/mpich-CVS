@@ -9,8 +9,9 @@ int main(int argc, char *argv[])
 { 
     int rank, nprocs, i, A[SIZE], B[SIZE];
     MPI_Win win;
+    int errs = 0;
  
-    MPI_Init(&argc,&argv); 
+    MTest_Init(&argc,&argv); 
 
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs); 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
@@ -32,9 +33,10 @@ int main(int argc, char *argv[])
         }
         MPI_Win_fence(0, win); 
         for (i=0; i<SIZE; i++)
-            if (A[i] != 1000 + i)
+            if (A[i] != 1000 + i) {
                 printf("Rank 0: A[%d] is %d, should be %d\n", i, A[i], 1000+i);
-        printf("Done\n");
+                errs++;
+            }
     }
 
     if (rank == 1) {
@@ -49,12 +51,15 @@ int main(int argc, char *argv[])
         }
         MPI_Win_fence(0, win); 
         for (i=0; i<SIZE; i++)
-            if (B[i] != 500 + i)
+            if (B[i] != 500 + i) {
                 printf("Rank 1: B[%d] is %d, should be %d\n", i, B[i], 500+i);
+                errs++;
+            }
     }
 
     MPI_Win_free(&win); 
 
+    MTest_Finalize(errs);
     MPI_Finalize(); 
     return 0; 
 } 

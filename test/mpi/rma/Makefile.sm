@@ -2,8 +2,8 @@
 # weak symbols are not supported)
 INCLUDES = -I../include -I${top_srcdir}/include
 EXTERNAL_LIBS = m
-LDADD = -L../../../lib
-DEPADD = ../../../lib/lib${MPILIBNAME}.a
+LDADD = -L../../../lib ../util/mtest.o
+DEPADD = ../../../lib/lib${MPILIBNAME}.a ../util/mtest.o
 smvar_do_sharedlibs = 0
 #
 allocmem_SOURCES = allocmem.c
@@ -26,19 +26,12 @@ fetchandadd_SOURCES = fetchandadd.c
 fetchandadd_tree_SOURCES = fetchandadd_tree.c
 
 winname_SOURCES = winname.c
-winname_LDADD = ../util/mtest.o
 putfence1_SOURCES = putfence1.c
-putfence1_LDADD = ../util/mtest.o
 getfence1_SOURCES = getfence1.c
-getfence1_LDADD = ../util/mtest.o
 accfence1_SOURCES = accfence1.c
-accfence1_LDADD = ../util/mtest.o
 accfence2_SOURCES = accfence2.c
-accfence2_LDADD = ../util/mtest.o
 putpscw1_SOURCES = putpscw1.c
-putpscw1_LDADD = ../util/mtest.o
 getgroup_SOURCES = getgroup.c
-getgroup_LDADD = ../util/mtest.o
 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) )

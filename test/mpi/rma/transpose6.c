@@ -13,8 +13,9 @@ int main(int argc, char *argv[])
     int nprocs, A[NROWS][NCOLS], B[NROWS][NCOLS], i, j;
     MPI_Win win;
     MPI_Datatype column, xpose;
+    int errs = 0;
  
-    MPI_Init(&argc,&argv); 
+    MTest_Init(&argc,&argv); 
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs); 
 
     if (nprocs != 1) {
@@ -46,12 +47,14 @@ int main(int argc, char *argv[])
     
     for (j=0; j<NCOLS; j++)
         for (i=0; i<NROWS; i++) 
-            if (B[j][i] != i*NCOLS + j + j*NCOLS + i)
+            if (B[j][i] != i*NCOLS + j + j*NCOLS + i) {
                 printf("Error: B[%d][%d]=%d should be %d\n", j, i,
                        B[j][i], i*NCOLS + j + j*NCOLS + i);
+                errs++;
+            }
 
     MPI_Win_free(&win); 
-    printf("Done\n");
+    MTest_Finalize(errs);
     MPI_Finalize(); 
     return 0; 
 } 

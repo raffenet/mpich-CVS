@@ -14,8 +14,9 @@ int main(int argc, char *argv[])
     MPI_Win win;
     MPI_Datatype column, xpose;
     MPI_Group comm_group, group;
+    int errs;
  
-    MPI_Init(&argc,&argv); 
+    MTest_Init(&argc,&argv); 
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs); 
     MPI_Comm_rank(MPI_COMM_WORLD,&rank); 
 
@@ -63,15 +64,17 @@ int main(int argc, char *argv[])
 
         for (j=0; j<NCOLS; j++)
             for (i=0; i<NROWS; i++) 
-                if (A[j][i] != i*NCOLS + j)
+                if (A[j][i] != i*NCOLS + j) {
                     printf("Error: A[%d][%d]=%d should be %d\n", j, i,
                            A[j][i], i*NCOLS + j);
+                    errs++;
+                }
     }
 
     MPI_Group_free(&group);
     MPI_Group_free(&comm_group);
     MPI_Win_free(&win); 
-    if (rank==0) printf("Done\n");
+    MTest_Finalize(errs);
     MPI_Finalize(); 
     return 0; 
 } 
