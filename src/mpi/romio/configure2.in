@@ -876,16 +876,67 @@ else
     F77=":"
 fi
 #
-PAC_C_INLINE
+AC_C_INLINE
 
 # Header files
 AC_CHECK_HEADERS(unistd.h)
 #
-PAC_INT_LT_POINTER()
+CROSS_SIZEOF_INT=${CROSS_SIZEOF_INT:-0}
+CROSS_SIZEOF_VOID_P=${CROSS_SIZEOF_VOID_P:-0}
+AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_INT)
+AC_CHECK_SIZEOF(void*,$CROSS_SIZEOF_VOID_P)
+AC_CACHE_CHECK([for int large enough for pointers],
+pac_cv_int_hold_pointer,[
+if test "$ac_cv_sizeof_int" = "0" -o \
+	"$ac_cv_sizeof_void_p" = "0" ; then
+    pac_cv_int_hold_pointer=unknown
+elif test "$ac_cv_sizeof_int" -lt "$ac_cv_sizeof_void_p" ; then
+    pac_cv_int_hold_pointer=no
+else
+    pac_cv_int_hold_pointer=yes
+fi
+])
+if test "$pac_cv_int_hold_pointer" != yes ; then
+    AC_DEFINE(INT_LT_POINTER,,[Define if int smaller than pointer])
+fi
 #
-PAC_LONG_LONG_64()
-#
-dnl PAC_LONG_64()
+dnl The original ROMIO configure used a set of complex tests here; this
+dnl is a partial reworking using the autoconf2 sizeof macros, and allowing
+dnl for the standardized CROSS_xxx varaibles for cross-compilation environments
+dnl PAC_LONG_LONG_64()
+CROSS_SIZEOF_LONG_LONG=${CROSS_SIZEOF_LONG_LONG:-0}
+AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
+if test "$ac_sizeof_long_long" != 0 ; then
+    if test "$ac_sizeof_long_long" = "8" ; then
+       AC_DEFINE(HAVE_LONG_LONG_64,,[Define if long long is 64 bits])
+       DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
+       FORTRAN_MPI_OFFSET="integer*8"
+       LL="\%lld"
+    elif test "$ac_sizeof_long_long" = "$ac_sizeof_int" ; then
+       DEFINE_MPI_OFFSET="typedef int MPI_Offset;"
+       FORTRAN_MPI_OFFSET="integer"
+       AC_DEFINE(MPI_OFFSET_IS_INT,,[Define if MPI_Offset is int])
+       LL="\%d"
+       MPI_OFFSET_KIND1="!"
+       MPI_OFFSET_KIND2="!"
+    else
+       echo "defining MPI_Offset as long in C and integer in Fortran" 
+       DEFINE_MPI_OFFSET="typedef long MPI_Offset;"
+       FORTRAN_MPI_OFFSET="integer"
+       LL="\%ld"
+       MPI_OFFSET_KIND1="!"
+       MPI_OFFSET_KIND2="!"
+    fi
+else
+    echo "defining MPI_Offset as long in C and integer in Fortran" 
+    DEFINE_MPI_OFFSET="typedef long MPI_Offset;"
+    FORTRAN_MPI_OFFSET="integer"
+    LL="\%ld"
+    MPI_OFFSET_KIND1="!"
+    MPI_OFFSET_KIND2="!"
+fi
+
+
 #
 if test -n "$longlongsize"; then
    if test $FROM_MPICH = 0 -a $FROM_MPICH2 = 0 ; then
