@@ -462,3 +462,9 @@ with MPI_Alloc_mem.
 # Sock:poll
 #
 **sock|poll|eqmalloc:MPIU_Malloc failed to allocate memory for an event queue structure
+
+#
+# CH3:rdma
+#
+**ch3progress:A subroutine call failed in the progress engine
+**read_progress:A subroutine call failed in the read progress engine
