@@ -88,7 +88,7 @@ fi
 if [ -x maint/extracterrmsgs -a $do_geterrmsgs = "yes" ] ; then
     echo "Extracting the error messages..."
     rm -rf .tmp
-    maint/extracterrmsgs src/mpi/*/*.c src/util/*/*.c src/include/*.h > .tmp 2>.err
+    maint/extracterrmsgs src/mpi/*/*.c src/mpi/romio/*/*.c src/util/*/*.c src/include/*.h > .tmp 2>.err
     # (error here is ok)
     update_errdefs=yes
     if [ -s .err ] ; then 
