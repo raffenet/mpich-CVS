@@ -46,6 +46,219 @@ model MPI implementation.
 % script \code{mpiman}; this is a script that uses \code{xman} to provide
 % a X11 Window System interface to the data in this manual.
 
+\section{Discussion}
+The ADI contains a large number of routines, but only a few of these
+are related to the lowest-level communication operations.  Most of the
+rest are used to provide opportunities for performance optimization
+(e.g., \code{MPID_Isend}) or to support the objects that MPI
+provides and that a device implementation may (or may not) need to
+understand (e.g., MPI attributes and groups).  
+
+The ADI is organized as a number of separate modules.
+For each module except for the core communication module (called MPID
+CORE), there is a sample (but complete) implementation.  These sample
+implementations are refered to as the \emph{generic} module
+implementations. For example,
+the ADI contains routines to create and manipulate MPI communicators;
+most implementations of the ADI will use the generic module for
+handling communicators.  Other modules, such as the point-to-point
+communications module, are more likely to be replaced with a
+device-specific implementation.  Even in the cases where an
+implementation of the ADI replaces a module, the generic
+implementation of that module will often serve as a guide.
+
+There are rougly three classes of modules:
+\begin{enumerate}
+\item The core: basic process creation and communication. This
+contains one module, MPID CORE. 
+\item Support for MPI objects.  These modules support the various MPI
+objects such as Datatypes, Groups, Communicators, and keyvals.
+\item Communication optimization.  These modules provide an
+intermediate level of functionality between that provided by MPID CORE
+and that provided by MPI.  The rationale for these are described in
+Section~\ref{sec-intermediate}. 
+\end{enumerate}
+
+The modules are (THIS LIST IS INCOMPLETE):
+\begin{description}
+\item[MPID CORE]Basic functions to start, stop, and communicate
+between processes.
+\item[Attributes]MPI Keyvals and attributes
+\item[Datatypes]MPI Datatypes and pack/unpack operations and a new
+object, \code{MPID_Segment}, used only within the ADI.
+\item[Groups]MPI Groups
+\item[Communicators]MPI Communicators
+\item[Requests]MPI Requests.  Requests are fundemental to many
+operations; most devices that implement more than MPID CORE will need
+to replace this module.
+\item[Windows]MPI Windows.
+\item[Point to point]Functions directly implementing the MPI
+point-to-point communication functions or some key subsets.
+\item[Topology]Information on the physical interconnect.  Currently
+limited to hierarchical information necessary to support clusters of
+SMPs and similar systems.
+\item[Timers]Support for fast timers, including synchronized timers.
+\item[Collective Support]Communication routines designed to support
+important algorithms for collective communication.
+\item[Collective]Alternate support for collective
+routines. \textbf{Note that this may end up being an MPI module, not
+and MPID module.}
+\item[Utilities]Routines to simplify correctness and performance
+debugging, and to provide a common interface to OS services that have
+different interfaces on different platforms.
+\end{description}
+
+By dividing the ADI into these modules, it becomes easy to implement
+MPI quickly by implementing just MPID CORE and using the generic
+modules for everything else.  Other modules can be replaced as
+warranted; for example, a new machine will likely need a new Timers
+module in order to access a system-specific timer.  Implementors
+trying to get the maximum performance for point-to-point operations
+may want to replace that module with one carefully tuned to their
+specific platform.
+
+\subsection{The Minimal Implementation}
+\label{sec-minimal}
+
+The minimal implementation consists of the following routines:
+
+\begin{description}
+\item[MPID Init thread]This is the device's counterpart to
+\code{MPI_Init_thread}. 
+\item[MPID Finalize]This is the devices's counterpart to
+\code{MPI_Finalize}
+\item[MPID Abort]This is the device's counterpart to \code{MPI_Abort}.
+\item[MPID Put]This is used for data movement; it is roughly an
+\code{MPI_Put} using only contiguous data.  However, it uses a
+different mechanism for indicating completion of data transfers
+\item[MPID Rhcv]This is used for messages; it is rougly an
+active-message call.  However, only predefined actions are allowed,
+and these actions are enumerated.
+\item[MPID Poll]This routine provides a way for a polling routine to
+be called.  A device is permitted to define this as a no-op if polling
+is not needed.  In other words, this routine is provided to
+\emph{allow} polling implementations, not to \emph{require} them.
+\end{description}
+
+\textbf{Note: this doesn't support Spawn etc. We need to decide how to
+add that, that is, what few other functions to add.}
+
+
+From these routines, all of MPI can be implemented\footnote{See
+Section~\ref{sec-passive-target} for some caveats about pure polling
+implementations}.  However, this approach may sacrifice performance
+for simplicity.  
+
+This is not the only small set of routines from which MPI can be
+implemented.  However, the one-sided operations defined in MPI-2 make
+it difficult to use a two-sided (message-passing-like) core.
+Alternately, \code{MPID_Put} isn't actually necessary; the same
+functionality is provided by \code{MPID_Rhcv}.  However, experience
+with active messages, as well as current trends in interconnects,
+suggests that a remote memory put operation that does require any
+other processing at the target (destination) should be separated from
+the more general active-message invocation (\code{MPID_Rhcv}).
+
+\subsection{Design Rationale}
+\label{sec-intermediate}
+The design of MPI puts a number of constraints on a high-quality
+implementation.  These constraints help explain the rationale behind
+the design of ADI-3.
+
+We start with a few general principles.  The first is that all valid
+MPI programs should work.  This implies that implementations should
+maintain proper flow control and should strive not to allocate new
+memory after \code{MPI_Init_thread}.  It certainly should not require
+the allocatation of memory proportional to the size of a message.
+This simple rule has significant consequences, starting with the
+handling of datatypes.
+
+\subsubsection{Noncontiguous Datatypes}
+Any message in MPI may be defined by a datatype representing
+non-contiguous locations in memory; there is no limit (other than the
+usual limits of available memory) on the size of this message.  Since
+no interconnects provide a way to send arbitrarily large
+non-contiguous messages (and even in shared memory, the complexity of
+handling the layouts of both the sending and receiving datatypes), an
+ADI must provide a was to pack and unpack datatypes to and from
+contiguous buffers.  
+Further, because the message may be arbitrarily large, an internal
+buffer,
+used only to hold a contiguous form of the message, should
+not be allocated for the entire message.
+The consequence of this rule is the \code{MPID_Segment} object and the
+routines to perform partial pack and unpack operations.
+
+A less obvious consequence of the need to handle noncontiguous
+datatypes in pieces (or segments) is that an ADI interface that
+provides MPI-like point-to-point operations, but only for contiguous
+data, cannot be used without significant modification.  
+
+\textbf{To see how, look at the old RMQ design that I did; it used
+handlers within the ack-loop.} 
+
+\subsubsection{Passive Target RMA}
+\label{sec-passive-target}
+\textbf{text describing passive targets as requiring a non-polling
+interface and basically an active-message call.  Since passive target
+requires mpid-rhcv, we put it in as a building block.}
+
+\subsubsection{Efficient Collective Algorithms}
+\begin{enumerate}
+\item Store and forward --- Since the message may need to be placed in
+special memory, separating out the buffer used for the final receive
+(possibly after unpacking into a buffer described with non-contiguous
+data type) and the memory from which the message could be forwarded is
+an important goal.  Further, store and
+forward operations often should be \emph{pipelined}; that is, sent in
+chuncks, where each chunck is forwarded it as it is received.
+Just to make things more complex, in collective algorithms, the data
+received is often processed (e.g., for reduce) and/or forwarded to
+multiple destinations.  These needs, taken together, encourage the
+definition of a store and forward ``building block'' routine
+\textbf{not yet defined}.
+
+\item Scatter/Gather --- A number of algorithms rely on dividing the
+message up into separate pieces, based on viewing the message as a
+contiguous array of bytes, and (in some cases) gathering the pieces
+up.  For example, a simple broadcast can be written as a scatter step
+followed by an Allgather step.  To write these for arbitrary (i.e.,
+noncontiguous) datatypes requires the ability to divide the message up
+independent of the datatype.  
+
+\item Blocking --- An advantage of the (non File) collective
+operations is that they are blocking.  This allows the code
+implementing the collective operation to remain in control; in
+particular, it can wait for an operation to complete and then perform
+the next step.  This feature influenced the design of the
+\textbf{store and forward building block yet to be defined}.
+\end{enumerate}
+
+\subsection{Multi-method Communication}
+An important implementation of the this ADI is the model multi-method
+implementation, based on separate message queues for each method.
+This device illustrates a more complex use of the ADI interface.  It
+implements not only the MPID CORE but most of the point-to-point
+routines as well, along with the collective support routines.  The
+generic modules are used for the rest of the ADI implementation.
+
+To make it possible to implement this kind of multi-method device, the
+ADI is careful with how MPI requests are handled.  It also defined a
+very high-level ADI interface (e.g., \code{MPID_Isend}) that gives the
+device the flexibility to determine the appropriate method and allows
+the method to determine the appropriate protocol for delivering a message.
+
+\subsection{Contrast with ADI-1 and ADI-2}
+\label{sec-historical}
+\textbf{This section will describe differences in concept and goals}
+
+In ADI-1 and ADI-2, non-contiguous datatypes were handled by first
+allocating a buffer large enough to hold the \emph{entire} message and
+then either packing the message into that buffer (for a send) or
+unpacking it after it was delivered (for a receive).  This was a
+reasonable expediant when the original MPICH implementation was done,
+but is not acceptable in a mature package.
+
 \section{ADI-3 Routines}
 \input adi3func.tex
 
