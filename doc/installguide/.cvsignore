@@ -8,3 +8,4 @@
 *.idx
 Makefile
 user.pdf
+config.options
