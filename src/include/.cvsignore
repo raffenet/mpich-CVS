@@ -9,3 +9,4 @@ mpidpost.h
 *pre.h
 *post.h
 winmpichtimer.h
+mpid_datatype.h
