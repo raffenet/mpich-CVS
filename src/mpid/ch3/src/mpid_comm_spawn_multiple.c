@@ -29,6 +29,10 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
+#undef FUNCNAME
+#define FUNCNAME MPID_Comm_spawn_multiple
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_of_argv[], int array_of_maxprocs[], MPID_Info *array_of_info_ptrs[], int root, MPID_Comm *comm_ptr, MPID_Comm **intercomm, int array_of_errcodes[]) 
 {
     int mpi_errno;
@@ -43,7 +47,11 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_
                                               array_of_info_ptrs,
                                               root, comm_ptr,
                                               intercomm,
-                                              array_of_errcodes); 
+                                              array_of_errcodes);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+    }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
     return mpi_errno;
