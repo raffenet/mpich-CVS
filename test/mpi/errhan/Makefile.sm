@@ -1,6 +1,6 @@
 INCLUDES = -I../include -I${top_srcdir}/include
 LDADD = ../util/mtest.o 
-DEPADD = @MPILIBLOC@
+DEPADD = @MPILIBLOC@ ../util/mtest.o
 smvar_do_sharedlibs = 0
 
 adderr_SOURCES = adderr.c
@@ -11,3 +11,11 @@ commcall_SOURCES = commcall.c
 winerr_SOURCES = winerr.c
 winerr2_SOURCES = winerr2.c
 errfatal_SOURCES = errfatal.c
+
+../util/mtest.o: 
+	(cd ../util && make mtest.o)
+
+testing:
+	../../runtests -srcdir=$(srcdir) -tests=testlist \
+			-mpiexec=$(bindir)/mpiexec \
+		   	-xmlfile=summary.xml
