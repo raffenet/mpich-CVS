@@ -10,9 +10,18 @@ while (<>) {
     }
     if (/^gcc /) {
 	s/[\r\n]*$//;
+	while (/\\$/) {
+	    # Read continuation lines
+	    s/\\$//;
+	    $_ .= <>;
+	}
       RESTART:$gccline = $_;
 	$filename = $gccline;
 	$filename =~ s/.*\s(\w*\.c)/\1/;
+	if ($filename eq $gccline) {
+	    # No file name was found, so reset to null
+	    $filename = "";
+	}
 	while (<>) {
 	    s/[\r\n]*$//;
 	    while (/\\$/) {
@@ -21,7 +30,7 @@ while (<>) {
 		$_ .= $nextline;
 	    }
 	    print "Looking for |$filename|\n" if $debug;
-	    if (/^$filename/) {
+	    if ($filename ne "" && /^$filename/) {
 		print "$_\n";
 	    }	
 	    else { 

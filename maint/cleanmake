@@ -25,8 +25,13 @@ while (<>) {
 	if (/^\s*fi\s*$/) { next; }
     }
 
-    # Clean up compiler outpu
+    # Clean up compiler output
     if (/^[agi]?cc\s/ || /^pgcc\s/) {
+	while (/\\$/) {
+	    s/\\$//;
+	    s/[\r\n]*//;
+	    $_ .= <>;
+	}
 	s/-I[^\s]*\s*//g;
 	s/-DHAVE_CONFIG_H\s*//g;
     }
