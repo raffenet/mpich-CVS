@@ -96,9 +96,9 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 	}
 	if (fcntl_struct->fsize == -1) {
 #ifdef MPICH2
-			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+			*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, "**io",
 							"**io %s", strerror(errno));
-			MPIR_Err_return_file(fd, myname, *error_code);
+			return;
 #elif defined(PRINT_ERR_MSG)
 			*error_code =  MPI_ERR_UNKNOWN;
 #else
@@ -135,9 +135,9 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 			    &status, error_code);
 	    if (*error_code != MPI_SUCCESS) {
 #ifdef MPICH2
-				*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+				*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, "**io",
 								"**io %s", strerror(errno));
-				MPIR_Err_return_file(fd, myname, *error_code);
+				return;
 #elif defined(PRINT_ERR_MSG)
 		FPRINTF(stderr, "ADIOI_NTFS_Fcntl: To preallocate disk space, ROMIO needs to read the file and write it back, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);

@@ -7,6 +7,9 @@
  */
 
 #include "mpioimpl.h"
+#ifdef MPICH2
+#include "mpiimpl.h"
+#endif
 
 #ifdef HAVE_WEAK_SYMBOLS
 
@@ -59,8 +62,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 
     if (comm == MPI_COMM_NULL) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_COMM, "**comm", 0);
-			return MPIR_Err_return_file(NULL, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_COMM, "**comm", 0);
+	return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_open: Invalid communicator\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -74,9 +77,9 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     MPI_Comm_test_inter(comm, &flag);
     if (flag) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_COMM, 
-							"**commnotintra", 0);
-			return MPIR_Err_return_file(NULL, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_COMM, 
+	    "**commnotintra", 0);
+	return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_open: Intercommunicator cannot be passed to MPI_File_open\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -90,9 +93,9 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     if ( ((amode&MPI_MODE_RDONLY)?1:0) + ((amode&MPI_MODE_RDWR)?1:0) +
 	 ((amode&MPI_MODE_WRONLY)?1:0) != 1 ) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_AMODE, 
-							"**fileamodeone", 0);
-			return MPIR_Err_return_file(NULL, myname, error_code);
+	     error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_AMODE, 
+		 "**fileamodeone", 0);
+	     return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_open: Exactly one of MPI_MODE_RDONLY, MPI_MODE_WRONLY, or MPI_MODE_RDWR must be specified\n");
 	MPI_Abort(MPI_COMM_WORLD, 1); 
@@ -106,9 +109,9 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     if ((amode & MPI_MODE_RDONLY) && 
             ((amode & MPI_MODE_CREATE) || (amode & MPI_MODE_EXCL))) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_AMODE, 
-							"**fileamoderead", 0);
-			return MPIR_Err_return_file(NULL, myname, error_code);
+		error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_AMODE, 
+		    "**fileamoderead", 0);
+		return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_open: It is erroneous to specify MPI_MODE_CREATE or MPI_MODE_EXCL with MPI_MODE_RDONLY\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -121,9 +124,9 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 
     if ((amode & MPI_MODE_RDWR) && (amode & MPI_MODE_SEQUENTIAL)) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_AMODE, 
-							"**fileamodeseq", 0);
-			return MPIR_Err_return_file(NULL, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_AMODE, 
+	    "**fileamodeseq", 0);
+	return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_open: It is erroneous to specify MPI_MODE_SEQUENTIAL with MPI_MODE_RDWR\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -185,7 +188,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	 * been called as well, so we probably didn't even make it this far.
 	 */
 #ifdef MPICH2
-	return MPIR_Err_return_file(NULL, myname, error_code);
+	return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	MPI_Abort(MPI_COMM_WORLD, 1); /* this is mostly here for clarity */
 #else /* MPICH-1 */
@@ -202,9 +205,9 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     if (((file_system == ADIO_PIOFS) || (file_system == ADIO_PVFS)) && 
         (amode & MPI_MODE_SEQUENTIAL)) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION, 
-							"**iosequnsupported", 0);
-			return MPIR_Err_return_file(NULL, myname, error_code);
+	    error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_UNSUPPORTED_OPERATION, 
+		"**iosequnsupported", 0);
+	    return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_open: MPI_MODE_SEQUENTIAL not supported on PIOFS and PVFS\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);

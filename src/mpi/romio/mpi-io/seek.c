@@ -7,6 +7,9 @@
  */
 
 #include "mpioimpl.h"
+#ifdef MPICH2
+#include "mpiimpl.h"
+#endif
 
 #ifdef HAVE_WEAK_SYMBOLS
 
@@ -58,9 +61,9 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION,
-							"**ioamodeseq", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_UNSUPPORTED_OPERATION,
+	    "**ioamodeseq", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_seek: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -75,9 +78,9 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
     case MPI_SEEK_SET:
 	if (offset < 0) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_ARG,
-							"**iobadoffset", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	    error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_ARG,
+		"**iobadoffset", 0);
+	    return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	    FPRINTF(stderr, "MPI_File_seek: Invalid offset argument\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
@@ -94,9 +97,9 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 	offset += curr_offset;
 	if (offset < 0) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_ARG,
-							"**ionegoffset", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	    error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_ARG,
+		"**ionegoffset", 0);
+	    return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	    FPRINTF(stderr, "MPI_File_seek: offset points to a negative location in the file\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
@@ -113,9 +116,9 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 	offset += eof_offset;
 	if (offset < 0) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_ARG,
-							"**ionegoffset", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	    error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_ARG,
+		"**ionegoffset", 0);
+	    return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	    FPRINTF(stderr, "MPI_File_seek: offset points to a negative location in the file\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
@@ -128,9 +131,9 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 	break;
     default:
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_ARG,
-							"**iobadwhence", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_ARG,
+	    "**iobadwhence", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_seek: Invalid whence argument\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);

@@ -7,6 +7,9 @@
  */
 
 #include "mpioimpl.h"
+#ifdef MPICH2
+#include "mpiimpl.h"
+#endif
 
 #ifdef HAVE_WEAK_SYMBOLS
 
@@ -60,9 +63,9 @@ int MPI_File_write_ordered(MPI_File fh, void *buf, int count,
 
     if (count < 0) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_ARG, 
-							"**iobadcount", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_ARG, 
+	    "**iobadcount", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_write_ordered: Invalid count argument\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -75,9 +78,9 @@ int MPI_File_write_ordered(MPI_File fh, void *buf, int count,
 
     if (datatype == MPI_DATATYPE_NULL) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_TYPE, 
-							"**dtypenull", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_TYPE, 
+	    "**dtypenull", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_write_ordered: Invalid datatype\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -91,9 +94,9 @@ int MPI_File_write_ordered(MPI_File fh, void *buf, int count,
     MPI_Type_size(datatype, &datatype_size);
     if ((count*datatype_size) % fh->etype_size != 0) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_TYPE, 
-							"**dtypenull", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_TYPE, 
+	    "**dtypenull", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_write_ordered: Only an integral number of etypes can be accessed\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -106,8 +109,8 @@ int MPI_File_write_ordered(MPI_File fh, void *buf, int count,
 
     if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS)) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION, "**iosharedunsupported", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_UNSUPPORTED_OPERATION, "**iosharedunsupported", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_write_ordered: Shared file pointer not supported on PIOFS and PVFS\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);

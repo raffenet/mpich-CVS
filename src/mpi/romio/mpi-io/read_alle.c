@@ -7,6 +7,9 @@
  */
 
 #include "mpioimpl.h"
+#ifdef MPICH2
+#include "mpiimpl.h"
+#endif
 
 #ifdef HAVE_WEAK_SYMBOLS
 
@@ -54,9 +57,9 @@ int MPI_File_read_all_end(MPI_File fh, void *buf, MPI_Status *status)
 
     if (!(fh->split_coll_count)) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_IO, 
-							"**iosplitcollnone", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, 
+	    "**iosplitcollnone", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_read_all_end: Does not match a previous MPI_File_read_all_begin\n");
         MPI_Abort(MPI_COMM_WORLD, 1);

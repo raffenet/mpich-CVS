@@ -35,9 +35,9 @@ void ADIOI_NTFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *er
 
 	if (ret_val == FALSE) {
 #ifdef MPICH2
-			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+			*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, "**io",
 							"**io %s", strerror(errno));
-			MPIR_Err_return_file((*request)->fd, myname, *error_code);
+			return;
 #elif defined(PRINT_ERR_MSG)
 			*error_code =  MPI_ERR_UNKNOWN;
 #else

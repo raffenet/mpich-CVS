@@ -7,6 +7,9 @@
  */
 
 #include "mpioimpl.h"
+#ifdef MPICH2
+#include "mpiimpl.h"
+#endif
 
 #ifdef HAVE_WEAK_SYMBOLS
 
@@ -58,8 +61,8 @@ int MPI_File_read_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
 
     if (offset < 0) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_ARG, "**iobadoffset", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_ARG, "**iobadoffset", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_read_at_all_begin: Invalid offset argument\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -72,8 +75,8 @@ int MPI_File_read_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
 
     if (count < 0) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_ARG, "**iobadcount", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_ARG, "**iobadcount", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_read_at_all_begin: Invalid count argument\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -86,9 +89,9 @@ int MPI_File_read_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
 
     if (datatype == MPI_DATATYPE_NULL) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_TYPE, 
-							"**dtypenull", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_TYPE, 
+	    "**dtypenull", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_read_at_all_begin: Invalid datatype\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -101,9 +104,9 @@ int MPI_File_read_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
 
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION,
-							"**ioamodeseq", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_UNSUPPORTED_OPERATION,
+	    "**ioamodeseq", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_read_at_all_begin: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -116,9 +119,9 @@ int MPI_File_read_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
 
     if (fh->split_coll_count) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_IO, 
-							"**iosplitcoll", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, 
+	    "**iosplitcoll", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_read_at_all_begin: Only one active split collective I/O operation allowed per file handle\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -134,9 +137,9 @@ int MPI_File_read_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
     MPI_Type_size(datatype, &datatype_size);
     if ((count*datatype_size) % fh->etype_size != 0) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_IO, 
-							"**ioetype", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, 
+	    "**ioetype", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_read_at_all_begin: Only an integral number of etypes can be accessed\n");
         MPI_Abort(MPI_COMM_WORLD, 1);

@@ -7,6 +7,9 @@
  */
 
 #include "mpioimpl.h"
+#ifdef MPICH2
+#include "mpiimpl.h"
+#endif
 
 #ifdef HAVE_WEAK_SYMBOLS
 
@@ -55,9 +58,8 @@ int MPI_File_get_type_extent(MPI_File fh, MPI_Datatype datatype,
 
     if (datatype == MPI_DATATYPE_NULL) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_TYPE, "**dtypenull",
-							0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_TYPE, "**dtypenull", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_get_type_extent: Invalid datatype\n");
         MPI_Abort(MPI_COMM_WORLD, 1);

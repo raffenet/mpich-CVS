@@ -7,6 +7,9 @@
  */
 
 #include "mpioimpl.h"
+#ifdef MPICH2
+#include "mpiimpl.h"
+#endif
 
 #ifdef HAVE_WEAK_SYMBOLS
 
@@ -57,9 +60,9 @@ int MPI_File_set_atomicity(MPI_File fh, int flag)
     MPI_Bcast(&tmp_flag, 1, MPI_INT, 0, fh->comm);
     if (tmp_flag != flag) {
 #ifdef MPICH2
-			error_code = MPIR_Err_create_code(MPI_ERR_ARG, 
-							"**notsame", 0);
-			return MPIR_Err_return_file(fh, myname, error_code);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_ARG, 
+	    "**notsame", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_set_atomicity: flag must be the same on all processes\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
