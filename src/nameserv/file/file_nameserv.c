@@ -63,12 +63,12 @@ int MPID_NS_Create( const MPID_Info *info_ptr, MPID_NS_Handle *handle_ptr )
     MPIU_Strnapp( (*handle_ptr)->dirname, "/.mpinamepub/", MAXPATHLEN );
 
     /* Make the directory if necessary */
-    /* FIXME: Determine if the directory exists before trying to create it */
+    /* FIXME (gropp): Determine if the directory exists before trying to create it */
     
     if (stat( (*handle_ptr)->dirname, &st ) || !S_ISDIR(st.st_mode) ) {
 	/* This mode is rwx by owner only.  */
 	if (mkdir( (*handle_ptr)->dirname, 00700 )) {
-	    /* FIXME: An error.  Ignore most ? 
+	    /* FIXME (gropp): An error.  Ignore most ? 
 	     For example, ignore EEXIST?  */
 	    ;
 	}
@@ -124,7 +124,7 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 #ifdef HAVE_STRERROR
 	reason = strerror( errno );
 #else
-	/* FIXME: This should use internationalization calls */
+	/* FIXME (gropp): This should use internationalization calls */
 	switch (errno) {
 	case EACCES:
 	    reason = "Access denied to some element of the path";
