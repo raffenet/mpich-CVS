@@ -375,30 +375,6 @@ if test "$enable_f90" = "yes" -a "$enable_f77" != "yes" ; then
    AC_MSG_WARN([Fortran 90 support requires compatible Fortran 77 support])
    enable_f77=yes
 fi
-if test "$enable_f77" = "yes" ; then
-   subsystems="$subsystems src/binding/f77"
-   bindings="$bindings f77"
-   bindings_dirs="$bindings_dirs src/binding/f77"
-fi
-if test "$enable_f90" = "yes" ; then
-   subsystems="$subsystems src/binding/f90"
-   bindings="$bindings f90"
-   bindings_dirs="$bindings_dirs src/binding/f90"
-fi
-if test "$enable_f90" = yes -o "$enable_f77" = yes ; then
-   AC_DEFINE(HAVE_FORTRAN_BINDING,1,[Define if Fortran is supported])
-fi
-
-if test "$enable_cxx" = "yes" ; then
-   subsystems="$subsystems src/binding/cxx"
-   bindings="$bindings cxx"
-   bindings_dirs="$bindings_dirs src/binding/cxx"
-   AC_DEFINE(HAVE_CXX_BINDING,1,[Define if C++ is supported])
-fi
-AC_SUBST(bindings)
-# Bindings dirs is used for the installation target
-AC_SUBST(bindings_dirs)
-#
 if test "$enable_debugger" = "yes" ; then
     debugger_dir=debugger
     AC_DEFINE(HAVE_DEBUGGER_SUPPORT,1,[Define if debugger support is included])
@@ -545,6 +521,34 @@ else
     subsystems="$subsystems src/pm/$pm_name"
 fi
 AC_SUBST(pm_name)
+#
+# The bindings must be the *last* subsystems configured, since they may
+# need to inherit libraries and/or options required by the other subsystems
+# (e.g., extra libraries required for ROMIO)
+if test "$enable_f77" = "yes" ; then
+   bindingsubsystems="$bindingsubsystems src/binding/f77"
+   bindings="$bindings f77"
+   bindings_dirs="$bindings_dirs src/binding/f77"
+fi
+if test "$enable_f90" = "yes" ; then
+   bindingsubsystems="$bindingsubsystems src/binding/f90"
+   bindings="$bindings f90"
+   bindings_dirs="$bindings_dirs src/binding/f90"
+fi
+if test "$enable_f90" = yes -o "$enable_f77" = yes ; then
+   AC_DEFINE(HAVE_FORTRAN_BINDING,1,[Define if Fortran is supported])
+fi
+
+if test "$enable_cxx" = "yes" ; then
+   bindingsubsystems="$bindingsubsystems src/binding/cxx"
+   bindings="$bindings cxx"
+   bindings_dirs="$bindings_dirs src/binding/cxx"
+   AC_DEFINE(HAVE_CXX_BINDING,1,[Define if C++ is supported])
+fi
+AC_SUBST(bindings)
+# Bindings dirs is used for the installation target
+AC_SUBST(bindings_dirs)
+#
 dnl
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
@@ -1204,8 +1208,20 @@ for dir in $subsystems $TOPLEVEL_SUBDIRS /dev/null ; do
         . $dir/localdefs
     fi
 done
+#
+# The language bindings must be done *last* because they may need to 
+# know values from the localdefs of the previous configures
+PAC_CONFIG_SUBDIRS_IMMEDIATE($bindingsubsystems)
+#
+# Get any localdefs that the subsystems created. Use a guard in case
+# the list is empty
+for dir in $bindingsubsystems /dev/null ; do 
+    if test -f $dir/localdefs ; then
+        . $dir/localdefs
+    fi
+done
 # Make subsystems available to makefiles.
-subsystems="$devsubsystems $subsystems"
+subsystems="$devsubsystems $subsystems $bindingsubsystems"
 AC_SUBST(subsystems)
 #
 dnl
