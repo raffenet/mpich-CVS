@@ -153,7 +153,7 @@ optinstall_SHLIB = lib/libf${MPILIBNAME}.so
 
 # Some of the subsidiary packages may need to be installed.  This target will
 # invoke their install targets as part of the installation process
-INSTALL_SUBDIRS = src/env src/pm/@pm_name@ @bindings_dirs@
+INSTALL_SUBDIRS = src/env src/pm/@pm_name@ @bindings_dirs@ @other_install_dirs@
 
 install-local:
 	-if [ "@BUILD_TVDLL@" = "yes" ] ; then \

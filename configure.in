@@ -593,18 +593,39 @@ if test $with_mpe != no ; then
         fi
     else
         subsystems="$subsystems src/mpe"
+	other_install_dirs="$other_install_dirs src/mpe"
 	mpe_dir=mpe
 	# Make sure that MPE knows that we're building from MPICH
         # (similar to ROMIO)
         FROM_MPICH2=yes
         export FROM_MPICH2
+	# Temporarily replace the default NONE value for exec_prefix
+	# and prefix with the actual, default values.
+	savePrefix=$prefix
+	saveExecprefix=$exec_prefix
+	test "x$prefix" = xNONE && prefix=$ac_default_prefix
+	test "x$exec_prefix" = xNONE && exec_prefix=$prefix
+	eval actualbindir=$bindir
+	MPI_CC=$actualbindir/mpicc
+	MPI_F77=$actualbindir/mpif77
+	eval actuallibdir=$libdir
+	#MPI_LIBS="-L$actuallibdir -lmpich -lpmpich"
+	prefix=$savePrefix
+	$exec_prefix=$saveExecprefix
+	# NOTE: You must append LIBS to MPI_LIBS before invoking the mpe
+	# connfigure
+	export MPI_CC
+	export MPI_F77
+	#export MPI_LIBS
         export use_top_srcdir
         top_build_dir=`pwd`
         export top_build_dir
     fi
 fi
 AC_SUBST(mpe_dir)
+AC_SUBST(other_install_dirs)
 #
+
 # The bindings must be the *last* subsystems configured, since they may
 # need to inherit libraries and/or options required by the other subsystems
 # (e.g., extra libraries required for ROMIO)
@@ -1392,6 +1413,8 @@ elif test -f $use_top_srcdir/src/mpid/$device_name/localdefs ; then
     . $use_top_srcdir/src/mpid/$device_name/localdefs
 fi
 
+## The MPE configure requires MPI_LIBS, and that requires all of the LIBS
+#MPI_LIBS="$MPI_LIBS $LIBS"
 PAC_CONFIG_SUBDIRS_IMMEDIATE($subsystems)
 #
 # Get any localdefs that the subsystems created. Use a guard in case
