@@ -1252,11 +1252,14 @@ int iPMI_Spawn_multiple(int count,
 	    buffer[0] = '\0';
 	    iter = buffer;
 	    maxlen = SMPD_MAX_CMD_LENGTH;
-	    for (j=0; argvs[i][j] != NULL; j++)
+	    if (argvs[i] != NULL)
 	    {
-		num_chars = smpd_add_string(iter, maxlen, argvs[i][j]);
-		maxlen -= num_chars;
-		iter += num_chars;
+		for (j=0; argvs[i][j] != NULL; j++)
+		{
+		    num_chars = smpd_add_string(iter, maxlen, argvs[i][j]);
+		    maxlen -= num_chars;
+		    iter += num_chars;
+		}
 	    }
 	    sprintf(key, "argv%d", i);
 	    result = smpd_add_command_arg(cmd_ptr, key, buffer);
