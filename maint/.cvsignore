@@ -3,6 +3,7 @@ simplemake
 checkbuilds
 getstates
 showsizes
+getcross
 config.log
 config.cache
 config.status
