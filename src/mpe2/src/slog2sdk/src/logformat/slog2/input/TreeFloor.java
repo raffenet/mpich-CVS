@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.ListIterator;
 
 import base.drawable.TimeBoundingBox;
+import base.drawable.Drawable;
 import logformat.slog2.*;
 
 /*
@@ -27,12 +28,14 @@ public class TreeFloor extends TreeMap
 {
     private short              depth;
     private TimeBoundingBox    timebounds;
+    private boolean            isIncreTimeOrdered;
 
-    public TreeFloor( short in_depth )
+    public TreeFloor( short in_depth, final BufForObjects.Order buf4objs_order )
     {
-        super();
-        depth       = in_depth;
-        timebounds  = new TimeBoundingBox();
+        super( buf4objs_order );  //  TreeMap( java.util.Comparator )
+        depth               = in_depth;
+        timebounds          = new TimeBoundingBox();
+        isIncreTimeOrdered  = buf4objs_order.isIncreasingIndexOrdered();
     }
 
     public short getDepth()
@@ -40,20 +43,26 @@ public class TreeFloor extends TreeMap
         return depth;
     }
 
-    public TimeBoundingBox firstTimeBounds()
+    public TimeBoundingBox earliestTimeBounds()
     {
-        return (TimeBoundingBox) super.firstKey();
+        if ( isIncreTimeOrdered )
+            return (TimeBoundingBox) super.firstKey();
+        else
+            return (TimeBoundingBox) super.lastKey();
     }
 
-    public TimeBoundingBox lastTimeBounds()
+    public TimeBoundingBox latestTimeBounds()
     {
-        return (TimeBoundingBox) super.lastKey();
+        if ( isIncreTimeOrdered )
+            return (TimeBoundingBox) super.lastKey();
+        else
+            return (TimeBoundingBox) super.firstKey();
     }
 
     public TimeBoundingBox getTimeBounds()
     {
-        timebounds.setEarliestTime( firstTimeBounds().getEarliestTime() );
-        timebounds.setLatestTime( lastTimeBounds().getLatestTime() );
+        timebounds.setEarliestTime( earliestTimeBounds().getEarliestTime() );
+        timebounds.setLatestTime( latestTimeBounds().getLatestTime() );
         if ( ! timebounds.isTimeOrdered() ) {
             System.out.println( "slog2.input.TreeFloor.getTimeBounds() "
                               + "returns wrong " + timebounds );
@@ -63,8 +72,8 @@ public class TreeFloor extends TreeMap
 
     public boolean coversBarely( final TimeBoundingBox  tframe )
     {
-        return    firstTimeBounds().contains( tframe.getEarliestTime() )
-               && lastTimeBounds().contains( tframe.getLatestTime() );
+        return    earliestTimeBounds().contains( tframe.getEarliestTime() )
+               && latestTimeBounds().contains( tframe.getLatestTime() );
     }
 
     public boolean covers( final TimeBoundingBox  tframe )
@@ -91,31 +100,28 @@ public class TreeFloor extends TreeMap
             double starttime = tframe.getEarliestTime(); 
             double finaltime = tframe.getLatestTime();
             while ( ! this.coversBarely( tframe ) ) {
-                if ( ! firstTimeBounds().contains( starttime ) )
+                if ( ! earliestTimeBounds().contains( starttime ) )
                     super.remove( super.firstKey() );
-                if ( ! lastTimeBounds().contains( finaltime ) )
+                if ( ! latestTimeBounds().contains( finaltime ) )
                     super.remove( super.lastKey() );
             }
         }
     }
 
     public Iterator iteratorOfDrawables( final TimeBoundingBox  tframe,
-                                         boolean isComposite,
-                                         boolean isForeItr, boolean isNestable )
+                                         final Drawable.Order   dobj_order,
+                                               boolean          isComposite,
+                                               boolean          isNestable )
     {
-        if ( isForeItr )
-            return new ForeItrOfDrawables( tframe, isComposite, isNestable );
-        else
-            return new BackItrOfDrawables( tframe, isComposite, isNestable );
+        return new ItrOfDrawables( tframe, dobj_order,
+                                   isComposite, isNestable );
     }
 
     public Iterator iteratorOfShadows( final TimeBoundingBox  tframe,
-                                       boolean isForeItr, boolean isNestable )
+                                       final Drawable.Order   dobj_order,
+                                             boolean          isNestable )
     {
-        if ( isForeItr )
-            return new ForeItrOfShadows( tframe, isNestable );
-        else
-            return new BackItrOfShadows( tframe, isNestable );
+        return new ItrOfShadows( tframe, dobj_order, isNestable );
     }
 
     public String toStubString()
@@ -140,21 +146,33 @@ public class TreeFloor extends TreeMap
 
 
 
-    private class ForeItrOfDrawables extends IteratorOfGroupObjects
+    private class ItrOfDrawables extends IteratorOfGroupObjects
     {
-        private static final boolean          INCRE_STARTTIME_ORDER = true;
-        private              Iterator         nodes_itr;
+        private              Drawable.Order   dobj_order;
         private              boolean          isComposite;
         private              boolean          isNestable;
 
-        public ForeItrOfDrawables( final TimeBoundingBox  tframe,
-                                         boolean          in_isComposite,
-                                         boolean          in_isNestable )
+        private              ListIterator     nodes_itr;
+        private              boolean          isSameDir;
+
+        public ItrOfDrawables( final TimeBoundingBox  tframe,
+                               final Drawable.Order   in_dobj_order,
+                                     boolean          in_isComposite,
+                                     boolean          in_isNestable )
         {
             super( tframe );
+            dobj_order  = in_dobj_order;
             isNestable  = in_isNestable;
             isComposite = in_isComposite;
-            nodes_itr   = values().iterator();
+
+            isSameDir   = (  dobj_order.isIncreasingTimeOrdered()
+                          == TreeFloor.this.isIncreTimeOrdered );
+
+            List nodes  = new ArrayList( TreeFloor.super.values() );
+            if ( isSameDir )
+                nodes_itr   = nodes.listIterator( 0 );
+            else
+                nodes_itr   = nodes.listIterator( nodes.size() );
             super.setObjGrpItr( this.nextObjGrpItr( tframe ) );
         }
 
@@ -162,72 +180,54 @@ public class TreeFloor extends TreeMap
         {
             TreeNode         node;
 
-            // nodes_itr is guaranteed to be NOT null by TreeMap.values()
-            // while ( nodes_itr != null )
+            // nodes_itr is guaranteed to be NOT null by TreeMap.values(),
+            // No need to check for nodes_itr != null.
+            if ( isSameDir) {
                 while ( nodes_itr.hasNext() ) {
                     node       = (TreeNode) nodes_itr.next();
                     if ( node.overlaps( tframe ) )
-                        return node.iteratorOfDrawables( tframe, isComposite,
-                                                         INCRE_STARTTIME_ORDER,
+                        return node.iteratorOfDrawables( tframe, dobj_order,
+                                                         isComposite,
                                                          isNestable );
                 }
-            // }
-            // return NULL when no more node in nodes_itr
-            return null;
-        }
-    }   // private class ForeItrOfDrawables
-
-    private class BackItrOfDrawables extends IteratorOfGroupObjects
-    {
-        private static final boolean          DECRE_STARTTIME_ORDER = false;
-        private              ListIterator     nodes_itr;
-        private              boolean          isComposite;
-        private              boolean          isNestable;
-
-        public BackItrOfDrawables( final TimeBoundingBox  tframe,
-                                         boolean          in_isComposite,
-                                         boolean          in_isNestable )
-        {
-            super( tframe );
-            isNestable  = in_isNestable;
-            isComposite = in_isComposite;
-            List nodes  = new ArrayList( values() );
-            nodes_itr   = nodes.listIterator( nodes.size() );
-            super.setObjGrpItr( this.nextObjGrpItr( tframe ) );
-        }
-
-        protected Iterator nextObjGrpItr( final TimeBoundingBox tframe )
-        {
-            TreeNode         node;
-
-            // nodes_itr is guaranteed to be NOT null by TreeMap.values()
-            // while ( nodes_itr != null )
+            }
+            else {
                 while ( nodes_itr.hasPrevious() ) {
                     node       = (TreeNode) nodes_itr.previous();
                     if ( node.overlaps( tframe ) )
-                        return node.iteratorOfDrawables( tframe, isComposite,
-                                                         DECRE_STARTTIME_ORDER,
+                        return node.iteratorOfDrawables( tframe, dobj_order,
+                                                         isComposite,
                                                          isNestable );
                 }
-            // }
-            // return NULL when no more node in nodes_itr
+            }
             return null;
         }
-    }   // private class BackItrOfDrawables
+    }   // private class ItrOfDrawables
 
-
-    private class ForeItrOfShadows extends IteratorOfGroupObjects
+    private class ItrOfShadows extends IteratorOfGroupObjects
     {
-        private static final boolean          INCRE_STARTTIME_ORDER = true;
-        private              Iterator         nodes_itr;
+        private              Drawable.Order   dobj_order;
         private              boolean          isNestable;
 
-        public ForeItrOfShadows( final TimeBoundingBox  tframe,
-                                       boolean          in_isNestable )
+        private              ListIterator     nodes_itr;
+        private              boolean          isSameDir;
+
+        public ItrOfShadows( final TimeBoundingBox  tframe,
+                             final Drawable.Order   in_dobj_order,
+                                   boolean          in_isNestable )
         {
             super( tframe );
+            dobj_order  = in_dobj_order;
             isNestable  = in_isNestable;
-            nodes_itr   = values().iterator();
+
+            isSameDir   = (  dobj_order.isIncreasingTimeOrdered()
+                          == TreeFloor.this.isIncreTimeOrdered );
+
+            List nodes  = new ArrayList( TreeFloor.super.values() );
+            if ( isSameDir )
+                nodes_itr   = nodes.listIterator( 0 );
+            else
+                nodes_itr   = nodes.listIterator( nodes.size() );
             super.setObjGrpItr( this.nextObjGrpItr( tframe ) );
         }
 
@@ -235,54 +235,26 @@ public class TreeFloor extends TreeMap
         {
             TreeNode         node;
 
-            // nodes_itr is guaranteed to be NOT null by TreeMap.values()
-            // while ( nodes_itr != null )
+            // nodes_itr is guaranteed to be NOT null by TreeMap.values(),
+            // No need to check for nodes_itr != null.
+            if ( isSameDir) {
                 while ( nodes_itr.hasNext() ) {
                     node       = (TreeNode) nodes_itr.next();
                     if ( node.overlaps( tframe ) )
-                        return node.iteratorOfShadows( tframe,
-                                                       INCRE_STARTTIME_ORDER,
+                        return node.iteratorOfShadows( tframe, dobj_order,
                                                        isNestable );
                 }
-            // }
-            // return NULL when no more node in nodes_itr
-            return null;
-        }
-    }   // private class ForeItrOfShadows
-
-    private class BackItrOfShadows extends IteratorOfGroupObjects
-    {
-        private static final boolean          DECRE_STARTTIME_ORDER = false;
-        private              ListIterator     nodes_itr;
-        private              boolean          isNestable;
-
-        public BackItrOfShadows( final TimeBoundingBox  tframe,
-                                        boolean         in_isNestable )
-        {
-            super( tframe );
-            isNestable  = in_isNestable;
-            List nodes  = new ArrayList( values() );
-            nodes_itr   = nodes.listIterator( nodes.size() );
-            super.setObjGrpItr( this.nextObjGrpItr( tframe ) );
-        }
-
-        protected Iterator nextObjGrpItr( final TimeBoundingBox tframe )
-        {
-            TreeNode         node;
-
-            // nodes_itr is guaranteed to be NOT null by TreeMap.values()
-            // while ( nodes_itr != null )
+            }
+            else {
                 while ( nodes_itr.hasPrevious() ) {
                     node       = (TreeNode) nodes_itr.previous();
                     if ( node.overlaps( tframe ) )
-                        return node.iteratorOfShadows( tframe,
-                                                       DECRE_STARTTIME_ORDER,
+                        return node.iteratorOfShadows( tframe, dobj_order,
                                                        isNestable );
                 }
-            // }
-            // return NULL when no more node in nodes_itr
+            }
             return null;
         }
-    }   // private class BackItrOfShadows
+    }   // private class ItrOfShadows
 
 }

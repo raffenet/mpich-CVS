@@ -36,14 +36,26 @@ public class TreeTrunk extends TreeFloorList
     private              double           tZoomFactor;
     private              double           logZoomFactor;
     
+    private              InputLog         slog_ins;
+    private              Drawable.Order   node_dobj_order;
 
-    private InputLog          slog_ins;
-
-    public TreeTrunk( InputLog  in_slog )
+    public TreeTrunk( InputLog  in_slog, final Drawable.Order in_dobj_order )
     {
-        super();
+        super( in_dobj_order );
         slog_ins       = in_slog;
         timeframe_root = null;
+
+        /*
+           Assume treenode is read in Drawable.INCRE_STARTTIME_ORDER
+           so if the input Drawable.Order's isStartTimeOrdered() is true,
+           then no reordering is needed.  If isStartTimeOrdered() returns
+           false, the treenode's BufForObjects{Drawables,Shadows} will then
+           be reshuffled in the order of Drawable.INCRE_FINALTIME_ORDER.
+        */
+        node_dobj_order = in_dobj_order.isStartTimeOrdered() ?
+                          null :
+                          Drawable.INCRE_FINALTIME_ORDER;
+            
     }
 
     public void initFromTreeTop()
@@ -52,7 +64,14 @@ public class TreeTrunk extends TreeFloorList
         TreeNode      treeroot;
 
         blockptr       = slog_ins.getFileBlockPtrToTreeRoot();
+        if ( blockptr.isNULL() )
+            return;
         treeroot       = slog_ins.readTreeNode( blockptr );
+        if ( treeroot == null )
+            return;
+
+        if ( node_dobj_order != null )
+            treeroot.reorderDrawables( node_dobj_order );
         depth_root     = treeroot.getTreeNodeID().depth;
         timeframe_root = new TimeBoundingBox( treeroot );
         duration_root  = timeframe_root.getDuration();
@@ -117,6 +136,8 @@ public class TreeTrunk extends TreeFloorList
                         if ( childnode == null ) {
                             blockptr   = childstub.getFileBlockPtr();
                             childnode  = slog_ins.readTreeNode( blockptr );
+                            if ( node_dobj_order != null )
+                                childnode.reorderDrawables( node_dobj_order );
                             super.put( childstub, childnode );
                         }
                         // Invoke growChildren() again to make sure all 

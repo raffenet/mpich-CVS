@@ -52,9 +52,12 @@ public class TreeNode extends BufForDrawables
     }
 
     public Iterator iteratorOfDrawables( final TimeBoundingBox  tframe,
-                                         boolean isComposite,
-                                         boolean isForeItr, boolean isNestable )
+                                         final Drawable.Order   dobj_order,
+                                               boolean          isComposite,
+                                               boolean          isNestable )
     {
+        boolean isForeItr;
+        isForeItr = dobj_order.isIncreasingTimeOrdered();
         if ( isForeItr ) {
             if ( isNestable )
                 return super.nestableForeIterator( tframe, isComposite );
@@ -70,8 +73,11 @@ public class TreeNode extends BufForDrawables
     }
 
     public Iterator iteratorOfShadows( final TimeBoundingBox  tframe,
-                                       boolean isForeItr, boolean isNestable )
+                                       final Drawable.Order   dobj_order,
+                                             boolean          isNestable )
     {
+        boolean isForeItr;
+        isForeItr = dobj_order.isIncreasingTimeOrdered();
         if ( isForeItr ) {
             if ( isNestable )
                 return new ForeItrOfNestableShadows( tframe );
@@ -138,6 +144,14 @@ public class TreeNode extends BufForDrawables
         }
         else
             shadowbufs = null;
+    }
+
+    public void reorderDrawables( final Drawable.Order dobj_order )
+    {
+        super.reorderDrawables( dobj_order );
+        if ( shadowbufs != null )
+            for ( int idx = 0; idx < shadowbufs.length; idx++ )
+                shadowbufs[ idx ].reorderDrawables( dobj_order );
     }
  
     public String toString()

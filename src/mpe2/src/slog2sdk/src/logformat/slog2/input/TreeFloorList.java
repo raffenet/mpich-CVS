@@ -24,26 +24,39 @@ public class TreeFloorList
 {
     private static final short               NULL_DEPTH = -1;
 
-    private TreeFloor[]      floors;
-    private short            lowest_depth;
+    private TreeFloor[]          floors;
+    private Drawable.Order       dobj_order;
+    private BufForObjects.Order  buf4objs_order;
+    private short                lowest_depth;
 
-    public TreeFloorList()
+    public TreeFloorList( final Drawable.Order in_dobj_order )
     {
-        floors = null;
-        lowest_depth = NULL_DEPTH;
+        // For checking of consistence when used with IteratorOfXXXDrawables()
+        dobj_order      = in_dobj_order;
+        buf4objs_order  = dobj_order.isIncreasingTimeOrdered() ?
+                          BufForObjects.INCRE_INDEX_ORDER :
+                          BufForObjects.DECRE_INDEX_ORDER;
+        lowest_depth    = NULL_DEPTH;
+        floors          = null;
     }
 
     protected void init( short depth_max )
     {
         floors = new TreeFloor[ depth_max + 1 ];
         for ( int idx = floors.length-1; idx >= 0; idx-- )
-            floors[ idx ] = new TreeFloor( (short) idx );
+            floors[ idx ] = new TreeFloor( (short) idx, buf4objs_order );
         lowest_depth = depth_max;
     }
 
     public BufForObjects getRoot()
     {
-        return (BufForObjects) floors[ floors.length-1 ].firstKey();
+        // If InputLog.readTreeNode( InputLog.getFileBlockPtrToTreeRoot() )
+        // returns null, above init( short depth_max ) won't be called.
+        // floors[] remain uninitialized. floors[] needs to be checked for null.
+        if ( floors != null )
+            return (BufForObjects) floors[ floors.length-1 ].firstKey();
+        else
+            return null;
     }
 
     /*
@@ -153,38 +166,57 @@ public class TreeFloorList
     }
 
     public Iterator iteratorOfAllDrawables( final TimeBoundingBox  tframe,
+                                            final Drawable.Order   itrOrder,
                                                   boolean          isComposite,
-                                                  boolean          isForeItr,
                                                   boolean          isNestable )
     {
-        if ( isForeItr )
-            return new ForeItrOfDrawables( tframe, isComposite,
-                                           isNestable, true );
-        else
-            return new BackItrOfDrawables( tframe, isComposite,
-                                           isNestable, true );
+        if ( itrOrder.isStartTimeOrdered() == dobj_order.isStartTimeOrdered() )
+            return new ItrOfDrawables( tframe, itrOrder, isComposite,
+                                       isNestable, true );
+        else {
+            System.err.println( "TreeFloorList.iteratorOfAllDrawables(): "
+                              + "Inconsistent Start/Final TimeOrder!\n"
+                              + "TreeFloor is created with " + dobj_order +"\n"
+                              + "but iteratorOfAllDrawables() is "
+                              + "invoked with " + itrOrder + ".");
+            return null;
+        }
     }
 
     public Iterator iteratorOfRealDrawables( final TimeBoundingBox  tframe,
+                                             final Drawable.Order   itrOrder,
                                                    boolean          isComposite,
-                                                   boolean          isForeItr,
                                                    boolean          isNestable )
     {
-        if ( isForeItr )
-            return new ForeItrOfDrawables( tframe, isComposite,
-                                           isNestable, false );
-        else
-            return new BackItrOfDrawables( tframe, isComposite,
-                                           isNestable, false );
+        if ( itrOrder.isStartTimeOrdered() == dobj_order.isStartTimeOrdered() )
+            return new ItrOfDrawables( tframe, itrOrder, isComposite,
+                                       isNestable, false );
+        else {
+            System.err.println( "TreeFloorList.iteratorOfRealDrawables(): "
+                              + "Inconsistent Start/Final Time Order!\n"
+                              + "TreeFloor is created with " + dobj_order +"\n"
+                              + "but iteratorOfRealDrawables() is "
+                              + "invoked with " + itrOrder + ".");
+            return null;
+        }
     }
 
     public Iterator iteratorOfLowestFloorShadows( final TimeBoundingBox tframe,
-                                                        boolean  isForeItr,
+                                                  final Drawable.Order itrOrder,
                                                         boolean  isNestable )
     {
-        return floors[ lowest_depth ].iteratorOfShadows( tframe,
-                                                         isForeItr,
-                                                         isNestable );
+        if ( itrOrder.isStartTimeOrdered() == dobj_order.isStartTimeOrdered() )
+            return floors[ lowest_depth ].iteratorOfShadows( tframe,
+                                                             itrOrder,
+                                                             isNestable );
+        else {
+            System.err.println( "TreeFloorList.iteratorOfLowestFloorShadows(): "
+                              + "Inconsistent Start/Final TimeOrder!\n"
+                              + "TreeFloor is created with " + dobj_order +"\n"
+                              + "but iteratorOfLowestFloorShadows() is "
+                              + "invoked with " + itrOrder + ".");
+            return null;
+        }
     }
 
     public String toStubString()
@@ -207,26 +239,24 @@ public class TreeFloorList
 
     public String toString( final TimeBoundingBox tframe )
     {
-        boolean isComposite      = true;
-        boolean isIncreStartTime = true;
-        boolean isNestable       = true;
+        Drawable.Order  dobj_order  = Drawable.INCRE_STARTTIME_ORDER;
+        boolean         isComposite = true;
+        boolean         isNestable  = true;
         StringBuffer rep = new StringBuffer();
         Iterator dobjs, sobjs;
         int idx;
-        dobjs = this.iteratorOfRealDrawables( tframe, isComposite,
-                                              isIncreStartTime, true );
+        dobjs = this.iteratorOfRealDrawables( tframe, dobj_order,
+                                              isComposite, true );
         for ( idx = 1; dobjs.hasNext(); idx++ )
             rep.append( idx + ", " + dobjs.next() + "\n" );
-        dobjs = this.iteratorOfRealDrawables( tframe, isComposite,
-                                              isIncreStartTime, false );
+        dobjs = this.iteratorOfRealDrawables( tframe, dobj_order,
+                                              isComposite, false );
         for ( ; dobjs.hasNext(); idx++ )
             rep.append( idx + ", " + dobjs.next() + "\n" );
-        sobjs = this.iteratorOfLowestFloorShadows( tframe,
-                                                   isIncreStartTime, true );
+        sobjs = this.iteratorOfLowestFloorShadows( tframe, dobj_order, true );
         for ( idx = 1; sobjs.hasNext(); idx++ )
             rep.append( idx + ", " + sobjs.next() + "\n" );
-        sobjs = this.iteratorOfLowestFloorShadows( tframe,
-                                                   isIncreStartTime, false );
+        sobjs = this.iteratorOfLowestFloorShadows( tframe, dobj_order, false );
         for ( ; sobjs.hasNext(); idx++ )
             rep.append( idx + ", " + sobjs.next() + "\n" );
         return rep.toString();
@@ -234,16 +264,15 @@ public class TreeFloorList
 
     public String toFloorString( final TimeBoundingBox timeframe )
     {
-        boolean isComposite      = true;
-        boolean isIncreStartTime = true;
-        boolean isNestable       = true;
+        Drawable.Order  dobj_order  = Drawable.INCRE_STARTTIME_ORDER;
+        boolean         isComposite = true;
+        boolean         isNestable  = true;
         StringBuffer rep = new StringBuffer();
         Iterator dobjs;
         for ( int flr = floors.length-1; flr >= 0; flr-- ) {
             rep.append( "\n" + floors[ flr ].toStubString() + "\n" );
-            dobjs = floors[ flr ].iteratorOfDrawables( timeframe,
+            dobjs = floors[ flr ].iteratorOfDrawables( timeframe, dobj_order,
                                                        isComposite,
-                                                       isIncreStartTime,
                                                        isNestable );
             for ( int idx = 1; dobjs.hasNext(); idx++ )
                  rep.append( "    " + idx + ", " + dobjs.next() + "\n" );
@@ -254,32 +283,38 @@ public class TreeFloorList
 
 
     /*
-        ForeItrOfDrawables returns Drawables in Increasing Starttime Order
+        ItrOfDrawables returns Drawables in specific Drawable.Order
      */
-    private class ForeItrOfDrawables implements Iterator
+    private class ItrOfDrawables implements Iterator
     {
-        private static final boolean  IS_FORE_ITR = true;
         /*
            map_obj2itr is a backstore for Iterator of each floor.
-           The key of map_obj2itr is the leading drawable out of the Iterator.
+           The key of map_obj2itr is the current leading drawable 
+           to be pulled from the Iterator.
          */
         private TreeMap      map_obj2itr;
         private Drawable     this_floor_obj;
         private Iterator     this_floor_itr;
         private Drawable     next_floor_obj;
-        private double       next_floor_starttime;
+        private double       next_floor_bordertime;
+        private boolean      isIncreTimeOrdered;
+        private boolean      isStartTimeOrdered;
 
-        public ForeItrOfDrawables( final TimeBoundingBox  tframe,
-                                         boolean          isComposite,
-                                         boolean          isNestable,
-                                         boolean          withShadows )
+        public ItrOfDrawables( final TimeBoundingBox  tframe,
+                               final Drawable.Order   dobj_order,
+                                     boolean          isComposite,
+                                     boolean          isNestable,
+                                     boolean          withShadows )
         {
-            // map_obj2itr has Drawables arranged in Increasing Starttime order
-            map_obj2itr = new TreeMap( Drawable.DRAWING_ORDER );
+            isIncreTimeOrdered  = dobj_order.isIncreasingTimeOrdered();
+            isStartTimeOrdered  = dobj_order.isStartTimeOrdered();
+
+            // map_obj2itr has Drawables arranged in the given Drawable.Order.
+            map_obj2itr = new TreeMap( dobj_order );
             for ( int idx = floors.length-1; idx >= lowest_depth; idx-- ) {
                 this_floor_itr = floors[ idx ].iteratorOfDrawables(
-                                               tframe, isComposite,
-                                               IS_FORE_ITR, isNestable );
+                                               tframe, dobj_order,
+                                               isComposite, isNestable );
                 if ( this_floor_itr.hasNext() ) {
                     this_floor_obj = (Drawable) this_floor_itr.next();
                     map_obj2itr.put( this_floor_obj, this_floor_itr );
@@ -287,7 +322,7 @@ public class TreeFloorList
             }
             if ( withShadows ) {
                 this_floor_itr = floors[ lowest_depth ].iteratorOfShadows(
-                                                        tframe, IS_FORE_ITR,
+                                                        tframe, dobj_order,
                                                         isNestable );
                 if ( this_floor_itr.hasNext() ) {
                     this_floor_obj = (Shadow) this_floor_itr.next();
@@ -296,25 +331,30 @@ public class TreeFloorList
             }
 
             try {
-                this_floor_obj = (Drawable) map_obj2itr.firstKey();
-                this_floor_itr = (Iterator)
-                                 map_obj2itr.remove( this_floor_obj );
+                this_floor_obj  = (Drawable) map_obj2itr.firstKey();
+                this_floor_itr  = (Iterator)
+                                  map_obj2itr.remove( this_floor_obj );
             } catch ( NoSuchElementException err ) {
                 // when map_obj2itr is empty, next_floor_obj is null
-                this_floor_obj = null;
-                this_floor_itr = null;
-                next_floor_obj = null;
-                next_floor_starttime = Double.POSITIVE_INFINITY;
+                this_floor_obj  = null;
+                this_floor_itr  = null;
+                next_floor_obj  = null;
+                next_floor_bordertime = isIncreTimeOrdered ?
+                                        Double.POSITIVE_INFINITY :
+                                        Double.NEGATIVE_INFINITY;
             }
 
             // Initialize next_floor_starttime
             try {
-                next_floor_obj = (Drawable) map_obj2itr.firstKey();
-                next_floor_starttime = next_floor_obj.getEarliestTime();
+                next_floor_obj  = (Drawable) map_obj2itr.firstKey();
+                next_floor_bordertime
+                = next_floor_obj.getBorderTime( isStartTimeOrdered );
             } catch ( NoSuchElementException err ) {
                 // when map_obj2itr is empty, next_floor_obj is null
-                next_floor_obj = null;
-                next_floor_starttime = Double.POSITIVE_INFINITY;
+                next_floor_obj  = null;
+                next_floor_bordertime = isIncreTimeOrdered ?
+                                        Double.POSITIVE_INFINITY :
+                                        Double.NEGATIVE_INFINITY;
             }
         }
 
@@ -327,6 +367,7 @@ public class TreeFloorList
         {
             Drawable     next_drawable;
             Iterator     next_floor_itr;
+            boolean      isFore, isOK;
 
             next_drawable  = this_floor_obj;
             this_floor_obj = null;
@@ -334,12 +375,14 @@ public class TreeFloorList
             try {
                 if ( this_floor_itr.hasNext() ) {
                     this_floor_obj = (Drawable) this_floor_itr.next();
-                    if (   next_floor_starttime
-                         < this_floor_obj.getEarliestTime() ) {
+                    isFore = next_floor_bordertime
+                           < this_floor_obj.getBorderTime( isStartTimeOrdered );
+                    isOK = isIncreTimeOrdered ? isFore : !isFore ;
+                    if ( isOK ) {
                         /*
                           pull next_floor_itr out from map_obj2itr
                           deposit this_floor_itr back to map_obj2itr
-                          update next_floor_starttime from map_obj2itr
+                          update next_floor_bordertime from map_obj2itr
                         */
                         next_floor_itr = (Iterator)
                                          map_obj2itr.remove( next_floor_obj );
@@ -347,154 +390,36 @@ public class TreeFloorList
                         this_floor_obj = next_floor_obj;
                         this_floor_itr = next_floor_itr;
                         next_floor_obj = (Drawable) map_obj2itr.firstKey();
-                        next_floor_starttime = next_floor_obj.getEarliestTime();
+                        next_floor_bordertime
+                        = next_floor_obj.getBorderTime( isStartTimeOrdered );
                     }
                 }
                 else {
                     /*
                       update this_floor_obj from next_floor_obj
-                      update next_floor_starttime from map_obj2itr
-                     */
+                      update next_floor_bordertime from map_obj2itr
+                    */
                     this_floor_obj = next_floor_obj;
                     if ( this_floor_obj != null ) {
                         this_floor_itr = (Iterator)
                                          map_obj2itr.remove( this_floor_obj );
                         next_floor_obj = (Drawable) map_obj2itr.firstKey();
-                        next_floor_starttime = next_floor_obj.getEarliestTime();
+                        next_floor_bordertime
+                        = next_floor_obj.getBorderTime( isStartTimeOrdered );
                     }
                 }
             } catch ( NoSuchElementException err ) {
                 // when map_obj2itr is empty, next_floor_obj is null
                 next_floor_obj     = null;
-                next_floor_starttime = Double.POSITIVE_INFINITY;
+                next_floor_bordertime = isIncreTimeOrdered ?
+                                        Double.POSITIVE_INFINITY :
+                                        Double.NEGATIVE_INFINITY;
             }
 
             return next_drawable;
         }
 
         public void remove() {}
-    }   // private class ForeItrOfDrawables
+    }   // private class ItrOfDrawables
 
-
-    /*
-        BackItrOfDrawables returns Drawables in Decreasing Starttime Order
-     */
-    private class BackItrOfDrawables implements Iterator
-    {
-        private static final boolean  IS_BACK_ITR = false;
-        /*
-           map_obj2itr is a backstore for Iterator of each floor.
-           The key of map_obj2itr is the leading drawable out of the Iterator.
-         */
-        private TreeMap      map_obj2itr;
-        private Drawable     this_floor_obj;
-        private Iterator     this_floor_itr;
-        private Drawable     next_floor_obj;
-        private double       next_floor_starttime;
-
-        public BackItrOfDrawables( final TimeBoundingBox  tframe,
-                                         boolean          isComposite,
-                                         boolean          isNestable,
-                                         boolean          withShadows )
-        {
-            // map_obj2itr has Drawables arranged in Increasing Starttime order
-            map_obj2itr = new TreeMap( Drawable.DRAWING_ORDER );
-            for ( int idx = floors.length-1; idx >= lowest_depth; idx-- ) {
-                this_floor_itr = floors[ idx ].iteratorOfDrawables(
-                                               tframe, isComposite,
-                                               IS_BACK_ITR, isNestable );
-                if ( this_floor_itr.hasNext() ) {
-                    this_floor_obj = (Drawable) this_floor_itr.next();
-                    map_obj2itr.put( this_floor_obj, this_floor_itr );
-                }
-            }
-            if ( withShadows ) {
-                this_floor_itr = floors[ lowest_depth ].iteratorOfShadows(
-                                                        tframe, IS_BACK_ITR,
-                                                        isNestable );
-                if ( this_floor_itr.hasNext() ) {
-                    this_floor_obj = (Shadow) this_floor_itr.next();
-                    map_obj2itr.put( this_floor_obj, this_floor_itr );
-                }
-            }
-
-            try {
-                this_floor_obj = (Drawable) map_obj2itr.lastKey();
-                this_floor_itr = (Iterator)
-                                 map_obj2itr.remove( this_floor_obj );
-            } catch ( NoSuchElementException err ) {
-                // when map_obj2itr is empty, next_floor_obj is null
-                this_floor_obj = null;
-                this_floor_itr = null;
-                next_floor_obj = null;
-                next_floor_starttime = Double.NEGATIVE_INFINITY;
-            }
-
-            // Initialize next_floor_starttime
-            try {
-                next_floor_obj = (Drawable) map_obj2itr.lastKey();
-                next_floor_starttime = next_floor_obj.getEarliestTime();
-            } catch ( NoSuchElementException err ) {
-                // when map_obj2itr is empty, next_floor_obj is null
-                next_floor_obj = null;
-                next_floor_starttime = Double.NEGATIVE_INFINITY;
-            }
-        }
-
-        public boolean hasNext()
-        {
-            return this_floor_obj != null;
-        }
-
-        public Object next()
-        {
-            Drawable     next_drawable;
-            Iterator     next_floor_itr;
-
-            next_drawable  = this_floor_obj;
-            this_floor_obj = null;
-
-            try {
-                if ( this_floor_itr.hasNext() ) {
-                    this_floor_obj = (Drawable) this_floor_itr.next();
-                    if (   this_floor_obj.getEarliestTime()
-                         < next_floor_starttime ) {
-                        /*
-                          pull next_floor_itr out from map_obj2itr
-                          deposit this_floor_itr back to map_obj2itr
-                          update next_floor_starttime from map_obj2itr
-                        */
-                        next_floor_itr = (Iterator)
-                                         map_obj2itr.remove( next_floor_obj );
-                        map_obj2itr.put( this_floor_obj, this_floor_itr );
-                        this_floor_obj = next_floor_obj;
-                        this_floor_itr = next_floor_itr;
-                        next_floor_obj = (Drawable) map_obj2itr.lastKey();
-                        next_floor_starttime = next_floor_obj.getEarliestTime();
-                    }
-                }
-                else {
-                    /*
-                      update this_floor_obj from next_floor_obj
-                      update next_floor_starttime from map_obj2itr
-                     */
-                    this_floor_obj = next_floor_obj;
-                    if ( this_floor_obj != null ) {
-                        this_floor_itr = (Iterator)
-                                         map_obj2itr.remove( this_floor_obj );
-                        next_floor_obj = (Drawable) map_obj2itr.lastKey();
-                        next_floor_starttime = next_floor_obj.getEarliestTime();
-                    }
-                }
-            } catch ( NoSuchElementException err ) {
-                // when map_obj2itr is empty, next_floor_obj is null
-                next_floor_obj     = null;
-                next_floor_starttime = Double.NEGATIVE_INFINITY;
-            }
-
-            return next_drawable;
-        }
-
-        public void remove() {}
-    }   // private class BackItrOfDrawables
 }

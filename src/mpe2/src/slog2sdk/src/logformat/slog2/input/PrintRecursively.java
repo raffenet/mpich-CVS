@@ -50,9 +50,16 @@ public class PrintRecursively
         slog_ins.initialize();
         System.out.println( slog_ins );
 
-        treetrunk  = new TreeTrunk( slog_ins );
+        treetrunk  = new TreeTrunk( slog_ins, Drawable.INCRE_STARTTIME_ORDER );
         treetrunk.initFromTreeTop();
         treeroot   = treetrunk.getTreeRoot();
+        if ( treeroot == null ) {
+            System.out.println( "SLOG-2 file, " + in_filename + " "
+                              + "contains no drawables" );
+            slog_ins.close();
+            System.exit( 0 );
+        }
+
         timebounds = new TimeBoundingBox( treeroot );
         resetTimeBounds( timebounds );
         System.err.println( "Time Window is " + timebounds );

@@ -59,10 +59,16 @@ public class Navigator
         // System.out.println( slog_ins );
 
         // Initialize the TreeTrunk
-        treetrunk       = new TreeTrunk( slog_ins );
+        treetrunk  = new TreeTrunk( slog_ins, Drawable.INCRE_STARTTIME_ORDER );
         treetrunk.setDebuggingEnabled( isVerbose );
         treetrunk.initFromTreeTop();
         treeroot        = treetrunk.getTreeRoot();
+        if ( treeroot == null ) {
+            System.out.println( "SLOG-2 file, " + in_filename + " "
+                              + "contains no drawables" );
+            slog_ins.close();
+            System.exit( 0 );
+        }
         timeframe_root  = new TimeBoundingBox( treeroot );
         depth_max       = treeroot.getTreeNodeID().depth;
         System.out.println( "TimeWindow = " + timeframe_root
