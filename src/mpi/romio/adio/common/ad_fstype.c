@@ -26,8 +26,13 @@
 #ifdef SX4
 #include <sys/stat.h>
 #endif
+#ifndef FREEBSD
 #ifdef PVFS
 #include "pvfs_config.h"
+#endif
+#endif
+#ifdef tflops
+#include <sys/mount.h>
 #endif
 
 void ADIO_FileSysType(char *filename, int *fstype, int *error_code)

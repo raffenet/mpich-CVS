@@ -25,11 +25,11 @@ int ADIOI_PFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
                       but request object was not freed. */
 
 #ifdef HAVE_STATUS_SET_BYTES
-    if ((done == 1) && ((*request)->nbytes != -1))
+    if ((done >= 0) && ((*request)->nbytes != -1))
 	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
 #endif
 
-    if (done == 1) {
+    if (done >= 0) {
         /* if request is still queued in the system, it is also there
            on ADIOI_Async_list. Delete it from there. */
         if ((*request)->queued) ADIOI_Del_req_from_list(request);
@@ -41,9 +41,9 @@ int ADIOI_PFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
     }
     
 #ifdef PRINT_ERR_MSG
-    *error_code = (done == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+    *error_code = (done == -1 && errno != 0) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
-    if (err == -1) {
+    if (done == -1 && errno != 0) {
 	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	ADIOI_Error((*request)->fd, *error_code, myname);	    

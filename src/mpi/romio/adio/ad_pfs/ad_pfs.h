@@ -20,6 +20,7 @@
 
 #ifdef tflops
 #define lseek eseek
+#define _gopen(n,m,i,p) open(n,m,p)
 #endif
 
 #endif

@@ -549,9 +549,9 @@ if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     fi
 fi
 #
-if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPHA" || test -n "$arch_netbsd" ; then
+if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPHA" || test -n "$arch_netbsd" || test -n "$arch_openbsd" ; then
     CC=${CC:-gcc}
-    if test -n "$arch_freebsd" || test -n "$arch_netbsd" ; then
+    if test -n "$arch_freebsd" || test -n "$arch_netbsd" || test -n "$arch_openbsd"; then
        F77=${FC:-f77}
        CFLAGS="$CFLAGS -DFREEBSD"
        PAC_HAVE_MOUNT_NFS

@@ -84,10 +84,10 @@
 #endif
 #endif
 
-/* Prototype to keep compiler happy */
-void mpi_file_get_group_(MPI_Fint *fh,MPI_Group *group, int *ierr );
-
 #if defined(MPIHP) || defined(MPILAM)
+/* Prototype to keep compiler happy */
+void mpi_file_get_group_(MPI_Fint *fh,MPI_Fint *group, int *ierr );
+
 void mpi_file_get_group_(MPI_Fint *fh,MPI_Fint *group, int *ierr )
 {
     MPI_File fh_c;
@@ -98,6 +98,9 @@ void mpi_file_get_group_(MPI_Fint *fh,MPI_Fint *group, int *ierr )
     *group = MPI_Group_c2f(group_c);
 }
 #else
+/* Prototype to keep compiler happy */
+void mpi_file_get_group_(MPI_Fint *fh,MPI_Group *group, int *ierr );
+
 void mpi_file_get_group_(MPI_Fint *fh,MPI_Group *group, int *ierr )
 {
     MPI_File fh_c;

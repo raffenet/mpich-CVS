@@ -10,6 +10,9 @@
 void ADIOI_PFS_Flush(ADIO_File fd, int *error_code)
 {
     int err, np_total, np_comm;
+#ifndef PRINT_ERR_MSG
+    static char myname[] = "ADIOI_PFS_FLUSH";
+#endif
 
 /* fsync is not actually needed in PFS, because it uses something
    called fast-path I/O. However, it doesn't do any harm either. */

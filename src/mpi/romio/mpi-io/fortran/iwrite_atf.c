@@ -84,12 +84,12 @@
 #endif
 #endif
 
+#if defined(MPIHP) || defined(MPILAM)
 /* Prototype to keep compiler happy */
 void mpi_file_iwrite_at_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
-                       int *count,MPI_Datatype *datatype,
+                       int *count,MPI_Fint *datatype,
 			 MPI_Fint *request, int *ierr );
 
-#if defined(MPIHP) || defined(MPILAM)
 void mpi_file_iwrite_at_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
                        int *count,MPI_Fint *datatype,
                        MPI_Fint *request, int *ierr )
@@ -105,6 +105,11 @@ void mpi_file_iwrite_at_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
     *request = MPIO_Request_c2f(req_c);
 }
 #else
+/* Prototype to keep compiler happy */
+void mpi_file_iwrite_at_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
+                       int *count,MPI_Datatype *datatype,
+			 MPI_Fint *request, int *ierr );
+
 void mpi_file_iwrite_at_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
                        int *count,MPI_Datatype *datatype,
                        MPI_Fint *request, int *ierr )

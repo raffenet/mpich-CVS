@@ -10,6 +10,9 @@
 void ADIOI_PVFS_Flush(ADIO_File fd, int *error_code)
 {
     int err;
+#ifndef PRINT_ERR_MSG
+    static char myname[] = "ADIOI_PVFS_FLUSH";
+#endif
 
     err = pvfs_fsync(fd->fd_sys);
 

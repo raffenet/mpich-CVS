@@ -84,11 +84,11 @@
 #endif
 #endif
 
+#if defined(MPIHP) || defined(MPILAM)
 /* Prototype to keep compiler happy */
 void mpi_file_read_all_begin_(MPI_Fint *fh,void *buf,int *count,
-			      MPI_Datatype *datatype, int *ierr );
+			      MPI_Fint *datatype, int *ierr );
 
-#if defined(MPIHP) || defined(MPILAM)
 void mpi_file_read_all_begin_(MPI_Fint *fh,void *buf,int *count,
                       MPI_Fint *datatype,int *ierr )
 {
@@ -101,6 +101,10 @@ void mpi_file_read_all_begin_(MPI_Fint *fh,void *buf,int *count,
     *ierr = MPI_File_read_all_begin(fh_c,buf,*count,datatype_c);
 }
 #else
+/* Prototype to keep compiler happy */
+void mpi_file_read_all_begin_(MPI_Fint *fh,void *buf,int *count,
+			      MPI_Datatype *datatype, int *ierr );
+
 void mpi_file_read_all_begin_(MPI_Fint *fh,void *buf,int *count,
                       MPI_Datatype *datatype, int *ierr ){
     MPI_File fh_c;

@@ -94,6 +94,8 @@ for LARCH in $ARCHLIST ; do
         next)            FARCH=NeXT ; break ;;	
 	KSR1|KSR2)       FARCH=ksr ; break ;;	
         FreeBSD)         FARCH=freebsd ; break ;;
+        OpenBSD)         FARCH=openbsd ; break ;;
+        NetBSD)          FARCH=netbsd ; break ;;
 	i386)            GARCH=ipsc2 ;;
 	ULTRIX|RISC)     GARCH=dec5000 ;;
    esac

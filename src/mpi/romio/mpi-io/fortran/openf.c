@@ -87,11 +87,11 @@
 #endif
 #endif
 
+#if defined(MPIHP) || defined(MPILAM)
 /* Prototype to keep compiler happy */
-void mpi_file_open_(MPI_Comm *comm,char *filename,int *amode,
+void mpi_file_open_(MPI_Fint *comm,char *filename,int *amode,
 		    MPI_Fint *info, MPI_Fint *fh, int *ierr, int str_len );
 
-#if defined(MPIHP) || defined(MPILAM)
 void mpi_file_open_(MPI_Fint *comm,char *filename,int *amode,
                   MPI_Fint *info, MPI_Fint *fh, int *ierr, int str_len )
 {
@@ -135,6 +135,10 @@ void mpi_file_open_(MPI_Comm *comm,_fcd filename_fcd,int *amode,
     char *filename = _fcdtocp(filename_fcd);
     int str_len = _fcdlen(filename_fcd);
 #else
+/* Prototype to keep compiler happy */
+void mpi_file_open_(MPI_Comm *comm,char *filename,int *amode,
+		    MPI_Fint *info, MPI_Fint *fh, int *ierr, int str_len );
+
 void mpi_file_open_(MPI_Comm *comm,char *filename,int *amode,
                   MPI_Fint *info, MPI_Fint *fh, int *ierr, int str_len )
 {

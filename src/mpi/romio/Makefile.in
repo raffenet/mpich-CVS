@@ -163,6 +163,10 @@ install:
 	$(MAKE) clean
 	@./util/romioinstall -prefix=$(PREFIX)
 
+# LAM added uninstall target
+uninstall:
+        @./util/romioinstall -prefix=$(PREFIX) -uninstall
+
 romio_lflags:
 	@echo '@ROMIO_LFLAGS@'
 

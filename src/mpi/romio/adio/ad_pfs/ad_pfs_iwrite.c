@@ -7,7 +7,8 @@
 
 #include "ad_pfs.h"
 
-void ADIOI_PFS_IwriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+void ADIOI_PFS_IwriteContig(ADIO_File fd, void *buf, int count, 
+                MPI_Datatype datatype, int file_ptr_type,
                 ADIO_Offset offset, ADIO_Request *request, int *error_code)  
 {
     long *id_sys;

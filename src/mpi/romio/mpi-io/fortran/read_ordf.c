@@ -84,11 +84,11 @@
 #endif
 #endif
 
+#if defined(MPIHP) || defined(MPILAM)
 /* Prototype to keep compiler happy */
 void mpi_file_read_ordered_(MPI_Fint *fh,void *buf,int *count,
-		    MPI_Datatype *datatype,MPI_Status *status, int *ierr );
+		    MPI_Fint *datatype,MPI_Status *status, int *ierr );
 
-#if defined(MPIHP) || defined(MPILAM)
 void mpi_file_read_ordered_(MPI_Fint *fh,void *buf,int *count,
                       MPI_Fint *datatype,MPI_Status *status, int *ierr )
 {
@@ -101,6 +101,10 @@ void mpi_file_read_ordered_(MPI_Fint *fh,void *buf,int *count,
     *ierr = MPI_File_read_ordered(fh_c,buf,*count,datatype_c,status);
 }
 #else
+/* Prototype to keep compiler happy */
+void mpi_file_read_ordered_(MPI_Fint *fh,void *buf,int *count,
+		    MPI_Datatype *datatype,MPI_Status *status, int *ierr );
+
 void mpi_file_read_ordered_(MPI_Fint *fh,void *buf,int *count,
                       MPI_Datatype *datatype,MPI_Status *status, int *ierr ){
     MPI_File fh_c;
