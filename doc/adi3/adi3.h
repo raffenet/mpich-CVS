@@ -638,6 +638,7 @@ typedef struct {
                   *remote_group; /* The local and remote groups are the
 				    same for intra communicators */
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
+    MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
   /* other, device-specific information */
     int           is_singlemethod; /* An example, device-specific field,
 				      this is used in a multi-method
@@ -672,6 +673,7 @@ typedef struct {
     MPID_List    attributes;
     MPID_Comm    *comm;         /* communicator of window */
     char         name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
+    MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
     /* other, device-specific information 
        This is likely to include a list of pending RMA operations
        (i.e., MPI_Put, MPI_Get, and MPI_Accumulate)

@@ -1,7 +1,7 @@
 %
 % This file contains the error classes/codes section so that it can be
 % separately printed.
-\subsubsection{Error Classes and Codes}
+\subsection{Error Classes and Codes}
 The MPI standard defines a number of error classes and permits an
 implementation to make use of additional error codes, with the proviso that
 any error code belong to some error class (though this does include the
@@ -15,13 +15,15 @@ In addition, many of the errors have common subcases.  For example, most of
 the errors that refer to an MPI opaque handle can indicate either a null or a
 non-null but invalid handle.   To handle all of these cases, we predefine an
 extended set of error codes.  Only the error classes are defined in
-\file{mpi.h}; the others are defined in \file{mpiimpl.h} (Question: is this
-the correct place, or should there be a separate file?).  The additional error
+\file{mpi.h}; the others are defined in the file \file{mpierrcodes.h} which is
+included by \file{mpiimpl.h}.  The additional error
 codes all have the form of \code{MPIi_ERR_<class>_<subclass>}.  For example,
 the code for a null communicator is \mpiconst{MPIi_ERR_COMM_NULL}.
+This prefix (with the lowercase \code{i}) was chosen to emphasize that this is
+an internal code.
 
-Comment [BRT]: I find that MPIi_ is painful to type.  Is there a
-reason the second `i' is lowercase?
+% Comment [BRT]: I find that MPIi_ is painful to type.  Is there a
+% reason the second `i' is lowercase?
 
 Many of these descriptions list the optional arguments.  These can be provided
 (in the order and with the types specified) to the call that creates an error

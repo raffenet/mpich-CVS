@@ -72,8 +72,8 @@ One possibility is to consider a few classes of systems.  Pure
 distributed memory is one important case.  Another is shared memory,
 or at least some common shared memory.  Of course, multi-method
 devices make this more difficult.  However, to be concrete, this
-approach of is taken here; the details are described in
-Section~\label{sec-mpi-operations}.
+approach is taken here; the details are described in
+Section~\ref{sec:mpi-operations}.
 
 % Outline:
 \section{General}
@@ -114,6 +114,13 @@ writing the code.
       (Section~\ref{sec:profile}) 
     \item[io]ROMIO implementation, possibly minus the miscellaneous MPI-2
       routines such as the info support
+    \end{description}
+  \item[util]Various utilities
+    \begin{description}
+    \item[param]Runtime parameter routines (e.g., like PETSc options database)
+    \item[mem]Memory allocation and management
+    \item[thread]Thread portability layer.  Supports at least pthreads,
+      openmp, and Windows.  Possibly also Solaris threads.
     \end{description}
   \item[mpid]Implementation of the ADI3
   \item[bnr]Process manager interface
@@ -193,47 +200,30 @@ There must be a configure option,
 that prevents \code{HAVE_ERROR_CHECKING} from being defined.
 
 \subsubsection{Errors to test for}
-Most values should be tested to ensure that they are in-range.  For examples,
+Most values should be tested to ensure that they are in-range.  For example,
 tags must be nonnegative for sending (and nonnegative or
 \mpiconst{MPI_ANY_TAG} for receiving). 
 
-Question: Code in ROMIO often includes the following test on pointers:
-\begin{verbatim}
-if (ptr < (Ptr_type) 0) error
-\end{verbatim}
-This helps catch some common invalid pointers on many systems, but isn't
-correct for some other systems.  Should there be an optional
-pointer-validation test?  For example, the function
-\mpidfunc{MPID_Test_pointer} would return true if the pointer was valid and
-false otherwise (possibly testing only for reading).  This could do anything
-from test against null to changing the \code{SIGSEGV} handler, attempting to
-read from the address, resetting the handler, and determining if the handler
-was invoked.  It could return an error code if it finds a problem.
-Note that this won't work in the multi-threaded case (unless a
-thread-specific signal handler is available).
+\begin{description}
+\item MPI Initialized
+\item Parameter values in range, including tag values, ranks, counts.
+\item Aliasing of input and output parameters (e.g., inbuf and outbuf of
+  \code{MPI_Allreduce}) 
+\item MPI objects valid (See opaque object discussion)
+\item Output parameter pointers valid.  The macro
+  \code{MPID_Pointer_is_invalid(void *p)} returns one for invalid pointers.
+  Note that this may be as simple as \code{((p) == 0)} and as complex as
+  \code{(long(p)<=0)} or \code{9!(p) || (unsigned long)(p) > STACKLIMIT)}.
+\end{description}
 
-Question [BRT]: Are there systems where a pointer can be less
-than zero?  I have always (perhaps incorrectly) considered pointers to
-be unsigned, so the above code fragment seems bizzare to me.  
-
-Question [BRT]: What is the purpose of performing these tests?  If the
-purpose is to help us, the MPICH developers, find bugs, then I suggest
-that we avoid adding these types of tests and instead make use of a
-product like Insure++.  If the purpose is to keep the user's code from
-core dumping, then such tests might be useful.  However, I highly
-recommend that the user be able to turn off such checks as a core dump
-frequently provides useful information about the source of the
-problem.
-Answer [WDG]: I believe that the intent was to catch user errors.  As the bug
-reports have shown, users often assume that any code except theirs is at
-fault, so the library code by default should be defensive.  
 
 \subsubsection{Choosing Error Handlers and Classes}
+\label{sec:chosing-errhandler}
 Error handlers should be chosen using the following decision tree:
 \begin{enumerate}
-\item If still in the initialization step (within
+\item If still in the initialization step (e.g., within
 \mpifunc{MPI_Init_thread}), errors return.  Question, should this be
-errors abort?
+errors abort?  Recommendation: abort.
 
 \item Check if executing inside a layered routine (i.e., an MPI routine called
   within the implementation of another MPI routine).  If so, return error
@@ -241,9 +231,9 @@ errors abort?
   Section~\ref{sec:err-handling-nested}. 
 
 \item If the routine has a valid \code{MPI_Comm}, \code{MPI_File}, or
-  \code{MPI_Win}, use the error handler from that object.  (Question: do we
-  have a common way to extract the error handler?  It isn't part of the
-  communicator/file/win structures yet.)
+  \code{MPI_Win}, use the error handler from that object.  Note that there is
+  a common errorhandler member (\code{errhandler}) in the related structures;
+  the \code{errfn} of this structure is the actual function.
 
 \item If the error relates to a request, and the request refers to a valid
   communicator, use that communicator's error handler (e.g., \code{MPI_Wait}).
@@ -252,7 +242,8 @@ errors abort?
   to \mpiconst{MPI_COMM_WORLD}  
   (see Section 7.2 in the MPI-1 Standard: ``MPI calls that are not related to
   any communicator are considered to be attached to the communicator
-  \code{MPI_COMM_WORLD}.'' ).
+  \code{MPI_COMM_WORLD}.'' ).  Ensure that the manual pages on error handlers
+  include this information.
 
 \item For MPI-IO, the default error handler is attached to
   \code{MPI_FILE_NULL} (see Section 9.7 in the MPI-2 standard: ``The default
@@ -261,15 +252,14 @@ errors abort?
   requires \mpifunc{MPI_FILE_SET_ERRHANDLER} and
   \mpifunc{MPI_FILE_GET_ERRHANDLER} to handle this special case for
   \mpiconst{MPI_FILE_NULL}.  We also need either a full
-\mpiconst{MPI_File} object associated with \mpiconst{MPI_FILE_NULL} or
-the various associated properties.  It might be eaiser for the
-implementation of \mpifunc{PMPI_File_set_errhandler} and
-\mpifunc{PMPI_File_get_errhandler} to be in the same file and share a
-static variable (see Section~\ref{sec:pmpi-routines}) such as
-\mpidconst{MPIi_File_errhandler}. 
-\end{enumerate}
+  \mpiconst{MPI_File} object associated with \mpiconst{MPI_FILE_NULL} or
+  the various associated properties.  It might be eaiser for the
+  implementation of \mpifunc{PMPI_File_set_errhandler} and
+  \mpifunc{PMPI_File_get_errhandler} to be in the same file and share a
+  static variable (see Section~\ref{sec:pmpi-routines}) such as
+  \mpidconst{MPIi_File_errhandler}. 
 
-\input{errcodes}
+\end{enumerate}
 
 \subsubsection{Error handling and Fault Tolerance}
 \label{sec:errs-and-faults}
@@ -286,116 +276,98 @@ communicator.
 In many cases, MPI routines are implemented in terms of other MPI (or
 PMPI) routines.  In these cases, it is important for any error handler
 (other than \mpiconst{MPI_ERRORS_RETURN}) to be invoked only by the
-``top-level'' routine.  In the case of a single-threaded MPI (from the
-user's perspective; that is, the user's code is single-threaded),
-implementing this is not difficult.  The ``top-level'' routine needs
-only to save the current error handler and then replace it with
-\mpiconst{MPI_ERRORS_RETURN}.  Any errors detected in the routines
-that the top level routine calls will then be returned to that
-routine, which can then invoke the specified MPI error handler.
-
-\index{thread overhead!error handlers}
-In a multithreaded case, however, this approach is incorrect, since
-another thread may be using the same object (think of
-\mpiconst{MPI_COMM_WORLD}).  This suggests an alternative approach.
-For each thread, maintain a ``current error handler.''  Most of the
-time, this will be ``objects error handler''.  However, during a
-layered call, this would be changed to ``errors return.''  
-
-The only difficulty with this is that threads are not registered with
-the MPI implementation; thus, depending on the details of the thread package,
-there may bes no easy way for the implementation
-to know a priori whether thread-private data has been created to store
-the current error handler.  Instead, when an error handler must be
-invoked or changed, a global table of known threads must be consulted
-(by the thread id, which is unique for each thread).  This table
-indicates which error handler is current for a thread.  
-Note that a different thread id function is needed for each thread
-package.  For example, if a system supports both pthreads and OpenMP
-(where OpenMP does not use pthreads), then the MPI implementation
-needs to know which thread package is being used.  This suggests that
-the function that provides the thread id by well isolated and perhaps
-dynamically loaded.
-
-Comment [BRT]: I believe most threads packages provide thread-specific
-storage.  If such storage is available, we should use it rather than
-creating our own implementation of thread-specific storage.
-
-Comment [BRT]: On some systems, the choice of the threads package (or
-lack thereof) must be selected at compile time and be consistent for
-all object files linked into the executable.  On these systems,
-dynamic loading of libraries compiled with different thread packages
-is likely to be problematic.
-
-Under pthreads, the situation is somewhat easier.  We can use
-\code{pthread_key_create} to create a key that can be used to access
-thread-private data with \code{pthread_getspecific} in any thread.
-The key needs to be a (at least file-scoped) variable such as
-\mpidconst{MPID_THREAD_KEY_ERRHANDLER}. 
-Since the pthread keys are common to all pthreads, this can be allocated in
-\mpidfunc{MPID_Init}.  Question: is this handled as part of
-\mpidfunc{MPID_Err_init}, and is there a corresponding
-\mpidfunc{MPID_Err_finalize} that calls \code{pthread_key_delete}?
-
-To implement the layered calls, the following functions may be 
-used\index{MPIi_Err_set_return}\index{MPIi_Err_restore}\index{MPIi_Err_get_handler} 
+``top-level'' routine.  
+This is managed by maintaining a per-thread nesting level.  Before an error
+handler is invoked, the nesting level is tested.  If the level is different
+from zero, the error is returned.  The interface is
+\index{MPID_Nest_incr}\index{MPID_Nest_decr}\index{MPID_Nest_value}
 \begin{verbatim}
-void MPIi_Err_set_return(void);
-void MPIi_Err_restore(void);
-MPID_Errhandler *MPIi_Err_get_handler(ds);
+MPID_Nest_incr()
+MPID_Nest_decr()
+MPID_Nest_value()
 \end{verbatim}
-The last routine returns the error handler to use; it first checks the
-global current error handler (\code{int}
-\mpiconst{MPIi_QUERY_ERRORS_RETURN}); if true, then the handler is
-\mpiconst{MPI_ERRORS_RETURN}.  Otherwise, it returns the handler
-associated with the data structure.  In the multithreaded case, it
-uses the thread id to check the table of threads for the
-thread-specific version of \mpiconst{MPIi_QUERY_ERRORS_RETURN}.
 
-This is different from the MPICH-1 version which implemented a general
-push/pop of error handlers.  While push/pop of error handlers is a
-nice abstract model, it is more than is needed for the layered MPI
-routines, and, as noted above, is not correct for the multithreaded
-case.
-
-Comment [BRT]: push/pop would be correct for the multi-threaded case
-as long as thread-specific stacks are used.
+See Section~\ref{sec:perthread} for details on the thread-specific storage.
 
 \subsection{Memory Allocation}
-Avoid memory allocation wherever practical.  Use \mpidfunc{MPID_Malloc}
-etc. instead of \code{malloc}, as described in the ADI-3 manual
-\cite{adi3man}. 
+As a software package, MPICH should not perturb the user's environment.  In
+particular, it should have bounded memory usage and should strive not to
+allocate memory outside of the initialization routine.  
 
-At normal exit from the MPI library in \mpifunc{MPI_Finalize}, the
-routine \mpidfunc{MPID_Trdump} must be called if the runtime parameter
+Where it is necessary to allocate memory, the function \mpidfunc{MPID_Malloc}
+(and corresponding \code{MPID_Calloc}, etc.) should be used instead of
+\code{malloc}, as described in the ADI-3 manual \cite{adi3man}.  
+
+Memory allocation follows the usual rules for a separate subpackage: there are
+initialization routines and a registered routine to be called in
+\mpifunc{MPI_Finalize}. (See Section~\ref{sec:finalize}.)  This end-of-job
+handler must call the 
+routine \mpidfunc{MPID_Trdump} if the runtime parameter
 \code{MPICH_TRDUMP}\eindex{MPICH_TRDUMP} is set.  
 
-Question: Should there be separate per-thread and per-process memory
-allocators? 
+% Question: Should there be separate per-thread and per-process memory
+% allocators? (answer: Per process only)
 
-Question: Should we use the same calling sequence as PETSc uses for the memory
-allocators?  This will make it easier to use the PETSc options database.
+% Question: Should we use the same calling sequence as PETSc uses for the memory
+% allocators?  This will make it easier to use the PETSc options database.
+% No, the PETSc form is int Petsc_Malloc( int size, void ** ptr ).  We want
+% void *malloc(size_t)
 
-Question: Should there be a memory allocator that remembers allocations within
-a routine so that out-of-memory errors can be cleanly handled (e.g., freeing
-all memory allocated within the routine)?  This could have something like
+\subsubsection{Multiple Memory Allocation}
+In some routines, there may be multiple memory allocations.  If an error is
+detected after some of these (either an out-of-memory error or some other
+error), it can be difficult to recover all of the allocated memory before
+returning.  To simplify this case, we define a simple, stack-based system that
+remembers the allocated memory and provides a simple way to ensure that all
+allocations are freed before an error return.
+
+% Question: Should there be a memory allocator that remembers allocations within
+% a routine so that out-of-memory errors can be cleanly handled (e.g., freeing
+% all memory allocated within the routine)?  
+
+This could have something like
 \begin{verbatim}
 #define MAX_MEM_STACK 16
 typedef struct { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPID_Mem_stack;
 \end{verbatim}
+defined in \file{mpiimpl.h} 
 and a memory allocation macro that updated a routine-local version of this
 with every allocation.  Then on an error, we could easily free any allocated
 memory.  The memory allocator could be
 \begin{verbatim}
-#define MALLOC_STK(n,a) {a=MALLOC(n);\
+#define MALLOC_STK(n,a) {a=MPID_Malloc(n);\
                if (_memstack.n_alloc >= MAX_MEM_STACK) abort(implerror)\
                _memstack.ptrs[_memstack.n_alloc++] = a;}
 #define FREE_STK     {int i; for (i=0;i<_memstack.n_alloc;i++) {\
                FREE(_memstack.ptrs[i]);}
 \end{verbatim}
 
-Comment [BRT]: _memstack needs to be allocated in thread specific
-storage in order for the MPI implementation to be thread safe.
+% Comment [BRT]: _memstack needs to be allocated in thread specific
+% storage in order for the MPI implementation to be thread safe.
+
+To ensure that the usuage is thread-safe, the \code{_memstack} should be
+declared within the routine.  A typical use might be
+\begin{verbatim}
+    MPID_Mem_stack _memstack;
+    _memstack.n_alloc = 0;
+
+    ...
+    MALLOC_STK(sizeof(MPID_Dataloop)*n,new->dataloops);
+    if (!new->dataloops) {
+        FREE_STK;
+        MPIR_Return( ... );
+    }
+    MALLOC_STK(m,new->other);
+    if (!new->other) {
+        FREE_STK;
+        MPIR_Return( ... );
+    }
+    ...
+    if (count < 0) {
+        FREE_STK; 
+        MPIR_Return( ... );
+    }
+\end{verbatim}
 
 \subsection{MPI Opaque Objects}
 
@@ -477,6 +449,7 @@ to work with, usually 27 and for some architectures 59.
 
 There are more than 32 but less than 64 predefined datatypes, so 6 bits are
 adequate to encode all of the predefined datatypes.
+Note that C2000 adds another 31 types, so we will need 7 bits eventually.
 That leaves us at least 5 bits
 (usually 21) to specify the size.  We'll be specifying size in bytes,
 which will be adequate (if long double is 16 bytes, then the long complex and
@@ -500,8 +473,9 @@ minus estimated \code{malloc} overhead (if we dynamically allocate).
 For indirectly accessed values the remaining bits specify an allocated block
 for storing pointers and an index into that block.  We'll split the bits
 based on the number of pointers we can store in a block (which will need
-to be statically calculable; \code{_SC_PAGE_SIZE} is a starting point, or we
-can  do a configure test and define...).
+to be statically calculable; the \code{_SC_PAGE_SIZE} value in the
+\code{sysconf} call is a starting point, or we can  do a configure test and
+define...). 
 
 \subsection{MPI and PMPI Routines}
 \label{sec:pmpi-routines}
@@ -526,12 +500,41 @@ int MPIR_Attr_get_util( int keyval, MPID_Comm *comm, void *attr )
 int PMPI_Attr_get( ... etc ... )
 \end{verbatim}
 
+Here is a sample \file{Makefile} target that creates the profiling routines
+with a separate name.
+\begin{verbatim}
+.SUFFIXES:
+.SUFFIXES: .o .po .c .f
+# Instead, we define the PMPI_OBJECTS as having suffix po:
+PMPI_OBJECTS = ${OBJECTS:.o=.po}
+# Convert foo.po to _foo.o, then archive all at once
+${libbuild_dir}/lib@PMPILIBNAME@.a: ${PMPI_OBJECTS}
+        @echo "Rename xxx.po to _xxx.o for profiling interface."
+        @if [ ! -d .tmp ] ; then mkdir .tmp ; else rm -f .tmp/*.o ; fi
+        @for file in $? ; do \
+            bname=`basename $$file .po`; \
+            cp $$file .tmp/_$${bname}.o ; \
+        done
+        @cd .tmp && ${AR} cr $@ *.o && rm -f *.o
+        -@rmdir .tmp
+# Note that the Solaris SunPro cc (4.0 98/12/15) does not allow the file
+# named with -o to have any suffix other than .o !
+.c.po:
+        ${C_COMPILE} -c -DMPI_BUILD_PROFILING $< -o $*.o
+        @mv $*.o $*.po
+.f.po:
+        ${F77_COMPILE} -c $<
+        @mv $*.o $*.po
+\end{verbatim}
+
 If it is necessary to create the \code{MPI} versions separately, the
 object files should be renamed, allowing them to be placed into the
 same library.  To handle the event that the library cannot hold over
 500 files (250 for PMPI MPI 1 and 2, plus a version for the MPI
 routines), the name of the library containing the profiling versions
-should be separate.
+should be separate.  That is, there are separate configure names
+\code{MPILIBNAME} and \code{PMPILIBNAME} that are usually the same but that
+can be set to different names.
 
 Question: If we do have two libraries, then we must link with both,
 even when the profiling routines are not otherwise used because any
@@ -542,41 +545,31 @@ it the best thing to do?  Note that we do this now, but through the
 confusing approach of using the MPI file names, but redefining them as PMPI
 with a file containing a redefinition of every single MPI routine.
 
-Question: The pragma code is very ugly and hard to read.  It is also hard to
-update.
-It would be relatively
-easy to create the correct form on the fly, using configure (or
-another program, run by configure).  But that
-would require at least an include file for each MPI routine.
-An alternate approach is to make the inclusion entirely machine
-generated.  In that case, updating it requires only re-running the
-update editor.  In this case, the pragmas for implementing the
-profiling interface should be placed between two clear markers, such
-as 
-\begin{verbatim}
-/* -- begin profiling interface for routine xxxx -- */
-/* DO NOT EDIT.  Use the program xxx to update */
-...
-/* -- end profiling interface -- */
-\end{verbatim}
+Some sets of routines need a variable that persists between calls.
+Rather than make the variable a global variable, it should become a
+\code{static} variable in a file, where if possible the variable is used
+entirely within that file (e.g., a file of utility routines).  If that is not
+possible, then it should be accessed through \code{MPIR_} or \code{MPID_}
+routines.  
 
-Placing the routine name in the comment header makes it easy to
-extract the correct name and generate the appropriate text.
-
-Question: Some sets of routines need a global variable.  Rather than
-make the variable truely global, we could use \code{static} to
-restrict it to file scope.   Examples are handling of the bsend
-buffers, the keyval used for topologies, and the error handler on
-\mpiconst{MPI_FILE_NULL}.  In order to provide the profiling
-interface, this can be implemented as is if weak symbols are
-provided.  Otherwise, the MPI version of the routines would simply
-call the PMPI routines.  Alternately the value could be accessed
-through a utility routine.
+% Rather than 
+% make the variable truly global, we could use \code{static} to
+% restrict it to file scope.   Examples are handling of the bsend
+% buffers, the keyval used for topologies, and the error handler on
+% \mpiconst{MPI_FILE_NULL}.  In order to provide the profiling
+% interface, this can be implemented as is if weak symbols are
+% provided.  Otherwise, the MPI version of the routines would simply
+% call the PMPI routines.  Alternately the value could be accessed
+% through a utility routine.
 
 \subsection{Deprecated Routines}
-Question:  How should deprecated routines be handled?  At the very
-least, their man pages should make clear that they are deprecated and
-what functions should be used instead.
+
+The MPI-2 standard deprecated some routines (see Section~2.6.1 in the MPI-2
+Standard).  The manual pages for the deprecated routines should make clear
+that they are deprecated and what functions should be used instead.  In
+addition, we should provide a library created with \code{wrappergen} that
+generates a single warning message for each deprecated routine used in an
+application (and of course document this).
 
 \subsection{Runtime Parameters}
 \label{sec:runtime-params}
@@ -594,12 +587,15 @@ to provide uniform access to runtime parameters?
 Question: What should the routines be?  For 
 example,\index{MPIi_Param_init}\index{MPIi_Param_get_int}\index{MPIi_Param_get_string}\index{MPIi_Param_finalize}
 \begin{verbatim}
-int MPIi_Param_init( int argc, char *argv[] );
+int MPIi_Param_init( int *argc, char **argv[] );
 int MPIi_Param_get_int( const char name[], int default_val, int *value );
 int MPIi_Param_get_string( const char name[], const char *default val,
                            char **value );
 void MPIi_Param_finalize( void );
 \end{verbatim}
+We use pointers to \code{argc} and \code{argv} to allow parameters to be
+removed.  
+
 The simplest implementation of these might be
 \begin{verbatim}
 int MPIi_Param_init( int argc, char *argv[] ) {return 0}
@@ -647,6 +643,15 @@ generation of help text.  It
 would also allow text describing the parameter to be provided from
 within the code.
 
+An alternative is to use a tool, similar to that for error reporting, that
+finds all uses of the parameter routines.
+
+Question: How do we find out that no value was specified?  This is different
+from having a default value.
+
+Question: the file read operation is a potential problem.  Do we want to have
+a separate pre-init and post-init (that can use \code{MPI_Bcast}) to get data?
+
 
 \subsection{Threads}
 \label{sec:threads}
@@ -660,12 +665,42 @@ portability to most Unix platforms, including Linux.
 routines (such as lock/unlock).  
 \end{enumerate}
 There are some operations, such as condition variables, monitors, and
-thread-shcheduling control, that may not be available (e.g., OpenMP
+thread-scheduling control, that may not be available (e.g., OpenMP
 has no condition variables)  
 
 Question: do we just want to emulate the missing operations, or (and?)
 do we want to know that they are missing so that an alternatie
 approach can be taken?
+
+\section{Per Thread and Per Process Data}
+\label{sec:perthread}
+There are various data values that are common to the MPI process and values
+that are specific to a particular thread in the MPI process.  An example of
+per-thread data is the nesting level for a layered MPI routine.  An example of
+per-process data is the thread-id of the main thread (the thread that called
+\mpifunc{MPI_Init} or \mpifunc{MPI_Init_thread}). 
+
+To simplify the management of per-thread data, there is a common data
+structure, \code{MPICH_PerThread_t}, that contains per-thread data.
+For example,
+\begin{verbatim}
+typedef struct {
+    int              nest_count;   /* For layered MPI implementation */
+    MPID_Timestamp_t timestamps[MAX_STATES];  /* per thread state timers */    
+    } MPICH_PerThread_t;
+\end{verbatim}
+
+Similarly, there is a per-process type
+\begin{verbatim}
+typedef struct {
+    MPID_Thread_key_t thread_key;
+    MPID_Thread_id_t  master_thread;
+} MPICH_PerProcess_t;
+\end{verbatim}
+
+Access to the fields in \code{MPICH_PerThread_t} is made through a macro that
+allows both the compile-time and run-time single-threaded case to directly
+access the data without using \code{pthread_getspecific}.
 
 \subsection{Coding Practices}
 \label{sec:coding-practices}
@@ -677,7 +712,6 @@ All routines should be prototyped.  The prototypes should be in the
 smallest scope possible.  For example, if the routine is used only
 within the files in a subdirectory, the prototype should be in an
 include file within that directory.
-Question: do we really want this?
 
 \item[Static functions.]
 Functions used entirely within a single file should be declared
@@ -704,26 +738,29 @@ Comment [BRT]: Yes.  Having a style standard makes it much easier to
 read and modify code written by others.
 
 \item[File header.]
-There should be a standard file header, containing the copyright and
-standardized includes (e.g., something like "\file{mpiimpl.h}").  This header
-template should be part of the development environment.  Question:
-what should this header be?
+There is a standard file header, \file{topfile.c}, containing the copyright and
+standardized includes (e.g., \file{mpiimpl.h}).  This header
+template should be part of the development environment. 
 
 \item[Function Name.]
-There should be a macro, \code{__FUNCTION__}, containing the name of the
-function.  This name is chosen because some versions of \code{gcc} will set it
-for you.  The statement \code{SET_FUNCTION_NAME("name");} should be included
-in the declarations part of the program \emph{or} we should include the
-appropriate \code{\#define} line (as PETSc does) before the function
-declaration. 
+The function name is available as \code{FCNAME}.  A configure test will
+determine if \code{__FUNCTION__} is available as the value of this (e.g.,
+\code{gcc} sets this value).
 
-Alternately, we could use \code{FCNAME} and include optional code to
-set it to either \code{__FUNCTION__} for systems that define that or
-explicitly to the name.
+% There should be a macro, \code{__FUNCTION__}, containing the name of the
+% function.  This name is chosen because some versions of \code{gcc} will set it
+% for you.  The statement \code{SET_FUNCTION_NAME("name");} should be included
+% in the declarations part of the program \emph{or} we should include the
+% appropriate \code{\#define} line (as PETSc does) before the function
+% declaration. 
 
-Comment [BRT]: Names beginning with an underscore are reserved for the
-compiler and runtime system.  Use of \code{__FUNCTION__} could affect
-portability.  So, I prefer the use of \code{FCNAME}.
+% Alternately, we could use \code{FCNAME} and include optional code to
+% set it to either \code{__FUNCTION__} for systems that define that or
+% explicitly to the name.
+
+% Comment [BRT]: Names beginning with an underscore are reserved for the
+% compiler and runtime system.  Use of \code{__FUNCTION__} could affect
+% portability.  So, I prefer the use of \code{FCNAME}.
 
 \item[Boolean Flags.]
 Data structures that contain a number of flags should store them
@@ -803,6 +840,17 @@ controlled:
 \end{description}
 \textbf{Question: do we want to allow even finer grain control?}
 
+In addition to timing the routines, we also need to instrument important
+states.  For example, the idle time in an \code{MPI_Wait} or in a blocking
+\code{select} should be covered.  We may want to have a class for idle time
+and separate entries for each place where the code waits.  For example,
+\code{MPID_STATE_IDLE_MPI_WAIT}.  
+
+In addition, nontrivial system calls should be timed because they can
+sometimes take surprising amounts of time (e.g., \code{gethostbyname}).
+These can be timed using the same macros, with state names that include the
+function name (e.g., \code{MPID_STATE_GETHOSTBYNAME}).
+
 \subsection{Sample Implementation Template}
 \begin{verbatim}
 /*
@@ -814,7 +862,7 @@ controlled:
 
 #include "mpiimpl.h"
 
-/* -- Begin Profiling Symbol Block */
+/* -- Begin Profiling Symbol Block for routine MPI_Foo */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Foo = PMPI_Foo
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
@@ -867,6 +915,7 @@ options) that know how to build MPICH2 with MPE, perftest, the test
 suite, and other options.  These should \emph{not} be part of the base
 MPICH2 project (as far as CVS is concerned).  This will encourage
 better separation of the projects.
+Question: How is the above supposed to work?
 
 Question: What about Fortran and C++?  These are required for full MPI support
 (unlike MPE or the performance tests), but have many unique requirements
@@ -882,6 +931,8 @@ definitions by the compiler.  This will require generating the
 files, with the (possible) exception of \file{mpi++.h} for C++
 support.
 
+Question: what about \file{mpio.h}?
+
 The \file{mpif.h} (or \file{mpif.h.in}) should be created from
 \file{mpi.h} so that the various integer values (e.g., error classes,
 datatypes, etc.) are guaranteed consistent.  This can be done prior to
@@ -890,6 +941,8 @@ distribution, similar to the way \file{configure} is generated from
 at least in the development Makefiles, the \file{mpif.h.in} file
 should be created from the \file{mpi.h} automatically, at least with
 respect to any values. 
+
+Question: Is there an easy Perl script for this, particularly, for the values?
 
 % Scenarios (move to ADI doc?)
 \input{pt2ptdesc}
@@ -4419,6 +4472,7 @@ calls.\index{MPICH_PRE_INIT}\index{MPICH_IS_INITIALIZED}
 \index{MPICH_POST_FINALIZED}
 
 \subsubsection{\mpifunc{MPI_FINALIZE}}
+\label{sec:finalize}
 The MPI-2 standard requires that \code{MPI_Finalize} first delete the
 attributes associated with \mpiconst{MPI_COMM_SELF}, even before
 \mpifunc{MPI_FINALIZED} would return true.  This allows any number of
@@ -5251,7 +5305,9 @@ Similar to the communicator versions.
 
 \paragraph{MPI I/O Error Handlers.}
 We need to ensure that ROMIO's error handlers are the same as the MPICH-2
-handlers.
+handlers.  In addition, these must support providing an error handler for
+\mpiconst{MPI_FILE_NULL}.  See the discussion in
+\section{sec:chosing-errhandler}. 
 
 \subsection{Handle Transfers}
 \label{sec:handle-transfer}
@@ -5466,6 +5522,9 @@ a simple perl program to extract the information stored in the
 \code{libtool} source to take advantage of that source of information
 without requiring the \code{libtool} development environment.
 
+Question: What are the makefile targets that we want to use for the shared
+libraries?
+
 \subsection{Configure}
 \label{sec:configure}
 We will use autoconf version 2.13 or later.  The top-level configure will only
@@ -5504,6 +5563,9 @@ If \code{automake} is used, add
 AM_CFLAGS=${COPTIONS}
 \end{verbatim}
 to the \file{Makefile.am}. 
+If we do use \code{automake}, we will provide a tool to edit the generated
+files to both clean them up and to patch errors (e.g., the re-run
+\code{automake} in \emph{distributed} versions of the \file{Makefile}s).
 
 \subsection{Supporting Cross-compilation}
 \label{sec:cross-compile}
@@ -5523,7 +5585,8 @@ integer in bytes.
 We need to document all \code{CROSS_xxx} variables.  Here is a start at that
 list:
 \begin{description}
-\item[\texttt{CROSS_BYTE_ORDERING}]
+\item[\texttt{CROSS_BYTE_ORDERING}]\code{WORDS_BIGENDIAN} or empty (just like
+  \code{AC_C_BIGENDIAN})
 \item[\texttt{CROSS_STRUCT_ALIGNMENT}]Structure alignment.  One of 
     \begin{description}
     \item[\texttt{packed}]No padding
@@ -5535,6 +5598,8 @@ list:
     \end{description}
     A program to determine these already exists and is part of the
     current MPICH.
+
+    Question: Do we need a \code{sixteen}?  Does this cover all four AIX forms?
 \item[\texttt{CROSS_SIZEOF_INT}]\code{sizeof(int)}
 \item[\texttt{CROSS_SIZEOF_VOID_P}]\code{sizeof(void*)}
 \item[\texttt{CROSS_SIZEOF_CHAR}]\code{sizeof(char)}
@@ -5574,12 +5639,22 @@ This file can be considered a very simple database, where each record
 contains the following information (some of the information is used
 only by compile steps; other by link or shared library steps.  There
 is enough overlap that the combined list is given).
+There are two kinds of values.  The first are keys that identify a particular
+compiler (or compiler class, like \code{gcc}).  These include
 \begin{description}
 \item[kind]C, C++, Fortran 77, or Fortran 90.  Perhaps Java as well.
 \item[action]compile, link, create static library, or create shared library
 \item[name]E.g., cc, xlc, pgcc, gcc
 \item[ostype]OS that has this compiler.  For some compilers, this is *
 (e.g., gcc, pgcc, cc)
+\item[signature]A regular expression that should match the value
+generated by version.  This may be slightly extended to allow a
+particular line of the output to be matched.
+\end{description}
+
+The second kind of values provide information about the compiler, such as
+options for generating optimized code or for creating object files for shared libraries.
+\begin{description}
 \item[optimize]Options for optimizing.
 \item[debug]Options for debugging.
 \item[ansi]Options to force ANSI (or a superset)
@@ -5587,9 +5662,6 @@ is enough overlap that the combined list is given).
 \item[threads]Options to allow threads
 \item[sharedobject]Options to create a shared object
 \item[version]Options to generate a version and name string.  See signature
-\item[signature]A regular expression that should match the value
-generated by version.  This may be slightly extended to allow a
-particular line of the output to be matched.
 \item[size32]Options for 32bit pointers
 \item[size64]Options for 64bit pointers
 \item[size=xx]Options for other sizes (128 bit pointers, anyone?) or
@@ -5640,6 +5712,10 @@ this file.  In the cross compilation case, either a different compiler
 may be used, the user can prebuild the program, or all of the
 necessary data can be supplied through environment variables.
 
+Question: This is not trivially parseable.  Another option is one value per
+line, or tab-separated values.  We should write perl or C code to parse it and
+adjust the format for easy handling.
+
 \subsection{Coding Rules}
 We will attempt to enforce the coding rules by building tools that
 check for conformance to these rules.
@@ -5677,6 +5753,8 @@ It is better to call a routine that can handle recording the results.
 Question: Should we define \code{PRINTF} etc. as we have in MPICH, or
 ban those values entirely?  Should we define a general output routine
 that can be implemented to output to a file, stdout, or a graphical display?
+Answer: We should define replacement routines.  These should implement
+something like the \code{DLAST} feature of MPICH (e.g., hold the last 100 messages).
 
 \subsection{NT Friendly}
 
@@ -5686,11 +5764,11 @@ macro that is defined as empty for UNIX and as the appropriate
 Microsoft-specific extension for Windows.
 
 Question: we can use a file to list these functions instead of
-\code{EXPORT_MPI_API}.  Should we do that instead?
+\code{EXPORT_MPI_API}.  Should we do that instead?  Answer: yes.
 
 Avoiding \code{printf} is important for Windows applications.
 
-Question: What else do we need to consider here?
+Question: What else do we need to consider here? (David Ashton to answer.)
 
 \subsection{Fortran Support}
 \label{sec:fortran}
@@ -5811,6 +5889,9 @@ opaque.  For example, the C++ \code{Comm} could contain a pointer to the
 implementations.  Perhaps by 2002, there will be fewer bugs in C++ compilers.
 \end{enumerate}
 
+Question: Is there a way to automate the generation of most of these routines?
+Or should we just write them out?
+
 \section{Standard Features}
 \label{sec:standard-features}
 (this section contains the standard features, such as command line
@@ -5822,6 +5903,9 @@ The implementation must provide the \emph{service} of providing
 command-line arguments to each process.  If the startup environment
 does not do so, the implementation must (see the discussion of
 \mpidfunc{MPID_Init}).  
+
+Note that we must also allow different command lines for different processes
+if the user wishes.
 
 \subsection{Standard I/O}
 I/O handling, particularly for stdin, remains troublesome.  We need to
@@ -5840,7 +5924,8 @@ implementation must be documented, as must any limitation on the use of
 Since many of these depend on the capabilities of the device, each device
 should provide files \file{signal_limits.txt} and \file{join_limits.txt} that
 document any limitations in the use of signals or \mpifunc{MPI_Comm_join}.  If
-no file is provide, no limits exist.
+no file is provide, no limits exist.  These files should be in the device
+directory (\file{mpid/foo}).
 
 \section{Testing}
 \label{sec:testing}
@@ -6307,6 +6392,12 @@ infrastructure list is settled.
 % Eventually include table or a project as Postscript from project.
 %
 \appendix
+
+\section{Error Codes}
+\label{sec:error-codes}
+
+\input{errcodes}
+
 \section{Rationale}
 \label{sec:rationale}
 
@@ -6314,6 +6405,151 @@ This appendix contains some of the discussion about the particular choices
 made in the design of the MPICH2 implementation, and include both design
 alternatives and discussion of constraints that may not be obvious to a casual
 reader of the MPI standard.  This appendix is organized by major section.
+
+\subsection{Error checks}
+
+\subsubsection{Pointer Checks.}
+Question: Code in ROMIO often includes the following test on pointers:
+\begin{verbatim}
+if (ptr < (Ptr_type) 0) error
+\end{verbatim}
+This helps catch some common invalid pointers on many systems, but isn't
+correct for some other systems.  Should there be an optional
+pointer-validation test?  For example, the function
+\mpidfunc{MPID_Test_pointer} would return true if the pointer was valid and
+false otherwise (possibly testing only for reading).  This could do anything
+from test against null to changing the \code{SIGSEGV} handler, attempting to
+read from the address, resetting the handler, and determining if the handler
+was invoked.  It could return an error code if it finds a problem.
+Note that this won't work in the multi-threaded case (unless a
+thread-specific signal handler is available).
+
+Question [BRT]: Are there systems where a pointer can be less
+than zero?  I have always (perhaps incorrectly) considered pointers to
+be unsigned, so the above code fragment seems bizzare to me.  
+
+Question [BRT]: What is the purpose of performing these tests?  If the
+purpose is to help us, the MPICH developers, find bugs, then I suggest
+that we avoid adding these types of tests and instead make use of a
+product like Insure++.  If the purpose is to keep the user's code from
+core dumping, then such tests might be useful.  However, I highly
+recommend that the user be able to turn off such checks as a core dump
+frequently provides useful information about the source of the
+problem.
+Answer [WDG]: I believe that the intent was to catch user errors.  As the bug
+reports have shown, users often assume that any code except theirs is at
+fault, so the library code by default should be defensive.  
+
+\subsection{Layered Error Handling}
+In the case of a single-threaded MPI (from the
+user's perspective; that is, the user's code is single-threaded),
+implementing this is not difficult.  The ``top-level'' routine needs
+only to save the current error handler and then replace it with
+\mpiconst{MPI_ERRORS_RETURN}.  Any errors detected in the routines
+that the top level routine calls will then be returned to that
+routine, which can then invoke the specified MPI error handler.
+
+\index{thread overhead!error handlers}
+In a multithreaded case, however, this approach is incorrect, since
+another thread may be using the same object (think of
+\mpiconst{MPI_COMM_WORLD}).  This suggests an alternative approach.
+For each thread, maintain a ``current error handler.''  Most of the
+time, this will be ``object's error handler''.  However, during a
+layered call, this would be changed to ``errors return.''  
+
+The only difficulty with this is that threads are not registered with
+the MPI implementation; thus, depending on the details of the thread package,
+there may bes no easy way for the implementation
+to know a priori whether thread-private data has been created to store
+the current error handler.  Instead, when an error handler must be
+invoked or changed, a global table of known threads must be consulted
+(by the thread id, which is unique for each thread).  This table
+indicates which error handler is current for a thread.  
+Note that a different thread id function is needed for each thread
+package.  For example, if a system supports both pthreads and OpenMP
+(where OpenMP does not use pthreads), then the MPI implementation
+needs to know which thread package is being used.  This suggests that
+the function that provides the thread id by well isolated and perhaps
+dynamically loaded.
+
+Comment [BRT]: I believe most threads packages provide thread-specific
+storage.  If such storage is available, we should use it rather than
+creating our own implementation of thread-specific storage.
+
+Comment [BRT]: On some systems, the choice of the threads package (or
+lack thereof) must be selected at compile time and be consistent for
+all object files linked into the executable.  On these systems,
+dynamic loading of libraries compiled with different thread packages
+is likely to be problematic.
+
+The following is old text that predated the ``nest level'' solution.  This
+followed the (non-thread-safe) approach used in MPICH that updated the error
+handler directly within the communicator.
+
+Under pthreads, the situation is somewhat easier.  We can use
+\code{pthread_key_create} to create a key that can be used to access
+thread-private data with \code{pthread_getspecific} in any thread.
+The key needs to be a (at least file-scoped) variable such as
+\mpidconst{MPID_THREAD_KEY_ERRHANDLER}. 
+Since the pthread keys are common to all pthreads, this can be allocated in
+\mpidfunc{MPID_Init}.  Question: is this handled as part of
+\mpidfunc{MPID_Err_init}, and is there a corresponding
+\mpidfunc{MPID_Err_finalize} that calls \code{pthread_key_delete}?
+The routine \code{pthread_cleanup_push} can be used to recover any
+thread-specific data structures. 
+
+To implement the layered calls, the following functions may be 
+used\index{MPIi_Err_set_return}\index{MPIi_Err_restore}\index{MPIi_Err_get_handler} 
+\begin{verbatim}
+void MPIi_Err_set_return(void);
+void MPIi_Err_restore(void);
+MPID_Errhandler *MPIi_Err_get_handler(ds);
+\end{verbatim}
+The last routine returns the error handler to use; it first checks the
+global current error handler (\code{int}
+\mpiconst{MPIi_QUERY_ERRORS_RETURN}); if true, then the handler is
+\mpiconst{MPI_ERRORS_RETURN}.  Otherwise, it returns the handler
+associated with the data structure.  In the multithreaded case, it
+uses the thread id to check the table of threads for the
+thread-specific version of \mpiconst{MPIi_QUERY_ERRORS_RETURN}.
+
+This is different from the MPICH-1 version which implemented a general
+push/pop of error handlers.  While push/pop of error handlers is a
+nice abstract model, it is more than is needed for the layered MPI
+routines, and, as noted above, is not correct for the multithreaded
+case.
+
+Comment [BRT]: push/pop would be correct for the multi-threaded case
+as long as thread-specific stacks are used.
+
+\subsection{Memory Allocation}
+The use of \code{MPID_Malloc} etc. makes it easier to use portable versions of
+memory tracing tools.  The allocator that maintains a stack of allocated
+memory is intended for routines such as \mpifunc{MPI_Type_hindexed} that make
+multiple memory allocations.
+
+\subsection{PMPI}
+Question: The pragma code is very ugly and hard to read.  It is also hard to
+update.
+It would be relatively
+easy to create the correct form on the fly, using configure (or
+another program, run by configure).  But that
+would require at least an include file for each MPI routine.
+An alternate approach is to make the inclusion entirely machine
+generated.  In that case, updating it requires only re-running the
+update editor.  In this case, the pragmas for implementing the
+profiling interface should be placed between two clear markers, such
+as 
+\begin{verbatim}
+/* -- begin profiling interface for routine xxxx -- */
+/* DO NOT EDIT.  Use the program xxx to update */
+...
+/* -- end profiling interface -- */
+\end{verbatim}
+
+Placing the routine name in the comment header makes it easy to
+extract the correct name and generate the appropriate text.
+
 
 \subsection{Attributes} 
 \subsection{Info}

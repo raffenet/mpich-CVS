@@ -38,9 +38,9 @@ errcodes.dvi: errcodes.tex
 	    -e s/@paragraph@/paragraph/g \
 	    -e s/@newparagraph@/subsection/g \
 	    -e s/@subsubsection@/subsubsection/g \
-	    -e s/@newsubsubsection@/section/g \
+	    -e s/@newsubsubsection@/subsection/g \
 	    -e s/@subsection@/subsection/g \
-	    -e s/@newsubsection@/relax/g \
+	    -e s/@newsubsection@/section/g \
 	    -e s/@section@/section/g \
 	    -e s/@newsection@/relax/g \
 	template.orig > template.tex
