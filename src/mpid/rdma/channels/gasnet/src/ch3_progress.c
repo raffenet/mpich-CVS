@@ -193,6 +193,9 @@ MPIDI_CH3_start_packet_handler (gasnet_token_t token, void* buf, size_t data_sz)
     int gn_errno;
     gasnet_node_t sender;
     MPIDI_VC *vc;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_START_PACKET_HANDLER);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_START_PACKET_HANDLER);
     
     printf_d ("Entering MPIDI_CH3_start_packet_handler\n");
     MPIDI_CH3I_inside_handler = 1;
@@ -215,6 +218,7 @@ MPIDI_CH3_start_packet_handler (gasnet_token_t token, void* buf, size_t data_sz)
     
     MPIDI_CH3I_inside_handler = 0;
     printf_d ("Exiting MPIDI_CH3_start_packet_handler\n");
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_START_PACKET_HANDLER);
 }
 
 void
@@ -226,7 +230,10 @@ MPIDI_CH3_continue_packet_handler (gasnet_token_t token, void* buf,
     gasnet_node_t sender;
     MPIDI_VC *vc;
     MPID_Request * rreq;
-    
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_CONTINUE_PACKET_HANDLER);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_CONTINUE_PACKET_HANDLER);
+
     printf_d ("Entering MPIDI_CH3_continue_packet_handler\n");
     MPIDI_CH3I_inside_handler = 1;
     MPIDI_CH3I_gasnet_token = token;
@@ -263,6 +270,7 @@ MPIDI_CH3_continue_packet_handler (gasnet_token_t token, void* buf,
     
     MPIDI_CH3I_inside_handler = 0;
     printf_d ("Exiting MPIDI_CH3_continue_packet_handler\n");
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_CONTINUE_PACKET_HANDLER);
 }
 
 void
@@ -277,6 +285,9 @@ MPIDI_CH3_CTS_packet_handler (gasnet_token_t token, void* buf, size_t buf_sz,
     MPID_Request *sreq;
     MPID_IOV *iov = (MPID_IOV *)buf;
     int i;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_CTS_PACKET_HANDLER);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_CTS_PACKET_HANDLER);
 
     assert (n_iov * sizeof (MPID_IOV) == buf_sz);
 
@@ -318,6 +329,7 @@ MPIDI_CH3_CTS_packet_handler (gasnet_token_t token, void* buf, size_t buf_sz,
     
     MPIDI_CH3I_inside_handler = 0;
     printf_d ("Exiting MPIDI_CH3_CTS_packet_handler\n");
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_CTS_PACKET_HANDLER);
 }
 
 void
@@ -328,7 +340,10 @@ MPIDI_CH3_reload_IOV_or_done_handler (gasnet_token_t token, int rreq_id,
     int gn_errno;
     gasnet_node_t sender;
     MPIDI_VC *vc;
-    
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_RELOAD_IOV_OR_DONE_HANDLER);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_RELOAD_IOV_OR_DONE_HANDLER);
+
     printf_d ("Entering MPIDI_CH3_reload_IOV_handler\n");
     MPIDI_CH3I_inside_handler = 1;
     MPIDI_CH3I_gasnet_token = token;
@@ -359,6 +374,7 @@ MPIDI_CH3_reload_IOV_or_done_handler (gasnet_token_t token, int rreq_id,
     
     MPIDI_CH3I_inside_handler = 0;
     printf_d ("Exiting MPIDI_CH3_reload_IOV_handler\n");
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_RELOAD_IOV_OR_DONE_HANDLER);
 }
 
 void
@@ -368,7 +384,10 @@ MPIDI_CH3_reload_IOV_reply_handler (gasnet_token_t token, void *buf, int buf_sz,
     MPID_Request *sreq;
     MPID_IOV *iov = (MPID_IOV *)buf;
     int i;
-    
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_RELOAD_IOV_REPLY_HANDLER);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_RELOAD_IOV_REPLY_HANDLER);
+
     printf_d ("Entering MPIDI_CH3_reload_IOV_reply_handler\n");
     MPIDI_CH3I_inside_handler = 1;
     MPIDI_CH3I_gasnet_token = token;
@@ -389,6 +408,7 @@ MPIDI_CH3_reload_IOV_reply_handler (gasnet_token_t token, void *buf, int buf_sz,
     
     MPIDI_CH3I_inside_handler = 0;
     printf_d ("Exiting MPIDI_CH3_reload_IOV_reply_handler\n");
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_RELOAD_IOV_REPLY_HANDLER);
 }
 
 
@@ -470,7 +490,10 @@ send_enqueuedv (MPIDI_VC * vc, MPID_Request * sreq)
     MPID_IOV tmp_iov;
     MPID_IOV * iov = sreq->dev.iov;
     int n_iov = sreq->dev.iov_count;
-    
+    MPIDI_STATE_DECL(MPID_STATE_SEND_ENQUEUEDV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_SEND_ENQUEUEDV);
+
     printf_d ("Entering send_enqueuedv\n");
     assert(n_iov <= MPID_IOV_LIMIT);
     assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
@@ -525,6 +548,7 @@ send_enqueuedv (MPIDI_VC * vc, MPID_Request * sreq)
 
     printf_d ("Exiting send_enqueuedv\n");
 
+    MPIDI_FUNC_EXIT(MPID_STATE_SEND_ENQUEUEDV);
     return mpi_errno;
 }
 
@@ -537,7 +561,10 @@ static int do_put (MPIDI_VC *vc, MPID_Request *sreq)
     int s_iov_len, r_iov_len;
     MPID_IOV *s_iov, *r_iov;
     int len;
-    
+    MPIDI_STATE_DECL(MPID_STATE_DO_PUT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_DO_PUT);
+
     printf_d ("Entering do_put\n");
 
     s_bytes = sreq->gasnet.iov_bytes;
@@ -592,5 +619,6 @@ static int do_put (MPIDI_VC *vc, MPID_Request *sreq)
     sreq->gasnet.remote_iov_count = r_iov_len - s;
     
     printf_d ("Exiting do_put\n");
+    MPIDI_FUNC_EXIT(MPID_STATE_DO_PUT);
     return mpi_errno;
 }
