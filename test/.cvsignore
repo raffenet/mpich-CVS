@@ -3,6 +3,7 @@
 *.bbg
 *.da
 *.gcov
+summary.xml
 Makefile
 Makefile.in
 Debug*
