@@ -47,6 +47,8 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
     PMI_keyval_t **info_keyval_vectors, preput_keyval_vector;
     int icount, j;
     MPID_Info *iter;
+    char key[MPI_MAX_INFO_KEY];
+    int vallen, flag;
 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
 
@@ -62,20 +64,51 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
 	    if (info_ptrs != NULL)
 	    {
 		icount = 0;
-		iter = info_ptrs[i];
-		while (iter)
+		if (info_ptrs[i] != NULL)
 		{
-		    icount++;
-		    iter = iter->next;
+		    mpi_errno = PMPI_Info_get_nkeys(info_ptrs[i]->handle, &icount);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			goto fn_exit;
+		    }
 		}
 		info_keyval_sizes[i] = icount;
 		info_keyval_vectors[i] = (PMI_keyval_t*) MPIU_Malloc(icount * sizeof(PMI_keyval_t));
 		iter = info_ptrs[i];
 		for (j=0; j<icount; j++)
 		{
-		    info_keyval_vectors[i][j].key = MPIU_Strdup(iter->key);
-		    info_keyval_vectors[i][j].val = MPIU_Strdup(iter->value);
-		    iter = iter->next;
+		    mpi_errno = PMPI_Info_get_nthkey(info_ptrs[i]->handle, j, key);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			goto fn_exit;
+		    }
+		    mpi_errno = PMPI_Info_get_valuelen(info_ptrs[i]->handle, key, &vallen, &flag);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			goto fn_exit;
+		    }
+		    if (!flag)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			goto fn_exit;
+		    }
+		    info_keyval_vectors[i][j].key = MPIU_Strdup(key);
+		    info_keyval_vectors[i][j].val = MPIU_Malloc((vallen + 1)* sizeof(char));
+		    mpi_errno = PMPI_Info_get(info_ptrs[i]->handle, key, vallen+1, info_keyval_vectors[i][j].val, &flag);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			goto fn_exit;
+		    }
+		    if (!flag)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			goto fn_exit;
+		    }
+		    MPIU_DBG_PRINTF(("key: <%s>, value: <%s>\n", info_keyval_vectors[i][j].key, info_keyval_vectors[i][j].val));
 		}
 	    }
 	    else
