@@ -35,7 +35,10 @@ int MPIDI_CH3_iStartRndvMsg(MPIDI_VC_t * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_
     sreq->dev.rdma_iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     sreq->dev.rdma_iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)sreq->dev.iov;
     sreq->dev.rdma_iov[1].MPID_IOV_LEN = sreq->dev.iov_count * sizeof(MPID_IOV);
-    sreq->dev.rdma_iov[2].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rts_pkt;
+    /* Save a copy of the rts packet in case it is not completely written by the iStartMsgv call */
+    /*sreq->dev.rdma_iov[2].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rts_pkt;*/
+    sreq->ch.pkt = *rts_pkt;
+    sreq->dev.rdma_iov[2].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)&sreq->ch.pkt;
     sreq->dev.rdma_iov[2].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
 
 #ifdef MPICH_DBG_OUTPUT
