@@ -74,6 +74,10 @@
 /* ... to do ... */
 
 /* Basic typedefs */
+#ifdef HAVE_SYS_BITYPES_H
+#include <sys/bitypes.h>
+#endif
+
 #ifndef HAVE_INT16_T 
 #ifdef INT16_T
 typedef INT16_T int16_t;
