@@ -220,7 +220,7 @@ def usage():
     print 'mpiexec -default defaultArgs -n <n> -host <h> -wdir <w> -path <p> cmd args : more_arg_sets : ...'
     print '    defaultArgs are passed to all processes unless overridden'
     print 'sample execution:'
-    print '    mpiexec.py  -default -n 2 -wdir /bin -env RMB3=e3 : pwd : -wdir /tmp : printenv'
+    print '    mpiexec.py  -default -n 2 -wdir /bin -env RMB3=e3 : pwd : -wdir /tmp pwd : printenv'
     print ''
     exit(-1)
 
