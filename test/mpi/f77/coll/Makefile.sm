@@ -2,4 +2,4 @@ LDADD = -L../../../../lib ../util/mtestf.o
 DEPADD = ../../../../lib/lib${MPILIBNAME}.a
 smvar_do_sharedlibs = 0
 
-uallreduce_SOURCES = uallreduce.c
+uallreduce_SOURCES = uallreduce.f
