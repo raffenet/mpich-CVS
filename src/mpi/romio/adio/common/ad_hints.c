@@ -136,7 +136,7 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    else if (!strcmp(value, "disable") || !strcmp(value, "DISABLE")) {
 		    /* romio_cb_write overrides no_indep_rw, too */
 		MPI_Info_set(info, "romio_cb_write", value);
-		MPI_Info_set(info, "romio_no_indep_rw", "disable")
+		MPI_Info_set(info, "romio_no_indep_rw", "disable");
 		fd->hints->cb_write = ADIOI_HINT_DISABLE;
 		fd->hints->no_indep_rw = ADIOI_HINT_DISABLE;
 	    }
