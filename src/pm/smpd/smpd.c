@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
 #endif
     }
 
-    result = smpd_entry_point(argc, argv);
+    result = smpd_entry_point();
 
     smpd_finalize_printf();
 
