@@ -106,6 +106,8 @@ extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
 extern void *MPIR_F_MPI_BOTTOM;
 extern void *MPI_F_STATUS_IGNORE;
 extern void *MPI_F_STATUSES_IGNORE;
+extern int  *MPI_F_ERRCODES_IGNORE;
+extern void *MPI_F_ARGVS_NULL;
 /* MPIR_F_PTR checks for the Fortran MPI_BOTTOM and provides the value 
    MPI_BOTTOM if found 
    See src/pt2pt/addressf.c for why MPIR_F_PTR(a) is just (a)
