@@ -57,7 +57,7 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
     char host[100];
     int port;
     int len;
-    LINGER linger;
+    /*LINGER linger;*/
     BOOL b;
     SOCKADDR_IN sockAddr;
     int error;
@@ -116,9 +116,11 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
     setsockopt(*pWrite, IPPROTO_TCP, TCP_NODELAY, (char*)&b, sizeof(BOOL));
 
     /* Set the linger on close option */
+    /*
     linger.l_onoff = 1 ;
     linger.l_linger = 60;
     setsockopt(*pWrite, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof(linger));
+    */
 
     sockAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
@@ -147,7 +149,7 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
     char host[100];
     int port;
     int len;
-    LINGER linger;
+    /*LINGER linger;*/
     BOOL b;
     SOCKADDR_IN sockAddr;
     int error;
@@ -209,9 +211,11 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
     setsockopt(*pWrite, IPPROTO_TCP, TCP_NODELAY, (char*)&b, sizeof(BOOL));
 
     /* Set the linger on close option */
+    /*
     linger.l_onoff = 1 ;
     linger.l_linger = 60;
     setsockopt(*pWrite, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof(linger));
+    */
 
     sockAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
