@@ -84,6 +84,8 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
     /* This code is ok for correct programs, but it would be better
        to copy the values from the per-process block and pass the user
        a pointer to a copy */
+    /* FIXME: If we are called from Fortran, we must return the values,
+       not the addresses, of these attributes */
     if (HANDLE_GET_KIND(comm_keyval) == HANDLE_KIND_BUILTIN) {
 	int attr_idx = comm_keyval & 0x0000000f;
 	void **attr_val_p = (void **)attribute_val;
