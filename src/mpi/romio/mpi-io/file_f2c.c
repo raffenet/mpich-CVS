@@ -46,7 +46,6 @@ MPI_File MPI_File_f2c(MPI_Fint fh)
     if ((fh < 0) || (fh > ADIOI_Ftable_ptr)) {
 	FPRINTF(stderr, "MPI_File_f2c: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-endif
     }
     return ADIOI_Ftable[fh];
 #endif

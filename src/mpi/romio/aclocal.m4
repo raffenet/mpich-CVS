@@ -5,7 +5,7 @@ dnl
 dnl Almost all of this file is taken from the aclocal.m4 of MPICH
 dnl
 dnl Get the format of Fortran names.  Uses F77, FFLAGS, and sets WDEF.
-dnl If the test fails, sets NOF77 to 1, HAS_FORTRAN to 0.
+dnl If the test fails, sets NOF77 to 1, HAVE_FORTRAN to 0.
 dnl
 dnl
 define(PAC_GET_FORTNAMES,[
@@ -635,8 +635,8 @@ EOF
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
   if test -x a.out ; then
       AC_MSG_RESULT(yes)
-      AC_DEFINE(HAS_MPI_INFO)
-      HAS_MPI_INFO="#define HAS_MPI_INFO"
+      AC_DEFINE(HAVE_MPI_INFO)
+      HAVE_MPI_INFO="#define HAVE_MPI_INFO"
       MPI_FINFO1="!"
       MPI_FINFO2="!"
       MPI_FINFO3="!"
@@ -672,8 +672,8 @@ EOF
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
   if test -x a.out ; then
       AC_MSG_RESULT(yes)
-      AC_DEFINE(HAS_MPI_DARRAY_SUBARRAY)
-      HAS_MPI_DARRAY_SUBARRAY="#define HAS_MPI_DARRAY_SUBARRAY"
+      AC_DEFINE(HAVE_MPI_DARRAY_SUBARRAY)
+      HAVE_MPI_DARRAY_SUBARRAY="#define HAVE_MPI_DARRAY_SUBARRAY"
       MPI_FARRAY1="!"
       MPI_FARRAY2="!"
       MPI_FARRAY3="!"
@@ -746,7 +746,7 @@ dnl
 dnl
 dnl check if pread64 is defined in IRIX. needed on IRIX 6.5
 dnl
-define(PAC_HAS_PREAD64,[
+define(PAC_HAVE_PREAD64,[
   AC_MSG_CHECKING(if pread64 is defined)
   rm -f conftest.c
   cat > conftest.c <<EOF
@@ -762,7 +762,7 @@ EOF
   $CC $USER_CFLAGS conftest.c > /dev/null 2>&1
   if test -x a.out ; then
       AC_MSG_RESULT(yes)
-      AC_DEFINE(HAS_PREAD64)
+      AC_DEFINE(HAVE_PREAD64)
   else
       AC_MSG_RESULT(no)
   fi
@@ -816,7 +816,7 @@ EOF
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
   if test -x a.out ; then
      AC_MSG_RESULT(yes)
-     AC_DEFINE(HAS_MPI_COMBINERS)
+     AC_DEFINE(HAVE_MPI_COMBINERS)
   else
      AC_MSG_RESULT(no)
   fi
@@ -860,7 +860,7 @@ fi
 ])dnl
 dnl
 dnl
-define(PAC_TEST_MPI_HAS_OFFSET_KIND,[
+define(PAC_TEST_MPI_HAVE_OFFSET_KIND,[
   AC_MSG_CHECKING(if MPI_OFFSET_KIND is defined in mpif.h)
   rm -f mpitest.f
   cat > mpitest.f <<EOF

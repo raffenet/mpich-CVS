@@ -54,7 +54,7 @@ void ADIO_End(int *error_code)
 /* free file, request, and info tables used for Fortran interface */
     if (ADIOI_Ftable) ADIOI_Free(ADIOI_Ftable);
     if (ADIOI_Reqtable) ADIOI_Free(ADIOI_Reqtable);
-#ifndef HAS_MPI_INFO
+#ifndef HAVE_MPI_INFO
     if (MPIR_Infotable) ADIOI_Free(MPIR_Infotable);
 #endif
 

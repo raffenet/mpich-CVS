@@ -24,7 +24,7 @@ extern ADIO_File *ADIOI_Ftable;
 extern int ADIOI_Ftable_ptr, ADIOI_Ftable_max;
 extern ADIO_Request *ADIOI_Reqtable;
 extern int ADIOI_Reqtable_ptr, ADIOI_Reqtable_max;
-#ifndef HAS_MPI_INFO
+#ifndef HAVE_MPI_INFO
 extern MPI_Info *MPIR_Infotable;
 extern int MPIR_Infotable_ptr, MPIR_Infotable_max;
 #endif

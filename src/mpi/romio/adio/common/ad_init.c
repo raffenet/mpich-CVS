@@ -25,7 +25,7 @@ ADIO_File *ADIOI_Ftable;
 int ADIOI_Ftable_ptr, ADIOI_Ftable_max;
 ADIO_Request *ADIOI_Reqtable;
 int ADIOI_Reqtable_ptr, ADIOI_Reqtable_max;
-#ifndef HAS_MPI_INFO
+#ifndef HAVE_MPI_INFO
 MPI_Info *MPIR_Infotable;
 int MPIR_Infotable_ptr, MPIR_Infotable_max;
 #endif
@@ -64,7 +64,7 @@ void ADIO_Init(int *argc, char ***argv, int *error_code)
     ADIOI_Reqtable = NULL;
     ADIOI_Reqtable_ptr = ADIOI_Reqtable_max = 0;
 
-#ifndef HAS_MPI_INFO
+#ifndef HAVE_MPI_INFO
     MPIR_Infotable = NULL;
     MPIR_Infotable_ptr = MPIR_Infotable_max = 0;
 #endif

@@ -18,7 +18,7 @@ void ADIOI_Datatype_iscontig(MPI_Datatype datatype, int *flag)
     MPIR_Datatype_iscontig(datatype, flag);
 }
 
-#elif (defined(MPIHP) && defined(HAS_MPI_INFO))
+#elif (defined(MPIHP) && defined(HAVE_MPI_INFO))
 /* i.e. HPMPI 1.4 only */
 
 int hpmp_dtiscontig(MPI_Datatype datatype);

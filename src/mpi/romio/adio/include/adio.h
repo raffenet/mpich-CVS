@@ -72,7 +72,7 @@
 #  endif
 #endif
 
-#if (!defined(HAS_MPI_INFO) && !defined(MPIO_INCLUDE))
+#if (!defined(HAVE_MPI_INFO) && !defined(MPIO_INCLUDE))
    typedef struct MPIR_Info *MPI_Info;
 #  define MPI_INFO_NULL 0
 #  define MPI_MAX_INFO_VAL      1024

@@ -17,7 +17,7 @@
 int ADIOI_XFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		  int wr, void *handle);
 
-#if (defined(HAS_PREAD64) && (_ABIO32 == 1))
+#if (defined(HAVE_PREAD64) && (_ABIO32 == 1))
 #  define pread pread64
 #  define pwrite pwrite64
 #endif
