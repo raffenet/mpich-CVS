@@ -6,12 +6,12 @@
 
 ## NOTE: we do NOT allow this pgm to run via mpdroot
 
-from os     import environ
+from os     import environ, close
 from sys    import argv, exit
-from socket import socket, AF_UNIX, SOCK_STREAM
+from socket import socket, AF_UNIX, SOCK_STREAM, fromfd
 from signal import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from mpdlib import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
-                   mpd_get_my_username, mpdError, mpd_raise
+                   mpd_get_my_username, mpdError, mpd_raise, mpd_send_one_line
 
 def mpdallexit():
     mpd_set_my_id('mpdallexit_')
@@ -19,13 +19,22 @@ def mpdallexit():
         print 'usage: mpdallexit (no args)'
         print 'causes all mpds in the ring to exit'
         exit(-1)
-    consoleName = '/tmp/mpd2.console_' + mpd_get_my_username()
-    conSocket = socket(AF_UNIX, SOCK_STREAM)             # note: UNIX socket
-    try:
-        conSocket.connect(consoleName)
-    except Exception, errmsg:
-        print 'cannot connect to local mpd at %s' % consoleName
-        exit(-1)
+    username = mpd_get_my_username()
+    if environ.has_key('UNIX_SOCKET'):
+        conFD = int(environ['UNIX_SOCKET'])
+        conSocket = fromfd(conFD,AF_UNIX,SOCK_STREAM)
+        close(conFD)
+    else:
+        consoleName = '/tmp/mpd2.console_' + username
+        conSocket = socket(AF_UNIX, SOCK_STREAM)             # note: UNIX socket
+        try:
+            conSocket.connect(consoleName)
+        except Exception, errmsg:
+            print 'cannot connect to local mpd at %s' % consoleName
+            exit(-1)
+            # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
+        msgToSend = 'realusername=%s\n' % username
+        mpd_send_one_line(conSocket,msgToSend)
     mpd_send_one_msg(conSocket, {'cmd':'mpdallexit'})
     msg = recv_one_msg_with_timeout(conSocket,5)
     if not msg:

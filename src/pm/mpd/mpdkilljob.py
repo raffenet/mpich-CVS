@@ -9,7 +9,7 @@ from sys    import argv, exit
 from socket import socket, fromfd, AF_UNIX, SOCK_STREAM
 from signal import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from mpdlib import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
-                   mpd_get_my_username, mpd_raise, mpdError
+                   mpd_get_my_username, mpd_raise, mpdError, mpd_send_one_line
 
 def mpdkilljob():
     mpd_set_my_id('mpdkilljob_')
@@ -35,6 +35,8 @@ def mpdkilljob():
             print '    2. mpd is running but was started without a "console" (-n option)'
             exit(-1)
             # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
+        msgToSend = 'realusername=%s\n' % username
+        mpd_send_one_line(conSocket,msgToSend)
     mpdid = ''
     if argv[1] == '-a':
         jobalias = argv[2]

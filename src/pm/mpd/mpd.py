@@ -29,7 +29,8 @@ from mpdlib    import mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
                       mpd_set_procedures_to_trace, mpd_trace_calls, mpd_raise, mpdError, \
                       mpd_get_my_username, mpd_get_groups_for_username, \
                       mpd_set_my_id, mpd_check_python_version, mpd_version, \
-                      mpd_socketpair, mpd_same_ips, mpd_uncaught_except_tb
+                      mpd_socketpair, mpd_same_ips, mpd_uncaught_except_tb, \
+                      mpd_recv_one_line
 from mpdman    import mpdman
 
 class _ActiveSockInfo:
@@ -49,6 +50,7 @@ def _mpd_init():
         stdout.flush()
     g.myId = '%s_%d' % (g.myHost,g.myPort)
     mpd_set_my_id(g.myId)
+    g.myrealUsername = mpd_get_my_username()
     g.currRingSize = 1    # just for now
 
     # setup syslog
@@ -197,10 +199,24 @@ def _mpd():
 def _handle_console_connection():
     if not g.conSocket:
         (g.conSocket,newConnAddr) = g.conListenSocket.accept()
+        line = mpd_recv_one_line(g.conSocket)  # char-based msg
+        line = line.strip()
+        if not line:   # may be another mpd just seeing if I am here
+            g.conSocket.close()
+            g.conSocket = 0
+            return
+        splitLine = line.split('=',1)
+        if len(splitLine) < 2  or  splitLine[0] != 'realusername':
+            mpd_print(1, 'console sent bad msg :%s:' % line)
+            mpd_send_one_msg(g.conSocket,{ 'cmd':'invalid_msg_received_from_you' })
+            g.conSocket.close()
+            g.conSocket = 0
+            return
         _add_active_socket(g.conSocket,
                            'my (%s) console socket' % g.myId,  # name
                            '_handle_console_input',            # handler
                            g.conSocket,0)                      # host,port
+        g.activeSockets[g.conSocket].realUsername = splitLine[1]
     else:
         return  ## postpone it; hope the other one frees up soon
         ## we used to deny the second console; now just let it wait for us
@@ -226,6 +242,11 @@ def _handle_console_input():
         g.conSocket = 0
         return
     if msg['cmd'] == 'mpdrun':
+        # permit anyone to run but use THEIR own username
+        #   thus, override any username specified by the user
+        msg['username'] = g.activeSockets[g.conSocket].realUsername
+        msg['users'] = { (0,msg['nprocs']-1) : g.activeSockets[g.conSocket].realUsername }
+        #
         msg['mpdid_mpdrun_start'] = g.myId
         msg['nstarted_on_this_loop'] = 0
         msg['first_loop'] = 1
@@ -250,10 +271,22 @@ def _handle_console_input():
         mpd_send_one_msg(g.rhsSocket,msgToSend)
         # do not send an ack to console now; will send trace info later
     elif msg['cmd'] == 'mpdallexit':
+        if g.activeSockets[g.conSocket].realUsername != g.myrealUsername:
+            mpd_send_one_msg(g.conSocket,{ 'cmd':'invalid_username_to_make_this_request' })
+            del g.activeSockets[g.conSocket]
+            g.conSocket.close()
+            g.conSocket = 0
+            return
         g.allExiting = 1
         mpd_send_one_msg(g.rhsSocket, {'cmd' : 'mpdallexit', 'src' : g.myId} )
         mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdallexit_ack'} )
     elif msg['cmd'] == 'mpdexit':
+        if g.activeSockets[g.conSocket].realUsername != g.myrealUsername:
+            mpd_send_one_msg(g.conSocket,{ 'cmd':'invalid_username_to_make_this_request' })
+            del g.activeSockets[g.conSocket]
+            g.conSocket.close()
+            g.conSocket = 0
+            return
         if msg['mpdid'] == 'localmpd':
             msg['mpdid'] = g.myId
         mpd_send_one_msg(g.rhsSocket, {'cmd' : 'mpdexit', 'src' : g.myId, 'done' : 0,
@@ -281,6 +314,9 @@ def _handle_console_input():
         mpd_send_one_msg(g.rhsSocket,msgToSend)
         # do not send an ack to console now; will send listjobs info later
     elif msg['cmd'] == 'mpdkilljob':
+        # permit anyone to kill but use THEIR own username
+        #   thus, override any username specified by the user
+        msg['username'] = g.activeSockets[g.conSocket].realUsername
         msg['src'] = g.myId
         msg['handled'] = 0
         if msg['mpdid'] == '':
@@ -288,6 +324,9 @@ def _handle_console_input():
         mpd_send_one_msg(g.rhsSocket, msg)
         # send ack to console after I get this msg back and do the kill myself
     elif msg['cmd'] == 'mpdsigjob':
+        # permit anyone to sig but use THEIR own username
+        #   thus, override any username specified by the user
+        msg['username'] = g.activeSockets[g.conSocket].realUsername
         msg['src'] = g.myId
         msg['handled'] = 0
         if msg['mpdid'] == '':

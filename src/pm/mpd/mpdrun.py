@@ -29,7 +29,8 @@ from re              import findall
 from urllib          import unquote
 from mpdlib          import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
                             mpd_get_inet_listen_socket, mpd_get_my_username, \
-                            mpd_raise, mpdError, mpd_version, mpd_print, mpd_read_one_line
+                            mpd_raise, mpdError, mpd_version, mpd_print, \
+                            mpd_read_one_line, mpd_send_one_line
 import xml.dom.minidom
 
 class mpdrunInterrupted(Exception):
@@ -112,6 +113,8 @@ def mpdrun():
             myExitStatus = -1  # used in main
             exit(myExitStatus) # really forces jump back into main
             # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
+        msgToSend = 'realusername=%s\n' % username
+        mpd_send_one_line(conSocket,msgToSend)
         msgToSend = { 'cmd' : 'get_mpd_version' }
         mpd_send_one_msg(conSocket,msgToSend)
         msg = recv_one_msg_with_timeout(conSocket,recvTimeout)

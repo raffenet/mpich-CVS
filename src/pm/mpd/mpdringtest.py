@@ -10,7 +10,7 @@ from sys    import argv, exit
 from time   import time
 from signal import signal, SIG_DFL, SIGINT, SIGTSTP, SIGCONT
 from mpdlib import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
-                   mpd_get_my_username, mpd_raise, mpdError
+                   mpd_get_my_username, mpd_raise, mpdError, mpd_send_one_line
 
 def mpdringtest():
     mpd_set_my_id('mpdringtest')
@@ -38,6 +38,8 @@ def mpdringtest():
             print '    2. mpd is running but was started without a "console" (-n option)'
             exit(-1)
             # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
+        msgToSend = 'realusername=%s\n' % username
+        mpd_send_one_line(conSocket,msgToSend)
     msgToSend = { 'cmd' : 'mpdringtest', 'numloops' : numLoops }
     starttime = time()
     mpd_send_one_msg(conSocket,msgToSend)

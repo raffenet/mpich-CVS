@@ -10,7 +10,7 @@ from socket import socket, fromfd, AF_UNIX, SOCK_STREAM
 from re     import sub
 from signal import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from mpdlib import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
-                   mpd_get_my_username, mpd_raise, mpdError
+                   mpd_get_my_username, mpd_raise, mpdError, mpd_send_one_line
 
 def mpdlistjobs():
     mpd_set_my_id('mpdlistjobs_')
@@ -56,6 +56,8 @@ def mpdlistjobs():
         except Exception, errmsg:
             mpd_raise('cannot connect to local mpd')
             # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
+        msgToSend = 'realusername=%s\n' % username
+        mpd_send_one_line(conSocket,msgToSend)
     msgToSend = { 'cmd' : 'mpdlistjobs' }
     mpd_send_one_msg(conSocket,msgToSend)
     msg = recv_one_msg_with_timeout(conSocket,5)

@@ -71,6 +71,8 @@ int main(int argc, char *argv[])
         {
             snprintf(env_unix_socket,NAME_LEN,"UNIX_SOCKET=%d",sock);
             putenv(env_unix_socket);
+	    snprintf(cmd,NAME_LEN,"realusername=%s\n",pwent->pw_name);
+	    write(sock,cmd,strlen(cmd));
         }
     }
 

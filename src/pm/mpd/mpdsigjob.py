@@ -9,7 +9,7 @@ from sys    import argv, exit
 from socket import socket, fromfd, AF_UNIX, SOCK_STREAM
 from signal import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from mpdlib import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
-                   mpd_get_my_username, mpd_raise, mpdError
+                   mpd_get_my_username, mpd_raise, mpdError, mpd_send_one_line
 
 def mpdsigjob():
     mpd_set_my_id('mpdsigjob_')
@@ -31,6 +31,8 @@ def mpdsigjob():
             print '    2. mpd is running but was started without a "console" (-n option)'
             exit(-1)
             # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
+        msgToSend = 'realusername=%s\n' % username
+        mpd_send_one_line(conSocket,msgToSend)
     sigtype = argv[1]
     if sigtype.startswith('-'):
         sigtype = sigtype[1:]
