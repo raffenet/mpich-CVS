@@ -1,4 +1,5 @@
 dnl
+
 dnl/*D
 dnl PAC_PROG_F77_NAME_MANGLE - Determine how the Fortran compiler mangles
 dnl names 
