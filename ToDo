@@ -1,3 +1,60 @@
+General Plan for 2003
+=====================
+RMA
+    Operation aggregation
+    Paper to journal (JPDC?)
+    Short paper to conference (mid year)
+
+Dynamic Processes
+    PM/PMI generalization for spawn/connect/accept
+    Fault tolerance implementation
+
+I/O
+    Use generalized requests
+    Integrate MPICH2 error reporting
+    External 32
+    
+Datatypes
+    Remaining functions (mostly MPI-2)
+    Performance tuning
+    Paper on the approach and results.  Target PVMMPI 03 (~April)
+
+C++ binding
+    Complete for MPI 1 and MPI 2
+    Tool to create application-specific subsets of the binding (e.g., without
+    methods not needed by the app) 
+    Short note (PVMMPI'03?)
+
+Fortran 90 binding
+     Move from MPICH1
+     Improve tool to create application-specific subsets of the binding
+     Short note (PVMMPI'03?), perhaps combined with C++
+
+Cluster Support
+    TCP + shared memory implementation (e.g., a channel method that supports
+    these two but is not a general multi-method device) 
+    Flow control
+    Paper on ADI3 and the new channel implementation (Parallel Computing)
+    Short paper to conference
+
+Scalability
+    Sparse arrays for all parts that currently use arrays (e.g., arrays of all
+    processes, rather than just the ones involving communication) 
+    (This is in support of BG/L)
+    Paper (probably in 2004)    
+
+Performance
+    SMP-only device used to hunt microseconds in the code implementation
+    Part of this may provide a suitable basis for a Cray X1 device
+
+Thread-safety
+    Alternate TCP and TCP+shared memory implementation that provides support
+    for MPI_THREAD_MULTIPLE 
+    Paper on the costs of thread-safety
+    
+Miscellaneous Issues
+====================
+
 MPI Profiling interface
    If weak symbols are not present, you must use
 
