@@ -118,8 +118,6 @@ int MPIU_Strnapp( char *, const char *, size_t );
   @*/
 char *MPIU_Strdup( const char * );
 
-
-
 #define MPIU_STR_SUCCESS    0
 #define MPIU_STR_FAIL      -1
 #define MPIU_STR_NOMEM      1
@@ -358,122 +356,11 @@ int MPIU_Str_add_string(char **str_ptr, int *maxlen_ptr, const char *val);
   @*/
 int MPIU_Str_get_string(char **str_ptr, char *val, int maxlen);
 
-#ifdef USE_MEMORY_TRACING
-/*M
-  MPIU_Malloc - Allocate memory
-
-  Synopsis:
-.vb
-  void *MPIU_Malloc( size_t len )
-.ve
-
-  Input Parameter:
-. len - Length of memory to allocate in bytes
-
-  Return Value:
-  Pointer to allocated memory, or null if memory could not be allocated.
-
-  Notes:
-  This routine will often be implemented as the simple macro
-.vb
-  #define MPIU_Malloc(n) malloc(n)
-.ve
-  However, it can also be defined as 
-.vb
-  #define MPIU_Malloc(n) MPIU_trmalloc(n,__FILE__,__LINE__)
-.ve
-  where 'MPIU_trmalloc' is a tracing version of 'malloc' that is included with 
-  MPICH.
-
-  Module:
-  Utility
-  M*/
-
-#define MPIU_Malloc(a)    MPIU_trmalloc((unsigned)(a),__LINE__,__FILE__)
-/*M
-  MPIU_Calloc - Allocate memory that is initialized to zero.
-
-  Synopsis:
-.vb
-    void *MPIU_Calloc( size_t nelm, size_t elsize )
-.ve
-
-  Input Parameters:
-+ nelm - Number of elements to allocate
-- elsize - Size of each element.
-
-  Notes:
-  Like 'MPIU_Malloc' and 'MPIU_Free', this will often be implemented as a 
-  macro but may use 'MPIU_trcalloc' to provide a tracing version.
-
-  Module:
-  Utility
-  M*/
-#define MPIU_Calloc(a,b)  \
-    MPIU_trcalloc((unsigned)(a),(unsigned)(b),__LINE__,__FILE__)
-
-/*M
-  MPIU_Free - Free memory
-
-  Synopsis:
-.vb
-   void MPIU_Free( void *ptr )
-.ve
-
-  Input Parameter:
-. ptr - Pointer to memory to be freed.  This memory must have been allocated
-  with 'MPIU_Malloc'.
-
-  Notes:
-  This routine will often be implemented as the simple macro
-.vb
-  #define MPIU_Free(n) free(n)
-.ve
-  However, it can also be defined as 
-.vb
-  #define MPIU_Free(n) MPIU_trfree(n,__FILE__,__LINE__)
-.ve
-  where 'MPIU_trfree' is a tracing version of 'free' that is included with 
-  MPICH.
-
-  Module:
-  Utility
-  M*/
-#define MPIU_Free(a)      MPIU_trfree(a,__LINE__,__FILE__)
-
-#define MPIU_Strdup(a)    MPIU_trstrdup(a,__LINE__,__FILE__)
-
-/* Define these as invalid C to catch their use in the code */
-#define malloc(a)         'Error use MPIU_Malloc'
-#define calloc(a,b)       'Error use MPIU_Calloc'
-#define free(a)           'Error use MPIU_Free'
-#if defined(strdup) || defined(__strdup)
-#undef strdup
-#endif
-#define strdup(a)         'Error use MPIU_Strdup'
-
-/* FIXME: Note that some of these prototypes are for old functions in the 
-   src/util/mem/trmem.c package, and are no longer used */
-void MPIU_trinit ( int );
-void *MPIU_trmalloc ( unsigned int, int, const char * );
-void MPIU_trfree ( void *, int, const char * );
-int MPIU_trvalid ( const char * );
-void MPIU_trspace ( int *, int * );
-void MPIU_trid ( int );
-void MPIU_trlevel ( int );
-void MPIU_trpush ( int );
-void MPIU_trpop (void);
-void MPIU_trDebugLevel ( int );
-void *MPIU_trstrdup( const char *, int, const char * );
-void *MPIU_trcalloc ( unsigned, unsigned, int, const char * );
-void *MPIU_trrealloc ( void *, int, int, const char * );
-void MPIU_TrSetMaxMem ( int );
-void MPIU_trdump ( FILE * );
-void MPIU_trSummary ( FILE * );
-void MPIU_trdumpGrouped ( FILE * );
-
-#else
-/* No memory tracing; just use native functions */
+/*  
+   These definitions were made for historical reasons; 
+   earlier versions of MPICH made use of a tracing memory 
+   package.  The current developers prefer to use other approaches.
+*/
 #define MPIU_Malloc(a)    malloc((unsigned)(a))
 #define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
 #define MPIU_Free(a)      free((void *)(a))
@@ -486,9 +373,9 @@ extern char *strdup( const char * );
 #else
 /* Don't define MPIU_Strdup, provide it in safestr.c */
 #endif /* HAVE_STRDUP */
-#endif /* USE_MEMORY_TRACING */
 
 
+#if 0
 /* Memory allocation stack.
    These are used to allocate multiple chunks of memory (with MPIU_Malloc)
    and ensuring that they are all freed.  This simplifies error handling
@@ -503,9 +390,11 @@ typedef struct MPIU_Mem_stack { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_M
                MPIU_Free(memstack.ptrs[i]);}}
 #define MALLOC_STK_INIT memstack.n_alloc = 0
 #define MALLOC_STK_DECL MPIU_Mem_stack memstack
+#endif
 
 /* Utilities: Safe string copy and sprintf */
 int MPIU_Strncpy( char *, const char *, size_t );
+
 /* Provide a fallback snprintf for systems that do not have one */
 /* Define attribute as empty if it has no definition */
 #ifndef ATTRIBUTE
