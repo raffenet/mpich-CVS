@@ -684,6 +684,11 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 			}
 		    }
 		}
+		else if (result == SMPD_DBS_RETURN)
+		{
+		    smpd_exit_fn("smpd_enter_at_state");
+		    return SMPD_SUCCESS;
+		}
 		else
 		{
 		    smpd_err_printf("unable to handle the command: \"%s\"\n", context->read_cmd.cmd);
