@@ -126,8 +126,11 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 					   &newcomm_ptr->attributes );
 	if (mpi_errno)
 	{
+	    /* IT IS VERY, VERY WRONG TO REPLACE THE ERROR CODE HERE */
+#if 0
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 		"**mpi_comm_dup", "**mpi_comm_dup %C %p", comm, newcomm);
+#endif
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP);
 	    *newcomm = MPI_COMM_NULL;
 	    /* FIXME - free newcomm */
