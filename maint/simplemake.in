@@ -639,7 +639,7 @@ sub ReadMfile {
             @subdirs = split(/\s+/,$1);
 	    $subdirs_has_autoconf = 0;
         }
-	elsif (/^SUBDIRS_([^\s]*)\s*=\s*(.*)\s*/) {
+	elsif (/^SUBDIRS_(\w+)\s*=\s*(.*)\s*/) {
 	    # use SUBDIRS_acname = realname to say that the
 	    # autoconf variable acname, used in SUBDIRS, can
 	    # have any of the values realname
@@ -713,7 +713,7 @@ sub ReadMfile {
 	elsif ($nocomments && /^\s*#/) {
 	       ;
 	   }
-	elsif (/^smvar_([^\s]*)\s*=\s*(.*)/) {
+	elsif (/^smvar_(\w+)\s*=\s*(.*)/) {
 	    # Allow the user to override any simplemake variable 
 	    # E.g.,
 	    # smvar_autoconf = /foo/bar/fixedac
@@ -1624,7 +1624,7 @@ sub ProcessFile {
 		$rootdirpath .= "../";
 		$ldir =~ s/^[^\/]+\///;
 	    }
-	    if ($ldir =~ /[^\s]+/) {
+	    if ($ldir =~ /\S+/) {
 		$rootdirpath .= "../";
 	    }		
 	}
@@ -2031,11 +2031,11 @@ sub TargetClean {
     if (defined($autoconf_files_by_dir_orig{$lcurdir})) {
         my $otherfiles = $autoconf_files_by_dir_orig{$lcurdir};
 	foreach $dir (@subdirs) {
-	    $otherfiles =~ s/ $dir\/[^\s]*//g;
+	    $otherfiles =~ s/ $dir\/\S*//g;
 	}
 	$otherfiles =~ s/^\s*//;
 	# Is there anything left?
-	if ($otherfiles =~ /[^\s]+/) {
+	if ($otherfiles =~ /\S+/) {
 	    print FD "\t-${quietLine}rm -f $otherfiles$newline";
 	}
     }
@@ -3040,8 +3040,8 @@ sub AddDependency {
     open( DEPFD, $cmdline ) || return;
     while (<DEPFD>) {
 	# Remove files that are provided by the device
-	s/[^\s]*mpidpre\.h//g;
-	s/[^\s]*mpidpost\.h//g;
+	s/\S*mpidpre\.h//g;
+	s/\S*mpidpost\.h//g;
 
 	# For derived object files like lo and pf, add these
 	if ($do_profilelibs && $found_profilelib) {
