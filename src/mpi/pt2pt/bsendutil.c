@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id$
- *
+/*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -217,7 +216,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 
     (void)NMPI_Pack_size( count, dtype, comm_ptr->handle, &packsize );
 
-    DEBUG1(printf("looking for buffer of size %d\n", packsize));
+    MPIU_DBG_PRINTF(("looking for buffer of size %d\n", packsize));
     /*
      * Use two passes.  Each pass is the same; between the two passes,
      * attempt to complete any active requests, and start any pending
@@ -229,7 +228,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	
 	p = MPIR_Bsend_find_buffer( packsize );
 	if (p) {
-	    DEBUG(printf("found buffer of size %d with address %x\n",packsize,p));
+	    MPIU_DBG_PRINTF(("found buffer of size %d with address %x\n",packsize,p));
 	    /* Found a segment */
 	    
 	    /* Pack the data into the buffer */
@@ -266,7 +265,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 		p->kind = kind;
 	    }
 	    else if (p->request) {
-		DEBUG(printf("saving request %x in %x\n",p->request,p));
+		MPIU_DBG_PRINTF(("saving request %x in %x\n",p->request,p));
 		/* Only remove this block from the avail list if the 
 		   message has not been sent (MPID_Send may have already 
 		   sent the data, in which case it returned a null
@@ -290,7 +289,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	    break;
 	}
 	if (p && pass == 2) break;
-	DEBUG(printf("Could not find storage, checking active\n" ));
+	MPIU_DBG_PRINTF(("Could not find storage, checking active\n" ));
 	/* Try to complete some pending bsends */
 	MPIR_Bsend_check_active( );
 	/* Give priority to any pending operations */
@@ -324,7 +323,7 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 {
     BsendData_t *prev = p->prev, *avail = BsendBuffer.avail, *avail_prev;
 
-    DEBUG1(printf("Freeing bsend segment at %x of size %d, next at %x\n",
+    MPIU_DBG_PRINTF(("Freeing bsend segment at %x of size %d, next at %x\n",
 		 p,p->size, ((char *)p)+p->total_size));
 
 #ifdef DBG_PRINT_ARENA
@@ -334,12 +333,12 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 
     /* Remove the segment from the free list */
     if (prev) {
-	DEBUG(printf("free segment is within active list\n"));
+	MPIU_DBG_PRINTF(("free segment is within active list\n"));
 	prev->next = p->next;
     }
     else {
 	/* p was at the head of the active list */
-	DEBUG(printf("free segment is head of active list\n"));
+	MPIU_DBG_PRINTF(("free segment is head of active list\n"));
 	BsendBuffer.active = p->next;
 	/* The next test sets the prev pointer to null */
     }
@@ -423,7 +422,7 @@ static void MPIR_Bsend_check_active( void )
 {
     BsendData_t *active = BsendBuffer.active, *next_active;
 
-    DEBUG(printf("Checking active starting at %x\n", active ));
+    MPIU_DBG_PRINTF(("Checking active starting at %x\n", active ));
     while (active) {
 	MPI_Request r = active->request->handle;
 	int         flag;
@@ -432,11 +431,11 @@ static void MPIR_Bsend_check_active( void )
 	NMPI_Test( &r, &flag, MPI_STATUS_IGNORE );
 	if (flag) {
 	    /* We're done.  Remove this segment */
-	    DEBUG(printf("Removing segment %x\n", active ));
+	    MPIU_DBG_PRINTF(("Removing segment %x\n", active ));
 	    MPIR_Bsend_free_segment( active );
 	}
 	active = next_active;
-	DEBUG(printf("Next active is %x\n",active));
+	MPIU_DBG_PRINTF(("Next active is %x\n",active));
     }
 }
 
@@ -506,7 +505,7 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
 	   carve out a new block */
 	BsendData_t *newp;
 	
-	DEBUG(printf("Breaking block into used and allocated at %x\n", p ));
+	MPIU_DBG_PRINTF(("Breaking block into used and allocated at %x\n", p ));
 	newp = (BsendData_t *)( (char *)p + BSENDDATA_HEADER_TRUE_SIZE + 
 				alloc_size );
 	newp->total_size = p->total_size - alloc_size - 
@@ -555,7 +554,7 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
     DBG_PRINTF( "At end of take buffer\n" );
     MPIR_Bsend_dump();
 #endif
-    DEBUG(printf("segment %x now head of active\n", p ));
+    MPIU_DBG_PRINTF(("segment %x now head of active\n", p ));
 }
 
 /* Ignore p */
