@@ -37,11 +37,20 @@ extern MPIDI_Process_t MPIDI_Process;
  * Debugging tools
  */
 void MPIDI_dbg_printf(int, char *, char *, ...);
+void MPIDI_err_printf(char *, char *, ...);
+
 #define MPIDI_dbg_printf(level, func, fmt, args...)			\
 {									\
     printf("%d (%d) %s(): " ## fmt ## "\n",				\
 	   MPIR_Process.comm_world->rank, level, func, ## args);	\
     fflush(stdout);							\
+}
+
+#define MPIDI_err_printf(func, fmt, args...)			\
+{								\
+    printf("%d %s(): " ## fmt ## "\n",				\
+	   MPIR_Process.comm_world->rank, func, ## args);	\
+    fflush(stdout);						\
 }
 
 #define MPIDI_QUOTE(A) MPIDI_QUOTE2(A)
