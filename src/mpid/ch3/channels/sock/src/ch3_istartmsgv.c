@@ -73,6 +73,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 
     /* The SOCK channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
+    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF);
     
     if (vc->sc.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
@@ -118,7 +119,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	    }
 	    else
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - connection failed, rc=%d", rc));
+		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - sock_writev failed, rc=%d", rc));
 		sreq = MPIDI_CH3_Request_create();
 		assert(sreq != NULL);
 		sreq->kind = MPID_REQUEST_SEND;

@@ -127,7 +127,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	fflush(stdout);
     }
 #   endif
-    
+
     rc = PMI_KVS_Commit(pg->kvs_name);
     assert(rc == 0);
     rc = PMI_Barrier();

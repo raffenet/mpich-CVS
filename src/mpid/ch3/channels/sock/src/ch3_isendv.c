@@ -48,7 +48,9 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 
     /* The sock channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
-    
+    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)iov[0].MPID_IOV_BUF);
+
+
     if (vc->sc.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
 	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
@@ -103,12 +105,12 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 	    }
 	    else if (rc == SOCK_ERR_NOMEM)
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "write failed, out of memory"));
+		MPIDI_DBG_PRINTF((55, FCNAME, "sock_writev failed, out of memory"));
 		sreq->status.MPI_ERROR = MPIR_ERR_MEMALLOCFAILED;
 	    }
 	    else
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "write failed, rc=%d", rc));
+		MPIDI_DBG_PRINTF((55, FCNAME, "sock_writev failed, rc=%d", rc));
 		/* Connection just failed.  Mark the request complete and return an error. */
 		vc->sc.state = MPIDI_CH3I_VC_STATE_FAILED;
 		/* TODO: Create an appropriate error message based on the return value (rc) */

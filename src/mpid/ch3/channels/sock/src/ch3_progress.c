@@ -180,7 +180,48 @@ int MPIDI_CH3_Progress(int is_blocking)
 		    else
 		    {
 			int mpi_errno;
-			
+
+#ifdef MPID_USE_SEQUENCE_NUMBERS
+			MPIU_DBG_PRINTF((
+			    "Invalid packet:\ntype: %d\neager:\n data_sz: %d\n context: %d\n tag: %d\n rank: %d\n srid: %d\n seqnum: %d\n"
+			    "cts:\n rreqid: %d\n srid: %d\nrts:\n data_sz: %d\n context: %d\n tag: %d\n rank: %d\n srid: %d\n seqnum: %d\n"
+			    "rndv data:\n rrid: %d\n",
+			    conn->pkt.type,
+			    conn->pkt.eager_send.data_sz,
+			    conn->pkt.eager_send.match.context_id,
+			    conn->pkt.eager_send.match.tag,
+			    conn->pkt.eager_send.match.rank,
+			    conn->pkt.eager_send.sender_req_id,
+			    conn->pkt.eager_send.seqnum,
+			    conn->pkt.rndv_clr_to_send.receiver_req_id,
+			    conn->pkt.rndv_clr_to_send.sender_req_id,
+			    conn->pkt.rndv_req_to_send.data_sz,
+			    conn->pkt.rndv_req_to_send.match.context_id,
+			    conn->pkt.rndv_req_to_send.match.tag,
+			    conn->pkt.rndv_req_to_send.match.rank,
+			    conn->pkt.rndv_req_to_send.sender_req_id,
+			    conn->pkt.rndv_req_to_send.seqnum,
+			    conn->pkt.rndv_send.receiver_req_id));
+#else
+			MPIU_DBG_PRINTF((
+			    "Invalid packet:\ntype: %d\neager:\n data_sz: %d\n context: %d\n tag: %d\n rank: %d\n srid: %d\n seqnum: %d\n"
+			    "cts:\n rreqid: %d\n srid: %d\nrts:\n data_sz: %d\n context: %d\n tag: %d\n rank: %d\n srid: %d\n seqnum: %d\n"
+			    "rndv data:\n rrid: %d\n",
+			    conn->pkt.type,
+			    conn->pkt.eager_send.data_sz,
+			    conn->pkt.eager_send.match.context_id,
+			    conn->pkt.eager_send.match.tag,
+			    conn->pkt.eager_send.match.rank,
+			    conn->pkt.eager_send.sender_req_id,
+			    conn->pkt.rndv_clr_to_send.receiver_req_id,
+			    conn->pkt.rndv_clr_to_send.sender_req_id,
+			    conn->pkt.rndv_req_to_send.data_sz,
+			    conn->pkt.rndv_req_to_send.match.context_id,
+			    conn->pkt.rndv_req_to_send.match.tag,
+			    conn->pkt.rndv_req_to_send.match.rank,
+			    conn->pkt.rndv_req_to_send.sender_req_id,
+			    conn->pkt.rndv_send.receiver_req_id));
+#endif
 			mpi_errno = MPIR_Err_create_code(MPI_ERR_INTERN, "**ch3|sock|badpacket", "**ch3|sock|badpacket %d",
 							 conn->pkt.type);
 			MPID_Abort(NULL, mpi_errno);
@@ -690,7 +731,7 @@ void MPIDI_CH3I_VC_post_read(MPIDI_VC * vc, MPID_Request * rreq)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_VC_POST_READ);
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering, vc=0x%08x, rreq=0x%08x", (unsigned) vc, rreq->handle));
+    MPIDI_DBG_PRINTF((60, FCNAME, "entering, vc=0x%p, rreq=0x%08x", vc, rreq->handle));
 
     assert (conn->recv_active == NULL);
     conn->recv_active = rreq;
@@ -710,7 +751,7 @@ void MPIDI_CH3I_VC_post_write(MPIDI_VC * vc, MPID_Request * sreq)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_VC_POST_WRITE);
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering, vc=0x%08x, sreq=0x%08x", (unsigned) vc, sreq->handle));
+    MPIDI_DBG_PRINTF((60, FCNAME, "entering, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
     
     assert (conn->send_active == NULL);
     conn->send_active = sreq;
@@ -813,7 +854,10 @@ static inline void connection_post_recv_pkt(MPIDI_CH3I_Connection_t * conn)
     MPIDI_STATE_DECL(MPID_STATE_CONNECTION_POST_RECV_PKT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_POST_RECV_PKT);
-    
+
+#ifdef MPICH_DBG_OUTPUT
+    memset(&conn->pkt, 0, sizeof(conn->pkt));
+#endif
     rc = sock_post_read(conn->sock, &conn->pkt, sizeof(conn->pkt), NULL);
     if (rc != SOCK_SUCCESS)
     {

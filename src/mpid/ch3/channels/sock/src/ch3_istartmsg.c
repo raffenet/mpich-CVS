@@ -51,7 +51,8 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr
 
     /* The SOCK channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
     hdr_sz = sizeof(MPIDI_CH3_Pkt_t);
-    
+    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)hdr);
+
     if (vc->sc.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
 	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
@@ -71,6 +72,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr
 		
 		if (nb == hdr_sz)
 		{ 
+		    MPIDI_DBG_PRINTF((55, FCNAME, "iStartMsg wrote all %d bytes\n", nb));
 		    MPIDI_DBG_PRINTF((55, FCNAME, "entire write complete"));
 		    /* done.  get us out of here as quickly as possible. */
 		}
@@ -85,7 +87,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr
 	    }
 	    else
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - connection failed, rc=%d", rc));
+		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - sock_write failed, rc=%d", rc));
 		sreq = MPIDI_CH3_Request_create();
 		assert(sreq != NULL);
 		sreq->kind = MPID_REQUEST_SEND;
