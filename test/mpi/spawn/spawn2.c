@@ -36,7 +36,7 @@ int main( int argc, char *argv[] )
 	   Windows applications may need to use just spawn1 or
 	   spawn1.exe.  We can't rely on using info to place . in the
 	   path, since info is not required to be followed. */
-	MPI_Comm_spawn( "./spawn1", MPI_ARGV_NULL, np,
+	MPI_Comm_spawn( "./spawn2", MPI_ARGV_NULL, np,
 			MPI_INFO_NULL, 0, MPI_COMM_WORLD,
 			&intercomm, errcodes );
     }
@@ -108,7 +108,7 @@ int main( int argc, char *argv[] )
 	   Windows applications may need to use just spawn1 or
 	   spawn1.exe.  We can't rely on using info to place . in the
 	   path, since info is not required to be followed. */
-	MPI_Comm_spawn( "./spawn1", MPI_ARGV_NULL, np,
+	MPI_Comm_spawn( "./spawn2", MPI_ARGV_NULL, np,
 			MPI_INFO_NULL, 0, MPI_COMM_WORLD,
 			&intercomm2, MPI_ERRCODES_IGNORE );
     }
@@ -139,44 +139,12 @@ int main( int argc, char *argv[] )
 		errs += err;
 	    }
 	}
-    }
-    else {
-	/* Child */
-	char cname[MPI_MAX_OBJECT_NAME];
-	int rlen;
 
-	if (size != np) {
-	    errs++;
-	    printf( "(Child) Did not create %d processes (got %d)\n", 
-		    np, size );
-	}
-	/* Check the name of the parent */
-	cname[0] = 0;
-	MPI_Comm_get_name( intercomm2, cname, &rlen );
-	/* MPI-2 section 8.4 requires that the parent have this
-	   default name */
-	if (strcmp( cname, "MPI_COMM_PARENT" ) != 0) {
-	    errs++;
-	    printf( "Name of parent is not correct\n" );
-	    if (rlen > 0 && cname[0]) {
-		printf( " Got %s but expected MPI_COMM_PARENT\n", cname );
-	    }
-	    else {
-		printf( " Expected MPI_COMM_PARENT but no name set\n" );
-	    }
-	}
-	MPI_Recv( &i, 1, MPI_INT, 0, 0, intercomm2, &status );
-	if (i != rank) {
-	    errs++;
-	    printf( "Unexpected rank on child %d (%d)\n", rank, i );
-	}
-	/* Send the errs back to the master process */
-	MPI_Ssend( &errs, 1, MPI_INT, 0, 1, intercomm2 );
+	MPI_Comm_free( &intercomm2 );
     }
 
     /* It isn't necessary to free the intercomm, but it should not hurt */
     MPI_Comm_free( &intercomm );
-    MPI_Comm_free( &intercomm2 );
 
     /* Note that the MTest_Finalize get errs only over COMM_WORLD */
     /* Note also that both the parent and child will generate "No Errors"
