@@ -841,6 +841,7 @@ sub print_args {
 	# Match type to replacement
 	print "parm = :$parm:\n" if $debug;
 	# Remove qualifiers from the parm
+	$arg_qualifiers[$count] = "";
 	if ($parm =~ /^const\s+/) {
 	    $parm =~ s/^const\s+//;
 	    $arg_qualifiers[$count] .= "const ";
