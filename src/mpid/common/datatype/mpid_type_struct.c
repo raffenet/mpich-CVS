@@ -38,7 +38,8 @@ int MPID_Type_struct_alignsize(int count,
     }
 
 #ifdef HAVE_MAX_STRUCT_ALIGNMENT
-    if (max_alignsize > HAVE_MAX_STRUCT_ALIGNMENT) max_alignsize = HAVE_MAX_STRUCT_ALIGNMENT;
+    if (max_alignsize > HAVE_MAX_STRUCT_ALIGNMENT)
+	max_alignsize = HAVE_MAX_STRUCT_ALIGNMENT;
 #endif
     /* if we didn't calculate a maximum struct alignment (above), then the
      * alignment was either "largest", in which case we just use what we found,
@@ -339,6 +340,8 @@ int MPID_Type_struct(int count,
 
 	/* TODO: don't bother with alignsize because of the lb/ub (?) */
 
+	new_dtp->element_size = -1; /* mark as a mixed-up element size */
+
 #ifdef MPID_STRUCT_DEBUG
 	MPIDI_Datatype_printf(*newtype, 0, 0, 1, 0);
 #endif
@@ -419,8 +422,11 @@ int MPID_Type_struct(int count,
 	return mpi_errno;
     } /* end of single derived type case */
     else {
-    	/* note: first and last are used for indices in this code, not byte positions */
-	int nr_pieces = 0, first = 0, last, found_lb = 0, found_ub = 0, epsilon, alignsize;
+    	/* note: first and last are used for indices in this code, not byte
+	 * positions
+	 */
+	int nr_pieces = 0, first = 0, last, found_lb = 0, found_ub = 0,
+	    epsilon, alignsize;
 	int *tmp_blocklength_array;
 	MPI_Aint *tmp_displacement_array, bytes, lb_disp = 0, ub_disp = 0;
 	MPID_IOV *iov_array;
@@ -447,14 +453,18 @@ int MPID_Type_struct(int count,
 		    found_lb = 1;
 		    lb_disp = displacement_array[i];
 		}
-		else if (displacement_array[i] < lb_disp) lb_disp = displacement_array[i];
+		else if (displacement_array[i] < lb_disp) {
+		    lb_disp = displacement_array[i];
+		}
 	    }
 	    else if (oldtype_array[i] == MPI_UB) {
 		if (!found_ub) {
 		    found_ub = 1;
 		    ub_disp = displacement_array[i];
 		}
-		else if (displacement_array[i] > ub_disp) ub_disp = displacement_array[i];
+		else if (displacement_array[i] > ub_disp) {
+		    ub_disp = displacement_array[i];
+		}
 	    }
 	    else if (HANDLE_GET_KIND(oldtype_array[i]) ==
                      HANDLE_KIND_BUILTIN) {
@@ -596,7 +606,7 @@ int MPID_Type_struct(int count,
 	    }
 	}
 
-	new_dtp->element_size = -1;
+	new_dtp->element_size = -1; /* mark as having more than one element type */
         new_dtp->eltype = eltype;
 
 #ifdef MPID_STRUCT_DEBUG

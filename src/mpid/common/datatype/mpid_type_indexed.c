@@ -130,6 +130,7 @@ int MPID_Type_indexed(int count,
 	new_dtp->extent         = max_ub - min_lb;
 	new_dtp->alignsize      = el_size;
 	new_dtp->n_elements     = el_count;
+	new_dtp->element_size   = el_size;
 	new_dtp->is_contig      = 0; /* ??? */
         new_dtp->eltype         = oldtype;
 
@@ -187,8 +188,7 @@ int MPID_Type_indexed(int count,
 	    new_dtp->loopsize       = new_loopsize;
 	    
 	    /* fill in dataloop, noting that this is a leaf.  no need to copy. */
-	    /* NOTE: element size in kind is off. */
-	    dlp->kind                       = DLOOP_KIND_INDEXED | DLOOP_FINAL_MASK | (el_size << DLOOP_ELMSIZE_SHIFT);
+	    dlp->kind                       = DLOOP_KIND_INDEXED | DLOOP_FINAL_MASK;
 	    dlp->handle                     = new_dtp->handle;
 	    dlp->loop_params.i_t.count      = contig_count;
 	    dlp->el_extent                  = el_size; /* extent = size for basic types */
@@ -258,6 +258,7 @@ int MPID_Type_indexed(int count,
 	new_dtp->loopinfo_depth = old_dtp->loopinfo_depth + 1;
 	new_dtp->alignsize      = old_dtp->alignsize;
 	new_dtp->n_elements     = el_count * old_dtp->n_elements;
+	new_dtp->element_size   = old_dtp->element_size;
         new_dtp->eltype         = old_dtp->eltype;
 
 	new_dtp->is_contig = 0; /* TODO: FIX THIS */

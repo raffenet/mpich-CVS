@@ -111,6 +111,7 @@ int MPID_Type_vector(int count,
 	new_dtp->extent         = new_dtp->ub - new_dtp->lb;
 	new_dtp->alignsize      = oldsize;
 	new_dtp->n_elements     = count * blocklength;
+	new_dtp->element_size   = oldsize;
 	new_dtp->is_contig      = ((stride == blocklength || count == 1) ? 1 : 0);
         new_dtp->eltype         = oldtype;
 
@@ -125,8 +126,7 @@ int MPID_Type_vector(int count,
 	new_dtp->loopinfo       = dlp;
 
 	/* fill in dataloop, noting that this is a leaf.  no need to copy. */
-	/* NOTE: element size in kind is off. */
-	dlp->kind                       = DLOOP_KIND_VECTOR | DLOOP_FINAL_MASK | (oldsize << DLOOP_ELMSIZE_SHIFT);
+	dlp->kind                       = DLOOP_KIND_VECTOR | DLOOP_FINAL_MASK;
 	dlp->handle                     = new_dtp->handle;
 	dlp->loop_params.v_t.count      = count;
 	dlp->loop_params.v_t.blocksize  = blocklength;
@@ -167,13 +167,14 @@ int MPID_Type_vector(int count,
 				   new_dtp->lb,
 				   new_dtp->ub);
 
-	new_dtp->true_lb     = new_dtp->lb + (old_dtp->true_lb - old_dtp->lb);
-	new_dtp->true_ub     = new_dtp->ub + (old_dtp->true_ub - old_dtp->ub);
-	new_dtp->extent      = new_dtp->ub - new_dtp->lb;
+	new_dtp->true_lb      = new_dtp->lb + (old_dtp->true_lb - old_dtp->lb);
+	new_dtp->true_ub      = new_dtp->ub + (old_dtp->true_ub - old_dtp->ub);
+	new_dtp->extent       = new_dtp->ub - new_dtp->lb;
 
-	new_dtp->alignsize   = old_dtp->alignsize;
-	new_dtp->n_elements  = old_dtp->n_elements * count * blocklength; /* ??? */
-        new_dtp->eltype      = old_dtp->eltype;
+	new_dtp->alignsize    = old_dtp->alignsize;
+	new_dtp->n_elements   = old_dtp->n_elements * count * blocklength;
+	new_dtp->element_size = old_dtp->element_size;
+        new_dtp->eltype       = old_dtp->eltype;
 
 	if (old_dtp->is_contig && (stride == blocklength || count == 1)) new_dtp->is_contig = 1; /* ??? */
 	else new_dtp->is_contig = 0;
@@ -187,7 +188,7 @@ int MPID_Type_vector(int count,
 	new_dtp->loopsize = new_loopsize;
 
 	/* fill in top part of dataloop */
-	dlp->kind                       = DLOOP_KIND_VECTOR | (old_dtp->size << DLOOP_ELMSIZE_SHIFT);
+	dlp->kind                       = DLOOP_KIND_VECTOR;
 	dlp->handle                     = new_dtp->handle; /* filled in by MPIU_Handle_obj_alloc */
 	dlp->loop_params.v_t.count      = count;
 	dlp->loop_params.v_t.blocksize  = blocklength;

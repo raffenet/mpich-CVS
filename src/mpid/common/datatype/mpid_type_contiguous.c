@@ -68,6 +68,7 @@ int MPID_Type_contiguous(int count,
 	new_dtp->extent         = new_dtp->ub - new_dtp->lb;
 	new_dtp->alignsize      = oldsize; /* ??? */
 	new_dtp->n_elements     = count;
+	new_dtp->element_size   = oldsize;
 	new_dtp->is_contig      = 1;
         new_dtp->eltype         = oldtype;
 
@@ -79,8 +80,7 @@ int MPID_Type_contiguous(int count,
 
 	/* fill in dataloop */
 	/* NOTE: element size in kind is probably wrong */
-	dlp->kind                       = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK |
-	                                  (oldsize << DLOOP_ELMSIZE_SHIFT);
+	dlp->kind                       = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
 	dlp->handle                     = new_dtp->handle;
 	dlp->loop_params.c_t.count      = count;
 	dlp->el_size                    = oldsize;
@@ -109,9 +109,10 @@ int MPID_Type_contiguous(int count,
 	new_dtp->true_ub    = new_dtp->ub + (old_dtp->true_ub - old_dtp->ub);
 	new_dtp->extent     = new_dtp->ub - new_dtp->lb;
 
-	new_dtp->alignsize  = old_dtp->alignsize;
-	new_dtp->n_elements = count * old_dtp->n_elements; /* ??? */
-	new_dtp->is_contig  = old_dtp->is_contig; /* ??? */
+	new_dtp->alignsize    = old_dtp->alignsize;
+	new_dtp->n_elements   = count * old_dtp->n_elements;
+	new_dtp->element_size = old_dtp->element_size;
+	new_dtp->is_contig    = old_dtp->is_contig; /* ??? */
 
 	/* allocate space for dataloop */
 	new_loopsize = old_dtp->loopsize + sizeof(struct MPID_Dataloop);
@@ -122,9 +123,7 @@ int MPID_Type_contiguous(int count,
 	new_dtp->loopsize       = new_loopsize;
 
 	/* fill in top part of dataloop */
-	/* NOTE: element size in kind is probably wrong */
-	dlp->kind                  = DLOOP_KIND_CONTIG |
-	                             (old_dtp->size << DLOOP_ELMSIZE_SHIFT);
+	dlp->kind                  = DLOOP_KIND_CONTIG;
 	/* NOTE: new_dtp->handle is filled in by MPIU_Handle_obj_alloc() */
 	dlp->handle                = new_dtp->handle;
 	dlp->loop_params.c_t.count = count;
