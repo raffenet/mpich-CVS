@@ -13,7 +13,7 @@ int smpd_handle_stdin_command(smpd_context_t *context)
     smpd_process_t *piter;
     smpd_stdin_write_node_t *node, *iter;
     int result;
-    sock_size_t num_written, num_decoded;
+    MPIDU_Sock_size_t num_written, num_decoded;
     int nd;
 
     smpd_enter_fn("handle_stdin_command");
@@ -59,8 +59,8 @@ int smpd_handle_stdin_command(smpd_context_t *context)
 		{
 		    /* attempt to write the data immediately */
 		    num_written = 0;
-		    result = sock_write(piter->in->sock, data, num_decoded, &num_written);
-		    if (result != SOCK_SUCCESS)
+		    result = MPIDU_Sock_write(piter->in->sock, data, num_decoded, &num_written);
+		    if (result != MPI_SUCCESS)
 		    {
 			smpd_err_printf("unable to write data to the stdin context of process %d\n", piter->rank);
 		    }
@@ -88,8 +88,8 @@ int smpd_handle_stdin_command(smpd_context_t *context)
 				    node->next = NULL;
 				    piter->stdin_write_list = node;
 				    piter->in->write_state = SMPD_WRITING_DATA_TO_STDIN;
-				    result = sock_post_write(piter->in->sock, node->buffer, node->length, NULL);
-				    if (result != SOCK_SUCCESS)
+				    result = MPIDU_Sock_post_write(piter->in->sock, node->buffer, node->length, node->length, NULL);
+				    if (result != MPI_SUCCESS)
 				    {
 					smpd_err_printf("unable to post a write of %d bytes to stdin for rank %d\n",
 					    node->length, piter->rank);
@@ -320,8 +320,8 @@ int smpd_handle_result(smpd_context_t *context)
     smpd_context_t *pmi_context;
     smpd_process_t *piter;
     int rank;
-    sock_t insock;
-    SOCK_NATIVE_FD stdin_fd;
+    MPIDU_Sock_t insock;
+    MPIDU_SOCK_NATIVE_FD stdin_fd;
     smpd_context_t *context_in;
 #ifdef HAVE_WINDOWS_H
     DWORD dwThreadID;
@@ -425,8 +425,8 @@ int smpd_handle_result(smpd_context_t *context)
 #endif
 
 				/* convert the native handle to a sock */
-				result = sock_native_to_sock(smpd_process.set, stdin_fd, NULL, &insock);
-				if (result != SOCK_SUCCESS)
+				result = MPIDU_Sock_native_to_sock(smpd_process.set, stdin_fd, NULL, &insock);
+				if (result != MPI_SUCCESS)
 				{
 				    smpd_err_printf("unable to create a sock from stdin,\nsock error: %s\n", get_sock_error_string(result));
 				    smpd_exit_fn("smpd_handle_result");
@@ -440,7 +440,7 @@ int smpd_handle_result(smpd_context_t *context)
 				    smpd_exit_fn("smpd_handle_result");
 				    return SMPD_FAIL;
 				}
-				sock_set_user_ptr(insock, context_in);
+				MPIDU_Sock_set_user_ptr(insock, context_in);
 
 #ifdef HAVE_WINDOWS_H
 				/* unfortunately, we cannot use stdin directly as a sock.  So, use a thread to read and forward
@@ -464,8 +464,8 @@ int smpd_handle_result(smpd_context_t *context)
 				smpd_process.stdin_redirecting = SMPD_TRUE;
 				/* post a read for a user command from stdin */
 				context_in->read_state = SMPD_READING_STDIN;
-				result = sock_post_read(insock, context_in->read_cmd.cmd, 1, NULL);
-				if (result != SOCK_SUCCESS)
+				result = MPIDU_Sock_post_read(insock, context_in->read_cmd.cmd, 1, 1, NULL);
+				if (result != MPI_SUCCESS)
 				{
 				    smpd_err_printf("unable to post a read on stdin for an incoming user command, error:\n%s\n",
 					get_sock_error_string(result));
@@ -609,8 +609,8 @@ int smpd_handle_result(smpd_context_t *context)
 			    strcpy(iter->context->cred_request, "yes");
 			    iter->context->read_state = SMPD_IDLE;
 			    iter->context->write_state = SMPD_WRITING_CRED_ACK_YES;
-			    result = sock_post_write(iter->context->sock, iter->context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
-			    ret_val = result == SOCK_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+			    result = MPIDU_Sock_post_write(iter->context->sock, iter->context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
+			    ret_val = result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
 			}
 			else
 			{
@@ -623,9 +623,24 @@ int smpd_handle_result(smpd_context_t *context)
 			strcpy(iter->context->cred_request, "no");
 			iter->context->read_state = SMPD_IDLE;
 			iter->context->write_state = SMPD_WRITING_CRED_ACK_NO;
-			result = sock_post_write(iter->context->sock, iter->context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
-			ret_val = result == SOCK_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+			result = MPIDU_Sock_post_write(iter->context->sock, iter->context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
+			ret_val = result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
 		    }
+		}
+		else if (strcmp(iter->cmd_str, "exit_on_done") == 0)
+		{
+		    ret_val = SMPD_DBS_RETURN;
+		    /*
+		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
+		    {
+			ret_val = SMPD_SUCCESS;
+		    }
+		    else
+		    {
+			smpd_err_printf("exit_on_done failed: %s\n", str);
+			ret_val = SMPD_ABORT;
+		    }
+		    */
 		}
 		else
 		{
@@ -716,7 +731,7 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     cmd = &context->read_cmd;
 
     /*
-    printf("handling dbs command on %s context, sock %d.\n", smpd_get_context_str(context), sock_getid(context->sock));
+    printf("handling dbs command on %s context, sock %d.\n", smpd_get_context_str(context), MPIDU_Sock_getid(context->sock));
     fflush(stdout);
     */
 
@@ -1239,9 +1254,9 @@ int smpd_handle_closed_command(smpd_context_t *context)
     if (context == smpd_process.left_context)
     {
 	smpd_dbg_printf("closed command received from left child, closing sock.\n");
-	smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(smpd_process.left_context->sock));
+	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_getid(smpd_process.left_context->sock));
 	smpd_process.left_context->state = SMPD_CLOSING;
-	sock_post_close(smpd_process.left_context->sock);
+	MPIDU_Sock_post_close(smpd_process.left_context->sock);
 	if (smpd_process.right_context)
 	{
 	    smpd_exit_fn("handle_closed_command");
@@ -1251,9 +1266,9 @@ int smpd_handle_closed_command(smpd_context_t *context)
     else if (context == smpd_process.right_context)
     {
 	smpd_dbg_printf("closed command received from right child, closing sock.\n");
-	smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(smpd_process.right_context->sock));
+	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_getid(smpd_process.right_context->sock));
 	smpd_process.right_context->state = SMPD_CLOSING;
-	sock_post_close(smpd_process.right_context->sock);
+	MPIDU_Sock_post_close(smpd_process.right_context->sock);
 	if (smpd_process.left_context)
 	{
 	    smpd_exit_fn("handle_closed_command");
@@ -1263,9 +1278,9 @@ int smpd_handle_closed_command(smpd_context_t *context)
     else if (context == smpd_process.parent_context)
     {
 	smpd_dbg_printf("closed command received from parent, closing sock.\n");
-	smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(smpd_process.parent_context->sock));
+	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_getid(smpd_process.parent_context->sock));
 	smpd_process.parent_context->state = SMPD_CLOSING;
-	sock_post_close(smpd_process.parent_context->sock);
+	MPIDU_Sock_post_close(smpd_process.parent_context->sock);
 	smpd_exit_fn("handle_closed_command");
 	return SMPD_EXITING;
     }
@@ -1336,8 +1351,8 @@ int smpd_handle_connect_command(smpd_context_t *context)
     int result;
     smpd_command_t *cmd, *temp_cmd;
     smpd_context_t *dest;
-    sock_set_t dest_set;
-    sock_t dest_sock;
+    MPIDU_Sock_set_t dest_set;
+    MPIDU_Sock_t dest_sock;
     int dest_id;
     char host[SMPD_MAX_HOST_LENGTH];
 
@@ -1446,7 +1461,7 @@ int smpd_handle_connect_command(smpd_context_t *context)
     }
     smpd_dbg_printf("now connecting to %s\n", host);
     /* create a new context */
-    result = smpd_create_context(SMPD_CONTEXT_UNDETERMINED, context->set, SOCK_INVALID_SOCK, dest_id, &dest);
+    result = smpd_create_context(SMPD_CONTEXT_UNDETERMINED, context->set, MPIDU_SOCK_INVALID_SOCK, dest_id, &dest);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a new context.\n");
@@ -1457,8 +1472,8 @@ int smpd_handle_connect_command(smpd_context_t *context)
     dest_set = context->set; /*smpd_process.set;*/
 
     /* start the connection logic here */
-    result = sock_post_connect(dest_set, dest, host, smpd_process.port, &dest_sock);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_post_connect(dest_set, dest, host, smpd_process.port, &dest_sock);
+    if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("unable to post a connect to start the connect command,\nsock error: %s\n",
 	    get_sock_error_string(result));
@@ -1474,14 +1489,14 @@ int smpd_handle_connect_command(smpd_context_t *context)
 	smpd_dbg_printf("adding new left child context\n");
 	smpd_init_context(dest, SMPD_CONTEXT_LEFT_CHILD, dest_set, dest_sock, dest_id);
 	smpd_process.left_context = dest;
-	sock_set_user_ptr(dest_sock, dest);
+	MPIDU_Sock_set_user_ptr(dest_sock, dest);
     }
     else if (smpd_process.right_context == NULL)
     {
 	smpd_dbg_printf("adding new right child context\n");
 	smpd_init_context(dest, SMPD_CONTEXT_RIGHT_CHILD, dest_set, dest_sock, dest_id);
 	smpd_process.right_context = dest;
-	sock_set_user_ptr(dest_sock, dest);
+	MPIDU_Sock_set_user_ptr(dest_sock, dest);
     }
     else
     {
@@ -1699,8 +1714,8 @@ int smpd_handle_stat_command(smpd_context_t *context)
 		}
 		smpd_snprintf_update(&str, &len, " host               = %s\n", iter->host);
 		smpd_snprintf_update(&str, &len, " rank               = %d\n", iter->rank);
-		smpd_snprintf_update(&str, &len, " set                = %d\n", sock_getsetid(iter->set));
-		smpd_snprintf_update(&str, &len, " sock               = %d\n", sock_getid(iter->sock));
+		smpd_snprintf_update(&str, &len, " set                = %d\n", MPIDU_Sock_getsetid(iter->set));
+		smpd_snprintf_update(&str, &len, " sock               = %d\n", MPIDU_Sock_getid(iter->sock));
 		smpd_snprintf_update(&str, &len, " account            = %s\n", iter->account);
 		smpd_snprintf_update(&str, &len, " password           = ***\n");
 		smpd_snprintf_update(&str, &len, " connect_return_id  = %d\n", iter->connect_return_id);
@@ -2355,6 +2370,56 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
     return result;
 }
 
+int smpd_handle_exit_on_done_command(smpd_context_t *context)
+{
+    int result;
+    smpd_command_t *cmd, *temp_cmd;
+
+    smpd_enter_fn("smpd_handle_exit_on_done_command");
+
+    cmd = &context->read_cmd;
+    smpd_process.exit_on_done = SMPD_TRUE;
+
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for a exit_on_done command.\n");
+	smpd_exit_fn("smpd_handle_exit_on_done_command");
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for a exit_on_done command.\n");
+	smpd_exit_fn("smpd_handle_exit_on_done_command");
+	return SMPD_FAIL;
+    }
+
+    /* add the result */
+    result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result string to the result command for a exit_on_done command.\n");
+	smpd_exit_fn("smpd_handle_exit_on_done_command");
+	return SMPD_FAIL;
+    }
+
+    /* send result back */
+    smpd_dbg_printf("replying to exit_on_done command: \"%s\"\n", temp_cmd->cmd);
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the context.\n");
+	smpd_exit_fn("smpd_handle_exit_on_done_command");
+	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn("smpd_handle_exit_on_done_command");
+    return result;
+}
+
 #if 0
 /* use this template to add new command handler functions */
 int smpd_handle__command(smpd_context_t *context)
@@ -2541,16 +2606,22 @@ int smpd_handle_command(smpd_context_t *context)
     else if (strcmp(cmd->cmd_str, "down") == 0)
     {
 	context->state = SMPD_EXITING;
-	result = sock_post_close(context->sock);
-	if (result != SOCK_SUCCESS)
+	result = MPIDU_Sock_post_close(context->sock);
+	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a close on sock %d,\nsock error: %s\n",
-		sock_getid(context->sock), get_sock_error_string(result));
+		MPIDU_Sock_getid(context->sock), get_sock_error_string(result));
 	    smpd_exit_fn("smpd_handle_command");
 	    return SMPD_FAIL;
 	}
 	smpd_exit_fn("smpd_handle_command");
 	return SMPD_EXITING;
+    }
+    else if (strcmp(cmd->cmd_str, "exit_on_done") == 0)
+    {
+	result = smpd_handle_exit_on_done_command(context);
+	smpd_exit_fn("smpd_handle_command");
+	return result;
     }
     else if (strcmp(cmd->cmd_str, "done") == 0)
     {
@@ -2559,13 +2630,26 @@ int smpd_handle_command(smpd_context_t *context)
 	    smpd_err_printf("done command read on %s context.\n", smpd_get_context_str(context));
 	}
 	context->state = SMPD_CLOSING;
-	result = sock_post_close(context->sock);
-	if (result != SOCK_SUCCESS)
+	result = MPIDU_Sock_post_close(context->sock);
+	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a close on sock %d,\nsock error: %s\n",
-		sock_getid(context->sock), get_sock_error_string(result));
+		MPIDU_Sock_getid(context->sock), get_sock_error_string(result));
 	    smpd_exit_fn("smpd_handle_command");
 	    return SMPD_FAIL;
+	}
+	if (smpd_process.exit_on_done)
+	{
+	    smpd_process.nproc_exited++;
+	    /*printf("%d exited\n", smpd_process.nproc_exited);*/
+	    if (smpd_process.nproc == smpd_process.nproc_exited)
+	    {
+		context->state = SMPD_EXITING;
+		smpd_dbg_printf("last process exited, returning SMPD_EXIT.\n");
+		/*printf("last process exited, returning SMPD_EXIT.\n");fflush(stdout);*/
+		smpd_exit_fn("smpd_handle_command");
+		return /*SMPD_EXIT*/ SMPD_EXITING;
+	    }
 	}
 	smpd_exit_fn("smpd_handle_command");
 	return SMPD_CLOSE;

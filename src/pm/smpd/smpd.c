@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "smpd.h"
+#include "mpi.h"
 #ifdef HAVE_WINDOWS_H
 #include "smpd_service.h"
 #endif
@@ -44,13 +45,22 @@ int main(int argc, char* argv[])
     smpd_enter_fn("main");
 
     /* initialization */
-    result = sock_init();
-    if (result != SOCK_SUCCESS)
+    result = PMPI_Init(&argc, &argv);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_init failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPI_Init failed,\n error: %d\n", result);
 	smpd_exit_fn("main");
 	return result;
     }
+    /*
+    result = MPIDU_Sock_init();
+    if (result != MPI_SUCCESS)
+    {
+	smpd_err_printf("MPIDU_Sock_init failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_exit_fn("main");
+	return result;
+    }
+    */
 
     result = smpd_init_process();
     if (result != SMPD_SUCCESS)
@@ -156,8 +166,8 @@ int main(int argc, char* argv[])
 int smpd_entry_point()
 {
     int result;
-    sock_set_t set;
-    sock_t listener;
+    MPIDU_Sock_set_t set;
+    MPIDU_Sock_t listener;
 
     /* This function is called by main or by smpd_service_main in the case of a Windows service */
 
@@ -186,20 +196,20 @@ int smpd_entry_point()
     if (smpd_process.pszExe[0] != '\0')
 	smpd_set_smpd_data("binary", smpd_process.pszExe);
 
-    result = sock_create_set(&set);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_create_set(&set);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
 	smpd_exit_fn("smpd_entry_point");
 	return result;
     }
     smpd_process.set = set;
-    smpd_dbg_printf("created a set for the listener: %d\n", sock_getsetid(set));
-    result = sock_listen(set, NULL, &smpd_process.port, &listener); 
-    if (result != SOCK_SUCCESS)
+    smpd_dbg_printf("created a set for the listener: %d\n", MPIDU_Sock_getsetid(set));
+    result = MPIDU_Sock_listen(set, NULL, &smpd_process.port, &listener); 
+    if (result != MPI_SUCCESS)
     {
 	/* If another smpd is running and listening on this port, tell it to shutdown or restart? */
-	smpd_err_printf("sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
 	smpd_exit_fn("smpd_entry_point");
 	return result;
     }
@@ -212,10 +222,10 @@ int smpd_entry_point()
 	smpd_exit_fn("smpd_entry_point");
 	return result;
     }
-    result = sock_set_user_ptr(listener, smpd_process.listener_context);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_set_user_ptr(listener, smpd_process.listener_context);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(result));
 	smpd_exit_fn("smpd_entry_point");
 	return result;
     }
@@ -290,17 +300,17 @@ int smpd_entry_point()
     if (smpd_process.root_smpd)
 	smpd_remove_from_dynamic_hosts();
 
-    result = sock_destroy_set(set);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_destroy_set(set);
+    if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("unable to destroy the set, error:\n%s\n",
 	    get_sock_error_string(result));
     }
 
-    result = sock_finalize();
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_finalize();
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
     }
 
     smpd_exit_fn("smpd_entry_point");

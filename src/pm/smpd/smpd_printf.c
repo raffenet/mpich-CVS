@@ -54,6 +54,7 @@ void smpd_translate_win_error(int error, char *msg, int maxlen, char *prepend, .
 char * get_sock_error_string(int error)
 {
     static char str[256];
+#if 0
     switch (error)
     {
     case SOCK_SUCCESS:
@@ -86,10 +87,13 @@ char * get_sock_error_string(int error)
 	sprintf(str, "operating system specific socket error %d occurred", sock_get_last_os_error());
 	return str;
     default:
+#endif
 	sprintf(str, "unknown socket error %d", error);
 	return str;
+#if 0
     }
     return NULL;
+#endif
 }
 
 char * smpd_get_context_str(smpd_context_t *context)

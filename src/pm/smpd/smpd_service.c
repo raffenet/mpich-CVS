@@ -648,9 +648,9 @@ void smpd_bomb_thread()
 */    
 void smpd_service_stop()
 {
-    sock_set_t set;
-    sock_t sock;
-    sock_event_t event;
+    MPIDU_Sock_set_t set;
+    MPIDU_Sock_t sock;
+    MPIDU_Sock_event_t event;
     char host[SMPD_MAX_HOST_LENGTH];
     int iter;
     DWORD dwThreadID;
@@ -667,17 +667,17 @@ void smpd_service_stop()
     /* stop the main thread */
     smpd_process.service_stop = SMPD_TRUE;
     gethostname(host, SMPD_MAX_HOST_LENGTH);
-    result = sock_create_set(&set);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_create_set(&set);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
 	SetEvent(smpd_process.hBombDiffuseEvent);
 	WaitForSingleObject(smpd_process.hBombThread, 3000);
 	CloseHandle(smpd_process.hBombThread);
 	ExitProcess(-1);
     }
-    result = sock_post_connect(set, NULL, host, smpd_process.port, &sock);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_post_connect(set, NULL, host, smpd_process.port, &sock);
+    if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("Unable to connect to '%s:%d',\nsock error: %s\n",
 	    smpd_process.host_list->host, smpd_process.port, get_sock_error_string(result));
@@ -686,8 +686,8 @@ void smpd_service_stop()
 	CloseHandle(smpd_process.hBombThread);
 	ExitProcess(-1);
     }
-    result = sock_wait(set, SOCK_INFINITE_TIME, &event);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_wait(set, MPIDU_SOCK_INFINITE_TIME, &event);
+    if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("Unable to connect to '%s:%d',\nsock error: %s\n",
 	    smpd_process.host_list->host, smpd_process.port, get_sock_error_string(result));

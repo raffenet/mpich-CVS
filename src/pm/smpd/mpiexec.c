@@ -14,8 +14,8 @@ int main(int argc, char* argv[])
     smpd_host_node_t *host_node_ptr;
     smpd_launch_node_t *launch_node_ptr;
     smpd_context_t *context;
-    sock_set_t set;
-    sock_t sock;
+    MPIDU_Sock_set_t set;
+    MPIDU_Sock_t sock;
     smpd_state_t state;
 
     smpd_enter_fn("main");
@@ -28,14 +28,23 @@ int main(int argc, char* argv[])
     }
 
     /* initialize */
-    result = sock_init();
-    if (result != SOCK_SUCCESS)
+    result = PMPI_Init(&argc, &argv);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_init failed,\nsock error: %s\n",
+	smpd_err_printf("MPI_Init failed,\nerror: %d\n", result);
+	smpd_exit_fn("main");
+	return result;
+    }
+    /*
+    result = MPIDU_Sock_init();
+    if (result != MPI_SUCCESS)
+    {
+	smpd_err_printf("MPIDU_Sock_init failed,\nsock error: %s\n",
 		      get_sock_error_string(result));
 	smpd_exit_fn("main");
 	return result;
     }
+    */
 
     result = smpd_init_process();
     if (result != SMPD_SUCCESS)
@@ -94,10 +103,10 @@ int main(int argc, char* argv[])
 	launch_node_ptr = launch_node_ptr->next;
     }
 
-    result = sock_create_set(&set);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_create_set(&set);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
 	goto quit_job;
     }
     smpd_process.set = set;
@@ -108,8 +117,8 @@ int main(int argc, char* argv[])
     state = smpd_process.do_console ? SMPD_MPIEXEC_CONNECTING_SMPD : SMPD_MPIEXEC_CONNECTING_TREE;
 
     /* start connecting the tree by posting a connect to the first host */
-    result = sock_post_connect(set, NULL, smpd_process.host_list->host, smpd_process.port, &sock);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_post_connect(set, NULL, smpd_process.host_list->host, smpd_process.port, &sock);
+    if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("Unable to connect to '%s:%d',\nsock error: %s\n",
 	    smpd_process.host_list->host, smpd_process.port, get_sock_error_string(result));
@@ -124,8 +133,8 @@ int main(int argc, char* argv[])
     context->state = state;
     context->connect_to = smpd_process.host_list;
     smpd_process.left_context = context;
-    result = sock_set_user_ptr(sock, context);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_set_user_ptr(sock, context);
+    if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("unable to set the smpd sock user pointer,\nsock error: %s\n",
 	    get_sock_error_string(result));
@@ -141,12 +150,22 @@ int main(int argc, char* argv[])
 quit_job:
 
     /* finalize */
-    smpd_dbg_printf("calling sock_finalize\n");
-    result = sock_finalize();
-    if (result != SOCK_SUCCESS)
+    /*
+    smpd_dbg_printf("calling MPIDU_Sock_finalize\n");
+    result = MPIDU_Sock_finalize();
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
     }
+    */
+    /* MPI_Finalize called in smpd_exit()
+    smpd_dbg_printf("calling MPI_Finalize\n");
+    result = PMPI_Finalize();
+    if (result != MPI_SUCCESS)
+    {
+	smpd_err_printf("MPI_Finalize failed,\nerror: %d\n", result);
+    }
+    */
 
 #ifdef HAVE_WINDOWS_H
     if (smpd_process.hCloseStdinThreadEvent)

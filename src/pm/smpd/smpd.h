@@ -14,7 +14,7 @@
 #else
 #include "smpdconf.h"
 #endif
-#include "sock.h"
+#include "mpidu_sock.h"
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef HAVE_SYS_TYPES_H
@@ -88,6 +88,7 @@ typedef int SMPD_BOOL;
 #define SMPD_AUTHENTICATION_ACCEPTED_STR  "SUCCESS"
 #define SMPD_SMPD_SESSION_STR             "smpd"
 #define SMPD_PROCESS_SESSION_STR          "process"
+#define SMPD_PMI_SESSION_STR              "pmi"
 #define SMPD_DEFAULT_PASSPHRASE           "behappy" /* must be less than 13 characers */
 #define SMPD_DEFAULT_PASSWORD             "gastroduodenostomy"
 #define SMPD_REGISTRY_KEY                 "SOFTWARE\\MPICH\\SMPD"
@@ -148,6 +149,7 @@ typedef enum smpd_state_t
     SMPD_MGR_LISTENING,
     SMPD_MPIEXEC_CONNECTING_TREE,
     SMPD_MPIEXEC_CONNECTING_SMPD,
+    SMPD_CONNECTING_PMI,
     SMPD_CONNECTING,
     SMPD_RECONNECTING,
     SMPD_READING_CHALLENGE_STRING,
@@ -166,6 +168,7 @@ typedef enum smpd_state_t
     SMPD_READING_SESSION_REQUEST,
     SMPD_WRITING_SMPD_SESSION_REQUEST,
     SMPD_WRITING_PROCESS_SESSION_REQUEST,
+    SMPD_WRITING_PMI_SESSION_REQUEST,
     SMPD_READING_PWD_REQUEST,
     SMPD_WRITING_PWD_REQUEST,
     SMPD_WRITING_NO_PWD_REQUEST,
@@ -229,7 +232,7 @@ typedef struct smpd_command_t
     char cmd_hdr_str[SMPD_CMD_HDR_LENGTH];
     char cmd_str[SMPD_MAX_CMD_STR_LENGTH];
     char cmd[SMPD_MAX_CMD_LENGTH];
-    SOCK_IOV iov[2];
+    MPID_IOV iov[2];
     int length;
     int src, dest, tag;
     int wait;
@@ -259,8 +262,8 @@ typedef struct smpd_context_t
     char host[SMPD_MAX_HOST_LENGTH];
     int id, rank;
     smpd_pwait_t wait;
-    sock_set_t set;
-    sock_t sock;
+    MPIDU_Sock_set_t set;
+    MPIDU_Sock_t sock;
     smpd_state_t state;
     smpd_state_t read_state;
     smpd_command_t read_cmd;
@@ -391,7 +394,7 @@ typedef struct smpd_global_t
     smpd_process_t *process_list;
     int  closing;
     int  root_smpd;
-    sock_set_t set;
+    MPIDU_Sock_set_t set;
     char host[SMPD_MAX_HOST_LENGTH];
     char pszExe[SMPD_MAX_EXE_LENGTH];
     int  bService;
@@ -455,6 +458,7 @@ typedef struct smpd_global_t
 #endif
     char printf_buffer[SMPD_MAX_DBG_PRINTF_LENGTH];
     int state_machine_ret_val;
+    SMPD_BOOL exit_on_done;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
@@ -469,14 +473,14 @@ HANDLE smpd_decode_handle(char *str);
 #endif
 void smpd_print_options(void);
 int smpd_entry_point(void);
-int smpd_enter_at_state(sock_set_t set, smpd_state_t state);
+int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state);
 int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr);
 int smpd_init_process(void);
 int smpd_init_printf(void);
 int smpd_finalize_printf(void);
-int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_set_t set, sock_t sock, int id);
+int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_Sock_set_t set, MPIDU_Sock_t sock, int id);
 int smpd_init_command(smpd_command_t *cmd);
-int smpd_create_context(smpd_context_type_t type, sock_set_t set, sock_t sock, int id, smpd_context_t **context_pptr);
+int smpd_create_context(smpd_context_type_t type, MPIDU_Sock_set_t set, MPIDU_Sock_t sock, int id, smpd_context_t **context_pptr);
 int smpd_create_command(char *cmd_str, int src, int dest, int want_reply, smpd_command_t **cmd_pptr);
 int smpd_create_command_copy(smpd_command_t *src_ptr, smpd_command_t **cmd_pptr);
 int smpd_free_command(smpd_command_t *cmd_ptr);
@@ -487,10 +491,10 @@ int smpd_parse_command(smpd_command_t *cmd_ptr);
 int smpd_post_read_command(smpd_context_t *context);
 int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd);
 int smpd_package_command(smpd_command_t *cmd);
-int smpd_read_string(sock_t sock, char *str, int maxlen);
-int smpd_write_string(sock_t sock, char *str);
-int smpd_read(sock_t sock, void *buf, sock_size_t len);
-int smpd_write(sock_t sock, void *buf, sock_size_t len);
+int smpd_read_string(MPIDU_Sock_t sock, char *str, int maxlen);
+int smpd_write_string(MPIDU_Sock_t sock, char *str);
+int smpd_read(MPIDU_Sock_t sock, void *buf, MPIDU_Sock_size_t len);
+int smpd_write(MPIDU_Sock_t sock, void *buf, MPIDU_Sock_size_t len);
 int smpd_dbg_printf(char *str, ...);
 int smpd_err_printf(char *str, ...);
 int smpd_enter_fn(char *fcname);
@@ -508,8 +512,8 @@ int smpd_getpid(void);
 char * get_sock_error_string(int error);
 void smpd_get_password(char *password);
 void smpd_get_account_and_password(char *account, char *password);
-int smpd_get_credentials_from_parent(sock_set_t set, sock_t sock);
-int smpd_get_smpd_password_from_parent(sock_set_t set, sock_t sock);
+int smpd_get_credentials_from_parent(MPIDU_Sock_set_t set, MPIDU_Sock_t sock);
+int smpd_get_smpd_password_from_parent(MPIDU_Sock_set_t set, MPIDU_Sock_t sock);
 int smpd_get_opt(int *argc, char ***argv, char * flag);
 int smpd_get_opt_int(int *argc, char ***argv, char * flag, int *n);
 int smpd_get_opt_long(int *argc, char ***argv, char * flag, long *n);
@@ -531,7 +535,7 @@ int smpd_add_string(char *str, int maxlen, const char *val);
 const char * smpd_get_string(const char *str, char *val, int maxlen, int *num_chars);
 int smpd_command_destination(int dest, smpd_context_t **dest_context);
 int smpd_forward_command(smpd_context_t *src, smpd_context_t *dest);
-int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set);
+int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, MPIDU_Sock_set_t set);
 int smpd_encode_buffer(char *dest, int dest_length, const char *src, int src_length, int *num_encoded);
 int smpd_decode_buffer(const char *str, char *dest, int length, int *num_decoded);
 int smpd_create_process_struct(int rank, smpd_process_t **process_ptr);

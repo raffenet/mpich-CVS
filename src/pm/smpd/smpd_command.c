@@ -355,7 +355,7 @@ int smpd_free_command(smpd_command_t *cmd_ptr)
     return SMPD_SUCCESS;
 }
 
-int smpd_create_context(smpd_context_type_t type, sock_set_t set, sock_t sock, int id, smpd_context_t **context_pptr)
+int smpd_create_context(smpd_context_type_t type, MPIDU_Sock_set_t set, MPIDU_Sock_t sock, int id, smpd_context_t **context_pptr)
 {
     int result;
     smpd_context_t *context;
@@ -429,7 +429,7 @@ int smpd_free_context(smpd_context_t *context)
 	}
 	/* erase the contents to help track down use of freed structures */
 	memset(context, 0, sizeof(smpd_context_t));
-	smpd_init_context(context, SMPD_CONTEXT_FREED, SOCK_INVALID_SET, SOCK_INVALID_SOCK, -1);
+	smpd_init_context(context, SMPD_CONTEXT_FREED, SOCK_INVALID_SET, MPIDU_SOCK_INVALID_SOCK, -1);
 	free(context);
     }
     smpd_exit_fn("smpd_free_context");
@@ -554,11 +554,11 @@ int smpd_post_read_command(smpd_context_t *context)
     smpd_enter_fn("smpd_post_read_command");
 
     /* post a read for the next command header */
-    smpd_dbg_printf("posting a read for a command header on the %s context, sock %d\n", smpd_get_context_str(context), sock_getid(context->sock));
+    smpd_dbg_printf("posting a read for a command header on the %s context, sock %d\n", smpd_get_context_str(context), MPIDU_Sock_getid(context->sock));
     context->read_state = SMPD_READING_CMD_HEADER;
     context->read_cmd.state = SMPD_CMD_READING_HDR;
-    result = sock_post_read(context->sock, context->read_cmd.cmd_hdr_str, SMPD_CMD_HDR_LENGTH, NULL);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_post_read(context->sock, context->read_cmd.cmd_hdr_str, SMPD_CMD_HDR_LENGTH, SMPD_CMD_HDR_LENGTH, NULL);
+    if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("unable to post a read for the next command header,\nsock error: %s\n", get_sock_error_string(result));
 	smpd_exit_fn("smpd_post_read_command");
@@ -603,11 +603,11 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
     cmd->iov[1].SOCK_IOV_LEN = cmd->length;
     /*smpd_dbg_printf("command at this moment: \"%s\"\n", cmd->cmd);*/
     smpd_dbg_printf("smpd_post_write_command on the %s context sock %d: %d bytes for command: \"%s\"\n",
-	smpd_get_context_str(context), sock_getid(context->sock),
+	smpd_get_context_str(context), MPIDU_Sock_getid(context->sock),
 	cmd->iov[0].SOCK_IOV_LEN + cmd->iov[1].SOCK_IOV_LEN,
 	cmd->cmd);
-    result = sock_post_writev(context->sock, cmd->iov, 2, NULL);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_post_writev(context->sock, cmd->iov, 2, NULL);
+    if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("unable to post a write for the next command,\nsock error: %s\n", get_sock_error_string(result));
 	smpd_exit_fn("smpd_post_write_command");

@@ -402,7 +402,7 @@ int smpd_piothread(smpd_piothread_arg_t *p)
     return 0;
 }
 
-int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set)
+int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, MPIDU_Sock_set_t set)
 {
     HANDLE hStdin, hStdout, hStderr;
     SOCKET hSockStdinR = INVALID_SOCKET, hSockStdinW = INVALID_SOCKET;
@@ -420,7 +420,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     DWORD launch_flag;
     int nError, result;
     unsigned long blocking_flag;
-    sock_t sock_in, sock_out, sock_err, sock_pmi;
+    MPIDU_Sock_t sock_in, sock_out, sock_err, sock_pmi;
     SECURITY_ATTRIBUTES saAttr;
     char str[8192], sock_str[20];
     BOOL bSuccess = TRUE;
@@ -716,25 +716,25 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     if (bSuccess)
     {
 	/* make sock structures out of the sockets */
-	nError = sock_native_to_sock(set, hIn, NULL, &sock_in);
-	if (nError != SOCK_SUCCESS)
+	nError = MPIDU_Sock_native_to_sock(set, hIn, NULL, &sock_in);
+	if (nError != MPI_SUCCESS)
 	{
-	    smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+	    smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
 	}
-	nError = sock_native_to_sock(set, (SOCK_NATIVE_FD)hSockStdoutR, NULL, &sock_out);
-	if (nError != SOCK_SUCCESS)
+	nError = MPIDU_Sock_native_to_sock(set, (MPIDU_SOCK_NATIVE_FD)hSockStdoutR, NULL, &sock_out);
+	if (nError != MPI_SUCCESS)
 	{
-	    smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+	    smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
 	}
-	nError = sock_native_to_sock(set, (SOCK_NATIVE_FD)hSockStderrR, NULL, &sock_err);
-	if (nError != SOCK_SUCCESS)
+	nError = MPIDU_Sock_native_to_sock(set, (MPIDU_SOCK_NATIVE_FD)hSockStderrR, NULL, &sock_err);
+	if (nError != MPI_SUCCESS)
 	{
-	    smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+	    smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
 	}
-	nError = sock_native_to_sock(set, (SOCK_NATIVE_FD)hSockPmiR, NULL, &sock_pmi);
-	if (nError != SOCK_SUCCESS)
+	nError = MPIDU_Sock_native_to_sock(set, (MPIDU_SOCK_NATIVE_FD)hSockPmiR, NULL, &sock_pmi);
+	if (nError != MPI_SUCCESS)
 	{
-	    smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+	    smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
 	}
 
 	process->in->sock = sock_in;
@@ -742,10 +742,10 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	process->err->sock = sock_err;
 	process->pmi->sock = sock_pmi;
 	process->pid = process->in->id = process->out->id = process->err->id = psInfo.dwProcessId;
-	sock_set_user_ptr(sock_in, process->in);
-	sock_set_user_ptr(sock_out, process->out);
-	sock_set_user_ptr(sock_err, process->err);
-	sock_set_user_ptr(sock_pmi, process->pmi);
+	MPIDU_Sock_set_user_ptr(sock_in, process->in);
+	MPIDU_Sock_set_user_ptr(sock_out, process->out);
+	MPIDU_Sock_set_user_ptr(sock_err, process->err);
+	MPIDU_Sock_set_user_ptr(sock_pmi, process->pmi);
     }
     else
     {
@@ -790,8 +790,8 @@ CLEANUP:
 
 	process->context_refcount = 3;
 	process->out->read_state = SMPD_READING_STDOUT;
-	result = sock_post_read(sock_out, process->out->read_cmd.cmd, 1, NULL);
-	if (result != SOCK_SUCCESS)
+	result = MPIDU_Sock_post_read(sock_out, process->out->read_cmd.cmd, 1, 1, NULL);
+	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("posting first read from stdout context failed, sock error: %s\n",
 		get_sock_error_string(result));
@@ -799,8 +799,8 @@ CLEANUP:
 	    return SMPD_FAIL;
 	}
 	process->err->read_state = SMPD_READING_STDERR;
-	result = sock_post_read(sock_err, process->err->read_cmd.cmd, 1, NULL);
-	if (result != SOCK_SUCCESS)
+	result = MPIDU_Sock_post_read(sock_err, process->err->read_cmd.cmd, 1, 1, NULL);
+	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("posting first read from stderr context failed, sock error: %s\n",
 		get_sock_error_string(result));
@@ -828,7 +828,7 @@ CLEANUP:
 
 #else
 
-int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set)
+int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, MPIDU_Sock_set_t set)
 {
     HANDLE hStdin, hStdout, hStderr;
     SOCKET hSockStdinR = INVALID_SOCKET, hSockStdinW = INVALID_SOCKET;
@@ -842,7 +842,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     DWORD launch_flag;
     int nError, result;
     unsigned long blocking_flag;
-    sock_t sock_in, sock_out, sock_err;
+    MPIDU_Sock_t sock_in, sock_out, sock_err;
 
     smpd_enter_fn("smpd_launch_process");
 
@@ -972,29 +972,29 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     RemoveEnvironmentVariables(process->env);
 
     /* make sock structures out of the sockets */
-    nError = sock_native_to_sock(set, hIn, NULL, &sock_in);
-    if (nError != SOCK_SUCCESS)
+    nError = MPIDU_Sock_native_to_sock(set, hIn, NULL, &sock_in);
+    if (nError != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+	smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
     }
-    nError = sock_native_to_sock(set, hOut, NULL, &sock_out);
-    if (nError != SOCK_SUCCESS)
+    nError = MPIDU_Sock_native_to_sock(set, hOut, NULL, &sock_out);
+    if (nError != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+	smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
     }
-    nError = sock_native_to_sock(set, hErr, NULL, &sock_err);
-    if (nError != SOCK_SUCCESS)
+    nError = MPIDU_Sock_native_to_sock(set, hErr, NULL, &sock_err);
+    if (nError != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+	smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
     }
 
     process->in->sock = sock_in;
     process->out->sock = sock_out;
     process->err->sock = sock_err;
     process->pid = process->in->id = process->out->id = process->err->id = psInfo.dwProcessId;
-    sock_set_user_ptr(sock_in, process->in);
-    sock_set_user_ptr(sock_out, process->out);
-    sock_set_user_ptr(sock_err, process->err);
+    MPIDU_Sock_set_user_ptr(sock_in, process->in);
+    MPIDU_Sock_set_user_ptr(sock_out, process->out);
+    MPIDU_Sock_set_user_ptr(sock_err, process->err);
 
 RESTORE_CLEANUP:
     /* Restore stdin, stdout, stderr */
@@ -1009,16 +1009,16 @@ CLEANUP:
 
     if (psInfo.hProcess != INVALID_HANDLE_VALUE)
     {
-	result = sock_post_read(sock_out, process->out->read_cmd.cmd, 1, NULL);
-	if (result != SOCK_SUCCESS)
+	result = MPIDU_Sock_post_read(sock_out, process->out->read_cmd.cmd, 1, NULL);
+	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("posting first read from stdout context failed, sock error: %s\n",
 		get_sock_error_string(result));
 	    smpd_exit_fn("smpd_launch_process");
 	    return SMPD_FAIL;
 	}
-	result = sock_post_read(sock_err, process->err->read_cmd.cmd, 1, NULL);
-	if (result != SOCK_SUCCESS)
+	result = MPIDU_Sock_post_read(sock_err, process->err->read_cmd.cmd, 1, NULL);
+	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("posting first read from stderr context failed, sock error: %s\n",
 		get_sock_error_string(result));
@@ -1109,13 +1109,13 @@ static void set_environment_variables(char *bEnv)
     }
 }
 
-int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set)
+int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, MPIDU_Sock_set_t set)
 {
     int result;
     int stdin_pipe_fds[2], stdout_pipe_fds[2];
     int  stderr_pipe_fds[2], pmi_pipe_fds[2];
     int pid;
-    sock_t sock_in, sock_out, sock_err, sock_pmi;
+    MPIDU_Sock_t sock_in, sock_out, sock_err, sock_pmi;
     char args[SMPD_MAX_EXE_LENGTH];
     char *argv[1024];
     char *token;
@@ -1315,56 +1315,56 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     close(pmi_pipe_fds[1]);
 
     /* make sock structures out of the sockets */
-    result = sock_native_to_sock(set, stdin_pipe_fds[1], NULL, &sock_in);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_native_to_sock(set, stdin_pipe_fds[1], NULL, &sock_in);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
     }
-    result = sock_native_to_sock(set, stdout_pipe_fds[0], NULL, &sock_out);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_native_to_sock(set, stdout_pipe_fds[0], NULL, &sock_out);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
     }
-    result = sock_native_to_sock(set, stderr_pipe_fds[0], NULL, &sock_err);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_native_to_sock(set, stderr_pipe_fds[0], NULL, &sock_err);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
     }
-    result = sock_native_to_sock(set, pmi_pipe_fds[0], NULL, &sock_pmi);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_native_to_sock(set, pmi_pipe_fds[0], NULL, &sock_pmi);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
     }
     process->in->sock = sock_in;
     process->out->sock = sock_out;
     process->err->sock = sock_err;
     process->pmi->sock = sock_pmi;
     process->pid = process->in->id = process->out->id = process->err->id = pid;
-    result = sock_set_user_ptr(sock_in, process->in);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_set_user_ptr(sock_in, process->in);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
     }
-    result = sock_set_user_ptr(sock_out, process->out);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_set_user_ptr(sock_out, process->out);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
     }
-    result = sock_set_user_ptr(sock_err, process->err);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_set_user_ptr(sock_err, process->err);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
     }
-    result = sock_set_user_ptr(sock_pmi, process->pmi);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_set_user_ptr(sock_pmi, process->pmi);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
     }
 
     process->context_refcount = 3;
     process->out->read_state = SMPD_READING_STDOUT;
-    result = sock_post_read(sock_out, process->out->read_cmd.cmd, 1, NULL);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_post_read(sock_out, process->out->read_cmd.cmd, 1, NULL);
+    if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("posting first read from stdout context failed, sock error: %s\n",
 	    get_sock_error_string(result));
@@ -1372,8 +1372,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	return SMPD_FAIL;
     }
     process->err->read_state = SMPD_READING_STDERR;
-    result = sock_post_read(sock_err, process->err->read_cmd.cmd, 1, NULL);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_post_read(sock_err, process->err->read_cmd.cmd, 1, NULL);
+    if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("posting first read from stderr context failed, sock error: %s\n",
 	    get_sock_error_string(result));
@@ -1468,6 +1468,7 @@ int smpd_exit(int exitcode)
     smpd_enter_fn("smpd_exit");
     smpd_kill_all_processes();
     smpd_finalize_printf();
+    PMPI_Finalize();
 #ifdef HAVE_WINDOWS_H
     /* This is necessary because exit() can deadlock flushing file buffers while the stdin thread is running */
     ExitProcess(exitcode);

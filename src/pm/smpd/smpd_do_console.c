@@ -11,8 +11,8 @@ int smpd_do_console()
 {
     int result;
     smpd_context_t *context;
-    sock_set_t set;
-    sock_t sock;
+    MPIDU_Sock_set_t set;
+    MPIDU_Sock_t sock;
     SMPD_BOOL no_smpd = SMPD_FALSE;
     int saved_state = 0;
 
@@ -33,10 +33,10 @@ int smpd_do_console()
 	smpd_get_password(smpd_process.passphrase);
     }
 
-    result = sock_create_set(&set);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_create_set(&set);
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
 	goto quit_job;
     }
     smpd_process.set = set;
@@ -52,8 +52,8 @@ int smpd_do_console()
     }
 
     /* start connecting the tree by posting a connect to the first host */
-    result = sock_post_connect(set, NULL, smpd_process.console_host, smpd_process.port, &sock);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_post_connect(set, NULL, smpd_process.console_host, smpd_process.port, &sock);
+    if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("Unable to connect to '%s:%d',\nsock error: %s\n",
 	    smpd_process.console_host, smpd_process.port, get_sock_error_string(result));
@@ -72,8 +72,8 @@ int smpd_do_console()
     }
     context->state = SMPD_MPIEXEC_CONNECTING_SMPD;
     smpd_process.left_context = context;
-    result = sock_set_user_ptr(sock, context);
-    if (result != SOCK_SUCCESS)
+    result = MPIDU_Sock_set_user_ptr(sock, context);
+    if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("Unable to set the smpd sock user pointer,\nsock error: %s\n",
 	    get_sock_error_string(result));
@@ -101,11 +101,11 @@ quit_job:
 	smpd_process.dbg_state = saved_state;
     }
     /* finalize */
-    smpd_dbg_printf("calling sock_finalize\n");
-    result = sock_finalize();
-    if (result != SOCK_SUCCESS)
+    smpd_dbg_printf("calling MPIDU_Sock_finalize\n");
+    result = MPIDU_Sock_finalize();
+    if (result != MPI_SUCCESS)
     {
-	smpd_err_printf("sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_err_printf("MPIDU_Sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
     }
 
 #ifdef HAVE_WINDOWS_H

@@ -53,8 +53,8 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 #ifdef HAVE_WINDOWS_H
     char str[20], read_handle_str[20], write_handle_str[20];
     int port;
-    sock_t listener;
-    sock_set_t set;
+    MPIDU_Sock_t listener;
+    MPIDU_Sock_set_t set;
     HANDLE hWrite, hRead;
     DWORD num_written, num_read;
 #endif
@@ -186,20 +186,20 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 
 	smpd_dbg_printf("manager creating listener and session sets.\n");
 
-	result = sock_create_set(&set);
-	if (result != SOCK_SUCCESS)
+	result = MPIDU_Sock_create_set(&set);
+	if (result != MPI_SUCCESS)
 	{
-	    smpd_err_printf("sock_create_set(listener) failed,\nsock error: %s\n", get_sock_error_string(result));
+	    smpd_err_printf("MPIDU_Sock_create_set(listener) failed,\nsock error: %s\n", get_sock_error_string(result));
 	    smpd_exit_fn("smpd_parse_command_args");
 	    return SMPD_FAIL;
 	}
 	smpd_process.set = set;
-	smpd_dbg_printf("created set for manager listener, %d\n", sock_getsetid(set));
+	smpd_dbg_printf("created set for manager listener, %d\n", MPIDU_Sock_getsetid(set));
 	port = 0;
-	result = sock_listen(set, NULL, &port, &listener); 
-	if (result != SOCK_SUCCESS)
+	result = MPIDU_Sock_listen(set, NULL, &port, &listener); 
+	if (result != MPI_SUCCESS)
 	{
-	    smpd_err_printf("sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
+	    smpd_err_printf("MPIDU_Sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
 	    smpd_exit_fn("smpd_parse_command_args");
 	    return SMPD_FAIL;
 	}
@@ -212,10 +212,10 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    smpd_exit_fn("smpd_parse_command_args");
 	    return result;
 	}
-	result = sock_set_user_ptr(listener, smpd_process.listener_context);
-	if (result != SOCK_SUCCESS)
+	result = MPIDU_Sock_set_user_ptr(listener, smpd_process.listener_context);
+	if (result != MPI_SUCCESS)
 	{
-	    smpd_err_printf("sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(result));
+	    smpd_err_printf("MPIDU_Sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(result));
 	    smpd_exit_fn("smpd_parse_command_args");
 	    return result;
 	}
@@ -282,10 +282,10 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    smpd_err_printf("state machine failed.\n");
 	}
 
-	result = sock_finalize();
-	if (result != SOCK_SUCCESS)
+	result = MPIDU_Sock_finalize();
+	if (result != MPI_SUCCESS)
 	{
-	    smpd_err_printf("sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
+	    smpd_err_printf("MPIDU_Sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
 	}
 	smpd_exit(0);
 	smpd_exit_fn("smpd_parse_command_args (ExitProcess)");

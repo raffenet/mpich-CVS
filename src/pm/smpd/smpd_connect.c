@@ -51,7 +51,7 @@ smpd_global_t smpd_process =
       NULL,             /* process_list           */
       SMPD_FALSE,       /* closing                */
       SMPD_FALSE,       /* root_smpd              */
-      SOCK_INVALID_SET, /* set                    */
+      MPIDU_SOCK_INVALID_SET, /* set                    */
       "",               /* host                   */
       "",               /* pszExe                 */
       SMPD_FALSE,       /* bService               */
@@ -130,7 +130,8 @@ smpd_global_t smpd_process =
       NULL,             /* hSMPDDataMutex          */
 #endif
       "",               /* printf_buffer           */
-      SMPD_SUCCESS      /* state_machine_ret_val   */
+      SMPD_SUCCESS,     /* state_machine_ret_val   */
+      SMPD_FALSE        /* exit_on_done            */
     };
 
 int smpd_post_abort_command(char *fmt, ...)
@@ -441,7 +442,7 @@ int smpd_init_process(void)
     smpd_process.left_context = NULL;
     smpd_process.right_context = NULL;
     smpd_process.parent_context = NULL;
-    smpd_process.set = SOCK_INVALID_SET;
+    smpd_process.set = MPIDU_SOCK_INVALID_SET;
 
     /* local data */
 #ifdef HAVE_WINDOWS_H
@@ -498,7 +499,7 @@ int smpd_init_process(void)
     return SMPD_SUCCESS;
 }
 
-int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_set_t set, sock_t sock, int id)
+int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_Sock_set_t set, MPIDU_Sock_t sock, int id)
 {
     int result;
 
@@ -532,10 +533,10 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_se
     context->wait = SMPD_FALSE;
     context->process = NULL;
 
-    if (sock != SOCK_INVALID_SOCK)
+    if (sock != MPIDU_SOCK_INVALID_SOCK)
     {
-	result = sock_set_user_ptr(sock, context);
-	if (result != SOCK_SUCCESS)
+	result = MPIDU_Sock_set_user_ptr(sock, context);
+	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("unable to set the sock user ptr while initializing context,\nsock error: %s\n",
 		get_sock_error_string(result));
@@ -682,14 +683,14 @@ void smpd_get_account_and_password(char *account, char *password)
     smpd_exit_fn("smpd_get_account_and_password");
 }
 
-int smpd_get_credentials_from_parent(sock_set_t set, sock_t sock)
+int smpd_get_credentials_from_parent(MPIDU_Sock_set_t set, MPIDU_Sock_t sock)
 {
     smpd_enter_fn("smpd_get_credentials_from_parent");
     smpd_exit_fn("smpd_get_credentials_from_parent");
     return SMPD_FAIL;
 }
 
-int smpd_get_smpd_password_from_parent(sock_set_t set, sock_t sock)
+int smpd_get_smpd_password_from_parent(MPIDU_Sock_set_t set, MPIDU_Sock_t sock)
 {
     smpd_enter_fn("smpd_get_smpd_password_from_parent");
     smpd_exit_fn("smpd_get_smpd_password_from_parent");
