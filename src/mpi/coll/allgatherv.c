@@ -663,7 +663,11 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
                 }
             }
 
-            comm_size = comm_ptr->local_size;
+            if (comm_ptr->comm_kind == MPID_INTRACOMM) 
+                comm_size = comm_ptr->local_size;
+            else
+                comm_size = comm_ptr->remote_size;
+
             for (i=0; i<comm_size; i++) {
                 MPIR_ERRTEST_COUNT(recvcounts[i], mpi_errno);
                 MPIR_ERRTEST_DATATYPE(recvcounts[i], recvtype, mpi_errno);
