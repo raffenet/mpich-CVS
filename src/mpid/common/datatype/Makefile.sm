@@ -1,4 +1,5 @@
 lib${MPILIBNAME}_a_SOURCES = gen_segment.c \
+	mpid_type_debug.c \
 	gen_dataloop.c \
 	mpid_segment.c \
 	mpid_type_dup.c \

@@ -80,9 +80,16 @@ int MPID_Type_struct(int count,
 		     MPI_Datatype *newtype)
 {
     int mpi_errno = MPI_SUCCESS;
-    int i, nr_real_types = 0, all_basics = 1, all_same = 1, has_lb = 0, has_ub = 0;
+    int i, nr_real_types = 0, all_basics = 1, all_same = 1, has_lb_builtin = 0, has_ub_builtin = 0;
 
     MPID_Datatype *new_dtp, *old_dtp;
+
+#ifdef MPID_STRUCT_DEBUG
+    MPIDI_Datatype_printf(oldtype_array[0], 1, displacement_array[0], blocklength_array[0], 1);
+    for (i=1; i < count; i++) {
+	MPIDI_Datatype_printf(oldtype_array[i], 1, displacement_array[i], blocklength_array[i], 0);
+    }
+#endif
 
     if (count == 1) {
 	/* simplest case: count == 1 */
@@ -93,12 +100,15 @@ int MPID_Type_struct(int count,
 				      1, /* displacement in bytes */
 				      *oldtype_array,
 				      newtype);
+#ifdef MPID_STRUCT_DEBUG
+	MPIDI_Datatype_printf(*newtype, 0, 0, 1, 0);
+#endif
 	return mpi_errno;
     }
 
     
-    if (*oldtype_array == MPI_LB) has_lb = 1;
-    else if (*oldtype_array == MPI_UB) has_ub = 1;
+    if (*oldtype_array == MPI_LB) has_lb_builtin = 1;
+    else if (*oldtype_array == MPI_UB) has_ub_builtin = 1;
     else if (HANDLE_GET_KIND(*oldtype_array) != HANDLE_KIND_BUILTIN) {
 	all_basics = 0;
 	nr_real_types = 1;
@@ -111,8 +121,8 @@ int MPID_Type_struct(int count,
      * that we can make.
      */
     for (i=1; i < count; i++) {
-	if (oldtype_array[i] == MPI_LB) has_lb = 1;
-	else if (oldtype_array[i] == MPI_UB) has_ub = 1;
+	if (oldtype_array[i] == MPI_LB) has_lb_builtin = 1;
+	else if (oldtype_array[i] == MPI_UB) has_ub_builtin = 1;
 	else if (HANDLE_GET_KIND(oldtype_array[i]) != HANDLE_KIND_BUILTIN) {
 	    all_basics = 0;
 	    nr_real_types++;
@@ -133,9 +143,12 @@ int MPID_Type_struct(int count,
 
 	/* alignsize and padding should be ok in this case */
 
+#ifdef MPID_STRUCT_DEBUG
+	MPIDI_Datatype_printf(*newtype, 0, 0, 1, 0);
+#endif
 	return mpi_errno;
     }
-    else if (all_basics && !has_lb && !has_ub) {
+    else if (all_basics && !has_lb_builtin && !has_ub_builtin) {
 	/* no derived types and no ub/lb, but not all the same -- just convert
 	 * everything to bytes.
 	 */
@@ -169,6 +182,9 @@ int MPID_Type_struct(int count,
 
 	new_dtp->element_size = -1; /* not all the same size */
 
+#ifdef MPID_STRUCT_DEBUG
+	MPIDI_Datatype_printf(*newtype, 0, 0, 1, 0);
+#endif
 	return mpi_errno;
     } /* end of all basics w/out lb or ub case */
     /* TODO: Catch case of a single basic with an LB and/or UB; this can be done
@@ -233,11 +249,11 @@ int MPID_Type_struct(int count,
 
 	/* deal with the LB and/or UB */
 	MPID_Datatype_get_ptr(*newtype, new_dtp);
-	if (has_lb) {
+	if (found_lb) {
 	    new_dtp->has_sticky_lb = 1;
 	    new_dtp->lb            = lb_disp;
 	}
-	if (has_ub) {
+	if (found_ub) {
 	    new_dtp->has_sticky_ub = 1;
 	    new_dtp->ub            = ub_disp;
 	}
@@ -245,6 +261,9 @@ int MPID_Type_struct(int count,
 
 	/* TODO: don't bother with alignsize because of the lb/ub (?) */
 
+#ifdef MPID_STRUCT_DEBUG
+	MPIDI_Datatype_printf(*newtype, 0, 0, 1, 0);
+#endif
 	return mpi_errno;
     } /* end of all basics w/ lb and/or ub case */
     else if (nr_real_types == 1) {
@@ -302,12 +321,12 @@ int MPID_Type_struct(int count,
 	MPID_Datatype_get_ptr(oldtype_array[real_type_idx], old_dtp);
 
 	new_dtp->is_committed = 0; /* especially for dup'd type */
-	if (has_lb) {
+	if (found_lb) {
 	    new_dtp->has_sticky_lb = 1;
 	    if (old_dtp->has_sticky_lb && old_dtp->lb < lb_disp) lb_disp = old_dtp->lb;
 	    new_dtp->lb            = lb_disp;
 	}
-	if (has_ub) {
+	if (found_ub) {
 	    new_dtp->has_sticky_ub = 1;
 	    if (old_dtp->has_sticky_ub && old_dtp->ub > ub_disp) ub_disp = old_dtp->ub;
 	    new_dtp->ub            = ub_disp;
@@ -316,6 +335,9 @@ int MPID_Type_struct(int count,
 	
 	/* alignsize and padding should be ok in this case */
 
+#ifdef MPID_STRUCT_DEBUG
+	MPIDI_Datatype_printf(*newtype, 0, 0, 1, 0);
+#endif
 	return mpi_errno;
     } /* end of single derived type case */
     else {
@@ -463,28 +485,33 @@ int MPID_Type_struct(int count,
 	MPIU_Free(tmp_blocklength_array);
 
 	MPID_Datatype_get_ptr(*newtype, new_dtp);
-	if (has_lb) {
+	if (found_lb) {
 	    new_dtp->has_sticky_lb = 1;
 	    new_dtp->lb            = lb_disp;
 	}
-	if (has_ub) {
+	if (found_ub) {
 	    new_dtp->has_sticky_ub = 1;
 	    new_dtp->ub            = ub_disp;
 	}
 	new_dtp->extent = new_dtp->ub - new_dtp->lb;
 
-	/* account for padding */
-	MPID_Datatype_get_ptr(*newtype, new_dtp);
-	alignsize = MPID_Type_struct_alignsize(count, oldtype_array);
-	new_dtp->alignsize = alignsize;
-	epsilon = new_dtp->extent % alignsize;
-	if (epsilon) {
-	    new_dtp->ub += (alignsize - epsilon);
-	    new_dtp->extent = new_dtp->ub - new_dtp->lb;
+	if (!found_lb && !found_ub) {
+	    /* account for padding */
+	    MPID_Datatype_get_ptr(*newtype, new_dtp);
+	    alignsize = MPID_Type_struct_alignsize(count, oldtype_array);
+	    new_dtp->alignsize = alignsize;
+	    epsilon = new_dtp->extent % alignsize;
+	    if (epsilon) {
+		new_dtp->ub += (alignsize - epsilon);
+		new_dtp->extent = new_dtp->ub - new_dtp->lb;
+	    }
 	}
-	
+
 	new_dtp->element_size = -1;
 
+#ifdef MPID_STRUCT_DEBUG
+	MPIDI_Datatype_printf(*newtype, 0, 0, 1, 0);
+#endif
 	return mpi_errno;
     } /* end of general case */
 }

@@ -139,6 +139,14 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 			   int array_of_integers[], 
 			   MPI_Aint array_of_addresses[], 
 			   MPI_Datatype array_of_datatypes[]);
+
+/* internal debugging functions */
+void MPIDI_Datatype_printf(MPI_Datatype type,
+			   int depth,
+			   MPI_Aint displacement,
+			   int blocklength,
+			   int header);
+
 /* Dataloop functions */
 
 typedef struct MPID_Dataloop * MPID_Dataloop_foo; /* HACK */
