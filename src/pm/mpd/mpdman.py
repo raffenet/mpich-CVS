@@ -943,10 +943,13 @@ def in_stdinRcvrs(myRank,stdinGoesToWho):
 
 def parse_pmi_msg(msg):
     parsed_msg = {}
-    sm = findall(r'\S+',msg)
-    for e in sm:
-        se = e.split('=')
-        parsed_msg[se[0]] = se[1]
+    try:
+        sm = findall(r'\S+',msg)
+        for e in sm:
+            se = e.split('=')
+            parsed_msg[se[0]] = se[1]
+    except:
+        print 'unable to parse pmi msg :%s:' % msg
     return parsed_msg
 
 if __name__ == '__main__':
