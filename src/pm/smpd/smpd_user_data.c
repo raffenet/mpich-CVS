@@ -67,7 +67,7 @@ void str_replace(char *str, char *find_chars, char replace_char)
 	while (cur_str)
 	{
 	    *cur_str = replace_char;
-	    cur_str = strchr(cur_str, find_chars);
+	    cur_str = strchr(cur_str, find_chars[i]);
 	}
     }
 }
