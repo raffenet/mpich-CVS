@@ -101,7 +101,14 @@ int MPE_Finish_log( char *filename );
 
 
 
-/* The format:
+/*
+   The following documentation has little resemblance to current CLOG-2
+   format.  They are kept here for historical reference purpose.
+   2/17/2005         Anthony Chan 
+*/
+/*
+The format:
+
 Each line:
   type process task data cycle timestamp [comment]
 
