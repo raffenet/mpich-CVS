@@ -3929,6 +3929,7 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
     {
 	if (sspi_context->id == sspi_id)
 	    break;
+	sspi_context = sspi_context->next;
     }
     if (sspi_context == NULL)
     {
