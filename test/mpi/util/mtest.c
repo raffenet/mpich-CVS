@@ -203,7 +203,7 @@ static int MTestTypeContigCheckbuf( MTestDatatype *mtype )
 }
 
 /* ------------------------------------------------------------------------ */
-/* Datatype routines for vector datatypes
+/* Datatype routines for vector datatypes                                   */
 /* ------------------------------------------------------------------------ */
 
 static void *MTestTypeVectorInit( MTestDatatype *mtype )
@@ -326,7 +326,7 @@ static int MTestTypeVectorCheckbuf( MTestDatatype *mtype )
 }
 #endif
 /* ------------------------------------------------------------------------ */
-/* Datatype routines for indexed block datatypes
+/* Datatype routines for indexed block datatypes                            */
 /* ------------------------------------------------------------------------ */
 /* 
  * Setup a buffer for one copy of an indexed datatype. 
