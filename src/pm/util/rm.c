@@ -33,6 +33,10 @@
 
 #include "pmutil.h"
 
+#ifndef isascii
+#define isascii(c) (((c)&~0x7f)==0)
+#endif
+
 /* ----------------------------------------------------------------------- */
 /* Determine the hosts                                                     */
 /*                                                                         */
@@ -69,7 +73,7 @@ int mpiexecChooseHosts( ProcessList *plist, int nplist,
 
     /* First, determine how many processes require host names */
     for (i=0; i<ptable->nProcesses; i++) {
-	if (!ptable->table[i].hostname) nNeeded++;
+	if (!ptable->table[i].spec.hostname) nNeeded++;
     }
     if (nNeeded == 0) return 0;
 
@@ -82,11 +86,11 @@ int mpiexecChooseHosts( ProcessList *plist, int nplist,
     ntest = ptable->nProcesses;
     while (nNeeded && ntest--) {
 	for (i=0; i<ptable->nProcesses; i++) {
-	    if (!ptable->table[i].hostname) break;
+	    if (!ptable->table[i].spec.hostname) break;
 	}
 	/* Read the machines file for this architecture.  Use the
 	   default architecture if none selected */
-	arch = ptable->table[i].arch;
+	arch = ptable->table[i].spec.arch;
 	mt = mpiexecReadMachines( arch, nNeeded );
 	if (!mt) {
 	    /* FIXME : needs an error message */
@@ -94,9 +98,9 @@ int mpiexecChooseHosts( ProcessList *plist, int nplist,
 	    if (1) {
 		for (; i<ptable->nProcesses; i++) {
 		    if ((!arch || 
-			 (strcmp( ptable->table[i].arch, arch )== 0)) &&
-			!ptable->table[i].hostname) {
-			ptable->table[i].hostname = "localhost";
+			 (strcmp( ptable->table[i].spec.arch, arch )== 0)) &&
+			!ptable->table[i].spec.hostname) {
+			ptable->table[i].spec.hostname = "localhost";
 			nNeeded--;
 		    }
 		}
@@ -118,9 +122,9 @@ int mpiexecChooseHosts( ProcessList *plist, int nplist,
 	k = 0;
 	/* Start from the first process that needs this arch */
 	for (; i<ptable->nProcesses; i++) {
-	    if ((!arch || (strcmp( ptable->table[i].arch, arch )== 0)) &&
-		!ptable->table[i].hostname) {
-		ptable->table[i].hostname = mt->hname[k++];
+	    if ((!arch || (strcmp( ptable->table[i].spec.arch, arch )== 0)) &&
+		!ptable->table[i].spec.hostname) {
+		ptable->table[i].spec.hostname = mt->desc[k++].name;
 		if (k >= mt->nHosts) k = 0;
 		nNeeded--;
 	    }
@@ -132,6 +136,9 @@ int mpiexecChooseHosts( ProcessList *plist, int nplist,
 }
 
 #define MAXLINE 256
+#ifndef DEFAULT_MACHINES_PATH
+#define DEFAULT_MACHINES_PATH "."
+#endif
 static const char defaultMachinesPath[] = DEFAULT_MACHINES_PATH;
 
 /* Read the associate machines file for the given architecture, returning
@@ -216,7 +223,7 @@ static MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
     
     /* This may be larger than needed if the machines file has
        fewer entries than nNeeded */
-    mt->desc = (MachineDesc *)MPIU_Malloc( nNeeded * sizeof(MacheineDesc) );
+    mt->desc = (MachineDesc *)MPIU_Malloc( nNeeded * sizeof(MachineDesc) );
     if (!mt->desc) {
 	return 0;
     }
