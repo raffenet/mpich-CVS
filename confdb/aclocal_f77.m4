@@ -397,13 +397,20 @@ $libs"
     # The -f is used by Absoft and is the compiler switch that folds 
     # symbolic names to lower case.  Without this option, the compiler
     # considers upper- and lower-case letters to be unique.
-    # The -YEXT_NAMES=LCS will cayse external names to be output as lower
+    # The -YEXT_NAMES=LCS will cause external names to be output as lower
     # case letter for Absoft F90 compilers (default is upper case)
     # The first line is "<space><newline>, the space is important
+    # To make the Absoft f77 and f90 work together, we need to prefer the
+    # upper case versions of the arguments.  They also require libU77.
+    # -YCFRL=1 causes Absoft f90 to work with g77 and similar (f2c-based) 
+    # Fortran compilers
+    #
 trial_FLAGS="000
--f
 -N109
+-f
+-YEXT_NAMES=UCS
 -YEXT_NAMES=LCS
+-YCFRL=1
 +U77"
     # Discard options that are not available:
     save_IFS="$IFS"
