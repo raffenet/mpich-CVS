@@ -129,8 +129,16 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
 	case 7: /* WTIME */
 	    *attr_val_p = &attr_copy.wtime_is_global;
 	    break;
-	case 9: /* UNIVERSE */
-	    *attr_val_p = &attr_copy.universe;
+	case 9: /* UNIVERSE_SIZE */
+	    /* This is a special case.  If universe is negative, we
+	       take that as indicating no value of UNIVERSE_SIZE,
+	       and set the flag accordingly */
+	    if (attr_copy.universe < 0) {
+		*flag = 0;
+	    }
+	    else {
+		*attr_val_p = &attr_copy.universe;
+	    }
 	    break;
 	case 11: /* LASTUSEDCODE */
 	    *attr_val_p = &attr_copy.lastusedcode;
@@ -151,8 +159,13 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
 	case 8: /* Fortran WTIME */
 	    *attr_int = attr_copy.wtime_is_global;
 	    break;
-	case 10: /* UNIVERSE */
-	    *attr_int = attr_copy.universe;
+	case 10: /* UNIVERSE_SIZE */
+	    if (attr_copy.universe < 0) {
+		*flag = 0;
+	    }
+	    else {
+		*attr_int = attr_copy.universe;
+	    }
 	    break;
 	case 12: /* LASTUSEDCODE */
 	    *attr_int = attr_copy.lastusedcode;
