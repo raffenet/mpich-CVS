@@ -264,6 +264,7 @@ int ib_setup_connections()
 	ib->m_message_size = IB_PINNED_MEMORY_SIZE;
 	ib->m_message_segments = 1;
 	ib->m_max_wqes = 50;
+	ib->m_mtu_size = 2048;
 	/* ***************************************** */
 	/* These fields were used by the Paceline code.
 	   I suspect I won't need to use them */
