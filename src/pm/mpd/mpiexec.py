@@ -12,8 +12,10 @@ mpiexec [global args] [local args] executable [args]
    where global args may be
       -l                           # line labels by MPI rank
       -if                          # network interface to use locally
+      -kx                          # keep generated xml for debugging
       -bnr                         # MPICH1 compatibility mode
       -g<local arg name>           # global version of local arg (below)
+      -machinefile                 # file mapping procs to machines
     and local args may be
       -n <n> or -np <n>            # number of processes to start
       -wdir <dirname>              # working directory to start in
@@ -43,10 +45,11 @@ __credits__ = ""
 
 from sys    import argv, exit
 from os     import environ, execvpe, getpid, getuid, getcwd, access, X_OK, path, unlink, \
-                   open, fdopen, O_CREAT, O_WRONLY, O_EXCL, O_RDONLY
+                   open as osopen, fdopen, O_CREAT, O_WRONLY, O_EXCL, O_RDONLY
 from popen2 import Popen3
 from pwd    import getpwuid
 from urllib import quote
+import re
 import xml.dom.minidom
 
 global totalProcs, nextRange, argvCopy, configLines, configIdx, appnum
@@ -57,7 +60,7 @@ def mpiexec():
     global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
 
     validGlobalArgs = { '-l' : 0, '-usize' : 1, '-gdb' : 0, '-bnr' : 0, '-tv' : 0,
-                        '-if' : 1,
+                        '-if' : 1, '-machinefile' : 1, '-kx' : 0, '-s' : 1,
                         '-gn' : 1, '-gnp' : 1, '-ghost' : 1, '-gpath' : 1, '-gwdir' : 1,
 			'-gsoft' : 1, '-garch' : 1, '-gexec' : 1,
 			'-genvall' : 0, '-genv' : 2, '-genvnone' : 0,
@@ -80,16 +83,15 @@ def mpiexec():
     if len(argv) < 2  or  argv[1] == '-h'  or  argv[1] == '-help'  or  argv[1] == '--help':
 	usage()
     if argv[1] == '-file':
-	delXmlFile = 0
 	if len(argv) != 3:
 	    usage()
         xmlFilename = argv[2]
+        globalArgs['-kx'] = 1
     else:
-	delXmlFile = 1
         if argv[1] == '-configfile':
 	    if len(argv) != 3:
 	        usage()
-            configFileFD = open(argv[2],O_RDONLY)
+            configFileFD = osopen(argv[2],O_RDONLY)
             configFile = fdopen(configFileFD,'r',0)
             configLines = configFile.readlines()
             configLines = [ x.strip() + ' : '  for x in configLines if x[0] != '#' ]
@@ -103,18 +105,19 @@ def mpiexec():
         else:
             collect_args(argv)
 
+        machineFileInfo = read_machinefile(globalArgs['-machinefile'])
         xmlDOC = xml.dom.minidom.Document()
         xmlCPG = xmlDOC.createElement('create-process-group')
         xmlDOC.appendChild(xmlCPG)
         for k in localArgSets.keys():
-            xmlPROCSPEC = xmlDOC.createElement('process-spec')
-            xmlCPG.appendChild(xmlPROCSPEC)
-	    handle_argset(localArgSets[k],xmlDOC,xmlPROCSPEC)
+	    handle_argset(localArgSets[k],xmlDOC,xmlCPG,machineFileInfo)
         xmlCPG.setAttribute('totalprocs', str(totalProcs) )  # after handling argsets
         if globalArgs['-l']:
             xmlCPG.setAttribute('output', 'label')
         if globalArgs['-if']:
             xmlCPG.setAttribute('net_interface', globalArgs['-if'])
+        if globalArgs['-s']:
+            xmlCPG.setAttribute('stdin_goes_to_who', globalArgs['-s'])
         if globalArgs['-bnr']:
             xmlCPG.setAttribute('doing_bnr', '1')
         if globalArgs['-gdb']:
@@ -126,20 +129,20 @@ def mpiexec():
         xmlFilename = '/tmp/%s_tempxml_%d' % (submitter,getpid())
         try:    unlink(xmlFilename)
 	except: pass
-        xmlFileFD = open(xmlFilename,O_CREAT|O_WRONLY|O_EXCL,0600)
+        xmlFileFD = osopen(xmlFilename,O_CREAT|O_WRONLY|O_EXCL,0600)
         xmlFile = fdopen(xmlFileFD,'w',0)
         print >>xmlFile, xmlDOC.toprettyxml(indent='   ')
-        # print xmlDOC.toprettyxml(indent='   ')    #### TEMP DEBUG
+        # print xmlDOC.toprettyxml(indent='   ')    #### RMB: TEMP DEBUG
         xmlFile.close()
     fullDirName = path.abspath(path.split(argv[0])[0])  # normalize for platform also
     mpdrun = path.join(fullDirName,'mpdrun.py')
     if not access(mpdrun,X_OK):
         print 'mpiexec: cannot execute mpdrun %s' % mpdrun
         exit(0);
-    if delXmlFile:
-        execvpe(mpdrun,[mpdrun,'-delxmlfile',xmlFilename],environ)
-    else:
+    if globalArgs['-kx']:
         execvpe(mpdrun,[mpdrun,'-f',xmlFilename],environ)
+    else:
+        execvpe(mpdrun,[mpdrun,'-delxmlfile',xmlFilename],environ)
     print 'mpiexec: exec failed for %s' % mpdrun
     exit(0);
 
@@ -147,10 +150,13 @@ def collect_args(args):
     global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
     globalArgs['-l']        = 0
     globalArgs['-if']       = ''
+    globalArgs['-s']        = '0'
+    globalArgs['-kx']       = 0
     globalArgs['-usize']    = 0
     globalArgs['-gdb']      = 0
     globalArgs['-bnr']      = 0
     globalArgs['-tv']       = 0
+    globalArgs['-machinefile'] = ''
     globalArgs['-gn']       = 1
     globalArgs['-ghost']    = '_any_'
     globalArgs['-gpath']    = environ['PATH']
@@ -192,11 +198,15 @@ def collect_args(args):
         if args[argidx] == ':':
             localArgsKey += 1
             localArgSets[localArgsKey] = []
+        elif args[argidx] == '-ghost'  or  args[argidx] == '-host':
+            if globalArgs['-machinefile']:
+                print '-host (or -ghost) and -machinefile are incompatible'
+                exit(-1)
         else:
             localArgSets[localArgsKey].append(args[argidx])
         argidx += 1
 
-def handle_argset(argset,xmlDOC,xmlPROCSPEC):
+def handle_argset(argset,xmlDOC,xmlCPG,machineFileInfo):
     global totalProcs, nextRange, argvCopy, configLines, configIdx, appnum
     global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
 
@@ -303,61 +313,83 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
         print 'no cmd specified'
         usage()
 
-    if nProcs == 1:
-        thisRange = (nextRange,nextRange)
-    else:
-        thisRange = (nextRange,nextRange+nProcs-1)
-    nextRange += nProcs
-    totalProcs += nProcs
+    argsetLoRange = nextRange
+    argsetHiRange = nextRange + nProcs - 1
+    loRange = argsetLoRange
+    hiRange = argsetHiRange
 
-    xmlPROCSPEC.setAttribute('user',getpwuid(getuid())[0])
-    xmlPROCSPEC.setAttribute('exec',cmdAndArgs[0])
-    xmlPROCSPEC.setAttribute('path',wpath)
-    xmlPROCSPEC.setAttribute('cwd',wdir)
-    xmlPROCSPEC.setAttribute('host',host)
-    xmlPROCSPEC.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]))
+    while loRange <= argsetHiRange:
+        host = globalArgs['-ghost']
+        ifhn = ''
+        if machineFileInfo:
+            if len(machineFileInfo) <= hiRange:
+                print 'too few entries in machinefile'
+                exit(-1)
+            host = machineFileInfo[loRange]['host']
+            ifhn = machineFileInfo[loRange]['ifhn']
+            for i in range(loRange+1,hiRange+1):
+                if machineFileInfo[i]['host'] != host  or  machineFileInfo[i]['ifhn'] != ifhn:
+                    hiRange = i - 1
+                    break
 
-    for i in xrange(1,len(cmdAndArgs[1:])+1):
-        arg = cmdAndArgs[i]
-        xmlARG = xmlDOC.createElement('arg')
-        xmlPROCSPEC.appendChild(xmlARG)
-        xmlARG.setAttribute('idx', '%d' % (i) )
-        xmlARG.setAttribute('value', '%s' % (quote(arg)))
+        xmlPROCSPEC = xmlDOC.createElement('process-spec')
+        xmlCPG.appendChild(xmlPROCSPEC)
+        xmlPROCSPEC.setAttribute('user',getpwuid(getuid())[0])
+        xmlPROCSPEC.setAttribute('exec',cmdAndArgs[0])
+        xmlPROCSPEC.setAttribute('path',wpath)
+        xmlPROCSPEC.setAttribute('cwd',wdir)
+        xmlPROCSPEC.setAttribute('host',host)
+        xmlPROCSPEC.setAttribute('range','%d-%d' % (loRange,hiRange))
 
-    envToSend = {}
-    if envall:
-        for envvar in environ.keys():
+        for i in xrange(1,len(cmdAndArgs[1:])+1):
+            arg = cmdAndArgs[i]
+            xmlARG = xmlDOC.createElement('arg')
+            xmlPROCSPEC.appendChild(xmlARG)
+            xmlARG.setAttribute('idx', '%d' % (i) )
+            xmlARG.setAttribute('value', '%s' % (quote(arg)))
+
+        envToSend = {}
+        if envall:
+            for envvar in environ.keys():
+                envToSend[envvar] = environ[envvar]
+        for envvar in globalArgs['-genvlist']:
+            if not environ.has_key(envvar):
+                print '%s in envlist does not exist in your env' % (envvar)
+                exit(-1)
             envToSend[envvar] = environ[envvar]
-    for envvar in globalArgs['-genvlist']:
-        if not environ.has_key(envvar):
-            print '%s in envlist does not exist in your env' % (envvar)
-            exit(-1)
-        envToSend[envvar] = environ[envvar]
-    for envvar in localEnvlist:
-        if not environ.has_key(envvar):
-            print '%s in envlist does not exist in your env' % (envvar)
-            exit(-1)
-        envToSend[envvar] = environ[envvar]
-    for envvar in globalArgs['-genv'].keys():
-        envToSend[envvar] = globalArgs['-genv'][envvar]
-    for envvar in localEnv.keys():
-        envToSend[envvar] = localEnv[envvar]
-    for envvar in envToSend.keys():
+        for envvar in localEnvlist:
+            if not environ.has_key(envvar):
+                print '%s in envlist does not exist in your env' % (envvar)
+                exit(-1)
+            envToSend[envvar] = environ[envvar]
+        for envvar in globalArgs['-genv'].keys():
+            envToSend[envvar] = globalArgs['-genv'][envvar]
+        for envvar in localEnv.keys():
+            envToSend[envvar] = localEnv[envvar]
+        for envvar in envToSend.keys():
+            xmlENVVAR = xmlDOC.createElement('env')
+            xmlPROCSPEC.appendChild(xmlENVVAR)
+            xmlENVVAR.setAttribute('name',  '%s' % (envvar))
+            xmlENVVAR.setAttribute('value', '%s' % (envToSend[envvar]))
+        if usize:
+            xmlENVVAR = xmlDOC.createElement('env')
+            xmlPROCSPEC.appendChild(xmlENVVAR)
+            xmlENVVAR.setAttribute('name', 'MPI_UNIVERSE_SIZE')
+            xmlENVVAR.setAttribute('value', '%s' % (usize))
         xmlENVVAR = xmlDOC.createElement('env')
         xmlPROCSPEC.appendChild(xmlENVVAR)
-        xmlENVVAR.setAttribute('name',  '%s' % (envvar))
-        xmlENVVAR.setAttribute('value', '%s' % (envToSend[envvar]))
-    if usize:
-        xmlENVVAR = xmlDOC.createElement('env')
-        xmlPROCSPEC.appendChild(xmlENVVAR)
-        xmlENVVAR.setAttribute('name', 'MPI_UNIVERSE_SIZE')
-        xmlENVVAR.setAttribute('value', '%s' % (usize))
-    xmlENVVAR = xmlDOC.createElement('env')
-    xmlPROCSPEC.appendChild(xmlENVVAR)
-    xmlENVVAR.setAttribute('name', 'MPI_APPNUM')
-    xmlENVVAR.setAttribute('value', '%s' % str(appnum))
+        xmlENVVAR.setAttribute('name', 'MPI_APPNUM')
+        xmlENVVAR.setAttribute('value', '%s' % str(appnum))
+        if ifhn:
+            xmlENVVAR.setAttribute('name', 'MPICH_INTERFACE_HOSTNAME')
+            xmlENVVAR.setAttribute('value', '%s' % (ifhn))
+
+        loRange = hiRange + 1
+        hiRange = argsetHiRange  # again
 
     appnum += 1
+    nextRange += nProcs
+    totalProcs += nProcs
 
 # Adjust nProcs (called maxprocs in the Standard) according to soft:
 # Our interpretation is that we need the largest number <= nProcs that is
@@ -401,6 +433,42 @@ def adjust_nprocs(nProcs,softness):
             usage()
         else:
             return max(biglist)
+
+
+def read_machinefile(machineFilename):
+    if not machineFilename:
+        return None
+    try:
+        machineFile = open(machineFilename,'r')
+    except:
+        print '** unable to open machinefile'
+        exit(-1)
+    procID = 0
+    machineFileInfo = {}
+    for line in machineFile:
+        line = line.strip()
+        if not line  or  line[0] == '#':
+            continue
+        splitLine = re.split(r'\s+',line)
+        host = splitLine[0]
+        if ':' in host:
+            (host,nprocs) = host.split(':',1)
+            nprocs = int(nprocs)
+        else:
+            nprocs = 1
+        kvps = {'ifhn' : ''}
+        for kv in splitLine[1:]:
+            (k,v) = kv.split('=',1)
+            if k == 'ifhn':  # interface hostname
+                kvps[k] = v
+            else:  # may be other kv pairs later
+                print 'unrecognized key in machinefile:', k
+                exit(-1)
+        for i in range(procID,procID+nprocs):
+            machineFileInfo[i] = { 'host' : host, 'nprocs' : nprocs }
+            machineFileInfo[i].update(kvps)
+        procID += nprocs
+    return machineFileInfo
 
 
 def usage():

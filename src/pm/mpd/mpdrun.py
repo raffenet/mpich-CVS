@@ -6,9 +6,8 @@
 
 """
 usage: mpdrun [args] pgm_to_execute [pgm_args]
-   where args may be: -a alias -np nprocs -hf hostsfile -cpm master_copgm -cpr remote_copgm -l -m -1 -s
+   where args may be: -a alias -np nprocs -cpm master_copgm -cpr remote_copgm -l -m -1 -s
        (nprocs must be a positive integer)
-       (-hf is a hostsfile containing names of nodes on which to run)
        (-l means attach line labels identifying which client prints each line)
        (-m means merge identical outputs into a single line;
            implies that program produces whole lines;
@@ -66,7 +65,7 @@ class mpdrunInterrupted(Exception):
         self.args = args
 
 global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
-       try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, conSocket
+       try0Locally, lineLabels, jobAlias, mergingOutput, conSocket
 global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd, totalview
 global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
 global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
@@ -75,7 +74,7 @@ global singinitPID, singinitPORT, doingBNR, myHost, myIP
 
 def mpdrun():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
-           try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, conSocket
+           try0Locally, lineLabels, jobAlias, mergingOutput, conSocket
     global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd, totalview
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
@@ -188,18 +187,7 @@ def mpdrun():
         limits  = { (0,nprocs-1) : {} }
         cli_environ = {} ; cli_environ.update(environ)
         envvars = { (0,nprocs-1) : cli_environ }
-        if hostsFile:
-            hosts = {}
-            hostNames = hostsFile.readlines()
-            hostNames = [ x.strip() for x in hostNames if x[0] != '#' ]
-            hostIdx = 0
-            for i in range(nprocs):
-                hosts[(i,i)] = gethostbyname_ex(hostNames[hostIdx])[2][0]
-                hostIdx += 1
-                if hostIdx >= len(hostNames):
-                    hostIdx = 0
-        else:
-            hosts   = { (0,nprocs-1) : '_any_' }
+        hosts   = { (0,nprocs-1) : '_any_' }
     else:
         pass    # args already defined by get_args_from_file
 
@@ -609,11 +597,10 @@ def print_ready_merged_lines(minRanks):
 
 def get_args_from_cmdline():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, try0Locally, \
-           lineLabels, jobAlias, stdinGoesToWho, hostsFile, jobid, mergingOutput, totalview
+           lineLabels, jobAlias, stdinGoesToWho, jobid, mergingOutput, totalview
     global outXmlDoc, outXmlEC, outXmlFile, gdb, gdbAttachJobid
     global singinitPID, singinitPORT, doingBNR, myHost, myIP
 
-    hostsFile = ''
     if len(argv) < 3:
         usage()
     argidx = 1
@@ -684,15 +671,6 @@ def get_args_from_cmdline():
                 elif argv[argidx] == '-if':
                     myHost = argv[argidx+1]
                     argidx += 2
-                elif argv[argidx] == '-hf':
-                    hostsFilename = argv[argidx+1]
-                    argidx += 2
-                    try:
-                        hostsFile = open(hostsFilename,'r')
-                    except:
-                        print 'unable to open hosts file: %s' % (hostsFilename)
-                        myExitStatus = -1  # used in main
-                        exit(myExitStatus) # really forces jump back into main
                 elif argv[argidx] == '-cpm':
                     mship = argv[argidx+1]
                     argidx += 2
@@ -736,7 +714,7 @@ def get_args_from_cmdline():
 
 def get_args_from_file():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
-           try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, conSocket
+           try0Locally, lineLabels, jobAlias, mergingOutput, conSocket
     global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd, totalview
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
@@ -941,7 +919,7 @@ def get_args_from_file():
 
 def get_vals_for_attach():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
-           try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, conSocket
+           try0Locally, lineLabels, jobAlias, mergingOutput, conSocket
     global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd, totalview
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
