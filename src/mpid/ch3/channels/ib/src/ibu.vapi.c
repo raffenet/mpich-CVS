@@ -1836,26 +1836,23 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    recv_vc_ptr = ibu->vc_ptr;
 	    if (recv_vc_ptr->ch.reading_pkt)
 	    {
-		if (((MPIDI_CH3_Pkt_t *)mem_ptr)->type < MPIDI_CH3_PKT_END_CH3)
+		/*mpi_errno =*/ MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
+		/*
+		if (mpi_errno != MPI_SUCCESS)
 		{
-		    /*printf("P");fflush(stdout);*/
-		    recv_vc_ptr->ch.recv_active = NULL;
-		    MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, mem_ptr);
-		    if (recv_vc_ptr->ch.recv_active == NULL)
-		    {
-			MPIU_DBG_PRINTF(("packet %d with no data handled.\n", g_num_received));
-			recv_vc_ptr->ch.reading_pkt = TRUE;
-		    }
-#ifdef MPICH_DBG_OUTPUT
-		    else
-		    {
-			MPIU_DBG_PRINTF(("packet %d with data handled.\n", g_num_received));
-		    }
-#endif
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "shared memory read progress unable to handle incoming packet");
+		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+		    return IBU_SUCCESS;
+		}
+		*/
+		if (recv_vc_ptr->ch.recv_active == NULL)
+		{
+		    MPIU_DBG_PRINTF(("packet %d with no data handled.\n", g_num_received));
+		    recv_vc_ptr->ch.reading_pkt = TRUE;
 		}
 		else
 		{
-		    MPIDI_err_printf("MPIDI_CH3I_ibu_wait", "unhandled packet type: %d\n", ((MPIDI_CH3_Pkt_t*)mem_ptr)->type);
+		    /*mpi_errno =*/ ibu_post_readv(recv_vc_ptr->ch.ibu, recv_vc_ptr->ch.recv_active->dev.iov, recv_vc_ptr->ch.recv_active->dev.iov_count);
 		}
 		mem_ptr = (unsigned char *)mem_ptr + sizeof(MPIDI_CH3_Pkt_t);
 		num_bytes -= sizeof(MPIDI_CH3_Pkt_t);
@@ -1867,12 +1864,6 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    break;
 		}
 	    }
-/*
-	    else
-	    {
-		printf("not handling pkt.\n");fflush(stdout);
-	    }
-*/
 #endif
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes\n", num_bytes));
 	    /*MPIDI_DBG_PRINTF((60, FCNAME, "ibu_wait(recv finished %d bytes)", num_bytes));*/
