@@ -15,23 +15,23 @@
  */
 void ADIOI_PVFS2_Flush(ADIO_File fd, int *error_code)
 {
-    int ret, rank, tmprank, dummy1, dummy2;
+    int ret, dummy1, dummy2;
     ADIOI_PVFS2_fs *pvfs_fs;
 
     *error_code = MPI_SUCCESS;
 
     pvfs_fs = (ADIOI_PVFS2_fs*)fd->fs_ptr;
 
-    MPI_Comm_rank(fd->comm, &rank);
-
     /* the cheapest way we know to let one process know everyone is here */
     MPI_Gather(&dummy1, 1, MPI_INT, &dummy2, 1, MPI_INT, 0, fd->comm);
 
-    if (rank == 0) {
+    /* io_worker computed in ADIO_Open */
+    if (fd->io_worker) {
 	ret = PVFS_sys_flush(pvfs_fs->pinode_refn, pvfs_fs->credentials);
 	MPI_Bcast(&ret, 1, MPI_INT, 0, fd->comm);
+    } else {
+	MPI_Bcast(&ret, 1, MPI_INT, 0, fd->comm);
     }
-    MPI_Bcast(&ret, 1, MPI_INT, 0, fd->comm);
     if (ret < 0)
 	ADIOI_PVFS2_pvfs_error_convert(ret, error_code);
 }
