@@ -1095,6 +1095,8 @@ static int socki_sock_alloc(struct sock_set * sock_set, struct sock ** sockp)
 	    sock_set->pollfds[elem].events = 0;
 	    sock_set->pollfds[elem].revents = 0;
 	    sock_set->pollinfos[elem].sock = sock;
+	    sock_set->pollinfos[elem].read_iov = NULL;
+	    sock_set->pollinfos[elem].write_iov = NULL;
 	    sock->sock_set = sock_set;
 	    sock->fd = -1;
 	    sock->pollfd = &sock_set->pollfds[elem];
@@ -1118,18 +1120,31 @@ static int socki_sock_alloc(struct sock_set * sock_set, struct sock ** sockp)
 	sock_errno = SOCK_ERR_NOMEM;
 	goto fail_free_fds;
     }
-    
+
     if (sock_set->poll_arr_sz > 0)
     {
 	/* Copy information from old arrays */
         memcpy(fds, sock_set->pollfds, sock_set->poll_arr_sz * sizeof(struct pollfd));
         memcpy(infos, sock_set->pollinfos, sock_set->poll_arr_sz * sizeof(struct pollinfo));
 
-	/* Fix up pollfd and pollinfo pointer in sock structure */
+	/* Fix up pollfd and pollinfo pointer in sock structure; also correct read_iov and write_iov in pollinfo structure */
 	for (elem = 0; elem < sock_set->poll_arr_sz; elem++)
 	{
-	    sock_set->pollinfos[elem].sock->pollfd = &fds[elem];
-	    sock_set->pollinfos[elem].sock->pollinfo = &infos[elem];
+	    struct pollinfo * const oldinfo = &sock_set->pollinfos[elem];
+	    struct sock * const sock = oldinfo->sock;
+	    
+	    sock->pollfd = &fds[elem];
+	    sock->pollinfo = &infos[elem];
+
+	    if (oldinfo->read_iov == &oldinfo->read_iov_1)
+	    {
+		infos[elem].read_iov = &infos[elem].read_iov_1;
+	    }
+	    
+	    if (oldinfo->write_iov == &oldinfo->write_iov_1)
+	    {
+		infos[elem].write_iov = &infos[elem].write_iov_1;
+	    }
 	}
 
 	/* Free old arrays... */
@@ -1147,6 +1162,8 @@ static int socki_sock_alloc(struct sock_set * sock_set, struct sock ** sockp)
     sock_set->pollfds[elem].events = 0;
     sock_set->pollfds[elem].revents = 0;
     sock_set->pollinfos[elem].sock = sock;
+    sock_set->pollinfos[elem].read_iov = NULL;
+    sock_set->pollinfos[elem].write_iov = NULL;
     sock->sock_set = sock_set;
     sock->fd = -1;
     sock->pollfd = &sock_set->pollfds[elem];
