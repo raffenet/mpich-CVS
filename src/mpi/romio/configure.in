@@ -19,16 +19,17 @@ arch_IRIX=""
 MPI=""
 MPI_INCLUDE_DIR=""
 ROMIO_INCLUDE=""
-MPI_LIB=""
-LIBNAME=""
 TEST_LIBNAME=""
 FILE_SYSTEM=""
+# Do not set variables to empty that may be communicated from the
+# outside environment (e.g., MPI_LIB, MPI_BIN_DIR, LIBNAME)
 DEBUG=no
 MIPS=0
 BITS=0
 FROM_MPICH=${FROM_MPICH:-no}
 FROM_MPICH2=${FROM_MPICH2:-no}
 FROM_LAM=${FROM_LAM:-no}
+if test "$FROM_LAM" = 1 ; then FROM_LAM=yes ; fi
 CFLAGS=${CFLAGS:-""}
 LL="\%lld"
 AR_LOCAL=l
@@ -266,6 +267,11 @@ fi
 # For the MPICH and MPICH2 configures, the compilers will already be
 # selected, so most of the compiler-selection code will be bypassed.
 # --------------------------------------------------------------------------
+# For historical reasons
+if test -z "$FC" ; then 
+    FC=$F77
+fi
+#
 C_DEBUG_FLAG="-g"
 F77_DEBUG_FLAG="-g"
 C_OPT_FLAG="-O"
@@ -643,7 +649,7 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
         F77=${FC:-mpif77 +U77}
     fi
     if test $MPI = "lam" && test "$FC" != ""; then
-        FC="$FC +U77"
+        F77="$F77 +U77"
     fi
     FTESTDEFINE="external iargc, getarg"
     if test -n "$arch_hpux" ; then
@@ -1197,6 +1203,15 @@ fi
 PAC_FUNC_STRERROR
 if test -z "$srcdir" -o "$srcdir" = "." ; then srcdir="$ROMIO_HOME" ; fi
 AC_SUBST(srcdir)
+# The following definitions are needed within adio/common/status_setb.c
+if test "$FROM_MPICH" = yes ; then
+   AC_DEFINE(MPICH,1,[Define if compiling within MPICH])
+elif test "$FROM_MPICH2" = yes ; then 
+   AC_DEFINE(MPICH2,1,[Define if compiling within MPICH2])
+elif test "$FROM_MPILAM" = yes ; then
+   AC_DEFINE(MPILAM,1,[Define if compiling within LAM/MPI])
+fi
+
 if test "$FROM_MPICH2" = no -a "$FROM_MPICH" = no ; then 
     if test -z "$LIBNAME"; then
         LIBNAME="$ROMIO_HOME/lib/$ARCH/libmpio.a"
@@ -1210,10 +1225,12 @@ if test "$FROM_MPICH2" = no -a "$FROM_MPICH" = no ; then
     fi
 else
     MPILIBNAME=${MPILIBNAME:-mpich}
-    if test -n "$top_build_dir" -a -d "$top_build_dir/lib" ; then
-        LIBNAME=$top_build_dir/lib/lib${MPILIBNAME}.a
-    else
-        LIBNAME="$ROMIO_HOME/lib${MPILIBNAME}.a"
+    if test -z "$LIBNAME" ; then
+        if test -n "$top_build_dir" -a -d "$top_build_dir/lib" ; then
+            LIBNAME=$top_build_dir/lib/lib${MPILIBNAME}.a
+        else
+            LIBNAME="$ROMIO_HOME/lib${MPILIBNAME}.a"
+	fi
     fi
 fi
 #
@@ -1241,7 +1258,7 @@ MPIRUN=mpirun
 #
 # if MPICH, use mpicc in test programs
 #
-if test $FROM_MPICH = yes ; then
+if test "$FROM_MPICH" = yes ; then
    MPICH_HOME=`dirname $ROMIO_HOME`
    if test -z "$MPI_BIN_DIR" ; then MPI_BIN_DIR=$MPICH_HOME/bin ; fi
    TEST_CC=$MPI_BIN_DIR/mpicc
@@ -1257,7 +1274,6 @@ if test $FROM_MPICH = yes ; then
       TEST_F77=$MPI_BIN_DIR/mpif77
    fi
    CC=$MPI_BIN_DIR/mpicc
-   AC_DEFINE(HAVE_STATUS_SET_BYTES,1,[Define if status_set_bytes available])
    EXTRA_DIRS="mpi-io/fortran mpi2-other/info mpi2-other/info/fortran mpi2-other/array mpi2-other/array/fortran"
    # Some older implementations of the ADI do not include the 
    # MPID_Status_set_bytes routine.   This uses either the 
@@ -1265,11 +1281,11 @@ if test $FROM_MPICH = yes ; then
    # with arg --without-setbytes
    if test "$ADI2_WITHOUT_SET_BYTES" != yes -a \
            "$with_setbytes" != no ; then
-       AC_DEFINE(HAVE_STATUS_SET_BYTES,1,[Define if have MPID_Status_set_bytes])
+       AC_DEFINE(HAVE_STATUS_SET_BYTES,1,[Define if have MPIR_Status_set_bytes])
    fi
 elif test $FROM_LAM = yes ; then
    # LAM does have the status set bytes functionality
-   AC_DEFINE(HAVE_STATUS_SET_BYTES,1,[Define if have MPID_Status_set_bytes])
+   AC_DEFINE(HAVE_STATUS_SET_BYTES,1,[Define if have MPIR_Status_set_bytes])
         
    # Used in the tests/ subdirectory for after ROMIO is built
    TEST_CC=mpicc

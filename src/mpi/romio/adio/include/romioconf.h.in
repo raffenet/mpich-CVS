@@ -195,13 +195,19 @@
 /* Define if syserrlist available */
 #undef HAVE_SYSERRLIST
 
-/* Define if status_set_bytes available */
+/* Define if compiling within MPICH */
+#undef MPICH
+
+/* Define if compiling within MPICH2 */
+#undef MPICH2
+
+/* Define if compiling within LAM/MPI */
+#undef MPILAM
+
+/* Define if have MPIR_Status_set_bytes */
 #undef HAVE_STATUS_SET_BYTES
 
-/* Define if have MPID_Status_set_bytes */
-#undef HAVE_STATUS_SET_BYTES
-
-/* Define if have MPID_Status_set_bytes */
+/* Define if have MPIR_Status_set_bytes */
 #undef HAVE_STATUS_SET_BYTES
 
 /* Define if status_set_bytes available */
