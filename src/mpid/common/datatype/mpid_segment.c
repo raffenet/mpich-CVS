@@ -127,6 +127,24 @@ static int MPID_Segment_index_unpack_to_buf(DLOOP_Offset *blocks_p,
 					    void *bufp,
 					    void *v_paramp);
 
+static int MPID_Segment_blkidx_unpack_to_buf(DLOOP_Offset *blocks_p,
+					     int count,
+					     int blocklen,
+					     DLOOP_Offset *offsetarray,
+					     DLOOP_Type el_type,
+					     DLOOP_Offset rel_off,
+					     void *bufp,
+					     void *v_paramp);
+
+static int MPID_Segment_blkidx_pack_to_buf(DLOOP_Offset *blocks_p,
+					   int count,
+					   int blocklen,
+					   DLOOP_Offset *offsetarray,
+					   DLOOP_Type el_type,
+					   DLOOP_Offset rel_off,
+					   void *bufp,
+					   void *v_paramp);
+
 static int MPID_Segment_index_pack_to_buf(DLOOP_Offset *blocks_p,
 					  int count,
 					  int *blockarray,
@@ -221,7 +239,7 @@ void MPID_Segment_pack(struct DLOOP_Segment *segp,
 			    lastp,
 			    MPID_Segment_contig_pack_to_buf, 
 			    MPID_Segment_vector_pack_to_buf,
-			    NULL,
+			    MPID_Segment_blkidx_pack_to_buf,
 			    MPID_Segment_index_pack_to_buf,
                             NULL,
 			    &pack_params);
@@ -248,7 +266,7 @@ void MPID_Segment_unpack(struct DLOOP_Segment *segp,
 			    lastp, 
 			    MPID_Segment_contig_unpack_to_buf,
 			    MPID_Segment_vector_unpack_to_buf,
-			    NULL,
+			    MPID_Segment_blkidx_unpack_to_buf,
 			    MPID_Segment_index_unpack_to_buf,
                             NULL,
 			    &unpack_params);
@@ -822,6 +840,53 @@ static int MPID_Segment_vector_unpack_to_buf(DLOOP_Offset *blocks_p,
     return 0;
 }
 
+/* MPID_Segment_blkidx_unpack_to_buf
+ */
+static int MPID_Segment_blkidx_unpack_to_buf(DLOOP_Offset *blocks_p,
+					     int count,
+					     int blocklen,
+					     DLOOP_Offset *offsetarray,
+					     DLOOP_Type el_type,
+					     DLOOP_Offset rel_off,
+					     void *bufp,
+					     void *v_paramp)
+{
+    int curblock = 0, el_size;
+    DLOOP_Offset blocks_left = *blocks_p;
+    char *cbufp = (char *) bufp + rel_off;
+    struct MPID_Segment_piece_params *paramp = v_paramp;
+    
+    el_size = MPID_Datatype_get_basic_size(el_type);
+
+    while (blocks_left) {
+	cbufp = (char *) bufp + rel_off + offsetarray[curblock];
+
+	if (blocklen > blocks_left) blocklen = blocks_left;
+
+	if (el_size == 8) {
+	    /* note: macro updates pack buffer location */
+	    MPIDI_COPY_TO_VEC(paramp->u.unpack.unpack_buffer,
+			      cbufp, 0, int64_t, blocklen, 1);
+	}
+	else if (el_size == 4) {
+	    MPIDI_COPY_TO_VEC(paramp->u.unpack.unpack_buffer,
+			      cbufp, 0, int32_t, blocklen, 1);
+	}
+	else if (el_size == 2) {
+	    MPIDI_COPY_TO_VEC(paramp->u.unpack.unpack_buffer,
+			      cbufp, 0, int16_t, blocklen, 1);
+	}
+	else {
+	    DLOOP_Offset size = blocklen * el_size;
+	    memcpy(cbufp, paramp->u.unpack.unpack_buffer, size);
+	    paramp->u.unpack.unpack_buffer += size;
+	}
+	blocks_left -= blocklen;
+	curblock++;
+    }
+    return 0;
+}
+
 /* MPID_Segment_index_unpack_to_buf
  */
 static int MPID_Segment_index_unpack_to_buf(DLOOP_Offset *blocks_p,
@@ -1055,6 +1120,56 @@ static int MPID_Segment_index_pack_to_buf(DLOOP_Offset *blocks_p,
 	    paramp->u.pack.pack_buffer += size;
 	}
 	blocks_left -= cur_block_sz;
+	curblock++;
+    }
+    return 0;
+}
+
+
+/* MPID_Segment_blkidx_pack_to_buf
+ */
+static int MPID_Segment_blkidx_pack_to_buf(DLOOP_Offset *blocks_p,
+					   int count,
+					   int blocklen,
+					   DLOOP_Offset *offsetarray,
+					   DLOOP_Type el_type,
+					   DLOOP_Offset rel_off,
+					   void *bufp,
+					   void *v_paramp)
+{
+    int curblock = 0, el_size;
+    DLOOP_Offset blocks_left = *blocks_p;
+    char *cbufp;
+    struct MPID_Segment_piece_params *paramp = v_paramp;
+    
+    el_size = MPID_Datatype_get_basic_size(el_type);
+
+    while (blocks_left) {
+	assert(curblock < count);
+	cbufp = (char *) bufp + rel_off + offsetarray[curblock];
+
+	if (blocklen > blocks_left) blocklen = blocks_left;
+
+	if (el_size == 8) {
+	    /* note: macro updates pack buffer location */
+	    MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer,
+				0, int64_t, blocklen, 1);
+	}
+	else if (el_size == 4) {
+	    MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer,
+				0, int32_t, blocklen, 1);
+	}
+	else if (el_size == 2) {
+	    MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer,
+				0, int16_t, blocklen, 1);
+	}
+	else {
+	    DLOOP_Offset size = blocklen * el_size;
+
+	    memcpy(paramp->u.pack.pack_buffer, cbufp, size);
+	    paramp->u.pack.pack_buffer += size;
+	}
+	blocks_left -= blocklen;
 	curblock++;
     }
     return 0;

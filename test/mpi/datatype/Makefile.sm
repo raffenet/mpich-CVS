@@ -19,6 +19,8 @@ simple-pack_SOURCES = simple-pack.c
 
 simple-pack-external_SOURCES = simple-pack-external.c
 
+darray-pack_SOURCES = darray-pack.c
+
 subarray-pack_SOURCES = subarray-pack.c
 
 transpose-pack_SOURCES = transpose-pack.c
