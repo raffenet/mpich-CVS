@@ -130,7 +130,7 @@ void MPIDI_err_printf(char *, char *, ...);
 #define MPIDI_DBG_PRINTF(e) MPIDI_dbg_printf e
 #define MPIDI_dbg_printf(level, func, fmt, args...)			\
 {									\
-    MPIU_DBG_PRINTF(("%d (%d) %s(): " ## fmt ## "\n",			\
+    MPIU_DBG_PRINTF(("%d (%d) %s(): " fmt "\n",				\
 	       MPIR_Process.comm_world->rank, level, func, ## args));	\
 }
 #else
@@ -140,7 +140,7 @@ void MPIDI_err_printf(char *, char *, ...);
 
 #define MPIDI_err_printf(func, fmt, args...)			\
 {								\
-    printf("%d %s(): " ## fmt ## "\n",				\
+    printf("%d %s(): " fmt "\n",				\
 	   MPIR_Process.comm_world->rank, func, ## args);	\
     fflush(stdout);						\
 }
