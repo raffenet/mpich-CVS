@@ -1,7 +1,7 @@
 ALL: mpich2.ps
 SHELL = /bin/sh
 
-.SUFFIXES: .pdf .ps .dvi .tex .fig .eps
+.SUFFIXES: .pdf .ps .dvi .tex .fig .txt .dot .eps
 
 .dvi.ps:
 	dvips $*
@@ -33,7 +33,7 @@ SHELL = /bin/sh
 # We touch mpich2.ind to work around a LaTeX bug in accessing the index file
 MPICH2FILES = mpich2.tex errcodes.tex pt2ptdesc.tex \
 	Makefile fixupindex scanpattern.eps mpidoc.sty indirect.eps \
-	sendrecv.eps
+	sendrecv.eps handle.eps intercomm.eps
 
 mpich2.dvi: $(MPICH2FILES)
 	touch mpich2.ind
@@ -116,6 +116,10 @@ mmca.dvi: mmca.tex Makefile template.orig
 	latex template
 	mv template.dvi mmca.dvi
 
+agent.dvi: agent.tex Makefile mpich2-arch.eps ca-nomenclature.eps vc-sm.eps \
+           send-sm.eps
+	latex agent
+
 mpich2pdf.dvi: $(MPICH2FILES)
 	touch mpich2pdf.ind
 	rm -f mpich2pdf.tex
@@ -163,10 +167,18 @@ install-web: mpich2.ps mpich2.pdf mpich2/mpich2.htm
 
 clean:
 	rm -f *.log *.aux *.dvi *.bbl mpich2.ps *~ *.toc errcodes.ps \
-		pt2ptdesc.ps
+		pt2ptdesc.ps handle.eps indirect.eps intercomm.eps \
+		scanpattern.eps sendrecv.eps agent.ps mpich2-arch.eps \
+		ca-nomenclature.eps vc-sm.eps send-sm.eps mmca.ps
 
 # Handle older fig2dev programs
 .fig.eps:
 	-fig2dev -L eps -l landscape $*.fig > $*.eps
 	if [ ! -s $*.eps ] ; then \
 		fig2dev -L ps -l landscape $*.fig > $*.eps ; fi
+
+.txt.dot:
+	./sm2dot $*.txt >$*.dot
+
+.dot.eps:
+	dot -Tps $*.dot >$*.eps

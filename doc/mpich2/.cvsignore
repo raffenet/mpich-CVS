@@ -4,18 +4,18 @@
 *.bbl
 *.dvi
 *.toc
-mpich2.ps
 *.idx
 *.ind
 *.ilg
-scanpattern.eps
-indirect.eps
+mpich2.ps
+scanpattern.eps indirect.eps handle.eps intercomm.eps sendrecv.eps
 template.tex
 errcodes.ps
 pt2ptdesc.ps
 colldesc.ps
 iohints.ps
 agent.ps
+ca-nomenclature.eps mpich2-arch.eps vc-sm.eps send-sm.eps
 mmca.ps
 mpich2.pdf
 latex.err
