@@ -929,7 +929,7 @@ sub addnull_ftoc {
     {char *p = v$count + $strlen - 1;
      int  li;
         while (*p == ' ') p--;
-        p2 = (char *)MPIU_Malloc( p-v$count + 1 );
+        p$count = (char *)MPIU_Malloc( p-v$count + 1 );
         for (li=0; li<(p-v$count); li++) { p$count\[li\] = v$count\[li\]; }
         p$count\[li\] = 0; 
     }
