@@ -167,13 +167,13 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		    
 		     'Waitany-2' => 'inout:reqarray:1',
 		     'Waitsome-2' => 'inout:reqarray:1',
-		     'Waitsome-5' => 'out:statusarray:3', # or 4?
+		     'Waitsome-5' => 'out:statusarray:1', # or 4?
 		     'Waitall-2' => 'inout:reqarray:1',
 		     'Waitall-3' => 'out:statusarray:1',
 		     'Testany-2' => 'inout:reqarray:1',
 		     'Testany-4' => 'in:refint',
 		     'Testsome-2' => 'inout:reqarray:1',
-		     'Testsome-5' => 'out:statusarray:3', # or 4?
+		     'Testsome-5' => 'out:statusarray:1', # or 4?
 		     'Testall-2' => 'inout:reqarray:1',
 		     'Testall-4' => 'out:statusarray:1',
 		     'Startall-2' => 'inout:preqarray:1',
@@ -480,6 +480,11 @@ if ($routine_list ne "") {
 	    'DOUBLE', 'LONG_DOUBLE', 'LONG_LONG_INT', 'LONG_LONG', 
 	    'PACKED', 'LB', 'UB', 'FLOAT_INT', 'DOUBLE_INT', 
 	    'LONG_INT', 'SHORT_INT', 'LONG_DOUBLE_INT' );
+
+#
+# Still missing: C++ only types: BOOL, COMPLEX, DOUBLE_COMPLEX, 
+# LONG_DOUBLE_COMPLEX. 
+
 # ops is like dtypes
 @ops = ( 'MAX', 'MIN', 'SUM', 'PROD', 'LAND', 'BAND', 'LOR', 'BOR', 
 	 'LXOR', 'BXOR', 'MINLOC', 'MAXLOC', 'REPLACE' );
@@ -710,13 +715,10 @@ if (!$build_sep_files) {
 # FIXME: The types for these should be determined by configure first.
 print $OUTFD "
 // Typedefs for basic int types
-typedef long Offset;
-typedef long Aint;
-typedef int  Fint;\n";
+typedef MPI_Offset Offset;
+typedef MPI_Aint   Aint;
+typedef MPI_Fint   Fint;\n";
 
-print $OUTFD "
-typedef void User_function(const void *, void*, int, const Datatype&); 
-";
 }
 
 #
@@ -780,6 +782,13 @@ foreach $class (@classes) {
 	&$extrafnc( $OUTFD );
     }
     &EndClass;
+
+    # Special case.  Once we define a Datatype, add this typedef
+    if ($class eq "dtype") {
+        print $OUTFD "
+typedef void User_function(const void *, void*, int, const Datatype&); 
+";
+    }
 }
 
 
@@ -1567,12 +1576,12 @@ sub Status_methods {
     my $OUTFD = $_[0];
     
     print $OUTFD "\
-    int Get_source(void) { the_real_status.MPI_SOURCE; }
-    int Get_tag(void) { the_real_status.MPI_TAG; }
-    int Get_error(void) { the_real_status.MPI_ERROR; }
-    int Set_source(int source) { the_real_status.MPI_SOURCE = source; }
-    int Set_tag(int tag) { the_real_status.MPI_TAG = tag; }
-    int Set_error(int error) { the_real_status.MPI_ERROR = error; }
+    int Get_source(void) { return the_real_status.MPI_SOURCE; }
+    int Get_tag(void) { return the_real_status.MPI_TAG; }
+    int Get_error(void) { return the_real_status.MPI_ERROR; }
+    void Set_source(int source) { the_real_status.MPI_SOURCE = source; }
+    void Set_tag(int tag) { the_real_status.MPI_TAG = tag; }
+    void Set_error(int error) { the_real_status.MPI_ERROR = error; }
 ";
 }
 
