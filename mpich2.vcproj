@@ -230,14 +230,18 @@ copy mmDebug\mpich2d.lib lib\mpich2d.lib
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
 			CharacterSet="2"
-			WholeProgramOptimization="TRUE">
+			WholeProgramOptimization="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
+				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="TRUE"
+				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
+				BufferSecurityCheck="FALSE"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\$(ConfigurationName)/mpich2.pch"
