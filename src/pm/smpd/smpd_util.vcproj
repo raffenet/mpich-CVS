@@ -102,6 +102,9 @@
 				RelativePath="smpd_get_opt.c">
 			</File>
 			<File
+				RelativePath="smpd_launch_process.c">
+			</File>
+			<File
 				RelativePath="smpd_printf.c">
 			</File>
 			<File

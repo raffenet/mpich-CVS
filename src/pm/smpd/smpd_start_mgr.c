@@ -15,7 +15,10 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
     int result;
 #ifdef HAVE_WINDOWS_H
     char read_handle_str[20], write_handle_str[20];
-    char account[100], port_str[20];
+    char domainaccount[100], account[100], domain[100], port_str[20];
+    char *pszDomain;
+    HANDLE user_handle;
+    int num_tries;
     char cmd[8192];
     PROCESS_INFORMATION pInfo;
     STARTUPINFO sInfo;
@@ -74,7 +77,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 
 	/************ Windows code to spawn the manager ************/
 
-	account[0] = '\0';
+	domainaccount[0] = '\0';
 	password[0] = '\0';
 	if (g_bService)
 	{
@@ -84,7 +87,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 		smpd_close_connection(set, sock);
 		return SMPD_FAIL;
 	    }
-	    result = smpd_read_string(set, sock, account, 100);
+	    result = smpd_read_string(set, sock, domainaccount, 100);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
@@ -155,14 +158,29 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	GetStartupInfo(&sInfo);
 	if (g_bService)
 	{
-	    /* logon user */
-	    /* CreateProcessAsUser */
-	}
-	else
-	{
-	    if (!CreateProcess(NULL, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &sInfo, &pInfo))
+	    smpd_parse_account_domain(domainaccount, account, domain);
+	    if (strlen(domain) < 1)
+		pszDomain = NULL;
+	    else
+		pszDomain = domain;
+
+	    result = smpd_get_user_handle(account, pszDomain, password, &user_handle);
+	    if (user_handle == INVALID_HANDLE_VALUE)
 	    {
-		smpd_err_printf("CreateProcess failed, error %d\n", GetLastError());
+		smpd_err_printf("smpd_get_user_handle failed, error %d.\n", result);
+		smpd_close_connection(set, sock);
+		CloseHandle(hRead);
+		CloseHandle(hWrite);
+		CloseHandle(hReadRemote);
+		CloseHandle(hWriteRemote);
+		return SMPD_FAIL;
+	    }
+
+	    result = SMPD_SUCCESS;
+	    if (!ImpersonateLoggedOnUser(user_handle))
+	    {
+		result = GetLastError();
+		smpd_err_printf("ImpersonateLoggedOnUser failed, error %d\n", result);
 		smpd_close_connection(set, sock);
 		CloseHandle(hRead);
 		CloseHandle(hWrite);
@@ -171,12 +189,65 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 		return SMPD_FAIL;
 	    }
 	}
+	
+	num_tries = 4;
+	do
+	{
+	    if (g_bService)
+	    {
+		result = CreateProcessAsUser(
+		    user_handle,
+		    NULL, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &sInfo, &pInfo);
+	    }
+	    else
+	    {
+		result = CreateProcess(
+		    NULL, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &sInfo, &pInfo);
+	    }
+
+	    if (result)
+	    {
+		result = SMPD_SUCCESS;
+		num_tries = 0;
+	    }
+	    else
+	    {
+		result = GetLastError();
+		if (result == ERROR_REQ_NOT_ACCEP)
+		{
+		    Sleep(1000);
+		    num_tries--;
+		    if (num_tries == 0)
+		    {
+			smpd_err_printf("%s failed, error %d\n", g_bService ? "CreateProcessAsUser" : "CreateProcess", result);
+		    }
+		}
+		else
+		{
+		    smpd_err_printf("%s failed, error %d\n", g_bService ? "CreateProcessAsUser" : "CreateProcess", result);
+		    num_tries = 0;
+		}
+	    }
+	} while (num_tries);
+
+	if (g_bService)
+	    RevertToSelf();
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_close_connection(set, sock);
+	    CloseHandle(hRead);
+	    CloseHandle(hWrite);
+	    CloseHandle(hReadRemote);
+	    CloseHandle(hWriteRemote);
+	    return SMPD_FAIL;
+	}
+
 	CloseHandle(pInfo.hThread);
 	CloseHandle(pInfo.hProcess);
 	CloseHandle(hReadRemote);
 	CloseHandle(hWriteRemote);
 
-	smpd_dbg_printf("reading the port string\n");
+	smpd_dbg_printf("smpd reading the port string from the manager\n");
 	/* read the listener port from the pipe to the manager */
 	if (!ReadFile(hRead, port_str, 20, &num_read, NULL))
 	{
@@ -195,9 +266,10 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	    return SMPD_FAIL;
 	}
 	/* send the account and password to the manager */
-	if (!WriteFile(hWrite, account, 100, &num_written, NULL))
+	smpd_dbg_printf("smpd sending the account and password to the manager\n");
+	if (!WriteFile(hWrite, domainaccount, 100, &num_written, NULL))
 	{
-	    smpd_err_printf("WriteFile() failed to write the account, error %d\n", GetLastError());
+	    smpd_err_printf("WriteFile('%s') failed to write the account, error %d\n", domainaccount, GetLastError());
 	    smpd_close_connection(set, sock);
 	    CloseHandle(hWrite);
 	    return SMPD_FAIL;
@@ -218,7 +290,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	}
 	if (num_written != 100)
 	{
-	    smpd_err_printf("parital account string written, %d bytes of 100\n", num_written);
+	    smpd_err_printf("parital password string written, %d bytes of 100\n", num_written);
 	    smpd_close_connection(set, sock);
 	    CloseHandle(hWrite);
 	    return SMPD_FAIL;
@@ -226,7 +298,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	CloseHandle(hWrite);
 
 	/* write the port to reconnect to back to mpiexec */
-	smpd_dbg_printf("writing reconnect request: port %s\n", port_str);
+	smpd_dbg_printf("smpd writing reconnect request: port %s\n", port_str);
 	result = smpd_write_string(set, sock, port_str);
 	if (result != SMPD_SUCCESS)
 	{
@@ -235,7 +307,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	    return SMPD_FAIL;
 	}
 
-	smpd_dbg_printf("closing the sock and set.\n");
+	smpd_dbg_printf("smpd closing the sock and set.\n");
 	smpd_close_connection(set, sock);
 #else
 

@@ -18,7 +18,7 @@ int smpd_write_string(sock_set_t set, sock_t sock, char *str)
     result = sock_write(sock, str, len, &num_written);
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("Unable to write string of length %d\nsock error: %s\n", len, get_sock_error_string(result));
+	smpd_err_printf("Unable to write string of length %d, sock error:\n%s\n", len, get_sock_error_string(result));
 	return SMPD_FAIL;
     }
     if (num_written == len)
@@ -30,7 +30,7 @@ int smpd_write_string(sock_set_t set, sock_t sock, char *str)
     result = sock_post_write(sock, str, len, NULL);
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("Unable to post a write for string of length %d.\nsock error: %s\n", len, get_sock_error_string(result));
+	smpd_err_printf("Unable to post a write for string of length %d, sock error:\n%s\n", len, get_sock_error_string(result));
 	return SMPD_FAIL;
     }
 
@@ -39,7 +39,7 @@ int smpd_write_string(sock_set_t set, sock_t sock, char *str)
     result = sock_wait(set, SOCK_INFINITE_TIME, &event);
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("sock_wait failed\nsock error: %s\n", get_sock_error_string(result));
+	smpd_err_printf("sock_wait failed, sock error:\n%s\n", get_sock_error_string(result));
 	return SMPD_FAIL;
     }
     switch (event.op_type)
@@ -101,7 +101,7 @@ static int read_string(sock_t sock, char *str, int maxlen)
 	    return total;
 	result = sock_read(sock, &ch, 1, &num_bytes);
     }
-    smpd_err_printf("Unable to read a string.\nsock error: %s\n", get_sock_error_string(result));
+    smpd_err_printf("Unable to read a string, sock error:\n%s\n", get_sock_error_string(result));
     return -1;
 }
 
@@ -116,7 +116,7 @@ static int chew_up_string(sock_set_t set, sock_t sock)
 	if (ch == '\0')
 	    return SMPD_SUCCESS;
     }
-    smpd_err_printf("Unable to read a string.\nsock error: %s\n", get_sock_error_string(result));
+    smpd_err_printf("Unable to read a string, sock error:\n%s\n", get_sock_error_string(result));
     return SMPD_FAIL;
 }
 
@@ -148,14 +148,14 @@ int smpd_read_string(sock_set_t set, sock_t sock, char *str, int maxlen)
 	result = sock_post_read(sock, str, 1, NULL);
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("Unable to read a string.\nsock error: %s\n", get_sock_error_string(result));
+	    smpd_err_printf("Unable to read a string, sock error:\n%s\n", get_sock_error_string(result));
 	    return SMPD_FAIL;
 	}
 	/*smpd_dbg_printf("smpd_read_string calling sock_wait.\n");*/
 	result = sock_wait(set, SOCK_INFINITE_TIME, &event);
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("sock_wait failed\nsock error: %s\n", get_sock_error_string(result));
+	    smpd_err_printf("sock_wait failed, sock error:\n%s\n", get_sock_error_string(result));
 	    return SMPD_FAIL;
 	}
 	switch (event.op_type)
@@ -199,4 +199,130 @@ int smpd_read_string(sock_set_t set, sock_t sock, char *str, int maxlen)
 	maxlen--;
     }
     return SMPD_FAIL;
+}
+
+int smpd_post_read_command(smpd_context *context)
+{
+    int result;
+
+    /* post a read for the next command header */
+    result = sock_post_read(context->sock, context->input_cmd_hdr_str, SMPD_CMD_HDR_LENGTH, NULL);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("unable to post a read for the next command header, sock error:\n%s\n", get_sock_error_string(result));
+	return SMPD_FAIL;
+    }
+
+    return SMPD_SUCCESS;
+}
+
+int smpd_read_command(smpd_context *context)
+{
+    int result;
+    int length;
+    char *str;
+    int num_read;
+
+    /* get the length of the command from the header */
+    length = atoi(context->input_cmd_hdr_str);
+    if (length < 1)
+    {
+	smpd_err_printf("unable to read the command, invalid command length: %d\n", length);
+	return SMPD_FAIL;
+    }
+
+    /* read the command */
+    str = context->input_str;
+    while (length)
+    {
+	result = sock_read(context->sock, str, length, &num_read);
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("unable to read the command, sock error:\n%s\n", get_sock_error_string(result));
+	    return SMPD_FAIL;
+	}
+	if (num_read < 0)
+	{
+	    smpd_err_printf("sock_read returned invalid num_bytes: %d\n", num_read);
+	    return SMPD_FAIL;
+	}
+	length -= num_read;
+	str += num_read;
+    }
+
+    return SMPD_SUCCESS;
+}
+
+int smpd_package_command(smpd_context *context)
+{
+    int length;
+
+    /* create the command header - for now it is simply the length of the command string */
+    length = (int)strlen(context->output_str) + 1;
+    if (length > SMPD_MAX_CMD_LENGTH)
+    {
+	smpd_err_printf("unable to package invalid command of length %d\n", length);
+	return SMPD_FAIL;
+    }
+    snprintf(context->output_cmd_hdr_str, SMPD_CMD_HDR_LENGTH, "%d", length);
+
+    return SMPD_SUCCESS;
+}
+
+int smpd_write_command(smpd_context *context)
+{
+    int length;
+    int num_written;
+    char *buf;
+    int result;
+
+    /* verify the header*/
+    length = atoi(context->output_cmd_hdr_str);
+    if (length < 1)
+    {
+	smpd_err_printf("unable to write command, invalid length: %d\n", length);
+	return SMPD_FAIL;
+    }
+
+    /* write the header */
+    length = SMPD_CMD_HDR_LENGTH;
+    buf = context->output_cmd_hdr_str;
+    while (length)
+    {
+	result = sock_write(context->sock, buf, length, &num_written);
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("unable to write the command header, sock error:\n%s\n", get_sock_error_string(result));
+	    return SMPD_FAIL;
+	}
+	if (num_written < 0)
+	{
+	    smpd_err_printf("sock_write returned invalid num_bytes: %d\n", num_written);
+	    return SMPD_FAIL;
+	}
+	length -= num_written;
+	buf += num_written;
+    }
+
+    /* write the data */
+    length = atoi(context->output_cmd_hdr_str);
+    buf = context->output_str;
+    while (length)
+    {
+	result = sock_write(context->sock, buf, length, &num_written);
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("unable to write the command, sock error:\n%s\n", get_sock_error_string(result));
+	    return SMPD_FAIL;
+	}
+	if (num_written < 0)
+	{
+	    smpd_err_printf("sock_write returned invalid num_bytes: %d\n", num_written);
+	    return SMPD_FAIL;
+	}
+	length -= num_written;
+	buf += num_written;
+    }
+
+    return SMPD_SUCCESS;
 }

@@ -17,12 +17,28 @@
 #include <termios.h>
 #endif
 
+int smpd_init_context(smpd_context *context, sock_set_t set, sock_t sock)
+{
+    context->host[0] = '\0';
+    context->id = -1;
+    context->input_cmd_hdr_str[0] = '\0';
+    context->input_str[0] = '\0';
+    context->next = NULL;
+    context->output_cmd_hdr_str[0] = '\0';
+    context->output_str[0] = '\0';
+    context->read_offset = 0;
+    context->set = set;
+    context->sock = sock;
+    return SMPD_SUCCESS;
+}
+
 int smpd_close_connection(sock_set_t set, sock_t sock)
 {
     int result;
     sock_event_t event;
 
     /* close the sock and its set */
+    smpd_dbg_printf("closing sock\n");
     result = sock_post_close(sock);
     if (result != SOCK_SUCCESS)
     {
@@ -45,6 +61,7 @@ int smpd_close_connection(sock_set_t set, sock_t sock)
 	}
 	*/
     } while (event.op_type != SOCK_OP_CLOSE);
+    smpd_dbg_printf("sock closed, destroying set\n");
     result = sock_destroy_set(set);
     if (result != SOCK_SUCCESS)
     {

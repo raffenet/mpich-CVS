@@ -11,6 +11,7 @@
 
 #define SMPD_SUCCESS                        0
 #define SMPD_FAIL                          -1
+#define SMPD_CLOSE                          2
 
 #define SMPD_TRUE                           1
 #define SMPD_FALSE                          0
@@ -18,6 +19,7 @@
 #define SMPD_SERVER_AUTHENTICATION          0
 #define SMPD_CLIENT_AUTHENTICATION          1
 
+#define SMPD_CMD_HDR_LENGTH                13
 #define SMPD_MAX_CMD_LENGTH	         8192
 #define SMPD_MAX_HOST_LENGTH	           64
 #define SMPD_PASSPHRASE_MAX_LENGTH        256
@@ -49,6 +51,20 @@
 #define snprintf _snprintf
 #endif
 
+typedef struct smpd_context
+{
+    char input_cmd_hdr_str[SMPD_CMD_HDR_LENGTH];
+    char input_str[SMPD_MAX_CMD_LENGTH];
+    char output_cmd_hdr_str[SMPD_CMD_HDR_LENGTH];
+    char output_str[SMPD_MAX_CMD_LENGTH];
+    int read_offset;
+    char host[SMPD_MAX_HOST_LENGTH];
+    int id;
+    sock_set_t set;
+    sock_t sock;
+    struct smpd_context *next;
+} smpd_context;
+
 extern char g_pszSMPDExe[1024];
 extern int  g_bService;
 extern int  g_bPasswordProtect;
@@ -66,6 +82,11 @@ HANDLE smpd_decode_handle(char *str);
 #endif
 
 /* smpd_util */
+int smpd_init_context(smpd_context *context, sock_set_t set, sock_t sock);
+int smpd_post_read_command(smpd_context *context);
+int smpd_read_command(smpd_context *context);
+int smpd_package_command(smpd_context *context);
+int smpd_write_command(smpd_context *context);
 int smpd_write_string(sock_set_t set, sock_t sock, char *str);
 int smpd_read_string(sock_set_t set, sock_t sock, char *str, int maxlen);
 int smpd_authenticate(sock_set_t set, sock_t sock, int type);
@@ -92,6 +113,10 @@ int smpd_get_opt_int(int *argc, char ***argv, char * flag, int *n);
 int smpd_get_opt_long(int *argc, char ***argv, char * flag, long *n);
 int smpd_get_opt_double(int *argc, char ***argv, char * flag, double *d);
 int smpd_get_opt_string(int *argc, char ***argv, char * flag, char *str, int len);
+#ifdef HAVE_WINDOWS_H
+void smpd_parse_account_domain(char *domain_account, char *account, char *domain);
+int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *handle_ptr);
+#endif
 
 
 #endif

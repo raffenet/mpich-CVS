@@ -158,7 +158,13 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	result = smpd_session(session_set, session_sock);
 	if (result != SMPD_SUCCESS)
 	    smpd_err_printf("smpd_session() failed.\n");
-	exit(result);
+	
+	result = sock_finalize();
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("sock_finalize failed, sock error:\n%s\n", get_sock_error_string(result));
+	}
+	ExitProcess(0);
     }
 #endif
 
