@@ -55,15 +55,9 @@
  */
 
 #include <stdlib.h>	
-/* 
-   The following was added by William Gropp to improve the portability 
-   to systems with non-ANSI C compilers 
- */
+/* mpichconf includes definitions for things like const and volatile if the
+   compiler does not support them */
 #include "mpichconf.h"
-#ifdef HAVE_NO_C_CONST
-#define const
-#endif
-
 #include <string.h>
 #include "mpi_interface.h"
 #include "mpich_dll_defs.h"	
@@ -145,7 +139,7 @@ int mqs_version_compatibility ( void )
 #endif
 char *mqs_version_string ( void )
 {
-  return "ETNUS MPICH message queue support for MPICH 1.1, 1.2 compiled on " __DATE__;
+  return "ETNUS MPICH message queue support for MPICH2 compiled on " __DATE__;
 } /* mqs_version_string */
 
 /* So the debugger can tell what interface width the library was compiled with */
