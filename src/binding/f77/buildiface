@@ -1766,8 +1766,9 @@ sub chararray2_ftoc {
         for (i=0; i <$Array_size; i++) {
             $free( p$count\[i\]\[0\] );  /* Free space allocated to args */
             $free( p$count\[i\] );       /* Free space allocated to arg array */
-            $free( p$count );
         }
+        /* Free the array of arrays */
+        $free( p$count );
     }\n";
 }
 
