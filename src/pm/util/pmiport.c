@@ -82,7 +82,7 @@ int mpiexecGetPort( int *fdout, int *portout )
     
 	if (setsockopt( fd, IPPROTO_TCP, TCP_NODELAY, 
 		    (char *)&optval, sizeof(optval) )) {
-	    perror( "Error calling setsockopt:" );
+	    MPIU_Internal_sys_error_printf( "setsockopt", errno, 0 );
 	}
 	
 	if (bind( fd, (struct sockaddr *)&sa, sizeof(sa) ) < 0) {

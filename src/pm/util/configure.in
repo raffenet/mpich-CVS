@@ -214,4 +214,4 @@ dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
 dnl
 dnl Generate the Makefiles from Makefile.in
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile test/Makefile)

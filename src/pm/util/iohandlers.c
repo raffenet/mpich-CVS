@@ -5,8 +5,10 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/* OWNER=gropp */
 #include "pmutilconf.h"
 #include "pmutil.h"
+#include "pmimpl.h"
 #include <stdio.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -98,8 +100,11 @@
 #include <sys/time.h>
 /* handle input for all of the processes in a process table.  Returns
    after a single invocation of select returns, with the number of active
-   processes.  */
-int IOHandleLoop( ProcessTable *ptable, int *reason )
+   processes. 
+   Return value: the number of active processes
+   reason - 
+ */
+int IOHandleLoop( ProcessTable *ptable, IOExitReason *reason )
 {
     int    i, j;
     fd_set readfds, writefds;
@@ -108,6 +113,7 @@ int IOHandleLoop( ProcessTable *ptable, int *reason )
     int    nactive;
     struct timeval tv;
 
+    PMUTIL_BEGIN("IOHandleLoop");
     /* Setup the select sets */
     FD_ZERO( &readfds );
     FD_ZERO( &writefds );
@@ -132,7 +138,11 @@ int IOHandleLoop( ProcessTable *ptable, int *reason )
 	    }
 	}
     }
-    if (maxfd == -1) { *reason = 1; return 0; }
+    if (maxfd == -1) { 
+	*reason = IO_NONE_ACTIVE; 
+	PMUTIL_END("IOHandleLoop");
+	return 0; 
+    }
 
     if (debug) {
 	DBG_PRINTF( ("Found %d active fds\n", nactive) );
@@ -140,23 +150,30 @@ int IOHandleLoop( ProcessTable *ptable, int *reason )
 
     /* A null timeout is wait forever.  We set a timeout here */
     tv.tv_sec  = GetRemainingTime();
+    /* We use select instead of poll because it is more portable (some
+       systems have select and not poll) */
+    PMUTIL_CALL_BEGIN("IOHandleLoop","select");
     nfds = select( maxfd+1, &readfds, &writefds, 0, &tv );
+    PMUTIL_CALL_END("IOHandleLoop","select");
     if (nfds < 0) {
 	/* It may be EINTR, in which case we need to recompute the active
-	   fds */
-	if (errno == EINTR) { *reason = 2; return nactive; }
+	   fds.  This may require that an outside routine update 
+	   pstate, so in this case we just return with a reason of EINTR */
+	if (errno == EINTR) { *reason = IO_EINTR; return nactive; }
 
 	/* Otherwise, we have a problem */
-	printf( "Error in select!\n" );
-	perror( "Reason: " );
-	/* FIXME */
+	MPIU_Internal_sys_error_printf( "select", errno, 0 );
+	*reason = IO_SYSERR;
+	PMUTIL_END("IOHandleLoop");
+	return nactive;
     }
     if (nfds == 0) {
 	/* This is a timeout from the select.  This is either a 
 	   total time expired or a polling time limit.  */
-	if (GetRemainingTime() <= 0) *reason = 2;
-	else                         *reason = 3;  /* Must be poll timeout */
+	if (GetRemainingTime() <= 0) *reason = IO_TIMEOUT;
+	else                         *reason = IO_POLL_TIMEOUT;  /* Must be poll timeout */
 	/* Note that no poll timeout is implemented yet */
+	PMUTIL_END("IOHandleLoop");
 	return 0;
     }
     if (nfds > 0) {
@@ -199,7 +216,8 @@ int IOHandleLoop( ProcessTable *ptable, int *reason )
 	    }
 	}
     }
-    *reason = 0;
+    *reason = IO_OK;
+    PMUTIL_END("IOHandleLoop");
     return nactive;
 }
 
@@ -239,6 +257,8 @@ void IOHandlersCloseAll( ProcessState *pstate, int np )
    only one comm_world, and to also suppress other characters, such as
       1>  (only one comm world; we are rank 1)
       [2]3> (at least 3 comm worlds, we're #2 and rank 3 in that)
+
+   Should this go into a different file?
 */
 void GetPrefixFromEnv( int isErr, char value[], int maxlen, int rank,
 		       int world )
@@ -406,6 +426,7 @@ typedef struct {
     char   *lastSeen;                /* Last location seen 
 					by the annotation routine in
 					the cbuf */
+    /* ??? What if nothing has been seen? */
     struct iovec   iovs[MAX_IOVS];   /* Used for inserting annotations*/
     int    cbufIncr[MAX_IOVS];       /* Tells how many characters through
 					the cbuf to advanced when this
@@ -450,12 +471,23 @@ static int IOManyToOneReader( int fd, void *extra )
     int       n;
     int       err;
 
+    PMUTIL_BEGIN("IOManyToOneReader");
     if (debug) {
 	DBG_PRINTF( ( "Reading from fd %d\n", fd ) );
     }
+    printf( "read args are %d %x %d\n",
+	    fd, iodata->abuf.cbuf.first, iodata->abuf.cbuf.nleft );
     n = read( fd, iodata->abuf.cbuf.first, iodata->abuf.cbuf.nleft );
     /* FIXME: what should we do on an error? */
-    if (n <= 0) return 0;
+    if (n <= 0) {
+	/* An EINTR can be ignored; other errors should generate some
+	   warning */
+	if (errno != EINTR) {
+	    MPIU_Internal_sys_error_printf( "read", errno, "IOManyToOneReader" );
+	}
+	PMUTIL_END("IOManyToOneReader");
+	return 0;
+    }
 
     /* Update the circular buffer */
     iodata->abuf.cbuf.nleft     -= n;
@@ -477,7 +509,9 @@ static int IOManyToOneReader( int fd, void *extra )
        that we'd get a long prefix and a series of newlines).
     */
     if (iodata->annotate) {
+	PMUTIL_CALL_BEGIN("IOManyToOneReader","annotate");
 	err = (*iodata->annotate)( &iodata->abuf, iodata->annotateExtra );
+	PMUTIL_CALL_END("IOManyToOneReader","annotate");
 	/* FIXME: what if err? */
     }
     else {
@@ -493,7 +527,9 @@ static int IOManyToOneReader( int fd, void *extra )
        This routine may be able to write the data directly, or it
        may have to queue the data.  The buffer is not emptied unless it
        is written */
+    PMUTIL_CALL_BEGIN("IOManyToOneReader","notify");
     err = (*iodata->notify)( &iodata->abuf, iodata->notifyExtra );
+    PMUTIL_CALL_END("IOManyToOneReader","notify");
     /* FIXME: err? One value is queued, not written, in which case
        we should stall input on this fd */
 
@@ -507,6 +543,7 @@ static int IOManyToOneReader( int fd, void *extra )
        IOHANDLER_ERR_CLOSED
        IOHANDLER_ERR_MEM
     */
+    PMUTIL_END("IOManyToOneReader");
     return n;
 }
 
@@ -566,6 +603,46 @@ static int IOManyToOneNotify( AnnotatedBuffer *abuf, void *extra )
     }
 
     return err;
+}
+/* Return a pointer to the extra data for a notify routine for 
+   a given fd.  Since this is a many to one notify, we look up the
+   data structure associated with a given fd and return that.  This
+   structure is first setup with IOManyToOneNotifySetup, and must be
+   called  before any routine that calls this routine */
+#define MAX_KNOWN_NOTIFY 10
+static int knownNotify = 0;
+typedef struct { int fd; IONotifyData *extra; } FdToNotify;
+static FdToNotify known[MAX_KNOWN_NOTIFY];
+
+static void *IOManyToOneNotifyInit( int fd )
+{
+    int i;
+
+    /* See if this is a known fd.  If so, return the extra data */
+    for (i=0; i<knownNotify; i++) {
+	if (known[i].fd == fd) return known[i].extra;
+    }
+    return 0;
+}
+
+int IOManyToOneNotifySetup( int fd )
+{   
+    IONotifyData *ionotify;
+
+    ionotify = (IONotifyData *)MPIU_Malloc( sizeof(IONotifyData) );
+    if (!ionotify) {
+	return 1;
+    }
+    ionotify->outfd     = fd;
+    ionotify->first     = 0;
+    ionotify->firstFree = 0;
+    ionotify->maxQueue  = MAX_ABUFS;
+
+    /* Create the data for an fd and save it where we can find it later */
+    known[knownNotify].fd      = fd;
+    known[knownNotify++].extra = ionotify;
+
+    return 0;
 }
 
 static int IOManyToOneConsume( AnnotatedBuffer *abuf, void *extra )
@@ -647,6 +724,7 @@ static int IOManyToOneWriter( int fd, void *extra )
 
 /* ------------------------------------------------------------------------- */
 /* 
+   FIXME:
    A prototypical annotation function.  This adds the
    specified label (stored in the structure pointed at by the extra data)
    after every newline (but only after a character has been seen)
@@ -655,8 +733,9 @@ static int IOManyToOneWriter( int fd, void *extra )
    FIXME: Still needs an initialization function that 
    can set up the extra data.
 */
+#define MAXLEADER 64
 typedef struct {
-    char *leader;
+    char leader[MAXLEADER];
     int  leaderlen;
     int  newlineFlag;
 } IOAnnotateData;
@@ -714,54 +793,101 @@ static int IOManyToOneAnnotate( AnnotatedBuffer *abuf, void *extra )
 
     return 0;
 }
-
-/* Finally, here is the initialization routine */
-#define MAX_CBUF_SIZE 1024
-int IOSetupOutHandler( IOSpec *ios, int fdSource, int fdDest, char *leader )
+/* Given a leader string (which may be null) to prefix each line,
+   return a pointer to the "extra data" to pass to the IOManyToOneAnnotate
+   routine.  Return null if an error */
+static void *IOManyToOneAnnotateInit( const char *leader )
 {
-    IOOutManyToOne *iosdata;
-    
-    iosdata = (IOOutManyToOne *)MPIU_Malloc( sizeof( IOOutManyToOne ) );
-    /* FIXME: test iosdata */
-
-    iosdata->abuf.cbuf.first     = 0;
-    iosdata->abuf.cbuf.firstFree = 0;
-    iosdata->abuf.cbuf.nleft     = MAX_CBUF_SIZE;
-    iosdata->abuf.cbuf.bufSize   = MAX_CBUF_SIZE;
-    iosdata->abuf.cbuf.buf       = (char *)MPIU_Malloc( MAX_CBUF_SIZE );
-    /* FIXME: test buf */
-
-    iosdata->abuf.lastSeen       = 0;
-
-    iosdata->annotate = IOManyToOneAnnotate;
-    iosdata->annotateExtra = 0;   /* FIXME */
-
-    iosdata->notify   = IOManyToOneNotify;
-    iosdata->notifyExtra = 0;     /* FIXME */
-
-#if 0    
-    iosdata->outfd     = fdDest;
-    iosdata->outleader = 1;
+    IOAnnotateData *ioannotate;
+    ioannotate = (IOAnnotateData *)MPIU_Malloc( sizeof(IOAnnotateData ) );
+    if (!ioannotate) return 0;
     if (*leader) {
-	iosdata->leaderlen = strlen( leader );
-	if (iosdata->leaderlen > MAXLEADER) {
-	    /* FIXME: error in leader */
-	    ;
+	ioannotate->leaderlen = strlen( leader );
+	if (ioannotate->leaderlen > MAXLEADER) {
+	    MPIU_Free( ioannotate );
+	    return 0;
 	}
 	else {
-	    MPIU_Strncpy( iosdata->leader, leader, MAXLEADER );
+	    MPIU_Strncpy( ioannotate->leader, leader, MAXLEADER );
 	}
     }
     else 
-	iosdata->leaderlen = 0;
+	ioannotate->leaderlen = 0;
 
+    return ioannotate;
+}
+/* ------------------------------------------------------------------------- */
+
+/* Finally, here is the initialization routine */
+#define MAX_CBUF_SIZE 1024
+/* Setup a handler for data from fdSouce to fdDest, prepending
+   leader (if non-null) to each line.  
+   Initialize ios with this information
+   return 0 if ok; non-zero on error (typically memory failure)
+   
+   Note that there are 3 functions that must be activated for handling
+   data:
+      ios->handler - Read the data from fdSource.  This may need to
+      activate the following two functions
+          iosdata->annotate - (Optionally) provide annotation of the data
+	  iosdata->notify   - Called to output the data; this may queue
+	  data and may return an indication that the output is full (to 
+	  temporarily turn off reading of input).
+   This is described in more detail at the top of the file.
+*/
+int IOSetupOutHandler( IOSpec *ios, int fdSource, int fdDest, 
+                       const char *leader )
+{
+    IOOutManyToOne *iosdata;
+    IOAnnotateData *ioannotate;
+
+    /* Create the structure */
+    iosdata = (IOOutManyToOne *)MPIU_Malloc( sizeof( IOOutManyToOne ) );
+    if (!iosdata) {
+	return 1;
+    }
+
+    /* Initialize the annotation buffer (abuf) */
+    iosdata->abuf.cbuf.nleft     = MAX_CBUF_SIZE;
+    iosdata->abuf.cbuf.bufSize   = MAX_CBUF_SIZE;
+    iosdata->abuf.cbuf.buf       = (char *)MPIU_Malloc( MAX_CBUF_SIZE );
+    if (!iosdata->abuf.cbuf.buf) {
+	MPIU_Free( iosdata );
+	return 1;
+    }
+    iosdata->abuf.cbuf.first     = iosdata->abuf.cbuf.buf;
+    iosdata->abuf.cbuf.firstFree = iosdata->abuf.cbuf.buf;
+    iosdata->abuf.lastSeen       = 0;
+
+    /* Pick the annotation routine and set the information for the
+       annotation */
+    iosdata->annotate      = IOManyToOneAnnotate;
+    iosdata->annotateExtra = IOManyToOneAnnotateInit( leader );
+    if (!iosdata->annotateExtra) {
+	MPIU_Free( iosdata->abuf.cbuf.buf );
+	MPIU_Free( iosdata );
+	return 1;
+    }
+
+    /* Set the routine to invoke when data is available to write */
+    iosdata->notify        = IOManyToOneNotify;
+    iosdata->notifyExtra   = IOManyToOneNotifyInit( fdDest );
+    if (!iosdata->notifyExtra) {
+	MPIU_Free( iosdata->abuf.cbuf.buf );
+	MPIU_Free( ioannotate );
+	MPIU_Free( iosdata );
+	return 1;
+    }
+
+    /* Finally, set the ios (top-level) data for handling input
+       on this fd */
     ios->isWrite     = 0;   /* Because we are READING the stdout/err
 			       of the process */
     ios->extra_state = (void *)iosdata;
-    ios->handler     = IOHandleStdOut;
+    ios->handler     = IOManyToOneReader;
     ios->fd          = fdSource;
     ios->fdstate     = IO_PENDING; /* We always want to read from this process */
-#endif
+
     return 0;
 }
 
@@ -795,7 +921,6 @@ int IOSetupOutHandler( IOSpec *ios, int fdSource, int fdDest, char *leader )
  * file.
  */
 #define MAXCHARBUF 1024
-#define MAXLEADER  32
 typedef struct {
     char buf[MAXCHARBUF];
     int  curlen;
@@ -845,21 +970,26 @@ static int IOHandleStdOut( int fd, void *extra )
 
 /* FIXME: io handler for stdin */
 /* Call this to read from fdSource and write to fdDest.  Prepend
-   "leader" to all output. */
-int IOSetupOutSimple( IOSpec *ios, int fdSource, int fdDest, char *leader )
+   "leader" to all output. Return 0 on success, non-zero on failure. 
+   Initialize ios with information on the handler. 
+*/
+int IOSetupOutSimple( IOSpec *ios, int fdSource, int fdDest, 
+		      const char *leader )
 {
     IOOutData *iosdata;
     
     iosdata = (IOOutData *)MPIU_Malloc( sizeof( IOOutData ) );
-    /* FIXME: test iosdata */
+    if (!iosdata) {
+	return 1;
+    }
     iosdata->curlen    = 0;
     iosdata->outfd     = fdDest;
     iosdata->outleader = 1;
     if (*leader) {
 	iosdata->leaderlen = strlen( leader );
 	if (iosdata->leaderlen > MAXLEADER) {
-	    /* FIXME: error in leader */
-	    ;
+	    /* Leader is too long */
+	    return 2;
 	}
 	else {
 	    MPIU_Strncpy( iosdata->leader, leader, MAXLEADER );
@@ -878,3 +1008,24 @@ int IOSetupOutSimple( IOSpec *ios, int fdSource, int fdDest, char *leader )
     return 0;
 }
 
+/* FIXME: Figure out where this goes.  Is it a general purpose utility? */
+/*
+ * By default, UNIX propagates fds to the children.  This can cause 
+ * difficult-to-find problems if *any* module does a fork or a fork and exec.
+ * To avoid problems with the exec part of this, fd's can be marked as
+ * close-on-exec.  This code may be used to so mark and fd; it returns
+ * zero on success; errno is set for an fcntl error otherwise.
+ */
+#include <fcntl.h>
+int MPIU_CloseFDonExec( int fd )
+{
+    int fcntl_flags, rc;
+
+    fcntl_flags = fcntl( fd, F_GETFD );
+    if (fcntl_flags < 0) return fcntl_flags;
+    
+    fcntl_flags |= FD_CLOEXEC;
+    rc = fcntl( fd, F_SETFD, fcntl_flags );
+    
+    return rc;
+}

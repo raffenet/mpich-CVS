@@ -47,8 +47,16 @@
 /* ----------------------------------------------------------------------- */
 /* ProcessState                                                            */
 /* ----------------------------------------------------------------------- */
-typedef enum { UNINITIALIZED=-1, 
-	       UNKNOWN, STARTING, ALIVE, COMMUNICATING, FINALIZED, EXITING, GONE } 
+typedef enum { UNINITIALIZED=-1, /* Before process created */
+	       /*UNKNOWN,*/        /* Process started but in unkown state */
+	       /*STARTING,*/       /* Process is starting */
+	       ALIVE,          /* Process is (expected to be) alive */
+	       COMMUNICATING,  /* Process is alive and using PMI */
+	       FINALIZED,      /* Process is alive but has indicated that
+				  it has called PMI_Finalize */
+	       /*EXITING, */       /* Process expected to exit */
+	       GONE            /* Process has exited and its status collected */
+               } 
     client_state_t;
 
 /* Record the return value from each process */
@@ -60,8 +68,20 @@ typedef enum { NORMAL,     /* Normal exit (possibly with nonzero status) */
 	       KILLED      /* Process was killed by mpiexec */ 
              } exit_state_t;
 
+/* IO Handlers */
 typedef int IOHandler( int, void * );
-typedef enum { IO_PENDING, IO_QUIET, IO_FINISHED } FDState;
+/* IOHandleLoop returns a reason for its exit */
+typedef enum { IO_OK,           /* IO Handler executed ok */
+	       IO_NONE_ACTIVE,  /* No fd's active (not just quiet) */
+	       IO_EINTR,        /* Exited due to interrupted system call */
+	       IO_TIMEOUT,      /* Global timeout reached */
+	       IO_POLL_TIMEOUT, /* poll/select timed out */
+	       IO_SYSERR        /* A (probably) fatal error in a system call */
+} IOExitReason;
+
+typedef enum { IO_PENDING, 
+	       IO_QUIET, 
+	       IO_FINISHED } FDState;
 typedef struct {
     int       fd;          /* fd for this IO */
     int       isWrite;     /* true if writing, else reading. No bidirection (?) */
@@ -186,8 +206,8 @@ void InitTimeout( int seconds );
 int GetRemainingTime( void );
 
 /* IO Handlers */
-int IOSetupOutHandler( IOSpec *, int, int, char * );
-int IOHandleLoop( ProcessTable *, int * );
+int IOSetupOutHandler( IOSpec *, int, int, const char * );
+int IOHandleLoop( ProcessTable *, IOExitReason * );
 void IOHandlersCloseAll( ProcessState *, int );
 void GetPrefixFromEnv( int, char [], int, int, int );
 

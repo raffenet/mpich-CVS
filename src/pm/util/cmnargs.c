@@ -5,6 +5,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/* OWNER=gropp */
 #include "pmutilconf.h"
 #include "pmutil.h"
 #include <stdio.h>

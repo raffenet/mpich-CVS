@@ -62,6 +62,7 @@ static int killOnAbort = 0;
 
 static void setup_sigchild( void );
 static int SetProcessExitStatus( ProcessTable *, pid_t, int );
+static void CleanupProcessExitStatus( ProcessTable * );
 
 /* Call this routine to initialize the sigchild and set the process table
    pointer */
@@ -74,6 +75,8 @@ void initPtableForSigchild( ProcessTable *t )
 /* inHandler and skipHandler are used to control the SIGCHLD handler and
    to avoid (or at least narrow) race conditions */
 static volatile int inHandler = 0;
+/* skip handler is set if we are planning to wait for processes with the
+   "wait" system call in a separate routine.  */
 static volatile int skipHandler = 0;
 /* nExited is used to keep track of how many processes have exited and
    to set the exitOrder field */
@@ -91,11 +94,18 @@ static void handle_sigchild( int sig )
 
     /* Set a flag to indicate that we're in the handler, and check 
        to see if we should ignore the signal */
+    if (inHandler) return;
     inHandler = 1;
+
     if (skipHandler) {
-	/* There is a small race condition here.  This should really
-	   use a test-and-set primative. */
+	/* Someone else wants to wait on the processes, so we
+	   return now. */
 	inHandler = 0;
+#ifndef SA_RESETHAND
+	/* If we can't clear the "reset handler bit", we must 
+	   re-install the handler here */
+	setup_sigchild();
+#endif
 	return;
     }
 
@@ -105,11 +115,17 @@ static void handle_sigchild( int sig )
 	DBG_FFLUSH( stderr );
     }
 
+    /* Since signals may be coallesced, we process all children that
+       have exited */
     while (1) {
 	/* Find out about any children that have exited */
 	pid = waitpid( (pid_t)(-1), &prog_stat, WNOHANG );
     
 	if (pid <= 0) {
+	    /* Note that it may not be an error if no child 
+	       found, depending on various race conditions.  
+	       Thus, we allow this case to happen without 
+	       generating an error message */
 	    /* Generate a debug message if we enter the handler but 
 	       do not find a child */
 	    if (debug && !foundChild) {
@@ -129,6 +145,11 @@ static void handle_sigchild( int sig )
 	   was not found */
 	SetProcessExitStatus( ptable, pid, prog_stat );
     }
+#ifndef SA_RESETHAND
+    /* If we can't clear the "reset handler bit", we must 
+       re-install the handler here */
+    setup_sigchild();
+#endif
     inHandler = 0;
 }
 
@@ -161,9 +182,13 @@ static void setup_sigchild( void )
 static void setup_sigchild( void )
 {
     /* No way to set up sigchld */
+#error "Unknown signal handling!  This routine must set a signal for SIGCHLD"
 }
 #endif
 
+/* Wait for all children to exit, and collect information about their exit
+   status and reason.  Used by programs such as forker/mpiexec2.c to 
+   gather information on all processes before exiting */
 void WaitForChildren( ProcessTable *ptable )
 {
     pid_t pid;
@@ -187,12 +212,21 @@ void WaitForChildren( ProcessTable *ptable )
     }
 }
 
+/*
+  This routine combines the exit status of the processes in ptable and returns 
+  a single status, chosen according to "rule".  The values for rule may be:
+  0 : take the max of exit statuses of each process
+  1 : take the sum of exit statuses
+  otherwise: take the bitwise or of exit statuses
+ */
 int ComputeExitStatus( ProcessTable *ptable, int rule )
 {
     int i, rc, prc;
     
     rc = 0;
     
+    /* Make sure that all processes have their data set */
+    CleanupProcessExitStatus( ptable );
     for (i=0; i<ptable->nProcesses; i++) {
 	if (ptable->table[i].state == GONE) {
 	    prc = ptable->table[i].status.exitStatus;
@@ -213,14 +247,22 @@ int ComputeExitStatus( ProcessTable *ptable, int rule )
 }
 
 
-/* Send a given signal to all processes */
+/* Send a given signal to all processes that are still running */
 void SignalAllProcesses( ProcessTable *ptable, int sig, const char msg[] )
 {
     int   i, rc;
     pid_t pid;
 
     for (i=0; i<=ptable->nProcesses; i++) {
-	/* FIXME - GONE isn't the right test */
+	/* GONE is used for statuses that have exited and for which status
+	   data has been collected.  Thus, any process not in the GONE
+	   state is a candidate for a signal.  Note, however, that some
+	   processes may be in transition, or may already be gone but that
+	   we do not know about yet, so an error return from kill, 
+	   particularly ESRCH (no such process) should be handled with care 
+	   so as to avoid misleading messages.  We explicitly do not
+	   check for a state of KILLED since a process may be catching or
+	   ignoring signals */
 	if (ptable->table[i].state != GONE) {
 	    pid = ptable->table[i].pid;
 	    if (pid > 0) {
@@ -231,10 +273,15 @@ void SignalAllProcesses( ProcessTable *ptable, int sig, const char msg[] )
 		if (rc) {
 		    /* Check for errors */
 		    if (errno != ESRCH) {
-			perror( msg );
+			/* This is an internal error */
+			MPIU_Internal_sys_error_printf( "kill", errno, 
+				"Could not signal process" );
 		    }
 		}
 	    }
+	    /* FIXME: We should not set this state, since we don't know
+	       if the signal was caught or ignored.  Perhaps this needs to 
+	       be a bit in the state that can be combined with others. */
 	    ptable->table[i].state = KILLED;
 	}
     }
@@ -269,11 +316,28 @@ void KillChildren( ProcessTable *ptable )
     SignalAllProcesses( ptable, SIGINT, "Could not kill with SIGINT" );
 
     /* We should wait here to give time for the processes to exit */
+    /* Note that sleep may set SIGALRM and fail to reset it after
+       the sleep completes.  */
     sleep( 1 );
     SignalAllProcesses( ptable, SIGQUIT, "Could not kill with SIGQUIT" );
 
     /* We don't wait on the processes; a separate step handles that */
 }
+
+/* This internal routine is used to record the exit status and reason for
+   a subprocess.  This process is called from within the SIGCHLD signal 
+   handler.  There is a potential race condition here, since the data that
+   this routine needs cannot be set in the ProcessTable until after the
+   fork returns.  If the created process terminates too quickly, this routine
+   may be called before the data is placed in the process table.  We could
+   try to mask off the SIGCHLD signal, but I don't trust that to work 
+   reliably on all systems.  Instead, we provide a fallback that stores
+   unmatched pids and prog_stats in an array which can be checked later.
+*/
+static int nUnexpectedExit = 0;
+typedef struct { pid_t pid; int prog_stat; } ProcessExit;
+#define MAX_UNEXPECTED_PIDS 32
+static ProcessExit UnexpectedPIDs[MAX_UNEXPECTED_PIDS];
 
 static int SetProcessExitStatus( ProcessTable *ptable, 
 				 pid_t pid, int prog_stat )
@@ -295,6 +359,8 @@ static int SetProcessExitStatus( ProcessTable *ptable,
 		DBG_FPRINTF( (stderr, "Found process %d in table in sigchld handler\n", pid) );
 		DBG_FFLUSH( stderr );
 	    }
+	    /* Indicate that the process has exited and that we have
+	       collected the data on it by setting the state to GONE */
 	    ptable->table[i].state             = GONE;
 	    /* Abnormal exit if either rc or sigval is set */
 	    ptable->table[i].status.exitStatus = rc;
@@ -317,12 +383,39 @@ static int SetProcessExitStatus( ProcessTable *ptable,
     }
     if (i == ptable->nProcesses) {
 	/* Did not find the matching pid */
-	;
-	/* FIXME: we could store the pid and status, and use
-	   it to handle the race condition where the process
-	   exits before the table is initialized */
+	if (nUnexpectedExit >= MAX_UNEXPECTED_PIDS) {
+	    /* Internal error */
+	}
+	else {
+	    UnexpectedPIDs[nUnexpectedExit].pid         = pid;
+	    UnexpectedPIDs[nUnexpectedExit++].prog_stat = prog_stat;
+	}
     }
     return 0;
+}
+
+/* For any process that is in the unexpected array, set the process
+   status. This must be called before using the final exit statuses. */
+static void CleanupProcessExitStatus( ProcessTable *ptable )
+{ 
+    int   i, j;
+    pid_t pid;
+    int   prog_stat;
+
+    for (i=0; i<nUnexpectedExit; i++) {
+	pid = UnexpectedPIDs[i].pid;
+	prog_stat = UnexpectedPIDs[i].prog_stat;
+	for (j=0; j<ptable->nProcesses; j++) {
+	    if (ptable->table[j].pid == pid) {
+		/* Call the routine to collect the data since we 
+		   know that the pid is in the table. */
+		SetProcessExitStatus( ptable, pid, prog_stat );
+		break;
+	    }
+	}
+    }
+    /* One way or another, we're done with this table */
+    nUnexpectedExit = 0;
 }
 
 /* Print out the reasons for failure for any processes that did not

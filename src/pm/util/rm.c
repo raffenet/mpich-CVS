@@ -200,7 +200,7 @@ static MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 	    MPIU_Strnapp( machinesfile, "/machines", PATH_MAX );
 	}
 	if (debug) {
-	    DBG_PRINTF( "Attempting to open %s\n", machinesfile );
+	    DBG_PRINTF( ("Attempting to open %s\n", machinesfile) );
 	}
 	fp = fopen( machinesfile, "r" );
 	if (fp) break;  /* Found one */
@@ -238,7 +238,7 @@ static MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 	    break;
 	}
 	if (debug) {
-	    DBG_PRINTF( "line: %s", buf );
+	    DBG_PRINTF( ("line: %s", buf) );
 	}
 	/* Skip comment lines */
 	p = buf;
