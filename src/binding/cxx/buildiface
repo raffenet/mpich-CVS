@@ -1913,13 +1913,15 @@ void operator delete[](void *p) {
     print $OUTFD "\
     }\n";
 
-    print $OUTFD "void Pcontrol( int v, ... )
+    # The MPI-2 specification specifies Pcontrol as taking const int,
+    # not just int, and some C++ compilers will (correctly) require this
+    print $OUTFD "void Pcontrol( const int v, ... )
     {
 	va_list ap;
         va_start(ap,v);\n";
      &printCoverageStart( $OUTFD, "Pcontrol", -1 );
     print $OUTFD "\
-	MPIX_CALL( MPI_Pcontrol( v, ap ) );\n";
+	MPIX_CALL( MPI_Pcontrol( (int)v, ap ) );\n";
      &printCoverageEnd( $OUTFD, "Pcontrol", -1 );
     print $OUTFD "\
     }\n";
