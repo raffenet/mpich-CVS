@@ -10,7 +10,7 @@ static unsigned int GetIP(char *pszIP)
     unsigned int nIP;
     unsigned int a,b,c,d;
     sscanf(pszIP, "%u.%u.%u.%u", &a, &b, &c, &d);
-    //printf("mask: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);
+    /*printf("mask: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);*/
     nIP = (d << 24) | (c << 16) | (b << 8) | a;
     return nIP;
 }
@@ -24,7 +24,7 @@ static unsigned int GetMask(char *pszMask)
     if (strstr(pszMask, "."))
     {
 	sscanf(pszMask, "%u.%u.%u.%u", &a, &b, &c, &d);
-	//printf("mask: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);
+	/*printf("mask: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);*/
 	nMask = (d << 24) | (c << 16) | (b << 8) | a;
     }
     else
