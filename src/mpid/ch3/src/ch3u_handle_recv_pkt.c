@@ -599,4 +599,5 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
     MPIDI_CH3_iRead(vc, rreq);
     
   fn_exit:
+    ;
 }
