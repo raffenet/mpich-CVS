@@ -404,6 +404,10 @@ void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 
 
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Handle_recv_pkt__post_data_receive
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 {
     int dt_contig;
