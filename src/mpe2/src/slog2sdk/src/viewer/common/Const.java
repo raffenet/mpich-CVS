@@ -41,15 +41,15 @@ public class Const
             = new Alias( RenderingHints.VALUE_ANTIALIAS_ON, "on" );
 
     public  static final Alias   COLOR_BLACK
-            = new Alias( Color.BLACK, "black" );
+            = new Alias( Color.black, "black" );
     public  static final Alias   COLOR_DARKGRAY
-            = new Alias( Color.DARK_GRAY, "dark gray" );
+            = new Alias( Color.darkGray, "dark gray" );
     public  static final Alias   COLOR_GRAY
-            = new Alias( Color.GRAY, "gray" );
+            = new Alias( Color.gray, "gray" );
     public  static final Alias   COLOR_LIGHTGRAY
-            = new Alias( Color.LIGHT_GRAY, "light gray" );
+            = new Alias( Color.lightGray, "light gray" );
     public  static final Alias   COLOR_WHITE
-            = new Alias( Color.WHITE, "white" );
+            = new Alias( Color.white, "white" );
 
     public static Alias  parseAntiAliasing( String str_rep )
     {

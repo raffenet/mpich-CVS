@@ -89,7 +89,7 @@ public class CategoryIcon implements Icon
         // Paint middle timeline
         x1 = x ;                       y1 = y + ICON_HALF_HEIGHT;
         x2 = x + ICON_WIDTH - 1;       y2 = y1;
-        g.setColor( Color.RED );
+        g.setColor( Color.red );
         g.drawLine( x1, y1, x2, y2 );
 
         x1 = x + XOFF;                   y1 = y + YOFF;
@@ -101,10 +101,10 @@ public class CategoryIcon implements Icon
 
         // Paint the border
         /*
-        g.setColor( Color.WHITE );
+        g.setColor( Color.white );
         g.drawLine( x1, y1, x1, y2 );     // left
         g.drawLine( x1, y1, x2, y1 );     // top
-        g.setColor( Color.LIGHT_GRAY );
+        g.setColor( Color.lightGray );
         g.drawLine( x2, y1, x2, y2 );     // right
         g.drawLine( x1, y2, x2, y2 );     // bottom
         */
@@ -117,7 +117,7 @@ public class CategoryIcon implements Icon
     {
         int x1, y1, x2, y2, x3, y3;
 
-        g.setColor( Color.BLACK );
+        g.setColor( Color.black );
         g.fillRect( x, y, ICON_WIDTH, ICON_HEIGHT );
 
         g.setColor( color_shown );
@@ -140,7 +140,7 @@ public class CategoryIcon implements Icon
     {
         int x1, y1, x2, y2, x3, y3;
 
-        g.setColor( Color.BLACK );
+        g.setColor( Color.black );
         g.fillRect( x, y, ICON_WIDTH, ICON_HEIGHT );
 
         g.setColor( color_shown );
