@@ -24,6 +24,6 @@ for path in $pathlist ; do
     CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/${path}"
 done
 
-#CPPFLAGS="$CPPFLAGS -I/usr/mellanox/include"
+CPPFLAGS="$CPPFLAGS -I/usr/mellanox/include -I/usr/mellanox/wrap"
 #LDFLAGS="$LDFLAGS -L/usr/mellanox/lib"
 #LIBS="$LIBS -lvapi"

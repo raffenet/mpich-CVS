@@ -44,6 +44,15 @@ extern volatile unsigned int MPIDI_CH3I_progress_completions;
    engine */
 #endif
 
+#if defined(MPICH_SINGLE_THREADED)
+#define MPIDI_CH3_Progress_start()
+#define MPIDI_CH3_Progress_end()
+#endif
+
+int MPIDI_CH3I_Progress(int blocking);
+#define MPIDI_CH3_Progress_test() MPIDI_CH3I_Progress(FALSE)
+#define MPIDI_CH3_Progress_wait() MPIDI_CH3I_Progress(TRUE)
+
 /*
  * Enable optional functionality
  */

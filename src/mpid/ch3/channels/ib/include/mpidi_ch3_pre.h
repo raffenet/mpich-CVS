@@ -25,7 +25,7 @@ MPIDI_CH3I_Process_group_t;
 #define MPIDI_CH3_PKT_DEFS
 #define MPIDI_CH3_PKT_DECL
 
-typedef enum
+typedef enum MPIDI_CH3I_VC_state
 {
     MPIDI_CH3I_VC_STATE_UNCONNECTED,
     MPIDI_CH3I_VC_STATE_CONNECTED,
@@ -33,20 +33,20 @@ typedef enum
 }
 MPIDI_CH3I_VC_state_t;
 
-#define MPIDI_CH3_VC_DECL			\
-struct MPIDI_CH3I_VC				\
-{						\
-    MPIDI_CH3I_Process_group_t * pg;		\
-    int pg_rank;				\
-    struct MPID_Request * sendq_head;		\
-    struct MPID_Request * sendq_tail;		\
-    ibu_t ibu;                                  \
-    struct MPID_Request * send_active;          \
-    struct MPID_Request * recv_active;          \
-    struct MPID_Request * req;                  \
-    MPIDI_CH3I_VC_state_t state;		\
-} ib;
+typedef struct MPIDI_CH3I_VC
+{
+    MPIDI_CH3I_Process_group_t * pg;
+    int pg_rank;
+    struct MPID_Request * sendq_head;
+    struct MPID_Request * sendq_tail;
+    ibu_t ibu;
+    struct MPID_Request * send_active;
+    struct MPID_Request * recv_active;
+    struct MPID_Request * req;
+    MPIDI_CH3I_VC_state_t state;
+} MPIDI_CH3I_VC;
 
+#define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ib;
 
 /*
  * MPIDI_CH3_CA_ENUM (additions to MPIDI_CA_t)

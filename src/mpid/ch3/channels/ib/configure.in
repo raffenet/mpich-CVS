@@ -48,8 +48,8 @@ if test "$ac_cv_search_gethostbyname" != "none required" ; then
 fi
 IB_LIBS="$IB_LIBS -lmtl_common -lvapi -lmpga -lpthread"
 AC_SUBST(IB_LIBS)
-IB_CPPFLAGS="$IB_CPPFLAGS -I/usr/mellanox/include -I/usr/mellanox/wrap"
-AC_SUBST(IB_CPPFLAGS)
+dnl IB_CPPFLAGS="$IB_CPPFLAGS -I/usr/mellanox/include -I/usr/mellanox/wrap"
+dnl AC_SUBST(IB_CPPFLAGS)
 IB_LDFLAGS="$IB_LDFLAGS -L/usr/mellanox/lib"
 AC_SUBST(IB_LDFLAGS)
 

@@ -13,8 +13,9 @@
 #define FUNCNAME MPIDI_CH3_iRead
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * req)
+int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * req)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IREAD);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IREAD);
@@ -26,4 +27,5 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * req)
     ibu_post_readv(vc->ib.ibu, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset, NULL);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
+    return mpi_errno;
 }

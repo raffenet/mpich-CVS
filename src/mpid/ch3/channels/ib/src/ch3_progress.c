@@ -7,21 +7,25 @@
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
 
+#define err_printf printf
+
 volatile unsigned int MPIDI_CH3I_progress_completions = 0;
 
 static inline void handle_read(MPIDI_VC *vc, int nb);
 static inline void handle_written(MPIDI_VC * vc);
 
+#ifndef MPICH_SINGLE_THREADED
 void MPIDI_CH3_Progress_start()
 {
     /* MT - This function is empty for the single-threaded implementation */
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Progress(int is_blocking)
+int MPIDI_CH3I_Progress(int is_blocking)
 {
     ibu_wait_t out;
     int rc;
@@ -69,14 +73,17 @@ int MPIDI_CH3_Progress(int is_blocking)
 #define FUNCNAME MPIDI_CH3_Progress_poke
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_Progress_poke()
+int MPIDI_CH3_Progress_poke()
 {
+    int mpi_errno;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
-    MPIDI_CH3_Progress(0);
+    mpi_errno = MPIDI_CH3I_Progress(0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
+    return mpi_errno;
 }
 
+#ifndef MPICH_SINGLE_THREADED
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_end
 #undef FCNAME
@@ -85,6 +92,7 @@ void MPIDI_CH3_Progress_end()
 {
     /* MT - This function is empty for the single-threaded implementation */
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress_init

@@ -61,8 +61,9 @@
 #define FUNCNAME MPIDI_CH3_iStartMsgv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
+int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request **sreq_ptr)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPID_Request * sreq = NULL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
@@ -135,9 +136,10 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	create_request(sreq, iov, n_iov, 0, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
-    
+
+    *sreq_ptr = sreq;
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
-    return sreq;
+    return mpi_errno;
 }
 

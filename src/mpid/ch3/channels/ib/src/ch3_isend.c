@@ -25,18 +25,19 @@
 #define FUNCNAME MPIDI_CH3_iSend
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
+int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz_t pkt_sz)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
 
     MPIU_DBG_PRINTF(("ch3_isend\n"));
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
+    assert(pkt_sz <= sizeof(MPIDI_CH3_Pkt_t));
 
     /* The IB implementation uses a fixed length header, the size of which is the maximum of all possible packet headers */
-    hdr_sz = sizeof(MPIDI_CH3_Pkt_t);
+    pkt_sz = sizeof(MPIDI_CH3_Pkt_t);
     
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {
@@ -47,12 +48,12 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 	/* MT: need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
 	   also try to write */
 	
-	MPIU_DBG_PRINTF(("ibu_post_write(%d bytes)\n", hdr_sz));
-	nb = ibu_write(vc->ib.ibu, hdr, hdr_sz);
+	MPIU_DBG_PRINTF(("ibu_post_write(%d bytes)\n", pkt_sz));
+	nb = ibu_write(vc->ib.ibu, pkt, pkt_sz);
 	
 	MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
 	
-	if (nb == hdr_sz)
+	if (nb == pkt_sz)
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
 	    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
@@ -64,17 +65,17 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 		MPIDI_CH3I_SendQ_dequeue(vc);
 	    }
 	}
-	else if (nb < hdr_sz)
+	else if (nb < pkt_sz)
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "partial write, enqueuing at head"));
-	    update_request(sreq, hdr, hdr_sz, nb);
+	    update_request(sreq, pkt, pkt_sz, nb);
 	    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 	    vc->ib.send_active = sreq;
 	}
 	else if (nb == 0)
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
-	    update_request(sreq, hdr, hdr_sz, 0);
+	    update_request(sreq, pkt, pkt_sz, 0);
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	    vc->ib.send_active = sreq;
 	}
@@ -91,11 +92,12 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
     else
     {
 	MPIDI_DBG_PRINTF((55, FCNAME, "send queue not empty, enqueuing"));
-	update_request(sreq, hdr, hdr_sz, 0);
+	update_request(sreq, pkt, pkt_sz, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
     
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND);
+    return mpi_errno;
 }
 

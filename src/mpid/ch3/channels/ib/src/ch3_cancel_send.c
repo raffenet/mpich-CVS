@@ -10,8 +10,9 @@
 #define FUNCNAME MPIDI_CH3_iSend
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Cancel_send(MPIDI_VC * vc, MPID_Request * sreq)
+int MPIDI_CH3_Cancel_send(MPIDI_VC * vc, MPID_Request * sreq, int *cancelled)
 {
-    return FALSE;
+    *cancelled = FALSE;
+    return MPI_SUCCESS;
 }
 

@@ -8,6 +8,8 @@
 #include "ibu.h"
 #include <stdio.h>
 
+#define err_printf printf
+
 struct ibuBlockAllocator_struct
 {
     void **pNextFree;
@@ -308,7 +310,7 @@ static VAPI_ret_t createQP(ibu_t ibu, ibu_set_t set)
     qp_init_attr.cap.max_oust_wr_sq = 10000; /*DEFAULT_MAX_WQE;*/
     qp_init_attr.cap.max_sg_size_rq = 8;
     qp_init_attr.cap.max_sg_size_sq = 8;
-    qp_init_attr.pd_hndl = IBU_Process.ptag;
+    qp_init_attr.pd_hndl = IBU_Process.pd_handle;
     qp_init_attr.rdd_hndl = 0;
     qp_init_attr.rq_cq_hndl = set;
     qp_init_attr.sq_cq_hndl = set;
@@ -492,12 +494,12 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
     work_req.opcode = VAPI_RECEIVE;
-    work_req.comp_type = VAPI_SIGNALLED;
+    work_req.comp_type = VAPI_SIGNALED;
     work_req.sg_lst_p = &data;
     work_req.sg_lst_len = 1;
     data.addr = mem_ptr;
     data.len = IBU_PACKET_SIZE;
-    data.l_key = ibu->lkey;
+    data.lkey = ibu->lkey;
 
     MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_rr"));
 
@@ -542,12 +544,12 @@ static int ibui_post_receive(ibu_t ibu)
     ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
     work_req.opcode = VAPI_RECEIVE;
-    work_req.comp_type = VAPI_SIGNALLED;
+    work_req.comp_type = VAPI_SIGNALED;
     work_req.sg_lst_p = &data;
     work_req.sg_lst_len = 1;
     data.addr = mem_ptr;
     data.len = IBU_PACKET_SIZE;
-    data.l_key = ibu->lkey;
+    data.lkey = ibu->lkey;
 
     MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_rr"));
 
@@ -583,7 +585,7 @@ static int ibui_post_ack_write(ibu_t ibu)
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_ACK_WRITE);
 
     work_req.opcode = VAPI_SEND_WITH_IMM;
-    work_req.comp_type = VAPI_SIGNALLED;
+    work_req.comp_type = VAPI_SIGNALED;
     work_req.sg_lst_p = NULL;
     work_req.sg_lst_len = 0;
     work_req.imm_data = ibu->nUnacked;
@@ -608,7 +610,7 @@ static int ibui_post_ack_write(ibu_t ibu)
     if (status != VAPI_OK)
     {
 	MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
-	err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
+	err_printf("%s: Error: failed to post ib send, status = %d\n", FCNAME, status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
 	return status;
     }
@@ -665,10 +667,10 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 
 	data.len = length;
 	data.addr = mem_ptr;
-	data.l_key = ibu->lkey;
+	data.lkey = ibu->lkey;
 	
 	work_req.opcode = VAPI_SEND;
-	work_req.comp_type = VAPI_SIGNALLED;
+	work_req.comp_type = VAPI_SIGNALED;
 	work_req.sg_lst_p = &data;
 	work_req.sg_lst_len = 1;
 	work_req.imm_data = 0;
@@ -695,7 +697,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	if (status != VAPI_OK)
 	{
 	    MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
-	    err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
+	    err_printf("%s: Error: failed to post ib send, status = %d\n", FCNAME, status);
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return -1;
 	}
@@ -778,12 +780,12 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
 	g_cur_write_stack_index++;
 	
-	data.length = msg_size;
-	data.va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
-	data.l_key = ibu->lkey;
+	data.len = msg_size;
+	data.addr = mem_ptr;
+	data.lkey = ibu->lkey;
 	
 	work_req.opcode = VAPI_SEND;
-	work_req.comp_type = VAPI_SIGNALLED;
+	work_req.comp_type = VAPI_SIGNALED;
 	work_req.sg_lst_p = &data;
 	work_req.sg_lst_len = 1;
 	work_req.imm_data = 0;
@@ -810,7 +812,7 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	if (status != VAPI_OK)
 	{
 	    MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
-	    err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
+	    err_printf("%s: Error: failed to post ib send, status = %d\n", FCNAME, status);
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return -1;
 	}
@@ -1220,14 +1222,14 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_SUCCESS;
 	    break;
-	case VAPI_SEND_DATA_RCV:
+	case VAPI_RECEIVE:
 	    if (completion_data.imm_data_valid)
 	    {
 		ibu->nAvailRemote += completion_data.imm_data;
 		MPIDI_DBG_PRINTF((60, FCNAME, "%d packets acked, nAvailRemote now = %d", completion_data.immediate_data, ibu->nAvailRemote));
 		ibuBlockFree(ibu->allocator, mem_ptr);
 		ibui_post_receive_unacked(ibu);
-		assert(completion_data.bytes_num == 0); /* check this after the printfs to see if the immediate data is correct */
+		assert(completion_data.byte_len == 0); /* check this after the printfs to see if the immediate data is correct */
 		break;
 	    }
 	    num_bytes = completion_data.byte_len;
