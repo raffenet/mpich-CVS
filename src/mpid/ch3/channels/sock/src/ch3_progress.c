@@ -187,8 +187,8 @@ int MPIDI_CH3_Progress(int is_blocking)
 			int mpi_errno;
 
 			MPIDI_DBG_Print_packet(&conn->pkt);
-			mpi_errno = MPIR_Err_create_code(MPI_ERR_INTERN, "**ch3|sock|badpacket", "**ch3|sock|badpacket %d",
-							 conn->pkt.type);
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_INTERN,
+							 "**ch3|sock|badpacket", "**ch3|sock|badpacket %d", conn->pkt.type);
 			MPID_Abort(NULL, mpi_errno);
 		    }
 		}
@@ -282,8 +282,8 @@ int MPIDI_CH3_Progress(int is_blocking)
 		{
 		    int mpi_errno;
 
-		    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|connfailed", "**ch3|sock|connfailed %d %d",
-						     /* FIXME: pgid */ -1, conn->vc->sc.pg_rank);
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|sock|connfailed",
+						     "**ch3|sock|connfailed %d %d", /* FIXME: pgid */ -1, conn->vc->sc.pg_rank);
 		    MPID_Abort(NULL, mpi_errno);
 
 		}
@@ -391,7 +391,7 @@ int MPIDI_CH3I_Progress_init()
     rc = sock_init();
     if (rc != SOCK_SUCCESS)
     {
-	mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(rc);
+	mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(FCNAME, rc);
 	MPID_Abort(NULL, mpi_errno);
 	goto fn_exit;
     }
@@ -400,7 +400,7 @@ int MPIDI_CH3I_Progress_init()
     rc = sock_create_set(&sock_set);
     if (rc != SOCK_SUCCESS)
     {
-	mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(rc);
+	mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(FCNAME, rc);
 	MPID_Abort(NULL, mpi_errno);
 	goto fn_exit;
     }
@@ -416,7 +416,7 @@ int MPIDI_CH3I_Progress_init()
     rc = sock_listen(sock_set, listener_conn, &listener_port, &sock);
     if (rc != SOCK_SUCCESS)
     {
-	mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(rc);
+	mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(FCNAME, rc);
 	MPID_Abort(NULL, mpi_errno);
 	goto fn_exit;
     }
@@ -580,7 +580,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
     if (temp == NULL)
     {
 	/*MPIDI_err_printf("GetHostAndPort", "MPIU_Strdup failed\n");*/
-	return MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|strdup", 0);
+	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|sock|strdup", 0);
     }
     /* move to the host part */
     token = strtok(temp, ":");
@@ -588,7 +588,8 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
     {
 	MPIU_Free(temp);
 	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|badbuscard", "**ch3|sock|badbuscard %s", business_card);
+	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|sock|badbuscard",
+				    "**ch3|sock|badbuscard %s", business_card);
     }
     /*strcpy(host, token);*/
     /* move to the ip part */
@@ -597,7 +598,8 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
     {
 	MPIU_Free(temp);
 	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|badbuscard", "**ch3|sock|badbuscard %s", business_card);
+	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|sock|badbuscard",
+				    "**ch3|sock|badbuscard %s", business_card);
     }
     MPIU_Strncpy(host, token, MAXHOSTNAMELEN); /* use the ip string instead of the hostname, it's more reliable */
     /* move to the port part */
@@ -606,7 +608,8 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
     {
 	MPIU_Free(temp);
 	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|badbuscard", "**ch3|sock|badbuscard %s", business_card);
+	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|sock|badbuscard",
+				    "**ch3|sock|badbuscard %s", business_card);
     }
     *port = atoi(token);
     MPIU_Free(temp);
@@ -671,17 +674,17 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     {
 	if (rc == SOCK_ERR_HOST_LOOKUP)
 	{ 
-	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|hostlookup", "**ch3|sock|hostlookup %d %d %s",
-					     /* FIXME: pgid*/ -1, conn->vc->sc.pg_rank, val);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|sock|hostlookup",
+					     "**ch3|sock|hostlookup %d %d %s", /* FIXME: pgid*/ -1, conn->vc->sc.pg_rank, val);
 	}
 	else if (rc == SOCK_ERR_CONN_REFUSED)
 	{ 
-	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|connrefused", "**ch3|sock|connrefused %d %d %s",
-					     /* FIXME: pgid */ -1, conn->vc->sc.pg_rank, val);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|sock|connrefused",
+					     "**ch3|sock|connrefused %d %d %s", /* FIXME: pgid */ -1, conn->vc->sc.pg_rank, val);
 	}
 	else
 	{
-	    mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(rc);
+	    mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(FCNAME, rc);
 	}
 
 	MPID_Abort(NULL, mpi_errno);
@@ -753,7 +756,7 @@ static inline MPIDI_CH3I_Connection_t * connection_alloc(void)
     conn = MPIU_Malloc(sizeof(MPIDI_CH3I_Connection_t));
     if (conn == NULL)
     {
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**ch3|sock|connallocfailed", 0 );
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|sock|connallocfailed", 0);
 	MPID_Abort(NULL, mpi_errno);
     }
 
@@ -856,7 +859,7 @@ static void connection_send_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno)
 
     MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_SEND_FAIL);
 
-    mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(sock_errno);
+    mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(FCNAME, sock_errno);
 
 #   if 0
     {
@@ -893,7 +896,7 @@ static void connection_recv_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno)
 
     MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_RECV_FAIL);
 
-    mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(sock_errno);
+    mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(FCNAME, sock_errno);
     MPID_Abort(NULL, mpi_errno);
     
     MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_RECV_FAIL);
