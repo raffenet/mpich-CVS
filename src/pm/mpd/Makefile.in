@@ -118,7 +118,7 @@ mpich2-mpdroot: mpich2-mpdroot.o
 	/bin/rm -f mpich2-mpdroot.o
 
 mpich2-mpdroot.o: ${srcdir}/mpdroot.c ${srcdir}/mpdroot.h mpdconf.h
-	/bin/cp $< mpich2-mpdroot.c
+	/bin/cp ${srcdir}/mpdroot.c mpich2-mpdroot.c
 	${C_COMPILE} -c -DBINDIR=\"${bindir}/\" mpich2-mpdroot.c
 	/bin/rm -f mpich2-mpdroot.c
 
