@@ -14,26 +14,22 @@ To build MPICH2 with the TCP channel, do the following:
     cd mpich2-<SNAPSHOT-DATE>
     ./configure
     make
-    cd src/pmi/impls/mpd
-    ./configure --prefix=/<ABSOLULTE_PATH_TO>/mpich2-<SNAPSHOT-DATE>
-    make
-    make install
-    cd ../../../..
 
-You now have a complete installation.  Example and test programs (both
+You should now have a complete build.  (make install does not work
+yet, so please do not attempt it.)  Example and test programs (both
 source and executables) can be found in ./examples and
 ./test/mpi/basic, respectively.  To run any of these programs, you
-will needed to start MPD.
+will need to start MPD.
 
    echo "password=<YOUR_MPD_PASSWORD_HERE>" >~/.mpd.conf
    chmod 600 ~/.mpd.conf
    ./bin/mpd &
 
 Should you wish to set up a MPD ring across multiple machines, more
-advanced instructions for MPD can be found in
-./src/pmi/impls/mpd/README.
+advanced instructions for MPD can be found in ./src/pm/mpd/README.
 
-Then, to run the hello world program, execute the following:
+Once you have MPD running, you may run the hello world program as
+follows.
 
     cd examples
-    ../bin/mpdrun -np 2 hellow
+    ../bin/mpiexec -np 2 hellow
