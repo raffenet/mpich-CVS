@@ -1,6 +1,8 @@
-LDADD = -L ../../../lib 
+INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
+LDADD = -L ../../../lib
+DEPADD = ../../../lib/lib${MPILIBNAME}.a
+
 self_SOURCES = self.c
-DEPADD = ../../../lib/libmpich.a
 simple_SOURCES = simple.c
 sendrecv_SOURCES = sendrecv.c
 srtest_SOURCES = srtest.c
@@ -8,5 +10,3 @@ wtime_SOURCES = wtime.c
 netpipe_SOURCES = netmpi.c GetOpt.c
 patterns_SOURCES = patterns.c
 
-INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
-DEPADD = ../../../lib/libmpich.a

@@ -1,8 +1,9 @@
+INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include \
+	   -I${srcdir}/../include
 LDADD = -L ../../../lib
-DEPADD = ../../../lib/libmpich.a
+DEPADD = ../../../lib/lib${MPILIBNAME}.a
+
 glpid_SOURCES = glpid.c
 grouptest_SOURCES = grouptest.c
 grouptest2_SOURCES = grouptest2.c
 groupcreate_SOURCES = groupcreate.c
-INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include \
-	 -I${srcdir}/../include
