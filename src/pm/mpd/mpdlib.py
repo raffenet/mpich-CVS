@@ -96,12 +96,11 @@ def mpd_uncaught_except_tb(arg1,arg2,arg3):
         errstr += '  File "%s", line %i, in %s\n    %s\n'%line
     errstr += "%s: %s\n"%(arg1,arg2)
     print errstr
-    syslog(LOG_ERR,errstr)
-
+    syslog(LOG_ERR, errstr)
 
 def mpd_raise(errmsg):
     raise_msg = errmsg + '\n    traceback: %s' % (mpd_get_tb()[1:])
-    syslog(raise_msg)
+    syslog(LOG_ERR, raise_msg)
     raise mpdError, raise_msg
 
 def mpd_print_non_mpd_exception(msg):
