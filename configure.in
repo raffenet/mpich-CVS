@@ -552,16 +552,6 @@ elif test ! -x $use_top_srcdir/src/pm/$pm_name/configure ; then
 else
     subsystems="$subsystems src/pm/$pm_name"
 fi
-dnl check python version
-if test "$with_pm" = "mpd" ; then
-    changequote(,)dnl
-    py_version=`python -c "import sys, string;print int(string.split(string.split(sys.version,' ')[0],'.')[0])"`
-    py_subversion=`python -c "import sys, string;print int(string.split(string.split(sys.version,' ')[0],'.')[1])"`
-    changequote([,])dnl
-    if test "$py_version" -lt "2" -o "$py_version" -eq "2" -a "$py_subversion" -lt "2" ; then
-        AC_MSG_ERROR([Python version 2.2 or greater required; version ${py_version}.${py_subversion} found]) 
-    fi	       
-fi
 AC_SUBST(pm_name)
 dnl
 dnl The recommended order for items in a configure.in file is
