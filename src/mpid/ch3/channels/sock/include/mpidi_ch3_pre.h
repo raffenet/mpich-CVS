@@ -79,11 +79,8 @@ struct MPIDI_CH3I_VC				\
 
 /*
  * MPIDI_CH3_CA_ENUM (additions to MPIDI_CA_t)
- *
- * MPIDI_CH3I_CA_HANDLE_PKT - The completion of a packet request (send or receive) needs to be handled.
  */
 #define MPIDI_CH3_CA_ENUM			\
-MPIDI_CH3I_CA_HANDLE_PKT,			\
 MPIDI_CH3I_CA_END_SOCK_CHANNEL,
 
 
