@@ -57,7 +57,7 @@ optinstall_LIB = lib/libp${MPILIBNAME}.a
 optinstall_SHLIB = lib/lib${MPILIBNAME}.so
 # Some of the subsidiary packages may need to be installed.  This target will
 # invoke their install targets as part of the installation process
-INSTALL_SUBDIRS = src/pm/@pm_name@
+INSTALL_SUBDIRS = src/pm/@pm_name@ @bindings_dirs@
 #install_DOC = 
 #install_HTML = 
 #install_MAN = 
