@@ -79,7 +79,14 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
 		    }
 		}
 		info_keyval_sizes[i] = icount;
-		info_keyval_vectors[i] = (PMI_keyval_t*) MPIU_Malloc(icount * sizeof(PMI_keyval_t));
+		if (icount > 0)
+		{
+		    info_keyval_vectors[i] = (PMI_keyval_t*) MPIU_Malloc(icount * sizeof(PMI_keyval_t));
+		}
+		else
+		{
+		    info_keyval_vectors[i] = NULL;
+		}
 		iter = info_ptrs[i];
 		for (j=0; j<icount; j++)
 		{
