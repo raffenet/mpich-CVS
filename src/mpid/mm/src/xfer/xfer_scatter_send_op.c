@@ -29,7 +29,7 @@ int xfer_scatter_send_op(MPID_Request *request_ptr, const void *buf, int count, 
        Either the first request, allocated by scatter_init,
        will be unused or we will allocate a new request at
        the end of the list */
-    if (!request_ptr->mm.op_valid)
+    if (request_ptr->mm.op_valid == FALSE)
     {
 	pRequest = request_ptr;
     }
@@ -42,7 +42,8 @@ int xfer_scatter_send_op(MPID_Request *request_ptr, const void *buf, int count, 
 	pRequest = pRequest->mm.next_ptr;
     }
 
-    pRequest->mm.op_valid = 1;
+    pRequest->mm.op_valid = TRUE;
+    pRequest->cc_ptr = &request_ptr->cc;
     pRequest->mm.next_ptr = NULL;
 
     /* Save the mpi segment */
@@ -68,6 +69,7 @@ int xfer_scatter_send_op(MPID_Request *request_ptr, const void *buf, int count, 
     }
     
     pCar->request_ptr = request_ptr;
+    pCar->type = MM_UNBOUND_WRITE_CAR;
     pCar->dest = dest;
     pCar->next_ptr = NULL;
 

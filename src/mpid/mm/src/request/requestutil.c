@@ -22,7 +22,7 @@ MPID_Request * mm_request_alloc()
     if (p == NULL)
 	return p;
     p->mm.op_valid = 0;
-    p->busy = 0;
+    p->cc = 0;
     p->mm.write_list = NULL;
     return p;
 }
