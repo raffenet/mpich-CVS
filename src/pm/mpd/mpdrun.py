@@ -87,7 +87,11 @@ def mpdrun():
 
     hostList = []
     if argsFilename:
-        argsFile = open(argsFilename,'r')
+        try:
+            argsFile = open(argsFilename,'r')
+        except:
+            print 'could not open job specification file %s' % (argsFilename)
+            exit(-1)
         args = argsFile.read()
 	if delArgsFile:
 	    unlink(argsFilename)
