@@ -45,6 +45,7 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * req)
 	    if (cc == 0)
 	    {
 		MPID_Request_free(req);
+		completion = TRUE;
 	    }
 	    break;
 	}
