@@ -1973,11 +1973,11 @@ if ($write_mpif) {
     # are both like STATUS(ES)_IGNORE
     print MPIFFD "       INTEGER MPI_ERRCODES_IGNORE(1)\n";
     print MPIFFD "       CHARACTER*1 MPI_ARGVS_NULL(1,1)\n";
+    # Unfortunately, we cannot parameter initialize this.  Further,
+    # there is no default initialization.  We could use a block data item...
     # ARGV_IGNORE can actually be a single blank string, but it needs
     # to be typed as a character array
     print MPIFFD "       CHARACTER*1 MPI_ARGV_NULL(1)\n";
-    # Unfortunately, we cannot parameter initialize this.  Further,
-    # there is no default initialization.  We could use a block data item...
 
     #
     # Error Classes
@@ -2159,6 +2159,12 @@ if ($write_mpif) {
        COMMON /MPIPRIV/ MPI_BOTTOM, MPI_IN_PLACE, MPI_STATUS_IGNORE,          &\n";
     print MPIFFD "     &      MPI_STATUSES_IGNORE, MPI_ERRCODES_IGNORE\n";
     print MPIFFD "       SAVE /MPIPRIV/\n";
+    # Add the common block for the character parameter ARGVS_NULL (Fortran
+    # requires character data in a different common block than 
+    # non-character data)
+    print MPIFFD "\
+       COMMON /MPIPRIVC/ MPI_ARGVS_NULL, MPI_ARGV_NULL
+       SAVE   /MPIPRIVC/\n";
 
     close( MPIFFD );
 } # if write_mpif
@@ -2302,13 +2308,15 @@ void *MPI_F_ARGVS_NULL      = 0;
 
 
     print $OUTFD "
-FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void * e )
+FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, 
+                                         void *e, void *f )
 {
     MPIR_F_MPI_BOTTOM     = a;
     MPIR_F_MPI_IN_PLACE   = b;
     MPI_F_STATUS_IGNORE   = c;
     MPI_F_STATUSES_IGNORE = d;
     MPI_F_ERRCODES_IGNORE = (int *)e;
+    MPI_F_ARGVS_NULL      = f;
 }
 ";
     close ($OUTFD);

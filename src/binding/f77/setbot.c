@@ -36,11 +36,13 @@ void *MPI_F_ARGVS_NULL      = 0;
 #endif
 
 
-FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void * e )
+FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, 
+                                         void *e, void *f )
 {
     MPIR_F_MPI_BOTTOM     = a;
     MPIR_F_MPI_IN_PLACE   = b;
-    MPI_F_STATUS_IGNORE   = d;
+    MPI_F_STATUS_IGNORE   = c;
     MPI_F_STATUSES_IGNORE = d;
     MPI_F_ERRCODES_IGNORE = (int *)e;
+    MPI_F_ARGVS_NULL      = f;
 }
