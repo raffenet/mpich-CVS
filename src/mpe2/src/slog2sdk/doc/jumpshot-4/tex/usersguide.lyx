@@ -895,11 +895,11 @@ collapsed false
 \begin_inset  Tabular
 <lyxtabular version="3" rows="4" columns="5">
 <features islongtable="true">
-<column alignment="center" valignment="center" leftline="true" width="0(null)">
-<column alignment="center" valignment="top" leftline="true" width="0(null)">
-<column alignment="center" valignment="top" leftline="true" width="0(null)">
-<column alignment="center" valignment="top" leftline="true" width="0(null)">
-<column alignment="center" valignment="top" leftline="true" rightline="true" width="0(null)">
+<column alignment="center" valignment="center" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="0">
 <row topline="true" bottomline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
@@ -1587,9 +1587,9 @@ collapsed false
 \begin_inset  Tabular
 <lyxtabular version="3" rows="8" columns="3">
 <features islongtable="true">
-<column alignment="center" valignment="top" leftline="true" width="0(null)">
-<column alignment="center" valignment="top" leftline="true" rightline="true" width="0(null)">
-<column alignment="center" valignment="top" rightline="true" width="0(null)">
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="0">
+<column alignment="center" valignment="top" rightline="true" width="0">
 <row topline="true" bottomline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
@@ -1967,8 +1967,8 @@ The convertor is generally selected based on the input file's file extension.
  If the text field does not display the default name as expected, hitting
  return key in the Input File Specification field will force an update of
  the Output File Name field with the default name.
- The Logfile Convertor has four major functions, each  associated with a
- button in the lower panel of the window.
+ The Logfile Convertor has five major functions, each is associated with
+ a button in the lower panel of the window.
  They are listed in Table 
 \begin_inset LatexCommand \ref{table:convertor_buttons}
 
@@ -1986,11 +1986,11 @@ collapsed false
 
 
 \begin_inset  Tabular
-<lyxtabular version="3" rows="5" columns="3">
+<lyxtabular version="3" rows="6" columns="3">
 <features islongtable="true">
-<column alignment="center" valignment="top" leftline="true" width="0(null)">
-<column alignment="center" valignment="top" leftline="true" width="0(null)">
-<column alignment="center" valignment="top" leftline="true" rightline="true" width="0(null)">
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="0">
 <row topline="true" bottomline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
@@ -2039,7 +2039,7 @@ Function
 
 \layout Standard
 
-Start Conversion
+Convert
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -2073,7 +2073,7 @@ Start the logfile conversion of the selected convertor
 
 \layout Standard
 
-Stop Conversion
+Stop
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -2093,7 +2093,7 @@ Stop the ongoing logfile conversion of the selected convertor
 
 
 \begin_inset Graphics
-	filename pic/gif2png/Help24.png
+	filename pic/gif2png/About24.png
 	scale 80
 	keepAspectRatio
 
@@ -2107,7 +2107,7 @@ Stop the ongoing logfile conversion of the selected convertor
 
 \layout Standard
 
-Usage of Convertor
+Usage
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -2119,7 +2119,7 @@ Print the usage information of the selected convertor
 \end_inset 
 </cell>
 </row>
-<row topline="true" bottomline="true">
+<row topline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
@@ -2127,7 +2127,7 @@ Print the usage information of the selected convertor
 
 
 \begin_inset Graphics
-	filename pic/gif2png/Home24.png
+	filename pic/gif2png/ConvertCancel24.png
 	scale 80
 	keepAspectRatio
 
@@ -2141,7 +2141,7 @@ Print the usage information of the selected convertor
 
 \layout Standard
 
-Return Home
+Cancel
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -2149,7 +2149,41 @@ Return Home
 
 \layout Standard
 
-Return to the previous component that spawns the Logfile Convertor
+Close the window without doing anything
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/gif2png/ConvertOk24.png
+	scale 80
+	keepAspectRatio
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+OK
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Display the last converted SLOG-2 file and close the window
 \end_inset 
 </cell>
 </row>
@@ -2229,7 +2263,12 @@ Hidden parameters panel of the Logfile Convertor.
 
 \layout Standard
 
-The standard output and error streams of the process are piped to the text
+The logfile conversion process is started by hitting the 
+\emph on 
+Convert
+\emph default 
+ button.
+ The standard output and error streams of the process are piped to the text
  area located in the middle of the window as the process is running.
  The Output File Size field displays the current size of the slog2 file
  as it is being generated.
@@ -2240,8 +2279,11 @@ The standard output and error streams of the process are piped to the text
 \end_inset 
 
 .
- If the logfile conversion fails, the error message will be printed in the
- text area for diagnosis or a bug report.
+ During the conversion, only the 
+\emph on 
+Stop
+\emph default 
+ button is enabled for the case that user wants to stop the ongoing conversion.
 \layout Standard
 
 
@@ -2265,7 +2307,7 @@ centering
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_2b/doc/jumpshot-4/tex/pic/convertor_progress.png
+	filename pic/convertor_progress.png
 	lyxscale 90
 	scale 50
 	keepAspectRatio
@@ -2284,6 +2326,85 @@ centering
 \end_inset 
 
 
+\layout Standard
+
+If the logfile conversion fails, the error message will be printed in the
+ text area for diagnosis or a bug report.
+ As shown in Figure 
+\begin_inset LatexCommand \ref{fig:convertor_done}
+
+\end_inset 
+
+, the 
+\emph on 
+OK
+\emph default 
+ button is enabled only when the logfile conversion is terminated normally
+ and the 
+\emph on 
+STOP
+\emph default 
+ button has not been clicked during the conversion.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\end_inset 
+
+
+\begin_inset Graphics
+	filename pic/convertor_done.png
+	lyxscale 90
+	scale 50
+	keepAspectRatio
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:convertor_done}
+
+\end_inset 
+
+The 
+\emph on 
+OK
+\emph default 
+ button is enabled when the logfile conversion finishes normally, i.e with
+ exit status 0.
+\end_inset 
+
+
+\layout Standard
+
+If 
+\emph on 
+OK
+\emph default 
+ button is clicked, the last converted slog2 file will be used for the subsequen
+t visualization.
+ If 
+\emph on 
+Cancel
+\emph default 
+ button is clicked, the Logfile Convertor dialog will be closed and the
+ control is returned to the Main window as if the Convertor dialog has never
+ been invoked.
 \layout Standard
 
 
@@ -2375,6 +2496,19 @@ S,
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+clearpage
+\end_inset 
+
+
+\layout Standard
+
+
 \begin_inset Float table
 wide false
 collapsed false
@@ -2385,8 +2519,8 @@ collapsed false
 \begin_inset  Tabular
 <lyxtabular version="3" rows="5" columns="4">
 <features islongtable="true">
-<column alignment="center" valignment="top" leftline="true" width="0(null)">
-<column alignment="center" valignment="top" leftline="true" width="0(null)">
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" width="0">
 <column alignment="center" valignment="top" leftline="true" width="2in">
 <column alignment="block" valignment="center" leftline="true" rightline="true" width="2in">
 <row topline="true" bottomline="true">
@@ -2696,6 +2830,19 @@ Figure
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+clearpage
+\end_inset 
+
+
+\layout Standard
+
+
 \begin_inset Float figure
 wide false
 collapsed false
@@ -2743,39 +2890,13 @@ Figure
 
  shows the popup dialog box either when the title icon of column Name is
  pressed or when the right mouse button is clicked somewhere in the column.
- Altogether, there are six different sort orders.
- The first four are various combinations of alphabetical and case-sensitive
- order; for example, 
-\emph on 
-z...a Z...A 
-\emph default 
-refers to a reverse-case-sensitive alphabetical ordering.
- The second-to-last order in the list is called the 
-\emph on 
-Creation Order,
-\emph default 
- which refers to the order in which categories are stored in the slog2 file
- when they are being created.
- The four alphabetical orderings have two hidden sort orders.
- One is called 
-\emph on 
-Preview Order,
-\emph default 
- which puts the preview drawable category before all the real drawable categorie
-s of the same topology.
- The other is 
-\emph on 
-Topo Order,
-\emph default 
- which refers to topological ordering (i.e., arrow is ahead of state).
- The Preview and Topo sort orders can be turned on or off through the Preference
- window as shown in Table 
-\begin_inset LatexCommand \ref{table:preference_legend}
+ Altogether, there are six different sort orders as shown in the figure
+ and they are summarized in Table 
+\begin_inset LatexCommand \ref{table:legend_sort_orders}
 
 \end_inset 
 
 .
- 
 \layout Standard
 
 
@@ -2801,8 +2922,8 @@ centering
 \begin_inset  Tabular
 <lyxtabular version="3" rows="7" columns="2">
 <features islongtable="true">
-<column alignment="center" valignment="top" leftline="true" width="0(null)">
-<column alignment="center" valignment="top" leftline="true" rightline="true" width="0(null)">
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="0">
 <row topline="true" bottomline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
@@ -2955,6 +3076,39 @@ Description of the Sort Order operation menu in the Legend window.
 
 \layout Standard
 
+The first four are various combinations of alphabetical and case-sensitive
+ order; for example, 
+\emph on 
+z...a Z...A 
+\emph default 
+refers to a reverse-case-sensitive alphabetical ordering.
+ The second-to-last order in the list is called the 
+\emph on 
+Creation Order,
+\emph default 
+ which refers to the order in which categories are stored in the slog2 file
+ when they are being created.
+ The four alphabetical orderings have two hidden sort orders.
+ One is called 
+\emph on 
+Preview Order,
+\emph default 
+ which puts the preview drawable category before all the real drawable categorie
+s of the same topology.
+ The other is 
+\emph on 
+Topo Order,
+\emph default 
+ which refers to topological ordering (i.e., arrow is ahead of state).
+ The Preview and Topo sort orders can be turned on or off through the Preference
+ window in Table 
+\begin_inset LatexCommand \ref{table:preference_legend}
+
+\end_inset 
+
+.
+\layout Standard
+
 
 \begin_inset Float figure
 wide false
@@ -3030,6 +3184,19 @@ Figure
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+clearpage
+\end_inset 
+
+
+\layout Standard
+
+
 \begin_inset Float table
 wide false
 collapsed false
@@ -3040,7 +3207,7 @@ collapsed false
 \begin_inset  Tabular
 <lyxtabular version="3" rows="5" columns="2">
 <features islongtable="true">
-<column alignment="center" valignment="top" leftline="true" width="0(null)">
+<column alignment="center" valignment="top" leftline="true" width="0">
 <column alignment="center" valignment="center" leftline="true" rightline="true" width="4in">
 <row topline="true" bottomline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -3242,15 +3409,12 @@ centering
 \layout Standard
 
 Most of the advanced features in the SLOG-2 viewer are provided through
-\emph on 
- 
-\emph default 
-a
+ a
 \emph on 
  zoomable
 \emph default 
  window.
- Jumpsshot-4 has two zoomable windows: Timeline and Histogram.
+ Jumpshot-4 has two zoomable windows: Timeline and Histogram.
  Figure 
 \begin_inset LatexCommand \ref{fig:timeline_popup}
 
@@ -4199,9 +4363,9 @@ collapsed false
 \begin_inset  Tabular
 <lyxtabular version="3" rows="21" columns="4">
 <features islongtable="true">
-<column alignment="center" valignment="top" leftline="true" width="0(null)">
-<column alignment="center" valignment="top" leftline="true" width="0(null)">
-<column alignment="center" valignment="top" leftline="true" width="0(null)">
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" width="0">
 <column alignment="center" valignment="center" leftline="true" rightline="true" width="3.5in">
 <row topline="true" bottomline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -5920,7 +6084,7 @@ centering
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_2b/doc/jumpshot-4/tex/pic/histogram_arrow_infobox.png
+	filename pic/histogram_arrow_infobox.png
 	lyxscale 80
 	scale 50
 	keepAspectRatio
@@ -6061,7 +6225,7 @@ centering
 \begin_inset  Tabular
 <lyxtabular version="3" rows="6" columns="3">
 <features islongtable="true">
-<column alignment="left" valignment="top" leftline="true" width="0(null)">
+<column alignment="left" valignment="top" leftline="true" width="0">
 <column alignment="center" valignment="top" leftline="true" width="1.1in">
 <column alignment="block" valignment="top" leftline="true" rightline="true" width="3.5in">
 <row topline="true" bottomline="true">
@@ -6379,7 +6543,7 @@ centering
 \begin_inset  Tabular
 <lyxtabular version="3" rows="10" columns="3">
 <features islongtable="true">
-<column alignment="left" valignment="top" leftline="true" width="0(null)">
+<column alignment="left" valignment="top" leftline="true" width="0">
 <column alignment="center" valignment="top" leftline="true" width="1.1in">
 <column alignment="block" valignment="top" leftline="true" rightline="true" width="3.5in">
 <row topline="true" bottomline="true">
@@ -6766,7 +6930,7 @@ centering
 \begin_inset  Tabular
 <lyxtabular version="3" rows="13" columns="3">
 <features islongtable="true">
-<column alignment="left" valignment="top" leftline="true" width="0(null)">
+<column alignment="left" valignment="top" leftline="true" width="0">
 <column alignment="center" valignment="top" leftline="true" width="1.9in">
 <column alignment="block" valignment="top" leftline="true" rightline="true" width="2.7in">
 <row topline="true" bottomline="true">
@@ -7229,7 +7393,7 @@ centering
 \begin_inset  Tabular
 <lyxtabular version="3" rows="4" columns="3">
 <features islongtable="true">
-<column alignment="left" valignment="top" leftline="true" width="0(null)">
+<column alignment="left" valignment="top" leftline="true" width="0">
 <column alignment="center" valignment="top" leftline="true" width="1.6in">
 <column alignment="block" valignment="top" leftline="true" rightline="true" width="3in">
 <row topline="true" bottomline="true">
@@ -7403,7 +7567,7 @@ centering
 \begin_inset  Tabular
 <lyxtabular version="3" rows="3" columns="3">
 <features islongtable="true">
-<column alignment="left" valignment="top" leftline="true" width="0(null)">
+<column alignment="left" valignment="top" leftline="true" width="0">
 <column alignment="center" valignment="top" leftline="true" width="1.6in">
 <column alignment="block" valignment="top" leftline="true" rightline="true" width="3in">
 <row topline="true" bottomline="true">

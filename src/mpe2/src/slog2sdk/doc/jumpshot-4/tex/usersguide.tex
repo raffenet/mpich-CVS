@@ -652,9 +652,9 @@ slog2 filename recommended by the convertor based on the text field
 in the Input File Specification. If the text field does not display
 the default name as expected, hitting return key in the Input File
 Specification field will force an update of the Output File Name field
-with the default name. The Logfile Convertor has four major functions,
-each  associated with a button in the lower panel of the window. They
-are listed in Table \ref{table:convertor_buttons}.
+with the default name. The Logfile Convertor has five major functions,
+each is associated with a button in the lower panel of the window.
+They are listed in Table \ref{table:convertor_buttons}.
 
 %
 \begin{table}[!htbp]
@@ -667,23 +667,28 @@ Function\tabularnewline
 \hline 
 \includegraphics[%
   scale=0.8]{pic/gif2png/Convert24.png}&
-Start Conversion&
+Convert&
 Start the logfile conversion of the selected convertor\tabularnewline
 \hline 
 \includegraphics[%
   scale=0.8]{pic/gif2png/Stop24.png}&
-Stop Conversion&
+Stop&
 Stop the ongoing logfile conversion of the selected convertor\tabularnewline
 \hline 
 \includegraphics[%
-  scale=0.8]{pic/gif2png/Help24.png}&
-Usage of Convertor&
+  scale=0.8]{pic/gif2png/About24.png}&
+Usage&
 Print the usage information of the selected convertor\tabularnewline
 \hline 
 \includegraphics[%
-  scale=0.8]{pic/gif2png/Home24.png}&
-Return Home&
-Return to the previous component that spawns the Logfile Convertor\tabularnewline
+  scale=0.8]{pic/gif2png/ConvertCancel24.png}&
+Cancel&
+Close the window without doing anything\tabularnewline
+\hline 
+\includegraphics[%
+  scale=0.8]{pic/gif2png/ConvertOk24.png}&
+OK&
+Display the last converted SLOG-2 file and close the window\tabularnewline
 \hline
 \end{longtable}
 
@@ -714,25 +719,49 @@ Convertor.}
 \end{figure}
 
 
-The standard output and error streams of the process are piped to
-the text area located in the middle of the window as the process is
-running. The Output File Size field displays the current size of the
-slog2 file as it is being generated. Also, the progress bar will be
-incremented to show the current ratio of the output to input file
-size, as in Figure \ref{fig:convertor_progress}. If the logfile conversion
-fails, the error message will be printed in the text area for diagnosis
-or a bug report.
+The logfile conversion process is started by hitting the \emph{Convert}
+button. The standard output and error streams of the process are piped
+to the text area located in the middle of the window as the process
+is running. The Output File Size field displays the current size of
+the slog2 file as it is being generated. Also, the progress bar will
+be incremented to show the current ratio of the output to input file
+size, as in Figure \ref{fig:convertor_progress}. During the conversion,
+only the \emph{Stop} button is enabled for the case that user wants
+to stop the ongoing conversion.
 
 %
 \begin{figure}[!htbp]
 \centering
 \includegraphics[%
-  scale=0.5]{/home/chan/slog2/slog2sdk_2b/doc/jumpshot-4/tex/pic/convertor_progress.png}
+  scale=0.5]{pic/convertor_progress.png}
 
 
 \caption{\label{fig:convertor_progress} Logfile conversion in progress.}
 \end{figure}
 
+
+If the logfile conversion fails, the error message will be printed
+in the text area for diagnosis or a bug report. As shown in Figure
+\ref{fig:convertor_done}, the \emph{OK} button is enabled only when
+the logfile conversion is terminated normally and the \emph{STOP}
+button has not been clicked during the conversion.
+
+%
+\begin{figure}[!htbp]
+\centering\includegraphics[%
+  scale=0.5]{pic/convertor_done.png}
+
+
+\caption{\label{fig:convertor_done}The \emph{OK} button is enabled when the
+logfile conversion finishes normally, i.e with exit status 0.}
+\end{figure}
+
+
+If \emph{OK} button is clicked, the last converted slog2 file will
+be used for the subsequent visualization. If \emph{Cancel} button
+is clicked, the Logfile Convertor dialog will be closed and the control
+is returned to the Main window as if the Convertor dialog has never
+been invoked.
 
 \clearpage
 
@@ -761,6 +790,8 @@ is first loaded into Jumpshot-4.}
 The Legend window contains mainly a four-column legend table. The
 four columns are labeled \emph{Topo, Name, V,} and \emph{S,} as in
 Table \ref{table:legend_column_ops}.
+
+\clearpage
 
 %
 \begin{table}[!htbp]
@@ -828,6 +859,8 @@ selecting a new color from the dialog, the new color will be used
 to update the icon button. The update won't be carried out in the
 timeline canvas automatically; an explicit screen redraw is needed.
 
+\clearpage
+
 %
 \begin{figure}[!htbp]
 \centering
@@ -843,18 +876,8 @@ column Category Name in the Legend window.}
 Figure \ref{fig:legend_sort_order} shows the popup dialog box either
 when the title icon of column Name is pressed or when the right mouse
 button is clicked somewhere in the column. Altogether, there are six
-different sort orders. The first four are various combinations of
-alphabetical and case-sensitive order; for example, \emph{z...a Z...A}
-refers to a reverse-case-sensitive alphabetical ordering. The second-to-last
-order in the list is called the \emph{Creation Order,} which refers
-to the order in which categories are stored in the slog2 file when
-they are being created. The four alphabetical orderings have two hidden
-sort orders. One is called \emph{Preview Order,} which puts the preview
-drawable category before all the real drawable categories of the same
-topology. The other is \emph{Topo Order,} which refers to topological
-ordering (i.e., arrow is ahead of state). The Preview and Topo sort
-orders can be turned on or off through the Preference window as shown
-in Table \ref{table:preference_legend}. 
+different sort orders as shown in the figure and they are summarized
+in Table \ref{table:legend_sort_orders}.
 
 %
 \begin{table}[!htbp]
@@ -891,6 +914,18 @@ menu in the Legend window.}
 \end{table}
 
 
+The first four are various combinations of alphabetical and case-sensitive
+order; for example, \emph{z...a Z...A} refers to a reverse-case-sensitive
+alphabetical ordering. The second-to-last order in the list is called
+the \emph{Creation Order,} which refers to the order in which categories
+are stored in the slog2 file when they are being created. The four
+alphabetical orderings have two hidden sort orders. One is called
+\emph{Preview Order,} which puts the preview drawable category before
+all the real drawable categories of the same topology. The other is
+\emph{Topo Order,} which refers to topological ordering (i.e., arrow
+is ahead of state). The Preview and Topo sort orders can be turned
+on or off through the Preference window in Table \ref{table:preference_legend}.
+
 %
 \begin{figure}[!htbp]
 \centering
@@ -922,6 +957,8 @@ the Timeline or Histogram window. Also, every element in the column
 Name can be edited. This feature allows the user to correct undesirable
 category names set during logfile creation and even facilitates sorting
 of the names for selection purposes.
+
+\clearpage
 
 %
 \begin{table}[!htbp]
@@ -975,10 +1012,10 @@ of a 514 MB 16-process slog2 file with default preview resolution.}
 
 
 Most of the advanced features in the SLOG-2 viewer are provided through
-\emph{}a \emph{zoomable} window. Jumpsshot-4 has two zoomable windows:
-Timeline and Histogram. Figure \ref{fig:timeline_popup} is the initial
-display of the Timeline window of a half-gigabyte 16-timeline slog2
-file. The zoomable window consists of several concealable and removable
+a \emph{zoomable} window. Jumpshot-4 has two zoomable windows: Timeline
+and Histogram. Figure \ref{fig:timeline_popup} is the initial display
+of the Timeline window of a half-gigabyte 16-timeline slog2 file.
+The zoomable window consists of several concealable and removable
 components. In the center of the window is the \emph{zoomable and
 scrollable canvas}. For the Timeline window, the center canvas is
 called the \emph{timeline canvas}. Directly on top of the zoomable
@@ -1707,7 +1744,7 @@ than that of the canvas.
 \begin{figure}[!htbp]
 \centering
 \includegraphics[%
-  scale=0.5]{/home/chan/slog2/slog2sdk_2b/doc/jumpshot-4/tex/pic/histogram_arrow_infobox.png}
+  scale=0.5]{pic/histogram_arrow_infobox.png}
 
 
 \caption{\label{fig:histogram_arrow_infobox} Arrow Summary Info Box of Figure

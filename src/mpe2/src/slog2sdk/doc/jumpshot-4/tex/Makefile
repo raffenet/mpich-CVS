@@ -5,7 +5,8 @@ HTML_DIR   = ../html
 # LYX pdflatex, latex2html
 LYX        = lyx
 PDFLATEX   = pdflatex
-LATEX2HTML = /usr/local/bin/latex2html
+# LATEX2HTML = /usr/local/bin/latex2html
+LATEX2HTML = latex2html
 
 # basic Unix command
 CP         = /bin/cp
