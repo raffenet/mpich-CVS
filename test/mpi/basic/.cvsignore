@@ -6,6 +6,7 @@ wtime
 netpipe
 patterns
 srtest
+self
 Debug*
 Release*
 *.plg

@@ -9,6 +9,8 @@ srvec
 bcasttest
 allred
 spawntest
+spawner
+spawnee
 cpi
 *.bb
 *.bbg

@@ -3,3 +3,9 @@ Makefile
 segtest
 *.s
 typename
+contents
+struct-pack
+triangular-pack
+slice-pack
+simple-pack
+transpose-pack
