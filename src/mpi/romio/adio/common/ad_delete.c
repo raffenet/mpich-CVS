@@ -13,7 +13,6 @@ void ADIOI_GEN_Delete(char *filename, int *error_code)
 #ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_GEN_DELETE";
 #endif
-
     err = unlink(filename);
 #ifdef PRINT_ERR_MSG
     *error_code = (err == 0) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;

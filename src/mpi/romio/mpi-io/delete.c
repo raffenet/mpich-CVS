@@ -113,7 +113,18 @@ int MPI_File_delete(char *filename, MPI_Info info)
      */
     switch (file_system) {
     case ADIO_PVFS:
+#ifdef ROMIO_PVFS
 	ADIOI_PVFS_Delete(filename, &error_code);
+#else
+#ifdef PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_delete: ROMIO has not been configured to use the PVFS file system\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_PVFS,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif	
+#endif
 	break;
     default:
 	ADIOI_GEN_Delete(filename, &error_code);
