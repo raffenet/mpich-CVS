@@ -1030,9 +1030,15 @@ extern Datatype TWOINTEGER;
 		  MAX_PROCESSOR_NAME, MAX_ERROR_STRING,
 		  MAX_NAME_STRING, MAX_PORT_NAME, MAX_OBJECT_NAME,
                   MAX_INFO_VAL, MAX_INFO_KEY, 
-		  UNDEFINED, @errclasses, SEEK_SET, SEEK_END, SEEK_CUR) {
+		  UNDEFINED, @errclasses) {
 	print $OUTFD "extern const int $int;\n";
     }
+    # Handle seek as a special case
+    print $OUTFD "#if !defined(MPICH_IGNORE_CXX_SEEK) && !defined(SEEK_SET)\n";
+    foreach $int (SEEK_SET, SEEK_END, SEEK_CUR) {
+	print $OUTFD "extern const int $int;\n";
+    }
+    print $OUTFD "#endif\n";
 
     # Predefined other
     print $OUTFD "extern const void *BOTTOM;\n";
@@ -1134,20 +1140,27 @@ sub print_header {
 # MPI
 sub printDefineChecks {
     # Add a test for definitions that will cause problems
+    # Unfortunately, #warning isn't part of standard C, so we can't use
+    # it.  
     print $OUTFD "#ifdef MPI
 #error \"You cannot define MPI; that name is reserved for the MPI namespace\"
 #endif\n";
-    print $OUTFD "#ifdef SEEK_SET
-#warning \"SEEK_SET is defined by MPI\"
+    # Let the user define MPICH_IGNORE_CXX_SEEK to both
+    # suppress the check for SEEK_SET etc. and to suppress the definition
+    # of the values.
+    print $OUTFD "#ifndef MPICH_IGNORE_CXX_SEEK
+#ifdef SEEK_SET
+/* #warning \"SEEK_SET is defined by MPI\" */
 #undef SEEK_SET
 #endif
 #ifdef SEEK_CUR
-#warning \"SEEK_CUR is defined by MPI\"
+/* #warning \"SEEK_CUR is defined by MPI\" */
 #undef SEEK_CUR
 #endif
 #ifdef SEEK_END
 #undef SEEK_END
-#warning \"SEEK_END is defined by MPI\"
+/* #warning \"SEEK_END is defined by MPI\" */
+#endif
 #endif\n\n";
 
 }
@@ -1481,6 +1494,12 @@ Datatype TWOINTEGER(MPI_2INTEGER);
 		  UNDEFINED, @errclasses ) {
 	print $OUTFD "const int $int = MPI_$int;\n";
     }
+    # Handle seek as a special case
+    print $OUTFD "#if !defined(MPICH_IGNORE_CXX_SEEK) && !defined(SEEK_SET)\n";
+    foreach $int (SEEK_SET, SEEK_END, SEEK_CUR) {
+	print $OUTFD "const int $int = MPI_$int;\n";
+    }
+    print $OUTFD "#endif\n";
 
     # Predefined other
     print $OUTFD "const void *BOTTOM = MPI_BOTTOM;\n";
