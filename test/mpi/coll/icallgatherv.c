@@ -85,8 +85,12 @@ int main( int argc, char *argv[] )
 		}
 	    }
 	    else {
+                for (i=0; i<rsize; i++) {
+                    recvcounts[i] = 0;
+                    recvdispls[i] = 0;
+                }
 		err = MPI_Allgatherv( sbuf, count, datatype,
-				      rbuf, 0, 0, datatype, comm );
+				      rbuf, recvcounts, recvdispls, datatype, comm );
 		if (err) {
 		    errs++;
 		    MTestPrintError( err );
@@ -101,7 +105,7 @@ int main( int argc, char *argv[] )
 	    free( sbuf );
 	    free( recvcounts );
 	    free( recvdispls );
-	}
+        }
     }
 
     MTest_Finalize( errs );
