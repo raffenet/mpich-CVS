@@ -23,13 +23,13 @@ int mm_post_recv(MM_Car *car_ptr)
     trailer_ptr = iter_ptr = MPID_Process.unex_q_head;
     while (iter_ptr)
     {
-	if ((iter_ptr->data.pkt.context == car_ptr->data.pkt.context) &&
-	    (iter_ptr->data.pkt.tag == car_ptr->data.pkt.tag) &&
+	if ((iter_ptr->msg_header.pkt.context == car_ptr->msg_header.pkt.context) &&
+	    (iter_ptr->msg_header.pkt.tag == car_ptr->msg_header.pkt.tag) &&
 	    (iter_ptr->src == car_ptr->src))
 	{
-	    if (iter_ptr->data.pkt.size > car_ptr->data.pkt.size)
+	    if (iter_ptr->msg_header.pkt.size > car_ptr->msg_header.pkt.size)
 	    {
-		err_printf("Error: unex msg size %d > posted msg size %d\n", iter_ptr->data.pkt.size, car_ptr->data.pkt.size);
+		err_printf("Error: unex msg size %d > posted msg size %d\n", iter_ptr->msg_header.pkt.size, car_ptr->msg_header.pkt.size);
 		return -1;
 	    }
 	    /* dequeue the car from the unex_q */
@@ -68,46 +68,6 @@ int mm_post_recv(MM_Car *car_ptr)
     MPID_Process.posted_q_tail = car_ptr;
 
     MPID_Thread_unlock(MPID_Process.qlock);
-
-    return MPI_SUCCESS;
-}
-
-/*@
-   mm_post_read_pkt - post a read of a packet on the vc
-
-   Parameters:
-+  MPIDI_VC *vc_ptr - virtual connection
-
-   Notes:
-@*/
-int mm_post_read_pkt(MPIDI_VC *vc_ptr)
-{
-    MM_Car *car_ptr;
-    MM_Segment_buffer *buf_ptr;
-
-    car_ptr = &vc_ptr->pkt.pkt_car;
-    buf_ptr = &vc_ptr->pkt.buf;
-    
-    car_ptr->type = MM_HEAD_CAR | MM_READ_CAR;
-    car_ptr->src = vc_ptr->rank;
-    car_ptr->dest = -1;
-    car_ptr->vc_ptr = vc_ptr;
-    car_ptr->next_ptr = NULL;
-    car_ptr->opnext_ptr = NULL;
-    car_ptr->qnext_ptr = NULL;
-    car_ptr->request_ptr = NULL;
-    car_ptr->buf_ptr = buf_ptr;
-    buf_ptr->type = MM_VEC_BUFFER;
-    buf_ptr->vec.vec[0].MPID_VECTOR_BUF = (void*)&car_ptr->data.pkt;
-    buf_ptr->vec.vec[0].MPID_VECTOR_LEN = sizeof(MPID_Packet);
-    buf_ptr->vec.vec_size = 1;
-    buf_ptr->vec.num_read = 0;
-    buf_ptr->vec.min_num_written = 0;
-    buf_ptr->vec.first = 0;
-    buf_ptr->vec.last = sizeof(MPID_Packet);
-    buf_ptr->vec.buf_size = sizeof(MPID_Packet);
-
-    vc_ptr->post_read(vc_ptr, car_ptr);
 
     return MPI_SUCCESS;
 }

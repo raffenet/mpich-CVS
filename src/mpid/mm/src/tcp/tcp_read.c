@@ -61,7 +61,17 @@ int tcp_read(MPIDI_VC *vc_ptr)
 	{
 	    /* get more buffers */
 	    car_ptr->request_ptr->mm.get_buffers(car_ptr->request_ptr);
-	    tcp_reset_car(car_ptr);
+	    /* reset the progress structures in the car */
+	    car_ptr->data.tcp.buf.vec_write.cur_index = 0;
+	    car_ptr->data.tcp.buf.vec_write.num_read_copy = 0;
+	    car_ptr->data.tcp.buf.vec_write.cur_num_written = 0;
+	    car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index = 0;
+	    car_ptr->data.tcp.buf.vec_write.vec_size = 0;
+	    /* copy the vector from the buffer to the car */
+	    memcpy(car_ptr->data.tcp.buf.vec_read.vec,
+		buf_ptr->vec.vec,
+		buf_ptr->vec.vec_size * sizeof(MPID_VECTOR));
+	    car_ptr->data.tcp.buf.vec_read.vec_size = buf_ptr->vec.vec_size;
 	    buf_ptr->vec.num_read = 0;
 	    buf_ptr->vec.num_cars_outstanding = buf_ptr->vec.num_cars;
 	}
@@ -98,6 +108,7 @@ int tcp_read(MPIDI_VC *vc_ptr)
 	    
 	    /* update vector */
 	    car_ptr->data.tcp.buf.vec_read.cur_num_read += num_read;
+	    car_ptr->data.tcp.buf.vec_read.total_num_read += num_read;
 	    if (car_ptr->data.tcp.buf.vec_read.cur_num_read == buf_ptr->vec.buf_size)
 	    {
 		/* reset the car */
@@ -127,8 +138,8 @@ int tcp_read(MPIDI_VC *vc_ptr)
 	    }
 	}
 	
-	if ((car_ptr->data.tcp.buf.vec_read.cur_num_read == buf_ptr->vec.buf_size) &&
-	    (buf_ptr->vec.last == car_ptr->request_ptr->mm.last))
+	//if ((car_ptr->data.tcp.buf.vec_read.cur_num_read == buf_ptr->vec.buf_size) && (buf_ptr->vec.last == buf_ptr->vec.segment_last))
+	if (car_ptr->data.tcp.buf.vec_read.total_num_read == buf_ptr->vec.segment_last)
 	{
 	    tcp_car_dequeue(vc_ptr, car_ptr);
 	    mm_cq_enqueue(car_ptr);

@@ -51,6 +51,7 @@ int tcp_accept_connection()
 	vc_ptr->post_read = tcp_post_read;
 	vc_ptr->merge_with_unexpected = tcp_merge_with_unexpected;
 	vc_ptr->post_write = tcp_post_write;
+	vc_ptr->post_read_pkt = tcp_post_read_pkt;
 
 	/* send a keep acknowledgement */
 	ack = TCP_ACCEPT_CONNECTION;
@@ -74,7 +75,7 @@ int tcp_accept_connection()
 	MPID_Thread_unlock(vc_ptr->lock);
 
 	/* post the first packet read on the newly connected vc */
-	mm_post_read_pkt(vc_ptr);
+	tcp_post_read_pkt(vc_ptr);
     }
     else
     {

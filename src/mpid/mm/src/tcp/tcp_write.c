@@ -134,7 +134,8 @@ int tcp_write(MPIDI_VC *vc_ptr)
 	    }
 
 	    /* if the entire mpi segment has been written, enqueue the car in the completion queue */
-	    if (car_ptr->data.tcp.buf.vec_write.total_num_written == car_ptr->request_ptr->mm.size)
+	    //if (car_ptr->data.tcp.buf.vec_write.total_num_written == car_ptr->request_ptr->mm.size)
+	    if (car_ptr->data.tcp.buf.vec_write.total_num_written == car_ptr->buf_ptr->vec.segment_last)
 	    {
 		tcp_car_dequeue(car_ptr->vc_ptr, car_ptr);
 		mm_cq_enqueue(car_ptr);

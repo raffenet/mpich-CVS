@@ -88,42 +88,12 @@ typedef int MM_CAR_TYPE;
 /* packet definitions */
 typedef struct MPID_Packet
 {
-    int type;
+    MPID_Packet_type type;
     int context;
     int tag;
     int src;
     int size;
 } MPID_Packet;
-
-typedef union MM_Car_data 
-{
-    MPID_Packet pkt;
-    struct car_packer
-    {
-	int first;
-	int last;
-    } packer;
-    struct car_unpacker
-    {
-	int first;
-	int last;
-    } unpacker;
-#ifdef WITH_METHOD_SHM
-    MM_Car_data_shm shm;
-#endif
-#ifdef WITH_METHOD_TCP
-    MM_Car_data_tcp tcp;
-#endif
-#ifdef WITH_METHOD_VIA
-    MM_Car_data_via via;
-#endif
-#ifdef WITH_METHOD_VIA_RDMA
-    MM_Car_data_via_rdma via_rdma;
-#endif
-#ifdef WITH_METHOD_NEW
-    MM_Car_data_new new;
-#endif
-} MM_Car_data;
 
 typedef union MM_Segment_buffer
 {
@@ -142,9 +112,8 @@ typedef union MM_Segment_buffer
 	MPID_VECTOR vec[MPID_VECTOR_LIMIT];
 	int vec_size;
 	int num_read;
-	int first, last;
+	int first, last, segment_last;
 	int buf_size;
-	int min_num_written;
 	int num_cars, num_cars_outstanding;
     } vec;
 #ifdef WITH_METHOD_SHM
@@ -179,6 +148,41 @@ typedef union MM_Segment_buffer
 #endif
 } MM_Segment_buffer;
 
+typedef struct MM_Car_msg_header
+{
+    MPID_Packet pkt;
+    MM_Segment_buffer buf;
+} MM_Car_msg_header;
+
+typedef union MM_Car_data 
+{
+    struct car_packer_data
+    {
+	int first;
+	int last;
+    } packer;
+    struct car_unpacker_data
+    {
+	int first;
+	int last;
+    } unpacker;
+#ifdef WITH_METHOD_SHM
+    MM_Car_data_shm shm;
+#endif
+#ifdef WITH_METHOD_TCP
+    MM_Car_data_tcp tcp;
+#endif
+#ifdef WITH_METHOD_VIA
+    MM_Car_data_via via;
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+    MM_Car_data_via_rdma via_rdma;
+#endif
+#ifdef WITH_METHOD_NEW
+    MM_Car_data_new new;
+#endif
+} MM_Car_data;
+
 /* Communication agent/action request */
 typedef struct MM_Car
 {
@@ -189,6 +193,7 @@ typedef struct MM_Car
     int src, dest;
     MM_CAR_TYPE type;
     MM_Car_data data;
+    MM_Car_msg_header msg_header;
     struct MM_Car *next_ptr, *opnext_ptr, *qnext_ptr, *vcqnext_ptr;
 } MM_Car;
 
@@ -211,7 +216,7 @@ typedef struct MM_Segment
     MM_Car rcar[2];
     int op_valid;
     int (*get_buffers)(struct MPID_Request *request_ptr);
-    MM_Segment_buffer buf, pkt_buf;
+    MM_Segment_buffer buf;
     struct MPID_Request *next_ptr;
 } MM_Segment;
 

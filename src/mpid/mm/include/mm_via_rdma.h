@@ -18,5 +18,6 @@ int via_rdma_can_connect(char *business_card);
 int via_rdma_post_connect(MPIDI_VC *vc_ptr, char *business_card);
 int via_rdma_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr);
 int via_rdma_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+int via_rdma_post_read_pkt(MPIDI_VC *vc_ptr);
 
 #endif

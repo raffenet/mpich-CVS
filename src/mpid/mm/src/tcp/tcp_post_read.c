@@ -13,5 +13,52 @@ int tcp_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 
 int tcp_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
 {
+    /* copy the unexpected packet into the posted packet */
+    car_ptr->msg_header.pkt = unex_car_ptr->msg_header.pkt;
+    /* read the data eagerly for now */
+    tcp_post_read(car_ptr->vc_ptr, car_ptr->next_ptr);
+    return MPI_SUCCESS;
+}
+
+int tcp_post_read_pkt(MPIDI_VC *vc_ptr)
+{
+    MM_Car *car_ptr;
+    MM_Segment_buffer *buf_ptr;
+
+    car_ptr = &vc_ptr->pkt_car;
+    buf_ptr = &vc_ptr->pkt_car.msg_header.buf;
+    
+    car_ptr->type = MM_UNEX_HEAD_CAR | MM_READ_CAR;
+    car_ptr->src = vc_ptr->rank;
+    car_ptr->dest = -1;
+    car_ptr->vc_ptr = vc_ptr;
+    car_ptr->next_ptr = NULL;
+    car_ptr->opnext_ptr = NULL;
+    car_ptr->qnext_ptr = NULL;
+    car_ptr->request_ptr = NULL;
+    car_ptr->buf_ptr = buf_ptr;
+    
+    car_ptr->data.tcp.buf.vec_read.cur_index = 0;
+    car_ptr->data.tcp.buf.vec_read.cur_num_read = 0;
+    car_ptr->data.tcp.buf.vec_read.num_read_at_cur_index = 0;
+    car_ptr->data.tcp.buf.vec_read.total_num_read = 0;
+    car_ptr->data.tcp.buf.vec_read.vec[0].MPID_VECTOR_BUF = (void*)&car_ptr->msg_header.pkt;
+    car_ptr->data.tcp.buf.vec_read.vec[0].MPID_VECTOR_LEN = sizeof(MPID_Packet);
+    car_ptr->data.tcp.buf.vec_read.vec_size = 1;
+
+    buf_ptr->type = MM_VEC_BUFFER;
+    buf_ptr->vec.vec[0].MPID_VECTOR_BUF = (void*)&car_ptr->msg_header.pkt;
+    buf_ptr->vec.vec[0].MPID_VECTOR_LEN = sizeof(MPID_Packet);
+    buf_ptr->vec.vec_size = 1;
+    buf_ptr->vec.num_read = 0;
+    buf_ptr->vec.first = 0;
+    buf_ptr->vec.last = sizeof(MPID_Packet);
+    buf_ptr->vec.segment_last = sizeof(MPID_Packet);
+    buf_ptr->vec.buf_size = sizeof(MPID_Packet);
+    buf_ptr->vec.num_cars = 1;
+    buf_ptr->vec.num_cars_outstanding = 1;
+
+    tcp_post_read(vc_ptr, car_ptr);
+
     return MPI_SUCCESS;
 }

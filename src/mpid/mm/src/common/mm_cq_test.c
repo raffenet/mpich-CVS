@@ -49,7 +49,7 @@ int mm_cq_test()
     while (car_ptr)
     {
 	complete = TRUE;
-	/* handle completed car */
+
 	if (car_ptr->type & MM_UNEX_HEAD_CAR)
 	{
 	    /* find in posted_q */
@@ -58,13 +58,13 @@ int mm_cq_test()
 	    trailer_ptr = iter_ptr = MPID_Process.posted_q_head;
 	    while (iter_ptr)
 	    {
-		if ((iter_ptr->data.pkt.context == car_ptr->data.pkt.context) &&
-		    (iter_ptr->data.pkt.tag == car_ptr->data.pkt.tag) &&
+		if ((iter_ptr->msg_header.pkt.context == car_ptr->msg_header.pkt.context) &&
+		    (iter_ptr->msg_header.pkt.tag == car_ptr->msg_header.pkt.tag) &&
 		    (iter_ptr->src == car_ptr->src))
 		{
-		    if (iter_ptr->data.pkt.size > car_ptr->data.pkt.size)
+		    if (iter_ptr->msg_header.pkt.size > car_ptr->msg_header.pkt.size)
 		    {
-			err_printf("Error: unex msg size %d > posted msg size %d\n", iter_ptr->data.pkt.size, car_ptr->data.pkt.size);
+			err_printf("Error: unex msg size %d > posted msg size %d\n", iter_ptr->msg_header.pkt.size, car_ptr->msg_header.pkt.size);
 			return -1;
 		    }
 		    /* dequeue the car from the posted_q */
@@ -82,8 +82,9 @@ int mm_cq_test()
 		    }
 		    MPID_Thread_unlock(MPID_Process.qlock);
 		    /* merge the unex car with the posted car using the method in the vc */
-		    iter_ptr->vc_ptr->merge_with_unexpected(car_ptr, iter_ptr);
+		    iter_ptr->vc_ptr->merge_with_unexpected(iter_ptr, car_ptr);
 		    found = TRUE;
+		    complete = FALSE;
 		    break;
 		}
 		if (trailer_ptr != iter_ptr)
@@ -109,10 +110,10 @@ int mm_cq_test()
 		car_ptr->next_ptr = NULL;
 		car_ptr->opnext_ptr = NULL;
 		car_ptr->qnext_ptr = NULL;
-		car_ptr->request_ptr->mm.size = old_car_ptr->data.pkt.size;
+		car_ptr->request_ptr->mm.size = old_car_ptr->msg_header.pkt.size;
 		buf_ptr = car_ptr->buf_ptr = &old_car_ptr->request_ptr->mm.buf;
 		buf_ptr->type = MM_TMP_BUFFER;
-		buf_ptr->tmp.buf_ptr[0] = MPIU_Malloc(old_car_ptr->data.pkt.size);
+		buf_ptr->tmp.buf_ptr[0] = MPIU_Malloc(old_car_ptr->msg_header.pkt.size);
 		buf_ptr->tmp.buf_ptr[1] = NULL;
 		buf_ptr->tmp.cur_buf = 0;
 		buf_ptr->tmp.min_num_written = 0;
@@ -132,6 +133,15 @@ int mm_cq_test()
 		/* post a read of the unexpected data */
 		car_ptr->vc_ptr->post_read(car_ptr->vc_ptr, car_ptr);
 		complete = FALSE;
+	    }
+	}
+
+	if (car_ptr->type & MM_WRITE_CAR)
+	{
+	    /* for now, all writes are eager - no rndv */
+	    if (car_ptr->next_ptr)
+	    {
+		car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
 	    }
 	}
 

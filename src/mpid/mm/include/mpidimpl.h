@@ -109,12 +109,6 @@ typedef union VC_Method_data
 #endif
 } VC_Method_data;
 
-typedef struct MPID_Next_packet
-{
-             MM_Car pkt_car; /* used to enqueue the read of the packet */
-  MM_Segment_buffer buf;     /* used to describe the pkt data in pkt_car */
-} MPID_Next_packet;
-
 typedef struct MPIDI_VC
 {
  MPID_Thread_lock_t lock;
@@ -130,9 +124,10 @@ typedef struct MPIDI_VC
               int (*merge_with_unexpected)(MM_Car *car_ptr, MM_Car *unex_car_ptr);
               int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
               int (*reset_car)(struct MM_Car *car_ptr);
+	      int (*post_read_pkt)(struct MPIDI_VC *vc_ptr);
   struct MPIDI_VC * read_next_ptr;
   struct MPIDI_VC * write_next_ptr;
-   MPID_Next_packet pkt;
+             MM_Car pkt_car; /* used to enqueue the read of the packet */
      VC_Method_data data;
 } MPIDI_VC;
 
@@ -197,7 +192,6 @@ MPID_Request * mm_request_alloc();
 
 /* queues */
            int mm_post_recv(MM_Car *car_ptr);
-           int mm_post_read_pkt(MPIDI_VC *vc_ptr);
            int mm_post_send(MM_Car *car_ptr);
            int mm_cq_test();
            int mm_cq_wait();

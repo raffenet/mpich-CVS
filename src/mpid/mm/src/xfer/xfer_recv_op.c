@@ -93,16 +93,18 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     /* setup the read car */
     if (bNeedHeader)
     {
-	pRequest->mm.rcar[0].request_ptr = pRequest;
-	pRequest->mm.rcar[0].buf_ptr = &pRequest->mm.buf;
 	pRequest->mm.rcar[0].type = MM_HEAD_CAR | MM_READ_CAR;
-	pRequest->mm.rcar[0].vc_ptr = mm_vc_from_communicator(request_ptr->comm, src);
 	pRequest->mm.rcar[0].src = src;
-	pRequest->mm.rcar[0].data.pkt.context = request_ptr->comm->context_id;
-	pRequest->mm.rcar[0].data.pkt.tag = request_ptr->mm.tag;
-	pRequest->mm.rcar[0].data.pkt.size = 0;
+	pRequest->mm.rcar[0].request_ptr = pRequest;
+	pRequest->mm.rcar[0].vc_ptr = mm_vc_from_communicator(request_ptr->comm, src);
+	pRequest->mm.rcar[0].buf_ptr = &pRequest->mm.rcar[0].msg_header.buf;
+	pRequest->mm.rcar[0].msg_header.pkt.type = MPID_EAGER_PKT; /* this should be set by the method */
+	pRequest->mm.rcar[0].msg_header.pkt.context = request_ptr->comm->context_id;
+	pRequest->mm.rcar[0].msg_header.pkt.tag = request_ptr->mm.tag;
+	pRequest->mm.rcar[0].msg_header.pkt.src = src;
+	pRequest->mm.rcar[0].msg_header.pkt.size = 0;
 	pRequest->mm.rcar[0].opnext_ptr = &pRequest->mm.rcar[1];
-	pRequest->mm.rcar[0].next_ptr = NULL;
+	pRequest->mm.rcar[0].next_ptr = &pRequest->mm.rcar[1];
 	pRequest->mm.rcar[0].qnext_ptr = NULL;
 	mm_inc_cc(pRequest);
 
@@ -115,9 +117,9 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
 	pCar->vc_ptr = mm_vc_from_communicator(request_ptr->comm, src);
     }
 
+    pCar->type = MM_READ_CAR;
     pCar->request_ptr = pRequest;
     pCar->buf_ptr = &pRequest->mm.buf;
-    pCar->type = MM_READ_CAR;
     pCar->src = src;
     pCar->next_ptr = NULL;
     pCar->opnext_ptr = NULL;
@@ -126,9 +128,9 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
 
     /* allocate a write car for unpacking */
     pCar = pRequest->mm.wcar;
+    pCar->type = MM_HEAD_CAR | MM_WRITE_CAR | MM_UNPACKER_CAR;
     pCar->request_ptr = pRequest;
     pCar->buf_ptr = &pRequest->mm.buf;
-    pCar->type = MM_HEAD_CAR | MM_WRITE_CAR | MM_UNPACKER_CAR;
     pCar->vc_ptr = MPID_Process.unpacker_vc_ptr;
     pCar->next_ptr = NULL;
     pCar->opnext_ptr = NULL;
