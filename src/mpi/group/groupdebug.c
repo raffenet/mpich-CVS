@@ -15,7 +15,7 @@
 void MPITEST_Group_create( int, int, MPI_Group * );
 void MPITEST_Group_print( MPI_Group );
 
-/* --BEGIN DEBUG -- */
+/* --BEGIN DEBUG-- */
 void MPITEST_Group_create( int nproc, int myrank, MPI_Group *new_group )
 {
     MPID_Group *new_group_ptr;
@@ -73,4 +73,4 @@ void MPITEST_Group_print( MPI_Group g )
 	g_idx = g_ptr->lrank_to_lpid[g_idx].next_lpid;
     }
 }
-/* -- END DEBUG -- */
+/* --END DEBUG-- */
