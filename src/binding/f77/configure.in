@@ -1190,6 +1190,11 @@ PAC_LANG_POP_COMPILERS
 
 AC_SUBST(ADDRESS_KIND)
 AC_SUBST(OFFSET_KIND)
+#
+# We'd also like to identify a Fortran 77 type that can be used for
+# offsets and for addresses, so that we can pass that information back 
+# up to allow other tools (such as user programs and test suites)
+# to properly declare the variables
 
 dnl Check for other Fortran 90 features, such as different include/use
 dnl module directory and special flags.  Build modules if requested
