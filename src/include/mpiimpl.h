@@ -548,7 +548,13 @@ do {                                                                    \
   {if (!(ptr)) { err = MPIR_Err_create_code( errclass, "**nullptrtype", "**nullptrtype %s", #kind ); } }
 
 #define MPID_Info_valid_ptr(ptr,err) MPID_Valid_ptr_class(Info,ptr,MPI_ERR_INFO,err)
-#define MPID_Comm_valid_ptr(ptr,err) MPID_Valid_ptr_class(Comm,ptr,MPI_ERR_COMM,err)
+/* Check not only for a null pointer but for an invalid communicator,
+   such as one that has been freed.  Let's try the ref_count as the test
+   for now */
+#define MPID_Comm_valid_ptr(ptr,err) {                      \
+     MPID_Valid_ptr_class(Comm,ptr,MPI_ERR_COMM,err);       \
+     if ((ptr) && (ptr)->ref_count == 0) {                      \
+        err = MPIR_Err_create_code(MPI_ERR_COMM,"**comm", 0);ptr=0;}}
 #define MPID_Datatype_valid_ptr(ptr,err) MPID_Valid_ptr_class(Datatype,ptr,MPI_ERR_TYPE,err)
 #define MPID_Group_valid_ptr(ptr,err) MPID_Valid_ptr_class(Group,ptr,MPI_ERR_GROUP,err)
 #define MPID_Win_valid_ptr(ptr,err) MPID_Valid_ptr_class(Win,ptr,MPI_ERR_WIN,err)
@@ -1188,7 +1194,7 @@ extern int MPID_THREAD_LEVEL;
 /* An intracommunicator must have a root between 0 and local_size-1. */
 /* intercomm can be between MPI_PROC_NULL (or MPI_ROOT) and local_size-1 */
 #define MPIR_ERRTEST_INTRA_ROOT(comm_ptr,root,err) \
-  if ((root) <= 0 || (root) >= (comm_ptr)->local_size) {\
+  if ((root) < 0 || (root) >= (comm_ptr)->local_size) {\
       err = MPIR_Err_create_code( MPI_ERR_ROOT, "**root", "**root %d", root );}
 #define MPIR_ERRTEST_PERSISTENT(reqp,err) \
   if ((reqp)->kind != MPID_PREQUEST_SEND && reqp->kind != MPID_PREQUEST_RECV) { \
