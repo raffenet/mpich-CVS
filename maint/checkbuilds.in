@@ -213,7 +213,7 @@ checkbuilds [ -enable-n=d ] [ -with-n=d ] [ -show ] [-envopt=name;value;... ]
     }
 
     else {
-	print STDERR "Unrecognized argument $_\n";
+	print STDERR "checkbuilds: Unrecognized argument $_\n";
 	exit(1);
     }
 }
@@ -554,7 +554,7 @@ sub RunTestSuites {
 	    &RunMPICH2TestSuite;
 	}
 	else {
-	    print $OUTFD "Unrecognized test $testname\n";
+	    print $OUTFD "checkbuilds: Unrecognized test $testname\n";
 	}
 	if ($is_xml) { 
 	    print $OUTFD "</TESTOUT>\n";
