@@ -12,11 +12,20 @@
 #include "mpisgi2.h"
 #endif
 
+#if 0
+#define HAVE_MPIR_TYPE_FLATTEN 1
+#define HAVE_MPIR_TYPE_GET_CONTIG_BLOCKS 1
+#endif
+
 void ADIOI_Optimize_flattened(ADIOI_Flatlist_node *flat_type);
 
 /* flatten datatype and add it to Flatlist */
 void ADIOI_Flatten_datatype(MPI_Datatype datatype)
 {
+    int i;
+#ifdef HAVE_MPIR_TYPE_FLATTEN
+    MPI_Aint flatten_idx;
+#endif
     int curr_index=0, is_contig;
     ADIOI_Flatlist_node *flat, *prev=0;
 
@@ -47,6 +56,9 @@ void ADIOI_Flatten_datatype(MPI_Datatype datatype)
     flat->indices = NULL;
 
     flat->count = ADIOI_Count_contiguous_blocks(datatype, &curr_index);
+#if 0
+    printf("cur_idx = %d\n", curr_index);
+#endif
 /*    FPRINTF(stderr, "%d\n", flat->count);*/
 
     if (flat->count) {
@@ -56,19 +68,25 @@ void ADIOI_Flatten_datatype(MPI_Datatype datatype)
     }
 	
     curr_index = 0;
-
+#ifdef HAVE_MPIR_TYPE_FLATTEN
+    flatten_idx = (MPI_Aint) flat->count;
+    MPIR_Type_flatten(datatype, flat->indices, flat->blocklens, &flatten_idx);
+#else
     ADIOI_Flatten(datatype, flat, 0, &curr_index);
 
     ADIOI_Optimize_flattened(flat);
+#endif
 /* debug */
-    /*FPRINTF(stderr, "blens: ");
+#if 0
+    FPRINTF(stderr, "blens: ");
     for (i=0; i<flat->count; i++) 
 	FPRINTF(stderr, "%d ", flat->blocklens[i]);
     FPRINTF(stderr, "\n\n");
     FPRINTF(stderr, "indices: ");
     for (i=0; i<flat->count; i++) 
 	FPRINTF(stderr, "%ld ", flat->indices[i]);
-    FPRINTF(stderr, "\n\n");*/
+    FPRINTF(stderr, "\n\n");
+#endif
 
 }
 
@@ -423,6 +441,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
     ADIOI_Free(ints);
     ADIOI_Free(adds);
     ADIOI_Free(types);
+
 }
 
 
@@ -430,8 +449,20 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 
 
 
+/* ADIOI_Count_contiguous_blocks
+ *
+ * Returns number of contiguous blocks in type, and also saves this value in
+ * curr_index.
+ */
 int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
 {
+#ifdef HAVE_MPIR_TYPE_GET_CONTIG_BLOCKS
+    /* MPICH2 can get us this value without all the envelope/contents calls */
+    int blks;
+    MPIR_Type_get_contig_blocks(datatype, &blks);
+    *curr_index = blks;
+    return blks;
+#else
     int count=0, i, n, num, basic_num, prev_index;
     int top_count, combiner, old_combiner, old_is_contig;
     int nints, nadds, ntypes, old_nints, old_nadds, old_ntypes;
@@ -592,6 +623,7 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
     ADIOI_Free(adds);
     ADIOI_Free(types);
     return count;
+#endif /* HAVE_MPIR_TYPE_GET_CONTIG_BLOCKS */
 }
 
 
