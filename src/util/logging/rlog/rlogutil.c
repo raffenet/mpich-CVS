@@ -22,6 +22,8 @@ static int ReadFileData(char *pBuffer, int length, FILE *fin)
 	    printf("Error: fread failed - %s\n", strerror(errno));
 	    return errno;
 	}
+	if (num_read == 0 && length)
+	    return -1;
 
 	/*printf("fread(%d)", num_read);fflush(stdout);*/
 
@@ -43,6 +45,8 @@ static int WriteFileData(const char *pBuffer, int length, FILE *fout)
 	    printf("Error: fwrite failed - %s\n", strerror(errno));
 	    return errno;
 	}
+	if (num_written == 0 && length)
+	    return -1;
 
 	/*printf("fwrite(%d)", num_written);fflush(stdout);*/
 
@@ -185,13 +189,25 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
     return pInput;
 }
 
+static int compareArrows(const RLOG_ARROW *pLeft, const RLOG_ARROW *pRight)
+{
+    if (pLeft->end_time < pRight->end_time)
+	return -1;
+    if (pLeft->end_time == pRight->end_time)
+	return 0;
+    return 1;
+}
+
 static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int n)
 {
-    RLOG_ARROW arrow;
+    RLOG_ARROW arrow, *pArray;
     int i, index, bModified;
     int num_bytes;
+    long arrow_pos;
+    int error;
 
     printf("Modifying %d arrows\n", nNumArrows);
+    arrow_pos = ftell(f);
     for (i=0; i<nNumArrows; i++)
     {
 	num_bytes = fread(&arrow, 1, sizeof(RLOG_ARROW), f);
@@ -223,6 +239,23 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 	    }
 	    fseek(f, 0, SEEK_CUR);
 	}
+    }
+
+    pArray = (RLOG_ARROW*)malloc(nNumArrows * sizeof(RLOG_ARROW));
+    if (pArray)
+    {
+	/* read the arrows */
+	fseek(f, arrow_pos, SEEK_SET);
+	error = ReadFileData((char*)pArray, nNumArrows * sizeof(RLOG_ARROW), f);
+	if (error)
+	    return error;
+	/* sort the arrows */
+	qsort(pArray, (size_t)nNumArrows, sizeof(RLOG_ARROW), compareArrows);
+	/* write the arrows back */
+	fseek(f, arrow_pos, SEEK_SET);
+	error = WriteFileData((char*)pArray, nNumArrows * sizeof(RLOG_ARROW), f);
+	if (error)
+	    return error;
     }
     return 0;
 }

@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     int bSummary = 1;
     RLOG_ARROW arrow, lastarrow;
     int bInvalidArrowFound = 0;
-    double *pMax = NULL;
+    double *pOffset = NULL;
     int nNumStates = 0;
     int nNumLevels = 0;
     int nTotalNumEvents = 0;
@@ -128,15 +128,15 @@ int main(int argc, char *argv[])
 	}
     }
 
-    pMax = (double*)malloc(range * sizeof(double));
-    if (pMax == NULL)
+    pOffset = (double*)malloc(range * sizeof(double));
+    if (pOffset == NULL)
     {
 	printf("malloc failed\n");
 	return -1;
     }
 
     for (i=0; i<range; i++)
-	pMax[i] = 0.0;
+	pOffset[i] = 0.0;
     num_arrows = RLOG_GetNumArrows(pInput);
     if (num_arrows)
     {
@@ -145,27 +145,33 @@ int main(int argc, char *argv[])
 	{
 	    if (arrow.leftright == RLOG_ARROW_LEFT)
 	    {
+		arrow.start_time += pOffset[arrow.dest];
+		arrow.end_time += pOffset[arrow.src];
+		if (arrow.start_time < arrow.end_time)
+		{
+		    pOffset[arrow.dest] += arrow.end_time - arrow.start_time;
+		}
 	    }
 	    else
 	    {
+		arrow.start_time += pOffset[arrow.src];
+		arrow.end_time += pOffset[arrow.dest];
+		if (arrow.start_time > arrow.end_time)
+		{
+		    pOffset[arrow.dest] += arrow.start_time - arrow.end_time;
+		}
 	    }
-	    /*
-	    pMax[arrow.dest - pInput->header.nMinRank] =
-		//max(pMax[arrow.dest - pInput->header.nMinRank], arrow.end_time - arrow.start_time);
-		max(pMax[arrow.dest - pInput->header.nMinRank], arrow.end_time - find_event.end_time);
-	    */
-	    //PrintArrow(&arrow);
 	}
 
 	for (j=0; j<range; j++)
 	{
-	    printf("[%d] -> %g\n", j, pMax[j]);
+	    printf("[%d] -> %g\n", j, pOffset[j]);
 	}
 
 	RLOG_CloseInputStruct(&pInput);
 
 	// modify all the events
-	RLOG_ModifyEvents(argv[1], pMax, range);
+	RLOG_ModifyEvents(argv[1], pOffset, range);
     }
     else
     {
