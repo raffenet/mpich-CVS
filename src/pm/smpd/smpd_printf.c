@@ -55,7 +55,8 @@ char * get_sock_error_string(int error)
     case SOCK_ERR_OP_ABORTED:
 	return "socket operation aborted";
     case SOCK_ERR_OS_SPECIFIC:
-	return "operating system specific socket error occurred";
+	sprintf(str, "operating system specific socket error %d occurred", sock_get_last_os_error());
+	return str;
     default:
 	sprintf(str, "unknown socket error %d", error);
 	return str;
@@ -149,7 +150,7 @@ int smpd_err_printf(char *str, ...)
 	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
 	{
 	    /* prepend output with the process tree node id */
-	    fprintf(stdout, "[%d]%sERROR:", smpd_process.id, indent);
+	    fprintf(stdout, "[%02d]%sERROR:", smpd_process.id, indent);
 	}
 	else
 	{
@@ -167,7 +168,7 @@ int smpd_err_printf(char *str, ...)
 	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
 	{
 	    /* prepend output with the process tree node id */
-	    fprintf(smpd_process.dbg_fout, "[%d]%sERROR:", smpd_process.id, indent);
+	    fprintf(smpd_process.dbg_fout, "[%02d]%sERROR:", smpd_process.id, indent);
 	}
 	else
 	{
@@ -214,7 +215,7 @@ int smpd_dbg_printf(char *str, ...)
 	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
 	{
 	    /* prepend output with the tree node id */
-	    printf("[%d]%s", smpd_process.id, indent);
+	    printf("[%02d]%s", smpd_process.id, indent);
 	}
 	else
 	{
@@ -232,7 +233,7 @@ int smpd_dbg_printf(char *str, ...)
 	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
 	{
 	    /* prepend output with the process tree node id */
-	    fprintf(smpd_process.dbg_fout, "[%d]%s", smpd_process.id, indent);
+	    fprintf(smpd_process.dbg_fout, "[%02d]%s", smpd_process.id, indent);
 	}
 	else
 	{
@@ -257,8 +258,7 @@ int smpd_dbg_printf(char *str, ...)
 
 int smpd_enter_fn(char *fcname)
 {
-    /*smpd_dbg_printf("%sentering %s\n", indent, fcname);*/
-    smpd_dbg_printf("entering %s\n", fcname);
+    smpd_dbg_printf("\\%s\n", fcname);
     if (cur_indent >= 0 && cur_indent < SMPD_MAX_INDENT)
     {
 	indent[cur_indent] = '.';
@@ -275,7 +275,6 @@ int smpd_exit_fn(char *fcname)
 	indent[cur_indent-1] = '\0';
     }
     cur_indent--;
-    /*smpd_dbg_printf("%sexiting %s\n", indent, fcname);*/
-    smpd_dbg_printf("exiting  %s\n", fcname);
+    smpd_dbg_printf("/%s\n", fcname);
     return SMPD_SUCCESS;
 }

@@ -122,6 +122,9 @@
 				RelativePath="smpd_get_opt.c">
 			</File>
 			<File
+				RelativePath=".\smpd_handle_command.c">
+			</File>
+			<File
 				RelativePath="smpd_launch_process.c">
 			</File>
 			<File
@@ -129,6 +132,15 @@
 			</File>
 			<File
 				RelativePath="smpd_read_write.c">
+			</File>
+			<File
+				RelativePath=".\smpd_session.c">
+			</File>
+			<File
+				RelativePath=".\smpd_start_mgr.c">
+			</File>
+			<File
+				RelativePath=".\smpd_state_machine.c">
 			</File>
 			<File
 				RelativePath="smpd_user_data.c">

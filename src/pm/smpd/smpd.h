@@ -34,6 +34,10 @@
 #define SMPD_SERVER_AUTHENTICATION          0
 #define SMPD_CLIENT_AUTHENTICATION          1
 
+#define SMPD_MAX_NAME_LENGTH              256
+#define SMPD_MAX_VALUE_LENGTH            1024
+#define SMPD_MAX_FILENAME                1024
+#define SMPD_MAX_STDOUT_LENGTH           1024
 #define SMPD_MAX_SESSION_HEADER_LENGTH   1024
 #define SMPD_CMD_HDR_LENGTH                13
 #define SMPD_MAX_CMD_LENGTH	         8192
@@ -66,7 +70,7 @@
 #define SMPD_SUCCESS_STR                  "SUCCESS"
 #define SMPD_FAIL_STR                     "FAIL"
 
-#define SMPD_FREE_COOKIE           0x00BEEF00
+#define SMPD_FREE_COOKIE           0xDDBEEFDD
 
 #define SMPD_DBG_STATE_STDOUT             0x1
 #define SMPD_DBG_STATE_ERROUT             0x2
@@ -79,8 +83,8 @@
 
 #define SMPD_CONSOLE_STR_LENGTH         10*SMPD_MAX_CMD_LENGTH
 
-#define SMPD_DEFAULT_TIMEOUT               45
-#define SMPD_SHORT_TIMEOUT                 20
+#define SMPD_DEFAULT_TIMEOUT              120
+#define SMPD_SHORT_TIMEOUT                 60
 
 #ifdef HAVE_WINDOWS_H
 #define snprintf _snprintf
@@ -94,6 +98,60 @@
 #define smpd_exit exit
 #endif
 
+typedef enum smpd_state_t
+{
+    SMPD_IDLE,
+    /* mpiexec process states */
+    SMPD_MPIEXEC_CONNECTING_TREE,
+    SMPD_MPIEXEC_DBS_STARTING,
+    SMPD_MPIEXEC_LAUNCHING,
+    SMPD_MPIEXEC_EXIT_WAITING,
+    SMPD_MPIEXEC_CLOSING,
+    SMPD_MPIEXEC_CONNECTING_SMPD,
+    /* smpd states */
+    SMPD_CONNECTING,
+    SMPD_READING_CHALLENGE_STRING,
+    SMPD_WRITING_CHALLENGE_RESPONSE,
+    SMPD_READING_CONNECT_RESULT,
+    SMPD_WRITING_CHALLENGE_STRING,
+    SMPD_READING_CHALLENGE_RESPONSE,
+    SMPD_WRITING_CONNECT_RESULT,
+    SMPD_READING_STDIN,
+    SMPD_READING_STDOUT,
+    SMPD_READING_STDERR,
+    SMPD_READING_CMD_HEADER,
+    SMPD_READING_CMD,
+    SMPD_WRITING_CMD,
+    SMPD_SMPD_LISTENING,
+    SMPD_MGR_LISTENING,
+    SMPD_READING_SESSION_REQUEST,
+    SMPD_WRITING_SMPD_SESSION_REQUEST,
+    SMPD_WRITING_PROCESS_SESSION_REQUEST,
+    SMPD_WRITING_PWD_REQUEST,
+    SMPD_WRITING_NO_PWD_REQUEST,
+    SMPD_READING_PWD_REQUEST,
+    SMPD_READING_SMPD_PASSWORD,
+    SMPD_WRITING_SMPD_PASSWORD,
+    SMPD_WRITING_CRED_REQUEST,
+    SMPD_READING_ACCOUNT,
+    SMPD_READING_PASSWORD,
+    SMPD_WRITING_ACCOUNT,
+    SMPD_WRITING_PASSWORD,
+    SMPD_WRITING_NO_CRED_REQUEST,
+    SMPD_READING_CRED_REQUEST,
+    SMPD_WRITING_RECONNECT_REQUEST,
+    SMPD_WRITING_NO_RECONNECT_REQUEST,
+    SMPD_READING_RECONNECT_REQUEST,
+    SMPD_READING_SESSION_HEADER,
+    SMPD_WRITING_SESSION_HEADER,
+    SMPD_READING_SMPD_RESULT,
+    SMPD_WRITING_SESSION_ACCEPT,
+    SMPD_WRITING_SESSION_REJECT,
+    SMPD_RECONNECTING,
+    SMPD_EXITING,
+    SMPD_CLOSING
+} smpd_state_t;
+
 typedef enum smpd_context_type_t
 {
     SMPD_CONTEXT_INVALID,
@@ -104,6 +162,9 @@ typedef enum smpd_context_type_t
     SMPD_CONTEXT_LEFT_CHILD,
     SMPD_CONTEXT_RIGHT_CHILD,
     SMPD_CONTEXT_CHILD,
+    SMPD_CONTEXT_LISTENER,
+    SMPD_CONTEXT_SMPD,
+    SMPD_CONTEXT_UNDETERMINED,
     SMPD_CONTEXT_FREED
 } smpd_context_type_t;
 
@@ -127,6 +188,7 @@ typedef struct smpd_command_t
     int length;
     int src, dest, tag;
     int wait;
+    int stdin_read_offset;
     struct smpd_command_t *next;
     int freed; /* debugging to see if freed more than once */
 } smpd_command_t;
@@ -137,6 +199,15 @@ typedef HANDLE smpd_pwait_t;
 typedef pid_t smpd_pwait_t;
 #endif
 
+typedef struct smpd_host_node_t
+{
+    int id, parent;
+    char host[SMPD_MAX_HOST_LENGTH];
+    /*char ip_str[MP_MAX_HOST_LENGTH];*/
+    int nproc;
+    struct smpd_host_node_t *next;
+} smpd_host_node_t;
+
 typedef struct smpd_context_t
 {
     smpd_context_type_t type;
@@ -145,9 +216,25 @@ typedef struct smpd_context_t
     smpd_pwait_t wait;
     sock_set_t set;
     sock_t sock;
+    smpd_state_t state;
+    smpd_state_t read_state;
     smpd_command_t read_cmd;
+    smpd_state_t write_state;
     smpd_command_t *write_list;
     smpd_command_t *wait_list;
+    smpd_host_node_t *connect_to;
+    char pszCrypt[SMPD_AUTHENTICATION_STR_LEN];
+    char pszChallengeResponse[SMPD_AUTHENTICATION_STR_LEN];
+    char port_str[SMPD_MAX_PORT_STR_LENGTH];
+    char session[SMPD_SESSION_REQUEST_LEN];
+    char pwd_request[SMPD_MAX_PWD_REQUEST_LENGTH];
+    char cred_request[SMPD_MAX_CRED_REQUEST_LENGTH];
+    char account[SMPD_MAX_ACCOUNT_LENGTH];
+    char password[SMPD_MAX_PASSWORD_LENGTH];
+    char smpd_pwd[SMPD_MAX_PASSWORD_LENGTH];
+    char session_header[SMPD_MAX_SESSION_HEADER_LENGTH];
+    int connect_return_id, connect_return_tag;
+    struct smpd_process_t *process;
     struct smpd_context_t *next;
 } smpd_context_t;
 
@@ -155,6 +242,7 @@ typedef struct smpd_process_t
 {
     int num_valid_contexts;
     smpd_context_t *in, *out, *err;
+    int context_refcount;
     int pid;
     char exe[SMPD_MAX_EXE_LENGTH];
     char env[SMPD_MAX_ENV_LENGTH];
@@ -166,13 +254,39 @@ typedef struct smpd_process_t
     struct smpd_process_t *next;
 } smpd_process_t;
 
+typedef struct smpd_launch_node_t
+{
+    char exe[SMPD_MAX_EXE_LENGTH];
+    char *env, env_data[SMPD_MAX_ENV_LENGTH];
+    int host_id;
+    long iproc;
+    struct smpd_launch_node_t *next;
+} smpd_launch_node_t;
+
+typedef struct smpd_env_node
+{
+    char name[SMPD_MAX_NAME_LENGTH];
+    char value[SMPD_MAX_VALUE_LENGTH];
+    struct smpd_env_node *next;
+} smpd_env_node;
+
+typedef struct smpd_map_drive_node
+{
+    char drive;
+    char share[SMPD_MAX_EXE_LENGTH];
+    struct smpd_map_drive_node *next;
+} smpd_map_drive_node;
+
 /* If you add elements to the process structure you must add the appropriate
    initializer in smpd_connect.c where the global variable, smpd_process, lives */
 typedef struct smpd_global_t
 {
+    /* stuff used by smpd */
+    smpd_state_t state;
     int id, parent_id;
     int level;
     smpd_context_t *left_context, *right_context, *parent_context, *context_list;
+    smpd_context_t *listener_context;
     smpd_process_t *process_list;
     int closing;
     int root_smpd;
@@ -188,9 +302,31 @@ typedef struct smpd_global_t
     int dbg_state;
     FILE *dbg_fout;
     int have_dbs;
+    char kvs_name[SMPD_MAX_DBS_NAME_LEN];
+    /* stuff used by mpiexec */
+#ifdef HAVE_WINDOWS_H
+    HANDLE hCloseStdinThreadEvent;
+    HANDLE hStdinThread;
+#endif
+    int do_console;
+    int port;
+    char console_host[SMPD_MAX_HOST_LENGTH];
+    smpd_host_node_t *host_list;
+    smpd_launch_node_t *launch_list;
+    int credentials_prompt;
+    int do_multi_color_output;
+    int no_mpi;
+    int output_exit_codes;
+    int local_root;
+    int use_iproot;
+    int use_process_session;
+    int shutdown_console;
+    int nproc;
+    int verbose;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
+
 
 /* smpd */
 int smpd_parse_command_args(int *argcp, char **argvp[]);
@@ -202,6 +338,7 @@ HANDLE smpd_decode_handle(char *str);
 #endif
 
 /* smpd_util */
+int smpd_enter_at_state(sock_set_t set, smpd_state_t state);
 int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr);
 int smpd_init_process(void);
 int smpd_init_printf(void);
@@ -268,5 +405,18 @@ int smpd_decode_buffer(char *str, char *dest, int length, int *num_decoded);
 int smpd_create_process_struct(int rank, smpd_process_t **process_ptr);
 int smpd_free_process_struct(smpd_process_t *process);
 char * smpd_get_context_str(smpd_context_t *context);
+int smpd_gen_authentication_strings(char *phrase, char *append, char *crypted);
+#ifdef HAVE_WINDOWS_H
+int smpd_start_win_mgr(smpd_context_t *context);
+#else
+int smpd_start_unx_mgr(smpd_context_t *context);
+#endif
+#ifdef HAVE_WINDOWS_H
+void StdinThread(SOCKET hWrite);
+#endif
+int smpd_handle_command(smpd_context_t *context);
+int smpd_handle_written(smpd_context_t *context);
+int smpd_handle_read(smpd_context_t *context);
+int smpd_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr);
 
 #endif

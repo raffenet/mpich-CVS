@@ -334,28 +334,28 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     }
 
     /* prevent the socket loops from being inherited */
-    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStdoutR, GetCurrentProcess(), &hSockStdoutR, 
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStdoutR, GetCurrentProcess(), (LPHANDLE)&hSockStdoutR, 
 	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
     {
 	nError = GetLastError();
 	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
 	goto CLEANUP;
     }
-    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStderrR, GetCurrentProcess(), &hSockStderrR, 
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStderrR, GetCurrentProcess(), (LPHANDLE)&hSockStderrR, 
 	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
     {
 	nError = GetLastError();
 	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
 	goto CLEANUP;
     }
-    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStdoutW, GetCurrentProcess(), &hSockStdoutW, 
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStdoutW, GetCurrentProcess(), (LPHANDLE)&hSockStdoutW, 
 	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
     {
 	nError = GetLastError();
 	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
 	goto CLEANUP;
     }
-    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStderrW, GetCurrentProcess(), &hSockStderrW, 
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStderrW, GetCurrentProcess(), (LPHANDLE)&hSockStderrW, 
 	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
     {
 	nError = GetLastError();
@@ -509,6 +509,8 @@ CLEANUP:
 	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)smpd_piothread, arg_ptr, 0, NULL);
 	CloseHandle(hThread);
 
+	process->context_refcount = 2;
+	process->out->read_state = SMPD_READING_STDOUT;
 	result = sock_post_read(sock_out, process->out->read_cmd.cmd, 1, NULL);
 	if (result != SOCK_SUCCESS)
 	{
@@ -517,6 +519,7 @@ CLEANUP:
 	    smpd_exit_fn("smpd_launch_process");
 	    return SMPD_FAIL;
 	}
+	process->err->read_state = SMPD_READING_STDERR;
 	result = sock_post_read(sock_err, process->err->read_cmd.cmd, 1, NULL);
 	if (result != SOCK_SUCCESS)
 	{
@@ -903,6 +906,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	smpd_err_printf("sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
     }
 
+    process->context_refcount = 2;
+    process->out->read_state = SMPD_READING_STDOUT;
     result = sock_post_read(sock_out, process->out->read_cmd.cmd, 1, NULL);
     if (result != SOCK_SUCCESS)
     {
@@ -911,6 +916,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	smpd_exit_fn("smpd_launch_process");
 	return SMPD_FAIL;
     }
+    process->err->read_state = SMPD_READING_STDERR;
     result = sock_post_read(sock_err, process->err->read_cmd.cmd, 1, NULL);
     if (result != SOCK_SUCCESS)
     {

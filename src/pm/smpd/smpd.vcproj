@@ -140,12 +140,6 @@
 			<File
 				RelativePath="smpd_cmd_args.c">
 			</File>
-			<File
-				RelativePath="smpd_session.c">
-			</File>
-			<File
-				RelativePath="smpd_start_mgr.c">
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

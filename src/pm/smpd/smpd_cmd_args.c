@@ -6,29 +6,13 @@
 
 #include "smpd.h"
 
-#ifdef HAVE_WINDOWS_H
-char *smpd_encode_handle(char *str, HANDLE h)
-{
-    sprintf(str, "%p", h);
-    return str;
-}
-
-HANDLE smpd_decode_handle(char *str)
-{
-    HANDLE p;
-    sscanf(str, "%p", &p);
-    return p;
-}
-#endif
-
 int smpd_parse_command_args(int *argcp, char **argvp[])
 {
 #ifdef HAVE_WINDOWS_H
     char str[20], read_handle_str[20], write_handle_str[20];
     int port;
-    sock_t listener, session_sock;
-    sock_set_t set, session_set;
-    sock_event_t event;
+    sock_t listener;
+    sock_set_t set;
     int result;
     HANDLE hWrite, hRead;
     DWORD num_written, num_read;
@@ -68,15 +52,8 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    smpd_exit_fn("smpd_parse_command_args");
 	    return SMPD_FAIL;
 	}
-	result = sock_create_set(&session_set);
-	if (result != SOCK_SUCCESS)
-	{
-	    smpd_err_printf("sock_create_set(session) failed, sock error:\n%s\n", get_sock_error_string(result));
-	    smpd_exit_fn("smpd_parse_command_args");
-	    return SMPD_FAIL;
-	}
-	smpd_dbg_printf("created set for manager listener, %d, and for the session sockets, %d\n",
-	    sock_getsetid(set), sock_getsetid(session_set));
+	smpd_process.set = set;
+	smpd_dbg_printf("created set for manager listener, %d\n", sock_getsetid(set));
 	port = 0;
 	result = sock_listen(set, NULL, &port, &listener); 
 	if (result != SOCK_SUCCESS)
@@ -86,6 +63,22 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("smpd manager listening on port %d\n", port);
+
+	result = smpd_create_context(SMPD_CONTEXT_LISTENER, set, listener, -1, &smpd_process.listener_context);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to create a context for the smpd listener.\n");
+	    smpd_exit_fn("smpd_parse_command_args");
+	    return result;
+	}
+	result = sock_set_user_ptr(listener, smpd_process.listener_context);
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("sock_set_user_ptr failed, sock error:\n%s\n", get_sock_error_string(result));
+	    smpd_exit_fn("smpd_parse_command_args");
+	    return result;
+	}
+	smpd_process.listener_context->state = SMPD_MGR_LISTENING;
 
 	memset(str, 0, 20);
 	snprintf(str, 20, "%d", port);
@@ -128,64 +121,13 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    smpd_exit_fn("smpd_parse_command_args");
 	    return SMPD_FAIL;
 	}
-	result = sock_wait(set, SOCK_INFINITE_TIME, &event);
-	if (result != SOCK_SUCCESS)
-	{
-	    smpd_err_printf("sock failure waiting for re-connection, sock error:\n%s\n", get_sock_error_string(result));
-	    smpd_exit_fn("smpd_parse_command_args");
-	    return SMPD_FAIL;
-	}
-	if (event.op_type != SOCK_OP_ACCEPT)
-	{
-	    smpd_err_printf("unexpected sock operation while waiting for re-connection: op_type = %d\n", event.op_type);
-	    smpd_exit_fn("smpd_parse_command_args");
-	    return SMPD_FAIL;
-	}
-	smpd_dbg_printf("accepting reconnection.\n");
-	result = sock_accept(listener, session_set, NULL, &session_sock);
-	if (result != SOCK_SUCCESS)
-	{
-	    smpd_err_printf("sock_accept failed, sock error:\n%s\n", get_sock_error_string(result));
-	    smpd_exit_fn("smpd_parse_command_args");
-	    return SMPD_FAIL;
-	}
-	smpd_dbg_printf("accepted sock %d into set %d\n", sock_getid(session_sock), sock_getsetid(session_set));
-	smpd_dbg_printf("closing the manager's listener set.\n");
-	/* Are we allowed to post a close on the listener?
-	smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(listener));
-	result = sock_post_close(listener);
-	if (result != SOCK_SUCCESS)
-	{
-	    smpd_err_printf("sock_post_close(listener) failed, sock error:\n%s\n", get_sock_error_string(result));
-	    smpd_exit_fn("smpd_parse_command_args");
-	    return SMPD_FAIL;
-	}
-	result = sock_wait(set, SOCK_INFINITE_TIME, &event);
-	if (result != SOCK_SUCCESS)
-	{
-	    smpd_err_printf("sock failure waiting for listener to close, sock error:\n%s\n", get_sock_error_string(result));
-	    smpd_exit_fn("smpd_parse_command_args");
-	    return SMPD_FAIL;
-	}
-	if (event.op_type != SOCK_OP_CLOSE)
-	{
-	    smpd_err_printf("unexpected sock operation while waiting for listener to close: op_type = %d\n", event.op_type);
-	    smpd_exit_fn("smpd_parse_command_args");
-	    return SMPD_FAIL;
-	}
-	*/
-	smpd_dbg_printf("destroying manager listener set: %d\n", sock_getsetid(set));
-	result = sock_destroy_set(set);
-	if (result != SOCK_SUCCESS)
-	{
-	    smpd_err_printf("Unable to destroy the listener set, sock error:\n%s\n", get_sock_error_string(result));
-	    smpd_exit_fn("smpd_parse_command_args");
-	    return SMPD_FAIL;
-	}
-	result = smpd_session(session_set, session_sock);
+
+	result = smpd_enter_at_state(set, SMPD_MGR_LISTENING);
 	if (result != SMPD_SUCCESS)
-	    smpd_err_printf("smpd_session() failed.\n");
-	
+	{
+	    smpd_err_printf("state machine failed.\n");
+	}
+
 	result = sock_finalize();
 	if (result != SOCK_SUCCESS)
 	{

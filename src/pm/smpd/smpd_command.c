@@ -118,67 +118,12 @@ int smpd_init_command(smpd_command_t *cmd)
     cmd->length = 0;
     cmd->wait = SMPD_FALSE;
     cmd->state = SMPD_CMD_INVALID;
+    cmd->stdin_read_offset = 0;
     cmd->freed = 0;
 
     smpd_exit_fn("smpd_init_command");
     return SMPD_SUCCESS;
 }
-
-#if 0
-int smpd_parse_command(smpd_command_t *cmd_ptr)
-{
-    char temp_str[100];
-
-    smpd_enter_fn("smpd_parse_command");
-
-    /* get the source */
-    if (!smpd_get_string_arg(cmd_ptr->cmd, "src", temp_str, 100))
-    {
-	smpd_err_printf("no src flag in the command.\n");
-	smpd_exit_fn("smpd_parse_command");
-	return SMPD_FAIL;
-    }
-    cmd_ptr->src = atoi(temp_str);
-    if (cmd_ptr->src < 0)
-    {
-	smpd_err_printf("invalid command src: %d\n", cmd_ptr->src);
-	smpd_exit_fn("smpd_parse_command");
-	return SMPD_FAIL;
-    }
-
-    /* get the destination */
-    if (!smpd_get_string_arg(cmd_ptr->cmd, "dest", temp_str, 100))
-    {
-	smpd_err_printf("no dest flag in the command.\n");
-	smpd_exit_fn("smpd_parse_command");
-	return SMPD_FAIL;
-    }
-    cmd_ptr->dest = atoi(temp_str);
-    if (cmd_ptr->dest < 0)
-    {
-	smpd_err_printf("invalid command dest: %d\n", cmd_ptr->dest);
-	smpd_exit_fn("smpd_parse_command");
-	return SMPD_FAIL;
-    }
-
-    /* get the command string */
-    if (!smpd_get_string_arg(cmd_ptr->cmd, "cmd", cmd_ptr->cmd_str, SMPD_MAX_CMD_STR_LENGTH))
-    {
-	smpd_err_printf("no cmd string in the command.\n");
-	smpd_exit_fn("smpd_parse_command");
-	return SMPD_FAIL;
-    }
-
-    /* get the tag */
-    if (smpd_get_string_arg(cmd_ptr->cmd, "tag", temp_str, 100))
-    {
-	cmd_ptr->tag = atoi(temp_str);
-    }
-
-    smpd_exit_fn("smpd_parse_command");
-    return SMPD_SUCCESS;
-}
-#endif
 
 int smpd_parse_command(smpd_command_t *cmd_ptr)
 {
@@ -355,15 +300,39 @@ int smpd_create_context(smpd_context_type_t type, sock_set_t set, sock_t sock, i
 	free(context);
 	return SMPD_FAIL;
     }
+    
+    /* add the context to the global list */
+    context->next = smpd_process.context_list;
+    smpd_process.context_list = context;
+
     *context_pptr = context;
     return result;
 }
 
 int smpd_free_context(smpd_context_t *context)
 {
+    smpd_context_t *iter, *trailer;
+
     smpd_enter_fn("smpd_free_context");
     if (context)
     {
+	/* remove the context from the global list */
+	iter = trailer = smpd_process.context_list;
+	while (iter)
+	{
+	    if (iter == context)
+	    {
+		if (iter == smpd_process.context_list)
+		    smpd_process.context_list = smpd_process.context_list->next;
+		else
+		    trailer->next = iter->next;
+		break;
+	    }
+	    if (trailer != iter)
+		trailer = trailer->next;
+	    iter = iter->next;
+	}
+
 	/* this check isn't full-proof because random data might match SMPD_CONTEXT_FREED */
 	if (context->type == SMPD_CONTEXT_FREED)
 	{
@@ -505,7 +474,9 @@ int smpd_post_read_command(smpd_context_t *context)
 	str = "right";
     else
 	str = "unknown";
-    smpd_dbg_printf("posting read for a command header on %s context, sock %d: %d bytes\n", str, sock_getid(context->sock), SMPD_CMD_HDR_LENGTH);
+    /*smpd_dbg_printf("posting a read for a command header on the %s context, sock %d: %d bytes\n", str, sock_getid(context->sock), SMPD_CMD_HDR_LENGTH);*/
+    smpd_dbg_printf("posting a read for a command header on the %s context, sock %d\n", str, sock_getid(context->sock));
+    context->read_state = SMPD_READING_CMD_HEADER;
     context->read_cmd.state = SMPD_CMD_READING_HDR;
     result = sock_post_read(context->sock, context->read_cmd.cmd_hdr_str, SMPD_CMD_HDR_LENGTH, NULL);
     if (result != SOCK_SUCCESS)
@@ -530,6 +501,7 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
     /*smpd_dbg_printf("command after packaging: \"%s\"\n", cmd->cmd);*/
     cmd->next = NULL;
     cmd->state = SMPD_CMD_WRITING_CMD;
+    context->write_state = SMPD_WRITING_CMD;
 
     if (!context->write_list)
     {
@@ -551,8 +523,8 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
     cmd->iov[1].SOCK_IOV_BUF = cmd->cmd;
     cmd->iov[1].SOCK_IOV_LEN = cmd->length;
     /*smpd_dbg_printf("command at this moment: \"%s\"\n", cmd->cmd);*/
-    smpd_dbg_printf("smpd_post_write_command on sock %d: %d bytes for command: \"%s\"\n",
-	sock_getid(context->sock),
+    smpd_dbg_printf("smpd_post_write_command on the %s context sock %d: %d bytes for command: \"%s\"\n",
+	smpd_get_context_str(context), sock_getid(context->sock),
 	cmd->iov[0].SOCK_IOV_LEN + cmd->iov[1].SOCK_IOV_LEN,
 	cmd->cmd);
     result = sock_post_writev(context->sock, cmd->iov, 2, NULL);
