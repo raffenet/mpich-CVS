@@ -393,6 +393,26 @@ fi
 ])dnl
 dnl
 dnl/*D
+dnl PAC_C_INLINE - Check if C supports inline
+dnl
+dnl Synopsis:
+dnl PAC_C_INLINE
+dnl
+dnl Output Effect:
+dnl Defines 'inline' as empty if inline is not available.
+dnl
+dnlD*/
+AC_DEFUN(PAC_C_INLINE,[
+AC_CACHE_CHECK([for inline],
+pac_cv_c_inline,[
+AC_TRY_COMPILE([inline int a( int b ){return b+1;}],[int a;],
+pac_cv_c_inline="yes",pac_cv_c_inline="no")])
+if test "$pac_cv_c_inline" = "no" ; then
+    AC_DEFINE(inline,)
+fi
+])dnl
+dnl
+dnl/*D
 dnl PAC_C_CPP_CONCAT - Check whether the C compiler accepts ISO CPP string
 dnl   concatenation
 dnl

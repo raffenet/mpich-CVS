@@ -5,7 +5,7 @@
 /* Define if semctl requires a union semun argument in the 4th position */
 #undef SEMCTL_NEEDS_SEMUN
 
-/* Define as empty if C supports does not support volatile */
+/* Define as empty if C does not support volatile */
 #undef volatile
 
 /* Define if #pragma weak supported */
@@ -26,3 +26,6 @@
 
 /* Define if the XOPEN versions of routines and header files are needed */
 #undef _XOPEN_SOURCE
+
+/* Define as empty if C does not support inline */
+#undef inline
