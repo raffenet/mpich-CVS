@@ -18,6 +18,7 @@ agent.ps
 ca-nomenclature.eps mpich2-arch.eps vc-sm.eps send-sm.eps
 mmca.ps
 mpich2.pdf
+mpich2
 latex.err
 *.hux
 mpich2pdf*

@@ -27,3 +27,6 @@ tcpadi3.ps
 *.ilg
 *.pdf
 adi3newpdf*
+latex.err
+adi3new
+*.hux
