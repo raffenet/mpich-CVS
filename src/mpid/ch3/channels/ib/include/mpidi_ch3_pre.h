@@ -58,6 +58,7 @@ typedef struct MPIDI_CH3_Pkt_rdma_iov_t \
 } MPIDI_CH3_Pkt_rdma_iov_t;
 
 #define MPIDI_CH3_PKT_ENUM \
+    MPIDI_CH3_PKT_RTS_PUT, \
     MPIDI_CH3_PKT_RTS_IOV, \
     MPIDI_CH3_PKT_CTS_IOV, \
     MPIDI_CH3_PKT_RELOAD,  \

@@ -84,6 +84,7 @@ int MPIDI_CH3_iStartRndvMsg(MPIDI_VC_t * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_
     }
 #endif
     sreq->ch.riov_offset = 0;
+    rts_pkt->type = MPIDI_CH3_PKT_RTS_PUT;
     mpi_errno = MPIDI_CH3_iStartMsg(vc, rts_pkt, sizeof(*rts_pkt), &rts_sreq);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)

@@ -486,6 +486,49 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			rreq->ch.req = NULL;
 			recv_vc_ptr->ch.recv_active = rreq;
 		    }
+		    else if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3_PKT_RTS_PUT)
+		    {
+			int found;
+			MPIU_DBG_PRINTF(("received rts put packet(sreq=0x%x).\n",
+					 ((MPIDI_CH3_Pkt_rndv_req_to_send_t*)mem_ptr)->sender_req_id));
+
+			mpi_errno = MPIDI_CH3U_Handle_recv_rndv_pkt(recv_vc_ptr,
+								    (MPIDI_CH3_Pkt_t*)mem_ptr,
+								    &rreq, &found);
+			/* --BEGIN ERROR HANDLING-- */
+			if (mpi_errno != MPI_SUCCESS)
+			{
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "ibu read progress unable to handle incoming rts(put) packet");
+			    MPIU_DBG_PRINTFX(("exiting ibu_wait v\n"));
+			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+			    return mpi_errno;
+			}
+			/* --END ERROR HANDLING-- */
+
+			if (found)
+			{
+			    mpi_errno = MPIDI_CH3U_Post_data_receive(recv_vc_ptr, found, &rreq);
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno != MPI_SUCCESS)
+			    {
+				mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+				MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+				return mpi_errno;
+			    }
+			    /* --END ERROR HANDLING-- */
+			    mpi_errno = MPIDI_CH3_iStartRndvTransfer(recv_vc_ptr, rreq);
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno != MPI_SUCCESS)
+			    {
+				mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+				MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+				return mpi_errno;
+			    }
+			    /* --END ERROR HANDLING-- */
+			}
+
+			recv_vc_ptr->ch.recv_active = NULL;
+		    }
 		    else if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3_PKT_CTS_IOV)
 		    {
 			MPIU_DBG_PRINTF(("received cts packet(sreq=0x%x, rreq=0x%x).\n",
