@@ -308,7 +308,7 @@ void MPIDI_err_printf(char *, char *, ...);
 }
 #else
 #define MPIDI_DBG_PRINTF(e)
-#define MPIDI_dbg_printf(level, func, fmt, args...)
+#define MPIDI_dbg_printf(level, func, fmt, args)
 #endif
 
 #define MPIDI_ERR_PRINTF(e) MPIDI_err_printf e
