@@ -27,21 +27,13 @@ int MM_Connect(MPID_Info *info_ptr, char *port_name)
 
     if (beasy_create(&bfd, ADDR_ANY, INADDR_ANY) == SOCKET_ERROR)
     {
-#ifdef HAVE_WINDOWS_H
-	error = WSAGetLastError();
-#else
-	error = errno;
-#endif
+	error = beasy_getlasterror();
 	printf("beasy_create failed, error %d\n", error);
 	return BFD_INVALID_SOCKET;
     }
     if (beasy_connect(bfd, host, port) == SOCKET_ERROR)
     {
-#ifdef HAVE_WINDOWS_H
-	error = WSAGetLastError();
-#else
-	error = errno;
-#endif
+	error = beasy_getlasterror();
 	printf("beasy_connect failed, error %d\n", error);
 	return BFD_INVALID_SOCKET;
     }

@@ -15,11 +15,7 @@ int MM_Recv(int conn, char *buffer, int length)
     int error;
     if (beasy_receive(conn, buffer, length) != SOCKET_ERROR)
 	return length;
-#ifdef HAVE_WINDOWS_H
-    error = WSAGetLastError();
-#else
-    error = errno;
-#endif
+    error = beasy_getlasterror();
     printf("beasy_receive failed, error %d\n", error);
     return SOCKET_ERROR;
 }
