@@ -213,6 +213,10 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode
     }
     else
     {
+	/* The user error handler may make calls to MPI routines, so the
+	 * nesting counter must be incremented before the handler is called */
+	MPIR_Nest_incr();
+    
 	/* We pass a final 0 (for a null pointer) to these routines
 	   because MPICH-1 expected that */
 	switch (comm_ptr->errhandler->language)
@@ -232,6 +236,8 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode
 	    break;
 #endif
 	}
+
+	MPIR_Nest_decr();
     }
     return errcode;
 }
@@ -310,6 +316,10 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
     {
 	/* Now, invoke the error handler for the window */
 
+	/* The user error handler may make calls to MPI routines, so the
+	 * nesting counter must be incremented before the handler is called */
+	MPIR_Nest_incr();
+    
 	/* We pass a final 0 (for a null pointer) to these routines
 	   because MPICH-1 expected that */
 	switch (win_ptr->errhandler->language)
@@ -329,6 +339,8 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
 		break;
 #endif
 	}
+
+	MPIR_Nest_decr();
     }
     return errcode;
 }
@@ -407,6 +419,11 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
     else
     {
 	/* Invoke the provided error handler */
+
+	/* The user error handler may make calls to MPI routines, so the
+	 * nesting counter must be incremented before the handler is called */
+	MPIR_Nest_incr();
+    
 	switch (file_ptr->errhandler->language)
 	{
 	    case MPID_LANG_C:
@@ -424,6 +441,8 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
 		break;
 #endif
 	}
+
+	MPIR_Nest_decr();
     }
     return errcode;
 }

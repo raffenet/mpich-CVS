@@ -15,11 +15,14 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                     int target_count, MPI_Datatype target_datatype, MPI_Op op,
                     MPID_Win *win_ptr)
 {
+    int nest_level_inc = FALSE;
     int mpi_errno=MPI_SUCCESS;
+    MPIU_CHKLMEM_DECL(2);
+    MPIU_CHKPMEM_DECL(1);
     MPIDI_STATE_DECL(MPID_STATE_MPID_ACCUMULATE);
     
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_ACCUMULATE);
-        
+
     if (MPIDI_Use_optimized_rma) {
 #       ifdef MPIDI_CH3_IMPLEMENTS_ACCUMULATE
         {
@@ -37,20 +40,21 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
         MPID_Datatype *dtp;
         MPIDI_Datatype_get_info(origin_count, origin_datatype,
                                 dt_contig, data_sz, dtp, dt_true_lb);  
-        
+
         if ((data_sz == 0) || (target_rank == MPI_PROC_NULL))
         {
             goto fn_exit;
         }
 
+        MPIR_Nest_incr();
+	nest_level_inc = TRUE;
+	
         /* FIXME: It makes sense to save the rank (and size) of the
            communicator in the window structure to speed up these operations,
            or to save a pointer to the communicator structure, rather than
            just the handle 
         */
-        MPIR_Nest_incr();
         NMPI_Comm_rank(win_ptr->comm, &rank);
-        MPIR_Nest_decr();
         
         if (target_rank == rank)
         {
@@ -64,22 +68,14 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                 goto fn_exit;
             }
 
-            if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN)
-            {
-                /* get the function by indexing into the op table */
-                uop = MPIR_Op_table[(op)%16 - 1];
-            }
-            else
-            {
-                /* --BEGIN ERROR HANDLING-- */
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP,
-                                                  "**opnotpredefined", "**opnotpredefined %d", op );
-                goto fn_exit;
-                /* --END ERROR HANDLING-- */
-            }
+	    MPIU_ERR_CHKANDJUMP1((HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN), mpi_errno, MPI_ERR_OP, "**opnotpredefined",
+				 "**opnotpredefined %d", op );
+	    
+	    /* get the function by indexing into the op table */
+	    uop = MPIR_Op_table[(op)%16 - 1];
             
-            if (HANDLE_GET_KIND(origin_datatype) ==
-                HANDLE_GET_KIND(target_datatype) ==  HANDLE_KIND_BUILTIN)
+            if (HANDLE_GET_KIND(origin_datatype) == HANDLE_KIND_BUILTIN &&
+                HANDLE_GET_KIND(target_datatype) == HANDLE_KIND_BUILTIN)
             {    
                 (*uop)(origin_addr, (char *) win_ptr->base + win_ptr->disp_unit *
                        target_disp, &target_count, &target_datatype);
@@ -102,27 +98,16 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                     /* first copy the data into a temporary buffer with
                        the same datatype as the target. Then do the
                        accumulate operation. */
-                    
+
                     mpi_errno = NMPI_Type_get_true_extent(target_datatype, 
                                                           &true_lb, &true_extent);
-                    /* --BEGIN ERROR HANDLING-- */
-                    if (mpi_errno)
-                    {
-                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-                        goto fn_exit;
-                    }
-                    /* --END ERROR HANDLING-- */
+                    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
                     
                     MPID_Datatype_get_extent_macro(target_datatype, extent); 
-                    
-                    tmp_buf = MPIU_Malloc(target_count * 
-                                          (MPIR_MAX(extent,true_extent)));  
-                    /* --BEGIN ERROR HANDLING-- */
-                    if (!tmp_buf)
-                    {
-                        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-                        goto fn_exit;
-                    }
+
+		    MPIU_CHKLMEM_MALLOC(tmp_buf, void *, target_count * (MPIR_MAX(extent,true_extent)), mpi_errno,
+					"temporary buffer");
+
                     /* --END ERROR HANDLING-- */
                     /* adjust for potential negative lower bound in datatype */
                     tmp_buf = (void *)((char*)tmp_buf - true_lb);
@@ -133,13 +118,7 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                 }
                 
                 segp = MPID_Segment_alloc();
-                /* --BEGIN ERROR HANDLING-- */
-                if (!segp)
-                {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 ); 
-                    goto fn_exit;
-                }
-                /* --END ERROR HANDLING-- */
+		MPIU_ERR_CHKANDJUMP((!segp), mpi_errno, MPI_ERR_OTHER, "**nomem"); 
                 MPID_Segment_init(NULL, target_count, target_datatype, segp, 0);
                 first = 0;
                 last  = SEGMENT_IGNORE_LAST;
@@ -147,15 +126,7 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                 MPID_Datatype_get_ptr(target_datatype, dtp);
                 vec_len = dtp->n_contig_blocks * target_count + 1; 
                 /* +1 needed because Rob says so */
-                dloop_vec = (DLOOP_VECTOR *)
-                    MPIU_Malloc(vec_len * sizeof(DLOOP_VECTOR));
-                /* --BEGIN ERROR HANDLING-- */
-                if (!dloop_vec)
-                {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 ); 
-                    goto fn_exit;
-                }
-                /* --END ERROR HANDLING-- */
+		MPIU_CHKLMEM_MALLOC(dloop_vec, DLOOP_VECTOR *, vec_len * sizeof(DLOOP_VECTOR), mpi_errno, "dloop vector");
                 
                 MPID_Segment_pack_vector(segp, first, &last, dloop_vec, &vec_len);
                 
@@ -172,12 +143,6 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                 }
                 
                 MPID_Segment_free(segp);
-                MPIU_Free(dloop_vec);
-                
-                if (tmp_buf)
-                {
-                    MPIU_Free((char *) tmp_buf + true_lb);
-                }
             }
         }
         else
@@ -191,15 +156,7 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                 curr_ptr = curr_ptr->next;
             }
             
-            new_ptr = (MPIDI_RMA_ops *) MPIU_Malloc(sizeof(MPIDI_RMA_ops));
-            /* --BEGIN ERROR HANDLING-- */
-            if (!new_ptr)
-            {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_ACCUMULATE);
-                return mpi_errno;
-            }
-            /* --END ERROR HANDLING-- */
+	    MPIU_CHKPMEM_MALLOC(new_ptr, MPIDI_RMA_ops *, sizeof(MPIDI_RMA_ops), mpi_errno, "RMA operation entry");
             if (prev_ptr != NULL)
             {
                 prev_ptr->next = new_ptr;
@@ -236,6 +193,15 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
     }
 
  fn_exit:
+    MPIU_CHKLMEM_FREEALL();
+    if (nest_level_inc);
+    { 
+	MPIR_Nest_decr();
+    }
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_ACCUMULATE);
     return mpi_errno;
+
+  fn_fail:
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
 }

@@ -185,6 +185,8 @@ int MPIR_Localcopy(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     int rank, mpi_errno = MPI_SUCCESS;
     MPI_Aint true_extent, sendtype_true_lb, recvtype_true_lb;
 
+    MPIR_Nest_incr();
+    
     MPIR_Datatype_iscontig(sendtype, &sendtype_iscontig);
     MPIR_Datatype_iscontig(recvtype, &recvtype_iscontig);
 
@@ -193,44 +195,32 @@ int MPIR_Localcopy(void *sendbuf, int sendcount, MPI_Datatype sendtype,
         MPID_Datatype_get_size_macro(sendtype, sendsize);
         mpi_errno = NMPI_Type_get_true_extent(sendtype, &sendtype_true_lb,
                                               &true_extent);
-        /* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno)
-        {
-            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-            return mpi_errno;
-        }
-        /* --END ERROR HANDLING-- */
+	MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**fail");
         
         mpi_errno = NMPI_Type_get_true_extent(recvtype, &recvtype_true_lb,
                                               &true_extent);
-        /* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno)
-        {
-            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-            return mpi_errno;
-        }
-        /* --END ERROR HANDLING-- */
+	MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**fail");
 
         memcpy(((char *) recvbuf + recvtype_true_lb), 
                ((char *) sendbuf + sendtype_true_lb), 
                sendcount*sendsize);
     }
     else {
-	MPIR_Nest_incr();
         NMPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPIR_Nest_decr();
         mpi_errno = MPIC_Sendrecv ( sendbuf, sendcount, sendtype,
                                     rank, MPIR_LOCALCOPY_TAG, 
                                     recvbuf, recvcount, recvtype,
                                     rank, MPIR_LOCALCOPY_TAG,
                                     MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS) {
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	}
-	/* --END ERROR HANDLING-- */
+	MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**fail");
     }
+    
+  fn_exit:
+    MPIR_Nest_decr();
     return mpi_errno;
+
+  fn_fail:
+    goto fn_exit;
 }
 
 

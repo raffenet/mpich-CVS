@@ -33,6 +33,8 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
     
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_CREATE);
     
+    MPIR_Nest_incr();
+        
 #   if defined(MPIDI_CH3_IMPLEMENTS_WIN_CREATE)
     {
 	mpi_errno = MPIDI_CH3_Win_create(base, size, disp_unit, info, comm_ptr, win_ptr);
@@ -72,9 +74,6 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
         (*win_ptr)->lock_queue = NULL;
         (*win_ptr)->my_counter = 0;
         (*win_ptr)->my_pt_rma_puts_accs = 0;
-        
-        
-        MPIR_Nest_incr();
         
         mpi_errno = NMPI_Comm_dup(comm_ptr->handle, &((*win_ptr)->comm));
         /* --BEGIN ERROR HANDLING-- */
@@ -154,8 +153,6 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
         }
         /* --END ERROR HANDLING-- */
         
-        MPIR_Nest_decr();
-        
         for (i=0; i<comm_size; i++)
         {
             (*win_ptr)->base_addrs[i] = tmp_buf[3*i];
@@ -184,6 +181,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
 #   endif
 
  fn_exit:
+    MPIR_Nest_decr();
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
     return mpi_errno;
 }

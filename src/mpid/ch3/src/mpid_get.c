@@ -15,6 +15,7 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype
             int target_count, MPI_Datatype target_datatype, MPID_Win *win_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIU_CHKPMEM_DECL(1);
     MPIDI_STATE_DECL(MPID_STATE_MPID_GET);
         
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_GET);
@@ -70,15 +71,7 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype
                 curr_ptr = curr_ptr->next;
             }
             
-            new_ptr = (MPIDI_RMA_ops *) MPIU_Malloc(sizeof(MPIDI_RMA_ops));
-            /* --BEGIN ERROR HANDLING-- */
-            if (!new_ptr)
-            {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_GET);
-                return mpi_errno;
-            }
-            /* --END ERROR HANDLING-- */
+	    MPIU_CHKPMEM_MALLOC(new_ptr, MPIDI_RMA_ops *, sizeof(MPIDI_RMA_ops), mpi_errno, "RMA operation entry");
             if (prev_ptr != NULL)
             {
                 prev_ptr->next = new_ptr;
@@ -113,7 +106,11 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype
         }
     }
 
+  fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_GET);
-
     return mpi_errno;
+
+  fn_fail:
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
 }

@@ -115,13 +115,18 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 	{
 	    int rc;
 
+	    /* The user error handler may make calls to MPI routines, so the nesting counter must be incremented before the
+	     * handler is called */
+	    MPIR_Nest_incr();
+    
 	    switch (request_ptr->greq_lang)
 	    {
 		case MPID_LANG_C:
 #ifdef HAVE_CXX_BINDING
 		case MPID_LANG_CXX:
 #endif
-		    mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
+		    rc = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**user", "**userfree %d", rc);
 		    break;
 #ifdef HAVE_FORTRAN_BINDING
 		case MPID_LANG_FORTRAN:
@@ -129,22 +134,21 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		{
 		    MPI_Fint ierr;
 		    ((MPIR_Grequest_f77_query_function *)(request_ptr->query_fn))( 
-			request_ptr->grequest_extra_state, 
-			&request_ptr->status, &ierr );
-		    mpi_errno = (int)ierr;
+			request_ptr->grequest_extra_state, &request_ptr->status, &ierr );
+		    rc = (int)ierr;
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**user", "**userfree %d", rc);
 		}
 		break;
 #endif	    
 		/* --BEGIN ERROR HANDLING-- */
 		default:
+		{
+		    /* --BEGIN ERROR HANDLING-- */
 		    /* This should not happen */
-		    mpi_errno = MPI_SUCCESS;
+		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase", request_ptr->greq_lang);
 		    break;
-		/* --END ERROR HANDLING-- */
-	    }
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userquery %d", mpi_errno);
+		    /* --END ERROR HANDLING-- */
+		}
 	    }
 
 	    MPIR_Request_extract_status(request_ptr, status);
@@ -156,6 +160,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		case MPID_LANG_CXX:
 #endif
 		    rc = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**user", "**userfree %d", rc);
 		    break;
 #ifdef HAVE_FORTRAN_BINDING
 		case MPID_LANG_FORTRAN:
@@ -165,6 +170,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		    
 		    ((MPIR_Grequest_f77_free_function *)(request_ptr->free_fn))(request_ptr->grequest_extra_state, &ierr);
 		    rc = (int) ierr;
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**user", "**userfree %d", rc);
 		    break;
 		}
 #endif
@@ -173,21 +179,27 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		{
 		    /* --BEGIN ERROR HANDLING-- */
 		    /* This should not happen */
-		    rc = MPI_ERR_INTERN;
+		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase", request_ptr->greq_lang);
 		    break;
 		    /* --END ERROR HANDLING-- */
 		}
 	    }
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (rc != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userfree %d", rc);
-	    }
-	    /* --END ERROR HANDLING-- */
 	    
 	    MPID_Request_release(request_ptr);
 	    *request = MPI_REQUEST_NULL;
+
+	    MPIR_Nest_decr();
+	    
 	    break;
+	}
+	
+	default:
+	{
+	    /* --BEGIN ERROR HANDLING-- */
+	    /* This should not happen */
+	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase", request_ptr->kind);
+	    break;
+	    /* --END ERROR HANDLING-- */
 	}
     }
 
@@ -226,13 +238,20 @@ int MPIR_Request_get_error(MPID_Request * request_ptr)
 
 	case MPID_UREQUEST:
 	{
+	    int rc;
+	    
+	    /* The user error handler may make calls to MPI routines, so the nesting counter must be incremented before the
+	       handler is called */
+	    MPIR_Nest_incr();
+    
 	    switch (request_ptr->greq_lang)
 	    {
 		case MPID_LANG_C:
 #ifdef HAVE_CXX_BINDING
 		case MPID_LANG_CXX:
 #endif
-		    mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
+		    rc = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**user", "**userfree %d", rc);
 		    break;
 #ifdef HAVE_FORTRAN_BINDING
 		case MPID_LANG_FORTRAN:
@@ -240,19 +259,35 @@ int MPIR_Request_get_error(MPID_Request * request_ptr)
 		{
 		    MPI_Fint ierr;
 		    ((MPIR_Grequest_f77_query_function*)(request_ptr->query_fn))( 
-			request_ptr->grequest_extra_state,
-			&request_ptr->status,
+			request_ptr->grequest_extra_state, &request_ptr->status,
 			&ierr );
-		    mpi_errno = (int)ierr;
+		    rc = (int) ierr;
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**user", "**userfree %d", rc);
 		    break;
 		}
 #endif
+		
+		default:
+		{
+		    /* --BEGIN ERROR HANDLING-- */
+		    /* This should not happen */
+		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase", request_ptr->greq_lang);
+		    break;
+		    /* --END ERROR HANDLING-- */
+		}
 	    }
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userquery %d", mpi_errno);
-	    }
+
+	    MPIR_Nest_decr();
 	    break;
+	}
+	
+	default:
+	{
+	    /* --BEGIN ERROR HANDLING-- */
+	    /* This should not happen */
+	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase", request_ptr->kind);
+	    break;
+	    /* --END ERROR HANDLING-- */
 	}
     }
 

@@ -59,7 +59,9 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
 {
     static const char FCNAME[] = "MPI_File_call_errhandler";
     int mpi_errno = MPI_SUCCESS;
+#if !defined(USE_ROMIO_FILE)    
     MPID_File *file_ptr = NULL;
+#endif    
     MPID_Errhandler *e;
     MPI_Errhandler eh;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_FILE_CALL_ERRHANDLER);
@@ -114,6 +116,11 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
 	e = file_ptr->errhandler;
     }
 #   endif
+
+    /* The user error handler may make calls to MPI routines, so the nesting
+     * counter must be incremented before the handler is called */
+    MPIR_Nest_incr();
+    
     switch (e->language) {
     case MPID_LANG_C:
 	(*e->errfn.C_File_Handler_function)( &fh, &errorcode );
@@ -131,6 +138,8 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
 	break;
 #endif
     }
+
+    MPIR_Nest_decr();
     
     /* ... end of body of routine ... */
 

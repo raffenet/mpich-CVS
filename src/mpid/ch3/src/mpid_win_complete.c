@@ -12,6 +12,7 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Win_complete(MPID_Win *win_ptr)
 {
+    int nest_level_inc = FALSE;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_COMPLETE);
 
@@ -66,6 +67,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             ranks_in_start_grp[i] = i;
         }
         
+        nest_level_inc = TRUE;
         MPIR_Nest_incr();
         
         mpi_errno = NMPI_Comm_group(win_ptr->comm, &win_grp);
@@ -109,8 +111,6 @@ int MPID_Win_complete(MPID_Win *win_ptr)
                 /* --END ERROR HANDLING-- */
             }
         }
-        
-        MPIR_Nest_decr();
         
         /* keep track of no. of ops to each proc. Needed for knowing
            whether or not to decrement the completion counter. The
@@ -358,6 +358,10 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     win_ptr->start_group_ptr = NULL; 
 
  fn_exit:
+    if (nest_level_inc)
+    { 
+	MPIR_Nest_decr();
+    }
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
     return mpi_errno;
 }

@@ -12,6 +12,7 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 {
+    int nest_level_inc = FALSE;
     int mpi_errno=MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_POST);
 
@@ -100,6 +101,7 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
                 ranks_in_post_grp[i] = i;
             }
         
+	    nest_level_inc = TRUE;
             MPIR_Nest_incr();
             
             mpi_errno = NMPI_Comm_group(win_ptr->comm, &win_grp);
@@ -137,14 +139,16 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
                 /* --END ERROR HANDLING-- */
             }
             
-            MPIR_Nest_decr();
-            
             MPIU_Free(ranks_in_win_grp);
             MPIU_Free(ranks_in_post_grp);
         }    
     }
 
  fn_exit:
+    if (nest_level_inc)
+    { 
+	MPIR_Nest_decr();
+    }
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_POST);
     return mpi_errno;
 }

@@ -142,7 +142,6 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 
 	    /* acthigh must either == 0 or the size of the local comm */
 	    if (acthigh != 0 && acthigh != comm_ptr->local_size) {
-		MPIR_Nest_decr();
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
 		    MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, 
 						  "**notsame",
@@ -221,7 +220,6 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 		       but not zero.  Indicate an internal error and 
 		       exit.  */
 		    /* --BEGIN ERROR HANDLING-- */
-		    MPIR_Nest_decr();
 		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
 						      MPIR_ERR_RECOVERABLE,
 		       FCNAME, __LINE__, MPI_ERR_INTERN, "**nouniquehigh", 0 );

@@ -17,6 +17,8 @@ int MPID_Win_free(MPID_Win **win_ptr)
         
    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_FREE);
         
+   MPIR_Nest_incr();
+
     if (MPIDI_Use_optimized_rma) {
 #       ifdef MPIDI_CH3_IMPLEMENTS_WIN_FREE
         {
@@ -31,8 +33,6 @@ int MPID_Win_free(MPID_Win **win_ptr)
         int err;
 #endif
     
-        MPIR_Nest_incr();
-
         /* set up the recvcnts array for the reduce scatter to check if all
            passive target rma operations are done */
         MPID_Comm_get_ptr( (*win_ptr)->comm, comm_ptr );
@@ -110,8 +110,6 @@ int MPID_Win_free(MPID_Win **win_ptr)
 
         NMPI_Comm_free(&((*win_ptr)->comm));
         
-        MPIR_Nest_decr();
-        
         MPIU_Free((*win_ptr)->base_addrs);
         MPIU_Free((*win_ptr)->disp_units);
         MPIU_Free((*win_ptr)->all_win_handles);
@@ -123,6 +121,7 @@ int MPID_Win_free(MPID_Win **win_ptr)
     }
  
  fn_exit:
+    MPIR_Nest_decr();
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FREE);
     return mpi_errno;
 }
