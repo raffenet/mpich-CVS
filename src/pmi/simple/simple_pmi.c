@@ -401,6 +401,7 @@ int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
+    PMIU_writeline( PMI_fd, "cmd=init\n" );
     PMIU_writeline( PMI_fd, "cmd=get_maxes\n" );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf );
