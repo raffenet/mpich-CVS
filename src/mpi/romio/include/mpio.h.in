@@ -25,7 +25,7 @@ extern "C" {
 typedef struct ADIOI_FileD *MPI_File;
 #endif
 
-/* no generalized requests as yet */
+@DEFINE_HAVE_MPI_GREQUEST@
 #ifndef HAVE_MPI_GREQUEST
 typedef struct ADIOI_RequestD *MPIO_Request;  
 #else
