@@ -45,9 +45,9 @@ def sig_handler(signum,frame):
 
 
 # This block will provide 'something' if a user does pydoc on this module
-if 'pydoc' in argv[0]  or  len(argv) == 1:
+if argv[0].find('pydoc') >= 0  or  len(argv) == 1:
     print __doc__
-    exit(-1)
+    exit(0)
 
 signal(SIGINT,sig_handler)
 signal(SIGUSR1,sig_handler)

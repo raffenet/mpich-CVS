@@ -42,9 +42,9 @@ from socket import gethostname, gethostbyname_ex, socket
 from popen2 import popen4
 
 # provide 'something' if a user does pydoc on this module or asks for help
-if 'pydoc' in argv[0] or (len(argv) == 2 and (argv[1] == '-h'  or  argv[1] == '--help')):
+if argv[0].find('pydoc') >= 0  or (len(argv) == 2 and (argv[1] == '-h'  or  argv[1] == '--help')):
     print __doc__
-    exit(-1)
+    exit(0)
 
 hostnames = [
               'torvalds.cs.mtsu.edu',
