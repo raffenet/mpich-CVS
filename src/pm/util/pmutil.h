@@ -186,7 +186,6 @@ void InitTimeout( int seconds );
 int GetRemainingTime( void );
 
 /* IO Handlers */
-int IOHandleStdOut( int, void * );
 int IOSetupOutHandler( IOSpec *, int, int, char * );
 int IOHandleLoop( ProcessTable *, int * );
 void IOHandlersCloseAll( ProcessState *, int );
