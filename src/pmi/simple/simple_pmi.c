@@ -45,6 +45,7 @@
 int PMI_fd = -1;
 int PMI_size = 1;
 int PMI_rank = 0;
+int PMI_universe_size = -1;
 
 /* Set PMI_initialized to 1 for regular initialized and 2 for 
    the singleton init case (no MPI_Init) */
@@ -152,6 +153,11 @@ int PMI_Init( int *spawned )
 	    PMI_debug = atoi( p );
 	else 
 	    PMI_debug = 0;
+
+	if ( ( p = getenv( "PMI_UNIVERSE_SIZE" ) ) ) 
+	    PMI_universe_size = atoi( p );
+	/* Leave unchanged otherwise, which indicates that no value
+	   was set */
     }
 	
     PMII_getmaxes( &PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max );
