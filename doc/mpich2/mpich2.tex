@@ -37,6 +37,8 @@
 \def\mpiconst#1{\code{#1}\index{#1}}
 % Environment variables
 \def\eindex#1{\index{#1}}
+% Configure option and related topics
+\def\cfgindex#1{\index{#1}}
 
 %\tpageoneskip
 \ANLTMTitle{MPICH2 Design Document\\
@@ -108,7 +110,8 @@ no runtime control) or
 #define END_ERROR_CHECKS }
 \end{verbatim}
 
-There must be a configure option, \code{--disable-error-checking},
+There must be a configure option,
+\code{--disable-error-checking}\cfgindex{--disable-error-checking},  
 that prevents \code{HAVE_ERROR_CHECKING} from being defined.
 
 \subsection{Error handling and Fault Tolerance}
@@ -151,14 +154,16 @@ mapping.  Thus a single bit test on the opaque handle could eliminate
 a number of tests and memory references for an important common case.
 
 The questions are: do we want to make this possible?  If so, do we
-want to implement it from the beginning?
+want to implement it from the beginning?  Note that encoding
+information into the opaque handle makes that handle conversion
+functions more complex.
 
 \subsection{MPI and PMPI Routines}
 Each routine should implement the \code{PMPI} version of the routine.
 Where possible, a weak symbol pragma may be used to define the
 \code{MPI} version of the routine.  If weak symbol support is not
 available, the \file{Makefile}s will support recompiling each file
-with the definition \code{MPICH_MPI_FROM_PMPI} made.  This can value
+with the definition \code{MPICH_MPI_FROM_PMPI} made.  This value
 can also be used to protect code that is used by the \code{PMPI}
 version of the routine.  For example, 
 \begin{verbatim}
@@ -209,18 +214,23 @@ as
 /* -- end profiling interface -- */
 \end{verbatim}
 
+\subsection{Deprecated Routines}
+Question:  How should deprecated routines be handled?  At the very
+least, their man pages should make clear that they are deprecated and
+what functions should be used instead.
+
 \subsection{Coding Practices}
 This section reviews some coding practices for the MPICH code.
 
 \begin{description}
-\item[function prototypes.]
+\item[Function prototypes.]
 All routines should be prototyped.  The prototypes should be in the
 smallest scope possible.  For example, if the routine is used only
 within the files in a subdirectory, the prototype should be in an
 include file within that directory.
 Question: do we really want this?
 
-\item[static functions.]
+\item[Static functions.]
 Functions used entirely within a single file should be declared
 \code{static}.  Functions that are not static must follow the naming
 convention of starting with \code{MPI_} or \code{PMPI_} (for routines
@@ -238,7 +248,7 @@ Parameters that are semantically arrays should be declared as arrays
 \item[Indentation style.]
 Question: should we specify an indentation style?  If so, we need to
 specify it at the top of each file (as an emacs command) so that emacs
-will use the correct style for users with other styles.
+will use the correct style for users with other styles or projects.
 
 \item[File header.]
 There should be a standard file header, containing the copyright and
@@ -271,9 +281,14 @@ definitions by the compiler.  This will require generating the
 \file{mpi.h.in}).  It should not include any other
 files, with the (possible) exception of \file{mpi++.h} for C++ support.
 
-The \file{mpif.h} (of \file{mpif.h.in}) should be created from
+The \file{mpif.h} (or \file{mpif.h.in}) should be created from
 \file{mpi.h} so that the various integer values (e.g., error classes,
-datatypes, etc.) are guaranteed consistent.
+datatypes, etc.) are guaranteed consistent.  This can be done prior to
+distribution, similar to the way \file{configure} is generated from
+\file{configure.in}.  The point is to automate this and ensure that,
+at least in the development Makefiles, the \file{mpif.h.in} file
+should be created from the \file{mpi.h} automatically, at least with
+respect to any values. 
 
 \section{MPI Operations}
 This section describes the implementation of the MPI operations.  The
@@ -286,6 +301,52 @@ the MPI Standard.
 
 \subsection{Attributes and Info}
 
+\mpiconst{MPI_ERR_KEYVAL}
+
+\paragraph{Info}
+
+Effor values defined for info:
+\mpiconst{MPI_ERR_INFO_KEY}
+\mpiconst{MPI_ERR_INFO_VALUE}
+\mpiconst{MPI_ERR_INFO_NOKEY}
+
+Constants defined for info: 
+\mpiconst{MPI_MAX_INFO_KEY}
+\mpiconst{MPI_MAX_INFO_VAL}
+Note that the MPI standard sets limits on the ranges that these can take.
+
+\paragraph{Defining New Keys}
+The MPI Forum has not resolved an ambiguity in the definition of
+info.  While it was clear during many of the discussions that the
+expectation was that \code{MPI_Info}\index{MPI_Info} could be used by
+layered implementations of parts of MPI, particularly the I/O part,
+IBM did not interpret the standard this way and their interpretation
+is both consistent with the standard and offers a feature not
+otherwise available (specifically, the ability to determine what info
+keys are recognized by the implementation).
+
+Note also that the interface to access the info values is not
+thread-safe, since it has the implicit assumption that the number of
+keys in an info object does not change unless ...
+For example, consider this sequence:
+\begin{verbatim}
+    MPI_Info_get_nkeys( info, &nkeys );
+    MPI_Info_get_nthkey( info, nkeys-1, keystring );
+\end{verbatim}
+In a multi-threaded environment, another thread may have called
+\begin{verbatim}
+   MPI_Info_delete( info, "any-key-in-info");
+\end{verbatim}
+after \mpifunc{MPI_Info_get_nkeys} but before
+\mpifunc{MPI_Info_get_nthkey}.  There's no way to really fix this, but
+we can at least raise the issue in the manual pages and generate
+helpful error messages in this case.  We may also want to add an
+extension that raises a special error code if a different thread
+modifies an \code{MPI_Info} while any of the routines with a notion of
+the ``current'' state of info are operating on it.
+
+\paragraph{MPI-1 Attribute Functions}
+The following five functions are deprecated.
 \subsubsection{\mpifunc{MPI_ATTR_DELETE}}
 \subsubsection{\mpifunc{MPI_ATTR_GET}}
 \subsubsection{\mpifunc{MPI_ATTR_PUT}}
@@ -320,9 +381,6 @@ modified by another thread?  Is there any way to actually do this?
 \subsubsection{\mpifunc{MPI_INFO_GET_VALUELEN}}
 \subsubsection{\mpifunc{MPI_INFO_SET}}
 
-\mpiconst{MPI_ERR_INFO_KEY}
-\mpiconst{MPI_ERR_KEYVAL}
-\mpiconst{MPI_MAX_INFO_KEY}
 
 \subsection{Datatypes}
 The ADI defines a datatype structure that is believed to be a good
@@ -330,6 +388,13 @@ choice for implementing operatoins that involve datatypes, such as
 \mpifunc{MPI_Pack} and \mpifunc{MPI_Unpack}.
 
 \subsubsection{\mpifunc{MPI_ADDRESS}}
+(Deprecated)
+\subsubsection{\mpifunc{MPI_TYPE_HINDEXED}}
+(Deprecated)
+\subsubsection{\mpifunc{MPI_TYPE_HVECTOR}}
+(Deprecated)
+\subsubsection{\mpifunc{MPI_TYPE_STRUCT}}
+(Deprecated)
 
 \subsubsection{\mpifunc{MPI_GET_ADDRESS}}
 
@@ -337,13 +402,8 @@ choice for implementing operatoins that involve datatypes, such as
 
 \subsubsection{\mpifunc{MPI_TYPE_COMMIT}}
 
-\subsubsection{\mpifunc{MPI_TYPE_HINDEXED}}
-
-\subsubsection{\mpifunc{MPI_TYPE_HVECTOR}}
 
 \subsubsection{\mpifunc{MPI_TYPE_INDEXED}}
-
-\subsubsection{\mpifunc{MPI_TYPE_STRUCT}}
 
 \subsubsection{\mpifunc{MPI_TYPE_VECTOR}}
 
@@ -352,6 +412,8 @@ choice for implementing operatoins that involve datatypes, such as
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_F90_COMPLEX}}
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_HINDEXED}}
+
+\subsubsection{\mpifunc{MPI_TYPE_CREATE_HVECTOR}}
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_INDEXED_BLOCK}}
 
@@ -389,33 +451,34 @@ Uses the \code{dataloop} field to access the data uses to create the datatype.
 \subsubsection{\mpifunc{MPI_TYPE_GET_ENVELOPE}}
 Uses \code{dataloop} field to identify how the datatype was constructed.
 The \code{combiner} type must be one of 
-\mpiconst{MPI_COMBINER_NAMED},
-\mpiconst{MPI_COMBINER_DUP},
-\mpiconst{MPI_COMBINER_CONTIGUOUS}, 
-\mpiconst{MPI_COMBINER_VECTOR},
-\mpiconst{MPI_COMBINER_HVECTOR_INTEGER},
-\mpiconst{MPI_COMBINER_HVECTOR},
-\mpiconst{MPI_COMBINER_INDEXED},
-\mpiconst{MPI_COMBINER_HINDEXED_INTEGER},
-\mpiconst{MPI_COMBINER_HINDEXED},
-\mpiconst{MPI_COMBINER_INDEXED_BLOCK},
-\mpiconst{MPI_COMBINER_STRUCT_INTEGER},
-\mpiconst{MPI_COMBINER_STRUCT},
-\mpiconst{MPI_COMBINER_SUBARRAY},
-\mpiconst{MPI_COMBINER_DARRAY},
-\mpiconst{MPI_COMBINER_F90_REAL},
-\mpiconst{MPI_COMBINER_F90_COMPLEX},
-\mpiconst{MPI_COMBINER_F90_INTEGER},
-\mpiconst{MPI_COMBINER_RESIZED}.
+
+\mpiconst{MPI_COMBINER_NAMED}\\
+\mpiconst{MPI_COMBINER_DUP}\\
+\mpiconst{MPI_COMBINER_CONTIGUOUS}\\
+\mpiconst{MPI_COMBINER_VECTOR}\\
+\mpiconst{MPI_COMBINER_HVECTOR_INTEGER}\\
+\mpiconst{MPI_COMBINER_HVECTOR}\\
+\mpiconst{MPI_COMBINER_INDEXED}\\
+\mpiconst{MPI_COMBINER_HINDEXED_INTEGER}\\
+\mpiconst{MPI_COMBINER_HINDEXED}\\
+\mpiconst{MPI_COMBINER_INDEXED_BLOCK}\\
+\mpiconst{MPI_COMBINER_STRUCT_INTEGER}\\
+\mpiconst{MPI_COMBINER_STRUCT}\\
+\mpiconst{MPI_COMBINER_SUBARRAY}\\
+\mpiconst{MPI_COMBINER_DARRAY}\\
+\mpiconst{MPI_COMBINER_F90_REAL}\\
+\mpiconst{MPI_COMBINER_F90_COMPLEX}\\
+\mpiconst{MPI_COMBINER_F90_INTEGER}\\
+\mpiconst{MPI_COMBINER_RESIZED}\\
 
 \subsubsection{\mpifunc{MPI_TYPE_GET_EXTENT}}
-Simply uses ???
+Simply uses extent field.
 
 \subsubsection{\mpifunc{MPI_TYPE_GET_NAME}}
 Uses the \code{name} field.
 
 \subsubsection{\mpifunc{MPI_TYPE_SET_NAME}}
-Sets the \code{name} field.
+Sets the \code{name} field.  Returns error if supplied name is too long.
 
 \subsubsection{\mpifunc{MPI_PACK}}
 \subsubsection{\mpifunc{MPI_PACK_SIZE}}
@@ -536,7 +599,22 @@ refers simply to the processes known to the current process.
 
 Question: How do we implement \mpifunc{MPI_Group_translate_ranks}?
 
+Actually, groups are simple as long as we don't require a scalable
+representation of group membership.  An interesting question is what
+sort of representation should be used for truly massively parallel
+systems such as Blue Gene.  
+
+\subsubsection{\mpifunc{MPI_GROUP_RANK}}
+Simply return rank field.
+\subsubsection{\mpifunc{MPI_GROUP_SIZE}}
+Simply return size field.
+
+\subsubsection{\mpifunc{MPI_GROUP_TRANSLATE_RANKS}}
+We may want to detect the special case of a group that is a subset of
+\code{MPI_COMM_WORLD}.  
+
 \subsubsection{\mpifunc{MPI_GROUP_COMPARE}}
+
 \subsubsection{\mpifunc{MPI_GROUP_DIFFERENCE}}
 \subsubsection{\mpifunc{MPI_GROUP_EXCL}}
 \subsubsection{\mpifunc{MPI_GROUP_FREE}}
@@ -544,9 +622,6 @@ Question: How do we implement \mpifunc{MPI_Group_translate_ranks}?
 \subsubsection{\mpifunc{MPI_GROUP_INTERSECTION}}
 \subsubsection{\mpifunc{MPI_GROUP_RANGE_EXCL}}
 \subsubsection{\mpifunc{MPI_GROUP_RANGE_INCL}}
-\subsubsection{\mpifunc{MPI_GROUP_RANK}}
-\subsubsection{\mpifunc{MPI_GROUP_SIZE}}
-\subsubsection{\mpifunc{MPI_GROUP_TRANSLATE_RANKS}}
 \subsubsection{\mpifunc{MPI_GROUP_UNION}}
 
 \subsection{Communicators}
@@ -565,6 +640,10 @@ ensure that the expected communicator is acted on?
 If a hidden communicator is used, it should have its error handler permanently
 set to \mpifunc{MPI_ERRORS_RETURN} so that an error action that is appropriate to
 the collective routine, not the routine called, may be used.
+
+What utility routines do we wish to define?  There are a number of
+routines that create communicators, including the topology routines.
+Note that attributes are only copied by \mpifunc{MPI_Comm_dup}.
 
 \subsubsection{\mpifunc{MPI_COMM_COMPARE}}
 \subsubsection{\mpifunc{MPI_COMM_CREATE}}
@@ -608,7 +687,7 @@ This is a special C++ function.
 Return a copy of the \code{name} field.
 
 \subsubsection{\mpifunc{MPI_COMM_SET_NAME}}
-Set the \code{name} field.
+Set the \code{name} field.  Check for valid length.
 
 \subsection{Point to Point Communication}
 
@@ -619,15 +698,25 @@ Questions that remain:  Handling of persistent requests.  The ADI
 contains memory registration.  Is anything else needed for persistent
 requests? 
 
-\subsubsection{\mpifunc{MPI_PROBE}}
+\paragraph{Buffered send}
+The buffered send should first use \mpidfunc{MPID_tBsend} to attempt
+and send the message before implementing the buffer-copying strategy.
+
+\subsubsection{\mpifunc{MPI_IBSEND}}
 \subsubsection{\mpifunc{MPI_BSEND}}
 \subsubsection{\mpifunc{MPI_BSEND_INIT}}
+Question:  Should this reserve space in the buffer that is used as
+necessary by \code{MPI_Start}?
+
 \subsubsection{\mpifunc{MPI_BUFFER_ATTACH}}
 \subsubsection{\mpifunc{MPI_BUFFER_DETACH}}
+
 \subsubsection{\mpifunc{MPI_CANCEL}}
 \subsubsection{\mpifunc{MPI_GET_COUNT}}
+Question: Does this belong with datatypes?
 \subsubsection{\mpifunc{MPI_GET_ELEMENTS}}
-\subsubsection{\mpifunc{MPI_IBSEND}}
+Question: Does this belong with datatypes?
+\subsubsection{\mpifunc{MPI_PROBE}}
 \subsubsection{\mpifunc{MPI_IPROBE}}
 \subsubsection{\mpifunc{MPI_IRECV}}
 \subsubsection{\mpifunc{MPI_IRSEND}}
@@ -669,7 +758,7 @@ Since each system may have some feature that provides for even faster
 implementation of the collective routines, it will be possible to
 substitute a system-specific implementation for any of the collective
 routines.  The purpose of the implementations provided with MPICH is
-to provide a good performance and a level of performance that will be adequate
+to provide a level of performance that will be adequate
 for many users.  
 
 The $\alpha$-tree approach described in
@@ -681,7 +770,7 @@ championed by van de Geijn (\cite{vandegeijn} isn't quite the right
 reference but it will do for now).
 
 
-\subsubsection{Redution functions}
+\subsubsection{Reduction functions}
 The reduction functions must use the \code{restrict} qualifier.
 
 Question:
@@ -697,7 +786,8 @@ For example, we could have \code{MPIR_SUM_Double},
 \code{MPIR_SUM_Int}, etc.  This would also allow us to use Fortran
 code for some or all of these routines, since Fortran compilers
 typically produce better code for this kind of operation (though the
-new definitions, using 'restrict', may be much better).
+new definitions, using \code{restrict}, may be much better than the
+current C code).
 
 The down side of this is that, particularly in unstripped code, each
 file (particularly if it includes any significant header files)
@@ -716,11 +806,12 @@ The MPICH code uses one gigantic file, \file{interops.c}, to provide a
 generic implementation of each collective operation.  Each
 communicator has a structure of pointers to functions.  Unless
 otherwise set, each communicator points to the predefined structure
-'MPIR_intra_collops' which is initialized to point to \emph{all} of
+\code{MPIR_intra_collops}\index{MPIR_intra_collops} which is
+initialized to point to \emph{all} of 
 these functions.  
 
 For MPICH2, I'd prefer that the default case have no structure, and
-each of the MPI functions (in its file) contains the generic
+each of the MPI functions (in its own file) contains the generic
 implementation of the collective operation, based (most likely) on the
 stream operations.  This will simplify the process of tuning each
 operation; it will also reduce the size of executables since few if
@@ -732,6 +823,22 @@ routines, do we want these in the same file as the intracommunicator
 routines, or in a alternate file.  E.g., should \file{bcast.c} contain
 the intracommunicator implementation of \mpifunc{MPI_Bcast} and
 \file{ibcast.c} contain the intercommunicator implementation.
+
+We may want to have multiple ``generic'' implementations and an easy
+way, say with environment variables, to select among them at runtime.
+
+We may want to compute and save things like the neighbors for each
+collective communication pattern; this can be done either when the
+collective operation is first encountered or at communicator creation
+time.  Question: how do we modularize this?  Is there a ``collective''
+attribute?
+
+\subsubsection{Collective Computation}
+\mpiconst{MPI_Op} need to have reference counts.  How do we handle the
+predefined types?  
+\subsubsection{\mpifunc{MPI_OP_CREATE}}
+\subsubsection{\mpifunc{MPI_OP_FREE}}
+
 
 \subsubsection{Intracommunicator Collective Operations}
 The following section (will) briefly describe the algorithms used to implement
@@ -761,6 +868,7 @@ This is similar to \code{MPI_ALLTOALL}, but the decision on size of data is
 more complicated. 
 
 \subsubsection{\mpifunc{MPI_ALLTOALLW}}
+Like \code{MPI_ALLTOALLV}.
 
 \subsubsection{\mpifunc{MPI_BARRIER}}
 Barrier is a special case of allreduce with no operation.
@@ -808,9 +916,6 @@ For short data, use an MST.
 \subsubsection{\mpifunc{MPI_SCAN}}
 \subsubsection{\mpifunc{MPI_SCATTER}}
 \subsubsection{\mpifunc{MPI_SCATTERV}}
-
-\subsubsection{\mpifunc{MPI_OP_CREATE}}
-\subsubsection{\mpifunc{MPI_OP_FREE}}
 
 \subsection{Topology}
 
@@ -952,11 +1057,6 @@ whether all windows are in shared memory.
 \subsubsection{\mpifunc{MPI_WIN_CREATE}}
 \subsubsection{\mpifunc{MPI_WIN_FREE}}
 
-\subsubsection{\mpifunc{MPI_WIN_CREATE_ERRHANDLER}}
-\subsubsection{\mpifunc{MPI_WIN_CALL_ERRHANDLER}}
-\subsubsection{\mpifunc{MPI_WIN_GET_ERRHANDLER}}
-\subsubsection{\mpifunc{MPI_WIN_SET_ERRHANDLER}}
-
 \subsubsection{\mpifunc{MPI_WIN_GET_GROUP}}
 
 \subsubsection{\mpifunc{MPI_WIN_GET_NAME }}
@@ -1075,7 +1175,38 @@ the request.
 
 \subsubsection{\mpifunc{MPI_ADD_ERROR_STRING}}
 
+\subsubsection{\mpifunc{MPI_WIN_CREATE_ERRHANDLER}}
+\subsubsection{\mpifunc{MPI_WIN_CALL_ERRHANDLER}}
+\subsubsection{\mpifunc{MPI_WIN_GET_ERRHANDLER}}
+\subsubsection{\mpifunc{MPI_WIN_SET_ERRHANDLER}}
+
 \subsection{Handle Transfers}
+These provide for the conversion of handles to and from the C and
+Fortran representations.  C++ is handled as a descendant of C (that
+is, there is no Fortran representation of a C++ handle directly, but
+C++ can use C handles.  
+\begin{figure}
+\begin{verbatim}
+     +-----+         +---------+
+     |  C  | < --- > | Fortran |
+     +-----+         +---------+
+        ^
+        |
+        v
+     +-----+ 
+     | C++ | 
+     +-----+ 
+\end{verbatim}
+\caption{Relationship of handle conversion functions.  The C to/from
+C++ are part of the C++ binding of MPI.}\label{fig:handle-transfers}
+\end{figure}
+These should normally (i.e., unless
+\code{--disable-mpi-macros}\cfgindex{--disable-mpi-macros} is
+specified to configure) be implemented as macros.  
+
+Unresolved question (raised by Barry Smith):  What should happen if
+the handle is invalid?  Should there even be a check?  Raise the error
+on \mpiconst{MPI_COMM_SELF}?
 
 \subsubsection{\mpifunc{MPI_ERRHANDLER_F2C}}
 \subsubsection{\mpifunc{MPI_ERRHANDLER_C2F}}
@@ -1091,6 +1222,20 @@ the request.
 \subsubsection{\mpifunc{MPI_STATUS_C2F}}
 \subsubsection{\mpifunc{MPI_TYPE_C2F}}
 \subsubsection{\mpifunc{MPI_TYPE_F2C}}
+
+\subsection{Timers}
+The MPI standard allows \code{MPI_Wtime} and \code{MPI_Wtick} to be
+implemented as macros; we should also allow that, at least as an
+option.  Question:  should there be a
+\code{--enable-mpi-macros}\cfgindex{--enable-mpi-macros} feature in
+configure?
+
+Eventually, we should allow for a synchronized timer.  That is, even
+if the underlying hardware does not provide a global timer, we should
+provide one as an option.
+
+\subsubsection{\mpifunc{MPI_WTICK}}
+\subsubsection{\mpifunc{MPI_WTIME}}
 
 \subsection{I/O}
 MPI I/O will be provided by ROMIO.  We expect to update ROMIO to exploit both
@@ -1216,17 +1361,20 @@ list:
     \item[\texttt{eight}]Aligned to eight bytes
     \item[\texttt{other}]Unable to determine
     \end{description}
+    A program to determine these already exists and is part of the
+    current MPICH.
 \item[\texttt{CROSS_SIZEOF_INT}]\code{sizeof(int)}
 \item[\texttt{CROSS_SIZEOF_VOID_P}]\code{sizeof(void*)}
-\item[\texttt{CROSS_SIZEOF_CHAR}]\code{sizeof{char}}
-\item[\texttt{CROSS_SIZEOF_LONG}]\code{sizeof{long}}
-\item[\texttt{CROSS_SIZEOF_FLOAT}]\code{sizeof{float}}
-\item[\texttt{CROSS_SIZEOF_DOUBLE}]\code{sizeof{double}}
-\item[\texttt{CROSS_SIZEOF_LONG_DOUBLE}]\code{long double}
+\item[\texttt{CROSS_SIZEOF_CHAR}]\code{sizeof(char)}
+\item[\texttt{CROSS_SIZEOF_LONG}]\code{sizeof(long)}
+\item[\texttt{CROSS_SIZEOF_FLOAT}]\code{sizeof(float)}
+\item[\texttt{CROSS_SIZEOF_DOUBLE}]\code{sizeof(double)}
+\item[\texttt{CROSS_SIZEOF_LONG_DOUBLE}]\code{sizeof(long double)}
 \item[\texttt{CROSS_F77_SIZEOF_INTEGER}]The size of an \code{INTEGER} in
   Fortran (as if there was a \code{sizeof} operator in Fortran)
-\item[\texttt{CROSS_F77_SIZEOF_REAL}]
-\item[\texttt{CROSS_F77_SIZEOF_DOUBLE_PRECISION}]
+\item[\texttt{CROSS_F77_SIZEOF_REAL}]Ditto for \code{REAL}
+\item[\texttt{CROSS_F77_SIZEOF_DOUBLE_PRECISION}]Ditto for
+\code{DOUBLE PRECISION}.
 \item[\texttt{CROSS_F90_INTEGER_KIND}]The Fortran 90 kind for an integer that
   corresponds to a C \code{int}.
 \item[\texttt{CROSS_OFFSET_KIND}]The Fortran 90 kind for an integer that
@@ -1329,7 +1477,9 @@ Tools already available:
 \item[checkforglobs]Check for global symbol names
 \item[tool-to-be-created]Check for use of banned routines (e.g., \code{printf},
 \code{alloca})
-\item[gcc -Wall etc.]Missing prototypes, return values, etc.
+\item[gcc -Wall etc.]Missing prototypes, return values,
+etc. (Question: add an \code{--enable-strict} to the standard
+configure macros?)
 \item[tool-to-be-created]Check for OS name or system type in a preprocessor
   statement 
 \end{description}
@@ -1364,6 +1514,11 @@ Microsoft-specific extension for Windows.
 Avoiding \code{printf} is important for Windows applications.
 
 \subsection{Fortran Support}
+Fortran support has two parts: Fortran 77 and Fortran 90/95.  
+There are a few functions unique to Fortran.  They include
+
+\subsubsection{\mpifunc{MPI_SIZEOF}}
+
 
 \subsection{C++ Support}
 
@@ -1377,7 +1532,9 @@ capabilities.
 \item Testing is separate from the MPICH testing, causing inadequate
 testing of the MPICH/C++ combination.
 \item Layering makes some things difficult. 
-\item Does not pass our (sometimes stricter) coding standards. 
+\item Does not pass our (sometimes stricter) coding standards.
+\item Layering can be awkward because some data structures must be
+duplicated since MPI itself leaves them opaque. 
 \end{enumerate}
 
 \section{Standard Features}
@@ -1437,15 +1594,13 @@ cut was made).
 \item Results for the following tests:
     \begin{enumerate}
     \item \code{mpptest -logscale} To get the general trend in performance
-    \item \code{mpptest -autodx} To get details for the short message
+    \item \code{mpptest -auto} To get details for the short message
 performance. 
     \item bisection bandwidth test for a large number of processes.
     We may want to use beff instead of mpptest.
     \item \code{mpptest -logscale -halo -npartner 8} To get more
     realistic communication performance
-    \item \code{mpptest -logscale -gop dsum} This isn't quite right.
-    We need both the scaling and the performance as a function of
-    message size.
+    \item \code{mpptest -logscale -gop -dsum} 
     \item Similar test for alltoallv. 
     \item Tests for I/O (Rajeev and Rob to identify)
     \item Tests for put/get/accumulate as those become available.
@@ -1453,6 +1608,9 @@ performance.
 -logscale -halo -npartner 8}
     \end{enumerate}
 \item This should also be in XML format.
+    Question: Should we add an XML output format to \code{mpptest}?
+Is there any clear XML definition yet for 2-d data?
+
 \end{enumerate}
 We should maintain the same data for vendor and other MPI
 implementations, and we should ask for a standard set of tests.  
@@ -1509,53 +1667,7 @@ replace this appendix.  Until then, this section serves as a place to
 cache these items.
 
 \subsection{Constants}
-\code{MPI::ERRORS_THROW_EXCEPTIONS}\\
-\code{MPI_ADDRESS_KIND}\\
-\code{MPI_ANY_TAG}\\
-\code{MPI_APPNUM}\\
-\code{MPI_ARGVS_NULL}\\
-\code{MPI_ARGV_NULL}\\
-\code{MPI_BOTTOM}\\
-\code{MPI_CONVERSION_FN_NULL}\\
-\code{MPI_DISTRIBUTE_BLOCK}\\
-\code{MPI_ERRCODES_IGNORE}\\
-\code{MPI_ERR_ACCESS}\\
-\code{MPI_ERR_AMODE}\\
-\code{MPI_ERR_BASE}\\
-\code{MPI_ERR_CONVERSION}\\
-\code{MPI_ERR_DUP_DATAREP}\\
-\code{MPI_ERR_FILE_IN_USE}\\
-\code{MPI_ERR_NAME}\\
-\code{MPI_ERR_NO_MEM}\\
-\code{MPI_ERR_NO_SUCH_FILE}\\
-\code{MPI_ERR_PORT}\\
-\code{MPI_ERR_SERVICE}\\
-\code{MPI_ERR_SPAWN}\\
-\code{MPI_FILE_NULL}\\
-\code{MPI_F_STATUSES_IGNORE}\\
-\code{MPI_INFO_NULL}\\
-\code{MPI_INTEGER_KIND}\\
-\code{MPI_LASTUSEDCODE}\\
-\code{MPI_LOCK_EXCLUSIVE}\\
-\code{MPI_MAX_DATAREP_STRING}\\
-\code{MPI_MAX_OBJECT_NAME}\\
-\code{MPI_MAX_PORT_NAME}\\
-\code{MPI_OFFSET_KIND}\\
-\code{MPI_ORDER_C}\\
-\code{MPI_ORDER_FORTRAN}\\
-\code{MPI_REPLACE}\\
-\code{MPI_ROOT}\\
-\code{MPI_STATUSES_IGNORE}\\
-\code{MPI_STATUS_IGNORE}\\
-\code{MPI_SUBVERSION}\\
-\code{MPI_THREAD_FUNNELED}\\
-\code{MPI_TYPECLASS_COMPLEX}\\
-\code{MPI_UNIVERSE_SIZE}\\
-\code{MPI_VERSION}\\
-\code{MPI_WCHAR}\\
-\code{MPI_WIN_BASE}\\
-\code{MPI_WIN_NULL}\\
-\code{MPI_WIN_SIZE}\\
+(I need to get the union of MPI-1 and MPI-2 constants)
 
 \subsection{Info keys}
 \code{access_style}\\
@@ -1584,8 +1696,6 @@ cache these items.
 \subsection{MPI-1 Functions}
 \code{MPI_GET_PROCESSOR_NAME}\\
 \code{MPI_PCONTROL}\\
-\code{MPI_WTICK}\\
-\code{MPI_WTIME}\\
 
 \subsection{MPI-2 Functions}
 This also includes MPI-1 functions with significant new functionality,
@@ -1599,8 +1709,6 @@ MPI-2, from intracommunicators to intercommunicators.
 \code{MPI_UNPACK_EXTERNAL}\\
 \\
 \code{MPI_REGISTER_DATAREP}\\
-\\
-\code{MPI_SIZEOF}\\
 \\
 \code{MPI_TYPE_DUP}\\
 \code{MPI_TYPE_MATCH_SIZE}\\
@@ -1621,7 +1729,9 @@ MPI-2, from intracommunicators to intercommunicators.
 
 \section{Development Plan}
 \label{sec:development}
-This section proposes a development and implementation plan.
+This section proposes a development and implementation plan.  The
+emphasis here is on independent subprojects, allowing development to
+proceed without waiting for all of the pieces to be in place.
 
 \begin{enumerate}
 \item ADI Implementation
