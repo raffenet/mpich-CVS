@@ -72,9 +72,21 @@ __attribute__ ((unused))
 #endif
 
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
+#ifdef HAVE_GCC_ASM_AND_X86_SFENCE
+#define MPID_WRITE_BARRIER() __asm__ __volatile__  ( "sfence" ::: "memory" )
+#else
 #define MPID_WRITE_BARRIER()
+#endif
+#ifdef HAVE_GCC_ASM_AND_X86_LFENCE
+#define MPID_READ_BARRIER() __asm__ __volatile__  ( ".byte 0x0f, 0xae, 0xe8" ::: "memory" )
+#else
 #define MPID_READ_BARRIER()
+#endif
+#ifdef HAVE_GCC_ASM_AND_X86_MFENCE
+#define MPID_READ_WRITE_BARRIER() __asm__ __volatile__  ( ".byte 0x0f, 0xae, 0xf0" ::: "memory" )
+#else
 #define MPID_READ_WRITE_BARRIER()
+#endif
 #else
 #define MPID_WRITE_BARRIER()
 #define MPID_READ_BARRIER()
