@@ -82,6 +82,7 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+	    MPIR_ERRTEST_ARGNULL( datatype, "datatype", mpi_errno );
 	    /* If datatype_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_MATCH_SIZE);
@@ -139,9 +140,13 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 	break;
     }
 
-    if (mpi_errno == MPI_SUCCESS && 
-	matched_datatype == MPI_DATATYPE_NULL) {
-	mpi_errno = MPIR_Err_create_code( mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**typematchsize", "**typematchsize %s %d", tname, size );
+    if (mpi_errno == MPI_SUCCESS) {
+	if (matched_datatype == MPI_DATATYPE_NULL) {
+	    mpi_errno = MPIR_Err_create_code( mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**typematchsize", "**typematchsize %s %d", tname, size );
+	}
+	else {
+	    *datatype = matched_datatype;
+	}
     }
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_MATCH_SIZE);
