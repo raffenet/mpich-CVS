@@ -830,9 +830,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 
 	result = execvp( process->exe, NULL );
 
-	smpd_err_printf("execvp failed, exiting.\n");
-	smpd_exit_fn("smpd_launch_process");
-	exit(-1);
+	smpd_err_printf("execvp failed - error %d, exiting.\n", errno);
+	exit(errno);
     }
 
     /* parent process */
