@@ -84,26 +84,25 @@ int MPI_Finalize( void )
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECLS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FINALIZE);
 
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-	    }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+	    }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FINALIZE);
+    
     /* ... body of routine ...  */
+    MPID_Finalize();
+
     MPIR_Call_finalize_callbacks();
 
     /* If memory debugging is enabled, check the memory here */
@@ -112,8 +111,6 @@ int MPI_Finalize( void )
 	MPIU_trdump( (void *)0 );
     }
 #endif
-
-    MPID_Finalize();
 
     /* ... end of body of routine ... */
 
