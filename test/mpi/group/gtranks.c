@@ -27,11 +27,15 @@ int main( int argc, char *argv[] )
     for (i=0; i<size; i++) {
 	if (i == rank) {
 	    if (ranksout[i] != 0) {
+		printf( "[%d] Rank %d is %d but should be 0\n", rank, 
+			i, ranksout[i] );
 		errs++;
 	    }
 	}
 	else {
 	    if (ranksout[i] != MPI_UNDEFINED) {
+		printf( "[%d] Rank %d is %d but should be undefined\n", rank, 
+			i, ranksout[i] );
 		errs++;
 	    }
 	}
