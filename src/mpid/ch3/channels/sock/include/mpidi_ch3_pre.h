@@ -72,34 +72,32 @@ struct MPIDI_CH3I_VC				\
     struct MPID_Request * sendq_head;		\
     struct MPID_Request * sendq_tail;		\
     MPIDI_CH3I_VC_state_t state;		\
-    sock_t sock;                                \
-} channel;
+    sock_t sock;				\
+} sc;
 
 
 /*
  * MPIDI_CH3_CA_ENUM (additions to MPIDI_CA_t)
  *
- * MPIDI_CH3I_CA_HANDLE_PKT - The completion of a packet request (send or
- * receive) needs to be handled.
+ * MPIDI_CH3I_CA_HANDLE_PKT - The completion of a packet request (send or receive) needs to be handled.
  */
 #define MPIDI_CH3_CA_ENUM			\
 MPIDI_CH3I_CA_HANDLE_PKT,			\
-MPIDI_CH3I_CA_END_CHANNEL,
+MPIDI_CH3I_CA_END_SOCK_CHANNEL,
 
 
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
  */
-#define MPIDI_CH3_REQUEST_DECL						\
-struct MPIDI_CH3I_Request						\
-{									\
-    /* iov_offset points to the current head element in the IOV */	\
-    int iov_offset;							\
-    									\
-    /*  pkt is used to temporarily store a packet header associated	\
-       with this request */						\
-    MPIDI_CH3_Pkt_t pkt;						\
-} channel;
+#define MPIDI_CH3_REQUEST_DECL									\
+struct MPIDI_CH3I_Request									\
+{												\
+    /* iov_offset points to the current head element in the IOV */				\
+    int iov_offset;										\
+												\
+    /*  pkt is used to temporarily store a packet header associated with this request */	\
+    MPIDI_CH3_Pkt_t pkt;									\
+} sc;
 
 #define MPID_STATE_LIST_CH3 \
 MPID_STATE_MAKE_PROGRESS, \
@@ -129,10 +127,10 @@ MPID_STATE_POST_PKT_SEND, \
 MPID_STATE_POST_QUEUED_SEND, \
 MPID_STATE_UPDATE_REQUEST, \
 MPID_STATE_POLL, \
-MPID_STATE_READ, \
-MPID_STATE_READV, \
-MPID_STATE_WRITE, \
-MPID_STATE_WRITEV, \
+MPID_STATE_SOCK_READ, \
+MPID_STATE_SOCK_READV, \
+MPID_STATE_SOCK_WRITE, \
+MPID_STATE_SOCK_WRITEV, \
 MPID_STATE_MPIDI_CH3U_BUFFER_COPY, \
 MPID_STATE_MPIDI_CH3_COMM_SPAWN,
 

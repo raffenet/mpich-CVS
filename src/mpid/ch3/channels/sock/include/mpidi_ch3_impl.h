@@ -27,51 +27,51 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
     /* MT - not thread safe! */											\
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue vc=0x%08x req=0x%08x", (unsigned long) vc, req->handle));	\
     req->ch3.next = NULL;											\
-    if (vc->channel.sendq_tail != NULL)										\
+    if (vc->sc.sendq_tail != NULL)										\
     {														\
-	vc->channel.sendq_tail->ch3.next = req;									\
+	vc->sc.sendq_tail->ch3.next = req;									\
     }														\
     else													\
     {														\
-	vc->channel.sendq_head = req;										\
+	vc->sc.sendq_head = req;										\
     }														\
-    vc->channel.sendq_tail = req;										\
+    vc->sc.sendq_tail = req;											\
 }
 
 #define MPIDI_CH3I_SendQ_enqueue_head(vc, req)									\
 {														\
     /* MT - not thread safe! */											\
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=0x%08x req=0x%08x", (unsigned long) vc, req->handle));	\
-    req->ch3.next = vc->channel.sendq_tail;									\
-    if (vc->channel.sendq_tail == NULL)										\
+    req->ch3.next = vc->sc.sendq_tail;										\
+    if (vc->sc.sendq_tail == NULL)										\
     {														\
-	vc->channel.sendq_tail = req;										\
+	vc->sc.sendq_tail = req;										\
     }														\
-    vc->channel.sendq_head = req;										\
+    vc->sc.sendq_head = req;											\
 }
 
 #define MPIDI_CH3I_SendQ_dequeue(vc)											\
 {															\
     /* MT - not thread safe! */												\
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_dequeue vc=0x%08x req=0x%08x", (unsigned long) vc, vc->channel.sendq_head));	\
-    vc->channel.sendq_head = vc->channel.sendq_head->ch3.next;								\
-    if (vc->channel.sendq_head == NULL)											\
+    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_dequeue vc=0x%08x req=0x%08x", (unsigned long) vc, vc->sc.sendq_head));	\
+    vc->sc.sendq_head = vc->sc.sendq_head->ch3.next;									\
+    if (vc->sc.sendq_head == NULL)											\
     {															\
-	vc->channel.sendq_tail = NULL;											\
+	vc->sc.sendq_tail = NULL;											\
     }															\
 }
 
-#define MPIDI_CH3I_SendQ_head(vc) (vc->channel.sendq_head)
+#define MPIDI_CH3I_SendQ_head(vc) (vc->sc.sendq_head)
 
-#define MPIDI_CH3I_SendQ_empty(vc) (vc->channel.sendq_head == NULL)
+#define MPIDI_CH3I_SendQ_empty(vc) (vc->sc.sendq_head == NULL)
 
 
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 short MPIDI_CH3I_Listener_get_port(void);
-int MPIDI_CH3I_TCP_post_connect(MPIDI_VC *);
-void MPIDI_CH3I_TCP_post_read(MPIDI_VC *, MPID_Request *);
-void MPIDI_CH3I_TCP_post_write(MPIDI_VC *, MPID_Request *);
+int MPIDI_CH3I_VC_post_connect(MPIDI_VC *);
+void MPIDI_CH3I_VC_post_read(MPIDI_VC *, MPID_Request *);
+void MPIDI_CH3I_VC_post_write(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_Request_adjust_iov(MPID_Request *, MPIDI_msg_sz_t);
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

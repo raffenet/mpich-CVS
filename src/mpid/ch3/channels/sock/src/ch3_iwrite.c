@@ -18,10 +18,10 @@ void MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IWRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IWRITE);
-    assert(vc->channel.state == MPIDI_CH3I_VC_STATE_CONNECTED);
-    req->channel.iov_offset = 0;
+    assert(vc->sc.state == MPIDI_CH3I_VC_STATE_CONNECTED);
+    req->sc.iov_offset = 0;
     
-    MPIDI_CH3I_TCP_post_write(vc, req);
+    MPIDI_CH3I_VC_post_write(vc, req);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);
 }
