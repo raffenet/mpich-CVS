@@ -302,7 +302,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Combining libraries into mpich2sockd.lib"
-				CommandLine="lib lib\mpich2sockd.lib lib\ch3sockd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib lib\mpich2ffd.lib"/>
+				CommandLine="lib lib\mpich2sockd.lib lib\ch3sockd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib lib\mpich2ffd.lib lib\smpd_utild.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -348,7 +348,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Combining libraries into mpich2sock.lib"
-				CommandLine="lib lib\mpich2sock.lib lib\ch3sock.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib lib\mpich2ff.lib lib\mpich2ff.lib"/>
+				CommandLine="lib lib\mpich2sock.lib lib\ch3sock.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib lib\mpich2ff.lib lib\mpich2ff.lib lib\smpd_util.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
