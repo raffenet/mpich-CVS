@@ -17,6 +17,8 @@ simple-size-extent_SOURCES = simple-size-extent.c
 
 slice-pack_SOURCES = slice-pack.c
 
+struct-no-real-types_SOURCES = struct-no-real-types.c
+
 slice-pack-external_SOURCES = slice-pack-external.c
 
 simple-pack_SOURCES = simple-pack.c
