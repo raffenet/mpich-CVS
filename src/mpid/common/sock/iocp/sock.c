@@ -1912,7 +1912,6 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 	{
 	    /*MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);*/ /* Maybe the logging will reset the last error? */
 	    mpi_errno = GetLastError();
-	    MPIU_DBG_PRINTF(("GetQueuedCompletionStatus failed, GetLastError: %d\n", mpi_errno));
 	    MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
 	    /* interpret error, return appropriate SOCK_ERR_... macro */
 	    if (mpi_errno == WAIT_TIMEOUT)
@@ -1920,6 +1919,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
 		return MPIDU_SOCK_ERR_TIMEOUT;
 	    }
+	    MPIU_DBG_PRINTF(("GetQueuedCompletionStatus failed, GetLastError: %d\n", mpi_errno));
 	    if (sock != NULL)
 	    {
 		if (sock->type == SOCKI_SOCKET)
