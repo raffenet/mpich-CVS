@@ -77,29 +77,26 @@ int MPI_Type_create_struct(int count,
 	    MPID_Datatype *datatype_ptr = NULL;
 
 	    MPIR_ERRTEST_COUNT(count,mpi_errno);
-	    if (count > 0) {
-		MPIR_ERRTEST_ARGNULL(array_of_blocklengths, "blocklens",
-				     mpi_errno);
-		MPIR_ERRTEST_ARGNULL(array_of_displacements, "indices",
-				     mpi_errno);
-		MPIR_ERRTEST_ARGNULL(array_of_types, "types", mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-		if (mpi_errno == MPI_SUCCESS) {
-		    for (i=0; i < count; i++) {
-			MPIR_ERRTEST_ARGNEG(array_of_blocklengths[i], "blocklen", mpi_errno);
-			if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	    if (count > 0) { 
+		MPIR_ERRTEST_ARGNULL(array_of_blocklengths, "blocklens", mpi_errno);
+		MPIR_ERRTEST_ARGNULL(array_of_displacements, "indices", mpi_errno);
+		MPIR_ERRTEST_ARGNULL(array_of_types, "types", mpi_errno);
+		if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	    }
+
+	    for (i=0; i < count; i++) {
+		MPIR_ERRTEST_ARGNEG(array_of_blocklengths[i], "blocklen", mpi_errno);
+		MPIR_ERRTEST_DATATYPE(array_of_blocklengths[i], array_of_types[i], mpi_errno);
+		if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 			
-			MPIR_ERRTEST_DATATYPE(array_of_blocklengths[i], array_of_types[i], mpi_errno);
-			MPIR_ERRTEST_DATATYPE_NULL(array_of_types[i], "datatype", mpi_errno);
-			if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-			
-			MPID_Datatype_get_ptr(array_of_types[i], datatype_ptr);
-			MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
-			if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-		    }
+		if (array_of_types[i] != MPI_DATATYPE_NULL && HANDLE_GET_KIND(array_of_types[i]) != HANDLE_KIND_BUILTIN) {
+		    MPID_Datatype_get_ptr(array_of_types[i], datatype_ptr);
+		    MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+		    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 		}
 	    }
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

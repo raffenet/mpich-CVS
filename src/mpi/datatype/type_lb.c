@@ -56,15 +56,31 @@ int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint *displacement)
     MPID_Datatype *datatype_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_LB);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_LB);
-    /* Get handles to MPI objects. */
-    MPID_Datatype_get_ptr( datatype, datatype_ptr );
+
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
+	    MPIR_ERRTEST_DATATYPE(1, datatype, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Datatype_get_ptr( datatype, datatype_ptr );
+
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             if (mpi_errno) goto fn_fail;
@@ -73,20 +89,34 @@ int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint *displacement)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) *displacement = 0;
-    else *displacement = datatype_ptr->lb;
+    /* ... body of routine ...  */
+    
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
+    {
+	*displacement = 0;
+    }
+    else
+    {
+	*displacement = datatype_ptr->lb;
+    }
 
+    /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_LB);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-				     "**mpi_type_lb", "**mpi_type_lb %D %p", 
-				     datatype, displacement);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_LB);
-    return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_type_lb",
+	    "**mpi_type_lb %D %p", datatype, displacement);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

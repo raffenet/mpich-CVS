@@ -67,7 +67,7 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
 
 	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(count, "count", mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(0, datatype, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(1, datatype, mpi_errno);
             if (mpi_errno) goto fn_fail;
 
             /* Validate datatype_ptr */

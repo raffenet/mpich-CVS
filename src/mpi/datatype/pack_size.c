@@ -141,13 +141,3 @@ int MPI_Pack_size(int incount,
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
-
-
-
-
-
-
-
-
-
-

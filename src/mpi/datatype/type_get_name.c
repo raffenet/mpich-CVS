@@ -235,6 +235,14 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
     }
 #   endif
     
+    /* Handle MPI_DATATYPE_NULL as a special case */
+    if (datatype == MPI_DATATYPE_NULL)
+    { 
+	MPIU_Strncpy( type_name, "MPI_DATATYPE_NULL", MPI_MAX_OBJECT_NAME );
+	*resultlen = (int)strlen( type_name );
+	goto fn_exit;
+    }
+    
     /* Convert MPI object handles to object pointers */
     MPID_Datatype_get_ptr( datatype, datatype_ptr );
     
@@ -259,10 +267,7 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
     /* If this is the first call, initialize all of the predefined names */
     if (!setup) { 
 	mpi_errno = MPIR_Datatype_init_names();
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS)
-	    goto fn_fail;
-	/* --END ERROR HANDLING-- */
+	if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	setup = 1;
     }
 
