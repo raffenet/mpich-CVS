@@ -65,4 +65,10 @@ AC_OUTPUT_COMMANDS(echo "copying mpidpre.h to src/include" ;
 AC_OUTPUT_COMMANDS(echo "copying mpid_datatype.h to src/include" ;
                    cp $topdir/../common/datatype/mpid_datatype.h \
 		       ../../include/)
+AC_OUTPUT_COMMANDS(echo "copying mpid_dataloop.h to src/include" ;
+                   cp $topdir/../common/datatype/mpid_dataloop.h \
+		       ../../include/)
+AC_OUTPUT_COMMANDS(echo "copying gen_dataloop.h to src/include" ;
+                   cp $topdir/../common/datatype/gen_dataloop.h \
+		       ../../include/)
 AC_OUTPUT(Makefile src/Makefile channels/Makefile)

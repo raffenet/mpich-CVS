@@ -267,6 +267,8 @@ AC_OUTPUT_COMMANDS(cp ./include/mpidconf.h ../../include)
 AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/include/mpidpre.h ../../include,use_top_srcdir=$use_top_srcdir)
 AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/include/mpidpost.h ../../include)
 AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/../common/datatype/mpid_datatype.h ../../include)
+AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/../common/datatype/mpid_dataloop.h ../../include)
+AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/../common/datatype/gen_dataloop.h ../../include)
 AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/include/*_pre.h ../../include)
 
 dnl Generate the Makefiles from Makefile.in
