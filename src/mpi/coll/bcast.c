@@ -646,7 +646,9 @@ int MPIR_Bcast_inter (
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, 
+					     FCNAME, __LINE__, MPI_ERR_OTHER, 
+					     "**fail", 0);
 	}
 	/* --END ERROR HANDLING-- */
         MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
@@ -665,7 +667,9 @@ int MPIR_Bcast_inter (
 	    /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
 	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, 
+						 FCNAME, __LINE__, 
+						 MPI_ERR_OTHER, "**fail", 0);
 		return mpi_errno;
 	    }
 	    /* --END ERROR HANDLING-- */
@@ -800,11 +804,6 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root,
         else
 	{
             /* intercommunicator */
-	    /*
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
-					      "**intercommcoll",
-					      "**intercommcoll %s", FCNAME );
-	    */
             mpi_errno = MPIR_Bcast_inter( buffer, count, datatype,
 	      root, comm_ptr );
         }
@@ -825,7 +824,8 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root,
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_bcast",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_bcast",
 	    "**mpi_bcast %p %d %D %d %C", buffer, count, datatype, root, comm);
     }
 #   endif
