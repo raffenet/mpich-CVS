@@ -18,7 +18,7 @@ from signal    import signal, SIGCHLD, SIGKILL, SIGHUP, SIG_IGN
 from atexit    import register
 from time      import sleep
 from random    import seed, randrange
-from syslog    import syslog
+from syslog    import syslog, openlog, closelog, LOG_DAEMON, LOG_INFO, LOG_ERR
 from md5       import new
 from cPickle   import dumps, loads
 # from marshal    import dumps, loads
@@ -49,6 +49,10 @@ def _mpd_init():
         stdout.flush()
     g.myId = '%s_%d' % (g.myHost,g.myPort)
     mpd_set_my_id(g.myId)
+
+    # setup syslog
+    openlog("mpd",0,LOG_DAEMON)
+    syslog(LOG_INFO,"mpdid=%s (port=%d)" % (g.myId,g.myPort) )
 
     if g.daemon:      # see if I should become a daemon with no controlling tty
         rc = fork()
@@ -250,7 +254,7 @@ def _handle_console_input():
         mpd_send_one_msg(g.conSocket,msgToSend)
         badMsg = 'invalid msg received from console: %s' % (str(msg))
         mpd_print(1, badMsg)
-        syslog(badMsg)
+        syslog(LOG_ERR,badMsg)
 
 def _handle_lhs_input():
     msg = mpd_recv_one_msg(g.lhsSocket)
@@ -472,7 +476,6 @@ def _do_mpdrun(msg):
             environ['MPDMAN_JOBID'] = jobid
             environ['MPDMAN_CLI_PGM'] = pgm
             environ['MPDMAN_CLI_PATH'] = pathForExec
-            print "RMB TEMP: PGMARGS=", pgmArgs
             environ['MPDMAN_PGM_ARGS'] = pgmArgs
             environ['MPDMAN_PGM_ENVVARS'] = pgmEnvVars
             environ['MPDMAN_CWD'] = cwd
@@ -876,6 +879,7 @@ def _cleanup():
         mpd_print(0, "CLEANING UP" )
         if g.conListenSocket in g.activeSockets:    # only delete if I put it there
             unlink(g.conListenName)
+        closelog()
     except:
         pass
 

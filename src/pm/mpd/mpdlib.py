@@ -11,7 +11,7 @@ from cPickle    import dumps, loads
 # from marshal    import dumps, loads
 from traceback  import extract_stack, format_list, extract_tb
 from exceptions import Exception
-from syslog     import syslog
+from syslog     import syslog, LOG_INFO
 from os         import getuid
 from grp        import getgrall
 from pwd        import getpwnam, getpwuid
@@ -48,6 +48,7 @@ def mpd_print(*args):
         printLine = printLine + str(arg)
     print printLine
     stdout.flush()
+    syslog(LOG_INFO,printLine)
 
 def mpd_print_tb(*args):
     global myId
@@ -72,6 +73,7 @@ def mpd_print_tb(*args):
         printLine = printLine + '(%s,%s,%s) ' % tuple(splitLine)
     print printLine
     stdout.flush()
+    syslog(LOG_INFO,printLine)
 
 def mpd_get_tb():
     stack = extract_stack()
