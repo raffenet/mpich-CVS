@@ -234,6 +234,13 @@ PMPI_LOCAL int MPIR_Allgatherv (
                    the havenots. We use a logarithmic
                    recursive-halfing algorithm for this. */
                 
+                /* This part of the code will not currently be
+                 executed because we are not using recursive
+                 doubling for non power of two. Mark it as experimental
+                 so that it doesn't show up as red in the coverage
+                 tests. */  
+
+		/* --BEGIN EXPERIMENTAL-- */
                 if (dst_tree_root + mask > comm_size) {
                     nprocs_completed = comm_size - my_tree_root - mask;
                     /* nprocs_completed is the number of processes in this
@@ -317,6 +324,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
                         k--;
                     }
                 }
+		/* --BEGIN EXPERIMENTAL-- */
                 
                 mask <<= 1;
                 i++;

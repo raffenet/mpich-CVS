@@ -30,9 +30,9 @@
    (comm_size >= 8), we use the algorithm by Jehoshua Bruck et al,
    IEEE TPDS, Nov. 1997. It is a store-and-forward algorithm that
    takes lgp steps. Because of the extra communication, the bandwidth
-   requirement is n.lgp.beta.
+   requirement is (n/2).lgp.beta.
 
-   Cost = lgp.alpha + n.lgp.beta
+   Cost = lgp.alpha + (n/2).lgp.beta
 
    where n is the total amount of data a process needs to send to all
    other processes.
