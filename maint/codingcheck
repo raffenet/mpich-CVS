@@ -30,6 +30,7 @@ $showfiles = 0;
 $depth = 1;
 $curdir = ".";
 %skipfiles = ();
+$line_num = 0;
 # Check for special args
 @files = ();
 foreach $arg (@ARGV) {
@@ -59,9 +60,12 @@ sub ProcessFile {
     &ClearPreamble;
     %warningmsgs = ();
     &ClearMismatchedStates;
+    &ClearNested;
     
     open( FD, "<$filename" ) || die "Could not open $filename";
+    $line_num = 0;
     while (<FD>) {
+	$line_num++;
 	$errsrc = " in $filename";
 	# Check for special comments
 	if (/\/\*\s*style:\s*allow:(\w*):(\d*)\s+sig:(\d*)/) {
@@ -106,6 +110,7 @@ sub ProcessFile {
 	&CheckForBadSubs( $_, $filename );
         &CheckForBadDefines( FD, $_, $filename );
 	&CheckForMismatchedStates ( FD, $_, $filename );
+	&CheckForNested( FD, $_, $filename );
     }
     # Output summary messages
     foreach $key (keys(%warningmsgs)) {
@@ -212,6 +217,7 @@ sub CheckForBadDefines {
     if ($curline =~ /^\s*#if/) {
 	while ($curline =~ /\/$/) {
 	    $curline .= <$FD>;
+	    $line_num ++;
 	}
 	# Search for either ifdef or defined(...)
 	if ($curline =~ /^\s*#ifdef\s*(.*)\s*/) {
@@ -227,7 +233,8 @@ sub CheckForBadDefines {
 	       while ($curline =~ /defined\(([^\)]*)\)/) {
 		   $defname = $1;
 		   print "$defname\n" if $debug;
-		   if (&CheckName( $defname ) ) {
+		   if (! defined($AllowedDefines{$defname}) && 
+		       &CheckName( $defname ) ) {
 		       print "Warning: ifdef name $defname used in $filename is nonstandard\n"
 		       }
 		   $curline =~ s/defined\($defname\)//g;
@@ -295,21 +302,54 @@ sub CheckForMismatchedStates {
 	$funcname =~ tr/a-z/A-Z/;
     }
     elsif ($curline =~ /\s*#define/) { return; }
-    elsif ($curline =~ /MPID_MPI_[A-Z_]*FUNC_ENTER\(\s*(.*)\s*\)/) {
+    elsif ($curline =~ /MPID_MPI_[A-Z0-9_]*FUNC_ENTER\(\s*(.*)\s*\)/ ||
+	   $curline =~ /MPID_MPI_[A-Z0-9_]*FUNC_ENTER_FRONT\(\s*(.*)\s*\)/ ||
+	   $curline =~ /MPID_MPI_[A-Z0-9_]*FUNC_ENTER_BOTH\(\s*(.*)\s*\)/ ||
+	   $curline =~ /MPID_MPI_[A-Z0-9_]*FUNC_ENTER_BACK\(\s*(.*)\s*\)/) {
 	$statename = $1;
 	$funcstatename = "MPID_STATE_".$funcname;
 	if ($funcname ne "" && $statename ne $funcstatename) {
 	    print "Warning: State name \"$statename\" does not match function name \"$funcname\"\n";
 	}
     }
-    elsif ($curline =~ /MPID_MPI_[A-Z_]*FUNC_EXIT\(\s*([^\s]*)\s*\)/) {
+    elsif ($curline =~ /MPID_MPI_[A-Z0-9_]*FUNC_EXIT\(\s*([^\s]*)\s*\)/) {
 	$endname = $1;
 	if ($statename ne $endname && $endname ne "stateid") {
-	    print "Warning: State $statename ended with $endname in $filename\n";
+	    print "Warning: State $statename ended with $endname in $filename\[$line_num\]\n";
 	}
     }
 }
+#
+# Check for nested routine calls (NMPI) without Nest_incr/decr
+$nested_seen = 0;
 
+sub ClearNested {
+    $nested_seen = 0;
+}
+sub CheckForNested {
+    my $FD = $_[0];
+    my $curline = $_[1];
+    my $filename = $_[2];
+    
+    # Skip definitions
+    if ($curline =~ /#define\s+NMPI/) {
+	return;
+    }
+    if ($curline =~ /NMPI_H_INCLUDED/) { 
+	return;
+    }
+    # Check for usage
+    if ($curline =~ /NMPI_([A-Za-z0-9_]*)/) {
+	my $name = $1;
+	if (!$nested_seen && $name ne "Abort") {
+	    # Don't warn about NMPI_Abort
+	    print "Error: NMPI_$name called without MPIR_Nest_incr in $filename\[$line_num\]\n";
+	}
+    }
+    elsif ($curline =~ /MPIR_Nest_incr/) {
+	$nested_seen ++;
+    }
+}
 #
 # Check for proper preamble.  Record during file reading and check at end
 $saw_c_style   = 0;
