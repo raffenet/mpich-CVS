@@ -18,6 +18,7 @@ from sys             import argv, exit, stdin, stdout, stderr
 from os              import environ, fork, execvpe, getuid, getpid, path, getcwd, \
                             close, wait, waitpid, kill, unlink, _exit,  \
 			    WIFSIGNALED, WEXITSTATUS
+from pwd             import getpwnam
 from socket          import socket, fromfd, AF_UNIX, SOCK_STREAM, gethostname, \
                             gethostbyname_ex, gethostbyaddr
 from select          import select, error
@@ -226,6 +227,14 @@ def mpdrun():
                 exit(myExitStatus) # really forces jump back into main
             if p.hasAttribute('user'):
                 tempuser = p.getAttribute('user')
+                try:
+                    pwent = getpwnam(tempuser)
+                except:
+                    pwent = None
+                if not pwent:
+                    print tempuser, 'is an invalid username'
+                    myExitStatus = -1  # used in main
+                    exit(myExitStatus) # really forces jump back into main
                 if tempuser == username  or  getuid() == 0:
                     users[(loRange,hiRange)] = p.getAttribute('user')
                 else:
@@ -365,12 +374,16 @@ def mpdrun():
             print 'mpd already has a console (e.g. for long ringtest); try later'
             myExitStatus = -1  # used in main
             exit(myExitStatus) # really forces jump back into main
-        elif msg['cmd'] == 'job_failed'  and  msg['reason'] == 'some_procs_not_started':
-            print 'mpdrun: unable to start all procs; may have invalid machine names'
-            print '    remaining specified hosts:'
-            for host in msg['remaining_hosts'].values():
-		if host != '_any_':
-                    print '        %s' % (host)
+        elif msg['cmd'] == 'job_failed':
+            if  msg['reason'] == 'some_procs_not_started':
+                print 'mpdrun: unable to start all procs; may have invalid machine names'
+                print '    remaining specified hosts:'
+                for host in msg['remaining_hosts'].values():
+                    if host != '_any_':
+                        print '        %s' % (host)
+            elif  msg['reason'] == 'invalid_username':
+                print 'mpdrun: invalid username %s at host %s' % \
+                      (msg['username'],msg['host'])
             myExitStatus = -1  # used in main
             exit(myExitStatus) # really forces jump back into main
         else:

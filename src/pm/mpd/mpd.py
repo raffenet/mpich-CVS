@@ -550,6 +550,15 @@ def _do_mpdrun(msg):
             (lo,hi) = ranks
             if currRank >= lo  and  currRank <= hi:
                 username = users[ranks]
+                try:
+                    pwent = getpwnam(username)
+                except:
+                    mpd_print(1,'%s is invalid username on %s' % (username,g.myHost))
+                    mpd_send_one_msg(g.conSocket, {'cmd' : 'job_failed',
+                                                   'reason' : 'invalid_username',
+                                                   'username' : username,
+                                                   'host' : g.myHost } )
+                    return
                 break
         execs = msg['execs']
         for ranks in execs.keys():
@@ -627,7 +636,6 @@ def _do_mpdrun(msg):
                 environ['MPDMAN_MSHIP_HOST'] = msg['mship_host']
                 environ['MPDMAN_MSHIP_PORT'] = str(msg['mship_port'])
             if getuid() == 0:
-                pwent = getpwnam(username)
                 uid = pwent[2]
                 gid = pwent[3]
                 setgroups(mpd_get_groups_for_username(username))
@@ -871,24 +879,15 @@ def _enter_existing_ring():
     # connect to lhs
     g.lhsHost = g.entryHost
     g.lhsPort  = g.entryPort
-    errmsg = ''
     inRing = 0
     numTries = 0
     while not inRing  and  numTries < 8:
-        try:
-            g.lhsSocket = mpd_get_inet_socket_and_connect(g.lhsHost,g.lhsPort)
+        g.lhsSocket = mpd_get_inet_socket_and_connect(g.lhsHost,g.lhsPort)
+        if g.lhsSocket:
             inRing = 1
-        except Exception, errmsg:
-            if errmsg[0] == 111:    # errmsg[1] == 'Connection refused':
-                mpd_print(1,'failed to enter ring; connection refused; re-trying')
-                sleep(0.4)
-            else:
-                break
         numTries += 1
     if not inRing:
-	if errmsg:
-	    errmsg = "reason = " + str(errmsg)
-        mpd_raise('Failed to enter ring at %s %d  %s' % (g.entryHost,g.entryPort,errmsg))
+        mpd_raise('Failed to enter ring at %s %d' % (g.entryHost,g.entryPort))
     _add_active_socket(g.lhsSocket,'lhs','_handle_lhs_input',g.lhsHost,g.lhsPort)
     msgToSend = { 'cmd' : 'request_to_enter_as_rhs',
                   'host' : g.myHost,
