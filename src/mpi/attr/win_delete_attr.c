@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Win_delete_attr(MPI_Win win, int win_keyval)
+int MPI_Win_delete_attr(MPI_Win win, int win_keyval)
 {
     static const char FCNAME[] = "MPI_Win_delete_attr";
     int mpi_errno = MPI_SUCCESS;

@@ -46,7 +46,7 @@
 .N MPI_SUCCESS
 .N ... others
 @*/
-EXPORT_MPI_API int MPI_Query_thread( int *provided )
+int MPI_Query_thread( int *provided )
 {
     static const char FCNAME[] = "MPI_Query_thread";
     int mpi_errno = MPI_SUCCESS;

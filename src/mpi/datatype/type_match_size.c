@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
+int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 {
     static const char FCNAME[] = "MPI_Type_match_size";
     int mpi_errno = MPI_SUCCESS;

@@ -101,7 +101,7 @@ int MPIR_Init_thread( int required, int *provided )
 .N MPI_SUCCESS
 .N ... others
 @*/
-EXPORT_MPI_API int MPI_Init_thread( int *argc, char *((*argv)[]), int required, 
+int MPI_Init_thread( int *argc, char *((*argv)[]), int required, 
 		     int *provided )
 {
     static const char FCNAME[] = "MPI_Init_thread";

@@ -40,7 +40,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Comm_disconnect(MPI_Comm *comm)
+int MPI_Comm_disconnect(MPI_Comm *comm)
 {
     static const char FCNAME[] = "MPI_Comm_disconnect";
     int mpi_errno = MPI_SUCCESS;

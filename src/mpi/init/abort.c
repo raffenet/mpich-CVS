@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Abort(MPI_Comm comm, int errorcode)
+int MPI_Abort(MPI_Comm comm, int errorcode)
 {
     static const char FCNAME[] = "MPI_Abort";
     int mpi_errno = MPI_SUCCESS;

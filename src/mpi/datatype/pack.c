@@ -47,7 +47,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Pack(void *inbuf, int incount, MPI_Datatype datatype, void *outbuf, 
+int MPI_Pack(void *inbuf, int incount, MPI_Datatype datatype, void *outbuf, 
 	     int outcount, int *position, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Pack";

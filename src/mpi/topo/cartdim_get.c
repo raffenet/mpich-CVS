@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Cartdim_get(MPI_Comm comm, int *ndims)
+int MPI_Cartdim_get(MPI_Comm comm, int *ndims)
 {
     static const char FCNAME[] = "MPI_Cartdim_get";
     int mpi_errno = MPI_SUCCESS;

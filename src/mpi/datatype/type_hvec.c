@@ -44,7 +44,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Type_hvector(int count, int blocklen, MPI_Aint stride, MPI_Datatype old_type, MPI_Datatype *newtype)
+int MPI_Type_hvector(int count, int blocklen, MPI_Aint stride, MPI_Datatype old_type, MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_hvector";
     int mpi_errno = MPI_SUCCESS;

@@ -63,7 +63,7 @@ static int MPIR_Type_get_elements( int m_rem, MPID_Datatype *datatype_ptr )
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
+int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 {
     static const char FCNAME[] = "MPI_Get_elements";
     int mpi_errno = MPI_SUCCESS;

@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Win_unlock(int rank, MPI_Win win)
+int MPI_Win_unlock(int rank, MPI_Win win)
 {
     static const char FCNAME[] = "MPI_Win_unlock";
     int mpi_errno = MPI_SUCCESS;

@@ -43,7 +43,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int *coords)
+int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int *coords)
 {
     static const char FCNAME[] = "MPI_Cart_coords";
     int mpi_errno = MPI_SUCCESS;

@@ -45,7 +45,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info, 
+int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info, 
 		   MPI_Comm comm, MPI_Win *win)
 {
     static const char FCNAME[] = "MPI_Win_create";

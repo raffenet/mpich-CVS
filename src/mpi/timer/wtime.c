@@ -41,7 +41,7 @@
 
 .see also: MPI_Wtick, MPI_Comm_get_attr, MPI_Attr_get
 @*/
-EXPORT_MPI_API double MPI_Wtime( void )
+double MPI_Wtime( void )
 {
     double t1;
     MPID_Time_t t;

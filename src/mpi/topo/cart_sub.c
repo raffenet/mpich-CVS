@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
+int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
 {
     static const char FCNAME[] = "MPI_Cart_sub";
     int mpi_errno = MPI_SUCCESS;

@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Buffer_attach(void *buffer, int size)
+int MPI_Buffer_attach(void *buffer, int size)
 {
     static const char FCNAME[] = "MPI_Buffer_attach";
     int mpi_errno = MPI_SUCCESS;

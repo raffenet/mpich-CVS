@@ -72,7 +72,7 @@ static void MPIR_Call_finalize_callbacks( void )
 .N MPI_SUCCESS
 .N ... others
 @*/
-EXPORT_MPI_API int MPI_Finalize( void )
+int MPI_Finalize( void )
 {
     static const char FCNAME[] = "MPI_Finalize";
     int mpi_errno = MPI_SUCCESS;

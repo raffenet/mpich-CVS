@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Pcontrol(const int level, ...)
+int MPI_Pcontrol(const int level, ...)
 {
     static const char FCNAME[] = "MPI_Pcontrol";
     int mpi_errno = MPI_SUCCESS;

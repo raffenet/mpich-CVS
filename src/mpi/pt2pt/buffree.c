@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Buffer_detach(void *bufferptr, int *size)
+int MPI_Buffer_detach(void *bufferptr, int *size)
 {
     static const char FCNAME[] = "MPI_Buffer_detach";
     int mpi_errno = MPI_SUCCESS;

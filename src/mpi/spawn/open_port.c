@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Open_port(MPI_Info info, char *port_name)
+int MPI_Open_port(MPI_Info info, char *port_name)
 {
     static const char FCNAME[] = "MPI_Open_port";
     int mpi_errno = MPI_SUCCESS;

@@ -49,7 +49,7 @@ Output Argument:
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Address( void *location, MPI_Aint *address )
+int MPI_Address( void *location, MPI_Aint *address )
 {
     static const char FCNAME[] = "MPI_Address";
     int mpi_errno = MPI_SUCCESS;

@@ -42,7 +42,7 @@
 .N MPI_SUCCESS
 .N ... others
 @*/
-EXPORT_MPI_API int MPI_Info_delete( MPI_Info info, char *key )
+int MPI_Info_delete( MPI_Info info, char *key )
 {
     static const char FCNAME[] = "MPI_Info_delete";
     int mpi_errno = MPI_SUCCESS;

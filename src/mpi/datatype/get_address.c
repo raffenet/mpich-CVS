@@ -47,7 +47,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Get_address(void *location, MPI_Aint *address)
+int MPI_Get_address(void *location, MPI_Aint *address)
 {
     static const char FCNAME[] = "MPI_Get_address";
     int mpi_errno = MPI_SUCCESS;

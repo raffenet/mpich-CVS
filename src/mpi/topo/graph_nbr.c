@@ -43,7 +43,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors, int *neighbors)
+int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors, int *neighbors)
 {
     static const char FCNAME[] = "MPI_Graph_neighbors";
     int mpi_errno = MPI_SUCCESS;

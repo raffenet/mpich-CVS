@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Group_compare(MPI_Group group1,MPI_Group group2, int *result)
+int MPI_Group_compare(MPI_Group group1,MPI_Group group2, int *result)
 {
     static const char FCNAME[] = "MPI_Group_compare";
     int mpi_errno = MPI_SUCCESS;

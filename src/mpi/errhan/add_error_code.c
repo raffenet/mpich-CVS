@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Add_error_code(int errorclass, int *errorcode)
+int MPI_Add_error_code(int errorclass, int *errorcode)
 {
     static const char FCNAME[] = "MPI_Add_error_code";
     int mpi_errno = MPI_SUCCESS;

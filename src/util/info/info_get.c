@@ -47,7 +47,7 @@ Output Parameters:
 .N MPI_SUCCESS
 .N ... others
 @*/
-EXPORT_MPI_API int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value, 
+int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value, 
 		 int *flag)
 {
     MPID_Info *curr_ptr, *info_ptr=0;

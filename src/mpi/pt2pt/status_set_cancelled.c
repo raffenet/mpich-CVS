@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Status_set_cancelled(MPI_Status *status, int flag)
+int MPI_Status_set_cancelled(MPI_Status *status, int flag)
 {
     static const char FCNAME[] = "MPI_Status_set_cancelled";
     int mpi_errno = MPI_SUCCESS;

@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
+int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
 {
     static const char FCNAME[] = "MPI_Alloc_mem";
     int mpi_errno = MPI_SUCCESS;

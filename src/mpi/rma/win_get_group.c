@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Win_get_group(MPI_Win win, MPI_Group *group)
+int MPI_Win_get_group(MPI_Win win, MPI_Group *group)
 {
     static const char FCNAME[] = "MPI_Win_get_group";
     int mpi_errno = MPI_SUCCESS;

@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Win_fence(int assert, MPI_Win win)
+int MPI_Win_fence(int assert, MPI_Win win)
 {
     static const char FCNAME[] = "MPI_Win_fence";
     int mpi_errno = MPI_SUCCESS;

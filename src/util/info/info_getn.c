@@ -44,7 +44,7 @@ Output Arguments:
 .N MPI_SUCCESS
 .N ... others
 @*/
-EXPORT_MPI_API int MPI_Info_get_nkeys( MPI_Info info, int *nkeys )
+int MPI_Info_get_nkeys( MPI_Info info, int *nkeys )
 {
     MPID_Info *info_ptr=0;
     int      n;

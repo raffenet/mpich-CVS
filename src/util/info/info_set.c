@@ -43,7 +43,7 @@ Input Parameters:
 .N MPI_SUCCESS
 .N ... others
 @*/
-EXPORT_MPI_API int MPI_Info_set( MPI_Info info, char *key, char *value )
+int MPI_Info_set( MPI_Info info, char *key, char *value )
 {
     static const char FCNAME[] = "MPI_Info_set";
     int mpi_errno = MPI_SUCCESS;

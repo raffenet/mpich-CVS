@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
+int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
 {
     static const char FCNAME[] = "MPI_Op_create";
     int mpi_errno = MPI_SUCCESS;

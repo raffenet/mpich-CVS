@@ -46,7 +46,7 @@ Notes:
 .N MPI_ERR_COMM
 .N MPI_ERR_ARG
 @*/
-EXPORT_MPI_API int MPI_Comm_size( MPI_Comm comm, int *size ) 
+int MPI_Comm_size( MPI_Comm comm, int *size ) 
 {
     static const char FCNAME[] = "MPI_Comm_size";
     int mpi_errno = MPI_SUCCESS;

@@ -40,7 +40,7 @@ Output Argument:
 .N MPI_SUCCESS
 .N ... others
 @*/
-EXPORT_MPI_API int MPI_Finalized( int * flag )
+int MPI_Finalized( int * flag )
 {
     static const char FCNAME[] = "MPI_Finalized";
     int mpi_errno = MPI_SUCCESS;

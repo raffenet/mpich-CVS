@@ -53,7 +53,7 @@ Output Argument:
 .N MPI_ERR_OP
 .N MPI_ERR_COMM
 @*/
-EXPORT_MPI_API int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count, 
+int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count, 
 		    MPI_Datatype datatype, MPI_Op op, MPI_Comm comm )
 {
     static const char FCNAME[] = "MPI_Allreduce";

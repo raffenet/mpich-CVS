@@ -43,7 +43,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Pack_size(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size)
+int MPI_Pack_size(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size)
 {
     static const char FCNAME[] = "MPI_Pack_size";
     int mpi_errno = MPI_SUCCESS;

@@ -40,7 +40,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Close_port(char *port_name)
+int MPI_Close_port(char *port_name)
 {
     static const char FCNAME[] = "MPI_Close_port";
     int mpi_errno = MPI_SUCCESS;

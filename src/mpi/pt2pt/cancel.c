@@ -40,7 +40,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Cancel(MPI_Request *request)
+int MPI_Cancel(MPI_Request *request)
 {
     static const char FCNAME[] = "MPI_Cancel";
     int mpi_errno = MPI_SUCCESS;

@@ -40,7 +40,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Free_mem(void *base)
+int MPI_Free_mem(void *base)
 {
     static const char FCNAME[] = "MPI_Free_mem";
     int mpi_errno = MPI_SUCCESS;

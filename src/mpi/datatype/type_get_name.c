@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
+int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
 {
     static const char FCNAME[] = "MPI_Type_get_name";
     int mpi_errno = MPI_SUCCESS;

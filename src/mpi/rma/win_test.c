@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Win_test(MPI_Win win, int *flag)
+int MPI_Win_test(MPI_Win win, int *flag)
 {
     static const char FCNAME[] = "MPI_Win_test";
     int mpi_errno = MPI_SUCCESS;

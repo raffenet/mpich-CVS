@@ -41,7 +41,7 @@ Output Argument:
 .N MPI_SUCCESS
 .N ... others
 @*/
-EXPORT_MPI_API int MPI_Initialized( int *flag )
+int MPI_Initialized( int *flag )
 {
     static const char FCNAME[] = "MPI_Initialized";
     int mpi_errno = MPI_SUCCESS;

@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
+int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 {
     static const char FCNAME[] = "MPI_File_set_errhandler";
     int mpi_errno = MPI_SUCCESS;

@@ -43,7 +43,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
+int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Probe";
     int mpi_errno = MPI_SUCCESS;

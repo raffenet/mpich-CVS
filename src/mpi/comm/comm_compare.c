@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
+int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
 {
     static const char FCNAME[] = "MPI_Comm_compare";
     int mpi_errno = MPI_SUCCESS;

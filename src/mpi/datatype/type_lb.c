@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint *displacement)
+int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint *displacement)
 {
     static const char FCNAME[] = "MPI_Type_lb";
     int mpi_errno = MPI_SUCCESS;

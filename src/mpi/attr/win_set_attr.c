@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
+int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 {
     static const char FCNAME[] = "MPI_Win_set_attr";
     int mpi_errno = MPI_SUCCESS;
