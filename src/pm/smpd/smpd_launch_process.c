@@ -854,7 +854,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     SetCurrentDirectory(process->dir);
 
     launch_flag = 
-	CREATE_SUSPENDED | CREATE_NO_WINDOW | priorityClass;
+	CREATE_SUSPENDED | /*CREATE_NEW_CONSOLE*/ /*DETACHED_PROCESS*/ CREATE_NO_WINDOW | priorityClass;
     if (dbg)
 	launch_flag = launch_flag | DEBUG_PROCESS;
 
