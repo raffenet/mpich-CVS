@@ -91,6 +91,7 @@ smpd_global_t smpd_process =
       SMPD_FALSE,       /* shutdown               */
       SMPD_FALSE,       /* restart                */
       SMPD_FALSE,       /* validate               */
+      SMPD_FALSE,       /* do_status              */
 #ifdef HAVE_WINDOWS_H
       FALSE,            /* bOutputInitialized     */
       NULL,             /* hOutputMutex           */

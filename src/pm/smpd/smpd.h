@@ -417,7 +417,7 @@ typedef struct smpd_global_t
     int use_process_session;
     int nproc, nproc_launched, nproc_exited;
     int verbose;
-    int shutdown, restart, validate; /* built in commands */
+    SMPD_BOOL shutdown, restart, validate, do_status; /* built in commands */
 #ifdef HAVE_WINDOWS_H
     BOOL bOutputInitialized;
     HANDLE hOutputMutex;

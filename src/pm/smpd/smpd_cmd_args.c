@@ -282,6 +282,19 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     }
 #endif
 
+    /* check for the status option */
+    if (smpd_get_opt_string(argcp, argvp, "-status", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+    {
+	smpd_process.do_console = 1;
+	smpd_process.do_status = 1;
+    }
+    else if (smpd_get_opt(argcp, argvp, "-status"))
+    {
+	gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	smpd_process.do_console = 1;
+	smpd_process.do_status = 1;
+    }
+
     /* check for console options */
     if (smpd_get_opt_string(argcp, argvp, "-console", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
     {

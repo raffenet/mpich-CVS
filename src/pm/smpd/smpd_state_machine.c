@@ -2547,7 +2547,28 @@ int smpd_state_writing_session_header(smpd_context_t *context, sock_event_t *eve
 	    result = smpd_post_write_command(context, cmd_ptr);
 	    if (result != SMPD_SUCCESS)
 	    {
-		smpd_err_printf("unable to post a write of the shutdown command on the %s context.\n",
+		smpd_err_printf("unable to post a write of the validate command on the %s context.\n",
+		    smpd_get_context_str(context));
+		smpd_exit_fn("smpd_state_writing_session_header");
+		return SMPD_FAIL;
+	    }
+	    break;
+	}
+
+	/* check to see if this is a status session */
+	if (smpd_process.do_status)
+	{
+	    result = smpd_create_command("status", 0, 1, SMPD_TRUE, &cmd_ptr);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to create a status command.\n");
+		smpd_exit_fn("smpd_state_writing_session_header");
+		return SMPD_FAIL;
+	    }
+	    result = smpd_post_write_command(context, cmd_ptr);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to post a write of the status command on the %s context.\n",
 		    smpd_get_context_str(context));
 		smpd_exit_fn("smpd_state_writing_session_header");
 		return SMPD_FAIL;

@@ -534,6 +534,28 @@ int smpd_handle_result(smpd_context_t *context)
 			smpd_err_printf("unable to create a done command.\n");
 		    }
 		}
+		else if (strcmp(iter->cmd_str, "status") == 0)
+		{
+		    /* print the result of the status command */
+		    printf("dynamic hosts: %s\n", str);
+		    ret_val = smpd_create_command("done", smpd_process.id, context->id, SMPD_FALSE, &cmd_ptr);
+		    if (ret_val == SMPD_SUCCESS)
+		    {
+			ret_val = smpd_post_write_command(context, cmd_ptr);
+			if (ret_val == SMPD_SUCCESS)
+			{
+			    ret_val = SMPD_CLOSE;
+			}
+			else
+			{
+			    smpd_err_printf("unable to post a write of a done command.\n");
+			}
+		    }
+		    else
+		    {
+			smpd_err_printf("unable to create a done command.\n");
+		    }
+		}
 		else if (strcmp(iter->cmd_str, "get") == 0)
 		{
 		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
@@ -1841,6 +1863,58 @@ int smpd_handle_validate_command(smpd_context_t *context)
     return result;
 }
 
+int smpd_handle_status_command(smpd_context_t *context)
+{
+    int result = SMPD_SUCCESS;
+    smpd_command_t *cmd, *temp_cmd;
+    char dynamic_hosts[SMPD_MAX_CMD_LENGTH - 100];
+
+    smpd_enter_fn("smpd_handle_status_command");
+
+    cmd = &context->read_cmd;
+
+    result = smpd_get_smpd_data("dynamic_hosts", dynamic_hosts, SMPD_MAX_CMD_LENGTH - 100);
+    if (result != SMPD_SUCCESS)
+	strcpy(dynamic_hosts, "none");
+
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for a status command.\n");
+	smpd_exit_fn("smpd_handle_status_command");
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for a status command.\n");
+	smpd_exit_fn("smpd_handle_status_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "result", dynamic_hosts);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the dynamic hosts result string to the result command for a status command.\n");
+	smpd_exit_fn("smpd_handle_status_command");
+	return SMPD_FAIL;
+    }
+
+    /* send result back */
+    smpd_dbg_printf("replying to status command: \"%s\"\n", temp_cmd->cmd);
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the context.\n");
+	smpd_exit_fn("smpd_handle_status_command");
+	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn("smpd_handle_status_command");
+    return result;
+}
+
 int smpd_handle_get_command(smpd_context_t *context)
 {
     int result = SMPD_SUCCESS;
@@ -2515,6 +2589,12 @@ int smpd_handle_command(smpd_context_t *context)
 	    else if (strcmp(cmd->cmd_str, "validate") == 0)
 	    {
 		result = smpd_handle_validate_command(context);
+		smpd_exit_fn("smpd_handle_command");
+		return result;
+	    }
+	    else if (strcmp(cmd->cmd_str, "status") == 0)
+	    {
+		result = smpd_handle_status_command(context);
 		smpd_exit_fn("smpd_handle_command");
 		return result;
 	    }
