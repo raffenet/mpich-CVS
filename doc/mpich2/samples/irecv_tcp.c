@@ -21,16 +21,17 @@ if (found) {
             MPID_Memcpy( buffer, request_ptr->eager.ptr, 
 			 request_ptr->status.count );
         else {
-            int location = 0;
+            int location = 0;  /* start from the beginning of eager.ptr */
             MPID_Unpack( buffer, count, datatype, 
 			 request_ptr->eager.ptr, &location, 
 			 request_ptr->status.count, request_ptr->msg_format );
         }
         /* release eager.ptr (includes flow control) */
         MPID_EagerFree( rank, comm_ptr, request_ptr->eager.ptr, msg_size );
-        MPID_MemWrite_ordered( request_ptr->complete, 1 );
+        MPID_MemWrite_ordered( request_ptr->xfer_completed, 1 );
     }
     else {
+         /* This is the rendezvous case */
          MPID_Hid_ok_to_send_t *packet;
          struct iovec vector[1];
 
@@ -54,8 +55,10 @@ if (found) {
     }
 }
 else {
-    /* Unmatched.  Attach datatype/buffer and wait for communication agent */
-    /* The tag, communicator, and source rank are already saved (by FOA) */ 
+    /* Unmatched.  Attach the user's datatype/buffer. 
+       When this receive is matched, the communication agent will
+       use that information to save the data into the user's buffer
+       The tag, communicator, and source rank are already saved (by FOA) */ 
     request_ptr->buf.ptr      = buffer;
     request_ptr->buf.count    = count;
     request_ptr->buf.datatype = datatype;
@@ -64,5 +67,7 @@ else {
     MPID_Comm_incr(comm_ptr,1);
     MPID_MemWrite_ordered(request_ptr->busy,0);
 }
+/* The MPI_Request is the index of the MPID_Request in the MPID_Request
+   array; this is saved in the self field */
 *request = request_ptr->self;
 return err;

@@ -8,7 +8,7 @@ if (count * datatype->size > eager_limit ||
     !MPID_Flow_limit( count * datatype->size , rank, comm_ptr )) {
     MPID_Hid_request_to_send_t *packet;
     struct iovec vector[1];
-    /* rendezvous */
+    /* This is the rendezvous case */
 
     /* save data fields */
     request_ptr->buf.ptr      = buffer;
@@ -32,7 +32,9 @@ if (count * datatype->size > eager_limit ||
                    NULL );  /* No completion flag needed here */
 }
 else {
-    /* Note that the flow limit test takes length, rank, and communicator.
+    /* This is the eager case.
+       Note that the flow limit test (MPID_Flow_limit) takes 
+       length, rank, and communicator.
        This ensures that the test is thread-safe 
        (it is really test and reserve on success) */
     MPID_Hid_eager_t *packet;
@@ -48,11 +50,16 @@ else {
 
     vector[0].iov_base = packet;
     vector[0].iov_len  = sizeof(MPID_Hid_eager_t);
+    /* 3 cases: 
+       contiguous (use user's buffer)
+       short (pack and send in an eager message)
+       use a stream (to long to pack into a single temp buffer or socket)
+     */
     if (datatype->is_contig) {
         vector[1].iov_base = buffer;
 	vector[1].iov_len  = count * datatype->size;
 	MPID_Rhcv_tcp( rank, comm_ptr, MPID_Hid_eager, vector, 2, 
-		       &request_ptr->complete );
+		       &request_ptr->xfer_completed );
         }
     else if (count * datatype->size <= short_limit) {
 	vector[1].iov_base = MPID_SendAlloc( count * datatype->size );
@@ -62,14 +69,14 @@ else {
                    count * datatype->size, msg_format );
 	MPID_Rhcv_tcp( rank, comm_ptr, MPID_Hid_eager, vector, 2, 
 		       NULL );  /* see note 8 */
-        request_ptr->complete = 1;
+        request_ptr->xfer_completed = 1;
     } else {
 	/* This is the complicated case.  We want to send a stream of 
 	   data */
 	MPID_Stream_send_init( buffer, count, datatype, &request_ptr->stream );
 	MPID_Stream_isend_tcp( rank, comm_ptr, MPID_Hid_eager, vector, 
 			       &request_ptr->stream, 
-			       NULL, &request_ptr->complete );
+			       NULL, &request_ptr->xfer_completed );
     }
 }
 *request = request_ptr->self;

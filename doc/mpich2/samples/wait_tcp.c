@@ -1,6 +1,6 @@
 request_ptr = &global_request[*request];
 
-if (request_ptr->complete) {
+if (request_ptr->xfer_completed) {
     if (status) *status = request_ptr->status;
     err = request_ptr->status.MPI_ERROR;
     /* Is there other rundown code, such as: */
@@ -19,7 +19,7 @@ while (1) {
 #else
     pthread_lock( &request_ptr->mutex );
 #endif
-    if (request_ptr->complete) {
+    if (request_ptr->xfer_completed) {
 #ifdef SINGLE_THREADED_DEVICE
 	pthread_unlock( &request_ptr->mutex );
 #endif

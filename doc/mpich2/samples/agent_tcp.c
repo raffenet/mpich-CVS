@@ -1,6 +1,6 @@
 /* Waiting on incoming messages */
 
-/* Blocking (in GetNextPacket) has three values:
+/* Blocking (in GetNextPacketHeader) has three values:
    BLOCKING: Wait until a packet is available
    NONBLOCKING: Test for any communication and return null if nothing 
    available
@@ -20,17 +20,13 @@ if (MPID_THREAD_LEVEL == MPID_THREAD_MULTIPLE) pthread_lock( agent_mutex );
 #endif
 {
     MPID_Hid_general_packet_t *packet;
-    /* returns the next successfully read complete packet */
-    /* This isn't quite correct - we don't want to require reading all
-       of a MPID_Hid_data packet, and maybe not all of an MPID_Hid_eager
-       packet.  We assume that this returns a pointer to a 
-       complete packet header, upto but not necessarily including any
-       data portion.  ? How do we know how much of any data portion 
-       is valid? */
-    packet = GetNextPacket( blocking, &source );
+    /* returns the next successfully read complete packet header (any
+       data payload may not be available yet) */
+    packet = GetNextPacketHeader( blocking, &source );
+    /* If there is no packet, we were NOT_BLOCKING and should return */
     if (!packet) break;  /* or pthread_unlock/return in the polling case */
     switch (packet->type) {
-        case MPID_Hid_eager:
+    case MPID_Hid_eager: {
         MPID_Hid_eager_t *lpacket = (MPID_Hid_eager_t *)packet;
         comm_ptr = &global_comm[lpacket->context_id];
         request_ptr = MPID_Request_recv_FOA( lpacket->tag, l
@@ -38,7 +34,8 @@ if (MPID_THREAD_LEVEL == MPID_THREAD_MULTIPLE) pthread_lock( agent_mutex );
                                              comm_ptr, &found );
         if (found) {
             /* Matching receive exists */
-            /* Check for truncation */
+            /* Check for truncation (more data sent than fits in receiver's
+	       buffer) */
             if (lpacket->msg_bytes > request_ptr->msg_bytes) {
 		request_ptr->status.MPI_ERROR = 
 		    MPID_Err_create_code( MPI_ERR_TRUNCATE, 0, 0, 
@@ -48,15 +45,16 @@ if (MPID_THREAD_LEVEL == MPID_THREAD_MULTIPLE) pthread_lock( agent_mutex );
             MPID_Segment_unpack_init( source, &request_ptr->stream );
             MPID_Stream_irecv_tcp( source, lpacket->msg_bytes, 
 				   &request_ptr->stream, 
-				   NULL, &request_ptr->complete );
+				   NULL, &request_ptr->xfer_completed );
 	    /* In the truncate error case, do we add a discard to the 
 	       input stream (see the MSG_READY case)?  Also, we 
 	       need to decrement the refcounts on the datatype and comm_ptr */
         }
         else {
-	    # This is an eager message with no matching receive.
+	    /* This is an eager message with no matching 
+	       receive (a user-error). */
             if (lpacket->mode == MPID_MSG_READY) {
-                /* indicate error */
+                /* Send an error message back to the sender */
 		struct iovec vector[1];
 		MPID_Hid_control_t *tpacket = 
 		    (MPID_Hid_control_t *)&request->packet;
@@ -94,9 +92,10 @@ if (MPID_THREAD_LEVEL == MPID_THREAD_MULTIPLE) pthread_lock( agent_mutex );
 				       MPID_Eager_complete_func, &request_ptr );
 	    }
         }
-        break;
+    }
+    break;
 
-        case MPID_Hid_request_to_send:
+    case MPID_Hid_request_to_send: {
         MPID_Hid_request_to_send_t *lpacket = 
 	    (MPID_Hid_request_to_send_t *)packet;
         comm_ptr = &global_comm[lpacket->context_id];
@@ -104,16 +103,17 @@ if (MPID_THREAD_LEVEL == MPID_THREAD_MULTIPLE) pthread_lock( agent_mutex );
                                              lpacket->sender_rank, 
                                              comm_ptr, &found );
         if (found) {
-             /* Same as Irecv case for found and not eager */
+	     /* Same as Irecv case for found and not eager */
         }
         else {
-             request_ptr->rndv.sender_id = lpacket->request_id;
-             request_ptr->msg_bytes      = lpacket->msg_bytes;
-             MPID_MemWrite_ordered( request_ptr->busy, 0 );
-        }
-        break;
+	     request_ptr->rndv.sender_id = lpacket->request_id;
+	     request_ptr->msg_bytes      = lpacket->msg_bytes;
+	     MPID_MemWrite_ordered( request_ptr->busy, 0 );
+        } 
+    }
+    break;
 
-        case MPID_Hid_ok_to_send:
+    case MPID_Hid_ok_to_send: {
         MPID_Hid_ok_to_send_t *lpacket = (MPID_Hid_ok_to_send *)packet;
 
         request_ptr = &global_request[lpacket->request_id];
@@ -130,17 +130,18 @@ if (MPID_THREAD_LEVEL == MPID_THREAD_MULTIPLE) pthread_lock( agent_mutex );
             vector[1].iov_len  = request_ptr->msg_bytes;
             MPID_Rhcv_tcp( request_ptr->recv_rank, request_ptr->comm_ptr, 
                            MPID_Hid_data, vector, 2, 
-                           &request_ptr->complete );
+                           &request_ptr->xfer_completed );
         } else {
             /* Start a send stream.  */
 	    MPID_Segment_init_pack( &request_ptr->segment );
             MPID_Stream_isend_tcp( source, 
                                    &request_ptr->segment, &request_ptr->stream,
-                                   NULL, &request_ptr->complete );
+                                   NULL, &request_ptr->xfer_completed );
         }
-        break;
+    }
+    break;
 
-        case MPID_Hid_data:
+    case MPID_Hid_data: {
         /* Expected data */
         MPID_Hid_data_t *lpacket = (MPID_Hid_data_t *)packet;
         request_ptr = &global_request[lpacket->request_id];
@@ -150,13 +151,15 @@ if (MPID_THREAD_LEVEL == MPID_THREAD_MULTIPLE) pthread_lock( agent_mutex );
         /* The data may not be available yet.  Define a stream to read it */
         MPID_Stream_irecv_tcp( source, &lpacket->data, lpacket->msg_bytes, 
 			       &request->segment, &request->stream, 
-			       NULL, &request->complete );
-        break;
+			       NULL, &request->xfer_completed );
+    }
+    break;
 
-        case MPID_Hid_control:
-	    /* not done yet */
-        break;    
-	...
+    case MPID_Hid_control: {
+	/* not done yet */
+    }
+    break;    
+    ...
     }
 #if defined(MULTITHREADED)
 if (MPID_THREAD_LEVEL == MPID_THREAD_MULTIPLE) pthread_unlock( agent_mutex );

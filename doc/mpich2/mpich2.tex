@@ -4768,7 +4768,8 @@ There are a few functions unique to Fortran.  They include
 \mpifunc{MPI_TYPE_CREATE_F90_REAL}, and 
 \mpifunc{MPI_TYPE_CREATE_F90_INTEGER}.  Note that the \code{TYPE_CREATE}
 routines create types that must return the corresponding combiner names when
-\mpifunc{MPI_TYPE_GET_ENVELOPE} is called.
+\mpifunc{MPI_TYPE_GET_ENVELOPE} is called and that these must be
+``predefined'' types; that is, they cannot be freed.
 
 \subsubsection{\mpifunc{MPI_SIZEOF}}
 This must be implemented in an MPI module.  The implementation looks something
@@ -4795,6 +4796,35 @@ definition.  The actual size (four in the example above) must be determined by
 configure or provided by the user.
 These can be created automatically in a way similar to the current
 Fortran 90 interface.
+
+\subsubsection{\mpifunc{MPI_TYPE_CREATE_F90_INTEGER}}
+This searches through a global list (pointed at by
+\mpidconst{MPID_F90_Predefined_types_head}) to see if the requested type has
+already been allocated.  If so, it returns that type.  
+If not, it must allocate a new predefined type, initialize all of the fields,
+including the envelope type of \mpiconst{MPI_COMBINER_F90_INTEGER} and the
+\code{digits} field, and returns that new type.
+In a multithreaded case, this list must be locked while the update is taking
+place. 
+
+Questions:
+Should we just have a small array instead of a list?  If the user asks for too
+many distinct types, we can return an \mpiconst{MPI_ERR_OTHER} class
+indicating the problem.
+
+Question:
+Should there be a separate routine to initialize this array and to free the
+datatypes that are created during \mpifunc{MPI_Finalize}?  (I think so,
+particularly when trying to streamline codes to requiring only single-language
+support.)  What are the names of the routines?  Is there a common file that
+contains \mpidconst{MPID_F90_Predefined_types_head} as well as the routines to
+allocate and free these predefined types?
+
+\subsubsection{\mpifunc{MPI_TYPE_CREATE_F90_REAL}}
+See \mpifunc{MPI_TYPE_CREATE_F90_INTEGER}.
+
+\subsubsection{\mpifunc{MPI_TYPE_CREATE_F90_COMPLEX}}
+See \mpifunc{MPI_TYPE_CREATE_F90_INTEGER}.
 
 \subsubsection{Fortran Wrappers}
 One added complexity of the Fortran wrappers is handling the possibility that

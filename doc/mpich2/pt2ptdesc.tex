@@ -1,3 +1,6 @@
+\newif\ifcodefirst
+\codefirsttrue
+
 \section{Scenarios}
 \label{sec:pt-2-pt-scenarios}
 
@@ -18,6 +21,8 @@ contain a pointer and length in bytes for each member).  However, this is not
 an efficient way to handle common vector datatypes or fixed blocksize hindexed
 datatypes.  How important is it to handle the case where a modest-sized
 \code{iovec} array can be used?  
+
+(Still to do: modify code samples to allow for the short iovec case.)
 
 The datatype is assumed to be complex enough that the device cannot handle it
 directly; for example, it may be an hindexed type with a large number (e.g.,
@@ -67,13 +72,18 @@ The basic communication is provided by
   pointers without making a temporary copy.  The write varient sets an integer
   flag when the data is written.
 
+  Note that this functionality is provided (I believe) by the current active
+  queue code.
+
 \item Stream read and write.  These provide a way to receive and send data that
   may not be in contiguous locations.  Roughly, a stream used for
   sending data:
     \begin{enumerate}
-    \item packs some number of bytes into a contiguous buffer
+    \item packs some number of bytes into a contiguous
+      buffer\label{stream:step1} 
     \item writes those bytes to a socket
-    \item when all of those bytes are written, returns to step 1 to
+    \item when all of those bytes are written, returns to
+      step~\ref{stream:step1} to 
     get the next group of bytes
     \item when all bytes are written, a completion routine is called
     that may, for example, free the buffer used to pack data.
@@ -105,9 +115,13 @@ The basic communication is provided by
     used for the remainder of the data.  A further refinement is to allow the
     use of \code{readv} once the read buffer is flushed.  
 
+    To implement these stream operations, the current active queue code may
+    need to be modified.
+
     Question: We could use \code{MSG_PEEK} and \code{recv} instead of
     \code{read} to see how much data is available without reading it.  Can we
     use this, or is it better to just read some of the data (one system call)?
+    Rob tells us that there is a way to get the number of bytes in the buffer.
 
 
   Question: Where is the buffer to pack into allocated?  Is this part of the 
@@ -120,7 +134,7 @@ The basic communication is provided by
   device must provide this function (unless it is happy with generic memory).
 
   Note that it is very useful to know if a datatype represents contiguous
-  data; a \mpids{MPI_Datatype}{contiguous} flag value may be helpful.  Note
+  data; a \mpids{MPI_Datatype}{is_contig} flag value may be helpful.  Note
   that in the case of resized datatypes, a type that is contiguous with a
   \code{count} of $1$ may not be contiguous with a \code{count} greater than
   one (e.g., when the MPI UB (upperbound) is past the last data byte).  Do we
@@ -151,6 +165,9 @@ The basic communication is provided by
 
     Question: Can we use \code{poll} always for Unix?  Should we?  If not, how
     do we want to choose between \code{poll} and \code{select}?
+    Note that the reason for using \code{poll} is that newer versions of Unix
+    allow you to configure the number of fd's to be larger than that supported
+    by \code{FD_SET}, rendering \code{select} nearly useless.
 
 \end{enumerate}
 
@@ -170,10 +187,21 @@ invoked.  The
 most common handler is the do-nothing handler (actually a \code{NULL}, so no
 function call is made).  The second most common
 sets a flag to one; this is normally used to set the
-\code{request_ptr->complete} flag.  For efficiency, this could be a
+\code{request_ptr->xfer_completed} flag.  For efficiency, this could be a
 special case of the \code{NULL} handler with a non-null argument.
 For a stream involving a noncontiguous datatype, it could call a true
-routine to free up any temporary buffers.
+routine to free up any temporary buffers (this is, in fact, part of the
+interface proposed here).
+
+Errors must be handled gracefully.  If at all possible, it should be possible
+to continue beyond an error.  For example, in the TCP case, if a socket closes
+(e.g., due to congestion or a timeout), the lowest-level code should try to
+reestablish the connection, without generating an error event.  (It may wish
+to record the fact that the socket closed, particularly in a
+performance-diagnostic mode.)  Only if a connection cannot be reestablished
+within a reasonable time (defined by a runtime parameter) should an error be
+propagated up to the MPI levels.  The procedure for passing an error will be
+discussed later.
 
 \implementation{{General Notes}}
 The basic structures include the following:
@@ -186,13 +214,13 @@ typedef struct {
 typedef struct { 
      int sender_id;
      int receiver_id;
-} MPID_Rndv_info;
+} MPID_Rndv_info;         /* Info for rendezvous delivery */
 typedef struct {
      void          *ptr;
      int           count;
      MPID_Datatype *dtype;
      MPID_Comm     *comm_ptr;
-} MPID_Buf_info;
+} MPID_Buf_info;          /* Info describing the user's buffer */
 
 #define MPID_REQ_REGULAR_MASK 0x1
 #define MPID_REQ_PERSIST_MASK 0x2
@@ -209,14 +237,15 @@ typedef struct {
 typedef union {
   MPID_Hid_general_t         general;
   MPID_Hid_data_t            data;
+  MPID_Hid_eager_t           eager;
   MPID_Hid_request_to_send_t rtosend;
-  ...
+  ... many other types ...
 } MPID_Packet;
 
 typedef struct {
      MPID_Request_kind kind;
      volatile int      busy;
-     volatile int      complete;
+     volatile int      xfer_completed;
      int               self;    /* integer id of request */
      int               context_id;
      MPI_Status        status;  /* Stores tag, source, error, and n bytes */
@@ -245,9 +274,22 @@ Notes:
 \item The values on the \code{MPID_Request_kind} are chosen to allow single
   bit tests to distinguish between persistant and non-persistant requests.
 
-\item The \code{busy} and \code{complete} flags in \code{MPID_Request} need be
+\item The \code{busy} and \code{xfer_completed} flags in \code{MPID_Request}
+  need be 
   \code{volatile} only when either (a) the process is multithreaded or (b) the
   device shares memory, particularly requests, among the processes.
+
+\item Packets are used to send information from one process to another.
+  Packets have two components: a packet header and a packet payload.  The
+  payload contains user data; many packets consist only of a header. 
+  The packet type \code{MPID_Hid_eager_t} is one of the few packet types that
+  contain both a header and a payload. 
+
+  Question: some things might be simpler if all packet headers were the same
+  size.  For example, they could all be the same number of cache lines.
+  This has some costs but may make other things simpler.  Note that it can
+  make packet headers \emph{shorter}: there is no need to record the length of
+  the packet header since they are all the same.
 
 \item Should the \code{MPID_Eager_info} and \code{MPID_Rndv_info} be in a
   union?  That would help reduce the overall size of an \code{MPID_Request}.
@@ -261,8 +303,8 @@ accomplished using (thread) locks or using flags (e.g., a \code{busy} flag).
 However, if flags are used, it is necessary to ensure that at pending writes
 to memory on the process are completed before the flag is updated.  The macro
 \mpidfunc{MPID_MemWrite_ordered} can be used for this.  
-For example, for an Alpha processor, \mpidfunc{MPID_MemWrite_ordered} 
-might look like this \cite{alpha-asm}:
+For example, for an Alpha processor using \code{gcc},
+\mpidfunc{MPID_MemWrite_ordered} might look like this \cite{alpha-asm}:
 \begin{verbatim}
 #define MPID_MemWrite_ordered(var,value) { \
       asm volatile ("wmb":/*no output*/:/*no input*/); *var = value ; }
@@ -296,16 +338,25 @@ among the threads, avoiding the need for a thread lock.  Do we want to
 consider that?  This is complicated by the fact that threads are not
 required to register themselves with MPI (e.g., with a call to something
 like \code{MPI_Thread_initialize}).\index{thread overhead!request allocation}
+This probably isn't worth it, but it is a potential bottleneck on systems with
+large numbers of CPUs per node and a single MPI process per node.
 
 \implementation{{MPI_Irecv}}
 
+\ifcodefirst
 \fileinclude{samples/irecv_tcp.c}
+\fi
 
 Notes:
 \begin{enumerate}
 \item \mpidfunc{MPID_Request_recv_FOA} always returns a request.  If the
   request was found (and not \code{busy}), it is removed from the queue.  If
-  one was not found, it is inserted and marked as busy.  In either case, 
+  one was not found, it is inserted and marked as busy.  Marking it as busy
+  keeps another thread from finding the request, through another call to
+  \mpidfunc{MPID_Request_recv_FOA}, of course, and attempting to use it before
+  all of the fields have been set.  In a single threaded implementation, the
+  \code{busy} flag is not needed.  
+  Whether the request was found or inserted, 
   the \code{status} fields are filled in, along with the \code{context_id}.
   This ensures that another thread that calls \mpidfunc{MPID_Request_recv_FOA}
   will match this inserted request, but, because of the
@@ -319,7 +370,10 @@ Notes:
   \mpids{MPID_Request}{status} are already filled in.  Is that what we want?
 
   Question: Should the \code{busy} flag be an integer or just a bit in the
-  request flags?
+  request flags?  Making it a bit makes atomic update more difficult, though
+  for \code{busy}, it may not matter (no other thread can do anything until
+  the \code{busy} bit is cleared.  The reason to consider a bit instead of an
+  integer is to keep the size of a \mpidconst{MPID_Request} down.  
 
 \item If a matching request was found, there are two cases.  Either the
   message was delivered eagerly or a rendezvous message was sent. Note that
@@ -341,7 +395,15 @@ Notes:
   Question: do we want to use a private \code{memcpy} that might use, for 
   example, quadword load and store instructions that some system libraries
   might not use?  Since we are likely to want this, we've used
-  \mpidfunc{MPID_Memcpy} instead of \code{memcpy}.
+  \mpidfunc{MPID_Memcpy} instead of \code{memcpy}.  Note that \code{mpptest}
+  has a \code{-memcpy} switch; \code{-memcpy -int} uses \code{int}s for the
+  moves instead of \code{memcpy} and \code{-memcpy -double} uses
+  \code{double}s for the moves.  Some quick tests with a version that used
+  \code{long long} instead of \code{int} and that set the options
+  \code{-Msafeptr=auto,arg -Munroll=n:8} for \code{pgcc} showed that the
+  \code{memcpy} and \code{long long} loop version had similar performance at
+  1024 bytes but the (inlined) \code{long long} version was twice as fast at
+  128 bytes.  \code{double}s are \emph{terrible} on I86.
 
 \item Otherwise, the user's buffer is not contiguous, and the data must be
   unpacked.  This is a simple case since all of the data is present, and 
@@ -350,6 +412,9 @@ Notes:
   Question: note that \mpidfunc{MPID_Unpack} has slightly different arguments
   from the one in the ADI-3 document.  Are these the correct ones?  In a
   homogeneous system, the \code{msg_format} value is never needed.
+  \code{msg_format} is used to indicate the format used by the sender; this
+  might be ``senders format'' or XDR or external32 etc.  Homogeneous systems
+  will always use ``senders format.''
 
 \item Once the data has been moved from the eager buffer, the eager buffer 
  can be freed.  This call also updates any flow control information (e.g.,
@@ -357,7 +422,7 @@ Notes:
  now marked as complete.
 
   Question: Are there other values that we want to mark here?  For example, 
-  a one in \code{complete} may mean ``data received but cleanup not done'' and
+  a one in \code{xfer_completed} may mean ``data received but cleanup not done'' and
   a two might mean ``finished''.
 
 \item If the request was found but the data was not available, we need to ask
@@ -372,7 +437,9 @@ Notes:
   communication agent).
 
   Question: if the message is truncated (user's buffer is too small), do 
-  we want to tell the sender?
+  we want to tell the sender?  We aren't required to, and it could be
+  difficult in the case of an eager send (the sender's call has long since
+  completed).  
 
   Question: do we want to remember the source, rather than having to look up
   the source again through the communicator?
@@ -390,19 +457,33 @@ Notes:
   counters on the datatype and the communicator to ensure that they aren't
   deleted before the communication completes.
   The \mpifunc{MPI_Irecv} can now return.  Completion of the message transfer
-  is now the responsibility of the communication agent. 
+  is now the responsibility of the communication agent (see below). 
 
-  Question: Should we go ahead and create the segment unpack, at least for 
-  non-contiguous datatypes?
+  Question: Should we go ahead and create the segment for the unpack, at least
+  for non-contiguous datatypes?
+
+  Question: Should the segement init increment the reference count for the
+  datatype to ensure that no \mpifunc{MPI_Type_free} frees it before the
+  segment code is done using it?
 
   Question: In the \mpifunc{MPI_Recv} case, we never need to increment the
   datatype and communicator reference counters.  Is there any significant 
   benefit to avoiding that step, particularly for very short messages?
+  Probably not if the message is found; if the message is not found, the
+  situation is murkier.  We should avoid the update to the permanent
+  communicators and datatypes (writes are expensive).
 \end{enumerate}
+
+\ifcodefirst
+\else
+\fileinclude{samples/irecv_tcp.c}
+\fi
 
 \implementation{{MPI_Isend}}
 
+\ifcodefirst
 \fileinclude{samples/isend_tcp.c}
+\fi
 
 Notes:
 \begin{enumerate}
@@ -417,10 +498,26 @@ Notes:
   the flow control limits, and if the limits allows it, updates the flow
   control limits to reserve that space.  This is needed for multithreaded
   codes to ensure that two threads do not both reserve the same eager buffer
-  space.  
+  space.  Note that flow limits are used to limit the amount of space consumed
+  at the destination; this is different from trying to limit the amount of
+  data within the socket buffer.  For example, consider the code
+\begin{verbatim}
+    if (rank == 0) {
+        for (i=0; i<1000; i++) MPI_Iprobe( ... );
+    } 
+    else if (rank == 1) {
+        for (i=0; i<1000; i++) MPI_Isend( buf, 100, MPI_INT, ... );
+    }
+\end{verbatim}
+  Each message sent by process 1 will fit within an empty socket buffer.  
+  On process 0, some number of messages will be received eagerly.  However, at
+  some point, process 0 will stop accepting messages from process 1 because
+  the space for buffering them is exhausted.  Using \mpidfunc{MPID_Flow_limit}
+  causes the \mpifunc{MPI_Isend} to shift to rendezvous mode even for short
+  messages.  (This assumes that we can accept 1000 envelopes).
 
 \item In the first case, the message is too large to send.  In this case,
-  information on the message data is saved and a request to send packet is
+  information on the message data is saved and a request-to-send packet is
   sent using \code{MPID_Rhcv_tcp}.  Note that the reference counts for the
   communicator and datatype are incremented to ensure that they are not
   deleted until the message is sent.
@@ -433,12 +530,27 @@ Notes:
   specific connection.  If we save the connection, we don't need to increment
   the reference count on the communicator.
 
+  Question: Do we want to create the segment now instead of just saving the 
+  \code{buffer, count, datatype}?  One reason not to is to try and inject the 
+  message into the network as early as possible.
+
 \item In the other case, the message may be sent eagerly.  There are two
   subcases here.  In the first, the message is either contiguous or small
   enough to be packed into a single temporary buffer.  The other case is a
   larger message.  We could ignore the larger message case by setting the
   eager limit to a small value, but we still would want to handle the large
   message case for \code{MPI_Rsend}, so we might as well do it here.
+
+%   An important generalization is the case of a short \code{iovec} datatype;
+%   that is, one that is not contiguous but is described by an \code{struct
+%   iovec} array with a small number (e.g., 7) of elements.  This is handled in
+%   the same way as the contiguous case.
+
+\item We can generalize the contiguous case to datatypes that are described by
+  short arrays of \code{struct iovec}, for example, seven elements or less.
+  This allows the header to use one element and the datatype the remaining
+  seven.  Longer arrays may not be handled efficiently by the operating
+  system. 
 
 \item In the case where the data is contiguous and is sent directly with
   \code{MPID_Rhcv_tcp}, the request is marked complete only when the data has
@@ -450,17 +562,16 @@ Notes:
   using incremental packing.  This uses a special data transfer routine,
   \mpidfunc{MPID_Stream_isend}.
 
-\item We can generalize the contiguous case to datatypes that are described by
-  short arrays of \code{struct iovec}, for example, seven elements or less.
-  This allows the header to use one element and the datatype the remaining
-  seven.  Longer arrays may not be handled efficiently by the operating
-  system. 
-
 \item We need some way to indicate that the \code{MPID_Request} itself can be
-  reused.  Setting the \code{complete} flag indicates that the user's buffer
+  reused.  Setting the \code{xfer_completed} flag indicates that the user's buffer
   can be reused.  Do we want to replace the \code{NULL} with something like
   \code{\&request_ptr->available}?
 \end{enumerate}
+
+\ifcodefirst
+\else
+\fileinclude{samples/isend_tcp.c}
+\fi
 
 \implementation{{Communication Agent}}
 The communication agent in MPICH2 replaces the \code{MPID_Device_check} in
@@ -473,48 +584,52 @@ In a multi-method device, it is often easiest if each method's communication
 agent runs in a separate thread.  That allows the operating system to 
 schedule the threads.  If the agents are running in the same thread (and 
 particularly, if they are running in the main thread in a polling-mode 
-implementation), each must normally be executed in the \code{NONBLOCKING} (or 
-\code{EXPECTING}) mode.
+implementation), each agent must normally be executed in the
+\code{NONBLOCKING} (or \code{EXPECTING}) mode.
 
-
+\ifcodefirst
 \fileinclude{samples/agent_tcp.c}
+\fi
 
 Notes:
 
 \begin{enumerate}
-\item The routine \code{GetNextPacket} returns a pointer to the next packet of
-  data, along with the \code{source} of the message.  This routine guarantees
+\item The routine \code{GetNextPacketHeader} returns a pointer to the next
+  packet header, along with the \code{source} of the message.  This routine
+  guarantees 
   that the entire packet header (the first \code{vector} element sent with
   \mpidfunc{MPID_Rhcv_tcp}) has been delivered.  It does this by reading the
   first two shorts; the second of these is the length of the packet header.
-  If less than a full packet has been delivered, \code{GetNextPacket} does not
+  If less than a full packet has been delivered, \code{GetNextPacketHeader}
+  does not 
   return a packet.  This simplifies the handling in the rest of the
-  communication agent without requiring that \code{GetNextPacket} understand
-  the different packet types.
+  communication agent without requiring that \code{GetNextPacketHeader}
+  understand the different packet types.
 
   Question: what is the source value?  Is it the local process id (e.g., the
   connection number)?
 
   Question: If we piggy-back flow-control information in the packets,
-  GetNextPacket could process that, eliminating that step from the
+  \code{GetNextPacketHeader} could process that, eliminating that step from the
   communication agent code.  This flow control information would contain
   information such as ``2k of eager buffers released''.
 
-\item The blocking parameter to \code{GetNextPacket} has the following
+\item The blocking parameter to \code{GetNextPacketHeader} has the following
   meanings:
   \begin{description}
   \item[\code{MPID_BLOCKING}:]Block until a packet is available.
   \item[\code{MPID_NONBLOCKING}:]Return a packet if one is available, otherwise
     return \code{NULL}.
   \item[\code{MPID_EXPECTING}:]Like \code{MPID_NONBLOCKING}, except
-    \code{GetNextPacket} may wait for a short time before returning.  For
+    \code{GetNextPacketHeader} may wait for a short time before returning.  For
     example, it may wait the time it takes a message to make a round trip in a
     case where a response is expected from another process.
   \end{description}
 
-\item When \code{GetNextPacket} returns with a packet, the data that
+\item When \code{GetNextPacketHeader} returns with a packet, the data that
   \code{packet} points at is valid until the next time that
-  \code{GetNextPacket} is called.  This allows \code{GetNextPacket} to read
+  \code{GetNextPacketHeader} is called.  This allows
+  \code{GetNextPacketHeader} to read 
   into an internal buffer and return a pointer into that buffer, avoiding an
   extra memory copy.  This works only if only one thread at a time calls the
   communication agent.  However, the restriction that only one thread call the
@@ -525,14 +640,16 @@ Notes:
   implementation where there is no separate thread running the communication
   agent).
 
-\item \code{GetNextPacket} must also keep track of the total message size that
-  a packet starts, so that subsequent calls to \code{GetNextPacket} will not
+\item \code{GetNextPacketHeader} must also keep track of the total message
+  size that 
+  a packet starts, so that subsequent calls to \code{GetNextPacketHeader} will
+  not 
   interpret data as a packet header.  This is covered in more detail under
   \mpidconst{MPID_Hid_data}.  A consequence of this is that
-  \code{GetNextPacket} might process additional data before returning a new
+  \code{GetNextPacketHeader} might process additional data before returning a new
   packet.
 
-  Note: an alternative is for \code{GetNextPacket} to return a special
+  Note: an alternative is for \code{GetNextPacketHeader} to return a special
   kind of packet for streaming data, allowing the communication agent to
   process data as it is read.  The reason that we don't do this is that for
   some kinds of messages, we want to bypass any buffering, and that requires
@@ -540,16 +657,22 @@ Notes:
   Question: Do we want to change the name to something that indicates that it
   does more than just read a packet?
 
-\item Question: Is \code{GetNextPacket} fair?  How do we ensure that
+\item Question: Is \code{GetNextPacketHeader} fair?  How do we ensure that
   \mpifunc{MPI_Testsome} is efficiently implemented?
 
 \item Under Linux, very short messages are often delayed; it is advantageous
   to always send at least 100 bytes.  We could accomodate this by either
   padding all of the packet types out to 100 bytes or always sending at least
   100 bytes with \code{MPID_Rhcv_tcp}.  In that case, we must ensure that
-  \code{GetNextPacket} knows to skip over the ``extra'' bytes, possibly by
+  \code{GetNextPacketHeader} knows to skip over the ``extra'' bytes, possibly
+  by 
   changing the \code{len} field in the \code{packet} and sending the extra
   bytes.  
+
+\item Note that \code{GetNextPacketHeader} guarantees only that the packet
+  header is available.  The payload in packet types that contain payload, such
+  as \mpidconst{MPID_Hid_eager_t} or \mpidconst{MPID_Hid_data_t}, may not be
+  available.  
 
 \item If we use a test on \mpidconst{MPID_THREAD_LEVEL} to check to see if we
   need to lock the agent, we also need to use that same mutex in any routine
@@ -563,7 +686,7 @@ Notes:
   error return on a ready-send).
 
 \item In the multithreaded case but polling case, we use a single mutex on the
-  agent.  Instead, we could have \code{GetNextPacket} set a mutex on that
+  agent.  Instead, we could have \code{GetNextPacketHeader} set a mutex on that
   source (e.g., socket), which would then be released by the agent when the
   packet was fully handled.  This would allow multiple threads to run the
   agent simultaneously on different sources.
@@ -706,14 +829,21 @@ Notes:
   exit, are-you-alive, etc.
 \end{enumerate}
 
+\ifcodefirst
+\else
+\fileinclude{samples/agent_tcp.c}
+\fi
+
 \implementation{{MPI_Wait}}
 
+\ifcodefirst
 \fileinclude{samples/wait_tcp.c}
+\fi
 
 Notes:
 \begin{enumerate}
 \item In the single-threaded case, we need only check the
-  \mpids{MPID_Request}{complete} flag. 
+  \mpids{MPID_Request}{xfer_completed} flag. 
   If set, then copy out the \mpiconst{MPI_Status} data (if the \code{status}
   pointer is not \mpiconst{MPI_STATUS_NULL}) and free the request.  Otherwise, 
   call the communication agent in blocking mode (wait until something happens)
@@ -723,10 +853,10 @@ Notes:
   transfer control to another thread, particularly to the thread running the
   communication agent if there is one, so that the message can be completed.
   This allows the implementation to avoid spinning on the
-  \mpids{MPID_Request}{complete} flag.  However\index{thread overhead!request
+  \mpids{MPID_Request}{xfer_completed} flag.  However\index{thread overhead!request
     completion}, it does force the use of a thread mutex to guard the
-  \code{complete} flag and a thread condition variable to release the
-  particular request.  (We are probably missing guards around \code{complete}
+  \code{xfer_completed} flag and a thread condition variable to release the
+  particular request.  (We are probably missing guards around \code{xfer_completed}
   elsewhere as well.)
 
   The sample code shows the use of condition variables with pthreads.
@@ -745,7 +875,7 @@ Notes:
   storing the thread id of the waiting process, we can avoid calling
   \code{pthread_cond_signal} when no process is waiting.
 
-  Another alternative is to simply busy wait on \mpids{MPI_Request}{completed}.
+  Another alternative is to simply busy wait on \mpids{MPI_Request}{xfer_completed}.
   
   Note that pthreads are not available on all platforms; we may need to
   implement other approaches as well.
@@ -756,11 +886,16 @@ Notes:
 
 \item Missing from this routine is any processing that may be required after
   the data transfer completes.  Note that, particularly in the case of
-  \mpidfunc{MPID_Rhcv}, the \code{complete} field is set once data is
+  \mpidfunc{MPID_Rhcv}, the \code{xfer_completed} field is set once data is
   transfered.  However, if some temporary buffer was allocated for sending or
   a datatype reference count was incremented, some further steps must be taken
   when finishing the request off.
 \end{enumerate}
+
+\ifcodefirst
+\else
+\fileinclude{samples/wait_tcp.c}
+\fi
 
 \pagerule\par
 The remaining text is leftover from a previous version and will be mined as
@@ -872,7 +1007,8 @@ Check remote queue for matching receive request (using
       simple (not the case in this example, but one that must be considered). 
       In this case, copy to the destination buffer (basically
       \mpidfunc{MPID_Pack}), followed by \mpidfunc{MPID_MemWrite_ordered} to set
-      the completed flag in the receive request.  Also mark the send request
+      the \code{xfer_completed} flag in the receive request.  Also mark the
+      send request 
       as completed.
     \item The destination buffer is not in shared memory, but the total
       message length is small.  In this case, use \mpidfunc{MPID_Pack} to pack
@@ -895,7 +1031,7 @@ Check remote queue for matching receive request (using
 \mpifunc{MPI_Wait}:
 
 Again, this is much like the \tcpname\ case.  Note, however, that the
-\mpids{MPID_Request}{complete} field can, in some cases, be set by the
+\mpids{MPID_Request}{xfer_completed} field can, in some cases, be set by the
 sending process (particularly for contiguous receive buffers that are in
 shared memory), so this field must be marked \code{volatile}, even in the
 single-threaded process case.
@@ -1042,10 +1178,10 @@ another.
 
 \begin{via}
   Question: How do we indicate that a message has been transfered?  Do we want
-  to use a remote write to set the \mpids{MPID_Request}{complete} field
+  to use a remote write to set the \mpids{MPID_Request}{xfer_completed} field
   directly, rather than sending a message?  Is it better to receive a
   completion message from the sender or to spin-wait on
-  \mpids{MPID_Request}{complete}? 
+  \mpids{MPID_Request}{xfer_completed}? 
 
 \end{via}
 
