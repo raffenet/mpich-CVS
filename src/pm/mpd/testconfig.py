@@ -12,7 +12,7 @@ This script is a work in progress and may change frequently as we work
 with users and gain additional insights into how to improve it.
 
 This script prints quite a bit of useful information about the host on
-which it runs, incuding some info about its ability to discover other
+which it runs, including some info about its ability to discover other
 computers via local files or dns.  It is here to help us help users
 detect problems with configurations of their computers.  For example,
 some computers are configured to think of themselves simply as
