@@ -10,7 +10,18 @@
 
 void ADIOI_PVFS2_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
 {
+    if (*request == ADIO_REQUEST_NULL) {
+        *error_code = MPI_SUCCESS;
+        return;
+    }
 
+#ifdef HAVE_STATUS_SET_BYTES
+    MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
+#endif
+    (*request)->fd->async_count--;
+    ADIOI_Free_request((ADIOI_Req_node *) (*request));
+    *request = ADIO_REQUEST_NULL;
+    *error_code = MPI_SUCCESS;
 }
 
 void ADIOI_PVFS2_WriteComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
