@@ -21,6 +21,8 @@ int main( int argc, char *argv[] )
 		  d, 0, newtype, 0, 0, 
 		  MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 
+    printf( " No Errors\n" );
+    
     MPI_Finalize();
 
     return 0;
