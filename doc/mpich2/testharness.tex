@@ -1,7 +1,285 @@
 \subsection{Writing New Tests}
+\label{sec:new-tests}
+This section describes how to add tests to the tests that are executed
+by the make target \code{testing}.  These tests are designed to be run
+by both developers and automated test scripts, and follow fairly
+simple rules to make it easy to determine if the test succeeded or
+failed.  It is recommended that each test program test a single
+characteristic or function.
 
+A test in the MPICH2 test set must follow these rules:
+\begin{enumerate}
+\item On success (no errors or problems detected), the process with
+rank zero in \code{MPI_COMM_WORLD} must write
+\begin{verbatim}
+ No Errors
+\end{verbatim}
+to standard output.  
+There is one space before \code{No}; this is used to simplify handling
+of tests in Fortran which, for ancient historical reasons, may need a
+leading blank.  On success, no other output may be written to either
+standard output or standard error.
+If any errors are found, no process may write
+this text.
+
+If there are multiple \code{MPI_COMM_WORLD}s, e.g., an MPI program
+that uses \code{MPI_Comm_spawn}, then the first \code{MPI_COMM_WORLD}
+\emph{only} should write \code{ No Errors}.  If there is no first
+\code{MPI_COMM_WORLD} (e.g., a program that uses
+\code{MPI_Comm_accept}), then the test program should choose one
+\code{MPI_COMM_WORLD} to be responsible for this output.
+
+\item On success, a process must exit with a zero status.
+
+\item The program must build with \code{make programname}, using the
+\file{Makefile} in the test directory.  This requires adding the
+program to the \file{Makefile.sm} and recreating the
+\file{Makefile.in} and rerunning the \code{configure} (or
+\file{config.status}) in the test directory.
+
+\item The test must not require any command-line arguments or
+environment variables.
+
+Tests are allowed to make use of environment
+variables or command-line arguments to provide additional
+capabilities, such as more extensive output when the test is being
+used for debugging.  But for the purposes of the \code{testing}
+target, the test must run ``bare.''
+
+\item Tests should be reasonably portable.  That is, they should not
+assume a particular hardware architecture (e.g., 32 bit pointers),
+operating system, or compiler extensions.  The \code{configure} in
+\file{test/mpi/configure.in} can be used to test for any specific
+features or header files.  If the test only works with a particular
+number of processes, the test should ensure that the number of
+processes provided is acceptable.  
+
+\item Tests should not assume that error checking is enabled.  Tests
+that require error checking should look for the C preprocessor
+variable \code{MPICH_NO_ERROR_CHECKING}. (note: this is not yet set).
+
+\item It is strongly recommended that tests limit the amount of output
+that they generate in the case of an error.  For example, setting a
+limit of no more than ten messages per process is often sufficient.  
+\end{enumerate}
+
+To add a new test to the tests that are run by the testing target,
+simply add a line containing the name of the test and the number of
+processes to use to the file \file{testlist} in the directory that
+contains the test.  A test may appear multiple times; for example,
+some of the collective tests appear with different numbers of
+processes.
+
+In most cases, an existing directory may be used for a new test.  If a
+new directory is required, you must also 
+\begin{enumerate}
+\item Create the directory.  Add a \file{Makefile.sm} and
+\file{.cvsignore} file, using one of the other directories as an
+example.
+\item In the parent directory of the new directory, add the new
+directory name to the \file{Makefile.sm} in that directory on the
+\code{SUBDIRS} line.  Also add the directory name to the
+\file{testlist} file in the parent directory.
+\item In \file{test/mpi/configure.in}, add your new directory to the
+\code{AC_OUTPUT} list (e.g., add \code{newdir/Makefile}).
+\item Rerun \file{maint/updatefiles} to rebuild the \code{configure}
+and \code{Makefile.in} files.  Rerun \code{configure} to rebuild the
+\code{Makefile}s.  
+\end{enumerate}
+
+The above is all that is necessary to add a test to the MPICH2 test
+suite.  The next section describes utilities that can help write more
+comprehensive and flexible tests.
+
+\subsubsection{Utilities for Test Programs}
+The file \file{test/mpi/util/mtest.c} provides some routines that make
+it easier to write test programs that try a variety of communicators
+and datatypes.  It also provides for several levels of informational
+messages.  An example of the use of these routines is shown in
+\file{test/mpi/template.c}.   The header file
+\file{test/mpi/include/mpitest.h} contains prototypes for these functions.
+
+The routines are divided up into several groups:
+\paragraph{Basic environment.}
+These routines handle initializing the routines and reporting the
+results of the tests.  They also provide routines for generating error
+and informational messages.  
+
+\paragraph{Communicators.}
+These routines create communicators that can be used for testing,
+including both inter- and intra-communicators.
+
+\paragraph{Datatypes.}
+These routines create datatypes and message buffers that may be sent
+and received with MPI communication routines, including
+point-to-point, collective, and one-sided.  
+
+\paragraph{MPI Windows.}
+These routines create MPI Window objects.
+
+The following is an example that uses the MTest routines:
+
+\begin{verbatim}
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *
+ *  (C) 2003 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+#include "mpi.h"
+#include <stdio.h>
+#include "mpitest.h"
+
+static char MTEST_Descrip[] = "A short message describing the test.";
+
+int main( int argc, char *argv[] )
+{
+    int errs = 0, err;
+    int rank, size, source, dest;
+    int minsize = 2, count; 
+    MPI_Comm      comm;
+    MPI_Status    status;
+    MTestDatatype sendtype, recvtype;
+
+    MTest_Init( &argc, &argv );
+
+    /* The following illustrates the use of the routines to 
+       run through a selection of communicators and datatypes.
+       Use subsets of these for tests that do not involve combinations 
+       of communicators, datatypes, and counts of datatypes */
+    while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
+	if (comm == MPI_COMM_NULL) continue;
+	/* Determine the sender and receiver */
+	MPI_Comm_rank( comm, &rank );
+	MPI_Comm_size( comm, &size );
+	source = 0;
+	dest   = size - 1;
+	
+	for (count = 1; count < 65000; count = count * 2) {
+	    MTestPrintfMsg( 1, "count = %d\n", count );
+	    while (MTestGetDatatypes( &sendtype, &recvtype, count )) {
+		if (rank == source) {
+		    sendtype.InitBuf( &sendtype );
+		    
+		    err = MPI_Send( sendtype.buf, sendtype.count, 
+				    sendtype.datatype, dest, 0, comm );
+		    if (err) {
+			errs++;
+			MTestPrintError( err );
+		    }
+		    MTestFreeDatatype( &sendtype );
+		}
+		else if (rank == dest) {
+		    recvtype.InitBuf( &recvtype );
+		    err = MPI_Recv( recvtype.buf, recvtype.count, 
+				    recvtype.datatype, source, 0, comm, &status );
+		    if (err) {
+			errs++;
+			fprintf( stderr, "Error with communicator %s and datatype %s\n", 
+				 MTestGetIntracommName(), 
+				 MTestGetDatatypeName( &recvtype ) );
+			MTestPrintError( err );
+		    }
+		    err = MTestCheckRecv( &status, &recvtype );
+		    if (err) {
+			errs += errs;
+		    }
+		    MTestFreeDatatype( &recvtype );
+		}
+	    }
+	}
+	MTestFreeComm( &comm );
+    }
+
+    MTest_Finalize( errs );
+    MPI_Finalize();
+    return 0;
+}
+\end{verbatim}
+
+This example illustrates many of the routines in the MTest package.
+They are, in order:
+\begin{description}
+\item[\code{MTest\_Init}]Initialize the MTest routines, including
+calling \code{MPI_Init} if necessary.  In addition, the following
+environment variables are read:
+\begin{description}
+\item[\code{MPITEST\_DEBUG}]If set, turns on internal debugging output
+from the MTest package, such as data on created datatypes and communicators.
+\item[\code{MPITEST\_VERBOSE}]If set to a positive integer, sets the
+message level for output from the routine \code{MTestPrintfMsg} (see
+below).
+\end{description}
+
+\item[\code{MTestGetIntracommGeneral}]Provide an intracommunicator in
+the parameter \code{comm}.  The return value is non-zero if a new
+communicator was returned, zero if the set of test communicators has
+been exhausted.  The communicator has size at least \code{minsize}.
+The third argument specifies whether some of the communicators may be
+\code{MPI_COMM_NULL}; this has effect only if \code{MPI_COMM_WORLD}
+has more than four processes.
+\item[\code{MTestPrintfMsg}]Print out a message, using the second
+argument as the \code{printf} format.  The first argument is the
+message level, and must be greater than the value of
+\code{MPITEST_VERBOSE}.  If \code{MPITEST_VERBOSE} was not set or was
+zero, nothing is printed (thus meeting the test requirements for no
+extra output by default).
+
+\item[\code{MTestGetDataypes}]Like the communicator routine, this
+provides different datatypes on successive calls, returning the value
+zero when all example datatypes have been provided.  This routine
+provides both a send and a receive datatype to make it possible to
+test communication that uses the same type signature but different
+type maps.  These routine return values in a structure,
+\code{MTestDatatype}, that is defined in \file{mpitest.h}.  The
+components of this structure that are used in this example are:
+
+    \begin{description}
+    \item[InitBuf]Called to initialize the data buffer
+    \item[buf,datatype,count]The parameters to pass to the
+    communication routine
+    \end{description}
+There are some other members to this structure but normally these are
+the only ones that should be used by test programs.
+
+\item[\code{MTestFreeDataype}]Frees the storage associated with an
+    \code{MTestDatatype}, including any message buffers.
+
+\item[\code{MTestGetIntracommName}]Returns a string describing the
+current intracommunicator (that is, the communicator provided by
+\code{MTestGetIntracommGeneral} and related routines).
+
+\item[\code{MTestGetDatatypeName}]Returns a string describing the
+given \code{MTestDatatype}.
+
+\item[\code{MTestPrintError}]Print the error message associated with
+an MPI error code.
+
+\item[\code{MTestCheckRecv}]Test the data received in an buffer
+contained within an \code{MTestDatatype} receive datatype.
+
+\item[\code{MTestFreeComm}]Free a communicator provided by
+\code{MTestGetIntracommGeneral} and related routines.
+
+\item[\code{MTest_Finalize}]Report the total number of errors or
+\code{ No Errors}.  Only process zero writes to stdout; the value
+printed is the sum of the number of errors (as given by the argument
+to the routine) across all processes.
+\end{description}
+
+The MTest package contains some additional routines for creating other
+kinds of communicators, including intercommunicators.
+
+Note that the MTest package is still under development; there may be
+additional routines and additional examples of communicators and
+datatypes.  
+
+
+\if 1=0
 \subsubsection{Test harness}
-There is a common test harness for running tests.  This will
+There is a common test harness for running tests.  
+
+This will
 \begin{enumerate}
 \item Allow selecting the level of testing; e.g., exhaustive (all
 tests for all combinations of datatypes and communicators), factored
@@ -78,3 +356,4 @@ void MTest_Message( msg, ... );
 void MTest_Finalize( int errcount );
 \end{verbatim}
 
+\fi
