@@ -174,6 +174,9 @@ def mpdrun():
 
         covered = [0] * nprocs 
         procSpec = createReq.getElementsByTagName('process-spec')
+        if not procSpec:
+            print 'No process-spec specified'
+            usage()
         for p in procSpec:
             if p.hasAttribute('range'):
                 therange = p.getAttribute('range')
