@@ -132,9 +132,6 @@ int MPIR_Comm_attr_dup_list( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
 	flag = 0;
 	switch (language) {
 	case MPID_LANG_C: 
-#ifdef HAVE_CXX_BINDING
-	case MPID_LANG_CXX: 
-#endif
 	    if (copyfn.C_CommCopyFunction) {
 		mpi_errno = copyfn.C_CommCopyFunction( comm_ptr->handle, 
 						p->keyval->handle, 
@@ -142,6 +139,10 @@ int MPIR_Comm_attr_dup_list( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
 						p->value, &new_value, &flag );
 	    }
 	    break;
+#ifdef HAVE_CXX_BINDING
+	case MPID_LANG_CXX: 
+	    break;
+#endif
 #ifdef HAVE_FORTRAN_BINDING
 	case MPID_LANG_FORTRAN: 
 	    {

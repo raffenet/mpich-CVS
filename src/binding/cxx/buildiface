@@ -901,7 +901,7 @@ extern Datatype TWOINTEGER;
     foreach $op (@ops) {
 	print $OUTFD "extern const Op $op;\n";
     }
-    print $OUTFD "extern Op OP_NULL;\n";
+    print $OUTFD "extern const Op OP_NULL;\n";
 
     # Predefined communicators and groups
     print $OUTFD "extern Intracomm COMM_WORLD;\n";
@@ -917,7 +917,7 @@ extern Datatype TWOINTEGER;
     print $OUTFD "extern const Errhandler ERRHANDLER_NULL;\n";
     print $OUTFD "extern const Errhandler ERRORS_RETURN;\n";
     print $OUTFD "extern const Errhandler ERRORS_ARE_FATAL;\n";
-    print $OUTFD "extern Errhandler ERRORS_THROW_EXCEPTIONS;\n";
+    print $OUTFD "extern const Errhandler ERRORS_THROW_EXCEPTIONS;\n";
 
     # Predefined integers.  Include MPI-2 predefined keyvals
     foreach $int (BSEND_OVERHEAD, KEYVAL_INVALID, CART, GRAPH,
@@ -1306,7 +1306,7 @@ Datatype TWOINTEGER(MPI_2INTEGER);
     foreach $op (@ops) {
 	print $OUTFD "const Op $op(MPI_$op);\n";
     }
-    print $OUTFD "Op OP_NULL;\n";
+    print $OUTFD "const Op OP_NULL;\n";
 
     # Predefined communicators and groups
     print $OUTFD "Intracomm COMM_WORLD(MPI_COMM_WORLD);\n";
@@ -1322,7 +1322,7 @@ Datatype TWOINTEGER(MPI_2INTEGER);
     print $OUTFD "const Errhandler ERRHANDLER_NULL;\n";
     print $OUTFD "const Errhandler ERRORS_RETURN(MPI_ERRORS_RETURN);\n";
     print $OUTFD "const Errhandler ERRORS_ARE_FATAL(MPI_ERRORS_ARE_FATAL);\n";
-    print $OUTFD "Errhandler ERRORS_THROW_EXCEPTIONS;\n";
+    print $OUTFD "const Errhandler ERRORS_THROW_EXCEPTIONS;\n";
 
     # Predefined integers
     foreach $int (BSEND_OVERHEAD, KEYVAL_INVALID, CART, GRAPH,
@@ -1431,13 +1431,36 @@ void MPIR_Call_op_fn( void *invec, void *outvec, int len, MPI_Datatype dtype,
 }
 void Op::Init( User_function *f, bool commute )
     {
-	MPI_Op op;
-	MPIX_CALL( MPI_Op_create( (MPI_User_function)f, 
+	MPIX_CALL( MPI_Op_create( (MPI_User_function *)f, 
 				 (int) commute, &the_real_op ) ); 
 	MPIR_Op_set_cxx( the_real_op );
     }\n";
 
+    # Keyval and attribute routines
     print $OUTFD "
+extern \"C\" void MPIR_Call_delfn( MPI_Comm comm, int keyval,
+				   void *value, void *extra_state, 
+				   MPI::Comm::Delete_attr_function *f )
+{
+    MPI::Comm cxxcomm = comm;
+    (*f)( cxxcomm, keyval, value, extra_state );
+}
+extern \"C\" void MPIR_Keyval_set_cxx( int );
+int Comm::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df, 
+			void *extra_state ) {
+    int keyval;
+
+    if (cf == MPI::Comm::NULL_COPY_FN) cf = 0;
+    if (df == MPI::Comm::NULL_DELETE_FN) df = 0;
+    MPIX_CALL( MPI_Comm_create_keyval( (MPI_Comm_copy_attr_function *)cf, 
+				       (MPI_Comm_delete_attr_function *)df,
+				      &keyval, extra_state ) );
+    MPIR_Keyval_set_cxx( keyval );
+    return keyval;
+}
+";
+
+    print $OUTFD "\
     void Datatype::Pack( const void *inbuf, int incount, void *outbuf, 
 			int outsize, int &position, const Comm &comm ) {
 	MPIX_CALL( MPI_Pack( (void *)inbuf, incount, the_real_datatype, outbuf, 
@@ -1779,8 +1802,13 @@ typedef void Errhandler_fn(Comm &, int *, ... );
     static int Create_keyval( Copy_attr_function *, Delete_attr_function *,
                               void * );
           
-    static Copy_attr_function NULL_COPY_FN, DUP_FN;
-    static Delete_attr_function NULL_DELETE_FN;\n"; 
+    static int NULL_COPY_FN( const Comm &oldcomm, int keyval, void *ex,
+    void *attr_in, void *attr_out, bool &flag ) { flag = 1; return 0;}
+    static int NULL_DELETE_FN( Comm &comm, int keyval, void * attr, void *ex )
+	{ return 0; }
+    static int DUP_FN( const Comm &oldcomm, int keyval, void *ex,
+    void *attr_in, void *attr_out, bool &flag ) { flag = 1; 
+    *(void **)attr_out = attr_in; return 0;} \n";
 }
 sub Graphcomm_methods {
     my $OUTFD = $_[0];
@@ -1800,6 +1828,7 @@ sub Op_methods {
     
     print $OUTFD "
     void Init( User_function *, bool );
+";
 }
     
 #
