@@ -30,6 +30,13 @@
 #endif
 #endif
 
+/*@
+    MPE_GetHostName -  
+
+    Parameters:
++ name : character pointer
+- nlen : integer
+@*/
 void MPE_GetHostName( name, nlen )
 char *name;
 int  nlen;
