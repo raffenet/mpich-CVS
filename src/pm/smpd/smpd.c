@@ -207,7 +207,8 @@ int smpd_entry_point()
     smpd_process.id = 0;
     smpd_process.root_smpd = SMPD_TRUE;
 
-    smpd_set_smpd_data("binary", smpd_process.pszExe);
+    if (smpd_process.pszExe[0] != '\0')
+	smpd_set_smpd_data("binary", smpd_process.pszExe);
 
     result = sock_create_set(&set);
     if (result != SOCK_SUCCESS)

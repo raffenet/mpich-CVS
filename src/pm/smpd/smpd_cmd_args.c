@@ -288,8 +288,10 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 
     if (smpd_get_opt_string(argcp, argvp, "-smpdfile", smpd_process.smpd_filename, SMPD_MAX_FILENAME))
     {
+	/*
 	FILE *fin;
 	char line[SMPD_PASSPHRASE_MAX_LENGTH+3];
+	*/
 	struct stat s;
 
 	if (stat(smpd_process.smpd_filename, &s) == 0)
@@ -300,6 +302,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 		smpd_exit_fn("smpd_parse_command_args");
 		return SMPD_FAIL;
 	    }
+	    /*
 	    fin = fopen(smpd_process.smpd_filename, "r");
 	    if (fin != NULL)
 	    {
@@ -316,6 +319,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 		}
 		fclose(fin);
 	    }
+	    */
 	}
     }
 
