@@ -1,1 +1,1 @@
-SUBDIRS = mpi .
+SUBDIRS = mpi util .

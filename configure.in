@@ -31,11 +31,19 @@ amount of timing information collected by the MPICH implementation],,
 enable_timing=all)
 dnl
 dnl Set single for now
-AC_ARG_ENABLE(threads,[--enable-threads=level - Control the level of thread
-support in the MPICH implementation.  level may be 
+AC_ARG_ENABLE(threads,
+[--enable-threads=level - Control the level of thread support in the 
+MPICH implementation.  level may be 
     single - Single threaded (MPI_THREAD_SINGLE and MPI_THREAD_FUNNELED)
     multiple - Multithreaded (MPI_THREAD_SERIAL and MPI_THREAD_MULTIPLE)],,
 enable_threads=single)
+dnl
+AC_ARG_ENABLE(g,
+[--enable-g=option - Control the level of debugging support in the MPICH
+implementation.  option may be a list of common separated names including
+    none  - No debugging
+    mem   - Memory usage tracing
+    all   - All of the above choices],,enable_g=none)
 dnl
 dnl Process any enable or with values
 dnl error-checking
@@ -75,13 +83,29 @@ case "$enable_threads" in
     no|single)
     AC_DEFINE(MPICH_SINGLE_THREADED,,[define to for single threaded])
     ;;
-    all|yes|runtime)
+    runtime=*|multiple=*)
+    thread_type=`echo $enable_threads | sed -e 's/^.*=//'g`
+    ;;
+    all|yes|multiple|runtime)
+    thread_type=pthread
     ;;
     *)
     AC_MSG_WARN([Unknown value $enable_threads for enable-threads])
     ;; 
 esac
-
+dnl
+dnl enable-g
+case "$enable_g" in 
+    no|none)
+    ;;
+    mem|all)
+    AC_DEFINE(USE_MEMORY_TRACING,,[Define to enable memory tracing])
+    CFLAGS="$CFLAGS -g"
+    ;;
+    *)
+    AC_MSG_WARN([Unknown value $enable_g for enable-g])
+    ;;
+esac
 dnl
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
@@ -129,6 +153,22 @@ else
     AC_DEFINE(HAVE_INT16_T,,[Define if int16_t is supported by the C compiler])
 fi
 dnl
+dnl check for library functions
+if test -n "$thread_type" ; then
+    case $thread_type in 
+        pthread|posix)
+	AC_SEARCH_LIBS(pthread_create,pthread,
+	    AC_DEFINE(HAVE_PTHREAD_CREATE,,[Define for pthreads]))
+	;;
+	solaris|thr)
+	AC_SEARCH_LIBS(thr_create,thread,
+	    AC_DEFINE(HAVE_THR_CREATE,,[Define for Solaris threads]))
+	;;
+	*)
+	AC_MSG_WARN([Unknown thread type $thread type]) 
+	;;
+    esac
+fi
 dnl Is there libnsl needed for gethostbyname?
 dnl AC_SEARCH_LIBS(gethostbyname,nsl)
 dnl
@@ -169,7 +209,11 @@ AC_CONFIG_SUBDIRS(src/mpi/timer $subsystems )
 dnl Generate the Makefiles from Makefile.in
 dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
 dnl from the file.
-AC_OUTPUT(Makefile src/Makefile src/mpi/Makefile \
+AC_OUTPUT(Makefile src/Makefile \
+          src/mpi/Makefile \
           src/mpi/init/Makefile src/mpi/errhan/Makefile \
+	  src/util/Makefile \
+	  src/util/mem/Makefile \
+	  src/util/thread/Makefile \
           src/include/mpi.h \
 	  examples/Makefile )

@@ -230,6 +230,7 @@ sub ReadMfile {
 #}
 #
 sub WriteMfile {
+    $maxline = 80;
     $output_filename = $_[0];
     # Write out the generated Makefile
     open( FD, ">$output_filename" ) || die "Could not open $output_filename\n";
@@ -255,7 +256,6 @@ sub WriteMfile {
     &TargetAll;
 
     # Output the generated targets.  First, the libraries
-    $maxline = 80;
     &TargetLibraries;
 
     # Next, the programs
@@ -302,6 +302,10 @@ sub DefaultRules {
 	if (!defined($makevars{"INCLUDES"})) {
 	    print FD "INCLUDES    = $include_list\n";
         }
+    }
+    # Add the LIBS if there are any programs to build
+    if (scalar(%pgmlinktypes)) {
+	print FD "LIBS        = \@LIBS\@\n";
     }
 
     # If there are subdirs, we need make
@@ -352,7 +356,6 @@ sub DefaultRules {
 
     # Configure update targets
     if ( -s "configure.in" && $maint_targets ) {
-	print FD "\nconfigure: configure.in\n";
 	# Convert ROOTDIR as necessary
 	$aargs = $autoconf_args;
 	if ($rootdirpath eq "") {
@@ -363,6 +366,29 @@ sub DefaultRules {
 	    $aargs =~ s/ROOTDIR/$rootdir/;
 	}
 	$aargs =~ s/\/\//\//;
+	$autoconf_deps="";
+	# If there is a -l dir in the autoconf_args, then add that to the
+	# dependencies
+	if ($aargs =~ /-l\s*([\.\/\w]*)/) {
+	    $macroloc = $1;
+	    $autoconf_deps .= "$macroloc/aclocal.m4";
+	    $linelen = length($autoconf_deps) + 24;
+	    # Extract includes from aclocal.m4
+	    open (AFD, "<$macroloc/aclocal.m4" );
+	    while (<AFD>) {
+		if (/^\s*builtin\(include,(\w*\.m4)\)\s*$/) {
+		    $filename = "$macroloc/$1";
+		    if ($linelen + length(" $filename" ) + 2 > $maxline ) { 
+			$autoconf_deps .= " \\\n        ";
+			$linelen = 8;
+		    }
+		    $autoconf_deps .= " $filename";
+		    $linelen += length($filename) + 1;
+		}
+	    }
+	    close (AFD);
+	}
+	print FD "\nconfigure: configure.in $autoconf_deps\n";
 	print FD "\tautoheader $aargs\n\tautoconf $aargs\n";
     }
     if ($maint_targets && "$smdir" ne "") {

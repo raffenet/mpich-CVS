@@ -37,6 +37,44 @@
 typedef short int16_t;
 #endif
 
+/* Memory allocation */
+#ifdef USE_MEMORY_TRACING
+#define MPID_Malloc(a)    MPID_trmalloc((unsigned)(a),__LINE__,__FILE__)
+#define MPID_Calloc(a,b)  \
+    MPID_trcalloc((unsigned)(a),(unsigned)(b),__LINE__,__FILE__)
+#define MPID_Free(a)      MPID_trfree(a,__LINE__,__FILE__)
+#define MPID_Strdup(a)    MPID_trstrdup(a,__LINE__,__FILE__)
+void *MPID_trmalloc ( unsigned int, int, char * );
+void MPID_trfree ( void *, int, char * );
+void *MPID_trstrdup( const char *, int, const char * );
+void *MPID_trcalloc ( unsigned, unsigned, int, char * );
+void *MPID_trrealloc ( void *, int, int, char * );
+/* Define these as invalid C to catch their use in the code */
+#define malloc(a)         'Error use MPID_Malloc'
+#define calloc(a,b)       'Error use MPID_Calloc'
+#define free(a)           'Error use MPID_Free'
+#if defined(strdup) || defined(__strdup)
+#undef strdup
+#endif
+#define strdup(a)         'Error use MPID_Strdup'
+#else
+#define MPID_Malloc(a)    malloc((unsigned)(a))
+#define MPID_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
+#define MPID_Free(a)      free((void *)(a))
+#define MPID_Strdup(a)    strdup(a)
+#endif
+
+/* Memory allocation stack */
+#define MAX_MEM_STACK 16
+typedef struct { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_Mem_stack;
+#define MALLOC_STK(n,a) {a=MPIU_Malloc(n);\
+               if (memstack.n_alloc >= MAX_MEM_STACK) abort(implerror);\
+               memstack.ptrs[memstack.n_alloc++] = a;}
+#define FREE_STK     {int i; for (i=memstack.n_alloc-1;i>=0;i--) {\
+               MPIU_Free(memstack.ptrs[i]);}}
+#define MALLOC_STK_INIT memstack.n_alloc = 0
+#define MALLOC_STK_DECL MPIU_Mem_stack memstack
+
 /* Known language bindings */
 typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN, 
 	       MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
@@ -146,8 +184,6 @@ typedef struct {
 
 /* Thread types */
 /* Temporary; this will include "mpichthread.h" eventually */
-typedef int MPID_Thread_key_t;
-typedef int MPID_Thread_id_t;
 
 typedef struct {
     int              nest_count;   /* For layered MPI implementation */
@@ -159,12 +195,21 @@ typedef struct {
 
 #ifdef MPICH_SINGLE_THREADED
 extern MPICH_PerThread_t MPIR_Thread;
+typedef int MPID_Thread_key_t;
+typedef int MPID_Thread_id_t;
 #define MPID_GetPerThread(p) p = &MPIR_Thread
 #else /* Assumes pthreads for simplicity */
+#if defined HAVE_PTHREAD_CREATE
+#include <pthread.h>
+typedef pthread_key_t MPID_Thread_key_t;
+typedef pthread_t MPID_Thread_id_t;
 #define MPID_GetPerThread(p) {\
-     p = pthread_getspecific( MPIR_Process.thread_key ); \
-     if (!p) { p = MPID_Calloc( 1, sizeof(MPID_PerThread_t ) );\
+     p = (MPICH_PerThread_t*)pthread_getspecific( MPIR_Process.thread_key ); \
+     if (!p) { p = MPID_Calloc( 1, sizeof(MPICH_PerThread_t ) );\
                pthread_setspecific( MPIR_Process.thread_key, p );}}
+#else
+#error No Thread Package Chosen
+#endif
 #endif
 
 
@@ -181,6 +226,17 @@ typedef struct {
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 
+/* Record the level of thread support */
+extern int MPID_THREAD_LEVEL;
+
+#ifdef MPICH_SINGLE_THREADED
+#define MPID_MAX_THREAD_LEVEL MPI_THREAD_FUNNELED
+#else
+#define MPID_MAX_THREAD_LEVEL MPI_THREAD_MULTIPLE
+#endif
+
+
+/* Routine tracing */
 #define MPID_MPI_FUNC_EXIT(a)
 #define MPID_MPI_FUNC_ENTER(a)
 

@@ -26,10 +26,22 @@
 /* Any internal routines can go here.  Make them static if possible */
 MPICH_PerProcess_t MPIR_Process;
 #ifdef MPICH_SINGLE_THREADED
+/* If single threaded, we preallocate this.  Otherwise, we create it */
 MPICH_PerThread_t  MPIR_Thread;
 #endif
 int MPIR_Init_thread( int required, int *provided )
 {
+    if (required > MPID_MAX_THREAD_LEVEL) {
+	*provided = MPID_MAX_THREAD_LEVEL;
+    }
+    else {
+	*provided = required;
+    }
+#ifndef MPICH_SINGLE_THREADED
+    MPIR_Process.thread_key = MPID_GetThreadKey();
+    MPIR_Process.master_thread = MPID_GetThreadId();
+#endif    
+    MPIR_Process.do_error_checks = 1;
     return 0;
 }
 #endif
