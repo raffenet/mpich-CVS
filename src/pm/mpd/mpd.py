@@ -468,7 +468,8 @@ def _do_mpdrun(msg):
                 break
         manPid = fork()
         if manPid == 0:
-            mpd_set_my_id('%s_man_before_exec_%d' % (g.myHost,g.myPid) )
+            mpd_set_my_id('%s_man_%d' % (g.myHost,g.myPid) )
+            g.myId = '%s_man_%d' % (g.myHost,g.myPid)
             for sock in g.activeSockets:
                 sock.close()
             toManSocket.close()
@@ -680,6 +681,7 @@ def _handle_man_msgs(manSocket):
         msg['nstarted_on_this_loop'] = 0
         msg['first_loop'] = 1
         msg['jobalias'] = ''
+        msg['stdin_goes_to_who'] = '0'
         if msg.has_key('try_0_locally'):
             _do_mpdrun(msg)
         else:
@@ -934,4 +936,4 @@ if __name__ == '__main__':
             #    profile.run('_mpd()')
             _mpd()
     except mpdError, errmsg:
-        print 'mpd failed (%s); cause: %s' % (g.myId,errmsg)
+        print '%s failed ; cause: %s' % (g.myId,errmsg)
