@@ -141,6 +141,7 @@ typedef MPIU_INT64_T int64_t;
 
 /* IOVs */
 /* The basic channel interface uses IOVs */
+#define MPID_IOV_BUF_CAST void *
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
 #define MPID_IOV         WSABUF
@@ -158,6 +159,10 @@ typedef MPIU_INT64_T int64_t;
 #define MPID_IOV_LIMIT   16
 
 /* FIXME: These need a definition.  What are they for? */
+/* These don't work.
+   I don't think there is a legal way in C to convert a pointer to an integer
+   without generating compiler warnings or errors.
+ */
 #ifdef HAVE_WINDOWS_H
 #define POINTER_TO_AINT(a)   ( ( MPI_Aint )( 0xffffffff & (__int64) ( a ) ) )
 #define POINTER_TO_OFFSET(a) ( ( MPI_Offset ) ( (__int64) ( a ) ) )
