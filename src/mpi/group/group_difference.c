@@ -127,11 +127,13 @@ int MPI_Group_difference(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup
 	}
 	else {
 	    mpi_errno = MPIR_Group_create( nnew, &new_group_ptr );
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno) {
 		MPID_Common_thread_unlock();
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_DIFFERENCE);
 		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	    }
+	    /* --END ERROR HANDLING-- */
 	    new_group_ptr->rank = MPI_UNDEFINED;
 	    k = 0;
 	    for (i=0; i<size1; i++) {
