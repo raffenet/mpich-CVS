@@ -2199,6 +2199,29 @@ int PMIX_Start_root_smpd(int nproc, char *host, int len, int *port)
     return PMI_SUCCESS;
 }
 
+int PMIX_Stop_root_smpd()
+{
+#ifdef HAVE_WINDOWS_H
+    DWORD result;
+#else
+    int status;
+#endif
+
+#ifdef HAVE_WINDOWS_H
+    result = WaitForSingleObject(pmi_process.hRootThread, INFINITE);
+    if (result != WAIT_OBJECT_0)
+    {
+	return PMI_FAIL;
+    }
+#else
+    if (waitpid(pmi_process.root_pid, &status, WUNTRACED) == -1)
+    {
+	return PMI_FAIL;
+    }
+#endif
+    return PMI_SUCCESS;
+}
+
 static int root_smpd(void *p)
 {
     int result;
