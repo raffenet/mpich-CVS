@@ -51,7 +51,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     int key_max_sz;
     int val_max_sz;
 
-    char shmemkey[100];
+    char shmemkey[MPIDI_MAX_SHM_NAME_LENGTH];
     int i, j, k;
     int shm_block;
 
@@ -247,12 +247,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	}
 
 	MPIU_DBG_PRINTF(("KEY = %s\n", shmemkey));
-#ifdef USE_POSIX_SHM
-	MPIU_Strncpy(pg->key, shmemkey, 100);
+#if defined(USE_POSIX_SHM) || defined(USE_WINDOWS_SHM)
+	MPIU_Strncpy(pg->key, shmemkey, MPIDI_MAX_SHM_NAME_LENGTH);
 #elif defined (USE_SYSV_SHM)
 	pg->key = atoi(shmemkey);
-#elif defined (USE_WINDOWS_SHM)
-	MPIU_Strncpy(pg->key, shmemkey, MAX_PATH);
 #else
 #error No shared memory subsystem defined
 #endif

@@ -27,6 +27,8 @@
 #error No shared memory subsystem defined
 #endif
 
+#define MPIDI_MAX_SHM_NAME_LENGTH 100
+
 #define SHM_SUCCESS    0
 #define SHM_FAIL      -1
 
@@ -63,13 +65,13 @@ typedef struct MPIDI_Process_group_s
     void *addr;
     int rank;
 #ifdef USE_POSIX_SHM
-    char key[100];
+    char key[MPIDI_MAX_SHM_NAME_LENGTH];
     int id;
 #elif defined (USE_SYSV_SHM)
     int key;
     int id;
 #elif defined (USE_WINDOWS_SHM)
-    char key[MAX_PATH];
+    char key[MPIDI_MAX_SHM_NAME_LENGTH];
     HANDLE id;
 #else
 #error *** No shared memory mapping variables specified ***
