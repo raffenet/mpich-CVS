@@ -28,7 +28,7 @@ AC_ARG_ENABLE(pmiport,
 
 PAC_PROG_MAKE
 
-AC_CHECK_HEADERS(unistd.h string.h stdlib.h)
+AC_CHECK_HEADERS(unistd.h string.h stdlib.h sys/socket.h)
 dnl Use snprintf if possible when creating messages
 AC_CHECK_FUNCS(snprintf)
 if test "$ac_cv_func_snprintf" = "yes" ; then

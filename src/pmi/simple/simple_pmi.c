@@ -25,7 +25,9 @@
 #endif
 #endif
 /* This should be moved to pmiu for shutdown */
+#if defined(HAVE_SYS_SOCKET_H)
 #include <sys/socket.h>
+#endif
 /* mpimem includes the definitions for MPIU_Snprintfl, MPIU_Malloc, and 
    MPIU_Free */
 #include "mpimem.h"
