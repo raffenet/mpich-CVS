@@ -1,7 +1,7 @@
 BUILDING MPICH2 under Windows
 
 requirements:
-a) MS Development Environment 2003, C/C++ and Fortran
+a) MS Development Environment 2003, C/C++
 b) perl
 c) administrative privileges on your machines.
 
