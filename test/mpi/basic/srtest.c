@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     if (myid == 0)
     {
 	printf("%d sending '%s' \n",myid,buffer);
-	MPI_Send(buffer, strlen(buffer)+1, MPI_CHAR, next, 99, MPI_COMM_WORLD);
+	MPI_Send(buffer, (int)strlen(buffer)+1, MPI_CHAR, next, 99, MPI_COMM_WORLD);
 	printf("%d receiving \n",myid);
 	MPI_Recv(buffer, BUFLEN, MPI_CHAR, MPI_ANY_SOURCE, 99, MPI_COMM_WORLD,
 		 &status);
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 		 &status);
 	printf("%d received '%s' \n",myid,buffer);
 	/* mpdprintf(001,"%d receiving \n",myid); */
-	MPI_Send(buffer, strlen(buffer)+1, MPI_CHAR, next, 99, MPI_COMM_WORLD);
+	MPI_Send(buffer, (int)strlen(buffer)+1, MPI_CHAR, next, 99, MPI_COMM_WORLD);
 	printf("%d sent '%s' \n",myid,buffer);
     }
     MPI_Barrier(MPI_COMM_WORLD);

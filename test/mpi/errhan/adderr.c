@@ -6,7 +6,12 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "mpitest.h"
+#include "mpitestconf.h"
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 /* Create NCLASSES new classes, each with 5 codes (160 total) */
 #define NCLASSES 32

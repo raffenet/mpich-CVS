@@ -8,6 +8,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
+#include "mpitestconf.h"
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif
 
 static char MTEST_Descrip[] = "Test reading and writing zero bytes (set status correctly)";
 

@@ -6,7 +6,12 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include "mpitestconf.h"
 #include "mpitest.h"
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 static char MTestDescrip[] = "Test freeing keyvals while still attached to \
 a win, then make sure that the keyval delete code are still \

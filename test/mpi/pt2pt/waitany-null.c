@@ -1,5 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "mpitestconf.h"
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 #include "mpi.h"
 
 static int verbose = 0;

@@ -1,10 +1,15 @@
 /* based on the pack.c test in the mpich suite.
  */
 
+#include "mpi.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "mpi.h"
+#include "mpitest.h"
+#include "mpitestconf.h"
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 static int verbose = 0;
 

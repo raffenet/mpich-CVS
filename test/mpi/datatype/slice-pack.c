@@ -1,7 +1,12 @@
+#include "mpi.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include "mpi.h"
+#include "mpitest.h"
+#include "mpitestconf.h"
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 static int verbose = 0;
 int a[100][100][100], e[9][9][9];

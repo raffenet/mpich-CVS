@@ -1,6 +1,11 @@
 /* Test of info that makes use of the extended handles */
 #include "mpi.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include "mpitestconf.h"
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 #define MAX_INFOS 256
 #define info_list 16

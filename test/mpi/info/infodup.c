@@ -6,7 +6,12 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "mpitest.h"
+#include "mpitestconf.h"
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 int main( int argc, char *argv[] )
 {
