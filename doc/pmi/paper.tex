@@ -1,8 +1,5 @@
 \documentclass[11pt]{article}
 \usepackage{times} % Necessary because Acrobat can't handle fonts properly
-\usepackage{/home/gropp/bin/share/tex/fileinclude}
-\usepackage{/home/gropp/data/share/refman}
-%\usepackage{fileinclude}
 \let\file=\texttt
 \let\code=\texttt
 \let\program=\code
@@ -572,8 +569,8 @@ a separate service to provide this information.
 \begin{verbatim}
 int PMI_Topo_type( PMI_Group group, int *kind );
 int PMI_Topo_cluster_info( PMI_Group group, 
-			    int *levels, int my_cluster[], 
-			    int my_rank[] );
+                            int *levels, int my_cluster[], 
+                            int my_rank[] );
 int PMI_Topo_mesh_info( PMI_Group group, int ndims, int dims[] );
 \end{verbatim}
 These routines provide information on the specified PMI group.
