@@ -91,14 +91,22 @@ int main(int argc, char **argv)
 
     for (i=0; i<SIZE; i++) buf[i] = i + mynod*SIZE;
     MPI_File_iwrite(fh, buf, 1, newtype, &req);
+#ifdef MPIO_USES_MPI_REQUEST
+    MPI_Wait(&req, &status);
+#else
     MPIO_Wait(&req, &status);
+#endif
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     for (i=0; i<SIZE; i++) buf[i] = -1;
 
     MPI_File_iread_at(fh, 0, buf, 1, newtype, &req);
+#ifdef MPIO_USES_MPI_REQUEST
+    MPI_Wait(&req, &status);
+#else
     MPIO_Wait(&req, &status);
+#endif
 
     for (i=0; i<SIZE; i++) {
 	if (!mynod) {
@@ -144,14 +152,22 @@ int main(int argc, char **argv)
 
     for (i=0; i<SIZE; i++) buf[i] = i + mynod*SIZE;
     MPI_File_iwrite_at(fh, mynod*(SIZE/2)*sizeof(int), buf, 1, newtype, &req);
+#ifdef MPIO_USES_MPI_REQUEST
+    MPI_Wait(&req, &status);
+#else
     MPIO_Wait(&req, &status);
+#endif
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     for (i=0; i<SIZE; i++) buf[i] = -1;
 
     MPI_File_iread_at(fh, mynod*(SIZE/2)*sizeof(int), buf, 1, newtype, &req);
+#ifdef MPIO_USES_MPI_REQUEST
+    MPI_Wait(&req, &status);
+#else
     MPIO_Wait(&req, &status);
+#endif
 
     for (i=0; i<SIZE; i++) {
 	if (!mynod) {
@@ -199,14 +215,22 @@ int main(int argc, char **argv)
 
     for (i=0; i<SIZE; i++) buf[i] = i + mynod*SIZE;
     MPI_File_iwrite(fh, buf, SIZE, MPI_INT, &req);
+#ifdef MPIO_USES_MPI_REQUEST
+    MPI_Wait(&req, &status);
+#else
     MPIO_Wait(&req, &status);
+#endif
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     for (i=0; i<SIZE; i++) buf[i] = -1;
 
     MPI_File_iread_at(fh, 0, buf, SIZE, MPI_INT, &req);
+#ifdef MPIO_USES_MPI_REQUEST
+    MPI_Wait(&req, &status);
+#else
     MPIO_Wait(&req, &status);
+#endif
 
     for (i=0; i<SIZE; i++) {
 	if (!mynod) {
