@@ -349,6 +349,8 @@ int ADIOI_Error(ADIO_File fd, int error_code, char *string);
 int MPIR_Err_setmsg( int, int, const char *, const char *, const char *, ... );
 int ADIOI_End_call(MPI_Comm comm, int keyval, void *attribute_val, void *extra_state);
 int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, int nbytes);
+int ADIOI_Uses_generic_read(ADIO_File fd);
+int ADIOI_Uses_generic_write(ADIO_File fd);
 
 
 /* Unix-style file locking */
