@@ -551,7 +551,7 @@ int MPI_Foo( MPI_Comm comm, int a )
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
-                return MPIR_Err_return_comm( comm_ptr, mpi_errno, FCNAME );
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -601,18 +601,20 @@ manually update each \file{Makefile.in}.
 
 Here is a typical \file{Makefile.sm} file for a leaf directory:
 \begin{verbatim}
-libmpich2_a_SOURCES = foo.c bar.c
+lib${MPILIBNAME}_a_SOURCES = foo.c bar.c
+INCLUDES = -I../../include -I${top_srcdir}/src/include
 \end{verbatim}
 
 Here is a typical \file{Makefile.sm} file for an interior node in the
 directory tree:
 \begin{verbatim}
-libmpich2_a_SOURCES = wrapack.c 
+lib${MPILIBNAME}_a_SOURCES = wrapack.c 
+INCLUDES = -I../../include -I${top_srcdir}/src/include
 SUBDIRS = shm tcp common datatype .
 \end{verbatim}
 This specifies four sudirectories and further that the current directory
 should be processed \emph{after} the subdirectories (because of the position
-of \file{.}).  It also adds \file{wrapack.o} to the \file{libmpich2} library.
+of \file{.}).  It also adds \file{wrapack.o} to the mpich library.
 
 If a particular \file{Makefile} needs a special-purpose target, that target
 can be added to the \file{Makefile.sm}, because lines in the
@@ -833,7 +835,7 @@ In addition, the macro \code{CONSTRUCT_MASK} may be used to return
 just these bits and \code{CONSTRUST_TYPE(id)} returns these values as the
 integers $0$--$3$.
 
-Using 00 as invalid, especially in the two high bits, will help detect
+Using $00$ as invalid, especially in the two high bits, will help detect
 bad parameters passed to us (although negative ints won't be caught).
 
 \code{CONSTRUCT_BUILTIN} types include the predefined datatypes such as
@@ -889,6 +891,16 @@ to be statically calculable; the \code{_SC_PAGE_SIZE} value in the
 define \code{MPID_BLOCK_SIZE}). 
 The macros \code{HANDLE_BLOCK(id)} and \code{HANDLE_BLOCK_INDEX(id)}
 return these values.
+Figure~\ref{fig:indirect} illustrates how the indirect handles are managed.
+This approach allows a modest number of objects to be preallocated and
+additional elements to be allocated dynamically as required.
+
+\begin{figure}
+\centerline{\psfig{file=indirect.eps,width=4in}}
+\caption{Data structures for converting an indirect handle into a particular
+  dynamically allocated object}
+\label{fig:indirect}
+\end{figure}
 
 \subsubsection{Converting Handles To Pointers}
 \label{sec:handle-to-ptr}
@@ -7467,6 +7479,26 @@ made in the design of the MPICH2 implementation, and include both design
 alternatives and discussion of constraints that may not be obvious to a casual
 reader of the MPI standard.  This appendix is organized by major section.
 
+\subsection{Opaque Handles}
+\label{sec:rationale-opaque-handles}
+
+The reason for the indirect blocks is to provide a balance between fast
+startup and small memory size and the ability to provide large numbers of
+objects to the applications that require them.  The approach taken here
+optimizes for small numbers of objects (the \code{CONSTRUCT_DIRECT} type) but
+allows large numbers of objects to be incrementally allocated.
+
+An alternative approach that one vendor used is \code{realloc}; for cases
+where the \code{realloc} succeeds without allocating new data (by extending
+the existing region), this approach is very fast.  However, in a multithreaded
+environment, it forces a lock around \emph{every} object access, since in the
+case where \code{realloc} allocates a new block, it is necessary to move the
+objects to the new storage.  In a multithreaded application, without a lock
+around each object access, an object may be updated by one thread while being
+moved by another.  The approach taken here avoids that problem; locks are only
+needed to allocate and free an object, and careful assembly language coding
+could eliminate those locks in favor of atomic update operations.
+
 \subsection{Error checks}
 
 \subsubsection{Pointer Checks.}
@@ -7584,7 +7616,7 @@ Comment [BRT]: push/pop would be correct for the multi-threaded case
 as long as thread-specific stacks are used.
 
 \subsection{Memory Allocation}
-The use of \code{MPID_Malloc} etc. makes it easier to use portable versions of
+The use of \code{MPIU_Malloc} etc. makes it easier to use portable versions of
 memory tracing tools.  The allocator that maintains a stack of allocated
 memory is intended for routines such as \mpifunc{MPI_Type_hindexed} that make
 multiple memory allocations.

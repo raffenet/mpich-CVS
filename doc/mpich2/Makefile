@@ -128,5 +128,8 @@ clean:
 	rm -f *.log *.aux *.dvi *.bbl mpich2.ps *~ *.toc errcodes.ps \
 		pt2ptdesc.ps
 
+# Handle older fig2dev programs
 .fig.eps:
-	fig2dev -L eps -l landscape $*.fig > $*.eps
+	-fig2dev -L eps -l landscape $*.fig > $*.eps
+	if [ ! -s $*.eps ] ; then \
+		fig2dev -L ps -l landscape $*.fig > $*.eps ; fi
