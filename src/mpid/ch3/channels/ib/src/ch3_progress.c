@@ -70,7 +70,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	case IBU_OP_CLOSE:
 	    break;
 	default:
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_op", "**shm_op %d", wait_result);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibu_op", "**ibu_op %d", out.op_type);
 	    goto fn_exit;
 	}
 
