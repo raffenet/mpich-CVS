@@ -20,9 +20,10 @@
 #if defined(HAVE_TIMING) && (HAVE_TIMING == MPID_TIMING_KIND_LOG || HAVE_TIMING == MPID_TIMING_KIND_LOG_DETAILED || \
     HAVE_TIMING == MPID_TIMING_KIND_ALL)
 
-/* define MPID_LOG_RECV_FROM_BEGINNING to log arrows from the beginning of send operations
-   to the beginning of the corresponding receive operations.  Otherwise, arrows are
-   logged from the beginning of the send to the end of the receive. */
+/* define MPID_LOG_RECV_FROM_BEGINNING to log arrows from the beginning of 
+   send operations to the beginning of the corresponding receive operations.  
+   Otherwise, arrows are logged from the beginning of the send to the end of 
+   the receive. */
 #undef MPID_LOG_RECV_FROM_BEGINNING
 /*#define MPID_LOG_RECV_FROM_BEGINNING*/
 
@@ -34,6 +35,7 @@
 #define MPID_LOGGING_RLOG 1
 #define MPID_LOGGING_DLOG 2
 #define MPID_LOGGING_LWLOG 3
+#define MPID_LOGGING_EXTERNAL 4
 
 /* Include the macros specific to the selected logging library */
 #if (USE_LOGGING == MPID_LOGGING_RLOG)
@@ -42,6 +44,8 @@
 #include "dlog_macros.h"
 #elif (USE_LOGGING == MPID_LOGGING_LWLOG)
 #include "lwlog.h"
+#elif (USE_LOGGING == MPID_LOGGING_EXTERNAL)
+#include "mpilogging.h"
 #else
 #error You must select a logging library if timing is enabled
 #endif
