@@ -667,9 +667,9 @@ def mpdman():
                         kvsname = parsedMsg['kvsname']
                         try:
                             del KVSs[kvsname]
-                            pmiMsgToSend = 'cmd=result_of_destroy_kvs rc=0\n'
+                            pmiMsgToSend = 'cmd=kvs_destroyed rc=0\n'
                         except:
-                            pmiMsgToSend = 'cmd=result_of_destroy_kvs rc=-1\n'
+                            pmiMsgToSend = 'cmd=kvs_destroyed rc=-1\n'
                         mpd_send_one_line(pmiSocket,pmiMsgToSend)
                     elif parsedMsg['cmd'] == 'put':
                         kvsname = parsedMsg['kvsname']
