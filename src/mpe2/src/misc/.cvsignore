@@ -6,6 +6,7 @@ config.cache
 config.system
 config.h.in
 autom4te.cache
+autom4te-*.cache
 Makefile
 mpe_misc_conf.h
 mpe_misc_conf.h.in

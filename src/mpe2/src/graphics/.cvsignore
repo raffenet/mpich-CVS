@@ -3,6 +3,7 @@ config.log
 config.status
 config.cache
 autom4te.cache
+autom4te-*.cache
 *conf.cache
 config.system
 config.h.in
