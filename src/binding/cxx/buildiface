@@ -1371,6 +1371,13 @@ Datatype TWOINTEGER(MPI_2INTEGER);
     return (Aint)a;
 }\n";
 
+    print $OUTFD "bool Is_initialized(void)
+    { 
+	int flag;
+	MPI_Initialized( &flag );
+	return (flag == 1);
+    }\n";
+
     print $OUTFD "double Wtime(void) { return MPI_Wtime(); }\n";
     print $OUTFD "double Wtick(void) { return MPI_Wtick(); }\n";
 
