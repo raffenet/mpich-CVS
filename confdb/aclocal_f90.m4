@@ -526,11 +526,13 @@ EOF
 # expect to be in control (and to provide library files unknown to any other
 # environment, even Fortran 77!)
 if AC_TRY_EVAL(compile_f77) ; then
-    if AC_TRY_LINK(link_f90) ; then
+    if AC_TRY_EVAL(link_f90) && test -x conftest ; then
         pac_cv_f90_and_f77="yes"
     else 
         pac_cv_f90_and_f77="no"
     fi
+    # Some versions of the Intel compiler produce these two files
+    rm -f work.pc work.pcl
 else
     pac_cv_f90_and_f77="yes"
 fi])
