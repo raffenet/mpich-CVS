@@ -78,9 +78,9 @@ int MPI_Type_create_struct(int count,
 #   endif /* HAVE_ERROR_CHECKING */
 
     mpi_errno = MPID_Type_struct(count,
-				 blocklens,
-				 indices,
-				 old_types,
+				 array_of_blocklengths,
+				 array_of_displacements,
+				 array_of_types,
 				 newtype);
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_STRUCT);

@@ -92,8 +92,8 @@ int MPI_Type_create_hvector(int count,
 			   blocklength,
 			   stride,
 			   1, /* stride in bytes */
-			   old_type,
-			   newtype_p);
+			   oldtype,
+			   newtype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HVECTOR);
     if (ret == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, ret);

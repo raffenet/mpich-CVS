@@ -78,10 +78,10 @@ int MPI_Type_create_hindexed(int count,
 #   endif /* HAVE_ERROR_CHECKING */
 
     mpi_errno = MPID_Type_indexed(count,
-				  blocklens,
-				  indices,
+				  array_of_blocklengths,
+				  array_of_displacements,
 				  1, /* displacements in bytes */
-				  old_type,
+				  oldtype,
 				  newtype);
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);
