@@ -41,3 +41,11 @@
 
   With the exception of the profiling interface, future releases of MPICH2 
   will address these limitations of the C++ binding.
+
+- MPI_COMM_SPAWN_MULTIPLE does not work properly when count is greater
+  than one, effectively making it the same as MPI_COMM_SPAWN.
+
+- The communicator passed to MPI_COMM_CONNECT and MPI_COMM_ACCEPT may
+  not include a process for which any process in the remote
+  communicator already shares an existing communicator.
+  

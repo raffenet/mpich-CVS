@@ -38,6 +38,46 @@
   NOTE: each of these routines now takes a single parameter, a pointer to a
   thread local state variable.
 
+- The CH3 device and interface have been modified to better support
+  MPI_COMM_{SPAWN,SPAWN_MULTIPLE,CONNECT,ACCEPT,DISCONNECT}.  Channels
+  writers will notice the following.  (This is still a work in progress.  See
+  the note below.)
+
+  * The introduction of a process group object (MPIDI_PG_t) and a new
+    set of routines to manipulate that object.
+
+  * The renaming of the MPIDI_VC object to MPIDI_VC_t to make it more
+    consistent with the naming of other objects in the device.
+
+  * The process group information in the MPIDI_VC_t moved from the channel
+    specific portion to the device layer.
+
+  * MPIDI_CH3_Connection_terminate() was added to the CH3 interface to allow
+    the channel to properly shutdown a connection before the device deletes all
+    associated data structures.
+
+  * A new upcall routine, MPIDI_CH3_Handle_connection(), was added to allow the
+    device to notify the device when a connection related event has completed.
+    A present the only event is MPIDI_CH3_VC_EVENT_TERMINATED, which notify the
+    device that the underlying connection associated with a VC has been
+    properly shutdown.  For every call to MPIDI_CH3_Connection_terminate() that
+    the device makes, the channel must make a corresponding upcall to
+    MPIDI_CH3_Handle_connection().  MPID_Finalize() will likely hang if this
+    rule is not followed.
+
+  * MPIDI_CH3_Get_parent_port() was added to provide MPID_Init() with the port
+    name of the the parent (spawner).  This port name is used by MPID_Init()
+    and MPID_Comm_connect() to create an intercommunicator between the parent
+    (spawner) and child (spawnee).  Eventually, MPID_Comm_spawn_multiple() will
+    be update to perform the reverse logic; however, the logic is presently
+    still in the sock channel.
+
+  Note: the changes noted are relatively fresh and are the beginning to a set
+  of future changes.  The goal is to minimize the amount of code required by a
+  channel to support MPI dynamic process functionality.  As such, portions of
+  the device will change dramaticly in a future release.  A few more changes to
+  the CH3 interface are also quite likely.
+
 
 =============================================================================== 
                                Changes in 0.96p2
