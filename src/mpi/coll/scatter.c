@@ -397,9 +397,9 @@ PMPI_LOCAL int MPIR_Scatter_inter (
         return MPI_SUCCESS;
     }
     
-    comm = comm_ptr->handle;
+    comm        = comm_ptr->handle;
     remote_size = comm_ptr->remote_size; 
-    local_size = comm_ptr->local_size; 
+    local_size  = comm_ptr->local_size; 
 
     if (root == MPI_ROOT) {
         MPID_Datatype_get_size_macro(sendtype, sendtype_size);
@@ -577,7 +577,12 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                 }
             }
 
-	    MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
+	    if (comm_ptr->comm_kind == MPID_INTRACOMM) {
+		MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
+	    }
+	    else {
+		MPIR_ERRTEST_INTER_ROOT(comm_ptr, root, mpi_errno);
+	    }
     
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCATTER);
@@ -606,12 +611,12 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                                      comm_ptr); 
         else {
             /* intercommunicator */ 
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
+/*	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**intercommcoll",
-					      "**intercommcoll %s", FCNAME );
-            /*mpi_errno = MPIR_Scatter_inter(sendbuf, sendcnt, sendtype,
+					      "**intercommcoll %s", FCNAME );*/
+            mpi_errno = MPIR_Scatter_inter(sendbuf, sendcnt, sendtype,
                                            recvbuf, recvcnt, recvtype, root,
-                                           comm_ptr); */
+                                           comm_ptr); 
         }
 	MPIR_Nest_decr();
     }

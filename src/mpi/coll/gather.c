@@ -518,7 +518,12 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf,
                 }
             }
 
-	    MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
+	    if (comm_ptr->comm_kind == MPID_INTRACOMM) {
+		MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
+	    }
+	    else {
+		MPIR_ERRTEST_INTER_ROOT(comm_ptr, root, mpi_errno);
+	    }
 
             rank = comm_ptr->rank;
             if (rank == root) {
@@ -556,12 +561,12 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf,
                                     comm_ptr);  
         else {
             /* intercommunicator */ 
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
+/*	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**intercommcoll",
-					      "**intercommcoll %s", FCNAME );
-            /*mpi_errno = MPIR_Gather_inter(sendbuf, sendcnt, sendtype,
+					      "**intercommcoll %s", FCNAME );*/
+            mpi_errno = MPIR_Gather_inter(sendbuf, sendcnt, sendtype,
                                           recvbuf, recvcnt, recvtype, root,
-                                          comm_ptr);*/
+                                          comm_ptr);
         }
 	MPIR_Nest_decr();
     }
