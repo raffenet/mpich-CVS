@@ -205,9 +205,8 @@ void ADIOI_Calc_my_req(ADIO_File fd, ADIO_Offset *offset_list, int *len_list,
 		       int **buf_idx_ptr)
 {
     int *count_my_req_per_proc, count_my_req_procs, *buf_idx;
-    int i, l, proc, rem_len, curr_idx;
-    ADIO_Offset fd_len;
-    ADIO_Offset off;
+    int i, l, proc;
+    ADIO_Offset fd_len, rem_len, curr_idx, off;
     ADIOI_Access *my_req;
 
     *count_my_req_per_proc_ptr = (int *) ADIOI_Calloc(nprocs,sizeof(int)); 
