@@ -282,7 +282,7 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 {
     static const char FCNAME[] = "MPI_Init_thread";
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_INIT_THREAD);
+    MPID_MPI_INIT_STATE_DECL(MPID_STATE_MPI_INIT_THREAD);
 
     MPID_MPI_INIT_FUNC_ENTER(MPID_STATE_MPI_INIT_THREAD);
 #   ifdef HAVE_ERROR_CHECKING
@@ -303,7 +303,7 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 
     if (mpi_errno == MPI_SUCCESS)
     {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
+	MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
 	return MPI_SUCCESS;
     }
     
@@ -314,7 +314,7 @@ fn_fail:
 				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_init_thread", "**mpi_init_thread %p %p %d %p", argc, argv, required, provided);
 #endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
+    MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */
 }
