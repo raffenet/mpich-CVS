@@ -582,7 +582,7 @@ PMPI_LOCAL int MPIR_Reduce (
 
 /* begin:nested */
 /* Needed in intercommunicator allreduce */
-/*PMPI_LOCAL */int MPIR_Reduce_inter ( 
+/* PMPI_LOCAL */int MPIR_Reduce_inter ( 
     void *sendbuf, 
     void *recvbuf, 
     int count, 
@@ -688,7 +688,7 @@ Input Parameters:
 
 Output Parameter:
 . recvbuf - address of receive buffer (choice, 
-significant only at 'root') 
+ significant only at 'root') 
 
 .N Fortran
 
@@ -701,6 +701,7 @@ significant only at 'root')
 .N MPI_ERR_TYPE
 .N MPI_ERR_BUFFER
 .N MPI_ERR_BUFFER_ALIAS
+
 @*/
 int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm)
 {
