@@ -230,6 +230,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 			{ 
 			    /* post receive for packet header */
 			    conn->state = CONN_STATE_CONNECTED;
+			    conn->vc->sc.state = MPIDI_CH3I_VC_STATE_CONNECTED;
 			    connection_post_recv_pkt(conn);
 			    connection_post_sendq_req(conn);
 			}
