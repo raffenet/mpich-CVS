@@ -136,9 +136,11 @@ int mpiexec_rsh()
     char *iter1, *iter2;
     char exe[SMPD_MAX_EXE_LENGTH];
     char *p;
-    char ssh_cmd[100] = "ssh";
+    char ssh_cmd[100] = "ssh -x";
     MPIDU_Sock_set_t set;
     SMPD_BOOL escape_escape = SMPD_TRUE;
+    char *env_str;
+    int maxlen;
 
     smpd_enter_fn("mpiexec_rsh");
 
@@ -228,7 +230,7 @@ int mpiexec_rsh()
 	MPIU_Strncpy(process->dir, launch_node_ptr->dir, SMPD_MAX_DIR_LENGTH);
 	MPIU_Strncpy(process->domain_name, smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN);
 	MPIU_Strncpy(process->env, launch_node_ptr->env, SMPD_MAX_ENV_LENGTH);
-	if (escape_escape == SMPD_TRUE)
+	if (escape_escape == SMPD_TRUE && smpd_process.mpiexec_run_local != SMPD_TRUE)
 	{
 	    /* convert \ to \\ to make cygwin ssh happy */
 	    iter1 = launch_node_ptr->exe;
@@ -266,9 +268,26 @@ int mpiexec_rsh()
 	/*sprintf(process->exe, "env PMI_RANK=%d PMI_SIZE=%d PMI_KVS=%s PMI_ROOT_HOST=%s PMI_ROOT_PORT=%d PMI_ROOT_LOCAL=0 %s",
 	    launch_node_ptr->iproc, launch_node_ptr->nproc, smpd_process.kvs_name, root_host, root_port, exe);*/
 
-	/* ssh and dynamic rPMI initialization */
-	MPIU_Snprintf(process->exe, SMPD_MAX_EXE_LENGTH, "%s %s env \"PMI_RANK=%d\" \"PMI_SIZE=%d\" \"PMI_KVS=%s\" \"PMI_ROOT_HOST=%s\" \"PMI_ROOT_PORT=%d\" \"PMI_ROOT_LOCAL=0\" \"%s\"",
-	    ssh_cmd, launch_node_ptr->hostname, launch_node_ptr->iproc, launch_node_ptr->nproc, smpd_process.kvs_name, root_host, root_port, exe);
+	if (smpd_process.mpiexec_run_local == SMPD_TRUE)
+	{
+	    /* -localonly option and dynamic rPMI initialization */
+	    env_str = &process->env[strlen(process->env)];
+	    maxlen = SMPD_MAX_ENV_LENGTH - strlen(process->env);
+	    MPIU_Str_add_int_arg(&env_str, &maxlen, "PMI_RANK", launch_node_ptr->iproc);
+	    MPIU_Str_add_int_arg(&env_str, &maxlen, "PMI_SIZE", launch_node_ptr->nproc);
+	    MPIU_Str_add_string_arg(&env_str, &maxlen, "PMI_KVS", smpd_process.kvs_name);
+	    MPIU_Str_add_string_arg(&env_str, &maxlen, "PMI_ROOT_HOST", root_host);
+	    MPIU_Str_add_int_arg(&env_str, &maxlen, "PMI_ROOT_PORT", root_port);
+	    MPIU_Str_add_string_arg(&env_str, &maxlen, "PMI_ROOT_LOCAL", "0");
+
+	    MPIU_Strncpy(process->exe, exe, SMPD_MAX_EXE_LENGTH);
+	}
+	else
+	{
+	    /* ssh and dynamic rPMI initialization */
+	    MPIU_Snprintf(process->exe, SMPD_MAX_EXE_LENGTH, "%s %s env \"PMI_RANK=%d\" \"PMI_SIZE=%d\" \"PMI_KVS=%s\" \"PMI_ROOT_HOST=%s\" \"PMI_ROOT_PORT=%d\" \"PMI_ROOT_LOCAL=0\" \"%s\"",
+		ssh_cmd, launch_node_ptr->hostname, launch_node_ptr->iproc, launch_node_ptr->nproc, smpd_process.kvs_name, root_host, root_port, exe);
+	}
 
 	MPIU_Strncpy(process->kvs_name, smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN);
 	process->nproc = launch_node_ptr->nproc;

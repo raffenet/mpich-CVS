@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
      */
     if (smpd_process.rsh_mpiexec == SMPD_TRUE)
     {
-	/* Do rsh stuff */
+	/* Do rsh or localonly stuff */
 	result = mpiexec_rsh();
 
 	/* skip over the non-rsh code and go to the cleanup section */

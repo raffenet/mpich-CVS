@@ -231,7 +231,6 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     char *exe_ptr;
     int num_args_to_strip;
     int nproc;
-    int run_local = SMPD_FALSE;
     char machine_file_name[SMPD_MAX_FILENAME];
     int use_machine_file = SMPD_FALSE;
     smpd_map_drive_node_t *map_node, *drive_map_list;
@@ -517,7 +516,9 @@ configfile_loop:
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "localonly") == 0)
 	    {
-		run_local = SMPD_TRUE;
+		/* the run_local flag + the rsh_mpiexec flag causes the rsh code to launch the processes locally */
+		smpd_process.mpiexec_run_local = SMPD_TRUE;
+		smpd_process.rsh_mpiexec = SMPD_TRUE;
 		if (argc > 2)
 		{
 		    if (isnumber((*argvp)[2]))
@@ -539,6 +540,20 @@ configfile_loop:
 			num_args_to_strip = 2;
 		    }
 		}
+		if (smpd_process.mpiexec_inorder_launch == SMPD_FALSE)
+		{
+		    smpd_launch_node_t *temp_node, *ordered_list = NULL;
+		    /* sort any existing reverse order nodes to be in order */
+		    while (smpd_process.launch_list)
+		    {
+			temp_node = smpd_process.launch_list->next;
+			smpd_process.launch_list->next = ordered_list;
+			ordered_list = smpd_process.launch_list;
+			smpd_process.launch_list = temp_node;
+		    }
+		    smpd_process.launch_list = ordered_list;
+		}
+		smpd_process.mpiexec_inorder_launch = SMPD_TRUE;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "machinefile") == 0)
 	    {

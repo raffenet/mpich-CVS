@@ -533,6 +533,7 @@ typedef struct smpd_global_t
     SMPD_BOOL map0to1;
     SMPD_BOOL rsh_mpiexec;
     SMPD_BOOL mpiexec_inorder_launch;
+    SMPD_BOOL mpiexec_run_local;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;

@@ -147,7 +147,8 @@ smpd_global_t smpd_process =
       0,                /* mpiexec_exit_code       */
       SMPD_FALSE,       /* map0to1                 */
       SMPD_FALSE,       /* rsh_mpiexec             */
-      SMPD_FALSE        /* mpiexec_inorder_launch  */
+      SMPD_FALSE,       /* mpiexec_inorder_launch  */
+      SMPD_FALSE        /* mpiexec_run_local       */
     };
 
 int smpd_post_abort_command(char *fmt, ...)
