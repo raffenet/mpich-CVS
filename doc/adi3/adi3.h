@@ -20,7 +20,6 @@
  */
 
 /*TOpaqOverview.tex
-
   Section : MPI Opaque Objects
   MPI Opaque objects are specified by integers in the range [0,...] (in
   the MPICH2 implementation).
@@ -36,17 +35,17 @@
 .vb
  typedef struct MPID_List *MPID_List_t;
 .ve
- so that the form of MPID_List is isolated to the list management routines?
+ so that the form of 'MPID_List' is isolated to the list management routines?
   T*/
 
-/*T
-  Attributes and keyvals must be maintained
+/*
+  Attributes and keyvals must be maintained.
 
   The definition of the list structure is made in the device to 
   simplify the construction of the data-structures that depend on
   it.  Most if not all devices will use the library code for
   managing these lists that is included with MPICH.
-  T*/
+  */
 typedef struct {
     /* other, device-specific information */
 }MPID_List;
@@ -65,9 +64,8 @@ typedef struct {
 typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN, 
 	       MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
 
+/* Keyval functions - Data types for attribute copy and delete routines. */
 /*TKyOverview.tex
-
-  Keyval functions - Data types for attribute copy and delete routines.
 
   Each keyval has a copy and a delete function associated with it.
   Unfortunately, these have a slightly different calling sequence for

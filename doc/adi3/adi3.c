@@ -20,7 +20,7 @@
 
  Most "routines" may also be implemented as macros in cases (such as memory 
  allocation) where performance is critical.  Any function that must be a
- function (because a pointer to it is needed) is marked NO MACRO ALLOWED.
+ function (because a pointer to it is needed) is marked 'NO MACRO ALLOWED'.
  (So far, there are no functions in this category).  For some functions, such
  as the timer routines, macros are recommended.
 
@@ -430,7 +430,7 @@ MPID_Comm *MPID_Comm_create( MPID_Comm *old_comm,
   valid code will hang.  
 
   There is a way to avoid the process lock at the cost of additional
-  collective operations.  The steps necessary to get a new context_id
+  collective operations.  The steps necessary to get a new 'context_id'
   are sketched below\:
 .vb
   MPI_Allreduce( over bitmask of available values )
@@ -527,7 +527,8 @@ int MPID_Comm_incr( MPID_Comm *comm, int incr )
   Notes:
   This routine allows the device to find out when an attribute value changes.
   This can be used by a device that defines its own keyvals (see 
-  'MPID_Init_thread') to allow the MPI user to communicate preferences to 
+
+  'MPID_Thread_init') to allow the MPI user to communicate preferences to 
   the device.  This has already been used in MPICH-G to pass quality-of-service
   information to the device.
 
@@ -732,6 +733,9 @@ void MPID_Comm_thread_unlock( MPID_Comm *comm )
   so would help isolate the impact of communication on one communicator with
   another.
 
+  Do we really need this routine?  If we have 'MPID_Irecv', is this 
+  needed at all?  Is it a routine that is used to implement 'MPID_Irecv', 
+  using only the 'MPID_CORE' routines?
   @*/
 MPID_Request *MPID_Request_recv_FOA( int tag, int rank, MPID_Comm *comm, 
 				     int *found )
@@ -960,7 +964,7 @@ void MPID_Request_free( MPID_Request *request )
   This routine is used to implement 'MPI_Alloc_mem'.  It is for that reason
   that there is no communicator argument.  
 
-  This memory may `only` be freed with 'MPID_Free_mem'.
+  This memory may `only` be freed with 'MPID_Mem_free'.
 
   This is a `local`, not a collective operation.  It functions more like a
   good form of 'malloc' than collective shared-memory allocators such as
@@ -974,10 +978,10 @@ void *MPID_Mem_alloc( size_t size, MPID_Info *info )
 }
 
 /*@
-  MPID_Mem_free - Frees memory allocated with 'MPID_Alloc_mem'
+  MPID_Mem_free - Frees memory allocated with 'MPID_Mem_alloc'
 
   Input Parameter:
-. ptr - Pointer to memory allocated by 'MPID_Alloc_mem'.
+. ptr - Pointer to memory allocated by 'MPID_Mem_alloc'.
 
   Return value:
   'MPI_SUCCESS' if memory was successfully freed; an MPI error code otherwise.
@@ -1228,7 +1232,7 @@ int MPID_Get_contig( void * origin_buf, int n,
   corresponds to the handler 'id'; the remaining elements are data that 
   the handler operation needs.  The handler 'id' can restrict the type of 
   memory that 'vector' may point at (e.g., it may require memory allocated 
-  with 'MPID_Alloc_mem').
+  with 'MPID_Mem_alloc').
 
   The C struct type 'iovec' is defined in '<sys/uio.h>' and is the 
   same structure used by the Unix 'readv' and 'writev' routines.  It has the
@@ -1495,8 +1499,6 @@ int MPID_tBsend( void *buf, int count, MPID_Datatype *datatype,
 
   If null, the original buffer is contiguous and can be used as is.
 
-  and
-
   If 'buf_desc' is non-null, the routine 'MPID_Segment_pack' must be used
   to fill a memory location or return a pointer to a contiguous buffer.
 
@@ -1561,7 +1563,7 @@ int MPID_Segment_init_pack( const void *buf, int count, MPID_Datatype *dtype,
   to simplify the use of the result (which, after all, is a pointer `and`
   a length)?
   @*/
-void *MPID_Segment_pack MPID_Segment *segment, int *first, int *last, 
+void *MPID_Segment_pack( MPID_Segment *segment, int *first, int *last, 
 			void *send_buffer ) 
 {
 }
@@ -2114,7 +2116,7 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   'MPICH_ADI_DB'.
 
   Names that are explicitly prohibited?  For example, do we want to 
-  reserve any names that 'MPI_Init_thread' (as opposed to 'MPID_Init_thread')
+  reserve any names that 'MPI_Init_thread' (as opposed to 'MPID_Thread_init')
   might use?  
 
   How does this interface to BNR?  Do we need to know anything?  Should
@@ -2165,8 +2167,8 @@ int MPID_Abort( MPID_Comm *comm )
   MPID_CORE
 
   Questions:
-  Need to check the MPI-2 requirements on MPI_Finalize with respect to
-  things like which process must remain after MPID_Finalize is called.
+  Need to check the MPI-2 requirements on 'MPI_Finalize' with respect to
+  things like which process must remain after 'MPID_Finalize' is called.
   @*/
 int MPID_Finalize( void )
 {
@@ -2235,7 +2237,7 @@ value might be "not yet heterogeneous").
 .vb
   #define MPID_Malloc(n) trmalloc(n,__FILE__,__LINE__)
 .ve
-  where 'trmalloc' is a tracing version of malloc that is included with 
+  where 'trmalloc' is a tracing version of 'malloc' that is included with 
   MPICH.
 
   Module:
@@ -2423,7 +2425,7 @@ void MPID_Wtime_init( void )
   In an MPI-1 environment, 'comm' would just be the 'MPID_Comm'
   specified by 'MPI_COMM_WORLD'; this routine would normally be called
   from within the implementation of 'MPI_Init_thread' (not
-  'MPID_Init_thread').  In an MPI-2 setting, this routine may be
+  'MPID_Thread_init').  In an MPI-2 setting, this routine may be
   called within 'MPI_Comm_spawn' and friends to establish a global
   timer even when new processes are added to the MPI job.
 
@@ -2757,22 +2759,22 @@ int MPID_Comm_spawn_multiple( int count, const char *commands[],
 }
 
 /*@
-  MPID_Open_port - Open a port for accepting connections from MPI processes
+  MPID_Port_open - Open a port for accepting connections from MPI processes
 
   Module:
   Dynamic
   @*/
-int MPID_Open_port( MPID_Info *info, const char *port_name )
+int MPID_Port_open( MPID_Info *info, const char *port_name )
 {
 }
 
 /*@
-  MPID_Close_port - Close a port
+  MPID_Port_close - Close a port
 
   Module:
   Dynamic
   @*/
-int MPID_Close_port( const char *port_name )
+int MPID_Port_close( const char *port_name )
 {
 }
 
@@ -2861,8 +2863,7 @@ int MPID_Comm_disconnect( MPID_Comm *comm )
   @*/
 int MPID_Err_create_code( int class, const char *generic_msg, 
                           const char instance_msg, ... )
-{
-}
+{}
 
 /*@
   MPID_Err_set_msg - Change the message for an error code or class
@@ -2878,6 +2879,7 @@ int MPID_Err_create_code( int class, const char *generic_msg,
  Error
 @*/
 int MPID_Err_set_msg( int code, const char *msg_string )
+{}
 
 /*@
   MPID_Err_add_class - Add an error class with an associated string
@@ -3089,7 +3091,7 @@ int MPID_Err_get_string( int code, char *msg, int msg_len )
 void MPICH_Quiet( MPID_Comm *comm, 
 		  int*(checkpointfunction(MPI_Comm *, void *)), 
 		  void *extra_data )
-
+{}
 /*
  * ToDo:
  * Complete list

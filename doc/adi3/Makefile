@@ -1,6 +1,9 @@
 ALL: adi3man.ps
 SHELL = /bin/sh
 
+#
+# Use doctext in /home/gropp/bin/$ARCH/doctext 
+DOCTEXT = doctext
 .SUFFIXES: .ps .dvi .tex
 
 adi3.dvi: adi3.tex
@@ -18,8 +21,8 @@ adi3man.ps: adi3man.tex adi3.c adi3.h
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
 	-rm -f adi3man/*.tex
 	(cd adi3man ; \
-	doctext -latex -nolocation -quotefmt ../adi3.c ;\
-	doctext -latex -nolocation -quotefmt ../adi3.h ;)
+	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.c ;\
+	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.h ;)
 	${MAKE} lists
 	-cp adi3man.tex adi3man/adi3man.tex
 	(cd adi3man ; \

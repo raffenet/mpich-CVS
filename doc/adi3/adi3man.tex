@@ -65,7 +65,8 @@ understand (e.g., MPI attributes and groups).
 
 The ADI is organized as a number of separate modules.
 For each module except for the core communication module (called MPID
-CORE), there is a sample (but complete) implementation.  These sample
+CORE), there is a sample (but complete) implementation that may be used to
+build other implementations of the ADI.  These sample
 implementations are refered to as the \emph{generic} module
 implementations. For example,
 the ADI contains routines to create and manipulate MPI communicators;
@@ -75,6 +76,8 @@ communications module, are more likely to be replaced with a
 device-specific implementation.  Even in the cases where an
 implementation of the ADI replaces a module, the generic
 implementation of that module will often serve as a guide.
+As a guide to implementing the MPID CORE, we provide several implementations
+for popular interprocess communication mechanisms, including TCP.
 
 There are roughly three classes of modules:
 \begin{enumerate}
@@ -90,45 +93,45 @@ Section~\ref{sec-intermediate}.
 
 The modules are (THIS LIST IS INCOMPLETE):
 \begin{description}
-\item[MPID CORE]. Basic functions to start, stop, and communicate
+\item[MPID CORE.] Basic functions to start, stop, and communicate
 between processes.  This also includes the \code{mpiexec} program.
 This is the only module for which there is no generic implementation; as
 described in Section~\ref{sec-minimal}, implementing just this module,
 combined with the generic implementation of the other modules, provides a
 complete ADI-3 implementation.
-\item[Attribute]. MPI Keyvals and attributes
-\item[Datatype]. MPI Datatypes and pack/unpack operations and a new
+\item[Attribute.] MPI Keyvals and attributes
+\item[Datatype.] MPI Datatypes and pack/unpack operations and a new
 object, \code{MPID_Segment}, used only within the ADI.
-\item[Dynamic]. Support for MPI-2 dynamic process operations.  This
+\item[Dynamic.] Support for MPI-2 dynamic process operations.  This
 module must be implemented to support the dynamic process chapter of MPI-2.
-\item[Group]. MPI Groups
-\item[Communicator]. MPI Communicators
-\item[Request]. MPI Requests.  Requests are fundemental to many
+\item[Group.] MPI Groups
+\item[Communicator.] MPI Communicators
+\item[Request.] MPI Requests.  Requests are fundemental to many
 operations; most devices that implement more than MPID CORE will need
 to replace this module.
-\item[Window]. MPI Windows.
+\item[Window.] MPI Windows.
 \item[Point to point]Functions directly implementing the MPI
 point-to-point communication functions or some key subsets.
-\item[Topology].Information on the physical interconnect.  Currently
+\item[Topology.]Information on the physical interconnect.  Currently
 limited to hierarchical information necessary to support clusters of
 SMPs and similar systems.
-\item[Timer]. Support for fast timers, including synchronized timers.
-\item[Stream]. Communication routines designed to support
+\item[Timer.] Support for fast timers, including synchronized timers.
+\item[Stream.] Communication routines designed to support
 important algorithms for collective communication.
-\item[Collective]. Alternate support for collective
+\item[Collective.] Alternate support for collective
 routines. \textbf{Note that this may end up being an MPI module, not
 an MPID module.}
-\item[Utility]. Routines to simplify correctness and performance
+\item[Utility.] Routines to simplify correctness and performance
 debugging, and to provide a common interface to OS services that have
 different interfaces on different platforms.
-\item[Environment]. This module contains both compile-time and run-time
+\item[Environment.] This module contains both compile-time and run-time
 constants that describe the environment. 
-\item[Communication]. The routines that carry out communication among MPI
+\item[Communication.] The routines that carry out communication among MPI
   processes. 
-\item[Error Reporting]. This provides support for detailed error
+\item[Error Reporting.] This provides support for detailed error
 reporting.  Most implementations will use the generic implementation
 of this module.
-\item[Extensions]. This module contains no required routines; instead,
+\item[Extensions.] This module contains no required routines; instead,
 it documents some of the various extensions that the MPICH group is
 considering, such as checkpointing.
 \end{description}
@@ -155,25 +158,25 @@ provides a generic implementation.  Thus, only the routines in
 communication mechanism.  \code{MPID_CORE} consists of the following routines: 
 
 \begin{description}
-\item[\code{MPID_Init_thread}]. This is the device's counterpart to
+\item[\code{MPID_Init_thread}.] This is the device's counterpart to
 \code{MPI_Init_thread}. 
-\item[\code{MPID_Finalize}]. This is the devices's counterpart to
+\item[\code{MPID_Finalize}.] This is the devices's counterpart to
 \code{MPI_Finalize}
-\item[\code{MPID_Abort}]. This is the device's counterpart to \code{MPI_Abort}.
-\item[\code{MPID_Put_contig}]. This is used for data movement; it is roughly an
+\item[\code{MPID_Abort}.] This is the device's counterpart to \code{MPI_Abort}.
+\item[\code{MPID_Put_contig}.] This is used for data movement; it is roughly an
 \code{MPI_Put} using only contiguous data.  However, it uses a
 different mechanism for indicating completion of data transfers (see \code{MPID_Flags_waitsome} and \code{MPID_Flags_testsome})
-\item[\code{MPID_Rhcv}]. This is used for messages; it is roughly an
+\item[\code{MPID_Rhcv}.] This is used for messages; it is roughly an
 active-message call.  However, only predefined actions are allowed,
 and these actions are enumerated.
-\item[\code{MPID_Flags_waitsome}, \code{MPID_Flags_testsome}]. These
+\item[\code{MPID_Flags_waitsome}, \code{MPID_Flags_testsome}.] These
 are used to complete \code{MPID_Rhcv} 
 and \code{MPID_Put_contig} operations
-\item[\code{MPID_Poll}]. This routine provides a way for a polling routine to
+\item[\code{MPID_Poll}.] This routine provides a way for a polling routine to
 be called.  A device is permitted to define this as a no-op if polling
 is not needed.  In other words, this routine is provided to
 \emph{allow} polling implementations, not to \emph{require} them.
-\item[\code{mpiexec}]. An implementation of \code{mpiexec}, as defined in the
+\item[\code{mpiexec}.] An implementation of \code{mpiexec}, as defined in the
   MPI-2 standard, for starting MPI jobs.  While not a routine, it must be 
   provided by any device.  
 \end{description}
@@ -207,25 +210,27 @@ communication support in \code{MPID_CORE}.  The contents of the
 dynamic module include:
 
 \begin{description}
-\item[\code{MPID_Comm_Spawn_Multiple}]. Spawns new processes.  An
-implementation 
-  that does not plan to support \code{MPI_Comm_spawn} or
-  \code{MPI_Comm_spawn_multiple} can implement these as routines that return
-  failure.  Such an implementation will not implement all of MPI-2.
-\item[\code{MPID_Open_port}]. Open a port for connecting to processes.  The
-  routines \code{MPID_Open_port}, \code{MPID_Close_port},
-  \code{MPID_Comm_connect}, \code{MPID_Comm_attach}, and
-  \code{MPID_Comm_disconnect} can be considered a 
-  ``submodule'' supporting the corresponding part of the MPI-2 standard.  Just
-  as for \code{MPID_Comm_spawn_multiple}, an implementation that chooses to
-  support only the subset of MPI-2 that does not include the MPI routines for
-  connecting two groups of MPI processes may implement these routines by
-  simply having them return failure.
-\item[\code{MPID_Close_port}]. Close a port opened with \code{MPID_Open_port}.
-\item[\code{MPID_Comm_connect}]. Connect to an MPI program.
-\item[\code{MPID_Comm_attach}]. Attach to an MPI program.
-\item[\code{MPID_Comm_disconnect}]. Detach from an MPI program.
+\item[\code{MPID_Comm_Spawn_Multiple}.] Spawns new processes.
+\item[\code{MPID_Port_open}.] Open a port for connecting to processes. 
+\item[\code{MPID_Port_close}.] Close a port opened with \code{MPID_Port_open}.
+\item[\code{MPID_Comm_connect}.] Connect to an MPI program.
+\item[\code{MPID_Comm_attach}.] Attach to an MPI program.
+\item[\code{MPID_Comm_disconnect}.] Detach from an MPI program.
 \end{description}
+An implementation that does not plan to support \code{MPI_Comm_spawn} or
+any of the other MPI-2 functions in the Dynamic chapter of the MPI-2 Standard
+can implement these as routines that return failure.  Such an implementation
+will not implement all of MPI-2. 
+%  The
+%   routines \code{MPID_Open_port}, \code{MPID_Close_port},
+%   \code{MPID_Comm_connect}, \code{MPID_Comm_attach}, and
+%   \code{MPID_Comm_disconnect} can be considered a 
+%   ``submodule'' supporting the corresponding part of the MPI-2 standard.
+%   Just 
+%   as for \code{MPID_Comm_spawn_multiple}, an implementation that chooses to
+%   support only the subset of MPI-2 that does not include the MPI routines for
+%   connecting two groups of MPI processes may implement these routines by
+%   simply having them return failure.
 
 \subsection{Design Rationale}
 \label{sec-intermediate}
@@ -260,10 +265,17 @@ routines to perform partial pack and unpack operations.
 A less obvious consequence of the need to handle noncontiguous
 datatypes in pieces (or segments) is that an ADI interface that
 provides MPI-like point-to-point operations, but only for contiguous
-data, cannot be used without significant modification.  
+data, cannot be used without significant modification.\footnote{Noncontiguous
+  messages must be sent in fragments (to bound the amount of memory
+  used by the implementation); reassembling these, particularly in the
+  presence of multiple communicating threads, is challenging to say the least,
+  since an MPI-like interface has no way to include additional data, such as a
+  message sequence number or other hook that could be used to put the
+  fragments back together.}
 
-\textbf{To see what the modifications would look like, see the old RMQ design that I did; it used
-handlers within the ack-loop.} 
+% \textbf{To see what the modifications would look like, see the old RMQ
+% design that I did; it used 
+% handlers within the ack-loop.} 
 
 \subsubsection{Passive Target RMA}
 \label{sec-passive-target}
@@ -343,6 +355,11 @@ communication.  ADI-3 adapts to these changes.
 \subsection{Our Plans for Using ADI-3 to Implement MPI-2}
 \label{sec:plans}
 
+%
+% Replace ``Channel Device'' with ``Rhcv Device'' since the new core
+% is not based on communication channels but is more of an active message
+% core
+%
 This subsection describes our implementation plans at Argonne.  The next
 subsection describes how collaborators (vendors, researchers, and others) can
 use the structure of ADI-3 to leverage our implementation work and their own
@@ -351,7 +368,7 @@ implememtation.
 
 As discussed above, ADI-3 contains a large number of functions in order to
 accomodate collaborators who want to themselves optimize a large part of the
-data structures and algorithms needed in a complet MPI implementation.  At the
+data structures and algorithms needed in a complete MPI implementation.  At the
 same time there is a much smaller number of routines, called the ``ADI Core''
 in this document, that capture that part of the ADI that is closest to the
 communication method. It is possible (but not required) that the full ADI be
@@ -371,10 +388,10 @@ those constraints.  Inside this device implementation there will be a furhter
 interface level, not yet defined, allowing new methods to be incorporated into
 the RMQ device in addition to the methods we will initially support:  TCP/IP,
 shared memory, and VIA.  We also intend to implement another device, called 
-the Channel Device, which will consist of an implementation of all of ADI-3 in
+the Rhcv Device, which will consist of an implementation of all of ADI-3 in
 terms of the small number of core functions.  We will also supply a number of
 sample implementations of the core.  It is expected that the RMQ Device will
-be in some cases faster than the Channel Device, for example in the shared
+be in some cases faster than the Rhcv Device, for example in the shared
 memory case, where the core routines may not provide the optimal communication
 model. 
 
@@ -382,7 +399,7 @@ model.
 \subsection{How Collaborators May Participate}
 \label{sec:collaborators}
 
-Thus ther are several options for collaborators, depending on their
+Thus there are several options for collaborators, depending on their
 objectives.
 \begin{enumerate}
 \item A collaborator might implement all of ADI-3 in his own way, using his
@@ -391,9 +408,9 @@ objectives.
   the MPI-over-ADI-3 implementation.
 \item A collaborator might implement only the routines in MPI Core, taking
   advantage of our data structures for communicators, datatypes, and other
-  objects making up our Channel Device implementation.
+  objects making up our Rhcv Device implementation.
 \item A collaborator might do something in between the above two options,
-  using only parts of the Channel Device implementation.
+  using only parts of the Rhcv Device implementation.
 \item A collaborator might add a method to the RMQ Device, using its internal
   interface and library routines, and not implement any of the ADI-3 functions.
 \end{enumerate}
@@ -420,15 +437,15 @@ to connect up the processes?
 \section{Integrating a Device into the MPICH build tree}
 Still to do.  This section needs to cover:
 \begin{enumerate}
-\item Directory structure.  Where will mpich look for a new device
+\item Directory structure.  Where will mpich look for a new device?
 \item Local configure/setup script.  How the top-level mpich configure invokes
-  the device-specific setup scripts
-\item mpiexec.  How mpich creates the correct mpiexec
+  the device-specific setup scripts?
+\item mpiexec.  How mpich creates the correct mpiexec?
 \item Installation.  How mpich gets the proper device-specific files
-  installed; e.g., the mpd for the mpd device.
+  installed; e.g., the mpd for the mpd device?
 \item Device-specific documentation, such as environment variables and
   command-line arguments used only by a particular device.
-\item Testing codes for device-specific functions
+\item Testing codes for device-specific functions.
 \end{enumerate}
 
 % Add manual entries to the table of contents
@@ -445,14 +462,21 @@ Still to do.  This section needs to cover:
 
 \section{Summary of MPID Routines by Module}
 
+%
+% I find this section very dangerous until and unless it is updated
+% automatically.  For example, MPID_Irecv was added some time ago, but
+% since it wasn't in the list, we talked about why it might be needed.
+%
+\textbf{THE FOLLOWING LIST IS CURRENTLY UPDATED BY HAND AND IS THUS OUT OF
+  DATE.  CHECK THE CONTENTS PAGE FOR A LIST OF ROUTINES}
+
 \subsection{MPID Core}
 \begin{verbatim}
     MPID_Abort
     MPID_Finalize
     MPID_Flags_testsome
     MPID_Flags_waitsome
-    MPID_Open_port
-    MPID_Put
+    MPID_Put_contig
     MPID_Rhcv
     MPID_Thread_init
 \end{verbatim}
@@ -461,11 +485,12 @@ Still to do.  This section needs to cover:
 
 \subsection{Dynamic}
 \begin{verbatim}
-    MPID_Close_port
     MPID_Comm_accept
     MPID_Comm_connect
     MPID_Comm_disconnect
     MPID_Comm_spawn_multiple
+    MPID_Port_close
+    MPID_Port_open
 \end{verbatim}
 
 \subsection{Handlers}
@@ -524,7 +549,8 @@ Still to do.  This section needs to cover:
 \subsection{Requests}
 \begin{verbatim}
     MPID_Request_cancel
-    MPID_Request_FOA
+    MPID_Request_send_FOA
+    MPID_Request_recv_FOA
     MPID_Request_free
     MPID_Request_iprobe
     MPID_Request_new
@@ -536,12 +562,15 @@ Still to do.  This section needs to cover:
 \begin{verbatim}
     MPID_Flags_testall
     MPID_Flags_waitall
-    MPID_Get
+    MPID_Get_contig
     MPID_Isend
-    etc.
+    MPID_Irecv
+    MPID_Irsend
+    MPID_Issend
+    MPID_Testsome
+    MPID_Waitsome
     MPID_Memory_register
     MPID_Memory_unregister
-    MPID_Rhc
     MPID_tBsend
 \end{verbatim}
 
@@ -612,6 +641,7 @@ Still to do.  This section needs to cover:
 
 \section{Attributes}
 \input AttrOverview.tex
+\subsection{Keyval functions}
 \input KyOverview.tex
 \input InfoOverview.tex
 \input Attribute-list.tex
@@ -705,7 +735,6 @@ of this is described in (technical note not yet written, but described
 in ALICE brown bag talk and Coding Standards document), and is
 included with the MPICH implementation.
 
-\paragraph
 Messages are \code{char *} instead of \code{wchar_t *} because (a)
 strings in C are \code{char *} and error strings in MPI are \code{char
 *}.  However, we'd like to support Unicode messages.  We may just
