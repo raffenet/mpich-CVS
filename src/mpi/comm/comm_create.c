@@ -48,7 +48,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     static const char FCNAME[] = "MPI_Comm_create";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    int i, j, n, *mapping = 0;
+    int i, j, n, *mapping = 0, new_context_id;
     MPID_Comm *newcomm_ptr;
     MPID_Group *group_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_CREATE);
@@ -91,6 +91,17 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 
     /* ... body of routine ...  */
     /* Create a new communicator from the specified group members */
+
+    /* If there is a context id cache in oldcomm, use it here.  Otherwise,
+       use the appropriate algorithm to get a new context id. 
+       Creating the context id is collective over the *input* communicator,
+       so it must be created before we decide if this process is a 
+       member of the group */
+    new_context_id = MPIR_Get_contextid( comm_ptr->handle );
+    if (new_context_id == 0) {
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**toomanycomm", 0 );
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
     
     /* Make sure that the processes for this group are contained within
        the input communicator.  Also identify the mapping from the ranks of 
@@ -137,12 +148,13 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	}
 
 	/* Get the new communicator structure and context id */
-	mpi_errno = MPIR_Comm_create( comm_ptr, &newcomm_ptr );
-	if (mpi_errno) {
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE );
+	newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
+	if (!newcomm_ptr) {
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
-
+	newcomm_ptr->ref_count = 1;
+	newcomm_ptr->context_id = new_context_id;
 	newcomm_ptr->remote_size = newcomm_ptr->local_size = n;
 	newcomm_ptr->rank        = group_ptr->rank;
 	/* Since the group has been provided, let the new communicator know

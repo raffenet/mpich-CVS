@@ -25,6 +25,11 @@ MPIU_Object_alloc_t MPID_Comm_mem = { 0, 0, 0, 0, MPID_COMM,
    Do *not* initialize the other fields except for the reference count.
    See MPIR_Comm_copy for a function to produce a copy of part of a
    communicator 
+
+   FIXME: comm_create can't use this because the context id must be
+   created separately from the communicator (creating the context
+   is collective over oldcomm_ptr, but this routine may be called only
+   by a subset of processes in the new communicator)
  */
 int MPIR_Comm_create( MPID_Comm *oldcomm_ptr, MPID_Comm **newcomm_ptr )
 {   
