@@ -544,6 +544,35 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
        AC_DEFINE(FREEBSD,1,[Define for FreeBSD])
        PAC_HAVE_MOUNT_NFS
        if test "$ROMIO_HAVE_MOUNT_NFS" = "1"; then
+	  # Gaaa.  The Intel V7.1 compiler replaces types.h (!!) with
+	  # a version that *DOES NOT CONTAIN THE DEFINITIONS NEEDED BY OTHER
+	  # INCLUDE FILES*!!!!  (Specifically, __SWORD_TYPE, used 
+	  # by statfs.h .  This problem was observed on Redhat 8.0 .
+	  AC_CHECK_HEADERS(sys/vfs.h sys/param.h sys/mount.h sys/statvfs.h)
+	  AC_MSG_CHECKING([whether struct statfs properly defined])
+	  AC_TRY_COMPILE([
+#ifdef HAVE_SYS_STATVFS_H
+#include <sys/statvfs.h>
+#endif
+#ifdef HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#ifdef HAVE_SYS_MOUNT_H
+#include <sys/mount.h>
+#endif],[
+     struct statfs f;],pac_cv_have_statfs=yes,pac_cv_have_statfs=no)
+          AC_MSG_RESULT($pac_cv_have_statfs)
+	  # At this point, we could check for whether defining 
+	  # __SWORD_TYPE as sizet_t or int/long (size of pointer)
+	  # would help.  FIXME
+
+	  if test "$pac_cv_have_statfs" = yes ; then
+	      AC_DEFINE(HAVE_STRUCT_STATFS,1,[Define if struct statfs can be compiled])
+	  fi
+	  
        		AC_MSG_CHECKING([for struct statfs.f_fstypename])
 		AC_TRY_COMPILE([
 			#include <sys/param.h>

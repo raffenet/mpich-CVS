@@ -1,184 +1,178 @@
-/* adio/include/romioconf.h.in.  Generated from configure.in by autoheader.  */
+/* adio/include/romioconf.h.in.  Generated automatically from configure.in by autoheader.  */
 
-/* Define for aio handle in aiocb */
-#undef AIO_HANDLE_IN_AIOCB
+/* Define as __inline if that's what the C compiler calls it.  */
+#undef inline
 
-/* Define for AIO priority is default */
-#undef AIO_PRIORITY_DEFAULT
+/* The number of bytes in a int.  */
+#undef SIZEOF_INT
 
-/* Define if no signotify */
-#undef AIO_SIGNOTIFY_NONE
+/* The number of bytes in a long long.  */
+#undef SIZEOF_LONG_LONG
+
+/* The number of bytes in a void*.  */
+#undef SIZEOF_VOIDP
+
+/* Define if you have the memalign function.  */
+#undef HAVE_MEMALIGN
+
+/* Define if you have the <sys/mount.h> header file.  */
+#undef HAVE_SYS_MOUNT_H
+
+/* Define if you have the <sys/param.h> header file.  */
+#undef HAVE_SYS_PARAM_H
+
+/* Define if you have the <sys/statvfs.h> header file.  */
+#undef HAVE_SYS_STATVFS_H
+
+/* Define if you have the <sys/vfs.h> header file.  */
+#undef HAVE_SYS_VFS_H
+
+/* Define if you have the <unistd.h> header file.  */
+#undef HAVE_UNISTD_H
 
 /* Define for SUN0S 4 */
 #undef AIO_SUN
 
-/* Define for AIX */
-#undef AIX
+/* Define for SUN0S 4 */
+#undef AIO_SUN
 
-/* Define if Cray */
-#undef CRAY
-
-/* Define for DEC/Compaq/HP Alpha */
-#undef DEC
-
-/* Define for FreeBSD */
-#undef FREEBSD
-
-/* Define to 1 if you have the <inttypes.h> header file. */
-#undef HAVE_INTTYPES_H
-
-/* Define if long long is 64 bits */
-#undef HAVE_LONG_LONG_64
-
-/* Define to 1 if you have the `memalign' function. */
-#undef HAVE_MEMALIGN
-
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
-
-/* Define if MOUNT_NFS defined */
-#undef HAVE_MOUNT_NFS
-
-/* Define if MPI combiners available */
-#undef HAVE_MPI_COMBINERS
-
-/* Define if Darray is available */
-#undef HAVE_MPI_DARRAY_SUBARRAY
-
-/* Define if generalized requests avaliable */
-#undef HAVE_MPI_GREQUEST
-
-/* Define if MPI Info is available */
-#undef HAVE_MPI_INFO
-
-/* Define if supports long long int */
-#undef HAVE_MPI_LONG_LONG_INT
-
-/* Define for CRAY weak dup */
-#undef HAVE_PRAGMA_CRI_DUP
-
-/* Define for HP weak pragma */
-#undef HAVE_PRAGMA_HP_SEC_DEF
-
-/* Define if pragma weak available */
-#undef HAVE_PRAGMA_WEAK
-
-/* Define if pread64 available */
-#undef HAVE_PREAD64
-
-/* Define if status set bytes available */
-#undef HAVE_STATUS_SET_BYTES
-
-/* Define to 1 if you have the <stdint.h> header file. */
-#undef HAVE_STDINT_H
-
-/* Define to 1 if you have the <stdlib.h> header file. */
-#undef HAVE_STDLIB_H
-
-/* Define if strerror available */
-#undef HAVE_STRERROR
-
-/* Define to 1 if you have the <strings.h> header file. */
-#undef HAVE_STRINGS_H
-
-/* Define to 1 if you have the <string.h> header file. */
-#undef HAVE_STRING_H
-
-/* Define if syserrlist available */
-#undef HAVE_SYSERRLIST
-
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#undef HAVE_SYS_STAT_H
-
-/* Define to 1 if you have the <sys/types.h> header file. */
-#undef HAVE_SYS_TYPES_H
-
-/* Define to 1 if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
-
-/* Define if weak symbols available */
-#undef HAVE_WEAK_SYMBOLS
-
-/* Define for HFS */
-#undef HFS
-
-/* Define for HPUX */
-#undef HPUX
-
-/* Define if int smaller than pointer */
-#undef INT_LT_POINTER
-
-/* Define if IRIX */
-#undef IRIX
-
-/* Define for Linux */
-#undef LINUX
-
-/* Define if compiling within MPICH */
-#undef MPICH
-
-/* Define if compiling within MPICH2 */
-#undef MPICH2
-
-/* Define if using HP MPI */
-#undef MPIHP
-
-/* Define if compiling within LAM/MPI */
-#undef MPILAM
-
-/* Define if SGI MPI */
-#undef MPISGI
-
-/* Define if MPI_Offset is int */
-#undef MPI_OFFSET_IS_INT
-
-/* Define for aiocb_t definition needed */
-#undef NEEDS_AIOCB_T
-
-/* Define if mpi_test needed */
-#undef NEEDS_MPI_TEST
-
-/* Define for NFS */
-#undef NFS
-
-/* Define if AIO should not be used */
-#undef NO_AIO
+/* Define for Solaris */
+#undef SOLARIS
 
 /* Define for no fd in the aiocb */
 #undef NO_FD_IN_AIOCB
 
-/* Define if no MPI type is contig */
-#undef NO_MPI_SGI_type_is_contig
+/* Define for aio handle in aiocb */
+#undef AIO_HANDLE_IN_AIOCB
 
-/* Define to the address where bug reports for this package should be sent. */
-#undef PACKAGE_BUGREPORT
-
-/* Define to the full name of this package. */
-#undef PACKAGE_NAME
-
-/* Define to the full name and version of this package. */
-#undef PACKAGE_STRING
-
-/* Define to the one symbol short name of this package. */
-#undef PACKAGE_TARNAME
-
-/* Define to the version of this package. */
-#undef PACKAGE_VERSION
+/* Define for AIX */
+#undef AIX
 
 /* Define for Intel Paragon */
 #undef PARAGON
 
-/* Define for PFS */
-#undef PFS
+/* Define for FreeBSD */
+#undef FREEBSD
 
-/* Define for PIOFS */
-#undef PIOFS
+/* Define if MOUNT_NFS defined */
+#undef HAVE_MOUNT_NFS
 
-/* Define for printing error messages */
-#undef PRINT_ERR_MSG
+/* Define if struct statfs can be compiled */
+#undef HAVE_STRUCT_STATFS
 
 /* Define if statfs has f_fstypename */
 #undef ROMIO_HAVE_STATFS_F_FSTYPENAME
+
+/* Define if statfs has f_fstypename */
+#undef ROMIO_HAVE_STATFS_F_FSTYPENAME
+
+/* Define for Linux */
+#undef LINUX
+
+/* Define for aiocb_t definition needed */
+#undef NEEDS_AIOCB_T
+
+/* Define for NEC SX4 */
+#undef SX4
+
+/* Define for HPUX */
+#undef HPUX
+
+/* Define for SPPUX (Convex) */
+#undef SPPUX
+
+/* Define for AIO priority is default */
+#undef AIO_PRIORITY_DEFAULT
+
+/* Define for DEC/Compaq/HP Alpha */
+#undef DEC
+
+/* Define if Cray */
+#undef CRAY
+
+/* Define if SGI MPI */
+#undef MPISGI
+
+/* Define if MPI supports datatype combiners */
+#undef HAVE_MPI_COMBINERS
+
+/* Define if no types show contig */
+#undef NO_MPI_SGI_type_is_contig
+
+/* Define if IRIX */
+#undef IRIX
+
+/* Define if no signotify */
+#undef AIO_SIGNOTIFY_NONE
+
+/* Define if pread64 available */
+#undef HAVE_PREAD64
+
+/* Define if IRIX */
+#undef IRIX
+
+/* Define if AIO should not be used */
+#undef NO_AIO
+
+/* Define if int smaller than pointer */
+#undef INT_LT_POINTER
+
+/* Define if long long is 64 bits */
+#undef HAVE_LONG_LONG_64
+
+/* Define if MPI_Offset is int */
+#undef MPI_OFFSET_IS_INT
+
+/* Define if mpi has long long it */
+#undef HAVE_MPI_LONG_LONG_INT
+
+/* Define if supports long long int */
+#undef HAVE_MPI_LONG_LONG_INT
+
+/* Define if MPI_Info available */
+#undef HAVE_MPI_INFO
+
+/* Define if MPI Info is available */
+#undef HAVE_MPI_INFO
+
+/* Define if no MPI type is contig */
+#undef NO_MPI_SGI_type_is_contig
+
+/* Define if MPI combiners available */
+#undef HAVE_MPI_COMBINERS
+
+/* Define if MPI Darray available */
+#undef HAVE_MPI_DARRAY_SUBARRAY
+
+/* Define if Darray is available */
+#undef HAVE_MPI_DARRAY_SUBARRAY
+
+/* Define if pragma weak available */
+#undef HAVE_PRAGMA_WEAK
+
+/* Define for HP weak pragma */
+#undef HAVE_PRAGMA_HP_SEC_DEF
+
+/* Define for CRAY weak dup */
+#undef HAVE_PRAGMA_CRI_DUP
+
+/* Define if weak symbols available */
+#undef HAVE_WEAK_SYMBOLS
+
+/* Define for NFS */
+#undef NFS
+
+/* Define for UFS */
+#undef UFS
+
+/* Define for HFS */
+#undef HFS
+
+/* Define for SFS */
+#undef SFS
+
+/* Define for XFS */
+#undef XFS
 
 /* Define for Romio with PVFS */
 #undef ROMIO_PVFS
@@ -186,39 +180,63 @@
 /* Define for Romio with PVFS2 */
 #undef ROMIO_PVFS2
 
+/* Define for PFS */
+#undef PFS
+
 /* Define for TESTFS */
 #undef ROMIO_TESTFS
 
-/* Define for SFS */
-#undef SFS
+/* Define for PIOFS */
+#undef PIOFS
 
-/* The size of a `int', as computed by sizeof. */
-#undef SIZEOF_INT
+/* Define if mpi_test needed */
+#undef NEEDS_MPI_TEST
 
-/* The size of a `long long', as computed by sizeof. */
-#undef SIZEOF_LONG_LONG
+/* Define if using MPICH */
+#undef MPICH
 
-/* The size of a `void*', as computed by sizeof. */
-#undef SIZEOF_VOIDP
+/* Define if SGI MPI */
+#undef MPISGI
 
-/* Define for Solaris */
-#undef SOLARIS
+/* Define if using LAM/MPI */
+#undef MPILAM
 
-/* Define for SPPUX (Convex) */
-#undef SPPUX
+/* Define if using HP MPI */
+#undef MPIHP
 
-/* Define to 1 if you have the ANSI C header files. */
-#undef STDC_HEADERS
+/* Define if strerror available */
+#undef HAVE_STRERROR
 
-/* Define for NEC SX4 */
-#undef SX4
+/* Define if syserrlist available */
+#undef HAVE_SYSERRLIST
 
-/* Define for UFS */
-#undef UFS
+/* Define if compiling within MPICH */
+#undef MPICH
 
-/* Define for XFS */
-#undef XFS
+/* Define if compiling within MPICH2 */
+#undef MPICH2
 
-/* Define as `__inline' if that's what the C compiler calls it, or to nothing
-   if it is not supported. */
-#undef inline
+/* Define if compiling within LAM/MPI */
+#undef MPILAM
+
+/* Define if have MPIR_Status_set_bytes */
+#undef HAVE_STATUS_SET_BYTES
+
+/* Define if have MPIR_Status_set_bytes */
+#undef HAVE_STATUS_SET_BYTES
+
+/* Define if status_set_bytes available */
+#undef HAVE_STATUS_SET_BYTES
+
+/* Define if generalized requests avaliable */
+#undef HAVE_MPI_GREQUEST
+
+/* Define if status set bytes available */
+#undef HAVE_STATUS_SET_BYTES
+
+/* Define if generalized requests avaliable */
+#undef HAVE_MPI_GREQUEST
+
+/* Define for printing error messages */
+#undef PRINT_ERR_MSG
+
