@@ -74,7 +74,9 @@ int main(int argc, char **argv)
 #if VERBOSE
 	    fprintf(stderr, "%s\n", string);
 #else
-	    if (strcmp( string, "Invalid displacement argument" ) != 0) {
+	    /* check for the word "displacement" in the message.
+	       This allows other formatting of the message */
+	    if (strstr( string, "displacement" ) == 0) {
 		fprintf( stderr, "Unexpected error message %s\n", string );
 		errs++;
 	    }
