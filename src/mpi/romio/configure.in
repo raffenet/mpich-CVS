@@ -38,7 +38,7 @@ Usage: ${progname} [-file_system=FILE_SYSTEM] [-arch=ARCH_TYPE] [-mpi=MPI_IMPL]
 
 where
    FILE_SYSTEM  = the file system(s) for which ROMIO is to be configured.
-                  Valid values are pfs, piofs, hfs, xfs, sfs, pvfs, ufs,
+                  Valid values are pfs, piofs, hfs, xfs, sfs, pvfs, pvfs2, ufs,
                   and nfs (case-sensitive). They correspond to Intel's PFS, 
                   IBM's PIOFS, HP/Convex's HFS, SGI's XFS, NEC's SFS, 
                   Clemson University's PVFS (for Linux clusters), any Unix 
@@ -185,7 +185,7 @@ TEST_CC=""
 TEST_F77=""
 TRY_WEAK_SYMBOLS=1
 #
-known_filesystems="nfs ufs pfs piofs pvfs testfs xfs hfs sfs"
+known_filesystems="nfs ufs pfs piofs pvfs pvfs2 testfs xfs hfs sfs"
 known_mpi_impls="mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi"
 #
 # Defaults
@@ -1328,6 +1328,11 @@ if test -n "$file_system_pvfs"; then
     dnl CFLAGS="$CFLAGS -DROMIO_PVFS"
     AC_DEFINE(ROMIO_PVFS)
 fi
+
+if test -n "$file_system_pvfs2"; then
+   AC_DEFINE(ROMIO_PVFS2)
+fi
+
 if test -n "$file_system_pfs"; then
     dnl CFLAGS="$CFLAGS -DPFS"
     AC_DEFINE(PFS)
@@ -1552,7 +1557,7 @@ AC_OUTPUT(Makefile mpi-io/Makefile mpi2-other/info/Makefile \
 		   adio/ad_xfs/Makefile adio/ad_hfs/Makefile \
 		   adio/ad_sfs/Makefile adio/ad_pfs/Makefile \
 		   adio/ad_testfs/Makefile adio/ad_pvfs/Makefile \
-		   adio/ad_piofs/Makefile )
+		   adio/ad_piofs/Makefile adio/ad_pvfs2/Makefile)
 if test "$NOF77" = 0; then
     CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/pfcoll_test.f test/fperf.f"
 fi

@@ -44,6 +44,7 @@
 #undef PIOFS
 #undef PRINT_ERR_MSG
 #undef ROMIO_PVFS
+#undef ROMIO_PVFS2
 #undef ROMIO_TESTFS
 #undef SFS
 #undef SOLARIS

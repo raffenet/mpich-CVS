@@ -154,7 +154,7 @@ TEST_CC=""
 TEST_F77=""
 TRY_WEAK_SYMBOLS=1
 #
-known_filesystems="nfs ufs pfs piofs pvfs testfs xfs hfs sfs"
+known_filesystems="nfs ufs pfs piofs pvfs pvfs2 testfs xfs hfs sfs"
 known_mpi_impls="mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi"
 #
 # Defaults
@@ -1189,6 +1189,9 @@ if test -n "$file_system_pvfs"; then
    # Use ROMIO_PVFS instead of PVFS because FREEBSD defines PVFS.
     AC_DEFINE(ROMIO_PVFS,,[Define for Romio with PVFS])
 fi
+if test -n "$file_system_pvfs2"; then
+    AC_DEFINE(ROMIO_PVFS2,,[Define for Romio with PVFS2])
+fi
 if test -n "$file_system_pfs"; then
     AC_DEFINE(PFS,,[Define for PFS])
 fi
@@ -1415,7 +1418,7 @@ AC_OUTPUT(Makefile localdefs mpi-io/Makefile mpi2-other/info/Makefile \
 		   adio/ad_xfs/Makefile adio/ad_hfs/Makefile \
 		   adio/ad_sfs/Makefile adio/ad_pfs/Makefile \
 		   adio/ad_testfs/Makefile adio/ad_pvfs/Makefile \
-		   adio/ad_piofs/Makefile \
+		   adio/ad_pvfs2/Makefile adio/ad_piofs/Makefile \
                    mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile \
                    mpi2-other/array/fortran/Makefile test/fmisc.f \
                    test/fcoll_test.f test/pfcoll_test.f test/fperf.f )

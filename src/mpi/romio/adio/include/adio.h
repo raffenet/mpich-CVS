@@ -264,6 +264,7 @@ typedef struct {
 #define ADIO_PVFS                157   /* PVFS for Linux Clusters from Clemson Univ. */
 #define ADIO_NTFS                158   /* NTFS for Windows NT */
 #define ADIO_TESTFS              159   /* fake file system for testing */
+#define ADIO_PVFS2               160   /* PVFS2: 2nd generation PVFS */
 
 #define ADIO_SEEK_SET            SEEK_SET
 #define ADIO_SEEK_CUR            SEEK_CUR

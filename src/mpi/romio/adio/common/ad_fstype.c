@@ -216,9 +216,11 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
     else {
 	/* FPRINTF(stderr, "%d\n", fsbuf.f_type);*/
 	if (fsbuf.f_type == NFS_SUPER_MAGIC) *fstype = ADIO_NFS;
-# ifdef ROMIO_PVFS
+# if defined(ROMIO_PVFS)
 	else if (fsbuf.f_type == PVFS_SUPER_MAGIC) *fstype = ADIO_PVFS;
-# endif
+# elif defined(ROMIO_PVFS2)
+	else if (1) fprintf(stderr, "specify 'pvfs2': for now!!!\n");
+#endif
 	else *fstype = ADIO_UFS;
     }
 #elif (defined(FREEBSD) && defined(HAVE_MOUNT_NFS))
@@ -345,6 +347,9 @@ static void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code
     }
     else if (!strncmp(filename, "pvfs:", 5) || !strncmp(filename, "PVFS:", 5)) {
 	*fstype = ADIO_PVFS;
+    }
+    else if (!strncmp(filename, "pvfs2:", 6)||!strncmp(filename, "PVFS2:", 6)) {
+	*fstype = ADIO_PVFS2;
     }
     else if (!strncmp(filename, "testfs:", 7) 
 	     || !strncmp(filename, "TESTFS:", 7))
@@ -580,6 +585,24 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 	return;
 #else
 	*ops = &ADIO_PVFS_operations;
+#endif
+    }
+    if (file_system == ADIO_PVFS2) {
+#ifndef ROMIO_PVFS2
+# ifdef MPICH2
+	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**iofstypeunsupported", 0);
+	return;
+# elif defined(PRINT_ERR_MSG)
+	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the PVFS2 file system\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+# else /* MPICH-1 */
+	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_PVFS,
+				     myname, (char *) 0, (char *) 0);
+	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
+# endif
+	return;
+#else
+	*ops = &ADIO_PVFS2_operations;
 #endif
     }
     if (file_system == ADIO_NTFS) {
