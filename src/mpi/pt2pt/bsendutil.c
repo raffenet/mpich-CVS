@@ -45,9 +45,9 @@
 /* #define DEBUG(a) a;fflush(stdout)  */
 #define DEBUG(a) 
 #define DEBUG1(a) 
-/* #define PRINT_AVAIL */
+/* #define DBG_PRINT_AVAIL */
 /* #define DEBUG1(a) a;fflush(stdout)  */
-/* #define PRINT_ARENA */
+/* #define DBG_PRINT_ARENA */
 
 /* Private structures for the bsend buffers */
 
@@ -325,7 +325,7 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
     DEBUG1(printf("Freeing bsend segment at %x of size %d, next at %x\n",
 		 p,p->size, ((char *)p)+p->total_size));
 
-#ifdef PRINT_ARENA
+#ifdef DBG_PRINT_ARENA
     printf( "At the begining of free_segment with size %d:\n", p->total_size );
     MPIR_Bsend_dump();
 #endif    
@@ -345,7 +345,7 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 	p->next->prev = prev;
     }
 
-#ifdef PRINT_AVAIL_LIST
+#ifdef DBG_PRINT_AVAIL_LIST
     {
 	BsendData_t *a = BsendBuffer.avail;
 	printf( "Avail list is:\n" );
@@ -403,7 +403,7 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 	BsendBuffer.avail = p;
 	p->prev           = 0;
     }
-#ifdef PRINT_ARENA
+#ifdef DBG_PRINT_ARENA
     printf( "At the end of free_segment:\n" );
     MPIR_Bsend_dump();
 #endif    
@@ -493,7 +493,7 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
     /* alloc_size is the amount of space (out of size) that we will 
        allocate for this buffer. */
 
-#ifdef PRINT_ARENA
+#ifdef DBG_PRINT_ARENA
     printf( "Taking %d bytes from a block with %d bytes\n", alloc_size, 
 	    p->total_size );
 #endif
@@ -523,7 +523,7 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
 	p->total_size = (char *)newp - (char*)p;
 	p->size       = p->total_size - BSENDDATA_HEADER_TRUE_SIZE;
 
-#ifdef PRINT_ARENA
+#ifdef DBG_PRINT_ARENA
 	printf( "broken blocks p (%d) and new (%d)\n",
 		p->total_size, newp->total_size ); fflush(stdout);
 #endif
@@ -549,7 +549,7 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
     p->prev	       = 0;
     BsendBuffer.active = p;
 
-#ifdef PRINT_ARENA
+#ifdef DBG_PRINT_ARENA
     printf( "At end of take buffer\n" );
     MPIR_Bsend_dump();
 #endif
@@ -569,7 +569,7 @@ static int MPIR_Bsend_finalize( void *p )
     return 0;
 }
 
-#ifdef PRINT_ARENA
+#ifdef DBG_PRINT_ARENA
 void MPIR_Bsend_dump( void )
 {
     BsendData_t *a = BsendBuffer.avail;
