@@ -170,7 +170,6 @@ def mpdboot():
         if verbosity == 1:
             print 'starting remote mpd on %s' % (host)
         status = system(cmd)
-        print "RMB STATUS=", status
         assert status is 0, '%s bombed with status %d' % (cmd,status)
         numStarted += 1
 
