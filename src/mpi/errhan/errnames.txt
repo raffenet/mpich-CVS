@@ -587,6 +587,7 @@ with MPI_Alloc_mem.
 **post_connect:failed to post a connection
 **progress_handle_sock_op:handle_sock_op failed
 **progress_sock_wait:sock_wait failed
+**sock_wait:sock_wait failed
 **shm_read_progress:shared memory read progress failed
 **shmconnect_getmem:failed to allocate shared memory for a write queue
 **shmwrite:shared memory write failed
@@ -662,42 +663,54 @@ with MPI_Alloc_mem.
 **desc_len:host description buffer too small
 **duphandle:unable to duplicate a handle
 **duphandle %d:unable to duplicate a handle (errno %d)
+**duphandle %s %d:unable to duplicate a handle, %s (errno %d)
 **fail:failure
 **fail %d:failure (errno %d)
 **fail %s:failure - %s
 **fail %s %d:failure - %s (errno %d)
 **gethostbyname:gethostbyname failed
 **gethostbyname %d:gethostbyname failed (errno %d)
+**gethostbyname %s %d:gethostbyname failed, %s (errno %d)
 **getinfo:getaddrinfo failed
 **getinfo %d:getaddrinfo failed (errno %d)
+**getinfo %s %d:getinfo failed, %s (errno %d)
 **init_description:unable to get the host description
 **iocp:unable to create an I/O completion port
 **iocp %d:unable to create an I/O completion port (errno %d)
+**iocp %s %d:unable to create an I/O copmletion port, %s (erron %d)
 **listen:listen failed
 **listen %d:listen failed (errno %d)
+**listen %s %d:listen failed, %s (errno %d)
 **pctwice:post close called twice
 **post_accept:post accept failed
 **progress_init:unable to initialize the progress engine
 **sock_byname:gethostbyname failed
 **sock_byname %d:gethostbyname failed (errno %d)
+**sock_byname %s %d:gethostbyname failed, %s (errno %d)
 **sock_closed:socket closed
 **sock_connect:connect failed
 **sock_connect %d:connect failed (errno %d)
 **sock_connect %s %d %d:unable to connect to %s on port %d, error %d
+**sock_connect %s %d %s %d:unable to connect to %s on port %d, %s (errno %d)
 **sock_create:unable to create a socket
 **sock_create %d:unable to create a socket (errno %d)
+**sock_create %s %d:unable to create a socket, %s (errno %d)
 **sock_gethost:gethostname failed
 **sock_gethost %d:gethostname failed (errno %d)
+**sock_gethost %s %d:gethostname failed, %s (errno %d)
 **sock_init:unable to initialize the sock library
 **sock_iocp:unable to create an I/O completion port
 **sock_iocp %d:unable to create an I/O completion port (errno %d)
 **sock_nop_accept:accept called without having received an op_accept
 **socket:WSASocket failed
 **socket %d:WSASocket failed (errno %d)
+**socket %s %d:WSASocket failed, %s (errno %d)
 **test_sock_wait:sock_wait failed
 **wsasock:WSAStartup failed
 **wsasock %d:WSAStartup failed (errno %d)
+**wsasock %s %d:WSAStartup failed, %s (errno %d)
 **post_write:Unable to post a write
+**post_write %p %p:Unable to post a write (%p %p)
 **sock_accept:Unable to accept a socket connection
 **sock_writev:Unable to write an iovec to a socket
 **sock_write:Unable to write to a socket
@@ -708,6 +721,14 @@ with MPI_Alloc_mem.
 **argstr_shmevent:shared memory event not found in the business card
 **event_create:unable to create an event
 **event_open:unable to open an event
+**event_reset:unable to reset an event
+**event_set:unable to set an event
+**event_wait:unable to wait on an event
+**write:write failed
+**writev:writev failed
+
+**postwrite:postwrite failed
+**postwrite %p %p:postwrite failed (%p %p)
 
 #
 # CH3:shm
@@ -1091,7 +1112,7 @@ with MPI_Alloc_mem.
 **mpi_intercomm_merge:MPI_Intercomm_merge failed
 **mpi_intercomm_merge %C %d %p:MPI_Intercomm_merge(%C, %d, %p) failed
 **mpi_keyval_create:MPI_Keyval_create failed
-**mpi_keyval_create %p %p %p %p:MPI_Keyval_create(%p, %p, %p, %p) failed
+**mpi_keyval_create %p %p %p %p:MPI_Keyval_create(copy_fn=%p, del_fn=%p, keyval=%p, extra=%p) failed
 **mpi_keyval_free:MPI_Keyval_free failed
 **mpi_keyval_free %p:MPI_Keyval_free(%p) failed
 **mpi_attr_put:MPI_Attr_put failed
@@ -1145,7 +1166,7 @@ with MPI_Alloc_mem.
 **mpi_errhandler_free:MPI_Errhandler_free failed
 **mpi_errhandler_free %p:MPI_Errhandler_free(%p) failed
 **mpi_error_string:MPI_Error_string failed
-**mpi_error_string %d %p %p:MPI_Error_string(%d, %p, %p) failed
+**mpi_error_string %d %s %p:MPI_Error_string(%d, %s, %p) failed
 **mpi_error_class:MPI_Error_class failed
 **mpi_error_class %d %p:MPI_Error_class(%d, %p) failed
 **mpi_wtime:MPI_Wtime failed
@@ -1202,7 +1223,7 @@ with MPI_Alloc_mem.
 **mpi_win_post:MPI_Win_post failed
 **mpi_win_post %G %d %W:MPI_Win_post(%G, %d, %W) failed
 **mpi_win_start:MPI_Win_start failed
-**mpi_win_start %G %d %W:MPI_Win_start(%G, %d, %W) failed
+**mpi_win_start %G %A %W:MPI_Win_start(%G, %A, %W) failed
 **mpi_win_test:MPI_Win_test failed
 **mpi_win_test %W %p:MPI_Win_test(%W, %p) failed
 **mpi_win_unlock:MPI_Win_unlock failed
@@ -1234,7 +1255,7 @@ with MPI_Alloc_mem.
 **mpi_comm_set_attr:MPI_Comm_set_attr failed
 **mpi_comm_set_attr %C %d %p:MPI_Comm_set_attr(%C, %d, %p) failed
 **mpi_comm_set_name:MPI_Comm_set_name failed
-**mpi_comm_set_name %C %p:MPI_Comm_set_name(%C, %p) failed
+**mpi_comm_set_name %C %s:MPI_Comm_set_name(%C, %s) failed
 **mpi_file_call_errhandler:MPI_File_call_errhandler failed
 **mpi_file_call_errhandler %F %d:MPI_File_call_errhandler(%F, %d) failed
 **mpi_grequest_complete:MPI_Grequest_complete failed
@@ -1270,7 +1291,7 @@ with MPI_Alloc_mem.
 **mpi_type_set_attr:MPI_Type_set_attr failed
 **mpi_type_set_attr %D %d %p:MPI_Type_set_attr(%D, %d, %p) failed
 **mpi_type_set_name:MPI_Type_set_name failed
-**mpi_type_set_name %D %p:MPI_Type_set_name(%D, %p) failed
+**mpi_type_set_name %D %s:MPI_Type_set_name(%D, %s) failed
 **mpi_type_match_size:MPI_Type_match_size failed
 **mpi_type_match_size %d %d %p:MPI_Type_match_size(%d, %d, %p) failed
 **mpi_win_call_errhandler:MPI_Win_call_errhandler failed
@@ -1288,7 +1309,7 @@ with MPI_Alloc_mem.
 **mpi_win_set_attr:MPI_Win_set_attr failed
 **mpi_win_set_attr %W %d %p:MPI_Win_set_attr(%W, %d, %p) failed
 **mpi_win_set_name:MPI_Win_set_name failed
-**mpi_win_set_name %W %p:MPI_Win_set_name(%W, %p) failed
+**mpi_win_set_name %W %s:MPI_Win_set_name(%W, %s) failed
 **mpi_alloc_mem:MPI_Alloc_mem failed
 **mpi_alloc_mem %d %I %p:MPI_Alloc_mem(%d, %I, %p) failed
 **mpi_comm_create_errhandler:MPI_Comm_create_errhandler failed
@@ -1318,13 +1339,13 @@ with MPI_Alloc_mem.
 **mpi_info_free:MPI_Info_free failed
 **mpi_info_free %p:MPI_Info_free(%p) failed
 **mpi_info_get:MPI_Info_get failed
-**mpi_info_get %I %p %d %p %p:MPI_Info_get(%I, %p, %d, %p, %p) failed
+**mpi_info_get %I %s %d %p %p:MPI_Info_get(%I, %s, %d, %p, %p) failed
 **mpi_info_get_nkeys:MPI_Info_get_nkeys failed
 **mpi_info_get_nkeys %I %p:MPI_Info_get_nkeys(%I, %p) failed
 **mpi_info_get_nthkey:MPI_Info_get_nthkey failed
 **mpi_info_get_nthkey %I %d %p:MPI_Info_get_nthkey(%I, %d, %p) failed
 **mpi_info_get_valuelen:MPI_Info_get_valuelen failed
-**mpi_info_get_valuelen %I %p %p %p:MPI_Info_get_valuelen(%I, %p, %p, %p) failed
+**mpi_info_get_valuelen %I %s %p %p:MPI_Info_get_valuelen(%I, %s, %p, %p) failed
 **mpi_info_set:MPI_Info_set failed
 **mpi_info_set %I %p %p:MPI_Info_set(%I, %p, %p) failed
 **mpi_pack_external:MPI_Pack_external failed
@@ -1355,6 +1376,7 @@ with MPI_Alloc_mem.
 **mpi_type_get_extent %D %p %p:MPI_Type_get_extent(%D, %p, %p) failed
 **mpi_type_get_true_extent:MPI_Type_get_true_extent failed
 **mpi_type_get_true_extent %D %p %p:MPI_Type_get_true_extent(%D, %p, %p) failed
+**mpi_type_test:MPI_Type_test failed
 **mpi_unpack_external:MPI_Unpack_external failed
 **mpi_unpack_external %s %p %d %p %p %d %D:MPI_Unpack_external(%s, %p, %d, %p, %p, %d, %D) failed
 **mpi_win_create_errhandler:MPI_Win_create_errhandler failed
@@ -1364,7 +1386,9 @@ with MPI_Alloc_mem.
 **mpi_win_set_errhandler:MPI_Win_set_errhandler failed
 **mpi_win_set_errhandler %W %E:MPI_Win_set_errhandler(%W, %E) failed
 **mpi_register_datarep:MPI_Register_datarep failed
-**mpi_register_datarep %s %p %p %p %p:MPI_Register_Datarep(%s %p %p %p %p) failed
+**mpi_register_datarep %s %p %p %p %p:MPI_Register_Datarep(%s, %p, %p, %p, %p) failed
+**mpi_pcontrol:MPI_Pcontrol failed
+**mpi_pcontrol %d:MPI_Pcontrol(%d) failed
 # -----------------------------------------------------------------------------
 # The following names are defined but not used (see the -careful option 
 # for extracterrmsgs) (still to do: move the undefined names here)
