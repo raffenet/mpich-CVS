@@ -18,6 +18,8 @@ Set files = CreateObject("Scripting.Dictionary")
 Set dotdots = CreateObject("Scripting.Dictionary")
 num_files = 0
 project_template = ""
+project_cxx_template = ""
+project_f_template = ""
 project_list = ""
 config_list = ""
 bWin64 = False
@@ -93,35 +95,50 @@ Function TestsToProjects(filename, dotdot)
 	Set fin = f.OpenTextFile(filename)
 	while not fin.AtEndOfStream
 		line = fin.ReadLine()
+		line = Trim(line)
 		twostrings = split(line, " ", -1, 1)
 		if not IsNull(twostrings) then
 			count = 0
 			for each s in twostrings
 				count = count + 1
 			next
-			if count = 2 And last_project <> twostrings(0) then
+			if count = 2 then
+			  if last_project <> twostrings(0) then
 				' Create the project file
 				project_name = twostrings(0)
 				If Left(project_name, 1) = "#" Then
 					project_name = Right(project_name, Len(project_name) - 1)
 				End If
+			    If last_project <> project_name then
 				last_project = project_name
-				project_filename = Replace( filename, "testlist", project_name + ".vcproj" )
-				project_relative_filename = Replace( project_filename, path_to_remove, "" )
 				c_filename = Replace( filename, "testlist", project_name + ".c" )
-				If f.FileExists( c_filename ) Then
+				cxx_filename = Replace( filename, "testlist", project_name + ".cxx" )
+				f_filename = Replace( filename, "testlist", project_name + ".f" )
+				cproj = f.FileExists( c_filename )
+				cxxproj = f.FileExists( cxx_filename )
+				fproj = f.FileExists( f_filename )
+				if cproj or cxxproj then
+					project_filename = Replace( filename, "testlist", project_name + ".vcproj" )
+				else
+					project_filename = Replace( filename, "testlist", project_name + ".vfproj" )
+				end if
+				project_relative_filename = Replace( project_filename, path_to_remove, "" )
+'				If f.FileExists( c_filename ) Or f.FileExists( cxx_filename ) Then
+				If cproj Or cxxproj Or fproj Then
 '					If bForce Or Not f.FileExists( project_filename ) Then
 						cEcho project_filename + vbCrLf
 						project_uuid = gen_uuid()
-						'uuid2 = gen_uuid()
-						'uuid3 = gen_uuid()
-						'uuid4 = gen_uuid()
-						new_project = Replace(project_template, "PROJECTNAME", project_name)
+						if cproj then
+							new_project = Replace(project_template, "PROJECTNAME", project_name)
+						end if
+						if cxxproj then
+							new_project = Replace(project_cxx_template, "PROJECTNAME", project_name)
+						end if
+						if fproj then
+							new_project = Replace(project_f_template, "PROJECTNAME", project_name)
+						end if
 						new_project = Replace(new_project, "UUID1", project_uuid)
 						new_project = Replace(new_project, "DOTDOTS", dotdot)
-						'new_project = Replace(new_project, "UUID2", uuid2)
-						'new_project = Replace(new_project, "UUID3", uuid3)
-						'new_project = Replace(new_project, "UUID4", uuid4)
 						set fout = f.CreateTextFile(project_filename, True)
 						fout.Write( new_project )
 						fout.Close()
@@ -133,9 +150,16 @@ Function TestsToProjects(filename, dotdot)
 '						' find the uuid in the contents
 '					End If
 					' Add the project to the lists used to create the test solution file
-					project_list = project_list + "Project(""{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"") = """ + project_name + """, """ + project_relative_filename + """, ""{" + project_uuid + "}""" + vbCrLf + "	ProjectSection(ProjectDependencies) = postProject" + vbCrLf + "	EndProjectSection" + vbCrLf + "EndProject" + vbCrLf
+					if fproj then
+						solution_guid = "6989167D-11E4-40FE-8C1A-2192A86A7E90" ' The fortran project guid
+					else
+						solution_guid = "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942" ' The C/C++ project guid
+					end if
+					project_list = project_list + "Project(""{" + solution_guid + "}"") = """ + project_name + """, """ + project_relative_filename + """, ""{" + project_uuid + "}""" + vbCrLf + "	ProjectSection(ProjectDependencies) = postProject" + vbCrLf + "	EndProjectSection" + vbCrLf + "EndProject" + vbCrLf
 					config_list = config_list + "		{" + project_uuid + "}.Debug.ActiveCfg = Debug|Win32" + vbCrLf + "		{" + project_uuid + "}.Debug.Build.0 = Debug|Win32" + vbCrLf + "		{" + project_uuid + "}.Release.ActiveCfg = Release|Win32" + vbCrLf + "		{" + project_uuid + "}.Release.Build.0 = Release|Win32" + vbCrLf
 				End If
+			    End If
+			  end if
 			end if
 		end if
 	wend
@@ -144,6 +168,14 @@ End Function
 
 set fin = f.OpenTextFile("project.txt")
 project_template = fin.ReadAll()
+fin.Close()
+
+set fin = f.OpenTextFile("project_cxx.txt")
+project_cxx_template = fin.ReadAll()
+fin.Close()
+
+set fin = f.OpenTextFile("project_f.txt")
+project_f_template = fin.ReadAll()
 fin.Close()
 
 GetTestLists cur_folder, ""
