@@ -13,7 +13,7 @@
 
 int smpd_command_destination(int dest, smpd_context_t **dest_context)
 {
-    int src, level_bit;
+    int src, level_bit, sub_tree_mask;
 
     smpd_dbg_printf("entering smpd_command_destination.\n");
 
@@ -58,7 +58,9 @@ int smpd_command_destination(int dest, smpd_context_t **dest_context)
     }
 
     level_bit = 0x1 << smpd_process.level;
-    if (( src ^ level_bit ) == ( dest & (level_bit-1) ))
+    sub_tree_mask = (level_bit << 1) - 1;
+
+    if (( src ^ level_bit ) == ( dest & sub_tree_mask ))
     {
 	if (smpd_process.left_context == NULL)
 	{
@@ -71,7 +73,7 @@ int smpd_command_destination(int dest, smpd_context_t **dest_context)
 	return SMPD_SUCCESS;
     }
 
-    if ( src == ( dest & (level_bit-1) ) )
+    if ( src == ( dest & sub_tree_mask ) )
     {
 	if (smpd_process.right_context == NULL)
 	{

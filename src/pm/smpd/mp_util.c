@@ -103,12 +103,18 @@ int handle_command(smpd_context_t *context)
 		get_sock_error_string(result));
 	    return SMPD_FAIL;
 	}
+	result = sock_post_close(context->sock);
+	if (result != SOCK_SUCCESS)
+	{
+	    mp_err_printf("unable to post a close of the sock after receiving a 'closed' command, sock error:\n%s\n",
+		get_sock_error_string(result));
+	    return SMPD_FAIL;
+	}
 	mp_dbg_printf("exiting handle_command.\n");
 	return SMPD_CLOSE;
     }
 
     mp_err_printf("ignoring unknown command from the session: '%s'\n", cmd->cmd);
-    smpd_post_read_command(context);
 
     mp_dbg_printf("exiting handle_command.\n");
     return SMPD_SUCCESS;
@@ -380,6 +386,7 @@ void StdinThread(SOCKET hWrite)
 		mp_err_printf("unable to forward stdin, WriteFile failed, error %d\n", GetLastError());
 		return;
 	    }
+	    /*
 	    if (strncmp(str, "close", 5) == 0)
 	    {
 		shutdown(hWrite, SD_BOTH);
@@ -387,6 +394,7 @@ void StdinThread(SOCKET hWrite)
 		mp_dbg_printf("closing stdin reader thread.\n");
 		return;
 	    }
+	    */
 	}
 	else if (result == WAIT_OBJECT_0 + 1)
 	{

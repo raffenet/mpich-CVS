@@ -299,6 +299,51 @@ int handle_command(smpd_context_t *context)
 	    return SMPD_FAIL;
 	}
     }
+    else if (strcmp(cmd->cmd_str, "print") == 0)
+    {
+	smpd_dbg_printf("PRINT: node %s:%d, level %d, parent = %d, left = %d, right = %d\n",
+	    smpd_process.host,
+	    smpd_process.id,
+	    smpd_process.level,
+	    /*smpd_process.parent_context ? smpd_process.parent_context->id : -1,*/
+	    smpd_process.parent_id,
+	    smpd_process.left_context ? smpd_process.left_context->id : -1,
+	    smpd_process.right_context ? smpd_process.right_context->id : -1);
+	if (smpd_process.left_context)
+	{
+	    result = smpd_create_command("print", smpd_process.id, smpd_process.left_context->id, &temp_cmd);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to create a 'print' command for the left context.\n");
+		smpd_dbg_printf("exiting handle_command.\n");
+		return SMPD_FAIL;
+	    }
+	    result = smpd_post_write_command(smpd_process.left_context, temp_cmd);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to post a write for the 'print' command to the left context.\n");
+		smpd_dbg_printf("exiting handle_command.\n");
+		return SMPD_FAIL;
+	    }
+	}
+	if (smpd_process.right_context)
+	{
+	    result = smpd_create_command("print", smpd_process.id, smpd_process.right_context->id, &temp_cmd);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to create a 'print' command for the right context.\n");
+		smpd_dbg_printf("exiting handle_command.\n");
+		return SMPD_FAIL;
+	    }
+	    result = smpd_post_write_command(smpd_process.right_context, temp_cmd);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to post a write for the 'print' command to the right context.\n");
+		smpd_dbg_printf("exiting handle_command.\n");
+		return SMPD_FAIL;
+	    }
+	}
+    }
     else
     {
 	smpd_err_printf("ignoring unknown session command: \"%s\"\n", cmd->cmd);
