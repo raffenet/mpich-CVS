@@ -74,7 +74,7 @@ static MPID_Thread_lock_t error_ring_mutex;
 #endif
 #endif
 
-int MPIR_Err_print_stack_flag = FALSE;
+int MPIR_Err_print_stack_flag = TRUE;
 static int MPIR_Err_abort_on_error = FALSE;
 
 void MPIR_Err_init( void )
@@ -578,7 +578,7 @@ static const char * GetDTypeString(MPI_Datatype d)
 	return "MPI_DATATYPE_NULL";
     }
     /* default is not thread safe */
-    MPIU_Snprintf(default_str, 64, "%d", d);
+    MPIU_Snprintf(default_str, 64, "0x%x", d);
     return default_str;
 }
 
@@ -646,13 +646,13 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
 		MPIU_Strncpy(str, "MPI_COMM_NULL", maxlen);
 		break;
 	    default:
-		MPIU_Snprintf(str, maxlen, "%d", C);
+		MPIU_Snprintf(str, maxlen, "0x%x", C);
 		break;
 	    }
 	    break;
 	case (int)'I':
 	    I = va_arg(list, MPI_Info);
-	    MPIU_Snprintf(str, maxlen, "%d", I);
+	    MPIU_Snprintf(str, maxlen, "0x%x", I);
 	    break;
 	case (int)'D':
 	    D = va_arg(list, MPI_Datatype);
@@ -661,28 +661,28 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
 #if 0
 	case (int)'F':
 	    F = va_arg(list, MPI_File);
-	    MPIU_Snprintf(str, maxlen, "%d", F);
+	    MPIU_Snprintf(str, maxlen, "0x%x", F);
 	    break;
 #endif
 	case (int)'W':
 	    W = va_arg(list, MPI_Win);
-	    MPIU_Snprintf(str, maxlen, "%d", W);
+	    MPIU_Snprintf(str, maxlen, "0x%x", W);
 	    break;
 	case (int)'G':
 	    G = va_arg(list, MPI_Group);
-	    MPIU_Snprintf(str, maxlen, "%d", G);
+	    MPIU_Snprintf(str, maxlen, "0x%x", G);
 	    break;
 	case (int)'O':
 	    O = va_arg(list, MPI_Op);
-	    MPIU_Snprintf(str, maxlen, "%d", O);
+	    MPIU_Snprintf(str, maxlen, "0x%x", O);
 	    break;
 	case (int)'R':
 	    R = va_arg(list, MPI_Request);
-	    MPIU_Snprintf(str, maxlen, "%d", R);
+	    MPIU_Snprintf(str, maxlen, "0x%x", R);
 	    break;
 	case (int)'E':
 	    E = va_arg(list, MPI_Errhandler);
-	    MPIU_Snprintf(str, maxlen, "%d", E);
+	    MPIU_Snprintf(str, maxlen, "0x%x", E);
 	    break;
 	default:
 	    /* Error: unhandled output type */
