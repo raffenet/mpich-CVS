@@ -324,7 +324,10 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
     {
 	error = WSAGetLastError();
 	smpd_err_printf("WSASocket failed, error %d\n", error);
-	closesocket(sock);
+	if (closesocket(sock) == SOCKET_ERROR)
+	{
+	    smpd_err_printf("closesocket failed, sock %d, error %d\n", sock, WSAGetLastError());
+	}
 	*pRead = INVALID_SOCKET;
 	*pWrite = INVALID_SOCKET;
 	return error;
@@ -349,8 +352,14 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
     if (connect(*pWrite, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
     {
 	error = WSAGetLastError();
-	closesocket(*pWrite);
-	closesocket(sock);
+	if (closesocket(*pWrite) ==  SOCKET_ERROR)
+	{
+	    smpd_err_printf("closesocket failed, sock %d, error %d\n", *pWrite, WSAGetLastError());
+	}
+	if (closesocket(sock) == SOCKET_ERROR)
+	{
+	    smpd_err_printf("closesocket failed, sock %d, error %d\n", sock, WSAGetLastError());
+	}
 	*pRead = INVALID_SOCKET;
 	*pWrite = INVALID_SOCKET;
 	return error;
@@ -367,7 +376,10 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
     b = TRUE;
     setsockopt(*pRead, IPPROTO_TCP, TCP_NODELAY, (char*)&b, sizeof(BOOL));
 
-    closesocket(sock);
+    if (closesocket(sock) == SOCKET_ERROR)
+    {
+	smpd_err_printf("closesocket failed, sock %d, error %d\n", sock, WSAGetLastError());
+    }
     return 0;
 }
 
@@ -428,7 +440,10 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
     {
 	error = WSAGetLastError();
 	smpd_err_printf("WSASocket failed, error %d\n", error);
-	closesocket(sock);
+	if (closesocket(sock) == SOCKET_ERROR)
+	{
+	    smpd_err_printf("closesocket failed, sock %d, error %d\n", sock, WSAGetLastError());
+	}
 	*pRead = INVALID_SOCKET;
 	*pWrite = INVALID_SOCKET;
 	return error;
@@ -451,8 +466,14 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
     if (connect(*pWrite, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
     {
 	error = WSAGetLastError();
-	closesocket(*pWrite);
-	closesocket(sock);
+	if (closesocket(*pWrite) == SOCKET_ERROR)
+	{
+	    smpd_err_printf("closesocket failed, sock %d, error %d\n", *pWrite, WSAGetLastError());
+	}
+	if (closesocket(sock) == SOCKET_ERROR)
+	{
+	    smpd_err_printf("closesocket failed, sock %d, error %d\n", sock, WSAGetLastError());
+	}
 	*pRead = INVALID_SOCKET;
 	*pWrite = INVALID_SOCKET;
 	return error;
@@ -466,7 +487,10 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
     b = TRUE;
     setsockopt(*pRead, IPPROTO_TCP, TCP_NODELAY, (char*)&b, sizeof(BOOL));
 
-    closesocket(sock);
+    if (closesocket(sock) == SOCKET_ERROR)
+    {
+	smpd_err_printf("closesocket failed, sock %d, error %d\n", sock, WSAGetLastError());
+    }
     return 0;
 }
 #endif
