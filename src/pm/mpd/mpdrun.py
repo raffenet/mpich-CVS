@@ -138,7 +138,7 @@ def mpdrun():
                             hostList.append(gethostname())
                         else:
                             hostList.append(ipaddr)
-        if hostSpec[0].hasAttribute('check'):
+        if hostSpec and hostSpec[0].hasAttribute('check'):
             hostSpecMode = hostSpec[0].getAttribute('check')
             if hostSpecMode == 'yes':
                 msgToSend = { 'cmd' : 'verify_hosts_in_ring', 'host_list' : hostList }
