@@ -4,11 +4,11 @@
 #       See COPYRIGHT in top-level directory.
 #
 
-from sys       import stdout, argv, settrace, exit
+from sys       import stdout, argv, settrace, exit, __stdout__, __stderr__
 from os        import environ, getpid, fork, setpgrp, waitpid, kill, chdir, \
                       setsid, getuid, setuid, setreuid, setregid, setgroups, \
                       umask, close, access, path, stat, unlink, strerror, \
-                      R_OK, X_OK, WNOHANG
+                      dup2, R_OK, X_OK, WNOHANG
 from pwd       import getpwnam
 from socket    import socket, AF_UNIX, SOCK_STREAM, gethostname
 from errno     import EINTR
@@ -71,6 +71,8 @@ def _mpd_init():
         stderr = logfile
         print >>stdout, 'logfile for mpd with pid %d' % getpid()
         stdout.flush()
+        dup2(logfile.fileno(),__stdout__.fileno())
+        dup2(logfile.fileno(),__stderr__.fileno())
 
     mpd_print(0, 'starting ')
     g.activeSockets = {}
