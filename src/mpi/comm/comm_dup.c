@@ -45,7 +45,7 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 {
     static const char FCNAME[] = "MPI_Comm_dup";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Comm *comm_ptr = NULL;
+    MPID_Comm *comm_ptr = NULL, *newcomm_ptr;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_DUP);
     /* Get handles to MPI objects. */
@@ -54,13 +54,10 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -69,6 +66,27 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+    /* Generate a new context value and a new communicator structure */
+    mpi_errno = MPIR_Comm_create( comm_ptr, &newcomm_ptr );
+    if (mpi_errno) {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP );
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
+
+    /* Duplicate the VCRT references */
+    MPID_VCRT_Add_ref( comm_ptr->vcrt );
+    newcomm_ptr->vcrt = comm_ptr->vcrt;
+    newcomm_ptr->vcr  = comm_ptr->vcr;
+
+    /* Copy attributes, executing the attribute copy functions */
+    /* FIXME: this should access the function through the perprocess
+       structure to prevent comm_dup from forcing the linking of the
+       attribute functions */
+    mpi_errno = MPIR_Comm_attr_dup( comm_ptr, &newcomm_ptr->attributes );
+
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP);
     return MPI_SUCCESS;

@@ -52,9 +52,8 @@ int MPI_Comm_free(MPI_Comm *comm)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
+            MPIR_ERRTEST_INITIALIZED( mpi_errno );
+	    if (mpi_errno) {
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
 	}
@@ -82,7 +81,18 @@ int MPI_Comm_free(MPI_Comm *comm)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
     /*mpi_errno = MPID_Comm_free(); */
+
+    /* Remove the attributes, executing the attribute delete routine */
+    /* FIXME: This needs to access the routine in the perprocess structure,
+       to prevent comm_free from forcing linking all of the attribute code */
+    mpi_errno = MPIR_Comm_attr_delete( comm_ptr, comm_ptr->attributes );
+
+    /* Free the VCRT */
+    MPID_VCRT_Release(comm_ptr->vcrt)
+    /* ... end of body of routine ... */
+
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_FREE);
