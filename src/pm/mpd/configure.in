@@ -32,23 +32,33 @@ AC_PROG_CC
 AC_PROG_MAKE_SET
 AC_PROG_LN_S
 
+
 dnl Find Python
-AC_CHECK_PROGS(PYTHON, python2 python python2.2 python2.3)
-if test -z "$PYTHON" ; then
-    AC_MSG_ERROR([No version of python found.  Python is required for mpd])
-fi
-dnl check python version
-AC_CACHE_CHECK([python version],
-pac_cv_python_version,[
-changequote(,)dnl
-pac_cv_python_version=`$PYTHON -c "import sys, string;print int(string.split(string.split(sys.version,' ')[0],'.')[0])"`
-pac_cv_python_subversion=`$PYTHON -c "import sys, string;print int(string.split(string.split(sys.version,' ')[0],'.')[1])"`
-changequote([,])dnl
-])
-if test "$pac_cv_python_version" -lt "2" -o "$pac_cv_python_version" -eq "2" -a "$pac_cv_python_subversion" -lt "2" ; then
-    AC_MSG_ERROR([Python version 2.2 or greater required; version ${pac_cv_python_version}.${pac_cv_python_subversion} found]) 
-fi	       
+for pypgm in python2.3 python2 python2.2 python ; do \
+    AC_CHECK_PROGS(PYTHON, $pypgm)
+    dnl check python version
+    AC_CACHE_CHECK([python version],
+    pac_cv_python_version,[
+    changequote(,)dnl
+    if test -z "$PYTHON" ; then
+        continue
+    fi
+    pac_cv_python_version=`$PYTHON -c "import sys, string;print int(string.split(string.split(sys.version,' ')[0],'.')[0])"`
+    pac_cv_python_subversion=`$PYTHON -c "import sys, string;print int(string.split(string.split(sys.version,' ')[0],'.')[1])"`
+    changequote([,])dnl
+    ])
+    if test "$pac_cv_python_version" -gt "2" -o "$pac_cv_python_version" -ge "2" -a "$pac_cv_python_subversion" -ge "2" ; then
+	break
+    fi	       
+    PYTHON=""    # not suitable
+    echo END LOOP
+done
 #
+if test -z "$PYTHON" ; then
+    AC_MSG_ERROR([Python required (version 2.2 or greater)]) 
+fi
+
+
 # Test for xml.dom.minidom module
 AC_MSG_CHECKING([that the xml module is available for Python])
 rm -f conftest*
