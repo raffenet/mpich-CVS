@@ -751,6 +751,7 @@ sub DefaultRules {
 	print FD "INSTALL         = \@INSTALL\@$newline";
 	print FD "INSTALL_PROGRAM = \@INSTALL_PROGRAM\@$newline";
 	print FD "INSTALL_DATA    = \@INSTALL_DATA\@$newline";
+	print FD "MKDIR_P         = \@MKDIR_P\@$newline";
     }
 
     # Directory definitions
@@ -1643,7 +1644,7 @@ sub TargetSharedLibraryFinal {
     print FD "# Build the shared library from the shared object files\n";
     print FD "$libdir/$newlibname: $libdir/$libname\n";
     print FD "\tif [ -d $libdir/.tmp ] ; then rm -rf $libdir/.tmp ; fi\n";
-    print FD "\tmkdir $libdir/.tmp\n";
+    print FD "\t\$(MKDIR_P) $libdir/.tmp\n";
     print FD "\t(cd $libdir/.tmp && ar x ../$libname && \\\n";
     print FD "\tfor file in *.lo ; do bfile=\`basename \$\$file .lo\` ; \\\n";
     print FD "\t\tmv \$\$file \$\$bfile.o ; done; \\\n";
@@ -1901,12 +1902,12 @@ sub InstallDocs {
     # Each document type is different.  In addition, we want the install
     # to work even if the documents have not been built.
     if ((!$didkind{"html"}) && $globaldockind{"html"}) {
-        print FD "\tif [ ! -d $(htmldir) ] ; then mkdir $(htmldir) ; fi\n";
+        print FD "\tif [ ! -d $(htmldir) ] ; then \$(MKDIR_P) $(htmldir) ; fi\n";
 	print FD "\tif [ -d www/www3 ] ; then \\$newline";
 	print FD "\t\$(INSTALL_DATA) www/www3/* \$(htmldir)/www3/ ; fi$newline";
     }
     if ((!$didkind{"man"}) && $globaldockind{"man"}) {
-        print FD "\tif [ ! -d $(mandir) ] ; then mkdir $(mandir) ; fi\n";
+        print FD "\tif [ ! -d $(mandir) ] ; then \$(MKDIR_P) $(mandir) ; fi\n";
 	print FD "\tif [ -d man/man3 ] ; then \\$newline";
 	print FD "\t\$(INSTALL_DATA) man/man3/* \$(mandir)/man3/ ; fi $newline";
     }
@@ -1941,9 +1942,9 @@ sub TargetInstall {
 	    $checkdir = $required_dirs{$dir};
 	    if ($checkdir ne "" && !defined($dirschecked{$checkdir})) {
 		$dirschecked{$checkdir} = 1;
-		print FD "\tif [ ! -d \${$checkdir} ] ; then mkdir \${$checkdir} ; fi$newline";
+		print FD "\tif [ ! -d \${$checkdir} ] ; then \$(MKDIR_P) \${$checkdir} ; fi$newline";
 	    }
-	    print FD "\tif [ ! -d \${$dir} ] ; then mkdir \${$dir} ; fi$newline";
+	    print FD "\tif [ ! -d \${$dir} ] ; then \$(MKDIR_P) \${$dir} ; fi$newline";
 	    $dirschecked{$dir} = 1;
 	}
 	foreach $file ($install_files{$kind}) {
@@ -1959,7 +1960,7 @@ sub TargetInstall {
     foreach $kind (keys(%optinstall_files)) {
 	$dir = $install_dir{$kind};
 	if (!defined($dirschecked{$dir})) {
-	    print FD "\tif [ ! -d \${$dir} ] ; then mkdir \${$dir} ; fi$newline";
+	    print FD "\tif [ ! -d \${$dir} ] ; then \$(MKDIR_P) \${$dir} ; fi$newline";
 	    $dirschecked{$dir} = 1;
 	}
 	foreach $filelist ($optinstall_files{$kind}) {
@@ -2378,6 +2379,7 @@ sub FindWorkingAutoconf {
 # need either a MKDIR_P command, determined byu configure, or an
 # mkinstalldirs script.  I'd prefer a mkdirp script, used only if mkdir -p
 # did not work, and chosen by configure in that case.
+# This is partially done (MKDIR_P and that is set to mkdir -p)
 # ----------------------------------------------------------------------------
 # Add the clean target for the coverage analyzer
 sub GcovClean {

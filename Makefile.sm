@@ -73,6 +73,7 @@ optinstall_INCLUDE = src/mpi/romio/include/mpiof.h src/mpi/romio/include/mpio.h
 # Some of the subsidiary packages may need to be installed.  This target will
 # invoke their install targets as part of the installation process
 INSTALL_SUBDIRS = src/env src/pm/@pm_name@ @bindings_dirs@
+
 #install_DOC = 
 #install_HTML = 
 #install_MAN = 
