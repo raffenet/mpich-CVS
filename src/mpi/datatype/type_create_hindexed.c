@@ -44,7 +44,11 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_create_hindexed(int count, int array_of_blocklengths[], MPI_Aint array_of_displacements[], MPI_Datatype oldtype, MPI_Datatype *newtype)
+int MPI_Type_create_hindexed(int count,
+			     int array_of_blocklengths[],
+			     MPI_Aint array_of_displacements[],
+			     MPI_Datatype oldtype,
+			     MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_create_hindexed";
     int mpi_errno = MPI_SUCCESS;
@@ -73,6 +77,14 @@ int MPI_Type_create_hindexed(int count, int array_of_blocklengths[], MPI_Aint ar
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HINDEXED);
-    return MPI_SUCCESS;
+    mpi_errno = MPID_Type_indexed(count,
+				  blocklens,
+				  indices,
+				  1, /* displacements in bytes */
+				  old_type,
+				  newtype);
+
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);
+    if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
+    else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }

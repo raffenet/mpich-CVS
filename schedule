@@ -108,19 +108,19 @@ MPI_Type_contiguous,1,1,2,1,Rob,,1,08/16/2002,
 MPI_Type_vector,1,1,2,1,Rob,,1,08/14/2002,
 MPI_Type_hvector,1,1,2,1,Rob,,1,08/15/2002,
 MPI_Type_indexed,1,1,2,1,Rob,,1,10/02/2002,
-MPI_Type_hindexed,1,1,2,1,Rob,MPIR_Type_compute_extent
-MPI_Type_struct,1,1,2,1,Rob,
+MPI_Type_hindexed,1,1,2,1,Rob,10/30/2002,
+MPI_Type_struct,1,1,2,1,Rob,10/30/2002,does not understand padding rules
 MPI_Address,1,1,1,2,Bill,,.1,1/7/02
-MPI_Type_extent,1,1,2,1,Rob,,1,08/15/2002,does not understand padding rules
+MPI_Type_extent,1,1,2,1,Rob,,1,08/15/2002,
 MPI_Type_size,1,1,2,1,Rob,,1,08/15/2002,
 MPI_Type_lb,1,1,2,1,Rob,,1,10/08/2002,
 MPI_Type_ub,1,1,2,1,Rob,,1,10/08/2002,
-MPI_Type_commit,1,1,2,1,Rob,
-MPI_Type_free,1,1,2,1,Rob,
+MPI_Type_commit,1,1,2,1,Rob,needs refcts
+MPI_Type_free,1,1,2,1,Rob,needs refcts
 MPI_Get_elements,
 MPI_Pack,1,1,2,1,Rob,,1,08/16/2002,
 MPI_Unpack,1,1,2,1,Rob,,1,08/16/2002,
-MPI_Pack_size,1,1,2,1,Rob,,1,08/15/2002,does not understand padding rules
+MPI_Pack_size,1,1,2,1,Rob,,1,08/15/2002,
 
 Collective Communication
 
@@ -261,11 +261,11 @@ MPI_Status_c2f,1,1,1,2,Bill,,.01,3/25/02
 MPI_Status_f2c,1,1,1,2,Bill,,.01,3/25/02
 MPI_Type_c2f,1,1,1,2,Bill,,.01,3/25/02
 MPI_Type_create_darray,,,,,,MPIR_Type_compute_extent
-MPI_Type_create_hindexed,,,,,,MPIR_Type_compute_extent
-MPI_Type_create_hvector,,,,,,MPIR_Type_compute_extent
+MPI_Type_create_hindexed,,,,,Rob,10/30/2002
+MPI_Type_create_hvector,,,,,Rob,10/30/2002
 MPI_Type_create_indexed_block,,,,,,MPIR_Type_compute_extent
 MPI_Type_create_resized,,,,,,MPIR_Type_compute_extent
-MPI_Type_create_struct,
+MPI_Type_create_struct,,,,,Rob,,,10/30/2002,
 MPI_Type_create_subarray,,,,,,MPIR_Type_compute_extent
 MPI_Type_f2c,1,1,1,2,Bill,,.01,3/25/02
 MPI_Type_get_extent,1,1,2,1,Rob,,.01,10/09/02

@@ -44,7 +44,11 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_create_struct(int count, int array_of_blocklengths[], MPI_Aint array_of_displacements[], MPI_Datatype array_of_types[], MPI_Datatype *newtype)
+int MPI_Type_create_struct(int count,
+			   int array_of_blocklengths[],
+			   MPI_Aint array_of_displacements[],
+			   MPI_Datatype array_of_types[],
+			   MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_create_struct";
     int mpi_errno = MPI_SUCCESS;
@@ -73,6 +77,13 @@ int MPI_Type_create_struct(int count, int array_of_blocklengths[], MPI_Aint arra
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_STRUCT);
-    return MPI_SUCCESS;
+    mpi_errno = MPID_Type_struct(count,
+				 blocklens,
+				 indices,
+				 old_types,
+				 newtype);
+
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_STRUCT);
+    if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
+    else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }
