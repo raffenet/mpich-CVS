@@ -256,7 +256,7 @@ if test "$with_device" = "mm" ; then with_device="mm:shm,tcp,sock" ; fi
 method_subdirs=`echo $with_device | sed -e 's/mm://' | sed -e 's/,/ /g'`
 if test "$method_subdirs" = "" ; then method_subdirs="shm tcp sock" ; fi
 AC_SUBST(method_subdirs)
-ib_method_yes_no = "no"
+ib_method_yes_no="no"
 for method in $method_subdirs ; do
     if test "$method" = "sock" ; then 
        AC_DEFINE(WITH_METHOD_SOCKET, 1, [socket method enabled])
@@ -279,7 +279,7 @@ for method in $method_subdirs ; do
        echo via rdma method enabled 
     fi
     if test "$method" = "ib" ; then
-       ib_method_yes_no = "yes"
+       ib_method_yes_no="yes"
        AC_DEFINE(WITH_METHOD_IB, 1, [infiniband method enabled])
        CPPFLAGS="$CPPFLAGS -I/usr/local/PSC1200/include -DLINUX -DNORCSID"
        LDFLAGS="$LDFLAGS -L/usr/local/PSC1200/lib -Xlinker -t"
@@ -341,5 +341,6 @@ AC_OUTPUT(Makefile \
  src/shm/Makefile \
  src/viardma/Makefile \
  src/packer/Makefile \
- src/unpacker/Makefile
+ src/unpacker/Makefile \
+, chmod a+x setup_device \
 )
