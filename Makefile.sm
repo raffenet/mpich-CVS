@@ -19,8 +19,9 @@ VERSION = 0.1
 dist:
 	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi
 #	if [ ! -d tmpdir/${PACKAGE}-${VERSION} ] ; then mkdir tmpdir/${PACKAGE}-${VERSION} ; fi
-	(cd tmpdir && cvs -d /home/MPI/cvsMaster export -D now mpich2full )
+	(cd tmpdir && cvs -d /home/MPI/cvsMaster export -D now mpich2all )
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-${VERSION}
+	(cd tmpdir/${PACKAGE}-${VERSION} && maint/updatefiles )
 	(cd tmpdir/${PACKAGE}-${VERSION} && maint/updatefiles -distrib )
 	(cd tmpdir && tar cf ${PACKAGE}-${VERSION}.tar ${PACKAGE}-${VERSION} )
 	mv tmpdir/${PACKAGE}-${VERSION}.tar .
