@@ -316,11 +316,14 @@ char *byteinfo;
 int  d1;
 {
     int  err;
-    if ( d1 > 0 )
+    if ( d1 <= 0 )
+        err = MPE_Log_event( *event, *data, NULL );
+    else if ( d1 == 1 && strncmp( byteinfo, " ", 1 ) == 0 ) /* single blank */
+        err = MPE_Log_event( *event, *data, NULL );
+    else  /* if ( d1 > 1 || non single blank string ) */ {
         /* mpe_tmp_cpy uses strncpy() which cannot be used on byteinfo */
         err = MPE_Log_event( *event, *data, byteinfo );
-    else
-        err = MPE_Log_event( *event, *data, NULL );
+    }
     return err;
 }
 #endif

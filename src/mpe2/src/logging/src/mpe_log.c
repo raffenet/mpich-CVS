@@ -489,7 +489,8 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
               (not used, provided for backward compatibility purpose)
 -   bytebuf - optional byte informational array.  In C, bytebuf should be
               set to NULL when no extra byte informational data.  In Fortran,
-              an zero-length string, i.e. "", is equivalent to NULL in C.
+              an zero-length string "", or a single blank string " ",
+              is equivalent to NULL in C.
 
     Returns:
     alway returns MPE_LOG_OK
