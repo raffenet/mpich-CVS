@@ -166,8 +166,22 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
     elmp->curblock    = elmp->orig_block;
     /* DLOOP_Stackelm_offset assumes correct orig_count, curcount, loop_p */
     elmp->curoffset   = /* elmp->orig_offset + */ DLOOP_Stackelm_offset(elmp);
-    
-    dlp = dlp->loop_params.cm_t.dataloop;
+
+    /* get pointer to next dataloop */
+    switch (dlp->kind & DLOOP_KIND_MASK) {
+	case DLOOP_KIND_CONTIG:
+	case DLOOP_KIND_VECTOR:
+	case DLOOP_KIND_BLOCKINDEXED:
+	case DLOOP_KIND_INDEXED:
+	    dlp = dlp->loop_params.cm_t.dataloop;
+	    break;
+	case DLOOP_KIND_STRUCT:
+	    dlp = dlp->loop_params.s_t.dataloop_array[0];
+	    break;
+	default:
+	    assert(0);
+	    break;
+    }
 
     for (i=1; i < depth; i++) {
 	/* loop_p, orig_count, orig_block, and curcount are all filled by us now.
@@ -181,7 +195,21 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	if (i < depth-1) {
 	    assert (!(dlp->kind & DLOOP_FINAL_MASK));
 
-	    dlp = dlp->loop_params.cm_t.dataloop;
+	    switch (dlp->kind & DLOOP_KIND_MASK) {
+		case DLOOP_KIND_CONTIG:
+		case DLOOP_KIND_VECTOR:
+		case DLOOP_KIND_BLOCKINDEXED:
+		case DLOOP_KIND_INDEXED:
+		    dlp = dlp->loop_params.cm_t.dataloop;
+		    break;
+		case DLOOP_KIND_STRUCT:
+		    dlp = dlp->loop_params.s_t.dataloop_array[0];
+		    break;
+		default:
+		    assert(0);
+		    break;
+	    }
+
 	}
 	else assert(dlp->kind & DLOOP_FINAL_MASK);
     }
@@ -660,11 +688,32 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    DLOOP_Dataloop_stackelm *next_elmp;
 	    int count_index, block_index;
 
-	    /* assuming that stack has been preloaded here. */
-	    next_elmp   = &(segp->stackelm[cur_sp + 1]);
-
 	    count_index = cur_elmp->orig_count - cur_elmp->curcount;
 	    block_index = cur_elmp->orig_block - cur_elmp->curblock;
+
+	    /* reload the next stackelm if necessary */
+	    next_elmp = &(segp->stackelm[cur_sp + 1]);
+	    if (cur_elmp->may_require_reloading) {
+		DLOOP_Dataloop *load_dlp;
+		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
+		    case DLOOP_KIND_CONTIG:
+		    case DLOOP_KIND_VECTOR:
+		    case DLOOP_KIND_BLOCKINDEXED:
+		    case DLOOP_KIND_INDEXED:
+			load_dlp = cur_elmp->loop_p->loop_params.cm_t.dataloop;
+			break;
+		    case DLOOP_KIND_STRUCT:
+			load_dlp = cur_elmp->loop_p->loop_params.s_t.dataloop_array[count_index];
+			break;
+		    default:
+			assert(0);
+			break;
+		}
+
+		DLOOP_Stackelm_load(next_elmp,
+				    load_dlp,
+				    1);
+	    }
 
 #ifdef DEBUG_DLOOP_MANIPULATE
 	    DLOOP_dbg_printf("\tpushing type, elmp=%x [%d], count=%d, block=%d\n",
