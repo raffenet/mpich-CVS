@@ -1073,3 +1073,38 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
     return SMPD_SUCCESS;
 #endif
 }
+
+int smpd_kill_all_processes(void)
+{
+    smpd_process_t *iter;
+
+    smpd_enter_fn("smpd_kill_all_processes");
+
+    iter = smpd_process.process_list;
+    while (iter)
+    {
+#ifdef HAVE_WINDOWS_H
+	TerminateProcess(iter->wait, 8676);
+#else
+	kill(iter->wait, SIGKILL);
+#endif
+	iter = iter->next;
+    }
+
+    smpd_exit_fn("smpd_kill_all_processes");
+    return SMPD_SUCCESS;
+}
+
+int smpd_exit(int exitcode)
+{
+    smpd_enter_fn("smpd_exit");
+    smpd_kill_all_processes();
+#ifdef HAVE_WINDOWS_H
+    /* This is necessary because exit() can deadlock flushing file buffers while the stdin thread is running */
+    ExitProcess(exitcode);
+#else
+    exit(exitcode);
+#endif
+    smpd_exit_fn("smpd_exit");
+    return SMPD_SUCCESS;
+}
