@@ -23,8 +23,6 @@ int MPID_Startall(int count, MPID_Request * requests[])
     {
 	MPID_Request * const preq = requests[i];
 
-	MPIR_Status_set_empty(preq->status);
-
 	switch (MPIDI_Request_get_persistent_type(preq))
 	{
 	    case MPIDI_REQUEST_PERSISTENT_RECV:
@@ -74,6 +72,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	
 	if (rc == MPI_SUCCESS)
 	{
+	    preq->status.MPI_ERROR = MPI_SUCCESS;
 	    preq->cc_ptr = &preq->partner_request->cc;
 	}
 	else
@@ -83,7 +82,10 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	       error code in the persistent request.  The wait and test
 	       routines will look at the error code in the persistent request
 	       if a partner request is not found. */
+	    preq->partner_request = NULL;
 	    preq->status.MPI_ERROR = rc;
+	    preq->cc_ptr = &preq->cc;
+	    preq->cc = 0;
 	}
     }
 
