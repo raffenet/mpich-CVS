@@ -186,7 +186,6 @@ sub StripComments {
 	}
 	else {
 	    # Keep collecting until we find the end of the comment
-	    $curline .= <$FD>;
 	    if (eof($FD)) {
 		print STDERR "Unterminated comment found$errsrc!\n";
 		my $line = $curline;
@@ -194,6 +193,7 @@ sub StripComments {
 		print STDERR "Comment begins with $line\n";
 		return $curline;
 	    }
+	    $curline .= <$FD>;
 	}
     }
     return $curline;

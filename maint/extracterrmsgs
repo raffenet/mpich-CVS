@@ -35,6 +35,7 @@ sub ProcessFile {
 
     while (<FD>) {
 	# First, remove any comments
+	$errsrc = " in $filename";
 	$_ = StripComments( FD, $_ );
 	# Skip the definition of the function
 	if (/int\s*MPIR_Err_create_code/) { next; }
