@@ -1916,6 +1916,8 @@ fi
 AC_SUBST(DOCTEXT)
 AC_SUBST(DOCTEXTSTYLE)
 
+dnl We can configure the test directory after the rest of the configure 
+dnl steps because it does not depend on them.
 AC_CONFIG_SUBDIRS(test/mpi)
 dnl
 dnl Generate the Makefiles from Makefile.in
