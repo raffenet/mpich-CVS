@@ -648,6 +648,77 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 #endif
 }
 
+int smpd_get_all_smpd_data(smpd_data_t **data)
+{
+#ifdef HAVE_WINDOWS_H
+    HKEY tkey;
+    DWORD result;
+    LONG enum_result;
+    char name[SMPD_MAX_NAME_LENGTH], value[SMPD_MAX_VALUE_LENGTH];
+    DWORD name_length, value_length, index;
+    smpd_data_t *list, *item;
+
+    smpd_enter_fn("smpd_get_all_smpd_data");
+
+    if (data == NULL)
+    {
+	smpd_exit_fn("smpd_get_all_smpd_data");
+	return SMPD_FAIL;
+    }
+
+    result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY,
+	0, 
+	KEY_READ,
+	&tkey);
+    if (result != ERROR_SUCCESS)
+    {
+	/* No key therefore no settings */
+	*data = NULL;
+	smpd_exit_fn("smpd_get_all_smpd_data");
+	return SMPD_SUCCESS;
+    }
+
+    list = NULL;
+    index = 0;
+    name_length = SMPD_MAX_NAME_LENGTH;
+    value_length = SMPD_MAX_VALUE_LENGTH;
+    enum_result = RegEnumValue(tkey, index, name, &name_length, NULL, NULL, value, &value_length);
+    while (enum_result == ERROR_SUCCESS)
+    {
+	item = (smpd_data_t*)malloc(sizeof(smpd_data_t));
+	if (item == NULL)
+	{
+	    *data = NULL;
+	    RegCloseKey(tkey);
+	    smpd_exit_fn("smpd_get_all_smpd_data");
+	    return SMPD_FAIL;
+	}
+	memcpy(item->name, name, SMPD_MAX_NAME_LENGTH);
+	memcpy(item->value, value, SMPD_MAX_VALUE_LENGTH);
+	item->next = list;
+	list = item;
+	index++;
+	name_length = SMPD_MAX_NAME_LENGTH;
+	value_length = SMPD_MAX_VALUE_LENGTH;
+	enum_result = RegEnumValue(tkey, index, name, &name_length, NULL, NULL, value, &value_length);
+    }
+    RegCloseKey(tkey);
+    *data = list;
+    smpd_exit_fn("smpd_get_all_smpd_data");
+    return SMPD_SUCCESS;
+#else
+    smpd_enter_fn("smpd_get_all_smpd_data");
+    if (data == NULL)
+    {
+	smpd_exit_fn("smpd_get_all_smpd_data");
+	return SMPD_FAIL;
+    }
+    *data = NULL;
+    smpd_exit_fn("smpd_get_all_smpd_data");
+    return SMPD_FAIL;
+#endif
+}
+
 int smpd_lock_smpd_data(void)
 {
     smpd_enter_fn("smpd_lock_smpd_data");
