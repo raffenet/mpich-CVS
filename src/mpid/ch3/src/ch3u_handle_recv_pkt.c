@@ -78,36 +78,60 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * upkt)
 	
 	case MPIDI_CH3_PKT_RNDV_REQ_TO_SEND:
 	{
+	    MPIDI_dbg_printf(30, FCNAME, "received rendezvous RTS packet");
+	    MPIDI_dbg_printf(30, FCNAME, "UMIMPLEMENTED");
+	    abort();
 	    break;
 	}
 	
 	case MPIDI_CH3_PKT_RNDV_CLR_TO_SEND:
 	{
+	    MPIDI_dbg_printf(30, FCNAME, "received rendezvous CTS packet");
+	    MPIDI_dbg_printf(30, FCNAME, "UMIMPLEMENTED");
+	    abort();
 	    break;
 	}
 	
 	case MPIDI_CH3_PKT_RNDV_SEND:
 	{
+	    MPIDI_dbg_printf(30, FCNAME, "received rendezvous send packet");
+	    MPIDI_dbg_printf(30, FCNAME, "UMIMPLEMENTED");
+	    abort();
 	    break;
 	}
 	
 	case MPIDI_CH3_PKT_CANCEL_SEND_REQ:
 	{
+	    MPIDI_dbg_printf(30, FCNAME,
+			     "received cancel send request packet");
+	    MPIDI_dbg_printf(30, FCNAME, "UMIMPLEMENTED");
+	    abort();
 	    break;
 	}
 	
 	case MPIDI_CH3_PKT_CANCEL_SEND_RESP:
 	{
+	    MPIDI_dbg_printf(30, FCNAME,
+			     "received cancel send response packet");
+	    MPIDI_dbg_printf(30, FCNAME, "UMIMPLEMENTED");
+	    abort();
 	    break;
 	}
 	
 	case MPIDI_CH3_PKT_PUT:
 	{
+	    MPIDI_dbg_printf(30, FCNAME, "received put packet");
+	    MPIDI_dbg_printf(30, FCNAME, "UMIMPLEMENTED");
+	    abort();
 	    break;
 	}
 	
 	case MPIDI_CH3_PKT_FLOW_CNTL_UPDATE:
 	{
+	    MPIDI_dbg_printf(30, FCNAME,
+			     "received flow control update packet");
+	    MPIDI_dbg_printf(30, FCNAME, "UMIMPLEMENTED");
+	    abort();
 	    break;
 	}
 	
