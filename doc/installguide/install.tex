@@ -1,0 +1,82 @@
+\documentclass[dvipdfm,11pt]{article}
+\usepackage[dvipdfm]{hyperref} % Upgraded url package
+\usepackage{../mpiman}   % Definitions for this particular version of the
+                         % manual
+
+\usepackage{tpage}
+
+\begin{document}
+\markright{MPICH2 Installer's Manual}
+\ANLTMTitle{MPICH2 Installer's Manual\\
+Version 0.1\\
+Draft of \today}{\em 
+William Gropp\\
+Ewing Lusk\\
+David Ashton\\
+Rob Ross\\
+Rajeev Thakur\\
+Brian Toonen\\
+Mathematics and Computer Science Division\\
+Argonne National Laboratory}{00}{\today}
+
+\cleardoublepage
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+
+\pagenumbering{arabic}
+\pagestyle{headings}
+\begin{document}
+
+Here is a basic outline for the document
+
+0. Quick start with ``best practices''.  Each step has a reference to
+more detailed information later in the document.
+
+1. Acquiring and unpacking.  Using a ``fast'' directory location and
+   VPATH
+
+1a. Reporting problems
+
+2. Choosing a device (defer a detailed discussion of each until later)
+
+3. configure, make, and install.  Always use --prefix 
+
+show only basic options for configure
+
+   3a. Optional include of device-specific information
+
+   3b. Optional include of pm-specific information
+ 
+   3c. Optional ``fast'' version
+
+   3d. Shared libraries
+
+4. Testing and benchmarking
+
+4a. make testing
+
+4b. Getting, building, and using mpptest and netpipe
+
+5. Special options
+
+6. Troubleshooting
+
+Appendix:
+
+A. Summary of configure options (particularly the enable and with options)
+
+\end{document}
+
+%
+% Comments on subclassing the document
+% We can use \ifdevname ... \fi and \ifpmname ... \fi, as in
+% \ifdevchiii .. \fi and \ifpmmpd ... \fi
+% (these will still need to be defined)
+% There should also be a way to select ``all'' in such a way that the
+% document can still flow well, such as
+% \ifdevall ... \else \ifdevchiii \else \ifdevmm \fi \fi \fi
+
+
+
