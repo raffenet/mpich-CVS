@@ -45,19 +45,19 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_14EDFEC445E84BFB85D0F259C13BDDB0"
+        "MsmKey" = "8:_10E884F8070A41D58D1E958979592989"
         "OwnerKey" = "8:_55B5CAEEC65B41548EFC545A48218F87"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_14EDFEC445E84BFB85D0F259C13BDDB0"
+        "MsmKey" = "8:_10E884F8070A41D58D1E958979592989"
         "OwnerKey" = "8:_AD63A10BAE3B42AE9BA9DDBE274523EE"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_14EDFEC445E84BFB85D0F259C13BDDB0"
+        "MsmKey" = "8:_10E884F8070A41D58D1E958979592989"
         "OwnerKey" = "8:_9456918885EA443184468C81D254F3F3"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -184,6 +184,12 @@
         "Entry"
         {
         "MsmKey" = "8:_4B0EC5EEB96E4CDC9830749FBE80BC5C"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_4E24D94FA816421EB7C8570369A0AC6D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1136,6 +1142,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_4E24D94FA816421EB7C8570369A0AC6D"
+            {
+            "SourcePath" = "8:..\\src\\pm\\smpd\\wmpiexec\\jumpshot.ico"
+            "TargetName" = "8:jumpshot.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_3E78E778239C46D6AEB696355EB2F1DE"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_50625EB256D147A880EC8EEFE0547A4A"
             {
             "SourcePath" = "8:..\\lib\\mpich2mpid.dll"
@@ -1200,7 +1226,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:wmpiexec, Version=1.0.1798.6781, Culture=neutral"
+            "AssemblyAsmDisplayName" = "8:wmpiexec, Version=1.0.1798.27453, Culture=neutral"
                 "ScatterAssemblies"
                 {
                     "_55B5CAEEC65B41548EFC545A48218F87"
@@ -1451,7 +1477,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:wmpiregister, Version=1.0.1798.6783, Culture=neutral"
+            "AssemblyAsmDisplayName" = "8:wmpiregister, Version=1.0.1798.27220, Culture=neutral"
                 "ScatterAssemblies"
                 {
                     "_9456918885EA443184468C81D254F3F3"
@@ -1702,7 +1728,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:wmpiconfig, Version=1.0.1798.6783, Culture=neutral"
+            "AssemblyAsmDisplayName" = "8:wmpiconfig, Version=1.0.1798.27220, Culture=neutral"
                 "ScatterAssemblies"
                 {
                     "_AD63A10BAE3B42AE9BA9DDBE274523EE"
@@ -2573,7 +2599,7 @@
             "Target" = "8:_96BC19B655FF4EE7BDBDE1B8314A44FD"
             "Folder" = "8:_A197F3C53A7E44ADAE8C8687CB0A39FD"
             "WorkingFolder" = "8:_09BC5ABDFA834ABD9D1000DD1EDD4212"
-            "Icon" = "8:"
+            "Icon" = "8:_4E24D94FA816421EB7C8570369A0AC6D"
             "Feature" = "8:"
             }
             "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_45C281086CBD483981D418D5847B7F1C"
@@ -3472,7 +3498,7 @@
         }
         "MergeModule"
         {
-            "{35A69C6E-5BA4-440D-803D-762B59A45393}:_14EDFEC445E84BFB85D0F259C13BDDB0"
+            "{35A69C6E-5BA4-440D-803D-762B59A45393}:_10E884F8070A41D58D1E958979592989"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
