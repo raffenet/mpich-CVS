@@ -174,11 +174,20 @@ void MPID_Datatype_free( MPID_Datatype *datatype )
       store-conditional  r2 to refcount-address
       if failed branch to try-again:
 .ve
-   on RISC architectures).  
+   on RISC architectures or
+.vb
+   lock
+   inc                   refcount-address (for up) or
+   lock
+   dec                   refcount-address (for down).
+.ve
+   on IA32; "lock" is a special opcode prefix that forces atomicity.  This 
+   is not a separate instruction; however, the GNU assembler expects opcode
+   prefixes on a separate line).
 
    Once the reference count is decremented to zero, it is an error to 
-   change it.  A correct MPI program will never do that, but an incorrect, 
-   (particularly a multithreaded program with a race condition), might.  
+   change it.  A correct MPI program will never do that, but an incorrect one 
+   (particularly a multithreaded program with a race condition) might.  
    
    The following code is `invalid`\:
 .vb

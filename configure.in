@@ -214,6 +214,21 @@ else
     AC_DEFINE(HAVE_INT32_T,,[Define if int32_t is supported by the C compiler])
 fi
 dnl
+dnl Get the size of the C types for encoding in the basic datatypes
+AC_CHECK_SIZEOF(short,CROSS_SIZEOF_SHORT)
+AC_CHECK_SIZEOF(int,CROSS_SIZEOF_SHORT)
+AC_CHECK_SIZEOF(long,CROSS_SIZEOF_LONG)
+AC_CHECK_SIZEOF(long long,CROSS_SIZEOF_LONG_LONG)
+AC_CHECK_SIZEOF(float,CROSS_SIZEOF_FLOAT)
+AC_CHECK_SIZEOF(double,CROSS_SIZEOF_DOUBLE)
+AC_CHECK_SIZEOF(long double,CROSS_SIZEOF_LONG_DOUBLE)
+AC_CHECK_SIZEOF(wchar_t,CROSS_SIZEOF_WCHAR_T)
+dnl
+dnl Still to do: create values for #define MPI_DOUBLE etc.
+dnl These will be of the form #define MPI_DOUBLE 0x5080002,
+dnl where this is CONSTRUCT_BUILTIN | MPID_DATATYPE | sizeof==8 | full object
+dnl is at index 2.
+dnl
 dnl check for library functions
 if test -n "$thread_type" ; then
     case $thread_type in 

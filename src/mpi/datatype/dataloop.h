@@ -18,8 +18,8 @@
   Datatype
   S*/
 typedef struct {
-    int count;
-    struct dataloop_ *datatype;
+    int     count;
+    struct MPID_Dataloop_st *datatype;
 } MPID_Datatype_contig;
 
 /*S
@@ -35,10 +35,10 @@ typedef struct {
   Datatype
   S*/
 typedef struct { 
-    int count;
-    struct dataloop_ *datatype;
-    int blocksize;
-    int stride;
+    int     count;
+    struct MPID_Dataloop_st *datatype;
+    int     blocksize;
+    int     stride;
 } MPID_Datatype_vector;
 
 /*S
@@ -55,9 +55,9 @@ typedef struct {
 
   S*/
 typedef struct {
-    int count;
-    struct dataloop_ *datatype;
-    int blocksize;
+    int      count;
+    struct MPID_Dataloop_st *datatype;
+    int      blocksize;
     MPI_Aint *offset;
 } MPID_Datatype_blockindexed;
 
@@ -75,9 +75,9 @@ typedef struct {
 
   S*/
 typedef struct {
-    int count;
-    struct dataloop_ *datatype;
-    int *blocksize;
+    int      count;
+    struct MPID_Dataloop_st *datatype;
+    int      *blocksize;
     MPI_Aint *offset;
 } MPID_Datatype_indexed;
 
@@ -95,10 +95,10 @@ typedef struct {
 
   S*/
 typedef struct {
-    int count;
-    struct dataloop_ *datatype;
-    int *blocksize;
-    int *offset;
+    int      count;
+    struct MPID_Dataloop_st *datatype;
+    int      *blocksize;
+    MPI_Aint *offset;
 } MPID_Datatype_struct;
 
 /* In many cases, we need the count and the next dataloop item. This
@@ -108,8 +108,8 @@ typedef struct {
    sizeof(pointer)>sizeof(int) ? 
 */
 typedef struct {
-    int count;
-    struct dataloop_ *datatype;
+    int      count;
+    struct MPID_Dataloop_st *datatype;
 } MPID_Datatype_common;
 
 /*S
@@ -117,9 +117,20 @@ typedef struct {
   description
 
   Fields:
-+  kind - Indicates what type of datatype.  May have the value
-  'MPID_Contig', 'MPID_Vector', 'MPID_BlockIndexed', 'MPID_Indexed', or
-  'MPID_Struct'.  
++  kind - Describes the type of the dataloop.  This is divided into three
+   separate bit fields\:
+.vb
+     Dataloop type (e.g., MPID_CONTIG etc.).  3 bits
+     IsFinal (a "leaf" dataloop; see text) 1 bit
+     Element Size (units for fields.) 2 bits
+        Element size has 4 values
+        0   - Elements are in units of bytes
+        1   - Elements are in units of 2 bytes
+        2   - Elements are in units of 4 bytes
+        3   - Elements are in units of 8 bytes
+.ve
+  The dataloop type is one of 'MPID_CONTIG', 'MPID_VECTOR', 
+  'MPID_BLOCKINDEXED', 'MPID_INDEXED', or 'MPID_STRUCT'.  
 . loop_parms - A union containing the 5 datatype structures, e.g., 
   'MPID_Datatype_contig', 'MPID_Datatype_vector', etc.  A sixth element in
   this union, 'count', allows quick access to the shared 'count' field in the
