@@ -45,7 +45,12 @@ for dir in $1 ; do
     IFS="$saveIFS"
 done
 dnl autoconf 2.52 uses _ before *some* internal commands (!)
+dnl output_subdirs *ALSO* resets INSTALL.  It *also* requires that 
+dnl ac_given_INSTALL be set to INSTALL
+SAVE_INSTALL="$INSTALL"
+ac_given_INSTALL="$INSTALL"
 ifdef([AC_OUTPUT_SUBDIRS],[AC_OUTPUT_SUBDIRS($1)],[_AC_OUTPUT_SUBDIRS($1)])
 subdirs="$SAVE_subdirs"
+INSTALL="$SAVE_INSTALL"
 ])
 
