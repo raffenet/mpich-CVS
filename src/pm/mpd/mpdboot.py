@@ -113,15 +113,15 @@ def usage():
     print '  --help --file=<hostsfile> --rsh=<rshcmd> --user=<user> --mpd=<mpdcmd> --totalnum=<n_to_start> --loccons --remcons --shell'
     print """
 mpdboot starts one mpd locally and (n_to_start - 1) others as computed from
-the -n (--totalnum) option; at least the one local mpd will be started by default;
-the machines to use are specified by the --file option (default is mpd.hosts).
-You may find it useful to specify the full pathname of mpd on remote hosts (-r) if
-they are not in your path.
-The --loccons and --remcons options indicate that you do NOT want a console available
-on local and remote mpds, respectively.
-The -s option allows you to indicate that Bourne shell is your default shell for rsh.
-The -1 option indicates that you want to start only 1 mpd on the local machine even
-if it appears multiple times in the hosts file.
+the -n (--totalnum) option; at least the one local mpd will be started by
+default;  the machines to use are specified by the --file option (default
+is mpd.hosts).  You may find it useful to specify the full pathname of mpd
+on remote hosts (-r) if it is not in your path on the remote machines.
+The --loccons and --remcons options indicate that you do NOT want a console
+available on local and remote mpds, respectively.
+The -s option allows you to indicate that Bourne shell is your default shell
+for rsh.  The -1 option indicates that you want to start only 1 mpd on the
+local machine even if it appears in the hosts file.
 """
     exit(-1)
     

@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
         if (rc < 0)
         {
             printf("cannot connect to mpd at: %s\n", console_name);
+	    printf("probably cause:  no mpd daemon on this machine\n");
             exit(-1);
         }
     }
