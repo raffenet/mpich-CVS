@@ -19,6 +19,12 @@ static int verbose = 0;         /* Message level (0 is none) */
 /* 
  * Initialize and Finalize MTest
  */
+
+/* 
+   Initialize MTest, initializing MPI if necessary.  Also sets debug
+   and verbose output flags from the environment variables MPITEST_DEBUG
+   and MPITEST_VERBOSE .
+*/
 void MTest_Init( int *argc, char ***argv )
 {
     int flag;
@@ -56,6 +62,12 @@ void MTest_Init( int *argc, char ***argv )
     }
 }
 
+/*
+  Finalize MTest.  errs is the number of errors on the calling process; 
+  this routine will write the total number of errors over all of MPI_COMM_WORLD
+  to the process with rank zero, or " No Errors".
+  It does *not* finalize MPI.
+ */
 void MTest_Finalize( int errs )
 {
     int rank, toterrs;
@@ -354,28 +366,39 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
     return datatype_index;
 }
 
+/* Reset the datatype index (start from the initial data type.
+   Note: This routine is rarely needed; MTestGetDatatypes automatically
+   starts over after the last available datatype is used.
+*/
 void MTestResetDatatypes( void )
 {
     datatype_index = 0;
 }
+/* Return the index of the current datatype.  This is rarely needed and
+   is provided mostly to enable debugging of the MTest package itself */
 int MTestGetDatatypeIndex( void )
 {
     return datatype_index;
 }
 
+/* Free the storage associated with a datatype */
 void MTestFreeDatatype( MTestDatatype *mtype )
 {
+    /* Invoke a datatype-specific free function to handle
+       both the datatype and the send/receive buffers */
     if (mtype->FreeBuf) {
 	(mtype->FreeBuf)( mtype );
     }
 }
 
+/* Check that a message was received correctly.  Returns the number of
+   errors detected.  Status may be NULL or MPI_STATUS_IGNORE */
 int MTestCheckRecv( MPI_Status *status, MTestDatatype *recvtype )
 {
     int count;
     int errs = 0;
 
-    if (status) {
+    if (status && status != MPI_STATUS_IGNORE) {
 	MPI_Get_count( status, recvtype->datatype, &count );
 	
 	/* Check count against expected count */
@@ -417,6 +440,12 @@ static int intraCommIdx = 0;
 static const char *intraCommName = 0;
 static const char *interCommName = 0;
 
+/* 
+ * Get an intracommunicator with at least min_size members.  If "allowSmaller"
+ * is true, allow the communicator to be smaller than MPI_COMM_WORLD and
+ * for this routine to return MPI_COMM_NULL for some values.  Returns 0 if
+ * no more communicators are available.
+ */
 int MTestGetIntracommGeneral( MPI_Comm *comm, int min_size, int allowSmaller )
 {
     int size, rank;
@@ -511,11 +540,15 @@ int MTestGetIntracommGeneral( MPI_Comm *comm, int min_size, int allowSmaller )
     return intraCommIdx;
 }
 
+/* 
+ * Get an intracommunicator with at least min_size members.
+ */
 int MTestGetIntracomm( MPI_Comm *comm, int min_size ) 
 {
     return MTestGetIntracommGeneral( comm, min_size, 0 );
 }
 
+/* Return the name of an intra communicator */
 const char *MTestGetIntracommName( void )
 {
     return intraCommName;
@@ -638,11 +671,14 @@ int MTestGetIntercomm( MPI_Comm *comm, int *isLeftGroup, int min_size )
     interCommIdx++;
     return interCommIdx;
 }
+/* Return the name of an intercommunicator */
 const char *MTestGetIntercommName( void )
 {
     return interCommName;
 }
 
+/* Get a communicator of a given minimum size.  Both intra and inter 
+   communicators are provided */
 int MTestGetComm( MPI_Comm *comm, int min_size )
 {
     int idx=0;
@@ -665,6 +701,8 @@ int MTestGetComm( MPI_Comm *comm, int min_size )
     return idx;
 }
 
+/* Free a communicator.  It may be called with a predefined communicator
+ or MPI_COMM_NULL */
 void MTestFreeComm( MPI_Comm *comm )
 {
     if (*comm != MPI_COMM_WORLD &&
@@ -683,6 +721,7 @@ void MTestPrintError( int errcode )
     MPI_Error_class( errcode, &errclass );
     MPI_Error_string( errcode, string, &slen );
     printf( "Error class %d (%s)\n", errclass, string );
+    fflush( stdout );
 }
 void MTestPrintErrorMsg( const char msg[], int errcode )
 {
@@ -755,6 +794,7 @@ int MTestGetWin( MPI_Win *win, int mustBePassive )
     win_index++;
     return win_index;
 }
+/* Return a pointer to the name associated with a window object */
 const char *MTestGetWinName( void )
 {
     
