@@ -60,7 +60,7 @@ D*/
 MPIDU_Sock_op_t - enumeration of posted operations that can be completed by the Sock module
 
 Notes:
-MPIDU_SOCK_OP_ACCEPT is different that the other operations.  When returned by MPIDU_Sock_wait(), oaperations other than
+MPIDU_SOCK_OP_ACCEPT is different that the other operations.  When returned by MPIDU_Sock_wait(), operations other than
 MPIDU_SOCK_OP_ACCEPT mark the completion of a previously posted operation.  MPIDU_SOCK_OP_ACCEPT indicates that a new connection is
 being formed and that MPIDU_Sock_accept() should be called.
 
@@ -1047,42 +1047,6 @@ Utility-Sock
 @*/
 int MPIDU_Sock_get_error_class_string(int error, char *error_string, int length);
 
-/*@
-MPIDU_Sock_describe_timer_states - registers the RLOG states exported by Sock
-
-Return value: a MPI error code with a Sock extended error class
-
-Module:
-Utility-Sock
-@*/
-int MPIDU_Sock_describe_timer_states(void);
-
 CPLUSPLUS_END
-
-
-#define MPIDU_SOCK_STATE_LIST \
-MPID_STATE_MPIDU_SOCK_INIT, \
-MPID_STATE_MPIDU_SOCK_FINALIZE, \
-MPID_STATE_MPIDU_SOCK_CREATE_SET, \
-MPID_STATE_MPIDU_SOCK_DESTROY_SET, \
-MPID_STATE_MPIDU_SOCK_NATIVE_TO_SOCK, \
-MPID_STATE_MPIDU_SOCK_LISTEN, \
-MPID_STATE_MPIDU_SOCK_ACCEPT, \
-MPID_STATE_MPIDU_SOCK_POST_CONNECT, \
-MPID_STATE_MPIDU_SOCK_POST_CLOSE, \
-MPID_STATE_MPIDU_SOCK_SET_USER_PTR, \
-MPID_STATE_MPIDU_SOCK_POST_READ, \
-MPID_STATE_MPIDU_SOCK_POST_READV, \
-MPID_STATE_MPIDU_SOCK_POST_WRITE, \
-MPID_STATE_MPIDU_SOCK_POST_WRITEV, \
-MPID_STATE_MPIDU_SOCK_WAIT, \
-MPID_STATE_MPIDU_SOCK_WAKEUP, \
-MPID_STATE_MPIDU_SOCK_READ, \
-MPID_STATE_MPIDU_SOCK_READV, \
-MPID_STATE_MPIDU_SOCK_WRITE, \
-MPID_STATE_MPIDU_SOCK_WRITEV, \
-MPID_STATE_MPIDU_SOCK_GET_SOCK_ID, \
-MPID_STATE_MPIDU_SOCK_GET_SOCK_SET_ID, \
-MPIDU_SOCKI_STATE_LIST
 
 #endif /* !defined(MPIDU_SOCK_H_INCLUDED) */
