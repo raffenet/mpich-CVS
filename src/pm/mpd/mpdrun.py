@@ -78,7 +78,8 @@ def mpdrun():
 	if delArgsFile:
 	    unlink(argsFilename)
         parsedArgs = parseString(args)
-        if parsedArgs.doctype.name != 'PMRequests':
+        ## if parsedArgs.doctype.name != 'PMRequests':
+        if parsedArgs.documentElement.tagName != 'PMRequests':
             print 'expecting PMRequests; got unrecognized doctype %s' 
             exit(-1)
         createReq = parsedArgs.getElementsByTagName('create-process-group')[0]
