@@ -881,28 +881,6 @@ else
     ifelse([$2],,:,[$2])
 fi
 ])
-
-#
-# This is a replacement that checks that FAILURES are signaled as well
-# (later configure macros look for the .o file, not just success from the
-# compiler, but they should not HAVE to
-#
-dnl --- insert 2.52 compatibility here ---
-dnl 2.52 does not have AC_PROG_CC_WORKS
-dnl ifdef([AC_PROG_CC_WORKS],,[AC_DEFUN([AC_PROG_CC_WORKS],)])
-dnl
-AC_DEFUN([PAC_PROG_CC_WORKS],
-[AC_PROG_CC_WORKS
-AC_MSG_CHECKING([whether the C compiler sets its return status correctly])
-AC_LANG_SAVE
-AC_LANG_C
-AC_TRY_COMPILE(,[int a = bzzzt;],notbroken=no,notbroken=yes)
-AC_MSG_RESULT($notbroken)
-if test "$notbroken" = "no" ; then
-    AC_MSG_ERROR([installation or configuration problem: C compiler does not
-correctly set error code when a fatal error occurs])
-fi
-])
 dnl
 dnl/*D
 dnl PAC_FUNC_CRYPT - Check that the function crypt is defined
