@@ -17,26 +17,32 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
 		   MPID_Request ** request)
 {
     MPID_Request * rreq;
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_RECV_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_RECV_INIT);
     
     rreq = MPIDI_CH3_Request_create();
-    if (rreq != NULL)
+    if (rreq == NULL)
     {
-	rreq->ref_count = 1;
-	rreq->kind = MPID_PREQUEST_RECV;
-	rreq->comm = comm;
-	rreq->ch3.match.rank = rank;
-	rreq->ch3.match.tag = tag;
-	rreq->ch3.match.context_id = comm->context_id + context_offset;
-	rreq->ch3.user_buf = (void *) buf;
-	rreq->ch3.user_count = count;
-	rreq->ch3.datatype = datatype;
-	MPIDI_Request_set_type(rreq, MPIDI_REQUEST_TYPE_RECV);
-	
-	*request = rreq;
-	
-	return MPI_SUCCESS;
+	goto fn_exit;
     }
+    
+    rreq->ref_count = 1;
+    rreq->kind = MPID_PREQUEST_RECV;
+    rreq->comm = comm;
+    rreq->ch3.match.rank = rank;
+    rreq->ch3.match.tag = tag;
+    rreq->ch3.match.context_id = comm->context_id + context_offset;
+    rreq->ch3.user_buf = (void *) buf;
+    rreq->ch3.user_count = count;
+    rreq->ch3.datatype = datatype;
+    rreq->partner_request = NULL;
+    MPIDI_Request_set_type(rreq, MPIDI_REQUEST_TYPE_RECV);
+	
+    *request = rreq;
 
-    MPIDI_DBG_PRINTF((15, FCNAME, "request allocation failed"));
-    return MPIR_ERR_MEMALLOCFAILED;
+  fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_RECV_INIT);
+    return mpi_errno;
 }

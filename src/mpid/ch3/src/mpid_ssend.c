@@ -57,7 +57,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 
     vc = comm->vcr[rank];
 	
-    MPIDI_CH3M_create_send_request(sreq, mpi_errno, goto fn_exit);
+    MPIDI_CH3M_create_sreq(sreq, mpi_errno, goto fn_exit);
     MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SSEND);
     
     /* FIXME: Since the request is never returned to the user and they can't do things like cancel it or wait on it, we may not

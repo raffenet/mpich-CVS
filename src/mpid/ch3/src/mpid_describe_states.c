@@ -206,6 +206,30 @@ int MPIDU_Describe_timer_states()
 		       "MPID_Irecv",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_SEND_INIT,
+		       "MPID_Send_init",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_BSEND_INIT,
+		       "MPID_Bsend_init",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_RSEND_INIT,
+		       "MPID_Rsend_init",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_SSEND_INIT,
+		       "MPID_Ssend_init",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_RECV_INIT,
+		       "MPID_Recv_init",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_STARTALL,
+		       "MPID_Startall",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_BARRIER,
 		       "MPIDI_Barrier",
 		       get_random_color_str());

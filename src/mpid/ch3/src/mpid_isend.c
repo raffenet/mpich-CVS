@@ -39,7 +39,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	goto fn_exit;
     }
     
-    MPIDI_CH3M_create_send_request(sreq, mpi_errno, goto fn_exit);
+    MPIDI_CH3M_create_sreq(sreq, mpi_errno, goto fn_exit);
     MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
     
     if (rank == MPI_PROC_NULL)

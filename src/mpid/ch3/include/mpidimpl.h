@@ -94,20 +94,14 @@ extern MPIDI_Process_t MPIDI_Process;
     (_req)->status.cancelled = FALSE;				\
     MPIDI_Request_state_init((_req));				\
     (_req)->comm = NULL;					\
-								\
-    /* XXX - initialized only for debugging purposes? */	\
-    (_req)->partner_request = NULL;				\
-    (_req)->ch3.user_buf = NULL;				\
-    (_req)->ch3.datatype = MPI_DATATYPE_NULL;			\
-    (_req)->ch3.tmpbuf = NULL;					\
 }
 
-#define MPIDI_CH3U_Request_destroy(_req)			\
-{							\
-    if (MPIDI_Request_get_srbuf_flag(_req))		\
-    {							\
-	MPIDI_CH3U_SRBuf_free(_req);			\
-    }							\
+#define MPIDI_CH3U_Request_destroy(_req)	\
+{						\
+    if (MPIDI_Request_get_srbuf_flag(_req))	\
+    {						\
+	MPIDI_CH3U_SRBuf_free(_req);		\
+    }						\
 }
 
 #define MPIDI_CH3U_Request_complete(_req)		\
@@ -122,28 +116,47 @@ extern MPIDI_Process_t MPIDI_Process;
     }							\
 }
 
-
-#define MPIDI_CH3M_create_send_request(_sreq, _mpi_errno, _FAIL)		\
+#define MPIDI_CH3M_create_sreq(_sreq, _mpi_errno, _FAIL)			\
 {										\
     (_sreq) = MPIDI_CH3_Request_create();					\
-    if ((_sreq) != NULL)							\
-    {										\
-	(_sreq)->ref_count = 2;							\
-	(_sreq)->kind = MPID_REQUEST_SEND;					\
-	(_sreq)->comm = comm;							\
-	(_sreq)->ch3.match.rank = rank;						\
-	(_sreq)->ch3.match.tag = tag;						\
-	(_sreq)->ch3.match.context_id = comm->context_id + context_offset;	\
-	(_sreq)->ch3.user_buf = (void *) buf;					\
-	(_sreq)->ch3.user_count = count;					\
-	(_sreq)->ch3.datatype = datatype;					\
-    }										\
-    else									\
+    if ((_sreq) == NULL)							\
     {										\
 	MPIDI_DBG_PRINTF((15, FCNAME, "send request allocation failed"));	\
 	(_mpi_errno) = MPIR_ERR_MEMALLOCFAILED;					\
 	_FAIL;									\
     }										\
+    										\
+    (_sreq)->ref_count = 2;							\
+    (_sreq)->kind = MPID_REQUEST_SEND;						\
+    (_sreq)->comm = comm;							\
+    (_sreq)->ch3.match.rank = rank;						\
+    (_sreq)->ch3.match.tag = tag;						\
+    (_sreq)->ch3.match.context_id = comm->context_id + context_offset;		\
+    (_sreq)->ch3.user_buf = (void *) buf;					\
+    (_sreq)->ch3.user_count = count;						\
+    (_sreq)->ch3.datatype = datatype;						\
+}
+
+#define MPIDI_CH3M_create_psreq(_sreq, _mpi_errno, _FAIL)			\
+{										\
+    (_sreq) = MPIDI_CH3_Request_create();					\
+    if ((_sreq) == NULL)							\
+    {										\
+	MPIDI_DBG_PRINTF((15, FCNAME, "send request allocation failed"));	\
+	(_mpi_errno) = MPIR_ERR_MEMALLOCFAILED;					\
+	_FAIL;									\
+    }										\
+										\
+    (_sreq)->ref_count = 1;							\
+    (_sreq)->kind = MPID_PREQUEST_SEND;						\
+    (_sreq)->comm = comm;							\
+    (_sreq)->ch3.match.rank = rank;						\
+    (_sreq)->ch3.match.tag = tag;						\
+    (_sreq)->ch3.match.context_id = comm->context_id + context_offset;		\
+    (_sreq)->ch3.user_buf = (void *) buf;					\
+    (_sreq)->ch3.user_count = count;						\
+    (_sreq)->ch3.datatype = datatype;						\
+    (_sreq)->partner_request = NULL;						\
 }
 
 /* Masks and flags for channel device state in an MPID_Request */

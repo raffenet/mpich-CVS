@@ -107,7 +107,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending non-contiguous ready-mode message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
-	MPIDI_CH3M_create_send_request(sreq, mpi_errno, goto fn_exit);
+	MPIDI_CH3M_create_sreq(sreq, mpi_errno, goto fn_exit);
 	MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_RSEND);
 	    
 	MPID_Segment_init(buf, count, datatype, &sreq->ch3.segment);

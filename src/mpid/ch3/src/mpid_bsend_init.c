@@ -14,29 +14,19 @@
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Bsend_init(const void * buf, int count, MPI_Datatype datatype, int rank, int tag, MPID_Comm * comm, int context_offset,
-		   MPID_Request ** request)
+		    MPID_Request ** request)
 {
     MPID_Request * sreq;
-    
-    sreq = MPIDI_CH3_Request_create();
-    if (sreq != NULL)
-    {
-	sreq->ref_count = 1;
-	sreq->kind = MPID_PREQUEST_SEND;
-	sreq->comm = comm;
-	sreq->ch3.match.rank = rank;
-	sreq->ch3.match.tag = tag;
-	sreq->ch3.match.context_id = comm->context_id + context_offset;
-	sreq->ch3.user_buf = (void *) buf;
-	sreq->ch3.user_count = count;
-	sreq->ch3.datatype = datatype;
-	MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_BSEND);
-	
-	*request = sreq;
-	
-	return MPI_SUCCESS;
-    }
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_BSEND_INIT);
 
-    MPIDI_DBG_PRINTF((15, FCNAME, "request allocation failed"));
-    return MPIR_ERR_MEMALLOCFAILED;
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_BSEND_INIT);
+
+    MPIDI_CH3M_create_psreq(sreq, mpi_errno, goto fn_exit);
+    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_BSEND);
+    *request = sreq;
+
+  fn_exit:    
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_BSEND_INIT);
+    return mpi_errno;
 }

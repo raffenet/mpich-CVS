@@ -42,7 +42,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	goto fn_exit;
     }
     
-    MPIDI_CH3M_create_send_request(sreq, mpi_errno, goto fn_exit);
+    MPIDI_CH3M_create_sreq(sreq, mpi_errno, goto fn_exit);
     MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_RSEND);
     MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
     

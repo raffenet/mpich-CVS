@@ -128,7 +128,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	    
 	    MPIDI_DBG_PRINTF((15, FCNAME, "sending non-contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
-	    MPIDI_CH3M_create_send_request(sreq, mpi_errno, goto fn_exit);
+	    MPIDI_CH3M_create_sreq(sreq, mpi_errno, goto fn_exit);
 	    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
 	    
 	    MPID_Segment_init(buf, count, datatype, &sreq->ch3.segment);
@@ -163,7 +163,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending rndv RTS, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
-	MPIDI_CH3M_create_send_request(sreq, mpi_errno, goto fn_exit);
+	MPIDI_CH3M_create_sreq(sreq, mpi_errno, goto fn_exit);
 	MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
 	
 	/* FIXME - Since the request is never returned to the user and they can't do things like cancel it or wait on it, we may

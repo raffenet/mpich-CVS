@@ -25,7 +25,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	
     MPIDI_DBG_PRINTF((15, FCNAME, "sending message to self"));
 	
-    MPIDI_CH3M_create_send_request(sreq, mpi_errno, goto fn_exit);
+    MPIDI_CH3M_create_sreq(sreq, mpi_errno, goto fn_exit);
     MPIDI_Request_set_type(sreq, type);
     MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_SELF_MSG);
     

@@ -5,7 +5,7 @@
  */
 
 #include "mpidimpl.h"
-
+#include "../../../mpi/pt2pt/bsendutil.h"
 /*
  * MPID_Startall()
  */
@@ -16,8 +16,11 @@
 int MPID_Startall(int count, MPID_Request * requests[])
 {
     int i;
-    int rc = MPI_SUCCESS;
+    int rc;
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_STARTALL);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_STARTALL);
 
     for (i = 0; i < count; i++)
     {
@@ -59,20 +62,29 @@ int MPID_Startall(int count, MPID_Request * requests[])
 
 	    case MPIDI_REQUEST_TYPE_BSEND:
 	    {
-		MPID_Request *request_ptr;
-		rc = MPIR_Bsend_isend(preq->ch3.user_buf, preq->ch3.user_count,
-				      preq->ch3.datatype, preq->ch3.match.rank,
-				      preq->ch3.match.tag, preq->comm, 2,
-				      &preq->partner_request);
+		MPID_Request * sreq;
+		
+		sreq = MPIDI_CH3_Request_create();
+		if (sreq != NULL)
+		{
+		    MPIU_Object_set_ref(sreq, 1);
+		    sreq->kind = MPID_REQUEST_SEND;
+		    sreq->cc   = 0;
+		    sreq->comm = preq->comm;
+		    
+		    
+		    rc = MPIR_Bsend_isend(preq->ch3.user_buf, preq->ch3.user_count, preq->ch3.datatype, preq->ch3.match.rank,
+					  preq->ch3.match.tag, preq->comm, BSEND_INIT, &preq->partner_request);
 
-		request_ptr = MPID_Request_create();
-		assert( request_ptr );
-		request_ptr->kind   = MPID_REQUEST_SEND;
-		MPIU_Object_set_ref( request_ptr, 1 );
-		request_ptr->cc_ptr = &request_ptr->cc;
-		request_ptr->cc     = 0;
-		request_ptr->comm   = preq->comm;
-		preq->partner_request = request_ptr;
+		    sreq->status.MPI_ERROR = rc;
+		    preq->partner_request = sreq;
+		    rc = MPI_SUCCESS;
+		}
+		else
+		{
+		    rc = MPIR_ERR_MEMALLOCFAILED;
+		}
+		
 		break;
 	    }
 
@@ -91,7 +103,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	{
 	    /* If a failure occurs attempting to start the request, then we assume that partner request was not created, and stuff
 	       the error code in the persistent request.  The wait and test routines will look at the error code in the persistent
-	       request if a partner request is present. */
+	       request if a partner request is not present. */
 	    preq->partner_request = NULL;
 	    preq->status.MPI_ERROR = rc;
 	    preq->cc_ptr = &preq->cc;
@@ -99,5 +111,6 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	}
     }
 
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_STARTALL);
     return mpi_errno;
 }
