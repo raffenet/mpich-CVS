@@ -136,18 +136,21 @@ PMPI_LOCAL int MPIR_Scatter (
                 position = 0;
 
                 if (recvbuf != MPI_IN_PLACE)
-                    MPIR_Localcopy(((char *) sendbuf + extent*sendcnt*rank),
+                    mpi_errno = MPIR_Localcopy(((char *) sendbuf + extent*sendcnt*rank),
                                    sendcnt*(comm_size-rank), sendtype, tmp_buf,
                                    nbytes*(comm_size-rank), MPI_BYTE);
                 else
-                    MPIR_Localcopy(((char *) sendbuf + extent*sendcnt*(rank+1)),
+                    mpi_errno = MPIR_Localcopy(((char *) sendbuf + extent*sendcnt*(rank+1)),
                                    sendcnt*(comm_size-rank-1),
                                    sendtype, (char *)tmp_buf + nbytes, 
                                    nbytes*(comm_size-rank-1), MPI_BYTE);
 
-                MPIR_Localcopy(sendbuf, sendcnt*rank, sendtype, 
+                if (mpi_errno) return mpi_errno;
+
+                mpi_errno = MPIR_Localcopy(sendbuf, sendcnt*rank, sendtype, 
                                ((char *) tmp_buf + nbytes*(comm_size-rank)),
                                nbytes*rank, MPI_BYTE);
+                if (mpi_errno) return mpi_errno;
 
                 curr_cnt = nbytes*comm_size;
             } 

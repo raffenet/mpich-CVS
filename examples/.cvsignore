@@ -21,6 +21,9 @@ cm2
 icpi
 child
 parent
+spawn_merge_child1
+spawn_merge_child2
+spawn_merge_parent
 *Debug*
 *Release*
 .deps

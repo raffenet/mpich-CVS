@@ -26,14 +26,12 @@
    
    Algorithm: MPI_Alltoall
 
-   We use four algorithms for alltoall. For very short messages, we use
-   a recursive doubling algorithm that takes lgp steps. At each step
-   pairs of processes exchange all the data they have (received) so
-   far. A lot more data is communicated than each process needs, but
-   for very short messages (typically 256 bytes or less), this
-   algorithm is still better because of the lower latency.
+   We use four algorithms for alltoall. For short messages, we use
+   the algorithm by Jehoshua Bruck et al, IEEE TPDS, Nov. 1997. It 
+   is a store-and-forward algorithm that takes lgp steps. Because of the 
+   extra communication, the bandwidth requirement is n.lgp.beta.
 
-   Cost = lgp.alpha + n.p.beta
+   Cost = lgp.alpha + n.lgp.beta
 
    where n is the total amount of data a process needs to send to all
    other processes.
@@ -75,19 +73,23 @@ PMPI_LOCAL int MPIR_Alltoall(
     MPID_Comm *comm_ptr )
 {
     static const char FCNAME[] = "MPIR_Alltoall";
-    int          comm_size, i, j, k, p, pof2;
+    int          comm_size, i, j, pof2;
     MPI_Aint     sendtype_extent, recvtype_extent;
-    MPI_Aint sendtype_true_extent, sendbuf_extent, sendtype_true_lb;
-    int          mpi_errno = MPI_SUCCESS;
+    MPI_Aint recvtype_true_extent, recvbuf_extent, recvtype_true_lb;
+    int mpi_errno=MPI_SUCCESS, src, dst, rank, nbytes;
     MPI_Status status;
-    int src, dst, rank, nbytes, curr_cnt, dst_tree_root, my_tree_root;
-    int last_recv_cnt, mask, tmp_mask, tree_root, nprocs_completed;
-    int sendtype_size;
+    int sendtype_size, pack_size, block, position, *displs, count;
+    MPI_Datatype newtype;
     void *tmp_buf;
     MPI_Comm comm;
     MPI_Request *reqarray;
     MPI_Status *starray;
-    
+#ifdef OLD
+    MPI_Aint sendtype_true_extent, sendbuf_extent, sendtype_true_lb;
+    int k, p, curr_cnt, dst_tree_root, my_tree_root;
+    int last_recv_cnt, mask, tmp_mask, tree_root, nprocs_completed;
+#endif
+
     if (sendcount == 0) return MPI_SUCCESS;
     
     comm = comm_ptr->handle;
@@ -98,20 +100,136 @@ PMPI_LOCAL int MPIR_Alltoall(
     MPID_Datatype_get_extent_macro(recvtype, recvtype_extent);
     MPID_Datatype_get_extent_macro(sendtype, sendtype_extent);
 
-    /* get true extent of sendtype */
-    mpi_errno = NMPI_Type_get_true_extent(sendtype, &sendtype_true_lb,
-                                          &sendtype_true_extent);  
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno) return mpi_errno;
-    /* --END ERROR HANDLING-- */
-
     MPID_Datatype_get_size_macro(sendtype, sendtype_size);
-    nbytes = sendtype_size * sendcount * comm_size;
+    nbytes = sendtype_size * sendcount;
     
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
     
     if (nbytes <= MPIR_ALLTOALL_SHORT_MSG) {
+
+        /* use the indexing algorithm by Jehoshua Bruck et al,
+         * IEEE TPDS, Nov. 97 */ 
+
+        /* allocate temporary buffer */
+        NMPI_Pack_size(recvcount*comm_size, recvtype, comm, &pack_size);
+        tmp_buf = MPIU_Malloc(pack_size);
+	/* --BEGIN ERROR HANDLING-- */
+        if (!tmp_buf) {
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+            return mpi_errno;
+        }
+	/* --END ERROR HANDLING-- */
+
+        /* Do Phase 1 of the algorithim. Shift the data blocks on process i
+         * upwards by a distance of i blocks. Store the result in recvbuf. */
+        mpi_errno = MPIR_Localcopy((char *) sendbuf + rank*sendcount*sendtype_extent, 
+                                   (comm_size - rank)*sendcount, sendtype, recvbuf, 
+                                   (comm_size - rank)*recvcount, recvtype); 
+        if (mpi_errno) return mpi_errno;
+        mpi_errno = MPIR_Localcopy(sendbuf, rank*sendcount, sendtype, 
+                                   (char *) recvbuf + (comm_size-rank)*recvcount*recvtype_extent, 
+                                   rank*recvcount, recvtype); 
+        if (mpi_errno) return mpi_errno;
+        /* Input data is now stored in recvbuf with datatype recvtype */
+
+        /* Now do Phase 2, the communication phase. It takes
+           ceiling(lg p) steps. In each step i, each process sends to rank+2^i
+           and receives from rank-2^i, and exchanges all data blocks
+           whose ith bit is 1. */
+
+        /* allocate displacements array for indexed datatype used in
+           communication */
+
+        displs = MPIU_Malloc(comm_size * 2* sizeof(int));
+	/* --BEGIN ERROR HANDLING-- */
+        if (!displs) {
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+            return mpi_errno;
+        }
+	/* --END ERROR HANDLING-- */
+
+        pof2 = 1;
+        while (pof2 < comm_size) {
+            dst = (rank + pof2) % comm_size;
+            src = (rank - pof2 + comm_size) % comm_size;
+
+            /* Exchange all data blocks whose ith bit is 1 */
+            /* Create an indexed datatype for the purpose */
+
+            count = 0;
+            for (block=1; block<comm_size; block++) {
+                if (block & pof2) {
+                    displs[count] = block * recvcount;
+                    count++;
+                }
+            }
+
+            mpi_errno = NMPI_Type_create_indexed_block(count, recvcount, 
+                                               displs, recvtype, &newtype);
+            if (mpi_errno) return mpi_errno;
+
+            mpi_errno = NMPI_Type_commit(&newtype);
+            if (mpi_errno) return mpi_errno;
+
+            position = 0;
+            mpi_errno = NMPI_Pack(recvbuf, 1, newtype, tmp_buf, pack_size, 
+                                  &position, comm);
+
+            mpi_errno = MPIC_Sendrecv(tmp_buf, position, MPI_PACKED, dst,
+                                      MPIR_ALLTOALL_TAG, recvbuf, 1, newtype,
+                                      src, MPIR_ALLTOALL_TAG, comm,
+                                      MPI_STATUS_IGNORE);
+
+            mpi_errno = NMPI_Type_free(&newtype);
+            if (mpi_errno) return mpi_errno;
+
+            pof2 *= 2;
+        }
+
+        MPIU_Free(displs);
+        MPIU_Free(tmp_buf);
+
+        /* Rotate blocks in recvbuf upwards by (rank + 1) blocks. Need
+         * a temporary buffer of the same size as recvbuf. */
+        
+        /* get true extent of recvtype */
+        mpi_errno = NMPI_Type_get_true_extent(recvtype, &recvtype_true_lb,
+                                              &recvtype_true_extent);  
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno) return mpi_errno;
+        /* --END ERROR HANDLING-- */
+
+        recvbuf_extent = recvcount * comm_size *
+            (MPIR_MAX(recvtype_true_extent, recvtype_extent));
+        tmp_buf = MPIU_Malloc(recvbuf_extent);
+	/* --BEGIN ERROR HANDLING-- */
+        if (!tmp_buf) {
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+            return mpi_errno;
+        }
+
+        mpi_errno = MPIR_Localcopy((char *) recvbuf + (rank+1)*recvcount*recvtype_extent, 
+                       (comm_size - rank - 1)*recvcount, recvtype, tmp_buf, 
+                       (comm_size - rank - 1)*recvcount, recvtype); 
+        if (mpi_errno) return mpi_errno;
+        mpi_errno = MPIR_Localcopy(recvbuf, (rank+1)*recvcount, recvtype, 
+                       (char *) tmp_buf + (comm_size-rank-1)*recvcount*recvtype_extent, 
+                       (rank+1)*recvcount, recvtype); 
+        if (mpi_errno) return mpi_errno;
+
+        /* Blocks are in the reverse order now (comm_size-1 to 0). 
+         * Reorder them to (0 to comm_size-1) and store them in recvbuf. */
+
+        for (i=0; i<comm_size; i++) 
+            MPIR_Localcopy((char *) tmp_buf + i*recvcount*recvtype_extent,
+                           recvcount, recvtype, 
+                           (char *) recvbuf + (comm_size-i-1)*recvcount*recvtype_extent, 
+                           recvcount, recvtype); 
+
+        MPIU_Free(tmp_buf);
+
+#ifdef OLD
         /* Short message. Use recursive doubling. Each process sends all
            its data at each step along with all data it received in
            previous steps. */
@@ -119,6 +237,13 @@ PMPI_LOCAL int MPIR_Alltoall(
         /* need to allocate temporary buffer of size
            sendbuf_extent*comm_size */
         
+        /* get true extent of sendtype */
+        mpi_errno = NMPI_Type_get_true_extent(sendtype, &sendtype_true_lb,
+                                              &sendtype_true_extent);  
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno) return mpi_errno;
+        /* --END ERROR HANDLING-- */
+
         sendbuf_extent = sendcount * comm_size *
             (MPIR_MAX(sendtype_true_extent, sendtype_extent));
         tmp_buf = MPIU_Malloc(sendbuf_extent*comm_size);
@@ -258,6 +383,8 @@ PMPI_LOCAL int MPIR_Alltoall(
         }
         
         MPIU_Free((char *)tmp_buf+sendtype_true_lb); 
+#endif
+
     }
 
     else if ((nbytes > MPIR_ALLTOALL_SHORT_MSG) && 

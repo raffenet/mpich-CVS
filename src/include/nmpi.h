@@ -48,4 +48,5 @@
 #define NMPI_Barrier PMPI_Barrier
 #define NMPI_Type_get_true_extent PMPI_Type_get_true_extent
 #define NMPI_Group_translate_ranks PMPI_Group_translate_ranks
+#define NMPI_Type_create_indexed_block PMPI_Type_create_indexed_block
 #endif /* MPICH_NMPI_H_INCLUDED */
