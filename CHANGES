@@ -1,0 +1,52 @@
+Changes in 0.94
+---------------
+
+
+
+================================================================================
+
+Changes in 0.93
+---------------
+Version 0.93 has undergone extensive changes to provide better error reporting.
+Part of these changes involved modifications to the ADI3 and CH3 interfaces.
+The following routines now return MPI error codes:
+
+MPID_Cancel_send()
+MPID_Cancel_recv()
+MPID_Progress_poke()
+MPID_Progress_test()
+MPID_Progress_wait()
+MPIDI_CH3_Cancel_send()
+MPIDI_CH3_Progress()
+MPIDI_CH3_Progress_poke()
+MPIDI_CH3_iRead()
+MPIDI_CH3_iSend()
+MPIDI_CH3_iSendv()
+MPIDI_CH3_iStartmsg()
+MPIDI_CH3_iStartmsgv()
+MPIDI_CH3_iWrite()
+MPIDI_CH3U_Handle_recv_pkt()
+MPIDI_CH3U_Handle_recv_req()
+MPIDI_CH3U_Handle_send_req()
+
+*******************************************************************************
+Of special note are MPID_Progress_test(), MPID_Progress_wait() and
+MPIDI_CH3_Progress() which previously returned an integer value indicating if
+one or more requests had completed.  They no longer return this value and
+instead return an MPI error code (also an integer).  The implication being that
+while the semantics changed, the type signatures did not.
+*******************************************************************************
+
+The function used to create error codes, MPIR_Err_create_code(), has also
+changed.  It now takes additional parameters, allowing it create a stack of
+errors and making it possible for the reporting function to indicate in which
+function and on which line the error occurred.  It also allows an error
+to be designated as fatal or recoverable.  Fatal errors always result in
+program termination regardless of the error handler installed by the
+application.
+
+A RDMA channel has been added and includes communication methods for shared
+memory and shmem.  This is recent development and the RDMA interface is still
+in flux.
+
+
