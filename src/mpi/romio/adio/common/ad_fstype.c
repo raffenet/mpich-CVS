@@ -80,12 +80,6 @@
 # endif
 #endif
 
-#ifdef PARAGON
-# include <nx.h>
-# include <pfs/pfs.h>
-# include <sys/mount.h>
-#endif
-
 #ifndef ROMIO_NTFS
 static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep);
 #endif
@@ -208,9 +202,6 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 #endif
 #ifdef ROMIO_HAVE_STRUCT_STAT_WITH_ST_FSTYPE
     struct stat sbuf;
-#endif
-#ifdef PARAGON
-    struct estatfs ebuf;
 #endif
 
     *error_code = MPI_SUCCESS;
@@ -344,26 +335,6 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	else *fstype = ADIO_SFS; /* assuming SX4 for now */
     }
 #endif /* STAT APPROACH */
-
-#if defined(PARAGON)
-    do {
-	err = statpfs(filename, &ebuf, 0, 0);
-    } while (err && (errno == ESTALE));
-
-    if (err && (errno == ENOENT)) {
-	ADIO_FileSysType_parentdir(filename, &dir);
-	err = statpfs(dir, &ebuf, 0, 0);
-	free(dir);
-    }
-
-    if (err) *error_code = MPI_ERR_UNKNOWN;
-    else {
-	if (ebuf.f_type == MOUNT_NFS) *fstype = ADIO_NFS;
-	else if (ebuf.f_type == MOUNT_PFS) *fstype = ADIO_PFS;
-	else *fstype = ADIO_UFS;
-    }
-    return;
-#endif
 
 #ifdef ROMIO_NTFS
     *fstype = ADIO_NTFS; /* only supported FS on Windows */
