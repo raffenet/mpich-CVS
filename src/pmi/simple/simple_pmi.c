@@ -980,7 +980,7 @@ static int PMII_Connect_to_pm( char *hostname, int portnum )
 	}
     }
 #endif
-    if (connect( fd, &sa, sizeof(sa) ) < 0) {
+    if (connect( fd, (struct sockaddr *)&sa, sizeof(sa) ) < 0) {
 	switch (errno) {
 	case ECONNREFUSED:
 	    /* (close socket, get new socket, try again) */
