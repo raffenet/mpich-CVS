@@ -11,3 +11,5 @@ cfree
 commname
 dupic
 .deps
+*.exe
+*.stackdump
