@@ -54,7 +54,6 @@ int MPI_Get_processor_name( char *name, int *resultlen)
 {
     static const char FCNAME[] = "MPI_Get_processor_name";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_PROCESSOR_NAME);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_PROCESSOR_NAME);
@@ -67,18 +66,24 @@ int MPI_Get_processor_name( char *name, int *resultlen)
 	    MPIR_ERRTEST_ARGNULL(resultlen,"resultlen",mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_PROCESSOR_NAME);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-
     /* ... body of routine ...  */
-    MPID_Get_processor_name( name, resultlen );
+    mpi_errno = MPID_Get_processor_name( name, resultlen );
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_PROCESSOR_NAME);
-    return MPI_SUCCESS;
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	return MPI_SUCCESS;
+    }
+    else
+    {
+	return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    }
 }
