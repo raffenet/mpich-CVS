@@ -708,6 +708,7 @@ dnl.ve
 dnl 
 dnlD*/
 AC_DEFUN(PAC_PROG_C_WEAK_SYMBOLS,[
+pragma_extra_message=""
 AC_CACHE_CHECK([for type of weak symbol support],
 pac_cv_prog_c_weak_symbols,[
 # Test for weak symbol support...
@@ -716,7 +717,35 @@ pac_cv_prog_c_weak_symbols,[
 AC_TRY_LINK([
 #pragma weak PFoo = Foo
 int Foo(a) { return a; }
-],[return PFoo(1);],pac_cv_prog_c_weak_symbols="pragma weak")
+],[return PFoo(1);],has_pragma_weak=yes)
+#
+# Some systems (Linux ia64 and ecc, for example), support weak symbols
+# only within a single object file!  This tests that case.
+if test "$has_pragma_weak" = yes ; then
+    rm -f conftest*
+    cat >>conftest1.c <<EOF
+#pragma weak PFoo = Foo
+int Foo(int);
+int Foo(a) { return a; }
+EOF
+    cat >>conftest2.c <<EOF
+int main() {
+return PFoo(0);}
+EOF
+    ac_link2='${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest1.c conftest2.c $LIBS >conftest.out 2>&1'
+    if eval $ac_link2 ; then
+        pac_cv_prog_c_weak_symbols="pragma weak"
+    else
+      echo "$ac_link2" >>config.log
+      echo "Failed program was" >>config.log
+      cat conftest1.c >>config.log
+      cat conftest2.c >>config.log
+      if test -s conftest.out ; then cat conftest.out >> config.log ; fi
+      has_pragma_weak=0
+      pragma_extra_message="pragma weak does not work outside of a file"
+    fi
+    rm -f conftest*
+fi
 dnl
 if test -z "$pac_cv_prog_c_weak_symbols" ; then 
     AC_TRY_LINK([
@@ -736,6 +765,12 @@ if test -z "$pac_cv_prog_c_weak_symbols" ; then
     pac_cv_prog_c_weak_symbols="no"
 fi
 ])
+dnl
+dnl If there is an extra explanatory message, echo it now so that it
+dnl doesn't interfere with the cache result value
+if test -n "$pragma_extra_message" ; then
+    echo $pragma_extra_message
+fi
 dnl
 if test "$pac_cv_prog_c_weak_symbols" = "no" ; then
     ifelse([$2],,:,[$2])
