@@ -1,3 +1,8 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*  
+ *  (C) 2004 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
