@@ -16,6 +16,7 @@
 #include "mpisysstates.h"
 
 /* Possible values for USE_LOGGING */
+#define MPID_LOGGING_NONE 0
 #define MPID_LOGGING_RLOG 1
 #define MPID_LOGGING_DLOG 2
 
