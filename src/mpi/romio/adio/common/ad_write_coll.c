@@ -788,17 +788,17 @@ static void ADIOI_Fill_send_buffer(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 	    if (send_buf_idx[p] < send_size[p]) {
 		if (curr_to_proc[p]+len > done_to_proc[p]) {
 		    if (done_to_proc[p] > curr_to_proc[p]) {
-			size = ADIOI_MIN(curr_to_proc[p] + len - 
+			size = (int)ADIOI_MIN(curr_to_proc[p] + len - 
                                 done_to_proc[p], send_size[p]-send_buf_idx[p]);
 			buf_incr = done_to_proc[p] - curr_to_proc[p];
 			ADIOI_BUF_INCR
-		        buf_incr = curr_to_proc[p] + len - done_to_proc[p];
+		        buf_incr = (int)(curr_to_proc[p] + len - done_to_proc[p]);
 			curr_to_proc[p] = done_to_proc[p] + size;
 		        ADIOI_BUF_COPY
 		    }
 		    else {
-			size = ADIOI_MIN(len,send_size[p]-send_buf_idx[p]);
-			buf_incr = len;
+			size = (int)ADIOI_MIN(len,send_size[p]-send_buf_idx[p]);
+			buf_incr = (int)len;
 			curr_to_proc[p] += size;
 			ADIOI_BUF_COPY
 		    }
@@ -809,13 +809,13 @@ static void ADIOI_Fill_send_buffer(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 		    }
 		}
 		else {
-		    curr_to_proc[p] += len;
-		    buf_incr = len;
+		    curr_to_proc[p] += (int)len;
+		    buf_incr = (int)len;
 		    ADIOI_BUF_INCR
 		}
 	    }
 	    else {
-		buf_incr = len;
+		buf_incr = (int)len;
 		ADIOI_BUF_INCR
             }
 	    off     += len;

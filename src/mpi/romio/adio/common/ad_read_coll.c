@@ -1002,29 +1002,29 @@ static void ADIOI_Fill_user_buffer(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 			jj++;
 		    }
 		    if (done_from_proc[p] > curr_from_proc[p]) {
-			size = ADIOI_MIN(curr_from_proc[p] + len - 
+			size = (int)ADIOI_MIN(curr_from_proc[p] + len - 
 			      done_from_proc[p], recv_size[p]-recv_buf_idx[p]);
 			buf_incr = done_from_proc[p] - curr_from_proc[p];
 			ADIOI_BUF_INCR
-			buf_incr = curr_from_proc[p]+len-done_from_proc[p];
+			buf_incr = (int)(curr_from_proc[p]+len-done_from_proc[p]);
 			curr_from_proc[p] = done_from_proc[p] + size;
 			ADIOI_BUF_COPY
 		    }
 		    else {
-			size = ADIOI_MIN(len,recv_size[p]-recv_buf_idx[p]);
-			buf_incr = len;
+			size = (int)ADIOI_MIN(len,recv_size[p]-recv_buf_idx[p]);
+			buf_incr = (int)len;
 			curr_from_proc[p] += size;
 			ADIOI_BUF_COPY
 		    }
 		}
 		else {
-		    curr_from_proc[p] += len;
-		    buf_incr = len;
+		    curr_from_proc[p] += (int)len;
+		    buf_incr = (int)len;
 		    ADIOI_BUF_INCR
 		}
 	    }
 	    else {
-		buf_incr = len;
+		buf_incr = (int)len;
 		ADIOI_BUF_INCR
 	    }
 	    off     += len;
