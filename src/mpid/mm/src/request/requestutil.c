@@ -58,18 +58,18 @@ void mm_request_free(MPID_Request *request_ptr)
     MM_EXIT_FUNC(MM_REQUEST_FREE);
 }
 
-void MPID_Request_free(MPID_Request *request_ptr)
+void MPID_Request_release(MPID_Request *request_ptr)
 {
-    MM_ENTER_FUNC(MPID_REQUEST_FREE);
+    MM_ENTER_FUNC(MPID_REQUEST_RELEASE);
 
     if (request_ptr == NULL)
     {
-	MM_EXIT_FUNC(MPID_REQUEST_FREE);
+	MM_EXIT_FUNC(MPID_REQUEST_RELEASE);
 	return;
     }
 
-    MPID_Request_free(request_ptr->mm.next_ptr);
+    MPID_Request_release(request_ptr->mm.next_ptr);
     mm_request_free(request_ptr);
 
-    MM_EXIT_FUNC(MPID_REQUEST_FREE);
+    MM_EXIT_FUNC(MPID_REQUEST_RELEASE);
 }
