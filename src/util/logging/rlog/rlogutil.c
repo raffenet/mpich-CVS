@@ -198,6 +198,7 @@ static int compareArrows(const RLOG_ARROW *pLeft, const RLOG_ARROW *pRight)
     return 1;
 }
 
+#if 0
 static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int n)
 {
     RLOG_ARROW arrow, *pArray;
@@ -271,8 +272,8 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
     }
     return 0;
 }
+#endif
 
-#if 0
 static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int n)
 {
     RLOG_ARROW arrow, *pArray;
@@ -355,7 +356,6 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
     }
     return 0;
 }
-#endif
 
 int ModifyEvents(FILE *f, int nNumEvents, int nMin, double *pOffsets, int n)
 {
