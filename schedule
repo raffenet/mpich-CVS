@@ -121,22 +121,22 @@ MPI_Pack_size,
 
 Collective Communication
 
-MPI_Barrier,1,3,2,2,Rajeev,,.3,5/14/02
-MPI_Bcast,1,3,2,2,Rajeev,MPID_Segment_pack and MPID_Segment_unpack
-MPI_Gather,1,3,2,2,Rajeev,MPID_Segment_pack and MPID_Segment_unpack
-MPI_Gatherv,1,3,2,3,Rajeev,MPID_Segment_pack and MPID_Segment_unpack
-MPI_Scatter,1,3,2,2,Rajeev,MPID_Segment_pack and MPID_Segment_unpack
-MPI_Scatterv,1,3,2,3,Rajeev,MPID_Segment_pack and MPID_Segment_unpack
-MPI_Allgather,1,3,2,2,Rajeev,MPID_Segment_pack and MPID_Segment_unpack
-MPI_Allgatherv,1,3,2,3,Rajeev,MPID_Segment_pack and MPID_Segment_unpack
-MPI_Alltoall,1,3,2,2,Rajeev,MPID_Segment_pack and MPID_Segment_unpack
-MPI_Alltoallv,1,3,2,3,Rajeev,MPID_Segment_pack and MPID_Segment_unpack
-MPI_Reduce,1,3,2,3,Rajeev,MPID_Segment_pack and MPID_Segment_unpack
+MPI_Barrier,,,,,,Bill,,done
+MPI_Bcast,,,,,,Rajeev,,done
+MPI_Gather,,,,,Rajeev,,done
+MPI_Gatherv,,,,,Rajeev,,done
+MPI_Scatter,,,,,Rajeev,,done
+MPI_Scatterv,,,,,Rajeev,,done
+MPI_Allgather,,,,,Rajeev,,done
+MPI_Allgatherv,,,,,Rajeev,,done
+MPI_Alltoall,,,,,Rajeev,,done
+MPI_Alltoallv,,,,,Rajeev,,done
+MPI_Reduce,,,,,Rajeev,,done
 MPI_Op_create,1,3,2,3,Bill,,.1,5/21/02
 MPI_Op_free,1,3,2,3,Bill,,.1,5/21/02
-MPI_Allreduce,1,3,2,3,Rajeev,MPID_Segment_pack and MPID_Segment_unpack
-MPI_Reduce_scatter,1,3,2,4,Rajeev,MPID_Segment_pack and MPID_Segment_unpack
-MPI_Scan,1,3,2,4,Rajeev,MPID_Segment_pack and MPID_Segment_unpack
+MPI_Allreduce,,,,,Rajeev,,done
+MPI_Reduce_scatter,,,,,Rajeev,,done
+MPI_Scan,,,,,Rajeev,,done
 
 Groups; Contexts; Communicators
 
@@ -312,8 +312,8 @@ MPI_Win_unlock,1,3,2,3,Rajeev,MPID_Win_unlock
 
 Extended Collective
 
-MPI_Alltoallw,
-MPI_Exscan,
+MPI_Alltoallw,,,,,Rajeev,,done
+MPI_Exscan,,,,,Rajeev,,done
 
 Extended Interfaces
 
