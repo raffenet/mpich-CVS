@@ -197,7 +197,7 @@ have the system administrator mount the NFS file system with the
 may reduce performance, but it is necessary for correct behavior.
 
 The following are some instructions we received from Ian Wells of HP
-for setting the {\tt noac} option on NFS. We have not tried them
+for setting the noac option on NFS. We have not tried them
 ourselves. We are including them here because you may find 
 them useful. Note that some of the steps may be specific to HP
 systems, and you may need root permission to execute some of the
