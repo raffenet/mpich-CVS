@@ -95,7 +95,7 @@ dist-with-version:
 	( cd tmpdir2/doc/refman && ${MAKE} )
 	-cp -f tmpdir2/doc/adi3/*.pdf tmpdir/${PACKAGE}-${version}/doc/adi3
 	-cp -f tmpdir2/doc/mpich2/*.pdf tmpdir/${PACKAGE}-${version}/doc/mpich2
-	-cp -f tmpdir2/doc/refman/mpiman.pdf tmpdir/${PACKAGE}-${versin}/doc/refman
+	-cp -f tmpdir2/doc/refman/mpiman.pdf tmpdir/${PACKAGE}-${version}/doc/refman
 	rm -rf tmpdir2
 	(cd tmpdir/${PACKAGE}-${version}/src && cvs -d $(MPICVSHOME) export -D 'now' mpe >>cvsexp.log 2>&1 && \
 	rm -rf mpe/slog_api mpe/viewers mpe/profiling )
