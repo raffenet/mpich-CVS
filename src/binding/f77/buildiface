@@ -2103,7 +2103,6 @@ if ($write_mpif) {
 	    &print_mpif_int("MPI_DISTRIBUTE_$distrib");
 	}
 	&print_mpif_int( "MPI_DISPLACEMENT_CURRENT" );
-	&print_mpif_int( "MPI_MAX_DATAREP_STRING" );
     }
     # 
     # Finally, the special symbols
