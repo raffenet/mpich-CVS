@@ -35,6 +35,5 @@ extern TCP_PerProcess TCP_Process;
 int tcp_read(MPIDI_VC *vc_ptr);
 int tcp_write(MPIDI_VC *vc_ptr);
 int tcp_write_aggressive(MPIDI_VC *vc_ptr);
-int tcp_setup_packet_car(MM_Car *car_ptr, MM_CAR_TYPE read_write, int src_dest, MPIDI_VC *vc_ptr);
 
 #endif

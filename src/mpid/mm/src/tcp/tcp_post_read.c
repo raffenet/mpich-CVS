@@ -63,7 +63,7 @@ int tcp_post_read_pkt(MPIDI_VC *vc_ptr)
 
     MM_ENTER_FUNC(TCP_POST_READ_PKT);
 
-    tcp_setup_packet_car(&vc_ptr->pkt_car, MM_READ_CAR, vc_ptr->rank, vc_ptr);
+    tcp_setup_packet_car(vc_ptr, MM_READ_CAR, vc_ptr->rank, &vc_ptr->pkt_car);
     tcp_post_read(vc_ptr, &vc_ptr->pkt_car);
 
     /*

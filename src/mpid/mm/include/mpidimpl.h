@@ -128,6 +128,7 @@ typedef struct MPIDI_VC
               int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 	      int (*enqueue_write_at_head)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
               int (*reset_car)(struct MM_Car *car_ptr);
+	      int (*setup_packet_car)(struct MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest, struct MM_Car *car_ptr);
 	      int (*post_read_pkt)(struct MPIDI_VC *vc_ptr);
   struct MPIDI_VC * read_next_ptr;
   struct MPIDI_VC * write_next_ptr;

@@ -240,13 +240,16 @@ int mm_post_rndv_data_send(MM_Car *rndv_cts_car_ptr)
 
     MM_ENTER_FUNC(MM_POST_RNDV_DATA_SEND);
 
+    /* get a rndv car and the sender car */
     rndv_car_ptr = mm_car_alloc();
-
     sender_car_ptr = rndv_cts_car_ptr->msg_header.pkt.u.cts.sender_car_ptr;
-    /* this implies that we need a setup_packet_car() function in the vc */
-    tcp_setup_packet_car(rndv_car_ptr, MM_WRITE_CAR, 
+
+    /* initialize the rndv car for sending a rndv data header packet */
+    sender_car_ptr->vc_ptr->setup_packet_car(
+	sender_car_ptr->vc_ptr, 
+	MM_WRITE_CAR,
 	sender_car_ptr->src, /* this could be an error because src could be MPI_ANY_SRC */
-	sender_car_ptr->vc_ptr);
+	rndv_car_ptr);
     
     /* set up the rndv data header packet */
     rndv_data_ptr = &rndv_car_ptr->msg_header.pkt.u.rdata;
@@ -271,9 +274,9 @@ int mm_post_rndv_clear_to_send(MM_Car *posted_car_ptr, MM_Car *rndv_rts_car_ptr)
 
     rndv_car_ptr = mm_car_alloc();
     
-    tcp_setup_packet_car(rndv_car_ptr, MM_WRITE_CAR, 
+    tcp_setup_packet_car(posted_car_ptr->vc_ptr, MM_WRITE_CAR, 
 	posted_car_ptr->src, /* this could be an error because src could be MPI_ANY_SRC */
-	posted_car_ptr->vc_ptr);
+	rndv_car_ptr);
     
     /* set up the cts header packet */
     rndv_cts_ptr = &rndv_car_ptr->msg_header.pkt.u.cts;

@@ -43,7 +43,7 @@ int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     {
 	rndv_car_ptr = mm_car_alloc();
 
-	tcp_setup_packet_car(rndv_car_ptr, MM_WRITE_CAR, car_ptr->dest, car_ptr->vc_ptr);
+	tcp_setup_packet_car(vc_ptr, MM_WRITE_CAR, car_ptr->dest, rndv_car_ptr);
 
 	/* set up the rts header packet */
 	rndv_rts_ptr = &rndv_car_ptr->msg_header.pkt.u.hdr;

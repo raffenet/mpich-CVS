@@ -169,15 +169,20 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_METHOD:
+	/* data members */
+	vc_ptr->data.shm.shm_ptr = NULL;
+	/* function pointers */
 	vc_ptr->merge_with_unexpected = shm_merge_with_unexpected;
 	vc_ptr->post_write = shm_post_write;
 	break;
 #endif
 #ifdef WITH_METHOD_TCP
     case MM_TCP_METHOD:
+	/* data members */
 	vc_ptr->data.tcp.bfd = BFD_INVALID_SOCKET;
 	vc_ptr->data.tcp.connected = FALSE;
 	vc_ptr->data.tcp.connecting = FALSE;
+	/* function pointers */
 	vc_ptr->post_read = tcp_post_read;
 	vc_ptr->merge_with_unexpected = tcp_merge_with_unexpected;
 	vc_ptr->post_write = tcp_post_write;
@@ -185,16 +190,27 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	vc_ptr->post_read_pkt = tcp_post_read_pkt;
 	vc_ptr->enqueue_read_at_head = tcp_car_head_enqueue;
 	vc_ptr->enqueue_write_at_head = tcp_car_head_enqueue;
+	vc_ptr->setup_packet_car = tcp_setup_packet_car;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA
     case MM_VIA_METHOD:
+	/* data members */
+	/*
+	via_init_info_struct(&vc_ptr->data.via.info);
+	vc_ptr->data.via.info.hVi = NULL;
+	...
+	*/
+	/* function pointers */
 	vc_ptr->merge_with_unexpected = via_merge_with_unexpected;
 	vc_ptr->post_write = via_post_write;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
     case MM_VIA_RDMA_METHOD:
+	/* data members */
+	/*via_init_info_struct(&vc_ptr->data.via.info);*/
+	/* function pointers */
 	vc_ptr->merge_with_unexpected = via_rdma_merge_with_unexpected;
 	vc_ptr->post_write = via_rdma_post_write;
 	break;

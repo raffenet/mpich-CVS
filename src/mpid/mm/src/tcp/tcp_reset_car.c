@@ -78,14 +78,17 @@ int tcp_reset_car(MM_Car *car_ptr)
 }
 
 /*@
-   tcp_setup_packet_car - setup packet car
+   tcp_setup_packet_car - set up a car to read or write an mpid packet
 
    Parameters:
-+  MM_Car *car_ptr - car
++  MPIDI_VC *vc_ptr - vc
+.  MM_CAR_TYPE read_write - read or write car type
+.  int src_dest - source or destination
+-  MM_Car *car_ptr - car
 
    Notes:
 @*/
-int tcp_setup_packet_car(MM_Car *car_ptr, MM_CAR_TYPE read_write, int src_dest, MPIDI_VC *vc_ptr)
+int tcp_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest, MM_Car *car_ptr)
 {
     MM_Segment_buffer *buf_ptr;
 

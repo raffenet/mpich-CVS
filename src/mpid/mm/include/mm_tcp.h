@@ -22,5 +22,6 @@ int tcp_car_head_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int tcp_reset_car(MM_Car *car_ptr);
 int tcp_post_read_pkt(MPIDI_VC *vc_ptr);
+int tcp_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest, MM_Car *car_ptr);
 
 #endif
