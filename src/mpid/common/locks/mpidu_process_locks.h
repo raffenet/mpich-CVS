@@ -28,6 +28,22 @@ __attribute__ ((unused))
 }
 #endif
 
+#ifdef HAVE_GCC_AND_X86_64_ASM
+#define HAVE_COMPARE_AND_SWAP
+static inline char
+__attribute__ ((unused))
+     compare_and_swap (volatile long int *p, long int oldval, long int newval)
+{
+  char ret;
+  long int readval;
+
+  __asm__ __volatile__ ("lock; cmpxchgq %3, %1; sete %0"
+                : "=q" (ret), "=m" (*p), "=a" (readval)
+            : "r" (newval), "m" (*p), "a" (oldval));
+  return ret;
+}
+#endif
+
 extern int g_nLockSpinCount;
 
 /* Define MPIDU_Yield() */
