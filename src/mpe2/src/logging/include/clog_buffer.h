@@ -19,8 +19,8 @@
 #define CLOG_DEFAULT_BLOCK_SIZE       131072
 #define CLOG_DEFAULT_BUFFERED_BLOCKS     128
 */
-#define CLOG_DEFAULT_BLOCK_SIZE          512
-#define CLOG_DEFAULT_BUFFERED_BLOCKS       4
+#define CLOG_DEFAULT_BLOCK_SIZE        65536
+#define CLOG_DEFAULT_BUFFERED_BLOCKS     128
 
 /* 
    for testing CLOG_status, one bit for initialized and one for on/off
