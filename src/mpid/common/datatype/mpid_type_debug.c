@@ -39,10 +39,10 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
 	sticky_ub = type_ptr->has_sticky_ub;
     }
 
-    MPI_Type_size(type, &size);
-    MPI_Type_get_true_extent(type, &true_lb, &extent);
+    PMPI_Type_size(type, &size);
+    PMPI_Type_get_true_extent(type, &true_lb, &extent);
     true_ub = extent + true_lb;
-    MPI_Type_get_extent(type, &lb, &extent);
+    PMPI_Type_get_extent(type, &lb, &extent);
     ub = extent + lb;
 
 #if 0
