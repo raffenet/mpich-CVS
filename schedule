@@ -77,8 +77,8 @@ MPI_Issend,
 MPI_Irsend,
 MPI_Irecv,
 MPI_Wait,,,,,Brian,,done
-MPI_Test,,,,,,MPI_Grequest_start,
-MPI_Request_free,
+MPI_Test,,,,David Bill Brian,MPI_Grequest_start,
+MPI_Request_free,.1,.15,.2,,Brian,,.1,05/14/02
 MPI_Waitany,,,,,,MPI_Grequest_start,
 MPI_Testany,,,,,,MPI_Grequest_start,
 MPI_Waitall,,,,,,MPI_Grequest_start,
