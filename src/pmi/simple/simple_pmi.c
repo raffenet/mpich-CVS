@@ -7,6 +7,8 @@
 
 /*********************** PMI implementation ********************************/
 
+#define USE_PMI_PORT
+
 #include "pmiconf.h" 
 
 #include <stdio.h>
@@ -74,6 +76,7 @@ int PMI_Init( int *spawned )
 
     /* setvbuf(stdout,0,_IONBF,0); */
     setbuf(stdout,NULL);
+    PMIU_printf( 1, "PMI_INIT\n" );
     if ( ( p = getenv( "PMI_FD" ) ) )
 	PMI_fd = atoi( p );
 #ifdef USE_PMI_PORT
@@ -108,11 +111,11 @@ int PMI_Init( int *spawned )
 	p = getenv( "PMI_ID" );
 	if (p) {
 	    id = atoi( p );
+	    /* PMII_Set_from_port sets up the values that are delivered
+	       by enviroment variables when a separate port is not used */
+	    PMII_Set_from_port( PMI_fd, id );
+	    notset = 0;
 	}
-	/* PMII_Set_from_port sets up the values that are delivered
-	   by enviroment variables when a separate port is not used */
-	PMII_Set_from_port( PMI_fd, id );
-	notset = 0;
     }
 #endif
     else {
