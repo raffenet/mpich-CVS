@@ -148,47 +148,47 @@ int main( int argc, char *argv[] )
        Use subsets of these for tests that do not involve combinations 
        of communicators, datatypes, and counts of datatypes */
     while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
-	if (comm == MPI_COMM_NULL) continue;
-	/* Determine the sender and receiver */
-	MPI_Comm_rank( comm, &rank );
-	MPI_Comm_size( comm, &size );
-	source = 0;
-	dest   = size - 1;
-	
-	for (count = 1; count < 65000; count = count * 2) {
-	    MTestPrintfMsg( 1, "count = %d\n", count );
-	    while (MTestGetDatatypes( &sendtype, &recvtype, count )) {
-		if (rank == source) {
-		    sendtype.InitBuf( &sendtype );
-		    
-		    err = MPI_Send( sendtype.buf, sendtype.count, 
-				    sendtype.datatype, dest, 0, comm );
-		    if (err) {
-			errs++;
-			MTestPrintError( err );
-		    }
-		    MTestFreeDatatype( &sendtype );
-		}
-		else if (rank == dest) {
-		    recvtype.InitBuf( &recvtype );
-		    err = MPI_Recv( recvtype.buf, recvtype.count, 
-				    recvtype.datatype, source, 0, comm, &status );
-		    if (err) {
-			errs++;
-			fprintf( stderr, "Error with communicator %s and datatype %s\n", 
-				 MTestGetIntracommName(), 
-				 MTestGetDatatypeName( &recvtype ) );
-			MTestPrintError( err );
-		    }
-		    err = MTestCheckRecv( &status, &recvtype );
-		    if (err) {
-			errs += errs;
-		    }
-		    MTestFreeDatatype( &recvtype );
-		}
-	    }
-	}
-	MTestFreeComm( &comm );
+        if (comm == MPI_COMM_NULL) continue;
+        /* Determine the sender and receiver */
+        MPI_Comm_rank( comm, &rank );
+        MPI_Comm_size( comm, &size );
+        source = 0;
+        dest   = size - 1;
+        
+        for (count = 1; count < 65000; count = count * 2) {
+            MTestPrintfMsg( 1, "count = %d\n", count );
+            while (MTestGetDatatypes( &sendtype, &recvtype, count )) {
+                if (rank == source) {
+                    sendtype.InitBuf( &sendtype );
+                    
+                    err = MPI_Send( sendtype.buf, sendtype.count, 
+                                    sendtype.datatype, dest, 0, comm );
+                    if (err) {
+                        errs++;
+                        MTestPrintError( err );
+                    }
+                    MTestFreeDatatype( &sendtype );
+                }
+                else if (rank == dest) {
+                    recvtype.InitBuf( &recvtype );
+                    err = MPI_Recv( recvtype.buf, recvtype.count, 
+                                    recvtype.datatype, source, 0, comm, &status );
+                    if (err) {
+                        errs++;
+                        fprintf( stderr, "Error with communicator %s and datatype %s\n", 
+                                 MTestGetIntracommName(), 
+                                 MTestGetDatatypeName( &recvtype ) );
+                        MTestPrintError( err );
+                    }
+                    err = MTestCheckRecv( &status, &recvtype );
+                    if (err) {
+                        errs += errs;
+                    }
+                    MTestFreeDatatype( &recvtype );
+                }
+            }
+        }
+        MTestFreeComm( &comm );
     }
 
     MTest_Finalize( errs );
@@ -200,13 +200,13 @@ int main( int argc, char *argv[] )
 This example illustrates many of the routines in the MTest package.
 They are, in order:
 \begin{description}
-\item[\code{MTest\_Init}]Initialize the MTest routines, including
+\item[\code{MTest_Init}]Initialize the MTest routines, including
 calling \code{MPI_Init} if necessary.  In addition, the following
 environment variables are read:
 \begin{description}
-\item[\code{MPITEST\_DEBUG}]If set, turns on internal debugging output
+\item[\code{MPITEST_DEBUG}]If set, turns on internal debugging output
 from the MTest package, such as data on created datatypes and communicators.
-\item[\code{MPITEST\_VERBOSE}]If set to a positive integer, sets the
+\item[\code{MPITEST_VERBOSE}]If set to a positive integer, sets the
 message level for output from the routine \code{MTestPrintfMsg} (see
 below).
 \end{description}
