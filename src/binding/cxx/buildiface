@@ -639,6 +639,7 @@ if ($build_io) {
 		     'op'        => 'Op_methods',
 		     'file'      => 'File_methods',
 		     'win'       => 'Win_methods',
+		     'greq'      => 'Grequest_methods',
 		     );
 
 # ----------------------------------------------------------------------------
@@ -2292,7 +2293,19 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
                    "MPI::Intercomm v;MPI_Comm vv;", 
                    "Comm_get_parent",
                    "&vv", "(v = (Intercomm)vv, v)" );
+    &PrintWrapper( $OUTFD, "Intercomm", "Comm::Join", "const int fd",
+                    "MPI::Intercomm v;MPI_Comm vv;",
+                    "Comm_join",
+                    "fd,&vv", "(v = (Intercomm)vv,v)" );
 
+    print $OUTFD "
+    Grequest Grequest::Start( Query_function query_fn,
+                              Free_function free_fn,
+                              Cancel_function cancel_fn,
+                              void *extra_state ) {
+	return 0;
+    }
+";
 
     print $OUTFD "} // namespace MPI\n";
     close ($OUTFD);
@@ -2778,6 +2791,12 @@ sub Grequest_methods {
     typedef int Query_function( void *, Status & );
     typedef int Free_function( void * );
     typedef int Cancel_function( void *, bool );
+";
+    print $OUTFD "
+    Grequest Start( Query_function query_fn,
+                    Free_function free_fn,
+                    Cancel_function cancel_fn,
+                    void *extra_state );
 ";
 }
     
