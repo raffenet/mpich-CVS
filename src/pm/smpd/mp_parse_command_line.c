@@ -1356,6 +1356,22 @@ configfile_loop:
 		strncpy(channel, (*argvp)[2], SMPD_MAX_NAME_LENGTH);
 		num_args_to_strip = 2;
 	    }
+	    else if (strcmp(&(*argvp)[1][1], "log") == 0)
+	    {
+		/* Give the user a shortcut to create log files using the mpe wrapper dll */
+		env_node = (smpd_env_node_t*)malloc(sizeof(smpd_env_node_t));
+		if (env_node == NULL)
+		{
+		    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		strncpy(env_node->name, "MPI_WRAP_DLL_NAME", SMPD_MAX_NAME_LENGTH);
+		/* FIXME: How do we know to use the debug or release version? */
+		strncpy(env_node->value, "mpich2mpe.dll", SMPD_MAX_VALUE_LENGTH);
+		env_node->next = env_list;
+		env_list = env_node;
+	    }
 	    else
 	    {
 		printf("Unknown option: %s\n", (*argvp)[1]);
