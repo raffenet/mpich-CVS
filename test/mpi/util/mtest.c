@@ -30,6 +30,7 @@ void MTest_Finalize( int errs )
 	else {
 	    printf( " No errors\n" );
 	}
+	fflush( stdout );
     }
 }
 

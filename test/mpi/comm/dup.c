@@ -30,17 +30,44 @@ int main( int argc, char **argv )
     dest = MPI_PROC_NULL;
     if (rank == 0) {
 	dest = size - 1;
+	a = rank;
+	b = -1;
 	MPI_Sendrecv( &a, 1, MPI_INT, dest, 0,
 		      &b, 1, MPI_INT, dest, 0, newcomm, &status );
+	if (b != dest) {
+	    errs++;
+	    fprintf( stderr, "Received %d expected %d on %d\n", b, dest, rank );
+	    fflush( stderr );
+	}
+	if (status.MPI_SOURCE != dest) {
+	    errs++;
+	    fprintf( stderr, "Source not set correctly in status on %d\n", 
+		     rank );
+	    fflush( stderr );
+	}
     }
     else if (rank == size-1) { 
 	dest = 0;
+	a = rank;
+	b = -1;
 	MPI_Sendrecv( &a, 1, MPI_INT, dest, 0,
 		      &b, 1, MPI_INT, dest, 0, newcomm, &status );
+	if (b != dest) {
+	    errs++;
+	    fprintf( stderr, "Received %d expected %d on %d\n", b, dest, rank );
+	    fflush( stderr );
+	}
+	if (status.MPI_SOURCE != dest) {
+	    errs++;
+	    fprintf( stderr, "Source not set correctly in status on %d\n", 
+		     rank );
+	    fflush( stderr );
+	}
     }
-
 
     MPI_Comm_free( &newcomm );
 
     MTest_Finalize( errs );
+
+    return 0;
 }
