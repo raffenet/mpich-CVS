@@ -112,7 +112,8 @@ int vector_of_vectors_test(void)
     }
 
     MPI_Type_commit(&outer_vector);
-    MPI_Type_size(outer_vector, &sizeoftype);
+/*     MPI_Type_size(outer_vector, &sizeoftype); */
+    MPI_Pack_external_size("external32", 1, outer_vector, &sizeoftype);
     if (sizeoftype != 4*sizeof(int)) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
@@ -212,7 +213,8 @@ int optimizable_vector_of_basics_test(void)
 
     int err, errs = 0;
 
-    MPI_Type_size(MPI_INT, &sizeofint);
+/*     MPI_Type_size(MPI_INT, &sizeofint); */
+    MPI_Pack_external_size("external32", 1, MPI_INT, &sizeoftype);
 
     if (sizeofint != sizeof(int)) {
 	errs++;
@@ -229,7 +231,9 @@ int optimizable_vector_of_basics_test(void)
 
     MPI_Type_commit(&parent_type);
 
-    MPI_Type_size(parent_type, &sizeoftype);
+/*     MPI_Type_size(parent_type, &sizeoftype); */
+    MPI_Pack_external_size("external32", 1, parent_type, &sizeoftype);
+
 
     if (sizeoftype != 20 * sizeof(int)) {
 	errs++;
