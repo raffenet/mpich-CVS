@@ -130,6 +130,8 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 				  BSEND, &request_ptr );
     if (mpi_errno == MPI_SUCCESS)
     {
+	/* We'll wait on the request, if any, within the bsendutil.c functions
+	   that advance active sends */
 	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
 	return MPI_SUCCESS;
     }
@@ -141,6 +143,4 @@ fn_fail:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */
-    /* We'll wait on the request, if any, within the bsendutil.c functions
-       that advance active sends */
 }
