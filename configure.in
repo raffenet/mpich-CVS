@@ -1575,7 +1575,8 @@ AC_OUTPUT(Makefile src/Makefile \
           src/util/logging/Makefile \
           src/util/timing/Makefile \
 	  doc/Makefile doc/mansrc/Makefile \
-	  doc/adi3/Makefile
+	  doc/adi3/Makefile doc/install/Makefile doc/user/Makefile \
+	  doc/develop/Makefile \
 )
 
 dnl The following files should be created by the appropriate configure within
