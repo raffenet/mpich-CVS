@@ -618,6 +618,12 @@ int MPID_Datatype_set_contents(struct MPID_Datatype *ptr,
 			       MPI_Datatype *types);
 
 void MPID_Datatype_free_contents(struct MPID_Datatype *ptr);
+void MPIDI_Datatype_get_contents_aints(MPID_Datatype_contents *cp,
+				       MPI_Aint *user_aints);
+void MPIDI_Datatype_get_contents_types(MPID_Datatype_contents *cp,
+				       MPI_Datatype *user_types);
+void MPIDI_Datatype_get_contents_ints(MPID_Datatype_contents *cp,
+				      int *user_ints);
 
 void MPID_Datatype_free(struct MPID_Datatype *ptr);
 

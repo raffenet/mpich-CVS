@@ -74,7 +74,6 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
     {
 	/* user-defined base type */
 	MPID_Datatype *old_dtp;
-	char *curpos;
 
 	MPID_Datatype_get_ptr(oldtype, old_dtp);
 
