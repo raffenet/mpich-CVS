@@ -70,8 +70,9 @@ PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
 					     __LINE__,
 					     MPI_ERR_ARG,
 					     "**darrayblock2",
-					     "**darrayblock2 %d",
-					     blksize);
+					     "**darrayblock2 %d %d",
+					     blksize*nprocs,
+					     global_size);
 	    return mpi_errno;
 	}
 #endif
