@@ -1,7 +1,7 @@
 Makefile
 Makefile.in
-mpidi_ch3i_ssm_conf.h.in
-mpidi_ch3i_ssm_conf.h
+mpidi_ch3i_sshm_conf.h.in
+mpidi_ch3i_sshm_conf.h
 *.o
 *.lo
 *.bb
