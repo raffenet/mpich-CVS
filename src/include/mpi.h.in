@@ -159,7 +159,7 @@ typedef int MPI_Op;
 /* Topology types */
 /* #define MPI_GRAPH  1 */
 /*   #define MPI_CART   2 */
-typedef enum { MPI_GRAPH=1, MPI_CART=2 } MPIR_Topo_type;
+typedef enum MPIR_Topo_type { MPI_GRAPH=1, MPI_CART=2 } MPIR_Topo_type;
 
 #define MPI_BOTTOM      (void *)0
 
@@ -230,7 +230,7 @@ typedef int (MPI_Delete_function) ( MPI_Comm, int, void *, void * );
 #define MPICH_HAS_C2F
 
 /* for the datatype decoders */
-enum {
+enum MPI_COMBINER_ENUM {
     MPI_COMBINER_NAMED            = 1,
     MPI_COMBINER_DUP              = 2,
     MPI_COMBINER_CONTIGUOUS       = 3, 
@@ -276,7 +276,7 @@ typedef @MPI_FINT@ MPI_Fint;
 typedef @MPI_OFFSET@ MPI_Offset;
 
 /* The order of these elements must match that in mpif.h */
-typedef struct { 
+typedef struct MPI_Status {
     int count;
     int cancelled;
     int MPI_SOURCE;
