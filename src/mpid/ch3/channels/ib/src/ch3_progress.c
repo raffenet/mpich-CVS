@@ -16,6 +16,7 @@ static inline int handle_read(MPIDI_VC *vc, int nb)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * req;
+    int complete;
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_READ);
@@ -35,15 +36,19 @@ static inline int handle_read(MPIDI_VC *vc, int nb)
 	if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	{
 	    /* Read operation complete */
-	    vc->ch.recv_active = NULL;
-	    mpi_errno = MPIDI_CH3U_Handle_recv_req(vc, req);
+	    mpi_errno = MPIDI_CH3U_Handle_recv_req(vc, req, &complete);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    }
-	    if (req->dev.iov_count == 0 && vc->ch.recv_active == NULL)
+	    if (complete)
 	    {
 		post_pkt_recv(vc);
+	    }
+	    else
+	    {
+		vc->ch.recv_active = req;
+		mpi_errno = ibu_post_readv(vc->ch.ibu, req->dev.iov, req->dev.iov_count);
 	    }
 	}
 	else
@@ -78,6 +83,7 @@ static inline int handle_read(MPIDI_VC *vc, int nb)
 static inline int handle_written(MPIDI_VC * vc)
 {
     int nb, mpi_errno = MPI_SUCCESS;
+    int complete;
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_WRITTEN);
 
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_WRITTEN);
@@ -117,16 +123,14 @@ static inline int handle_written(MPIDI_VC * vc)
 	    if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	    {
 		/* Write operation complete */
-		vc->ch.send_active = NULL;
-		
-		mpi_errno = MPIDI_CH3U_Handle_send_req(vc, req);
+		mpi_errno = MPIDI_CH3U_Handle_send_req(vc, req, &complete);
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_WRITTEN);
 		    return mpi_errno;
 		}
-		if (req->dev.iov_count == 0 && vc->ch.sendq_head == req)
+		if (complete)
 		{
 		    MPIDI_CH3I_SendQ_dequeue(vc);
 		}
@@ -368,7 +372,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
 	}
     }
     
-    req->ch.iov_offset = offset;
+    req->ch.iov_offset = 0;
 
     MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning TRUE"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
