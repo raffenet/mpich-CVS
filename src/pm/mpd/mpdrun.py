@@ -207,7 +207,12 @@ def mpdrun():
                 print '*** exiting; range %d-%d has no exec' % (loRange,hiRange)
                 exit(-1)
             if p.hasAttribute('user'):
-                users[(loRange,hiRange)] = p.getAttribute('user')
+                tempuser = p.getAttribute('user')
+                if tempuser == username  or  getuid() == 0:
+                    users[(loRange,hiRange)] = p.getAttribute('user')
+                else:
+                    print tempuser, 'username does not match yours and you are not root'
+                    exit(-1)
             else:
                 users[(loRange,hiRange)] = username
             if p.hasAttribute('cwd'):
