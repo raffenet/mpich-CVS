@@ -28,8 +28,10 @@ void ADIOI_PVFS2_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
      * ADIO_Open.  This node can perform operations on files and then 
      * inform the other nodes of the result */
 
-    /* we know all processes have reached this point because we did an
-     * MPI_Barrier in MPI_File_set_size() */
+    /* MPI-IO semantics treat conflicting MPI_File_set_size requests the
+     * same as conflicting write requests. Thus, a resize from one
+     * process does not have to be visible to the other processes until a
+     * syncronization point is reached */
 
     if (rank == fd->hints->ranklist[0]) {
 	ret = PVFS_sys_truncate(pvfs_fs->object_ref, 
