@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
 		printf("Unable to create an MPI_Info to be used in MPI_Open_port.\n");
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	    }
-	    result = MPI_Open_port(info, mpi_port);
+	    result = MPI_Open_port(/*info*/MPI_INFO_NULL, mpi_port);
 	    if (result != MPI_SUCCESS)
 	    {
 		printf("MPI_Open_port failed, aborting.\n");
@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
 		printf("Unable to broadcast the port name to COMM_WORLD.\n");
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	    }
-	    printf("%s listening on port: %s\n", processor_name, mpi_port);
+	    printf("%s listening on port:\n%s\n", processor_name, mpi_port);
 	    fflush(stdout);
 
 	    result = MPI_Comm_accept(mpi_port, info, 0, MPI_COMM_WORLD, &comm);
@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
 	    printf("sending num_colors.\n");
 	    fflush(stdout);
 	    */
-	    MPI_Send(&num_colors, 1, MPI_INT, 0, 0, comm);
+	    result = MPI_Send(&num_colors, 1, MPI_INT, 0, 0, comm);
 	    if (result != MPI_SUCCESS)
 	    {
 		printf("Unable to send num_colors to visualizer, aborting.\n");
@@ -606,6 +606,8 @@ int main(int argc, char *argv[])
 
 	dumpimage(filename, out_grid_array, ipixels_across, ipixels_down, imax_iterations, file_message, num_colors, colors);
     }
+
+    MPI_Comm_disconnect(&comm);
 
     MPI_Finalize();
     free(colors);
@@ -1377,51 +1379,3 @@ void dumpimage(char *filename, int in_grid_array[], int in_pixels_across, int in
 
     fclose(ifp);
 }
-
-
-
-/*
-The portable graymap format is a lowest  common  denominator
-grayscale file format.  The definition is as follows:
-
-- A "magic number" for identifying the  file  type.   A  pgm
-file's magic number is the two characters "P2".
-
-- Whitespace (blanks, TABs, CRs, LFs).
-
-- A width, formatted as ASCII characters in decimal.
-
-- Whitespace.
-- A height, again in ASCII decimal.
-
-- Whitespace.
-
-- The maximum gray value, again in ASCII decimal.
-
-- Whitespace.
-
-- Width * height gray values, each in ASCII decimal, between
-0  and  the  specified  maximum  value,  separated by whi-
-tespace, starting at the top-left corner of  the  graymap,
-proceding  in  normal English reading order.  A value of 0
-means black, and the maximum value means white.
-
-- Characters from a "#" to the next end-of-line are  ignored
-(comments).
-
-- No line should be longer than 70 characters.
-
-Here is an example of a small graymap in this format:
-
-P2
-# feep.pgm
-24 7
-15
-0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
-0  3  3  3  3  0  0  7  7  7  7  0  0 11 11 11 11  0  0 15 15 15 15  0
-0  3  0  0  0  0  0  7  0  0  0  0  0 11  0  0  0  0  0 15  0  0 15  0
-0  3  3  3  0  0  0  7  7  7  0  0  0 11 11 11  0  0  0 15 15 15 15  0
-0  3  0  0  0  0  0  7  0  0  0  0  0 11  0  0  0  0  0 15  0  0  0  0
-0  3  0  0  0  0  0  7  7  7  7  0  0 11 11 11 11  0  0 15  0  0  0  0
-0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
-*/

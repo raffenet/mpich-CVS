@@ -178,12 +178,15 @@ int main(int argc, char *argv[])
     char error_str[MPI_MAX_ERROR_STRING];
     int length;
     int index;
+    int pid;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &myid);
     MPI_Comm_get_parent(&parent);
     MPI_Get_processor_name(processor_name, &namelen);
+
+    pid = getpid();
 
     if (parent == MPI_COMM_NULL)
     {
@@ -339,7 +342,7 @@ int main(int argc, char *argv[])
 	    len = sizeof(addr);
 	    getsockname(listener, &addr, &len);
 	    
-	    printf("%s listening on port %d\n", processor_name, addr.sin_port);
+	    printf("%s listening on port %d\n", processor_name, ntohs(addr.sin_port));
 	    fflush(stdout);
 
 	    sock = accept(listener, NULL, NULL);
@@ -392,6 +395,23 @@ int main(int argc, char *argv[])
 	    }
 	    printf("x0,y0 = (%f, %f) x1,y1 = (%f,%f)\n", x_min, y_min, x_max, y_max);fflush(stdout);
 
+	    /*printf("sending the limits: (%f,%f)(%f,%f)\n", x_min, y_min, x_max, y_max);fflush(stdout);*/
+	    /* let everyone know the limits */
+	    for (i=0; i<num_children; i++)
+	    {
+		MPI_Send(&x_min, 1, MPI_DOUBLE, 0, 0, child_comm[i]);
+		MPI_Send(&x_max, 1, MPI_DOUBLE, 0, 0, child_comm[i]);
+		MPI_Send(&y_min, 1, MPI_DOUBLE, 0, 0, child_comm[i]);
+		MPI_Send(&y_max, 1, MPI_DOUBLE, 0, 0, child_comm[i]);
+	    }
+
+	    /* check for the end condition */
+	    if (x_min == x_max && y_min == y_max)
+	    {
+		/*printf("root bailing.\n");fflush(stdout);*/
+		break;
+	    }
+
 	    /* break the work up into 400 pieces */
 	    istep = ipixels_across / 20;
 	    jstep = ipixels_down / 20;
@@ -423,22 +443,6 @@ int main(int argc, char *argv[])
 		swap(&j2[ii], &j2[jj]);
 	    }
 
-	    /*printf("sending the limits: (%f,%f)(%f,%f)\n", x_min, y_min, x_max, y_max);fflush(stdout);*/
-	    /* let everyone know the limits */
-	    for (i=0; i<num_children; i++)
-	    {
-		MPI_Send(&x_min, 1, MPI_DOUBLE, 0, 0, child_comm[i]);
-		MPI_Send(&x_max, 1, MPI_DOUBLE, 0, 0, child_comm[i]);
-		MPI_Send(&y_min, 1, MPI_DOUBLE, 0, 0, child_comm[i]);
-		MPI_Send(&y_max, 1, MPI_DOUBLE, 0, 0, child_comm[i]);
-	    }
-
-	    /* check for the end condition */
-	    if (x_min == x_max && y_min == y_max)
-	    {
-		break;
-	    }
-
 	    /* send a piece of work to each worker (there must be more work than workers) */
 	    k = 0;
 	    for (i=0; i<num_children; i++)
@@ -459,6 +463,7 @@ int main(int argc, char *argv[])
 	    {
 		MPI_Waitany(num_children, child_request, &index, &status);
 		memcpy(work, &result[index], 5 * sizeof(int));
+		/*printf("master receiving data in k<400 loop.\n");fflush(stdout);*/
 		MPI_Recv(in_grid_array, (work[2] + 1 - work[1]) * (work[4] + 1 - work[3]), MPI_INT, 0, 201, child_comm[index], &status);
 		/* draw data */
 		output_data(in_grid_array, &work[1], out_grid_array, ipixels_across, ipixels_down);
@@ -477,6 +482,8 @@ int main(int argc, char *argv[])
 	    for (i=0; i<num_children; i++)
 	    {
 		MPI_Wait(&child_request[i], &status);
+		memcpy(work, &result[i], 5 * sizeof(int));
+		/*printf("master receiving data in tail loop.\n");fflush(stdout);*/
 		MPI_Recv(in_grid_array, (work[2] + 1 - work[1]) * (work[4] + 1 - work[3]), MPI_INT, 0, 201, child_comm[i], &status);
 		/* draw data */
 		output_data(in_grid_array, &work[1], out_grid_array, ipixels_across, ipixels_down);
@@ -504,16 +511,17 @@ int main(int argc, char *argv[])
     {
 	for (;;)
 	{
+	    /*printf("slave[%d] receiveing bounds.\n", pid);fflush(stdout);*/
 	    MPI_Recv(&x_min, 1, MPI_DOUBLE, 0, 0, parent, MPI_STATUS_IGNORE);
 	    MPI_Recv(&x_max, 1, MPI_DOUBLE, 0, 0, parent, MPI_STATUS_IGNORE);
 	    MPI_Recv(&y_min, 1, MPI_DOUBLE, 0, 0, parent, MPI_STATUS_IGNORE);
 	    MPI_Recv(&y_max, 1, MPI_DOUBLE, 0, 0, parent, MPI_STATUS_IGNORE);
-	    /*printf("received bounding box: (%f,%f)(%f,%f)\n", x_min, y_min, x_max, y_max);fflush(stdout);*/
+	    /*printf("slave[%d] received bounding box: (%f,%f)(%f,%f)\n", pid, x_min, y_min, x_max, y_max);fflush(stdout);*/
 
 	    /* check for the end condition */
 	    if (x_min == x_max && y_min == y_max)
 	    {
-		/*printf("slave done.\n");fflush(stdout);*/
+		/*printf("slave[%d] done.\n", pid);fflush(stdout);*/
 		break;
 	    }
 
@@ -521,7 +529,7 @@ int main(int argc, char *argv[])
 	    y_resolution = (y_max-y_min)/ ((double)ipixels_down);
 
 	    MPI_Recv(work, 5, MPI_INT, 0, 100, parent, &status);
-	    /*printf("received work: %d, (%d,%d)(%d,%d)\n", work[0], work[1], work[2], work[3], work[4]);fflush(stdout);*/
+	    /*printf("slave[%d] received work: %d, (%d,%d)(%d,%d)\n", pid, work[0], work[1], work[2], work[3], work[4]);fflush(stdout);*/
 	    while (work[0] != 0)
 	    {
 		imin = work[1];
@@ -566,17 +574,19 @@ int main(int argc, char *argv[])
 		    }
 		}
 		/* send the result to the root */
-		work[0] = myid; /* useless in the spawn version - everyone is rank 0 */
+		/*printf("slave[%d] sending work %d back.\n", pid, work[0]);fflush(stdout);*/
 		MPI_Send(work, 5, MPI_INT, 0, 200, parent);
+		/*printf("slave[%d] sending work %d data.\n", pid, work[0]);fflush(stdout);*/
 		MPI_Send(in_grid_array, (work[2] + 1 - work[1]) * (work[4] + 1 - work[3]), MPI_INT, 0, 201, parent);
 		/* get the next piece of work */
+		/*printf("slave[%d] receiving new work.\n", pid);fflush(stdout);*/
 		MPI_Recv(work, 5, MPI_INT, 0, 100, parent, &status);
-		/*printf("received work: %d, (%d,%d)(%d,%d)\n", work[0], work[1], work[2], work[3], work[4]);fflush(stdout);*/
+		/*printf("slave[%d] received work: %d, (%d,%d)(%d,%d)\n", pid, work[0], work[1], work[2], work[3], work[4]);fflush(stdout);*/
 	    }
 	}
     }
 
-    if (myid == 0 && save_image)
+    if (master && save_image)
     {
 	imax_iterations = 0;
 	for (i=0; i<ipixels_across * ipixels_down; ++i)
@@ -610,10 +620,20 @@ int main(int argc, char *argv[])
 	dumpimage(filename, out_grid_array, ipixels_across, ipixels_down, imax_iterations, file_message, num_colors, colors);
     }
 
+    if (master)
+    {
+	for (i=0; i<num_children; i++)
+	{
+	    MPI_Comm_disconnect(&child_comm[i]);
+	}
+	free(child_comm);
+	free(child_request);
+	free(colors);
+    }
+
     MPI_Finalize();
-    free(colors);
     return 0;
-} /* end of main */
+}
 
 void PrintUsage()
 {
