@@ -1,12 +1,15 @@
 /* simple test for multiple executables */
 #include "mpi.h"
 #include <stdio.h>
+#include <unistd.h>
+#define MAX_DIRNAME_SIZE 256 
 
 int main( int argc, char *argv[])
 {
     int  i, myid, numprocs;
     int  namelen;
     char processor_name[MPI_MAX_PROCESSOR_NAME];
+    char curr_wd[MAX_DIRNAME_SIZE];
 
     MPI_Init( &argc, &argv );
     MPI_Comm_size( MPI_COMM_WORLD, &numprocs );
@@ -21,6 +24,9 @@ int main( int argc, char *argv[])
 	fprintf( stdout, "[%d] argv[%d]=\"%s\"\n", myid, i, argv[i] ); 
 	fflush( stdout );
     }
+
+    getcwd( curr_wd, MAX_DIRNAME_SIZE ); 
+    fprintf( stdout, "[%d] current working directory=%s\n", i, curr_wd );
 
     MPI_Finalize( );
 }
