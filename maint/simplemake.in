@@ -442,6 +442,11 @@ sub ReadMfile {
         elsif (/^EXTRA_PROGRAMS\s*=\s*(.*)\s*$/) {
 	    $extra_programs{$1} = 1;
 	}
+	elsif (/^EXTERNAL_LIBS\s*=\s*(.*)\s*$/) {
+	    foreach $lib (split(/\s+/,$1)) {
+		$external_libraries{$lib} = 1;
+	    }
+	}
 	elsif ($nocomments && /^\s*#/) {
 	       ;
 	   }
@@ -508,7 +513,7 @@ sub ReadMfile {
     }
 }
 
-#foreach $dir (split(/\s\s*/,$subdirs)) {
+#foreach $dir (split(/\s+/,$subdirs)) {
 #    ReadMfile( "$dir/m.s" );
 #}
 #
@@ -928,6 +933,7 @@ sub ClearVars {
     %profile_libraries = ();
     %install_files = ();
     %optinstall_files = ();
+    %external_libraries = ();
     $found_profilelib = 0;
     $found_sharedlib  = 0;
     %programs = ();
@@ -1414,7 +1420,8 @@ sub TargetPrograms {
 	    $libdir = $1;
 	    $libname = $2;
 	    if (defined($libdir) && defined($libname) && 
-		$libdir ne "" && $libname ne "") { 
+		$libdir ne "" && $libname ne "" && 
+		!defined($external_libraries{$libname})) { 
 	        &print_make_line( FD, " $libdir/lib$libname.a" );
             }
 	}

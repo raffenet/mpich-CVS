@@ -77,7 +77,11 @@ lib<name>_a_SOURCES = source file names for library <name>
 lib<name>_a_DIR     = directory in which lib<name> will exist
 <name>_SOURCES      = source file names for program <name>
 <name>_LDADD        = additional files and flags used for 
-                      linking program <name>
+                      linking program <name>.  Libraries are added to
+		      the dependency list as if they are local, if a 
+		      -L<path> string is present.  If external libraries
+		      are also needed (e.g., -lm), mark these with
+		      the EXTERNAL_LIBS variable
 SUBDIRS             = names of subsidiary directories
 EXTRA_PROGRAMS      = names of programs that should *not* be built by default
 doc_<type>_SOURCES  = Source files for building documentation using doctext.
@@ -87,7 +91,11 @@ doc_<type>_DIR      = Installation directory for documentation (some
 profilelib_<oldname> = <newname>
                     - Create a profile version of <oldname> with name 
                       <newname>
-
+EXTERNAL_LIBS        = Names of libraries that are external to this
+                       package and that should not be included in dependency
+		       lists for programs.  For example, if -lm is a 
+		       library in a <name>_LDADD list, add m to 
+		       EXTERNAL_LIBS
 Other lines are copied as provided.  Variables (e.g., name = ...) are placed
 before other targets.  
 
