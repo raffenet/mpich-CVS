@@ -175,12 +175,16 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
     {
 	if (smpd_process.bService)
 	{
+	    smpd_dbg_printf("CreateProcessAsUser\n");
 	    result = CreateProcessAsUser(
 		user_handle,
-		NULL, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &sInfo, &pInfo);
+		NULL, cmd, NULL, NULL, TRUE,
+		0,
+		NULL, NULL, &sInfo, &pInfo);
 	}
 	else
 	{
+	    smpd_dbg_printf("CreateProcess\n");
 	    result = CreateProcess(
 		NULL, cmd, NULL, NULL, TRUE,
 		0,
