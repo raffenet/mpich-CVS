@@ -84,8 +84,9 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 	}
 
 	/* Make sure that we get the correct group */
-	if (comm_ptr->comm_kind == MPID_INTERCOMM)
+	if (comm_ptr->comm_kind == MPID_INTERCOMM) {
 	    local_vcr = comm_ptr->local_vcr;
+	}
 	else
 	    local_vcr = comm_ptr->vcr;
 	
@@ -100,6 +101,10 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 	
 	comm_ptr->local_group = group_ptr;
     }
+    /* FIXME: Add a sanity check that the size of the group is the same as
+       the size of the communicator.  This helps catch corrupted 
+       communicators */
+
     *group = comm_ptr->local_group->handle;
     MPIU_Object_add_ref( comm_ptr->local_group );
     /* ... end of body of routine ... */
