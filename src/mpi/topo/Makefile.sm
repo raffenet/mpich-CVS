@@ -1,4 +1,4 @@
-lib${MPILIBNAME}_a_SOURCES = cart_coords.c cart_create.c cart_get.c cart_map.c cart_rank.c \
-                             cart_shift.c cart_sub.c dims_create.c graph_get.c graph_map.c \
-                             graph_nbr.c graphcreate.c graphdimsget.c graphnbrcnt.c cartdim_get.c
+lib${MPILIBNAME}_a_SOURCES = cart_coords.c cart_create.c cart_get.c cart_map.c \
+ cart_rank.c cart_shift.c cart_sub.c dims_create.c graph_get.c graph_map.c \
+ graph_nbr.c graphcreate.c graphdimsget.c graphnbrcnt.c cartdim_get.c topo_test.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include

@@ -1,1 +1,1 @@
-SUBDIRS = coll comm datatype errhan init spawn timer pt2pt topo attr .
+SUBDIRS = attr coll comm datatype errhan group init io misc pt2pt rma spawn timer topo .

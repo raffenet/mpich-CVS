@@ -29,6 +29,60 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
     return errcode;
 }
 
+int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], 
+			  int errcode )
+{
+    /* First, check the nesting level */
+    if (MPIR_Nest_value()) return errcode;
+
+    /* Now, invoke the error handler for the communicator */
+    if (win_ptr && win_ptr->errhandler) {
+	switch (win_ptr->errhandler->language) {
+	case MPID_LANG_C:
+	case MPID_LANG_CXX:
+	    (*win_ptr->errhandler->errfn.C_Comm_Handler_function)( &win_ptr->id, &errcode );
+	    break;
+	case MPID_LANG_FORTRAN90:
+	case MPID_LANG_FORTRAN:
+	    (*win_ptr->errhandler->errfn.F77_Handler_function)( (MPI_Fint *)&win_ptr->id, &errcode );
+	    break;
+	}
+    }
+    else {
+	/* No communicator, so errors are fatal */
+	printf( "Fatal error %d\n", errcode );
+	exit(1); /* Change this to MPID_Abort */
+    }
+    return errcode;
+}
+
+int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[], 
+			  int errcode )
+{
+    /* First, check the nesting level */
+    if (MPIR_Nest_value()) return errcode;
+
+    /* Now, invoke the error handler for the communicator */
+    if (file_ptr && file_ptr->errhandler) {
+	switch (file_ptr->errhandler->language) {
+	case MPID_LANG_C:
+	case MPID_LANG_CXX:
+	    (*file_ptr->errhandler->errfn.C_Comm_Handler_function)( &file_ptr->id, &errcode );
+	    break;
+	case MPID_LANG_FORTRAN90:
+	case MPID_LANG_FORTRAN:
+	    (*file_ptr->errhandler->errfn.F77_Handler_function)( (MPI_Fint *)&file_ptr->id, &errcode );
+	    break;
+	}
+    }
+    else {
+	/* No communicator, so errors are fatal */
+	printf( "Fatal error %d\n", errcode );
+	exit(1); /* Change this to MPID_Abort */
+    }
+    return errcode;
+}
+
 int MPIR_Err_create_code( int class, const char def_string[], ... )
 {
     return class;

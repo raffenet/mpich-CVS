@@ -1,2 +1,2 @@
-lib${MPILIBNAME}_a_SOURCES = wtime.c mpidtime.c
+lib${MPILIBNAME}_a_SOURCES = wtime.c mpidtime.c wtick.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include

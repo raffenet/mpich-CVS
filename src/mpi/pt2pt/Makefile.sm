@@ -1,7 +1,7 @@
-lib${MPILIBNAME}_a_SOURCES = address.c bsend.c bsend_init.c bufattach.c buffree.c cancel.c \
-                             commreq_free.c create_recv.c create_send.c ibsend.c iprobe.c \
-                             irecv.c irsend.c isend.c issend.c probe.c recv.c rsend.c \
-                             rsend_init.c send.c sendrecv.c sendrecv_rep.c ssend.c ssend_init.c \
-                             start.c startall.c test.c testall.c testany.c testcancel.c testsome.c \
-                             wait.c waitall.c waitany.c waitsome.c
+lib${MPILIBNAME}_a_SOURCES = address.c bsend.c bsend_init.c bufattach.c \
+ buffree.c cancel.c commreq_free.c create_recv.c create_send.c ibsend.c iprobe.c \
+ irecv.c irsend.c isend.c issend.c probe.c recv.c rsend.c rsend_init.c send.c \
+ sendrecv.c sendrecv_rep.c ssend.c ssend_init.c start.c startall.c test.c testall.c \
+ testany.c testsome.c wait.c waitall.c waitany.c waitsome.c request_get_status.c \
+ status_set_cancelled.c test_cancelled.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include

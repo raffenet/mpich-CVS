@@ -200,6 +200,9 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Info_valid_ptr(ptr,err) MPID_Valid_ptr(Info,ptr,err)
 #define MPID_Comm_valid_ptr(ptr,err) MPID_Valid_ptr(Comm,ptr,err)
 #define MPID_Datatype_valid_ptr(ptr,err) MPID_Valid_ptr(Datatype,ptr,err)
+#define MPID_Group_valid_ptr(ptr,err) MPID_Valid_ptr(Group,ptr,err)
+#define MPID_Win_valid_ptr(ptr,err) MPID_Valid_ptr(Win,ptr,err)
+#define MPID_File_valid_ptr(ptr,err) MPID_Valid_ptr(File,ptr,err)
 
 /* Info */
 typedef struct MPID_Info_s {
@@ -311,6 +314,12 @@ extern MPID_Comm MPID_Comm_direct[];
 /* Function to access indirect objects */
 extern MPID_Comm *MPID_Comm_Get_ptr_indirect( int handle );
 
+/* Windows */
+typedef struct {
+    int           id;             /* value of MPI_Win for this structure */
+    MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
+} MPID_Win;
+
 /* Datatypes */
 
 typedef struct MPID_Datatype_st { 
@@ -358,6 +367,11 @@ typedef struct MPID_Datatype_st {
   /* The following describes a generate datatype */
   /* other, device-specific information */
 } MPID_Datatype;
+
+typedef struct {
+    int           id;             /* value of MPI_File for this structure */
+    MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
+} MPID_File;
 
 /* Time stamps */
 /* Get the timer definitions.  The source file for this include is
@@ -471,6 +485,8 @@ extern int MPID_THREAD_LEVEL;
 /* Bindings for internal routines */
 void MPIR_Add_finalize( int (*)( void * ), void * );
 int MPIR_Err_return_comm( MPID_Comm *, const char [], int );
+int MPIR_Err_return_win( MPID_Win *, const char [], int );
+int MPIR_Err_return_file( MPID_File *, const char [], int );
 int MPIR_Err_create_code( int, const char [], ... );
 void MPIR_Nest_incr( void );
 void MPIR_Nest_decr( void );
