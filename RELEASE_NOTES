@@ -35,7 +35,9 @@
 - Previous releases of MPICH2 supported the "forker" process manager.  This
   process manager is still available but is unsupported and untested.  It
   does not support the dynamic-process operations in MPI-2 and thus will
-  fail many of the tests included with MPICH2.
+  fail many of the tests included with MPICH2.  Users should use the "gforker"
+  process manager instead of "forker", in those cases where the default 
+  "mpd" process manager is not appropriate.
 
 - The CH3 device does not presently support heterogeneous communication.  That
   is to say that the processes involved in a job must use the same basic type
@@ -90,13 +92,30 @@
 			Issues for Developers
 -------------------------------------------------------------------------------
 
-- MPICH2 requires autoconf version 2.53 or lower; however, MPE2, which is
-  distributed as part of MPICH2, requires autoconf 2.52 or higher.  By default,
-  MPICH2 and MPE use the autoconf programs in one's path.  The environment
-  variables AUTOCONF and AUTOHEADER can be set to specify alternative commands
-  for MPICH2.  Likewise, MPE_AUTOCONF and MPE_AUTOHEADER can be set to specify
-  alternative commands for MPE2.  Obviously, these environment variables must
-  be set before running "maint/updatefiles" or "make dist".  At present, we use
-  a patched version of 2.13 for MPICH2 and 2.59 for MPE2 for releases, although
-  2.53 appears to work fine for both packages.  The patch for 2.13 is located
-  in maint/ac2.13.diff.
+- MPE2, which is distributed as part of MPICH2, requires autoconf 2.52 or
+  higher.  By default, MPICH2 and MPE use the autoconf programs in one's path.
+  The environment variables AUTOCONF and AUTOHEADER can be set to specify
+  alternative commands for MPICH2.  Likewise, MPE_AUTOCONF and MPE_AUTOHEADER
+  can be set to specify alternative commands for MPE2.  Obviously, these
+  environment variables must be set before running "maint/updatefiles" or
+  "make dist".  At present, we use a patched version of 2.13 for MPICH2 and
+  2.59 for MPE2 for releases, although 2.53 appears to work fine for both
+  packages.  The patch for 2.13 is located in maint/ac2.13.diff.  Later 
+  versions, such as 2.59, have also been used for MPICH2, though only after 
+  some difficulty due to incompatibilities between the various autoconf 
+  versions.
+
+  Developers should also be aware that some versions of autoconf dynamically
+  choose the version based on the contents of the configure.in file.
+  Unfortunately, this means that autoconf may choose incompatible versions of
+  autoconf for different configure.in files in the same project (specifically,
+  some versions of configure pass the values of some of the environment on the
+  command line; earlier versions of configure view these as target platform
+  specifications and generate obscure error messages).  This is made even
+  worse by the fact that, while AC_PREREQ() is supoosed to select the minimum
+  version of autoconf to be used with a configure.in file, these autoconf
+  scripts often use this as the *maximum* version number to use.  You may see
+  this come up in some of the MPICH2 or MPE2 subdirectories; if you do, the
+  best workaround for these buggy versions of autoconf is to select a specific
+  version rather than the version that tries to determine the autoconf version
+  for you.
