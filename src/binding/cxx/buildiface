@@ -42,6 +42,7 @@ $debug = 0;
 #feature variables
 $do_subdecls = 1;
 
+
 # Process arguments
 #
 # Args
@@ -175,6 +176,16 @@ foreach $_ (@ARGV) {
 %class_mpi2ppreq = ();
 %class_mpi2req = ();
 %class_mpi2st = ();
+
+# MPI objects
+@dtypes = ( 'CHAR', 'UNSIGNED_CHAR', 'BYTE', 'SHORT', 'UNSIGNED_SHORT',
+	    'INT', 'UNSIGNED', 'LONG', 'UNSIGNED_LONG', 'FLOAT', 
+	    'DOUBLE', 'LONG_DOUBLE', 'LONG_LONG_INT', 'LONG_LONG', 
+	    'PACKED', 'LB', 'UB', 'FLOAT_INT', 'DOUBLE_INT', 
+	    'LONG_INT', 'SHORT_INT', 'LONG_DOUBLE_INT' );
+@ops = ( 'MAX', 'MIN', 'SUM', 'PROD', 'LAND', 'BAND', 'LOR', 'BOR', 
+	 'LXOR', 'BXOR', 'MINLOC', 'MAXLOC', 'REPLACE' );
+
 
 #
 # Special routines require special processing in C++
@@ -363,6 +374,14 @@ if (!$build_sep_files) {
     open ( $OUTFD, ">$filename" ) || die "Could not open $filename\n";
     $files[$#files+1] = $filename;
     &print_header;
+    print $OUTFD "namespace MPI {\n";
+    print $OUTFD "#ifdef HAVE_CXX_EXCEPTIONS
+#define MPIX_CALL( fnc ) \\
+{int err; err = fnc ; if (err) throw Exception(err);}
+#else
+#define MPIX_CALL( fnc ) (void)fnc
+#endif
+"
 }
 
 # Build the routines by class
@@ -376,6 +395,7 @@ foreach $class (@classes) {
 	open ( $OUTFD, ">$filename" ) || die "Could not open $filename\n";
 	$files[$#files+1] = $filename;
 	&print_header;
+	print $OUTFD "namespace MPI {\n";
     }
     if (!$build_sep_files) {
 	# Here is where we add (some) of the code to write the
@@ -453,6 +473,7 @@ foreach $class (@classes) {
 	}
     }
     if ($build_sep_files) {
+	print $OUTFD "} // namespace MPI\n";
 	close( $OUTFD );
     }
     else {
@@ -496,6 +517,8 @@ if (!$build_sep_files) {
         }
 	print $OUTFD "\n}\n";
     }
+    print $OUTFD "} // namespace MPI\n";
+
     close ( $OUTFD );
 }
 
@@ -520,11 +543,11 @@ for ($i=0; $i<=$#files; $i++) {
 }
 &print_endline( MAKEFD );
 
+# No profile library for C++.  All routines call the MPI, not PMPI, routines.
 print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources}\
 \
-profilelib_\${MPILIBNAME} = p\${MPILIBNAME}\
 INCLUDES = -I../../include -I\${top_srcdir}/src/include\
-maint-clean:\
+maintainerclean-local:\
 \trm -f \${mpi_sources}\n";
 
 close( MAKEFD );
@@ -899,6 +922,28 @@ sub build_specials {
     &print_header;
     print $OUTFD "#include \"mpi.h\"\n";
     print $OUTFD "#include \"mpicxx.h\"\n";
+
+    # Start the namespace
+    print $OUTFD "namespace MPI {\n";
+
+    # Initialize the datatypes
+    foreach $dtype (@dtypes) {
+	print $OUTFD "const Datatype MPI::$dtype(MPI_$dtype);\n";
+    }
+    # special case
+    print $OUTFD "const Datatype MPI::TWOINT(MPI_2INT);\n";
+
+    # Initialize the operations
+    foreach $op (@ops) {
+	print $OUTFD "const Op MPI::$op(MPI_$op);\n";
+    }
+
+    # Predefined communicators and groups
+    print $OUTFD "Intracomm MPI::COMM_WORLD(MPI_COMM_WORLD);\n";
+    print $OUTFD "Intracomm MPI::COMM_SELF(MPI_COMM_SELF);\n";
+    print $OUTFD "const Comm MPI::COMM_NULL;\n";
+    print $OUTFD "const Group MPI::GROUP_EMPTY(MPI_GROUP_EMPTY);\n";
+
     print $OUTFD "void Init";
     $args = "";
     &print_args( $OUTFD, $args );
@@ -906,8 +951,9 @@ sub build_specials {
     print $OUTFD "{\n";
     print $OUTFD "    MPI_Init( 0, 0 );\n";
     print $OUTFD "}\n";
+
+    print $OUTFD "} // namespace MPI\n";
     close ($OUTFD);
-    close( $OUTFD );
 }
 
 # Given an integer location of an argument, return the corresponding
@@ -1073,6 +1119,7 @@ sub HandleObjectParm {
     }
     return $parm;
 }
+# ----------------------------------------------------------------------------
 #
 # MUST DO BEFORE USABLE
 # The initialization of the objects:
