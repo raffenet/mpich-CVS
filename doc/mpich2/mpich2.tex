@@ -1189,18 +1189,18 @@ For very simple uses, these two one-line forms are provided
 The definitions of these macros allow for thread-safe
 implementations.  For example,
 \begin{description}
-\item[MPID\_STAT\_BEGIN]Allows for a thread lock; it can also find the 
-per-thread data block containing statistics information
-\item[MPID\_STAT\_ACC]Accumulates an integer value into a predefined
+\item[MPID_STAT_BEGIN]Allows for a thread lock; it can also find the 
+per-thread data block containing statistics information. 
+\item[MPID_STAT_ACC]Accumulates an integer value into a predefined
 \code{statid}.  This can be as simple as a sum or can include code to
 track maximum and minimum values, standard deviations, or even
 histograms. 
-\item[MPID\_STAT\_ACC\_RANGE]Accumulates an integer value that
+\item[MPID_STAT_ACC_RANGE]Accumulates an integer value that
 represents a single value in a range.  The purpose of this is to keep
 which values are used, and how many times they are used (e.g.,
 file \code{fd}s).
-\item[MPID\_STAT\_END]Allows for the release of a thread lock.
-\item[MPID\_STAT\_ACC\_SIMPLE]is a short-hand for 
+\item[MPID_STAT_END]Allows for the release of a thread lock.
+\item[MPID_STAT_ACC_SIMPLE]is a short-hand for 
 \begin{verbatim}
     #ifdef COLLECT_STATS
     {
@@ -1214,7 +1214,7 @@ file \code{fd}s).
 \end{verbatim}
 This is appropriate for cases where only a single value is being
 collected.
-\item[MPID\_STAT\_MISC]includes the statement only if
+\item[MPID_STAT_MISC]includes the statement only if
 \code{COLLECT_STATS} is defined.  This is useful for declaring and
 initializing local variables that may be used to update a statistics
 value (e.g., the \code{val} in the example).
@@ -1226,6 +1226,34 @@ them; an alternative is to use atomic update or assembly code that
 exploits load-link/store-conditional instructions.  Arranging the code
 this way abstracts out the use of thread locks so that they can be
 avoided where they aren't needed.
+
+The value of \code{statid} is of the form \code{MPID_STAT_ID_xxx}.  These are
+constant values that are set in the file \file{mpistat.h}.  We may provide a
+simple tool to search through the source files and create these values
+automatically.  Each \code{statid} refers to an element of an
+\code{MPID_Stat_t} structure whose definition is
+\begin{verbatim}
+typedef struct {
+    int accval, maxval, minval, nval;
+} MPID_Stat_t;
+\end{verbatim}
+This allows the accumulation of the value (\code{accval}), the min and max
+ranges seen, and the number of values (\code{nval}).  More complex versions of
+this type could also include bins for histogramming the range of values seen.
+
+In order to read and optionally reset the statistics values in a thread-safe
+way, the two routines\index{thread overhead!statistics}
+\begin{verbatim}
+MPID_Stat_lock()
+MPID_Stat_unlock()
+\end{verbatim}
+are provided.  While the lock is held, no updates will be made to the
+statistics values.  In a single-threaded implementation, these routines are
+effectively no-ops.  
+In order to make use of tools such as the Alice Memory Snooper
+(\url{www.mcs.anl.gov/AMS}), we will need to provide a generic locking
+mechanism for the statistics, somewhat separate from the thread locks.  This
+still needs work.
 
 \subsection{Memory Allocation}
 As a software package, MPICH should minimize the perturbation of the user's
@@ -1286,6 +1314,8 @@ memory.  The memory allocator could be
                _memstack.ptrs[_memstack.n_alloc++] = a;}
 #define FREE_STK     {int i; for (i=_memstack.n_alloc-1;i>=0;i--) {\
                MPID_Free(_memstack.ptrs[i]);}}
+#define MALLOC_STK_INIT _memstack.n_alloc = 0
+#define MALLOC_STK_DECL MPID_Mem_stack _memstack
 \end{verbatim}
 
 % Comment [BRT]: _memstack needs to be allocated in thread specific
@@ -1294,9 +1324,8 @@ memory.  The memory allocator could be
 To ensure that the usuage is thread-safe, the \code{_memstack} should be
 declared within the routine.  A typical use might be
 \begin{verbatim}
-    MPID_Mem_stack _memstack;
-    _memstack.n_alloc = 0;
-
+    MALLOC_STK_DECL;
+    MALLOC_STK_INIT;
     ...
     MALLOC_STK(sizeof(MPID_Dataloop)*n,new->dataloops);
     if (!new->dataloops) {
@@ -1415,9 +1444,9 @@ a TCP device or allocating message-buffer space for a shared memory or
 VIA device.  It may be more appropriate to provide two separate
 phases:
 \begin{description}
-\item[Param\_init]No values are available until after this call.  
+\item[Param_init]No values are available until after this call.  
 After this call, some values are available (see below).
-\item[Param\_bcast]All values are available to all processes.  This
+\item[Param_bcast]All values are available to all processes.  This
 call may use MPI communication
 \end{description}
 To make this work, \code{MPID_Param_register} must indicate when the
