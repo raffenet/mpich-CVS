@@ -42,17 +42,9 @@ typedef unsigned long MPID_Seqnum_t;
 
 typedef struct MPIDI_Message_match
 {
-/*# if defined(HAVE_INT32_T) && defined(HAVE_INT16_T)*/
     int32_t tag;
     int16_t rank;
     int16_t context_id;
-/*
-# else
-    int tag;
-    int rank;
-    int context_id;
-# endif
-*/
 }
 MPIDI_Message_match;
 
