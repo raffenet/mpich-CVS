@@ -144,7 +144,7 @@ int CH3U_Describe_timer_states()
 		       "MPIDI_CH3_Finalize",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3_Init,
+		       MPID_STATE_MPIDI_CH3_INIT,
 		       "MPIDI_CH3_Init",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
