@@ -329,7 +329,7 @@ for option in $enable_g ; do
         debug|dbg)
 	CFLAGS="$CFLAGS -g"
 	;;
-        no|non)
+        no|none)
 	;;
 	handle)
 	AC_DEFINE(MPICH_DEBUG_HANDLES,,[Define to enable handle checking])
