@@ -110,6 +110,10 @@ will continue to reside there.
 Both the MPICH distribution and the MPICH2 CVS module will contain additional
 items, including the MPE and perftest modules.  
 
+Even though they are separate modules (and can be used independently
+of MPICH), this tree include the ROMIO and BNR modules.  This is done
+because an MPI implementation is not complete without these components.
+
 \begin{description}
 \item[/]Top level directory for MPICH2, it contains the configure script,
   top-level \file{Makefile}, \file{COPYRIGHT}, \file{README}, and related
@@ -155,16 +159,34 @@ items, including the MPE and perftest modules.
       (Section~\ref{sec:handle-transfer}).  Handle transfer includes handle to
       pointer transfers. 
     \item[io]ROMIO implementation, possibly minus the miscellaneous MPI-2
-      routines such as the info support that are in other directories already
+      routines such as the info support that are in other directories already.
+      This contains its own \file{src} and \file{include} directories
+      because it can be used independently of MPICH.
       \begin{description}
       \item[src]Note ROMIO currently has no specific \file{src} directory;
         instead, it has \file{adio}, \file{mpi-io}, and \file{mpi2-other}.
 % [BRT] It seems a bit redundant to have a directory structure of
-% src/mpi/io/src
+% src/mpi/io/src 
+% [WDG] Added explanation above
       \item[include]
       \item[...]Other directories
       \end{description}
     \end{description}
+\item[include]Main MPI includes (like \file{mpi.h} and \file{mpiimpl.h}).  
+%\textbf{Should most include files go here?  What about replacable modules,
+%  such as alternative datatype implementations?}
+% [BRT] I feel that the include files should be with their respective C files
+% in the source directory.  Although a few of the header files are exported
+% (installed) to the public, they are really part of the source.
+  It also contains either links (or copies for Windows) to 
+  other include files (for particular modules) that are set up as part of
+  the build process, rather than including a long list of directory paths.
+% [BRT] This is precisely what we did in Globus.  The include directory was
+% created during the first phase of the build process to store symlinks to all
+% of the public header files.  In the off chance you are interested, libraries
+% were built during the second phase, and programs were build during the third
+% phase.  While this involved multiple passes over the tree, it avoided having
+% to order the building of modules based on dependencies.
   \item[util]Various utilities
     \begin{description}
     \item[param]Runtime parameter routines (e.g., like PETSc options database)
@@ -174,7 +196,13 @@ items, including the MPE and perftest modules.
       openmp, and Windows.  Possibly also Solaris threads.
     \end{description}
   \item[mpid]Implementation of the ADI3.  There are many subdirectories here.
-  \item[bnr]Process manager interface
+  \item[bnr]Process manager interface.  This contains the BNR
+      definition and the MPD implementation (as well as a remote shell
+      implementatio).  The configure option
+      \cfgoption{--with-bnr=dir} can be used to select an alternative
+      implementation of BNR not in MPICH, or to select the
+      \code{remsh} implementation for those who don't want
+      free-running demons.
     \begin{description}
       \item[include]BNR header files
       \item[mpd]Implementation of \code{bnr} in terms of \code{mpd}, 
@@ -185,13 +213,16 @@ items, including the MPE and perftest modules.
           \item[include]Include files for mpd.  No MPICH code includes
     any files here (MPICH code can only include BNR includes).
         \end{description}
+      \item[remsh]Implementation of \code{bnr} in terms of remote
+      shell (\code{rsh}, \code{ssh}, or \code{remsh}).
     \end{description}
 % [BRT] BNR is an interface provide by a variety of process managers.
 % It should not be a directory in the MPICH2 tree; although we do need
 % a configure option to specify where BNR is located.  (We need
 % to define how BNR implementation needs to present itself)
-  \item[binding]Language bindings
-% [BRT] Alternative language bindings?  C is out primary binding...
+% [WDG] Added some discussion.  This is really a compromise; but BNR
+% is likely to exist only in or for MPICH.
+  \item[binding]Alternative Language bindings (C is the primary binding)
     \begin{description}
     \item[c++]C++ binding (includes \file{configure})
       \begin{description}
@@ -212,21 +243,6 @@ items, including the MPE and perftest modules.
   \item[env]Commands like \code{mpiexec} and \code{mpicc}
   \end{description}
   
-\item[include]Main MPI includes (like \file{mpi.h} and \file{mpiimpl.h}).  
-\textbf{Should most include files go here?  What about replacable modules,
-  such as alternative datatype implementations?}
-% [BRT] I feel that the include files should be with their respective C files
-% in the source directory.  Although a few of the header files are exported
-% (installed) to the public, they are really part of the source.
-  On possibility is to use links to the files that would be set up as part of
-  the build process, rather than including a long list of directory paths.
-  For Windows, copies of the files could be used.
-% [BRT] This is precisely what we did in Globus.  The include directory was
-% created during the first phase of the build process to store symlinks to all
-% of the public header files.  In the off chance you are interested, libraries
-% were built during the second phase, and programs were build during the third
-% phase.  While this involved multiple passes over the tree, it avoided having
-% to order the building of modules based on dependencies.
 
 \item[doc]Documentation
   \begin{description}
@@ -236,13 +252,6 @@ items, including the MPE and perftest modules.
     \item[adi3]
   \end{description}
 
-\item[bin]Contains tools for building and running MPI programs.  This may be
-  empty in a distribution and only filled in as a consequence of running
-  \code{make}.
-% [BRT] bin, lib, or include should not exist in the archive.  They are needed
-% for building and testing, but are not part of the source tree.  They should
-% be create in which ever directory the user runs configure from (which does
-% not necessarily have to the top level source directory)
 
 \item[maint]
   Contains scripts and tools used to manage the project.  Some of these may be
@@ -268,6 +277,29 @@ example output files are required (as they are by the MPICH tests).
 \item[examples]Example programs.  Only the most solid examples are included.
 \end{description}
 
+\subsection{The Build Directories}
+These directories are created as part of the build process.  They may
+be created at the top level in a source distribution (e.g., at the
+same level as \file{src} and \file{doc} in the source tree) or in a
+separate location as part of a vpath build.
+These directories include
+\begin{description}
+\item[bin]Contains tools for building and running MPI programs.  This may be
+  empty in a distribution and only filled in as a consequence of running
+  \code{make}.
+% [BRT] bin, lib, or include should not exist in the archive.  They are needed
+% for building and testing, but are not part of the source tree.  They should
+% be create in which ever directory the user runs configure from (which does
+% not necessarily have to the top level source directory)
+% [WDG] Moved these directories into a section decribing the build
+% directories
+\item[lib]Contains \file{libmpich.a} and related (e.g., shared)
+libraries
+\item[include]Contains the \file{mpi.h}, \file{mpif.h}, and related
+files.  Also contains any Fortran 90 module files (but not the Fortran
+90 module libraries).
+\end{description}
+
 \subsection{Sample Implementation Template}
 \label{sec:template}
 
@@ -278,8 +310,8 @@ A few comments first:
       style for the code.  Unfortunately, there is no style variable, so an
       \code{eval} line must be used.  An \code{mpich} style was chosen so that 
       we can specify the behavior; another approach is to adopt one
-      of the predefined styles (such as BSD).
-% [BRT] The elisp code for the style should be included in the distribution.
+      of the predefined styles (such as BSD).  If we use our own
+      style, the elisp code for it will be included in \file{maint}.
 \item The comment block includes the copyright statement
 \item The first C statement must be the include of \file{mpiimpl.h}.  This
   ensures that the configuration switches (in \file{mpichconf.h}) are set as
@@ -299,15 +331,20 @@ A few comments first:
 routines can easily access the name of the routine.  While some
 compilers (such as \code{gcc}) provide \code{__FUNCTION__} for this,
 that is not portable.
-\item The first executable statement starts the timer (and in general,
+\item 
+The first executable statement starts the timer (and in general,
 any profiling) for the routine.  This
   is a macro that will expand into the appropriate code, including no code for
   the fastest production version and logging code for SLOG output.
+  Since the intent is to bracket the body of the function, and to
+  allow other more general operations, this is a macro.
 % [BRT] should this be more generic, such as MPID_MPI_FUNC_ENTER, to allow
 % more flexibility?  We should probably define a CPP macro with the name
 % of the function (in addition to defining the FCNAME variable) so that
 % MPID_MPI_FUNC_ENTER could be used to construct a call to 
 % MPID_TimerStateBegin(MPID_STATE_MPI_FOO)
+% [WDG] I changed the names but I haven't added the CPP value for the
+% function name.
 \item Routines of the form \code{MPID_Xxx_get_ptr} return the pointer
 for an opaque handle.  These do no (or limited) error checking (see
 \code{MPID_Comm_valid_ptr} below).
@@ -317,6 +354,11 @@ for an opaque handle.  These do no (or limited) error checking (see
   errors).  Note that the macro \code{MPID_BEGIN_ERROR_CHECKS} is
   followed by a semicolon; this is to ensure that Emacs auto-indents the
   code properly.
+  Also note that the error checking is enclosed in a block, which
+  both helps set off the code and allows for the use of variables
+  local to the block.  Similarly, a block is explicitly shown for the
+  \code{MPID_BEGIN_ERROR_CHECKS} to \code{MPID_END_ERROR_CHECKS} to
+  visually set off this code from the surrounding code.
 % [BRT] for CPP conditions in the code, I like to see the statements indented
 % along with the code.  Also, for macros that begin and end blocks, I like to
 % see a explicit block created.  For example:
@@ -335,16 +377,20 @@ form \code{MPID_Xxx_valid_ptr}.  This sets the second argument with an
 error message if the pointer is not valid.
 \item Error codes are generated with \code{MPIR_Err_create_code}.  These use
   predefined name strings (see error reporting in the ADI manual and
-Appendix~\ref{sec:error-codes}. 
+Appendix~\ref{sec:error-codes}). 
 \item The example shows the use of MPID routines to lock the communicator
-  against other threads.  Note that locks should be used sparinly; any
+  against other threads.  As with the error checking code above, a
+block is used to visually indicate the extent of the code that is
+protected by the lock.  Note that locks should be used sparinly; any
 lock that is held is a potential problem for fault-tolerant code.
 That is, if we support the loss of an MPI process, then if a process
 dies while holding a lock, it is difficult to recover.  Where
 possible, use atomic operations (such as atomic increment, provided by
 \code{MPID_Comm_incr} etc.) instead of lock/unlock.  
 % [BRT] Again, I like to see the code protected by a mutex explicitly placed
-% in a separate block to make it clear what is protected and what is not.
+% in a separate block to make it clear what is protected and what is
+% not.
+% [WDG] Great idea!
 %
 % MPID_Comm_thread_lock(comm_ptr);
 % {
@@ -356,7 +402,8 @@ possible, use atomic operations (such as atomic increment, provided by
 % if necessary, I will use a goto to a label at the end of the block and then
 % check for the (error) condition and perform the return. 
 \item The last executable statement (before any return) must end the
-timer (and any profiling) with \code{MPID_TimerStateEnd}.
+timer (and any profiling) with \code{MPID_MPI_FUNC_EXIT}.  There are
+several variations on this described in Section~\ref{sec:builtin-timing}.
 \item The return always gives \code{MPI_SUCCESS} explicitly.  Any return that
   might return an error code should use \code{MPIR_Return} instead.  
 \end{enumerate}
@@ -411,45 +458,55 @@ int MPIR_Foo_util( int a, MPID_Comm *comm )
 int MPI_Foo( MPI_Comm comm, int a ) 
 {
     static const char FCNAME[] = "MPI_Foo";
-    int mpi_errno = MPI_SUCCESS;
+    int mpi_errno;
 
-    MPID_TimerStateBegin(MPID_STATE_MPI_FOO);
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FOO);
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
 #ifdef HAVE_ERROR_CHECKING
-    MPID_BEGIN_ERROR_CHECKS;
-        if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                        "**initialized", 0 );
-        if (a < 0) {
-            mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
-                        "**negarg", "**negarg %s %d", "a", a );
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
+                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
+                            "**initialized", 0 );
+            if (a < 0) {
+                mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
+                            "**negarg", "**negarg %s %d", "a", a );
+            } 
+            /* Validate comm_ptr */
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            if (!comm_ptr) { comm_ptr = MPIR_Process.comm_world; }
+            if (mpi_errno) {
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
+                return MPIR_Return( comm_ptr->errhandler, mpi_errno );
+            }
         }
-        /* Validate comm_ptr */
-        MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-        if (!comm_ptr) { comm_ptr = MPIR_Process.comm_world; }
-        if (mpi_errno) {
-            MPID_TimerStateEnd(MPID_STATE_MPI_FOO);
-            return MPIR_Return( comm_ptr->errhandler, mpi_errno );
-        }
-    MPID_END_ERROR_CHECKS;
+        MPID_END_ERROR_CHECKS;
+    }
 #endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
     /* Some routines must ensure only one thread modifies a communicator
        at a time, e.g., MPI_Comm_set_attr.  */
     MPID_Comm_thread_lock( comm_ptr );
-    ... actual code ...
+    {
+        ... actual code ...
+    }
     MPID_Comm_thread_unlock( comm_ptr );
     /* ... end of body of routine ... */
 
-    MPID_TimerStateEnd(MPID_STATE_MPI_FOO);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
     return MPI_SUCCESS;
 }
 \end{verbatim}
 % [BRT] Personally, I prefer the block associated with conditional statements
 % have its braces on lines by themselves.  This makes the code more readable
 % and is more consistent with the way function blocks are expressed.
+% [WDG] The best location of the begin-block brace will be argued until the
+% Sun explodes :) .  Some prefer if/endif etc. because anonymous blocks
+% have their own drawbacks; placing the brace with the controlling
+% clause emphasizes the connection.
 The rest of this section discusses some of the coding practices and
 suggestions in more detail.
 
@@ -487,8 +544,9 @@ of \file{.}).  It also adds \file{wrapack.o} to the \file{libmpich2} library.
 
 If a particular \file{Makefile} needs a special-purpose target, that target
 can be added to the \file{Makefile.sm}, because lines in the
-\file{Makefile.sm} that are not meaningful to the program that processes these
-files are copied directly into the output \file{Makefile.in}.  
+\file{Makefile.sm} that are not meaningful to \code{simplemake} (the
+program that processes these 
+files) are copied directly into the output \file{Makefile.in}.  
 
 \subsection{Include Files}
 The include file \file{mpi.h} should not require any \code{-Dxxx}
@@ -501,9 +559,11 @@ files, with the (possible) exception of \file{mpich++.h} for C++
 support and \file{mpio.h} for ROMIO.
 % [BRT] We will need to make an exception to this rule for things like vendor
 % MPI support.
+% [WDG] We can *always* make exceptions.
 
 The \file{mpif.h} (or \file{mpif.h.in}) should be created from
-\file{mpi.h} so that the various integer values (e.g., error classes,
+\file{mpi.h} (or possibly a third file in a simple, easy-to-parse
+format) so that the various integer values (e.g., error classes, 
 datatypes, etc.) are guaranteed consistent.  This can be done prior to
 distribution, similar to the way \file{configure} is generated from
 \file{configure.in}.  The point is to automate this and ensure that,
@@ -516,6 +576,7 @@ respect to any values.
 % [BRT] Alternatively, we could use a description file to express all of the
 % constants, etc.  All of the files, including mpi.h, could be generated from
 % that file.  This avoids having to parse C :-).
+% [WDG] Good point, though we may be able to do what we need with sed.
 
 For module-dependent includes, comments in \file{mpiimpl.h} should explain the
 search rules expected (e.g., link or copy in the same directory; file in
@@ -551,6 +612,12 @@ profiling switch \code{-DMPICH_MPI_FROM_PMPI}\footnote{Without this, rerunning
   suffix-based rules.  The solution here is a hack, but it is a hack that
   prevents accidentally using the wrong file.}.
 
+%
+% All of this needs to be added to simplemake as the rule for c to pf
+% files.  We can then remove this block of text and simply explain the
+% reason for pf.  simplemake should support using files with the name
+% rule.c2pf as the way to generate the .c.pf rule, and rule.pf should
+% contain everything necessary for .c.pf, .f.pf, etc.
 \begin{verbatim}
 .SUFFIXES:
 .SUFFIXES: .o .pf .c .f
@@ -750,9 +817,13 @@ time
 and at runtime, the tests should be placed within the following block:
 \begin{verbatim}
 #ifdef HAVE_ERROR_CHECKING
+    {
     MPID_BEGIN_ERROR_CHECKS;
-    ...
+        {
+        ...
+        }
     MPID_END_ERROR_CHECKS
+    }
 #endif /* HAVE_ERROR_CHECKING */
 \end{verbatim}
 The macros \code{MPID_BEGIN_ERROR_CHECKS} and \code{MPID_END_ERROR_CHECKS} can
@@ -768,6 +839,7 @@ no runtime control) or
 % MPID_BEGIN_ERROR_CHECK to be if (HAVE_ERROR_CHECKING || ...).  This would
 % eliminate the #ifdef and endif statements.  (Please see comments early about
 % the style of such blocks)
+% [WDG] We did something like this in MPICH and I really didn't like it.
 
 There must be a configure option,
 \cfgoption{--disable-error-checking},  
@@ -783,7 +855,9 @@ tags must be nonnegative for sending (and nonnegative or
 
 Some of the error conditions to test for include
 \begin{itemize}
-\item Is MPI Initialized?
+\item Is MPI Initialized?\footnote{This is important not just for
+novice users for the case of libraries that may be called erroneously
+before MPI is initialized.}
 \item Are parameter values in range, including tag values, ranks, counts?
 \item Are input and output parameters improperly aliased (e.g., inbuf and
   outbuf of   \code{MPI_Allreduce})?
@@ -793,7 +867,11 @@ Some of the error conditions to test for include
   Note that this may be as simple as \code{((p) == 0)} or
   \code{(long(p)<=0)} or \code{(!(p) || (unsigned long)(p) > STACKLIMIT)}, or
   even call a routine that attempts to access the pointer with a
-  \code{SIGSEGV} handler set.
+  \code{SIGSEGV} handler set.  An enhancement of this is to return
+zero on success and nonzero on failure, with the particular non-zero
+value indicating the reason for failure, including null, SEGV
+(out-of-range), unaligned (which suggests including the alignment
+requirement in the call).
 \end{itemize}
 Note that message buffer pointers depend on the datatype; if the datatype is a
 struct type, then a null pointer or otherwise invalid value for the message
@@ -814,7 +892,8 @@ error handler.
 \begin{enumerate}
 \item If still in the initialization step (e.g., within
 \mpifunc{MPI_Init_thread}), errors invoke a special pre-initialization error
-handler.  This handler may either abort or return; by default, it will abort.
+handler. (\textbf{What is it?})  This handler may either abort or
+return; by default, it will abort. 
 A return may be prefered for some fault-tolerant applications.
 
 \item Check if executing inside a layered routine (i.e., an MPI routine called
@@ -841,7 +920,12 @@ A return may be prefered for some fault-tolerant applications.
   (see Section 7.2 in the MPI-1 Standard: ``MPI calls that are not related to
   any communicator are considered to be attached to the communicator
   \code{MPI_COMM_WORLD}.'' ).  Ensure that the manual pages on error handlers
-  include this information.
+  include this information.  Routines that don't have a natural
+communicator, file, or window can include the predefined name block
+\code{errhandler} in the structured comment documentation block with
+\begin{verbatim}
+.N errhandler
+\end{verbatim}
 
 \item For MPI-IO, the default error handler is attached to
   \code{MPI_FILE_NULL} (see Section 9.7 in the MPI-2 standard: ``The default
@@ -878,7 +962,7 @@ communicator.
 
 \subsubsection{Error Handling for Layered Routines}
 \label{sec:err-handling-nested}
-In many cases, MPI routines are implemented in terms of other MPI (or
+In some cases, MPI routines are implemented in terms of other MPI (or
 PMPI) routines.  In these cases, it is important for any error handler
 (other than \mpiconst{MPI_ERRORS_RETURN}) to be invoked only by the
 ``top-level'' routine.  
@@ -905,6 +989,8 @@ per-process data is the thread-id of the main thread (the thread that called
 To simplify the management of per-thread data, there is a common data
 structure, \code{MPICH_PerThread_t}, that contains per-thread data.
 For example,
+% 
+% Note that this requires the timer include first
 \begin{verbatim}
 typedef struct {
     MPID_Time_t stamp;
@@ -917,6 +1003,8 @@ typedef struct {
 } MPICH_PerThread_t;
 \end{verbatim}
 Similarly, there is a per-process type
+% Note that this requires the thread package and the MPID typedefs
+% from it, along with the definition of MPID_Comm. 
 \begin{verbatim}
 typedef enum { MPICH_PRE_INIT=0, MPICH_WITHIN_MPI=1,
                MPICH_POST_FINALIZED=2 } MPIR_MPI_State_t;
@@ -954,6 +1042,13 @@ extern MPICH_PerThread_t MPIR_Thread;
 \label{sec:builtin-timing}
 All programs should contain basic timing and usage instrumentation.  This
 section describes the MPICH approach.
+There are two basic types of profiling: state recording, ala SLOG, and
+statistics gathering.  States are assumed to be nested (within a
+thread) while statistics can be collected anywhere.  In fact, the
+state recording calls also collect statistics, allowing a build to
+choose between full state logging, simple statistics collection, and
+no data collection at all.  Separate statistics-collection calls are
+provide to augment, not replace, the state recording calls.
 
 \subsubsection{Basic Timer Routines.}
 These provide a basic mechanism for accessing a fast timer.  The value of the
@@ -988,8 +1083,13 @@ Note that these timers should normally not be used directly; instead,
 the timer macros \code{MPID_TimerStateBegin} and
 \code{MPID_TimerStateEnd} should be used.  
 
-\subsubsection{Instrumenting the MPI code.}
+\subsubsection{Instrumenting the MPI code for States.}
 Each major routine will contain references to 
+\begin{verbatim}
+MPID_MPI_FUNC_ENTER( stateid );
+MPID_MPI_FUNC_EXIT( stateid );
+\end{verbatim}
+These will normally be defined as the corresponding timer calls
 \begin{verbatim}
 MPID_TimerStateBegin( stateid );
 MPID_TimerStateEnd( stateid );
@@ -1009,7 +1109,7 @@ Each state belongs to a class; there are at most 32 classes (so that we can use
 bitwise tests on a 32 bit \code{unsigned int}).  Instrumentation can be
 controlled:
 \begin{description}
-\item[at compile time]with the \code{--enable-timing} configure flag.
+\item[at compile time]with the \cfgoption{--enable-timing} configure flag.
 % Options to this can restrict timing code to particular classes, e.g.,
 % enable-timing=all,class=pt2pt,class=coll.
 \item[at run time]with the \code{MPICH_TIMING} environment variable or
@@ -1048,6 +1148,18 @@ There are three levels to the state timers:
 \end{description}
 If state timers are enabled (with \cfgoption{--enable-timing}), these are
 controlled by the runtime parameter code.
+
+\paragraph{Adding data to the state.}
+Because it is often valuable to have data with the state, there are
+two more forms of \code{MPID_MPI_FUNC_EXIT}:
+\begin{verbatim}
+MPID_MPI_FUNC_EXITI1(stateid,i1)
+MPID_MPI_FUNC_EXITI2(stateid,i1,i2)
+\end{verbatim}
+These allow including one or two integers in the state.  If more
+complex state information is required, it should be handled by making
+direct calls to the appropriate profiling routines (suitably wrapped
+to obey the selected profiling level).
 
 \subsection{Memory Allocation}
 As a software package, MPICH should minimize the perturbation of the user's
@@ -5768,17 +5880,18 @@ Fortran representations.  C++ is handled as a descendant of C (that
 is, there is no Fortran representation of a C++ handle directly, but
 C++ can use C handles.  
 \begin{figure}
-\begin{verbatim}
-     +-----+         +---------+
-     |  C  | < --- > | Fortran |
-     +-----+         +---------+
-        ^
-        |
-        v
-     +-----+ 
-     | C++ | 
-     +-----+ 
-\end{verbatim}
+\centerline{\psfig{file=handle.eps}}
+% \begin{verbatim}
+%      +-----+         +---------+
+%      |  C  | < --- > | Fortran |
+%      +-----+         +---------+
+%         ^
+%         |
+%         v
+%      +-----+ 
+%      | C++ | 
+%      +-----+ 
+% \end{verbatim}
 \caption{Relationship of handle conversion functions.  The C to/from
 C++ are part of the C++ binding of MPI.}\label{fig:handle-transfers}
 \end{figure}
@@ -6971,6 +7084,7 @@ the spirit of the MPI Forum and allow users to create their own keys.
 
 \input{errcodes}
 
+\ifrationale
 \section{Rationale}
 \label{sec:rationale}
 
@@ -7341,6 +7455,9 @@ Files produced by \code{automake} must be modified.  If we use
 \item Fixes errors.  Some of these have been fixed in some of the
   \code{automake} installations, but there will undoubtably be others.
 \end{enumerate}
+
+% End of rationale
+\fi
 
 \let\SaveBibliography=\thebibliography
 \def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}
