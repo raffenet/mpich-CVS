@@ -70,8 +70,8 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
     MPID_Request * sreq = NULL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
-    MPIU_dbg_printf("ch3_istartmsgv\n");
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
+    MPIU_dbg_printf("ch3_istartmsgv\n");
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     assert(n_iov <= MPID_IOV_LIMIT);

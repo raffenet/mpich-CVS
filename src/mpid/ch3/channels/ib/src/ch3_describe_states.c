@@ -176,6 +176,10 @@ int CH3U_Describe_timer_states()
 	"iub_post_writev",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
+	MPID_STATE_IBU_GET_LID,
+	"ibu_get_lid",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
 	MPID_STATE_MPIDI_CH3I_SETUP_CONNECTIONS,
 	"MPIDI_CH3I_Setup_connections",
 	get_random_color_str());

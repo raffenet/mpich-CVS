@@ -1039,12 +1039,14 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	if (status != IBA_OK)
 	{
 	    printf("error: ib_completion_poll_us did not return IBA_OK\n");
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
 	}
 	if (completion_data.status != IB_COMP_ST_SUCCESS)
 	{
 	    printf("error: status = %d != IB_COMP_ST_SUCCESS, %s\n", 
 		completion_data.status, iba_compstr(completion_data.status));
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
 	}
 
@@ -1373,5 +1375,9 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
 
 int ibu_get_lid()
 {
+    MPIDI_STATE_DECL(MPID_STATE_IBU_GET_LID);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_GET_LID);
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_GET_LID);
     return IBU_Process.lid;
 }
