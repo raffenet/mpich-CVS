@@ -17,15 +17,16 @@ Anthony Chan:
            eliminate the completely broken old code.
            1) Fixed the totally broken algorithm that combines basic
               MPI_Datatype signatures.
-           2) the new code has all the basic MPI_Datatypes supported in
-              mpich2's mpi.h.  Changed basic MPI_Datatypes' assigned hash
-              value from consecutive integers to consective odd integers
-              to avoid the 25% hash collison rate in adding any 2 basic
-              MPI_Datatype signatures.
-              Assigned "struct" basic MPI_Datatypes with consistent hash
+           2) Added support for all the basic MPI_Datatypes defined in
+              mpich2's mpi.h.
+           3) Fixed the 25% hash collison rate when combining any 2 basic
+              MPI_Datatype signatures by changing the basic MPI_Datatypes'
+              assigned hash value from consecutive integers to consective
+              odd integers.
+           4) Assigned "struct" basic MPI_Datatypes with consistent hash
               values that match the combined signatures of the corresponding
               basic MPI_Datatypes.
-           3) the old code used mainly MPI_Bcast in all datatype hash
+           5) the old code used mainly MPI_Bcast in all datatype hash
               communication algorithm.  This oversimplied algorithm was,
               strictly speaking, insufficient test.  The new code added
               more helper rountines that closely match the communication
@@ -33,9 +34,9 @@ Anthony Chan:
               That should allow error detection more straight forward and
               allow more transparent error messages (when error reporting
               system is fixed).
-           4) Replaced some of clumsy logic that uses MPI_Send/MPI_Recv
+           6) Replaced some of clumsy logic that uses MPI_Send/MPI_Recv
               in broadcasting error by more straight forward MPI collective
               calls.
-           5) Added the support of alloca() in configure,
+           7) Added the support of alloca() in configure,
               i.e. replaced malloc()/free() by alloca() if available.
-           6) Fixed the check of MPI_IN_PLACE in MPI_Allreduce/MPI_Allgather.
+           8) Fixed the check of MPI_IN_PLACE in MPI_Allreduce/MPI_Allgather.
