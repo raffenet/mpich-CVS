@@ -1,0 +1,2 @@
+#! /bin/sh
+LIBS="$LIBS @ROMIO_LIBLIST@"
