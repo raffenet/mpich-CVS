@@ -356,8 +356,10 @@ def _handle_lhs_input():
                 if g.conSocket:    # may have closed it if user did ^C at console
                     mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdringtest_done' })
     elif msg['cmd'] == 'mpdsigjob':
+	forwarded = 0
         if msg['handled']:    # already handled on at least one other host
             mpd_send_one_msg(g.rhsSocket,msg)
+	    forwarded = 1
         handledHere = 0
         for jobid in g.activeJobs.keys():
             sjobid = jobid.split('  ')  # jobnum and mpdid
@@ -372,14 +374,17 @@ def _handle_lhs_input():
                         handledHere = 1
         if handledHere:
             msg['handled'] = 1
-        if not msg['handled']  and  msg['src'] != g.myId:
+        if not forwarded  and  msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket,msg)
         if msg['src'] == g.myId:
-            mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdsigjob_ack',
-                                           'handled' : msg['handled'] } )
+	    if g.conSocket:
+                mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdsigjob_ack',
+                                               'handled' : msg['handled'] } )
     elif msg['cmd'] == 'mpdkilljob':
-        if msg['handled']:    # already handled on at least one other host
+	forwarded = 0
+        if msg['handled'] and msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket,msg)
+	    forwarded = 1
         handledHere = 0
         for jobid in g.activeJobs.keys():
             sjobid = jobid.split('  ')  # jobnum and mpdid
@@ -392,7 +397,7 @@ def _handle_lhs_input():
                             pgrp = manPid * (-1)  # neg manPid -> group
                             kill(pgrp,SIGKILL)
                             cliPid = g.activeJobs[jobid][manPid]['clipid']
-                            pgrp = cliPid * (-1)  # neg manPid -> group
+                            pgrp = cliPid * (-1)  # neg Pid -> group
                             kill(pgrp,SIGKILL)  # neg Pid -> group
                             handledHere = 1
                         except:
@@ -400,7 +405,7 @@ def _handle_lhs_input():
                 # del g.activeJobs[jobid]  ## handled when child goes away
         if handledHere:
             msg['handled'] = 1
-        if not msg['handled']  and  msg['src'] != g.myId:
+        if not forwarded  and  msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket,msg)
         if msg['src'] == g.myId:
             mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdkilljob_ack',
@@ -415,7 +420,7 @@ def _handle_lhs_input():
                         pgrp = manPid * (-1)  # neg manPid -> group
                         kill(pgrp,SIGKILL)
                         cliPid = g.activeJobs[jobid][manPid]['clipid']
-                        pgrp = cliPid * (-1)  # neg manPid -> group
+                        pgrp = cliPid * (-1)  # neg Pid -> group
                         kill(pgrp,SIGKILL)  # neg Pid -> group
                     except:
                         pass
