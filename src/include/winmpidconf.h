@@ -1,8 +1,11 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 #ifndef MPIDCONF_H
 #define MPIDCONF_H
-
-/* src/include/mpichconf.h.  Generated automatically by configure.  */
-/* src/include/mpichconf.h.in.  Generated automatically from configure.in by autoheader.  */
 
 /* Define to empty if the keyword does not work.  */
 /* #undef const */
@@ -29,7 +32,7 @@
 #define SIZEOF_LONG_DOUBLE 12
 
 /* The number of bytes in a long long.  */
-//#define SIZEOF_LONG_LONG 8
+/*#define SIZEOF_LONG_LONG 8*/
 
 /* The number of bytes in a short.  */
 #define SIZEOF_SHORT 2
@@ -47,22 +50,22 @@
 #define HAVE_GETHOSTNAME 1
 
 /* Define if you have the gettimeofday function.  */
-//#define HAVE_GETTIMEOFDAY 1
+/*#define HAVE_GETTIMEOFDAY 1*/
 
 /* Define if you have the mutex_init function.  */
 /* #undef HAVE_MUTEX_INIT */
 
 /* Define if you have the pthread_mutexattr_init function.  */
-//#define HAVE_PTHREAD_MUTEXATTR_INIT 1
+/*#define HAVE_PTHREAD_MUTEXATTR_INIT 1*/
 
 /* Define if you have the pthread_mutexattr_setpshared function.  */
-//#define HAVE_PTHREAD_MUTEXATTR_SETPSHARED 1
+/*#define HAVE_PTHREAD_MUTEXATTR_SETPSHARED 1*/
 
 /* Define if you have the putenv function.  */
 #define HAVE_PUTENV 1
 
 /* Define if you have the sched_yield function.  */
-//#define HAVE_SCHED_YIELD 1
+/*#define HAVE_SCHED_YIELD 1*/
 
 /* Define if you have the select function.  */
 #define HAVE_SELECT 1
@@ -89,7 +92,7 @@
 #define HAVE_STRDUP 1
 
 /* Define if you have the usleep function.  */
-//#define HAVE_USLEEP 1
+/*#define HAVE_USLEEP 1*/
 
 /* Define if you have the yield function.  */
 /* #undef HAVE_YIELD */
@@ -104,19 +107,19 @@
 /* #undef HAVE_LINUX_UNISTD_H */
 
 /* Define if you have the <netdb.h> header file.  */
-//#define HAVE_NETDB_H 1
+/*#define HAVE_NETDB_H 1*/
 
 /* Define if you have the <netinet/in.h> header file.  */
-//#define HAVE_NETINET_IN_H 1
+/*#define HAVE_NETINET_IN_H 1*/
 
 /* Define if you have the <netinet/tcp.h> header file.  */
-//#define HAVE_NETINET_TCP_H 1
+/*#define HAVE_NETINET_TCP_H 1*/
 
 /* Define if you have the <pthread.h> header file.  */
-//#define HAVE_PTHREAD_H 1
+/*#define HAVE_PTHREAD_H 1*/
 
 /* Define if you have the <sched.h> header file.  */
-//#define HAVE_SCHED_H 1
+/*#define HAVE_SCHED_H 1*/
 
 /* Define if you have the <stdlib.h> header file.  */
 #define HAVE_STDLIB_H 1
@@ -128,19 +131,19 @@
 /* #undef HAVE_SYS_FILIO_H */
 
 /* Define if you have the <sys/ioctl.h> header file.  */
-//#define HAVE_SYS_IOCTL_H 1
+/*#define HAVE_SYS_IOCTL_H 1*/
 
 /* Define if you have the <sys/ipc.h> header file.  */
 /* #undef HAVE_SYS_IPC_H */
 
 /* Define if you have the <sys/param.h> header file.  */
-//#define HAVE_SYS_PARAM_H 1
+/*#define HAVE_SYS_PARAM_H 1*/
 
 /* Define if you have the <sys/ptrace.h> header file.  */
 /* #undef HAVE_SYS_PTRACE_H */
 
 /* Define if you have the <sys/select.h> header file.  */
-//#define HAVE_SYS_SELECT_H 1
+/*#define HAVE_SYS_SELECT_H 1*/
 
 /* Define if you have the <sys/sem.h> header file.  */
 /* #undef HAVE_SYS_SEM_H */
@@ -149,25 +152,25 @@
 /* #undef HAVE_SYS_SHM_H */
 
 /* Define if you have the <sys/socket.h> header file.  */
-//#define HAVE_SYS_SOCKET_H 1
+/*#define HAVE_SYS_SOCKET_H 1*/
 
 /* Define if you have the <sys/stat.h> header file.  */
-//#define HAVE_SYS_STAT_H 1
+/*#define HAVE_SYS_STAT_H 1*/
 
 /* Define if you have the <sys/time.h> header file.  */
-//#define HAVE_SYS_TIME_H 1
+/*#define HAVE_SYS_TIME_H 1*/
 
 /* Define if you have the <sys/types.h> header file.  */
-//#define HAVE_SYS_TYPES_H 1
+/*#define HAVE_SYS_TYPES_H 1*/
 
 /* Define if you have the <sys/uio.h> header file.  */
-//#define HAVE_SYS_UIO_H 1
+/*#define HAVE_SYS_UIO_H 1*/
 
 /* Define if you have the <sys/wait.h> header file.  */
-//#define HAVE_SYS_WAIT_H 1
+/*#define HAVE_SYS_WAIT_H 1*/
 
 /* Define if you have the <unistd.h> header file.  */
-//#define HAVE_UNISTD_H 1
+/*#define HAVE_UNISTD_H 1*/
 
 /* Define if you have the <values.h> header file.  */
 /* #undef HAVE_VALUES_H */
@@ -200,10 +203,10 @@
 #define restrict
 
 /* Define if int16_t is supported by the C compiler */
-//#define HAVE_INT16_T 
+/*#define HAVE_INT16_T */
 
 /* Define if int32_t is supported by the C compiler */
-//#define HAVE_INT32_T 
+/*#define HAVE_INT32_T */
 
 /* define if char * is byte pointer */
 /* #undef CHAR_PTR_IS_BYTE */
