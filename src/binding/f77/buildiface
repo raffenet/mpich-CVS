@@ -96,6 +96,7 @@ foreach $_ (@ARGV) {
     }
 }
 
+# Note that the code that looks up values strips blanks out of the type name
 %tof77 = ( 'MPI_Datatype' => 'MPI_Fint *',
 	   'MPI_Comm' => 'MPI_Fint *',
 	   'MPI_File' => 'MPI_Fint *',
@@ -109,19 +110,19 @@ foreach $_ (@ARGV) {
 	   'MPI_Offset' => 'MPI_Offset *', # Should be MPIR_FOint
 	   'int' => 'MPI_Fint *',
 	   'int [][3]' => 'MPI_Fint *',
-	   'MPI_Datatype *' => 'MPI_Fint *',
-	   'MPI_Comm *' => 'MPI_Fint *',
-	   'MPI_File *' => 'MPI_Fint *',
-	   'MPI_Win *' => 'MPI_Fint *', 
-	   'MPI_Group *' => 'MPI_Fint *',
-	   'MPI_Request *' => 'MPI_Fint *',
-	   'MPI_Aint *' => 'MPI_Fint *',   # Should be MPIR_FAint
+	   'MPI_Datatype*' => 'MPI_Fint *',
+	   'MPI_Comm*' => 'MPI_Fint *',
+	   'MPI_File*' => 'MPI_Fint *',
+	   'MPI_Win*' => 'MPI_Fint *', 
+	   'MPI_Group*' => 'MPI_Fint *',
+	   'MPI_Request*' => 'MPI_Fint *',
+	   'MPI_Aint*' => 'MPI_Fint *',   # Should be MPIR_FAint
 	   'int *' => 'MPI_Fint *',
 	   'int*' => 'MPI_Fint *',         # Catch missing space
-	   'MPI_Op *' => 'MPI_Fint *',
-	   'MPI_Status *' => 'MPI_Fint *',
-	   'MPI_Info *' => 'MPI_Fint *',
-	   'MPI_Errhandler *' => 'MPI_Fint *',
+	   'MPI_Op*' => 'MPI_Fint *',
+	   'MPI_Status*' => 'MPI_Fint *',
+	   'MPI_Info*' => 'MPI_Fint *',
+	   'MPI_Errhandler*' => 'MPI_Fint *',
 	   );
 
 # declarg is special parameters for certain routines
@@ -137,6 +138,10 @@ foreach $_ (@ARGV) {
 		  'MPI_Status *'  => '(MPI_Status *)(ARG)',
 		  'MPI_File' => '(MPI_File)(ARG)',
 		  'MPI_File *' => '(MPI_File *)(ARG)', 
+		  'MPI_Comm' => '(MPI_Comm)(ARG)',
+		  'MPI_Comm *' => '(MPI_Comm *)(ARG)',
+                  'MPI_Datatype' => '(MPI_Datatype)(ARG)',
+                  'MPI_Datatype *' => '(MPI_Datatype *)(ARG)',
 		  'int [][3]' => '(int (*)[3])(ARG)'
 );
 
@@ -660,6 +665,10 @@ sub print_args {
 	    # Assume that this is <type> <name>[]; convert to
 	    # <type>[]
 	    $parm = "$1" . "[]";
+	}
+	# Remove arg names from pointer types
+	elsif ($parm =~ /(.*\*)\s+\w*/) {
+	    $parm = $1;
 	}
 	# Remove blanks from the parm
 	$parm =~ s/\s//;
