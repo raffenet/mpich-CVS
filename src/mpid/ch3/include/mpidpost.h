@@ -443,7 +443,7 @@ void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sd
 }
 
 #if defined(MPICH_SINGLE_THREADED)
-#define MPID_Request_set_complete(_req)		\
+#define MPID_Request_set_completed(_req)	\
 {						\
     *(_req)->cc_ptr = 0;			\
     MPIDI_CH3_Progress_signal_completion();	\
@@ -452,7 +452,7 @@ void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sd
 /* MT - A write barrier must be performed before decrementing the completion
    counter .  This insures that other fields in the req structure are updated
    before the completion is signaled. */
-#error Multi-threaded MPID_Request_set_complete() not implemented.
+#error Multi-threaded MPID_Request_set_completed() not implemented.
 #endif
 
 

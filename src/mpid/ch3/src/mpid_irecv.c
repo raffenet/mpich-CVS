@@ -166,7 +166,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 		MPIDI_CH3U_Buffer_copy(sreq->ch3.user_buf, sreq->ch3.user_count, sreq->ch3.datatype, &sreq->status.MPI_ERROR,
 				       buf, count, datatype, &data_sz, &rreq->status.MPI_ERROR);
 		rreq->status.count = data_sz;
-		MPID_Request_set_complete(sreq);
+		MPID_Request_set_completed(sreq);
 		MPID_Request_release(sreq);
 	    }
 	    else
