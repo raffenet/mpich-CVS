@@ -127,6 +127,7 @@ int ForceUnexpectedTest(int rank)
 	MPI_Isend(buffer, 100, MPI_BYTE, 1, tag2, MPI_COMM_WORLD, &request2);
 	MPI_Wait(&request1, &status);
 	MPI_Wait(&request2, &status);
+	MPI_Recv(buffer, 100, MPI_BYTE, 1, tag1, MPI_COMM_WORLD, &status);
     }
     else if (rank == 1)
     {
@@ -135,7 +136,42 @@ int ForceUnexpectedTest(int rank)
 	MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag1, MPI_COMM_WORLD, &request1);
 	MPI_Wait(&request1, &status);
 	/*printf("Rank 1: received message '%s'\n", buffer);fflush(stdout);*/
+	MPI_Send(buffer, 100, MPI_BYTE, 0, tag1, MPI_COMM_WORLD);
     }
+
+    return TRUE;
+}
+
+int RndvTest(int rank, int size, int reps)
+{
+    int tag = 1;
+    MPI_Status status;
+    char *buffer;
+    int i;
+
+    buffer = (char*)malloc(size);
+    if (buffer == NULL)
+    {
+	printf("malloc failed to allocate %d bytes.\n", size);
+	exit(0);
+    }
+    if (rank == 0)
+    {
+	for (i=0; i<reps; i++)
+	{
+	    MPI_Send(buffer, size, MPI_BYTE, 1, tag, MPI_COMM_WORLD);
+	    MPI_Recv(buffer, size, MPI_BYTE, 1, tag, MPI_COMM_WORLD, &status);
+	}
+    }
+    else if (rank == 1)
+    {
+	for (i=0; i<reps; i++)
+	{
+	    MPI_Recv(buffer, size, MPI_BYTE, 0, tag, MPI_COMM_WORLD, &status);
+	    MPI_Send(buffer, size, MPI_BYTE, 0, tag, MPI_COMM_WORLD);
+	}
+    }
+    free(buffer);
 
     return TRUE;
 }
@@ -146,6 +182,7 @@ int main(int argc, char *argv[])
     int size, rank;
     int bDoAll = FALSE;
     int reps;
+    int rndv_size;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -243,6 +280,28 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = ForceUnexpectedTest(rank);
+	    if (rank == 0)
+	    {
+		printf(result ? "SUCCESS\n" : "FAILURE\n");
+		fflush(stdout);
+	    }
+	}
+
+	if (bDoAll || (strcmp(argv[1], "rndv") == 0))
+	{
+	    rndv_size = 24*1024;
+	    if (argc > 2)
+	    {
+		rndv_size = atoi(argv[2]);
+		if (rndv_size < 1024)
+		    rndv_size = 1024;
+	    }
+	    if (rank == 0)
+	    {
+		printf("Rndv test\n");
+		fflush(stdout);
+	    }
+	    result = RndvTest(rank, rndv_size, 1);
 	    if (rank == 0)
 	    {
 		printf(result ? "SUCCESS\n" : "FAILURE\n");
