@@ -118,10 +118,11 @@ typedef char *MPID_FCHAR_T;
 #include <stdlib.h>
 #endif
 
-#ifndef MALLOC
-#define MALLOC malloc
-#define FREE free
-#endif
+/* Temporary patch for the space routines.  Eventually, this should use
+   (FIXME) *just* the memory definitions currently in mpiimpl.h */
+#define MPIU_Malloc(a)    malloc((unsigned)(a))
+#define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
+#define MPIU_Free(a)      free((void *)(a))
 
 #ifndef MPIR_USE_LOCAL_ARRAY
 #define MPIR_USE_LOCAL_ARRAY 32

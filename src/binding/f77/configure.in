@@ -721,7 +721,7 @@ for var in INTEGER1 INTEGER2 INTEGER4 INTEGER8 INTEGER16 \
         eval $fullvar=MPI_DATATYPE_NULL
         continue
     fi
-    echo "$fullvar = $fullvarvalue"
+    #echo "$fullvar = $fullvarvalue"
     value=0
     for pos in 3 4 5 6 7 8 9 10 ; do
         char=`expr substr $fullvarvalue $pos 1`
@@ -794,6 +794,9 @@ Fortran (the Fortran standard requires it).)])
 # Set a conservative default if it isn't provided.
 BSEND_OVERHEAD=${BSEND_OVERHEAD:-128}
 AC_SUBST(BSEND_OVERHEAD)
+
+MPI_MAX_PROCESSOR_NAME="${MPI_MAX_PROCESSOR_NAME:-128}"
+AC_SUBST(MPI_MAX_PROCESSOR_NAME)
 #
 # Try for weak symbols for the profiling interface.
 if test "$enable_weak" = "yes" ; then
