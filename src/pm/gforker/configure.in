@@ -251,5 +251,7 @@ dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
 dnl
+dnl Other autoconf variables that may be imported from the calling environment
+AC_SUBST(DOCTEXT)
 dnl Generate the Makefiles from Makefile.in
 AC_OUTPUT(Makefile)
