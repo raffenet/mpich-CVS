@@ -19,27 +19,49 @@ def mpdlistjobs():
     jobid    = ''
     sjobid   = ''
     jobalias = ''
+    sssPrintFormat = 0
     if len(argv) > 1:
         aidx = 1
         while aidx < len(argv):
             if argv[aidx] == '-h'  or  argv[aidx] == '--help':
-                print 'usage: mpdlistjobs [-u | --user username] [-a | --alias jobalias] ',
-                print '[-j | --jobid jobid]'
-                print '  (only use one of jobalias or jobid)'
-                print 'lists jobs being run by an mpd ring, all by default, or filtered'
-                print 'by user, mpd job id, or alias assigned when the job was submitted'
-                exit(-1)
-            if argv[aidx] == '-u' or argv[aidx] == '--user':
+                usage()
+            if argv[aidx] == '-u':    # or --user=
                 uname = argv[aidx+1]
                 aidx += 2
-            elif argv[aidx] == '-j'  or  argv[aidx] == '--jobid':
+            elif argv[aidx].startswith('--user'):
+                splitArg = argv[aidx].split('=')
+                try:
+                    uname = splitArg[1]
+                except:
+                    print 'mpdlistjobs: invalid argument:', argv[aidx]
+                    usage()
+                aidx += 1
+            elif argv[aidx] == '-j':    # or --jobid=
                 jobid = argv[aidx+1]
                 aidx += 2
                 sjobid = jobid.split('@')    # jobnum and originating host
-            elif argv[aidx] == '-a'  or  argv[aidx] == '--alias':
+            elif argv[aidx].startswith('--jobid'):
+                splitArg = argv[aidx].split('=')
+                try:
+                    jobid = splitArg[1]
+                    sjobid = jobid.split('@')    # jobnum and originating host
+                except:
+                    print 'mpdlistjobs: invalid argument:', argv[aidx]
+                    usage()
+                aidx += 1
+            elif argv[aidx] == '-a':    # or --alias=
                 jobalias = argv[aidx+1]
                 aidx += 2
-            elif argv[aidx] == '-sss':
+            elif argv[aidx].startswith('--alias'):
+                splitArg = argv[aidx].split('=')
+                try:
+                    jobalias = splitArg[1]
+                except:
+                    print 'mpdlistjobs: invalid argument:', argv[aidx]
+                    usage()
+                aidx += 1
+            elif argv[aidx] == '--sss':
+                sssPrintFormat = 1
                 aidx +=1
             else:
                 print 'unrecognized arg: %s' % argv[aidx]
@@ -92,7 +114,7 @@ def mpdlistjobs():
             if not smjobid[2]:
                 smjobid[2] = '          '  # just for printing
             if print_based_on_uname and (print_based_on_jobid or print_based_on_jobalias):
-                if '-sss' in argv:
+                if sssPrintFormat:
                     print "%s %s %s"%(msg['host'],msg['clipid'],msg['sid'])
                 else:
                     print 'jobid    = %s@%s' % (smjobid[0],smjobid[1])
@@ -107,6 +129,14 @@ def mpdlistjobs():
         else:
             break  # mpdlistjobs_trailer
 
+
+def usage():
+    print 'usage: mpdlistjobs [-u | --user=username] [-a | --alias=jobalias] ',
+    print '[-j | --jobid=jobid]'
+    print '  (only use one of jobalias or jobid)'
+    print 'lists jobs being run by an mpd ring, all by default, or filtered'
+    print 'by user, mpd job id, or alias assigned when the job was submitted'
+    exit(-1)
 
 def signal_handler(signum,frame):
     if signum == SIGALRM:
