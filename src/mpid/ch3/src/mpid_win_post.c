@@ -41,7 +41,11 @@ void *MPIDI_Win_wait_thread(void *arg)
     MPID_Win *win_ptr;
     int *mpi_errno;
 
-    mpi_errno = (int *) malloc(sizeof(int));
+    mpi_errno = (int *) MPIU_Malloc(sizeof(int));
+    if (!mpi_errno) {
+        *mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        return mpi_errno;
+    }
     *mpi_errno = MPI_SUCCESS;
 
     win_ptr = (MPID_Win *) arg;

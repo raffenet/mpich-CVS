@@ -8,10 +8,12 @@
 
 int MPID_Win_wait(MPID_Win *win_ptr)
 {
-    int *mpi_errno;
+    int mpi_errno, *err;
 
-    pthread_join(win_ptr->wait_thread_id, (void **) &mpi_errno);
-    return *mpi_errno;
+    pthread_join(win_ptr->wait_thread_id, (void **) &err);
+    mpi_errno = *err;
+    MPIU_Free(*err);
+    return mpi_errno;
 }
 
 
