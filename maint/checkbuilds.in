@@ -734,23 +734,17 @@ sub RunIntelTestSuite {
 	if ($test_status != 0) {
 	    # Try to figure out what went wrong.  
 	    if (-s "Test/test.results") { 
-		my $linecount = 256;
-		if (open( TESTFD, "Test/test.results" )) {
-		    print $OUTFD "First $linecount lines of test.results\n";
-		    while (<TESTFD> && $linecount-- > 0) {
-			if ($is_xml) {
-			    # xml-ify the line by 
-			    # escaping the special characters
-			    s/</\*AMP\*lt;/g;
-			    s/>/\*AMP\*gt;/g;
-			    s/&/\*AMP\*amp;/g;
-			    s/\*AMP\*/&/g;
-			}
-			print $OUTFD $_;
-		    }
-		    close (TESTFD);
-		}
+		&CopyFileToOutput( "Test/test.results" );
 	    }
+	    if (! -s "lib/libmpitestf_mpich2.a" && 
+		-s "lib/makeflib.log") {
+		&CopyFileToOutput( "lib/makeflib.log" );
+	    }
+	    if (! -s "lib/libmpitest_mpich2.a" && 
+		-s "lib/makeclib.log") {
+		&CopyFileToOutput( "lib/makeclib.log" );
+	    }
+	    
 	}
     }
     else {
@@ -987,3 +981,24 @@ if ($is_xml) {
     print $OUTFD "</MPICH2BUILD>\n";
 }
 close $OUTFD;
+
+sub CopyFileToOutput {
+    my $filename = $_[0];
+    my $linecount = 256;
+
+    if (open( TESTFD, "<$filename" )) {
+	print $OUTFD "First $linecount lines of $filename\n";
+	while (<TESTFD> && ($linecount-- > 0)) {
+	    if ($is_xml) {
+		# xml-ify the line by 
+		# escaping the special characters
+		s/</\*AMP\*lt;/g;
+		s/>/\*AMP\*gt;/g;
+		s/&/\*AMP\*amp;/g;
+		s/\*AMP\*/&/g;
+	    }
+	    print $OUTFD $_;
+	}
+	close (TESTFD);
+    }
+}
