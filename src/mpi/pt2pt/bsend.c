@@ -66,7 +66,7 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    if (comm_ptr) {
-		MPIR_ERRTEST_SEND_TAG(comm_ptr,tag,mpi_errno);
+		MPIR_ERRTEST_SEND_TAG(tag,mpi_errno);
 		MPIR_ERRTEST_SEND_RANK(comm_ptr,tag,mpi_errno)
 	    }
 
