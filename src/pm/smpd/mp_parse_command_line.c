@@ -7,24 +7,20 @@
 #include <stdio.h>
 #include "mpiexec.h"
 #include "smpd.h"
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 void mp_print_options(void)
 {
     printf("\n");
     printf("Usage:\n");
-    /*
-    printf("   mpiexec -n #processes [options] executable [args ...]\n");
-    printf("   mpiexec [options] configfile [args ...]\n");
-    printf("\n");
-    printf("mpiexec options:\n");
-    printf("   -n num_processes\n");
-    printf("   -host hostname\n");
-    printf("   -env var=val\n");
-    printf("   -wdir drive:\\my\\working\\directory\n");
-    printf("   -wdir /my/working/directory\n");
-    printf("   -file configfile\n");
-    */
     printf("mpiexec -n <maxprocs> [options] executable [args ...]\n");
     printf("mpiexec [options] executable [args ...] : [options] exe [args] : ...\n");
     printf("mpiexec -file <configfile>\n");
@@ -271,6 +267,169 @@ int mp_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *laun
 
     return SMPD_SUCCESS;
 }
+
+#ifndef HAVE_WINDOWS_H
+
+int exists(char *filename)
+{
+    struct stat file_stat;
+
+    if ((stat(filename, &file_stat) < 0) || !(S_ISREG(file_stat.st_mode)))
+    {
+	return 0; /* no such file, or not a regular file */
+    }
+    return 1;
+}
+
+int GetFullPathName(const char *filename, int maxlen, char *buf, char **file_part)
+{
+    char *path = NULL;
+    char cwd[SMPD_MAX_EXE_LENGTH] = "";
+
+    getcwd(cwd, SMPD_MAX_EXE_LENGTH);
+    path = (char*)malloc((strlen(getenv("PATH")) + 1) * sizeof(char));
+
+    if (cwd[strlen(cwd)-1] != '/')
+	strcat(cwd, "/");
+
+    /* add searching of the path and verifying file exists */
+
+    /* for now, just put whatever they give you tacked on to the cwd */
+    snprintf(buf, maxlen, "%s%s", cwd, filename);
+
+    free(path);
+    return 0;
+}
+
+#if 0
+/* SEARCH_PATH() - use the given environment, find the PATH variable,
+ * search the path for cmd, return a string with the full path to
+ * the command.
+ *
+ * This could probably be done a lot more efficiently.
+ *
+ * Returns a pointer to a string containing the filename (including
+ * path) if successful, or NULL on failure.
+ */
+char *search_path(char **env, char *cmd, char *cwd, int uid, int gid, char *uname)
+{
+    int i, len;
+    char *tmp, *path, succeeded = 0;
+    static char filename[4096];
+
+    for (i=0; env[i]; i++)
+    {
+	if (strncmp(env[i], "PATH=", 5) != 0)
+	    continue;
+
+	len = strlen(env[i])+1;
+	if (!(path=(char *)malloc(len * sizeof(char))))
+	{
+	    return(NULL);
+	}
+	bcopy(env[i], path, len * sizeof(char));
+
+	/* check for absolute or relative pathnames */
+	if ((strncmp(cmd,"./",2)) && (strncmp(cmd,"../",3)) && (cmd[0]!='/'))
+	{
+	    /* ok, no pathname specified, search for a valid executable */
+	    tmp = NULL;
+	    for (strtok(path, "="); (tmp = strtok(NULL, ":")); )
+	    {
+		/* concatenate search path and command */
+		/* use cwd if relative path is being used in environment */
+		if (!strncmp(tmp,"../",3) || !strncmp(tmp,"./",2) ||
+		    !strcmp(tmp,".") || !strcmp(tmp,".."))
+		{
+		    snprintf(filename, 4096, "%s/%s/%s", cwd, tmp, cmd);
+		}
+		else
+		{
+		    snprintf(filename, 4096, "%s/%s", tmp, cmd);
+		}
+		/* see if file is executable */
+		if (is_executable(filename, uname, uid, gid))
+		{
+		    succeeded=1;
+		    break;
+		}
+	    }
+	}
+	else
+	{
+	    /* ok, pathname is specified */
+	    if (!(strncmp(cmd,"../",3)) || !(strncmp(cmd,"./",2)))
+		snprintf(filename, 4096, "%s/%s", cwd, cmd);
+	    else
+		strncpy(filename,cmd,4096);
+	    if (is_executable(filename, uname, uid, gid))
+		succeeded=1;
+	}
+	return((succeeded) ? filename : NULL);
+    }
+    return(NULL);
+}
+
+/* IS_EXECUTABLE() - checks to see if a given filename refers to a file
+ * which a given user could execute
+ *
+ * Parameters:
+ * fn  - pointer to string containing null terminated file name,
+ *       including path
+ * un  - pointer to string containing user name
+ * uid - numeric user id for user
+ * gid - numeric group id for user (from password entry)
+ *
+ * Returns 1 if the file exists and is executable, 0 otherwise.
+ *
+ * NOTE: This code in and of itself isn't a good enough check unless it
+ * is called by a process with its uid/gid set to the values passed in.
+ * Otherwise the directory path would not necessarily be traversable by
+ * the user.
+ */
+int is_executable(char *fn, char *un, int uid, int gid)
+{
+    struct stat file_stat;
+
+    if ((stat(fn, &file_stat) < 0) || !(S_ISREG(file_stat.st_mode)))
+    {
+	return(0); /* no such file, or not a regular file */
+    }
+
+    if (file_stat.st_mode & S_IXOTH)
+    {
+	return(1); /* other executable */
+    }
+
+    if ((file_stat.st_mode & S_IXUSR) && (file_stat.st_uid == uid))
+    {
+	return(1); /* user executable and user owns file */
+    }
+
+    if (file_stat.st_mode & S_IXGRP)
+    {
+	struct group *grp_info;
+	int i;
+
+	if (file_stat.st_gid == gid)
+	{
+	    return(1); /* group in passwd entry matches, executable */
+	}
+
+	/* check to see if user is in this group in /etc/group */
+	grp_info = getgrgid(file_stat.st_gid);
+	for(i=0; grp_info->gr_mem[i]; i++)
+	{
+	    if (!strcmp(un, grp_info->gr_mem[i]))
+	    {
+		return(1); /* group from groups matched, executable */
+	    }
+	}
+    }
+    return(0);
+}
+#endif
+#endif
 
 int mp_parse_command_args(int *argcp, char **argvp[])
 {
@@ -862,55 +1021,21 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		return SMPD_FAIL;
 	    }
 
-#ifdef HAVE_WINDOWS_H
-	    if (!((*argvp)[1][0] == '\\' && (*argvp)[1][1] == '\\') && (*argvp)[1][0] != '/')
+	    if (!((*argvp)[1][0] == '\\' && (*argvp)[1][1] == '\\') && (*argvp)[1][0] != '/' &&
+		!(strlen((*argvp)[1]) > 3 && (*argvp)[1][1] == ':' && (*argvp)[1][2] == '\\') )
 	    {
-		GetFullPathName((*argvp)[1], MAX_PATH, temp_exe, &namepart);
+		GetFullPathName((*argvp)[1], SMPD_MAX_EXE_LENGTH, temp_exe, &namepart);
 		total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, temp_exe);
 	    }
 	    else
 	    {
 		total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, (*argvp)[1]);
 	    }
-#else
-	    total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, (*argvp)[1]);
-#endif
 	    for (i=2; i<argc; i++)
 	    {
 		total += smpd_add_string(&exe[total], SMPD_MAX_EXE_LENGTH - total, (*argvp)[i]);
 	    }
 	    smpd_dbg_printf("handling executable:\n%s\n", exe);
-#if 0
-	    strncpy(exe, (*argvp)[1], SMPD_MAX_EXE_LENGTH);
-	    exe[SMPD_MAX_EXE_LENGTH-1] = '\0';
-
-	    args[0] = '\0';
-	    for (i = 2; i<argc; i++)
-	    {
-		strncat(args, (*argvp)[i], SMPD_MAX_EXE_LENGTH - 1 - strlen(args));
-		if (i < argc-1)
-		{
-		    strncat(args, " ", SMPD_MAX_EXE_LENGTH - 1 - strlen(args));
-		}
-	    }
-#ifdef HAVE_WINDOWS_H
-	    /* Fix up the executable name */
-	    if (exe[0] == '\\' && exe[1] == '\\')
-	    {
-		strncpy(temp_exe, exe, SMPD_MAX_EXE_LENGTH);
-		temp_exe[SMPD_MAX_EXE_LENGTH-1] = '\0';
-		/* Quote the executable in case there are spaces in the path */
-		sprintf(exe, "\"%s\"", temp_exe);
-	    }
-	    else if (exe[0] != '/')
-	    {
-		GetFullPathName(exe, MAX_PATH, temp_exe, &namepart);
-		/* Quote the executable in case there are spaces in the path */
-		sprintf(exe, "\"%s\"", temp_exe);
-	    }
-#endif
-	    smpd_dbg_printf("handling executable:\n%s %s\n", exe, args);
-#endif
 	}
 
 	if (nproc == 0)
@@ -939,12 +1064,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    launch_node->iproc = cur_rank++;
 	    launch_node->env = launch_node->env_data;
 	    launch_node->env_data[0] = '\0';
-#if 0
-	    if (args[0] != '\0')
-		sprintf(launch_node->exe, "%s %s", exe, args);
-	    else
-#endif
-		strcpy(launch_node->exe, exe);
+	    strcpy(launch_node->exe, exe);
 	    launch_node->next = NULL;
 	    if (smpd_process.launch_list == NULL)
 		smpd_process.launch_list = launch_node;
