@@ -902,8 +902,8 @@ configfile_loop:
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-		g_timeout = atoi((*argvp)[2]);
 #ifdef HAVE_WINDOWS_H
+		g_timeout = atoi((*argvp)[2]);
 		if (g_timeout > 0 && g_hTimeoutThread == NULL)
 		{
 		    g_hTimeoutThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)timeout_thread, NULL, 0, NULL);
