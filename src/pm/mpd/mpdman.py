@@ -307,6 +307,9 @@ def mpdman():
             mpd_send_one_line(pmiSocket,pmiMsgToSend)
             exit(0)
         exit(0)
+    # if not initially a recvr of stdin (e.g. gdb) then give an immediate eof to the client
+    if not in_stdinRcvrs(myRank,stdinGoesToWho):
+        close(fd_write_cli_stdin)
     if doingBNR:
         cliBNRSocket.close()
     msgToSend = { 'cmd' : 'client_pid', 'jobid' : jobid,
