@@ -1,4 +1,5 @@
 mpi_sources = wtime.c wtick.c
+HEADERS = timerconf.h mpichtimer.h
 lib${MPILIBNAME}_a_SOURCES = ${mpi_sources} mpidtime.c
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 
