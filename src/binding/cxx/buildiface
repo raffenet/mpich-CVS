@@ -173,7 +173,7 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		     'Waitall-2' => 'inout:reqarray:1',
 		     'Waitall-3' => 'out:statusarray:1',
 		     'Testany-2' => 'inout:reqarray:1',
-		     'Testany-4' => 'in:refint',
+		     'Testany-3' => 'in:refint',
 		     'Testsome-2' => 'inout:reqarray:1',
 		     'Testsome-5' => 'out:statusarray:1', # or 4?
 		     'Testall-2' => 'inout:reqarray:1',
@@ -230,7 +230,7 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 %class_mpi1cart = ( 'Dup' => MPI_Comm,
 		    'Get_dim' => 'int',
 		    'Get_topo' => '0:4',
-		    'Get_cart_rank' => 'int',
+		    'Get_cart_rank' => '3',
 		    'Get_coords' => 0,
 		    'Shift' => '0:4:5',
 		    'Sub' => 'MPI_Comm:2',
@@ -309,7 +309,7 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		   'Waitany' => 'static:int:2',
 		   'Waitsome' => 'static:3:2:5',
 		   'Testall' => 'static:int;bool:2:4',
-		   'Testany' => 'static:3;bool:2:4',
+		   'Testany' => 'static:4;bool:2:3:4',
 		   'Testsome' => 'static:3:2:5',
 );
 %class_mpi1st = ( 'Get_count' => 'int',
@@ -1755,7 +1755,7 @@ sub Clone_method {
     my $classname = $_[1];
     print $OUTFD "    $classname & Clone(void) const { 
         MPI_Comm ncomm;
-        MPI_Comm_dup( (MPI_Comm)this, &ncomm); 
+        MPI_Comm_dup( (MPI_Comm)the_real_comm, &ncomm); 
         $classname *clone = new $classname(ncomm); 
         return *clone; };\n";
 }
