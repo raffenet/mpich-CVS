@@ -11,6 +11,8 @@
 /* This section of code is for the RLOG logging library */
 #if (USE_LOGGING == MPID_LOGGING_RLOG)
 
+int MPIDU_Socki_describe_timer_states(void);
+
 #include <math.h>
 
 /* utility funcions */
