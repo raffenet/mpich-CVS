@@ -7,6 +7,8 @@ srcdir = @srcdir@
 .tex.dvi:
 	@if [ ! -s ../mpiman.sty ] ; then \
 	(cd .. && ln -s $(srcdir)/../mpiman.sty mpiman.sty) ; fi
+	@if [ ! -s code.sty ] ; then \
+	ln -s $(srcdir)/../adi3/code.sty code.sty ; fi
 	@if [ ! -s user.bib ] ; then \
 	 ln -s $(srcdir)/user.bib user.bib ; fi
 	-latex $< </dev/null >/dev/null 2>&1
@@ -16,6 +18,8 @@ srcdir = @srcdir@
 
 .dvi.pdf:
 	dvipdfm $*
+.dvi.ps:
+	dvips $*
 
 all-redirect: user.pdf
 
@@ -24,3 +28,9 @@ mandoc:
 htmldoc:
 
 latexdoc: ALL
+
+clean:
+	-rm -f *.toc *.out *.dvi user.ps user.pdf *.aux *.blg *.bbl
+
+distclean: clean
+	-rm -f code.sty

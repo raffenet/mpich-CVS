@@ -1,5 +1,6 @@
 \documentclass[dvipdfm,11pt]{article}
 \usepackage[dvipdfm]{hyperref} % Upgraded url package
+\usepackage{code}
 \parskip=.1in
 
 \begin{document}
@@ -234,6 +235,29 @@ Currently shared libraries are only tested on Linux, and there are
 restrictions.  See the \emph{Installer's Guide} for how to build MPICH2
 as a shared library.
 
+\subsection{Special Issues for C++}
+\label{sec:cxx}
+
+Some users may get error messages such as
+\begin{verbatim}
+SEEK_SET is #defined but must not be for the C++ binding of MPI
+\end{verbatim}
+The problem is that both \file{stdio.h} and the MPI C++ interface use
+\code{SEEK_SET}, \code{SEEK_CUR}, and \code{SEEK_END}.  This is really a bug
+in the MPI-2 standard.  You can 
+try adding 
+\begin{verbatim}
+#undef SEEK_SET
+#undef SEEK_END
+#undef SEEK_CUR
+\end{verbatim}
+before \file{mpi.h} is included, or add the definition
+\begin{verbatim}
+-DMPICH_IGNORE_CXX_SEEK
+\end{verbatim}
+to the command line (this will cause the MPI versions of \code{SEEK_SET}
+etc. to be skipped).
+
 \subsection{Special Issues for Fortran}
 \label{sec:fortran}
 This section is under development.
@@ -278,7 +302,7 @@ Here we describe the standard \texttt{mpiexec} arguments from the MPI-2
 Standard~\cite{mpi-forum:mpi2-journal}.  The simplest form of a command
 to start an MPI job is 
 \begin{verbatim}
-     mpiexec -n 32 a.out
+   mpiexec -n 32 a.out
 \end{verbatim}
 to start the executable \texttt{a.out} with 32 processes (providing an
 \texttt{MPI\_COMM\_WORLD} of size 32 inside the MPI application).  Other
@@ -288,7 +312,7 @@ specifying a number of processes.  Multiple sets of processes can be run
 with different exectuables and different values for their arguments,
 with ``\texttt{:}'' separating the sets of processes, as in:
 \begin{verbatim}
-    mpiexec -n 1 -host loginnode master : -n 32 -host smp slave
+   mpiexec -n 1 -host loginnode master : -n 32 -host smp slave
 \end{verbatim}
 The \texttt{-configfile} argument allows one to specify a file containing the
 specifications for process sets on separate lines in the file.  This
@@ -643,7 +667,10 @@ script of an \texttt{mpigdb} session gives an idea of how this works.
 Input keystrokes are sent to all processes unless specifially directed
 by the ``\texttt{z}'' command.
 
-\begin{small}
+%
+% We need to make this tiny; small is still too big for the line lengths
+% that are in this example
+\begin{tiny}
 \begin{verbatim}
 ksl2% mpigdb -n 10 cpi
 0-9:  (gdb) l
@@ -772,7 +799,7 @@ ksl2% mpigdb -n 10 cpi
 0-9:  MPIGDB ENDING
 ksl2% 
 \end{verbatim}
-\end{small}
+\end{tiny}
 You can attach to a running job with
 \begin{verbatim}
     mpdgdb -a <jobid>
@@ -804,9 +831,14 @@ create user applications.  gcc and g77 for cygwin can be used with the
 libmpich*.a libraries.
 
 For MS Developer Studio users: Create a project and add
-\texttt{C:$\backslash$Program
-  Files$\backslash$MPICH2$\backslash$include} to the include path and
-\texttt{C:$\backslash$Program Files$\backslash$MPICH2$\backslash$lib} to
+\begin{verbatim}
+    C:\Program Files\MPICH2\include
+\end{verbatim}
+to the include path and
+\begin{verbatim}
+    C:\Program Files\MPICH2\lib
+\end{verbatim}
+to
 the library path.  Add \texttt{cxx.lib} and \texttt{mpich2.lib} to the
 Release target link command.  Add \texttt{cxxd.lib} and
 \texttt{mpich2d.lib} to the Debug target.
@@ -814,7 +846,7 @@ Release target link command.  Add \texttt{cxxd.lib} and
 Intel Fortran 8 users add \texttt{fmpich2d.lib} to the link command in
 addition to the libraries mentioned above.
 
-cygwin users use \texttt{libmpich2.a} \texttt{libfmpich2g.a}.
+Cygwin users use \texttt{libmpich2.a} \texttt{libfmpich2g.a}.
 
 \subsection{Running}
 \label{sec:winrun}
