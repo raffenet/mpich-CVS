@@ -122,8 +122,8 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 		segp->builtin_loop.kind                     = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
 		segp->builtin_loop.loop_params.c_t.count    = count * tmploop->loop_params.c_t.count;
 		segp->builtin_loop.loop_params.c_t.dataloop = NULL;
-		segp->builtin_loop.el_size                  = type_size;
-		segp->builtin_loop.el_extent                = type_extent;
+		segp->builtin_loop.el_size                  = tmploop->el_size;
+		segp->builtin_loop.el_extent                = tmploop->el_extent;
 	    }
 	    else
 	    {
