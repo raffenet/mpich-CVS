@@ -4,12 +4,19 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+
+#if !defined(SOCKIMPLH_H_INCLUDED)
+#define SOCKIMPL_H_INCLUDED
+
 #include "sockpollconf.h"
 
-#ifdef HAVE_SYS_UIO_H
+#if defined(HAVE_SYS_UIO_H)
 #include <sys/uio.h>
 #endif
-#ifdef HAVE_UNISTD_H
+#if defined(HAVE_LIMITS_H)
+#include <limits.h>
+#endif
+#if defined(HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
 
@@ -21,6 +28,8 @@
 #define SOCK_INVALID_SOCKET  -1
 #define SOCK_SIZE_MAX	     SSIZE_MAX
 
-typedef struct sock_set_s * sock_set_t;
-typedef struct sock_s * sock_t;
+typedef struct sock_set * sock_set_t;
+typedef struct sock * sock_t;
 typedef size_t sock_size_t;
+
+#endif /* !defined(SOCLIMPL_H_INCLUDED) */

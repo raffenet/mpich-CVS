@@ -26,6 +26,8 @@ fi
 export sock_name
 AC_SUBST(sock_name)
 
+PAC_PROG_MAKE
+
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
 AC_SUBST(MPILIBNAME)
@@ -39,6 +41,6 @@ AC_SUBST(master_top_srcdir)
 PAC_SUBDIR_CACHE
 AC_CONFIG_SUBDIRS(${sock_name})
 
-AC_OUTPUT(Makefile sock.h localdefs)
+AC_OUTPUT(Makefile localdefs)
 
 PAC_SUBDIR_CACHE_CLEANUP

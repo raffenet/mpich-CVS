@@ -3,8 +3,9 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#ifndef SOCK_H
-#define SOCK_H
+
+#if !defined(SOCK_H_INCLUDED)
+#define SOCK_H_INCLUDED
 
 #if defined(__cplusplus)
 #if !defined(CPLUSPLUS_BEGIN)
@@ -43,11 +44,15 @@ typedef enum sock_op
 /* insert error codes here */
 #define SOCK_SUCCESS           0
 #define SOCK_FAIL              -1
+#define SOCK_EOF	       1 
 #define SOCK_ERR_NOMEM         1000
 #define SOCK_ERR_TIMEOUT       1001
 #define SOCK_ERR_HOST_LOOKUP   1002
 #define SOCK_ERR_CONN_REFUSED  1003
-#define SOCK_ERR_OS_SPECIFIC   1004
+#define SOCK_ERR_CONN_FAILED   1004
+#define SOCK_ERR_BAD_SOCK      1005
+#define SOCK_ERR_BAD_BUFFER    1006 
+#define SOCK_ERR_OS_SPECIFIC   1007
 
 /*
  * structures
@@ -105,4 +110,4 @@ int sock_getid(sock_t sock);
 
 CPLUSPLUS_END
 
-#endif
+#endif /* !defined(SOCK_H_INCLUDED) */

@@ -9,7 +9,7 @@ AC_CONFIG_AUX_DIR(../../../../../confdb)
 dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 dnl
-AC_CONFIG_HEADER(include/sockpollconf.h)
+AC_CONFIG_HEADER(sockpollconf.h)
 
 echo "RUNNING CONFIGURE FOR THE POLL IMPLEMENTATION OF SOCK"
 
@@ -19,6 +19,8 @@ if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
     AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
     configured.  Run "make distclean" in $srcdir first.])
 fi
+
+PAC_PROG_MAKE
 
 AC_CHECK_HEADERS(                               \
     assert.h                                    \
@@ -32,7 +34,29 @@ AC_CHECK_HEADERS(                               \
     sys/poll.h                                  \
     sys/socket.h                                \
     sys/types.h                                 \
+    sys/uio.h					\
     unistd.h)
+
+AC_SEARCH_LIBS(socket,socket)
+if test "$ac_cv_search_socket" != "none required" ; then
+    TCP_LIBS="$TCP_LIBS $ac_cv_search_socket" 
+fi
+AC_SEARCH_LIBS(gethostbyname,nsl)
+if test "$ac_cv_search_gethostbyname" != "none required" ; then
+    TCP_LIBS="$TCP_LIBS $ac_cv_search_gethostbyname" 
+fi
+#
+# Check for socklen_t .  If undefined, define it as int
+AC_CACHE_CHECK([whether socklen_t is defined],
+pac_cv_have_socklen_t,[
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/socket.h>]
+typedef double socklen_t;,[socklen_t a;],pac_cv_have_socklen_t=no,pac_cv_have_socklen_t=yes)])
+if test "$pac_cv_have_socklen_t" = no ; then
+    AC_DEFINE(socklen_t,int,[Define if socklen_t is not defined])
+fi
+AC_SUBST(TCP_LIBS)
 
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
@@ -44,4 +68,4 @@ AC_SUBST(CC_SHL)
 AC_SUBST(C_LINK_SHL)
 AC_SUBST(master_top_srcdir)
 
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile localdefs)
