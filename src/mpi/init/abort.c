@@ -59,10 +59,6 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
