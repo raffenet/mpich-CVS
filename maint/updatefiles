@@ -421,7 +421,7 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround"
 		    cd ..
 		fi
 	    fi
-	    if [ -s "$dir/configure2.in" ] ; then
+	    if [ -s "$dir/configure2.in" -a 0 ] ; then
 	        # There is a version 1 and version 2 configure in this
 	        # directory.  
 	        if [ $dir = "./src/mpi/romio" ] ; then
