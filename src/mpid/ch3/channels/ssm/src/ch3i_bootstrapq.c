@@ -516,20 +516,17 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_BootstrapQ_tostring(MPIDI_CH3I_BootstrapQ queue, char *name, int length)
 {
-    /*int mpi_errno, len;*/
+    int mpi_errno;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSRAPQ_TOSTRING);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSRAPQ_TOSTRING);
     /*printf("[%d] queue->name = %s\n", MPIR_Process.comm_world->rank, queue->name);fflush(stdout);*/
-    MPIU_Strncpy(name, queue->name, length);
-    /*
-    len = MPIU_Strncpy(name, queue->name, length);
-    if (len < 1 || len >= length)
+    mpi_errno = MPIU_Strncpy(name, queue->name, length);
+    if (mpi_errno)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_TOSTRING);
 	return mpi_errno;
     }
-    */
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSRAPQ_TOSTRING);
     return MPI_SUCCESS;
 }
