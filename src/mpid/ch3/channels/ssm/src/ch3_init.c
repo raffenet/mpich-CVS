@@ -311,6 +311,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	return mpi_errno;
     }
     */
+    /* FIXME: Note that gethostname is not in POSIX */
+    /* FIXME: consider using sizeof(pg->shm_hostname) instead of
+       MAXHOSTNAMELEN, in case the system and the ssm/include header files
+       have a different interpretation of the size of MAXHOSTNAMELEN */
     gethostname(pg->shm_hostname, MAXHOSTNAMELEN);
     /*
     MPIU_Strncpy(pg->shm_hostname, val, MAXHOSTNAMELEN);
