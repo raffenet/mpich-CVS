@@ -129,7 +129,7 @@ static char *get_random_color_str()
     return random_color_str;
 }
 
-int Sock_describe_timer_states()
+int MPIDU_Sock_describe_timer_states()
 {
     RLOG_DescribeState(g_pRLOG,
 	MPID_STATE_MPIDU_SOCK_INIT,
@@ -204,18 +204,18 @@ int Sock_describe_timer_states()
 	"mpidu_sock_post_writev",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_MPIDU_SOCK_GETID,
+	MPID_STATE_MPIDU_SOCK_GET_SOCK_ID,
 	"mpidu_sock_getid",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_MPIDU_SOCK_GETSETID,
+	MPID_STATE_MPIDU_SOCK_GET_SOCK_SET_ID,
 	"mpidu_sock_getsetid",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
 	MPID_STATE_MPIDU_SOCK_NATIVE_TO_SOCK,
 	"mpidu_sock_native_to_sock",
 	get_random_color_str());
-    return Socki_describe_timer_states();
+    return MPIDU_Socki_describe_timer_states();
 }
 
 #endif /* USE_LOGGING == MPID_LOGGING_RLOG */

@@ -26,6 +26,8 @@ CPLUSPLUS_BEGIN
 #include "mpidu_sock_conf.h"
 #endif
 
+#include "mpitypedefs.h"
+
 /* implemenatation specific header file */    
 #include "mpidu_socki.h"
 
@@ -47,14 +49,15 @@ D*/
 #define MPIDU_SOCK_ERR_BAD_SOCK		MPICH_ERR_LAST_CLASS + 5
 #define MPIDU_SOCK_ERR_BAD_HOST		MPICH_ERR_LAST_CLASS + 6
 #define MPIDU_SOCK_ERR_BAD_PORT		MPICH_ERR_LAST_CLASS + 7
-#define MPIDU_SOCK_ERR_BAD_LEN		MPICH_ERR_LAST_CLASS + 8
-#define MPIDU_SOCK_ERR_SOCK_CLOSED	MPICH_ERR_LAST_CLASS + 9
-#define MPIDU_SOCK_ERR_CONN_CLOSED	MPICH_ERR_LAST_CLASS + 10
-#define MPIDU_SOCK_ERR_CONN_FAILED	MPICH_ERR_LAST_CLASS + 11
-#define MPIDU_SOCK_ERR_INPROGRESS	MPICH_ERR_LAST_CLASS + 12
-#define MPIDU_SOCK_ERR_TIMEOUT		MPICH_ERR_LAST_CLASS + 13
-#define MPIDU_SOCK_ERR_INTR		MPICH_ERR_LAST_CLASS + 14
-#define MPIDU_SOCK_ERR_NOP_ACCEPT       MPICH_ERR_LAST_CLASS + 15
+#define MPIDU_SOCK_ERR_BAD_BUF		MPICH_ERR_LAST_CLASS + 8
+#define MPIDU_SOCK_ERR_BAD_LEN		MPICH_ERR_LAST_CLASS + 9
+#define MPIDU_SOCK_ERR_SOCK_CLOSED	MPICH_ERR_LAST_CLASS + 10
+#define MPIDU_SOCK_ERR_CONN_CLOSED	MPICH_ERR_LAST_CLASS + 11
+#define MPIDU_SOCK_ERR_CONN_FAILED	MPICH_ERR_LAST_CLASS + 12
+#define MPIDU_SOCK_ERR_INPROGRESS	MPICH_ERR_LAST_CLASS + 13
+#define MPIDU_SOCK_ERR_TIMEOUT		MPICH_ERR_LAST_CLASS + 14
+#define MPIDU_SOCK_ERR_INTR		MPICH_ERR_LAST_CLASS + 15
+#define MPIDU_SOCK_ERR_NOP_ACCEPT       MPICH_ERR_LAST_CLASS + 16
 
 
 /*E
@@ -96,7 +99,7 @@ S*/
 typedef struct MPIDU_Sock_event
 {
     MPIDU_Sock_op_t op_type;
-    MPIDU_Sock_size_t num_bytes;
+    MPIU_Size_t num_bytes;
     void * user_ptr;
     int error;
 } MPIDU_Sock_event_t;
@@ -107,9 +110,11 @@ MPIDU_Sock_init - initialize the Sock communication library
 
 Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - initialization completed successfully
-. MPIDU_SOCK_ERR_INIT - Sock module already initialized
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
 - MPIDU_SOCK_ERR_FAIL - other failure; initialization failed
+
+Notes:
+The Sock module may be initialized multiple times.  The implementation should perform reference counting if necessary.
 
 Module:
 Utility-Sock
@@ -146,6 +151,7 @@ Input Parameters:
 Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - description successfully obtained and placed in host_description
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
+. MPIDU_SOCK_ERR_BAD_LEN - len parameter is less than zero
 . MPIDU_SOCK_ERR_BAD_HOST - host_description parameter not big enough to store required information
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
 - MPIDU_SOCK_ERR_FAIL - unable to obtain network interface information from OS
@@ -199,6 +205,8 @@ Return value: a MPI error code with a Sock extended error class
 Notes:
 <BRT> What are the semantics for destroying a sock set that still contains active sock objects?  sock objects by definition
 cannot exist outside of a set.
+
+It is consider erroneous to destroy a set that still contains sock objects or is being operated upon with an of the Sock routines.
 
 Module:
 Utility-Sock
@@ -455,7 +463,7 @@ internal progress engine could block on an application routine.
 Module:
 Utility-Sock
 E*/
-typedef int (* MPIDU_Sock_progress_update_func_t)(MPIDU_Sock_size_t num_bytes, void * user_ptr);
+typedef int (* MPIDU_Sock_progress_update_func_t)(MPIU_Size_t num_bytes, void * user_ptr);
 
 
 /*@
@@ -472,6 +480,7 @@ Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - request close the connection successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
+. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by buf and maxlen resulted in a memory fault
 . MPIDU_SOCK_ERR_BAD_LEN - length parameters must be greater than zero and maxlen must be greater than minlen
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
 . MPIDU_SOCK_ERR_INPROGRESS - this operation overlapped with another like operation already in progress
@@ -513,7 +522,7 @@ one thread is not attempting to post a new operation while another thread is att
 Module:
 Utility-Sock
 @*/
-int MPIDU_Sock_post_read(MPIDU_Sock_t sock, void * buf, MPIDU_Sock_size_t minbr, MPIDU_Sock_size_t maxbr,
+int MPIDU_Sock_post_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t minbr, MPIU_Size_t maxbr,
                          MPIDU_Sock_progress_update_func_t fn);
 
 
@@ -530,7 +539,7 @@ Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - request close the connection successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
-. MPIDU_SOCK_ERR_BAD_IOV - pointer to iov is invalid, or pointers/lengths in iov are invalid
+. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by iov and iov_n resulted in a memory fault
 . MPIDU_SOCK_ERR_BAD_LEN - iov_n is out of range
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
 . MPIDU_SOCK_ERR_INPROGRESS - this operation overlapped with another like operation already in progress
@@ -589,6 +598,7 @@ Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - request close the connection successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
+. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by buf and maxlen resulted in a memory fault
 . MPIDU_SOCK_ERR_BAD_LEN - length parameters must be greater than zero and maxlen must be greater than minlen
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
 . MPIDU_SOCK_ERR_INPROGRESS - this operation overlapped with another like operation already in progress
@@ -631,7 +641,7 @@ need this flexibility?
 Module:
 Utility-Sock
 @*/
-int MPIDU_Sock_post_write(MPIDU_Sock_t sock, void * buf, MPIDU_Sock_size_t min, MPIDU_Sock_size_t max,
+int MPIDU_Sock_post_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t min, MPIU_Size_t max,
 			  MPIDU_Sock_progress_update_func_t fn);
 
 
@@ -648,7 +658,7 @@ Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - request close the connection successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
-. MPIDU_SOCK_ERR_BAD_IOV - pointer to iov is invalid, or pointers/lengths in iov are invalid
+. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by iov and iov_n resulted in a memory fault
 . MPIDU_SOCK_ERR_BAD_LEN - iov_n is out of range
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
 . MPIDU_SOCK_ERR_INPROGRESS - this operation overlapped with another like operation already in progress
@@ -768,7 +778,8 @@ Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - request close the connection successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
-. MPIDU_SOCK_ERR_BAD_LEN - length parameters must be greater than zero and maxlen must be greater than minlen
+. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by buf and len resulted in a memory fault
+. MPIDU_SOCK_ERR_BAD_LEN - length parameter must be greater than zero
 . MPIDU_SOCK_ERR_SOCK_CLOSED - the sock object was closed locally
 . MPIDU_SOCK_ERR_CONN_CLOSED - the connection was closed by the peer
 . MPIDU_SOCK_ERR_CONN_FAILED - the connection failed
@@ -799,7 +810,7 @@ not attempting to perform an immediate read while another thread is attempting t
 Module:
 Utility-Sock
 @*/
-int MPIDU_Sock_read(MPIDU_Sock_t sock, void * buf, MPIDU_Sock_size_t len, MPIDU_Sock_size_t * num_read);
+int MPIDU_Sock_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t * num_read);
 
 
 /*@
@@ -817,7 +828,8 @@ Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - request close the connection successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
-. MPIDU_SOCK_ERR_BAD_LEN - length parameters must be greater than zero and maxlen must be greater than minlen
+. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by iov and iov_n resulted in a memory fault
+. MPIDU_SOCK_ERR_BAD_LEN - iov_n parameter must be greater than zero and not greater than MPID_IOV_LIMIT
 . MPIDU_SOCK_ERR_SOCK_CLOSED - the sock object was closed locally
 . MPIDU_SOCK_ERR_CONN_CLOSED - the connection was closed by the peer
 . MPIDU_SOCK_ERR_CONN_FAILED - the connection failed
@@ -848,7 +860,7 @@ not attempting to perform an immediate read while another thread is attempting t
 Module:
 Utility-Sock
 @*/
-int MPIDU_Sock_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_Sock_size_t * num_read);
+int MPIDU_Sock_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t * num_read);
 
 
 /*@
@@ -866,7 +878,8 @@ Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - request close the connection successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
-. MPIDU_SOCK_ERR_BAD_LEN - length parameters must be greater than zero and maxlen must be greater than minlen
+. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by buf and len resulted in a memory fault
+. MPIDU_SOCK_ERR_BAD_LEN - length parameter must be greater than zero
 . MPIDU_SOCK_ERR_SOCK_CLOSED - the sock object was closed locally
 . MPIDU_SOCK_ERR_CONN_CLOSED - the connection was closed by the peer
 . MPIDU_SOCK_ERR_CONN_FAILED - the connection failed
@@ -896,7 +909,7 @@ not attempting to perform an immediate write while another thread is attempting 
 Module:
 Utility-Sock
 @*/
-int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIDU_Sock_size_t len, MPIDU_Sock_size_t * num_written);
+int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t * num_written);
 
 
 /*@
@@ -914,7 +927,8 @@ Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - request close the connection successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
-. MPIDU_SOCK_ERR_BAD_LEN - length parameters must be greater than zero and maxlen must be greater than minlen
+. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by iov and iov_n resulted in a memory fault
+. MPIDU_SOCK_ERR_BAD_LEN - iov_n parameter must be greater than zero and not greater than MPID_IOV_LIMIT
 . MPIDU_SOCK_ERR_SOCK_CLOSED - the sock object was closed locally
 . MPIDU_SOCK_ERR_CONN_CLOSED - the connection was closed by the peer
 . MPIDU_SOCK_ERR_CONN_FAILED - the connection failed
@@ -944,7 +958,7 @@ not attempting to perform an immediate write while another thread is attempting 
 Module:
 Utility-Sock
 @*/
-int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_Sock_size_t * num_written);
+int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t * num_written);
 
 
 /*@
@@ -959,10 +973,12 @@ Notes:
 The integer is unique relative to all other open sock objects in the local process.  The integer may later be reused for a
 different sock once the current object is closed and destroyed.
 
+This function does not return an error code.  Passing in an invalid sock object has undefined results (garbage in, garbage out).
+
 Module:
 Utility-Sock
 @*/
-int MPIDU_Sock_getid(MPIDU_Sock_t sock);
+int MPIDU_Sock_get_sock_id(MPIDU_Sock_t sock);
 
 
 /*@
@@ -978,10 +994,24 @@ Notes:
 The integer is unique relative to all other sock set objects currently existing in the local process.  The integer may later be
 reused for a different sock set once the current object destroyed.
 
+This function does not return an error code.  Passing in an invalid sock set object has undefined results (garbage in, garbage
+out).
+
 Module:
 Utility-Sock
 @*/
-int MPIDU_Sock_getsetid(MPIDU_Sock_set_t set);
+int MPIDU_Sock_get_sock_set_id(MPIDU_Sock_set_t set);
+
+
+/*@
+MPIDU_Sock_describe_timer_states - registers the RLOG states exported by Sock
+
+Return value: a MPI error code with a Sock extended error class
+
+Module:
+Utility-Sock
+@*/
+int MPIDU_Sock_describe_timer_states(void);
 
 
 CPLUSPLUS_END
@@ -1008,8 +1038,8 @@ MPID_STATE_MPIDU_SOCK_READ, \
 MPID_STATE_MPIDU_SOCK_READV, \
 MPID_STATE_MPIDU_SOCK_WRITE, \
 MPID_STATE_MPIDU_SOCK_WRITEV, \
-MPID_STATE_MPIDU_SOCK_GETID, \
-MPID_STATE_MPIDU_SOCK_GETSETID, \
+MPID_STATE_MPIDU_SOCK_GET_SOCK_ID, \
+MPID_STATE_MPIDU_SOCK_GET_SOCK_SET_ID, \
 MPIDU_SOCKI_STATE_LIST
 
 #endif /* !defined(MPIDU_SOCK_H_INCLUDED) */
