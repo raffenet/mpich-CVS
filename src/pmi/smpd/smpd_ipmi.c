@@ -357,7 +357,14 @@ static int rPMI_Init(int *spawned)
     strcpy(smpd_process.host, pmi_process.root_host);
 
     p = getenv("PMI_SPAWN");
-    *spawned = (p != NULL) ? 1 : 0;
+    if (p)
+    {
+	*spawned = atoi(p);
+    }
+    else
+    {
+	*spawned = 0;
+    }
 
     p = getenv("PMI_KVS");
     if (p != NULL)
@@ -618,7 +625,14 @@ int iPMI_Init(int *spawned)
     pmi_process.nproc = 1;
 
     p = getenv("PMI_SPAWN");
-    *spawned = (p != NULL) ? 1 : 0;
+    if (p)
+    {
+	*spawned = atoi(p);
+    }
+    else
+    {
+	*spawned = 0;
+    }
 
     p = getenv("PMI_KVS");
     if (p != NULL)
@@ -716,13 +730,33 @@ int iPMI_Init(int *spawned)
     }
 
     /*
-    printf("PMI_RANK=%s PMI_SIZE=%s PMI_KVS=%s PMI_SMPD_ID=%s PMI_SMPD_FD=%s PMI_SMPD_KEY=%s\n",
+    printf("PMI_RANK=%s PMI_SIZE=%s PMI_KVS=%s PMI_SMPD_ID=%s PMI_SMPD_FD=%s PMI_SMPD_KEY=%s\n PMI_SPAWN=%s",
 	getenv("PMI_RANK"), getenv("PMI_SIZE"), getenv("PMI_KVS"), getenv("PMI_SMPD_ID"),
-	getenv("PMI_SMPD_FD"), getenv("PMI_SMPD_KEY"));
+	getenv("PMI_SMPD_FD"), getenv("PMI_SMPD_KEY"), getenv("PMI_SPAWN"));
     fflush(stdout);
     */
 
     pmi_process.init_finalized = PMI_INITIALIZED;
+
+    /*
+    if (*spawned && pmi_process.iproc == 0)
+    {
+	char key[1024], val[8192];
+	key[0] = '\0';
+	result = PMI_KVS_Iter_first(pmi_process.kvs_name, key, 1024, val, 8192);
+	if (result != PMI_SUCCESS || key[0] == '\0')
+	{
+	    printf("No preput values in %s\n", pmi_process.kvs_name);
+	}
+	while (result == PMI_SUCCESS && key[0] != '\0')
+	{
+	    printf("PREPUT key=%s, val=%s\n", key, val);
+	    result = PMI_KVS_Iter_next(pmi_process.kvs_name, key, 1024, val, 8192);
+	}
+	fflush(stdout);
+    }
+    iPMI_Barrier();
+    */
 
     return PMI_SUCCESS;
 }
@@ -1312,6 +1346,7 @@ int iPMI_Spawn_multiple(int count,
 	return PMI_FAIL;
     }
 
+    /*printf("creating spawn command.\n");fflush(stdout);*/
     result = smpd_create_command("spawn", pmi_process.smpd_id, dest, SMPD_TRUE, &cmd_ptr);
     if (result != SMPD_SUCCESS)
     {
@@ -1482,7 +1517,7 @@ int iPMI_Spawn_multiple(int count,
     /* post the write of the command */
     /*
     printf("posting write of spawn command to %s context, sock %d: '%s'\n",
-	smpd_get_context_str(pmi_process.context), MPIDU_Sock_getid(pmi_process.context->sock), cmd_ptr->cmd);
+	smpd_get_context_str(pmi_process.context), MPIDU_Sock_get_sock_id(pmi_process.context->sock), cmd_ptr->cmd);
     fflush(stdout);
     */
     result = smpd_post_write_command(pmi_process.context, cmd_ptr);
@@ -1504,16 +1539,28 @@ int iPMI_Spawn_multiple(int count,
     result = smpd_enter_at_state(pmi_process.set, SMPD_WRITING_CMD);
     if (result != SMPD_SUCCESS)
     {
+	/*printf("PMI_Spawn_multiple returning failure.\n");fflush(stdout);*/
 	pmi_err_printf("the state machine logic failed to get the result of the spawn command.\n");
 	return PMI_FAIL;
     }
-    return PMI_FAIL;
+    /*printf("PMI_Spawn_multiple returning success.\n");fflush(stdout);*/
+    return PMI_SUCCESS;
 }
 
 int iPMI_Args_to_keyval(int *argcp, char **argvp[], PMI_keyval_t *keyvalp[], int *size)
 {
     if (argcp == NULL || argvp == NULL || keyvalp == NULL || size == NULL)
 	return PMI_ERR_INVALID_ARG;
+    return PMI_SUCCESS;
+}
+
+int iPMI_Free_keyvals(PMI_keyval_t keyvalp[], int size)
+{
+    if (keyvalp == NULL || size < 0)
+	return PMI_ERR_INVALID_ARG;
+    if (size == 0)
+	return PMI_SUCCESS;
+    /* free stuff */
     return PMI_SUCCESS;
 }
 

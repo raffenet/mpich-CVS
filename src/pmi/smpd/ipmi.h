@@ -88,6 +88,8 @@ int iPMI_Spawn_multiple(int count,
 /* parse PMI implementation specific values into an info object that can then be passed to 
    PMI_Spawn_multiple.  Remove PMI implementation specific arguments from argc and argv */
 int iPMI_Args_to_keyval(int *argcp, char **argvp[], PMI_keyval_t **keyvalp, int *size);
+/* free the data returned by iPMI_Args_to_keyval */
+int iPMI_Free_keyvals(PMI_keyval_t keyvalp[], int size);
 
 typedef struct ipmi_functions_t
 {
@@ -115,6 +117,7 @@ typedef struct ipmi_functions_t
     int (*PMI_KVS_Iter_next)(const char [], char [], int , char [], int );
     int (*PMI_Spawn_multiple)(int, const char *[], const char **[], const int [], const int [], const PMI_keyval_t *[], int, const PMI_keyval_t [], int []);
     int (*PMI_Args_to_keyval)(int *, char **[], PMI_keyval_t **, int * );
+    int (*PMI_Free_keyvals)(PMI_keyval_t [], int);
 } ipmi_functions_t;
 
 #if defined(__cplusplus)
