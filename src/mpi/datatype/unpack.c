@@ -56,7 +56,7 @@ int MPI_Unpack(void *inbuf,
 {
     static const char FCNAME[] = "MPI_Unpack";
     int mpi_errno = MPI_SUCCESS;
-    int first, last;
+    MPI_Aint first, last;
     MPID_Comm *comm_ptr = NULL;
     MPID_Datatype *datatype_ptr = NULL;
     MPID_Segment *segp;
@@ -109,7 +109,7 @@ int MPI_Unpack(void *inbuf,
 			&last,
 			(void *) ((char *) inbuf + *position));
 
-    *position += last;
+    *position += (int) last;
 
     MPID_Segment_free(segp);
 

@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     int disp[100], block[100];
     MPI_Datatype ltype;
 	
-    int bufsize, position;
+    int bufsize, position = 0;
     void *buffer;
 	
     int i, j, errs = 0;

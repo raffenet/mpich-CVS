@@ -1,5 +1,6 @@
 #include "mpi.h"
 #include <stdio.h>
+#include <string.h>
 
 #define BUFLEN 512
 

@@ -8,6 +8,8 @@
 #include "mpiimpl.h"
 #include "mpiinfo.h"
 
+#include <string.h>
+
 /* -- Begin Profiling Symbol Block for routine MPI_Info_dup */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Info_dup = PMPI_Info_dup

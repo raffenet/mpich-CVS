@@ -354,9 +354,10 @@ int MPID_Type_struct(int count,
 	return mpi_errno;
     } /* end of single derived type case */
     else {
-	int nr_pieces = 0, first = 0, last, bytes, found_lb = 0, found_ub = 0, epsilon, alignsize;
+    	/* note: first and last are used for indices in this code, not byte positions */
+	int nr_pieces = 0, first = 0, last, found_lb = 0, found_ub = 0, epsilon, alignsize;
 	int *tmp_blocklength_array;
-	MPI_Aint *tmp_displacement_array, lb_disp = 0, ub_disp = 0;
+	MPI_Aint *tmp_displacement_array, bytes, lb_disp = 0, ub_disp = 0;
 	MPID_IOV *iov_array;
 	MPID_Segment *segp;
 

@@ -8,6 +8,8 @@
 #include "mpiimpl.h"
 #include "errcodes.h"
 
+#include <string.h>
+
 /*
  * This file contains the routines needed to implement the MPI routines that
  * can add error classes and codes during runtime.  This file is organized

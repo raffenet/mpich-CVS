@@ -19,7 +19,7 @@
 #include "mpid_dataloop.h"
 struct MPID_Datatype;
 
-typedef int MPIDI_msg_sz_t;
+typedef MPI_Aint MPIDI_msg_sz_t;
 #define MPIDI_MSG_SZ_FMT "%d"
 
 /* Include definitions from the channel which must exist before items in this file (mpidimpl.h) or the file it includes

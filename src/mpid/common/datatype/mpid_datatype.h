@@ -359,13 +359,13 @@ void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
 			      DLOOP_Offset first,
 			      DLOOP_Offset *lastp,
 			      DLOOP_VECTOR *vector,
-			      DLOOP_Offset *lengthp);
+			      int *lengthp);
 
 void MPID_Segment_unpack_vector(struct DLOOP_Segment *segp,
 				DLOOP_Offset first,
 				DLOOP_Offset *lastp,
 				DLOOP_VECTOR *vector,
-				DLOOP_Offset *lengthp);
+				int *lengthp);
 
 void MPID_Segment_count_contig_blocks(struct DLOOP_Segment *segp,
 				      DLOOP_Offset first,

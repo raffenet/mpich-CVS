@@ -21,7 +21,8 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
 			   int header)
 {
     char *string;
-    MPI_Aint size, extent, true_lb, true_ub, lb, ub, sticky_lb, sticky_ub;
+    int size;
+    MPI_Aint extent, true_lb, true_ub, lb, ub, sticky_lb, sticky_ub;
 
     if (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) {
 	string = MPIDI_datatype_builtin_to_string(type);
@@ -78,8 +79,8 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
 static char *MPIDI_datatype_builtin_to_string(MPI_Datatype type)
 {
     static char t_char[]             = "MPI_CHAR";
-    static char t_uchar[]            ="MPI_UNSIGNED_CHAR";
-    static char t_byte[]             ="MPI_BYTE";
+    static char t_uchar[]            = "MPI_UNSIGNED_CHAR";
+    static char t_byte[]             = "MPI_BYTE";
     static char t_wchar_t[]          = "MPI_WCHAR_T";
     static char t_short[]            = "MPI_SHORT";
     static char t_ushort[]           = "MPI_UNSIGNED_SHORT";

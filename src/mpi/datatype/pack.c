@@ -63,7 +63,8 @@ int MPI_Pack(void *inbuf,
 	     MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Pack";
-    int mpi_errno = MPI_SUCCESS, first, last;
+    int mpi_errno = MPI_SUCCESS;
+    MPI_Aint first, last;
     MPID_Datatype *datatype_ptr = NULL;
     MPID_Comm *comm_ptr = NULL;
 
@@ -139,7 +140,7 @@ int MPI_Pack(void *inbuf,
 		      &last,
 		      (void *) ((char *) outbuf + *position));
 
-    *position += last;
+    *position += (int) last;
 
     MPID_Segment_free(segp);
 

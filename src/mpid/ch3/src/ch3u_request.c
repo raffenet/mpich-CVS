@@ -696,7 +696,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
 {
-    int last;
+    MPIDI_msg_sz_t last;
     int tmpbuf_last;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_SRBUF);
@@ -795,7 +795,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 	else
 	{
 	    MPID_Segment seg;
-	    int last;
+	    MPIDI_msg_sz_t last;
 
 	    MPID_Segment_init(rreq->ch3.user_buf, rreq->ch3.user_count, rreq->ch3.datatype, &seg);
 	    last = unpack_sz;

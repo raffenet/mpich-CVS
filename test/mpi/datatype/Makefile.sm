@@ -5,7 +5,7 @@ typename_SOURCES = typename.c
 
 contents_SOURCES = contents.c
 
-struct-pack_SOURCES = triangular-pack.c
+struct-pack_SOURCES = struct-pack.c
 
 triangular-pack_SOURCES = triangular-pack.c
 

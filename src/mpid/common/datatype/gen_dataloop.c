@@ -147,7 +147,7 @@ void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
 	    break;
 
 	case DLOOP_KIND_BLOCKINDEXED:
-	    dataloop->loop_params.bi_t.offset_array = (int *)
+	    dataloop->loop_params.bi_t.offset_array = (DLOOP_Offset *)
 		((char *) dataloop->loop_params.bi_t.offset_array + ptrdiff);
 	    dataloop->loop_params.bi_t.dataloop = (struct DLOOP_Dataloop *)
 		((char *) dataloop->loop_params.bi_t.dataloop + ptrdiff);
@@ -159,7 +159,7 @@ void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
 	case DLOOP_KIND_INDEXED:
 	    dataloop->loop_params.i_t.blocksize_array = (int *)
 		((char *) dataloop->loop_params.i_t.blocksize_array + ptrdiff);
-	    dataloop->loop_params.i_t.offset_array = (int *)
+	    dataloop->loop_params.i_t.offset_array = (DLOOP_Offset *)
 		((char *) dataloop->loop_params.i_t.offset_array + ptrdiff);
 	    dataloop->loop_params.i_t.dataloop = (struct DLOOP_Dataloop *)
 		((char *) dataloop->loop_params.i_t.dataloop + ptrdiff);
@@ -171,7 +171,7 @@ void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
 	case DLOOP_KIND_STRUCT:
 	    dataloop->loop_params.s_t.blocksize_array = (int *)
 		((char *) dataloop->loop_params.s_t.blocksize_array + ptrdiff);
-	    dataloop->loop_params.s_t.offset_array = (int *)
+	    dataloop->loop_params.s_t.offset_array = (DLOOP_Offset *)
 		((char *) dataloop->loop_params.s_t.offset_array + ptrdiff);
 	    dataloop->loop_params.s_t.dataloop_array = (struct DLOOP_Dataloop **)
 		((char *) dataloop->loop_params.s_t.dataloop_array + ptrdiff);

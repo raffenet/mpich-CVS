@@ -453,7 +453,8 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     else { /* derived datatype */
                         MPID_Segment *segp;
                         DLOOP_VECTOR *dloop_vec;
-                        DLOOP_Offset first, last, dloop_vec_len;
+                        MPI_Aint first, last;
+			int vec_len;
                         MPI_Datatype type;
                         int type_size, count;
 
@@ -464,11 +465,11 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                         first = 0;
                         last  = SEGMENT_IGNORE_LAST;
 
-                        dloop_vec_len = new_dtp->n_contig_blocks *
+                        vec_len = new_dtp->n_contig_blocks *
                             rma_op_infos[total_op_count].count + 1; 
                         /* +1 needed because Rob says  so */
                         dloop_vec = (DLOOP_VECTOR *)
-                            MPIU_Malloc(dloop_vec_len * sizeof(DLOOP_VECTOR));
+                            MPIU_Malloc(vec_len * sizeof(DLOOP_VECTOR));
                         if (!dloop_vec) {
                             mpi_errno = MPIR_Err_create_code(
                                 MPI_ERR_OTHER, "**nomem", 0 ); 
@@ -477,14 +478,14 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                         }
 
                         MPID_Segment_pack_vector(segp, first, &last,
-                                                 dloop_vec, &dloop_vec_len);
+                                                 dloop_vec, &vec_len);
 
                         type = new_dtp->eltype;
                         type_size = MPID_Datatype_get_basic_size(type);
-                        for (i=0; i<dloop_vec_len; i++) {
+                        for (i=0; i<vec_len; i++) {
                             count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
-                          (*uop)((char *)tmp_buf + (int) dloop_vec[i].DLOOP_VECTOR_BUF,
-                           (char *)win_buf_addr + (int) dloop_vec[i].DLOOP_VECTOR_BUF,
+                          (*uop)((char *)tmp_buf + (MPI_Aint) dloop_vec[i].DLOOP_VECTOR_BUF,
+                           (char *)win_buf_addr + (MPI_Aint) dloop_vec[i].DLOOP_VECTOR_BUF,
                                  &count, &type);
                         }
 

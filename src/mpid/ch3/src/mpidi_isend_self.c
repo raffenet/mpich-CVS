@@ -52,7 +52,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     
     if (found)
     {
-	int data_sz;
+	MPIDI_msg_sz_t data_sz;
 	
 	MPIDI_DBG_PRINTF((15, FCNAME, "found posted receive request; copying data"));
 	    

@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     MPI_Aint sizeofint;
 	
     int err, errs = 0;
-    int bufsize, position;
+    int bufsize, position = 0;
     void *buffer;
   
     int i, j;

@@ -6,7 +6,7 @@
 static int verbose = 0;
 
 /* tests */
-int builtin_float_test();
+int builtin_float_test(void);
 int vector_of_vectors_test(void);
 int optimizable_vector_of_basics_test(void);
 int indexed_of_basics_test(void);
@@ -77,7 +77,7 @@ int main(int argc, char **argv)
  *
  * Returns the number of errors encountered.
  */
-int builtin_float_test()
+int builtin_float_test(void)
 {
     int nints, nadds, ntypes, combiner;
 
