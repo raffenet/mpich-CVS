@@ -83,7 +83,7 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
 
     /* ... body of routine ...  */
     
-    /* FIXME: This should be MPID_Mem_alloc */
+    /* FIXME: This should be MPID_Alloc_mem */
     ap = MPIU_Malloc(size);
     /* --BEGIN ERROR HANDLING-- */
     if (!ap)

@@ -1446,7 +1446,7 @@ extern volatile int MPIDI_Passive_target_thread_exit_flag;
  */
 
 /*@
-  MPID_Mem_alloc - Allocate memory suitable for passive target RMA operations
+  MPID_Alloc_mem - Allocate memory suitable for passive target RMA operations
 
   Input Parameter:
 + size - Number of types to allocate.
@@ -1460,7 +1460,7 @@ extern volatile int MPIDI_Passive_target_thread_exit_flag;
   This routine is used to implement 'MPI_Alloc_mem'.  It is for that reason
   that there is no communicator argument.  
 
-  This memory may `only` be freed with 'MPID_Mem_free'.
+  This memory may `only` be freed with 'MPID_Free_mem'.
 
   This is a `local`, not a collective operation.  It functions more like a
   good form of 'malloc' than collective shared-memory allocators such as
@@ -1477,13 +1477,13 @@ extern volatile int MPIDI_Passive_target_thread_exit_flag;
   Module:
   Win
   @*/
-void *MPID_Mem_alloc( size_t size, MPID_Info *info );
+void *MPID_Alloc_mem( size_t size, MPID_Info *info );
 
 /*@
-  MPID_Mem_free - Frees memory allocated with 'MPID_Mem_alloc'
+  MPID_Free_mem - Frees memory allocated with 'MPID_Alloc_mem'
 
   Input Parameter:
-. ptr - Pointer to memory allocated by 'MPID_Mem_alloc'.
+. ptr - Pointer to memory allocated by 'MPID_Alloc_mem'.
 
   Return value:
   'MPI_SUCCESS' if memory was successfully freed; an MPI error code otherwise.
@@ -1495,24 +1495,24 @@ void *MPID_Mem_alloc( size_t size, MPID_Info *info );
   Module:
   Win
   @*/
-int MPID_Mem_free( void *ptr );
+int MPID_Free_mem( void *ptr );
 
 /*@
   MPID_Mem_was_alloced - Return true if this memory was allocated with 
-  'MPID_Mem_alloc'
+  'MPID_Alloc_mem'
 
   Input Parameters:
 + ptr  - Address of memory
 - size - Size of reqion in bytes.
 
   Return value:
-  True if the memory was allocated with 'MPID_Mem_alloc', false otherwise.
+  True if the memory was allocated with 'MPID_Alloc_mem', false otherwise.
 
   Notes:
   This routine may be needed by 'MPI_Win_create' to ensure that the memory 
   for passive target RMA operations was allocated with 'MPI_Mem_alloc'.
   This may be used, for example, for ensuring that memory used with
-  passive target operations was allocated with 'MPID_Mem_alloc'.
+  passive target operations was allocated with 'MPID_Alloc_mem'.
 
   Module:
   Win

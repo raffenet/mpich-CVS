@@ -1125,7 +1125,7 @@ int MPID_Get_sametype( void *origin_buf, int n, MPID_Datatype *dtype,
   corresponds to the handler 'id'; the remaining elements are data that 
   the handler operation needs.  The handler 'id' can restrict the type of 
   memory that 'vector' may point at (e.g., it may require memory allocated 
-  with 'MPID_Mem_alloc').
+  with 'MPID_Alloc_mem').
 
   The C struct type 'iovec' is defined in '<sys/uio.h>' and is the 
   same structure used by the Unix 'readv' and 'writev' routines.  It has the

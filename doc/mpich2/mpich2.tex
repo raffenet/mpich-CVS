@@ -7420,21 +7420,21 @@ Question:  There are four possible \code{assert} values for
 \end{description}
 
 \subsubsection{\mpifunc{MPI_ALLOC_MEM}}
-Call \mpidfunc{MPID_Mem_alloc}.  We also need a routine that
+Call \mpidfunc{MPID_Alloc_mem}.  We also need a routine that
 \mpifunc{MPI_WIN_CREATE} can call to determine if memory was allocated with
 this (or a similar) routine.
 
 Note [BRT]: The performance of point-to-point and collective communication
 could be improved in some situations if the user buffers were
-allocated using \mpifunc{MPI_Mem_alloc}.  The info argument could be
+allocated using \mpifunc{MPI_Alloc_mem}.  The info argument could be
 used to express the intended use of the space, alllowing
-\mpifunc{MPI_Mem_alloc} to select an appropriate memory pool.
+\mpifunc{MPI_Alloc_mem} to select an appropriate memory pool.
 
 Question: Should this routine be \mpidfunc{MPID_Mem_isalloc}\code{( int
 size, void *ptr )}?  ([BRT] isalloc???)
 
 \subsubsection{\mpifunc{MPI_FREE_MEM}}
-Call \mpidfunc{MPID_Mem_free}.
+Call \mpidfunc{MPID_Free_mem}.
 
 For error reporting, we may want to keep a reference count so that a
 \mpifunc{MPI_Free_mem} applied to a window that is currently part of a window
