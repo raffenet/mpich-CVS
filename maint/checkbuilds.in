@@ -64,6 +64,8 @@ $OUTFD     = OUTFD;
 # The following variable separate the various sections
 $TestStart = "-----------------------------------------------------------\n";
 $TestEnd   = "-----------------------------------------------------------\n";
+$TestDateStart = "Run on ";
+$TestDateEnd   = "\n";
 $TestHostStart = "Run on host ";
 $TestHostEnd   = "\n";
 $ConfigStart = " -- Begin Configure Step -- \n";
@@ -259,6 +261,8 @@ sub RunTest {
 	print $OUTFD $TestStart;
 	my $host = `uname -n`;
 	print $OUTFD "$TestHostStart$host$TestHostEnd";
+	my $date = `date "+%Y-%m-%d-%H-%M"`;
+	print $OUTFD "$TestDateStart$date$TestDateEnd";
 	unlink "Makefile";
 	print $OUTFD $ConfigStart;
 	@config = split( /\s+/, "$srcdir/configure --prefix=$instdir $enable_args $with_args $config_args" );
@@ -583,6 +587,8 @@ sub RunMPD {
 sub XMLStyle {
     $TestStart     = "<BUILDTEST>\n";
     $TestEnd       = "</BUILDTEST>\n";
+    $TestDateStart = "<DATE>\n";
+    $TestDateEnd   = "</DATE>\n";
     $TestHostStart = "<HOST>\n";
     $TestHostEnd   = "</HOST>\n";
     $ConfigStart   = "<CONFIG>\n";
