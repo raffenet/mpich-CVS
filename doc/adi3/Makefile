@@ -58,7 +58,7 @@ adi3man/adi3man.htm: adi3man.tex adi3.c adi3.h Makefile
 #	tohtml -default adi3new.tex
 #	tohtml -default adi3new.tex
 
-adi3new.ps: adi3new.tex adi3.c adi3.h Makefile
+adi3new.ps: adi3new.tex adi3.c adi3.h adi-ov.eps Makefile
 	touch adi3new.ind
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
 	-rm -f adi3man/*.tex adi3man/tmp.*
