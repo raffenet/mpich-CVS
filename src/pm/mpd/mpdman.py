@@ -70,12 +70,15 @@ def mpdman():
     mpdSocket = fromfd(mpdFD,AF_INET,SOCK_STREAM)
     close(mpdFD)
     socketsToSelect[mpdSocket] = 1
-    lineLabels = int(environ['MPDMAN_LINE_LABELS'])
+    stdinGoesToWho = environ['MPDMAN_STDIN_GOES_TO_WHO']
     gdb = int(environ['MPDMAN_GDB'])
+    lineLabels = int(environ['MPDMAN_LINE_LABELS'])
     startStdoutLineLabel = 1
     startStderrLineLabel = 1
-    myLineLabel = str(myRank) + ': '
-    stdinGoesToWho = environ['MPDMAN_STDIN_GOES_TO_WHO']
+    if spawned:
+        myLineLabel = str(myRank) + ',' + str(spawned) + ': '
+    else:
+        myLineLabel = str(myRank) + ': '
 
     # set up pmi stuff early in case I was spawned
     KVSs = {}
@@ -916,20 +919,21 @@ def mpdman():
                     
                     if totspawns == spawnssofar:    # This is the last in the spawn sequence
                         spawnedCnt += 1    # non-zero to use for creating kvsname in msg below
-                        msgToSend = { 'cmd' : 'spawn',
-                                      'conhost'  : gethostname(),
-                                      'conport'  : myPort,
-                                      'spawned'  : spawnedCnt,
-                                      'nstarted' : 0,
-                                      'nprocs'   : tpsf,
-                                      'hosts'    : spawnHosts,
-                                      'execs'    : spawnExecs,
-                                      'users'    : spawnUsers,
-                                      'cwds'     : spawnCwds,
-                                      'paths'    : spawnPaths,
-                                      'args'     : spawnArgs,
-                                      'envvars'  : spawnEnvvars,
-                                      'limits'   : spawnLimits
+                        msgToSend = { 'cmd'         : 'spawn',
+                                      'conhost'     : gethostname(),
+                                      'conport'     : myPort,
+                                      'spawned'     : spawnedCnt,
+                                      'nstarted'    : 0,
+                                      'nprocs'      : tpsf,
+                                      'hosts'       : spawnHosts,
+                                      'execs'       : spawnExecs,
+                                      'users'       : spawnUsers,
+                                      'cwds'        : spawnCwds,
+                                      'paths'       : spawnPaths,
+                                      'args'        : spawnArgs,
+                                      'envvars'     : spawnEnvvars,
+                                      'limits'      : spawnLimits,
+                                      'line_labels' : str(lineLabels),
                                     }
                         mpd_send_one_msg(mpdSocket,msgToSend)
                         # I could send the preput_info along but will keep it here
