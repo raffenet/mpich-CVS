@@ -1295,6 +1295,7 @@ int smpd_state_pmi_listening(smpd_context_t *context, MPIDU_Sock_event_t *event_
 	{
 	    /* process structure found for this listener */
 	    iter->pmi->sock = new_sock;
+	    iter->context_refcount++;
 	    result = MPIDU_Sock_set_user_ptr(new_sock, iter->pmi);
 	    if (result != MPI_SUCCESS)
 	    {
@@ -3410,6 +3411,8 @@ int smpd_handle_op_close(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 	    {
 		smpd_process_t *trailer, *iter;
 
+		smpd_dbg_printf("process refcount == %d, waiting for the process to finish exiting.\n", context->process->context_refcount);
+
 #ifdef HAVE_WINDOWS_H
 		smpd_process_from_registry(context->process);
 #endif
@@ -3499,6 +3502,7 @@ int smpd_handle_op_close(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 	    }
 	    else
 	    {
+		smpd_dbg_printf("process refcount == %d, %s closing.\n", context->process->context_refcount, smpd_get_context_str(context));
 		/* NULL the context pointer just to be sure no one uses it after it is freed. */
 		switch (context->type)
 		{
@@ -3516,6 +3520,10 @@ int smpd_handle_op_close(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 		    break;
 		}
 	    }
+	}
+	else
+	{
+	    smpd_dbg_printf("Unaffiliated %s context closing.\n", smpd_get_context_str(context));
 	}
 	if (context == smpd_process.left_context)
 	    smpd_process.left_context = NULL;

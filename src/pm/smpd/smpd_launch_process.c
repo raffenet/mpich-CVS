@@ -928,7 +928,10 @@ CLEANUP:
 	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)smpd_piothread, arg_ptr, 0, NULL);
 	CloseHandle(hThread);
 
-	process->context_refcount = 3;
+	if (smpd_process.use_inherited_handles)
+	    process->context_refcount = 3;
+	else
+	    process->context_refcount = 2;
 	process->out->read_state = SMPD_READING_STDOUT;
 	result = MPIDU_Sock_post_read(sock_out, process->out->read_cmd.cmd, 1, 1, NULL);
 	if (result != MPI_SUCCESS)
