@@ -65,7 +65,7 @@ int MPI_Add_error_class(int *errorclass)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    new_class = MPIR_Err_add_class( 0, 0 );
+    new_class = MPIR_Err_add_class( 0 );
     if (new_class < 0) {
 	/* Error return.  */
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**noerrclasses", 0 );

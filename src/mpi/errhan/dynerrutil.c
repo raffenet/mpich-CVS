@@ -19,6 +19,9 @@
  * ROMIO will be customized to provide error messages with the same tools
  * as the rest of MPICH2 and will not rely on the dynamically assigned
  * error classes.  This leaves all of the classes and codes for the user.
+ *
+ * Because we have customized ROMIO, we do not need to implement 
+ * instance-specific messages for the dynamic error codes.  
  */
 
 /* Local data structures.
@@ -26,30 +29,31 @@
    Since we limit the number of user-defined classes and code (no more
    than 256 of each), we allocate an array of pointers to the messages here.
 
-   We also allow the use of instance-specific messages.  This allows an 
-   implementation of ADI-3 to add messages without changing the predefined
-   set of error messages.
-
    We *could* allow 256 codes with each class.  However, we don't expect 
    any need for this many codes, so we simply allow 256 (actually
    ERROR_MAX_NCODE) codes, and distribute these among the error codes.
+
+   A user-defined error code has the following format.  The ERROR_xxx
+   is the macro that may be used to extract the data (usually a MASK and
+   a (right)shift)
+
+   [0-5] Class (same as predefined error classes);  ERROR_CLASS_MASK
+   [6]   Is dynamic; ERROR_DYN_MASK and ERROR_DYN_SHIFT
+   [7-18] Code index (for messages); ERROR_GENERIC_MASK and ERROR_GENERIC_SHIFT
+   [19-31] Zero (unused but defined as zero)
 */
 
 static int  not_initialized = 1;  /* This allows us to use atomic decr */
-static char *(user_class_msgs[ERROR_MAX_NCLASS]) = { 0 };
-static char *(user_code_msgs[ERROR_MAX_NCODE]) = { 0 };
-static char *(user_instance_msgs[ERROR_MAX_NCODE]) = { 0 };
+static const char *(user_class_msgs[ERROR_MAX_NCLASS]) = { 0 };
+static const char *(user_code_msgs[ERROR_MAX_NCODE]) = { 0 };
 static int  first_free_class = 0;
-static int  first_free_code  = 0;
+static int  first_free_code  = 1;  /* code 0 is reserved */
 #if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_FUNNELED
 volatile static int ready = 0;
 #endif
 
 /* Forward reference */
 const char *MPIR_Err_get_dynerr_string( int code );
-
-/* Each user_code_msgs is allowed to have a single related instance message,
-   so no separate counter is required for allocating user_instance_msgs */
 
 /* This external allows this package to define the routine that converts
    dynamically assigned codes and classes to their corresponding strings. 
@@ -89,7 +93,6 @@ static void MPIR_Init_err_dyncodes( void )
     }
     for (i=0; i<ERROR_MAX_NCODE; i++) {
 	user_code_msgs[i] = 0;
-	user_instance_msgs[i] = 0;
     }
     /* Set the routine to provides access to the dynamically created
        error strings */
@@ -102,8 +105,6 @@ static void MPIR_Init_err_dyncodes( void )
     ready = 1;
 #endif
 }
-
-const char *MPIR_Err_get_dynerr_string( int code );
 
 /*+
   MPIR_Err_set_msg - Change the message for an error code or class
@@ -120,14 +121,54 @@ const char *MPIR_Err_get_dynerr_string( int code );
 @*/
 int MPIR_Err_set_msg( int code, const char *msg_string )
 {
+    int errcode, errclass, msg_len;
+    char *str;
+
     if (not_initialized)
 	MPIR_Init_err_dyncodes();
 
-    /* FIXME 
-       get index from code.  
-       Get length of string
-       save in usercodemsgs 
-    */
+    
+    /* Error strings are attached to a particular error code, not class.
+       As a special case, if the code is 0, we use the class message */
+    errclass = code & ERROR_CLASS_MASK;
+    errcode  = (code & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT;
+
+    if (code & ~(ERROR_CLASS_MASK | ERROR_DYN_MASK | ERROR_GENERIC_MASK)) {
+	/* Check for invalid error code */
+	/* FIXME: make this instance specific */
+	return MPI_ERR_ARG;
+    }
+
+    msg_len = strlen( msg_string );
+    str = (char *)MPIU_Malloc( msg_len + 1 );
+    MPIU_Strncpy( str, msg_string, msg_len + 1 );
+    if (!str) {
+	/* FIXME: make this instance specific */
+	return MPI_ERR_OTHER;
+    }
+    if (errcode) {
+	if (errcode < first_free_code) {
+	    if (user_code_msgs[errcode]) {
+		MPIU_Free( user_code_msgs[errcode] );
+	    }
+	    user_code_msgs[errcode] = (const char *)str;
+	}
+	else {
+	    MPIU_Free( str );
+	}
+    }
+    else {
+	if (errclass < first_free_class) {
+	    if (user_class_msgs[errclass]) {
+		MPIU_Free( user_class_msgs[errclass] );
+	    }
+	    user_class_msgs[errclass] = (const char *)str;
+	}
+	else {
+	    MPIU_Free( str );
+	}
+    }
+       
     return MPI_SUCCESS;
 }
 
@@ -135,10 +176,8 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
   MPIR_Err_add_class - Add an error class with an associated string
 
   Input Parameters:
-+ msg_string - Message text for this class.  A null string may be used, in
+. msg_string - Message text for this class.  A null string may be used, in
   which case 'MPIR_Err_set_msg' should be called later.
-- instance_msg_string - Instance-specific message string.  See the error 
-  reporting overview.  May be the null string.
 
   Return value:
   An error class.
@@ -155,8 +194,7 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
   Module:
   Error
   @*/
-int MPIR_Err_add_class( const char *msg_string, 
-			const char *instance_msg_string )
+int MPIR_Err_add_class( const char *msg_string )
 {
     int new_class;
 
@@ -177,7 +215,7 @@ int MPIR_Err_add_class( const char *msg_string,
     else {
 	user_class_msgs[new_class] = 0;
     }
-    return new_class;
+    return (new_class | ERROR_DYN_MASK);
 }
 
 /*+
@@ -185,9 +223,7 @@ int MPIR_Err_add_class( const char *msg_string,
 
   Input Parameters:
 + class - Class that the code belongs to
-. msg_string - Message text for this code
-- instance_msg_string - Instance-specific message string.  See the error 
-  reporting overview.  May be the null string.
+- msg_string - Message text for this code
 
   Return value:
   An error code.
@@ -200,8 +236,7 @@ int MPIR_Err_add_class( const char *msg_string,
   Module:
   Error
   @*/
-int MPIR_Err_add_code( int class, const char *msg_string, 
-		       const char *instance_msg_string )
+int MPIR_Err_add_code( int class, const char *msg_string )
 {
     int new_code;
 
@@ -276,12 +311,13 @@ void MPIR_Err_delete_class( int class )
   'MPIR_Err_create_code'.
 
   Return value:
-  A poiner to a null-terminated text string with the corresponding error 
+  A pointer to a null-terminated text string with the corresponding error 
   message.  A null return indicates an error; usually the value of 'code' is 
   neither a valid error class or code.
 
   Notes:
-  This routine is used to implement 'MPI_ERROR_STRING'.
+  This routine is used to implement 'MPI_ERROR_STRING'.  It is only called
+  for dynamic error codes.  
 
   Module:
   Error 
@@ -289,6 +325,30 @@ void MPIR_Err_delete_class( int class )
   @*/
 const char *MPIR_Err_get_dynerr_string( int code )
 {
-    return "unknown";
+    int errcode, errclass;
+    const char *errstr = 0;
+
+    /* Error strings are attached to a particular error code, not class.
+       As a special case, if the code is 0, we use the class message */
+    errclass = code & ERROR_CLASS_MASK;
+    errcode  = (code & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT;
+
+    if (code & ~(ERROR_CLASS_MASK | ERROR_DYN_MASK | ERROR_GENERIC_MASK)) {
+	/* Check for invalid error code */
+	return 0;
+    }
+
+    if (errcode) {
+	if (errcode < first_free_code) {
+	    errstr = user_code_msgs[errcode];
+	}
+    }
+    else {
+	if (errclass < first_free_class) {
+	    errstr = user_class_msgs[errclass];
+	}
+    }
+       
+    return errstr;
 }
 

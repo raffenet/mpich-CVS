@@ -13,8 +13,8 @@
 /* Routine to return the error message for an error code.  Null on failure */
 void MPIR_Err_get_string( int, char * );
 int MPIR_Err_set_msg( int, const char * );
-int MPIR_Err_add_class( const char *, const char * );
-int MPIR_Err_add_code( int, const char *, const char * );
+int MPIR_Err_add_class( const char * );
+int MPIR_Err_add_code( int, const char * );
 void MPIR_Err_delete_code( int );
 void MPIR_Err_delete_class( int );
 

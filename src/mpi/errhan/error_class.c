@@ -64,7 +64,9 @@ int MPI_Error_class(int errorcode, int *errorclass)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    *errorclass = errorcode & ERROR_CLASS_MASK;
+    /* We include the dynamic bit because this is needed to fully
+       describe the dynamic error classes */
+    *errorclass = errorcode & (ERROR_CLASS_MASK | ERROR_DYN_MASK);
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_CLASS);
