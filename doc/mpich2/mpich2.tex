@@ -3,6 +3,7 @@
 %
 % This document should be used with the ADI3 document
 \documentclass{article}
+\usepackage{psfig}
 \usepackage{/home/gropp/data/share/refman}
 \usepackage{/home/gropp/sowing-proj/sowing/docs/doctext/tpage}
 \usepackage{epsf}
@@ -532,7 +533,7 @@ int MPIi_Param_get_string( const char name[], const char *default_val,
     { char *tmp = getenv(name); 
       if (!tmp) tmp = default_val; 
       else { *value = (char *)malloc( sizeof(tmp) + 1 ); 
-	     strcpy( *value, tmp );
+             strcpy( *value, tmp );
              return 0; }
      return 0; }
 void MPIi_Param_finalize( void ){}
@@ -1261,7 +1262,7 @@ Questions about the implementation of datatypes:
     heterogeneous communication.  Thus the datatype structure needs
     several dataloop entries, at least in the heterogeneous case.
     There may be multiple heterogeneous representations.  For example, 
-    most communicators may use reader-makes-right (RMR) \cite{rmr?}
+    most communicators may use reader-makes-right (RMR) \cite{Zhou:1995:RMR}
     but any IMPI (interoperable MPI) communicators need a different
     representation.  Communicators that connect an unusual system
     (e.g., one using a non-IEEE floating point format) may need to use
@@ -2213,7 +2214,7 @@ drop into a special optimized case.  Should we set things up so that a single
 int of flags, where the ``good'' case is a zero bit for each flag, can be
 tested with a single compare against zero?
 
-\subsubsection{\mpidfunc{MPID_Rhcv}
+\subsubsection{\mpidfunc{MPID_Rhcv}}
 This function is not part of MPI but is a critical part of the ADI.
 The choice of implementation depends on the properties of the ADI;
 some are reviewed below.
@@ -2715,7 +2716,7 @@ that two independent isend/irecv pairs, as shown in Figure~\ref{fig:sendrecv}.
   data ------------>
   ack  ------------>
 \end{verbatim}
-\caption{Two sendrecv scenarios}
+\caption{Two sendrecv scenarios}\label{fig:sendrecv}
 \end{figure}
 Question: do we want to allow ok-to-send acks to be piggy-backed onto
 an ongoing data stream?  Once a data stream starts, we can record that
@@ -3203,7 +3204,18 @@ rank.  If we exploit topology information to determine a better
 communication pattern, the contiguity of ranks in the process subsets
 may be broken.  Do we want to handle this by rearranging the data to
 match the ordering of the topology?  If so, we need to keep a flag
-that indicates whether a copy is necessary or not.
+with the communicator topology information that indicates whether a copy is
+necessary or not. 
+
+We also need some common routines for collective argument checking.  These
+fall into a few cases:
+\begin{enumerate}
+\item All must have the same value.  For example, the \code{root} value in an
+  intracommunicator broadcast or the operation in an allreduce.
+\item All must specify the same type signature (number of items and types).
+  For example, the \code{count} and \code{datatype} in an intracommunicator
+  broadcast.
+\end{enumerate}
 
 \subsubsection{\mpifunc{MPI_ALLGATHER}}
 For short data, use recursive doubling algorithm.  For long data, consider the
@@ -3212,11 +3224,16 @@ bucket brigade algorithm.
 Question:  For heterogeneous systems, the decision as to whether the
 data is ``short'' needs to be made relative to some cannonical
 representation, such as XDR or external32.  What is the routine to
-determine cannonical size?
+determine cannonical size?  Also, do we want to have a separate routine for
+the heterogeneous case?
 
 \subsubsection{\mpifunc{MPI_ALLGATHERV}}
 Same as \mpifunc{MPI_ALLGATHER}, since all processes can make the
 short/long determination.
+
+Question: Is there a role for a common routine to compute total message
+lengths from a count array and a datatype, and to precompute the locations in
+the send and/or receive buffer for communicating?
 
 \subsubsection{\mpifunc{MPI_ALLREDUCE}}
 Consider recursive doubling algorithm, with care taken to ensure that all
@@ -3247,12 +3264,26 @@ more complicated.
 Like \code{MPI_ALLTOALLV}.
 
 \subsubsection{\mpifunc{MPI_BARRIER}}
-Barrier is a special case of allreduce with no operation.
+Barrier is a special case of allreduce with no operation or data.
 
 \subsubsection{\mpifunc{MPI_BCAST}}
 Broadcast will be implemented by a scatter followed by an allgather.  These
 will use an ordering of nodes from \mpidfunc{MPID_Topology_xxx}, rather than
 the rank ordering of the communicator.
+Data that is very short (e.g., a single int) should use a MST (minimal
+spanning tree).  The tree itself should be defined by
+\mpidfunc{MPID_Topo_cluster_info} or something similar (e.g., a
+\mpidfunc{MPID_Topo_MST} function).  
+Since the tree should be defined by the topology rather than computed, the
+algorithm should look something like (this is the simple MST, not the
+scatter/allgather approach)
+\begin{algorithm}
+Get_MST( \&parent, \&nchildren, \&children );
+if (*parent) 
+    Recv( from *parent )
+for (i=0; i<nchildren; i++)
+    Send( to (*children)[i] )
+\end{algorithm}
 
 \subsubsection{\mpifunc{MPI_EXSCAN}}
 Use the same approach as \code{MPI_SCAN} but do not include the local
@@ -3279,18 +3310,41 @@ exchange algorithms.
 For long data, this should use the bucket brigade algorithm.
 
 \subsubsection{\mpifunc{MPI_SCAN}}
-Use a spanning tree.  Pipeline for long vectors.
+Use reflection.  At step $k$, processes with rank $r$ exchange their current
+result with the process at $r+2^k$ or a $r-2^k$, where the sign is positive if
+the $k$th bit of $r$ is not set, and negative otherwise (see
+Figure~\ref{fig:scan-pattern}).  This allows the scan 
+to be computed in $\log p$ steps.  
+
+Note that towards the end of this process, some of the exchanges are not
+needed; the data needs to flow only to the processes with higher rank, not
+lower rank.  Do we want to do this or does it complicate the code?
+
+Note also that this algorithm must use the rank order of the communicator, not
+a reordering for a better fit to the topology of the system.  If there is
+strong clustering in the underlying interconnect topology, a different
+algorithm will be needed.
+
+\begin{figure}
+\centerline{\psfig{file=scanpattern.eps}}
+\caption{Communication pattern for \code{MPI_Scan}}\label{fig:scan-pattern}
+\end{figure}
 
 \subsubsection{\mpifunc{MPI_SCATTER}}
 For short data, use an MST. On store and forward networks, MST should be used
 for long data as well.  To avoid excessive memory consumption, the
 \mpidfunc{MPID_Stream_iforward} routines should be used.
 
+On a switched network, an MST may not be optimal for the long case.  Do we
+want to provide a simple send-to-each in that case?
+
 \subsubsection{\mpifunc{MPI_SCATTERV}}
 For short data, use an MST. 
 
 \subsection{Intercommunicator Collective Operations}
 (Not yet done)
+\mpiconst{MPI_ROOT} and \mpiconst{MPI_PROC_NULL} are used by the group
+containing the root process; the other group refers to the rank of the root.
 % \subsubsection{\mpifunc{MPI_ALLGATHER}}
 % \subsubsection{\mpifunc{MPI_ALLGATHERV}}
 % \subsubsection{\mpifunc{MPI_ALLTOALL}}
@@ -3336,11 +3390,17 @@ allow the topology routines to be replaced as a module.
 Question: how do we define routines needed to support the MPI (not
 MPID) calls?  Should we have \code{MPIi} routines?  For topology, we
 could have \mpidfunc{MPIi_Topo_init} (and the corresponding
-\mpidfunc{MPIi_Topo_finalize}). 
+\mpidfunc{MPIi_Topo_finalize}).   Note that we need this to allocate the
+keyval used to store the topology attributes.  We also need a
+\mpidconst{MPID_Topo_graph_t}, \mpidconst{MPID_Topo_cart_t}, and
+\mpidconst{MPID_Topo_common_t} structure that holds the information for each
+topology (the common type is a subset of the other two that provides access
+only to the topology type).
 
 \subsubsection{\mpifunc{MPI_CARTDIM_GET}}
 Access the topology description and return the number of dimensions of
-Cartesian topology (if defined).
+Cartesian topology (if defined) from the \mpids{MPID_Topo_cart_t}{ndims}
+field. 
 
 \subsubsection{\mpifunc{MPI_CART_CREATE}}
 This routine argues for a corresponding MPID routine, along with one for dims
@@ -3348,27 +3408,37 @@ create. Alternately, as suggested by the MPI standard, this could call
 \mpifunc{MPI_CART_MAP} followed by \mpifunc{MPI_COMM_SPLIT}.
 
 \subsubsection{\mpifunc{MPI_CART_GET}}
-Access the topology description and return the associated fields.
+Access the topology description and return the associated fields
+(\mpids{MPID_Topo_cart_t}{dims}, \mpids{MPID_Topo_cart_t}{periods}, and
+\mpids{MPID_Topo_cart_t}{coords}). 
 
 \subsubsection{\mpifunc{MPI_CART_MAP}}
-This routine should call \mpidfunc{MPID_Cart_map}, which will have a default
-implementation.  
+This routine should call \mpidfunc{MPID_Cart_map}.  A trivial implementation
+of this routine (as described in the MPI standard) is to simply return the
+rank of the process in the input communicator.
 
 \subsubsection{\mpifunc{MPI_CART_RANK}}
 Access the topology description and convert the specified Cartesian
-coordinates into a rank.
+coordinates into a rank.  This uses \mpids{MPID_Topo_cart_t}{dims} and
+\mpids{MPID_Topo_cart_t}{ndims} to compute the rank; note that is must also
+handle the case of periodic coordinates (\mpids{MPID_Topo_cart_t}{periods}).
 
 \subsubsection{\mpifunc{MPI_CART_SHIFT}}
 This routine accesses the topology description and computes the requested
-shifted rank.
+shifted rank.  This is roughly \mpifunc{MPI_Cart_coords}, followed by an
+update to the coordinates, followed by \mpifunc{MPI_Cart_rank}.  
 
 \subsubsection{\mpifunc{MPI_CART_SUB}}
 This routine can be implemented with \mpifunc{MPI_COMM_SPLIT} (see the MPI-1
 standard, section 6.5.7 ``Low-level topology functions'').  It may also
-want to call \mpidfunc{MPID_Cart_map} to allow subdimensions to be reordered.
+want to call \mpidfunc{MPID_Cart_map} to allow subdimensions to be reordered
+when requested.
 
 \subsubsection{\mpifunc{MPI_DIMS_CREATE}}
-This routine calls \mpidfunc{MPID_Dims_create}.
+This routine calls \mpidfunc{MPID_Dims_create}, which trys to return a
+``good'' set of dimensions.  It could use \mpidfunc{MPID_Topo_cluster_info} to
+provide a good match to a cluster; otherwise, it should strive to create a
+decomposition that is as even as possible.
 
 \subsubsection{\mpifunc{MPI_GRAPHDIMS_GET}}
 Access the topology description and return the number of dimensions of
@@ -3379,20 +3449,30 @@ This is implemented using \mpifunc{MPI_GRAPH_MAP} and
 \mpifunc{MPI_COMM_SPLIT}. 
 
 \subsubsection{\mpifunc{MPI_GRAPH_GET}}
-Access the topology description and return the associated fields.
+Access the topology description and return the associated fields, which
+include \mpids{MPID_Topo_graph_t}{index} and
+\mpids{MPID_Topo_graph_t}{edges}. 
 
 \subsubsection{\mpifunc{MPI_GRAPH_MAP}}
-This should eventually have an MPID routine, but not in ADI-3.
+This should eventually have an MPID routine, but not in ADI-3.  It simply
+returns the \code{rank} of the input communicator.
+
+Question: Should this try to detect special patterns for which good mappings
+are known?  For example, if we provide routines that are used by the
+collective to determine good minimal spanning tree mappings, can
+\mpifunc{MPI_GRAPH_MAP} take advantage of them?
 
 \subsubsection{\mpifunc{MPI_GRAPH_NEIGHBORS}}
-Access the topology description and return the associated fields.
+Access the topology description and return the associated fields by using
+\mpids{MPID_Topo_graph_t}{index} and \mpids{MPID_Topo_graph_t}{edges}.
 
 \subsubsection{\mpifunc{MPI_GRAPH_NEIGHBORS_COUNT}}
 Access the topology description and return the associated fields.
 
 \subsubsection{\mpifunc{MPI_TOPO_TEST}}
 Return \mpiconst{MPI_GRAPH} for graph topology, \mpiconst{MPI_CART} for
-Cartesian topology, and \mpiconst{MPI_UNDEFINED} otherwise.
+Cartesian topology, and \mpiconst{MPI_UNDEFINED} otherwise.  This uses the
+\mpids{MPID_Topo_common_t}{topo_kind} field.
 
 \subsection{RMA}
 \label{sec:rma}
@@ -3479,10 +3559,16 @@ To remove the complexity of datatypes, we might want a
 special-case versions of put.  It would still need to work on \emph{two}
 segments; that is, both the origin and targets.
 
+Still needed: a discussion of the completion of one-sided operations.  Do we
+want to use the flags (e.g., \mpidfunc{MPID_Flags_waitall})?
+
 \subsubsection{\mpifunc{MPI_ACCUMULATE}}
 
 Note that the target address is computed as base address of target window +
-target_offset * target_window_displacement_unit.
+\code{target_offset * target_window_displacement_unit}.
+
+Among the errors to check for is offset out of range.  This is
+\mpiconst{MPI_ERR_DISP}; are there any subcases?
 
 \begin{tcp}
 The assumption here is that the target process must perform the operation.
@@ -3508,16 +3594,23 @@ all of data to be delivered.  In fact, a double-buffer arrangement can be used
 (the Stream operations should support this).  
 
 Question: how is this stream matched between the sender and receiver?  Should
-this use a ``Stream_put'' instead, where the target sends the buffer address
+this use a ``\code{Stream_put}'' instead, where the target sends the buffer
+address 
 to use, or do we just use a context from a communicator within in the Window
-object, combined with a unique tag value?
+object, combined with a unique tag value?  How is completion handled?
 
 Note that high-latency systems may want to defer any communication until the
-access epoch completes (e.g., the closing \code{MPI_Win_fence} or
-\code{MPI_Win_unlock}.  Exploiting that requires merging messages into a
+access epoch completes (i.e., the closing \mpifunc{MPI_Win_fence},
+\mpifunc{MPI_Win_complete}, or \mpifunc{MPI_Win_unlock}).  Exploiting that
+requires merging messages into a 
 single message (as seen by the OS).  The above description doesn't handle this
 case. 
+
+Question: do we want to use offsets or should we provide the address?  Is
+there a special window object that exposes all of a processes memory, for use
+by the MPI implementation in delivering messages?
 \end{tcp}
+
 
 \begin{shmem}
 \begin{enumerate}
@@ -3531,6 +3624,8 @@ An alternate implementation would have the target process rather than the
 origin process perform the operation.  The difficulty with this is that the
 origin buffer need not be in shared memory, so it is less likely that this
 single-move form can be carried out.
+
+Question: how is completion handled?  
 
 \item Otherwise (If the target window is not in shared memory),
 use the \tcpname\ code (send datatype description, use stream to deposit
@@ -3556,6 +3651,10 @@ contiguous can be handled with a simple call to either
 is where both datatypes are not contiguous or the same, requiring a
 copy to an intermediate form.
 
+Another possible implementation would have a thread per window object, or a
+thread for all window objects that allow locks\index{thread overhead!passive
+  RMA}. 
+
 \subsubsection{\mpifunc{MPI_PUT}}
 \begin{adi3}\mpidfunc{MPID_Put}
 \begin{mmadi}If target and origin datatype are
@@ -3565,11 +3664,13 @@ copy to an intermediate form.
   Otherwise, what?
 
 \begin{tcp}
-Like \code{MPI_ACCUMULATE}, with \mpiconst{MPI_REPLACE} as the operation.  
+Like \code{MPI_ACCUMULATE}, with \mpiconst{MPI_REPLACE} as the operation. 
+This should be optimized for this case.  
 \end{tcp}
 
 \begin{shmem}
 Like \code{MPI_ACCUMULATE}, with \mpiconst{MPI_REPLACE} as the operation.  
+This should be optimized for this case.  
 \end{shmem}
 
 \begin{via}
@@ -3582,6 +3683,8 @@ allow an overlap of packing and sending?
 
 Otherwise, like \code{MPI_ACCUMULATE}, with \mpiconst{MPI_REPLACE} as the
 operation.  
+
+Question: how is completion handled?
 \end{via}
 
 \end{mmadi}
@@ -3608,6 +3711,9 @@ If the target datatype is supported (e.g., contiguous) and the target window
 is registered, then use \code{MPID_Get_contig}.  The destination on the origin
 process is either the origin buffer (if registered) or a temporary registered
 buffer.  
+
+Question: If a temporary buffer is used, we must signal completion to the
+origin somehow.  How?
 
 Otherwise, use \tcpname\ approach.
 \end{via}
@@ -3671,7 +3777,10 @@ Setup the default attributes (\mpiconst{MPI_WIN_BASE},
 \mpiconst{MPI_WIN_SIZE}, and \mpiconst{MPI_WIN_DISP_UNIT}).  Note that these
 attributes could return pointers to the corresponding fields in the window
 object, but for safety against users storing through those pointers, they
-should use a separate area of memory.
+should use a separate area of memory.  Question: should they be in the same
+struct (e.g., fields \mpids{MPID_Win}{user_base}, \mpids{MPID_Win}{user_size},
+and \mpids{MPID_Win}{user_disp}) or far way where a mistake by the user is
+less likely to cause trouble?
 
 Use the private communicator to perform an \mpifunc{MPI_Allgather} 
 collect all of the displacement units and all of the window base
@@ -3685,13 +3794,14 @@ addresses in \mpids{MPI_Win}{bases}.
 
 Question:  In support of the SPMD, collective allocation model, should
 there are also be a \code{gbase} when all processes have the same base
-address for the local windows?  If so, use
+address for the local windows?  If so, set
 \mpidconst{MPID_WIN_CONST_BASE} in \mpids{MPI_Win}{_flags}.
 
 In the case of a device that supports \emph{only} \tcpname, it isn't
 necessary to collect the displacement units or the window bases,
 because the target process can apply these adjustments to the
-address.  However, for any one-sided operation, it is necessary to
+address.  However, for any one-sided operation performed by the device, it is
+necessary to 
 have this information.  Further, knowing whether the target window is
 in shared (or registered for \vianame) memory is necessary when
 implementing the RMA operations.
@@ -3699,7 +3809,7 @@ implementing the RMA operations.
 If the info key \mpiconst{nolocks}\index{MPI_Info!keys!nolocks} is \code{true},
 then no provision needs to be made for either passive target access or for
 \mpifunc{MPI_Win_lock} and \mpifunc{MPI_Win_unlock} calls.  Save this
-fact in the \mpiconst{MPID_WIN_NO_LOCKS} in \mpids{MPI_Win}{_flags}.
+fact as \mpiconst{MPID_WIN_NO_LOCKS} in \mpids{MPI_Win}{_flags}.
 
 For shared memory, we may want the window object to be in shared
 memory itself.  Even if the window object is not in shared memory,
@@ -3710,7 +3820,8 @@ multimethod device, a window object whose group contains no processes
 that shares memory should not consume limited shared memory space).
 
 Question: how are pending (not yet completed) RMA operations
-remembered?  Do we need to keep a list of requests on which we can
+remembered?  Do we need to keep a list of requests (or streams) on which we
+must 
 wait at the end of an access epoch?  For efficiency and low-latency
 with short data transfers (ones that are completed immediately,
 e.g. by sending a short message), do we want to have those indicate
@@ -3739,7 +3850,7 @@ is too long.
 \subsubsection{\mpifunc{MPI_WIN_LOCK} and \mpifunc{MPI_WIN_UNLOCK}}
 There are two types of lock and unlock implementations.  In the most
 obvious, based on the name, \code{MPI_WIN_LOCK} waits until the
-request process acknowledges the lock. This is appropriate when the
+indicated process acknowledges the lock. This may be appropriate when the
 window is in memory that is shared among the processes in the window
 object, such as a fully shared-memory implementation or a distributed
 shared memory implementation.
@@ -3776,6 +3887,16 @@ whether operations are started as soon as possible or as late as possible.
 
 Question: Can we optimize for the nonexclusive lock (read)?  
 
+Question: Do we want a predefined window attribute that can select between
+different lock approaches (early versus lazy) instead of the info value?
+The advantage is that info applies only at window creation time, while the
+attribute can be changed after the window is created.
+
+In the shared memory case, we may prefer acquiring the lock early if that is a
+simple operation.  However, it may still be advantageous to ask the target to
+perform the operation so as to maintain memory locality for the lock
+variables.
+
 \begin{tcp}
 Send a message of type \mpidconst{MPID_Hid_lock_op} with
 \mpidfunc{MPID_Rhcv}.  The message indicates whether the lock is
@@ -3802,6 +3923,11 @@ and end RMA operations.  This suggests that the RMA handler operations
 whether a lock should first be acquired and whether a lock is needed
 at all (the \mpiconst{MPI_MODE_NOCHECK} case).  
 
+Question: Does the window object have two bits that indicate whether it is
+currently within an access epoch and/or an exposure epoch?  This could be used
+for error checking (e.g., \mpidconst{MPIi_ERR_WIN_NOACCESS} or
+\mpidconst{MPIi_ERR_NOEXPOSURE}).
+
 \subsubsection{Scalable Active Target Synchronization}
 The scalable active target synchronization routines (\mpifunc{MPI_WIN_POST},
 \mpifunc{MPI_WIN_START}, \mpifunc{MPI_WIN_COMPLETE}, \mpifunc{MPI_WIN_WAIT})
@@ -3819,7 +3945,25 @@ proceed.  This approach is scalable since the time is independent on the size
 of the group of the window object and scales linearly with the size of the
 group in the post and start calls.  
 
+A better approach may be to follow the same approach recommended above for
+lock/unlock: defer until an RMA operation is going to each designated
+neighbor. This might lead to an approach that involved no extra messages, at
+least in the \tcpname\ case:
+\begin{tcp}
+No messages are exchanged for start, post, complete, or wait.
+(the fact that they have been called may be remembered)
+When the first RMA operation (i.e., put, get, or accumulate) arrives, it is 
+applied (if the exposure epoch has started) or is queued (if not).  This only
+requires that, at least until the first ack, a long RMA must not assume that
+the exposure epoch has started.
 
+Question: is a message needed to indicate that an exposure epoch has ended (I
+don't think so)?
+\end{tcp} 
+
+Question: If only one group is ever used for scalable synchronization on this
+window, is there anything that we can take advantage of?  Do we indicate this
+with an info key \mpidconst{onegroup}\index{MPI_Info!keys!onegroup}?
 \subsubsection{\mpifunc{MPI_WIN_POST}}
 Begin an exposure epoch for the local window.
 
@@ -3906,6 +4050,8 @@ Like \mpifunc{MPI_WIN_START}, but for the complete counter.
 End an exposure epoch for the local window.
 
 Like \mpifunc{MPI_WIN_POST}, but for the complete counter.
+
+
 % \begin{tcp}
 % \end{tcp}
 % \begin{shmem}
@@ -3916,7 +4062,12 @@ Like \mpifunc{MPI_WIN_POST}, but for the complete counter.
 \subsection{Starting and Ending MPI}
 
 \subsubsection{\mpifunc{MPI_ABORT}}
-\begin{adi3}\mpidfunc{MPID_Abort}
+\begin{adi3}
+\mpidfunc{MPID_Abort}.  This should abort only the specified communicator.  If
+no communicator is specified, abort all.  
+
+Question: What is the BNR call for aborting processes?  Is there one for
+subsets?  
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_INIT_THREAD}}
@@ -3951,18 +4102,23 @@ Initialize the list of registered memory.
 This should also set the value \mpidfunc{MPID_THREAD_PROVIDED}.
 
 This must also invoke the various init functions for the different
-subsystems and predefined objects.  These include topology, datatypes,
+subsystems and predefined objects.  These include keyvals, topology, datatypes,
 groups, communicators, reduction operations (\code{MPI_Op}), timers, and error
 handlers.  Each of these should be handled by calling an
 \mpidfunc{MPIi_xxx_init} or \mpidfunc{MPID_xxx_init}.  We may also
 want to have a similar initialization routine for Fortran, Fortran 90,
 and C++.  
+Also setup information for the debugger (process tables, etc.)
 
+Question: Do we want to support the special case of a single language?  I.e.,
+only C or C++?  Do we do that by dynamically loading the Fortran, Fortran 90,
+and C++ initialization routines as required?
 
 \subsubsection{\mpifunc{MPI_QUERY_THREAD}}
 This returns the level of thread support provided.  Should there be an
 \mpidfunc{MPID_THREAD_PROVIDED} variable?  This could be a static
-variable within the file that implements the thread related functions.
+variable within the file that implements the (PMPI version of the)
+thread-related functions. 
 
 \subsubsection{\mpifunc{MPI_IS_THREAD_MAIN}}
 This needs a thread-private variable that is set only by the thread that calls
@@ -3991,10 +4147,12 @@ As part of the error checking code, each routine should check the
 state of the \code{is_initialized} flag.  Should there be an 
 \begin{verbatim}
     enum { MPICH_PRE_INIT=0, MPICH_IS_INITIALIZED=1,
-           MPICH_IS_FINALIZED=2 } MPIR_Initialized;
+           MPICH_POST_FINALIZED=2 } MPIR_Initialized;
 \end{verbatim}
-variable?  This can be used by the \mpifunc{MPI_INITIALIZE} and
-\mpifunc{MPI_FINALIZED} calls.
+variable?  This can be used by the \mpifunc{MPI_INITIALIZED} and
+\mpifunc{MPI_FINALIZED}
+calls.\index{MPICH_PRE_INIT}\index{MPICH_IS_INITIALIZED}
+\index{MPICH_POST_FINALIZED}
 
 \subsubsection{\mpifunc{MPI_FINALIZE}}
 The MPI-2 standard requires that \code{MPI_Finalize} first delete the
@@ -4522,7 +4680,8 @@ Tools already available:
 etc. (Question: add an \code{--enable-strict} to the standard
 configure macros?)
 \item[tool-to-be-created]Check for OS name or system type in a preprocessor
-  statement 
+  statement (look for \emph{all} \code{\#ifdef} or \code{\#if defined()} and
+  check against permitted values).
 \end{description}
 
 We also need tools for the following:
@@ -4530,6 +4689,7 @@ We also need tools for the following:
 \item Look for functions and header files that are not universal and
 ensure that they are properly guarded.
 \item Look for functions that are not universal (e.g., \code{rindex}).
+Question: Do we have a list of banned routines?  Permitted ones?
 \end{itemize}
 
 \subsubsection{Printing and Other Messages}
@@ -4552,7 +4712,12 @@ This is a
 macro that is defined as empty for UNIX and as the appropriate
 Microsoft-specific extension for Windows.
 
+Question: we can use a file to list these functions instead of
+\code{EXPORT_MPI_API}.  Should we do that instead?
+
 Avoiding \code{printf} is important for Windows applications.
+
+Question: What else do we need to consider here?
 
 \subsection{Fortran Support}
 Fortran support has two parts: Fortran 77 and Fortran 90/95.  
@@ -4843,8 +5008,8 @@ proceed without waiting for all of the pieces to be in place.
         \begin{enumerate}
         \item Error handling
         \item Attributes
-	\item Info
-	\item Runtime parameters
+        \item Info
+        \item Runtime parameters
         \item Topology
         \item Datatype
         \item Group
