@@ -74,8 +74,9 @@ typedef MPI_Aint MPI_FAint;
 /* Fortran logical values */
 #ifndef _CRAY
 #if !defined(F77_RUNTIME_VALUES) && defined(F77_TRUE_VALUE_SET)
-#define MPIR_F_TRUE  F77_TRUE_VALUE
-#define MPIR_F_FALSE F77_FALSE_VALUE
+/*#define MPIR_F_TRUE  F77_TRUE_VALUE*/
+/*#define MPIR_F_FALSE F77_FALSE_VALUE */
+extern const int MPIR_F_TRUE, MPIR_F_FALSE;
 #else
 extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
 #endif
