@@ -14,12 +14,16 @@
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
 #if defined(FORTRANCAPS)
+FORTRAN_API void FORT_CALL MPIO_TEST(MPI_Fint *request,int *flag,MPI_Status *status, int *ierr );
 #pragma weak MPIO_TEST = PMPIO_TEST
 #elif defined(FORTRANDOUBLEUNDERSCORE)
+FORTRAN_API void FORT_CALL mpio_test__(MPI_Fint *request,int *flag,MPI_Status *status, int *ierr );
 #pragma weak mpio_test__ = pmpio_test__
 #elif !defined(FORTRANUNDERSCORE)
+FORTRAN_API void FORT_CALL mpio_test(MPI_Fint *request,int *flag,MPI_Status *status, int *ierr );
 #pragma weak mpio_test = pmpio_test
 #else
+FORTRAN_API void FORT_CALL mpio_test_(MPI_Fint *request,int *flag,MPI_Status *status, int *ierr );
 #pragma weak mpio_test_ = pmpio_test_
 #endif
 
@@ -86,9 +90,9 @@
 #endif
 
 /* Prototype to keep compiler happy */
-FORTRAN_API void FORT_CALL mpio_test_(MPI_Fint *request,int *flag,MPI_Status *status, int *ierr );
+FORTRAN_API void FORT_CALL mpio_test_(MPI_Fint *request,MPI_Fint *flag,MPI_Status *status, MPI_Fint *ierr );
 
-FORTRAN_API void FORT_CALL mpio_test_(MPI_Fint *request,int *flag,MPI_Status *status, int *ierr )
+FORTRAN_API void FORT_CALL mpio_test_(MPI_Fint *request,MPI_Fint *flag,MPI_Status *status, MPI_Fint *ierr )
 {
     MPIO_Request req_c;
     

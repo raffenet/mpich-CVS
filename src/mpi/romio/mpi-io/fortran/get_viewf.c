@@ -18,12 +18,16 @@
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
 #if defined(FORTRANCAPS)
+extern FORTRAN_API void FORT_CALL MPI_FILE_GET_VIEW( MPI_Fint *, MPI_Offset*, MPI_Fint*, MPI_Fint*, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 #pragma weak MPI_FILE_GET_VIEW = PMPI_FILE_GET_VIEW
 #elif defined(FORTRANDOUBLEUNDERSCORE)
+extern FORTRAN_API void FORT_CALL mpi_file_get_view__( MPI_Fint *, MPI_Offset*, MPI_Fint*, MPI_Fint*, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 #pragma weak mpi_file_get_view__ = pmpi_file_get_view__
 #elif !defined(FORTRANUNDERSCORE)
+extern FORTRAN_API void FORT_CALL mpi_file_get_view( MPI_Fint *, MPI_Offset*, MPI_Fint*, MPI_Fint*, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 #pragma weak mpi_file_get_view = pmpi_file_get_view
 #else
+extern FORTRAN_API void FORT_CALL mpi_file_get_view_( MPI_Fint *, MPI_Offset*, MPI_Fint*, MPI_Fint*, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 #pragma weak mpi_file_get_view_ = pmpi_file_get_view_
 #endif
 
@@ -133,18 +137,16 @@ void mpi_file_get_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Fint *etype,
 #else
 
 #ifdef _UNICOS
-void mpi_file_get_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Datatype *etype,
-   MPI_Datatype *filetype, _fcd datarep_fcd, int *ierr)
+void mpi_file_get_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Fint *etype,
+   MPI_Fint *filetype, _fcd datarep_fcd, int *ierr)
 {
     char *datarep = _fcdtocp(datarep_fcd);
     int str_len = _fcdlen(datarep_fcd);
 #else
 /* Prototype to keep compiler happy */
-FORTRAN_API void FORT_CALL mpi_file_get_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Datatype *etype,
-		MPI_Datatype *filetype,char *datarep, int *ierr, int str_len );
+FORTRAN_API void FORT_CALL mpi_file_get_view_( MPI_Fint *fh, MPI_Offset *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep FORT_MIXED_LEN_DECL, MPI_Fint *ierr FORT_END_LEN_DECL );
 
-FORTRAN_API void FORT_CALL mpi_file_get_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Datatype *etype,
-   MPI_Datatype *filetype,char *datarep, int *ierr, int str_len )
+FORTRAN_API void FORT_CALL mpi_file_get_view_( MPI_Fint *fh, MPI_Offset *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep FORT_MIXED_LEN(str_len), MPI_Fint *ierr FORT_END_LEN(str_len) )
 {
 #endif
     MPI_File fh_c;

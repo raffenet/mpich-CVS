@@ -15,12 +15,16 @@
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
 #if defined(FORTRANCAPS)
+extern FORTRAN_API void FORT_CALL MPI_FILE_GET_INFO( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #pragma weak MPI_FILE_GET_INFO = PMPI_FILE_GET_INFO
 #elif defined(FORTRANDOUBLEUNDERSCORE)
+extern FORTRAN_API void FORT_CALL mpi_file_get_info__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #pragma weak mpi_file_get_info__ = pmpi_file_get_info__
 #elif !defined(FORTRANUNDERSCORE)
+extern FORTRAN_API void FORT_CALL mpi_file_get_info( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #pragma weak mpi_file_get_info = pmpi_file_get_info
 #else
+extern FORTRAN_API void FORT_CALL mpi_file_get_info_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #pragma weak mpi_file_get_info_ = pmpi_file_get_info_
 #endif
 
@@ -87,9 +91,9 @@
 #endif
 
 /* Prototype to keep compiler happy */
-FORTRAN_API void FORT_CALL mpi_file_get_info_(MPI_Fint *fh, MPI_Fint *info_used, int *ierr );
+FORTRAN_API void FORT_CALL mpi_file_get_info_(MPI_Fint *fh, MPI_Fint *info_used, MPI_Fint *ierr );
 
-FORTRAN_API void FORT_CALL mpi_file_get_info_(MPI_Fint *fh, MPI_Fint *info_used, int *ierr )
+FORTRAN_API void FORT_CALL mpi_file_get_info_(MPI_Fint *fh, MPI_Fint *info_used, MPI_Fint *ierr )
 {
     MPI_File fh_c;
     MPI_Info info_used_c;

@@ -15,12 +15,16 @@
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
 #if defined(FORTRANCAPS)
+extern FORTRAN_API void FORT_CALL MPI_FILE_GET_POSITION( MPI_Fint *, MPI_Offset*, MPI_Fint * );
 #pragma weak MPI_FILE_GET_POSITION = PMPI_FILE_GET_POSITION
 #elif defined(FORTRANDOUBLEUNDERSCORE)
+extern FORTRAN_API void FORT_CALL mpi_file_get_position__( MPI_Fint *, MPI_Offset*, MPI_Fint * );
 #pragma weak mpi_file_get_position__ = pmpi_file_get_position__
 #elif !defined(FORTRANUNDERSCORE)
+extern FORTRAN_API void FORT_CALL mpi_file_get_position( MPI_Fint *, MPI_Offset*, MPI_Fint * );
 #pragma weak mpi_file_get_position = pmpi_file_get_position
 #else
+extern FORTRAN_API void FORT_CALL mpi_file_get_position_( MPI_Fint *, MPI_Offset*, MPI_Fint * );
 #pragma weak mpi_file_get_position_ = pmpi_file_get_position_
 #endif
 
@@ -87,9 +91,9 @@
 #endif
 
 /* Prototype to keep compiler happy */
-FORTRAN_API void FORT_CALL mpi_file_get_position_(MPI_Fint *fh, MPI_Offset *offset, int *ierr );
+FORTRAN_API void FORT_CALL mpi_file_get_position_(MPI_Fint *fh, MPI_Offset *offset, MPI_Fint *ierr );
 
-FORTRAN_API void FORT_CALL mpi_file_get_position_(MPI_Fint *fh, MPI_Offset *offset, int *ierr )
+FORTRAN_API void FORT_CALL mpi_file_get_position_(MPI_Fint *fh, MPI_Offset *offset, MPI_Fint *ierr )
 {
     MPI_File fh_c;
     
