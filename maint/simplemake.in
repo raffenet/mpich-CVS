@@ -1499,8 +1499,9 @@ sub TargetAll {
 	}
 	if (defined($optinstall_files{'SHLIB'})) {
 	    # Conditionally create the shared libraries.
-	    print FD "\tif [ \"\@ENABLE_SHLIB\@\" != \"none\" ] ; then \\\n";
+	    print FD "\t\@if [ \"\@ENABLE_SHLIB\@\" != \"none\" ] ; then \\\n";
 	    foreach $libspec (split(/\s+/,$optinstall_files{'SHLIB'})) {
+		print FD "\t    echo \"make $libspec\" ;\\\n";
 		print FD "\t    \${MAKE} $libspec ; \\\n";
 	    }
 	    print FD "\tfi\n";
@@ -2655,7 +2656,15 @@ sub PrintMakeLongline {
     else {
 	# Use space, not \s, because we want tabs to remain tabs
 	foreach my $token (split(/ /,$line)) {
-	    &print_make_line( $FD, "$token " )
+	    # We must be careful not to add a blank if the token is
+	    # a \ used at the end of a line to continue to the 
+	    # next line
+	    if ($token eq "\\") {
+		&print_make_line( $FD, "$token" );
+	    }
+	    else {
+		&print_make_line( $FD, "$token " );
+	    }
 	}
     }
     if ($flag eq "last") {
