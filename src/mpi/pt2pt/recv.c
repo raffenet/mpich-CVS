@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "mpir_pt2pt.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Recv */
 #if defined(HAVE_PRAGMA_WEAK)

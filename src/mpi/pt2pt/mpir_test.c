@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "mpir_pt2pt.h"
 
 int MPIR_Test(MPID_Request * request)
 {
