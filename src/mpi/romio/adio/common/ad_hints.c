@@ -108,8 +108,11 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		fd->hints->cb_read = ADIOI_HINT_ENABLE;
 	    }
 	    else if (!strcmp(value, "disable") || !strcmp(value, "DISABLE")) {
+		    /* romio_cb_read overrides no_indep_rw */
 		MPI_Info_set(info, "romio_cb_read", value);
+		MPI_Info_set(info, "romio_no_indep_rw", "disable");
 		fd->hints->cb_read = ADIOI_HINT_DISABLE;
+		fd->hints->no_indep_rw = ADIOI_HINT_DISABLE;
 	    }
 	    else if (!strcmp(value, "automatic") || !strcmp(value, "AUTOMATIC"))
 	    {
@@ -131,8 +134,11 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		fd->hints->cb_write = ADIOI_HINT_ENABLE;
 	    }
 	    else if (!strcmp(value, "disable") || !strcmp(value, "DISABLE")) {
+		    /* romio_cb_write overrides no_indep_rw, too */
 		MPI_Info_set(info, "romio_cb_write", value);
+		MPI_Info_set(info, "romio_no_indep_rw", "disable")
 		fd->hints->cb_write = ADIOI_HINT_DISABLE;
+		fd->hints->no_indep_rw = ADIOI_HINT_DISABLE;
 	    }
 	    else if (!strcmp(value, "automatic") || !strcmp(value, "AUTOMATIC"))
 	    {
@@ -153,8 +159,15 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		     &flag);
 	if (flag) {
 	    if (!strcmp(value, "true") || !strcmp(value, "TRUE")) {
+		    /* if 'no_indep_rw' set, also hint that we will do
+		     * collective buffering: if we aren't doing independent io,
+		     * then we have to do collective  */
 		MPI_Info_set(info, "romio_no_indep_rw", value);
+		MPI_Info_set(info, "romio_cb_write", "enable");
+		MPI_Info_set(info, "romio_cb_read", "enable");
 		fd->hints->no_indep_rw = 1;
+		fd->hints->cb_read = 1;
+		fd->hints->cb_write = 1;
 		tmp_val = 1;
 	    }
 	    else if (!strcmp(value, "false") || !strcmp(value, "FALSE")) {
@@ -277,13 +290,21 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	}
 	strcpy(fd->hints->cb_config_list, ADIOI_CB_CONFIG_LIST_DFLT);
     }
-    /* deferred_open won't be set by callers, but if the user hints collecitve
-     * buffering (two-phase) i/o w/o independent i/o is going on, we'll set
-     * this internal hint as a convenience */
-    if ( (fd->hints->cb_read && fd->hints->cb_write) 
-		    && fd->hints->no_indep_rw) {
+    /* deferred_open won't be set by callers, but if the user doesn't
+     * explicitly disable collecitve buffering (two-phase) and does hint that
+     * io w/o independent io is going on, we'll set this internal hint as a
+     * convenience */
+    if ( ( (fd->hints->cb_read != ADIOI_HINT_DISABLE) \
+			    && (fd->hints->cb_write != ADIOI_HINT_DISABLE)\
+			    && fd->hints->no_indep_rw ) ) {
 	    fd->hints->deferred_open = 1;
     } else {
+	    /* setting romio_no_indep_rw enable and romio_cb_{read,write}
+	     * disable at the same time doesn't make sense. honor
+	     * romio_cb_{read,write} and force the no_indep_rw hint to
+	     * 'disable' */
+	    MPI_Info_set(info, "romio_no_indep_rw", "disable");
+	    fd->hints->no_indep_rw = 0;
 	    fd->hints->deferred_open = 0;
     }
 
