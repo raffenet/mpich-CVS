@@ -42,7 +42,7 @@ Documentation:
 
 PDF documentation can be found in directory
 '/usr/local/mpi/doc/'.  These include an installation manual ('install.pdf') 
-and a user's manual ('usermanual.pdf').
+and a user''s manual ('usermanual.pdf').
 
 Man pages exist for every MPI subroutine and function.  The man pages are
 also available on the Web at 'http://www.mcs.anl.gov/mpi/www'.
