@@ -13,8 +13,10 @@ echo "RUNNING CONFIGURE FOR MPI TESTS"
 otherlangs=""
 AC_ARG_ENABLE(f77,
 [--enable-f77 - Turn on Fortran 77 tests (default)],,enable_f77=yes)
+dnl
+dnl Set the f90 default to the same as MPICH2 (that is, off by default)
 AC_ARG_ENABLE(f90,
-[--enable-f90 - Turn on Fortran 90 tests (default)],,enable_f90=yes)
+[--enable-f90 - Turn on Fortran 90 tests (default)],,enable_f90=no)
 AC_ARG_ENABLE(cxx,
 [--enable-cxx - Turn on C++ tests (default)],,enable_cxx=yes)
 PAC_PROG_MAKE
