@@ -376,7 +376,7 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     if test "$enable_aio" = "no" ; then
         AC_DEFINE(NO_AIO)
     else
-        AC_DEFINE(AIO_SUN)
+        AC_DEFINE(AIO_SUN,,[Define for SUN0S 4])
     fi
     if test -z "$MPI" ; then
         MPI=mpich
