@@ -64,6 +64,7 @@ static smpd_data_t * smpd_parse_smpd_file()
     char equal_str[SMPD_MAX_NAME_LENGTH];
     char data[SMPD_MAX_VALUE_LENGTH];
     int num_chars;
+    int result;
 
     fin = smpd_open_smpd_file(SMPD_FALSE);
     if (fin != NULL)

@@ -1127,7 +1127,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     const char *str_iter;
     int total, num_chars;
     char *actual_exe, exe_data[SMPD_MAX_EXE_LENGTH];
-    const char *temp_str;
+    char *temp_str;
     char temp_exe[SMPD_MAX_EXE_LENGTH];
     smpd_command_t *cmd_ptr;
 
