@@ -12,7 +12,8 @@
 #define  REPEAT 	1000
 int 	 g_NSAMP =	250;
 #define  PERT		3
-#define  LATENCYREPS	1000
+/*#define  LATENCYREPS	1000*/
+int      g_LATENCYREPS = 1000;
 #define  LONGTIME	1e99
 #define  CHARSIZE	8
 #define  PATIENCE	50
@@ -68,6 +69,8 @@ void RecvTime(ArgStruct *p, double *t, int *rpt);
 int Establish(ArgStruct *p);
 int  CleanUp(ArgStruct *p);
 void task(char *cmdLine);
+double TestLatency(ArgStruct *p);
+double TestSyncTime(ArgStruct *p);
 
 void PrintOptions()
 {
@@ -172,41 +175,9 @@ int main(int argc, char *argv[])
 	}
     }
     
-    args.bufflen = 1;
-    args.buff = (char *)malloc(args.bufflen);
-    args.buff1 = (char *)malloc(args.bufflen);
-    Sync(&args);
-    t0 = When();
-    t0 = When();
-    t0 = When();
-    t0 = When();
-    for (i = 0; i < LATENCYREPS; i++)
-    {
-	if (args.tr)
-	{
-	    SendData(&args);
-	    RecvData(&args);
-	}
-	else
-	{
-	    RecvData(&args);
-	    SendData(&args);
-	}
-    }
-    latency = (When() - t0)/(2 * LATENCYREPS);
-    free(args.buff);
-    free(args.buff1);
-    
-    t0 = When();
-    t0 = When();
-    t0 = When();
-    t0 = When();
-    t0 = When();
-    t0 = When();
-    for (i = 0; i < LATENCYREPS; i++)
-	Sync(&args);
-    synctime = (When() - t0)/LATENCYREPS;
-    
+    latency = TestLatency(&args);
+    synctime = TestSyncTime(&args);
+ 
     
     if (args.tr)
     {
@@ -522,6 +493,103 @@ void Sync(ArgStruct *p)
 	MPI_Send(&ch, 1, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD);
 	MPI_Recv(&ch, 1, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD, &status);
     }
+}
+
+int DetermineLatencyReps(ArgStruct *p)
+{
+    MPI_Status status;
+    double t0, duration = 0;
+    int reps = 1;
+    int i;
+
+    /* prime the send/receive pipes */
+    Sync(p);
+    Sync(p);
+    Sync(p);
+
+    /* test how long it takes to send n messages 
+     * where n = 1, 2, 4, 8, 16, 32, ...
+     */
+    while ( (duration < 0.1) ||
+	    (duration < 0.3 && reps < 1000))
+    {
+	t0 = When();
+	t0 = When();
+	t0 = When();
+	t0 = When();
+	for (i=0; i<reps; i++)
+	{
+	    Sync(p);
+	}
+	duration = When() - t0;
+	reps = reps * 2;
+
+	/* use duration from the root only */
+	if (p->prot.iproc == 0)
+	    MPI_Send(&duration, 1, MPI_DOUBLE, p->prot.nbor, 2, MPI_COMM_WORLD);
+	else
+	    MPI_Recv(&duration, 1, MPI_DOUBLE, p->prot.nbor, 2, MPI_COMM_WORLD, &status);
+    }
+
+    return reps;
+}
+
+double TestLatency(ArgStruct *p)
+{
+    double latency, t0;
+    int i;
+
+    g_LATENCYREPS = DetermineLatencyReps(p);
+    if (g_LATENCYREPS < 1024 && p->prot.iproc == 0)
+    {
+	printf("Using %d reps to determine latency\n", g_LATENCYREPS);
+	fflush(stdout);
+    }
+
+    p->bufflen = 1;
+    p->buff = (char *)malloc(p->bufflen);
+    p->buff1 = (char *)malloc(p->bufflen);
+    Sync(p);
+    t0 = When();
+    t0 = When();
+    t0 = When();
+    t0 = When();
+    for (i = 0; i < g_LATENCYREPS; i++)
+    {
+	if (p->tr)
+	{
+	    SendData(p);
+	    RecvData(p);
+	}
+	else
+	{
+	    RecvData(p);
+	    SendData(p);
+	}
+    }
+    latency = (When() - t0)/(2 * g_LATENCYREPS);
+    free(p->buff);
+    free(p->buff1);
+
+    return latency;
+}
+
+double TestSyncTime(ArgStruct *p)
+{
+    double synctime, t0;
+    int i;
+
+    t0 = When();
+    t0 = When();
+    t0 = When();
+    t0 = When();
+    t0 = When();
+    t0 = When();
+    for (i = 0; i < g_LATENCYREPS; i++)
+	Sync(p);
+    synctime = (When() - t0)/g_LATENCYREPS;
+
+    return synctime;
 }
 
 void SendRecvData(ArgStruct *p)
