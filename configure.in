@@ -1025,7 +1025,7 @@ export MPILIBNAME
 export CC
 PAC_SUBDIR_CACHE
 dnl AC_CONFIG_SUBDIRS(src/mpi/timer $subsystems)
-PAC_CONFIG_SUBDIRS_IMMEDIATE(src/mpi/timer $subsystems)
+PAC_CONFIG_SUBDIRS_IMMEDIATE(src/mpi/timer $subsystems $TOPLEVEL_SUBDIRS)
 #
 # Make subsystems available to makefiles.
 AC_SUBST(subsystems)
@@ -1146,6 +1146,7 @@ AC_OUTPUT(Makefile src/Makefile \
           src/mpi/topo/Makefile \
           src/mpid/Makefile \
           src/mpid/common/Makefile \
+          $TOPLEVEL_OUTPUT_FILES \
           src/mpid/common/datatype/Makefile \
           src/mpid/common/locks/Makefile \
           src/pm/Makefile \
