@@ -1530,6 +1530,22 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 	    }
 	    else if (sock->type == SOCK_LISTENER)
 	    {
+		if (sock->closing && sock->pending_operations == 0)
+		{
+		    out->op_type = SOCK_OP_CLOSE;
+		    out->num_bytes = 0;
+		    out->error = SOCK_SUCCESS;
+		    out->user_ptr = sock->user_ptr;
+		    CloseHandle(sock->read.ovl.hEvent);
+		    CloseHandle(sock->write.ovl.hEvent);
+		    sock->read.ovl.hEvent = NULL;
+		    sock->write.ovl.hEvent = NULL;
+#if 0
+		    BlockFree(g_StateAllocator, sock); /* will this cause future io completion port errors since sock is the iocp user pointer? */
+#endif
+		    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+		    return SOCK_SUCCESS;
+		}
 		sock->state |= SOCK_ACCEPTED;
 		out->op_type = SOCK_OP_ACCEPT;
 		out->num_bytes = num_bytes;
@@ -1549,7 +1565,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 	{
 	    /*MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);*/ /* Maybe the logging will reset the last error? */
 	    error = GetLastError();
-	    MPIU_DBG_PRINTF(("GetLastError: %d\n", error));
+	    MPIU_DBG_PRINTF(("GetQueuedCompletionStatus failed, GetLastError: %d\n", error));
 	    MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
 	    /* interpret error, return appropriate SOCK_ERR_... macro */
 	    if (error == WAIT_TIMEOUT)
@@ -1573,10 +1589,47 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 		    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 		    return SOCK_SUCCESS;
 		}
+		if (sock->type == SOCK_LISTENER)
+		{
+		    /* this only works if the aborted operation is reported before the close is reported
+		       because the close will free the sock structure causing these dereferences bogus.
+		       I need to reference count the sock */
+		    if (sock->closing)
+		    {
+#if 0
+			/* This doesn't work because no more completion packets are received after an error? */
+			if (error == ERROR_OPERATION_ABORTED)
+			{
+			    /* If the listener is being closed, ignore the aborted accept operation */
+			    continue;
+			}
+#else
+			out->op_type = SOCK_OP_CLOSE;
+			out->num_bytes = 0;
+			if (error == ERROR_OPERATION_ABORTED)
+			    out->error = SOCK_SUCCESS;
+			else
+			    out->error = WinToSockError(error);
+			out->user_ptr = sock->user_ptr;
+			MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+			return SOCK_SUCCESS;
+#endif
+		    }
+		    else
+		    {
+			/* Should we return a SOCK_OP_ACCEPT with an error if there is a failure on the listener? */
+			out->op_type = SOCK_OP_ACCEPT;
+			out->num_bytes = 0;
+			out->error = WinToSockError(error);
+			out->user_ptr = sock->user_ptr;
+			MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+			return SOCK_SUCCESS;
+		    }
+		}
 	    }
 
 	    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
-	    return SOCK_FAIL;
+	    return WinToSockError(error);
 	}
     }
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
