@@ -18,13 +18,13 @@
 #define FUNCNAME MPIDI_CH3U_Handle_recv_req
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * req)
+int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 {
     int completion = FALSE;
     
-    assert(req->ch3.ca < MPIDI_CH3_CA_END_CH3);
+    assert(rreq->ch3.ca < MPIDI_CH3_CA_END_CH3);
     
-    switch(req->ch3.ca)
+    switch(rreq->ch3.ca)
     {
 	case MPIDI_CH3_CA_NONE:
 	{
@@ -37,14 +37,20 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * req)
 	    break;
 	}
 	
+	case MPIDI_CH3_CA_COPY_COMPLETE:
+	{
+	    MPIDI_CH3U_Request_copy_tmp_data(rreq);
+	    /* fall through into the next case */
+	}
+	
 	case MPIDI_CH3_CA_COMPLETE:
 	{
 	    int cc;
 		
-	    MPIDI_CH3U_Request_decrement_cc(req, &cc);
+	    MPIDI_CH3U_Request_decrement_cc(rreq, &cc);
 	    if (cc == 0)
 	    {
-		MPID_Request_free(req);
+		MPID_Request_free(rreq);
 	    }
 	    break;
 	}
@@ -52,7 +58,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * req)
 	default:
 	{
 	    MPIDI_dbg_printf(30, FCNAME, "action %d not implemented",
-			     req->ch3.ca);
+			     rreq->ch3.ca);
 	    abort();
 	}
     }
