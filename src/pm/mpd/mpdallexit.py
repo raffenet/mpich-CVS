@@ -4,7 +4,16 @@
 #       See COPYRIGHT in top-level directory.
 #
 
-## NOTE: we do NOT allow this pgm to run via mpdroot
+"""
+usage: mpdallexit (no args)
+causes all mpds in the ring to exit
+"""
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
+
 
 from os     import environ, close
 from sys    import argv, exit
@@ -16,8 +25,7 @@ from mpdlib import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
 def mpdallexit():
     mpd_set_my_id('mpdallexit_')
     if len(argv) > 1  and  ( argv[1] == '-h'  or  argv[1] == '--help') :
-        print 'usage: mpdallexit (no args)'
-        print 'causes all mpds in the ring to exit'
+        print __doc__
         exit(-1)
     username = mpd_get_my_username()
     if environ.has_key('UNIX_SOCKET'):
