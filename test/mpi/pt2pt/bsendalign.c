@@ -15,7 +15,8 @@ int main( int argc, char *argv[] )
     MPI_Status status;
     int a[10], b[10];
     int align;
-    char buf[BUFSIZE+8], *bptr, bl, i, j, rank, size;
+    char buf[BUFSIZE+8], *bptr;
+    int bl, i, j, rank, size;
     int errs = 0;
 
     MTest_Init( 0, 0 );
@@ -50,15 +51,15 @@ int main( int argc, char *argv[] )
 		    for (k=0; k<10; k++) {
 			if (b[k] != (i + 10 * j) * size + k) {
 			    errs++;
-			    printf( "received b[%d] = %d from %d tag %d\n",
-				    k, b[k], i, 27+j );
+			    printf( "(Align=%d) received b[%d] = %d (expected %d) from %d tag %d\n",
+				    align, k, b[k], (i+10*j), i, 27+j );
 			}
 		    }
 		}
 	    }
 	}
 	MPI_Buffer_detach( &bptr, &bl );
-	if (bptr != buf) {
+	if (bptr != buf+align) {
 	    errs++;
 	    printf( "Did not recieve the same buffer on detach that was provided on init (%lx vs %lx)\n", (long)bptr, (long)buf );
 	}
