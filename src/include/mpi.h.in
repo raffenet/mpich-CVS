@@ -87,7 +87,7 @@ typedef int MPI_Win;
 /* File and IO */
 /* This define is temporary; it lets ROMIO know that MPI_File has been defined */
 #define MPI_FILE_DEFINED
-#ifdef NEW_MPIIO
+#ifdef MPICH_NEW_MPIIO
 typedef int MPI_File;
 #define MPI_FILE_NULL ((MPI_File)0x10000000)
 #else
