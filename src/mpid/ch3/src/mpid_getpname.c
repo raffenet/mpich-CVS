@@ -18,7 +18,7 @@ int MPID_Get_processor_name(char * name, int * resultlen)
     if (MPIDI_Process.processor_name != NULL)
     {
 	strcpy(name, MPIDI_Process.processor_name);
-	*resultlen = strlen(MPIDI_Process.processor_name);
+	*resultlen = (int)strlen(MPIDI_Process.processor_name);
     }
     else
     {
