@@ -2163,8 +2163,9 @@ If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
 		fout.WriteLine("#define __i386__")
 		fout.WriteLine("#define HAVE_32BIT_POINTERS")
 	End If
-	fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
+	fout.WriteLine("/*#define MPIDI_CH3_CHANNEL_RNDV*/")
 	fout.WriteLine("#define USE_RDMA_GET")
+	fout.WriteLine("#define USE_NO_PIN_CACHE")
 	Call WriteFooter(fout)
 	fout.Close()
 End If
