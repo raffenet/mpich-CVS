@@ -5593,24 +5593,24 @@ One complication to the \mpifunc{MPI_Init} and \mpifunc{MPI_Init_thread} is
 handling the case where this process is created by \mpifunc{MPI_Comm_spawn} or
 \mpifunc{MPI_Comm_spawn_multiple}.  This part of the code is shown below:
 \begin{verbatim}
-   BNR_Port_t port;
+   bool_t spawned;
 
-   BNR_Init( &port );
-   if (BNR_Is_spawned( &port )) {
-       <Wait until all processes are ready>
-       if (my rank == 0) {
-           BNR_Connect( port );
+   BNR_Init( &spawned );
+   BNR_KM_Get_my_name(dbname);
+   ...
+   BNR_Barrier();
+   if (spawned) {
+       if (my rank == root) {
+	       BNR_KM_Get(dbname, MPICH_PARENT_PORT_KEY, pszPortName);
        }
    <construct intercommunicator for parent>
-   MPID_COMM_PARENT = <that intercommunicator>
+   PMPI_Comm_connect(pszPortName, MPI_INFO_NULL, root, MPI_COMM_WORLD, &comm_parent);
+   MPID_COMM_PARENT = comm_parent;
    }
    else {
        MPID_COMM_PARENT = MPI_COMM_NULL;
    }
 \end{verbatim}
-An alternative to the \mpidfunc{BNR_Is_spawned} is to have \mpidfunc{BNR_Init}
-return a pointer to a \mpidfunc{BNR_Port_t}; if the pointer is null, then the
-process was not spawned.
 
 The initialization of the processes in (the local) \mpiconst{MPI_COMM_WORLD}
 are carried out with \mpidfunc{MPID_Init}.
@@ -5624,10 +5624,9 @@ in \mpiconst{MPI_COMM_WORLD}.  This may include host and port for
 TCP.  This is likely to use something like the following:
 \begin{verbatim}
    <Get contact port>
-   sprintf( key, "%d:%d:contact", gid, lrank );
+   sprintf( key, "%d:contact", rank );
    sprintf( value, "%s:%d", hostname, port );
-   BNR_Put( key, value );
-   BNR_Fence();
+   BNR_KM_Put( dbname, key, value );
 \end{verbatim}
 \end{tcp}
 \begin{shmem}
@@ -5674,9 +5673,9 @@ connections are not established until needed, how connections are
 established.  For example, for \tcpname, the code might look like
 \begin{verbatim}
    sprintf( key, "%d:%d:contact", gid_of_process, lrank_of_process );
-   BNR_Get( key, value );
+   BNR_KM_Get( key, value );
    <use value as hostname:port to contact>
-\end{verbatim}\index{BNR_Get}
+\end{verbatim}\index{BNR_KM_Get}
 
 \subsubsection{\mpifunc{MPI_QUERY_THREAD}}
 This returns the level of thread support provided.  Should there be an
@@ -5806,26 +5805,27 @@ as well.
 \label{sec:bnr}
 
 The purpose of the BNR is to provide an interface to external process
-managers and related resources.  The external process manager may be
+managers and related resources.  
+
+({\em Rationale:\/} The external process manager may be
 very sophisticated and offer many useful functions or it may be very
-simple and capable of few operations beyond starting a process.  The
-BNR interface provides an interface that allows us to exploit the
+simple and capable of few operations beyond starting a process.
+BNR provides an interface that allows us to exploit the
 capabilities of a powerful process manager while also (by providing
 implementations of any missing functionality ourselves) allowing us to
 use more limited process managers.  An example of functionality that
-not all process managers provide is the ``precommunication'' setup. 
+not all process managers provide is the ``precommunication'' setup.)
 
-The primitive concepts of the BNR interface are the {\em group}, the {\em
-  keymap},
-and the {\em domain}.  Each of these was chosen in order to
-provide a simple, MPI-independent interface that would be straightforward for
-process managers to implement.
+The primitive concepts of BNR are the {\em group}, the {\em keymap}, 
+the {\em domain}, and {\em spawn}.  Each of these was chosen in 
+order to provide a simple, MPI-independent interface that would be 
+straightforward for process managers to implement.
 
 A BNR {\em group\/} (or process group) is a set of processes started by the
 process manager ``at the same time.''  It is designed to fit the process
 manager's own concept of a related set of parallel processes belonging to a
-single parallel job.  A process belongs to only one process group and can be
-identified by (group, rank).  Thus, these are different from MPI groups.
+single parallel job.  A process belongs to only one process group.  They are 
+different from MPI groups.
 
 ({\em Rationale:\/}  This approach in discussion was called ``big groups.''
 An alternative approach is to have BNR process groups correspond to MPI groups
@@ -5834,7 +5834,7 @@ assortment of group construction and manipulation routines and imposes a new
 concept on the process manager.)
 
 A BNR {\em keymap\/} is a collection of key=value pairs associated
-with a job and keymap handle.  Its purpose is to provide certain
+with a keymap handle.  Its purpose is to provide certain
 services to the library linked with the application.  One type of
 service required by the library from the process manager might be
 called ``precommunication.''  Since only the process manager knows
@@ -5853,7 +5853,7 @@ we use the term keymap instead of database in this text.
 
 ({\em Rationale:\/}  An alternate approach is to attach keymaps to process
 groups.  This requires too much duplication of data in multiple keymaps in
-environments where it is easy for multiply groups to share the same keymap.)
+environments where it is easy for multiple groups to share the same keymap.)
 
 A BNR {\em domain\/} is an environment managed by a single instance of a
 process manager.  Thus within a domain, keymaps may be shared among multiple
@@ -5888,19 +5888,24 @@ BNR-Spawn-multiple may instantiate the set of requested processes in a domain
 outside of the one its calling process belongs to so long as the entire process
 group resides within a single domain.)
 
+BNR {\em spawn\/} is the ability to launch a set of processes within a job.  These
+processes must be in a single BNR domain but they need not be in the same domain
+as the process that issues a BNR spawn operation.
 
-\subsubsection{The BNR Basic Functions}
+\subsubsection{The BNR Group Functions}
 \label{sec:bnr-basic}
 
 These functions implicitly refer to the process group to which the calling
 process belongs. 
 
 \begin{verbatim}
-  BNR_Init( )              - initialize BNR for this process group         
-  BNR_Get_size( *int )     - get size of process group
-  BNR_Get_rank( *int )     - get rank in process group
-  BNR_Barrier( )           - barrier across processes in process group
-  BNR_Finalize( )          - finalize BNR for this process group.
+  BNR_Init( int *spawned )  - initialize BNR for this process group
+                              The return value indicates if this process was
+                              created by BNR_Spawn_multiple.
+  BNR_Get_size( int *size ) - get size of process group
+  BNR_Get_rank( int *rank ) - get rank in process group
+  BNR_Barrier( )            - barrier across processes in process group
+  BNR_Finalize( )           - finalize BNR for this process group.
 \end{verbatim}
 
 ({\em Rationale:\/}  Note that there is no access to an identifier for the
@@ -5920,43 +5925,39 @@ These functions are the interface to BNR keymaps.  Some implementations might
 be integrated with the process manager; other implementations could be
 independent of the process manager (e.g. separate server). 
 
-Question: Why are keymaps (old databases) managed by string name
-instead of a handle?  If a serialized name is needed for external
-identification, that could be given by a separate function.  - WDG.
+Question: Why are keymaps managed by string name instead of a handle?
+If a serialized name is needed for external identification, that could be 
+given by a separate function.  - WDG.
 
 \begin{verbatim}
-  int BNR_Key_Get_my_name(char *dbname)        - get name of keymap
-  int BNR_Key_Get_name_length_max( )           - needed since might be sent
-  int BNR_Key_Create(char *dbname [OUT})       - make a new one, get name 
-  int BNR_Key_Destroy(char *dbname [IN])       - finish with one 
-  int BNR_Put(char *dbname,
-              const char key[BNR_MAX_KEY_LEN],
-              char value[BNR_MAX_VALUE_LEN]); - put data
-  int BNR_Commit(char *dbname)                - block until all pending put
+  int BNR_KM_Get_my_name(char *dbname)        - get name of keymap
+  int BNR_KM_Get_name_length_max( )           - needed since might be sent
+  int BNR_KM_Create(char *dbname [OUT})       - make a new one, get name 
+  int BNR_KM_Destroy(const char *dbname [IN]) - finish with one 
+  int BNR_KM_Put(char *dbname, const char *key,
+                 const char *value);          - put data
+  int BNR_KM_Commit(const char *dbname)       - block until all pending put
                                                 operations from this process
                                                 are complete.  This is a process
                                                 local operation.
-  int BNR_Get(char *dbname,
-              const char key[],
-              char value[BNR_MAX_VALUE_LEN]); - get value associated with key
-  int BNR_Key_iter_first(char *dbname, char *key, char *val)  - loop through the
-  int BNR_Key_iter_next(char *dbname, char *key, char *val)      pairs in the db
+  int BNR_KM_Get(const char *dbname,
+                 const char *key, char *value); - get value associated with key
+  int BNR_KM_iter_first(const char *dbname, char *key, char *val)  - loop through the
+  int BNR_KM_iter_next(const char *dbname, char *key, char *val)      pairs in the db
 \end{verbatim}
   
-On a \code{BNR_Put}, if a pair with the same key is already in the keymap,
-the value is overwritten.  On a \code{BNR_Get}, if there is no pair with
-matching key, the return value is -1.  
+On a \code{BNR_KM_Put}, multiple puts to the same key in the keymap is illegal.
+On a \code{BNR_KM_Get}, if there is no pair with matching key, the return value is -1.
 
 ({\em Rationale:\/}  Note that there is no fence operation, since process
-groups are separate from keymaps.  Since \code{BNR_Put}s and \code{BNR_Get}s
+groups are separate from keymaps.  Since \code{BNR_KM_Put}s and \code{BNR_KM_Get}s
 are globally asynchronous, it is the responsibility of the user to ensure that
 the data sought by a get operation has been placed in the keymap by a put
-operation.  The \code{BNR_Commit} ensures that the put has taken place
+operation.  The \code{BNR_KM_Commit} ensures that the put has taken place
 ``locally'' (synchronization between a process and the keymap); 
 another mechanism is required for synchronization across processes.  Within
 a process group this can be accomplished by the \code{BNR_Barrier}; across
-process groups it can be accomplished by message passing (See the {\tt MM}
-interface below.)
+process groups it can be accomplished by message passing.)
 
 ({\em Rationale:\/}  The iteration scheme for extracting the total contents
 of a keymap is obviously not thread safe.  This is not viewed as a problem.)
@@ -5967,15 +5968,22 @@ of a keymap is obviously not thread safe.  This is not viewed as a problem.)
 In this section are the process creation routines.
 
 \begin{verbatim}
-
-int BNR_Spawn_multiple(count, cmds, argvs, maxprocs, infos, errors,
-                       [OUT] bool_t same_domain);
+int BNR_Spawn_multiple(int count, const char **cmds, const char ***argvs, 
+		       const int *maxprocs, const void *info, [OUT] int *errors, 
+		       [OUT] bool_t *same_domain, const void *preput_info);
 \end{verbatim}
 
 ({\em Rationale:\/}  The \code{same_domain} argument lets the process manager
 tell us whether the keymap associated with the new process group is shared,
 or whether we will need to receive the contents of the new group's keymap
 and add it to our own.)
+
+({\em Rationale:\/}  The \code{preput_info} argument contains key/value pairs
+to be put in the keymap associated with the new process group.  The new processes
+can access these values through \code{BNR_KM_Get} calls immediately after
+\code{BNR_Init}.  This eliminates the need to pass environment variables through
+the \code{info} parameter.
+)
 
 Note that there is no new process group identifier returned.  The only real
 need for it would be to implement a \code{BNR_Kill} function, which is not
@@ -5990,13 +5998,16 @@ We postulate the existence of some low-level communication routines.  The {\tt
   MM} stands for ``multi-method.''
 
 \begin{verbatim}
-MM_get_port_name
-MM_connect
-MM_accept
-MM_send
-MM_receive
+int MM_Open_port(const MPID_Info *info_ptr, char *port_name);
+int MM_Close_port(const char *port_name);
+int MM_Accept(const MPID_Info *info_ptr, const char *port_name);
+int MM_Connect(const MPID_Info *info_ptr, const char *port_name);
+int MM_Send(int conn, const char *buffer, int length);
+int MM_Recv(int conn, char *buffer, int length);
+int MM_Close(int conn);
 MM_???
 \end{verbatim}
+Question: Should the length parameter for MM_Recv be [IN/OUT]?
 
 One use of this form of communication is to copy keymaps between domains.
 Here are functions to carry this out:
@@ -6004,40 +6015,37 @@ Here are functions to carry this out:
 \begin{verbatim}
 SendKeymaps([IN] conn, [IN] comm)
 {
-    MM_send(conn, Ndb)
+    MM_Send(conn, Ndb)
     foreach dbname (used in a vc in comm)
     {
-        MM_send(conn, dbname);
-        done = BNR_Key_iter_first(dbname, key, val);
-        while (!done)
+        MM_Send(conn, dbname);
+        BNR_KM_iter_first(dbname, key, val);
+        while (key[0] != '\0')
         {
-            MM_send(conn, (key,val));
-            done = BNR_Key_iter_next(dbname, key, val);
+            MM_Send(conn, (key,val));
+            BNR_KM_iter_next(dbname, key, val);
         }
-        MM_Send(conn, (dbdone));
+        MM_Send(conn, ('',''));
     }
 }
 
-RecvKeymaps([IN] conn, [OUT] dbmap)
+RecvKeymaps([IN] conn)
 {
-    MM_recv(conn, Ndb);
-    dbmap = malloc(Ndb * sizeof(int));
+    MM_Recv(conn, Ndb);
     
     for (i = 0; i < Ndb; i++)
     {
-        MM_recv(conn, (remote_dbname));
-
-        BNR_Create_DB(dbname);
-        strcpy(dbmap[i], dbname);
+        BNR_KM_Create(dbname);
+        <save dbname>
         
         while(1)
         {
-            MM_recv(conn, (key, val));
-            if (key == (dbdone)) break;
-            BNR_Put(dbname, key, val);
+            MM_Recv(conn, (key, val));
+            if (*key == '\0') break;
+            BNR_KM_Put(dbname, key, val);
         }
 
-        BNR_Commit(dbname);
+        BNR_KM_Commit(dbname);
     }
 }
 \end{verbatim}
@@ -6082,59 +6090,89 @@ mpiexec::main()
 
 int MPI_Init()
 {
-    BNR_Init();
+    BNR_Init(&spawned);
 
     /* initialize methods, device, etc. */
     
-    BNR_Get_my_DB_name(my_dbname);
-    BNR_Put(my_dbname, ..., ...);
-    BNR_Commit(my_dbname);
+    BNR_KM_Get_my_name(my_dbname);
+    BNR_KM_Put(my_dbname, ..., ...);
+    BNR_KM_Commit(my_dbname);
 
     BNR_Barrier();
     
     /* Various initializations like datatypes, COMM_WORLD, etc. */
 
-    /* get parent_port_name from environment */
-    if (parent_port_name is defined)
+    if (spawned)
     {
-        MPI_Comm_connect(parent_port_name, info, 0, MPI_COMM_WORLD,
-                         &intercomm);
+        BNR_KM_Get(my_dbname, MPICH_PARENT_PORT_KEY, pszPortName);
+        PMPI_Comm_connect(pszPortName, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &comm_parent);
     }
     else
     {
-        intercomm = MPI_COMM_NULL;
+        comm_parent = MPI_COMM_NULL;
     }
 }
 
 int MPI_Comm_Spawn_multiple(count, cmds, argvs, maxprocs, infos, root, comm,
                             intercomm, errors)
 {
-    if (root)
+    PMPI_Info_create(&info);
+    if (rank == root)
     {
-        port_info = NULL; /* ??? */
-        MPI_Open_port(port_info, port_name);
-
-        /* add port_name to all infos */
-
-        BNR_Spawn_multiple(count, cmds, argvs, maxprocs, infos, errors,
-                           &bnr_same_domain, &pg);
-        if (bnr_same_domain)
+        PMPI_Info_create(&prepost_info);
+        PMPI_Open_port(MPI_INFO_NULL, pszPortName);
+        PMPI_Info_set(prepost_info, MPICH_PARENT_PORT_KEY, pszPortName);
+        /*if (g_bSpawnCalledFromMPIExec) 
+         *    PMPI_Info_set(prepost_info, MPICH_EXEC_IS_PARENT_KEY, "yes");
+         */
+        BNR_Spawn_multiple(count, cmds, argvs, maxprocs, infos, errors, 
+                           &same_domain, prepost_info);
+        PMPI_Info_free(&prepost_info);
+        if (same_domain)
         {
-            MPI_Info_set(accept_info, "BNR_SAME_DOMAIN", "");
+            /* set same domain for accept */
+            PMPI_Info_set(info, MPICH_BNR_SAME_DOMAIN_KEY, "yes");
         }
     }
-
-    MPI_Comm_accept(port_name, accept_info, root, comm, intercomm);
-    
+    PMPI_Comm_accept(pszPortName, info, root, comm, intercomm);
+    if (comm_ptr->rank == root)
+    {
+        PMPI_Close_port(pszPortName);
+    }
+    PMPI_Info_free(&info);
 }
 
 int MPI_Open_port(info, port_name)
 {
-    port_name = MM_get_port_name();  /* query_descriptor() ??? */
+    MM_Open_port(info_ptr, port_name);  /* query_descriptor() ??? */
 }
 
 int MPI_Comm_accept(port_name, info, root, comm, intercomm)
 {
+    char value[10];
+    if (comm_ptr->rank == root)
+    {
+        conn = MM_Accept(info_ptr, port_name);
+        PMPI_Info_get(info, MPICH_BNR_SAME_DOMAIN_KEY, 10, value, &same_domain);
+
+        /* Allocate a local process group
+           Create or make a way to create VC's for this group */
+
+        if (!same_domain) {
+            SendKeymaps(conn, comm);
+            RecvKeymaps(conn, comm);
+        }
+
+        MM_Close(conn);
+
+        /* Bcast resulting intercommunicator stuff to the rest of this communicator */
+    }
+    else
+    {
+        /* Bcast resulting intercommunicator stuff */
+    }
+
+/*
     if (root)
     {
         conn = MM_accept(port_name);
@@ -6176,10 +6214,26 @@ int MPI_Comm_accept(port_name, info, root, comm, intercomm)
         
         MPI_Bcast(intercomm->remote_VCTable, root, comm)
     }
+*/
 }
 
 int MPI_Comm_connect(port_name, info, root, comm, intercomm)
 {
+    if (comm_ptr->rank == root)
+    {
+        conn = MM_Connect(info_ptr, port_name);
+
+        /* Transfer stuff */
+
+        MM_Close(conn);
+
+        /* Bcast resulting intercommunicator stuff to the rest of this communicator */
+    }
+    else
+    {
+        /* Bcast resulting intercommunicator stuff */
+    }
+/*
     if (root)
     {
         conn = MM_connect(port_name);
@@ -6219,6 +6273,7 @@ int MPI_Comm_connect(port_name, info, root, comm, intercomm)
         
         MPI_Bcast(intercomm->remote_VCTable, root, comm)
     }
+*/
 }
 \end{verbatim}
 
