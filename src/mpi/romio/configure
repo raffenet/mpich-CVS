@@ -244,6 +244,8 @@ case $arg in
      ;;
   -prefix=* | --prefix=*)
      PREFIX=`echo $arg|sed 's/-*prefix=//'`
+     # Use new variable name for prefix
+     prefix=$PREFIX
      ;;
   -f90nag | --f90nag)
      FC=f90
@@ -508,6 +510,92 @@ grep _"$ARCH"_ $srcdir/.config_params > /dev/null 2>&1
 if test $? != 0 ; then
    echo "Unknown architecture $arch... proceeding anyway"
 fi
+#
+#
+#
+# Find the home directory if not specified
+if test "X$srcdir" != "X." -a -s $srcdir/mpi-io/Makefile.in ; then 
+    ROMIO_HOME_TRIAL=$srcdir
+else
+    
+ROMIO_HOME_TRIAL=$PWD
+if test "${ROMIO_HOME_TRIAL}" != "" -a -d "${ROMIO_HOME_TRIAL}" ; then 
+    if test -r ${ROMIO_HOME_TRIAL}/.foo$$ ; then
+        /bin/rm -f ${ROMIO_HOME_TRIAL}/.foo$$
+        /bin/rm -f .foo$$
+    fi
+    if test -r ${ROMIO_HOME_TRIAL}/.foo$$ -o -r .foo$$ ; then
+        ROMIO_HOME_TRIAL=
+    else
+        echo "test" > ${ROMIO_HOME_TRIAL}/.foo$$
+        if test ! -r .foo$$ ; then
+            /bin/rm -f ${ROMIO_HOME_TRIAL}/.foo$$
+            ROMIO_HOME_TRIAL=
+        else
+            /bin/rm -f ${ROMIO_HOME_TRIAL}/.foo$$
+        fi
+    fi
+fi
+if test "${ROMIO_HOME_TRIAL}" = "" ; then
+    ROMIO_HOME_TRIAL=`pwd | sed -e 's%/tmp_mnt/%/%g'`
+fi
+if test ! -r ${ROMIO_HOME_TRIAL}/mpi-io/Makefile.in ; then
+        ROMIO_HOME_TRIAL=`pwd`
+    if test ! -r ${ROMIO_HOME_TRIAL}/mpi-io/Makefile.in ; then
+        print_error "Cannot determine the root directory!" 
+        exit 1
+    fi
+    ROMIO_HOME_TRIAL=`pwd | sed -e 's%/tmp_mnt/%/%g'`
+    if test ! -d ${ROMIO_HOME_TRIAL} ; then 
+        print_error "Warning: your default path uses the automounter; this may"
+        print_error "cause some problems if you use other NFS-connected systems.
+"
+        ROMIO_HOME_TRIAL=`pwd`
+    fi
+fi
+if test -z "${ROMIO_HOME_TRIAL}" ; then
+    ROMIO_HOME_TRIAL=`pwd | sed -e 's%/tmp_mnt/%/%g'`
+    if test ! -d ${ROMIO_HOME_TRIAL} ; then 
+        print_error "Warning: your default path uses the automounter; this may"
+        print_error "cause some problems if you use other NFS-connected systems.
+"
+        ROMIO_HOME_TRIAL=`pwd`
+    fi
+fi
+
+fi
+echo "ROMIO home directory is $ROMIO_HOME_TRIAL"
+ROMIO_HOME=$ROMIO_HOME_TRIAL
+#
+# Create the "autoconf" style directory names...
+#
+if test -z "$prefix" ; then prefix=$PREFIX ; fi
+if test -z "$prefix" ; then
+    prefix=$ROMIO_HOME
+fi
+
+if test -z "$exec_prefix" ; then exec_prefix='${prefix}' ; fi
+# exec_prefix is the prefix for directories containing machine-specific
+# files such as libraries and executables.  For the USER
+
+includedir="${prefix}/include"
+
+# bindir is for executable programs for the USER
+if test -z "$bindir" ; then bindir='${exec_prefix}/bin' ; fi
+
+# sbindir is for executable programs for the ADMINISTRATOR
+if test -z "$sbindir" ; then sbindir='${exec_prefix}/sbin' ; fi
+
+# libdir is for libraries for the USER
+if test -z "$libdir" ; then libdir='${exec_prefix}/lib' ; fi
+
+# mandir is the root for the man pages
+if test -z "$mandir" ; then mandir='${prefix}/man' ; fi
+
+if test -z "$docdir" ; then docdir='${prefix}/doc' ; fi
+
+if test -z "$htmldir" ; then htmldir='${prefix}/www' ; fi
+ 
 #
 # check for valid file system
 if test -n "$FILE_SYSTEM" ; then
@@ -3239,60 +3327,6 @@ fi
   fi
   rm -f conftest conftest.c
 
-#
-# Find the home directory if not specified
-if test "X$srcdir" != "X." -a -s $srcdir/mpi-io/Makefile.in ; then 
-    ROMIO_HOME_TRIAL=$srcdir
-else
-    
-ROMIO_HOME_TRIAL=$PWD
-if test "${ROMIO_HOME_TRIAL}" != "" -a -d "${ROMIO_HOME_TRIAL}" ; then 
-    if test -r ${ROMIO_HOME_TRIAL}/.foo$$ ; then
-        /bin/rm -f ${ROMIO_HOME_TRIAL}/.foo$$
-        /bin/rm -f .foo$$
-    fi
-    if test -r ${ROMIO_HOME_TRIAL}/.foo$$ -o -r .foo$$ ; then
-        ROMIO_HOME_TRIAL=
-    else
-        echo "test" > ${ROMIO_HOME_TRIAL}/.foo$$
-        if test ! -r .foo$$ ; then
-            /bin/rm -f ${ROMIO_HOME_TRIAL}/.foo$$
-            ROMIO_HOME_TRIAL=
-        else
-            /bin/rm -f ${ROMIO_HOME_TRIAL}/.foo$$
-        fi
-    fi
-fi
-if test "${ROMIO_HOME_TRIAL}" = "" ; then
-    ROMIO_HOME_TRIAL=`pwd | sed -e 's%/tmp_mnt/%/%g'`
-fi
-if test ! -r ${ROMIO_HOME_TRIAL}/mpi-io/Makefile.in ; then
-        ROMIO_HOME_TRIAL=`pwd`
-    if test ! -r ${ROMIO_HOME_TRIAL}/mpi-io/Makefile.in ; then
-        print_error "Cannot determine the root directory!" 
-        exit 1
-    fi
-    ROMIO_HOME_TRIAL=`pwd | sed -e 's%/tmp_mnt/%/%g'`
-    if test ! -d ${ROMIO_HOME_TRIAL} ; then 
-        print_error "Warning: your default path uses the automounter; this may"
-        print_error "cause some problems if you use other NFS-connected systems.
-"
-        ROMIO_HOME_TRIAL=`pwd`
-    fi
-fi
-if test -z "${ROMIO_HOME_TRIAL}" ; then
-    ROMIO_HOME_TRIAL=`pwd | sed -e 's%/tmp_mnt/%/%g'`
-    if test ! -d ${ROMIO_HOME_TRIAL} ; then 
-        print_error "Warning: your default path uses the automounter; this may"
-        print_error "cause some problems if you use other NFS-connected systems.
-"
-        ROMIO_HOME_TRIAL=`pwd`
-    fi
-fi
-
-fi
-echo "ROMIO home directory is $ROMIO_HOME_TRIAL"
-ROMIO_HOME=$ROMIO_HOME_TRIAL
 if test -z "$srcdir" -o "$srcdir" = "." ; then srcdir="$ROMIO_HOME" ; fi
 
 if test -z "$LIBNAME"; then
@@ -3577,6 +3611,15 @@ done
 
 trap 'rm -f Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h; exit 1' 1 3 15
 VPATH='$VPATH'
+prefix='$prefix'
+exec_prefix='$exec_prefix'
+includedir='$includedir'
+bindir='$bindir'
+sbindir='$sbindir'
+libdir='$libdir'
+mandir='$mandir'
+docdir='$docdir'
+htmldir='$htmldir'
 RANLIB='$RANLIB'
 CC='$CC'
 F77='$F77'
@@ -3663,6 +3706,15 @@ cat $top_srcdir/${file}.in | sed -e "
 $prsub
 $extrasub
 s%@VPATH@%$VPATH%g
+s%@prefix@%$prefix%g
+s%@exec_prefix@%$exec_prefix%g
+s%@includedir@%$includedir%g
+s%@bindir@%$bindir%g
+s%@sbindir@%$sbindir%g
+s%@libdir@%$libdir%g
+s%@mandir@%$mandir%g
+s%@docdir@%$docdir%g
+s%@htmldir@%$htmldir%g
 s%@RANLIB@%$RANLIB%g
 s%@CC@%$CC%g
 s%@F77@%$F77%g
@@ -3692,7 +3744,7 @@ s%@F77GETARG@%$F77GETARG%g
 s%@F77IARGC@%$F77IARGC%g
 s%@FTESTDEFINE@%$FTESTDEFINE%g
 s%@FORTRAN_MPI_OFFSET@%$FORTRAN_MPI_OFFSET%g
-s%@FROM_MPICH@%$FROM_MPICH%g
+s%@FROM_MPICH@%$FROM_MPICH%g" | sed -e "
 s%@NEEDS_MPI_FINT@%$NEEDS_MPI_FINT%g
 s%@HAVE_MPI_INFO@%$HAVE_MPI_INFO%g
 s%@BUILD_MPI_INFO@%$BUILD_MPI_INFO%g
@@ -3701,7 +3753,7 @@ s%@BUILD_MPI_ARRAY@%$BUILD_MPI_ARRAY%g
 s%@DEFINE_MPI_OFFSET@%$DEFINE_MPI_OFFSET%g
 s%@MPI_FINFO1@%$MPI_FINFO1%g
 s%@MPI_FINFO2@%$MPI_FINFO2%g
-s%@MPI_FINFO3@%$MPI_FINFO3%g" | sed -e "
+s%@MPI_FINFO3@%$MPI_FINFO3%g
 s%@MPI_FINFO4@%$MPI_FINFO4%g
 s%@MPI_FARRAY1@%$MPI_FARRAY1%g
 s%@MPI_FARRAY2@%$MPI_FARRAY2%g

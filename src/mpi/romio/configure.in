@@ -335,8 +335,27 @@ if test $? != 0 ; then
 fi
 #
 #
+#
+# Find the home directory if not specified
+if test "X$srcdir" != "X." -a -s $srcdir/mpi-io/Makefile.in ; then 
+    ROMIO_HOME_TRIAL=$srcdir
+else
+    PAC_GETWD(ROMIO_HOME_TRIAL,mpi-io/Makefile.in)
+fi
+echo "ROMIO home directory is $ROMIO_HOME_TRIAL"
+ROMIO_HOME=$ROMIO_HOME_TRIAL
+#
 # Create the "autoconf" style directory names...
 #
+if test -z "$prefix" ; then prefix=$PREFIX ; fi
+if test -z "$prefix" ; then
+    prefix=$ROMIO_HOME
+fi
+AC_SUBST(prefix)
+if test -z "$exec_prefix" ; then exec_prefix='${prefix}' ; fi
+# exec_prefix is the prefix for directories containing machine-specific
+# files such as libraries and executables.  For the USER
+AC_SUBST(exec_prefix)
 includedir="${prefix}/include"
 AC_SUBST(includedir)
 # bindir is for executable programs for the USER
@@ -348,8 +367,6 @@ AC_SUBST(sbindir)
 # libdir is for libraries for the USER
 if test -z "$libdir" ; then libdir='${exec_prefix}/lib' ; fi
 AC_SUBST(libdir)
-if test -z "$prefix" ; then prefix=$PREFIX ; fi
-AC_SUBST(prefix)
 # mandir is the root for the man pages
 if test -z "$mandir" ; then mandir='${prefix}/man' ; fi
 AC_SUBST(mandir)
@@ -1054,15 +1071,6 @@ if test -n "$mpi_hp"; then
 fi
 #
 PAC_FUNC_STRERROR
-#
-# Find the home directory if not specified
-if test "X$srcdir" != "X." -a -s $srcdir/mpi-io/Makefile.in ; then 
-    ROMIO_HOME_TRIAL=$srcdir
-else
-    PAC_GETWD(ROMIO_HOME_TRIAL,mpi-io/Makefile.in)
-fi
-echo "ROMIO home directory is $ROMIO_HOME_TRIAL"
-ROMIO_HOME=$ROMIO_HOME_TRIAL
 if test -z "$srcdir" -o "$srcdir" = "." ; then srcdir="$ROMIO_HOME" ; fi
 AC_SUBST(srcdir)
 if test -z "$LIBNAME"; then
