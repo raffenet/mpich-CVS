@@ -1715,6 +1715,13 @@ int smpd_state_pmi_listening(smpd_context_t *context, MPIDU_Sock_event_t *event_
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
+    result = MPIDU_Sock_post_close(context->sock);
+    if (result != MPI_SUCCESS)
+    {
+	smpd_err_printf("error closing pmi listener socket: %s\n", get_sock_error_string(result));
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
     iter = smpd_process.process_list;
     while (iter)
     {
@@ -1742,6 +1749,13 @@ int smpd_state_pmi_listening(smpd_context_t *context, MPIDU_Sock_event_t *event_
 	    return SMPD_SUCCESS;
 	}
 	iter = iter->next;
+    }
+    result = MPIDU_Sock_post_close(new_sock);
+    if (result != MPI_SUCCESS)
+    {
+	smpd_err_printf("error closing pmi socket not unassociated with any process: %s\n", get_sock_error_string(result));
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
     }
     smpd_err_printf("accepted a socket on a listener not associated with a process struct.\n");
     smpd_exit_fn(FCNAME);
@@ -5714,7 +5728,10 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 		    {
 			if (!((context->type == SMPD_CONTEXT_STDOUT || context->type == SMPD_CONTEXT_STDERR) && event.error == MPIDU_SOCK_ERR_CONN_CLOSED))
 			{
-			    smpd_err_printf("op_read error on %s context: %s\n", smpd_get_context_str(context), get_sock_error_string(event.error));
+			    if (!smpd_process.closing)
+			    {
+				smpd_err_printf("op_read error on %s context: %s\n", smpd_get_context_str(context), get_sock_error_string(event.error));
+			    }
 			}
 		    }
 		}
