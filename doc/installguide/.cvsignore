@@ -6,6 +6,7 @@
 *.toc
 *.ind
 *.idx
+*.out
 Makefile
-user.pdf
+install.pdf
 config.options
