@@ -37,9 +37,9 @@ void MPIDI_CH3_Progress_poke(void);
 MPID_Request * MPIDI_CH3U_Request_FUOAP(int, int, int, int *);
 MPID_Request * MPIDI_CH3U_Request_FPOAU(MPIDI_Message_match *, int *);
 int MPIDI_CH3U_Request_adjust_iov(MPID_Request *, int);
-void MPIDI_CH3U_Handle_packet(MPIDI_VC *, MPIDI_CH3_Pkt_t *);
-void MPIDI_CH3U_Handle_req(MPIDI_VC *, MPID_Request *);
-
+int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC *, MPIDI_CH3_Pkt_t *);
+int MPIDI_CH3U_Handle_recv_req(MPIDI_VC *, MPID_Request *);
+int MPIDI_CH3U_Handle_send_req(MPIDI_VC *, MPID_Request *);
 
 /*
  * Macros defining both device and channel level request management routines
@@ -69,9 +69,23 @@ MPIU_Object_add_ref(req)
  */
 #define MPID_Progress_start()
 #define MPID_Progress_end()
-#define MPID_Progress_test() (MPIDI_CH3_Progress(0))
-#define MPID_Progress_wait() {MPIDI_CH3_Progress(1);}
+#define MPID_Progress_test() (MPIDI_CH3_Progress(FALSE))
+#define MPID_Progress_wait() {MPIDI_CH3_Progress(TRUE);}
 #define MPID_Progress_poke() {MPIDI_CH3_Progress_poke();}
+
+/*
+ * Debugging tools
+ */
+void MPIDI_dbg_printf(int, char *, char *, ...);
+#define MPIDI_dbg_printf(level, func, fmt, args...)			\
+{									\
+    printf("%d (%d) %s(): " ## fmt ## "\n",				\
+	   MPIR_Process.comm_world->rank, level, func, ## args);	\
+    fflush(stdout);							\
+}
+
+#define MPIDI_QUOTE(A) MPIDI_QUOTE2(A)
+#define MPIDI_QUOTE2(A) #A
 
 /* Include definitions from the channel which require items defined by this
    file (mpidimpl.h) or the file it includes (mpiimpl.h).  NOTE: This include
