@@ -315,6 +315,8 @@ def mpdrun():
 			    exit_status = WEXITSTATUS(status)
 		            print '  exit status of rank %d: return code %d ' % \
                                   (msg['rank'],exit_status)
+			    if exit_status > myExitStatus:
+			        myExitStatus = exit_status
                         # del socketsToSelect[readySocket]
                         # readySocket.close()
                         # done += 1
