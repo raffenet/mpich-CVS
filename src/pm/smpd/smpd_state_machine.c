@@ -2354,6 +2354,7 @@ int smpd_state_reading_sspi_header(smpd_context_t *context, MPIDU_Sock_event_t *
 #define FCNAME "smpd_state_reading_sspi_buffer"
 int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 {
+#ifdef HAVE_WINDOWS_H
     int result;
     SECURITY_STATUS sec_result, sec_result_copy;
     SecBufferDesc outbound_descriptor, inbound_descriptor;
@@ -2515,6 +2516,12 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
 
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
+#else
+    smpd_enter_fn(FCNAME);
+    smpd_err_printf("function not implemented.\n");
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+#endif
 }
 
 #undef FCNAME
@@ -2737,6 +2744,7 @@ int smpd_state_writing_delegate_request(smpd_context_t *context, MPIDU_Sock_even
 #define FCNAME "smpd_state_reading_delegate_request_result"
 int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 {
+#ifdef HAVE_WINDOWS_H
     int result;
     const char *result_str = SMPD_SUCCESS_STR;
     SECURITY_STATUS sec_result;
@@ -2807,6 +2815,12 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 
     smpd_exit_fn(FCNAME);
     return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+#else
+    smpd_enter_fn(FCNAME);
+    smpd_err_printf("function not implemented.\n");
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+#endif
 }
 
 #undef FCNAME
