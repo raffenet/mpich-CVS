@@ -7,7 +7,8 @@
 
 #include "mpiimpl.h"
 #include "mpi_init.h"
-#include "bnr.h"
+/*#include "bnr.h"*/
+
 
 /* -- Begin Profiling Symbol Block for routine MPI_Init */
 #if defined(HAVE_PRAGMA_WEAK)
