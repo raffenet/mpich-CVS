@@ -2013,7 +2013,13 @@ int MPID_Memory_unregister( void *buf, int len, MPID_Comm *comm, int rank,
  * 2. Should there be a test as well as a wait on a stream?  If a stream
  * is a kind of request, then we get this automatically.
  *
+ * 3. The examples outlined here rely on explicit advancement of the stream
+ * by the process the initiates it.  Another approach is to allow the 
+ * communication agent to send each piece of the stream as it becomes possible.
  *
+ * 4. Should there be a one-sided stream operation?  E.g., just as we have 
+ * streams as a generalization of message-passing, do we want the same thing 
+ * for RMA operations?
  T*/
 
 /*@

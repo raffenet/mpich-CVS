@@ -62,7 +62,7 @@
 
 %
 % Algorithm
-\newenvironment{algorithm}{\begin{obeylines}\obeyspaces}{\end{obeylines}}
+\newenvironment{algorithm}{\begin{obeylines}\obeyspaces\noindent}{\end{obeylines}}
 
 %\tpageoneskip
 \ANLTMTitle{MPICH2 Design Document\\
@@ -620,7 +620,7 @@ messaging.  Examples are TCP, UDP, and MPI-1.
 \item[\shmemname]Shared memory.  This assumes separate processes that
 can share some memory.  Operations on this shared memory are
 accomplished using the usual language-defined methods for accessing
-memory.  However, most user memory (i.e., user-declared
+memory.  However, most user memory (e.g., user-declared
 variables) is not shared.  Examples are Unix System V shared memory
 segments and shared \code{mmap} regions.  
 
@@ -862,8 +862,8 @@ name), speed is not critical for the Info functions.
 
 Question: Since many of the predefined Info values encode either booleans or
 integers, do we want an internal routine such as \mpidfunc{MPID_Info_get_int}
-that returns an integer value if the key is found and has either an integer or
-boolean value?  Similarly, should there be an \mpidfunc{MPID_Info_set_int}?
+that returns an integer value if the key is found and has either an integer
+value?  Similarly, should there be an \mpidfunc{MPID_Info_set_int}?
 If we do this, do we want to cache the result in the Info item
 structure?
 There are a few info keys (e.g., \mpiconst{chuncked} or
@@ -871,6 +871,8 @@ There are a few info keys (e.g., \mpiconst{chuncked} or
 (\mpiconst{access_style}) that is a list of strings.  \mpiconst{soft}
 is a list of triplets; an info routine that returned triplets would be
 needed for this.
+We also need \mpidfunc{MPID_Info_get_bool} that returns 1, 0, or -1
+(for error).  
 
 Question: Do we want to make the key part of the structure, and set
 \mpiconst{MPI_MAX_KEY_VALUE} to a small value such as 32 (the minimum
@@ -1090,6 +1092,11 @@ Question:  How do we want to organize the optimization code for datatypes?  We
 shouldn't embed it within the \code{MPI_TYPE_COMMIT} function.  Should each of
 the dataloop types (e.g., \code{MPID_Vector}) have a corresponding routine
 that is called with the entire datatype (not just the specific dataloop)?
+
+One special case is to identify datatypes that are contiguous.  
+Question: should this set a field in the datatype, a bit in
+\mpids{MPI_Datatype}{_flags}, or a bit in the id for the
+\mpiconst{MPI_Datatype}? 
 
 \subsubsection{\mpifunc{MPI_TYPE_DUP}}
 Duplicate a datatype.  Invoke the attribute copy code for the attribute list
@@ -1797,7 +1804,7 @@ matched by a posted receive.  This requires a bit for ready mode in the
 If the message is small in total size and flow control allows it, send
 the data with \mpidconst{MPID_Hid_short} using \mpidfunc{MPID_Rhcv}.
 Otherwise, send a \mpidconst{MPID_Hid_request_to_send} with
-\mpidfunc{MPID_Rhcv}. 
+\mpidfunc{MPID_Rhcv}.  
 \end{core}
 \begin{via}
 Attempt to register the source memory so that direct memory operations may be
@@ -1893,8 +1900,8 @@ Simply use \mpifunc{MPI_Isend}, \mpifunc{MPI_Irecv}, and
 Question: Should this use the segment code to bound the memory buffer that
 must be allocated for the replacement?
 \begin{adi3}
-\mpidfunc{MPID_Segement}, \mpidfunc{MPID_Stream_irecv}, and
-\mpidfunc{MPID_Streadm_isend}. 
+\mpidfunc{MPID_Segment}, \mpidfunc{MPID_Stream_irecv}, and
+\mpidfunc{MPID_Stream_isend}. 
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_SEND_INIT}}
@@ -1938,10 +1945,40 @@ functions.
 Generalized requests:  On completion, invoke the
 \mpids{MPI_Request(generalized)}{free_fn}. 
 
+Persistent requests: The actual request is the
+\mpids{MPI_Request(persistent)}{active_request} in the
+\mpidconst{MPID_Request} structure.
 
+The two most basic routines are \mpifunc{MPI_Testany} and
+\mpifunc{MPI_Waitany} in the sense that all of the other operations
+can be built from these.  For example:
+\begin{description}
+\item[\mpifunc{MPI_Wait}]\mpifunc{MPI_Waitany}
+\item[\mpifunc{MPI_Waitsome}]\mpifunc{MPI_Waitany} followed by
+\mpifunc{MPI_Testsome}.  Note that without the \mpifunc{MPI_Testsome}
+call, this requirements of \mpifunc{MPI_Waitsome} won't be met; in
+particular, the \mpifunc{MPI_Testsome} is needed to allow
+\mpifunc{MPI_Waitsome} to provide fairness (indicate \emph{all}
+requests that are ready).
+\item[\mpifunc{MPI_Waitall}]\mpifunc{MPI_Waitany} until all non-null
+requests have completed.
+\item[\mpifunc{MPI_Test}]\mpifunc{MPI_Testany}
+\item[\mpifunc{MPI_Testsome}]\mpifunc{MPI_Testany} until flag returns
+false.
+\item[\mpifunc{MPI_Testall}]\mpifunc{MPI_Test} for each request.
+\end{description}
+These are not necessarily the best implementations of the eight
+completion functions, but they do provide reasonable implementations
+as long as the number of requests provided to the completion function
+is not too large (since some of the algorithms above have complexity
+proportional to the square of the number of requests).
+
+Question:  Should we define \mpidfunc{MPID_Testany} and
+\mpidfunc{MPID_Waitany} instead of the \mpidfunc{MPID_Testsome} and
+\mpidfunc{MPID_Waitsome} routines?
 
 \subsubsection{\mpifunc{MPI_TEST}}
-Call \mpifunc{MPI_Testall}.
+Call \mpifunc{MPI_Testany}.
 
 \subsubsection{\mpifunc{MPI_TESTALL}}
 See \mpifunc{MPI_TESTANY}.
@@ -2098,12 +2135,28 @@ Is this the same as \tcpname, but with slightly different message
 types?
 Where are there differences?  For example, should datatypes be stored
 in shared memory, thus eliminating the
-\mpidconst{MPID_Hid_datatype_desc}?  Should the lock/unlock operations
+\mpidconst{MPID_Hid_datatype_desc}?  If so, how does the device ensure
+that the datatype code places everything in shared memory (e.g.,
+\mpifunc{MPI_TYPE_CREATE_INDEXED} cannot use \code{malloc} to save the
+index arrays)?  Should the lock/unlock operations
 be direct rather than using \mpidconst{MPID_Hid_lock_op}?
+If the message queues are stored in shared memory, how does that
+change the various routines?  For example, does a \shmem\ device not
+use \mpidconst{MPID_Hid_short}, using instead direct access to shared
+memory so as to reduce the latency of short messages?
+
+Note that since the assumption is that only some memory is shared, it
+isn't possible to implement most message operations without using a
+communication agent at the destination to implement the transfer of
+data into user-defined buffers that are not in shared memory.
+
+Question:  Do we want a separate case for systems that can share all
+of process memory (Windows and Linux)?
 \end{shmem}
 
 \begin{via}
-Like \shmemname.
+Like \tcpname, except some data can be transfered without the agent
+(remote read and write (get/put) operations).
 \end{via}
 
 \subsection{Collective Communication and Computation}
@@ -2204,7 +2257,7 @@ Since operations on \mpiconst{MPI_Op} are infrequent, we should have a
 \mpids{MPI_Op}{ref_count} field for all cases (even single threaded).
 
 How do we handle the predefined types?  Who creates them?  Do we want an 
-\mpidfunc{MPIi_Op_setup} and \mpidfunc{MPIi_Op_finalize}?
+\mpidfunc{MPIi_Op_init} and \mpidfunc{MPIi_Op_finalize}?
 
 \subsubsection{\mpifunc{MPI_OP_FREE}}
 If predefined and not in finalize, indicate error.
@@ -2254,6 +2307,14 @@ Consider recursive doubling algorithm, with care taken to ensure that all
 results are the same, particularly in the presence of extended registers
 (e.g., 80 bit intermediate quantities on Intel).
 
+Note that \mpiconst{MPI_IN_PLACE} is valid for this routine. 
+
+Question: Do we want to implement this using a modification of the accumulate
+operation?  That might be a simpler way to handle \mpiconst{MPI_IN_PLACE}.
+
+Question: What should be used in the heterogeneous case?  Should that
+reduce to \mpifunc{MPI_Reduce} followed by \mpifunc{MPI_Bcast}?
+
 \subsubsection{\mpifunc{MPI_ALLTOALL}}
 For short data and for all data on completely connected networks, use a
 hypercube algorithm: each process exchanges with its partner in that dimension
@@ -2278,7 +2339,8 @@ will use an ordering of nodes from \mpidfunc{MPID_Topology_xxx}, rather than
 the rank ordering of the communicator.
 
 \subsubsection{\mpifunc{MPI_EXSCAN}}
-See \code{MPI_SCAN}.
+Use the same approach as \code{MPI_SCAN} but do not include the local
+contribution in the local result.
 
 \subsubsection{\mpifunc{MPI_GATHER}}
 This will use a MST for short gathers to reduce the impact of latency.  
@@ -2313,21 +2375,21 @@ For short data, use an MST.
 
 \subsection{Intercommunicator Collective Operations}
 (Not yet done)
-\subsubsection{\mpifunc{MPI_ALLGATHER}}
-\subsubsection{\mpifunc{MPI_ALLGATHERV}}
-\subsubsection{\mpifunc{MPI_ALLTOALL}}
-\subsubsection{\mpifunc{MPI_ALLTOALLV}}
-\subsubsection{\mpifunc{MPI_ALLTOALLW}}
-\subsubsection{\mpifunc{MPI_BARRIER}}
-\subsubsection{\mpifunc{MPI_BCAST}}
-\subsubsection{\mpifunc{MPI_ALLREDUCE}}
-\subsubsection{\mpifunc{MPI_REDUCE}}
-\subsubsection{\mpifunc{MPI_EXSCAN}}
-\subsubsection{\mpifunc{MPI_GATHER}}
-\subsubsection{\mpifunc{MPI_GATHERV}}
-\subsubsection{\mpifunc{MPI_SCAN}}
-\subsubsection{\mpifunc{MPI_SCATTER}}
-\subsubsection{\mpifunc{MPI_SCATTERV}}
+% \subsubsection{\mpifunc{MPI_ALLGATHER}}
+% \subsubsection{\mpifunc{MPI_ALLGATHERV}}
+% \subsubsection{\mpifunc{MPI_ALLTOALL}}
+% \subsubsection{\mpifunc{MPI_ALLTOALLV}}
+% \subsubsection{\mpifunc{MPI_ALLTOALLW}}
+% \subsubsection{\mpifunc{MPI_BARRIER}}
+% \subsubsection{\mpifunc{MPI_BCAST}}
+% \subsubsection{\mpifunc{MPI_ALLREDUCE}}
+% \subsubsection{\mpifunc{MPI_REDUCE}}
+% \subsubsection{\mpifunc{MPI_EXSCAN}}
+% \subsubsection{\mpifunc{MPI_GATHER}}
+% \subsubsection{\mpifunc{MPI_GATHERV}}
+% \subsubsection{\mpifunc{MPI_SCAN}}
+% \subsubsection{\mpifunc{MPI_SCATTER}}
+% \subsubsection{\mpifunc{MPI_SCATTERV}}
 
 \subsection{Topology}
 
@@ -2357,7 +2419,8 @@ allow the topology routines to be replaced as a module.
 
 Question: how do we define routines needed to support the MPI (not
 MPID) calls?  Should we have \code{MPIi} routines?  For topology, we
-could have \mpidfunc{MPIi_Topo_init}.
+could have \mpidfunc{MPIi_Topo_init} (and the corresponding
+\mpidfunc{MPIi_Topo_finalize}). 
 
 \subsubsection{\mpifunc{MPI_CARTDIM_GET}}
 Access the topology description and return the number of dimensions of
@@ -2637,7 +2700,7 @@ Otherwise, use \tcpname\ approach.
 \begin{tcp}
 This can be viewed as a special case of the post/start/complete/wait
 synchronization, with a carefully chosen set of neighbors (e.g., the usual
-barrier tree).  Or it just use \mpifunc{MPI_BARRIER}.  
+barrier tree).  Or just use \mpifunc{MPI_BARRIER}.  
 
 Question: do VIA-like remote memory access require any cache flush operations?
 \end{tcp}
@@ -2651,6 +2714,9 @@ post/start/complete/wait synchronization.
 As for \tcpname, this can be viewed as a special case of the
 post/start/complete/wait synchronization. 
 \end{via}
+
+In all cases, any pending RMA operations must complete first before
+\mpifunc{MPI_WIN_FENCE} may return.
 
 Question:  There are four possible \code{assert} values for
 \mpifunc{MPI_Win_fence}.  Are the following correct?
@@ -2682,7 +2748,7 @@ object generates an error message.
 
 \subsubsection{\mpifunc{MPI_WIN_CREATE}}
 Allocate a new window object.  Call \mpifunc{MPI_Comm_dup} to create a
-private communicator that can be used as necessary; this also stores
+private \mpids{MPI_Win}{communicator} that can be used as necessary; this also stores
 the group of the window object.  Save the \mpids{MPI_Win}{buffer},
 \mpids{MPI_Win}{buffer_size}, and \mpids{MPI_Win}{displacement_unit}. 
 Setup the default attributes (\mpiconst{MPI_WIN_BASE},
@@ -2691,13 +2757,54 @@ attributes could return pointers to the corresponding fields in the window
 object, but for safety against users storing through those pointers, they
 should use a separate area of memory.
 
+Use the private communicator to perform an \mpifunc{MPI_Allgather} 
+collect all of the displacement units and all of the window base
+addresses from all of the processes using \mpifunc{MPI_Allgather},
+along with a flag that indicates if the local window is in shared memory.  
+If all of the displacement units are the same, set the
+\mpids{MPI_Win}{_flags} with \mpidconst{MPID_WIN_CONST_DISP} and save
+the displacement value in \mpids{MPI_Win}{gdisp}.  Otherwise, save the
+displacements in an array \mpids{MPI_Win}{displs}.  Save the base
+addresses in \mpids{MPI_Win}{bases}.  
+
+Question:  In support of the SPMD, collective allocation model, should
+there are also be a \code{gbase} when all processes have the same base
+address for the local windows?  If so, use
+\mpidconst{MPID_WIN_CONST_BASE} in \mpids{MPI_Win}{_flags}.
+
+In the case of a device that supports \emph{only} \tcpname, it isn't
+necessary to collect the displacement units or the window bases,
+because the target process can apply these adjustments to the
+address.  However, for any one-sided operation, it is necessary to
+have this information.  Further, knowing whether the target window is
+in shared (or registered for \vianame) memory is necessary when
+implementing the RMA operations.
+
 If the info key \mpiconst{nolocks}\index{MPI_Info!nolocks} is \code{true},
 then no provision needs to be made for either passive target access or for
-\mpifunc{MPI_Win_lock} and \mpifunc{MPI_Win_unlock} calls.
+\mpifunc{MPI_Win_lock} and \mpifunc{MPI_Win_unlock} calls.  Save this
+fact in the \mpiconst{MPID_WIN_NO_LOCKS} in \mpids{MPI_Win}{_flags}.
+
+For shared memory, we may want the window object to be in shared
+memory itself.  Even if the window object is not in shared memory,
+some things, like the local window locks, may need to be.  Question:
+how is the window object allocated?  If there is an MPID routine for
+it, does it need to know the group of the window (e.g., in a
+multimethod device, a window object whose group contains no processes
+that shares memory should not consume limited shared memory space).
+
+Question: how are pending (not yet completed) RMA operations
+remembered?  Do we need to keep a list of requests on which we can
+wait at the end of an access epoch?  For efficiency and low-latency
+with short data transfers (ones that are completed immediately,
+e.g. by sending a short message), do we want to have those indicate
+that they are complete (e.g., by returning a null handle to wait on)?
+Do we only need to use the flags array and \mpidfunc{MPID_Flags_waitall}?
 
 \subsubsection{\mpifunc{MPI_WIN_FREE}}
 Call \mpifunc{MPI_Barrier} on the internal \mpids{MPI_Win}{communicator}.
-Check for errors, such as unreleased locks or incomplete
+Check for errors, such as unreleased locks, pending RMA operations, or
+incomplete 
 post/start/complete/wait synchronization.
 Free the internal communicator.  Execute any attribute delete functions.
 
@@ -2710,7 +2817,7 @@ Uses the \mpids{MPI_Win}{name} field.  Note that the Fortran versions
 must be careful to blank-pad the value rather than null-terminating it.
 
 \subsubsection{\mpifunc{MPI_WIN_SET_NAME}}
-Sets the \mpids{MPI_Win}{name} field.  Returns error if supplied name
+Sets the \mpids{MPI_Win}{name} field.  Returns error if the supplied name
 is too long. 
 
 \subsubsection{\mpifunc{MPI_WIN_LOCK} and \mpifunc{MPI_WIN_UNLOCK}}
@@ -2736,7 +2843,20 @@ for \mpifunc{MPI_WIN_CREATE} that asks for the blocking lock?
 
 Another alternative is to combine the lock with the first operation
 request, particularly in the \tcpname\ case.  This is simpler than
-queueing up a long list of operations.
+queueing up a long list of operations.  In this case, at the second
+RMA request, issue both operations.  This allows sequences such as
+\begin{verbatim}
+MPI_Win_lock( 0, rank, 0, win );
+MPI_Put( buf, 1, MPI_INT, rank, 0, 1, MPI_INT, win );
+MPI_Win_unlock( rank, win );
+\end{verbatim}
+to turn into a single \mpidfunc{MPID_Rhcv} call, issued at the
+\mpifunc{MPI_Win_unlock} operation.  To implement this, the window
+object could store a single \mpidconst{MPID_Hid_rma_op} structure and
+issue it as soon as either a second operation is defined or an access
+epoch ends (perhaps restricted to the passive target case).  We could
+even use an info value, specified at window creation time, to guide
+whether operations are started as soon as possible or as late as possible.
 
 Question: Can we optimize for the nonexclusive lock (read)?  
 
@@ -2761,7 +2881,10 @@ support for remote locks; use them if they are available.
 The \code{assert} value \mpiconst{MPI_MODE_NOCHECK} can be used to eliminate
 the need to wait for the lock to be acquired.  This allows
 \mpifunc{MPI_Win_lock} and \mpifunc{MPI_Win_unlock} to be used soley to begin
-and end RMA operations.
+and end RMA operations.  This suggests that the RMA handler operations
+(e.g., \mpidconst{MPID_Hid_put}) may want a few bits to specify
+whether a lock should first be acquired and whether a lock is needed
+at all (the \mpiconst{MPI_MODE_NOCHECK} case).  
 
 \subsubsection{Scalable Active Target Synchronization}
 The scalable active target synchronization routines (\mpifunc{MPI_WIN_POST},
@@ -2883,8 +3006,42 @@ Like \mpifunc{MPI_WIN_POST}, but for the complete counter.
 \subsubsection{\mpifunc{MPI_INIT_THREAD}}
 \begin{adi3}
 \mpidfunc{MPID_Init}
+Each device and method in a device will also require initialization.  
+\begin{tcp}
+Acquire enough information to establish a connection with each process
+in \mpiconst{MPI_COMM_WORLD}.  This may include host and port for
+TCP.  
+\end{tcp}
+\begin{shmem}
+Create a shared memory area for \mpidconst{MPID_Request}s, short
+messages, and an area for streams (used to move long messages).
+Exchange information on the addresses (or ensure that all 
+processes have mapped the shared area into the same local addresses).
+Create a shared memory area for use by \mpidfunc{MPI_Mem_alloc}.
+\end{shmem}
+\begin{via}
+Acquire enough information to establish connections (this is
+particularly critical because connections may be a scarce resource).  
+Consider pre-establishing some connections based on runtime parameter
+values (e.g., a \mpidconst{MPICH_NBRLIST} value that, for each
+process, contains the ranks in \mpiconst{MPI_COMM_WORLD} that that
+process should start connected to).  
+
+For each connection, register some memory that can be used for
+communication in the event that a message buffer cannot be registered.
+Initialize the list of registered memory.
+\end{via}
 \end{adi3}
 This should also set the value \mpidfunc{MPID_THREAD_PROVIDED}.
+
+This must also invoke the various init functions for the different
+subsystems and predefined objects.  These include topology, datatypes,
+groups, communicators, reduction operations (\code{MPI_Op}), timers, and error
+handlers.  Each of these should be handled by calling an
+\mpidfunc{MPIi_xxx_init} or \mpidfunc{MPID_xxx_init}.  We may also
+want to have a similar initialization routine for Fortran, Fortran 90,
+and C++.  
+
 
 \subsubsection{\mpifunc{MPI_QUERY_THREAD}}
 This returns the level of thread support provided.  Should there be an
@@ -2929,8 +3086,12 @@ attributes associated with \mpiconst{MPI_COMM_SELF}, even before
 \mpifunc{MPI_FINALIZED} would return true.  This allows any number of
 modules to attach ``end-of-job'' actions to \code{MPI_Finalize}.
 
+Just as \mpifunc{MPI_INIT_THREAD} invokes initialization routines for
+the various subsystems, \mpifunc{MPI_FINALIZE} should invoke
+\mpidfunc{MPI_xxx_finalize} for those systems, in reverse order.
 
 \subsection{Dynamic Processes}
+\label{sec:spawn}
 
 This section has not been written.  A big question is how or if the BNR
 interface to a parallel process manager is used in the implementation
@@ -2963,6 +3124,7 @@ service?  Perhaps both?
 \subsubsection{\mpifunc{MPI_CLOSE_PORT}}
 
 \subsection{User-Defined Requests}
+\label{sec:grequest}
 
 Question:  What ADI support is required for these?  Note that the
 request is under the control of the device, so many of the fields
@@ -2989,9 +3151,8 @@ For example, \mpids{MPI_Request(generalized)}{query_fn},
 
 \subsection{Error Handlers}
 
-
 \subsubsection{\mpifunc{MPI_ERRHANDLER_FREE}}
-\mpidfunc{MPID_Errhandler_free}?
+Calls \mpidfunc{MPID_Errhandler_free}
 
 \subsubsection{\mpifunc{MPI_ERRHANDLER_CREATE}}
 Deprecated.  Call \mpifunc{MPI_COMM_CREATE_ERRHANDLER}.
@@ -3003,20 +3164,40 @@ Deprecated.  Call \mpifunc{MPI_COMM_GET_ERRHANDLER}.
 Deprecated.  Call \mpifunc{MPI_COMM_SET_ERRHANDLER}.
 
 \subsubsection{\mpifunc{MPI_ERROR_CLASS}}
-Return the error class of an error code.
+Return the error class of an error code.  We may either allow the
+error reporting module to do this, or define the mask used to extract
+the class field from the error code.  I prefer defining a routine in
+order to modularize the error reporting.  In this case, the routine
+might be \mpidfunc{MPID_Err_code_to_class}.
 
 \subsubsection{\mpifunc{MPI_ERROR_STRING}}
-Return the error string associated with an error code.
+Calls \mpidfunc{MPID_Err_get_string} to return the error string
+associated with an error code. 
 
 \subsubsection{\mpifunc{MPI_ADD_ERROR_CLASS}}
+Call \mpidfunc{MPID_Err_add_class} with a null string for the
+\code{instance_msg_string}. 
 
 \subsubsection{\mpifunc{MPI_ADD_ERROR_CODE}}
+Call \mpidfunc{MPID_Err_add_code} with a null string for the
+\code{instance_msg_string}. 
 
 \subsubsection{\mpifunc{MPI_ADD_ERROR_STRING}}
+Call \mpidfunc{MPID_Err_set_msg}.
 
 \subsubsection{\mpifunc{MPI_COMM_CALL_ERRHANDLER}}
 All error handler calls use the common error handler structure
-\mpidfunc{MPID_Errhandler} structure.  
+\mpidfunc{MPID_Errhandler} structure.  There should be a common
+routine to invoke the error handler from an object.  We could do this
+is objects with error handlers have the same header layout;
+alternately, we have something like\index{MPIi_Call_errhandler}
+\begin{verbatim}
+int MPIi_Call_errhandler( void *obj, MPI_Errhandler errhander, ... )
+\end{verbatim}
+and invoke it as
+\begin{verbatim}
+MPIi_Call_errhandler( comm_ptr, comm_ptr->errhandler, ... )
+\end{verbatim}
 
 \subsubsection{\mpifunc{MPI_COMM_CREATE_ERRHANDLER}}
 Create an \mpidconst{MPID_Errhandler}, set the kind to
