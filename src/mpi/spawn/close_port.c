@@ -58,7 +58,8 @@ int MPI_Close_port(char *port_name)
     }
 
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
+    /* fn_fail: */ /* this suppresses warnings from compilers that object 
+		      to unused labels */
 #ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
 				     FCNAME, __LINE__, MPI_ERR_OTHER,

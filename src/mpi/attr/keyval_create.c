@@ -85,11 +85,12 @@ int MPI_Keyval_create(MPI_Copy_function *copy_fn,
     }
 
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
+    /* fn_fail: *//* No use of fn_fail in this routine (yet) */
 #ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
 				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_keyval_create", "**mpi_keyval_create %p %p %p %p", copy_fn, delete_fn, keyval, extra_state);
+	"**mpi_keyval_create", "**mpi_keyval_create %p %p %p %p", 
+				     copy_fn, delete_fn, keyval, extra_state);
 #endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_KEYVAL_CREATE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
