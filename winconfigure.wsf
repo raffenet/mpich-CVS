@@ -112,6 +112,11 @@
 			helpstring = "Configure the test directory only"
 			require = "false"
 		/>
+		<unnamed
+			name = "--gen-mpi"
+			helpstring = "Generate the stub MPI functions"
+			require = "false"
+		/>
         <example>Example: winconfigure.wsf --force</example>
     </runtime>
 <script language="VBScript">
@@ -242,6 +247,12 @@ For arg = 0 To argCount - 1
   ElseIf argValue = "--testdir" Then
     ConfigureTestDir()
     WScript.Quit
+  ElseIf argValue = "--gen-mpi" Then
+	FindMPIFuncs()
+	WScript.Quit
+  ElseIf argValue = "--gen-sfort" Then
+	CreateStdcallFortranInterface()
+	WScript.Quit
   ElseIf argValue = "--help" Then
     WScript.Arguments.ShowUsage
     WScript.Quit
@@ -959,6 +970,206 @@ if bAddDllDecoration then
 	End If
 end if
 
+Function FindMPIFuncs()
+	Dim index, index2, right_str, result
+	set c_files = CreateObject("Scripting.Dictionary")
+	FindCFiles c_files, f.GetFolder("src\mpi")
+	' replace "int MPI_" with "EXPORT_MPI_API int MPI_CALL MPI_"
+	' fixup MPI_Fint MPI_
+	a = c_files.Items
+	If c_files.Count > 0 Then
+		For i = 0 to c_files.Count - 1
+			'cEcho a(i)
+			set fin = f.OpenTextFile(a(i))
+			contents = fin.ReadAll()
+			fin.Close()
+			index = InStr(contents, "int MPI_")
+			If index <> 0 Then
+				right_str = Right(contents, Len(contents) - index + 1)
+				index2 = InStr(right_str, ")")
+				If index2 <> 0 Then
+					If Mid(contents, index-5, 5) = "MPI_F" then
+						result = "MPI_F"
+					else
+						result = ""
+					end if
+					result = result & Left(right_str, index2) & vbCrLf & "{" & vbCrLf & "    return MPI_SUCCESS;" & vbCrLf & "}" & vbCrLf
+					cEcho result
+				End If
+			End If
+		Next
+	End If	
+End Function
+
+Function internalPrintFortranInterface(dir)
+	Dim index, index2, right_str, result
+	set c_files = CreateObject("Scripting.Dictionary")
+	FindCFiles c_files, f.GetFolder(dir)
+	' replace "int MPI_" with "EXPORT_MPI_API int MPI_CALL MPI_"
+	' fixup MPI_Fint MPI_
+	a = c_files.Items
+	If c_files.Count > 0 Then
+		For i = 0 to c_files.Count - 1
+			'cEcho a(i)
+			set fin = f.OpenTextFile(a(i))
+			contents = fin.ReadAll()
+			fin.Close()
+			index = InStr(contents, "int MPI_")
+			If index <> 0 Then
+				right_str = Right(contents, Len(contents) - index + 1)
+				index2 = InStr(right_str, ")")
+				If index2 <> 0 Then
+					If Mid(contents, index-5, 5) = "MPI_F" then
+						result = "MPI_F"
+					else
+						result = ""
+					end if
+					result = result & Left(right_str, index2)' & vbCrLf & "{" & vbCrLf & "    return MPI_SUCCESS;" & vbCrLf & "}" & vbCrLf
+					cEcho result
+				End If
+			End If
+		Next
+	End If	
+End Function
+
+Function PrintFortranInterface()
+	internalPrintFortranInterface("src\mpi\coll")
+	internalPrintFortranInterface("src\mpi\pt2pt")
+	internalPrintFortranInterface("src\mpi\rma")
+End Function
+
+'Function PrintFortranInterface()
+'	Dim index, index2, right_str, result
+'	set c_files = CreateObject("Scripting.Dictionary")
+'	FindCFiles c_files, f.GetFolder("src\binding\f77")
+'	a = c_files.Items
+'	If c_files.Count > 0 Then
+'		For i = 0 to c_files.Count - 1
+'			set fin = f.OpenTextFile(a(i))
+'			contents = fin.ReadAll()
+'			fin.Close()
+'			index = InStrRev(contents, "FORT_DLL_SPEC void FORT_CALL mpi_")
+'			If index <> 0 Then
+'				right_str = Right(contents, Len(contents) - index + 1)
+'				index2 = InStr(right_str, ")")
+'				If index2 <> 0 Then
+'					result = Left(right_str, index2)' & vbCrLf & "{" & vbCrLf & "    return MPI_SUCCESS;" & vbCrLf & "}" & vbCrLf
+'					cEcho result
+'				End If
+'			End If
+'		Next
+'	End If	
+'End Function
+
+Function internalFindFCFiles(ByRef key, ByRef files, folder)
+	For Each sub_folder in folder.SubFolders
+		internalFindFCFiles key, files, sub_folder
+	Next
+	For Each file in folder.Files
+		If Right(file.Name, 3) = "f.c" Then
+			files.Add key, file.Path
+			key = key + 1
+		End If
+	Next
+End Function
+Function FindFCFiles(ByRef files, folder)
+	files.RemoveAll()
+	key = 0
+	internalFindFCFiles key, files, folder
+End Function
+
+Function FindStr(pattern, str)
+   Dim regEx, Match, Matches           ' Create variable.
+   Set regEx = New RegExp              ' Create a regular expression.
+   regEx.Pattern = pattern             ' Set pattern.
+   regEx.IgnoreCase = True             ' Set case insensitivity.
+   regEx.Global = True                 ' Set global applicability.
+   Set Matches = regEx.Execute(str)    ' Execute search.
+   For Each Match in Matches           ' Return the first match
+      FindStr = Match.Value
+      Exit Function
+   Next
+   FindStr = ""
+End Function
+
+Function AddStringLengthParameters(str)
+	Dim result, index, cur_arg, match, end_str
+	cur_arg = 1
+	result = ""
+	end_str = ""
+	match = FindStr("void\s*\*\s*\w+,", str)
+	while match <> ""
+		index = InStr(str, match)
+		result = result & Left(str, index + Len(match) - 2) & " FORT_MIXED_LEN(d" & cur_arg & ")"
+		end_str = end_str & " FORT_END_LEN(d" & cur_arg & ")"
+		cur_arg = cur_arg + 1
+		str = Right(str, Len(str) - index - Len(match) + 2)
+		match = FindStr("void\s*\*\s*\w+,", str)
+	wend
+	AddStringLengthParameters = result & str & end_str
+End Function
+
+Function CreateStdcallFortranInterface()
+	Dim index, index2, right_str, result, prototype, filename
+	set c_files = CreateObject("Scripting.Dictionary")
+	set fprotos = f.CreateTextFile("src\binding\f77\fprotos.h")
+	fprotos.WriteLine( "/* -*- Mode: C; c-basic-offset:4 ; -*- */" & vbNewLine & "/*" & vbNewLine & " *  (C) 2001 by Argonne National Laboratory." & vbNewLine & " *      See COPYRIGHT in top-level directory." & vbNewLine & " */" )
+	fprotos.WriteLine("")
+	fprotos.WriteLine("#ifndef FPROTOS_H")
+	fprotos.WriteLine("#define FPROTOS_H")
+	fprotos.WriteLine("")
+	fprotos.WriteLine("/* fprotos.h.  Generated automatically by winconfigure.  */")
+	fprotos.WriteLine("")
+	'fnames = Split("MPI_Allgather MPI_Allgatherv MPI_Allreduce MPI_Alltoall MPI_Alltoallv MPI_Alltoallw MPI_Bcast MPI_Exscan MPI_Gather MPI_Gatherv MPI_Reduce MPI_Reduce_scatter MPI_Scan MPI_Scatter MPI_Scatterv MPI_Bsend MPI_Bsend_init MPI_Buffer_attach MPI_Buffer_detach MPI_Ibsend MPI_Irecv MPI_Irsend MPI_Isend MPI_Issend MPI_Recv MPI_Recv_init MPI_Rsend MPI_Rsend_init MPI_Send MPI_Sendrecv MPI_Sendrecv_replace MPI_Send_init MPI_Ssend MPI_Ssend_init MPI_Accumulate MPI_Get MPI_Put MPI_Win_create")
+	fnames = Split("mpi_allgather_ +mpi_allgatherv_ +mpi_allreduce_ +mpi_alltoall_ +mpi_alltoallv_ +mpi_alltoallw_ +mpi_bcast_ +mpi_exscan_ +mpi_gather_ +mpi_gatherv_ +mpi_reduce_ +mpi_reduce_scatter_ +mpi_scan_ +mpi_scatter_ +mpi_scatterv_ +mpi_bsend_ +mpi_bsend_init_ +mpi_buffer_attach_ +mpi_buffer_detach_ +mpi_ibsend_ +mpi_irecv_ +mpi_irsend_ +mpi_isend_ +mpi_issend_ +mpi_recv_ +mpi_recv_init_ +mpi_rsend_ +mpi_rsend_init_ +mpi_send_ +mpi_sendrecv_ +mpi_sendrecv_replace_ +mpi_send_init_ +mpi_ssend_ +mpi_ssend_init_ +mpi_accumulate_ +mpi_get_ +mpi_put_ +mpi_win_create_ ", "+")
+	FindFCFiles c_files, f.GetFolder("src\binding\f77")
+	a = c_files.Items
+	If c_files.Count > 0 Then
+		For i = 0 to c_files.Count - 1
+			set fin = f.OpenTextFile(a(i))
+			contents = fin.ReadAll()
+			fin.Close()
+			found = false
+			for each name in fnames
+				if InStr(contents, name) then
+					'cEcho "found " & name & " in: " & vbCrLf & contents
+					found = true
+					exit for
+				end if
+			next
+			if found = true then
+				index = InStrRev(contents, "FORT_DLL_SPEC void FORT_CALL mpi_")
+				If index <> 0 Then
+					result = Left(contents, index - 1)
+					right_str = Right(contents, Len(contents) - index + 1)
+					index2 = InStr(right_str, ")")
+					If index2 <> 0 Then
+						result = result & AddStringLengthParameters(Left(right_str, index2 - 1)) & Right(right_str, Len(right_str) - index2 + 1)
+						result = Replace(result, "fproto.h", "fprotos.h")
+						index = InStrRev(result, "FORT_DLL_SPEC void FORT_CALL mpi_")
+						right_str = Right(result, Len(result) - index + 1)
+						index2 = InStr(right_str, "))")
+						prototype = "extern " & Left(right_str, index2 + 1) & ";"
+						'prototype = Replace(prototype, "FORT_MIXED_LEN", "FORT_MIXED_LEN_DECL")
+						'prototype = Replace(prototype, "FORT_END_LEN", "FORT_END_LEN_DECL")
+						filename = Replace(a(i), ".c", "s.c")
+						'cEcho "filename: " & filename
+						'cEcho "prototype: " & prototype
+						'cEcho result
+						set file = f.CreateTextFile(filename)
+						file.Write(result)
+						file.Close()
+						fprotos.WriteLine(prototype)
+					End If
+				End If
+			End If
+		Next
+	End If
+	fprotos.WriteLine("")
+	fprotos.WriteLine("#endif")
+	fprotos.Close()
+End Function
+
 '
 ' Generate mpichtimer.h
 '
@@ -1189,7 +1400,12 @@ Function BuildIFaces()
 			WScript.Echo("Run ""perl buildiface"" from the src\binding\f77 directory before running winconfigure")
 	
 		End If
-	
+
+		'
+		' Create the string versions of the fortran interface necessitated by the stdcall calling convention
+		'
+		CreateStdcallFortranInterface()
+		
 		'
 		' Generate setbotf.f
 		'
