@@ -5,39 +5,95 @@ SUBDIRS = . channels src
 # the header files verify before make recurses into the source directory
 # and attempts to build files with a broken header files
 #
-all-local: ../../include/mpidpre.h ../../include/mpidpost.h
+all-local: ${srcdir}/Makefile.in ${srcdir}/src/Makefile.in \
+	   Makefile src/Makefile \
+	   ../../include/mpidpre.h ../../include/mpidpost.h \
+	   ../../include/mpid_datatype.h ../../include/mpid_dataloop.h \
+	   ../../include/gen_dataloop.h
+
+
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	@echo " " ;							      \
+	 echo "ERROR: SRCDIR/src/mpid/ch3/Makefile.in is out of date." ;      \
+	 echo "You must run maint/updatefiles and then reconfigure." ;	      \
+	 echo " " ;							      \
+	 exit 1
+
+${srcdir}/src/Makefile.in: ${srcdir}/src/Makefile.sm
+	@echo " " ;							      \
+	 echo "ERROR: SRCDIR/src/mpid/ch3/src/Makefile.in is out of date." ;  \
+	 echo "You must run maint/updatefiles and then reconfigure." ;	      \
+	 echo " " ;							      \
+	 exit 1
+
+Makefile: ${srcdir}/Makefile.in
+	@echo " " ;							      \
+	 echo "ERROR: src/mpid/ch3/Makefile is out of date." ;		      \
+	 echo "Running config.status." ;				      \
+	 echo " " ;							      \
+	 ./config.status ;						      \
+	 exit 1
+
+src/Makefile: ${srcdir}/src/Makefile.in
+	@echo " " ;							      \
+	 echo "ERROR: src/mpid/ch3/src/Makefile is out of date." ;	      \
+	 echo "Running config.status." ;				      \
+	 echo " " ;							      \
+	 ./config.status ;						      \
+	 exit 1
 
 ../../include/mpidpre.h: ${srcdir}/include/mpidpre.h
-	@echo " " ; \
-	 echo "ERROR: src/include/mpidpre.h is out of date." ; \
-	 echo "Running config.status and cleaning build tree." ; \
-	 echo " " ; \
-	 ./config.status && \
-	 cd ../../.. && \
-	 make clean 2>&1 >/dev/null ; \
+	@echo " " ;							      \
+	 echo "ERROR: src/include/mpidpre.h is out of date." ;		      \
+	 echo "Running config.status and cleaning build tree." ;	      \
+	 echo " " ;							      \
+	 ./config.status &&						      \
+	 cd ../../.. &&							      \
+	 make clean 2>&1 >/dev/null ;					      \
 	 exit 1
 
 ../../include/mpidpost.h: ${srcdir}/include/mpidpost.h
-	@echo " " ; \
-	 echo "ERROR: src/include/mpidpre.h is out of date." ; \
-	 echo "Running config.status and cleaning build tree." ; \
-	 echo " " ; \
-	 ./config.status && \
-	 cd ../../.. && \
-	 make clean 2>&1 >/dev/null ; \
+	@echo " " ;							      \
+	 echo "ERROR: src/include/mpidpre.h is out of date." ;		      \
+	 echo "Running config.status and cleaning build tree." ;	      \
+	 echo " " ;							      \
+	 ./config.status &&						      \
+	 cd ../../.. &&							      \
+	 make clean 2>&1 >/dev/null ;					      \
 	 exit 1
 
 ../../include/mpid_datatype.h: ${srcdir}/../common/datatype/mpid_datatype.h
-	@echo " " ; \
-	 echo "ERROR: src/include/mpid_datatype.h is out of date." ; \
-	 echo "Running config.status and cleaning build tree." ; \
-	 echo " " ; \
-	 ./config.status && \
-	 cd ../../.. && \
-	 make clean 2>&1 >/dev/null ; \
+	@echo " " ;							      \
+	 echo "ERROR: src/include/mpid_datatype.h is out of date." ;	      \
+	 echo "Running config.status and cleaning build tree." ;	      \
+	 echo " " ;							      \
+	 ./config.status &&						      \
+	 cd ../../.. &&							      \
+	 make clean 2>&1 >/dev/null ;					      \
+	 exit 1
+
+../../include/mpid_dataloop.h: ${srcdir}/../common/datatype/mpid_dataloop.h
+	@echo " " ;							      \
+	 echo "ERROR: src/include/mpid_dataloop.h is out of date." ;	      \
+	 echo "Running config.status and cleaning build tree." ;	      \
+	 echo " " ;							      \
+	 ./config.status &&						      \
+	 cd ../../.. &&							      \
+	 make clean 2>&1 >/dev/null ;					      \
+	 exit 1
+
+../../include/gen_dataloop.h: ${srcdir}/../common/datatype/gen_dataloop.h
+	@echo " " ;							      \
+	 echo "ERROR: src/include/gen_dataloop.h is out of date." ;	      \
+	 echo "Running config.status and cleaning build tree." ;	      \
+	 echo " " ;							      \
+	 ./config.status &&						      \
+	 cd ../../.. &&							      \
+	 make clean 2>&1 >/dev/null ;					      \
 	 exit 1
 
 distclean-local:
 	-rm -f ../../include/mpidpre.h ../../include/mpidpost.h
-	-rm -f ../../include/mpid_datatype.h
+	-rm -f ../../include/mpid_datatype.h ../../include/mpid_dataloop.h
+	-rm -f ../../include/gen_dataloop.h
 	-rm -f include/mpidi_ch3_conf.h
