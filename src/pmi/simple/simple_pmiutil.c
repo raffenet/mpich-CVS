@@ -41,6 +41,7 @@ void PMIU_printf( int print_flag, char *fmt, ... )
     va_list ap;
 
     if ( print_flag ) {
+	/* MPIU_Error_printf( "[%s]: ", PMIU_print_id ); */
 	fprintf( stderr, "[%s]: ", PMIU_print_id );
 	va_start( ap, fmt );
 	vfprintf( stderr, fmt, ap );

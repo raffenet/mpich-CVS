@@ -82,7 +82,7 @@ int PMI_Init( int *spawned )
 	    printf( "Connecting to %s\n", p );
 	}
 	if (pn) {
-	    strncpy( hostname, p, (pn - p) );
+	    MPIU_Strncpy( hostname, p, (pn - p) );
 	    hostname[(pn-p)] = 0;
 	    portnum = atoi( pn+1 );
 	    /* FIXME: Check for valid integer after : */
@@ -566,8 +566,8 @@ int PMI_Connect_to_pm( char *hostname, int portnum )
 	return -1;
     }
     
-    bzero( &sa, sizeof(sa) );
-    bcopy( hp->h_addr, &sa.sin_addr, hp->h_length);
+    bzero( (void *)&sa, sizeof(sa) );
+    bcopy( (void *)hp->h_addr, (void *)&sa.sin_addr, hp->h_length);
     sa.sin_family = hp->h_addrtype;
     sa.sin_port   = htons( (unsigned short) portnum );
     
