@@ -6,20 +6,13 @@
 
 #include "mpidimpl.h"
 #include "bsocket.h"
-#ifdef HAVE_ERRNO_H
-#include "errno.h"
-#endif
 
 int MM_Send(int conn, char *buffer, int length)
 {
     int error;
     if (beasy_send(conn, buffer, length) != SOCKET_ERROR)
 	return length;
-#ifdef HAVE_WINDOWS_H
-    error = WSAGetLastError();
-#else
-    error = errno;
-#endif
+    error = beasy_getlasterror();
     printf("beasy_send failed, error %d\n", error);
     return SOCKET_ERROR;
 }
