@@ -1521,7 +1521,10 @@ Call \mpidfunc{MPID_Testsome} on each request, on at a time.
 Question: do we want something better?  Can we subdivide
 \mpidfunc{MPID_Testsome} into smaller building blocks from which we
 can build the four test routines without dropping down to an
-\mpidfunc{MPID_Test}?
+\mpidfunc{MPID_Test}?  For example, the closest match to \code{select} is to
+implement xxxsome, for advancing the state/completing operations, but decide
+how to update/record the requests that have completed based on whether the
+call is implementing the any, all, or some version.
 
 \subsubsection{\mpifunc{MPI_TESTSOME}}
 Call \mpidfunc{MPID_Testsome}.
@@ -1540,6 +1543,55 @@ See \mpifunc{MPI_Testany}.
 
 \subsubsection{\mpifunc{MPI_WAITSOME}}
 Call \mpidfunc{MPID_Waitsome}.
+
+\subsection{Communication Agent}
+All implementations require some sort of communication agent.  This agent
+handles the delivery of data as described by \mpifunc{MPI_Recv} and
+\mpifunc{MPI_Irecv}, RMA operations that require action at the target (such as
+handling complex datatypes and for two-sided communication layers), and more
+subtle operations such as cancelling of nonblocking sends.  This agent may be
+invoked explicitly (a polling interface) or implicitly (e.g., in response to
+an I/O interrupt or a thread-schedule event).  
+
+\begin{tcp}
+Receive a message header.  This is a message sent with \mpidfunc{MPID_Rhcv},
+and the header is one of the \mpidconst{MPID_Hid_xxx_t} structures.
+Based on the header type, invoke the appropriate processing routine (there
+should be one for each header type, such as
+\mpidfunc{MPID_TCP_Hid_xxx_method}). 
+
+Still to do:  List the detailed behavior of head message type.
+\begin{description}
+\item[\mpidconst{MPID_Hid_short}]
+Call \mpidfunc{MPID_Request_recv_FOA}.  If found, transfer data using
+\mpidfunc{MPID_Unpack}.  Otherwise, save data (transfer with \code{memcpy}) in
+message buffer area.  Update flow control.
+
+\item[\mpidconst{MPID_Hid_request_to_send}]
+Call \mpidfunc{MPID_Request_recv_FOA}.  If found, reply with
+\mpidconst{MPID_Hid_ok_to_send} sent with \mpidfunc{MPID_Rhcv}.  Otherwise,
+store message id in newly allocated request and mark request as ready for use.
+\end{description}
+
+Questions and comments:
+
+This should probably use a buffered read to reduce the number of system
+calls.  The buffering code should be able to switch to direct read when a
+large amount of data is being moved (by emptying the buffer and then switching
+to direct read).  
+
+How is flow control handled?  Should flow control be bundled with the buffered
+read/write logic?
+
+\end{tcp}
+
+\begin{shmem}
+Is this the same as \tcpname, but with slightly different message types?
+\end{shmem}
+
+\begin{via}
+Like \shmemname.
+\end{via}
 
 \subsection{Collective Communication and Computation}
 One of the major changes in MPICH2 is in the implementation of the
