@@ -21,7 +21,6 @@ typedef struct MM_Car_data_tcp
 	    int total_num_read;
 	    int cur_num_read;
 	    int cur_index;
-	    int num_read_at_cur_index;
 	} vec_read;
 	struct car_tcp_vec_write
 	{
