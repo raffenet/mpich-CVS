@@ -17,7 +17,7 @@
 #define MPICH_DBG_MEMLOG_LINE_SIZE 256
 #endif
 
-MPIU_dbg_state_t MPIUI_dbg_state = DBG_STATE_UNINIT;
+MPIU_dbg_state_t MPIUI_dbg_state = MPIU_DBG_STATE_UNINIT;
 static int dbg_memlog_num_lines = MPICH_DBG_MEMLOG_NUM_LINES;
 static int dbg_memlog_line_size = MPICH_DBG_MEMLOG_LINE_SIZE;
 static char **dbg_memlog = NULL;
@@ -48,20 +48,20 @@ static void dbg_init(void)
      */
     if (strcmp(envstr, "memlog") == 0)
     {
-	MPIUI_dbg_state = DBG_STATE_MEMLOG;
+	MPIUI_dbg_state = MPIU_DBG_STATE_MEMLOG;
     }
     else if (strcmp(envstr, "stdout") == 0)
     {
-	MPIUI_dbg_state = DBG_STATE_STDOUT;
+	MPIUI_dbg_state = MPIU_DBG_STATE_STDOUT;
     }
     else if (strcmp(envstr, "memlog,stdout") == 0 ||
 	     strcmp(envstr, "stdout,memlog") == 0)
     {
-	MPIUI_dbg_state = DBG_STATE_STDOUT | DBG_STATE_MEMLOG;
+	MPIUI_dbg_state = MPIU_DBG_STATE_STDOUT | MPIU_DBG_STATE_MEMLOG;
     }
 
     /* If memlog is enabled, the we need to allocate some memory for it */
-    if (MPIUI_dbg_state & DBG_STATE_MEMLOG)
+    if (MPIUI_dbg_state & MPIU_DBG_STATE_MEMLOG)
     {
 	dbg_memlog = MPIU_Malloc(dbg_memlog_num_lines * sizeof(char *) +
 				 dbg_memlog_num_lines * dbg_memlog_line_size);
@@ -77,7 +77,7 @@ static void dbg_init(void)
 	}
 	else
 	{
-	    MPIUI_dbg_state &= ~DBG_STATE_MEMLOG;
+	    MPIUI_dbg_state &= ~MPIU_DBG_STATE_MEMLOG;
 	}
     }
 }
@@ -87,12 +87,12 @@ int MPIU_dbg_printf(char *str, ...)
     int n = 0;
     va_list list;
 
-    if (MPIUI_dbg_state == DBG_STATE_UNINIT)
+    if (MPIUI_dbg_state == MPIU_DBG_STATE_UNINIT)
     {
 	dbg_init();
     }
 
-    if (MPIUI_dbg_state & DBG_STATE_MEMLOG)
+    if (MPIUI_dbg_state & MPIU_DBG_STATE_MEMLOG)
     {
 	dbg_memlog[dbg_memlog_next][0] = '\0';
 	va_start(list, str);
@@ -122,7 +122,7 @@ int MPIU_dbg_printf(char *str, ...)
 	}
     }
 
-    if (MPIUI_dbg_state & DBG_STATE_STDOUT)
+    if (MPIUI_dbg_state & MPIU_DBG_STATE_STDOUT)
     {
 	va_start(list, str);
 	n = vprintf(str, list);

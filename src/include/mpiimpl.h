@@ -81,10 +81,10 @@ typedef int int32_t;
 */
 typedef enum
 {
-    DBG_STATE_NONE = 0,
-    DBG_STATE_UNINIT = 1,
-    DBG_STATE_STDOUT = 2,
-    DBG_STATE_MEMLOG = 4,
+    MPIU_DBG_STATE_NONE = 0,
+    MPIU_DBG_STATE_UNINIT = 1,
+    MPIU_DBG_STATE_STDOUT = 2,
+    MPIU_DBG_STATE_MEMLOG = 4,
 }
 MPIU_dbg_state_t;
 int MPIU_dbg_printf(char *str, ...);
@@ -92,7 +92,7 @@ int MPIU_dbg_printf(char *str, ...);
 extern MPIU_dbg_state_t MPIUI_dbg_state;
 #define MPIU_DBG_PRINTF(e)			\
 {						\
-    if (MPIUI_dbg_state != DBG_STATE_NONE)	\
+    if (MPIUI_dbg_state != MPIU_DBG_STATE_NONE)	\
     {						\
 	MPIU_dbg_printf e;			\
     }						\
@@ -110,6 +110,8 @@ int msg_printf(char *str, ...);
 #define msg_fprintf fprintf
 int err_printf(char *str, ...);
 #define err_fprintf fprintf
+
+#define MPIU_Assert assert
 
 #include "mpiimplthread.h"
 
