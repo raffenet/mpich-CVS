@@ -86,8 +86,10 @@ public class PreferencePanel extends JPanel
                                         "INIT_SLOG2_LEVEL_READ",
                                         Const.SHORT_FORMAT );
         fld_INIT_SLOG2_LEVEL_READ.setToolTipText(
-          "The number of SLOG-2 level read into memory when Jumpshot-4 starts, "
-        + "it also asymptotically affects the performance of zooming in/out." );
+          "The number of SLOG-2 levels being read into memory when "
+        + "timeline window is initialized, the number affects the "
+        + "zooming and scrolling performance exponentially (in a "
+        + "asymptotical sense)." );
         fld_INIT_SLOG2_LEVEL_READ.setHorizontalAlignment( JTextField.CENTER );
         fld_INIT_SLOG2_LEVEL_READ.addSelfDocumentListener();
         fld_INIT_SLOG2_LEVEL_READ.setEditable( true );
@@ -107,7 +109,7 @@ public class PreferencePanel extends JPanel
                                       "SCREEN_HEIGHT_RATIO",
                                       0.0f, 1.0f );
         sdr_SCREEN_HEIGHT_RATIO.setToolTipText(
-        "Initial available screen height(ratio) for Timeline window's canvas" );
+        "Ratio of the initial timeline canvas height to the screen height.");
         sdr_SCREEN_HEIGHT_RATIO.setHorizontalAlignment( JTextField.CENTER );
         sdr_SCREEN_HEIGHT_RATIO.setEditable( true );
         super.add( sdr_SCREEN_HEIGHT_RATIO );
@@ -116,8 +118,8 @@ public class PreferencePanel extends JPanel
                                          "TIME_SCROLL_UNIT_RATIO",
                                          0.0f, 1.0f );
         sdr_TIME_SCROLL_UNIT_RATIO.setToolTipText(
-          "The number r, 0.0 < r < 1.0, defines the ratio of unit increment of "
-        + "the time scrollbar to the width of timeline canvas." );
+          "Unit increment of the horizontal scrollbar in the fraction of "
+        + "timeline canvas's width." );
         sdr_TIME_SCROLL_UNIT_RATIO.setHorizontalAlignment( JTextField.CENTER );
         sdr_TIME_SCROLL_UNIT_RATIO.setEditable( true );
         super.add( sdr_TIME_SCROLL_UNIT_RATIO );
@@ -151,7 +153,7 @@ public class PreferencePanel extends JPanel
         lst_BACKGROUND_COLOR.addItem( Const.COLOR_LIGHTGRAY );
         lst_BACKGROUND_COLOR.addItem( Const.COLOR_WHITE );
         lst_BACKGROUND_COLOR.setToolTipText(
-        "Background color of the Timeline Canvas" );
+        "Background color of the timeline canvas" );
         super.add( lst_BACKGROUND_COLOR );
 
         super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
@@ -162,7 +164,7 @@ public class PreferencePanel extends JPanel
         lst_ACTIVE_REFRESH.addItem( Boolean.TRUE );
         lst_ACTIVE_REFRESH.addItem( Boolean.FALSE );
         lst_ACTIVE_REFRESH.setToolTipText(
-        "Whelther to let Jumpshot-4 actively update the Timeline canvas." );
+        "Whelther to let Jumpshot-4 actively update the timeline canvas." );
         super.add( lst_ACTIVE_REFRESH );
         lst_ACTIVE_REFRESH.setEnabled( false );
         /*
@@ -191,9 +193,9 @@ public class PreferencePanel extends JPanel
                                       "STATE_HEIGHT_FACTOR",
                                       0.0f, 1.0f );
         sdr_STATE_HEIGHT_FACTOR.setToolTipText(
-          "Factor f, 0.0 < f < 1.0, defines the height of the outermost "
-        + "rectangle with respect to the Y_AXIS_ROW_HEIGHT. The larger "
-        + "the factor f is, the larger the outermost rectangle will be." );
+          "Ratio of the outermost rectangle height to the row height. The "
+        + "larger the factor is, the larger the outermost rectangle will "
+        + "be with respect to the row height." );
         sdr_STATE_HEIGHT_FACTOR.setHorizontalAlignment( JTextField.CENTER );
         sdr_STATE_HEIGHT_FACTOR.setEditable( true );
         super.add( sdr_STATE_HEIGHT_FACTOR );
@@ -202,8 +204,8 @@ public class PreferencePanel extends JPanel
                                         "NESTING_HEIGHT_FACTOR",
                                         0.0f, 1.0f );
         sdr_NESTING_HEIGHT_FACTOR.setToolTipText(
-          "Factor f, 0.0 < f < 1.0, defines the gap between nesting rectangles."
-        + " The larger the factor f is, the smaller the gap." );
+          "The gap ratio between successive nesting rectangles. The "
+        + "larger the factor is, the smaller the gap will be." );
         sdr_NESTING_HEIGHT_FACTOR.setHorizontalAlignment( JTextField.CENTER );
         sdr_NESTING_HEIGHT_FACTOR.setEditable( true );
         super.add( sdr_NESTING_HEIGHT_FACTOR );
@@ -215,8 +217,8 @@ public class PreferencePanel extends JPanel
         lst_ARROW_ANTIALIASING.addItem( Const.ANTIALIAS_OFF );
         lst_ARROW_ANTIALIASING.addItem( Const.ANTIALIAS_ON );
         lst_ARROW_ANTIALIASING.setToolTipText(
-          "Antialiasing in drawing arrow. ON usually slows down "
-        + "the drawing by a factor of ~3" );
+          "Whelther to draw arrow with antialiasing lines. Turning this on "
+        + "will slow down the canvas drawing by a factor of ~3" );
         super.add( lst_ARROW_ANTIALIASING );
 
         fld_ARROW_HEAD_LENGTH = new LabeledTextField( true,
@@ -243,7 +245,7 @@ public class PreferencePanel extends JPanel
                                        "CLICK_RADIUS_TO_LINE",
                                        Const.INTEGER_FORMAT );
         fld_CLICK_RADIUS_TO_LINE.setToolTipText(
-        "Radius in pixel for a point/click to be considered on the arrow." );
+        "Radius in pixel for a click to be considered on the arrow." );
         fld_CLICK_RADIUS_TO_LINE.setHorizontalAlignment( JTextField.CENTER );
         fld_CLICK_RADIUS_TO_LINE.addSelfDocumentListener();
         fld_CLICK_RADIUS_TO_LINE.setEditable( true );
