@@ -59,6 +59,7 @@ AC_CHECK_PROGS(RANLIB,ranlib,true)
 dnl
 dnl Check for shared library
 PAC_ARG_SHAREDLIBS
+AC_SUBST(ENABLE_SHLIB)
 dnl
 dnl Is there libnsl needed for gethostbyname?
 dnl AC_SEARCH_LIBS(gethostbyname,nsl)
