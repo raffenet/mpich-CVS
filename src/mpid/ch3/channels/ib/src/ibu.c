@@ -992,13 +992,13 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 
     mem_ptr = ibuBlockAlloc(ibu->allocator);
     buf = mem_ptr;
-    printf("iov length: %d\n", n);
+    /*printf("iov length: %d\n", n);*/
     for (iov_index = 0; iov_index<n && num_avail; iov_index++)
     {
 	len = min (num_avail, iov[iov_index].IBU_IOV_LEN);
 	num_avail -= len;
 	total += len;
-	printf("copying %d bytes to ib buffer - num_avail: %d\n", len, num_avail);fflush(stdout);
+	/*printf("copying %d bytes to ib buffer - num_avail: %d\n", len, num_avail);fflush(stdout);*/
 	memcpy(buf, iov[iov_index].IBU_IOV_BUF, len);
 	if (num_avail)
 	    buf += len;
@@ -1137,9 +1137,11 @@ int ibu_init()
 	return status;
     }
     IBU_Process.lid = IBU_Process.attr_p->port_dynamic_info_p->lid;
+    /*
     printf("infiniband:\n mtu: %d\n msg_size: %d\n",
 	IBU_Process.attr_p->port_static_info_p->mtu,
 	IBU_Process.attr_p->port_static_info_p->msg_size);fflush(stdout);
+    */
 
     /* non infiniband initialization */
     g_StateAllocator = ibuBlockAllocInit(sizeof(ibu_state_t), 1000, 500, malloc, free);
