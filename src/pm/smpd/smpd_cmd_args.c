@@ -7,6 +7,7 @@
 #include "smpd.h"
 #ifdef HAVE_WINDOWS_H
 #include "smpd_service.h"
+#include <Ntdsapi.h>
 #endif
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -365,6 +366,43 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     {
 	smpd_stop_service();
 	ExitProcess(0);
+    }
+    if (smpd_get_opt(argcp, argvp, "-register_spn"))
+    {
+	DWORD len;
+	char err_msg[256];
+	char **spns;
+	HANDLE ds;
+	DWORD result;
+	result = DsBind(NULL/*DCName*/, NULL/*DomainName*/, &ds);
+	if (result != ERROR_SUCCESS)
+	{
+	    smpd_translate_win_error(result, err_msg, 256, NULL);
+	    smpd_err_printf("DsBind failed: %s\n", err_msg);
+	    ExitProcess(result);
+	}
+	len = 1;
+	result = DsGetSpn(DS_SPN_SERVICE, SMPD_SERVICE_NAME, SMPD_SERVICE_NAME, 0, 0, NULL, NULL, &len, &spns);
+	if (result != ERROR_SUCCESS)
+	{
+	    smpd_translate_win_error(result, err_msg, 256, NULL);
+	    smpd_err_printf("DsGetSpn failed: %s\n", err_msg);
+	    ExitProcess(result);
+	}
+	printf("registering: %s\n", spns[0]);
+	/*
+	result = DsWriteAccountSpn(ds, DS_SPN_ADD_SPN_OP, "SYSTEM", 1, spns);
+	if (result != ERROR_SUCCESS)
+	{
+	    DsFreeSpnArray(1, spns);
+	    smpd_translate_win_error(result, err_msg, 256, NULL);
+	    smpd_err_printf("DsWriteAccountSpn failed: %s\n", err_msg);
+	    ExitProcess(result);
+	}
+	*/
+	DsFreeSpnArray(1, spns);
+	result = DsUnBind(&ds);
+	ExitProcess(result);
     }
 
     if (smpd_get_opt(argcp, argvp, "-mgr"))
