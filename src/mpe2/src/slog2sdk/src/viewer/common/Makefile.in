@@ -20,7 +20,8 @@ RM           = @RM@
 
 TARGET    =
 PACKAGE   = viewer.common
-SRC       = SwingWorker.java Dialogs.java Routines.java TopControl.java \
+SRC       = SwingWorker.java Dialogs.java \
+            CustomCursor.java Routines.java TopControl.java \
             LabeledTextField.java LabeledFloatSlider.java \
             Alias.java Const.java LabeledComboBox.java Parameters.java \
             PreferencePanel.java TopWindow.java PreferenceFrame.java
