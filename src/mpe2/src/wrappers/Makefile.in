@@ -30,10 +30,10 @@ build_include:
 	      if [ ! -d $(includebuild_dir) ] ; then \
 	          $(MKDIR) -p $(includebuild_dir) ; \
 	      fi ; \
-	      cd $(top_srcdir)/include ; \
 	      for file in $(MPE_HEADERS) ; do \
-	          if [ -f $$file ] ; then \
-	              $(CP) -f $$file $(includebuild_dir) ; \
+	          if [ -f $(top_srcdir)/include/$$file ] ; then \
+	              $(CP) -f $(top_srcdir)/include/$$file \
+	                       $(includebuild_dir) ; \
 	          fi ; \
 	      done ; \
 	  fi
