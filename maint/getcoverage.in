@@ -40,6 +40,13 @@ $indexfile = "";     # File to contain the index of files
 $annoteFiles = 0;
 $annoteBaseDir = "";
 %AnnoteFilesMap = ();   # Clear the list of files 
+%AnnoteMissed   = ();   # Clear the mapping of filenames to "missed;total" lines
+%AnnoteFilesToOrig = (); # Map from annoted file key to original name (used for
+                         # indexing into AnnoteMissed)
+#
+# Keep track of coverage amounts
+$GrandTotal       = 0;
+$GrandTotalMissed = 0;
 
 for (@ARGV) {
     if (/-annote=(.*)/) {
@@ -66,6 +73,9 @@ for (@ARGV) {
 	@files = &ExpandDir( $filename );
 	foreach $file (@files) {
 	    ($missed_lines,$total_lines) = &CountUncoveredLines( $file );
+	    $GrandTotal       += $total_lines;
+	    $GrandTotalMissed += $missed_lines;
+	    $AnnoteMissed{$file} = "$missed_lines;$total_lines";
 	    if ($missed_lines) {
 		print "$missed_lines line(s) not covered by tests in $file\n";
 		&WriteAnnoteFile( $file );
@@ -77,6 +87,9 @@ for (@ARGV) {
     }
     elsif (-s $filename) {
 	($missed_lines,$total_lines) = &CountUncoveredLines( $filename );
+	$GrandTotal       += $total_lines;
+	$GrandTotalMissed += $missed_lines;
+	$AnnoteMissed{$filename} = "$missed_lines;$total_lines";
 	if ($missed_lines) {
 	    print "$missed_lines line(s) not covered by tests in $filename\n";
 	    &WriteAnnoteFile( $filename );
@@ -135,6 +148,12 @@ sub CountUncoveredLines {
 	    while (<FD>) {
 		$linecount++;
 		if (/^\s/) { $fileline++; }
+		if (/^\s*\/\* --BEGIN/) {
+		    my $cleanline = $_;
+		    $cleanline =~ s/^\s*//;
+		    chop $cleanline;
+		    print STDERR "Possible missing END DEBUG in $filename at $linecount; saw $cleanline\n";
+		}
 		if (/^\s*\/\* --END DEBUG-- \*\//) {
 		    last; 
 		}
@@ -143,11 +162,17 @@ sub CountUncoveredLines {
 	}
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
-	if (/^\s*\/\* --BEGIN ERROR HANDLING-- \*\//) {
+	if (/^\s*\/\*\s--BEGIN ERROR HANDLING-- \*\//) {
 	    while (<FD>) {
 		$linecount++;
 		if (/^\s/) { $fileline++; }
-		if (/^\s*\/\* --END ERROR HANDLING-- \*\//) {
+		if (/^\s*\/\*\s--BEGIN/) {
+		    my $cleanline = $_;
+		    $cleanline =~ s/^\s*//;
+		    chop $cleanline;
+		    print STDERR "Possible missing END ERROR HANDLING in $filename at $linecount; saw $cleanline\n";
+		}
+		if (/^\s*\/\*\s--END ERROR HANDLING-- \*\//) {
 		    last; 
 		}
 	    }
@@ -273,8 +298,8 @@ sub AnnotateUncoveredLines {
 
 	# Special cases for blocks that we skip (mark them as executed) 
 	if (/^\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/ || 
-	    /^\s*\/\* --BEGIN DEBUG-- \*\// ||
-	    /^\s*\/\* --BEGIN ERROR HANDLING-- \*\//) {
+	    /^\s*\/\*\s--BEGIN DEBUG-- \*\// ||
+	    /^\s*\/\*\s--BEGIN ERROR HANDLING-- \*\//) {
 	    # This could be a "skip" state
 	    $newstate = "exec";
 	}
@@ -292,12 +317,7 @@ sub AnnotateUncoveredLines {
 	$curstate = $newstate;
 	
 	# Add this line
-	# HTML-ify the line first (handle <,>,and &
-	s/\&/--AMP--/g;
-	s/>/&gt;/g;
-	s/</&lt;/g;
-	s/--AMP--/&amp;/g;
-	print $outfile $_;
+	print $outfile &HTMLify($_);
 
 	# Now, for the blocks that we skip, read them until we reach the
 	# end of the block
@@ -306,7 +326,7 @@ sub AnnotateUncoveredLines {
 	    my $sawend = 0;
 	    while (<FD>) {
 		if (!/^\s/) { next; }
-	        print $outfile $_;
+	        print $outfile &HTMLify($_);
 		if (/^\s+\#\s*endif/ || /^\s*\#\s*els/) { 
 		    $sawend = 1;
 		    last; 
@@ -319,11 +339,11 @@ sub AnnotateUncoveredLines {
 	}
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
-	if (/^\s*\/\* --BEGIN DEBUG-- \*\//) {
+	if (/^\s*\/\*\s--BEGIN DEBUG-- \*\//) {
 	    my $sawend=0;
 	    while (<FD>) {
-		if (/^\s/) { print $outfile $_; }
-		if (/^\s*\/\* --END DEBUG-- \*\//) {
+		if (/^\s/) { print $outfile &HTMLify($_); }
+		if (/^\s*\/\*\s--END DEBUG-- \*\//) {
 		    $sawend = 1;
 		    last; 
 		}
@@ -335,11 +355,11 @@ sub AnnotateUncoveredLines {
 	}
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
-	if (/^\s*\/\* --BEGIN ERROR HANDLING-- \*\//) {
+	if (/^\s*\/\*\s--BEGIN ERROR HANDLING-- \*\//) {
 	    my $sawend = 0;
 	    while (<FD>) {
-		if (/^\s/) { print $outfile $_; }
-		if (/^\s*\/\* --END ERROR HANDLING-- \*\//) {
+		if (/^\s/) { print $outfile &HTMLify($_); }
+		if (/^\s*\/\*\s--END ERROR HANDLING-- \*\//) {
 		    $sawend = 1;
 		    last; 
 		}
@@ -374,7 +394,7 @@ sub WriteAnnoteFile {
     my $filename =$_[0];
     if ($annoteFiles) {
 	# Make a file name
-	my $basefile = $file;
+	my $basefile = $filename;
 	$basefile =~ s/\.gcov//;
 	$basefile =~ s/$annoteBaseDir//;
 	my $OUTFD = OUTFD;
@@ -382,12 +402,13 @@ sub WriteAnnoteFile {
 	$rc = open( $OUTFD, ">$annoteSrcDir/$basefile.htm" );
 	if ($rc != 0) {
 	    $AnnoteFilesMap{$basefile} = "$annoteSrcDir/$basefile.htm";
+	    $AnnoteFilesToOrig{$basefile} = $filename;
 	    $newline = "\r\n";
 	    print $OUTFD "<HTML><HEAD>$newline";
 	    print $OUTFD "<TITLE>Coverage for $file</TITLE>$newline";
 	    print $OUTFD "</HEAD>$newline";
 	    print $OUTFD "<BODY BGCOLOR=\"FFFFFF\">$newline";
-	    &AnnotateUncoveredLines( $file, "red", $OUTFD );
+	    &AnnotateUncoveredLines( $filename, "red", $OUTFD );
 	    print $OUTFD "</BODY></HTML>$newline";
 	    close( $OUTFD );
 	}
@@ -411,18 +432,76 @@ sub WriteAnnoteFileMap {
 
     print IFD "<HTML><HEAD><TITLE>Index to coverage analysis</TITLE></HEAD>\n";
     print IFD "<BODY BGCOLOR=\"FFFFFF\">\n";
+
+    # Create the heading
+    if ($GrandTotal > 0 && $GrandTotalMissed > 0) { 
+	print IFD "<H2>Summary of Coverage Testing</H2>\n";
+	print IFD "Of $GrandTotal lines in code, $GrandTotalMissed lines were not covered\n";
+	my $percent = (100 * $GrandTotalMissed) / $GrandTotal;
+	my $covered = 100 - $percent;
+	print IFD "or $percent% missed ($covered% covered)\n";
+    }
+
+    my $col = 1;
+    my $maxcol = 4;
+    my $curprefix = "--NONE--";
     for ($i=0; $i<=$#names; $i++) {
 	my $file = $names[$i];
 	my $target = $AnnoteFilesMap{$file};
 
 	# Clean up filename
 	$file =~ s/^\.\///;
+	if ($file =~ /(.*)\/([^\/]*)/) {
+	    $dirname  = $1;
+	    $basename = $2;
+	}
+	else {
+	    $dirname  = "";
+	    $basename = $file;
+	}
+
 	# Clean up target
 	if ($annoteWebPrefix ne "") {
 	    $target =~ s/$annoteSrcDir/$annoteWebPrefix/;
 	}
-	print IFD "<A HREF=\"$target\">$file</A><BR>\n";
+
+	# Compare dirname to curprefix; start a new table if
+	# necessary
+	if ($dirname ne $curprefix) {
+	    if ($curprefix ne "--NONE--") {
+		for (my $j=$col-1; $j<=$maxcol; $j++) {
+		    print IFD "<TD></TD>";
+		}
+		print IFD "</TR></TABLE>\n";
+	    }
+	    $curprefix = $dirname;
+	    print IFD "<H2>$dirname</H2>\n";
+	    print IFD "<TABLE WIDTH=100%>\n";
+	}
+	if ($col == 1) {
+	    print IFD "<TR WIDTH=100%>\n";
+	}
+	my $label = $basename;
+	my $origFileName = $AnnoteFilesToOrig{$names[$i]};
+	if (defined($AnnoteMissed{$origFileName})) {
+	    my ($missed,$total) = split(/;/,$AnnoteMissed{$origFileName});
+	    $label = "$label ($missed)";
+	}
+	print IFD "<TD><A HREF=\"$target\">$label</A></TD>\n";
+	if ($col++ == $maxcol) {
+	    print IFD "</TR>\n";
+	    $col = 1;
+	}
     }
+    # Flush the final table
+    if ($curprefix ne "--NONE--") {
+	# In case the page is empty
+	for (my $i=$col-1; $i<=$maxcol; $i++) {
+	    print IFD "<TD></TD>";
+	}
+	print IFD "</TR></TABLE>\n";
+    }
+	
     print IFD "</BODY></HTML>\n";
     close IFD;
 }
@@ -452,6 +531,18 @@ sub MakeDirs {
     }
     return 1;
 }
+# --------------------------------------------------------------------------
+# HTMLify
+# Take an input line and make it value HTML
+sub HTMLify {
+    my $line = $_[0];
+    $line =~ s/\&/--AMP--/g;
+    $line =~ s/>/&gt;/g;
+    $line =~ s/</&lt;/g;
+    $line =~ s/--AMP--/&amp;/g;
+    return $line;
+}
+
 #
 # To generate a summary
 # cd mpich2/src 
