@@ -14,9 +14,10 @@ call mpi_file_open( comm, filename, MPI_MODE_RDWR + MPI_MODE_CREATE, MPI_INFO_NU
 </openfile>
 <closefile>
 call mpi_file_close( fh, ierr )
+call mpi_comm_rank( comm, r, ierr )
 if (r .eq. 0) then
     call mpi_file_delete( filename, MPI_INFO_NULL, ierr )
-fi
+endif
 <checkErr/>
 </closefile>
 

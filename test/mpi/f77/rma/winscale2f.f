@@ -81,7 +81,8 @@ C Check the results
                if (buf(i,0) .ne. ans) then
                   errs = errs + 1
                   if (errs .le. 10) then
-                     print *, ' buf(',i,'0) = ', buf(i,0)
+                     print *, ' buf(',i,',0) = ', buf(i,0), 
+     &    'expected ', ans
                   endif
                endif
             enddo
@@ -93,7 +94,7 @@ C Check the results
                   errs = errs + 1
                   if (errs .le. 10) then
                      print *, ' buf(',i,',',ncols+1,') = ', 
-     &                          buf(i,ncols+1)
+     &                          buf(i,ncols+1), ' expected ', ans
                   endif
                endif
             enddo
