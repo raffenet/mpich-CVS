@@ -1052,6 +1052,9 @@ int MPID_Recv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 int MPID_Irecv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
                MPID_Request **);
 
+int MPID_Probe(int, int, MPID_Comm *, int, MPI_Status *);
+int MPID_Iprobe(int, int, MPID_Comm *, int, MPI_Status *);
+
 int MPID_Win_create(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
                     MPID_Win **);
 int MPID_Win_fence(int, MPID_Win *);
@@ -1078,8 +1081,8 @@ void MPID_Progress_wait(void);
 void MPID_Progress_poke(void);
 #endif
 
-#if !defined(MPID_Request_free)
-void MPID_Request_free(MPID_Request *);
+#if !defined(MPID_Request_release)
+void MPID_Request_release(MPID_Request *);
 #endif
 
 #if !defined(MPID_Errhandler_free)
