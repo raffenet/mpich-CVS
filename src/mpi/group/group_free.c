@@ -58,7 +58,7 @@ int MPI_Group_free(MPI_Group *group)
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr, mpi_errno );
-	    /* If group_ptr is not value, it will be reset to null */
+	    /* If group_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_FREE);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
