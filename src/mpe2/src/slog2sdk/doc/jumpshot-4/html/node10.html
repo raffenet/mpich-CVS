@@ -27,26 +27,26 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html264"
+<A NAME="tex2html265"
   HREF="node11.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html260"
+<A NAME="tex2html261"
   HREF="node8.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html254"
+<A NAME="tex2html255"
   HREF="node9.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html262"
+<A NAME="tex2html263"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html265"
+<B> Next:</B> <A NAME="tex2html266"
   HREF="node11.html">3.3 Legend Window</A>
-<B> Up:</B> <A NAME="tex2html261"
+<B> Up:</B> <A NAME="tex2html262"
   HREF="node8.html">3. Graphical User Interface</A>
-<B> Previous:</B> <A NAME="tex2html255"
+<B> Previous:</B> <A NAME="tex2html256"
   HREF="node9.html">3.1 Main Window</A>
- &nbsp; <B>  <A NAME="tex2html263"
+ &nbsp; <B>  <A NAME="tex2html264"
   HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
@@ -61,8 +61,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 <DIV ALIGN="CENTER"><A NAME="fig:convertor_init"></A><A NAME="663"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.2:</STRONG>
-The Logfile Convertor window that allows
-conversion of supported trace file format to SLOG-2 format.</CAPTION>
+Logfile Convertor window allowing conversion
+of supported trace file format to SLOG-2 format.</CAPTION>
 <TR><TD>
 <DIV ALIGN="CENTER"><IMG
   WIDTH="567" HEIGHT="523" ALIGN="BOTTOM" BORDER="0"
@@ -75,33 +75,33 @@ conversion of supported trace file format to SLOG-2 format.</CAPTION>
 </DIV>
 
 <P>
-If a non-slog2 file is selected in the Main window, the Logfile Convertor
-as shown in Figure <A HREF="#fig:convertor_init">3.2</A> will be invoked to prompt
+If a non-slog2 file is selected in the Main window, the Logfile Convertor,
+as shown in Figure <A HREF="#fig:convertor_init">3.2</A>, will be invoked to prompt
 user to convert the file to SLOG-2 format readable by this viewer.
-There are currently 3 supported convertors: <I>CLOG</I> -&gt;
-<I>SLOG-2</I>, <I>RLOG</I> -&gt; <I>SLOG-2</I> and <I>UTE</I>
--&gt; <I>SLOG-2.</I> Convertor is generally selected based
-on the input file's file extension. In the case that wrong file convertor
-is selected, user can correct it through the pale blue pulldown menu
-located at the top of the window. The Logfile Convertor window can
-also be invoked by directly clicking on the Logfile Conversion button
-shown in the Table <A HREF="#table:main_toolbar">3.2</A>. The text field of the
-Output File Name usually displays the default slog2 filename recommended
-by the convertor based on the text field in the Input File Specification.
-If the text field does not display the default name as expected, hitting
-return key in the Input File Specification field will force the update
-of the Output File Name field with the default name. There are 4 major
-functions of the Logfile convertor and each of them is associated
-with a button in the lower panel of the window. They are listed in
-the Table <A HREF="#table:convertor_buttons">3.4</A>.
+Currently, four convertors are supported: <I>CLOG</I> -&gt;
+<I>SLOG-2</I>, <I>CLOG-2 -&gt; SLOG-2, RLOG</I> -&gt;
+<I>SLOG-2</I> and <I>UTE</I> -&gt; <I>SLOG-2.</I> The convertor
+is generally selected based on the input file's file extension. If
+the wrong file convertor is selected, the user can correct it through
+the pale-blue pulldown menu located at the top of the window. The
+Logfile Convertor window can also be invoked by directly clicking
+on the Logfile Conversion button shown in the Table <A HREF="#table:main_toolbar">3.2</A>.
+The text field of the Output File Name usually displays the default
+slog2 filename recommended by the convertor based on the text field
+in the Input File Specification. If the text field does not display
+the default name as expected, hitting return key in the Input File
+Specification field will force an update of the Output File Name field
+with the default name. The Logfile Convertor has four major functions,
+each  associated with a button in the lower panel of the window. They
+are listed in Table <A HREF="#table:convertor_buttons">3.4</A>.
 
 <P>
 <BR><P></P>
-<DIV ALIGN="CENTER"><A NAME="664"></A>
+<DIV ALIGN="CENTER"><A NAME="665"></A>
 <TABLE>
 <CAPTION><STRONG>Table 3.4:</STRONG>
-Functions of the major functions
-in the Logfile Convertor window.</CAPTION>
+Major functions in the Logfile Convertor
+window.</CAPTION>
 <TR><TD><TABLE CELLPADDING=3 BORDER="1">
 <TR><TD ALIGN="CENTER">Icon</TD>
 <TD ALIGN="CENTER">Description</TD>
@@ -144,23 +144,22 @@ in the Logfile Convertor window.</CAPTION>
 <BR>
 
 <P>
-Since the Logfile Convertor launches a separate java process to do
+Since the Logfile Convertor launches a separate Java process to do
 the logfile conversion, it requires certain parameters to launch the
-process correctly. All the parameters that are needed by any logfile
-convertor are supplied through a panel hidden by a splitter in the
-convertor window. The splitter has a divider which can be lifted up
-to display all the parameters used to launch the java process as in
-the Figure <A HREF="#table:convertor_buttons">3.4</A>. In the rare occasion that
-the default parameters are not correct, the text fields can be modified
-to reflect the situation. 
+process correctly. All the parameters needed by any logfile convertor
+are supplied through a panel hidden by a splitter in the convertor
+window. The splitter has a divider that can be lifted up to display
+all the parameters used to launch the Java process, as in Figure <A HREF="#table:convertor_buttons">3.4</A>.
+On the rare occasion that the default parameters are not correct,
+the text fields can be modified to reflect the situation. 
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:convertor_parameters"></A><A NAME="665"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:convertor_parameters"></A><A NAME="666"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.3:</STRONG>
-The hidden parameters panel of the
-Logfile Convertor.</CAPTION>
+Hidden parameters panel of the Logfile
+Convertor.</CAPTION>
 <TR><TD>
 <DIV ALIGN="CENTER"><IMG
   WIDTH="567" HEIGHT="523" ALIGN="BOTTOM" BORDER="0"
@@ -173,18 +172,18 @@ Logfile Convertor.</CAPTION>
 </DIV>
 
 <P>
-The standard output and error streams of the process are being piped
-to the text area located in the middle of the window as the process
-is running. The Output File Size field displays the current size of
-the slog2 file as it is being generated, also the progress bar will
-be incremented to show the current ratio of the output to input file
-size as in the Figure <A HREF="#fig:convertor_progress">3.4</A>. If the logfile
-conversion fails, the error message will be printed in the text area
-for diagnosis or bug report.
+The standard output and error streams of the process are piped to
+the text area located in the middle of the window as the process is
+running. The Output File Size field displays the current size of the
+slog2 file as it is being generated. Also, the progress bar will be
+incremented to show the current ratio of the output to input file
+size, as in Figure <A HREF="#fig:convertor_progress">3.4</A>. If the logfile conversion
+fails, the error message will be printed in the text area for diagnosis
+or a bug report.
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:convertor_progress"></A><A NAME="666"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:convertor_progress"></A><A NAME="667"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.4:</STRONG>
 Logfile conversion in progress.</CAPTION>
@@ -204,26 +203,26 @@ Logfile conversion in progress.</CAPTION>
 <P>
 <HR>
 <!--Navigation Panel-->
-<A NAME="tex2html264"
+<A NAME="tex2html265"
   HREF="node11.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html260"
+<A NAME="tex2html261"
   HREF="node8.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html254"
+<A NAME="tex2html255"
   HREF="node9.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html262"
+<A NAME="tex2html263"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html265"
+<B> Next:</B> <A NAME="tex2html266"
   HREF="node11.html">3.3 Legend Window</A>
-<B> Up:</B> <A NAME="tex2html261"
+<B> Up:</B> <A NAME="tex2html262"
   HREF="node8.html">3. Graphical User Interface</A>
-<B> Previous:</B> <A NAME="tex2html255"
+<B> Previous:</B> <A NAME="tex2html256"
   HREF="node9.html">3.1 Main Window</A>
- &nbsp; <B>  <A NAME="tex2html263"
+ &nbsp; <B>  <A NAME="tex2html264"
   HREF="node2.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 

@@ -27,26 +27,26 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html538"
+<A NAME="tex2html539"
   HREF="node32.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html534"
+<A NAME="tex2html535"
   HREF="node30.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html528"
+<A NAME="tex2html529"
   HREF="node30.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html536"
+<A NAME="tex2html537"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html539"
+<B> Next:</B> <A NAME="tex2html540"
   HREF="node32.html">4.2 Tuning of the</A>
-<B> Up:</B> <A NAME="tex2html535"
+<B> Up:</B> <A NAME="tex2html536"
   HREF="node30.html">4. Special Features</A>
-<B> Previous:</B> <A NAME="tex2html529"
+<B> Previous:</B> <A NAME="tex2html530"
   HREF="node30.html">4. Special Features</A>
- &nbsp; <B>  <A NAME="tex2html537"
+ &nbsp; <B>  <A NAME="tex2html538"
   HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
@@ -57,45 +57,46 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 </H1>
 
 <P>
-The Level-of-detail support provided in SLOG-2 and Jumpshot-4 tends
-to help locate states which are either longer in time or occur very
+The level-of-detail support provided in SLOG-2 and Jumpshot-4 tends
+to help locate states that either are longer in time or occur very
 frequently. States that are short and occur rarely in a big logfile
-are very difficult to locate without any special tool. In Jumpshot-4,
-a search and scan facility is provided to facilitate this goal. There
-are 3 search criteria: search time, searchable timeline IDs and searchable
+are difficult to locate without a special tool. In Jumpshot-4, a search
+and scan facility is provided to facilitate this goal. There are three
+search criteria: search time, searchable timeline IDs, and searchable
 categories. 
 
 <P>
 
 <OL>
-<LI><I>Search Time</I> is the time that search starts. It is marked by
-a yellow line called search cursor. There are 2 different ways of
-setting the search cursor. When the timeline canvas is in Hand mode
-as described in Figure <A HREF="node13.html#fig:mouse_hand_mode">3.11</A> of section <A HREF="node13.html#sub:Zoomable-and-Scrollable">3.4.1</A>,
-left mouse clicking will set the search cursor. The other way can
-be done in either Hand or Zoom mode. First popup an information dialog
-box of any kind using right mouse clicking, then press the SearchInitialize
-button in the toolbar to replace the green line by the yellow search
-cursor. When there are more than one information dialog box, the information
-dialog box that is shown up last will have its green line used to
-initialize the search cursor. When Timeline window first starts up,
-the search cursor is set at the starttime of the logfile.
+<LI><I>Search time</I> is the time that search starts. It is marked by
+a yellow line called the search cursor. There are two different ways
+of setting the search cursor. When the timeline canvas is in hand
+mode, as described in Figure <A HREF="node13.html#fig:mouse_hand_mode">3.11</A> of Section
+<A HREF="node13.html#sub:Zoomable-and-Scrollable">3.4.1</A>, left mouse clicking will set the
+search cursor. The other way can be done in either hand or zoom mode.
+First, one pops up an information dialog box of any kind, using right
+mouse clicking; then one presses the SearchInitialize button in the
+toolbar to replace the green line by the yellow search cursor. When
+more than one information dialog box is shown, the information dialog
+box shown last will have its green line used to initialize the search
+cursor. When the Timeline window first starts up, the search cursor
+is set at the starttime of the logfile.
 </LI>
-<LI><I>Searchable Timeline IDs</I> are the timelines that search will
-operate on, i.e only states on the marked timelines will be returned
-by the search facility. These marked timelines can be selected by
-clicking on their timeline IDs on Y-axis label panel with rules described
-in Table <A HREF="#table:selection_rules">3.10</A>. When nothing is selected, all
+<LI><I>Searchable timeline IDs</I> are the timelines that the search will
+operate on; only states on the marked timelines will be returned by
+the search facility. These marked timelines can be selected by clicking
+on their timeline IDs on y-axis label panel with rules described in
+Table <A HREF="#table:selection_rules">3.10</A>. When nothing is selected, all
 timelines are searchable.
 </LI>
-<LI><I>Searchable Categories</I> are categories that have their searchable
+<LI><I>Searchable categories</I> are categories that have their searchable
 checkboxes enabled as in Figure <A HREF="node11.html#fig:legend_checkbox_ops">3.8</A>. Only
-drawable with searchable category can be returned by the search facility.
-By default, all categories in Legend window are searchable. 
+a drawable with a searchable category can be returned by the search
+facility. By default, all categories in the Legend window are searchable. 
 </LI>
 </OL>
 
-<DIV ALIGN="CENTER"><A NAME="fig:timeline_search_preview"></A><A NAME="714"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:timeline_search_preview"></A><A NAME="715"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 4.1:</STRONG>
 Search of state <I>eos</I> in
@@ -113,32 +114,33 @@ preview stage. The returned state is a preview state containing state
 </DIV>
 
 <P>
-After setting any needed search criteria, the search operation can
-be carried out by pressing either the SearchForeward or SearchBackward
+After any needed search criteria have been set, the search operation
+can be carried out by pressing either the SearchForeward or SearchBackward
 buttons shown in Table <A HREF="#table:timeline_toolbar">3.12</A>. As shown in
 Figure <A HREF="#fig:timeline_search_preview">4.1</A>, the search facility returns
-a searched state which is marked by a transparent <A NAME="tex2html69"
+a searched state that is marked by a transparent <A NAME="tex2html70"
   HREF="#foot602"><SUP>4.1</SUP></A>box with a 3D raised border and whose starttime is marked by a yellow
-search cursor, an upper and a lower 3D arrowheads. The upper 3D arrow's
-color matches that of the returned state. In the figure, since the
-returned state is a preview state, so the upper 3D arrow is gray in
-color as it is shown in Legend window. Accompanied with the 3D raised
-bordered box is a popup Search Box that shows the detailed of the
-preview state like the Drawable Info Box in Figure <A HREF="node19.html#fig:timeline_infobox_preview_state">3.16</A>.
+search cursor and an upper and a lower 3D arrowhead. The upper 3D
+arrow's color matches that of the returned state. In the figure, the
+returned state is a preview state, so the upper 3D arrow is gray,
+as shown in the Legend window. Accompanied with the 3D raised bordered
+box is a popup Search Box that shows the details of the preview state,
+like the Drawable Info Box in Figure <A HREF="node19.html#fig:timeline_infobox_preview_state">3.16</A>.
 Since the search in the figure is looking for state <I>eos</I>, a
-Drawable Info Box is shown to indicate the returned 3D bordered box
-does contain category <I>eos</I> graphically. In order to locate the
-real state <I>eos</I>, a dragged zoom is performed around the 3D raised
-bordered box and the result is shown in Figure <A HREF="#fig:timeline_search_preview_zoomed">4.2</A>.
+Drawable Info Box is shown to indicate that the returned 3D bordered
+box does contain category <I>eos</I> graphically. In order to locate
+the real state <I>eos</I>, a dragged zoom is performed around the
+3D raised bordered box; the result is shown in Figure <A HREF="#fig:timeline_search_preview_zoomed">4.2</A>.
 In the figure, the real <I>eos</I> is located in the middle of the
-original 3D bordered box and it is pointed by the Drawable Info Box.
+original 3D bordered box, and it is pointed to by the Drawable Info
+Box.
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:timeline_search_preview_zoomed"></A><A NAME="715"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:timeline_search_preview_zoomed"></A><A NAME="716"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 4.2:</STRONG>
-Dragged zoom the region
+Dragged zoom performed
 around the 3D raised bordered box in Figure <A HREF="#fig:timeline_search_preview">4.1</A>
 shows the real state <I>eos.</I></CAPTION>
 <TR><TD>
@@ -153,51 +155,51 @@ shows the real state <I>eos.</I></CAPTION>
 </DIV>
 
 <P>
-In general, when searching on big slog2 file, all preview categories
-should be set searchable, otherwise searching for real drawables may
-not return anything. Because at lower zoom level, there may not be
-any real drawables of the categories of interest, only preview drawable
-contains the categories of interest. Also, the search facility is
-carried out for the drawables that are in the physical memory. In
-some rare occasions, drawables in the memory may have been exhausted
-for searching before the end of the logfile has been reached, user
-may need to advance the search by scroll forward or backward to read
-in more drawables and to restart the search again. For a very big
+In general, when one is searching in a big slog2 file, all preview
+categories should be set searchable; otherwise, searching for real
+drawables may not return anything because at the lower zoom level
+there may be no real drawables of the categories of interest. Only
+the preview drawable contains the categories of interest. Also, the
+search facility is carried out for the drawables that are in the physical
+memory. On rare occasions, drawables in the memory may have been exhausted
+for searching before the end of the logfile has been reached; thus,
+the user may need to advance the search by scrolling forward or backward
+to read in more drawables and to restart the search. For a very big
 logfile, the search process of a real state may require repeated operations
 of search and dragged zoom before the real state can be found. This
-process will be automated in the later version of Jumpshot-4.
+process will be automated in a later version of Jumpshot-4.
 
 <P>
 <BR><HR><H4>Footnotes</H4>
 <DL>
 <DT><A NAME="foot602">...</A><A
- HREF="node31.html#tex2html69"><SUP>4.1</SUP></A></DT>
-<DD>the transparency of the 3D raised box can be made opaque by selecting
+ HREF="node31.html#tex2html70"><SUP>4.1</SUP></A></DT>
+<DD>The transparency of the 3D raised box can be made opaque by selecting
 the SEARCHED_OBJECT_ON_TOP true.
 
 </DD>
 </DL><HR>
 <!--Navigation Panel-->
-<A NAME="tex2html538"
+<A NAME="tex2html539"
   HREF="node32.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html534"
+<A NAME="tex2html535"
   HREF="node30.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html528"
+<A NAME="tex2html529"
   HREF="node30.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html536"
+<A NAME="tex2html537"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html539"
+<B> Next:</B> <A NAME="tex2html540"
   HREF="node32.html">4.2 Tuning of the</A>
-<B> Up:</B> <A NAME="tex2html535"
+<B> Up:</B> <A NAME="tex2html536"
   HREF="node30.html">4. Special Features</A>
-<B> Previous:</B> <A NAME="tex2html529"
+<B> Previous:</B> <A NAME="tex2html530"
   HREF="node30.html">4. Special Features</A>
- &nbsp; <B>  <A NAME="tex2html537"
+ &nbsp; <B>  <A NAME="tex2html538"
   HREF="node2.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 

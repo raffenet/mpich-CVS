@@ -34,10 +34,10 @@
 
 \layout Title
 
-Jumpshot-4's User's Guide
+Jumpshot-4 Users Guide
 \layout Author
 
-Anthony Chan
+Anthony Chan,
 \begin_inset Foot
 collapsed true
 
@@ -46,7 +46,7 @@ collapsed true
 chan@mcs.anl.gov
 \end_inset 
 
-, David Ashton
+ David Ashton,
 \begin_inset Foot
 collapsed true
 
@@ -55,7 +55,7 @@ collapsed true
 ashton@mcs.anl.gov
 \end_inset 
 
-, Rusty Lusk
+ Rusty Lusk,
 \begin_inset Foot
 collapsed true
 
@@ -64,7 +64,7 @@ collapsed true
 lusk@mcs.anl.gov
 \end_inset 
 
-, William Gropp
+ William Gropp
 \begin_inset Foot
 collapsed true
 
@@ -75,16 +75,16 @@ gropp@mcs.anl.gov
 
 
 \newline 
-Mathematics and Computer Science Divsion, Argonne National Laboratory
+Mathematics and Computer Science Division, Argonne National Laboratory
 \layout Section*
 
 Acknowledgments
 \layout Standard
 
-We would like to thank Dave Wootton of IBM Poughkeepsie for his valuable
- suggestions and comments during the development of this tool.
+We thank Dave Wootton of IBM Poughkeepsie for his valuable suggestions and
+ comments during the development of this tool.
  This work has been supported in part through the Center for Astrophysical
- Thermonuclear Flashes at the University of Chicago by the United States
+ Thermonuclear Flashes at the University of Chicago by the U.S.
  Department of Energy under contract B532820.
  This work was also supported by the Mathematical, Information, and Computationa
 l Sciences Division subprogram of the Office of Advanced Scientific Computing
@@ -103,30 +103,29 @@ l Sciences Division subprogram of the Office of Advanced Scientific Computing
 Introduction
 \layout Standard
 
-Jumpshot-4 is the visualization program for the improved scalable logfile
- format, SLOG-2, which provides a hierarchical structure to store a large
- number of drawable objects in a very scalable and efficient way for visualizati
-on.
- The new scalable logfile format allows the display program to provide functiona
-lities never made possible before.
- Level-of-detail support through preview drawables which provides high-level
- abstraction of the details without reading in huge amount of data into
- the graphical display engine.
- New Jumpshot allows seamless scrolling from the beginning till the end
- of logfile at any zoom-level.
- In addition, new functionalities like dragged-zoom, grasp and scroll, instant
- zoom in/out, easy vertical expansion of timelines, cut and paste of timelines
- are available as well.
- A new search and scan facility is provided to locate the hard-to-find objects
- in very large logfile.
- Also, the histogram module based on user selected duration provides a convenien
-t and graphical way to analyze the statistics of logfile, e.g.
- easy detection of load imbalance among timelines.
+Jumpshot-4 is a visualization program for the logfile format, SLOG-2, which
+ provides a hierarchical structure to store a large number of drawable objects
+ in a scalable and efficient way for visualization.
+ SLOG-2's new scalable logfile format allows the display program to provide
+ functionalities never before possible.
+ Level-of-detail support through preview drawables provides high-level abstracti
+on of the details without reading huge amounts of data into the graphical
+ display engine.
+ Jumpshot-4 allows seamless scrolling from the beginning to the end of the
+ logfile at any zoom level.
+ In addition, new functionalities are available, such as dragged-zoom, grasp
+ and scroll, instant zoom in/out, easy vertical expansion of timelines,
+ and cut and paste of timelines.
+ A new search-and-scan facility is provided in order to locate hard-to-find
+ objects in a very large logfile.
+ Also, the histogram module based on user-selected duration provides a convenien
+t and graphical way to analyze the statistics of a logfile (e.g., it enables
+ easy detection of load imbalance among timelines).
  The new legend table makes manipulation of the different categories of
  objects easy.
  The new viewer also provides an integrated logfile convertor for all known
- SLOG-2 convertible trace formats, like CLOG, RLOG, and UTE, and it attempts
- to conform to the standard Look and Feel that is expected by most users.
+ SLOG-2 convertible trace formats, including CLOG, CLOG-2, RLOG, and UTE,
+ and it conforms to the standard look and feel expected by most users.
  
 \layout Chapter
 
@@ -139,9 +138,9 @@ Understanding the Drawable
 The main visual component in the SLOG-2 visualization program, Jumpshot-4,
  is the 
 \emph on 
-timeline canvas
+timeline canvas,
 \emph default 
- which is zoomable and scrollable in both horizontal and vertical axes.
+ which is zoomable and scrollable in both the horizontal and vertical axes.
  The timeline canvas can be thought of as a 
 \noun on 
 timeline
@@ -151,110 +150,100 @@ timeline
 time
 \noun default 
  coordinate system.
- Each point on the canvas is identified by two numbers, a timestamp and
+ Each point on the canvas is identified by two numbers: a timestamp and
  a timeline ID.
- The canvas is where the graphical objects contained in SLOG-2 file are
- being drawn on.
+ The graphical objects contained in the SLOG-2 file are drawn on the canvas.
  These objects are called 
 \emph on 
-Drawables.
+drawables.
  
 \emph default 
-There are 2 kinds of drawable objects.
- They are 
+There are two kinds of drawable objects:
 \emph on 
-Primitive
+primitive
 \emph default 
  and 
 \emph on 
-Composite
+composite
 \emph default 
  drawables.
  The primitive drawables are the simplest drawables and are considered to
- be basic elements of SLOG-2 file.
+ be basic elements of the SLOG-2 file.
  They are categorized based on their topological structures.
- Currently, there are 3 topologies supported in SLOG-2.
- They are 
+ Currently, three topologies are supported in SLOG-2:
 \emph on 
-State
-\emph default 
-, 
-\emph on 
-Arrow
+state, arrow,
 \emph default 
  and 
 \emph on 
-Event
+event.
+
 \emph default 
-.
- Both state and arrow are drawables identified by 2 points in the timeline
- canvas, i.e.
- a pair of (timestamp, timeline ID) coordinates.
- State's start timeline ID is the same as its final timeline ID, but arrow
- is different from state in the way that arrow's start and final timeline
- IDs may be different.
- Event consists of only 1 point in the timeline canvas, i.e.
- it has only 1 timestamp and 1 timeline ID.
- Composite drawable is more complicated and is constructed by a collection
- of primitive drawables
+ Both state and arrow are drawables identified by two points in the timeline
+ canvas, that is, a pair of (timestamp, timeline ID) coordinates.
+ State's start timeline ID is the same as its final timeline ID, but  arrow's
+ start and final timeline IDs may be different.
+ Event consists of only one point in the timeline canvas; that is, it has
+ only one timestamp and one timeline ID.
+ The composite drawable is more complicated and is constructed by a collection
+ of primitive drawables.
 \begin_inset Foot
 collapsed true
 
 \layout Standard
 
-In general, composite drawable can be seen as composed of other simpler
+In general, the composite drawable can be seen as composed of other simpler
  composite drawables.
 \end_inset 
 
-.
  In order to centralize the properties of drawables, all the displayable
- attributes of a drawable are stored in its corresponding 
+ attributes of a drawableare stored in its corresponding 
 \emph on 
 Category 
 \emph default 
-object, e.g.
- color, legend name, topology and other shared description of a drawable.
+object (e.g., color, legend name, topology, and other shared description of
+ a drawable).
  Both the category and drawable definitions are stored in the SLOG-2 file.
  These definitions are interpreted and displayed by the display program,
  Jumpshot-4.
 \layout Standard
 
 One of the distinct features of Jumpshot is that it uses nested states to
- show the relationship of functions in the call stack, i.e.
- nested states corresponds to the nested subroutine calls.
- Current implementation of the SLOG-2 format stores some of the state nesting
- information to optimize the performance of the visualization program.
+ show the relationship of functions in the call stack; that is, the nested
+ states correspond to the nested subroutine calls.
+ The current implementation of the SLOG-2 format stores some of the state
+ nesting information to optimize the performance of the visualization program.
 \layout Section
 
 Understanding the Preview Drawable
 \layout Standard
 
-A preview drawable is created as a result of the renormalization process
- of the SLOG-2 format.
+The preview drawable is created as a result of renormalization of the SLOG-2
+ format.
  The renormalized object provides a high-level description of what is going
  on within the (timeline vs time) region where the preview object spans.
- Preview drawable is designed to amalgamate real drawables of same topological
- type, e.g.
- preview state amalgamates only states.
- So preview drawable is always a primitive drawable in the renormalization
+ The preview drawable is designed to amalgamate real drawables of the same
+ topological type, for example, a preview state is a "state amalgamates
+ only" object.
+ Hence, a preview drawable is always a primitive drawable in the renormalization
  scheme.
- There are currently 3 different types of preview drawables: 
+ There are currently three different types of preview drawables: 
 \emph on 
 Preview_State, Preview_Arrow, and Preview_Event.
 
 \emph default 
- Therefore one preview drawable is for each supported topology of primitive
+ Therefore, one preview drawable is for each supported topology of primitive
  drawable.
- Up to three preview categories could show up in the Legend window of the
- display program as shown in Figure 
+ Up to three preview categories can appear in the Legend window of the display
+ program (see Figure 
 \begin_inset LatexCommand \ref{fig:legend_popup}
 
 \end_inset 
 
 .
- The Legend window contains a table of legends which are basically visual
- representation of category objects mentioned earlier.
- Each legend provides an interface to the user modifiable part of the correspond
+ The Legend window contains a table of legends that are basically a visual
+ representation of the category objects mentioned earlier.
+ Each legend provides an interface to the user-modifiable part of the correspond
 ing category that is relevant to the display program.
  
 \layout Standard
@@ -269,23 +258,23 @@ Figures
 
 \end_inset 
 
- illustrate the visual transition from preview drawable to its detailed
- content of the first 5 processes of a 16 processes MPI slog2 file when
- the timeline canvas is being zoomed-in.
- The sequence of figures is generated by zooming in a marked region in each
- successive figure in the sequence.
+ illustrate the visual transition from the preview drawable to its detailed
+ content of the first five processes of a 16-process MPI slog2 file when
+ zooming in on the timeline canvas.
+ The sequence of figures is generated by zooming in on a marked region in
+ each successive figure in sequence.
  The marked region is shaded and is bounded by a pair of white lines.
- A magnifying glass with plus sign in the center is the cursor that marks
- the end of the zoom region.
+ A magnifying glass with a plus sign in the center is the cursor that marks
+ the ends of the zoom region.
  Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_0}
 
 \end_inset 
 
- is a typical timeline canvas where most of real drawables are still buried
- inside their preview drawables.
- In the figure, there are preview arrows, preview states in the front and
- some long running real states in the back.
+ is a typical timeline canvas, in which most of the real drawables are still
+ buried inside their preview drawables.
+ In the figure are preview arrows, preview states in the front, and some
+ long-running real states in the back.
 \layout Standard
 
 
@@ -324,10 +313,9 @@ centering
 
 \end_inset 
 
- A typical zoom-out view of preview states and arrows.
- The region that is marked by a pair of white lines and the zoom-plus cursor
- is being zoomed in, i.e.
- enlarged, in the next figure.
+ Typical zoomed-out view of preview states and arrows.
+ The region marked by a pair of white lines and the zoom-plus cursor is
+ zoomed into (i.e., enlarged) in the next figure.
 \end_inset 
 
 
@@ -335,26 +323,26 @@ centering
 \noindent 
 Each thick yellow line is a 
 \emph on 
-preview arrow
+preview arrow,
 \emph default 
- which represents a collection of arrows between its 2 ending timelines.
- The start and final timestamps of preview arrow are the extremes of all
- real arrows amalgamated inside the preview object.
+ which represents a collection of arrows between its two ending timelines.
+ The start and final timestamps of the preview arrow are the extremes of
+ all real arrows amalgamated inside the preview object.
  Notice that the beginning or ending timestamp of a preview arrow does not
- necessarily mean that there is any arrow starting and ending at that times,
- it just indicates that there are arrows starting or ending within these
- 2 times and between the 2 marked timelines.
+ necessarily mean that there is any arrow starting and ending at that time;
+ it indicates simply that there are arrows starting or ending within these
+ two times and between the two marked timelines.
  The thickness of the preview arrow denotes the number of real arrows represente
 d by the preview object.
- Because of the limitation on the available thickness that preview arrow
- can have, the thickness of the preview object is set to equal to the order
+ Because of the limitation on the available thickness that a preview arrow
+ can have, the thickness of the preview object is set equal to the order
  of magnitude of the number of real objects amalgamated.
- So same thickness in two different preview arrows does not mean that they
- contain exactly the same number of real arrows, but does mean that the
- numbers of real arrows contained in the preview objects are within the
- same order of magnitude, i.e.
- within a constant multiplicative factor as defined by PREVIEW_ARROW_LOG_BASE
- in Preference window shown in Figure 
+ That is, the same thickness in two different preview arrows does not mean
+ that they contain exactly the same number of real arrows; rather, it means
+ that the numbers of real arrows contained in the preview objects are within
+ the same order of magnitude, that is, within a constant multiplicative
+ factor as defined by PREVIEW_ARROW_LOG_BASE in the Preference window shown
+ in Figure 
 \begin_inset LatexCommand \ref{fig:preference_pview_state}
 
 \end_inset 
@@ -370,7 +358,7 @@ d by the preview object.
  the preview objects.
 \layout Standard
 
-The rectangle that has horizontal strips of colors is 
+The rectangle that has horizontal strips of colors is the 
 \emph on 
 preview state
 \emph default 
@@ -379,13 +367,13 @@ preview state
  of real states that are amalgamated within the time range of the preview
  state.
  Depending on the PREVIEW_STATE_DISPLAY value selected in the pulldown menu
- at the top of left side Y-axis label 
+ at the top of the left side of the y-axis label,
 \begin_inset Foot
-collapsed false
+collapsed true
 
 \layout Standard
 
-In Preference window as shown in Figure 
+In the Preference window, as shown in Figure 
 \begin_inset LatexCommand \ref{fig:preference_pview_state}
 
 \end_inset 
@@ -396,38 +384,35 @@ In Preference window as shown in Figure
 \end_inset 
 
 , there is also a PREVIEW_STATE_DISPLAY variable.
- The variable determines the initial PREVIEW_STATE_DISPLAY used when Timeline
- window is first made visible.
+ The variable determines the initial PREVIEW_STATE_DISPLAY used when the
+ Timeline window is first made visible.
 \end_inset 
 
-, the distribution and the heights of the strips can be changed drastically.
- One of the display options for preview state is 
+ the distribution and the heights of the strips can be changed dramatically.
+ One of the display options for the preview state is 
 \emph on 
 CumulativeInclusionRatio
 \emph default 
 .
- With this option, the strips are arranged in decreasing height order, sort
- of like a small cumulative histogram.
+ With this option, the strips are arranged in order of decreasing height
+ (somewhat like a small, cumulative histogram).
  The tallest strip at the bottom of the preview state corresponds to the
  category of states that contribute the longest total duration in the specified
  time range 
 \emph on 
-inclusively
+inclusively,
 \emph default 
-, i.e.
- disregarding the nesting state order.
- This visual representation aims to tell what state categories could be
- within the span of the preview state and which state category contributes
- the most statistically to the specified time range, so user can decide
+that is, disregarding the nesting state order.
+ This visual representation tells which state categories can be within the
+ span of the preview state and which state category contributes the most
+ statistically to the specified time range, so that the user can decide
  where to zoom in to find out more details.
- In a sense, the preview states provide a global coarse-grain summary of
- what is going on without losing as much details as the preview found in
- older Jumpshot, i.e.
- Jumpshot-3.
- Compared with Jumpshot-3's preview which has averaged out the information
- about timeline IDs, the new preview states retain the timeline ID information
- and that may lead to early detection of load balancing problem before zooming
- in to see all the real states.
+ In a sense, the preview states provide a global, coarse-grained summary
+ of what is going on, without losing as many details as with the preview
+ in the older version of Jumpshot.
+ For example, the new preview states retain timeline ID information, which
+  may enable early detection of load-balancing problems before zooming in
+ to see all the real states.
  
 \layout Standard
 \noindent 
@@ -467,7 +452,7 @@ centering
 
 \end_inset 
 
- The next zoom-in view of Figure 
+ Zoomed-in view of Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_0}
 
 \end_inset 
@@ -483,7 +468,7 @@ Figure
 
 \end_inset 
 
- shows a more zoom-in view of the region marked by the pair of white lines
+ shows a zoomed-in view of the region marked by the pair of white lines
  in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_0}
 
@@ -495,49 +480,46 @@ Figure
 
 \end_inset 
 
-, some of the preview arrows have disappeared and are replaced by real arrows,
- i.e.
- the white arrows.
+, some of the preview arrows have disappeared and have been replaced by
+ real arrows (i.e., the white arrows).
  Also, some of the stripped preview states have split into several small
- preview states of identical color, i.e.
- the white and gray states, to show more detailed distribution.
- Another important feature of preview state becomes apparent in the figures:
- Preview states are properly nested within real states.
- In the most expanded Y-axis label view, preview state is always on top
- of other nested states
+ preview states of identical color  (i.e., the white and gray states) to show
+ more detailed distribution.
+ Another important feature of the preview state becomes apparent in the
+ figures:  Preview states are properly nested within real states.
+ In the most expanded y-axis label view, the preview state is always on
+ top of the other nested states;
 \begin_inset Foot
 collapsed false
 
 \layout Standard
 
-Only in slog2 file that has multiple ViewMaps and where timelines can be
- collapsed, i.e.
- AIX's UTE generated slog2 file, preview state can be nested with other
- preview state in collapsed Y-axis label view.
+Only in a slog2 file that has multiple ViewMaps and where timelines can
+ be collapsed, that is, AIX's UTE generated slog2 file, can a preview state
+ be nested with other preview states in a collapsed y-axis label view.
 \end_inset 
 
-, i.e.
- states that enclose the preview state are alway real states.
+that is, states that enclose the preview state are always real states.
  A good visual example is shown in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_1}
 
 \end_inset 
 
- where all the white, turquoise and gray preview states
+, where all the white, turquoise, and gray preview states
 \begin_inset Foot
 collapsed false
 
 \layout Standard
 
-when a preview state contains only real states of one single category, it
+When a preview state contains only real states of one single category, it
  may appear like a real state in the timeline canvas.
  The only sure way to tell the difference is to bring up the Drawable Info
  Box by right clicking on the state.
 \end_inset 
 
- are sitting on top of the long orange and dark royal blue states.
- This indicates that the white, turquoise and gray real states are all nested
- inside the long running orange and dark royal blue states.
+ are sitting on top of the long orange and dark royal-blue states.
+ This configuration indicates that the white, turquoise, and gray real states
+ are all nested inside the long-running orange and dark royal-blue states.
 \layout Standard
 
 
@@ -576,7 +558,7 @@ centering
 
 \end_inset 
 
- The next zoom-in view of Figure 
+ Zoomed-in view of Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_1}
 
 \end_inset 
@@ -592,32 +574,32 @@ Figure
 
 \end_inset 
 
- is the zoom-in view of the region marked by the pair of white lines in
+ is a zoomed-in view of the region marked by the pair of white lines in
  Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_1}
 
 \end_inset 
 
 .
- Comparing these 2 figures, all the preview drawables have disappeared and
- are replaced by real drawables.
- Each white preview state are replaced by hundreds of white real states,
- the same is also true for the gray preview states that sit to the right
- of the turquoise states
+ Comparing these two figures, we see that all the preview drawables have
+ been replaced by real drawables.
+ Each white preview state is replaced by hundreds of white real states.
+ The same is true for the gray preview states to the rightof the turquoise
+ states.
 \begin_inset Foot
 collapsed true
 
 \layout Standard
 
-In order to speed up graphics performance of the display program, an aggressive
- algorithm has been employed to eliminate drawing states that are closely
- packed together within the nearest neighboring pixels.
+In order to speed the graphics performance of the display program, an aggressive
+ algorithm has been used to eliminate drawing states that are closely packed
+ together within the nearest neighboring pixels.
  Together with the fact that the number of pixels available is less than
- the number of non-overlap states in the region, the number of the real
- states may sometimes not appear as numerous as the Drawable Info Box of
- preview state indicates.
- In that case, a further zoom in will be needed to confirm the case as shown
- in Fig.
+ the number of nonoverlap states in the region, the number of the real states
+ may sometimes not appear as numerous as the Drawable Info Box of the preview
+ state indicates.
+ In that case, a further zoom-in will be needed to confirm the case, as
+ shown in Fig.
  
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_3}
 
@@ -626,9 +608,8 @@ In order to speed up graphics performance of the display program, an aggressive
 .
 \end_inset 
 
-.
- The preview arrows are all replaced by the real arrows.
- It becomes apparent that the white lines marked region in Figure 
+ The preview arrows all have been replaced by real arrows.
+ The region marked by the white lines in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_1}
 
 \end_inset 
@@ -638,12 +619,12 @@ In order to speed up graphics performance of the display program, an aggressive
 
 \end_inset 
 
- but at the same time it reduces the number of drawables drawn on the canvas
+, but at the same time it reduces the number of drawables drawn on the canvas
  by a factor of 100.
  Another way of seeing this benefit is to find out the exact number of real
- drawables amalgamated by the preview objects within the zoomed region.
- This can be achieved by right clicking on the preview drawable and the
- result is shown in Figure 
+ drawables amalgamated by the preview objects within the zoomed-in region.
+ This can be achieved by right clicking on the preview drawable.
+ The result is shown in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_infobox_preview_state}
 
 \end_inset 
@@ -687,7 +668,7 @@ centering
 
 \end_inset 
 
- The next zoom-in view of Figure 
+ Zoomed-in view of Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_2}
 
 \end_inset 
@@ -698,7 +679,7 @@ centering
 
 \layout Standard
 
-Further zooming into the white lines marked region in Figure 
+Further zooming in on the region marked by the white lines in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_2}
 
 \end_inset 
@@ -716,8 +697,8 @@ Further zooming into the white lines marked region in Figure
 
 \end_inset 
 
- enlarges the real drawables into easily separable objects as shown in Figure
- 
+ enlarges the real drawables into easily separable objects, as shown in
+ Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_4}
 
 \end_inset 
@@ -762,7 +743,7 @@ centering
 
 \end_inset 
 
- The next zoom-in view of Figure 
+ Zoomed-in view of Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_3}
 
 \end_inset 
@@ -796,54 +777,56 @@ Understanding the Preview State Display
 
 \layout Standard
 
-So far only one of the representations of preview state, 
+So far only one of the representations of the preview state, 
 \emph on 
 CumulativeInclusionRatio
 \emph default 
-, is used to illustrate the concept and representation of the preview state.
- Jumpshot-4 actually uses several different representations of preview state.
- All these representations are based on 2 ratios stored in SLOG-2 file.
- They are called 
+, has been used to illustrate the concept and representation of the preview
+ state.
+ Jumpshot-4 actually uses several different representations of the preview
+ state.
+ All these representations are based on two ratios stored in the SLOG-2
+ file:
 \emph on 
-Inclusion Ratio 
+ inclusion ratio 
 \emph default 
 and 
 \emph on 
-Exclusion Ratio.
+exclusion ratio.
  
 \emph default 
-Inclusion ratio is computed without taking into account of the nesting order
- of the states.
- States which are either nested inside or enclose other states contribute
+The inclusion ratio is computed without taking into account the nesting
+ order of the states.
+ States that either are nested inside or enclose other states contribute
  equally to the inclusion ratio.
- The end result is that the sum of all inclusion ratios from all state categorie
-s in a preview state could easily be larger than 1.
- On the other hand, exclusion ratio is specifically computed to exclude
+ The result is that the sum of all inclusion ratios from all state categories
+ in a preview state could easily be larger than 1.
+ On the other hand, the exclusion ratio is specifically computed to exclude
  the overlap of the nested state from the enclosing state.
  Therefore the sum of exclusion ratios of all state categories in a preview
  state is guaranteed to be less than or equal to 1.
  
 \layout Standard
 
-The motivation of computing these 2 ratios is to satisfy two opposite needs
- of preview state.
- If you are a MPI application developer and you have put a lot of user-defined
- states in your SLOG-2 file through either MPE or AIX's PCT utility, you
- most likely would be interested in the profiling information of the user-define
-d states which enclose MPI states and other user-defined states.
- In this case, inclusion ratio will be very useful.
- Because inclusion ratios of user-defined states usually dominate all state
+The motivation for computing these two ratios is to satisfy two opposite
+ needs of the preview state.
+ The MPI application developer who has put a lot of user-defined states
+ in a SLOG-2 file, through either MPE or AIX's PCT utility, is likely to
+ be interested in the profiling information of the user-defined states that
+ enclose MPI states and other user-defined states.
+ In this case, the inclusion ratio will be useful.
+ The inclusion ratios of user-defined states usually dominate all state
  inclusion ratios, including those of MPI states.
- Therefore, the inclusion ratio highlights the outermost enclosing states
- even at high preview level.
- On the other hand, if you are a MPI implementor or are interested in the
- low level MPI networking overhead, you are most likely interested in the
- profiling information of MPI and its internal calls.
- Exclusion ratio will come in handy.
- Exclusion ratios for the innermost nested states, i.e.
- MPI states, tend to dominate all state exclusion ratios.
- So the exclusion ratio highlights the innermost nested states at very high
- preview level.
+ Therefore, the inclusion ratio highlights the outermost enclosing states,
+ even at a high preview level.
+ On the other hand, the MPI implementor or the person interested in the
+ low-level MPI networking overhead is likely to be interested in the profiling
+ information of MPI and its internal calls.
+ The exclusion ratio will come in handy here.
+ Exclusion ratios for the innermost nested states (i.e., MPI states) tend
+ to dominate all state exclusion ratios.
+ So the exclusion ratio highlights the innermost nested states at a very
+ high preview level.
 \layout Standard
 
 
@@ -881,10 +864,9 @@ centering
 
 \end_inset 
 
-A zoomed in view of some nested states where the duration of the orange
- state is 1.0 sec.
- The duration of the navy blue state is 0.8 sec.
- The sum of durations for the 2 yellow states is 0.5 sec.
+Zoomed-in view of some nested states where the duration of the orange state
+ is 1.0 sec, the duration of the navy-blue state is 0.8 sec, and the sum of
+ durations for the two yellow states is 0.5 sec.
 \end_inset 
 
 
@@ -895,11 +877,11 @@ Figure
 
 \end_inset 
 
- shows a typical zoomed in view of some nested states.
- In this view, the yellow states are deeply nested in the navy blue state
- which is in turns nested in the orange state.
+ shows a typical zoomed-in view of some nested states.
+ In this view, the yellow states are deeply nested in the navy-blue state,
+ which is in turn nested in the orange state.
  The pair of green lines mark the region where a preview state is being
- created for.
+ created.
 \layout Standard
 
 
@@ -1122,8 +1104,8 @@ Outermost Enclosing State
 
 \end_inset 
 
-The breakdown of real states' contribution to a preview state of duration
- 1.0 sec as it is marked by a pair of green lines in Figure 
+Contributions of real states to a preview state of duration 1.0 sec as marked
+ by the pair of green lines in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_nesting_detail}
 
 \end_inset 
@@ -1141,9 +1123,9 @@ The inclusion and exclusion ratios are computed for the region marked by
 \end_inset 
 
 .
- The table shows that the most dominant state among all inclusion ratios
- is the orange outermost state, but the most dominate state among all exclusion
- ratios is the yellow innermost state which is the least dominant state
+ As the table shows, the most dominant state among all inclusion ratios
+ is the orange outermost state, but the most dominant state among all exclusion
+ ratios is the yellow innermost state, which is the least dominant state
  in inclusion ratios.
  One obvious observation is that the inclusion and exclusion ratios of the
  innermost state category are the same.
@@ -1184,25 +1166,25 @@ centering
 
 \end_inset 
 
- Different preview state displays of the zoomed in view of the Figure 
+ Different preview state displays of the zoomed-in view of the Figure 
 \begin_inset LatexCommand \ref{fig:timeline_nesting_detail}
 
 \end_inset 
 
 .
- Starting from the top, the first one is 
+ Starting from the top, the first one is the
 \emph on 
 CumulativeInclusionRatio
 \emph default 
- view, the second one is 
+ view, the second one is the 
 \emph on 
 OverlapInclusionRatio
 \emph default 
- view, the third one is 
+ view, the third one is the 
 \emph on 
 CumulativeExclusionRatio
 \emph default 
- view, and the last one is 
+ view, and the last one is the
 \emph on 
 OverlapExclusionRatio
 \emph default 
@@ -1212,7 +1194,7 @@ OverlapExclusionRatio
 
 \layout Standard
 
-With data computed in Table 
+With the data computed in Table 
 \begin_inset LatexCommand \ref{table:legend_nesting_detail}
 
 \end_inset 
@@ -1228,11 +1210,11 @@ With data computed in Table
  to the height of the preview state.
  For instance, if the ratio of the category for the strip is 0.9, the correspondi
 ng colored strip will occupy 90% of the preview state's height.
- The statement is true for all preview state display except 
+ This statement is true for all preview state displays except 
 \emph on 
-CumulativeInclusionRatio
+CumulativeInclusionRatio,
 \emph default 
- which could have its total sum of ratios in exceed of 1.0 especially when
+ which may have its total sum of ratios in excess of 1.0, especially when
  the slog2 file is highly nested.
  First consider the 
 \emph on 
@@ -1242,101 +1224,97 @@ and
 \emph on 
 CumulativeExclusionRatio
 \emph default 
- views, i.e the first and the third ones from the top in the figure.
- Notice that yellow state is least important in the top 
+ views (i.e., the first and the third ones from the top in the figure).
+ Notice that yellow state is the least important in the top 
 \emph on 
 CumulativeInclusionRatio
 \emph default 
- view, but becomes most significant in the third 
+ view but becomes the most significant in the third 
 \emph on 
 CumulativeExclusionRatio
 \emph default 
  view.
- Since the sum of all inclusion ratios is larger than 1, in this case, the
- sum is 2.3, the 
+ Since the sum of all inclusion ratios is larger than 1 (in this case, the
+ sum is 2.3), the 
 \emph on 
 CumulativeInclusionRatio
 \emph default 
  view reweights all ratios to fill up the preview box.
- Strictly speaking 
+ Strictly speaking, the 
 \emph on 
 CumulativeInclusionRatio
 \emph default 
  view cannot be used to compare different preview states because of the
- arbitrary rescaling
+ arbitrary rescaling.
 \begin_inset Foot
 collapsed true
 
 \layout Standard
 
-Most of times, neighoring preview states in 
+Usually, neighoring preview states in the 
 \emph on 
 CumulativeInclusionRatio
 \emph default 
- view has similar total sum of inclusion ratios.
- Because of this fact, one can compare adjacent preview states.
- But bear in mind that the total sum of inclusion ratios between nearby
- preview states can change drastically without any visual indication.
- When in doubt, right click on the preview state to get Drawable Info Box
- to confirm the ratios.
+ view have a similar total sum of inclusion ratios.
+ Hence, one can compare adjacent preview states.
+ But we note that the total sum of inclusion ratios between nearby preview
+ states can change dramatically without any visual indication.
+ When in doubt, one should right click on the preview state to get the Drawable
+ Info Box and confirm the ratios.
 \end_inset 
 
-.
- If one is interested in the comparison of inclusion ratios across different
- preview states, 
+ If one is interested in comparing inclusion ratios across different preview
+ states, the 
 \emph on 
 OverlapInclusionRatio
 \emph default 
  view can be used instead.
- 
-\emph on 
-OverlapInclusionRatio
-\emph default 
- view draws all inclusion ratios proportional to the height of the preview
- state but in an overlapping way, i.e.
- draw them in decreasing inclusion ratios order and stack one on top of
- the other, sort of like nested state.
- The overlap view of exclusion ratios is 
+  This view draws all inclusion ratios proportional to the height of the
+ preview state but in an overlapping way, that is, in order of decreasing
+ inclusion ratios, and stacks one on top of the other (somewhat like a nested
+ state).
+ The overlap view of exclusion ratios is the 
 \emph on 
 OverlapExclusionRatio
 \emph default 
- view which is shown at the bottom of Figure 
+ view, shown at the bottom of Figure 
 \begin_inset LatexCommand \ref{fig:timeline_nesting_preview_all}
 
 \end_inset 
 
 .
- 
+ The
 \emph on 
-OverlapExclusionRatio 
+ OverlapExclusionRatio 
 \emph default 
-view draws exclusion ratios exactly the same way as 
+view draws exclusion ratios exactly the same way as does the
 \emph on 
-OverlapInclusionRatio
+ OverlapInclusionRatio
 \emph default 
 .
- In general, overlap view cannot fill up the full height of the preview
+ In general, an overlap view cannot fill up the full height of the preview
  state.
- This is apparent in 
+ This is apparent in the 
 \emph on 
 OverlapExclusionRatio
 \emph default 
- view in 
+ view in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_nesting_preview_all}
 
 \end_inset 
 
- where the white bordered box indicates the full height of the preview state.
+, where the white bordered box indicates the full height of the preview
+ state.
  The white bordered box is necessary in comparing the ratios across different
  preview states with respect to the preview states' duration.
- However, the white bordered box can sometimes be confusing, because whatever
- in the back of the preview state can show through the empty space within
+ The white bordered box can sometimes be confusing, however, because whatever
+ is in the back of the preview state can show through the empty space within
  the white bordered box.
  In that case, the bordered box can be turned off by selecting 
 \emph on 
 Empty
 \emph default 
- in PREVIEW_STATE_BORDER in Preference window.
+ in the PREVIEW_STATE_BORDER in the Preference window.
  
 \layout Standard
 
@@ -1365,14 +1343,13 @@ CumulativeExclusionRatio
 
 \end_inset 
 
- respectively.
+, respectively.
  The 
 \emph on 
 CumulativeExclusionRatio
 \emph default 
- view does provide an extra dimension of information when compared to its
- inclusion ratio counterpart at the expense of being a bit more complicated
- to digest visually.
+ view provides an extra dimension of information compared with its inclusion
+ ratio counterpart, at the expense of being a bit more complicated visually.
 \layout Standard
 
 
@@ -1410,7 +1387,7 @@ centering
 
 \end_inset 
 
- The 
+
 \emph on 
 CumulativeExclusionRatio
 \emph default 
@@ -1460,7 +1437,7 @@ centering
 
 \end_inset 
 
-The 
+
 \emph on 
 CumulativeExclusionRatio
 \emph default 
@@ -1469,8 +1446,7 @@ CumulativeExclusionRatio
 
 \end_inset 
 
-.
- Also, a zoom-in shot of Figure 
+; also, a zoomed-in shot of Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_0_excl}
 
 \end_inset 
@@ -1537,60 +1513,67 @@ centering
 
 \end_inset 
 
- The main control window of Jumpshot-4.
+ Main control window of Jumpshot-4.
 \end_inset 
 
 
 \layout Standard
 
-The first window that pops up when invoking Jumpshot-4 is called Main window
- as shown in Figure 
+The first window that pops up when invoking Jumpshot-4 is called the Main
+ window, as shown in Figure 
 \begin_inset LatexCommand \ref{fig:main}
 
 \end_inset 
 
 .
- The buttons shown in toolbar are shortcuts to the sub menu items in the
- top menubar.
- The function of each of these buttons is listed in the Table 
+ The buttons shown in the toolbar are shortcuts to the submenu items in
+ the top menu bar.
+ The function of each of these buttons is listed in Table 
 \begin_inset LatexCommand \ref{table:main_toolbar}
 
 \end_inset 
 
 .
- There are 2 text fields that display crucial information about the logfile
- being processed.
- The text field which is titled 
+ Two text fields display crucial information about the logfile being processed.
+ The text field entitled 
 \emph on 
 LogName
 \emph default 
  displays the pathname of the logfile being processed.
- The pulldown menu which is titled 
+ The pulldown menu entitled 
 \emph on 
 ViewMap
 \emph default 
  lists all the available ViewMaps in the SLOG-2 file.
- Currently, both CLOG
+ Currently, the CLOG
 \begin_inset Foot
 collapsed true
 
 \layout Standard
 
-a low-overhead native trace format from MPE.
+A low-overhead native trace format from MPE.
 \end_inset 
 
- and RLOG
+, CLOG-2
 \begin_inset Foot
 collapsed true
 
 \layout Standard
 
-an internal MPICH2 profiling format
+A low-overheaed native trace foramt from MPE-2
 \end_inset 
 
- converted SLOG-2 file contains one ViewMaps, it is called the Identity
- Map.
- Only IBM's UTE trace converted SLOG-2 file contains multiple ViewMaps.
+ and RLOG-converted
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+An internal MPICH2 profiling format
+\end_inset 
+
+ SLOG-2 files contain one ViewMap, called the Identity Map.
+ Only IBM's UTE trace-converted SLOG-2 file contains multiple ViewMaps.
 \layout Standard
 
 
@@ -1825,7 +1808,7 @@ display the Preference window that adjusts Jumpshot's properties
 
 \layout Standard
 
-Show User's Manual
+Show Users Manual
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1833,7 +1816,7 @@ Show User's Manual
 
 \layout Standard
 
-show the User's Manual of this program
+show the Users Manual of this program
 \end_inset 
 </cell>
 </row>
@@ -1928,22 +1911,22 @@ centering
 
 \end_inset 
 
-The Logfile Convertor window that allows conversion of supported trace file
- format to SLOG-2 format.
+Logfile Convertor window allowing conversion of supported trace file format
+ to SLOG-2 format.
 \end_inset 
 
 
 \layout Standard
 
-If a non-slog2 file is selected in the Main window, the Logfile Convertor
+If a non-slog2 file is selected in the Main window, the Logfile Convertor,
  as shown in Figure 
 \begin_inset LatexCommand \ref{fig:convertor_init}
 
 \end_inset 
 
- will be invoked to prompt user to convert the file to SLOG-2 format readable
+, will be invoked to prompt user to convert the file to SLOG-2 format readable
  by this viewer.
- There are currently 3 supported convertors: 
+ Currently, four convertors are supported: 
 \emph on 
 CLOG
 \emph default 
@@ -1953,7 +1936,7 @@ CLOG
 \emph default 
 , 
 \emph on 
-RLOG 
+CLOG-2 --> SLOG-2, RLOG 
 \emph default 
 -->
 \emph on 
@@ -1968,9 +1951,9 @@ UTE
  SLOG-2.
  
 \emph default 
-Convertor is generally selected based on the input file's file extension.
- In the case that wrong file convertor is selected, user can correct it
- through the pale blue pulldown menu located at the top of the window.
+The convertor is generally selected based on the input file's file extension.
+ If the wrong file convertor is selected, the user can correct it through
+ the pale-blue pulldown menu located at the top of the window.
  The Logfile Convertor window can also be invoked by directly clicking on
  the Logfile Conversion button shown in the Table 
 \begin_inset LatexCommand \ref{table:main_toolbar}
@@ -1982,11 +1965,11 @@ Convertor is generally selected based on the input file's file extension.
  filename recommended by the convertor based on the text field in the Input
  File Specification.
  If the text field does not display the default name as expected, hitting
- return key in the Input File Specification field will force the update
- of the Output File Name field with the default name.
- There are 4 major functions of the Logfile convertor and each of them is
- associated with a button in the lower panel of the window.
- They are listed in the Table 
+ return key in the Input File Specification field will force an update of
+ the Output File Name field with the default name.
+ The Logfile Convertor has four major functions, each  associated with a
+ button in the lower panel of the window.
+ They are listed in Table 
 \begin_inset LatexCommand \ref{table:convertor_buttons}
 
 \end_inset 
@@ -2182,24 +2165,24 @@ Return to the previous component that spawns the Logfile Convertor
 
 \end_inset 
 
-Functions of the major functions in the Logfile Convertor window.
+Major functions in the Logfile Convertor window.
 \end_inset 
 
 
 \layout Standard
 
-Since the Logfile Convertor launches a separate java process to do the logfile
+Since the Logfile Convertor launches a separate Java process to do the logfile
  conversion, it requires certain parameters to launch the process correctly.
- All the parameters that are needed by any logfile convertor are supplied
- through a panel hidden by a splitter in the convertor window.
- The splitter has a divider which can be lifted up to display all the parameters
- used to launch the java process as in the Figure 
+ All the parameters needed by any logfile convertor are supplied through
+ a panel hidden by a splitter in the convertor window.
+ The splitter has a divider that can be lifted up to display all the parameters
+ used to launch the Java process, as in Figure 
 \begin_inset LatexCommand \ref{table:convertor_buttons}
 
 \end_inset 
 
 .
- In the rare occasion that the default parameters are not correct, the text
+ On the rare occasion that the default parameters are not correct, the text
  fields can be modified to reflect the situation.
  
 \layout Standard
@@ -2240,25 +2223,25 @@ centering
 
 \end_inset 
 
-The hidden parameters panel of the Logfile Convertor.
+Hidden parameters panel of the Logfile Convertor.
 \end_inset 
 
 
 \layout Standard
 
-The standard output and error streams of the process are being piped to
- the text area located in the middle of the window as the process is running.
+The standard output and error streams of the process are piped to the text
+ area located in the middle of the window as the process is running.
  The Output File Size field displays the current size of the slog2 file
- as it is being generated, also the progress bar will be incremented to
- show the current ratio of the output to input file size as in the Figure
- 
+ as it is being generated.
+ Also, the progress bar will be incremented to show the current ratio of
+ the output to input file size, as in Figure 
 \begin_inset LatexCommand \ref{fig:convertor_progress}
 
 \end_inset 
 
 .
  If the logfile conversion fails, the error message will be printed in the
- text area for diagnosis or bug report.
+ text area for diagnosis or a bug report.
 \layout Standard
 
 
@@ -2321,15 +2304,15 @@ clearpage
 Legend Window
 \layout Standard
 
-As soon as a SLOG-2 file is selected in Main window and ready for visualization,
- the Legend window like the one shown in Figure 
+As soon as a SLOG-2 file is selected in the Main window and is ready for
+ visualization, the Legend window like the one shown in Figure 
 \begin_inset LatexCommand \ref{fig:legend_popup}
 
 \end_inset 
 
  will be displayed.
- All the features that are going to be discussed in the Legend window affects
- both the Timeline and Histogram windows.
+ All the features that are going to be discussed in the Legend window affect
+ both the Timeline and the Histogram windows.
 \layout Standard
 
 
@@ -2368,20 +2351,20 @@ centering
 
 \end_inset 
 
- A typical Legend window when slog2 file is first loaded into Jumpshot-4.
+ Typical Legend window when a slog2 file is first loaded into Jumpshot-4.
 \end_inset 
 
 
 \layout Standard
 
-The Legend window contains mainly a 4-columns legend table.
- The 4 columns are labeled as 
+The Legend window contains mainly a four-column legend table.
+ The four columns are labeled 
 \emph on 
-Topo, Name, V 
+Topo, Name, V, 
 \emph default 
 and 
 \emph on 
-S
+S,
 \emph default 
  as in Table 
 \begin_inset LatexCommand \ref{table:legend_column_ops}
@@ -2525,7 +2508,7 @@ Edit Name
 
 \layout Standard
 
-Sort Order menu (Figure 
+Sort Order Menu (Figure 
 \begin_inset LatexCommand \ref{fig:legend_sort_order}
 
 \end_inset 
@@ -2653,7 +2636,7 @@ Table
 
  also lists out all defined mouse operations that are provided in each column.
  The operations are (1) left mouse clicking on the column title icon and
- on the column cell as well as (2) right mouse clicking in any column cell.
+ on the column cell and (2) right mouse clicking in any column cell.
  
 \layout Standard
 
@@ -2705,11 +2688,11 @@ Figure
 
  is the Color Chooser dialog that will pop up when one of the icon buttons
  in column Topo is pressed.
- The color editor provides 3 different ways of choosing a new color.
+ The color editor provides three ways of choosing a new color.
  After selecting a new color from the dialog, the new color will be used
  to update the icon button.
- The update won't be carried out in the timeline canvas automatically, explicit
- screen redraw is needed.
+ The update won't be carried out in the timeline canvas automatically; an
+ explicit screen redraw is needed.
 \layout Standard
 
 
@@ -2759,34 +2742,33 @@ Figure
 \end_inset 
 
  shows the popup dialog box either when the title icon of column Name is
- pressed or when right mouse button is clicked somewhere in the column.
- There are altogether 6 different sort orders.
- The first 4 orderings are various combination of alphabetical and case
- sensitive order, e.g.
- 
+ pressed or when the right mouse button is clicked somewhere in the column.
+ Altogether, there are six different sort orders.
+ The first four are various combinations of alphabetical and case-sensitive
+ order; for example, 
 \emph on 
 z...a Z...A 
 \emph default 
-refers reverse case sensitive alphabetical ordering.
- The second last order in the list is called 
+refers to a reverse-case-sensitive alphabetical ordering.
+ The second-to-last order in the list is called the 
 \emph on 
-Creation Order
+Creation Order,
 \emph default 
- which refers to the order in which categories are stored in slog2 file
+ which refers to the order in which categories are stored in the slog2 file
  when they are being created.
- The 4 alphabetical ordering has 2 hidden sort orders.
+ The four alphabetical orderings have two hidden sort orders.
  One is called 
 \emph on 
-Preview Order
+Preview Order,
 \emph default 
  which puts the preview drawable category before all the real drawable categorie
 s of the same topology.
  The other is 
 \emph on 
-Topo Order
+Topo Order,
 \emph default 
- which refers to topological ordering, i.e arrow is ahead of state.
- The preview and topo sort orders can be turned on or off through the Preference
+ which refers to topological ordering (i.e., arrow is ahead of state).
+ The Preview and Topo sort orders can be turned on or off through the Preference
  window as shown in Table 
 \begin_inset LatexCommand \ref{table:preference_legend}
 
@@ -2855,7 +2837,7 @@ A...Z a...z
 
 \layout Standard
 
-case sensitive alphabetical ordering
+case-sensitive alphabetical ordering
 \end_inset 
 </cell>
 </row>
@@ -2875,7 +2857,7 @@ z...a Z...A
 
 \layout Standard
 
-reverse case sensitive alphabetical ordering
+reverse-case-sensitive alphabetical ordering
 \end_inset 
 </cell>
 </row>
@@ -2895,7 +2877,7 @@ Aa...Zz
 
 \layout Standard
 
-case insensitive alphabetical ordering
+case-insensitive alphabetical ordering
 \end_inset 
 </cell>
 </row>
@@ -2915,7 +2897,7 @@ zZ...aA
 
 \layout Standard
 
-reverse case insensitive alphabetical ordering
+reverse-case-insensitive alphabetical ordering
 \end_inset 
 </cell>
 </row>
@@ -2967,7 +2949,7 @@ reverse of Creation order
 
 \end_inset 
 
-The Description of the Sort Order operation menu in the Legend window.
+Description of the Sort Order operation menu in the Legend window.
 \end_inset 
 
 
@@ -3021,29 +3003,30 @@ Figure
 \end_inset 
 
  shows a popup dialog box when the title icon of column V (Visibility) or
- S (Searchability) is pressed or when right mouse button is clicked somewhere
- in either columns.
+ S (Searchability) is pressed or when the right mouse button is clicked
+ somewhere in either column.
  The rule of selection in the legend table follows the standard practice
- of other graphical user interfaces as in the Table 
+ of other graphical user interfaces as in Table 
 \begin_inset LatexCommand \ref{table:selection_rules}
 
 \end_inset 
 
 .
- Together with this standard selection rules, the operations provided in
- checkbox operation menu allow easy enabling and disabling of visibility
+ Together with these standard selection rules, the operations provided in
+ the checkbox operation menu allow easy enabling and disabling of visibility
  as well as searchability checkboxes.
  With the help of continuous selection of the category rows in the legend
- table and various sort ordering available, users can easily make a huge
- number of categories disappear in the Timeline or Histogram window.
- For instance, in CLOG converted SLOG-2 file where upper case name always
- refers to MPI names, the case sensitive alphabetical ordering allows all
+ table and the various sort orderings, users can easily make a huge number
+ of categories disappear in the Timeline or Histogram window.
+ For instance, in CLOG converted SLOG-2 file where upper-case names always
+ refer to MPI names, the case-sensitive alphabetical ordering allows all
  MPI names to be put before all user-defined categories.
- With continuous mouse selection, user can easily toggle the visibility
+ With continuous mouse selection, the user can easily toggle the visibility
  of user-defined states in the Timeline or Histogram window.
- Also, every element in the column Name is editable.
- This allows user to correct undesirable category names set during logfile
- creation or even facilitate sorting of the names for selection purposes.
+ Also, every element in the column Name can be edited.
+ This feature allows the user to correct undesirable category names set
+ during logfile creation and even facilitates sorting of the names for selection
+ purposes.
 \layout Standard
 
 
@@ -3192,7 +3175,7 @@ text
 
 \end_inset 
 
- Standard Selection Rules.
+ Standard selection rules.
 \end_inset 
 
 
@@ -3200,10 +3183,10 @@ text
 
 
 \noun on 
-NOTE: 
+Note: 
 \noun default 
-Any changes done in the Legend window that alters the appearance of drawables
- won't be automatically updated in the timeline canvas until the CanvasReDraw
+Any change done in the Legend window that alters the appearance of drawables
+ will not be automatically updated in the Timeline canvas until the CanvasReDraw
  button in the Timeline window is pressed.
 \layout Section
 
@@ -3251,8 +3234,8 @@ centering
 
 \end_inset 
 
- The initial display of the Timeline window of a 514 MB 16 processes slog2
- file with default preview resolution.
+ Initial display of the Timeline window of a 514 MB 16-process slog2 file
+ with default preview resolution.
 \end_inset 
 
 
@@ -3262,26 +3245,26 @@ Most of the advanced features in the SLOG-2 viewer are provided through
 \emph on 
  
 \emph default 
-the
+a
 \emph on 
- Zoomable
+ zoomable
 \emph default 
  window.
- There are two zoomable windows in Jumpshot-4: Timeline and Histogram windows.
+ Jumpsshot-4 has two zoomable windows: Timeline and Histogram.
  Figure 
 \begin_inset LatexCommand \ref{fig:timeline_popup}
 
 \end_inset 
 
- is the initial display of the Timeline window of a half gigabyte 16 timelines
+ is the initial display of the Timeline window of a half-gigabyte 16-timeline
  slog2 file.
- Zoomable window consists of several concealable and removable components.
- In the center of the window, it is the 
+ The zoomable window consists of several concealable and removable components.
+ In the center of the window is the 
 \emph on 
 zoomable and scrollable canvas
 \emph default 
 .
- For Timeline window, the center canvas is called
+ For the Timeline window, the center canvas is called the
 \emph on 
  timeline canvas
 \emph default 
@@ -3291,14 +3274,14 @@ zoomable and scrollable canvas
 time display panel
 \emph default 
 .
- On top of the display panel, there is the removable
+ On top of the display panel is the removable
 \emph on 
  toolbar
 \emph default 
 .
  To the left of the canvas is the concealable
 \emph on 
- Y-axis label panel
+ y-axis label panel
 \emph default 
 .
  To the right of the canvas is the concealable
@@ -3311,14 +3294,14 @@ time display panel
 time ruler canvas
 \emph default 
 .
- Both Y-axis label and the row adjustment panels can be put out of sight
+ Both the y-axis label and the row adjustment panels can be put out of sight
  by clicking the tabs in the dividers or dragging the dividers to the side
  of the window.
  The top toolbar can be dragged out of the window or be repositioned in
- the other 3 sides of the window.
- A bare minimal zoomable window can be obtained by the removal of toolbar
- and the hiding of the left and right panels.
- An almost bare minimal Timeline window looks like the one shown in Figure
+ the other three sides of the window.
+ A bare-minimal zoomable window can be obtained by removing the toolbar
+ and hiding the left and right panels.
+ An almost-bare-minimal Timeline window looks like the one shown in Figure
  
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_0}
 
@@ -3336,28 +3319,28 @@ Zoomable and Scrollable Canvas
 
 \layout Standard
 
-When viewing a big slog2 file like the one shown in Figure 
+When a big slog2 file like the one shown in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_popup}
 
 \end_inset 
 
-, the whole timeline canvas is filled up with preview drawables.
- Though it provides a reasonable description at high level
+is viewed, the whole timeline canvas is filled with preview drawables.
+ Although it provides a reasonable description at a high level,
 \begin_inset Foot
-collapsed false
+collapsed true
 
 \layout Standard
 
-Reasonable description here means that user can still get a vague sense
- of where the long and/or frequent drawables are .
+Reasonable description here means that the user can still get a vague sense
+ of where the long or frequent drawables are.
 \end_inset 
 
-, it is pretty obscure to know the details.
+ it is hard to know the details.
  Hence, a well-designed zoomable and scrollable user interface (ZSUI) of
- the timeline canvas becomes an absolute necessity to facilitate the location
- of events of interest.
+ the timeline canvas becomes necessary to help the viewer locate events
+ of interest.
  The ZSUI of the timeline canvas includes many parts and operations.
- But the most handy ones are 
+ The most handy ones are 
 \emph on 
 dragged zoom
 \emph default 
@@ -3372,20 +3355,19 @@ instant zoom in and out.
 \emph default 
  All these features are supported by the 
 \emph on 
-Zoomable and Scrollable canvas
+zoomable and scrollable canvas
 \emph default 
 .
- There are 2 such canvases in the Timeline window.
- They are 
+ There are two such canvases in the Timeline window:
 \emph on 
-Timeline Canvas
+ timeline canvas
 \emph default 
  and 
 \emph on 
-Time Ruler Canvas
+time ruler canvas
 \emph default 
 .
- In these canvases, left mouse clicking can be alternated in 2 different
+ In these canvases, left mouse clicking can be alternated in two different
  modes by a pair of toggled buttons as shown in Figures 
 \begin_inset LatexCommand \ref{fig:mouse_zoom_mode}
 
@@ -3399,25 +3381,24 @@ Time Ruler Canvas
 .
  They are called 
 \emph on 
-Zoom
+zoom
 \emph default 
  and 
 \emph on 
-Hand 
+hand 
 \emph default 
 modes.
  Each canvas in the Timeline window has its own set of toggled buttons that
  determine its left mouse click behavior.
- The timeline canvas's toggled buttons are located above the canvas and
- sit at the end of the time display panel.
+ The timeline canvas's toggled buttons are located above the canvas  at
+ the end of the time display panel.
  The time ruler's toggled buttons are located at the bottom of row adjustment
- panel, i.e.
- sit right next to the end of the ruler.
- By default, the timeline canvas is in zoom mode and the time ruler canvas
- is in hand mode, so user can do zooming when the cursor is in the timeline
+ panel, next to the end of the ruler.
+ By default, the timeline canvas is in zoom mode, and the time ruler canvas
+ is in hand mode, so the user can do zooming when the cursor is in the timeline
  canvas and can scroll easily by simply moving the cursor over the ruler
  canvas.
- Also, the scrolling can be done by simply dragging on scrollbar's knob,
+ Also, the scrolling can be done by simply dragging on the scrollbar's knob,
  clicking the end buttons and in the space between the knob and scrollbar's
  end buttons.
 \layout Standard
@@ -3547,44 +3528,44 @@ centering
 \emph on 
 Dragged zoom
 \emph default 
- is active only when the left mouse click is in zoom mode, i.e.
- when the the magnifying glass button is pressed in the toggled buttons
- as in Figure 
+ is active only when the left mouse click is in zoom mode, that is, when
+ the magnifying glass button is pressed in the toggled buttons as in Figure
+ 
 \begin_inset LatexCommand \ref{fig:mouse_zoom_mode}
 
 \end_inset 
 
 .
  In zoom mode, the cursor within the canvas will appear like a magnifying
- glass with plus sign in the center as in Figure 
+ glass with a plus sign in the center, as in Figure 
 \begin_inset LatexCommand \ref{fig:zoom_plus_cursor}
 
 \end_inset 
 
 .
- It is called zoom-plus cursor.
+ It is called the zoom-plus cursor.
  The dragged zoom operation is initialized by pressing the left mouse button
- at the beginning of the zoom-in region, a white line will then appear.
+ at the beginning of the zoomed-in region; a white line will then appear.
  As soon as dragging is detected, another white line will appear to mark
- the current ending of the zoom-in region.
- The region that is marked by pair of white lines is lightly shaded as shown
- in Figure 
+ the current ending of the zoomed-in region.
+ The region that is marked by the pair of white lines is lightly shaded,
+ as shown in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_3}
 
 \end_inset 
 
 .
- The process can be canceled anytime by hitting the ESC key during dragging.
- Once the left mouse button is released, zooming will be carried out and
+ The process can be canceled by hitting the ESC key during dragging.
+ Once the left mouse button is released, zooming will be carried out, and
  the Timeline window will then be updated as in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_4}
 
 \end_inset 
 
 .
- The time display panel is updated with the latest time related information
- of the zoom-in region.
- Notice that the zooming as well as scrolling can be achieved by explicitly
+ The time display panel is updated with the latest time-related information
+ of the zoomed-in region.
+ Notice that zooming as well as scrolling can be achieved by explicitly
  editing the text fields in the time display panel.
 \layout Subsubsection
 
@@ -3637,32 +3618,27 @@ instant zoom
 \emph default 
  is enabled by default.
  Instant zoom allows zooming in at the point of left mouse clicking by a
- factor of 1/2, i.e.
- the region centered at the point of left clicking will be magnified by
- a factor or 2.
+ factor of 1/2; that is, the region centered at the point of left clicking
+ will be magnified by a factor of 2.
  Also, the 
 \emph on 
-Zoom Focus Time
+zoom focus time
 \emph default 
  in the time display panel will be updated with the time where left clicking
  on the canvas is detected.
- In the process, the cursor remain
-\emph on 
-s 
-\emph default 
-zoom-plus cursor.
+ In the process, the cursor remainsa zoom-plus cursor.
  
 \emph on 
 Shift-click
 \emph default 
 , on the other hand, will do the opposite.
- While holding down Shift key, the cursor will be changed to a zoom-minus
+ While the shift key is held down, the cursor will be changed to a zoom-minus
  cursor as in Figure 
 \begin_inset LatexCommand \ref{fig:zoom_minus_cursor}
 
 \end_inset 
 
- to indicate zooming out is the action associated with left clicking.
+, to indicate zooming out is the action associated with left clicking.
  The zoom factor is 2 in this case.
 \layout Subsubsection
 
@@ -3702,8 +3678,8 @@ centering
 
 \end_inset 
 
- Open hand cursor indicates that left mouse clicking is ready to grasp and
- scroll.
+ Open-hand cursor indicates that the left mouse click is ready to grasp
+ and scroll.
 \end_inset 
 
 
@@ -3742,7 +3718,7 @@ centering
 
 \end_inset 
 
- Close hand cursor indicates that left mouse clicking is scrolling.
+ Closed-hand cursor indicates that the left mouse click is scrolling.
 \end_inset 
 
 
@@ -3752,8 +3728,8 @@ centering
 \emph on 
 Grasp and Scroll
 \emph default 
- is active only when the left mouse click is in hand mode, i.e.
- when the open hand button is pressed as in Figure 
+ is active only when the left mouse click is in hand mode, that is, when
+ the open-hand button is pressed as in Figure 
 \begin_inset LatexCommand \ref{fig:mouse_hand_mode}
 
 \end_inset 
@@ -3765,52 +3741,51 @@ Grasp and Scroll
 \end_inset 
 
 .
- As soon as left mouse button is pressed down, the cursor turns to a close
- hand as in Figure 
+ As soon as left mouse button is pressed down, the cursor turns to a closed
+ hand, as in Figure 
 \begin_inset LatexCommand \ref{fig:hand_close_cursor}
 
 \end_inset 
 
 .
  It indicates the canvas will move in the same direction that the cursor
- moves as long as the left mouse button remain pressed.
- The grasp and scroll mode in time ruler canvas can only move horizontally,
- but the grasp and scroll mode in timeline canvas allows movement in both
- vertical and horizontal axes.
- 
+ moves as long as the left mouse button remains pressed.
+ The grasp and scroll mode in the time ruler canvas can move only horizontally,
+ but the grasp and scroll mode in the timeline canvas allows movement both
+ vertically and horizontally.
 \layout Subsubsection
 
 Information Dialog Box
 \layout Standard
 
-Jumpshot-4 wouldn't be complete if it cannot provide a way to tell user
- what exactly are being displayed.
- It is particularly important when there are many preview drawables.
+To be complete, Jumpshot-4 provides a way to tell user exactly what is being
+ displayed.
+ This feature is particularly important when there are many preview drawables.
  Following standard user interface practice, Jumpshot-4 uses 
 \emph on 
 right mouse clicking
 \emph default 
- as an interface for user to tell Jumpshot-4 what object that more information
- is needed.
- In general, anywhere on the canvas, both timeline and time ruler canvases,
- can be inquired with right mouse clicks.
- Information dialog box will pop up accordingly to tell user more about
- object that is being clicked.
- There are 3 different types of information dialogs: Drawable Info Box,
- Duration Info Box and Time Info Box.
- All these info boxes remain in memory as long as they are not closed even
- if the canvas has been scrolled or zoomed.
- One of the usages of the info boxes is to serve as time markers in between
+ as an interface for the user to tell Jumpshot-4 for what object more informatio
+n is needed.
+ In general, the user can inquire anywhere on the canvas (timeline or time
+ ruler canvases) by right mouse clicking.
+ An information dialog box will pop up accordingly to tell the user more
+ about the object being clicked on.
+ There are three different types of information dialogs: Drawable Info Box,
+ Duration Info Box, and Time Info Box.
+ All these info boxes remain in memory as long as they are not closed, even
+ if the canvas has been scrolled past or zoomed into.
+ One of the uses of the info boxes is to serve as time markers in between
  zooming and scrolling.
 \layout Paragraph
 
 Drawable Info Box
 \layout Standard
 
-Drawable Info Box is a popup dialog box that provides detailed information
- about the drawable object that is being clicked.
- There are 2 different kind of Drawable Info Box, one for preview drawable,
- one for real drawable.
+The Drawable Info Box is a popup dialog box that provides detailed information
+ about the drawable object that is being clicked on.
+ There are two different kinds of Drawable Info Box: one for preview drawable
+ and one for real drawable.
  
 \layout Subparagraph
 
@@ -3858,31 +3833,31 @@ centering
 
 \layout Standard
 
-Right mouse clicking on 2 of the preview states in the timeline canvas shown
- in Figure 
+Right mouse clicking on two of the preview states in the timeline canvas
+ shown in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_preview_detail_1_excl}
 
 \end_inset 
 
- will pop up 2 Drawable Info Boxes for the preview states.
+ will pop up two Drawable Info Boxes for the preview states.
  They are displayed in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_infobox_preview_state}
 
 \end_inset 
 
 .
- The popup Info Box's upper left hand corner will be positioned at exactly
- where right mouse click is detected and a green line marker will appear
- on the canvas to indicate what time has been clicked in case the dialog
+ The popup Info Box's upper-left-hand corner will be positioned at exactly
+ where right mouse click is detected, and a green line marker will appear
+ on the canvas to indicate what time has been clicked, in case the dialog
  box is moved from its original popup location.
- In order to best illustrate what information is presented by the Drawable
- Info Box, let's take the highlighted Drawable Info Box in Figure 
+ To illustrate what information is presented by the Drawable Info Box, we
+ take the highlighted Drawable Info Box in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_infobox_preview_state}
 
 \end_inset 
 
  as an example.
- The Drawable Info Box for preview state contains a pink label 
+ The Drawable Info Box for the preview state contains a pink label 
 \begin_inset Quotes eld
 \end_inset 
 
@@ -3891,10 +3866,10 @@ Preview State
 \end_inset 
 
 , and the icon inside the dialog box shows the color and shape of the drawable.
- Below the icon, there is a big text area that prints all the detailed statistic
-al information about this preview state.
- There are 6 timestamps in the text area: maximum duration, minimum starttime,
- maximum endtime, average duration, average starttime and average endtime.
+ Below the icon is a big text area that prints all the detailed statistical
+ information about this preview state.
+ There are six timestamps in the text area: maximum duration, minimum starttime,
+ maximum endtime, average duration, average starttime, and average endtime.
  Here 
 \begin_inset Quotes eld
 \end_inset 
@@ -3912,7 +3887,7 @@ al information about this preview state.
 \end_inset 
 
  refers to the ending point.
- The 3 
+ The three 
 \begin_inset Quotes eld
 \end_inset 
 
@@ -3922,7 +3897,7 @@ average
 
  timestamps are averaged over all the real drawables represented by this
  preview drawable.
- Besides timestamps, the info box also tells 
+ Besides timestamps, the info box also tells the
 \begin_inset Quotes eld
 \end_inset 
 
@@ -3936,10 +3911,10 @@ Number of Real Drawables
  Also, the text area lists all the categories of real drawables amalgamated
  and their ratios of the total duration of all real drawables to the duration
  of the preview states.
- In this case, there is only 1 category of real states in this preview state,
- so all 136 states are all PACKs.
+ In this case, there is only one category of real states in the preview
+ state, so the 136 states are all PACKs.
  The sum of the durations of all PACKs is about half of the duration of
- the preview state as it is indicated by 
+ the preview state, as indicated by 
 \begin_inset Quotes eld
 \end_inset 
 
@@ -3951,46 +3926,45 @@ ratio=0.5021433
  
 \layout Standard
 
-Another Drawable Info Box which is shown in Figure 
+Another Drawable Info Box, shown in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_infobox_preview_state}
 
 \end_inset 
 
- has its upper left-hand pointed at a preview state that has 4 different
- strips of colors: yellow, royal blue, white and purple.
+, has its upper left hand pointed at a preview state that has four different
+ strips of colors: yellow, royal blue, white, and purple.
  Right mouse clicking at the yellow strip pops up a Drawable Info Box with
  a yellow state icon with label BARRIER.
- As shown in the figure, this preview state amalgamated 4 different categories
- of real states: ALLREDUCE, PACK, SSEND, and BARRIER, and the statistically
+ As shown in the figure, this preview state amalgamated four categories
+ of real states: ALLREDUCE, PACK, SSEND, and BARRIER; the statistically
  most significant one is BARRIER.
  It proportionally and exclusively occupies 55% of the length of the preview
  state.
- Hence BARRIER strip has the tallest height among all the color strips shown
- in the preview state.
- Clicking on the different color strip in the same preview state will pop
- up a Drawable Info Box with a different labeled icon, but the content of
- the text area remains the same.
+ Hence  the BARRIER strip is the tallest of all the color strips shown in
+ the preview state.
+ Clicking on a different color strip in the same preview state will pop
+ up a drawable info box with a differently labeled icon, but the contents
+ of the text area remains the same.
  In general, not every category listed in the text area is visible in the
  preview state display.
- Out of the 4 categories mentioned in the text area, only 3 are visible
+ Of the four categories mentioned in the text area, only three are visible
  noticeably in the figure given the limited pixel height available to the
  preview state.
  The least significant category ALLREDUCE is barely visible.
  But the limitation can be improved by selecting another display option
- for preview state in Preference window that does not rely on the category
- ratio
+ for the preview state in the Preference window that does not rely on the
+ category ratio
 \begin_inset Foot
 collapsed true
 
 \layout Standard
 
-i.e.
- by setting the PREVIEW_STATE_DISPLAY pulldown menu in Timeline window or
- Preference window to 
+That is, by setting the PREVIEW_STATE_DISPLAY pulldown menu in the Timeline
+ window or Preference window to the 
 \emph on 
 FitMostLegends
 \emph default 
- message as listed in Table 
+ message, as listed in Table 
 \begin_inset LatexCommand \ref{table:preference_zoomable_timeline}
 
 \end_inset 
@@ -3999,9 +3973,9 @@ FitMostLegends
 \end_inset 
 
 .
- As indicated, there are altogether 58 real drawables in the preview state,
- but no information is provided about how many real drawables are in each
- real category.
+ As indicated, there are 58 real drawables in the preview state, but no
+ information is provided about how many real drawables are in each real
+ category.
 \layout Subparagraph
 
 Drawable Info Box for Real Drawable
@@ -4043,15 +4017,15 @@ centering
 \end_inset 
 
  Drawable Info Box for real state and arrow.
- The Drawable Info Box for the arrow shows the message size, 1600 byte,
+ The Drawable Info Box for the arrow shows the message size, 1600 bytes,
  and tag ID, 454.
 \end_inset 
 
 
 \layout Standard
 
-Similarly for real drawables, Drawable Info Box can be brought up by right
- mouse clicking on the real drawables.
+Similarly for real drawables, the Drawable Info Box can be brought up by
+ right mouse clicking on the real drawables.
  In Figure 
 \begin_inset LatexCommand \ref{fig:timeline_infobox_real_primitive}
 
@@ -4059,27 +4033,27 @@ Similarly for real drawables, Drawable Info Box can be brought up by right
 
 , Drawable Info Boxes for a real arrow and a real state are shown.
  The Drawable Info Box for the arrow is invoked by clicking anywhere within
- the vicinity of the arrow body
+ the vicinity of the arrow body.
 \begin_inset Foot
-collapsed false
+collapsed true
 
 \layout Standard
 
 The vicinity width can be adjusted by modifying the parameter CLICK_RADIUS_TO_LI
-NE in Preference window as listed in Table 
+NE in the Preference window as listed in Table 
 \begin_inset LatexCommand \ref{table:preference_zoomable_all}
 
 \end_inset 
 
-.
  The default is 3 pixels.
 \end_inset 
 
-, and the info box shows the starttime, start timeline ID, endtime, and
- ending timeline ID and some extra information implemented by the native
+ The info box shows the starttime, start timeline ID, endtime, and ending
+ timeline ID, as well as some extra information implemented by the native
  format.
- In this example, the message size carried by the specific arrow is 1600
- byte.
+ In this example, the extra information is the message size carried by the
+ specific arrow.
+ The message size is 1600 bytes.
 \layout Paragraph
 
 Duration Info Box
@@ -4127,24 +4101,24 @@ centering
 
 \layout Standard
 
-Duration Info Box is created by right dragging in the timeline canvas or
- the time ruler canvas to mark a region in time.
+The Duration Info Box is created by right dragging in the timeline canvas
+ or the time ruler canvas to mark a region in time.
  The dragged region will be marked by a pair of green lines and is lightly
  shaded as well.
- Duration Info Box could serve a marker to facilitate the process of zooming
+ The Duration Info Box can serve a marker to facilitate the process of zooming
  in and out.
- The information provided by Duration Info Box could also be used to compare
+ The information provided by Duration Info Box can also be used to compare
  different durations or to measure the total duration of a collection of
  subroutine calls.
- For instance in Figure 
+ For instance, in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_infobox_duration}
 
 \end_inset 
 
 , the Duration Info Box marks all consecutive green states on the fifth
  timelines.
- The Duration Info Box says the total duration of the 9 green states is
- about 1.74 msec..
+ The Duration Info Box says the total duration of the nine green states
+ is about 1.74 msec.
 \layout Paragraph
 
 Time Info Box
@@ -4192,7 +4166,7 @@ centering
 \layout Standard
 
 Time Info Box is created by right clicking in the empty space in either
- timeline or the time ruler canvas as in Figure 
+ the timeline or the time ruler canvas, as in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_infobox_time}
 
 \end_inset 
@@ -4204,8 +4178,8 @@ Time Info Box is created by right clicking in the empty space in either
 Toolbar
 \layout Standard
 
-The buttons in the toolbar of Timeline window provides various basic services
- to the Timeline window.
+The buttons in the toolbar of the Timeline window provide various basic
+ services to the Timeline window.
  Table 
 \begin_inset LatexCommand \ref{table:timeline_toolbar}
 
@@ -4511,7 +4485,7 @@ Alt-E
 
 \layout Standard
 
-Expand the Y-axis tree label by 1 level
+Expand the y-axis tree label by 1 level
 \end_inset 
 </cell>
 </row>
@@ -4562,7 +4536,7 @@ Alt-C
 \bar no 
 \noun off 
 \color none
-Collapse the Y-axis tree label by 1 level
+Collapse the y-axis tree label by 1 level
 \end_inset 
 </cell>
 </row>
@@ -4985,7 +4959,7 @@ Alt-S
 
 \layout Standard
 
-Search Initialization from last popup InfoBox's time
+Search initialization from last popup InfoBox's time
 \end_inset 
 </cell>
 </row>
@@ -5150,7 +5124,7 @@ Preference/Legend window
 \bar default 
 \noun default 
 \color default
- or Y-axis label panel.
+ or y-axis label panel.
 \end_inset 
 </cell>
 </row>
@@ -5250,41 +5224,41 @@ Exit the Timeline window
 
 \end_inset 
 
- Table of toolbar's functionalities.
+ Toolbar functionalities.
 \end_inset 
 
 
 \layout Subsection
 
-Y-axis Label Panel
+Y-Axis Label Panel
 \layout Standard
 
-The concealable left panel in Timeline window is called Y-axis label panel
- which contains a tree-like representation for Y-axis label for the timelines.
- For a SLOG-2 file convertible from CLOG or RLOG with the default viewmap,
- the typical Y axis label panel looks like that is shown in Figure 
+The concealable left panel in Timeline window is called the y-axis label
+ panel.
+ It contains a tree-like representation for the y-axis label for the timelines.
+ For a SLOG-2 file convertible from CLOG, CLOG-2 or RLOG with the default
+ viewmap, the typical y-axis label panel looks like that shown in Figure
+ 
 \begin_inset LatexCommand \ref{fig:yaxis_label_panel}
 
 \end_inset 
 
 .
- Together with toolbar's label buttons, e.g.
- LabelMark and LabelMove, and standard mouse selection methods listed in
- Table 
+ Together with the toolbar's label buttons (e.g., LabelMark and LabelMove)
+ and standard mouse selection methods listed in Table 
 \begin_inset LatexCommand \ref{table:selection_rules}
 
 \end_inset 
 
 , labels can be rearranged easily to create a more easily understood timeline
  canvas.
- For multiple viewmaps SLOG-2 file from IBM's UTE trace environment, LabelExpand
- and LabelCollapse buttons will come in handy to expand and collapse the
- label tree by one whole level.
+ For the multiple-viewmaps SLOG-2 file from IBM's UTE trace environment,
+ the LabelExpand and LabelCollapse buttons will come in handy to expand
+ and collapse the label tree by one whole level.
  In order to minimize unnecessary redraw of the timeline canvas, the synchroniza
-tion between the label panel and the timeline canvas is carried out passively,
- i.e.
- user needs to press the CanvasReDraw button in the toolbar to update the
- Timeline window with the changes from the label panel.
+tion between the label panel and the timeline canvas is carried out passively;
+ that is, the user needs to press the CanvasReDraw button in the toolbar
+ to update the Timeline window with the changes from the label panel.
 \layout Standard
 
 
@@ -5345,10 +5319,10 @@ centering
 
 \end_inset 
 
- A simple 1 level Y-axis label tree.
+ Simple one-level y-axis label tree.
  The blue highlighted labels are those that have been selected.
  The pulldown menu at the top of panel indicates the value in PREVIEW_STATE_DISP
-LAY in Preference window
+LAY in the Preference window.
 \end_inset 
 
 
@@ -5357,36 +5331,37 @@ LAY in Preference window
 Row Adjustment Panel
 \layout Standard
 
-The concealable right panel in Timeline window contains the row adjustment
- panel which is used to determine the row adjustment scheme.
- There are 2 different modes in row adjustment panel: row count mode and
- row height mode.
- These 2 modes can be selected by the pulldown menu at the top of the panel.
- The row count mode attempts to keep the number of timelines constant as
- indicated in the Row Count text field when the Timeline window resizes.
+The concealable right panel in the Timeline window contains the row adjustment
+ panel, which is used to determine the row adjustment scheme.
+ There are two different modes in the row adjustment panel: row count mode
+ and row height mode.
+ These two modes can be selected by the pulldown menu at the top of the
+ panel.
+ The row count mode attempts to keep the number of timelines constant, as
+ indicated in the row count text field when the Timeline window resizes.
  On the other hand, the row height mode fixes the height of each timeline
- as indicated by the Row Height text field.
+ as indicated by the row height text field.
  Currently, the height of the timeline can be adjusted up to the height
- of the timeline canvas, in that case the Row Count text field shows a number
- 1
+ of the timeline canvas; in that case the row count text field shows the
+ number 1.
 \begin_inset Foot
-collapsed false
+collapsed true
 
 \layout Standard
 
-If the slog2 file contains numerous timelines, increasing the Row Height
+If the slog2 file contains numerous timelines, increasing the row height
  will increase the size of the images managed by Jumpshot-4.
- This may cause the Java Virtual Machine to exhaust all its memory if the
- virtual machine is not set to have enough memory when Jumpshot-4 is started
- or there isn't enough physical memory in machine that Jumpshot-4 runs on.
+ This action may cause the Java Virtual Machine to exhaust all its memory
+ if the virtual machine is not set to have enough memory when Jumpshot-4
+ is started or if there isn't enough physical memory in the machine that
+ Jumpshot-4 runs on.
  
 \end_inset 
 
-.
  The maximum number of timelines that can be displayed is set to the total
- number of rows represented by the whole Y-axis label tree
+ number of rows represented by the whole y-axis label tree
 \begin_inset Foot
-collapsed false
+collapsed true
 
 \layout Standard
 
@@ -5394,12 +5369,12 @@ Hence the row height cannot be adjusted all the way to zero.
 \end_inset 
 
 .
- For multiple viewmaps slog2 file, the Y-axis label tree can be expanded
+ For a multiple-viewmaps slog2 file, the y-axis label tree can be expanded
  or collapsed.
  This could change the maximum number of rows in the row count slider after
- user hits the CanvasReDraw button.
- Coupling with window resize, the row adjustment panel allows user to magnify
- or shrink the height of the timeline as one desires.
+ the user hits the CanvasReDraw button.
+ Together with window resize, the row adjustment panel allows the user to
+ magnify or shrink the height of the timeline as desired.
 \layout Standard
 
 
@@ -5465,8 +5440,8 @@ centering
 \end_inset 
 
  Row Adjustment Panel determines the Timeline window's resize scheme.
- When one of the mode sliders or text fields is adjusted, the other 3 components
- will be adjusted simultaneously.
+ When one of the mode sliders or text fields is adjusted, the other three
+ components will be adjusted simultaneously.
 \end_inset 
 
 
@@ -5515,7 +5490,7 @@ centering
 
 \end_inset 
 
-A histogram window of the whole duration shown in Figure 
+Histogram window of the whole duration shown in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_popup}
 
 \end_inset 
@@ -5526,8 +5501,8 @@ A histogram window of the whole duration shown in Figure
 
 \layout Standard
 
-The Histogram window is created through clicking the statistics button located
- in the middle of Duration Info Box shown in Figure 
+The Histogram window is created by clicking the statistics button located
+ in the middle of Duration Info Box, shown in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_infobox_duration}
 
 \end_inset 
@@ -5538,94 +5513,93 @@ The Histogram window is created through clicking the statistics button located
 
 \end_inset 
 
-, the histogram window is created for the whole duration of the timeline
+, the Histogram window is created for the whole duration of the timeline
  canvas in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_popup}
 
 \end_inset 
 
-, i.e same duration as the complet slog2 file.
+, that is, the  same duration as the complete slog2 file.
  In general, the total duration of the histogram canvas is the same as the
- duration marked by the Duration Info Box so that the histogram window functions
- like a graphical display of statistical summary of the duration of interest.
+ duration marked by the Duration Info Box, so that the Histogram window
+ functions like a graphical display of statistical summary of the duration
+ of interest.
  For instance, it is obvious from Figure 
 \begin_inset LatexCommand \ref{fig:histogram_state_all_cumu_excl}
 
 \end_inset 
 
- that the yellow state, it is MPI_Barrier in this case, cumulatively takes
- up the most time.
+ that the yellow state (MPI_Barrier in this case) cumulatively takes up
+ the most time.
  This is especially true in the last timeline.
 \layout Standard
 
-Since Histogram window is also a 
+Since the Histogram window is also a 
 \emph on 
 zoomable 
 \emph default 
-window like Timeline window, a lot of features like those described in section
+window like the Timeline window, a lot of the features described in Section
  
 \begin_inset LatexCommand \ref{sub:Zoomable-and-Scrollable}
 
 \end_inset 
 
- for Timeline window are available for Histogram window as well, e.g.
- dragged-zoom, grasp and scroll, instant zoom in/out, easy vertical expansion
- of timeline, cut and paste of timelines.
- If some state categories or timelines need to be made invisible in histogram
- window, it can be achieved through disabling the corresponding categories
- in Legend window's column V or S or selected corresponding timelines in
- histogram window.
- It is just like that of Timeline window.
+ for the Timeline window are available for the Histogram window as well,
+ for example, dragged-zoom, grasp and scroll, instant zoom in/out, easy
+ vertical expansion of timeline, and cut and paste of timelines.
+ If some state categories or timelines need to be made invisible in the
+ Histogram window, one can disable the corresponding categories in the Legend
+ window's column V or S or selected corresponding timelines in the Histogram
+ window.
+ The process is just like that for the Timeline window.
 \layout Standard
 
-Only summary objects can be displayed in the histogram window.
- Summary object is similar to preview object discussed earlier.
- Preview objects are created during logfile creation stage and cannot be
- modified during visualization.
- Summary objects, on the other hand, are created dynamically during visualizatio
-n, i.e.
- during creation of a Duration Info Box, so they can be modified easy by
- end users.
- There are 2 different kinds of summary objects: summary state and summary
+Only summary objects can be displayed in the Histogram window.
+ Summary objects are similar to preview objects discussed earlier.
+ However, whereas Preview objects are created during the logfile creation
+ stage and cannot be modified during visualization, Summary objects are
+ created dynamically during visualization, that is, during creation of a
+ Duration Info Box, so they can be modified easily by the user.
+ There are two different kinds of summary objects: summary state and summary
  arrow.
- There is only 1 summary state per timeline and 1 summary arrow for each
- ordered pair of timelines
+ There is only one summary state per timeline and one summary arrow for
+ each ordered pair of timelines.
 \begin_inset Foot
-collapsed false
+collapsed true
 
 \layout Standard
 
-ordered pair of timelines means timeline pair (1,2) is different from pair
- (2,1).
+An ordered pair of timelines means that the timeline pair (1,2) is different
+ from the pair (2,1).
 \end_inset 
 
-.
- Currently 3 different views are available in Histogram window: 
+ Currently three different views are available in the Histogram window:
+ 
 \emph on 
 States Only
 \emph default 
 ,
 \emph on 
- Arrows Only 
+ Arrows Only, 
 \emph default 
 and
 \emph on 
  All
 \emph default 
 .
- In 
+ In the 
 \emph on 
 States Only
 \emph default 
  view, only summary states are displayed.
- In 
+ In the 
 \emph on 
 Arrows Only
 \emph default 
  view, only summary arrows are displayed.
- In 
+ In the
 \emph on 
-All
+ All
 \emph default 
  view, both summary states and arrows are displayed.
 \layout Subsection
@@ -5669,26 +5643,26 @@ centering
 
 \end_inset 
 
- State Summary Info Boxes of the Histogram window.
+ Summary state info boxes of the Histogram window.
 \end_inset 
 
 
 \layout Standard
 
 Since summary states are created through the statistics of real and preview
- states, summary states inherit properties of preview states, i.e.
+ states, summary states the inherit properties of preview states, that is,
  inclusion and exclusion ratios.
- Because of this, different representations of summary state are formed
- based on the PREVIEW_STATE_DISPLAY discussed earlier in section 
+ Hence, different representations of summary state are formed based on the
+ PREVIEW_STATE_DISPLAY discussed in Section 
 \begin_inset LatexCommand \ref{sub:Preview-State-Display}
 
 \end_inset 
 
 .
- Different representation of summary state can be selected through SUMMARY_STATE
-_DISPLAY pulldown menu located at the top of the left panel in the histogram
- window or through a similar variable defined in Preference window and in
- Table 
+ Different representations of summary states can be selected through the
+ SUMMARY_STATE_DISPLAY pulldown menu located at the top of the left panel
+ in the histogram window or through a similar variable defined in the Preference
+ window and in Table 
 \begin_inset LatexCommand \ref{table:preference_zoomable_histogram}
 
 \end_inset 
@@ -5704,8 +5678,8 @@ _DISPLAY pulldown menu located at the top of the left panel in the histogram
 CumulativeExclusionRatio
 \emph default 
  view.
- Since the most time consuming timeline is the last one, we will zoom in
- the last three timelines and use them to discuss the visual representation
+ Since the most time-consuming timeline is the last one, we will zoom in
+ on the last three timelines and use them to discuss the visual representation
  of summary state.
  Figure 
 \begin_inset LatexCommand \ref{fig:histogram_state_infobox}
@@ -5724,24 +5698,25 @@ CumulativeExclusionRatio
  The info box lists the total number of real states it contains and detailed
  information of what state categories it contains.
  In the figure, the summary info boxes at timeline 15 and 13 show that the
- timeline 15 summary state contains about 148006 real states and the timeline
- 13 summary state has about 859613 real states, i.e.
- timeline 13 has 5.8 times the number of real states than that of timeline
- 15 within the same duration.
+ timeline 15 summary state contains about 148,006 real states and the timeline
+ 13 summary state has about 859,613 real states; that is, timeline 13 has
+ 5.8 times the number of real states than that of timeline 15 within the
+ same duration.
  Each summary state also displays the ratios of the total duration of each
  member state category to the duration of the canvas as colored boxes inside
  the gray bordered box.
- Right clicking at any of the colored boxes will display a summary info
+ Right clicking on any of the colored boxes will display a summary info
  box that indicates the color and name of category and the corresponding
- ratio for the duration as the highlighted summary info box in the Figure
- 
+ ratio for the duration; see, for example, the highlighted summary info
+ box in the Figure 
 \begin_inset LatexCommand \ref{fig:histogram_state_infobox}
 
 \end_inset 
 
-.The remaining duration at the end of each timeline is unaccounted for.
- In this particular logfile, remaining time could be thought of being used
- for computation.
+.
+ The remaining duration at the end of each timeline is unaccounted for.
+ In this particular logfile, the remaining time could be thought of as being
+ used for computation.
 \layout Standard
 
 
@@ -5780,7 +5755,7 @@ centering
 
 \end_inset 
 
-The
+
 \emph on 
  OverlapInclusionRatio
 \emph default 
@@ -5795,23 +5770,23 @@ The
 
 \layout Standard
 
-Switching the SUMMARY_STATE_DISPLAY pulldown menu in histogram window in
- the figure to 
+Switching the SUMMARY_STATE_DISPLAY pulldown menu in the Histogram window
+ in the figure to 
 \emph on 
 OverlapInclusionRatio
 \emph default 
  redraws the histogram canvas.
- The histogram canvas now looks like one shown in Figure 
+ The histogram canvas now looks like the one shown in Figure 
 \begin_inset LatexCommand \ref{fig:histogram_state_over_incl}
 
 \end_inset 
 
 .
- Since the sum of all inclusion ratios is greater than 1.0, 
+ Since the sum of all inclusion ratios is greater than 1.0, the
 \emph on 
 CumulativeInclusionRatio
 \emph default 
- view is not provided in the histogram window
+ view is not provided in the Histogram window.
 \begin_inset Foot
 collapsed true
 
@@ -5821,31 +5796,29 @@ The view cannot be drawn within same duration as marked in the timeline
  window.
 \end_inset 
 
-.
- All the member categories of the summary states in 
+ All the member categories of the summary states in the
 \emph on 
 OverlapInclusionRatio
 \emph default 
- view are drawn from the beginning of the histogram canvas and they are
- nested one inside others in decreasing inclusion ratio order, so the largest
+ view are drawn from the beginning of the histogram canvas and are nested
+ one inside the others in decreasing inclusion ratio order, so the largest
  inclusion ratios are easily noticeable.
- In order to see the smallest ratios, one needs to zoom in around the beginning
- of the canvas.
+ To see the smallest ratios, one needs to zoom in around the beginning of
+ the canvas.
  In Figure 
 \begin_inset LatexCommand \ref{fig:histogram_state_over_incl}
 
 \end_inset 
 
-, the largest inclusion ratios in the 3 visible timelines are all royal
+, the largest inclusion ratios in the three visible timelines are all royal
  blue and take up about the same amount of time.
- The 2nd largest ratios are all orange colored and is smallest in the timeline
+ The second largest ratios are all orange colored and smallest in the timeline
  15.
- Therefore 
+ Therefore, the 
 \emph on 
 OverlapInclusionRatio
 \emph default 
- is good for comparison of member category contribution among different
- timelines.
+ is good for comparing member category contribution among different timelines.
 \layout Subsection
 
 Summary Arrows
@@ -5887,9 +5860,9 @@ centering
 
 \end_inset 
 
- The 
+
 \emph on 
-Arrows Only
+ Arrows Only
 \emph default 
  view of the Figure 
 \begin_inset LatexCommand \ref{fig:histogram_state_all_cumu_excl}
@@ -5921,8 +5894,8 @@ Arrows Only
  The duration of each summary arrow is the total duration of all real arrows
  taking place between the ordered pair of timelines within the duration
  of the canvas.
- Notice that it is possible the duration of summary arrow is longer than
- that of the canvas.
+ Notice that the duration of summary arrow may be longer than that of the
+ canvas.
  
 \layout Standard
 
@@ -5982,7 +5955,7 @@ Right mouse clicking at the summary arrow will display a Summary Info Box
 .
  The info box lists the total number of real arrows and the ratio of the
  total duration of all real arrows to the duration of canvas.
- Together with the info box, summary arrow provides a way to tell which
+ Together with the info box, the summary arrow provides a way to tell which
  ordered pair of timelines communicates the most.
 \layout Section
 
@@ -6024,7 +5997,7 @@ centering
 
 \end_inset 
 
- The Preference window that shows PREVIEW_STATE_DISPLAY
+ Preference window showing the PREVIEW_STATE_DISPLAY.
 \end_inset 
 
 
@@ -6035,30 +6008,29 @@ As shown in Figure
 
 \end_inset 
 
- is the Preference window that adjusts the various display properties of
- the visualization program.
- A list of all the parameters and their definitions are listed in Tables
- 
+, the Preference window adjusts the various display properties of the visualizat
+ion program.
+ The parameters and their definitions are listed in Tables 
 \begin_inset LatexCommand \ref{table:preference_zoomable_reinit}
 
 \end_inset 
 
-,
+, 
 \begin_inset LatexCommand \ref{table:preference_zoomable_all}
 
 \end_inset 
 
-, 
+,  
 \begin_inset LatexCommand \ref{table:preference_zoomable_timeline}
 
 \end_inset 
 
-, 
+,  
 \begin_inset LatexCommand \ref{table:preference_zoomable_histogram}
 
 \end_inset 
 
- and 
+ , and 
 \begin_inset LatexCommand \ref{table:preference_legend}
 
 \end_inset 
@@ -6142,7 +6114,7 @@ any text
 
 \layout Standard
 
-Label for the root node of the Y-axis tree label in the left panel.
+Label for the root node of the y-axis tree label in the left panel.
 \end_inset 
 </cell>
 </row>
@@ -6250,7 +6222,7 @@ read into memory when
 \noun default 
 \color default
 the Timeline window is initialized, the integer affects the zooming and
- scrolling performance exponentially (in a asymptotic sense).
+ scrolling performance exponentially (in an asymptotic sense).
 \end_inset 
 </cell>
 </row>
@@ -6378,7 +6350,7 @@ Parameters for the section of
 \emph on 
 Zoomable Window Reinitialization
 \emph default 
- in Preference window.
+ in the Preference window.
 \end_inset 
 
 
@@ -6467,7 +6439,7 @@ true, false
 
 \layout Standard
 
-Whether to show the top of the Y-axis tree-styled directory label.
+Whether to show the top of the y-axis tree-styled directory label.
 \end_inset 
 </cell>
 </row>
@@ -6683,7 +6655,7 @@ integer
 
 \layout Standard
 
-Minimum width in pixel to be considered a dragged operation.
+Minimum width in pixels to be considered a dragged operation.
 \end_inset 
 </cell>
 </row>
@@ -6709,7 +6681,7 @@ CLICK_RADIUS_TO_LINE
 
 \layout Standard
 
-Radius in pixel for a click to be considered on the arrow.
+Radius in pixels for a click to be considered on the arrow.
 \end_inset 
 </cell>
 </row>
@@ -6764,7 +6736,7 @@ Whether to zoom in immediately after left mouse click on canvas.
 \emph on 
 All Zoomable Windows
 \emph default 
- in Preference window.
+ in the Preference window.
  
 \end_inset 
 
@@ -6880,7 +6852,7 @@ ARROW_HEAD_LENGTH
 
 \layout Standard
 
-Length of arrow head in pixel.
+Length of arrow head in pixels.
 \end_inset 
 </cell>
 </row>
@@ -6906,7 +6878,7 @@ ARROW_HEAD_HALF_WIDTH
 
 \layout Standard
 
-Half width of arrow head's base in pixel.
+Half-width of arrow head's base in pixels.
 \end_inset 
 </cell>
 </row>
@@ -6969,7 +6941,7 @@ ColorRaised, ColorLowered, ColorXOR, WhiteRaised, WhiteLowered, WhitePlain,
 
 \layout Standard
 
-Border style of Preview state.
+Border style of preview state.
 \end_inset 
 </cell>
 </row>
@@ -7004,7 +6976,7 @@ integer
 
 \layout Standard
 
-The empty border insets' width in pixel for the Preview state.
+The empty border insets' width in pixels for the Preview state.
 \end_inset 
 </cell>
 </row>
@@ -7030,7 +7002,7 @@ integer
 
 \layout Standard
 
-The empty border insets' height in pixel for the Preview state.
+The empty border insets' height in pixels for the Preview state.
 \end_inset 
 </cell>
 </row>
@@ -7056,8 +7028,8 @@ integer
 
 \layout Standard
 
-Minimum height of the legend division(category strip) in pixel inside THICKNESS
- the Preview state
+Minimum height of the legend division (category strip) in pixels inside
+ THICKNESS the Preview state
 \end_inset 
 </cell>
 </row>
@@ -7101,7 +7073,7 @@ integer
 
 \layout Standard
 
-The logarithmic base of the number of real arrows amalgamated in Preview
+The logarithmic base of the number of real arrows amalgamated in preview
  arrow.
  Hence, this determines the Preview arrow's thickness.
 \end_inset 
@@ -7138,7 +7110,7 @@ integer
 
 \layout Standard
 
-Length of the search marker's arrow in pixel
+Length of the search marker's arrow in pixels
 \end_inset 
 </cell>
 </row>
@@ -7173,7 +7145,7 @@ integer
 
 \layout Standard
 
-Thickness in pixel of the popup frame that highlights the searched drawable
+Thickness in pixels of the popup frame that highlights the searched drawable
 \end_inset 
 </cell>
 </row>
@@ -7228,7 +7200,7 @@ Parameters for the section of
 \emph on 
 Timeline Zoomable Window 
 \emph default 
-in Preference window.
+in the Preference window.
 \end_inset 
 
 
@@ -7336,7 +7308,7 @@ ColorRaised, ColorLowered, ColorXOR, WhiteRaised, WhiteLowered, WhitePlain,
 
 \layout Standard
 
-Border style of Summary state when Histogram window starts up.
+Border style of summary state when Histogram window starts up.
 \end_inset 
 </cell>
 </row>
@@ -7380,9 +7352,9 @@ integer
 
 \layout Standard
 
-The logarithmic base of the number of real arrows amalgamated in Summary
+The logarithmic base of the number of real arrows amalgamated in summary
  arrow.
- Hence, this determines the Summary arrow's thickness.
+ Hence, this determines the summary arrow's thickness.
 \end_inset 
 </cell>
 </row>
@@ -7402,7 +7374,7 @@ Parameters for the section of
 \emph on 
 Histogram Zoomable Window
 \emph default 
- in Preference window.
+ in the Preference window.
 \end_inset 
 
 
@@ -7482,7 +7454,7 @@ true, false
 
 \layout Standard
 
-Whether to arrange the legends with a hidden Preview order.
+Whether to arrange the legends with a hidden preview order.
 \end_inset 
 </cell>
 </row>
@@ -7508,7 +7480,7 @@ true, false
 
 \layout Standard
 
-Whether to arrange the legends with a hidden Topology order.
+Whether to arrange the legends with a hidden topology order.
 \end_inset 
 </cell>
 </row>
@@ -7524,11 +7496,11 @@ Whether to arrange the legends with a hidden Topology order.
 
 \end_inset 
 
-Parameters for the section of 
+Parameters for the section of the
 \emph on 
-Legend Window
+Legend window
 \emph default 
- in Preference window.
+ in the Preference window.
 \end_inset 
 
 
@@ -7540,54 +7512,53 @@ Special Features
 Search and Scan Facility
 \layout Standard
 
-The Level-of-detail support provided in SLOG-2 and Jumpshot-4 tends to help
- locate states which are either longer in time or occur very frequently.
- States that are short and occur rarely in a big logfile are very difficult
- to locate without any special tool.
+The level-of-detail support provided in SLOG-2 and Jumpshot-4 tends to help
+ locate states that either are longer in time or occur very frequently.
+ States that are short and occur rarely in a big logfile are difficult to
+ locate without a special tool.
  In Jumpshot-4, a search and scan facility is provided to facilitate this
  goal.
- There are 3 search criteria: search time, searchable timeline IDs and searchabl
-e categories.
+ There are three search criteria: search time, searchable timeline IDs,
+ and searchable categories.
  
 \layout Enumerate
 
 
 \emph on 
-Search Time
+Search time
 \emph default 
  is the time that search starts.
- It is marked by a yellow line called search cursor.
- There are 2 different ways of setting the search cursor.
- When the timeline canvas is in Hand mode as described in Figure 
+ It is marked by a yellow line called the search cursor.
+ There are two different ways of setting the search cursor.
+ When the timeline canvas is in hand mode, as described in Figure 
 \begin_inset LatexCommand \ref{fig:mouse_hand_mode}
 
 \end_inset 
 
- of section 
+ of Section 
 \begin_inset LatexCommand \ref{sub:Zoomable-and-Scrollable}
 
 \end_inset 
 
 , left mouse clicking will set the search cursor.
- The other way can be done in either Hand or Zoom mode.
- First popup an information dialog box of any kind using right mouse clicking,
- then press the SearchInitialize button in the toolbar to replace the green
- line by the yellow search cursor.
- When there are more than one information dialog box, the information dialog
- box that is shown up last will have its green line used to initialize the
- search cursor.
- When Timeline window first starts up, the search cursor is set at the starttime
- of the logfile.
+ The other way can be done in either hand or zoom mode.
+ First, one pops up an information dialog box of any kind, using right mouse
+ clicking; then one presses the SearchInitialize button in the toolbar to
+ replace the green line by the yellow search cursor.
+ When more than one information dialog box is shown, the information dialog
+ box shown last will have its green line used to initialize the search cursor.
+ When the Timeline window first starts up, the search cursor is set at the
+ starttime of the logfile.
 \layout Enumerate
 
 
 \emph on 
-Searchable Timeline IDs 
+Searchable timeline IDs 
 \emph default 
-are the timelines that search will operate on, i.e only states on the marked
+are the timelines that the search will operate on; only states on the marked
  timelines will be returned by the search facility.
  These marked timelines can be selected by clicking on their timeline IDs
- on Y-axis label panel with rules described in Table 
+ on y-axis label panel with rules described in Table 
 \begin_inset LatexCommand \ref{table:selection_rules}
 
 \end_inset 
@@ -7598,7 +7569,7 @@ are the timelines that search will operate on, i.e only states on the marked
 
 
 \emph on 
-Searchable Categories 
+Searchable categories 
 \emph default 
 are categories that have their searchable checkboxes enabled as in Figure
  
@@ -7607,8 +7578,9 @@ are categories that have their searchable checkboxes enabled as in Figure
 \end_inset 
 
 .
- Only drawable with searchable category can be returned by the search facility.
- By default, all categories in Legend window are searchable.
+ Only a drawable with a searchable category can be returned by the search
+ facility.
+ By default, all categories in the Legend window are searchable.
  
 \layout Standard
 
@@ -7662,9 +7634,9 @@ eos
 
 \layout Standard
 
-After setting any needed search criteria, the search operation can be carried
- out by pressing either the SearchForeward or SearchBackward buttons shown
- in Table 
+After any needed search criteria have been set, the search operation can
+ be carried out by pressing either the SearchForeward or SearchBackward
+ buttons shown in Table 
 \begin_inset LatexCommand \ref{table:timeline_toolbar}
 
 \end_inset 
@@ -7675,24 +7647,24 @@ After setting any needed search criteria, the search operation can be carried
 
 \end_inset 
 
-, the search facility returns a searched state which is marked by a transparent
+, the search facility returns a searched state that is marked by a transparent
  
 \begin_inset Foot
 collapsed false
 
 \layout Standard
 
-the transparency of the 3D raised box can be made opaque by selecting the
+The transparency of the 3D raised box can be made opaque by selecting the
  SEARCHED_OBJECT_ON_TOP true.
 \end_inset 
 
 box with a 3D raised border and whose starttime is marked by a yellow search
- cursor, an upper and a lower 3D arrowheads.
+ cursor and an upper and a lower 3D arrowhead.
  The upper 3D arrow's color matches that of the returned state.
- In the figure, since the returned state is a preview state, so the upper
- 3D arrow is gray in color as it is shown in Legend window.
+ In the figure, the returned state is a preview state, so the upper 3D arrow
+ is gray, as shown in the Legend window.
  Accompanied with the 3D raised bordered box is a popup Search Box that
- shows the detailed of the preview state like the Drawable Info Box in Figure
+ shows the details of the preview state, like the Drawable Info Box in Figure
  
 \begin_inset LatexCommand \ref{fig:timeline_infobox_preview_state}
 
@@ -7703,8 +7675,8 @@ box with a 3D raised border and whose starttime is marked by a yellow search
 \emph on 
 eos
 \emph default 
-, a Drawable Info Box is shown to indicate the returned 3D bordered box
- does contain category 
+, a Drawable Info Box is shown to indicate that the returned 3D bordered
+ box does contain category 
 \emph on 
 eos 
 \emph default 
@@ -7713,8 +7685,8 @@ graphically.
 \emph on 
 eos
 \emph default 
-, a dragged zoom is performed around the 3D raised bordered box and the
- result is shown in Figure 
+, a dragged zoom is performed around the 3D raised bordered box; the result
+ is shown in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_search_preview_zoomed}
 
 \end_inset 
@@ -7724,8 +7696,8 @@ eos
 \emph on 
 eos 
 \emph default 
-is located in the middle of the original 3D bordered box and it is pointed
- by the Drawable Info Box.
+is located in the middle of the original 3D bordered box, and it is pointed
+ to by the Drawable Info Box.
 \layout Standard
 
 
@@ -7763,7 +7735,7 @@ centering
 
 \end_inset 
 
- Dragged zoom the region around the 3D raised bordered box in Figure 
+ Dragged zoom performed around the 3D raised bordered box in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_search_preview}
 
 \end_inset 
@@ -7776,22 +7748,21 @@ eos.
 
 \layout Standard
 
-In general, when searching on big slog2 file, all preview categories should
- be set searchable, otherwise searching for real drawables may not return
- anything.
- Because at lower zoom level, there may not be any real drawables of the
- categories of interest, only preview drawable contains the categories of
- interest.
+In general, when one is searching in a big slog2 file, all preview categories
+ should be set searchable; otherwise, searching for real drawables may not
+ return anything because at the lower zoom level there may be no real drawables
+ of the categories of interest.
+ Only the preview drawable contains the categories of interest.
  Also, the search facility is carried out for the drawables that are in
  the physical memory.
- In some rare occasions, drawables in the memory may have been exhausted
- for searching before the end of the logfile has been reached, user may
- need to advance the search by scroll forward or backward to read in more
- drawables and to restart the search again.
+ On rare occasions, drawables in the memory may have been exhausted for
+ searching before the end of the logfile has been reached; thus, the user
+ may need to advance the search by scrolling forward or backward to read
+ in more drawables and to restart the search.
  For a very big logfile, the search process of a real state may require
  repeated operations of search and dragged zoom before the real state can
  be found.
- This process will be automated in the later version of Jumpshot-4.
+ This process will be automated in a later version of Jumpshot-4.
 \layout Section
 
 Tuning of the Timeline Window
@@ -7833,7 +7804,7 @@ centering
 
 \end_inset 
 
- The initial Timeline window with finer preview resolution.
+ Initial Timeline window with finer preview resolution.
 \end_inset 
 
 
@@ -7846,51 +7817,49 @@ One of the major improvements in the new Jumpshot and SLOG-2 is the scalability
 
 \end_inset 
 
-, there are 14 bands of preview states covering the whole canvas in the
- initial Timeline window.
- By incrementing the parameter INIT_SLOG2_LEVEL_READ by 1 in Preference
+, 14 bands of preview states cover the whole canvas in the initial Timeline
+ window.
+ By incrementing the parameter INIT_SLOG2_LEVEL_READ by 1 in the Preference
  window as in Table 
 \begin_inset LatexCommand \ref{table:preference_zoomable_reinit}
 
 \end_inset 
 
-, the initial Timeline window is redisplayed and is shown in Figure 
+, the initial Timeline window is redisplayed, as shown in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_popup_finer}
 
 \end_inset 
 
 .
  The new Timeline window has 27 bands of preview states instead of 14.
- The increase preview resolution does offer a more detailed description
- of logfile but at the expense of graphical performance.
- Because every increment of INIT_SLOG2_LEVEL_READ will roughly double the
- number of drawables to be iterated during every zooming or scrolling
+ The increased preview resolution offers a more detailed description of
+ the logfile but at the expense of graphical performance because every increment
+ of INIT_SLOG2_LEVEL_READ roughly doubles the number of drawables to be
+ iterated during every zooming or scrolling.
 \begin_inset Foot
-collapsed false
+collapsed true
 
 \layout Standard
 
-it is true for a binary tree
+It is true for a binary tree.
 \end_inset 
 
-.
- The biggest demand of graphical performance occurs when the zooming to
- the level of only pure real drawables from the lower zoom level.
+ The biggest demand of graphical performance occurs when zooming to the
+ level of only pure real drawables from the lower zoom level.
  The value of INIT_SLOG2_LEVEL_READ should be chosen so that Jumpshot does
  not appear to be too slow during the zooming to the pure real drawable
  level.
  For a fast graphics system, INIT_SLOG2_LEVEL_READ should be set higher
- than the default value 4, e.g.
- 5, so that more information is present during each view.
- Slow graphics system should set INIT_SLOG2_LEVEL_READ lower, e.g.
- 3.
+ than the default value 4 (e.g., 5) so that more information is present during
+ each view.
+ Slow graphics system should set INIT_SLOG2_LEVEL_READ lower (e.g., 3).
 \layout Standard
 
-Another parameter also significantly affects the graphical performance is
- ARROW_ANTIALIASING in Preference window.
+Another parameter that significantly affects the graphical performance is
+ ARROW_ANTIALIASING in the Preference window.
  Setting the parameters to ON will force Jumpshot to draw all arrows including
  preview arrows with anti-aliasing lines.
- This proves to be an expensive graphical operation
+ This proves to be an expensive graphical operation.
 \begin_inset Foot
 collapsed false
 
@@ -7901,10 +7870,9 @@ A typical timeline canvas with arrows will draw roughly a factor 3 slower
  
 \end_inset 
 
-.
- Except when high quality picture is needed like during screen capture for
- picture or when anti-aliasing lines are drawn with graphics hardware support,
- it is not recommended to turn on ARROW_ANTIALIASING.
+ Except when a high-quality picture is needed, for example during screen
+ capture for a picture or when anti-aliasing lines are drawn with graphics
+ hardware support, turning on ARROW_ANTIALIASING is not recommended.
  
 \layout Section
 
@@ -7947,9 +7915,9 @@ centering
 
 \end_inset 
 
- Graphical MPI overhead profiling through the use of 
+ Graphical MPI overhead profiling through the use of the
 \emph on 
-BaseAlignedCumulativeExclusionRatio
+ BaseAlignedCumulativeExclusionRatio
 \emph default 
  view of Timeline window in Figure 
 \begin_inset LatexCommand \ref{fig:timeline_popup}
@@ -7962,20 +7930,20 @@ BaseAlignedCumulativeExclusionRatio
 
 \layout Standard
 
-One of the questions that most MPI application developers always want to
- know is the overhead of MPI calls in their programs.
- Essentially they would like to know what is the communication overhead
- in their parallel programs.
+Most MPI application developers want to know about the overhead of MPI calls
+ in their programs.
+ Essentially, they want to know what the communication overheadis in their
+ parallel programs.
  New SLOG-2 viewer provides a graphical answer to this question for most
- MPI profiling system.
- In MPE profiling system, MPI states are alway nested deeper than the user-defin
-ed states.
- Therefore disabling user-defined states and arrows in 
+ MPI profiling systems.
+ In MPE profiling systems, MPI states are alway nested deeper than the user-defi
+ned states.
+ Therefore, disabling the user-defined states and arrows in the 
 \emph on 
 CumulativeExclusionRatio
 \emph default 
- mode in the Timeline window still leaves all MPI exclusion ratios intact
- without distorted the collective meaning of exclusion ratios.
+ mode in the Timeline window still leaves all MPI exclusion ratios intact,
+ without distorting the collective meaning of exclusion ratios.
  Figure 
 \begin_inset LatexCommand \ref{fig:timeline_mpi_overhead}
 
@@ -7989,31 +7957,29 @@ CumulativeExclusionRatio
 \emph on 
 BaseAligned
 \emph default 
- mode which looks like a 2-dimensional projection of a 3-dimensional histogram
- for a timeline vs time coordinate system.
+ mode that looks like a two-dimensional projection of a three-dimensional
+ histogram for a timeline vs time coordinate system.
  The base aligned feature is for easy comparison of preview states' heights.
- It becomes apparent from the figure that not only do we know the yellow
- state, i.e.
- MPI_Barrier, takes up most time in the program, we also know when and where
- MPI_Barrier consumes most time.
- The combination of disabling user-defined states and use of 
+ From the figure, we know that the yellow state (i.e., MPI_Barrier) takes
+ the most time in the program; we also know when and where MPI_Barrier consumes
+ the most time.
+ The combination of disabling user-defined states and using the
 \emph on 
-BaseAlignedCumulativeExclusionRatio
+ BaseAlignedCumulativeExclusionRatio
 \emph default 
  Timeline view provides a powerful and convenient way to estimate MPI communicat
 ion overhead.
- Together with the zoomable capability of the Timeline window, user can
- easily zoom in to identify the time and location of the bottleneck that
- causes the biggest communication overhead.
- For an overall estimate of MPI overhead, a histogram window over the whole
- duration of the timeline canvas can be obtained and is shown in Figure
- 
+ Together with the zoomable capability of the Timeline window, the user
+ can easily zoom in to identify the time and location of the bottleneck
+ that causes the biggest communication overhead.
+ For an overall estimate of MPI overhead, a Histogram window over the whole
+ duration of the timeline canvas can be obtained, as shown in Figure 
 \begin_inset LatexCommand \ref{fig:histogram_mpi_overhead}
 
 \end_inset 
 
 .
- The vacuum region in each timeline is assumed to be used by user computation.
+ The empty region in each timeline is assumed to be for user computation.
 \layout Standard
 
 
@@ -8052,7 +8018,7 @@ centering
 
 \end_inset 
 
- An overall MPI overhead histogram for Figure 
+ Overall MPI overhead histogram for Figure 
 \begin_inset LatexCommand \ref{fig:timeline_mpi_overhead}
 
 \end_inset 

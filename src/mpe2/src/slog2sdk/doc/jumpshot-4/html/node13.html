@@ -27,26 +27,26 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html313"
+<A NAME="tex2html314"
   HREF="node14.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html309"
+<A NAME="tex2html310"
   HREF="node12.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html303"
+<A NAME="tex2html304"
   HREF="node12.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html311"
+<A NAME="tex2html312"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html314"
+<B> Next:</B> <A NAME="tex2html315"
   HREF="node14.html">3.4.1.1 Dragged Zoom</A>
-<B> Up:</B> <A NAME="tex2html310"
+<B> Up:</B> <A NAME="tex2html311"
   HREF="node12.html">3.4 Timeline Zoomable Window</A>
-<B> Previous:</B> <A NAME="tex2html304"
+<B> Previous:</B> <A NAME="tex2html305"
   HREF="node12.html">3.4 Timeline Zoomable Window</A>
- &nbsp; <B>  <A NAME="tex2html312"
+ &nbsp; <B>  <A NAME="tex2html313"
   HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
@@ -58,36 +58,35 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 </H2>
 
 <P>
-When viewing a big slog2 file like the one shown in Figure <A HREF="node12.html#fig:timeline_popup">3.9</A>,
-the whole timeline canvas is filled up with preview drawables. Though
-it provides a reasonable description at high level<A NAME="tex2html37"
-  HREF="#foot326"><SUP>3.3</SUP></A>, it is pretty obscure to know the details. Hence, a well-designed
-zoomable and scrollable user interface (ZSUI) of the timeline canvas
-becomes an absolute necessity to facilitate the location of events
-of interest. The ZSUI of the timeline canvas includes many parts and
-operations. But the most handy ones are <I>dragged zoom</I>, <I>grasp
-and scroll</I> and <I>instant zoom in and out.</I> All these features
-are supported by the <I>Zoomable and Scrollable canvas</I>. There
-are 2 such canvases in the Timeline window. They are <I>Timeline
-Canvas</I> and <I>Time Ruler Canvas</I>. In these canvases, left mouse
-clicking can be alternated in 2 different modes by a pair of toggled
-buttons as shown in Figures <A HREF="#fig:mouse_zoom_mode">3.10</A> and <A HREF="#fig:mouse_hand_mode">3.11</A>.
-They are called <I>Zoom</I> and <I>Hand</I> modes. Each canvas in
-the Timeline window has its own set of toggled buttons that determine
-its left mouse click behavior. The timeline canvas's toggled buttons
-are located above the canvas and sit at the end of the time display
-panel. The time ruler's toggled buttons are located at the bottom
-of row adjustment panel, i.e. sit right next to the end of the ruler.
-By default, the timeline canvas is in zoom mode and the time ruler
-canvas is in hand mode, so user can do zooming when the cursor is
-in the timeline canvas and can scroll easily by simply moving the
+When a big slog2 file like the one shown in Figure <A HREF="node12.html#fig:timeline_popup">3.9</A>is
+viewed, the whole timeline canvas is filled with preview drawables.
+Although it provides a reasonable description at a high level,<A NAME="tex2html38"
+  HREF="#foot327"><SUP>3.4</SUP></A> it is hard to know the details. Hence, a well-designed zoomable and
+scrollable user interface (ZSUI) of the timeline canvas becomes necessary
+to help the viewer locate events of interest. The ZSUI of the timeline
+canvas includes many parts and operations. The most handy ones are
+<I>dragged zoom</I>, <I>grasp and scroll</I> and <I>instant zoom
+in and out.</I> All these features are supported by the <I>zoomable
+and scrollable canvas</I>. There are two such canvases in the Timeline
+window: <I>timeline canvas</I> and <I>time ruler canvas</I>. In these
+canvases, left mouse clicking can be alternated in two different modes
+by a pair of toggled buttons as shown in Figures <A HREF="#fig:mouse_zoom_mode">3.10</A>
+and <A HREF="#fig:mouse_hand_mode">3.11</A>. They are called <I>zoom</I> and <I>hand</I>
+modes. Each canvas in the Timeline window has its own set of toggled
+buttons that determine its left mouse click behavior. The timeline
+canvas's toggled buttons are located above the canvas  at the end
+of the time display panel. The time ruler's toggled buttons are located
+at the bottom of row adjustment panel, next to the end of the ruler.
+By default, the timeline canvas is in zoom mode, and the time ruler
+canvas is in hand mode, so the user can do zooming when the cursor
+is in the timeline canvas and can scroll easily by simply moving the
 cursor over the ruler canvas. Also, the scrolling can be done by simply
-dragging on scrollbar's knob, clicking the end buttons and in the
-space between the knob and scrollbar's end buttons.
+dragging on the scrollbar's knob, clicking the end buttons and in
+the space between the knob and scrollbar's end buttons.
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:mouse_zoom_mode"></A><A NAME="679"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:mouse_zoom_mode"></A><A NAME="680"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.10:</STRONG>
 Canvas's left mouse click is in zoom
@@ -105,7 +104,7 @@ mode.</CAPTION>
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:mouse_hand_mode"></A><A NAME="680"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:mouse_hand_mode"></A><A NAME="681"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.11:</STRONG>
 Canvas's left mouse click is in hand
@@ -124,10 +123,10 @@ mode.</CAPTION>
 <P>
 <BR><HR><H4>Footnotes</H4>
 <DL>
-<DT><A NAME="foot326">... level</A><A
- HREF="node13.html#tex2html37"><SUP>3.3</SUP></A></DT>
-<DD>Reasonable description here means that user can still get a vague
-sense of where the long and/or frequent drawables are .
+<DT><A NAME="foot327">...</A><A
+ HREF="node13.html#tex2html38"><SUP>3.4</SUP></A></DT>
+<DD>Reasonable description here means that the user can still get a vague
+sense of where the long or frequent drawables are.
 
 </DD>
 </DL>
@@ -136,51 +135,51 @@ sense of where the long and/or frequent drawables are .
 <A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
 
 <UL>
-<LI><A NAME="tex2html315"
-  HREF="node14.html">3.4.1.1 Dragged Zoom</A>
 <LI><A NAME="tex2html316"
-  HREF="node15.html">3.4.1.2 Instant Zoom</A>
+  HREF="node14.html">3.4.1.1 Dragged Zoom</A>
 <LI><A NAME="tex2html317"
-  HREF="node16.html">3.4.1.3 Grasp and Scroll</A>
+  HREF="node15.html">3.4.1.2 Instant Zoom</A>
 <LI><A NAME="tex2html318"
+  HREF="node16.html">3.4.1.3 Grasp and Scroll</A>
+<LI><A NAME="tex2html319"
   HREF="node17.html">3.4.1.4 Information Dialog Box</A>
 <UL>
-<LI><A NAME="tex2html319"
+<LI><A NAME="tex2html320"
   HREF="node18.html">3.4.1.4.1 Drawable Info Box</A>
 <UL>
-<LI><A NAME="tex2html320"
-  HREF="node19.html">3.4.1.4.1.1 Drawable Info Box for Preview Drawable</A>
 <LI><A NAME="tex2html321"
+  HREF="node19.html">3.4.1.4.1.1 Drawable Info Box for Preview Drawable</A>
+<LI><A NAME="tex2html322"
   HREF="node20.html">3.4.1.4.1.2 Drawable Info Box for Real Drawable</A>
 </UL>
-<LI><A NAME="tex2html322"
-  HREF="node21.html">3.4.1.4.2 Duration Info Box</A>
 <LI><A NAME="tex2html323"
+  HREF="node21.html">3.4.1.4.2 Duration Info Box</A>
+<LI><A NAME="tex2html324"
   HREF="node22.html">3.4.1.4.3 Time Info Box</A>
 </UL></UL>
 <!--End of Table of Child-Links-->
 <HR>
 <!--Navigation Panel-->
-<A NAME="tex2html313"
+<A NAME="tex2html314"
   HREF="node14.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html309"
+<A NAME="tex2html310"
   HREF="node12.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html303"
+<A NAME="tex2html304"
   HREF="node12.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html311"
+<A NAME="tex2html312"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html314"
+<B> Next:</B> <A NAME="tex2html315"
   HREF="node14.html">3.4.1.1 Dragged Zoom</A>
-<B> Up:</B> <A NAME="tex2html310"
+<B> Up:</B> <A NAME="tex2html311"
   HREF="node12.html">3.4 Timeline Zoomable Window</A>
-<B> Previous:</B> <A NAME="tex2html304"
+<B> Previous:</B> <A NAME="tex2html305"
   HREF="node12.html">3.4 Timeline Zoomable Window</A>
- &nbsp; <B>  <A NAME="tex2html312"
+ &nbsp; <B>  <A NAME="tex2html313"
   HREF="node2.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 

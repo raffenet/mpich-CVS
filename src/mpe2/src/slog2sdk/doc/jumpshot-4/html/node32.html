@@ -27,26 +27,26 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html550"
+<A NAME="tex2html551"
   HREF="node33.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html546"
+<A NAME="tex2html547"
   HREF="node30.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html540"
+<A NAME="tex2html541"
   HREF="node31.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html548"
+<A NAME="tex2html549"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html551"
+<B> Next:</B> <A NAME="tex2html552"
   HREF="node33.html">4.3 Estimation of MPI</A>
-<B> Up:</B> <A NAME="tex2html547"
+<B> Up:</B> <A NAME="tex2html548"
   HREF="node30.html">4. Special Features</A>
-<B> Previous:</B> <A NAME="tex2html541"
+<B> Previous:</B> <A NAME="tex2html542"
   HREF="node31.html">4.1 Search and Scan</A>
- &nbsp; <B>  <A NAME="tex2html549"
+ &nbsp; <B>  <A NAME="tex2html550"
   HREF="node2.html">Contents</A></B> 
 <BR>
 <BR>
@@ -58,11 +58,11 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:timeline_popup_finer"></A><A NAME="716"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:timeline_popup_finer"></A><A NAME="717"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 4.3:</STRONG>
-The initial Timeline window with
-finer preview resolution.</CAPTION>
+Initial Timeline window with finer
+preview resolution.</CAPTION>
 <TR><TD>
 <DIV ALIGN="CENTER"><IMG
   WIDTH="947" HEIGHT="725" ALIGN="BOTTOM" BORDER="0"
@@ -77,72 +77,72 @@ finer preview resolution.</CAPTION>
 <P>
 One of the major improvements in the new Jumpshot and SLOG-2 is the
 scalability in terms of visualization performance. As shown in Figure
-<A HREF="node12.html#fig:timeline_popup">3.9</A>, there are 14 bands of preview states covering
-the whole canvas in the initial Timeline window. By incrementing the
-parameter INIT_SLOG2_LEVEL_READ by 1 in Preference window as in
-Table <A HREF="#table:preference_zoomable_reinit">3.14</A>, the initial Timeline
-window is redisplayed and is shown in Figure <A HREF="#fig:timeline_popup_finer">4.3</A>.
+<A HREF="node12.html#fig:timeline_popup">3.9</A>, 14 bands of preview states cover the whole
+canvas in the initial Timeline window. By incrementing the parameter
+INIT_SLOG2_LEVEL_READ by 1 in the Preference window as in Table
+<A HREF="#table:preference_zoomable_reinit">3.14</A>, the initial Timeline window
+is redisplayed, as shown in Figure <A HREF="#fig:timeline_popup_finer">4.3</A>.
 The new Timeline window has 27 bands of preview states instead of
-14. The increase preview resolution does offer a more detailed description
-of logfile but at the expense of graphical performance. Because every
-increment of INIT_SLOG2_LEVEL_READ will roughly double the number
-of drawables to be iterated during every zooming or scrolling<A NAME="tex2html72"
-  HREF="#foot623"><SUP>4.2</SUP></A>. The biggest demand of graphical performance occurs when the zooming
-to the level of only pure real drawables from the lower zoom level.
-The value of INIT_SLOG2_LEVEL_READ should be chosen so that Jumpshot
+14. The increased preview resolution offers a more detailed description
+of the logfile but at the expense of graphical performance because
+every increment of INIT_SLOG2_LEVEL_READ roughly doubles the number
+of drawables to be iterated during every zooming or scrolling.<A NAME="tex2html73"
+  HREF="#foot623"><SUP>4.2</SUP></A> The biggest demand of graphical performance occurs when zooming to
+the level of only pure real drawables from the lower zoom level. The
+value of INIT_SLOG2_LEVEL_READ should be chosen so that Jumpshot
 does not appear to be too slow during the zooming to the pure real
 drawable level. For a fast graphics system, INIT_SLOG2_LEVEL_READ
-should be set higher than the default value 4, e.g. 5, so that more
+should be set higher than the default value 4 (e.g., 5) so that more
 information is present during each view. Slow graphics system should
-set INIT_SLOG2_LEVEL_READ lower, e.g. 3.
+set INIT_SLOG2_LEVEL_READ lower (e.g., 3).
 
 <P>
-Another parameter also significantly affects the graphical performance
-is ARROW_ANTIALIASING in Preference window. Setting the parameters
+Another parameter that significantly affects the graphical performance
+is ARROW_ANTIALIASING in the Preference window. Setting the parameters
 to ON will force Jumpshot to draw all arrows including preview arrows
 with anti-aliasing lines. This proves to be an expensive graphical
-operation<A NAME="tex2html73"
-  HREF="#foot624"><SUP>4.3</SUP></A>. Except when high quality picture is needed like during screen capture
-for picture or when anti-aliasing lines are drawn with graphics hardware
-support, it is not recommended to turn on ARROW_ANTIALIASING. 
+operation.<A NAME="tex2html74"
+  HREF="#foot624"><SUP>4.3</SUP></A> Except when a high-quality picture is needed, for example during
+screen capture for a picture or when anti-aliasing lines are drawn
+with graphics hardware support, turning on ARROW_ANTIALIASING is
+not recommended. 
 
 <P>
 <BR><HR><H4>Footnotes</H4>
 <DL>
-<DT><A NAME="foot623">... scrolling</A><A
- HREF="node32.html#tex2html72"><SUP>4.2</SUP></A></DT>
-<DD>it is true for a binary tree
+<DT><A NAME="foot623">...</A><A
+ HREF="node32.html#tex2html73"><SUP>4.2</SUP></A></DT>
+<DD>It is true for a binary tree.
 
 </DD>
-<DT><A NAME="foot624">...
-operation</A><A
- HREF="node32.html#tex2html73"><SUP>4.3</SUP></A></DT>
+<DT><A NAME="foot624">...</A><A
+ HREF="node32.html#tex2html74"><SUP>4.3</SUP></A></DT>
 <DD>A typical timeline canvas with arrows will draw roughly a factor 3
 slower with anti-aliasing on. 
 
 </DD>
 </DL><HR>
 <!--Navigation Panel-->
-<A NAME="tex2html550"
+<A NAME="tex2html551"
   HREF="node33.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
-<A NAME="tex2html546"
+<A NAME="tex2html547"
   HREF="node30.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
-<A NAME="tex2html540"
+<A NAME="tex2html541"
   HREF="node31.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
-<A NAME="tex2html548"
+<A NAME="tex2html549"
   HREF="node2.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html551"
+<B> Next:</B> <A NAME="tex2html552"
   HREF="node33.html">4.3 Estimation of MPI</A>
-<B> Up:</B> <A NAME="tex2html547"
+<B> Up:</B> <A NAME="tex2html548"
   HREF="node30.html">4. Special Features</A>
-<B> Previous:</B> <A NAME="tex2html541"
+<B> Previous:</B> <A NAME="tex2html542"
   HREF="node31.html">4.1 Search and Scan</A>
- &nbsp; <B>  <A NAME="tex2html549"
+ &nbsp; <B>  <A NAME="tex2html550"
   HREF="node2.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 
