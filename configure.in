@@ -1238,21 +1238,21 @@ export MPI_INTEGER16
 # Try to find corresponding types for the size-specific types.
 #
 # Assume that the float/double/long double are simply spaced
-# Datatypes used up through 24 in Fortran
-# 25,26,27,28,29,2a
+# Datatypes used up through 26 in Fortran
+# 27,28,29,2a,2b,2c
 if test "$ac_cv_sizeof_float" = "4" ; then
-    MPI_REAL4="0x4c000425"
-    MPI_COMPLEX8="0x4c000826"
+    MPI_REAL4="0x4c000427"
+    MPI_COMPLEX8="0x4c000828"
     MPIR_REAL4_CTYPE=float
 fi
 if test "$ac_cv_sizeof_double" = "8" ; then
-    MPI_REAL8="0x4c000827"
-    MPI_COMPLEX16="0x4c001028"
+    MPI_REAL8="0x4c000829"
+    MPI_COMPLEX16="0x4c00102a"
     MPIR_REAL8_CTYPE=double
 fi
 if test "$ac_cv_sizeof_long_double" = "16" ; then
-    MPI_REAL16="0x4c001029"
-    MPI_COMPLEX32="0x4c00202a"
+    MPI_REAL16="0x4c00102b"
+    MPI_COMPLEX32="0x4c00202c"
     MPIR_REAL16_TYPE="long double"
 fi
 if test -n "$MPIR_REAL4_CTYPE" ; then
@@ -1275,27 +1275,27 @@ for type in char short int long long_long ; do
     if test -n "$len" ; then 
     case $len in 
     1) if test "$MPI_INTEGER1" = "MPI_DATATYPE_NULL" ; then
-           MPI_INTEGER1="0x4c00012b"
+           MPI_INTEGER1="0x4c00012d"
 	   MPIR_INTEGER1_CTYPE="$ctype"
        fi
        ;;
     2) if test "$MPI_INTEGER2" = "MPI_DATATYPE_NULL" ; then
-           MPI_INTEGER2="0x4c00022c"
+           MPI_INTEGER2="0x4c00022f"
 	   MPIR_INTEGER2_CTYPE="$ctype"
        fi
        ;;
     4) if test "$MPI_INTEGER4" = "MPI_DATATYPE_NULL" ; then
-           MPI_INTEGER4="0x4c00042d"
+           MPI_INTEGER4="0x4c000430"
 	   MPIR_INTEGER4_CTYPE="$ctype"
        fi
        ;;
     8) if test "$MPI_INTEGER8" = "MPI_DATATYPE_NULL" ; then
-           MPI_INTEGER8="0x4c00082e"
+           MPI_INTEGER8="0x4c000831"
 	   MPIR_INTEGER8_CTYPE="$ctype"
        fi
        ;;
     16) if test "$MPI_INTEGER16" = "MPI_DATATYPE_NULL" ; then
-           MPI_INTEGER16="0x4c00102f"
+           MPI_INTEGER16="0x4c001032"
 	   MPIR_INTEGER16_CTYPE="$ctype"
        fi
        ;;
