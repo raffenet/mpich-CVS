@@ -56,32 +56,160 @@ Output Parameters:
 .N MPI_ERR_EXHAUSTED
 
 @*/
-int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, int sendtag, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
+int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, int sendtag, int source, int recvtag,
+			 MPI_Comm comm, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Sendrecv_replace";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-
-    MPID_MPI_PT2PT_FUNC_ENTER_BOTH(MPID_STATE_MPI_SENDRECV_REPLACE);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_SENDRECV_REPLACE);
+    
+    /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV_REPLACE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+            }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+	    
+    MPID_MPI_PT2PT_FUNC_ENTER_BOTH(MPID_STATE_MPI_SENDRECV_REPLACE);
+    
+    /* Convert handles to MPI objects. */
+    MPID_Comm_get_ptr(comm, comm_ptr);
+    
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPID_Datatype * datatype_ptr = NULL;
+	    
+	    /* Validate communicator */
+            MPID_Comm_valid_ptr(comm_ptr, mpi_errno);
+            if (mpi_errno) {
+		goto fn_exit;
+            }
+	    
+            /* Validate datatype */
+	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
+            MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+	    MPIR_ERRTEST_USERBUFFER(buf, count, datatype, mpi_errno);
+	    
+	    /* Validate count */
+	    MPIR_ERRTEST_COUNT(count, mpi_errno);
+
+	    /* Validate status (status_ignore is not the same as null) */
+	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
+
+	    /* Validate tags */
+	    MPIR_ERRTEST_SEND_TAG(sendtag, mpi_errno);
+	    MPIR_ERRTEST_RECV_TAG(recvtag, mpi_errno);
+
+	    /* Validate source and destination */
+	    if (comm_ptr) {
+		MPIR_ERRTEST_SEND_RANK(comm_ptr, dest, mpi_errno);
+		MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
+	    }
+            if (mpi_errno) {
+		goto fn_exit;
             }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV_REPLACE);
-    return MPI_SUCCESS;
+#   if defined(MPID_Sendrecv_replace)
+    {
+	mpi_errno = MPID_Sendrecv_replace(buf, count, datatype, dest, sendtag, source, recvtag, comm_ptr, status)
+    }
+#   else
+    {
+	MPID_Request * sreq;
+	MPID_Request * rreq;
+	void * tmpbuf = NULL;
+	int tmpbuf_size;
+	int tmpbuf_count;
+
+	mpi_errno = MPI_Pack_size(count, datatype, comm, &tmpbuf_size);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    goto blk_exit;
+	}
+
+	tmpbuf = MPIU_Malloc(tmpbuf_size);
+	if (tmpbuf == NULL)
+	{
+	    goto blk_exit;
+	}
+
+	tmpbuf_count = 0;
+	mpi_errno = MPI_Pack(buf, count, datatype, tmpbuf, tmpbuf_size, &tmpbuf_count, comm);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    goto blk_exit;
+	}
+	
+	mpi_errno = MPID_Irecv(buf, count, datatype, source, recvtag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &rreq);
+	if (mpi_errno)
+	{
+	    goto fn_exit;
+	}
+
+	mpi_errno = MPID_Isend(tmpbuf, tmpbuf_count, MPI_PACKED, dest, sendtag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &sreq);
+	if (mpi_errno)
+	{
+	    /* FIXME: should we cancel the pending (possibly completed) receive request or wait for it to complete? */
+	    MPID_Request_release(rreq);
+	    goto fn_exit;
+	}
+
+	while(1)
+	{
+	    MPID_Progress_start();
+	
+	    if (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
+	    {
+		MPID_Progress_wait();
+	    }
+	    else
+	    {
+		MPID_Progress_end();
+		break;
+	    }
+	}
+
+	if (status != MPI_STATUS_IGNORE)
+	{
+	    *status = rreq->status;
+	}
+
+	if (mpi_errno == MPI_SUCCESS)
+	{
+	    mpi_errno = rreq->status.MPI_ERROR;
+	}
+    
+	if (mpi_errno == MPI_SUCCESS)
+	{
+	    mpi_errno = sreq->status.MPI_ERROR;
+	}
+    
+	MPID_Request_release(sreq);
+	MPID_Request_release(rreq);
+
+      blk_exit:
+	if (tmpbuf != NULL)
+	{
+	    MPIU_Free(tmpbuf);
+	}
+    }
+#   endif
+    
+  fn_exit:
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }
