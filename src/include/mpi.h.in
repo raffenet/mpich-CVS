@@ -78,6 +78,12 @@ typedef int MPI_Comm;
 typedef int MPI_Group;
 #define MPI_GROUP_EMPTY 1
 
+/* RMA and Windows */
+typedef int MPI_Win;
+
+/* File and IO */
+typedef int MPI_File;
+
 /* Collective operations */
 typedef int MPI_Op;
 
@@ -118,7 +124,8 @@ typedef int MPI_Op;
 #define MPI_MAX_PROCESSOR_NAME 256
 #define MPI_MAX_ERROR_STRING   512
 #define MPI_MAX_NAME_STRING     63
-#define MPI_MAX_PORT_NAME       256
+#define MPI_MAX_PORT_NAME      256
+#define MPI_MAX_OBJECT_NAME    128
 
 /* Pre-defined constants */
 #define MPI_UNDEFINED      (-32766)

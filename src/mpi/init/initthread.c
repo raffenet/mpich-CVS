@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpi_init.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Init_thread */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -63,7 +64,7 @@ int MPIR_Init_thread( int required, int *provided )
 int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 {
     static const char FCNAME[] = "MPI_Init_thread";
-    int mpi_errno;
+    int mpi_errno = MPI_SUCCESS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INIT_THREAD);
 #   ifdef HAVE_ERROR_CHECKING
@@ -76,7 +77,7 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
-                return MPIR_Return( 0, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;

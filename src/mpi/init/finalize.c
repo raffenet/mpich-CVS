@@ -35,7 +35,7 @@ typedef struct {
 } Finalize_func_t;
 #define MAX_FINALIZE_FUNC 16
 static Finalize_func_t fstack[MAX_FINALIZE_FUNC];
-static fstack_sp = 0;
+static int fstack_sp = 0;
 
 void MPIR_Add_finalize( int (*f)( void * ), void *extra_data )
 {
@@ -75,7 +75,7 @@ static void MPIR_Call_finalize( void )
 int MPI_Finalize( void )
 {
     static const char FCNAME[] = "MPI_Finalize";
-    int mpi_errno;
+    int mpi_errno = MPI_SUCCESS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FINALIZE);
 
@@ -89,7 +89,7 @@ int MPI_Finalize( void )
 	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
-                return MPIR_Return( 0, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;

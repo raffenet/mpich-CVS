@@ -14,9 +14,125 @@
    do not want mpi.h to depend on any other files or configure flags */
 #include "mpichconf.h"
 
-/* Include the implementation definitions (e.g., error reporting, thread
-   portability) */
+#ifdef STDC_HEADERS
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#endif
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+/* 
+   Include the implementation definitions (e.g., error reporting, thread
+   portability)
+   More detailed documentation is containing in the MPICH2 and ADI3 manuals.
+ */
 /* ... to do ... */
+
+/* Basic typedefs */
+#ifndef HAVE_INT16_T 
+/* Fix me (short may not be correct) */
+typedef short int16_t;
+#endif
+
+/* Known language bindings */
+typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN, 
+	       MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
+/* Known MPI object types */
+typedef enum { 
+  MPID_COMM=1, MPID_WIN=2, MPID_FILE=4, MPID_DATATYPE=8 } MPID_Object_kind;
+
+/* Error Handlers */
+typedef union {
+   void (*C_Comm_Handler_function) ( MPI_Comm *, int *, ... );
+   void (*F77_Handler_function) ( MPI_Fint *, MPI_Fint *, ... );
+   void (*C_Win_Handler_function) ( MPI_Win *, int *, ... );
+   void (*C_File_Handler_function) ( MPI_File *, int *, ... );
+} MPID_Errhandler_fn;
+
+typedef struct {
+  int                id;
+  volatile int       ref_count;
+  MPID_Lang_t        language;
+  MPID_Object_kind   kind;
+  MPID_Errhandler_fn errfn;
+  /* Other, device-specific information */
+} MPID_Errhandler;
+
+/* Lists and attributes */
+typedef struct MPID_List_elm {
+    struct MPID_List_elm *next;
+    void   *item;
+    /* other, device-specific information */
+}MPID_List;
+
+typedef union {
+  int  (*C_CommCopyFunction)( MPI_Comm, int, void *, void *, void *, int * );
+  void (*F77_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
+			      MPI_Fint *, MPI_Fint *, MPI_Fint * );
+  void (*F90_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *,
+			      MPI_Aint *, MPI_Fint *, MPI_Fint * );
+  int (*C_FileCopyFunction) ( MPI_Comm, int, void *, void *, void *, int * );
+  int (*C_TypeCopyFunction) ( MPI_Datatype, int, 
+			      void *, void *, void *, int * );
+  /* The C++ function is the same as the C function */
+} MPID_Copy_function;
+typedef union {
+  int  (*C_DeleteFunction)  ( MPI_Comm, int, void *, void * );
+  void (*F77_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
+			      MPI_Fint * );
+  void (*F90_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *, 
+			      MPI_Fint * );
+  int  (*C_FileDeleteFunction)  ( MPI_File, int, void *, void * );
+  int  (*C_TypeDeleteFunction)  ( MPI_Datatype, int, void *, void * );
+  
+} MPID_Delete_function;
+typedef struct {
+    int                  id;
+    volatile int         ref_count;
+    MPID_Lang_t          language;
+    MPID_Object_kind     kind;
+    void                 *extra_state;
+    MPID_Copy_function   copyfn;
+    MPID_Delete_function delfn;
+  /* other, device-specific information */
+} MPID_Keyval;
+typedef struct {
+    void *      value;              /* Stored value */
+    MPID_Keyval *keyval;            /* Keyval structure for this attribute */
+    /* other, device-specific information */
+} MPID_Attribute;
+
+typedef struct {
+    volatile int ref_count;
+    int          size;           /* Size of a group */
+    int          *lrank_to_lpid; /* Array mapping a local rank to local 
+				    process number */
+  /* other, device-specific information */
+} MPID_Group;
+
+/* Communicators */
+typedef struct { 
+    volatile int ref_count;
+    int16_t       context_id;    /* Assigned context id */
+    int           size;          /* Value of MPI_Comm_(remote)_size */
+    int           rank;          /* Value of MPI_Comm_rank */
+    int           id;            /* value of MPI_Comm for this structure */
+    MPID_List     attributes;    /* List of attributes */
+    MPID_Group    *local_group,  /* Groups in communicator. */
+                  *remote_group; /* The local and remote groups are the
+				    same for intra communicators */
+    char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
+    MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
+  /* other, device-specific information */
+    int           is_singlemethod; /* An example, device-specific field,
+				      this is used in a multi-method
+				      device to indicate that all processes
+				      in this communicator belong to the
+				      same method */
+} MPID_Comm;
 
 /* Time stamps */
 /* Get the timer definitions.  The source file for this include is
@@ -51,8 +167,6 @@ extern MPICH_PerThread_t MPIR_Thread;
                pthread_setspecific( MPIR_Process.thread_key, p );}}
 #endif
 
-/* Communicator type */
-typedef void MPID_Comm;
 
 /* Per process data */
 typedef enum { MPICH_PRE_INIT=0, MPICH_WITHIN_MPI=1,
@@ -93,5 +207,9 @@ extern MPICH_PerProcess_t MPIR_Process;
 
 /* Bindings for internal routines */
 void MPIR_Add_finalize( int (*)( void * ), void * );
-
+int MPIR_Err_return_comm( MPID_Comm *, const char [], int );
+int MPIR_Err_create_code( int, const char [], ... );
+void MPIR_Nest_incr( void );
+void MPIR_Nest_decr( void );
+int MPIR_Nest_value( void );
 #endif /* MPIIMPL_INCLUDED */
