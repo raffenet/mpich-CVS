@@ -341,6 +341,7 @@ void testAll(void)
     MPI_Win_create_errhandler(&win_errhan, &errhan);
     MPI_Win_get_errhandler(win, &errhan);
     MPI_Win_set_errhandler(win, errhan);
+#ifdef ROMIO_VERSION
     MPI_File_open(comm, filename, amode, info, &file);
     MPI_File_close(&file);
     MPI_File_delete(filename, info);
@@ -404,6 +405,7 @@ void testAll(void)
     MPIO_Request_c2f(iorequest);
     MPIO_Request_f2c(fint);
     */
+#endif
 }
 
 int main(int argc, char *argv[])
