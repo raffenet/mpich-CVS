@@ -178,23 +178,57 @@
     MPIU_ERR_SETANDSTMT(err,MPI_ERR_GROUP,goto fn_fail,"**groupnull");\
 }else { MPIR_ERRTEST_VALID_HANDLE(group,MPID_GROUP,err,MPI_ERR_GROUP,"**group");}
 
-#define MPIR_ERRTEST_COMM(comm,err)											\
-{															\
-    if (HANDLE_GET_MPI_KIND(comm) != MPID_COMM ||									\
-	(HANDLE_GET_KIND(comm) == HANDLE_KIND_INVALID &&								\
-	 comm != MPI_COMM_NULL))											\
-    {															\
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, "**comm", 0 );	\
-    }															\
-    if (comm == MPI_COMM_NULL)												\
-    {															\
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, "**commnull", 0 );	\
-    }															\
+#define MPIR_ERRTEST_COMM(comm_, err_)				\
+{								\
+    if (comm_ == MPI_COMM_NULL)					\
+    {								\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_COMM,, "**commnull");	\
+    }								\
+    if (HANDLE_GET_MPI_KIND(comm_) != MPID_COMM)		\
+    {								\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_COMM,, "**comm");	\
+    }								\
 }
+
+#define MPIR_ERRTEST_WIN(win_, err_)				\
+{								\
+    if (win_ == MPI_WIN_NULL)					\
+    {								\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_WIN,, "**winnull");	\
+    }								\
+    if (HANDLE_GET_MPI_KIND(win_) != MPID_WIN)			\
+    {								\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_WIN,, "**win");	\
+    }								\
+}
+
 #define MPIR_ERRTEST_REQUEST(request,err)
 #define MPIR_ERRTEST_ERRHANDLER(errhandler,err) if (errhandler == MPI_ERRHANDLER_NULL) {\
     MPIU_ERR_SETANDSTMT(err,MPI_ERR_OTHER,,"**errhandlernull");\
 }else { MPIR_ERRTEST_VALID_HANDLE(errhandler,MPID_ERRHANDLER,err,MPI_ERR_OTHER,"**errhandler");}
+
+#define MPIR_ERRTEST_KEYVAL(keyval_, object_, objectdesc_, err_)					\
+{													\
+    if ((keyval_) == MPI_KEYVAL_INVALID)								\
+    {													\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,, "**keyvalinvalid");					\
+    }													\
+    else if (HANDLE_GET_MPI_KIND(keyval_) != MPID_KEYVAL)						\
+    { 													\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,, "**keyval");						\
+    }													\
+    else if ((((keyval_) & 0x03c00000) >> 22) != (object_))						\
+    { 													\
+	MPIU_ERR_SETANDSTMT1(err_, MPI_ERR_KEYVAL,, "**keyvalobj", "**keyvalobj %s", (objectdesc_));	\
+    }													\
+}
+#define MPIR_ERRTEST_KEYVAL_PERM(keyval_, err_)			       						\
+{														\
+    if (HANDLE_GET_MPI_KIND(keyval_) == MPID_KEYVAL && HANDLE_GET_KIND(keyval_) == HANDLE_KIND_BUILTIN)		\
+    {														\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_OTHER,, "**permattr");						\
+    }														\
+}
 
 /* Special MPI error "class/code" for out of memory */
 /* FIXME: not yet done */
