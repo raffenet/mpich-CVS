@@ -8,11 +8,11 @@ srcdir=@srcdir@
 
 @VPATH@
 
+all: c-test @FORTRAN_TEST@
+
 c-test: simple perf async coll_test coll_perf misc file_info excl large_array \
      atomicity noncontig i_noncontig noncontig_coll split_coll shared_fp \
      large_file psimple
-
-all: c-test @FORTRAN_TEST@
 
 default: all
 

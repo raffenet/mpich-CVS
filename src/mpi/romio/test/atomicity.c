@@ -74,7 +74,11 @@ int main(int argc, char **argv)
              MPI_MODE_RDWR, MPI_INFO_NULL, &fh);
 
 /* set atomicity to true */
-    MPI_File_set_atomicity(fh, 1);
+    err = MPI_File_set_atomicity(fh, 1);
+    if (err != MPI_SUCCESS) {
+	printf("Atomic mode not supported on this file system.\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
     
