@@ -5,14 +5,14 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-typedef struct {
+typedef struct MPIR_Graph_topology {
   int nnodes;
   int nedges;
   int *index;
   int *edges;
 } MPIR_Graph_topology;
 
-typedef struct {
+typedef struct MPIR_Cart_topology {
   int nnodes;     /* Product of dims[*], gives the size of the topology */
   int ndims;
   int *dims;
@@ -20,9 +20,9 @@ typedef struct {
   int *position;
 } MPIR_Cart_topology;
 
-typedef struct { 
+typedef struct MPIR_Topology { 
   MPIR_Topo_type kind;
-  union { 
+  union topo { 
     MPIR_Graph_topology graph;
     MPIR_Cart_topology  cart;
   } topo;
