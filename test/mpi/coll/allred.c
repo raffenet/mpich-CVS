@@ -2463,6 +2463,20 @@ if (gerr > 0) {
 	printf( "Found %d errors overall on %d\n", gerr, rank );
 	}
 
+{
+    int toterrs;
+    MPI_Allreduce( &gerr, &toterrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
+    if (rank == 0) {
+	if (toterrs) {
+	    printf( " Found %d errors\n", toterrs );
+	}
+	else {
+	    printf( " No Errors\n" );
+	}
+	fflush( stdout );
+    }
+}
+
 MPI_Finalize( );
 return 0;
 }

@@ -6,5 +6,5 @@ dup_LDADD = ../util/mtest.o
 dup_SOURCES=dup.c
 ic1_LDADD = ../util/mtest.o
 ic1_SOURCES=ic1.c
-cfree_LDADD = 
+cfree_LDADD = ../util/mtest.o
 cfree_SOURCES=cfree.c

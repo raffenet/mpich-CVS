@@ -1,6 +1,7 @@
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "mpitest.h"
 
 /* 
  * This is a simple program that tests bsend.  It may be run as a single
@@ -19,7 +20,7 @@ int main( int argc, char *argv[] )
     int errs = 0, rank;
     int bufsize, bsize;
 
-    MPI_Init( &argc, &argv );
+    MTest_Init( &argc, &argv );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
     bufsize = 3 * MPI_BSEND_OVERHEAD + 7 + 17 + 2*sizeof(double);
@@ -61,6 +62,7 @@ int main( int argc, char *argv[] )
     /* We can't guarantee that messages arrive until the detach */
     MPI_Buffer_detach( &bbuf, &bsize );
 
+    MTest_Finalize( errs );
     
     MPI_Finalize();
     return 0;

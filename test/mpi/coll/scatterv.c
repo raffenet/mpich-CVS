@@ -95,8 +95,10 @@ int main( int argc, char **argv )
     MPI_Cart_get( comm2d, 2, dims, periods, coords );
     myrow = coords[0];
     mycol = coords[1];
+/*
     if (rank == 0) 
 	printf( "Decomposition is [%d x %d]\n", dims[0], dims[1] );
+*/
 
     /* Get the size of the matrix */
     nx = 10;
@@ -148,7 +150,7 @@ int main( int argc, char **argv )
     MPI_Allreduce( &errs, &tot_errs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
     if (rank == 0) {
 	if (tot_errs == 0)
-	    printf( "No errors\n" );
+	    printf( "No Errors\n" );
 	else
 	    printf( "%d errors in use of MPI_SCATTERV\n", tot_errs );
 	}

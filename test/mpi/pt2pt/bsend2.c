@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include "mpi.h"
+#include "mpitest.h"
 
 int main( int argc, char *argv[] )
 {
     MPI_Status status;
     int a[10], b[10];
     int buf[1000], *bptr, bl, i, j, rank, size;
+    int errs = 0;
 
-    MPI_Init( 0, 0 );
+    MTest_Init( 0, 0 );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
     MPI_Comm_size( MPI_COMM_WORLD, &size );
     MPI_Buffer_attach( buf, 1000 );
@@ -27,10 +29,17 @@ int main( int argc, char *argv[] )
 		status.MPI_SOURCE = -20;
 		MPI_Recv( b, 10, MPI_INT, i, 27+j, MPI_COMM_WORLD, &status );
     
-		if (status.MPI_TAG != 27+j) printf( "Wrong tag = %d\n", status.MPI_TAG );
-		if (status.MPI_SOURCE != i) printf( "Wrong source = %d\n", status.MPI_SOURCE );
+		if (status.MPI_TAG != 27+j) { 
+		    errs ++;
+		    printf( "Wrong tag = %d\n", status.MPI_TAG );
+		}
+		if (status.MPI_SOURCE != i) {
+		    errs++;
+		    printf( "Wrong source = %d\n", status.MPI_SOURCE );
+		}
 		for (k=0; k<10; k++) {
 		    if (b[k] != (i + 10 * j) * size + k) {
+			errs++;
 			printf( "received b[%d] = %d from %d tag %d\n",
 				k, b[k], i, 27+j );
 		    }
@@ -40,6 +49,7 @@ int main( int argc, char *argv[] )
     }
     MPI_Buffer_detach( &bptr, &bl );
     
+    MTest_Finalize( errs );
     MPI_Finalize();
     return 0;
 }

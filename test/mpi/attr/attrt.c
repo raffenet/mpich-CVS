@@ -135,9 +135,9 @@ int test_communicators( void )
 	    MPI_Abort(MPI_COMM_WORLD, 3002 );
 	}
 	else {
-	    printf( "lo in\n" );FFLUSH;
+	    /* printf( "lo in\n" );FFLUSH; */
 	    MPI_Barrier(lo_comm );
-	    printf( "lo out\n" );FFLUSH;
+	    /* printf( "lo out\n" );FFLUSH; */
 	}
     }
     else {

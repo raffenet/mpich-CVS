@@ -67,6 +67,12 @@ foreach $_ (@ARGV) {
 	$xmlfile   = $1;
 	$xmloutput = 1;
 	open( XMLOUT, ">$xmlfile" ) || die "Cannot open $xmlfile\n";
+	my $date = `date "+%Y-%m-%d-%H-%M"`;
+	print XMLOUT "<?xml version='1.0' ?>
+<?xml-stylesheet href=\"er.xsl\" type=\"text/xsl\" ?>
+<MPITESTRESULTS>
+<DATE>$date</DATE>
+<MPISOURCE></MPISOURCE>\n";
     }
     else {
 	print STDERR "Unrecognized argument $_\n";
@@ -89,7 +95,10 @@ else {
     &RunList( $listfiles );
 }
 
-if ($xmloutput) { close XMLOUT; }
+if ($xmloutput) { 
+    print XMLOUT "</MPITESTRESULTS>\n";
+    close XMLOUT; 
+}
 #
 # ---------------------------------------------------------------------------
 # Routines
@@ -229,7 +238,7 @@ sub RunMPIProgram {
 	 die "Could not run $programname\n";
     if ($ResultTest ne "") {
 	# Read and process the output
-	($found_errors, $inline) = &$ResultTest( MPIOUT );
+	($found_error, $inline) = &$ResultTest( MPIOUT );
     }
     else {
 	$inline = "";
@@ -248,19 +257,19 @@ sub RunMPIProgram {
 		    $err_count ++;
 		}
 	    }
-	}
-	if ($found_noerror == 0) {
-	    print STDERR "Program $programname exited without No Errors\n";
-	}
-	$rc = close ( MPIOUT );
-	if ($rc == 0) {
-	    # Only generate a message if we think that the program
-	    # passed the test.
-	    if (!$found_error) {
-		$run_status = $?;
-		print STDERR "Program $programname exited with non-zero status $run_status\n";
-		$round_error = 1;
-		$err_count ++;
+	    if ($found_noerror == 0) {
+		print STDERR "Program $programname exited without No Errors\n";
+	    }
+	    $rc = close ( MPIOUT );
+	    if ($rc == 0) {
+		# Only generate a message if we think that the program
+		# passed the test.
+		if (!$found_error) {
+		    $run_status = $?;
+		    print STDERR "Program $programname exited with non-zero status $run_status\n";
+		    $found_error = 1;
+		    $err_count ++;
+		}
 	    }
 	}
     }
@@ -322,6 +331,7 @@ sub TestStatus {
 	# This test *requires* non-zero return codes
 	$found_error = 1;
 	$err_count ++;
+	$inline .= "mpiexec returned a zero status but the program returned a nonzero status\n";
     }
     return ($found_error,$inline);
 }
@@ -345,7 +355,7 @@ sub RunPostMsg {
 }
 sub RunTestPassed {
     if ($xmloutput) {
-	print XMLOUT "<STATUS>Passed</STATUS>$newline";
+	print XMLOUT "<STATUS>pass</STATUS>$newline";
     }
 }
 sub RunTestFailed {
@@ -353,7 +363,7 @@ sub RunTestFailed {
     $output =~ s/</\&lt;/g;
     $output =~ s/>/\&gt;/g;
     if ($xmloutput) {
-	print XMLOUT "<STATUS>Failed</STATUS>$newline";
+	print XMLOUT "<STATUS>fail</STATUS>$newline";
 	print XMLOUT "<TESTDIFF>$output</TESTDIFF>$newline";
     }
 }
