@@ -649,7 +649,9 @@ sub RunMpichTestSuite {
 	print $OUTFD "Could not execute " . join(" ", @config) . "\n";
 	print $OUTFD "Environment was\n";
 	foreach $key (keys(%ENV)) {
-	    print $OUTFD "$key = $ENV{$key}\n";
+	    my $line = "$key = $ENV{$key}";
+	    if ($is_xml) { $line = &XMLify( $line ); }
+	    print $OUTFD "$line\n";
 	}
     }
     %ENV = %saveENV;
@@ -721,7 +723,9 @@ sub RunCxxTestSuite {
 	print $OUTFD "Could not execute " . join(" ", @config) . "\n";
 	print $OUTFD "Environment was\n";
 	foreach $key (keys(%ENV)) {
-	    print $OUTFD "$key = $ENV{$key}\n";
+	    my $line = "$key = $ENV{$key}";
+	    if ($is_xml) { $line = &XMLify( $line ); }
+	    print $OUTFD "$line\n";
 	}
     }
     %ENV = %saveENV;
@@ -749,7 +753,9 @@ sub RunIntelTestSuite {
     # Switch to using the checked-in version of the Intel test
     $config[$nargs++] = "$projects_dir/IntelMPITEST/configure";
     $config[$nargs++] = "--with-mpich2=$instdir";
-    if (!defined($chosenEnable{"f77"})) {
+    # f77 is now the default, so we should run with the f77 tests
+    # unless we did not build f77
+    if (!$has_f77) {       # defined($chosenEnable{"f77"})
 	# Only run the C tests if we did not build fortran
 	$config[$nargs++] = "--disable-f77";
 	$testname = "newtestl_c";
@@ -798,7 +804,9 @@ sub RunIntelTestSuite {
 	print $OUTFD "Could not execute " . join(" ", @config) . "\n";
 	print $OUTFD "Environment was\n";
 	foreach $key (keys(%ENV)) {
-	    print $OUTFD "$key = $ENV{$key}\n";
+	    my $line = "$key = $ENV{$key}";
+	    if ($is_xml) { $line = &XMLify( $line ); }
+	    print $OUTFD "$line\n";
 	}
     }
     %ENV = %saveENV;
@@ -874,11 +882,7 @@ sub RunProgram {
 	open( $OUTFD, ">>$outfile" ) || die "Could not reopen $outfile for appending\n";
 	while (<CFD>) {
 	    if ($is_xml) {
-		# xml-ify the line by escaping the special characters
-		s/</\*AMP\*lt;/g;
-		s/>/\*AMP\*gt;/g;
-		s/&/\*AMP\*amp;/g;
-		s/\*AMP\*/&/g;
+		$_ = &XMLify( $_ );
 	    }
 	    print $OUTFD $_;
 	}
@@ -1045,16 +1049,39 @@ sub CopyFileToOutput {
 	while (<TESTFD>) {
 	    if ($linecount <= 0) { last; }
 	    if ($is_xml) {
-		# xml-ify the line by 
-		# escaping the special characters
-		s/</\*AMP\*lt;/g;
-		s/>/\*AMP\*gt;/g;
-		s/&/\*AMP\*amp;/g;
-		s/\*AMP\*/&/g;
+		$_ = &XMLify( $_ );
 	    }
 	    print $OUTFD $_;
 	    $linecount --;
 	}
 	close (TESTFD);
     }
+}
+
+sub XMLify {
+    my $line = $_[0];
+    my $itcount = 0;
+    # xml-ify the line by escaping the special characters
+    $line =~ s/</\*AMP\*lt;/g;
+    $line =~ s/>/\*AMP\*gt;/g;
+    $line =~ s/&/\*AMP\*amp;/g;
+    $line =~ s/\*AMP\*/&/g;
+
+    # Handle non-printing ascii characters (e.g., ones that emacs would
+    # print as \200).  XML may refuse to display non-printing characters
+    # BUG IN PERL: The negated POSIX character class does not work!
+    # It isn't clear whether ANY of the POSIX character classes work
+    # while ($line =~ /^([:print:]*)([:^print:])(.*)/s) {
+    # Instead, we use an explicit ASCII range, and include tab characters
+    while ($line =~ /^([ -~\t]*)([^ -~\t\n])(.*)/s) {
+        # Grr.  This doesn't work either.  The character conversion
+	# gets lost.  However, this is still better than including
+	# a nonprinting character in the output
+        $char = $2;
+	$hexversion = sprintf( "\\%03x", $char );
+	$line = $1 . $hexversion . $3;
+	if ($itcount++ > 100) { last; }
+    }
+
+    return $line;
 }
