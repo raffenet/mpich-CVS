@@ -93,7 +93,7 @@ typedef struct ibu_state_t
     IB_mtu_t mtu_size;
     IB_lid_t dlid;
     VAPI_mr_hndl_t mr_handle;
-    VAPI_qp_num_t dest_qp_num;
+    VAPI_qp_num_t qp_num, dest_qp_num;
 
     int closing;
     int pending_operations;
@@ -121,6 +121,8 @@ typedef struct IBU_Global {
     VAPI_hca_hndl_t  hca_handle;
     VAPI_pd_hndl_t   pd_handle;
     VAPI_hca_port_t  hca_port;
+    int              port;
+    VAPI_cqe_num_t   cq_size;
     IB_lid_t         lid;
     ibu_state_t *    unex_finished_list;
     int              error;
@@ -128,11 +130,6 @@ typedef struct IBU_Global {
 } IBU_Global;
 
 IBU_Global IBU_Process;
-
-#define DEFAULT_NUM_RETRIES 10
-
-static int g_connection_attempts = DEFAULT_NUM_RETRIES;
-static int g_num_cp_threads = 2;
 
 typedef struct ibu_num_written_t
 {
@@ -244,7 +241,7 @@ static VAPI_ret_t modifyQP( ibu_t ibu, VAPI_qp_state_t qp_state )
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_QP_STATE);
 	qp_attr.pkey_ix = 0;
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_PKEY_IX);
-	qp_attr.port = 1;
+	qp_attr.port = IBU_Process.port;
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_PORT);
 	qp_attr.remote_atomic_flags = VAPI_EN_REM_WRITE | VAPI_EN_REM_READ;
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_REMOTE_ATOMIC_FLAGS);
@@ -345,7 +342,8 @@ static VAPI_ret_t createQP(ibu_t ibu, ibu_set_t set)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATEQP);
 	return status;
     }
-    ibu->dest_qp_num = qp_prop.qp_num;
+    /*ibu->dest_qp_num = qp_prop.qp_num;*/
+    ibu->qp_num = qp_prop.qp_num;
     MPIU_DBG_PRINTF(("exiting createQP\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATEQP);
     return IBU_SUCCESS;
@@ -417,19 +415,17 @@ static void ib_free_deregister(void *p)
 }
 
 #undef FUNCNAME
-#define FUNCNAME ibu_create_qp
+#define FUNCNAME ibu_start_qp
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-ibu_t ibu_create_qp(ibu_set_t set, int dlid)
+ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
 {
     VAPI_ret_t status;
     ibu_t p;
-    int i;
-    MPIDI_STATE_DECL(MPID_STATE_IBU_CREATE_QP);
+    MPIDI_STATE_DECL(MPID_STATE_IBU_START_QP);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_CREATE_QP);
-
-    MPIU_DBG_PRINTF(("entering ibu_create_qp\n"));
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_START_QP);
+    MPIU_DBG_PRINTF(("entering ibu_start_qp\n"));
     p = (ibu_t)MPIU_Malloc(sizeof(ibu_state_t));
     if (p == NULL)
     {
@@ -437,6 +433,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
 	return NULL;
     }
 
+    memset(p, 0, sizeof(ibu_state_t));
     p->state = 0;
     p->dlid = dlid;
     /* In ibuBlockAllocInit, ib_malloc_register is called which sets the global variable s_mr_handle */
@@ -455,22 +452,42 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
 	return NULL;
     }
+    *qp_num_ptr = p->qp_num;
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_START_QP);
+    return p;
+}
 
+#undef FUNCNAME
+#define FUNCNAME ibu_finish_qp
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int ibu_finish_qp(ibu_t p, int dest_lid, int dest_qp_num)
+{
+    VAPI_ret_t status;
+    int i;
+    MPIDI_STATE_DECL(MPID_STATE_IBU_FINISH_QP);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINISH_QP);
+    MPIU_DBG_PRINTF(("entering ibu_finish_qp\n"));
+
+
+    p->dest_qp_num = dest_qp_num;
+    p->dlid = dest_lid;
     /*MPIDI_DBG_PRINTF((60, FCNAME, "modifyQP(INIT)"));*/
     status = modifyQP(p, VAPI_INIT);
     if (status != IBU_SUCCESS)
     {
 	MPIU_Internal_error_printf("ibu_create_qp: modifyQP(INIT) failed, error %s\n", VAPI_strerror(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
-	return NULL;
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
+	return -1;
     }
     /*MPIDI_DBG_PRINTF((60, FCNAME, "modifyQP(RTR)"));*/
     status = modifyQP(p, VAPI_RTR);
     if (status != IBU_SUCCESS)
     {
 	MPIU_Internal_error_printf("ibu_create_qp: modifyQP(RTR) failed, error %s\n", VAPI_strerror(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
-	return NULL;
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
+	return -1;
     }
 
     /* The Mellanox code adds a barrier here so that both sides are in the RTR state before moving to RTS */
@@ -481,8 +498,8 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     if (status != IBU_SUCCESS)
     {
 	MPIU_Internal_error_printf("ibu_create_qp: modifyQP(RTS) failed, error %s\n", VAPI_strerror(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
-	return NULL;
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
+	return -1;
     }
 
     /* pre post some receives on each connection */
@@ -496,8 +513,8 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     p->nAvailRemote--; /* remove one from nAvailRemote so a ack packet can always get through */
 
     MPIU_DBG_PRINTF(("exiting ibu_create_qp\n"));    
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
-    return p;
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
+    return MPI_SUCCESS;
 }
 
 #ifndef min
@@ -526,7 +543,6 @@ static int ibui_post_receive_unacked(ibu_t ibu)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 	return IBU_FAIL;
     }
-    assert(mem_ptr);
 
 #ifdef HAVE_32BIT_POINTERS
     ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
@@ -590,7 +606,6 @@ static int ibui_post_receive(ibu_t ibu)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return IBU_FAIL;
     }
-    assert(mem_ptr);
 
 #ifdef HAVE_32BIT_POINTERS
     ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
@@ -938,9 +953,10 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 int ibu_init()
 {
     VAPI_ret_t status;
-    VAPI_cqe_num_t max_cq_entries = IBU_MAX_CQ_ENTRIES+1;
     EVAPI_hca_profile_t sugg_profile;
     VAPI_hca_id_t id = "InfiniHost0";
+    VAPI_hca_vendor_t vendor;
+    VAPI_hca_cap_t hca_cap;
     MPIDI_STATE_DECL(MPID_STATE_IBU_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_INIT);
@@ -973,6 +989,15 @@ int ibu_init()
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
+    status = VAPI_query_hca_cap(IBU_Process.hca_handle, &vendor, &hca_cap);
+    if (status != VAPI_OK)
+    {
+	MPIU_Internal_error_printf("ibu_init: VAPI_query_hca_cap failed, status %s\n", VAPI_strerror(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
+	return status;
+    }
+    IBU_Process.port = hca_cap.phys_port_num;
+    IBU_Process.cq_size = hca_cap.max_num_ent_cq;
     /* get a protection domain handle */
     status = VAPI_alloc_pd(IBU_Process.hca_handle, &IBU_Process.pd_handle);
     if (status != VAPI_OK)
@@ -1032,6 +1057,7 @@ int ibu_finalize()
 #ifdef HAVE_32BIT_POINTERS
     ibuBlockAllocFinalize(&g_workAllocator);
 #endif
+    VAPI_close_hca(IBU_Process.hca_handle);
     MPIU_DBG_PRINTF(("exiting ibu_finalize\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);
     return IBU_SUCCESS;
@@ -1056,7 +1082,7 @@ void FooBar2(VAPI_hca_hndl_t hca_handle, VAPI_event_record_t *event, void *p)
 int ibu_create_set(ibu_set_t *set)
 {
     VAPI_ret_t status;
-    VAPI_cqe_num_t max_cq_entries = IBU_MAX_CQ_ENTRIES+1;
+    VAPI_cqe_num_t max_cq_entries = IBU_Process.cq_size;
     EVAPI_compl_handler_hndl_t ch;
     EVAPI_async_handler_hndl_t ah;
     MPIDI_STATE_DECL(MPID_STATE_IBU_CREATE_SET);
@@ -1066,7 +1092,7 @@ int ibu_create_set(ibu_set_t *set)
     /* create the completion queue */
     status = VAPI_create_cq(
 	IBU_Process.hca_handle, 
-	IBU_MAX_CQ_ENTRIES,
+	IBU_Process.cq_size,
 	set,
 	&max_cq_entries);
     if (status != VAPI_OK)
