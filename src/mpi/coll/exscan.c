@@ -33,6 +33,7 @@
  .vb
    partial_scan = sendbuf;
    mask = 0x1;
+   flag = 0;
    while (mask < size) {
       dst = rank^mask;
       if (dst < size) {
@@ -40,10 +41,14 @@
          recv from dst into tmp_buf;
          if (rank > dst) {
             partial_scan = tmp_buf + partial_scan;
-            if ((rank==1) && (dst==0))
-               recv_buf = tmp_buf;
-            else if (rank != 0)
-               recvbuf = tmp_buf + recvbuf;
+            if (rank != 0) {
+               if (flag == 0) {
+                   recv_buf = tmp_buf;
+                   flag = 1;
+               }
+               else 
+                   recv_buf = tmp_buf + recvbuf;
+            }
          }
          else {
             if (op is commutative)
@@ -74,7 +79,7 @@ PMPI_LOCAL int MPIR_Exscan (
     MPI_Status status;
     int        rank, comm_size;
     int        mpi_errno = MPI_SUCCESS;
-    int mask, dst, is_commutative; 
+    int mask, dst, is_commutative, flag; 
     MPI_Aint true_extent, true_lb, extent;
     void *partial_scan, *tmp_buf;
     MPI_User_function *uop;
@@ -150,6 +155,7 @@ PMPI_LOCAL int MPIR_Exscan (
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
 
+    flag = 0;
     mask = 0x1;
     while (mask < comm_size) {
         dst = rank ^ mask;
@@ -176,22 +182,25 @@ PMPI_LOCAL int MPIR_Exscan (
                    in sendbuf on rank 0.
                    On others, recvbuf is the scan of values in the
                    sendbufs on lower ranks. */ 
-                if ((rank == 1) && (dst == 0)) {
-                    /* simply copy data recd from rank 0 into recvbuf */
-                    mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype,
-                                               recvbuf, count, datatype);
-                    if (mpi_errno) return mpi_errno;
-                }
-                else if (rank != 0) {
+                if (rank != 0) {
+                    if (flag == 0) {
+                        /* simply copy data recd from rank 0 into recvbuf */
+                        mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype,
+                                                   recvbuf, count, datatype);
+                        if (mpi_errno) return mpi_errno;
+                        flag = 1;
+                    }
+                    else {
 #ifdef HAVE_CXX_BINDING
-		    if (is_cxx_uop) {
-			(*MPIR_Process.cxx_call_op_fn)( tmp_buf, recvbuf, 
-					 count, datatype, uop );
-		    }
-		    else 
+                        if (is_cxx_uop) {
+                            (*MPIR_Process.cxx_call_op_fn)( tmp_buf, recvbuf, 
+                                                            count, datatype, uop );
+                        }
+                        else 
 #endif
-                    (*uop)(tmp_buf, recvbuf, &count, &datatype);
-		}
+                            (*uop)(tmp_buf, recvbuf, &count, &datatype);
+                    }
+                }
             }
             else {
                 if (is_commutative) {
