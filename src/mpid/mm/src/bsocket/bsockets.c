@@ -442,8 +442,9 @@ bsocket - socket
 @*/
 int bsocket(int family, int type, int protocol)
 {
+    int bfdtemp;
     BFD_Buffer *pbfd;
-    
+
     DBG_MSG("Enter bsocket\n");
     /*dbg_printf("bsocket\n");*/
     
@@ -456,7 +457,10 @@ int bsocket(int family, int type, int protocol)
     
     memset(pbfd, 0, sizeof(BFD_Buffer));
     pbfd->state = BFD_FD_NOT_IN_USE;
-    pbfd->real_fd = socket(family, type, protocol);
+
+    bfdtemp = socket(family, type, protocol);
+    DuplicateHandle(GetCurrentProcess(), (HANDLE)bfdtemp, GetCurrentProcess(), &(HANDLE)(pbfd->real_fd), 0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS);
+
     if (pbfd->real_fd == SOCKET_ERROR) 
     {
 	DBG_MSG("ERROR in bsocket: socket returned SOCKET_ERROR\n");
@@ -533,14 +537,14 @@ baccept - accept
 @*/
 int baccept(int bfd, struct sockaddr *cliaddr, socklen_t *clilen)
 {
-    int 	       conn_fd;
+    int 	       conn_fd, bfdtemp;
     BFD_Buffer 	       *new_bfd;
     
     DBG_MSG("Enter baccept\n");
     /*dbg_printf("baccept\n");*/
     
-    conn_fd = accept(((BFD_Buffer*)bfd)->real_fd, cliaddr, clilen);
-    if (conn_fd == SOCKET_ERROR) 
+    bfdtemp = accept(((BFD_Buffer*)bfd)->real_fd, cliaddr, clilen);
+    if (bfdtemp == SOCKET_ERROR) 
     {
 	DBG_MSG("ERROR in baccept: accept returned SOCKET_ERROR\n");
 	return BFD_INVALID_SOCKET;
@@ -552,6 +556,8 @@ int baccept(int bfd, struct sockaddr *cliaddr, socklen_t *clilen)
 	DBG_MSG(("ERROR in baccept: BlockAlloc return NULL\n"));
 	return BFD_INVALID_SOCKET;
     }
+
+    DuplicateHandle(GetCurrentProcess(), (HANDLE)bfdtemp, GetCurrentProcess(), &(HANDLE)conn_fd, 0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS);
 
     memset(new_bfd, 0, sizeof(BFD_Buffer));
     new_bfd->real_fd = conn_fd;
