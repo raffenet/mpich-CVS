@@ -52,7 +52,19 @@ CPPFLAGS=
 # Note that some versions of autoconf will insist that the compiler 
 # produce executables at this point, which is why we must do something
 # special for building within MPICH2
-AC_C_LONG_DOUBLE
+dnl We cannot use AC_C_LONG_DOUBLE
+dnl because it does not support cross-compilation.  Instead, we use the
+dnl same test in the MPICH2 configure.
+# Check on support for long double and long long types.  Do this before the
+# structure alignment test because it will test for including those
+# types as well
+AC_CACHE_CHECK([whether long double is supported],
+pac_cv_have_long_double,[
+AC_TRY_COMPILE(,[long double a;],
+pac_cv_have_long_double=yes,pac_cv_have_long_double=no)])
+if test "$pac_cv_have_long_double" = "yes" ; then
+    AC_DEFINE(HAVE_LONG_DOUBLE,1,[Define if long double is supported])
+fi
 AC_MSG_CHECKING([whether long long available])
 AC_TRY_COMPILE(,[long long a;],pac_cv_have_long_long=yes,pac_cv_have_long_long=no)
 AC_MSG_RESULT($pac_cv_have_long_long)
