@@ -48,9 +48,12 @@ also the value at index %d
 **cartdim:Size of Cartesian grid is larger than the size of the communicator
 **cartdim %d %d:Size of the communicator (%d) is smaller than the size of the \
  Cartesian topology (%d)
+**cartshiftzero:Displacement must be non-zero
 **edgeoutrange:Edge index in graph topology is out of range
 **edgeoutrange %d %d %d:Edge index edges[%d] is %d but must be nonnegative \
  and less than %d
+**nulledge:Edge detected from a node to the same node
+**nulledge %d %d:Edge for node %d (entry edges[%d]) is to itself
 **indexneg:Index value in graph topology must be nonnegative
 **indexneg %d %d:Index value for index[%d] is %d but must be nonnegative
 **indexnonmonotone:Index values in graph topology must be monotone nondecreasing

@@ -100,6 +100,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
+	    int j;
 	    /* Check that index is monotone nondecreasing */
 	    /* Use ERR_ARG instead of ERR_TOPOLOGY because there is not
 	       topology yet */
@@ -129,6 +130,24 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 				  "**topotoolarge", "**topotoolarge %d %d",
 					  nnodes, comm_ptr->remote_size );
 	    }
+	    /* We could also check that no edge is from a node to itself.
+	       This gives us an excuse to run over the entire arrays. 
+	       This test could be combined with the above to make the code
+	       shorter.
+	    */
+	    if (!mpi_errno) {
+		j = 0;
+		for (i=0; i<nnodes && !mpi_errno; i++) {
+		    for (;j<index[i]; j++) {
+			if (edges[j] == i) {
+			    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
+				     "**nulledge", "**nulledge %d %d", i, j );
+			    break;
+			}
+		    }
+		}
+	    }
+	    
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
