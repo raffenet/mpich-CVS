@@ -26,7 +26,7 @@ ib_uint32_t modifyQP( IB_Info *ib, Ib_qp_state qp_state )
     ib_uint32_t status;
     ib_qp_attr_list_t attrList;
     ib_address_vector_t av;
-    static attr_rec_t *attr_rec;
+    attr_rec_t *attr_rec = NULL;
 
     if (qp_state == IB_QP_STATE_INIT)
     {
@@ -54,6 +54,7 @@ ib_uint32_t modifyQP( IB_Info *ib, Ib_qp_state qp_state )
     else if (qp_state == IB_QP_STATE_RTR) 
     {
 	av.sl                         = 0;
+	MPIU_dbg_printf("setting dest_lid to ib->m_dlid: %d\n", ib->m_dlid);
 	av.dest_lid                   = ib->m_dlid;
 	av.grh_f                      = 0;
 	av.path_bits                  = 0;
@@ -121,7 +122,10 @@ ib_uint32_t modifyQP( IB_Info *ib, Ib_qp_state qp_state )
 
     status = ib_qp_modify_us(IB_Process.hca_handle, 
 			     ib->m_qp_handle, 
-			     qp_state, &attrList );
+			     qp_state, 
+			     &attrList );
+    if (attr_rec)    
+	free(attr_rec);
     if( status != IB_SUCCESS )
     {
 	return status;
