@@ -33,11 +33,6 @@ int main(int argc, char *argv[])
         MPI_Win_create(counter_mem, nprocs*sizeof(int), sizeof(int),
                        MPI_INFO_NULL, MPI_COMM_WORLD, &win);
 
-        for (i=0; i<300; i++) {
-            usleep(1000);
-            MPIDI_CH3I_Progress(0);
-        }
-
         MPI_Win_free(&win); 
         free(counter_mem);
     }
