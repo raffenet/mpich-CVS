@@ -197,6 +197,71 @@ int MPID_Type_struct(int count,
      * with a contig followed by an adjustment of the LB and UB, which would be
      * simpler to process than the indexed that we use below.
      */
+    else if (all_basics && nr_real_types == 1) {
+	/* There are only basics, and only one, but there are LBs and/or UBs that
+	 * we need to strip out.
+	 */
+	int type_idx = 0, found_lb = 0, found_ub = 0;
+	MPI_Aint lb_disp = 0, ub_disp = 0;
+
+	/* pass through all the types:
+	 * - find the smallest LB
+	 * - find the largest UB
+	 * - find the real type
+	 */
+	for (i=0; i < count; i++) {
+	    if (oldtype_array[i] == MPI_LB) {
+		if (!found_lb) {
+		    found_lb = 1;
+		    lb_disp = displacement_array[i];
+		}
+		else if (displacement_array[i] < lb_disp) lb_disp = displacement_array[i];
+	    }
+	    else if (oldtype_array[i] == MPI_UB) {
+		if (!found_ub) {
+		    found_ub = 1;
+		    ub_disp = displacement_array[i];
+		}
+		else if (displacement_array[i] > ub_disp) ub_disp = displacement_array[i];
+	    }
+	    else {
+		type_idx = i;
+	    } 
+	}
+
+	if (displacement_array[type_idx] == (MPI_Aint) 0) {
+	    /* do this with a contig */
+	    mpi_errno = MPID_Type_contiguous(blocklength_array[type_idx],
+					     oldtype_array[type_idx],
+					     newtype);
+	}
+	else {
+	    /* use an indexed type */
+	    mpi_errno = MPID_Type_indexed(1,
+					  &blocklength_array[type_idx],
+					  &displacement_array[type_idx],
+					  1, /* displacement in bytes */
+					  oldtype_array[type_idx],
+					  newtype);
+	}
+	if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+
+	/* deal with the LB and/or UB */
+	MPID_Datatype_get_ptr(*newtype, new_dtp);
+	if (found_lb) {
+	    new_dtp->has_sticky_lb = 1;
+	    new_dtp->lb            = lb_disp;
+	}
+	if (found_ub) {
+	    new_dtp->has_sticky_ub = 1;
+	    new_dtp->ub            = ub_disp;
+	}
+	new_dtp->extent = new_dtp->ub - new_dtp->lb;
+
+        new_dtp->eltype = oldtype_array[type_idx];
+
+	return mpi_errno;
+    }
     else if (all_basics) {
 	/* There are only basics, but there are LBs and/or UBs that we need to
 	 * strip out.  So we convert to MPI_BYTEs as before, pull out the LBs and
