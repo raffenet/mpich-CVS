@@ -23,8 +23,6 @@
  * This structure is used to pass function-specific parameters into our 
  * segment processing function.  This allows us to get additional parameters
  * to the functions it calls without changing the prototype.
- *
- * TODO: MOVE THIS OUT AND MAKE IT USE-DEPENDENT
  */
 struct MPID_Segment_piece_params {
     union {

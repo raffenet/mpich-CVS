@@ -511,6 +511,10 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    assert(myblocks >= 0);
 	    stream_off += myblocks * stream_el_size;
 
+	    /* myblocks indicates how many blocks were processed by the
+	     * piecefn.  if it processed less than we expected, we will save
+	     * our state and return immediately (next two cases).
+	     */
 	    if (myblocks == 0) {
 		DLOOP_SEGMENT_SAVE_LOCAL_VALUES;
 		return;
