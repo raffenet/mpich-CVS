@@ -1,3 +1,4 @@
+EXTRA_DIRS = ../../../common/locks
 SUBDIRS = src .
 
 distclean-local:
