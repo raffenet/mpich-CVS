@@ -1449,12 +1449,13 @@ sub chararray_ftoc {
     print $OUTFD "\
     { int i;
       char *ptmp;\n";
-    if ($ArraySize ne "") {
+    if ($Array_size ne "") {
 	print $OUTFD "\
-      asize$count = $ArraySize + 1;\n";
+      asize$count = $Array_size + 1;\n";
     }
     else {
 	print $OUTFD "\
+      /* Compute the size of the array by looking for an all-blank line */
       pcpy$count = v$count;
       for (asize$count=1; 1; asize$count++) {
           char *pt = pcpy$count + d$count - 1;
