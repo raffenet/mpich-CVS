@@ -493,9 +493,11 @@ int MPIDI_CH3U_Request_load_send_iov(
 		      sreq->ch3.segment_first, last, *iov_n));
     assert(sreq->ch3.segment_first < last);
     assert(last > 0);
+    assert(*iov_n <= MPID_IOV_LIMIT);
     MPID_Segment_pack_vector(&sreq->ch3.segment, sreq->ch3.segment_first,
 			     &last, iov, iov_n);
     assert(*iov_n > 0);
+    assert(*iov_n <= MPID_IOV_LIMIT);
     MPIDI_DBG_PRINTF((40, FCNAME, "post-pv: first=" MPIDI_MSG_SZ_FMT
 		      ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 		      sreq->ch3.segment_first, last, *iov_n));
@@ -624,17 +626,19 @@ int MPIDI_CH3U_Request_load_recv_iov(
 	    goto fn_exit;
 	}
 	
+	last = rreq->ch3.segment_size;
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-upv: first=" MPIDI_MSG_SZ_FMT
 			  ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 			  rreq->ch3.segment_first, last, rreq->ch3.iov_count));
-	last = rreq->ch3.segment_size;
 	assert(rreq->ch3.segment_first < last);
 	assert(last > 0);
+	rreq->ch3.iov_count = MPID_IOV_LIMIT;
 	MPID_Segment_unpack_vector(&rreq->ch3.segment, rreq->ch3.segment_first,
 				   &last, rreq->ch3.iov, &rreq->ch3.iov_count);
 	MPIDI_DBG_PRINTF((40, FCNAME, "post-upv: first=" MPIDI_MSG_SZ_FMT
 			  ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 			  rreq->ch3.segment_first, last, rreq->ch3.iov_count));
+	assert(rreq->ch3.iov_count <= MPID_IOV_LIMIT);
 	
 	if (rreq->ch3.iov_count == 0)
 	{
