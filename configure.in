@@ -178,6 +178,7 @@ AC_C_CONST
 PAC_C_VOLATILE
 PAC_C_RESTRICT
 AC_C_INLINE
+PAC_C_STRUCT_ALIGNMENT
 AC_CACHE_CHECK([for int16_t],pac_cv_int16_t,[
 AC_TRY_COMPILE([#include <sys/types.h>],[int16_t a=0;],
 pac_cv_int16_t=yes,pac_cv_int16_t=no)])
@@ -216,13 +217,64 @@ fi
 dnl
 dnl Get the size of the C types for encoding in the basic datatypes
 AC_CHECK_SIZEOF(short,CROSS_SIZEOF_SHORT)
-AC_CHECK_SIZEOF(int,CROSS_SIZEOF_SHORT)
+AC_CHECK_SIZEOF(int,CROSS_SIZEOF_INT)
 AC_CHECK_SIZEOF(long,CROSS_SIZEOF_LONG)
 AC_CHECK_SIZEOF(long long,CROSS_SIZEOF_LONG_LONG)
 AC_CHECK_SIZEOF(float,CROSS_SIZEOF_FLOAT)
 AC_CHECK_SIZEOF(double,CROSS_SIZEOF_DOUBLE)
 AC_CHECK_SIZEOF(long double,CROSS_SIZEOF_LONG_DOUBLE)
 AC_CHECK_SIZEOF(wchar_t,CROSS_SIZEOF_WCHAR_T)
+dnl
+dnl Generate a hex version of the size of each type
+for type in short int long long_long float double long_double ; do
+    eval len=\$ac_cv_sizeof_$type
+    if test -z "$len" ; then len=0 ; fi
+    if test $len -le 0 ; then
+         eval len_$type="00"
+    elif test $len -le 9 ; then 
+         eval len_$type="0$len" 
+    elif test $len -le 15 ; then
+         case $len in 
+         10) char=a ;;
+	 11) char=b ;;
+	 12) char=c ;;
+	 13) char=d ;;
+	 14) char=e ;;
+	 15) char=f ;;
+         esac
+         eval len_$type="0$char"
+    else
+         len=`expr $len - 16`
+         eval len_$type="1$len"
+    fi
+done
+# By definition, sizeof char is 1
+MPI_CHAR="0x50000101"
+MPI_UNSIGNED_CHAR="0x50000201"
+MPI_SHORT="0x500003$len_short"
+MPI_UNSIGNED_SHORT="0x500004$len_short"
+MPI_INT="0x500005$len_int"
+MPI_UNSIGNED_INT="0x500006$len_int"
+MPI_LONG="0x500007$len_long"
+MPI_UNSIGNED_LONG="0x500008$len_long"
+MPI_LONG_LONG="0x500009$len_long_long"
+MPI_FLOAT="0x50000b$len_float"
+MPI_DOUBLE="0x50000d$len_double"
+MPI_LONG_DOUBLE="0x50000f$len_long_double"
+MPI_BYTE="0x50001101"
+AC_SUBST(MPI_CHAR)
+AC_SUBST(MPI_UNSIGNED_CHAR)
+AC_SUBST(MPI_SHORT)
+AC_SUBST(MPI_UNSIGNED_SHORT)
+AC_SUBST(MPI_INT)
+AC_SUBST(MPI_UNSIGNED_INT)
+AC_SUBST(MPI_LONG)
+AC_SUBST(MPI_UNSIGNED_LONG)
+AC_SUBST(MPI_LONG_LONG)
+AC_SUBST(MPI_FLOAT)
+AC_SUBST(MPI_DOUBLE)
+AC_SUBST(MPI_LONG_DOUBLE)
+AC_SUBST(MPI_BYTE)
 dnl
 dnl Still to do: create values for #define MPI_DOUBLE etc.
 dnl These will be of the form #define MPI_DOUBLE 0x5080002,

@@ -21,19 +21,19 @@ extern "C" {
 #define MPI_UNEQUAL   3
 
 typedef int MPI_Datatype;
-#define MPI_CHAR           ((MPI_Datatype)1)
-#define MPI_UNSIGNED_CHAR  ((MPI_Datatype)2)
-#define MPI_BYTE           ((MPI_Datatype)3)
-#define MPI_SHORT          ((MPI_Datatype)4)
-#define MPI_UNSIGNED_SHORT ((MPI_Datatype)5)
-#define MPI_INT            ((MPI_Datatype)6)
-#define MPI_UNSIGNED       ((MPI_Datatype)7)
-#define MPI_LONG           ((MPI_Datatype)8)
-#define MPI_UNSIGNED_LONG  ((MPI_Datatype)9)
-#define MPI_FLOAT          ((MPI_Datatype)10)
-#define MPI_DOUBLE         ((MPI_Datatype)11)
-#define MPI_LONG_DOUBLE    ((MPI_Datatype)12)
-#define MPI_LONG_LONG_INT  ((MPI_Datatype)13)
+#define MPI_CHAR           ((MPI_Datatype)@MPI_CHAR@)
+#define MPI_UNSIGNED_CHAR  ((MPI_Datatype)@MPI_UNSIGNED_CHAR@)
+#define MPI_BYTE           ((MPI_Datatype)@MPI_BYTE@)
+#define MPI_SHORT          ((MPI_Datatype)@MPI_SHORT@)
+#define MPI_UNSIGNED_SHORT ((MPI_Datatype)@MPI_UNSIGNED_SHORT@)
+#define MPI_INT            ((MPI_Datatype)@MPI_INT@)
+#define MPI_UNSIGNED       ((MPI_Datatype)@MPI_UNSIGNED_INT@)
+#define MPI_LONG           ((MPI_Datatype)@MPI_LONG@)
+#define MPI_UNSIGNED_LONG  ((MPI_Datatype)@MPI_UNSIGNED_LONG@)
+#define MPI_FLOAT          ((MPI_Datatype)@MPI_FLOAT@)
+#define MPI_DOUBLE         ((MPI_Datatype)@MPI_DOUBLE@)
+#define MPI_LONG_DOUBLE    ((MPI_Datatype)@MPI_LONG_DOUBLE@)
+#define MPI_LONG_LONG_INT  ((MPI_Datatype)@MPI_LONG_LONG@)
 #define MPI_LONG_LONG      MPI_LONG_LONG_INT
 
 #define MPI_PACKED         ((MPI_Datatype)14)
@@ -183,13 +183,26 @@ typedef int (MPI_Delete_function) ( MPI_Comm, int, void *, void * );
 #define MPICH_HAS_C2F
 
 /* for the datatype decoders */
-#define MPI_COMBINER_NAMED         2312
-#define MPI_COMBINER_CONTIGUOUS    2313
-#define MPI_COMBINER_VECTOR        2314
-#define MPI_COMBINER_HVECTOR       2315
-#define MPI_COMBINER_INDEXED       2316
-#define MPI_COMBINER_HINDEXED      2317
-#define MPI_COMBINER_STRUCT        2318
+enum {
+    MPI_COMBINER_NAMED = 1,
+    MPI_COMBINER_DUP = 2,
+    MPI_COMBINER_CONTIGUOUS = 3, 
+    MPI_COMBINER_VECTOR    = 4,
+    MPI_COMBINER_HVECTOR_INTEGER = 5,
+    MPI_COMBINER_HVECTOR   = 6,
+    MPI_COMBINER_INDEXED   = 7,
+    MPI_COMBINER_HINDEXED_INTEGER = 8, 
+    MPI_COMBINER_HINDEXED     = 9, 
+    MPI_COMBINER_INDEXED_BLOCK = 10, 
+    MPI_COMBINER_STRUCT_INTEGER = 11,
+    MPI_COMBINER_STRUCT      = 12, 
+    MPI_COMBINER_SUBARRAY = 13,
+    MPI_COMBINER_DARRAY = 14,
+    MPI_COMBINER_F90_REAL = 15, 
+    MPI_COMBINER_F90_COMPLEX = 16, 
+    MPI_COMBINER_F90_INTEGER = 17, 
+    MPI_COMBINER_RESIZED = 18 
+};
 
 /* for info */
 typedef int MPI_Info;
