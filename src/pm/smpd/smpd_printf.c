@@ -267,6 +267,11 @@ static int write_file(FILE *fout, void *buffer, int length)
 
 void smpd_trim_logfile()
 {
+    /* Do nothing until I can figure out why the trim code isn't working */
+}
+
+void smpd_trim_logfile_new()
+{
     static int count = 0;
     FILE *fout;
     long size;
