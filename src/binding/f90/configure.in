@@ -224,6 +224,9 @@ if test -z "$modincdir" ; then
    modincdir=$includedir
 fi
 AC_SUBST(modincdir)
+dnl
+dnl Other autoconf variables that may be imported from the calling environment
+AC_SUBST(DOCTEXT)
 #
 # Put a version of mpif90 into the build bin directory.  Note that
 # because the mod file is *not* copied into the src/include directory
