@@ -925,7 +925,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	setenv("PMI_KVS", str, 1);
 	sprintf(str, "%d", pmi_pipe_fds[1]);
 	smpd_dbg_printf("env: PMI_SMPD_FD=%s\n", str);
-	putenv("PMI_SMPD_FD", str, 1);
+	setenv("PMI_SMPD_FD", str, 1);
 	sprintf(str, "%d", smpd_process.id);
 	smpd_dbg_printf("env: PMI_SMPD_ID=%s\n", str);
 	setenv("PMI_SMPD_ID", str, 1);
