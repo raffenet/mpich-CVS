@@ -67,6 +67,7 @@
 #define NMPI_Type_get_true_extent MPI_Type_get_true_extent
 #define NMPI_Group_translate_ranks MPI_Group_translate_ranks
 #define NMPI_Type_create_indexed_block MPI_Type_create_indexed_block
+#define NMPI_Wtime MPI_Wtime
 #else
 #define NMPI_Abort PMPI_Abort
 #define NMPI_Bcast PMPI_Bcast
@@ -111,6 +112,7 @@
 #define NMPI_Type_get_true_extent PMPI_Type_get_true_extent
 #define NMPI_Group_translate_ranks PMPI_Group_translate_ranks
 #define NMPI_Type_create_indexed_block PMPI_Type_create_indexed_block
+#define NMPI_Wtime PMPI_Wtime
 #endif
 #endif /* MPICH_NMPI_H_INCLUDED */
 
