@@ -13,6 +13,8 @@ $mpich1_dir = "/home/gropp/tmp/cvstesting/mpich";
 $use_rand_args = 1;
 #
 $is_xml = 0;
+# Set the default compilers.  These can be overridden by setting the CC
+# and FC environment variables.
 $ccname = "gcc";
 $fcname = "f77";
 #
@@ -61,6 +63,8 @@ $OUTFD     = OUTFD;
 # The following variable separate the various sections
 $TestStart = "-----------------------------------------------------------\n";
 $TestEnd   = "-----------------------------------------------------------\n";
+$TestHostStart = "Run on host ";
+$TestHostEnd   = "\n";
 $ConfigStart = " -- Begin Configure Step -- \n";
 $ConfigEnd   = " -- End   Configure Step -- \n";
 $MakeStart   = " -- Begin Make Step --\n";
@@ -240,6 +244,8 @@ sub RunTest {
     else {
 #	$enable_args .= " --enable-echo";
 	print $OUTFD $TestStart;
+	my $host = `uname -n`;
+	print $OUTFD "TestHostStart$host$TestHostEnd";
 	unlink "Makefile";
 	print $OUTFD $ConfigStart;
 	@config = split( /\s+/, "$srcdir/configure --prefix=$instdir $enable_args $with_args $config_args" );
@@ -388,19 +394,33 @@ sub RunTestSuites {
 	    $config[0] = "$mpich1_dir/examples/test/configure";
 	    $config[1] = "--prefix=$instdir";
 	    $config[2] = "-mpilibname=mpich";
-	    # Note that there are no quotes in the following because
-	    # they are not needed (no shell evaluation here)
+	    # This isn't right, since these need to use the compilation 
+	    # scripts.  We'll approximate this by trying to use the
+	    # compilation scripts if they're found
 	    if (defined($ENV{"CC"})) {
 		$ccname = $ENV{"CC"};
 	    }
 	    if (defined($ENV{"FC"})) {
 	        $fcname = $ENV{"FC"};
 	    }
-	    $config[3] = "-cc=$ccname -I$instdir/include -L$instdir/lib";
-	    $config[4] = "-fc=$fcname -I$instdir/include -L$instdir/lib";
+	    # Note that there are no quotes in the following because
+	    # they are not needed (no shell evaluation here)
+	    if (-x "$instdir/bin/mpicc" ) {
+		$config[3] = "-cc=$instdir/bin/mpicc";
+	    }
+	    else {
+		$config[3] = "-cc=$ccname -I$instdir/include -L$instdir/lib";
+	    }
+	    if (-x "$instdir/bin/mpif77" ) {
+		$config[3] = "-cf=$instdir/bin/mpif77";
+	    }
+	    else {
+		$config[4] = "-fc=$fcname -I$instdir/include -L$instdir/lib";
+	    }
 	    #$config[5] = "--enable-echo";
 	    %saveENV = %ENV;
 	    $ENV{MPIRUN} = "$instdir/bin/mpiexec";
+	    # This timeout needs to be made uniform for all mpiruns
 	    $ENV{MPIEXEC_TIMEOUT} = "1";
 	    $rc = &RunProgram( @config );
 	    if ($rc == 0) {
@@ -467,6 +487,8 @@ sub RunProgram {
     $pid = fork();
     if ($pid == 0) {
         open STDIN, '/dev/null';
+	# Do we want to allow an output filter, e.g., to convert the 
+	# output into well-formed XML?
         open STDOUT, ">>$outfile";
         open STDERR, ">>&STDOUT";
         exec @args;
@@ -486,6 +508,8 @@ sub RunProgram {
 sub XMLStyle {
     $TestStart     = "<BUILDTEST>\n";
     $TestEnd       = "</BUILDTEST>\n";
+    $TestHostStart = "<HOST>\n";
+    $TestHostEnd   = "</HOST>\n";
     $ConfigStart   = "<CONFIG>\n";
     $ConfigEnd     = "</CONFIG>\n";
     $MakeStart     = "<MAKE>\n";
