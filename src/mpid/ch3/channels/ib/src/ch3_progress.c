@@ -220,20 +220,6 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
     return TRUE;
 }
 
-#define post_pkt_recv(vc) \
-{ \
-    MPIDI_STATE_DECL(MPID_STATE_POST_PKT_RECV); \
-    MPIDI_FUNC_ENTER(MPID_STATE_POST_PKT_RECV); \
-    vc->ch.req->dev.iov[0].MPID_IOV_BUF = (void *)&vc->ch.req->ch.pkt; \
-    vc->ch.req->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t); \
-    vc->ch.req->dev.iov_count = 1; \
-    vc->ch.req->ch.iov_offset = 0; \
-    vc->ch.req->dev.ca = MPIDI_CH3I_CA_HANDLE_PKT; \
-    vc->ch.recv_active = vc->ch.req; \
-    /*mpi_errno = */ibu_post_read(vc->ch.ibu, &vc->ch.req->ch.pkt, sizeof(MPIDI_CH3_Pkt_t), NULL); \
-    MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV); \
-}
-
 #undef FUNCNAME
 #define FUNCNAME handle_read
 #undef FCNAME
@@ -265,7 +251,8 @@ static inline int handle_read(MPIDI_VC *vc, int nb)
 	    
 	    vc->ch.recv_active = NULL;
 	    
-	    /*if (ca == MPIDI_CH3I_CA_HANDLE_PKT)
+#ifndef USE_INLINE_PKT_RECEIVE
+	    if (ca == MPIDI_CH3I_CA_HANDLE_PKT)
 	    {
 		MPIDI_CH3_Pkt_t * pkt = &req->ch.pkt;
 		
@@ -284,7 +271,9 @@ static inline int handle_read(MPIDI_VC *vc, int nb)
 		    }
 		}
 	    }
-	    else */ if (ca == MPIDI_CH3_CA_COMPLETE)
+	    else
+#endif
+	    if (ca == MPIDI_CH3_CA_COMPLETE)
 	    {
 		MPIDI_DBG_PRINTF((65, FCNAME, "received requested data, decrementing CC"));
 		/* mark data transfer as complete adn decrment CC */

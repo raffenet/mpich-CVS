@@ -1302,7 +1302,11 @@ static int ibui_read_unex(ibu_t ibu)
 		MPIU_Internal_error_printf("ibui_read_unex: mem_ptr == NULL\n");
 	    }
 	    assert(ibu->unex_list->mem_ptr != NULL);
+#ifdef USE_INLINE_PKT_RECEIVE
+	    ibuBlockFreeIB(ibu->allocator, (unsigned char *)(ibu->unex_list->mem_ptr) - sizeof(MPIDI_CH3_Pkt_t));
+#else
 	    ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
+#endif
 	    /* MPIU_Free the unexpected data node */
 	    temp = ibu->unex_list;
 	    ibu->unex_list = ibu->unex_list->next;
@@ -1378,7 +1382,11 @@ int ibui_readv_unex(ibu_t ibu)
 	    }
 	    assert(ibu->unex_list->mem_ptr != NULL);
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockFreeIB(mem_ptr)"));
+#ifdef USE_INLINE_PKT_RECEIVE
+	    ibuBlockFreeIB(ibu->allocator, (unsigned char *)(ibu->unex_list->mem_ptr) - sizeof(MPIDI_CH3_Pkt_t));
+#else
 	    ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
+#endif
 	    /* MPIU_Free the unexpected data node */
 	    temp = ibu->unex_list;
 	    ibu->unex_list = ibu->unex_list->next;
@@ -1458,6 +1466,10 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
     unsigned int offset;
 #ifndef HAVE_32BIT_POINTERS
     ibu_work_id_handle_t *id_ptr;
+#endif
+#ifdef USE_INLINE_PKT_RECEIVE
+    MPIDI_VC *recv_vc_ptr;
+    void *mem_ptr_orig;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
 
@@ -1584,6 +1596,20 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		break;
 	    }
 	    num_bytes = completion_data.byte_len;
+#ifdef USE_INLINE_PKT_RECEIVE
+	    recv_vc_ptr = (MPIDI_VC *)(ibu->user_ptr);
+	    if (recv_vc_ptr->ch.reading_pkt)
+	    {
+		MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, mem_ptr);
+		if (recv_vc_ptr->ch.recv_active == NULL)
+		{
+		    recv_vc_ptr->ch.reading_pkt = TRUE;
+		}
+		mem_ptr_orig = mem_ptr;
+		mem_ptr = (unsigned char *)mem_ptr + sizeof(MPIDI_CH3_pkt_t);
+		num_bytes -= sizeof(MPIDI_CH3_Pkt_t);
+	    }
+#endif
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes\n", num_bytes));
 	    /*MPIDI_DBG_PRINTF((60, FCNAME, "ibu_wait(recv finished %d bytes)", num_bytes));*/
 	    if (!(ibu->state & IBU_READING))
@@ -1628,7 +1654,11 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    if (mem_ptr == NULL)
 			MPIU_Internal_error_printf("ibu_wait: read mem_ptr == NULL\n");
 		    assert(mem_ptr != NULL);
+#ifdef USE_INLINE_PKT_RECEIVE
+		    ibuBlockFreeIB(ibu->allocator, mem_ptr_orig);
+#else
 		    ibuBlockFreeIB(ibu->allocator, mem_ptr);
+#endif
 		    ibui_post_receive(ibu);
 		}
 		else
@@ -1675,7 +1705,11 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    ibu->read.buffer = (char*)(ibu->read.buffer) + num_bytes;
 		    ibu->read.bufflen -= num_bytes;
 		    /* put the receive packet back in the pool */
+#ifdef USE_INLINE_PKT_RECEIVE
+		    ibuBlockFreeIB(ibu->allocator, mem_ptr_orig);
+#else
 		    ibuBlockFreeIB(ibu->allocator, mem_ptr);
+#endif
 		    ibui_post_receive(ibu);
 		}
 		if (ibu->read.bufflen == 0)

@@ -211,6 +211,8 @@ int MPIDI_CH3I_Setup_connections()
 	/* set the state to connected */
 	vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;
 	/* post a read of the first packet */
+	post_pkt_recv(vc);
+#if 0
 	MPIU_DBG_PRINTF(("posting first packet receive of %d bytes\n", sizeof(MPIDI_CH3_Pkt_t)));
 	vc->ch.req->dev.iov[0].MPID_IOV_BUF = (void *)&vc->ch.req->ch.pkt;
 	vc->ch.req->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
@@ -220,6 +222,7 @@ int MPIDI_CH3I_Setup_connections()
 	vc->ch.recv_active = vc->ch.req;
 	mpi_errno = ibu_post_read(vc->ch.ibu, &vc->ch.req->ch.pkt,
 				  sizeof(MPIDI_CH3_Pkt_t), NULL);
+#endif
     }
 
     PMI_Barrier();

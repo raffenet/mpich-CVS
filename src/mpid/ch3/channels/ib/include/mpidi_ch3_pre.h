@@ -42,6 +42,7 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_Request * send_active;
     struct MPID_Request * recv_active;
     struct MPID_Request * req;
+    int reading_pkt;
     MPIDI_CH3I_VC_state_t state;
 } MPIDI_CH3I_VC;
 

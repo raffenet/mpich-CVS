@@ -95,6 +95,23 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
 #define MPIDI_CH3I_SendQ_empty(vc) (vc->ch.sendq_head == NULL)
 
+#ifdef USE_INLINE_PKT_RECEIVE
+#define post_pkt_recv(vc) vc->ch.receiving_pkt = TRUE
+#else
+#define post_pkt_recv(vc) \
+{ \
+    MPIDI_STATE_DECL(MPID_STATE_POST_PKT_RECV); \
+    MPIDI_FUNC_ENTER(MPID_STATE_POST_PKT_RECV); \
+    vc->ch.req->dev.iov[0].MPID_IOV_BUF = (void *)&vc->ch.req->ch.pkt; \
+    vc->ch.req->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t); \
+    vc->ch.req->dev.iov_count = 1; \
+    vc->ch.req->ch.iov_offset = 0; \
+    vc->ch.req->dev.ca = MPIDI_CH3I_CA_HANDLE_PKT; \
+    vc->ch.recv_active = vc->ch.req; \
+    /*mpi_errno = */ibu_post_read(vc->ch.ibu, &vc->ch.req->ch.pkt, sizeof(MPIDI_CH3_Pkt_t), NULL); \
+    MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV); \
+}
+#endif
 
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);

@@ -111,9 +111,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	vc_table[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
 	vc_table[p].ch.recv_active = NULL;
 	vc_table[p].ch.send_active = NULL;
+	vc_table[p].ch.reading_pkt = TRUE;
     }
     pg->vc_table = vc_table;
-    
+
     /* Initialize MPI_COMM_WORLD object */
     comm = MPIR_Process.comm_world;
     comm->rank = pg_rank;
