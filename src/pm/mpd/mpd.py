@@ -243,6 +243,8 @@ def _mpd():
             else:
                 mpd_raise('unknown ready socket %s' %  \
                           (`g.activeSockets[readySocket].name`) )
+        try:    unlink(g.logFilename)
+        except: pass
 
 def _handle_console_connection():
     if not g.conSocket:
