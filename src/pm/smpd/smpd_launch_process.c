@@ -17,6 +17,9 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
 
 #ifdef HAVE_WINDOWS_H
 
@@ -867,7 +870,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     char *token;
     int i;
     char str[1024];
-    char *str_iter;
+    const char *str_iter;
     int total, num_chars;
 
     smpd_enter_fn("smpd_launch_process");

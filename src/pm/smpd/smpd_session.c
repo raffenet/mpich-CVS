@@ -5,6 +5,12 @@
  */
 
 #include "smpd.h"
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
 
 #ifndef HAVE_WINDOWS_H
 smpd_sig_fn_t *smpd_signal( int signo, smpd_sig_fn_t func )
