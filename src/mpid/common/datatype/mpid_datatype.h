@@ -23,15 +23,14 @@
  * and, if the refct is then zero, frees the MPID_Datatype and associated
  * structures.
  */
-#define MPID_Datatype_release(datatype_ptr)
-do {
-    int inuse;
-
-    MPIU_Object_release_ref((datatype_ptr),&inuse);
-    if (!inuse) {
-	MPID_Datatype_free(datatype_ptr);
-    }
-#endif
+#define MPID_Datatype_release(datatype_ptr)                             \
+do {                                                                    \
+    int inuse;                                                          \
+                                                                        \
+    MPIU_Object_release_ref((datatype_ptr),&inuse);                     \
+    if (!inuse) {                                                       \
+	MPID_Datatype_free(datatype_ptr);                               \
+    }                                                                   \
 } while (0)
 
 /* Note: Probably there is some clever way to build all of these from a macro.
