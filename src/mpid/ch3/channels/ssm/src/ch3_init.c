@@ -24,7 +24,7 @@ MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 {
-    int mpi_errno;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_Process_group_t * pg;
     int pg_rank;
     int pg_size;
@@ -285,13 +285,38 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	/*printf("root process created bootQ: '%s'\n", queue_name);*/
 	strcpy(val, queue_name);
 	mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
+	if (mpi_errno != 0)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
+	    return mpi_errno;
+	}
 	mpi_errno = PMI_KVS_Commit(pg->kvs_name);
+	if (mpi_errno != 0)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", mpi_errno);
+	    return mpi_errno;
+	}
 	mpi_errno = PMI_Barrier();
+	if (mpi_errno != 0)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
+	    return mpi_errno;
+	}
     }
     else
     {
 	mpi_errno = PMI_Barrier();
+	if (mpi_errno != 0)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
+	    return mpi_errno;
+	}
 	mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val);
+	if (mpi_errno != 0)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
+	    return mpi_errno;
+	}
 	strcpy(queue_name, val);
 	/*printf("process %d got bootQ name: '%s'\n", pg_rank, queue_name);*/
 	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg->bootstrapQ, queue_name, 1);
@@ -301,7 +326,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	    return mpi_errno;
 	}
     }
-    PMI_Barrier();
+    mpi_errno = PMI_Barrier();
+    if (mpi_errno != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
+	return mpi_errno;
+    }
     mpi_errno = MPIDI_CH3I_BootstrapQ_unlink(pg->bootstrapQ);
     if (mpi_errno != MPI_SUCCESS)
     {
