@@ -6,6 +6,9 @@
  */
 #ifndef MTEST_INCLUDED
 #define MTEST_INCLUDED
+
+#include "mpitestconf.h"
+
 /*
  * Init and finalize test 
  */
