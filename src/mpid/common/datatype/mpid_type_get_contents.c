@@ -48,7 +48,7 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 {
     MPID_Datatype *dtp;
     struct MPID_Dataloop *dlp;
-    int dtype_combiner, count, size, i;
+    int dtype_combiner, count, i;
 
     if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
 	/* this is erroneous according to the standard */
@@ -70,15 +70,13 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 	if (max_integers >= 3 && max_datatypes >= 1) {
 	    if (dlp->kind & DLOOP_FINAL_MASK) {
 		array_of_datatypes[0] = dlp->loop_params.v_t.u.handle;
-		size = MPID_Datatype_get_basic_size(dlp->loop_params.v_t.u.handle);
 	    }
 	    else {
 		array_of_datatypes[0] = dlp->loop_params.v_t.u.dataloop->handle;
-		size = dlp->el_size;
 	    }
 	    array_of_integers[0]  = dlp->loop_params.v_t.count;
 	    array_of_integers[1]  = dlp->loop_params.v_t.blocksize;
-	    array_of_integers[2]  = dlp->loop_params.v_t.stride / size;
+	    array_of_integers[2]  = dlp->loop_params.v_t.stride / dlp->el_extent;
 	}
 	else return create_error_to_return();
     }
@@ -104,7 +102,9 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 		array_of_integers[i+1] = dlp->loop_params.i_t.blocksize_array[i];
 	    }
 	    for (i=0; i < count; i++) {
-		array_of_integers[i+count+1] = dlp->loop_params.i_t.offset_array[i];
+		/* divide by element extent to convert back from bytes */
+		/* TODO: padding/alignment issues? */
+		array_of_integers[i+count+1] = dlp->loop_params.i_t.offset_array[i] / dlp->el_extent;
 	    }
 	    if (dlp->kind & DLOOP_FINAL_MASK)
 		array_of_datatypes[0] = dlp->loop_params.i_t.u.handle;

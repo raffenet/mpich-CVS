@@ -44,7 +44,11 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_indexed(int count, int blocklens[], int indices[], MPI_Datatype old_type, MPI_Datatype *newtype)
+int MPI_Type_indexed(int count,
+		     int blocklens[],
+		     int indices[],
+		     MPI_Datatype old_type,
+		     MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_indexed";
     int mpi_errno = MPI_SUCCESS;
@@ -72,6 +76,21 @@ int MPI_Type_indexed(int count, int blocklens[], int indices[], MPI_Datatype old
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    mpi_errno = MPID_Type_indexed(count,
+				  blocklens,
+				  indices,
+				  0, /* displacements not in bytes */
+				  old_type,
+				  newtype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_INDEXED);
-    return MPI_SUCCESS;
+    if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
+    else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }
+
+
+
+
+
+
+
+

@@ -28,8 +28,8 @@
   Return Value:
   0 on success, -1 on failure.
 
-  This routine calls MPID_Dataloop_create_struct() to create the loops for this
-  new datatype.  It calls MPID_Datatype_new() to allocate space for the new
+  This routine calls MPID_Dataloop_copy() to create the loops for this
+  new datatype.  It calls MPIU_Handle_obj_alloc() to allocate space for the new
   datatype.
 @*/
 int MPID_Type_vector(int count,
