@@ -116,6 +116,8 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	    MPIR_Wait(request_ptr);
 	
 	    mpi_errno = request_ptr->status.MPI_ERROR;
+	    MPID_Request_free(request_ptr);
+		
 	    if (!mpi_errno)
 	    {
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);

@@ -89,25 +89,9 @@ int MPI_Wait(MPI_Request  *request, MPI_Status   *status)
     {
 	*status = request_ptr->status;
     }
+    *request = MPI_REQUEST_NULL;
+    MPID_Request_free(request_ptr);
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WAIT);
     return MPI_SUCCESS;
-}
-
-void MPIR_Wait(MPID_Request * request)
-{
-    while(1)
-    {
-	MPID_Progress_start();
-	
-	if (request->busy)
-	{
-	    MPID_Progress_wait();
-	}
-	else
-	{
-	    MPID_Progress_end();
-	    break;
-	}
-    }
 }
