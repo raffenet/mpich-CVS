@@ -109,17 +109,3 @@ fi
 ])
 ])
 
-
-dnl ---
-dnl AC_CHECK_HEADERS(HEADER-FILE... [, ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]])
-undefine([AC_CHECK_HEADERS])
-AC_DEFUN(AC_CHECK_HEADERS,
-[for ac_hdr in $1
-do
-AC_CHECK_HEADER($ac_hdr,
-[changequote(, )dnl
-  ac_tr_hdr=HAVE_`echo $ac_hdr | sed 'y%abcdefghijklmnopqrstuvwxyz./-%ABCDEFGHIJKLMNOPQRSTUVWXYZ___%'`
-changequote([, ])dnl
-  AC_DEFINE_UNQUOTED($ac_tr_hdr) $2], $3)dnl
-done
-])

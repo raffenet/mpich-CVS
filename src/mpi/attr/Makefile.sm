@@ -6,3 +6,13 @@ lib${MPILIBNAME}_a_SOURCES =
  type_get_attr.c type_set_attr.c win_create_keyval.c \
  win_delete_attr.c win_free_keyval.c win_get_attr.c win_set_attr.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include
+profilelib_${MPILIBNAME} = p${MPILIBNAME}
+#
+# This is a test for the document generation
+doc_HTML_SOURCES = attr_delete.c attr_get.c attr_put.c \
+ comm_create_keyval.c comm_delete_attr.c comm_free_keyval.c \
+ comm_get_attr.c comm_set_attr.c keyval_create.c keyval_free.c \
+ type_create_keyval.c type_delete_attr.c type_free_keyval.c \
+ type_get_attr.c type_set_attr.c win_create_keyval.c \
+ win_delete_attr.c win_free_keyval.c win_get_attr.c win_set_attr.c
+
