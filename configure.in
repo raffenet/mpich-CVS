@@ -1109,6 +1109,10 @@ if test "$enable_coverage" = "yes" ; then
     else
         AC_MSG_WARN([--enable-coverage only supported for GCC])
     fi
+    # Test for the routines that we need to use to ensure that the
+    # data files are (usually) written out
+    AC_CHECK_FUNCS(usleep)
+    AC_DEFINE(USE_COVERAGE,1,[Define if performing coverage tests])
 fi
 dnl Is there libnsl needed for gethostbyname?
 dnl AC_SEARCH_LIBS(gethostbyname,nsl)

@@ -6,6 +6,8 @@
  */
 
 #include "mpiimpl.h"
+#define HAVE_USLEEP
+#define USE_COVERAGE
 
 /* -- Begin Profiling Symbol Block for routine MPI_Finalize */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -101,6 +103,7 @@ int MPI_Finalize( void )
 {
     static const char FCNAME[] = "MPI_Finalize";
     int mpi_errno = MPI_SUCCESS;
+    int rank=0;
     MPID_MPI_FINALIZE_STATE_DECL(MPID_STATE_MPI_FINALIZE);
 
 
@@ -120,6 +123,9 @@ int MPI_Finalize( void )
     MPID_MPI_FINALIZE_FUNC_ENTER(MPID_STATE_MPI_FINALIZE);
     
     /* ... body of routine ...  */
+#if defined(HAVE_USLEEP) && defined(USE_COVERAGE)
+    rank = MPIR_Process.comm_world->rank;
+#endif    
 
     /* Question: why is this not one of the finalize callbacks?.  Do we need
        pre and post MPID_Finalize callbacks? */
@@ -162,6 +168,13 @@ int MPI_Finalize( void )
 #endif
 
     MPIR_Process.initialized = MPICH_POST_FINALIZED;
+
+#if defined(HAVE_USLEEP) && defined(USE_COVERAGE)
+    /* If performing coverage analysis, make each process sleep for
+       rank * 100 ms, to give time for the coverage tool to write out
+       any files */
+    usleep( rank * 100000 );
+#endif
     /* ... end of body of routine ... */
 
     MPID_MPI_FINALIZE_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
