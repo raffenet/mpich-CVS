@@ -10,7 +10,8 @@
 
 void ADIOI_XFS_Open(ADIO_File fd, int *error_code)
 {
-    int perm, old_mask, amode, amode_direct;
+    int perm, amode, amode_direct;
+    unsigned int old_mask;
     struct dioattr st;
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_XFS_OPEN";
