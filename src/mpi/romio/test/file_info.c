@@ -4,11 +4,11 @@
 #include <string.h>
 #include <stdlib.h>
 
-/* prints out all the default info keys and values used by ROMIO */
+static int verbose = 0;
 
 int main(int argc, char **argv)
 {
-    int i, len, nkeys, flag, mynod, default_striping_factor=0, nprocs;
+    int i, len, nkeys, flag, mynod, default_striping_factor=0, nprocs, errs = 0;
     MPI_File fh;
     MPI_Info info, info_used;
     char *filename, key[MPI_MAX_INFO_KEY], value[MPI_MAX_INFO_VAL];
@@ -23,11 +23,12 @@ int main(int argc, char **argv)
     if (!mynod) {
 	i = 1;
 	while ((i < argc) && strcmp("-fname", *argv)) {
+	    if (!strcmp("-v", *argv)) verbose = 1;
 	    i++;
 	    argv++;
 	}
 	if (i >= argc) {
-	    fprintf(stderr, "\n*#  Usage: file_info -fname filename\n\n");
+	    fprintf(stderr, "\n*#  Usage: file_info [-v] -fname filename\n\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	argv++;
@@ -36,11 +37,13 @@ int main(int argc, char **argv)
 	strcpy(filename, *argv);
 	MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(filename, len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&verbose, 1, MPI_INT, 0, MPI_COMM_WORLD);
     }
     else {
 	MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	filename = (char *) malloc(len+1);
 	MPI_Bcast(filename, len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&verbose, 1, MPI_INT, 0, MPI_COMM_WORLD);
     }
 
 /* open the file with MPI_INFO_NULL */
@@ -54,15 +57,96 @@ int main(int argc, char **argv)
     for (i=0; i<nkeys; i++) {
 	MPI_Info_get_nthkey(info_used, i, key);
 	MPI_Info_get(info_used, key, MPI_MAX_INFO_VAL-1, value, &flag);
+#if 0
 	if (!mynod) 
 	    fprintf(stderr, "Process %d, Default:  key = %s, value = %s\n", mynod, 
                 key, value);
-	if (!strcmp("striping_factor", key))
-	  default_striping_factor = atoi(value);
+#endif
+	if (!strcmp("striping_factor", key)) {
+	    default_striping_factor = atoi(value);
+	    /* no check */
+	}
+	else if (!strcmp("cb_buffer_size", key)) {
+	    if (atoi(value) != 4194304) {
+		errs++;
+		if (verbose) fprintf(stderr, "cb_buffer_size is %d; should be %d\n",
+				     atoi(value), 4194304);
+	    }
+	}
+	else if (!strcmp("romio_cb_read", key)) {
+	    if (strcmp("automatic", value)) {
+		errs++;
+		if (verbose) fprintf(stderr, "romio_cb_read is set to %s; should be %s\n",
+				     value, "automatic");
+	    }
+	}
+	else if (!strcmp("romio_cb_write", key)) {
+	    if (strcmp("automatic", value)) {
+		errs++;
+		if (verbose) fprintf(stderr, "romio_cb_write is set to %s; should be %s\n",
+				     value, "automatic");
+	    }
+	}
+	else if (!strcmp("cb_nodes", key)) {
+	    /* unreliable test -- just ignore value */
+#if 0
+	    if (atoi(value) != 1) {
+		errs++;
+		if (verbose) fprintf(stderr, "cb_nodes is %d; should be %d\n", atoi(value),
+				     1);
+	    }
+#endif
+	}
+	else if (!strcmp("romio_no_indep_rw", key)) {
+	    if (strcmp("false", value)) {
+		errs++;
+		if (verbose) fprintf(stderr, "romio_no_indep_rw is set to %s; should be %s\n",
+				     value, "false");
+	    }
+	}
+	else if (!strcmp("ind_rd_buffer_size", key)) {
+	    if (atoi(value) != 4194304) {
+		errs++;
+		if (verbose) fprintf(stderr, "ind_rd_buffer_size is %d; should be %d\n",
+				     atoi(value), 4194304);
+	    }
+	}
+	else if (!strcmp("ind_wr_buffer_size", key)) {
+	    if (atoi(value) != 524288) {
+		errs++;
+		if (verbose) fprintf(stderr, "ind_wr_buffer_size is %d; should be %d\n",
+				     atoi(value), 524288);
+	    }
+	}
+	else if (!strcmp("romio_ds_read", key)) {
+	    if (strcmp("automatic", value)) {
+		errs++;
+		if (verbose) fprintf(stderr, "romio_ds_read is set to %s; should be %s\n",
+				     value, "automatic");
+	    }
+	}
+	else if (!strcmp("romio_ds_write", key)) {
+	    if (strcmp("automatic", value)) {
+		errs++;
+		if (verbose) fprintf(stderr, "romio_ds_write is set to %s; should be %s\n",
+				     value, "automatic");
+	    }
+	}
+	else if (!strcmp("cb_config_list", key)) {
+	    if (strcmp("*:1", value)) {
+		errs++;
+		if (verbose) fprintf(stderr, "cb_config_list is set to %s; should be %s\n",
+				     value, "*:1");
+	    }
+	}
+	else {
+	    errs++;
+	    if (verbose) fprintf(stderr, "unexpected key %s\n", key);
+	}
     }
 
     MPI_File_close(&fh);
-
+    
 /* delete the file */
     if (!mynod) MPI_File_delete(filename, MPI_INFO_NULL);
     MPI_Barrier(MPI_COMM_WORLD);
@@ -78,7 +162,7 @@ int main(int argc, char **argv)
     MPI_Info_set(info, "cb_buffer_size", "8388608");
 
     /* number of processes that actually perform I/O in collective I/O */
-    sprintf(value, "%d", nprocs/2);
+    sprintf(value, "%d", nprocs/2 ? 0 : 1);
     MPI_Info_set(info, "cb_nodes", value);
 
     /* buffer size for data sieving in independent reads */
@@ -102,6 +186,9 @@ int main(int argc, char **argv)
     /* the striping unit in bytes */
     MPI_Info_set(info, "striping_unit", "131072");
 
+    /* set the cb_config_list so we'll get deterministic cb_nodes output */
+    MPI_Info_set(info, "cb_config_list", "*:*");
+
     /* the I/O device number from which to start striping the file.
        accepted only if 0 <= value < default_striping_factor; 
        ignored otherwise */
@@ -121,12 +208,103 @@ int main(int argc, char **argv)
     MPI_File_get_info(fh, &info_used);
     MPI_Info_get_nkeys(info_used, &nkeys);
 
+#if 0
     if (!mynod) fprintf(stderr, "\n New values\n\n");
+#endif
     for (i=0; i<nkeys; i++) {
 	MPI_Info_get_nthkey(info_used, i, key);
 	MPI_Info_get(info_used, key, MPI_MAX_INFO_VAL-1, value, &flag);
+#if 0
 	if (!mynod) fprintf(stderr, "Process %d, key = %s, value = %s\n", mynod, 
                 key, value);
+#endif
+	if (!strcmp("striping_factor", key)) {
+	    if (atoi(value) != default_striping_factor-1) {
+		errs++;
+		if (verbose) fprintf(stderr, "striping_factor is %d; should be %d\n",
+				     atoi(value), default_striping_factor);
+	    }
+	}
+	else if (!strcmp("cb_buffer_size", key)) {
+	    if (atoi(value) != 8388608) {
+		errs++;
+		if (verbose) fprintf(stderr, "cb_buffer_size is %d; should be %d\n",
+				     atoi(value), 8388608);
+	    }
+	}
+	else if (!strcmp("romio_cb_read", key)) {
+	    if (strcmp("automatic", value)) {
+		errs++;
+		if (verbose) fprintf(stderr, "romio_cb_read is set to %s; should be %s\n",
+				     value, "automatic");
+	    }
+	}
+	else if (!strcmp("romio_cb_write", key)) {
+	    if (strcmp("automatic", value)) {
+		errs++;
+		if (verbose) fprintf(stderr, "romio_cb_write is set to %s; should be %s\n",
+				     value, "automatic");
+	    }
+	}
+	else if (!strcmp("cb_nodes", key)) {
+	    if (atoi(value) != nprocs/2 ? 0 : 1) {
+		errs++;
+		if (verbose) fprintf(stderr, "cb_nodes is %d; should be %d\n", atoi(value),
+				     nprocs/2 ? 0 : 1);
+	    }
+	}
+	else if (!strcmp("romio_no_indep_rw", key)) {
+	    if (strcmp("false", value)) {
+		errs++;
+		if (verbose) fprintf(stderr, "romio_no_indep_rw is set to %s; should be %s\n",
+				     value, "false");
+	    }
+	}
+	else if (!strcmp("ind_rd_buffer_size", key)) {
+	    if (atoi(value) != 2097152) {
+		errs++;
+		if (verbose) fprintf(stderr, "ind_rd_buffer_size is %d; should be %d\n",
+				     atoi(value), 2097152);
+	    }
+	}
+	else if (!strcmp("ind_wr_buffer_size", key)) {
+	    if (atoi(value) != 1048576) {
+		errs++;
+		if (verbose) fprintf(stderr, "ind_wr_buffer_size is %d; should be %d\n",
+				     atoi(value), 1048576);
+	    }
+	}
+	else if (!strcmp("romio_ds_read", key)) {
+	    if (strcmp("automatic", value)) {
+		errs++;
+		if (verbose) fprintf(stderr, "romio_ds_read is set to %s; should be %s\n",
+				     value, "automatic");
+	    }
+	}
+	else if (!strcmp("romio_ds_write", key)) {
+	    if (strcmp("automatic", value)) {
+		errs++;
+		if (verbose) fprintf(stderr, "romio_ds_write is set to %s; should be %s\n",
+				     value, "automatic");
+	    }
+	}
+	else if (!strcmp("cb_config_list", key)) {
+	    if (strcmp("*:*", value)) {
+		errs++;
+		if (verbose) fprintf(stderr, "cb_config_list is set to %s; should be %s\n",
+				     value, "*:*");
+	    }
+	}
+	else {
+	    errs++;
+	    if (verbose) fprintf(stderr, "unexpected key %s\n", key);
+	}
+    }
+	    
+    /* Q: SHOULD WE BOTHER LOOKING AT THE OTHER PROCESSES? */
+    if (!mynod) {
+	if (errs) fprintf(stderr, "Found %d errors.\n", errs);
+	else printf("No errors.\n");
     }
     
     MPI_File_close(&fh);
@@ -136,3 +314,12 @@ int main(int argc, char **argv)
     MPI_Finalize();
     return 0;
 }
+
+
+
+
+
+
+
+
+
