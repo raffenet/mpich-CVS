@@ -141,15 +141,17 @@ profile:
 
 cleanall:
 	@dirs=`echo "$(ALL_DIRS)"`; \
+	echo "cleaning test directory" ;\
+	(cd test ; ${MAKE} cleanall ) ;\
         echo cleaning current directory ;\
         (rm -f config.status Makefile *~ *.log romio.tar*) ;\
         for dir in $$dirs ;\
          do \
             echo " " ;\
+	    if [ ! -d $$dir ] ; then continue ; \
             echo cleaning directory $$dir ;\
             (cd $$dir; rm -f *.o Makefile *~) ;\
          done; \
-         (cd test; rm -f .P* PI* misc.c large_file.c fcoll_test.f fmisc.f fperf.f mpif.h simple async coll_test coll_perf misc perf fcoll_test fperf fmisc file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity *.out runtests); \
          echo " " ;\
          echo "cleaning directory include" ;\
          (cd include; rm -f *.h);\
