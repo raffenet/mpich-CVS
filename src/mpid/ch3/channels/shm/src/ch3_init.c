@@ -24,6 +24,10 @@ static void generate_shm_string(char *str)
 #endif
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 {
     int rc;
@@ -186,18 +190,28 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #endif
 
 #ifdef USE_SAME_ADDR_ON_ALL_PROCESSES
-	pg->addr = MPIDI_CH3I_SHM_Get_mem_sync( pg, pg_size * shm_block, pg_rank, pg_size, TRUE );
+	rc = MPIDI_CH3I_SHM_Get_mem_sync( pg, pg_size * shm_block, pg_rank, pg_size, TRUE );
 #else
-	pg->addr = MPIDI_CH3I_SHM_Get_mem( pg, pg_size * shm_block, pg_rank, pg_size, TRUE );
+	rc = MPIDI_CH3I_SHM_Get_mem( pg, pg_size * shm_block, pg_rank, pg_size, TRUE );
 #endif
+	if (rc != MPI_SUCCESS)
+	{
+	    rc = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**getmem", 0);
+	    return rc;
+	}
     }
     else
     {
 #ifdef USE_SAME_ADDR_ON_ALL_PROCESSES
-	pg->addr = MPIDI_CH3I_SHM_Get_mem_sync( pg, shm_block, 0, 1, FALSE );
+	rc = MPIDI_CH3I_SHM_Get_mem_sync( pg, shm_block, 0, 1, FALSE );
 #else
-	pg->addr = MPIDI_CH3I_SHM_Get_mem( pg, shm_block, 0, 1, FALSE );
+	rc = MPIDI_CH3I_SHM_Get_mem( pg, shm_block, 0, 1, FALSE );
 #endif
+	if (rc != MPI_SUCCESS)
+	{
+	    rc = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
+	    return rc;
+	}
     }
 
     /* initialize each shared memory queue */
