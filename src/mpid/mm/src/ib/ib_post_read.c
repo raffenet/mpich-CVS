@@ -110,7 +110,7 @@ int ib_handle_read(MPIDI_VC *vc_ptr, void *mem_ptr, int num_bytes)
 	/*BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);*/
 	PrintHeader(&vc_ptr->pkt_car.msg_header.pkt.u.hdr);
 	mm_cq_enqueue(&vc_ptr->pkt_car);
-	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_HANDLE_READ);
 	return MPI_SUCCESS;
     }
 
