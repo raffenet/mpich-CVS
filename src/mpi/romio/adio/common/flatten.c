@@ -91,6 +91,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
     MPI_Type_get_contents(datatype, nints, nadds, ntypes, ints, adds, types);
 
     switch (combiner) {
+#ifdef MPICH2
     case MPI_COMBINER_DUP:
         MPI_Type_get_envelope(types[0], &old_nints, &old_nadds,
 			      &old_ntypes, &old_combiner); 
@@ -98,7 +99,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 	if ((old_combiner != MPI_COMBINER_NAMED) && (!old_is_contig))
             ADIOI_Flatten(types[0], flat, st_offset, curr_index);
         break;
-
+#endif
     case MPI_COMBINER_CONTIGUOUS:
 	top_count = ints[0];
         MPI_Type_get_envelope(types[0], &old_nints, &old_nadds,
@@ -445,6 +446,7 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
     MPI_Type_get_contents(datatype, nints, nadds, ntypes, ints, adds, types);
 
     switch (combiner) {
+#ifdef MPICH2
     case MPI_COMBINER_DUP:
         MPI_Type_get_envelope(types[0], &old_nints, &old_nadds,
                               &old_ntypes, &old_combiner); 
@@ -453,6 +455,7 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
 	    count = ADIOI_Count_contiguous_blocks(types[0], curr_index);
 	else count = 1;
         break;
+#endif
     case MPI_COMBINER_CONTIGUOUS:
         top_count = ints[0];
         MPI_Type_get_envelope(types[0], &old_nints, &old_nadds,
