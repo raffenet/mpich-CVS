@@ -5,3 +5,8 @@ Makefile
 hellow
 sr
 srtest
+srvec
+bcasttest
+allred
+spawntest
+cpi

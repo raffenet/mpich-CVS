@@ -97,7 +97,8 @@ int MPIR_Comm_attr_delete( MPID_Comm *comm_ptr, MPID_Attribute *attr )
 	
 	/* Check the sentinals first */
 	if (p->pre_sentinal != 0 || p->post_sentinal != 0) {
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**attrsentinal" );
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, 
+					      "**attrsentinal", 0 );
 	    /* We could keep trying to free the attributes, but for now
 	       we'll just bag it */
 	    return mpi_errno;
@@ -111,7 +112,7 @@ int MPIR_Comm_attr_delete( MPID_Comm *comm_ptr, MPID_Attribute *attr )
 	switch (language) {
 	case MPID_LANG_C: 
 	case MPID_LANG_CXX: 
-	    mpi_errno = delfn.C_CommDeleteFunction( commptr->handle, 
+	    mpi_errno = delfn.C_CommDeleteFunction( comm_ptr->handle, 
 					  p->keyval->handle, 
 					  p->value, p->keyval->extra_state );
 	    break;
@@ -139,7 +140,7 @@ int MPIR_Comm_attr_delete( MPID_Comm *comm_ptr, MPID_Attribute *attr )
 #endif
 	}
 
-	MPIU_Handle_obj_free( p );
+	MPIU_Handle_obj_free( &MPID_Attr_mem, p );
 	
 	p = new_p;
     }

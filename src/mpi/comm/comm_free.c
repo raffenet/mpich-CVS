@@ -90,7 +90,7 @@ int MPI_Comm_free(MPI_Comm *comm)
     mpi_errno = MPIR_Comm_attr_delete( comm_ptr, comm_ptr->attributes );
 
     /* Free the VCRT */
-    MPID_VCRT_Release(comm_ptr->vcrt)
+    MPID_VCRT_Release(comm_ptr->vcrt);
     /* ... end of body of routine ... */
 
     if (mpi_errno == MPI_SUCCESS)

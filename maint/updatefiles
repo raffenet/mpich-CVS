@@ -226,8 +226,9 @@ if [ "$has_unix_find" = "yes" ] ; then
 		continue
 	    fi
             (cd $dir ; rm -f mf.tmp ; \
-	    sed -e 's%^SHELL *=.*%SHELL = /bin/sh%' \
-		-e "s%@srcdir@%.%g" Makefile.in > mf.tmp ;\
+	    sed -e 's%^SHELL[ 	]*=.*%SHELL = /bin/sh%' \
+		-e "s%@srcdir@%.%g" \
+		-e '/@SET_MAKE@/d' Makefile.in > mf.tmp ;\
 	    make -f mf.tmp configure ; rm -f mf.tmp )
 	    #
             # Under cygwin, sometimes (?) configure ends up containing \^M

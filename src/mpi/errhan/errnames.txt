@@ -61,6 +61,8 @@ was not started with MPI_GREQUEST_START
 **cancelpersend:Cancellation of persistent send requests is not supported
 **cancelunknown:Attempt to cancel an unknown type of request
 **permop:Cannot free permanent MPI_Op 
+**attrsentinal:Internal fields in an attribute have been overwritten; \
+ possible errors in using the attribute value in user code.
 #---- The messages below this line haven't been used yet.
 
 **buffer:Invalid buffer pointer
