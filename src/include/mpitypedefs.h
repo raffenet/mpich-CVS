@@ -7,11 +7,7 @@
 #if !defined(MPITYPEDEFS_H_INCLUDED)
 #define MPITYPEDEFS_H_INCLUDED
 
-#ifdef USE_WINCONF_H
-#include "winmpichconf.h"
-#else
 #include "mpichconf.h"
-#endif
 
 /* ------------------------------------------------------------------------- */
 /* mpitypedefs.h */

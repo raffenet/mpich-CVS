@@ -6,11 +6,7 @@
  */
 
 #include "mpiimpl.h"
-#ifdef USE_WINCONF_H
-#include "wintimerconf.h"
-#else
 #include "timerconf.h"
-#endif
 
 /* -- Begin Profiling Symbol Block for routine MPI_Wtick */
 #if defined(HAVE_PRAGMA_WEAK)

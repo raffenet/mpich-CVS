@@ -28,11 +28,7 @@
 
 /* Data computed by configure.  This is included *after* mpi.h because we
    do not want mpi.h to depend on any other files or configure flags */
-#ifdef USE_WINCONF_H
-#include "winmpichconf.h"
-#else
 #include "mpichconf.h"
-#endif
 
 #ifdef STDC_HEADERS
 #include <stdlib.h>
