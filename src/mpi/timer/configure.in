@@ -161,6 +161,9 @@ case "$timer_type" in
     AC_CHECK_FUNC(clock_gettime,,[missing_function=yes])
     if test "$missing_function" = yes ; then
         AC_SEARCH_LIBS(clock_gettime,rt,missing_function=no)
+	if test "$missing_function" = yes ; then
+             AC_MSG_ERROR([Requested timer clock_gettime (POSIX) is not available])
+        fi
     fi
     AC_CHECK_FUNC(clock_getres,,[missing_function=yes])
     if test "$missing_function" = yes ; then
