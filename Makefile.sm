@@ -153,6 +153,10 @@ install-local:
 	-if [ "@BUILD_TVDLL@" = "yes" ] ; then \
 	    $(INSTALL_DATA) src/mpi/debugger/libtvmpich.so \
 			${libdir}/libtvmpich.so ; fi
+	if test ! -d ${exec_prefix}/examples ; then \
+	    $(MKDIR_P) ${exec_prefix}/examples ; \
+	fi
+	$(INSTALL_PROGRAM) examples/cpi ${exec_prefix}/examples/cpi
 
 install_DOC = 
 optinstall_DOC = \
