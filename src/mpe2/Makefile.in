@@ -37,18 +37,22 @@ build_include:
 	      fi ; \
 	      cd $(top_srcdir)/include && \
 	      for file in $(MPE_HEADERS) ; do \
-	          if [ -f $$file -a ! -f $(includebuild_dir)/$$file ] ; then \
-	              $(CP) $$file $(includebuild_dir) ; \
+	          if [ ! -f $(includebuild_dir)/$$file ] ; then \
+	              if [ -f $$file ] ; then \
+	                  $(CP) $$file $(includebuild_dir) ; \
+	              else \
+	                  echo "/* This empty MPE header will be replaced by the correct header if corresponding subpackage is configured successfully. */" > $(includebuild_dir)/$$file ; \
+	              fi ; \
 	          fi ; \
 	      done ; \
 	  fi
 
 build_lib_bin: clean_bin clean_lib 
 	@for pkg in $(PKGS) ; do \
-             if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
+	     if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
 	         echo "Making $$pkg ...." ; \
 	         ( cd $$pkg && $(MAKE) ) ; \
-             fi ; \
+	     fi ; \
 	 done
 
 ########  Linkage Tests
@@ -111,16 +115,16 @@ clean_lib:
 clean: clean_bin clean_lib
 	@-$(RM) -f work.pc work.pcl
 	@-for pkg in $(PKGS) ; do \
-              if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
+	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
 	          ( cd $$pkg && $(MAKE) clean ) ; \
-              fi ; \
+	      fi ; \
 	  done
 
 distclean: clean_bin clean_lib
 	@-for pkg in $(PKGS) ; do \
-              if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
+	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
 	          ( cd $$pkg && $(MAKE) distclean ) ; \
-              fi ; \
+	      fi ; \
 	  done
 	@-$(RM) -f sbin/mpeinstall sbin/mpeuninstall
 	@-$(RM) -f Makefile mpe_conf.h config.log config.status
