@@ -460,10 +460,15 @@ sub RunMpichTestSuite {
     chdir $mpich_test_dir || die "Cannot change to $mpich_test_dir\n";
 
     # A special hack for the io part 
-    if (! -d io) { 
+    # If there is no link or io directory, create one and populate it
+    if (! -d "io" && ! -l "io") { 
 	`mkdir "io"`;
+    }
+    if (! -f "io/Mfile.in") {
 	`cp $mpich1_dir/examples/test/io/*.in io`;
     }
+
+    # Create the arguments for the configure step
     $nargs = 0;
     $config[$nargs++] = "$mpich1_dir/examples/test/configure";
     $config[$nargs++] = "--prefix=$instdir";
