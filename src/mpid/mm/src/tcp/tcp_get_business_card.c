@@ -49,17 +49,32 @@ static int GetLocalIPs(unsigned int *pIP, int max)
 #else /* HAVE_WINDOWS_H */
 
 #define NUM_IFREQS 10
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
+
+#ifdef HAVE_NET_IF_H
+#ifdef __STRICT_ANSI__
+#define __USE_MISC /* This must be defined to get struct ifreq defined */
+#endif
 #include <net/if.h>
+#endif
+
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
-#if defined(HAVE_SYS_IOCTL_H)
-#   include <sys/ioctl.h>
 #endif
-#if defined(HAVE_SYS_SOCKIO_H)
-#   include <sys/sockio.h>
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
 #endif
+#ifdef HAVE_SYS_SOCKIO_H
+#include <sys/sockio.h>
+#endif
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
+#endif
 
 static int GetLocalIPs(unsigned int *pIP, int max)
 {
