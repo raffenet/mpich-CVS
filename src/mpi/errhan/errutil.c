@@ -225,6 +225,26 @@ int MPIR_Err_create_code( int class, const char def_string[], ... )
     return err_code;
 }
 
+/*
+ * Accessor routines for the predefined messages.  These can be
+ * used by the other routines (such as MPI_Error_string) to
+ * access the messages in this file, or the messages that may be
+ * available through any message catalog facility 
+ */
+const char *MPIR_Err_get_generic_string( int class )
+{
+#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS
+    if (class >= 0 && class < MPIR_MAX_ERROR_CLASS_INDEX) {
+	return generic_err_msgs[class_to_index[class]].long_name;
+    }
+    else {
+	return "Unknown error class";
+    }
+#else 
+    return "Error message texts are not available";
+#endif
+}
+
 /* 
    Nesting level for routines.
    Note that since these use per-thread data, no locks or atomic update

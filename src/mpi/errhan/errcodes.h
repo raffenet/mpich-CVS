@@ -38,6 +38,8 @@
 #define ERROR_SPECIFIC_SEQ_SIZE   64
 #define ERROR_SPECIFIC_SEQ_SHIFT  25
 
+#define ERROR_GET_CLASS( code ) (code && ERROR_CLASS_MASK)
+
 /* These must correspond to the masks defined above */
 #define ERROR_MAX_NCLASS 256
 #define ERROR_MAX_NCODE  256

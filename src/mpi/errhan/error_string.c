@@ -67,6 +67,7 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
     /* Convert the code to a string.  The cases are:
        simple class.  Find the corresponding string.
        <not done>
@@ -78,12 +79,20 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
      */
     if ( (errorcode && ERROR_CLASS_MASK) == errorcode) {
 	/* code is a raw error class.  Convert the class to an index */
-	/* class_to_index[errorcode] */
-	/* Not correct yet, and this data is only available as static info in
-	   errutil.c */
-;
+	const char *p = MPIR_Err_get_generic_string( errorcode );
+	*resultlen = strlen( p );
+	strcpy( string, p );
     }
-    /* Not implemented */
+    else {
+	/* error code encods a message.  For now, just mask it off
+	   and return the class message */
+	/* FIXME */
+	const char *p = MPIR_Err_get_generic_string( ERROR_GET_CLASS(errorcode) );
+	*resultlen = strlen( p );
+	strcpy( string, p );
+    }
+    /* ... end of body of routine ... */
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_STRING);
     return MPI_SUCCESS;
 }

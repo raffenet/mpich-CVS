@@ -81,6 +81,11 @@ generic is $arg2 and specific is $arg3\r\n";
 	    if (!defined($generic_msgs{$arg2})) {
 		if ($arg3 ne "0" && $arg3 ne $arg2) {
 		    print "Adding specific short msg $arg3\n" if $debug;
+		    # Check that this is really a specific message
+		    # (contains %<format>)
+		    if (! ($arg3 =~ /\%/)) {
+			print STDERR "Warning: specific message $arg3 in $filename contains no format control\n";
+		    }
 		    $specific_msgs[$generic_count] = $arg3;
 		}
 		else {
@@ -138,6 +143,11 @@ sub CreateErrMsgMapping {
 	    $repl = $2;
 	    $repl =~ s/\r*\n*$//g;
 	    while ($repl =~ /\\\s*$/) {
+		# If there is a \\ at the end, read another.  
+		# Remove the \ at the end (an alternative is to turn
+		# it into a \n (newline), but we may want to avoid 
+		# multiline messages
+		$repl =~ s/\\\s*$//;
 		$repl .= <FD>;
 	    }
 	    $longnames{"\"$name\""} = $repl;
@@ -175,7 +185,10 @@ sub CreateErrMsgMapping {
 
     # Now, output each short,long key
     # Do the generic, followed by the specific, messages
-    print $OUTFD "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS\n";
+    # The long messages must be available for the generic message output.
+    # An alternative is to separate the short from the long messages;
+    # the long messages are needed for > MSG_NONE, the short for > MSG_CLASS.
+    print $OUTFD "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE\n";
     print $OUTFD "/* The names are in sorted order, allowing the use of a simple\
   linear search or bisection algorithm to find the message corresponding to\
   a particular message */\n";
@@ -250,6 +263,8 @@ sub CreateErrMsgMapping {
     print $OUTFD "#endif\n";
 
     print $OUTFD "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE\n";
+    $maxval = $#mpimsg + 1;
+    print $OUTFD "#define MPIR_MAX_ERROR_CLASS_INDEX $maxval\n";
     print $OUTFD "static int class_to_index[] = {\n";
     for ($i=0; $i<=$#mpimsg; $i++) {
 	print $OUTFD "$short_to_num{$mpimsg[$i]},";
