@@ -1,0 +1,35 @@
+- what are the requirements for the communication agent?
+
+  - driven by the needs of RMA, Pt2Pt, and Collective 
+
+
+- Agent is responsible for transportation and "matching"
+
+  In the send/recv case, matching is as simple as matching the standard MPI
+  envelope information.
+
+  In the RMA case, "matching" is much more complicated.  RMA operation
+  messages/RHCs need to be matched to exposure epochs.  Before an operation
+  message can be processed, locks, etc. may need to be acquired.
+
+- what we're doing here is allowing the origin to create a string of CARs
+  that the target will service, serialize these CARS, pass them to the
+  target, and place them in the appropriate queue for service - but not
+  quite, because there is some translation/processing that has to be done
+  here.
+
+  - they cause matching and/or creation of CARs on the other side that
+    correspond to completion of operations desired by the origin
+
+  - in a put case, can you just serialize a recv of the data?  no, you can't
+    do this.  there has to be something else going on.  so CARs can be
+    created as a result of the reception of a CAM.  damn.
+
+  - one way to look at this is that CAR processing could create additional
+    CARs to be processed...this would cleanly handle the put case - origin
+    serializes the put, and the target creates the corresponding recv after
+    processing the put CAR?
+
+  - a series of RMA operations could be described as a chain of operation
+    CARs where each operation has a data CARs hung off of it
+
