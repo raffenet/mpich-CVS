@@ -20,7 +20,7 @@ void MPIDI_dbg_printf(int level, char * func, char * fmt, ...)
 
 	if (MPIR_Process.comm_world)
 	{
-            MPIU_dbglog_printf("[%d] %s(): ", MPIR_Process.comm_world->rank, func);
+	    MPIU_dbglog_printf("[%d] %s(): ", MPIR_Process.comm_world->rank, func);
 	}
 	else
 	{
@@ -182,6 +182,38 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 		MPIU_DBG_PRINTF((" target ....... 0x%08X\n", pkt->lock.target_win_handle));
 		MPIU_DBG_PRINTF((" source ....... 0x%08X\n", pkt->lock.source_win_handle));
 		break;
+	    case MPIDI_CH3_PKT_LOCK_PUT_UNLOCK:
+		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_LOCK_PUT_UNLOCK\n"));
+		MPIU_DBG_PRINTF((" addr ......... %p\n", pkt->lock_put_unlock.addr));
+		MPIU_DBG_PRINTF((" count ........ %d\n", pkt->lock_put_unlock.count));
+		MPIU_DBG_PRINTF((" datatype ..... 0x%08X\n", pkt->lock_put_unlock.datatype));
+		MPIU_DBG_PRINTF((" lock_type .... %d\n", pkt->lock_put_unlock.lock_type));
+		MPIU_DBG_PRINTF((" target ....... 0x%08X\n", pkt->lock_put_unlock.target_win_handle));
+		MPIU_DBG_PRINTF((" source ....... 0x%08X\n", pkt->lock_put_unlock.source_win_handle));
+		break;
+	    case MPIDI_CH3_PKT_LOCK_ACCUM_UNLOCK:
+		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_LOCK_ACCUM_UNLOCK\n"));
+		MPIU_DBG_PRINTF((" addr ......... %p\n", pkt->lock_accum_unlock.addr));
+		MPIU_DBG_PRINTF((" count ........ %d\n", pkt->lock_accum_unlock.count));
+		MPIU_DBG_PRINTF((" datatype ..... 0x%08X\n", pkt->lock_accum_unlock.datatype));
+		MPIU_DBG_PRINTF((" lock_type .... %d\n", pkt->lock_accum_unlock.lock_type));
+		MPIU_DBG_PRINTF((" target ....... 0x%08X\n", pkt->lock_accum_unlock.target_win_handle));
+		MPIU_DBG_PRINTF((" source ....... 0x%08X\n", pkt->lock_accum_unlock.source_win_handle));
+		break;
+	    case MPIDI_CH3_PKT_LOCK_GET_UNLOCK:
+		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_LOCK_GET_UNLOCK\n"));
+		MPIU_DBG_PRINTF((" addr ......... %p\n", pkt->lock_get_unlock.addr));
+		MPIU_DBG_PRINTF((" count ........ %d\n", pkt->lock_get_unlock.count));
+		MPIU_DBG_PRINTF((" datatype ..... 0x%08X\n", pkt->lock_get_unlock.datatype));
+		MPIU_DBG_PRINTF((" lock_type .... %d\n", pkt->lock_get_unlock.lock_type));
+		MPIU_DBG_PRINTF((" target ....... 0x%08X\n", pkt->lock_get_unlock.target_win_handle));
+		MPIU_DBG_PRINTF((" source ....... 0x%08X\n", pkt->lock_get_unlock.source_win_handle));
+		MPIU_DBG_PRINTF((" request ...... 0x%08X\n", pkt->lock_get_unlock.request_handle));
+		break;
+	    case MPIDI_CH3_PKT_PT_RMA_DONE:
+		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_PT_RMA_DONE\n"));
+		MPIU_DBG_PRINTF((" source ....... 0x%08X\n", pkt->lock_accum_unlock.source_win_handle));
+		break;
 	    case MPIDI_CH3_PKT_LOCK_GRANTED:
 		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_LOCK_GRANTED\n"));
 		MPIU_DBG_PRINTF((" source ....... 0x%08X\n", pkt->lock_granted.source_win_handle));
@@ -220,7 +252,7 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 		MPIU_DBG_PRINTF((" iov_len ...... %d\n", pkt->iov.iov_len));
 		break;
 #endif
-  	    case MPIDI_CH3_PKT_CLOSE:
+	    case MPIDI_CH3_PKT_CLOSE:
 		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_CLOSE\n"));
 		MPIU_DBG_PRINTF((" ack ......... %s\n", pkt->close.ack ? "TRUE" : "FALSE"));
 		break;
