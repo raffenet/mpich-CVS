@@ -37,14 +37,14 @@ MPIDI_VC * mm_vc_from_communicator(MPID_Comm *comm_ptr, int rank)
     if (comm_ptr->vcrt == NULL)
     {
 	/* allocate a vc reference table */
-	mpi_errno = MPID_VCRT_Create(comm_ptr->remote_size, &comm_ptr->vcrt);
+	mpi_errno = MPID_VCRT_create(comm_ptr->remote_size, &comm_ptr->vcrt);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_FROM_COMMUNICATOR);
 	    return NULL;
 	}
 	/* get an alias to the array of vc pointers */
-	mpi_errno = MPID_VCRT_Get_ptr(comm_ptr->vcrt, &comm_ptr->vcr);
+	mpi_errno = MPID_VCRT_get_ptr(comm_ptr->vcrt, &comm_ptr->vcr);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_FROM_COMMUNICATOR);
@@ -89,14 +89,14 @@ MPIDI_VC * mm_vc_from_context(int comm_context, int rank)
     if (comm_ptr->vcrt == NULL)
     {
 	/* allocate a vc reference table */
-	mpi_errno = MPID_VCRT_Create(comm_ptr->remote_size, &comm_ptr->vcrt);
+	mpi_errno = MPID_VCRT_create(comm_ptr->remote_size, &comm_ptr->vcrt);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_FROM_CONTEXT);
 	    return NULL;
 	}
 	/* get an alias to the array of vc pointers */
-	mpi_errno = MPID_VCRT_Get_ptr(comm_ptr->vcrt, &comm_ptr->vcr);
+	mpi_errno = MPID_VCRT_get_ptr(comm_ptr->vcrt, &comm_ptr->vcr);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_FROM_CONTEXT);
