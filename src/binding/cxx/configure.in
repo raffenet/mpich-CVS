@@ -4,6 +4,13 @@ dnl We need install.sh, config.guess, etc. for the code that
 dnl finds the Fortran libraries
 AC_CONFIG_AUX_DIR(../../../confdb)
 
+dnl
+dnl First check that we have a clean build if we are doing a VPATH build
+if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
+    AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
+    configured.  Run "make distclean" in $srcdir first.])
+fi
+
 if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
 AC_SUBST(MPILIBNAME)
 AC_PROG_CXX
