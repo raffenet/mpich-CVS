@@ -52,7 +52,7 @@ int MPIR_Reduce (
     int        mask, relrank, source, lroot;
     int        mpi_errno = MPI_SUCCESS;
     MPI_User_function *uop;
-    MPI_Aint   true_lb, true_extent; 
+    MPI_Aint   true_lb, true_extent, extent; 
     void       *buffer;
     MPID_Op *op_ptr;
     MPI_Comm comm;
@@ -130,8 +130,9 @@ int MPIR_Reduce (
 
     mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb, &true_extent);  
     if (mpi_errno) return mpi_errno;
+    MPID_Datatype_get_extent_macro(datatype, extent);
 
-    buffer = MPIU_Malloc(true_extent * count);
+    buffer = MPIU_Malloc(count*(MPIR_MAX(extent,true_extent)));
     if (!buffer) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
@@ -142,7 +143,7 @@ int MPIR_Reduce (
     /* If I'm not the root, then my recvbuf may not be valid, therefore
        I have to allocate a temporary one */
     if (rank != root) {
-        recvbuf = MPIU_Malloc(true_extent * count);
+        recvbuf = MPIU_Malloc(count*(MPIR_MAX(extent,true_extent)));
         if (!recvbuf) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
@@ -260,7 +261,7 @@ PMPI_LOCAL int MPIR_Reduce_inter (
 
     int rank, mpi_errno;
     MPI_Status status;
-    MPI_Aint true_extent, true_lb;
+    MPI_Aint true_extent, true_lb, extent;
     void *tmp_buf=NULL;
     MPID_Comm *newcomm_ptr = NULL;
     MPI_Comm comm;
@@ -293,7 +294,8 @@ PMPI_LOCAL int MPIR_Reduce_inter (
                                                   &true_extent);  
             if (mpi_errno) return mpi_errno;
 
-            tmp_buf = MPIU_Malloc(true_extent*count);
+            MPID_Datatype_get_extent_macro(datatype, extent);
+            tmp_buf = MPIU_Malloc(count*(MPIR_MAX(extent,true_extent)));
             if (!tmp_buf) {
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;

@@ -123,20 +123,9 @@ int MPIR_Localcopy(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 {
     int sendtype_iscontig, recvtype_iscontig, sendsize;
     int rank, mpi_errno = MPI_SUCCESS;
-    MPI_Status status;
 
-    if (HANDLE_GET_KIND(sendtype) == HANDLE_KIND_BUILTIN)
-        sendtype_iscontig = 1;
-    else {
-        sendtype_iscontig = 0;
-        /* CHANGE THIS TO CHECK THE is_contig FIELD OF THE DATATYPE */
-    }
-    if (HANDLE_GET_KIND(recvtype) == HANDLE_KIND_BUILTIN)
-        recvtype_iscontig = 1;
-    else {
-        recvtype_iscontig = 0;
-        /* CHANGE THIS TO CHECK THE is_contig FIELD OF THE DATATYPE */
-    }
+    MPIR_Datatype_iscontig(sendtype, &sendtype_iscontig);
+    MPIR_Datatype_iscontig(recvtype, &recvtype_iscontig);
 
     if (sendtype_iscontig && recvtype_iscontig)
     {
@@ -149,7 +138,7 @@ int MPIR_Localcopy(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                                     rank, MPIR_LOCALCOPY_TAG, 
                                     recvbuf, recvcount, recvtype,
                                     rank, MPIR_LOCALCOPY_TAG,
-                                    MPI_COMM_WORLD, &status );
+                                    MPI_COMM_WORLD, MPI_STATUS_IGNORE );
     }
     return mpi_errno;
 }

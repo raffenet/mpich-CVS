@@ -131,7 +131,8 @@ PMPI_LOCAL int MPIR_Allgatherv (
                                                   &true_extent);  
             if (mpi_errno) return mpi_errno;
             
-            tmp_buf = MPIU_Malloc(total_count*true_extent);
+            tmp_buf =
+                MPIU_Malloc(total_count*(MPIR_MAX(true_extent,recv_extent)));  
             if (!tmp_buf) { 
                 mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**nomem", 0);
                 return mpi_errno;

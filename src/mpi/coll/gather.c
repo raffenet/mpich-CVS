@@ -367,7 +367,10 @@ PMPI_LOCAL int MPIR_Gather_inter (
                 mpi_errno = NMPI_Type_get_true_extent(sendtype, &true_lb,
                                                       &true_extent);  
                 if (mpi_errno) return mpi_errno;
-                tmp_buf = MPIU_Malloc(true_extent*sendcnt*local_size);
+                MPID_Datatype_get_extent_macro(sendtype, extent);
+ 
+                tmp_buf =
+                    MPIU_Malloc(sendcnt*local_size*(MPIR_MAX(extent,true_extent)));  
                 if (!tmp_buf) {
                     mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;

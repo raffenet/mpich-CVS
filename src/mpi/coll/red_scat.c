@@ -133,7 +133,8 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
         }
         
         /* allocate temporary buffer to store incoming data */
-        tmp_recvbuf = MPIU_Malloc(true_extent*recvcnts[rank]);
+        tmp_recvbuf =
+            MPIU_Malloc(recvcnts[rank]*(MPIR_MAX(true_extent,extent))); 
         if (!tmp_recvbuf) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
@@ -217,7 +218,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
         /* for short messages, use recursive doubling. */
 
         /* need to allocate temporary buffer to receive incoming data*/
-        tmp_recvbuf = MPIU_Malloc(true_extent*total_count);
+        tmp_recvbuf = MPIU_Malloc(total_count*(MPIR_MAX(true_extent,extent)));
         if (!tmp_recvbuf) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
@@ -227,7 +228,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
         
         /* need to allocate another temporary buffer to accumulate
            results */
-        tmp_results = MPIU_Malloc(true_extent*total_count);
+        tmp_results = MPIU_Malloc(total_count*(MPIR_MAX(true_extent,extent)));
         if (!tmp_results) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
@@ -460,7 +461,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
 */
     
     int rank, mpi_errno, root, local_size, total_count, i;
-    MPI_Aint true_extent, true_lb;
+    MPI_Aint true_extent, true_lb, extent;
     void *tmp_buf=NULL;
     int *displs=NULL;
     MPID_Comm *newcomm_ptr = NULL;
@@ -490,8 +491,9 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
         mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb,
                                               &true_extent);  
         if (mpi_errno) return mpi_errno;
+        MPID_Datatype_get_extent_macro(datatype, extent);
 
-        tmp_buf = MPIU_Malloc(true_extent*total_count);
+        tmp_buf = MPIU_Malloc(total_count*(MPIR_MAX(extent,true_extent)));
         if (!tmp_buf) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;

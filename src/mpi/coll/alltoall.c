@@ -76,7 +76,7 @@ PMPI_LOCAL int MPIR_Alltoall(
 {
     int          comm_size, i, j, k, p, pof2;
     MPI_Aint     sendtype_extent, recvtype_extent;
-    MPI_Aint sendtype_true_extent, sendbuf_true_extent, sendtype_true_lb;
+    MPI_Aint sendtype_true_extent, sendbuf_extent, sendtype_true_lb;
     int          mpi_errno = MPI_SUCCESS;
     MPI_Status status;
     int src, dst, rank, nbytes, curr_cnt, dst_tree_root, my_tree_root;
@@ -114,8 +114,9 @@ PMPI_LOCAL int MPIR_Alltoall(
         /* need to allocate temporary buffer of size
            sendbuf_extent*comm_size */
         
-        sendbuf_true_extent = sendcount * comm_size * sendtype_true_extent; 
-        tmp_buf = MPIU_Malloc(sendbuf_true_extent*comm_size);
+        sendbuf_extent = sendcount * comm_size *
+            (MPIR_MAX(sendtype_true_extent, sendtype_extent));
+        tmp_buf = MPIU_Malloc(sendbuf_extent*comm_size);
         if (!tmp_buf) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
@@ -127,7 +128,7 @@ PMPI_LOCAL int MPIR_Alltoall(
         /* copy local sendbuf into tmp_buf at location indexed by rank */
         curr_cnt = sendcount*comm_size;
         mpi_errno = MPIR_Localcopy(sendbuf, curr_cnt, sendtype,
-                                   ((char *)tmp_buf + rank*sendbuf_true_extent),
+                                   ((char *)tmp_buf + rank*sendbuf_extent),
                                    curr_cnt, sendtype);
         if (mpi_errno) return mpi_errno;
         
@@ -144,11 +145,11 @@ PMPI_LOCAL int MPIR_Alltoall(
             
             if (dst < comm_size) {
                 mpi_errno = MPIC_Sendrecv(((char *)tmp_buf +
-                                           my_tree_root*sendbuf_true_extent),
+                                           my_tree_root*sendbuf_extent),
                                           curr_cnt, sendtype,
                                           dst, MPIR_ALLTOALL_TAG, 
                                           ((char *)tmp_buf +
-                                           dst_tree_root*sendbuf_true_extent),
+                                           dst_tree_root*sendbuf_extent),
                                           sendcount*comm_size*mask,
                                           sendtype, dst, MPIR_ALLTOALL_TAG, 
                                           comm, &status);
@@ -197,7 +198,7 @@ PMPI_LOCAL int MPIR_Alltoall(
                         && (dst >= tree_root + nprocs_completed)) {
                         /* send the data received in this step above */
                         mpi_errno = MPIC_Send(((char *)tmp_buf +
-                                               dst_tree_root*sendbuf_true_extent),
+                                               dst_tree_root*sendbuf_extent),
                                               last_recv_cnt, sendtype,
                                               dst, MPIR_ALLTOALL_TAG,
                                               comm);  
@@ -209,7 +210,7 @@ PMPI_LOCAL int MPIR_Alltoall(
                              (dst < tree_root + nprocs_completed) &&
                              (rank >= tree_root + nprocs_completed)) {
                         mpi_errno = MPIC_Recv(((char *)tmp_buf +
-                                               dst_tree_root*sendbuf_true_extent),
+                                               dst_tree_root*sendbuf_extent),
                                               sendcount*comm_size*mask, 
                                               sendtype,   
                                               dst, MPIR_ALLTOALL_TAG,
@@ -230,7 +231,7 @@ PMPI_LOCAL int MPIR_Alltoall(
         /* now copy everyone's contribution from tmp_buf to recvbuf */
         for (p=0; p<comm_size; p++) {
             mpi_errno = MPIR_Localcopy(((char *)tmp_buf +
-                                        p*sendbuf_true_extent +
+                                        p*sendbuf_extent +
                                         rank*sendcount*sendtype_extent),
                                         sendcount, sendtype, 
                                         ((char*)recvbuf +

@@ -376,7 +376,7 @@ PMPI_LOCAL int MPIR_Allgather_inter (
 
     int rank, local_size, remote_size, mpi_errno, root;
     MPI_Comm newcomm;
-    MPI_Aint true_extent, true_lb;
+    MPI_Aint true_extent, true_lb, extent, send_extent;
     void *tmp_buf=NULL;
     MPID_Comm *newcomm_ptr = NULL;
 
@@ -390,7 +390,10 @@ PMPI_LOCAL int MPIR_Allgather_inter (
         mpi_errno = NMPI_Type_get_true_extent(sendtype, &true_lb,
                                               &true_extent);  
         if (mpi_errno) return mpi_errno;
-        tmp_buf = MPIU_Malloc(true_extent*sendcount*local_size);
+        MPID_Datatype_get_extent_macro( sendtype, send_extent );
+        extent = MPIR_MAX(send_extent, true_extent);
+
+        tmp_buf = MPIU_Malloc(extent*sendcount*local_size);
         if (!tmp_buf) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;

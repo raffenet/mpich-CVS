@@ -68,7 +68,7 @@ PMPI_LOCAL int MPIR_Allreduce (
     MPI_Status status;
     int mask, dst, dst_tree_root, my_tree_root, nprocs_completed, k, i,
         j, tmp_mask, tree_root, is_commutative; 
-    MPI_Aint true_extent, true_lb;
+    MPI_Aint true_extent, true_lb, extent;
     void *tmp_buf;
     MPI_User_function *uop;
     MPID_Op *op_ptr;
@@ -139,7 +139,9 @@ PMPI_LOCAL int MPIR_Allreduce (
         mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb,
                                               &true_extent); 
 	if (mpi_errno) return mpi_errno;
-        tmp_buf = MPIU_Malloc(count*true_extent);
+        MPID_Datatype_get_extent_macro( datatype, extent );
+
+        tmp_buf = MPIU_Malloc(count*(MPIR_MAX(extent,true_extent)));
         if (!tmp_buf) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;

@@ -72,7 +72,7 @@ PMPI_LOCAL int MPIR_Exscan (
     int        rank, comm_size;
     int        mpi_errno = MPI_SUCCESS;
     int mask, dst, is_commutative; 
-    MPI_Aint true_extent, true_lb;
+    MPI_Aint true_extent, true_lb, extent;
     void *partial_scan, *tmp_buf;
     MPI_User_function *uop;
     MPID_Op *op_ptr;
@@ -121,7 +121,9 @@ PMPI_LOCAL int MPIR_Exscan (
     mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb,
                                           &true_extent);  
     if (mpi_errno) return mpi_errno;
-    partial_scan = MPIU_Malloc(true_extent*count);
+    MPID_Datatype_get_extent_macro( datatype, extent );
+
+    partial_scan = MPIU_Malloc(count*(MPIR_MAX(true_extent,extent)));
     if (!partial_scan) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
@@ -130,7 +132,7 @@ PMPI_LOCAL int MPIR_Exscan (
     partial_scan = (void *)((char*)partial_scan - true_lb);
     
     /* need to allocate temporary buffer to store incoming data*/
-    tmp_buf = MPIU_Malloc(true_extent*count);
+    tmp_buf = MPIU_Malloc(count*(MPIR_MAX(true_extent,extent)));
     if (!tmp_buf) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;

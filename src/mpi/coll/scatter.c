@@ -422,7 +422,9 @@ PMPI_LOCAL int MPIR_Scatter_inter (
                                                       &true_extent);  
                 if (mpi_errno) return mpi_errno;
 
-                tmp_buf = MPIU_Malloc(true_extent*recvcnt*local_size);
+                MPID_Datatype_get_extent_macro(recvtype, extent);
+                tmp_buf =
+                    MPIU_Malloc(recvcnt*local_size*(MPIR_MAX(extent,true_extent)));  
                 if (!tmp_buf) {
                     mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
