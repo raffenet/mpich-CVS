@@ -51,6 +51,8 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
 	MPID_Process.comm_parent = (MPID_Comm *)0;
     }
 
+    mm_car_init();
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPID_INIT);
     return MPI_SUCCESS;
 }
