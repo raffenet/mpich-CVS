@@ -49,12 +49,12 @@ int ib_handle_written_ack(MPIDI_VC *vc_ptr, int num_written)
     return MPI_SUCCESS;
 }
 
-int ib_handle_written_connect_pkt(MPIDI_VC *vc_ptr, int num_written)
+int ib_handle_written_context_pkt(MPIDI_VC *vc_ptr, int num_written)
 {
-    MPIDI_STATE_DECL(MPID_STATE_IB_HANDLE_WRITTEN_CONNECT_PKT);
+    MPIDI_STATE_DECL(MPID_STATE_IB_HANDLE_WRITTEN_CONTEXT_PKT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_IB_HANDLE_WRITTEN_CONNECT_PKT);
+    MPIDI_FUNC_ENTER(MPID_STATE_IB_HANDLE_WRITTEN_CONTEXT_PKT);
 
-    MPIDI_FUNC_EXIT(MPID_STATE_IB_HANDLE_WRITTEN_CONNECT_PKT);
+    MPIDI_FUNC_EXIT(MPID_STATE_IB_HANDLE_WRITTEN_CONTEXT_PKT);
     return MPI_SUCCESS;
 }

@@ -24,8 +24,7 @@ int socket_handle_accept(void)
     vc_ptr = mm_vc_alloc(MM_SOCKET_METHOD);
 
     /* Change the state */
-    SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_ACCEPTING);
-    SOCKET_SET_BIT(vc_ptr->data.socket.connect_state, SOCKET_READING_CONNECT_PKT);
+    SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_READING_CONTEXT_PKT);
 
     /* accept new connection */
     if ((error = sock_accept(SOCKET_Process.set, vc_ptr, SOCKET_Process.listener, &sock)) != SOCK_SUCCESS)
@@ -43,7 +42,7 @@ int socket_handle_accept(void)
 
     MPIU_dbg_printf("sock_post_read(%d:context)\n", sock_getid(sock));
 
-    if ((error = sock_post_read(sock, &vc_ptr->pkt_car.msg_header.pkt.u.connect, sizeof(MPID_Connect_pkt), NULL)) != SOCK_SUCCESS)
+    if ((error = sock_post_read(sock, &vc_ptr->pkt_car.msg_header.pkt.u.context, sizeof(MPID_Context_pkt), NULL)) != SOCK_SUCCESS)
     {
 	socket_print_sock_error(error, "socket_handle_accept: sock_post_read failed.");
 	mm_vc_free(vc_ptr);
@@ -64,13 +63,10 @@ int socket_make_progress(void)
 {
     int error;
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_MAKE_PROGRESS);
-    MPIDI_STATE_DECL(MPID_STATE_SOCK_WAIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_MAKE_PROGRESS);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_WAIT);
     error = sock_wait(SOCKET_Process.set, 0, &SOCKET_Process.out);
-    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
     if (error != SOCK_SUCCESS)
     {
 	if (SOCKET_Process.out.error != SOCK_ERR_TIMEOUT)
@@ -97,12 +93,18 @@ int socket_make_progress(void)
     case SOCK_OP_ACCEPT:
 	socket_handle_accept();
 	break;
+#ifdef MPICH_DEV_BUILD
     case SOCK_OP_CLOSE:
 	if (SOCKET_Process.out.user_ptr != NULL)
+	{
 	    MPIU_dbg_printf("socket(%d) closed.\n", sock_getid(((MPIDI_VC*)SOCKET_Process.out.user_ptr)->data.socket.sock));
+	}
 	else
+	{
 	    MPIU_dbg_printf("socket closed.\n");
+	}
 	break;
+#endif
     case SOCK_OP_TIMEOUT:
 	break;
     default:

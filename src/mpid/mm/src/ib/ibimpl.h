@@ -31,10 +31,10 @@ extern IB_PerProcess IB_Process;
 int ib_handle_read(MPIDI_VC *vc_ptr, int num_bytes);
 int ib_handle_read_data(MPIDI_VC *vc_ptr, int num_read);
 int ib_handle_read_ack(MPIDI_VC *vc_ptr, int num_read);
-int ib_handle_read_connect_pkt(MPIDI_VC *vc_ptr, int num_read);
+int ib_handle_read_context_pkt(MPIDI_VC *vc_ptr, int num_read);
 int ib_handle_written(MPIDI_VC *vc_ptr, int num_bytes);
 int ib_handle_written_ack(MPIDI_VC *vc_ptr, int num_written);
-int ib_handle_written_connect_pkt(MPIDI_VC *vc_ptr, int num_written);
+int ib_handle_written_context_pkt(MPIDI_VC *vc_ptr, int num_written);
 /*
 int ib_read_data(MPIDI_VC *vc_ptr);
 int ib_write_aggressive(MPIDI_VC *vc_ptr);

@@ -32,10 +32,10 @@ extern SOCKET_PerProcess SOCKET_Process;
 int socket_handle_read(MPIDI_VC *vc_ptr, int num_bytes);
 int socket_handle_read_data(MPIDI_VC *vc_ptr, int num_read);
 int socket_handle_read_ack(MPIDI_VC *vc_ptr, int num_read);
-int socket_handle_read_connect_pkt(MPIDI_VC *vc_ptr, int num_read);
+int socket_handle_read_context_pkt(MPIDI_VC *vc_ptr, int num_read);
 int socket_handle_written(MPIDI_VC *vc_ptr, int num_bytes);
 int socket_handle_written_ack(MPIDI_VC *vc_ptr, int num_written);
-int socket_handle_written_connect_pkt(MPIDI_VC *vc_ptr, int num_written);
+int socket_handle_written_context_pkt(MPIDI_VC *vc_ptr, int num_written);
 int socket_read_data(MPIDI_VC *vc_ptr);
 int socket_write_aggressive(MPIDI_VC *vc_ptr);
 

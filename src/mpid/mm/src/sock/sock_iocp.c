@@ -675,9 +675,9 @@ int sock_accept(sock_set_t set, void * user_ptr, sock_t listener, sock_t *accept
 
 int sock_post_close(sock_t sock)
 {
-    MPIDI_STATE_DECL(MPID_STATE_SOCK_CLOSE);
+    MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_CLOSE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_CLOSE);
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_POST_CLOSE);
 
     sock->closing = TRUE;
     if (sock->pending_operations == 0)
@@ -687,7 +687,7 @@ int sock_post_close(sock_t sock)
 	sock->sock = SOCK_INVALID_SOCKET;
 	PostQueuedCompletionStatus(sock->set, 0, (DWORD)sock, NULL);
     }
-    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_CLOSE);
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
     return SOCK_SUCCESS;
 }
 

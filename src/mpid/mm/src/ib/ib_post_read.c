@@ -33,11 +33,11 @@ int ib_handle_read_ack(MPIDI_VC *vc_ptr, int num_read)
     return MPI_SUCCESS;
 }
 
-int ib_handle_read_connect_pkt(MPIDI_VC *temp_vc_ptr, int num_read)
+int ib_handle_read_context_pkt(MPIDI_VC *temp_vc_ptr, int num_read)
 {
-    MPIDI_STATE_DECL(MPID_STATE_IB_HANDLE_READ_CONNECT_PKT);
-    MPIDI_FUNC_ENTER(MPID_STATE_IB_HANDLE_READ_CONNECT_PKT);
-    MPIDI_FUNC_EXIT(MPID_STATE_IB_HANDLE_READ_CONNECT_PKT);
+    MPIDI_STATE_DECL(MPID_STATE_IB_HANDLE_READ_CONTEXT_PKT);
+    MPIDI_FUNC_ENTER(MPID_STATE_IB_HANDLE_READ_CONTEXT_PKT);
+    MPIDI_FUNC_EXIT(MPID_STATE_IB_HANDLE_READ_CONTEXT_PKT);
     return MPI_SUCCESS;
 }
 

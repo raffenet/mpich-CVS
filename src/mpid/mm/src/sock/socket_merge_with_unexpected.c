@@ -9,6 +9,7 @@ int socket_merge_with_unexpected(MM_Car *posted_car_ptr, MM_Car *unex_car_ptr)
 {
     int num_left, num_updated;
     char *unex_data_ptr;
+    int bMoreData = FALSE;
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_MERGE_WITH_UNEXPECTED);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_MERGE_WITH_UNEXPECTED);
@@ -26,6 +27,7 @@ int socket_merge_with_unexpected(MM_Car *posted_car_ptr, MM_Car *unex_car_ptr)
     {
 	/* if the message is still being read then change to the reading_data state */
 	/*posted_car_ptr->vc_ptr->data.socket.read = socket_read_data;*/
+	bMoreData = TRUE;
     }
 
     /* mark the head car as completed */
@@ -37,6 +39,11 @@ int socket_merge_with_unexpected(MM_Car *posted_car_ptr, MM_Car *unex_car_ptr)
 	num_updated = posted_car_ptr->vc_ptr->merge_unexpected_data(posted_car_ptr->vc_ptr, posted_car_ptr, unex_data_ptr, num_left);
 	num_left -= num_updated;
 	unex_data_ptr += num_updated;
+	if (num_left == 0 && bMoreData)
+	{
+	    /* post a read of the remaining data */
+	    socket_read_data(posted_car_ptr->vc_ptr);
+	}
 	posted_car_ptr = posted_car_ptr->next_ptr;
     }
 

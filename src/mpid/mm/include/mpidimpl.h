@@ -91,10 +91,8 @@ typedef union VC_Method_data
 #ifdef WITH_METHOD_SOCKET
     struct vc_socket
     {
-	int freeme;
 	struct MPIDI_VC *connect_vc_ptr;
 	int state;
-	int connect_state;
 	sock_t sock;
     } socket;
 #endif

@@ -601,28 +601,26 @@ int socket_handle_written(MPIDI_VC *vc_ptr, int num_written)
 
     MPIU_dbg_printf("socket_handle_written(%d) - %d bytes\n", sock_getid(vc_ptr->data.socket.sock), num_written);
 
-    /*if (vc_ptr->data.socket.state & SOCKET_CONNECT_MASK)*/
-    /*if (!(vc_ptr->data.socket.state & SOCKET_WRITE_CONNECTED))*/
     if (!(vc_ptr->data.socket.state & SOCKET_CONNECTED))
     {
-	if (vc_ptr->data.socket.connect_state & SOCKET_WRITING_ACK)
+	if (vc_ptr->data.socket.state & SOCKET_WRITING_ACK)
 	{
 	    socket_handle_written_ack(vc_ptr, num_written);
 	    MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_WRITTEN);
 	    return MPI_SUCCESS;
 	}
-	else if (vc_ptr->data.socket.connect_state & SOCKET_WRITING_CONNECT_PKT)
+	else if (vc_ptr->data.socket.state & SOCKET_WRITING_CONTEXT_PKT)
 	{
-	    socket_handle_written_connect_pkt(vc_ptr, num_written);
+	    socket_handle_written_context_pkt(vc_ptr, num_written);
 	    MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_WRITTEN);
 	    return MPI_SUCCESS;
 	}
 	else
 	{
-	    err_printf("socket_handle_written: unknown connecting state %d.\n", vc_ptr->data.socket.connect_state);
+	    err_printf("socket_handle_written: unknown connecting state %d.\n", vc_ptr->data.socket.state);
 	}
 
-	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ);
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_WRITTEN);
 	return MPI_SUCCESS;
     }
 

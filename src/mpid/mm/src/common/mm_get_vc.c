@@ -52,6 +52,7 @@ MPIDI_VC * mm_vc_from_communicator(MPID_Comm *comm_ptr, int rank)
 	}
     }
 
+    /* lock vcr */
     vc_ptr = comm_ptr->vcr[rank];
     if (vc_ptr == NULL)
     {

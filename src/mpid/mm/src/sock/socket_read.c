@@ -449,7 +449,7 @@ int socket_handle_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer 
 	socket_read_data(vc_ptr);
     }
 
-    MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_READ_VEC);
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ_VEC);
     return MPI_SUCCESS;
 }
 
@@ -483,6 +483,7 @@ int socket_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_pt
 int socket_handle_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, int num_read)
 {
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_HANDLE_READ_TMP);
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_HANDLE_READ_TMP);
     /*msg_printf("num_read tmp: %d\n", num_read);*/
 
     /* update the amount read */
@@ -494,7 +495,14 @@ int socket_handle_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer 
 	dbg_printf("num_read: %d\n", buf_ptr->tmp.num_read);
 	/* remove from read queue and insert in completion queue */
 	socket_car_dequeue_read(vc_ptr, car_ptr);
-	mm_cq_enqueue(car_ptr);
+
+	/* If I put it in the completion queue, the car will be freed.  This is bad because
+	   it needs to stay in the unexpected queue */
+	/*mm_cq_enqueue(car_ptr);*/
+
+	/* So I put the completion queue logic here, minus the freeing of the car */
+	socket_post_read_pkt(vc_ptr);
+	mm_dec_cc_atomic(car_ptr->request_ptr);
     }
     else
     {
@@ -538,6 +546,7 @@ int socket_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 int socket_handle_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, int num_read)
 {
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_HANDLE_READ_SIMPLE);
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_HANDLE_READ_SIMPLE);
     /*msg_printf("num_read simple: %d\n", num_read);*/
 
     /* update the amount read */

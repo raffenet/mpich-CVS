@@ -7,26 +7,21 @@
 #define MM_SOCKET_PRE_H
 
 /* socket state */
-#define SOCKET_INVALID_STATE   0x00
-#define SOCKET_CONNECTING      0x01
-#define SOCKET_ACCEPTING       0x02
-#define SOCKET_CONNECT_MASK    0x03
-#define SOCKET_CONNECTED       0x04
-/*
-#define SOCKET_READ_CONNECTED  0x04
-#define SOCKET_WRITE_CONNECTED 0x08
-*/
-#define SOCKET_READING_HEADER  0x10
-#define SOCKET_READING_DATA    0x20
-#define SOCKET_WRITING_HEADER  0x40
-#define SOCKET_WRITING_DATA    0x80
-
+#define SOCKET_INVALID_STATE        0x000
+#define SOCKET_CONNECTED            0x001
+#define SOCKET_READING_HEADER       0x002
+#define SOCKET_READING_DATA         0x004
+#define SOCKET_WRITING_HEADER       0x008
+#define SOCKET_WRITING_DATA         0x010
 /* connecting state */
-#define SOCKET_READING_ACK          0x01
-#define SOCKET_WRITING_ACK          0x02
-#define SOCKET_READING_CONNECT_PKT  0x04
-#define SOCKET_WRITING_CONNECT_PKT  0x08
-#define SOCKET_POSTING_CONNECT      0x10
+#define SOCKET_CONNECTING           0x020
+#define SOCKET_FREEME_BIT           0x040
+#define SOCKET_HEADTOHEAD_BITS      0x061
+#define SOCKET_READING_ACK          0x080
+#define SOCKET_WRITING_ACK          0x100
+#define SOCKET_READING_CONTEXT_PKT  0x200
+#define SOCKET_WRITING_CONTEXT_PKT  0x400
+#define SOCKET_POSTING_CONNECT      0x800
 
 #define SOCKET_SET_BIT(a,b)         a |= ( b )
 #define SOCKET_CLR_BIT(a,b)         a &= ~( b )

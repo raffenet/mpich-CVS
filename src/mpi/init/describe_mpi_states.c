@@ -335,6 +335,7 @@ int MPIR_Describe_mpi_timer_states()
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_SEND, "MPIC_Send", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_RECV, "MPIC_Recv", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_SENDRECV, "MPIC_Sendrecv", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIR_WAIT, "MPIR_Wait", get_random_color_str());
 
     return 0;
 }
