@@ -87,7 +87,7 @@ if (g_pRLOG) \
     RLOG_LogRecv( g_pRLOG, source, tag, count ); \
 }
 
-#ifdef LOG_RECV_FROM_BEGINNING
+#ifdef MPID_LOG_RECV_FROM_BEGINNING
 #define MPIDU_PT2PT_FUNC_ENTER_BOTH(a) \
 if (g_pRLOG) \
 { \

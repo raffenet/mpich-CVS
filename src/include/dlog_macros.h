@@ -54,7 +54,7 @@ extern DLOG_Struct *g_pDLOG;
 #define MPIDU_FINALIZE_FUNC_EXIT(a)
 
 /* arrow generating enter and exit macros */
-#ifdef LOG_ARROWS
+#ifdef MPID_LOG_ARROWS
 #define MPIDU_PT2PT_FUNC_ENTER_FRONT(a) \
 { \
     DLOG_LogOpenEvent( g_pDLOG, g_timer_state[ a ].in_id, g_timer_state[ a ].num_calls++ ); \

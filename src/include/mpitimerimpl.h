@@ -20,11 +20,11 @@
 #if defined(HAVE_TIMING) && (HAVE_TIMING == MPID_TIMING_KIND_LOG || HAVE_TIMING == MPID_TIMING_KIND_LOG_DETAILED || \
     HAVE_TIMING == MPID_TIMING_KIND_ALL)
 
-/* define LOG_RECV_FROM_BEGINNING to log arrows from the beginning of send operations
+/* define MPID_LOG_RECV_FROM_BEGINNING to log arrows from the beginning of send operations
    to the beginning of the corresponding receive operations.  Otherwise, arrows are
    logged from the beginning of the send to the end of the receive. */
-#undef LOG_RECV_FROM_BEGINNING
-/*#define LOG_RECV_FROM_BEGINNING*/
+#undef MPID_LOG_RECV_FROM_BEGINNING
+/*#define MPID_LOG_RECV_FROM_BEGINNING*/
 
 /* These next two include files contain the static state definitions */
 #include "mpistates.h"
@@ -65,11 +65,11 @@
 #define MPID_MPI_FINALIZE_FUNC_ENTER(a)       MPIDU_FINALIZE_FUNC_ENTER(a)
 #define MPID_MPI_FINALIZE_FUNC_EXIT(a)        MPIDU_FINALIZE_FUNC_EXIT(a)
 
-#define LOG_ARROWS
-#ifdef LOG_ARROWS
+#define MPID_LOG_ARROWS
+#ifdef MPID_LOG_ARROWS
 #define MPID_MPI_PT2PT_FUNC_ENTER_FRONT(a)    MPIDU_PT2PT_FUNC_ENTER_FRONT(a)
 #define MPID_MPI_PT2PT_FUNC_EXIT_FRONT(a)     MPIDU_PT2PT_FUNC_EXIT(a)
-#ifdef LOG_RECV_FROM_BEGINNING
+#ifdef MPID_LOG_RECV_FROM_BEGINNING
 #define MPID_MPI_PT2PT_FUNC_ENTER_BACK(a)     MPIDU_PT2PT_FUNC_ENTER_BACK(a)
 #define MPID_MPI_PT2PT_FUNC_EXIT_BACK(a)      MPIDU_PT2PT_FUNC_EXIT(a)
 #define MPID_MPI_PT2PT_FUNC_EXIT_BOTH(a)      MPIDU_PT2PT_FUNC_EXIT(a)
@@ -108,11 +108,11 @@
 #define MPIDI_FINALIZE_FUNC_ENTER(a)       MPIDU_FINALIZE_FUNC_ENTER(a)
 #define MPIDI_FINALIZE_FUNC_EXIT(a)        MPIDU_FINALIZE_FUNC_EXIT(a)
 
-#define LOG_MPID_ARROWS
-#ifdef LOG_MPID_ARROWS
+#define MPID_LOG_MPID_ARROWS
+#ifdef MPID_LOG_MPID_ARROWS
 #define MPIDI_PT2PT_FUNC_ENTER_FRONT(a)    MPIDU_PT2PT_FUNC_ENTER_FRONT(a)
 #define MPIDI_PT2PT_FUNC_EXIT_FRONT(a)     MPIDU_PT2PT_FUNC_EXIT(a)
-#ifdef LOG_RECV_FROM_BEGINNING
+#ifdef MPID_LOG_RECV_FROM_BEGINNING
 #define MPIDI_PT2PT_FUNC_ENTER_BACK(a)     MPIDU_PT2PT_FUNC_ENTER_BACK(a)
 #define MPIDI_PT2PT_FUNC_EXIT_BACK(a)      MPIDU_PT2PT_FUNC_EXIT(a)
 #define MPIDI_PT2PT_FUNC_EXIT_BOTH(a)      MPIDU_PT2PT_FUNC_EXIT(a)
