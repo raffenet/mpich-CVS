@@ -1,1 +1,1 @@
-SUBDIRS = misc attr coll
+SUBDIRS = util misc attr coll rma
