@@ -2022,10 +2022,10 @@ int beasy_error_to_string(int error, char *str, int length)
 	memcpy(str, str_local, num_bytes+1);
     else
     {
-	LocalFree(str);
+	LocalFree(str_local);
 	return num_bytes+1;
     }
-    LocalFree(str);
+    LocalFree(str_local);
     strtok(str, "\r\n"); /* remove any CR/LF characters from the output */
 #else
     /*dbg_printf("beasy_error_to_string\n");*/
