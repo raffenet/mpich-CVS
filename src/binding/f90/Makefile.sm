@@ -1,4 +1,5 @@
 smvar_do_dependencies = ignore
+smvar_do_sharedlibs   = 0
 
 MOD              = @F90MODEXT@
 MPIMOD           = @MPIMODNAME@
