@@ -253,6 +253,8 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	cur_elmp = &(segp->stackelm[0]);
 	DLOOP_STACKELM_RESET_VALUES;
 
+	/* TODO: AVOID CALLING MANIP. IF FIRST == 0 */
+
 	/* Note: we're simply using the manipulate function with a NULL piecefn
 	 * to handle this case.  It's one more function call, but it dramatically
 	 * simplifies this code.
