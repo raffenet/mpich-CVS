@@ -20,7 +20,8 @@ from os              import environ, fork, execvpe, getuid, getpid, path, getcwd
 			    WIFSIGNALED, WEXITSTATUS
 from socket          import socket, fromfd, AF_UNIX, SOCK_STREAM, gethostname, \
                             gethostbyname_ex, gethostbyaddr
-from select          import select
+from select          import select, error
+from errno           import EINTR
 from exceptions      import Exception
 from re              import findall
 from urllib          import unquote
@@ -395,7 +396,13 @@ def mpdrun():
     done = 0
     while done < 3:    # man, client stdout, and client stderr
         try:
-            (readySockets,unused1,unused2) = select(socketsToSelect.keys(),[],[],1)
+            try:
+                (readySockets,unused1,unused2) = select(socketsToSelect.keys(),[],[],1)
+            except error, data:
+                if data[0] == EINTR:    # interrupted by timeout for example
+                    continue
+                else:
+                    mpd_raise('select error: %s' % strerror(data[0]))
             if mergingOutput  and  len(readySockets) == 0:    # timed out
                 for line in linesOrdered:
                     linesToRanks[line].sort()
@@ -594,8 +601,8 @@ def sig_handler(signum,frame):
 	    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGCONT' }
 	    mpd_send_one_msg(manSocket,msgToSend)
     elif signum == SIGALRM:
-        mpd_print(1, 'mpdrun telling client to terminate due to timeout %d seconds %s' % \
-                  (timeoutVal,manSocket))
+        mpd_print(1, 'mpdrun telling client to terminate due to timeout %d seconds' % \
+                  (timeoutVal))
         if manSocket:
             msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
             mpd_send_one_msg(manSocket,msgToSend)
