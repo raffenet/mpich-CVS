@@ -41,7 +41,7 @@ build_include:
 	              if [ -f $$file ] ; then \
 	                  $(CP) $$file $(includebuild_dir) ; \
 	              else \
-	                  echo "/* This empty MPE header will be replaced by the correct header if corresponding subpackage is configured successfully. */" > $(includebuild_dir)/$$file ; \
+	                  echo "/* This empty MPE header will be replaced by the correct header if the corresponding subpackage is configured successfully. */" > $(includebuild_dir)/$$file ; \
 	              fi ; \
 	          fi ; \
 	      done ; \
@@ -54,30 +54,6 @@ build_lib_bin: clean_bin clean_lib
 	         ( cd $$pkg && $(MAKE) ) ; \
 	     fi ; \
 	 done
-
-########  Linkage Tests
-linktest_all: linktest_C linktest_F77
-
-linktest_C:
-	@if [ "$(MPI_IMPL)" != "MPICH" -a "$(MPI_IMPL)" != "MPICH2" ] ; then \
-	     ( cd contrib/test && $(MAKE) linktest_C ) ; \
-	 fi
-
-linktest_F77:
-	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
-	     if [    "$(MPI_IMPL)" != "MPICH" \
-	          -a "$(MPI_IMPL)" != "MPICH2" ] ; then \
-	         ( cd contrib/test && $(MAKE) linktest_F77 ) ; \
-	     fi ; \
-	 fi
-	@echo
-
-#  For backward compatibility
-linktest: linktest_C
-
-#  For backward compatibility
-fortran_test: linktest_F77
-########
 
 ########  Installing
 install:
