@@ -70,21 +70,25 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	if (type != MPIDI_REQUEST_TYPE_RSEND)
 	{
 	    MPIDI_DBG_PRINTF((15, FCNAME, "added receive request to unexpected queue; attaching send request"));
+	    rreq->partner_request = sreq;
+	    rreq->ch3.sender_req_id = sreq->handle;
 	}
 	else
 	{
 	    MPIDI_DBG_PRINTF((15, FCNAME, "ready send unable to find matching recv req"));
 	    sreq->status.MPI_ERROR = MPI_ERR_UNKNOWN; /* FIXME */
 	    rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN; /* FIXME */
+	    
+	    rreq->partner_request = NULL;
+	    rreq->ch3.sender_req_id = MPI_REQUEST_NULL;
 	    rreq->status.count = 0;
+	    
 	    /* sreq has never been seen by the user or outside this thread, so it is safe to reset ref_count and cc */
 	    sreq->ref_count = 1;
 	    sreq->cc = 0;
 	}
 	    
 	MPIDI_Request_set_msg_type(rreq, MPIDI_REQUEST_SELF_MSG);
-	rreq->partner_request = sreq;
-	rreq->ch3.sender_req_id = sreq->handle;
     }
 
   fn_exit:
