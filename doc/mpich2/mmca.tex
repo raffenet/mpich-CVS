@@ -1,0 +1,95 @@
+\section{Multi-method Communication Architecture}
+
+In this section, we present a multi-method communication architecture
+for MPICH2.
+
+Rather than present the entire architecture at once, we will start
+with a basic system and modify it as we add capabilities.  The reason
+for such a presentation is two-fold.  First, the intricate details of
+the architecture are difficult to understand at first glance.  We hope
+that by incrementally presenting features of the architecture, the
+motivation will be clearer and the reader will be better served.
+Second, the organization of this section suggests a plan for
+developing a prototype implementation of the multi-method
+architecture.  Many of the ideas presented within the section are as
+of yet unproven, and would be benefit greatly from rapid prototyping
+and performance analysis.
+
+%------------------------------------------------------------------------------
+
+% \subsection{Architecture Overview}
+
+%------------------------------------------------------------------------------
+
+\subsection{Simple Messaging}
+
+goal: describe components necessary for unoptimized, multi-method
+point-to-point
+
+
+\subsubsection{Overview}
+
+major steps in point-to-point communication:
+\begin{itemize}
+\item posting
+\item progress
+\item completion
+\end{itemize}
+
+
+\subsubsection{Components}
+
+components needs to perform point-to-point communication:
+\begin{itemize}
+\item assumed knowledge stuff -- 
+\item virtual connections
+\item methods --
+interface to convey messages to be sent and received
+\item requst matching
+\item progress engine --
+only poll methods that might have work to do.  need a low cost way to
+communicate amount of work between method and progress engine.
+\end{itemize}
+
+
+\subsubsection{Walkthrough}
+
+
+\subsubsection{Summary}
+
+
+%------------------------------------------------------------------------------
+
+\subsection{Filling out point-to-point}
+
+wildcards
+
+persistent sends
+
+request cancellation
+
+
+
+%------------------------------------------------------------------------------
+
+\subsection{Optimizing Simple Messaging}
+
+% [BRT] To what degree do we want to discuss optimizations of simple
+% messaging?  It seems like most of these optimizations apply to any
+% device, not just the multi-method device.  On the other hand, we do
+% want to support these optimizations, so it seems unwise not to mention
+% them and include them in the design.
+
+for contiguous data, send directly from and receive directly into the
+user buffer.
+
+receiving a message by reading it directly from the memory of the
+sending process (e.g., ptrace and /proc/PID/mem) or sending a message
+by writing it directly to the memory of the receiving process.
+
+allow the user to MPI_Alloc_mem() to allocate a buffer in shared
+memory, reducing the number of data from two to one when using the
+shared memory method.
+
+%------------------------------------------------------------------------------
+
