@@ -490,7 +490,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 
 	    if (recv_vc_ptr->ch.shm_reading_pkt)
 	    {
-		MPIU_DBG_PRINTF(("shm_read_progress: reading %d byte header from shm packet %d\n", sizeof(MPIDI_CH3_Pkt_t), index));
+		MPIU_DBG_PRINTF(("shm_read_progress: reading %d byte header from shm packet %d offset %d\n", sizeof(MPIDI_CH3_Pkt_t), index, pkt_ptr->offset));
 		mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
 		if (mpi_errno != MPI_SUCCESS)
 		{
@@ -550,7 +550,9 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 			memcpy(recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF, iter_ptr,
 			    recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_LEN);
 			MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-			MPIU_DBG_PRINTF(("shm_read_progress: %d bytes read from packet %d\n", recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_LEN, index));
+			MPIU_DBG_PRINTF(("shm_read_progress: %d bytes read from packet %d offset %d\n",
+			    recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_LEN, index,
+			    pkt_ptr->offset + (int)((char*)iter_ptr - (char*)mem_ptr)));
 			iter_ptr += recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_LEN;
 			/* update the iov */
 			num_bytes -= recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_LEN;
@@ -563,7 +565,8 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 			MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 			memcpy(recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF, iter_ptr, num_bytes);
 			MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-			MPIU_DBG_PRINTF(("shm_read_progress: %d bytes read from packet %d\n", num_bytes, index));
+			MPIU_DBG_PRINTF(("shm_read_progress: %d bytes read from packet %d offset %d\n", num_bytes, index,
+			    pkt_ptr->offset + (int)((char*)iter_ptr - (char*)mem_ptr)));
 			iter_ptr += num_bytes;
 			/* update the iov */
 			recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_LEN -= num_bytes;
@@ -609,7 +612,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 		    memcpy(recv_vc_ptr->ch.read.buffer, mem_ptr, recv_vc_ptr->ch.read.bufflen);
 		    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-		    MPIU_DBG_PRINTF(("shm_read_progress: %d bytes read from packet %d\n", recv_vc_ptr->ch.read.bufflen, index));
+		    MPIU_DBG_PRINTF(("shm_read_progress: %d bytes read from packet %d offset %d\n", recv_vc_ptr->ch.read.bufflen, index, pkt_ptr->offset));
 		    recv_vc_ptr->ch.read.total = recv_vc_ptr->ch.read.bufflen;
 		    /*shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, recv_vc_ptr->ch.read.bufflen, num_bytes - recv_vc_ptr->ch.read.bufflen);*/
 		    pkt_ptr->offset += recv_vc_ptr->ch.read.bufflen;
@@ -622,7 +625,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 		    memcpy(recv_vc_ptr->ch.read.buffer, mem_ptr, num_bytes);
 		    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-		    MPIU_DBG_PRINTF(("shm_read_progress: %d bytes read from packet %d\n", num_bytes, index));
+		    MPIU_DBG_PRINTF(("shm_read_progress: %d bytes read from packet %d offset %d\n", num_bytes, index, pkt_ptr->offset));
 		    recv_vc_ptr->ch.read.total += num_bytes;
 		    /* advance the user pointer */
 		    recv_vc_ptr->ch.read.buffer = (char*)(recv_vc_ptr->ch.read.buffer) + num_bytes;
