@@ -10,10 +10,11 @@
 
 /* defmsg is generated automatically from the source files and contains
    all of the error messages */
-/* #include "defmsg.h" */
+#include "defmsg.h" 
 
 /* stdarg is required to handle the variable argument lists for 
    MPIR_Err_create_code */
+#include <stdarg.h>
 
 /*
  * Instance-specific error messages are stored in a ring.
@@ -237,3 +238,19 @@ int MPIR_Nest_value( void )
     MPID_GetPerThread(p);
     return p->nest_count;
 }
+
+/*
+ * Error handlers.  These are handled just like the other opaque objects
+ * in MPICH
+ */
+
+#ifndef MPID_ERRHANDLER_PREALLOC 
+#define MPID_ERRHANDLER_PREALLOC 8
+#endif
+
+/* Preallocated info objects */
+MPID_Errhandler MPID_Errhandler_direct[MPID_ERRHANDLER_PREALLOC];
+MPIU_Object_alloc_t MPID_Errhandler_mem = { 0, 0, 0, 0, MPID_ERRHANDLER, 
+				      sizeof(MPID_Errhandler), MPID_Errhandler_direct,
+                                      MPID_ERRHANDLER_PREALLOC, };
+

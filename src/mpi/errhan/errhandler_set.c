@@ -55,10 +55,7 @@ int MPI_Errhandler_set(MPI_Comm comm, MPI_Errhandler errhandler)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not value, it will be reset to null */
@@ -71,6 +68,15 @@ int MPI_Errhandler_set(MPI_Comm comm, MPI_Errhandler errhandler)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    MPIR_Nest_incr();
+    mpi_errno = PMPI_Comm_set_errhandler( comm, errhandler );
+    MPIR_Nest_decr();
+    if (mpi_errno) {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERRHANDLER_SET);
+	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    }
+    /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERRHANDLER_SET);
     return MPI_SUCCESS;
 }

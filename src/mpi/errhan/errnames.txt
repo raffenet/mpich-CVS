@@ -5,11 +5,20 @@
 **initialized:MPI not initialized. Call MPI_Init or MPI_Init_thread first
 **inittwice:Cannot call MPI_INIT or MPI_INIT_THREAD more than once
 **nomem:Out of memory
+**nomem %d %d:Out of memory (requested %d but only %d available)
 **notimpl:Function not implemented
 **nullptr:Null pointer
 **nullptr %s:Null pointer in parameter %s
-----
+**commnamelen: Specified communicator name is too long
+**commnamelen %d: Specified communicator name is too long (%d characters)
+**winnamelen: Specified window object name is too long
+**winnamelen %d: Specified window object name is too long (%d characters)
+**typenamelen: Specified datatype name is too long
+**typenamelen %d: Specified datatype name is too long (%d characters)
 **success:No MPI error
+**fileexist:File exists
+**fileexist %s:File %s exists
+----
 **buffer:Invalid buffer pointer
 **bufnull:Null buffer pointer
 **bufbsend:Insufficient space in Bsend buffer
@@ -89,9 +98,8 @@ be in the range 0 to %d
 **dimspartition:Can not partition nodes as requested 
 **arg:Invalid argument
 **arg %s:Invalid argument %s
-**argerrcode:Invalid error code (optional arg:       value (int))
-**argnull:Invalid null parameter (optional arg: 
-      name of argument (string))
+**argerrcode:Invalid error code (optional arg:  value (int))
+**argnull:Invalid null parameter (optional arg: name of argument (string))
 **argaddress:Address of location given to MPI_ADDRESS does not fix in a \
 Fortran integer (optional       argument: address (long int))
 **errhandler:Invalid errhandler
@@ -102,24 +110,21 @@ Fortran integer (optional       argument: address (long int))
 **stride:Range does not terminate (optional 
       arguments: start, end, stride (int))
 **stridezero:Zero stride is incorrect 
-**argarray:Invalid value in array (optional 
-      arguments: name of variable (string), index (int), value (int))
-**argnamed:Invalid argument (optional arguments: 
-      name (string), value (int))
-**argarrayneg:Negative value in array 
-      (optional arguments: name of variable (string), index (int), value
-      (int)) 
+**argarray:Invalid value in array (optional arguments: name of variable (string), index (int), value (int))
+**argnamed:Invalid argument (optional arguments: name (string), value (int))
+**argarrayneg:Negative value in array (optional arguments: name of variable\
+(string), index (int), value (int)) 
 **darraydist:For MPI_DISTRIBUTE_NONE, the number of processes in that\
-      dimension of the grid must be 1 (optional arguments: index of
+      dimension of the grid must be 1 (optional arguments: index of\
       array_of_psizes, value (int))
 **darrayunknown:Unknown distribution type 
 **darrayblock:Value of m must be positive for block(m) distribution (optional argument: value of m (int))
 **darrayblock2:m * nprocs is less than array_size and is not valid for \
-block(m) distribution
+      block(m) distribution \
       (optional arguments: \code{m*nprocs}, \code{array_size} (int))
 **darraycyclic:Value of m must be positive for a cyclic(m) distribution (optional argument: m (int))
 **argposneg:Value of position must be nonnegative (optional argument: value (int))
-**infonkey:n (for nth key/value) is invalid (optional arguments: 
+**infonkey:n (for nth key/value) is invalid (optional arguments: \
       n, number of keys in info (int))
 **unknown:Unknown error.  Please file a bug report.
 **truncate:Message truncated
@@ -131,13 +136,9 @@ block(m) distribution
       (optional arguments: source, destination, tag (int))
 **preinit:MPI_Init must be 
       called first (optional argument: name of calling routine (string))
-**startup:Error on
-    startup, such as a 
-      mismatch between \code{mpiexec} and the MPI libraries (optional
+**startup:Error on startup, such as a \
+      mismatch between mpiexec and the MPI libraries (optional \
       argument: text with detailed reason (string))
-**nomem:Out of memory
-    (optional arguments: 
-      requested and available (int))
 **attrcopy:User defined attribute copy routine returned a non-zero return code
 **attrcopy %d:User defined attribute copy routine returned a non-zero return code %d
 **intern:Internal MPI error!
@@ -158,16 +159,11 @@ block(m) distribution
 **fileamodeseq:Cannot specify MPI_MODE_SEQUENTIAL with MPI_MODE_RDWR
 **filename:Invalid file name
 **filename %s:Invalid file name %s
-**filenamelong:Pathname too long (optional 
-      arguments: name, length, and maximum length (string, int, int))
-**filenamedir:Invalid or missing directory 
-      (optional argument: name (string))
+**filenamelong:Pathname too long (optional arguments: name, length, and maximum length (string, int, int))
+**filenamedir:Invalid or missing directory (optional argument: name (string))
 **conversion:An error occurred in a user-defined data conversion function
-**datarep:The requested datarep name has already 
-  been specified to MPI_REGISTER_DATAREP (optional arg: name
-  (string))
-**fileexist:File exists
-  (optional arg: name (string)) 
+**datarep:The requested datarep name has already been specified to \
+   MPI_REGISTER_DATAREP (optional arg: name (string))
 **fileinuse:File in use by some process
 **fileinuse %s:File %s is in use by some process (optional 
 **file:Invalid MPI_File
@@ -190,7 +186,7 @@ block(m) distribution
 **io:Other I/O error 
 **io %s:Other I/O error %s
 **ioetype:Only an integral number of etypes can be accessed
-**iofstype:Cannot determine filesystem type 
+**iofstype:Cannot determine filesystem type \
       (optional argument: name of file (string))
 **iofstypeunsupported:Specified filesystem is not available (optional argument: name of filesystem (string))
 **iosplitcoll:Only one active split collective I/O operation is allowed per file handle
@@ -199,10 +195,11 @@ block(m) distribution
 **ioneedrdwr:Read/write access is required to this file
 **iofiletype:Filetype must be constructed out of one or more etypes
 **iosharedunsupported:Shared file pointers not supported (optional argument: name of file system (string))
-**ioamodeseq:Cannot use this function when the file is opened with amode MPI_MODE_SEQUENTIAL (optional
-      argument: name of routine (string))
+**ioamodeseq:Cannot use this function when the file is opened with amode \
+    MPI_MODE_SEQUENTIAL (optional argument: name of routine (string))
 **iowronly:Cannot read from a file opened with amode MPI_MODE_WRONLY
-**iosequnsupported:MPI_MODE_SEQUENTIAL not supported on this file system (optional argument: name of file       system (string))
+**iosequnsupported:MPI_MODE_SEQUENTIAL not supported on this file system \
+ (optional argument: name of file       system (string))
 **servicename:Attempt to lookup an unknown service name 
 **servicename %s:Attempt to lookup an unknown service name %s
 **allocmem:Unable to allocate memory for MPI_Alloc_mem

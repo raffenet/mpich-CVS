@@ -46,21 +46,24 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
     static const char FCNAME[] = "MPI_Comm_set_errhandler";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    int in_use;
+    MPID_Errhandler *errhan_ptr;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SET_ERRHANDLER);
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
+    MPID_Errhandler_get_ptr( errhandler, errhan_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not value, it will be reset to null */
+
+	    MPIR_Errhandler_valid_ptr( errhan_ptr,mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ERRHANDLER);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -69,6 +72,15 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+    MPIU_Object_release_ref(comm_ptr->errhandler,&in_use);
+    if (!in_use) {
+	MPIR_Errhandler_free( comm_ptr->errhandler );
+    }
+    MPIU_Object_add_ref(errhan_ptr);
+    comm_ptr->errhandler = errhan_ptr;
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ERRHANDLER);
     return MPI_SUCCESS;
