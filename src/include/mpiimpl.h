@@ -92,6 +92,7 @@
 #include "mpiimplthread.h"
 #include "mpiatomic.h"
 
+#include "mpiutil.h"
 
 /* Include definitions from the device which must exist before items in this
    file (mpiimpl.h) can be defined. */
@@ -153,8 +154,6 @@ void MPIU_dump_dbg_memlog(FILE * fp);
 /* For unconditional debug output, use the following */
 #define DBG_PRINTF printf
 #define DBG_FPRINTF fprintf
-
-#define MPIU_Assert assert
 
 /* Define MPICH_DEBUG_INTERNAL to compile in optional debugging
    tests and routines.  These are enabled with the appropriate 

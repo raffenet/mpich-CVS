@@ -272,11 +272,13 @@ sub ProcessFile {
 # have a terminating null.  This is still touchy, but it isn't the risk
 # posed by the copy or cat routines, since it doesn't write to any memory
 # location.
-%bettersubs = ( "strcpy" => "MPIU_Strncpy",
+%bettersubs = ( "assert" => "MPIU_Assert or MPIU_Assertp",
+		"strcpy" => "MPIU_Strncpy",
 	        "strncpy" => "MPIU_Strncpy",
 #		"strcmp" => "strncmp",
 		"strcat" => "MPIU_Strnapp",
 		"sprintf" => "MPIU_Snprintf", 
+		"strerror" => "MPIU_Strerror",
 		);
 
 sub CheckForBadSubs {
