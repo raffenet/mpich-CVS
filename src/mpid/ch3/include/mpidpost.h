@@ -28,11 +28,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent);
 /*E
   MPIDI_CH3_Finalize - Shutdown the channel implementation.
 
-  Output Parameters:
-+ has_args - boolean value that is true if the command line arguments are available on every node
-. has_env - boolean value that is true if the environment variable settings are available on every node
-- has_parent - boolean value that is true if this MPI job was spawned by another set of MPI processes
-
   Return value:
   A MPI error class.
 E*/
