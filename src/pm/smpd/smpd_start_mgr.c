@@ -376,6 +376,8 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	}
 	if (result == 0)
 	{
+	    /* the child is not the root so clear the flag */
+	    smpd_process.root_smpd = SMPD_FALSE;
 	    /* I'm the child so handle a session and then exit */
 	    result = smpd_session(set, sock);
 	    if (result != SMPD_SUCCESS)
