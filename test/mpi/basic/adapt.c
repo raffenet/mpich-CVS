@@ -836,7 +836,7 @@ skip_12_trial:
 			    }
 			}
 			j = ii % nrepeat012;
-			if (j == 0 && nrepeat012 > ii)
+			if (j == 0 && nrepeat012 >= ii)
 			    j = ii;
 			for (k=0; k < j; k++)
 			{
