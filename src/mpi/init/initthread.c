@@ -25,6 +25,16 @@
 
 /* Any internal routines can go here.  Make them static if possible */
 MPICH_PerProcess_t MPIR_Process = { MPICH_PRE_INIT }; /* all others are irelevant */
+
+/* The following is used to tell a debugger the location of the shared
+   library that the debugger can load in order to access information about
+   the parallel program, such as message queues */
+#ifdef HAVE_DEBUGGER_SUPPORT
+#ifdef MPICH_INFODLL_LOC
+char MPIR_dll_name[] = MPICH_INFODLL_LOC;
+#endif
+#endif
+
 #ifdef MPICH_SINGLE_THREADED
 /* If single threaded, we preallocate this.  Otherwise, we create it */
 MPICH_PerThread_t  MPIR_Thread;
