@@ -894,6 +894,9 @@
 				RelativePath="src\mpi\romio\adio\common\ad_open.c">
 			</File>
 			<File
+				RelativePath=".\src\mpi\romio\adio\common\ad_prealloc.c">
+			</File>
+			<File
 				RelativePath="src\mpi\romio\adio\common\ad_read_coll.c">
 			</File>
 			<File
@@ -1881,9 +1884,6 @@
 				RelativePath="src\mpi\datatype\get_elements.c">
 			</File>
 			<File
-				RelativePath="src\mpi\romio\mpi-io\get_errh.c">
-			</File>
-			<File
 				RelativePath="src\mpi\romio\mpi-io\get_extent.c">
 			</File>
 			<File
@@ -2572,9 +2572,6 @@
 			</File>
 			<File
 				RelativePath="src\mpi\romio\mpi-io\set_atom.c">
-			</File>
-			<File
-				RelativePath="src\mpi\romio\mpi-io\set_errh.c">
 			</File>
 			<File
 				RelativePath="src\mpi\romio\mpi-io\set_info.c">
