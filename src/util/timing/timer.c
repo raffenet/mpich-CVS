@@ -226,6 +226,7 @@ int MPIU_Timer_init(int rank, int size)
     MPIR_Describe_mpi_timer_states();
     MPIDU_Describe_timer_states();
     /* Insert Package_Describe_timer_states() here */
+    MPIDU_Segment_describe_timer_states();
 
     DLOG_EnableLogging(g_pDLOG);
     DLOG_SaveFirstTimestamp(g_pDLOG);

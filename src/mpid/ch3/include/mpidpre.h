@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #endif
 
+#include "segment_states.h"
 #include "mpid_dataloop.h"
 struct MPID_Datatype;
 

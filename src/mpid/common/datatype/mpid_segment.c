@@ -192,7 +192,10 @@ void MPID_Segment_pack(struct DLOOP_Segment *segp,
 		       void *pack_buffer)
 {
     struct MPID_Segment_piece_params pack_params;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_PACK);
     
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_PACK);
+
     pack_params.u.pack.pack_buffer = pack_buffer;
     MPID_Segment_manipulate(segp,
 			    first,
@@ -200,6 +203,8 @@ void MPID_Segment_pack(struct DLOOP_Segment *segp,
 			    MPID_Segment_contig_pack_to_buf, 
 			    MPID_Segment_vector_pack_to_buf,
 			    &pack_params);
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_PACK);
     return;
 }
 
@@ -212,6 +217,9 @@ void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
 			      DLOOP_Offset *lengthp)
 {
     struct MPID_Segment_piece_params packvec_params;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_PACK_VECTOR);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_PACK_VECTOR);
 
     packvec_params.u.pack_vector.vectorp = vectorp;
     packvec_params.u.pack_vector.index   = 0;
@@ -228,6 +236,7 @@ void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
 
     /* last value already handled by MPID_Segment_manipulate */
     *lengthp = packvec_params.u.pack_vector.index;
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_PACK_VECTOR);
     return;
 }
 
@@ -249,6 +258,9 @@ void MPID_Segment_flatten(struct DLOOP_Segment *segp,
 			  DLOOP_Offset *lengthp)
 {
     struct MPID_Segment_piece_params packvec_params;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_FLATTEN);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_FLATTEN);
 
     packvec_params.u.flatten.offp = (int64_t *) offp;
     packvec_params.u.flatten.sizep = sizep;
@@ -266,6 +278,7 @@ void MPID_Segment_flatten(struct DLOOP_Segment *segp,
 
     /* last value already handled by MPID_Segment_manipulate */
     *lengthp = packvec_params.u.flatten.index;
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_FLATTEN);
     return;
 }
 
@@ -280,6 +293,9 @@ void MPID_Segment_count_contig_blocks(struct DLOOP_Segment *segp,
 				      DLOOP_Offset *countp)
 {
     struct MPID_Segment_piece_params packvec_params;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_COUNT_CONTIG_BLOCKS);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_COUNT_CONTIG_BLOCKS);
 
     packvec_params.u.contig_blocks.last_loc = NULL;
     packvec_params.u.contig_blocks.count    = 0;
@@ -292,6 +308,7 @@ void MPID_Segment_count_contig_blocks(struct DLOOP_Segment *segp,
 			    &packvec_params);
 
     *countp = packvec_params.u.contig_blocks.count;
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_COUNT_CONTIG_BLOCKS);
 }
 
 /* Segment_unpack
@@ -302,7 +319,10 @@ void MPID_Segment_unpack(struct DLOOP_Segment *segp,
 			 const DLOOP_Buffer unpack_buffer)
 {
     struct MPID_Segment_piece_params unpack_params;
-    
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_UNPACK);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_UNPACK);
+
     unpack_params.u.unpack.unpack_buffer = (DLOOP_Buffer) unpack_buffer;
     MPID_Segment_manipulate(segp,
 			    first,
@@ -310,6 +330,8 @@ void MPID_Segment_unpack(struct DLOOP_Segment *segp,
 			    MPID_Segment_contig_unpack_to_buf,
 			    MPID_Segment_vector_unpack_to_buf,
 			    &unpack_params);
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_UNPACK);
     return;
 }
 
@@ -329,6 +351,9 @@ static int MPID_Segment_vector_pack_to_iov(int *blocks_p,
 {
     int i, size, blocks_left;
     struct MPID_Segment_piece_params *paramp = v_paramp;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_VECTOR_PACK_TO_IOV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_VECTOR_PACK_TO_IOV);
 
     blocks_left = *blocks_p;
 
@@ -358,6 +383,7 @@ static int MPID_Segment_vector_pack_to_iov(int *blocks_p,
 	    if (paramp->u.pack_vector.index == paramp->u.pack_vector.length) {
 		/* TODO: FIX SO THAT WE CONTINUE TO DO AGGREGATION ON LAST VECTOR */
 		*blocks_p -= blocks_left;
+		MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_VECTOR_PACK_TO_IOV);
 		return 1;
 	    }
 	}
@@ -366,6 +392,7 @@ static int MPID_Segment_vector_pack_to_iov(int *blocks_p,
 
     }
     assert(blocks_left == 0);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_VECTOR_PACK_TO_IOV);
     return 0;
 }
 
@@ -390,6 +417,9 @@ static int MPID_Segment_vector_flatten(int *blocks_p,
 {
     int i, size, blocks_left;
     struct MPID_Segment_piece_params *paramp = v_paramp;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_VECTOR_FLATTEN);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_VECTOR_FLATTEN);
 
     blocks_left = *blocks_p;
 
@@ -421,12 +451,14 @@ static int MPID_Segment_vector_flatten(int *blocks_p,
 	else {
 	    /* we tried to add to the end of the last region and failed; add blocks back in */
 	    *blocks_p = *blocks_p - blocks_left + (size / basic_size);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_VECTOR_FLATTEN);
 	    return 1;
 	}
 	rel_off += stride;
 
     }
     assert(blocks_left == 0);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_VECTOR_FLATTEN);
     return 0;
 }
 
@@ -440,6 +472,9 @@ static int MPID_Segment_contig_pack_to_iov(int *blocks_p,
 {
     int size;
     struct MPID_Segment_piece_params *paramp = v_paramp;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_CONTIG_PACK_TO_IOV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_CONTIG_PACK_TO_IOV);
 
     size = *blocks_p * el_size;
 
@@ -464,8 +499,13 @@ static int MPID_Segment_contig_pack_to_iov(int *blocks_p,
 	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_LEN = size;
 	paramp->u.pack_vector.index++;
 	/* check to see if we have used our entire vector buffer, and if so return 1 to stop processing */
-	if (paramp->u.pack_vector.index == paramp->u.pack_vector.length) return 1;
+	if (paramp->u.pack_vector.index == paramp->u.pack_vector.length)
+	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_CONTIG_PACK_TO_IOV);
+	    return 1;
+	}
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_CONTIG_PACK_TO_IOV);
     return 0;
 }
 
@@ -479,6 +519,9 @@ static int MPID_Segment_contig_flatten(int *blocks_p,
 {
     int size, index;
     struct MPID_Segment_piece_params *paramp = v_paramp;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_CONTIG_FLATTEN);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_CONTIG_FLATTEN);
 
     size = *blocks_p * el_size;
     index = paramp->u.flatten.index;
@@ -504,8 +547,13 @@ static int MPID_Segment_contig_flatten(int *blocks_p,
 
 	paramp->u.flatten.index++;
 	/* check to see if we have used our entire vector buffer, and if so return 1 to stop processing */
-	if (paramp->u.flatten.index == paramp->u.flatten.length) return 1;
+	if (paramp->u.flatten.index == paramp->u.flatten.length)
+	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_CONTIG_FLATTEN);
+	    return 1;
+	}
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_CONTIG_FLATTEN);
     return 0;
 }
 
@@ -519,6 +567,9 @@ static int MPID_Segment_contig_count_block(int *blocks_p,
 {
     int size;
     struct MPID_Segment_piece_params *paramp = v_paramp;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_CONTIG_COUNT_BLOCK);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_CONTIG_COUNT_BLOCK);
 
     size = *blocks_p * el_size;
 
@@ -539,6 +590,7 @@ static int MPID_Segment_contig_count_block(int *blocks_p,
 	paramp->u.contig_blocks.last_loc = (char *) bufp + rel_off + size;
 	paramp->u.contig_blocks.count++;
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_CONTIG_COUNT_BLOCK);
     return 0;
 }
 
@@ -552,7 +604,10 @@ void MPID_Segment_unpack_vector(struct DLOOP_Segment *segp,
 				DLOOP_VECTOR *vectorp,
 				DLOOP_Offset *lengthp)
 {
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_UNPACK_VECTOR);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_UNPACK_VECTOR);
     MPID_Segment_pack_vector(segp, first, lastp, vectorp, lengthp);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_UNPACK_VECTOR);
     return;
 }
 
@@ -573,6 +628,9 @@ static int MPID_Segment_vector_unpack_to_buf(int *blocks_p,
     int i, blocks_left, whole_count;
     char *cbufp = (char *) bufp + rel_off;
     struct MPID_Segment_piece_params *paramp = v_paramp;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_VECTOR_UNPACK_TO_BUF);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_VECTOR_UNPACK_TO_BUF);
 
     whole_count = *blocks_p / blksz;
     blocks_left = *blocks_p % blksz;
@@ -596,6 +654,7 @@ static int MPID_Segment_vector_unpack_to_buf(int *blocks_p,
 	    paramp->u.unpack.unpack_buffer += blocks_left * basic_size;
 	}
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_VECTOR_UNPACK_TO_BUF);
     return 0;
 }
 
@@ -609,6 +668,9 @@ static int MPID_Segment_contig_unpack_to_buf(int *blocks_p,
 {
     int size;
     struct MPID_Segment_piece_params *paramp = v_paramp;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_CONTIG_UNPACK_TO_BUF);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_CONTIG_UNPACK_TO_BUF);
 
     size = *blocks_p * el_size;
 
@@ -619,6 +681,7 @@ static int MPID_Segment_contig_unpack_to_buf(int *blocks_p,
     
     memcpy((char *) bufp + rel_off, paramp->u.unpack.unpack_buffer, size);
     paramp->u.unpack.unpack_buffer += size;
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_CONTIG_UNPACK_TO_BUF);
     return 0;
 }
 
@@ -640,6 +703,9 @@ static int MPID_Segment_vector_pack_to_buf(int *blocks_p,
     int i, blocks_left, whole_count;
     char *cbufp = (char *) bufp + rel_off;
     struct MPID_Segment_piece_params *paramp = v_paramp;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_VECTOR_PACK_TO_BUF);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_VECTOR_PACK_TO_BUF);
 
     whole_count = *blocks_p / blksz;
     blocks_left = *blocks_p % blksz;
@@ -663,6 +729,7 @@ static int MPID_Segment_vector_pack_to_buf(int *blocks_p,
 	    paramp->u.pack.pack_buffer += blocks_left * basic_size;
 	}
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_VECTOR_PACK_TO_BUF);
     return 0;
 }
 
@@ -677,6 +744,9 @@ static int MPID_Segment_contig_pack_to_buf(int *blocks_p,
 {
     int size;
     struct MPID_Segment_piece_params *paramp = v_paramp;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_CONTIG_PACK_TO_BUF);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_CONTIG_PACK_TO_BUF);
 
     size = *blocks_p * el_size;
 
@@ -697,6 +767,8 @@ static int MPID_Segment_contig_pack_to_buf(int *blocks_p,
 
     memcpy(paramp->u.pack.pack_buffer, (char *) bufp + rel_off, size);
     paramp->u.pack.pack_buffer += size;
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_CONTIG_PACK_TO_BUF);
     return 0;
 }
 
