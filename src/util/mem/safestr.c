@@ -43,3 +43,21 @@ int MPIU_Strncpy( char *dest, const char *src, size_t n )
 	   debugging version */
 	return 1;
 }
+
+#ifndef HAVE_STRDUP
+#ifdef MPIU_Strdup
+#undef MPIU_Strdup
+#endif
+char *MPIU_Strdup( const char *str )
+{
+    char *p = MPIU_Malloc( strlen(str) + 1 );
+    char *in_p = (char *)str;
+
+    if (!p) {
+	while (*in_p) {
+	    *p++ = *in_p++;
+	}
+    }
+    return p;
+}
+#endif
