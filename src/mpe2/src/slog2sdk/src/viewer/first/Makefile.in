@@ -55,7 +55,7 @@ $(TARGET): $(OBJ)
 	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
 	done ; \
 	$(JAR) uvf $${jarfile} images/*.gif images/checkbox/*.gif \
-	           html/*.html applet.html
+	           html/* applet.html
 
 $(TS_TARGET): $(OBJ)
 	cd $(CLASSDIR) ; \

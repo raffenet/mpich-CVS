@@ -30,7 +30,7 @@ public class FirstPanel extends JPanel
                                           + "bug-reports/questions:\n"
                                           + "            chan@mcs.anl.gov";
     private static String       manual_path      = Const.DOC_PATH
-                                                 + "manual_index.html";
+                                                 + "usersguide.html";
     private static String       faq_path         = Const.DOC_PATH
                                                  + "faq_index.html";
     private static String       js_icon_path     = Const.IMG_PATH
