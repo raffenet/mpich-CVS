@@ -7,7 +7,7 @@
 
 int shm_can_connect(char *business_card)
 {
-    if (stricmp(business_card, SHM_Process.host))
+    if (strncmp(business_card, SHM_Process.host, 100))
 	return TRUE;
     return FALSE;
 }
