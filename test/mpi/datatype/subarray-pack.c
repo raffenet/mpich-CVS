@@ -1,5 +1,4 @@
 #include "mpi.h"
-#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,7 +71,7 @@ int main(int argc, char **argv)
 	fprintf(stderr, "Found %d errors\n", errs);
     }
     else {
-	printf(" No errors\n");
+	printf(" No Errors\n");
     }
     MPI_Finalize();
     return 0;
@@ -721,6 +720,7 @@ static int pack_and_unpack(char *typebuf,
 
 static int parse_args(int argc, char **argv)
 {
+    /*
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)
@@ -731,6 +731,9 @@ static int parse_args(int argc, char **argv)
 		break;
 	}
     }
+    */
+    if (argc > 1 && strcmp(argv[1], "-v") == 0)
+	verbose = 1;
     return 0;
 }
 
