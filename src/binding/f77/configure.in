@@ -583,6 +583,10 @@ AC_SUBST(MPI_LB)
 AC_SUBST(MPI_UB)
 
 # We must convert all hex values to decimal (!)
+# It would be nice to use expr to extract the next character rather than
+# the heavier-weight sed, but expr under Tru64 Unix discards leading zeros,
+# even when used only with the match (:) command.  Rather than have configure
+# figure out if expr works, we just use sed.  Sigh.
 for var in CHARACTER INTEGER REAL LOGICAL DOUBLE_PRECISION COMPLEX \
     DOUBLE_COMPLEX 2INTEGER 2REAL 2COMPLEX 2DOUBLE_PRECISION 2DOUBLE_COMPLEX \
     PACKED UB LB ; do  
@@ -590,13 +594,14 @@ for var in CHARACTER INTEGER REAL LOGICAL DOUBLE_PRECISION COMPLEX \
     eval fullvarvalue=\$$fullvar
     #echo "$fullvar = $fullvarvalue"
     value=0
-    # expr substr is not universal, so we use the : form instead
-    fullvarvalue=`expr $fullvarvalue : '..\(.*\)'`
+    fullvarvalue=`echo $fullvarvalue | sed -e 's/..\(.*\)/\1/'`
     for pos in 3 4 5 6 7 8 9 10 ; do
+        # This works, even for Tru64, because only a single character
+	# is extracted
         char=`expr $fullvarvalue : '\(.\)'`
 	# FIXME: Tru64 Unix eliminates leading zeros (!)
 	# How do we fix something that broken?
-	fullvarvalue=`expr $fullvarvalue : '.\(.*\)'`
+	fullvarvalue=`echo $fullvarvalue | sed -e 's/.\(.*\)/\1/'`
         case $char in 
             a) char=10 ;;
 	    b) char=11 ;;
@@ -711,12 +716,12 @@ for var in INTEGER1 INTEGER2 INTEGER4 INTEGER8 INTEGER16 \
     fi
     #echo "$fullvar = $fullvarvalue"
     value=0
-    # expr substr is not universal, so we use the : form instead
-    fullvarvalue=`expr $fullvarvalue : '..\(.*\)'`
+    # See the comments above on why expr with : cannot be used here
+    fullvarvalue=`echo $fullvarvalue | sed -e 's/..\(.*\)/\1/'`
     for pos in 3 4 5 6 7 8 9 10 ; do
         #char=`expr substr $fullvarvalue $pos 1`
         char=`expr $fullvarvalue : '\(.\)'`
-	fullvarvalue=`expr $fullvarvalue : '.\(.*\)'`
+	fullvarvalue=`echo $fullvarvalue | sed -e 's/.\(.*\)/\1/'`
         case $char in 
             a) char=10 ;;
 	    b) char=11 ;;
