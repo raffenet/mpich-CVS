@@ -330,7 +330,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	    count++;
 	    iter = iter->ssm.shm_next_writer;
 	}
-	if (count > MPIDI_CH3I_Process.num_cpus)
+	if (count >= MPIDI_CH3I_Process.num_cpus)
 	    MPIDI_CH3I_Process.pg->nShmWaitSpinCount = 1;
 
 	vc->ssm.state = MPIDI_CH3I_VC_STATE_CONNECTED;
