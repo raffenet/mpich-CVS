@@ -142,14 +142,37 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
 	    *attr_val_p = &attr_copy.wtime_is_global;
 	    break;
 	case 9: /* UNIVERSE_SIZE */
-	    /* This is a special case.  If universe is negative, we
-	       take that as indicating no value of UNIVERSE_SIZE,
-	       and set the flag accordingly */
-	    if (attr_copy.universe < 0) {
+	    /* This is a special case.  If universe is not set, then we
+	       attempt to get it from the device.  If the device is doesn't
+	       supply a value, then we set the flag accordingly */
+	    if (attr_copy.universe >= 0)
+	    { 
+		*attr_val_p = &attr_copy.universe;
+	    }
+	    else if (attr_copy.universe == MPIR_UNIVERSE_SIZE_NOT_AVAILABLE)
+	    {
 		*flag = 0;
 	    }
-	    else {
-		*attr_val_p = &attr_copy.universe;
+	    else
+	    {
+		mpi_errno = MPID_Get_universe_size(&attr_copy.universe);
+		/* --BEGIN ERROR HANDLING-- */
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    attr_copy.universe = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
+		    goto fn_fail;
+		}
+		/* --END ERROR HANDLING-- */
+		
+		if (attr_copy.universe >= 0)
+		{
+		    *attr_val_p = &attr_copy.universe;
+		}
+		else
+		{
+		    attr_copy.universe = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
+		    *flag = 0;
+		}
 	    }
 	    break;
 	case 11: /* LASTUSEDCODE */
@@ -180,11 +203,37 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
 	    *attr_int = attr_copy.wtime_is_global;
 	    break;
 	case 10: /* UNIVERSE_SIZE */
-	    if (attr_copy.universe < 0) {
+	    /* This is a special case.  If universe is not set, then we
+	       attempt to get it from the device.  If the device is doesn't
+	       supply a value, then we set the flag accordingly */
+	    if (attr_copy.universe >= 0)
+	    { 
+		*attr_int = attr_copy.universe;
+	    }
+	    else if (attr_copy.universe == MPIR_UNIVERSE_SIZE_NOT_AVAILABLE)
+	    {
 		*flag = 0;
 	    }
-	    else {
-		*attr_int = attr_copy.universe;
+	    else
+	    {
+		mpi_errno = MPID_Get_universe_size(&attr_copy.universe);
+		/* --BEGIN ERROR HANDLING-- */
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    attr_copy.universe = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
+		    goto fn_fail;
+		}
+		/* --END ERROR HANDLING-- */
+		
+		if (attr_copy.universe >= 0)
+		{
+		    *attr_int = attr_copy.universe;
+		}
+		else
+		{
+		    attr_copy.universe = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
+		    *flag = 0;
+		}
 	    }
 	    break;
 	case 12: /* LASTUSEDCODE */

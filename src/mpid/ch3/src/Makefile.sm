@@ -17,6 +17,7 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpid_comm_disconnect.c	\
     mpid_comm_spawn_multiple.c	\
     mpid_finalize.c		\
+    mpid_get_universe_size.c	\
     mpid_getpname.c		\
     mpid_init.c			\
     mpid_iprobe.c		\

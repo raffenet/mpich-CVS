@@ -88,20 +88,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	/* --END ERROR HANDLING-- */
     }
 
-    pmi_errno = PMI_Get_universe_size(&universe_size);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_universe_size",
-					 "**pmi_get_universe_size %d", pmi_errno);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
-    if (universe_size != -1)
-    {
-	MPIR_Process.attrs.universe = universe_size;
-    }
-
     pmi_errno = PMI_Get_appnum(&appnum);
     if (pmi_errno != PMI_SUCCESS)
     {

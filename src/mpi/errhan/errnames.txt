@@ -466,6 +466,7 @@ with MPI_Alloc_mem.
 **ch3|ctspkt:failure occurred while attempting to send CTS packet
 **ch3|eagermsg:failure occurred while attempting to send an eager message
 **ch3|flowcntlpkt:UNIMPLEMENTED: unable to handle flow control packets
+**ch3|get_universe_size_notimpl: MPIDI_CH3_Get_universe_size() is not implemented
 **ch3|loadrecviov %s:failure occurred while loading the receive I/O vector (%s)
 **ch3|loadrecviov:failure occurred while loading the receive I/O vector
 **ch3|loadsendiov:failure occurred while loading the send I/O vector

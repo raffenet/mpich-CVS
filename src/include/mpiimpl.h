@@ -3166,6 +3166,21 @@ int MPID_Get_processor_name( char *name, int *resultlen);
 
 void MPID_Errhandler_free(MPID_Errhandler *errhan_ptr);
 
+/*@
+  MPID_Get_universe_size - Return the number of processes that the current
+  process management environment can handle
+
+  Output Parameters:
+. universe_size - the universe size; MPIR_UNIVERSE_SIZE_NOT_AVAILABLE if the
+  size cannot be determined
+  
+  Return value:
+  A MPI error code.
+@*/
+int MPID_Get_universe_size(int  * universe_size);
+
+#define MPIR_UNIVERSE_SIZE_NOT_SET -1
+#define MPIR_UNIVERSE_SIZE_NOT_AVAILABLE -2
 
 /*
  * FIXME: VCs should not be exposed to the top layer, which implies that these routines should not be exposed either.  Instead,

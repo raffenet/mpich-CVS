@@ -7,6 +7,7 @@ lib${MPILIBNAME}_a_SOURCES =			\
     ch3_comm_spawn_multiple.c			\
     ch3_finalize.c				\
     ch3_get_parent_port.c			\
+    ch3_get_universe_size.c			\
     ch3_init.c					\
     ch3_isend.c					\
     ch3_isendv.c				\

@@ -340,7 +340,17 @@ E*/
 void MPIDI_CH3_Progress_signal_completion(void);
 
 
-/* int MPIDI_CH3_Comm_spawn(const char *, const char *[], const int , MPI_Info, const int, MPID_Comm *, MPID_Comm *, int []); */
+/*@
+  MPIDI_CH3_Get_universe_size - Return the number of processes that the current process management environment can handle
+
+  Output Parameters:
+. universe_size - the universe size; MPIR_UNIVERSE_SIZE_NOT_AVAILABLE if the size cannot be determined
+  
+  Return value:
+  A MPI error code.
+@*/
+int MPIDI_CH3_Get_universe_size(int  * universe_size);
+
 
 int MPIDI_CH3_Open_port(char *port_name);
 
