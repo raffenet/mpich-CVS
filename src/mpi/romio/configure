@@ -1228,6 +1228,7 @@ echo "$ac_t""yes"
 else
 echo "$ac_t""yes" 1>&1
 fi
+     ROMIO_HAVE_MOUNT_NFS=1
      
 {
 test -n "$verbose" && \
@@ -1241,6 +1242,7 @@ SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_MOUNT_NFS\${SEDdB}HAVE_MOUNT_NFS\${SEDdC}1\${SE
 }
 
   else
+     ROMIO_HAVE_MOUNT_NFS=0
      if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""no"
 else
@@ -1249,6 +1251,83 @@ fi
   fi
   rm -f conftest conftest.c
 
+       if test "$ROMIO_HAVE_MOUNT_NFS" = "1"; then
+       		if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking struct statfs.f_fstypename""... $ac_c"
+else
+echo $ac_n "checking struct statfs.f_fstypename""... $ac_c" 1>&1
+fi
+		echo checking for 
+			#include <sys/param.h>
+			#include <string.h>
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+			struct statfs f;
+			memset(&f, 0, sizeof(f));
+			strncmp("nfs", f.f_fstypename, 3);
+		
+{
+test -n "$verbose" && \
+echo "	defining" ROMIO_HAVE_STATFS_F_FSTYPENAME to be 1
+echo "#define" ROMIO_HAVE_STATFS_F_FSTYPENAME 1 >> confdefs.h
+DEFS="$DEFS -DROMIO_HAVE_STATFS_F_FSTYPENAME=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}ROMIO_HAVE_STATFS_F_FSTYPENAME\${SEDdB}ROMIO_HAVE_STATFS_F_FSTYPENAME\${SEDdC}1\${SEDdD}
+\${SEDuA}ROMIO_HAVE_STATFS_F_FSTYPENAME\${SEDuB}ROMIO_HAVE_STATFS_F_FSTYPENAME\${SEDuC}1\${SEDuD}
+\${SEDeA}ROMIO_HAVE_STATFS_F_FSTYPENAME\${SEDeB}ROMIO_HAVE_STATFS_F_FSTYPENAME\${SEDeC}1\${SEDeD}
+"
+}
+
+		if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""yes"
+else
+echo "$ac_t""yes" 1>&1
+fi
+int main() { exit(0); }
+int t() { 
+{
+test -n "$verbose" && \
+echo "	defining" ROMIO_HAVE_STATFS_F_FSTYPENAME to be 0
+echo "#define" ROMIO_HAVE_STATFS_F_FSTYPENAME 0 >> confdefs.h
+DEFS="$DEFS -DROMIO_HAVE_STATFS_F_FSTYPENAME=0"
+SEDDEFS="${SEDDEFS}\${SEDdA}ROMIO_HAVE_STATFS_F_FSTYPENAME\${SEDdB}ROMIO_HAVE_STATFS_F_FSTYPENAME\${SEDdC}0\${SEDdD}
+\${SEDuA}ROMIO_HAVE_STATFS_F_FSTYPENAME\${SEDuB}ROMIO_HAVE_STATFS_F_FSTYPENAME\${SEDuC}0\${SEDuD}
+\${SEDeA}ROMIO_HAVE_STATFS_F_FSTYPENAME\${SEDeB}ROMIO_HAVE_STATFS_F_FSTYPENAME\${SEDeC}0\${SEDeD}
+"
+}
+;
+		if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""no"
+else
+echo "$ac_t""no" 1>&1
+fi  }
+EOF
+if eval $compile; then
+  :
+fi
+rm -f conftest*
+
+       fi
        longlongsize=${longlongsize:-0}
 # printf doesn't work properly and no integer*8 as far as I can tell
     else 
@@ -1667,7 +1746,7 @@ if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
     CC=${CC:-cc}
     F77=${FC:-f77}
     if test $DEBUG = "yes"; then
-                CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose"
+                CFLAGS="$CFLAGS -g -verbose"
     else 
                 CFLAGS="$CFLAGS -O"
     fi
@@ -4404,6 +4483,18 @@ DEFS="$DEFS -DMPILAM=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}MPILAM\${SEDdB}MPILAM\${SEDdC}1\${SEDdD}
 \${SEDuA}MPILAM\${SEDuB}MPILAM\${SEDuC}1\${SEDuD}
 \${SEDeA}MPILAM\${SEDeB}MPILAM\${SEDeC}1\${SEDeD}
+"
+}
+
+   
+{
+test -n "$verbose" && \
+echo "	defining HAVE_STATUS_SET_BYTES"
+echo "#define" HAVE_STATUS_SET_BYTES 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_STATUS_SET_BYTES=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_STATUS_SET_BYTES\${SEDdB}HAVE_STATUS_SET_BYTES\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_STATUS_SET_BYTES\${SEDuB}HAVE_STATUS_SET_BYTES\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_STATUS_SET_BYTES\${SEDeB}HAVE_STATUS_SET_BYTES\${SEDeC}1\${SEDeD}
 "
 }
 
