@@ -43,8 +43,8 @@
 #define IDEAL_MIN_Y_VALUE -1.0
 #define MAX_WIDTH 2048       /* maximum size of image, across, in pixels */
 #define MAX_HEIGHT 2048      /* maximum size of image, down, in pixels */
-#define IDEAL_WIDTH 768       /* my favorite size of image, across, in pixels */
-#define IDEAL_HEIGHT 768      /* my favorite size of image, down, in pixels */
+#define IDEAL_WIDTH 760       /* my favorite size of image, across, in pixels */
+#define IDEAL_HEIGHT 760      /* my favorite size of image, down, in pixels */
 
 #define RGBtocolor_t(r,g,b) ((color_t)(((unsigned char)(r)|((unsigned short)((unsigned char)(g))<<8))|(((unsigned long)(unsigned char)(b))<<16)))
 #define getR(r) ((int)((r) & 0xFF))
