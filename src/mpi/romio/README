@@ -1,10 +1,34 @@
           ROMIO: A High-Performance, Portable MPI-IO Implementation
 
-                      Version 1.0.3 beta, March 2000
+                      Version 1.0.3 beta, July 2000
 
 
 Major Changes in This Version:
 -----------------------------
+
+* When used with MPICH 1.2.1, the MPI-IO functions return proper error codes 
+  and classes, and the status object is filled in.
+
+* On SGI's XFS file system, ROMIO can use direct I/O even if the user's request 
+  does not meet the various restrictions needed to use direct I/O. ROMIO does
+  this by doing part of the request with buffered I/O (until all the restrictions 
+  are met) and doing the rest with direct I/O. This feature hasn't been tested
+  rigorously. Please check for errors.
+
+  By default, ROMIO will use only buffered I/O. Direct I/O can be enabled either 
+  by setting the environment variables MPIO_DIRECT_READ and/or MPIO_DIRECT_WRITE
+  to TRUE, or on a per-file basis by using the info keys "direct_read" and 
+  "direct_write". 
+
+  Direct I/O will result in higher performance only if you are accessing a 
+  high-bandwidth disk system. Otherwise, buffered I/O is better, and is therefore
+  used as the default.
+
+* Miscellaneous bug fixes.
+
+
+Major Changes Version 1.0.2:
+---------------------------
 
 * Implemented the shared file pointer functions (Section 9.4.4 of MPI-2) and 
   split collective I/O functions (Section 9.4.5). Therefore, the main
