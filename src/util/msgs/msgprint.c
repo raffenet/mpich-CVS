@@ -55,3 +55,47 @@ int MPIU_Error_printf(char *str, ...)
     return n;
 }
 
+int MPIU_Internal_error_printf(char *str, ...)
+{
+    int n;
+    va_list list;
+    char *format_str;
+
+    va_start(list, str);
+#ifdef USE_GETTEXT
+    /* Category is LC_MESSAGES */
+    format_str = dgettext( "mpich", str );
+    if (!format_str) format_str = str;
+#else
+    format_str = str;
+#endif
+    n = vfprintf(stderr, format_str, list);
+    va_end(list);
+
+    fflush(stderr);
+
+    return n;
+}
+
+int MPIU_Msg_printf(char *str, ...)
+{
+    int n;
+    va_list list;
+    char *format_str;
+
+    va_start(list, str);
+#ifdef USE_GETTEXT
+    /* Category is LC_MESSAGES */
+    format_str = dgettext( "mpich", str );
+    if (!format_str) format_str = str;
+#else
+    format_str = str;
+#endif
+    n = vfprintf(stdout, format_str, list);
+    va_end(list);
+
+    fflush(stderr);
+
+    return n;
+}
+
