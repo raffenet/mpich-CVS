@@ -51,6 +51,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ch3rdmatp", "src\mpid\ch3\c
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpich2f", "src\binding\f77\mpich2f.vcproj", "{D45A7472-5ECD-481D-A26D-98D88ED44305}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		ch3rdmaDebug = ch3rdmaDebug
@@ -362,6 +366,22 @@ Global
 		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0D}.Release.ActiveCfg = ch3rdmatpRelease|Win32
 		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0D}.shmDebug.ActiveCfg = ch3rdmatpRelease|Win32
 		{B50F53CE-A0E1-4849-A24F-4E9E3860DF0D}.shmRelease.ActiveCfg = ch3rdmatpRelease|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.ch3rdmaDebug.ActiveCfg = Debug|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.ch3rdmaRelease.ActiveCfg = Release|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.ch3rdmatpDebug.ActiveCfg = Debug|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.ch3rdmatpRelease.ActiveCfg = Release|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.ch3sockDebug.ActiveCfg = Debug|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.ch3sockPRelease.ActiveCfg = Release|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.ch3sockRelease.ActiveCfg = Release|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.ch3ssmDebug.ActiveCfg = Debug|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.ch3ssmPDebug.ActiveCfg = Debug|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.ch3ssmRelease.ActiveCfg = Release|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.Debug.ActiveCfg = Debug|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.mmDebug.ActiveCfg = Debug|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.mmRelease.ActiveCfg = Release|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.Release.ActiveCfg = Release|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.shmDebug.ActiveCfg = Debug|Win32
+		{D45A7472-5ECD-481D-A26D-98D88ED44305}.shmRelease.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
