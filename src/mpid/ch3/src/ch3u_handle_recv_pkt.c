@@ -671,35 +671,26 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
             iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;
             iov[0].MPID_IOV_LEN = sizeof(*get_resp_pkt);
 
+            req = MPID_Request_create();
+            MPIU_Object_set_ref(req, 1);
+            req->kind = MPID_REQUEST_SEND;
+            MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_GET_RESP); 
+            req->ch3.decr_ctr = get_pkt->decr_ctr;
+
             if (HANDLE_GET_KIND(get_pkt->datatype) == HANDLE_KIND_BUILTIN) {
                 iov[1].MPID_IOV_BUF = get_pkt->addr;
                 MPID_Datatype_get_size_macro(get_pkt->datatype, type_size);
                 iov[1].MPID_IOV_LEN = get_pkt->count * type_size;
 	    
-                mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, 2, &req);
+                req->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+
+                mpi_errno = MPIDI_CH3_iSendv(vc, req, iov, 2);
                 if (mpi_errno != MPI_SUCCESS)
                 {
+                    MPIU_Object_set_ref(req, 0);
+                    MPIDI_CH3_Request_destroy(req);
                     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rmamsg", 0);
                     return mpi_errno;
-                }
-                if (req != NULL) {
-                    /* operation not complete. */
-                    MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_GET_RESP); 
-                    req->ch3.decr_ctr = get_pkt->decr_ctr;
-                    /* FIXME: MT: In the multithreaded case, there is a
-                       potential race condition here. The decr_ctr may
-                       get set after the request completed (and the
-                       completion action was called on the
-                       request). As a result the counter may never get
-                       decremented */
-                    MPID_Request_release(req);
-                }
-                else {
-                    /* operation complete. decrement counter */
-                    /* FIXME: MT: this has to be done atomically */
-                    if (get_pkt->decr_ctr != NULL)
-                        *(get_pkt->decr_ctr) -= 1;
-                    MPIDI_CH3_Progress_signal_completion();	
                 }
             }
             else {
@@ -720,8 +711,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
             req = get_resp_pkt->request;
 
             if (HANDLE_GET_KIND(req->ch3.datatype) == HANDLE_KIND_BUILTIN) {
-                MPID_Datatype_get_size_macro(req->ch3.datatype,
-                                             type_size);
+                MPID_Datatype_get_size_macro(req->ch3.datatype, type_size);
                 req->ch3.recv_data_sz = type_size * req->ch3.user_count;
             }
             else {

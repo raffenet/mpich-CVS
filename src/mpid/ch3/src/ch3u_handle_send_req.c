@@ -34,6 +34,14 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 	{
 	    /* mark data transfer as complete and decrement CC */
 	    sreq->ch3.iov_count = 0;
+
+            if (MPIDI_Request_get_type(sreq) == MPIDI_REQUEST_TYPE_GET_RESP) { 
+                /* atomically decrement RMA completion counter */
+                /* FIXME: MT: this has to be done atomically */
+                if (sreq->ch3.decr_ctr != NULL)
+                    *(sreq->ch3.decr_ctr) -= 1;
+            }
+
 	    MPIDI_CH3U_Request_complete(sreq);
 	    break;
 	}

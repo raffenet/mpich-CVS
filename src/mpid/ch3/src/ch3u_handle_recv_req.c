@@ -35,9 +35,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	    /* mark data transfer as complete and decrement CC */
 	    rreq->ch3.iov_count = 0;
             
-            if ((MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP)
-                  || (MPIDI_Request_get_type(rreq) ==
-                            MPIDI_REQUEST_TYPE_GET_RESP)) { 
+            if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP) { 
                 /* atomically decrement RMA completion counter */
                 /* FIXME: MT: this has to be done atomically */
                 if (rreq->ch3.decr_ctr != NULL)
