@@ -311,10 +311,6 @@ int CH3U_Describe_timer_states()
 		       "MPIDI_CH3I_IB_Post_read",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3I_IB_POST_WRITE,
-		       "MPIDI_CH3I_IB_Post_write",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_POST_PKT_RECV,
 		       "post_pkt_recv",
 		       get_random_color_str());

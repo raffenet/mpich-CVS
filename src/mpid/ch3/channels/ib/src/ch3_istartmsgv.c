@@ -6,39 +6,35 @@
 
 #include "mpidi_ch3_impl.h"
 
-static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offset, int nb)
-{
-    MPID_Request * sreq;
-    int i;
-    MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST);
-    
-    sreq = MPIDI_CH3_Request_create();
-    assert(sreq != NULL);
-    MPIU_Object_set_ref(sreq, 2);
-    sreq->kind = MPID_REQUEST_SEND;
-    
-    /* memcpy(sreq->ch3.iov, iov, iov_count * sizeof(MPID_IOV)); */
-    for (i = 0; i < iov_count; i++)
-    {
-	sreq->ch3.iov[i] = iov[i];
-    }
-    if (iov_offset == 0)
-    {
-	/* memcpy(&sreq->ib.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */
-	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));
-	sreq->ib.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
-	sreq->ch3.iov[0].MPID_IOV_BUF = (void*)&sreq->ib.pkt;
-    }
-    (char *) sreq->ch3.iov[iov_offset].MPID_IOV_BUF += nb;
-    sreq->ch3.iov[iov_offset].MPID_IOV_LEN -= nb;
-    sreq->ib.iov_offset = iov_offset;
-    sreq->ch3.iov_count = iov_count;
-    sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
-
-    MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST);
-    return sreq;
+/*static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offset, int nb)*/
+#undef create_request
+#define create_request(sreq, iov, count, offset, nb) \
+{ \
+    int i; \
+    MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST); \
+    MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST); \
+    sreq = MPIDI_CH3_Request_create(); \
+    assert(sreq != NULL); \
+    MPIU_Object_set_ref(sreq, 2); \
+    sreq->kind = MPID_REQUEST_SEND; \
+    /* memcpy(sreq->ch3.iov, iov, iov_count * sizeof(MPID_IOV)); */ \
+    for (i = 0; i < count; i++) \
+    { \
+	sreq->ch3.iov[i] = iov[i]; \
+    } \
+    if (offset == 0) \
+    { \
+	/* memcpy(&sreq->ib.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */ \
+	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t)); \
+	sreq->ib.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
+	sreq->ch3.iov[0].MPID_IOV_BUF = (void*)&sreq->ib.pkt; \
+    } \
+    (char *) sreq->ch3.iov[offset].MPID_IOV_BUF += nb; \
+    sreq->ch3.iov[offset].MPID_IOV_LEN -= nb; \
+    sreq->ib.iov_offset = offset; \
+    sreq->ch3.iov_count = count; \
+    sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE; \
+    MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
 }
 
 /*
@@ -91,10 +87,9 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	channel, thus insuring that the progress engine does also try to
 	write */
 
-	if (n_iov > 1)
-	    nb = ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL);
-	else
-	    nb = ibu_post_write(vc->ib.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, NULL);
+	nb = (n_iov > 1) ?
+	    ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL) :
+	    ibu_post_write(vc->ib.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, NULL);
 	
 	MPIU_DBG_PRINTF(("ch3_istartmsgv: ibu_post_writev returned %d bytes\n", nb));
 	if (nb > 0)
@@ -111,9 +106,9 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 		else
 		{
 		    MPIU_DBG_PRINTF(("ch3_istartmsgv: ibu_post_writev did not complete the send, allocating request\n"));
-		    sreq = create_request(iov, n_iov, offset, nb);
+		    create_request(sreq, iov, n_iov, offset, nb);
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    /*MPIDI_CH3I_IB_post_write(vc, sreq);*/ vc->ib.send_active = sreq;
+		    vc->ib.send_active = sreq;
 		    break;
 		}
 	    }
@@ -121,9 +116,9 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	else if (nb == 0)
 	{
 	    MPIU_DBG_PRINTF(("ch3_istartmsgv: this should be an error because the sendQ is empty but ibu_post_writev() returned 0 bytes.\n"));
-	    sreq = create_request(iov, n_iov, 0, 0);
+	    create_request(sreq, iov, n_iov, 0, 0);
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-	    /*MPIDI_CH3I_IB_post_write(vc, sreq);*/ vc->ib.send_active = sreq;
+	    vc->ib.send_active = sreq;
 	}
 	else
 	{
@@ -137,7 +132,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
     }
     else
     {
-	sreq = create_request(iov, n_iov, 0, 0);
+	create_request(sreq, iov, n_iov, 0, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
     

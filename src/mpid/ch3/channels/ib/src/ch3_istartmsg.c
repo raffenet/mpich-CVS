@@ -6,28 +6,24 @@
 
 #include "mpidi_ch3_impl.h"
 
-static MPID_Request * create_request(void * hdr, int hdr_sz, int nb)
-{
-    MPID_Request * sreq;
-    MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST);
-
-    sreq = MPIDI_CH3_Request_create();
-    assert(sreq != NULL);
-    MPIU_Object_set_ref(sreq, 2);
-    sreq->kind = MPID_REQUEST_SEND;
-    /* memcpy(&sreq->ib.pkt, hdr, hdr_sz); */
-    assert(hdr_sz == sizeof(MPIDI_CH3_Pkt_t));
-    sreq->ib.pkt = *(MPIDI_CH3_Pkt_t *) hdr;
-    sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->ib.pkt + nb;
-    sreq->ch3.iov[0].MPID_IOV_LEN = hdr_sz - nb;
-    sreq->ch3.iov_count = 1;
-    sreq->ib.iov_offset = 0;
-    sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
-    
-    MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST);
-    return sreq;
+/*static MPID_Request * create_request(void * hdr, int hdr_sz, int nb)*/
+#undef create_request
+#define create_request(sreq, hdr, hdr_sz, nb) \
+{ \
+    MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST); \
+    MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST); \
+    sreq = MPIDI_CH3_Request_create(); \
+    assert(sreq != NULL); \
+    MPIU_Object_set_ref(sreq, 2); \
+    sreq->kind = MPID_REQUEST_SEND; \
+    assert(hdr_sz == sizeof(MPIDI_CH3_Pkt_t)); \
+    sreq->ib.pkt = *(MPIDI_CH3_Pkt_t *) hdr; \
+    sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->ib.pkt + nb; \
+    sreq->ch3.iov[0].MPID_IOV_LEN = hdr_sz - nb; \
+    sreq->ch3.iov_count = 1; \
+    sreq->ib.iov_offset = 0; \
+    sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE; \
+    MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
 }
 
 /*
@@ -78,9 +74,9 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME,
 		"send delayed, request enqueued"));
-	    sreq = create_request(hdr, hdr_sz, nb);
+	    create_request(sreq, hdr, hdr_sz, nb);
 	    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-	    /*MPIDI_CH3I_IB_post_write(vc, sreq);*/ vc->ib.send_active = sreq;
+	    vc->ib.send_active = sreq;
 	}
 	else
 	{
@@ -97,9 +93,8 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
     }
     else
     {
-	MPIDI_DBG_PRINTF((55, FCNAME,
-	    "send in progress, request enqueued"));
-	sreq = create_request(hdr, hdr_sz, 0);
+	MPIDI_DBG_PRINTF((55, FCNAME, "send in progress, request enqueued"));
+	create_request(sreq, hdr, hdr_sz, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
     
