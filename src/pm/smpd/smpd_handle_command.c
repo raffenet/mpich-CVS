@@ -510,6 +510,11 @@ int smpd_handle_result(smpd_context_t *context)
 			ret_val = SMPD_ABORT;
 		    }
 		}
+		else if (strcmp(iter->cmd_str, "spawn") == 0)
+		{
+		    smpd_dbg_printf("%s command result = %s\n", iter->cmd_str, str);
+		    ret_val = SMPD_DBS_RETURN;
+		}
 		else if (iter->cmd_str[0] == 'd' && iter->cmd_str[1] == 'b')
 		{
 		    smpd_dbg_printf("%s command result = %s\n", iter->cmd_str, str);
@@ -2430,6 +2435,10 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     char key[100], val[1024];
     char *iter1, *iter2;
     char maxprocs_str[1024], nkeyvals_str[1024], keyvals_str[1024];
+    smpd_launch_node_t *launch_list, *launch_iter, *launch_temp;
+    PMI_keyval_t *info;
+    char key_temp[SMPD_MAX_NAME_LENGTH], val_temp[SMPD_MAX_VALUE_LENGTH];
+    int cur_iproc;
 
     smpd_enter_fn("smpd_handle_spawn_command");
 
@@ -2475,25 +2484,6 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	return SMPD_FAIL;
     }
     printf("ncmds = %d\n", ncmds);fflush(stdout);
-    for (i=0; i<ncmds; i++)
-    {
-	sprintf(key, "cmd%d", i);
-	if (MPIU_Str_get_string_arg(cmd->cmd, key, node.exe, SMPD_MAX_EXE_LENGTH) != MPIU_STR_SUCCESS)
-	{
-	    smpd_err_printf("unable to get the %s parameter from the spawn command '%s'.\n", key, cmd->cmd);
-	    smpd_exit_fn("smpd_handle_spawn_command");
-	    return SMPD_FAIL;
-	}
-	printf("%s = %s\n", key, node.exe);fflush(stdout);
-	sprintf(key, "argv%d", i);
-	if (MPIU_Str_get_string_arg(cmd->cmd, key, node.args, SMPD_MAX_EXE_LENGTH) != MPIU_STR_SUCCESS)
-	{
-	    smpd_err_printf("unable to get the %s parameter from the spawn command '%s'.\n", key, cmd->cmd);
-	    smpd_exit_fn("smpd_handle_spawn_command");
-	    return SMPD_FAIL;
-	}
-	printf("%s = %s\n", key, node.args);fflush(stdout);
-    }
     if (MPIU_Str_get_string_arg(cmd->cmd, "maxprocs", maxprocs_str, 1024) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to get the maxrpocs parameter from the spawn command '%s'.\n", cmd->cmd);
@@ -2531,8 +2521,38 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	nkeyvals[i] = atoi(key);
 	printf("nkeyvals[%d] = %d\n", i, nkeyvals[i]);fflush(stdout);
     }
+    info = NULL;
+    launch_list = NULL;
+    launch_iter = NULL;
+    cur_iproc = 0;
     for (i=0; i<ncmds; i++)
     {
+	if (info != NULL)
+	{
+	    /* free the last round of infos */
+	    for (j=0; j<nkeyvals[i-1]; j++)
+	    {
+		free(info[j].key);
+		free(info[j].val);
+	    }
+	    free(info);
+	}
+	/* allocate some new infos */
+	if (nkeyvals[i] > 0)
+	{
+	    info = (PMI_keyval_t*)malloc(nkeyvals[i] * sizeof(PMI_keyval_t));
+	    if (info == NULL)
+	    {
+		smpd_err_printf("unable to allocate memory for the info keyvals (cmd %d, num_infos %d).\n", i, nkeyvals[i]);
+		smpd_exit_fn("smpd_handle_spawn_command");
+		return SMPD_FAIL;
+	    }
+	}
+	else
+	{
+	    info = NULL;
+	}
+	/* parse the keyvals into infos */
 	sprintf(key, "keyvals%d", i);
 	if (MPIU_Str_get_string_arg(cmd->cmd, key, keyvals_str, 1024) == MPIU_STR_SUCCESS)
 	{
@@ -2547,9 +2567,102 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		    return SMPD_FAIL;
 		}
 		printf("key %d = %s\n", j, val);fflush(stdout);
+		key_temp[0] = '\0';
+		val_temp[0] = '\0';
+		iter1 = val;
+		result = MPIU_Str_get_string(&iter1, key_temp, SMPD_MAX_NAME_LENGTH);
+		if (result != MPIU_STR_SUCCESS)
+		{
+		    smpd_err_printf("unable to parse the key from the %dth keyval pair in the %dth keyvals string.\n", j, i);
+		    smpd_exit_fn("smpd_handle_spawn_command");
+		    return SMPD_FAIL;
+		}
+		result = MPIU_Str_get_string(&iter1, val_temp, SMPD_MAX_VALUE_LENGTH); /* eat the '=' character */
+		if (result != MPIU_STR_SUCCESS)
+		{
+		    smpd_err_printf("unable to parse the key from the %dth keyval pair in the %dth keyvals string.\n", j, i);
+		    smpd_exit_fn("smpd_handle_spawn_command");
+		    return SMPD_FAIL;
+		}
+		result = MPIU_Str_get_string(&iter1, val_temp, SMPD_MAX_VALUE_LENGTH);
+		if (result != MPIU_STR_SUCCESS)
+		{
+		    smpd_err_printf("unable to parse the key from the %dth keyval pair in the %dth keyvals string.\n", j, i);
+		    smpd_exit_fn("smpd_handle_spawn_command");
+		    return SMPD_FAIL;
+		}
+		info[j].key = strdup(key_temp);
+		info[j].val = strdup(val_temp);
 	    }
 	}
+	/* get the current command */
+	sprintf(key, "cmd%d", i);
+	if (MPIU_Str_get_string_arg(cmd->cmd, key, node.exe, SMPD_MAX_EXE_LENGTH) != MPIU_STR_SUCCESS)
+	{
+	    smpd_err_printf("unable to get the %s parameter from the spawn command '%s'.\n", key, cmd->cmd);
+	    smpd_exit_fn("smpd_handle_spawn_command");
+	    return SMPD_FAIL;
+	}
+	printf("%s = %s\n", key, node.exe);fflush(stdout);
+	sprintf(key, "argv%d", i);
+	if (MPIU_Str_get_string_arg(cmd->cmd, key, node.args, SMPD_MAX_EXE_LENGTH) != MPIU_STR_SUCCESS)
+	{
+	    smpd_err_printf("unable to get the %s parameter from the spawn command '%s'.\n", key, cmd->cmd);
+	    smpd_exit_fn("smpd_handle_spawn_command");
+	    return SMPD_FAIL;
+	}
+	printf("%s = %s\n", key, node.args);fflush(stdout);
+	/* create launch nodes for the current command */
+	for (j=0; j<maxprocs[i]; j++)
+	{
+	    if (launch_list == NULL)
+	    {
+		launch_list = (smpd_launch_node_t*)malloc(sizeof(smpd_launch_node_t));
+		launch_iter = launch_list;
+		if (launch_iter)
+		{
+		    launch_iter->prev = NULL;
+		}
+	    }
+	    else
+	    {
+		launch_iter->next = (smpd_launch_node_t*)malloc(sizeof(smpd_launch_node_t));
+		if (launch_iter->next)
+		{
+		    launch_iter->next->prev = launch_iter;
+		    launch_iter = launch_iter->next;
+		}
+		else
+		{
+		    launch_iter = NULL;
+		}
+	    }
+	    if (launch_iter == NULL)
+	    {
+		smpd_err_printf("unable to allocate a launch node structure for the %dth command.\n", cur_iproc);
+		smpd_exit_fn("smpd_handle_spawn_command");
+		return SMPD_FAIL;
+	    }
+	    launch_iter->iproc = cur_iproc++;
+	    launch_iter->args[0] = '\0';
+	    launch_iter->clique[0] = '\0';
+	    launch_iter->dir[0] = '\0';
+	    launch_iter->env_data[0] = '\0';
+	    launch_iter->env = launch_iter->env_data;
+	    launch_iter->exe[0] = '\0';
+	    launch_iter->host_id = 0;
+	    launch_iter->map_list = NULL;
+	    launch_iter->path[0] = '\0';
+	    launch_iter->next = NULL;
+
+	    strcpy(launch_iter->exe, node.exe);
+	    strcpy(launch_iter->args, node.args);
+
+	    /* interpret the infos for this command */
+	}
     }
+
+    /* Get the keyval pairs to be put in the process group keyval space before the processes are launched. */
     if (MPIU_Str_get_int_arg(cmd->cmd, "npreput", &npreput) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to get the npreput parameter from the spawn command '%s'.\n", cmd->cmd);
@@ -2576,6 +2689,18 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     free(nkeyvals);
 
     /* do the spawn stuff */
+    launch_iter = launch_list;
+    while (launch_iter)
+    {
+	printf("launch_node:\n");
+	printf(" rank: %d\n", launch_iter->iproc);
+	printf(" exe: %s\n", launch_iter->exe);
+	printf(" args: %s\n", launch_iter->args);
+	launch_temp = launch_iter;
+	launch_iter = launch_iter->next;
+	free(launch_temp);
+    }
+    fflush(stdout);
 
     /* add the result */
     result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
