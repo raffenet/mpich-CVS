@@ -169,7 +169,7 @@ void ADIOI_PVFS_ReadStridedListIO(ADIO_File fd, void *buf, int count,
 	while (b_blks_read < total_blks_to_read) {
 	    for (i=0; i<flat_buf->count; i++) {
 		mem_offsets[b_blks_read % MAX_ARRAY_SIZE] = 
-		    (char*)(buf + j*buftype_extent + flat_buf->indices[i]);
+		    (char*)((char *)buf + j*buftype_extent + flat_buf->indices[i]);
 		mem_lengths[b_blks_read % MAX_ARRAY_SIZE] = 
 		    flat_buf->blocklens[i];
 		file_lengths += flat_buf->blocklens[i];
@@ -667,7 +667,7 @@ void ADIOI_PVFS_ReadStridedListIO(ADIO_File fd, void *buf, int count,
 	    k = start_k;
 	    j = start_j;
 	    for (i=0; i<mem_list_count; i++) {	     
-	        mem_offsets[i] = (char*)(buf + buftype_extent*
+	        mem_offsets[i] = (char*)((char *)buf + buftype_extent*
 					 (buf_count/flat_buf->count) +
 					 (int)flat_buf->indices[k]);
 		if(!i) {
