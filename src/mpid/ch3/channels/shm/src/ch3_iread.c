@@ -44,7 +44,7 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 
     pkt_ptr = &vc->shm.read_shmq->packet[index];
     mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
-    num_bytes = vc->shm.read_shmq->packet[index].num_bytes;
+    num_bytes = pkt_ptr->num_bytes;
     assert(num_bytes > 0);
 
     iter_ptr = mem_ptr;
