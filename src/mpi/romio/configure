@@ -2822,6 +2822,14 @@ fi
 fi
 
 #
+# if FILE_SYSTEM is not set above, use ufs and nfs as default
+#
+if test -z "$FILE_SYSTEM" ; then
+    file_system_ufs=1
+    file_system_nfs=1
+    FILE_SYSTEM="ufs nfs"
+    echo "configuring for file systems ufs and nfs"
+fi
 #
 if test -n "$file_system_nfs"; then
     CFLAGS="$CFLAGS -D__NFS"
