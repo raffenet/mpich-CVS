@@ -883,9 +883,9 @@ if bAddDllDecoration then
 		prototypes = Replace(prototypes, "double PMPI_Wtick", "EXPORT_MPI_API double MPI_CALL PMPI_Wtick")
 		contents = ReplaceBetweenTags(contents, "#if", "MPI_BUILD_PROFILING", "#endif  /* MPI_BUILD_PROFILING */", prototypes & "#endif  /* MPI_BUILD_PROFILING */")
 	end if
-	fout.Write(contents)
-	fout.Close()
 end if
+fout.Write(contents)
+fout.Close()
 
 '
 ' Generate mpichtimer.h
