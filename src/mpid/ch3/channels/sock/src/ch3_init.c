@@ -99,13 +99,13 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     for (p = 0; p < pg_size; p++)
     {
 	MPIDI_CH3U_VC_init(&vc_table[p], p);
-	vc_table[p].sc.pg = pg;
-	vc_table[p].sc.pg_rank = p;
-	vc_table[p].sc.sendq_head = NULL;
-	vc_table[p].sc.sendq_tail = NULL;
-	vc_table[p].sc.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-	vc_table[p].sc.sock = MPIDU_SOCK_INVALID_SOCK;
-	vc_table[p].sc.conn = NULL;
+	vc_table[p].ch.pg = pg;
+	vc_table[p].ch.pg_rank = p;
+	vc_table[p].ch.sendq_head = NULL;
+	vc_table[p].ch.sendq_tail = NULL;
+	vc_table[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+	vc_table[p].ch.sock = MPIDU_SOCK_INVALID_SOCK;
+	vc_table[p].ch.conn = NULL;
     }
     pg->vc_table = vc_table;
     
@@ -366,13 +366,13 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     for (p = 0; p < pg_size; p++)
     {
 	MPIDI_CH3U_VC_init(&vc_table[p], p);
-	vc_table[p].sc.pg = pg;
-	vc_table[p].sc.pg_rank = p;
-	vc_table[p].sc.sendq_head = NULL;
-	vc_table[p].sc.sendq_tail = NULL;
-	vc_table[p].sc.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-	vc_table[p].sc.sock = MPIDU_SOCK_INVALID_SOCK;
-	vc_table[p].sc.conn = NULL;
+	vc_table[p].ch.pg = pg;
+	vc_table[p].ch.pg_rank = p;
+	vc_table[p].ch.sendq_head = NULL;
+	vc_table[p].ch.sendq_tail = NULL;
+	vc_table[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+	vc_table[p].ch.sock = MPIDU_SOCK_INVALID_SOCK;
+	vc_table[p].ch.conn = NULL;
     }
     pg->vc_table = vc_table;
     
@@ -654,13 +654,13 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         for (p = 0; p < pg->size; p++)
         {
             MPIDI_CH3U_VC_init(&vc_table[p], p);
-            vc_table[p].sc.pg = pg;
-            vc_table[p].sc.pg_rank = p;
-            vc_table[p].sc.sendq_head = NULL;
-            vc_table[p].sc.sendq_tail = NULL;
-            vc_table[p].sc.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-            vc_table[p].sc.sock = MPIDU_SOCK_INVALID_SOCK;
-            vc_table[p].sc.conn = NULL;
+            vc_table[p].ch.pg = pg;
+            vc_table[p].ch.pg_rank = p;
+            vc_table[p].ch.sendq_head = NULL;
+            vc_table[p].ch.sendq_tail = NULL;
+            vc_table[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+            vc_table[p].ch.sock = MPIDU_SOCK_INVALID_SOCK;
+            vc_table[p].ch.conn = NULL;
         }
         pg->vc_table = vc_table;
         

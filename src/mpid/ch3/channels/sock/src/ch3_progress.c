@@ -169,14 +169,14 @@ int MPIDI_CH3I_Progress(int is_blocking)
 			vc = &MPIDI_CH3I_Process.pg->vc_table[pg_rank]; /* FIXME: need to lookup process group from pg_id */
 #endif
                         vc = &(pg->vc_table[pg_rank]);
-			assert(vc->sc.pg_rank == pg_rank);
+			assert(vc->ch.pg_rank == pg_rank);
 
-			if (vc->sc.conn == NULL) {
+			if (vc->ch.conn == NULL) {
                             /* no head-to-head connects, accept the
                                connection */
-			    vc->sc.state = MPIDI_CH3I_VC_STATE_CONNECTING;
-			    vc->sc.sock = conn->sock;
-			    vc->sc.conn = conn;
+			    vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
+			    vc->ch.sock = conn->sock;
+			    vc->ch.conn = conn;
 			    conn->vc = vc;
 			    
 			    conn->pkt.type = MPIDI_CH3I_PKT_SC_OPEN_RESP;
@@ -188,9 +188,9 @@ int MPIDI_CH3I_Progress(int is_blocking)
                                    comm_world; just compare the ranks */
                                 if (MPIR_Process.comm_world->rank < pg_rank) { 
                                     /* accept connection */
-                                    vc->sc.state = MPIDI_CH3I_VC_STATE_CONNECTING;
-                                    vc->sc.sock = conn->sock;
-                                    vc->sc.conn = conn;
+                                    vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
+                                    vc->ch.sock = conn->sock;
+                                    vc->ch.conn = conn;
                                     conn->vc = vc;
 			    
                                     conn->pkt.type = MPIDI_CH3I_PKT_SC_OPEN_RESP;
@@ -211,9 +211,9 @@ int MPIDI_CH3I_Progress(int is_blocking)
                                 if (strcmp(MPIDI_CH3I_Process.pg->kvs_name, 
                                            pg->kvs_name) < 0) {
                                     /* accept connection */
-                                    vc->sc.state = MPIDI_CH3I_VC_STATE_CONNECTING;
-                                    vc->sc.sock = conn->sock;
-                                    vc->sc.conn = conn;
+                                    vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
+                                    vc->ch.sock = conn->sock;
+                                    vc->ch.conn = conn;
                                     conn->vc = vc;
                                     
                                     conn->pkt.type = MPIDI_CH3I_PKT_SC_OPEN_RESP;
@@ -242,14 +242,14 @@ int MPIDI_CH3I_Progress(int is_blocking)
                         }
                         /* FIXME - where does this vc get freed? */
 
-                        vc->sc.pg = NULL;
-                        vc->sc.pg_rank = 0;
-                        vc->sc.sendq_head = NULL;
-                        vc->sc.sendq_tail = NULL;
+                        vc->ch.pg = NULL;
+                        vc->ch.pg_rank = 0;
+                        vc->ch.sendq_head = NULL;
+                        vc->ch.sendq_tail = NULL;
 
-                        vc->sc.state = MPIDI_CH3I_VC_STATE_CONNECTING;
-                        vc->sc.sock = conn->sock;
-                        vc->sc.conn = conn;
+                        vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
+                        vc->ch.sock = conn->sock;
+                        vc->ch.conn = conn;
                         conn->vc = vc;
                         
                         conn->pkt.type = MPIDI_CH3I_PKT_SC_OPEN_RESP;
@@ -267,9 +267,9 @@ int MPIDI_CH3I_Progress(int is_blocking)
 			if (conn->pkt.sc_open_resp.ack)
 			{
 			    conn->state = CONN_STATE_CONNECTED;
-			    conn->vc->sc.state = MPIDI_CH3I_VC_STATE_CONNECTED;
-			    assert(conn->vc->sc.conn == conn);
-			    assert(conn->vc->sc.sock == conn->sock);
+			    conn->vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;
+			    assert(conn->vc->ch.conn == conn);
+			    assert(conn->vc->ch.sock == conn->sock);
 			    
 			    connection_post_recv_pkt(conn);
 			    connection_post_sendq_req(conn);
@@ -342,7 +342,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 			{ 
 			    /* post receive for packet header */
 			    conn->state = CONN_STATE_CONNECTED;
-			    conn->vc->sc.state = MPIDI_CH3I_VC_STATE_CONNECTED;
+			    conn->vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;
 			    connection_post_recv_pkt(conn);
 			    connection_post_sendq_req(conn);
 			}
@@ -396,7 +396,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		    int mpi_errno;
 
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|connfailed",
-						     "**ch3|sock|connfailed %d %d", /* FIXME: pgid */ -1, conn->vc->sc.pg_rank);
+						     "**ch3|sock|connfailed %d %d", /* FIXME: pgid */ -1, conn->vc->ch.pg_rank);
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS);
 		    return mpi_errno;
 		    /*MPID_Abort(NULL, mpi_errno, 13);*/
@@ -783,9 +783,9 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
-    assert(vc->sc.state == MPIDI_CH3I_VC_STATE_UNCONNECTED);
+    assert(vc->ch.state == MPIDI_CH3I_VC_STATE_UNCONNECTED);
     
-    vc->sc.state = MPIDI_CH3I_VC_STATE_CONNECTING;
+    vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
     
     mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
     if (mpi_errno != PMI_SUCCESS)
@@ -810,14 +810,14 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	return mpi_errno;
     }
 
-    rc = snprintf(key, key_max_sz, "P%d-businesscard", vc->sc.pg_rank);
+    rc = snprintf(key, key_max_sz, "P%d-businesscard", vc->ch.pg_rank);
     if (rc < 0 || rc > key_max_sz)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
 	return mpi_errno;
     }
-    rc = PMI_KVS_Get(vc->sc.pg->kvs_name, key, val, val_max_sz);
+    rc = PMI_KVS_Get(vc->ch.pg->kvs_name, key, val, val_max_sz);
     if (rc != PMI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", rc);
@@ -850,8 +850,8 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     rc = MPIDU_Sock_post_connect(sock_set, conn, host, port, &conn->sock);
     if (rc == MPI_SUCCESS)
     {
-	vc->sc.sock = conn->sock;
-	vc->sc.conn = conn;
+	vc->ch.sock = conn->sock;
+	vc->ch.conn = conn;
 	conn->vc = vc;
 	conn->state = CONN_STATE_CONNECTING;
 	conn->send_active = NULL;
@@ -863,12 +863,12 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	if (rc == SOCK_ERR_HOST_LOOKUP)
 	{ 
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|hostlookup",
-					     "**ch3|sock|hostlookup %d %d %s", remote_pg_ptr, conn->vc->sc.pg_rank, val);
+					     "**ch3|sock|hostlookup %d %d %s", remote_pg_ptr, conn->vc->ch.pg_rank, val);
 	}
 	else if (rc == SOCK_ERR_CONN_REFUSED)
 	{ 
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|connrefused",
-					     "**ch3|sock|connrefused %d %d %s", remote_pg_ptr, conn->vc->sc.pg_rank, val);
+					     "**ch3|sock|connrefused %d %d %s", remote_pg_ptr, conn->vc->ch.pg_rank, val);
 	}
 	else
 	{
@@ -879,7 +879,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 #endif
 	mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	
-	vc->sc.state = MPIDI_CH3I_VC_STATE_FAILED;
+	vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
 	connection_free(conn);
     }
     
@@ -897,7 +897,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_VC_post_read(MPIDI_VC * vc, MPID_Request * rreq)
 {
-    MPIDI_CH3I_Connection_t * conn = vc->sc.conn;
+    MPIDI_CH3I_Connection_t * conn = vc->ch.conn;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_READ);
 
@@ -906,7 +906,7 @@ int MPIDI_CH3I_VC_post_read(MPIDI_VC * vc, MPID_Request * rreq)
 
     assert (conn->recv_active == NULL);
     conn->recv_active = rreq;
-    mpi_errno = MPIDU_Sock_post_readv(conn->sock, rreq->dev.iov + rreq->sc.iov_offset, rreq->dev.iov_count - rreq->sc.iov_offset, NULL);
+    mpi_errno = MPIDU_Sock_post_readv(conn->sock, rreq->dev.iov + rreq->ch.iov_offset, rreq->dev.iov_count - rreq->ch.iov_offset, NULL);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
@@ -923,7 +923,7 @@ int MPIDI_CH3I_VC_post_read(MPIDI_VC * vc, MPID_Request * rreq)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_VC_post_write(MPIDI_VC * vc, MPID_Request * sreq)
 {
-    MPIDI_CH3I_Connection_t * conn = vc->sc.conn;
+    MPIDI_CH3I_Connection_t * conn = vc->ch.conn;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_WRITE);
 
@@ -932,8 +932,8 @@ int MPIDI_CH3I_VC_post_write(MPIDI_VC * vc, MPID_Request * sreq)
     
     assert (conn->send_active == NULL);
     conn->send_active = sreq;
-    mpi_errno = MPIDU_Sock_post_writev(conn->sock, sreq->dev.iov + sreq->sc.iov_offset,
-				  sreq->dev.iov_count - sreq->sc.iov_offset,  NULL);
+    mpi_errno = MPIDU_Sock_post_writev(conn->sock, sreq->dev.iov + sreq->ch.iov_offset,
+				  sreq->dev.iov_count - sreq->ch.iov_offset,  NULL);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
@@ -986,20 +986,20 @@ int  MPIDI_CH3I_Connect_to_root(char *port_name, MPIDI_VC **new_vc)
 
     *new_vc = vc;
 
-    vc->sc.pg = pg;
-    vc->sc.pg_rank = 0;
-    vc->sc.sendq_head = NULL;
-    vc->sc.sendq_tail = NULL;
-    vc->sc.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-    vc->sc.sock = MPIDU_SOCK_INVALID_SOCK;
-    vc->sc.conn = NULL;
+    vc->ch.pg = pg;
+    vc->ch.pg_rank = 0;
+    vc->ch.sendq_head = NULL;
+    vc->ch.sendq_tail = NULL;
+    vc->ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+    vc->ch.sock = MPIDU_SOCK_INVALID_SOCK;
+    vc->ch.conn = NULL;
     
     rc = MPIDU_Sock_post_connect(sock_set, conn, host, port, &conn->sock);
     if (rc == MPI_SUCCESS)
     {
-        vc->sc.sock = conn->sock;
-        vc->sc.conn = conn;
-        vc->sc.state = MPIDI_CH3I_VC_STATE_CONNECTING;
+        vc->ch.sock = conn->sock;
+        vc->ch.conn = conn;
+        vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
         conn->vc = vc;
         conn->state = CONN_STATE_CONNECT_ACCEPT;
         conn->send_active = NULL;
@@ -1011,12 +1011,12 @@ int  MPIDI_CH3I_Connect_to_root(char *port_name, MPIDI_VC **new_vc)
         if (rc == SOCK_ERR_HOST_LOOKUP)
         { 
             mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|hostlookup",
-                                             "**ch3|sock|hostlookup %d %d %s", pg, conn->vc->sc.pg_rank, port_name);
+                                             "**ch3|sock|hostlookup %d %d %s", pg, conn->vc->ch.pg_rank, port_name);
         }
         else if (rc == SOCK_ERR_CONN_REFUSED)
         { 
             mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|connrefused",
-                                             "**ch3|sock|connrefused %d %d %s", pg, conn->vc->sc.pg_rank, port_name);
+                                             "**ch3|sock|connrefused %d %d %s", pg, conn->vc->ch.pg_rank, port_name);
         }
         else
         {
@@ -1024,7 +1024,7 @@ int  MPIDI_CH3I_Connect_to_root(char *port_name, MPIDI_VC **new_vc)
         }
 #endif
 	mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-        vc->sc.state = MPIDI_CH3I_VC_STATE_FAILED;
+        vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
         MPIU_Free(conn);
         goto fn_exit;
     }
@@ -1162,7 +1162,7 @@ static void connection_send_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno)
 	conn->state = CONN_STATE_FAILED;
 	if (conn->vc != NULL)
 	{
-	    conn->vc->sc.state = MPIDI_CH3I_VC_STATE_FAILED;
+	    conn->vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
 	    MPIDI_CH3U_VC_send_failure(conn->vc, mpi_errno);
 	}
     }

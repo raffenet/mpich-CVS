@@ -319,7 +319,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         }
 
         for (i=0; i<comm_size; i++) 
-            local_pg_ranks[i] = comm_ptr->vcr[i]->sc.pg_rank;
+            local_pg_ranks[i] = comm_ptr->vcr[i]->ch.pg_rank;
 
         mpi_errno = MPIC_Send(local_pg_ranks, comm_size, MPI_INT,
                               0, 105, tmp_comm->handle); 
@@ -437,13 +437,13 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     for (p = 0; p < remote_pg->size; p++)
     {
 	MPIDI_CH3U_VC_init(&vc_table[p], p);
-	vc_table[p].sc.pg = remote_pg;
-	vc_table[p].sc.pg_rank = p;
-	vc_table[p].sc.sendq_head = NULL;
-	vc_table[p].sc.sendq_tail = NULL;
-	vc_table[p].sc.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-	vc_table[p].sc.sock = MPIDU_SOCK_INVALID_SOCK;
-	vc_table[p].sc.conn = NULL;
+	vc_table[p].ch.pg = remote_pg;
+	vc_table[p].ch.pg_rank = p;
+	vc_table[p].ch.sendq_head = NULL;
+	vc_table[p].ch.sendq_tail = NULL;
+	vc_table[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+	vc_table[p].ch.sock = MPIDU_SOCK_INVALID_SOCK;
+	vc_table[p].ch.conn = NULL;
     }
     remote_pg->vc_table = vc_table;
 
@@ -581,13 +581,13 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         for (p = 0; p < pg->size; p++)
         {
             MPIDI_CH3U_VC_init(&vc_table[p], p);
-            vc_table[p].sc.pg = pg;
-            vc_table[p].sc.pg_rank = p;
-            vc_table[p].sc.sendq_head = NULL;
-            vc_table[p].sc.sendq_tail = NULL;
-            vc_table[p].sc.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-            vc_table[p].sc.sock = MPIDU_SOCK_INVALID_SOCK;
-            vc_table[p].sc.conn = NULL;
+            vc_table[p].ch.pg = pg;
+            vc_table[p].ch.pg_rank = p;
+            vc_table[p].ch.sendq_head = NULL;
+            vc_table[p].ch.sendq_tail = NULL;
+            vc_table[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+            vc_table[p].ch.sock = MPIDU_SOCK_INVALID_SOCK;
+            vc_table[p].ch.conn = NULL;
         }
         pg->vc_table = vc_table;
         
@@ -701,7 +701,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         for (i=0; i<comm_size; i++) {
 
             /* find rank of i in process group */
-            p = comm_ptr->vcr[i]->sc.pg_rank;
+            p = comm_ptr->vcr[i]->ch.pg_rank;
 
             mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d-businesscard", p);
             if (mpi_errno < 0 || mpi_errno > key_max_sz)
@@ -710,7 +710,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
                 return mpi_errno;
             }
 
-            mpi_errno = PMI_KVS_Get(comm_ptr->vcr[i]->sc.pg->kvs_name,
+            mpi_errno = PMI_KVS_Get(comm_ptr->vcr[i]->ch.pg->kvs_name,
                                     key, val); 
             if (mpi_errno != 0)
             {
@@ -819,13 +819,13 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     for (p = 0; p < pg->size; p++)
     {
 	MPIDI_CH3U_VC_init(&vc_table[p], p);
-	vc_table[p].sc.pg = pg;
-	vc_table[p].sc.pg_rank = p;
-	vc_table[p].sc.sendq_head = NULL;
-	vc_table[p].sc.sendq_tail = NULL;
-	vc_table[p].sc.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-	vc_table[p].sc.sock = MPIDU_SOCK_INVALID_SOCK;
-	vc_table[p].sc.conn = NULL;
+	vc_table[p].ch.pg = pg;
+	vc_table[p].ch.pg_rank = p;
+	vc_table[p].ch.sendq_head = NULL;
+	vc_table[p].ch.sendq_tail = NULL;
+	vc_table[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+	vc_table[p].ch.sock = MPIDU_SOCK_INVALID_SOCK;
+	vc_table[p].ch.conn = NULL;
     }
     pg->vc_table = vc_table;
 

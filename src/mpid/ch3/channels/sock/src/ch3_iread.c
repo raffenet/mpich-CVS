@@ -21,29 +21,29 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IREAD);
 #ifdef MPICH_DBG_OUTPUT
-    /*assert(vc->sc.state == MPIDI_CH3I_VC_STATE_CONNECTED);*/
-    if (vc->sc.state != MPIDI_CH3I_VC_STATE_CONNECTED)
+    /*assert(vc->ch.state == MPIDI_CH3I_VC_STATE_CONNECTED);*/
+    if (vc->ch.state != MPIDI_CH3I_VC_STATE_CONNECTED)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**vc_state", "**vc_state %d", vc->sc.state);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**vc_state", "**vc_state %d", vc->ch.state);
 	goto fn_exit;
     }
 #endif
 
-    mpi_errno = MPIDU_Sock_readv(vc->sc.sock, rreq->dev.iov, rreq->dev.iov_count, &nb);
+    mpi_errno = MPIDU_Sock_readv(vc->ch.sock, rreq->dev.iov, rreq->dev.iov_count, &nb);
     if (mpi_errno == MPI_SUCCESS)
     {
-	rreq->sc.iov_offset = 0;
-	while (rreq->sc.iov_offset < rreq->dev.iov_count)
+	rreq->ch.iov_offset = 0;
+	while (rreq->ch.iov_offset < rreq->dev.iov_count)
 	{
-	    if ((MPIU_Size_t)rreq->dev.iov[rreq->sc.iov_offset].MPID_IOV_LEN <= nb)
+	    if ((MPIU_Size_t)rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_LEN <= nb)
 	    {
-		nb -= rreq->dev.iov[rreq->sc.iov_offset].MPID_IOV_LEN;
-		rreq->sc.iov_offset += 1;
+		nb -= rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_LEN;
+		rreq->ch.iov_offset += 1;
 	    }
 	    else
 	    {
-		rreq->dev.iov[rreq->sc.iov_offset].MPID_IOV_BUF = (char *) rreq->dev.iov[rreq->sc.iov_offset].MPID_IOV_BUF + nb;
-		rreq->dev.iov[rreq->sc.iov_offset].MPID_IOV_LEN -= nb;
+		rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_BUF = (char *) rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_BUF + nb;
+		rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_LEN -= nb;
 		mpi_errno = MPIDI_CH3I_VC_post_read(vc, rreq);
 		goto fn_exit;
 	    }

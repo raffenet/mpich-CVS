@@ -88,7 +88,7 @@ typedef struct MPIDI_CH3I_VC
     struct MPIDI_CH3I_Connection * conn;
 } MPIDI_CH3I_VC;
 
-#define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC sc;
+#define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;
 
 
 /*
@@ -109,7 +109,7 @@ struct MPIDI_CH3I_Request									\
 												\
     /*  pkt is used to temporarily store a packet header associated with this request */	\
     MPIDI_CH3_Pkt_t pkt;									\
-} sc;
+} ch;
 
 #define MPID_STATE_LIST_CH3 \
 MPID_STATE_MPIDI_CH3_CANCEL_SEND, \

@@ -19,13 +19,13 @@ static MPID_Request * create_request(void * hdr, MPIDI_msg_sz_t hdr_sz, MPIU_Siz
 	return NULL;
     MPIU_Object_set_ref(sreq, 2);
     sreq->kind = MPID_REQUEST_SEND;
-    /* memcpy(&sreq->sc.pkt, hdr, hdr_sz); */
+    /* memcpy(&sreq->ch.pkt, hdr, hdr_sz); */
     assert(hdr_sz == sizeof(MPIDI_CH3_Pkt_t));
-    sreq->sc.pkt = *(MPIDI_CH3_Pkt_t *) hdr;
-    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->sc.pkt + nb;
+    sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) hdr;
+    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt + nb;
     sreq->dev.iov[0].MPID_IOV_LEN = hdr_sz - nb;
     sreq->dev.iov_count = 1;
-    sreq->sc.iov_offset = 0;
+    sreq->ch.iov_offset = 0;
     sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
     
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST);
@@ -56,7 +56,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_R
     hdr_sz = sizeof(MPIDI_CH3_Pkt_t);
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)hdr);
 
-    if (vc->sc.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
+    if (vc->ch.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
 	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
@@ -68,7 +68,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_R
 	    
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                not also try to write */
-	    rc = MPIDU_Sock_write(vc->sc.sock, hdr, hdr_sz, &nb);
+	    rc = MPIDU_Sock_write(vc->ch.sock, hdr, hdr_sz, &nb);
 	    if (rc == MPI_SUCCESS)
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %ld bytes", (unsigned long) nb));
@@ -127,7 +127,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_R
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
-    else if (vc->sc.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
+    else if (vc->ch.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
     {
 	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  posting connect and enqueuing request"));
 	
@@ -144,7 +144,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_R
 	/* Form a new connection */
 	MPIDI_CH3I_VC_post_connect(vc);
     }
-    else if (vc->sc.state != MPIDI_CH3I_VC_STATE_FAILED)
+    else if (vc->ch.state != MPIDI_CH3I_VC_STATE_FAILED)
     {
 	/* Unable to send data at the moment, so queue it for later */
 	MPIDI_DBG_PRINTF((55, FCNAME, "forming connection, request enqueued"));

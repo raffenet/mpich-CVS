@@ -37,43 +37,43 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
     /* MT - not thread safe! */											\
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue vc=%p req=0x%08x", vc, req->handle));       	                \
     req->dev.next = NULL;											\
-    if (vc->sc.sendq_tail != NULL)										\
+    if (vc->ch.sendq_tail != NULL)										\
     {														\
-	vc->sc.sendq_tail->dev.next = req;									\
+	vc->ch.sendq_tail->dev.next = req;									\
     }														\
     else													\
     {														\
-	vc->sc.sendq_head = req;										\
+	vc->ch.sendq_head = req;										\
     }														\
-    vc->sc.sendq_tail = req;											\
+    vc->ch.sendq_tail = req;											\
 }
 
 #define MPIDI_CH3I_SendQ_enqueue_head(vc, req)									\
 {														\
     /* MT - not thread safe! */											\
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=%p req=0x%08x", vc, req->handle));              	\
-    req->dev.next = vc->sc.sendq_tail;										\
-    if (vc->sc.sendq_tail == NULL)										\
+    req->dev.next = vc->ch.sendq_tail;										\
+    if (vc->ch.sendq_tail == NULL)										\
     {														\
-	vc->sc.sendq_tail = req;										\
+	vc->ch.sendq_tail = req;										\
     }														\
-    vc->sc.sendq_head = req;											\
+    vc->ch.sendq_head = req;											\
 }
 
 #define MPIDI_CH3I_SendQ_dequeue(vc)												\
 {																\
     /* MT - not thread safe! */													\
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_dequeue vc=%p req=0x%08x", vc, vc->sc.sendq_head->handle));	                        \
-    vc->sc.sendq_head = vc->sc.sendq_head->dev.next;										\
-    if (vc->sc.sendq_head == NULL)												\
+    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_dequeue vc=%p req=0x%08x", vc, vc->ch.sendq_head->handle));	                        \
+    vc->ch.sendq_head = vc->ch.sendq_head->dev.next;										\
+    if (vc->ch.sendq_head == NULL)												\
     {																\
-	vc->sc.sendq_tail = NULL;												\
+	vc->ch.sendq_tail = NULL;												\
     }																\
 }
 
-#define MPIDI_CH3I_SendQ_head(vc) (vc->sc.sendq_head)
+#define MPIDI_CH3I_SendQ_head(vc) (vc->ch.sendq_head)
 
-#define MPIDI_CH3I_SendQ_empty(vc) (vc->sc.sendq_head == NULL)
+#define MPIDI_CH3I_SendQ_empty(vc) (vc->ch.sendq_head == NULL)
 
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
