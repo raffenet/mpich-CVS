@@ -237,7 +237,7 @@ MPID_Request * mm_request_alloc(void);
 	   int tmp_buffer_init(MPID_Request *request_ptr);
 	   int simple_buffer_init(MPID_Request *request_ptr);
 
-	   int mm_make_progress();
+	   int mm_make_progress(void);
 
 /* queues */
            int mm_post_recv(MM_Car *car_ptr);
