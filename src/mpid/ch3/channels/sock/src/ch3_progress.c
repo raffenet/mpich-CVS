@@ -103,7 +103,11 @@ int MPIDI_CH3_Progress(int is_blocking)
 		
 		if (event.error != SOCK_SUCCESS)
 		{
-		    connection_recv_fail(conn, event.error);
+		    if (!shutting_down || event.error != SOCK_EOF)  /* FIXME: this should be handled by the close protocol */
+		    {
+			connection_recv_fail(conn, event.error);
+		    }
+		    
 		    break;
 		}
 		
