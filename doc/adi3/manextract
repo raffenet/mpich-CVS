@@ -26,11 +26,26 @@ while (<>) {
 	}
 	else {
 	    s/^ \*//;
+	    if (/[A-Za-z]:[ ]*$/) {
+		s/[ ]*(.*):/\\subsection{$1}/g;
+	    }
+	    s/^.vb/\\begin{verbatim}/g;
+	    s/^.ve/\\end{verbatim}/g;
+	    s/\'([^\']*)\'/]\texttt{$1}/g;
+	    s/\\:/:/g;
 	    print $OUTFILE $_;
 	}
 	while (<>) {
 	    if (/T\*\//) { last ; }
 	    s/^ \*//;
+	    if (/[A-Za-z]:[ ]*$/) {
+		s/[ ]*(.*):/\\subsection{$1}/g;
+	    }
+	    s/^.vb/\\begin{verbatim}/g;
+	    s/^.ve/\\end{verbatim}/g;
+	    s/\'([^\']*)\'/\\texttt{$1}/g;
+	    s/\`([^\`]*)\`/\\emph{$1}/g;
+	    s/\\:/:/g;
 	    print $OUTFILE $_;
 	}
 	if ($filename ne "") { close(OUTFILE); }

@@ -14,14 +14,43 @@ paper.dvi: paper.tex
 	-latex $*
 	-latex $*
 
-adi3man.ps: adi3man.tex adi3.c adi3.h
+adi3man.ps: adi3man.tex adi3.c adi3.h 
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
+	-rm adi3man/*.tex
+	(cd adi3man ; \
+	doctext -latex -nolocation -quotefmt ../adi3.c ;\
+	doctext -latex -nolocation -quotefmt ../adi3.h ;)
+	${MAKE} lists
 	-cp adi3man.tex adi3man/adi3man.tex
 	(cd adi3man ; \
-	doctext -latex -nolocation -quotefmt -outfile adi3func.tex ../adi3.c ;\
-	doctext -latex -nolocation -quotefmt -outfile adi3data.tex ../adi3.h ;\
+	../manextract ../adi3.[ch] > /dev/null ;\
+	latex adi3man ;\
 	latex adi3man ;\
 	dvips adi3man )
-	if [ -s adi3man/adi3man.ps ] ; then cp adi3man/adi3man.ps . ; fi
+
+install-web: adi3man.ps
+	cp adi3.[ch] /mcs/www-unix/mpi/mpich/adi3
+	cp adi3man.ps /mcs/www-unix/mpi/mpich/adi3
 clean:
-	rm -f *.log *.aux *.dvi adi3.ps *.bbl paper.ps
+	rm -f *.log *.aux *.dvi adi3.ps *.bbl paper.ps findmod
+
+#
+# The following are helpers for assembling the reference manual
+findmod: adi3.c adi3.h Makefile
+	rm -f .findmod
+	@(cd adi3man ; \
+	for file in *.tex ; do \
+	if [ $$file = "adi3man.tex" ] ; then continue ; fi ; \
+	awk '{if (pnext == 1) { printf("%s",$$0); pnext=2; exit;} };\
+	/\{Module\}/ {pnext = 1;}; \
+	END{if (pnext != 2) printf("None");}' $$file | \
+	sed 's/{.*\\_}/_/g' >> ../.findmod ;\
+	echo " $$file" >> ../.findmod;\
+	done )
+	sort .findmod > findmod
+	rm -f .findmod
+lists: findmod
+	cd adi3man ; \
+	awk 'BEGIN{module=""};{if ($$1 != module) { \
+	file=$$1 "-list.tex"; module=$$1; };\
+	print "\\input " $$2>>file;}' ../findmod

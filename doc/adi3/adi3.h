@@ -19,7 +19,9 @@
  * Do we want to mark parts 'Public' or 'Private'
  */
 
-/*D
+/*TOpaqOverview.tex
+
+  Section : MPI Opaque Objects
   MPI Opaque objects are specified by integers in the range [0,...] (in
   the MPICH2k implementation).
   Out of range values are invalid; the value 0 is reserved for use as
@@ -35,16 +37,16 @@
  typedef struct MPID_List *MPID_List_t;
 .ve
  so that the form of MPID_List is isolated to the list management routines?
-  D*/
+  T*/
 
-/*D
+/*T
   Attributes and keyvals must be maintained
 
   The definition of the list structure is made in the device to 
   simplify the construction of the data-structures that depend on
   it.  Most if not all devices will use the library code for
   managing these lists that is included with MPICH.
-  D*/
+  T*/
 typedef struct {
     /* other, device-specific information */
 }MPID_List;
@@ -56,6 +58,9 @@ typedef struct {
   or created by.  This type enumerates the possible language so that
   the MPI implementation can choose the correct behavior.  An example of this
   are the keyval attribute copy and delete functions.
+
+  Module:
+  Attribute
   D*/
 typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN, 
 	       MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
@@ -76,7 +81,9 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
   generate an error message in this case; note that this would have to 
   be an option, because (particularly when accessing the attribute from C), 
   it may be what the user intended, and in any case, it is a valid operation.
-  
+
+  Module:
+  Attribute
   D*/
 typedef union {
   int  (*C_CopyFunction)  (MPI_Comm, int, void *, void *, void *, int *)
@@ -125,15 +132,18 @@ typedef struct {
 } MPID_Attribute;
 
 /*D
-  LocalPID -
+  LocalPID - Description of the local process ids
   
+  Module:
+  Group
+
   Question:
   Do we want to have a local pid type that maps a virtual local process 
-  number to a specific 
+  number to a specific process or link?
   D*/
 
 /*D
-  Processor mask 
+  MPID_Lpidmask - Description of the Processor mask data strucure
 
   Allows quick determination whether a designated processor is within the
   set of active processes.
@@ -147,15 +157,18 @@ typedef struct {
 
   This structure is manipulated with the routines\:
 .vb
-  void MPID_Lpid_set( MPID_lpidmask *, int pid )
-  void MPID_Lpid_init( MPID_lpidmask * )
-  int MPID_Lpid_isset( MPID_lpidmask *, int pid )
-  int MPID_Lpid_nextset( MPID_lpidmask *, int lastpid ) 
+  void MPID_Lpid_set( MPID_Lpidmask *, int pid )
+  void MPID_Lpid_init( MPID_Lpidmask * )
+  int MPID_Lpid_isset( MPID_Lpidmask *, int pid )
+  int MPID_Lpid_nextset( MPID_Lpidmask *, int lastpid ) 
 .ve  
+
+  Module:
+  Group
   D*/
 typedef struct {
     /* other, device-specific information */
-} MPID_lpidmask;
+} MPID_Lpidmask;
 
 
 /*
@@ -216,7 +229,7 @@ typedef struct datatloop_ {
 } MPID_Dataloop;
 
 /*D
-  MPID_Datatype - .
+  MPID_Datatype - Description of the MPID Datatype structure
 
   Notes:
   The 'ref_count' is needed for nonblocking operations such as
@@ -227,6 +240,9 @@ typedef struct datatloop_ {
    ...
    MPI_Wait( &request, &status );
 .ve
+
+  Module:
+  Datatype
 
   Question:
   For some of the boolean information (e.g., is_contig), should we just use
@@ -282,7 +298,7 @@ typedef struct {
 } MPID_Datatype;
 
 /*D
- MPID_Group - .
+ MPID_Group - Description of the Group data structure
 
  The processes in the group of 'MPI_COMM_WORLD' have lpid values 0 to size-1,
  where size is the size of 'MPI_COMM_WORLD'.  Processes created by 
@@ -304,6 +320,9 @@ typedef struct {
  is an index into a table of MPID_Lpid_t''s that contain this (device- and
  method-specific) information.
 
+ Module:
+ Group
+
  Questions:
  Do we want a rank of this process in the group (if any)?
  D*/
@@ -316,7 +335,7 @@ typedef struct {
 } MPID_Group;
 
 /*D
-  MPID_Comm - .
+  MPID_Comm - Description of the Communicator data structure
 
   Notes:
   Note that the size (and possibly rank) duplicate data in the groups that
@@ -325,6 +344,9 @@ typedef struct {
   We may also want the local-rank to lpid mapping to be included as well,
   skipping the indirection through the (remote) group (using a pointer to
   the same storage).
+
+  Module:
+  Communicator
 
   Question:
   Do we want a communicator type (intra or inter) or do we use
@@ -358,8 +380,12 @@ typedef struct {
 } MPID_Comm;
 
 /*D
-  MPID_Win - .
+  MPID_Win - Description of the Window Object data structure.
 
+  Module:
+  Win
+
+  Question:
   Should a win be defined after MPID_Segment in case the device wants to 
   store a queue of pending put/get operations, described with MPID_Segment
   (or MPID_Request)s?
@@ -392,7 +418,7 @@ typedef struct {
 } MPID_Dataloop_stackelm;
 
 /*D
-  MPID_Segment - .
+  MPID_Segment - Description of the Segment datatype
 
   Notes:
   This has no corresponding MPI datatype.
@@ -441,6 +467,9 @@ typedef struct {
   For example, a vector of vector has the datatype description read
   only once, not once for each count of the outer vector.
 
+  Module:
+  Segment
+
   Questions:
   Should this have an id for allocation and similarity purposes?
   D*/
@@ -461,7 +490,10 @@ typedef struct {
 } MPID_Segment;
 
 /*D
-  MPID_Request
+  MPID_Request - Description of the Request data structure
+
+  Module:
+  Request
 
   Question:
   Do we need an MPID_Datatype * to hold the datatype in the event of a 
@@ -475,10 +507,16 @@ typedef struct {
 } MPID_Request;
 
 /*D
+  Handlers - Description of the remote handlers and their arguments
+  
   Enumerate the possible Remote Handler Call types.  For each of these
   handler id values, there is a corresponding structure of type <name>_t;
   e.g., for handler id MPID_Hid_Cancel, there is a typedef defining
   MPID_Hid_Cancel_t.
+
+  Module:
+  MPID_CORE
+
   D*/
 typedef enum { MPID_Hid_Request_to_send = 1, 
 	       MPID_Hid_Cancel = 27,
@@ -493,7 +531,7 @@ typedef enum { MPID_Hid_Request_to_send = 1,
  */
 
 /*D 
-  MPID_Hid_Request_to_send
+  MPID_Hid_Request_to_send - Handler type for point-to-point communication
 
   The specific type lengths are not required; however, the type lengths
   used by the device must be consistent with the rest of the code.
@@ -505,6 +543,9 @@ typedef enum { MPID_Hid_Request_to_send = 1,
   number is helpful for message-matching tools when there are multiple
   MPI threads.  Another example is the hash value of the datatype signature,
   used to provide more complete error checking. 
+
+  Module:
+  MPID_CORE
 
   Question: 
   Should there be a bit to indicate an rsend message so that "no posted
@@ -523,6 +564,9 @@ typedef struct {
 /*D
    MPID_Hid_Cancel - Cancel a communication operation
 
+   Module:
+   MPID_CORE
+
   D*/
 typedef struct {
    int16_t request_id;
@@ -535,10 +579,13 @@ typedef struct {
   T*/
 
 /*D
-  Constants - .
+  Constants - Description of constants defined by the device.
 
   The thread levels are 'defined' rather than enumerated so that they 
   can be used in preprocessor tests.
+
+  Module:
+  Environment
   D*/
 #define MPID_THREAD_SINGLE     0
 #define MPID_THREAD_FUNNELLED  1
@@ -568,5 +615,7 @@ typedef struct {
   #fi
 .ve
 
+  Module:
+  Environment
   D*/
 #define MPID_MAX_THREAD_LEVEL 

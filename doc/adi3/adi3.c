@@ -5,7 +5,7 @@
  * All parts of this document are subject to (and expected to) change
  * This DRAFT dated September 8, 2000
  ***********************************************************************/
-/*T
+/*TOverview.tex
  The following are routines that a device must implement; these are used
  by the code that implements the MPI communication operations.
 
@@ -53,13 +53,13 @@
  these aren't user-level routines).
  T*/
 
-/*T
+/*
  * Section 1: Data Structures
  * 
  * Routines to manage and interrogate the data structures.
  *
- T*/
-/*T
+ */
+/*TDSOverview.tex
   Section : Data Structures
 
   MPI has a number of data structures, most of which are represented by 
@@ -83,7 +83,7 @@
   data structure has an 'MPID_<datastructure>_incr' routine that performs an
   atomic fetch and increment operation.  
 
- D*/
+ T*/
 
 /*
  * Datatypes 
@@ -93,7 +93,7 @@
     MPID_Datatype_new - Create a new datatype structure
 
     Return value: Pointer to the new data structure.  The following
-    fields are already set:
+    fields are already set\:
 +   id        - MPI_Datatype handle for this datatype.
 -   ref_count - set to 1.
 
@@ -469,9 +469,9 @@ int MPID_Comm_incr( MPID_Comm *comm, int incr )
 {
 }
 
-/*T
+/*TAttrOverview.tex
  *
- * Section : - Communicator attributes
+ * Section : Communicator attributes
  *
  * These provide a way for the user to pass data to the MPI implementation,
  * on a communicator-by-communicator basis.  To allow an implementation to
@@ -510,7 +510,7 @@ int MPID_Comm_incr( MPID_Comm *comm, int incr )
   Fortran 77 one is 'MPI_Attr_set').
 
   Module:
-  Attributes
+  Attribute
 
   Question:
   We may want to register keyvals with the device so that only attributes
@@ -536,7 +536,7 @@ void MPID_Comm_attr_set( MPID_Comm *comm, int keyval, void *attr_val,
 - keyval - key value of attribute.
 
   Module:
-  Attributes
+  Attribute
   @*/
 void MPID_Comm_attr_delete( MPID_Comm *comm, int keyval )
 {
@@ -557,7 +557,7 @@ void MPID_Comm_attr_delete( MPID_Comm *comm, int keyval )
   respectively.
 
   Module:
-  Attributes
+  Attribute
 
   Question:
   The value of 'MPI_WTIME_IS_GLOBAL' is better known by the timer.  Should
@@ -852,6 +852,9 @@ void MPID_Request_free( MPID_Request *request )
   This is a `local`, not a collective operation.  It functions more like a
   good form of 'malloc' than collective shared-memory allocators such as
   the 'shmalloc' found on SGI systems.
+
+  Module:
+  Win
   @*/
 void *MPID_Alloc_mem( size_t size )
 {
@@ -869,12 +872,15 @@ void *MPID_Alloc_mem( size_t size )
   Notes:
   The return value is provided because it may not be easy to validate the
   value of 'ptr' without attempting to free the memory.
+
+  Module:
+  Win
   @*/
 int MPID_Free_mem( void *ptr )
 {
 }
 
-/*T
+/*TCMOverview.tex
  * Section 2: Communication
  *
  * General Notes: Communication operations are non-blocking, with a completion
@@ -1220,13 +1226,16 @@ int MPID_Isend( void *buf, int count, MPID_Datatype *datatype,
   for the case when the message can be delivered without blocking the
   calling process.  An ADI implementation is free to have this routine
   always return 'MPID_WOULD_BLOCK', but is encouraged not to.
+
+  Module:
+  Communication
   @*/
 int MPID_tBsend( void *buf, int count, MPID_Datatype *datatype,
 		 int tag, int rank, MPID_Comm *comm )
 {
 }
 
-/*T 
+/*TSGOverview.tex 
  * Section 3: Communication Buffer management
  *
  * The routines in this section fill two roles.  In the implementation of
@@ -1273,6 +1282,9 @@ int MPID_tBsend( void *buf, int count, MPID_Datatype *datatype,
   Initializes a 'MPID_Segment' from a specified user buffer which is 
   described by (buf,count,datatype) and hence may represent noncontiguous
   data or contiguous data in a heterogeneous system.
+
+  Module:
+  Segment
 
   Questions: 
   Add an `intent` so that sending all of the data can use device 
@@ -1334,6 +1346,9 @@ int MPID_Segment_init_pack( const void *buf, int count, MPID_Datatype *dtype,
   cache-line boundary (subject to the 3 requirements above) is allowed 
   (and is the reason to make first an in/out parameter).
 
+  Module:
+  Segment
+
   Questions:
   If 'MPID_Segment_pack' returns an internal buffer, who is responsible for
   freeing it?  It can''t be a single static buffer because that isn''t 
@@ -1354,6 +1369,9 @@ void *MPID_Segment_pack MPID_Segment *buf_desc, int *first, int *last,
 /*@
   MPID_Segment_init_unpack - .
   
+  Module:
+  Segment
+
   Questions:
   Should there be a flag indicating that the buffer may be used in a 
   put operation (as part of a receive and forward operation)?
@@ -1366,6 +1384,9 @@ void * MPID_Segment_init_unpack( void *buf, int count, MPID_Datatype *dtype,
 
 /*@
   MPID_Segment_unpack - .
+
+  Module:
+  Segment
   @*/
 int MPID_Segment_unpack( MPID_Segment *segment, int *first, int *last, 
 		       void *recv_buffer )
@@ -1377,6 +1398,9 @@ int MPID_Segment_unpack( MPID_Segment *segment, int *first, int *last,
 
   Input Parameter:
 . segment - Segment to free
+
+  Module:
+  Segment
 
   Question:
   Should we pass the address of the segment pointer so that we can set
@@ -1414,6 +1438,9 @@ int MPID_Segment_free( MPID_Segment *segment )
   memory; the return code should indicate success if the memory is
   registered, even if this particular call was not responsible for actually
   registering the memory.  
+
+  Module:
+  Communication
   @*/
 int MPID_Memory_register( void *buf, int len, int rdwt )
 {
@@ -1445,12 +1472,15 @@ int MPID_Memory_register( void *buf, int len, int rdwt )
   'MPID_Memory_unregister' thus has the same reference-count
   semantics as other MPI routines.  Note that this may require implementing
   a reference count mechanism for registered memory.
+
+  Module:
+  Communication
   @*/
 int MPID_Memory_unregister( void *buf, int len, int rdwt )
 {
 }
 
-/*T
+/*TStmOverview.tex
  * Section 4: Store, Process, and Forward Communication
  *
  * Algorithms for collective communication are often of the
@@ -1688,7 +1718,7 @@ int MPID_Iforward_stream( MPID_Stream *stream, void *header,
 {
 }
 
-/*T
+/*TTopoOverview.tex
  * Section : Topology
  *
  * The MPI collective and topology routines can benefit from information 
@@ -1765,9 +1795,9 @@ int MPID_Topo_cluster_info( int *levels, int my_cluster[], int my_rank[] )
 {
 }
 
-/*T
+/*
  * Section : Miscellaneous
- T*/
+ */
 /*@
   MPID_Thread_init - Initialize the device
 
@@ -1909,6 +1939,9 @@ value might be "not yet heterogeneous").
   data type that reflects data that must be copied from an array of arbitrary
   size will have to allocate memory (and can fail; note that there is an
   MPI error class for out-of-memory).
+
+  Module:
+  Utility
   D*/
 
 /*@
@@ -1932,6 +1965,8 @@ value might be "not yet heterogeneous").
   where 'trmalloc' is a tracing version of malloc that is included with 
   MPICH.
 
+  Module:
+  Utility
   @*/
 void *MPID_Malloc( size_t len )
 {
@@ -1944,6 +1979,8 @@ void *MPID_Malloc( size_t len )
 . ptr - Pointer to memory to be freed.  This memory must have been allocated
   with 'MPID_Malloc'.
 
+  Module:
+  Utility
   @*/
 void MPID_Free( void * ptr )
 {
@@ -1972,6 +2009,9 @@ void MPID_Free( void * ptr )
 .vb
  #define MPID_Memcpy( dest, src, n ) memcpy( dest, src, n )
 .ve
+
+  Module:
+  Utility
   @*/
 void *MPID_Memcpy( void *dest, const void *src, size_t n )
 {
@@ -1979,6 +2019,9 @@ void *MPID_Memcpy( void *dest, const void *src, size_t n )
 
 /*@
   MPID_Calloc - .
+
+  Module:
+  Utility
   @*/
 void *MPID_Calloc( )
 {
@@ -1993,6 +2036,9 @@ void *MPID_Calloc( )
   Return value:
   A pointer to a copy of the string, including the terminating null.  A
   null pointer is returned on error, such as out-of-memory.
+
+  Module:
+  Utility
   @*/
 char *MPID_Strdup( const char *str )
 {
@@ -2304,8 +2350,93 @@ int MPID_Attr_delete( MPID_List *list, int keyval )
   thread support provided, and may be used at compile time to remove
   thread locks and other code needed only in a multithreaded environment.
 
+  Module:
+  Environment
   D*/
 extern int MPID_THREAD_LEVEL;
+
+/*TDyOverview.tex
+ * Section : Dynamic Processes
+ *
+ * The challenge here is to define a core set of routines that aren't
+ * too complicated to implement.  Unfortunately, these are at the core of
+ * the device-specific operations.  The only function that the MPI level
+ * can really provide is the construction of the intercommunicator from 
+ * a list of local process id's.
+ *
+ * Question:
+ * One new datastructure may be exposed here: the MPI Info.  Should we
+ * add an MPID_Info * (non-opaque) structure?
+ T*/
+/*@
+  MPID_Comm_spawn_multiple - Spawm and connect to new processes
+
+  Module:
+  MPID_CORE
+  @*/
+int MPID_Comm_spawn_multiple( int count, const char *commands[],
+			      const char *argv_p[][], 
+			      const int max_procs[],
+			      MPID_Info *info[],
+			      int root, MPID_Comm *comm, 
+			      MPID_Lpid lpids[], int err_codes[] )
+{
+}
+
+/*@
+  MPID_Open_port - Open a port for accepting connections from MPI processes
+
+  Module:
+  MPID_CORE
+  @*/
+int MPID_Open_port( MPID_Info *info, const char *port_name )
+{
+}
+
+/*@
+  MPID_Close_port - Close a port
+
+  Module:
+  MPID_CORE
+  @*/
+int MPID_Close_port( const char *port_name )
+{
+}
+
+/*@
+  MPID_Comm_accept - Accept a connection from an MPI process
+
+  Module:
+  MPID_CORE
+
+  @*/
+int MPID_Comm_accept( const char *port_name, MPID_Info *info, int root,
+		      MPID_Comm *comm, MPID_Lpid (*lpids)[] )
+{
+}
+
+/*@
+  MPID_Comm_connect - Connect to an MPI process
+
+  Module:
+  MPID_CORE
+
+  @*/
+int MPID_Comm_connect( const char *port_name, MPID_Info *info, int root,
+		       MPID_Comm *comm, MPID_Lpid (*lpids)[] )
+{
+}
+
+/*@
+  MPID_Comm_disconnect - Disconnect from MPI processes
+
+  Module:
+  MPID_CORE
+
+  @*/
+int MPID_Comm_disconnect( MPID_Comm *comm )
+{
+}
 
 /*
  * ToDo:

@@ -82,7 +82,7 @@ Section~\ref{sec-intermediate}.
 The modules are (THIS LIST IS INCOMPLETE):
 \begin{description}
 \item[MPID CORE]Basic functions to start, stop, and communicate
-between processes.
+between processes.  This also includes the \code{mpiexec} program.
 \item[Attributes]MPI Keyvals and attributes
 \item[Datatypes]MPI Datatypes and pack/unpack operations and a new
 object, \code{MPID_Segment}, used only within the ADI.
@@ -142,6 +142,10 @@ and \code{MPID_Put} operations
 be called.  A device is permitted to define this as a no-op if polling
 is not needed.  In other words, this routine is provided to
 \emph{allow} polling implementations, not to \emph{require} them.
+\item[MPID Comm Spawn Multiple]
+\item[MPID Comm Connect]
+\item[MPID Comm Attach]
+\item[mpiexec]
 \end{description}
 
 \textbf{Note: this doesn't support Spawn etc. We need to decide how to
@@ -270,19 +274,90 @@ Dynamic processes.  What is the ADI interface?
 utility module.  But what routines from \code{MPID_Core} must it call
 to connect up the processes?
 
-\section{ADI-3 Routines}
-\input adi3func.tex
+%\section{ADI-3 Routines}
+%\input adi3func.tex
 
-\section{ADI-3 Datastructures}
-\input adi3data.tex
+%\section{ADI-3 Datastructures}
+%\input adi3data.tex
+
+\section{Integrating a Device into the MPICH build tree}
+Still to do.  This section needs to cover:
+\begin{enumerate}
+\item Directory structure.  Where will mpich look for a new device
+\item Local configure/setup script.  How the top-level mpich configure invokes
+  the device-specific setup scripts
+\item mpiexec.  How mpich creates the correct mpiexec
+\item installation.  How mpich gets the proper device-specific files
+  installed; e.g., the mpd for the mpd device.
+\item Device-specific documentation, such as environment variables and
+  command-line arguments used only by a particular device.
+\item Testing codes for device-specific functions
+\end{enumerate}
+
+\input Overview.tex
+\input OpaqOverview.tex
+\input DSOverview.tex
+\input Constants.tex
+\input DyOverview.tex
+
+\section{MPID Core}
+\input MPID_CORE-list.tex
+\input Handlers.tex
+
+\subsection{mpiexec}
+\textbf{Need some discussion of mpiexec}
+
+\section{Attributes}
+\input AttrOverview.tex
+\input Keyval.tex
+\input Attribute-list.tex
+
+\section{Datatypes}
+\input Datatype-list.tex
+\input SGOverview.tex
+\input Segment-list.tex
+
+\section{Groups}
+\input LocalPID.tex
+\input Group-list.tex
+
+\section{Communicators}
+\input Communicator-list.tex
+
+\section{Requests}
+\input Request-list.tex
+
+\section{Communication}
+\input CMOverview.tex
+\input Communication-list.tex
+
+\section{Streams}
+\input StmOverview.tex
+\input Stream-list.tex
+
+\section{Window Objects}
+\input Win-list.tex
+
+\section{Timers}
+\input Timer-list.tex
+
+\section{Topology}
+\input TopoOverview.tex
+\input Topology-list.tex
+
+\section{Utility}
+\input Memory.tex
+\input Utility-list.tex 
+
+\section{Environment}
+\input Environment-list.tex
+
+\newread\testfile
+\openin\testfile{None-list.tex}
+\ifeof\testfile\else
+\section{Miscellaneous}
+\input None-list.tex
+\fi
+\closein\testfile
 
 \end{document}
-
-
-
-
-
-
-
-
-
