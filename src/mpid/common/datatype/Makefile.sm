@@ -1,2 +1,2 @@
 lib${MPILIBNAME}_a_SOURCES = mpid_segment.c
-INCLUDES = -I../../../include -I${top_srcdir}/include -I${master_top_srcdir}/src/include
+INCLUDES = -I ../../@device_name@/include -I../../../include -I${top_srcdir}/include -I${master_top_srcdir}/src/include
