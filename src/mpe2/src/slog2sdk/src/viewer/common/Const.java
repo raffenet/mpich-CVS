@@ -27,8 +27,8 @@ public class Const
     public  static final String  INTEGER_FORMAT         = "#,##0";
     public  static final String  FLOAT_FORMAT           = "0.0##";
     public  static final String  SHORT_FORMAT           = "##0";
-    public  static final String  STRING_FORMAT          = null;;
-    public  static final String  BOOLEAN_FORMAT         = null;;
+    public  static final String  STRING_FORMAT          = null;
+    public  static final String  BOOLEAN_FORMAT         = null;
 
     public  static final int     TIME_SCROLLBAR_UNIT_INCREMENT = 20;
 
