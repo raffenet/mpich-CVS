@@ -28,7 +28,7 @@ AC_CHECK_FUNCS( pthread_mutexattr_init pthread_mutexattr_setpshared )
 AC_CHECK_HEADERS( pthread.h sched.h )
 
 if test "$HAVE_SPARC_INLINE_PROCESS_LOCKS" = "yes" ; then
-    AC_DEFINE(HAVE_SPARC_INLINE_PROCESS_LOCKS)
+    AC_DEFINE(HAVE_SPARC_INLINE_PROCESS_LOCKS, 1, [Use inline spin locks on SPARC architectures])
 fi
 
 AC_SUBST(AR)
