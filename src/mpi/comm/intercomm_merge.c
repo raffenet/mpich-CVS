@@ -104,22 +104,55 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    MPIR_Nest_incr();
+
+    /* Make sure that we have a local intercommunicator */
+    if (!comm_ptr->local_comm) {
+	/* Manufacture the local communicator */
+	MPIR_Setup_intercomm_localcomm( comm_ptr );
+    }
+
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    int acthigh;
+	    /* Check for consistent valus of high in each local group.
+	     The Intel test suite checks for this; it is also an easy
+	     error to make */
+	    acthigh = high ? 1 : 0;   /* Clamp high into 1 or 0 */
+	    NMPI_Allreduce( MPI_IN_PLACE, &acthigh, 1, MPI_INT, MPI_SUM,
+			    comm_ptr->local_comm->handle );
+
+	    /* acthigh must either == 0 or the size of the local comm */
+	    if (acthigh != 0 && acthigh != comm_ptr->local_size) {
+		MPIR_Nest_decr();
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
+						  "**notsame",
+						  "**notsame %s %s", "high", 
+						  "MPI_Intercomm_merge" );
+		
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    }
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
     /* FIXME : We should not use the same context id here */
     /* Find the "high" value of the other group of processes.  This
        will be used to determine which group is ordered first in
-       the generated communicator */
+       the generated communicator.  high is logical */
     local_high = high;
     if (comm_ptr->rank == 0) {
 	NMPI_Sendrecv( &local_high, 1, MPI_INT, 0, 0, 
 		       &remote_high, 1, MPI_INT, 0, 0, intercomm, 
 		       MPI_STATUS_IGNORE );
     }
+
     /* All processes in the local group now need to get the 
        value of remote_high */
-    if (!comm_ptr->local_comm) {
-	/* Manufacture the local communicator */
-	MPIR_Setup_intercomm_localcomm( comm_ptr );
-    }
     NMPI_Bcast( &remote_high, 1, MPI_INT, 0, comm_ptr->local_comm->handle );
         
     /* If local_high and remote_high are the same, then order is arbitrary.
@@ -138,8 +171,9 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 
     newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
     if (!newcomm_ptr) {
+	MPIR_Nest_decr();
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
 
@@ -187,8 +221,9 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     /* printf( "About to get context id \n" ); fflush( stdout ); */
     new_context_id = MPIR_Get_contextid( newcomm_ptr->handle );
     if (new_context_id == 0) {
+	MPIR_Nest_decr();
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**toomanycomm", 0 );
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
     /* printf( "Resetting contextid\n" ); fflush( stdout ); */
@@ -199,6 +234,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 
     *newintracomm = newcomm_ptr->handle;
 
+    MPIR_Nest_decr();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
     return MPI_SUCCESS;
 }
