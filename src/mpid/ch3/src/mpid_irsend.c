@@ -119,6 +119,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	}
 	else
 	{
+	    sreq->ref_count = 0;
 	    MPIDI_CH3_Request_destroy(sreq);
 	    sreq = NULL;
 	}

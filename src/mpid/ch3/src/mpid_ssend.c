@@ -139,7 +139,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    
 	    iov_n = MPID_IOV_LIMIT - 1;
 	    mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
-	    if (mpi_errno != MPI_SUCCESS)
+	    if (mpi_errno == MPI_SUCCESS)
 	    {
 		iov_n += 1;
 		
@@ -151,6 +151,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    }
 	    else
 	    {
+		sreq->ref_count = 0;
 		MPIDI_CH3_Request_destroy(sreq);
 		sreq = NULL;
 	    }

@@ -35,6 +35,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     rreq = MPIDI_CH3U_Request_FDP_or_AEU(&match, &found);
     if (rreq == NULL)
     {
+	sreq->ref_count = 0;
 	MPIDI_CH3_Request_destroy(sreq);
 	sreq = NULL;
 	mpi_errno = MPIR_ERR_MEMALLOCFAILED;
