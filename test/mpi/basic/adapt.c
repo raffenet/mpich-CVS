@@ -9,7 +9,7 @@
 #include "GetOpt.h"
 
 #ifndef BOOL
-#define BOOL int
+typedef int BOOL;
 #endif
 #ifndef TRUE
 #define TRUE 1
