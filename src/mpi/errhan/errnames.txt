@@ -1329,3 +1329,6 @@ with MPI_Alloc_mem.
 **mpi_win_set_errhandler %W %E:MPI_Win_set_errhandler(%W, %E) failed
 **mpi_register_datarep:MPI_Register_datarep failed
 **mpi_register_datarep %s %p %p %p %p:MPI_Register_Datarep(%s %p %p %p %p) failed
+# -----------------------------------------------------------------------------
+# The following names are defined but not used (see the -careful option 
+# for extracterrmsgs) (still to do: move the undefined names here)
