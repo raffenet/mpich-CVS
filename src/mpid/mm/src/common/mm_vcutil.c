@@ -162,7 +162,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	break;
     case MM_UNPACKER_METHOD:
 	vc_ptr->write = mm_unpacker_write;
-	vc_ptr->read = mm_unpacker_read;
+	vc_ptr->read = NULL;
 	vc_ptr->method = MM_UNPACKER_METHOD;
 	vc_ptr->ref_count = 1;
 	vc_ptr->readq_head = NULL;
