@@ -20,6 +20,6 @@
 FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
 {
     MPIR_F_MPI_BOTTOM = a;
-    MPIR_F_MPI_STATUS_IGNORE = b;
-    MPIR_F_MPI_STATUSES_IGNORE = c;
+    MPI_F_STATUS_IGNORE = b;
+    MPI_F_STATUSES_IGNORE = c;
 }

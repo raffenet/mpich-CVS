@@ -18,6 +18,7 @@
 # Setup global variables
 $buildfiles = 1;
 $build_prototypes = 1;
+$build_io = 1;
 $print_line_len = 0;
 $write_mpif = 1;
 $is_MPI = 1;
@@ -60,6 +61,7 @@ foreach $_ (@ARGV) {
 	$build_prototypes = 0;
 	$do_weak    = 0;
     }
+    elsif (/-noromio/) { $build_io = 0; }
     elsif (/-debug/) {
 	$debug = 1;
     }
@@ -217,7 +219,8 @@ foreach $_ (@ARGV) {
 # routines are handled with the special argument processing)
 %special_routines = ( 'Init' => 1, 'Init_thread' => 1, 'Pcontrol' => '1',
 		      'Address' => 1, 'Get_address' => 1,
-		      'Keyval_create' => 1,
+		      'Keyval_create' => 1, 'Status_f2c' => 1,
+		      'Status_c2f' => 1, 
 		      );
 # 
 # Note that wtime and wtick aren't found because they don't match the 
@@ -370,101 +373,12 @@ if ($build_prototypes) {
 /* Prototypes for Fortran Interface Functions */\n";
 }
 
-open( FD, "<$prototype_file" ) || die "Cannot open $prototype_file\n";
 
-# Skip to prototypes
-while (<FD>) {
-    if ( /\/\*\s*Begin Prototypes/ ) { last; }
-}
+&ReadAndProcessInterface( $prototype_file );
 
-# Read each one
-while (<FD>) {
-    # Remove any comments
-    s/\/\*.*\*\///g;
-    print $_ if $debug;
-    if (/\/\*\s*End Prototypes/) { last; }
-    if (/^int\s+$routine_prefix($routine_pattern)\s*\((.*)/) {
-	$routine_name = $1;
-	$args = $2;
-	while (! ($args =~ /;/)) {
-	    $args .= <FD>;
-	}
-	$args =~ s/\)\s*;//g;
-	$args =~ s/[\r\n]*//g;
-	# remove qualifiers from args
-	$args =~ s/\s*const\s+//g;
-	$lcname = lc($routine_name);
-	# Eventually, we'll create a new file here.  
-	# For C++, we may create similar files by looking up 
-	# the corresponding routines.
-	if (defined($special_routines{$routine_name})) {
-	    print "Skiping $routine_name\n" if $debug;
-	}
-	else {
-	    # Check for duplicates in the list of routines
-	    if (defined($mpi_routines{$routine_name})) {
-		print STDERR "Duplicate prototypes for $routine_name\n";
-	    }
-	    # Clear variables
-	    $clean_up = "";
-	    &clean_args;
-	    $mpi_routines{$routine_name} = $args;
-	    if ($buildfiles) {
-		if (defined($name_map{$lcname})) {
-		    $filename = $name_map{$lcname} . "f.c";
-		}
-		else {
-		    $filename = $lcname . "f.c";
-		}
-		$OUTFD = OUTPUTFILED;   # Needed for pre 5.6 versions of perl
-		open ($OUTFD, ">$filename" ) || die "Cannot open $filename\n";
-		# Add the name to the list of files"
-		$files[$#files+1] = $filename;
-	    }
-	    else {
-		$OUTFD = STDOUT;
-	    }
-	    &print_header( $routine_name, $lcname );
-	    if ($do_subdecls) {
-		print $OUTFD "FORTRAN_API void FORT_CALL ";
-	    }
-	    else {
-		print $OUTFD "void ";
-	    }
-	    print $OUTFD "${out_prefix}${lcname}_ ";
-	    # Print args not only prints the arguments but fills the
-	    # array @arg_addresses to indicate the number of dereference
-	    # operations are needed to recover the original value (since
-	    # all Fortran parameters are passed either by value-result or
-	    # by reference, many value parameters in the C calls are 
-	    # replaced by reference parameters in the Fortran interface.
-	    print "Printing arguments for mpi_${lcname}_\n" if $debug;
-	    &print_args( $OUTFD, $args );
-
-	    &print_attr;
-	    print $OUTFD "{\n";
-	    &print_special_decls( $routine_name );
-	    print $OUTFD "    *ierr = $routine_prefix$routine_name";
-	    print "Printing call arguments for mpi_${lcname}_\n" if $debug;
-	    &print_call_args( $args );
-	    # Print any post call processing
-	    &print_post_call( $routine_name, $args );
-	    print $OUTFD "}\n";
-	    if ($buildfiles) {
-		close ($OUTFD);
-	    }
-	    if ($build_prototypes) {
-		if ($do_subdecls) {
-		    print PROTOFD "FORTRAN_API void FORT_CALL ${out_prefix}${lcname}_ ";
-		}
-		else {
-		    print PROTOFD "void ${out_prefix}${lcname}_ ";
-		}
-		&print_args( PROTOFD, $args );
-		print PROTOFD ";\n";
-	    }
-	}
-    }
+# if doing MPI2, we also need to read the MPI-2 protottypes
+if ( -s "../../mpi/romio/include/mpio.h.in" && $build_io) { 
+    &ReadAndProcessInterface( "../../mpi/romio/include/mpio.h.in" );
 }
 
 if ($is_MPI) {
@@ -750,7 +664,7 @@ sub print_args {
     }
     # Add the new error return code
     print $OUTFD "MPI_Fint *ierr ${last_args}";
-    print $OUTFD ")\n";
+    print $OUTFD ")";
 }
 
 # Print the arguments for the routine CALL.  
@@ -802,7 +716,7 @@ sub print_call_args {
 # the __atribute__ weak option.
 sub print_attr {
     if ($do_weak) {
-	print $OUTFD "FUNC_ATTRIBUTES\n";
+	print $OUTFD " FUNC_ATTRIBUTES\n";
     }
 }
 
@@ -1017,7 +931,7 @@ sub bufaddr_ctof {
 sub status_ftoc {
     my $count = $_[0];
     print $OUTFD "\
-    if (v$count == MPIR_F_MPI_STATUS_IGNORE) { v$count = MPI_STATUS_IGNORE; }\n";
+    if (v$count == MPI_F_STATUS_IGNORE) { v$count = MPI_STATUS_IGNORE; }\n";
 }
 sub status_ctof {
     my $coutvar = $_[0];
@@ -1036,7 +950,7 @@ sub status_in_arg {
 sub status_array_ftoc {
     my $count = $_[0];
     print $OUTFD "\
-    if (v$count == MPIR_F_MPI_STATUSES_IGNORE) { v$count = MPI_STATUS_IGNORE; }\n";
+    if (v$count == MPI_F_STATUSES_IGNORE) { v$count = MPI_STATUS_IGNORE; }\n";
 }
 sub status_array_ctof {
     my $coutvar = $_[0];
@@ -1174,29 +1088,11 @@ sub print_special_decls {
 # Need to put this into a routine similar to the ReadInterface routine
 # in the c++ version.  This will allow us to read both mpi.h.in
 # and mpio.h.in (or other files)
-open ( MPIFD, "<$prototype_file" ) || die "Could not open $prototype_file\n";
-#
-# First, find the values that we need
-while (<MPIFD>) {
-    # Remove any comments
-    s/\/\*.*\*\///g;
-    if (/#\s*define\s+(MPI_[A-Z_0-9]*)\s*([^\s]*)/) {
-	$mpidef{$1} = $2;
-    }
-    elsif (/typedef\s+enum\s*{\s*(.*)/) {
-	# Eat until we find the closing right brace
-	$enum_line = $1;
-	while (! ($enum_line =~ /}/)) { $enum_line .= <MPIFD>; }
-	# Now process for names and values
-	while ( ($enum_line =~ /\s*(MPI_[A-Z_0-9]*)\s*=\s*([a-fx0-9]*)(.*)/ ) ){
-	    $mpidef{$1} = $2;
-	    $enum_line = $3;
-	    print "Defining $1 as $2\n" if $debug;
-	}
-	
-    } 
+
+&ReadInterfaceForDefinitions( $prototype_file );
+if ($build_io) {
+    &ReadInterfaceForDefinitions( "../../mpi/romio/include/mpio.h" );
 }
-close (MPIFD);
 #
 if ($write_mpif) {
 
@@ -1242,7 +1138,7 @@ $cchar       This file created by buildiface $arg_string\n";
 	&print_mpif_int( "MPI_$key" );
     }
     # Objects
-    foreach $key ('COMM_WORLD', 'COMM_SELF', 'GROUP_EMPTY', 'COMM_NULL', 'WIN_NULL', 'FILE_NULL', 'GROUP_NULL', 'OP_NULL', 'DATATYPE_NULL', 'REQUEST_NULL', 'ERRHANDLER_NULL') {
+    foreach $key ('COMM_WORLD', 'COMM_SELF', 'GROUP_EMPTY', 'COMM_NULL', 'WIN_NULL', 'FILE_NULL', 'GROUP_NULL', 'OP_NULL', 'DATATYPE_NULL', 'REQUEST_NULL', 'ERRHANDLER_NULL', 'INFO_NULL', ) {
 	&print_mpif_int( "MPI_$key" );
     }
     # Attributes
@@ -1312,6 +1208,21 @@ $cchar       This file created by buildiface $arg_string\n";
     print MPIFFD "       INTEGER MPI_ADDRESS_KIND, MPI_OFFSET_KIND\n";
     print MPIFFD "       PARAMETER (MPI_ADDRESS_KIND=\@ADDRESS_KIND\@)\n";
     print MPIFFD "       PARAMETER (MPI_OFFSET_KIND=\@OFFSET_KIND\@)\n";
+
+    # MPI-2 types: Files
+    if ($build_io) {
+	# Modes
+	foreach $mode (RDONLY, RDWR, WRONLY, DELETE_ON_CLOSE, UNIQUE_OPEN,
+		       CREATE, EXCL, APPEND, SEQUENTIAL) {
+	    &print_mpif_int( "MPI_MODE_$mode" );
+	}
+	# Seek
+	foreach $dir (SET, CUR, END) {
+	    &print_mpif_int( "MPI_SEEK_$dir" );
+	}
+	&print_mpif_int( "MPI_DISPLACEMENT_CURRENT" );
+	&print_mpif_int( "MPI_MAX_DATAREP_STRING" );
+    }
     # 
     # Finally, the special symbols
     print MPIFFD "       INTEGER MPI_BOTTOM\n";
@@ -1330,7 +1241,7 @@ $cchar       This file created by buildiface $arg_string\n";
 } # if write_mpif
 
 #
-# Look through $args for parameter names (foo\s\s*name)
+# Look through $args for parameter names (foo\s+name)
 # and remove them
 sub clean_args {
     my $newargs = "";
@@ -1393,11 +1304,13 @@ MPI_Fint MPIR_F_TRUE = 1, MPIR_F_FALSE = 0;
 #endif
 ";
     # This is also temporary.
+    # MPI-2, section 4.12.5, on the declaration of MPI_F_STATUS_IGNORE
+    # MPI_F_STATUSES_IGNORE as global variables in mpi.h (!)
     print $OUTFD "
 #ifndef USE_POINTER_FOR_BOTTOM
 void *MPIR_F_MPI_BOTTOM = 0;
-void *MPIR_F_MPI_STATUS_IGNORE = 0;
-void *MPIR_F_MPI_STATUSES_IGNORE = 0;
+void *MPI_F_STATUS_IGNORE = 0;
+void *MPI_F_STATUSES_IGNORE = 0;
 #endif
 \n";
 
@@ -1447,8 +1360,8 @@ void *MPIR_F_MPI_STATUSES_IGNORE = 0;
 FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
 {
     MPIR_F_MPI_BOTTOM = a;
-    MPIR_F_MPI_STATUS_IGNORE = b;
-    MPIR_F_MPI_STATUSES_IGNORE = c;
+    MPI_F_STATUS_IGNORE = b;
+    MPI_F_STATUSES_IGNORE = c;
 }
 ";
     close ($OUTFD);
@@ -1618,11 +1531,78 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
 	print PROTOFD ";\n";
     }
 
+    # The status conversion functions.
+    # These are a little different because they are routines that
+    # are called from C.
+    # Also note that we must exclude them from the routines that
+    # are generated for Fortran.  These are here because they need to
+    # know how Fortran stores a status (e.g., if C and Fortran integers 
+    # are the same size).
+    $OUTFD = "STATUSF2C";
+    open ($OUTFD, ">statusf2c.c" ) || die "Cannot open statusf2c.c\n";
+    $files[$#files+1] = "statusf2c.c";
+    print $OUTFD "
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*  
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ *
+ * This file is automatically generated by buildiface 
+ * DO NOT EDIT
+ */
+#include \"mpi_fortimpl.h\"
+int MPI_Status_f2c( MPI_Fint *f_status, MPI_Status *c_status )
+{
+    int mpi_errno = MPI_SUCCESS;
+    /* This code assumes that the ints are the same size */
+    if (f_status == MPI_F_STATUS_IGNORE) {
+	/* The call is erroneous (se 4.12.5 in MPI-2) */
+        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, \"**notfstatignore\", 0 );
+	return MPIR_Err_return_comm( 0, \"MPI_Status_f2c\",  mpi_errno );
+    }
+    *c_status = *(MPI_Status *)	f_status;
+    return MPI_SUCCESS;  
+}\n";
+    close ($OUTFD);
+
+    $OUTFD = "STATUSC2F";
+    open ($OUTFD, ">statusc2f.c" ) || die "Cannot open statusc2f.c\n";
+    $files[$#files+1] = "statusc2f.c";
+    print $OUTFD "
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*  
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ *
+ * This file is automatically generated by buildiface 
+ * DO NOT EDIT
+ */
+#include \"mpi_fortimpl.h\"
+int MPI_Status_c2f( MPI_Status *c_status, MPI_Fint *f_status )
+{
+    int mpi_errno = MPI_SUCCESS;
+    /* This code assumes that the ints are the same size */
+    if (c_status == MPI_STATUS_IGNORE ||
+	c_status == MPI_STATUSES_IGNORE) {
+	/* The call is erroneous (se 4.12.5 in MPI-2) */
+        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, \"**notcstatignore\", 0 );
+	return MPIR_Err_return_comm( 0, \"MPI_Status_c2f\",  mpi_errno );
+    }
+    *(MPI_Status *)f_status = *c_status;
+    return MPI_SUCCESS
+}\n";
+    close ($OUTFD);
+
 }
 
 sub print_mpif_int {
     my $key = $_[0];
     my $value = $mpidef{$key};
+    
+    if ($value eq "") {
+	print STDERR "No value found for $key\n";
+	return 0;
+    }
     # Remove any casts
     print "Input value for $key = $value\n" if $debug;
     if ($value =~ /\(MPI/) {
@@ -1641,6 +1621,137 @@ sub print_mpif_int {
     }
     print MPIFFD "       INTEGER $key\n";
     print MPIFFD "       PARAMETER ($key=$value)\n";
+}
+
+sub ReadAndProcessInterface {
+    my $prototype_file = $_[0];
+
+    open( FD, "<$prototype_file" ) || die "Cannot open $prototype_file\n";
+
+    # Skip to prototypes
+    while (<FD>) {
+	if ( /\/\*\s*Begin Prototypes/ ) { last; }
+    }
+
+    # Read each one
+    while (<FD>) {
+	# Remove any comments
+	s/\/\*.*\*\///g;
+	print $_ if $debug;
+	if (/\/\*\s*End Prototypes/) { last; }
+	if (/^int\s+$routine_prefix($routine_pattern)\s*\((.*)/) {
+	    $routine_name = $1;
+	    $args = $2;
+	    while (! ($args =~ /;/)) {
+		$args .= <FD>;
+	    }
+	    $args =~ s/\)\s*;//g;
+	    $args =~ s/[\r\n]*//g;
+	    # remove qualifiers from args
+	    $args =~ s/\s*const\s+//g;
+	    $lcname = lc($routine_name);
+	    # Eventually, we'll create a new file here.  
+	    # For C++, we may create similar files by looking up 
+	    # the corresponding routines.
+	    if (defined($special_routines{$routine_name})) {
+		print "Skiping $routine_name\n" if $debug;
+	    }
+	    else {
+		# Check for duplicates in the list of routines
+		if (defined($mpi_routines{$routine_name})) {
+		    print STDERR "Duplicate prototypes for $routine_name\n";
+		    next;
+		}
+		# Clear variables
+		&clean_args;
+		$mpi_routines{$routine_name} = $args;
+
+		$clean_up = "";
+		if ($buildfiles) {
+		    if (defined($name_map{$lcname})) {
+			$filename = $name_map{$lcname} . "f.c";
+		    }
+		    else {
+			$filename = $lcname . "f.c";
+		    }
+		    $OUTFD = OUTPUTFILED;   # Needed for pre 5.6 versions of perl
+		    open ($OUTFD, ">$filename" ) || die "Cannot open $filename\n";
+		    # Add the name to the list of files"
+		    $files[$#files+1] = $filename;
+		}
+		else {
+		    $OUTFD = STDOUT;
+		}
+		&print_header( $routine_name, $lcname );
+		if ($do_subdecls) {
+		    print $OUTFD "FORTRAN_API void FORT_CALL ";
+		}
+		else {
+		    print $OUTFD "void ";
+		}
+		print $OUTFD "${out_prefix}${lcname}_ ";
+		# Print args not only prints the arguments but fills the
+		# array @arg_addresses to indicate the number of dereference
+		# operations are needed to recover the original value (since
+		# all Fortran parameters are passed either by value-result or
+		# by reference, many value parameters in the C calls are 
+		# replaced by reference parameters in the Fortran interface.
+		print "Printing arguments for mpi_${lcname}_\n" if $debug;
+		&print_args( $OUTFD, $args );
+
+		&print_attr;
+		print $OUTFD "{\n";
+		&print_special_decls( $routine_name );
+		print $OUTFD "    *ierr = $routine_prefix$routine_name";
+		print "Printing call arguments for mpi_${lcname}_\n" if $debug;
+		&print_call_args( $args );
+		# Print any post call processing
+		&print_post_call( $routine_name, $args );
+		print $OUTFD "}\n";
+		if ($buildfiles) {
+		    close ($OUTFD);
+		}
+		if ($build_prototypes) {
+		    if ($do_subdecls) {
+			print PROTOFD "FORTRAN_API void FORT_CALL ${out_prefix}${lcname}_ ";
+		    }
+		    else {
+			print PROTOFD "void ${out_prefix}${lcname}_ ";
+		    }
+		    &print_args( PROTOFD, $args );
+		    print PROTOFD ";\n";
+		}
+	    }
+	}
+    }
+}
+
+sub ReadInterfaceForDefinitions {
+    my $prototype_file = $_[0];
+
+    open ( MPIFD, "<$prototype_file" ) || die "Could not open $prototype_file\n";
+    #
+    # First, find the values that we need
+    while (<MPIFD>) {
+	# Remove any comments
+	s/\/\*.*\*\///g;
+	if (/#\s*define\s+(MPI_[A-Z_0-9]*)\s*([^\s]*)/) {
+	    $mpidef{$1} = $2;
+	}
+	elsif (/typedef\s+enum\s*{\s*(.*)/) {
+	    # Eat until we find the closing right brace
+	    $enum_line = $1;
+	    while (! ($enum_line =~ /}/)) { $enum_line .= <MPIFD>; }
+	       # Now process for names and values
+	       while ( ($enum_line =~ /\s*(MPI_[A-Z_0-9]*)\s*=\s*([a-fx0-9]*)(.*)/ ) ){
+		   $mpidef{$1} = $2;
+		   $enum_line = $3;
+		   print "Defining $1 as $2\n" if $debug;
+	       }
+	       
+	   } 
+    }
+    close (MPIFD);
 }
 
 # ----------------------------------------------------------------------------
@@ -1666,8 +1777,8 @@ sub CheckAutoconf {
     close ACFD;
 
     chdir tmp;
-    $rc = system "autoconf 2>&1 >/dev/null";
-    $rc = system "grep endEOF configure 2>&1 >/dev/null";
+    $rc = system "autoconf >/dev/null 2>&1 ";
+    $rc = system "grep endEOF configure >/dev/null 2>&1";
     $rc = !$rc;
     chdir "..";
 
