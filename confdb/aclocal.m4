@@ -18,10 +18,27 @@ builtin(include,aclocal_java.m4)
 
 dnl PAC_CONFIG_SUBDIRS_IMMEDIATE(DIR ...)
 dnl Perform the configuration *now*
+dnl 
+dnl There is a bug in AC_OUTPUT_SUBDIRS that is tickled by this
+dnl code.  There is no step to create any of the intermediate
+dnl directories in the case that this is a vpath build.  
 AC_DEFUN(PAC_CONFIG_SUBDIRS_IMMEDIATE,
 [AC_REQUIRE([AC_CONFIG_AUX_DIR_DEFAULT])dnl
 SAVE_subdirs="$subdirs"
 subdirs="$1"
+#
+# Build any intermediate directories
+for $dir in $1 ; do
+    saveIFS="$IFS"
+    IFS="/"
+    curdir=""
+    for $subdir in $dir ; do
+	curdir="${curdir}$subdir"
+	if test ! -d $curdir ; then mkdir $curdir ; fi
+        curdir="${curdir}/"
+    done
+    IFS="$saveIFS"
+done
 AC_OUTPUT_SUBDIRS($1)
 subdirs="$SAVE_subdirs"
 ])
