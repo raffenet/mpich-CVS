@@ -200,9 +200,17 @@ public class TraceToSlog2
         StringTokenizer  tokens = new StringTokenizer( tracename,
                          "[]{}()~!@#$%^&*\\;`/? \t\n\r\f" );
         StringBuffer     strbuf = new StringBuffer();
-        while ( tokens.hasMoreTokens() )
+        if ( tokens.hasMoreTokens() ) {
             strbuf.append( tokens.nextToken() );
-        return strbuf.toString();
+            while ( tokens.hasMoreTokens() ) {
+                strbuf.append( '_' );
+                strbuf.append( tokens.nextToken() );
+            }
+        }
+        if ( strbuf.charAt( 0 ) == '-' )
+            return "TRACE_" + strbuf.toString();
+        else
+            return strbuf.toString();
     }
 
     public static String tracenameTOslogname( String tracename )
@@ -213,7 +221,10 @@ public class TraceToSlog2
         else {
             String prefix_name = stripInvalidChar( tracename );
             if ( prefix_name.length() > 0 )
-                return prefix_name + ".slog2";
+                if ( prefix_name.endsWith( "." ) )
+                    return prefix_name + "slog2";
+                else
+                    return prefix_name + ".slog2";
             else
                 return "trace.slog2";
         }
