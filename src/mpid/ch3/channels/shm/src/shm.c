@@ -612,23 +612,10 @@ int MPIDI_CH3I_SHM_post_read(MPIDI_VC *vc, void *buf, int len, int (*rfn)(int, v
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_SHM_post_readv(MPIDI_VC *vc, MPID_IOV *iov, int n, int (*rfn)(int, void*))
 {
-#ifdef MPICH_DBG_OUTPUT
-    char str[1024] = "MPIDI_CH3I_SHM_post_readv: ";
-    char *s;
-    int i;
-#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
-#ifdef MPICH_DBG_OUTPUT
-    s = &str[16];
-    for (i=0; i<n; i++)
-    {
-	s += sprintf(s, "%d,", iov[i].MPID_IOV_LEN);
-    }
-    MPIDI_DBG_PRINTF((60, FCNAME, "%s\n", str));
-#endif
     vc->shm.read.total = 0;
     /* This isn't necessary if we require the iov to be valid for the duration of the operation */
     /*vc->shm.read.iov = iov;*/
