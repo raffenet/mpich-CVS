@@ -185,6 +185,21 @@ int MPIDI_CH3I_mqshm_unlink(int id)
     return mpi_errno;
 }
 
+/*
+static void print_msgq(mqshm_t *q_ptr)
+{
+    int i = q_ptr->first;
+    printf("msg_q: first = %d, last = %d, next_free = %d\n",
+	   q_ptr->first, q_ptr->last, q_ptr->next_free);
+    while (i != MQSHM_END)
+    {
+	printf("msg[%d].tag = %d\n", i, q_ptr->msg[i].tag);
+	i = q_ptr->msg[i].next;
+    }
+    fflush(stdout);
+}
+*/
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_mqshm_send
 #undef FCNAME
@@ -244,6 +259,7 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 		q_ptr->msg[q_ptr->last].next = index;
 		q_ptr->last = index;
 	    }
+	    /*print_msgq(q_ptr);*/
 	    *num_sent = length;
 	    /*q_ptr->inuse = 0;*/
 	    MPIDU_Process_unlock(&q_ptr->lock);
@@ -300,12 +316,12 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 		/* remove the node from the queue */
 		if (last_index == MQSHM_END)
 		{
-		    /*printf("[%d] recv: removing index %d from the head\n", MPIR_Process.comm_world->rank, index);fflush(stdout);*/
+		    /*printf("[%d] recv(%d): removing index %d from the head\n", MPIR_Process.comm_world->rank, tag, index);fflush(stdout);*/
 		    q_ptr->first = q_ptr->msg[index].next;
 		}
 		else
 		{
-		    /*printf("[%d] recv: removing index %d\n", MPIR_Process.comm_world->rank, index);fflush(stdout);*/
+		    /*printf("[%d] recv(%d): removing index %d\n", MPIR_Process.comm_world->rank, tag. index);fflush(stdout);*/
 		    q_ptr->msg[last_index].next = q_ptr->msg[index].next;
 		}
 		/* validate the message */
@@ -324,6 +340,7 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 		q_ptr->msg[index].next = q_ptr->next_free;
 		q_ptr->next_free = index;
 		/*q_ptr->inuse = 0;*/
+		/*print_msgq(q_ptr);*/
 		MPIDU_Process_unlock(&q_ptr->lock);
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE);
 		return mpi_errno;
