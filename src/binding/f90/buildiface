@@ -1,4 +1,6 @@
 #! /usr/bin/perl
+# binding.sub provides the routines for reading the prototype file
+# and extracting the function definitions.
 require "binding.sub";
 
 $prototype_file = "../../include/mpi.h.in";
@@ -6,6 +8,9 @@ $prototype_file = "../../include/mpi.h.in";
 %mpi_routines = ();
 %NeedConstants = ();   # constants needed for declaration, hased by routine
 
+#
+# parmc2f translates the C/C++ names to the Fortran 90 name.  %name% will
+# be replaced with the argument name in declarations.
 %parmc2f = ( 'int' => 'INTEGER',
 	     'int[]' => 'INTEGER %name%(*)',
 	     'int[][3]' => 'INTEGER %name%(3,*)',
@@ -61,7 +66,9 @@ $prototype_file = "../../include/mpi.h.in";
 	     'MPI_File*' => 'INTEGER', # Never an array of files
 	     );
 
-# Routine-count
+# special_args provides for handling of arguments that require special
+# features.  The keys are of the form 'Routine-count', with count the 
+# position of the argument, starting from one.
 %special_args = ( 'Testany-2' => 'MPI_Request[]',
 		  'Startall-2' => 'MPI_Request[]',
 		  'Testall-2' => 'MPI_Request[]',
@@ -137,9 +144,13 @@ $prototype_file = "../../include/mpi.h.in";
 		  'Type_create_hindexed-3' => 'MPI_Aint[]',
 		);
 
+# Some routines must be skipped (custom code is provided for them)
 %skip_routines = ( 'Init' => 1, 'Init_thread' => 1, 'Status_c2f' => 1,
 		   'Status_f2c' => 1, 'Pcontrol' => 1,
 		   );
+#
+# Read the interface file (e.g., mpi.h.in) and file in the various 
+# data structures (they're in global variables)
 &ReadInterface( $prototype_file, "MPI_", "[A-Z][a-z_0-9]*", "mpi_routines" );
 
 #
@@ -147,6 +158,7 @@ $prototype_file = "../../include/mpi.h.in";
 # input arrays versus ones that are output scalars.  For those functions,
 # convert input (or output) arrays to [] format.  
 
+# ----------------------------------------------------------------------------
 #
 # Generate the module for the routines
 # First pass.  Ignore the issue of choice routines
@@ -165,6 +177,9 @@ print MPIFD "       MODULE MPI
   
 close (MPIFD);
 # ----------------------------------------------------------------------------
+# This is the file for the routines that have no "choice" arguments.
+# An example of a choice argument is a "void *buf" input argument to 
+# MPI_Send, which allows any buffer address, both numeric and character.
 open ( MPIBASEFD, ">mpi_base.f90" ) || die "Could not open mpi_base.f90\n";
 print MPIBASEFD "       MODULE MPI_BASE
        IMPLICIT NONE
@@ -182,6 +197,8 @@ foreach $routine (keys(%mpi_routines)) {
     }
 
     # Check for a void * argument (usually choice)
+    # As noted above, we don't include the routines with choice arguments
+    # in the base module.
     if ($args =~ /void/) {
 	$mpi_choice_routines{$routine} = $args;
 	print "Skipping $routine because of void argument\n" if $debug;
@@ -251,7 +268,7 @@ foreach $routine (keys(%mpi_routines)) {
     print MPIBASEFD "       END SUBROUTINE MPI_$ucname\n\n";
 }
 
-# Add specials
+# Add special routines (e.g., the ones with unusual arguments)
 
 print MPIBASEFD "
         SUBROUTINE MPI_INIT(ierror)
@@ -283,6 +300,26 @@ close MPIFD;
 
 #
 # Generate the choice argument routines
+# FIXME: This file is not quite right.  Also note that it is 
+# *input* for yet another step, one that generates particular values 
+# for the types of the choice arguments.  We should consider using 
+# a different extension for this file, such as sed or in, so that 
+# it is clearly not a ready-to-use Fortran 90 input file.
+# In particular, it needs to be set up so that
+#   <typesize>
+#   <type>
+#   <dims>
+#   <type1>
+#   <dims1>
+# can all be substituted as necessary.  For example
+#   <typesize> => 4
+#   <type> => real
+#   <dims> => (*)
+#   <type1> => real
+#   <dims1> => (*)
+# For scalar arguments, <dims> should be empty.
+# Finally, the module name needs to be distinct for each choice of
+# <type>, <dims>, <type1>, and <dims1>
 open( MPIFD, ">mpi_t1.f90" ) || die "Cannot open mpi_t1.f90\n";
 print MPIFD "        MODULE MPI_t1_s
         IMPLICIT NONE
@@ -426,6 +463,14 @@ print MAKEFD "maint-clean:\
 print MAKEFD "install_BIN     = mpif90\n";
 print MAKEFD "install_ETC     = mpif90.conf\n";
 print MAKEFD "install_INCLUDE = mpi.\$(MOD) mpi_constants.\$(MOD) mpi_base.\$(MOD)\n";
+
+# ----------------------------------------------------------------------------
+# FIXME: Add the steps to handle the choice arguments.  They should be
+# selected by configure from a list of possible choices, with an 
+# enable switch used to bypass the checks.  In addition, we need a way to 
+# dynamically create subsets, given a list of routines and types/dimensions 
+# to include.  This allows users to build precisely tailored F90 modules.
+# ----------------------------------------------------------------------------
 
 # Since configure copies mpif90 to the bin dir, we need to remove it
 # in a distclean step.
