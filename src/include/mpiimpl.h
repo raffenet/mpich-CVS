@@ -87,6 +87,11 @@ int err_printf(char *str, ...);
 #include "mpiimplthread.h"
 
 /* Memory allocation */
+/* style: allow:malloc:2 sig:0 */
+/* style: allow:free:2 sig:0 */
+/* style: allow:strdup:2 sig:0 */
+/* style: allow:calloc:2 sig:0 */
+
 #ifdef USE_MEMORY_TRACING
 #define MPIU_Malloc(a)    MPIU_trmalloc((unsigned)(a),__LINE__,__FILE__)
 #define MPIU_Calloc(a,b)  \

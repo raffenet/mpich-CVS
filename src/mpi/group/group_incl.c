@@ -80,10 +80,11 @@ int MPI_Group_incl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 			}
 			if (group_ptr->lrank_to_lpid[ranks[i]].flag) {
 			mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
-					"**duprank", "**duprank %d %d",
-							  i, ranks[i] );
+				"**rankdup", "**rankdup %d %d %d",
+				  i, ranks[i], 
+				  group_ptr->lrank_to_lpid[ranks[i]].flag-1);
 			}
-			group_ptr->lrank_to_lpid[ranks[i]].flag = 1;
+			group_ptr->lrank_to_lpid[ranks[i]].flag = i+1;
 		    }
 		}
 		MPID_Common_thread_unlock();

@@ -24,6 +24,9 @@
 **permattr:Cannot set permanent attribute
 **noerrclasses:No more user-defined error classes
 **noerrcodes:No more user-defined error codes
+**rankdup:Duplicate ranks in rank array 
+**rankdup %d %d %d:Duplicate ranks in rank array at index %d, has value %d which is \
+also the value at index %d
 ----
 **buffer:Invalid buffer pointer
 **bufnull:Null buffer pointer
@@ -70,9 +73,6 @@ is %d
 **rankarray %d %d %d:Invalid rank in rank array at index %d, has value %d but must\
 be in the range 0 to %d
 **rankarray %d %d %d:Invalid rank in rank array[%d], value is %d but must be in 0 to %d.
-**rankdup:Duplicate ranks in rank array 
-**rankdup %d %d %d:Duplicate ranks in rank array at index %d, has value %d which is \
-also the value at index %d
 **ranklocal:Error specifying local_leader 
 **ranklocal %d %d:Error specifying local_leader; rank given was %d but must\
 be in the range 0 to %d
