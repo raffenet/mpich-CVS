@@ -14,3 +14,4 @@ mpi_t1.f90
 autom4ate.cache
 *.mod
 *.MOD
+.libs
