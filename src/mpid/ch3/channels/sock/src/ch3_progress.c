@@ -186,47 +186,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 		    {
 			int mpi_errno;
 
-#ifdef MPID_USE_SEQUENCE_NUMBERS
-			MPIU_DBG_PRINTF((
-			    "Invalid packet:\ntype: %d\neager:\n data_sz: %d\n context: %d\n tag: %d\n rank: %d\n srid: %d\n seqnum: %d\n"
-			    "cts:\n rreqid: %d\n srid: %d\nrts:\n data_sz: %d\n context: %d\n tag: %d\n rank: %d\n srid: %d\n seqnum: %d\n"
-			    "rndv data:\n rrid: %d\n",
-			    conn->pkt.type,
-			    conn->pkt.eager_send.data_sz,
-			    conn->pkt.eager_send.match.context_id,
-			    conn->pkt.eager_send.match.tag,
-			    conn->pkt.eager_send.match.rank,
-			    conn->pkt.eager_send.sender_req_id,
-			    conn->pkt.eager_send.seqnum,
-			    conn->pkt.rndv_clr_to_send.receiver_req_id,
-			    conn->pkt.rndv_clr_to_send.sender_req_id,
-			    conn->pkt.rndv_req_to_send.data_sz,
-			    conn->pkt.rndv_req_to_send.match.context_id,
-			    conn->pkt.rndv_req_to_send.match.tag,
-			    conn->pkt.rndv_req_to_send.match.rank,
-			    conn->pkt.rndv_req_to_send.sender_req_id,
-			    conn->pkt.rndv_req_to_send.seqnum,
-			    conn->pkt.rndv_send.receiver_req_id));
-#else
-			MPIU_DBG_PRINTF((
-			    "Invalid packet:\ntype: %d\neager:\n data_sz: %d\n context: %d\n tag: %d\n rank: %d\n srid: %d\n seqnum: %d\n"
-			    "cts:\n rreqid: %d\n srid: %d\nrts:\n data_sz: %d\n context: %d\n tag: %d\n rank: %d\n srid: %d\n seqnum: %d\n"
-			    "rndv data:\n rrid: %d\n",
-			    conn->pkt.type,
-			    conn->pkt.eager_send.data_sz,
-			    conn->pkt.eager_send.match.context_id,
-			    conn->pkt.eager_send.match.tag,
-			    conn->pkt.eager_send.match.rank,
-			    conn->pkt.eager_send.sender_req_id,
-			    conn->pkt.rndv_clr_to_send.receiver_req_id,
-			    conn->pkt.rndv_clr_to_send.sender_req_id,
-			    conn->pkt.rndv_req_to_send.data_sz,
-			    conn->pkt.rndv_req_to_send.match.context_id,
-			    conn->pkt.rndv_req_to_send.match.tag,
-			    conn->pkt.rndv_req_to_send.match.rank,
-			    conn->pkt.rndv_req_to_send.sender_req_id,
-			    conn->pkt.rndv_send.receiver_req_id));
-#endif
+			MPIDI_DBG_Print_packet(&conn->pkt);
 			mpi_errno = MPIR_Err_create_code(MPI_ERR_INTERN, "**ch3|sock|badpacket", "**ch3|sock|badpacket %d",
 							 conn->pkt.type);
 			MPID_Abort(NULL, mpi_errno);
