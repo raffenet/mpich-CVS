@@ -152,6 +152,17 @@ if ($do_dependencies) {
 }
 
 # Routines
+# Strip \n or \r\n from the end of a string
+#sub strip (\@@);
+sub strip {
+#    my $aref = @_;
+#    foreach (@$aref) { s/[\r,\n]*$//; }
+    for(@_)
+    {
+        s/\W*$//;
+    }
+}
+
 # Read Makefile.sm
 sub ReadMfile {
     $Mfile = $_[0];
@@ -160,11 +171,15 @@ sub ReadMfile {
     while (<MFILE>) {
 	$origline = $_;
         # Handle continuation lines
-        chomp;
+        #chomp;
+        s/[\r\n]*$//; # David added
+		#strip;
         while (s/\\$//) {  # Match and remove a trailing \
 	    $nextline = <MFILE>;
 	    $origline .= $nextline;
-	    chomp $nextline;
+	    #chomp $nextline;
+	    $nextline =~ s/[\r\n]*$//; # David added
+		#strip $nextline;
             $_ .= $nextline;
         }
 
@@ -428,7 +443,9 @@ sub DefaultRules {
 	    $aargs =~ s/ROOTDIR/\./;
 	}
 	else {
-	    chomp( $rootdir =  $rootdirpath );
+	    #chomp( $rootdir =  $rootdirpath );
+	    ( $rootdir =  $rootdirpath ) =~ s/[\r\n]*$//; # David added
+		#strip( $rootdir = $rootdirpath );
 	    $aargs =~ s/ROOTDIR/$rootdir/;
 	}
 	$aargs =~ s/\/\//\//;
@@ -620,7 +637,9 @@ sub GetLibLoc {
     $libname = $_[0];
     
     $libloc = $libdir{$libname};
-    chomp( $rootdir =  $rootdirpath );
+    #chomp( $rootdir =  $rootdirpath );
+    ( $rootdir =  $rootdirpath ) =~ s/[\r\n]*$//; # David added
+	#strip ( $rootdir =  $rootdirpath );
     $libloc =~ s/ROOTDIR/$rootdir/;
     # Remove duplicated //
     $libloc =~ s/\/\//\//;
@@ -1041,12 +1060,17 @@ sub ReadAutoconf {
 	    # First, read past all continued lines
 	    $line = "";
 	    while (/\\\s*$/) {
-		chomp;    # remove trailing EOL (\n on Unix, \r\n on DOS)
+		#chomp;    # remove trailing EOL (\n on Unix, \r\n on DOS)
+		s/[\r\n]*$//; # David added
+		#strip;
 		chop($_); # remove the backslash
 		$line .= $_;
 		$_ = <FDCONF>;
 	    }
-	    $line .= $_; chomp( $line );
+	    $line .= $_; 
+	    #chomp( $line );
+	    $line =~ s/[\r\n]*$//; # David added
+		#strip ( $line );
 	    #print $line;
 	    $line =~ /^\s*AC_OUTPUT\((.*)\)\s*$/;
 	    $files = $1;
