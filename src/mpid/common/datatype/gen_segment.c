@@ -67,6 +67,9 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	sblp->loop_params.c_t.count = count;
 	sblp->loop_params.c_t.dataloop = 0;
 	sblp->el_size = elmsize;
+#ifdef DLOOP_HETEROGENEOUS_SUPPORT
+        DLOOP_Handle_get_basic_type_macro(handle, sblp->el_type);
+#endif
 	DLOOP_Handle_get_extent_macro(handle, sblp->el_extent);
 
 	dlp = sblp;
@@ -358,8 +361,8 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 					       NULL,
 					       NULL,
 					       NULL,
-					       NULL,
-					       sizefn);
+					       sizefn,
+                                               NULL);
 	    
 	    /* verify that we're in the right location */
 	    if (tmp_last != first) assert(0);
