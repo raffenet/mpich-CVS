@@ -17,4 +17,8 @@ del testfile.0
 del testfile.1
 del testfile.2
 del testfile.3
+del iotest.txt
+del cxx\io\iotest.txt
+del f77\io\iotest.txt
+del .test.ord.shfp.*
 :END
