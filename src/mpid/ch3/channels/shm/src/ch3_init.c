@@ -121,6 +121,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     pg->nShmEagerLimit = MPIDI_SHM_EAGER_LIMIT;
 #ifdef HAVE_SHARED_PROCESS_READ
     pg->nShmRndvLimit = MPIDI_SHM_RNDV_LIMIT;
+#ifdef HAVE_WINDOWS_H
+    pg->pSharedProcessHandles = NULL;
+#else
+    pg->pSharedProcessIDs = NULL;
+    pg->pSharedProcessFileDescriptors = NULL;
+#endif
 #endif
     pg->addr = NULL;
 #ifdef USE_POSIX_SHM
@@ -402,6 +408,18 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     /* initialize each shared memory queue */
     for (i=0; i<pg_size; i++)
     {
+#ifdef HAVE_SHARED_PROCESS_READ
+#ifdef HAVE_WINDOWS_H
+	if (pg->pSharedProcessHandles)
+	    vc_table[i].ch.hSharedProcessHandle = pg->pSharedProcessHandles[i];
+#else
+	if (pg->pSharedProcessIDs)
+	{
+	    vc_table[i].ch.nSharedProcessID = pg->pSharedProcessIDs[i];
+	    vc_table[i].ch.nSharedProcessFileDescriptor = pg->pSharedProcessFileDescriptors[i];
+	}
+#endif
+#endif
 	if (i == pg_rank)
 	{
 	    vc_table[i].ch.shm = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * i));

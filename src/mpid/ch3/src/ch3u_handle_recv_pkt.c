@@ -40,7 +40,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
 #define FUNCNAME MPIDI_CH3U_Handle_unordered_recv_pkt
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp)
+int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp, MPID_IOV *rdma_iov, int rdma_iov_count)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_UNORDERED_RECV_PKT);
@@ -173,7 +173,7 @@ int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, M
 #define FUNCNAME MPIDI_CH3U_Handle_ordered_recv_pkt
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp)
+int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp, MPID_IOV *rdma_iov, int rdma_iov_count)
 {
     int type_size;
     static int in_routine = FALSE;
@@ -372,6 +372,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 	    MPIDI_CH3_Pkt_rndv_req_to_send_t * rts_pkt = &pkt->rndv_req_to_send;
 	    MPID_Request * rreq;
 	    int found;
+#ifdef MPIDI_CH3_CHANNEL_RNDV
+	    int i;
+#endif
 
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received rndv RTS pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d, data_sz=%d",
 			      rts_pkt->sender_req_id, rts_pkt->match.rank, rts_pkt->match.tag, rts_pkt->match.context_id,
@@ -387,7 +390,15 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 	    /* --END ERROR HANDLING-- */
 
 	    set_request_info(rreq, rts_pkt, MPIDI_REQUEST_RNDV_MSG);
-	    
+#ifdef MPIDI_CH3_CHANNEL_RNDV
+	    for (i=0; i<rdma_iov_count; i++)
+	    {
+		rreq->dev.rdma_iov[i].MPID_IOV_BUF = rdma_iov[i].MPID_IOV_BUF;
+		rreq->dev.rdma_iov[i].MPID_IOV_LEN = rdma_iov[i].MPID_IOV_LEN;
+	    }
+	    rreq->dev.rdma_iov_count = rdma_iov_count;
+#endif
+
 	    if (found)
 	    {
 #ifdef MPIDI_CH3_CHANNEL_RNDV
@@ -406,8 +417,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 		    goto fn_exit;
 		}
 		/* --END ERROR HANDLING-- */
-		mpi_errno = MPIDI_CH3_do_cts (vc, rreq, rreq->dev.sender_req_id,
-					      rreq->dev.iov, rreq->dev.iov_count);
+		mpi_errno = MPIDI_CH3_do_cts(vc, rreq);
 		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS)
 		{

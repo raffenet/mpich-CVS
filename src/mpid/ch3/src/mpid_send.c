@@ -108,6 +108,8 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
     
     /* FIXME: flow control: limit number of outstanding eager messsages containing data and need to be buffered by the receiver */
 
+    printf("MPIDI_CH3_EAGER_MAX_MSG_SIZE = %d\n", MPIDI_CH3_EAGER_MAX_MSG_SIZE);
+    printf("data_sz = %d\n", data_sz);fflush(stdout);
     if (data_sz + sizeof(MPIDI_CH3_Pkt_eager_send_t) <=	MPIDI_CH3_EAGER_MAX_MSG_SIZE)
     {
 	MPIDI_CH3_Pkt_t upkt;
@@ -211,7 +213,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 #ifndef MPIDI_CH3_CHANNEL_RNDV
 	MPID_Request * rts_sreq;
 #endif
-	
+	printf("rndv msg.\n");fflush(stdout);
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending rndv RTS, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
 	MPIDI_CH3M_create_sreq(sreq, mpi_errno, goto fn_exit);
@@ -236,6 +238,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 
 #ifdef MPIDI_CH3_CHANNEL_RNDV
 
+	printf("channel rdma.\n");fflush(stdout);
 	MPIDI_DBG_PRINTF((30, FCNAME, "Rendezvous send using do_rts"));
     
 	if (dt_contig) 
@@ -268,8 +271,8 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	    }
 	    /* --END ERROR HANDLING-- */
 	}
-	mpi_errno = MPIDI_CH3_do_rts (vc, sreq, &upkt, sreq->dev.iov,
-				      sreq->dev.iov_count);
+	printf("mpid_do_rts");fflush(stdout);
+	mpi_errno = MPIDI_CH3_do_rts (vc, sreq, &upkt);
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{

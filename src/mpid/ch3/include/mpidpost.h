@@ -345,9 +345,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm
   Input Parameters:
 + vc - virtual connection over which the rendezvous will be performed
 . sreq - pointer to the send request object
-. rts_pkt - CH3 packet to be delivered to CH3 on remote side
-. iov - the first vector of a structure contains a buffer pointer and length
-- n_iov - number of elements in the vector
+- rts_pkt - CH3 packet to be delivered to CH3 on remote side
 
   Return value:
   An mpi error code.
@@ -355,8 +353,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm
   IMPLEMENTORS:
 E*/
 int MPIDI_CH3_do_rts (MPIDI_VC * vc, MPID_Request * sreq,
-		      MPIDI_CH3_Pkt_t * rts_pkt,
-		      MPID_IOV * iov, int n_iov);
+		      MPIDI_CH3_Pkt_t * rts_pkt);
 
 /*E
   MPIDI_CH3_do_cts - This function is used to indicate that a previous
@@ -379,8 +376,7 @@ int MPIDI_CH3_do_rts (MPIDI_VC * vc, MPID_Request * sreq,
 
   IMPLEMENTORS:
 E*/
-int MPIDI_CH3_do_cts (MPIDI_VC * vc, MPID_Request * rreq, MPI_Request sreq_id,
-		      MPID_IOV * iov, int n_iov);
+int MPIDI_CH3_do_cts (MPIDI_VC * vc, MPID_Request * rreq);
 
 
 
@@ -418,7 +414,7 @@ int MPIDI_CH3_Abort(int exit_code, char *error_msg);
   routine must serialize the calls (perhaps by locking the VC).  Special consideration may need to be given to packet ordering
   if the channel has made guarantees about ordering.
 E*/
-int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp);
+int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp, MPID_IOV *rdma_iov, int rdma_iov_count);
 
 
 /*E

@@ -120,6 +120,8 @@ extern MPIDI_Process_t MPIDI_Process;
     (_req)->dev.lock_queue_entry = NULL;                        \
     (_req)->dev.dtype_info = NULL;				\
     (_req)->dev.dataloop = NULL;				\
+    (_req)->dev.rdma_iov_count = 0;				\
+    (_req)->dev.rdma_iov_offset = 0;				\
 }
 
 #define MPIDI_CH3U_Request_destroy(_req)			\

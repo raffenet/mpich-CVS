@@ -202,7 +202,8 @@ typedef enum shm_wait_e
 {
 SHM_WAIT_TIMEOUT,
 SHM_WAIT_READ,
-SHM_WAIT_WRITE
+SHM_WAIT_WRITE,
+SHM_WAIT_WAKEUP
 } shm_wait_t;
 
 int MPIDI_CH3I_Progress_init(void);
@@ -219,5 +220,7 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC *vc, void *buf, int len, int *num_bytes_ptr);
 int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr);
 int MPIDI_CH3I_SHM_read(MPIDI_VC *vc, void *buf, int len);
 int MPIDI_CH3I_SHM_readv(MPIDI_VC *vc, MPID_IOV *iov, int n);
+int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC *vc, MPID_Request *rreq);
+int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq);
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

@@ -184,7 +184,7 @@ static inline int handle_written(MPIDI_VC * vc)
     return mpi_errno;
 }
 
-void MPIDI_CH3_Progress_start()
+void MPIDI_CH3_Progress_start(MPID_Progress_state *state)
 {
     /* MT - This function is empty for the single-threaded implementation */
 }
@@ -280,6 +280,8 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		*/
 	    }
 	    break;
+	case SHM_WAIT_WAKEUP:
+	    break;
 	default:
 	    /*MPIDI_err_printf(FCNAME, "MPIDI_CH3I_SHM_wait returned an unknown operation code\n");*/
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_op", "**shm_op %d", wait_result);
@@ -348,7 +350,7 @@ int MPIDI_CH3_Progress_poke()
 #define FUNCNAME MPIDI_CH3_Progress_end
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_Progress_end()
+void MPIDI_CH3_Progress_end(MPID_Progress_state *state)
 {
     /* MT - This function is empty for the single-threaded implementation */
 }

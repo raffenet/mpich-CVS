@@ -17,6 +17,14 @@ echo "RUNNING SETUP_CHANNEL FOR THE SHARED MEMORY CHANNEL"
 # $ac_configure_args - all arguments passed to configure
 #
 
+file=${master_top_srcdir}/src/mpid/${device_name}/channels/shm/setup_channel.args
+if test -f ${file} ; then
+    . ${file}
+else
+    echo "Error: ${file} not found"
+    exit 1
+fi
+
 pathlist=""
 pathlist="$pathlist src/mpid/${device_name}/channels/${channel_name}/include"
 for path in $pathlist ; do
@@ -27,6 +35,10 @@ done
 devsubsystems="$devsubsystems src/mpid/common/locks"
 
 CPPFLAGS="$CPPFLAGS -DUSE_PROCESS_LOCKS"
-#CPPFLAGS="$CPPFLAGS -I/usr/local/PSC1200/include -DLINUX -DNORCSID"
-#LDFLAGS="$LDFLAGS -L/usr/local/PSC1200/lib -Xlinker -t"
-#LIBS="$LIBS /usr/local/PSC1200/lib/libibos.so -ldl -lpthread"
+
+if test "$rdma_name" = proc ; then
+    CPPFLAGS="$CPPFLAGS -DHAVE_SHARED_PROCESS_READ -DMPIDI_CH3_CHANNEL_RNDV"
+fi
+if test "$rdma_mode" = get ; then
+    CPPFLAGS="$CPPFLAGS -DUSE_RDMA_GET"
+fi

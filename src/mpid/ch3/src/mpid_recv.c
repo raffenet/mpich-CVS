@@ -137,8 +137,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 		    goto fn_exit;
 		}
 		/* --END ERROR HANDLING-- */
-		mpi_errno = MPIDI_CH3_do_cts (vc, rreq, rreq->dev.sender_req_id,
-					      rreq->dev.iov, rreq->dev.iov_count);
+		mpi_errno = MPIDI_CH3_do_cts (vc, rreq);
 		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS)
 		{

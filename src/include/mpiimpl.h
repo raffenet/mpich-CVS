@@ -1218,7 +1218,7 @@ extern MPID_Comm MPID_Comm_direct[];
   E*/
 typedef enum MPID_Request_kind_t {
     MPID_REQUEST_SEND, MPID_REQUEST_RECV, MPID_PREQUEST_SEND,
-    MPID_PREQUEST_RECV, MPID_UREQUEST } MPID_Request_kind_t;
+    MPID_PREQUEST_RECV, MPID_UREQUEST, MPID_LAST_REQUEST_TYPE } MPID_Request_kind_t;
 
 /* Typedefs for Fortran generalized requests */
 typedef void (MPIR_Grequest_f77_cancel_function)(void *, int*, int *); 
