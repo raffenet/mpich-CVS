@@ -84,6 +84,8 @@ int main(int argc, char* argv[])
 	    smpd_exit(0);
 	}
     }
+    printf("\nRunning smpd from the console, not as a service.\n");
+    fflush(stdout);
     smpd_process.bService = SMPD_FALSE;
 #endif
     

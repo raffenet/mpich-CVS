@@ -443,15 +443,15 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     int num_args_to_strip;
     int nproc;
     int run_local = SMPD_FALSE;
-    char machine_file_name[SMPD_MAX_EXE_LENGTH];
+    char machine_file_name[SMPD_MAX_FILENAME];
     int use_machine_file = SMPD_FALSE;
     smpd_map_drive_node_t *map_node, *drive_map_list;
     smpd_env_node_t *env_node, *env_list;
     char *equal_sign_pos;
-    char wdir[SMPD_MAX_EXE_LENGTH];
+    char wdir[SMPD_MAX_DIR_LENGTH];
     int logon;
     int use_debug_flag;
-    char pwd_file_name[SMPD_MAX_EXE_LENGTH];
+    char pwd_file_name[SMPD_MAX_FILENAME];
     int use_pwd_file;
     smpd_host_node_t *host_node_ptr, *host_list, *host_node_iter;
     int no_drive_mapping;
@@ -459,10 +459,11 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     int index, i;
     char configfilename[SMPD_MAX_FILENAME];
     int use_configfile;
-    char exe[SMPD_MAX_EXE_LENGTH]/*, args[SMPD_MAX_ARGS_LENGTH]*/;
+    char exe[SMPD_MAX_EXE_LENGTH];
     char temp_exe[SMPD_MAX_EXE_LENGTH], *namepart;
     smpd_launch_node_t *launch_node, *launch_node_iter;
     int total;
+    char path[SMPD_MAX_PATH_LENGTH];
 
     smpd_enter_fn("mp_parse_command_args");
 
@@ -639,6 +640,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	use_priorities = SMPD_FALSE;
 	use_configfile = SMPD_FALSE;
 	use_machine_file = SMPD_FALSE;
+	path[0] = '\0';
 
 	/* parse the current block */
 
@@ -715,7 +717,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-		strcpy(machine_file_name, (*argvp)[2]);
+		strncpy(machine_file_name, (*argvp)[2], SMPD_MAX_FILENAME);
 		use_machine_file = SMPD_TRUE;
 		num_args_to_strip = 2;
 	    }
@@ -737,7 +739,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 			return SMPD_FAIL;
 		    }
 		    map_node->drive = (*argvp)[2][0];
-		    strcpy(map_node->share, &(*argvp)[2][2]);
+		    strncpy(map_node->share, &(*argvp)[2][2], SMPD_MAX_EXE_LENGTH);
 		    map_node->next = drive_map_list;
 		    drive_map_list = map_node;
 		}
@@ -751,7 +753,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-		strcpy(wdir, (*argvp)[2]);
+		strncpy(wdir, (*argvp)[2], SMPD_MAX_DIR_LENGTH);
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "env") == 0)
@@ -778,8 +780,8 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    return SMPD_FAIL;
 		}
 		*equal_sign_pos = '\0';
-		strcpy(env_node->name, (*argvp)[2]);
-		strcpy(env_node->value, equal_sign_pos+1);
+		strncpy(env_node->name, (*argvp)[2], SMPD_MAX_NAME_LENGTH);
+		strncpy(env_node->value, equal_sign_pos+1, SMPD_MAX_VALUE_LENGTH);
 		env_node->next = env_list;
 		env_list = env_node;
 		num_args_to_strip = 2;
@@ -805,7 +807,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-		strcpy(pwd_file_name, (*argvp)[2]);
+		strncpy(pwd_file_name, (*argvp)[2], SMPD_MAX_FILENAME);
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "file") == 0)
@@ -816,7 +818,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-		strcpy(configfilename, (*argvp)[2]);
+		strncpy(configfilename, (*argvp)[2], SMPD_MAX_FILENAME);
 		use_configfile = SMPD_TRUE;
 		num_args_to_strip = 2;
 	    }
@@ -845,7 +847,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		}
 		host_list->next = NULL;
 		host_list->nproc = -1;
-		strcpy(host_list->host, (*argvp)[2]);
+		strncpy(host_list->host, (*argvp)[2], SMPD_MAX_HOST_LENGTH);
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "hosts") == 0)
@@ -894,7 +896,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 			    }
 			    host_node_ptr->next = NULL;
 			    host_node_ptr->nproc = 1;
-			    strcpy(host_node_ptr->host, (*argvp)[index]);
+			    strncpy(host_node_ptr->host, (*argvp)[index], SMPD_MAX_HOST_LENGTH);
 			    index++;
 			    if (argc > index)
 			    {
@@ -1041,6 +1043,17 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
+		num_args_to_strip = 2;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "path") == 0)
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no path specifed after -path option.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		strncpy(path, (*argvp)[2], SMPD_MAX_PATH_LENGTH);
 		num_args_to_strip = 2;
 	    }
 	    else

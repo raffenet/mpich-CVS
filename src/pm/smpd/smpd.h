@@ -52,6 +52,8 @@ typedef int SMPD_BOOL;
 #define SMPD_MAX_HOST_LENGTH	           64
 #define SMPD_MAX_EXE_LENGTH              1024
 #define SMPD_MAX_ENV_LENGTH              1024
+#define SMPD_MAX_DIR_LENGTH              1024
+#define SMPD_MAX_PATH_LENGTH             1024
 #define SMPD_MAX_ACCOUNT_LENGTH           100
 #define SMPD_MAX_PASSWORD_LENGTH          100
 #define SMPD_MAX_CRED_REQUEST_LENGTH      100
@@ -252,8 +254,8 @@ typedef struct smpd_process_t
     int pid;
     char exe[SMPD_MAX_EXE_LENGTH];
     char env[SMPD_MAX_ENV_LENGTH];
-    char dir[SMPD_MAX_EXE_LENGTH];
-    char path[SMPD_MAX_EXE_LENGTH];
+    char dir[SMPD_MAX_DIR_LENGTH];
+    char path[SMPD_MAX_PATH_LENGTH];
     int rank;
     int nproc;
     smpd_pwait_t wait;
