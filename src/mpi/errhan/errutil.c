@@ -931,6 +931,8 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 	int ring_seq;
 	int generic_idx;
 
+	error_class = ERROR_GET_CLASS(errorcode);
+
 	ring_idx    = (errorcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
 	ring_seq    = (errorcode & ERROR_SPECIFIC_SEQ_MASK) >> ERROR_SPECIFIC_SEQ_SHIFT;
 	generic_idx = ((errorcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
@@ -949,7 +951,8 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 
 		    if (ErrorRing[ring_idx].id == ring_id)
 		    {
-			if (MPIU_Strncpy(msg, ErrorRing[ring_idx].msg, MPI_MAX_ERROR_STRING))
+			if (MPIU_Snprintf(msg, MPI_MAX_ERROR_STRING, "%s: %s", ErrorRing[ring_idx].msg,
+					  get_class_msg(error_class)))
 			{
 			    msg[MPI_MAX_ERROR_STRING - 1] = '\0';
 			}
@@ -972,7 +975,8 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 	{
 	    if (generic_idx >= 0)
 	    {
-		if (MPIU_Strncpy(msg, generic_err_msgs[generic_idx].long_name, MPI_MAX_ERROR_STRING))
+		if (MPIU_Snprintf(msg, MPI_MAX_ERROR_STRING, "%s: %s", generic_err_msgs[generic_idx].long_name,
+				  get_class_msg(error_class)))
 		{
 		    msg[MPI_MAX_ERROR_STRING - 1] = '\0';
 		}
@@ -980,8 +984,6 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 	    }
 	}
 #       endif
-
-	error_class = ERROR_GET_CLASS(errorcode);
 
 	if (error_class <= MPICH_ERR_LAST_CLASS)
 	{
