@@ -155,7 +155,7 @@ AC_CHECK_PROGS(CC, cc xlC xlc pgcc icc gcc )
 test -z "$CC" && AC_MSG_ERROR([no acceptable cc found in \$PATH])
 PAC_PROG_CC_WORKS
 AC_PROG_CC_GNU
-if test $ac_cv_prog_gcc = yes; then
+if test "$ac_cv_prog_gcc" = yes; then
   GCC=yes
 else
   GCC=
