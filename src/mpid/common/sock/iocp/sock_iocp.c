@@ -12,6 +12,8 @@
 #include <mswsock.h>
 #include <stdio.h>
 
+/*#define USE_SOCK_IOV_COPY*/
+
 #define SOCKI_TCP_BUFFER_SIZE       32*1024
 #define SOCKI_STREAM_PACKET_LENGTH  8*1024
 
@@ -31,7 +33,11 @@ typedef struct sock_buffer
     OVERLAPPED ovl;
     void *buffer;
     int bufflen;
+#ifdef USE_SOCK_IOV_COPY
     SOCK_IOV iov[SOCK_IOV_MAXLEN];
+#else
+    SOCK_IOV *iov;
+#endif
     int iovlen;
     int index;
     int total;
@@ -284,7 +290,6 @@ int GetLastSockError()
     int error;
 
     error = WSAGetLastError();
-    MPIU_DBG_PRINTF(("***** GetLastSockError error %d *****\n", error));
     switch (error)
     {
     case WSAEINTR:
@@ -498,7 +503,9 @@ static inline void init_state_struct(sock_state_t *p)
     p->read.total = 0;
     p->read.num_bytes = 0;
     p->read.buffer = NULL;
-    /*p->read.iov = NULL;*/
+#ifndef USE_SOCK_IOV_COPY
+    p->read.iov = NULL;
+#endif
     p->read.iovlen = 0;
     p->read.ovl.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     p->read.ovl.Offset = 0;
@@ -507,7 +514,9 @@ static inline void init_state_struct(sock_state_t *p)
     p->write.total = 0;
     p->write.num_bytes = 0;
     p->write.buffer = NULL;
-    /*p->write.iov = NULL;*/
+#ifndef USE_SOCK_IOV_COPY
+    p->write.iov = NULL;
+#endif
     p->write.iovlen = 0;
     p->write.ovl.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     p->write.ovl.Offset = 0;
@@ -1366,11 +1375,19 @@ int sock_post_readv(sock_t sock, SOCK_IOV *iov, int n, int (*rfn)(sock_size_t, v
 #endif
     DWORD flags = 0;
     MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_READV);
+#ifdef USE_SOCK_IOV_COPY
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
+#endif
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_POST_READV);
     sock->read.total = 0;
-    /*sock->read.iov = iov;*/
+#ifdef USE_SOCK_IOV_COPY
+    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
     memcpy(sock->read.iov, iov, sizeof(SOCK_IOV) * n);
+    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+#else
+    sock->read.iov = iov;
+#endif
     sock->read.iovlen = n;
     sock->read.index = 0;
     sock->read.use_iov = TRUE;
@@ -1417,6 +1434,9 @@ int sock_post_writev(sock_t sock, SOCK_IOV *iov, int n, int (*wfn)(sock_size_t, 
     int i;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_WRITEV);
+#ifdef USE_SOCK_IOV_COPY
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
+#endif
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_POST_WRITEV);
     if (n == 0)
@@ -1425,8 +1445,13 @@ int sock_post_writev(sock_t sock, SOCK_IOV *iov, int n, int (*wfn)(sock_size_t, 
 	return SOCK_FAIL;
     }
     sock->write.total = 0;
-    /*sock->write.iov = iov;*/
+#ifdef USE_SOCK_IOV_COPY
+    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
     memcpy(sock->write.iov, iov, sizeof(SOCK_IOV) * n);
+    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+#else
+    sock->write.iov = iov;
+#endif
     sock->write.iovlen = n;
     sock->write.index = 0;
     sock->write.use_iov = TRUE;
