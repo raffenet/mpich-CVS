@@ -540,6 +540,7 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_netbsd" ; 
     if test -n "$arch_freebsd" || test -n "$arch_netbsd" ; then
        F77=${FC:-f77}
        CFLAGS="$CFLAGS -D__FREEBSD"
+       PAC_HAVE_MOUNT_NFS
        longlongsize=${longlongsize:-0}
 # printf doesn't work properly and no integer*8 as far as I can tell
     else 
@@ -909,7 +910,7 @@ int Foo(a) { return a; }
     AC_DEFINE(HAVE_PRAGMA_WEAK)
   else
     AC_TRY_LINK([
-#pragma _HP_SECONDARY_DEF Foo = PFoo
+#pragma _HP_SECONDARY_DEF Foo PFoo
 int Foo(a) { return a; }
 ],[return PFoo(1);],has_pragma_hp_secondary=1)
     if test "$has_pragma_hp_secondary" = 1 ; then 

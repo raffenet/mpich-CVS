@@ -1038,4 +1038,27 @@ fi
 rm -f conftest*]
 )dnl
 dnl
-   
+dnl
+define(PAC_HAVE_MOUNT_NFS,[
+  AC_MSG_CHECKING([if MOUNT_NFS is defined in the include files])
+  rm -f conftest.c
+  cat > conftest.c <<EOF
+#include <sys/param.h>
+#include <sys/mount.h>
+     main()
+     {
+         int i=MOUNT_NFS;
+     }
+EOF
+  rm -f a.out
+  $CC $USER_CFLAGS conftest.c > /dev/null 2>&1
+  if test -x a.out ; then
+     AC_MSG_RESULT(yes)
+     AC_DEFINE(__HAVE_MOUNT_NFS)
+  else
+     AC_MSG_RESULT(no)
+  fi
+  rm -f a.out conftest.c
+])dnl
+dnl
+dnl
