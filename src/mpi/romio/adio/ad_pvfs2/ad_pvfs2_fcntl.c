@@ -76,8 +76,8 @@ void ADIOI_PVFS2_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 						myname, __LINE__,
 						MPI_ERR_IO, 
 						"Error in ADIO_ReadContig", 0);
-		/* --END ERROR HANDLING-- */
                 return;  
+		/* --END ERROR HANDLING-- */
 	    }
 	    ADIO_WriteContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
                              done, &status, error_code);
