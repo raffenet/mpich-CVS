@@ -81,6 +81,7 @@ def mpdman():
         myLineLabel = str(myRank) + ': '
     singinitPID  = int(environ['MPDMAN_SINGINIT_PID'])
     singinitPORT = int(environ['MPDMAN_SINGINIT_PORT'])
+    doingBNR = int(environ['MPDMAN_DOING_BNR'])
 
     # set up pmi stuff early in case I was spawned
     KVSs = {}
@@ -102,7 +103,6 @@ def mpdman():
     jobEndingEarly = 0
     pmiCollectiveJob = 0
     spawnedCnt = 0
-    doingBNR = 0  ## BNR
     pmiSocket = 0   # obtained later
 
     if nprocs == 1:  # one-man ring
@@ -183,6 +183,11 @@ def mpdman():
         if not environ.has_key('MPI_UNIVERSE_SIZE'):
             universeSize = msg['ringsize']
 
+    if doingBNR:
+        (pmiSocket,cliBNRSocket)   = mpd_socketpair()
+        socketsToSelect[pmiSocket] = 1
+        cli_environ['MAN_MSGS_FD'] = str(cliBNRSocket.fileno())               ## BNR
+
     if singinitPORT:
         pmiListenSocket = 0
         pmiSocket = mpd_get_inet_socket_and_connect(myHost,singinitPORT)
@@ -245,7 +250,7 @@ def mpdman():
         cli_environ['MPD_JID'] = environ['MPDMAN_JOBID']                       ## BNR
         cli_environ['MPD_JSIZE'] = str(nprocs)                                 ## BNR
         cli_environ['MPD_JRANK'] = str(myRank)                                 ## BNR
-        ##### cli_environ['MAN_MSGS_FD'] = cli_environ['PMI_FD'] # same as PMI_FD    ## BNR
+
         cli_environ['CLIENT_LISTENER_FD'] = str(clientListenSocket.fileno())   ## BNR
         errmsg = set_limits(clientPgmLimits)
         if errmsg:
@@ -275,6 +280,8 @@ def mpdman():
             mpd_send_one_line(pmiSocket,pmiMsgToSend)
             exit(0)
         exit(0)
+    if doingBNR:
+        cliBNRSocket.close()
     msgToSend = { 'cmd' : 'client_pid', 'jobid' : jobid,
                   'manpid' : getpid(), 'clipid' : clientPid, 'rank' : myRank }
     mpd_send_one_msg(mpdSocket,msgToSend)
@@ -1025,7 +1032,7 @@ def mpdman():
                 elif parsedMsg['cmd'] == 'accepting_signals':          ## BNR
                     ## handle it like a barrier_in ??
                     pmiBarrierInRecvd = 1
-                    doingBNR = 1    ## BNR
+                    doingBNR = 1    ## BNR  # set again is OK
                 elif parsedMsg['cmd'] == 'interrupt_peer_with_msg':    ## BNR
                     mpd_send_one_msg(rhsSocket,parsedMsg)
                 else:

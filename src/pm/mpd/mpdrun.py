@@ -17,7 +17,7 @@ signal(SIGCONT,SIG_IGN)
 from sys             import argv, exit, stdin, stdout, stderr
 from os              import environ, fork, execvpe, getuid, getpid, path, getcwd, \
                             close, wait, waitpid, kill, unlink, _exit,  \
-                            WIFSIGNALED, WEXITSTATUS
+                            WIFSIGNALED, WEXITSTATUS, strerror
 from pwd             import getpwnam
 from socket          import socket, fromfd, AF_UNIX, SOCK_STREAM, gethostname, \
                             gethostbyname_ex, gethostbyaddr
@@ -42,7 +42,7 @@ global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
 global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
 global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
 global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
-global singinitPID, singinitPORT
+global singinitPID, singinitPORT, doingBNR
 
 
 def mpdrun():
@@ -51,7 +51,7 @@ def mpdrun():
     global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
-    global singinitPID, singinitPORT
+    global singinitPID, singinitPORT, doingBNR
 
     mpd_set_my_id('mpdrun_' + `getpid()`)
     pgm = ''
@@ -74,6 +74,7 @@ def mpdrun():
     gdbAttachJobid = ''
     singinitPID  = 0
     singinitPORT = 0
+    doingBNR = 0
     known_rlimit_types = ['core','cpu','fsize','data','stack','rss',
                           'nproc','nofile','ofile','memlock','as','vmem']
     username = mpd_get_my_username()
@@ -209,6 +210,8 @@ def mpdrun():
         msgToSend['rship'] = rship
         msgToSend['mship_host'] = gethostname()
         msgToSend['mship_port'] = mshipPort
+    if doingBNR:
+        msgToSend['doing_bnr'] = 1
     if stdinGoesToWho == 'all':
         stdinGoesToWho = '0-%d' % (nprocs-1)
     msgToSend['stdin_goes_to_who'] = stdinGoesToWho
@@ -527,7 +530,7 @@ def get_args_from_cmdline():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, try0Locally, \
            lineLabels, jobAlias, stdinGoesToWho, hostsFile, jobid, mergingOutput
     global outXmlDoc, outXmlEC, outXmlFile, gdb, gdbAttachJobid
-    global singinitPID, singinitPORT
+    global singinitPID, singinitPORT, doingBNR
 
     hostsFile = ''
     if len(argv) < 3:
@@ -609,6 +612,9 @@ def get_args_from_cmdline():
                 elif argv[argidx] == '-cpm':
                     mship = argv[argidx+1]
                     argidx += 2
+                elif argv[argidx] == '-bnr':
+                    doingBNR = 1
+                    argidx += 1
                 elif argv[argidx] == '-cpr':
                     rship = argv[argidx+1]
                     argidx += 2

@@ -692,6 +692,10 @@ def _do_mpdrun(msg):
                 environ['MPDMAN_RSHIP'] = msg['rship']
                 environ['MPDMAN_MSHIP_HOST'] = msg['mship_host']
                 environ['MPDMAN_MSHIP_PORT'] = str(msg['mship_port'])
+            if msg.has_key('doing_bnr'):
+                environ['MPDMAN_DOING_BNR'] = '1'
+            else:
+                environ['MPDMAN_DOING_BNR'] = '0'
             if getuid() == 0:
                 uid = pwent[2]
                 gid = pwent[3]
