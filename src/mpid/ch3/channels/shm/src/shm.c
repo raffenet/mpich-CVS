@@ -247,7 +247,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
     {
 	if (MPIDI_CH3I_Process.unex_finished_list)
 	{
-	    MPIDI_DBG_PRINTF((60, FCNAME, "returning previously received %d bytes", vc->shm.unex_finished_list->read.total));
+	    MPIDI_DBG_PRINTF((60, FCNAME, "returning previously received %d bytes", MPIDI_CH3I_Process.unex_finished_list->shm.read.total));
 
 	    *num_bytes_ptr = MPIDI_CH3I_Process.unex_finished_list->shm.read.total;
 	    *vc_pptr = MPIDI_CH3I_Process.unex_finished_list;

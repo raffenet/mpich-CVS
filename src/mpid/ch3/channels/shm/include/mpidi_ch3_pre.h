@@ -10,7 +10,7 @@
 #include "mpidi_ch3i_shm_conf.h"
 #include "mpid_locksconf.h"
 
-/*#define MPICH_DBG_OUTPUT*/
+#define MPICH_DBG_OUTPUT
 
 #define SHM_SUCCESS    0
 #define SHM_FAIL      -1
