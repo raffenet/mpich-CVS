@@ -114,14 +114,27 @@
   macros rather than function calls, even in the multithreaded case, and
   can use special processor instructions that guarantee atomicity to 
   avoid thread locks.
-  The decrement routine returns the postdecrement value of the reference 
-  counter.  If this value is zero, then the routine that decremented the
+  The decrement routine sets the value pointed at by 'inuse_ptr' to 0 if 
+  the postdecrement value of the reference counter is zero, and to a non-zero
+  value otherwise.  If this value is zero, then the routine that decremented 
+  the
   reference count should free the object.  This may be as simple as 
   calling 'MPIU_Handle_obj_destroy' (for simple objects with no other allocated
   storage) or may require calling a separate routine to destroy the object.
   Because MPI uses 'MPI_xxx_free' to both decrement the reference count and 
   free the object if the reference count is zero, we avoid the use of 'free'
   in the MPID routines.
+
+  The 'inuse_ptr' approach is used rather than requiring the post-decrement
+  value because, for reference-count semantics, all that is necessary is
+  to know when the reference count reaches zero, and this can sometimes
+  be implemented more cheaply that requiring the post-decrement value (e.g.,
+  on IA32, there is an instruction for this operation).
+
+  Question:
+  Should we state that this is a macro so that we can use a register for
+  the output value?  That avoids a store.  Alternately, have the macro 
+  return the value as if it was a function?
 
   Structure Definitions:
   The structure definitions in this document define `only` that part of

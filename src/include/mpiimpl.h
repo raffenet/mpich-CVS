@@ -262,8 +262,8 @@ void *MPIU_Handle_get_ptr_indirect( int, MPIU_Object_alloc_t * );
 #ifdef MPICH_SINGLE_THREADED
 #define MPIU_Object_add_ref(objptr) \
     ((MPIU_Handle_head*)(objptr))->ref_count++
-#define MPIU_Object_release_ref(objptr,newval_ptr) \
-    *(newval_ptr)=--((MPIU_Handle_head*)(objptr))->ref_count
+#define MPIU_Object_release_ref(objptr,inuse_ptr) \
+    *(inuse_ptr)=--((MPIU_Handle_head*)(objptr))->ref_count
 #else
 /* These can be implemented using special assembly language operations
    on most processors.  If no such operation is available, then each
@@ -275,16 +275,28 @@ void *MPIU_Handle_get_ptr_indirect( int, MPIU_Object_alloc_t * );
    responsible for setting the value to zero.
  */
 #if USE_ATOMIC_UPDATES
+#ifdef HAVE_PENTIUM_GCC_ASM
+#define MPID_Atomic_incr( count_ptr ) \
+   __asm__ __volatile__ ( "lock; incl %0" \
+                         : "=m" (*count_ptr) :: "memory", "cc" )
+
+#define MPID_Atomic_decr_flag( count_ptr, flag ) \
+   __asm__ __volatile__ ( "lock; decl %0 ; setnz %1" \
+                         : "=m" (*count_ptr) , "=q" (flag) :: "memory", "cc" )
+#else
+#abort "Atomic updates specified but no code for this platform"
+#endif
 #define MPIU_Object_add_ref(objptr) \
     MPID_Atomic_incr(&((objptr)->ref_count))
-#define MPIU_Object_release_ref(objptr,newval_ptr) \
-    MPID_Atomic_decr_flag(&((objptr)->ref_count),flag)
+#define MPIU_Object_release_ref(objptr,inuse_ptr) \
+    { int flag; 
+      MPID_Atomic_decr_flag(&((objptr)->ref_count),flag); *inuse_ptr = flag; }
 #else
 #define MPIU_Object_add_ref(objptr) \
     {MPID_Thread_lock(&(objptr)->mutex);(objptr)->ref_count++;\
     MPID_Thread_unlock(&(objptr)->mutex);}
-#define MPIU_Object_release_ref(objptr,newval_ptr) \
-    {MPID_Thread_lock(&(objptr)->mutex);*(newval_ptr)=--(objptr)->ref_count;\
+#define MPIU_Object_release_ref(objptr,isuse_ptr) \
+    {MPID_Thread_lock(&(objptr)->mutex);*(inuse_ptr)=--(objptr)->ref_count;\
     MPID_Thread_unlock(&(objptr)->mutex);}
 #endif
 #endif

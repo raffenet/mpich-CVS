@@ -593,7 +593,7 @@ just too awkward.}, we settled on simply setting the indentation level.
 \item The example shows the use of MPID routines to lock the communicator
   against other threads.  As with the error checking code above, a
 block is used to visually indicate the extent of the code that is
-protected by the lock.  Note that locks should be used sparinly; any
+protected by the lock.  Note that locks should be used sparingly; any
 lock that is held is a potential problem for fault-tolerant code.
 That is, if we support the loss of an MPI process, then if a process
 dies while holding a lock, it is difficult to recover.  Where
