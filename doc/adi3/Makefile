@@ -4,7 +4,7 @@ SHELL = /bin/sh
 #
 # Use doctext in /home/gropp/bin/$ARCH/doctext 
 DOCTEXT = doctext
-.SUFFIXES: .ps .pdf .dvi .tex
+.SUFFIXES: .ps .pdf .dvi .tex .eps .fig
 
 adi3.dvi: adi3.tex
 paper.dvi: paper.tex
@@ -92,3 +92,9 @@ lists: findmod
 	awk 'BEGIN{module=""};{if ($$1 != module) { \
 	file=$$1 "-list.tex"; module=$$1; };\
 	print "\\input " $$2>>file;}' ../findmod
+
+# Handle older fig2dev programs
+.fig.eps:
+	-fig2dev -L eps -l landscape $*.fig > $*.eps
+	if [ ! -s $*.eps ] ; then \
+		fig2dev -L ps -l landscape $*.fig > $*.eps ; fi
