@@ -38,6 +38,7 @@ AC_CHECK_HEADERS(                               \
     sys/poll.h                                  \
     sys/types.h                                 \
     sys/uio.h					\
+    limits.h                                    \
     unistd.h)
 
 AC_CHECK_FUNC(poll,pac_cv_have_func_poll=yes,pac_cv_have_func_poll=no)
