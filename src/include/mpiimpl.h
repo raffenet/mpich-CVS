@@ -244,6 +244,7 @@ void MPIU_trdump ( FILE * );
 void MPIU_trSummary ( FILE * );
 void MPIU_trdumpGrouped ( FILE * );
 
+
 /* Memory allocation stack */
 #define MAX_MEM_STACK 16
 typedef struct MPIU_Mem_stack { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_Mem_stack;
@@ -261,6 +262,12 @@ int MPIU_error_printf( char *str, ... );
 
 /* Utilities */
 int MPIU_Strncpy( char *dest, const char *src, size_t n );
+/* Provide a fallback snprintf for systems that do not have one */
+#ifdef HAVE_SNPRINTF
+#define MPIU_Snprintf snprintf
+#else
+int MPIU_Snprintf( char *str, size_t size, const char *format, ... );
+#endif
 
 /* Known language bindings */
 typedef enum MPID_Lang_t { MPID_LANG_C 
