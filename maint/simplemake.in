@@ -87,8 +87,8 @@ $quiet = 0;
 # When we are building profiled versions, we use a separate ext rule
 %extrules_with_profile = %extrules;
 # PROFILE_DEF_MPI is set when needed to create the profiling libraries.
-$extrules_with_profile{'c'} =~ s/-c/-c \@PROFILE_DEF_MPI\@/;
-print "rule = $extrules_with_profile{'c'}\n" if $debug;
+$extrules_with_profile{'c:o'} =~ s/-c/-c \@PROFILE_DEF_MPI\@/;
+print "rule = $extrules_with_profile{'c:o'}\n" if $debug;
 
 # Definitions for each extension (these are the defs needed for each ext->o
 # extension)
@@ -604,6 +604,7 @@ sub DefaultRules {
 
     # Definitions for each possible program type seen
     foreach $ext (keys(%ext_seen)) {
+	print "ext seen is :$ext:\n" if $debug;
 	$extkey = "$ext:o";
 	print FD "$extdef{$extkey}$newline";
 	if (defined($pgmlinktypes{$ext})) {
@@ -648,7 +649,8 @@ sub DefaultRules {
 	print FD ".$ext.o:$newline";
 	if ($found_profilelib) {
 	    # Use a special rule when building the non-profile-lib version
-	    print FD "\t$extrules_with_profile{$ext}$newline";
+	    $extkey = "$ext:o";
+	    print FD "\t$extrules_with_profile{$extkey}$newline";
 	}
 	else {
 	    $extkey = "$ext:o";
@@ -750,7 +752,9 @@ sub FindSrcTypes {
     }
     foreach $file (split(/\s\s*/,$files)) {
 	($name,$ext) = split('\.',$file);
-	$ext_seen{$ext} = 1;
+	if ($ext ne "") {
+	    $ext_seen{$ext} = 1;
+	}
     }
 }
 
