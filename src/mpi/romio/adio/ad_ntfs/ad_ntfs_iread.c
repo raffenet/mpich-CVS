@@ -49,15 +49,13 @@ void ADIOI_NTFS_IreadContig(ADIO_File fd, void *buf, int count,
 	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	ADIOI_Error(fd, *error_code, myname);	    
+#endif
     }
     else *error_code = MPI_SUCCESS;
-#endif
 
     fd->fp_sys_posn = -1;   /* set it to null. */
     fd->async_count++;
 }
-
-
 
 void ADIOI_NTFS_IreadStrided(ADIO_File fd, void *buf, int count, 
 		       MPI_Datatype datatype, int file_ptr_type,
