@@ -35,6 +35,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     int kvs_name_sz;
     int key_max_sz;
     int val_max_sz;
+    int universe_size;
+    int appnum;
     char * key = NULL;
     char * val = NULL;
     int p;
@@ -81,6 +83,30 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }
+
+    pmi_errno = PMI_Get_universe_size(&universe_size);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_universe_size",
+					 "**pmi_get_universe_size %d", pmi_errno);
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
+    }
+    if (universe_size != -1)
+	MPIR_Process.attrs.universe = universe_size;
+
+    pmi_errno = PMI_Get_appnum(&appnum);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_appnum",
+					 "**pmi_get_appnum %d", pmi_errno);
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
+    }
+    if (appnum != -1)
+	MPIR_Process.attrs.appnum = appnum;
     
     /*
      * Get the process group id
