@@ -7,6 +7,18 @@
 
 #include "mpiimpl.h"
 
+#ifdef USE_ROMIO_FILE
+/* Forward ref for the routine to extract and set the error handler
+   in a ROMIO File structure.  FIXME: These should be imported from a common
+   header file that is also used in mpich2_fileutil.c
+ */
+int MPIR_ROMIO_Get_file_errhand( MPI_File, MPID_Errhandler ** );
+int MPIR_ROMIO_Set_file_errhand( MPI_File, MPID_Errhandler * );
+void MPIR_Get_file_error_routine( MPID_Errhandler *, 
+				  void (**)(MPI_File *, int *, ...), 
+				  int * );
+#endif
+
 /* -- Begin Profiling Symbol Block for routine MPI_File_set_errhandler */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_File_set_errhandler = PMPI_File_set_errhandler
