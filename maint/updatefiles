@@ -450,30 +450,53 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround"
 #		         autoconf $acIncDirFlag ../../../confdb configure2.in > configure )
 #		     fi
 #		fi
-	        if grep 'mpi2-other/info/Makefile \\' $dir/configure 2>&1 >/dev/null ; then 
-		    fixBackWhackCtrlMBug=yes
-                fi
-	        # Add other tests here (sigh) as necessary
-	        if [ $fixBackWhackCtrlMBug = yes ] ; then
-		    rm -f c.tmp 
-		    sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
-		    rm -f $dir/configure
-		    mv c.tmp $dir/configure
-	        fi
-	        continue
+	            if grep 'mpi2-other/info/Makefile \\' $dir/configure 2>&1 >/dev/null ; then 
+		        fixBackWhackCtrlMBug=yes
+                    fi
+	            # Add other tests here (sigh) as necessary
+	            if [ $fixBackWhackCtrlMBug = yes ] ; then
+		         rm -f c.tmp 
+		        sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
+		        rm -f $dir/configure
+		        mv c.tmp $dir/configure
+	            fi
+	            continue
+	        elif [ $dir = "./src/mpe" ] ; then
+		    echo $dir
+		    (cd $dir && autoheader && autoconf )
+		    continue
 	    fi
-	    # The make -q checks whether the target is upto date first;
-	    # if it isn't, we remake it.
-            (cd $dir && rm -f mf.tmp ; \
-	    sed -e 's%^SHELL[ 	]*=.*%SHELL = /bin/sh%' \
-		-e "s%@srcdir@%.%g" \
-		-e '/include .deps/d' \
-		-e '/@SET_MAKE@/d' Makefile.in > mf.tmp ;\
-		if make -q -f mf.tmp configure >/dev/null 2>&1 ; then \
-            : ; else \
-	    echo "Found $dir/configure.in" ; \
-	    make -f mf.tmp configure ; fi ; rm -f mf.tmp  \
-	    )
+	    # First, check for a configure target in Makefile.in
+	    if grep 'configure:' $dir/Makefile.in >/dev/null 2>&1 ; then
+ 	        # The make -q checks whether the target is upto date first;
+	        # if it isn't, we remake it.
+                (cd $dir && rm -f mf.tmp ; \
+	        sed -e 's%^SHELL[ 	]*=.*%SHELL = /bin/sh%' \
+		    -e "s%@srcdir@%.%g" \
+		    -e '/include .deps/d' \
+		    -e '/@SET_MAKE@/d' Makefile.in > mf.tmp ;\
+		    if make -q -f mf.tmp configure >/dev/null 2>&1 ; then \
+                : ; else \
+	        echo "Found $dir/configure.in" ; \
+	        make -f mf.tmp configure ; fi ; rm -f mf.tmp  \
+	        )
+            else 
+		if [ -x $dir/makeconfigure ] ; then
+		    echo "Using makeconfigure in $dir"
+		    (cd $dir && ./makeconfigure )
+		else
+		    # Check for old 1.7 configure files (in MPE, at least for
+		    # now)
+		    if egrep 'AC_ARG|AC_CHECK_FUNCS' $dir/configure.in >/dev/null 2>&1 ; then
+		        echo "Trying simple autoheader/autoconf in $dir"
+		        (cd $dir && autoheader && autoconf)
+		    else
+		        # Try autoconf-1.7; accepts failures gracefully
+		        echo "Trying simple autoconf using 1.7 in $dir"
+			(cd $dir && autoconf-1.7)
+		    fi
+		fi
+            fi
 	    if [ $fixEndEOFBug = yes ] ; then
 		if grep endEOF $dir/configure >/dev/null 2>&1 ; then
 		    echo "Fixing endEOF error in generated configure"
@@ -556,6 +579,7 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
 	 	      -skipfile=./src/mpi/romio/adio/include/mpisgi2.h \
 		      -skipfile=./src/util/slog2sdk \
 		      -skipfile=./src/mpe \
+		      -skipfile=./src/mpe/include \
 			$codecheck_args src
 fi
 if [ -n "$error_summary" ] ; then

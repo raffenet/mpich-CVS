@@ -423,7 +423,16 @@ sub ProcessDir {
     my $dir = $_[0]; $dir =~ s/\/$//;
     my $savedir = $curdir;
     $curdir =~ s/\/$//;
+
+    my $f2name = "./" . "$curdir/$dir" ;
+    if (defined($skipfiles{"$curdir/$dir"}) || defined($skipfiles{$f2name})) {
+	print "Skipping directory $curdir\n" if ($verbose);
+	$savedir = $curdir;
+	return;
+    }
+
     $curdir = "$curdir/$dir";
+
     print "Processing directory $curdir\n" if ($verbose);
     opendir( $DIR, "$curdir" ) || die "Cannot open directory $curdir\n";
     my @filelist;
