@@ -560,13 +560,6 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         }
     }
 
-    mpi_errno = PMI_Barrier();
-    if (mpi_errno != 0)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
-	return mpi_errno;
-    }
-
     if (rank == root) {
         /* now send the business cards of the processes on this side
            to the other side. Allocate a larger bizcards buffer if
@@ -696,12 +689,6 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     MPIU_Free(key);
     MPIU_Free(val);
 
-#ifdef FOO
-    printf("Reached here, rank %d\n", rank);
-    fflush(stdout);
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
     for (i=0; i<NUMPGS; i++)
         MPIU_Free(local_pg_ids[i]);
     MPIU_Free(local_pg_ids);
@@ -717,6 +704,8 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     MPIU_Free(remote_pgs_array);
 
     if (bizcards) MPIU_Free(bizcards);
+
+    mpi_errno = MPIR_Barrier(comm_ptr);
 
 fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_ACCEPT);

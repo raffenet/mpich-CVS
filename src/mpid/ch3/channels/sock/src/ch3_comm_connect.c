@@ -595,13 +595,6 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
         }
     }
 
-    mpi_errno = PMI_Barrier();
-    if (mpi_errno != 0)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
-	return mpi_errno;
-    }
-
     if (rank == root) {
         /* All communication with remote root done. Release the
            communicator. */
@@ -701,6 +694,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
 
     if (bizcards) MPIU_Free(bizcards);
 
+    mpi_errno = MPIR_Barrier(comm_ptr);
 
  fn_exit: 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_CONNECT);
