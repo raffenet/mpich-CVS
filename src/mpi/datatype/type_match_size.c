@@ -62,7 +62,7 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
     };
     static MPI_Datatype int_types[] = { MPI_CHAR, MPI_SHORT, MPI_INT, 
 					MPI_LONG
-#ifdef HAVE_LONG_LONG
+#ifdef HAVE_LONG_LONG_INT
 					, MPI_LONG_LONG
 #endif
     };
