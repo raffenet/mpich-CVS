@@ -446,21 +446,23 @@ def _do_mpdrun(msg):
         if handled_one__any_:
             break
         hosts = msg['hosts']
-        chked_ips = [ mpd_same_ips(g.myHost,x) for x in hosts.values() ]
-        if 1 not in chked_ips  and  '_any_' not in hosts.values():
-            break
         currRank = msg['nstarted']
         found = 0
+        hostSpecForCurrRank = ''
         for ranks in hosts.keys():
             (lo,hi) = ranks
-            if mpd_same_ips(g.myHost,hosts[ranks]) and (currRank >= lo and currRank <= hi):
-                found = 1
-                break
-        if not found:
-            for ranks in hosts.keys():
-                (lo,hi) = ranks
-                if hosts[ranks] == '_any_'  and  (currRank >= lo and currRank <= hi):
-                    handled_one__any_ = 1
+            if currRank >= lo and currRank <= hi:
+                hostSpecForCurrRank = hosts[ranks]
+        if not hostSpecForCurrRank:
+            hostSpecForCurrRank = '_any_'
+        if hostSpecForCurrRank == '_any_':
+            handled_one__any_ = 1
+            found = 1
+        elif mpd_same_ips(g.myHost,hostSpecForCurrRank):
+            found = 1
+        elif hostSpecForCurrRank == '_any_from_pool_':
+            for host in msg['host_spec_pool']:
+                if mpd_same_ips(host,g.myHost):
                     found = 1
                     break
         if not found:

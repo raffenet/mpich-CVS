@@ -84,6 +84,7 @@ def mpdrun():
 	if msg['mpd_version'] != mpd_version:
 	    mpd_raise('mpd version %s does not match mine %s' % (msg['mpd_version'],mpd_version) )
 
+    hostList = []
     if argsFilename:
         argsFile = open(argsFilename,'r')
         args = argsFile.read()
@@ -116,7 +117,6 @@ def mpdrun():
             stdinGoesToWho = int(createReq.getAttribute('stdin_goes_to_all'))
 
         nextHost = 0
-        hostList = []
         hostSpec = createReq.getElementsByTagName('host-spec')
         for hostname in hostSpec[0].childNodes:
             hostname = hostname.data.strip()
@@ -188,14 +188,8 @@ def mpdrun():
             envvars[(loRange,hiRange)] = envVals
 
             if hostList:
-                lo = loRange
-                hi = hiRange
-                while lo <= hi:
-                    hosts[(lo,lo)] = hostList[nextHost]
-                    nextHost += 1
-                    if nextHost >= len(hostList):
-                        nextHost = 0
-                    lo += 1
+                # NOTE: we will later have the option to designate a host for a process
+                hosts[(loRange,hiRange)] = '_any_from_pool_'
             else:
                 hosts[(loRange,hiRange)] = '_any_'
 
@@ -255,7 +249,8 @@ def mpdrun():
                   'cwds'     : cwds,
                   'paths'    : paths,
                   'args'     : args,
-                  'envvars'  : envvars
+                  'envvars'  : envvars,
+                  'host_spec_pool' : hostList
 		}
     if try0Locally:
         msgToSend['try_0_locally'] = 1
