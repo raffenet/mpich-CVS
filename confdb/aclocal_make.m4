@@ -15,6 +15,13 @@ dnl code.  There is no acceptable fix.
 dnl
 dnl
 dnl
+dnl
+dnl Find a make program if none is defined.
+AC_DEFUN(PAC_PROG_MAKE_PROGRAM,[true
+if test "X$MAKE" = "X" ; then
+   AC_CHECK_PROGS(MAKE,make gnumake nmake pmake smake)
+fi
+])dnl
 dnl/*D
 dnl PAC_PROG_MAKE_ECHOS_DIR - Check whether make echos all directory changes
 dnl
@@ -30,10 +37,10 @@ dnl PAC_PROG_MAKE
 dnlD*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE_ECHOS_DIR,[
-MAKE=${MAKE:-make}
 AC_CACHE_CHECK([whether make echos directory changes],
 pac_cv_prog_make_echos_dir,
 [
+AC_REQUIRE([PAC_PROG_MAKE_PROGRAM])
 /bin/rm -f conftest
 cat > conftest <<.
 SHELL=/bin/sh
@@ -82,6 +89,7 @@ dnlD*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE_INCLUDE,[
 AC_CACHE_CHECK([whether make supports include],pac_cv_prog_make_include,[
+AC_REQUIRE([PAC_PROG_MAKE_PROGRAM])
 /bin/rm -f conftest
 cat > conftest <<.
 ALL:
@@ -126,6 +134,7 @@ dnl
 AC_DEFUN(PAC_PROG_MAKE_ALLOWS_COMMENTS,[
 AC_CACHE_CHECK([whether make allows comments in actions],
 pac_cv_prog_make_allows_comments,[
+AC_REQUIRE([PAC_PROG_MAKE_PROGRAM])
 /bin/rm -f conftest
 cat > conftest <<.
 SHELL=/bin/sh
@@ -180,6 +189,7 @@ AC_DEFUN(PAC_PROG_MAKE_VPATH,[
 AC_SUBST(VPATH)
 AC_CACHE_CHECK([for virtual path format],
 pac_cv_prog_make_vpath,[
+AC_REQUIRE([PAC_PROG_MAKE_PROGRAM])
 rm -rf conftest*
 mkdir conftestdir
 cat >conftestdir/a.c <<EOF
@@ -238,12 +248,13 @@ dnlD*/
 AC_DEFUN(PAC_PROG_MAKE_SET_CFLAGS,[
 AC_CACHE_CHECK([whether make sets CFLAGS],
 pac_cv_prog_make_set_cflags,[
+AC_REQUIRE([PAC_PROG_MAKE_PROGRAM])
 /bin/rm -f conftest
-cat > conftest <<.
+cat > conftest <<EOF
 SHELL=/bin/sh
 ALL:
 	@echo X[\$]{CFLAGS}X
-.
+EOF
 pac_str=`$MAKE -f conftest 2>&1`
 /bin/rm -f conftest 
 if test "$pac_str" = "XX" ; then
@@ -253,6 +264,53 @@ else
 fi
 ])
 if test "$pac_cv_prog_make_set_cflags" = "no" ; then
+    ifelse([$2],,:,[$2])
+else
+    ifelse([$1],,:,[$1])
+fi
+])dnl
+dnl
+dnl/*D
+dnl PAC_PROG_MAKE_HAS_PATTERN_RULES - Determine if the make program supports
+dnl pattern rules
+dnl
+dnl Synopsis:
+dnl PAC_PROG_MAKE_HAS_PATTERN_RULES([action if true],[action if false])
+dnl
+dnl Output Effect:
+dnl Executes the first argument if patterns of the form
+dnl.vb
+dnl   prefix%suffix: prefix%suffix
+dnl.ve
+dnl are supported by make (gnumake and Solaris make are known to support
+dnl this form of target).  If patterns are not supported, executes the
+dnl second argument.
+dnl
+dnl See Also:
+dnl PAC_PROG_MAKE
+dnl 
+dnlD*/
+AC_DEFUN(PAC_PROG_MAKE_HAS_PATTERN_RULES,[
+AC_CACHE_CHECK([whether make has pattern rules],
+pac_cv_prog_make_has_patterns,[
+AC_REQUIRE([PAC_PROG_MAKE_PROGRAM])
+rm -f conftest*
+cat > conftestmm <<EOF
+# Test for pattern rules
+.SUFFIXES:
+.SUFFIXES: .dep .c
+conftest%.dep: %.c
+	@cat \[$]< >\[$]@
+EOF
+date > conftest.c
+if ${MAKE} -f conftestmm conftestconftest.dep 1>&AC_FD_CC 2>&1 ; then
+    pac_cv_prog_make_has_patterns="yes"
+else
+    pac_cv_prog_make_has_patterns="no"
+fi
+rm -f conftest*
+])
+if test "$pac_cv_prog_make_has_patterns" = "no" ; then
     ifelse([$2],,:,[$2])
 else
     ifelse([$1],,:,[$1])
@@ -283,13 +341,12 @@ dnl 'SET_MAKE' is set to 'MAKE = $MAKE'.
 dnlD*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE,[
-if test "X$MAKE" = "X" ; then
-    AC_CHECK_PROGS(MAKE,make gnumake nmake pmake smake)
-fi
+PAC_PROG_MAKE_PROGRAM
 PAC_PROG_MAKE_ECHOS_DIR
 PAC_PROG_MAKE_INCLUDE
 PAC_PROG_MAKE_ALLOWS_COMMENTS
 PAC_PROG_MAKE_VPATH
+PAC_PROG_MAKE_HAS_PATTERN_RULES
 AC_SUBST(SET_CFLAGS)
 PAC_PROG_MAKE_SET_CFLAGS([SET_CFLAGS='CFLAGS='])
 if test "$pac_cv_prog_make_echos_dir" = "no" ; then
