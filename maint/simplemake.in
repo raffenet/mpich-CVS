@@ -1160,6 +1160,7 @@ sub ClearVars {
     # These may be overriden on a file by file basis
     $autoconf = "autoconf"; # Name of autoconf program to use
     $autoconf_version = ""; # Any version is allowed
+    $configure_has_config_headers = "no";
     %simplemake_vars = ();
 }	
 
@@ -1566,6 +1567,20 @@ sub TargetClean {
 	# do that only once (not recursively) and only after all other
 	# uses of the Makefile, since distclean removes the Makefile
 	# Directories containing autoconf should include an rm of configure
+
+	# This should also remove any files that will be created with
+	# autoheader.  We'll need to check for files that are created
+	# by autoheader, not just rely on the AC_CONFIG_HEADER command,
+	# since some headers may be created by hand.  We'll ignore
+	# this for now, since we uniformly use autoheader (and
+	# simplemake runs autoheader if it finds AC_CONFIG_HEADER)
+	if ($configure_has_config_headers ne "no") {
+	    print FD "\t-rm -f ";
+	    foreach $file (split(/\s+/,$configure_has_config_headers)) {
+		print FD "$file.in ";
+	    }
+	    print FD "$newline";
+	}
     }
 }
 
