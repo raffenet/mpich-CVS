@@ -657,6 +657,8 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
 		      -skipfile=./src/pmi/winmpd \
 		      -skipfile=./src/util/logging/dlog \
 		      -skipfile=./src/util/logging/dlog2slog \
+		      -skipfile=./src/mpid/common/sock/poll/mpidu_sock_poll.h \
+		      -skipfile=./src/mpid/common/sock/poll/poll.c \
 			$codecheck_args src
 fi
 if [ -n "$error_summary" ] ; then
