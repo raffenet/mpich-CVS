@@ -26,6 +26,11 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
     MPI_Type_commit(&pinode_type);
 
     ADIOI_PVFS2_Init(error_code);
+    if (*error_code != MPI_SUCCESS)
+    {
+	/* XXX: handle errors */
+	return;
+    }
 
     pvfs2_fs = (ADIOI_PVFS2_fs *)ADIOI_Malloc(sizeof(ADIOI_PVFS2_fs));
 
@@ -41,7 +46,10 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 
 	ret = PVFS_sys_lookup(ADIOI_PVFS2_fs_id_list[0], fd->filename, 
 		pvfs2_fs->credentials, &resp_lookup);
-	if (ret < 0 && (fd->access_mode & MPI_MODE_CREATE) ) {
+	if (ret > 0 ) {
+	    fprintf(stderr, "PVFS_sys_lookup returns %d\n", ret);
+	}
+	if ( (ret < 0) && (fd->access_mode & MPI_MODE_CREATE) ) {
 	    ret = PVFS_sys_getparent(ADIOI_PVFS2_fs_id_list[0], fd->filename,
 		    pvfs2_fs->credentials, &resp_getparent);
 	    if (ret < 0) {
@@ -65,9 +73,10 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 	/* define a pvfs_pinode_reference datatype and broadcast the pinode
 	 * reference: need to learn how to create a 64-bit datatype */
 	MPI_Bcast(&(pvfs2_fs->pinode), 1, pinode_type, 0, fd->comm);
+    } else {
+	/* recieve the broadcast */
+	MPI_Bcast(&(pvfs2_fs->pinode), 1, pinode_type, 0, fd->comm);
     }
-    /* recieve the broadcast */
-    MPI_Bcast(&(pvfs2_fs->pinode), 1, pinode_type, 0, fd->comm);
 
     MPI_Type_free(&pinode_type);
 
