@@ -32,6 +32,20 @@
 #define MPID_DTYPE_BEGINNING  0
 #define MPID_DTYPE_END       -1
 
+/* LB/UB calculation helper macros */
+
+#define MPID_DATATYPE_CONTIG_LB_UB(__olddtp, __count, __lb, __ub)	\
+do {									\
+    if ((__olddtp)->extent >= 0) {					\
+        __lb = (__olddtp)->lb;						\
+        __ub = (__olddtp)->ub + (__olddtp)->extent * (__count - 1);	\
+    }									\
+    else /* negative extent */ {					\
+	__lb = __olddtp->lb + (__olddtp)->extent * (__count - 1);	\
+	__ub = __olddtp->ub;						\
+    }									\
+} while (0)
+
 /* Datatype functions */
 int MPID_Type_dup(MPI_Datatype oldtype,
 		  MPI_Datatype *newtype);

@@ -9,6 +9,7 @@
 #include <mpid_dataloop.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <limits.h>
 
 /*@
   MPID_Type_struct - create a struct datatype
@@ -89,8 +90,7 @@ int MPID_Type_struct(int count,
 				      newtype);
 	return mpi_errno;
     }
-
-    if (all_basics && !has_lb && !has_ub) {
+    else if (all_basics && !has_lb && !has_ub) {
 	/* no derived types and no ub/lb, but not all the same -- just convert
 	 * everything to bytes.
 	 */
@@ -113,14 +113,12 @@ int MPID_Type_struct(int count,
 	MPIU_Free(tmp_blocklength_array);
 
 	return mpi_errno;
-    }
-
+    } /* end of all basics w/out lb or ub case */
     /* TODO: Catch case of a single basic with an LB and/or UB; this can be done
      * with a contig followed by an adjustment of the LB and UB, which would be
      * simpler to process than the indexed that we use below.
      */
-
-    if (all_basics) {
+    else if (all_basics) {
 	/* There are only basics, but there are LBs and/or UBs that we need to
 	 * strip out.  So we convert to MPI_BYTEs as before, pull out the LBs and
 	 * UBs, and then adjust the LB/UB as needed afterwards.
@@ -189,9 +187,8 @@ int MPID_Type_struct(int count,
 	new_dtp->extent = new_dtp->ub - new_dtp->lb;
 
 	return mpi_errno;
-    }
-
-    if (nr_real_types == 1) {
+    } /* end of all basics w/ lb and/or ub case */
+    else if (nr_real_types == 1) {
 	/* There's exactly one derived type in the struct.
 	 * 
 	 * steps:
@@ -244,6 +241,7 @@ int MPID_Type_struct(int count,
 
 	MPID_Datatype_get_ptr(*newtype, new_dtp);
 	MPID_Datatype_get_ptr(oldtype_array[real_type_idx], old_dtp);
+	/* TODO: NEED TO LOOK AT THE OLD TYPE TO SEE IF IT HAD AN LB AND/OR UB!!! */
 	if (has_lb) {
 	    new_dtp->has_sticky_lb = 1;
 	    new_dtp->lb            = lb_disp;
@@ -255,20 +253,140 @@ int MPID_Type_struct(int count,
 	new_dtp->extent = new_dtp->ub - new_dtp->lb;
 	   
 	return mpi_errno;
-    }
+    } /* end of single derived type case */
+    else {
+	int nr_pieces = 0, first = 0, last, bytes, found_lb = 0, found_ub = 0;
+	int *tmp_blocklength_array;
+	MPI_Aint *tmp_displacement_array, lb_disp = 0, ub_disp = 0;
+	MPID_IOV *iov_array;
+	MPID_Segment *segp;
 
-    /* Multiple derived types ... this is essentially the flattening case from
-     * ROMIO.
-     */
-    assert(0);
+	/* General case: more than one type, not all of which are basics.
+	 *
+	 * We're going to flatten the whole thing into a collection 
+	 * of contiguous pieces and make an hindexed out of that.
+	 *
+	 * Three passes (roughly):
+	 * - First figure out how many pieces there are going to be.
+	 * - Allocate and fill in arrays of extents for type.
+	 * - Recalculate the number of elements (basics)
+	 * 
+	 */
 
-    return MPI_SUCCESS;
+	for (i=0; i < count; i++) {
+	    int tmp_pieces = 0, tmp_lb, tmp_ub;
+
+	    if (oldtype_array[i] == MPI_LB) {
+		if (!found_lb) {
+		    found_lb = 1;
+		    lb_disp = displacement_array[i];
+		}
+		else if (displacement_array[i] < lb_disp) lb_disp = displacement_array[i];
+	    }
+	    else if (oldtype_array[i] == MPI_UB) {
+		if (!found_ub) {
+		    found_ub = 1;
+		    ub_disp = displacement_array[i];
+		}
+		else if (displacement_array[i] > ub_disp) ub_disp = displacement_array[i];
+	    }
+	    else if (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN) tmp_pieces = 1;
+	    else {
+		MPID_Datatype_get_ptr(oldtype_array[i], old_dtp);
+
+		/* calculate lb and ub of this type; see mpid_datatype.h */
+		MPID_DATATYPE_CONTIG_LB_UB(old_dtp, blocklength_array[i], tmp_lb, tmp_ub);
+		tmp_pieces = old_dtp->n_elements;
+		if (old_dtp->has_sticky_lb) {
+		    if (!found_lb) {
+			found_lb = 1;
+			lb_disp = tmp_lb + displacement_array[i];
+		    }
+		    else if (tmp_lb + displacement_array[i] < lb_disp)
+			lb_disp = tmp_lb + displacement_array[i];
+		}
+		if (old_dtp->has_sticky_ub) {
+		    if (!found_ub) {
+			found_ub = 1;
+			ub_disp = tmp_ub + displacement_array[i];
+		    }
+		    else if (tmp_ub + displacement_array[i] > ub_disp)
+			ub_disp = tmp_ub + displacement_array[i];
+		}
+	    }
+	    nr_pieces += tmp_pieces * blocklength_array[i];
+	}
+
+	nr_pieces += 2; /* TEMPORARY SANITY CHECK!!! */
+
+	iov_array = (MPID_IOV *) MPIU_Malloc(nr_pieces * sizeof(MPID_IOV));
+	if (iov_array == NULL) assert(0);
+	tmp_blocklength_array = (int *) MPIU_Malloc(nr_pieces * sizeof(int));
+	if (tmp_blocklength_array == NULL) assert(0);
+	tmp_displacement_array = (MPI_Aint *) MPIU_Malloc(nr_pieces * sizeof(MPI_Aint));
+	if (tmp_displacement_array == NULL) assert(0);
+
+	segp = MPID_Segment_alloc();
+
+	for (i=0; i < count; i++) {
+	    /* we're going to use the segment code to flatten the type.
+	     * we put in our displacement as the buffer location, and use
+	     * the blocklength as the count value to get N contiguous copies
+	     * of the type.
+	     *
+	     * Note that we're going to get back values in bytes, so that will
+	     * be our new element type.
+	     */
+	    MPID_Segment_init((char *) displacement_array[i],
+			      blocklength_array[i],
+			      oldtype_array[i],
+			      segp);
+
+	    last = nr_pieces;
+	    bytes = INT_MAX;
+	    /* TODO: CREATE MANIPULATION ROUTINES THAT TAKE THE LEN AND DISP
+	     * ARRAYS AND FILL THEM IN DIRECTLY.
+	     */
+	    MPID_Segment_pack_vector(segp,
+				     0,
+				     &bytes, /* don't care, just want it to go */
+				     &iov_array[first],
+				     &last);
+	    first = last;
+	}
+
+	for (i=0; i < last; i++) {
+	    tmp_blocklength_array[i]  = iov_array[i].MPID_IOV_LEN;
+	    tmp_displacement_array[i] = (MPI_Aint) iov_array[i].MPID_IOV_BUF;
+	}
+
+	MPID_Segment_free(segp);
+	MPIU_Free(iov_array);
+
+	mpi_errno = MPID_Type_indexed(last,
+				      tmp_blocklength_array,
+				      tmp_displacement_array,
+				      1,
+				      MPI_BYTE,
+				      newtype);
+	if (mpi_errno != MPI_SUCCESS) assert(0);
+
+	MPIU_Free(tmp_displacement_array);
+	MPIU_Free(tmp_blocklength_array);
+
+	MPID_Datatype_get_ptr(*newtype, new_dtp);
+	if (has_lb) {
+	    new_dtp->has_sticky_lb = 1;
+	    new_dtp->lb            = lb_disp;
+	}
+	if (has_ub) {
+	    new_dtp->has_sticky_ub = 1;
+	    new_dtp->ub            = ub_disp;
+	}
+	new_dtp->extent = new_dtp->ub - new_dtp->lb;
+
+	return mpi_errno;
+    } /* end of general case */
 }
-
-
-
-
-
-
 
 

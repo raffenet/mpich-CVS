@@ -104,14 +104,8 @@ int MPID_Type_contiguous(int count,
 	new_dtp->loopinfo_depth = old_dtp->loopinfo_depth + 1;
 
 	/* calculate lb, ub, true_lb, true_ub */
-	if (old_dtp->extent >= 0) {
-	    new_dtp->lb     = old_dtp->lb;
-	    new_dtp->ub     = old_dtp->ub + old_dtp->extent * (count-1);
-	}
-	else /* negative extent */ {
-	    new_dtp->lb     = old_dtp->lb + old_dtp->extent * (count-1);
-	    new_dtp->ub     = old_dtp->ub;
-	}
+	MPID_DATATYPE_CONTIG_LB_UB(old_dtp, count, new_dtp->lb, new_dtp->ub); /* see mpid_datatype.h */
+
 	new_dtp->true_lb    = new_dtp->lb + (old_dtp->true_lb - old_dtp->lb);
 	new_dtp->true_ub    = new_dtp->ub + (old_dtp->true_ub - old_dtp->ub);
 	new_dtp->extent     = new_dtp->ub - new_dtp->lb;
