@@ -7,8 +7,8 @@
 
 #include "mpiimpl.h"
 
-int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
-			  MPI_Status * status, int * active)
+
+int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI_Status * status, int * active)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -18,18 +18,10 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 	case MPID_REQUEST_SEND:
 	case MPID_REQUEST_RECV:
 	{
-	    if (request_ptr->status.MPI_ERROR != MPI_SUCCESS)
-	    {
-		mpi_errno = request_ptr->status.MPI_ERROR;
-	    }
-
-	    if (status != MPI_STATUS_IGNORE)
-	    {
-		*status = request_ptr->status;
-	    }
-	    
-	    *request = MPI_REQUEST_NULL;
+	    MPIR_Request_extract_status(request_ptr, status);
+	    mpi_errno = request_ptr->status.MPI_ERROR;
 	    MPID_Request_release(request_ptr);
+	    *request = MPI_REQUEST_NULL;
 	    break;
 	}
 			
@@ -38,22 +30,15 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 	{
 	    if (request_ptr->partner_request != NULL)
 	    {
-		MPID_Request * prequest_ptr;
+		MPID_Request * prequest_ptr = request_ptr->partner_request;
 
-		prequest_ptr = request_ptr->partner_request;
+		/* reset persistent request to inactive state */
 		request_ptr->cc = 0;
 		request_ptr->cc_ptr = &request_ptr->cc;
 		request_ptr->partner_request = NULL;
 		
-		if (prequest_ptr->status.MPI_ERROR != MPI_SUCCESS)
-		{
-		    mpi_errno = prequest_ptr->status.MPI_ERROR;
-		}
-			    
-		if (status != MPI_STATUS_IGNORE)
-		{
-		    *status = prequest_ptr->status;
-		}
+		MPIR_Request_extract_status(prequest_ptr, status);
+		mpi_errno = prequest_ptr->status.MPI_ERROR;
 	    
 		MPID_Request_release(prequest_ptr);
 	    }
@@ -61,12 +46,8 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 	    {
 		if (request_ptr->status.MPI_ERROR != MPI_SUCCESS)
 		{
-		    /* if the persistent request failed to start then make the
-		       error code available */
-		    if (status != MPI_STATUS_IGNORE)
-		    {
-			*status = request_ptr->status;
-		    }
+		    /* if the persistent request failed to start then make the error code available */
+		    mpi_errno = request_ptr->status.MPI_ERROR;
 		}
 		else
 		{
@@ -83,25 +64,12 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 	    int rc;
 	    
 	    mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
-	    if (mpi_errno == MPI_SUCCESS)
-	    {
-		mpi_errno = request_ptr->status.MPI_ERROR;
-	    }
-	    else
-	    {
-		request_ptr->status.MPI_ERROR = mpi_errno;
-	    }
+	    MPIR_Request_extract_status(request_ptr, status);
 	    
 	    rc = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
-	    if (request_ptr->status.MPI_ERROR == MPI_SUCCESS)
+	    if (mpi_errno == MPI_SUCCESS)
 	    {
-		request_ptr->status.MPI_ERROR = rc;
 		mpi_errno = rc;
-	    }
-	    
-	    if (status != MPI_STATUS_IGNORE)
-	    {
-		*status = request_ptr->status;
 	    }
 	    
 	    MPID_Request_release(request_ptr);

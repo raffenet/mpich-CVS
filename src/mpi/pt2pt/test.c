@@ -125,8 +125,7 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     {
 	if (*request_ptr->cc_ptr == 0)
 	{
-	    mpi_errno = MPIR_Request_complete(request, request_ptr, status,
-					      &active_flag);
+	    mpi_errno = MPIR_Request_complete(request, request_ptr, status, &active_flag);
 	    *flag = TRUE;
 	    goto fn_exit;
 	}
@@ -137,8 +136,7 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     
     if (*request_ptr->cc_ptr == 0)
     {
-	mpi_errno = MPIR_Request_complete(request, request_ptr, status,
-					  &active_flag);
+	mpi_errno = MPIR_Request_complete(request, request_ptr, status, &active_flag);
 	*flag = TRUE;
 	goto fn_exit;
     }

@@ -114,15 +114,9 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 #   endif /* HAVE_ERROR_CHECKING */
 
     MPIR_Wait(request_ptr);
-    mpi_errno = MPIR_Request_complete(request, request_ptr, status,
-				      &active_flag);
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	mpi_errno = request_ptr->status.MPI_ERROR;
-    }
+    mpi_errno = MPIR_Request_complete(request, request_ptr, status, &active_flag);
 
   fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
-    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
-	MPIR_Err_return_comm(request_ptr?request_ptr->comm:0, FCNAME, mpi_errno);
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm(request_ptr?request_ptr->comm:0, FCNAME, mpi_errno);
 }

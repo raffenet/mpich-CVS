@@ -170,9 +170,7 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
 	{
 	    if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
 	    {
-		mpi_errno = MPIR_Request_complete(&array_of_requests[i],
-						  request_ptrs[i], status,
-						  &active_flag);
+		mpi_errno = MPIR_Request_complete(&array_of_requests[i], request_ptrs[i], status, &active_flag);
 		if (active_flag)
 		{
 		    *index = i;
@@ -205,6 +203,5 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
     }
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITANY);
-    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
-	MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
 }

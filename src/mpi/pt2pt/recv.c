@@ -122,8 +122,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Recv(buf, count, datatype, source, tag, comm_ptr,
-			  MPID_CONTEXT_INTRA_PT2PT, status, &request_ptr);
+    mpi_errno = MPID_Recv(buf, count, datatype, source, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, status, &request_ptr);
     if (mpi_errno == MPI_SUCCESS)
     {
 	if (request_ptr == NULL)
@@ -133,13 +132,18 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	}
 	else
 	{
-	    /* If a request was returned, then we need to block until the
-	       request is complete */
+	    /* If a request was returned, then we need to block until the request is complete */
 	    MPIR_Wait(request_ptr);
 	    
 	    if (status != MPI_STATUS_IGNORE)
 	    {
+		int error;
+		
+		/* According to the MPI 1.1 standard page 22 lines 9-12, the MPI_ERROR field may not be modified except by the
+		   functions in section 3.7.5 which return MPI_ERR_IN_STATUSES (MPI_Wait{all,some} and MPI_Test{all,some}). */
+		error = status->MPI_ERROR;
 		*status = request_ptr->status;
+		status->MPI_ERROR = error;
 	    }
 	    
 	    mpi_errno = request_ptr->status.MPI_ERROR;

@@ -92,8 +92,7 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests",
-				 mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(index, "index", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
 	    /* NOTE: MPI_STATUS_IGNORE != NULL */
@@ -173,9 +172,7 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
     {
 	if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
 	{
-	    mpi_errno = MPIR_Request_complete(&array_of_requests[i],
-					      request_ptrs[i], status,
-					      &active_flag);
+	    mpi_errno = MPIR_Request_complete(&array_of_requests[i], request_ptrs[i], status, &active_flag);
 	    if (active_flag)
 	    {
 		*flag = TRUE;
