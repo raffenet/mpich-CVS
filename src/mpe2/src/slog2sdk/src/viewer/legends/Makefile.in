@@ -22,8 +22,11 @@ TARGET    = $(libbuild_dir)/legends.jar
 PACKAGE   = viewer.legends
 SRC       = Const.java CategoryIcon.java CategoryLabel.java \
             CategoryIconRenderer.java CategoryIconEditor.java \
-            LegendTableModel.java LegendTable.java \
-            LegendPanel.java LegendFrame.java
+            LegendTableModel.java \
+            Triangular3DIcon.java GenericHeaderRenderer.java \
+            TableHeaderHandler.java TableColumnHandler.java \
+            OperationBooleanMenu.java OperationStringMenu.java \
+            LegendTable.java LegendPanel.java LegendFrame.java
 
 OBJ       = $(SRC:.java=.class)
 

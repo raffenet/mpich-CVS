@@ -23,8 +23,6 @@ public class LegendPanel extends JPanel
 {
     private LegendTable  legend_table;
 
-    private JButton      visible_btn;
-    private JButton      search_btn;
     private JButton      all_btn;
     private JButton      clear_btn;
     private JButton      close_btn;
@@ -52,57 +50,30 @@ public class LegendPanel extends JPanel
 
         Border titled_border;
 
-        JPanel  selected_panel = new JPanel();
-        selected_panel.setLayout( new BoxLayout( selected_panel,
+        JPanel  select_panel = new JPanel();
+        select_panel.setLayout( new BoxLayout( select_panel,
                                                BoxLayout.X_AXIS ) );
-            selected_panel.add( Box.createHorizontalGlue() );
-
-            visible_btn = new JButton( "Visible" );
-            visible_btn.setToolTipText(
-                        "Toggle all selected Visiblility checkboxes" );
-            // visible_btn.setAlignmentX( Component.CENTER_ALIGNMENT );
-            visible_btn.addActionListener( this );
-            selected_panel.add( visible_btn );
-
-            selected_panel.add( Box.createHorizontalGlue() );
-
-            search_btn = new JButton( "Searchable" );
-            search_btn.setToolTipText(
-                        "Toggle all selected Searchability checkboxes" );
-            // search_btn.setAlignmentX( Component.CENTER_ALIGNMENT );
-            search_btn.addActionListener( this );
-            selected_panel.add( search_btn );
-
-            selected_panel.add( Box.createHorizontalGlue() );
-        titled_border = BorderFactory.createTitledBorder(
-                                      etched_border, " Selected Toggles " );
-        selected_panel.setBorder( titled_border );
-        super.add( selected_panel );
-
-        JPanel  all_panel = new JPanel();
-        all_panel.setLayout( new BoxLayout( all_panel,
-                                               BoxLayout.X_AXIS ) );
-            all_panel.add( Box.createHorizontalGlue() );
+            select_panel.add( Box.createHorizontalGlue() );
 
             all_btn = new JButton( "Select" );
             all_btn.setToolTipText( "Select all Legends" );
             // all_btn.setAlignmentX( Component.CENTER_ALIGNMENT );
             all_btn.addActionListener( this );
-            all_panel.add( all_btn );
+            select_panel.add( all_btn );
 
-            all_panel.add( Box.createHorizontalGlue() );
+            select_panel.add( Box.createHorizontalGlue() );
 
             clear_btn = new JButton( "Deselect" );
             clear_btn.setToolTipText( "Deselect all Legends" );
             // clear_btn.setAlignmentX( Component.CENTER_ALIGNMENT );
             clear_btn.addActionListener( this );
-            all_panel.add( clear_btn );
+            select_panel.add( clear_btn );
 
-            all_panel.add( Box.createHorizontalGlue() );
+            select_panel.add( Box.createHorizontalGlue() );
         titled_border = BorderFactory.createTitledBorder(
-                                      etched_border, " All Toggles " );
-        all_panel.setBorder( titled_border );
-        super.add( all_panel );
+                                      etched_border, " All " );
+        select_panel.setBorder( titled_border );
+        super.add( select_panel );
 
         JPanel  end_panel = new JPanel();
         end_panel.setLayout( new BoxLayout( end_panel, BoxLayout.X_AXIS ) );
@@ -124,10 +95,6 @@ public class LegendPanel extends JPanel
      
         if ( evt_src == close_btn )
             TopWindow.Legend.setVisible( false );
-        else if ( evt_src == visible_btn )
-            legend_table.toggleVisibilityCheckboxes();
-        else if ( evt_src == search_btn )
-            legend_table.toggleSearchabilityCheckboxes();
         else if ( evt_src == all_btn )
             legend_table.selectAll();
         else if ( evt_src == clear_btn )

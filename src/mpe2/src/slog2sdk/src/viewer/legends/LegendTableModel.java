@@ -13,8 +13,10 @@ import java.util.Map;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Collections;
 
+import java.awt.Color;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.table.AbstractTableModel;
@@ -29,23 +31,32 @@ import logformat.slog2.CategoryMap;
 public class LegendTableModel extends AbstractTableModel
 //                              implements ListSelectionListener
 {
-    public  static final int      ICON_COLUMN            = 0;
-    public  static final int      NAME_COLUMN            = 1;
-    public  static final int      VISIBILITY_COLUMN      = 2;
-    public  static final int      SEARCHABILITY_COLUMN   = 3;
+    public  static final int        ICON_COLUMN            = 0;
+    public  static final int        NAME_COLUMN            = 1;
+    public  static final int        VISIBILITY_COLUMN      = 2;
+    public  static final int        SEARCHABILITY_COLUMN   = 3;
 
-    private static final String[] COLUMN_TITLES
-                                  = { "Topo", "Name", "V", "S" };
-    private static final String[] COLUMN_TOOLTIPS
-                                  = { "Topology/Color", "Name",
-                                      "Visibility", "Searchability" };
-    private static final Class[]  COLUMN_CLASSES
-                                  = { CategoryIcon.class, String.class,
-                                      Boolean.class, Boolean.class };
-    private static final Object[] COLUMN_SAMPLES
-                                  = { CategoryIcon.BLANK_ICON,
-                                      "ABCDEFGHIJKLMNOP",
-                                      Boolean.TRUE, Boolean.TRUE };
+    private static final String[]   COLUMN_TITLES
+                                    = { "Topo", "Name", "V", "S" };
+    private static final String[]   COLUMN_TOOLTIPS
+                                    = { "Topology/Color", "Category Name",
+                                        "Visibility", "Searchability" };
+    private static final Class[]    COLUMN_CLASSES
+                                    = { CategoryIcon.class, String.class,
+                                        Boolean.class, Boolean.class };
+    private static final Color[]    COLUMN_TITLE_FORE_COLORS
+                                    = { Color.magenta, Color.pink,
+                                        Color.green, Color.yellow };
+    private static final Color[]    COLUMN_TITLE_BACK_COLORS
+                                    = { Color.black, Color.gray,
+                                        Color.darkGray.darker(),
+                                        Color.blue.darker() };
+    private static final boolean[]  COLUMN_TITLE_RAISED_ICONS
+                                    = { false, false, true, false };
+    private static final Object[]   COLUMN_SAMPLES
+                                    = { CategoryIcon.BLANK_ICON,
+                                        "ABCDEFGHIJKLMNOP",
+                                        Boolean.TRUE, Boolean.TRUE };
 
     private List   objdef_list    = null;
     private List   icon_list      = null;
@@ -55,7 +66,14 @@ public class LegendTableModel extends AbstractTableModel
         super();
 
         objdef_list  = new ArrayList( map.values() );
-        Collections.sort( objdef_list, Category.INDEX_ORDER );
+        this.sort( Category.INDEX_ORDER );
+    }
+
+
+
+    //  Sorting into various order
+    private void initIconListFromCategoryList()
+    {
         icon_list    = new ArrayList( objdef_list.size() );
 
         Icon      icon;
@@ -68,6 +86,32 @@ public class LegendTableModel extends AbstractTableModel
             icon_list.add( icon );
         }
     }
+
+    private void sort( Comparator comparator )
+    {
+        Collections.sort( objdef_list, comparator );
+        this.initIconListFromCategoryList();        
+    }
+
+    private void reverse()
+    {
+        Collections.reverse( objdef_list );
+        this.initIconListFromCategoryList();        
+    }
+
+    public void refreshOrder( Comparator comparator )
+    {
+        this.sort( comparator );
+        super.fireTableDataChanged(); 
+    }
+
+    public void reverseOrder()
+    {
+        this.reverse();
+        super.fireTableDataChanged(); 
+    }
+
+
 
     public int getRowCount()
     {
@@ -87,6 +131,21 @@ public class LegendTableModel extends AbstractTableModel
     public String getColumnName( int icolumn )
     {
         return COLUMN_TITLES[ icolumn ];
+    }
+
+    public Color getColumnNameForeground( int icolumn )
+    {
+        return COLUMN_TITLE_FORE_COLORS[ icolumn ];
+    }
+
+    public Color getColumnNameBackground( int icolumn )
+    {
+        return COLUMN_TITLE_BACK_COLORS[ icolumn ];
+    }
+
+    public boolean isRaisedColumnNameIcon( int icolumn )
+    {
+        return COLUMN_TITLE_RAISED_ICONS[ icolumn ];
     }
 
     public String getColumnToolTip( int icolumn )

@@ -25,7 +25,7 @@ public class LegendFrame extends JFrame
 
     public LegendFrame( final InputLog  slog_ins )
     {
-        super( "Legend" );
+        super( "Legend : " + slog_ins.getPathnameSuffix() );
         super.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
         TopWindow.Legend.disposeAll();
         TopWindow.Legend.setWindow( this );

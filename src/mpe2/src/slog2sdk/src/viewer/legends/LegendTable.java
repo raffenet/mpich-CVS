@@ -14,16 +14,20 @@ import java.awt.Insets;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Component;
+import java.awt.event.MouseAdapter;
 import javax.swing.SwingConstants;
 import javax.swing.JComponent;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JCheckBox;
+import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.UIManager;
 
 import base.drawable.Category;
 import logformat.slog2.CategoryMap;
@@ -43,6 +47,7 @@ public class LegendTable extends JTable
 
     private LegendTableModel    table_model;
     private TableColumnModel    column_model;
+    private JTableHeader        table_header;
 
     public LegendTable( CategoryMap  map )
     {
@@ -56,8 +61,11 @@ public class LegendTable extends JTable
                                 new CategoryIconEditor() );
         super.setAutoResizeMode( AUTO_RESIZE_OFF );
         super.setIntercellSpacing( new Dimension( 2, 2 ) );
+        super.setShowHorizontalLines( false );
+        super.setShowVerticalLines( true );
 
         column_model  = super.getColumnModel();
+        table_header = this.getTableHeader();
         this.setColumnHeaderRenderers();
         this.initColumnSize();
 
@@ -67,25 +75,47 @@ public class LegendTable extends JTable
     private void setColumnHeaderRenderers()
     {
         TableColumn        column; 
-        JLabel             header;
+        TableCellRenderer  renderer;
+        JPopupMenu         pop_menu;
+        MouseAdapter       handler;
         Color              bg_color;
+        Class              class_type;
         int                column_count;
 
         column_count  = table_model.getColumnCount();
         for ( int icol = 0; icol < column_count; icol++ ) {
             column     = column_model.getColumn( icol );
-            header     = (JLabel) column.getHeaderRenderer();
-            if ( header == null ) {
-                header     = new DefaultTableCellRenderer();
-                header.setText( table_model.getColumnName( icol ) );
-                header.setToolTipText( table_model.getColumnToolTip( icol ) );
-                header.setHorizontalAlignment( SwingConstants.CENTER );
-                header.setBackground( Color.gray );
-                header.setForeground( Color.white );
-                column.setHeaderRenderer( (TableCellRenderer) header );
+            renderer   = column.getHeaderRenderer();
+            class_type = table_model.getColumnClass( icol );
+            if ( class_type == Boolean.class ) {
+                renderer = new GenericHeaderRenderer( this, icol );
+                ((GenericHeaderRenderer) renderer).initPressablePullDownTab();
+                column.setHeaderRenderer( renderer );
+
+                pop_menu = new OperationBooleanMenu( this, icol );
+                handler  = new TableHeaderHandler( this, icol, pop_menu );
+                table_header.addMouseListener( handler );
+                handler  = new TableColumnHandler( this, icol, pop_menu );
+                this.addMouseListener( handler );
+            }
+            if ( class_type == String.class ) {
+                renderer = new GenericHeaderRenderer( this, icol );
+                ((GenericHeaderRenderer) renderer).initPressablePullDownTab();
+                column.setHeaderRenderer( renderer );
+
+                pop_menu = new OperationStringMenu( this, icol );
+                handler  = new TableHeaderHandler( this, icol, pop_menu );
+                table_header.addMouseListener( handler );
+                handler  = new TableColumnHandler( this, icol, pop_menu );
+                this.addMouseListener( handler );
+            }
+            else if ( renderer == null ) {
+                renderer = new GenericHeaderRenderer( this, icol );
+                column.setHeaderRenderer( renderer );
             }
             else
-                header.setToolTipText( table_model.getColumnToolTip( icol ) );
+                ( (JComponent) renderer).setToolTipText(
+                               table_model.getColumnToolTip( icol ) );
         }
     }
 
@@ -94,31 +124,65 @@ public class LegendTable extends JTable
         TableCellRenderer  renderer;
         Component          component;
         TableColumn        column; 
+        Dimension          intercell_gap;
+        Object             header_value;
+        Dimension          header_size;
+        Insets             header_insets;
+        int                header_width;
         Dimension          cell_size;
         Insets             cell_insets;
-        int                column_count, cell_height, row_count, row_height;
+        int                cell_width, cell_height, row_height;
+        int                column_count, row_count;
         int                vport_width, vport_height;
 
-        vport_width   = 0;
-        vport_height  = 0;
+        vport_width    = 0;
+        vport_height   = 0;
 
-        row_height    = 0;
-        column_count  = table_model.getColumnCount();
+        row_height     = 0;
+        intercell_gap  = super.getIntercellSpacing();
+        column_count   = table_model.getColumnCount();
         for ( int icol = 0; icol < column_count; icol++ ) {
-            renderer   = super.getDefaultRenderer(
-                               table_model.getColumnClass( icol ) );
-            component  = renderer.getTableCellRendererComponent( this,
-                                  table_model.getColumnTypicalValue( icol ),
-                                  false, false, 0, icol );
+            column        = column_model.getColumn( icol );
+            // determine header renderer's size
+            renderer      = column.getHeaderRenderer();
+            component     = renderer.getTableCellRendererComponent( this,
+                                     column.getHeaderValue(),
+                                     false, false, -1, icol );
+            header_size   = component.getPreferredSize();
+            header_insets = ( (JComponent) component ).getInsets();
+            header_width  = header_size.width + intercell_gap.width
+                          + header_insets.left + header_insets.right;
+            // determine cell renderer's size
+            renderer     = column.getCellRenderer();
+            if ( renderer == null )
+                renderer = super.getDefaultRenderer(
+                                 table_model.getColumnClass( icol ) );
+            component   = renderer.getTableCellRendererComponent( this,
+                                   table_model.getColumnTypicalValue( icol ),
+                                   false, false, 0, icol );
+            cell_size   = component.getPreferredSize();
+            // cell_insets = ( (JComponent) component ).getInsets();
             if ( component instanceof CategoryIconRenderer )
                 cell_insets = ( (JComponent) component ).getInsets();
             else
                 cell_insets = EMPTY_INSETS;
-            cell_size  = component.getPreferredSize();
-            column     = column_model.getColumn( icol );
-            column.setPreferredWidth( cell_size.width
-                                    + cell_insets.left + cell_insets.right );
-            vport_width  += cell_size.width;
+            cell_width   = cell_size.width
+                         + cell_insets.left + cell_insets.right;
+            /*
+            System.out.println( "At column " + icol + "\n"
+                              + "\t header size = " + header_size + "\n"
+                              + "\t cell size = " + cell_size );
+            System.out.println( "\t header_width = " + header_width
+                              + ", cell_width = " + cell_width );
+            */
+            if ( cell_width > header_width ) {
+                column.setPreferredWidth( cell_width );
+                vport_width  += cell_width;
+            }
+            else {
+                column.setPreferredWidth( header_width );
+                vport_width  += header_width;
+            }
             cell_height   = cell_size.height
                           + cell_insets.top + cell_insets.bottom;
             if ( cell_height > row_height )
@@ -133,32 +197,5 @@ public class LegendTable extends JTable
             vport_height  = row_height * row_count;
         super.setPreferredScrollableViewportSize(
               new Dimension( vport_width, vport_height ) );
-    }
-
-    private void toggleCheckboxesAtColumn( int icolumn )
-    {
-        int[]      irows;
-        int        irow, idx;
-        Boolean    bval;
-
-        irows  = super.getSelectedRows();
-        for ( idx = 0; idx < irows.length; idx++ ) {
-             irow  = irows[ idx ];
-             bval  = (Boolean) table_model.getValueAt( irow, icolumn );
-             if ( bval.booleanValue() )
-                 table_model.setValueAt( Boolean.FALSE, irow, icolumn );
-             else
-                 table_model.setValueAt( Boolean.TRUE, irow, icolumn );
-        }
-    }
-
-    public void toggleVisibilityCheckboxes()
-    {
-         this.toggleCheckboxesAtColumn( LegendTableModel.VISIBILITY_COLUMN );
-    }
-
-    public void toggleSearchabilityCheckboxes()
-    {
-         this.toggleCheckboxesAtColumn( LegendTableModel.SEARCHABILITY_COLUMN );
     }
 }
