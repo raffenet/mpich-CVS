@@ -182,6 +182,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 	MPIDI_CH3_Pkt_t upkt;
 	MPIDI_CH3_Pkt_rndv_req_to_send_t * const rts_pkt =
 	    &upkt.rndv_req_to_send;
+	MPID_Request * rts_sreq;
 	    
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending rndv RTS, data_sz="
 			  MPIDI_MSG_SZ_FMT, data_sz));
@@ -196,7 +197,12 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 	rts_pkt->sender_req_id = sreq->handle;
 	rts_pkt->data_sz = data_sz;
 
-	MPIDI_CH3_iSend(comm->vcr[rank], sreq, rts_pkt, sizeof(*rts_pkt));
+	rts_sreq = MPIDI_CH3_iStartMsg(comm->vcr[rank], rts_pkt,
+				       sizeof(*rts_pkt));
+	if (rts_sreq != NULL)
+	{
+	    MPID_Request_release(rts_sreq);
+	}
     }
 
   fn_exit:

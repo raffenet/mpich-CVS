@@ -23,7 +23,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype,
     MPIDI_CH3_Pkt_ready_send_t * const ready_pkt = &upkt.ready_send;
     MPIDI_msg_sz_t data_sz;
     int dt_contig;
-    MPID_Request * sreq;
+    MPID_Request * sreq = NULL;
     int mpi_errno = MPI_SUCCESS;    
     MPIDI_STATE_DECL(MPID_STATE_MPID_RSEND);
 

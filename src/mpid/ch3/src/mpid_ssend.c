@@ -21,7 +21,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype,
 {
     MPIDI_msg_sz_t data_sz;
     int dt_contig;
-    MPID_Request * sreq;
+    MPID_Request * sreq = NULL;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_SSEND);
 
@@ -206,6 +206,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype,
 	MPIDI_CH3_Pkt_t upkt;
 	MPIDI_CH3_Pkt_rndv_req_to_send_t * const rts_pkt =
 	    &upkt.rndv_req_to_send;
+	MPID_Request * rts_sreq;
 	
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending rndv RTS, data_sz="
 			  MPIDI_MSG_SZ_FMT, data_sz));
@@ -219,7 +220,12 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype,
 	rts_pkt->sender_req_id = sreq->handle;
 	rts_pkt->data_sz = data_sz;
 
-	MPIDI_CH3_iSend(comm->vcr[rank], sreq, rts_pkt, sizeof(*rts_pkt));
+	rts_sreq = MPIDI_CH3_iStartMsg(comm->vcr[rank], rts_pkt,
+				       sizeof(*rts_pkt));
+	if (rts_sreq != NULL)
+	{
+	    MPID_Request_release(rts_sreq);
+	}
 
 	/* TODO: fill temporary IOV or pack temporary buffer after send to hide
            some latency.  This require synchronization because CTS could arrive
