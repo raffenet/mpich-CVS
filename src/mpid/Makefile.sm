@@ -1,5 +1,4 @@
 # SUBDIRS_device_name are the names that @ devicename @ can take in SUBDIRS
-SUBDIRS_device_name = bsocket mm
-#SUBDIRS = bsocket mm .
+SUBDIRS_device_name = mm
 SUBDIRS = @device_name@ .
 

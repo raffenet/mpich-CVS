@@ -1,0 +1,6 @@
+*.plg
+Debug
+Release
+*.o
+Makefile
+Makefile.in
