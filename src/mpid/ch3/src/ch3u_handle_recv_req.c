@@ -9,10 +9,11 @@
 /*
  * MPIDI_CH3U_Handle_recv_req()
  *
- * NOTE: This routine must be reentrant safe.  Routines like MPIDI_CH3_iRead()
- * are allowed to perform up-calls if they complete the requested work
- * immediately. *** Care must be take to avoid deep recursion which with some
- * thread packages can result in overwriting the stack of another thread. ***
+ * NOTE: This routine must be reentrant.  Routines like MPIDI_CH3_iRead() are
+ * allowed to perform additional up-calls if they complete the requested work
+ * immediately. *** Care must be take to avoid deep recursion.  With some
+ * thread packages, exceeding the stack space allocated to a thread can result
+ * in overwriting the stack of another thread. ***
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Handle_recv_req
@@ -34,6 +35,8 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	
 	case MPIDI_CH3_CA_RELOAD_IOV:
 	{
+	    MPIDI_err_printf(FCNAME, "MPIDI_CH3_CA_RELOAD_IOV UMIMPLEMENTED");
+	    abort();
 	    break;
 	}
 	
@@ -51,14 +54,14 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	    if (cc == 0)
 	    {
 		MPID_Request_free(rreq);
+		completion = TRUE;
 	    }
 	    break;
 	}
 	
 	default:
 	{
-	    MPIDI_dbg_printf(30, FCNAME, "action %d not implemented",
-			     rreq->ch3.ca);
+	    MPIDI_err_printf(FCNAME, "action %d UNIMPLEMENTED", rreq->ch3.ca);
 	    abort();
 	}
     }
