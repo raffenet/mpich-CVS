@@ -8,15 +8,6 @@
 #ifndef MPITIMERIMPL_H
 #define MPITIMERIMPL_H
 
-/* Routine tracing (see --enable-timing for control of this) */
-#ifdef HAVE_TIMING
-
-/* define LOG_RECV_FROM_BEGINNING to log arrows from the beginning of send operations
-   to the beginning of the corresponding receive operations.  Otherwise, arrows are
-   logged from the beginning of the send to the end of the receive. */
-#undef LOG_RECV_FROM_BEGINNING
-/*#define LOG_RECV_FROM_BEGINNING*/
-
 /* Possible values for timing */
 #define MPID_TIMING_KIND_NONE 0
 #define MPID_TIMING_KIND_TIME 1
@@ -24,6 +15,16 @@
 #define MPID_TIMING_KIND_LOG_DETAILED 3
 #define MPID_TIMING_KIND_ALL 4
 #define MPID_TIMING_KIND_RUNTIME 5
+
+/* Routine tracing (see --enable-timing for control of this) */
+#if defined(HAVE_TIMING) && (HAVE_TIMING == MPID_TIMING_KIND_LOG || HAVE_TIMING == MPID_TIMING_KIND_LOG_DETAILED || \
+    HAVE_TIMING == MPID_TIMING_KIND_ALL)
+
+/* define LOG_RECV_FROM_BEGINNING to log arrows from the beginning of send operations
+   to the beginning of the corresponding receive operations.  Otherwise, arrows are
+   logged from the beginning of the send to the end of the receive. */
+#undef LOG_RECV_FROM_BEGINNING
+/*#define LOG_RECV_FROM_BEGINNING*/
 
 /* These next two include files contain the static state definitions */
 #include "mpistates.h"
@@ -171,7 +172,7 @@ int MPIDU_Segment_describe_timer_states(void);
 #define MPID_STAT_ACC_SIMPLE(statid,val)
 #define MPID_STAT_MISC(a) a
 
-#else /* HAVE_TIMING */
+#else /* HAVE_TIMING and doing logging */
 
 /* evaporate all the timing macros if timing is not selected */
 #define MPIU_Timer_init(rank, size)
