@@ -51,7 +51,7 @@ int ib_handle_read(MPIDI_VC *vc_ptr, void *mem_ptr, int num_bytes)
     {
 	MPIU_dbg_printf("ib_handle_read() received header - %d bytes\n", num_bytes);
 	memcpy(&vc_ptr->pkt_car.msg_header.pkt.u.hdr, mem_ptr, num_bytes);
-	BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);
+	/*BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);*/
 	mm_cq_enqueue(&vc_ptr->pkt_car);
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ);
 	return MPI_SUCCESS;
@@ -59,7 +59,7 @@ int ib_handle_read(MPIDI_VC *vc_ptr, void *mem_ptr, int num_bytes)
 
     MPIU_dbg_printf("ib_handle_read() received data - %d bytes\n", num_bytes);
     ib_handle_read_data(vc_ptr, mem_ptr, num_bytes);
-    BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);
+    /*BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);*/
 
     MPIDI_FUNC_EXIT(MPID_STATE_IB_HANDLE_READ);
     return -1;

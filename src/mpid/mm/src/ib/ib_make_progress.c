@@ -70,6 +70,10 @@ int ib_make_progress()
 	break;
     case OP_RECEIVE:
 	ib_handle_read(vc_ptr, mem_ptr, completion_data.bytes_num);
+	/* put the receive packet back in the pool */
+	BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);
+	/* post another receive to replace the consumed one */
+	ibu_post_receive(vc_ptr);
 	break;
     default:
 	MPIU_dbg_printf("unknown ib op_type: %d\n", completion_data.op_type);
