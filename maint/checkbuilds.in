@@ -4,7 +4,8 @@
 # Configure and build mpich2 with some of the options
 #
 # Set default values
-$srcdir  = "/home/gropp/projects/mpich2";
+$projects_dir = "/home/gropp/projects";
+$srcdir  = "$projects_dir/mpich2";
 $tmpdir = "/sandbox/gropp";
 # rundir is the directory in which to run the tests.
 $rundir = "";
@@ -24,7 +25,7 @@ $fcname = "f77";
 		  'error-checking;no;runtime;all', 
 		  'error-messages;all;generic;class;none',
 		  'timer-type;linux86_cycle;gethrtime;clock_gettime;gettimeofday;linuxalpha_cycle',
-		  'timings;none;all;runtime',
+		  'timing;none;all;runtime',
 		  'mpi-macros',
 		  'g;none;all;handle;mem;dbg',
 		  'internat',
@@ -200,7 +201,7 @@ if ($intel_test_dir eq "") {
     $intel_test_dir = "$tmpdir/cb/MPITEST";
 }
 if ($mpicxx_test_dir eq "") {
-    $mpicxx_test_dir = "$tmpdir/cv/mpicxxtest";
+    $mpicxx_test_dir = "$tmpdir/cb/mpicxxtest";
 }
 
 # ---------------------------------------------------------------------------
@@ -504,17 +505,12 @@ sub RunMpichTestSuite {
     else {
 	$makepgm = "make";
     }
-#$config[$nargs++] = "--enable-echo";
+    #$config[$nargs++] = "--enable-echo";
     %saveENV = %ENV;
     $ENV{MPIRUN} = "$instdir/bin/mpiexec";
-# This timeout needs to be made uniform for all mpiruns
-# 3 minutes is enough for some of our slower machines
-    if ($built_for_mpd) {
-	$ENV{MPIEXEC_TIMEOUT} = "180";
-    }
-    else {
-	$ENV{MPIEXEC_TIMEOUT} = "3";
-    }
+    # This timeout needs to be made uniform for all mpiruns
+    # 3 minutes is enough for some of our slower machines
+    $ENV{MPIEXEC_TIMEOUT} = "180";
     $rc = &RunProgram( @config );
     if ($rc == 0) {
 	# HACK for mpd for now.
@@ -548,6 +544,7 @@ sub RunCxxTestSuite {
     chdir $mpicxx_test_dir || die "Cannot change to $mpicxx_test_dir\n";
     $config[$nargs++] = "$projects_dir/mpicxxtest/configure";
     $config[$nargs++] = "--with-mpich=$instdir";
+    $config[$nargs++] = "--enable-xml";
     if (defined($ENV{"MAKE"})) {
 	$makepgm = $ENV{"MAKE"};
     }
@@ -557,12 +554,7 @@ sub RunCxxTestSuite {
     %saveENV = %ENV;
     # This timeout needs to be made uniform for all mpiruns
     # 3 minutes is enough for some of our slower machines
-    if ($built_for_mpd) {
-	$ENV{MPIEXEC_TIMEOUT} = "180";
-    }
-    else {
-	$ENV{MPIEXEC_TIMEOUT} = "3";
-    }
+    $ENV{MPIEXEC_TIMEOUT} = "180";
     $rc = &RunProgram( @config );
     if ($rc == 0) {
 	# HACK for mpd for now.
@@ -591,13 +583,13 @@ sub RunCxxTestSuite {
 sub RunIntelTestSuite {
     my $nargs = 0;
 
-    print "Intel test suite not yet supported\n";
     $cwd = `pwd`;
 
     my @config;
 
     chdir $intel_test_dir || die "Cannot change to $intel_test_dir\n";
-    $config[$nargs++] = "--with-mpich=$instdir";
+    $config[$nargs++] = "$projects_dir/MPITEST/configure";
+    $config[$nargs++] = "--with-mpich2=$instdir";
     if (defined($ENV{"MAKE"})) {
 	$makepgm = $ENV{"MAKE"};
     }
@@ -607,19 +599,14 @@ sub RunIntelTestSuite {
     %saveENV = %ENV;
     # This timeout needs to be made uniform for all mpiruns
     # 3 minutes is enough for some of our slower machines
-    if ($built_for_mpd) {
-	$ENV{MPIEXEC_TIMEOUT} = "180";
-    }
-    else {
-	$ENV{MPIEXEC_TIMEOUT} = "3";
-    }
+    $ENV{MPIEXEC_TIMEOUT} = "180";
     $rc = &RunProgram( @config );
     if ($rc == 0) {
 	# HACK for mpd for now.
 	if ($built_for_mpd) {
 	    &RunMPD;
 	}
-	$rc = &RunProgram( "$makepgm run-tests" );
+	$rc = &RunProgram( "$makepgm newtestl" );
 	$test_status = $rc;
 	if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
 	if ($built_for_mpd) {
@@ -663,6 +650,7 @@ sub RunProgram {
 	# output into well-formed XML?
         open STDERR, ">>&STDOUT";
         exec @args;
+	die "Could not exec program $args[0]\n";
     }
     else {
 	# Read from the child

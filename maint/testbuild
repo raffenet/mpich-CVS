@@ -7,6 +7,9 @@ srcdir=/home/gropp/projects/mpich2
 if [ -z "$tmpdir" ] ; then tmpdir=/sandbox/gropp ; fi
 if [ -z "$rundir" ] ; then rundir=$tmpdir/cb/mpich2 ; fi
 if [ -z "$mpichtestdir" ] ; then mpichtestdir=$tmpdir/cb/mpitest ; fi
+if [ -z "$mpicxxtestdir" ] ; then mpicxxtestdir=$tmpdir/cb/mpicxxtest ; fi
+if [ -z "$inteltestdir" ] ; then inteltestdir=$tmpdir/cb/MPITEST ; fi
+
 outdir=/home/gropp/projects/mpich2-tests
 date=`date "+%Y-%m-%d"`
 # default outfile
@@ -47,6 +50,12 @@ fi
 if [ ! -d $mpichtestdir ] ; then
     mkdir $mpichtestdir
 fi
+if [ ! -d $mpicxxtestdir ] ; then
+    mkdir $mpicxxtestdir
+fi
+if [ ! -d $inteltestdir ] ; then
+    mkdir $inteltestdir
+fi
 # Build the current version of checkbuilds
 (cd $rundir/maint && $srcdir/maint/configure 2>&1 >/dev/null)
 if [ ! -x $rundir/maint/checkbuilds ] ; then
@@ -55,8 +64,10 @@ if [ ! -x $rundir/maint/checkbuilds ] ; then
 fi
 #
 #
+# -tests="mpich;mpicxx;intel"
+# Use -tests="mpich;mpicxx" to get a smaller list of tests.
 $rundir/maint/checkbuilds -rundir=$rundir \
 			  -envopt="CC;cc;gcc" -envopt="FC;f77;g77" \
-			  -tests=mpich -tmpdir=$tmpdir \
+			  -tests="mpich;mpicxx;intel" -tmpdir=$tmpdir \
 			  -xml -maxcount=1 -outfile=$outfile $other_opts
 

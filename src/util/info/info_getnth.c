@@ -35,7 +35,7 @@ Input Arguments:
 - n - key number (integer)
 
 Output Argument:
-. keys - key (string)
+. keys - key (string).  The maximum number of characters is 'MPI_MAX_INFO_KEY'.
 
    Notes:
 
