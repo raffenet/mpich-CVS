@@ -88,13 +88,17 @@ typedef struct {
 #define MPE_KIND_GROUP 0x100
 #define MPE_KIND_MSG_INIT 0x200
 #define MPE_KIND_FILE 0x400
+#define MPE_KIND_RMA 0x800
 
 /* More as needed */
 
 /* Number of MPI routines; increase to allow user extensions */
+#ifdef HAVE_MPI_RMA
+#define MPE_MAX_STATES 200
+void MPE_Init_MPIRMA( void );
 #ifdef HAVE_MPI_IO
 #define MPE_MAX_STATES 180
-void MPE_Init_MPIIO(void);
+void MPE_Init_MPIIO( void );
 #else
 #define MPE_MAX_STATES 128
 #endif
@@ -300,12 +304,12 @@ MPI_Request request;
   rq_alloc(requests_avail_0,newrq);
   if (newrq) {
       PMPI_Type_size( datatype, &typesize );
-      newrq->request	   = request;
-      newrq->status	   = RQ_SEND;
-      newrq->size	   = count * typesize;
-      newrq->tag	   = tag;
-      newrq->otherParty	   = dest;
-      newrq->next	   = 0;
+      newrq->request       = request;
+      newrq->status        = RQ_SEND;
+      newrq->size          = count * typesize;
+      newrq->tag           = tag;
+      newrq->otherParty    = dest;
+      newrq->next          = 0;
       newrq->is_persistent = is_persistent;
       rq_add( requests_head_0, requests_tail_0, newrq );
     }
@@ -322,9 +326,9 @@ MPI_Request request;
      blocks.  Do this is we see this is a bottleneck */
   rq_alloc( requests_avail_0, newrq );
   if (newrq) {
-      newrq->request	   = request;
-      newrq->status	   = RQ_RECV;
-      newrq->next	   = 0;
+      newrq->request       = request;
+      newrq->status        = RQ_RECV;
+      newrq->next          = 0;
       newrq->is_persistent = is_persistent;
       rq_add( requests_head_0, requests_tail_0, newrq );
     }
@@ -1644,7 +1648,7 @@ int  MPI_Finalize(  )
         cnt[i] = states[i].n_calls;
     PMPI_Reduce( cnt, totcnt, MPE_MAX_STATES, MPI_INT, MPI_SUM, 
                  0, MPI_COMM_WORLD );
-    
+
     if (procid_0 == 0) {
         fprintf( stderr, "Writing logfile....\n");
         for (i=0; i<MPE_MAX_STATES; i++) {
@@ -1723,6 +1727,11 @@ char *** argv;
 #ifdef HAVE_MPI_IO
   allow_mask |= MPE_KIND_FILE;
 #endif
+
+#ifdef HAVE_MPI_RMA
+   allow_mask |= MPE_KIND_RMA;
+#endif
+
   /* Should check environment and command-line for changes to allow_mask */
   
   /* We COULD read these definitions from a file, but accessing the file
@@ -2260,8 +2269,12 @@ char *** argv;
   MPE_Init_MPIIO();
 #endif
 
-  /* Set default logfilename */  
-/*  sprintf( logFileName_0, "%s_profile.log", (*argv)[0] ); */
+#ifdef HAVE_MPI_RMA
+  MPE_Init_MPIRMA();
+#endif
+
+  /*  Set default logfilename  */  
+  /*  sprintf( logFileName_0, "%s_profile.log", (*argv)[0] ); */
   sprintf( logFileName_0, "%s", (*argv)[0] );
 
   /* Enable the basic states */
