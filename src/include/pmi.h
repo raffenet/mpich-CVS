@@ -22,6 +22,8 @@ int PMI_Get_size( int *size ); /* get size of process group */
 int PMI_Get_rank( int *rank ); /* get rank in process group */
 int PMI_Barrier( void );       /* barrier across processes in process group */
 int PMI_Finalize( void );      /* finalize PMI for this process group */
+int PMI_Get_clique_size( int *size ); /* get the number of processes on my node */
+int PMI_Get_clique_ranks( int *ranks ); /* get the ranks on my node */
 
 /* PMI Keymap functions */
 int PMI_KVS_Get_my_name( char *kvsname );       /* get name of keyval space */
@@ -60,19 +62,6 @@ int PMI_Spawn_multiple(int count,
                        const PMI_keyval_t * preput_keyval_vector,
                        int * errors,
                        int * same_domain);
-
-/* int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
-                       const int *maxprocs, const void *info, int *errors, 
-                       int *same_domain, const void *preput_info);
-
-int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
-                       const int *maxprocs, const void *info, int *errors, 
-                       int *same_domain, int preput_num,
-		       const char *preput_keys[], const char *preput_vals[]);
-*/
-
-int PMI_Spawn(const char *cmd, const char *argv[], const int maxprocs,
-	      char *spawned_kvsname, const int kvsnamelen );
 
 /* parse PMI implementation specific values into an info object that can then be passed to 
    PMI_Spawn_multiple.  Remove PMI implementation specific arguments from argc and argv */
