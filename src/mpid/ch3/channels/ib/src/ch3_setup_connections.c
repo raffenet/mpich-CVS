@@ -43,7 +43,7 @@ int MPIDI_CH3I_Setup_connections()
 	dlid = atoi(val);
 	assert(dlid >= 0);
 	/* connect to the dlid */
-	MPIU_dbg_printf("calling ibu_create_qp(%d)\n", dlid);
+	MPIU_DBG_PRINTF(("calling ibu_create_qp(%d)\n", dlid));
 	vc->ib.ibu = ibu_create_qp(MPIDI_CH3I_Process.set, dlid);
 	assert(vc->ib.ibu != NULL);
 	if (vc->ib.ibu == NULL)
@@ -53,7 +53,7 @@ int MPIDI_CH3I_Setup_connections()
 	/* set the state to connected */
 	vc->ib.state = MPIDI_CH3I_VC_STATE_CONNECTED;
 	/* post a read of the first packet */
-	MPIU_dbg_printf("posting first packet receive of %d bytes\n", sizeof(MPIDI_CH3_Pkt_t));
+	MPIU_DBG_PRINTF(("posting first packet receive of %d bytes\n", sizeof(MPIDI_CH3_Pkt_t)));
 	vc->ib.req->ch3.iov[0].MPID_IOV_BUF = (void *)&vc->ib.req->ib.pkt;
 	vc->ib.req->ch3.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
 	vc->ib.req->ch3.iov_count = 1;

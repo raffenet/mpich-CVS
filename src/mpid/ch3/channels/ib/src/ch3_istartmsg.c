@@ -49,7 +49,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 
-    MPIU_dbg_printf("ch3_istartmsg\n");
+    MPIU_DBG_PRINTF(("ch3_istartmsg\n"));
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
 

@@ -121,7 +121,7 @@ void MPIDI_CH3I_IB_post_read(MPIDI_VC * vc, MPID_Request * req)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_IB_POST_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_IB_POST_READ);
-    MPIU_dbg_printf("ch3_ib_post_read\n");
+    MPIU_DBG_PRINTF(("ch3_ib_post_read\n"));
     vc->ib.recv_active = req;
     ibu_post_readv(vc->ib.ibu, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset, NULL);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_IB_POST_READ);
@@ -133,7 +133,7 @@ void MPIDI_CH3I_IB_post_write(MPIDI_VC * vc, MPID_Request * req)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_IB_POST_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_IB_POST_WRITE);
-    MPIU_dbg_printf("ch3_ib_post_write\n");
+    MPIU_DBG_PRINTF(("ch3_ib_post_write\n"));
     /*
     vc->ib.send_active = req;
     ibu_post_writev(vc->ib.ibu, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset, NULL);
@@ -172,7 +172,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
 	    (char *) req->ch3.iov[offset].MPID_IOV_BUF += nb;
 	    req->ch3.iov[offset].MPID_IOV_LEN -= nb;
 	    req->ib.iov_offset = offset;
-	    MPIU_dbg_printf("adjust_iov returning FALSE\n");
+	    MPIU_DBG_PRINTF(("adjust_iov returning FALSE\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
 	    return FALSE;
 	}
@@ -180,7 +180,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
     
     req->ib.iov_offset = offset;
 
-    MPIU_dbg_printf("adjust_iov returning TRUE\n");
+    MPIU_DBG_PRINTF(("adjust_iov returning TRUE\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
     return TRUE;
 }
@@ -338,7 +338,7 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_READ);
     
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
-    MPIU_dbg_printf("handle_read(%d)\n", nb);
+    MPIU_DBG_PRINTF(("handle_read(%d)\n", nb));
     while (vc->ib.recv_active != NULL)
     {
 	MPID_Request * req = vc->ib.recv_active;
@@ -568,13 +568,13 @@ static inline void make_progress(int is_blocking)
 	case IBU_OP_TIMEOUT:
 	    break;
 	case IBU_OP_READ:
-	    MPIU_dbg_printf("make_progress: ibu_wait reported %d bytes read\n", out.num_bytes);
+	    MPIU_DBG_PRINTF(("make_progress: ibu_wait reported %d bytes read\n", out.num_bytes));
 	    handle_read(out.user_ptr, out.num_bytes);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MAKE_PROGRESS);
 	    return;
 	    break;
 	case IBU_OP_WRITE:
-	    MPIU_dbg_printf("make_progress: ibu reported %d bytes written\n", out.num_bytes);
+	    MPIU_DBG_PRINTF(("make_progress: ibu reported %d bytes written\n", out.num_bytes));
 	    //handle_written(out.user_ptr, out.num_bytes);
 	    handle_written(out.user_ptr);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MAKE_PROGRESS);

@@ -21,7 +21,7 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * req)
     assert(vc->ib.state = MPIDI_CH3I_VC_STATE_CONNECTED);
     req->ib.iov_offset = 0;
 
-    MPIU_dbg_printf("ch3_iread\n");
+    MPIU_DBG_PRINTF(("ch3_iread\n"));
     MPIDI_CH3I_IB_post_read(vc, req);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
