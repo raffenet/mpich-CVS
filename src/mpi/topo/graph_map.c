@@ -21,7 +21,18 @@
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Graph_map PMPI_Graph_map
-
+int MPIR_Graph_map( const MPID_Comm *comm_ptr, int nnodes, const int index[], 
+		    const int edges[], int *newrank )
+{
+    /* This is the trivial version that does not remap any processes. */
+    if (comm_ptr->rank < nnodes) {
+	*newrank = comm_ptr->rank;
+    }
+    else {
+	*newrank = MPI_UNDEFINED;
+    }
+    return MPI_SUCCESS;
+}
 #endif
 
 #undef FUNCNAME
@@ -101,15 +112,17 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     MPIU_ERR_CHKANDJUMP(comm_ptr->local_size < nnodes,mpi_errno,MPI_ERR_ARG,
 			"**graphnnodes");
     
-    /* This is the trivial version that does not remap any processes.
-       FIXME: Add hook to optional device support for process mapping */
-    if (comm_ptr->rank < nnodes) {
-	*newrank = comm_ptr->rank;
+    if (comm_ptr->topo_fns != NULL && comm_ptr->topo_fns->graphMap != NULL) {
+	mpi_errno = comm_ptr->topo_fns->graphMap( comm_ptr, nnodes, 
+						  (const int*) index,
+						  (const int*) edges, 
+						  newrank );
     }
     else {
-	*newrank = MPI_UNDEFINED;
+	mpi_errno = MPIR_Cart_map( comm_ptr, nnodes,
+				   (const int*) index,
+				   (const int*) edges, newrank );
     }
-    
     /* ... end of body of routine ... */
 
   fn_exit:

@@ -219,6 +219,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	newcomm_ptr->remote_group = 0;
 	newcomm_ptr->local_group  = 0;
 	newcomm_ptr->coll_fns	  = 0;
+	newcomm_ptr->topo_fns     = 0;
 	newcomm_ptr->name[0]	  = 0;
 
         /* Notify the device of this new communicator */

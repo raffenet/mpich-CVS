@@ -23,6 +23,39 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Cart_map PMPI_Cart_map
 
+int MPIR_Cart_map( const MPID_Comm *comm_ptr, int ndims, const int dims[], 
+		   const int periodic[], int *newrank )
+{		   
+    int rank, nranks, i, size, mpi_errno;
+
+    /* Determine number of processes needed for topology */
+    nranks = dims[0];
+    for ( i=1; i<ndims; i++ )
+	nranks *= dims[i];
+    
+    size = comm_ptr->remote_size;
+    
+    /* Test that the communicator is large enough */
+    if (size < nranks) {
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+				  "MPIR_Cart_map", __LINE__,
+				  MPI_ERR_DIMS, 
+				  "**topotoolarge",
+				  "**topotoolarge %d %d", size, nranks );
+	return mpi_errno;
+    }
+
+    /* Am I in this range? */
+    rank = comm_ptr->rank;
+    if ( rank < nranks )
+	/* This relies on the ranks *not* being reordered by the current
+	   Cartesian routines */
+	*newrank = rank;
+    else
+	*newrank = MPI_UNDEFINED;
+
+    return MPI_SUCCESS;
+}
 #endif
 
 #undef FUNCNAME
@@ -93,9 +126,10 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 	    MPIR_ERRTEST_ARGNULL(newrank,"newrank",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(dims,"dims",mpi_errno);
 	    if (ndims < 1) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_DIMS,
-						  "**dims", "**dims %d", 
-						  ndims );
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+				  MPIR_ERR_RECOVERABLE, 
+				  FCNAME, __LINE__, MPI_ERR_DIMS,
+				  "**dims", "**dims %d", ndims );
 		}
             if (mpi_errno) goto fn_fail;
         }
@@ -104,27 +138,17 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    
-    /* Determine number of processes needed for topology */
-    nranks = dims[0];
-    for ( i=1; i<ndims; i++ )
-	nranks *= dims[i];
-    
-    size = comm_ptr->remote_size;
-    
-    /* Test that the communicator is large enough */
-    MPIU_ERR_CHKANDJUMP2((size < nranks), mpi_errno, MPI_ERR_DIMS, "**topotoolarge",
-			 "**topotoolarge %d %d", size, nranks );
-
-    /* Am I in this range? */
-    rank = comm_ptr->rank;
-    if ( rank < nranks )
-	/* This relies on the ranks *not* being reordered by the current
-	   Cartesian routines */
-	*newrank = rank;
-    else
-	*newrank = MPI_UNDEFINED;
-
+    if (comm_ptr->topo_fns != NULL && comm_ptr->topo_fns->cartMap != NULL) {
+	mpi_errno = comm_ptr->topo_fns->cartMap( comm_ptr, ndims, 
+						 (const int*) dims,
+						 (const int*) periods, 
+						 newrank );
+    }
+    else {
+	mpi_errno = MPIR_Cart_map( comm_ptr, ndims, 
+				   (const int*) dims,
+				   (const int*) periods, newrank );
+    }
     /* ... end of body of routine ... */
 
   fn_exit:
@@ -137,8 +161,10 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_cart_map",
-	    "**mpi_cart_map %C %d %p %p %p", comm_old, ndims, dims, periods, newrank);
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_cart_map",
+	    "**mpi_cart_map %C %d %p %p %p", comm_old, ndims, dims, periods, 
+	    newrank);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

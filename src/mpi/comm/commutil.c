@@ -136,6 +136,9 @@ int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
     /* FIXME  : No local functions for the collectives */
     localcomm_ptr->coll_fns = 0;
 
+    /* FIXME  : No local functions for the topology routines */
+    localcomm_ptr->topo_fns = 0;
+
     /* We do *not* inherit any name */
     localcomm_ptr->name[0] = 0;
 
@@ -536,6 +539,9 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     }
     /* We could also inherit the communicator function pointer */
     newcomm_ptr->coll_fns = 0;
+
+    /* Similarly, we could also inherit the topology function pointer */
+    newcomm_ptr->topo_fns = 0;
 
     /* We do *not* inherit any name */
     newcomm_ptr->name[0] = 0;

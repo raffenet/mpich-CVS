@@ -127,6 +127,10 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Process.cxx_call_delfn = 0;
 
 #endif
+    /* This allows the device to select an alternative function for 
+       dimsCreate */
+    MPIR_Process.dimsCreate     = 0;
+
     /* "Allocate" from the reserved space for builtin communicators and
        (partially) initialize predefined communicators.  comm_parent is
        intially NULL and will be allocated by the device if the process group
@@ -145,6 +149,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 		 MPI_MAX_OBJECT_NAME);
     MPIR_Process.comm_world->errhandler	  = NULL; /* XXX */
     MPIR_Process.comm_world->coll_fns	  = NULL; /* XXX */
+    MPIR_Process.comm_world->topo_fns     = NULL; /* XXX */
     
     MPIR_Process.comm_self		 = MPID_Comm_builtin + 1;
     MPIR_Process.comm_self->handle	 = MPI_COMM_SELF;
@@ -158,6 +163,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 		 MPI_MAX_OBJECT_NAME);
     MPIR_Process.comm_self->errhandler	 = NULL; /* XXX */
     MPIR_Process.comm_self->coll_fns	 = NULL; /* XXX */
+    MPIR_Process.comm_self->topo_fns     = NULL; /* XXX */
 
     MPIR_Process.comm_parent = NULL;
 

@@ -28,6 +28,103 @@
 #undef FUNCNAME
 #define FUNCNAME MPI_Cart_create
 
+/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
+   the MPI routines */
+#ifndef MPICH_MPI_FROM_MPI
+int MPIR_Cart_create( const MPID_Comm *comm_ptr, int ndims, const int dims[], 
+		      const int periods[], int reorder, MPI_Comm *comm_cart )
+{
+    static const char FCNAME[] = "MPIR_Cart_create";
+    int       i, newsize, rank, nranks, mpi_errno;
+    MPID_Comm *newcomm_ptr;
+    MPIR_Topology *cart_ptr;
+    MPIU_CHKPMEM_DECL(4);
+    
+    /* Check for invalid arguments */
+    newsize = 1;
+    for (i=0; i<ndims; i++) 
+	newsize *= dims[i];
+
+    /* Use ERR_ARG instead of ERR_TOPOLOGY because there is no topology yet */
+    MPIU_ERR_CHKANDJUMP2((newsize > comm_ptr->remote_size), mpi_errno, 
+			 MPI_ERR_ARG, "**cartdim",
+			 "**cartdim %d %d", comm_ptr->remote_size, newsize);
+
+    /* Create a new communicator as a duplicate of the input communicator
+       (but do not duplicate the attributes) */
+
+    mpi_errno = MPIR_Comm_copy( (MPID_Comm *)comm_ptr, newsize, &newcomm_ptr );
+    if (mpi_errno) goto fn_fail;
+
+    if (reorder) {
+	/* Allow the cart map routine to remap the assignment of ranks to 
+	   processes */
+	MPIR_Nest_incr();
+	mpi_errno = NMPI_Cart_map( comm_ptr->handle, ndims, dims, periods, 
+				   &rank );
+	MPIR_Nest_decr();
+    }
+    else {
+	rank   = comm_ptr->rank;
+    }
+
+    /* If this process is not in the resulting communicator, return a 
+       null communicator and exit */
+    if (rank >= newsize) {
+	*comm_cart = MPI_COMM_NULL;
+	return MPI_SUCCESS;
+    }
+
+    /* Create the topololgy structure */
+    MPIU_CHKPMEM_MALLOC(cart_ptr,MPIR_Topology*,sizeof(MPIR_Topology),
+			mpi_errno, "cart_ptr" );
+
+    cart_ptr->kind               = MPI_CART;
+    cart_ptr->topo.cart.nnodes   = newsize;
+    cart_ptr->topo.cart.ndims    = ndims;
+    MPIU_CHKPMEM_MALLOC(cart_ptr->topo.cart.dims,int*,ndims*sizeof(int),
+			mpi_errno, "cart.dims");
+    MPIU_CHKPMEM_MALLOC(cart_ptr->topo.cart.periodic,int*,ndims*sizeof(int),
+			mpi_errno, "cart.periodic");
+    MPIU_CHKPMEM_MALLOC(cart_ptr->topo.cart.position,int*,ndims*sizeof(int),
+			mpi_errno, "cart.position");
+    nranks = newsize;
+    for (i=0; i<ndims; i++)
+    {
+	cart_ptr->topo.cart.dims[i]     = dims[i];
+	cart_ptr->topo.cart.periodic[i] = periods[i];
+	nranks = nranks / dims[i];
+	/* FIXME: nranks could be zero (?) */
+	cart_ptr->topo.cart.position[i] = rank / nranks;
+	rank = rank % nranks;
+    }
+
+    /* Place this topology onto the communicator */
+    mpi_errno = MPIR_Topology_put( newcomm_ptr, cart_ptr );
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+    *comm_cart = newcomm_ptr->handle;
+
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    MPIU_CHKPMEM_REAP();
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, "MPIR_Cart_create", __LINE__, 
+	    MPI_ERR_OTHER, 
+	    "**mpi_cart_create",
+	    "**mpi_cart_create %C %d %p %p %d %p", comm_ptr, ndims, dims, 
+	    periods, reorder, comm_cart);
+    }
+#   endif
+    return mpi_errno;
+    /* --END ERROR HANDLING-- */
+}
+#endif
+
 /*@
 
 MPI_Cart_create - Makes a new communicator to which topology information
@@ -66,7 +163,6 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     int newsize, rank, nranks, i;
     MPID_Comm *comm_ptr = NULL, *newcomm_ptr;
     MPIR_Topology *cart_ptr;
-    MPIU_CHKPMEM_DECL(4);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_CREATE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -117,60 +213,20 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    
-    /* Check for invalid arguments */
-    newsize = 1;
-    for (i=0; i<ndims; i++) 
-	newsize *= dims[i];
 
-    /* Use ERR_ARG instead of ERR_TOPOLOGY because there is no topology yet */
-    MPIU_ERR_CHKANDJUMP2((newsize > comm_ptr->remote_size), mpi_errno, MPI_ERR_ARG, "**cartdim",
-			 "**cartdim %d %d", comm_ptr->remote_size, newsize);
-
-    /* Create a new communicator as a duplicate of the input communicator
-       (but do not duplicate the attributes) */
-
-    mpi_errno = MPIR_Comm_copy( comm_ptr, newsize, &newcomm_ptr );
-    if (mpi_errno) goto fn_fail;
-
-    /* If this process is not in the resulting communicator, return a 
-       null communicator and exit */
-    if (comm_ptr->rank >= newsize) {
-	*comm_cart = MPI_COMM_NULL;
-	goto fn_exit;
+    if (comm_ptr->topo_fns != NULL && comm_ptr->topo_fns->cartCreate != NULL) {
+	mpi_errno = comm_ptr->topo_fns->cartCreate( comm_ptr, ndims, 
+						    (const int*) dims,
+						    (const int*) periods, 
+						    reorder,
+						    comm_cart );
     }
-
-    /* Create the topololgy structure */
-    MPIU_CHKPMEM_MALLOC(cart_ptr,MPIR_Topology*,sizeof(MPIR_Topology),
-			mpi_errno, "cart_ptr" );
-
-    cart_ptr->kind               = MPI_CART;
-    cart_ptr->topo.cart.nnodes   = newsize;
-    cart_ptr->topo.cart.ndims    = ndims;
-    MPIU_CHKPMEM_MALLOC(cart_ptr->topo.cart.dims,int*,ndims*sizeof(int),
-			mpi_errno, "cart.dims");
-    MPIU_CHKPMEM_MALLOC(cart_ptr->topo.cart.periodic,int*,ndims*sizeof(int),
-			mpi_errno, "cart.periodic");
-    MPIU_CHKPMEM_MALLOC(cart_ptr->topo.cart.position,int*,ndims*sizeof(int),
-			mpi_errno, "cart.position");
-    rank   = comm_ptr->rank;
-    nranks = newsize;
-    for (i=0; i<ndims; i++)
-    {
-	cart_ptr->topo.cart.dims[i]     = dims[i];
-	cart_ptr->topo.cart.periodic[i] = periods[i];
-	nranks = nranks / dims[i];
-	/* FIXME: nranks could be zero (?) */
-	cart_ptr->topo.cart.position[i] = rank / nranks;
-	rank = rank % nranks;
+    else {
+	mpi_errno = MPIR_Cart_create( comm_ptr, ndims, 
+				      (const int*) dims,
+				      (const int*) periods, reorder, 
+				      comm_cart );
     }
-
-    /* Place this topology onto the communicator */
-    mpi_errno = MPIR_Topology_put( newcomm_ptr, cart_ptr );
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-
-    *comm_cart = newcomm_ptr->handle;
-
     /* ... end of body of routine ... */
 
   fn_exit:
@@ -180,12 +236,13 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-    MPIU_CHKPMEM_REAP();
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_cart_create",
-	    "**mpi_cart_create %C %d %p %p %d %p", comm_old, ndims, dims, periods, reorder, comm_cart);
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_cart_create",
+	    "**mpi_cart_create %C %d %p %p %d %p", comm_old, ndims, dims, 
+	    periods, reorder, comm_cart);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

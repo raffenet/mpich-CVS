@@ -1195,6 +1195,9 @@ typedef struct MPID_Comm {
     struct MPID_Collops  *coll_fns; /* Pointer to a table of functions 
                                               implementing the collective 
                                               routines */
+    struct MPID_TopoOps  *topo_fns; /* Pointer to a table of functions
+				       implementting the topology routines
+				    */
 #ifdef MPID_HAS_HETERO
     int is_hetero;
 #endif
@@ -1664,6 +1667,31 @@ typedef struct MPID_Collops {
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------------------------------------------------------- */
+/* mpitopo.h (in src/mpi/topo? */
+/*
+ * The following struture allows the device detailed control over the 
+ * functions that are used to implement the topology routines.  If either
+ * the pointer to this structure is null or any individual entry is null,
+ * the default function is used (this follows exactly the same rules as the
+ * collective operations, provided in the MPID_Collops structure).
+ */
+/* ------------------------------------------------------------------------- */
+
+typedef struct MPID_TopoOps {
+    int (*cartCreate)( const MPID_Comm *, int, const int[], const int [],
+		       int, MPI_Comm * );
+    int (*cartMap)   ( const MPID_Comm *, int, const int[], const int [], 
+		       int * );
+    int (*graphCreate)( const MPID_Comm *, int, const int[], const int [],
+			int, MPI_Comm * );
+    int (*graphMap)   ( const MPID_Comm *, int, const int[], const int[], 
+			int * );
+} MPID_TopoOps;
+/* ------------------------------------------------------------------------- */
+/* end of mpitopo.h (in src/mpi/topo? */
+/* ------------------------------------------------------------------------- */
+
+/* ------------------------------------------------------------------------- */
 /* Files */
 /* FIXME: Make this compatible with ROMIO */
 /* The "USE_ROMIO_FILE" definition tells MPICH2 to use the MPI_File
@@ -1873,6 +1901,11 @@ typedef struct MPICH_PerProcess_t {
     PreDefined_attrs  attrs;            /* Predefined attribute values */
     /* Communicator context ids.  Special data is needed for thread-safety */
     int context_id_mask[32];
+
+    /* The topology routines dimsCreate is independent of any communicator.
+       If this pointer is null, the default routine is used */
+    int (*dimsCreate)( int, int, int *);
+
     /* Attribute dup functions.  Here for lazy initialization */
     int (*attr_dup)( int, MPID_Attribute *, MPID_Attribute ** );
     int (*attr_free)( int, MPID_Attribute * );

@@ -176,6 +176,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	MPIU_Object_add_ref( group_ptr );
 
 	newcomm_ptr->coll_fns = 0;
+	newcomm_ptr->topo_fns = 0;
 
 	/* Setup the communicator's vc table */
 	MPID_VCRT_Create( n, &newcomm_ptr->vcrt );

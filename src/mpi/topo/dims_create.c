@@ -115,77 +115,42 @@ PMPI_LOCAL int factor( int n, Factors factors[], int *ndivisors )
     *ndivisors = nall;
     return nfactors;
 }
-#endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Dims_create
-
-/*@
-    MPI_Dims_create - Creates a division of processors in a cartesian grid
-
- Input Parameters:
-+ nnodes - number of nodes in a grid (integer) 
-- ndims - number of cartesian dimensions (integer) 
-
- In/Out Parameter:   
-. dims - integer array of size  'ndims' specifying the number of nodes in each 
- dimension.  A value of 0 indicates that 'MPI_Dims_create' should fill in a
- suitable value.
-
-.N ThreadSafe
-
-.N Fortran
-
-.N Errors
-.N MPI_SUCCESS
-@*/
-int MPI_Dims_create(int nnodes, int ndims, int *dims)
+int MPIR_Dims_create( int nnodes, int ndims, int *dims )
 {
-    static const char FCNAME[] = "MPI_Dims_create";
-    int mpi_errno = MPI_SUCCESS;
     Factors factors[MAX_FACTORS];
-    int i, j;
+    int i, j, mpi_errno;
     int dims_needed, dims_product, nfactors, ndivisors;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_DIMS_CREATE);
-
-    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_DIMS_CREATE);
-    
-    /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_ARGNEG(nnodes,"nnodes",mpi_errno);
-	    MPIR_ERRTEST_ARGNEG(ndims,"ndims",mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(dims,"dims",mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
-    /* ... body of routine ...  */
-
     /* Find the number of unspecified dimensions in dims and the product
        of the positive values in dims */
     dims_needed  = 0;
     dims_product = 1;
     for (i=0; i<ndims; i++) {
-	MPIU_ERR_CHKANDJUMP3((dims[i] < 0) , mpi_errno, MPI_ERR_DIMS, "**argarrayneg", 
+	if (dims[i] < 0) {
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
+					      MPIR_ERR_RECOVERABLE,
+					      "MPIR_Dims_create", __LINE__,
+					      MPI_ERR_DIMS, 
+			     "**argarrayneg", 
 			     "**argarrayneg %s %d %d", "dims", i, dims[i]);
+	    return mpi_errno;
+	}
 	if (dims[i] == 0) dims_needed ++;
 	else dims_product *= dims[i];
     }
 
     /* Can we factor nnodes by dims_product? */
-    MPIU_ERR_CHKANDJUMP(((nnodes / dims_product ) * dims_product != nnodes ), mpi_errno, MPI_ERR_DIMS, "**dimspartition");
+    if ((nnodes / dims_product ) * dims_product != nnodes ) {
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					  "MPIR_Dims_create", __LINE__,
+					  MPI_ERR_DIMS, "**dimspartition", 0);
+	return mpi_errno;
+    }
 
     if (!dims_needed) {
 	/* Special case - all dimensions provided */
-	goto fn_exit;
+	return MPI_SUCCESS;
     }
     nnodes /= dims_product;
 
@@ -320,7 +285,65 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
 	    }
 	}
     }
+    return MPI_SUCCESS;
+}
 
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME MPI_Dims_create
+
+/*@
+    MPI_Dims_create - Creates a division of processors in a cartesian grid
+
+ Input Parameters:
++ nnodes - number of nodes in a grid (integer) 
+- ndims - number of cartesian dimensions (integer) 
+
+ In/Out Parameter:   
+. dims - integer array of size  'ndims' specifying the number of nodes in each 
+ dimension.  A value of 0 indicates that 'MPI_Dims_create' should fill in a
+ suitable value.
+
+.N ThreadSafe
+
+.N Fortran
+
+.N Errors
+.N MPI_SUCCESS
+@*/
+int MPI_Dims_create(int nnodes, int ndims, int *dims)
+{
+    static const char FCNAME[] = "MPI_Dims_create";
+    int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_DIMS_CREATE);
+
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
+    
+    MPID_CS_ENTER();
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_DIMS_CREATE);
+    
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_ARGNEG(nnodes,"nnodes",mpi_errno);
+	    MPIR_ERRTEST_ARGNEG(ndims,"ndims",mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(dims,"dims",mpi_errno);
+            if (mpi_errno) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+    if (MPIR_Process.dimsCreate != NULL) {
+	mpi_errno = MPIR_Process.dimsCreate( nnodes, ndims, dims );
+    }
+    else {
+	mpi_errno = MPIR_Dims_create( nnodes, ndims, dims );
+    }
     /* ... end of body of routine ... */
 
   fn_exit:
@@ -333,7 +356,8 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_dims_create",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_dims_create",
 	    "**mpi_dims_create %d %d %p", nnodes, ndims, dims);
     }
 #   endif
