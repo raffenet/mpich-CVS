@@ -28,4 +28,5 @@ coll11_SOURCES = coll11.c
 coll12_SOURCES = coll12.c
 scatterv_SOURCES = scatterv.c
 scattern_SOURCES = scattern.c
+rerr_SOURCES = rerr.c
 
