@@ -27,6 +27,11 @@
 **rankdup:Duplicate ranks in rank array 
 **rankdup %d %d %d:Duplicate ranks in rank array at index %d, has value %d which is \
 also the value at index %d
+**topotoolarge:Topology size is greater than communicator size
+**topotoolarge %d %d:Topology size %d is larger than communicator size (%d)
+**notcarttopo:No Cartesian topology associated with this communicator
+**notgraphtopo:No Graph topology associated with this communicator
+
 ----
 **buffer:Invalid buffer pointer
 **bufnull:Null buffer pointer
@@ -90,7 +95,6 @@ be in the range 0 to %d
 **opundefined:MPI_Op operation not defined for this datatype (optional argument: name of datatype (string))
 **opperm:Cannot free permanent MPI_Op 
 **topology:Invalid topology
-**topologysize:Topology size is greater than communicator size (optional arguments: topology size and communicator       size (int))
 **grapharraysize:Specified edge less than zero or greater than nnodes
  (optional arguments: index, value, nnodes (int))
 **dims:Invalid dimension argument
