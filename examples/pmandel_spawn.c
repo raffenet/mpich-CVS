@@ -221,10 +221,11 @@ int main(int argc, char *argv[])
 	result = (header_t*)malloc(num_children * sizeof(header_t));
 	if (child_comm == NULL || child_request == NULL || result == NULL)
 	{
-	    printf("Error: unable to allocate an array of %d communicators and requests for the slaves.\n", num_children);
+	    printf("Error: unable to allocate an array of %d communicators, requests and work objects for the slaves.\n", num_children);
 	    error_code = MPI_Abort(MPI_COMM_WORLD, -1);
 	    exit(error_code);
 	}
+	printf("Spawning %d slaves.\n", num_children);
 	for (i=0; i<num_children; i++)
 	{
 	    error = MPI_Comm_spawn(argv[0], MPI_ARGV_NULL, 1,
@@ -290,7 +291,7 @@ int main(int argc, char *argv[])
 
     if (master)
     {
-	int istep, jstep, cur_proc;
+	int istep, jstep;
 	int i1[400], i2[400], j1[400], j2[400];
 	int ii, jj;
 	struct sockaddr_in addr;
@@ -422,11 +423,10 @@ int main(int argc, char *argv[])
 		swap(&j2[ii], &j2[jj]);
 	    }
 
-	    /*printf("bcasting the limits: (%f,%f)(%f,%f)\n", x_min, y_min, x_max, y_max);fflush(stdout);*/
+	    /*printf("sending the limits: (%f,%f)(%f,%f)\n", x_min, y_min, x_max, y_max);fflush(stdout);*/
 	    /* let everyone know the limits */
 	    for (i=0; i<num_children; i++)
 	    {
-		MPI_Send(&num_colors, 1, MPI_INT, 0, 0, child_comm[i]);
 		MPI_Send(&x_min, 1, MPI_DOUBLE, 0, 0, child_comm[i]);
 		MPI_Send(&x_max, 1, MPI_DOUBLE, 0, 0, child_comm[i]);
 		MPI_Send(&y_min, 1, MPI_DOUBLE, 0, 0, child_comm[i]);
@@ -440,7 +440,6 @@ int main(int argc, char *argv[])
 	    }
 
 	    /* send a piece of work to each worker (there must be more work than workers) */
-	    cur_proc = 1;
 	    k = 0;
 	    for (i=0; i<num_children; i++)
 	    {
@@ -450,10 +449,9 @@ int main(int argc, char *argv[])
 		work[3] = j1[k]; /* jmin */
 		work[4] = j2[k]; /* jmax */
 
-		/*printf("sending work(%d) to %d\n", k+1, cur_proc);fflush(stdout);*/
-		MPI_Send(work, 5, MPI_INT, 0, 100, child_comm[cur_proc]);
-		MPI_Irecv(&result[cur_proc], 5, MPI_INT, 0, 200, child_comm[cur_proc], &child_request[cur_proc]);
-		cur_proc++;
+		/*printf("sending work(%d) to %d\n", k+1, i);fflush(stdout);*/
+		MPI_Send(work, 5, MPI_INT, 0, 100, child_comm[i]);
+		MPI_Irecv(&result[i], 5, MPI_INT, 0, 200, child_comm[i], &child_request[i]);
 		k++;
 	    }
 	    /* receive the results and hand out more work until the image is complete */
@@ -461,9 +459,7 @@ int main(int argc, char *argv[])
 	    {
 		MPI_Waitany(num_children, child_request, &index, &status);
 		memcpy(work, &result[index], 5 * sizeof(int));
-		/*MPI_Recv(work, 5, MPI_INT, MPI_ANY_SOURCE, 200, MPI_COMM_WORLD, &status);*/
-		cur_proc = work[0];
-		MPI_Recv(in_grid_array, (work[2] + 1 - work[1]) * (work[4] + 1 - work[3]), MPI_INT, 0, 201, child_comm[cur_proc], &status);
+		MPI_Recv(in_grid_array, (work[2] + 1 - work[1]) * (work[4] + 1 - work[3]), MPI_INT, 0, 201, child_comm[index], &status);
 		/* draw data */
 		output_data(in_grid_array, &work[1], out_grid_array, ipixels_across, ipixels_down);
 		work[0] = k+1;
@@ -471,9 +467,9 @@ int main(int argc, char *argv[])
 		work[2] = i2[k];
 		work[3] = j1[k];
 		work[4] = j2[k];
-		/*printf("sending work(%d) to %d\n", k+1, cur_proc);fflush(stdout);*/
-		MPI_Send(work, 5, MPI_INT, 0, 100, child_comm[cur_proc]);
-		MPI_Irecv(&result[cur_proc], 5, MPI_INT, 0, 200, child_comm[cur_proc], &child_request[cur_proc]);
+		/*printf("sending work(%d) to %d\n", k+1, index);fflush(stdout);*/
+		MPI_Send(work, 5, MPI_INT, 0, 100, child_comm[index]);
+		MPI_Irecv(&result[index], 5, MPI_INT, 0, 200, child_comm[index], &child_request[index]);
 		k++;
 	    }
 	    /* receive the last pieces of work */
@@ -481,8 +477,7 @@ int main(int argc, char *argv[])
 	    for (i=0; i<num_children; i++)
 	    {
 		MPI_Wait(&child_request[i], &status);
-		cur_proc = work[0];
-		MPI_Recv(in_grid_array, (work[2] + 1 - work[1]) * (work[4] + 1 - work[3]), MPI_INT, 0, 201, child_comm[cur_proc], &status);
+		MPI_Recv(in_grid_array, (work[2] + 1 - work[1]) * (work[4] + 1 - work[3]), MPI_INT, 0, 201, child_comm[i], &status);
 		/* draw data */
 		output_data(in_grid_array, &work[1], out_grid_array, ipixels_across, ipixels_down);
 		work[0] = 0;
@@ -490,8 +485,8 @@ int main(int argc, char *argv[])
 		work[2] = 0;
 		work[3] = 0;
 		work[4] = 0;
-		/*printf("sending %d to tell %d to stop\n", work[0], cur_proc);fflush(stdout);*/
-		MPI_Send(work, 5, MPI_INT, 0, 100, child_comm[cur_proc]);
+		/*printf("sending %d to tell %d to stop\n", work[0], i);fflush(stdout);*/
+		MPI_Send(work, 5, MPI_INT, 0, 100, child_comm[i]);
 	    }
 
 	    /* tell the visualizer the image is done */
@@ -513,10 +508,12 @@ int main(int argc, char *argv[])
 	    MPI_Recv(&x_max, 1, MPI_DOUBLE, 0, 0, parent, MPI_STATUS_IGNORE);
 	    MPI_Recv(&y_min, 1, MPI_DOUBLE, 0, 0, parent, MPI_STATUS_IGNORE);
 	    MPI_Recv(&y_max, 1, MPI_DOUBLE, 0, 0, parent, MPI_STATUS_IGNORE);
+	    /*printf("received bounding box: (%f,%f)(%f,%f)\n", x_min, y_min, x_max, y_max);fflush(stdout);*/
 
 	    /* check for the end condition */
 	    if (x_min == x_max && y_min == y_max)
 	    {
+		/*printf("slave done.\n");fflush(stdout);*/
 		break;
 	    }
 
@@ -524,6 +521,7 @@ int main(int argc, char *argv[])
 	    y_resolution = (y_max-y_min)/ ((double)ipixels_down);
 
 	    MPI_Recv(work, 5, MPI_INT, 0, 100, parent, &status);
+	    /*printf("received work: %d, (%d,%d)(%d,%d)\n", work[0], work[1], work[2], work[3], work[4]);fflush(stdout);*/
 	    while (work[0] != 0)
 	    {
 		imin = work[1];
@@ -568,11 +566,12 @@ int main(int argc, char *argv[])
 		    }
 		}
 		/* send the result to the root */
-		work[0] = myid;
+		work[0] = myid; /* useless in the spawn version - everyone is rank 0 */
 		MPI_Send(work, 5, MPI_INT, 0, 200, parent);
 		MPI_Send(in_grid_array, (work[2] + 1 - work[1]) * (work[4] + 1 - work[3]), MPI_INT, 0, 201, parent);
 		/* get the next piece of work */
 		MPI_Recv(work, 5, MPI_INT, 0, 100, parent, &status);
+		/*printf("received work: %d, (%d,%d)(%d,%d)\n", work[0], work[1], work[2], work[3], work[4]);fflush(stdout);*/
 	    }
 	}
     }
