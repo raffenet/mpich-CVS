@@ -1045,7 +1045,7 @@ dnl
 dnl First, ensure that echo works within the config.status 
 AC_OUTPUT_COMMANDS([if test "$enable_echo" ; then set -x ; fi ])
 dnl This must be run before converting C to !
-AC_OUTPUT_COMMANDS([rm -f .tmp ; 
+AC_OUTPUT_COMMANDS([rm -rf .tmp ; 
 cat mpif.h mpif_bottom.h > .tmp ;
 rm -f mpif.h ; mv .tmp mpif.h
 ])
@@ -1053,10 +1053,10 @@ dnl By modifying mpif.h to use ! for comments, it can work with many f90
 dnl compilers without creating a separate version.  
 dnl Note that this is run AFTER the AC_OUTPUT actions
 AC_OUTPUT_COMMANDS([if test "$has_exclaim" = "yes" ; then 
-    rm -f .tmp
+    rm -rf .tmp
     cp mpif.h .tmp
     sed -e 's/^C/\!/g' .tmp > mpif.h
-    rm -f .tmp
+    rm -rf .tmp
 fi
 ],[has_exclaim=$has_exclaim])
 dnl
