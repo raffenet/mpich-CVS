@@ -42,8 +42,7 @@ int MPIDI_CH3_Finalize()
 
     /* Let PMI know the process is about to exit */
     rc = PMI_Finalize();
-    assert(rc == 0);
-    if (rc)
+    if (rc != PMI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
 	    MPI_ERR_OTHER, "**pmi_finalize", "**pmi_finalize %d", rc );
