@@ -53,6 +53,16 @@ line = gdb_sout_serr.readline() #; print "LINE4=|%s|" % (line.rstrip()) ; stdout
 write(gdb_sin_fileno,'set confirm on\n')
 line = gdb_sout_serr.readline() #; print "LINE5=|%s|" % (line.rstrip()) ; stdout.flush()
 
+write(gdb_sin_fileno,'b main\n')
+gdb_line = gdb_sout_serr.readline()  # drain breakpoint response
+if not gdb_line.startswith('Breakpoint'):
+    print 'mpdgdbdrv: expecting "Breakpoint", got :%s:' % (gdb_line)
+    exit(-1)
+gdb_line = gdb_sout_serr.readline()  # drain prompt
+if not gdb_line.startswith('(gdb)'):
+    print 'mpdgdbdrv: expecting "(gdb)", got :%s:' % (gdb_line)
+    exit(-1)
+
 print '(gdb)\n', ; stdout.flush()    # initial prompt to user
 
 user_fileno = stdin.fileno()
@@ -78,25 +88,31 @@ while 1:
             user_line = stdin.readline()
             # print "USERLINE=", user_line, ; stdout.flush()
             if not line:
-                print '***** problem no line from gdb'
+                print 'mpdgdbdrv: problem: expected user input but got none'
                 exit(-1)
             if user_line.startswith('r'):
-                write(gdb_sin_fileno,'b 1\n')
-                for i in range(2):    # drain multi-line response
-                    gdb_line = gdb_sout_serr.readline()  # drain response
+                # we have already set breakpoint 1 in main
                 write(gdb_sin_fileno,user_line)
-                for i in range(6):    # drain multi-line response
-                    gdb_line = gdb_sout_serr.readline()  # drain reaponse
-                    # print "RESPLINE=|%s|" % (gdb_line) ; stdout.flush()
-
+                gdb_line = gdb_sout_serr.readline()  # drain starting msg
+                if not gdb_line.startswith('Starting program'):
+                    print 'mpdgdbdrv: expecting "Starting program", got :%s:' % (gdb_line)
+                    exit(-1)
+                while 1:    # drain to a prompt
+                    gdb_line = gdb_sout_serr.readline()  # drain one line
+                    if gdb_line.startswith('(gdb)'):
+                        break
                 write(gdb_sin_fileno,'info program\n')
                 gdb_line = gdb_sout_serr.readline()  # get pid
                 appPid = findall(r'Using .* image of child process (\d+)',gdb_line)
+                if not appPid:
+                    print 'mpdgdbdrv: expecting app pid, got :%s:' % (gdb_line)
+                    exit(-1)
                 appPid = int(appPid[0])
                 # print "PID=%d" % (appPid) ; stdout.flush()
-                for i in range(3):    # drain multi-line response
-                    gdb_line = gdb_sout_serr.readline()  # drain reaponse
-
+                while 1:    # drain to a prompt
+                    gdb_line = gdb_sout_serr.readline()  # drain one line
+                    if gdb_line.startswith('(gdb)'):
+                        break
                 write(gdb_sin_fileno,'c\n')
             else:
                 write(gdb_sin_fileno,user_line)
