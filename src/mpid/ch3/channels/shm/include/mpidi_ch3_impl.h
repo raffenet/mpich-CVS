@@ -72,7 +72,26 @@
 #else
 #define MPID_READ_WRITE_BARRIER()
 #endif
+
+#elif defined(HAVE___ASM_AND_PENTIUM_ASM)
+#ifdef HAVE___ASM_AND_X86_SFENCE
+/*#define MPID_WRITE_BARRIER() __asm sfence */
+#define MPID_WRITE_BARRIER()
 #else
+#define MPID_WRITE_BARRIER()
+#endif
+#ifdef HAVE___ASM_AND_X86_LFENCE
+#define MPID_READ_BARRIER() __asm _emit 0x0f __asm _emit 0xae __asm _emit 0xe8
+#else
+#define MPID_READ_BARRIER()
+#endif
+#ifdef HAVE___ASM_AND_X86_MFENCE
+/*#define MPID_READ_WRITE_BARRIER() __asm _emit 0x0f __asm _emit 0xae __asm _emit 0xf0*/
+#define MPID_READ_WRITE_BARRIER()
+
+#else
+#define MPID_READ_WRITE_BARRIER()
+#endif
 #define MPID_WRITE_BARRIER()
 #define MPID_READ_BARRIER()
 #define MPID_READ_WRITE_BARRIER()
