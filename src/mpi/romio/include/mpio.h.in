@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-#define ROMIO_VERSION 124 /* version 1.2.4 */
+#define ROMIO_VERSION 126 /* version 1.2.6 */
 
 /* define MPI-IO datatypes and constants */
 
@@ -30,6 +30,7 @@ typedef struct ADIOI_FileD *MPI_File;
 typedef struct ADIOI_RequestD *MPIO_Request;  
 #else
 #define MPIO_Request MPI_Request
+#define MPIO_USES_MPI_REQUEST
 #endif
 #define MPIO_REQUEST_DEFINED
 
