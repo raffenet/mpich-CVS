@@ -58,7 +58,7 @@ int MPI_File_set_errhandler(MPI_File mpi_fh, MPI_Errhandler errhandler)
 					      myname, __LINE__,
 					      MPI_ERR_UNSUPPORTED_OPERATION,
 					      "**fileopunsupported",
-					      "Only MPI_ERRORS_RETURN and MPI_ERRORS_ARE_FATAL are currently supported for MPI_File_set_errhandler");
+					      0);
 	    return MPIO_Err_return_file(fh, error_code);
 	}
 
