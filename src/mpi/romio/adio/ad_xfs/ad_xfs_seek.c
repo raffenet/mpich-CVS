@@ -35,8 +35,11 @@ ADIO_Offset ADIOI_XFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 	MPI_Type_extent(fd->filetype, &filetype_extent);
 	MPI_Type_size(fd->filetype, &filetype_size);
 	if ( ! filetype_size ) {
+	    /* Since offset relative to the filetype size, we can't
+	       do compute the offset when that result is zero.
+	       Return zero for the offset for now */
 	    *error_code = MPI_SUCCESS; 
-	    return;
+	    return 0;
 	}
 
 	n_etypes_in_filetype = filetype_size/etype_size;

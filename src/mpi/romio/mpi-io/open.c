@@ -42,7 +42,7 @@ Output Parameters:
 int MPI_File_open(MPI_Comm comm, char *filename, int amode, 
                   MPI_Info info, MPI_File *fh)
 {
-    int error_code, file_system, flag, tmp_amode, rank, orig_amode;
+    int error_code, file_system, flag, /* tmp_amode, */rank, orig_amode;
 #ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_OPEN";
 #endif
@@ -115,10 +115,10 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 
 /* check if amode is the same on all processes */
     MPI_Comm_dup(comm, &dupcomm);
-    tmp_amode = amode;
 
 /*  
     Removed this check because broadcast is too expensive. 
+    tmp_amode = amode;
     MPI_Bcast(&tmp_amode, 1, MPI_INT, 0, dupcomm);
     if (amode != tmp_amode) {
 	FPRINTF(stderr, "MPI_File_open: amode must be the same on all processes\n");
