@@ -17,6 +17,9 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * rreq;
     int found;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_RECV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_RECV);
 
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     MPIDI_DBG_PRINTF((15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
@@ -142,5 +145,6 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 			  "allocated"));
     }
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_RECV);
     return mpi_errno;
 }

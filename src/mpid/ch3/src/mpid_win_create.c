@@ -10,6 +10,10 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info
                     *info_ptr, MPID_Comm *comm_ptr, MPID_Win **win_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_CREATE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_WIN_CREATE);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
 
     return mpi_errno;
 }

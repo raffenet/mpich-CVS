@@ -132,6 +132,42 @@ int MPIDU_Describe_timer_states()
     /* describe the states used in the ch3/src directory */
 
     RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_IRSEND, "MPID_Irsend",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_ISEND, "MPID_Isend",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_ISSEND, "MPID_Issend",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_PROBE, "MPID_Probe",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_PUT, "MPID_PUT",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_RECV, "MPID_Recv",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_RSEND, "MPID_Rsend",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_SEND, "MPID_Send",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_SSEND, "MPID_Ssend",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_WIN_CREATE, "MPID_Win_create",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_WIN_FENCE, "MPID_Win_fence",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_WIN_FREE, "MPID_Win_free",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_CREATE_REQUEST, "Create_request",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 

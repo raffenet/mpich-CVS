@@ -11,6 +11,10 @@ int MPI_Put(void *origin_addr, int origin_count, MPI_Datatype
             int target_count, MPI_Datatype target_datatype, MPID_Win *win_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPI_PUT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPI_PUT);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPI_PUT);
 
     return mpi_errno;
 }

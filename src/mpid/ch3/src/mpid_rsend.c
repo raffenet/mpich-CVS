@@ -25,6 +25,9 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype,
     int dt_contig;
     MPID_Request * sreq;
     int mpi_errno = MPI_SUCCESS;    
+    MPIDI_STATE_DECL(MPID_STATE_MPID_RSEND);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_RSEND);
 
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     MPIDI_DBG_PRINTF((15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
@@ -155,5 +158,6 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype,
 	}
     }
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_RSEND);
     return mpi_errno;
 }

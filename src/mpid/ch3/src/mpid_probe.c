@@ -15,6 +15,9 @@ int MPID_Probe(int source, int tag, MPID_Comm * comm, int context_offset,
 {
     MPID_Request * rreq;
     const int context = comm->context_id + context_offset;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_PROBE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_PROBE);
 
     do
     {
@@ -35,5 +38,6 @@ int MPID_Probe(int source, int tag, MPID_Comm * comm, int context_offset,
     }
     while(TRUE);
 
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_PROBE);
     return MPI_SUCCESS;
 }
