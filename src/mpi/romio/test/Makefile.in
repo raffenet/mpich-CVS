@@ -53,14 +53,26 @@ file_info: file_info.o
 error: error.o
 shared_fp: shared_fp.o
 split_coll: split_coll.o
-fperf: fperf.o
-fcoll_test: fcoll_test.o
-pfcoll_test: pfcoll_test.o
-fmisc: fmisc.o
-finfo: finfo.o
-info: info.o
+#fperf: fperf.o
+#fcoll_test: fcoll_test.o
+#pfcoll_test: pfcoll_test.o
+#fmisc: fmisc.o
 large_file: large_file.o
 large_array: large_array.o
+
+#
+# The Fortran tests must be built with the Fortran linker
+fperf: fperf.f
+	$(F77) $(USER_FFLAGS) -o  $@ $< $(OUR_LIBS)
+
+fcoll_test: fcoll_test.f
+	$(F77) $(USER_FFLAGS) -o  $@ $< $(OUR_LIBS)
+
+fmisc: fmisc.f
+	$(F77) $(USER_FFLAGS) -o  $@ $< $(OUR_LIBS)
+
+pfcoll_test: pfcoll_test.f	
+	$(F77) $(USER_FFLAGS) -o  $@ $< $(OUR_LIBS)
 
 testing: 
 	-./runtests $(TESTARGS)
