@@ -99,9 +99,8 @@ int MPI_Win_get_group(MPI_Win win, MPI_Group *group)
         MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_GROUP);
 	return MPI_SUCCESS;
     }
-    else
-    {
-        MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_GROUP);
-	return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
-    }
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_GROUP);
+    return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
 }

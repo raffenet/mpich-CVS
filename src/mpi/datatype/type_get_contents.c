@@ -90,6 +90,7 @@ int MPI_Type_get_contents(MPI_Datatype datatype,
 				       array_of_addresses,
 				       array_of_datatypes);
     if (mpi_errno != MPI_SUCCESS) {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_CONTENTS);
 	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     }

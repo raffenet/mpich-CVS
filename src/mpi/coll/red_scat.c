@@ -1022,11 +1022,11 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE_SCATTER);
 	return MPI_SUCCESS;
     }
-    else
-    {
-	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE_SCATTER);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
 
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+    
     /* ... end of body of routine ... */
+    
+    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE_SCATTER);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

@@ -106,7 +106,13 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_Win_create(base, size, disp_unit, info, comm_ptr, &win_ptr);
+    mpi_errno = MPID_Win_create(base, size, disp_unit, info, comm_ptr, &win_ptr);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);
+	MPIR_Err_return_win(NULL, FCNAME, mpi_errno);
+    }
 
     /* return the handle of the window object to the user */
     *win = win_ptr->handle;

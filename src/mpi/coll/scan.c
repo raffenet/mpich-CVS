@@ -350,11 +350,11 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCAN);
 	return MPI_SUCCESS;
     }
-    else
-    {
-	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCAN);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 
     /* ... end of body of routine ... */
+
+    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCAN);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

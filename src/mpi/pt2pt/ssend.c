@@ -157,7 +157,9 @@ int MPI_Ssend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	    }
 	}
     }
-    
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+
     /* ... end of body of routine ... */
 
   fn_exit:

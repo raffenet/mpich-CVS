@@ -93,7 +93,10 @@ int MPI_Start(MPI_Request *request)
 #   endif /* HAVE_ERROR_CHECKING */
 
     mpi_errno = MPID_Startall(1, &request_ptr);
-    
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+    }
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
     return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
 	MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);

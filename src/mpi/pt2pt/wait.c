@@ -122,6 +122,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	    mpi_errno = MPID_Progress_wait();
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		goto fn_exit;
 	    }
 	}
@@ -133,6 +134,10 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     }
 
     mpi_errno = MPIR_Request_complete(request, request_ptr, status, &active_flag);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+    }
 
   fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
