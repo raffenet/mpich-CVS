@@ -7,10 +7,10 @@
 \usepackage{version}
 \usepackage{ifthen}
 \usepackage{psfig}
-\usepackage{/home/gropp/data/share/refman}
-\usepackage{/home/gropp/bin/share/tex/fileinclude}
-\usepackage{/home/gropp/sowing-proj/sowing/docs/doctext/tpage}
-\usepackage{/home/gropp/BOOKS/Beowulf/tex/url}
+%\usepackage{refman}
+%\usepackage{fileinclude}
+%\usepackage{tpage}
+%\usepackage{url}
 \usepackage{epsf}
 \usepackage{mpidoc}
 \usepackage{graphics}
@@ -36,7 +36,7 @@
 \let\SaveBibliography=\thebibliography
 \let\section=\RealSection
 \def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}
-\bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp,mpich2}
+\bibliography{/home/MPI/allbib,mpich2}
 \bibliographystyle{plain}
 
 
