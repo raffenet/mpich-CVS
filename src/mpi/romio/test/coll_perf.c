@@ -1,22 +1,20 @@
 #include "mpi.h"
-#include "mpio.h"
+#include "mpio.h"  /* not necessary with MPICH 1.1.1 or HPMPI 1.4 */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-#define FILE_SIZE (128*128*128*4)
-
-/* A 128^3 array. For other array sizes, change FILE_SIZE above and
-   array_of_gsizes below. */
 
 /* The file name is taken as a command-line argument. */
 
 /* Measures the I/O bandwidth for writing/reading a 3D
    block-distributed array to a file corresponding to the global array
-   in row-major (C) order. */ 
-/* Note that the file access pattern is noncontiguous. */
+   in row-major (C) order.
+   Note that the file access pattern is noncontiguous.
+  
+   Array size 128^3. For other array sizes, change array_of_gsizes below.*/
 
-main(int argc, char **argv)
+
+int main(int argc, char **argv)
 {
     MPI_Datatype newtype;
     int i, ndims, array_of_gsizes[3], array_of_distribs[3];
@@ -114,7 +112,7 @@ main(int argc, char **argv)
                     MPI_COMM_WORLD);
 
     if (mynod == 0) {
-      write_bw = (FILE_SIZE)/(new_write_tim*1000000.0);
+      write_bw = (array_of_gsizes[0]*array_of_gsizes[1]*array_of_gsizes[2]*sizeof(int))/(new_write_tim*1024.0*1024.0);
       printf("Global array size %d x %d x %d integers\n", array_of_gsizes[0], array_of_gsizes[1], array_of_gsizes[2]);
       printf("Collective write time = %f sec, Collective write bandwidth = %f Mbytes/sec\n", new_write_tim, write_bw);
     }
@@ -136,7 +134,7 @@ main(int argc, char **argv)
                     MPI_COMM_WORLD);
 
     if (mynod == 0) {
-      read_bw = (FILE_SIZE)/(new_read_tim*1000000.0);
+      read_bw = (array_of_gsizes[0]*array_of_gsizes[1]*array_of_gsizes[2]*sizeof(int))/(new_read_tim*1024.0*1024.0);
       printf("Collective read time = %f sec, Collective read bandwidth = %f Mbytes/sec\n", new_read_tim, read_bw);
     }
 
@@ -145,4 +143,5 @@ main(int argc, char **argv)
     free(filename);
 
     MPI_Finalize();
+    return 0;
 }
