@@ -944,7 +944,7 @@ if test -n "$mpi_sgi"; then
 fi
 #
 # check if darray and subarray constructors are defined in the MPI implementation
-if test $WITHIN_KNOWN_MPI_IMPL = no ; then
+if test $WITHIN_KNOWN_MPI_IMPL = no -o $FROM_MPICH2 != no ; then
    PAC_MPI_DARRAY_SUBARRAY
 else
    AC_DEFINE(HAVE_MPI_DARRAY_SUBARRAY,,[Define if Darray is available])
