@@ -91,22 +91,22 @@ pac_namecheck=`echo X$pac_cv_prog_f77_name_mangle | sed 's/ /-/g'`
 ifelse([$1],,[
 case $pac_namecheck in
     X) AC_MSG_WARN([Cannot determine Fortran naming scheme]) ;;
-    Xlower) AC_DEFINE(F77_NAME_LOWER,,[Define if Fortran names are lowercase]) 
+    Xlower) AC_DEFINE(F77_NAME_LOWER,1,[Define if Fortran names are lowercase]) 
 	F77_NAME_MANGLE="F77_NAME_LOWER"
 	;;
-    Xlower-underscore) AC_DEFINE(F77_NAME_LOWER_USCORE,,[Define if Fortran names are lowercase with a trailing underscore])
+    Xlower-underscore) AC_DEFINE(F77_NAME_LOWER_USCORE,1,[Define if Fortran names are lowercase with a trailing underscore])
 	F77_NAME_MANGLE="F77_NAME_LOWER_USCORE"
 	 ;;
-    Xlower-doubleunderscore) AC_DEFINE(F77_NAME_LOWER_2USCORE,,[Define if Fortran names containing an underscore have two trailing underscores])
+    Xlower-doubleunderscore) AC_DEFINE(F77_NAME_LOWER_2USCORE,1,[Define if Fortran names containing an underscore have two trailing underscores])
 	F77_NAME_MANGLE="F77_NAME_LOWER_2USCORE"
 	 ;;
-    Xupper) AC_DEFINE(F77_NAME_UPPER,,[Define if Fortran names are uppercase]) 
+    Xupper) AC_DEFINE(F77_NAME_UPPER,1,[Define if Fortran names are uppercase]) 
 	F77_NAME_MANGLE="F77_NAME_UPPER"
 	;;
-    Xmixed) AC_DEFINE(F77_NAME_MIXED,,[Define if Fortran names preserve the original case]) 
+    Xmixed) AC_DEFINE(F77_NAME_MIXED,1,[Define if Fortran names preserve the original case]) 
 	F77_NAME_MANGLE="F77_NAME_MIXED"
 	;;
-    Xmixed-underscore) AC_DEFINE(F77_NAME_MIXED_USCORE,,[Define if Fortran names preserve the original case and add a trailing underscore]) 
+    Xmixed-underscore) AC_DEFINE(F77_NAME_MIXED_USCORE,1,[Define if Fortran names preserve the original case and add a trailing underscore]) 
 	F77_NAME_MANGLE="F77_NAME_MIXED_USCORE"
 	;;
     *) AC_MSG_WARN([Unknown Fortran naming scheme]) ;;
