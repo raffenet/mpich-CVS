@@ -1,0 +1,64 @@
+% 
+%   This is a latex file that generates a reference manual for the 
+%   Model MPI implementation
+%
+\documentclass{article}
+\usepackage[dvipdfm]{hyperref}
+\usepackage{refman}
+\usepackage{tpage}
+\textheight=9in
+\textwidth=6.1in
+\oddsidemargin=.2in
+\topmargin=-.50in
+
+% Include each routine in the contents page
+\mancontentstrue
+
+\begin{document}
+
+\markright{MPICH2 Reference Manual}
+
+
+\def\nopound{\catcode`\#=13}
+{\nopound\gdef#{{\tt \char`\#}}}
+%\catcode`\_=13
+%\def_{{\tt \char`\_}}
+\catcode`\_=11
+\def\code#1{{\tt #1}}
+
+\ANLTitle{MPICH2 Model MPI Implementation\\Reference Manual\\\ \\Draft}{\em 
+William Gropp\\
+Ewing Lusk
+Mathematics and Computer Science Division\\
+Argonne National Laboratory}{00}{\today}
+
+\clearpage
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+
+\pagenumbering{arabic}
+\pagestyle{headings}
+
+\section{Introduction}
+This document contains detailed documentation on the routines that are part of
+the MPICH model MPI implementation.
+
+As an alternate to this manual, the reader should consider using the
+script \code{mpiman}; this is a script that uses \code{xman} to provide
+a X11 Window System interface to the data in this manual.
+
+\section{MPI Commands}
+\input refcmd.tex
+
+\section{MPI routines}
+\input refmpi.tex
+
+%\section{MPE routines}
+%\input ref4/ref.tex
+
+%\section{ADI routines}
+%\input ref5/ref.tex
+
+\end{document}
