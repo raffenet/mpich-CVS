@@ -66,10 +66,17 @@ if test "$FROM_MPICH2" = yes ; then
     CXX=$top_build_dir/bin/mpicxx
     F90=$top_build_dir/bin/mpif90
 fi
-# Simple tests for which other languages we can handle
+# Simple tests for which other languages we can handle.  
+# Use these only when configuring separate from an MPICH2 build
 f77dir="#"
 AC_SUBST(f77dir)
-if test "$enable_f77" = yes ; then
+if test "$FROM_MPICH2" = yes ; then
+    if test "$enable_f77" = yes ; then
+       # Assume success
+        otherlangs="$otherlangs f77"
+	f77dir=f77
+    fi
+elif test "$enable_f77" = yes ; then
     AC_MSG_CHECKING([that we can build MPI programs with Fortran 77])
     rm -f conftest*
     cat >conftest.f <<EOF
@@ -91,7 +98,12 @@ EOF
 fi
 f90dir="#"
 AC_SUBST(f90dir)
-if test "$enable_f90" = yes ; then
+if test "$FROM_MPICH2" = yes ; then
+    if test "$enable_f90" = yes ; then
+        otherlangs="$otherlangs f90"
+	f90dir=f90
+    fi
+elif test "$enable_f90" = yes ; then
     AC_MSG_CHECKING([that we can build MPI programs with Fortran 90])
     rm -f conftest*
     cat >conftest.f90 <<EOF
@@ -118,7 +130,12 @@ fi
 # Simple tests for which other languages we can handle
 cxxdir="#"
 AC_SUBST(cxxdir)
-if test "$enable_cxx" = yes ; then
+if test "$FROM_MPICH2" = yes ; then
+    if test "$enable_cxx" = yes ; then
+        otherlangs="$otherlangs cxx"
+	cxxdir=cxx
+    fi
+elif test "$enable_cxx" = yes ; then
     AC_MSG_CHECKING([that we can build MPI programs with C++])
     rm -f conftest*
     cat >conftest.cxx <<EOF
@@ -184,5 +201,6 @@ AC_OUTPUT(Makefile \
 	  cxx/Makefile \
 	  cxx/util/Makefile \
 	  cxx/coll/Makefile \
+	  cxx/io/Makefile \
 	  testlist \
 	  )
