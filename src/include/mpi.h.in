@@ -129,7 +129,7 @@ typedef int MPI_Op;
 #define MPI_GROUP_NULL     ((MPI_Group)0x08000000)
 #define MPI_DATATYPE_NULL  ((MPI_Datatype)0x0c000000)
 #define MPI_REQUEST_NULL   ((MPI_Request)0x2c000000)
-#define MPI_ERRHANDLER_NULL ((MPI_Errhandler )0x14000000)
+#define MPI_ERRHANDLER_NULL ((MPI_Errhandler)0x14000000)
 
 /* These are only guesses; make sure you change them in mpif.h as well */
 #define MPI_MAX_PROCESSOR_NAME @MPI_MAX_PROCESSOR_NAME@
