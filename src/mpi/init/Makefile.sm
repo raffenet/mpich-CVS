@@ -1,7 +1,4 @@
-# As routines are implemented, add there files to the list.
-# (unimplemented routines should cause link-time, not run-time failures)
 lib${MPILIBNAME}_a_SOURCES =init.c initialized.c initthread.c ismain.c \
-	finalize.c finalized.c querythread.c
-#lib${MPILIBNAME}_a_SOURCES = init.c initialized.c initthread.c ismain.c \
-	finalize.c finalized.c querythread.c abort.c
+ finalize.c finalized.c querythread.c
+#lib${MPILIBNAME}_a_SOURCES = init.c initialized.c initthread.c ismain.c finalize.c finalized.c querythread.c abort.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include
