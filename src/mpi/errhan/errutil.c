@@ -917,7 +917,7 @@ int MPIR_Nest_value( void )
 MPID_Errhandler MPID_Errhandler_builtin[2] = 
           { { MPI_ERRORS_ARE_FATAL, 0},
 	    { MPI_ERRORS_RETURN, 0} }; 
-MPID_Errhandler MPID_Errhandler_direct[MPID_ERRHANDLER_PREALLOC];
+MPID_Errhandler MPID_Errhandler_direct[MPID_ERRHANDLER_PREALLOC] = { {0} };
 MPIU_Object_alloc_t MPID_Errhandler_mem = { 0, 0, 0, 0, MPID_ERRHANDLER, 
 					    sizeof(MPID_Errhandler), 
 					    MPID_Errhandler_direct,

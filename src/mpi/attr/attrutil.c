@@ -19,7 +19,7 @@
 #endif
 
 /* Preallocated keyval objects */
-MPID_Keyval MPID_Keyval_direct[MPID_KEYVAL_PREALLOC];
+MPID_Keyval MPID_Keyval_direct[MPID_KEYVAL_PREALLOC] = { {0} };
 MPIU_Object_alloc_t MPID_Keyval_mem = { 0, 0, 0, 0, MPID_KEYVAL, 
 					    sizeof(MPID_Keyval), 
 					    MPID_Keyval_direct,
@@ -35,7 +35,7 @@ void MPID_Keyval_free(MPID_Keyval *keyval_ptr)
 #endif
 
 /* Preallocated keyval objects */
-MPID_Attribute MPID_Attr_direct[MPID_ATTR_PREALLOC];
+MPID_Attribute MPID_Attr_direct[MPID_ATTR_PREALLOC] = { {0} };
 MPIU_Object_alloc_t MPID_Attr_mem = { 0, 0, 0, 0, MPID_ATTR, 
 					    sizeof(MPID_Attribute), 
 					    MPID_Attr_direct,

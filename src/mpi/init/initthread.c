@@ -28,7 +28,7 @@ MPICH_PerProcess_t MPIR_Process = { MPICH_PRE_INIT }; /* all others are irelevan
 
 #ifdef MPICH_SINGLE_THREADED
 /* If single threaded, we preallocate this.  Otherwise, we create it */
-MPICH_PerThread_t  MPIR_Thread;
+MPICH_PerThread_t  MPIR_Thread = { 0 };
 #endif
 int MPIR_Init_thread(int * argc, char ***argv, int required,
 		     int * provided)
