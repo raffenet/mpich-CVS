@@ -222,6 +222,14 @@ int smpd_cache_password(const char *account, const char *password)
     int num_bytes;
     DWORD len;
 
+    smpd_enter_fn("smpd_cache_password");
+
+    if (smpd_option_on("nocache"))
+    {
+	smpd_exit_fn("smpd_cache_password");
+	return SMPD_SUCCESS;
+    }
+
     RegDeleteKey(HKEY_CURRENT_USER, SMPD_REGISTRY_CACHE_KEY);
     if (RegCreateKeyEx(HKEY_CURRENT_USER, SMPD_REGISTRY_CACHE_KEY,
 	0, 
@@ -234,6 +242,7 @@ int smpd_cache_password(const char *account, const char *password)
     {
 	nError = GetLastError();
 	/*smpd_err_printf("CachePassword:RegDeleteKey(...) failed, error: %d\n", nError);*/
+	smpd_exit_fn("smpd_cache_password");
 	return SMPD_FAIL;
     }
 
@@ -244,6 +253,7 @@ int smpd_cache_password(const char *account, const char *password)
     {
 	/*smpd_err_printf("CachePassword:RegSetValueEx(%s) failed, error: %d\n", g_pszAccount, nError);*/
 	RegCloseKey(hRegKey);
+	smpd_exit_fn("smpd_cache_password");
 	return SMPD_FAIL;
     }
 
@@ -258,10 +268,12 @@ int smpd_cache_password(const char *account, const char *password)
     {
 	/*smpd_err_printf("CachePassword:RegSetValueEx(...) failed, error: %d\n", nError);*/
 	RegCloseKey(hRegKey);
+	smpd_exit_fn("smpd_cache_password");
 	return SMPD_FAIL;
     }
 
     RegCloseKey(hRegKey);
+    smpd_exit_fn("smpd_cache_password");
     return SMPD_SUCCESS;
 }
 
@@ -273,6 +285,8 @@ SMPD_BOOL smpd_get_cached_password(char *account, char *password)
     HKEY hRegKey = NULL;
     DWORD dwLength;
     int num_bytes;
+
+    smpd_enter_fn("smpd_get_cached_password");
 
     if (RegOpenKeyEx(HKEY_CURRENT_USER, SMPD_REGISTRY_CACHE_KEY, 0, KEY_QUERY_VALUE, &hRegKey) == ERROR_SUCCESS) 
     {
@@ -287,10 +301,14 @@ SMPD_BOOL smpd_get_cached_password(char *account, char *password)
 	{
 	    /*smpd_err_printf("ReadPasswordFromRegistry:RegQueryValueEx(...) failed, error: %d\n", nError);*/
 	    RegCloseKey(hRegKey);
+	    smpd_exit_fn("smpd_get_cached_password");
 	    return SMPD_FALSE;
 	}
 	if (strlen(szAccount) < 1)
+	{
+	    smpd_exit_fn("smpd_get_cached_password");
 	    return SMPD_FALSE;
+	}
 
 	*szPassword = '\0';
 	dwLength = SMPD_MAX_PASSWORD_LENGTH*2;
@@ -303,6 +321,7 @@ SMPD_BOOL smpd_get_cached_password(char *account, char *password)
 	{
 	    /*smpd_err_printf("ReadPasswordFromRegistry:RegQueryValueEx(...) failed, error: %d\n", nError);*/
 	    RegCloseKey(hRegKey);
+	    smpd_exit_fn("smpd_get_cached_password");
 	    return SMPD_FALSE;
 	}
 
@@ -310,14 +329,18 @@ SMPD_BOOL smpd_get_cached_password(char *account, char *password)
 
 	strcpy(account, szAccount);
 	smpd_decode_buffer(szPassword, password, SMPD_MAX_PASSWORD_LENGTH, &num_bytes);
+	smpd_exit_fn("smpd_get_cached_password");
 	return SMPD_TRUE;
     }
 
+    smpd_exit_fn("smpd_get_cached_password");
     return SMPD_FALSE;
 }
 
 int smpd_delete_cached_password()
 {
+    smpd_enter_fn("smpd_delete_cached_password");
     RegDeleteKey(HKEY_CURRENT_USER, SMPD_REGISTRY_CACHE_KEY);
+    smpd_exit_fn("smpd_delete_cached_password");
     return SMPD_SUCCESS;
 }
