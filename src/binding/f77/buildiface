@@ -534,6 +534,15 @@ maint-clean:\
     print MAKEFD "install_BIN     = mpif77\n";
     print MAKEFD "install_ETC     = mpif77.conf\n";
 
+    # Add the documentation
+    print MAKEFD "# Documentation sources
+doc_sources = mpif77.txt
+DOCDESTDIRS = html:www/www1,man:man/man1,latex:refman
+doc_HTML_SOURCES  = \${doc_sources}
+doc_MAN_SOURCES   = \${doc_sources}
+doc_LATEX_SOURCES = \${doc_sources}
+";
+
     # Since configure copies mpif.h to the include dir, we need to remove it
     # in a distclean step.  Ditto for mpif77; add the generated files.
     print MAKEFD "distclean-local:\n";
@@ -1881,7 +1890,7 @@ void *MPI_F_STATUSES_IGNORE = 0;
     print $OUTFD "#ifndef F77_RUNTIME_VALUES
     /* any compile/link time values go here */
 #else
-#   abort \"Fortran values must be determined at configure time\"
+#   error \"Fortran values must be determined at configure time\"
 #endif
 ";
     print $OUTFD "    *ierr = MPI_Init( 0, 0 );\n";
