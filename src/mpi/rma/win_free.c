@@ -81,9 +81,20 @@ int MPI_Win_free(MPI_Win *win)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_Win_free(&win_ptr);
+    if (MPIR_Process.attr_free && win_ptr->attributes) {
+	mpi_errno = MPIR_Process.attr_free( win_ptr->handle, 
+					    win_ptr->attributes );
+    }
+    if (mpi_errno == MPI_SUCCESS) {
+	MPID_Win_free(&win_ptr);
 
-    *win = MPI_WIN_NULL;
+	*win = MPI_WIN_NULL;
+    }
+    else {
+	    /* If the user attribute free function returns an error, 
+	       then do not free the window */
+	;
+    }
     
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_FREE);
     return MPI_SUCCESS;
