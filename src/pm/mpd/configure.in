@@ -83,7 +83,8 @@ if test -z "$PYTHON" ; then
     AC_MSG_ERROR([Python required (version 2.2 or greater, with necessary modules)]) 
 fi
 
-if test "`uname -o`" = "Cygwin" ; then
+CYGWIN_TEST=`uname -a | grep -i cygwin`
+if test -n "$CYGWIN_TEST" ; then
     AC_MSG_CHECKING([that rebaseall is ok on this cygwin system])
     echo
     if ! $PYTHON -c 'from socket import socket ; from os import fork ; x = fork()'  >/dev/null 2>&1 ; then
