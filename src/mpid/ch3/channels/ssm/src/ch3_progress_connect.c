@@ -397,7 +397,6 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	}
 	if (count >= MPIDI_CH3I_Process.num_cpus)
 	{
-	    /*MPIDI_Process.my_pg->ch.nShmWaitSpinCount = 1;*/
 	    MPIDI_Process.my_pg->ch.nShmWaitSpinCount = 1;
 	}
 
