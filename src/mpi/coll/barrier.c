@@ -337,6 +337,7 @@ int MPI_Barrier( MPI_Comm comm )
 	}
         MPIR_Nest_decr();
     }
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
@@ -349,5 +350,6 @@ int MPI_Barrier( MPI_Comm comm )
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
+    /* --END ERROR HANDLING-- */
     /* ... end of body of routine ... */
 }

@@ -136,6 +136,7 @@ int MPI_Put(void *origin_addr, int origin_count, MPI_Datatype
                          target_rank, target_disp, target_count,
                          target_datatype, win_ptr);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
         mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
@@ -145,6 +146,7 @@ int MPI_Put(void *origin_addr, int origin_count, MPI_Datatype
 	MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_PUT);
         return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
     }
+    /* --END ERROR HANDLING-- */
     
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_PUT);
     return MPI_SUCCESS;

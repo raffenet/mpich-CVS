@@ -126,11 +126,13 @@ int MPIR_Gather (
                        easier to unpack everything later into the recv_buf */
                     mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
                                                tmp_buf, nbytes, MPI_BYTE);
+		    /* --BEGIN ERROR HANDLING-- */
                     if (mpi_errno)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 			return mpi_errno;
 		    }
+		    /* --END ERROR HANDLING-- */
                 }
                 curr_cnt = nbytes;
             }
@@ -142,11 +144,13 @@ int MPIR_Gather (
 		{
                     mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
                                                recvbuf, recvcnt, recvtype);
+		    /* --BEGIN ERROR HANDLING-- */
                     if (mpi_errno)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 			return mpi_errno;
 		    }
+		    /* --END ERROR HANDLING-- */
                 }
                 curr_cnt = recvcnt;
             }          
@@ -166,11 +170,13 @@ int MPIR_Gather (
             /* copy from sendbuf into tmp_buf */
             mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
                                        tmp_buf, nbytes, MPI_BYTE);
+	    /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		return mpi_errno;
 	    }
+	    /* --END ERROR HANDLING-- */
             curr_cnt = nbytes;
         }
         
@@ -191,11 +197,13 @@ int MPIR_Gather (
                                               recvcnt*mask, recvtype, src,
                                               MPIR_GATHER_TAG, comm, 
                                               &status);
+			/* --BEGIN ERROR HANDLING-- */
                         if (mpi_errno)
 			{
 			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 			    return mpi_errno;
 			}
+			/* --END ERROR HANDLING-- */
                     }
                     else
 		    {
@@ -205,11 +213,13 @@ int MPIR_Gather (
                                               mask*nbytes, MPI_BYTE, src,
                                               MPIR_GATHER_TAG, comm, 
                                               &status);
+			/* --BEGIN ERROR HANDLING-- */
                         if (mpi_errno)
 			{
 			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 			    return mpi_errno;
 			}
+			/* --END ERROR HANDLING-- */
                         /* the recv size is larger than what may be sent in
                            some cases. query amount of data actually received */
                         NMPI_Get_count(&status, MPI_BYTE, &recv_size);
@@ -226,21 +236,25 @@ int MPIR_Gather (
                     /* leaf nodes send directly from sendbuf */
                     mpi_errno = MPIC_Send(sendbuf, sendcnt, sendtype, dst,
                                           MPIR_GATHER_TAG, comm); 
+		    /* --BEGIN ERROR HANDLING-- */
                     if (mpi_errno)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 			return mpi_errno;
 		    }
+		    /* --END ERROR HANDLING-- */
                 }
                 else
 		{
                     mpi_errno = MPIC_Send(tmp_buf, curr_cnt, MPI_BYTE, dst,
                                           MPIR_GATHER_TAG, comm); 
+		    /* --BEGIN ERROR HANDLING-- */
                     if (mpi_errno)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 			return mpi_errno;
 		    }
+		    /* --END ERROR HANDLING-- */
                 }
                 break;
             }
@@ -324,11 +338,13 @@ int MPIR_Gather (
                                           mask*nbytes, MPI_BYTE, src,
                                           MPIR_GATHER_TAG, comm, 
                                           &status);
+		    /* --BEGIN ERROR HANDLING-- */
                     if (mpi_errno)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 			return mpi_errno;
 		    }
+		    /* --END ERROR HANDLING-- */
                     /* the recv size is larger than what may be sent in
                        some cases. query amount of data actually received */
                     NMPI_Get_count(&status, MPI_BYTE, &recv_size);
@@ -341,11 +357,13 @@ int MPIR_Gather (
                 dst = (dst + root) % comm_size;
                 mpi_errno = MPIC_Send(tmp_buf, curr_cnt, MPI_BYTE, dst,
                                       MPIR_GATHER_TAG, comm); 
+		/* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		    return mpi_errno;
 		}
+		/* --END ERROR HANDLING-- */
                 break;
             }
             mask <<= 1;
@@ -463,11 +481,13 @@ PMPI_LOCAL int MPIR_Gather_inter (
 	    {
                 mpi_errno = NMPI_Type_get_true_extent(sendtype, &true_lb,
                                                       &true_extent);  
+		/* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		    return mpi_errno;
 		}
+		/* --END ERROR HANDLING-- */
                 MPID_Datatype_get_extent_macro(sendtype, extent);
  
                 tmp_buf =
@@ -500,11 +520,13 @@ PMPI_LOCAL int MPIR_Gather_inter (
                                       sendtype, root,
                                       MPIR_GATHER_TAG, comm); 
                 MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr ); 
+		/* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		    return mpi_errno;
 		}
+		/* --END ERROR HANDLING-- */
                 MPIU_Free(((char*)tmp_buf+true_lb));
             }
         }
@@ -521,11 +543,13 @@ PMPI_LOCAL int MPIR_Gather_inter (
                 mpi_errno = MPIC_Recv(((char *)recvbuf+recvcnt*i*extent), 
                                       recvcnt, recvtype, i,
                                       MPIR_GATHER_TAG, comm, &status);
+		/* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		    return mpi_errno;
 		}
+		/* --END ERROR HANDLING-- */
             }
         }
         else
