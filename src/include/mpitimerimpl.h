@@ -91,7 +91,7 @@
 #define MPID_MPI_PT2PT_FUNC_EXIT_BOTH(a)      MPIDU_PT2PT_FUNC_EXIT(a)
 #endif
 
-#if (HAVE_TIMING == MPID_TIMING_KIND_LOG_DETAILED)
+#if defined(HAVE_TIMING) && (HAVE_TIMING == MPID_TIMING_KIND_LOG_DETAILED)
 
 /* device layer definitions */
 #define MPIDI_STATE_DECL(a)                MPIDU_STATE_DECL(a)
