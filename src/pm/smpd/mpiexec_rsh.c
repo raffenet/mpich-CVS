@@ -394,12 +394,12 @@ int mpiexec_rsh()
 	/* Two samples for testing on the local machine */
 
 	/* static rPMI initialization */
-	/*sprintf(process->exe, "env PMI_RANK=%d PMI_SIZE=%d PMI_KVS=%s PMI_ROOT_HOST=%s PMI_ROOT_PORT=8888 PMI_ROOT_LOCAL=1 %s",
-	    launch_node_ptr->iproc, launch_node_ptr->nproc, smpd_process.kvs_name, root_host, exe);*/
+	/*sprintf(process->exe, "env PMI_RANK=%d PMI_SIZE=%d PMI_KVS=%s PMI_ROOT_HOST=%s PMI_ROOT_PORT=8888 PMI_ROOT_LOCAL=1 PMI_APPNUM=%d %s",
+	    launch_node_ptr->iproc, launch_node_ptr->nproc, smpd_process.kvs_name, root_host, launch_node_ptr->appnum, exe);*/
 
 	/* dynamic rPMI initialization */
-	/*sprintf(process->exe, "env PMI_RANK=%d PMI_SIZE=%d PMI_KVS=%s PMI_ROOT_HOST=%s PMI_ROOT_PORT=%d PMI_ROOT_LOCAL=0 %s",
-	    launch_node_ptr->iproc, launch_node_ptr->nproc, smpd_process.kvs_name, root_host, root_port, exe);*/
+	/*sprintf(process->exe, "env PMI_RANK=%d PMI_SIZE=%d PMI_KVS=%s PMI_ROOT_HOST=%s PMI_ROOT_PORT=%d PMI_ROOT_LOCAL=0 PMI_APPNUM=%d %s",
+	    launch_node_ptr->iproc, launch_node_ptr->nproc, smpd_process.kvs_name, root_host, root_port, launch_node_ptr->appnum, exe);*/
 
 	if (smpd_process.mpiexec_run_local == SMPD_TRUE)
 	{
