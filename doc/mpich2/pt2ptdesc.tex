@@ -12,6 +12,13 @@ This represents one of the more complex cases; most communication will offer
 some opportunities for exploiting special cases such as simple datatypes
 representing contiguous data or blocking communication.  
 
+Question: this discussion assumes that only contiguous data can be handled.
+We may want to consider the more general \code{iovec} (array of structures
+contain a pointer and length in bytes for each member).  However, this is not
+an efficient way to handle common vector datatypes or fixed blocksize hindexed
+datatypes.  How important is it to handle the case where a modest-sized
+\code{iovec} array can be used?  
+
 The datatype is assumed to be complex enough that the device cannot handle it
 directly; for example, it may be an hindexed type with a large number (e.g.,
 10000) of entries, or a simple resized struct datatype and a large count.
@@ -77,7 +84,7 @@ The request is \emph{removed} from the receive queue so that no other thread
 can match it (and any send-cancel will now fail).
 
 First, check the amount of data sent against the size of the buffer specified
-by the user, where size is (roughly) \code{count * datatype1->size}.  If the
+by the user, where size is (roughly) \code{count1 * datatype1->size}.  If the
 amount of data sent is larger than that, set the error return to error class
 \mpiconst{MPI_ERR_TRUNCATE}.   
 Question: how do we ensure that no buffer overruns occur during the rest of
@@ -104,16 +111,24 @@ unless as an argument to \mpidfunc{MPID_Unpack}.  Is this what we want?
   
   First, create a \mpidconst{MPID_Segment} describing the receive buffer.
   Use that segment to create a (receive) stream.
+  (Question: what is the stream here?  Is it just a segment along with any
+  other data that is needed by the communication agent to send each lump of
+  packed data along?) 
   Use \mpidfunc{MPID_Rhcv} to send a request back to the
   sender, including the sender's request id
   (\mpids{MPID_Hid_Request_to_send}{request_id}) and an id that can be used to
   identify this request.  The handler type is \mpidconst{MPID_Hid_ok_to_send}.
 
-  Question: should this simply by the index of the \mpiconst{MPI_Request}?
+  Question: should this simply be the index of the \mpiconst{MPI_Request}?
   That has the advantage of being addressing-independent, as well as saving a
   few bytes (a short should be sufficient).  The id of the receiving request
   is needed to know where to mark the message as complete as well as to access
   any other segment/stream information.
+  Question: In a multithreaded case, the request id's could be partitioned
+  among the threads, avoiding the need for a thread lock.  Do we want to
+  consider that?  This is complicated by the fact that threads are not
+  required to register themselves with MPI (e.g., with a call to something
+  like \code{MPI_Thread_initialize}).
 
   Question: there is no explicit stream here; that is, the stream handling is
   done through calls to \mpidfunc{MPID_Rhcv} and the way in which the
@@ -141,7 +156,7 @@ There are two cases:
   parameters describing the eager message limits as well as the current state
   of flow control (e.g., if too many eager messages have been sent but not
   received by the user at the destination process, no more eager messages may
-  be sent).
+  be sent) against the size of the message (\code{count2 * datatype2->size}).
 
 Use \mpidfunc{MPID_Pack} to pack the data up.  Use \mpidfunc{MPID_Rhcv} to
 send the envelope and data.  Mark the request as completed
@@ -153,9 +168,11 @@ Question: who releases the pack buffer?  Is that something the
 should \mpidfunc{MPID_Rhcv} know how to mark the request as completed, and
 have a separate cleanup step that releases any local resources as part of
 freeing the request.  Current thinking is that \mpidfunc{MPID_Rhcv} must
-handle this, since the request is locally complete once all of the data has
+handle this, since the request is locally complete (in MPI terms) once all of
+the data has 
 been given to \mpidfunc{MPID_Rhcv}.  That is, the user's buffer can be reused
-(because we copied the data out of it) and the eager message has been given to
+(because we copied the data out of it when we packed the data) and the eager
+message has been given to 
 the low-level part of the ADI.  The request is no longer needed.  
 
 \item The data must be sent with rendezvous.
@@ -195,7 +212,12 @@ Wait on the request to complete.  There are several cases:
             pthread_cond_wait( &request_mutex, &cond );
     }
 \end{verbatim}  
-Note that this requires either a mutex per request or (less scalably) a mutex
+The \code{pthread_cond_wait} atomically releases the \code{request_mutex} and
+waits for the condition variable \code{cond}.  The condition variable is set
+when another thread executes \code{pthread_cond_broadcast} (or
+\code{pthread_cond_signal} to this particular thread).
+Note that this algorithm requires either a mutex per request or (less
+scalably) a mutex 
 on all requests (but local to the calling MPI process).  
 Note that a single mutex may be more appropriate for the multiple completion
 routines such as \mpifunc{MPI_Waitsome} or \mpifunc{MPI_Waitall}.
@@ -204,13 +226,20 @@ The above approach also requires that the communication agent execute a
 
 Another alternative is to simply busy wait on \mpids{MPI_Request}{completed}.
 
+Note that pthreads are not available on all platforms; we may need to
+implement other approaches as well.
+
+Question: How well do pthread condition variables work on our important Unix
+platforms (e.g., Linux, Solaris, AIX, etc.)?  Is there a similar Windows NT
+approach, or is something different required?
+
 Yet another is to store the thread id of the thread that is waiting on the
 request; this allows the communication agent to use \code{pthread_cond_signal}
 to wake up only the thread that can proceed; it also keeps the communication
 agent from constantly calling \code{pthread_cond_broadcast}.
 \end{enumerate}
 
-Communication Agent:
+\texttt{Communication Agent:}
 
 On the receiving end, the communication agent is responsible for handling an
 incoming \mpidconst{MPID_Hid_request_to_send} message.  
@@ -220,7 +249,10 @@ any.  There are two cases.
 \item A matching request was found.  The request is removed from the receive
   queue (marked matched?), and an \mpidconst{MPID_Hid_ok_to_send} message is
   returned using \mpidfunc{MPID_Rhcv}.
-\item A matching request was not found.  The information on the message from
+\item A matching request was not found.  Then, as in the \mpifunc{MPI_Irecv}
+  case, \mpidfunc{MPID_Request_recv_FOA} will have created a new request and
+  returned that new request.
+  The information on the message from
   the envelope (e.g., \mpids{MPID_Hid_request_to_send}{length},
   \mpids{MPID_Hid_request_to_send}{request_id},
   \mpids{MPID_Hid_request_to_send}{tag},
@@ -239,7 +271,9 @@ space (Question: is flow control handled with \mpidfunc{MPID_Flow_recv}?).
 
 Question: What allocates the buffers for unexpected eager messages?  We cannot
 use \code{malloc} here, at least on all platforms (and we must enforce
-resource limits).
+resource limits) because the \code{malloc} might fail, and our flow-control
+promise is that there is space available.  If we depend on \code{malloc}, we
+need to provide for a negative acknowledgement on eager messages.
 
 
 The communication agent is responsible for transferring the message once it is
@@ -252,16 +286,25 @@ request.  It then initiates a stream send.  This consists of:
 \item Consult \mpidconst{MPID_Segment} for the next group of bytes
   to be packed into a contiguous buffer and sent.  If the user's datatype is
   not contiguous, pack into a contiguous 
-  location with \mpidfunc{MPID_Pack} (if the user's buffer \emph{is}
-  contiguous, the segment routine will return a pointer at that buffer without
+  location with \mpidfunc{MPID_Segment_pack} (if the user's buffer \emph{is}
+  contiguous, this segment routine can return a pointer to that buffer without
   copying).  Update the segment to indicate the
   current position in the (user's) buffer (by maintaining the dataloop
   stack). 
   Question: Were is the buffer to pack into allocated?  Is this part of the 
-  \mpidconst{MPID_Segment} structure?  part of the \mpidconst{MPID_Stream}
+  \mpidconst{MPID_Segment} structure?  Part of the \mpidconst{MPID_Stream}
   structure? How do we make sure that the choice is
   good for this particular method (e.g., are segments allocated with a source
-  or destination rank and a group/communicator)?
+  or destination rank and a group/communicator)?  Note that the ADI-3 provides
+  a \mpidfunc{MPID_Segment_init_pack} (and an unpack) that takes the
+  communicator and rank for the destination.  In a multi-method device, each
+  device must provide this function (unless it is happy with generic memory).
+
+  Note that it is very useful to know if a datatype represents contiguous
+  data; a \mpids{MPI_Datatype}{contiguous} flag value may be helpful.  Note
+  that in the case of resized datatypes, a type that is contiguous with a
+  \code{count} of $1$ may not be contiguous with a \code{count} greater than
+  one.  Do we want a separate flag for that?  
 
 \item Use \mpidfunc{MPID_Rhcv} to return the data.  For methods that use Unix
   sockets, \code{writev}\index{writev} can be used to send the data.  The
@@ -280,7 +323,9 @@ response to receiving an \mpidconst{MPID_Hid_ok_to_send} packet).
 At the receiving process, data arrives as \mpidconst{MPID_Hid_data} type.  
 Using the \mpids{MPID_Hid_data}{recv_request_id}, this is matched to a request
 and thus to a segment.  Typically, the data is received into a contiguous
-buffer which is then handed, with the segment, to \mpidfunc{MPID_Unpack}.
+buffer which is then handed, with the segment, to \mpidfunc{MPID_Unpack} 
+(but see comments below under refinements that can reduce the amount of
+copying in the contiguous, and with more work, the \code{iovec}, case).
 Once the data unpack completes, a \mpidconst{MPID_Hid_ok_to_send} request is
 returned to the sender using \mpidfunc{MPID_Rhcv} unless all of the message
 has been received.
@@ -303,7 +348,9 @@ what it needs to use to get the next group of bytes to send in the stream.
 A communication agent that is either running in a separate thread or that is
 in blocking mode in a single-threaded application and that communicates using
 Unix sockets can use \code{select} or \code{poll} (with an infinite timeout)
-to wait for incoming information.
+to wait for incoming information.  Note that Rob prefers \code{poll}.
+Question: Can we use \code{poll} always for Unix?  Should we?  If not, how do
+we want to choose between \code{poll} and \code{select}?
 
 In order to reduce the amount of data movement and the number of system calls,
 a socket-based agent should use a buffered read mechanism that attempts to
@@ -322,6 +369,12 @@ steps:
   bytes, so this transfer may need to be remembered so that it is completed
   before any attempt to read into the read buffer is made).
 \end{enumerate}
+A further refinement is to allow the use of \code{readv} once the read buffer
+is flushed.  
+
+Question: We could use \code{MSG_PEEK} and \code{recv} instead of \code{read}
+to see how much data is available without reading it.  Can we use this, or is
+it better to just read some of the data (one system call)?
 \end{tcp}
 
 \begin{shmem}
@@ -349,7 +402,10 @@ queue element directly. The two cases are
     is heterogeneous, we still need the \mpidconst{recved_format} etc. fields
     since the data may have been packed for a communicator containing
     processes with different data represenations.
-    Question: who frees the eager buffer space?  
+    Question: who frees the eager buffer space?  Does the receiver free it
+    after unpacking the data, or do we ask the sender to free it?  We might
+    want the sender to free it if the sender allocated it.
+
   \item The data has not been delivered.  This follows the \tcpname\ case,
     since the data must be delivered by having the sender place some of it in
     shared memory, then signal the receiving process, and so on.  The
@@ -357,7 +413,7 @@ queue element directly. The two cases are
     buffers in shared memory?) and sends the address and size of that buffer
     to the sender using \mpidfunc{MPID_Rhcv} to deliver a message to the
     sender's incoming message queue.  Further processing is handled by the
-    communication agent.
+    communication agent (including any double buffering of the transfer).
   \end{enumerate}
 \end{enumerate}
 
@@ -419,7 +475,7 @@ message to manage the communication.
 Question: If we use a \code{data_available} field, how do we avoid
 busy-waiting?  Do we simply poll and yield?
 
-Communication agent:
+\texttt{Communication agent:}
 
 The communication agent is responsible for making progress on a stream (the
 sending of segments).  There is no special action on the receiving end.  On
@@ -450,7 +506,8 @@ into or out of shared memory.
 Note that waiting on fields in individual request items is ok in this simple
 example, but becomes less suitable when there are a significant number of
 pending requests.  Question: we could establish a bit vector of pending
-requests; this could be atomically updated into indicate that a process's
+requests (each bit represents a request and the position matches the index);
+this could be atomically updated into indicate that a process's 
 request was ready for operation.  However, this may not be much better than
 sending a message to the communication agent.
 
@@ -475,12 +532,12 @@ data can be written into and read from remote memory that has been registered.
 \mpifunc{MPI_Irecv}:
 
 Follow the approach in \tcpname.  
-If a message must be send (e.g., a
+If a message must be sent (e.g., a
 \mpidconst{MPID_Hid_ok_to_send}), \mpidfunc{MPID_Rhcv} sends it by writing to
 a pre-registered location.  Flow control provides information on where to
 write (e.g., multiple incoming locations can be allocated, and either
 information on each message updates what is free or separate flow control
-messages are send).   
+messages are sent).   
 
 Note that because the data is noncontiguous, it must be delivered into some
 intermediate memory in contiguous form\footnote{We assume that either the
@@ -508,7 +565,7 @@ transfering the first segment into an internal registered-memory buffer.
 
 Follow the approach in \tcpname.  
 
-Communication agent:
+\texttt{Communication agent:}
 
 The agent must respond to messages in much the same way as \tcpname.  However,
 the process of sending a stream of segments may be different. 
@@ -529,7 +586,9 @@ another.
 \begin{via}
   Question: How do we indicate that a message has been transfered?  Do we want
   to use a remote write to set the \mpids{MPID_Request}{complete} field
-  directly, rather than sending a message?
+  directly, rather than sending a message?  Is it better to receive a
+  completion message from the sender or to spin-wait on
+  \mpids{MPID_Request}{complete}? 
 
 \end{via}
 
