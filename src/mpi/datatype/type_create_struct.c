@@ -88,7 +88,8 @@ int MPI_Type_create_struct(int count,
 
 	    for (i=0; i < count; i++) {
 		MPIR_ERRTEST_ARGNEG(array_of_blocklengths[i], "blocklen", mpi_errno);
-		MPIR_ERRTEST_DATATYPE(array_of_blocklengths[i], array_of_types[i], mpi_errno);
+		MPIR_ERRTEST_DATATYPE(array_of_types[i], "datatype[i]",
+				      mpi_errno);
 		if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 			
 		if (array_of_types[i] != MPI_DATATYPE_NULL && HANDLE_GET_KIND(array_of_types[i]) != HANDLE_KIND_BUILTIN) {

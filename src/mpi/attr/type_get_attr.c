@@ -76,7 +76,7 @@ int MPI_Type_get_attr(MPI_Datatype type, int type_keyval, void *attribute_val, i
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_DATATYPE(1, type, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(type, "datatype", mpi_errno);
 	    MPIR_ERRTEST_KEYVAL(type_keyval, MPID_DATATYPE, "datatype", mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }

@@ -71,7 +71,7 @@ int MPI_Type_vector(int count,
 
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_ARGNEG(blocklength, "blocklen", mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(blocklength, old_type, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(old_type, "datatype", mpi_errno);
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    
 	    if (old_type != MPI_DATATYPE_NULL && HANDLE_GET_KIND(old_type) != HANDLE_KIND_BUILTIN) {

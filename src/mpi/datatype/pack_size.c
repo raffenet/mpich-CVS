@@ -100,8 +100,7 @@ int MPI_Pack_size(int incount,
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) goto fn_fail;
 	    
-	    MPIR_ERRTEST_DATATYPE(incount, datatype, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE_NULL(datatype, "datatype", mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
             if (mpi_errno) goto fn_fail;
 	    
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)

@@ -74,10 +74,7 @@ int MPI_Type_create_hvector(int count,
 
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_ARGNEG(blocklength, "blocklen", mpi_errno);
-	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-	    
-	    /* MPIR_ERRTEST_DATATYPE(blocklength, oldtype, mpi_errno); */
-	    MPIR_ERRTEST_DATATYPE_NULL(oldtype, "datatype", mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(oldtype, "datatype", mpi_errno);
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
             MPID_Datatype_get_ptr(oldtype, datatype_ptr);
@@ -124,14 +121,13 @@ int MPI_Type_create_hvector(int count,
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_type_create_hvector",
-	    "**mpi_type_create_hvector %d %d %d %D %p", count, blocklength, stride, oldtype, newtype);
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+	    MPI_ERR_OTHER, "**mpi_type_create_hvector",
+	    "**mpi_type_create_hvector %d %d %d %D %p", count,
+	    blocklength, stride, oldtype, newtype);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
-
-
-

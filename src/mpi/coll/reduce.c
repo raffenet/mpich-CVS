@@ -838,7 +838,7 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
 		MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
 
                 MPIR_ERRTEST_COUNT(count, mpi_errno);
-                MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+                MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
                 if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                     MPID_Datatype_get_ptr(datatype, datatype_ptr);
                     MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
@@ -862,7 +862,7 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
 
                 if (root == MPI_ROOT) {
                     MPIR_ERRTEST_COUNT(count, mpi_errno);
-                    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+                    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
                     if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                         MPID_Datatype_get_ptr(datatype, datatype_ptr);
                         MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
@@ -874,7 +874,7 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
                 
                 else if (root != MPI_PROC_NULL) {
                     MPIR_ERRTEST_COUNT(count, mpi_errno);
-                    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+                    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
                     if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                         MPID_Datatype_get_ptr(datatype, datatype_ptr);
                         MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );

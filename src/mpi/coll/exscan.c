@@ -358,7 +358,7 @@ int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
             MPIR_ERRTEST_COMM_INTRA(comm_ptr, mpi_errno);
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 	    MPIR_ERRTEST_OP(op, mpi_errno);
 	    
             if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {

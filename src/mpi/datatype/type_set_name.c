@@ -61,7 +61,7 @@ int MPI_Type_set_name(MPI_Datatype type, char *type_name)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_DATATYPE(1, type, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(type, "datatype", mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;

@@ -64,7 +64,7 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_DATATYPE(1, type, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(type, "datatype", mpi_errno);
 	    MPIR_ERRTEST_KEYVAL(type_keyval, MPID_DATATYPE, "datatype", mpi_errno);
 	    MPIR_ERRTEST_KEYVAL_PERM(type_keyval, mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;

@@ -70,7 +70,7 @@ int MPI_Pack_external_size(char *datarep,
         {
 	    MPIR_ERRTEST_COUNT(incount,mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-	    MPIR_ERRTEST_DATATYPE(incount, datatype, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;

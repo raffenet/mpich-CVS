@@ -126,7 +126,8 @@ int MPI_Type_struct(int count,
 	    if (mpi_errno == MPI_SUCCESS) {
 		for (i=0; i < count; i++) {
 		    MPIR_ERRTEST_ARGNEG(blocklens[i], "blocklen", mpi_errno);
-		    MPIR_ERRTEST_DATATYPE(blocklens[i], old_types[i], mpi_errno);
+		    MPIR_ERRTEST_DATATYPE(old_types[i], "datatype[i]",
+					  mpi_errno);
 		    /* stop before we dereference the null type */
 		    if (mpi_errno != MPI_SUCCESS) break;
 

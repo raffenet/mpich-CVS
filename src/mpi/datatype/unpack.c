@@ -103,7 +103,7 @@ int MPI_Unpack(void *inbuf,
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
 
-	    MPIR_ERRTEST_DATATYPE(outcount, datatype, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    
 	    if (datatype != MPI_DATATYPE_NULL &&HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {

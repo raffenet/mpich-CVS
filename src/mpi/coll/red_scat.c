@@ -1125,7 +1125,7 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts,
                 sum += recvcnts[i];
 	    }
 
-	    MPIR_ERRTEST_DATATYPE(sum, datatype, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
             if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(datatype, datatype_ptr);
                 MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );

@@ -103,7 +103,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
             if (mpi_errno) goto fn_fail;
 	    
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 	    MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
 	    MPIR_ERRTEST_RECV_TAG(tag, mpi_errno);
             if (mpi_errno) goto fn_fail;

@@ -86,8 +86,7 @@ int MPI_Pack_external(char *datarep,
 	    MPIR_ERRTEST_ARGNULL(position, "position", mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-	    MPIR_ERRTEST_DATATYPE(incount, datatype, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE_NULL(datatype, "datatype", mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 	    if (mpi_errno == MPI_SUCCESS) {
 		if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
 		    MPID_Datatype *datatype_ptr = NULL;

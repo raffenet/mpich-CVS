@@ -99,9 +99,11 @@ int MPI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
             if (mpi_errno) goto fn_fail;
 
 	    MPIR_ERRTEST_COUNT(origin_count, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(origin_count, origin_datatype, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(origin_datatype, "origin_datatype",
+				  mpi_errno);
 	    MPIR_ERRTEST_COUNT(target_count, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(target_count, target_datatype, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(target_datatype, "target_datatype",
+				  mpi_errno);
 	    MPIR_ERRTEST_DISP(target_disp, mpi_errno);
 
             if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN)

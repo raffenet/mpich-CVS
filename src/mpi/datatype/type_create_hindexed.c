@@ -82,8 +82,7 @@ int MPI_Type_create_hindexed(int count,
 	    }
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    
-	    /* Q: MPIR_ERRTEST_DATATYPE(count, oldtype, mpi_errno); */
-	    MPIR_ERRTEST_DATATYPE_NULL(oldtype, "datatype", mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(oldtype, "datatype", mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    
 	    if (HANDLE_GET_KIND(oldtype) != HANDLE_KIND_BUILTIN) {

@@ -101,7 +101,7 @@ int MPI_Type_hindexed(int count,
 	    MPID_Datatype *datatype_ptr = NULL;
 
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE_NULL(old_type, "datatype", mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(old_type, "datatype", mpi_errno);
 	    if (count > 0) {
 		MPIR_ERRTEST_ARGNULL(blocklens, "blocklens", mpi_errno);
 		MPIR_ERRTEST_ARGNULL(indices, "indices", mpi_errno);

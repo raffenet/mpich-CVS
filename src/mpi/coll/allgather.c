@@ -863,7 +863,7 @@ int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype,
             if (sendbuf != MPI_IN_PLACE)
 	    {
                 MPIR_ERRTEST_COUNT(sendcount, mpi_errno);
-                MPIR_ERRTEST_DATATYPE(sendcount, sendtype, mpi_errno);
+                MPIR_ERRTEST_DATATYPE(sendtype, "sendtype", mpi_errno);
                 if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN)
 		{
                     MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
@@ -875,7 +875,7 @@ int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 
             MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, recvcount, mpi_errno);
 	    MPIR_ERRTEST_COUNT(recvcount, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(recvcount, recvtype, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(recvtype, "recvtype", mpi_errno);
             if (HANDLE_GET_KIND(recvtype) != HANDLE_KIND_BUILTIN)
 	    {
                 MPID_Datatype_get_ptr(recvtype, recvtype_ptr);

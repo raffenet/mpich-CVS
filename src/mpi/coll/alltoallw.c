@@ -345,8 +345,8 @@ int MPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls,
             for (i=0; i<comm_size; i++) {
                 MPIR_ERRTEST_COUNT(sendcnts[i], mpi_errno);
                 MPIR_ERRTEST_COUNT(recvcnts[i], mpi_errno);
-                MPIR_ERRTEST_DATATYPE(sendcnts[i], sendtypes[i], mpi_errno);
-                MPIR_ERRTEST_DATATYPE(recvcnts[i], recvtypes[i], mpi_errno);
+                MPIR_ERRTEST_DATATYPE(sendtypes[i], "sendtype[i]", mpi_errno);
+                MPIR_ERRTEST_DATATYPE(recvtypes[i], "recvtype[i]", mpi_errno);
 
                 if (HANDLE_GET_KIND(sendtypes[i]) != HANDLE_KIND_BUILTIN) {
                     MPID_Datatype_get_ptr(sendtypes[i], sendtype_ptr);

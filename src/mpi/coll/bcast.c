@@ -759,7 +759,7 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root,
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 	    if (comm_ptr->comm_kind == MPID_INTRACOMM) {
 		MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
 	    }

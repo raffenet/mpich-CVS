@@ -71,8 +71,7 @@ int MPI_Type_contiguous(int count,
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    
-	    MPIR_ERRTEST_DATATYPE(count, old_type, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE_NULL(old_type, "datatype", mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(old_type, "datatype", mpi_errno);
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    
             if (HANDLE_GET_KIND(old_type) != HANDLE_KIND_BUILTIN) {

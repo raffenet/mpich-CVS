@@ -325,8 +325,8 @@ int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls,
             for (i=0; i<comm_size; i++) {
                 MPIR_ERRTEST_COUNT(sendcnts[i], mpi_errno);
                 MPIR_ERRTEST_COUNT(recvcnts[i], mpi_errno);
-                MPIR_ERRTEST_DATATYPE(sendcnts[i], sendtype, mpi_errno);
-                MPIR_ERRTEST_DATATYPE(recvcnts[i], recvtype, mpi_errno);
+                MPIR_ERRTEST_DATATYPE(sendtype, "sendtype", mpi_errno);
+                MPIR_ERRTEST_DATATYPE(recvtype, "recvtype", mpi_errno);
 	    }
             if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(sendtype, sendtype_ptr);

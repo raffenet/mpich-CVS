@@ -96,7 +96,7 @@ int MPI_Rsend_init(void *buf, int count, MPI_Datatype datatype, int dest,
             if (mpi_errno) goto fn_fail;
 	    
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 	    MPIR_ERRTEST_SEND_RANK(comm_ptr, dest, mpi_errno);
 	    MPIR_ERRTEST_SEND_TAG(tag, mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(request,"request",mpi_errno);

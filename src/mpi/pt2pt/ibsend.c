@@ -100,7 +100,7 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	    }
 
 	    /* Validate datatype */
-	    MPIR_ERRTEST_DATATYPE(count,datatype,mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 
 	    /* Validate buffer */
 	    MPIR_ERRTEST_USERBUFFER(buf,count,datatype,mpi_errno);
