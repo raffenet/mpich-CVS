@@ -12,3 +12,4 @@ spawnargv_SOURCES = spawnargv.c
 spaconacc_SOURCES = spaconacc.c
 selfconacc_SOURCES = selfconacc.c
 spawnmult2_SOURCES = spawnmult2.c
+join_SOURCES = join.c

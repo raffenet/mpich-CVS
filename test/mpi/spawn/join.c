@@ -7,18 +7,23 @@
 #include <unistd.h>
 #include <string.h>
 #include "mpi.h"
+#include "mpitest.h"
+
+static char MTEST_Descrip[] = "A simple test of Comm_join";
+
+#define COUNT 1024
 
 int main( int argc, char *argv[] )
 {
-    char str[10];
-    int err=0, rank, nprocs;
+    int sendbuf[COUNT], recvbuf[COUNT], i;
+    int err=0, rank, nprocs, errs=0;
     MPI_Comm intercomm;
     int listenfd, connfd, clilen, port, namelen, len;
     struct sockaddr_in cliaddr, servaddr;
     struct hostent *h;
     char hostname[MPI_MAX_PROCESSOR_NAME];
 
-    MPI_Init(&argc, &argv);
+    MTest_Init( &argc, &argv );
 
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs); 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -111,21 +116,28 @@ int main( int argc, char *argv[] )
     err = MPI_Comm_join(connfd, &intercomm);
     if (err) printf("Error in MPI_Comm_join\n");
 
-    if (rank == 1) {
-        err = MPI_Recv(str, 3, MPI_CHAR, 0, 0, intercomm, MPI_STATUS_IGNORE);
-        printf("Server received from client: %s\n", str);
-        fflush(stdout);
-
-        err = MPI_Send("bye", 4, MPI_CHAR, 0, 0, intercomm); 
-    }
-    else{
-        err = MPI_Send("hi", 3, MPI_CHAR, 0, 0, intercomm);
-        
-        err = MPI_Recv(str, 4, MPI_CHAR, 0, 0, intercomm, MPI_STATUS_IGNORE);
-        printf("Client received from server: %s\n", str);
-        fflush(stdout);
+    for (i=0; i<COUNT; i++) {
+        recvbuf[i] = -1;
+        sendbuf[i] = i + COUNT*rank;
     }
 
+    err = MPI_Sendrecv(sendbuf, COUNT, MPI_INT, 0, 0, recvbuf, COUNT, MPI_INT, 
+                       0, 0, intercomm, MPI_STATUS_IGNORE);
+    if (err != MPI_SUCCESS)
+        errs++;
+
+    for (i=0; i<COUNT; i++) {
+        if (recvbuf[i] != ((rank+1)%2) * COUNT + i)
+            errs++;
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    err = MPI_Comm_disconnect(&intercomm);
+    if (err != MPI_SUCCESS)
+        errs++;
+
+    MTest_Finalize(errs);
     MPI_Finalize();
 
     return 0;
