@@ -2,11 +2,78 @@
 				Changes in 1.0
 ===============================================================================
 
-*** FIXME: update before official 1.0 release ***
+- The User's Guide has been expanded considerably.  The Installation Guide has
+  been expanded some as well.
 
-- A new and improved process manager that spawns processes using fork() in now
-  available.  This process manager, "gforker", should be used in place of the
-  previous "forker" process manager.
+- MPI_COMM_JOIN has been implemented; although like the other dynamic process
+  routines, it is only supported by the Sock channel.
+
+- MPI_COMM_CONNECT and MPI_COMM_ACCEPT are now allowed to connect with remote
+  process to which they are already connected.
+
+- The dataloop and datatype contents code has been improved to address
+  alignment issues on all platforms.
+
+- A bug in the datatype code, which handled zero block length cases
+  incorrectly, has been fixed.
+
+- An segmentation fault in the datatype memory management, resulting from
+  freeing memory twice, has been fixed.
+
+- The following changes were made to the MPD process manager:
+
+  - MPI_SPAWN_MULTIPLE now works with MPD.
+
+  - The arguments to the 'mpiexec' command supplied by the MPD have changed.
+    First, the -default option has been removed.  Second, more flexible ways to
+    pass environment variables have been added.
+
+  - The commands 'mpdcheck' and 'testconfig' have been to installations using
+    MPD.  These commands test the setup of the machines on which you wish to
+    run MPICH2 jobs.  They help to identify misconfigurations, firewall issues,
+    and other communication problems.
+
+  - Support for MPI_APPNUM and MPI_UNIVERSE_SIZE has been added to the Simple
+    implementation of PMI and the MPD process manager.
+
+  - In general, error detection and recovery in MPD has improved.
+
+- A new process manager, gforker, is now available.  Like the forker process
+  manager, gforker spawns processes using fork(), and thus is quite useful on
+  SMPs machines.  However, unlike forker, gforker supports all of the features
+  of a standard mpiexec, plus some.  Therefore, It should be used in place of
+  the previous forker process manager, which is now deprecated.
+
+- The following changes were made to ROMIO:
+
+  - The amount of duplicated ROMIO code in the close, resize, preallocate,
+    read, write, asyncronous io, and sync routines has been substantially
+    reduced.
+
+  - A bug in flattening code, triggered by nested datatypes, has been fixed.
+
+  - Some small memory leaks have been fixed.
+
+  - The error handling has been abstracted allowing different MPI
+    implementations to handle and report error conditions in their own way.
+    Using this abstraction, the error handling routines have been made
+    consistent with rest of MPICH2.
+
+  - AIO support has been cleaned up and unified.  It now works correctly on
+    Linux, and is properly detected on old versions of AIX.
+
+  - A bug in MPI_File_seek code, and underlying support code, has been fixed.
+
+  - Support for PVFS2 has improved.
+
+  - Several dead file systems have been removed.  Others, including HFS, SFS,
+    PIOFS, and Paragon, have been deprecated.
+
+- MPE and CLOG have been updated to version 2.1. For more details, please see
+  src/mpe2/README.
+
+- MPICH2 now works on Solaris.
+
 
 ===============================================================================
 			       Changes in 0.971
