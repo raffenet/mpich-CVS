@@ -20,12 +20,19 @@ AC_ARG_WITH(device,
 with_device=default)
 
 dnl Extract the device and channel name from the --with-device argument
+if test "$with_device" = "default" ; then
+DEVICE=ch3
+CHANNEL=tcp
+AC_SUBST(DEVICE)
+AC_SUBST(CHANNEL)
+else
 DEVICE=`echo $with_device | sed -e 's/:.*//g'`
 AC_SUBST(DEVICE)
 changequote(<<,>>)
 CHANNEL=`echo $with_device | sed -e 's/[^:]*://g'`
 changequote([,])
 AC_SUBST(CHANNEL)
+fi
 
 if test ! -d $srcdir/channels/$CHANNEL ; then
     AC_MSG_ERROR([Channel $CHANNEL is unknown])
