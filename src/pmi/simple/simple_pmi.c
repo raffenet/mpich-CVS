@@ -1331,6 +1331,9 @@ static int mpd_singinit()
 	newargv[5] = NULL;
 	rc = execvp(newargv[0],newargv);
 	perror("mpd_singinit: execv failed");
+	printf("  This singleton init program attempted to access some feature\n");
+	printf("  for which mpd support was required, e.g. spawn or universe_size.\n");
+	printf("  But, the necessary mpd program (mpdrun) is not in your path.\n");
 	return(-1);
     }
     else
