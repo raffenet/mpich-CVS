@@ -42,10 +42,10 @@
  */
 
 /* #define DEBUG(a) a;fflush(stdout)  */
+/* #define DEBUG1(a) a;fflush(stdout)  */
 #define DEBUG(a) 
 #define DEBUG1(a) 
 /* #define DBG_PRINT_AVAIL */
-/* #define DEBUG1(a) a;fflush(stdout)  */
 /* #define DBG_PRINT_ARENA */
 
 /* Private structures for the bsend buffers */
@@ -287,7 +287,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	    }
 	    break;
 	}
-	if (p && pass == 2) break;
+	if (p || pass == 2) break;
 	MPIU_DBG_PRINTF(("Could not find storage, checking active\n" ));
 	/* Try to complete some pending bsends */
 	MPIR_Bsend_check_active( );
@@ -299,6 +299,12 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
     
     if (!p) {
 	/* Return error for no buffer space found */
+#if 0
+	/* Generate a traceback of the allocated space, explaining why
+	   packsize could not be found */
+	PRINTF( "Could not find space; dumping arena\n" );
+	MPIR_Bsend_dump();
+#endif
 	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_isend", MPI_ERR_BUFFER, "**bufbsend", 
 				     "**bufbsend %d %d", packsize, 
 				     BsendBuffer.buffer_size );
