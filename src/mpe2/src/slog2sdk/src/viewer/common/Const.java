@@ -21,8 +21,9 @@ public class Const
     public  static final int     MIN_ZOOM_LEVEL         = 0;
     public  static final int     MAX_ZOOM_LEVEL         = 30;
 
-    public  static final String  PANEL_TIME_FORMAT      = "#,##0.00########";
     public  static final String  RULER_TIME_FORMAT      = "#,##0.00######";
+    public  static final String  PANEL_TIME_FORMAT      = "#,##0.00########";
+    public  static final String  INFOBOX_TIME_FORMAT    = "#,##0.000000####";
     public  static final String  INTEGER_FORMAT         = "#,##0";
     public  static final String  FLOAT_FORMAT           = "0.0##";
     public  static final String  SHORT_FORMAT           = "##0";

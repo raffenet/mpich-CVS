@@ -66,4 +66,22 @@ public class Routines
         }
         return size;
     }
+
+    //  JTextField.getColumnWidth() uses char('m') defines column width
+    //  getAdjNumOfTextColumns() computes the effective char column number
+    //  that is needed by the JTextField's setColumns().
+    //  This routine should be good for both JTextField and JTextArea
+    public static int getAdjNumOfTextColumns( Component textcomp,
+                                              int num_numeric_columns )
+    {
+        FontMetrics metrics;
+        int         num_char_columns;
+
+        metrics = textcomp.getFontMetrics( textcomp.getFont() );
+        num_char_columns = (int) Math.ceil( (double) num_numeric_columns
+                                          * metrics.charWidth( '1' )
+                                          / metrics.charWidth( 'm' ) );
+        // System.out.println( "num_char_columns = " + num_char_columns );
+        return num_char_columns;
+    }
 }

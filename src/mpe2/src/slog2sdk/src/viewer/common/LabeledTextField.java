@@ -12,7 +12,6 @@ package viewer.common;
 import java.text.NumberFormat;
 import java.text.DecimalFormat;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Dimension;
 import java.awt.event.ActionListener;
 import javax.swing.event.DocumentEvent;
@@ -45,9 +44,11 @@ public class LabeledTextField extends JPanel
 
         // preferred_height = fld.getPreferredSize().height + this.TEXT_HEIGHT;
         if ( format != null ) {
+            int  num_col;
             fmt = (DecimalFormat) NumberFormat.getInstance();
             fmt.applyPattern( format );
-            fld.setColumns( this.getCalibratedColumnWidth( format.length() ) );
+            num_col = Routines.getAdjNumOfTextColumns( fld, format.length() );
+            fld.setColumns( num_col );
         }
         else
             fmt = null;
@@ -82,22 +83,6 @@ public class LabeledTextField extends JPanel
     public void setHorizontalAlignment( int alignment )
     {
         fld.setHorizontalAlignment( alignment );
-    }
-
-    //  JTextField.getColumnWidth() uses char('m') defines column width
-    //  getCalibratedColumnWidth() computes the effective char width
-    //  that is needed by the JTextField constructor
-    private int getCalibratedColumnWidth( int num_numeric_columns )
-    {
-        FontMetrics metrics;
-        int         num_char_columns;
-
-        metrics = fld.getFontMetrics( fld.getFont() );
-        num_char_columns = (int) Math.ceil( (double) num_numeric_columns
-                                          * metrics.charWidth( '8' )
-                                          / metrics.charWidth( 'm' ) );
-        // System.out.println( "num_char_columns = " + num_char_columns );
-        return num_char_columns;
     }
 
     public void setText( String str )
