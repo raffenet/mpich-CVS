@@ -5,6 +5,7 @@ DEPADD = ../../../lib/lib${MPILIBNAME}.a
 smvar_do_sharedlibs = 0
 
 attrt_SOURCES = attrt.c
+attrict_SOURCES = attrict.c
 attrerr_SOURCES = attrerr.c
 attrerrcomm_SOURCES = attrerrcomm.c
 attrerrtype_SOURCES = attrerrtype.c
