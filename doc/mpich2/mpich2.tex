@@ -463,7 +463,7 @@ int MPI_Foo( MPI_Comm comm, int a )
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FOO);
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
-#ifdef HAVE_ERROR_CHECKING
+#   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
@@ -484,7 +484,7 @@ int MPI_Foo( MPI_Comm comm, int a )
         }
         MPID_END_ERROR_CHECKS;
     }
-#endif /* HAVE_ERROR_CHECKING */
+#   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
     /* Some routines must ensure only one thread modifies a communicator
@@ -518,7 +518,7 @@ standards, we build the \file{Makefile.in} files from a simpler source file,
 \file{Makefile.sm}.  The extension ``sm'' is for ``simple make.''  These files
 follow some of the same conventions used by \code{automake}, but are simpler.
 See Section~\ref{sec:makefiles} for more discussion of Makefile issues.
-The program (actually a Perl script) \code{simplemake} reads
+The program (actually a Perl script) \code{simplemake}\index{simplemake} reads
 \file{Makefile.sm} files and writes \file{Makefile.in} files.  These in turn
 are read by \code{configure}, which writes the \file{Makefile} that
 \code{make} will use.  While not as convenient as a single integrated
@@ -547,6 +547,10 @@ can be added to the \file{Makefile.sm}, because lines in the
 \file{Makefile.sm} that are not meaningful to \code{simplemake} (the
 program that processes these 
 files) are copied directly into the output \file{Makefile.in}.  
+
+Project-specific details such as the locations of include files and libraries
+are passed to \code{simplemake} through its command line; this is done in the
+\file{makeconfigure}\index{makeconfigure} script in the top level directory.
 
 \subsection{Include Files}
 The include file \file{mpi.h} should not require any \code{-Dxxx}
@@ -1189,18 +1193,18 @@ For very simple uses, these two one-line forms are provided
 The definitions of these macros allow for thread-safe
 implementations.  For example,
 \begin{description}
-\item[MPID_STAT_BEGIN]Allows for a thread lock; it can also find the 
+\item[\code{MPID_STAT_BEGIN}]Allows for a thread lock; it can also find the 
 per-thread data block containing statistics information. 
-\item[MPID_STAT_ACC]Accumulates an integer value into a predefined
+\item[\code{MPID_STAT_ACC}]Accumulates an integer value into a predefined
 \code{statid}.  This can be as simple as a sum or can include code to
 track maximum and minimum values, standard deviations, or even
 histograms. 
-\item[MPID_STAT_ACC_RANGE]Accumulates an integer value that
+\item[\code{MPID_STAT_ACC_RANGE}]Accumulates an integer value that
 represents a single value in a range.  The purpose of this is to keep
 which values are used, and how many times they are used (e.g.,
 file \code{fd}s).
-\item[MPID_STAT_END]Allows for the release of a thread lock.
-\item[MPID_STAT_ACC_SIMPLE]is a short-hand for 
+\item[\code{MPID_STAT_END}]Allows for the release of a thread lock.
+\item[\code{MPID_STAT_ACC_SIMPLE}]is a short-hand for 
 \begin{verbatim}
     #ifdef COLLECT_STATS
     {
@@ -1214,7 +1218,7 @@ file \code{fd}s).
 \end{verbatim}
 This is appropriate for cases where only a single value is being
 collected.
-\item[MPID_STAT_MISC]includes the statement only if
+\item[\code{MPID_STAT_MISC}]includes the statement only if
 \code{COLLECT_STATS} is defined.  This is useful for declaring and
 initializing local variables that may be used to update a statistics
 value (e.g., the \code{val} in the example).
@@ -1444,9 +1448,9 @@ a TCP device or allocating message-buffer space for a shared memory or
 VIA device.  It may be more appropriate to provide two separate
 phases:
 \begin{description}
-\item[Param_init]No values are available until after this call.  
+\item[\code{MPID_Param_init}]No values are available until after this call.  
 After this call, some values are available (see below).
-\item[Param_bcast]All values are available to all processes.  This
+\item[\code{MPID_Param_bcast}]All values are available to all processes.  This 
 call may use MPI communication
 \end{description}
 To make this work, \code{MPID_Param_register} must indicate when the
