@@ -27,6 +27,9 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 /*
  * Define Data structures.
@@ -45,6 +48,10 @@
 #define PATH_MAX 2048		/* max length of PATH */
 #endif
 #define MAXPROCESSES     64	/* max number of processes to manage */
+
+#ifndef MAX_HOST_NAME
+#define MAX_HOST_NAME 512
+#endif
 
 /* ----------------------------------------------------------------------- */
 /* ProcessState                                                            */
@@ -149,6 +156,7 @@ int mpiexecArgs( int, char *[], ProcessTable_t *,
 		 int (*)( int, char *[], void *), void * );
 int mpiexecPrintTable( ProcessTable_t * );
 int mpiexecChooseHosts( ProcessTable_t * );
+int mpiexecGetMyHostName( char myname[MAX_HOST_NAME+1] );
 
 /* ----------------------------------------------------------------------- */
 
@@ -156,7 +164,7 @@ int main( int argc, char *argv[] )
 {
     int rc = 0;
     int fdPMI, portnum;             /* fd and port for PMI messages */
-
+    char myname[MAX_HOST_NAME+1];
     processTable.maxProcesses = MAXPROCESSES;
 
     /* Process the command line arguments to build the table of 
@@ -177,7 +185,7 @@ int main( int argc, char *argv[] )
     /* Optionally stage the executables */
     
     /* Start the remote shell processes ooncurrently */
-    rc = mpiexecStartProcesses( &ptable, myname, portnum );
+    rc = mpiexecStartProcesses( &processTable, myname, portnum );
 
     /* Poll on the active FDs and handle each input type */
 
@@ -426,7 +434,7 @@ MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
     char machinesfile[PATH_MAX];
     char dirname[PATH_MAX];
     char *p;
-    char *path=getenv("MPIEXEC_MACHINES_PATH");
+    const char *path=getenv("MPIEXEC_MACHINES_PATH");
     MachineTable *mt;
     int len, nFound = 0;
     
@@ -437,6 +445,7 @@ MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
     if (!path) path = defaultMachinesPath;
 
     while (path) {
+	char *next_path;
 	/* Get next path member */
 	next_path = strchr( path, ':' );
 	if (next_path) 
@@ -515,21 +524,6 @@ int mpiexecGetPort( int *fdout, int *portout )
     int                portnum;
     char               *range_ptr;
     int                low_port, high_port;
-#if 0
-    struct hostent     *hp;
-    char               myname[MAX_HOST_NAME+1];
-    /*
-     * First, get network name if necessary
-     */
-    if (!hostname) {
-	hostname = myname;
-	gethostname( myname, MAX_HOST_NAME );
-    }
-    hp = gethostbyname( hostname );
-    if (!hp) {
-	return -1;
-    }
-#endif
     
     /* Get the low and high portnumber range.  zero may be used to allow
        the system to choose */
@@ -589,6 +583,25 @@ int mpiexecGetPort( int *fdout, int *portout )
     return 0;
 }
 
+int mpiexecGetMyHostName( char myname[MAX_HOST_NAME+1] )
+{
+    struct hostent     *hp;
+    char *hostname = 0;
+    /*
+     * First, get network name if necessary
+     */
+    if (!hostname) {
+	hostname = myname;
+	gethostname( myname, MAX_HOST_NAME );
+    }
+    hp = gethostbyname( hostname );
+    if (!hp) {
+	return -1;
+    }
+    return 0;
+}
+
+
 /* ----------------------------------------------------------------------- */
 /* Usage message                                                           */
 /* ----------------------------------------------------------------------- */
@@ -609,9 +622,10 @@ Usage: mpiexec -n <numprocs> -soft <softness> -host <hostname> \n\
 /* stdin/out/err are redirected so that we can explicitly manage them.     */
 /* Process are also started without waiting for any handshake.             */
 /* ----------------------------------------------------------------------- */
-int mpiexecStartProcesses( ProcessTable *ptable, char myname[], int port )
+int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 {
     int i;
+    int pid;
 
     for (i=0; i<ptable->nProcesses; i++) {
 	int read_out_pipe[2], write_in_pipe[2], read_err_pipe[2];
@@ -640,6 +654,10 @@ int mpiexecStartProcesses( ProcessTable *ptable, char myname[], int port )
 	    
 	}
 	else if (pid == 0) {
+	    char **myargv;
+	    char port_as_string[1024];
+	    int rshNargs, j;
+
 	    /* FIXME: we need to close the fdPMI */
 	    close(read_out_pipe[0]);
 	    close(write_in_pipe[1]);
@@ -667,18 +685,19 @@ int mpiexecStartProcesses( ProcessTable *ptable, char myname[], int port )
 	    /* Look for %h (hostname) and %e (executable).  If not
 	       found, then use the following.  
 	       FIXME: Assume no %h and %e */
-	    myargv[rshNargs++] = ps->hostname;
+	    myargv[rshNargs++] = (char *)(ps->hostname);
 	    /* FIXME: no option for user name (e.g., -l username) */
 	    /* FIXME: Do we start with -n, or do we let mpiexec handle that? */
 	    /* myargv[rshNargs++] = "-n"; */
 	    /* FIXME: this assumes a particular shell syntax (csh) */
 	    myargv[rshNargs++] = "setenv";
 	    myargv[rshNargs++] = "MPIEXEC_PORT";
-	    myargv[rshNargs++] = port_as_num;
+	    sprintf( port_as_string, "%s:%d", myname, port );
+	    myargv[rshNargs++] = port_as_string;
 	    myargv[rshNargs++] = "\\;";
-	    myargv[rshNargs++] = ps->exename;
+	    myargv[rshNargs++] = (char *)(ps->exename);
 	    for (j=0; j<ps->nArgs; j++) 
-		myargv[rshNargs++] = ps->args[j];
+		myargv[rshNargs++] = (char *)(ps->args[j]);
 	    myargv[rshNargs++] = 0;
 #ifdef DEBUG
 	    { int k;
@@ -718,7 +737,7 @@ int mpiexecGetRemshellArgv( char *argv[], int nargv )
 
     /* Convert the string for the remote shell command into an argv list */
     if (!remargs) {
-	char *rem = getenv( "MPIEXEC_REMSHELL" );
+	const char *rem = getenv( "MPIEXEC_REMSHELL" );
 	char *next_parm;
 	if (!rem) rem = defaultRemoteshell;
 	
@@ -773,3 +792,4 @@ int mpiexecPrintTable( ProcessTable_t *ptable )
 	printf( "\n" );
     }
 }
+
