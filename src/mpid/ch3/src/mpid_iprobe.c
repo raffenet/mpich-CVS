@@ -21,7 +21,9 @@ int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int context_offset, int *
     rreq = MPIDI_CH3U_Request_FU(source, tag, context);
     if (rreq != NULL)
     {
-	*status = rreq->status;
+	if (status != MPI_STATUS_IGNORE)
+	    *status = rreq->status;
+	
 	MPID_Request_release(rreq);
 	*flag = TRUE;
     }
