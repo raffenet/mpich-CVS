@@ -2,7 +2,7 @@
 #
 # Create simple schedule web pages
 rm -f .m1 .m2 .m3 mpich2-1pgrs.html
-cat schedule | maint/schdtox -html -mpi1 > .m2
+cat schedule | maint/schdtox -html=6 -mpi1 > .m2
 cat >>.m1 <<EOF
 <HTML>
 <HEAD>
@@ -16,4 +16,21 @@ cat >>.m3 <<EOF
 </HTML>
 EOF
 cat .m1 .m2 .m3 > mpich2-1pgrs.html
+rm -f .m1 .m2 .m3
+#
+rm -f .m1 .m2 .m3 mpich2-pgrs.html
+cat schedule | maint/schdtox -html=6 > .m2
+cat >>.m1 <<EOF
+<HTML>
+<HEAD>
+<TITLE>MPICH2 Progress: All MPI Routines</TITLE>
+</HEAD>
+<BODY BGCOLOR="FFFFFF">
+<H2>Status of MPI Functions in MPICH2</H2>
+EOF
+cat >>.m3 <<EOF
+</BODY>
+</HTML>
+EOF
+cat .m1 .m2 .m3 > mpich2-pgrs.html
 rm -f .m1 .m2 .m3

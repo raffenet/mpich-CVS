@@ -10,13 +10,22 @@
 
 $do_html = 0;
 $mpi1_only = 0;
-foreach $_ (@ARGV) {
-    if (/-html/) { $do_html = 1; }
+$table_cols = 4;
+$firstdate = "3/2/02";
+
+while ($_ = shift(@ARGV)) {
+    if (/-html/) { 
+	$do_html = 1; 
+	if (/=(\d*)/) {
+	    $table_cols = $1;
+	}
+    }
     elsif (/-mpi1/) { $mpi1_only = 1; }
-    else {
+    elsif (/^-/) {
 	print STDERR "Unexpected option $_\n";
 	exit 1;
     }
+    else { unshift (@ARGV,$_); last; }
 }
 
 # If requested, get MPI 1 only
@@ -24,7 +33,7 @@ if ($mpi1_only) {
     open( MPI1, "<maint/mpi1.lst" ) || die "Cannot open mpi1.lst\n";
     while (<MPI1>) {
 	s/#.*//g;
-	s/[\r\n]*//g;
+	s/\s*[\r\n]*//g;
 	if (/^MPI_/) {
 	    $mpi1_names{$_} = 1;
 	}
@@ -32,7 +41,7 @@ if ($mpi1_only) {
 }
 #
 # Skip header
-while (<STDIN>) {
+while (<>) {
     if (/-------------------------/) { last; }
 }
 
@@ -50,7 +59,7 @@ while (<STDIN>) {
 %nametoowner = ();
 @idtoname = ();
 $id = 1;
-while (<STDIN>) {
+while (<>) {
     s/[\r\n]*$//;
     if (/^\s*BEGIN\s*(\w*)/) {
 	$prefix = "$1:";
@@ -96,6 +105,7 @@ while (<STDIN>) {
 	else {
 	    if ($actual eq "done") { $actual = 1; }
 	    $nametotime{$routine} = $actual;
+	    if ($finished eq "") { $finished = $firstdate; }
 	    $nametofinished{$routine} = $finished;
 	}	    
 	$nametodepend{$routine} = $depend;
@@ -107,11 +117,14 @@ while (<STDIN>) {
 	#print "$1\n";
 	#print "$id\t$id\t$1\t\r\n";
 	$routine = $1;
+	print "Saw :$routine:\n" if $debug;
 	if ($mpi1_only) {
 	    # Skip if not an MPI function
 	    $ucroutine = $routine;
 	    $ucroutine =~ tr/a-z/A-Z/;
-	    if (!defined($mpi1_names{$ucroutine})) { next; }
+	    if (!defined($mpi1_names{$ucroutine})) { 
+		print "Skipping $routine\n" if $debug;
+		next; }
 	}
 	# Add any prefix to the routine
 	$routine = "$prefix$routine";
@@ -150,8 +163,6 @@ sub Earlier {
     return 0;
 }
 
-$firstdate = "3/2/02";
-
 sub PrintAsSpreadsheet {
 print "ID\tUnique_ID\tTask_name\tDuration\tPredecessors\tResource_Names\tActual_Finish\r\n";
 for ($i = 1; $i <$id; $i++) {
@@ -172,6 +183,40 @@ for ($i = 1; $i <$id; $i++) {
 }
 }
 
+#
+# HTMLTable( numcols, setchar, rowstart, rowend, colstart, colend )
+# Acts on @table.  Everything after numcols is optional
+sub HTMLTable {
+    my $nc     = $_[0];
+    my $colsep = $_[1];
+    my $rowstart = $_[2];
+    my $rowend   = $_[3];
+    my $colstart = $_[4];
+    my $colend   = $_[5];
+
+    if ($colsep eq "") { $colsep = ":"; }
+    if ($rowstart eq "") { $rowstart = "<TR>"; }
+    if ($rowend eq "") { $rowend = "</TR>\n"; }
+    if ($colstart eq "") { $colstart = "<TD>"; }
+    if ($colend eq "") { $colend = "</TD>"; }
+
+    my $nrows = $#table;
+    # Number of table rows within each column
+    my $nrows_per_col = int (($nrows + $nc - 1) / $nc);
+    
+    for (my $i=0; $i<$nrows_per_col; $i++) {
+	print $rowstart;
+	for (my $j=0; $j<$nc; $j++) {
+	    # Extract table row
+	    my @cols = split( /$colsep/, $table[$i+$j*$nrows_per_col] );
+	    for (my $k=0; $k<=$#cols; $k++) {
+		print "$colstart$cols[$k]$colend";
+	    }
+	}
+	print $rowend;
+    }
+}
+
 sub PrintAsHtml {
     $done_count = 0;
     $tot_count = 0;
@@ -189,10 +234,13 @@ sub PrintAsHtml {
 	    if ($finished ne "") { 
 		$done_count++;
 		$finished = "done";
-	        $color = "00FF00";}
-	    print "<TR><TD><FONT COLOR=\"$color\">$routine</FONT><TD>$finished<TD>$owner</TR>\n";
+	        $color = "00D010";
+	    }
+#	    print "<TR><TD><FONT COLOR=\"$color\">$routine</FONT><TD>$finished<TD>$owner</TR>\n";
+	    @table[$#table+1] = "<FONT COLOR=\"$color\">$routine</FONT>";
 	}
     }
+    &HTMLTable( $table_cols );
     print "</TABLE>\n";
     print "<TABLE><TR><TH>Routines Finished<TH>Routines Left</TR>\n";
     $left_count = $tot_count - $done_count;
