@@ -66,37 +66,37 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
 	case DLOOP_KIND_CONTIG:
 	    MPIU_dbg_printf("      dl%d [shape = record, label = \"contig |{ ct = %d; el_sz = %d; el_ext = %d }\"];\n",
 			    depth,
-			    loop_p->loop_params.c_t.count,
-			    loop_p->el_size,
-			    loop_p->el_extent);
+			    (int) loop_p->loop_params.c_t.count,
+			    (int) loop_p->el_size,
+			    (int) loop_p->el_extent);
 	    break;
 	case DLOOP_KIND_VECTOR:
 	    MPIU_dbg_printf("      dl%d [shape = record, label = \"vector |{ ct = %d; blk = %d; str = %d; el_sz = %d; el_ext = %d }\"];\n",
 			    depth,
-			    loop_p->loop_params.v_t.count,
-			    loop_p->loop_params.v_t.blocksize,
-			    loop_p->loop_params.v_t.stride,
-			    loop_p->el_size,
-			    loop_p->el_extent);
+			    (int) loop_p->loop_params.v_t.count,
+			    (int) loop_p->loop_params.v_t.blocksize,
+			    (int) loop_p->loop_params.v_t.stride,
+			    (int) loop_p->el_size,
+			    (int) loop_p->el_extent);
 	    break;
 	case DLOOP_KIND_INDEXED:
 	    MPIU_dbg_printf("      dl%d [shape = record, label = \"indexed |{ ct = %d; tot_blks = %d; regions = ",
 			    depth,
-			    loop_p->loop_params.i_t.count,
-			    loop_p->loop_params.i_t.total_blocks);
+			    (int) loop_p->loop_params.i_t.count,
+			    (int) loop_p->loop_params.i_t.total_blocks);
 	    
 	    /* 3 picked as arbitrary cutoff */
 	    for (i=0; i < 3 && i < loop_p->loop_params.i_t.count; i++) {
 		if (i + 1 < loop_p->loop_params.i_t.count) {
 		    /* more regions after this one */
 		    MPIU_dbg_printf("(%d, %d), ",
-				    loop_p->loop_params.i_t.offset_array[i],
-				    loop_p->loop_params.i_t.blocksize_array[i]);
+				    (int) loop_p->loop_params.i_t.offset_array[i],
+				    (int) loop_p->loop_params.i_t.blocksize_array[i]);
 		}
 		else {
 		    MPIU_dbg_printf("(%d, %d); ",
-				    loop_p->loop_params.i_t.offset_array[i],
-				    loop_p->loop_params.i_t.blocksize_array[i]);
+				    (int) loop_p->loop_params.i_t.offset_array[i],
+				    (int) loop_p->loop_params.i_t.blocksize_array[i]);
 		}
 	    }
 	    if (i < loop_p->loop_params.i_t.count) {
@@ -110,19 +110,19 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
 	case DLOOP_KIND_BLOCKINDEXED:
 	    MPIU_dbg_printf("      dl%d [shape = record, label = \"blockindexed |{ ct = %d; blk = %d; disps = ",
 			    depth,
-			    loop_p->loop_params.bi_t.count,
-			    loop_p->loop_params.bi_t.blocksize);
+			    (int) loop_p->loop_params.bi_t.count,
+			    (int) loop_p->loop_params.bi_t.blocksize);
 	    
 	    /* 3 picked as arbitrary cutoff */
 	    for (i=0; i < 3 && i < loop_p->loop_params.bi_t.count; i++) {
 		if (i + 1 < loop_p->loop_params.bi_t.count) {
 		    /* more regions after this one */
 		    MPIU_dbg_printf("%d, ",
-				    loop_p->loop_params.bi_t.offset_array[i]);
+				    (int) loop_p->loop_params.bi_t.offset_array[i]);
 		}
 		else {
 		    MPIU_dbg_printf("%d; ",
-				    loop_p->loop_params.bi_t.offset_array[i]);
+				    (int) loop_p->loop_params.bi_t.offset_array[i]);
 		}
 	    }
 	    if (i < loop_p->loop_params.bi_t.count) {
@@ -130,13 +130,13 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
 	    }
 
 	    MPIU_dbg_printf("el_sz = %d; el_ext = %d }\"];\n",
-			    loop_p->el_size,
-			    loop_p->el_extent);
+			    (int) loop_p->el_size,
+			    (int) loop_p->el_extent);
 	    break;
 	case DLOOP_KIND_STRUCT:
 	    MPIU_dbg_printf("      dl%d [shape = record, label = \"struct | {ct = %d; blks = ",
 			    depth,
-			    loop_p->loop_params.s_t.count);
+			    (int) loop_p->loop_params.s_t.count);
 	    for (i=0; i < 3 && i < loop_p->loop_params.s_t.count; i++) {
 		if (i + 1 < loop_p->loop_params.s_t.count) {
 		    MPIU_dbg_printf("%d, ",
@@ -250,16 +250,16 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
     MPIU_dbg_printf("%5d  %21s  %11d  %11d  %11d  %11d  %11d(%1d)  %11d(%1d)  %11d  %11d\n",
 		    depth,
 		    string,
-		    size,
-		    extent,
-		    true_lb,
-		    true_ub,
-		    lb,
-		    sticky_lb,
-		    ub,
-		    sticky_ub,
-		    displacement,
-		    blocklength);
+		    (int) size,
+		    (int) extent,
+		    (int) true_lb,
+		    (int) true_ub,
+		    (int) lb,
+		    (int) sticky_lb,
+		    (int) ub,
+		    (int) sticky_ub,
+		    (int) displacement,
+		    (int) blocklength);
     return;
 }
 /* --END ERROR HANDLING-- */
@@ -421,13 +421,13 @@ void MPIDU_Datatype_debug(MPI_Datatype type,
     MPID_Datatype_get_ptr(type, dtp);
 
     MPIU_dbg_printf("# Size = %d, Extent = %d, LB = %d%s, UB = %d%s, Extent = %d, %s\n",
-		    dtp->size,
-		    dtp->extent,
-		    dtp->lb,
+		    (int) dtp->size,
+		    (int) dtp->extent,
+		    (int) dtp->lb,
 		    (dtp->has_sticky_lb) ? "(sticky)" : "",
-		    dtp->ub,
+		    (int) dtp->ub,
 		    (dtp->has_sticky_ub) ? "(sticky)" : "",
-		    dtp->extent,
+		    (int) dtp->extent,
 		    dtp->is_contig ? "is N contig" : "is not N contig");
 
     MPIU_dbg_printf("# Contents:\n");
