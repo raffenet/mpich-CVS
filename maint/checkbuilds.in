@@ -301,6 +301,10 @@ sub RunTest {
 		    print $OUTFD $GlobNameStart;
 		    $globcheck_status = &RunProgram( @pgm );
 		    print $OUTFD $GlobNameEnd;
+		    # It would also be good to run
+		    #   find . -name Makefile -exec egrep '@[A-Za-z0-9_]*@' \
+		    #   \{\} /dev/null \;
+		    # over the files to check for unsubstituted names
 		}
 
 		# Install the libraries

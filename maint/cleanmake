@@ -15,12 +15,18 @@ while (<>) {
 	while (<>) {
 	    if (! /\\$/) { last; }
 	}
-	if (/^\s*done\s*$/) { next; }
+	if (/\sdone\s*$/) { next; }
     }
     # skip line that start with if and ar continued
     if (/^\s*if \[ ! -d lib.*\\$/) {
 	while (<>) {
 	    if (! /\\$/) { last; }
+	}
+	if (/^\s*fi\s*$/) { next; }
+    }
+    if (/^\s*if \[ \"/) {
+	while (/\\$/) {
+	    $_ = <>;
 	}
 	if (/^\s*fi\s*$/) { next; }
     }
@@ -87,7 +93,8 @@ while (<>) {
 	    # to allow "filename: message"
 	    if (/^\s*$srcname\s*[:]*\s*$/) { next; }
 
-	    if (! (/^[aig]?cc\s/) && ! (/^mpicc\s/) && ! (/^\.\.\.ar/) ) { 
+	    if (! (/^[aig]?cc\s/) && ! (/^mpicc\s/) && ! (/^\.\.\.ar/) 
+		&& !( /\s*if\s*\[.*then/)) { 
 		# Add a new line to help the compile line stand out.
 		print "\n";
 		print $last_line; 
