@@ -70,11 +70,11 @@ void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 
   usec = t2->tv_usec - t1->tv_usec;
   sec  = t2->tv_sec - t1->tv_sec;
-  t3->usec += usec;
-  t3->sec += sec;
-  if (t3->usec > 1.0e6) {
-    t3->usec -= 1.0e6;
-    t3->sec++;
+  t3->tv_usec += usec;
+  t3->tv_sec += sec;
+  if (t3->tv_usec > 1.0e6) {
+    t3->tv_usec -= 1.0e6;
+    t3->tv_sec++;
   }
 }
 #elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
