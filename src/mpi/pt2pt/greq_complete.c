@@ -52,7 +52,7 @@ int MPI_Grequest_complete( MPI_Request request )
     MPID_Request *request_ptr;
     MPID_MPI_STATE_DECLS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GREQUEST_FOO);
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GREQUEST_COMPLETE);
     /* Get handles to MPI objects. */
     MPID_Request_get_ptr( request, request_ptr );
 #   ifdef HAVE_ERROR_CHECKING
@@ -66,8 +66,8 @@ int MPI_Grequest_complete( MPI_Request request )
 						  "**notgenreq", 0 );
 	    }
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_FOO);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_COMPLETE);
+                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -78,6 +78,6 @@ int MPI_Grequest_complete( MPI_Request request )
     MPID_Request_set_completed( request_ptr );
     /* ... end of body of routine ... */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_FOO);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_COMPLETE);
     return MPI_SUCCESS;
 }

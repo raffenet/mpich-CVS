@@ -72,7 +72,7 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
 	    MPIR_ERRTEST_ARGNULL(request,"request",mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_START);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -90,6 +90,7 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
     lrequest_ptr->free_fn              = free_fn;
     lrequest_ptr->query_fn             = query_fn;
     lrequest_ptr->grequest_extra_state = extra_state;
+    lrequest_ptr->cc_ptr               = &lrequest_ptr->cc;
     lrequest_ptr->cc                   = 1;
 
     *request = lrequest_ptr->handle;
