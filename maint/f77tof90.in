@@ -3,12 +3,15 @@
 # f77tof90 indir outdir [ Makefile-template [Make-Append] ]
 # For each file in indir/*.[fF], create a corresponding file in outdir
 # with .f90/.F90, and with any include "mpif.h" replaced with use mpi
+# It also changes to the new comment style, because some compilers
+# use the comment style to choose other features of the language
 #
 $indir = $ARGV[0];
 $outdir = $ARGV[1];
 $makeTemplate = $ARGV[2];
 $makeAppend   = $ARGV[3];
-$convertToFreeForm = 1;
+$convertToFreeForm    = 1;
+$convertToNewComments = 1;
 # Including a newline variable allows us to handle Unix and DOS source files
 $newline = "\n";
 
@@ -73,6 +76,9 @@ sub ConvertToF90 {
 	if (/^(\s*)include\s+[\'\"]mpif\.h/) {
 	    $_ = "$1use mpi";
 	}
+	if ($convertToNewComments) {
+	    s/^C/!/;
+	}	
 	# We could also detect continuations in column six and 
 	# convert to free-form input by holding one line back
 	if ($convertToFreeForm) {
