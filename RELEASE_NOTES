@@ -76,14 +76,6 @@
   MPI_COMM_SPAWN_MULTIPLE does not work properly when count is greater
   than one, effectively making it the same as MPI_COMM_SPAWN.
 
-- At present, the forker process manager does not support
-  MPI_COMM_SPAWN (or MPI_COMM_SPAWN_MULTIPLE).
-
-- The communicator passed to MPI_COMM_CONNECT and MPI_COMM_ACCEPT may
-  not include a process for which any process in the remote
-  communicator already shares an existing or previously existing
-  communicator.
-
 - For passive target RMA, there is no asynchronous agent at the target
   that will cause progress to occur. Progress occurs only when the user
   calls an MPI function at the target (which could well be MPI_WIN_FREE).
