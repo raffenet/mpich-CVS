@@ -5,9 +5,15 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpi.h"
-#include <stdio.h>
-#include <string.h>
 #include "mpitest.h"
+#include <stdio.h>
+#include <stdlib.h>
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 static char MTEST_Descrip[] = "A simple test of Comm_spawn";
 
