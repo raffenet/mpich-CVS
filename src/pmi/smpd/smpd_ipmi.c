@@ -976,6 +976,18 @@ int iPMI_Get_rank(int *rank)
     return PMI_SUCCESS;
 }
 
+int iPMI_Get_universe_size(int *size)
+{
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (size == NULL)
+	return PMI_ERR_INVALID_ARG;
+
+    *size = -1;
+
+    return PMI_SUCCESS;
+}
+
 int iPMI_Get_clique_size( int *size )
 {
     if (pmi_process.init_finalized == PMI_FINALIZED)
@@ -1471,7 +1483,7 @@ int iPMI_Spawn_multiple(int count,
                        const char * cmds[],
                        const char ** argvs[],
                        const int maxprocs[],
-                       const int info_keyval_sizes[],
+                       const int cinfo_keyval_sizes[],
                        const PMI_keyval_t * info_keyval_vectors[],
                        int preput_keyval_size,
                        const PMI_keyval_t preput_keyval_vector[],
@@ -1485,6 +1497,9 @@ int iPMI_Spawn_multiple(int count,
     char key[100];
     char *iter, *iter2;
     int i, j, maxlen, maxlen2;
+    int path_specified = 0;
+    char path[SMPD_MAX_PATH_LENGTH] = "";
+    int *info_keyval_sizes;
 
     if (pmi_process.init_finalized == PMI_FINALIZED)
 	return PMI_ERR_INIT;
@@ -1539,6 +1554,8 @@ int iPMI_Spawn_multiple(int count,
 		    result = MPIU_Str_add_string(&iter, &maxlen, argvs[i][j]);
 		}
 	    }
+	    iter--;
+	    *iter = '\0'; /* erase the trailing space */
 	    sprintf(key, "argv%d", i);
 	    result = smpd_add_command_arg(cmd_ptr, key, buffer);
 	    if (result != SMPD_SUCCESS)
@@ -1564,30 +1581,55 @@ int iPMI_Spawn_multiple(int count,
 	pmi_err_printf("unable to add maxprocs(%s) to the spawn command.\n", buffer);
 	return PMI_FAIL;
     }
-    /* add the keyval sizes array */
-    if (info_keyval_sizes)
+
+#ifdef HAVE_WINDOWS_H
     {
-	buffer[0] = '\0';
-	for (i=0; i<count; i++)
+	HMODULE hModule;
+	char exe_path[SMPD_MAX_PATH_LENGTH];
+	char *iter;
+	int length;
+
+	GetCurrentDirectory(SMPD_MAX_PATH_LENGTH, path);
+	hModule = GetModuleHandle(NULL);
+	if (GetModuleFileName(hModule, exe_path, SMPD_MAX_PATH_LENGTH)) 
 	{
-	    if (i < count-1)
-		sprintf(key, "%d ", info_keyval_sizes[i]);
-	    else
-		sprintf(key, "%d", info_keyval_sizes[i]);
-	    strcat(buffer, key);
-	}
-	result = smpd_add_command_arg(cmd_ptr, "nkeyvals", buffer);
-	if (result != SMPD_SUCCESS)
-	{
-	    pmi_err_printf("unable to add nkeyvals(%s) to the spawn command.\n", buffer);
-	    return PMI_FAIL;
+	    iter = strrchr(exe_path, '\\');
+	    if (iter != NULL)
+	    {
+		if (iter == (exe_path + 2) && *(iter-1) == ':')
+		{
+		    /* leave the \ if the path is at the root, like c:\foo.exe */
+		    iter++;
+		}
+		*iter = '\0'; /* erase the file name leaving only the path */
+	    }
+	    length = (int)strlen(path);
+	    iter = &path[length];
+	    MPIU_Snprintf(iter, SMPD_MAX_PATH_LENGTH-length, ";%s", exe_path);
 	}
     }
+#else
+    getcwd(path, SMPD_MAX_PATH_LENGTH);
+#endif
+
+    /* create a copy of the sizes so we can change the values locally */
+    info_keyval_sizes = (int*)malloc(count * sizeof(int));
+    if (info_keyval_sizes == NULL)
+    {
+	pmi_err_printf("unable to allocate an array of kevval sizes.\n");
+	return PMI_FAIL;
+    }
+    for (i=0; i<count; i++)
+    {
+	info_keyval_sizes[i] = info_keyval_sizes[i];
+    }
+
     /* add the keyvals */
     if (info_keyval_sizes && info_keyval_vectors)
     {
 	for (i=0; i<count; i++)
 	{
+	    path_specified = 0;
 	    buffer[0] = '\0';
 	    iter = buffer;
 	    maxlen = SMPD_MAX_CMD_LENGTH;
@@ -1596,6 +1638,10 @@ int iPMI_Spawn_multiple(int count,
 		keyval_buf[0] = '\0';
 		iter2 = keyval_buf;
 		maxlen2 = SMPD_MAX_CMD_LENGTH;
+		if (strcmp(info_keyval_vectors[i][j].key, "path") == 0)
+		{
+		    path_specified = 1;
+		}
 		result = MPIU_Str_add_string_arg(&iter2, &maxlen2, info_keyval_vectors[i][j].key, info_keyval_vectors[i][j].val);
 		if (result != MPIU_STR_SUCCESS)
 		{
@@ -1612,6 +1658,26 @@ int iPMI_Spawn_multiple(int count,
 		    return PMI_FAIL;
 		}
 	    }
+	    /* add the current directory as the default path if a path has not been specified */
+	    if (!path_specified)
+	    {
+		keyval_buf[0] = '\0';
+		iter2 = keyval_buf;
+		maxlen2 = SMPD_MAX_CMD_LENGTH;
+		result = MPIU_Str_add_string_arg(&iter2, &maxlen2, "path", path);
+		iter2--;
+		*iter2 = '\0';
+		sprintf(key, "%d", j);
+		result = MPIU_Str_add_string_arg(&iter, &maxlen, key, keyval_buf);
+		if (result != MPIU_STR_SUCCESS)
+		{
+		    pmi_err_printf("unable to add %s=%s to the spawn command.\n", key, keyval_buf);
+		    return PMI_FAIL;
+		}
+		info_keyval_sizes[i]++;
+	    }
+	    iter--;
+	    *iter = '\0'; /* remove the trailing space */
 	    sprintf(key, "keyvals%d", i);
 	    result = smpd_add_command_arg(cmd_ptr, key, buffer);
 	    if (result != SMPD_SUCCESS)
@@ -1621,6 +1687,76 @@ int iPMI_Spawn_multiple(int count,
 	    }
 	}
     }
+    else
+    {
+	if (!info_keyval_sizes)
+	{
+	    buffer[0] = '\0';
+	    for (i=0; i<count; i++)
+	    {
+		if (i < count-1)
+		    strcat(buffer, "1 ");
+		else
+		    strcat(buffer, "1");
+	    }
+	    result = smpd_add_command_arg(cmd_ptr, "nkeyvals", buffer);
+	    if (result != SMPD_SUCCESS)
+	    {
+		pmi_err_printf("unable to add nkeyvals(%s) to the spawn command.\n", buffer);
+		return PMI_FAIL;
+	    }
+	}
+	for (i=0; i<count; i++)
+	{
+	    buffer[0] = '\0';
+	    iter = buffer;
+	    maxlen = SMPD_MAX_CMD_LENGTH;
+	    /* add the current directory as the default path if a path has not been specified */
+	    keyval_buf[0] = '\0';
+	    iter2 = keyval_buf;
+	    maxlen2 = SMPD_MAX_CMD_LENGTH;
+	    result = MPIU_Str_add_string_arg(&iter2, &maxlen2, "path", path);
+	    iter2--;
+	    *iter2 = '\0';
+	    strcpy(key, "0");
+	    result = MPIU_Str_add_string_arg(&iter, &maxlen, key, keyval_buf);
+	    if (result != MPIU_STR_SUCCESS)
+	    {
+		pmi_err_printf("unable to add %s=%s to the spawn command.\n", key, keyval_buf);
+		return PMI_FAIL;
+	    }
+	    sprintf(key, "keyvals%d", i);
+	    result = smpd_add_command_arg(cmd_ptr, key, buffer);
+	    if (result != SMPD_SUCCESS)
+	    {
+		pmi_err_printf("unable to add %s(%s) to the spawn command.\n", key, buffer);
+		return PMI_FAIL;
+	    }
+	}
+    }
+
+    /* add the keyval sizes array */
+    if (info_keyval_sizes)
+    {
+	buffer[0] = '\0';
+	for (i=0; i<count; i++)
+	{
+	    if (i < count-1)
+		sprintf(key, "%d ", info_keyval_sizes[i] > 0 ? info_keyval_sizes[i] : 1);
+	    else
+		sprintf(key, "%d", info_keyval_sizes[i] > 0 ? info_keyval_sizes[i] : 1);
+	    strcat(buffer, key);
+	}
+	result = smpd_add_command_arg(cmd_ptr, "nkeyvals", buffer);
+	if (result != SMPD_SUCCESS)
+	{
+	    pmi_err_printf("unable to add nkeyvals(%s) to the spawn command.\n", buffer);
+	    return PMI_FAIL;
+	}
+    }
+
+    free(info_keyval_sizes);
+
     /* add the pre-put keyvals */
     result = smpd_add_command_int_arg(cmd_ptr, "npreput", preput_keyval_size);
     if (result != SMPD_SUCCESS)

@@ -48,6 +48,7 @@ int iPMI_Initialized( PMI_BOOL *initialized );            /* Return true if PMI 
 int iPMI_Finalize( void );               /* finalize PMI for this process group */
 int iPMI_Get_size( int *size );          /* get size of process group */
 int iPMI_Get_rank( int *rank );          /* get rank in process group */
+int iPMI_Get_universe_size( int *size ); /* get the maximum allowed spawnable resources */
 int iPMI_Get_id( char id_str[], int length );         /* get a string to uniquely identify the process group */
 int iPMI_Get_kvs_domain_id( char id_str[], int length );     /* get a string to uniquely identify the kvs domain */
 int iPMI_Get_id_length_max( int *maxlen);      /* get the maximum length the id string can be. Must return >= 40 */
@@ -99,6 +100,7 @@ typedef struct ipmi_functions_t
     int (*PMI_Finalize)( void );
     int (*PMI_Get_size)( int * );
     int (*PMI_Get_rank)( int * );
+    int (*PMI_Get_universe_size)( int * );
     int (*PMI_Get_id)( char[] , int );
     int (*PMI_Get_kvs_domain_id)( char [], int );
     int (*PMI_Get_id_length_max)( int *);

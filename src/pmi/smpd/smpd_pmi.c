@@ -76,6 +76,7 @@ int PMI_Init(int *spawned)
 	    fn.PMI_Finalize = (int (*)(void))PMIGetProcAddress(hModule, "PMI_Finalize");
 	    fn.PMI_Get_size = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Get_size");
 	    fn.PMI_Get_rank = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Get_rank");
+	    fn.PMI_Get_universe_size = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Get_universe_size");
 	    fn.PMI_Get_id = (int (*)(char [], int))PMIGetProcAddress(hModule, "PMI_Get_id");
 	    fn.PMI_Get_kvs_domain_id = (int (*)(char [], int))PMIGetProcAddress(hModule, "PMI_Get_kvs_domain_id");
 	    fn.PMI_Get_id_length_max = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Get_id_length_max");
@@ -106,6 +107,7 @@ int PMI_Init(int *spawned)
     fn.PMI_Finalize = iPMI_Finalize;
     fn.PMI_Get_size = iPMI_Get_size;
     fn.PMI_Get_rank = iPMI_Get_rank;
+    fn.PMI_Get_universe_size = iPMI_Get_universe_size;
     fn.PMI_Get_id = iPMI_Get_id;
     fn.PMI_Get_kvs_domain_id = iPMI_Get_kvs_domain_id;
     fn.PMI_Get_id_length_max = iPMI_Get_id_length_max;
@@ -150,6 +152,13 @@ int PMI_Get_rank(int *rank)
     if (fn.PMI_Get_rank == NULL)
 	return PMI_FAIL;
     return fn.PMI_Get_rank(rank);
+}
+
+int PMI_Get_universe_size(int *size)
+{
+    if (fn.PMI_Get_universe_size == NULL)
+	return PMI_FAIL;
+    return fn.PMI_Get_universe_size(size);
 }
 
 int PMI_Get_clique_size( int *size )
