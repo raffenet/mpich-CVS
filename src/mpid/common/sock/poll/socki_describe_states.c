@@ -148,11 +148,11 @@ int Socki_Describe_timer_states()
 		       "socki_handle_write",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCKI_ALLOC,
+		       MPID_STATE_SOCKI_SOCK_ALLOC,
 		       "socki_alloc",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCKI_FREE,
+		       MPID_STATE_SOCKI_SOCK_FREE,
 		       "socki_free",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
