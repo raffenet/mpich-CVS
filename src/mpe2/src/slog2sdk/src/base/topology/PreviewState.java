@@ -13,25 +13,24 @@ import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Color;
 import java.awt.Point;
+import java.util.List;
+import java.util.ListIterator;
+
 import base.drawable.CoordPixelXform;
+import base.drawable.CategoryWeight;
 import base.drawable.DrawnBox;
+import base.drawable.Category;
 
-public class State
+public class PreviewState extends State
 {
-    protected static StateBorder BorderStyle  = StateBorder.WHITE_RAISED_BORDER;
-
-    public static void setBorderStyle( final StateBorder state_border )
-    {
-        BorderStyle = state_border;
-    }
-
     /*
         Draw a Rectangle between left-upper vertex (start_time, start_ypos) 
         and right-lower vertex (final_time, final_ypos)
         Assume caller guarantees the order of timestamps and ypos, such that
         start_time <= final_time  and  start_ypos <= final_ypos.
     */
-    private static int  drawForward( Graphics2D g, Color color, Insets insets,
+    private static int  drawForward( Graphics2D g,
+                                     List twgt_list, Insets insets,
                                      CoordPixelXform    coord_xform,
                                      DrawnBox           last_drawn_pos,
                                      double start_time, float start_ypos,
@@ -77,9 +76,33 @@ public class State
             // iTail = coord_xform.getImageWidth();
         jTail    = jFinal;
             
-        // Fill the color of the rectangle
-        g.setColor( color );
-        g.fillRect( iHead, jHead, iTail-iHead+1, jTail-jHead+1 );
+        int iwidth  = iTail-iHead+1;
+        int jheight = jTail-jHead+1;
+
+        // Compute the pixel height per unit weight
+        CategoryWeight  twgt = null;
+        float           tot_wgt = 0.0f;
+        ListIterator twgts_itr = twgt_list.listIterator();
+        while ( twgts_itr.hasNext() ) {
+            twgt  = (CategoryWeight) twgts_itr.next();
+            if ( twgt.getCategory().isVisible() )
+                tot_wgt += twgt.getWeight();
+        }
+        float  height_per_wgt = (float) jheight / tot_wgt;
+
+        // Fill the color of the sub-rectangles
+        jHead += jheight;
+        while ( twgts_itr.hasPrevious() ) {
+            twgt  = (CategoryWeight) twgts_itr.previous();
+            if ( twgt.getCategory().isVisible() ) {
+                jheight  = (int) (height_per_wgt * twgt.getWeight());
+                if ( jheight > 0 ) {
+                    jHead -= jheight;
+                    g.setColor( twgt.getCategory().getColor() );
+                    g.fillRect( iHead, jHead, iwidth, jheight );
+                }
+            }
+        }
 
         BorderStyle.paintStateBorder( g, iHead, jHead, isStartVtxInImg,
                                          iTail, jTail, isFinalVtxInImg );
@@ -93,9 +116,10 @@ public class State
         Assume caller guarantees the order of timestamps and ypos, such that
         start_time <= final_time  and  start_ypos <= final_ypos
     */
-    private static boolean isPixelIn( CoordPixelXform coord_xform, Point pt,
-                                      double start_time, float start_ypos,
-                                      double final_time, float final_ypos )
+    private static Category isPixelIn( List twgt_list, Insets insets,
+                                       CoordPixelXform coord_xform, Point pt,
+                                       double start_time, float start_ypos,
+                                       double final_time, float final_ypos )
     {
         int      iStart, jStart, iFinal, jFinal;
         int      pt_x, pt_y;
@@ -104,27 +128,65 @@ public class State
 
         jStart   = coord_xform.convertRowToPixel( start_ypos );
         if ( pt_y < jStart  )
-            return false;
+            return null;
 
         jFinal   = coord_xform.convertRowToPixel( final_ypos );
         if ( pt_y > jFinal )
-            return false;
+            return null;
 
         pt_x     = pt.x;
 
         iStart   = coord_xform.convertTimeToPixel( start_time );
         if ( pt_x < iStart )
-            return false;
+            return null;
 
         iFinal   = coord_xform.convertTimeToPixel( final_time );
         if ( pt_x > iFinal )
-            return false;
+            return null;
 
-        return true;
+        //  If the code gets to here, it means the pixel is within the Shadow.
+        if ( insets != null ) {
+            iStart += insets.left;
+            iFinal -= insets.right;
+            jStart += insets.top;
+            jFinal -= insets.bottom;
+        }
+
+        int jHead, jTail, jheight;
+        jHead    = jStart;
+        jTail    = jFinal;
+        jheight  = jTail-jHead+1;
+
+        // Compute the pixel height per unit weight
+        CategoryWeight  twgt = null;
+        float           tot_wgt = 0.0f;
+        ListIterator twgts_itr = twgt_list.listIterator();
+        while ( twgts_itr.hasNext() ) {
+            twgt  = (CategoryWeight) twgts_itr.next();
+            if ( twgt.getCategory().isVisible() )
+                tot_wgt += twgt.getWeight();
+        }
+        float  height_per_wgt = (float) jheight / tot_wgt;
+
+        // Fill the color of the sub-rectangles
+        jHead += jheight;
+        while ( twgts_itr.hasPrevious() ) {
+            twgt  = (CategoryWeight) twgts_itr.previous();
+            if ( twgt.getCategory().isVisible() ) {
+                jheight  = (int) (height_per_wgt * twgt.getWeight());
+                if ( jheight > 0 ) {
+                    jHead -= jheight;
+                    if ( pt_y >= jHead )
+                        return twgt.getCategory();
+                }
+            }
+        }
+
+        return null; // mean failure, need something other than null
     }
 
 
-    public static int  draw( Graphics2D g, Color color, Insets insets,
+    public static int  draw( Graphics2D g, List twgt_list, Insets insets,
                              CoordPixelXform    coord_xform,
                              DrawnBox           last_drawn_pos,
                              double start_time, float start_ypos,
@@ -132,51 +194,52 @@ public class State
     {
          if ( start_time < final_time ) {
              if ( start_ypos < final_ypos )
-                 return drawForward( g, color, insets,
+                 return drawForward( g, twgt_list, insets,
                                      coord_xform, last_drawn_pos,
                                      start_time, start_ypos,
                                      final_time, final_ypos );
              else
-                 return drawForward( g, color, insets,
+                 return drawForward( g, twgt_list, insets,
                                      coord_xform, last_drawn_pos,
                                      start_time, final_ypos,
                                      final_time, start_ypos );
          }
          else {
              if ( start_ypos < final_ypos )
-                 return drawForward( g, color, insets,
+                 return drawForward( g, twgt_list, insets,
                                      coord_xform, last_drawn_pos,
                                      final_time, start_ypos,
                                      start_time, final_ypos );
              else
-                 return drawForward( g, color, insets,
+                 return drawForward( g, twgt_list, insets,
                                      coord_xform, last_drawn_pos,
                                      final_time, final_ypos,
                                      start_time, start_ypos );
          }
     }
 
-    public static boolean containsPixel( CoordPixelXform coord_xform, Point pt,
-                                         double start_time, float start_ypos,
-                                         double final_time, float final_ypos )
+    public static Category containsPixel( List twgt_list, Insets insets,
+                                          CoordPixelXform coord_xform, Point pt,
+                                          double start_time, float start_ypos,
+                                          double final_time, float final_ypos )
     {
          if ( start_time < final_time ) {
              if ( start_ypos < final_ypos )
-                 return isPixelIn( coord_xform, pt,
+                 return isPixelIn( twgt_list, insets, coord_xform, pt,
                                    start_time, start_ypos,
                                    final_time, final_ypos );
              else
-                 return isPixelIn( coord_xform, pt,
+                 return isPixelIn( twgt_list, insets, coord_xform, pt,
                                    start_time, final_ypos,
                                    final_time, start_ypos );
          }
          else {
              if ( start_ypos < final_ypos )
-                 return isPixelIn( coord_xform, pt,
+                 return isPixelIn( twgt_list, insets, coord_xform, pt,
                                    final_time, start_ypos,
                                    start_time, final_ypos );
              else
-                 return isPixelIn( coord_xform, pt,
+                 return isPixelIn( twgt_list, insets, coord_xform, pt,
                                    final_time, final_ypos,
                                    start_time, start_ypos );
          }
