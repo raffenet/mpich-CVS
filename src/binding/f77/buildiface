@@ -1634,7 +1634,7 @@ if ($write_mpif) {
 	&print_mpif_int( "MPI_$key" );
     }
     # Attributes
-    foreach $key (TAG_UB, HOST, IO, WTIME_IS_GLOBAL, UNIVERSE_SIZE, LASTUSEDCODE, APPNUM) {
+    foreach $key (TAG_UB, HOST, IO, WTIME_IS_GLOBAL, UNIVERSE_SIZE, LASTUSEDCODE, APPNUM, WIN_BASE, WIN_SIZE, WIN_DISP_UNIT ) {
 	# Special cast:  The Fortran versions of these attributes have 
 	# value 1 greater than the C versions
 	$attrval = $mpidef{"MPI_$key"};
