@@ -138,6 +138,12 @@ if test "X$real_enable_cache" = "Xyes" ; then
 else
   cache_file="/dev/null"
 fi
+# Remember our location and the name of the cachefile
+pac_cv_my_conf_dir=`pwd`
+dnl do not include the cachefile name, since this may contain the process
+dnl number and cause comparisons looking for changes to the cache file
+dnl to detect a change that isn't real.
+dnl pac_cv_my_cachefile=$cachefile
 #
 # Update the cache_system file if necessary
 if test "$cache_system_ok" != yes ; then
@@ -175,6 +181,7 @@ enable_cache="$enableval",enable_cache="notgiven")
 dnl
 
 dnl Clean the cache of extraneous quotes that AC_CACHE_SAVE may add
+dnl
 AC_DEFUN([PAC_CACHE_CLEAN],[
     rm -f confcache
     sed -e "s/'\\\\''//g" -e "s/'\\\\/'/" -e "s/\\\\'/'/" \
@@ -221,7 +228,9 @@ dnl
 dnl D*/
 AC_DEFUN(PAC_SUBDIR_CACHE,[
 if test "x$1" = "xalways" -o \( "$cache_file" = "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" \) ; then
-    cache_file=$$conf.cache
+    # Use an absolute directory to help keep the subdir configures from getting
+    # lost
+    cache_file=`pwd`/$$conf.cache
     touch $cache_file
     dnl 
     dnl For Autoconf 2.52+, we should ensure that the environment is set
@@ -255,6 +264,10 @@ if test "x$1" = "xalways" -o \( "$cache_file" = "/dev/null" -a "X$real_enable_ca
     # with data that contains blanks.  What happens is that the quotes
     # that it adds get quoted and then added again.  To avoid this,
     # we strip off the outer quotes for all cached variables
+    dnl We add pac_cv_my_conf_dir to give the source of this cachefile,
+    dnl and pac_cv_my_cachefile to indicate how it chose the cachefile.
+    pac_cv_my_conf_dir=`pwd`
+    pac_cv_my_cachefile=$cachefile
     AC_CACHE_SAVE
     PAC_CACHE_CLEAN
     ac_configure_args="$ac_configure_args -enable-cache"
@@ -277,4 +290,3 @@ if test "$cache_file" != "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" ; th
    rm -f $cache_file
 fi
 ])
-
