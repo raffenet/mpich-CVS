@@ -1202,9 +1202,17 @@ int MPID_Comm_spawn_multiple(int, char *[], char* *[], int [], MPI_Info [],
                              int, MPID_Comm *, MPID_Comm **, int []);
 
 int MPID_Send(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
+	      MPID_Request **);
+int MPID_Rsend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
+               MPID_Request **);
+int MPID_Ssend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
                MPID_Request **);
 int MPID_Isend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
                MPID_Request **);
+int MPID_Irsend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
+		MPID_Request **);
+int MPID_Issend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
+		MPID_Request **);
 int MPID_Recv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
               MPI_Status *, MPID_Request **);
 int MPID_Irecv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
