@@ -1,3 +1,5 @@
 Makefile*
 simple
 sendrecv
+wtime
+netpipe
