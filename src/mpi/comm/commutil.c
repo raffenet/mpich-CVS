@@ -49,6 +49,8 @@ MPIU_Object_alloc_t MPID_Comm_mem = { 0, 0, 0, 0, MPID_COMM,
    created separately from the communicator (creating the context
    is collective over oldcomm_ptr, but this routine may be called only
    by a subset of processes in the new communicator)
+
+   Only Comm_split currently uses this
  */
 int MPIR_Comm_create( MPID_Comm *oldcomm_ptr, MPID_Comm **newcomm_ptr )
 {   
@@ -197,7 +199,12 @@ int MPIR_Get_contextid( MPI_Comm comm )
 	if (local_mask[i]) {
 	    /* There is a bit set in this word */
 	    mask = 0x00000001;
-	    /* This is a simple sequential search.  */
+	    /* This is a simple sequential search. */
+	    /* FIXME: We can make this faster on many systems
+	       by using either operations on chars first (to look for 
+	       the first byte with bits set) or by using explicit masks
+	       like 0x00FF0000 to find the byte with the first bit set
+	       (or even nibble (four bits) */
 	    for (j=0; j<32; j++) {
 		if (mask & local_mask[i]) {
 		    /* Found the leading set bit */
@@ -228,11 +235,17 @@ void MPIR_Free_contextid( int context_id )
 {
     int idx, bitpos;
     /* Convert the context id to the bit position */
-    /* printf( "Freeed id = %d\n", context_id ); */
+    /* printf( "Freed id = %d\n", context_id ); */
     context_id >>= 2;       /* Remove the shift of a factor of four */
     idx    = context_id / 32;
     bitpos = context_id % 32;
 
+    /* --BEGIN ERROR HANDLING-- */
+    if (idx < 0 || idx >= MAX_CONTEXT_MASK) {
+	MPID_Abort( 0, MPI_ERR_INTERN, 1, 
+		    "In MPIR_Free_contextid, idx is out of range" );
+    }
+    /* --END ERROR HANDLING-- */
     context_mask[idx] |= (0x1 << bitpos);
 
 #ifdef MPICH_DEBUG_INTERNAL
@@ -255,13 +268,20 @@ void MPIR_Free_contextid( int context_id )
    extends to MPI-2 (where the last step, returning the context, is 
    not used and instead separate send and receive context id value 
    are kept).  For this reason, we'll use (a).
+
+   Even better is to separate the local and remote context ids.  Then
+   each group of processes can manage their context ids separately.
 */
 /* FIXME (gropp): This approach for intercomm context will not work for MPI-2
 */
 int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 {
     int context_id, remote_context_id, final_context_id;
-    int tag = 31567; /* FIXME */
+    int tag = 31567; /* FIXME (gropp) - we need an internal tag or 
+		        communication channel.  Can we use a different
+		        context instead?.  Or can we use the tag 
+		        provided in the intercomm routine? (not on a dup, 
+			but in that case it can use the collective context) */
 
     if (!comm_ptr->local_comm) {
 	/* Manufacture the local communicator */
