@@ -168,6 +168,12 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	NMPI_Bcast( remote_lpids, remote_size, MPI_INT, local_leader, 
 		    local_comm );
 
+	/* 
+	 * It would be good to detect invalid intercommunicators, such
+	 * as ones with overlapping groups (the Fortran tests in the
+	 * Intel test suite can erroneously attempt to create such
+	 * intercommunicators if too few processes are used for the tests).
+	 */
 	/* We need to do something with the context ids.  For 
 	   MPI1, we can just take the min of the two context ids and
 	   use that value.  For MPI2, we'll need to have separate
