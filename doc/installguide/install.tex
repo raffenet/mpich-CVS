@@ -301,7 +301,11 @@ The number to start can be less than 1 + number of hosts in the
 file, but cannot be greater than 1 + the number of hosts in the
 file.  One mpd is always started on the machine where \texttt{mpdboot} is
 run, and is counted in the number to start, whether or not it occurs
-in the file.
+in the file.  By default, \texttt{mpdboot} will only start one mpd per
+machine even if the machine name appears in the hosts file multiple times.
+The -1 option can be used to override this behavior, but there is typically
+no reason for a user to need multiple mpds on a single host.
+The -1 option exists mostly to support internal testing.
 
 Check to see if all the hosts you listed in mpd.hosts are in the output
 of 
