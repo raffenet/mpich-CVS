@@ -24,7 +24,7 @@ void ADIOI_GEN_ReadStrided_naive(ADIO_File fd, void *buf, int count,
     MPI_Aint filetype_extent, buftype_extent; 
     int buf_count, buftype_is_contig, filetype_is_contig;
     ADIO_Offset userbuf_off;
-    ADIO_Offset off, req_off, disp, end_offset=0, readbuf_off, start_off;
+    ADIO_Offset off, req_off, disp, end_offset=0, start_off;
     ADIO_Status status1;
 
     *error_code = MPI_SUCCESS;  /* changed below if error */
@@ -200,7 +200,7 @@ void ADIOI_GEN_ReadStrided_naive(ADIO_File fd, void *buf, int count,
 	    off = disp + flat_file->indices[f_index] + 
 	          (ADIO_Offset) n_filetypes*filetype_extent;
 	    frd_size = ADIOI_MIN(flat_file->blocklens[f_index], 
-	                         bufsize-userbuf_off);
+	                         bufsize-(int)userbuf_off);
 	}
 
 	/* End of calculations.  At this point the following values have
@@ -272,7 +272,7 @@ void ADIOI_GEN_ReadStrided_naive(ADIO_File fd, void *buf, int count,
 		    off = disp + flat_file->indices[f_index] + 
                           (ADIO_Offset) n_filetypes*filetype_extent;
 		    frd_size = ADIOI_MIN(flat_file->blocklens[f_index], 
-		                         bufsize-userbuf_off);
+		                         bufsize-(int)userbuf_off);
 		}
 	    }
 	}
