@@ -555,6 +555,8 @@ with MPI_Alloc_mem.
 **shm_unlink %s %d:failed to unlink shared memory object %s, error %d
 **shmctl:failed to mark the sysv segment for removal
 **shmctl %d %d:failed to mark the sysv segment %d for removal, error %d
+**ftok:failed to create a sysv key from a file name
+**ftok %s %d %d:failed to create a sysv key from the file '%s' and id %d, error %d
 
 #
 # CH3:shm
