@@ -42,12 +42,12 @@ Output Parameters:
 #include "mpiu_greq.h"
 
 int MPI_File_iwrite_shared(MPI_File fh, void *buf, int count, 
-		MPI_Datatype datatype, MPIO_Request *request)
+			   MPI_Datatype datatype, MPIO_Request *request)
 {
 	MPI_Status *status;
 	int errcode;
 
-	status = (MPI_Status*)malloc(sizeof(MPI_Status));
+	status = (MPI_Status *) ADIOI_Malloc(sizeof(MPI_Status));
 
 	/* for now, no threads or anything fancy. 
 	 * just call the blocking version */

@@ -8,6 +8,10 @@
 
 #include "ad_ufs.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 void ADIOI_UFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 {
     int err;

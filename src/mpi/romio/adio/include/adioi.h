@@ -361,6 +361,81 @@ int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, int nbytes)
 int ADIOI_Uses_generic_read(ADIO_File fd);
 int ADIOI_Uses_generic_write(ADIO_File fd);
 
+/* File I/O common functionality */
+int ADIOI_File_read(MPI_File fh,
+		    MPI_Offset offset,
+		    int file_ptr_type,
+		    void *buf,
+		    int count,
+		    MPI_Datatype datatype,
+		    char *myname,
+		    MPI_Status *status);
+int ADIOI_File_write(MPI_File fh,
+		     MPI_Offset offset,
+		     int file_ptr_type,
+		     void *buf,
+		     int count,
+		     MPI_Datatype datatype,
+		     char *myname,
+		     MPI_Status *status);
+int ADIOI_File_read_all(MPI_File fh,
+			MPI_Offset offset,
+			int file_ptr_type,
+			void *buf,
+			int count,
+			MPI_Datatype datatype,
+			char *myname,
+			MPI_Status *status);
+int ADIOI_File_write_all(MPI_File fh,
+			 MPI_Offset offset,
+			 int file_ptr_type,
+			 void *buf,
+			 int count,
+			 MPI_Datatype datatype,
+			 char *myname,
+			 MPI_Status *status);
+int ADIOI_File_read_all_begin(MPI_File fh,
+			      MPI_Offset offset,
+			      int file_ptr_type,
+			      void *buf,
+			      int count,
+			      MPI_Datatype datatype,
+			      char *myname);
+int ADIOI_File_write_all_begin(MPI_File fh,
+			       MPI_Offset offset,
+			       int file_ptr_type,
+			       void *buf,
+			       int count,
+			       MPI_Datatype datatype,
+			       char *myname);
+int ADIOI_File_read_all_end(MPI_File fh,
+			    void *buf,
+			    char *myname,
+			    MPI_Status *status);
+int ADIOI_File_write_all_end(MPI_File fh,
+			     void *buf,
+			     char *myname,
+			     MPI_Status *status);
+#ifndef HAVE_MPI_GREQUEST
+int ADIOI_File_iwrite(MPI_File fh,
+		      MPI_Offset offset,
+		      int file_ptr_type,
+		      void *buf,
+		      int count,
+		      MPI_Datatype datatype,
+		      char *myname,
+		      MPIO_Request *request);
+int ADIOI_File_iread(MPI_File fh,
+		     MPI_Offset offset,
+		     int file_ptr_type,
+		     void *buf,
+		     int count,
+		     MPI_Datatype datatype,
+		     char *myname,
+		     MPIO_Request *request);
+#endif
+
+
 
 /* Unix-style file locking */
 
