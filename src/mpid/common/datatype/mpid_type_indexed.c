@@ -25,6 +25,8 @@ static void MPIDI_Type_indexed_array_copy(int count,
 					  MPI_Aint *output_displacement_array,
 					  int dispinbytes,
 					  MPI_Aint old_extent);
+static int MPIDI_Type_indexed_zero_size(MPID_Datatype *new_dtp);
+
 /*@
   MPID_Type_indexed - create an indexed datatype
  
@@ -94,51 +96,10 @@ int MPID_Type_indexed(int count,
 
     if (count == 0)
     {
-	/* we are interpreting the standard here based on the fact that
-	 * with a zero count there is nothing in the typemap.
-	 *
-	 * we handle this case explicitly to get it out of the way.
-	 */
-	new_dtp->has_sticky_ub = 0;
-	new_dtp->has_sticky_lb = 0;
-
-	new_dtp->alignsize    = 0;
-	new_dtp->element_size = 0;
-	new_dtp->eltype       = 0;
-
-	new_dtp->size    = 0;
-	new_dtp->lb      = 0;
-	new_dtp->ub      = 0;
-	new_dtp->true_lb = 0;
-	new_dtp->true_ub = 0;
-	new_dtp->extent  = 0;
-
-	new_dtp->n_elements = 0;
-	new_dtp->is_contig  = 1;
-
-	mpi_errno = MPID_Dataloop_create_indexed(0,
-						 NULL,
-						 NULL,
-						 0,
-						 MPI_INT, /* dummy type */
-						 &(new_dtp->dataloop),
-						 &(new_dtp->dataloop_size),
-						 &(new_dtp->dataloop_depth),
-						 0);
+	mpi_errno = MPIDI_Type_indexed_zero_size(new_dtp);
 	if (mpi_errno == MPI_SUCCESS) {
-	    /* heterogeneous dataloop representation */
-	    mpi_errno = MPID_Dataloop_create_indexed(0,
-						     NULL,
-						     NULL,
-						     0,
-						     MPI_INT,
-						     &(new_dtp->hetero_dloop),
-						     &(new_dtp->hetero_dloop_size),
-						     &(new_dtp->hetero_dloop_depth),
-						     0);
+	    *newtype = new_dtp->handle;
 	}
-
-	*newtype = new_dtp->handle;
 	return mpi_errno;
     }
     else if (is_builtin)
@@ -189,52 +150,70 @@ int MPID_Type_indexed(int count,
 	new_dtp->eltype        = el_type;
     }
 
-    /* priming for loop */
-    old_ct = blocklength_array[0];
-    eff_disp = (dispinbytes) ? ((MPI_Aint *) displacement_array)[0] :
-	(((MPI_Aint) ((int *) displacement_array)[0]) * old_extent);
 
-    MPID_DATATYPE_BLOCK_LB_UB((MPI_Aint) blocklength_array[0],
+    /* find the first nonzero blocklength element */
+    i = 0;
+    while (i < count && blocklength_array[i] == 0) i++;
+
+    if (i == count) {
+	/* no nonzero blocks; treat the same as the count == 0 case */
+	mpi_errno = MPIDI_Type_indexed_zero_size(new_dtp);
+	if (mpi_errno == MPI_SUCCESS) {
+	    *newtype = new_dtp->handle;
+	}
+	return mpi_errno;
+    }
+
+    /* priming for loop */
+    old_ct = blocklength_array[i];
+    eff_disp = (dispinbytes) ? ((MPI_Aint *) displacement_array)[i] :
+	(((MPI_Aint) ((int *) displacement_array)[i]) * old_extent);
+    
+    MPID_DATATYPE_BLOCK_LB_UB((MPI_Aint) blocklength_array[i],
 			      eff_disp,
 			      old_lb,
 			      old_ub,
 			      old_extent,
 			      min_lb,
 			      max_ub);
-
-    /* determine min lb, max ub, and count of old types */
-    for (i=1; i < count; i++)
+    
+    /* determine min lb, max ub, and count of old types in remaining
+     * nonzero size blocks
+     */
+    for (i++; i < count; i++)
     {
 	MPI_Aint tmp_lb, tmp_ub;
 	
-	old_ct += blocklength_array[i]; /* add more oldtypes */
+	if (blocklength_array[i] > 0) {
+	    old_ct += blocklength_array[i]; /* add more oldtypes */
 	
-	eff_disp = (dispinbytes) ? ((MPI_Aint *) displacement_array)[i] :
-	    (((MPI_Aint) ((int *) displacement_array)[i]) * old_extent);
+	    eff_disp = (dispinbytes) ? ((MPI_Aint *) displacement_array)[i] :
+		(((MPI_Aint) ((int *) displacement_array)[i]) * old_extent);
 	
-	/* calculate ub and lb for this block */
-	MPID_DATATYPE_BLOCK_LB_UB((MPI_Aint) blocklength_array[i],
-				  eff_disp,
-				  old_lb,
-				  old_ub,
-				  old_extent,
-				  tmp_lb,
-				  tmp_ub);
-
-	if (tmp_lb < min_lb) min_lb = tmp_lb;
-	if (tmp_ub > max_ub) max_ub = tmp_ub;
+	    /* calculate ub and lb for this block */
+	    MPID_DATATYPE_BLOCK_LB_UB((MPI_Aint) blocklength_array[i],
+				      eff_disp,
+				      old_lb,
+				      old_ub,
+				      old_extent,
+				      tmp_lb,
+				      tmp_ub);
+	
+	    if (tmp_lb < min_lb) min_lb = tmp_lb;
+	    if (tmp_ub > max_ub) max_ub = tmp_ub;
+	}
     }
-
+    
     new_dtp->size = old_ct * old_sz;
-
+    
     new_dtp->lb      = min_lb;
     new_dtp->ub      = max_ub;
     new_dtp->true_lb = min_lb + (old_true_lb - old_lb);
     new_dtp->true_ub = max_ub + (old_true_ub - old_ub);
     new_dtp->extent  = max_ub - min_lb;
-
+    
     new_dtp->n_elements = old_ct * el_ct;
-
+    
     /* new type is only contig for N types if it's all one big
      * block, its size and extent are the same, and the old type
      * was also contiguous.
@@ -244,7 +223,7 @@ int MPID_Type_indexed(int count,
 						   displacement_array,
 						   dispinbytes,
 						   old_extent);
-
+    
     if ((contig_count == 1) && (new_dtp->size == new_dtp->extent))
     {
 	new_dtp->is_contig = old_is_contig;
@@ -663,4 +642,49 @@ static void MPIDI_Type_indexed_array_copy(int count,
 	}
     }
     return;
+}
+
+static int MPIDI_Type_indexed_zero_size(MPID_Datatype *new_dtp)
+{
+    int mpi_errno;
+    new_dtp->has_sticky_ub = 0;
+    new_dtp->has_sticky_lb = 0;
+    
+    new_dtp->alignsize    = 0;
+    new_dtp->element_size = 0;
+    new_dtp->eltype       = 0;
+    
+    new_dtp->size    = 0;
+    new_dtp->lb      = 0;
+    new_dtp->ub      = 0;
+    new_dtp->true_lb = 0;
+    new_dtp->true_ub = 0;
+    new_dtp->extent  = 0;
+    
+    new_dtp->n_elements = 0;
+    new_dtp->is_contig  = 1;
+    
+    mpi_errno = MPID_Dataloop_create_indexed(0,
+					     NULL,
+					     NULL,
+					     0,
+					     MPI_INT, /* dummy type */
+					     &(new_dtp->dataloop),
+					     &(new_dtp->dataloop_size),
+					     &(new_dtp->dataloop_depth),
+					     0);
+    if (mpi_errno == MPI_SUCCESS) {
+	/* heterogeneous dataloop representation */
+	mpi_errno = MPID_Dataloop_create_indexed(0,
+						 NULL,
+						 NULL,
+						 0,
+						 MPI_INT,
+						 &(new_dtp->hetero_dloop),
+						 &(new_dtp->hetero_dloop_size),
+						 &(new_dtp->hetero_dloop_depth),
+						 0);
+    }
+    
+    return mpi_errno;
 }
