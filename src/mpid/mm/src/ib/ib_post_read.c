@@ -38,6 +38,7 @@ int ib_post_read_pkt(MPIDI_VC *vc_ptr)
 
 static void PrintHeader(MPID_Header_pkt *p)
 {
+    /*
     MPIU_dbg_printf("Header Packet:\n");
     MPIU_dbg_printf(" context: %d\n", p->context);
     MPIU_dbg_printf(" sender_car_ptr: 0x%x\n", p->sender_car_ptr);
@@ -45,6 +46,9 @@ static void PrintHeader(MPID_Header_pkt *p)
     MPIU_dbg_printf(" src: %d\n", p->src);
     MPIU_dbg_printf(" tag: %d\n", p->tag);
     MPIU_dbg_printf(" type: %d\n", p->type);
+    */
+    MPIU_dbg_printf("Header Packet: ctx %d, car 0x%x, sz %d, src %d, tag %d, type %d\n", 
+	p->context, p->sender_car_ptr, p->size, p->src, p->tag, p->type);
 }
 
 int ib_handle_read(MPIDI_VC *vc_ptr, void *mem_ptr, int num_bytes)
