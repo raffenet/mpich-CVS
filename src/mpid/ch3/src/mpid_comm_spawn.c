@@ -13,9 +13,6 @@
 #define FUNCNAME MPID_Comm_spawn
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-
-#define MPIDI_CH3_Comm_spawn MPIDI_CH3_Comm_spawn 
-
 int MPID_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info,
 		    int root, MPID_Comm *comm, MPID_Comm *intercomm,
 		    int array_of_errcodes[])
