@@ -1,0 +1,6 @@
+INCLUDES = -I.. -I$(srcdir)/..
+argstest_SOURCES = argstest.c
+argstest_LDADD = -L.. -lmpiexec -L../../../../lib -lmpich
+
+forktest_SOURCES = forktest.c
+forktest_LDADD = -L.. -lmpiexec -L../../../../lib -lmpich

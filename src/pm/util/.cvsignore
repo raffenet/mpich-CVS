@@ -2,3 +2,6 @@ Makefile.in
 Makefile
 configure
 config.*
+.deps
+autom4te*
+pmutilconf.h*

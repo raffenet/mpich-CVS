@@ -1,18 +1,27 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id$
- *
+/*  
  *  (C) 2003 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
 /* OWNER=gropp */
 #include "pmutilconf.h"
-#include "pmutil.h"
+#include "process.h"
+/* #include "pmutil.h" */
 #include <stdio.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
 #include <ctype.h>
+
+/* Temporary debug definitions */
+#define DBG_PRINTF(a) printf a
+#define DBG_FPRINTF(a) fprintf a
+#define DBG_FFLUSH(a) fflush(a)
+
+/* Use the memory defintions from mpich2/src/include */
+#include "mpimem.h"
+/* End temporary */
 
 /* ----------------------------------------------------------------------- */
 /* Process options                                                         */
@@ -34,28 +43,47 @@
    the configfile contains lines with -soft, -n etc.
 */
 
-/*
- * MPIExecArgs processes the arguments for mpiexec.  For any argument that 
- * is not recognized, it calls the ProcessArg routine, which returns the
- * number of arguments that should be skipped.  The void * pointer in
- * the call to ProcessArg is filled with the "extraData" pointer.  If
- * ProcessArg is null, then any unrecognized argument causes mpiexec to 
- * print a help message and exit.
- *
- * In addition the the arguments specified by the MPI standard, 
- * -np is accepted as a synonym for -n and -hostfile is allowed
- * to specify the available hosts.
- *
- * The implementation understands the ":" notation to separate out 
- * different executables.  Since no ordering of these arguments is implied,
- * other than that the executable comes last, we store the values until
- * we see an executable.
- */
+/* Internal routines */
 static int getInt( int, int, char *[] );
-static int mpiexecParseSoftspec( const char *, SoftSpec * );
-static int ReadConfigFile( const char *, ProcessList *, int );
+static int ParseSoftspec( const char *, ProcessSoftSpec * );
+static int ReadConfigFile( const char *, ProcessUniverse * );
 
-int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist, 
+/*@ MPIE_Args - Process the arguments for mpiexec.  
+  
+    Input Parameters:
++   argc,argv - Argument count and vector
+.   ProcessArg - Routine that is called with any unrecognized argument.  
+    Returns 0 if the argument is successfully handled, non-zero otherwise.   
+-   extraData - Pointer passed to 'ProcessArg' routine
+
+    Output Parameter:
+.   pUniv - The elements of the 'ProcessUniverse' structure are filled in.
+
+    Notes:
+    This routine may be called to parse the arguments for an implementation of
+    'mpiexec'.  The 'ProcessUniverse' structure is filled in with information
+    about each process.
+
+  'MPIE_Args' processes the arguments for 'mpiexec'.  For any argument that 
+  is not recognized, it calls the 'ProcessArg' routine, which returns the
+  number of arguments that should be skipped.  The 'void * pointer' in
+  the call to 'ProcessArg' is filled with the 'extraData' pointer.  If
+  'ProcessArg' is null, then any unrecognized argument causes mpiexec to 
+  print a help message and exit.
+ 
+  In addition the the arguments specified by the MPI standard, 
+  -np is accepted as a synonym for -n and -hostfile is allowed
+  to specify the available hosts.
+ 
+  The implementation understands the ':' notation to separate out 
+  different executables.  Since no ordering of these arguments is implied,
+  other than that the executable comes last, we store the values until
+  we see an executable.
+
+  The routine 'mpiexec_usage' may be called to provide usage information 
+  if this routine detects an erroneous argument specification.
+ @*/
+int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv, 
 		 int (*ProcessArg)( int, char *[], void *), void *extraData )
 {
     int         i;
@@ -72,9 +100,18 @@ int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist,
     int        optionArgs = 0; /* Keep track of where we got 
 				 the options */
     int        optionCmdline = 0;
+    ProcessApp *pApp, **nextAppPtr;
 
-    /* Get values from the environment first.  Command line options
+    /* FIXME: Get values from the environment first.  Command line options
        override the environment */
+
+    /* Allocate the members of the ProcessUniverse structure */
+    pUniv->worlds = (ProcessWorld*) MPIU_Malloc( sizeof(ProcessWorld) );
+    pUniv->worlds->nApps     = 0;
+    pUniv->worlds->nProcess  = 0;
+    pUniv->worlds->nextWorld = 0;
+    nextAppPtr = &(pUniv->worlds->apps); /* Pointer to set with the next app */
+
     for (i=1; i<argc; i++) {
 	if ( strncmp( argv[i], "-n",  strlen( argv[i] ) ) == 0 ||
 	     strncmp( argv[i], "-np", strlen( argv[i] ) ) == 0 ) {
@@ -86,7 +123,7 @@ int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist,
 	    if ( i+1 < argc )
 		soft = argv[++i];
 	    else {
-		mpiexec_usage( "Missing argument to -soft\n" );
+		mpiexec_usage( "Missing argument to -soft" );
 	    }
 	    optionArgs = 1;
 	}
@@ -94,37 +131,37 @@ int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist,
 	    if ( i+1 < argc )
 		host = argv[++i];
 	    else 
-		mpiexec_usage( "Missing argument to -host\n" );
+		mpiexec_usage( "Missing argument to -host" );
 	    optionArgs = 1;
 	}
 	else if ( strncmp( argv[i], "-arch", 6 ) == 0 ) {
 	    if ( i+1 < argc )
 		arch = argv[++i];
 	    else
-		mpiexec_usage( "Missing argument to -arch\n" );
+		mpiexec_usage( "Missing argument to -arch" );
 	    optionArgs = 1;
 	}
 	else if ( strncmp( argv[i], "-wdir", 6 ) == 0 ) {
 	    if ( i+1 < argc )
 		wdir = argv[++i];
 	    else
-		mpiexec_usage( "Missing argument to -wdir\n" );
+		mpiexec_usage( "Missing argument to -wdir" );
 	    optionArgs = 1;
 	}
 	else if ( strncmp( argv[i], "-path", 6 ) == 0 ) {
 	    if ( i+1 < argc )
 		path = argv[++i];
 	    else
-		mpiexec_usage( "Missing argument to -path\n" );
+		mpiexec_usage( "Missing argument to -path" );
 	    optionArgs = 1;
 	}
 	else if ( strncmp( argv[i], "-configfile", 12 ) == 0) {
 	    if ( i+1 < argc ) {
 		/* Ignore the other command line arguments */
-		ReadConfigFile( argv[++i], plist, nplist );
+		ReadConfigFile( argv[++i], pUniv );
 	    }
 	    else
-		mpiexec_usage( "Missing argument to -configfile\n" );
+		mpiexec_usage( "Missing argument to -configfile" );
 	    optionCmdline = 1;
 	} 
 	else if (argv[i][0] != '-') {
@@ -147,50 +184,47 @@ int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist,
 		indexOfFirstArg = -1;
 	    }
 	    
-	    /* Check that we still have room */
-	    if (curplist >= nplist) {
-		mpiexec_usage( "Too many processes requested\n" );
-		return -1;
-	    }
-
-	    plist[curplist].spec.exename  = exename;
-	    plist[curplist].spec.hostname = host;
-	    plist[curplist].spec.arch     = arch;
-	    plist[curplist].spec.path     = path;
-	    plist[curplist].spec.wdir     = wdir;
+	    /* Create a new app */
+	    pApp = (ProcessApp*) MPIU_Malloc( sizeof(ProcessApp) );
+	    *nextAppPtr = pApp;
+	    nextAppPtr = &(pApp->nextApp);
+	    pApp->nextApp = 0;
+	    pApp->pState  = 0;
+	    /* Save the properties of this app */
+	    pApp->exename  = exename;
+	    pApp->arch     = arch;
+	    pApp->path     = path;
+	    pApp->wdir     = wdir;
+	    pApp->hostname = host;
 	    if (indexOfFirstArg > 0) {
-		plist[curplist].spec.args     =
-		    (const char **)(argv + indexOfFirstArg);
-		plist[curplist].spec.nArgs    = i - indexOfFirstArg;
+		pApp->args  = (const char **)(argv + indexOfFirstArg);
+		pApp->nArgs = i - indexOfFirstArg;
 	    }
 	    else {
-		plist[curplist].spec.args     = 0;
-		plist[curplist].spec.nArgs    = 0;
+		pApp->args  = 0;
+		pApp->nArgs = 0;
 	    }
 
 	    if (soft) {
 		/* Set the np to 0 to indicate valid softspec */
-		plist[curplist].np = 0;
+		pApp->nProcess = 0;
 		if (np > 0) {
-		    /* FIXME: Could warn about np and soft? */
-		    ;
+		    mpiexec_usage( "-n and -soft may not be used together" );
 		}
-		mpiexecParseSoftspec( soft, &plist[curplist].soft );
+		ParseSoftspec( soft, &pApp->soft );
 	    }
 	    else {
 		if (np == -1) np = 1;
-		plist[curplist].np = np;
-		plist[curplist].soft.nelm = 0;
-		plist[curplist].soft.tuples = 0;
+		pApp->nProcess    = np;
+		pApp->soft.nelm   = 0;
+		pApp->soft.tuples = 0;
 	    }
-	    plist[curplist].appnum = appnum;
-	    curplist++;
-	    appnum++;
+	    pApp->myAppNum = appnum++;
 
 	    /* Now, clear all of the values for the next set */
 	    host = arch = wdir = path = soft = exename = 0;
 	    indexOfFirstArg = -1;
-	    np              = 1;
+	    np              = -1;
 	}
 	else {
 	    /* Use the callback routine to handle any unknown arguments
@@ -245,6 +279,7 @@ static int getInt( int argnum, int argc, char *argv[] )
     return 0;
 }
 
+/* FIXME: Move this routine else where; perhaps a pmutil.c? */
 /* 
  * Try to get an integer value from the enviroment.  Return the default
  * if the value is not available or invalid
@@ -275,7 +310,7 @@ int mpiexecGetIntValue( const char name[], int default_val )
  *  element -> number | range
  *  range   -> number:number[:number]
  */
-static int mpiexecParseSoftspec( const char *str, SoftSpec *sspec )
+static int ParseSoftspec( const char *str, ProcessSoftSpec *sspec )
 {
     const char *p = str, *p1, *p2;
     int s, e, incr;
@@ -304,22 +339,22 @@ static int mpiexecParseSoftspec( const char *str, SoftSpec *sspec )
 	s = 0; e = 0; incr = 1;
 	p2 = p;
 	while (p2 < p1 && *p2 != ':') {
-	    s += 10 * s + (*p2 - '0');
+	    s = 10 * s + (*p2 - '0');
 	    p2++;
 	}
 	if (*p2 == ':') {
-	    /* Keep going */
+	    /* Keep going (end) */
 	    p2++;
 	    while (p2 < p1 && *p2 != ':') {
-		e += 10 * e + (*p2 - '0');
+		e = 10 * e + (*p2 - '0');
 		p2++;
 	    }
 	    if (*p2 == ':') {
-		/* Keep going */
+		/* Keep going (stride) */
 		p2++;
 		incr = 0;
 		while (p2 < p1 && *p2 != ':') {
-		    incr += 10 * incr + (*p2 - '0');
+		    incr = 10 * incr + (*p2 - '0');
 		    p2++;
 		}
 	    }
@@ -352,14 +387,15 @@ static int mpiexecParseSoftspec( const char *str, SoftSpec *sspec )
 #define MAXARGV    256
 static int LineToArgv( char *buf, char *(argv[]), int maxargc );
 
-static int ReadConfigFile( const char *filename, 
-			   ProcessList *plist, int nplist)
+static int ReadConfigFile( const char *filename, ProcessUniverse *pUniv)
 {
     FILE *fp = 0;
     int curplist = 0;
     char linebuf[MAXLINEBUF];
     char *(argv[MAXARGV]);       /* A kind of dummy argv */
     int  argc, newplist;
+    ProcessApp *pApp, **nextAppPtr;
+    
 
     fp = fopen( filename, "r" );
     if (!fp) {
@@ -376,8 +412,7 @@ static int ReadConfigFile( const char *filename,
 	   command line (this allows slightly more than the standard
 	   requires for configfile, but the extension (allowing :)
 	   is not prohibited by the standard */
-	newplist = mpiexecArgs( argc, argv, 
-				&plist[curplist], nplist - curplist, 0, 0 );
+	newplist = MPIE_Args( argc, argv, pUniv, 0, 0 );
 	if (newplist > 0) 
 	    curplist += newplist;
 	else 
@@ -420,42 +455,51 @@ static int LineToArgv( char *linebuf, char *(argv[]), int maxargv )
 /*
  * Debugging routine used to print out the results from mpiexecArgs
  */
-void mpiexecPrintProcessList( FILE *fp, ProcessList *plist, int nplist )
+void MPIE_PrintProcessUniverse( FILE *fp, ProcessUniverse *pUniv )
 {
     int i, j;
-    ProcessSpec *pspec;
-    SoftSpec    *sspec;
-    
-    for (i=0; i<nplist; i++) {
-	pspec = &plist[i].spec;
-	sspec = &plist[i].soft;
-	DBG_FPRINTF( (fp, "ProcessList[%d] for %d processes:\n", i, plist[i].np ));
-	DBG_FPRINTF( (fp, "\
+    ProcessWorld    *pWorld;
+    ProcessApp      *pApp;
+    ProcessSoftSpec *sSpec;
+    int             nWorld = 0;
+
+    pWorld = pUniv->worlds;
+    while (pWorld) {
+	DBG_FPRINTF( (fp,"Apps for world %d\n", nWorld ) );
+	pApp   = pWorld->apps;
+	while (pApp) {
+	    DBG_FPRINTF( (fp, "App %d:\n\
     exename   = %s\n\
     hostname  = %s\n\
     arch      = %s\n\
     path      = %s\n\
-    wdir      = %s\n", 
-		 pspec->exename  ? pspec->exename : "<NULL>", 
-		 pspec->hostname ? pspec->hostname : "<NULL>", 
-		 pspec->arch     ? pspec->arch     : "<NULL>", 
-		 pspec->path     ? pspec->path     : "<NULL>", 
-		 pspec->wdir     ? pspec->wdir     : "<NULL>") );
-	DBG_FPRINTF( (fp, "    args:\n") );
-	for (j=0; j<pspec->nArgs; j++) {
-	    DBG_FPRINTF( (fp, "        %s\n", pspec->args[j]) );
-	}
-	if (sspec->nelm > 0) {
-	    DBG_FPRINTF( (fp, "    Soft spec with %d tuples\n", sspec->nelm) );
-	    for (j=0; j<sspec->nelm; j++) {
-		DBG_FPRINTF( (fp, "        %d:%d:%d\n", 
-			 sspec->tuples[j][0],
-			 sspec->tuples[j][1],
-			 sspec->tuples[j][2]) );
+    wdir      = %s\n", pApp->myAppNum, 
+		 pApp->exename  ? pApp->exename : "<NULL>", 
+		 pApp->hostname ? pApp->hostname : "<NULL>", 
+		 pApp->arch     ? pApp->arch     : "<NULL>", 
+		 pApp->path     ? pApp->path     : "<NULL>", 
+		 pApp->wdir     ? pApp->wdir     : "<NULL>") );
+	    DBG_FPRINTF( (fp, "    args:\n") );
+	    for (j=0; j<pApp->nArgs; j++) {
+		DBG_FPRINTF( (fp, "        %s\n", pApp->args[j]) );
 	    }
+	    sSpec = &(pApp->soft);
+	    if (sSpec->nelm > 0) {
+		DBG_FPRINTF( (fp, "    Soft spec with %d tuples\n", sSpec->nelm) );
+		for (j=0; j<sSpec->nelm; j++) {
+		    DBG_FPRINTF( (fp, "        %d:%d:%d\n", 
+				  sSpec->tuples[j][0],
+				  sSpec->tuples[j][1],
+				  sSpec->tuples[j][2]) );
+		}
+	    }
+	    else {
+		DBG_FPRINTF( (fp, "    n         = %d\n", pApp->nProcess ) );
+		DBG_FPRINTF( (fp, "    No soft spec\n") );
+	    }
+	    pApp = pApp->nextApp;
 	}
-	else {
-	    DBG_FPRINTF( (fp, "    No soft spec\n") );
-	}
+	pWorld = pWorld->nextWorld;
+	nWorld++;
     }
 }

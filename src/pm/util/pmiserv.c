@@ -106,17 +106,17 @@ static int pmidebug = 1;
 static int  fPMI_Allocate_kvs( int *, char [] );
 static int  fPMI_Allocate_kvs_group( void );
 
-static void fPMI_Handle_barrier( PMIProcess * );
-static void fPMI_Handle_create_kvs( PMIProcess * );
-static void fPMI_Handle_destroy_kvs( PMIProcess * );
-static void fPMI_Handle_put( PMIProcess * );
-static void fPMI_Handle_get( PMIProcess * );
-static void fPMI_Handle_get_my_kvsname( PMIProcess * );
-static void fPMI_Handle_init( PMIProcess * );
-static void fPMI_Handle_get_maxes( PMIProcess * );
-static void fPMI_Handle_getbyidx( PMIProcess * );
-static void fPMI_Handle_init_port( PMIProcess * );
-static void fPMI_Handle_spawn( PMIProcess * );
+static int fPMI_Handle_barrier( PMIProcess * );
+static int fPMI_Handle_create_kvs( PMIProcess * );
+static int fPMI_Handle_destroy_kvs( PMIProcess * );
+static int fPMI_Handle_put( PMIProcess * );
+static int fPMI_Handle_get( PMIProcess * );
+static int fPMI_Handle_get_my_kvsname( PMIProcess * );
+static int fPMI_Handle_init( PMIProcess * );
+static int fPMI_Handle_get_maxes( PMIProcess * );
+static int fPMI_Handle_getbyidx( PMIProcess * );
+static int fPMI_Handle_init_port( PMIProcess * );
+static int fPMI_Handle_spawn( PMIProcess * );
 
 int PMIServHandleInput( int fd, void *extra );
 
@@ -124,6 +124,33 @@ typedef struct {
     ProcessState *pstate;
     /* ProcessState contains a PMIProcess member */
 } PMIData;
+
+
+/*
+ * All PMI commands are handled by calling a routine that is associated with
+ * the command.  New PMI commands can be added by updating this table.
+ */
+typedefs struct {
+    const char cmdName[];
+    int (*handler)( void * );
+} PMICmdMap;
+
+static PMICmdMap pmiCommands[] = { 
+    { "barrier_in",     fPMI_Handle_barrier },
+    { "finalize",       fPMI_Handle_finalize },
+    { "abort",          fPMI_Handle_abort },
+    { "create_kvs",     fPMI_Handle_create_kvs },
+    { "destroy_kvs",    fPMI_Handle_destroy_kvs }, 
+    { "put",            fPMI_Handle_put },
+    { "get",            fPMI_Handle_get },
+    { "get_my_kvsname", fPMI_Handle_get_my_kvsname },
+    { "init",           fPMI_Handle_init },
+    { "get_maxes",      fPMI_Handle_get_maxes },
+    { "getbyidx",       fPMI_Handle_getbyidx },
+    { "initack",        fPMI_Handle_init_port },
+    { "spawn",          fPMI_Handle_spawn },
+    { "\0",             0 },                     /* Sentinal for end of list */
+};
 
 /*
  * Initialize the information needed to communicate the the PMI client 
@@ -175,6 +202,7 @@ int PMIServHandleInputFd ( int fd, int pidx, void *extra )
     int  rc;
     int  returnCode = 0;
     char inbuf[PMIU_MAXLINE], outbuf[PMIU_MAXLINE], cmd[MAXPMICMD];
+    PMICmdMap *p;
 
     DBG_PRINTF( "Handling PMI input\n" ); fflush(stdout);
     if ( ( rc = PMIU_readline( pentry->fd, inbuf, PMIU_MAXLINE ) ) > 0 ) {
@@ -185,6 +213,19 @@ int PMIServHandleInputFd ( int fd, int pidx, void *extra )
 	PMIU_parse_keyvals( inbuf );
 	PMIU_getval( "cmd", cmd, MAXPMICMD );
 	DBG_PRINTF( "cmd = %s\n", cmd ); fflush(stdout);
+	p = pmiCommands;
+	while (p->handle) {
+	    if (strncmp( cmd, p->name, MAXPMICMD ) == 0) {
+		rc = (p->handle)( pentry );
+		break;
+	    }
+	    p++;
+	}
+	if (!p->handle) {
+	    PMIU_printf( 1, "unknown cmd %s\n", cmd );
+	}
+
+#if 0
 	if ( strncmp( cmd, "barrier_in", MAXPMICMD ) == 0 ) {
 	    fPMI_Handle_barrier( pentry );
 	}
@@ -341,7 +382,7 @@ static int fPMI_Allocate_kvs_group( void )
  *
  * Need a structure that has the fds for all members of a pmi group
  */
-static void fPMI_Handle_barrier( PMIProcess *pentry )
+static int fPMI_Handle_barrier( PMIProcess *pentry )
 {
     int i;
     int group = pentry->group;
@@ -359,12 +400,13 @@ static void fPMI_Handle_barrier( PMIProcess *pentry )
 	}
 	pmi.grouptable[group].num_in_barrier = 0;
     }
+    return 0;
 }
 
 /* 
  * Handle an incoming "create_kvs" command
  */
-static void fPMI_Handle_create_kvs( PMIProcess *pentry )
+static int fPMI_Handle_create_kvs( PMIProcess *pentry )
 {
     int  kvsidx;
     char kvsname[MAXKVSNAME], outbuf[PMIU_MAXLINE];
@@ -375,12 +417,13 @@ static void fPMI_Handle_create_kvs( PMIProcess *pentry )
     if (pmidebug) {
 	DBG_PRINTF( "Handle_create_kvs new %d name %s\n", kvsidx, kvsname );
     }
+    return 0;
 }
 
 /* 
  * Handle an incoming "destroy_kvs" command 
  */
-static void fPMI_Handle_destroy_kvs( PMIProcess *pentry )
+static int fPMI_Handle_destroy_kvs( PMIProcess *pentry )
 {
     int  i, rc=0;
     char kvsname[MAXKVSNAME];
@@ -410,12 +453,13 @@ static void fPMI_Handle_destroy_kvs( PMIProcess *pentry )
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=kvs_destroyed rc=%d msg=%s\n",
 	      rc, message );
     PMIU_writeline( pentry->fd, outbuf );
+    return 0;
 }
 
 /* 
  * Handle an incoming "put" command
  */
-static void fPMI_Handle_put( PMIProcess *pentry )
+static int fPMI_Handle_put( PMIProcess *pentry )
 {
     int  i, j, rc=0;
     char kvsname[MAXKVSNAME];
@@ -463,12 +507,13 @@ static void fPMI_Handle_put( PMIProcess *pentry )
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=put_result rc=%d msg=%s\n",
 	      rc, message );
     PMIU_writeline( pentry->fd, outbuf );
+    return 0;
 }
 
 /*
  * Handle incoming "get" command
  */
-static void fPMI_Handle_get( PMIProcess *pentry )
+static int fPMI_Handle_get( PMIProcess *pentry )
 {
     int  i, j, rc=0;
     char kvsname[MAXKVSNAME];
@@ -509,39 +554,43 @@ static void fPMI_Handle_get( PMIProcess *pentry )
 	      rc, message, value );
     PMIU_writeline( pentry->fd, outbuf );
     DBG_PRINTF( "%s", outbuf );
+    return rc;
 }
 
 /* Handle an incoming get_my_kvsname command */
-static void fPMI_Handle_get_my_kvsname( PMIProcess *pentry )
+static int fPMI_Handle_get_my_kvsname( PMIProcess *pentry )
 {
     char outbuf[PMIU_MAXLINE];
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=my_kvsname kvsname=%s\n",
 	      pmi.kvstable[pentry->kvs].kvsname );
     PMIU_writeline( pentry->fd, outbuf );
+    return 0;
 }
 
 /* Handle an incoming "init" command */
-static void fPMI_Handle_init( PMIProcess *pentry )
+static int fPMI_Handle_init( PMIProcess *pentry )
 {
     /* nothing to do at present */
+    return 0;
 }
 
 /* Handle an incoming "get_maxes" command */
-static void fPMI_Handle_get_maxes( PMIProcess *pentry )
+static int fPMI_Handle_get_maxes( PMIProcess *pentry )
 {
     char outbuf[PMIU_MAXLINE];
     MPIU_Snprintf( outbuf, PMIU_MAXLINE,
 	      "cmd=maxes kvsname_max=%d keylen_max=%d vallen_max=%d\n",
 	      MAXKVSNAME, MAXKEYLEN, MAXVALLEN );
     PMIU_writeline( pentry->fd, outbuf );
+    return 0;
 }
 
 /*
  * Handle incoming "getbyidx" command
  */
-static void fPMI_Handle_getbyidx( PMIProcess *pentry )
+static int fPMI_Handle_getbyidx( PMIProcess *pentry )
 {
-    int i, j;
+    int i, j, rc=0;
     char kvsname[MAXKVSNAME], j_char[8], outbuf[PMIU_MAXLINE];
 
     PMIU_getval( "kvsname", kvsname, MAXKVSNAME );
@@ -566,13 +615,15 @@ static void fPMI_Handle_getbyidx( PMIProcess *pentry )
 	break;
     }
     if ( i == MAXKVSS ) {
+	rc = -1;
 	MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=getbyidx_results rc=-1 "
 		  "reason=kvs_%s_not_found\n", kvsname );
     }
     PMIU_writeline( pentry->fd, outbuf );
+    return rc;
 }
 
-static void fPMI_Handle_init_port( PMIProcess *pentry )
+static int fPMI_Handle_init_port( PMIProcess *pentry )
 {
     char outbuf[PMIU_MAXLINE];
 
@@ -586,9 +637,10 @@ static void fPMI_Handle_init_port( PMIProcess *pentry )
     PMIU_writeline( pentry->fd, outbuf );
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set debug=%d\n", 1 );
     PMIU_writeline( pentry->fd, outbuf );
+    return 0;
 }
 
-static void fPMI_Handle_spawn( PMIProcess *pentry )
+static int fPMI_Handle_spawn( PMIProcess *pentry )
 {
     /* Input:
        nprocs=%d execname=%s arg=%s
@@ -596,6 +648,7 @@ static void fPMI_Handle_spawn( PMIProcess *pentry )
        Output:
        cmd=spawn_result remote_kvsname=name rc=integer
     */
+    return 0;
 }
 
 /*  
