@@ -389,6 +389,11 @@ for type in int long long_long short ; do
 done
 AC_SUBST(MPI_AINT)
 dnl
+dnl If sizeof(mpi_aint) = sizeof(int), set this value
+if test "$ac_cv_sizeof_int" = "$ac_cv_sizeof_void_p" ; then
+    AC_DEFINE(SIZEOF_INT_IS_AINT,,[define if sizeof(int) = sizeof(void*)])
+fi
+dnl
 dnl Configure any subdirectories.  Note that config.status will *not* 
 dnl reexecute these!
 dnl Export any important variables first:
