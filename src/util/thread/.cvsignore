@@ -11,4 +11,7 @@ Makefile.in
 configure
 config.*
 *.cache
+localdefs
+mpe_thread_conf.h
+mpe_thread.c
 mpe_thread_conf.h.in

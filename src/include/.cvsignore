@@ -3,6 +3,8 @@ mpif.h
 mpichtimer.h
 mpid*.h
 mpid*.h.in
+mpe_thread.h
+mpimod.pcl
 mpid_datatype.h
 mpid_dataloop.h
 gen_dataloop.h
