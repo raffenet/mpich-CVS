@@ -30,7 +30,7 @@ if [ -z "`echo $JVMFLAGS | grep '\-Xms'`" ] ; then
     JVMFLAGS="-Xms32m $JVMFLAGS"
 fi
 if [ -z "`echo $JVMFLAGS | grep '\-Xmx'`" ] ; then
-    JVMFLAGS="-Xmx64m $JVMFLAGS"
+    JVMFLAGS="-Xmx96m $JVMFLAGS"
 fi
 
 ${JVM} -Djava.library.path=@JPATH_START@${TRACE_LIBDIR}@JPATH_FINAL@ ${JVMFLAGS} -jar @JPATH_START@${MAIN_LIB}@JPATH_FINAL@ "$@"

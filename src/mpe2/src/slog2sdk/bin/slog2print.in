@@ -21,7 +21,7 @@ if [ -z "`echo $JVMFLAGS | grep '\-Xms'`" ] ; then
     JVMFLAGS="-Xms32m $JVMFLAGS"
 fi
 if [ -z "`echo $JVMFLAGS | grep '\-Xmx'`" ] ; then
-    JVMFLAGS="-Xmx64m $JVMFLAGS"
+    JVMFLAGS="-Xmx128m $JVMFLAGS"
 fi
 
 ${JVM} ${JVMFLAGS} -jar @JPATH_START@${MAIN_LIB}@JPATH_FINAL@ "$@"
