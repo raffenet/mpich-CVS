@@ -586,6 +586,7 @@ lib\${MPIFLIBNAME}_a_SOURCES = \${mpi_sources} setbotf.f \
 lib\${FWRAPNAME}_a_DIR = ROOTDIR/lib\
 lib\${FWRAPNAME}_a_SOURCES = \${mpi_sources}\
 \
+HEADERS = fproto.h mpi_fortimpl.h\
 profilelib_\${MPIFLIBNAME} = p\${MPIFLIBNAME}\
 INCLUDES = -I../../include -I\${master_top_srcdir}/src/include\
 maint-clean:\
@@ -2410,8 +2411,9 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d,
     &set_weak_decl( "MPI_Wtime", "void", "double" );
     &set_weak_decl( "PMPI_Wtime", "void", "double" );
     &print_header( "MPI_Wtime", "wtime", "" );
-    # mpiimpl.h is needed for the timer definitions
-    print $OUTFD "#include \"mpiimpl.h\"\n";
+    # mpichtimer.h is needed for the timer definitions
+    print $OUTFD "#include \"mpichconf.h\"\n";
+    print $OUTFD "#include \"mpichtimer.h\"\n";
     &print_routine_type_decl( $OUTFD, "wtime" );
     print $OUTFD "( void ) ";
     #&print_attr;
@@ -2438,8 +2440,9 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d,
     &set_weak_decl( "MPI_Wtick", "void", "double" );
     &set_weak_decl( "PMPI_Wtick", "void", "double" );
     &print_header( "MPI_Wtick", "wtick", "" );
-    # mpiimpl.h is needed for the timer definitions
-    print $OUTFD "#include \"mpiimpl.h\"\n";
+    # mpichtimer.h is needed for the timer definitions
+    print $OUTFD "#include \"mpichconf.h\"\n";
+    print $OUTFD "#include \"mpichtimer.h\"\n";
     &print_routine_type_decl( $OUTFD, "wtick" );
     print $OUTFD "( void ) ";
     #&print_attr;
@@ -2548,7 +2551,10 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d,
  * DO NOT EDIT
  */
 #include \"mpi_fortimpl.h\"
-#include \"mpiimpl.h\"
+/* mpierrs.h and mpierror.h for the error code creation */
+#include \"mpierrs.h\"
+#include <stdio.h> 
+#include \"mpierror.h\"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Status_f2c */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -2597,7 +2603,10 @@ int MPI_Status_f2c( MPI_Fint *f_status, MPI_Status *c_status )
  * DO NOT EDIT
  */
 #include \"mpi_fortimpl.h\"
-#include \"mpiimpl.h\"
+/* mpierrs.h and mpierror.h for the error code creation */
+#include \"mpierrs.h\"
+#include <stdio.h> 
+#include \"mpierror.h\"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Status_c2f */
 #if defined(HAVE_PRAGMA_WEAK)
