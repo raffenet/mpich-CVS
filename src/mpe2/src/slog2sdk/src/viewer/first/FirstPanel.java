@@ -42,7 +42,7 @@ public class FirstPanel extends JPanel
     private static String        open_icon_path     = Const.IMG_PATH
                                                     + "Open24.gif";
     private static String        convert_icon_path  = Const.IMG_PATH
-                                                    + "Copy24.gif";
+                                                    + "Convert24.gif";
     private static String        show_icon_path     = Const.IMG_PATH
                                                     + "New24.gif";
     private static String        close_icon_path    = Const.IMG_PATH
