@@ -821,7 +821,7 @@ skip_12_trial:
 
 			/******* use the ii variable here !!! ******/
 
-			for (j = 0; j < nrepeat012; j+=ii)
+			for (j = 0; j < nrepeat012-ii; j+=ii)
 			{
 			    for (k=0; k<ii; k++)
 			    {
