@@ -78,7 +78,12 @@ int MPIDI_CH3_Progress(int is_blocking)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS);
 
-    MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
+#ifdef MPICH_DBG_OUTPUT
+    if (is_blocking)
+    {
+	MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
+    }
+#endif
     do
     {
 	rc = sock_wait(sock_set, is_blocking ? SOCK_INFINITE_TIME : 0, &event);
@@ -366,7 +371,19 @@ int MPIDI_CH3_Progress(int is_blocking)
     while (completions == MPIDI_CH3I_progress_completions && is_blocking);
 
     count = MPIDI_CH3I_progress_completions - completions;
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", count));
+#ifdef MPICH_DBG_OUTPUT
+    if (is_blocking)
+    {
+	MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", count));
+    }
+    else
+    {
+	if (count > 0)
+	{
+	    MPIDI_DBG_PRINTF((50, FCNAME, "exiting (non-blocking), count=%d", count));
+	}
+    }
+#endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS);
     return count;
 }
