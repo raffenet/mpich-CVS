@@ -18,4 +18,8 @@
 #include <sys/uio.h>
 #include "adio.h"
 
+#ifdef tflops
+#define lseek eseek
+#endif
+
 #endif
