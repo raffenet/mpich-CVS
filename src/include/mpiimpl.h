@@ -490,7 +490,7 @@ typedef struct MPID_Datatype_st {
     int           n_elements;   /* Number of basic elements in this datatype */
     MPI_Aint      element_size; /* Size of each element or -1 if elements are
 				   not all the same size */
-    int (*free_fn)( MPID_Datatype * ); /* Function to free this datatype */
+    int (*free_fn)( struct MPID_Datatype_st * ); /* Function to free this datatype */
     /* Other, device-specific information */
 #ifdef MPID_DEV_DATATYPE_DECL
     MPID_DEV_DATATYPE_DECL
