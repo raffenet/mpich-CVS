@@ -286,7 +286,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit",
 					 "**pmi_kvs_commit %d", pmi_errno);
 	goto fn_fail;
-	/* --BEGIN ERROR HANDLING-- */
+	/* --END ERROR HANDLING-- */
     }
 
     pmi_errno = PMI_Barrier();
