@@ -49,9 +49,14 @@ static int PMI_fd = -1;
 static int PMI_size = 1;
 static int PMI_rank = 0;
 
-/* Set PMI_initialized to 1 for regular initialized and 2 for 
-   the singleton init case (no MPI_Init) */
-#define SINGLETON_INIT 2
+/* Set PMI_initialized to 1 for singleton init but no process manager
+   to help.  Initialized to 2 for normal initialization.  Initialized
+   to values higher than 2 when singleton_init by a process manager.
+   All values higher than 1 invlove a PM in some way.
+*/
+#define SINGLETON_INIT_BUT_NO_PM 1
+#define NORMAL_INIT_WITH_PM      2
+#define SINGLETON_INIT_MPD       3
 static int PMI_initialized = 0;
 
 /* ALL GLOBAL VARIABLES MUST BE INITIALIZED TO AVOID POLLUTING THE 
@@ -68,6 +73,11 @@ static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max );
 static int PMII_iter( const char *kvsname, const int idx, int *nextidx, char *key, int key_len, char *val, int val_len );
 static int PMII_Set_from_port( int, int );
 static int PMII_Connect_to_pm( char *, int );
+
+static void mpd_singinit();
+static int accept_one_connection(int);
+static char cached_singinit_key[PMIU_MAXLINE];
+static char cached_singinit_val[PMIU_MAXLINE];
 
 /******************************** Group functions *************************/
 
@@ -131,7 +141,7 @@ int PMI_Init( int *spawned )
 	PMI_rank = 0;
 	*spawned = 0;
 	
-	PMI_initialized = SINGLETON_INIT;
+	PMI_initialized = SINGLETON_INIT_BUT_NO_PM;
 	PMI_kvsname_max = 256;
 	PMI_keylen_max  = 256;
 	PMI_vallen_max  = 256;
@@ -176,7 +186,8 @@ int PMI_Init( int *spawned )
     else
 	*spawned = 0;
 
-    PMI_initialized = 1;
+    if ( ! PMI_initialized )
+	PMI_initialized = NORMAL_INIT_WITH_PM;
 
     /*****   RMB TEST BLOCK
     {
@@ -225,7 +236,7 @@ int PMI_Get_universe_size( int *size)
     int maxlen;
 #endif
 
-    if ( PMI_initialized )
+    if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
     {
 #ifdef USE_HUMAN_READABLE_TOKENS
 	iter = buf;
@@ -262,8 +273,8 @@ int PMI_Barrier( )
     int maxlen;
 #endif
 
-    if ( PMI_initialized == 1) {
-	/* Ignore if SINGLETON_INIT */
+    if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
+    {
 #ifdef USE_HUMAN_READABLE_TOKENS
 	iter = buf;
 	maxlen = PMIU_MAXLINE;
@@ -310,8 +321,7 @@ int PMI_Finalize( )
     int maxlen;
 #endif
 
-    /* Ignore SINGLETON_INIT */
-    if (PMI_initialized == 1)
+    if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
     {
 #ifdef USE_HUMAN_READABLE_TOKENS
 	iter = buf;
@@ -353,9 +363,9 @@ int PMI_KVS_Get_my_name( char kvsname[], int length )
     int maxlen;
 #endif
 
-    if (PMI_initialized == SINGLETON_INIT) {
+    if (PMI_initialized == SINGLETON_INIT_BUT_NO_PM) {
 	/* Return a dummy name */
-	MPIU_Strncpy( kvsname, "mykvs", PMIU_MAXLINE );
+	MPIU_Strncpy( kvsname, "singinit_kvs_0", PMIU_MAXLINE );  /* used by mpd if nec */
 	return 0;
     }
 #ifdef USE_HUMAN_READABLE_TOKENS
@@ -433,7 +443,7 @@ int PMI_KVS_Create( char kvsname[], int length )
     int maxlen;
 #endif
     
-    if (PMI_initialized == SINGLETON_INIT) {
+    if (PMI_initialized == SINGLETON_INIT_BUT_NO_PM) {
 	/* It is ok to pretend to *create* a kvs space */
 	return 0;
     }
@@ -469,7 +479,7 @@ int PMI_KVS_Destroy( const char kvsname[] )
     int maxlen;
 #endif
 
-    if (PMI_initialized == SINGLETON_INIT) {
+    if (PMI_initialized == SINGLETON_INIT_BUT_NO_PM) {
 	return 0;
     }
 
@@ -514,8 +524,9 @@ int PMI_KVS_Put( const char kvsname[], const char key[], const char value[] )
     int maxlen;
 #endif
 
-    if (PMI_initialized == SINGLETON_INIT) {
-	/* Ignore the put */
+    if (PMI_initialized == SINGLETON_INIT_BUT_NO_PM) {
+	strcpy(cached_singinit_key,key);
+	strcpy(cached_singinit_val,value);
 	return 0;
     }
     
@@ -619,53 +630,6 @@ int PMI_KVS_Iter_next(const char kvsname[], char key[], int key_len, char val[],
 
 /******************************** Process Creation functions *************************/
 
-/* PMI_Spawn obsolete? (replaced by PMI_Spawn_multiple, of which it is a special case */
-
-int PMI_Spawn(const char *command, const char *argv[], 
-	      const int maxprocs, char *kvsname, int kvsnamelen )
-{
-    int  rc;
-    char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
-#ifdef USE_HUMAN_READABLE_TOKENS
-    char *iter;
-    int maxlen;
-#endif
-
-    /* FIXME: Check for tempbuf too short */
-#ifdef USE_HUMAN_READABLE_TOKENS
-    iter = buf;
-    maxlen = PMIU_MAXLINE;
-    MPIU_Str_add_string_arg(&iter, &maxlen, "cmd", "spawn");
-    MPIU_Str_add_int_arg(&iter, &maxlen, "nprocs", maxprocs);
-    MPIU_Str_add_string_arg(&iter, &maxlen, "execname", command);
-    MPIU_Str_add_string_arg(&iter, &maxlen, "arg", argv[0]);
-    MPIU_Strncpy(iter, "\n", maxlen);
-#else
-    MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=spawn nprocs=%d execname=%s arg=%s\n",
-	      maxprocs, command, argv[0] );
-#endif
-    PMIU_writeline( PMI_fd, buf );
-    PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
-    PMIU_parse_keyvals( buf ); 
-    PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
-    PMIU_getval( "remote_kvsname", kvsname, kvsnamelen );
-    if ( strncmp( cmd, "spawn_result", PMIU_MAXLINE ) != 0 ) {
-	PMIU_printf( 1, "got unexpected response to spawn :%s:\n", buf );
-	return( -1 );
-    }
-    else {
-	PMIU_getval( "rc", buf, PMIU_MAXLINE );
-	rc = atoi( buf );
-	if ( rc == 0 ) {
-	    return( 0 );
-	}
-	else {
-	    return( -1 );
-	}
-    }
-    return( -1 );
-}
-
 int PMI_Spawn_multiple(int count,
                        const char * cmds[],
                        const char ** argvs[],
@@ -679,10 +643,21 @@ int PMI_Spawn_multiple(int count,
     int  i,rc,argcnt,spawncnt;
     char buf[PMIU_MAXLINE], tempbuf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
-    /* PMIU_printf( 1, "PMI_Spawn_multiple not implemented yet\n" ); */
     /* printf("CMD0 = :%s:\n",cmds[0]);  fflush(stdout);  */
-       /* printf("ARG00=:%s:\n",argvs[0][0]);  fflush(stdout);  */
+    /* printf("ARG00=:%s:\n",argvs[0][0]);  fflush(stdout);  */
     /* MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=spawn execname=/bin/hostname nprocs=1\n" ); */
+    if (PMI_initialized < 2)
+    {
+	mpd_singinit();
+	PMI_initialized = SINGLETON_INIT_MPD;    /* do this right away */
+	PMI_size = 1;
+	PMI_rank = 0;
+	PMI_debug = 0;
+	PMI_spawned = 0;
+	PMII_getmaxes( &PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max );
+	PMI_KVS_Put( "singinit_kvs_0", cached_singinit_key, cached_singinit_val );
+    }
+
     for (spawncnt=0; spawncnt < count; spawncnt++)
     {
 	/* FIXME: Check for buf too short */
@@ -958,7 +933,6 @@ static int PMII_Connect_to_pm( char *hostname, int portnum )
     struct sockaddr_in sa;
     int                fd;
     int                optval = 1;
-    int                flags;
     int                q_wait = 1;
     
     hp = gethostbyname( hostname );
@@ -1136,3 +1110,82 @@ static int PMII_Set_from_port( int fd, int id )
     return 0;
 }
 #endif
+
+
+static void mpd_singinit()
+{
+    int pid, rc, len;
+    int singinit_listen_sock, pmi_sock, stdin_sock, stdout_sock, stderr_sock;
+    char *newargv[8], charpid[8], port_c[8];
+    struct sockaddr_in sin;
+
+    sin.sin_family = AF_INET;
+    sin.sin_addr.s_addr = INADDR_ANY;
+    sin.sin_port = htons(0);    /* anonymous port */
+    singinit_listen_sock = socket(AF_INET, SOCK_STREAM, 0);
+    rc = bind(singinit_listen_sock, (struct sockaddr *)&sin ,sizeof(sin));
+    len = sizeof(struct sockaddr_in);
+    rc = getsockname( singinit_listen_sock, (struct sockaddr *) &sin, &len ); 
+    sprintf(port_c,"%d",ntohs(sin.sin_port));
+    rc = listen(singinit_listen_sock, 5);
+
+    pid = fork();
+    if (pid < 0)
+    {
+	perror("mpd_singinit: fork failed");
+	exit(-1);
+    }
+    else if (pid == 0)
+    {
+	newargv[0] = "mpdrun.py";
+	newargv[1] = "-p";
+	sprintf(charpid,"%d",getpid());
+	newargv[2] = charpid;
+	newargv[3] = port_c;
+	newargv[4] = "unknown_via_singinit";
+	newargv[5] = NULL;
+	execvp(newargv[0],newargv);
+	perror("mpd_singinit: execv failed");
+	exit(-1);
+    }
+    else
+    {
+	/* printf("mpd_singinit: accepting pmi conn from mpdman\n"); */
+	pmi_sock = accept_one_connection(singinit_listen_sock);
+	PMI_fd = pmi_sock;
+	stdin_sock  = accept_one_connection(singinit_listen_sock);
+	dup2(stdin_sock, 0);
+	stdout_sock = accept_one_connection(singinit_listen_sock);
+	dup2(stdout_sock,1);
+	stderr_sock = accept_one_connection(singinit_listen_sock);
+	dup2(stderr_sock,2);
+	/* printf("mpd_singinit: past accepting\n");  fflush(stdout); */
+    }
+}
+
+static int accept_one_connection(int list_sock)
+{
+    int len, gotit, new_sock;
+    struct sockaddr_in from;
+
+    len = sizeof(from);
+    gotit = 0;
+    while ( ! gotit )
+    {
+	new_sock = accept(list_sock, (struct sockaddr *)&from, &len);
+	if (new_sock == -1)
+	{
+	    if (errno == EINTR)    /* interrupted? If so, try again */
+		continue;
+	    else
+	    {
+		printf("accept failed\n");
+		exit(-1);
+	    }
+	}
+	else
+	    gotit = 1;
+    }
+    return(new_sock);
+}
+
