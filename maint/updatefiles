@@ -219,6 +219,7 @@ if [ $? = 0 ] ; then has_unix_find=yes ; else has_unix_find=no ; fi
 if [ "$has_unix_find" = "yes" ] ; then
     for dir in `find . -name 'configure.in' -print` ; do
         dir=`dirname $dir`
+	echo $dir
 	if [ -s $dir/Makefile.in ] ; then 
             echo "Found $dir/configure.in"
 	    #
@@ -230,6 +231,16 @@ if [ "$has_unix_find" = "yes" ] ; then
 		# to TRY_COMPILE, and stock 2.13 generates bogus 
 		# code for language FORTRAN.
 		continue
+	    fi
+	    if [ -s "$dir/configure2.in" ] ; then
+	        # There is a version 1 and version 2 configure in this
+	        # directory.  
+	        if [ $dir = "./src/mpi/romio" ] ; then
+		    (cd $dir ; \
+		    autoheader -l ../../../confdb configure2.in > adio/include/romioconf.h \
+		     autoconf -l ../../../confdb configure2.in > configure )
+		fi
+	        continue
 	    fi
             (cd $dir ; rm -f mf.tmp ; \
 	    sed -e 's%^SHELL[ 	]*=.*%SHELL = /bin/sh%' \
