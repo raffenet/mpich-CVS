@@ -6,9 +6,6 @@
 
 #include "mpidimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME xfer_scatter_send_op
-
 /*@
    xfer_scatter_send_op - xfer_scatter_send_op
 
@@ -25,11 +22,8 @@
 @*/
 int xfer_scatter_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Datatype dtype, int first, int last, int dest)
 {
-    static const char FCNAME[] = "xfer_scatter_send_op";
     MM_Car *pCar;
     MPID_Request *pRequest;
-
-    MPID_MPI_FUNC_ENTER(MPID_STATE_XFER_SCATTER_SEND_OP);
 
     if (!request_ptr->op_valid)
     {
@@ -73,6 +67,5 @@ int xfer_scatter_send_op(MPID_Request *request_ptr, const void *buf, int count, 
     pCar->dest = dest;
     pCar->next_ptr = NULL;
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_XFER_SCATTER_SEND_OP);
     return MPI_SUCCESS;
 }

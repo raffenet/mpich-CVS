@@ -6,9 +6,6 @@
 
 #include "mpidimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME xfer_scatter_init
-
 /*@
    xfer_scatter_init - xfer_scatter_init
 
@@ -22,10 +19,7 @@
 @*/
 int xfer_scatter_init(int src, int tag, MPID_Comm *comm_ptr, MPID_Request **request_pptr)
 {
-    static const char FCNAME[] = "xfer_scatter_init";
     MPID_Request *pRequest;
-
-    MPID_MPI_FUNC_ENTER(MPID_STATE_XFER_SCATTER_INIT);
 
     pRequest = mm_request_alloc();
     pRequest->src = src;
@@ -34,7 +28,5 @@ int xfer_scatter_init(int src, int tag, MPID_Comm *comm_ptr, MPID_Request **requ
 
     *request_pptr = pRequest;
 
-
-    MPID_MPI_FUNC_EXIT(MPID_STATE_XFER_SCATTER_INIT);
     return MPI_SUCCESS;
 }

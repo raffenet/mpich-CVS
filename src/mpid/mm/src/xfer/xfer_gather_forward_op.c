@@ -6,9 +6,6 @@
 
 #include "mpidimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME xfer_gather_forward_op
-
 /*@
    xfer_gather_forward_op - xfer_gather_forward_op
 
@@ -20,10 +17,5 @@
 @*/
 int xfer_gather_forward_op(MPID_Request *request_ptr, int size)
 {
-    static const char FCNAME[] = "xfer_gather_forward_op";
-
-    MPID_MPI_FUNC_ENTER(MPID_STATE_XFER_GATHER_FORWARD_OP);
-
-    MPID_MPI_FUNC_EXIT(MPID_STATE_XFER_GATHER_FORWARD_OP);
     return MPI_SUCCESS;
 }
