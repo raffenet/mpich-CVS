@@ -84,19 +84,21 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 	return errcode;
     }
     else {
+	/* We pass a final 0 (for a null pointer) to these routines
+	   because MPICH-1 expected that */
 	switch (comm_ptr->errhandler->language) {
 	case MPID_LANG_C:
 #ifdef HAVE_CXX_BINDING
 	case MPID_LANG_CXX:
 #endif
 	    (*comm_ptr->errhandler->errfn.C_Comm_Handler_function)( 
-		&comm_ptr->handle, &errcode );
+		&comm_ptr->handle, &errcode, 0 );
 	    break;
 #ifdef HAVE_FORTRAN_BINDING
 	case MPID_LANG_FORTRAN90:
 	case MPID_LANG_FORTRAN:
 	    (*comm_ptr->errhandler->errfn.F77_Handler_function)( 
-		(MPI_Fint *)&comm_ptr->handle, &errcode );
+		(MPI_Fint *)&comm_ptr->handle, &errcode, 0 );
 	    break;
 #endif
 	}
