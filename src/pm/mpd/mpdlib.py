@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from sys        import version_info, stdout, exc_info, exit
-from socket     import socket, AF_INET, SOCK_STREAM
+from socket     import socket, AF_INET, SOCK_STREAM, gethostbyname_ex
 from re         import sub, split
 from cPickle    import dumps, loads
 from traceback  import extract_stack, format_list, extract_tb
@@ -222,6 +222,18 @@ def mpd_get_groups_for_username(username):
         if username in group[3]  and  group[2] not in userGroups:
             userGroups.append(group[2])
     return userGroups
+
+def mpd_same_ips(host1,host2):    # hosts may be names or IPs
+    try:
+        ips1 = gethostbyname_ex(host1)[2]    # may fail if invalid host
+        ips2 = gethostbyname_ex(host2)[2]    # may fail if invalid host
+    except:
+        return 0
+    for ip1 in ips1:
+        for ip2 in ips2:
+            if ip1 == ip2:
+                return 1
+    return 0
 
 if __name__ == '__main__':
     print 'mpdlib for mpd version: %s' % str(mpd_version)

@@ -6,7 +6,7 @@ from sys    import argv, exit
 from popen2 import Popen3
 from socket import gethostname
 from select import select, error
-from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_raise, mpdError
+from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_raise, mpdError, mpd_same_ips
 
 def mpdboot():
     rshCmd    = 'ssh'
@@ -82,7 +82,8 @@ def mpdboot():
             usage()
         hosts = [ x.strip() for x in hosts if x[0] != '#' ]
         if oneLocal:
-            hosts = [ x for x in hosts if x != myHost ]
+            hosts = [ x for x in hosts if not mpd_same_ips(x,myHost) ]
+            # hosts = [ x for x in hosts if x != myHost ]
         if len(hosts) < (totalNum-1):    # one is local
             print 'there are not enough hosts specified on which to start all processes'
             exit(-1)

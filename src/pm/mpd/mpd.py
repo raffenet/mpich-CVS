@@ -23,7 +23,7 @@ from mpdlib    import mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
                       mpd_set_procedures_to_trace, mpd_trace_calls, mpd_raise, mpdError, \
                       mpd_get_my_username, mpd_get_groups_for_username, \
                       mpd_set_my_id, mpd_check_python_version, mpd_version, \
-                      mpd_socketpair
+                      mpd_socketpair, mpd_same_ips
 
 
 class _ActiveSockInfo:
@@ -380,13 +380,14 @@ def _do_mpdrun(msg):
         if handled_one__any_:
             break
         hosts = msg['hosts']
-        if g.myHost not in hosts.values()  and  '_any_' not in hosts.values():
+        chked_ips = [ mpd_same_ips(g.myHost,x) for x in hosts.values() ]
+        if 1 not in chked_ips  and  '_any_' not in hosts.values():
             break
         currRank = msg['nstarted']
         found = 0
         for ranks in hosts.keys():
             (lo,hi) = ranks
-            if hosts[ranks] == g.myHost  and  (currRank >= lo and currRank <= hi):
+            if mpd_same_ips(g.myHost,hosts[ranks]) and (currRank >= lo and currRank <= hi):
                 found = 1
                 break
         if not found:
