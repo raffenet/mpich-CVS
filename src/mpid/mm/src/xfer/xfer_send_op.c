@@ -105,6 +105,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     mm_inc_cc(pRequest);
 
     /* setup the write car, adding a header car if this is the first send op to this destination */
+    pRequest->mm.write_list = &pRequest->mm.wcar[0];
     if (bNeedHeader)
     {
 	pRequest->mm.wcar[0].request_ptr = pRequest;

@@ -9,7 +9,10 @@ int tcp_write(MPIDI_VC *vc_ptr)
 {
     MM_Car *car_ptr;
 
-    car_ptr = vc_ptr->readq_head;
+    if (!vc_ptr->data.tcp.connected)
+	return MPI_SUCCESS;
+
+    car_ptr = vc_ptr->writeq_head;
 
     switch (car_ptr->buf_ptr->type)
     {
