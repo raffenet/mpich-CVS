@@ -29,7 +29,7 @@ int MPI_Gatherv(void* sbuff, int scnt, MPI_Datatype stype,
         if(r == root) {
             CollChk_same_dtype_vector(comm, root, scnt, rcnt, rtype, call);
             if (sbuff != MPI_IN_PLACE) {
-                CollChk_hash_dtype(rtype, rcnt,
+                CollChk_hash_dtype(rtype, *rcnt,
                                    &(hs1.hash_val), &(hs1.hash_cnt));
                 CollChk_hash_dtype(stype, scnt,
                                    &(hs2.hash_val), &(hs2.hash_cnt));
