@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#! /usr/bin/perl -w
 #
 # This file builds candidate interface files from the descriptions in 
 # mpi.h
@@ -52,7 +52,6 @@ $returnType   = "void";
 
 #feature variables
 $do_logical = 1;
-$do_fint    = 1;
 $do_weak    = 1;
 $do_subdecls = 1;
 $do_bufptr = 1;
@@ -496,7 +495,7 @@ foreach $_ (@ARGV) {
 
 #
 # Load any definition file
-if ($definition_file ne "") {
+if ($definition_file) {
     require $definition_file;
 }
 
@@ -664,7 +663,7 @@ sub print_header {
     my $extra = $_[3];
  
     &print_copyright( );
-    if ($extra ne "") {
+    if ($extra) {
 	print $OUTFD $extra;
     }
     &print_profiling_block( $routine_name, $lcname, $args );
@@ -942,7 +941,7 @@ sub print_args {
 	    }
 	    elsif (defined($tof77{$basetype})) {
 		# FIXME: This code (now commented out) is not correct
-		print STDERR "Using fall through for $basetype in $routine\n" if #debug;
+		print STDERR "Using fall through for $basetype in $routine\n" if $debug;
 # 		if ($useOldCode eq "yes") {
 # 		$nstar_before = ($basetype =~ /\*/);
 # 		$basetype = $tof77{$basetype};
@@ -1611,7 +1610,7 @@ sub chararray_ftoc {
     print $OUTFD "\
     { int i;
       char *ptmp;\n";
-    if ($Array_size ne "") {
+    if ($Array_size) {
 	print $OUTFD "\
       asize$count = $Array_size + 1;\n";
     }
@@ -2896,7 +2895,7 @@ sub CheckAutoconf {
     print ACFD "AC_TRY_COMPILE(,[integer a],a=1,a=0)\n";
     close ACFD;
 
-    chdir tmp;
+    chdir 'tmp';
     $rc = system "autoconf >/dev/null 2>&1 ";
     $rc = system "grep endEOF configure >/dev/null 2>&1";
     $rc = !$rc;
