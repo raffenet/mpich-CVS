@@ -55,13 +55,13 @@ Provide the files
 routines include files in this order:
 
 \begin{description}
-\item[mpi.h]The standard \file{mpi.h} that all MPI users include
-\item[mpidpre.h]Any definitions needed \emph{before} the provided
+\item[mpi.h]---The standard \file{mpi.h} that all MPI users include
+\item[mpidpre.h]---Any definitions needed \emph{before} the provided
 definitions of the contents of the internal structures.  This can
 included definitions that override parts of \file{mpiimpl.h}
-\item[contents of mpiimpl.h]The bulk of the internal definitions.
+\item[contents of mpiimpl.h]---The bulk of the internal definitions.
 This also includes information on the timers.
-\item[mpidpost.h]Any definitions needed by the device after the rest
+\item[mpidpost.h]---Any definitions needed by the device after the rest
 of the definitions in \file{mpiimpl.h}.  In many cases, this file may
 be empty.
 \end{description}

@@ -901,17 +901,17 @@ four.  The API routines for communication take an explicit context id
 offset as a parameter.  These offsets have the following values.  For
 intracommunicators: 
 \begin{description}
-\item[0]--point to point communication, 
-\item[1]--collective communication, 
-\item[2]--communication for files, 
-\item[3]--communication for window objects.  
+\item[0]-- point to point communication, 
+\item[1]-- collective communication, 
+\item[2]-- communication for files, 
+\item[3]-- communication for window objects.  
 \end{description}
 For intercommunicators: 
 \begin{description}
-\item[0]--point to point, 
-\item[1]--collective in group A, 
-\item[2]--collective in group B, 
-\item[3]--collective over both groups.
+\item[0]-- point to point, 
+\item[1]-- collective in group A, 
+\item[2]-- collective in group B, 
+\item[3]-- collective over both groups.
 \end{description}
 (Note that a single context value for ``collective in local group'' is
 adequate; however, having separate context values provides stronger
