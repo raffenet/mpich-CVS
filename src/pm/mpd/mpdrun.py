@@ -86,8 +86,6 @@ def mpdrun():
     hosts   = {}
 
     get_args_from_cmdline()    # verify args as much as possible before connecting to mpd
-    if argsFilename:
-        get_args_from_file()
 
     (listenSocket,listenPort) = mpd_get_inet_listen_socket('',0)
     signal(SIGALRM,sig_handler)
@@ -125,6 +123,8 @@ def mpdrun():
         if msg['mpd_version'] != mpd_version:
             mpd_raise('mpd version %s does not match mine %s' % (msg['mpd_version'],mpd_version) )
 
+    if argsFilename:    # get these after we have a conn to mpd
+        get_args_from_file()
     if gdbAttachJobid:
         get_vals_for_attach()
     elif not argsFilename:    # if only had cmd-line args
