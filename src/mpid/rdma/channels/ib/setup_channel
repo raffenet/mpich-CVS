@@ -1,4 +1,4 @@
-echo "RUNNING SETUP_CHANNEL FOR THE GASNET CHANNEL"
+echo "RUNNING SETUP_CHANNEL FOR THE INFINIBAND CHANNEL"
 
 #
 # NOTE: This file is sourced from the setup_device with the current working

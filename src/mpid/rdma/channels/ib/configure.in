@@ -11,7 +11,7 @@ dnl Definitions will be placed in this file rather than in the DEFS variable
 dnl
 AC_CONFIG_HEADER(include/mpidi_ch3i_gasnet_conf.h)
 
-echo "RUNNING CONFIGURE FOR THE GASNET CHANNEL"
+echo "RUNNING CONFIGURE FOR THE INFINIBAND CHANNEL"
 
 dnl
 dnl First check that we have a clean build if we are doing a VPATH build
