@@ -78,7 +78,7 @@ def mpiexec():
                 elif defaultArgs[gargIdx] == '-path':
                     gPath = defaultArgs[gargIdx+1]
                     gargIdx += 2
-                elif defaultArgs[gargIdx] == '-n':
+                elif defaultArgs[gargIdx] == '-n'  or  defaultArgs[gargIdx] == '-np':
                     gNProcs = int(defaultArgs[gargIdx+1])
                     gargIdx += 2
                 else:
