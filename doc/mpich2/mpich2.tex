@@ -369,6 +369,45 @@ which would generate a set of directories under the
 pages, in their natural place (e.g.,
 \file{/usr/local/mpich-2.0.3/man}).
 
+\subsection{Modularity}
+\label{sec:modularity}
+One of the greatest challenges will be maintaining modularity of the source
+code.  Here are a few guidelines.
+
+\begin{description}
+\item[mpich/src/include]: This should be the home only for files that are
+  common to 
+the implementation of the routines in \file{mpich/src/mpi}, and should not be
+the 
+(CVS) home for any files in a separate module (defined as anything that does
+or should have its own configure).  Use \code{AC_OUTPUT_COMMANDS} to copy any
+necessary include files into \file{mpich/src/include} from their natural home
+location.  See \file{mpich/src/mpi/timer/configure.in} for an example. 
+
+\item[Global variables] should be grouped together by module.  For the routines
+in \file{mpich/src/mpi} (but not counting \file{src/mpi/timer} because that is
+a separate 
+module), you can use the per thread or per process blocks in
+\file{src/include/mpiimpl.h}.  Other modules, such as the ADI implementations,
+BNR, 
+or the timer, should use their own structures to hold global variables. 
+
+\item[mpich/configure.in]: This should have only the tests necessary for the
+  code in 
+\file{src/mpi}, excluding \file{src/mpi/timer} .  Any tests for
+device-dependent features 
+must be made in a configure within that particular device, using
+\code{AC_CONFIG_SUBDIRS} .  In particular, no tests for features needed by
+BNR, the 
+timer, or the device should be made here. 
+
+\item[Initialization and rundown]: As much as possible, let modules initialize 
+themselves on first use, rather than forcing \code{MPI_Init_thread} to call
+something 
+to initialize them.  Use the finalize callbacks to register any routine used
+to clean up during \code{MPI_Finalize}. 
+\end{description}
+
 \subsection{Sample Implementation Template}
 \label{sec:template}
 
