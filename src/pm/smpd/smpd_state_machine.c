@@ -3223,37 +3223,50 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 	    {
 		/* FIXME: insert implementation here: */
 		/* verify local admin */
-		BOOL b;
+		BOOL b = FALSE;
+		int error;
 		SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
 		PSID AdministratorsGroup;
-		b = AllocateAndInitializeSid(
+		context->access = SMPD_ACCESS_NONE;
+		result_str = SMPD_FAIL_STR;
+		if (AllocateAndInitializeSid(
 		    &NtAuthority,
 		    2,
 		    SECURITY_BUILTIN_DOMAIN_RID,
 		    DOMAIN_ALIAS_RID_ADMINS,
 		    0, 0, 0, 0, 0, 0,
-		    &AdministratorsGroup);
-		if (b)
+		    &AdministratorsGroup))
 		{
-		    if (!CheckTokenMembership(NULL, AdministratorsGroup, &b)) 
+		    if (CheckTokenMembership(NULL, AdministratorsGroup, &b)) 
 		    {
-			b = FALSE;
-		    } 
+			smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
+			if (b)
+			{
+			    smpd_dbg_printf("allowing admin access to smpd\n");
+			    context->access = SMPD_ACCESS_ADMIN;
+			    result_str = SMPD_SUCCESS_STR;
+			}
+			else
+			{
+			    smpd_dbg_printf("CheckTokenMembership returned %s is not an administrator, denying admin access to smpd.\n", context->account);
+			}
+		    }
+		    else
+		    {
+			error = GetLastError();
+			smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
+			smpd_dbg_printf("CheckTokenMembership returned false, %d, denying admin access to smpd.\n", error);
+		    }
 		    FreeSid(AdministratorsGroup); 
-		}
-		smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
-		smpd_dbg_printf("impersonated user: '%s'\n", context->account);
-
-		if (b)
-		{
-		    smpd_dbg_printf("allowing admin access to smpd\n");
-		    context->access = SMPD_ACCESS_ADMIN;
 		}
 		else
 		{
-		    context->access = SMPD_ACCESS_NONE;
-		    result_str = SMPD_FAIL_STR;
+		    smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
+		    smpd_err_printf("AllocateAndInitializeSid failed: %d\n", GetLastError());
 		}
+		/* revert must be called before any smpd_dbg_printfs will work */
+		/*smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);*/
+		smpd_dbg_printf("impersonated user: '%s'\n", context->account);
 	    }
 	    else
 	    {
