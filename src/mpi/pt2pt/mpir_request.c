@@ -145,7 +145,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		{
 		    /* --BEGIN ERROR HANDLING-- */
 		    /* This should not happen */
-		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase", request_ptr->greq_lang);
+		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase %d", request_ptr->greq_lang);
 		    break;
 		    /* --END ERROR HANDLING-- */
 		}
@@ -179,7 +179,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		{
 		    /* --BEGIN ERROR HANDLING-- */
 		    /* This should not happen */
-		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase", request_ptr->greq_lang);
+		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase %d", request_ptr->greq_lang);
 		    break;
 		    /* --END ERROR HANDLING-- */
 		}
@@ -197,7 +197,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 	{
 	    /* --BEGIN ERROR HANDLING-- */
 	    /* This should not happen */
-	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase", request_ptr->kind);
+	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase %d", request_ptr->kind);
 	    break;
 	    /* --END ERROR HANDLING-- */
 	}
@@ -271,7 +271,7 @@ int MPIR_Request_get_error(MPID_Request * request_ptr)
 		{
 		    /* --BEGIN ERROR HANDLING-- */
 		    /* This should not happen */
-		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase", request_ptr->greq_lang);
+		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase %d", request_ptr->greq_lang);
 		    break;
 		    /* --END ERROR HANDLING-- */
 		}
@@ -285,7 +285,7 @@ int MPIR_Request_get_error(MPID_Request * request_ptr)
 	{
 	    /* --BEGIN ERROR HANDLING-- */
 	    /* This should not happen */
-	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase", request_ptr->kind);
+	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN,, "**badcase", "**badcase %d", request_ptr->kind);
 	    break;
 	    /* --END ERROR HANDLING-- */
 	}
