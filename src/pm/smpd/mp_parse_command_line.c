@@ -162,6 +162,10 @@ void mp_print_extra_options(void)
     printf("  timeout for the job.\n");
     printf("-plaintext\n");
     printf("  don't encrypt the data on the wire.\n");
+    printf("-delegate\n");
+    printf("  use passwordless delegation to launch processes\n");
+    printf("-impersonate\n");
+    printf("  use passwordless authentication to launch processes\n");
 }
 
 #ifdef HAVE_WINDOWS_H
@@ -1006,12 +1010,14 @@ configfile_loop:
 	    {
 		smpd_process.logon = SMPD_TRUE;
 	    }
-	    else if (strcmp(&(*argvp)[1][1], "sspi") == 0)
+	    else if ( (strcmp(&(*argvp)[1][1], "impersonate") == 0) || (strcmp(&(*argvp)[1][1], "impersonation") == 0) )
 	    {
 		smpd_process.use_sspi = SMPD_TRUE;
+		smpd_process.use_delegation = SMPD_FALSE;
 	    }
 	    else if ( (strcmp(&(*argvp)[1][1], "delegate") == 0) || (strcmp(&(*argvp)[1][1], "delegation") == 0) )
 	    {
+		smpd_process.use_sspi = SMPD_TRUE;
 		smpd_process.use_delegation = SMPD_TRUE;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "dbg") == 0)
