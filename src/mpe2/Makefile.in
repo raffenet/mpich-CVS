@@ -35,7 +35,7 @@ build_include:
 	      if [ ! -d $(includebuild_dir) ] ; then \
 	          $(MKDIR) -p $(includebuild_dir) ; \
 	      fi ; \
-	      cd $(top_srcdir)/include ; \
+	      cd $(top_srcdir)/include && \
 	      for file in $(MPE_HEADERS) ; do \
 	          if [ -f $$file -a ! -f $(includebuild_dir)/$$file ] ; then \
 	              $(CP) $$file $(includebuild_dir) ; \
@@ -47,7 +47,7 @@ build_lib_bin: clean_bin clean_lib
 	@for pkg in $(PKGS) ; do \
              if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
 	         echo "Making $$pkg ...." ; \
-	         ( cd $$pkg ; $(MAKE) ) ; \
+	         ( cd $$pkg && $(MAKE) ) ; \
              fi ; \
 	 done
 
@@ -96,7 +96,7 @@ clean_include:
 	  fi
 
 clean_bin:
-	 -cd $(binbuild_dir) ; \
+	 -cd $(binbuild_dir) && \
 	  for file in * ; do \
 	      if [ ! -d "$$file" ] ; then \
 	          $(RM) -f $$file ; \
@@ -112,14 +112,14 @@ clean: clean_bin clean_lib
 	@-$(RM) -f work.pc work.pcl
 	@-for pkg in $(PKGS) ; do \
               if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
-	          ( cd $$pkg ; $(MAKE) clean ) ; \
+	          ( cd $$pkg && $(MAKE) clean ) ; \
               fi ; \
 	  done
 
 distclean: clean_bin clean_lib
 	@-for pkg in $(PKGS) ; do \
               if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
-	          ( cd $$pkg ; $(MAKE) distclean ) ; \
+	          ( cd $$pkg && $(MAKE) distclean ) ; \
               fi ; \
 	  done
 	@-$(RM) -f sbin/mpeinstall sbin/mpeuninstall
