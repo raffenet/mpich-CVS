@@ -30,11 +30,11 @@ int ib_setup_connections()
    ib_init - initialize the ib method
 
    Notes:
+   Let's assume there is one HCA per node with one port available.
 @*/
 int ib_init()
 {
     ib_uint32_t status;
-    ib_hca_attr_t attr;
     char key[100], value[100];
     MPIDI_STATE_DECL(MPID_STATE_IB_INIT);
     MPIDI_FUNC_ENTER(MPID_STATE_IB_INIT);
@@ -64,25 +64,28 @@ int ib_init()
 	return status;
     }
     /* get the lid */
-    status = ib_hca_query_us(IB_Process.hca_handle, &attr, HCA_QUERY_HCA_STATIC);
+    status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, HCA_QUERY_HCA_STATIC);
     if (status != IB_SUCCESS)
     {
 	err_printf("ib_init: ib_hca_query_us(HCA_QUERY_HCA_STATIC) failed, status %d\n", status);
 	return status;
     }
-    attr.port_dynamic_info_p = 
-	(port_dynamic_info_t*)malloc(attr.node_info.port_num * sizeof(port_dynamic_info_t));
-    status = ib_hca_query_us(IB_Process.hca_handle, &attr, HCA_QUERY_PORT_INFO_DYNAMIC);
+    IB_Process.attr.port_dynamic_info_p = 
+	(port_dynamic_info_t*)malloc(IB_Process.attr.node_info.port_num * sizeof(port_dynamic_info_t));
+    status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, HCA_QUERY_PORT_INFO_DYNAMIC);
     if (status != IB_SUCCESS)
     {
 	err_printf("ib_init: ib_hca_query_us(HCA_QUERY_PORT_INFO_DYNAMIC) failed, status %d\n", status);
 	return status;
     }
-    IB_Process.lid = attr.port_dynamic_info_p->lid;
-    free(attr.port_dynamic_info_p);
+    IB_Process.lid = IB_Process.attr.port_dynamic_info_p->lid;
+    // free this structure because the information is transient?
+    free(IB_Process.attr.port_dynamic_info_p);
+    IB_Process.attr.port_dynamic_info_p = NULL;
 
     sprintf(key, "ib_lid_%d", MPIR_Process.comm_world->rank);
     sprintf(value, "%d", IB_Process.lid);
+    MPIU_dbg_printf("ib lid %d\n", IB_Process.lid);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
     PMI_Barrier();
 
