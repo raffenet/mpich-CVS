@@ -138,7 +138,8 @@ int smpd_post_abort_command(char *fmt, ...)
     {
 	if (smpd_process.left_context == NULL)
 	{
-	    smpd_err_printf("aborting.\n");
+	    printf("aborting: %s\n", error_str);
+	    fflush(stdout);
 	    smpd_exit_fn("smpd_post_abort_command");
 	    smpd_exit(-1);
 	}
