@@ -53,7 +53,4 @@ AC_SUBST(CC_SHL)
 AC_SUBST(C_LINK_SHL)
 AC_SUBST(master_top_srcdir)
 
-PAC_SUBDIR_CACHE
-AC_CONFIG_SUBDIRS(../../../common/locks)
-
 AC_OUTPUT(Makefile src/Makefile localdefs)

@@ -1,4 +1,4 @@
-echo "RUNNING SETUP_CHANNEL FOR THE INFINIBAND CHANNEL"
+echo "RUNNING SETUP_CHANNEL FOR THE SHARED MEMORY CHANNEL"
 
 #
 # NOTE: This file is sourced from the setup_device with the current working
@@ -23,6 +23,8 @@ for path in $pathlist ; do
     CPPFLAGS="$CPPFLAGS -I`pwd`/${path}"
     CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/${path}"
 done
+
+TOPLEVEL_SUBDIRS="$TOPLEVEL_SUBDIRS src/mpid/common/locks"
 
 CPPFLAGS="$CPPFLAGS -DUSE_PROCESS_LOCKS"
 #CPPFLAGS="$CPPFLAGS -I/usr/local/PSC1200/include -DLINUX -DNORCSID"
