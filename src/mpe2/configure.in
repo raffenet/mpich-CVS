@@ -249,30 +249,37 @@ dnl
 AC_ARG_WITH( mpicc,
 [--with-mpicc=MPI_CC                - C compiler used to compile MPI program
                                      and to create parallel executable,
-                                     e.g. mpcc for IBM MPI.],
+                                     e.g. mpcc for IBM MPI, or mpicc from
+                                     MPICHx or LAM-MPI.],
 MPI_CC="$withval" )
  
 AC_ARG_WITH( mpif77,
 [--with-mpif77=MPI_F77              - F77 compiler used to compile MPI program
                                      and to create parallel executable,
-                                     e.g. mpxlf for IBM MPI.],
+                                     e.g. mpxlf for IBM MPI, or mpif77 from
+                                     MPICHx or LAM-MPI.],
 MPI_F77="$withval" )
  
 AC_ARG_WITH( mpiinc,
-[--with-mpiinc=MPI_INC              - MPI compiler's include flag with prefix
-                                     -I used in the MPI implementation, usually
-                                     it specifies where mpi.h and mpif.h are
-                                     located, e.g. -I/pkgs/MPI/include.],
+[--with-mpiinc=MPI_INC              - MPI compiler's include flags prefixed
+                                     with -I.  It specifies where mpi.h and
+                                     mpif.h are located,
+                                     e.g. -I/pkgs/MPI/include.],
 MPI_INC="$withval" )
  
 AC_ARG_WITH( mpilibs,
-[--with-mpilibs=MPI_LIBS            - MPI compiler's library flags with prefix
-                                     -L to the library path and prefix -l to
-                                     the name of the libraries used in the MPI
-                                     implementation, usually specify where MPI
-                                     libraries is located.
+[--with-mpilibs=MPI_LIBS            - MPI compiler's library flags prefixed
+                                     with -L for the library path and prefixed
+                                     with -l for the name of the MPI libraries.
+                                     It specifies the location of the MPI
+                                     libraries. 
                                      e.g. -L/pkgs/MPI/lib -lpmpich -lmpich.],
 MPI_LIBS="$withval" )
+
+AC_ARG_VAR( MPI_CC, [C compiler to compile MPI program and to create parallel executable, e.g. mpcc for IBM MPI, or mpicc from MPICHx or LAM-MPI.] )
+AC_ARG_VAR( MPI_F77, [F77 compiler to compile MPI program and to create parallel executable, e.g. mpxlf for IBM MPI, or mpif77 from MPICHx or LAM-MPI.] )
+AC_ARG_VAR( MPI_INC, [MPI compiler's include flags prefixed with -I.  It specifies where mpi.h and mpif.h are located, e.g. -I/pkgs/MPI/include.] )
+AC_ARG_VAR( MPI_LIBS, [MPI compiler's library flags prefixed with -L for the library path and prefixed with -l for the name of the MPI libraries. It specifies the location of the MPI libraries. e.g. -L/pkgs/MPI/lib -lpmpich -lmpich.] )
 
 AC_PROG_CC
 dnl Check for broken handling of common symbols
