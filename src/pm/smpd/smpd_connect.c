@@ -58,11 +58,13 @@ void smpd_child_handler(int code)
 	{
 	    fprintf(stderr, "waitpid failed, error %d\n", errno);
 	}
+	/*
 	else
 	{
 	    printf("process %d exited with code: %d\n", pid, WIFEXITED(status) ? WEXITSTATUS(status) : -1);
 	    fflush(stdout);
 	}
+	*/
     }
 }
 #endif
