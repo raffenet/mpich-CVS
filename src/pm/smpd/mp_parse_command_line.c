@@ -1449,7 +1449,7 @@ configfile_loop:
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "log") == 0)
 	    {
-		/* Give the user a shortcut to create log files using the mpe wrapper dll */
+		/* -log is a shortcut to create log files using the mpe wrapper dll */
 		env_node = (smpd_env_node_t*)malloc(sizeof(smpd_env_node_t));
 		if (env_node == NULL)
 		{
@@ -1458,8 +1458,6 @@ configfile_loop:
 		    return SMPD_FAIL;
 		}
 		strncpy(env_node->name, "MPI_WRAP_DLL_NAME", SMPD_MAX_NAME_LENGTH);
-		/* FIXME: How do we know to use the debug or release version? */
-		/*strncpy(env_node->value, "mpich2mpe.dll", SMPD_MAX_VALUE_LENGTH);*/
 		strncpy(env_node->value, "mpe", SMPD_MAX_VALUE_LENGTH);
 		env_node->next = env_list;
 		env_list = env_node;
