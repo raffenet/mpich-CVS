@@ -1,0 +1,55 @@
+#! /usr/local/bin/perl
+#
+# Fixup the index file by making all entries follow the same case rules; 
+# also replace any expanded TeX code
+#
+# Define special names that should not be case converted
+%specialnames = ( "MPI_COMM_WORLD" => 1, "MPI_ERRORS_FATAL" => 1,
+	          "MPI_COMM_SELF" => 1, "MPICH_TRDUMP" => 1,
+		  "MPI_ERRORS_RETURN" => 1, "MPID_tBsend" => 1,
+		  "MPID_THREAD_PROVIDED" => 1, "MPI_MAX_INFO_KEY" => 1,
+		  "MPI_MAX_INFO_VAL" => 1, "MPI_CART" => 1, 
+		  "MPI_GRAPH" => 1, "MPI_CONGRUENT" => 1, 
+		  "MPI_SIMILAR" => 1, "MPI_UNDEFINED" => 1,
+		  "MPI_UNEQUAL" => 1, "MPI_IDENT" => 1,
+		  "MPI_IN_PLACE" => 1, "MPI_ROOT" => 1, 
+		  "MPI_ANY_SOURCE" => 1, "MPI_ANY_TAG" => 1, 
+		  "MPI_PROC_NULL" => 1 );
+while (<>) {
+    # Remove the \_ expansion
+    s/\\discretionary \{-\}\{\}\{\}//g;
+    s/{\\texttt{\\char *`\\_ *}/_/g;
+    if (/\\indexentry{MPID_(.)([A-Za-z0-9_]*)}{(.*)}/) {
+        $firstchar = $1;
+        $name = $2;
+	$rest = $3;
+        $key="MPID_$firstchar$name";
+	if (!defined($specialnames{$key})) {
+  	    $name =~ tr/A-Z/a-z/;				     
+        }
+        print "\\indexentry{$firstchar${name}_MPID}{$rest}\n";
+        }
+    elsif (/\\indexentry{MPI_(ERR_[A-Za-z0-9_]*)}{(.*)}/) {
+        $name = $1;
+	$rest = $2;
+        print "\\indexentry{${name}_MPI}{$rest}\n";
+	}
+    elsif (/\\indexentry{MPI_(COMBINER_[A-Za-z0-9_]*)}{(.*)}/) {
+        $name = $1;
+	$rest = $2;
+        print "\\indexentry{${name}_MPI}{$rest}\n";
+	}
+    elsif (/\\indexentry{MPI_(.)([A-Za-z0-9_]*)}{(.*)}/) {
+        $firstchar = $1;
+        $name = $2;
+	$rest = $3;
+        $key="MPI_$firstchar$name";
+	if (!defined($specialnames{$key})) {
+	    $name =~ tr/A-Z/a-z/;
+        }
+        print "\\indexentry{$firstchar${name}_MPI}{$rest}\n";
+        }
+    else {
+	print $_;
+    }
+}

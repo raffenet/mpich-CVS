@@ -284,6 +284,13 @@ standardized includes (e.g., something like "mpiimpl.h").  This header
 template should be part of the development environment.  Question:
 what should this header be?
 
+\item[Function Name.]
+There should be a macro, \code{__FUNCTION__}, containing the name of the
+function.  This name is chosen because some versions of \code{gcc} will set it
+for you.  The statement \code{SET_FUNCTION_NAME("name");} should be included
+in the declarations part of the program \emph{or} we should include the
+appropriate \code{\#define} line (as PETSc does) before the function
+declaration. 
 \end{description}
 
 \subsection{Other Subsystems}
@@ -327,23 +334,80 @@ directory in the MPI source tree.  Note that this means that the
 directory structure does not exactly match the chapter structure of
 the MPI Standard.
 
+For each routine, the description may be text, usually indicating that no ADI
+routines are involved.  For example, many of the process topology and other
+informational routines fit into this category.
+For routines that make use of the ADI, the description will often be presented
+as follows:
+\begin{adi3}The ADI3 routine(s) that are called
+\begin{mmadi}One possible implementation of the above routine(s), using
+  lower-level ADI3 routines.
+\begin{core}One possible implementation of the MMADI routines, using just the
+  MPID_CORE. 
+\end{core}
+\end{mmadi}
+\end{adi3}
+The purpose of this description is to evaluate the ADI-3 design (at all
+levels, not just to core and the most general, top level) for the
+implementation of MPI.  
+
 \subsection{Attributes and Info}
 
+Error values defined for keyvals and attributes:
 \mpiconst{MPI_ERR_KEYVAL}
 
-\paragraph{Info}
+\paragraph{Info.}
 
 Error values defined for info:
-\mpiconst{MPI_ERR_INFO_KEY}
-\mpiconst{MPI_ERR_INFO_VALUE}
-\mpiconst{MPI_ERR_INFO_NOKEY}
+\mpiconst{MPI_ERR_INFO_KEY},
+\mpiconst{MPI_ERR_INFO_VALUE},
+\mpiconst{MPI_ERR_INFO_NOKEY}.
 
 Constants defined for info: 
-\mpiconst{MPI_MAX_INFO_KEY}
-\mpiconst{MPI_MAX_INFO_VAL}
+\mpiconst{MPI_MAX_INFO_KEY},
+\mpiconst{MPI_MAX_INFO_VAL}.
 Note that the MPI standard sets limits on the ranges that these can take.
 
-\paragraph{Defining New Keys}
+Predefined info keys are:
+\mpiconst{access_style}, 
+\mpiconst{appnum}, 
+\mpiconst{arch}, 
+\mpiconst{cb_block_size}, 
+\mpiconst{cb_buffer_size}, 
+\mpiconst{cb_nodes}, 
+\mpiconst{chunked}, 
+\mpiconst{chunked_item}, 
+\mpiconst{chunked_size}, 
+\mpiconst{collective_buffering}, 
+\mpiconst{external32}, 
+\mpiconst{false}, 
+\mpiconst{file}, 
+\mpiconst{file_perm}, 
+\mpiconst{filename}, 
+\mpiconst{host}, 
+\mpiconst{internal}, 
+\mpiconst{io_node_list}, 
+\mpiconst{ip_address}, 
+\mpiconst{ip_port}, 
+\mpiconst{native}, 
+\mpiconst{nb_proc}, 
+\mpiconst{no_locks}, 
+\mpiconst{num_io_nodes}, 
+\mpiconst{path}, 
+\mpiconst{random}, 
+\mpiconst{read_mostly}, 
+\mpiconst{read_once}, 
+\mpiconst{reverse_sequential}, 
+\mpiconst{sequential}, 
+\mpiconst{soft}, 
+\mpiconst{striping_factor}, 
+\mpiconst{striping_unit}, 
+\mpiconst{true}, 
+\mpiconst{wdir}, 
+\mpiconst{write_mostly}, 
+\mpiconst{write_once}.
+
+\paragraph{Defining New Keys.}
 The MPI Forum has not resolved an ambiguity in the definition of
 info.  While it was clear during many of the discussions that the
 expectation was that \code{MPI_Info}\index{MPI_Info} could be used by
@@ -373,7 +437,7 @@ extension that raises a special error code if a different thread
 modifies an \code{MPI_Info} while any of the routines with a notion of
 the ``current'' state of info are operating on it.
 
-\paragraph{MPI-1 Attribute Functions}
+\paragraph{MPI-1 Attribute Functions.}
 The following five functions are deprecated.
 \subsubsection{\mpifunc{MPI_ATTR_DELETE}}
 Calls \mpifunc{MPI_COMM_DELETE_ATTR}.
@@ -391,7 +455,8 @@ Calls \mpifunc{MPI_COMM_CREATE_KEYVAL}.
 Calls \mpifunc{MPI_COMM_FREE_KEYVAL}.
 
 \subsubsection{\mpifunc{MPI_COMM_CREATE_KEYVAL}}
-This should use a common MPID routine to create keyvals.
+This should use a common MPID routine to create keyvals.  This routine, along
+with others to allocate MPID objects, has not yet been defined in the ADI.
 
 \subsubsection{\mpifunc{MPI_COMM_FREE_KEYVAL}}
 Ditto to free keyvals.
@@ -399,40 +464,64 @@ Ditto to free keyvals.
 \subsubsection{\mpifunc{MPI_COMM_NULL_COPY_FN}}
 
 %\subsubsection{\mpifunc{MPI_COMM_DUP_FN}}
+
 \subsubsection{\mpifunc{MPI_COMM_GET_ATTR}}
-\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value
+\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value.
+Question: does this require a thread lock, or is that burden on the user?  Do
+we want to have the ability to detect thread races (e.g., a flag to indicate
+that another thread has touched the list)?
 \end{adi3}
+
 \subsubsection{\mpifunc{MPI_COMM_SET_ATTR}}
-\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value
+\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value.
+This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
 \end{adi3}
+
 \subsubsection{\mpifunc{MPI_COMM_DELETE_ATTR}}
-\begin{adi3}\mpidfunc{MPID_Attr_delete}
+\begin{adi3}\mpidfunc{MPID_Attr_delete}.
+This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_TYPE_GET_ATTR}}
-\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value
-\end{adi3}
-\subsubsection{\mpifunc{MPI_TYPE_SET_ATTR}}
-\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value
-\end{adi3}
-\subsubsection{\mpifunc{MPI_TYPE_DELETE_ATTR}}
-\begin{adi3}\mpidfunc{MPID_Attr_delete}
+\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value.
+This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
 \end{adi3}
 
+\subsubsection{\mpifunc{MPI_TYPE_SET_ATTR}}
+\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value.
+This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
+\end{adi3}
+
+\subsubsection{\mpifunc{MPI_TYPE_DELETE_ATTR}}
+\begin{adi3}\mpidfunc{MPID_Attr_delete}.
+This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
+\end{adi3}
+
+\subsubsection{\mpifunc{MPI_TYPE_CREATE_KEYVAL}}
+This should use a common MPID routine to create keyvals.  
+
 \subsubsection{\mpifunc{MPI_TYPE_FREE_KEYVAL}}
-\subsubsection{\mpifunc{MPI_TYPE_NULL_COPY_FN}}
+%\subsubsection{\mpifunc{MPI_TYPE_NULL_COPY_FN}}
 %\subsubsection{\mpifunc{MPI_TYPE_DUP_FN}}
 
 \subsubsection{\mpifunc{MPI_WIN_CREATE_KEYVAL}}
+This should use a common MPID routine to create keyvals.  
+
 \subsubsection{\mpifunc{MPI_WIN_FREE_KEYVAL}}
+
 \subsubsection{\mpifunc{MPI_WIN_SET_ATTR}}
-\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value
+\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value.
+This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
 \end{adi3}
+
 \subsubsection{\mpifunc{MPI_WIN_GET_ATTR}}
-\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value
+\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value.
+This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
 \end{adi3}
+
 \subsubsection{\mpifunc{MPI_WIN_DELETE_ATTR}}
-\begin{adi3}\mpidfunc{MPID_Attr_delete}
+\begin{adi3}\mpidfunc{MPID_Attr_delete}.
+This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
 \end{adi3}
 
 %\subsubsection{\mpifunc{MPI_WIN_NULL_COPY_FN}}
@@ -460,8 +549,8 @@ choice for implementing operatoins that involve datatypes, such as
 Deprecated.  Use \mpifunc{MPI_GET_ADDRESS}.
 \subsubsection{\mpifunc{MPI_TYPE_HINDEXED}}
 Deprecated.  However, we can't easily use \code{MPI_TYPE_CREATE_HINDEXED}
-because that could (if \code{MPI_Aint} is longer than \code{int}) making a
-copy of an array argument.
+because that could (if \code{MPI_Aint} is longer than \code{int}) require
+making a copy of an array argument.
 
 \subsubsection{\mpifunc{MPI_TYPE_HVECTOR}}
 Deprecated.  Use \mpifunc{MPI_TYPE_CREATE_HVECTOR}.
@@ -471,6 +560,7 @@ Deprecated.  For reasons similar to \code{MPI_TYPE_HINDEXED}, we do not want
 to call the new function.
 
 \subsubsection{\mpifunc{MPI_GET_ADDRESS}}
+See the MPICH-1 \mpifunc{MPI_ADDRESS}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CONTIGUOUS}}
 
@@ -479,8 +569,6 @@ to call the new function.
 \subsubsection{\mpifunc{MPI_TYPE_VECTOR}}
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_DARRAY}}
-
-\subsubsection{\mpifunc{MPI_TYPE_CREATE_F90_COMPLEX}}
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_HINDEXED}}
 
@@ -520,12 +608,14 @@ Simply uses the \code{true_extent} field in the structure.
 
 \subsubsection{\mpifunc{MPI_TYPE_GET_CONTENTS}}
 Uses the \code{dataloop} field to access the data uses to create the datatype.
+Actually, must use a separate dataloop field so that the arguments that the
+user provided are returned, rather than an optimized form).
 
 \subsubsection{\mpifunc{MPI_TYPE_GET_ENVELOPE}}
 Uses \code{dataloop} field to identify how the datatype was constructed.
 The \code{combiner} type must be one of 
 
-\mpiconst{MPI_COMBINER_NAMED}\\
+\noindent\mpiconst{MPI_COMBINER_NAMED}\\
 \mpiconst{MPI_COMBINER_DUP}\\
 \mpiconst{MPI_COMBINER_CONTIGUOUS}\\
 \mpiconst{MPI_COMBINER_VECTOR}\\
@@ -548,7 +638,8 @@ The \code{combiner} type must be one of
 Simply uses extent field.
 
 \subsubsection{\mpifunc{MPI_TYPE_GET_NAME}}
-Uses the \code{name} field.
+Uses the \code{name} field.  Note that the Fortran versions must be careful to
+blank-pad the value rather than null-terminating it.
 
 \subsubsection{\mpifunc{MPI_TYPE_SET_NAME}}
 Sets the \code{name} field.  Returns error if supplied name is too long.
@@ -662,7 +753,7 @@ have reference counts.
 
 Question: Do we want a special case for the groups of self and comm
 world?  This would eliminate a lookup in the group table for the a very
-common case.  Should there be a \code{MPID_GROUP_WORLD}?  
+common case.  Should there be an \code{MPID_GROUP_WORLD}?  
 
 Question: What data structure should be used to represent groups?
 MPICH-1 used a simple array that mapped rank in a group to rank in the
@@ -677,6 +768,9 @@ representation of group membership.  An interesting question is what
 sort of representation should be used for truly massively parallel
 systems such as Blue Gene.  
 
+Plan: At least initially, the group implementation in ADI-3 will \emph{not} be
+scalable.  Each group will have an array that maps ranks to local process ids.
+
 \subsubsection{\mpifunc{MPI_GROUP_RANK}}
 Simply return rank field.
 \subsubsection{\mpifunc{MPI_GROUP_SIZE}}
@@ -684,18 +778,97 @@ Simply return size field.
 
 \subsubsection{\mpifunc{MPI_GROUP_TRANSLATE_RANKS}}
 We may want to detect the special case of a group that is a subset of
-\code{MPI_COMM_WORLD}.  
+\code{MPI_COMM_WORLD} (does this imply a flag in the \mpidfunc{MPID_Group}
+structure?).  
+If either group is not a subset of \code{MPI_COMM_WORLD}, then 
+\begin{enumerate}
+\item For group2, if necessary, create a new array containing the pairs
+  \code{local process id}, \code{local rank}, sorted by \code{local process
+    id}. (Note that \mpifunc{MPI_GROUP_FREE} needs to free this array.)
+\item For each rank in ranks1, find the corresponding \code{local process id}
+  and then search for that in the sorted array in group2.  
+\end{enumerate}
+Question: should there be a \code{MINIMUM_MEMORY} option that controls when
+memory is left allocated to speed subsequent operations?  In this case, we
+leave the memory allocated so as to speed subsequent translations.  Normally,
+this routine is only used in tracing libraries to convert relative ranks into
+absolute ranks; in that case, it is likely to be called frequently.
+
+\subsubsection{\mpifunc{MPI_GROUP_FREE}}
 
 \subsubsection{\mpifunc{MPI_GROUP_COMPARE}}
+\begin{enumerate}
+\item Check that sizes are the same.  If not, set \code{result} to
+  \mpiconst{MPI_UNEQUAL} and return.
+\item Check that the elements of \code{lrank_to_lpid} are the same.  If so,
+set \code{result} to \mpiconst{MPI_IDENT} and return.
+\item Check that the \code{lrank_to_lpid} arrays contain the same values, but
+  in a different order.  We could use the same array needed by
+  \code{MPI_GROUP_TRANSLATE_RANKS} here.  If those two arrays have the same
+  local process ids, return \mpiconst{MPI_SIMILAR}, otherwise return
+  \mpiconst{MPI_UNEQUAL}.  Question: should we free the new arrays if we
+  allocate them?
+\end{enumerate}
+
+\subsubsection{\mpifunc{MPI_GROUP_EXCL}}
+\begin{adi3}
+  Construct new group from subset of \code{lrank_to_lpid} field of
+  input group.
+
+  To conform to Intel test suite error test for duplicate ranks, check for 
+  duplicate ranks in the exclusion list.
+\end{adi3}
+
+\subsubsection{\mpifunc{MPI_GROUP_INCL}}
+\begin{adi3}
+  Construct new group from subset of \code{lrank_to_lpid} field of
+  input group.
+
+  Make sure to check for duplicate input ranges (invalid).
+\end{adi3}
+
+\subsubsection{\mpifunc{MPI_GROUP_RANGE_EXCL}}
+\begin{adi3}
+  Construct new group from subset of \code{lrank_to_lpid} field of
+  input group.  This is a little tricky because multiple ranges can be
+  specified and they can exclude overlapping ranges of ranks.  One easy way is
+  to simply create a new array of markers set to zero, use the ranges to set
+  the values to 1 for each element specified by the range, and then assemble
+  a group from what's left (calling \mpifunc{MPI_GROUP_INCL}, of course).
+\end{adi3}
+
+\subsubsection{\mpifunc{MPI_GROUP_RANGE_INCL}}
+\begin{adi3}
+  Construct new group from subset of \code{lrank_to_lpid} field of
+  input group.
+\end{adi3}
 
 \subsubsection{\mpifunc{MPI_GROUP_DIFFERENCE}}
-\subsubsection{\mpifunc{MPI_GROUP_EXCL}}
-\subsubsection{\mpifunc{MPI_GROUP_FREE}}
-\subsubsection{\mpifunc{MPI_GROUP_INCL}}
+
+This should use the local process id and rank array to identify the different
+processes to include.  Note that this includes only the elements of the first
+group that are not in the second group, ordered as in the first group.  
+This can first save the indexes of entries that will be used; that array of
+indices in then sorted by the rank-in-group field, and the new group can be
+created by calling \mpifunc{MPI_GROUP_INCL} (or an internal version that works
+directly with the non-opaque data structures and assumes valid inputs).
+
+Note: the MPICH-1 implementation has complexity that is the product of the
+sizes of the groups (!).
+
 \subsubsection{\mpifunc{MPI_GROUP_INTERSECTION}}
-\subsubsection{\mpifunc{MPI_GROUP_RANGE_EXCL}}
-\subsubsection{\mpifunc{MPI_GROUP_RANGE_INCL}}
+
+This is implemented similarly to \mpifunc{MPI_GROUP_DIFFERENCE}.
+
+Note: the MPICH-1 implementation has complexity that is the product of the
+sizes of the groups (!).
+
 \subsubsection{\mpifunc{MPI_GROUP_UNION}}
+
+This is implemented similarly to \mpifunc{MPI_GROUP_DIFFERENCE}.
+
+Note: the MPICH-1 implementation has complexity that is the product of the
+sizes of the groups (!).
 
 \subsection{Communicators}
 
@@ -719,20 +892,38 @@ routines that create communicators, including the topology routines.
 Note that attributes are only copied by \mpifunc{MPI_Comm_dup}.
 
 \subsubsection{\mpifunc{MPI_COMM_COMPARE}}
+This compares first the \code{context_id} values (Question: this assumes that
+we don't use the same \code{context_id} for communicators with disjoint
+groups).  If the same, return \mpiconst{MPI_IDENT}.  Other wise, call
+\mpifunc{MPI_GROUP_COMPARE} for the remote group (and if both are
+intercommunicators, local group).  If the group comparision(s) return
+\mpifunc{MPI_IDENT}, then return \mpifunc{MPI_CONGRUENT}.  Otherwise, return
+the same value as given by \mpifunc{MPI_GROUP_COMPARE}.
+
 \subsubsection{\mpifunc{MPI_COMM_CREATE}}
+We need a basic communicator creation routine for this.
+
 \subsubsection{\mpifunc{MPI_COMM_DUP}}
+This routine must invoke the attribute copy functions for each attribute.
+
 \subsubsection{\mpifunc{MPI_COMM_FREE}}
+This routine must invoke the attribute delete functions for each attribute.
+
 \subsubsection{\mpifunc{MPI_COMM_GROUP}}
-Return a duplicate (shallow copy) of the local group.
+\begin{adi3}Return a duplicate (shallow copy) of the local group.  Call
+  \mpidfunc{MPID_Group_incr}. 
+\end{adi3}
 
 \subsubsection{\mpifunc{MPI_COMM_RANK}}
 Return the \code{rank} field.
 
 \subsubsection{\mpifunc{MPI_COMM_REMOTE_GROUP}}
-Return a duplicate (shallow copy) of the remote group.
+\begin{adi3}Return a duplicate (shallow copy) of the remote group.  Call
+  \mpidfunc{MPID_Group_incr}. 
+\end{adi3}
 
 \subsubsection{\mpifunc{MPI_COMM_REMOTE_SIZE}}
-See \code{MPI_COMM_SIZE}/
+See \code{MPI_COMM_SIZE}.
 
 \subsubsection{\mpifunc{MPI_COMM_SIZE}}
 Return the \code{size} field.  This is really the size of the local
@@ -742,14 +933,25 @@ destination or source ranks must look at the remote size.  Should
 there be a \code{local_size} field in the communicator?
 
 \subsubsection{\mpifunc{MPI_COMM_SPLIT}}
+
 \subsubsection{\mpifunc{MPI_COMM_TEST_INTER}}
+Should this simply test to see if the remote group and the local groups are
+the same, or should there be a separate communicator ``kind'' field?  Note
+that the C++ binding defines 4 kinds of communicators: intercomm, intracomm,
+graphcomm, and cartcomm. 
+
 \subsubsection{\mpifunc{MPI_INTERCOMM_CREATE}}
+
 \subsubsection{\mpifunc{MPI_INTERCOMM_MERGE}}
 
-\subsubsection{\mpifunc{MPI_COMM_C2F}}
-\subsubsection{\mpifunc{MPI_COMM_F2C}}
 \subsubsection{\mpifunc{MPI_COMM_CLONE}}
-This is a special C++ function.
+This is a special C++ function; it behaves similarly to
+\mpifunc{MPI_COMM_DUP}, but returns a reference (pointer) to the created
+communicator, rather than the communicator itself.  This is necessary because
+the C++ binding makes a Comm an abstract base class, so you can't dup a
+general communicator, just one of the four derived classes.
+Question: should we design an internal dup function so that both
+\mpifunc{MPI_COMM_DUP} and the C++ \code{MPI::Comm::Clone} function can use it?
 
 \subsubsection{\mpifunc{MPI_COMM_GET_NAME}}
 Return a copy of the \code{name} field.
@@ -766,17 +968,28 @@ Questions that remain:  Handling of persistent requests.  The ADI
 contains memory registration.  Is anything else needed for persistent
 requests? 
 
+Since requests are allocated by the \mpidfunc{MPID_Request_xxx_FOA} routines,
+should a persistent request simply have a pointer to the active request?  The
+request pointer could be null to indicate an inactive persistent request.
+
 \subsubsection{\mpifunc{MPI_PROBE}}
 \begin{adi3}\mpidfunc{MPID_Request_probe}
-\begin{mmadi}
-\begin{core}
-\end{core}
-\end{mmadi}
 \end{adi3}
 
-\paragraph{Buffered send}
-The buffered send should first use \mpidfunc{MPID_tBsend} to attempt
+\paragraph{Buffered send.}
+The buffered send (both blocking and nonblocking) should first use
+\mpidfunc{MPID_tBsend} to attempt 
 and send the message before implementing the buffer-copying strategy.
+
+Question: should the request needed to implement a buffered send be allocated
+from the user-supplied buffer?  The standard suggests so, though it isn't
+strictly required.
+
+What utility routine should be defined to allocate buffer space from the
+user-specified buffer?  How will it be made thread-safe?  What is the
+interface to \mpifunc{MPI_REQUEST_FREE}?  How do we ensure that we wait on
+pending bsend operations in a polling implementation?  See the file
+mpich/src/util/bsendutil2.c in MPICH-1.
 
 \subsubsection{\mpifunc{MPI_IBSEND}}
 \subsubsection{\mpifunc{MPI_BSEND}}
@@ -786,6 +999,13 @@ necessary by \code{MPI_Start}?
 
 \subsubsection{\mpifunc{MPI_BUFFER_ATTACH}}
 \subsubsection{\mpifunc{MPI_BUFFER_DETACH}}
+Buffer detach must first wait for all operations to complete before
+returning.  
+In order to catch race conditions in a multi-threaded environment, 
+\code{MPI_Buffer_detach} should set a flag on the buffer on entrance; all
+buffered send operations should check this value before proceeding, generating
+a \mpiconst{MPI_ERR_OTHER} class of type \code{THREAD_RACE} if the flag is
+set.
 
 \subsubsection{\mpifunc{MPI_CANCEL}}
 \begin{adi3}\mpidfunc{MPID_Request_cancel}
@@ -798,6 +1018,7 @@ necessary by \code{MPI_Start}?
 \subsubsection{\mpifunc{MPI_GET_COUNT}}
 How does this get the value?
 Question: Does this belong with datatypes?
+
 \subsubsection{\mpifunc{MPI_GET_ELEMENTS}}
 How does this get the value?
 Question: Does this belong with datatypes?
@@ -809,8 +1030,6 @@ Question: Does this belong with datatypes?
 \end{core}
 \end{mmadi}
 \end{adi3}
-
-\subsubsection{\mpifunc{MPI_IBSEND}}
 
 \subsubsection{\mpifunc{MPI_IRECV}}
 \begin{adi3}\mpidfunc{MPID_Irecv}
@@ -959,7 +1178,8 @@ file (particularly if it includes any significant header files)
 includes a significant amount of information.  A latency, if you will,
 for each file.  That is, if putting all of the routines into a single
 file takes $n$ bytes, putting them into $k$ files takes $n + (k-1)m$,
-where $m$ is the size of the header.  
+where $m$ is the size of the header.  In practice, the value of $m$ can be
+relatively large (several kilobytes).
 
 If we want to use the Fortran compiler for some or all of these, we'll
 need a Fortran compiler and a backup when there is no Fortran compiler.
@@ -1111,26 +1331,60 @@ MPID) calls?  Should we have \code{MPIi} routines?  For topology, we
 could have \code{MPIi_Topo_init}.
 
 \subsubsection{\mpifunc{MPI_CARTDIM_GET}}
+Access the topology description and return the number of dimensions of
+Cartesian topology (if defined).
+
 \subsubsection{\mpifunc{MPI_CART_CREATE}}
 This routine argues for a corresponding MPID routine, along with one for dims
-create. 
+create. Alternately, as suggested by the MPI standard, this could call
+\mpifunc{MPI_CART_MAP} followed by \mpifunc{MPI_COMM_SPLIT}.
+
 \subsubsection{\mpifunc{MPI_CART_GET}}
+Access the topology description and return the associated fields.
+
 \subsubsection{\mpifunc{MPI_CART_MAP}}
+This routine should call \mpidfunc{MPID_Cart_map}, which will have a default
+implementation.  
+
 \subsubsection{\mpifunc{MPI_CART_RANK}}
+Access the topology description and convert the specified Cartesian
+coordinates into a rank.
+
 \subsubsection{\mpifunc{MPI_CART_SHIFT}}
+This routine accesses the topology description and computes the requested
+shifted rank.
+
 \subsubsection{\mpifunc{MPI_CART_SUB}}
+This routine can be implemented with \mpifunc{MPI_COMM_SPLIT} (see the MPI-1
+standard, section 6.5.7 ``Low-level topology functions'').  It may also
+want to call \mpidfunc{MPID_Cart_map} to allow subdimensions to be reordered.
+
 \subsubsection{\mpifunc{MPI_DIMS_CREATE}}
+This routine calls \mpidfunc{MPID_Dims_create}.
 
 \subsubsection{\mpifunc{MPI_GRAPHDIMS_GET}}
+Access the topology description and return the number of dimensions of
+the nodes and edges of a graph topology (if defined).
 
 \subsubsection{\mpifunc{MPI_GRAPH_CREATE}}
-This should eventually have an MPID routine, but not in ADI-3.
+This is implemented using \mpifunc{MPI_GRAPH_MAP} and
+\mpifunc{MPI_COMM_SPLIT}. 
+
 \subsubsection{\mpifunc{MPI_GRAPH_GET}}
+Access the topology description and return the associated fields.
+
 \subsubsection{\mpifunc{MPI_GRAPH_MAP}}
+This should eventually have an MPID routine, but not in ADI-3.
+
 \subsubsection{\mpifunc{MPI_GRAPH_NEIGHBORS}}
+Access the topology description and return the associated fields.
+
 \subsubsection{\mpifunc{MPI_GRAPH_NEIGHBORS_COUNT}}
+Access the topology description and return the associated fields.
 
 \subsubsection{\mpifunc{MPI_TOPO_TEST}}
+Return \mpiconst{MPI_GRAPH} for graph topology, \mpiconst{MPI_CART} for
+Cartesian topology, and \mpiconst{MPI_UNDEFINED} otherwise.
 
 \subsection{RMA}
 
@@ -1208,22 +1462,31 @@ held until the \code{MPI_Win_unlock}.
 Clearly, the choice of immediate or deferred locks depends on the kind
 of communication between processes.
 
+Question: are there any special values for window objects similar to the ones
+considered for datatypes and communicators?  For example, one bit could
+indicate whether all windows of the window object are in shared memory.
+
+To remove the complexity of datatypes, we might want a
+\mpidfunc{MPID_Stream_put} that acts on a segment, rather than using several
+special-case versions of put.  It would still need to work on \emph{two}
+segments; that is, both the origin and targets.
 
 \subsubsection{\mpifunc{MPI_ACCUMULATE}}
 \subsubsection{\mpifunc{MPI_PUT}}
+\begin{adi3}\mpidfunc{MPID_Put}
+\begin{mmadi}If target and origin datatype are contiguous, use
+  \mpidfunc{MPID_Put_contig}.  Otherwise, if they are the same (and system is
+  homogeneous?), use \mpidfunc{MPID_Put_sametype}.  
+  Otherwise, what?
+\end{mmadi}
+\end{adi3}
+
 \subsubsection{\mpifunc{MPI_GET}}
 
 \subsubsection{\mpifunc{MPI_WIN_FENCE}}
 
 \subsubsection{\mpifunc{MPI_ALLOC_MEM}}
 \subsubsection{\mpifunc{MPI_FREE_MEM}}
-
-\subsubsection{\mpifunc{MPI_WIN_C2F}}
-Question:  are there any special values similar to the ones considered
-for datatypes and communicators?  For example, one bit could indicate
-whether all windows are in shared memory.
-
-\subsubsection{\mpifunc{MPI_WIN_F2C}}
 
 \subsubsection{\mpifunc{MPI_WIN_CREATE}}
 \subsubsection{\mpifunc{MPI_WIN_FREE}}
@@ -1232,8 +1495,8 @@ whether all windows are in shared memory.
 Access the group of the related communicator (Question: does this increment the
 reference count for the group?)
 
-\subsubsection{\mpifunc{MPI_WIN_GET_NAME }}
-\subsubsection{\mpifunc{MPI_WIN_SET_NAME }}
+\subsubsection{\mpifunc{MPI_WIN_GET_NAME}}
+\subsubsection{\mpifunc{MPI_WIN_SET_NAME}}
 
 \subsubsection{\mpifunc{MPI_WIN_LOCK} and \mpifunc{MPI_WIN_UNLOCK}}
 There are two types of lock and unlock implementations.  In the most
@@ -1264,7 +1527,14 @@ for \mpifunc{MPI_WIN_CREATE} that asks for the blocking lock?
 \subsection{Starting and Ending MPI}
 
 \subsubsection{\mpifunc{MPI_ABORT}}
+\begin{adi3}\mpidfunc{MPID_Abort}
+\end{adi3}
+
 \subsubsection{\mpifunc{MPI_INIT_THREAD}}
+\begin{adi3}
+\mpidfunc{MPID_Init}
+\end{adi3}
+This should also set the value \mpidfunc{MPID_THREAD_PROVIDED}.
 
 \subsubsection{\mpifunc{MPI_QUERY_THREAD}}
 This returns the level of thread support provided.  Should there be an
@@ -1272,7 +1542,18 @@ This returns the level of thread support provided.  Should there be an
 
 \subsubsection{\mpifunc{MPI_IS_THREAD_MAIN}}
 This needs a thread-private variable that is set only by the thread that calls
-\mpifunc{MPI_INIT_THREAD}.
+\mpifunc{MPI_INIT_THREAD}.  Alternately, we can use a public variable that
+holds the thread id of the thread that called \mpifunc{MPI_INIT_THREAD}.  For
+example, 
+\begin{verbatim}
+static pthread_t main_thread_id;
+...
+is_main_thread = pthread_equal( main_thread_id, pthread_self() );
+\end{verbatim}
+This does require that the thread library used by the user is the same as the
+one that the MPICH library is built for.  We may want to put this routine in a
+separate library, allowing several different thread libraries to be used with
+MPICH. 
 
 \subsubsection{\mpifunc{MPI_FINALIZED}}
 See \code{MPI_INITIALIZED}
@@ -1380,6 +1661,9 @@ All error handler calls use the common error handler structure
 \subsubsection{\mpifunc{MPI_WIN_GET_ERRHANDLER}}
 \subsubsection{\mpifunc{MPI_WIN_SET_ERRHANDLER}}
 
+\paragraph{MPI I/O Error Handlers.}
+We need to ensure that ROMIO's error handlers are the same as the MPICH-2
+handlers.
 
 \subsection{Handle Transfers}
 These provide for the conversion of handles to and from the C and
@@ -1407,10 +1691,14 @@ specified to configure) be implemented as macros.
 
 Unresolved question (raised by Barry Smith):  What should happen if
 the handle is invalid?  Should there even be a check?  Raise the error
-on \mpiconst{MPI_COMM_SELF}?
+on \mpiconst{MPI_COMM_SELF} or \mpiconst{MPI_COMM_WORLD}?
 
+\subsubsection{\mpifunc{MPI_COMM_C2F}}
+\subsubsection{\mpifunc{MPI_COMM_F2C}}
 \subsubsection{\mpifunc{MPI_ERRHANDLER_F2C}}
 \subsubsection{\mpifunc{MPI_ERRHANDLER_C2F}}
+\subsubsection{\mpifunc{MPI_FILE_C2F}}
+\subsubsection{\mpifunc{MPI_FILE_F2C}}
 \subsubsection{\mpifunc{MPI_GROUP_F2C}}
 \subsubsection{\mpifunc{MPI_GROUP_C2F}}
 \subsubsection{\mpifunc{MPI_INFO_F2C}}
@@ -1420,9 +1708,16 @@ on \mpiconst{MPI_COMM_SELF}?
 \subsubsection{\mpifunc{MPI_REQUEST_F2C}}
 \subsubsection{\mpifunc{MPI_REQUEST_C2F}}
 \subsubsection{\mpifunc{MPI_STATUS_F2C}}
+This needs to recognize the constants \mpiconst{MPI_F_STATUS_IGNORE} and
+\mpiconst{MPI_F_STATUSES_IGNORE} (which must be declared in \file{mpi.h}; see
+Section 4.12.5 ``Status'' in MPI-2).  
+
 \subsubsection{\mpifunc{MPI_STATUS_C2F}}
 \subsubsection{\mpifunc{MPI_TYPE_C2F}}
 \subsubsection{\mpifunc{MPI_TYPE_F2C}}
+\subsubsection{\mpifunc{MPI_WIN_C2F}}
+\subsubsection{\mpifunc{MPI_WIN_F2C}}
+
 
 \subsection{Timers}
 The MPI standard allows \code{MPI_Wtime} and \code{MPI_Wtick} to be
@@ -1443,12 +1738,19 @@ MPI I/O will be provided by ROMIO.  We expect to update ROMIO to exploit both
 MPI-2 functions and to make use of MPID functions (such as the Stream and
 Segment modules) when ROMIO is part of MPICH.
 
-% \code{MPI_FILE_C2F}\\
-% \code{MPI_FILE_CALL_ERRHANDLER }\\
+There are a few places where we need to improve the current code to provide
+better integration:
+\begin{itemize}
+\item I/O requests must be integrated with all other MPI requests.  This
+  eliminates the need for ROMIO's \code{MPIO_Wait} routine.
+\item Error handler should consistent with the rest of MPI-2.  Error reporting
+  should follow the rest of MPICH-2.
+\end{itemize}
+
+% \code{MPI_FILE_CALL_ERRHANDLER}\\
 % \code{MPI_FILE_CLOSE}\\
 % \code{MPI_FILE_CREATE_ERRHANDLER}\\
 % \code{MPI_FILE_DELETE}\\
-% \code{MPI_FILE_F2C}\\
 % \code{MPI_FILE_GET_AMODE}\\
 % \code{MPI_FILE_GET_ATOMICITY}\\
 % \code{MPI_FILE_GET_BYTE_OFFSET}\\
@@ -1585,13 +1887,13 @@ list:
 \end{description}
 
 Other items, such as the allowed types for the f90 modules, also needs
-to be speicfieable from the environment.
+to be specifyable from the environment.
 
 See also mpi-maint request 5556 for the values needed by the Intel
 Tflops system.  It should be possible to specify these with a special
 site file.  Also note the need to export variables; we may want to
-create a step that does something like '\code{set | grep 'CROSS_' | 
-sed ...}'.  
+create a step that does something like \code{set | grep 'CROSS_' | 
+sed ...}.  
 
 \subsubsection{Complex Configuration Data}
 Much of the complexity in the current configure system comes from
@@ -1716,10 +2018,32 @@ Avoiding \code{printf} is important for Windows applications.
 
 \subsection{Fortran Support}
 Fortran support has two parts: Fortran 77 and Fortran 90/95.  
+
 There are a few functions unique to Fortran.  They include
+\mpifunc{MPI_SIZEOF} and \mpifunc{MPI_TYPE_CREATE_F90_COMPLEX}, 
+\mpifunc{MPI_TYPE_CREATE_F90_REAL}, and 
+\mpifunc{MPI_TYPE_CREATE_F90_INTEGER}.
+
 
 \subsubsection{\mpifunc{MPI_SIZEOF}}
+This must be implemented in an MPI module.
 
+\subsubsection{Fortran Wrappers}
+One added complexity of the Fortran wrappers is handling the possibility that
+the types \code{MPI_Fint} and \code{int} have different sizes.  When the
+Fortran codes simply call the C codes, this results in copying array arguments
+to a temporary array, calling the C code, and freeing the array.  Allocation
+and deallocation of small arrays can be avoided by using local arrays (to be
+thread-safe).  However, I'd prefer to avoid this whenever possible.  Thus, we
+need a CPP value that indicates whether \code{MPI_Fint} and \code{int} are the
+same size, such as \mpifunc{MPICH_FINT_EQ_INT}.
+
+In addition, the MPICH Fortran wrapper code is intended for use with MPE and
+other MPI implementations, and makes no assumptions about the structure of
+MPI opaque objects, necessitating a transfer of values for each array-value
+argument.  I'd like to avoid this as well.  Can we ignore the other MPI's, or
+use special routines as part of the MPE support?  Alternately, should we
+define \code{MPICH_REQUEST_C_IS_F77} etc.?
 
 \subsection{C++ Support}
 
@@ -1746,7 +2070,7 @@ etc.)
 The implementation must provide the \emph{service} of providing
 command-line arguments to each process.  If the startup environment
 does not do so, the implementation must (see the discussion of
-\mpidfunc{MPID_Thread_init}).  
+\mpidfunc{MPID_Init}).  
 
 \section{Testing}
 
@@ -1869,30 +2193,6 @@ cache these items.
 
 \subsection{Constants}
 (I need to get the union of MPI-1 and MPI-2 constants)
-
-\subsection{Info keys}
-\code{access_style}\\
-\code{appnum}\\
-\code{arch}\\
-\code{cb_block_size}\\
-\code{external32}\\
-\code{false}\\
-\code{file}\\
-\code{file_perm}\\
-\code{host}\\
-\code{internal}\\
-\code{io_node_list}\\
-\code{ip_address}\\
-\code{native}\\
-\code{nb_proc}\\
-\code{no_locks}\\
-\code{num_io_nodes}\\
-\code{path}\\
-\code{random}\\
-\code{soft}\\
-\code{striping_factor}\\
-\code{wdir}\\
-\code{write_mostly}\\
 
 \subsection{MPI-1 Functions}
 \code{MPI_GET_PROCESSOR_NAME}\\
