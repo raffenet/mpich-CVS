@@ -20,6 +20,13 @@ extern "C" {
 #define SOCKET_ERROR -1
 #endif
 
+#ifndef ADDR_ANY
+#define ADDR_ANY 0
+#endif
+#ifndef INADDR_ANY
+#define INADDR_ANY 0
+#endif
+
 #ifdef HAVE_WINSOCK2_H
 #ifndef socklen_t
 typedef int socklen_t;
