@@ -836,11 +836,6 @@ if test -n "$arch_IRIX"; then
    MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
 fi
 
-#
-# If we haven't found an architecture, try for a default
-if test -z "$FILE_SYSTEM" ; then
-        FILE_SYSTEM="ufs"
-fi
 # 
 # If no system selected, turn of AIO
 if test "$have_aio" != yes ; then
