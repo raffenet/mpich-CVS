@@ -760,6 +760,13 @@ typedef struct MPID_Comm {
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
     struct MPID_Comm    *local_comm; /* Defined only for intercomms, holds
 				        an intracomm for the local group */
+    int           is_low_group;   /* For intercomms only, this boolean is
+				     set for all members of one of the 
+				     two groups of processes and clear for 
+				     the other.  It enables certain
+				     intercommunicator collective operations
+				     that wish to use half-duplex operations
+				     to implement a full-duplex operation */
     struct MPID_Collops  *coll_fns; /* Pointer to a table of functions 
                                               implementing the collective 
                                               routines */
@@ -1466,6 +1473,8 @@ int MPID_Recv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 int MPID_Irecv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
                MPID_Request **);
 int MPID_Send_init(const void *, int, MPI_Datatype, int, int, MPID_Comm *,
+		   int, MPID_Request **);
+int MPID_Bsend_init(const void *, int, MPI_Datatype, int, int, MPID_Comm *,
 		   int, MPID_Request **);
 int MPID_Rsend_init(const void *, int, MPI_Datatype, int, int, MPID_Comm *,
 		    int, MPID_Request **);

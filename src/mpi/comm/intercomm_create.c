@@ -114,7 +114,8 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     int context_id, final_context_id;
     int remote_size, *remote_lpids=0;
     int local_size, *local_lpids;
-    int comm_info[2];
+    int comm_info[3];
+    int is_low_group = 0;
     int i;
     MPID_Comm *newcomm_ptr, *commworld_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INTERCOMM_CREATE);
@@ -263,6 +264,11 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	}
 #       endif /* HAVE_ERROR_CHECKING */
 	
+	/* Make an arbitrary decision about which group of processs is
+	   the low group.  The LEADERS do this by comparing the
+	   local process ids of the 0th member of the two groups */
+	is_low_group = local_lpids[0] < remote_lpids[0];
+
 	/* At this point, we're done with the local lpids */
 	MPIU_Free( local_lpids );
     } /* End of the first phase of the leader communication */
@@ -304,9 +310,10 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	   along with the final context id */
 	comm_info[0] = remote_size;
 	comm_info[1] = final_context_id;
+	comm_info[2] = is_low_group;
 	DEBUG(printf ("About to bcast on local_comm\n"));
-	NMPI_Bcast( comm_info, 2, MPI_INT, local_leader, local_comm );
-	NMPI_Bcast( remote_lpids, comm_info[0], MPI_INT, local_leader, 
+	NMPI_Bcast( comm_info, 3, MPI_INT, local_leader, local_comm );
+	NMPI_Bcast( remote_lpids, remote_size, MPI_INT, local_leader, 
 		    local_comm );
 	DEBUG(printf( "end of bcast on local_comm of size %d\n", 
 		      comm_ptr->local_size ));
@@ -314,7 +321,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     else {
 	/* were the other processes */
 	DEBUG(printf ("About to receive bcast on local_comm\n"));
-	NMPI_Bcast( comm_info, 2, MPI_INT, local_leader, local_comm );
+	NMPI_Bcast( comm_info, 3, MPI_INT, local_leader, local_comm );
 	remote_size = comm_info[0];
 	remote_lpids = (int *)MPIU_Malloc( remote_size * sizeof(int) );
 	if (!remote_lpids) {
@@ -325,6 +332,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	NMPI_Bcast( remote_lpids, remote_size, MPI_INT, local_leader, 
 		    local_comm );
 	final_context_id = comm_info[1];
+	is_low_group     = comm_info[2];
     }
 
     /* If we did not choose this context, free it.  We won't do this
@@ -356,7 +364,8 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     newcomm_ptr->remote_group = 0;
     newcomm_ptr->comm_kind    = MPID_INTERCOMM;
     newcomm_ptr->local_comm   = 0;
-    
+    newcomm_ptr->is_low_group = is_low_group;
+
     /* FIXME: for MPI1, all process ids are relative to MPI_COMM_WORLD.
        For MPI2, we'll need to do something more complex */
     commworld_ptr = MPIR_Process.comm_world;
