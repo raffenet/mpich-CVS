@@ -117,9 +117,6 @@
 				RelativePath=".\src\util\carutil.c">
 			</File>
 			<File
-				RelativePath="..\..\util\dbg\dbg_printf.c">
-			</File>
-			<File
 				RelativePath=".\src\ib\ib_can_connect.c">
 			</File>
 			<File
