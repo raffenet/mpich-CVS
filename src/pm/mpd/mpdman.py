@@ -81,6 +81,7 @@ def mpdman():
     kvs_next_id = 1
     jobEndingEarly = 0
     pmiCollectiveJob = 0
+    exchanged_kvss = 0
     doingBNR = 0  ## BNR
 
     if nprocs == 1:  # one-man ring
@@ -664,7 +665,7 @@ def mpdman():
                         if myRank == 0  or  holdingPMIBarrierLoop1:
                             msgToSend = { 'cmd' : 'pmi_barrier_loop_1' }
                             mpd_send_one_msg(rhsSocket,msgToSend)
-                        if myRank == 0  and  spawned:
+                        if myRank == 0  and  spawned  and  not exchanged_kvss:
                             ## NOTE: a non-MPI job might not call the pmi barrier code;
                             ## this may cause the pgm to hang if it does spawns
                             exec('default_kvs = %s' % default_kvsname)
@@ -675,6 +676,7 @@ def mpdman():
                             mpd_send_one_msg(conSocket,msgToSend)
                             msg = mpd_recv_one_msg(conSocket)
                             exec('%s = %s' % (msg['kvsname'],msg['kvs']))  # get parentkvs
+                            exchanged_kvss = 1
                     elif parsedMsg['cmd'] == 'get':
                         kvsname = parsedMsg['kvsname']
                         key = parsedMsg['key']
