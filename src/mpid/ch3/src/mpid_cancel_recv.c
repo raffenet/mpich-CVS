@@ -15,10 +15,9 @@ void MPID_Cancel_recv(MPID_Request * rreq)
     MPIDI_STATE_DECL(MPID_STATE_MPID_CANCEL_RECV);
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CANCEL_RECV);
-   
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
+    
     assert(rreq->kind == MPID_REQUEST_RECV);
-    /* XXX - need to handle persistent requests */
     
     if (MPIDI_CH3U_Request_DP(rreq))
     {
