@@ -115,16 +115,12 @@ int smpd_encrypt_data(char *input, int input_length, char *output, int output_le
     }
 
     /* Acquire a cryptographic provider context handle. */
-    if (!CryptAcquireContext(&hCryptProv, "MPICH", MS_DEF_PROV, PROV_RSA_FULL, 0))
+    if (!CryptAcquireContext(&hCryptProv, NULL, MS_DEF_PROV, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
     {
-	/* Some sort of error occured, create default key container.*/
-	if (!CryptAcquireContext(&hCryptProv, "MPICH", MS_DEF_PROV, PROV_RSA_FULL, CRYPT_NEWKEYSET))
-	{
-	    /* Error creating key container!*/
-	    smpd_err_printf("Error during CryptAcquireContext: %d\n", GetLastError());
-	    ret_val = SMPD_FAIL;
-	    goto fn_cleanup;
-	}
+	/* Error creating key container!*/
+	smpd_err_printf("Error during CryptAcquireContext: %d\n", GetLastError());
+	ret_val = SMPD_FAIL;
+	goto fn_cleanup;
     }
 
     /* Create an empty hash object. */
@@ -269,16 +265,12 @@ int smpd_decrypt_data(char *input, int input_length, char *output, int *output_l
     }
 
     /* Acquire a cryptographic provider context handle. */
-    if (!CryptAcquireContext(&hCryptProv, "MPICH", MS_DEF_PROV, PROV_RSA_FULL, 0))
+    if (!CryptAcquireContext(&hCryptProv, NULL, MS_DEF_PROV, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
     {
-	/* Some sort of error occured, create default key container.*/
-	if (!CryptAcquireContext(&hCryptProv, "MPICH", MS_DEF_PROV, PROV_RSA_FULL, CRYPT_NEWKEYSET))
-	{
-	    /* Error creating key container!*/
-	    smpd_err_printf("Error during CryptAcquireContext: %d\n", GetLastError());
-	    ret_val = SMPD_FAIL;
-	    goto fn_cleanup;
-	}
+	/* Error creating key container!*/
+	smpd_err_printf("Error during CryptAcquireContext: %d\n", GetLastError());
+	ret_val = SMPD_FAIL;
+	goto fn_cleanup;
     }
 
     /* Create an empty hash object. */
