@@ -466,7 +466,7 @@ for ($i=0; $i<=$#files; $i++) {
 }
 &print_endline( MAKEFD );
 
-print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources}\
+print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources} setbotf.f \
 \
 profilelib_\${MPILIBNAME} = p\${MPILIBNAME}\
 INCLUDES = -I../../include -I\${master_top_srcdir}/src/include\

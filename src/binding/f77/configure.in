@@ -1039,6 +1039,8 @@ AC_OUTPUT_COMMANDS([if test "$has_exclaim" = "yes" ; then
 fi
 ],[has_exclaim=$has_exclaim])
 dnl
+FC="$F77"
+AC_SUBST(FC)
 AC_SUBST(CFLAGS) # some autoconf versions need this explicitly
 dnl AC_OUTPUT_COMMANDS([chmod a+x mpif77])
 dnl AC_OUTPUT_COMMANDS([chmod a+x mpif90])
