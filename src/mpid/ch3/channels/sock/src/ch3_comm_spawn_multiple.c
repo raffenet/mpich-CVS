@@ -15,15 +15,18 @@ static void free_pmi_keyvals(PMI_keyval_t **kv, int size, int *counts)
     {
 	for (j=0; j<counts[i]; j++)
 	{
-	    MPIU_Free(kv[i][j].key);
-	    MPIU_Free(kv[i][j].val);
+	    if (kv[i][j].key != NULL)
+		MPIU_Free(kv[i][j].key);
+	    if (kv[i][j].val != NULL)
+		MPIU_Free(kv[i][j].val);
 	}
 	if (kv[i] != NULL)
 	{
 	    MPIU_Free(kv[i]);
 	}
     }
-    MPIU_Free(kv);
+    if (kv != NULL)
+	MPIU_Free(kv);
 }
 
 /*
@@ -86,6 +89,7 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
         if (mpi_errno != MPI_SUCCESS)
 	{
 	    free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
+	    MPIU_Free(info_keyval_sizes);
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    goto fn_exit;
 	}
@@ -115,6 +119,11 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
     }
 
     mpi_errno = MPIDI_CH3_Comm_accept(port_name, root, comm_ptr, intercomm); 
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	goto fn_exit;
+    }
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);

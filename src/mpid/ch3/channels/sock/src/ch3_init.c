@@ -278,7 +278,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	}
     }
 #   endif
-    
+
     /* XXX - has_args and has_env need to come from PMI eventually... */
     *has_args = TRUE;
     *has_env = TRUE;
@@ -303,7 +303,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         mpi_errno = MPIDI_CH3_Comm_connect(val, 0, commworld, &intercomm);
         if (mpi_errno != MPI_SUCCESS)
 	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "spawned group unable to connect back to the parent");
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**conparent", "**conparent %s", val);
 	    return mpi_errno;
 	}
 
