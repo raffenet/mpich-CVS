@@ -96,6 +96,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_WRITEV);
 		/**********************nb = writev(vc->ib.fd, iov, n_iov);********************************/
+		nb = 0;
 		MPIDI_FUNC_EXIT(MPID_STATE_WRITEV);
 	    }
 	    while (nb == -1 && errno == EINTR);

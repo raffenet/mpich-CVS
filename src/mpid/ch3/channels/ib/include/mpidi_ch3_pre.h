@@ -7,6 +7,7 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
+#include "ibu.h"
 #include "ib_types.h"
 #include "ib_defs.h" 
 #include "blockallocator.h"
@@ -111,6 +112,7 @@ struct MPIDI_CH3I_VC				\
     int pg_rank;				\
     struct MPID_Request * sendq_head;		\
     struct MPID_Request * sendq_tail;		\
+    ibu_t ibu;                                  \
     MPIDI_CH3I_VC_state_t state;		\
 } ib;
 

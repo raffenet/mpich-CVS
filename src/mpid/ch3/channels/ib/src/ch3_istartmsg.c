@@ -72,6 +72,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_WRITE);
 		/*********************nb = write(vc->ib.fd, hdr, hdr_sz);********************************/
+		nb = 0;
 		MPIDI_FUNC_EXIT(MPID_STATE_WRITE);
 	    }
 	    while (nb == -1 && errno == EINTR);

@@ -11,8 +11,12 @@ extern "C" {
 #endif
 
 /* config header file */
-//#include "mpichconf.h"
 #include "mpidi_ch3i_ib_conf.h"
+
+#ifdef IBU_TYPE_WINDOWS
+#include <winsock2.h>
+#include <windows.h>
+#endif
 #include "iba.h"
 #include "psc_iba.h"
 
@@ -55,7 +59,6 @@ typedef enum IBU_OP
 /* definitions/structures specific to Windows */
 #ifdef IBU_TYPE_WINDOWS
 
-#include <winsock2.h>
 #define IBU_IOV             WSABUF
 #define IBU_IOV_LEN         len
 #define IBU_IOV_BUF         buf

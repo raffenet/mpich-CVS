@@ -43,6 +43,7 @@
 typedef struct MPIDI_CH3I_Process_s
 {
     MPIDI_CH3I_Process_group_t * pg;
+    ibu_set_t set;
 }
 MPIDI_CH3I_Process_t;
 
@@ -102,5 +103,6 @@ int MPIDI_CH3I_TCP_post_connect(MPIDI_VC *);
 void MPIDI_CH3I_TCP_post_read(MPIDI_VC *, MPID_Request *);
 void MPIDI_CH3I_TCP_post_write(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_Request_adjust_iov(MPID_Request *, MPIDI_msg_sz_t);
+int MPIDI_CH3I_Setup_connections();
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

@@ -6,6 +6,7 @@
 
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
+#include "ibu.h"
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
@@ -23,7 +24,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     MPID_Comm * comm;
     int p;
 	
-    short port;
+    int port;
     char * key;
     char * val;
     int key_max_sz;
@@ -111,7 +112,14 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     val = MPIU_Malloc(val_max_sz);
     assert(val != NULL);
     
-    port = MPIDI_CH3I_get_lid();
+    /* initialize the infinband functions */
+    rc = ibu_init();
+    assert(rc == IBU_SUCCESS);
+    /* create a completion set for this process */
+    rc = ibu_create_set(&MPIDI_CH3I_Process.set);
+    assert(rc == IBU_SUCCESS);
+    /* get and put the local id for this process in the PMI database */
+    port = ibu_get_lid();
     
     rc = snprintf(key, key_max_sz, "P%d-lid", pg_rank);
     assert(rc > -1 && rc < key_max_sz);
@@ -141,10 +149,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	{
 	    rc = snprintf(key, key_max_sz, "P%d-lid", p);
 	    assert(rc > -1 && rc < key_max_sz);
-	    rc = PMI_KVS_Get(pg->kvs_name, key, port);
+	    rc = PMI_KVS_Get(pg->kvs_name, key, val);
 	    assert(rc == 0);
 	    
-	    dbg_printf("[%d] port[%d]=%s\n", pg_rank, p, port);
+	    dbg_printf("[%d] port[%d]=%s\n", pg_rank, p, val);
 	    fflush(stdout);
 	}
     }
@@ -153,6 +161,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     /* XXX - has_args and has_env need to come from PMI eventually... */
     *has_args = TRUE;
     *has_env = TRUE;
+
+    /* for now, connect all the processes at init time */
+    MPIDI_CH3I_Setup_connections();
 
     return MPI_SUCCESS;
 }

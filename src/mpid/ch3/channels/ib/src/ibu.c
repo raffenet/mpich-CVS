@@ -81,13 +81,17 @@ typedef struct IBU_Global {
 		  char err_msg[IBU_ERROR_MSG_LENGTH];
 } IBU_Global;
 
-extern IBU_Global IBU_Process;
+IBU_Global IBU_Process;
 
 #define DEFAULT_NUM_RETRIES 10
 
 static int g_connection_attempts = DEFAULT_NUM_RETRIES;
 static int g_num_cp_threads = 2;
 
+/* local prototypes */
+static int ibui_post_receive(ibu_t ibu);
+static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_update)(int, void*));
+static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*));
 
 /* utility allocator functions */
 #if 0
@@ -491,6 +495,63 @@ static void ib_free_deregister(void *p)
 {
     /*ib_mr_deregister_us(IBU_Process.hca_handle, s_mr_handle);*/
     free(p);
+}
+
+ibu_t ibu_create_qp(ibu_set_t set, int dlid)
+{
+    ib_uint32_t status;
+    ibu_t p;
+    int i;
+
+    p = (ibu_t)malloc(sizeof(ibu_state_t));
+    if (p == NULL)
+	return NULL;
+
+    p->dlid = dlid;
+    p->allocator = BlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT, IBU_PACKET_COUNT, ib_malloc_register, ib_free_deregister);
+    p->mr_handle = s_mr_handle; /* Not thread safe. This handle is reset every time ib_malloc_register is called. */
+    p->mtu_size = 3; /* 3 = 2048 */
+    /* save the lkey for posting sends and receives */
+    p->lkey = s_lkey;
+
+    /*MPIU_dbg_printf("creating the queue pair\n");*/
+    /* Create the queue pair */
+    status = createQP(p, set);
+    if (status != IBU_SUCCESS)
+    {
+	MPIU_dbg_printf("createQP failed, error %d\n", status);
+	return NULL;
+    }
+
+    /*MPIU_dbg_printf("modifyQP(INIT)\n");*/
+    status = modifyQP(p, IB_QP_STATE_INIT);
+    if (status != IB_SUCCESS)
+    {
+	MPIU_dbg_printf("modifyQP(INIT) failed, error %d\n", status);
+	return NULL;
+    }
+    /*MPIU_dbg_printf("modifyQP(RTR)\n");*/
+    status = modifyQP(p, IB_QP_STATE_RTR);
+    if (status != IB_SUCCESS)
+    {
+	MPIU_dbg_printf("modifyQP(RTR) failed, error %d\n", status);
+	return NULL;
+    }
+    /*MPIU_dbg_printf("modifyQP(RTS)\n");*/
+    status = modifyQP(p, IB_QP_STATE_RTS);
+    if (status != IB_SUCCESS)
+    {
+	MPIU_dbg_printf("modifyQP(RTS) failed, error %d\n", status);
+	return NULL;
+    }
+
+    /* pre post some receives on each connection */
+    for (i=0; i<IBU_NUM_PREPOSTED_RECEIVES; i++)
+    {
+	ibui_post_receive(p);
+    }
+
+    return p;
 }
 
 #ifndef min

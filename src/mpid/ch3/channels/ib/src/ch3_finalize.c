@@ -18,12 +18,6 @@ int MPIDI_CH3_Finalize()
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
 
-    /* TODO - Close any open communication sockets. Don't forget to set the
-       socket back to blocking before calling close() or data in the socket
-       buffer may not be flushed to the network device.  Should this be done
-       done completely in Progress_finalize() or is additional coordination
-       required? */
-    
     /* Shutdown the progress engine */
     rc = MPIDI_CH3I_Progress_finalize();
     assert (rc == MPI_SUCCESS);
