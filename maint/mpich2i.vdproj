@@ -111,6 +111,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_A1F57C4D80254521B3D8F037205E0D48"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_A323FB112A43470E80B73C22BC0E1A21"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -172,6 +178,12 @@
         "Entry"
         {
         "MsmKey" = "8:_E0907DDA7B3248E3ACC56FBB96DA2CBD"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E32D71077BF844138B6F8425717C921F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -605,6 +617,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_A1F57C4D80254521B3D8F037205E0D48"
+            {
+            "SourcePath" = "8:..\\lib\\cxx.lib"
+            "TargetName" = "8:cxx.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_B167421D29EE4EAFA108A852DB65BD75"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_A323FB112A43470E80B73C22BC0E1A21"
             {
             "SourcePath" = "8:..\\lib\\mpich2d.dll"
@@ -811,6 +843,26 @@
             "TargetName" = "8:fmpich2gd.dll"
             "Tag" = "8:"
             "Folder" = "8:_BB1583009D63480DBB484EB460D60D15"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E32D71077BF844138B6F8425717C921F"
+            {
+            "SourcePath" = "8:..\\lib\\cxxd.lib"
+            "TargetName" = "8:cxxd.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_B167421D29EE4EAFA108A852DB65BD75"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1033,13 +1085,13 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MPICH2"
-        "ProductCode" = "8:{353FCD8C-5F5F-4226-871E-42F8A673A433}"
-        "PackageCode" = "8:{2E3B621D-3C9D-4645-A013-D178944FDC1A}"
+        "ProductCode" = "8:{76CD78D2-4E47-461A-BBB2-EAE755FADF47}"
+        "PackageCode" = "8:{6687DC2E-F12C-4D6A-BA48-75366D465DFB}"
         "UpgradeCode" = "8:{2CC63CCF-15DA-4D23-97BE-D82ACE5600E1}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
-        "ProductVersion" = "8:0.9.7"
+        "ProductVersion" = "8:0.9.71"
         "Manufacturer" = "8:Argonne National Lab"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:www.mcs.anl.gov/mpi/mpich2"
