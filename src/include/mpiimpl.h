@@ -421,12 +421,15 @@ extern MPID_Group MPID_Group_builtin[MPID_GROUP_N_BUILTIN];
 extern MPID_Group MPID_Group_direct[];
 
 /* Communicators */
-typedef struct { 
+typedef struct MPID_Comm { 
     int           id;            /* value of MPI_Comm for this structure */
     volatile int  ref_count;
     int16_t       context_id;    /* Assigned context id */
     int           size;          /* Value of MPI_Comm_(remote)_size */
     int           rank;          /* Value of MPI_Comm_rank */
+    MPID_VC       *((*vc_table)[]); /* pointer to the virtual connecton reference
+				    table */
+    volatile int  *vc_ref_cnt;   /* reference count for the VC ref table */
     MPID_List     attributes;    /* List of attributes */
     MPID_Group    *local_group,  /* Groups in communicator. */
                   *remote_group; /* The local and remote groups are the
@@ -451,7 +454,7 @@ extern MPID_Comm MPID_Comm_builtin[MPID_COMM_N_BUILTIN];
 extern MPID_Comm MPID_Comm_direct[];
 
 /* Requests */
-typedef struct {
+typedef struct MPID_Request {
     int           id;
     volatile int ref_count;
     volatile int busy;
