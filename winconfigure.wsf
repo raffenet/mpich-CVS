@@ -142,6 +142,7 @@ Function cEcho(str)
 End Function
 
 bUseIbRDMA = False
+bUsePinCache = False
 bRemoveFortran = False
 bWin64 = False
 bUseCycleCounter = False
@@ -244,6 +245,10 @@ For arg = 0 To argCount - 1
 	bUseIbRDMA = True
   ElseIf argValue = "--use_ib_rdma" Then
 	bUseIbRDMA = True
+  ElseIf argValue = "--use-pin-cache" Then
+    bUsePinCache = True
+  ElseIf argValue = "--use_pin_cache" Then
+    bUsePinCache = True
   ElseIf argValue = "--testdir" Then
     ConfigureTestDir()
     WScript.Quit
@@ -2581,9 +2586,12 @@ If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
 	End If
 	If bUseIbRDMA Then
 		fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
-		fout.WriteLine("/*#define USE_NO_PIN_CACHE*/")
 	Else
 		fout.WriteLine("/*#define MPIDI_CH3_CHANNEL_RNDV*/")
+	End If
+	If bUsePinCache Then
+		fout.WriteLine("/*#define USE_NO_PIN_CACHE*/")
+	else
 		fout.WriteLine("#define USE_NO_PIN_CACHE")
 	End If
 	fout.WriteLine("#define USE_RDMA_GET")
