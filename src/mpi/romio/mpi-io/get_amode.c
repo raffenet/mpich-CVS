@@ -45,7 +45,7 @@ int MPI_File_get_amode(MPI_File mpi_fh, int *amode)
 
     /* --BEGIN ERROR HANDLING-- */
     MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
-    /* -- END ERROR HANDLING-- */
+    /* --END ERROR HANDLING-- */
 
     *amode = fh->access_mode;
     return MPI_SUCCESS;
