@@ -34,6 +34,7 @@ void MPIDI_CH3U_Buffer_copy(
 
     if (sdata_sz == 0)
     {
+	*rsz = 0;
 	goto fn_exit;
     }
     
