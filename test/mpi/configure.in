@@ -62,11 +62,30 @@ AC_DEFINE(HAVE_MPI_WIN_CREATE,1,[Define if MPI_Win_create is available])
 
 # Now, select the proper compilers for the tests
 if test "$FROM_MPICH2" = yes ; then
-    LIBS=$saveLIBS
-    CC=$top_build_dir/bin/mpicc
-    FC=$top_build_dir/bin/mpif77
-    CXX=$top_build_dir/bin/mpicxx
-    F90=$top_build_dir/bin/mpif90
+    if test "$enable_in_place" = yes ; then
+        LIBS=$saveLIBS
+        CC=$top_build_dir/bin/mpicc
+        FC=$top_build_dir/bin/mpif77
+        CXX=$top_build_dir/bin/mpicxx
+        F90=$top_build_dir/bin/mpif90
+    else
+        # note that the default definition of bindir is 
+	#    '${exec_prefix}/bin'
+        # so even if prefix is set, exec prefix is not until
+	# the very last moment (i.e., not here). 
+	if test "X$exec_prefix" = "XNONE" ; then
+	    saveExec_prefix=$exec_prefix
+	    exec_prefix=$prefix
+	    eval mpibindir=${bindir}
+	    exec_prefix=$saveExec_prefix
+        else
+            eval  mpibindir=${bindir}
+	fi
+        CC=$mpibindir/mpicc
+        FC=$mpibindir/mpif77
+        CXX=$mpibindir/mpicxx
+        F90=$mpibindir/mpif90
+    fi
 fi
 # Simple tests for which other languages we can handle.  
 # Use these only when configuring separate from an MPICH2 build
