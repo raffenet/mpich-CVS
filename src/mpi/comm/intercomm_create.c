@@ -56,7 +56,9 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Comm *peer_comm_ptr = NULL;
-    int context_id;
+    int context_id, final_context_id;
+    int remote_size, *remote_lpids;
+    MPID_Comm *newcomm_ptr, *commworld_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INTERCOMM_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INTERCOMM_CREATE);
@@ -89,12 +91,15 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
        to the other group */
     context_id = MPIR_Get_contextid( local_comm );
     if (context_id == 0) {
-	/* FIXME - error */
-	;
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**toomanycomm", 0 );
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
     
     if (comm_ptr->rank == local_leader) {
 	int remote_info[2], local_info[2];
+	int *local_lpids, i;
+
 	MPID_Comm_get_ptr( peer_comm, peer_comm_ptr );
 #       ifdef HAVE_ERROR_CHECKING
 	{
@@ -121,8 +126,124 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	/* Exchange information with my peer.  Use sendrecv */
 	local_info[0] = context_id;
 	local_info[1] = comm_ptr->local_size;
+
+	NMPI_Sendrecv( local_info, 2, MPI_INT, remote_leader, tag,
+		       remote_info, 2, MPI_INT, remote_leader, tag, 
+		       peer_comm, MPI_STATUS_NULL );
 	
+	/* With this information, we can now send and receive the 
+	   local process ids from the peer.  This works only
+	   for local process ids within MPI_COMM_WORLD, so this
+	   will need to be fixed for the MPI2 version - FIXME */
+	
+	remote_size = remote_info[1];
+	remote_lpids = (int *)MPIU_Malloc( remote_size * sizeof(int) );
+	if (!remote_lpids) {
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
+	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	}
+	local_lpids =  (int *)MPIU_Malloc( comm_ptr->local_size * sizeof(int) );
+	if (!local_lpids) {
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
+	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	}
+	for (i=0; i<comm_ptr->local_size; i++) {
+	    (void)MPID_VCR_Get_lpid( comm_ptr->vcr[i], &local_lpids[i] );
+	}
+	
+	/* Exchange the lpid arrays */
+	NMPI_Sendrecv( local_lpids, comm_ptr->local_size, MPI_INT, 
+		       remote_leader, tag,
+		       remote_lpids, remote_size, MPI_INT, 
+		       remote_leader, tag, peer_comm, MPI_STATUS_NULL );
+
+	MPIU_Free( local_lpids );
+
+	/* Now, send all of our local processes the remote_lpids */
+	NMPI_Bcast( &remote_size, 1, MPI_INT, local_leader, local_comm );
+	NMPI_Bcast( remote_lpids, remote_size, MPI_INT, local_leader, 
+		    local_comm );
+
+	/* We need to do something with the context ids.  For 
+	   MPI1, we can just take the min of the two context ids and
+	   use that value.  For MPI2, we'll need to have separate
+	   send and receive context ids - FIXME */
+	if (remote_info[0] < context_id) {
+	    final_context_id = remote_info[0];
+	}
+	else 
+	    final_context_id = context_id;
+	NMPI_Bcast( &final_context_id, 1, MPI_INT, local_leader, local_comm );
     }
+    else {
+	/* We're *not* the leader, so we wait for the broadcast of the 
+	   lpid array */
+	NMPI_Bcast( &remote_size, 1, MPI_INT, local_leader, local_comm );
+	remote_lpids = (int *)MPIU_Malloc( remote_size * sizeof(int) );
+	if (!remote_lpids) {
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
+	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	}
+	NMPI_Bcast( remote_lpids, remote_size, MPI_INT, local_leader, 
+		    local_comm );
+	NMPI_Bcast( &final_context_id, 1, MPI_INT, local_leader, local_comm );
+    }
+
+    /* If we did not choose this context, free it.  We won't do this
+       once we have MPI2 intercomms (at least, not for intercomms that
+       are not subsets of MPI_COMM_WORLD) - FIXME */
+    if (final_context_id != context_id) {
+	MPIR_Free_contextid( context_id );
+    }
+
+    /* All processes in the local_comm now build the communicator */
+
+    newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
+    if (!newcomm_ptr) {
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
+
+    MPIU_Object_set_ref( newcomm_ptr, 1 );
+    newcomm_ptr->context_id   = final_context_id;
+    newcomm_ptr->remote_size  = remote_size;
+    newcomm_ptr->local_size   = comm_ptr->local_size;
+    newcomm_ptr->rank         = comm_ptr->local_rank;
+    newcomm_ptr->local_group  = 0;
+    newcomm_ptr->remote_group = 0;
+    
+    /* FIXME: for MPI1, all process ids are relative to MPI_COMM_WORLD.
+       For MPI2, we'll need to do something more complex */
+    commworld_ptr = MPIR_Process.comm_world;
+    /* Setup the communicator's vc table: remote group */
+    MPID_VCRT_Create( n, &newcomm_ptr->vcrt );
+    MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, &newcomm_ptr->vcr );
+    for (i=0; i<remote_size; i++) {
+	/* For rank i in the new communicator, find the corresponding
+	   rank in the comm world (FIXME FOR MPI2) */
+	MPID_VCR_Dup( commworld_ptr->vcr[remote_lpids[i]], 
+		      &newcomm_ptr->vcr[i] );
+	}
+
+    /* Setup the communicator's vc table: local group */
+    MPID_VCRT_Create( n, &newcomm_ptr->local_vcrt );
+    MPID_VCRT_Get_ptr( newcomm_ptr->local_vcrt, &newcomm_ptr->local_vcr );
+    for (i=0; i<comm_ptr->local_size; i++) {
+	int lpid;
+	(void)MPID_VCR_Get_lpid( comm_ptr->vcr[i], &lpid );
+	MPID_VCR_Dup( commworld_ptr->vcr[lpid], &newcomm_ptr->local_vcr[i] );
+    }
+	
+    /* Notify the device of this new communicator */
+    MPID_Dev_comm_create_hook( newcomm_ptr );
+    
+    *newintercomm = newcomm_ptr->handle;
+
+    MPIU_Free( remote_lpids );
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
     return MPI_SUCCESS;

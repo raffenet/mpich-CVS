@@ -102,6 +102,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     new_context_id = MPIR_Get_contextid( comm_ptr->handle );
     if (new_context_id == 0) {
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**toomanycomm", 0 );
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
     

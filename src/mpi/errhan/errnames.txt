@@ -88,6 +88,8 @@ was not started with MPI_GREQUEST_START
 **group:Invalid group
 **commnotintra:An intracommunicator is required but an intercommunicator \
  was provided.
+**commnotinter:An intercommunicator is required but an intracommunicator \
+ was provided.
 **ranklocal:Error specifying local_leader 
 **ranklocal %d %d:Error specifying local_leader; rank given was %d but must\
 be in the range 0 to %d
