@@ -171,6 +171,10 @@ int CH3U_Describe_timer_states()
 		       MPID_STATE_MPIDI_CH3_IWRITE,
 		       "MPIDI_CH3_iWrite",
 		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_CH3_PROGRESS_TEST,
+		       "MPIDI_CH3_Progress_test",
+		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3_PROGRESS_START,
 		       "MPIDI_CH3_Progress_start",
@@ -306,6 +310,18 @@ int CH3U_Describe_timer_states()
 		       "MPIDI_CH3I_BootstrapQ_recv_msg",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE_NAMED,
+		       "MPIDI_CH3I_BootstrapQ_create_named",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE_UNIQUE_NAME,
+		       "MPIDI_CH3I_BootstrapQ_create_unique_name",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_UNLINK,
+		       "MPIDI_CH3I_BOOTSTRAPQ_UNLINK",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
 		       MPID_STATE_HANDLE_SOCK_OP,
 		       "handle_sock_op",
 		       get_random_color_str());
@@ -328,6 +344,14 @@ int CH3U_Describe_timer_states()
     RLOG_DescribeState(g_pRLOG,
 		       MPID_STATE_MPIDI_CH3I_SHM_GET_MEM,
 		       "MPIDI_CH3I_SHM_Get_mem",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED,
+		       "MPIDI_CH3I_SHM_Get_mem_named",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_CH3I_SHM_UNLINK_MEM,
+		       "MPIDI_CH3I_SHM_Unlink_mem",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
 		       MPID_STATE_MPIDI_CH3I_SHM_ATTACH_TO_MEM,

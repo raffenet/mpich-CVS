@@ -82,12 +82,9 @@
 #define MPID_READ_WRITE_BARRIER()
 #endif
 
-#if 0
-#if defined(HAVE_MSGGET) && !defined(USE_SINGLE_MSG_QUEUE)
+#ifndef HAVE_WINDOWS_H
 #define USE_SINGLE_MSG_QUEUE
 #endif
-#endif
-#define USE_SINGLE_MSG_QUEUE
 
 #define MPIDI_SHM_EAGER_LIMIT          (128*1024)
 #ifdef HAVE_SHARED_PROCESS_READ
