@@ -1,7 +1,7 @@
 #ifndef BLOCKALLOCATOR_H
 #define BLOCKALLOCATOR_H
 
-#ifdef ALLOCATOR_LOCKING
+#ifdef WITH_ALLOCATOR_LOCKING
 
 extern int g_nLockSpinCount;
 
