@@ -234,6 +234,7 @@ static BOOL smpd_setup_service_restart( SC_HANDLE schService )
 {
     SC_ACTION	actionList[3];
     SERVICE_FAILURE_ACTIONS schActionOptions;
+    SERVICE_DESCRIPTION ds;
     HMODULE hModule;
     BOOL ( WINAPI * ChangeServiceConfig2_fn)(SC_HANDLE hService, DWORD dwInfoLevel, LPVOID lpInfo);
 
@@ -244,6 +245,10 @@ static BOOL smpd_setup_service_restart( SC_HANDLE schService )
     ChangeServiceConfig2_fn = (BOOL ( WINAPI *)(SC_HANDLE, DWORD, LPVOID))GetProcAddress(hModule, "ChangeServiceConfig2A");
     if (ChangeServiceConfig2_fn == NULL)
 	return FALSE;
+
+    /* Add a description string */
+    ds.lpDescription = "Process manager service for MPICH2 applications";
+    ChangeServiceConfig2_fn(schService, SERVICE_CONFIG_DESCRIPTION, &ds);
 
     /* The actions in this array are performed in order each time the service fails 
        within the specified reset period.
