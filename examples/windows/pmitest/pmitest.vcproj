@@ -80,7 +80,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="pmi.lib ws2_32.lib"
+				AdditionalDependencies="mpich2sock.lib smpd_util.lib pmi.lib ws2_32.lib mswsock.lib mpr.lib rpcrt4.lib"
 				OutputFile="$(OutDir)/pmitest.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\lib"
