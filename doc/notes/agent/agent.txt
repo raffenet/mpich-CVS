@@ -352,6 +352,10 @@ The xfer request structure will contain both a counter for determining when
 operation have completed as well as tracking data structures for building the
 CARs associated with the xfer block.
 
+THESE ARE FOR HOMOGENEOUS USE ONLY.  In the hetergeneous case, the message
+headers (envelopes) would need to include data format information for each
+fragment of the message. (basically each car)
+
 MPID_xfer_scatter_init(src, tag, comm, &req)
 {
     alloc(req); /* allocates a xfer request */
@@ -363,12 +367,266 @@ MPID_xfer_scatter_init(src, tag, comm, &req)
     req->recv_car_list = recv_envelope;
 }
 
-MPID_xfer_scatter_recv_op(req, buf, count, dtype, first, last)
+MPID_xferi_scatter_recv_mop_op(req, buf, count, dtype, first, last, mop_func)
 {
     req->recv_vc->alloc(car);
     car->type = RECV_DATA | UNPACK;
     car->segment = segment;
-    list_add(req->recv_car_list, car);    
+
+    if (mop_func != MOP_NOOP)
+    {
+	recv_car->type |= MOP;
+	recv_car->op_func = mop_func;
+    }
+
+    list_add(req->recv_car_list, car);
+    req->recv_car_list.size += get_segment_size(segment);
+}
+
+
+/*
+ *
+ * the type field has three independent sets of flags:
+ * SEND_DATA - sending
+ * RECV_DATA - receiving
+ *
+ * SUPPLY_PACKED_BUF - the method associated with this CAR will supply a
+ *     buffer for use by both this and some other CAR
+ * PACKED_BUF_DEPENDENCY - this CAR will be supplied a buffer from some other
+ *     CAR (thus it has a buffer dependency)
+ *
+ * PACK - this CAR packs the data from the segment into the packed buffer
+ * UNPACK - this CAR unpacks the data from the pack buffer into the segment
+ *     buffer
+ */
+
+MPID_xferi_scatter_recv_mop_forward_op(req, buf, count, dtype, first, last, mop_func, dest)
+{
+    send_vc = get_vc(req->comm, dest);
+    send_vc->alloc(send_car);
+    req->recv_vc->alloc(recv_car);
+
+    /*
+     * Buffer handling is determined using some yet-to-be-determined function.
+     * Nothing above this interface should be looking at the methods, so this
+     * decision can't be made until we get in here?
+     *
+     * This function can take the count/dtype as a parameter to use to help 
+     * decide if it wants to tailor buffer allocation to eager vs. rendezvous.
+     */
+    buffer_handing = func(..., mop_orientation);
+    switch(buffer_handling)
+    {
+      case SENDER_SUPPLIES_BUF:
+    	send_car->type = SEND_DATA | SUPPLY_PACKED_BUF | PROGRESS_DEPENDENCY;
+        send_car->buf_dep = recv_car;
+	send_car->pack_buf = NULL;
+    	send_car->pack_size = get_segment_size(buf, count, dtype, first, last);
+
+    	recv_car->type = RECV_DATA | UNPACK | PACKED_BUF_DEPENDENCY
+	    | SUPPLY_PROGRESS;
+	recv_car->op_func = mop_func;
+        recv_car->pack_buf = NULL;
+    	recv_car->segment = segment(buf, count, dtype, first, last);
+    	recv_car->progress_dep = send_car;
+
+      case RECEIVER_SUPPLIES_BUF:
+    	send_car->type = SEND_DATA | PACKED_BUF_DEPENDENCY
+	    | PROGRESS_DEPENDENCY;
+	send_car->pack_buf = NULL;
+    	send_car->pack_size = get_segment_size(buf, count, dtype, first, last);
+
+    	recv_car->type = RECV_DATA | UNPACK | SUPPLY_PACKED_BUF
+	    | SUPPLY_PROGRESS;
+        recv_car->buf_dep = send_car;
+        recv_car->pack_buf = NULL;
+    	recv_car->segment = segment(buf, count, dtype, first, last);
+    	recv_car->progress_dep = send_car;
+    
+      case USE_SEGMENT_BUF:
+    	send_car->type = SEND_DATA | PACK | PROGRESS_DEPENDENCY;
+	send_car->pack_buf = NULL;
+    	send_car->pack_size = get_segment_size(buf, count, dtype, first, last);
+
+    	recv_car->type = RECV_DATA | UNPACK | SUPPLY_PROGRESS;
+        recv_car->pack_buf = NULL;
+    	recv_car->segment = segment(buf, count, dtype, first, last);
+    	recv_car->progress_dep = send_car;
+    
+      case USE_TMP_BUF:
+	/* case where neither method is capable of providing a buffer */
+	alloc(tmp_buf);
+    	send_car->type = SEND_DATA | PROGRESS_DEPENDENCY;
+	send_car->pack_buf = tmp_buf;
+    	send_car->pack_size = get_segment_size(buf, count, dtype, first, last);
+
+    	recv_car->type = RECV_DATA | UNPACK | SUPPLY_PROGRESS;
+        recv_car->pack_buf = tmp_buf;
+    	recv_car->segment = segment(buf, count, dtype, first, last);
+    	recv_car->progress_dep = send_car;
+    }
+
+    if (mop_func != MOP_NOOP)
+    {
+	if (mop_orientation == SEND)
+	{
+	    send_car->type |= MOP;
+	    send_car->op_func = mop_func;
+	    
+	}
+	else
+	{
+	    recv_car->type |= MOP;
+	    recv_car->op_func = mop_func;
+	}
+    }
+	
+    if (req->send_car_list{dest} == NULL) 
+    {
+        req->send_car_list{dest} = envelope_car{dest};
+	req->send_car_list{dest}.size = 0;
+    }
+
+    /* basically we're adding to the size of the 
+     * envelope, which we know are at the head of these lists
+     */
+    list_add(req->send_car_list{dest}, send_car);
+    req->send_car_list{dest}.size += send_car->pack_size;
+    list_add(req->recv_car_list, recv_car);    
+    req->recv_car_list.size += recv_car->pack_size;
+}
+
+MPID_xfer_scatter_forward_op(req, size, dest)
+{
+
+    /* this one doesn't unpack.  david points out that there is no
+       USE_SEGMENT_BUF case here.  that might be worth optimizing out... */
+
+    send_vc = get_vc(req->comm, dest);
+    send_vc->alloc(send_car);
+    req->recv_vc->alloc(recv_car);
+
+    /*
+     * Buffer handling is determined using some yet-to-be-determined function.
+     * Nothing above this interface should be looking at the methods, so this
+     * decision can't be made until we get in here?
+     *
+     * This function can take the count/dtype as a parameter to use to help 
+     * decide if it wants to tailor buffer allocation to eager vs. rendezvous.
+     */
+    buffer_handing = func(...);
+    switch(buffer_handling)
+    {
+      case SENDER_SUPPLIES_BUF:
+    	send_car->type = SEND_DATA | SUPPLY_PACKED_BUF
+	    | PROGRESS_DEPENDENCY;
+        send_car->buf_dep = recv_car;
+	send_car->pack_buf = NULL;
+    	send_car->pack_size = size;
+
+    	recv_car->type = RECV_DATA | PACKED_BUF_DEPENDENCY | SUPPLY_PROGRESS;
+        recv_car->pack_buf = NULL;
+    	recv_car->pack_size = size;
+    	recv_car->progress_dep = send_car;
+    
+      case RECEIVER_SUPPLIES_BUF:
+    	send_car->type = SEND_DATA | PACKED_BUF_DEPENDENCY
+	    | PROGRESS_DEPENDENCY;
+	send_car->pack_buf = NULL;
+    	send_car->pack_size = size;
+
+    	recv_car->type = RECV_DATA | SUPPLY_PACKED_BUF | SUPPLY_PROGRESS;
+        recv_car->buf_dep = send_car;
+        recv_car->pack_buf = NULL;
+    	recv_car->pack_size = size;
+    	recv_car->progress_dep = send_car;
+    
+      case USE_TMP_BUF:
+	/* case where neither method is capable of providing a buffer */
+	alloc(tmp_buf);
+    	send_car->type = SEND_DATA | PROGRESS_DEPENDENCY;
+	send_car->pack_buf = tmp_buf;
+    	send_car->pack_size = size;
+
+    	recv_car->type = RECV_DATA | SUPPLY_PROGRESS;
+        recv_car->pack_buf = tmp_buf;
+    	recv_car->pack_size = size;
+    	recv_car->progress_dep = send_car;
+    }
+
+    if (req->send_car_list{dest} == NULL) 
+    {
+        req->send_car_list{dest} = envelope_car{dest};
+	req->send_car_list{dest}.size = 0;
+    }
+
+    /* basically we're adding to the size of the 
+     * envelope, which we know are at the head of these lists
+     */
+    list_add(req->send_car_list{dest}, send_car);
+    req->send_car_list{dest}.size += send_car->pack_size;
+    list_add(req->recv_car_list, recv_car);    
+    req->recv_car_list.size += recv_car->pack_size;
+}
+
+MPID_xfer_scatter_send_op(req, buf, count, dtype, first, last, dest)
+{
+    send_vc = get_vc(req->comm, dest);
+    send_vc->alloc(car);
+    car->type = SEND_DATA | PACK;
+    car->segment = segment;
+    if (req->send_car_list{dest} == NULL)
+        req->send_car_list{dest} = envelope_car{dest}; /* allocate an envelope
+                                                          and put it at the 
+                                                          head of the 
+                                                          send_car_list for 
+                                                          this destination */
+    list_add(req->send_car_list{dest}, car);
+    req->send_car_list{dest}.size += get_segment_size(segment);
+}
+
+MPID_xfer_scatter_start(req)
+{
+    /* add the heads of the lists of cars into the ready lists/queues */
+    foreach rank in {send} {
+	vc = get_vc(req->comm, rank);
+        vc.send(vc, req->send_car_list{rank});
+    }
+    req->recv_vc.recv(vc, req->recv_car_list);
+
+}
+
+
+
+MPID_xfer_gather_init(dest, tag, comm, &req)
+{
+    alloc(req); /* allocates a xfer request */
+    req->dest = dest;
+    req->tag = tag;
+    req->comm = comm;
+    req->car_count = 0;
+    req->send_vc = get_vc(comm, dest);
+    req->send_car_list = send_envelope;
+}
+
+MPID_xferi_gather_recv_mop_op(req, buf, count, dtype, first, last, mop_func, src)
+{
+    req->recv_vc->alloc(car);
+    car->type = RECV_DATA | UNPACK;
+    car->segment = segment;
+    if (req->recv_car_list{src} == NULL)
+    {
+        req->recv_car_list{src} = envelope_car{src};
+    }
+
+    if (mop_func != MOP_NOOP)
+    {
+	recv_car->type |= MOP;
+	recv_car->op_func = mop_func;
+    }
+    
+    list_add(req->recv_car_list{src}, car);
+    req->recv_car_list{src}.size += get_segment_size(segment);
 }
 
 /*
@@ -387,49 +645,54 @@ MPID_xfer_scatter_recv_op(req, buf, count, dtype, first, last)
  *     buffer
  */
 
-MPID_xfer_scatter_recv_forward_op(req, buf, count, dtype, first, last, dest)
+MPID_xferi_gather_recv_mop_forward_op(req, buf, count, dtype, first, last, mop, src)
 {
-	this one unpacks
-}
+    recv_vc = get_vc(req->comm, src);
+    recv_vc->alloc(recv_car);
+    req->send_vc->alloc(send_car);
 
-
-MPID_xfer_scatter_mayberecv_forward_op(req, buf, count, dtype, first, last, dest, RECVFLAG)
-{
-    send_vc = get_vc(req->comm, dest);
-    send_vc->alloc(send_car);
-    req->recv_vc->alloc(recv_car);
-
-    buffer_handing = func(...);
+    /*
+     * Buffer handling is determined using some yet-to-be-determined function.
+     * Nothing above this interface should be looking at the methods, so this
+     * decision can't be made until we get in here?
+     *
+     * This function can take the count/dtype as a parameter to use to help 
+     * decide if it wants to tailor buffer allocation to eager vs. rendezvous.
+     */
+    buffer_handing = func(..., mop_orientation);
     switch(buffer_handling)
     {
       case SENDER_SUPPLIES_BUF:
-    	send_car->type = SEND_DATA | SUPPLY_PACKED_BUF;
+    	send_car->type = SEND_DATA | SUPPLY_PACKED_BUF | PROGRESS_DEPENDENCY;
         send_car->buf_dep = recv_car;
 	send_car->pack_buf = NULL;
     	send_car->pack_size = get_segment_size(buf, count, dtype, first, last);
 
-    	recv_car->type = RECV_DATA | UNPACK | PACKED_BUF_DEPENDENCY;
+    	recv_car->type = RECV_DATA | UNPACK | PACKED_BUF_DEPENDENCY
+	    | SUPPLY_PROGRESS;
         recv_car->pack_buf = NULL;
     	recv_car->segment = segment(buf, count, dtype, first, last);
     	recv_car->progress_dep = send_car;
     
       case RECEIVER_SUPPLIES_BUF:
-    	send_car->type = SEND_DATA | PACKED_BUF_DEPENDENCY;
+    	send_car->type = SEND_DATA | PACKED_BUF_DEPENDENCY
+	    | PROGRESS_DEPENDENCY;
 	send_car->pack_buf = NULL;
     	send_car->pack_size = get_segment_size(buf, count, dtype, first, last);
 
-    	recv_car->type = RECV_DATA | UNPACK | SUPPLY_PACKED_BUF;
+    	recv_car->type = RECV_DATA | UNPACK | SUPPLY_PACKED_BUF
+	    | SUPPLY_PROGRESS;
         recv_car->buf_dep = send_car;
         recv_car->pack_buf = NULL;
     	recv_car->segment = segment(buf, count, dtype, first, last);
     	recv_car->progress_dep = send_car;
     
       case USE_SEGMENT_BUF:
-    	send_car->type = SEND_DATA | PACK;
+    	send_car->type = SEND_DATA | PACK | PROGRESS_DEPENDENCY;
 	send_car->pack_buf = NULL;
     	send_car->pack_size = get_segment_size(buf, count, dtype, first, last);
 
-    	recv_car->type = RECV_DATA | UNPACK;
+    	recv_car->type = RECV_DATA | UNPACK | SUPPLY_PROGRESS;
         recv_car->pack_buf = NULL;
     	recv_car->segment = segment(buf, count, dtype, first, last);
     	recv_car->progress_dep = send_car;
@@ -437,46 +700,226 @@ MPID_xfer_scatter_mayberecv_forward_op(req, buf, count, dtype, first, last, dest
       case USE_TMP_BUF:
 	/* case where neither method is capable of providing a buffer */
 	alloc(tmp_buf);
-    	send_car->type = SEND_DATA;
+    	send_car->type = SEND_DATA | PROGRESS_DEPENDENCY;
 	send_car->pack_buf = tmp_buf;
     	send_car->pack_size = get_segment_size(buf, count, dtype, first, last);
 
-    	recv_car->type = RECV_DATA | UNPACK;
+    	recv_car->type = RECV_DATA | UNPACK | SUPPLY_PROGRESS;
         recv_car->pack_buf = tmp_buf;
     	recv_car->segment = segment(buf, count, dtype, first, last);
     	recv_car->progress_dep = send_car;
     }
-    if (req->send_car_list{dest} == NULL)
-        req->send_car_list{dest} = envelope_car{dest};
-    list_add(req->send_car_list{dest}, send_car);
-    list_add(req->recv_car_list, recv_car);    
+
+    if (mop_func != MOP_NOOP)
+    {
+	if (mop_orientation == SEND)
+	{
+	    send_car->type |= MOP;
+	    send_car->op_func = mop_func;
+	    
+	}
+	else
+	{
+	    recv_car->type |= MOP;
+	    recv_car->op_func = mop_func;
+	}
+    }
+
+    if (req->recv_car_list{src} == NULL)
+    {
+        req->recv_car_list{src} = envelope_car{src};
+        req->recv_car_list{src}.size = 0;
+    }
+
+    /* basically we're adding to the size of the 
+     * envelope, which we know are at the head of these lists
+     */
+    list_add(req->recv_car_list{src}, recv_car);
+    req->recv_car_list{src}.size += recv_car->pack_size;
+    list_add(req->send_car_list, send_car);    
+    req->send_car_list.size += send_car->pack_size;
 }
 
-MPID_xfer_scatter_forward_op(req, size, dest)
+MPID_xfer_gather_forward_op(req, size, dest)
 {
 
-    this one doesn't unpack.  david points out that there is no USE_SEGMENT_BUF
-    case here.  that might be worth optimizing out...
+    /* this one doesn't unpack.  david points out that there is no
+       USE_SEGMENT_BUF case here.  that might be worth optimizing out... */
 
-}
+    recv_vc = get_vc(req->comm, src);
+    recv_vc->alloc(recv_car);
+    req->send_vc->alloc(send_car);
 
-MPID_xfer_scatter_send_op(req, buf, count, dtype, first, last, dest)
-{
-    send_vc = get_vc(req->comm, dest);
-    send_vc->alloc(car);
-    car->type = SEND_DATA | PACK;
-    car->segment = segment;
-    if (req->send_car_list{dest} == NULL)
-        req->send_car_list{dest} = envelope_car{dest}; /* allocate an envelope
-                                                          and put it at the 
-                                                          head of the 
-                                                          send_car_list for 
-                                                          this destination */
-    list_add(req->send_car_list{dest}, car);
-}
+    /*
+     * Buffer handling is determined using some yet-to-be-determined function.
+     * Nothing above this interface should be looking at the methods, so this
+     * decision can't be made until we get in here?
+     *
+     * This function can take the count/dtype as a parameter to use to help 
+     * decide if it wants to tailor buffer allocation to eager vs. rendezvous.
+     */
+    buffer_handing = func(...);
+    switch(buffer_handling)
+    {
+      case SENDER_SUPPLIES_BUF:
+    	send_car->type = SEND_DATA | SUPPLY_PACKED_BUF
+	    | PROGRESS_DEPENDENCY;
+        send_car->buf_dep = recv_car;
+	send_car->pack_buf = NULL;
+    	send_car->pack_size = size;
 
-MPID_xfer_scatter_start(req)
-{
+    	recv_car->type = RECV_DATA | PACKED_BUF_DEPENDENCY | SUPPLY_PROGRESS;
+        recv_car->pack_buf = NULL;
+    	recv_car->pack_size = size;
+    	recv_car->progress_dep = send_car;
     
+      case RECEIVER_SUPPLIES_BUF:
+    	send_car->type = SEND_DATA | PACKED_BUF_DEPENDENCY
+	    | PROGRESS_DEPENDENCY;
+	send_car->pack_buf = NULL;
+    	send_car->pack_size = size;
+
+    	recv_car->type = RECV_DATA | SUPPLY_PACKED_BUF | SUPPLY_PROGRESS;
+        recv_car->buf_dep = send_car;
+        recv_car->pack_buf = NULL;
+    	recv_car->pack_size = size;
+    	recv_car->progress_dep = send_car;
+    
+      case USE_TMP_BUF:
+	/* case where neither method is capable of providing a buffer */
+	alloc(tmp_buf);
+    	send_car->type = SEND_DATA | PROGRESS_DEPENDENCY;
+	send_car->pack_buf = tmp_buf;
+    	send_car->pack_size = size;
+
+    	recv_car->type = RECV_DATA | SUPPLY_PROGRESS;
+        recv_car->pack_buf = tmp_buf;
+    	recv_car->pack_size = size;
+    	recv_car->progress_dep = send_car;
+    }
+    
+    if (req->recv_car_list{src} == NULL)
+    {
+        req->recv_car_list{src} = envelope_car{src};
+        req->recv_car_list{src}.size = 0;
+    }
+
+    /* basically we're adding to the size of the 
+     * envelope, which we know are at the head of these lists
+     */
+    list_add(req->recv_car_list{src}, recv_car);
+    req->recv_car_list{src}.size += recv_car->pack_size;
+    list_add(req->send_car_list, send_car);    
+    req->send_car_list.size += send_car->pack_size;
 }
 
+MPID_xfer_gather_send_op(req, buf, count, dtype, first, last)
+{
+    req->send_vc->alloc(send_car);
+    send_car->type = SEND_DATA | PACK;
+    send_car->segment = segment;
+    list_add(req->send_car_list, send_car);
+    req->send_car_list.size += get_segment_size(segment);
+}
+
+MPID_xfer_gather_start(req)
+{
+    /* add the heads of the lists of cars into the ready lists/queues */
+    foreach rank in {recv} {
+	/* need to get the vc for rank; extract it from the head car, which is
+         * the envelope - this could be a special field in the envelope, or
+	 * we could have the vc in all cars (that seems silly)
+	 *
+	 * alternatively we could look up the vc using the info in the request
+	 * plus the rank from the envelope...
+         */
+	vc = get_vc(req->comm, rank);
+        vc.recv(vc, req->recv_car_list{rank});
+    }
+    req->send_vc.send(vc, req->send_car_list);
+}
+
+/***************************************************************/
+
+now we need to make progress on things, taking the dependencies into acct.
+
+/***************************************************************/
+
+the open question at the moment is where to put the car lists.
+
+one option is to associate things with the vc.
+
+this necessitates having a list of "active" vcs, I think.
+
+we would update any necessary global method state during the xfer start
+functions.
+
+we note that there is a disparity between the send side and the receive side
+in that there is always the possibility that messages will arrive, so we need
+to be polling all the time for receives, at some interval.  This interval
+might be very infrequent when we are not expecting any messages, but more
+frequent when we know that there are outstanding operations on the given
+method.
+
+in some cases it costs the same to poll all vcs for a given method as it does
+to poll a set of or a single vc for the method.  in other cases it is more
+expensive to poll all vcs on the method.
+
+another issue is knowing the relative speeds of the methods WRT how often to
+poll.
+
+the polling functions could give feedback as well indicating that progress was
+made, or # of things processed, or whatever.  this might be useful as well...
+
+this could be a priority thing of some sort.
+
+we call a method-specific function to add the car lists to the specific VC(s).
+this allows for the method to update any internal structures as well which it
+can use to keep up with active connections/sockets/VIs/whatever.
+
+/* this is will be a pointer in the vc to a method-specific function
+ */
+
+We're going to allow methods to modify the VC method functions whenever they
+feel like it in order to express the current state via the function pointers.
+
+Boy, that's wacky isn't it? :)
+
+This could also be used to put a VC in an error state.
+
+tcp_send(vc, car_list)
+{
+    if connect isn't initiated
+       initiate connect
+       queue car list
+    else if connect in progress
+       queue car list
+    else if send queue is not empty
+       queue car list
+       make progress on this send queue
+    else
+       make progress on specified car list
+       enqueue remainder of car list
+    fi
+}
+
+tcp_recv(vc, car_list)
+{
+
+}
+
+tcp_make_progress()
+{
+}
+
+
+In the case where a recv is posted to the method but the matching message has
+already started to arrive (a corresponding unexpected CAR already exists), we
+need a way to switch the CAR the progress engine is using to complete the
+receive.  To accomplish this, we will lock the unexpected CAR, point the
+unexpected CAR at the new recv CAR, copy any data already received into the
+buffer associated with the new car, and then release the lock.  When the
+progress engine receives more data, it will notice that the unexpected CAR
+contains a pointer to a real recv CAR, update its cached CAR pointer, and
+release the unexpected CAR (continuing to process the incoming data using the
+state in the recv CAR).
