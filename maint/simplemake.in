@@ -803,8 +803,10 @@ sub WriteMfile {
     # We use the master_top_builddir instead of top_builddir because
     # we manage subdirectory builds in a different way than the Automake and
     # Autoconf style
-    print FD "top_builddir = \@master_top_builddir\@$newline";
-    print FD "builddir     = \@builddir\@$newline";
+# These are not currently in use (or we should generate them only
+# when they are used)
+#    print FD "top_builddir = \@master_top_builddir\@$newline";
+#    print FD "builddir     = \@builddir\@$newline";
     if ($useinclude) {
         print FD "SHELL = \@SHELL\@$newline";
         print FD "include $includedir/$makefilebase$newline";
@@ -1074,7 +1076,9 @@ sub DefaultRules {
 	    $any_prog_def = 1;
 	}
 	if ($do_sharedlibs || $found_sharedlib) {
-	    if (!$libtool_def) {
+	    if (!$libtool_def && $#allshlibtargets >= 0) {
+		# Only add the libtool definition if there are targets that
+		# may need it.
 		$libtool_def = 1;
 		print FD "LIBTOOL  = \@LIBTOOL\@$newline";
 	    }
@@ -2516,8 +2520,11 @@ sub VariableDocs {
     foreach my $kind (keys(%docsrc)) {
 	;
     }
-    # Let us set doctext from configure.
-    print FD "DOCTEXT = \@DOCTEXT\@\n";
+    # Let us set doctext from configure.  We only need this if
+    # we saw any sources.  This expresion is true if docsrc is non-empty
+    if (scalar(%docsrc)) {
+	print FD "DOCTEXT = \@DOCTEXT\@\n";
+    }
 }
 
 #
