@@ -55,7 +55,7 @@ cat >conftest.$ac_f90ext <<EOF
 EOF
 if AC_TRY_EVAL(ac_f90compile) ; then
    dnl Look for module name
-   pac_MOD=`ls conftest* 2>&1 | grep -v conftest.$ac_f90ext | grep -v conftest.o`
+   pac_MOD=`ls conftest.* 2>&1 | grep -v conftest.$ac_f90ext | grep -v conftest.o`
    pac_MOD=`echo $pac_MOD | sed -e 's/conftest\.//g'`
    pac_cv_f90_module_case="lower"
    if test "X$pac_MOD" = "X" ; then
@@ -194,7 +194,7 @@ EOF
         KINDVAL="unavailable"
         eval "pac_cv_prog_f90_int_kind_$sellen"=-1
         if AC_TRY_EVAL(ac_f90link) && test -s conftest ; then
-            ./conftest >>config.log 2>&1
+            ./conftest 1>&AC_FD_CC 2>&1
             if test -s conftest1.out ; then
 	        # Because of write, there may be a leading blank.
                 KINDVAL=`cat conftest1.out | sed 's/ //g'`
