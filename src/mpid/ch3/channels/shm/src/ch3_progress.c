@@ -294,6 +294,8 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		*/
 	    }
 	    break;
+	case SHM_WAIT_WAKEUP:
+	    break;
 	default:
 	    /*MPIDI_err_printf(FCNAME, "MPIDI_CH3I_SHM_wait returned an unknown operation code\n");*/
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_op", "**shm_op %d", wait_result);

@@ -32,7 +32,7 @@ static int InitSharedProcesses(MPIDI_PG_t *pg, int nRank)
 #ifdef HAVE_WINDOWS_H
     pg->ch.pSharedProcessHandles = (HANDLE*)MPIU_Malloc(sizeof(HANDLE) * nProc);
 #else
-    pg->ch.pSharedProcessIDs = (int*)MPIU_Malloc(sizeof(int) * pg->ch.size);
+    pg->ch.pSharedProcessIDs = (int*)MPIU_Malloc(sizeof(int) * nProc);
     pg->ch.pSharedProcessFileDescriptors = (int*)MPIU_Malloc(sizeof(int) * nProc);
 #endif
 
@@ -77,7 +77,7 @@ static int InitSharedProcesses(MPIDI_PG_t *pg, int nRank)
 #else
             sprintf(filename, "/proc/%d/mem", pSharedProcess[i].nPid);
             pg->ch.pSharedProcessIDs[i] = pSharedProcess[i].nPid;
-            pg->ch.pSharedProcessFileDescriptors[i] = open(filename, O_RDONLY);
+            pg->ch.pSharedProcessFileDescriptors[i] = open(filename, O_RDWR/*O_RDONLY*/);
             if (pg->ch.pSharedProcessFileDescriptors[i] == -1)
 	    {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**open", "**open %s %d %d", filename, pSharedProcess[i].nPid, errno);
@@ -326,7 +326,7 @@ int MPIDI_CH3I_SHM_Release_mem(MPIDI_PG_t *pg, BOOL bUseShm)
 	MPIU_Free(pg->ch.pSharedProcessHandles);
 	pg->ch.pSharedProcessHandles = NULL;
 #else
-	for (i=0; i<pg->ch.size; i++)
+	for (i=0; i<MPIDI_PG_Get_size(pg); i++)
 	    close(pg->ch.pSharedProcessFileDescriptors[i]);
 	MPIU_Free(pg->ch.pSharedProcessFileDescriptors);
 	MPIU_Free(pg->ch.pSharedProcessIDs);

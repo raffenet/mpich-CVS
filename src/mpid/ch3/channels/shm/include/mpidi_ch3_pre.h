@@ -75,19 +75,59 @@ MPIDI_CH3I_Process_group_t;
 
 #define MPIDI_CH3_PG_DECL MPIDI_CH3I_Process_group_t ch;
 
-#ifdef USE_ALIGNED_PACKET_SIZE
-typedef struct MPIDI_CH3_Pkt_max_size_aligned
-{
-    char pad[32];
-} MPIDI_CH3_Pkt_max_size_aligned_t;
+#define MPIDI_CH3I_PKT_DECL \
+MPIDI_CH3_Pkt_rdma_rts_iov_t rts_iov; \
+MPIDI_CH3_Pkt_rdma_cts_iov_t cts_iov; \
+MPIDI_CH3_Pkt_rdma_reload_t reload; \
+MPIDI_CH3_Pkt_rdma_iov_t iov;
 
-#define MPIDI_CH3_PKT_DECL MPIDI_CH3_Pkt_max_size_aligned_t dummy;
+#define MPIDI_CH3I_PKT_DEFS \
+typedef struct MPIDI_CH3_Pkt_rdma_rts_iov_t \
+{ \
+    MPIDI_CH3_Pkt_type_t type; \
+    MPI_Request sreq; \
+    int iov_len; \
+} MPIDI_CH3_Pkt_rdma_rts_iov_t; \
+typedef struct MPIDI_CH3_Pkt_rdma_cts_iov_t \
+{ \
+    MPIDI_CH3_Pkt_type_t type; \
+    MPI_Request sreq, rreq; \
+    int iov_len; \
+} MPIDI_CH3_Pkt_rdma_cts_iov_t; \
+typedef struct MPIDI_CH3_Pkt_rdma_reload_t \
+{ \
+    MPIDI_CH3_Pkt_type_t type; \
+    int send_recv; \
+    MPI_Request sreq, rreq; \
+} MPIDI_CH3_Pkt_rdma_reload_t; \
+typedef struct MPIDI_CH3_Pkt_rdma_iov_t \
+{ \
+    MPIDI_CH3_Pkt_type_t type; \
+    MPI_Request req; \
+    int send_recv; \
+    int iov_len; \
+} MPIDI_CH3_Pkt_rdma_iov_t;
+
+#ifdef USE_ALIGNED_PACKET_SIZE
+#define MPIDI_CH3_PKT_DECL MPIDI_CH3I_PKT_DECL MPIDI_CH3_Pkt_max_size_aligned_t dummy;
+#define MPIDI_CH3_PKT_DEFS MPIDI_CH3I_PKT_DEFS \
+typedef struct MPIDI_CH3_Pkt_max_size_aligned \
+{ \
+    char pad[32]; \
+} MPIDI_CH3_Pkt_max_size_aligned_t;
 #else
-#define MPIDI_CH3_PKT_DECL
+#define MPIDI_CH3_PKT_DECL MPIDI_CH3I_PKT_DECL
+#define MPIDI_CH3_PKT_DEFS MPIDI_CH3I_PKT_DEFS
 #endif
 
-#define MPIDI_CH3_PKT_ENUM
-#define MPIDI_CH3_PKT_DEFS
+#define MPIDI_CH3_PKT_ENUM \
+    MPIDI_CH3_PKT_RTS_IOV, \
+    MPIDI_CH3_PKT_CTS_IOV, \
+    MPIDI_CH3_PKT_RELOAD,  \
+    MPIDI_CH3_PKT_IOV
+
+#define MPIDI_CH3_PKT_RELOAD_SEND 1
+#define MPIDI_CH3_PKT_RELOAD_RECV 0
 
 /* This structure requires the iovec structure macros to be defined */
 typedef struct MPIDI_CH3I_SHM_Buffer_t
@@ -165,6 +205,8 @@ struct MPIDI_CH3I_Request						\
     /*  pkt is used to temporarily store a packet header associated	\
        with this request */						\
     MPIDI_CH3_Pkt_t pkt;						\
+									\
+    struct MPID_Request *req;						\
 } ch;
 
 /*
@@ -176,5 +218,16 @@ typedef struct MPIDI_CH3I_Progress_state
 } MPIDI_CH3I_Progress_state;
 
 #define MPIDI_CH3_PROGRESS_STATE_DECL MPIDI_CH3I_Progress_state ch;
+
+#define MPIDI_CH3_REQUEST_KIND_DECL \
+MPIDI_CH3I_IOV_WRITE_REQUEST, \
+MPIDI_CH3I_IOV_READ_REQUEST, \
+MPIDI_CH3I_RTS_IOV_READ_REQUEST
+
+/*
+#define MPIDI_CH3I_IOV_WRITE_REQUEST MPID_LAST_REQUEST_KIND + 1
+#define MPIDI_CH3I_IOV_READ_REQUEST MPID_LAST_REQUEST_KIND + 2
+#define MPIDI_CH3I_RTS_IOV_READ_REQUEST MPID_LAST_REQUEST_KIND + 3
+*/
 
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */
