@@ -1942,7 +1942,7 @@ Sub AddDefinitions( fout, filename )
 					'fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS 1")
 				Case "HAVE_MALLOC_H"
 					fout.WriteLine("#define HAVE_MALLOC_H 1")
-				Case "MPICH_DBG_MEMINIT"
+				Case "MPICH_DEBUG_MEMINIT"
 					fout.WriteLine("/* #undef MPICH_DEBUG_MEMINIT */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
