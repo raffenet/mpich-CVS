@@ -420,7 +420,9 @@ def mpdrun():
                         # print 'rank %d (%s) in job %s failed to find executable %s' % \
                               # ( msg['rank'], msg['src'], msg['jobid'], msg['exec'] )
                         host = msg['src'].split('_')[0]
-                        print 'Invalid executable %s on %s' % (msg['exec'],host)
+                        reason = unquote(msg['reason'])
+                        print 'problem with executable  %s  on  %s:  %s ' % \
+                              (msg['exec'],host,reason)
                         # keep going until all man's finish
                     elif msg['cmd'] == 'job_aborted_early':
                         print 'rank %d in job %s caused collective abort of all ranks' % \

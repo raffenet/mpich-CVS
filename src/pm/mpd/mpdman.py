@@ -14,6 +14,7 @@ from re      import findall, sub
 from signal  import signal, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_DFL
 from md5     import new
 from cPickle import loads
+from urllib  import quote
 from mpdlib  import mpd_set_my_id, mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
                     mpd_send_one_msg, mpd_send_one_msg_noprint, mpd_recv_one_msg, \
                     mpd_send_one_line, mpd_send_one_line_noprint, mpd_recv_one_line, \
@@ -198,7 +199,9 @@ def mpdman():
         except Exception, errmsg:
             ## mpd_raise('execvpe failed for client %s; errmsg=:%s:' % (clientPgm,errmsg) )
             # print '%s: could not run %s; probably executable file not found' % (myId,clientPgm)
-	    pmiMsgToSend = 'cmd=invalid_executable\n'
+            # mpd_print(1111, 'RMB DEBUG MPDMAN: %s' % (errmsg) )
+            reason = quote(str(errmsg))
+	    pmiMsgToSend = 'cmd=invalid_executable reason=%s\n' % (reason)
 	    mpd_send_one_line(pmiSocketClientEnd,pmiMsgToSend)
             exit(0)
         exit(0)
@@ -678,7 +681,8 @@ def mpdman():
 		    # invalid_executable is sent BEFORE client actually starts
                     if parsedMsg['cmd'] == 'invalid_executable':
                         msgToSend = { 'cmd' : 'invalid_executable', 'src' : myId, 'jobid' : jobid,
-                                      'rank' : myRank, 'exec' : clientPgm }
+                                      'rank' : myRank, 'exec' : clientPgm,
+                                      'reason' : parsedMsg['reason']  }
                         mpd_send_one_msg(rhsSocket,msgToSend)
                         if conSocket:
                             mpd_send_one_msg_noprint(conSocket,msgToSend)
