@@ -6,14 +6,13 @@
 
 usage_msg="
 Usage: ${progname} [-file_system=FILE_SYSTEM] [-arch=ARCH_TYPE] [-mpi=MPI_IMPL]
-                [-mpiincdir=MPI_INCLUDE_DIR] [-mpilib=MPI_LIBRARY]
+                [-mpilib=MPI_LIBRARY]
 		[-mpibindir=MPI_BIN_DIR]
                 [-cc=C_COMPILER] [-fc=FORTRAN_COMPILER] [-nof77] 
                 [-cflags=CFLAGS] [-fflags=FFLAGS] [-f90=F90_COMPILER] [-debug] 
-                [-make=MAKEPGM] [-mpiolib=MPIO_LIBRARY] [-ar_nolocal] 
+                [-mpiolib=MPIO_LIBRARY] [-ar_nolocal] 
                 [-noranlib] [-ar=AR_COMMAND] [-prefix=INSTALL_DIR]  
-                [-intsize=INTSIZE] [-ptrsize=PTRSIZE] [-longsize=LONGSIZE]
-                [-longlongsize=LONGLONGSIZE] [-f90nag] [-disable-weak-symbols]
+                [-longlongsize=LONGLONGSIZE] [-disable-weak-symbols]
 
 where
    FILE_SYSTEM  = the file system(s) for which ROMIO is to be configured.
@@ -56,26 +55,13 @@ where
                   ROMIO uses f90.
    MPIO_LIBRARY = name of the MPI-IO library to be built (full path).
                   Default is "this_directory"/lib/ARCH_TYPE/libmpio.a.
-   MAKEPGM      = name of the make program to use
    AR_COMMAND   = an alternate archiver (ar) command to use.
    INSTALL_DIR  = directory where ROMIO is to be installed
-   INTSIZE      = size of int in bytes.
-   PTRSIZE      = size of pointers in bytes.
-   LONGSIZE     = size of long in bytes.
    LONGLONGSIZE = size of long long in bytes.
  
-The options '-mpiincdir' and '-mpilib' may be needed if the MPI include file
-and MPI library are not in the compiler's default path.
-
 The option '-nof77' prevents the compilation of routines that require a
 Fortran compiler.  If you select this option, you cannot use the
 Fortran interface of MPI-IO.
-
-The option '-f90nag' allows you to use the NAG Fortran 90 compiler 
-instead of Fortran 77.
-
-The option '-make' may be used to select an alternate make program. ROMIO
-uses "make" by default.
 
 If '-debug' is used, ROMIO will be configured with the '-g' compiler option
 for debugging.
@@ -274,6 +260,9 @@ if test -n "$FILE_SYSTEM" ; then
    for x in $FILE_SYSTEM
    do
       found=no
+      # We could also do test -d "ad_$y" to test for known file systems
+      # based on having access to the adio code.  Then adding a file 
+      # system would not require changing configure to change known_filesystems
       for y in $known_filesystems ; do 
           if test $x = $y ; then
 	      found=yes
@@ -354,15 +343,21 @@ if test -n "$arch_sun4" ; then
     else 
         CFLAGS="$CFLAGS -O"
     fi
+    if test "$enable_aio" != "no" ; then
+        # Check for aio
+	AC_SEARCH_LIBS(aio_write,aio rt)
+	if test "$ac_cv_search_aio_write" = "no" ; then
+	    enable_aio=no
+	elif test "$ac_cv_search_aio_write" != "none required" ; then
+	    ROMIO_LIBLIST="$ROMIO_LIBLIST $ac_cv_search_aio_write"
+        fi
+    fi
     if test "$enable_aio" = "no" ; then
         AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
-    else
+    else 
         AC_DEFINE(AIO_SUN,,[Define for SUN0S 4])
-	AC_SEARCH_LIBS(aiowait,aio,
-		[ AC_DEFINE(AIO_SUN,,[Define for SUNOS 4])
-        	  ROMIO_LIBLIST="$ROMIO_LIBLIST -laio" ]
-	)
     fi
+
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -387,15 +382,22 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     else 
         CFLAGS="$CFLAGS -O"
     fi
+    if test "$enable_aio" != "no" ; then
+        # Check for aio
+	AC_SEARCH_LIBS(aio_write,aio rt)
+	if test "$ac_cv_search_aio_write" = "no" ; then
+	    enable_aio=no
+	elif test "$ac_cv_search_aio_write" != "none required" ; then
+	    ROMIO_LIBLIST="$ROMIO_LIBLIST $ac_cv_search_aio_write"
+	    MPI_LIB="$MPI_LIB -laio"
+        fi
+    fi
     if test "$enable_aio" = "no" ; then
         AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
-    else
+    else 
         AC_DEFINE(AIO_SUN,,[Define for SUN0S 4])
-	AC_SEARCH_LIBS(aiowait,aio,
-		[ AC_DEFINE(AIO_SUN,,[Define for SUNOS 4])
-        	  ROMIO_LIBLIST="$ROMIO_LIBLIST -laio" ]
-	)
     fi
+
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -1227,6 +1229,7 @@ if test "$FROM_MPICH2" = 0 ; then
         mkdir $ROMIO_HOME/lib/$ARCH
     fi
 else
+    MPILIBNAME=${MPILIBNAME:-mpich}
     if test -n "$top_build_dir" -a -d "$top_build_dir/lib" ; then
         LIBNAME=$top_build_dir/lib/lib${MPILIBNAME}.a
     else
@@ -1393,7 +1396,7 @@ rm -f adio/include/romioconf.h ${use_top_srcdir}/src/mpi/romio/adio/include/romi
 # Create makefiles for all of the adio devices.  Only the ones that 
 # are active will be called by the top level ROMIO make
 AC_OUTPUT_COMMANDS([chmod 755 util/romioinstall test/runtests])
-AC_OUTPUT(Makefile mpi-io/Makefile mpi2-other/info/Makefile \
+AC_OUTPUT(Makefile localdefs mpi-io/Makefile mpi2-other/info/Makefile \
 		   mpi2-other/array/Makefile adio/common/Makefile \
 		   test/Makefile test/misc.c test/large_file.c \
 		   test/runtests util/romioinstall include/mpio.h \
