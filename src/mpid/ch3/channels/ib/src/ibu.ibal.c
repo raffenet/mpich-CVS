@@ -16,6 +16,8 @@
 
 #ifdef USE_IB_IBAL
 
+#define TRACE_IBU
+
 #define GETLKEY(p) (((ibmem_t*)p) - 1)->lkey
 typedef struct ibmem_t
 {
@@ -59,11 +61,8 @@ ibuBlockAllocator g_workAllocator = NULL;
 #endif
 
 typedef int IBU_STATE;
-#define IBU_ACCEPTING  0x0001
-#define IBU_ACCEPTED   0x0002
-#define IBU_CONNECTING 0x0004
-#define IBU_READING    0x0008
-#define IBU_WRITING    0x0010
+#define IBU_READING    0x0001
+#define IBU_WRITING    0x0002
 
 typedef struct ibu_buffer_t
 {
@@ -1552,7 +1551,6 @@ char * op2str(int wc_type)
 #define FUNCNAME ibu_wait
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-/*int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)*/
 int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op_t *op_ptr)
 {
     int i;
