@@ -6,6 +6,8 @@
 
 #include "mpidimpl.h"
 
+MPIDI_RMA_ops *MPIDI_RMA_ops_list=NULL;
+
 #undef FUNCNAME
 #define FUNCNAME MPID_Win_fence
 #undef FCNAME
@@ -68,7 +70,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         /* set rma_target_proc[i] to 1 if rank i is a target of RMA
            ops from this process */
         total_op_count = 0;
-        curr_ptr = win_ptr->rma_ops_list;
+        curr_ptr = MPIDI_RMA_ops_list;
         while (curr_ptr != NULL) {
             total_op_count++;
             rma_target_proc[curr_ptr->target_rank] = 1;
@@ -123,7 +125,12 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         mpi_errno = NMPI_Allreduce(MPI_IN_PLACE, rma_target_proc, comm_size,
                                    MPI_INT, MPI_SUM, win_ptr->comm);
         MPIR_Nest_decr();
-        if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+        if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "The allreduce to send out the data to all the nodes in the fence failed");
+	    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+	    return mpi_errno;
+	}
 
         /* Set the completion counter */
         /* FIXME: MT: this needs to be done atomically because other
@@ -134,7 +141,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         MPIU_Free(rma_target_proc);
 
         i = 0;
-        curr_ptr = win_ptr->rma_ops_list;
+        curr_ptr = MPIDI_RMA_ops_list;
         while (curr_ptr != NULL) {
             /* The completion counter at the target is decremented
                only on the last operation on the target. Otherwise, we
@@ -150,12 +157,22 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
             case (MPIDI_RMA_ACCUMULATE):
                 mpi_errno = MPIDI_CH3I_Send_rma_msg(curr_ptr, win_ptr,
                      decr_addr, &dtype_infos[i], &dataloops[i], &requests[i]); 
-                if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+                if (mpi_errno != MPI_SUCCESS)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "sending the rma message failed");
+		    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+		    return mpi_errno;
+		}
                 break;
             case (MPIDI_RMA_GET):
                 mpi_errno = MPIDI_CH3I_Recv_rma_msg(curr_ptr, win_ptr,
                      decr_addr, &dtype_infos[i], &dataloops[i], &requests[i]); 
-                if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+                if (mpi_errno != MPI_SUCCESS)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "receiving the rma message failed");
+		    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+		    return mpi_errno;
+		}
                 break;
             default:
                 /* FIXME - return some error code here */
@@ -179,6 +196,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     else {
                         mpi_errno = requests[i]->status.MPI_ERROR;
                         if (mpi_errno != MPI_SUCCESS) {
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "rma message operation failed");
                             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                             return mpi_errno;
                         }
@@ -192,6 +210,12 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
             }
             if (!done) {
                 mpi_errno = MPID_Progress_wait();
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
+		    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+		    return mpi_errno;
+		}
                 done = 1;
             }
             else {
@@ -210,13 +234,13 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         }
 
         /* free MPIDI_RMA_ops_list */
-        curr_ptr = win_ptr->rma_ops_list;
+        curr_ptr = MPIDI_RMA_ops_list;
         while (curr_ptr != NULL) {
             next_ptr = curr_ptr->next;
             MPIU_Free(curr_ptr);
             curr_ptr = next_ptr;
         }
-        win_ptr->rma_ops_list = NULL;
+        MPIDI_RMA_ops_list = NULL;
 
         /* wait for all operations from other processes to finish */
         while (win_ptr->my_counter) {
@@ -224,8 +248,9 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
             if (win_ptr->my_counter) {
                 mpi_errno = MPID_Progress_wait();
                 if (mpi_errno != MPI_SUCCESS) {
-                    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-                    return mpi_errno;
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
+		    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+		    return mpi_errno;
                 }
             }
             else 
