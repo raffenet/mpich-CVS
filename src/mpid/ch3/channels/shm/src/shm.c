@@ -1195,6 +1195,8 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 				/* --BEGIN ERROR HANDLING-- */
 				if (mpi_errno != MPI_SUCCESS)
 				{
+				    /* This destruction probably isn't correct. */
+				    /* I think it needs to save the error in the request, complete the request and return */
 				    MPIU_Object_set_ref(rreq, 0);
 				    MPIDI_CH3_Request_destroy(rreq);
 				    rreq = NULL;
