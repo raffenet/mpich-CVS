@@ -381,6 +381,7 @@ Fortran integer (value is %ld)
 **portexist %s:Named port %s does not exist
 **porttimeout:Time out attempting an MPI_Comm_connect to a port
 **porttimeout %s:Time out attempting an MPI_Comm_connect to a port named %s
+**openportfailed:Unable to establish a port
 **filequota:Quota exceeded for files
 **filequota %s:Quota %s exceeded for files
 **filerdonly:Read-only file or filesystem name
