@@ -15,7 +15,7 @@
 #include "mpichconf.h"
 
 /* Include definitions from the device which must exist before items in this
-   file (mpiimple.h) can be defined.  NOTE: This include requires the device to
+   file (mpiimpl.h) can be defined.  NOTE: This include requires the device to
    copy mpidpre.h to the src/include directory in the build tree. */
 #include "mpidpre.h"
 
@@ -72,34 +72,7 @@ typedef int BOOL;
 #define err_printf printf
 #define err_fprintf fprintf
 
-/* Thread basics */
-#ifdef MPICH_SINGLE_THREADED
-typedef int MPID_Thread_key_t;
-typedef int MPID_Thread_id_t;
-typedef int MPID_Thread_lock_t;
-#define MPID_Thread_lock( a )
-#define MPID_Thread_unlock( a )
-#define MPID_Thread_lock_init( a )
-#define MPID_GetPerThread(p) p = &MPIR_Thread
-#else /* Assumes pthreads for simplicity */
-/* Eventually replace this with an include of a header file with the 
-   correct definitions for the specified thread package. */
-#if defined HAVE_PTHREAD_CREATE
-#include <pthread.h>
-typedef pthread_key_t MPID_Thread_key_t;
-typedef pthread_t MPID_Thread_id_t;
-typedef pthread_mutex_t MPID_Thread_lock_t;
-#define MPID_GetPerThread(p) {\
-     p = (MPICH_PerThread_t*)pthread_getspecific( MPIR_Process.thread_key ); \
-     if (!p) { p = MPIU_Calloc( 1, sizeof(MPICH_PerThread_t ) );\
-               pthread_setspecific( MPIR_Process.thread_key, p );}}
-#define MPID_Thread_lock( a ) pthread_mutex_lock( a )
-#define MPID_Thread_unlock( a ) pthread_mutex_unlock( a )
-#define MPID_Thread_lock_init( a ) pthread_mutex_init( a, 0 )
-#else
-#error No Thread Package Chosen
-#endif
-#endif
+#include "mpiimplthread.h"
 
 /* Memory allocation */
 #ifdef USE_MEMORY_TRACING

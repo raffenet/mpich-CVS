@@ -8,6 +8,7 @@
 
 #include "vipl.h"
 #include "mpiimpl.h"
+#include "mpiimplthread.h"
 
 typedef struct VI_Info
 {
@@ -36,5 +37,39 @@ typedef struct VI_Info
     long nSendAcked;
     unsigned int nNumSent, nNumReceived, nSequenceNumberSend, nSequenceNumberReceive;
 } VI_Info;
+
+typedef struct MM_Car_data_via
+{
+    union 
+    {
+	struct car_via_tmp
+	{
+	    int num_read;
+	} tmp;
+	struct car_via_vec
+	{
+	    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
+	    int len;
+	} vec;
+#ifdef WITH_METHOD_SHM
+	struct car_via_shm
+	{
+	    int num_read;
+	} shm;
+#endif
+#ifdef WITH_METHOD_VIA
+	struct car_via_via
+	{
+	    int num_read;
+	} via;
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+	struct car_via_via_rdma
+	{
+	    int num_read;
+	} via_rdma;
+#endif
+    } buf;
+} MM_Car_data_via;
 
 #endif

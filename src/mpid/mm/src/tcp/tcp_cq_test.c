@@ -29,6 +29,7 @@ int tcp_cq_test()
 	if (BFD_ISSET(vc_iter->data.tcp.bfd, &readset))
 	{
 	    /* read data */
+	    tcp_read(vc_iter);
 	    nready--;
 	}
 	if (nready == 0)
@@ -42,6 +43,7 @@ int tcp_cq_test()
 	if (BFD_ISSET(vc_iter->data.tcp.bfd, &writeset))
 	{
 	    /* write data */
+	    tcp_write(vc_iter);
 	    nready--;
 	}
 	if (nready == 0)

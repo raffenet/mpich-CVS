@@ -9,9 +9,22 @@
 #include "mpi.h"
 #include "mpidconf.h"
 #include "mpid_datatype.h"
+#include "mpiimpl.h"
 
-#ifdef HAVE_NEW_METHOD
-#include "new_method_pre.h"
+#ifdef WITH_METHOD_TCP
+#include "mm_tcp_pre.h"
+#endif
+#ifdef WITH_METHOD_SHM
+#include "mm_shm_pre.h"
+#endif
+#ifdef WITH_METHOD_VIA
+#include "mm_via_pre.h"
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+#include "mm_via_rdma_pre.h"
+#endif
+#ifdef WITH_NEW_METHOD
+#include "mm_new_pre.h"
 #endif
 
 #ifdef HAVE_WINSOCK2_H
@@ -81,6 +94,36 @@ typedef struct MPID_Packet
     int size;
 } MPID_Packet;
 
+typedef union MM_Car_data 
+{
+    MPID_Packet pkt;
+    struct car_packer
+    {
+	int first;
+	int last;
+    } packer;
+    struct car_unpacker
+    {
+	int first;
+	int last;
+    } unpacker;
+#ifdef WITH_METHOD_SHM
+    MM_Car_data_shm shm;
+#endif
+#ifdef WITH_METHOD_TCP
+    MM_Car_data_tcp tcp;
+#endif
+#ifdef WITH_METHOD_VIA
+    MM_Car_data_via via;
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+    MM_Car_data_via_rdma via_rdma;
+#endif
+#ifdef WITH_METHOD_NEW
+    MM_Car_data_new new;
+#endif
+} MM_Car_data;
+
 /* Communication agent request */
 typedef struct MM_Car
 {
@@ -90,48 +133,7 @@ typedef struct MM_Car
     struct MPIDI_VC *vc_ptr;
     int src, dest;
     MM_CAR_TYPE type;
-    union car_data {
-	MPID_Packet pkt;
-	struct car_packer
-	{
-	    int first;
-	    int last;
-	} packer;
-	struct car_unpacker
-	{
-	    int first;
-	    int last;
-	} unpacker;
-#ifdef WITH_METHOD_SHM
-	struct car_shm 
-	{
-	    void *shm_ptr;
-	} shm;
-#endif
-#ifdef WITH_METHOD_TCP
-	struct car_tcp
-	{
-	    int num_read;
-	} tcp;
-#endif
-#ifdef WITH_METHOD_VIA
-	struct car_via
-	{
-	    void *desc_ptr;
-	} via;
-#endif
-#ifdef WITH_METHOD_VIA_RDMA
-	struct car_viardma
-	{
-	    void *desc_ptr;
-	} viardma;
-#endif
-#ifdef HAVE_NEW_METHOD
-#ifdef WITH_METHOD_NEW
-	MPID_DEV_METHOD_NEW_DECL
-#endif
-#endif
-    } data;
+    MM_Car_data data;
     struct MM_Car *next_ptr, *opnext_ptr, *qnext_ptr, *mnext_ptr;
 } MM_Car;
 
