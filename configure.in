@@ -1277,7 +1277,7 @@ AC_HEADER_STDC
 # Check for a specific header
 # Grrr.  OS/X fails the test for sys/uio.h because uio *requires* sys/types.h
 # to compile.  Thus, we'll make that a separate test
-AC_CHECK_HEADERS(stdarg.h sys/types.h)
+AC_CHECK_HEADERS(stdarg.h sys/types.h inttypes.h limits.h)
 AC_CACHE_CHECK([for sys/uio.h],ac_cv_header_sys_uio_h,[
 AC_TRY_COMPILE([
 #include <sys/types.h>
