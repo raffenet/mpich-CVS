@@ -69,6 +69,8 @@ int MPI_Type_free(MPI_Datatype *datatype)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    *datatype = MPI_DATATYPE_NULL;
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_FREE);
     return MPI_SUCCESS;
 }

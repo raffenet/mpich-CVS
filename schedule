@@ -268,8 +268,8 @@ MPI_Type_create_resized,,,,,,MPIR_Type_compute_extent
 MPI_Type_create_struct,
 MPI_Type_create_subarray,,,,,,MPIR_Type_compute_extent
 MPI_Type_f2c,1,1,1,2,Bill,,.01,3/25/02
-MPI_Type_get_extent,1,1,2,1,Rob,
-MPI_Type_get_true_extent,1,1,2,1,Rob,
+MPI_Type_get_extent,1,1,2,1,Rob,,.01,10/09/02
+MPI_Type_get_true_extent,1,1,2,1,Rob,,.01,10/09/02
 MPI_Unpack_external,
 MPI_Win_c2f,1,1,1,2,Bill,,.01,3/25/02
 MPI_Win_create_errhandler,1,1,1,2,Bill,,.05,3/8/02
