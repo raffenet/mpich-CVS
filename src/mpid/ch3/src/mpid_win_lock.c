@@ -14,13 +14,13 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_RMA_ops *curr_ptr, *prev_ptr, *new_ptr;
-    MPIDI_STATE_DECL(MPID_STATE_MPI_WIN_LOCK);
+    MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_LOCK);
 
-    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_LOCK);
+    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_LOCK);
 
 #ifdef MPICH_SINGLE_THREADED
     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**needthreads", 0 );
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_LOCK);
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_LOCK);
     return mpi_errno;
 #endif
 
@@ -34,7 +34,7 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
     new_ptr = (MPIDI_RMA_ops *) MPIU_Malloc(sizeof(MPIDI_RMA_ops));
     if (!new_ptr) {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_LOCK);
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_LOCK);
         return mpi_errno;
     }
     if (prev_ptr != NULL)
@@ -47,7 +47,7 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
     new_ptr->target_rank = dest;
     new_ptr->lock_type = lock_type;
 
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_LOCK);
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_LOCK);
 
     return mpi_errno;
 }
