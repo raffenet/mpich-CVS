@@ -40,34 +40,42 @@
 
    Notes:
 
+   'peer_comm' is significant only for the process designated the 
+   'local_leader' in the 'local_comm'.
+
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader, MPI_Comm peer_comm, int remote_leader, int tag, MPI_Comm *newintercomm)
+int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader, 
+			 MPI_Comm peer_comm, int remote_leader, int tag, 
+			 MPI_Comm *newintercomm)
 {
     static const char FCNAME[] = "MPI_Intercomm_create";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Comm *peer_comm_ptr = NULL;
+    int context_id;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_INTERCOMM_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INTERCOMM_CREATE);
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( local_comm, comm_ptr );
-    MPID_Comm_get_ptr( peer_comm, peer_comm_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-            MPID_Comm_valid_ptr( peer_comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    if (comm_ptr && 
+		(local_leader < 0 || local_leader >= comm_ptr->local_size)) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK, "**ranklocal", 
+					  "**ranklocal %d %d", 
+					  local_leader, comm_ptr->local_size );
+	    }
+	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -76,6 +84,45 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader, MPI_Comm peer_co
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* Create the contexts.  Each group will have a context for sending 
+       to the other group */
+    context_id = MPIR_Get_contextid( local_comm );
+    if (context_id == 0) {
+	/* FIXME - error */
+	;
+    }
+    
+    if (comm_ptr->rank == local_leader) {
+	int remote_info[2], local_info[2];
+	MPID_Comm_get_ptr( peer_comm, peer_comm_ptr );
+#       ifdef HAVE_ERROR_CHECKING
+	{
+	    MPID_BEGIN_ERROR_CHECKS;
+	    {
+		MPID_Comm_valid_ptr( peer_comm_ptr, mpi_errno );
+		if (peer_comm_ptr && 
+		    (remote_leader < 0 || 
+		     remote_leader >= peer_comm_ptr->local_size)) {
+		    mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK, 
+						      "**rankremote", 
+					  "**rankremote %d %d", 
+					  local_leader, comm_ptr->local_size );
+		}
+		if (mpi_errno) {
+		    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
+		    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+		}
+	    }
+	    MPID_END_ERROR_CHECKS;
+	}
+#       endif /* HAVE_ERROR_CHECKING */
+
+	/* Exchange information with my peer.  Use sendrecv */
+	local_info[0] = context_id;
+	local_info[1] = comm_ptr->local_size;
+	
+    }
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
     return MPI_SUCCESS;
