@@ -284,7 +284,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 
 
 
-#ifdef OOOLD
+#ifdef USE_OOOLD
 int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 {
     int mpi_errno;

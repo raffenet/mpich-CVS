@@ -76,7 +76,7 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 
 
 
-#ifdef OLDSTUFF
+#ifdef USE_OLDSTUFF
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.

@@ -459,7 +459,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
 }
 
 
-#ifdef OOOLD
+#ifdef USE_OOOLD
 int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm **newcomm)
 {
     int p, key_max_sz, val_max_sz, mpi_errno=MPI_SUCCESS;

@@ -44,7 +44,7 @@ int MPID_Win_wait(MPID_Win *win_ptr)
 
 
 
-#ifdef OLDSTUFF
+#ifdef USE_OLDSTUFF
 
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*

@@ -474,7 +474,7 @@ fn_exit:
 
 
 
-#ifdef OOOLD
+#ifdef USE_OOOLD
 int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm **newcomm)
 {
     int p, mpi_errno = MPI_SUCCESS, kvs_namelen;
