@@ -54,10 +54,11 @@ typedef enum sock_op
 #define SOCK_ERR_CONN_REFUSED   1003
 #define SOCK_ERR_CONN_FAILED    1004
 #define SOCK_ERR_BAD_SOCK       1005
-#define SOCK_ERR_BAD_BUFFER     1006
-#define SOCK_ERR_OP_IN_PROGRESS 1007
-#define SOCK_ERR_OP_ABORTED     1008
-#define SOCK_ERR_OS_SPECIFIC    1009
+#define SOCK_ERR_BAD_SET        1006
+#define SOCK_ERR_BAD_BUFFER     1007
+#define SOCK_ERR_OP_IN_PROGRESS 1008
+#define SOCK_ERR_OP_ABORTED     1009
+#define SOCK_ERR_OS_SPECIFIC    1010
 
 /*
  * structures
