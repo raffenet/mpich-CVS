@@ -49,7 +49,7 @@ int MPIDI_CH3_iStartRndvMsg(MPIDI_VC_t * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_
 #ifdef MPICH_DBG_OUTPUT
     for (i=0; i<sreq->dev.iov_count; i++)
     {
-	MPIU_DBG_PRINTF(("do_rts: send buf[%d] = %p, len = %d\n",
+	MPIU_DBG_PRINTF(("iStartRndvMsg: send buf[%d] = %p, len = %d\n",
 			 i, sreq->dev.iov[i].MPID_IOV_BUF, sreq->dev.iov[i].MPID_IOV_LEN));
     }
 #endif
@@ -76,7 +76,7 @@ int MPIDI_CH3_iStartRndvMsg(MPIDI_VC_t * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_
 #ifdef MPICH_DBG_OUTPUT
     for (i=0; i<sreq->dev.iov_count; i++)
     {
-	MPIU_DBG_PRINTF(("do_rts: send buf[%d] = %p, len = %d\n",
+	MPIU_DBG_PRINTF(("iStartRndvMsg: send buf[%d] = %p, len = %d\n",
 			 i, sreq->dev.iov[i].MPID_IOV_BUF, sreq->dev.iov[i].MPID_IOV_LEN));
     }
 #endif
