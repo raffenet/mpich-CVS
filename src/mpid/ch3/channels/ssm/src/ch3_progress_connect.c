@@ -176,6 +176,7 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
     mpi_errno = MPIU_Str_get_string_arg(business_card, MPIDI_CH3I_SHM_HOST_KEY, hostname, 256);
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
+	/*printf("getstringarg(%s, %s) failed.\n", MPIDI_CH3I_SHM_HOST_KEY, business_card);fflush(stdout);*/
 	*flag = FALSE;
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_shmhost", 0);
 	return mpi_errno;
@@ -199,7 +200,7 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
     *flag = TRUE;
     /*MPIU_DBG_PRINTF(("%s == %s\n", MPIDI_CH3I_Process.pg->shm_hostname, hostname));*/
 
-    /*MPIU_DBG_PRINTF(("attaching to queue: %s\n", queue_name));*/
+    MPIU_DBG_PRINTF(("attaching to queue: %s\n", queue_name));
     mpi_errno = MPIDI_CH3I_BootstrapQ_attach(queue_name, &queue);
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -331,6 +332,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 
     /* attempt to connect through shared memory */
     connected = FALSE;
+    MPIU_DBG_PRINTF(("business card: <%s> = <%s>\n", key, val));
     mpi_errno = MPIDI_CH3I_Shm_connect(vc, val, &connected);
     if (mpi_errno != MPI_SUCCESS)
     {

@@ -338,7 +338,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
 	    return mpi_errno;
 	}
-	/*printf("root process created bootQ: '%s'\n", queue_name);*/
+	/*printf("root process created bootQ: '%s'\n", queue_name);fflush(stdout);*/
 	MPIU_Strncpy(val, queue_name, val_max_sz);
 	mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
 	if (mpi_errno != 0)
@@ -374,7 +374,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	    return mpi_errno;
 	}
 	MPIU_Strncpy(queue_name, val, val_max_sz);
-	/*printf("process %d got bootQ name: '%s'\n", pg_rank, queue_name);*/
+	/*printf("process %d got bootQ name: '%s'\n", pg_rank, queue_name);fflush(stdout);*/
 	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg->bootstrapQ, queue_name, 1);
 	if (mpi_errno != MPI_SUCCESS)
 	{
@@ -465,6 +465,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
 	return mpi_errno;
     }
+    /*printf("putting <%s> = <%s>\n", key, bc_orig);fflush(stdout);*/
     mpi_errno = PMI_KVS_Put(pg->kvs_name, key, bc_orig);
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -485,6 +486,13 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
 	return mpi_errno;
     }
+
+#if 0
+/* test */
+    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val, val_max_sz);
+    printf("got <%s> = <%s>\n", key, val);fflush(stdout);
+/* end test */
+#endif
 
 #   if defined(DEBUG)
     {

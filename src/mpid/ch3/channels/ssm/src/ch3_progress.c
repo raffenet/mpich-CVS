@@ -244,7 +244,7 @@ int MPIDI_CH3I_Message_queue_progress()
     if (num_bytes)
     {
 	vc_ptr = &MPIDI_CH3I_Process.pg->vc_table[info.pg_rank];
-	/* printf("rank %d attaching to shm(%s) from rank %d\n", MPIR_Process.comm_world->rank, info.info.name, info.pg_rank); */
+	/*printf("rank %d attaching to shm(%s) from rank %d\n", MPIR_Process.comm_world->rank, info.info.name, info.pg_rank);fflush(stdout);*/
 	mpi_errno = MPIDI_CH3I_SHM_Attach_to_mem(
 	    &info.info, &vc_ptr->ch.shm_read_queue_info);
 	if (mpi_errno != MPI_SUCCESS)
@@ -259,6 +259,7 @@ int MPIDI_CH3I_Message_queue_progress()
 	MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
 	vc_ptr->ch.shm_reading_pkt = TRUE;
 	/* add this VC to the global list to be shm_waited on */
+	/*printf("vc added to reading list.\n");fflush(stdout);*/
 	vc_ptr->ch.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
 	MPIDI_CH3I_Process.shm_reading_list = vc_ptr;
     }
