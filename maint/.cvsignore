@@ -5,6 +5,7 @@ getstates
 getcoverage
 showsizes
 getcross
+f77tof90
 config.log
 config.cache
 config.status
