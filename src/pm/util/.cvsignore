@@ -10,6 +10,8 @@ config.log
 config.status
 config.system
 configure
+pmutilconf.h
+pmutilconf.h.in
 *.cache
 libmpiexec.a
 .deps
