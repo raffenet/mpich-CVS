@@ -66,6 +66,15 @@ reasons for them.
    code checker.  Running the code checker over them is still possible
    (and a good idea) with the option -checktest (to maint/codingcheck)
 
+9. The perl program "checkforglobs" looks at the generated library and
+   lists any global names that do not conform to the naming rules.  There
+   are two types of problems: One is names that don't have one of the 
+   permitted prefixed (e.g., MPI_ or PMI_).  The other is symbols that are
+   "Common" rather than "Text".  Common symbols are often uninitialized 
+   global variables.  While these are allowed in most Unix systems, Mac OSX 
+   will not load common symbols from libraries, causing unsatisfied 
+   external referneces.  These checks are run as part of the nightly runs.
+
 Other Recommendations
 Or things not checked for but desired
 
