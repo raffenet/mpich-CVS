@@ -600,6 +600,7 @@ static inline int DLOOP_Stackelm_offset(struct DLOOP_Dataloop_stackelm *elmp)
 	assert(0);
         break;
     }
+    return -1;
 }
 
 /* 
