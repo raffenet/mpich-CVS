@@ -147,11 +147,11 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	}
 	
 	last = rreq->dev.segment_size;
+	rreq->dev.iov_count = MPID_IOV_LIMIT;
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 			  rreq->dev.segment_first, last, rreq->dev.iov_count));
 	assert(rreq->dev.segment_first < last);
 	assert(last > 0);
-	rreq->dev.iov_count = MPID_IOV_LIMIT;
 	MPID_Segment_unpack_vector(&rreq->dev.segment, rreq->dev.segment_first, &last, rreq->dev.iov, &rreq->dev.iov_count);
 	MPIDI_DBG_PRINTF((40, FCNAME, "post-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 			  rreq->dev.segment_first, last, rreq->dev.iov_count));
