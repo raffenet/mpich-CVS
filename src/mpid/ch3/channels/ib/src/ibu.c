@@ -697,7 +697,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
 				&work_req);
     if (status != IBU_SUCCESS)
     {
-	MPIDI_DBG_PRINTF((60, FCNAME, "nAvailRemote: %d, nUnacked: %d", ibu->nAvailRemote, ibu->nUnacked));
+	printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
 	err_printf("%s: Error: failed to post ib receive, status = %d\n", FCNAME, status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return status;
@@ -753,7 +753,7 @@ static int ibui_post_receive(ibu_t ibu)
 				&work_req);
     if (status != IBU_SUCCESS)
     {
-	MPIDI_DBG_PRINTF((60, FCNAME, "nAvailRemote: %d, nUnacked: %d", ibu->nAvailRemote, ibu->nUnacked));
+	printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
 	err_printf("%s: Error: failed to post ib receive, status = %d\n", FCNAME, status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return status;
@@ -871,7 +871,7 @@ static int ibui_post_ack_write(ibu_t ibu)
 	&work_req);
     if (status != IBU_SUCCESS)
     {
-	MPIDI_DBG_PRINTF((60, FCNAME, "nAvailRemote: %d, nUnacked: %d", ibu->nAvailRemote, ibu->nUnacked));
+	printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
 	err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
 	return status;
@@ -962,7 +962,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	    &work_req);
 	if (status != IBU_SUCCESS)
 	{
-	    MPIDI_DBG_PRINTF((60, FCNAME, "nAvailRemote: %d, nUnacked: %d", ibu->nAvailRemote, ibu->nUnacked));
+	    printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
 	    err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITE);
 	    return -1;
@@ -1114,7 +1114,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	&work_req);
     if (status != IBU_SUCCESS)
     {
-	MPIDI_DBG_PRINTF((60, FCNAME, "nAvailRemote: %d, nUnacked: %d", ibu->nAvailRemote, ibu->nUnacked));
+	printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
 	err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
 	return status;
@@ -1224,7 +1224,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	    &work_req);
 	if (status != IBU_SUCCESS)
 	{
-	    MPIDI_DBG_PRINTF((60, FCNAME, "nAvailRemote: %d, nUnacked: %d", ibu->nAvailRemote, ibu->nUnacked));
+	    printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
 	    err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
 	    return -1;
@@ -1892,8 +1892,10 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    if (completion_data.immediate_data_f)
 	    {
 		ibu->nAvailRemote += completion_data.immediate_data;
+		MPIDI_DBG_PRINTF((60, FCNAME, "%d packets acked, nAvailRemote now = %d", completion_data.immediate_data, ibu->nAvailRemote));
 		ibuBlockFree(ibu->allocator, mem_ptr);
 		ibui_post_receive_unacked(ibu);
+		assert(completion_data.bytes_num == 0); /* check this after the printfs to see if the immediate data is correct */
 		break;
 	    }
 	    num_bytes = completion_data.bytes_num;
