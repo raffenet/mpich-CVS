@@ -95,7 +95,8 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
-    
+
+    /* FIXME: Is this correct for intercomms? */
     mpi_errno = MPID_Iprobe(source, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, 
 			    flag, status);
     
