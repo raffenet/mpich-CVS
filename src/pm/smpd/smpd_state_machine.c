@@ -1171,7 +1171,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		}
 		else if (strcmp(cmd_ptr->cmd_str, "down") == 0)
 		{
-		    smpd_dbg_printf("down command written, exiting.\n");
+		    smpd_dbg_printf("down command written, posting a close of the %s context\n", smpd_get_context_str(context));
 		    context->state = SMPD_EXITING;
 		    result = sock_post_close(context->sock);
 		    if (result != SOCK_SUCCESS)
@@ -1861,6 +1861,16 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
 		}
+		/* close the listener */
+		smpd_dbg_printf("closing the mgr listener.\n");
+		result = sock_post_close(context->sock);
+		if (result != SOCK_SUCCESS)
+		{
+		    smpd_err_printf("unable to post a close on the listener sock after accepting the re-connection, sock error:\n%s\n",
+			get_sock_error_string(result));
+		    smpd_exit_fn("smpd_enter_at_state");
+		    return SMPD_FAIL;
+		}
 		break;
 	    default:
 		smpd_err_printf("sock_op_accept returned while context is in state: %s\n",
@@ -1942,20 +1952,34 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 	    smpd_dbg_printf("SOCK_OP_CLOSE\n");
 	    if (event.error != SOCK_SUCCESS)
 		smpd_err_printf("error closing socket: %s\n", get_sock_error_string(event.error));
+	    smpd_dbg_printf("op_close received - %s state.\n", smpd_get_state_string(context->state));
 	    switch (context->state)
 	    {
+	    case SMPD_SMPD_LISTENING:
+	    case SMPD_MGR_LISTENING:
+		smpd_process.listener_context = NULL;
+		break;
 	    case SMPD_MPIEXEC_CLOSING:
-		smpd_dbg_printf("op_close received - SMPD_MPIEXEC_CLOSING state.\n");
 		break;
 	    case SMPD_EXITING:
-		smpd_dbg_printf("op_close received - SMPD_EXITING state.\n");
+		if (smpd_process.listener_context)
+		{
+		    smpd_process.listener_context->state = SMPD_EXITING;
+		    smpd_dbg_printf("closing the listener (state = %s).\n", smpd_get_state_string(smpd_process.listener_context->state));
+		    result = sock_post_close(smpd_process.listener_context->sock);
+		    smpd_process.listener_context = NULL;
+		    if (result == SOCK_SUCCESS)
+		    {
+			break;
+		    }
+		    smpd_err_printf("unable to post a close of the listener sock, error:\n%s\n",
+			get_sock_error_string(result));
+		}
 		smpd_free_context(context);
 		/*smpd_exit(0);*/
 		smpd_exit_fn("smpd_enter_at_state");
 		return SMPD_SUCCESS;
-		break;
 	    case SMPD_CLOSING:
-		smpd_dbg_printf("op_close received - SMPD_CLOSING state.\n");
 		if (context->type == SMPD_CONTEXT_STDOUT || context->type == SMPD_CONTEXT_STDERR)
 		{
 		    context->process->context_refcount--;
@@ -2067,12 +2091,26 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    smpd_process.right_context = NULL;
 		if (context == smpd_process.parent_context)
 		    smpd_process.parent_context = NULL;
+		if (context == smpd_process.listener_context)
+		    smpd_process.listener_context = NULL;
 		if (smpd_process.closing && smpd_process.left_context == NULL && smpd_process.right_context == NULL)
 		{
 		    if (smpd_process.parent_context == NULL)
 		    {
-			smpd_dbg_printf("all contexts closed, exiting state machine.\n");
+			if (smpd_process.listener_context)
+			{
+			    smpd_dbg_printf("all contexts closed, closing the listener.\n");
+			    smpd_process.listener_context->state = SMPD_EXITING;
+			    result = sock_post_close(smpd_process.listener_context->sock);
+			    if (result == SOCK_SUCCESS)
+			    {
+				break;
+			    }
+			    smpd_err_printf("unable to post a close of the listener sock, error:\n%s\n",
+				get_sock_error_string(result));
+			}
 			smpd_free_context(context);
+			smpd_dbg_printf("all contexts closed, exiting state machine.\n");
 			/*smpd_exit(0);*/
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_SUCCESS;
