@@ -605,6 +605,7 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_S
     context->sspi_buffer_length = 0;
     context->sspi_outbound_buffer = NULL;
     context->sspi_max_buffer_size = 0;
+    context->sspi_id = -1;
 #ifdef HAVE_WINDOWS_H
     memset(&context->sspi_credential, 0, sizeof(CredHandle));
     memset(&context->sspi_expiration_time, 0, sizeof(TimeStamp));

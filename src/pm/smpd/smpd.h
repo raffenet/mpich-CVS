@@ -350,6 +350,7 @@ typedef struct smpd_context_t
     int sspi_max_buffer_size;
     int sspi_buffer_length;
     void *sspi_buffer, *sspi_outbound_buffer;
+    int sspi_id;
 #ifdef HAVE_WINDOWS_H
     CredHandle sspi_credential;
     CtxtHandle sspi_context;
