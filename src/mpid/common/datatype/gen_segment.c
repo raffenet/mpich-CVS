@@ -498,7 +498,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
 #ifdef DEBUG_DLOOP_MANIPULATE
 	    DLOOP_dbg_printf("\thit leaf; cur_sp=%d, elmp=%x, piece_sz=%d\n", cur_sp,
-		       (unsigned) cur_elmp, myblocks * local_el_size);
+		             (unsigned) cur_elmp, myblocks * local_el_size);
 #endif
 
 	    /* enforce the last parameter if necessary by reducing myblocks */
@@ -507,7 +507,8 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    {
 		myblocks = ((last - stream_off) / stream_el_size);
 #ifdef DEBUG_DLOOP_MANIPULATE
-		DLOOP_dbg_printf("\tpartial block count=%d\n", myblocks);
+		DLOOP_dbg_printf("\tpartial block count=%d (%d bytes)\n", myblocks,
+                                 (int) myblocks * stream_el_size);
 #endif
 		if (myblocks == 0) {
 		    DLOOP_SEGMENT_SAVE_LOCAL_VALUES;
@@ -628,7 +629,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			/* this math relies on assertions at top of code block */
 			cur_elmp->curcount -= myblocks / cur_elmp->curblock;
 			if (cur_elmp->curcount == 0) {
-			    assert(myblocks % cur_elmp->orig_block == 0);
+			    assert(myblocks % cur_elmp->curblock == 0);
 			    DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
 			}
 			else {
