@@ -52,6 +52,7 @@ typedef struct { int val, cnt; } Factors;
 	  877,  881,  883,  887,  907,  911,  919,  929,  937,  941, 
 	  947,  953,  967,  971,  977,  983,  991,  997};
 PMPI_LOCAL int factor( int, Factors [], int * );
+
 PMPI_LOCAL int factor( int n, Factors factors[], int *ndivisors )
 {
     int n_tmp, n_root;
@@ -198,7 +199,7 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
        The MPICH 1 version used donated code that was quite sophisticated
        and complex.  However, since it didn't take the system topology
        into account, it was more sophisticated that was perhaps warranted.
-       In addition, useful values of nnodes for MPI programs will be
+       In addition, useful values of nnodes for most MPI programs will be
        of the order 10-10000, and powers of two will be common.
     */
 
@@ -213,6 +214,7 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
        3. Other.  There are enough factors to divide among the dimensions.
           This is done in an ad hoc fashion
     */
+
     /* Distribute the factors among the dimensions */
     if (ndivisors <= dims_needed) {
 	/* Just use the factors as needed */

@@ -42,6 +42,9 @@ int MPIR_Topology_put( MPID_Comm *comm_ptr, MPIR_Topology *topo_ptr )
 
     if (MPIR_Topology_keyval == MPI_KEYVAL_INVALID) {
 	/* Create a new keyval */
+	/* FIXME - thread safe code needs a thread lock here, followed
+	   by another test on the keyval to see if a different thread
+	   got there first */
 	MPIR_Nest_incr();
 	mpi_errno = NMPI_Comm_create_keyval( MPIR_Topology_copy_fn, 
 					     MPIR_Topology_delete_fn,
@@ -61,7 +64,7 @@ int MPIR_Topology_put( MPID_Comm *comm_ptr, MPIR_Topology *topo_ptr )
 /* Ignore p */
 static int MPIR_Topology_finalize( void *p )
 {
-    if (MPIR_Topology_keyval == MPI_KEYVAL_INVALID) {
+    if (MPIR_Topology_keyval != MPI_KEYVAL_INVALID) {
 	/* Just in case */
 	NMPI_Comm_free_keyval( &MPIR_Topology_keyval );
     }
@@ -130,7 +133,8 @@ static int MPIR_Topology_copy_fn ( MPI_Comm comm, int keyval, void *extra_data,
 	/* Unknown topology */
 	return MPI_ERR_TOPOLOGY;
     }
-    return MPI_SUCCESS;
+    /* Return mpi_errno in case one of the copy array functions failed */
+    return mpi_errno;
 }
 static int MPIR_Topology_delete_fn ( MPI_Comm comm, int keyval, 
 				     void *attr_val, void *extra_data )
