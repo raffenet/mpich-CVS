@@ -217,8 +217,9 @@ AC_ARG_WITH(namepublisher,
                                pmiext  (service using a pmi extension,
                                         usually only within the same MPD ring)
 			       file:directory
+			       mpd
                                ldap:ldapservername
-                             Only no and file have been implemented so far.],,
+                             Only no, file, and mpd have been implemented so far.],,
 with_namepublisher=file)
 
 AC_ARG_WITH(cxxlibname,
@@ -1090,6 +1091,10 @@ dnl    AC_DEFINE(USE_PMIEXT_FOR_NAMEPUB,1,[Define if pmiext should be used for n
     AC_CHECK_FUNCS(strerror)
     AC_DEFINE_UNQUOTED(FILE_NAMEPUB_BASEDIR,$basedir,[Directory to use in namepub])
     AC_DEFINE(USE_FILE_FOR_NAMEPUB,1,[Define if file should be used for name publisher])
+    ;;
+
+    mpd)
+    nameserv_name="mpd"
     ;;
 
     *)
@@ -2417,6 +2422,7 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
           src/pmi/Makefile \
 	  src/nameserv/Makefile \
 	  src/nameserv/file/Makefile \
+	  src/nameserv/mpd/Makefile \
 	  src/util/Makefile \
 	  src/util/info/Makefile \
 	  src/util/instrm/Makefile \
