@@ -11,12 +11,12 @@ typedef HANDLE MPE_Thread_mutex_t;
 typedef HANDLE MPE_Thread_id_t;
 typedef DWORD MPE_Thread_tls_t;
 
-typedef struct
+typedef struct MPE_Thread_cond_fifo_t
 {
     HANDLE event;
     struct MPE_Thread_cond_fifo_t *next;
 } MPE_Thread_cond_fifo_t;
-typedef struct
+typedef struct MPE_Thread_cond_t
 {
     MPE_Thread_tls_t tls;
     MPE_Thread_mutex_t fifo_mutex;
