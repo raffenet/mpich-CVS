@@ -8,4 +8,4 @@ dnl automake generates.  We don't use AC_DEFUN, since aclocal will
 dnl then complain that AM_IGNORE is a duplicate (if you are using the
 dnl patched automake/aclocal).
 ifdef([AM_IGNORE],,[
-define([AM_IGNORE],)
+define([AM_IGNORE],)])
