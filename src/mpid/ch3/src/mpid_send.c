@@ -36,7 +36,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	    pkt->match.context_id = comm->context_id + context_offset;
 	    pkt->data_sz = 0;
 
-	    req = MPIDI_CH3_iStartMsg(comm->vcr[rank], pkt, sizeof(rpkt));
+	    req = MPIDI_CH3_iStartMsg(comm->vcr[rank], pkt, sizeof(*pkt));
 	    if (req)
 	    {
 		req->comm = comm;
@@ -76,8 +76,10 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	    pkt->match.context_id = comm->context_id + context_offset;
 	    pkt->data_sz = count * dt_sz;
 
+	    MPIDI_dbg_printf(15, FCNAME, "sending eager contiguous message, "
+			     "data_sz=%ld", pkt->data_sz);
 	    iov[0].iov_base = pkt;
-	    iov[0].iov_len = sizeof(rpkt);
+	    iov[0].iov_len = sizeof(*pkt);
 	    iov[1].iov_base = (void *) buf;
 	    iov[1].iov_len = count * dt_sz;
 	    req = MPIDI_CH3_iStartMsgv(comm->vcr[rank], iov, 2);
@@ -125,7 +127,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	pkt->data_sz = count * dt_sz;
 	pkt->req_id_sender = req->handle;
 
-	MPIDI_CH3_iSend(comm->vcr[rank], req, pkt, sizeof(rpkt));
+	MPIDI_CH3_iSend(comm->vcr[rank], req, pkt, sizeof(*pkt));
     }
     
     MPIDI_dbg_printf(10, FCNAME, "exiting");
