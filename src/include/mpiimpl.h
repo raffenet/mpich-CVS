@@ -16,7 +16,7 @@
 
 /* Include definitions from the device which must exist before items in this
    file (mpiimple.h) can be defined.  NOTE: This include requires the device to
-   copy mpidpre.h to the src/include directory. */
+   copy mpidpre.h to the src/include directory in the build tree. */
 #include "mpidpre.h"
 
 #ifdef STDC_HEADERS
@@ -727,18 +727,28 @@ int MPID_Close_port(char *);
 int MPID_Comm_accept(char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 int MPID_Comm_connect(char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 int MPID_Comm_disconnect(MPID_Comm *);
-int MPID_Comm_spawn_multiple(int, char *[], char* *[], int [], MPI_Info [], int, MPID_Comm *, MPID_Comm **, int []);
+int MPID_Comm_spawn_multiple(int, char *[], char* *[], int [], MPI_Info [],
+			     int, MPID_Comm *, MPID_Comm **, int []);
 int MPID_Finalize(void);
 int MPID_Init(int *, char ***, int, int *, int *, int *);
 int MPID_Open_port(MPID_Info *, char *);
-int MPID_Isend(void *, int, MPID_Datatype *, int, int, MPID_Comm *, MPID_Request **);
-int MPID_Irecv(void *, int, MPID_Datatype *, int, int, MPID_Comm *, MPID_Request **);
-int MPID_Test(MPID_Request *, int *, MPI_Status *);
-int MPID_Wait(MPID_Request *, MPI_Status *);
+int MPID_Send(const void *, int, MPID_Datatype *, int, int, MPID_Comm *, int,
+	       MPID_Request **);
+int MPID_Isend(const void *, int, MPID_Datatype *, int, int, MPID_Comm *, int,
+	       MPID_Request **);
+int MPID_Recv(void *, int, MPID_Datatype *, int, int, MPID_Comm *, int,
+	      MPI_Status *, MPID_Request **);
+int MPID_Irecv(void *, int, MPID_Datatype *, int, int, MPID_Comm *, int,
+	       MPID_Request **);
+void MPID_Progress_start();
+void MPID_Progress_end();
+int MPID_Progress_test();
+void MPID_Progress_wait();
+void MPID_Progress_poke();
 
 /* Include definitions from the device which require items defined by this file
    (mpiimpl.h).  NOTE: This include requires the device to copy mpidpost.h to
-   the src/include directory. */
+   the src/include directory in the build tree. */
 #include "mpidpost.h"
 
 #endif /* MPIIMPL_INCLUDED */
