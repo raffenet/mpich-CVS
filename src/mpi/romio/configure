@@ -1512,8 +1512,86 @@ else
 fi
 #
 
+if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking for inline""... $ac_c"
+else
+echo $ac_n "checking for inline""... $ac_c" 1>&1
+fi
+if eval "test \"`echo '$''{'pac_cv_c_inline'+set}'`\" = set"; then
+   if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""(cached)"
+else
+echo "$ac_t""(cached)" 1>&1
+fi
+else
+  cat > conftest.c <<EOF
+#include "confdefs.h"
+inline int a( int b ){return b+1;}
+int main() { exit(0); }
+int t() { int a; }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  pac_cv_c_inline="yes"
+
+else
+  rm -rf conftest*
+  pac_cv_c_inline="no"
+fi
+rm -f conftest*
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""$pac_cv_c_inline"
+else
+echo "$ac_t""$pac_cv_c_inline" 1>&1
+fi
+if test "$pac_cv_c_inline" = "no" ; then
+    
+{
+test -n "$verbose" && \
+echo "	defining" inline to be empty
+echo "#define" inline  >> confdefs.h
+DEFS="$DEFS -Dinline="
+}
+
+fi
+
+#
+
 if test -z "$intsize" ; then
-    if test -z "$ac_echo_n" ; then
+    Pac_name="int"
+ Pac_varname=`echo "$Pac_name" | sed -e 's/ /_/g' -e 's/\*/star/g'`
+eval Pac_testval=\$"${Pac_varname}_len"
+if test -z "$Pac_testval" ; then
+   
+      
+   eval Pac_testval=\$"CROSS_SIZEOF_INT"
+fi
+if test -n "$Pac_testval" ; then
+    Pac_CV_NAME=$Pac_testval
+else
+if test -z "$ac_echo_n" ; then
 ac_echo_n=yes
 if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
   if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
@@ -1564,6 +1642,7 @@ echo "$ac_t""$Pac_CV_NAME"
 else
 echo "$ac_t""$Pac_CV_NAME" 1>&1
 fi
+    eval ${Pac_varname}_len=$Pac_CV_NAME
 else
     if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""unavailable"
@@ -1571,11 +1650,23 @@ else
 echo "$ac_t""unavailable" 1>&1
 fi
 fi
+fi
 intsize=$Pac_CV_NAME
 
 fi
 if test -z "$pointersize" ; then
-    if test -z "$ac_echo_n" ; then
+    Pac_name="void *"
+ Pac_varname=`echo "$Pac_name" | sed -e 's/ /_/g' -e 's/\*/star/g'`
+eval Pac_testval=\$"${Pac_varname}_len"
+if test -z "$Pac_testval" ; then
+   
+      
+   eval Pac_testval=\$"CROSS_SIZEOF_VOID_P"
+fi
+if test -n "$Pac_testval" ; then
+    Pac_CV_NAME=$Pac_testval
+else
+if test -z "$ac_echo_n" ; then
 ac_echo_n=yes
 if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
   if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
@@ -1626,11 +1717,13 @@ echo "$ac_t""$Pac_CV_NAME"
 else
 echo "$ac_t""$Pac_CV_NAME" 1>&1
 fi
+    eval ${Pac_varname}_len=$Pac_CV_NAME
 else
     if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""unavailable"
 else
 echo "$ac_t""unavailable" 1>&1
+fi
 fi
 fi
 pointersize=$Pac_CV_NAME
@@ -1732,7 +1825,18 @@ DEFS="$DEFS -DMPI_OFFSET_IS_INT=1"
        MPI_OFFSET_KIND2="!"
     fi
 else
-   if test -z "$ac_echo_n" ; then
+   Pac_name="long long"
+ Pac_varname=`echo "$Pac_name" | sed -e 's/ /_/g' -e 's/\*/star/g'`
+eval Pac_testval=\$"${Pac_varname}_len"
+if test -z "$Pac_testval" ; then
+   
+      
+   eval Pac_testval=\$"CROSS_SIZEOF_LONG_LONG"
+fi
+if test -n "$Pac_testval" ; then
+    Pac_CV_NAME=$Pac_testval
+else
+if test -z "$ac_echo_n" ; then
 ac_echo_n=yes
 if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
   if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
@@ -1783,11 +1887,13 @@ echo "$ac_t""$Pac_CV_NAME"
 else
 echo "$ac_t""$Pac_CV_NAME" 1>&1
 fi
+    eval ${Pac_varname}_len=$Pac_CV_NAME
 else
     if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""unavailable"
 else
 echo "$ac_t""unavailable" 1>&1
+fi
 fi
 fi
 longlongsize=$Pac_CV_NAME
@@ -2067,7 +2173,11 @@ DEFS="$DEFS -DHAVE_MPI_LONG_LONG_INT=1"
    fi
 fi
 #
-if test "$FORTRAN_MPI_OFFSET" = "integer*8" && test "A$MPI_OFFSET_KIND2" = "A!" && test $NOF77 = 0 ; then
+if test -n "$OFFSET_KIND" -a "A$MPI_OFFSET_KIND1" = "A!" ; then 
+  MPI_OFFSET_KIND1="        INTEGER MPI_OFFSET_KIND"
+  MPI_OFFSET_KIND2="        PARAMETER (MPI_OFFSET_KIND=$OFFSET_KIND)"
+else
+ if test "$FORTRAN_MPI_OFFSET" = "integer*8" && test "A$MPI_OFFSET_KIND2" = "A!" && test $NOF77 = 0 ; then
    if test -z "$ac_echo_n" ; then
 ac_echo_n=yes
 if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
@@ -2110,9 +2220,11 @@ fi
 KINDVAL=""
 if $F90 -o kind kind.f >/dev/null 2>&1 ; then
     ./kind >/dev/null 2>&1
-    KINDVAL=`cat k.out`
+    if test -s k.out ; then 
+        KINDVAL=`cat k.out`
+    fi
 fi
-rm -f kind k.out kind.f kind.o
+rm -f kind k.out kind.f kind.o k.out
 if test -n "$KINDVAL" -a "$KINDVAL" != "-1" ; then
    if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""$KINDVAL"
@@ -2129,9 +2241,9 @@ echo "$ac_t""unavailable" 1>&1
 fi
 fi
 
-fi
-#
-if test "$FORTRAN_MPI_OFFSET" = "integer" && test "A$MPI_OFFSET_KIND2" = "A!" && test $NOF77 = 0 ; then
+ fi
+ #
+  if test "$FORTRAN_MPI_OFFSET" = "integer" && test "A$MPI_OFFSET_KIND2" = "A!" && test $NOF77 = 0 ; then
    if test -z "$ac_echo_n" ; then
 ac_echo_n=yes
 if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
@@ -2174,7 +2286,9 @@ fi
 KINDVAL=""
 if $F90 -o kind kind.f >/dev/null 2>&1 ; then
     ./kind >/dev/null 2>&1
-    KINDVAL=`cat k.out`
+    if test -s k.out ; then 
+        KINDVAL=`cat k.out`
+    fi
 fi
 rm -f kind k.out kind.f kind.o
 if test -n "$KINDVAL" -a "$KINDVAL" != "-1" ; then
@@ -2193,6 +2307,7 @@ echo "$ac_t""unavailable" 1>&1
 fi
 fi
 
+  fi
 fi
 #
 # check if MPI_Info functions are defined in the MPI implementation

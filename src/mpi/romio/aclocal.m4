@@ -127,9 +127,23 @@ dnl
 dnl PAC_GET_TYPE_SIZE(typename,var_for_size)
 dnl
 dnl sets var_for_size to the size.  Ignores if the size cannot be determined
+dnl (see aclocal.m4 in MPICH)
 dnl
 define(PAC_GET_TYPE_SIZE,
-[AC_MSG_CHECKING([for size of $1])
+[Pac_name="$1"
+ Pac_varname=`echo "$Pac_name" | sed -e 's/ /_/g' -e 's/\*/star/g'`
+eval Pac_testval=\$"${Pac_varname}_len"
+if test -z "$Pac_testval" ; then
+   changequote(<<,>>)
+   define(<<AC_TYPE_NAME>>,translit(CROSS_SIZEOF_$1,[a-z *],[A-Z_P]))dnl
+   changequote([,])
+   eval Pac_testval=\$"AC_TYPE_NAME"
+fi
+if test -n "$Pac_testval" ; then
+    Pac_CV_NAME=$Pac_testval
+else
+AC_MSG_CHECKING([for size of $1])
+dnl Check for existing size or for CROSS_SIZEOF_name
 /bin/rm -f conftestval
 AC_TEST_PROGRAM([#include <stdio.h>
 main() { 
@@ -141,8 +155,10 @@ main() {
 /bin/rm -f conftestval
 if test -n "$Pac_CV_NAME" -a "$Pac_CV_NAME" != 0 ; then
     AC_MSG_RESULT($Pac_CV_NAME)
+    eval ${Pac_varname}_len=$Pac_CV_NAME
 else
     AC_MSG_RESULT(unavailable)
+fi
 fi
 $2=$Pac_CV_NAME
 ])dnl
@@ -848,9 +864,11 @@ fi
 KINDVAL=""
 if $F90 -o kind kind.f >/dev/null 2>&1 ; then
     ./kind >/dev/null 2>&1
-    KINDVAL=`cat k.out`
+    if test -s k.out ; then 
+        KINDVAL=`cat k.out`
+    fi
 fi
-rm -f kind k.out kind.f kind.o
+rm -f kind k.out kind.f kind.o k.out
 if test -n "$KINDVAL" -a "$KINDVAL" != "-1" ; then
    AC_MSG_RESULT($KINDVAL)
    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
@@ -1086,7 +1104,9 @@ fi
 KINDVAL=""
 if $F90 -o kind kind.f >/dev/null 2>&1 ; then
     ./kind >/dev/null 2>&1
-    KINDVAL=`cat k.out`
+    if test -s k.out ; then 
+        KINDVAL=`cat k.out`
+    fi
 fi
 rm -f kind k.out kind.f kind.o
 if test -n "$KINDVAL" -a "$KINDVAL" != "-1" ; then
@@ -1140,3 +1160,18 @@ changequote([,])
   rm -f conftest conftest.c
 ])dnl
 dnl
+dnl
+dnl
+define(PAC_C_INLINE,[
+AC_MSG_CHECKING([for inline])
+if eval "test \"`echo '$''{'pac_cv_c_inline'+set}'`\" = set"; then
+   AC_MSG_RESULT([(cached)])
+else
+  AC_COMPILE_CHECK(,[inline int a( int b ){return b+1;}],[int a;],
+pac_cv_c_inline="yes",pac_cv_c_inline="no")
+fi
+AC_MSG_RESULT($pac_cv_c_inline)
+if test "$pac_cv_c_inline" = "no" ; then
+    AC_DEFINE(inline,)
+fi
+])dnl

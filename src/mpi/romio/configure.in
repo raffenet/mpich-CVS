@@ -851,6 +851,8 @@ else
     F77=":"
 fi
 #
+PAC_C_INLINE
+#
 PAC_INT_LT_POINTER()
 #
 PAC_LONG_LONG_64()
@@ -865,12 +867,17 @@ if test -n "$longlongsize"; then
    fi
 fi
 #
-if test "$FORTRAN_MPI_OFFSET" = "integer*8" && test "A$MPI_OFFSET_KIND2" = "A!" && test $NOF77 = 0 ; then
+if test -n "$OFFSET_KIND" -a "A$MPI_OFFSET_KIND1" = "A!" ; then 
+  MPI_OFFSET_KIND1="        INTEGER MPI_OFFSET_KIND"
+  MPI_OFFSET_KIND2="        PARAMETER (MPI_OFFSET_KIND=$OFFSET_KIND)"
+else
+ if test "$FORTRAN_MPI_OFFSET" = "integer*8" && test "A$MPI_OFFSET_KIND2" = "A!" && test $NOF77 = 0 ; then
    PAC_MPI_OFFSET_KIND()
-fi
-#
-if test "$FORTRAN_MPI_OFFSET" = "integer" && test "A$MPI_OFFSET_KIND2" = "A!" && test $NOF77 = 0 ; then
+ fi
+ #
+  if test "$FORTRAN_MPI_OFFSET" = "integer" && test "A$MPI_OFFSET_KIND2" = "A!" && test $NOF77 = 0 ; then
    PAC_MPI_OFFSET_KIND_4BYTE()
+  fi
 fi
 #
 # check if MPI_Info functions are defined in the MPI implementation
