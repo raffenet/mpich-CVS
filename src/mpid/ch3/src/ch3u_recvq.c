@@ -291,9 +291,8 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag, int context_id, 
 	}
     
 	found = FALSE;
-
-      lock_exit:
     }
+  lock_exit:
     MPIDI_Recvq_unlock();
 
     if (!found)
@@ -494,8 +493,8 @@ MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match, int * fo
 	}
     
 	found = FALSE;
-      lock_exit:
     }
+  lock_exit:
     MPIDI_Recvq_unlock();
 
     if (!found)
