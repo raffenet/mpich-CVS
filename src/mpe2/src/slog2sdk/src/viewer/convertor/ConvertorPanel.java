@@ -488,8 +488,8 @@ public class ConvertorPanel extends JPanel
             cmd_button_panel.add( cmd_stop_btn );
             cmd_button_panel.add( Box.createHorizontalGlue() );
 
-                cmd_help_btn = new JButton( " Help " );
-                icon_URL = getURL( Const.IMG_PATH + "Help24.gif" );
+                cmd_help_btn = new JButton( " Usage " );
+                icon_URL = getURL( Const.IMG_PATH + "About24.gif" );
                 if ( icon_URL != null ) {
                     cmd_help_btn.setIcon( new ImageIcon( icon_URL ) );
                     cmd_help_btn.setVerticalTextPosition(
@@ -499,7 +499,7 @@ public class ConvertorPanel extends JPanel
                     // cmd_help_btn.setMargin( btn_insets );
                 }
                 cmd_help_btn.setToolTipText(
-                    "Help message of the selected logfile conversion." );
+                    "Usage information of the selected logfile convertor." );
             cmd_button_panel.add( cmd_help_btn );
             cmd_button_panel.add( Box.createHorizontalGlue() );
 
@@ -529,8 +529,9 @@ public class ConvertorPanel extends JPanel
                                      AbstractButton.RIGHT );
                     // cmd_close4ok_btn.setMargin( btn_insets );
                 }
-                cmd_close4ok_btn.setToolTipText( "Close this panel and "
-                    + "Display the last converted SLOG2 logfile." );
+                cmd_close4ok_btn.setToolTipText( 
+                    "Display the last converted SLOG2 logfile "
+                  + "and Exit this dialog box." );
                 cmd_button_panel.add( cmd_close4ok_btn );
                 cmd_button_panel.add( Box.createHorizontalGlue() );
             }
@@ -649,7 +650,7 @@ public class ConvertorPanel extends JPanel
     }
 
 
-    private void convertSelectedLogFile()
+    private SwingProcessWorker convertSelectedLogFile()
     {
         String              convertor;
         String              path2jardir, path2tracelib;
@@ -658,7 +659,9 @@ public class ConvertorPanel extends JPanel
         File                infile, outfile, jar_file;
         InputLog            slog_ins;
         RuntimeExecCommand  exec_cmd;
-        ProgressAction      logconv_progress;
+
+        SwingProcessWorker  conv_worker;
+        ProgressAction      conv_progress;
 
         // Check the validity of the Input File
         infile_name   = cmd_infile.getText();
@@ -667,19 +670,19 @@ public class ConvertorPanel extends JPanel
             Dialogs.error( top_window,
                            infile_name + " does not exist!\n"
                          + "No conversion will take place." );
-            return;
+            return null;
         }
         if ( infile.isDirectory() ) {
             Dialogs.error( top_window,
                            infile_name + " is a directory!\n"
                          + "No conversion will take place." );
-            return;
+            return null;
         }
         if ( ! infile.canRead() ) {
             Dialogs.error( top_window,
                            "File " + infile_name + " is NOT readable!\n"
                          + "No conversion will take place." );
-            return;
+            return null;
         }
         slog_ins = null;
         try {
@@ -694,7 +697,7 @@ public class ConvertorPanel extends JPanel
                            infile_name + " is already a SLOG-2 file!\n"
                          + "No conversion will take place." );
             cmd_outfile.setText( infile_name );
-            return;
+            return null;
         }
 
         // Check the validity of the Output File
@@ -705,13 +708,13 @@ public class ConvertorPanel extends JPanel
                 Dialogs.error( top_window,
                                outfile_name + " is a directory!\n"
                              + "No conversion will take place." );
-                return;
+                return null;
             }
             if ( ! outfile.canWrite() ) {
                 Dialogs.error( top_window,
                                "File " + outfile_name + " cannot be written!\n"
                              + "No conversion will take place." );
-                return;
+                return null;
             }
             if ( ! Dialogs.confirm( top_window,
                                     outfile_name + " already exists! "
@@ -720,7 +723,7 @@ public class ConvertorPanel extends JPanel
                               "Please change the output filename "
                             + "and restart the conversion again.",
                               null );
-                return;
+                return null;
             }
             outfile.delete();
         }
@@ -733,7 +736,7 @@ public class ConvertorPanel extends JPanel
         jar_file  = new File( jar_path );
         if ( ! jar_file.exists() ) {
             Dialogs.error( top_window, jar_path + " does not exist!" );
-            return;
+            return null;
         }
 
         exec_cmd = new RuntimeExecCommand();
@@ -759,11 +762,13 @@ public class ConvertorPanel extends JPanel
            Start a SwingWorker thread to execute the process:
            Prepare a progress action for the JProgressBar for the SwingWorker
         */
-        logconv_progress = new ProgressAction( cmd_outfile_size, cmd_progress );
-        logconv_progress.initialize( infile, outfile );
-        logconv_worker = new SwingProcessWorker( this, cmd_textarea );
-        logconv_worker.initialize( exec_cmd.toStringArray(), logconv_progress );
-        logconv_worker.start();
+        conv_progress = new ProgressAction( cmd_outfile_size, cmd_progress );
+        conv_progress.initialize( infile, outfile );
+        conv_worker = new SwingProcessWorker( this, cmd_textarea );
+        conv_worker.initialize( exec_cmd.toStringArray(), conv_progress );
+        conv_worker.start();
+
+        return conv_worker;
     }
 
     private void resetAllButtons( boolean isConvertingLogfile )
@@ -771,10 +776,16 @@ public class ConvertorPanel extends JPanel
         cmd_start_btn.setEnabled( !isConvertingLogfile );
         cmd_stop_btn.setEnabled( isConvertingLogfile );
         cmd_help_btn.setEnabled( !isConvertingLogfile );
-        if ( cmd_close4ok_btn != null )
-            cmd_close4ok_btn.setEnabled( !isConvertingLogfile );
         if ( cmd_close4cancel_btn != null )
             cmd_close4cancel_btn.setEnabled( !isConvertingLogfile );
+        if ( cmd_close4ok_btn != null ) {
+            // The scenarios that logconv_worker == null are either the
+            // process has not been started or it has been stopped by user.
+            if ( logconv_worker != null && logconv_worker.isEndedNormally() )
+                cmd_close4ok_btn.setEnabled( !isConvertingLogfile );
+            else
+                cmd_close4ok_btn.setEnabled( false );
+        }
     }
 
     // Interface for WaitingContainer (used by SwingProcessWorker)
@@ -909,7 +920,7 @@ public class ConvertorPanel extends JPanel
     {
         public void actionPerformed( ActionEvent evt )
         {
-            convertSelectedLogFile();
+            logconv_worker = convertSelectedLogFile();
         }
     }
 
@@ -917,8 +928,12 @@ public class ConvertorPanel extends JPanel
     {
         public void actionPerformed( ActionEvent evt )
         {
-            if ( logconv_worker != null )
+            // Set logconv_worker = null when the conversion is stopped manually
+            // so resetAllButtons() can set close4ok button accordingly.
+            if ( logconv_worker != null ) {
                 logconv_worker.finished();
+                logconv_worker  = null;
+            }
         }
     }
 

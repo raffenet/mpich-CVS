@@ -122,4 +122,10 @@ public class SwingProcessWorker extends SwingWorker
                        + process_istatus + "\n" );
         container.finalizeWaiting();
     }   // End of finished()
+
+    //  Check if the process is terminated normally, process_istatus == 0.
+    public boolean isEndedNormally()
+    {
+        return process_istatus == 0;
+    }
 }

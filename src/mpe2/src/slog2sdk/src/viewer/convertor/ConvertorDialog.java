@@ -75,6 +75,8 @@ public class ConvertorDialog extends JDialog
         conv_dialog.pack();
         conv_dialog.init( filename );
         conv_dialog.setVisible( true );
+        // As ConvertorDialog is modal, it will block until it is closed
+        // and the program logic stays here until user closes the dialog.
         return logname_fetcher.getFilename();
     }
 
@@ -98,7 +100,10 @@ public class ConvertorDialog extends JDialog
         private String           filename;
 
         public CloseToRetrieveAction( ConvertorDialog convertor_dialog )
-        { convertor  = convertor_dialog; }
+        {
+            convertor  = convertor_dialog;
+            filename   = null;
+        }
 
         public String  getFilename()
         { return filename; }
