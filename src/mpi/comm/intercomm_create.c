@@ -25,12 +25,13 @@
 
 /* 128 allows us to handle up to 4k processes */
 #define MAX_LPID32_ARRAY 128
-PMPI_LOCAL int MPIR_CheckDisjoint_Lpids( int lpids1[], int n1, 
+PMPI_LOCAL int MPIR_CheckDisjointLpids( int [], int, int [], int );
+PMPI_LOCAL int MPIR_CheckDisjointLpids( int lpids1[], int n1, 
 					 int lpids2[], int n2 )
 {
-    int i, idx, bit, maxlpid = -1;
+    int i, maxi, idx, bit, maxlpid = -1;
     int mpi_errno;
-    int32_t lpidmask[MAX_LPID32_ARRAY]
+    int32_t lpidmask[MAX_LPID32_ARRAY];
 
     /* Find the max lpid */
     for (i=0; i<n1; i++) {
@@ -108,7 +109,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     MPID_Comm *comm_ptr = NULL;
     MPID_Comm *peer_comm_ptr = NULL;
     int context_id, final_context_id;
-    int remote_size, *remote_lpids;
+    int remote_size, *remote_lpids=0;
     int local_size, *local_lpids;
     int comm_info[2];
     int i;
@@ -272,7 +273,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     /* Leaders can now swap context ids and then broadcast the value
        to the local group of processes */
     if (comm_ptr->rank == local_leader) {
-	int remote_contextid;
+	int remote_context_id;
 
 	NMPI_Sendrecv( &context_id, 1, MPI_INT, remote_leader, tag,
 		       &remote_context_id, 1, MPI_INT, remote_leader, tag, 

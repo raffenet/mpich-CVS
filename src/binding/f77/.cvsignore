@@ -77,6 +77,7 @@ commrsizef.c
 commseterrf.c
 commtesticf.c
 dims_createf.c
+dup_fnf.c
 errhcreatef.c
 errhfreef.c
 errhgetf.c
@@ -147,6 +148,8 @@ keyval_freef.c
 lookup_namef.c
 mpif.h.in
 mpif.h
+null_copy_fnf.c
+null_del_fnf.c
 op_createf.c
 op_freef.c
 open_portf.c
