@@ -220,6 +220,7 @@ typeextentf.c
 typefreekeyf.c
 typegetcntsf.c
 typegetenvf.c
+typegetextentf.c
 typegnamef.c
 typegtextf.c
 typenewkeyf.c
