@@ -297,10 +297,6 @@ def mpdrun():
                     print 'mpdrun telling client to terminate due to timeout %d seconds' % timeoutVal
                     msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
                     mpd_send_one_msg(manSocket,msgToSend)
-                    del socketsToSelect[manSocket]
-                    manSocket.close()
-                    manSocket = 0
-                    done += 1
                     continue
             for readySocket in readySockets:
                 if readySocket == manSocket:
