@@ -1,11 +1,11 @@
 MAKE=@MAKE@
 SHELL=/bin/sh
 
-TARGETS = base/io base/topology base/drawable \
+TARGETS = base/io base/topology base/drawable base/statistics \
           logformat/clog logformat/clogTOdrawable \
           logformat/trace logformat/slog2 \
-          viewer/common viewer/legends viewer/timelines \
-          viewer/preview viewer/first
+          viewer/common viewer/legends \
+          viewer/timelines viewer/first
 
 #          viewer/swingextn viewer/timelines
 
