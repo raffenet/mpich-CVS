@@ -1,0 +1,9 @@
+Makefile
+Makefile.in
+configure
+config.status
+config.system
+config.log
+localdefs
+*.cache
+.deps
