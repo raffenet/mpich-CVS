@@ -100,52 +100,58 @@ int MPI_Cancel(MPI_Request *request)
 
     switch (request_ptr->kind)
     {
-	case MPID_REQUEST_RECV:
-	{
-	    MPID_Cancel_recv(request_ptr);
-	    break;
-	}
-
-	case MPID_PREQUEST_RECV:
-	{
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, 
-					      "**cancelperrecv", 0 );
-	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-	}
-
 	case MPID_REQUEST_SEND:
 	{
 	    MPID_Cancel_send(request_ptr);
 	    break;
 	}
 
+	case MPID_REQUEST_RECV:
+	{
+	    MPID_Cancel_recv(request_ptr);
+	    break;
+	}
+
 	case MPID_PREQUEST_SEND:
 	{
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, 
-					      "**cancelpersend", 0 );
-	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	    if (request_ptr->partner_request != NULL)
+	    {
+		MPID_Cancel_send(request_ptr->partner_request);
+	    }
+	    else
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_ERR_REQUEST, "**requestpersistactive", 0);
+	    }
+	    
+	    break;
+	}
+
+	case MPID_PREQUEST_RECV:
+	{
+	    if (request_ptr->partner_request != NULL)
+	    {
+		MPID_Cancel_recv(request_ptr->partner_request);
+	    }
+	    else
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_ERR_REQUEST, "**requestpersistactive", 0);
+	    }
+
+	    break;
 	}
 
 	case MPID_UREQUEST:
 	{
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
-	    mpi_errno = (request_ptr->cancel_fn)( 
-		request_ptr->grequest_extra_state, 
-		(request_ptr->cc == 0) );
+	    mpi_errno = (request_ptr->cancel_fn)(request_ptr->grequest_extra_state, (request_ptr->cc == 0));
 	    break;
 	}
 
 	default:
 	{
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
-	    mpi_errno = MPIR_Err_create_code(
-		MPI_ERR_INTERN, "**cancelunknown", 0 );
-	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	    mpi_errno = MPIR_Err_create_code(MPI_ERR_INTERN, "**cancelunknown", 0 );
 	}
     }
     
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
-    return MPI_SUCCESS;
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
 }
