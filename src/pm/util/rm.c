@@ -10,8 +10,10 @@
  * interfaces in this file, other resource managers can be used.
  *
  * The interfaces are:
- * int mpiexecRMChooseHosts( ProcessTable_t *ptable )
- *    Set the host field for each of the processes
+ * int mpiexecChooseHosts( ProcessList *plist, int nplist, 
+ *                         ProcessTable *ptable )
+ *    Given the list of processes in plist, set the host field for each of the 
+ *    processes in the ptable (ptable is already allocated)
  *
  * int mpiexecRMProcessArg( int argc, char *argv[], void *extra )
  *    Called by the top-level argument processor for unrecognized arguments;
@@ -37,11 +39,20 @@
 /* For each requested process that does not have an assigned host yet,     */
 /* use information from a machines file to fill in the choices             */
 /* ----------------------------------------------------------------------- */
-/* This structure is used as part of the code to assign machines to 
+/* These structures are used as part of the code to assign machines to 
    processes */
 typedef struct {
+    char *name;            /* Name of the machine (used for ssh etc) */
+    int  np;               /* Number of processes on this machine */
+    char *login;           /* Login name to use (if different) */
+    char *netname;         /* Interface name to use (if different from host) */
+    /* Other resource descriptions would go here, such as memory, 
+       software, file systems */
+} MachineDesc;
+
+typedef struct {
     int nHosts; 
-    char **hname;
+    MachineDesc *desc;
 } MachineTable;
 
 static MachineTable *mpiexecReadMachines( const char *, int );
@@ -129,8 +140,10 @@ static const char defaultMachinesPath[] = DEFAULT_MACHINES_PATH;
    # comments
    hostname
    
-   Eventually, we'll allow
-   hostname [ : nproc [ : login ] ]
+   hostname [ : [ nproc ] [ : [ login ] [ : [ netname ] ] ]
+
+   Eventually, we may want to allow a more complex description,
+   using key=value pairs
 
    The files are for the format:
 
@@ -146,7 +159,6 @@ static MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
     char buf[MAXLINE+1];
     char machinesfile[PATH_MAX];
     char dirname[PATH_MAX];
-    char *p;
     const char *path=getenv("MPIEXEC_MACHINES_PATH");
     MachineTable *mt;
     int len, nFound = 0;
@@ -204,11 +216,17 @@ static MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
     
     /* This may be larger than needed if the machines file has
        fewer entries than nNeeded */
-    mt->hname = (char **)MPIU_Malloc( nNeeded * sizeof(char *) );
-    if (!mt->hname) {
+    mt->desc = (MachineDesc *)MPIU_Malloc( nNeeded * sizeof(MacheineDesc) );
+    if (!mt->desc) {
 	return 0;
     }
+
+    /* Order of fields
+       hostname [ : [ nproc ] [ : [ login ] [ : [ netname ] ] ]
+    */
     while (nNeeded) {
+	char *name=0, *login=0, *netname=0, *npstring=0;
+	char *p, *p1;
 	if (!fgets( buf, MAXLINE, fp )) {
 	    break;
 	}
@@ -220,13 +238,79 @@ static MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 	p[MAXLINE] = 0;
 	while (isascii(*p) && isspace(*p)) p++;
 	if (*p == '#') continue;
+
+	/* To simplify the handling of the end-of-line, remove any return
+	   or newline chars.  Include \r for DOS files */
+	p1 = p;
+	while (*p1 && (*p1 != '\r' && *p1 != '\n')) p1++;
+	*p1 = 0;
 	
-	len = strlen( p );
-	if (p[len-1] == '\n') p[--len] = 0;
-	if (p[len-1] == '\r') p[--len] = 0;   /* Handle DOS files */
-	mt->hname[nFound] = (char *)MPIU_Malloc( len + 1 );
-	if (!mt->hname[nFound]) return 0;
-	MPIU_Strncpy( mt->hname[nFound], p, len+1 );
+	/* Parse the line by 
+	   setting pointers to the fields
+	   replacing : by null
+	*/
+	name = p;
+
+	/* Skip over the value */
+	p1 = p;
+	while (*p1 && !isspace(*p1) && *p1 != ':') p1++;
+	if (*p1 == ':') *p1++ = 0;
+
+	p = p1;
+	while (isascii(*p) && isspace(*p)) p++;
+	
+	npstring = p;
+
+	/* Skip over the value */
+	p1 = p;
+	while (*p1 && !isspace(*p1) && *p1 != ':') p1++;
+	if (*p1 == ':') *p1++ = 0;
+
+	p = p1;
+	while (isascii(*p) && isspace(*p)) p++;
+	
+	login = p;
+
+	/* Skip over the value */
+	p1 = p;
+	while (*p1 && !isspace(*p1) && *p1 != ':') p1++;
+	if (*p1 == ':') *p1++ = 0;
+
+	p = p1;
+	while (isascii(*p) && isspace(*p)) p++;
+	
+	netname = p;
+
+	/* Skip over the value */
+	p1 = p;
+	while (*p1 && !isspace(*p1) && *p1 != ':') p1++;
+	if (*p1 == ':') *p1++ = 0;
+	
+	/* Save the names */
+
+	/* Initialize the fields for this new entry */
+	mt->desc[nFound].name    = MPIU_Strdup( name );
+	if (login) 
+	    mt->desc[nFound].login   = MPIU_Strdup( login );
+	else
+	    mt->desc[nFound].login = 0;
+	if (npstring) {
+	    char *newp;
+	    int n = strtol( npstring, &newp, 0 );
+	    if (newp == npstring) {
+		/* This indicates an error in the file.  How do we
+		   report that? */
+		n = 1;
+	    }
+	    mt->desc[nFound].np      = n;
+	}
+	else 
+	    mt->desc[nFound].np      = 1;
+	if (netname) 
+	    mt->desc[nFound].netname = MPIU_Strdup( netname );
+	else
+	    mt->desc[nFound].netname = 0;
+
 	nFound++;
 	nNeeded--;
     }
