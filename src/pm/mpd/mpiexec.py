@@ -57,7 +57,7 @@ def mpiexec():
                 shOut = Popen3("/bin/sh -c 'for a in $*; do echo _$a; done' -- %s" % (line))
                 for shline in shOut.fromchild:
                     tempargv.append(shline[1:].strip())    # 1: strips off the leading _
-            tempargv = tempargv[0:-1]    # strip off the last : I added
+            tempargv = [argv[0]] + tempargv[0:-1]    # strip off the last : I added
             collect_args(tempargv)
         else:
             collect_args(argv)
