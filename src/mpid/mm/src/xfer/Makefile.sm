@@ -5,7 +5,7 @@
  xfer_scatter_recv_forward_op.c xfer_scatter_recv_mop_forward_op.c \
  xfer_scatter_recv_mop_op.c xfer_scatter_recv_op.c xfer_scatter_replicate_op.c \
  xfer_scatter_send_op.c xfer_scatter_start.c
-#lib${MPILIBNAME}_a_SOURCES = xfer_forward_op.c xfer_init.c xfer_recv_forward_op.c \
+lib${MPILIBNAME}_a_SOURCES = xfer_forward_op.c xfer_init.c xfer_recv_forward_op.c \
  xfer_recv_mop_forward.c xfer_recv_mop_op.c xfer_recv_op.c xfer_send_op.c \
  xfer_start.c
 INCLUDES = -I../../include -I${top_srcdir}/include -I../../../../include -I${master_top_srcdir}/src/include
