@@ -4,6 +4,7 @@
 	Version="7.10"
 	Name="mpi"
 	ProjectGUID="{EAC12E9B-4B5D-4D26-8FAE-2425A48E3804}"
+	RootNamespace="mpi"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -127,7 +128,7 @@ copy $(ConfigurationName)\mpi.lib lib\mpi.lib
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath=".\src\binding\mpi\mpi.c">
+				RelativePath=".\src\pm\smpd\mpi.c">
 			</File>
 			<File
 				RelativePath=".\mpi.def">
