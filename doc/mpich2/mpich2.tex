@@ -6250,49 +6250,47 @@ int MPI_Comm_accept(port_name, info, root, comm, intercomm)
         /* Bcast resulting intercommunicator stuff */
     }
 
-/*
-    if (root)
-    {
-        conn = MM_accept(port_name);
-
-        MPI_Info_get(info, "BNR_SAME_DOMAIN", 0, NULL, &bnr_same_domain);
-
-        MM_send(conn, bnr_same_domain);
-        MM_send(conn, comm->size);
-        MM_recv(conn, remote_size);
-        
-        MPID_Intercomm_alloc(INTER, intercomm, comm->size, remote_size);
-        intercomm->local_VCTable = comm->VCTable;
-        intercomm->local_size = comm->size;
-        
-        SendCommVCTable(conn, comm->VCTable, comm->size);
-        if (!bnr_same_domain)
-        {
-            SendKeymaps(conn, comm);
-        }
-        
-        RecvCommVCTable(conn, intercomm->remote_VCTable,
-                        intercomm->remote_size);
-        if (!bnr_same_domain)
-        {
-            RecvKeymaps(conn, dbmap);
-            FixVCTable(dbmap, intercomm->remote_VCTable);
-        }
-
-        MPI_Bcast(remote_size, root, comm);
-        MPI_Bcast(intercomm->remote_VCTable, root, comm)
-    }
-    else
-    {
-        MPI_Bcast(remote_size, root, comm);
-        
-        MPID_Intercomm_alloc(INTER, intercomm, comm->size, remote_size);
-        intercomm->local_VCTable = comm->VCTable;
-        intercomm->local_size = comm->size;
-        
-        MPI_Bcast(intercomm->remote_VCTable, root, comm)
-    }
-*/
+%    if (root)
+%    {
+%        conn = MM_accept(port_name);
+%
+%        MPI_Info_get(info, "BNR_SAME_DOMAIN", 0, NULL, &bnr_same_domain);
+%
+%        MM_send(conn, bnr_same_domain);
+%        MM_send(conn, comm->size);
+%        MM_recv(conn, remote_size);
+%        
+%        MPID_Intercomm_alloc(INTER, intercomm, comm->size, remote_size);
+%        intercomm->local_VCTable = comm->VCTable;
+%        intercomm->local_size = comm->size;
+%        
+%        SendCommVCTable(conn, comm->VCTable, comm->size);
+%        if (!bnr_same_domain)
+%        {
+%            SendKeymaps(conn, comm);
+%        }
+%        
+%        RecvCommVCTable(conn, intercomm->remote_VCTable,
+%                        intercomm->remote_size);
+%        if (!bnr_same_domain)
+%        {
+%            RecvKeymaps(conn, dbmap);
+%            FixVCTable(dbmap, intercomm->remote_VCTable);
+%        }
+%
+%        MPI_Bcast(remote_size, root, comm);
+%        MPI_Bcast(intercomm->remote_VCTable, root, comm)
+%    }
+%    else
+%    {
+%        MPI_Bcast(remote_size, root, comm);
+%        
+%        MPID_Intercomm_alloc(INTER, intercomm, comm->size, remote_size);
+%        intercomm->local_VCTable = comm->VCTable;
+%        intercomm->local_size = comm->size;
+%        
+%        MPI_Bcast(intercomm->remote_VCTable, root, comm)
+%    }
 }
 
 int MPI_Comm_connect(port_name, info, root, comm, intercomm)
@@ -6311,68 +6309,58 @@ int MPI_Comm_connect(port_name, info, root, comm, intercomm)
     {
         /* Bcast resulting intercommunicator stuff */
     }
-/*
-    if (root)
-    {
-        conn = MM_connect(port_name);
-        
-        MM_recv(conn, bnr_same_domain);
-        MM_recv(conn, remote_size);
-        MM_send(conn, comm->size);
-
-        MPID_Intercomm_alloc(INTER, intercomm, comm->size, remote_size);
-        intercomm->local_VCTable = comm->VCTable;
-        intercomm->local_size = comm->size;
-        
-        RecvCommVCTable(conn, intercomm->remote_VCTable,
-                        intercomm->remote_size);
-        if (!bnr_same_domain)
-        {
-            RecvKeymaps(conn, dbmap);
-            FixVCTable(dbmap, intercomm->remote_VCTable);
-        }
-        
-        SendCommVCTable(conn, comm->VCTable, comm->size);
-        if (!bnr_same_domain)
-        {
-            SendKeymaps(conn, comm);
-        }
-        
-        MPI_Bcast(remote_size, root, comm);
-        MPI_Bcast(intercomm->remote_VCTable, root, comm)
-    }
-    else
-    {
-        MPI_Bcast(remote_size, root, comm);
-        
-        MPID_Intercomm_alloc(INTER, intercomm, comm->size, remote_size);
-        intercomm->local_VCTable = comm->VCTable;
-        intercomm->local_size = comm->size;
-        
-        MPI_Bcast(intercomm->remote_VCTable, root, comm)
-    }
-*/
+%    if (root)
+%    {
+%        conn = MM_connect(port_name);
+%        
+%        MM_recv(conn, bnr_same_domain);
+%        MM_recv(conn, remote_size);
+%        MM_send(conn, comm->size);
+%
+%        MPID_Intercomm_alloc(INTER, intercomm, comm->size, remote_size);
+%        intercomm->local_VCTable = comm->VCTable;
+%        intercomm->local_size = comm->size;
+%        
+%        RecvCommVCTable(conn, intercomm->remote_VCTable,
+%                        intercomm->remote_size);
+%        if (!bnr_same_domain)
+%        {
+%            RecvKeymaps(conn, dbmap);
+%            FixVCTable(dbmap, intercomm->remote_VCTable);
+%        }
+%        
+%        SendCommVCTable(conn, comm->VCTable, comm->size);
+%        if (!bnr_same_domain)
+%        {
+%            SendKeymaps(conn, comm);
+%        }
+%        
+%        MPI_Bcast(remote_size, root, comm);
+%        MPI_Bcast(intercomm->remote_VCTable, root, comm)
+%    }
+%    else
+%    {
+%        MPI_Bcast(remote_size, root, comm);
+%        
+%        MPID_Intercomm_alloc(INTER, intercomm, comm->size, remote_size);
+%        intercomm->local_VCTable = comm->VCTable;
+%        intercomm->local_size = comm->size;
+%        
+%        MPI_Bcast(intercomm->remote_VCTable, root, comm)
+%    }
 }
 \end{verbatim}
 \end{small}
 
 
-\subsubsection{Previous Dynamic Processes Section }
+\subsubsection{MPI Dynamic Processes Functions }
 \label{sec:spawn-impl}
-
-{\em This is intended to be merged with the previous section}.
-
-
-This section has not been written.  A big question is how or if the BNR
-interface to a parallel process manager is used in the implementation
-of the MPICH routines, or whether another layer of abstraction is
-used, and BNR is just one of the ways in which to implement that abstraction.
 
 \subsubsection{\mpifunc{MPI_COMM_CONNECT}}
 
-\begin{verbatim}
-  BNR_Connect( &port, &gid )
-\end{verbatim}
+%\begin{verbatim}
+%  BNR_Connect( &port, &gid )
+%\end{verbatim}
 
 \subsubsection{\mpifunc{MPI_COMM_DISCONNECT}}
 This function is like \mpifunc{MPI_Comm_free}, except that it also guarantees
@@ -6382,8 +6370,8 @@ status of ``connected'' processes.
 
 
 \subsubsection{\mpifunc{MPI_COMM_GET_PARENT}}
-Return \mpidconst{MPID_COMM_PARENT}.  This value is set by
-\mpifunc{MPI_Init_thread}. 
+Return \mpidconst{MPID_COMM_PARENT}.
+%This value is set by \mpifunc{MPI_Init_thread}. 
 
 \subsubsection{\mpifunc{MPI_COMM_JOIN}}
 \mpifunc{MPI_Comm_join} creates an intercommunicator for two (and only two)
@@ -6407,81 +6395,81 @@ processes.
 
 \subsubsection{\mpifunc{MPI_COMM_SPAWN}}
 
-Notes:
-\begin{itemize}
-\item \code{BNR_Port_t} is a BNR-defined data structure that is set by
-  \mpidfunc{BNR_Spawn} and used by \mpidfunc{BNR_Accept}.   In a TCP-based
-  implementation, \code{BNR_Spawn} would get a port, communicate that port
-  (probably through an environment variable but possibly through an LDAP
-  service) to the new processes, which would use that name to as an argument
-  to \mpidfunc{BNR_Connect}.  A shared-memory-only implementation could use a
-  SYSV segment id.
-
-\item \mpidfunc{BNR_Accept} does not return until all of the requested
-  processes have started and completed their initialization (see
-  \code{MPI_Init_thread}).
-
-\item \mpidfunc{MPID_New_connections} informs the device that there are
-  \code{count} new processes with BNR group id \code{gid}.  This routine
-  returns the local process ids (\code{lpid}s).
-
-\item As used here, \mpidfunc{BNR_Spawn} could return immediately; only after
-  the \mpidfunc{BNR_Accept} call returns does this code need to know if 
-  \mpidfunc{BNR_Spawn} has succeeded, or, in the case of a ``soft'' spawn, how
-  many processes were successfully created.  This allows \mpidfunc{BNR_Spawn}
-  to be ``nonblocking'' in the MPI sense, with completion handled by
-  \mpidfunc{BNR_Accept} on the ``port'' returned by \mpidfunc{BNR_Spawn}.
-
-\end{itemize}
-
-\begin{verbatim}
-    BNR_Port_t port;
-    int        err_stat[count];
-    int        lpid[count];
-    if (rank == root) {
-        BNR_Spawn( count, command, args, envp, info, &port, err_stat );
-        BNR_Accept( &port, &gid );
-    }
-    PMPI_Bcast( &gid, 1, MPI_INT, root, comm->private_comm );
-    MPID_New_connections( gid, count, lpid );
-
-    /* Now we need to create the intercommuicator for the new processes */
-    <Use the intercomm create code, but with lpid as the local process ids
-     of the remote group rather than using an existing MPI group>
-\end{verbatim}
+%Notes:
+%\begin{itemize}
+%\item \code{BNR_Port_t} is a BNR-defined data structure that is set by
+%  \mpidfunc{BNR_Spawn} and used by \mpidfunc{BNR_Accept}.   In a TCP-based
+%  implementation, \code{BNR_Spawn} would get a port, communicate that port
+%  (probably through an environment variable but possibly through an LDAP
+%  service) to the new processes, which would use that name to as an argument
+%  to \mpidfunc{BNR_Connect}.  A shared-memory-only implementation could use a
+%  SYSV segment id.
+%
+%\item \mpidfunc{BNR_Accept} does not return until all of the requested
+%  processes have started and completed their initialization (see
+%  \code{MPI_Init_thread}).
+%
+%\item \mpidfunc{MPID_New_connections} informs the device that there are
+%  \code{count} new processes with BNR group id \code{gid}.  This routine
+%  returns the local process ids (\code{lpid}s).
+%
+%\item As used here, \mpidfunc{BNR_Spawn} could return immediately; only after
+%  the \mpidfunc{BNR_Accept} call returns does this code need to know if 
+%  \mpidfunc{BNR_Spawn} has succeeded, or, in the case of a ``soft'' spawn, how
+%  many processes were successfully created.  This allows \mpidfunc{BNR_Spawn}
+%  to be ``nonblocking'' in the MPI sense, with completion handled by
+%  \mpidfunc{BNR_Accept} on the ``port'' returned by \mpidfunc{BNR_Spawn}.
+%
+%\end{itemize}
+%
+%\begin{verbatim}
+%    BNR_Port_t port;
+%    int        err_stat[count];
+%    int        lpid[count];
+%    if (rank == root) {
+%        BNR_Spawn( count, command, args, envp, info, &port, err_stat );
+%        BNR_Accept( &port, &gid );
+%    }
+%    PMPI_Bcast( &gid, 1, MPI_INT, root, comm->private_comm );
+%    MPID_New_connections( gid, count, lpid );
+%
+%    /* Now we need to create the intercommuicator for the new processes */
+%    <Use the intercomm create code, but with lpid as the local process ids
+%     of the remote group rather than using an existing MPI group>
+%\end{verbatim}
 
 Question:  Should this be a special case of spawn multiple?
 
 \subsubsection{\mpifunc{MPI_COMM_SPAWN_MULTIPLE}}
 
-This is very similar to \mpifunc{MPI_COMM_SPAWN}, with the change that
-multiple calls to \mpidfunc{BNR_Spawn} and \mpidfunc{BNR_Accept} are made.
-All of the calls to \mpidfunc{BNR_Spawn} are made before any call to
-\mpidfunc{BNR_Accept} in order to start any time-consuming process scheduling
-and creation operations before waiting for any to complete (see the discussion
-on \mpidfunc{BNR_Spawn} in \mpifunc{MPI_Comm_spawn}.
-\begin{verbatim}
-    BNR_Port_t port[count];
-    int        err_stat[max_procs][count];
-    int        lpid[max_procs][count];
-    if (rank == root) {
-        for (i=0; i<count; i++) {
-            BNR_Spawn( array_of_maxprocs[i], array_of_commands[i], 
-                       array_of_argv[i], envp, array_of_info[i], &port[i], 
-                       err_stat[i] );
-        }
-        for (i=0; i<count; i++) {
-            BNR_Accept( &port[i], &gids[i] );
-        }
-    }
-    PMPI_Bcast( gids, count, MPI_INT, root, comm->private_comm );
-    for (i=0; i<count; i++) {
-        MPID_New_connections( gids[i], array_of_maxprocs[i], lpid[i] );
-    }
-
-    /* Now we need to create the intercommuicator for the new processes */
-    ... not done ...
-\end{verbatim}
+%This is very similar to \mpifunc{MPI_COMM_SPAWN}, with the change that
+%multiple calls to \mpidfunc{BNR_Spawn} and \mpidfunc{BNR_Accept} are made.
+%All of the calls to \mpidfunc{BNR_Spawn} are made before any call to
+%\mpidfunc{BNR_Accept} in order to start any time-consuming process scheduling
+%and creation operations before waiting for any to complete (see the discussion
+%on \mpidfunc{BNR_Spawn} in \mpifunc{MPI_Comm_spawn}.
+%\begin{verbatim}
+%    BNR_Port_t port[count];
+%    int        err_stat[max_procs][count];
+%    int        lpid[max_procs][count];
+%    if (rank == root) {
+%        for (i=0; i<count; i++) {
+%            BNR_Spawn( array_of_maxprocs[i], array_of_commands[i], 
+%                       array_of_argv[i], envp, array_of_info[i], &port[i], 
+%                       err_stat[i] );
+%        }
+%        for (i=0; i<count; i++) {
+%            BNR_Accept( &port[i], &gids[i] );
+%        }
+%    }
+%    PMPI_Bcast( gids, count, MPI_INT, root, comm->private_comm );
+%    for (i=0; i<count; i++) {
+%        MPID_New_connections( gids[i], array_of_maxprocs[i], lpid[i] );
+%    }
+%
+%    /* Now we need to create the intercommuicator for the new processes */
+%    ... not done ...
+%\end{verbatim}
 
 \subsubsection{\mpifunc{MPI_LOOKUP_NAME}}
 Question:  Do we want to define an API or a wire protocol for the name
@@ -6567,17 +6555,18 @@ ldap_modify_s( ldap_handle, name, attrs );
 
 \subsubsection{\mpifunc{MPI_OPEN_PORT}}
 An MPI ``port'' is just a string that is used in \mpifunc{MPI_Comm_attach} and
-\mpifunc{MPI_Comm_connect}.  Since these ports are used to establish
-connections between groups or processes that are defined by BNR, 
-
-\begin{verbatim}
-    BNR_Open_port( );
-\end{verbatim}
+\mpifunc{MPI_Comm_connect}.  
+%Since these ports are used to establish connections between groups or processes 
+%that are defined by BNR, 
+%
+%\begin{verbatim}
+%    BNR_Open_port( );
+%\end{verbatim}
 
 \subsubsection{\mpifunc{MPI_CLOSE_PORT}}
-\begin{verbatim}
-    BNR_Close_port( );
-\end{verbatim}
+%\begin{verbatim}
+%    BNR_Close_port( );
+%\end{verbatim}
 
 \subsection{User-Defined Requests}
 \label{sec:grequest}
