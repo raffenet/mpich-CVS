@@ -20,6 +20,10 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
+#undef FUNCNAME
+#define FUNCNAME MPID_Open_port
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Open_port(MPID_Info *info_ptr, char *port_name)
 {
     int mpi_errno=MPI_SUCCESS;

@@ -6,6 +6,10 @@
 
 #include "mpidi_ch3_impl.h"
 
+#undef FUNCNAME
+#define FUNCNAME create_request
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offset, MPIU_Size_t nb)
 {
     MPID_Request * sreq;

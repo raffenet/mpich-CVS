@@ -6,6 +6,10 @@
 
 #include "mpidi_ch3_impl.h"
 
+#undef FUNCNAME
+#define FUNCNAME update_request
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static void update_request(MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_sz, MPIU_Size_t nb)
 {
     MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST);

@@ -20,6 +20,10 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
+#undef FUNCNAME
+#define FUNCNAME MPID_Comm_disconnect
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Comm_disconnect(MPID_Comm *comm_ptr)
 {
     int mpi_errno;
