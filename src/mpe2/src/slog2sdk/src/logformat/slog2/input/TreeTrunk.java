@@ -27,6 +27,11 @@ public class TreeTrunk extends TreeFloorList
     private               short            depth_init;  // depth initialized
     private               short            iZoom_level;
 
+    private               double           duration_root;
+    private               double           tZoomFactor;
+    private               double           logZoomFactor;
+    
+
     private InputLog          slog_ins;
 
     public TreeTrunk( InputLog  in_slog )
@@ -43,12 +48,30 @@ public class TreeTrunk extends TreeFloorList
 
         blockptr       = slog_ins.getFileBlockPtrToTreeRoot();
         treeroot       = slog_ins.readTreeNode( blockptr );
-        timeframe_root = new TimeBoundingBox( treeroot );
         depth_root     = treeroot.getTreeNodeID().depth;
+        timeframe_root = new TimeBoundingBox( treeroot );
+        duration_root  = timeframe_root.getDuration();
         depth_init     = depth_root;
         iZoom_level    = 0;
+        tZoomFactor    = (double) slog_ins.getNumChildrenPerNode();
+        logZoomFactor  = Math.log( tZoomFactor );
         super.init( depth_root );
         super.put( treeroot, treeroot );
+    }
+
+    /*
+        setTimeZoomFactor() set Non-Default zooming factor.  
+        It is Not being used yet
+    */
+    public void setTimeZoomFactor( double time_zoom_factor )
+    {
+        tZoomFactor    = time_zoom_factor;
+        logZoomFactor  = Math.log( tZoomFactor );
+    }
+
+    public double getTimeZoomFactor()
+    {
+        return tZoomFactor;
     }
 
     public TreeNode getTreeRoot()
@@ -100,8 +123,9 @@ public class TreeTrunk extends TreeFloorList
                     else { // childstub.disjoints( time_win )
                         if ( childnode != null ) {
                             this.removeChildren( childnode, in_depth );
-                            debug_println( "TreeTrunk.growChildren(): "
-                              + "remove(" + childstub.getTreeNodeID() + ")" );
+                            if ( isDebugging )
+                                debug_println( "TreeTrunk.growChildren(): "
+                                + "remove(" + childstub.getTreeNodeID() + ")" );
                             super.remove( childstub );
                         }
                     }
@@ -137,85 +161,61 @@ public class TreeTrunk extends TreeFloorList
                 childnode = super.get( childstub );
                 if ( childnode != null ) {
                     this.removeChildren( childnode, in_depth );
-                    debug_println( "TreeTrunk.removeChildren(): "
-                         + "remove(" + childstub.getTreeNodeID() + ")" );
+                    if ( isDebugging )
+                        debug_println( "TreeTrunk.removeChildren(): "
+                        + "remove(" + childstub.getTreeNodeID() + ")" );
                     super.remove( childstub );
                 }
             }
         }
     }
 
-    // Zoom In : 
-    // The argument, time_win, is the new Time Window to be achieved
-    public void contractTimeWindowTo( final TimeBoundingBox  time_win )
+    /*
+        Adjust the duration of the root level treefloor's time window.
+        So that zoom level can be computed consistently, i.e. getZoomLevel().
+        CanvasTime needs to call this.
+    */
+    public void setNumOfViewsPerUpdate( int num_views )
     {
-        debug_println( "contractTimeWindowTo( " + time_win + " )" );
-        TreeFloor  coverer, lowester;
-        short      coverer_depth, lowester_depth, next_depth;
-        TreeNode   treenode;
-
-        iZoom_level    += 1;
-        lowester        = super.getLowestFloor();
-        // if ( ! lowester.covers( time_win ) ) {
-            coverer         = super.pruneToBarelyCoveringFloor( time_win );
-            coverer_depth   = coverer.getDepth();
-            lowester_depth  = lowester.getDepth();
-            next_depth      = (short) ( lowester_depth - 1 );
-            if ( next_depth < 0 )
-                next_depth = 0;
-            debug_println( "coverer_depth = " + coverer_depth );
-            debug_println( "lowester_depth = " + lowester_depth );
-            debug_println( "iZoom_level = " + iZoom_level );
-            debug_println( "next_depth = " + next_depth );
-            if ( next_depth < coverer_depth ) {
-                Iterator nodes = coverer.values().iterator(); 
-                while ( nodes.hasNext() ) {
-                    treenode = (TreeNode) nodes.next();
-                    if ( treenode.overlaps( time_win ) )
-                        this.growChildren( treenode, next_depth, time_win );
-                    else {
-                        this.removeChildren( treenode, next_depth );
-                        debug_println( "TreeTrunk.contractTimeWindowTo(): "
-                             + "remove(" + treenode.getTreeNodeID() + ")" );
-                        nodes.remove();
-                    }
-                }
-                super.removeAllChildFloorsBelow( next_depth );
-            }
-        // }
-        // return super.getLowestDepth();
+        duration_root *= (double) num_views;
     }
 
-    // Zoom Out :
-    // The argument, time_win, is the new Time Window to be achieved
-    public void enlargeTimeWindowTo( final TimeBoundingBox  time_win )
+    /* return 0 when time_win.getDuration() == timeframe_root.getDuration() */
+    private short getZoomLevel( final TimeBoundingBox  time_win )
     {
-        debug_println( "enlargeTimeWindowTo( " + time_win + " )" );
+        return (short) Math.round( Math.log( duration_root
+                                           / time_win.getDuration() )
+                                 / logZoomFactor );
+    }
+
+    // Zoom In/Out :
+    // The argument, time_win, is the new Time Window to be achieved
+    public void zoomTimeWindowTo( final TimeBoundingBox  time_win )
+    {
+        if ( isDebugging )
+            debug_println( "zoomTimeWindowTo( " + time_win + " )" );
         TreeFloor  coverer, lowester;
         short      coverer_depth, lowester_depth, next_depth;
         TreeNode   treenode;
 
-        iZoom_level    -= 1;
+        iZoom_level     = this.getZoomLevel( time_win );
         lowester        = super.getLowestFloor();
         // if ( ! lowester.covers( time_win ) ) {
             coverer         = super.getCoveringFloor( time_win );
             coverer_depth   = coverer.getDepth();
             lowester_depth  = lowester.getDepth();
-            next_depth      = 0;
-            // guarantee enlargeTimeWindowTo() to be the 
-            // reverse function of contractTimeWindowTo()
-            if ( lowester_depth > 0 )
-                next_depth  = (short) ( lowester_depth + 1 );
-            else
-                next_depth  = (short) ( depth_init - iZoom_level );
+            // guarantee zoom-in to be reverse function of zoom-out; 
+            next_depth      = (short) ( depth_init - iZoom_level );
             if ( next_depth < 0 )
                 next_depth = 0;
             if ( next_depth > depth_root )
                 next_depth = depth_root;
-            debug_println( "coverer_depth = " + coverer_depth );
-            debug_println( "lowester_depth = " + lowester_depth );
-            debug_println( "iZoom_level = " + iZoom_level );
-            debug_println( "next_depth = " + next_depth );
+            if ( isDebugging ) {
+                debug_println( "coverer_depth = " + coverer_depth );
+                debug_println( "lowester_depth = " + lowester_depth );
+                debug_println( "iZoom_level = " + iZoom_level );
+                debug_println( "next_depth = " + next_depth );
+            }
             if ( next_depth < coverer_depth ) {
                 Iterator nodes = coverer.values().iterator();
                 while ( nodes.hasNext() ) {
@@ -224,8 +224,9 @@ public class TreeTrunk extends TreeFloorList
                         this.growChildren( treenode, next_depth, time_win );
                     else {
                         this.removeChildren( treenode, next_depth );
-                        debug_println( "TreeTrunk.enlargeTimeWindowTo(): "
-                             + "remove(" + treenode.getTreeNodeID() + ")" );
+                        if ( isDebugging )
+                            debug_println( "TreeTrunk.zoomTimeWindowTo(): "
+                            + "remove(" + treenode.getTreeNodeID() + ")" );
                         nodes.remove();
                     }
                 }
@@ -235,12 +236,14 @@ public class TreeTrunk extends TreeFloorList
         // return super.getLowestDepth();
     }
 
+
     // Scroll forward and backward
     // The argument, time_win, is the new Time Window to be achieved
     // Returns the lowest-depth of the tree.
     public void scrollTimeWindowTo( final TimeBoundingBox  time_win )
     {
-        debug_println( "scrollTimeWindowTo( " + time_win + " )" );
+        if ( isDebugging )
+            debug_println( "scrollTimeWindowTo( " + time_win + " )" );
         TreeFloor  coverer, lowester;
         short      coverer_depth, lowester_depth, next_depth;
         TreeNode   treenode;
@@ -251,10 +254,12 @@ public class TreeTrunk extends TreeFloorList
             coverer_depth   = coverer.getDepth();
             lowester_depth  = lowester.getDepth();
             next_depth      = lowester_depth;
-            debug_println( "coverer_depth = " + coverer_depth );
-            debug_println( "lowester_depth = " + lowester_depth );
-            debug_println( "iZoom_level = " + iZoom_level );
-            debug_println( "next_depth = " + next_depth );
+            if ( isDebugging ) {
+                debug_println( "coverer_depth = " + coverer_depth );
+                debug_println( "lowester_depth = " + lowester_depth );
+                debug_println( "iZoom_level = " + iZoom_level );
+                debug_println( "next_depth = " + next_depth );
+            }
             if ( next_depth < coverer_depth ) {
                 Iterator nodes = coverer.values().iterator();
                 while ( nodes.hasNext() ) {
@@ -263,8 +268,9 @@ public class TreeTrunk extends TreeFloorList
                         this.growChildren( treenode, next_depth, time_win );
                     else {
                         this.removeChildren( treenode, next_depth );
-                        debug_println( "TreeTrunk.scrollTimeWindowTo(): "
-                             + "remove(" + treenode.getTreeNodeID() + ")" );
+                        if ( isDebugging )
+                            debug_println( "TreeTrunk.scrollTimeWindowTo(): "
+                            + "remove(" + treenode.getTreeNodeID() + ")" );
                         nodes.remove();
                     }
                 }
@@ -300,20 +306,24 @@ public class TreeTrunk extends TreeFloorList
         if ( timeframe_root.overlaps( time_win_new ) ) { 
             //  Determine if TimeWindow is scrolled, enlarged or contracted.
             if ( ! time_win_old.equals( time_win_new ) ) {
-                time_ratio = time_win_new.getLength()
-                           / time_win_old.getLength();
+                time_ratio = time_win_new.getDuration()
+                           / time_win_old.getDuration();
                 if ( Math.abs( time_ratio - 1.0d ) <= TOLERANCE )
                     scrollTimeWindowTo( time_win_new );
                 else
+                    zoomTimeWindowTo( time_win_new );
+                    /*
                     if ( time_ratio > 1.0d )
                         enlargeTimeWindowTo( time_win_new );
                     else
                         contractTimeWindowTo( time_win_new );
+                    */
             }   
             return true;
         }
         else {  // if ( timeframe_root.disjoints( time_win_new ) )
             //  Don't update the TimeWindow, emit a warning message and return
+            if ( isDebugging )
             debug_println( "TreeTrunk.updateTimeWindow(): ERROR!\n"
                          + "\t TimeWindow disjoints from TimeFrame@TreeRoot.\n"
                          + "\t TimeWin@TreeRoot = " + timeframe_root + "\n"
@@ -335,7 +345,6 @@ public class TreeTrunk extends TreeFloorList
 
     private static void debug_println( String str )
     {
-        if ( isDebugging )
-            System.out.println( str );
+        System.out.println( str );
     }
 }

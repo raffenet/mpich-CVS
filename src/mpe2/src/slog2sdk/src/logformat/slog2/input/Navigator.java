@@ -139,7 +139,7 @@ public class Navigator
                     else if ( argv[ idx ].startsWith( "zi=" ) ) {
                         str = argv[ idx ].trim().substring( 3 );
                         double zoom_ctr = Double.parseDouble( str );
-                        double ctr_span = timeframe_old.getLength() / 2.0d
+                        double ctr_span = timeframe_old.getDuration() / 2.0d
                                         / zoom_ftr;
                         timeframe.setEarliestTime( zoom_ctr - ctr_span );
                         timeframe.setLatestTime( zoom_ctr + ctr_span );
@@ -149,7 +149,7 @@ public class Navigator
                     else if ( argv[ idx ].startsWith( "zo=" ) ) {
                         str = argv[ idx ].trim().substring( 3 );
                         double zoom_ctr = Double.parseDouble( str );
-                        double ctr_span = timeframe_old.getLength() / 2.0d
+                        double ctr_span = timeframe_old.getDuration() / 2.0d
                                         * zoom_ftr;
                         timeframe.setEarliestTime( zoom_ctr - ctr_span );
                         timeframe.setLatestTime( zoom_ctr + ctr_span );
@@ -159,7 +159,7 @@ public class Navigator
                     else if ( argv[ idx ].startsWith( "sf=" ) ) {
                         str = argv[ idx ].trim().substring( 3 );
                         double Nwins = Double.parseDouble( str );
-                        double win_span = timeframe_old.getLength();
+                        double win_span = timeframe_old.getDuration();
                         timeframe.setEarliestTime( Nwins * win_span
                                  + timeframe_old.getEarliestTime() );
                         timeframe.setLatestTime( win_span
@@ -171,7 +171,7 @@ public class Navigator
                     else if ( argv[ idx ].startsWith( "sb=" ) ) {
                         str = argv[ idx ].trim().substring( 3 );
                         double Nwins = Double.parseDouble( str );
-                        double win_span = timeframe_old.getLength();
+                        double win_span = timeframe_old.getDuration();
                         timeframe.setEarliestTime( - Nwins * win_span
                                  + timeframe_old.getEarliestTime() );
                         timeframe.setLatestTime( win_span
@@ -194,7 +194,7 @@ public class Navigator
                         double zoom_ctr = ( timeframe_old.getEarliestTime()
                                           + timeframe_old.getLatestTime() )
                                           / 2.0d;
-                        double ctr_span = timeframe_old.getLength() / 2.0d
+                        double ctr_span = timeframe_old.getDuration() / 2.0d
                                         / zoom_ftr;
                         timeframe.setEarliestTime( zoom_ctr - ctr_span );
                         timeframe.setLatestTime( zoom_ctr + ctr_span );
@@ -205,7 +205,7 @@ public class Navigator
                         double zoom_ctr = ( timeframe_old.getEarliestTime()
                                           + timeframe_old.getLatestTime() )
                                           / 2.0d;
-                        double ctr_span = timeframe_old.getLength() / 2.0d
+                        double ctr_span = timeframe_old.getDuration() / 2.0d
                                         * zoom_ftr;
                         timeframe.setEarliestTime( zoom_ctr - ctr_span );
                         timeframe.setLatestTime( zoom_ctr + ctr_span );
@@ -214,7 +214,7 @@ public class Navigator
                     }
                     else if ( argv[ idx ].startsWith( "sf" ) ) {
                         double Nwins = 1.0d;
-                        double win_span = timeframe_old.getLength();
+                        double win_span = timeframe_old.getDuration();
                         timeframe.setEarliestTime( Nwins * win_span
                                  + timeframe_old.getEarliestTime() );
                         timeframe.setLatestTime( win_span
@@ -225,7 +225,7 @@ public class Navigator
                     }
                     else if ( argv[ idx ].startsWith( "sb" ) ) {
                         double Nwins = 1.0d;
-                        double win_span = timeframe_old.getLength();
+                        double win_span = timeframe_old.getDuration();
                         timeframe.setEarliestTime( - Nwins * win_span
                                  + timeframe_old.getEarliestTime() );
                         timeframe.setLatestTime( win_span
