@@ -148,8 +148,8 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
 	case 14: /* APPNUM */
 	    *attr_int = attr_copy.appnum;
 	    break;
-	}
 #endif
+	}
     }
     else {
 	MPID_Attribute *p = comm_ptr->attributes;
