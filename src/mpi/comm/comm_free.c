@@ -110,6 +110,9 @@ int MPI_Comm_free(MPI_Comm *comm)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    if (*comm == MPI_COMM_WORLD || *comm == MPI_COMM_SELF) {
+	return 0;
+    }
     MPIU_Object_release_ref( comm_ptr, &inuse);
     if (!inuse) {
 	/* Remove the attributes, executing the attribute delete routine.
@@ -118,14 +121,27 @@ int MPI_Comm_free(MPI_Comm *comm)
 	    mpi_errno = MPIR_Process.comm_attr_free( comm_ptr, 
 						     comm_ptr->attributes );
 	}
-	
-	/* Free the VCRT */
-	MPID_VCRT_Release(comm_ptr->vcrt);
-	
-	/* Free the context value */
-	MPIR_Free_contextid( comm_ptr->context_id );
 
-	MPIU_Handle_obj_free( &MPID_Comm_mem, comm_ptr ); 
+	if (!mpi_errno) {
+	    /* Free the VCRT */
+	    MPID_VCRT_Release(comm_ptr->vcrt);
+	
+	    /* FIXME: For intercomms, free the local vcrt */
+
+	    /* Free the context value */
+	    MPIR_Free_contextid( comm_ptr->context_id );
+
+	    /* FIXME: Free the local and remote groups, if they exist */
+	    comm_ptr->local_group = 0;
+	    comm_ptr->remote_group = 0;
+
+	    /* FIXME - when we recover comm objects, many tests (such
+	       as c/grp_ctxt_comm/functional/MPI_Comm_create) fail */
+  	    MPIU_Handle_obj_free( &MPID_Comm_mem, comm_ptr );  
+	}
+	else {
+	    MPIU_Object_add_ref( comm_ptr );
+	}
     }
     /* ... end of body of routine ... */
 
