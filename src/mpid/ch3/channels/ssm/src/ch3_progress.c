@@ -12,7 +12,7 @@ int MPIDI_CH3I_sock_read_active = 0;
 int MPIDI_CH3I_sock_write_active = 0;
 int MPIDI_CH3I_active_flag = 0;
 
-#ifdef USE_FIXED_SPIN_WAITS
+#if defined(USE_FIXED_SPIN_WAITS) || !defined(MPID_CPU_TICK)
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress
@@ -207,7 +207,7 @@ fn_exit:
 
 #endif
 
-#ifdef USE_ADAPTIVE_PROGRESS
+#if defined(USE_ADAPTIVE_PROGRESS) && defined(MPID_CPU_TICK)
 
 #define MPIDI_CH3I_UPDATE_ITERATIONS    10
 #define MPID_SINGLE_ACTIVE_FACTOR      100

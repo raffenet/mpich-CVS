@@ -36,7 +36,8 @@ typedef long long MPID_CPU_Tick_t;
 typedef unsigned __int64 MPID_CPU_Tick_t;
 
 #else
-#error CPU tick instruction needed to count progress time
+/*#error CPU tick instruction needed to count progress time*/
+#undef MPID_CPU_TICK
 #endif
 
 extern volatile unsigned int MPIDI_CH3I_progress_completions;
