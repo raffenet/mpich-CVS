@@ -262,6 +262,12 @@ contents = contents + fin.ReadAll()
 fin.Close()
 dim regEx, Match, Matches
 set regEx = New RegExp
+' remove all dnl lines to prevent false matches
+regEx.Pattern = "dnl .*"
+regEx.IgnoreCase = True
+regEx.Global = True
+contents = regEx.Replace(contents, "")
+' find the datatype handles
 regEx.Pattern = "MPI_.*=""?0x4c00.*[0-9a-f][0-9a-f]"
 regEx.IgnoreCase = False
 regEx.Global = True
@@ -615,26 +621,30 @@ end if
 if dtypes.Exists("MPI_FLOAT_INT") then
 	MPI_FLOAT_INT = dtypes.Item("MPI_FLOAT_INT")
 else
-	missing_datatypes = missing_datatypes & "MPI_FLOAT_INT" & vbCrLf
-	MPI_FLOAT_INT         = "0x" + mpi_datatype_prefix + len_float_int       + "12"
+	'missing_datatypes = missing_datatypes & "MPI_FLOAT_INT" & vbCrLf
+	'MPI_FLOAT_INT         = "0x" + mpi_datatype_prefix + len_float_int       + "12"
+	MPI_FLOAT_INT         = "0x8c000000"
 end if
 if dtypes.Exists("MPI_DOUBLE_INT") then
 	MPI_DOUBLE_INT = dtypes.Item("MPI_DOUBLE_INT")
 else
-	missing_datatypes = missing_datatypes & "MPI_DOUBLE_INT" & vbCrLf
-	MPI_DOUBLE_INT        = "0x" + mpi_datatype_prefix + len_double_int      + "13"
+	'missing_datatypes = missing_datatypes & "MPI_DOUBLE_INT" & vbCrLf
+	'MPI_DOUBLE_INT        = "0x" + mpi_datatype_prefix + len_double_int      + "13"
+	MPI_DOUBLE_INT        = "0x8c000001"
 end if
 if dtypes.Exists("MPI_LONG_INT") then
 	MPI_LONG_INT = dtypes.Item("MPI_LONG_INT")
 else
-	missing_datatypes = missing_datatypes & "MPI_LONG_INT" & vbCrLf
-	MPI_LONG_INT          = "0x" + mpi_datatype_prefix + len_long_int        + "14"
+	'missing_datatypes = missing_datatypes & "MPI_LONG_INT" & vbCrLf
+	'MPI_LONG_INT          = "0x" + mpi_datatype_prefix + len_long_int        + "14"
+	MPI_LONG_INT          = "0x8c000002"
 end if
 if dtypes.Exists("MPI_SHORT_INT") then
 	MPI_SHORT_INT = dtypes.Item("MPI_SHORT_INT")
 else
-	missing_datatypes = missing_datatypes & "MPI_SHORT_INT" & vbCrLf
-	MPI_SHORT_INT         = "0x" + mpi_datatype_prefix + len_short_int       + "15"
+	'missing_datatypes = missing_datatypes & "MPI_SHORT_INT" & vbCrLf
+	'MPI_SHORT_INT         = "0x" + mpi_datatype_prefix + len_short_int       + "15"
+	MPI_SHORT_INT         = "0x8c000003"
 end if
 if dtypes.Exists("MPI_2INT") then
 	MPI_2INT = dtypes.Item("MPI_2INT")
@@ -645,8 +655,9 @@ end if
 if dtypes.Exists("MPI_LONG_DOUBLE_INT") then
 	MPI_LONG_DOUBLE_INT = dtypes.Item("MPI_LONG_DOUBLE_INT")
 else
-	missing_datatypes = missing_datatypes & "MPI_LONG_DOUBLE_INT" & vbCrLf
-	MPI_LONG_DOUBLE_INT   = "0x" + mpi_datatype_prefix + len_long_double_int + "17"
+	'missing_datatypes = missing_datatypes & "MPI_LONG_DOUBLE_INT" & vbCrLf
+	'MPI_LONG_DOUBLE_INT   = "0x" + mpi_datatype_prefix + len_long_double_int + "17"
+	MPI_LONG_DOUBLE_INT   = "0x8c000004"
 end if
 if dtypes.Exists("MPI_CHARACTER") then
 	MPI_CHARACTER = dtypes.Item("MPI_CHARACTER")
