@@ -109,7 +109,7 @@ int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
 	    mpi_errno = MPIR_Call_attr_delete( type, p );
 	    if (mpi_errno) {
 		MPID_Common_thread_unlock();
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_ATTR);
 		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	    }
 	    p->value = attribute_val;
