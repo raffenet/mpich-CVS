@@ -41,7 +41,6 @@
 #endif
 #ifdef HAVE_WINSOCK2_H
 #include <time.h>
-#define snprintf _snprintf
 #endif
 
 /*#define DEBUG_BSOCKET*/
