@@ -873,6 +873,7 @@ def _handle_man_msgs(manSocket):
         msg['jobalias'] = ''
         msg['stdin_goes_to_who'] = '0'
         msg['ringsize'] = 0
+        msg['gdb'] = 0
         mpd_send_one_msg(g.rhsSocket,msg)
         ## mpd_send_one_msg(manSocket, {'cmd' : 'mpdrun_ack', } )
     else:
