@@ -513,7 +513,9 @@ sub ReadMfile {
 	    @install_subdirs = split(/\s+/,$1);
 	}
         elsif (/^EXTRA_PROGRAMS\s*=\s*(.*)\s*$/) {
-	    $extra_programs{$1} = 1;
+	    foreach $program (split(/\s+/,$1)) {
+		$extra_programs{$program} = 1;
+	    }
 	}
 	elsif (/^EXTRA_DIRS\s*=\s*(.*)\s*$/) {
 	    @extra_dirs = split( /\s+/,$1);

@@ -519,7 +519,10 @@ sub RunProgram {
 	close CFD;
 	# end of read from the child
         #waitpid $pid,0;
+	# Note that this status is usually shifted right by 8, so
+	# we check for that
         $rc = $?;
+	if ($rc > 255) { $rc = $rc >> 8; }
     }
 #    if ($outfile ne "") {
 #	open( $OUTFD, ">>$outfile" ) || die "Could not reopen $outfile\n";

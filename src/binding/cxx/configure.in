@@ -44,4 +44,4 @@ if test "$ENABLE_SHLIB" = "gcc" ; then
 fi
 dnl     checks for library functions
 dnl     checks for system services
-AC_OUTPUT(Makefile) dnl test/Makefile)
+AC_OUTPUT(Makefile) 

@@ -1082,9 +1082,13 @@ dnl
 FC="$F77"
 AC_SUBST(FC)
 AC_SUBST(CFLAGS) # some autoconf versions need this explicitly
-dnl AC_OUTPUT_COMMANDS([chmod a+x mpif77])
+# These last 2 sets of flags are used to pass flags needed only to compile
+# and use MPI programs, not to build the MPI library itself.
+AC_SUBST(MPI_FFLAGS)
+AC_SUBST(MPI_LDFLAGS)
+AC_OUTPUT_COMMANDS([chmod a+x mpif77])
 dnl AC_OUTPUT_COMMANDS([chmod a+x mpif90])
-dnl AC_OUTPUT(Makefile mpif.h mpi_fortdefs.h mpif77 mpif77.conf mpif90 mpif90.conf initfcmn.f)
+AC_OUTPUT_COMMANDS([cp -p mpif77 ../../../bin])
 AC_OUTPUT(Makefile mpif.h mpif77.conf mpif77 setbotf.f)
 exit 0
 dnl

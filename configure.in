@@ -1154,12 +1154,16 @@ MPI_CFLAGS="$MPI_CFLAGS"
 MPI_LDFLAGS="$MPI_LDFLAGS $LDFLAGS"
 AC_SUBST(MPI_CFLAGS)
 AC_SUBST(MPI_LDFLAGS)
+
+AC_CONFIG_SUBDIRS(test/mpi)
 dnl
 dnl Generate the Makefiles from Makefile.in
 dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
 dnl from the file.
 
 AC_OUTPUT_COMMANDS([chmod a+x test/runtests])
+AC_OUTPUT_COMMANDS([chmod a+x src/env/mpicc])
+AC_OUTPUT_COMMANDS([cp -p src/env/mpicc bin/mpicc])
 AC_OUTPUT(Makefile src/Makefile \
           src/binding/Makefile \
           src/env/mpicc \
@@ -1199,17 +1203,6 @@ AC_OUTPUT(Makefile src/Makefile \
 	  test/mpid/Makefile \
 	  test/mpid/ch3/Makefile \
 	  test/util/info/Makefile \
-	  test/mpi/Makefile \
-          test/mpi/basic/Makefile \
-	  test/mpi/attr/Makefile \
-	  test/mpi/util/Makefile \
-	  test/mpi/coll/Makefile \
-	  test/mpi/comm/Makefile \
-	  test/mpi/datatype/Makefile \
-	  test/mpi/errhan/Makefile \
-	  test/mpi/group/Makefile \
-	  test/mpi/pt2pt/Makefile \
-          test/mpi/rma/Makefile \
 	  examples/Makefile\
           src/util/logging/Makefile\
           src/util/timing/Makefile )

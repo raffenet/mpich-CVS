@@ -1,0 +1,38 @@
+dnl Process this file with autoconf to produce a configure script.
+dnl
+dnl aclocal_cache.m4, included by sowing/confdb/aclocal.m4, fixes 
+dnl bugs in autoconf caching.
+dnl
+dnl The file name here refers to a file in the source being configured
+AC_INIT(include/mpitest.h)
+dnl
+AC_CONFIG_AUX_DIR(../../confdb)
+dnl
+echo "RUNNING CONFIGURE FOR MPI TESTS"
+PAC_PROG_MAKE
+if test -z "$top_build_dir" ; then 
+    top_build_dir=`cd ../.. ; pwd`
+fi
+CC=$top_build_dir/bin/mpicc
+FC=$top_build_dir/bin/mpif77
+CXX=$top_build_dir/bin/mpicxx
+# Clear the CPPFLAGS, since the MPI configure will have added many items
+# that are not required for user MPI programs.
+CPPFLAGS=
+AC_SUBST(CC)
+AC_SUBST(FC)
+AC_SUBST(CXX)
+AC_SUBST(MAKE)
+if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
+AC_SUBST(MPILIBNAME)
+AC_OUTPUT(Makefile \
+          basic/Makefile \
+	  attr/Makefile \
+	  util/Makefile \
+	  coll/Makefile \
+	  comm/Makefile \
+	  datatype/Makefile \
+	  errhan/Makefile \
+	  group/Makefile \
+	  pt2pt/Makefile \
+          rma/Makefile )
