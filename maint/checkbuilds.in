@@ -1,5 +1,6 @@
 #! @PERL@
 # -*- Mode: perl; -*-
+# @configure_input@
 #
 # Configure and build mpich2 with some of the options
 #
@@ -18,6 +19,10 @@ $is_xml = 0;
 # and FC environment variables.
 $ccname = "gcc";
 $fcname = "f77";
+#
+# Set whether the C++ and Fortran bindings have been built.  
+$has_f77 = 1;
+$has_cxx = 1;
 #
 # Set available options.  For enable and with, the values are
 # {with,enable}-name[;possiblevalues]*
@@ -423,6 +428,7 @@ sub time_left {
 #
 sub RunTestSuites {
     my $run_status = 0;
+    my $r_status = 0;
     foreach my $testname (split(';',$tests)) {
 	if ($testname eq "") { next; }
 	print $OUTFD $RunTestStart;
@@ -445,8 +451,12 @@ sub RunTestSuites {
 	    print $OUTFD "Unrecognized test $testname\n";
 	}
 	print $OUTFD $RunTestEnd;
+	if ($run_status != 0) { 
+	    # If any test fails, record its status.
+	    $r_status = $run_status;
+	}
     }
-    return $run_status;
+    return $r_status;
 }
 # ---------------------------------------------------------------------------
 sub RunMpichTestSuite {
@@ -498,6 +508,12 @@ sub RunMpichTestSuite {
     else {
 	$config[$nargs++] = "-fc=$fcname -I$instdir/include -L$instdir/lib";
     }
+    if (! $has_f77) {
+	$config[$nargs++] = "--disable-f77";
+    }
+    # Add $config[$nargs++] = "--enable-coverage"; 
+    # if we build mpich2 with the coverage switch.
+
     if (defined($ENV{"MAKE"})) {
 	$makepgm = $ENV{"MAKE"};
 	$config[$nargs++] = "-make=$makepgm";
@@ -541,6 +557,12 @@ sub RunCxxTestSuite {
     $cwd = `pwd`;
     my @config;
 
+    #
+    # First, check for the mpicxx program
+    if (! -x "$instdir/bin/mpicxx") { 
+	# Probably built without C++ support
+	return;
+    }
     chdir $mpicxx_test_dir || die "Cannot change to $mpicxx_test_dir\n";
     $config[$nargs++] = "$projects_dir/mpicxxtest/configure";
     $config[$nargs++] = "--with-mpich=$instdir";
@@ -564,6 +586,9 @@ sub RunCxxTestSuite {
 	$rc = &RunProgram( "$makepgm run-tests" );
 	$test_status = $rc;
 	if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
+	# This step converts the summary.xml file into a valid XML file
+	# by adding the appropriate header and footer
+	$rc = &RunProgram( "$makepgm get-summary" );
 	if ($built_for_mpd) {
 	    &StopMPD;
 	}

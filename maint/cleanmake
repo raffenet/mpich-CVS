@@ -17,7 +17,7 @@ while (<>) {
 	}
 	if (/\sdone\s*$/) { next; }
     }
-    # skip line that start with if and ar continued
+    # skip lines that start with if and ar continued
     if (/^\s*if \[ ! -d lib.*\\$/) {
 	while (<>) {
 	    if (! /\\$/) { last; }
@@ -29,6 +29,10 @@ while (<>) {
 	    $_ = <>;
 	}
 	if (/^\s*fi\s*$/) { next; }
+    }
+    # skip lines that make the shared libraries
+    if (/^\s*if \[ \"none\".* mpich.la/) {
+	next;
     }
 
     # Clean up compiler output
