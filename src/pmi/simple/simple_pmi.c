@@ -67,6 +67,8 @@ int PMI_Init( int *spawned )
     char *p;
     int notset = 1;
 
+    /* setvbuf(stdout,0,_IONBF,0); */
+    setbuf(stdout,NULL);
     if ( ( p = getenv( "PMI_FD" ) ) )
 	PMI_fd = atoi( p );
 #ifdef USE_PMI_PORT
@@ -153,7 +155,7 @@ int PMI_Init( int *spawned )
     else
 	PMI_spawned = 0;
     if (PMI_spawned)
-	*spawned = 1;
+	*spawned = 0;    /**** RMB CHG BACK TO 1 AFTER TESTS *****/
     else
 	*spawned = 0;
 
@@ -428,42 +430,70 @@ int PMI_Spawn(const char *command, const char *argv[],
     return( -1 );
 }
 
+/*****
 int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
                        const int *maxprocs, const void *info, int *errors, 
                        int *same_domain, const void *preput_info)
+*****/
+
+#ifdef FOO
+
+int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
+                       const int *maxprocs, const void *info, int *errors, 
+                       int *same_domain, int preput_num,
+		       const char *preput_keys[], const char *preput_vals[])
 {
-    int  rc;
-    char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
-    char *remote_kvsname = (char *) info;
-    int remote_kvsname_len = (int) preput_info;
+    int  i,rc,argcnt,spawncnt;
+    char buf[PMIU_MAXLINE], tempbuf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
     /* PMIU_printf( 1, "PMI_Spawn_multiple not implemented yet\n" ); */
     /* printf("CMD0 = :%s:\n",cmds[0]);  fflush(stdout);  */
        /* printf("ARG00=:%s:\n",argvs[0][0]);  fflush(stdout);  */
     /* snprintf( buf, PMIU_MAXLINE, "cmd=spawn execname=/bin/hostname nprocs=1\n" ); */
-    snprintf( buf, PMIU_MAXLINE, "cmd=spawn nprocs=%d execname=%s arg=%s\n",
-	      maxprocs[0], cmds[0], argvs[0][0] );
-    PMIU_writeline( PMI_fd, buf );
-    PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
-    PMIU_parse_keyvals( buf ); 
-    PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
-    PMIU_getval( "remote_kvsname", remote_kvsname, remote_kvsname_len );
-    if ( strncmp( cmd, "spawn_result", PMIU_MAXLINE ) != 0 ) {
-	PMIU_printf( 1, "got unexpected response to spawn :%s:\n", buf );
-	return( -1 );
-    }
-    else {
-	PMIU_getval( "rc", buf, PMIU_MAXLINE );
-	rc = atoi( buf );
-	if ( rc == 0 ) {
-	    return( 0 );
-	}
-	else {
+    *same_domain = 0;    /* spawner and spawnee can NOT see each other's KVSs */
+    for (spawncnt=0; spawncnt < count; spawncnt++)
+    {
+        snprintf(buf, PMIU_MAXLINE, "cmd=spawn nprocs=%d execname=%s ",
+	          maxprocs[spawncnt], cmds[spawncnt] );
+    
+        for (i=0,argcnt=0; argvs[spawncnt][i] != NULL; i++)
+        {
+	    snprintf(tempbuf,PMIU_MAXLINE,"arg%d=%s ",i+1,argvs[spawncnt][i]);
+	    strcat(buf,tempbuf);
+	    argcnt++;
+        }
+        snprintf(tempbuf,PMIU_MAXLINE,"argcnt=%d ",argcnt);
+        strcat(buf,tempbuf);
+    
+        snprintf(tempbuf,PMIU_MAXLINE,"preput_num=%d ",preput_num);
+        strcat(buf,tempbuf);
+        for (i=0; i < preput_num; i++)
+        {
+	    sprintf(tempbuf,"preput_%d=%s:%s ",i,preput_keys[i],preput_vals[i]);
+	    strcat(buf,tempbuf);
+        }
+        strcat(buf, "\n");
+        PMIU_writeline( PMI_fd, buf );
+        PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
+        PMIU_parse_keyvals( buf ); 
+        PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
+        if ( strncmp( cmd, "spawn_result", PMIU_MAXLINE ) != 0 ) {
+	    PMIU_printf( 1, "got unexpected response to spawn :%s:\n", buf );
 	    return( -1 );
-	}
+        }
+        else {
+	    PMIU_getval( "rc", buf, PMIU_MAXLINE );
+	    rc = atoi( buf );
+	    if ( rc != 0 ) {
+	        return( -1 );
+	    }
+        }
     }
-    return( -1 );
+    return( 0 );
 }
+
+#endif
+
 
 int PMI_Args_to_info(int *argcp, char ***argvp, void *infop)
 {
