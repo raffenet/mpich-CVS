@@ -247,6 +247,12 @@ int smpd_process_from_registry(smpd_process_t *process)
     result = RegDeleteKey(HKEY_LOCAL_MACHINE, name);
     if (result != ERROR_SUCCESS)
     {
+	if (result == ERROR_FILE_NOT_FOUND || result == ERROR_PATH_NOT_FOUND)
+	{
+	    /* Key already deleted, return success */
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_SUCCESS;
+	}
 	smpd_err_printf("Unable to delete the HKEY_LOCAL_MACHINE\\%s registry key, error %d\n", name, result);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
