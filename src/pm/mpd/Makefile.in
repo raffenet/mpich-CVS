@@ -4,6 +4,7 @@
 prefix    = @prefix@
 exec_prefix = @exec_prefix@
 bindir    = @bindir@
+mandir    = @mandir@
 srcdir	  = @srcdir@
 SHELL	  = @SHELL@
 CC	  = @CC@
@@ -173,3 +174,8 @@ man:
 	    currdir=`pwd` ; cd ${srcdir} &&  pydoc $$cmd | txt2man -t $$cmd -s 1 -v "mpd cmds" | awk ' !/Help on module/ { print } ' > $$currdir/$$cmd.1 ; \
 	done
 	# example:  nroff -man mpd.1 | less
+
+install-man:
+	-@for cmd in ${PYTHON_SOURCE} ; do \
+		${INSTALL} -m 644 $$cmd.1 ${mandir}/$$cmd.1 ; \
+	done
