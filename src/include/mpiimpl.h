@@ -58,10 +58,6 @@
 #include <sys/types.h>
 #endif
 
-#ifdef HAVE_PTHREAD_H
-#include <pthread.h>
-#endif
-
 /* This allows us to keep names local to a single file when we can use
    weak symbols */
 #ifdef  USE_WEAK_SYMBOLS
@@ -1380,12 +1376,16 @@ typedef struct MPID_Win {
     int *disp_units;      /* array of displacement units of all windows */
     int **all_counters;    /* array of addresses of the completion
                                  counters of all processes */
+#ifdef USE_THREADED_WINDOW_CODE
+    /* These were causing compilation errors.  We need to figure out how to
+       integrate threads into MPICH2 before including these fields. */
 #ifdef HAVE_PTHREAD_H
     pthread_t wait_thread_id; /* id of thread handling MPI_Win_wait */
     pthread_t passive_target_thread_id; /* thread for passive target RMA */
 #elif defined(HAVE_WINTHREADS)
     HANDLE wait_thread_id;
     HANDLE passive_target_thread_id;
+#endif
 #endif
     /* These are COPIES of the values so that addresses to them
        can be returned as attributes.  They are initialized by the
