@@ -169,6 +169,7 @@ SMPD_BOOL smpd_option_on(const char *option)
 	    return SMPD_TRUE;
 	}
     }
+
     smpd_exit_fn(FCNAME);
     return SMPD_FALSE;
 }
@@ -579,6 +580,44 @@ int smpd_get_smpd_data_default(const char *key, char *value, int value_len)
 }
 
 #undef FCNAME
+#define FCNAME "smpd_get_smpd_data_from_environment"
+static SMPD_BOOL smpd_get_smpd_data_from_environment(const char *key, char *value, int value_len)
+{
+    char *env_option, *env;
+    size_t length;
+
+    smpd_enter_fn(FCNAME);
+
+    /* Check to see if the option has been set in the environment */
+    length = strlen(key) + strlen(SMPD_ENV_OPTION_PREFIX) + 1;
+    env_option = (char*)malloc(length * sizeof(char));
+    if (env_option != NULL)
+    {
+	env = &env_option[strlen(SMPD_ENV_OPTION_PREFIX)];
+	while (*key != '\0')
+	{
+	    *env = toupper(*key);
+	    key++;
+	    env++;
+	}
+	*env = '\0';
+	env = getenv(env_option);
+	free(env_option);
+	if (env != NULL)
+	{
+	    if ((int)strlen(env) < value_len)
+	    {
+		strcpy(value, env);
+		smpd_exit_fn(FCNAME);
+		return SMPD_TRUE;
+	    }
+	}
+    }
+    smpd_exit_fn(FCNAME);
+    return SMPD_FALSE;
+}
+
+#undef FCNAME
 #define FCNAME "smpd_get_smpd_data"
 int smpd_get_smpd_data(const char *key, char *value, int value_len)
 {
@@ -587,6 +626,12 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
     DWORD len, result;
 
     smpd_enter_fn(FCNAME);
+
+    if (smpd_get_smpd_data_from_environment(key, value, value_len) == SMPD_TRUE)
+    {
+	smpd_exit_fn(FCNAME);
+	return SMPD_SUCCESS;
+    }
 
     result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY,
 	0, 
@@ -630,6 +675,12 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
     smpd_enter_fn(FCNAME);
 
     smpd_dbg_printf("getting smpd data: %s\n", key);
+
+    if (smpd_get_smpd_data_from_environment(key, value, value_len) == SMPD_TRUE)
+    {
+	smpd_exit_fn(FCNAME);
+	return SMPD_SUCCESS;
+    }
 
     list = smpd_parse_smpd_file();
 

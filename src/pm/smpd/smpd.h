@@ -130,6 +130,7 @@ typedef int SMPD_BOOL;
 /*#define SMPD_SECURITY_PACKAGE             "NTLM"*/
 #define SMPD_SECURITY_PACKAGE             "Kerberos"
 /*#define SMPD_SECURITY_PACKAGE             "Negotiate"*/
+#define SMPD_ENV_OPTION_PREFIX            "SMPD_OPTION_"
 #define SMPD_FREE_COOKIE           0xDDBEEFDD
 
 #define SMPD_DBG_STATE_STDOUT            0x01
