@@ -320,14 +320,6 @@ case $ARCH in
      fi
      ;;
 
-     paragon)
-     CC=${CC:-icc}
-     F77=${FC:-if77}
-     if test "$CC" = "icc"; then
-         C_OPT_FLAG="-Knoieee -Mvect -O3"
-     fi
-     ;;
-
      tflop|tflops)
      CC=${CC:-pgcc}
      F77=${FC:-pgf77}
@@ -401,6 +393,7 @@ if test $DEBUG = "yes" ; then
 else 
     CFLAGS="$CFLAGS $C_OPT_FLAG"
 fi
+
 # ---------------------------------------------------------------------------
 # Here go the rest of the tests
 # ---------------------------------------------------------------------------
@@ -434,10 +427,9 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     fi
     AR="ar cr"
 # solaris does not have l option to ar
-# solaris f90 does not have 8-byte integer type
-# (it does now!!!! 11/29/01)
 fi
-#
+
+
 if test -n "$arch_rs6000"; then
     # Check that aio is available (many systems appear to have aio
     # either installed improperly or turned off).
@@ -474,26 +466,7 @@ int main( int argc, char **argv )
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
 fi    
 #
-if test -n "$arch_paragon"; then
-    AR="ar860 cr$AR_LOCAL"
-    MPI_LIB="$MPI_LIB -nx"
-    if test -z "$MPI" ; then
-        MPI=mpich
-        mpi_mpich=1
-    fi
-    if test -z "$FILE_SYSTEM" ; then
-        file_system_pfs=1
-        file_system_ufs=1
-        file_system_nfs=1
-        FILE_SYSTEM="pfs ufs nfs"
-    fi
-    AC_DEFINE(PARAGON,1,[Define for Intel Paragon])
-    have_aio=no
-# NO_AIO is if configuring for NFS/UFS. It doesn't affect PFS asynch. I/O.
-# long long does not exist
-    longlongsize=${longlongsize:-0} 
-fi    
-#
+
 if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     # TFLOP_FLAGS="-cougar -D__PUMA"
     have_aio=no
