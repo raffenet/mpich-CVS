@@ -16,8 +16,22 @@
 
 #ifdef USE_IB_IBAL
 
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+#define IBU_ERROR_MSG_LENGTH       255
+#define IBU_PACKET_SIZE            (1024 * 64)
+#define IBU_PACKET_COUNT           128
+#define IBU_NUM_PREPOSTED_RECEIVES (IBU_ACK_WATER_LEVEL*3)
+#define IBU_MAX_CQ_ENTRIES         255
+#define IBU_MAX_POSTED_SENDS       8192
+#define IBU_MAX_DATA_SEGMENTS      100
+#define IBU_ACK_WATER_LEVEL        32
+
 #define TRACE_IBU
 
+#if 0
 #define GETLKEY(p) (((ibmem_t*)p) - 1)->lkey
 typedef struct ibmem_t
 {
@@ -25,6 +39,25 @@ typedef struct ibmem_t
     uint32_t lkey;
     uint32_t rkey;
 } ibmem_t;
+#endif
+
+typedef struct ibuBlock_t
+{
+    struct ibuBlock_t *next;
+    ib_mr_handle_t handle;
+    uint32_t lkey;
+    unsigned char data[IBU_PACKET_SIZE];
+} ibuBlock_t;
+
+typedef struct ibuQueue_t
+{
+    struct ibuQueue_t *next_q;
+    ibuBlock_t *pNextFree;
+    ibuBlock_t block[IBU_PACKET_COUNT];
+} ibuQueue_t;
+
+static int g_offset;
+#define GETLKEY(p) (((ibuBlock_t*)((char *)p - g_offset))->lkey)
 
 struct ibuBlockAllocator_struct
 {
@@ -113,15 +146,6 @@ typedef struct ibu_state_t
     struct ibu_state_t *unex_finished_queue;
 } ibu_state_t;
 
-#define IBU_ERROR_MSG_LENGTH       255
-#define IBU_PACKET_SIZE            (1024 * 64)
-#define IBU_PACKET_COUNT           128
-#define IBU_NUM_PREPOSTED_RECEIVES (IBU_ACK_WATER_LEVEL*3)
-#define IBU_MAX_CQ_ENTRIES         255
-#define IBU_MAX_POSTED_SENDS       8192
-#define IBU_MAX_DATA_SEGMENTS      100
-#define IBU_ACK_WATER_LEVEL        32
-
 typedef struct IBU_Global {
     ib_al_handle_t   al_handle;
     ib_ca_handle_t   hca_handle;
@@ -134,7 +158,7 @@ typedef struct IBU_Global {
     char             err_msg[IBU_ERROR_MSG_LENGTH];
     /* hack to get around zero sized messages */
     void *           ack_mem_ptr;
-    ib_mr_handle_t   ack_mr_handle;
+    /*ib_mr_handle_t   ack_mr_handle;*/
     uint32_t         ack_lkey;
 #ifdef TRACE_IBU
     int outstanding_recvs, outstanding_sends, total_recvs, total_sends;
@@ -164,11 +188,15 @@ static int ibui_post_ack_write(ibu_t ibu);
 /* utility allocator functions */
 
 static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p));
-static ibuBlockAllocator ibuBlockAllocInitIB(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size, ib_mr_handle_t *hp, uint32_t *lp, uint32_t *rp), void (* free_fn)(void *p));
+static ibuQueue_t * ibuBlockAllocInitIB();
 static int ibuBlockAllocFinalize(ibuBlockAllocator *p);
+static int ibuBlockAllocFinalizeIB(ibuQueue_t *p);
 static void * ibuBlockAlloc(ibuBlockAllocator p);
+static void * ibuBlockAllocIB(ibuQueue_t *p);
 static int ibuBlockFree(ibuBlockAllocator p, void *pBlock);
-static int ibuBlockFreeIB(ibuBlockAllocator p, void *pBlock);
+static int ibuBlockFreeIB(ibuQueue_t * p, void *pBlock);
+static void *ib_malloc_register(size_t size, ib_mr_handle_t *mhp, uint32_t *lp, uint32_t *rp);
+static void ib_free_deregister(void *p);
 
 static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p))
 {
@@ -197,51 +225,31 @@ static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, in
     return p;
 }
 
-static ibuBlockAllocator ibuBlockAllocInitIB(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size, ib_mr_handle_t *hp, uint32_t *lp, uint32_t *rp), void (* free_fn)(void *p))
+static ibuQueue_t * ibuBlockAllocInitIB()
 {
-    ibuBlockAllocator p;
-    void **ppVoid;
+    ibuQueue_t *q;
     int i;
+    ibuBlock_t b[2];
     ib_mr_handle_t handle;
     uint32_t lkey;
     uint32_t rkey;
-    ibmem_t *mem_ptr;
-    void *pVoid;
 
-    blocksize += sizeof(ibmem_t);
-    incrementsize += sizeof(ibmem_t);
-
-    p = alloc_fn( sizeof(struct ibuBlockAllocator_struct) + ((blocksize + sizeof(void**)) * count), &handle, &lkey, &rkey );
-
-    p->alloc_fn = (void*(*)(size_t ))alloc_fn;
-    p->free_fn = free_fn;
-    p->nIncrementSize = incrementsize;
-    p->pNextAllocation = NULL;
-    p->nCount = count;
-    p->nBlockSize = blocksize;
-    p->pNextFree = (void**)(p + 1);
-
-    ppVoid = (void**)(p + 1);
-    for (i=0; i<count-1; i++)
+    q = (ibuQueue_t*)ib_malloc_register(sizeof(ibuQueue_t), &handle, &lkey, &rkey);
+    if (q == NULL)
     {
-	*ppVoid = (void*)((char*)ppVoid + sizeof(void**) + blocksize);
-	ppVoid = *ppVoid;
+	return NULL;
     }
-    *ppVoid = NULL;
-
-    ppVoid = p->pNextFree;
-    while (*ppVoid != NULL)
+    q->next_q = NULL;
+    for (i=0; i<IBU_PACKET_COUNT; i++)
     {
-	pVoid = (void*)((ibmem_t*)((void**)ppVoid + 1) + 1);
-	mem_ptr = (ibmem_t*)pVoid;
-	mem_ptr--;
-	mem_ptr->handle = handle;
-	mem_ptr->lkey = lkey;
-	mem_ptr->rkey = rkey;
-	ppVoid = *ppVoid;
+	q->block[i].next = &q->block[i+1];
+	q->block[i].handle = handle;
+	q->block[i].lkey = lkey;
     }
-
-    return p;
+    q->block[IBU_PACKET_COUNT-1].next = NULL;
+    q->pNextFree = &q->block[0];
+    g_offset = (char*)&b[1].data - (char*)&b[1];
+    return q;
 }
 
 static int ibuBlockAllocFinalize(ibuBlockAllocator *p)
@@ -253,6 +261,14 @@ static int ibuBlockAllocFinalize(ibuBlockAllocator *p)
 	(*p)->free_fn(*p);
     *p = NULL;
     return 0;
+}
+
+static int ibuBlockAllocFinalizeIB(ibuQueue_t *p)
+{
+    if (p == NULL)
+	return 0;
+    ibuBlockAllocFinalizeIB(p->next_q);
+    ib_free_deregister(p);
 }
 
 static void * ibuBlockAlloc(ibuBlockAllocator p)
@@ -281,8 +297,8 @@ static void * ibuBlockAllocIB(ibuBlockAllocator p)
 	return NULL;
     }
 
-    pVoid = (void*)(((ibmem_t*)((void**)(p->pNextFree) + 1)) + 1);
-    p->pNextFree = *(p->pNextFree);
+    pVoid = p->pNextFree->data;
+    p->pNextFree = p->pNextFree->next;
 
     return pVoid;
 }
@@ -298,10 +314,11 @@ static int ibuBlockFree(ibuBlockAllocator p, void *pBlock)
 
 static int ibuBlockFreeIB(ibuBlockAllocator p, void *pBlock)
 {
-    ((ibmem_t*)pBlock)--;
-    ((void**)pBlock)--;
-    *((void**)pBlock) = p->pNextFree;
-    p->pNextFree = pBlock;
+    ibuBlock_t *b;
+
+    b = (ibuBlock_t *)((char *)pBlock - g_offset);
+    b->next = p->pNextFree;
+    p->pNextFree = b;
     return 0;
 }
 
@@ -502,9 +519,9 @@ ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
 
     memset(p, 0, sizeof(ibu_state_t));
     p->state = 0;
-    p->allocator = ibuBlockAllocInitIB(IBU_PACKET_SIZE, IBU_PACKET_COUNT,
+    p->allocator = ibuBlockAllocInitIB(); /*IBU_PACKET_SIZE, IBU_PACKET_COUNT,
 				     IBU_PACKET_COUNT,
-				     ib_malloc_register, ib_free_deregister);
+				     ib_malloc_register, ib_free_deregister);*/
 
     /*MPIDI_DBG_PRINTF((60, FCNAME, "creating the queue pair\n"));*/
     /* Create the queue pair */
@@ -577,10 +594,6 @@ int ibu_finish_qp(ibu_t p, int dest_lid, int dest_qp_num)
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
     return MPI_SUCCESS;
 }
-
-#ifndef min
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
 
 #undef FUNCNAME
 #define FUNCNAME ibui_post_receive_unacked
@@ -1547,6 +1560,34 @@ char * op2str(int wc_type)
     return str;
 }
 
+/* Port me to ibal
+void PrintWC(VAPI_wc_desc_t *p)
+{
+    printf("Work Completion Descriptor:\n");
+    printf(" id: %d\n", (int)p->id);
+    printf(" opcode: %u = %s\n",
+	   p->opcode, VAPI_cqe_opcode_sym(p->opcode));
+    printf(" byte_len: %d\n", p->byte_len);
+    printf(" imm_data_valid: %d\n", (int)p->imm_data_valid);
+    printf(" imm_data: %u\n", (unsigned int)p->imm_data);
+    printf(" remote_node_addr:\n");
+    printf("  type: %u = %s\n",
+	   p->remote_node_addr.type,
+	   VAPI_remote_node_addr_sym(p->remote_node_addr.type));
+    printf("  slid: %d\n", (int)p->remote_node_addr.slid);
+    printf("  sl: %d\n", (int)p->remote_node_addr.sl);
+    printf("  qp: %d\n", (int)p->remote_node_addr.qp_ety.qp);
+    printf("  loc_eecn: %d\n", (int)p->remote_node_addr.ee_dlid.loc_eecn);
+    printf(" grh_flag: %d\n", (int)p->grh_flag);
+    printf(" pkey_ix: %d\n", p->pkey_ix);
+    printf(" status: %u = %s\n",
+	   (int)p->status, VAPI_wc_status_sym(p->status));
+    printf(" vendor_err_syndrome: %d\n", p->vendor_err_syndrome);
+    printf(" free_res_count: %d\n", p->free_res_count);
+    fflush(stdout);
+}
+*/
+
 #undef FUNCNAME
 #define FUNCNAME ibu_wait
 #undef FCNAME
@@ -1945,7 +1986,6 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 #define FUNCNAME ibu_set_vc_ptr
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-/*int ibu_set_user_ptr(ibu_t ibu, void *user_ptr)*/
 int ibu_set_vc_ptr(ibu_t ibu, void *vc_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_IBU_SET_USER_PTR);
