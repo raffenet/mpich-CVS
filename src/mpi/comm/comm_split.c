@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpicomm.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Comm_split */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -32,7 +33,7 @@ typedef struct {
     int color, key;
 } splittype;
 
-PMPI_LOCAL MPIU_Sort_inttable( splittype *keytable, int size )
+PMPI_LOCAL void MPIU_Sort_inttable( splittype *keytable, int size )
 {
     splittype tmp;
     int i, j;

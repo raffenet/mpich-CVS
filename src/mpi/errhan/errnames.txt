@@ -65,7 +65,7 @@ was not started with MPI_GREQUEST_START
 **attrsentinal:Internal fields in an attribute have been overwritten; \
  possible errors in using the attribute value in user code.
 **toomanycomm:Too many communicators
-
+**group:Invalid group
 #---- The messages below this line haven't been used yet.
 
 **buffer:Invalid buffer pointer
@@ -118,7 +118,6 @@ be in the range 0 to %d
 **root %d:Invalid root (value given was %d)
 **rootlarge:Value of root is too large
 **rootlarge %d %d:Value of root is too large (value is %d but must be less than %d)
-**group:Invalid group
 **groupnull:Null group
 **op:Invalid MPI_Op
 **opnull:Null MPI_Op

@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpicomm.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Comm_dup */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -103,10 +104,13 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
     newcomm_ptr->name[0] = 0;
 
     /* Copy attributes, executing the attribute copy functions */
-    /* FIXME: this should access the function through the perprocess
+    /* This accesses the attribute dup function through the perprocess
        structure to prevent comm_dup from forcing the linking of the
        attribute functions */
-    mpi_errno = MPIR_Comm_attr_dup( comm_ptr, &newcomm_ptr->attributes );
+    if (MPIR_Process.comm_attr_dup) {
+	mpi_errno = MPIR_Process.comm_attr_dup( comm_ptr, 
+						&newcomm_ptr->attributes );
+    }
 
     *newcomm = newcomm_ptr->handle;
     /* ... end of body of routine ... */

@@ -53,7 +53,7 @@ typedef struct { int val, cnt; } Factors;
 PMPI_LOCAL int factor( int n, Factors *factors, int *ndivisors )
 {
     int n_tmp, n_root;
-    int i, nfactors, nall=0;
+    int i, nfactors=0, nall=0;
     int cnt;
 
     /* Start from an approximate of the square root of n, by first finding

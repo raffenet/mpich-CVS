@@ -118,24 +118,29 @@ int MPIR_Comm_attr_delete( MPID_Comm *comm_ptr, MPID_Attribute *attr )
 	    break;
 #ifdef HAVE_FORTRAN_BINDING
 	case MPID_LANG_FORTRAN: 
-	    MPI_Fint fcomm, fkeyval, fvalue, fextra, ierr;
-	    fcomm   = (MPI_Fint) (comm_ptr->handle);
-	    fkeyval = (MPI_Fint) (p->keyval->handle);
-	    fvalue  = (MPI_Fint) (p->value);
-	    fextra  = (MPI_Fint) (p->keyval->extra_state );
-	    delfn.F77_DeleteFunction( &fcomm, &fkeyval, &fvalue, &fextra, 
-				      &ierr );
-	    if (ierr) mpi_errno = (int)ierr;
+	    {
+		MPI_Fint fcomm, fkeyval, fvalue, fextra, ierr;
+		fcomm   = (MPI_Fint) (comm_ptr->handle);
+		fkeyval = (MPI_Fint) (p->keyval->handle);
+		fvalue  = (MPI_Fint) (p->value);
+		fextra  = (MPI_Fint) (p->keyval->extra_state );
+		delfn.F77_DeleteFunction( &fcomm, &fkeyval, &fvalue, &fextra, 
+					  &ierr );
+		if (ierr) mpi_errno = (int)ierr;
+	    }
 	    break;
 	case MPID_LANG_FORTRAN90: 
-	    MPI_Fint fcomm, fkeyval, ierr;
-	    MPI_Aint fvalue, fextra;
-	    fcomm   = (MPI_Fint) (comm_ptr->handle);
-	    fkeyval = (MPI_Fint) (p->keyval->handle);
-	    fvalue  = (MPI_Aint) (p->value);
-	    fextra  = (MPI_Aint) (p->keyval->extra_state );
-	    delfn.F90_DeleteFunction( &fcomm, &fkeyval, &fvalue, &fextra, 
-				      &ierr ););
+	    {
+		MPI_Fint fcomm, fkeyval, ierr;
+		MPI_Aint fvalue, fextra;
+		fcomm   = (MPI_Fint) (comm_ptr->handle);
+		fkeyval = (MPI_Fint) (p->keyval->handle);
+		fvalue  = (MPI_Aint) (p->value);
+		fextra  = (MPI_Aint) (p->keyval->extra_state );
+		delfn.F90_DeleteFunction( &fcomm, &fkeyval, &fvalue, &fextra, 
+				      &ierr );
+		if (ierr) mpi_errno = (int)ierr;
+	    }
 	    break;
 #endif
 	}

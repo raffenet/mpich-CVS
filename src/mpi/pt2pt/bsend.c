@@ -51,6 +51,7 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     static const char FCNAME[] = "MPI_Bsend";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_Request *request_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_BSEND);
 
     MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPI_BSEND);
@@ -88,7 +89,16 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     }
     /* Check for MPID_WOULD_BLOCK? */
 #endif    
-    
+    mpi_errno = MPIR_Bsend_isend( buf, count, datatype, dest, tag, comm_ptr, 
+				  &request_ptr );
+    if (!mpi_errno) {
+	MPIR_Wait( request_ptr );
+	MPID_Request_release( request_ptr );
+    }
+    else {
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
     /* ... end of body of routine ... */
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);

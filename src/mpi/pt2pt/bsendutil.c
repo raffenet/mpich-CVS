@@ -13,33 +13,43 @@
 /* BsendMsg is used to hold all of the message particulars in case
    a request is not currently available */
 typedef struct {
-    void *buf;
-    int  count;
+    void         *msgbuf;
+    int          count;
     MPI_Datatype dtype;
-    int tag;
-    MPI_Comm comm;
-    int dest;
+    int          tag;
+    MPID_Comm    *comm_ptr;
+    int          dest;
 } BsendMsg_t;
 
 /* BsendData describes a bsend request */
 typedef struct BsendData {
-    int size;                      /* size that is available for data */
+    int              size;             /* size that is available for data */
     struct BsendData *next, *prev;
-    MPID_Request *request;
-    BsendMsg_t msg;
+    MPID_Request     *request;
+    BsendMsg_t       msg;
 } BsendData_t;
 
 /* BsendBuffer is the structure that describes the overall Bsend buffer */
 static struct {
-    void        *buffer;
-    int         size;
-    BsendData_t *avail;
-    BsendData_t *pending;
+    void               *buffer;        /* Pointer to the begining of the user-
+					  provided buffer */
+    int                size;           /* Size of the user-provided buffer */
+    BsendData_t        *avail;         /* Pointer to the first available block
+					  of space */
+    BsendData_t        *pending;       /* Pointer to the first message that
+					  could not be sent because of a 
+					  resource limit (e.g., no requests
+					  available) */
+    BsendData_t        *active;        /* Pointer to the first active (sending)
+					  message */
 #if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
     MPID_Thread_lock_t bsend_lock;     /* Thread lock for bsend access */
 #endif
 
-} BsendBuffer = { 0, 0, 0, 0 };
+} BsendBuffer = { 0, 0, 0, 0, 0 };
+
+/* Forward references */
+static int MPIR_Bsend_release( void *, int );
     
 int MPIR_Bsend_attach( void *buffer, int size )
 {
@@ -53,12 +63,14 @@ int MPIR_Bsend_attach( void *buffer, int size )
 			     size, MPI_BSEND_OVERHEAD );
     }
 
-    BsendBuffer.buffer = buffer;
-    BsendBuffer.size = size;
-    BsendBuffer.avail = buffer;
+    BsendBuffer.buffer  = buffer;
+    BsendBuffer.size    = size;
+    BsendBuffer.avail   = buffer;
     BsendBuffer.pending = 0;
-    
-    p = (BsendData_t *)buffer;
+    BsendBuffer.active  = 0;
+
+    /* Set the first block */
+    p       = (BsendData_t *)buffer;
     p->size = size - sizeof(BsendData_t);
     p->next = p->prev = 0;
 
@@ -78,59 +90,71 @@ int MPIR_Bsend_detach( void *p, int *size )
     return MPI_SUCCESS;
 }
 
-#ifdef FOO
 int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype, 
 		      int dest, int tag, MPID_Comm *comm_ptr, 
 		      MPI_Request *request  )
 {
     BsendData_t *p;
-    int packsize;
+    int packsize, mpi_errno;
 
     /* Find a free segment and copy the data into it.  If we could 
        have, we would already have used tBsend to send the message with
        no copying */
-    (void)PMPI_Pack_size( count, dtype, &packsize );
+    (void)PMPI_Pack_size( count, dtype, comm_ptr->handle, &packsize );
+    MPID_Thread_lock( &BsendBuffer.bsend_lock );
     p = BsendBuffer.avail;
     while (p) {
 	if (p->size <= packsize) { 
 	    BsendData_t *prev = p->prev, *bnext;
-	    int  newsize;
+	    int         newsize, nblocks;
 
 	    /* Found a segment */
 
 	    /* Pack the data into the buffer */
-	    (void)PMPI_Pack( buf, count, dtype, p->buffer, packsize, &position,
-		       comm_ptr->handle );
+	    p->msg.count = 0;
+	    (void)PMPI_Pack( buf, count, dtype, p->msg.msgbuf, packsize, 
+			     &p->msg.count, comm_ptr->handle );
 	    /* Try to send the message */
-	    mpi_errno = MPID_Send(p->buffer, packsize, MPI_PACKED, dest, tag, 
-				  comm_ptr,
+	    mpi_errno = MPID_Send(p->msg.msgbuf, p->msg.count, MPI_PACKED, 
+				  dest, tag, comm_ptr,
 				  MPID_CONTEXT_INTRA_PT2PT, &p->request );
 	    /* If the error is "request not available", put this on the
 	       pending list */
-	    /* NOT YET DONE */
+	    /* FIXME: NOT YET DONE */
+	    p->msg.dtype     = MPI_PACKED;
+	    p->msg.tag       = tag;
+	    p->msg.comm_ptr  = comm_ptr;
+	    p->msg.dest      = dest;
 	    
+
 	    /* shorten the segment.  If there isn't enough space, 
 	       just remove it from the avail list */
 	    
 	    /* Add to the active list; save the next pointer */
-	    bnext = p->next;
-	    p->next = BsendBuffer.active;
+	    bnext              = p->next;
+	    p->next            = BsendBuffer.active;
 	    BsendBuffer.active = p;
 
-	    newsize = p->size - packsize - sizeof(BsendData_t)
+	    newsize = p->size - packsize - sizeof(BsendData_t);
+
+	    /* We must preserve alignment on the BsendData_t structure. */
+	    nblocks = (p->msg.count + sizeof(BsendData_t) - 1) /
+		    sizeof(BsendData_t);
+	    newsize = p->size - (nblocks + 1) * sizeof(BsendData_t);
 	    if (newsize < 0) {
 		prev->next = bnext;
 	    }
 	    else {
-		p = (BsendData_t *)(&p->buffer[packsize]);
-		p->size = newsize;
-		p->next = bnext;
+		p          += nblocks * sizeof(BsendData_t);
+		p->size    = newsize + sizeof(BsendData_t);
+		p->next    = bnext;
 		prev->next = p;
 	    }
 	    break;
 	}
 	p = p->next;
     }
+    MPID_Thread_unlock( &BsendBuffer.bsend_lock );
     
     if (!p) {
 	/* Return error for no buffer space found */
@@ -144,16 +168,16 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 /* This routine is called to release a buffer slot.
    It must try to merge with the next and the previous buffer 
 */
-int MPIR_Bsend_release( void *buf, int size )
+static int MPIR_Bsend_release( void *buf, int size )
 {
-    BSenddata_t *p = BsendBuffer.avail;
+    BsendData_t *p = BsendBuffer.avail;
     char *bufaddr = (char *)buf;
 
-    if (buf == BsendBuffer.buf) {
+    if (buf == BsendBuffer.buffer) {
 	/* Special case of buffer at the beginning */
 	/* ....; */
 	/* Include merge with the next one */
-	return;
+	return 0;
     }
 
     /* Otherwise, try to find the location within the buffer */
@@ -161,7 +185,7 @@ int MPIR_Bsend_release( void *buf, int size )
 	char *p_addr = (char *)p;
 	/* Is this at the END of this block */
 	if (p_addr + p->size + sizeof(BsendData_t) == bufaddr) {
-	    BSendData_t *pnext = p->next;
+	    BsendData_t *pnext = p->next;
 	    char *pnext_addr = (char *)pnext;
 	    p->size += size;
 	    /* Is this new block at the beginning of the next one */
@@ -172,7 +196,5 @@ int MPIR_Bsend_release( void *buf, int size )
 	    }
 	}
     }
+    return 0;
 }
-
-
-#endif

@@ -108,7 +108,6 @@ int MPI_Buffer_detach(void *buffer, int *size)
     if (mpi_errno) {
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }	
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BUFFER_DETACH);
     return MPI_SUCCESS;
 }
 

@@ -60,7 +60,7 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPIR_Topology *cart_ptr;
-    int i, n, *vals;
+    int i;
     int pos[MAX_CART_DIM];
     int rank;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_SHIFT);

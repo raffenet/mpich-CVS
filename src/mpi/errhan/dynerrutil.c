@@ -35,7 +35,7 @@ static char *(user_code_msgs[ERROR_MAX_NCODE]) = { 0 };
 static char *(user_instance_msgs[ERROR_MAX_NCODE]) = { 0 };
 static int  first_free_class = 0;
 static int  first_free_code  = 0;
-#if MPID_THREAD_LEVEL >= MPI_THREAD_FUNNELED
+#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_FUNNELED
 volatile static int ready = 0;
 #endif
 
@@ -58,10 +58,10 @@ const char *MPIR_Err_get_dynerr_string( int code );
    a multithreaded case, it must check *again* in case two threads
    are in a race to call this routine
  */
-static void MPIR_Init_err_dyncodes( )
+static void MPIR_Init_err_dyncodes( void )
 {
     int i;
-#if MPID_THREAD_LEVEL >= MPI_THREAD_FUNNELED
+#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_FUNNELED
     { 
 	int init_value;
 	MPIR_Fetch_and_increment( &initialized, &init_value );
@@ -88,7 +88,7 @@ static void MPIR_Init_err_dyncodes( )
        error strings */
     MPIR_Process.errcode_to_string = MPIR_Err_get_dynerr_string;
 
-#if MPID_THREAD_LEVEL >= MPI_THREAD_FUNNELED
+#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_FUNNELED
     /* Release the other threads */
     ready = 1;
 #endif

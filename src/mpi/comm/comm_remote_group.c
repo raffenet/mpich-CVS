@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpicomm.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Comm_remote_group */
 #if defined(HAVE_PRAGMA_WEAK)

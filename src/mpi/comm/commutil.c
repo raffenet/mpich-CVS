@@ -14,9 +14,6 @@
 #define MPID_COMM_PREALLOC 8
 #endif
 
-/* forward reference */
-int MPIR_Get_contextid( MPI_Comm comm );
-
 /* Preallocated comm objects */
 MPID_Comm MPID_Comm_builtin[MPID_COMM_N_BUILTIN];
 MPID_Comm MPID_Comm_direct[MPID_COMM_PREALLOC];

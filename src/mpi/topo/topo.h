@@ -29,5 +29,6 @@ typedef struct {
 } MPIR_Topology;
 
 MPIR_Topology *MPIR_Topology_get( MPID_Comm * );
+int MPIR_Topology_put( MPID_Comm *, MPIR_Topology * );
 
 #define MAX_CART_DIM 16
