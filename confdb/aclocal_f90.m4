@@ -36,6 +36,8 @@ ifelse([$4], , , [  rm -rf conftest*
 ])dnl
 fi
 rm -f conftest*
+# The intel compiler sometimes generates these work.pc and .pcl files
+rm -f work.pc work.pcl
 ifelse(NEED_POP,yes,[
 undefine([NEED_POP])
 AC_LANG_RESTORE])
@@ -80,6 +82,8 @@ else
     pac_cv_f90_module_ext="unknown"
 fi
 rm -f conftest*
+# The intel compiler sometimes generates these work.pc and .pcl files
+rm -f work.pc work.pcl
 ])
 if test -s work.pcl ; then
     AC_MSG_WARN([Compiler generates auxillery files (work.pcl)!])
@@ -180,6 +184,8 @@ else
 fi
 if test "$pac_madedir" = "yes" ; then rm -rf conftestdir ; fi
 rm -f conftest*
+# The intel compiler sometimes generates these work.pc and .pcl files
+rm -f work.pc work.pcl
 ])
 AC_SUBST(F90MODINCFLAG)
 F90MODINCFLAG=$pac_cv_f90_module_incflag
@@ -253,6 +259,8 @@ EOF
             fi
         fi
         rm -f conftest*
+	# The intel compiler sometimes generates these work.pc and .pcl files
+	rm -f work.pc work.pcl
 	AC_MSG_RESULT($KINDVAL)
     fi # not cached
 fi # Has Fortran 90
@@ -351,6 +359,8 @@ else
   pac_cv_prog_f90_works="no"
 fi
 rm -f conftest*
+# The intel compiler sometimes generates these work.pc and .pcl files
+rm -f work.pc work.pcl
 AC_LANG_RESTORE
 AC_MSG_RESULT($pac_cv_prog_f90_works)
 if test $pac_cv_prog_f90_works = no; then
@@ -381,7 +391,7 @@ if test "$cross_compiling" = yes ; then
     ifelse([$2],,[AC_MSG_WARN([No value provided for size of $1 when cross-compiling])]
 ,eval PAC_CV_NAME=$2)
 else
-    /bin/rm -f conftest*
+    rm -f conftest*
     cat <<EOF > conftestc.c
 #include <stdio.h>
 #include "confdefs.h"
@@ -441,6 +451,8 @@ EOF
 	    eval PAC_CV_NAME=0
         fi
         rm -f conftest*
+	# The intel compiler sometimes generates these work.pc and .pcl files
+	rm -f work.pc work.pcl
         LIBS=$saveLIBS
     else
         AC_MSG_WARN([Unable to compile the C routine for finding the size of a $1])
