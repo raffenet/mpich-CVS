@@ -44,6 +44,7 @@ for dir in $1 ; do
     done
     IFS="$saveIFS"
 done
+PAC_CACHE_CLEAN
 dnl autoconf 2.52 uses _ before *some* internal commands (!)
 dnl output_subdirs *ALSO* resets INSTALL.  It *also* requires that 
 dnl ac_given_INSTALL be set to INSTALL

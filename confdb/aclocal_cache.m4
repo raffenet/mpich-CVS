@@ -89,6 +89,10 @@ fi
 if test "X$real_enable_cache" = "Xyes" ; then
   if test -r "$cache_file" ; then
     echo "loading cache $cache_file"
+    if test -w "$cache_file" ; then
+        # Clean the cache file (ergh)
+	PAC_CACHE_CLEAN
+    fi
     . $cache_file
   else
     echo "creating cache $cache_file"
@@ -124,6 +128,26 @@ AC_ARG_ENABLE(cache,
 [--enable-cache  - Turn on configure caching],
 enable_cache="$enableval",enable_cache="notgiven")
 ])
+dnl
+
+dnl Clean the cache of extraneous quotes that AC_CACHE_SAVE may add
+AC_DEFUN([PAC_CACHE_CLEAN],[
+    rm -f confcache
+    sed -e "s/'\\\\''//g" -e "s/'\\\\/'/" -e "s/\\\\'/'/" \
+		-e "s/'\\\\''//g" $cache_file > confcache
+    if cmp -s $cache_file confcache ; then
+        :
+    else
+        if test -w $cache_file ; then
+	    echo "updating cache $cache_file"
+            cat confcache > $cache_file
+        else
+            echo "not updating unwritable cache $cache_file"
+        fi
+    fi	
+    rm -f confcache
+])
+
 dnl/*D
 dnl PAC_SUBDIR_CACHE - Create a cache file before ac_output for subdirectory
 dnl configures.
@@ -168,7 +192,13 @@ if test "$cache_file" = "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" ; the
     ac_cv_env_CXX_value=$CXX
     dnl other parameters are
     dnl build_alias, host_alias, target_alias
+
+    # It turns out that A C CACHE_SAVE can't be invoked more than once
+    # with data that contains blanks.  What happens is that the quotes
+    # that it adds get quoted and then added again.  To avoid this,
+    # we strip off the outer quotes for all cached variables
     AC_CACHE_SAVE
+    PAC_CACHE_CLEAN
     ac_configure_args="$ac_configure_args -enable-cache"
 fi
 dnl Unconditionally export these values.  Subdir configures break otherwise
@@ -189,3 +219,4 @@ if test "$cache_file" != "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" ; th
    rm -f $cache_file
 fi
 ])
+
