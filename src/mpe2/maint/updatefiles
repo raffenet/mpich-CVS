@@ -1,6 +1,6 @@
-#!/bin/sh
-AUTOHEADER=autoheader
-AUTOCONF=autoconf
+#! /bin/sh
+AUTOHEADER=${AUTOHEADER:-"autoheader"}
+AUTOCONF=${AUTOCONF:-"autoconf"}
 
 # The directory of this script is located
 curr_dir="$PWD/`dirname $0`"
