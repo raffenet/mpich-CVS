@@ -32,62 +32,51 @@ AC_PROG_CC
 AC_PROG_MAKE_SET
 AC_PROG_LN_S
 
-
-dnl Find Python
-for pypgm in python2.3 python2 python2.2 python ; do \
-    AC_CHECK_PROGS(PYTHON, $pypgm)
-    dnl check python version
-    AC_CACHE_CHECK([python version],
-    pac_cv_python_version,[
+AC_CHECK_PROG(PY23, python2.3, python2.3)
+AC_CHECK_PROG(PY2,  python2, python2)
+AC_CHECK_PROG(PY22, python2.2, python2)
+AC_CHECK_PROG(PY,   python, python)
+dnl Find a usable Python
+PYTHON=""
+for pypgm in $PY23 $PY2 $PY22 $PY ; do \
+    AC_MSG_CHECKING([that $pypgm is a valid python version])
     changequote(,)dnl
-    if test -z "$PYTHON" ; then
-        continue
-    fi
-    pac_cv_python_version=`$PYTHON -c "import sys;print sys.version_info[0]"`
-    pac_cv_python_subversion=`$PYTHON -c "import sys;print sys.version_info[1]"`
+    py_version=`$pypgm -c "import sys;print sys.version_info[0]"`
+    py_subversion=`$pypgm -c "import sys;print sys.version_info[1]"`
     changequote([,])dnl
-    ])
-    if test "$pac_cv_python_version" -gt "2" -o "$pac_cv_python_version" -ge "2" -a "$pac_cv_python_subversion" -ge "2" ; then
-	break
+    if test "$py_version" -gt "2" -o "$py_version" -ge "2" -a "$py_subversion" -ge "2" ; then
+        AC_MSG_RESULT(yes)
+    else
+        AC_MSG_RESULT(no)
+	continue
     fi	       
-    PYTHON=""    # not suitable
+    
+    AC_MSG_CHECKING([that the cPickle module is available for $pypgm])
+    if $pypgm -c 'from cPickle import dumps'  >/dev/null 2>&1 ; then
+        AC_MSG_RESULT(yes)
+    else
+        AC_MSG_RESULT(no)
+	continue
+    fi
+    
+    AC_MSG_CHECKING([that the xml minidom module is available for $pypgm])
+    if $pypgm -c 'from xml.dom.minidom import parseString'  >/dev/null 2>&1 ; then
+        AC_MSG_RESULT(yes)
+    else
+        AC_MSG_RESULT(no)
+	continue
+    fi
+    PYTHON="$pypgm"
     echo END LOOP
+    break
 done
 #
 if test -z "$PYTHON" ; then
-    AC_MSG_ERROR([Python required (version 2.2 or greater)]) 
+    AC_MSG_ERROR([Python required (version 2.2 or greater, with necessary modules)]) 
 fi
 
-
-# Test for xml.dom.minidom module
-AC_MSG_CHECKING([that the xml module is available for Python])
-rm -f conftest*
-cat > conftest.py <<EOF
-from xml.dom.minidom import parseString
-EOF
-if $PYTHON conftest.py >/dev/null 2>&1 ; then
-    rm -f conftest*
-    AC_MSG_RESULT(yes)
-else
-    rm -f conftest*
-    AC_MSG_RESULT(no)
-    AC_MSG_ERROR([The xml.dom.minidom module is required for the mpd process manager])
-fi
-
-# Test for cPickle
-AC_MSG_CHECKING([that the cPickle module is available for Python])
-rm -f conftest*
-cat > conftest.py <<EOF
-from cPickle import dumps
-EOF
-if $PYTHON conftest.py >/dev/null 2>&1 ; then
-    rm -f conftest*
-    AC_MSG_RESULT(yes)
-else
-    rm -f conftest*
-    AC_MSG_RESULT(no)
-    AC_MSG_ERROR([The cPickle module is required for the mpd process manager])
-fi
+echo "RMB PYTHON=" $PYTHON
+AC_SUBST(PYTHON)
 
 # In case clinker is not defined
 if test -z "$CLINKER" ; then 
