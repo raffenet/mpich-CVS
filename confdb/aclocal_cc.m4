@@ -355,7 +355,7 @@ if test "$ac_cv_func_semctl" = "yes" ; then
 #include <sys/sem.h>],[union semun arg;arg.val=0;],
     pac_cv_type_union_semun="yes",pac_cv_type_union_semun="no")])
     if test "$pac_cv_type_union_semun" = "yes" ; then
-        AC_DEFINE(HAVE_UNION_SEMUN,,[Has union semun])
+        AC_DEFINE(HAVE_UNION_SEMUN,1,[Has union semun])
         #
         # See if we can use an int in semctl or if we need the union
         AC_CACHE_CHECK([whether semctl needs union semun],
@@ -368,7 +368,7 @@ int arg = 0; semctl( 1, 1, SETVAL, arg );],
         pac_cv_func_semctl_needs_semun="no")
         ])
         if test "$pac_cv_func_semctl_needs_semun" = "yes" ; then
-            AC_DEFINE(SEMCTL_NEEDS_SEMUN,[Needs an explicit definition of semun])
+            AC_DEFINE(SEMCTL_NEEDS_SEMUN,1,[Needs an explicit definition of semun])
         fi
     fi
 fi
@@ -715,6 +715,7 @@ dnl.vb
 dnl    HAVE_WEAK_ATTRIBUTE
 dnl.ve
 dnl if functions can be declared as 'int foo(...) __attribute__ ((weak));'
+dnl sets the shell variable pac_cv_attr_weak to yes.
 dnl 
 dnlD*/
 AC_DEFUN(PAC_PROG_C_WEAK_SYMBOLS,[
@@ -794,11 +795,11 @@ if test "$pac_cv_prog_c_weak_symbols" = "no" ; then
     ifelse([$2],,:,[$2])
 else
     case "$pac_cv_prog_c_weak_symbols" in
-	"pragma weak") AC_DEFINE(HAVE_PRAGMA_WEAK,,[Supports weak pragma]) 
+	"pragma weak") AC_DEFINE(HAVE_PRAGMA_WEAK,1,[Supports weak pragma]) 
 	;;
-	"pragma _HP")  AC_DEFINE(HAVE_PRAGMA_HP_SEC_DEF,,[HP style weak pragma])
+	"pragma _HP")  AC_DEFINE(HAVE_PRAGMA_HP_SEC_DEF,1,[HP style weak pragma])
 	;;
-	"pragma _CRI") AC_DEFINE(HAVE_PRAGMA_CRI_DUP,,[Cray style weak pragma])
+	"pragma _CRI") AC_DEFINE(HAVE_PRAGMA_CRI_DUP,1,[Cray style weak pragma])
 	;;
     esac
     ifelse([$1],,:,[$1])
@@ -863,9 +864,9 @@ double crypt(double a){return a;}],[return 0];,
 pac_cv_func_crypt_xopen="no",pac_cv_func_crypt_xopen="yes")])
 fi
 if test "$pac_cv_func_crypt_xopen" = "yes" ; then
-    AC_DEFINE(_XOPEN_SOURCE,,[if xopen needed for crypt])
+    AC_DEFINE(_XOPEN_SOURCE,1,[if xopen needed for crypt])
 elif test "$pac_cv_func_crypt_defined" = "no" ; then
-    AC_DEFINE(NEED_CRYPT_PROTOTYPE,,[if a prototype for crypt is needed])
+    AC_DEFINE(NEED_CRYPT_PROTOTYPE,1,[if a prototype for crypt is needed])
 fi
 ])dnl
 dnl/*D
@@ -1241,4 +1242,22 @@ main()
 AC_MSG_RESULT($AC_CV_NAME)
 dnl AC_DEFINE_UNQUOTED(AC_TYPE_NAME,$AC_CV_NAME)
 undefine([AC_TYPE_NAME])undefine([AC_CV_NAME])
+])
+
+dnl
+dnl PAC_C_GNU_ATTRIBUTE - See if the GCC __attribute__ specifier is allow.
+dnl Use the following
+dnl #ifndef HAVE_GCC_ATTRIBUTE
+dnl #define __attribute__(a)
+dnl #endif
+dnl If *not*, define __attribute__(a) as null
+dnl
+AC_DEFUN([PAC_C_GNU_ATTRIBUTE],[
+AC_CACHE_CHECK([whether __attribute__ allowed],
+pac_cv_gnu_attr,[
+AC_TRY_COMPILE([int foo(int) __attribute__ ((pure));],[int a;],
+pac_cv_gnu_attr=yes,pac_cv_gnu_attr=no)])
+if test "$pac_cv_gnu_attr" != "yes" ; then
+    AC_DEFINE(HAVE_GCC_ATTRIBUTE,1,[Define if GNU __attribute__ is supported])
+fi
 ])
