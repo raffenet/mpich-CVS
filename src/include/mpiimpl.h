@@ -1246,14 +1246,14 @@ void MPID_Request_release(MPID_Request *);
 
 void MPID_Errhandler_free(MPID_Errhandler *errhan_ptr);
 
-int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr);
-int MPID_VCRT_Add_ref(MPID_VCRT vcrt);
-int MPID_VCRT_Release(MPID_VCRT vcrt);
-int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr);
+int MPID_VCRT_create(int size, MPID_VCRT *vcrt_ptr);
+int MPID_VCRT_add_ref(MPID_VCRT vcrt);
+int MPID_VCRT_release(MPID_VCRT vcrt);
+int MPID_VCRT_get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr);
 
-int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr);
-int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr);
-int MPID_VCR_Set_lpid(MPID_VCR vcr, int lpid);
+int MPID_VCR_dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr);
+int MPID_VCR_release(MPID_VCR vcr);
+int MPID_VCR_get_lpid(MPID_VCR vcr, int * lpid_ptr);
 
 /* Include definitions from the device which require items defined by this file
    (mpiimpl.h).  NOTE: This include requires the device to copy mpidpost.h to
