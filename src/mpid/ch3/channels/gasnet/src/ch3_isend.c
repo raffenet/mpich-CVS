@@ -23,8 +23,6 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr,
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
 
-    printf_d ("Entering "FCNAME "\n");
-
     /* This channel uses a fixed length header, the size of which
      * is the maximum of all possible packet headers */
     hdr_sz = sizeof(MPIDI_CH3_Pkt_t);
@@ -34,12 +32,12 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr,
         /* MT */
     {
 #if 0
-	printf_d ("Calling gasnet_AMRequestMedium0 (node = %d, handler_id = %d "
-		  "(%s), hdr = %p, hdr_sz = %d)\n",
-		  vc->lpid, MPIDI_CH3_start_packet_handler_id,
-		  "MPIDI_CH3_start_packet_handler_id", hdr, hdr_sz);
+	MPIDI_DBG_PRINTF((55, FCNAME, "Calling gasnet_AMRequestMedium0 (node = "
+			  "%d, handler_id = %d (%s), hdr = %p, hdr_sz = %d)\n",
+			  vc->lpid, MPIDI_CH3_start_packet_handler_id,
+			  "MPIDI_CH3_start_packet_handler_id", hdr, hdr_sz));
 #endif
-	printf_d ("  sending %d bytes\n", hdr_sz);
+	MPIDI_DBG_PRINTF((55, FCNAME, "  sending %d bytes\n", hdr_sz));
 	gn_errno = gasnet_AMRequestMedium0 (vc->lpid,
 					    MPIDI_CH3_start_packet_handler_id,
 					    hdr, hdr_sz);
@@ -64,7 +62,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr,
 	sreq->gasnet.vc = vc;
 	MPIDI_CH3I_SendQ_enqueue(sreq, CH3_NORMAL_QUEUE);
     }
-    printf_d ("Exiting "FCNAME "\n");
+
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND);
     return mpi_errno;

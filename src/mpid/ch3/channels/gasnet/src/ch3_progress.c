@@ -129,7 +129,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	sreq = MPIDI_CH3I_SendQ_head (CH3_RNDV_QUEUE);
 	if (sreq)
 	{
-	    printf_d ("handle rendezvous puts\n");
+	    MPIDI_DBG_PRINTF((55, FCNAME, "handle rendezvous puts\n"));
 	    DUMP_REQUEST(sreq);
 	    switch (sreq->gasnet.rndv_state)
 	    {
@@ -196,6 +196,10 @@ int MPIDI_CH3I_Progress(int is_blocking)
     return mpi_errno;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_start_packet_handler
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 void
 MPIDI_CH3_start_packet_handler (gasnet_token_t token, void* buf, size_t data_sz)
 {
@@ -209,7 +213,7 @@ MPIDI_CH3_start_packet_handler (gasnet_token_t token, void* buf, size_t data_sz)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_START_PACKET_HANDLER);
     
-    printf_d ("Entering MPIDI_CH3_start_packet_handler\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     MPIDI_CH3I_inside_handler = 1;
     MPIDI_CH3I_gasnet_token = token;
     gn_errno = gasnet_AMGetMsgSource (token, &sender);
@@ -217,7 +221,7 @@ MPIDI_CH3_start_packet_handler (gasnet_token_t token, void* buf, size_t data_sz)
     {
 	MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet AMGetMesgSource failed");
     }
-    printf_d ("  sender = %d\n", sender);
+    MPIDI_DBG_PRINTF((55, FCNAME, "  sender = %d\n", sender));
     MPIDI_PG_Get_vc(MPIDI_Process.my_pg, sender, &vc);
     vc->gasnet.data = buf + sizeof (MPIDI_CH3_Pkt_t);
     vc->gasnet.data_sz = data_sz - sizeof (MPIDI_CH3_Pkt_t);
@@ -238,10 +242,14 @@ MPIDI_CH3_start_packet_handler (gasnet_token_t token, void* buf, size_t data_sz)
     }
     
     MPIDI_CH3I_inside_handler = 0;
-    printf_d ("Exiting MPIDI_CH3_start_packet_handler\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_START_PACKET_HANDLER);
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_continue_packet_handler
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 void
 MPIDI_CH3_continue_packet_handler (gasnet_token_t token, void* buf,
 				   size_t data_sz)
@@ -255,7 +263,7 @@ MPIDI_CH3_continue_packet_handler (gasnet_token_t token, void* buf,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_CONTINUE_PACKET_HANDLER);
 
-    printf_d ("Entering MPIDI_CH3_continue_packet_handler\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     MPIDI_CH3I_inside_handler = 1;
     MPIDI_CH3I_gasnet_token = token;
 
@@ -264,7 +272,7 @@ MPIDI_CH3_continue_packet_handler (gasnet_token_t token, void* buf,
     {
 	MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet AMGetMsgSource failed");
     }
-    printf_d ("  sender = %d\n", sender);
+    MPIDI_DBG_PRINTF((55, FCNAME, "  sender = %d\n", sender));
     MPIDI_PG_Get_vc(MPIDI_Process.my_pg, sender, &vc);
     vc->gasnet.data = buf;
     vc->gasnet.data_sz = data_sz;
@@ -279,10 +287,14 @@ MPIDI_CH3_continue_packet_handler (gasnet_token_t token, void* buf,
     }
     
     MPIDI_CH3I_inside_handler = 0;
-    printf_d ("Exiting MPIDI_CH3_continue_packet_handler\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_CONTINUE_PACKET_HANDLER);
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_CTS_packet_handler
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 void
 MPIDI_CH3_CTS_packet_handler (gasnet_token_t token, void* buf, size_t buf_sz,
 			      MPI_Request sreq_id, MPI_Request rreq_id,
@@ -302,7 +314,7 @@ MPIDI_CH3_CTS_packet_handler (gasnet_token_t token, void* buf, size_t buf_sz,
 
     assert (n_iov * sizeof (MPID_IOV) == buf_sz);
 
-    printf_d ("Entering MPIDI_CH3_CTS_packet_handler\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     MPIDI_CH3I_inside_handler = 1;
     MPIDI_CH3I_gasnet_token = token;
 
@@ -339,13 +351,17 @@ MPIDI_CH3_CTS_packet_handler (gasnet_token_t token, void* buf, size_t buf_sz,
     MPIDI_CH3I_SendQ_enqueue(sreq, CH3_RNDV_QUEUE);
     
     MPIDI_CH3I_inside_handler = 0;
-    printf_d ("Exiting MPIDI_CH3_CTS_packet_handler\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_CTS_PACKET_HANDLER);
 #else
     abort ();
 #endif
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_reload_IOV_or_done_handler
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 void
 MPIDI_CH3_reload_IOV_or_done_handler (gasnet_token_t token, int rreq_id,
 				      int sreq_id)
@@ -360,7 +376,7 @@ MPIDI_CH3_reload_IOV_or_done_handler (gasnet_token_t token, int rreq_id,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_RELOAD_IOV_OR_DONE_HANDLER);
 
-    printf_d ("Entering MPIDI_CH3_reload_IOV_handler\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     MPIDI_CH3I_inside_handler = 1;
     MPIDI_CH3I_gasnet_token = token;
   
@@ -389,10 +405,14 @@ MPIDI_CH3_reload_IOV_or_done_handler (gasnet_token_t token, int rreq_id,
     }
     
     MPIDI_CH3I_inside_handler = 0;
-    printf_d ("Exiting MPIDI_CH3_reload_IOV_handler\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_RELOAD_IOV_OR_DONE_HANDLER);
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_reload_IOV_reply_handler
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 void
 MPIDI_CH3_reload_IOV_reply_handler (gasnet_token_t token, void *buf, int buf_sz,
 				    int sreq_id, int n_iov)
@@ -404,7 +424,7 @@ MPIDI_CH3_reload_IOV_reply_handler (gasnet_token_t token, void *buf, int buf_sz,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_RELOAD_IOV_REPLY_HANDLER);
 
-    printf_d ("Entering MPIDI_CH3_reload_IOV_reply_handler\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     MPIDI_CH3I_inside_handler = 1;
     MPIDI_CH3I_gasnet_token = token;
 
@@ -423,7 +443,7 @@ MPIDI_CH3_reload_IOV_reply_handler (gasnet_token_t token, void *buf, int buf_sz,
     MPIDI_CH3I_SendQ_enqueue (sreq, CH3_RNDV_QUEUE);
     
     MPIDI_CH3I_inside_handler = 0;
-    printf_d ("Exiting MPIDI_CH3_reload_IOV_reply_handler\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_RELOAD_IOV_REPLY_HANDLER);
 }
 
@@ -496,6 +516,10 @@ int MPIDI_CH3I_Progress_finalize()
     return MPI_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME send_enqueuedv
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int
 send_enqueuedv (MPIDI_VC_t * vc, MPID_Request * sreq)
 {
@@ -510,7 +534,7 @@ send_enqueuedv (MPIDI_VC_t * vc, MPID_Request * sreq)
 
     MPIDI_FUNC_ENTER(MPID_STATE_SEND_ENQUEUEDV);
 
-    printf_d ("Entering send_enqueuedv\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     assert(n_iov <= MPID_IOV_LIMIT);
     assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
     /* The channel uses a fixed length header, the size of which is
@@ -532,7 +556,7 @@ send_enqueuedv (MPIDI_VC_t * vc, MPID_Request * sreq)
 	tmp_iov = iov[i];
 	iov[i].MPID_IOV_LEN = MPIDI_CH3_packet_len - msg_sz;
 	
-	printf_d ("  sending %d bytes\n", msg_sz);
+	MPIDI_DBG_PRINTF((55, FCNAME, "  sending %d bytes\n", msg_sz));
 	gn_errno = gasnet_AMRequestMediumv0(vc->lpid,
 					    MPIDI_CH3_start_packet_handler_id,
 					    iov, i+1);
@@ -551,7 +575,7 @@ send_enqueuedv (MPIDI_VC_t * vc, MPID_Request * sreq)
     }
     else
     {
-	printf_d ("  sending %d bytes\n", msg_sz);
+	MPIDI_DBG_PRINTF((55, FCNAME, "  sending %d bytes\n", msg_sz));
 	gn_errno = gasnet_AMRequestMediumv0(vc->lpid,
 					    MPIDI_CH3_start_packet_handler_id,
 					    iov, n_iov);
@@ -563,12 +587,16 @@ send_enqueuedv (MPIDI_VC_t * vc, MPID_Request * sreq)
 	sreq->dev.iov_count = 0;
     }
 
-    printf_d ("Exiting send_enqueuedv\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
 
     MPIDI_FUNC_EXIT(MPID_STATE_SEND_ENQUEUEDV);
     return mpi_errno;
 }
 
+#undef FUNCNAME
+#define FUNCNAME do_put
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int do_put (MPIDI_VC_t *vc, MPID_Request *sreq)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -582,7 +610,7 @@ static int do_put (MPIDI_VC_t *vc, MPID_Request *sreq)
 
     MPIDI_FUNC_ENTER(MPID_STATE_DO_PUT);
 
-    printf_d ("Entering do_put\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
 
     s_bytes = sreq->gasnet.iov_bytes;
     r_bytes = sreq->gasnet.remote_iov_bytes;
@@ -635,7 +663,7 @@ static int do_put (MPIDI_VC_t *vc, MPID_Request *sreq)
     sreq->dev.iov_count = s_iov_len - s;
     sreq->gasnet.remote_iov_count = r_iov_len - s;
     
-    printf_d ("Exiting do_put\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_DO_PUT);
     return mpi_errno;
 }

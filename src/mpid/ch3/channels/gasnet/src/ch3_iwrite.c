@@ -26,8 +26,8 @@ int MPIDI_CH3_iWrite(MPIDI_VC_t * vc, MPID_Request * req)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IWRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IWRITE);
+    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
 
-    printf_d ("Entering "FCNAME "\n");
     if (n_iov == 0)
     {
 	goto fn_exit;
@@ -46,7 +46,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC_t * vc, MPID_Request * req)
 	tmp_iov = iov[i];
 	iov[i].MPID_IOV_LEN = MPIDI_CH3_packet_len - msg_sz;
 	
-	printf_d ("  sending %d bytes\n", msg_sz);
+	MPIDI_DBG_PRINTF((55, FCNAME, "  sending %d bytes\n", msg_sz));
 	gn_errno = gasnet_AMRequestMediumv0(vc->lpid,
 					    MPIDI_CH3_continue_packet_handler_id,
 					    &iov[iov_offset], i+1 - iov_offset);
@@ -66,7 +66,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC_t * vc, MPID_Request * req)
     }
     else
     {
-	printf_d ("  sending %d bytes\n", msg_sz);
+	MPIDI_DBG_PRINTF((55, FCNAME, "  sending %d bytes\n", msg_sz));
 	gn_errno = gasnet_AMRequestMediumv0(vc->lpid,
 					    MPIDI_CH3_continue_packet_handler_id,
 					    &iov[iov_offset], i - iov_offset);
@@ -78,7 +78,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC_t * vc, MPID_Request * req)
 	req->dev.iov_count = 0;
     }
  fn_exit:
-    printf_d ("Exiting "FCNAME "\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);
     return mpi_errno;
 }

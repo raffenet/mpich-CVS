@@ -21,19 +21,23 @@ int MPIDI_CH3_iRead(MPIDI_VC_t * vc, MPID_Request * rreq)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IREAD);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IREAD);
-    printf_d ("Entering "FCNAME "\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
+
     do
     {
-	printf_d ("  rreq->gasnet.iov_offset = %d\n", rreq->gasnet.iov_offset);
-	printf_d ("  rreq->dev.iov_count = %d\n", rreq->dev.iov_count);
-	printf_d ("  vc->gasnet.data_sz = %d\n", vc->gasnet.data_sz);
+	MPIDI_DBG_PRINTF((55, FCNAME, "  rreq->gasnet.iov_offset = %d\n",
+			  rreq->gasnet.iov_offset));
+	MPIDI_DBG_PRINTF((55, FCNAME, "  rreq->dev.iov_count = %d\n",
+			  rreq->dev.iov_count));
+	MPIDI_DBG_PRINTF((55, FCNAME, "  vc->gasnet.data_sz = %d\n",
+			  vc->gasnet.data_sz));
     
 	for (i = rreq->gasnet.iov_offset;
 	     i < rreq->dev.iov_count + rreq->gasnet.iov_offset; ++i)
 	{
-	    printf_d ("  rreq->dev.iov[%d] = (%p, %d)\n", i,
+	    MPIDI_DBG_PRINTF((55, FCNAME, "  rreq->dev.iov[%d] = (%p, %d)\n", i,
 		      rreq->dev.iov[i].MPID_IOV_BUF,
-		      rreq->dev.iov[i].MPID_IOV_LEN);
+		      rreq->dev.iov[i].MPID_IOV_LEN));
 	
 	    if (rreq->dev.iov[i].MPID_IOV_LEN <= vc->gasnet.data_sz)
 	    {
@@ -68,7 +72,7 @@ int MPIDI_CH3_iRead(MPIDI_VC_t * vc, MPID_Request * rreq)
     vc->gasnet.recv_active = NULL;
 
 fn_exit:
-    printf_d ("Exiting "FCNAME "\n");
+    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
     return MPI_SUCCESS;
 }

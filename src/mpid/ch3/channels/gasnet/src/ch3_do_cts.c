@@ -25,7 +25,6 @@ int MPIDI_CH3_do_cts(MPIDI_VC_t *vc, MPID_Request *rreq, MPI_Request sreq_id,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_DO_CTS);
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    printf_d ("Entering "FCNAME"\n");
     assert(n_iov <= MPID_IOV_LIMIT);
 
     DUMP_REQUEST(rreq);
@@ -51,7 +50,6 @@ int MPIDI_CH3_do_cts(MPIDI_VC_t *vc, MPID_Request *rreq, MPI_Request sreq_id,
 	MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet send failed");
     }
 
-    printf_d ("Exiting "FCNAME"\n");
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_DO_CTS);
     return mpi_errno;

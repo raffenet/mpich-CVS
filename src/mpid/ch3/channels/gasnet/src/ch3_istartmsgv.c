@@ -47,7 +47,6 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov,
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    printf_d ("Entering "FCNAME"\n");
     assert(n_iov <= MPID_IOV_LIMIT);
     assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
 
@@ -72,7 +71,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov,
 	    tmp_iov = iov[i];
 	    iov[i].MPID_IOV_LEN = MPIDI_CH3_packet_len - msg_sz;
 	
-	    printf_d ("  sending %d bytes\n", msg_sz);
+	    MPIDI_DBG_PRINTF((55, FCNAME, "  sending %d bytes\n", msg_sz));
 	    gn_errno = gasnet_AMRequestMediumv0(vc->lpid,
 						MPIDI_CH3_start_packet_handler_id,
 						iov, i+1);
@@ -107,7 +106,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov,
 	}
 	else
 	{
-	    printf_d ("  sending %d bytes\n", msg_sz);
+	    MPIDI_DBG_PRINTF((55, FCNAME, "  sending %d bytes\n", msg_sz));
 	    gn_errno = gasnet_AMRequestMediumv0(vc->lpid,
 						MPIDI_CH3_start_packet_handler_id,
 						iov, n_iov);
@@ -147,7 +146,6 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov,
     
     *sreq_ptr = sreq;
 
-    printf_d ("Exiting "FCNAME"\n");
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
     return mpi_errno;

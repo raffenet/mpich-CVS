@@ -30,7 +30,6 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz,
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    printf_d ("Entering "FCNAME"\n");
     assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
 
     /* This channel uses a fixed length header, the size of which is
@@ -73,7 +72,6 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz,
 
     *sreq_ptr = sreq;
 
-    printf_d ("Exiting "FCNAME"\n");
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND);
     return mpi_errno;

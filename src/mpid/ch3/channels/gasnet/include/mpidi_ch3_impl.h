@@ -7,7 +7,6 @@
 #if !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED)
 #define MPICH_MPIDI_CH3_IMPL_H_INCLUDED
 
-#define printf_d(x...) //do { printf ("%d: ", MPIDI_CH3I_my_rank); printf (x); fflush(stdout); } while(0)
 extern int MPIDI_CH3I_my_rank;
 
 #include "mpidi_ch3i_gasnet_conf.h"

@@ -29,7 +29,6 @@ int MPIDI_CH3_Finalize()
     }
     
     PMI_Finalize ();
-    printf_d ("MPIDI_CH3_Finalize\n");
     
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     return mpi_errno;

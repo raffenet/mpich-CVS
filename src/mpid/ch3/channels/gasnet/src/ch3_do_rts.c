@@ -26,7 +26,6 @@ int MPIDI_CH3_do_rts(MPIDI_VC_t *vc, MPID_Request *sreq,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_DO_RTS);
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    printf_d ("Entering "FCNAME"\n");
     assert(n_iov <= MPID_IOV_LIMIT);
 
     DUMP_REQUEST(sreq);
@@ -65,7 +64,6 @@ int MPIDI_CH3_do_rts(MPIDI_VC_t *vc, MPID_Request *sreq,
 	MPIDI_CH3I_SendQ_enqueue(rts_sreq, CH3_NORMAL_QUEUE);
     }
 
-    printf_d ("Exiting "FCNAME"\n");
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_DO_RTS);
     return mpi_errno;
