@@ -586,13 +586,13 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
                                         recvtype, comm_ptr); 
         else {
             /* intracommunicator */
-            printf("ERROR: MPI_Allgatherv for intercommunicators not yet implemented.\n"); 
-            NMPI_Abort(MPI_COMM_WORLD, 1);
-
-            mpi_errno = MPIR_Allgatherv_inter(sendbuf, sendcount, 
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+					      "**intercommcoll",
+					      "**intercommcoll %s", FCNAME );
+            /* mpi_errno = MPIR_Allgatherv_inter(sendbuf, sendcount, 
                                         sendtype, recvbuf,
                                         recvcounts, displs,
-                                        recvtype, comm_ptr); 
+                                        recvtype, comm_ptr); */
         }
     }
     if (mpi_errno == MPI_SUCCESS)

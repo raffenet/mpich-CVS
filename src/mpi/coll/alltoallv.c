@@ -281,12 +281,12 @@ int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype sendt
                                        rdispls, recvtype, comm_ptr);
         else {
             /* intercommunicator */
-            printf("ERROR: MPI_Alltoallv for intercommunicators not yet implemented.\n"); 
-            NMPI_Abort(MPI_COMM_WORLD, 1);
-
-            mpi_errno = MPIR_Alltoallv_inter(sendbuf, sendcnts, sdispls,
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+					      "**intercommcoll",
+					      "**intercommcoll %s", FCNAME );
+            /*mpi_errno = MPIR_Alltoallv_inter(sendbuf, sendcnts, sdispls,
                                              sendtype, recvbuf, recvcnts,
-                                             rdispls, recvtype, comm_ptr);
+                                             rdispls, recvtype, comm_ptr);*/
         }
     }
     if (mpi_errno == MPI_SUCCESS)

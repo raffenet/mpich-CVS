@@ -677,12 +677,12 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype
                                             op, comm_ptr);
         else {
             /* intercommunicator */
-            printf("ERROR: MPI_Reduce_scatter for intercommunicators not yet implemented.\n"); 
-            NMPI_Abort(MPI_COMM_WORLD, 1);
-
-            mpi_errno = MPIR_Reduce_scatter_inter(sendbuf, recvbuf,
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+					      "**intercommcoll",
+					      "**intercommcoll %s", FCNAME );
+            /*mpi_errno = MPIR_Reduce_scatter_inter(sendbuf, recvbuf,
                                                   recvcnts, datatype, 
-                                                  op, comm_ptr);           
+                                                  op, comm_ptr);           */
         }
     }
     if (mpi_errno == MPI_SUCCESS)

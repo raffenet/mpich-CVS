@@ -561,12 +561,12 @@ int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *rec
                                        comm_ptr);
         else {
             /* intercommunicator */
-            printf("ERROR: MPI_Allgather for intercommunicators not yet implemented.\n"); 
-            NMPI_Abort(MPI_COMM_WORLD, 1);
-
-            mpi_errno = MPIR_Allgather_inter(sendbuf, sendcount, sendtype,
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+					      "**intercommcoll",
+					      "**intercommcoll %s", FCNAME );
+            /*mpi_errno = MPIR_Allgather_inter(sendbuf, sendcount, sendtype,
                                              recvbuf, recvcount, recvtype,
-                                             comm_ptr);            
+                                             comm_ptr);            */
         }
     }
     if (mpi_errno == MPI_SUCCESS)

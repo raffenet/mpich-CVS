@@ -425,13 +425,13 @@ int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recv
                                       recvbuf, recvcount, recvtype, comm_ptr); 
         else {
             /* intercommunicator */
-            printf("ERROR: MPI_Alltoall for intercommunicators not yet implemented.\n"); 
-            NMPI_Abort(MPI_COMM_WORLD, 1);
-            
-            mpi_errno = MPIR_Alltoall_inter(sendbuf, sendcount,
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+					      "**intercommcoll",
+					      "**intercommcoll %s", FCNAME );
+            /*mpi_errno = MPIR_Alltoall_inter(sendbuf, sendcount,
                                             sendtype, recvbuf,
                                             recvcount, recvtype,
-                                            comm_ptr); 
+                                            comm_ptr); */
         }
     }
     if (mpi_errno == MPI_SUCCESS)

@@ -589,11 +589,11 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
             mpi_errno = MPIR_Bcast( buffer, count, datatype, root, comm_ptr );
         else {
             /* intercommunicator */
-            printf("ERROR: MPI_Bcast for intercommunicators not yet implemented.\n");
-            NMPI_Abort(MPI_COMM_WORLD, 1);
-
-            mpi_errno = MPIR_Bcast_inter( buffer, count, datatype,
-                                          root, comm_ptr );
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+					      "**intercommcoll",
+					      "**intercommcoll %s", FCNAME );
+            /*mpi_errno = MPIR_Bcast_inter( buffer, count, datatype,
+	      root, comm_ptr );*/
 
         }
     }

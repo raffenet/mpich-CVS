@@ -436,11 +436,11 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
                                        op, comm_ptr); 
         else {
             /* intercommunicator */
-            printf("ERROR: MPI_Allreduce for intercommunicators not yet implemented.\n"); 
-            NMPI_Abort(MPI_COMM_WORLD, 1);
-
-            mpi_errno = MPIR_Allreduce_inter(sendbuf, recvbuf, count,
-                                             datatype, op, comm_ptr);       
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+					      "**intercommcoll",
+					      "**intercommcoll %s", FCNAME );
+/*            mpi_errno = MPIR_Allreduce_inter(sendbuf, recvbuf, count,
+	      datatype, op, comm_ptr);       */
         }
     }
     if (mpi_errno == MPI_SUCCESS)

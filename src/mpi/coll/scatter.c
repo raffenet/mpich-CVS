@@ -598,12 +598,12 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                                      comm_ptr); 
         else {
             /* intercommunicator */ 
-            printf("ERROR: MPI_Scatter for intercommunicators not yet implemented.\n"); 
-            NMPI_Abort(MPI_COMM_WORLD, 1);
-            
-            mpi_errno = MPIR_Scatter_inter(sendbuf, sendcnt, sendtype,
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+					      "**intercommcoll",
+					      "**intercommcoll %s", FCNAME );
+            /*mpi_errno = MPIR_Scatter_inter(sendbuf, sendcnt, sendtype,
                                            recvbuf, recvcnt, recvtype, root,
-                                           comm_ptr); 
+                                           comm_ptr); */
         }
     }
     if (mpi_errno == MPI_SUCCESS)
