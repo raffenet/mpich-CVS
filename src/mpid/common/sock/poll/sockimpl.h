@@ -24,8 +24,8 @@
 #define SOCK_IOV_LEN         iov_len
 #define SOCK_IOV_BUF         iov_base
 #define SOCK_IOV_MAXLEN      16
-#define SOCK_INFINITE        -1
-#define SOCK_INVALID_SOCKET  -1
+#define SOCK_INFINITE_TIME   -1
+#define SOCK_INVALID_SOCK    NULL
 #define SOCK_SIZE_MAX	     SSIZE_MAX
 
 typedef struct sock_set * sock_set_t;
