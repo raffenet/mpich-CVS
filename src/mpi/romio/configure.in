@@ -173,6 +173,7 @@ MAKE=${MAKE:-"make"}
 # foll. needed for f77 test programs
 F77GETARG="call getarg(i,str)"
 F77IARGC="iargc()"
+F77MPIOINC="include 'mpiof.h'"
 FTESTDEFINE=""
 FORTRAN_MPI_OFFSET=""
 MPIOF_H_INCLUDED=0
