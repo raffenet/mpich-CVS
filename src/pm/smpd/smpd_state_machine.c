@@ -2196,6 +2196,9 @@ int smpd_state_reading_cred_ack(smpd_context_t *context, MPIDU_Sock_event_t *eve
 	smpd_exit_fn("smpd_state_writing_cred_request");
 	return SMPD_SUCCESS;
     }
+    else if (strcmp(context->cred_request, "sspi") == 0)
+    {
+    }
     context->state = SMPD_CLOSING;
     result = MPIDU_Sock_post_close(context->sock);
     smpd_exit_fn("smpd_state_writing_cred_request");
@@ -2235,6 +2238,7 @@ int smpd_state_writing_cred_ack_yes(smpd_context_t *context, MPIDU_Sock_event_t 
 int smpd_state_writing_cred_ack_no(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 {
     int result;
+    char *host_ptr;
 
     smpd_enter_fn("smpd_state_writing_cred_ack_no");
     if (event_ptr->error != MPI_SUCCESS)
@@ -2246,9 +2250,22 @@ int smpd_state_writing_cred_ack_no(smpd_context_t *context, MPIDU_Sock_event_t *
 	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
     }
 
-    smpd_dbg_printf("wrote cred request yes ack.\n");
+    smpd_dbg_printf("wrote cred request no ack.\n");
 
     /* insert code here to handle failed connection attempt */
+    smpd_process.left_context = NULL;
+    if (smpd_process.do_console && smpd_process.console_host[0] != '\0')
+	host_ptr = smpd_process.console_host;
+    else if (context->connect_to && context->connect_to->host[0] != '\0')
+	host_ptr = context->connect_to->host;
+    else if (context->host[0] != '\0')
+	host_ptr = context->host;
+    else
+	host_ptr = NULL;
+    if (host_ptr)
+	result = smpd_post_abort_command("Unable to connect to %s", host_ptr);
+    else
+	result = smpd_post_abort_command("connection failed");
 
     context->read_state = SMPD_IDLE;
     context->write_state = SMPD_IDLE;
@@ -2641,7 +2658,14 @@ int smpd_state_reading_cred_request(smpd_context_t *context, MPIDU_Sock_event_t 
 	if (strcmp(context->account, "invalid account") == 0)
 	{
 	    /*smpd_err_printf("Attempting to create a session with an smpd that requires credentials without having obtained any credentials.\n");*/
-	    smpd_err_printf("Credentials required to connect to the process manager on %s.  Please use \"mpiexec -register\" or \"mpiexec -logon ...\" to provide user credentials.\n");
+	    if (context->connect_to != NULL)
+	    {
+		smpd_err_printf("Credentials required to connect to the process manager on %s.  Please use \"mpiexec -register\" or \"mpiexec -logon ...\" to provide user credentials.\n", context->connect_to->host);
+	    }
+	    else
+	    {
+		smpd_err_printf("Credentials required to connect to the process manager.  Please use \"mpiexec -register\" or \"mpiexec -logon ...\" to provide user credentials.\n");
+	    }
 	    strcpy(context->cred_request, "no");
 	    context->write_state = SMPD_WRITING_CRED_ACK_NO;
 	    context->read_state = SMPD_IDLE;
@@ -3389,8 +3413,7 @@ int smpd_state_reading_process_result(smpd_context_t *context, MPIDU_Sock_event_
 	    return SMPD_FAIL;
 	}
 	/* when does a forming context get assinged it's global place?  At creation?  At connection? */
-	if (smpd_process.left_context == smpd_process.left_context)
-	    smpd_process.left_context = NULL;
+	smpd_process.left_context = NULL;
 	if (host_ptr)
 	    result = smpd_post_abort_command("Unable to connect to %s", host_ptr);
 	else
