@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include "mpi.h"
+/* unistd is needed for sleep */
+#include <unistd.h>
 
 int main( int argc, char *argv[] )
 {
