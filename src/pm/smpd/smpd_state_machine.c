@@ -696,6 +696,23 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_SUCCESS;
 		}
+		else if (result == SMPD_ABORT)
+		{
+		    result = smpd_post_read_command(context);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a read for the next command on %s context.\n", smpd_get_context_str(context));
+			smpd_exit_fn("smpd_enter_at_state");
+			return SMPD_FAIL;
+		    }
+		    result = smpd_post_abort_command("");
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to post an abort command.\n");
+			smpd_exit_fn("smpd_enter_at_state");
+			return SMPD_FAIL;
+		    }
+		}
 		else
 		{
 		    smpd_err_printf("unable to handle the command: \"%s\"\n", context->read_cmd.cmd);
