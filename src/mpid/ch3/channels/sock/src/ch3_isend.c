@@ -6,7 +6,7 @@
 
 #include "mpidi_ch3_impl.h"
 
-static void update_request(MPID_Request * sreq, void * hdr, int hdr_sz, int nb)
+static void update_request(MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_sz, sock_size_t nb)
 {
     MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST);
 
@@ -25,7 +25,7 @@ static void update_request(MPID_Request * sreq, void * hdr, int hdr_sz, int nb)
 #define FUNCNAME MPIDI_CH3_iSend
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
+void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPI_msg_sz_t hdr_sz)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
 
@@ -42,7 +42,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
-	    int nb;
+	    sock_size_t nb;
 	    int rc;
 
 	    MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
@@ -52,7 +52,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 	    rc = sock_write(vc->sc.sock, hdr, hdr_sz, &nb);
 	    if (rc == SOCK_SUCCESS)
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
+		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %ld bytes", (unsigned long) nb));
 		
 		if (nb == hdr_sz)
 		{ 

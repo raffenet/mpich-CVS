@@ -6,7 +6,7 @@
 
 #include "mpidi_ch3_impl.h"
 
-static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offset, int nb)
+static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offset, sock_size_t nb)
 {
     MPID_Request * sreq;
     int i;
@@ -80,7 +80,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
 	    int rc;
-	    int nb;
+	    sock_size_t nb;
 
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                also try to write */
@@ -89,7 +89,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	    {
 		int offset = 0;
     
-		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
+		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %ld bytes", (unsigned long) nb));
 		
 		while (offset < n_iov)
 		{

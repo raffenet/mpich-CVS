@@ -6,7 +6,7 @@
 
 #include "mpidi_ch3_impl.h"
 
-static MPID_Request * create_request(void * hdr, int hdr_sz, int nb)
+static MPID_Request * create_request(void * hdr, MPIDI_msg_sz_t hdr_sz, sock_size_t nb)
 {
     MPID_Request * sreq;
     MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST);
@@ -39,7 +39,7 @@ static MPID_Request * create_request(void * hdr, int hdr_sz, int nb)
 #define FUNCNAME MPIDI_CH3_iStartMsg
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
+MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz)
 {
     MPID_Request * sreq = NULL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSG);
@@ -57,7 +57,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
-	    int nb;
+	    sock_size_t nb;
 	    int rc;
 
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
@@ -65,7 +65,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 	    rc = sock_write(vc->sc.sock, hdr, hdr_sz, &nb);
 	    if (rc == SOCK_SUCCESS)
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
+		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %ld bytes", (unsigned long) nb));
 		
 		if (nb == hdr_sz)
 		{ 

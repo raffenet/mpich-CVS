@@ -6,7 +6,7 @@
 
 #include "mpidi_ch3_impl.h"
 
-static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, int iov_offset, int nb)
+static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, int iov_offset, sock_size_t nb)
 {
     int i;
     MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST);
@@ -54,7 +54,7 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
-	    int nb;
+	    sock_size_t nb;
 	    int rc;
 
 	    MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
@@ -69,7 +69,7 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 	    {
 		int offset = 0;
 
-		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
+		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %ld bytes", (unsigned long) nb));
 		
 		while (offset < n_iov)
 		{
