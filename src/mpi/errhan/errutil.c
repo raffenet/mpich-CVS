@@ -536,7 +536,7 @@ static const char * GetAssertString(int d)
 {
     static char str[ASSERT_STR_MAXLEN] = "";
     char *cur;
-    int len = ASSERT_STR_MAXLEN;
+    size_t len = ASSERT_STR_MAXLEN;
     size_t n;
 
     if (d == 0)
