@@ -521,7 +521,7 @@ dnl
 dnl tries to determine the Fortran 90 kind parameter for 8-byte integers
 dnl
 define(PAC_MPI_OFFSET_KIND,
-[m -f conftest*
+[rm -f conftest*
 # Determine the extension for Fortran 90 files (not all compilers accept
 # .f and not all accept .f90)
 if test -z "$ac_f90ext" ; then
