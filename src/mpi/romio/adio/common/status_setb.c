@@ -5,9 +5,9 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
-#ifdef MPICH
-
 #include "mpi.h"
+
+#ifdef MPICH
 
 void MPID_Status_set_bytes(MPI_Status *status, int nbytes);
 int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, 
