@@ -20,7 +20,7 @@ void ADIOI_NFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
     ADIO_Offset curr_fsize, alloc_size, size, done;
     ADIO_Status status;
     char *buf;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NFS_FCNTL";
 #endif
 

@@ -11,7 +11,7 @@
 void ADIOI_XFS_Close(ADIO_File fd, int *error_code)
 {
     int err, err1;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_XFS_CLOSE";
 #endif
 

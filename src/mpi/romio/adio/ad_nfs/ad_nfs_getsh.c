@@ -19,7 +19,7 @@ void ADIOI_NFS_Get_shared_fp(ADIO_File fd, int incr, ADIO_Offset *shared_fp,
     ADIO_Offset new_fp;
     int err;
     MPI_Comm dupcommself;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NFS_GET_SHARED_FP";
 #endif
 

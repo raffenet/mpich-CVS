@@ -11,7 +11,7 @@
 void ADIOI_NFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 {
     int err;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NFS_RESIZE";
 #endif
     

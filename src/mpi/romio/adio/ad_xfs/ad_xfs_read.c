@@ -17,7 +17,7 @@ void ADIOI_XFS_ReadContig(ADIO_File fd, void *buf, int count,
 {
     int err=-1, datatype_size, len, diff, size, nbytes;
     void *newbuf;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_XFS_READCONTIG";
 #endif
 

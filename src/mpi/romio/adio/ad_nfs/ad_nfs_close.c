@@ -11,7 +11,7 @@
 void ADIOI_NFS_Close(ADIO_File fd, int *error_code)
 {
     int err;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NFS_CLOSE";
 #endif
     

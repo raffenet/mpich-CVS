@@ -12,7 +12,7 @@ int ADIOI_UFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 {
 #ifndef NO_AIO
     int done=0;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_UFS_READDONE";
 #endif
 #ifdef AIO_SUN 

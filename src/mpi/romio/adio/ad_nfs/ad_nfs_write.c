@@ -14,7 +14,7 @@ void ADIOI_NFS_WriteContig(ADIO_File fd, void *buf, int count,
 		     ADIO_Offset offset, ADIO_Status *status, int *error_code)
 {
     int err=-1, datatype_size, len;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NFS_WRITECONTIG";
 #endif
 
@@ -157,7 +157,7 @@ void ADIOI_NFS_WriteStrided(ADIO_File fd, void *buf, int count,
     char *writebuf, *value;
     int flag, st_fwr_size, st_n_filetypes, writebuf_len, write_sz;
     int new_bwr_size, new_fwr_size, err_flag=0, info_flag, max_bufsize;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NFS_WRITESTRIDED";
 #endif
 

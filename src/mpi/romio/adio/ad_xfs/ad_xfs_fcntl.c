@@ -18,7 +18,7 @@ void ADIOI_XFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
     int combiner, i, j, k, filetype_is_contig, err;
     ADIOI_Flatlist_node *flat_file;
     struct flock64 fl;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_XFS_FCNTL";
 #endif
 

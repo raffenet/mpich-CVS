@@ -17,7 +17,7 @@ void ADIOI_NFS_IreadContig(ADIO_File fd, void *buf, int count,
     ADIO_Status status;
 #else
     int err=-1;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NFS_IREADCONTIG";
 #endif
 #endif

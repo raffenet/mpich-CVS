@@ -14,7 +14,7 @@ void ADIOI_NFS_ReadContig(ADIO_File fd, void *buf, int count,
 		     ADIO_Offset offset, ADIO_Status *status, int *error_code)
 {
     int err=-1, datatype_size, len;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NFS_READCONTIG";
 #endif
 
@@ -119,7 +119,7 @@ void ADIOI_NFS_ReadStrided(ADIO_File fd, void *buf, int count,
     char *readbuf, *tmp_buf, *value;
     int flag, st_frd_size, st_n_filetypes, readbuf_len;
     int new_brd_size, new_frd_size, err_flag=0, info_flag, max_bufsize;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NFS_READSTRIDED";
 #endif
 

@@ -11,7 +11,7 @@
 void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
 {
 #ifndef NO_AIO
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_UFS_READCOMPLETE";
 #endif
 #ifdef AIO_SUN 

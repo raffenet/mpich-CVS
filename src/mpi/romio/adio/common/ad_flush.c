@@ -15,7 +15,7 @@
 void ADIOI_GEN_Flush(ADIO_File fd, int *error_code)
 {
     int err;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_GEN_FLUSH";
 #endif
     err = fsync(fd->fd_sys);

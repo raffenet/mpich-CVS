@@ -13,7 +13,7 @@ void ADIOI_XFS_IreadContig(ADIO_File fd, void *buf, int count,
                 ADIO_Offset offset, ADIO_Request *request, int *error_code)  
 {
     int  len, typesize, err=-1;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_XFS_IREADCONTIG";
 #endif
 

@@ -11,7 +11,7 @@
 void ADIOI_NFS_Open(ADIO_File fd, int *error_code)
 {
     int perm, old_mask, amode;
-#ifndef PRINT_ERR_MSG
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NFS_OPEN";
 #endif
 
