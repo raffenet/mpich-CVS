@@ -62,8 +62,6 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
     MPID_Request *lrequest_ptr;
     MPID_MPI_STATE_DECLS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GREQUEST_START);
-
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -72,7 +70,7 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
 	    MPIR_ERRTEST_ARGNULL(request,"request",mpi_errno);
 	    if (request != NULL)
 	    {
-		MPI_ERRTEST_REQUEST(*request, mpi_errno);
+		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
 	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_START);
@@ -82,6 +80,8 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GREQUEST_START);
 
     /* ... body of routine ...  */
     lrequest_ptr = MPID_Request_create();

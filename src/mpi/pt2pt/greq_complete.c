@@ -52,7 +52,6 @@ int MPI_Grequest_complete( MPI_Request request )
     MPID_Request *request_ptr;
     MPID_MPI_STATE_DECLS;
 
-    /* Get handles to MPI objects. */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -69,6 +68,7 @@ int MPI_Grequest_complete( MPI_Request request )
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GREQUEST_COMPLETE);
     
+    /* Get handles to MPI objects. */
     MPID_Request_get_ptr( request, request_ptr );
 
 #   ifdef HAVE_ERROR_CHECKING
