@@ -43,7 +43,7 @@ int PMI_KVS_iter_next(const char *kvsname, char *key, char *val);   /* pairs in 
 
 /* PMI Process Creation functions */
 
-typedef struct
+typedef struct PMI_keyval_t
 {
     char * key;
     char * val;
