@@ -11,6 +11,7 @@
 #    MPI_CXXFLAGS       - Any special flags needed to compile 
 #    MPI_LDFLAGS        - Any special flags needed to link
 #    MPILIBNAME         - Name of the MPI library
+#    MPICXXLIBNAME      - Name of the C++ binding part of the MPI library
 #    MPI_OTHERLIBS      - Other libraries needed in order to link 
 #    
 # We assume that (a) the C++ compiler can both compile and link programs
@@ -38,9 +39,10 @@ CXX_LINKPATH_SHL="@CXX_LINKPATH_SHL@"
 MPI_CXXFLAGS="@MPI_CXXFLAGS@"
 MPI_LDFLAGS="@MPI_LDFLAGS@"
 MPILIBNAME="@MPILIBNAME@"
+MPICXXLIBNAME="@MPICXXLIBNAME@"
 MPI_OTHERLIBS="@LIBS@"
 NEEDSPLIB="@NEEDSPLIB@"
-# MPIVERSION is the version of the MPICH2 library that mpicc is intended for
+# MPIVERSION is the version of the MPICH2 library that mpicxx is intended for
 MPIVERSION=@MPIVERSION@
 #
 # Internal variables
@@ -158,6 +160,10 @@ mpilibs=-l$MPILIBNAME
 if [ "$NEEDSPLIB" = yes ] ; then
      mpilibs="$mpilibs -lp$MPILIBNAME -l$MPILIBNAME -lp$MPILIBNAME"
 fi
+cxxlibs=
+if [ "$MPICXXLIBNAME" != "$MPILIBNAME" ] ; then
+    cxxlibs="-l$MPICXXLIBNAME"
+fi
 #
 # Concatenate the user flags with the ones needed by MPI
 # For now, the HAVE_MPI_CXX flag is used to control the inclusion of 
@@ -172,9 +178,9 @@ LDFLAGS="$LDFLAGS $MPI_LDFLAGS"
 if [ "$linking" = yes ] ; then
     if [ -n "$CXX_LINKPATH_SHL" ] ; then
         # Prepend the path for the shared libraries to the library list
-        mpilibs="$CXX_LINKPATH_SHL$libdir $mpilibs"
+        shllibpath="$CXX_LINKPATH_SHL$libdir"
     fi
-    $Show $CXX $CXXFLAGS $LDFLAGS -I$includedir -L$libdir $allargs $mpilibs $MPI_OTHERLIBS
+    $Show $CXX $CXXFLAGS $LDFLAGS -I$includedir -L$libdir $allargs $shllibpath $cxxlibs $mpilibs $MPI_OTHERLIBS
     rc=$?
 else
     $Show $CXX $CXXFLAGS -I$includedir $allargs
