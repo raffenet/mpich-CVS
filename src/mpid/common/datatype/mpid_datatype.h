@@ -33,6 +33,12 @@
 #define MPID_DTYPE_END       -1
 
 /* Datatype functions */
+int MPID_Type_struct(int count,
+		     int *blocklength_array,
+		     MPI_Aint *displacement_array,
+		     MPI_Datatype *oldtype_array,
+		     MPI_Datatype *newtype);
+
 int MPID_Type_indexed(int count,
 		      int *blocklength_array,
 		      void *displacement_array,

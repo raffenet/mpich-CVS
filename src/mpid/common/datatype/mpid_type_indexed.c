@@ -66,7 +66,8 @@ int MPID_Type_indexed(int count,
      * function.
      */
 
-    new_dtp->combiner     = MPI_COMBINER_INDEXED;
+    if (dispinbytes) new_dtp->combiner = MPI_COMBINER_HINDEXED;
+    else new_dtp->combiner             = MPI_COMBINER_INDEXED;
     new_dtp->is_permanent = 0;
     new_dtp->is_committed = 0;
     new_dtp->attributes   = 0;
