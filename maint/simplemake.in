@@ -1847,14 +1847,19 @@ sub TargetInstall {
     }
     foreach $extradir (@install_subdirs) {
 	# Check for configure substitutions in the list.  Make
-	# these conditional, so that they can be empty
+	# these conditional, so that they can be empty.  Also note that
+	# they could also contain *multiple* directories, so we have
+	# to handle them in a general way
 	$endline = "";
 	if ($extradir =~ /^@/) {
-	    print FD "\tif [ -n \"$extradir\" ] ; then \\$newline";
-	    $endline = " ; fi";
+	    print FD "\tfor dir in $extradir - ; do \\$newline";
+	    print FD "\t\tif [ \"\$\$\dir\" = \"-\" ] ; then break ; fi ;\\$newline";
+	    print FD "\t\t(cd \$\$dir && \$(MAKE) INSTALL_STRIP_FLAG=\$(INSTALL_STRIP_FLAG) install) ;\\$newline";
+	    print FD "\tdone$newline";
 	}
-	print FD "\t(cd $extradir && \$(MAKE) INSTALL_STRIP_FLAG=\$(INSTALL_STRIP_FLAG) install)$endline$newline";
-	
+	else {
+	    print FD "\t(cd $extradir && \$(MAKE) INSTALL_STRIP_FLAG=\$(INSTALL_STRIP_FLAG) install)$newline";
+	}
     }
     print FD "$newline";
 
