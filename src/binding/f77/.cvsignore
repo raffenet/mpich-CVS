@@ -21,6 +21,7 @@ config.status
 config.cache
 config.system
 autom4te.cache
+autom4te-*.cache
 abortf.c
 accumulatef.c
 adderrclassf.c
