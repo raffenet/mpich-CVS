@@ -266,15 +266,8 @@ fi
 dnl
 dnl Checks for programs
 PAC_PROG_MAKE
-# archive program
-# In some cases, the AR definition in the MPICH configure is exported.
-# Define our own AR here, just in case
-if test -n "$ARCMD" ; then
-    AR="$ARCMD"
-else
-    AR=ar
-fi
-AC_SUBST(AR)
+
+AC_PATH_PROG(AR,ar)
 AC_PROG_INSTALL
 PAC_PROG_MKDIR_P
 # Note that we set RANLIB to true if we don't find it (some systems neither
@@ -527,6 +520,12 @@ if test $len -lt 16 ; then
     hexlen="0$hexlen"
 fi
 len_integer=$hexlen
+if test "$len_integer" = 0 ; then
+   # We have a problem
+   AC_MSG_WARN([Unable to determine size of an INTEGER type; using 4])
+   # We make the length 4
+   len_integer="04"
+fi
 MPI_INTEGER=0x4c00${len_integer}19
 MPI_REAL=0x4c00${len_integer}1a
 MPI_LOGICAL=0x4c00${len_integer}1b
@@ -565,6 +564,12 @@ if test $len -lt 16 ; then
     hexlen="0$hexlen"
 fi
 len_double=$hexlen
+if test "$len_double" = 0 ; then
+   # We have a problem
+   AC_MSG_WARN([Unable to determine size of a DOUBLE PRECISION type; using 8])
+   # We make the length 8
+   len_double="08"
+fi
 MPI_COMPLEX=0x4c00${len_double}1c
 MPI_DOUBLE_PRECISION=0x4c00${len_double}1d
 MPI_2INTEGER=0x4c00${len_double}1e
@@ -575,6 +580,12 @@ AC_SUBST(MPI_2INTEGER)
 AC_SUBST(MPI_2REAL)
 
 len_doublecplx=`expr $pac_cv_f77_sizeof_double_precision \* 2`
+if test "$len_doublecplx" = 0 ; then
+   # We have a problem
+   AC_MSG_WARN([Unable to determine size of a DOUBLE PRECISION type; using 8])
+   # We make the length 8*2 (in hex)
+   len_doublecplx="10"
+fi
 len=$len_doublecplx
 #
 # Take len and turn it into two hex digits (there are 8 bits available
