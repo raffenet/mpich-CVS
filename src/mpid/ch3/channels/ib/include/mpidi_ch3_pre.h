@@ -45,7 +45,7 @@ typedef struct MPIDI_CH3I_VC
     MPIDI_CH3I_VC_state_t state;
 } MPIDI_CH3I_VC;
 
-#define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ib;
+#define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;
 
 /*
  * MPIDI_CH3_CA_ENUM (additions to MPIDI_CA_t)
@@ -70,7 +70,7 @@ struct MPIDI_CH3I_Request						\
     /*  pkt is used to temporarily store a packet header associated	\
        with this request */						\
     MPIDI_CH3_Pkt_t pkt;						\
-} ib;
+} ch;
 
 #define MPID_STATE_LIST_CH3 \
 MPID_STATE_MPIDI_COMM_SPAWN, \

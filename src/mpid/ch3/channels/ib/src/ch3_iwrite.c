@@ -23,20 +23,20 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 
     MPIDI_DBG_PRINTF((71, FCNAME, "entering"));
 
-    req->ib.iov_offset = 0;
-    vc->ib.send_active = req;
-    nb = (req->ch3.iov_count == 1) ?
-	ibu_write(vc->ib.ibu, req->ch3.iov, req->ch3.iov->MPID_IOV_LEN) :
-	ibu_writev(vc->ib.ibu, req->ch3.iov, req->ch3.iov_count);
+    req->ch.iov_offset = 0;
+    vc->ch.send_active = req;
+    nb = (req->dev.iov_count == 1) ?
+	ibu_write(vc->ch.ibu, req->dev.iov, req->dev.iov->MPID_IOV_LEN) :
+	ibu_writev(vc->ch.ibu, req->dev.iov, req->dev.iov_count);
 
     if (nb > 0)
     {
 	if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	{
 	    /* Write operation complete */
-	    MPIDI_CA_t ca = req->ch3.ca;
+	    MPIDI_CA_t ca = req->dev.ca;
 	    
-	    vc->ib.send_active = NULL;
+	    vc->ch.send_active = NULL;
 	    
 	    if (ca == MPIDI_CH3_CA_COMPLETE)
 	    {
@@ -44,18 +44,18 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 		{
 		    MPIDI_CH3I_SendQ_dequeue(vc);
 		}
-		vc->ib.send_active = MPIDI_CH3I_SendQ_head(vc);
+		vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
 		/* mark data transfer as complete and decrment CC */
-		req->ch3.iov_count = 0;
+		req->dev.iov_count = 0;
 		MPIDI_CH3U_Request_complete(req);
 	    }
 	    else if (ca == MPIDI_CH3I_CA_HANDLE_PKT)
 	    {
-		MPIDI_CH3_Pkt_t * pkt = &req->ib.pkt;
+		MPIDI_CH3_Pkt_t * pkt = &req->ch.pkt;
 		
 		if (pkt->type < MPIDI_CH3_PKT_END_CH3)
 		{
-		    vc->ib.send_active = MPIDI_CH3I_SendQ_head(vc);
+		    vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
 		}
 		else
 		{
@@ -66,7 +66,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 	    {
 		MPIDI_DBG_PRINTF((71, FCNAME, "finished sending iovec, calling CH3U_Handle_send_req()"));
 		MPIDI_CH3U_Handle_send_req(vc, req);
-		if (MPIDI_CH3I_SendQ_head(vc) == req && req->ch3.iov_count == 0)
+		if (MPIDI_CH3I_SendQ_head(vc) == req && req->dev.iov_count == 0)
 		{
 		    /* NOTE: This code assumes that if another write is not posted by the device during the callback, then the
 		       device has completed the current request.  As a result, the current request is dequeded and next request
@@ -74,7 +74,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 		    MPIDI_DBG_PRINTF((71, FCNAME, "request (assumed) complete, dequeuing req and posting next send"));
 		    MPIDI_CH3I_SendQ_dequeue(vc);
 		}
-		vc->ib.send_active = MPIDI_CH3I_SendQ_head(vc);
+		vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
 	    }
 	    else
 	    {
@@ -83,7 +83,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 	}
 	else
 	{
-	    assert(req->ib.iov_offset < req->ch3.iov_count);
+	    assert(req->ch.iov_offset < req->dev.iov_count);
 	}
     }
     else if (nb == 0)
@@ -94,7 +94,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
     else
     {
 	/* Connection just failed.  Mark the request complete and return an error. */
-	vc->ib.state = MPIDI_CH3I_VC_STATE_FAILED;
+	vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
 	/* TODO: Create an appropriate error message based on the value of errno */
 	req->status.MPI_ERROR = MPI_ERR_INTERN;
 	/* MT - CH3U_Request_complete performs write barrier */

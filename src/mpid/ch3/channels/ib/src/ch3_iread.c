@@ -19,12 +19,12 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * req)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IREAD);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IREAD);
-    assert(vc->ib.state = MPIDI_CH3I_VC_STATE_CONNECTED);
-    req->ib.iov_offset = 0;
+    assert(vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED);
+    req->ch.iov_offset = 0;
 
     MPIDI_DBG_PRINTF((60, FCNAME, "ch3_iread\n"));
-    vc->ib.recv_active = req;
-    ibu_post_readv(vc->ib.ibu, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset, NULL);
+    vc->ch.recv_active = req;
+    ibu_post_readv(vc->ch.ibu, req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset, NULL);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
     return mpi_errno;

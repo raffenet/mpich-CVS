@@ -15,18 +15,18 @@
     MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST); \
     for (i = 0; i < count; i++) \
     { \
-	sreq->ch3.iov[i] = iov[i]; \
+	sreq->dev.iov[i] = iov[i]; \
     } \
     if (offset == 0) \
     { \
 	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t)); \
-	sreq->ib.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
-	sreq->ch3.iov[0].MPID_IOV_BUF = (void*)&sreq->ib.pkt; \
+	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
+	sreq->dev.iov[0].MPID_IOV_BUF = (void*)&sreq->ch.pkt; \
     } \
-    (char *) sreq->ch3.iov[offset].MPID_IOV_BUF += nb; \
-    sreq->ch3.iov[offset].MPID_IOV_LEN -= nb; \
-    sreq->ib.iov_offset = offset; \
-    sreq->ch3.iov_count = count; \
+    (char *) sreq->dev.iov[offset].MPID_IOV_BUF += nb; \
+    sreq->dev.iov[offset].MPID_IOV_LEN -= nb; \
+    sreq->ch.iov_offset = offset; \
+    sreq->dev.iov_count = count; \
     MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST); \
 }
 
@@ -62,8 +62,8 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 	   as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
 	
 	nb = (n_iov > 1) ?
-	    ibu_writev(vc->ib.ibu, iov, n_iov) :
-	    ibu_write(vc->ib.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN);
+	    ibu_writev(vc->ch.ibu, iov, n_iov) :
+	    ibu_write(vc->ch.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN);
 	
 	if (nb > 0)
 	{
@@ -83,7 +83,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write, enqueuing at head"));
 		    update_request(sreq, iov, n_iov, offset, nb);
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    vc->ib.send_active = sreq;
+		    vc->ch.send_active = sreq;
 		    break;
 		}
 	    }
@@ -92,9 +92,9 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 		MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
 		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		MPIDI_CH3U_Handle_send_req(vc, sreq);
-		if (sreq->ch3.iov_count == 0)
+		if (sreq->dev.iov_count == 0)
 		{
-		/* NOTE: ch3.iov_count is used to detect completion instead of cc because the transfer may be complete, but
+		/* NOTE: dev.iov_count is used to detect completion instead of cc because the transfer may be complete, but
 		    request may still be active (see MPI_Ssend()) */
 		    MPIDI_CH3I_SendQ_dequeue(vc);
 		}
@@ -105,12 +105,12 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 	    MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
 	    update_request(sreq, iov, n_iov, 0, 0);
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-	    vc->ib.send_active = sreq;
+	    vc->ch.send_active = sreq;
 	}
 	else
 	{
 	    /* Connection just failed.  Mark the request complete and return an error. */
-	    vc->ib.state = MPIDI_CH3I_VC_STATE_FAILED;
+	    vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
 	    /* TODO: Create an appropriate error message based on the value of errno */
 	    sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 	    /* MT - CH3U_Request_complete performs write barrier */

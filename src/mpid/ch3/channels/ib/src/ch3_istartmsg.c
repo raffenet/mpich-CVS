@@ -17,12 +17,12 @@
     MPIU_Object_set_ref(sreq, 2); \
     sreq->kind = MPID_REQUEST_SEND; \
     assert(pkt_sz == sizeof(MPIDI_CH3_Pkt_t)); \
-    sreq->ib.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
-    sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->ib.pkt + nb; \
-    sreq->ch3.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
-    sreq->ch3.iov_count = 1; \
-    sreq->ib.iov_offset = 0; \
-    sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE; \
+    sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
+    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt + nb; \
+    sreq->dev.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
+    sreq->dev.iov_count = 1; \
+    sreq->ch.iov_offset = 0; \
+    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE; \
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
 }
 
@@ -64,7 +64,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 	   channel, thus insuring that the progress engine does also try to
 	   write */
 	
-	nb = ibu_write(vc->ib.ibu, pkt, pkt_sz);
+	nb = ibu_write(vc->ch.ibu, pkt, pkt_sz);
 	
 	if (nb == pkt_sz)
 	{
@@ -77,7 +77,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 		"send delayed, request enqueued"));
 	    create_request(sreq, pkt, pkt_sz, nb);
 	    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-	    vc->ib.send_active = sreq;
+	    vc->ch.send_active = sreq;
 	}
 	else
 	{
