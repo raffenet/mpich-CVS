@@ -155,6 +155,8 @@ AC_C_CONST
 dnl  Checking Headers
 AC_CHECK_HEADERS( stdio.h stdlib.h string.h unistd.h )
 
+AC_FUNC_ALLOCA
+
 dnl Check MPI-IO
 if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     if test "$enable_checkMPI" = "yes" -a "$enable_checkMPIO" = "yes" ; then
