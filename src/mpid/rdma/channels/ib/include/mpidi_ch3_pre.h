@@ -7,42 +7,22 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
-#if 0
-#ifdef DEBUG
-#  undef DEBUG
-#  define NDEBUG
-#  define GASNET_SEQ 
-#  include "gasnet.h"
-#  undef NDEBUG
-#  define DEBUG
-#else
-#  define NDEBUG
-#  define GASNET_SEQ 
-#  include "gasnet.h"
-#  undef NDEBUG
-#endif
-#else
-#warning DARIUS
-#define DEBUG
-#define GASNET_SEQ 
-#include "gasnet.h"
-#endif
-
 /*#define MPID_USE_SEQUENCE_NUMBERS*/
 
 typedef struct MPIDI_CH3I_Process_group_s
 {
     volatile int ref_count;
     char * kvs_name;
+    char * pg_id;
     int size;
     struct MPIDI_VC * vc_table;
+    struct MPIDI_CH3I_Process_group_s *next;
 }
 MPIDI_CH3I_Process_group_t;
 
 typedef enum MPIDI_CH3I_VC_state
 {
     MPIDI_CH3I_VC_STATE_UNCONNECTED,
-    MPIDI_CH3I_VC_STATE_CONNECTING,
     MPIDI_CH3I_VC_STATE_CONNECTED,
     MPIDI_CH3I_VC_STATE_FAILED
 }
@@ -54,17 +34,25 @@ typedef struct MPIDI_CH3I_VC
     int pg_rank;
     int data_sz;
     void * data;
-    struct MPID_Request *recv_active;
+    struct MPID_Request * sendq_head;
+    struct MPID_Request * sendq_tail;
+    ibu_t ibu;
+    struct MPID_Request * send_active;
+    struct MPID_Request * recv_active;
+    struct MPID_Request * req;
+    int reading_pkt;
+    MPIDI_CH3I_VC_state_t state;
 } MPIDI_CH3I_VC;
 
-#define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC gasnet;
+#define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;
 
 
 /*
  * MPIDI_CH3_CA_ENUM (additions to MPIDI_CA_t)
  */
 #define MPIDI_CH3_CA_ENUM			\
-MPIDI_CH3I_CA_END_GASNET_CHANNEL
+MPIDI_CH3I_CA_HANDLE_PKT,			\
+MPIDI_CH3I_CA_END_IB_CHANNEL
 
 typedef enum MPIDI_CH3I_RNDV_state
 {
@@ -92,7 +80,7 @@ struct MPIDI_CH3I_Request						\
     int remote_iov_offset;						\
     int remote_iov_count;						\
     MPIDI_CH3_Pkt_t pkt;						\
-} gasnet;
+} ch;
 
 #if 0
 #define DUMP_REQUEST(req) do {							\
@@ -115,44 +103,5 @@ struct MPIDI_CH3I_Request						\
 #else
 #define DUMP_REQUEST(req) do { } while (0)
 #endif
-
-#define MPID_STATE_LIST_CH3 \
-MPID_STATE_MPIDI_CH3_CANCEL_SEND, \
-MPID_STATE_MPIDI_CH3_COMM_SPAWN, \
-MPID_STATE_MPIDI_CH3_FINALIZE, \
-MPID_STATE_MPIDI_CH3_INIT, \
-MPID_STATE_MPIDI_CH3_IREAD, \
-MPID_STATE_MPIDI_CH3_ISEND, \
-MPID_STATE_MPIDI_CH3_ISENDV, \
-MPID_STATE_MPIDI_CH3_ISTARTMSG, \
-MPID_STATE_MPIDI_CH3_ISTARTMSGV, \
-MPID_STATE_MPIDI_CH3_IWRITE, \
-MPID_STATE_MPIDI_CH3_PROGRESS_INIT, \
-MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE, \
-MPID_STATE_MPIDI_CH3_PROGRESS_START, \
-MPID_STATE_MPIDI_CH3_PROGRESS_END, \
-MPID_STATE_MPIDI_CH3_PROGRESS, \
-MPID_STATE_MPIDI_CH3_PROGRESS_POKE, \
-MPID_STATE_MPIDI_CH3_REQUEST_CREATE, \
-MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF, \
-MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF, \
-MPID_STATE_MPIDI_CH3_REQUEST_DESTROY, \
-MPID_STATE_MPIDI_CH3I_LISTENER_GET_PORT, \
-MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE, \
-MPID_STATE_MPIDI_CH3I_PROGRESS_INIT, \
-MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT, \
-MPID_STATE_MPIDI_CH3I_VC_POST_READ, \
-MPID_STATE_MPIDI_CH3I_VC_POST_WRITE, \
-MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD, \
-MPID_STATE_MPIDI_CH3U_BUFFER_COPY, \
-MPID_STATE_CONNECTION_ALLOC, \
-MPID_STATE_CONNECTION_FREE, \
-MPID_STATE_CONNECTION_POST_SENDQ_REQ, \
-MPID_STATE_CONNECTION_POST_SEND_PKT, \
-MPID_STATE_CONNECTION_POST_RECV_PKT, \
-MPID_STATE_CONNECTION_SEND_FAIL, \
-MPID_STATE_CONNECTION_RECV_FAIL, \
-MPID_STATE_UPDATE_REQUEST, \
-SOCK_STATE_LIST
 
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */

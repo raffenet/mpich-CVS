@@ -19,34 +19,7 @@ MPIDI_VC *MPIDI_CH3_vc_table;
 
 int MPIDI_CH3I_my_rank;
 
-extern void MPIDI_CH3_start_packet_handler (gasnet_token_t token, void* buf,
-					    size_t data_sz);
-extern void MPIDI_CH3_continue_packet_handler (gasnet_token_t token, void* buf,
-					       size_t data_sz);
-extern void MPIDI_CH3_CTS_packet_handler (gasnet_token_t token, void* buf,
-					  size_t buf_sz, MPI_Request sreq_id,
-					  MPI_Request rreq_id, int remote_buf_sz,
-					  int n_iov);
-extern void MPIDI_CH3_reload_IOV_or_done_handler (gasnet_token_t token,
-						  int rreq_id);
-extern void MPIDI_CH3_reload_IOV_reply_handler (gasnet_token_t token, void *buf,
-						int buf_sz, int sreq_id,
-						int n_iov);
-
-gasnet_handlerentry_t MPIDI_CH3_gasnet_handler_table[] =
-{
-    { MPIDI_CH3_start_packet_handler_id, MPIDI_CH3_start_packet_handler },
-    { MPIDI_CH3_continue_packet_handler_id, MPIDI_CH3_continue_packet_handler },
-    { MPIDI_CH3_CTS_packet_handler_id, MPIDI_CH3_CTS_packet_handler },
-    { MPIDI_CH3_reload_IOV_or_done_handler_id,
-      MPIDI_CH3_reload_IOV_or_done_handler },
-    { MPIDI_CH3_reload_IOV_reply_handler_id, MPIDI_CH3_reload_IOV_reply_handler }
-};
-
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
-
-/* XXX - all calls to assert() need to be turned into real error checking and
-   return meaningful errors */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Init
@@ -55,7 +28,6 @@ MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 int MPIDI_CH3_Init(int * argc, char *** argv, int * has_args, int * has_env,
 		   int * has_parent)
 {
-    int gn_errno;
     int mpi_errno;
     MPIDI_CH3I_Process_group_t * pg;
     
@@ -64,45 +36,41 @@ int MPIDI_CH3_Init(int * argc, char *** argv, int * has_args, int * has_env,
     MPIDI_VC * vc_table;
     MPID_Comm * comm, *commworld, *intercomm;
     int p;
+    int port;
+    char * key;
+    char * val;
+    int key_max_sz;
+    int val_max_sz;
     int name_sz;
-#ifdef FOO
-    int i;
-#endif
+    int id_sz;
 
     MPIDI_CH3I_inside_handler = 0;
 	
-    gn_errno = gasnet_init (argc, argv);
-    if (gn_errno != GASNET_OK)
-    {
-        mpi_errno = MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
-                                          __LINE__, MPI_ERR_OTHER, "**init",
-                                          "gasnet_init failed %d", gn_errno);
-        return mpi_errno;
-    }
-
-
-    /* by specifying a 0 segsize, we're disabling remote memory
-     * access.  For now, we're just using medium AM messages */
-    gn_errno = gasnet_attach (MPIDI_CH3_gasnet_handler_table,
-			      sizeof (MPIDI_CH3_gasnet_handler_table) /
-			      sizeof (gasnet_handlerentry_t),
-			      0, (uintptr_t)-1);
-    if (gn_errno != GASNET_OK)
-    {
-        mpi_errno = MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
-                                          __LINE__, MPI_ERR_OTHER, "**init",
-                                          "gasnet_attach failed %d", gn_errno);
-        return mpi_errno;
-    }
-
-    MPIDI_CH3_packet_len = gasnet_AMMaxMedium ();
-#warning DARIUS
     MPIDI_CH3_packet_len = 16384;
 
-    pg_rank = gasnet_mynode ();
-    pg_size = gasnet_nodes ();
+    mpi_errno = PMI_Init(has_parent);
+    if (mpi_errno != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_init", "**pmi_init %d", mpi_errno);
+	return mpi_errno;
+    }
+    mpi_errno = PMI_Get_rank(&pg_rank);
+    if (mpi_errno != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_rank", "**pmi_get_rank %d", mpi_errno);
+	return mpi_errno;
+    }
+    mpi_errno = PMI_Get_size(&pg_size);
+    if (mpi_errno != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_size", "**pmi_get_size %d", mpi_errno);
+	return mpi_errno;
+    }
 
     MPIDI_CH3I_my_rank = pg_rank;
+
+    /*MPIU_Timer_init(pg_rank, pg_size);*/
+    MPIU_dbg_init(pg_rank);
 
     /* Allocate process group data structure and populate */
     pg = MPIU_Malloc(sizeof(MPIDI_CH3I_Process_group_t));
@@ -125,7 +93,34 @@ int MPIDI_CH3_Init(int * argc, char *** argv, int * has_args, int * has_env,
 					 __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
     }
+    mpi_errno = PMI_KVS_Get_my_name(pg->kvs_name, name_sz);
+    if (mpi_errno != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_my_name", "**pmi_kvs_get_my_name %d", mpi_errno);
+	return mpi_errno;
+    }
+
+    mpi_errno = PMI_Get_id_length_max(&id_sz);
+    if (mpi_errno != PMI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id_length_max", "**pmi_get_id_length_max %d", mpi_errno);
+	return mpi_errno;
+    }
+    pg->pg_id = MPIU_Malloc(id_sz + 1);
+    if (pg->pg_id == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	return mpi_errno;
+    }
+    mpi_errno = PMI_Get_id(pg->pg_id, id_sz);
+    if (mpi_errno != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id", "**pmi_get_id %d", mpi_errno);
+	return mpi_errno;
+    }
+
     pg->ref_count = 1;
+    pg->next = NULL;
     MPIDI_CH3I_Process.pg = pg;
     
     /* Allocate and initialize the VC table associated with this
@@ -141,24 +136,18 @@ int MPIDI_CH3_Init(int * argc, char *** argv, int * has_args, int * has_env,
     for (p = 0; p < pg_size; p++)
     {
 	MPIDI_CH3U_VC_init(&vc_table[p], p);
-	vc_table[p].gasnet.pg = pg;
-	vc_table[p].gasnet.pg_rank = p;
-	vc_table[p].gasnet.recv_active = NULL;
+	vc_table[p].ch.pg = pg;
+	vc_table[p].ch.pg_rank = p;
+	vc_table[p].ch.sendq_head = NULL;
+	vc_table[p].ch.sendq_tail = NULL;
+	vc_table[p].ch.req = (MPID_Request*)MPIU_Malloc(sizeof(MPID_Request));
+	vc_table[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+	vc_table[p].ch.recv_active = NULL;
+	vc_table[p].ch.send_active = NULL;
+	vc_table[p].ch.reading_pkt = TRUE;
     }
     pg->vc_table = vc_table;
     MPIDI_CH3_vc_table = vc_table;
-    
-    /*
-     * Initialize Progress Engine 
-     */
-    mpi_errno = MPIDI_CH3I_Progress_init();
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
-					 __LINE__, MPI_ERR_OTHER,
-					 "**init_progress", 0);
-	return mpi_errno;
-    }
     
     /* Initialize MPI_COMM_WORLD object */
     comm = MPIR_Process.comm_world;
@@ -182,7 +171,12 @@ int MPIDI_CH3_Init(int * argc, char *** argv, int * has_args, int * has_env,
     }
     for (p = 0; p < pg_size; p++)
     {
-	MPID_VCR_Dup(&vc_table[p], &comm->vcr[p]);
+	mpi_errno = MPID_VCR_Dup(&vc_table[p], &comm->vcr[p]);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_vcrdup", 0);
+	    return mpi_errno;
+	}
     }
     
     /* Initialize MPI_COMM_SELF object */
@@ -205,8 +199,101 @@ int MPIDI_CH3_Init(int * argc, char *** argv, int * has_args, int * has_env,
 					 0);
 	return mpi_errno;
     }
-    MPID_VCR_Dup(&vc_table[pg_rank], &comm->vcr[0]);    
+    mpi_errno = MPID_VCR_Dup(&vc_table[pg_rank], &comm->vcr[0]);    
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_vcrdup", 0);
+	return mpi_errno;
+    }
+
+    /* Initialize Progress Engine */
+    mpi_errno = MPIDI_CH3I_Progress_init();
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
+					 __LINE__, MPI_ERR_OTHER,
+					 "**init_progress", 0);
+	return mpi_errno;
+    }
     
+    mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
+    if (mpi_errno != PMI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);
+	return mpi_errno;
+    }
+    key_max_sz++;
+    key = MPIU_Malloc(key_max_sz);
+    if (key == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	return mpi_errno;
+    }
+    mpi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
+    if (mpi_errno != PMI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);
+	return mpi_errno;
+    }
+    val_max_sz++;
+    val = MPIU_Malloc(val_max_sz);
+    if (val == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	return mpi_errno;
+    }
+    
+    /* initialize the infinband functions */
+    mpi_errno = ibu_init();
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_ibu", 0);
+	return mpi_errno;
+    }
+    /* create a completion set for this process */
+    mpi_errno = ibu_create_set(&MPIDI_CH3I_Process.set);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_ibu_set", 0);
+	return mpi_errno;
+    }
+    /* get and put the local id for this process in the PMI database */
+    port = ibu_get_lid();
+
+    mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d-lid", pg_rank);
+    if (mpi_errno < 0 || mpi_errno > key_max_sz)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
+	return mpi_errno;
+    }
+    mpi_errno = snprintf(val, val_max_sz, "%d", port);
+    if (mpi_errno < 0 || mpi_errno > val_max_sz)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
+	return mpi_errno;
+    }
+    mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
+    if (mpi_errno != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
+	return mpi_errno;
+    }
+
+    MPIU_DBG_PRINTF(("Published lid=%d\n", port));
+    
+    mpi_errno = PMI_KVS_Commit(pg->kvs_name);
+    if (mpi_errno != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", mpi_errno);
+	return mpi_errno;
+    }
+    mpi_errno = PMI_Barrier();
+    if (mpi_errno != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
+	return mpi_errno;
+    }
+
     /* XXX - has_args and has_env need to come from PMI eventually... */
     *has_args = TRUE;
     *has_env = TRUE;
@@ -215,12 +302,34 @@ int MPIDI_CH3_Init(int * argc, char *** argv, int * has_args, int * has_env,
     
     if (*has_parent) 
     {
-	/* gasnet can't spawn --Darius */
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
-					 __LINE__, MPI_ERR_OTHER,
-					 "**notimpl", 0);
-	return mpi_errno;
+        /* This process was spawned. Create intercommunicator with parents. */
+
+        if (pg_rank == 0)
+	{
+            /* get the port name of the root of the parents */
+            mpi_errno = PMI_KVS_Get(pg->kvs_name, "PARENT_ROOT_PORT_NAME", val, val_max_sz);
+            if (mpi_errno != 0)
+            {
+                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
+                return mpi_errno;
+            }
+        }
+
+        /* do a connect with the root */
+        MPID_Comm_get_ptr(MPI_COMM_WORLD, commworld);
+        mpi_errno = MPIDI_CH3_Comm_connect(val, 0, commworld, &intercomm);
+        if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+
+        MPIR_Process.comm_parent = intercomm;
     }
+
+    /* for now, connect all the processes at init time */
+    MPIDI_DBG_PRINTF((65, "ch3_init", "calling setup_connections.\n"));fflush(stdout);
+    MPIDI_CH3I_Setup_connections();
+    MPIDI_DBG_PRINTF((65, "ch3_init", "connections formed, exiting\n"));fflush(stdout);
+
+    MPIU_Free(val);
+    MPIU_Free(key);
 
     return MPI_SUCCESS;
 }

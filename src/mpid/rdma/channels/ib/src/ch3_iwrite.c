@@ -16,63 +16,100 @@
 int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 {
     int mpi_errno = MPI_SUCCESS;
-    int gn_errno;
-    int msg_sz;
-    MPID_IOV tmp_iov;
-    MPID_IOV *iov = req->dev.iov;
-    int n_iov = req->dev.iov_count;
-    int iov_offset = req->gasnet.iov_offset;
-    int i, j;
+    int nb;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IWRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IWRITE);
 
-    printf_d ("Entering "FCNAME "\n");
-    /* get an iov that has no more than MPIDI_CH3_packet_len of data */
-    msg_sz = 0;
-    for (i = iov_offset; i < n_iov + iov_offset; ++i)
-    {
-	if (msg_sz + iov[i].MPID_IOV_LEN > MPIDI_CH3_packet_len)
-	    break;
-	msg_sz += iov[i].MPID_IOV_LEN;
-    }
-    if (i < n_iov + iov_offset)
-    {
-	tmp_iov = iov[i];
-	iov[i].MPID_IOV_LEN = MPIDI_CH3_packet_len - msg_sz;
-	
-	printf_d ("  sending %d bytes\n", msg_sz);
-	gn_errno = gasnet_AMRequestMediumv0(vc->lpid,
-					    MPIDI_CH3_continue_packet_handler_id,
-					    &iov[iov_offset], i+1 - iov_offset);
-	if (gn_errno != GASNET_OK)
-	{
-	    MPID_Abort(NULL, MPI_SUCCESS, -1);
-	}
+    MPIDI_DBG_PRINTF((71, FCNAME, "entering"));
 
-	/* update iov to reflect sent data */
-	req->dev.iov[i].MPID_IOV_BUF = tmp_iov.MPID_IOV_BUF +
-	    iov[i].MPID_IOV_LEN;
-	req->dev.iov[i].MPID_IOV_LEN = tmp_iov.MPID_IOV_LEN -
-	    iov[i].MPID_IOV_LEN;
+    req->ch.iov_offset = 0;
+    vc->ch.send_active = req;
+    mpi_errno = (req->dev.iov_count == 1) ?
+	ibu_write(vc->ch.ibu, req->dev.iov, req->dev.iov->MPID_IOV_LEN, &nb) :
+	ibu_writev(vc->ch.ibu, req->dev.iov, req->dev.iov_count, &nb);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);
+	return mpi_errno;
+    }
+
+    if (nb > 0)
+    {
+	if (MPIDI_CH3I_Request_adjust_iov(req, nb))
+	{
+	    /* Write operation complete */
+	    MPIDI_CA_t ca = req->dev.ca;
 	    
-	req->gasnet.iov_offset = i;
-	req->dev.iov_count = n_iov + iov_offset - i;
+	    vc->ch.send_active = NULL;
+	    
+	    if (ca == MPIDI_CH3_CA_COMPLETE)
+	    {
+		if (MPIDI_CH3I_SendQ_head(vc) == req)
+		{
+		    MPIDI_CH3I_SendQ_dequeue(vc);
+		}
+		vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
+		/* mark data transfer as complete and decrment CC */
+		req->dev.iov_count = 0;
+		MPIDI_CH3U_Request_complete(req);
+	    }
+	    else if (ca == MPIDI_CH3I_CA_HANDLE_PKT)
+	    {
+		MPIDI_CH3_Pkt_t * pkt = &req->ch.pkt;
+		
+		if (pkt->type < MPIDI_CH3_PKT_END_CH3)
+		{
+		    vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
+		}
+		else
+		{
+		    MPIDI_DBG_PRINTF((71, FCNAME, "unknown packet type %d", pkt->type));
+		}
+	    }
+	    else if (ca < MPIDI_CH3_CA_END_CH3)
+	    {
+		MPIDI_DBG_PRINTF((71, FCNAME, "finished sending iovec, calling CH3U_Handle_send_req()"));
+		MPIDI_CH3U_Handle_send_req(vc, req);
+		if (req->dev.iov_count == 0)
+		{
+		    /* NOTE: This code assumes that if another write is not posted by the device during the callback, then the
+		       device has completed the current request.  As a result, the current request is dequeded and next request
+		       in the queue is processed. */
+		    if (MPIDI_CH3I_SendQ_head(vc) == req)
+		    {
+			MPIDI_DBG_PRINTF((71, FCNAME, "request (assumed) complete, dequeuing req and posting next send"));
+			MPIDI_CH3I_SendQ_dequeue(vc);
+		    }
+		    vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
+		}
+	    }
+	    else
+	    {
+		assert(ca < MPIDI_CH3I_CA_END_IB);
+	    }
+	}
+	else
+	{
+	    assert(req->ch.iov_offset < req->dev.iov_count);
+	}
+    }
+    else if (nb == 0)
+    {
+	MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
+	MPIDI_CH3I_SendQ_enqueue(vc, req);
     }
     else
     {
-	printf_d ("  sending %d bytes\n", msg_sz);
-	gn_errno = gasnet_AMRequestMediumv0(vc->lpid,
-					    MPIDI_CH3_continue_packet_handler_id,
-					    &iov[iov_offset], i - iov_offset);
-	if (gn_errno != GASNET_OK)
-	{
-	    MPID_Abort(NULL, MPI_SUCCESS, -1);
-	}
-	req->dev.iov_count = 0;
+	/* Connection just failed.  Mark the request complete and return an error. */
+	vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
+	/* TODO: Create an appropriate error message based on the value of errno */
+	req->status.MPI_ERROR = MPI_ERR_INTERN;
+	/* MT - CH3U_Request_complete performs write barrier */
+	MPIDI_CH3U_Request_complete(req);
     }
-    
-    printf_d ("Exiting "FCNAME "\n");
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);
     return mpi_errno;
 }

@@ -10,13 +10,8 @@
 #define printf_d(x...) //do { printf ("%d: ", MPIDI_CH3I_my_rank); printf (x); fflush(stdout); } while(0)
 extern int MPIDI_CH3I_my_rank;
 
-#ifdef USE_WINCONF_H
-#include "winmpidi_ch3i_gasnet_conf.h"
-#include "winmpidi_ch3_conf.h"
-#else
-#include "mpidi_ch3i_gasnet_conf.h"
+#include "mpidi_ch3i_ib_conf.h"
 #include "mpidi_ch3_conf.h"
-#endif
 #include "mpidimpl.h"
 
 #if defined(HAVE_ASSERT_H)
@@ -95,6 +90,24 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
 #define MPIDI_CH3I_SendQ_empty(queue) (MPIDI_CH3I_sendq_head[queue] == NULL)
 
+#define USE_INLINE_PKT_RECEIVE
+#ifdef USE_INLINE_PKT_RECEIVE
+#define post_pkt_recv(vc) vc->ch.reading_pkt = TRUE
+#else
+#define post_pkt_recv(vc) \
+{ \
+    MPIDI_STATE_DECL(MPID_STATE_POST_PKT_RECV); \
+    MPIDI_FUNC_ENTER(MPID_STATE_POST_PKT_RECV); \
+    vc->ch.req->dev.iov[0].MPID_IOV_BUF = (void *)&vc->ch.req->ch.pkt; \
+    vc->ch.req->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t); \
+    vc->ch.req->dev.iov_count = 1; \
+    vc->ch.req->ch.iov_offset = 0; \
+    vc->ch.req->dev.ca = MPIDI_CH3I_CA_HANDLE_PKT; \
+    vc->ch.recv_active = vc->ch.req; \
+    /*mpi_errno = */ibu_post_read(vc->ch.ibu, &vc->ch.req->ch.pkt, sizeof(MPIDI_CH3_Pkt_t)); \
+    MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV); \
+}
+#endif
 
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
@@ -104,5 +117,7 @@ int MPIDI_CH3I_VC_post_read(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_VC_post_write(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_sock_errno_to_mpi_errno(char * fcname, int sock_errno);
 int MPIDI_CH3I_Get_business_card(char *value, int length);
+int MPIDI_CH3I_Request_adjust_iov(MPID_Request *, MPIDI_msg_sz_t);
+int MPIDI_CH3I_Setup_connections();
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

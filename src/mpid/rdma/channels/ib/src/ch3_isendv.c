@@ -6,112 +6,138 @@
 
 #include "mpidi_ch3_impl.h"
 
-extern void *MPIDI_CH3_packet_buffer;
+/*static void update_request(MPID_Request * sreq, MPID_IOV * iov, int count, int offset, int nb)*/
+#undef update_request
+#define update_request(sreq, iov, count, offset, nb) \
+{ \
+    int i; \
+    MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST); \
+    MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST); \
+    for (i = 0; i < count; i++) \
+    { \
+	sreq->dev.iov[i] = iov[i]; \
+    } \
+    if (offset == 0) \
+    { \
+	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t)); \
+	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
+	sreq->dev.iov[0].MPID_IOV_BUF = (void*)&sreq->ch.pkt; \
+    } \
+    (char *) sreq->dev.iov[offset].MPID_IOV_BUF += nb; \
+    sreq->dev.iov[offset].MPID_IOV_LEN -= nb; \
+    sreq->ch.iov_offset = offset; \
+    sreq->dev.iov_count = count; \
+    MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST); \
+}
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_iSendv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov,
-		     int n_iov)
+int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
 {
     int mpi_errno = MPI_SUCCESS;
-    int gn_errno;
-    int msg_sz;
-    int offset;
-    int i, j;
-    MPID_IOV tmp_iov;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
+    MPIU_DBG_PRINTF(("ch3_isendv\n"));
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    printf_d ("Entering "FCNAME"\n");
-    assert(n_iov <= MPID_IOV_LIMIT);
-    assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
-
-    /* The channel uses a fixed length header, the size of which is
-     * the maximum of all possible packet headers */
-    iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
-    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)iov[0].MPID_IOV_BUF);
-
-    if (MPIDI_CH3I_SendQ_empty (CH3_NORMAL_QUEUE) && !MPIDI_CH3I_inside_handler)
-       /* MT */
+#ifdef MPICH_DBG_OUTPUT
+    if (n_iov > MPID_IOV_LIMIT)
     {
-	/* get an iov that has no more than MPIDI_CH3_packet_len of data */
-	msg_sz = 0;
-	for (i = 0; i < n_iov; ++i)
-	{
-	    if (msg_sz + iov[i].MPID_IOV_LEN > MPIDI_CH3_packet_len)
-		break;
-	    msg_sz += iov[i].MPID_IOV_LEN;
-	}
-	if (i < n_iov)
-	{
-	    tmp_iov = iov[i];
-	    iov[i].MPID_IOV_LEN = MPIDI_CH3_packet_len - msg_sz;
-	
-	    printf_d ("  sending %d bytes\n", msg_sz);
-	    gn_errno = gasnet_AMRequestMediumv0(vc->lpid,
-						MPIDI_CH3_start_packet_handler_id,
-						iov, i+1);
-	    if (gn_errno != GASNET_OK)
-	    {
-		MPID_Abort(NULL, MPI_SUCCESS, -1);
-	    }
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
+	return mpi_errno;
+    }
+    if (iov[0].MPID_IOV_LEN > sizeof(MPIDI_CH3_Pkt_t))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
+	return mpi_errno;
+    }
+#endif
 
-	    sreq->dev.iov[0].MPID_IOV_LEN = tmp_iov.MPID_IOV_LEN -
-		iov[i].MPID_IOV_LEN;
-	    sreq->dev.iov[0].MPID_IOV_BUF = tmp_iov.MPID_IOV_BUF +
-		iov[i].MPID_IOV_LEN;
+    /* The IB implementation uses a fixed length header, the size of which is the maximum of all possible packet headers */
+    iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
+    
+    /* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
+    if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
+    {
+	int nb;
+	
+	MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
+	
+	/* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
+	   also try to write */
+	
+	/* FIXME: the current code only agressively writes the first IOV.  Eventually it should be changed to agressively write
+	   as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
+	
+	mpi_errno = (n_iov > 1) ?
+	    ibu_writev(vc->ch.ibu, iov, n_iov, &nb) :
+	    ibu_write(vc->ch.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, &nb);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    sreq->status.MPI_ERROR = MPI_ERR_INTERN;
+	    MPIDI_CH3U_Request_complete(sreq);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
+	    return mpi_errno;
+	}
+
+	if (nb >= 0)
+	{
+	    int offset = 0;
 	    
-	    for (j = 1; j < n_iov - i - 1; j++)
+	    MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
+	    
+	    while (offset < n_iov)
 	    {
-		sreq->dev.iov[j] = iov[j+i];
+		if ((int)iov[offset].MPID_IOV_LEN <= nb)
+		{
+		    nb -= iov[offset].MPID_IOV_LEN;
+		    offset++;
+		}
+		else
+		{
+		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write, enqueuing at head"));
+		    update_request(sreq, iov, n_iov, offset, nb);
+		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+		    vc->ch.send_active = sreq;
+		    break;
+		}
 	    }
-	    sreq->gasnet.iov_offset = 0;
-	    sreq->dev.iov_count = n_iov - i;
-	    sreq->gasnet.vc = vc;
-	    MPIDI_CH3I_SendQ_enqueue_head (sreq, CH3_NORMAL_QUEUE);
-	    assert (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL);
-	    MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
+	    if (offset == n_iov)
+	    {
+		MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
+		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+		MPIDI_CH3U_Handle_send_req(vc, sreq);
+		if (sreq->dev.iov_count == 0)
+		{
+		/* NOTE: dev.iov_count is used to detect completion instead of cc because the transfer may be complete, but
+		    request may still be active (see MPI_Ssend()) */
+		    MPIDI_CH3I_SendQ_dequeue(vc);
+		}
+	    }
 	}
 	else
 	{
-	    printf_d ("  sending %d bytes\n", msg_sz);
-	    gn_errno = gasnet_AMRequestMediumv0(vc->lpid,
-						MPIDI_CH3_start_packet_handler_id,
-						iov, n_iov);
-	    if (gn_errno != GASNET_OK)
-	    {
-		MPID_Abort(NULL, MPI_SUCCESS, -1);
-	    }
-	    MPIDI_CH3U_Handle_send_req(vc, sreq);
-	}    
+	    /* Connection just failed.  Mark the request complete and return an error. */
+	    vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
+	    /* TODO: Create an appropriate error message based on the value of errno */
+	    sreq->status.MPI_ERROR = MPI_ERR_INTERN;
+	    /* MT - CH3U_Request_complete performs write barrier */
+	    MPIDI_CH3U_Request_complete(sreq);
+	}
     }
     else
     {
-	int i;
-	
-	MPIDI_DBG_PRINTF((55, FCNAME, "enqueuing"));
-	
-	sreq->gasnet.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
-	sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->gasnet.pkt;
-	sreq->dev.iov[0].MPID_IOV_LEN = iov[0].MPID_IOV_LEN;
-
-	for (i = 1; i < n_iov; i++)
-	{
-	    sreq->dev.iov[i] = iov[i];
-	}
-
-	sreq->dev.iov_count = n_iov;
-	sreq->gasnet.iov_offset = 0;
-	sreq->gasnet.vc = vc;
-	MPIDI_CH3I_SendQ_enqueue(sreq, CH3_NORMAL_QUEUE);
+	MPIDI_DBG_PRINTF((55, FCNAME, "send queue not empty, enqueuing"));
+	update_request(sreq, iov, n_iov, 0, 0);
+	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
-
-    printf_d ("Exiting "FCNAME"\n");
+    
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
     return mpi_errno;
 }
-

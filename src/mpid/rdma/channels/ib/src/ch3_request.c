@@ -39,7 +39,7 @@ MPID_Request * MPIDI_CH3_Request_create()
 	MPIDI_DBG_PRINTF((60, FCNAME, "unable to allocate a request"));
     }
 
-    req->gasnet.iov_offset = 0;
+    req->ch.iov_offset = 0;
     
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_CREATE);
     return req;
