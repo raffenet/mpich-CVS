@@ -7,6 +7,86 @@
 
 #ifdef WITH_METHOD_IB
 
+/* minimal set of functions */
+
+ib_int32_t ib_init_us(void)
+{
+    return IB_SUCCESS;
+}
+
+ib_int32_t ib_release_us(void)
+{
+    return IB_SUCCESS;
+}
+
+ib_int32_t ib_hca_open_us( const char * hca_name,
+			  ib_hca_handle_t * handle_p )
+{
+    return IB_SUCCESS;
+}
+
+ib_int32_t ib_hca_query_us(ib_hca_handle_t hca_handle, 
+			   ib_hca_attr_t * hca_attr_p, 
+			   ib_uint32_t hca_attr_flags )
+{
+    return IB_SUCCESS;
+}
+
+ib_int32_t ib_pd_allocate_us(ib_hca_handle_t hca_handle,
+			     ib_pd_handle_t * pd_handle_p)
+{
+    return IB_SUCCESS;
+}
+
+ib_int32_t ib_mr_register_us(ib_hca_handle_t   hca_handle,
+			     ib_uint8_t * va,
+			     ib_uint32_t byte_num,
+			     ib_pd_handle_t pd_handle,
+			     ib_uint32_t access_control,
+			     ib_mr_handle_t * mr_handle,
+			     ib_uint32_t * l_key,
+			     ib_uint32_t * r_key)
+{
+    return IB_SUCCESS;
+}
+
+ib_int32_t ib_qp_create_us( ib_hca_handle_t hca_handle,
+			   ib_pd_handle_t  pd_handle,
+			   ib_qp_attr_list_t * attr_list,
+			   ib_qp_handle_t * qp_handle,
+			   ib_uint32_t * qpn,
+			   void * user_context_async_p )
+{
+    return IB_SUCCESS;
+}
+
+ib_int32_t ib_qp_modify_us( ib_hca_handle_t hca_handle,
+			   ib_qp_handle_t qp_handle,
+			   Ib_qp_state qp_state,
+			   ib_qp_attr_list_t * attr_list )
+{
+    return IB_SUCCESS;
+}
+
+ib_int32_t ib_cqd_create_us (  ib_hca_handle_t hca_handle,
+			     ib_cqd_handle_t * cqd_handle_p )
+{
+    return IB_SUCCESS;
+}
+
+ib_int32_t ib_cq_create_us( ib_hca_handle_t hca_handle,
+			   ib_cqd_handle_t   cqd_handle,
+			   ib_uint32_t * num_entries_p,
+			   ib_cq_handle_t * cq_handle_p,
+			   void * user_context_async_p)
+{
+    return IB_SUCCESS;
+}
+
+#if 0
+
+/* complete set of functions */
+
 /************ Init/Close **********************/
 ib_int32_t ib_init_us(void)
 {
@@ -424,5 +504,6 @@ ib_int32_t ib_set_un_async_error_eh_us ( ib_hca_handle_t hca_handle,
     return IB_SUCCESS;
 }
 
+#endif
 
 #endif

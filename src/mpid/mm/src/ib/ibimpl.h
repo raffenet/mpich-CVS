@@ -17,7 +17,9 @@
 #define IB_EAGER_LIMIT         (1024 * 20)
 #define IB_ERROR_MSG_LENGTH    256
 #define IB_LISTENER_POINTER    &IB_Process
-#define IB_PINNED_MEMORY_SIZE  2*1024*1024
+//#define IB_PINNED_MEMORY_SIZE  2*1024*1024
+#define IB_PACKET_SIZE         (1024 * 128)
+#define IB_PACKET_COUNT        16
 #define IB_MAX_CQ_ENTRIES      50
 
 typedef struct IB_PerProcess {

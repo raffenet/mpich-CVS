@@ -173,6 +173,42 @@ ib_uint32_t createQP(IB_Info *ib)
     return IB_SUCCESS;
 }
 
+static ib_mr_handle_t s_mr_handle;
+static ib_uint32_t    s_lkey;
+void *ib_malloc_register(size_t size)
+{
+    ib_uint32_t status;
+    void *ptr;
+    ib_uint32_t rkey;
+
+    ptr = malloc(size);
+    if (ptr == NULL)
+    {
+	MPIU_dbg_printf("malloc(%d) failed.\n", size);
+	return NULL;
+    }
+    status = ib_mr_register_us(
+	IB_Process.hca_handle,
+	(ib_uint8_t*)ptr,
+	size,
+	IB_Process.pd_handle,
+	IB_ACCESS_LOCAL_WRITE,
+	&s_mr_handle,
+	&s_lkey, &rkey);
+    if (status != IB_SUCCESS)
+    {
+	MPIU_dbg_printf("ib_mr_register_us failed, error %d\n", status);
+	return NULL;
+    }
+
+    return ptr;
+}
+
+void ib_free_deregister(void *p)
+{
+    free(p);
+}
+
 int ib_setup_connections()
 {
     MPID_Comm *comm_ptr;
@@ -182,7 +218,7 @@ int ib_setup_connections()
     char *key, *value;
     IB_Info *ib;
     ib_uint32_t status;
-    ib_uint32_t lkey, rkey;
+    //ib_uint32_t lkey, rkey;
     ib_uint32_t max_cq_entries = IB_MAX_CQ_ENTRIES+1;
     MPIDI_STATE_DECL(MPID_STATE_IB_SETUP_CONNECTIONS);
 
@@ -238,6 +274,7 @@ int ib_setup_connections()
 	ib = &vc_ptr->data.ib.info;
 	ib->m_dlid = atoi(value);
 	/*MPIU_dbg_printf("pinning %d bytes of memory\n", IB_PINNED_MEMORY_SIZE);*/
+	/*
 	ib->m_virtual_address = malloc(IB_PINNED_MEMORY_SIZE);
 	if (ib->m_virtual_address == NULL)
 	{
@@ -262,9 +299,12 @@ int ib_setup_connections()
 	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
 	    return -1;
 	}
+	*/
+	ib->m_allocator = BlockAllocInit(IB_PACKET_SIZE, IB_PACKET_COUNT, IB_PACKET_COUNT, ib_malloc_register, ib_free_deregister);
+	ib->m_mr_handle = s_mr_handle; /* Not thread safe. This handle is reset every time ib_malloc_register is called. */
 	ib->m_polling = TRUE;
-	ib->m_message_size = IB_PINNED_MEMORY_SIZE;
-	ib->m_message_segments = 1;
+	//ib->m_message_size = IB_PINNED_MEMORY_SIZE;
+	//ib->m_message_segments = 1;
 	ib->m_max_wqes = 50;
 	ib->m_mtu_size = 2048;
 	/* ***************************************** */
@@ -313,6 +353,8 @@ int ib_setup_connections()
 	  will only be one posted send or recv?
 	********************************************/
 
+	ib->m_lkey = s_lkey;
+#if 0
 	/*MPIU_dbg_printf("allocating the descriptor segments\n");*/
 
 	/* allocate and setup the receive segments */
@@ -331,7 +373,7 @@ int ib_setup_connections()
 	{
 	    ib->m_recv_sglist.data_seg_p[i].length = ib->m_message_size;
 	    ib->m_recv_sglist.data_seg_p[i].va = (ib_uint64_t)ib->m_virtual_address;
-	    ib->m_recv_sglist.data_seg_p[i].l_key = lkey;
+	    ib->m_recv_sglist.data_seg_p[i].l_key = s_lkey;
 	}
 
 	/* allocate and setup the send segments */
@@ -350,8 +392,9 @@ int ib_setup_connections()
 	{
 	    ib->m_send_sglist.data_seg_p[i].length = ib->m_message_size;
 	    ib->m_send_sglist.data_seg_p[i].va = (ib_uint64_t)ib->m_virtual_address;
-	    ib->m_send_sglist.data_seg_p[i].l_key = lkey;
+	    ib->m_send_sglist.data_seg_p[i].l_key = s_lkey;
 	}
+#endif
 
 	/*MPIU_dbg_printf("creating the queue pair\n");*/
 	/* Create the queue pair */
