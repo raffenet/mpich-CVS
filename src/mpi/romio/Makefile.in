@@ -156,3 +156,11 @@ distclean: cleanall
 
 # Allow dependencies target
 dependencies:
+
+# MPICH2 documentation targets
+mandoc:
+	(cd mpi-io && $(MAKE) mandoc )
+htmldoc:
+	(cd mpi-io && $(MAKE) htmldoc )
+latexdoc:
+	(cd mpi-io && $(MAKE) latexdoc )

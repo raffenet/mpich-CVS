@@ -13,8 +13,26 @@ C_COMPILE_SHL = $(CC_SHL) @CFLAGS@ $(INCLUDE_DIR)
 
 @VPATH@
 
-# EXTRA objects are ones that need to be included for all but MPICH2
+# mpi_sources gives the files that implement the MPI IO routines.  
+# This is used for the MPICH2 documentation target, and does not
+# include files either not used in MPICH2 or that do not contain
+# documentation entries.
+mpi_sources = close.c read.c open.c write.c set_view.c \
+      iread.c iwrite.c \
+      seek.c get_posn.c \
+      delete.c read_all.c read_at.c \
+      read_atall.c iread_at.c iwrite_at.c write_all.c get_bytoff.c \
+      write_at.c write_atall.c get_view.c get_group.c get_amode.c \
+      get_extent.c fsync.c get_atom.c set_atom.c \
+      set_size.c get_size.c prealloc.c file_f2c.c file_c2f.c \
+      ioreq_f2c.c ioreq_c2f.c set_info.c get_info.c \
+      rd_atallb.c rd_atalle.c read_allb.c read_alle.c wr_atallb.c \
+      wr_atalle.c write_allb.c write_alle.c \
+      get_posn_sh.c iread_sh.c read_sh.c write_sh.c \
+      iwrite_sh.c seek_sh.c read_ord.c read_orde.c write_ordb.c \
+      read_ordb.c write_ord.c write_orde.c mpiu_greq.c 
 
+# EXTRA objects are ones that need to be included for all but MPICH2
 MPIO_OBJECTS = close.o read.o open.o write.o set_view.o \
       iread.o iwrite.o iotest.o iowait.o \
 	iowaitall.o iowaitany.o \
@@ -120,3 +138,18 @@ $(SHLIBNAME).la: $(MPIO_LOOBJECTS) $(MPIO_EXTRA_LOOBJECTS)
 
 clean:
 	@rm -f *.o *.lo
+
+# MPICH2 documentation targets
+master_top_srcdir = @master_top_srcdir@
+.c.man:
+	doctext  -mpath ../../../../man/man3 -ext 3 -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.latex:
+	doctext -latex -mpath ../../../../doc/refman  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.html:
+	doctext -html -mpath ../../../../www/www3  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+mandoc: ${mpi_sources:.c=.man}
+latexdoc: ${mpi_sources:.c=.latex}
+htmldoc: ${mpi_sources:.c=.html}
