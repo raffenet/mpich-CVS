@@ -3,6 +3,8 @@
 hellow_SOURCES = hellow.c
 hellow_LDADD = -L ../lib 
 sr_SOURCES = sr.c
+srvec_LDADD = -L ../lib 
+srvec_SOURCES = srvec.c
 sr_LDADD = -L ../lib 
 srtest_SOURCES = srtest.c
 srtest_LDADD = -L ../lib 
