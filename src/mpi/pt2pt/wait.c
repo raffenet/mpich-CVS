@@ -45,8 +45,10 @@ int MPI_Wait(MPI_Request  *request, MPI_Status   *status)
 {
     static const char FCNAME[] = "MPI_Wait";
     int mpi_errno = MPI_SUCCESS;
+    MPID_Request *request_ptr = NULL;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WAIT);
+    MPID_Request_get_ptr( *request, request_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -55,6 +57,7 @@ int MPI_Wait(MPI_Request  *request, MPI_Status   *status)
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
                             "**initialized", 0 );
             }
+	    MPID_Request_valid_ptr(request_ptr, mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WAIT);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -63,6 +66,8 @@ int MPI_Wait(MPI_Request  *request, MPI_Status   *status)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    MPID_Wait(request_ptr, status);
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WAIT);
     return MPI_SUCCESS;

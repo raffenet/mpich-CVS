@@ -680,5 +680,7 @@ int MPID_Init(void);
 int MPID_Open_port(MPID_Info *, char *);
 int MPID_Isend(void *, int, MPID_Datatype *, int, int, MPID_Comm *, MPID_Request **);
 int MPID_Irecv(void *, int, MPID_Datatype *, int, int, MPID_Comm *, MPID_Request **);
+int MPID_Test(MPID_Request *, int *, MPI_Status *);
+int MPID_Wait(MPID_Request *, MPI_Status *);
 
 #endif /* MPIIMPL_INCLUDED */

@@ -1,2 +1,2 @@
-lib${MPILIBNAME}_a_SOURCES = mpid_isend.c mpid_irecv.c
+lib${MPILIBNAME}_a_SOURCES = mpid_isend.c mpid_irecv.c mpid_test.c mpid_wait.c
 INCLUDES = -I../../include -I../../../../include -I${top_srcdir}/src/include
