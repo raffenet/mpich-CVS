@@ -95,7 +95,7 @@ by \\ [2ex]
 \noindent
 ROMIO is a high-performance, portable implementation of MPI-IO (the
 I/O chapter in \mbox{MPI-2}). This document describes how to install and use
-ROMIO version~1.2.3 on various machines.
+ROMIO version~1.2.4 on various machines.
 \end{abstract}
 
 \section{Introduction} 
@@ -103,7 +103,7 @@ ROMIO version~1.2.3 on various machines.
 ROMIO\footnote{\tt http://www.mcs.anl.gov/romio} is a
 high-performance, portable implementation of MPI-IO (the I/O chapter in 
 MPI-2~\cite{mpi97a}). This document describes how to install and use
-ROMIO version~1.2.3 on various machines.
+ROMIO version~1.2.4 on various machines.
 
 
 %
@@ -111,20 +111,13 @@ ROMIO version~1.2.3 on various machines.
 %
 \section{Major Changes in This Version}
 \begin{itemize}
-\item Added explicit control over aggregators for collective operations
-      (see description of \texttt{cb\_config\_list}).
-\item Added the following working hints: \texttt{cb\_config\_list},
-      \texttt{romio\_cb\_read}, \texttt{romio\_cb\_write},\newline
-      \texttt{romio\_ds\_read}.  These additional hints have
-      been added but are currently ignored by the implementation:
-      \texttt{romio\_ds\_write}, \texttt{romio\_no\_indep\_rw}.
-\item Added NTFS ADIO implementation.
-\item Added testfs ADIO implementation for use in debugging.
-\item Added delete function to ADIO interface so that file systems that
-      need to use their own delete function may do so (e.g. PVFS).
-\item Changed version numbering to match version number of MPICH release.
+\item Added section describing ROMIO \texttt{MPI\_FILE\_SYNC} and
+      \texttt{MPI\_FILE\_CLOSE} behavior
+\item Bug removed from PVFS ADIO implementation regarding resize operations
+\item Added support for PVFS listio operations (see Section \ref{sec:hints})
+\item Added the following working hints:
+      \texttt{romio\_pvfs\_listio\_read}, \texttt{romio\_pvfs\_listio\_write}
 \end{itemize}
-
 
 %
 % GENERAL INFORMATION
@@ -148,7 +141,7 @@ workstations (Sun, SGI, HP, IBM, DEC, Linux, and FreeBSD).
 Supported file systems are IBM PIOFS, Intel PFS, HP/Convex
 HFS, SGI XFS, NEC SFS, PVFS, NFS, NTFS, and any Unix file system (UFS).
 
-This version of ROMIO is included in MPICH 1.2.3; an earlier version
+This version of ROMIO is included in MPICH 1.2.4; an earlier version
 is included in at least the following MPI implementations: LAM, HP
 MPI, SGI MPI, and NEC MPI. 
 
@@ -173,6 +166,7 @@ in Section~\ref{sec:limit} of this document (e.g., {\tt MPIO\_Request}
 object, restriction to homogeneous environments). 
 
 \subsection{ROMIO Optimizations}
+\label{sec:opt}
 
 ROMIO implements two I/O optimization techniques that in general
 result in improved performance for applications.  The first of these
@@ -368,6 +362,22 @@ For XFS control is provided for the direct I/O optimization:
 values are \texttt{true} and \texttt{false}.  Default is \texttt{false}.
 \item \texttt{direct\_write} -- Controls direct I/O for writes.  Valid
 values are \texttt{true} and \texttt{false}.  Default is \texttt{false}.
+\end{itemize}
+
+For PVFS control is provided for the use of the listio interface.  This
+interface to PVFS allows for a collection of noncontiguous regions to be
+requested (for reading or writing) with a single operation.  This can result
+in substantially higher performance when accessing noncontiguous regions.
+Support for these operations in PVFS exists after version 1.5.4, but has not
+been heavily tested, so use of the interface is disabled in ROMIO by default
+at this time.  The hints to control listio use are:
+\begin{itemize}
+\item \texttt{romio\_pvfs\_listio\_read} -- Controls use of listio for reads.
+Valid values are \texttt{enable}, \texttt{disable}, and \texttt{automatic}.
+Default is \texttt{disable}.
+\item \texttt{romio\_pvfs\_listio\_write} -- Controls use of listio for writes.
+Valid values are \texttt{enable}, \texttt{disable}, and \texttt{automatic}.
+Default is \texttt{disable}.
 \end{itemize}
 
 If ROMIO doesn't understand a hint, or if the value is invalid, the hint
@@ -723,6 +733,22 @@ the book.
 % MAJOR CHANGES IN PREVIOUS RELEASES
 %
 \section{Major Changes in Previous Releases}
+
+\subsection{Major Changes in Version 1.2.3}
+\begin{itemize}
+\item Added explicit control over aggregators for collective operations
+      (see description of \texttt{cb\_config\_list}).
+\item Added the following working hints: \texttt{cb\_config\_list},
+      \texttt{romio\_cb\_read}, \texttt{romio\_cb\_write},\newline
+      \texttt{romio\_ds\_read}.  These additional hints have
+      been added but are currently ignored by the implementation:
+      \texttt{romio\_ds\_write}, \texttt{romio\_no\_indep\_rw}.
+\item Added NTFS ADIO implementation.
+\item Added testfs ADIO implementation for use in debugging.
+\item Added delete function to ADIO interface so that file systems that
+      need to use their own delete function may do so (e.g. PVFS).
+\item Changed version numbering to match version number of MPICH release.
+\end{itemize}
 
 \subsection{Major Changes in Version 1.0.3}
 \begin{itemize}
