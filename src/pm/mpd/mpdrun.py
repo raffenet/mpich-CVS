@@ -394,6 +394,8 @@ def mpdrun():
                             outXmlEC.appendChild(outXmlProc)
                             outXmlProc.setAttribute('rank',str(msg['cli_rank']))
                             outXmlProc.setAttribute('status',str(msg['cli_status']))
+                            outXmlProc.setAttribute('pid',str(msg['cli_pid']))
+                            outXmlProc.setAttribute('host',msg['cli_host'])
                         # print "exit info: rank=%d  host=%s  pid=%d  status=%d" % \
                               # (msg['cli_rank'],msg['cli_host'],
                                # msg['cli_pid'],msg['cli_status'])
