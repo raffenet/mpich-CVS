@@ -1,17 +1,17 @@
 #include "mpi.h"
-#include "mpio.h"
+#include "mpio.h"  /* not necessary with MPICH 1.1.1 or HPMPI 1.4 */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
 /* prints out all the default info keys and values used by ROMIO */
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int i, len, nkeys, flag, mynod, default_striping_factor, nprocs;
     MPI_File fh;
     MPI_Info info, info_used;
-    char *filename, key[MPI_MAX_INFO_KEY+1], value[MPI_MAX_INFO_VAL+1];
+    char *filename, key[MPI_MAX_INFO_KEY], value[MPI_MAX_INFO_VAL];
 
     MPI_Init(&argc,&argv);
 
@@ -53,8 +53,9 @@ main(int argc, char **argv)
 
     for (i=0; i<nkeys; i++) {
 	MPI_Info_get_nthkey(info_used, i, key);
-	MPI_Info_get(info_used, key, MPI_MAX_INFO_VAL, value, &flag);
-	printf("Process %d, Default:  key = %s, value = %s\n", mynod, 
+	MPI_Info_get(info_used, key, MPI_MAX_INFO_VAL-1, value, &flag);
+	if (!mynod) 
+	    printf("Process %d, Default:  key = %s, value = %s\n", mynod, 
                 key, value);
 	if (!strcmp("striping_factor", key))
 	  default_striping_factor = atoi(value);
@@ -123,8 +124,8 @@ main(int argc, char **argv)
     if (!mynod) printf("\n New values\n\n");
     for (i=0; i<nkeys; i++) {
 	MPI_Info_get_nthkey(info_used, i, key);
-	MPI_Info_get(info_used, key, MPI_MAX_INFO_VAL, value, &flag);
-	printf("Process %d, key = %s, value = %s\n", mynod, 
+	MPI_Info_get(info_used, key, MPI_MAX_INFO_VAL-1, value, &flag);
+	if (!mynod) printf("Process %d, key = %s, value = %s\n", mynod, 
                 key, value);
     }
     
@@ -133,4 +134,5 @@ main(int argc, char **argv)
     MPI_Info_free(&info_used);
     MPI_Info_free(&info);
     MPI_Finalize();
+    return 0;
 }
