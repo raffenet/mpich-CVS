@@ -1175,3 +1175,4 @@ if test "$pac_cv_c_inline" = "no" ; then
     AC_DEFINE(inline,)
 fi
 ])dnl
+define(AC_MSG_WARN,[AC_MSG_RESULT([Warning: $1])])
