@@ -364,7 +364,8 @@ foreach $_ (@ARGV) {
 # Check that gcc is available if we need it
 if ($do_dependencies) {
     if ($make_depend eq "gcc -MM") { 
-	if (open (TFD, "gcc --version | 2>&1" )) {
+	# This was | 2>&1 but the redirect should go before the pipe.
+	if (open (TFD, "gcc --version 2>&1 |" )) {
 	    close TFD;
 	}
 	else {
@@ -2158,7 +2159,7 @@ sub FindWorkingAutoconf {
     if ($autoconf_version ne "") {
 	foreach $file (split(/:/,$autoconf)) {
 	    $lastfile = $file;
-	    if (open( ACFD, "$file --version |" ) ) {
+	    if (open( ACFD, "$file --version 2>&1 |" ) ) {
 		$found_version = "";
 		while (<ACFD>) {
 		    print STDERR "$_";
