@@ -1,6 +1,6 @@
           ROMIO: A High-Performance, Portable MPI-IO Implementation
 
-                      Version 1.0.3 beta, July 2000
+                      Version 1.0.3 beta, August 2000
 
 
 Major Changes in This Version:
@@ -9,20 +9,21 @@ Major Changes in This Version:
 * When used with MPICH 1.2.1, the MPI-IO functions return proper error codes 
   and classes, and the status object is filled in.
 
-* On SGI's XFS file system, ROMIO can use direct I/O even if the user's request 
-  does not meet the various restrictions needed to use direct I/O. ROMIO does
-  this by doing part of the request with buffered I/O (until all the restrictions 
-  are met) and doing the rest with direct I/O. This feature hasn't been tested
-  rigorously. Please check for errors.
+* On SGI's XFS file system, ROMIO can use direct I/O even if the
+  user's request does not meet the various restrictions needed to use
+  direct I/O. ROMIO does this by doing part of the request with
+  buffered I/O (until all the restrictions are met) and doing the rest
+  with direct I/O. (This feature hasn't been tested rigorously. Please
+  check for errors.) 
 
-  By default, ROMIO will use only buffered I/O. Direct I/O can be enabled either 
-  by setting the environment variables MPIO_DIRECT_READ and/or MPIO_DIRECT_WRITE
-  to TRUE, or on a per-file basis by using the info keys "direct_read" and 
-  "direct_write". 
+  By default, ROMIO will use only buffered I/O. Direct I/O can be
+  enabled either by setting the environment variables MPIO_DIRECT_READ
+  and/or MPIO_DIRECT_WRITE to TRUE, or on a per-file basis by using
+  the info keys "direct_read" and "direct_write". 
 
-  Direct I/O will result in higher performance only if you are accessing a 
-  high-bandwidth disk system. Otherwise, buffered I/O is better, and is therefore
-  used as the default.
+  Direct I/O will result in higher performance only if you are
+  accessing a high-bandwidth disk system. Otherwise, buffered I/O is
+  better and is therefore used as the default.
 
 * Miscellaneous bug fixes.
 
@@ -172,12 +173,12 @@ http://www.mcs.anl.gov/romio .  The MPI-2 standard is available at
 http://www.mpi-forum.org/docs/docs.html .
 
 This version of ROMIO includes everything defined in the MPI-2 I/O
-chapter except support for file interoperability (Sec. 9.5 of MPI-2),
-I/O error handling (Sec. 9.7), and I/O error classes (Sec. 9.8).  The
-subarray and distributed array datatype constructor functions from
-Chapter 4 (Sec. 4.14.4 & 4.14.5) have been implemented. They are
-useful for accessing arrays stored in files. The functions
-MPI_File_f2c and MPI_File_c2f (Sec. 4.12.4) are also implemented.
+chapter except support for file interoperability (Sec. 9.5 of MPI-2) and
+user-defined error handlers for files (Sec. 4.13.3).  The subarray and
+distributed array datatype constructor functions from Chapter 4
+(Sec. 4.14.4 & 4.14.5) have been implemented. They are useful for
+accessing arrays stored in files. The functions MPI_File_f2c and
+MPI_File_c2f (Sec. 4.12.4) are also implemented.
 
 C, Fortran, and profiling interfaces are provided for all functions
 that have been implemented. 
@@ -193,8 +194,12 @@ workstations (Sun, SGI, HP, IBM, DEC, Linux, and FreeBSD).  Supported
 file systems are IBM PIOFS, Intel PFS, HP/Convex HFS, SGI XFS, NEC
 SFS, PVFS, NFS, and any Unix file system (UFS).
 
-This version of ROMIO is included in MPICH 1.2.0; the previous version
-is included in LAM, HP MPI, SGI MPI, and NEC MPI. 
+This version of ROMIO is included in MPICH 1.2.1; an earlier version
+is included in at least the following MPI implementations: LAM, HP
+MPI, SGI MPI, and NEC MPI.  
+
+Note that proper I/O error codes and classes are returned and the
+status variable is filled only when used with MPICH 1.2.1.
 
 You can open files on multiple file systems in the same program. The
 only restriction is that the directory where the file is to be opened
@@ -401,7 +406,8 @@ and link MPI-IO programs.
 Limitations of this version of ROMIO
 ------------------------------------
 
-* The "status" argument is not filled in any function. Consequently,
+* When used with any MPI implementation other than MPICH 1.2.1, the
+"status" argument is not filled in any MPI-IO function. Consequently, 
 MPI_Get_count and MPI_Get_elements will not work when passed the
 status object from an MPI-IO operation.
 
@@ -420,7 +426,8 @@ work for nonblocking I/O.
 * This version works only on a homogeneous cluster of machines,
 and only the "native" file data representation is supported.
 
-* All functions return only two possible error codes---MPI_SUCCESS on
+* When used with any MPI implementation other than MPICH 1.2.1, all
+MPI-IO functions return only two possible error codes---MPI_SUCCESS on
 success and MPI_ERR_UNKNOWN on failure.
 
 * Shared file pointers are not supported on PVFS and IBM PIOFS file
@@ -510,3 +517,13 @@ MPI-IO implementation issues are discussed in our IOPADS '99 paper,
 "On Implementing MPI-IO Portably and with High Performance."
 All ROMIO-related papers are available online from
 http://www.mcs.anl.gov/romio.
+
+
+Learning MPI-IO
+---------------
+
+The book "Using MPI-2: Advanced Features of the Message-Passing
+Interface," published by MIT Press, provides a tutorial introduction to
+all aspects of MPI-2, including parallel I/O. It has lots of example
+programs. See http://www.mcs.anl.gov/mpi/usingmpi2 for further
+information about the book.
