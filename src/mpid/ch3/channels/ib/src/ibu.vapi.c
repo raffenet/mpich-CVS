@@ -1438,7 +1438,6 @@ char * op2str(int opcode)
 #define FUNCNAME ibu_wait
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-/*int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)*/
 int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op_t *op_ptr)
 {
     int i;
