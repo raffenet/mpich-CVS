@@ -34,11 +34,7 @@ void MPIDI_CH3U_Buffer_copy(
     MPIDI_CH3U_Datatype_get_info(scount, sdt, sdt_contig, sdata_sz, sdt_ptr);
     MPIDI_CH3U_Datatype_get_info(rcount, rdt, rdt_contig, rdata_sz, rdt_ptr);
 
-    if (sdata_sz == 0)
-    {
-	*rsz = 0;
-	goto fn_exit;
-    }
+    printf("sdata_sz=%d, rdata_sz=%d\n", sdata_sz, rdata_sz);
     
     if (sdata_sz > rdata_sz)
     {
@@ -46,6 +42,12 @@ void MPIDI_CH3U_Buffer_copy(
 			  sdata_sz, rdata_sz));
 	sdata_sz = rdata_sz;
 	*rmpi_errno = MPI_ERR_TRUNCATE;
+    }
+    
+    if (sdata_sz == 0)
+    {
+	*rsz = 0;
+	goto fn_exit;
     }
     
     if (sdt_contig && rdt_contig)
