@@ -25,13 +25,14 @@ print_error() {
     }
 usage_msg="
 Usage: ${progname} [-file_system=FILE_SYSTEM] [-arch=ARCH_TYPE] [-mpi=MPI_IMPL]
-                 [-mpiincdir=MPI_INCLUDE_DIR] [-mpilib=MPI_LIBRARY]
-                 [-cc=C_COMPILER] [-fc=FORTRAN_COMPILER] [-nof77] 
-                 [-cflags=CFLAGS] [-fflags=FFLAGS] [-f90nag] [-debug] 
-                 [-make=MAKEPGM] [-mpiolib=MPIO_LIBRARY] [-ar_nolocal] 
-                 [-noranlib] [-ar=AR_COMMAND] [-prefix=INSTALL_DIR]  
-                 [-intsize=INTSIZE] [-ptrsize=PTRSIZE] [-longsize=LONGSIZE]
-                 [-longlongsize=LONGLONGSIZE] [-noprofile]
+                [-mpiincdir=MPI_INCLUDE_DIR] [-mpilib=MPI_LIBRARY]
+                [-cc=C_COMPILER] [-fc=FORTRAN_COMPILER] [-nof77] 
+                [-cflags=CFLAGS] [-fflags=FFLAGS] [-f90=F90_COMPILER] [-debug] 
+                [-make=MAKEPGM] [-mpiolib=MPIO_LIBRARY] [-ar_nolocal] 
+                [-noranlib] [-ar=AR_COMMAND] [-prefix=INSTALL_DIR]  
+                [-intsize=INTSIZE] [-ptrsize=PTRSIZE] [-longsize=LONGSIZE]
+                [-longlongsize=LONGLONGSIZE] [-f90nag] [-noprofile] 
+                 
 where
    FILE_SYSTEM  = the file system(s) for which ROMIO is to be configured.
                   Valid values are pfs, piofs, hfs, xfs, sfs, ufs, and nfs 
@@ -63,6 +64,8 @@ where
                   uses a default compiler depending on the machine.
    CFLAGS       = flags to give to the C compiler
    FFLAGS       = flags to give to the Fortran compiler
+   F90_COMPILER = the Fortran 90 compiler to use. If not specified, 
+                  ROMIO uses f90.
    MPIO_LIBRARY = name of the MPI-IO library to be built (full path).
                   Default is "this_directory"/lib/ARCH_TYPE/libmpio.a.
    MAKEPGM      = name of the make program to use
@@ -163,6 +166,7 @@ FORTRAN_MPI_OFFSET=""
 MPIOF_H_INCLUDED=0
 MPI_OFFSET_KIND1="!"
 MPI_OFFSET_KIND2="!"
+F90=""
 TEST_CC=""
 TEST_F77=""
 #
@@ -260,6 +264,9 @@ case $arg in
   -noprofile | --noprofile)
      echo "profiling interface will not be built"
      NOPROFILE=1
+     ;;
+  -f90=* | --f90=*)
+     F90=`echo $arg|sed 's/-*fc=//'`
      ;;
   -h | -help | --h | --help | -u | --u)
     (echo "${usage_msg}") >& 2
@@ -1139,13 +1146,13 @@ else
 echo "$ac_t""yes" 1>&1
 fi
        else
-	   FILE_SYSTEM="ufs $FILE_SYSTEM"
-	   file_system_ufs=1
-           if test -z "$ac_echo_test" -a 1 = 1 ; then
+          if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""no"
 else
 echo "$ac_t""no" 1>&1
 fi
+          file_system_ufs=1
+          FILE_SYSTEM="ufs $FILE_SYSTEM"
        fi
        echo "configuring for file systems $FILE_SYSTEM"
    fi
@@ -1775,7 +1782,71 @@ DEFS="$DEFS -D__HAVE_MPI_LONG_LONG_INT=1"
    fi
 fi
 #
-# check if MPI_Info is implemented in the MPI implementation
+if test "$FORTRAN_MPI_OFFSET" = "integer*8" && test "A$MPI_OFFSET_KIND2" = "A!" ; then
+   if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking for Fortran 90 KIND parameter for 8-byte integers""... $ac_c"
+else
+echo $ac_n "checking for Fortran 90 KIND parameter for 8-byte integers""... $ac_c" 1>&1
+fi
+rm -f kind.f kind.o kind
+cat <<EOF > kind.f
+      program main
+      integer i
+      i = selected_int_kind(16)
+      open(8, file="k.out", form="formatted")
+      write (8,*) i
+      close(8)
+      stop
+      end
+EOF
+if test -z "$F90" ; then
+   F90=f90
+fi
+KINDVAL=""
+if $F90 -o kind kind.f >/dev/null 2>&1 ; then
+    ./kind >/dev/null 2>&1
+    KINDVAL=`cat k.out`
+fi
+rm -f kind k.out kind.f kind.o
+if test -n "$KINDVAL" -a "$KINDVAL" != "-1" -a "$KINDVAL" != " -1" ; then
+   if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""$KINDVAL"
+else
+echo "$ac_t""$KINDVAL" 1>&1
+fi
+   MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
+   MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=$KINDVAL)"
+else
+    if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""unavailable"
+else
+echo "$ac_t""unavailable" 1>&1
+fi
+fi
+
+fi
+#
+# check if MPI_Info functions are defined in the MPI implementation
 if test $FROM_MPICH = 0 ; then
    
   if test -z "$ac_echo_n" ; then
@@ -2488,7 +2559,7 @@ if test $FROM_MPICH = 1 ; then
       TEST_F77=$MPICH_HOME/bin/mpif90
    else
       TEST_F77=$MPICH_HOME/bin/mpif77
-   fi     
+   fi
    CC=$MPICH_HOME/bin/mpicc
 fi
 #
