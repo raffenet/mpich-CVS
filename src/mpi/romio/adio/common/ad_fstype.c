@@ -24,6 +24,10 @@
 #include "pvfs.h"
 #endif
 
+#ifdef HAVE_PVFS2_H
+#include "pvfs2.h"
+#endif
+
 /* Notes on detection process:
  *
  * There are three more "general" mechanisms that we use for detecting
