@@ -249,8 +249,37 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     SECURITY_ATTRIBUTES saAttr;
     char str[100], sock_str[20];
     BOOL bSuccess = TRUE;
+    char *actual_exe, exe_data[SMPD_MAX_EXE_LENGTH];
+    const char *args;
+    char temp_exe[SMPD_MAX_EXE_LENGTH];
+    int num_chars;
 
     smpd_enter_fn("smpd_launch_process");
+
+    /* resolve the executable name */
+    if (process->path[0] != '\0')
+    {
+	args = smpd_get_string(process->exe, temp_exe, SMPD_MAX_EXE_LENGTH, &num_chars);
+	smpd_dbg_printf("searching for '%s' in '%s'\n", temp_exe, process->path);
+	if (smpd_search_path(process->path, temp_exe, SMPD_MAX_EXE_LENGTH, exe_data))
+	{
+	    if (args != NULL)
+	    {
+		strncat(exe_data, " ", SMPD_MAX_EXE_LENGTH - strlen(exe_data));
+		strncat(exe_data, args, SMPD_MAX_EXE_LENGTH - strlen(exe_data));
+		exe_data[SMPD_MAX_EXE_LENGTH-1] = '\0';
+	    }
+	    actual_exe = exe_data;
+	}
+	else
+	{
+	    actual_exe = process->exe;
+	}
+    }
+    else
+    {
+	actual_exe = process->exe;
+    }
 
     smpd_priority_class_to_win_class(&priorityClass);
     smpd_priority_to_win_priority(&priority);
@@ -467,10 +496,11 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     if (dbg)
 	launch_flag = launch_flag | DEBUG_PROCESS;
 
+    smpd_dbg_printf("CreateProcess(%s)\n", actual_exe);
     psInfo.hProcess = INVALID_HANDLE_VALUE;
     if (CreateProcess(
 	NULL,
-	process->exe,
+	actual_exe,
 	NULL, NULL, TRUE,
 	launch_flag,
 	pEnv,

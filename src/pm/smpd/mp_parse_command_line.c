@@ -269,171 +269,6 @@ int mp_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *laun
     return SMPD_SUCCESS;
 }
 
-#ifndef HAVE_WINDOWS_H
-
-#if 0
-int exists(char *filename)
-{
-    struct stat file_stat;
-
-    if ((stat(filename, &file_stat) < 0) || !(S_ISREG(file_stat.st_mode)))
-    {
-	return 0; /* no such file, or not a regular file */
-    }
-    return 1;
-}
-#endif
-
-int GetFullPathName(const char *filename, int maxlen, char *buf, char **file_part)
-{
-    char *path = NULL;
-    char cwd[SMPD_MAX_EXE_LENGTH] = "";
-
-    getcwd(cwd, SMPD_MAX_EXE_LENGTH);
-    path = (char*)malloc((strlen(getenv("PATH")) + 1) * sizeof(char));
-
-    if (cwd[strlen(cwd)-1] != '/')
-	strcat(cwd, "/");
-
-    /* add searching of the path and verifying file exists */
-
-    /* for now, just put whatever they give you tacked on to the cwd */
-    snprintf(buf, maxlen, "%s%s", cwd, filename);
-
-    free(path);
-    return 0;
-}
-
-#if 0
-/* SEARCH_PATH() - use the given environment, find the PATH variable,
- * search the path for cmd, return a string with the full path to
- * the command.
- *
- * This could probably be done a lot more efficiently.
- *
- * Returns a pointer to a string containing the filename (including
- * path) if successful, or NULL on failure.
- */
-char *search_path(char **env, char *cmd, char *cwd, int uid, int gid, char *uname)
-{
-    int i, len;
-    char *tmp, *path, succeeded = 0;
-    static char filename[4096];
-
-    for (i=0; env[i]; i++)
-    {
-	if (strncmp(env[i], "PATH=", 5) != 0)
-	    continue;
-
-	len = strlen(env[i])+1;
-	if (!(path=(char *)malloc(len * sizeof(char))))
-	{
-	    return(NULL);
-	}
-	bcopy(env[i], path, len * sizeof(char));
-
-	/* check for absolute or relative pathnames */
-	if ((strncmp(cmd,"./",2)) && (strncmp(cmd,"../",3)) && (cmd[0]!='/'))
-	{
-	    /* ok, no pathname specified, search for a valid executable */
-	    tmp = NULL;
-	    for (strtok(path, "="); (tmp = strtok(NULL, ":")); )
-	    {
-		/* concatenate search path and command */
-		/* use cwd if relative path is being used in environment */
-		if (!strncmp(tmp,"../",3) || !strncmp(tmp,"./",2) ||
-		    !strcmp(tmp,".") || !strcmp(tmp,".."))
-		{
-		    snprintf(filename, 4096, "%s/%s/%s", cwd, tmp, cmd);
-		}
-		else
-		{
-		    snprintf(filename, 4096, "%s/%s", tmp, cmd);
-		}
-		/* see if file is executable */
-		if (is_executable(filename, uname, uid, gid))
-		{
-		    succeeded=1;
-		    break;
-		}
-	    }
-	}
-	else
-	{
-	    /* ok, pathname is specified */
-	    if (!(strncmp(cmd,"../",3)) || !(strncmp(cmd,"./",2)))
-		snprintf(filename, 4096, "%s/%s", cwd, cmd);
-	    else
-		strncpy(filename,cmd,4096);
-	    if (is_executable(filename, uname, uid, gid))
-		succeeded=1;
-	}
-	return((succeeded) ? filename : NULL);
-    }
-    return(NULL);
-}
-
-/* IS_EXECUTABLE() - checks to see if a given filename refers to a file
- * which a given user could execute
- *
- * Parameters:
- * fn  - pointer to string containing null terminated file name,
- *       including path
- * un  - pointer to string containing user name
- * uid - numeric user id for user
- * gid - numeric group id for user (from password entry)
- *
- * Returns 1 if the file exists and is executable, 0 otherwise.
- *
- * NOTE: This code in and of itself isn't a good enough check unless it
- * is called by a process with its uid/gid set to the values passed in.
- * Otherwise the directory path would not necessarily be traversable by
- * the user.
- */
-int is_executable(char *fn, char *un, int uid, int gid)
-{
-    struct stat file_stat;
-
-    if ((stat(fn, &file_stat) < 0) || !(S_ISREG(file_stat.st_mode)))
-    {
-	return(0); /* no such file, or not a regular file */
-    }
-
-    if (file_stat.st_mode & S_IXOTH)
-    {
-	return(1); /* other executable */
-    }
-
-    if ((file_stat.st_mode & S_IXUSR) && (file_stat.st_uid == uid))
-    {
-	return(1); /* user executable and user owns file */
-    }
-
-    if (file_stat.st_mode & S_IXGRP)
-    {
-	struct group *grp_info;
-	int i;
-
-	if (file_stat.st_gid == gid)
-	{
-	    return(1); /* group in passwd entry matches, executable */
-	}
-
-	/* check to see if user is in this group in /etc/group */
-	grp_info = getgrgid(file_stat.st_gid);
-	for(i=0; grp_info->gr_mem[i]; i++)
-	{
-	    if (!strcmp(un, grp_info->gr_mem[i]))
-	    {
-		return(1); /* group from groups matched, executable */
-	    }
-	}
-    }
-    return(0);
-}
-#endif
-#endif
-
 int mp_parse_command_args(int *argcp, char **argvp[])
 {
     int cur_rank;
@@ -460,7 +295,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     char configfilename[SMPD_MAX_FILENAME];
     int use_configfile;
     char exe[SMPD_MAX_EXE_LENGTH];
-    char temp_exe[SMPD_MAX_EXE_LENGTH], *namepart;
+    char exe_path[SMPD_MAX_EXE_LENGTH], *namepart;
     smpd_launch_node_t *launch_node, *launch_node_iter;
     int total;
     char path[SMPD_MAX_PATH_LENGTH];
@@ -738,6 +573,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 			smpd_exit_fn("mp_parse_command_args");
 			return SMPD_FAIL;
 		    }
+		    map_node->ref_count = 0;
 		    map_node->drive = (*argvp)[2][0];
 		    strncpy(map_node->share, &(*argvp)[2][2], SMPD_MAX_EXE_LENGTH);
 		    map_node->next = drive_map_list;
@@ -1083,23 +919,46 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    if (!((*argvp)[1][0] == '\\' && (*argvp)[1][1] == '\\') && (*argvp)[1][0] != '/' &&
 		!(strlen((*argvp)[1]) > 3 && (*argvp)[1][1] == ':' && (*argvp)[1][2] == '\\') )
 	    {
-		GetFullPathName((*argvp)[1], SMPD_MAX_EXE_LENGTH, temp_exe, &namepart);
-		total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, temp_exe);
+		/* an absolute path was not specified so find the executable an save the path */
+		if (smpd_get_full_path_name((*argvp)[1], SMPD_MAX_EXE_LENGTH, exe_path, &namepart))
+		{
+		    if (path[0] != '\0')
+		    {
+			if (strlen(path) < SMPD_MAX_PATH_LENGTH)
+			{
+			    strcat(path, ";");
+			    strncat(path, exe_path, SMPD_MAX_PATH_LENGTH - strlen(path));
+			    path[SMPD_MAX_PATH_LENGTH-1] = '\0';
+			}
+		    }
+		    else
+		    {
+			strncpy(path, exe_path, SMPD_MAX_PATH_LENGTH);
+		    }
+		    total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, namepart);
+		}
+		else
+		{
+		    total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, (*argvp)[1]);
+		}
 	    }
 	    else
 	    {
+		/* an absolute path was specified */
 		total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, (*argvp)[1]);
 	    }
 	    for (i=2; i<argc; i++)
 	    {
 		total += smpd_add_string(&exe[total], SMPD_MAX_EXE_LENGTH - total, (*argvp)[i]);
 	    }
+	    /* remove the trailing space */
+	    exe[strlen(exe)-1] = '\0';
 	    smpd_dbg_printf("handling executable:\n%s\n", exe);
 	}
 
 	if (nproc == 0)
 	{
-	    smpd_err_printf("missing num_proc flag: -n, -np, or -hosts.\n");
+	    smpd_err_printf("missing num_proc flag: -n, -np, -hosts, or -localonly.\n");
 	    smpd_exit_fn("mp_parse_command_args");
 	    return SMPD_FAIL;
 	}
@@ -1123,6 +982,20 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    launch_node->iproc = cur_rank++;
 	    launch_node->env = launch_node->env_data;
 	    launch_node->env_data[0] = '\0';
+	    if (wdir[0] != '\0')
+		strcpy(launch_node->dir, wdir);
+	    else
+		launch_node->dir[0] = '\0';
+	    if (path[0] != '\0')
+		strcpy(launch_node->path, path);
+	    else
+		launch_node->path[0] = '\0';
+	    launch_node->map_list = drive_map_list;
+	    if (drive_map_list)
+	    {
+		/* ref count the list so when freeing the launch_node it can be know when to free the list */
+		drive_map_list->ref_count++;
+	    }
 	    strcpy(launch_node->exe, exe);
 	    launch_node->next = NULL;
 	    if (smpd_process.launch_list == NULL)

@@ -265,10 +265,21 @@ typedef struct smpd_process_t
     struct smpd_process_t *next;
 } smpd_process_t;
 
+typedef struct smpd_map_drive_node_t
+{
+    int ref_count;
+    char drive;
+    char share[SMPD_MAX_EXE_LENGTH];
+    struct smpd_map_drive_node_t *next;
+} smpd_map_drive_node_t;
+
 typedef struct smpd_launch_node_t
 {
     char exe[SMPD_MAX_EXE_LENGTH];
     char *env, env_data[SMPD_MAX_ENV_LENGTH];
+    char dir[SMPD_MAX_DIR_LENGTH];
+    char path[SMPD_MAX_PATH_LENGTH];
+    smpd_map_drive_node_t *map_list;
     int host_id;
     int iproc;
     int nproc;
@@ -281,13 +292,6 @@ typedef struct smpd_env_node_t
     char value[SMPD_MAX_VALUE_LENGTH];
     struct smpd_env_node_t *next;
 } smpd_env_node_t;
-
-typedef struct smpd_map_drive_node_t
-{
-    char drive;
-    char share[SMPD_MAX_EXE_LENGTH];
-    struct smpd_map_drive_node_t *next;
-} smpd_map_drive_node_t;
 
 typedef struct smpd_database_element_t
 {
@@ -479,5 +483,7 @@ void smpd_translate_win_error(int error, char *msg, int maxlen, char *prepend, .
 typedef void smpd_sig_fn_t( int );
 smpd_sig_fn_t *smpd_signal( int signo, smpd_sig_fn_t func );
 #endif
+SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *path, char **namepart);
+SMPD_BOOL smpd_search_path(const char *path, const char *exe, int maxlen, char *str);
 
 #endif

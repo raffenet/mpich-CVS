@@ -13,6 +13,235 @@
 #endif
 
 #ifndef HAVE_WINDOWS_H
+
+#if 0
+int exists(char *filename)
+{
+    struct stat file_stat;
+
+    if ((stat(filename, &file_stat) < 0) || !(S_ISREG(file_stat.st_mode)))
+    {
+	return 0; /* no such file, or not a regular file */
+    }
+    return 1;
+}
+#endif
+
+int GetFullPathName(const char *filename, int maxlen, char *buf, char **file_part)
+{
+    char *path = NULL;
+    char cwd[SMPD_MAX_EXE_LENGTH] = "";
+
+    getcwd(cwd, SMPD_MAX_EXE_LENGTH);
+    path = (char*)malloc((strlen(getenv("PATH")) + 1) * sizeof(char));
+
+    if (cwd[strlen(cwd)-1] != '/')
+	strcat(cwd, "/");
+
+    /* add searching of the path and verifying file exists */
+
+    /* for now, just put whatever they give you tacked on to the cwd */
+    snprintf(buf, maxlen, "%s%s", cwd, filename);
+
+    free(path);
+    return 0;
+}
+
+#if 0
+/* SEARCH_PATH() - use the given environment, find the PATH variable,
+ * search the path for cmd, return a string with the full path to
+ * the command.
+ *
+ * This could probably be done a lot more efficiently.
+ *
+ * Returns a pointer to a string containing the filename (including
+ * path) if successful, or NULL on failure.
+ */
+char *search_path(char **env, char *cmd, char *cwd, int uid, int gid, char *uname)
+{
+    int i, len;
+    char *tmp, *path, succeeded = 0;
+    static char filename[4096];
+
+    for (i=0; env[i]; i++)
+    {
+	if (strncmp(env[i], "PATH=", 5) != 0)
+	    continue;
+
+	len = strlen(env[i])+1;
+	if (!(path=(char *)malloc(len * sizeof(char))))
+	{
+	    return(NULL);
+	}
+	bcopy(env[i], path, len * sizeof(char));
+
+	/* check for absolute or relative pathnames */
+	if ((strncmp(cmd,"./",2)) && (strncmp(cmd,"../",3)) && (cmd[0]!='/'))
+	{
+	    /* ok, no pathname specified, search for a valid executable */
+	    tmp = NULL;
+	    for (strtok(path, "="); (tmp = strtok(NULL, ":")); )
+	    {
+		/* concatenate search path and command */
+		/* use cwd if relative path is being used in environment */
+		if (!strncmp(tmp,"../",3) || !strncmp(tmp,"./",2) ||
+		    !strcmp(tmp,".") || !strcmp(tmp,".."))
+		{
+		    snprintf(filename, 4096, "%s/%s/%s", cwd, tmp, cmd);
+		}
+		else
+		{
+		    snprintf(filename, 4096, "%s/%s", tmp, cmd);
+		}
+		/* see if file is executable */
+		if (is_executable(filename, uname, uid, gid))
+		{
+		    succeeded=1;
+		    break;
+		}
+	    }
+	}
+	else
+	{
+	    /* ok, pathname is specified */
+	    if (!(strncmp(cmd,"../",3)) || !(strncmp(cmd,"./",2)))
+		snprintf(filename, 4096, "%s/%s", cwd, cmd);
+	    else
+		strncpy(filename,cmd,4096);
+	    if (is_executable(filename, uname, uid, gid))
+		succeeded=1;
+	}
+	return((succeeded) ? filename : NULL);
+    }
+    return(NULL);
+}
+
+/* IS_EXECUTABLE() - checks to see if a given filename refers to a file
+ * which a given user could execute
+ *
+ * Parameters:
+ * fn  - pointer to string containing null terminated file name,
+ *       including path
+ * un  - pointer to string containing user name
+ * uid - numeric user id for user
+ * gid - numeric group id for user (from password entry)
+ *
+ * Returns 1 if the file exists and is executable, 0 otherwise.
+ *
+ * NOTE: This code in and of itself isn't a good enough check unless it
+ * is called by a process with its uid/gid set to the values passed in.
+ * Otherwise the directory path would not necessarily be traversable by
+ * the user.
+ */
+int is_executable(char *fn, char *un, int uid, int gid)
+{
+    struct stat file_stat;
+
+    if ((stat(fn, &file_stat) < 0) || !(S_ISREG(file_stat.st_mode)))
+    {
+	return(0); /* no such file, or not a regular file */
+    }
+
+    if (file_stat.st_mode & S_IXOTH)
+    {
+	return(1); /* other executable */
+    }
+
+    if ((file_stat.st_mode & S_IXUSR) && (file_stat.st_uid == uid))
+    {
+	return(1); /* user executable and user owns file */
+    }
+
+    if (file_stat.st_mode & S_IXGRP)
+    {
+	struct group *grp_info;
+	int i;
+
+	if (file_stat.st_gid == gid)
+	{
+	    return(1); /* group in passwd entry matches, executable */
+	}
+
+	/* check to see if user is in this group in /etc/group */
+	grp_info = getgrgid(file_stat.st_gid);
+	for(i=0; grp_info->gr_mem[i]; i++)
+	{
+	    if (!strcmp(un, grp_info->gr_mem[i]))
+	    {
+		return(1); /* group from groups matched, executable */
+	    }
+	}
+    }
+    return(0);
+}
+#endif
+#endif
+
+SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, char **namepart)
+{
+#ifdef HAVE_WINDOWS_H
+    int len;
+
+    /* make a full path out of the name provided */
+    len = GetFullPathName(exe, maxlen, exe_path, namepart);
+    if (len == 0 || len > maxlen)
+	return SMPD_FALSE;
+    
+    /* Verify file exists.  If it doesn't search the path for exe */
+
+    /* convert the name to its UNC equivalent to avoid need to map drive */
+
+    *(*namepart - 1) = '\0'; /* separate the path from the executable */
+    return SMPD_TRUE;
+#else
+    char *path = NULL;
+    char cwd[SMPD_MAX_EXE_LENGTH] = "";
+
+    getcwd(cwd, SMPD_MAX_EXE_LENGTH);
+    path = (char*)malloc((strlen(getenv("PATH")) + 1) * sizeof(char));
+
+    if (cwd[strlen(cwd)-1] != '/')
+	strcat(cwd, "/");
+
+    /* add searching of the path and verifying file exists */
+
+    /* for now, just put whatever they give you tacked on to the cwd */
+    snprintf(exe_path, maxlen, "%s%s", cwd, exe);
+    *namepart = strrchr(exe_path, '/');
+    *(*namepart - 1) = '\0'; /* separate the path from the executable */
+
+    free(path);
+    return SMPD_TRUE;
+#endif
+}
+
+SMPD_BOOL smpd_search_path(const char *path, const char *exe, int maxlen, char *str)
+{
+#ifdef HAVE_WINDOWS_H
+    char *filepart;
+
+    /* search for exactly what's specified */
+    if (SearchPath(path, exe, NULL, maxlen, str, &filepart) == 0)
+    {
+	/* search for file + .exe */
+	if (SearchPath(path, exe, ".exe", maxlen, str, &filepart) == 0)
+	{
+	    /* search the default path */
+	    if (SearchPath(NULL, exe, NULL, maxlen, str, &filepart) == 0)
+	    {
+		/* search the default path + .exe */
+		if (SearchPath(NULL, exe, ".exe", maxlen, str, &filepart) == 0)
+		    return SMPD_FALSE;
+	    }
+	}
+    }
+    return SMPD_TRUE;
+#else
+    return SMPD_FALSE;
+#endif
+}
+
+#ifndef HAVE_WINDOWS_H
 smpd_sig_fn_t *smpd_signal( int signo, smpd_sig_fn_t func )
 {
     struct sigaction act, oact;

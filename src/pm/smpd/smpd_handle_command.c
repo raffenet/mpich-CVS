@@ -91,6 +91,8 @@ int smpd_launch_processes()
     int result;
     smpd_command_t *cmd_ptr;
     smpd_launch_node_t *launch_node_ptr;
+    smpd_map_drive_node_t *map_iter;
+    char drive_map_str[SMPD_MAX_EXE_LENGTH];
 
     /* launch the processes */
     smpd_dbg_printf("launching the processes.\n");
@@ -121,6 +123,24 @@ int smpd_launch_processes()
 		goto launch_failure;
 	    }
 	}
+	if (launch_node_ptr->dir[0] != '\0')
+	{
+	    result = smpd_add_command_arg(cmd_ptr, "d", launch_node_ptr->dir);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the working directory to the launch command: '%s'\n", launch_node_ptr->dir);
+		goto launch_failure;
+	    }
+	}
+	if (launch_node_ptr->path[0] != '\0')
+	{
+	    result = smpd_add_command_arg(cmd_ptr, "p", launch_node_ptr->path);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the search path to the launch command: '%s'\n", launch_node_ptr->path);
+		goto launch_failure;
+	    }
+	}
 	result = smpd_add_command_int_arg(cmd_ptr, "i", launch_node_ptr->iproc);
 	if (result != SMPD_SUCCESS)
 	{
@@ -138,6 +158,18 @@ int smpd_launch_processes()
 	{
 	    smpd_err_printf("unable to add the kvs name('%s') to the launch command\n", smpd_process.kvs_name);
 	    goto launch_failure;
+	}
+	map_iter = launch_node_ptr->map_list;
+	while (map_iter)
+	{
+	    sprintf(drive_map_str, "%c:%s", map_iter->drive, map_iter->share);
+	    result = smpd_add_command_arg(cmd_ptr, "m", drive_map_str);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the drive mapping to the launch command: '%s'\n", drive_map_str);
+		goto launch_failure;
+	    }
+	    map_iter = map_iter->next;
 	}
 
 	/* send the launch command */
@@ -714,10 +746,11 @@ int smpd_handle_launch_command(smpd_context_t *context)
 	return SMPD_FAIL;
     }
     smpd_get_string_arg(cmd->cmd, "e", process->env, SMPD_MAX_ENV_LENGTH);
-    smpd_get_string_arg(cmd->cmd, "d", process->dir, SMPD_MAX_EXE_LENGTH);
-    smpd_get_string_arg(cmd->cmd, "p", process->path, SMPD_MAX_EXE_LENGTH);
+    smpd_get_string_arg(cmd->cmd, "d", process->dir, SMPD_MAX_DIR_LENGTH);
+    smpd_get_string_arg(cmd->cmd, "p", process->path, SMPD_MAX_PATH_LENGTH);
     smpd_get_string_arg(cmd->cmd, "k", process->kvs_name, SMPD_MAX_DBS_NAME_LEN);
     smpd_get_int_arg(cmd->cmd, "n", &process->nproc);
+    /* parse the -m drive mapping options */
 
     /* launch the process */
     smpd_dbg_printf("launching: '%s'\n", process->exe);
