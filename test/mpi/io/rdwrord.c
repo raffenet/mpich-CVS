@@ -31,6 +31,9 @@ int main( int argc, char *argv[] )
     buf = (int *)malloc( size * sizeof(int) );
     buf[0] = rank;
     MPI_File_write_ordered( fh, buf, 1, MPI_INT, &status );
+
+    /* make sure all writes finish before we seek/read */
+    MPI_Barrier(comm);
     
     /* Set the individual pointer to 0, since we want to use a read_all */
     MPI_File_seek( fh, 0, MPI_SEEK_SET ); 
