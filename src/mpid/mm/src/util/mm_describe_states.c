@@ -76,12 +76,12 @@ int MPIDU_Describe_timer_states()
     g_timer_state[MPID_STATE_MM_CQ_ENQUEUE].name = "mm_cq_enqueue";
     g_timer_state[MPID_STATE_MM_CREATE_POST_UNEX].name = "mm_create_post_unex";
     g_timer_state[MPID_STATE_MM_ENQUEUE_REQUEST_TO_SEND].name = "mm_enqueue_request_to_send";
-    g_timer_state[MPID_STATE_CQ_HANDLE_READ_HEAD_CAR].name = "cq_handle_read_head_car";
-    g_timer_state[MPID_STATE_CQ_HANDLE_READ_DATA_CAR].name = "cq_handle_read_data_car";
-    g_timer_state[MPID_STATE_CQ_HANDLE_READ_CAR].name = "cq_handle_read_car";
-    g_timer_state[MPID_STATE_CQ_HANDLE_WRITE_HEAD_CAR].name = "cq_handle_write_head_car";
-    g_timer_state[MPID_STATE_CQ_HANDLE_WRITE_DATA_CAR].name = "cq_handle_write_data_car";
-    g_timer_state[MPID_STATE_CQ_HANDLE_WRITE_CAR].name = "cq_handle_write_car";
+    g_timer_state[MPID_STATE_MM_CQ_HANDLE_READ_HEAD_CAR].name = "mm_cq_handle_read_head_car";
+    g_timer_state[MPID_STATE_MM_CQ_HANDLE_READ_DATA_CAR].name = "mm_cq_handle_read_data_car";
+    g_timer_state[MPID_STATE_MM_CQ_HANDLE_READ_CAR].name = "mm_cq_handle_read_car";
+    g_timer_state[MPID_STATE_MM_CQ_HANDLE_WRITE_HEAD_CAR].name = "mm_cq_handle_write_head_car";
+    g_timer_state[MPID_STATE_MM_CQ_HANDLE_WRITE_DATA_CAR].name = "mm_cq_handle_write_data_car";
+    g_timer_state[MPID_STATE_MM_CQ_HANDLE_WRITE_CAR].name = "mm_cq_handle_write_car";
 
     /* xfer functions */
     g_timer_state[MPID_STATE_XFER_INIT].name = "xfer_init";
@@ -416,12 +416,12 @@ int MPIDU_Describe_timer_states()
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MM_CQ_ENQUEUE, "mm_cq_enqueue", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MM_CREATE_POST_UNEX, "mm_create_post_unex", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MM_ENQUEUE_REQUEST_TO_SEND, "mm_enqueue_request_to_send", get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, MPID_STATE_CQ_HANDLE_READ_HEAD_CAR, "cq_handle_read_head_car", get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, MPID_STATE_CQ_HANDLE_READ_DATA_CAR, "cq_handle_read_data_car", get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, MPID_STATE_CQ_HANDLE_READ_CAR, "cq_handle_read_car", get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, MPID_STATE_CQ_HANDLE_WRITE_HEAD_CAR, "cq_handle_write_head_car", get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, MPID_STATE_CQ_HANDLE_WRITE_DATA_CAR, "cq_handle_write_data_car", get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, MPID_STATE_CQ_HANDLE_WRITE_CAR, "cq_handle_write_car", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MM_CQ_HANDLE_READ_HEAD_CAR, "mm_cq_handle_read_head_car", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MM_CQ_HANDLE_READ_DATA_CAR, "mm_cq_handle_read_data_car", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MM_CQ_HANDLE_READ_CAR, "mm_cq_handle_read_car", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MM_CQ_HANDLE_WRITE_HEAD_CAR, "mm_cq_handle_write_head_car", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MM_CQ_HANDLE_WRITE_DATA_CAR, "mm_cq_handle_write_data_car", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MM_CQ_HANDLE_WRITE_CAR, "mm_cq_handle_write_car", get_random_color_str());
 
     /* xfer functions */
     RLOG_DescribeState(g_pRLOG, MPID_STATE_XFER_INIT, "xfer_init", get_random_color_str());

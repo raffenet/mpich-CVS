@@ -295,7 +295,7 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	}
 #endif
 	tcp_car_dequeue_write(car_ptr->vc_ptr);
-	car_ptr->next_ptr = NULL; /* prevent the next car from being enqueued by cq_handle_write_car() */
+	car_ptr->next_ptr = NULL; /* prevent the next car from being enqueued by mm_cq_handle_write_car() */
 	mm_cq_enqueue(car_ptr);
     }
 
@@ -339,7 +339,7 @@ int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	}
 #endif
 	tcp_car_dequeue_write(vc_ptr);
-	car_ptr->next_ptr = NULL; /* prevent the next car from being enqueued by cq_handle_write_car() */
+	car_ptr->next_ptr = NULL; /* prevent the next car from being enqueued by mm_cq_handle_write_car() */
 	mm_cq_enqueue(car_ptr);
     }
 
@@ -383,7 +383,7 @@ int tcp_write_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_p
 	}
 #endif
 	tcp_car_dequeue_write(vc_ptr);
-	car_ptr->next_ptr = NULL; /* prevent the next car from being enqueued by cq_handle_write_car() */
+	car_ptr->next_ptr = NULL; /* prevent the next car from being enqueued by mm_cq_handle_write_car() */
 	mm_cq_enqueue(car_ptr);
     }
 

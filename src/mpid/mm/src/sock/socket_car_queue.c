@@ -26,11 +26,13 @@ int socket_car_head_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     {
 	/*msg_printf("socket_car_head_enqueue: enqueueing write head packet\n");*/
 	/* If the write queue for this vc is empty then enqueue this vc in the process active write list */
+	/*
 	if (vc_ptr->writeq_head == NULL)
 	{
 	    vc_ptr->write_next_ptr = SOCKET_Process.write_list;
 	    SOCKET_Process.write_list = vc_ptr;
 	}
+	*/
 
 	/* enqueue at the head */
 	iter_ptr = car_ptr;
@@ -154,6 +156,7 @@ int socket_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     return MPI_SUCCESS;
 }
 
+#if 0
 static int socket_vc_dequeue_write(MPIDI_VC *vc_ptr)
 {
     MPIDI_VC *iter_ptr;
@@ -177,6 +180,7 @@ static int socket_vc_dequeue_write(MPIDI_VC *vc_ptr)
     }
     return MPI_ERR_ARG;
 }
+#endif
 
 /*@
    socket_car_dequeue_write - dequeue the head write car from a vc
@@ -202,7 +206,7 @@ int socket_car_dequeue_write(MPIDI_VC *vc_ptr)
     {
 	vc_ptr->writeq_tail = NULL;
 	/* If the write queue becomes empty, remove the vc from the process active vc write list */
-	socket_vc_dequeue_write(vc_ptr);
+	/*socket_vc_dequeue_write(vc_ptr);*/
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_CAR_DEQUEUE_WRITE);

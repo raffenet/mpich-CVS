@@ -23,8 +23,10 @@ typedef struct SOCKET_PerProcess {
                 sock_t listener;
 		   int port;
 		  char host[100];
+		  /*
 	    MPIDI_VC * read_list;
 	    MPIDI_VC * write_list;
+	    */
 		   int error;
 		  char err_msg[SOCKET_ERROR_MSG_LENGTH];
 } SOCKET_PerProcess;

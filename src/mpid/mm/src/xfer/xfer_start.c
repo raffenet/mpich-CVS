@@ -23,12 +23,7 @@ int xfer_start(MPID_Request *request_ptr)
 
     MPIDI_FUNC_ENTER(MPID_STATE_XFER_START);
 
-#ifdef MPICH_DEV_BUILD
-    if (request_ptr == NULL)
-    {
-	err_printf("Error: xfer_start called with NULL request pointer.\n");
-    }
-#endif
+    assert(request_ptr);
 
     /* choose the buffers scheme to satisfy each segment */
     pRequest = request_ptr;

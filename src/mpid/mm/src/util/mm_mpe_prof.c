@@ -188,7 +188,7 @@ static char * g_XColors[] = {
 "grey95","gray96","grey96","gray97","grey97","gray98","grey98","gray99","grey99","gray100","LightGreen"
 };
 
-void random_X_color_string(char *str)
+static void random_X_color_string(char *str)
 {
     int i = (int)(((double)rand() / (double)RAND_MAX) * (double)(NUM_X_COLORS-1));
     strcpy(str, g_XColors[i]);

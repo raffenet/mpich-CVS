@@ -49,12 +49,12 @@ MM_Car *find_in_queue(MM_Car **find_q_head_ptr, MM_Car **find_q_tail_ptr, MM_Car
     return NULL;
 }
 
-int cq_handle_read_head_car(MM_Car *car_ptr)
+int mm_cq_handle_read_head_car(MM_Car *car_ptr)
 {
     MM_Car *qcar_ptr;
-    MPIDI_STATE_DECL(MPID_STATE_CQ_HANDLE_READ_HEAD_CAR);
+    MPIDI_STATE_DECL(MPID_STATE_MM_CQ_HANDLE_READ_HEAD_CAR);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_CQ_HANDLE_READ_HEAD_CAR);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_CQ_HANDLE_READ_HEAD_CAR);
 
     switch (car_ptr->msg_header.pkt.u.type)
     {
@@ -116,18 +116,18 @@ int cq_handle_read_head_car(MM_Car *car_ptr)
 	err_printf("Error: RDMA_REQUEST_DATA_ACK_PKT not handled yet.\n");
 	break;
     default:
-	err_printf("Error: cq_handle_read_head_car: unknown car type %d\n", car_ptr->msg_header.pkt.u.type);
+	err_printf("Error: mm_cq_handle_read_head_car: unknown car type %d\n", car_ptr->msg_header.pkt.u.type);
 	break;
     }
 
-    MPIDI_FUNC_EXIT(MPID_STATE_CQ_HANDLE_READ_HEAD_CAR);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_CQ_HANDLE_READ_HEAD_CAR);
     return MPI_SUCCESS;
 }
 
-int cq_handle_read_data_car(MM_Car *car_ptr)
+int mm_cq_handle_read_data_car(MM_Car *car_ptr)
 {
-    MPIDI_STATE_DECL(MPID_STATE_CQ_HANDLE_READ_DATA_CAR);
-    MPIDI_FUNC_ENTER(MPID_STATE_CQ_HANDLE_READ_DATA_CAR);
+    MPIDI_STATE_DECL(MPID_STATE_MM_CQ_HANDLE_READ_DATA_CAR);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_CQ_HANDLE_READ_DATA_CAR);
 
     if (car_ptr->next_ptr)
     {
@@ -143,39 +143,39 @@ int cq_handle_read_data_car(MM_Car *car_ptr)
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
 
-    MPIDI_FUNC_EXIT(MPID_STATE_CQ_HANDLE_READ_DATA_CAR);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_CQ_HANDLE_READ_DATA_CAR);
     return MPI_SUCCESS;
 }
 
-int cq_handle_read_car(MM_Car *car_ptr)
+int mm_cq_handle_read_car(MM_Car *car_ptr)
 {
     int ret_val;
-    MPIDI_STATE_DECL(MPID_STATE_CQ_HANDLE_READ_CAR);
+    MPIDI_STATE_DECL(MPID_STATE_MM_CQ_HANDLE_READ_CAR);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_CQ_HANDLE_READ_CAR);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_CQ_HANDLE_READ_CAR);
 
     if (car_ptr->type & MM_HEAD_CAR)
     {
-	ret_val = cq_handle_read_head_car(car_ptr);
-	MPIDI_FUNC_EXIT(MPID_STATE_CQ_HANDLE_READ_CAR);
+	ret_val = mm_cq_handle_read_head_car(car_ptr);
+	MPIDI_FUNC_EXIT(MPID_STATE_MM_CQ_HANDLE_READ_CAR);
 	return ret_val;
     }
 
-    ret_val = cq_handle_read_data_car(car_ptr);
-    MPIDI_FUNC_EXIT(MPID_STATE_CQ_HANDLE_READ_CAR);
+    ret_val = mm_cq_handle_read_data_car(car_ptr);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_CQ_HANDLE_READ_CAR);
     return ret_val;
 }
 
 #ifdef FOO
-int cq_handle_write_head_car(MM_Car *car_ptr)
+int mm_cq_handle_write_head_car(MM_Car *car_ptr)
 {
-    MPIDI_STATE_DECL(MPID_STATE_CQ_HANDLE_WRITE_HEAD_CAR);
-    MPIDI_FUNC_ENTER(MPID_STATE_CQ_HANDLE_WRITE_HEAD_CAR);
+    MPIDI_STATE_DECL(MPID_STATE_MM_CQ_HANDLE_WRITE_HEAD_CAR);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_CQ_HANDLE_WRITE_HEAD_CAR);
 
     /* rndv */
     if (car_ptr->msg_header.pkt.u.hdr.type == MPID_RNDV_REQUEST_TO_SEND_PKT)
     {
-	MPIDI_FUNC_EXIT(MPID_STATE_CQ_HANDLE_WRITE_HEAD_CAR);
+	MPIDI_FUNC_EXIT(MPID_STATE_MM_CQ_HANDLE_WRITE_HEAD_CAR);
 	return MPI_SUCCESS;
     }
 
@@ -188,14 +188,14 @@ int cq_handle_write_head_car(MM_Car *car_ptr)
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
 
-    MPIDI_FUNC_EXIT(MPID_STATE_CQ_HANDLE_WRITE_HEAD_CAR);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_CQ_HANDLE_WRITE_HEAD_CAR);
     return MPI_SUCCESS;
 }
 
-int cq_handle_write_data_car(MM_Car *car_ptr)
+int mm_cq_handle_write_data_car(MM_Car *car_ptr)
 {
-    MPIDI_STATE_DECL(MPID_STATE_CQ_HANDLE_WRITE_DATA_CAR);
-    MPIDI_FUNC_ENTER(MPID_STATE_CQ_HANDLE_WRITE_DATA_CAR);
+    MPIDI_STATE_DECL(MPID_STATE_MM_CQ_HANDLE_WRITE_DATA_CAR);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_CQ_HANDLE_WRITE_DATA_CAR);
 
     if (car_ptr->next_ptr)
     {
@@ -206,40 +206,40 @@ int cq_handle_write_data_car(MM_Car *car_ptr)
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
 
-    MPIDI_FUNC_EXIT(MPID_STATE_CQ_HANDLE_WRITE_DATA_CAR);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_CQ_HANDLE_WRITE_DATA_CAR);
     return MPI_SUCCESS;
 }
 
-int cq_handle_write_car(MM_Car *car_ptr)
+int mm_cq_handle_write_car(MM_Car *car_ptr)
 {
     int ret_val;
-    MPIDI_STATE_DECL(MPID_STATE_CQ_HANDLE_WRITE_CAR);
+    MPIDI_STATE_DECL(MPID_STATE_MM_CQ_HANDLE_WRITE_CAR);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_CQ_HANDLE_WRITE_CAR);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_CQ_HANDLE_WRITE_CAR);
 
     if (car_ptr->type & MM_HEAD_CAR)
     {
-	ret_val = cq_handle_write_head_car(car_ptr);
-	MPIDI_FUNC_EXIT(MPID_STATE_CQ_HANDLE_WRITE_CAR);
+	ret_val = mm_cq_handle_write_head_car(car_ptr);
+	MPIDI_FUNC_EXIT(MPID_STATE_MM_CQ_HANDLE_WRITE_CAR);
 	return ret_val;
     }
 
-    ret_val = cq_handle_write_data_car(car_ptr);
-    MPIDI_FUNC_EXIT(MPID_STATE_CQ_HANDLE_WRITE_CAR);
+    ret_val = mm_cq_handle_write_data_car(car_ptr);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_CQ_HANDLE_WRITE_CAR);
     return ret_val;
 }
 
 #else
 
-int cq_handle_write_car(MM_Car *car_ptr)
+int mm_cq_handle_write_car(MM_Car *car_ptr)
 {
-    MPIDI_STATE_DECL(MPID_STATE_CQ_HANDLE_WRITE_CAR);
-    MPIDI_FUNC_ENTER(MPID_STATE_CQ_HANDLE_WRITE_CAR);
+    MPIDI_STATE_DECL(MPID_STATE_MM_CQ_HANDLE_WRITE_CAR);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_CQ_HANDLE_WRITE_CAR);
 
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
 
-    MPIDI_FUNC_EXIT(MPID_STATE_CQ_HANDLE_WRITE_CAR);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_CQ_HANDLE_WRITE_CAR);
     return MPI_SUCCESS;
 }
 #endif
@@ -284,12 +284,12 @@ int mm_cq_test()
 
 	if (car_ptr->type & MM_READ_CAR)
 	{
-	    cq_handle_read_car(car_ptr);
+	    mm_cq_handle_read_car(car_ptr);
 	}
 
 	if (car_ptr->type & MM_WRITE_CAR)
 	{
-	    cq_handle_write_car(car_ptr);
+	    mm_cq_handle_write_car(car_ptr);
 	}
 
 	car_ptr = next_car_ptr;
