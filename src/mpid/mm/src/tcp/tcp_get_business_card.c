@@ -211,17 +211,18 @@ int tcp_get_business_card(char *value, int length)
 	{
 	    h = gethostbyaddr((const char *)&local_ip[i], sizeof(int), AF_INET);
 	    if (h->h_name != NULL)
-		value += sprintf(value, "%s:%d:", h->h_name, TCP_Process.port);
+		value += sprintf(value, "%s:%u.%u.%u.%u:%d:", 
+				 h->h_name, 
+				 a, b, c, d,
+				 TCP_Process.port);
 	    else
-		value += sprintf(value, "%u.%u.%u.%u:%d:", a, b, c, d, TCP_Process.port);
+		value += sprintf(value, "%u.%u.%u.%u:%u.%u.%u.%u:%d:", 
+				 a, b, c, d, 
+				 a, b, c, d,
+				 TCP_Process.port);
 	}
     }
-    printf("tcp business card:\n<%s>\n", value_orig);fflush(stdout);
-
-/*
-    sprintf(value, "192.168.113.1:%d", TCP_Process.port);
-    printf("tcp business card:\n<%s>\n", value);fflush(stdout);
-*/
+    msg_printf("tcp business card:\n<%s>\n", value_orig);
 
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_GET_BUSINESS_CARD);
     return MPI_SUCCESS;

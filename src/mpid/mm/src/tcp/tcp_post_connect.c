@@ -9,6 +9,8 @@ static unsigned int GetIP(char *pszIP)
 {
     unsigned int nIP;
     unsigned int a,b,c,d;
+    if (pszIP == NULL)
+	return 0;
     sscanf(pszIP, "%u.%u.%u.%u", &a, &b, &c, &d);
     /*printf("mask: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);*/
     nIP = (d << 24) | (c << 16) | (b << 8) | a;
@@ -20,6 +22,9 @@ static unsigned int GetMask(char *pszMask)
     int i, nBits;
     unsigned int nMask = 0;
     unsigned int a,b,c,d;
+
+    if (pszMask == NULL)
+	return 0;
 
     if (strstr(pszMask, "."))
     {
@@ -52,7 +57,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
     char pszNetMask[50];
     char *pEnv, *token;
     unsigned int nNicNet, nNicMask;
-    char *temp, *pszIP, *pszPort;
+    char *temp, *pszHost, *pszIP, *pszPort;
     unsigned int ip;
 
     pEnv = getenv("MPICH_NETMASK");
@@ -73,13 +78,14 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
 		token = strtok(temp, ":\r\n");
 		while (token)
 		{
-		    pszIP = token;
+		    pszHost = token;
+		    pszIP = strtok(NULL, ":\r\n");
 		    pszPort = strtok(NULL, ":\r\n");
 		    ip = GetIP(pszIP);
 		    if ((ip & nNicMask) == nNicNet)
 		    {
 			/* the current ip address matches the requested network so return these values */
-			strcpy(host, pszIP);
+			strcpy(host, pszHost); /*pszIP);*/
 			*port = atoi(pszPort);
 			free(temp);
 			return MPI_SUCCESS;
@@ -91,20 +97,34 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
 	}
     }
 
-    strcpy(host, business_card);
-    token = strtok(host, ":");
+    temp = strdup(business_card);
+    /* move to the host part */
+    token = strtok(temp, ":");
     if (token == NULL)
     {
+	free(temp);
 	err_printf("tcp_post_connect:GetHostAndPort: invalid business card\n");
 	return -1;
     }
+    strcpy(host, temp);
+    /* move to the ip part */
     token = strtok(NULL, ":");
     if (token == NULL)
     {
+	free(temp);
+	err_printf("tcp_post_connect:GetHostAndPort: invalid business card\n");
+	return -1;
+    }
+    /* move to the port part */
+    token = strtok(NULL, ":");
+    if (token == NULL)
+    {
+	free(temp);
 	err_printf("tcp_post_connect:GetHostAndPort: invalid business card\n");
 	return -1;
     }
     *port = atoi(token);
+    free(temp);
 
     return MPI_SUCCESS;
 }
