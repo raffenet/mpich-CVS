@@ -107,7 +107,7 @@ static int MTestTypeContigCheckbuf( MTest_Datatype *mtype )
 
 static void *MTestTypeVectorInit( MTest_Datatype *mtype, int n )
 {
-    int size;
+    MPI_Aint size;
     if (n > 0) {
 	MPI_Type_extent( mtype->datatype, &size );
 	mtype->buf = (void *) malloc( n * size );
