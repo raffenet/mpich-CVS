@@ -209,8 +209,7 @@ def mpdboot():
         if totalNum > 1:
             try:
                 f = open(hostsFilename,'r')
-                for i in range(totalNum):
-                    line = f.readline()
+                for line in f:
                     lines.append(line)
             except:
                 print 'unable to open (or read) hostsfile %s' % (hostsFilename)
