@@ -605,7 +605,7 @@ int sock_wait(sock_set_t sock_set, int millisecond_timeout, sock_event_t * event
 	    }
 
 	    /* According to Stevens, some errors are reported as normal data and some are reported with POLLERR.  */
-	    if (pollfd->revents & (POLLIN | POLLERR | POLLHUP))
+	    if (pollfd->revents & (POLLIN | POLLERR))
 	    {
 		if (pollinfo->state == SOCK_STATE_CONNECTED)
 		{
