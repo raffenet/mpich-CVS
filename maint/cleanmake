@@ -93,11 +93,12 @@ while (<>) {
 	    # line as necessary)
 	    $last_line =~ /^(.*\s+)([^\s]+)\s*$/;
 	    $srcname = $2;
-	    # Need to quote any metacharacters in srcname FIXME
+	    # Need to quote any metacharacters in srcname.  We
+	    # use \Q<variable>\E
 	    #print " src name = $srcname, other = $1\n";
 	    # skip line ONLY if all that is on it is the file name, 
 	    # to allow "filename: message"
-	    if (/^\s*$srcname\s*[:]*\s*$/) { next; }
+	    if (/^\s*\Q$srcname\E\s*[:]*\s*$/) { next; }
 
 	    if (! (/^[aig]?cc\s/) && ! (/^mpicc\s/) && ! (/^\.\.\.ar/) 
 		&& !( /\s*if\s*\[.*then/)) { 
