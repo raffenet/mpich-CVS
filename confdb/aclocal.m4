@@ -100,3 +100,31 @@ else
 fi
 AC_SUBST(MKDIR_P)
 ])
+dnl
+dnl
+dnl Test for a clean VPATH directory.  Provide this command with the names
+dnl of all of the generated files that might cause problems 
+dnl (Makefiles won't cause problems because there's no VPATH usage for them)
+AC_DEFUN([PAC_VPATH_CHECK],[
+if test "`cd $srcdir && pwd`" != "`pwd`" ; then
+    pac_dirtyfiles=""
+    pac_header=""
+    ifdef([AC_LIST_HEADER],[pac_header=AC_LIST_HEADER])
+    for file in config.status $pac_header $1 ; do
+        if test -f $srcdir/$file ; then 
+	    pac_dirtyfiles="$pac_dirtyfiles $file"
+	fi
+    done
+
+    if test -n "$pac_dirtyfiles" ; then
+        if test -f $srcdir/Makefile ; then
+            AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
+    configured.  Run "make distclean" in $srcdir first and make sure that the
+    files $pac_dirtyfiles have been removed.])
+        else
+            AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
+    configured.  Remove the files $pac_dirtyfiles in $srcdir.])
+        fi
+    fi
+fi
+])
