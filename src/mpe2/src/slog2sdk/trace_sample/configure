@@ -1239,7 +1239,7 @@ Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:1242: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
 else
@@ -1256,7 +1256,7 @@ Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:1259: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
 else
@@ -1273,7 +1273,7 @@ Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:1276: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
 else
@@ -1311,7 +1311,7 @@ else
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:1314: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
   ac_cv_header_stdc=yes
@@ -1415,7 +1415,7 @@ else
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:1418: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
   eval "ac_cv_header_$ac_safe=yes"
@@ -2423,7 +2423,7 @@ else
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:2426: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
   eval "ac_cv_header_$ac_safe=yes"
@@ -6263,7 +6263,7 @@ echo "configure:6257: checking for including <jni.h>" >&5
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:6266: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
   jac_jni_working=yes
@@ -6354,7 +6354,7 @@ echo "configure:6348: checking for including <jni.h>" >&5
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:6357: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
   jac_jni_working=yes
@@ -6567,7 +6567,7 @@ echo "configure:6561: checking for including <jni.h>" >&5
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:6570: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
   jac_jni_working=yes
@@ -6709,15 +6709,22 @@ done
 
 
 # Define bindir's executables, and pass them down to sbindir's install-package
-EXEFILES="traceprint traceTOslog2"
+OLD_EXEFILES="traceprint traceTOslog2"
 
-
-PATH_EXEFILES="sbin/install-package"
-for exefile in $EXEFILES ; do
-    PATH_EXEFILES="$PATH_EXEFILES bin/$exefile"
+PATH_OLD_EXEFILES="sbin/install-package"
+for exefile in $OLD_EXEFILES ; do
+    PATH_OLD_EXEFILES="$PATH_OLD_EXEFILES bin/$exefile"
 done
 
 TRACE_NAME=textlog
+
+
+if test "X$TRACE_NAME" != "X" -a "$TRACE_NAME" != "trace" ; then
+    for oldpgm in $OLD_EXEFILES ; do
+        newpgm=$TRACE_NAME`echo $oldpgm | sed -e 's%trace%%'`
+        EXEFILES="$EXEFILES $newpgm"
+    done
+fi
 
 
 trap '' 1 2 15
@@ -6775,7 +6782,7 @@ done
 ac_given_srcdir=$srcdir
 ac_given_INSTALL="$INSTALL"
 
-trap 'rm -fr `echo "Makefile src/Makefile $PATH_EXEFILES trace_impl.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+trap 'rm -fr `echo "Makefile src/Makefile $PATH_OLD_EXEFILES trace_impl.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -6855,8 +6862,8 @@ s%@binbuild_dir@%$binbuild_dir%g
 s%@sbinbuild_dir@%$sbinbuild_dir%g
 s%@logfilesbuild_dir@%$logfilesbuild_dir%g
 s%@gui_libbuild_dir@%$gui_libbuild_dir%g
-s%@EXEFILES@%$EXEFILES%g
 s%@TRACE_NAME@%$TRACE_NAME%g
+s%@EXEFILES@%$EXEFILES%g
 
 CEOF
 EOF
@@ -6898,7 +6905,7 @@ EOF
 
 cat >> $CONFIG_STATUS <<EOF
 
-CONFIG_FILES=\${CONFIG_FILES-"Makefile src/Makefile $PATH_EXEFILES"}
+CONFIG_FILES=\${CONFIG_FILES-"Makefile src/Makefile $PATH_OLD_EXEFILES"}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
@@ -7077,7 +7084,7 @@ rm -fr confdefs* $ac_clean_files
 test "$no_create" = yes || ${CONFIG_SHELL-/bin/sh} $CONFIG_STATUS || exit 1
 
 
-for script in $PATH_EXEFILES ; do
+for script in $PATH_OLD_EXEFILES ; do
     if test -f "$script" ; then
         chmod a+x $script
     else
@@ -7094,7 +7101,7 @@ done
 
 # Rename all the scripts in bindir according to the TRACE_NAME
 if test "X$TRACE_NAME" != "X" -a "$TRACE_NAME" != "trace" ; then
-    for oldpgm in $EXEFILES ; do
+    for oldpgm in $OLD_EXEFILES ; do
         newpgm=$TRACE_NAME`echo $oldpgm | sed -e 's%trace%%'`
         $MV bin/$oldpgm bin/$newpgm
     done

@@ -361,8 +361,12 @@ fi
 
 # echo "UNINSTALLFILE = $UNINSTALLFILE"
 
-echo "Creating ${pkgname}'s sbin"
-MkDir $sbindir
+# check if $UNINSTALLFILE lives under $sbindir
+uninstall_basename=`echo $UNINSTALLFILE | sed -e "s%^$sbindir%%"`
+if [ "$UNINSTALLFILE" != "$uninstall_basename" ] ; then
+    echo "Creating ${pkgname}'s sbin"
+    MkDir $sbindir
+fi
 
 # Copy libraries
 for type in lib logfiles ; do
@@ -416,7 +420,9 @@ set -x
 EOF
 fi
 
-chmod u+x $UNINSTALLFILE
+if [ "$UNINSTALLFILE" != "/dev/null" ] ; then
+    chmod u+x $UNINSTALLFILE
+fi
 
 # Add the files to be removed to the UNINSTALLFILE
 for file in $filelist ; do

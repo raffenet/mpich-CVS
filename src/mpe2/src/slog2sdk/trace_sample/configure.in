@@ -211,20 +211,27 @@ AC_SUBST(logfilesbuild_dir)
 AC_SUBST(gui_libbuild_dir)
 
 # Define bindir's executables, and pass them down to sbindir's install-package
-EXEFILES="traceprint traceTOslog2"
-AC_SUBST(EXEFILES)
+OLD_EXEFILES="traceprint traceTOslog2"
 
-PATH_EXEFILES="sbin/install-package"
-for exefile in $EXEFILES ; do
-    PATH_EXEFILES="$PATH_EXEFILES bin/$exefile"
+PATH_OLD_EXEFILES="sbin/install-package"
+for exefile in $OLD_EXEFILES ; do
+    PATH_OLD_EXEFILES="$PATH_OLD_EXEFILES bin/$exefile"
 done
 
 TRACE_NAME=textlog
 AC_SUBST(TRACE_NAME)
 
-AC_OUTPUT(Makefile src/Makefile $PATH_EXEFILES)
+if test "X$TRACE_NAME" != "X" -a "$TRACE_NAME" != "trace" ; then
+    for oldpgm in $OLD_EXEFILES ; do
+        newpgm=$TRACE_NAME`echo $oldpgm | sed -e 's%trace%%'`
+        EXEFILES="$EXEFILES $newpgm"
+    done
+fi
+AC_SUBST(EXEFILES)
 
-for script in $PATH_EXEFILES ; do
+AC_OUTPUT(Makefile src/Makefile $PATH_OLD_EXEFILES)
+
+for script in $PATH_OLD_EXEFILES ; do
     if test -f "$script" ; then
         chmod a+x $script
     else
@@ -234,7 +241,7 @@ done
 
 # Rename all the scripts in bindir according to the TRACE_NAME
 if test "X$TRACE_NAME" != "X" -a "$TRACE_NAME" != "trace" ; then
-    for oldpgm in $EXEFILES ; do
+    for oldpgm in $OLD_EXEFILES ; do
         newpgm=$TRACE_NAME`echo $oldpgm | sed -e 's%trace%%'`
         $MV bin/$oldpgm bin/$newpgm
     done
