@@ -95,6 +95,9 @@ sub ProcessFile {
 		if ($arg3 =~ /^[1-9]/) {
 		    print STDERR "Error: third argument to Create_code is an invalid integer $arg3 (must be 0 or a string) in $filename\n";
 		}
+		if ($arg3 eq $arg2) {
+		    print STDERR "Error: generic and instance messages must be different in $filename (message $arg2)\n";
+		}
 #		if ($arg3 =~ /^\s*0\s*$/) { $arg3 = $arg2; }
 	    }
 	    else {
