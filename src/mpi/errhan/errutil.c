@@ -530,7 +530,7 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
     MPI_Comm C;
     MPI_Info I;
     MPI_Datatype D;
-    MPI_File F;
+/*    MPI_File F;*/
     MPI_Win W;
     MPI_Group G;
     MPI_Op O;
@@ -606,6 +606,7 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
 	    D = va_arg(list, MPI_Datatype);
 	    MPIU_Snprintf(str, maxlen, "%s", GetDTypeString(D));
 	    break;
+#if 0
 	case (int)'F':
 	    F = va_arg(list, MPI_File);
 	    if (F == MPI_FILE_NULL)
@@ -617,6 +618,7 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
 		MPIU_Snprintf(str, maxlen, "file=0x%x", (unsigned long)F);
 	    }
 	    break;
+#endif
 	case (int)'W':
 	    W = va_arg(list, MPI_Win);
 	    if (W == MPI_WIN_NULL)
