@@ -10,7 +10,7 @@
 #define _AD_PVFS2_H
 #include "ad_pvfs2.h"
 
-#define ADIOI_PVFS2_DEBUG_MASK CLIENT_DEBUG
+#define ADIOI_PVFS2_DEBUG_MASK 0
 
 
 struct ADIOI_PVFS2_fs_s {
