@@ -167,7 +167,7 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 #define MPIDI_DEC_WRITE_ACTIVE()
 #endif
 
-#define USE_VALIDATING_QUEUE_MACROS
+/*#define USE_VALIDATING_QUEUE_MACROS*/
 #ifdef USE_VALIDATING_QUEUE_MACROS
 
 #define MPIDI_CH3I_SendQ_enqueue(vc, req)									\
