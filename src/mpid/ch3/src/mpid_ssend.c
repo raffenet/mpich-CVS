@@ -84,6 +84,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype,
 		MPID_Request_release(rreq);
 		goto fn_exit;
 	    });
+	    sreq->ch3.vc = comm->vcr[rank];
 
 	    rreq->partner_request = sreq;
 	    MPIDI_Request_set_msg_type(rreq, MPIDI_REQUEST_SELF_MSG);
@@ -94,6 +95,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype,
     
 
     MPIDI_CH3M_create_send_request(sreq, mpi_errno, goto fn_exit);
+    sreq->ch3.vc = comm->vcr[rank];
 	
     /* XXX - Since the request is never returned to the user and they can't
        do things like cancel it or wait on it, we may not need to fill in

@@ -148,6 +148,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype,
 			      "message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
 	    MPIDI_CH3M_create_send_request(sreq, mpi_errno, goto fn_exit);
+	    sreq->ch3.vc = comm->vcr[rank];
 	    
 	    MPID_Segment_init(buf, count, datatype, &sreq->ch3.segment);
 	    sreq->ch3.segment_first = 0;

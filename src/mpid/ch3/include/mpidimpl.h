@@ -83,7 +83,6 @@ extern MPIDI_Process_t MPIDI_Process;
 	sreq->ch3.user_buf = (void *) buf;				  \
 	sreq->ch3.user_count = count;					  \
 	sreq->ch3.datatype = datatype;					  \
-	sreq->ch3.vc = comm->vcr[rank];					  \
     }									  \
     else								  \
     {									  \
