@@ -6,19 +6,20 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "mpitest.h"
 
 static char MTEST_Descrip[] = "Test that communicators have reference count semantics";
 
 #define NELM 128
+#define NCOMM 1020
 
 int main( int argc, char *argv[] )
 {
     int errs = 0;
     int rank, size, source, dest, i;
-    int minsize = 2, count; 
     MPI_Comm      comm;
-    MPI_Comm      tmpComm[1024];
+    MPI_Comm      tmpComm[NCOMM];
     MPI_Status    status;
     MPI_Request   req;
     int           *buf=0;
@@ -52,12 +53,17 @@ int main( int argc, char *argv[] )
 	MPI_Irecv( buf, NELM, MPI_INT, source, 0, comm, &req );
 	MPI_Comm_free( &comm );
 
-	for (i=0; i<1024; i++) {
+	if (comm != MPI_COMM_NULL) {
+	    errs++;
+	    printf( "Freed comm was not set to COMM_NULL\n" );
+	}
+
+	for (i=0; i<NCOMM; i++) {
 	    MPI_Comm_split( MPI_COMM_WORLD, 0, size - rank, &tmpComm[i] );
 	}
 
 	MPI_Sendrecv( 0, 0, MPI_INT, source, 1, 
-		      0, 0, MPI_INT, source, 1, comm, &status );
+		      0, 0, MPI_INT, source, 1, MPI_COMM_WORLD, &status );
 
 	MPI_Wait( &req, &status );
 	for (i=0; i<NELM; i++) {
@@ -68,7 +74,7 @@ int main( int argc, char *argv[] )
 		}
 	    }
 	}
-	for (i=0; i<1024; i++) {
+	for (i=0; i<NCOMM; i++) {
 	    MPI_Comm_free( &tmpComm[i] );
 	}
 	free( buf );
@@ -76,11 +82,20 @@ int main( int argc, char *argv[] )
     else if (rank == source) {
 	buf = (int *)malloc( NELM * sizeof(int) );
 	for (i=0; i<NELM; i++) buf[i] = i;
+
+	for (i=0; i<NCOMM; i++) {
+	    MPI_Comm_split( MPI_COMM_WORLD, 0, size - rank, &tmpComm[i] );
+	}
 	/* Synchronize with the receiver */
 	MPI_Sendrecv( 0, 0, MPI_INT, dest, 1, 
-		      0, 0, MPI_INT, dest, 1, comm, &status );
+		      0, 0, MPI_INT, dest, 1, MPI_COMM_WORLD, &status );
 	MPI_Send( buf, NELM, MPI_INT, dest, 0, comm );
 	free( buf );
+    }
+    else {
+	for (i=0; i<NCOMM; i++) {
+	    MPI_Comm_split( MPI_COMM_WORLD, 0, size - rank, &tmpComm[i] );
+	}
     }
 
     
