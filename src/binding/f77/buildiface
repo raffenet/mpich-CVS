@@ -2651,8 +2651,6 @@ sub ReadAndProcessInterface {
     # Read each one
     while (<FD>) {
 	$linecount ++;
-	# Remove any comments
-	s/\/\*.*\*\///g;
 	print $_ if $debug;
 	# In some packages (not MPI but in Parallel netCDF) not all prototypes
 	# have Fortran equivalents.  The following lets us skip over them
@@ -2670,6 +2668,8 @@ sub ReadAndProcessInterface {
 		&SkipCPPIfdef( FD );
 	    }
 	}
+	# Remove any comments
+	s/\/\*.*\*\///g;
 
 	if (/^int\s+$routine_prefix($routine_pattern)\s*\((.*)/) {
 	    $routine_name = $1;
