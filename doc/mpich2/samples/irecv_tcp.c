@@ -9,8 +9,7 @@ if (found) {
     if (request_ptr->eager.ptr) {
         /* This is the eager case; all data is available */
         /* This requires FOA to wait while receiving data (busy).  The
-           assumption is that eager messages will be short relatively
-           short */
+           assumption is that eager messages will be relatively short */
         /* Check for Truncation */
         msg_size = request_ptr->status.count;
         if (count * datatype->size < msg_size ) {
@@ -19,8 +18,8 @@ if (found) {
             request_ptr->status.count = count * datatype->size;
         }
         if (datatype->is_contig) 
-            memcpy( buffer, request_ptr->eager.ptr, 
-		    request_ptr->status.count );
+            MPID_Memcpy( buffer, request_ptr->eager.ptr, 
+			 request_ptr->status.count );
         else {
             int location = 0;
             MPID_Unpack( buffer, count, datatype, 

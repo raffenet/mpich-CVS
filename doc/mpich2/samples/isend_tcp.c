@@ -61,14 +61,15 @@ else {
         MPID_Pack( buffer, count, datatype, request_ptr->buf.ptr
                    count * datatype->size, msg_format );
 	MPID_Rhcv_tcp( rank, comm_ptr, MPID_Hid_eager, vector, 2, 
-		       NULL );
+		       NULL );  /* see note 8 */
         request_ptr->complete = 1;
     } else {
 	/* This is the complicated case.  We want to send a stream of 
 	   data */
 	MPID_Stream_send_init( buffer, count, datatype, &request_ptr->stream );
 	MPID_Stream_isend_tcp( rank, comm_ptr, MPID_Hid_eager, vector, 
-			       &request_ptr->stream, &request_ptr->complete );
+			       &request_ptr->stream, 
+			       NULL, &request_ptr->complete );
     }
 }
 *request = request_ptr->self;

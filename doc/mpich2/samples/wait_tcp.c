@@ -7,7 +7,7 @@ if (request_ptr->complete) {
     if (request_ptr->buf.datatype) {
 	MPID_Datatype_incr( request_ptr->buf.datatype, -1 );
     }
-    if (*request & MPID_REQ_REQULAR_MASK) {
+    if (request_ptr->kind & MPID_REQ_REQULAR_MASK) {
 	MPID_Request_free( request_ptr );
 	*request = MPI_REQUEST_NULL;  
     }

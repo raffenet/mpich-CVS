@@ -59,13 +59,17 @@ This method is a prototype for a TCP method.
 
 The basic communication is provided by
 \begin{enumerate}
-\item Buffered read and write.  These are roughly like the Unix
-\code{fread} and \code{fwrite}.  Just as for those routines, using buffered
-routines can reduce the number of system calls and data motion.  
+\item Buffered read and write.  These are roughly like the Unix \code{fread}
+  and \code{fwrite}.  Just as for those routines, using buffered routines can
+  reduce the number of system calls and data motion.  One major difference is
+  that these are nonblocking in the MPI sense.  That is, the buffered read
+  returns a pointer into the internal buffer, and the buffered write accepts
+  pointers without making a temporary copy.  The write varient sets an integer
+  flag when the data is written.
 
 \item Stream read and write.  These provide a way to receive and send data that
-may not be in contiguous locations.  Roughly, a stream used for
-    sending data:
+  may not be in contiguous locations.  Roughly, a stream used for
+  sending data:
     \begin{enumerate}
     \item packs some number of bytes into a contiguous buffer
     \item writes those bytes to a socket
@@ -190,7 +194,7 @@ typedef struct {
      MPID_Comm     *comm_ptr;
 } MPID_Buf_info;
 
-#define MPID_REQ_REQULAR_MASK 0x1
+#define MPID_REQ_REGULAR_MASK 0x1
 #define MPID_REQ_PERSIST_MASK 0x2
 #define MPID_REQ_USER_MASK    0x4
 typedef enum { MPID_REQ_ISEND=1, MPID_REQ_IRECV=3, MPID_REQ_PERSIST_ISEND=0,
@@ -198,8 +202,8 @@ typedef enum { MPID_REQ_ISEND=1, MPID_REQ_IRECV=3, MPID_REQ_PERSIST_ISEND=0,
 
 /* All packet types start with the same values */
 typedef struct {
-  short kind;
-  short len;
+  int16_t kind;
+  int16_t len;
 } MPID_Hid_general_t;
 
 typedef union {
@@ -208,6 +212,7 @@ typedef union {
   MPID_Hid_request_to_send_t rtosend;
   ...
 } MPID_Packet;
+
 typedef struct {
      MPID_Request_kind kind;
      volatile int      busy;
@@ -243,6 +248,11 @@ Notes:
 \item The \code{busy} and \code{complete} flags in \code{MPID_Request} need be
   \code{volatile} only when either (a) the process is multithreaded or (b) the
   device shares memory, particularly requests, among the processes.
+
+\item Should the \code{MPID_Eager_info} and \code{MPID_Rndv_info} be in a
+  union?  That would help reduce the overall size of an \code{MPID_Request}.
+  One goal should be to keep an \code{MPID_Request} to a single cache-line;
+  that will improve the performance, particular for the shared-memory devices.
 \end{enumerate}
 
 In the case where there are multiple threads, it is necessary to ensure that
@@ -255,7 +265,7 @@ For example, for an Alpha processor, \mpidfunc{MPID_MemWrite_ordered}
 might look like this \cite{alpha-asm}:
 \begin{verbatim}
 #define MPID_MemWrite_ordered(var,value) { \
-      asm volatile ("wmb":/*no output*/:/*no input*/); var = value ; }
+      asm volatile ("wmb":/*no output*/:/*no input*/); *var = value ; }
 \end{verbatim}
 
 Note that in OpenMP, this can use the \code{flush} directive, although that
@@ -330,7 +340,8 @@ Notes:
 
   Question: do we want to use a private \code{memcpy} that might use, for 
   example, quadword load and store instructions that some system libraries
-  might not use?
+  might not use?  Since we are likely to want this, we've used
+  \mpidfunc{MPID_Memcpy} instead of \code{memcpy}.
 
 \item Otherwise, the user's buffer is not contiguous, and the data must be
   unpacked.  This is a simple case since all of the data is present, and 
@@ -346,7 +357,7 @@ Notes:
  now marked as complete.
 
   Question: Are there other values that we want to mark here?  For example, 
-  a one in \code{complete} may mean ``data received but cleanup not down'' and
+  a one in \code{complete} may mean ``data received but cleanup not done'' and
   a two might mean ``finished''.
 
 \item If the request was found but the data was not available, we need to ask
@@ -445,15 +456,26 @@ Notes:
   seven.  Longer arrays may not be handled efficiently by the operating
   system. 
 
+\item We need some way to indicate that the \code{MPID_Request} itself can be
+  reused.  Setting the \code{complete} flag indicates that the user's buffer
+  can be reused.  Do we want to replace the \code{NULL} with something like
+  \code{\&request_ptr->available}?
 \end{enumerate}
 
 \implementation{{Communication Agent}}
+The communication agent in MPICH2 replaces the \code{MPID_Device_check} in
+MPICH-1.  In a version of MPICH2 that uses polling, there will be a similar
+routine that executes the communication agent code.  Other implementations may
+execute the same code in a separate thread; in those implementations, there
+will be no separate polling routine.
+
 In a multi-method device, it is often easiest if each method's communication 
 agent runs in a separate thread.  That allows the operating system to 
 schedule the threads.  If the agents are running in the same thread (and 
 particularly, if they are running in the main thread in a polling-mode 
 implementation), each must normally be executed in the \code{NONBLOCKING} (or 
 \code{EXPECTING}) mode.
+
 
 \fileinclude{samples/agent_tcp.c}
 
@@ -539,6 +561,12 @@ Notes:
   implementation is more likely to use functions to handle each packet type,
   at least for the less common cases (e.g., \mpidconst{MPID_Hid_control} and
   error return on a ready-send).
+
+\item In the multithreaded case but polling case, we use a single mutex on the
+  agent.  Instead, we could have \code{GetNextPacket} set a mutex on that
+  source (e.g., socket), which would then be released by the agent when the
+  packet was fully handled.  This would allow multiple threads to run the
+  agent simultaneously on different sources.
 \end{enumerate}
 
 \mpidconst{MPID_Hid_eager}:

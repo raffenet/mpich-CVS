@@ -3894,6 +3894,20 @@ whether operations are started as soon as possible or as late as possible.
 
 Question: Can we optimize for the nonexclusive lock (read)?  
 
+Question: In the case where the operation is lock-put-unlock or
+lock-accumulate-unlock, we could avoid serialization in access to the window
+by only locking the byte range defined by the operation.  This would guarantee
+the MPI semantics while providing for a higher degree of parallelism in
+access.  Should we do something like this?  Note the a lock for the local
+window must lock the entire window since access may be through local
+load and store operations.  Alternately, if all operations are serialized
+through the local communication agent, then we don't need to do this at all.
+Even in the local access case, if we specified through the \code{assert}
+argument that no local stores were used, it would be possible to allow
+disjoint put operations to take place concurrently.  We could do this through
+the \code{MPI_MODE_NOCHECK} assert value, or through a new
+\code{MPIX_MODE_NO_LOCAL_STORE} value.
+
 Question: Do we want a predefined window attribute that can select between
 different lock approaches (early versus lazy) instead of the info value?
 The advantage is that info applies only at window creation time, while the

@@ -117,7 +117,7 @@ if (MPID_THREAD_LEVEL == MPID_THREAD_MULTIPLE) pthread_lock( agent_mutex );
         MPID_Hid_ok_to_send_t *lpacket = (MPID_Hid_ok_to_send *)packet;
 
         request_ptr = &global_request[lpacket->request_id];
-        if (request_ptr->datatype->is_contig) {
+        if (request_ptr->buf.datatype->is_contig) {
             struct iovec vector[2];
 	    MPID_Hid_data *tpacket;
             vector[0].iov_base = tpacket = &request_ptr->packet; 
@@ -126,7 +126,7 @@ if (MPID_THREAD_LEVEL == MPID_THREAD_MULTIPLE) pthread_lock( agent_mutex );
 	    tpacket->kind    = MPID_Hid_data;
 	    tpacket->len     = sizeof(MPID_Hid_data_t);
 	    tpacket->msg_bytes = request_ptr->msg_bytes;
-            vector[1].iov_base = request_ptr->buffer;
+            vector[1].iov_base = request_ptr->buf.buffer;
             vector[1].iov_len  = request_ptr->msg_bytes;
             MPID_Rhcv_tcp( request_ptr->recv_rank, request_ptr->comm_ptr, 
                            MPID_Hid_data, vector, 2, 
@@ -148,9 +148,9 @@ if (MPID_THREAD_LEVEL == MPID_THREAD_MULTIPLE) pthread_lock( agent_mutex );
         /* If the destination is contiguous, we can read directly into it.
            Otherwise, we need an intermediate buffer to unpack from */
         /* The data may not be available yet.  Define a stream to read it */
-        MPID_Stream_recv_tcp( source, &lpacket->data, lpacket->msg_bytes, 
-                              &request->segment, &request->stream, 
-                              NULL, &request->complete );
+        MPID_Stream_irecv_tcp( source, &lpacket->data, lpacket->msg_bytes, 
+			       &request->segment, &request->stream, 
+			       NULL, &request->complete );
         break;
 
         case MPID_Hid_control:
