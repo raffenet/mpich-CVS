@@ -9,9 +9,13 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "mpiimpl.h" /* MPICH2 thing */
+#if 0
+#include "mpiimpl.h"
+#endif
 #include "mpioimpl.h"
 #include "adio_extern.h"
+
+#define NMPI_Comm_call_errhandler PMPI_Comm_call_errhandler
 
 /* MPICH2 error handling implementation */
 int MPIR_Err_create_code_valist(int, int, const char [], int, int, 
