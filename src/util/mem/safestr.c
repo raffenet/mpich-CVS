@@ -28,6 +28,27 @@
  * Question: should we provide a way to request the length of the string,
  * since we know it?
  */
+/*@ MPIU_Strncpy - Copy a string with a maximum length
+  
+    Input Parameters:
++   instr - String to copy
+-   maxlen - Maximum total length of 'outstr'
+
+    Output Parameter:
+.   outstr - String to copy into
+
+    Notes:
+    This routine is the routine that you wish 'strncpy' was.  In copying 
+    'instr' to 'outstr', it stops when either the end of 'outstr' (the 
+    null character) is seen or the maximum length 'maxlen' is reached.
+    Unlike 'strncpy', it does not add enough nulls to 'outstr' after 
+    copying 'instr' in order to move precisely 'maxlen' characters.  
+    Thus, this routine may be used anywhere 'strcpy' is used, without any
+    performance cost related to large values of 'maxlen'.
+
+  Module:
+  Utility
+  @*/
 int MPIU_Strncpy( char *dest, const char *src, size_t n )
 {
     char * restrict d_ptr = dest;
@@ -51,6 +72,24 @@ int MPIU_Strncpy( char *dest, const char *src, size_t n )
 
 /* Append src to dest, but only allow dest to contain n characters (including
    any null, which is always added to the end of the line */
+/*@ MPIU_Strnapp - Append to a string with a maximum length
+
+    Input Parameters:
++   instr - String to copy
+-   maxlen - Maximum total length of 'outstr'
+
+    Output Parameter:
+.   outstr - String to copy into
+
+    Notes:
+    This routine is similar to 'strncat' except that the 'maxlen' argument
+    is the maximum total length of 'outstr', rather than the maximum 
+    number of characters to move from 'instr'.  Thus, this routine is
+    easier to use when the declared size of 'instr' is known.
+
+  Module:
+  Utility
+  @*/
 int MPIU_Strnapp( char *dest, const char *src, size_t n )
 {
     char * restrict d_ptr = dest;
@@ -86,6 +125,28 @@ int MPIU_Strnapp( char *dest, const char *src, size_t n )
 #ifdef MPIU_Strdup
 #undef MPIU_Strdup
 #endif
+/*@ 
+  MPIU_Strdup - Duplicate a string
+
+  Synopsis:
+.vb
+    char *MPIU_Strdup( const char *str )
+.ve
+
+  Input Parameter:
+. str - null-terminated string to duplicate
+
+  Return value:
+  A pointer to a copy of the string, including the terminating null.  A
+  null pointer is returned on error, such as out-of-memory.
+
+  Notes:
+  Like 'MPIU_Malloc' and 'MPIU_Free', this will often be implemented as a 
+  macro but may use 'MPIU_trstrdup' to provide a tracing version.
+
+  Module:
+  Utility
+  @*/
 char *MPIU_Strdup( const char *str )
 {
     char *p = MPIU_Malloc( strlen(str) + 1 );
