@@ -107,12 +107,24 @@ fn_exit:
     return;
 fn_fail:
     /* graceful shutdown
-    shutdown(hWrite, SD_SEND);
+    if (shutdown(hWrite, SD_SEND) == SOCKET_ERROR)
+    {
+	smpd_err_printf("shutdown failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+    }
     recv(hWrite, &bogus_char, 1, 0);
-    closesocket(hWrite);
+    if (closesocket(hWrite) == SOCKET_ERROR)
+    {
+	smpd_err_printf("closesocket failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+    }
     */
-    shutdown(hWrite, SD_BOTH);
-    closesocket(hWrite);
+    if (shutdown(hWrite, SD_BOTH) == SOCKET_ERROR)
+    {
+	smpd_err_printf("shutdown failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+    }
+    if (closesocket(hWrite) == SOCKET_ERROR)
+    {
+	smpd_err_printf("closesocket failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+    }
     goto fn_exit;
 }
 /* forward entire input lines at a time version */
@@ -151,12 +163,18 @@ void smpd_stdin_thread(SOCKET hWrite)
 		if (num_read < 1)
 		{
 		    /* ReadFile failed, what do I do? */
-		    shutdown(hWrite, SD_BOTH);
-		    closesocket(hWrite);
+		    if (shutdown(hWrite, SD_BOTH) == SOCKET_ERROR)
+		    {
+			smpd_err_printf("shutdown failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+		    }
+		    if (closesocket(hWrite) == SOCKET_ERROR)
+		    {
+			smpd_err_printf("closesocket failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+		    }
 		    smpd_dbg_printf("ReadFile failed, closing stdin reader thread.\n");
 		    return;
 		}
-		printf("CHAR(%d)", (int)str[index]);fflush(stdout);
+		/*printf("CHAR(%d)", (int)str[index]);fflush(stdout);*/
 		if (str[index] == '\n' || index == SMPD_MAX_CMD_LENGTH-1)
 		{
 		    num_read = index + 1;
@@ -186,16 +204,28 @@ void smpd_stdin_thread(SOCKET hWrite)
 	    else
 	    {
 		/* ReadFile failed, what do I do? */
-		shutdown(hWrite, SD_BOTH);
-		closesocket(hWrite);
+		if (shutdown(hWrite, SD_BOTH) == SOCKET_ERROR)
+		{
+		    smpd_err_printf("shutdown failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+		}
+		if (closesocket(hWrite) == SOCKET_ERROR)
+		{
+		    smpd_err_printf("closesocket failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+		}
 		smpd_dbg_printf("ReadFile failed, closing stdin reader thread.\n");
 		return;
 	    }
 	}
 	else if (result == WAIT_OBJECT_0 + 1)
 	{
-	    shutdown(hWrite, SD_BOTH);
-	    closesocket(hWrite);
+	    if (shutdown(hWrite, SD_BOTH) == SOCKET_ERROR)
+	    {
+		smpd_err_printf("shutdown failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+	    }
+	    if (closesocket(hWrite) == SOCKET_ERROR)
+	    {
+		smpd_err_printf("closesocket failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+	    }
 	    smpd_dbg_printf("hCloseStdinThreadEvent signalled, closing stdin reader thread.\n");
 	    return;
 	}
@@ -257,8 +287,14 @@ void smpd_stdin_thread(SOCKET hWrite)
 		else
 		{
 		    /* ReadFile failed, what do I do? */
-		    shutdown(hWrite, SD_BOTH);
-		    closesocket(hWrite);
+		    if (shutdown(hWrite, SD_BOTH) == SOCKET_ERROR)
+		    {
+			smpd_err_printf("shutdown failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+		    }
+		    if (closesocket(hWrite) == SOCKET_ERROR)
+		    {
+			smpd_err_printf("closesocket failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+		    }
 		    smpd_dbg_printf("ReadFile failed, closing stdin reader thread.\n");
 		    return;
 		}
@@ -266,16 +302,28 @@ void smpd_stdin_thread(SOCKET hWrite)
 	    else
 	    {
 		/* ReadFile failed, what do I do? */
-		shutdown(hWrite, SD_BOTH);
-		closesocket(hWrite);
+		if (shutdown(hWrite, SD_BOTH) == SOCKET_ERROR)
+		{
+		    smpd_err_printf("shutdown failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+		}
+		if (closesocket(hWrite) == SOCKET_ERROR)
+		{
+		    smpd_err_printf("closesocket failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+		}
 		smpd_dbg_printf("ReadFile failed, closing stdin reader thread.\n");
 		return;
 	    }
 	}
 	else if (result == WAIT_OBJECT_0 + 1)
 	{
-	    shutdown(hWrite, SD_BOTH);
-	    closesocket(hWrite);
+	    if (shutdown(hWrite, SD_BOTH) == SOCKET_ERROR)
+	    {
+		smpd_err_printf("shutdown failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+	    }
+	    if (closesocket(hWrite) == SOCKET_ERROR)
+	    {
+		smpd_err_printf("closesocket failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+	    }
 	    smpd_dbg_printf("hCloseStdinThreadEvent signalled, closing stdin reader thread.\n");
 	    return;
 	}
@@ -326,16 +374,28 @@ void smpd_stdin_thread(SOCKET hWrite)
 	    else
 	    {
 		/* fgets failed, what do I do? */
-		shutdown(hWrite, SD_BOTH);
-		closesocket(hWrite);
+		if (shutdown(hWrite, SD_BOTH) == SOCKET_ERROR)
+		{
+		    smpd_err_printf("shutdown failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+		}
+		if (closesocket(hWrite) == SOCKET_ERROR)
+		{
+		    smpd_err_printf("closesocket failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+		}
 		smpd_dbg_printf("fgets failed, closing stdin reader thread.\n");
 		return;
 	    }
 	}
 	else if (result == WAIT_OBJECT_0 + 1)
 	{
-	    shutdown(hWrite, SD_BOTH);
-	    closesocket(hWrite);
+	    if (shutdown(hWrite, SD_BOTH) == SOCKET_ERROR)
+	    {
+		smpd_err_printf("shutdown failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+	    }
+	    if (closesocket(hWrite) == SOCKET_ERROR)
+	    {
+		smpd_err_printf("closesocket failed, sock %d, error %d\n", hWrite, WSAGetLastError());
+	    }
 	    smpd_dbg_printf("hCloseStdinThreadEvent signalled, closing stdin reader thread.\n");
 	    return;
 	}
@@ -1165,16 +1225,8 @@ int smpd_state_reading_cmd_header(smpd_context_t *context, MPIDU_Sock_event_t *e
     smpd_enter_fn(FCNAME);
     if (event_ptr->error != MPI_SUCCESS)
     {
-	if (context->type == SMPD_CONTEXT_PMI)
-	{
-	    smpd_dbg_printf("unable to read the cmd header on the %s context, %s.\n",
-		smpd_get_context_str(context), get_sock_error_string(event_ptr->error));
-	}
-	else
-	{
-	    smpd_err_printf("unable to read the cmd header on the %s context, %s.\n",
-		smpd_get_context_str(context), get_sock_error_string(event_ptr->error));
-	}
+	smpd_err_printf("unable to read the cmd header on the %s context, %s.\n",
+	    smpd_get_context_str(context), get_sock_error_string(event_ptr->error));
 	if (smpd_process.root_smpd)
 	{
 	    context->state = SMPD_CLOSING;
@@ -1280,7 +1332,7 @@ int smpd_state_reading_cmd(smpd_context_t *context, MPIDU_Sock_event_t *event_pt
     else if (result == SMPD_CLOSE || result == SMPD_EXITING)
     {
 	smpd_dbg_printf("not posting read for another command because %s returned\n",
-	    result == SMPD_CLOSE ? "SMPD_CLOSING" : "SMPD_EXITING");
+	    result == SMPD_CLOSE ? "SMPD_CLOSE" : "SMPD_EXITING");
 	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
@@ -3948,10 +4000,8 @@ int smpd_state_writing_reconnect_request(smpd_context_t *context, MPIDU_Sock_eve
     {
 	smpd_err_printf("unable to post a close on sock(%d) after reconnect request written, error:\n%s\n",
 	    MPIDU_Sock_get_sock_id(context->sock), get_sock_error_string(result));
-	context->state = SMPD_CLOSING;
-	result = MPIDU_Sock_post_close(context->sock);
 	smpd_exit_fn(FCNAME);
-	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+	return SMPD_FAIL;
     }
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
@@ -5403,6 +5453,19 @@ int smpd_handle_op_close(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 		    }
 		}
 
+		if (context->process->in != NULL)
+		{
+		    smpd_context_t *in_context = context->process->in;
+		    context->process->in = NULL;
+		    in_context->state = SMPD_CLOSING;
+		    in_context->process = NULL; /* NULL this out so the closing of the stdin context won't access it after it has been freed */
+		    result = MPIDU_Sock_post_close(in_context->sock);
+		    if (result != MPI_SUCCESS)
+		    {
+			smpd_free_context(in_context);
+		    }
+		}
+
 		if (smpd_process.parent_context != NULL)
 		{
 		    /* create the process exited command */
@@ -5492,7 +5555,7 @@ int smpd_handle_op_close(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 	    }
 	    else
 	    {
-		smpd_dbg_printf("process refcount == %d, %s closing.\n", context->process->context_refcount, smpd_get_context_str(context));
+		smpd_dbg_printf("process refcount == %d, %s closed.\n", context->process->context_refcount, smpd_get_context_str(context));
 		/* NULL the context pointer just to be sure no one uses it after it is freed. */
 		switch (context->type)
 		{
@@ -5588,7 +5651,7 @@ int smpd_handle_op_close(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 	    }
 	    else
 	    {
-		smpd_dbg_printf("process refcount == %d, %s closing.\n", context->process->context_refcount, smpd_get_context_str(context));
+		smpd_dbg_printf("process refcount == %d, %s closed.\n", context->process->context_refcount, smpd_get_context_str(context));
 		/* NULL the context pointer just to be sure no one uses it after it is freed. */
 		switch (context->type)
 		{
@@ -5927,14 +5990,16 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 	case MPIDU_SOCK_OP_CLOSE:
 	    smpd_dbg_printf("SOCK_OP_CLOSE\n");
 	    if (event.error != MPI_SUCCESS)
-		smpd_err_printf("error closing socket: %s\n", get_sock_error_string(event.error));
+		smpd_err_printf("error closing the %s context socket: %s\n", smpd_get_context_str(context), get_sock_error_string(event.error));
 	    result = smpd_handle_op_close(context, &event);
+	    /*
 	    if (event.error != MPI_SUCCESS)
 	    {
 		smpd_err_printf("unable to close the %s context.\n", smpd_get_context_str(context));
 		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
+	    */
 	    if (result != SMPD_SUCCESS)
 	    {
 		if (result == SMPD_EXIT)
