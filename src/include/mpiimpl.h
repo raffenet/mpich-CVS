@@ -72,12 +72,32 @@ typedef int BOOL;
    routines for error messages or msg_printf etc. for general messages 
    (msg_printf will go through gettext).  
 */
-#ifdef MPICH_DBG_OUTPUT
-int dbg_printf(char *str, ...);
+typedef enum
+{
+    DBG_STATE_NONE = 0,
+    DBG_STATE_UNINIT = 1,
+    DBG_STATE_STDOUT = 2,
+    DBG_STATE_MEMLOG = 4,
+}
+MPIU_dbg_state_t;
+int MPIU_dbg_printf(char *str, ...);
+#if defined(MPICH_DBG_OUTPUT)
+extern MPIU_dbg_state_t MPIUI_dbg_state;
+#define MPIU_DBG_PRINTF(e)			\
+{						\
+    if (MPIUI_dbg_state != DBG_STATE_NONE)	\
+    {						\
+	MPIU_dbg_printf e;			\
+    }						\
+}
 #else
-#define dbg_printf
+#define MPIU_DBG_PRINTF(e)
 #endif
-#define dbg_fprintf fprintf
+void MPIU_dump_dbg_memlog_to_stdout(void);
+void MPIU_dump_dbg_memlog_to_file(FILE * fp);
+/* The follow is temporarily provided for backward compatibility.  Any code
+   using dbg_printf should be updated to use MPIU_DBG_PRINTF. */
+#define dbg_printf MPIU_dbg_printf
 /* The following are temporary definitions */
 int msg_printf(char *str, ...);
 #define msg_fprintf fprintf
