@@ -459,7 +459,7 @@ with MPI_Alloc_mem.
 **ch3|sock|pmi_finalize %d:PMI_Finalize failed, error %d
 
 #
-# CH3:mm
+# CH3:ssm
 #
 **MPIDI_CH3I_SHM_Attach_to_mem:MPIDI_CH3I_SHM_Attach_to_mem failed
 **MPIDI_CH3I_SHM_Attach_to_mem %d:MPIDI_CH3I_SHM_Attach_to_mem failed, error %d
@@ -539,6 +539,7 @@ with MPI_Alloc_mem.
 #
 # CH3:shm
 #
+**shm_wait:wait function failed
 **GetMemTwice:Global shared memory initializer called more than once
 **finalize_progress_finalize:Progress finalize failed
 **finalize_release_mem:Release shared memory failed
