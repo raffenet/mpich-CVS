@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "mpiexec.h"
 #include "smpd.h"
+#include <string.h>
 
 void mp_print_options(void)
 {
