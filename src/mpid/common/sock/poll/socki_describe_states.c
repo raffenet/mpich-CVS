@@ -132,6 +132,22 @@ static char *get_random_color_str()
 int Socki_Describe_timer_states()
 {
     RLOG_DescribeState(g_pRLOG,
+		       SOCKI_SOCK_HANDLE_ACCEPT,
+		       "socki_handle_accept",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       SOCKI_SOCK_HANDLE_CONNECT,
+		       "socki_handle_connect",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       SOCKI_SOCK_HANDLE_READ,
+		       "socki_handle_read",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       SOCKI_SOCK_HANDLE_WRITE,
+		       "socki_handle_write",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
 		       SOCKI_SOCK_ALLOC,
 		       "socki_alloc",
 		       get_random_color_str());

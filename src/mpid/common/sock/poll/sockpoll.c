@@ -897,8 +897,8 @@ static void socki_handle_accept(struct pollfd * const pollfd, struct pollinfo * 
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKI_HANDLE_ACCEPT);
     
+    socki_event_enqueue(pollinfo->sock->sock_set, SOCK_OP_ACCEPT, 0, pollinfo->user_ptr, SOCK_SUCCESS);
     
-
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKI_HANDLE_ACCEPT);
 }
 
