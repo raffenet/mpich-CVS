@@ -189,8 +189,8 @@ void MPID_Dataloop_create_contiguous(int count,
 	MPID_Datatype_get_ptr(oldtype, old_dtp); /* fills in old_dtp */
 
 	/* if we have a simple combination of contigs, coalesce */
-	if ((old_dtp->loopinfo->kind & DLOOP_KIND_CONTIG) &&
-	    (old_dtp->size == old_dtp->extent))
+	if (((old_dtp->loopinfo->kind & DLOOP_KIND_MASK) == DLOOP_KIND_CONTIG)
+	    && (old_dtp->size == old_dtp->extent))
 	{
 	    /* will just copy contig and multiply count */
 	    apply_contig_coalescing = 1;
