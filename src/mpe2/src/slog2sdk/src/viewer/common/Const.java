@@ -10,6 +10,7 @@
 package viewer.common;
 
 import java.awt.Font;
+import java.awt.RenderingHints;
 
 public class Const
 {
@@ -29,4 +30,22 @@ public class Const
     public  static final String  BOOLEAN_FORMAT         = null;;
 
     public  static final int     TIME_SCROLLBAR_UNIT_INCREMENT = 20;
+
+    public  static final Alias   ANTIALIAS_DEFAULT
+            = new Alias( RenderingHints.VALUE_ANTIALIAS_DEFAULT, "default" );
+    public  static final Alias   ANTIALIAS_OFF
+            = new Alias( RenderingHints.VALUE_ANTIALIAS_OFF, "off" );
+    public static final  Alias   ANTIALIAS_ON
+            = new Alias( RenderingHints.VALUE_ANTIALIAS_ON, "on" );
+
+    public static Alias  parseAntiAliasing( String str_rep )
+    {
+        if ( str_rep.equalsIgnoreCase( ANTIALIAS_DEFAULT.toString() ) )
+            return ANTIALIAS_DEFAULT;
+        else if ( str_rep.equalsIgnoreCase( ANTIALIAS_OFF.toString() ) )
+            return ANTIALIAS_OFF;
+        else if ( str_rep.equalsIgnoreCase( ANTIALIAS_ON.toString() ) )
+            return ANTIALIAS_ON;
+        return ANTIALIAS_DEFAULT;
+    }
 }

@@ -25,7 +25,7 @@ import base.drawable.NestingStacks;
 
 public class Parameters
 {
-    private static final String   VERSION_INFO             = "1.0";
+    private static final String   VERSION_INFO             = "1.0.0.1";
     private static       String   setupfile_path           = null;
 
     public  static       boolean  AUTO_WINDOWS_LOCATION    = true;
@@ -37,6 +37,7 @@ public class Parameters
     public  static       int      Y_AXIS_ROW_HEIGHT        = 71;
     public  static       float    STATE_HEIGHT_FACTOR      = 0.8f;
     public  static       float    NESTING_HEIGHT_FACTOR    = 0.8f;
+    public  static       Alias    ARROW_ANTIALIASING       = Const.ANTIALIAS_DEFAULT;
     public  static       int      ARROW_HEAD_LENGTH        = 10;
     public  static       int      ARROW_HEAD_HALF_WIDTH    = 3;
     public  static       int      CLICK_RADIUS_TO_LINE     = 3;
@@ -52,8 +53,9 @@ public class Parameters
 
     public static void initStaticClasses()
     {
-        // Define the Font used in ModelXXXXPanels
+        // Define the Font used in ModelXXXXPanels and PreferencePanel
         LabeledTextField.setDefaultFont( Const.FONT );
+        LabeledComboBox.setDefaultFont( Const.FONT );
         // Define the size of ArrowHead
         Arrow.setHeadLength( Parameters.ARROW_HEAD_LENGTH );
         Arrow.setHeadHalfWidth( Parameters.ARROW_HEAD_HALF_WIDTH );
@@ -91,6 +93,8 @@ public class Parameters
                            String.valueOf( STATE_HEIGHT_FACTOR ) );
         pptys.setProperty( "NESTING_HEIGHT_FACTOR",
                            String.valueOf( NESTING_HEIGHT_FACTOR ) );
+        pptys.setProperty( "ARROW_ANTIALIASING",
+                           String.valueOf( ARROW_ANTIALIASING ) );
         pptys.setProperty( "ARROW_HEAD_LENGTH",
                            String.valueOf( ARROW_HEAD_LENGTH ) );
         pptys.setProperty( "ARROW_HEAD_HALF_WIDTH",
@@ -170,6 +174,9 @@ public class Parameters
         ppty_val = pptys.getProperty( "NESTING_HEIGHT_FACTOR" );
         if ( ppty_val != null )
             NESTING_HEIGHT_FACTOR = Float.parseFloat( ppty_val );
+        ppty_val = pptys.getProperty( "ARROW_ANTIALIASING" );
+        if ( ppty_val != null )
+            ARROW_ANTIALIASING = Const.parseAntiAliasing( ppty_val );
         ppty_val = pptys.getProperty( "ARROW_HEAD_LENGTH" );
         if ( ppty_val != null )
             ARROW_HEAD_LENGTH = Integer.parseInt( ppty_val );
@@ -196,6 +203,7 @@ public class Parameters
         rep.append( "Y_AXIS_ROW_HEIGHT = "     + Y_AXIS_ROW_HEIGHT     + "\n" );
         rep.append( "STATE_HEIGHT_FACTOR = "   + STATE_HEIGHT_FACTOR   + "\n" );
         rep.append( "NESTING_HEIGHT_FACTOR = " + NESTING_HEIGHT_FACTOR + "\n" );
+        rep.append( "ARROW_ANTIALIASING = "    + ARROW_ANTIALIASING    + "\n" );
         rep.append( "ARROW_HEAD_LENGTH = "     + ARROW_HEAD_LENGTH     + "\n" );
         rep.append( "ARROW_HEAD_HALF_WIDTH = " + ARROW_HEAD_HALF_WIDTH + "\n" );
         rep.append( "CLICK_RADIUS_TO_LINE = "  + CLICK_RADIUS_TO_LINE  + "\n" );

@@ -20,8 +20,9 @@ RM           = @RM@
 
 TARGET    =
 PACKAGE   = viewer.common
-SRC       = Dialogs.java Routines.java TopWindow.java LabeledTextField.java \
-            Const.java Parameters.java PreferencePanel.java PreferenceFrame.java
+SRC       = Dialogs.java Routines.java LabeledTextField.java \
+            Alias.java Const.java LabeledComboBox.java Parameters.java \
+            PreferencePanel.java TopWindow.java PreferenceFrame.java
 
 OBJ       = $(SRC:.java=.class)
 

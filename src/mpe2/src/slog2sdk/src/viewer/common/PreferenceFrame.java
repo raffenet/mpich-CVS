@@ -17,8 +17,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.*;
 
-import viewer.common.TopWindow;
-
 public class PreferenceFrame extends JFrame
                              implements ActionListener
 {

@@ -29,7 +29,7 @@ public class LabeledTextField extends JPanel
     private JLabel                 tag;
     private JTextField             fld;
     private DecimalFormat          fmt;
-    private int                    preferred_height;
+    // private int                    preferred_height;
 
     private FieldDocumentListener  self_listener;
 
@@ -43,7 +43,7 @@ public class LabeledTextField extends JPanel
         add( tag );
         add( fld );
 
-        preferred_height = fld.getPreferredSize().height + this.TEXT_HEIGHT;
+        // preferred_height = fld.getPreferredSize().height + this.TEXT_HEIGHT;
         if ( format != null ) {
             fmt = (DecimalFormat) NumberFormat.getInstance();
             fmt.applyPattern( format );
@@ -201,7 +201,10 @@ public class LabeledTextField extends JPanel
     // BoxLayout respects component's maximum size
     public Dimension getMaximumSize()
     {
-        return new Dimension( Short.MAX_VALUE, preferred_height );
+        // return new Dimension( Short.MAX_VALUE, preferred_height );
+        return new Dimension( Short.MAX_VALUE, 
+                              fld.getPreferredSize().height
+                            + this.TEXT_HEIGHT );
     }
 
 

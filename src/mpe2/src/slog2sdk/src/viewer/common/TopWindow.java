@@ -110,12 +110,9 @@ public abstract class TopWindow
         public void disposeAll()
         {
             Legend.disposeAll();
-            if ( Dialogs.confirm( First.getWindow(),
-                 "Are you sure you want to exit Jumpshot-4 ?" ) ) {
-                Preference.disposeAll();
-                dispose();
-                System.exit( 0 );
-            }
+            Preference.disposeAll();
+            dispose();
+            System.exit( 0 );
         }
     };
 }
