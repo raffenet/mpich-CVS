@@ -7,7 +7,7 @@ C
       implicit none
       include 'mpif.h'
       integer ierr, errs
-      integer fh, info1, info2
+      integer fh, info1, info2, rank
       logical flag
       character*(50) filename
       character*(MPI_MAX_INFO_KEY) mykey
@@ -15,6 +15,8 @@ C
 
       errs = 0
       call mtest_init( ierr )
+
+      call mpi_comm_rank( MPI_COMM_WORLD, rank, ierr )
 C
 C Open a simple file
       ierr = -1
@@ -60,7 +62,10 @@ C If we find it, we must have the correct name
       call mpi_info_free( info2, ierr )
 C
       call mpi_file_close( fh, ierr )
-      call mpi_file_delete( filename, MPI_INFO_NULL, ierr )
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+      if (rank .eq. 0) then
+         call mpi_file_delete( filename, MPI_INFO_NULL, ierr )
+      endif
 
       call mtest_finalize( errs )
       call mpi_finalize( ierr )
