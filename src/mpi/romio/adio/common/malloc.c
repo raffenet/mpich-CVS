@@ -14,8 +14,10 @@
    Later on, add some tracing and error checking, similar to 
    MPID_trmalloc. */
 
-/* can't include adio.h here, because of the macro */
+/* can't include adio.h here, because of the macro, so 
+ * include romioconf.h to make sure config-time defines get included */
 
+#include "romioconf.h"
 #include "mpi.h"
 #include <stdlib.h>
 #include <stdio.h>
