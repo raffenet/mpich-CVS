@@ -20,3 +20,4 @@ localpack_SOURCES = localpack.c
 
 lbub_SOURCES = lbub.c
 
+zeroparms_SOURCES = zeroparms.c
