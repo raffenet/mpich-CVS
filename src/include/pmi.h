@@ -158,7 +158,7 @@ int PMI_Get_id( char id_str[], int length );
 PMI_Get_kvs_domain_id - obtain the id of the PMI domain
 
 Input Parameter:
-. length - length of id_str
+. length - length of id_str character array
 
 Output Parameter:
 . id_str - character array that receives the id of the PMI domain
@@ -177,7 +177,7 @@ as long as the number returned by PMI_Get_id_length_max().
 Module:
 PMI
 @*/
-int PMI_Get_kvs_domain_id( char *id_str, int length );
+int PMI_Get_kvs_domain_id( char id_str[], int length );
 
 /*@
 PMI_Get_id_length_max - obtain the maximum length of an id string
