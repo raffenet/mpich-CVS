@@ -32,7 +32,7 @@ int main( int argc, char *argv[] )
 
     if (parentcomm == MPI_COMM_NULL) {
 	/* Create 2 more processes */
-	MPI_Comm_spawn( "./spawn1", inargv, np,
+	MPI_Comm_spawn( "./spawnargv", inargv, np,
 			MPI_INFO_NULL, 0, MPI_COMM_WORLD,
 			&intercomm, errcodes );
     }
