@@ -55,7 +55,8 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     value_len = PMI_KVS_Get_name_length_max();
     value = (char*)malloc(value_len * sizeof(char));
     PMI_KVS_Get_my_name(value);
-    strcpy(MPID_Process.pmi_kvsname, value);
+    strncpy(MPID_Process.pmi_kvsname, value, MM_KVS_NAME_LENGTH);
+    MPID_Process.pmi_kvsname[MM_KVS_NAME_LENGTH-1] = '\0';
     free(value);
     /*dbg_printf("%s-\n", MPID_Process.pmi_kvsname);*/
     MPIR_Process.comm_world->mm.pmi_kvsname = MPID_Process.pmi_kvsname;

@@ -8,6 +8,7 @@
 
 #include "mpiimpl.h"
 #include "bsocket.h"
+#include "sock.h"
 #include "blockallocator.h"
 #include <assert.h>
 
@@ -19,6 +20,7 @@
 #define INVALID_POINTER ((void*)0xcdcdcdcd)
 #endif
 
+#define MM_KVS_NAME_LENGTH 100
 /* key used by spawners and spawnees to get the port by which they can connect to each other */
 #define MPICH_PARENT_PORT_KEY     "MPI_Parent_port"
 /* key used to tell comm_accept that it doesn't need to transfer pmi databases */
@@ -42,7 +44,7 @@ typedef struct MPID_PerProcess {
       MPID_Thread_lock_t cqlock;
          struct MM_Car * cq_head;          /* completion queue head */
          struct MM_Car * cq_tail;          /* completion queue tail */
-                    char pmi_kvsname[100];
+                    char pmi_kvsname[MM_KVS_NAME_LENGTH];
              MPID_Comm * comm_parent;
           OpenPortNode * port_list;
           BlockAllocator VCTable_allocator; /* memory allocator for vc tables */
@@ -64,6 +66,9 @@ typedef enum MM_METHOD {
 #ifdef WITH_METHOD_TCP
     MM_TCP_METHOD, 
 #endif
+#ifdef WITH_METHOD_SOCKET
+    MM_SOCKET_METHOD,
+#endif
 #ifdef WITH_METHOD_VIA
     MM_VIA_METHOD,
 #endif
@@ -78,6 +83,19 @@ typedef enum MM_METHOD {
 
 typedef union VC_Method_data
 {
+#ifdef WITH_METHOD_SOCKET
+    struct vc_socket
+    {
+	int state;
+	/*
+	int connected;
+	int ack_received;
+	int accept_called;
+	*/
+	int connect_state;
+	sock_t sock;
+    } socket;
+#endif
 #ifdef WITH_METHOD_TCP
     struct vc_tcp
     {
@@ -158,6 +176,9 @@ typedef struct MPIDI_VCRT
 #ifdef WITH_METHOD_TCP
 #include "mm_tcp.h"
 #endif
+#ifdef WITH_METHOD_SOCKET
+#include "mm_socket.h"
+#endif
 #ifdef WITH_METHOD_VIA
 #include "mm_via.h"
 #endif
@@ -204,6 +225,8 @@ MPID_Request * mm_request_alloc(void);
 	   int vec_buffer_init(MPID_Request *request_ptr);
 	   int tmp_buffer_init(MPID_Request *request_ptr);
 	   int simple_buffer_init(MPID_Request *request_ptr);
+
+	   int mm_make_progress();
 
 /* queues */
            int mm_post_recv(MM_Car *car_ptr);
