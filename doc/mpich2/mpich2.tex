@@ -289,7 +289,7 @@ because an MPI implementation is not complete without these components.
 %            shell (\code{rsh}, \code{ssh}, or \code{remsh}).
           \item[winmpd]Implementation of \code{pmi} for the Windows
           MPD
-	  \item[smpd]\fixme{Needs a description}
+          \item[smpd]\fixme{Needs a description}
 %          \item[bproc]Scyld bproc
 %          \item[openpbs]OpenPBS process-manager interface
 % note: uni is still in some builds but should not be present in any
@@ -318,7 +318,7 @@ because an MPI implementation is not complete without these components.
         \item[remshell]is a process manager that uses a remote shell
         program to start the remote processes, and is appropriate for
         users that do not wish to start demons on other machines.
-	This process manager is still under development and is not
+        This process manager is still under development and is not
         yet available.
         \item[util]Provides utility services that can be used to
         implement a process manager, including routines for annotating
@@ -717,12 +717,12 @@ several variations on this described in Section~\ref{sec:builtin-timing}.
   error handling and/or reporting should be surrounded with comments
   as in the following:
 \begin{verbatim}
-	mpi_errno = MPID_Progress_wait();
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS) {
+        mpi_errno = MPID_Progress_wait();
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno != MPI_SUCCESS) {
             MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SEND);
             return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-	}     
+        }     
         /* --END ERROR HANDLING-- */
 \end{verbatim}
   These source annotations work with the coverage analyzer tools
@@ -1414,8 +1414,8 @@ different header:
 typedef struct {
     int  handle;
     volatile int ref_count; /* This field is used to indicate that the
-			       object is not in use (see, e.g., 
-			       MPID_Comm_valid_ptr) */
+                               object is not in use (see, e.g., 
+                               MPID_Comm_valid_ptr) */
     void *next;   /* Free handles use this field to point to the next
                      free object */
 } MPIU_Handle_common;
@@ -1579,11 +1579,11 @@ their code being error free).  To improve the quality of the data from
 a coverage analyzer, comments \emph{exactly} of the following form
 should surround the error handling code:
 \begin{verbatim}
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS) {
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno != MPI_SUCCESS) {
             MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SEND);
             return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-	}     
+        }     
         /* --END ERROR HANDLING-- */
 \end{verbatim}
 
@@ -1849,13 +1849,13 @@ typedef struct MPICH_PerProcess_t {
     /* Routines to call C++ functions from the C implementation of the
        MPI reduction and attribute routines */
     void (*cxx_call_op_fn)( void *, void *, int, MPI_Datatype, 
-			    MPI_User_function * );
+                            MPI_User_function * );
     /* Attribute functions.  We use a single "call" function for Comm, Datatype,
        and File, since all are ints (and we can cast in the call) */
     int  (*cxx_call_delfn)( int, int, void *, void *, 
-			    void (*)(void) );
+                            void (*)(void) );
     int  (*cxx_call_copyfn)( int, int, void *, void *, 
-			    void (*)(void) );
+                            void (*)(void) );
 #endif    
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
@@ -3541,7 +3541,7 @@ at the receiver).  The kinds of datatypes to test include
      \item Different patterns (contig, vector (block count of one,
            two, 13), indexed (monotone
            increasing and nonmonotone)) \fixme{Only a few of these
-	     are implemented.}
+             are implemented.}
      \item \code{MPI_PACKED} sent but received either with
            \code{MPI_PACKED} or with the matching type signature
      \end{enumerate}
@@ -9357,7 +9357,7 @@ the spirit of the MPI Forum and allow users to create their own keys.
 %%   \item Runtime Environment.  (Processor name and MPI version.)
 %%   \item Profiling.
 %%   \item MPI command environment (\code{mpiexec}, \code{mpicc}, etc.)
-%%   \end{enumerate}
+  \end{enumerate}
 \item Source code, portability, and framework.
   These are miscellaneous (though important) items that need to be completed
   before much coding is done.  Most of the issues mentioned in
@@ -9938,7 +9938,7 @@ relying on the attribute is that the order of invocation is not defined.
 
 \subsection{Portability}
 Here is some discussion on what would be necessary if \code{automake}
-was used.\index{automake|why we do not use it}
+was used.\index{automake!why we do not use it}
 
 If \code{automake} is used, add
 \begin{verbatim}
