@@ -72,6 +72,8 @@ $ConfigStart = " -- Begin Configure Step -- \n";
 $ConfigEnd   = " -- End   Configure Step -- \n";
 $MakeStart   = " -- Begin Make Step --\n";
 $MakeEnd     = " -- End   Make Step --\n";
+$GlobNameStart = " -- Begin Check of global names --\n";
+$GlobNameEnd   = " -- End   Check of global names --\n";
 $MakeInstStart = " -- Begin Make Install Step --\n";
 $MakeInstEnd   = " -- End   Make Install Step --\n";
 $RunTestStart  = " -- Begin Run Test Step --\n";
@@ -286,6 +288,18 @@ sub RunTest {
 	    print $OUTFD $MakeEnd;
 	    $make_status = $rc;
 	    if ($rc == 0) {
+		# Only perform these steps if the make succeeded
+
+		# Check the libraries for nonconforming global symbols.
+		$globnametest = "/home/gropp/sowing-proj/sowing/bin/checkforglobs"
+		if ( -x $globnametest ) { 
+		    my @pgm = split( /\s+/, "$globnametest -mpich2 -c++ -exclude=initcxx.o lib/libmpich.a" );
+		    print $OUTFD $GlobNameStart;
+		    $rc = &RunProgram( @pgm );
+		    print $OUTFD $GlobNameEnd;
+		}
+
+		# Install the libraries
 		print $OUTFD $MakeInstStart;
 		# Clean the install directory
 		# ????
@@ -595,6 +609,8 @@ sub XMLStyle {
     $ConfigEnd     = "</CONFIG>\n";
     $MakeStart     = "<MAKE>\n";
     $MakeEnd       = "</MAKE>\n";
+    $GlobNameStart = "<GLOBNAME>\n";
+    $GlobNameEnd   = "</GLOBNAME>\n";
     $MakeInstStart = "<MAKEINST>\n";
     $MakeInstEnd   = "</MAKEINST>\n";
     $RunTestStart  = "<RUNTEST>\n";
