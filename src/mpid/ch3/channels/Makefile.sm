@@ -1,5 +1,5 @@
 # SUBDIRS_channel_name contains the list of all possible channel
 # implementations
-SUBDIRS_channel_name = tcp singleton
+SUBDIRS_channel_name = tcp ib
 SUBDIRS = @channel_name@ .
 
