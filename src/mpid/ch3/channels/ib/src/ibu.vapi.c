@@ -12,6 +12,7 @@
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
+#include "mpidi_ch3_impl.h"
 
 #ifdef USE_IB_VAPI
 
@@ -1594,6 +1595,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    recv_vc_ptr = (MPIDI_VC *)(ibu->user_ptr);
 	    if (recv_vc_ptr->ch.reading_pkt)
 	    {
+		/*printf("P");fflush(stdout);*/
 		MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, mem_ptr);
 		if (recv_vc_ptr->ch.recv_active == NULL)
 		{
@@ -1602,6 +1604,12 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		mem_ptr = (unsigned char *)mem_ptr + sizeof(MPIDI_CH3_Pkt_t);
 		num_bytes -= sizeof(MPIDI_CH3_Pkt_t);
 	    }
+/*
+	    else
+	    {
+		printf("not handling pkt.\n");fflush(stdout);
+	    }
+*/
 #endif
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes\n", num_bytes));
 	    /*MPIDI_DBG_PRINTF((60, FCNAME, "ibu_wait(recv finished %d bytes)", num_bytes));*/
