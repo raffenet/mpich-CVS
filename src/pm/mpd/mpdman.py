@@ -59,7 +59,8 @@ def mpdman():
     close(listenFD)
     socketsToSelect = { listenSocket : 1 }
     lineLabels = int(environ['MPDMAN_LINE_LABELS'])
-    startLineLabel = 1
+    startStdoutLineLabel = 1
+    startStderrLineLabel = 1
     myLineLabel = str(myRank) + ': '
 
     # set up pmi stuff early in case I was spawned
@@ -437,19 +438,19 @@ def mpdman():
                     if parentStdoutSocket:
                         if lineLabels:
                             splitLine = line.split('\n',1024)
-                            if startLineLabel:
+                            if startStdoutLineLabel:
                                 line = myLineLabel
                             else:
                                 line = ''
                             if splitLine[-1] == '':
-                                startLineLabel = 1
+                                startStdoutLineLabel = 1
                                 del splitLine[-1]
                             else:
-                                startLineLabel = 0
+                                startStdoutLineLabel = 0
                             for s in splitLine[0:-1]:
                                 line = line + s + '\n' + myLineLabel
                             line = line + splitLine[-1]
-                            if startLineLabel:
+                            if startStdoutLineLabel:
                                 line = line + '\n'
                         mpd_send_one_line(parentStdoutSocket,line)
                         # parentStdoutSocket.sendall('STDOUT by %d: |%s|' % (myRank,line) )
@@ -473,7 +474,22 @@ def mpdman():
                             mpd_send_one_msg(rhsSocket,msgToSend)
                 else:
                     if parentStderrSocket:
-                        # note not handling linelabels for stderr right now
+                        if lineLabels:
+                            splitLine = line.split('\n',1024)
+                            if startStderrLineLabel:
+                                line = myLineLabel
+                            else:
+                                line = ''
+                            if splitLine[-1] == '':
+                                startStderrLineLabel = 1
+                                del splitLine[-1]
+                            else:
+                                startStderrLineLabel = 0
+                            for s in splitLine[0:-1]:
+                                line = line + s + '\n' + myLineLabel
+                            line = line + splitLine[-1]
+                            if startStderrLineLabel:
+                                line = line + '\n'
                         mpd_send_one_line(parentStderrSocket,line)
             elif readySocket in childrenStdoutTreeSockets:
                 line = readySocket.recv(1024)
