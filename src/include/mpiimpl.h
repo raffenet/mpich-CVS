@@ -166,19 +166,15 @@ typedef enum {
 #define HANDLE_BLOCK(a) (((a)& 0x03FF0000) >> HANDLE_INDIRECT_SHIFT)
 #define HANDLE_BLOCK_INDEX(a) ((a) & 0x0000FFFF)
 
-/* For direct, the remainder of the handle is the index into a predefined 
-   block */
-#define HANDLE_MASK 0x03FFFFFF
-#define HANDLE_INDEX(a) ((a)& HANDLE_MASK)
-
 /* Handle block is between 1 and 1024 *elements* */
 #define HANDLE_BLOCK_SIZE 256
 /* Index size is bewtween 1 and 65536 *elements* */
 #define HANDLE_BLOCK_INDEX_SIZE 1024
 
-#define PREDEFINED_HANDLE(name,index) \
-     (HANDLE_KIND_DIRECT << HANDLE_KIND_SHIFT) | \
-     (MPID_##name << HANDLE_MPI_KIND_SHIFT) | index
+/* For direct, the remainder of the handle is the index into a predefined 
+   block */
+#define HANDLE_MASK 0x03FFFFFF
+#define HANDLE_INDEX(a) ((a)& HANDLE_MASK)
 
 /* ALL objects have the id as the first value. */
 /* Inactive (unused and stored on the appropriate avail list) objects 
@@ -249,14 +245,14 @@ int MPIU_Handle_free( void *((*)[]), int );
 /* Convert Handles to objects for MPI types that have predefined objects */
 /* Question.  Should this do ptr=0 first, particularly if doing --enable-strict
    complication? */
-#define MPID_Getb_ptr(kind,a,ptr)					\
+#define MPID_Getb_ptr(kind,a,bmsk,ptr)					\
 {									\
    switch (HANDLE_GET_KIND(a)) {					\
       case HANDLE_KIND_INVALID:						\
           ptr=0;							\
 	  break;							\
       case HANDLE_KIND_BUILTIN:						\
-          ptr=MPID_##kind##_builtin+HANDLE_INDEX(a);			\
+          ptr=MPID_##kind##_builtin+((a)&(bmsk));			\
           break;							\
       case HANDLE_KIND_DIRECT:						\
           ptr=MPID_##kind##_direct+HANDLE_INDEX(a);			\
@@ -291,9 +287,10 @@ int MPIU_Handle_free( void *((*)[]), int );
     }									\
 }
 
-#define MPID_Comm_get_ptr(a,ptr)       MPID_Getb_ptr(Comm,a,ptr)
-#define MPID_Group_get_ptr(a,ptr)      MPID_Getb_ptr(Group,a,ptr)
-#define MPID_Datatype_get_ptr(a,ptr)   MPID_Getb_ptr(Datatype,a,ptr)
+#define MPID_Comm_get_ptr(a,ptr)       MPID_Getb_ptr(Comm,a,0x03ffffff,ptr)
+#define MPID_Group_get_ptr(a,ptr)      MPID_Getb_ptr(Group,a,0x03ffffff,ptr)
+#define MPID_Datatype_get_ptr(a,ptr)   MPID_Getb_ptr(Datatype,a,0x000000ff,ptr)
+#define MPID_Datatype_get_size(a)      (((a)&0xfc0000ff)>>8)
 #define MPID_File_get_ptr(a,ptr)       MPID_Get_ptr(File,a,ptr)
 #define MPID_Errhandler_get_ptr(a,ptr) MPID_Get_ptr(Errhandler,a,ptr)
 #define MPID_Op_get_ptr(a,ptr)         MPID_Get_ptr(Op,a,ptr)
@@ -739,13 +736,13 @@ int MPID_Comm_spawn_multiple(int, char *[], char* *[], int [], MPI_Info [],
 int MPID_Finalize(void);
 int MPID_Init(int *, char ***, int, int *, int *, int *);
 int MPID_Open_port(MPID_Info *, char *);
-int MPID_Send(const void *, int, MPID_Datatype *, int, int, MPID_Comm *, int,
+int MPID_Send(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 	       MPID_Request **);
-int MPID_Isend(const void *, int, MPID_Datatype *, int, int, MPID_Comm *, int,
+int MPID_Isend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 	       MPID_Request **);
-int MPID_Recv(void *, int, MPID_Datatype *, int, int, MPID_Comm *, int,
+int MPID_Recv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 	      MPI_Status *, MPID_Request **);
-int MPID_Irecv(void *, int, MPID_Datatype *, int, int, MPID_Comm *, int,
+int MPID_Irecv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 	       MPID_Request **);
 void MPID_Progress_start();
 void MPID_Progress_end();
