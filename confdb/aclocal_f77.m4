@@ -398,7 +398,8 @@ EOF
     fi
     AC_MSG_CHECKING([if ${F77-f77} $flags $libs works with GETARG and IARGC])
     if AC_TRY_EVAL(ac_fcompilelink) && test -x conftest ; then
-	if test "$ac_cv_prog_f77_cross" = "no" ; then
+	# Check that cross != yes so that this works with autoconf 2.52
+	if test "$ac_cv_prog_f77_cross" != "yes" ; then
 	    if ./conftest >/dev/null 2>&1 ; then
 		found_answer="yes"
 	        FXX_MODULE="$fxx_module"
@@ -492,7 +493,7 @@ $libs"
 +U77"
     fi
     # Discard options that are not available:
-    save_IFS="$IFS"
+    # (IFS already saved above)
     IFS=" 
 "
     save_trial_FLAGS="$trial_FLAGS"
@@ -637,7 +638,7 @@ EOF
 	        ac_fcompilelink_test="${F77-f77} -o conftest $FFLAGS $flags conftest.f $LDFLAGS $libs $LIBS 1>&AC_FD_CC"
 		found_answer="no"
                 if AC_TRY_EVAL(ac_fcompilelink_test) && test -x conftest ; then
-		    if test "$ac_cv_prog_f77_cross" = "no" ; then
+		    if test "$ac_cv_prog_f77_cross" != "yes" ; then
 			if ./conftest >/dev/null 2>&1 ; then
 			    found_answer="yes"
 			fi

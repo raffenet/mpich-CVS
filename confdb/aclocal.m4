@@ -8,7 +8,12 @@ builtin(include,aclocal_cc.m4)
 builtin(include,aclocal_cross.m4)
 builtin(include,aclocal_cxx.m4)
 builtin(include,aclocal_f77.m4)
+dnl If we're using 2.52, include new support for F90
+ifelse(AC_ACVERSION,[2.52],[
+builtin(include,aclangf90.m4)
+],[
 builtin(include,aclocal_f90.m4)
+])
 builtin(include,aclocal_make.m4)
 builtin(include,aclocal_mpi.m4)
 builtin(include,aclocal_web.m4)
