@@ -67,11 +67,13 @@ PMPI_LOCAL int MPIR_Scatter (
     int        mpi_errno = MPI_SUCCESS;
     MPI_Comm comm;
     
-    if (recvcnt == 0) return MPI_SUCCESS;
-
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
+
+    if ( ((rank == root) && (sendcnt == 0)) ||
+         ((rank != root) && (recvcnt == 0)) )
+        return MPI_SUCCESS;
 
     is_homogeneous = 1;
 #ifdef MPID_HAS_HETERO
@@ -566,15 +568,17 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                 }
             }
 
-	    MPIR_ERRTEST_COUNT(recvcnt, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(recvcnt, recvtype, mpi_errno);
-	    MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
-    
-            if (HANDLE_GET_KIND(recvtype) != HANDLE_KIND_BUILTIN) {
-                MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
-                MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
+            if (recvbuf != MPI_IN_PLACE) {
+                MPIR_ERRTEST_COUNT(recvcnt, mpi_errno);
+                MPIR_ERRTEST_DATATYPE(recvcnt, recvtype, mpi_errno);
+                if (HANDLE_GET_KIND(recvtype) != HANDLE_KIND_BUILTIN) {
+                    MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
+                    MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
+                }
             }
 
+	    MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
+    
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCATTER);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

@@ -71,7 +71,7 @@ MPIR_Op_check_dtype_fn *MPIR_Op_check_dtype_table[] = {
    Cost = (2.floor(lgp)+2).alpha + (2.((p-1)/p) + 2).n.beta + n.(1+(p-1)/p).gamma
 
    
-   For long messages, for user-defined ops, and for count < pof2 
+   For short messages, for user-defined ops, and for count < pof2 
    we use a recursive doubling algorithm (similar to the one in
    MPI_Allgather). We use this algorithm in the case of user-defined ops
    because in this case derived datatypes are allowed, and the user
@@ -497,7 +497,7 @@ PMPI_LOCAL int MPIR_Allreduce (
 }
 
 
-#if 0
+#ifdef OLD
 PMPI_LOCAL int MPIR_Allreduce ( 
     void *sendbuf, 
     void *recvbuf, 

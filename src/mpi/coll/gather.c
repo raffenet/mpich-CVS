@@ -56,7 +56,7 @@ int MPIR_Gather (
     int        comm_size, rank;
     int        mpi_errno = MPI_SUCCESS;
     int curr_cnt=0, relative_rank, nbytes, recv_size, is_homogeneous;
-    int mask, sendtype_size, src, dst, position;
+    int mask, sendtype_size, recvtype_size, src, dst, position;
 #ifdef MPID_HAS_HETERO
     int tmp_buf_size;
 #endif
@@ -65,11 +65,12 @@ int MPIR_Gather (
     MPI_Aint   extent=0;            /* Datatype extent */
     MPI_Comm comm;
     
-    if (sendcnt == 0) return MPI_SUCCESS;
-
-    comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
+
+    if ( ((rank == root) && (recvcnt == 0)) ||
+         ((rank != root) && (sendcnt == 0)) )
+        return MPI_SUCCESS;
 
     is_homogeneous = 1;
 #ifdef MPID_HAS_HETERO
@@ -89,10 +90,16 @@ int MPIR_Gather (
     
     if (is_homogeneous) {
         /* communicator is homogeneous. no need to pack buffer. */
-        
-        MPID_Datatype_get_size_macro(sendtype, sendtype_size);
-        nbytes = sendtype_size * sendcnt;
-        
+
+        if (rank == root) {
+            MPID_Datatype_get_size_macro(recvtype, recvtype_size);
+            nbytes = recvtype_size * recvcnt;
+        }
+        else {
+            MPID_Datatype_get_size_macro(sendtype, sendtype_size);
+            nbytes = sendtype_size * sendcnt;
+        }
+
         if (rank == root) {
             if (root != 0) {
                 /* allocate temporary buffer to receive data because it
@@ -501,8 +508,15 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf,
                 return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
 
-            MPIR_ERRTEST_COUNT(sendcnt, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(sendcnt, sendtype, mpi_errno);
+            if (sendbuf != MPI_IN_PLACE) {
+                MPIR_ERRTEST_COUNT(sendcnt, mpi_errno);
+                MPIR_ERRTEST_DATATYPE(sendcnt, sendtype, mpi_errno);
+                if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
+                    MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
+                    MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
+                }
+            }
+
 	    MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
 
             rank = comm_ptr->rank;
@@ -513,10 +527,6 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf,
                     MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
                     MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
                 }
-            }
-            if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
-                MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
-                MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
             }
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_GATHER);

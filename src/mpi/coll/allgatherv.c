@@ -96,11 +96,13 @@ PMPI_LOCAL int MPIR_Allgatherv (
     if (total_count*type_size > MPIR_ALLGATHERV_MEDIUM_MSG) {
         /* long message. use ring algorithm. */
 
-        /* First, load the "local" version in the recvbuf. */
-        mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype, 
-                                  ((char *)recvbuf + displs[rank]*recv_extent),
-                                   recvcounts[rank], recvtype);
-        if (mpi_errno) return mpi_errno;
+        if (sendbuf != MPI_IN_PLACE) {
+            /* First, load the "local" version in the recvbuf. */
+            mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype, 
+                                       ((char *)recvbuf + displs[rank]*recv_extent),
+                                       recvcounts[rank], recvtype);
+            if (mpi_errno) return mpi_errno;
+        }
 
         left  = (comm_size + rank - 1) % comm_size;
         right = (rank + 1) % comm_size;
@@ -114,7 +116,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
                                  ((char *)recvbuf + displs[jnext]*recv_extent),
                                       recvcounts[jnext], recvtype, left, 
                                       MPIR_ALLGATHERV_TAG, comm, &status );
-            if (mpi_errno) break;
+            if (mpi_errno) return mpi_errno;
             j	    = jnext;
             jnext = (comm_size + jnext - 1) % comm_size;
         }
@@ -508,7 +510,6 @@ PMPI_LOCAL int MPIR_Allgatherv_inter (
    and then does an intracommunicator broadcast. 
 */
 
-    static const char FCNAME[] = "MPIR_Allgatherv";
     int remote_size, mpi_errno, root, rank;
     MPID_Comm *newcomm_ptr = NULL;
     MPI_Datatype newtype;
@@ -653,8 +654,14 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
                 return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
 
-            MPIR_ERRTEST_COUNT(sendcount, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(sendcount, sendtype, mpi_errno);
+            if (sendbuf != MPI_IN_PLACE) {
+                MPIR_ERRTEST_COUNT(sendcount, mpi_errno);
+                MPIR_ERRTEST_DATATYPE(sendcount, sendtype, mpi_errno);
+                if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
+                    MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
+                    MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
+                }
+            }
 
             comm_size = comm_ptr->local_size;
             for (i=0; i<comm_size; i++) {
@@ -667,11 +674,6 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
                 MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
             }
     
-            if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
-                MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
-                MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
-            }
-
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLGATHERV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

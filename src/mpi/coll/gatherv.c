@@ -199,8 +199,15 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                 return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
 
-            MPIR_ERRTEST_COUNT(sendcnt, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(sendcnt, sendtype, mpi_errno);
+            if (sendbuf != MPI_IN_PLACE) {
+                MPIR_ERRTEST_COUNT(sendcnt, mpi_errno);
+                MPIR_ERRTEST_DATATYPE(sendcnt, sendtype, mpi_errno);
+                if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
+                    MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
+                    MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
+                }
+            }
+
 	    MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
 
             rank = comm_ptr->rank;
@@ -214,10 +221,6 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                     MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
                     MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
                 }
-            }
-            if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
-                MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
-                MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
             }
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_GATHERV);
