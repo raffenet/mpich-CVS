@@ -84,6 +84,7 @@ int MPIR_Bcast (
   int *recvcnts, *displs, left, right, jnext;
   void *tmp_buf;
   MPI_Comm comm;
+  MPID_Datatype *dtp;
 
   if (count == 0) return MPI_SUCCESS;
 
@@ -97,8 +98,8 @@ int MPIR_Bcast (
   if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
       is_contig = 1;
   else {
-      is_contig = 0;
-      /* FIXME: CHANGE THIS TO CHECK THE is_contig FIELD OF THE DATATYPE */
+      MPID_Datatype_get_ptr(datatype, dtp); 
+      is_contig = dtp->is_contig;
   }
 
   is_homogeneous = 1;
