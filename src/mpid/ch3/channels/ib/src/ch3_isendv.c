@@ -89,6 +89,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 
     /* The IB implementation uses a fixed length header, the size of which is the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
+    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF);
     
     /* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */

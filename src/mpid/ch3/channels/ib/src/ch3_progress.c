@@ -9,6 +9,49 @@
 
 volatile unsigned int MPIDI_CH3I_progress_completions = 0;
 
+/*
+ * MPIDI_CH3I_Request_adjust_iov()
+ *
+ * Adjust the iovec in the request by the supplied number of bytes.  If the iovec has been consumed, return true; otherwise return
+ * false.
+ */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Request_adjust_iov
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
+{
+    int offset = req->ch.iov_offset;
+    const int count = req->dev.iov_count;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
+    
+    while (offset < count)
+    {
+	if (req->dev.iov[offset].MPID_IOV_LEN <= (unsigned int)nb)
+	{
+	    nb -= req->dev.iov[offset].MPID_IOV_LEN;
+	    offset++;
+	}
+	else
+	{
+	    req->dev.iov[offset].MPID_IOV_BUF = (char*)req->dev.iov[offset].MPID_IOV_BUF + nb;
+	    req->dev.iov[offset].MPID_IOV_LEN -= nb;
+	    req->ch.iov_offset = offset;
+	    MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning FALSE"));
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
+	    return FALSE;
+	}
+    }
+    
+    req->ch.iov_offset = 0;
+
+    MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning TRUE"));
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
+    return TRUE;
+}
+
 #undef FUNCNAME
 #define FUNCNAME handle_read
 #undef FCNAME
@@ -52,19 +95,6 @@ static inline int handle_read(MPIDI_VC *vc, int nb)
 		mpi_errno = ibu_post_readv(vc->ch.ibu, req->dev.iov, req->dev.iov_count);
 	    }
 	}
-	else
-	{
-#ifdef MPICH_DBG_OUTPUT
-	    /*assert(req->ch.iov_offset < req->dev.iov_count);*/
-	    if (req->ch.iov_offset >= req->dev.iov_count)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ch.iov_offset, req->dev.iov_count);
-	    }
-#endif
-	    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
-	    return mpi_errno;
-	}
     }
     else
     {
@@ -94,21 +124,6 @@ static inline int handle_written(MPIDI_VC * vc)
     {
 	MPID_Request * req = vc->ch.send_active;
 
-	/*
-	if (req->ch.iov_offset >= req->dev.iov_count)
-	{
-	    MPIDI_DBG_PRINTF((60, FCNAME, "iov_offset(%d) >= iov_count(%d)", req->ch.iov_offset, req->dev.iov_count));
-	}
-	*/
-#ifdef MPICH_DBG_OUTPUT
-	/*assert(req->ch.iov_offset < req->dev.iov_count);*/
-	if (req->ch.iov_offset >= req->dev.iov_count)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ch.iov_offset, req->dev.iov_count);
-	    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_WRITTEN);
-	    return mpi_errno;
-	}
-#endif
 	/*MPIDI_DBG_PRINTF((60, FCNAME, "calling ibu_post_writev"));*/
 	mpi_errno = ibu_writev(vc->ch.ibu, req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset, &nb);
 	if (mpi_errno != IBU_SUCCESS)
@@ -136,20 +151,6 @@ static inline int handle_written(MPIDI_VC * vc)
 		    MPIDI_CH3I_SendQ_dequeue(vc);
 		}
 		vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
-	    }
-	    else
-	    {
-#ifdef MPICH_DBG_OUTPUT
-		MPIDI_DBG_PRINTF((65, FCNAME, "iovec updated by %d bytes but not complete", nb));
-		/*assert(req->ch.iov_offset < req->dev.iov_count);*/
-		if (req->ch.iov_offset >= req->dev.iov_count)
-		{
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ch.iov_offset, req->dev.iov_count);
-		    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_WRITTEN);
-		    return mpi_errno;
-		}
-#endif
-		break;
 	    }
 	}
 	else
@@ -335,47 +336,4 @@ int MPIDI_CH3I_Progress_finalize()
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
     return mpi_errno;
-}
-
-/*
- * MPIDI_CH3I_Request_adjust_iov()
- *
- * Adjust the iovec in the request by the supplied number of bytes.  If the iovec has been consumed, return true; otherwise return
- * false.
- */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3U_Request_adjust_iov
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
-{
-    int offset = req->ch.iov_offset;
-    const int count = req->dev.iov_count;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
-    
-    while (offset < count)
-    {
-	if (req->dev.iov[offset].MPID_IOV_LEN <= (unsigned int)nb)
-	{
-	    nb -= req->dev.iov[offset].MPID_IOV_LEN;
-	    offset++;
-	}
-	else
-	{
-	    req->dev.iov[offset].MPID_IOV_BUF = (char*)req->dev.iov[offset].MPID_IOV_BUF + nb;
-	    req->dev.iov[offset].MPID_IOV_LEN -= nb;
-	    req->ch.iov_offset = offset;
-	    MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning FALSE"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
-	    return FALSE;
-	}
-    }
-    
-    req->ch.iov_offset = 0;
-
-    MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning TRUE"));
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
-    return TRUE;
 }

@@ -66,6 +66,7 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 
     /* The IB implementation uses a fixed length header, the size of which is the maximum of all possible packet headers */
     pkt_sz = sizeof(MPIDI_CH3_Pkt_t);
+    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)pkt);
     
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {

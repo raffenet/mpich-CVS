@@ -13,7 +13,14 @@
     MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST); \
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST); \
     sreq = MPIDI_CH3_Request_create(); \
-    assert(sreq != NULL); \
+    /*assert(sreq != NULL);*/ \
+    if (sreq == NULL) \
+    { \
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0); \
+	MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG); \
+	return mpi_errno; \
+    } \
     MPIU_Object_set_ref(sreq, 2); \
     sreq->kind = MPID_REQUEST_SEND; \
     assert(pkt_sz == sizeof(MPIDI_CH3_Pkt_t)); \
@@ -81,8 +88,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 	    }
 	    else
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME,
-		    "send delayed, request enqueued"));
+		MPIDI_DBG_PRINTF((55, FCNAME, "send delayed, request enqueued"));
 		create_request(sreq, pkt, pkt_sz, nb);
 		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		vc->ch.send_active = sreq;

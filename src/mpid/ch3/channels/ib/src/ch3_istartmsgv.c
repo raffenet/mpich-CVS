@@ -14,14 +14,18 @@
     MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST); \
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST); \
     sreq = MPIDI_CH3_Request_create(); \
-    assert(sreq != NULL); \
+    /*assert(sreq != NULL);*/ \
+    if (sreq == NULL) \
+    { \
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0); \
+	MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV); \
+	return mpi_errno; \
+    } \
     MPIU_Object_set_ref(sreq, 2); \
     sreq->kind = MPID_REQUEST_SEND; \
-    /* memcpy(sreq->dev.iov, iov, iov_count * sizeof(MPID_IOV)); */ \
-    for (i = 0; i < count; i++) \
-    { \
-	sreq->dev.iov[i] = iov[i]; \
-    } \
+    memcpy(sreq->dev.iov, iov, iov_count * sizeof(MPID_IOV)); \
+    /*for (i = 0; i < count; i++) { sreq->dev.iov[i] = iov[i]; }*/ \
     if (offset == 0) \
     { \
 	/* memcpy(&sreq->ch.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */ \
@@ -89,25 +93,27 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
     /* The IB implementation uses a fixed length header, the size of which is
        the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
+    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF);
     
     /* Connection already formed.  If send queue is empty attempt to send
     data, queuing any unsent data. */
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {
+	int error;
 	int nb;
-	int offset = 0;
 
 	/* MT - need some signalling to lock down our right to use the
 	channel, thus insuring that the progress engine does also try to
 	write */
 
-	mpi_errno = (n_iov > 1) ?
+	error = (n_iov > 1) ?
 	    ibu_writev(vc->ch.ibu, iov, n_iov, &nb) :
 	    ibu_write(vc->ch.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, &nb);
-	if (mpi_errno == MPI_SUCCESS)
+	if (error == MPI_SUCCESS)
 	{
+	    int offset = 0;
+
 	    MPIU_DBG_PRINTF(("ch3_istartmsgv: ibu_post_writev returned %d bytes\n", nb));
-	    offset = 0;
 
 	    while (offset < n_iov)
 	    {
