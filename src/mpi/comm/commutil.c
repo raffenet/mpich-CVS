@@ -242,7 +242,7 @@ static int MPIR_Find_context_bit( unsigned int local_mask[] ) {
 
 int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 {
-    int i, j, context_id = 0;
+    int          context_id = 0;
     unsigned int local_mask[MAX_CONTEXT_MASK];
 
     if (initialize_context_mask) {
