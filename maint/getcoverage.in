@@ -31,6 +31,7 @@ $includeFileInOutput = 0;
 $skipErrExits = 1;
 $outputUncovered = 1;
 @UnCalled = ();
+@CoveredFiles = ();        # Array of files that are ok
 # annoteSrcDir is where the annotation files are placed,
 # annoteBaseDir is the base file name that is stripped from the
 # file names
@@ -64,6 +65,15 @@ for (@ARGV) {
 	$indexfile = $1;
 	next;
     }
+    elsif (/-indexdir=(.*)/) {
+	# This target sets the directory for the index file, along with
+	# the file that contains the names of the files that are 
+	# considered completely covered.
+	my $indexdir = $1;
+	$indexfile = "$indexdir/index.htm";
+	$coveredindexfile = "$indexdir/covered.htm";
+	next;
+    }
 
     my $filename = $_;
     if (-d $filename) {
@@ -82,6 +92,7 @@ for (@ARGV) {
 	    }
 	    else {
 		print "All code covered by tests in $file\n";
+		$CoveredFiles[$#CoveredFiles+1] = $file;
 	    }
 	}
     }
@@ -96,6 +107,7 @@ for (@ARGV) {
 	}
 	else {
 	    print "All code covered by tests in $filename\n";
+	    $CoveredFiles[$#CoveredFiles+1] = $filename;
 	}
     }
     else {
@@ -110,6 +122,9 @@ for $routine (@UnCalled) {
 if ($annoteFiles && $indexfile ne "") {
     # Here is where we could process the list of files that were annotated
     &WriteAnnoteFileMap( $indexfile );
+    if ($coveredindexfile ne "") {
+	WriteCoveredFileMap( $coveredindexfile );
+    }
 }
 
 # Count the number of uncovered lines, and return that number.
@@ -173,6 +188,23 @@ sub CountUncoveredLines {
 		    print STDERR "Possible missing END ERROR HANDLING in $filename at $linecount; saw \"$cleanline\"\n";
 		}
 		if (/^\s*\/\*\s+--END ERROR HANDLING--\s+\*\/\s*/) {
+		    last; 
+		}
+	    }
+	    next;	       
+	}
+	# Skip any blocks marked as experimental
+	if (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
+	    while (<FD>) {
+		$linecount++;
+		if (/^\s/) { $fileline++; }
+		if (/^\s*\/\*\s+--BEGIN/) {
+		    my $cleanline = $_;
+		    $cleanline =~ s/^\s*//;
+		    chop $cleanline;
+		    print STDERR "Possible missing END EXPERIMENTAL in $filename at $linecount; saw \"$cleanline\"\n";
+		}
+		if (/^\s*\/\*\s+--END EXPERIMENTAL--\s+\*\/\s*/) {
 		    last; 
 		}
 	    }
@@ -261,13 +293,15 @@ sub ExpandDir {
 #             errcheck (error checking code)
 #             errhandle (error handling code)
 #             debug     (debug code)
+#             exper     (experimental)
 #          Currently, the skipcolors are 
 sub AnnotateUncoveredLines {
     my $filename = $_[0];
     my $bgcolor  = $_[1];
     my %skipcolors = ( "errcheck" => "lightblue",
 		       "errhandle" => "lightblue",
-		       "debug" => "lightblue" );
+		       "debug" => "lightblue", 
+		       "exper" => "lightblue" );
     my $outfile  = $_[2];
     my $curstate = "init";    # Current state
     my $newstate;             # New state implied by the last line read
@@ -318,6 +352,10 @@ sub AnnotateUncoveredLines {
 	elsif (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
 	    $newstate = "skip";
 	    $substate = "errhandle";
+	}
+	elsif (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
+	    $newstate = "skip";
+	    $substate = "exper";
 	}
 
 	# If there is a change in state, generate the correct code
@@ -530,6 +568,22 @@ sub WriteAnnoteFileMap {
     close IFD;
 }
 
+# -
+# ( $coveredindexfile );
+sub WriteCoveredFileMap {
+    my $filename = $_[0];
+
+    open ( IFD, ">$filename" ) || die "Cannot open $filename\n";
+
+    @sortedfiles = sort ( @CoveredFiles );
+    for (my $i = 0; $i <= $#sortedfiles; $i ++ ) {
+	my $file = $sortedfiles[$i];
+	print IFD "$file\n";
+    }
+    close( IFD );
+}
+
+# -
 # Make all of the directories in filename (which may include a 
 # final file).  If it contains only directories, make sure that 
 # the name ends in a /
