@@ -23,10 +23,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pmandel_spawn", "pmandel_sp
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spawntest", "spawntest.vcproj", "{6BB16851-FDFE-4654-8F1A-DCAC63EBE11A}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pman_vis", "windows\pmandel_vis\pman_vis.vcproj", "{29D7A10A-E306-413E-A87E-5A2BCCE0848C}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
@@ -77,10 +73,6 @@ Global
 		{D05C5962-1D40-4A33-ACE8-87A6DA3600A9}.Debug.Build.0 = Debug|Win32
 		{D05C5962-1D40-4A33-ACE8-87A6DA3600A9}.Release.ActiveCfg = Release|Win32
 		{D05C5962-1D40-4A33-ACE8-87A6DA3600A9}.Release.Build.0 = Release|Win32
-		{6BB16851-FDFE-4654-8F1A-DCAC63EBE11A}.Debug.ActiveCfg = Debug|Win32
-		{6BB16851-FDFE-4654-8F1A-DCAC63EBE11A}.Debug.Build.0 = Debug|Win32
-		{6BB16851-FDFE-4654-8F1A-DCAC63EBE11A}.Release.ActiveCfg = Release|Win32
-		{6BB16851-FDFE-4654-8F1A-DCAC63EBE11A}.Release.Build.0 = Release|Win32
 		{29D7A10A-E306-413E-A87E-5A2BCCE0848C}.Debug.ActiveCfg = Debug|Win32
 		{29D7A10A-E306-413E-A87E-5A2BCCE0848C}.Debug.Build.0 = Debug|Win32
 		{29D7A10A-E306-413E-A87E-5A2BCCE0848C}.Release.ActiveCfg = Release|Win32
