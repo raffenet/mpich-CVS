@@ -2147,12 +2147,12 @@ if ($write_mpif) {
 
     # When building the Fortran interface for Microsoft Windows, there 
     # are some additional compiler directives needed 
-    print MPIFFD "C     Directives needed for Microsoft Windows to support
-C     dynamic library import.  CMS is for the Microsoft compiler,
-C     CDEC is (we believe) for the DEC Fortran compiler.  Other
-C     compilers should (and probably will) ignore these directives
-CMS\$ATTRIBUTES DLLIMPORT::/MPIPRIV/
-CDEC\$ATTRIBUTES DLLIMPORT::/MPIPRIV/\n";
+    # This provides a hook for any DLL export directives.  We need to 
+    # make this a configure-time variable because some compilers (in 
+    # particular, a version of the Intel Fortran compiler for Linux)
+    # will read directives for other compilers and then flag as fatal
+    # errors directives that it does not support but does recognize.
+    print MPIFFD "\@DLLEXPORT\@\n";
 
     # Add the common block for the special constants
     print MPIFFD "\
