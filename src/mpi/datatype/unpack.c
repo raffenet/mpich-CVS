@@ -97,10 +97,10 @@ int MPI_Unpack(void *inbuf,
     first = *position;
     last  = insize;
 
-    MPID_Segment_pack(segp,
-		      first,
-		      &last,
-		      (void *) ((char *) outbuf + first));
+    MPID_Segment_unpack(segp,
+			first,
+			&last,
+			(void *) ((char *) inbuf + first));
 
     *position = last;
 
