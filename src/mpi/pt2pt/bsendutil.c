@@ -62,6 +62,8 @@ typedef struct BsendData {
     struct BsendData *next, *prev;
     MPID_Request     *request;
     BsendMsg_t       msg;
+    double           alignpad;         /* make sure that the struct shares
+					  double alignment */
 } BsendData_t;
 
 /* BsendBuffer is the structure that describes the overall Bsend buffer */
@@ -87,7 +89,6 @@ static int initialized = 0;   /* keep track of the first call to any
 				 bsend routine */
 
 /* Forward references */
-static int MPIR_Bsend_release( void *, int );
 static void MPIR_Bsend_retry_pending( void );
 static void MPIR_Bsend_check_active ( void );
 static BsendData_t *MPIR_Bsend_find_buffer( int );
@@ -138,6 +139,7 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
     p->size	  = buffer_size - sizeof(BsendData_t);
     p->total_size = buffer_size;
     p->next	  = p->prev = 0;
+    p->msg.msgbuf = (char *)p + sizeof(BsendData_t);
 
     return MPI_SUCCESS;
 }
@@ -186,52 +188,57 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 
     (void)NMPI_Pack_size( count, dtype, comm_ptr->handle, &packsize );
 
+    /*
+     * Use two passes.  Each pass is the same; between the two passes,
+     * attempt to complete any active requests, and start any pending
+     * ones.  If the message can be initiated in the first pass,
+     * do not perform the second pass.
+     */
+    MPID_Thread_lock( &BsendBuffer.bsend_lock );
     for (pass = 0; pass < 2; pass++) {
-	MPID_Thread_lock( &BsendBuffer.bsend_lock );
 	
 	p = MPIR_Bsend_find_buffer( packsize );
-	p = BsendBuffer.avail;
-	while (p) {
-	    if (p->size <= packsize) { 
-		/* Found a segment */
+	if (p) {
+	    /* Found a segment */
+	    
+	    /* Pack the data into the buffer */
+	    /* We may want to optimize for the special case of
+	       either primative or contiguous types, and just
+	       use memcpy and the provided datatype */
+	    p->msg.count = 0;
+	    (void)NMPI_Pack( buf, count, dtype, p->msg.msgbuf, packsize, 
+			     &p->msg.count, comm_ptr->handle );
+	    /* Try to send the message */
+	    mpi_errno = MPID_Send(p->msg.msgbuf, p->msg.count, MPI_PACKED, 
+				  dest, tag, comm_ptr,
+				  MPID_CONTEXT_INTRA_PT2PT, &p->request );
+	    /* If the error is "request not available", put this on the
+	       pending list */
+	    /* FIXME: NOT YET DONE */
+	    if (mpi_errno == -1) {  /* -1 is a temporary place holder for
+				       request-not-available */
+		p->msg.dtype     = MPI_PACKED;
+		p->msg.tag       = tag;
+		p->msg.comm_ptr  = comm_ptr;
+		p->msg.dest      = dest;
 		
-		/* Pack the data into the buffer */
-		p->msg.count = 0;
-		(void)NMPI_Pack( buf, count, dtype, p->msg.msgbuf, packsize, 
-				 &p->msg.count, comm_ptr->handle );
-		/* Try to send the message */
-		mpi_errno = MPID_Send(p->msg.msgbuf, p->msg.count, MPI_PACKED, 
-				      dest, tag, comm_ptr,
-				      MPID_CONTEXT_INTRA_PT2PT, &p->request );
-		/* If the error is "request not available", put this on the
-		   pending list */
-		/* FIXME: NOT YET DONE */
-		if (mpi_errno == -1) {  /* -1 is a temporary place holder for
-					   request-not-available */
-		    p->msg.dtype     = MPI_PACKED;
-		    p->msg.tag       = tag;
-		    p->msg.comm_ptr  = comm_ptr;
-		    p->msg.dest      = dest;
-		    
-		    /* FIXME: Still need to add to pending list */
-		    
-		    /* ibsend has a problem.  
-		       Use a generalized request here? */
-		}
-		else if (p->request) {
-		    /* Only remove this block from the avail list if the 
-		       message has not been sent (MPID_Send may have already 
-		       sent the data, in which case it returned a null
-		       request) */
-		    MPIR_Bsend_take_buffer( p, p->msg.count );
-		    *request = p->request;
-		}
-		else {
-		    *request = 0;
-		}
-		break;
+		/* FIXME: Still need to add to pending list */
+		
+		/* ibsend has a problem.  
+		   Use a generalized request here? */
 	    }
-	    p = p->next;
+	    else if (p->request) {
+		/* Only remove this block from the avail list if the 
+		   message has not been sent (MPID_Send may have already 
+		   sent the data, in which case it returned a null
+		   request) */
+		MPIR_Bsend_take_buffer( p, p->msg.count );
+		*request = p->request;
+	    }
+	    else {
+		*request = 0;
+	    }
+	    break;
 	}
 	if (p && pass == 2) break;
 	/* Try to complete some pending bsends */
@@ -361,13 +368,17 @@ static BsendData_t *MPIR_Bsend_find_buffer( int size )
     BsendData_t *p = BsendBuffer.avail;
 
     while (p) {
-	if (p->size <= size) { 
+	if (p->size >= size) { 
 	    return p;
 	}
+	p = p->next;
     }
     return 0;
 }
 
+/* This is the minimum number of bytes that a segment must be able to
+   hold. */
+#define MIN_BUFFER_BLOCK 8
 /*
  * Carve off size bytes from buffer p and leave the remainder
  * on the avail list.  Handle the head/tail cases. 
@@ -376,48 +387,55 @@ static BsendData_t *MPIR_Bsend_find_buffer( int size )
  */
 static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
 {
-    BsendData_t *prev = p->prev, *bnext;
-    int         newsize;
-    
-    /* Add p to the active list; save the next pointer */
-    /* Question: this adds to the head.  Do we want to add to
-       the tail? */
-    bnext              = p->next;
-    p->next            = BsendBuffer.active;
-    BsendBuffer.active = p;
-    
-    /* shorten the segment.  If there isn't enough space, 
-       just remove it from the avail list */
-    
-    newsize = p->size - p->msg.count - sizeof(BsendData_t);
-    /* Round down to a multiple of 8 to preserve alignment */
-    newsize -= (newsize & 0x7);
-    
-    if (newsize < 0) {
-	/* The entire block goes into the active list; 
-	   link around it */
-	if (prev) {
-	    prev->next = bnext;
+    BsendData_t *prev;
+    int         alloc_size;
+
+    /* Compute the remaining size.  This must include any padding 
+       that must be added to make the new block properly aligned */
+    alloc_size = size;
+    if (alloc_size & 0x7) 
+	alloc_size += (8 - (alloc_size & 0x7));
+    /* alloc_size is the amount of space (out of size) that we will 
+       allocate for this buffer. */
+
+    /* Is there enough space left to create a new block? */
+    if (alloc_size + sizeof(BsendData_t) + MIN_BUFFER_BLOCK <= p->size) {
+	/* Yes, the available space (p->size) is large enough to 
+	   carve out a new block */
+	BsendData_t *newp;
+	
+	newp = (BsendData_t *)( (char *)p + sizeof(BsendData_t) + alloc_size );
+	newp->total_size = p->total_size - alloc_size - sizeof(BsendData_t);
+	newp->size = newp->total_size - sizeof(BsendData_t);
+	newp->msg.msgbuf = (char *)newp + sizeof(BsendData_t);
+
+	/* Insert this new block after p (we'll remove p from the avail list
+	   next) */
+	newp->next = p->next;
+	newp->prev = p;
+	if (p->next) {
+	    p->next->prev = newp;
 	}
-	else {
-	    BsendBuffer.avail = bnext;
-	}
-	if (bnext) 
-	    bnext->prev = prev;
+	p->next = newp;
+    }
+
+    /* Remove p from the avail list and add it to the active list */
+    prev = p->prev;
+    if (prev) {
+	prev->next = p->next;
     }
     else {
-	p          += (p->total_size - newsize);
-	p->total_size = 0;
-	p->size    = newsize + sizeof(BsendData_t);
-	p->next    = bnext;
-	if (prev) {
-	    prev->next = p;
-	}
-	else {
-	    BsendBuffer.avail = p;
-	}
-	if (bnext) {
-	    bnext->prev = p;
-	}
+	BsendBuffer.avail = p->next;
     }
+
+    if (p->next) {
+	p->next->prev = p->prev;
+    }
+	
+    if (BsendBuffer.active) {
+	BsendBuffer.active->prev = p;
+    }
+    p->next	      = BsendBuffer.active;
+    p->prev	      = 0;
+    BsendBuffer.avail = p;
 }

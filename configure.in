@@ -692,6 +692,7 @@ typedef struct BsendData {
     int          tag;
     void         *comm_ptr;
     int          dest;
+    double       alignpad;
     } msg;
 } BsendData_t;
 int main( int argc, char *argv[] ){
@@ -942,6 +943,7 @@ AC_OUTPUT(Makefile src/Makefile \
 	  test/mpi/datatype/Makefile \
 	  test/mpi/errhan/Makefile \
 	  test/mpi/group/Makefile \
+	  test/mpi/pt2pt/Makefile \
 	  examples/Makefile\
           src/util/logging/Makefile\
           src/util/timing/Makefile )
