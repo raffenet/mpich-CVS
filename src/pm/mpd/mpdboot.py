@@ -23,8 +23,8 @@ def mpdboot():
     fullDirName  = path.abspath(path.split(argv[0])[0])
     rshCmd     = 'ssh'
     user       = mpd_get_my_username()
-    mpdCmd     = path.join(fullDirName,'mpd')
-    mpdbootCmd = path.join(fullDirName,'mpdboot')
+    mpdCmd     = path.join(fullDirName,'mpd.py')
+    mpdbootCmd = path.join(fullDirName,'mpdboot.py')
     hostsFile  = 'mpd.hosts'
     totalNum   = 1    # may get chgd below
     debug      = 0
@@ -151,7 +151,7 @@ def mpdboot():
 	    break
     if not anMPDALreadyHere:
         try:
-            system('%s/mpdallexit > /dev/null' % (fullDirName))  # stop any current mpds
+            system('%s/mpdallexit.py > /dev/null' % (fullDirName))  # stop any current mpds
         except:
             pass
 
@@ -279,7 +279,7 @@ def err_exit(msg):
         except:
             pass
         try:
-            system('%s/mpdallexit > /dev/null' % (fullDirName))  # stop any current mpds
+            system('%s/mpdallexit.py > /dev/null' % (fullDirName))  # stop any current mpds
         except:
              pass
         try:
