@@ -35,14 +35,14 @@ int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
                           context_id, &request_ptr); 
     if (mpi_errno != MPI_SUCCESS)
     {
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SEND);
+	MPID_MPI_PT2PT_FUNC_EXIT_FRONT(MPID_STATE_MPIC_SEND);
 	return mpi_errno;
     }
     if (request_ptr) {
         MPIR_Wait(request_ptr);
         MPID_Request_release(request_ptr);
     }
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SEND);
+    MPID_MPI_PT2PT_FUNC_EXIT_FRONT(MPID_STATE_MPIC_SEND);
     return mpi_errno;
 }
 
