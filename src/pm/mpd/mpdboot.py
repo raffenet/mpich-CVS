@@ -18,7 +18,7 @@ def mpdboot():
     user      = mpd_get_my_username()
     mpdCmd    = path.join(myOwnDir,'mpd')
     hostsFile = 'mpd.hosts'
-    totalNum  = 1
+    totalNum  = 0    # should get chgd below
     debug     = 0
     verbosity = 0
     localConsoleVal  = ''
@@ -93,7 +93,11 @@ def mpdboot():
         hosts = [ x  for x in hosts if x != '' ]    # delete empty lines
         if oneLocal:
             hosts = [ x for x in hosts if not mpd_same_ips(x,myHost) ]
-            # hosts = [ x for x in hosts if x != myHost ]
+            if totalNum == 0:
+                totalNum = len(hosts) + 1
+        else:
+            if totalNum == 0:
+                totalNum = len(hosts)
         if len(hosts) < (totalNum-1):    # one is local
             print 'there are not enough hosts specified on which to start all processes'
             exit(-1)
