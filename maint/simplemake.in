@@ -254,8 +254,12 @@ $sysconfdir_name =           'sysconfdir      = @' . "sysconfdir"  . '@';
 # We add the -p switch to install for the libraries because libraries
 # that require ranlib may fail if installed without preserving the
 # data/time on the file.  This should work because configure looks for
-# a BSD-style install
-%install_methods = ( 'LIB'     => '$(INSTALL_DATA) -p',
+# a BSD-style install.
+# Sigh.  ginstall (!!!) doesn't support the -p switch.
+# This means that there is no way to install a library under Darwin
+# without defining INSTALL_DATA as install -p, which configure 
+# does not figure out(!)
+%install_methods = ( 'LIB'     => '$(INSTALL_DATA)',
 		     'BIN'     => '$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)',
 		     'SHLIB'   => '$(INSTALL_PROGRAM)',
 		     'INCLUDE' => '$(INSTALL_DATA)',
