@@ -146,7 +146,8 @@ extern MPIU_dbg_state_t MPIUI_dbg_state;
 #define MPIU_DBG_PRINTF(e)
 #endif
 void MPIU_dump_dbg_memlog_to_stdout(void);
-void MPIU_dump_dbg_memlog_to_file(FILE * fp);
+void MPIU_dump_dbg_memlog_to_file(char *filename);
+void MPIU_dump_dbg_memlog(FILE * fp);
 /* The follow is temporarily provided for backward compatibility.  Any code
    using dbg_printf should be updated to use MPIU_DBG_PRINTF. */
 #define dbg_printf MPIU_dbg_printf

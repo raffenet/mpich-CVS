@@ -248,10 +248,21 @@ int msg_printf(char *str, ...)
 
 void MPIU_dump_dbg_memlog_to_stdout(void)
 {
-    MPIU_dump_dbg_memlog_to_file(stdout);
+    MPIU_dump_dbg_memlog(stdout);
 }
 
-void MPIU_dump_dbg_memlog_to_file(FILE * fp)
+void MPIU_dump_dbg_memlog_to_file(char *filename)
+{
+    FILE *fout;
+    fout = fopen(filename, "wb");
+    if (fout != NULL)
+    {
+	MPIU_dump_dbg_memlog(fout);
+	fclose(fout);
+    }
+}
+
+void MPIU_dump_dbg_memlog(FILE * fp)
 {
     if (dbg_memlog_count != 0)
     {
@@ -269,6 +280,7 @@ void MPIU_dump_dbg_memlog_to_file(FILE * fp)
 	    ent = (ent + 1) % dbg_memlog_num_lines;
 	}
 	while(ent != last_ent);
+	fflush(fp);
     }
 }
 
