@@ -642,6 +642,39 @@ if test "$pac_cv_char_p_is_byte" = "yes" ; then
     AC_DEFINE(CHAR_PTR_IS_BYTE,,[define if char * is byte pointer])
 fi
 dnl
+dnl Get the size for the bsendoverhead
+rm -f conftestval
+dnl FIXME This should really use code from bsendutil.c.  Types
+dnl defined in the mpiimpl.h file or in mpi.h have been replaced here. 
+AC_CACHE_CHECK([for size of MPI_BSEND_OVERHEAD],pac_cv_mpi_bsend_overhead,[
+AC_TRY_RUN([
+#include <stdio.h>
+/* BsendData describes a bsend request */
+typedef struct BsendData {
+    int              size;             /* size that is available for data */
+    int              total_size;       /* total size of this segment */
+    struct BsendData *next, *prev;
+    void         *request;
+    struct {
+    void         *msgbuf;
+    int          count;
+    int          dtype;
+    int          tag;
+    void         *comm_ptr;
+    int          dest;
+    } msg;
+} BsendData_t;
+int main( int argc, char *argv[] ){
+  FILE *f=fopen("conftestval", "w");
+  if (!f) exit(1);
+  fprintf(f, "%d\n", sizeof(BsendData_t));
+  exit(0);
+}
+],pac_cv_mpi_bsend_overhead=`cat conftestval`,pac_cv_mpi_bsend_overhead=256,pac_cv_mpi_bsend_overhead=256)
+])
+BSEND_OVERHEAD=$pac_cv_mpi_bsend_overhead
+AC_SUBST(BSEND_OVERHEAD)
+dnl
 dnl check for library functions
 if test -n "$thread_type" ; then
     case $thread_type in 

@@ -15,6 +15,7 @@
 #define NMPI_Reduce PMPI_Reduce
 #define NMPI_Unpack PMPI_Unpack
 #define NMPI_Wait PMPI_Wait
+#define NMPI_Test PMPI_Test
 #define NMPI_Allreduce PMPI_Allreduce
 #define NMPI_Allgather PMPI_Allgather
 #define NMPI_Comm_get_attr PMPI_Comm_get_attr

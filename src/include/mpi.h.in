@@ -145,7 +145,7 @@ typedef int MPI_Op;
 #define MPI_KEYVAL_INVALID 0x24000000
 
 /* Upper bound on the overhead in bsend for each message buffer */
-#define MPI_BSEND_OVERHEAD 512
+#define MPI_BSEND_OVERHEAD @BSEND_OVERHEAD@
 
 /* Topology types */
 /* #define MPI_GRAPH  1 */
