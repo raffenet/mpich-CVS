@@ -22,8 +22,9 @@
 @*/
 int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src)
 {
-    MM_Car *pCar;
-    MPID_Request *pRequest;
+    MM_Car *pCar, *pCarIter;
+    MPID_Request *pRequest, *pRequestIter;
+    BOOL bNeedHeader = TRUE;
 
     /* Get a pointer to the current unused request, allocating if necessary. */
     if (request_ptr->mm.op_valid == FALSE)
@@ -32,53 +33,96 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     }
     else
     {
-	pRequest = request_ptr;
-	while (pRequest->mm.next_ptr)
-	    pRequest = pRequest->mm.next_ptr;
-	pRequest->mm.next_ptr = mm_request_alloc();
-	pRequest = pRequest->mm.next_ptr;
+	pRequest = mm_request_alloc();
+	pRequestIter = request_ptr;
+	pCarIter = pRequestIter->mm.rcar;
+	if (pCarIter->type & MM_HEAD_CAR)
+	{
+	    if (pCarIter->src == src)
+	    {
+		while (pCarIter->qnext_ptr)
+		{
+		    pCarIter = pCarIter->qnext_ptr;
+		}
+		pCarIter->qnext_ptr = pRequest->mm.rcar;
+		bNeedHeader = FALSE;
+	    }
+	}
+	while (pRequestIter->mm.next_ptr)
+	{
+	    pRequestIter = pRequestIter->mm.next_ptr;
+	    if (bNeedHeader)
+	    {
+		pCarIter = pRequestIter->mm.rcar;
+		if (pCarIter->type & MM_HEAD_CAR)
+		{
+		    if (pCarIter->src == src)
+		    {
+			while (pCarIter->qnext_ptr)
+			{
+			    pCarIter = pCarIter->qnext_ptr;
+			}
+			pCarIter->qnext_ptr = pRequest->mm.rcar;
+			bNeedHeader = FALSE;
+		    }
+		}
+	    }
+	}
+	pRequestIter->mm.next_ptr = pRequest;
     }
 
     pRequest->mm.op_valid = TRUE;
+    pRequest->comm = request_ptr->comm;
     pRequest->cc_ptr = &request_ptr->cc;
     (*(pRequest->cc_ptr))++;
     pRequest->mm.next_ptr = NULL;
 
     /* Save the mpi segment */
-    pRequest->mm.buf.recv = buf;
+    /* These fields may not be necessary since we have MPID_Segment_init */
+    pRequest->mm.user_buf.recv = buf;
     pRequest->mm.count = count;
     pRequest->mm.dtype = dtype;
     pRequest->mm.first = first;
     pRequest->mm.last = last;
+    pRequest->mm.size = count * MPID_Datatype_get_size(dtype);
+
+    MPID_Segment_init(buf, count, dtype, &pRequest->mm.segment);
 
     /* setup the read car */
-    pRequest->mm.rcar.request_ptr = request_ptr;
-    pRequest->mm.rcar.src = src;
-    pRequest->mm.rcar.type = MM_READ_CAR;
-    pRequest->mm.rcar.vc_ptr = mm_get_vc(request_ptr->comm, src);
-    pRequest->mm.rcar.next_ptr = NULL;
-
-    /* allocate a write car for unpacking */
-    if (request_ptr->mm.write_list == NULL)
+    if (bNeedHeader)
     {
-	request_ptr->mm.write_list = &request_ptr->mm.wcar;
-	pCar = &request_ptr->mm.wcar;
+	pRequest->mm.rcar[0].request_ptr = pRequest;
+	pRequest->mm.rcar[0].type = MM_HEAD_CAR | MM_READ_CAR;
+	pRequest->mm.rcar[0].vc_ptr = mm_get_vc(request_ptr->comm, src);
+	pRequest->mm.rcar[0].src = src;
+	pRequest->mm.rcar[0].data.pkt.context = request_ptr->comm->context_id;
+	pRequest->mm.rcar[0].data.pkt.tag = request_ptr->mm.tag;
+	pRequest->mm.rcar[0].data.pkt.size = 0;
+	pRequest->mm.rcar[0].qnext_ptr = &pRequest->mm.rcar[1];
+	pRequest->mm.rcar[0].next_ptr = NULL;
+
+	pCar = &pRequest->mm.rcar[1];
+	pCar->vc_ptr = pRequest->mm.rcar[0].vc_ptr;
     }
     else
     {
-	pCar = request_ptr->mm.write_list;
-	while (pCar->next_ptr)
-	    pCar = pCar->next_ptr;
-	pCar->next_ptr = mm_car_alloc();
-	pCar = pCar->next_ptr;
+	pCar = pRequest->mm.rcar;
+	pCar->vc_ptr = mm_get_vc(request_ptr->comm, src);
     }
-    
-    pCar->request_ptr = request_ptr;
-    pCar->type = MM_WRITE_CAR;
+
+    pCar->request_ptr = pRequest;
+    pCar->type = MM_READ_CAR;
+    pCar->src = src;
+    pCar->next_ptr = NULL;
+    pCar->qnext_ptr = NULL;
+
+    /* allocate a write car for unpacking */
+    pCar = pRequest->mm.wcar;
+    pCar->request_ptr = pRequest;
+    pCar->type = MM_HEAD_CAR | MM_WRITE_CAR;
     pCar->vc_ptr = mm_get_unpacker_vc();
     pCar->next_ptr = NULL;
-
-    MPID_Segment_init(buf, count, dtype, &pRequest->mm.segment);
+    pCar->qnext_ptr = NULL;
 
     return MPI_SUCCESS;
 }

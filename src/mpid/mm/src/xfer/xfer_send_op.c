@@ -23,7 +23,9 @@
 int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Datatype dtype, int first, int last, int dest)
 {
     MM_Car *pCar;
-    MPID_Request *pRequest;
+    MPID_Request *pRequest, *pRequestIter;
+    BOOL bNeedHeader = TRUE;
+    MM_Car *pCarIter;
 
     /* Get a pointer to the current unused request, allocating if necessary. */
     if (request_ptr->mm.op_valid == FALSE)
@@ -32,54 +34,101 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     }
     else
     {
-	pRequest = request_ptr;
-	while (pRequest->mm.next_ptr)
-	    pRequest = pRequest->mm.next_ptr;
-	pRequest->mm.next_ptr = mm_request_alloc();
-	pRequest = pRequest->mm.next_ptr;
+	pRequest = mm_request_alloc();
+	pRequestIter = request_ptr;
+	pCarIter = pRequestIter->mm.write_list;
+	while (pCarIter)
+	{
+	    if (pCarIter->dest == dest)
+	    {
+		while (pCarIter->qnext_ptr)
+		{
+		    pCarIter = pCarIter->qnext_ptr;
+		}
+		pCarIter->qnext_ptr = pRequest->mm.wcar;
+		bNeedHeader = FALSE;
+		break;
+	    }
+	    pCarIter = pCarIter->next_ptr;
+	}
+	while (pRequestIter->mm.next_ptr)
+	{
+	    pRequestIter = pRequestIter->mm.next_ptr;
+	    if (bNeedHeader)
+	    {
+		pCarIter = pRequestIter->mm.write_list;
+		while (pCarIter)
+		{
+		    if (pCarIter->dest == dest)
+		    {
+			while (pCarIter->qnext_ptr)
+			{
+			    pCarIter = pCarIter->qnext_ptr;
+			}
+			pCarIter->qnext_ptr = pRequest->mm.wcar;
+			bNeedHeader = FALSE;
+			break;
+		    }
+		    pCarIter = pCarIter->next_ptr;
+		}
+	    }
+	}
+	pRequestIter->mm.next_ptr = pRequest;
     }
 
     pRequest->mm.op_valid = TRUE;
+    pRequest->comm = request_ptr->comm;
     /* point the completion counter to the primary request */
     pRequest->cc_ptr = &request_ptr->cc;
     (*(pRequest->cc_ptr))++;
     pRequest->mm.next_ptr = NULL;
 
     /* Save the mpi segment */
-    pRequest->mm.buf.send = buf;
+    /* These fields may not be necessary since we have MPID_Segment_init */
+    pRequest->mm.user_buf.send = buf;
     pRequest->mm.count = count;
     pRequest->mm.dtype = dtype;
     pRequest->mm.first = first;
     pRequest->mm.last = last;
-
-    /* setup the read car for packing the mpi buffer to be sent */
-    pRequest->mm.rcar.request_ptr = request_ptr;
-    pRequest->mm.rcar.type = MM_READ_CAR;
-    pRequest->mm.rcar.vc_ptr = mm_get_packer_vc();
-    pRequest->mm.rcar.next_ptr = NULL;
+    pRequest->mm.size = count * MPID_Datatype_get_size(dtype);
 
     MPID_Segment_init(buf, count, dtype, &pRequest->mm.segment);
 
-    /* allocate a write car */
-    if (request_ptr->mm.write_list == NULL)
+    /* setup the read car for packing the mpi buffer to be sent */
+    pRequest->mm.rcar[0].request_ptr = pRequest;
+    pRequest->mm.rcar[0].type = MM_HEAD_CAR | MM_READ_CAR;
+    pRequest->mm.rcar[0].vc_ptr = mm_get_packer_vc();
+    pRequest->mm.rcar[0].next_ptr = NULL;
+    pRequest->mm.rcar[0].qnext_ptr = NULL;
+    pRequest->mm.rcar[0].src = request_ptr->comm->rank; /* packer source is myself */
+
+
+    if (bNeedHeader)
     {
-	request_ptr->mm.write_list = &request_ptr->mm.wcar;
-	pCar = &request_ptr->mm.wcar;
+	pRequest->mm.wcar[0].request_ptr = pRequest;
+	pRequest->mm.wcar[0].type = MM_HEAD_CAR | MM_WRITE_CAR;
+	pRequest->mm.wcar[0].vc_ptr = mm_get_vc(request_ptr->comm, dest);
+	pRequest->mm.wcar[0].dest = dest;
+	pRequest->mm.wcar[0].data.pkt.context = request_ptr->comm->context_id;
+	pRequest->mm.wcar[0].data.pkt.tag = request_ptr->mm.tag;
+	pRequest->mm.wcar[0].data.pkt.size = 0;
+	pRequest->mm.wcar[0].qnext_ptr = &pRequest->mm.wcar[1];
+	pRequest->mm.wcar[0].next_ptr = NULL;
+
+	pCar = &pRequest->mm.wcar[1];
+	pCar->vc_ptr = pRequest->mm.wcar[0].vc_ptr;
     }
     else
     {
-	pCar = request_ptr->mm.write_list;
-	while (pCar->next_ptr)
-	    pCar = pCar->next_ptr;
-	pCar->next_ptr = mm_car_alloc();
-	pCar = pCar->next_ptr;
+	pCar = &pRequest->mm.wcar[0];
+	pCar->vc_ptr = mm_get_vc(request_ptr->comm, dest);
     }
-    
-    pCar->request_ptr = request_ptr;
+
+    pCar->request_ptr = pRequest;
     pCar->type = MM_WRITE_CAR;
-    pCar->vc_ptr = mm_get_vc(request_ptr->comm, dest);
     pCar->dest = dest;
     pCar->next_ptr = NULL;
+    pCar->qnext_ptr = NULL;
 
     return MPI_SUCCESS;
 }

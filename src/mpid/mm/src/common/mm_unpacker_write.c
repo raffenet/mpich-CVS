@@ -17,7 +17,7 @@
 @*/
 int mm_unpacker_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
-    switch (car_ptr->request_ptr->mm.read_buf_type)
+    switch (car_ptr->request_ptr->mm.buf_type)
     {
     case MM_NULL_BUFFER:
 	err_printf("error, cannot unpack from a null buffer\n");
@@ -25,13 +25,21 @@ int mm_unpacker_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     case MM_TMP_BUFFER:
 	MPID_Segment_unpack(
 	    &car_ptr->request_ptr->mm.segment, /* unpack the segment in the request */
-	    car_ptr->request_ptr->mm.read_buf.tmp.cur_buf, /* unpack from the read buffer */
+	    car_ptr->request_ptr->mm.buf.tmp.cur_buf, /* unpack from the read buffer */
 	    &car_ptr->data.unpacker.first, /* first and last are kept in the car */
 	    &car_ptr->data.unpacker.last);
 	/* update first and last */
 	/* update min_num_written */
 	break;
-    case MM_MPI_BUFFER:
+    case MM_VEC_BUFFER:
+	MPID_Segment_unpack_vector(
+	    &car_ptr->request_ptr->mm.segment,
+	    car_ptr->data.unpacker.first,
+	    &car_ptr->data.unpacker.last,
+	    car_ptr->request_ptr->mm.buf.vec.vec,
+	    &car_ptr->request_ptr->mm.buf.vec.size);
+	/* update first and last */
+	/* update min_num_written */
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_BUFFER:
@@ -50,7 +58,7 @@ int mm_unpacker_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	break;
 #endif
     default:
-	err_printf("illegal buffer type: %d\n", car_ptr->request_ptr->mm.read_buf_type);
+	err_printf("illegal buffer type: %d\n", car_ptr->request_ptr->mm.buf_type);
 	break;
     }
 

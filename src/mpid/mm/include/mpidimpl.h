@@ -19,8 +19,10 @@ typedef struct OpenPortNode {
 
 typedef struct MPID_PerProcess {
     MPID_Thread_lock_t  lock;
-       struct MPIDI_VC *active_read_vc_list;
-       struct MPIDI_VC *active_write_vc_list;
+       struct MPIDI_VC *posted_q;
+       struct MPIDI_VC *unex_list;
+       struct MPIDI_VC *read_list;
+       struct MPIDI_VC *write_list;
                   char  pmi_kvsname[100];
              MPID_Comm *comm_parent;
           OpenPortNode *port_list;
@@ -132,6 +134,19 @@ MPID_Request * mm_request_alloc();
            int mm_unpacker_vc_free(MPIDI_VC *ptr);
            int mm_car_enqueue(MM_Car *car_ptr);
            int mm_car_dequeue(MM_Car *car_ptr);
+	   int mm_post_recv(MM_Car *car_ptr);
+	   int mm_enqueue_send(MM_Car *car_ptr);
+           int mm_get_buffers_tmp(MPID_Request *request_ptr);
+           int mm_get_buffers_vec(MPID_Request *request_ptr);
+#ifdef WITH_METHOD_SHM
+           int mm_get_buffers_shm(MPID_Request *request_ptr);
+#endif
+#ifdef WITH_METHOD_VIA
+           int mm_get_buffers_via(MPID_Request *request_ptr);
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+           int mm_get_buffers_viardma(MPID_Request *request_ptr);
+#endif
 
 /*
 What is an xfer block? - A block is defined by an init call, followed by one or more

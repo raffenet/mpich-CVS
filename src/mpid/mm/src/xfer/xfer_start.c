@@ -18,9 +18,9 @@ int xfer_start(MPID_Request *request_ptr)
 {
     int mpi_errno;
     MPID_Request *pRequest;
-    MM_Car *pCar;
+    MM_Car *pCar, *pCarIter;
 
-    /* choose the buffers scheme to complete this operation */
+    /* choose the buffers scheme to satisfy each segment */
     pRequest = request_ptr;
     while (pRequest)
     {
@@ -36,11 +36,35 @@ int xfer_start(MPID_Request *request_ptr)
     pRequest = request_ptr;
     while (pRequest)
     {
-	mm_car_enqueue(&pRequest->mm.rcar);
+	if (pRequest->mm.rcar[0].type & MM_HEAD_CAR)
+	{
+	    /* add up the size of the message and put it in the packet */
+	    pRequest->mm.rcar[0].data.pkt.size = 0;
+	    pCarIter = pRequest->mm.rcar->qnext_ptr;
+	    while (pCarIter)
+	    {
+		pRequest->mm.rcar[0].data.pkt.size += pCarIter->request_ptr->mm.size;
+		pCarIter = pCarIter->qnext_ptr;
+	    }
+	    /* post the recv */
+	    mm_post_recv(pRequest->mm.rcar);
+	}
 	pCar = pRequest->mm.write_list;
 	while (pCar)
 	{
-	    mm_car_enqueue(pCar);
+	    if (pCar->type & MM_HEAD_CAR)
+	    {
+		/* add up the size of the message and put it in the packet */
+		pCar->data.pkt.size = 0;
+		pCarIter = pCar;
+		while (pCarIter)
+		{
+		    pCar->data.pkt.size += pCarIter->request_ptr->mm.size;
+		    pCarIter = pCarIter->qnext_ptr;
+		}
+		/* enqueue the send */
+		mm_enqueue_send(pCar);
+	    }
 	    pCar = pCar->next_ptr;
 	}
 	pRequest = pRequest->mm.next_ptr;

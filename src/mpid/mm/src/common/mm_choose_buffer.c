@@ -16,16 +16,18 @@
 @*/
 int mm_choose_buffer(MPID_Request *request_ptr)
 {
-    if (request_ptr->mm.rcar.type != MM_NULL_CAR)
+    if (request_ptr->mm.rcar[0].type != MM_NULL_CAR)
     {
-	request_ptr->mm.read_buf_type = MM_MPI_BUFFER;
-	request_ptr->mm.read_buf.mpi.size = MPID_VECTOR_LIMIT;
-	request_ptr->mm.read_buf.mpi.num_read = 0;
-	request_ptr->mm.read_buf.mpi.min_num_written = 0;
+	request_ptr->mm.buf_type = MM_VEC_BUFFER;
+	request_ptr->mm.buf.vec.size = MPID_VECTOR_LIMIT;
+	request_ptr->mm.buf.vec.num_read = 0;
+	request_ptr->mm.buf.vec.min_num_written = 0;
+	request_ptr->mm.get_buffers = mm_get_buffers_vec;
     }
     else
     {
-	request_ptr->mm.read_buf_type = MM_NULL_BUFFER;
+	request_ptr->mm.buf_type = MM_NULL_BUFFER;
+	request_ptr->mm.get_buffers = NULL;
     }
 
     return MPI_SUCCESS;

@@ -24,10 +24,11 @@
 #endif
 #define MPID_VECTOR_LIMIT   16
 
+/* Buffer type */
 typedef enum MM_BUFFER_TYPE {
     MM_NULL_BUFFER,
     MM_TMP_BUFFER,
-    MM_MPI_BUFFER,
+    MM_VEC_BUFFER,
 #ifdef WITH_METHOD_SHM
     MM_SHM_BUFFER,
 #endif
@@ -43,13 +44,46 @@ typedef enum MM_BUFFER_TYPE {
     MM_END_MARKER_BUFFER
 } MM_BUFFER_TYPE;
 
+/* Packet header type */
+typedef enum { 
+    MPID_INVALID_PKT,
+    MPID_EAGER_PKT,
+    MPID_RNDV_REQUEST_TO_SEND_PKT,
+    MPID_RNDV_OK_TO_SEND_PKT,
+    MPID_RNDV_DATA_PKT,
+    MPID_RDMA_ACK_PKT,
+    MPID_RDMA_DATA_ACK_PKT,
+    MPID_RDMA_REQUEST_DATA_ACK_PKT
+} MPID_Packet_type;
+
+/* Communication agent request type */
+/*
 typedef enum MM_CAR_TYPE { 
     MM_NULL_CAR,
+    MM_HEADER_CAR,
     MM_READ_CAR,
+    MM_PACKER_READ_CAR,
     MM_WRITE_CAR,
+    MM_UNPACKER_WRITE_CAR,
     MM_END_MARKER_TYPE_CAR
 } MM_CAR_TYPE;
+*/
+typedef int MM_CAR_TYPE;
+#define MM_NULL_CAR      0x00
+#define MM_HEAD_CAR      0x01
+#define MM_READ_CAR      0x02
+#define MM_WRITE_CAR     0x04
 
+/* packet definitions */
+typedef struct MPID_Packet
+{
+    int context;
+    int tag;
+    /*int src;*/
+    int size;
+} MPID_Packet;
+
+/* Communication agent request */
 typedef struct MM_Car
 {
     struct MPID_Request *request_ptr;
@@ -57,6 +91,7 @@ typedef struct MM_Car
     int src, dest;
     MM_CAR_TYPE type;
     union data {
+	MPID_Packet pkt;
 	struct packer
 	{
 	    int first;
@@ -78,12 +113,12 @@ typedef struct MM_Car
 	} tcp;
 #endif
 #ifdef WITH_METHOD_VIA
-	struct 
+	struct via
 	{
 	} via;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
-	struct
+	struct viardma
 	{
 	} viardma;
 #endif
@@ -96,23 +131,26 @@ typedef struct MM_Car
     struct MM_Car *next_ptr, *qnext_ptr;
 } MM_Car;
 
+/* multi-method segment */
 typedef struct MM_Segment
 {
     int tag;
-    union buf {
+    union user_buf {
 	const void *send;
 	void *recv;
-    } buf;
+    } user_buf;
     int count;
     MPI_Datatype dtype;
+    int size;
     int first;
     int last;
     MPID_Segment segment;
     MM_Car *write_list;
-    MM_Car wcar;
-    MM_Car rcar;
+    MM_Car wcar[2];
+    MM_Car rcar[2];
     int op_valid;
-    MM_BUFFER_TYPE read_buf_type;
+    int (*get_buffers)(struct MPID_Request *request_ptr);
+    MM_BUFFER_TYPE buf_type;
     union MM_Segment_buffer
     {
 	struct tmp
@@ -122,13 +160,13 @@ typedef struct MM_Segment
 	    int num_read;
 	    int min_num_written;
 	} tmp;
-	struct mpi
+	struct vec
 	{
 	    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
 	    int size;
 	    int num_read;
 	    int min_num_written;
-	} mpi;
+	} vec;
 #ifdef WITH_METHOD_SHM
 	struct shm
 	{
@@ -152,12 +190,13 @@ typedef struct MM_Segment
 #endif
 #ifdef WITH_METHOD_NEW
 #endif
-    } read_buf;
+    } buf;
     struct MPID_Request *next_ptr;
 } MM_Segment;
 
 #define MPID_DEV_REQUEST_DECL MM_Segment mm;
 
+/* multi-method communicator data */
 typedef struct MM_Comm_struct
 {
     char *pmi_kvsname;

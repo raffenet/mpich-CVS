@@ -26,8 +26,8 @@ int mm_car_enqueue(MM_Car *car_ptr)
 	/* If the write queue for this vc is empty then enqueue this vc in the process active write list */
 	if (vc_ptr->writeq_head == NULL)
 	{
-	    vc_ptr->write_next_ptr = MPID_Process.active_write_vc_list;
-	    MPID_Process.active_write_vc_list = vc_ptr;
+	    vc_ptr->write_next_ptr = MPID_Process.write_list;
+	    MPID_Process.write_list = vc_ptr;
 	}
 	/* enqueue the write car in the vc_ptr write queue */
 	if (vc_ptr->writeq_tail != NULL)
@@ -40,8 +40,8 @@ int mm_car_enqueue(MM_Car *car_ptr)
 	/* If the read queue for this vc is empty then enqueue this vc in the process active read list */
 	if (vc_ptr->readq_head == NULL)
 	{
-	    vc_ptr->read_next_ptr = MPID_Process.active_read_vc_list;
-	    MPID_Process.active_read_vc_list = vc_ptr;
+	    vc_ptr->read_next_ptr = MPID_Process.read_list;
+	    MPID_Process.read_list = vc_ptr;
 	}
 	/* enqueue the read car in the vc_ptr read queue */
 	if (vc_ptr->readq_tail != NULL)
@@ -63,12 +63,12 @@ int mm_car_enqueue(MM_Car *car_ptr)
 static int mm_vc_dequeue_write(MPIDI_VC *vc_ptr)
 {
     MPIDI_VC *iter_ptr;
-    if (vc_ptr == MPID_Process.active_write_vc_list)
+    if (vc_ptr == MPID_Process.write_list)
     {
-	MPID_Process.active_write_vc_list = vc_ptr->write_next_ptr;
+	MPID_Process.write_list = vc_ptr->write_next_ptr;
 	return MPI_SUCCESS;
     }
-    iter_ptr = MPID_Process.active_write_vc_list;
+    iter_ptr = MPID_Process.write_list;
     while (iter_ptr->write_next_ptr)
     {
 	if (iter_ptr->write_next_ptr == vc_ptr)
@@ -84,12 +84,12 @@ static int mm_vc_dequeue_write(MPIDI_VC *vc_ptr)
 static int mm_vc_dequeue_read(MPIDI_VC *vc_ptr)
 {
     MPIDI_VC *iter_ptr;
-    if (vc_ptr == MPID_Process.active_read_vc_list)
+    if (vc_ptr == MPID_Process.read_list)
     {
-	MPID_Process.active_read_vc_list = vc_ptr->read_next_ptr;
+	MPID_Process.read_list = vc_ptr->read_next_ptr;
 	return MPI_SUCCESS;
     }
-    iter_ptr = MPID_Process.active_read_vc_list;
+    iter_ptr = MPID_Process.read_list;
     while (iter_ptr->read_next_ptr)
     {
 	if (iter_ptr->read_next_ptr == vc_ptr)

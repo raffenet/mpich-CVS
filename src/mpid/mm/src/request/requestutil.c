@@ -23,18 +23,6 @@ MPID_Request * mm_request_alloc()
 	return p;
 #ifdef MPICH_DEV_BUILD
     memset(p, 0, sizeof(MPID_Request));
-    /*
-    p->mm.read_buf_type = MM_NULL_BUFFER;
-    memset(&p->mm.read_buf, 0, sizeof(MM_Segment::MM_Segment_buffer));
-    p->mm.buf.recv = NULL;
-    p->mm.count = 0;
-    p->mm.first = 0;
-    p->mm.last = 0;
-    p->mm.next_ptr = NULL;
-    p->mm.op_valid = 0;
-    p->cc = 0;
-    p->mm.write_list = NULL;
-    */
     p->cc_ptr = &p->cc;
 #endif
     return p;
