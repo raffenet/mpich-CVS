@@ -44,7 +44,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
+EXPORT_MPI_API int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 {
     static const char FCNAME[] = "MPI_Testsome";
     int mpi_errno = MPI_SUCCESS;

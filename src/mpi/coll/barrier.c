@@ -40,7 +40,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Barrier( MPI_Comm comm )
+EXPORT_MPI_API int MPI_Barrier( MPI_Comm comm )
 {
     static const char FCNAME[] = "MPI_Barrier";
     int mpi_errno = MPI_SUCCESS;

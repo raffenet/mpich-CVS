@@ -47,7 +47,7 @@
 .N MPI_SUCCESS
 .N ... others
 @*/
-int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MPI_Comm *newcomm)
+EXPORT_MPI_API int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MPI_Comm *newcomm)
 {
     static const char FCNAME[] = "MPI_Comm_connect";
     int mpi_errno = MPI_SUCCESS;

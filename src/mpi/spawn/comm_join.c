@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Comm_join(int fd, MPI_Comm *intercomm)
+EXPORT_MPI_API int MPI_Comm_join(int fd, MPI_Comm *intercomm)
 {
     static const char FCNAME[] = "MPI_Comm_join";
     int mpi_errno = MPI_SUCCESS;

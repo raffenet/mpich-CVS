@@ -48,7 +48,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, int sendtag, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
+EXPORT_MPI_API int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, int sendtag, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Sendrecv_replace";
     int mpi_errno = MPI_SUCCESS;

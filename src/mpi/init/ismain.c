@@ -42,7 +42,7 @@
 .N MPI_SUCCESS
 .N ... others
 @*/
-int MPI_Is_thread_main( int *flag )
+EXPORT_MPI_API int MPI_Is_thread_main( int *flag )
 {
     static const char FCNAME[] = "MPI_Is_thread_main";
     int mpi_errno = MPI_SUCCESS;

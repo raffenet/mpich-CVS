@@ -44,7 +44,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group group2, int *ranks2)
+EXPORT_MPI_API int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group group2, int *ranks2)
 {
     static const char FCNAME[] = "MPI_Group_translate_ranks";
     int mpi_errno = MPI_SUCCESS;

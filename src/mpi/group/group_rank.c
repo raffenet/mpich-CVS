@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Group_rank(MPI_Group group, int *rank)
+EXPORT_MPI_API int MPI_Group_rank(MPI_Group group, int *rank)
 {
     static const char FCNAME[] = "MPI_Group_rank";
     int mpi_errno = MPI_SUCCESS;

@@ -47,7 +47,7 @@ size of 'datatype' (so that 'count' would not be integral), a 'count' of
 .N MPI_SUCCESS
 .N MPI_ERR_TYPE
 @*/
-int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
+EXPORT_MPI_API int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
 {
     static const char FCNAME[] = "MPI_Get_count";
     int mpi_errno = MPI_SUCCESS;

@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Comm_remote_size(MPI_Comm comm, int *size)
+EXPORT_MPI_API int MPI_Comm_remote_size(MPI_Comm comm, int *size)
 {
     static const char FCNAME[] = "MPI_Comm_remote_size";
     int mpi_errno = MPI_SUCCESS;

@@ -44,7 +44,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm )
+EXPORT_MPI_API int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm )
 {
     static const char FCNAME[] = "MPI_Bcast";
     int mpi_errno = MPI_SUCCESS;

@@ -45,7 +45,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
+EXPORT_MPI_API int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Exscan";
     int mpi_errno = MPI_SUCCESS;

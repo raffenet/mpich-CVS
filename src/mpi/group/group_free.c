@@ -40,7 +40,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Group_free(MPI_Group *group)
+EXPORT_MPI_API int MPI_Group_free(MPI_Group *group)
 {
     static const char FCNAME[] = "MPI_Group_free";
     int mpi_errno = MPI_SUCCESS;

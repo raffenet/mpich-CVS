@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
+EXPORT_MPI_API int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 {
     static const char FCNAME[] = "MPI_Intercomm_merge";
     int mpi_errno = MPI_SUCCESS;

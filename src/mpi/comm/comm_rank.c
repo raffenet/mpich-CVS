@@ -42,7 +42,7 @@ Output Argument:
 .N MPI_SUCCESS
 .N MPI_ERR_COMM
 @*/
-int MPI_Comm_rank( MPI_Comm comm, int *rank ) 
+EXPORT_MPI_API int MPI_Comm_rank( MPI_Comm comm, int *rank ) 
 {
     static const char FCNAME[] = "MPI_Comm_rank";
     int mpi_errno = MPI_SUCCESS;

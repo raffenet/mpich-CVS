@@ -44,7 +44,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source, int *dest)
+EXPORT_MPI_API int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source, int *dest)
 {
     static const char FCNAME[] = "MPI_Cart_shift";
     int mpi_errno = MPI_SUCCESS;

@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
+EXPORT_MPI_API int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
 {
     static const char FCNAME[] = "MPI_Graphdims_get";
     int mpi_errno = MPI_SUCCESS;

@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Win_set_name(MPI_Win win, char *win_name)
+EXPORT_MPI_API int MPI_Win_set_name(MPI_Win win, char *win_name)
 {
     static const char FCNAME[] = "MPI_Win_set_name";
     int mpi_errno = MPI_SUCCESS;

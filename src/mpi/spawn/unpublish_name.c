@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
+EXPORT_MPI_API int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
 {
     static const char FCNAME[] = "MPI_Unpublish_name";
     int mpi_errno = MPI_SUCCESS;

@@ -43,7 +43,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Attr_get(MPI_Comm comm, int keyval, void *attr_value, int *flag)
+EXPORT_MPI_API int MPI_Attr_get(MPI_Comm comm, int keyval, void *attr_value, int *flag)
 {
     static const char FCNAME[] = "MPI_Attr_get";
     int mpi_errno = MPI_SUCCESS;

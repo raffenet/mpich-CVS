@@ -38,7 +38,7 @@
 
 .see also: MPI_Wtime, MPI_Comm_get_attr, MPI_Attr_get
 @*/
-double MPI_Wtick( void )
+EXPORT_MPI_API double MPI_Wtick( void )
 {
     static const char FCNAME[] = "MPI_Wtick";
     int mpi_errno = MPI_SUCCESS;

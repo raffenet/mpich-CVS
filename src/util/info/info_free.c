@@ -40,7 +40,7 @@ Input Parameters:
 .N ... others
 .N fortran
 @*/
-int MPI_Info_free( MPI_Info *info )
+EXPORT_MPI_API int MPI_Info_free( MPI_Info *info )
 {
     static const char FCNAME[] = "MPI_Info_free";
     int mpi_errno = MPI_SUCCESS;

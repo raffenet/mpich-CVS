@@ -44,7 +44,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status)
+EXPORT_MPI_API int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Iprobe";
     int mpi_errno = MPI_SUCCESS;

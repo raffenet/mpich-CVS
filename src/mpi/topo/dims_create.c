@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Dims_create(int nnodes, int ndims, int *dims)
+EXPORT_MPI_API int MPI_Dims_create(int nnodes, int ndims, int *dims)
 {
     static const char FCNAME[] = "MPI_Dims_create";
     int mpi_errno = MPI_SUCCESS;

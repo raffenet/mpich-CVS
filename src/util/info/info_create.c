@@ -39,7 +39,7 @@
 .N MPI_SUCCESS
 .N ... others
 @*/
-int MPI_Info_create( MPI_Info *info )
+EXPORT_MPI_API int MPI_Info_create( MPI_Info *info )
 {
     MPID_Info *info_ptr;
     static const char FCNAME[] = "MPI_Info_create";

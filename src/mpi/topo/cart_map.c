@@ -44,7 +44,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods, int *newrank)
+EXPORT_MPI_API int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods, int *newrank)
 {
     static const char FCNAME[] = "MPI_Cart_map";
     int mpi_errno = MPI_SUCCESS;

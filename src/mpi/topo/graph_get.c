@@ -44,7 +44,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, int *index, int *edges)
+EXPORT_MPI_API int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, int *index, int *edges)
 {
     static const char FCNAME[] = "MPI_Graph_get";
     int mpi_errno = MPI_SUCCESS;

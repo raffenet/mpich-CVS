@@ -44,7 +44,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges, int *newrank)
+EXPORT_MPI_API int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges, int *newrank)
 {
     static const char FCNAME[] = "MPI_Graph_map";
     int mpi_errno = MPI_SUCCESS;

@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Topo_test(MPI_Comm comm, int *status)
+EXPORT_MPI_API int MPI_Topo_test(MPI_Comm comm, int *status)
 {
     static const char FCNAME[] = "MPI_Topo_test";
     int mpi_errno = MPI_SUCCESS;

@@ -43,7 +43,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
+EXPORT_MPI_API int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 {
     static const char FCNAME[] = "MPI_Comm_split";
     int mpi_errno = MPI_SUCCESS;

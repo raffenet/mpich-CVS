@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
+EXPORT_MPI_API int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
 {
     static const char FCNAME[] = "MPI_Comm_remote_group";
     int mpi_errno = MPI_SUCCESS;

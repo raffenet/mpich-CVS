@@ -49,7 +49,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, int root, MPI_Comm comm, MPI_Comm *intercomm, int array_of_errcodes[])
+EXPORT_MPI_API int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, int root, MPI_Comm comm, MPI_Comm *intercomm, int array_of_errcodes[])
 {
     static const char FCNAME[] = "MPI_Comm_spawn";
     int mpi_errno = MPI_SUCCESS;

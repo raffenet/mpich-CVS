@@ -46,7 +46,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_get_contents(MPI_Datatype datatype, int max_integers, int max_addresses, int max_datatypes, int array_of_integers[], MPI_Aint array_of_addresses[], MPI_Datatype array_of_datatypes[])
+EXPORT_MPI_API int MPI_Type_get_contents(MPI_Datatype datatype, int max_integers, int max_addresses, int max_datatypes, int array_of_integers[], MPI_Aint array_of_addresses[], MPI_Datatype array_of_datatypes[])
 {
     static const char FCNAME[] = "MPI_Type_get_contents";
     int mpi_errno = MPI_SUCCESS;

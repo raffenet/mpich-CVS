@@ -46,7 +46,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)
+EXPORT_MPI_API int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Recv";
     int mpi_errno = MPI_SUCCESS;

@@ -40,7 +40,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Keyval_free(int *keyval)
+EXPORT_MPI_API int MPI_Keyval_free(int *keyval)
 {
     static const char FCNAME[] = "MPI_Keyval_free";
     int mpi_errno = MPI_SUCCESS;

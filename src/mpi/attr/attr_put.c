@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
+EXPORT_MPI_API int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
 {
     static const char FCNAME[] = "MPI_Attr_put";
     int mpi_errno = MPI_SUCCESS;

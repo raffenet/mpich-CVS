@@ -45,7 +45,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,int reorder, MPI_Comm *comm_graph)
+EXPORT_MPI_API int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,int reorder, MPI_Comm *comm_graph)
 {
     static const char FCNAME[] = "MPI_Graph_create";
     int mpi_errno = MPI_SUCCESS;

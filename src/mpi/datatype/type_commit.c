@@ -40,7 +40,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_commit(MPI_Datatype *datatype)
+EXPORT_MPI_API int MPI_Type_commit(MPI_Datatype *datatype)
 {
     static const char FCNAME[] = "MPI_Type_commit";
     int mpi_errno = MPI_SUCCESS;

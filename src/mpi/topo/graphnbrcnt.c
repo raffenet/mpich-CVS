@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
+EXPORT_MPI_API int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
 {
     static const char FCNAME[] = "MPI_Graph_neighbors_count";
     int mpi_errno = MPI_SUCCESS;

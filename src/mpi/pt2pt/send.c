@@ -45,7 +45,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
+EXPORT_MPI_API int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Send";
     int mpi_errno = MPI_SUCCESS;

@@ -44,7 +44,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_hindexed(int count, int blocklens[], MPI_Aint indices[], MPI_Datatype old_type, MPI_Datatype *newtype)
+EXPORT_MPI_API int MPI_Type_hindexed(int count, int blocklens[], MPI_Aint indices[], MPI_Datatype old_type, MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_hindexed";
     int mpi_errno = MPI_SUCCESS;

@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
+EXPORT_MPI_API int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 {
     static const char FCNAME[] = "MPI_Comm_create";
     int mpi_errno = MPI_SUCCESS;

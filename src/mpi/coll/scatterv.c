@@ -48,7 +48,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendtype, void *recvbuf, int recvcnt,  MPI_Datatype recvtype, int root, MPI_Comm comm)
+EXPORT_MPI_API int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendtype, void *recvbuf, int recvcnt,  MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Scatterv";
     int mpi_errno = MPI_SUCCESS;

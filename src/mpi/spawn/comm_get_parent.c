@@ -40,7 +40,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Comm_get_parent(MPI_Comm *parent)
+EXPORT_MPI_API int MPI_Comm_get_parent(MPI_Comm *parent)
 {
     static const char FCNAME[] = "MPI_Comm_get_parent";
     int mpi_errno = MPI_SUCCESS;

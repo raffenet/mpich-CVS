@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Wait(MPI_Request  *request, MPI_Status   *status)
+EXPORT_MPI_API int MPI_Wait(MPI_Request  *request, MPI_Status   *status)
 {
     static const char FCNAME[] = "MPI_Wait";
     int mpi_errno = MPI_SUCCESS;

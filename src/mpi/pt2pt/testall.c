@@ -43,7 +43,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[])
+EXPORT_MPI_API int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[])
 {
     static const char FCNAME[] = "MPI_Testall";
     int mpi_errno = MPI_SUCCESS;

@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Status_set_elements(MPI_Status *status, MPI_Datatype datatype, 
+EXPORT_MPI_API int MPI_Status_set_elements(MPI_Status *status, MPI_Datatype datatype, 
 			    int count)
 {
     static const char FCNAME[] = "MPI_Status_set_elements";

@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Group_size(MPI_Group group, int *size)
+EXPORT_MPI_API int MPI_Group_size(MPI_Group group, int *size)
 {
     static const char FCNAME[] = "MPI_Group_size";
     int mpi_errno = MPI_SUCCESS;

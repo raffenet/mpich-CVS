@@ -51,7 +51,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, int recvcount, MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
+EXPORT_MPI_API int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, int recvcount, MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Sendrecv";
     int mpi_errno = MPI_SUCCESS;

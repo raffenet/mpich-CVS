@@ -43,7 +43,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Pack_external_size(char *datarep, int incount, MPI_Datatype datatype, MPI_Aint *size)
+EXPORT_MPI_API int MPI_Pack_external_size(char *datarep, int incount, MPI_Datatype datatype, MPI_Aint *size)
 {
     static const char FCNAME[] = "MPI_Pack_external_size";
     int mpi_errno = MPI_SUCCESS;

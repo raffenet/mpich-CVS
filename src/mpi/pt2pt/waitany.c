@@ -43,7 +43,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Status *status)
+EXPORT_MPI_API int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Waitany";
     int mpi_errno = MPI_SUCCESS;

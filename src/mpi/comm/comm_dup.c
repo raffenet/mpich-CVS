@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
+EXPORT_MPI_API int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 {
     static const char FCNAME[] = "MPI_Comm_dup";
     int mpi_errno = MPI_SUCCESS;

@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_get_extent(MPI_Datatype datatype, MPI_Aint *lb, MPI_Aint *extent)
+EXPORT_MPI_API int MPI_Type_get_extent(MPI_Datatype datatype, MPI_Aint *lb, MPI_Aint *extent)
 {
     static const char FCNAME[] = "MPI_Type_get_extent";
     int mpi_errno = MPI_SUCCESS;

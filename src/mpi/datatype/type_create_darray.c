@@ -49,7 +49,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_create_darray(int size, int rank, int ndims, int array_of_gsizes[], int array_of_distribs[], int array_of_dargs[], int array_of_psizes[], int order, MPI_Datatype oldtype, MPI_Datatype *newtype)
+EXPORT_MPI_API int MPI_Type_create_darray(int size, int rank, int ndims, int array_of_gsizes[], int array_of_distribs[], int array_of_dargs[], int array_of_psizes[], int order, MPI_Datatype oldtype, MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_create_darray";
     int mpi_errno = MPI_SUCCESS;

@@ -7,7 +7,7 @@
 
 #include "mpiimpl.h"
 #include "mpi_init.h"
-/*#include "bnr.h"*/
+#include "bnr.h"
 
 
 /* -- Begin Profiling Symbol Block for routine MPI_Init */
@@ -43,15 +43,13 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Init( int *argc, char ***argv )
+EXPORT_MPI_API int MPI_Init( int *argc, char ***argv )
 {
     static const char FCNAME[] = "MPI_Init";
     int mpi_errno = MPI_SUCCESS;
-    /*
     char *pszParent;
     MPI_Info info;
     MPI_Comm intercomm;
-    */
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INIT);
 #   ifdef HAVE_ERROR_CHECKING
@@ -71,27 +69,24 @@ int MPI_Init( int *argc, char ***argv )
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    /*
     BNR_Init();
-    */
 
     MPIR_Init_thread( MPI_THREAD_SINGLE, (int *)0 );
 
-    /*
     BNR_DB_Get_my_name(MPIR_Process.bnr_dbname);
     BNR_Barrier();
 
-    pszParent = getenv("BNR_PARENT");
+    pszParent = getenv(BNR_PARENT_PORT);
     if (pszParent != NULL)
     {
 	PMPI_Info_create(&info);
+	PMPI_Info_set(info, BNR_PARENT_PORT, pszParent);
 	PMPI_Comm_connect(pszParent, info, 0, MPI_COMM_WORLD, &intercomm);
     }
     else
     {
 	intercomm = MPI_COMM_NULL;
     }
-    */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT);
     return MPI_SUCCESS;

@@ -41,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Comm_test_inter(MPI_Comm comm, int *flag)
+EXPORT_MPI_API int MPI_Comm_test_inter(MPI_Comm comm, int *flag)
 {
     static const char FCNAME[] = "MPI_Comm_test_inter";
     int mpi_errno = MPI_SUCCESS;

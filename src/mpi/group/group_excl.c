@@ -43,7 +43,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
+EXPORT_MPI_API int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 {
     static const char FCNAME[] = "MPI_Group_excl";
     int mpi_errno = MPI_SUCCESS;

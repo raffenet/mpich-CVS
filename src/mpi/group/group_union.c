@@ -42,7 +42,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
+EXPORT_MPI_API int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 {
     static const char FCNAME[] = "MPI_Group_union";
     int mpi_errno = MPI_SUCCESS;

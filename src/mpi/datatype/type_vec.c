@@ -48,7 +48,7 @@ Output Parameter:
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_vector(int count, int blocklength, int stride, 
+EXPORT_MPI_API int MPI_Type_vector(int count, int blocklength, int stride, 
 		    MPI_Datatype old_type, MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_vector";
