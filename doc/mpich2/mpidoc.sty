@@ -59,7 +59,7 @@
 
 %
 % Algorithm
-\newenvironment{algorithm}{\begingroup\advance\leftskip2em\obeylines\obeyspaces\makeuscore\noindent\makespaceactive}{\endgroup}
+\newenvironment{algorithm}{\begingroup\advance\leftskip2em\obeylines\obeyspaces\makeuscore\noindent\makespaceactive\parskip 2pt}{\endgroup}
 
 %
 % This is used to indicate a implementation of a routine.
@@ -71,4 +71,4 @@
 \setlength{\parindent}{1em}
 %
 % String version of error codes
-\def\emsg#1{\texttt{**#1}}
+\def\emsg#1{(\texttt{**#1})}

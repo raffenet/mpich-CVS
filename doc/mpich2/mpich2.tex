@@ -53,9 +53,9 @@ This document discusses how the MPICH2 implementation is written using
 the ADI-3 \cite{adi3man} for the supporting functions.  This document
 contains guidelines for the MPICH2 implementation.  One important
 purpose of this document is to provide common guidelines for writing
-the MPICH code.
-
-See also the Coding Standards docment \cite{coding-standards}.
+the MPICH code. 
+See also the Coding Standards docment \cite{coding-standards} for more
+details on general coding practices
 
 To date, this document contains primarily comments on the rules for
 writing the code.  Few comments on the use of ADI-3 routines have been
@@ -91,7 +91,7 @@ miscellaneous rationale for the decisions in this document
 \section{General}
 \label{sec:general}
 
-This section contains general recommendations are requirements for
+This section contains general recommendations and requirements for
 writing the code.  
 
 This section starts with a discussion of the directory structure for the
@@ -130,20 +130,24 @@ items, including the MPE and perftest modules.
       \code{MPI_Unpack_external} functions.
     \item[group]Groups (Section~\ref{sec:groups})
     \item[comm]Communicators (Section~\ref{sec:communicators})
-      \textbf{Question: intercomm separate?}
-    \item[pt2pt]Point-to-point (Section~\ref{sec:pt-2-pt})
+      This has both inter and intracomms.
+    \item[pt2pt]Point-to-point (Section~\ref{sec:pt-2-pt}).  This
+    includes generalized requests (Section~\ref{sec:grequest}) because
+    they use the same completion  
+    routines as other point-to-point routines.
     \item[coll]Collective communication and computation
-      (Section~\ref{sec:collective-comm}) 
-      \textbf{Question: split into intercomm and intracomm?}
+      (Section~\ref{sec:collective-comm}).  Because the MPI collective
+      routines for inter- and intra-comm collectives are the same,
+      both are in this directory.
     \item[topo]Process topology (Section~\ref{sec:topo})
     \item[rma]Remote memory access (Section~\ref{sec:rma})
     \item[init]Starting and ending MPI (Section~\ref{sec:init})
     \item[spawn]Dynamic processes (Section~\ref{sec:spawn})
       \textbf{Question: spawn separate from attach/connect/lookup?}
       Rusty votes no.
-    \item[grequest]User-defined requests (Section~\ref{sec:grequest})
-      \textbf{Question: Part of point-2-point?} Rusty votes yes.  Bill votes
-      no.
+%    \item[grequest]User-defined requests (Section~\ref{sec:grequest})
+%      \textbf{Question: Part of point-2-point?} Rusty votes yes.  Bill votes
+%      no.
     \item[errhan]Error handlers (Section~\ref{sec:errhand})
     \item[handle]Handle transfers (Section~\ref{sec:handle-transfer}).  This
       includes handle to pointer transfers.
@@ -169,14 +173,15 @@ items, including the MPE and perftest modules.
     \item[thread]Thread portability layer.  Supports at least pthreads,
       openmp, and Windows.  Possibly also Solaris threads.
     \end{description}
-  \item[mpid]Implementation of the ADI3
+  \item[mpid]Implementation of the ADI3.  There a many subdirectories here.
   \item[bnr]Process manager interface
     \begin{description}
       \item[include]BNR header files
       \item[mpd]Implementation of \code{bnr} in terms of \code{mpd}
         \begin{description}
           \item[src]Source files for mpd
-          \item[include]Include files for mpd
+          \item[include]Include files for mpd.  No MPICH code includes
+    any files here (MPICH code can only include BNR includes).
         \end{description}
     \end{description}
   \item[binding]Language bindings
@@ -189,12 +194,12 @@ items, including the MPE and perftest modules.
     \item[fortran]Fortran 77 binding (includes \file{configure})
       \begin{description}
       \item[src]
-      %\item[include]
+      \item[include]
       \end{description}
     \item[fortran90]Fortran 90 binding (includes \file{configure})
       \begin{description}
       \item[src]
-      %\item[include]
+      \item[include]
       \end{description}
     \end{description}
   \item[env]Commands like \code{mpiexec} and \code{mpicc}
@@ -228,7 +233,10 @@ items, including the MPE and perftest modules.
 
 \item[test]Testing tools and programs
   \begin{description}
-    \item[util]Contains utilities for running the tests
+    \item[util]Contains utilities for running the tests and routines
+for generating test cases, such as collections of communicators and
+datatypes.  Also contains code for reporting results so that no
+example output files are required (as they are by the MPICH tests).
     \item[mpi]Test of MPI.  Must work with \emph{any} MPI implementation.
       \begin{description}
         \item[xxx]The directory structure should match that for the
@@ -249,8 +257,8 @@ A few comments first:
 \item The first line must set the C style to mpich so that there is a common
       style for the code.  Unfortunately, there is no style variable, so an
       \code{eval} line must be used.  An \code{mpich} style was chosen so that 
-      we can specify the behavior; another (riskier) approach is to adopt one
-      of the predefined styles (riskier because it might change).
+      we can specify the behavior; another approach is to adopt one
+      of the predefined styles (such as BSD).
 \item The comment block includes the copyright statement
 \item The first C statement must be the include of \file{mpiimpl.h}.  This
   ensures that the configuration switches (in \file{mpichconf.h}) are set as
@@ -266,16 +274,38 @@ A few comments first:
 \item The structured comment block uses predefined text for the possible error
   classes.  These are specified as \code{.N name}, along with common text on
   errors \code{.N Errors}.
-\item The first executable statement starts the timer for the routine.  This
+\item The declaration of \code{FCNAME} ensures that all macros and
+routines can easily access the name of the routine.  While some
+compilers (such as \code{gcc}) provide \code{__FUNCTION__} for this,
+that is not portable.
+\item The first executable statement starts the timer (and in general,
+any profiling) for the routine.  This
   is a macro that will expand into the appropriate code, including no code for
   the fastest production version and logging code for SLOG output.
+\item Routines of the form \code{MPID_Xxx_get_ptr} return the pointer
+for an opaque handle.  These do no (or limited) error checking (see
+\code{MPID_Comm_valid_ptr} below).
 \item The actual error checks are guarded by both a compile-time test and a
   runtime test.  Note that only at the end of the list is an error return
-  issued (this allows us to consider adding code to catch \emph{all} errors).
+  issued (this allows us to consider adding code to catch \emph{all}
+  errors).  Note that the macro \code{MPID_BEGIN_ERROR_CHECKS} is
+  followed by a semicolon; this is to ensure that Emacs auto-indents the
+  code properly.
+\item Pointers to opaque objects are validated with routines of the
+form \code{MPID_Xxx_valid_ptr}.  This sets the second argument with an
+error message if the pointer is not valid.
 \item Error codes are generated with \code{MPIR_Err_create_code}.  These use
-  predefined name strings (see error reporting in the ADI manual).
+  predefined name strings (see error reporting in the ADI manual and
+Appendix~\ref{sec:error-codes}. 
 \item The example shows the use of MPID routines to lock the communicator
-  against other threads.
+  against other threads.  Note that locks should be used sparinly; any
+lock that is held is a potential problem for fault-tolerant code.
+That is, if we support the loss of an MPI process, then if a process
+dies while holding a lock, it is difficult to recover.  Where
+possible, use atomic operations (such as atomic increment, provided by
+\code{MPID_Comm_incr} etc.) instead of lock/unlock.  
+\item The last executable statement (before any return) must end the
+timer (and any profiling) with \code{MPID_TimerStateEnd}.
 \item The return always gives \code{MPI_SUCCESS} explicitly.  Any return that
   might return an error code should use \code{MPIR_Return} instead.  
 \end{enumerate}
@@ -408,9 +438,12 @@ version of the routine.  This is shown in the sample implementation template
 To allow a single library to contain all of the files, it is necessary to
 nameshift the object files for either the PMPI or MPI routines.  
 Here is a sample \file{Makefile} target that creates the profiling routines
-with a separate name.  The suffix \code{pf} is used instead of \code{po}
+with a separate name.
+These use a different suffix (\code{pf})\footnote{The suffix \code{pf}
+is used instead of \code{po} 
 because \code{po} is used by the GNU \code{gettext} facility for
-internationalization.  These use a different suffix (\code{pf}) from that used
+internationalization.}
+from that used
 for the normal object files so that there is no confusion over whether
 \code{foo.o} represents the regular file or the file built with the separate
 profiling switch \code{-DMPICH_MPI_FROM_PMPI}\footnote{Without this, rerunning
@@ -480,7 +513,7 @@ prefixes:
 \begin{description}
 \item[MPIR]Routines used only within the MPI implementation (outside of the
   ADI).
-\item[MPID]Routines defined either in the ADI or used within the ADI
+\item[MPID]Routines either defined in the ADI or used within the ADI
 \end{description}
 Many routines will have the \code{MPID} prefix.
 
@@ -602,6 +635,11 @@ that the pointer points to a valid object (for example, by checking a
 ``cookie'' value).  A null pointer is returned by either macro if the handle
 is (known to be) invalid.
 
+Note that most of the opaque objects have reference count semantics.
+Be sure to increment and decrement the reference count as necessary,
+using the routines for atomically modifying the reference count (e.g.,
+\code{MPID_Comm_incr}). 
+
 \subsection{Error reporting}
 \label{sec:error-reporting}
 
@@ -613,17 +651,17 @@ time
 and at runtime, the tests should be placed within the following block:
 \begin{verbatim}
 #ifdef HAVE_ERROR_CHECKING
-BEGIN_ERROR_CHECKS
-...
-END_ERROR_CHECKS
-#endif
+    MPID_BEGIN_ERROR_CHECKS;
+    ...
+    MPID_END_ERROR_CHECKS
+#endif /* HAVE_ERROR_CHECKING */
 \end{verbatim}
-The macros \code{BEGIN_ERROR_CHECKS} and \code{END_ERROR_CHECKS} can
+The macros \code{MPID_BEGIN_ERROR_CHECKS} and \code{MPID_END_ERROR_CHECKS} can
 expand, depending on configuration settings, into either null (i.e.,
 no runtime control) or 
 \begin{verbatim}
-#define BEGIN_ERROR_CHECK if (MPIR_Process.do_error_checks) {
-#define END_ERROR_CHECKS }
+#define MPID_BEGIN_ERROR_CHECK if (MPIR_Process.do_error_checks) {
+#define MPID_END_ERROR_CHECKS }
 \end{verbatim}
 (See Section~\ref{sec:perthread} for \code{MPIR_Process}.)
 
@@ -656,7 +694,7 @@ Some of the error conditions to test for include
 Note that message buffer pointers depend on the datatype; if the datatype is a
 struct type, then a null pointer or otherwise invalid value for the message
 buffer may in fact be valid when combined with the datatype.
-The test \code{MPIR_Check_user_buffer( buf, count, datatype )} checks that the
+The test \code{MPID_Check_user_buffer( buf, count, datatype )} checks that the
 specified user buffer represents a valid address.  This can be as simple as
 testing that \code{buf + datatype->real_lower_bound} is not null.  If we use
 this routine for testing, then the test on the message buffer can be made
@@ -794,14 +832,14 @@ macros.
 Access to the fields in \code{MPICH_PerThread_t} is made through a macro that
 allows both the compile-time and run-time single-threaded case to directly
 access the data without using, for example, \code{pthread_getspecific}.
-To access this data, the routine \code{MPIR_GetPerThread} is used.  This
+To access this data, the routine \code{MPID_GetPerThread} is used.  This
 might have a definition like
 \begin{verbatim}
 #ifdef MPICH_SINGLE_THREADED
 extern MPICH_PerThread_t MPIR_Thread;
-#define MPIR_GetPerThread(p) p = &MPIR_Thread
+#define MPID_GetPerThread(p) p = &MPIR_Thread
 #else /* Assumes pthreads for simplicity */
-#define MPIR_GetPerThread(p) {\
+#define MPID_GetPerThread(p) {\
      p = pthread_getspecific( MPIR_Process.thread_key ); \
      if (!p) { p = MPID_Calloc( 1, sizeof(MPID_PerThread_t ) );\
                pthread_setspecific( MPIR_Process.thread_key, p );}}
@@ -841,6 +879,10 @@ simply
 (See questions in the ADI document on whether these should be explicitly
 pointers or if values are prefered.)
 
+Note that these timers should normally not be used directly; instead,
+the timer macros \code{MPID_TimerStateBegin} and
+\code{MPID_TimerStateEnd} should be used.  
+
 \subsubsection{Instrumenting the MPI code.}
 Each major routine will contain references to 
 \begin{verbatim}
@@ -858,7 +900,7 @@ Simple informational routines such as \code{MPI_Comm_size} and
 \textbf{Question: Also keep track of max/min times and either sum of squares
   or a histogram of times?}
 
-Each state belongs to a class; there are 32 classes (so that we can use
+Each state belongs to a class; there are at most 32 classes (so that we can use
 bitwise tests on a 32 bit \code{unsigned int}).  Instrumentation can be
 controlled:
 \begin{description}
@@ -990,6 +1032,15 @@ declared within the routine.  A typical use might be
     }
 \end{verbatim}
 
+\subsubsection{Testing for Memory Errors}
+The \file{tr2} (TRacing memory package) provides both tests for memory
+leaks and for memory overruns by using sentinals; it can also
+pre-initialize all allocated memory to various patterns.  These tests
+should be made a part of the nightly rounds (even in MPICH).  
+Question: what is the configure command to enable memory tracing, and
+what are the command-line/environment variables that are used to
+control the level of detail when tracing is enabled?
+
 \subsection{Runtime Parameters}
 \label{sec:runtime-params}
 MPICH-1 suffers from having many compile-time parameters that could just as
@@ -1081,6 +1132,11 @@ The format of the configuration file has not been defined.  Bill is leaning
 towards an XML format to allow for simple use of tools to manage the file and
 a standard way to organize parameters in hierarchies.
 
+A side note: in MPICH 1.2.2, a commandline option for controlling the
+p4 socket code using the format \code{-p4sctrl name=val:name=val:...}
+was used.  Should we standardize on this (key \code{=} value pairs)
+for commandline options and environment variables?
+
 \subsection{Threads}
 \label{sec:threads}
 All thread-related operations must not assume a particular thread
@@ -1103,13 +1159,23 @@ Question: do we just want to emulate the missing operations, or (and?)
 do we want to know that they are missing so that an alternative
 approach can be taken?
 
+\subsection{Initialization and Finalization}
+\label{sec:initialization}
+In order to simplify the development of independent modules for parts
+of MPICH (such as the topology or collective routines),
+\code{MPI_Init} and \code{MPI_Init_thread} call a series of
+initialization routines for each such package.  To handle
+\code{MPI_Finalize}, each package can register an exit handler.  See
+Section~\ref{sec:finalize} for details.
+
 \subsection{Coding Practices}
 \label{sec:coding-practices}
 This section reviews some coding practices for the MPICH code.
 
 \begin{description}
 \item[Function prototypes.]
-All routines should be prototyped.  The prototypes should be in the
+All routines should be prototyped and declared in prototype form.  The
+prototypes should be in the 
 smallest scope possible.  For example, if the routine is used only
 within the files in a subdirectory, the prototype should be in an
 include file within that directory.  This helps identify functions that are
@@ -1119,7 +1185,9 @@ used outside of their intended scope.
 Functions used entirely within a single file should be declared
 \code{static}.  Functions that are not static must follow the naming
 convention of starting with \code{MPI_} or \code{PMPI_} (for routines
-implementing the MPI Standard) or \code{MPIR_} for internal routines.  
+implementing the MPI Standard), \code{MPIR_} for internal routines
+used only in the MPICH (and not MPID) code, and \code{MPID_} for all
+other internal routines.  
 Global symbols, such as keyvals, should use \code{MPICH_} as the
 prefix.  Also consider the use of \code{inline}, along with the
 autoconf macro \code{AC_C_INLINE} to test for this feature.
@@ -1199,7 +1267,7 @@ assume that several data structures use flags.
 #define MPID_CLR_FLAG(ds,field)    (ds)->_flag &= ~(field)
 \end{verbatim}
 \mpiconst{MPI_Datatype}s need multiple boolean flags (e.g., has a
-sticky upper bound marker, lower bound marker).  Window objects also
+sticky upper bound marker, lower bound marker).  MPI Window objects also
 have multiple flags.
 
 \end{description}
@@ -1212,7 +1280,7 @@ For MPICH2, these should be cleanly separated.  Of course, the full MPICH
 distribution will contain these and know how to build them.
 
 To simplify the construction of a
-full MPICH distribution, there should be a Makefile (and configure
+full MPICH distribution, there will be a Makefile (and configure
 options) that knows how to build MPICH2 with MPE, perftest, the test
 suite, and other options.  These should \emph{not} be part of the base
 MPICH2 project (as far as CVS is concerned).  This will encourage
@@ -2045,7 +2113,7 @@ user provided are returned, rather than an optimized form).
 Uses \code{dataloop} field to identify how the datatype was constructed.
 The \code{combiner} type must be one of 
 
-\noindent\mpiconst{MPI_COMBINER_NAMED}\\
+\mpiconst{MPI_COMBINER_NAMED}\\
 \mpiconst{MPI_COMBINER_DUP}\\
 \mpiconst{MPI_COMBINER_CONTIGUOUS}\\
 \mpiconst{MPI_COMBINER_VECTOR}\\
@@ -2146,7 +2214,7 @@ over the header.
 
 Heterogeneous case:  In all cases (RMR and XDR/external32/etc.), each basic
 datatype must be identified and processed.  Further, for RMR, we need to know
-the origin of the data so the the receiver can figure out what to do.
+the origin of the data so that the receiver can figure out what to do.
 
 Question: some communicators may require a symmetric format, such as XDR or
 external32.  An example is any communicator that involves a process connected
@@ -2154,7 +2222,7 @@ through IMPI \cite{impi}.  Do communicators need a structure that contains
 information on heterogeneity (e.g., a \mpids{MPI_Comm}{data_rep})?
 
 Question:  The MPI-FT project (no papers available) has proposed reordering
-the data so that data of each time is placed together.  For example, instead
+the data so that data of each type is placed together.  For example, instead
 of sending char-int-char-int, it might send int-int-char-char, and rely on the
 datatype at the destination to receive it correctly.  Do we want to make this
 an option?  How do we handle the case that less than one complete instance of
@@ -2320,7 +2388,7 @@ We may want to detect the special case of a group that is a subset of
 structure?).  Such a flag might be
 \mpids{MPI_Group}{MPID_GROUP_SUBSET_WORLD}. 
 
-\begin{algorithm}
+%\begin{algorithm}
 If either group is not a subset of \code{MPI_COMM_WORLD}, then 
 \begin{enumerate}
 \item For \code{group2}, if necessary, create a new array containing the pairs
@@ -2337,9 +2405,10 @@ If either group is not a subset of \code{MPI_COMM_WORLD}, then
   in 
   the sorted array \code{lpid_to_lrank} in \code{group2}.
 \end{enumerate}
-\end{algorithm}
+%\end{algorithm}
 
-Question: should there be a \code{MINIMUM_MEMORY} option that controls when
+Question: should there be a
+\code{MINIMUM_MEMORY}\index{MINIMUM_MEMORY} option that controls when 
 memory is left allocated to speed subsequent operations?  In this case, we
 leave the memory allocated so as to speed subsequent translations.  Normally,
 this routine is only used in tracing libraries to convert relative ranks into
@@ -2512,6 +2581,7 @@ The multithreaded case is more difficult.  You cannot do
   \mpifunc{MPI_Allreduce}
   unlock
 \end{algorithm}
+\noindent 
 because different threads in the same process might lock the data structure,
 causing a deadly embrace.
 One possible solution is to use a lock/read/unlock on the bit vector, followed
@@ -2527,6 +2597,7 @@ along with a queue containing the context ids of communicators that
 are requesting a new context id and a variable that indicates that
 some thread has acquired the rights to the mask, are stored in
 thread-shared memory.
+
 \begin{algorithm}
 while (no context id found) {
     local_mask = 0
@@ -2733,19 +2804,20 @@ group id of zero and the rank in \code{MPI_COMM_WORLD}.  More complex jobs
 (such as that in Figure~\ref{fig:spawn-ic}) would have multiple BNR groups.
 
 \begin{figure}
-\begin{verbatim}
-(place holder for nice figure containing the following
-(a)         g1             g2            (separate MPI jobs)
-(b)         g1 ----------- g2            (connect/attach)
-(c)         g1 ----------- g2            (g1 spawns)
-            |
-            g3
-(d)         g1 ----------- g2            (g2 spawns)
-            |              |
-            g3             g4
-(e)         (intercomm_merge using (g1-g2) as peer comm, and 
-            (g1+g3) and (g2+g4) as the local groups.
-\end{verbatim}
+% \begin{verbatim}
+% (place holder for nice figure containing the following
+% (a)         g1             g2            (separate MPI jobs)
+% (b)         g1 ----------- g2            (connect/attach)
+% (c)         g1 ----------- g2            (g1 spawns)
+%             |
+%             g3
+% (d)         g1 ----------- g2            (g2 spawns)
+%             |              |
+%             g3             g4
+% (e)         (intercomm_merge using (g1-g2) as peer comm, and 
+%             (g1+g3) and (g2+g4) as the local groups.
+% \end{verbatim}
+\centerline{\psfig{file=intercomm.eps}}
 \caption{Example of MPI process creation and
 \mpifunc{MPI_Intercomm_merge}}\label{fig:spawn-ic} 
 \end{figure}
@@ -4804,23 +4876,6 @@ name server) do not need to load those libraries just to resolve
 symbols that appear only in the functions that appear in code called
 during \mpifunc{MPI_Finalize}.  
 
-Question:
-Since storing function pointers is vunerable to user-errors that
-overwrite memory, do we want to add sentinals, either on each side of
-the function stack or around each entry in the stack?
-
-Question: 
-Do we need to provide an ordering to these callbacks?  We could add a
-third argument that specified a phase; the callbacks would be called
-in phase order; within a phase, the order would be arbitrary.
-
-Question:
-Another approach is to add these as internal attributes on
-\mpiconst{MPI_COMM_SELF}, with the delete function corresponding to
-the callback defined above. The major problem with this is defining
-and communicating the private keyvals without losing the separation
-of the module from the rest of the code.  The other problem with
-relying on the attribute is that the order of invocation is not defined.
 
 A partial list of subsystems that we might handle with these finalize
 callbacks include 
@@ -5843,33 +5898,6 @@ Standard \code{configure} and \code{Makefile} variables
   to rebuild the package with \code{-g} added to all compile lines.
 \end{description}
 
-If \code{automake} is used, add
-\begin{verbatim}
-# Use AM_xFLAGS to modify compiler behavior
-AM_CFLAGS=${COPTIONS}
-\end{verbatim}
-to the \file{Makefile.am}. 
-If we do use \code{automake}, we will provide a tool to edit the generated
-files to both clean them up and to patch errors (e.g., the re-run
-\code{automake} in \emph{distributed} versions of the \file{Makefile}s).
-
-Files produced by \code{automake} must be modified.  If we use
-\code{automake}, we will provide an \code{automake-fixup} that 
-\begin{enumerate}
-\item Removes bogus targets for updating the \code{configure} and
-  \code{Makefile.in} files.  Automake's targets for these are not correct,
-  particularly for distributions (it doesn't ensure that the correct versions
-  of the various autotools are used; the stock \code{automake} doesn't even
-  generate a correct \file{Makefile.in}).  Of particular importance is
-  removing the \code{stamp-h} target and dependencies.
-\item Cleans up empty targets and dependencies.  While not essential, the
-  \file{Makefile.in}s generated by \code{automake} are very messy; user's are
-  used to looking at \file{Makefile}s and understanding what is going on.  For
-  example, this pass can eliminate the many hook targets such as
-  \code{check-am}.
-\item Fixes errors.  Some of these have been fixed in some of the
-  \code{automake} installations, but there will undoubtably be others.
-\end{enumerate}
 
 \subsection{Configure Flags}
 \label{sec:config-flags}
@@ -6356,6 +6384,9 @@ performance.
 \item This should also be in XML format.
     Question: Should we add an XML output format to \code{mpptest}?
 Is there any clear XML definition yet for 2-d data?
+Tabular output can use the \code{gtable} library to generate output in
+different formats.
+
 
 \end{enumerate}
 We should maintain the same data for vendor and other MPI
@@ -6369,10 +6400,12 @@ combinations of arguments.  A comprehensive test needs to check many
 of these combinations.  
 
 \begin{enumerate}
+
 \item Datatypes. It is particularly important to check cases where the
-sender and receiver use datatypes with the same type signature but
+sender and receiver use datatypes with the same type signature but 
 different type maps (e.g., contiguous data at the sender and indexed
-at the receiver).  
+at the receiver).  The kinds of datatypes to test include
+
      \begin{enumerate}
      \item All predefined datatypes
      \item Some mixed types
@@ -6408,11 +6441,18 @@ at the receiver).
      take an \code{nelm} that specifies the number of basic
      types.  If there is a required divisor of \code{nelm} (e.g., the
      datatype is a vector with a block count of 13), that is
-     specified, allowing the testing code to compute valid \code{nelm}s.
+     specified, allowing the testing code to compute valid
+     \code{nelm}s.
+
+     To make it easy to add types and to control the types used in
+     testing (so that exhaustive and reduced tests are easy to
+     manage), there should be a table-driven form, based on text
+     strings.  SKaMPI may use a similar approach.
 
      Question:  For collective scatter and gather routines
      (particularly the ``v'' versions), do we also need routines to
      allocate, initialize, and check the communication buffers?
+
 \item Communicators
     \begin{enumerate}
     \item \code{MPI_COMM_WORLD}
@@ -6426,10 +6466,89 @@ at the receiver).
     \item Intercommunicator (built from the groups containing odd,
 or even ranks in MPI 
     \end{enumerate}
-\item Message Sizes from zero to at least 128 KB
+
+\item Message Sizes from zero to at least 128 KB.  These must be cover
+enough range so that all protocols are tested within the device.  To
+simplify this, there should be a way to query the device about the
+number of protocols and message sizes (even if the results are only
+approximate, as they could be for an adaptive method).
+
+\item Communication Patterns
+In addition to the unit tests, there must be a way to test
+interactions between different pending operations.  We may want to
+have a set of communication specifications, containing setup,
+initiate, wait, and rundown, that would allow various combinations of
+nonblocking and blocking communication to be selected either from a
+table or at random.  These should also include successive collective
+operations, using the same and different operations.
+
 \end{enumerate}
 
-Test harness
+\subsection{Test harness}
+The is a common test harness for running tests.  This will
+\begin{enumerate}
+\item Allow selecting the level of testing; e.g., exhaustive (all
+tests for all combinations of datatypes and communicators), factored
+(all tests for some combination of datatypes and communicators), or
+reduced (a sampling of tests), or random (tests chosen using a
+pseudorandom number generator).  
+
+\item The test harness is table driven, allowing a specific set to be
+easily specified.  
+\end{enuerate}
+This test harness replaces the current \file{runtests} scripts.
+
+In addition, each test will use simple set of routine (similar to the
+ones in \file{test.c} used in some of the current tests.  A simple
+communication test might look like
+\begin{verbatim}
+#include "mpi.h"
+#include "mpitest.h"
+
+int main( int argc, char **argv )
+{
+    int errs;
+    int sender, receiver;
+    MTest_Datatypes sendtype, recvtype;
+    ...
+    MTest_Init( &argc, &argv );   /* Testing initialization */
+    while (MPI_Comm = MTest_Get_comm( &sender, &receiver )) {
+         while (MTest_Get_datatypes( &sendtype, &recvtype ) ) {
+             if (sender) {
+                 sendbuf = sendtype.InitBuf( &sendtype );
+                 ... send operation
+                 sendtype.FreeBuf( &sendtype );
+             } 
+             else if (receiver) {
+                 recvbuf = recvtype.InitBuf( &recvtype );
+                 ... recv operation
+                 if (MTest_Check_recv( &status, &recvtype ))) {
+                     errs++;
+                     MTest_Errmsg( msg, ... );  /* Any process can call */
+                     }
+                 else {
+                     MTest_Message( msg, ... );  /* ditto */
+                 }
+                 recvtype.FreeBuf( &recvtype );
+             }
+         }
+         MTest_Reset_datatypes();
+    }
+    MTest_Finalize( errs );
+    return 0;
+}
+\end{verbatim}
+This uses a ``get next'' interface for the communicators and datatypes
+because, even though it isn't thread-safe, it is very convenient to
+use.  A thread-safe form can also be provided if necessary.  All MPI
+initialization and finalization is done within the \code{MTest}
+routines.  This also supports control of debugging output: command
+line and environment variables control how much output the
+\code{MTest_Message} and \code{MTest_Errmsg} generate.  In the
+automated test mode, \code{MTest_Message} produces no output; in the
+full debugging mode, it performs a \code{printf/fflush} with each
+call.  Other versions of \code{MTest_Get_datatypes} and
+\code{MTest_Check_recv} can be used for collective routines.
 
 \subsection{Debugger Interface}
 \label{sec:debug-interface}
@@ -7043,6 +7162,28 @@ reduction operation (there is no return value).  MPICH used an external int
 \subsection{Topology}
 \subsection{RMA}  
 \subsection{Starting and Ending MPI}
+
+The following three questions have to do with the callbacks registered
+for \code{MPI_Finalize}.
+
+Question:
+Since storing function pointers is vunerable to user-errors that
+overwrite memory, do we want to add sentinals, either on each side of
+the function stack or around each entry in the stack?
+
+Question: 
+Do we need to provide an ordering to these callbacks?  We could add a
+third argument that specified a phase; the callbacks would be called
+in phase order; within a phase, the order would be arbitrary.
+
+Question:
+Another approach is to add these as internal attributes on
+\mpiconst{MPI_COMM_SELF}, with the delete function corresponding to
+the callback defined above. The major problem with this is defining
+and communicating the private keyvals without losing the separation
+of the module from the rest of the code.  The other problem with
+relying on the attribute is that the order of invocation is not defined.
+
 \subsection{Dynamic processes}
 \subsection{Name service}
 \subsection{User-defined requests}
@@ -7053,6 +7194,38 @@ reduction operation (there is no return value).  MPICH used an external int
 \subsection{Runtime Environment}
 \subsection{Profiling}
 \subsection{MPI command environment}
+
+\subsection{Portability}
+Here is some discussion on what would be necessary if \code{automake}
+was used.
+
+If \code{automake} is used, add
+\begin{verbatim}
+# Use AM_xFLAGS to modify compiler behavior
+AM_CFLAGS=${COPTIONS}
+\end{verbatim}
+to the \file{Makefile.am}. 
+If we do use \code{automake}, we will provide a tool to edit the generated
+files to both clean them up and to patch errors (e.g., the re-run
+\code{automake} in \emph{distributed} versions of the \file{Makefile}s).
+
+Files produced by \code{automake} must be modified.  If we use
+\code{automake}, we will provide an \code{automake-fixup} that 
+\begin{enumerate}
+\item Removes bogus targets for updating the \code{configure} and
+  \code{Makefile.in} files.  Automake's targets for these are not correct,
+  particularly for distributions (it doesn't ensure that the correct versions
+  of the various autotools are used; the stock \code{automake} doesn't even
+  generate a correct \file{Makefile.in}).  Of particular importance is
+  removing the \code{stamp-h} target and dependencies.
+\item Cleans up empty targets and dependencies.  While not essential, the
+  \file{Makefile.in}s generated by \code{automake} are very messy; user's are
+  used to looking at \file{Makefile}s and understanding what is going on.  For
+  example, this pass can eliminate the many hook targets such as
+  \code{check-am}.
+\item Fixes errors.  Some of these have been fixed in some of the
+  \code{automake} installations, but there will undoubtably be others.
+\end{enumerate}
 
 \let\SaveBibliography=\thebibliography
 \def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}
