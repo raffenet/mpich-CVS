@@ -158,6 +158,9 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 	    group_ptr2->rank >= 0) {
 	    mylpid = group_ptr2->lrank_to_lpid[group_ptr2->rank].lpid;
 	}
+	else {
+	    mylpid = -2;
+	}
 	k = size1;
 	for (i=0; i<size2; i++) {
 	    if (group_ptr2->lrank_to_lpid[i].flag) {
