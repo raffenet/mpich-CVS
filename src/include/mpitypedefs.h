@@ -64,19 +64,38 @@ typedef MPIU_INT64_T int64_t;
 
 typedef MPIU_SIZE_T MPIU_Size_t;
 
-/* FIXME: These need a definition.  What are they for? */
-/* These don't work.
-   I don't think there is a legal way in C to convert a pointer to an integer
-   without generating compiler warnings or errors.
- */
-#ifdef HAVE_WINDOWS_H
-#define POINTER_TO_AINT(a)   ( ( MPI_Aint )( 0xffffffff & (__int64) ( a ) ) )
-#define POINTER_TO_OFFSET(a) ( ( MPI_Offset ) ( (__int64) ( a ) ) )
-#else
-#define POINTER_TO_AINT(a)   ( ( MPI_Aint )( a ) )
-#define POINTER_TO_OFFSET(a) ( ( MPI_Offset ) ( a ) )
-#endif
+/* Use the MPIU_PtrToXXX macros to convert pointers to and from integer types */
 
+/* The Microsoft compiler will not allow casting of different sized types without
+ * printing a compiler warning.  Using these macros allows compiler specific
+ * type casting and avoids the warning output.  These macros should only be used
+ * in code that can handle loss of bits.
+ */
+
+/* PtrToLong converts a pointer to a long type, truncating bits if necessary */
+#ifdef PtrToLong
+#define MPIU_PtrToLong PtrToLong
+#else
+#define MPIU_PtrToLong(a) (long)(a)
+#endif
+/* PtrToInt converts a pointer to a int type, truncating bits if necessary */
+#ifdef PtrToInt
+#define MPIU_PtrToInt PtrToInt
+#else
+#define MPIU_PtrToInt(a) (int)(a)
+#endif
+/* LongToPtr converts a long to a pointer type, extending bits if necessary */
+#ifdef LongToPtr
+#define MPIU_LongToPtr LongToPtr
+#else
+#define MPIU_LongToPtr(a) (void*)(a)
+#endif
+/* IntToPtr converts a int to a pointer type, extending bits if necessary */
+#ifdef IntToPtr
+#define MPIU_IntToPtr IntToPtr
+#else
+#define MPIU_IntToPtr(a) (void*)(a)
+#endif
 
 /* ------------------------------------------------------------------------- */
 /* end of mpitypedefs.h */

@@ -622,8 +622,8 @@ static int do_accumulate_op(MPID_Request *rreq)
         for (i=0; i<vec_len; i++)
 	{
             count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
-            (*uop)((char *)rreq->dev.user_buf + POINTER_TO_AINT( dloop_vec[i].DLOOP_VECTOR_BUF ),
-                   (char *)rreq->dev.real_user_buf + POINTER_TO_AINT( dloop_vec[i].DLOOP_VECTOR_BUF ),
+            (*uop)((char *)rreq->dev.user_buf + MPIU_PtrToInt( dloop_vec[i].DLOOP_VECTOR_BUF ),
+                   (char *)rreq->dev.real_user_buf + MPIU_PtrToInt( dloop_vec[i].DLOOP_VECTOR_BUF ),
                    &count, &type);
         }
         

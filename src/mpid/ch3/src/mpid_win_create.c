@@ -137,8 +137,8 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
 
     /* FIXME: This needs to be fixed for heterogeneous systems */
     tmp_buf[3*rank] = base;
-    tmp_buf[3*rank+1] = (void *) disp_unit;
-    tmp_buf[3*rank+2] = (void *) (*win_ptr)->handle; 
+    tmp_buf[3*rank+1] = MPIU_IntToPtr(disp_unit);
+    tmp_buf[3*rank+2] = MPIU_IntToPtr((*win_ptr)->handle);
 
     mpi_errno = NMPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                                tmp_buf, 3 * sizeof(void *), MPI_BYTE, 
@@ -157,8 +157,8 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     for (i=0; i<comm_size; i++)
     {
         (*win_ptr)->base_addrs[i] = tmp_buf[3*i];
-        (*win_ptr)->disp_units[i] = (int) tmp_buf[3*i+1];
-        (*win_ptr)->all_win_handles[i] = (MPI_Win) tmp_buf[3*i+2];
+        (*win_ptr)->disp_units[i] = MPIU_PtrToInt(tmp_buf[3*i+1]);
+        (*win_ptr)->all_win_handles[i] = MPIU_PtrToInt(tmp_buf[3*i+2]);
     }
 
     MPIU_Free(tmp_buf);
@@ -557,8 +557,8 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                         for (i=0; i<vec_len; i++)
 			{
                             count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
-                            (*uop)((char *)tmp_buf + POINTER_TO_AINT( dloop_vec[i].DLOOP_VECTOR_BUF ),
-                                   (char *)win_buf_addr + POINTER_TO_AINT ( dloop_vec[i].DLOOP_VECTOR_BUF ),
+                            (*uop)((char *)tmp_buf + MPIU_PtrToInt( dloop_vec[i].DLOOP_VECTOR_BUF ),
+                                   (char *)win_buf_addr + MPIU_PtrToInt( dloop_vec[i].DLOOP_VECTOR_BUF ),
                                    &count, &type);
                         }
 

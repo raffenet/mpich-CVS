@@ -438,8 +438,8 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                     type_size = MPID_Datatype_get_basic_size(type);
                     for (i=0; i<vec_len; i++) {
                         count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
-                        (*uop)((char *)tmp_buf + POINTER_TO_AINT( dloop_vec[i].DLOOP_VECTOR_BUF ),
-                            (char *)win_buf_addr + POINTER_TO_AINT( dloop_vec[i].DLOOP_VECTOR_BUF ),
+                        (*uop)((char *)tmp_buf + MPIU_PtrToInt( dloop_vec[i].DLOOP_VECTOR_BUF ),
+                            (char *)win_buf_addr + MPIU_PtrToInt( dloop_vec[i].DLOOP_VECTOR_BUF ),
                                &count, &type);
                     }
                     

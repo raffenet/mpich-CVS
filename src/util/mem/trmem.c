@@ -36,9 +36,6 @@ int MPIU_trvalid( const char str[] );
 #endif
 #endif
 
-/* If you change this, you must change the format spec (%lx) to match */
-typedef long PointerInt;
-
 #if defined(HAVE_STDLIB_H) || defined(STDC_HEADERS)
 #include <stdlib.h>
 #else
@@ -257,7 +254,7 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
 	if (*nend == ALREADY_FREED) {
 	    MPIU_Error_printf( 
 		     "[%d] Block [id=%d(%lu)] at address %lx was already freed\n", 
-		     world_rank, head->id, head->size, (PointerInt)a + sizeof(TrSPACE) );
+		     world_rank, head->id, head->size, MPIU_PtrToLong(a) + sizeof(TrSPACE) );
 	    head->fname[TR_FNAME_LEN-1]	  = 0;  /* Just in case */
 	    head->freed_fname[TR_FNAME_LEN-1] = 0;  /* Just in case */
 	    MPIU_Error_printf(
@@ -272,7 +269,7 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
 	    /* Damaged tail */
 	    MPIU_Error_printf(
 		     "[%d] Block [id=%d(%lu)] at address %lx is corrupted (probably write past end)\n", 
-		     world_rank, head->id, head->size, (PointerInt)a );
+		     world_rank, head->id, head->size, MPIU_PtrToLong(a) );
 	    head->fname[TR_FNAME_LEN-1]= 0;  /* Just in case */
 	    MPIU_Error_printf(
 		     "[%d] Block allocated in %s[%d]\n", world_rank, 
@@ -296,7 +293,7 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
 	head->next->prev = head->prev;
     if (TRlevel & TR_FREE)
 	MPIU_Error_printf( "[%d] Freeing %lu bytes at %lx in %s:%d\n", 
-		     world_rank, head->size, (PointerInt)a + sizeof(TrSPACE),
+		     world_rank, head->size, MPIU_PtrToLong(a) + sizeof(TrSPACE),
 		     file, line );
     
     /* 
@@ -349,7 +346,7 @@ int MPIU_trvalid( const char str[] )
 	    if (!errs) MPIU_Error_printf( "%s\n", str );
 	    errs++;
 	    MPIU_Error_printf( "[%d] Block at address %lx is corrupted\n", 
-			 world_rank, (PointerInt)head );
+			 world_rank, MPIU_PtrToLong(head) );
 	    /* Must stop because if head is invalid, then the data in the
 	       head is probably also invalid, and using could lead to 
 	       SEGV or BUS  */
@@ -363,7 +360,7 @@ int MPIU_trvalid( const char str[] )
 	    head->fname[TR_FNAME_LEN-1]= 0;  /* Just in case */
 	    MPIU_Error_printf( 
 "[%d] Block [id=%d(%lu)] at address %lx is corrupted (probably write past end)\n", 
-			 world_rank, head->id, head->size, (PointerInt)a );
+			 world_rank, head->id, head->size, MPIU_PtrToLong(a) );
 	    MPIU_Error_printf(
 			 "[%d] Block allocated in %s[%d]\n", 
 			 world_rank, head->fname, head->lineno );
@@ -404,7 +401,7 @@ void MPIU_trdump( FILE *fp )
     head = TRhead;
     while (head) {
 	FPRINTF( fp, "[%d] %lu at [%lx], id = ", 
-		 world_rank, head->size, (PointerInt)head + sizeof(TrSPACE) );
+		 world_rank, head->size, MPIU_PtrToLong(head) + sizeof(TrSPACE) );
 	if (head->id >= 0) {
 	    head->fname[TR_FNAME_LEN-1] = 0;
 	    FPRINTF( fp, "%d %s[%d]\n", 
@@ -597,7 +594,7 @@ void *MPIU_trrealloc( void *p, int size, int lineno, const char fname[] )
 	MPIU_Error_printf( 
 "[%d] Block at address %lx is corrupted; cannot realloc;\n\
 may be block not allocated with MPIU_trmalloc or MALLOC\n", 
-		     world_rank, (PointerInt)pa );
+		     world_rank, MPIU_PtrToLong(pa) );
 	return 0;
     }
 
