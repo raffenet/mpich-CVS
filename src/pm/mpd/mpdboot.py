@@ -403,7 +403,8 @@ def usage():
 if __name__ == '__main__':
     try:
         mpdboot()
-    except SystemExit, errmsg:
-        pass
     except mpdError, errmsg:
         print 'mpdboot failed: %s' % (errmsg)
+    ## RMB: I commented these 2 lines out as unnec (I think) on 10/5/04
+    # except SystemExit, errmsg:
+        # pass

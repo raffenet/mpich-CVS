@@ -50,7 +50,11 @@ def mpdcleanup():
 	usage()
         mpd_raise('invalid arg(s) specified: ' + ' '.join(args) )
 
-    cleanFile = '/tmp/mpd2.console_%s' % (user)
+    if environ.has_key('MPD_CON_EXT'):
+        conExt = '_' + environ['MPD_CON_EXT']
+    else:
+        conExt = ''
+    cleanFile = '/tmp/mpd2.console_' + user + conExt
     system( '%s %s' % (cleanCmd,cleanFile) )
     if rshCmd == 'ssh':
 	xOpt = '-x'

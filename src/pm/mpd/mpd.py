@@ -94,6 +94,10 @@ def _mpd_init():
     mpd_set_my_id(g.myId)
     g.myrealUsername = mpd_get_my_username()
     g.currRingSize = 1    # just for now
+    if environ.has_key('MPD_CON_EXT'):
+        g.conExt = '_' + environ['MPD_CON_EXT']
+    else:
+        g.conExt = ''
 
     # setup syslog
     import sys    # to get access to excepthook in next line
@@ -113,7 +117,7 @@ def _mpd_init():
             exit(0)
         chdir("/")  # free up filesys for umount
         umask(0)
-        g.logFilename = '/tmp/mpd2.logfile_' + mpd_get_my_username()
+        g.logFilename = '/tmp/mpd2.logfile_' + mpd_get_my_username() + g.conExt
         try:    unlink(g.logFilename)
         except: pass
         logFileFD = open(g.logFilename,O_CREAT|O_WRONLY|O_EXCL,0600)
@@ -141,7 +145,7 @@ def _mpd_init():
     g.allExiting      = 0
     g.exiting         = 0    # for mpdexit
     if g.allowConsole:
-        g.conListenName = '/tmp/mpd2.console_' + mpd_get_my_username()
+        g.conListenName = '/tmp/mpd2.console_' + mpd_get_my_username() + g.conExt
         consoleAlreadyExists = 0
         if access(g.conListenName,R_OK):    # if console is there, see if mpd is listening
             tempSocket = socket(AF_UNIX,SOCK_STREAM)  # note: UNIX socket

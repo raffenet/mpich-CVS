@@ -17,26 +17,31 @@ int main(int argc, char *argv[])
 
     if ((pwent = getpwuid(getuid())) == NULL)    /* for real id */
     {
-	printf("%s: getpwnam failed",argv[0]);
-	exit(-1);
+        printf("%s: getpwnam failed",argv[0]);
+        exit(-1);
     }
 
     /* if just want help, go straight to the program; else setup console */
     if (argc == 2  &&  strncmp("--help", argv[1], 6) == 0)
     {
-	/* do not need console */
+        /* do not need console */
     }
     else
     {
         /* setup default console */
         snprintf(console_name,NAME_LEN,"/tmp/mpd2.console_%s", pwent->pw_name );
+        if (s = getenv("MPD_CON_EXT"))
+        {
+            strcat(console_name,"_");
+            strcat(console_name,s);
+        }
 
         /* handle undocumented options: */
-	/*   'use user console' even if setuid root; */
-	/*   either set an env var or place --mpduuc on cmd-line */
+        /*   'use user console' even if setuid root; */
+        /*   either set an env var or place --mpduuc on cmd-line */
         if (getenv("MPD_USE_USER_CONSOLE"))
         {
-	    /* nothing to do; just stick with default console */
+            /* nothing to do; just stick with default console */
         }
         else if (argc > 1  &&  strncmp(argv[1],"--mpduuc",8) == 0)
         {
@@ -63,8 +68,8 @@ int main(int argc, char *argv[])
         {
             /*****
             printf("cannot connect to local mpd at: %s\n", console_name);
-	    printf("probable cause:  no mpd daemon on this machine\n");
-	    printf("possible cause:  unix socket %s has been removed\n", console_name);
+            printf("probable cause:  no mpd daemon on this machine\n");
+            printf("possible cause:  unix socket %s has been removed\n", console_name);
             exit(-1);
             *****/
         }
@@ -72,8 +77,8 @@ int main(int argc, char *argv[])
         {
             snprintf(env_unix_socket,NAME_LEN,"UNIX_SOCKET=%d",sock);
             putenv(env_unix_socket);
-	    snprintf(cmd,NAME_LEN,"realusername=%s\n",pwent->pw_name);
-	    write(sock,cmd,strlen(cmd));
+            snprintf(cmd,NAME_LEN,"realusername=%s\n",pwent->pw_name);
+            write(sock,cmd,strlen(cmd));
         }
     }
 
@@ -83,12 +88,12 @@ int main(int argc, char *argv[])
     newargv = (char **) malloc(sizeof(char*) * (argc + 2));  /* pad a bit */
     if ((NAME_LEN - (strlen("mpdchkpyver.py")+1)) > 0)
     {
-	strncpy(cmd,argv[0],NAME_LEN-strlen("mpdchkpyver.py"));
+        strncpy(cmd,argv[0],NAME_LEN-strlen("mpdchkpyver.py"));
     }
     else
     {
-	printf("insufficient space for full pathname of mpdchkpyver.py in buffer\n");
-	exit(-1);
+        printf("insufficient space for full pathname of mpdchkpyver.py in buffer\n");
+        exit(-1);
     }
     if (s = strrchr(cmd,'/'))
     {
@@ -102,7 +107,7 @@ int main(int argc, char *argv[])
     /* printf("MPDROOT: CMD=%s\n",cmd); */
     newargv[0] = cmd;
     for (i=0; i < argc; i++)
-	newargv[i+1] = argv[i];
+        newargv[i+1] = argv[i];
     newargv[i+1] = 0;
     execvp(cmd,&newargv[0]);
     printf("mpdroot failed to exec :%s:\n",newargv[0]);

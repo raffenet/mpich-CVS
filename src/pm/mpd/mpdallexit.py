@@ -33,7 +33,11 @@ def mpdallexit():
         conSocket = fromfd(conFD,AF_UNIX,SOCK_STREAM)
         close(conFD)
     else:
-        consoleName = '/tmp/mpd2.console_' + username
+        if environ.has_key('MPD_CON_EXT'):
+            conExt = '_' + environ['MPD_CON_EXT']
+        else:
+            conExt = ''
+        consoleName = '/tmp/mpd2.console_' + username + conExt
         conSocket = socket(AF_UNIX, SOCK_STREAM)             # note: UNIX socket
         try:
             conSocket.connect(consoleName)
