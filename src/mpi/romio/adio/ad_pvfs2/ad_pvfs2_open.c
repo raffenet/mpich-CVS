@@ -30,7 +30,8 @@ typedef struct open_status_s open_status;
      * handle to everyone else in the communicator
      */
 static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
-	                 ADIOI_PVFS2_fs *pvfs2_fs, open_status *o_status)
+	                 int nr_datafiles, ADIOI_PVFS2_fs *pvfs2_fs, 
+			 open_status *o_status)
 {
     int ret;
     PVFS_sysresp_lookup resp_lookup;
@@ -39,10 +40,12 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
     PVFS_sys_attr attribs;
 
     ADIOI_PVFS2_makeattribs(&attribs);
+    attribs.dfile_count = nr_datafiles;
 
     memset(&resp_lookup, 0, sizeof(resp_lookup));
     memset(&resp_getparent, 0, sizeof(resp_getparent));
     memset(&resp_create, 0, sizeof(resp_create));
+
 
     ret = PVFS_sys_lookup(fs_id, pvfs_name,
 	    &(pvfs2_fs->credentials), &resp_lookup, PVFS2_LOOKUP_LINK_FOLLOW);
@@ -150,7 +153,8 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 	    o_status.error = -1;
 	} else  {
 	    fake_an_open(cur_fs, pvfs_path,
-		    fd->access_mode, pvfs2_fs, &o_status);
+		    fd->access_mode, fd->hints->striping_factor, 
+		    pvfs2_fs, &o_status);
 	}
     }
 

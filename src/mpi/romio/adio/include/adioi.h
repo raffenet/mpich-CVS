@@ -57,6 +57,8 @@ typedef struct ADIOI_Malloc_req_ptr {
  */
 struct ADIOI_Hints_struct {
     int initialized;
+    int striping_factor;
+    int striping_unit;
     int cb_read;
     int cb_write;
     int cb_nodes;
