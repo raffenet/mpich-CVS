@@ -256,6 +256,7 @@ def mpdrun():
         mpd_raise('no msg recvd from mpd when expecting ack of request')
     elif msg['cmd'] == 'mpdrun_ack':
         currRingSize = msg['ringsize']
+        currRingNCPUs = msg['ring_ncpus']
     else:
         if msg['cmd'] == 'already_have_a_console':
             print 'mpd already has a console (e.g. for long ringtest); try later'
@@ -288,7 +289,8 @@ def mpdrun():
     msg = mpd_recv_one_msg(manSocket)
     if (not msg  or  not msg.has_key('cmd') or msg['cmd'] != 'man_checking_in'):
         mpd_raise('mpdrun: from man, invalid msg=:%s:' % (msg) )
-    msgToSend = { 'cmd' : 'ringsize', 'ringsize' : currRingSize }
+    msgToSend = { 'cmd' : 'ring_ncpus', 'ring_ncpus' : currRingNCPUs,
+                  'ringsize' : currRingSize }
     mpd_send_one_msg(manSocket,msgToSend)
     msg = mpd_recv_one_msg(manSocket)
     if (not msg  or  not msg.has_key('cmd')):

@@ -5,7 +5,8 @@
 #
 
 """
-usage: mpd [--host=<host> --port=<portnum>] [--noconsole] \ 
+usage: mpd --help
+       mpd [--host=<host> --port=<portnum>] [--noconsole] \ 
            [--trace] [--echo] [--daemon] [--bulletproof] \ 
            [--if <interface/hostname>] [--listenport <listenport>]' 
 
@@ -92,7 +93,8 @@ def _mpd_init():
     g.myId = '%s_%d' % (g.myHost,g.myPort)
     mpd_set_my_id(g.myId)
     g.myrealUsername = mpd_get_my_username()
-    g.currRingSize = 1    # just for now
+    g.currRingSize = 1    # default
+    g.currRingNCPUs = 1   # default
     if environ.has_key('MPD_CON_EXT'):
         g.conExt = '_' + environ['MPD_CON_EXT']
     else:
@@ -303,6 +305,7 @@ def _handle_console_input():
         msg['nstarted_on_this_loop'] = 0
         msg['first_loop'] = 1
         msg['ringsize'] = 0
+        msg['ring_ncpus'] = 0
         if msg.has_key('try_0_locally'):
             _do_mpdrun(msg)
         else:
@@ -416,10 +419,12 @@ def _handle_lhs_input():
         if msg.has_key('mpdid_mpdrun_start')  and  msg['mpdid_mpdrun_start'] == g.myId:
             if msg['first_loop']:
                 g.currRingSize = msg['ringsize']
+                g.currRingNCPUs = msg['ring_ncpus']
             if msg['nstarted'] == msg['nprocs']:
                 if g.conSocket:
                     mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdrun_ack',
-                                                   'ringsize' : g.currRingSize} )
+                                                   'ringsize' : g.currRingSize,
+                                                   'ring_ncpus' : g.currRingNCPUs} )
                 return
             if not msg['first_loop']  and  msg['nstarted_on_this_loop'] == 0:
                 if msg.has_key('jobid'):
@@ -837,6 +842,7 @@ def _do_mpdrun(msg):
             _add_active_socket(toManSocket,'man_msgs','_handle_man_msgs',
                                'localhost',0,tempPort)
     msg['ringsize'] += 1
+    msg['ring_ncpus'] += g.NCPUs
     mpd_print(0000, "FORWARDING MSG=:%s:" % msg)
     mpd_send_one_msg(g.rhsSocket,msg)  # forward it on around
 
@@ -1074,6 +1080,7 @@ def _handle_man_msgs(manSocket):
         msg['jobalias'] = ''
         msg['stdin_goes_to_who'] = '0'
         msg['ringsize'] = 0
+        msg['ring_ncpus'] = 0
         msg['gdb'] = 0
         msg['totalview'] = 0
         mpd_send_one_msg(g.rhsSocket,msg)
@@ -1308,7 +1315,11 @@ def _process_cmdline_args():
     for opt in opts:
         if   opt[0] == '-h'  or  opt[0] == '--host':
             g.entryHost = opt[1]
-            g.entryIP = gethostbyname_ex(g.entryHost)[2][0]
+            try:
+                g.entryIP = gethostbyname_ex(g.entryHost)[2][0]
+            except:
+                print 'mpd failed to enter ring; unknown host: %s' % (g.entryHost)
+                usage()
         elif opt[0] == '-p'  or  opt[0] == '--port':
             g.entryPort = int(opt[1])
         elif opt[0] == '-i'  or  opt[0] == '--if':

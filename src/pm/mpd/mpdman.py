@@ -171,20 +171,20 @@ def mpdman():
                 mpd_print(1,'failed to insert preput_info')
                 exit(-1)
             msg = mpd_recv_one_msg(conSocket)
-            if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ringsize':
+            if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ring_ncpus':
                 mpd_raise('spawned: bad msg from con; got: %s' % (msg) )
-            universeSize = msg['ringsize']
+            universeSize = msg['ring_ncpus']
             mpd_send_one_msg(rhsSocket,msg)  # forward it on
         else:
             msgToSend = { 'cmd' : 'man_checking_in' }
             mpd_send_one_msg(conSocket,msgToSend)
             msg = mpd_recv_one_msg(conSocket)
-            if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ringsize':
-                mpd_raise('invalid msg from con; expecting ringsize got: %s' % (msg) )
+            if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ring_ncpus':
+                mpd_raise('invalid msg from con; expecting ring_ncpus got: %s' % (msg) )
             if clientPgmEnv.has_key('MPI_UNIVERSE_SIZE'):
                 universeSize = int(clientPgmEnv['MPI_UNIVERSE_SIZE'])
             else:
-                universeSize = msg['ringsize']
+                universeSize = msg['ring_ncpus']
             mpd_send_one_msg(rhsSocket,msg)
         ## NOTE: if you spawn a non-MPI job, it may not send this msg
         ## in which case the pgm will hang
@@ -199,15 +199,15 @@ def mpdman():
     else:
         conSocket = 0
 
-    msg = mpd_recv_one_msg(lhsSocket)    # recv msg containing ringsize
-    if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ringsize':
-        mpd_raise('invalid msg from lhs; expecting ringsize got: %s' % (msg) )
+    msg = mpd_recv_one_msg(lhsSocket)    # recv msg containing ringsize and ncpus
+    if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ring_ncpus':
+        mpd_raise('invalid msg from lhs; expecting ring_ncpus got: %s' % (msg) )
     if myRank != 0:
         mpd_send_one_msg(rhsSocket,msg)
         if clientPgmEnv.has_key('MPI_UNIVERSE_SIZE'):
             universeSize = int(clientPgmEnv['MPI_UNIVERSE_SIZE'])
         else:
-            universeSize = msg['ringsize']
+            universeSize = msg['ring_ncpus']
 
     if doingBNR:
         (pmiSocket,cliBNRSocket)   = mpd_socketpair()
@@ -453,7 +453,7 @@ def mpdman():
                         msgToSend = { 'cmd' : 'preput_info_for_child',
                                       'kvs' : KVSs[spawnedKVSname] }
                         mpd_send_one_msg(tempSocket,msgToSend)
-                        msgToSend = { 'cmd' : 'ringsize', 'ringsize' : universeSize }
+                        msgToSend = { 'cmd' : 'ring_ncpus', 'ring_ncpus' : universeSize }
                         mpd_send_one_msg(tempSocket,msgToSend)
                         if pmiSocket:  # may have disappeared in early shutdown
                             pmiMsgToSend = 'cmd=spawn_result status=spawn_done\n'
