@@ -314,6 +314,7 @@ if test -n "$arch_IRIX"; then
         5000) ;;
         8000) ;;
         10000);;
+	12000);;
         *)
         print_error "Unexpected IRIX/MIPS chipset $cputype.  Please send the output"
         print_error " "
