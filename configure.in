@@ -1575,7 +1575,7 @@ AC_OUTPUT(Makefile src/Makefile \
           src/util/logging/Makefile \
           src/util/timing/Makefile \
 	  doc/Makefile doc/mansrc/Makefile \
-	  doc/adi3/Makefile doc/install/Makefile doc/user/Makefile \
+	  doc/adi3/Makefile doc/installguide/Makefile doc/userguide/Makefile \
 	  doc/develop/Makefile \
 )
 
