@@ -544,11 +544,11 @@ SOURCE=.\src\mpi\datatype\get_address.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\mpi\datatype\getcount.c
+SOURCE=.\src\mpi\datatype\get_count.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\mpi\datatype\getelements.c
+SOURCE=.\src\mpi\datatype\get_elements.c
 # End Source File
 # Begin Source File
 

@@ -83,7 +83,7 @@ int mm_cq_handle_read_head_car(MM_Car *car_ptr)
 	else
 	{
 	    /* else allocate a temp buffer, place in the unex_q, and post a read */
-	    MPIU_dbg_printf("mm_cq_handle_read_head_car: receive not found, creating unexpected\n");
+	    /*MPIU_dbg_*/printf("mm_cq_handle_read_head_car: receive not found, creating unexpected\n");
 	    mm_create_post_unex(car_ptr);
 	}
 	MPID_Thread_unlock(MPID_Process.qlock);
