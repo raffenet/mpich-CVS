@@ -465,7 +465,8 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
     struct hostent *h = NULL;
     int n = 0;
 #endif
-    ADDRINFO *res, *iter;
+    ADDRINFO *res, *iter, hint;
+    char host[256];
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
@@ -475,7 +476,7 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
 	return mpi_errno;
     }
-    
+
     if (gethostname(hostname, 100) == SOCKET_ERROR)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock_gethost", "**sock_gethost %d", WSAGetLastError());
@@ -483,22 +484,78 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
 	return mpi_errno;
     }
 
+    hint.ai_flags = AI_PASSIVE | AI_CANONNAME;
+    hint.ai_family = PF_UNSPEC;
+    hint.ai_socktype = SOCK_STREAM;
+    hint.ai_protocol = 0;
+    hint.ai_addrlen = 0;
+    hint.ai_canonname = NULL;
+    hint.ai_addr = 0;
+    hint.ai_next = NULL;
     if (getaddrinfo(hostname, NULL, NULL, &res))
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**getinfo", "**getinfo %d", WSAGetLastError());
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
 	return mpi_errno;
     }
-    
+
+    /* add the host names */
     iter = res;
     while (iter)
     {
-	mpi_errno = MPIU_Str_add_string(&host_description, &len, iter->ai_canonname);
-	if (mpi_errno)
+	if (iter->ai_canonname)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
-	    return mpi_errno;
+	    /*printf("adding canonname: %s\n", iter->ai_canonname);*/
+	    mpi_errno = MPIU_Str_add_string(&host_description, &len, iter->ai_canonname);
+	    if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+		return mpi_errno;
+	    }
+	}
+	else
+	{
+	    switch (iter->ai_family)
+	    {
+	    case PF_INET:
+	    case PF_INET6:
+		if (getnameinfo(iter->ai_addr, iter->ai_addrlen, host, 256, NULL, 0, 0) == 0)
+		{
+		    /*printf("adding nameinfo: %s\n", host);*/
+		    mpi_errno = MPIU_Str_add_string(&host_description, &len, host);
+		    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+			return mpi_errno;
+		    }
+		}
+		break;
+	    }
+	}
+	iter = iter->ai_next;
+    }
+    /* add the names again, this time as ip addresses */
+    iter = res;
+    while (iter)
+    {
+	switch (iter->ai_family)
+	{
+	case PF_INET:
+	case PF_INET6:
+	    if (getnameinfo(iter->ai_addr, iter->ai_addrlen, host, 256, NULL, 0, NI_NUMERICHOST) == 0)
+	    {
+		/*printf("adding nameinfo: %s\n", host);*/
+		mpi_errno = MPIU_Str_add_string(&host_description, &len, host);
+		if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+		    return mpi_errno;
+		}
+	    }
+	    break;
 	}
 	iter = iter->ai_next;
     }
@@ -1455,7 +1512,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			if (!ReadFile((HANDLE)(sock->sock), sock->read.buffer, (DWORD)sock->read.bufflen, &sock->read.num_bytes, &sock->read.ovl))
 			{
 			    mpi_errno = GetLastError();
-			    MPIU_DBG_PRINTF(("GetLastError: %d\n", error));
+			    MPIU_DBG_PRINTF(("GetLastError: %d\n", mpi_errno));
 			    if (mpi_errno == ERROR_HANDLE_EOF || mpi_errno == 0)
 			    {
 				out->op_type = MPIDU_SOCK_OP_READ;
@@ -1911,7 +1968,7 @@ int MPIDU_Sock_read(MPIDU_Sock_t sock, void * buf, MPIDU_Sock_size_t len, MPIDU_
 	}
 	else
 	{
-	    MPIU_DBG_PRINTF(("sock_read error %d\n", e));
+	    MPIU_DBG_PRINTF(("sock_read error %d\n", mpi_errno));
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %d", mpi_errno);
 	}
     }
@@ -1973,7 +2030,7 @@ int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIDU_Sock_size_t len, MPIDU
     int mpi_errno;
     int length, num_sent, total = 0;
 #ifdef MPICH_DBG_OUTPUT
-    sock_size_t len_orig = len;
+    MPIDU_Sock_size_t len_orig = len;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_WRITE);
 
