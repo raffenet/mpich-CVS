@@ -11,7 +11,7 @@
 int main( int argc, char *argv[] )
 {
     int errs = 0;
-    int newrank;
+    int newrank, merr;
 
     MTest_Init( &argc, &argv );
 

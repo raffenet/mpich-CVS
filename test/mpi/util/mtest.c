@@ -7,6 +7,7 @@
 #include "mpi.h"
 #include "mpitest.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 /* 
  * Initialize and Finalize MTest
@@ -385,7 +386,7 @@ void MTestPrintError( int errcode )
     char string[MPI_MAX_ERROR_STRING];
     
     MPI_Error_class( errcode, &errclass );
-    MPI_Error_string( errocde, string, &slen );
+    MPI_Error_string( errcode, string, &slen );
     printf( "Error class %d (%s)\n", errclass, string );
 }
 

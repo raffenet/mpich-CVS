@@ -13,7 +13,7 @@ int main( int argc, char *argv[] )
     int errs = 0;
     int dims[2];
     int periods[2];
-    int newrank;
+    int size, rank, newrank;
 
     MTest_Init( &argc, &argv );
 
@@ -34,7 +34,7 @@ int main( int argc, char *argv[] )
     else {
 	if (rank != newrank) {
 	    errs++;
-	    printf( "Newrank not defined and should be 0\n";
+	    printf( "Newrank not defined and should be 0\n" );
 	}
     }
 
