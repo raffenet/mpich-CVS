@@ -140,12 +140,12 @@ EXPORTS
 	pmpi_exscan__
 	mpi_exscan__=pmpi_exscan__
 ; pmpi first versions
-;	pmpi_file_call_errhandler__
-;	mpi_file_call_errhandler__=pmpi_file_call_errhandler__
+	pmpi_file_call_errhandler__
+	mpi_file_call_errhandler__=pmpi_file_call_errhandler__
 	pmpi_file_close__
 	mpi_file_close__=pmpi_file_close__
-;	pmpi_file_create_errhandler__
-;	mpi_file_create_errhandler__=pmpi_file_create_errhandler__
+	pmpi_file_create_errhandler__
+	mpi_file_create_errhandler__=pmpi_file_create_errhandler__
 	pmpi_file_delete__
 	mpi_file_delete__=pmpi_file_delete__
 	pmpi_file_get_amode__
@@ -382,8 +382,8 @@ EXPORTS
 	mpi_gatherv__=pmpi_gatherv__
 	pmpi_get__
 	mpi_get__=pmpi_get__
-;	pmpi_get_address__
-;	mpi_get_address__=pmpi_get_address__
+	pmpi_get_address__
+	mpi_get_address__=pmpi_get_address__
 	pmpi_get_count__
 	mpi_get_count__=pmpi_get_count__
 	pmpi_get_elements__
@@ -454,8 +454,8 @@ EXPORTS
 	mpi_info_set__=pmpi_info_set__
 	pmpi_init__
 	mpi_init__=pmpi_init__
-;	pmpi_init_thread__
-;	mpi_init_thread__=pmpi_init_thread__
+	pmpi_init_thread__
+	mpi_init_thread__=pmpi_init_thread__
 	pmpi_initialized__
 	mpi_initialized__=pmpi_initialized__
 	pmpi_intercomm_create__
@@ -624,8 +624,8 @@ EXPORTS
 	mpi_type_indexed__=pmpi_type_indexed__
 	pmpi_type_lb__
 	mpi_type_lb__=pmpi_type_lb__
-;	pmpi_type_match_size__
-;	mpi_type_match_size__=pmpi_type_match_size__
+	pmpi_type_match_size__
+	mpi_type_match_size__=pmpi_type_match_size__
 	pmpi_type_set_attr__
 	mpi_type_set_attr__=pmpi_type_set_attr__
 	pmpi_type_set_name__
@@ -696,10 +696,10 @@ EXPORTS
 	mpi_win_unlock__=pmpi_win_unlock__
 	pmpi_win_wait__
 	mpi_win_wait__=pmpi_win_wait__
-;	pmpi_wtick__
-;	mpi_wtick__=pmpi_wtick__
-;	pmpi_wtime__
-;	mpi_wtime__=pmpi_wtime__
+	pmpi_wtick__
+	mpi_wtick__=pmpi_wtick__
+	pmpi_wtime__
+	mpi_wtime__=pmpi_wtime__
         pmpi_dup_fn__
         mpi_dup_fn__=pmpi_dup_fn__
         pmpi_null_delete_fn__
