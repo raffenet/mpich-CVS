@@ -102,22 +102,22 @@ void MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		       around effects. */
 		    if (pc_new->pkt.seqnum - vc->seqnum_recv < pc_cur->pkt.seqnum - vc->seqnum_recv)
 		    {
-			if (pc_last != NULL)
-			{
-			    pc_new->next = pc_cur;
-			    pc_last->next = pc_new;
-			}
-	    
 			break;
 		    }
 
+		    pc_last = pc_cur;
 		    pc_cur = pc_cur->next;
 		}
-		
+
 		if (pc_last == NULL)
 		{
-		    pc_new->next = NULL;
+		    pc_new->next = pc_cur;
 		    vc->msg_reorder_queue = pc_new;
+		}
+		else
+		{
+		    pc_new->next = pc_cur;
+		    pc_last->next = pc_new;
 		}
 	    }
 

@@ -56,11 +56,19 @@ int main(int argc, char * argv[])
 		pkt.match.tag = i;
 		pkt.match.context_id = comm->context_id + MPID_CONTEXT_INTRA_PT2PT;
 		pkt.sender_req_id = MPI_REQUEST_NULL;
-		pkt.data_sz = seqnum * sizeof(int);
+#               if defined(SEND_DATA)
+		{
+		    pkt.data_sz = seqnum * sizeof(int);
+		}
+#		else
+		{ 
+		    pkt.data_sz = 0;
+		}
+#		endif
 		/* MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum); */
 		MPIDI_CH3U_Pkt_set_seqnum(&pkt, seqnum);
 
-		printf("Sending msg %lu\n", seqnum);
+		printf("Sending msg %lu, tag=%d\n", seqnum, pkt.match.tag);
 		fflush(stdout);
 		
 		if (pkt.data_sz > 0)
@@ -98,10 +106,9 @@ int main(int argc, char * argv[])
 		
 		rc = MPI_Wait(&request, &status);
 		assert(rc == MPI_SUCCESS);
-
-		usleep(1000);
-		
 	    }
+
+	    vc->seqnum_send += ITERS;
 	}
 	else if (rank == 1)
 	{
@@ -120,24 +127,28 @@ int main(int argc, char * argv[])
 
 		printf("Recevied msg rank=%d tag=%d count=%d error=%d\n", status.MPI_SOURCE, status.MPI_TAG, j, status.MPI_ERROR);
 		fflush(stdout);
-		
-		if (j != i)
-		{
-		    errs++;
-		    printf("ERROR: expected count=%d, got count=%d\n", i, j);
-		    fflush(stdout);
-		    continue;
-		}
 
-		for (j = 0; j < i; j++)
+#               if defined(SEND_DATA)
 		{
-		    if (buf[j] != i)
+		    if (j != i)
 		    {
 			errs++;
-			printf("ERROR: expected buf[%d]=%d, got buf[%d]=%d\n", j, i, j, buf[j]);
+			printf("ERROR: expected count=%d, got count=%d\n", i, j);
 			fflush(stdout);
+			continue;
+		    }
+
+		    for (j = 0; j < i; j++)
+		    {
+			if (buf[j] != i)
+			{
+			    errs++;
+			    printf("ERROR: expected buf[%d]=%d, got buf[%d]=%d\n", j, i, j, buf[j]);
+			    fflush(stdout);
+			}
 		    }
 		}
+#		endif
 	    }
 
 	    if (errs == 0)
@@ -151,7 +162,8 @@ int main(int argc, char * argv[])
 	    fflush(stdout);
 	}
     
-	MPI_Finalize();  assert(rc != MPI_SUCCESS);
+	rc = MPI_Finalize();
+	assert(rc == MPI_SUCCESS);
     }
 #   else
     {
