@@ -21,6 +21,7 @@
 %\tpageoneskip
 \ANLTMTitle{MPICH2 Design Document\\
 Draft of \today}{\em 
+David Ashton\\
 William Gropp\\
 Ewing Lusk\\
 Rob Ross\\
@@ -101,7 +102,7 @@ Most values should be tested to ensure that they are in-range.  For examples,
 tags must be nonnegative for sending (and nonnegative or
 \mpiconst{MPI_ANY_TAG} for receiving). 
 
-Question: Code in ROMIO often includs the following test on pointers:
+Question: Code in ROMIO often includes the following test on pointers:
 \begin{verbatim}
 if (ptr < (Ptr_type) 0) error
 \end{verbatim}
@@ -128,6 +129,9 @@ core dumping, then such tests might be useful.  However, I highly
 recommend that the user be able to turn off such checks as a core dump
 frequently provides useful information about the source of the
 problem.
+Answer [WDG]: I believe that the intent was to catch user errors.  As the bug
+reports have shown, users often assume that any code except theirs is at
+fault, so the library code by default should be defensive.  
 
 \subsubsection{Choosing Error Handlers and Classes}
 Error handlers should be chosen using the following decision tree:
@@ -4339,12 +4343,40 @@ used, and BNR is just one of the ways in which to implement that abstraction.
 
 \subsubsection{\mpifunc{MPI_COMM_CONNECT}}
 
+\begin{verbatim}
+  BNR_Connect( &port, &gid )
+\end{verbatim}
+
 \subsubsection{\mpifunc{MPI_COMM_DISCONNECT}}
+This function is like \mpifunc{MPI_Comm_free}, except that it also guarantees
+that all communication has completed before it returns and it affects the
+status of ``connected'' processes.
+
+
 
 \subsubsection{\mpifunc{MPI_COMM_GET_PARENT}}
-Return \mpidconst{MPID_COMM_PARENT}.
+Return \mpidconst{MPID_COMM_PARENT}.  This value is set by
+\mpifunc{MPI_Init_thread}. 
 
 \subsubsection{\mpifunc{MPI_COMM_JOIN}}
+\mpifunc{MPI_Comm_join} creates an intercommunicator for two (and only two)
+MPI processes that have an established socket between them.  It is permissible
+for an MPI implementation to refuse to create the intercommunicator; for
+example, an MPI implementation that only implements a shared-memory device can
+return a failure for this routine.  The standard requires all implementations
+to document any limitations on \mpifunc{MPI_Comm_join}; to handle this, each
+device must also provide a file \file{join_limits.txt} (similar to
+\file{signal_limits.txt}).  If no file is present, then there are no limits
+and \mpifunc{MPI_Comm_join} will always succeed (in the absence of other
+problems, like out-of-memory when updating internal tables).
+
+This routine argues for a routine that exchanges the necessary connection
+information between two processes, perhaps by formatting the data to and from
+a string.  Then \mpifunc{MPI_Comm_join} can use \code{read} and \code{write}
+to send this data; \mpifunc{MPI_Comm_connect} and \mpifunc{MPI_Comm_accept}
+(or \mpidfunc{BNR_Connect} and \mpidfunc{BNR_Accept}) can use the same data
+representation but different methods for communicating the data between
+processes.  
 
 \subsubsection{\mpifunc{MPI_COMM_SPAWN}}
 
@@ -4439,49 +4471,86 @@ A typical implementation using OpenLDAP might look something like
 this (this is incomplete and only includes the name of the ldap
 routines that can be used):
 \begin{verbatim}
+#include <lber.h>
 #include <ldap.h>
-static ?type? ldap_handle = 0;
+static LDAP ldap_handle = 0;
+LDAPMessage *res;
+char        **value_ptr;
 if (!ldap_handle) {
-    ? how do we get the server name ?
+    ? how do we get the server name and port (LDAP_PORT is the default)?
     ? Use ldap_url_parse or ldap_is_ldap_url?
-    ldap_handle = ldap_init(?? );
-    ldap_bind_s( ldap_handle, ?? );
-    /* Or ldap_simple_bind_s or ldap_kerberos_bind_s */
+    ldap_handle = ldap_open( host, port );
+    /* method can be LDAP_AUTH_SIMPLE, LDAP_AUTH_KRBV41 or 
+       LDAP_AUTH_KRBV42 */
+    ldap_bind_s( ldap_handle, who, cred, method );
+    /* Or ldap_simple_bind_s( handle, who, passwd) 
+       or ldap_kerberos_bind_s( handled, who ) */
     MPIR_Add_finalize( MPID_Nameserver_finalize &ldap_handle );  
           /* See MPI_Finalize */
     }
 /* Synchronous call because MPI_LOOKUP_NAME is blocking */
-ldap_search_s( ??? ldap_handle, name, value );
+/* This isn't correct yet */
+ldap_search_s( ldap_handle, jobname, LDAP_SCOPE_BASE, 
+               NULL, NULL, portname, &res );
+
 /* Use ldap_search_st to search with a timeout */
-ldap_parse_result();
+res = ldap_first_entry( ldap_handle, res );
+/* attr is the LDAP attribute to return the value for. */
+value_ptr = ldap_get_values( ldap_handle, res, attr );
+
+/* ?? ldap_parse_result(); */
+/* Free result data with msgfree */
+ldap_msgfree( res );
 ...
 static int MPID_Nameserver_finalize( void *ptr )
 {
-    ?? ldap_handle = (??) ptr;
-    ldap_unbind_s( ldap_handle ??? );
+    ldap_handle = (LDAP *) ptr;
+    ldap_unbind_s( ldap_handle );
+#ifdef __WIN32
+    /* See man -s 3 ldap */
     ldap_memfree( );
+#endif
     return 0;
 }
 ...
 /* if an error seen, use */
-str = ldap_err2string( ... );
+str = ldap_err2string( err );
 MPIR_Err_setcode( "Error from ldap library during %s operation: %s", 
                   routine_name, str );
 \end{verbatim}
 
 \subsubsection{\mpifunc{MPI_PUBLISH_NAME}}
 \begin{verbatim}
-ldap_add_s( ldap_handle, name, value ??? );
+/* attrs is an LDAPMod *attrs[] type */
+attrs[0]->mod_type = ?;
+attrs[0]->mod_values[0] = ?;
+attrs[0]->mod_op = LDAP_MOD_ADD; /* or LDAP_MOD_REPLACE */
+attrs[1] = NULL:
+if (ldap_add_s( ldap_handle, name, attrs) == -1) {
+    <error; see ldap_handle->ld_errno>
+}
 \end{verbatim}
 
 \subsubsection{\mpifunc{MPI_UNPUBLISH_NAME}}
 \begin{verbatim}
-ldap_delete_s( ldap_handle, name, ??? );
+/* like add, but with LDAP_MOD_DELETE as the mod_op */
+ldap_modify_s( ldap_handle, name, attrs );
+/* Use ldap_delete_s( ldap_handle, name ) to completely remove a name */
 \end{verbatim}
 
 \subsubsection{\mpifunc{MPI_OPEN_PORT}}
+An MPI ``port'' is just a string that is used in \mpifunc{MPI_Comm_attach} and
+\mpifunc{MPI_Comm_connect}.  Since these ports are used to establish
+connections between groups or processes that are defined by BNR, 
+
+\begin{verbatim}
+    BNR_Open_port( );
+\end{verbatim}
 
 \subsubsection{\mpifunc{MPI_CLOSE_PORT}}
+\begin{verbatim}
+    BNR_Close_port( );
+\end{verbatim}
 
 \subsection{User-Defined Requests}
 \label{sec:grequest}
@@ -5146,17 +5215,30 @@ implementations.  Perhaps by 2002, there will be fewer bugs in C++ compilers.
 handling, environment variables, configure options for error checking,
 etc.)
 
+\subsection{Command line and environment}
 The implementation must provide the \emph{service} of providing
 command-line arguments to each process.  If the startup environment
 does not do so, the implementation must (see the discussion of
 \mpidfunc{MPID_Init}).  
 
+\subsection{Standard I/O}
 I/O handling, particularly for stdin, remains troublesome.  We need to
 be more precise about what is available and what isn't.  We need to
 pay closer attention to the value of the attribute \mpiconst{MPI_IO},
 and we may want to consider adding new keyvals with more control, such
 as \mpidconst{MPICH_IO_STDIN}, \mpidconst{MPICH_IO_STDOUT}, and
 \mpidconst{MPICH_IO_STDERR}. 
+
+\subsection{Documentation and Man Pages}
+The MPI standard requires that the MPI implementation document certain
+features and capabilities.  For example, any signal used by the MPI
+implementation must be documented, as must any limitation on the use of
+\mpifunc{MPI_Comm_join}.  
+
+Since many of these depend on the capabilities of the device, each device
+should provide files \file{signal_limits.txt} and \file{join_limits.txt} that
+document any limitations in the use of signals or \mpifunc{MPI_Comm_join}.  If
+no file is provide, no limits exist.
 
 \section{Testing}
 \label{sec:testing}
@@ -5313,6 +5395,51 @@ messages in the multi-threaded case).
 % \code{MPI_Type_copy_attr_function}\\
 % \code{MPI_Win_copy_attr_function}\\
 % \code{MPI_Win_errhandler_fn}\\
+
+\section{ToDo List}
+\label{sec:todo}
+This section contains a ToDo list for this document; that is, the outstanding
+issues and questions.  The process for resolving each of these is to have each
+item choosen by one person who is responsible for writing the text (the
+section author) and one
+other person who is the ``immediate reviewer''.  The writer is responsible for
+organizing and leading any discussion necessary to complete the text.
+Anyone may read and comment on the document at any time, but should check with
+the section author first to make sure that the document is up-to-date.
+\begin{enumerate}
+\item Major Sections
+  \begin{enumerate}
+  \item Point-to-point.  
+    \begin{enumerate}
+    \item Make the scenario (Section~\ref{sec:pt-2-pt-scenarios})
+      consistent with the description of the individual routines and with
+      the most current discussions of the active queue implementation.
+    \item Define the communicator data structure, including the handling
+      of processes that are not part of the original
+      \mpiconst{MPI_COMM_WORLD}.
+    \end{enumerate}
+  \item RMA.  Everything (including scenarios illustrating BSP-style defered
+    updates).
+  \item Collective.  Most of this can be left until later.  However, it
+    would be good to include details for \mpifunc{MPI_Bcast} and
+    \mpifunc{MPI_Scatter} that show how the routines use the lower-level
+    point-to-point routines (e.g., what is called ``stream'' in this
+    document).  Also:
+    \begin{enumerate}
+    \item Basic routines for communicator construction.  Coordinate intercomm
+      creation with the dynamic process routines (\mpifunc{MPI_Comm_spawn},
+      \mpifunc{MPI_Comm_connect}, \mpifunc{MPI_Comm_attach}, and
+      \mpifunc{MPI_Join}).  
+    \end{enumerate}
+  \end{enumerate}
+\item Minor Items
+  \begin{enumerate}
+  \item Error reporting routines, particularly the handling of
+    instance-specific messages.
+  \item Integral profiling and data collection.  Definition of macros for
+    collecting timing data and for generating slog records.
+  \end{enumerate}
+\end{enumerate}
 
 \section{Development Plan}
 \label{sec:development}
