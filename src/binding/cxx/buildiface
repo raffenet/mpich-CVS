@@ -348,7 +348,7 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 %class_mpi2dtype = ( 'Set_name' => 0, 
 		     'Get_name' => 0,
 		     'Dup' => 'MPI_Datatype',
-		     'Get_extent' => '0,',
+		     'Get_extent' => '0',
 );
 %class_mpi2errh = ();
 %class_mpi2graph = ();
