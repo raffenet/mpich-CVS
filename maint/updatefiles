@@ -530,7 +530,7 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 		    echo "Error! Could not build configure in $dir with make configure"
 	            finalStatus=3
 	        elif grep PAC_ $dir/configure >/dev/null 2>&1 ; then
-                    echo "Error! autoconf did not find local macro definitions"
+                    echo "Error! autoconf did not find local macro definitions for configure in $dir"
 	            echo "The following (at most 40 lines) local macros were not found:"
 		    grep PAC_ $dir/configure | head -40
 		    finalStatus=3
