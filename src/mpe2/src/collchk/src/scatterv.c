@@ -31,7 +31,7 @@ int MPI_Scatterv(void* sbuff, int* scnt, int* displs, MPI_Datatype stype,
             if (rbuff != MPI_IN_PLACE) {
                 CollChk_hash_dtype(rtype, rcnt,
                                    &(hs1.hash_val), &(hs1.hash_cnt));
-                CollChk_hash_dtype(stype, scnt,
+                CollChk_hash_dtype(stype, *scnt,
                                    &(hs2.hash_val), &(hs2.hash_cnt));
                 if (    (hs1.hash_val != hs2.hash_val)
                      || (hs1.hash_cnt != hs2.hash_cnt) ) {
