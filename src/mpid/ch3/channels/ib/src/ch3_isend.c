@@ -55,7 +55,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 		ibu_post_write(vc->ib.ibu, hdr, hdr_sz, NULL);
 		nb = 0;
 	    }
-	    while (nb == -1 && errno == EINTR);
+	    while (nb == -1);
 	    
 	    MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
 		

@@ -107,8 +107,7 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 		    }
 		}
 	    }
-	    else if (nb == 0 || errno == EAGAIN ||
-		     errno == EWOULDBLOCK || errno == ENOMEM)
+	    else if (nb == 0)
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
 		update_request(sreq, iov, n_iov, 0, 0);
@@ -132,23 +131,6 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
-#if 0
-    else if (vc->ib.state == MPIDI_CH3I_VC_STATE_UNCONNECTED)
-    {
-	/* Form a new connection, queuing the data so it can be sent later. */
-	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  enqueuing request"));
-	MPIDI_CH3I_TCP_post_connect(vc);
-	update_request(sreq, iov, n_iov, 0, 0);
-	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-    }
-    else if (vc->ib.state != MPIDI_CH3I_VC_STATE_FAILED)
-    {
-	/* Unable to send data at the moment, so queue it for later */
-	MPIDI_DBG_PRINTF((55, FCNAME, "still connecting.  enqueuing request"));
-	update_request(sreq, iov, n_iov, 0, 0);
-	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-    }
-#endif
     else
     {
 	/* Connection failed.  Mark the request complete and return an

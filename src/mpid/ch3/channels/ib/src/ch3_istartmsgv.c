@@ -69,7 +69,6 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 {
     MPID_Request * sreq = NULL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
-    MPIDI_STATE_DECL(MPID_STATE_WRITEV);
 
     MPIU_dbg_printf("ch3_istartmsgv\n");
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
@@ -95,12 +94,10 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
                write */
 	    do
 	    {
-		MPIDI_FUNC_ENTER(MPID_STATE_WRITEV);
 		ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL);
 		nb = 0;
-		MPIDI_FUNC_EXIT(MPID_STATE_WRITEV);
 	    }
-	    while (nb == -1 && errno == EINTR);
+	    while (nb == -1);
 	    
 	    if (nb > 0)
 	    {
@@ -122,8 +119,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 		    }
 		}
 	    }
-	    else if (nb == 0 || errno == EAGAIN ||
-		     errno == EWOULDBLOCK || errno == ENOMEM)
+	    else if (nb == 0)
 	    {
 		sreq = create_request(iov, n_iov, 0, 0);
 		MPIDI_CH3I_SendQ_enqueue(vc, sreq);
@@ -145,21 +141,6 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
-#if 0
-    else if (vc->ib.state == MPIDI_CH3I_VC_STATE_UNCONNECTED)
-    {
-	/* Form a new connection, queuing the data so it can be sent later. */
-	MPIDI_CH3I_TCP_post_connect(vc);
-	sreq = create_request(iov, n_iov, 0, 0);
-	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-    }
-    else if (vc->ib.state != MPIDI_CH3I_VC_STATE_FAILED)
-    {
-	/* Unable to send data at the moment, so queue it for later */
-	sreq = create_request(iov, n_iov, 0, 0);
-	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-    }
-#endif
     else
     {
 	/* Connection failed, so allocate a request and return an error. */

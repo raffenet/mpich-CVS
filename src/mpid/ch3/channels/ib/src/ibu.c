@@ -989,6 +989,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
     {
 	if (IBU_Process.unex_finished_list)
 	{
+	    MPIU_dbg_printf("ibu_wait returning previously received %d bytes\n", ibu->read.total);
 	    /* remove this ibu from the finished list */
 	    ibu = IBU_Process.unex_finished_list;
 	    IBU_Process.unex_finished_list = IBU_Process.unex_finished_list->unex_finished_queue;
@@ -1121,7 +1122,8 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    break;
 	case OP_RECEIVE:
 	    num_bytes = completion_data.bytes_num;
-	    MPIU_dbg_printf("ibu_wait(recv finished %d bytes)\n", num_bytes);
+	    MPIU_dbg_printf("ibu_wait: read update, total = %d + %d = %d\n", ibu->read.total, num_bytes, ibu->read.total + num_bytes);
+	    /*MPIU_dbg_printf("ibu_wait(recv finished %d bytes)\n", num_bytes);*/
 	    if (!(ibu->state & IBU_READING))
 	    {
 		ibui_buffer_read(ibu, mem_ptr, num_bytes);

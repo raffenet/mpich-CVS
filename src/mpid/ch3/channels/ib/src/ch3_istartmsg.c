@@ -71,12 +71,10 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
                write */
 	    do
 	    {
-		MPIDI_FUNC_ENTER(MPID_STATE_WRITE);
 		ibu_post_write(vc->ib.ibu, hdr, hdr_sz, NULL);
 		nb = 0;
-		MPIDI_FUNC_EXIT(MPID_STATE_WRITE);
 	    }
-	    while (nb == -1 && errno == EINTR);
+	    while (nb == -1);
 	    
 	    if (nb == hdr_sz)
 	    {
@@ -89,15 +87,6 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 				  "send delayed, request enqueued"));
 		sreq = create_request(hdr, hdr_sz, nb);
 		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		MPIDI_CH3I_IB_post_write(vc, sreq);
-	    }
-	    else if (errno == EAGAIN || errno == EWOULDBLOCK ||
-		     errno == ENOMEM)
-	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "send failed, errno=%d:%s, "
-				  "request enqueued", errno, strerror(errno)));
-		sreq = create_request(hdr, hdr_sz, 0);
-		MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 		MPIDI_CH3I_IB_post_write(vc, sreq);
 	    }
 	    else
@@ -121,27 +110,6 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
-#if 0
-    else if (vc->ib.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
-    {
-	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  requesting connection "
-			  "and enqueuing send request"));
-	
-	/* Form a new connection */
-	MPIDI_CH3I_TCP_post_connect(vc);
-
-	/* queue the data so it can be sent after the connection is formed */
-	sreq = create_request(hdr, hdr_sz, 0);
-	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-    }
-    else if (vc->ib.state != MPIDI_CH3I_VC_STATE_FAILED)
-    {
-	/* Unable to send data at the moment, so queue it for later */
-	MPIDI_DBG_PRINTF((55, FCNAME, "forming connection, request enqueued"));
-	sreq = create_request(hdr, hdr_sz, 0);
-	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-    }
-#endif
     else
     {
 	/* Connection failed, so allocate a request and return an error. */

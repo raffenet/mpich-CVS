@@ -136,6 +136,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     rc = PMI_Barrier();
     assert(rc == 0);
 
+    /*
     {
 	for (p = 0; p < pg_size; p++)
 	{
@@ -148,6 +149,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	    fflush(stdout);
 	}
     }
+    */
     
     MPIU_Free(val);
     MPIU_Free(key);
