@@ -18,6 +18,8 @@ all-local:
 	        rm -f lib/pkglist.new ; \
             else \
 	        rm -f lib/lib${MPILIBNAME}.a lib/libp${MPILIBNAME}.a ; \
+		rm -f lib/lib${MPILIBNAME}.so* lib/libp${MPILIBNAME}.so* ; \
+		rm -f lib/lib${MPILIBNAME}.la* lib/libp${MPILIBNAME}.la* ; \
 		rm -f lib/pkglist ; \
 		${MAKE} clean ; cd test && ${MAKE} clean ; \
 	    fi ; \
@@ -34,6 +36,7 @@ all-postamble:
 
 distclean-local:
 	-@rm -f lib/lib${MPILIBNAME}.a lib/pkglist lib/pkglist.new
+	-@rm -f lib/lib${MPILIBNAME}.so* lib/lib${MPILIBNAME}.la
 	-@rm -f src/include/${MPILIBNAME}conf.h
 	-@rm -f src/include/mpio.h
 	-@rm -f bin/mpicc
