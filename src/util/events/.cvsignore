@@ -9,3 +9,6 @@ Makefile.in
 *.bbg
 *.da
 .libs
+mpiu_events_conf.h
+mpiu_events_conf.h.in
+configure
