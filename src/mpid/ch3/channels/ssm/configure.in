@@ -38,10 +38,51 @@ AC_CHECK_HEADERS(sys/stat.h sys/ptrace.h sys/wait.h errno.h ctype.h process.h sy
 AC_CHECK_FUNCS(msgget yield mutex_init shmget shmat shmdt shmctl usleep sleep getcwd gethostname gettimeofday putenv select socket sched_yield)
 AC_CHECK_FUNCS(sysconf pthread_mutexattr_setpshared pthread_mutexattr_init)
 AC_CHECK_FUNCS( mmap )
-AC_SEARCH_LIBS( mq_open, rt, AC_DEFINE(HAVE_MQ_OPEN,,[Define if mq_open is available]) )
-AC_SEARCH_LIBS( shm_open, rt, AC_DEFINE(HAVE_SHM_OPEN,,[Define if shm_open is available]) )
-AC_SEARCH_LIBS( shm_unlink, rt, AC_DEFINE(HAVE_SHM_UNLINK,,[Define if shm_unlink is available]) )
 AC_SEARCH_LIBS( uuid_generate, uuid )
+AC_SEARCH_LIBS( mq_open, rt, AC_DEFINE(HAVE_MQ_OPEN,,[Define if mq_open is available]) )
+
+save_libs2=$LIBS
+AC_SEARCH_LIBS( shm_open, rt, have_shm_open=yes, have_shm_open=no)
+AC_SEARCH_LIBS( shm_unlink, rt, have_shm_unlink=yes, have_shm_unlink=no)
+if test $have_shm_open = "yes" -a $have_shm_unlink = "yes" ; then
+    AC_MSG_CHECKING(that shm_open has been implemented)
+    AC_TRY_RUN([
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+
+int main(int argc, char ** argv)
+{
+   int fd;
+
+   fd = shm_open("/mpich2conf", O_RDWR | O_CREAT, 0666);
+   if (fd == -1)
+   {
+       if (errno == ENOSYS)
+       {
+           return 1;
+       }
+   }
+   else
+   {
+       shm_unlink("/mpich2conf");
+       close(fd);
+   }
+   return 0;
+}],shm_open_impl=yes,shm_open_impl=no)
+    AC_MSG_RESULT($shm_open_impl)
+    if test $shm_open_impl = "yes" ; then
+        AC_DEFINE(HAVE_SHM_OPEN,,[Define if shm_open is available])
+        AC_DEFINE(HAVE_SHM_UNLINK,,[Define if shm_unlink is available])
+    else
+        LIBS=$save_libs2
+    fi
+else
+    LIBS=$save_libs2
+fi
+
 
 cpu_gcc_x86_cycle=no
 AC_TRY_COMPILE(,[
