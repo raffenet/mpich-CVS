@@ -25,7 +25,8 @@ and installed.  The programs are
 
 jumpshot:        A visualization tool for SLOG-2 file.
 logconvertor     A GUI front end for all the logfile convertor.
-slog2print:      A SLOG-2 printing program.  Only useful for small slog2 file.
+slog2filter      A SLOG-2 formating and filtering program
+slog2print:      A SLOG-2 serial printing program, i.e. scalable.
 slog2navigator:  Another SLOG-2 printing program with navigation feature.
                  aka. baby jumpshot.
 
@@ -164,6 +165,9 @@ where all the executable jar files are located.  The utility programs
 mentioned above has its bytecode archived by the following jar file
 of the same name.  They are
 
+slog2filter.jar: executable jar file that filters or modifies the content
+                 of the slog2 file.
+
 slog2print.jar: executable jar file prints the slog2 file
                 usage: java -jar slog2print.jar slog2filename
 
@@ -190,3 +194,39 @@ jumpshot.jar: executable jar file that visualizes slog2 file and convert
 
 jumpshot_launcher.jar: executable jar file that launchs jumpshot.jar
                        usage:java -jar jumpshot_launcher
+
+
+Using SLOG2 command line utility programs
+-----------------------------------------
+1) Modifocation of SLOG2 File's Structure:
+   slog2filter that can reconfigure slog2 treenode features,
+   like tree leaf size and number of child nodes per parent node through
+   command like
+
+   e.g. slog2filter -ls 128k flash2.slog2
+
+   which will create a flash2.slog2.slog2 file with slog2 leaf size = 128k
+   instead of the default 64k.  This is useful to readjust the number of
+   preview bands in Jumpshot if the default one does not produce a desirable
+   view in Jumpshot.
+
+2) Print Specific Information of SLOG2 File.
+   a) slog2print prints drawables in the 4 time orders as listed by
+      "slog2print -h".
+   b) Also, slog2print can print specific features of slog2 file,
+      like CategoryMap, DirectoryTree, Y-Coordinate Map....
+
+   e.g. slog2print -c flash2.slog2
+
+   which prints the CategoryMap of flash2.slog2
+
+3) Removal of Undesirable Categories of Drawables.
+   slog2filter can delete specific categories of drawables.
+   i.e. using "slog2print -c" to identify the category indexes of undesirable
+   drawables, say id1,id2,...idN.  Then do
+
+   slog2repair -r id1,id2,...idN -o new_flash2.slog2 flash2.slog2
+
+   which will create a new_flash2.slog2 file that does not have drawables
+   with category indexes, id1,id2,...idN, and with similar file structure
+   as the original one.

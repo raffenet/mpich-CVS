@@ -60,17 +60,23 @@ in this feature, you could disable it through --disable-sample.
 
 
 
-To enable debugging support, i.e. the java source is needed to be compiled
-with -g.  One should do
+To enable debugging support, i.e. the java source files are needed to be
+compiled with -g.  Two way of doing that:
 
-<slog2sdk>/configure JFLAGS=-g ....
+Either through configure,
+<slog2sdk>/configure .... JFLAGS=-g
 make
+make install PREFIX=<slog2sdk_install>
+
+Or through make,
+<slog2sdk>/configure ....
+make JFLAGS=-g
 make install PREFIX=<slog2sdk_install>
 
 
 
-To enable the verbose duing make.  Instead of simply doing make, 
-one should issue:
+To enable the verbose option of the java archive process (i.e. using jar),
+add "JARFLAGS=v" during make:
 
 <slog2sdk>/configure ....
 make JARFLAGS=v
