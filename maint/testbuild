@@ -30,7 +30,7 @@ if [ -z "$inteltestdir" ] ; then inteltestdir=$tmpdir/cb/MPITEST ; fi
 date=`date "+%Y-%m-%d"`
 # default outfile
 outfile=testbuild.xml
-tests="mpich;mpicxx;intel;mpich2"
+tests="mpich:mpicxx:intel:mpich2"
 #
 # Option options to checkbuild
 other_opts=""
@@ -102,8 +102,8 @@ if [ ! -x $rundir/maint/checkbuilds ] ; then
 fi
 #
 #
-# -tests="mpich;mpicxx;intel"
-# Use -tests="mpich;mpicxx" to get a smaller list of tests.
+# -tests="mpich:mpicxx:intel"
+# Use -tests="mpich:mpicxx" to get a smaller list of tests.
 # Use eval to make sure that quoted arguments containing spaces are handled
 # correctly
 # Set the default values of the CC and FC environment variables

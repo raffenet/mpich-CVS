@@ -155,7 +155,7 @@ foreach $_ (@ARGV) {
 	set_time_left( $1 );
     }
     elsif (/-tests=(.*)/) {
-	$tests = ";" . $1 . ";";
+	$tests = ":" . $1 . ":";
     }
     elsif (/-outfile=(.*)/) {
 	$outfile = $1;
@@ -509,7 +509,7 @@ sub RunTestSuites {
     if (!$has_cxx) {
 	&SkipCxxTestSuite;
     }
-    foreach my $testname (split(';',$tests)) {
+    foreach my $testname (split(':',$tests)) {
 	if ($testname eq "") { next; }
 	print $OUTFD $RunTestStart;
 	if ($is_xml) { 
