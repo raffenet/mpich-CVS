@@ -182,7 +182,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 		    {
 			int mpi_errno;
 			
-			mpi_errno = MPIR_Err_create_code(MPI_ERR_INTERN, "[ch3:sock] received packet of unknown type %d",
+			mpi_errno = MPIR_Err_create_code(MPI_ERR_INTERN, "**ch3|sock|badpacket", "**ch3|sock|badpacket %d",
 							 conn->pkt.type);
 			MPID_Abort(NULL, mpi_errno);
 		    }
@@ -277,7 +277,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 		{
 		    int mpi_errno;
 
-		    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "[ch3:sock] failed to connnect to process %d:%d",
+		    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|connfailed", "**ch3|sock|connfailed %d %d",
 						     /* FIXME: pgid */ -1, conn->vc->sc.pg_rank);
 		    MPID_Abort(NULL, mpi_errno);
 
@@ -535,7 +535,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
 		nNicMask = GetMask(token);
 
 		/* parse each line of the business card and match the ip address with the network mask */
-		temp = strdup(business_card);
+		temp = MPIU_Strdup(business_card);
 		token = strtok(temp, ":\r\n");
 		while (token)
 		{
@@ -549,45 +549,45 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
 			/* the current ip address matches the requested network so return these values */
 			MPIU_Strncpy(host, pszIP, MAXHOSTNAMELEN); /*pszHost);*/
 			*port = atoi(pszPort);
-			free(temp);
+			MPIU_Free(temp);
 			return MPI_SUCCESS;
 		    }
 		    token = strtok(NULL, ":\r\n");
 		}
-		free(temp);
+		MPIU_Free(temp);
 	    }
 	}
     }
 
-    temp = strdup(business_card);
+    temp = MPIU_Strdup(business_card);
     /* move to the host part */
     token = strtok(temp, ":");
     if (token == NULL)
     {
-	free(temp);
+	MPIU_Free(temp);
 	/*err_printf("GetHostAndPort: invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_ERR_OTHER, "[ch3:sock] GetHostAndPort: Invalid business card - %s", business_card);
+	return MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|badbuscard", "**ch3|sock|badbuscard %s", business_card);
     }
     /*strcpy(host, token);*/
     /* move to the ip part */
     token = strtok(NULL, ":");
     if (token == NULL)
     {
-	free(temp);
+	MPIU_Free(temp);
 	/*err_printf("GetHostAndPort: invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_ERR_OTHER, "[ch3:sock] GetHostAndPort: Invalid business card - %s", business_card);
+	return MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|badbuscard", "**ch3|sock|badbuscard %s", business_card);
     }
     MPIU_Strncpy(host, token, MAXHOSTNAMELEN); /* use the ip string instead of the hostname, it's more reliable */
     /* move to the port part */
     token = strtok(NULL, ":");
     if (token == NULL)
     {
-	free(temp);
+	MPIU_Free(temp);
 	/*err_printf("GetHostAndPort: invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_ERR_OTHER, "[ch3:sock] GetHostAndPort: Invalid business card - %s", business_card);
+	return MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|badbuscard", "**ch3|sock|badbuscard %s", business_card);
     }
     *port = atoi(token);
-    free(temp);
+    MPIU_Free(temp);
 
     return MPI_SUCCESS;
 }
@@ -649,12 +649,12 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     {
 	if (rc == SOCK_ERR_HOST_LOOKUP)
 	{ 
-	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "[ch3:sock] failed to obtain host information for process %d:%d (%s)",
+	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|hostlookup", "**ch3|sock|hostlookup %d %d %s",
 					     /* FIXME: pgid*/ -1, conn->vc->sc.pg_rank, val);
 	}
 	else if (rc == SOCK_ERR_CONN_REFUSED)
 	{ 
-	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "[ch3:sock] failed to connect to process %d:%d (%s)",
+	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|connrefused", "**ch3|sock|connrefused %d %d %s",
 					     /* FIXME: pgid */ -1, conn->vc->sc.pg_rank, val);
 	}
 	else
@@ -731,7 +731,7 @@ static inline MPIDI_CH3I_Connection_t * connection_alloc(void)
     conn = MPIU_Malloc(sizeof(MPIDI_CH3I_Connection_t));
     if (conn == NULL)
     {
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "ch3:sock unable to allocate a connection structure", 0 );
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**ch3|sock|connallocfailed", 0 );
 	MPID_Abort(NULL, mpi_errno);
     }
 
