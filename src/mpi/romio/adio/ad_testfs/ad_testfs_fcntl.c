@@ -13,8 +13,6 @@
 void ADIOI_TESTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, 
 			int *error_code)
 {
-    int i, err;
-
     int myrank, nprocs;
 
     *error_code = MPI_SUCCESS;

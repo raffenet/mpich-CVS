@@ -11,7 +11,7 @@
 
 void ADIOI_SFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *error_code)
 {
-    int  i, ntimes, err, len;
+    int  i, ntimes, len;
     ADIO_Offset curr_fsize, alloc_size, size, done;
     ADIO_Status status;
     char *buf;

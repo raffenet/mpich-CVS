@@ -12,8 +12,7 @@
 void ADIOI_PIOFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *error_code)
 {
     MPI_Datatype copy_etype, copy_filetype;
-    int combiner, i, j, k, filetype_is_contig, ntimes, err;
-    ADIOI_Flatlist_node *flat_file;
+    int i, ntimes, err;
     ADIO_Offset curr_fsize, alloc_size, size, len, done;
     ADIO_Status status;
     char *buf;
