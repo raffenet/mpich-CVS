@@ -394,6 +394,21 @@ def mpdman():
                             mpd_send_one_msg(rhsSocket,msgToSend)
                         else:
                             mpd_send_one_msg(rhsSocket,msg)
+                elif msg['cmd'] == 'pmi_getbyidx':
+                    if msg['from_rank'] == myRank:
+			if pmiSocket:  # may have disappeared in early shutdown
+                            KVSs[default_kvsname].update(msg['kvs'])
+                            if KVSs[default_kvsname].keys():
+                                key = KVSs[default_kvsname].keys()[0]
+                                val = KVSs[default_kvsname][key]
+                                pmiMsgToSend = 'cmd=getbyidx_results rc=0 nextidx=1 key=%s val=%s\n' % \
+                                               (key,val)
+                            else:
+                                pmiMsgToSend = 'cmd=getbyidx_results rc=-2 reason=no_more_keyvals\n'
+                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                    else:
+                        msg['kvs'].update(KVSs[default_kvsname])
+                        mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'response_to_pmi_get':
                     if msg['to_rank'] == myRank:
 			if pmiSocket:  # may have disappeared in early shutdown
@@ -711,6 +726,23 @@ def mpdman():
                             msgToSend = { 'cmd' : 'pmi_get', 'key' : key,
                                           'kvsname' : kvsname, 'from_rank' : myRank }
                             mpd_send_one_msg(rhsSocket,msgToSend)
+                    elif parsedMsg['cmd'] == 'getbyidx':
+                        kvsname = parsedMsg['kvsname']
+                        idx = int(parsedMsg['idx'])
+                        if idx == 0:
+                            msgToSend = { 'cmd' : 'pmi_getbyidx', 'kvsname' : kvsname,
+                                          'from_rank' : myRank, 'kvs' : KVSs[default_kvsname] }
+                            mpd_send_one_msg(rhsSocket,msgToSend)
+                        else:
+                            if len(KVSs[default_kvsname].keys()) > idx:
+                                key = KVSs[default_kvsname].keys()[idx]
+                                val = KVSs[default_kvsname][key]
+                                nextidx = idx + 1
+                                pmiMsgToSend = 'cmd=getbyidx_results rc=0 nextidx=%d key=%s val=%s\n' % \
+                                               (nextidx,key,val)
+                            else:
+                                pmiMsgToSend = 'cmd=getbyidx_results rc=-2 reason=no_more_keyvals\n'
+                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
                     elif parsedMsg['cmd'] == 'spawn':
                         ## This proc may produce stdout and stderr; do this early so I
                         ## won't exit before child sets up its conns with me.

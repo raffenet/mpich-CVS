@@ -73,10 +73,12 @@ int main(int argc, char *argv[])
         msg_recvd[n] = '\0';
     printf("%d: recvd msg=:%s:\n",pmi_rank,msg_recvd); fflush(stdout);
 	
+    /* interface may have changed
     sprintf(msg_to_send,"cmd=spawn nprocs=%d execname=%s arg=%s\n",
 	    1,"/home/rbutler/mpd2/pmitest","spawned");
     write(pmi_fd,msg_to_send,strlen(msg_to_send));
     printf("sent spawn\n"); fflush(stdout);
+    */
 
     /**********
     if (pmi_rank == 0)
