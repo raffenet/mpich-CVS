@@ -7,6 +7,7 @@
 """
 usage: mpdexit mpdid
     mpdid may be obtained via mpdtrace -l (or may be "localmpd")
+causes a single mpd to exit (and thus exit the ring)
 """
 from time import ctime
 __author__ = "Ralph Butler and Rusty Lusk"
