@@ -857,7 +857,9 @@ if test "$enable_f77" = "default" ; then
     AC_PROG_F77
     if test -n "$F77" ; then enable_f77=yes ; fi
 fi
-if test "$enable_f90" = "default" ; then
+# F90 requires F77 as well.  If the user disabled f77, do not run the
+# next test; instead, drop into the warning message
+if test "$enable_f90" = "default" -a "$enable_f77" = yes ; then
     enable_f90=no
     # Check for a Fortran compiler
     PAC_PROG_F90
@@ -870,7 +872,8 @@ if test "$enable_f90" = "default" ; then
 fi
 if test "$enable_f90" = "yes" -a "$enable_f77" != "yes" ; then
    # Fortran 90 support requires compatible Fortran 77 support
-   AC_MSG_WARN([Fortran 90 support requires compatible Fortran 77 support])
+   AC_MSG_WARN([Fortran 90 support requires compatible Fortran 77 support.  To force the use of the Fortran 90 compiler for Fortran 77, set the environment variable F77 to the name of the Fortran 90 compiler.])
+   # We should probably do the compatibility test as well
    enable_f77=yes
 fi
 if test "$enable_f77" = "yes" ; then
@@ -2257,7 +2260,16 @@ else
 fi
 AC_SUBST(EXAMPLE_LIBS)
 dnl default settings for compiler and linker flags 
-MPI_CFLAGS="$MPI_CFLAGS $CFLAGS"
+# Note:
+#   The MPI_CFLAGS should not contain *all* of the CFLAGS, just the 
+#   flags needed to compile with the mpi.h header.  Normally, no flags
+#   should be required to compile MPI programs (otherwise, users that choose
+#   not to use the compile scripts will submit bug reports).
+#   For now, we try using no extra Flags.  
+#MPI_CFLAGS="$MPI_CFLAGS $CFLAGS"
+#
+# Unlike MPI_CFLAGS, the linker flags will always be needed to ensure that 
+# all of the required libraries are present.
 MPI_LDFLAGS="$MPI_LDFLAGS $LDFLAGS"
 AC_SUBST(MPI_CFLAGS)
 AC_SUBST(MPI_LDFLAGS)
