@@ -558,6 +558,13 @@ sub ReadMfile {
             @subdirs = split(/\s+/,$1);
 	    $subdirs_has_autoconf = 0;
         }
+	elsif (/^SUBDIRS_([^\s]*)\s*=\s*(.*)\s*/) {
+	    # use SUBDIRS_acname = realname to say that the
+	    # autoconf variable acname, used in SUBDIRS, can
+	    # have any of the values realname
+	    $subdir_autoconf_vars{$1} = $2;
+	    $subdir_optionals .= " $2";
+	}
         elsif (/^DOC_SUBDIRS\s*=\s*(.*)\s*\r?$/) {
 	    # The \r is used to remove any \r in DOS-style files
             @doc_subdirs = split(/\s+/,$1);
@@ -1231,6 +1238,8 @@ sub ClearVars {
     %pgmlinktypes = ();
     # Other directories
     @subdirs = ();
+    %subdir_autoconf_vars = ();
+    $subdir_optionals = "";
     @doc_subdirs = ();
     $docargsAdd = "";
     %docthiskinddir = ();
@@ -1625,7 +1634,10 @@ sub TargetClean {
     # Clean coverage analysis files
     &GcovClean;
 
+    # Finally, execute make clean in any subdirs
     &RecursiveOp( "clean" );
+
+    # distclean target
     print FD "distclean: clean";
     if (defined($usertargets{"distclean-local"})) { 
 	print FD " distclean-local";
@@ -1646,6 +1658,29 @@ sub TargetClean {
 	# Add the AC_CONFIG_HEADER file, if any.
 	print FD "\t-${quietLine}rm -f $configure_has_config_headers$newline";
     }
+    # Handle files that aren't part of subdirs
+    if (defined($autoconf_files_by_dir_orig{$lcurdir})) {
+        my $otherfiles = $autoconf_files_by_dir_orig{$lcurdir};
+	foreach $dir (@subdirs) {
+	    $otherfiles =~ s/ $dir\/[^\s]*//g;
+	}
+	$otherfiles =~ s/^\s*//;
+	# Is there anything left?
+	if ($otherfiles =~ /[^\s]+/) {
+	    print FD "\t-${quietLine}rm -f $otherfiles$newline";
+	}
+    }
+    # Another difficulty are the optional directories.  For example,
+    # a SUBDIRS = foo \@bar\@ 
+    # line (without the \, included since the simplemake.in file is
+    # itself processed with autoconf)
+    if ($subdir_optionals ne "") {
+	print FD "\t-\@for dir in $subdir_optionals ; do \\$newline";
+	print FD "\t    if [ -s \$\$dir/Makefile ] ; then \\$newline";
+	print FD "\t      (cd \$\$dir && \${MAKE} distclean ;) ; fi ; \\$newline";
+	print FD "\tdone$newline";
+    }
+
     &DistCleanDependencies;
 
     if ($distcleanfiles ne "") {
@@ -2528,7 +2563,7 @@ sub TargetDependenciesDynamic {
 
 	# We always use a "newalldeps" incase there is a failure 
 	# creating the new list of dependency files.
-	print FD "\t-rm -f .deps/newalldeps$newline";
+	print FD "\t}rm -f .deps/newalldeps$newline";
 	foreach $lib (keys(%libraries)) {
 	    foreach $sourcefile (split(/\s+/,&ExpandMakeVars($libraries{$lib}))) {
 		$ext = $sourcefile;
@@ -2553,7 +2588,7 @@ sub TargetDependenciesDynamic {
 sub DistCleanDependencies {
     # Eventually, this should output only in Makefiles that have the 
     # dependencies directory
-    print FD "\trm -rf .deps$newline";
+    print FD "\t-${quietLine}rm -rf .deps$newline";
 }
 
 
@@ -2620,6 +2655,15 @@ sub ReadAutoconf {
 		    if (! -s "$curdir$1/Makefile.sm") {
 			$autoconf_files_by_dir{$lcurdir} .= " $file";
 		    }
+		    else {
+			# We also need to handle files that do have a 
+			# Makefile.sm,
+			# but that aren't in the "usual" path.  Those
+			# are directories that are not included in the
+			# SUBDIRS path.  These are used only by the distclean
+			# target
+			$autoconf_files_by_dir_orig{$lcurdir} .= " $file";
+		    }
 		}
 		elsif ($file =~ /^\$(\w*)/) {
 		    # Another special case.  The name is actually
@@ -2635,7 +2679,7 @@ sub ReadAutoconf {
 			}
 		    }
 		    else {
-			print STDERR "Shell variable $varname will not be added to the list\n\
+			print STDERR "Shell variable $varname will not be added to the list\
 of known autoconf file files for ";
 			if ($lcurdir ne "") {
 			    print STDERR "$lcurdir.\n";
@@ -2651,7 +2695,7 @@ of known autoconf file files for ";
 		}
 	    }
 	    # Add files that configure generates in the current directory
-	    $autoconf_files_by_dir{$lcurdir} .= " config.status config.log config.cache config.system";
+	    $autoconf_files_by_dir{$lcurdir} .= " config.status config.log config.cache *conf.cache config.system";
 	    #print "$files\n";
 	    last;
 	}
