@@ -466,6 +466,7 @@ export master_top_srcdir
 dnl
 dnl This goes here because we need the top_srcdir
 if test "$enable_romio" = "yes" ; then
+   AC_DEFINE(HAVE_ROMIO,,[Define if ROMIO is enabled])
    if test -d $use_top_srcdir/src/mpi/romio ; then
        subsystems="$subsystems src/mpi/romio"
    else
@@ -1181,6 +1182,20 @@ dnl The following files should be created by the appropriate configure within
 dnl the device.
 dnl          src/mpid/mm/Makefile \
 
+if test "$enable_romio" = "yes" ; then
+  /bin/rm -f src/include/mpio.h "${top_srcdir}/include/mpio.h"
+  cp src/mpi/romio/include/mpio.h src/include
+  if test -s src/binding/f77/mpif.h ; then
+
+dnl Remove MPI_OFFSET_KIND and MPI_FILE_NULL from ROMIO's 
+dnl mpiof.h and append it to mpif.h
+
+      sed -e '/OFFSET_KIND/d' src/mpi/romio/include/mpiof.h | \
+      sed -e '/FILE_NULL/d' src/mpi/romio/include/mpiof.h | \
+      cat src/binding/f77/mpif.h - > src/binding/f77/tmp_mpif.h 
+      mv -f src/binding/f77/tmp_mpif.h src/binding/f77/mpif.h
+  fi
+fi
 
 PAC_SUBDIR_CACHE_CLEANUP
 echo 'Configuration completed.'

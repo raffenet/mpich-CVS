@@ -1055,6 +1055,10 @@ int PMPI_Win_set_errhandler(MPI_Win, MPI_Errhandler);
 #endif  /* MPI_BUILD_PROFILING */
 /* End of MPI bindings */
 
+#ifdef HAVE_ROMIO
+#include "mpio.h"
+#endif
+
 #if defined(__cplusplus)
 }
 /* Add the C++ bindings */
