@@ -45,7 +45,7 @@ void MPIDI_Datatype_dot_printf(MPI_Datatype type,
 	MPID_Dataloop *loop_p;
 
 	MPID_Datatype_get_ptr(type, dt_p);
-	loop_p = dt_p->loopinfo;
+	loop_p = dt_p->dataloop;
 
 	MPIDI_Dataloop_dot_printf(loop_p, depth, header);
 	return;

@@ -77,14 +77,14 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 	new_dtp->eltype        = old_dtp->eltype;
 	
 	/* copy dataloop */
-	dlp = MPID_Dataloop_alloc(old_dtp->loopsize);
+	dlp = MPID_Dataloop_alloc(old_dtp->dataloop_size);
 	if (dlp == NULL) assert(0);
 	
-	new_dtp->loopinfo       = dlp;
-	new_dtp->loopinfo_depth = old_dtp->loopinfo_depth;
-	new_dtp->loopsize       = old_dtp->loopsize;
+	new_dtp->dataloop       = dlp;
+	new_dtp->dataloop_depth = old_dtp->dataloop_depth;
+	new_dtp->dataloop_size       = old_dtp->dataloop_size;
 	
-	MPID_Dataloop_copy(dlp, old_dtp->loopinfo, old_dtp->loopsize);
+	MPID_Dataloop_copy(dlp, old_dtp->dataloop, old_dtp->dataloop_size);
 
 	*newtype = new_dtp->handle;
     }

@@ -46,7 +46,7 @@
 /* NOTE: put get size into mpiimpl.h; the others go here until such time
  * as we see that we need them elsewhere.
  */
-#define DLOOP_Handle_get_loopsize_macro  MPID_Datatype_get_loopsize
+#define DLOOP_Handle_get_dataloop_size_macro  MPID_Datatype_get_dataloop_size
 
 #define DLOOP_Handle_get_loopdepth_macro(__handle,__depth) \
     MPID_Datatype_get_loopdepth_macro(__handle,__depth)

@@ -117,9 +117,9 @@ int MPID_Type_struct(int count,
     new_dtp->name[0]      = 0;
     new_dtp->contents     = NULL;
 
-    new_dtp->loopsize       = -1;
-    new_dtp->loopinfo       = NULL;
-    new_dtp->loopinfo_depth = -1;
+    new_dtp->dataloop_size       = -1;
+    new_dtp->dataloop       = NULL;
+    new_dtp->dataloop_depth = -1;
 
     if (count == 0)
     {
@@ -149,9 +149,9 @@ int MPID_Type_struct(int count,
 				    NULL,
 				    NULL,
 				    NULL,
-				    &(new_dtp->loopinfo),
-				    &(new_dtp->loopsize),
-				    &(new_dtp->loopinfo_depth),
+				    &(new_dtp->dataloop),
+				    &(new_dtp->dataloop_size),
+				    &(new_dtp->dataloop_depth),
 				    0);
 	*newtype = new_dtp->handle;
 	
@@ -328,9 +328,9 @@ int MPID_Type_struct(int count,
 					    blocklength_array,
 					    displacement_array,
 					    oldtype_array,
-					    &(new_dtp->loopinfo),
-					    &(new_dtp->loopsize),
-					    &(new_dtp->loopinfo_depth),
+					    &(new_dtp->dataloop),
+					    &(new_dtp->dataloop_size),
+					    &(new_dtp->dataloop_depth),
 					    MPID_DATALOOP_HOMOGENEOUS);
 
     *newtype = new_dtp->handle;
@@ -689,11 +689,11 @@ int MPID_Dataloop_create_struct(int count,
 	    {
 		MPID_Datatype_get_ptr(oldtype_array[i], old_dtp);
 
-		if (old_dtp->loopinfo_depth > old_loop_depth)
+		if (old_dtp->dataloop_depth > old_loop_depth)
 		{
-		    old_loop_depth = old_dtp->loopinfo_depth;
+		    old_loop_depth = old_dtp->dataloop_depth;
 		}
-		new_loop_sz += old_dtp->loopsize;
+		new_loop_sz += old_dtp->dataloop_size;
 	    }
 	}
 
@@ -792,10 +792,10 @@ int MPID_Dataloop_create_struct(int count,
 	    {
 		MPID_Datatype_get_ptr(oldtype_array[i], old_dtp);
 
-		MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
+		MPID_Dataloop_copy(curpos, old_dtp->dataloop, old_dtp->dataloop_size);
 		new_dlp->loop_params.s_t.dataloop_array[loop_idx] =
 		    (struct MPID_Dataloop *) curpos;
-		curpos += old_dtp->loopsize;
+		curpos += old_dtp->dataloop_size;
 		new_dlp->loop_params.s_t.blocksize_array[loop_idx] =
 		    blklen_array[i];
 		new_dlp->loop_params.s_t.el_extent_array[loop_idx] =

@@ -43,7 +43,7 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 	new_dtp->size           = oldsize;
 	new_dtp->has_sticky_ub  = 1;
 	new_dtp->has_sticky_lb  = 1;
-	new_dtp->loopinfo_depth = 1;
+	new_dtp->dataloop_depth = 1;
 	new_dtp->true_lb        = 0;
 	new_dtp->lb             = lb;
 	new_dtp->true_ub        = oldsize;
@@ -56,13 +56,13 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
         new_dtp->eltype         = oldtype;
 
 	/* allocate dataloop */
-	new_dtp->loopsize = sizeof(struct MPID_Dataloop);
+	new_dtp->dataloop_size = sizeof(struct MPID_Dataloop);
 	dlp               = MPID_Dataloop_alloc(sizeof(struct MPID_Dataloop));
 	/* --BEGIN ERROR HANDLING-- */
 	if (dlp == NULL) return MPIDI_Type_create_resized_memory_error();
 	/* --END ERROR HANDLING-- */
 
-	new_dtp->loopinfo = dlp;
+	new_dtp->dataloop = dlp;
 
 	/* fill in dataloop */
 	dlp->kind                  = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
@@ -82,7 +82,7 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 	new_dtp->size           = old_dtp->size;
 	new_dtp->has_sticky_ub  = 1;
 	new_dtp->has_sticky_lb  = 1;
-	new_dtp->loopinfo_depth = 1;
+	new_dtp->dataloop_depth = 1;
 	new_dtp->true_lb        = old_dtp->true_lb;
 	new_dtp->lb             = lb;
 	new_dtp->true_ub        = old_dtp->true_ub;
@@ -98,17 +98,17 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
         new_dtp->eltype         = old_dtp->eltype;
 
 	/* allocate dataloop */
-	new_dtp->loopsize = old_dtp->loopsize;
-	dlp               = MPID_Dataloop_alloc(new_dtp->loopsize);
+	new_dtp->dataloop_size = old_dtp->dataloop_size;
+	dlp               = MPID_Dataloop_alloc(new_dtp->dataloop_size);
 	/* --BEGIN ERROR HANDLING-- */
 	if (dlp == NULL) return MPIDI_Type_create_resized_memory_error();
 	/* --END ERROR HANDLING-- */
 
-	new_dtp->loopinfo = dlp;
+	new_dtp->dataloop = dlp;
 
 	/* make a copy of the dataloop from the old type (no changes) */
 	curpos = (char *) dlp;
-	MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
+	MPID_Dataloop_copy(curpos, old_dtp->dataloop, old_dtp->dataloop_size);
     }
 
     *newtype_p = new_dtp->handle;

@@ -53,7 +53,7 @@ int MPID_Type_commit(MPI_Datatype *datatype_p)
 		     (int) datatype_ptr->n_contig_blocks));
 
 #if 0
-    MPIDI_Dataloop_dot_printf(datatype_ptr->loopinfo, 0, 1);
+    MPIDI_Dataloop_dot_printf(datatype_ptr->dataloop, 0, 1);
 #endif
 
     return 0;

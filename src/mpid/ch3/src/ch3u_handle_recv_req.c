@@ -422,11 +422,11 @@ static int create_derived_datatype(MPID_Request *req, MPID_Datatype **dtp)
     new_dtp->n_contig_blocks = dtype_info->n_contig_blocks; 
     new_dtp->size = dtype_info->size;
     new_dtp->extent = dtype_info->extent;
-    new_dtp->loopsize = dtype_info->loopsize;
-    new_dtp->loopinfo_depth = dtype_info->loopinfo_depth; 
+    new_dtp->dataloop_size = dtype_info->dataloop_size;
+    new_dtp->dataloop_depth = dtype_info->dataloop_depth; 
     new_dtp->eltype = dtype_info->eltype;
     /* set dataloop pointer */
-    new_dtp->loopinfo = req->dev.dataloop;
+    new_dtp->dataloop = req->dev.dataloop;
     
     new_dtp->ub = dtype_info->ub;
     new_dtp->lb = dtype_info->lb;
@@ -435,10 +435,10 @@ static int create_derived_datatype(MPID_Request *req, MPID_Datatype **dtp)
     new_dtp->has_sticky_ub = dtype_info->has_sticky_ub;
     new_dtp->has_sticky_lb = dtype_info->has_sticky_lb;
     /* update pointers in dataloop */
-    ptrdiff = (MPI_Aint)((char *) (new_dtp->loopinfo) - (char *)
-                         (dtype_info->loopinfo));
+    ptrdiff = (MPI_Aint)((char *) (new_dtp->dataloop) - (char *)
+                         (dtype_info->dataloop));
     
-    MPID_Dataloop_update(new_dtp->loopinfo, ptrdiff);
+    MPID_Dataloop_update(new_dtp->dataloop, ptrdiff);
 
     new_dtp->contents = NULL;
 

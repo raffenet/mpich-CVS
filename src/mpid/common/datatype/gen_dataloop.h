@@ -294,7 +294,7 @@ typedef struct DLOOP_Segment {
 			      * we created/used by parsing so far?  that amount + 1.
 			      */
     DLOOP_Dataloop_stackelm stackelm[DLOOP_MAX_DATATYPE_DEPTH];
-    int  cur_sp;   /* Current stack pointer when using loopinfo */
+    int  cur_sp;   /* Current stack pointer when using dataloop */
     int  valid_sp; /* maximum valid stack pointer.  This is used to 
                       maintain information on the stack after it has
                       been placed there by following the datatype field

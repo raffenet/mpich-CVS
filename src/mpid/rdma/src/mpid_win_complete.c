@@ -294,10 +294,10 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         int           n_contig_blocks;
         int           size;     
         MPI_Aint      extent;   
-        int           loopsize; 
-        void          *loopinfo;  /* pointer needed to update pointers
+        int           dataloop_size; 
+        void          *dataloop;  /* pointer needed to update pointers
                                      within dataloop on remote side */
-        int           loopinfo_depth; 
+        int           dataloop_depth; 
         int           eltype;
         MPI_Aint ub, lb, true_ub, true_lb;
         int has_sticky_ub, has_sticky_lb;
@@ -468,10 +468,10 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             dtype_infos[i].n_contig_blocks = dtp->n_contig_blocks;
             dtype_infos[i].size = dtp->size;
             dtype_infos[i].extent = dtp->extent;
-            dtype_infos[i].loopsize = dtp->loopsize;
-            dtype_infos[i].loopinfo_depth = dtp->loopinfo_depth;
+            dtype_infos[i].dataloop_size = dtp->dataloop_size;
+            dtype_infos[i].dataloop_depth = dtp->dataloop_depth;
             dtype_infos[i].eltype = dtp->eltype;
-            dtype_infos[i].loopinfo = dtp->loopinfo;
+            dtype_infos[i].dataloop = dtp->dataloop;
             dtype_infos[i].ub = dtp->ub;
             dtype_infos[i].lb = dtp->lb;
             dtype_infos[i].true_ub = dtp->true_ub;
@@ -479,13 +479,13 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             dtype_infos[i].has_sticky_ub = dtp->has_sticky_ub;
             dtype_infos[i].has_sticky_lb = dtp->has_sticky_lb;
 
-            dataloops[i] = MPIU_Malloc(dtp->loopsize);
+            dataloops[i] = MPIU_Malloc(dtp->dataloop_size);
             if (!dataloops[i]) {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
                 return mpi_errno;
             }
-            memcpy(dataloops[i], dtp->loopinfo, dtp->loopsize);
+            memcpy(dataloops[i], dtp->dataloop, dtp->dataloop_size);
 
             /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
             mpi_errno = NMPI_Isend(&rma_op_infos[i],
@@ -513,7 +513,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             tags[dest]++;
             
             mpi_errno = NMPI_Isend(dataloops[i],
-                                   dtp->loopsize, MPI_BYTE, 
+                                   dtp->dataloop_size, MPI_BYTE, 
                                    dest, tags[dest], comm,
                                    &reqs[req_cnt]); 
             if (mpi_errno) {

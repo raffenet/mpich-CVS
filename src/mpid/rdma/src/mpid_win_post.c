@@ -162,10 +162,10 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
         int           n_contig_blocks; 
         int           size;     
         MPI_Aint      extent;   
-        int           loopsize; 
-        void          *loopinfo;  /* pointer needed to update pointers
+        int           dataloop_size; 
+        void          *dataloop;  /* pointer needed to update pointers
                                      within dataloop on remote side */
-        int           loopinfo_depth; 
+        int           dataloop_depth; 
         int           eltype;
         MPI_Aint ub, lb, true_ub, true_lb;
         int has_sticky_ub, has_sticky_lb;
@@ -282,13 +282,13 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                 tags[src]++;
 
                 /* recv dataloop */
-                dataloop = (void *) MPIU_Malloc(dtype_info.loopsize);
+                dataloop = (void *) MPIU_Malloc(dtype_info.dataloop_size);
                 if (!dataloop) {
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     return (THREAD_RETURN_TYPE)mpi_errno;
                 }
 
-                mpi_errno = NMPI_Recv(dataloop, dtype_info.loopsize,
+                mpi_errno = NMPI_Recv(dataloop, dtype_info.dataloop_size,
                                        MPI_BYTE, src, tags[src], comm,
                                        MPI_STATUS_IGNORE);
                 if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
@@ -314,12 +314,12 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                 new_dtp->n_contig_blocks = dtype_info.n_contig_blocks;
                 new_dtp->size = dtype_info.size;
                 new_dtp->extent = dtype_info.extent;
-                new_dtp->loopsize = dtype_info.loopsize;
-                new_dtp->loopinfo_depth = dtype_info.loopinfo_depth; 
+                new_dtp->dataloop_size = dtype_info.dataloop_size;
+                new_dtp->dataloop_depth = dtype_info.dataloop_depth; 
                 new_dtp->eltype = dtype_info.eltype;
 
                 /* set dataloop pointer */
-                new_dtp->loopinfo = dataloop;
+                new_dtp->dataloop = dataloop;
                 /* set datatype handle to be used in send/recv
                    below */
                 rma_op_info.datatype = new_dtp->handle;
@@ -331,10 +331,10 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                 new_dtp->has_sticky_ub = dtype_info.has_sticky_ub;
                 new_dtp->has_sticky_lb = dtype_info.has_sticky_lb;
                 /* update pointers in dataloop */
-                ptrdiff = (MPI_Aint)((char *) (new_dtp->loopinfo) - (char *)
-                    (dtype_info.loopinfo));
+                ptrdiff = (MPI_Aint)((char *) (new_dtp->dataloop) - (char *)
+                    (dtype_info.dataloop));
 
-                MPID_Dataloop_update(new_dtp->loopinfo, ptrdiff);
+                MPID_Dataloop_update(new_dtp->dataloop, ptrdiff);
             }
 
             switch (rma_op_info.type) {

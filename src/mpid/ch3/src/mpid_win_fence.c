@@ -433,10 +433,10 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         dtype_info->n_contig_blocks = target_dtp->n_contig_blocks;
         dtype_info->size = target_dtp->size;
         dtype_info->extent = target_dtp->extent;
-        dtype_info->loopsize = target_dtp->loopsize;
-        dtype_info->loopinfo_depth = target_dtp->loopinfo_depth;
+        dtype_info->dataloop_size = target_dtp->dataloop_size;
+        dtype_info->dataloop_depth = target_dtp->dataloop_depth;
         dtype_info->eltype = target_dtp->eltype;
-        dtype_info->loopinfo = target_dtp->loopinfo;
+        dtype_info->dataloop = target_dtp->dataloop;
         dtype_info->ub = target_dtp->ub;
         dtype_info->lb = target_dtp->lb;
         dtype_info->true_ub = target_dtp->true_ub;
@@ -444,7 +444,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         dtype_info->has_sticky_ub = target_dtp->has_sticky_ub;
         dtype_info->has_sticky_lb = target_dtp->has_sticky_lb;
 
-        *dataloop = MPIU_Malloc(target_dtp->loopsize);
+        *dataloop = MPIU_Malloc(target_dtp->dataloop_size);
 	/* --BEGIN ERROR HANDLING-- */
         if (!(*dataloop))
 	{
@@ -453,15 +453,15 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
             return mpi_errno;
         }
 	/* --END ERROR HANDLING-- */
-        memcpy(*dataloop, target_dtp->loopinfo, target_dtp->loopsize);
+        memcpy(*dataloop, target_dtp->dataloop, target_dtp->dataloop_size);
 
         if (rma_op->type == MPIDI_RMA_PUT)
 	{
-            put_pkt->dataloop_size = target_dtp->loopsize;
+            put_pkt->dataloop_size = target_dtp->dataloop_size;
 	}
         else
 	{
-            accum_pkt->dataloop_size = target_dtp->loopsize;
+            accum_pkt->dataloop_size = target_dtp->dataloop_size;
 	}
     }
 
@@ -483,7 +483,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
             iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)dtype_info;
             iov[1].MPID_IOV_LEN = sizeof(*dtype_info);
             iov[2].MPID_IOV_BUF = *dataloop;
-            iov[2].MPID_IOV_LEN = target_dtp->loopsize;
+            iov[2].MPID_IOV_LEN = target_dtp->dataloop_size;
 
             iov[3].MPID_IOV_BUF = rma_op->origin_addr;
             iov[3].MPID_IOV_LEN = rma_op->origin_count * origin_type_size;
@@ -515,7 +515,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
             iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)dtype_info;
             iov[1].MPID_IOV_LEN = sizeof(*dtype_info);
             iov[2].MPID_IOV_BUF = *dataloop;
-            iov[2].MPID_IOV_LEN = target_dtp->loopsize;
+            iov[2].MPID_IOV_LEN = target_dtp->dataloop_size;
             iovcnt = 3;
         }
 
@@ -650,10 +650,10 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         dtype_info->n_contig_blocks = dtp->n_contig_blocks;
         dtype_info->size = dtp->size;
         dtype_info->extent = dtp->extent;
-        dtype_info->loopsize = dtp->loopsize;
-        dtype_info->loopinfo_depth = dtp->loopinfo_depth;
+        dtype_info->dataloop_size = dtp->dataloop_size;
+        dtype_info->dataloop_depth = dtp->dataloop_depth;
         dtype_info->eltype = dtp->eltype;
-        dtype_info->loopinfo = dtp->loopinfo;
+        dtype_info->dataloop = dtp->dataloop;
         dtype_info->ub = dtp->ub;
         dtype_info->lb = dtp->lb;
         dtype_info->true_ub = dtp->true_ub;
@@ -661,7 +661,7 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         dtype_info->has_sticky_ub = dtp->has_sticky_ub;
         dtype_info->has_sticky_lb = dtp->has_sticky_lb;
 
-        *dataloop = MPIU_Malloc(dtp->loopsize);
+        *dataloop = MPIU_Malloc(dtp->dataloop_size);
 	/* --BEGIN ERROR HANDLING-- */
         if (!(*dataloop))
 	{
@@ -670,16 +670,16 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
             return mpi_errno;
         }
 	/* --END ERROR HANDLING-- */
-        memcpy(*dataloop, dtp->loopinfo, dtp->loopsize);
+        memcpy(*dataloop, dtp->dataloop, dtp->dataloop_size);
 
-        get_pkt->dataloop_size = dtp->loopsize;
+        get_pkt->dataloop_size = dtp->dataloop_size;
 
         iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)get_pkt;
         iov[0].MPID_IOV_LEN = sizeof(*get_pkt);
         iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)dtype_info;
         iov[1].MPID_IOV_LEN = sizeof(*dtype_info);
         iov[2].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)*dataloop;
-        iov[2].MPID_IOV_LEN = dtp->loopsize;
+        iov[2].MPID_IOV_LEN = dtp->dataloop_size;
         
         mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, 3, &req);
 
@@ -744,10 +744,10 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         int           n_contig_blocks;
         int           size;     
         MPI_Aint      extent;   
-        int           loopsize; 
-        void          *loopinfo;  /* pointer needed to update pointers
+        int           dataloop_size; 
+        void          *dataloop;  /* pointer needed to update pointers
                                      within dataloop on remote side */
-        int           loopinfo_depth; 
+        int           dataloop_depth; 
         int           eltype;
         MPI_Aint ub, lb, true_ub, true_lb;
         int has_sticky_ub, has_sticky_lb;
@@ -902,10 +902,10 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                 dtype_infos[i].n_contig_blocks = dtp->n_contig_blocks;
                 dtype_infos[i].size = dtp->size;
                 dtype_infos[i].extent = dtp->extent;
-                dtype_infos[i].loopsize = dtp->loopsize;
-                dtype_infos[i].loopinfo_depth = dtp->loopinfo_depth;
+                dtype_infos[i].dataloop_size = dtp->dataloop_size;
+                dtype_infos[i].dataloop_depth = dtp->dataloop_depth;
                 dtype_infos[i].eltype = dtp->eltype;
-                dtype_infos[i].loopinfo = dtp->loopinfo;
+                dtype_infos[i].dataloop = dtp->dataloop;
                 dtype_infos[i].ub = dtp->ub;
                 dtype_infos[i].lb = dtp->lb;
                 dtype_infos[i].true_ub = dtp->true_ub;
@@ -913,13 +913,13 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                 dtype_infos[i].has_sticky_ub = dtp->has_sticky_ub;
                 dtype_infos[i].has_sticky_lb = dtp->has_sticky_lb;
 
-                dataloops[i] = MPIU_Malloc(dtp->loopsize);
+                dataloops[i] = MPIU_Malloc(dtp->dataloop_size);
                 if (!dataloops[i]) {
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                     return mpi_errno;
                 }
-                memcpy(dataloops[i], dtp->loopinfo, dtp->loopsize);
+                memcpy(dataloops[i], dtp->dataloop, dtp->dataloop_size);
 
                 /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
                 mpi_errno = NMPI_Isend(&rma_op_infos[i],
@@ -947,7 +947,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                 tags[dest]++;
 
                 mpi_errno = NMPI_Isend(dataloops[i],
-                                       dtp->loopsize, MPI_BYTE, 
+                                       dtp->dataloop_size, MPI_BYTE, 
                                        dest, tags[dest], comm,
                                        &reqs[req_cnt]); 
                 if (mpi_errno) {
@@ -1034,7 +1034,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 
                     /* recv dataloop */
                     dataloops[total_op_count] = (void *)
-                        MPIU_Malloc(dtype_infos[total_op_count].loopsize);
+                        MPIU_Malloc(dtype_infos[total_op_count].dataloop_size);
                     if (!dataloops[total_op_count]) {
                         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
@@ -1042,7 +1042,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     }
 
                     mpi_errno = NMPI_Recv(dataloops[total_op_count],
-                                          dtype_infos[total_op_count].loopsize,
+                                          dtype_infos[total_op_count].dataloop_size,
                                           MPI_BYTE, src, tags[src], comm,
                                           MPI_STATUS_IGNORE);
                     if (mpi_errno) {
@@ -1073,12 +1073,12 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                         dtype_infos[total_op_count].n_contig_blocks; 
                     new_dtp->size = dtype_infos[total_op_count].size;
                     new_dtp->extent = dtype_infos[total_op_count].extent;
-                    new_dtp->loopsize = dtype_infos[total_op_count].loopsize;
-                    new_dtp->loopinfo_depth =
-                        dtype_infos[total_op_count].loopinfo_depth; 
+                    new_dtp->dataloop_size = dtype_infos[total_op_count].dataloop_size;
+                    new_dtp->dataloop_depth =
+                        dtype_infos[total_op_count].dataloop_depth; 
                     new_dtp->eltype = dtype_infos[total_op_count].eltype;
                     /* set dataloop pointer */
-                    new_dtp->loopinfo = dataloops[total_op_count];
+                    new_dtp->dataloop = dataloops[total_op_count];
                     /* set datatype handle to be used in send/recv
                        below */
                     rma_op_infos[total_op_count].datatype = new_dtp->handle;
@@ -1090,10 +1090,10 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     new_dtp->has_sticky_ub = dtype_infos[total_op_count].has_sticky_ub;
                     new_dtp->has_sticky_lb = dtype_infos[total_op_count].has_sticky_lb;
                     /* update pointers in dataloop */
-                    ptrdiff = (MPI_Aint)((char *) (new_dtp->loopinfo) - (char *)
-                        (dtype_infos[total_op_count].loopinfo));
+                    ptrdiff = (MPI_Aint)((char *) (new_dtp->dataloop) - (char *)
+                        (dtype_infos[total_op_count].dataloop));
 
-                    MPID_Dataloop_update(new_dtp->loopinfo, ptrdiff);
+                    MPID_Dataloop_update(new_dtp->dataloop, ptrdiff);
                 }
 
                 switch (rma_op_infos[total_op_count].type) {

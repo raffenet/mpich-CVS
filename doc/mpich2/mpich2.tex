@@ -4298,9 +4298,9 @@ Here are the steps to create and return a new datatype.
 
 \item Setup the two dataloops.  For datatypes that require copies of input
   arrays (e.g., \code{MPI_Type_indexed}), only the
-  \mpids{MPID_Datatype}{opt_loopinfo} should contain a copy if possible.  
-  Use \code{NULL} pointers in the \mpids{MPID_Datatype}{loopinfo} to indicate
-  that the corresponding fields in \mpids{MPID_Datatype}{opt_loopinfo} should
+  \mpids{MPID_Datatype}{opt_dataloop} should contain a copy if possible.  
+  Use \code{NULL} pointers in the \mpids{MPID_Datatype}{dataloop} to indicate
+  that the corresponding fields in \mpids{MPID_Datatype}{opt_dataloop} should
   be used.  This will become clearer below.
   
   Setting up the \code{dataloop} is relatively easy.  The combiner (e.g.,

@@ -64,9 +64,9 @@ int MPID_Type_vector(int count,
     new_dtp->name[0]      = 0;
     new_dtp->contents     = NULL;
 
-    new_dtp->loopsize       = -1;
-    new_dtp->loopinfo       = NULL;
-    new_dtp->loopinfo_depth = -1;
+    new_dtp->dataloop_size       = -1;
+    new_dtp->dataloop       = NULL;
+    new_dtp->dataloop_depth = -1;
 
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
 
@@ -98,9 +98,9 @@ int MPID_Type_vector(int count,
 				    0,
 				    0,
 				    MPI_INT, /* dummy type */
-				    &(new_dtp->loopinfo),
-				    &(new_dtp->loopsize),
-				    &(new_dtp->loopinfo_depth),
+				    &(new_dtp->dataloop),
+				    &(new_dtp->dataloop_size),
+				    &(new_dtp->dataloop_depth),
 				    0);
 	*newtype = new_dtp->handle;
 	
@@ -181,9 +181,9 @@ int MPID_Type_vector(int count,
 					    stride,
 					    strideinbytes,
 					    oldtype,
-					    &(new_dtp->loopinfo),
-					    &(new_dtp->loopsize),
-					    &(new_dtp->loopinfo_depth),
+					    &(new_dtp->dataloop),
+					    &(new_dtp->dataloop_size),
+					    &(new_dtp->dataloop_depth),
 					    0);
 
     *newtype = new_dtp->handle;
@@ -260,10 +260,10 @@ int MPID_Dataloop_create_vector(int count,
     }
     else {
 	MPID_Datatype_get_ptr(oldtype, old_dtp);
-	new_loop_sz = sizeof(struct MPID_Dataloop) + old_dtp->loopsize;
+	new_loop_sz = sizeof(struct MPID_Dataloop) + old_dtp->dataloop_size;
 	/* TODO: ACCOUNT FOR PADDING IN LOOP_SZ HERE */
 
-	new_loop_depth = old_dtp->loopinfo_depth + 1;
+	new_loop_depth = old_dtp->dataloop_depth + 1;
     }
 
     new_dlp = MPID_Dataloop_alloc(new_loop_sz);
@@ -310,7 +310,7 @@ int MPID_Dataloop_create_vector(int count,
 	curpos += sizeof(struct MPID_Dataloop);
 	/* TODO: ACCOUNT FOR PADDING HERE */
 
-	MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
+	MPID_Dataloop_copy(curpos, old_dtp->dataloop, old_dtp->dataloop_size);
 	new_dlp->loop_params.c_t.dataloop = (struct MPID_Dataloop *) curpos;
     }
 

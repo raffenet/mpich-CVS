@@ -45,6 +45,6 @@ void MPID_Datatype_free(MPID_Datatype *ptr)
        for RMA ops */  
     if (ptr->contents)
         MPID_Datatype_free_contents(ptr);
-    MPID_Dataloop_free(ptr->loopinfo);
+    MPID_Dataloop_free(ptr->dataloop);
     MPIU_Handle_obj_free(&MPID_Datatype_mem, ptr);
 }

@@ -333,7 +333,7 @@ typedef struct {
     volatile int  ref_count;
     int           is_contig;     /* True if data is contiguous (even with 
 				    a (count,datatype) pair) */
-    MPID_Dataloop loopinfo;      /* Describes the arguments that the
+    MPID_Dataloop dataloop;      /* Describes the arguments that the
                                     user provided for creating the datatype;
 				    these are used to implement the
 				    MPI-2 MPI_Type_get_contents functions */
@@ -342,7 +342,7 @@ typedef struct {
 				    resizing (the extent of) an existing 
 				    type.  Note that the extent of the
 				    datatype may be different from the
-				    extent information in loopinfo */
+				    extent information in dataloop */
 
     /* The remaining fields are required but less frequently used, and
        are placed after the more commonly used fields */
@@ -351,7 +351,7 @@ typedef struct {
     int           is_permanent;  /* e.g., MPI_DOUBLE*/
     int           is_committed;  /* See MPID_Datatype_commit */
 
-    int           loopinfo_depth; /* Depth of dataloop stack needed
+    int           dataloop_depth; /* Depth of dataloop stack needed
 				     to process this datatype.  This 
 				     information is used to ensure that
 				     no datatype is constructed that
@@ -451,9 +451,9 @@ typedef struct {
 
   Fields:
 + curcount - Current loop count value (between 0 and 
-             loopinfo.loop_params.count-1) 
+             dataloop.loop_params.count-1) 
 . curoffset - Offset for relative offsets in datatypes 
-- loopinfo  - Loop-based description of the datatype
+- dataloop  - Loop-based description of the datatype
 
   Module:
   Datatype-DS
@@ -461,7 +461,7 @@ S*/
 typedef struct {
     int           curcount;
     MPI_Aint      curoffset;
-    MPID_Dataloop loopinfo;
+    MPID_Dataloop dataloop;
 } MPID_Dataloop_stackelm;
 
 /* S
@@ -475,34 +475,34 @@ typedef struct {
   the various array references)\:
 .vb
   cur_sp=valid_sp=0;
-  stackelm[cur_sp].loopinfo  = datatype->loopinfo;
-  stackelm[cur_sp].loopinfo.curcount = 0;
+  stackelm[cur_sp].dataloop  = datatype->dataloop;
+  stackelm[cur_sp].dataloop.curcount = 0;
   while (cur_sp >= 0) {
-     if stackelm[cur_sp].loopinfo.kind is final then
+     if stackelm[cur_sp].dataloop.kind is final then
         // final means simple, consisting of basic datatypes, such 
         // as a vector datatype made up of bytes or doubles)
-        process datatype (this uses loopinfo.kind to pick the correct
+        process datatype (this uses dataloop.kind to pick the correct
             code fragments; we may also include some alignment tests
             so that longer word moves may be used for short (e.g.,
             one or two word) blocks).
 	    We can also choose to stop and return here when, for example,
 	    we have filled an output buffer.
         cur_sp--;
-     else if stackelm[cur_sp].curcount == stackelm[cur_sp].loopinfo.cm_t.count
+     else if stackelm[cur_sp].curcount == stackelm[cur_sp].dataloop.cm_t.count
          then {
          // We are done with the datatype.
          cur_sp--;
          }
      else {
         // need to push a datatype.  Two cases: struct or other
-        if (stackelm[cur_sp].loopinfo.kind == struct_type) {
-           stackelm[cur_sp+1].loopinfo = 
-           stackelm[cur_sp].loopinfo.s_t.dataloop[stackelm[cur_sp].curcount];
+        if (stackelm[cur_sp].dataloop.kind == struct_type) {
+           stackelm[cur_sp+1].dataloop = 
+           stackelm[cur_sp].dataloop.s_t.dataloop[stackelm[cur_sp].curcount];
            }
         else {
            if (valid_sp <= cur_sp) {
-               stackelm[cur_sp+1].loopinfo = 
-               stackelm[cur_sp].loopinfo.cm_t.dataloop;
+               stackelm[cur_sp+1].dataloop = 
+               stackelm[cur_sp].dataloop.cm_t.dataloop;
                valid_sp = cur_sp + 1;
            }
         }
@@ -543,7 +543,7 @@ typedef struct {
 
     /* stuff to manage pack/unpack */
     MPID_Dataloop_stackelm loopstack[MPID_MAX_DATATYPE_DEPTH];
-    int  cur_sp;   /* Current stack pointer when using loopinfo */
+    int  cur_sp;   /* Current stack pointer when using dataloop */
     int  valid_sp; /* maximum valid stack pointer.  This is used to 
 		      maintain information on the stack after it has
 		      been placed there by following the datatype field

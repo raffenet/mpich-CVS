@@ -106,12 +106,12 @@ do {                                                                    \
     switch (HANDLE_GET_KIND(a)) {                                       \
         case HANDLE_KIND_DIRECT:                                        \
             ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
-            __depth = ((MPID_Datatype *) ptr)->loopinfo_depth;          \
+            __depth = ((MPID_Datatype *) ptr)->dataloop_depth;          \
             break;                                                      \
         case HANDLE_KIND_INDIRECT:                                      \
             ptr = ((MPID_Datatype *)                                    \
 		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
-            __depth = ((MPID_Datatype *) ptr)->loopinfo_depth;          \
+            __depth = ((MPID_Datatype *) ptr)->dataloop_depth;          \
             break;                                                      \
         case HANDLE_KIND_INVALID:                                       \
         case HANDLE_KIND_BUILTIN:                                       \
@@ -127,12 +127,12 @@ do {                                                                    \
     switch (HANDLE_GET_KIND(a)) {                                       \
         case HANDLE_KIND_DIRECT:                                        \
             ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
-            __lptr = ((MPID_Datatype *) ptr)->loopinfo;                 \
+            __lptr = ((MPID_Datatype *) ptr)->dataloop;                 \
             break;                                                      \
         case HANDLE_KIND_INDIRECT:                                      \
             ptr = ((MPID_Datatype *)                                    \
 		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
-            __lptr = ((MPID_Datatype *) ptr)->loopinfo;                 \
+            __lptr = ((MPID_Datatype *) ptr)->dataloop;                 \
             break;                                                      \
         case HANDLE_KIND_INVALID:                                       \
         case HANDLE_KIND_BUILTIN:                                       \
@@ -255,9 +255,8 @@ typedef struct MPID_Datatype {
     int           alignsize;     /* size of datatype to align (affects pad) */
     /* The remaining fields are required but less frequently used, and
        are placed after the more commonly used fields */
-    int loopsize; /* size of loops for this datatype in bytes; derived value */
-    struct MPID_Dataloop *loopinfo; /* Original loopinfo, used when 
-                                     * creating and when getting contents */
+    int dataloop_size; /* size of loops for this datatype in bytes; derived value */
+    struct MPID_Dataloop *dataloop; /* default dataloop; might be optimized */
     int           has_sticky_ub;   /* The MPI_UB and MPI_LB are sticky */
     int           has_sticky_lb;
     int           is_permanent;  /* True if datatype is a predefined type */
@@ -266,7 +265,7 @@ typedef struct MPID_Datatype {
     int           eltype;      /* type of elementary datatype. Needed
                                  to implement MPI_Accumulate */
 
-    int           loopinfo_depth; /* Depth of dataloop stack needed
+    int           dataloop_depth; /* Depth of dataloop stack needed
                                      to process this datatype.  This 
                                      information is used to ensure that
                                      no datatype is constructed that

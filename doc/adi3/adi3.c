@@ -101,7 +101,7 @@
     Notes:
     If no datatype can be allocated, a null is returned.
     This routine only provides a pointer to the structure.  All ``public''
-    fields, such as 'has_sticky_ub' and 'loopinfo', will be set by the 
+    fields, such as 'has_sticky_ub' and 'dataloop', will be set by the 
     implementation of the various MPI datatype construction routines.
 
     Module:

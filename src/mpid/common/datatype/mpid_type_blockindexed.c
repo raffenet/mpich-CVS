@@ -78,9 +78,9 @@ int MPID_Type_blockindexed(int count,
     new_dtp->name[0]      = 0;
     new_dtp->contents     = NULL;
 
-    new_dtp->loopsize       = -1;
-    new_dtp->loopinfo       = NULL;
-    new_dtp->loopinfo_depth = -1;
+    new_dtp->dataloop_size       = -1;
+    new_dtp->dataloop       = NULL;
+    new_dtp->dataloop_depth = -1;
 
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
 
@@ -113,9 +113,9 @@ int MPID_Type_blockindexed(int count,
 					  NULL,
 					  0,
 					  MPI_INT, /* dummy type */
-					  &(new_dtp->loopinfo),
-					  &(new_dtp->loopsize),
-					  &(new_dtp->loopinfo_depth),
+					  &(new_dtp->dataloop),
+					  &(new_dtp->dataloop_size),
+					  &(new_dtp->dataloop_depth),
 					  0);
 	*newtype = new_dtp->handle;
 	
@@ -227,9 +227,9 @@ int MPID_Type_blockindexed(int count,
 				      displacement_array,
 				      dispinbytes,
 				      oldtype,
-				      &(new_dtp->loopinfo),
-				      &(new_dtp->loopsize),
-				      &(new_dtp->loopinfo_depth),
+				      &(new_dtp->dataloop),
+				      &(new_dtp->dataloop_size),
+				      &(new_dtp->dataloop_depth),
 				      0);
 
     *newtype = new_dtp->handle;
@@ -296,8 +296,8 @@ int MPID_Dataloop_create_blockindexed(int count,
     {
 	MPID_Datatype_get_ptr(oldtype, old_dtp);
 	old_extent     = old_dtp->extent;
-	old_loop_sz    = old_dtp->loopsize;
-	old_loop_depth = old_dtp->loopinfo_depth;
+	old_loop_sz    = old_dtp->dataloop_size;
+	old_loop_depth = old_dtp->dataloop_depth;
     }
 
     contig_count = MPIDI_Type_blockindexed_count_contig(count,
@@ -447,7 +447,7 @@ int MPID_Dataloop_create_blockindexed(int count,
 	/* copy old dataloop and set pointer to it */
 	curpos = (char *) new_dlp;
 	curpos += (new_loop_sz - old_loop_sz);
-	MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
+	MPID_Dataloop_copy(curpos, old_dtp->dataloop, old_dtp->dataloop_size);
 	new_dlp->loop_params.bi_t.dataloop = (struct MPID_Dataloop *) curpos;
     }
 

@@ -302,10 +302,10 @@ typedef struct MPIDI_RMA_dtype_info { /* for derived datatypes */
     int           n_contig_blocks;
     int           size;     
     MPI_Aint      extent;   
-    int           loopsize; /* not needed because this info is sent in packet header. remove it after lock/unlock is implemented in the device */
-    void          *loopinfo;  /* pointer needed to update pointers
+    int           dataloop_size; /* not needed because this info is sent in packet header. remove it after lock/unlock is implemented in the device */
+    void          *dataloop;  /* pointer needed to update pointers
                                  within dataloop on remote side */
-    int           loopinfo_depth; 
+    int           dataloop_depth; 
     int           eltype;
     MPI_Aint ub, lb, true_ub, true_lb;
     int has_sticky_ub, has_sticky_lb;
