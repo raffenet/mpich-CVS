@@ -169,6 +169,10 @@ int CH3U_Describe_timer_states()
 	"MPIDI_CH3I_SHM_Free",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
+	MPID_STATE_MPIDI_CH3I_SHM_GET_MEM,
+	"MPIDI_CH3I_SHM_Get_mem",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
 	MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC,
 	"MPIDI_CH3I_SHM_Get_mem_sync",
 	get_random_color_str());

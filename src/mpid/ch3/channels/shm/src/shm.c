@@ -130,8 +130,11 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 
 #ifdef USE_IOV_LEN_2_SHORTCUT
     if (n == 2 && 
+	/*
 	iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_eager_send_t) && 
-	iov[1].MPID_IOV_LEN < 16*1024-sizeof(MPIDI_CH3_Pkt_eager_send_t))
+	iov[1].MPID_IOV_LEN < MPIDI_CH3I_PACKET_SIZE-sizeof(MPIDI_CH3_Pkt_eager_send_t))
+	*/
+	iov[0].MPID_IOV_LEN + iov[1].MPID_IOV_LEN < MPIDI_CH3I_PACKET_SIZE)
     {
 	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	memcpy(vc->shm.shm->packet[index].data, 
@@ -169,6 +172,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 	    memcpy(dest_pos, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	    dest_pos += iov[i].MPID_IOV_LEN;
+	    /*
 	    if (dest_avail == 0)
 	    {
 		WRITE_BARRIER();
@@ -183,7 +187,9 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 		}
 		dest_pos = vc->shm.shm->packet[index].data;
 		dest_avail = MPIDI_CH3I_PACKET_SIZE;
+		vc->shm.shm->packet[index].num_bytes = 0;
 	    }
+	    */
 	}
 	else
 	{
@@ -196,7 +202,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 	    vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
 	    cur_pos = iov[i].MPID_IOV_BUF + dest_avail;
 	    cur_avail = iov[i].MPID_IOV_LEN - dest_avail;
-	    num_bytes = 0;
+	    /*num_bytes = 0;*/
 	    while (cur_avail)
 	    {
 		index = vc->shm.shm->tail_index = 
@@ -223,8 +229,12 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 	    }
 	    dest_pos = vc->shm.shm->packet[index].data + num_bytes;
 	    dest_avail = MPIDI_CH3I_PACKET_SIZE - num_bytes;
+	    /*
 	    if (dest_avail == 0)
 	    {
+		WRITE_BARRIER();
+		vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
+
 		index = vc->shm.shm->tail_index = 
 		    (vc->shm.shm->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		if (vc->shm.shm->packet[index].avail == MPIDI_CH3I_PKT_USED)
@@ -235,11 +245,30 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 		}
 		dest_pos = vc->shm.shm->packet[index].data;
 		dest_avail = MPIDI_CH3I_PACKET_SIZE;
+		vc->shm.shm->packet[index].num_bytes = 0;
 	    }
+	    */
+	}
+	if (dest_avail == 0)
+	{
+	    WRITE_BARRIER();
+	    vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
+	    index = vc->shm.shm->tail_index = 
+		(vc->shm.shm->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
+	    if (vc->shm.shm->packet[index].avail == MPIDI_CH3I_PKT_USED)
+	    {
+		MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
+		return total;
+	    }
+	    dest_pos = vc->shm.shm->packet[index].data;
+	    dest_avail = MPIDI_CH3I_PACKET_SIZE;
+	    vc->shm.shm->packet[index].num_bytes = 0;
 	}
     }
-    if (vc->shm.shm->packet[index].avail == MPIDI_CH3I_PKT_AVAILABLE && 
-	vc->shm.shm->packet[index].num_bytes > 0)
+    if (/*vc->shm.shm->packet[index].avail == MPIDI_CH3I_PKT_AVAILABLE && */
+	dest_avail < MPIDI_CH3I_PACKET_SIZE)
+	/*vc->shm.shm->packet[index].num_bytes > 0)*/
     {
 	WRITE_BARRIER();
 	vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;

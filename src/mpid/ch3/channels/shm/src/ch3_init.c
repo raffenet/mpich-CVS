@@ -178,11 +178,19 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #error *** No shared memory variables specified ***
 #endif
 
+#ifdef USE_SAME_ADDR_ON_ALL_PROCESSES
 	pg->addr = MPIDI_CH3I_SHM_Get_mem_sync( pg, pg_size * shm_block, pg_rank, pg_size, TRUE );
+#else
+	pg->addr = MPIDI_CH3I_SHM_Get_mem( pg, pg_size * shm_block, pg_rank, pg_size, TRUE );
+#endif
     }
     else
     {
+#ifdef USE_SAME_ADDR_ON_ALL_PROCESSES
 	pg->addr = MPIDI_CH3I_SHM_Get_mem_sync( pg, shm_block, 0, 1, FALSE );
+#else
+	pg->addr = MPIDI_CH3I_SHM_Get_mem( pg, shm_block, 0, 1, FALSE );
+#endif
     }
 
     /* initialize each shared memory queue */

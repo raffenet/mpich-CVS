@@ -112,6 +112,135 @@ static void InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
 }
 #endif
 
+/*@
+   MPIDI_CH3I_SHM_Get_mem - allocate and get address and size of memory shared by all processes. 
+
+   Parameters:
++  int nTotalSize
+.  int nRank
+-  int nNproc
+
+   Notes:
+    Set the global variables pg->addr, pg->size, pg->id
+@*/
+void *MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc, BOOL bUseShm)
+{
+#ifdef HAVE_SHARED_PROCESS_READ
+    int shp_offset;
+#endif
+#if defined(HAVE_WINDOWS_H) && defined(SYNCHRONIZE_SHMAPPING)
+    HANDLE hSyncEvent1, hSyncEvent2;
+#endif
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+
+#ifdef HAVE_SHARED_PROCESS_READ
+    /* add room at the end of the shard memory region for the shared process information */
+    shp_offset = nTotalSize;
+    nTotalSize += nNproc * sizeof(MPIDI_CH3I_Shared_process_t);
+#endif
+
+#if defined(HAVE_WINDOWS_H) && defined(SYNCHRONIZE_SHMAPPING)
+    hSyncEvent1 = CreateEvent(NULL, TRUE, FALSE, "mpich2shmsyncevent1");
+    hSyncEvent2 = CreateEvent(NULL, TRUE, FALSE, "mpich2shmsyncevent2");
+#endif
+
+    if (nTotalSize < 1)
+    {
+	err_printf("Error: unable to allocate %d bytes of shared memory: must be greater than zero.\n", nTotalSize);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+	return NULL;
+    }
+
+    if (bUseShm)
+    {
+	/* Create the shared memory object */
+#ifdef HAVE_SHMGET
+	pg->id = shmget(pg->key, nTotalSize, IPC_CREAT | SHM_R | SHM_W);
+	if (pg->id == -1) 
+	{
+	    printf("Error in shmget\n");
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+	    exit(0);
+	}
+#elif defined (HAVE_CREATEFILEMAPPING)
+	pg->id = CreateFileMapping(
+	    INVALID_HANDLE_VALUE,
+	    NULL,
+	    PAGE_READWRITE,
+	    0, 
+	    nTotalSize,
+	    pg->key);
+	if (pg->id == NULL) 
+	{
+	    printf("Error in CreateFileMapping, %d\n", GetLastError());
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+	    exit(0);
+	}
+#else
+#error *** No shared memory allocation function specified ***
+#endif
+
+	/* Get the shmem pointer */
+#if defined(HAVE_WINDOWS_H) && defined(SYNCHRONIZE_SHMAPPING)
+	if (nRank == 0)
+	{
+	    ResetEvent(hSyncEvent2);
+	    SetEvent(hSyncEvent1);
+	    WaitForSingleObject(hSyncEvent2, INFINITE);
+	}
+	else
+	{
+	    WaitForSingleObject(hSyncEvent1, INFINITE);
+	    ResetEvent(hSyncEvent1);
+	    SetEvent(hSyncEvent2);
+	}
+#endif
+	pg->addr = NULL;
+	MPIU_DBG_PRINTF(("[%d] mapping shared memory\n", nRank));
+#ifdef HAVE_SHMAT
+	pg->addr = shmat(pg->id, NULL, SHM_RND);
+	if (pg->addr == (void*)-1)
+	{
+	    printf("Error from shmat %d\n", errno());
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+	    return NULL;
+	}
+#elif defined(HAVE_MAPVIEWOFFILE)
+	pg->addr = MapViewOfFileEx(
+	    pg->id,
+	    FILE_MAP_WRITE,
+	    0, 0,
+	    nTotalSize,
+	    NULL
+	    );
+	MPIU_DBG_PRINTF(("."));
+	if (pg->addr == NULL)
+	{
+	    err_printf("Error in MapViewOfFileEx, %d\n", GetLastError());
+	}
+#else
+#error *** No shared memory mapping function specified ***
+#endif
+	MPIU_DBG_PRINTF(("\n[%d] finished mapping shared memory: addr:%x\n", nRank, pg->addr));
+
+#ifdef HAVE_SHARED_PROCESS_READ
+
+	pg->pSHP = (MPIDI_CH3I_Shared_process_t*)((char*)pg->addr + shp_offset);
+	InitSharedProcesses(pg);
+#endif
+    }
+    else
+    {
+	pg->addr = MPIU_Malloc(nTotalSize);
+    }
+
+    MPIU_DBG_PRINTF(("[%d] made it: shm address: %x\n", nRank, pg->addr));
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+    return pg->addr;
+}
+
 static BOOL g_bGetMemSyncCalled = FALSE;
 /*@
    MPIDI_CH3I_SHM_Get_mem_sync - allocate and get address and size of memory shared by all processes. 
