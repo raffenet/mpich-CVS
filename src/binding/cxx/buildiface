@@ -34,9 +34,9 @@
 #
 # Setup global variables
 $buildfiles = 1;
-$build_sep_files = 1; # If false, build one huge mpicxx.h file
+$build_sep_files = 0; # If false, build one huge mpicxx.h file
 $build_io = 1;        # If false, exclude the MPI-IO routines
-$indent = "";
+$indent = "    ";
 $print_line_len = 0;
 $debug = 0;
 @mpilevels = ( 'mpi1' , 'mpi2' );
@@ -52,6 +52,10 @@ $do_subdecls = 1;
 # -feature=logical=on:fint=off
 # The feature names mean:
 #    subdecls - Declarations for PC-C++ compilers added
+# -routines=name  - provide a list of routines or a file that
+# lists the routines to use.  The names must be in the same form as the 
+# the class_xxx variables.  E.g., comm-Send, dtype-Commit.
+$routine_list = "";
 foreach $_ (@ARGV) {
     if (/-feature=(.*)/) {
 	foreach $feature (split(/:/,$1)) {
@@ -66,13 +70,18 @@ foreach $_ (@ARGV) {
 	}
     }
     elsif (/-nosep/) { $build_sep_files = 0; $indent = "    "; }
+    elsif (/-sep/) { $build_sep_files = 1; $indent = ""; }
     elsif (/-noromio/) { $build_io = 0; }
     elsif (/-debug/) { $debug = 1; }
+    elsif (/-routines=(.*)/) {
+	$routine_list = $1;
+    }
     else {
 	print STDERR "Unrecognized argument $_\n";
     }
 }
 
+if (! -d "../../mpi/romio") { $build_io = 0; }
 # Value of the hash is the argument of the routine that returns a value
 %class_mpi1comm = ( Send => 0, Recv => 0, Bsend => 0, Ssend => 0, Rsend => 0, 
 		    Isend => MPI_Request, Irsend => MPI_Request, 
@@ -81,7 +90,10 @@ foreach $_ (@ARGV) {
 		    Send_init => MPI_Request, Bsend_init => MPI_Request, 
 		    Rsend_init => MPI_Request, Recv_init => MPI_Request, 
 		    Sendrecv => 0, Sendrecv_repl => 0, Get_size => 'int', 
-		    Get_rank => 'int', Free => 0, Get_topology => 2, Abort => 0);
+		    Get_rank => 'int', Free => 0, Get_topology => 2, 
+		    Get_group => MPI_Group,
+		    Compare => 'int', 
+		    Abort => 0);
 %class_mpi1cart = ( 'Dup' => MPI_Comm,
 		    'Get_dim' => 'int',
 		    'Get_topo' => 'int',
@@ -113,7 +125,7 @@ foreach $_ (@ARGV) {
 %class_mpi1group = ( 'Get_size' => 'int',
 		     'Get_rank' => 'int',
 		     'Translate_ranks' => 0,
-		     'Compare' => 0,
+		     'Compare' => 'int',
 		     'Union' => MPI_Group,
 		     'Intersect' => MPI_Group,
 		     'Difference' => MPI_Group,
@@ -173,7 +185,9 @@ foreach $_ (@ARGV) {
 %class_mpi2graph = ();
 %class_mpi2group = ();
 %class_mpi2inter = ();
-%class_mpi2intra = ();
+# Alltoallw uses an array of datatypes, which requires special handling
+%class_mpi2intra = ( #'Alltoallw' => 0, 
+		     'Exscan' => 0 );
 %class_mpi2op = ();
 %class_mpi2ppreq = ();
 %class_mpi2req = ();
@@ -239,6 +253,70 @@ if ($build_io) {
 %class_mpi2win = ( );
 %class_mpi2info = ( );
 
+# Name of classes, in the order in which they must be declared.
+@classes = ( 
+		   'dtype', 
+		   'info', 
+		   'st', 
+		   'group', 
+		   'op', 
+		   'errh',
+		   'req', 
+		   'preq', 
+                   'comm', 
+		   'inter', 
+		   'intra', 
+		   'greq', 
+		   'win', 
+		   'file', 
+		   'graph',
+		   'cart', 
+);
+
+
+# If there is a specific list of routines, replace the list with this
+# list
+%newclasses = ();
+if ($routine_list ne "") {
+    for $routine (split(/\s+/,$routine_list)) {
+	print "$routine\n" if $debug;
+	($class,$rname) = split(/-/,$routine);
+	# Look up name in the class list
+	$classvar = "class-mpi1$class";
+	$result_type = 0;
+	if (defined($$classvar{$rname})) {
+	    $result_type = $$classvar{$rname};
+	}
+	else {
+	    $classvar = "class-mpi2$class";
+	    if (defined($$classvar{$rname})) {
+		$result_type = $$classvar{$rname};
+	    }
+	}
+	$newclasses{$class} .= " $rname=>$result_type";
+    }
+    # Now, clear all of the classes
+    foreach $class (@classes) {
+	$class_name = "class_mpi1$class";
+	%$class_name = ();
+	$class_name = "class_mpi2$class";
+	%$class_name = ();
+    }		  
+    # And unpack newclasses
+    foreach $class (keys(%newclasses)) {
+	$class_name = "class_mpi1$class";
+	foreach $rpair (split(/\s+/,$newclasses{$class})) {
+	    if ($rpair eq "") { next; }
+	    print "$rpair\n" if $debug;
+	    ($routine, $rval) = split(/=>/,$rpair);
+	    $$class_name{$routine} = $rval;
+	}
+    }
+    # At this point, we should generate only the routines requested,
+    # plus all of the classes (we may need the empty classes for the
+    # predefined types)
+}
+
 # MPI objects
 @dtypes = ( 'CHAR', 'UNSIGNED_CHAR', 'BYTE', 'SHORT', 'UNSIGNED_SHORT',
 	    'INT', 'UNSIGNED', 'LONG', 'UNSIGNED_LONG', 'FLOAT', 
@@ -259,30 +337,14 @@ if ($build_io) {
 
 $arg_string = join( ' ', @ARGV );
 
+# ---------------------------------------------------------------------------
+# Here begins more executable code.  Read the definitions of the 
+# routines
 &ReadInterface( "../../include/mpi.h.in" );
 # if doing MPI2, we also need to read the MPI-2 protottypes
 if ( -s "../../mpi/romio/include/mpio.h.in" ) { 
     &ReadInterface( "../../mpi/romio/include/mpio.h.in" );
 }
-# Name of classes, in the order in which they must be declared.
-@classes = ( 
-		   'dtype', 
-		   'info', 
-		   'st', 
-		   'group', 
-		   'op', 
-		   'errh',
-		   'req', 
-		   'preq', 
-                   'comm', 
-		   'inter', 
-		   'intra', 
-		   'greq', 
-		   'win', 
-		   'file', 
-		   'graph',
-		   'cart', 
-);
 
 %class_type = ( 'comm' => MPI_Comm, 
 		'cart' => MPI_Comm,
@@ -319,6 +381,9 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 		   'file' => 'File',
 );
 
+#
+# Each class may need to access internal elements of another class.
+# This has gives the list of friends for each class
 %class_friends = ( 'comm' => 'Cartcomm,Intercomm,Intracomm,Graphcomm,Datatype',
 		   'cart' => '',
 		   'dtype' => 'Comm,Status,Intracomm,Intercomm',
@@ -333,8 +398,8 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 		   'st' => 'Comm,File,Request',
 		   'greq' => '',
 		   'info' => '',
-		   'win' => '',
-		   'file' => '',
+		   'win' => 'Datatype',
+		   'file' => 'Datatype,Info,Group',
  );
 
 #
@@ -351,6 +416,7 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 	     'comm-Get_topology' => 'Topo_test',
 	     'comm-Get_rank' => 'Comm_rank',
 	     'comm-Get_size' => 'Comm_size',
+	     'comm-Get_group' => 'Comm_group',
 	     'dtype-Create_contiguous' => 'Type_contiguous',
 	     'dtype-Create_vector' => 'Type_vector',
 	     'dtype-Create_indexed' => 'Type_indexed',
@@ -413,12 +479,19 @@ if (!$build_sep_files) {
 #else
 #define MPIX_CALL( fnc ) (void)fnc
 #endif\n";
+
+print $OUTFD "
+// Typedefs for basic int types
+typedef long MPI::Offset;
+typedef long MPI::Aint;
+typedef int MPI::Fint;\n";
 }
 
 # Build the routines by class
 foreach $class (@classes) {
     $Class = $fullclassname{$class};
     $mpi_type = $class_type{$class};
+    if ($class eq "file" && !$build_io) { next; }
     if ($build_sep_files) {
 	$filename = "${mpiclass}-cpp.h";
 	open ( $OUTFD, ">$filename" ) || die "Could not open $filename\n";
@@ -529,6 +602,9 @@ if (!$build_sep_files) {
 	    $args = $mpi_routine{$routine};
 	    # Process info for finding the return value info.
 	    &FindReturnInfo( $info, $args );
+	    # If thies routine isn't a member of this MPI level,
+	    # then skip it
+	    if ($return_type eq "") { next; }
 	    $real_return_type = $return_type;
 	    print $OUTFD "$real_return_type $defer_definition{$routine}::$routine";
 	    &print_args( $OUTFD, $args, $defer_definition{$routine}, $info );
@@ -787,106 +863,6 @@ sub print_attr {
 
 #
 # Special processing
-# Logical variables
-sub logical_ftoc {
-}
-sub logical_in_decl {
-    my $count = $_[0];
-    if ($do_logical) {
-	print $OUTFD "    int l$count;\n";
-    }
-}
-sub logical_in_arg {
-    my $count = $_[0];
-    if ($do_logical) {
-	print $OUTFD "l$count";
-    }
-    else {
-	print $OUTFD "v$count";
-    }
-}
-# logical_ctof( cvar, fvar )
-sub logical_ctof {
-    my $coutvar = $_[0];
-    my $outvar  = $_[1];
-    if ($do_logical) {
-	print $OUTFD "    *$outvar = MPIR_TO_FLOG($coutvar);\n";
-    }
-}
-sub logical_out_decl {
-    my $count = $_[0];
-    if ($do_logical) {
-	print $OUTFD "    int l$count;\n";
-    }
-}
-sub logical_out_arg {
-    my $count = $_[0];
-    if ($do_logical) {
-	print $OUTFD "\&l$count";
-    }
-    else {
-	print $OUTFD "v$count";
-    }
-}
-#
-# Logical variables, but for an array.  
-# Array args can use the global $Array_size and $Array_typedef if necessary
-sub logical_array_ftoc {
-    print $OUTFD "\
-    {int li; 
-     for (li=0; li<$Array_size; li++) {
-        l$count\[li\] = MPIR_FROM_FLOG(v$count\[li\]);
-     }
-    }
-";
-}
-sub logical_array_in_decl {
-    my $count = $_[0];
-    print $OUTFD "    int *l$count = (int *)malloc($Array_size * sizeof(int));\n";
-}
-sub logical_array_in_arg {
-    my $count = $_[0];
-    print $OUTFD "l$count";
-}
-
-sub logical_array_ctof {
-    my $coutvar = $_[0];
-    my $outvar  = $_[1];
-    print $OUTFD "\
-    {int li;
-     for (li=0; li<$Array_size; li++) {
-        $outvar\[li\] = MPIR_TO_FLOG($outvar\[li\]);
-     }
-    }
-";
-}
-sub logical_array_out_decl {
-}
-sub logical_array_out_arg {
-    my $count = $_[0];
-    print $OUTFD "v$count";
-}
-
-# This is the routine that handles the post-call processing
-sub print_post_call {
-    my $routine_name = $_[0];
-    my $args = $_[1];
-    if (!defined($special_args{$routine_name})) { return; }
-    # Erg.  Special processing
-    foreach $count (split(/:/,$special_args{$routine_name})) {
-	$rule = $special_args{"${routine_name}-$count"};
-	($direction,$method,$Array_size) = split(/:/,$rule);
-	print STDERR "$routine_name: dir = $direction, method = $method\n" if $debug;
-	if ($direction eq "out") {
-	    $processing_routine = "${method}_ctof";
-	    &$processing_routine( "l$count", "v$count" );
-	}
-	if ($clean_up ne "") {
-	    print $OUTFD $clean_up;
-	}
-    }
-}
-
 
 # This routine handles the special arguments in the *call*
 sub print_special_call_arg {
@@ -932,13 +908,15 @@ sub clean_args {
     my $newargs = "";
     my $comma = "";
     for $parm (split(',',$args)) {
-	if ( ($parm =~ /^\s*([A-Za-z0-9_]+)\s+[A-Za-z0-9_]+$/) ) {
+	# Remove any leading or trailing spaces
+	$parm =~ s/^\s*//;
+	$parm =~ s/\s*$//;
+	# Handle parameters with parameter names
+	# First if handles "int foo", second handles "int *foo"
+	if ( ($parm =~ /^([A-Za-z0-9_]+)\s+[A-Za-z0-9_]+$/) ) {
 	    $parm = $1;
 	}
-	elsif ( ($parm =~ /\s*([A-Za-z0-9_]+\s*\*)\s*[A-Za-z0-9_]+$/) ) {
-	    $parm = $1;
-	}
-	elsif ( ($parm =~ /^\s+([^\s].*)\s*$/) ) {
+	elsif ( ($parm =~ /^([A-Za-z0-9_]+\s*\*)\s*[A-Za-z0-9_]+$/) ) {
 	    $parm = $1;
 	}
 	$newargs .= "$comma$parm";
@@ -1206,10 +1184,9 @@ sub ReadInterface {
 	    }
 	    $args =~ s/\)\s*;//g;
 	    $args =~ s/[\r\n]*//g;
+	    # Special substitutions
+	    $args =~ s/MPIO_Request/MPI_Request/g;
 	    $lcname = lc($routine_name);
-	    # Eventually, we'll create a new file here.  
-	    # For C++, we may create similar files by looking up 
-				# the corresponding routines.
 	    if (defined($special_routines{$routine_name})) {
 		print "Skipping $routine_name\n" if $debug;
 	    }
@@ -1239,5 +1216,12 @@ sub ReadInterface {
 #   Just provide the Pack_size, Pack, Unpack prototypes in the Datatype
 #   class definition
 #   Add these to the end
+#
+# Routines with arrays of aggregate types (e.g., arrays of Datatypes) 
+# really require special processing.  We need to either do something like
+# is done for the Fortran routines (for any routine with special needs, 
+# enumerate which args require special handling and name the routine) 
+# or simply provide hand-written code for the internals of those operations.
+
 
 
