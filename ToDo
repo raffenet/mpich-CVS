@@ -7,3 +7,6 @@ MPI Profiling interface
    for the MPI calls are defined only for the pmpi versions (as they should
    be) but some of the ADI routines are only in the mpich library.  
 
+
+It would be nice if the top-level configure echoed its arguments as the
+first line of output like some of the subdirectory configures do.
