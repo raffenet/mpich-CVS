@@ -1730,6 +1730,8 @@ if ($write_mpif) {
     &print_mpif_int( "MPI_PACKED" );
 
     # Optional types
+    # Warning: Should these use \@MPI_$key\@, since the 
+    # C-version must also compute these?
     foreach $key (INTEGER1, INTEGER2, INTEGER4, INTEGER8, INTEGER16,
 		  REAL4, REAL8, REAL16, COMPLEX8, COMPLEX16, COMPLEX32) {
 	print MPIFFD "       INTEGER MPI_$key\n";
