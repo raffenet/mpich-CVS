@@ -45,7 +45,7 @@ typedef struct pmi_process_t
     int *clique_ranks;
 } pmi_process_t;
 
-int root_smpd(void *p);
+static int root_smpd(void *p);
 
 /* global variables */
 static pmi_process_t pmi_process =
@@ -55,7 +55,7 @@ static pmi_process_t pmi_process =
     NULL,                /* root thread    */
     NULL,                /* hRootThreadReadyEvent */
 #else
-    0                    /* root pid       */
+    0,                   /* root pid       */
 #endif
     "",                  /* root host      */
     0,                   /* root port      */
