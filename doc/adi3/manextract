@@ -1,0 +1,18 @@
+#! /usr/local/bin/perl
+#
+# This script extracts the text blocks from a source file and creates a
+# simple text block out of them.  
+# 
+# Initially, we will use this to create LaTeX blocks so that the ADI reference
+# manual can contain the comments from the example source files adi3.c and
+# adi3.h.  
+#
+while (<>) {
+    if (/\/\*T/) {
+	# Process until we find the matching T*/
+	while (<>) {
+	    print $_;
+	    if (/T\*\//) { break; }
+	}
+    }
+}

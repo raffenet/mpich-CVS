@@ -19,7 +19,7 @@
 \catcode`\_=13
 \def_{{\tt \char`\_}}
 \catcode`\_=11
-%\def\code#1{{\tt #1}}
+\def\code#1{{\tt #1}}
 
 % \ANLTitle{MPICH Model MPI Implementation\\Reference Manual\\\ \\Draft}{\em 
 % William Gropp\\
@@ -130,10 +130,12 @@ The minimal implementation consists of the following routines:
 \item[MPID Abort]This is the device's counterpart to \code{MPI_Abort}.
 \item[MPID Put]This is used for data movement; it is roughly an
 \code{MPI_Put} using only contiguous data.  However, it uses a
-different mechanism for indicating completion of data transfers
+different mechanism for indicating completion of data transfers (see \code{MPID_Waitsome} and \code{MPID_Testsome})
 \item[MPID Rhcv]This is used for messages; it is rougly an
 active-message call.  However, only predefined actions are allowed,
 and these actions are enumerated.
+\code[MPID Waitsome, MPID Testsome]These are used to complete \code{MPID_Rhcv}
+and \code{MPID_Put} operations
 \item[MPID Poll]This routine provides a way for a polling routine to
 be called.  A device is permitted to define this as a no-op if polling
 is not needed.  In other words, this routine is provided to

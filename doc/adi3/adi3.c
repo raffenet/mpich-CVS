@@ -1309,6 +1309,59 @@ int MPID_Memory_unregister( void *buf, int len, int rdwt )
 }
 
 /*
+ * Section 4: Store, Process, and Forward Communication
+ *
+ * Algorithms for collective communication are often of the
+ * store and forward (to one or more processes); collective computation (such 
+ * as reduce or scan) adds a processing step before forwarding.
+ * This section describes the routines needed for these operations.
+ * They rely on the MPID_Segment to provide an interface between the 
+ * general MPI datatypes and the contiguous byte array form in which 
+ * most store and forward operations are described.
+ *
+ * Because the collective routines are all blocking, these routines can
+ * use a simplified strategy for initiating the "next" block in a store
+ * and forward pipeline.
+ *
+ * Another difference between these and the point-to-point routines is
+ * that we may need more information that just the "tag" that point-to-point
+ * provides.  Thus, at the beginning of a store-and-forward operation,
+ * a small amount of additional data may be sent.
+ */
+
+/*@
+  MPID_Isend_stream - Initialize a stream and begin sending.
+
+  Input Parameters:
++ segment - The buffer to be sent, defined by a segment type.
+. header  - An optional pointer to additional data to send.  If provided,
+            the stream receivers must provide a matching buffer
+. header_size - Number of bytes in 'header' to send.  Use zero if 'header' is 
+  null.
+. tag - Message tag.
+. rank - Rank of destination process
+. comm - Communicator to send stream in
+- first,last - recommended byte range from 'segment' to send first.
+  See notes for details.
+ 
+  Output Parameter:
+. stream - Pointer to a stream object.  This is similar to an
+  'MPID_Request', but contains information needed to process streams.
+
+  Notes:
+
+  This communication defines a `stream` consisting of several
+  communication steps.
+
+  @*/
+void MPID_Isend_stream( MPID_Segment *segment, void *header, int header_size,
+			int tag, int rank, MPID_Comm *comm, 
+			int first, int last, MPID_Stream **stream )
+{
+}
+
+
+/*
  * Section x: Topology
  */
 /*
