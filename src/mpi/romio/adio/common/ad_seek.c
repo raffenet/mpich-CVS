@@ -86,14 +86,6 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
  * WriteContig will seek to the correct place in the file before
  * reading/writing.  
  */
-#if 0
-#ifdef PROFILE
-    MPE_Log_event(11, 0, "start seek");
-#endif
-    err = lseek(fd->fd_sys, off, SEEK_SET);
-#ifdef PROFILE
-    MPE_Log_event(12, 0, "end seek");
-#endif
     fd->fp_ind = off;
     fd->fp_sys_posn = off;
 
