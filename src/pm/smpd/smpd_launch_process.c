@@ -754,6 +754,24 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     sock_set_user_ptr(sock_out, process->out);
     sock_set_user_ptr(sock_err, process->err);
 
+    result = sock_post_read(sock_out, process->out->read_cmd.cmd, 1, NULL);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("posting first read from stdout context failed, sock error: %s\n",
+	    get_sock_error_string(result));
+	smpd_exit_fn("smpd_launch_process");
+	return SMPD_FAIL;
+    }
+    result = sock_post_read(sock_err, process->err->read_cmd.cmd, 1, NULL);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("posting first read from stderr context failed, sock error: %s\n",
+	    get_sock_error_string(result));
+	smpd_exit_fn("smpd_launch_process");
+	return SMPD_FAIL;
+    }
+    process->wait = process->in->wait = process->out->wait = process->err->wait = pid;
+
     smpd_exit_fn("smpd_launch_process");
     return SMPD_SUCCESS;
 }
