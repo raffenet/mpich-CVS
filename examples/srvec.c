@@ -78,8 +78,7 @@ int main(int argc, char **argv)
     
 
     msg_sz = msg_count * msg_blocklength;
-    buf_sz = msg_sz + (msg_count > 0 ? msg_count - 1 : 0) *
-	(msg_stride - msg_blocklength);
+    buf_sz = msg_count * msg_stride;
     
     if (rank == 0)
     {
@@ -144,10 +143,12 @@ int main(int argc, char **argv)
 	
 	    for (i = 0; i < msg_sz; i++)
 	    {
-		if (buf[i] != iter * buf_sz + i)
+		const int expected = iter * buf_sz +
+		    i / msg_blocklength * msg_stride + i % msg_blocklength;
+		if (buf[i] != expected)
 		{
 		    printf("ERROR: %d != %d, i=%d iter=%d\n", buf[i],
-			   iter * buf_sz + i, i, iter);
+			   expected, i, iter);
 		    fflush(stdout);
 		    abort();
 		}
