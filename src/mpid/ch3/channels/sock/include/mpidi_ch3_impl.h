@@ -14,6 +14,10 @@
 #include <assert.h>
 #endif
 
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 256
+#endif
+
 typedef struct MPIDI_CH3I_Process_s
 {
     MPIDI_CH3I_Process_group_t * pg;
@@ -73,5 +77,6 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC *);
 void MPIDI_CH3I_VC_post_read(MPIDI_VC *, MPID_Request *);
 void MPIDI_CH3I_VC_post_write(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_sock_errno_to_mpi_errno(int sock_errno);
+int MPIDI_CH3I_Get_business_card(char *value, int length);
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

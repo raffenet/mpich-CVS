@@ -466,6 +466,132 @@ short MPIDI_CH3I_Listener_get_port()
     return listener_port;
 }
 
+static unsigned int GetIP(char *pszIP)
+{
+    unsigned int nIP;
+    unsigned int a,b,c,d;
+    if (pszIP == NULL)
+	return 0;
+    sscanf(pszIP, "%u.%u.%u.%u", &a, &b, &c, &d);
+    /*printf("mask: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);*/
+    nIP = (d << 24) | (c << 16) | (b << 8) | a;
+    return nIP;
+}
+
+static unsigned int GetMask(char *pszMask)
+{
+    int i, nBits;
+    unsigned int nMask = 0;
+    unsigned int a,b,c,d;
+
+    if (pszMask == NULL)
+	return 0;
+
+    if (strstr(pszMask, "."))
+    {
+	sscanf(pszMask, "%u.%u.%u.%u", &a, &b, &c, &d);
+	/*printf("mask: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);*/
+	nMask = (d << 24) | (c << 16) | (b << 8) | a;
+    }
+    else
+    {
+	nBits = atoi(pszMask);
+	for (i=0; i<nBits; i++)
+	{
+	    nMask = nMask << 1;
+	    nMask = nMask | 0x1;
+	}
+    }
+    /*
+    unsigned int a, b, c, d;
+    a = ((unsigned char *)(&nMask))[0];
+    b = ((unsigned char *)(&nMask))[1];
+    c = ((unsigned char *)(&nMask))[2];
+    d = ((unsigned char *)(&nMask))[3];
+    printf("mask: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);
+    */
+    return nMask;
+}
+
+static int GetHostAndPort(char *host, int *port, char *business_card)
+{
+    char pszNetMask[50];
+    char *pEnv, *token;
+    unsigned int nNicNet, nNicMask;
+    char *temp, *pszHost, *pszIP, *pszPort;
+    unsigned int ip;
+
+    pEnv = getenv("MPICH_NETMASK");
+    if (pEnv != NULL)
+    {
+	MPIU_Strncpy(pszNetMask, pEnv, 50);
+	token = strtok(pszNetMask, "/");
+	if (token != NULL)
+	{
+	    token = strtok(NULL, "\n");
+	    if (token != NULL)
+	    {
+		nNicNet = GetIP(pszNetMask);
+		nNicMask = GetMask(token);
+
+		/* parse each line of the business card and match the ip address with the network mask */
+		temp = strdup(business_card);
+		token = strtok(temp, ":\r\n");
+		while (token)
+		{
+		    pszHost = token;
+		    pszIP = strtok(NULL, ":\r\n");
+		    pszPort = strtok(NULL, ":\r\n");
+		    ip = GetIP(pszIP);
+		    /*msg_printf("masking '%s'\n", pszIP);*/
+		    if ((ip & nNicMask) == nNicNet)
+		    {
+			/* the current ip address matches the requested network so return these values */
+			MPIU_Strncpy(host, pszIP, MAXHOSTNAMELEN); /*pszHost);*/
+			*port = atoi(pszPort);
+			free(temp);
+			return MPI_SUCCESS;
+		    }
+		    token = strtok(NULL, ":\r\n");
+		}
+		free(temp);
+	    }
+	}
+    }
+
+    temp = strdup(business_card);
+    /* move to the host part */
+    token = strtok(temp, ":");
+    if (token == NULL)
+    {
+	free(temp);
+	/*err_printf("GetHostAndPort: invalid business card\n");*/
+	return MPIR_Err_create_code(MPI_ERR_OTHER, "[ch3:sock] GetHostAndPort: Invalid business card - %s", business_card);
+    }
+    /*strcpy(host, token);*/
+    /* move to the ip part */
+    token = strtok(NULL, ":");
+    if (token == NULL)
+    {
+	free(temp);
+	/*err_printf("GetHostAndPort: invalid business card\n");*/
+	return MPIR_Err_create_code(MPI_ERR_OTHER, "[ch3:sock] GetHostAndPort: Invalid business card - %s", business_card);
+    }
+    MPIU_Strncpy(host, token, MAXHOSTNAMELEN); /* use the ip string instead of the hostname, it's more reliable */
+    /* move to the port part */
+    token = strtok(NULL, ":");
+    if (token == NULL)
+    {
+	free(temp);
+	/*err_printf("GetHostAndPort: invalid business card\n");*/
+	return MPIR_Err_create_code(MPI_ERR_OTHER, "[ch3:sock] GetHostAndPort: Invalid business card - %s", business_card);
+    }
+    *port = atoi(token);
+    free(temp);
+
+    return MPI_SUCCESS;
+}
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_VC_post_connect
 #undef FCNAME
@@ -476,6 +602,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     char * val;
     int key_max_sz;
     int val_max_sz;
+    char host[MAXHOSTNAMELEN];
     int port;
     int rc;
     MPIDI_CH3I_Connection_t * conn;
@@ -496,21 +623,19 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     val_max_sz = PMI_KVS_Get_value_length_max();
     val = MPIU_Malloc(val_max_sz);
     assert(val != NULL);
-    
-    rc = snprintf(key, key_max_sz, "P%d-port", vc->sc.pg_rank);
+
+    rc = snprintf(key, key_max_sz, "P%d-businesscard", vc->sc.pg_rank);
     assert(rc > -1 && rc < key_max_sz);
     rc = PMI_KVS_Get(vc->sc.pg->kvs_name, key, val);
-    assert(rc == 0);
-    rc = sscanf(val, "%d", &port);
-    
-    rc = snprintf(key, key_max_sz, "P%d-hostname", vc->sc.pg_rank);
-    assert(rc > -1 && rc < key_max_sz);
-    rc = PMI_KVS_Get(vc->sc.pg->kvs_name, key, val);
-    assert(rc == 0);
+    assert(rc == MPI_SUCCESS);
+
+    rc = GetHostAndPort(host, &port, val);
+    assert(rc == MPI_SUCCESS);
+    /*printf("GetHostAndPort returned: host %s, port %d\n", host, port);fflush(stdout);*/
 
     conn = connection_alloc();
 
-    rc = sock_post_connect(sock_set, conn, val, port, &conn->sock);
+    rc = sock_post_connect(sock_set, conn, host, port, &conn->sock);
     if (rc == SOCK_SUCCESS)
     {
 	vc->sc.sock = conn->sock;

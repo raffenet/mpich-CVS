@@ -13,10 +13,6 @@
 #include <sys/param.h>
 #endif
 
-#ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN 256
-#endif
-
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
 /* XXX - all calls to assert() need to be turned into real error checking and
@@ -33,8 +29,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     MPID_Comm * comm;
     int p;
 	
-    char * hostname;
-    short port;
     char * key;
     char * val;
     int key_max_sz;
@@ -117,30 +111,18 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     val_max_sz = PMI_KVS_Get_value_length_max();
     val = MPIU_Malloc(val_max_sz);
     assert(val != NULL);
-    
-    hostname = MPIU_Malloc(MAXHOSTNAMELEN + 1);
-    assert(hostname != NULL);
-    rc = gethostname(hostname, MAXHOSTNAMELEN);
-    assert(rc != -1);
-    assert((int)strlen(hostname) + 1 < val_max_sz);
-    
-    rc = snprintf(key, key_max_sz, "P%d-hostname", pg_rank);
+
+    rc = snprintf(key, key_max_sz, "P%d-businesscard", pg_rank);
     assert(rc > -1 && rc < key_max_sz);
-    rc = PMI_KVS_Put(pg->kvs_name, key, hostname);
-    assert(rc == 0);
-    
-    port = MPIDI_CH3I_Listener_get_port();
-    
-    rc = snprintf(key, key_max_sz, "P%d-port", pg_rank);
-    assert(rc > -1 && rc < key_max_sz);
-    rc = snprintf(val, val_max_sz, "%d", port);
-    assert(rc > -1 && rc < val_max_sz);
+    rc = MPIDI_CH3I_Get_business_card(val, val_max_sz);
+    assert(rc == MPI_SUCCESS);
     rc = PMI_KVS_Put(pg->kvs_name, key, val);
     assert(rc == 0);
 
 #   if defined(DEBUG)
     {
-	dbg_printf("[%d] Published hostname=%s port=%d\n", pg_rank, hostname, port);
+	/*dbg_printf("[%d] Published hostname=%s port=%d\n", pg_rank, hostname, port);*/
+	dbg_printf("[%d] Business card: <%s>\n", pg_rank, val);
 	fflush(stdout);
     }
 #   endif
@@ -150,7 +132,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     rc = PMI_Barrier();
     assert(rc == 0);
 
-    MPIU_Free(hostname);
+    /*MPIU_Free(hostname);*/
     MPIU_Free(val);
     MPIU_Free(key);
     
@@ -158,17 +140,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     {
 	for (p = 0; p < pg_size; p++)
 	{
-	    rc = snprintf(key, key_max_sz, "P%d-hostname", p);
+	    rc = snprintf(key, key_max_sz, "P%d-businesscard", p);
 	    assert(rc > -1 && rc < key_max_sz);
-	    rc = PMI_KVS_Get(pg->kvs_name, key, host);
+	    rc = PMI_KVS_Get(pg->kvs_name, key, val);
 	    assert(rc == 0);
-	    
-	    rc = snprintf(key, key_max_sz, "P%d-port", p);
-	    assert(rc > -1 && rc < key_max_sz);
-	    rc = PMI_KVS_Get(pg->kvs_name, key, port);
-	    assert(rc == 0);
-	    
-	    dbg_printf("[%d] hostname[%d]=%s port[%d]=%s\n", pg_rank, p, host, p, port);
+
+	    dbg_printf("[%d] businesscard=%s\n", pg_rank, val);
 	    fflush(stdout);
 	}
     }

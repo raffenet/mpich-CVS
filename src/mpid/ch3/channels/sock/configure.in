@@ -22,7 +22,7 @@ fi
 
 PAC_PROG_MAKE
 
-AC_CHECK_HEADERS(assert.h)
+AC_CHECK_HEADERS(assert.h sys/types.h sys/socket.h netdb.h net/if.h netinet/in.h sys/ioctl.h sys/sockio.h errno.h)
 
 AC_SUBST(DEVICE)
 AC_SUBST(CHANNEL)
