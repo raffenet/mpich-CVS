@@ -563,11 +563,12 @@ static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
 	}
 	else if (last_idx >= 0 && (last_end == ((char *) bufp + rel_off)))
 	{
-	    /* add this size to the last vector rather than using up another one */
+	    /* add this size to the last vector rather than using up new one */
 	    paramp->u.pack_vector.vectorp[last_idx].DLOOP_VECTOR_LEN += size;
 	}
 	else {
-	    paramp->u.pack_vector.vectorp[last_idx+1].DLOOP_VECTOR_BUF = (char *) bufp + rel_off;
+	    paramp->u.pack_vector.vectorp[last_idx+1].DLOOP_VECTOR_BUF =
+		(char *) bufp + rel_off;
 	    paramp->u.pack_vector.vectorp[last_idx+1].DLOOP_VECTOR_LEN = size;
 	    paramp->u.pack_vector.index++;
 	}
@@ -621,7 +622,8 @@ static int MPID_Segment_contig_flatten(DLOOP_Offset *blocks_p,
 #endif
     
     if (index > 0 && ((DLOOP_Offset) bufp + rel_off) ==
-	((paramp->u.flatten.offp[index - 1]) + (DLOOP_Offset) paramp->u.flatten.sizep[index - 1]))
+	((paramp->u.flatten.offp[index - 1]) +
+	 (DLOOP_Offset) paramp->u.flatten.sizep[index - 1]))
     {
 	/* add this size to the last vector rather than using up another one */
 	paramp->u.flatten.sizep[index - 1] += size;
@@ -631,7 +633,9 @@ static int MPID_Segment_contig_flatten(DLOOP_Offset *blocks_p,
 	paramp->u.flatten.sizep[index] = size;
 
 	paramp->u.flatten.index++;
-	/* check to see if we have used our entire vector buffer, and if so return 1 to stop processing */
+	/* check to see if we have used our entire vector buffer, and if so 
+	 * return 1 to stop processing
+	 */
 	if (paramp->u.flatten.index == paramp->u.flatten.length)
 	{
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_CONTIG_FLATTEN);
@@ -705,7 +709,9 @@ static int MPID_Segment_vector_flatten(DLOOP_Offset *blocks_p,
 	rel_off += stride;
 
     }
+    /* --BEGIN ERROR HANDLING-- */
     assert(blocks_left == 0);
+    /* --END ERROR HANDLING-- */
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_VECTOR_FLATTEN);
     return 0;
 }

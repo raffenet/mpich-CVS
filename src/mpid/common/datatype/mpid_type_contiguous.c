@@ -8,7 +8,6 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
-#include <assert.h>
 
 /* #define MPID_TYPE_ALLOC_DEBUG */
 
@@ -85,15 +84,15 @@ int MPID_Type_contiguous(int count,
 	new_dtp->n_elements    = 0;
 	new_dtp->is_contig     = 1;
 
-	MPID_Dataloop_create_contiguous(0,
-					MPI_INT, /* dummy type */
-					&(new_dtp->loopinfo),
-					&(new_dtp->loopsize),
-					&(new_dtp->loopinfo_depth),
-					0);
+	mpi_errno = MPID_Dataloop_create_contiguous(0,
+						    MPI_INT, /* dummy type */
+						    &(new_dtp->loopinfo),
+						    &(new_dtp->loopsize),
+						    &(new_dtp->loopinfo_depth),
+						    0);
 	*newtype = new_dtp->handle;
 	
-	return MPI_SUCCESS;
+	return mpi_errno;
     }
     else if (is_builtin)
     {
@@ -152,12 +151,12 @@ int MPID_Type_contiguous(int count,
     }
 
     /* fill in dataloop */
-    MPID_Dataloop_create_contiguous(count,
-				    oldtype,
-				    &(new_dtp->loopinfo),
-				    &(new_dtp->loopsize),
-				    &(new_dtp->loopinfo_depth),
-				    0);
+    mpi_errno = MPID_Dataloop_create_contiguous(count,
+						oldtype,
+						&(new_dtp->loopinfo),
+						&(new_dtp->loopsize),
+						&(new_dtp->loopinfo_depth),
+						0);
 
     *newtype = new_dtp->handle;
 
@@ -165,22 +164,32 @@ int MPID_Type_contiguous(int count,
     MPIU_dbg_printf("contig type %x created.\n", new_dtp->handle);
 #endif
 
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
 /*@
-  MPID_Dataloop_contiguous - create the dataloop representation for a
-  contiguous datatype
+   MPID_Dataloop_contiguous - create the dataloop representation for a
+   contiguous datatype
 
+   Arguments:
++  int count,
+.  MPI_Datatype oldtype,
+.  MPID_Dataloop **dlp_p,
+.  int *dlsz_p,
+.  int *dldepth_p,
+-  int flags
+
+.N Errors
+.N MPI_SUCCESS
 @*/
-void MPID_Dataloop_create_contiguous(int count,
-				     MPI_Datatype oldtype,
-				     MPID_Dataloop **dlp_p,
-				     int *dlsz_p,
-				     int *dldepth_p,
-				     int flags)
+int MPID_Dataloop_create_contiguous(int count,
+				    MPI_Datatype oldtype,
+				    MPID_Dataloop **dlp_p,
+				    int *dlsz_p,
+				    int *dldepth_p,
+				    int flags)
 {
-    int is_builtin, apply_contig_coalescing = 0;
+    int mpi_errno, is_builtin, apply_contig_coalescing = 0;
     int new_loop_sz, new_loop_depth;
 
     MPID_Datatype *old_dtp = NULL;
@@ -215,7 +224,18 @@ void MPID_Dataloop_create_contiguous(int count,
     }
 
     new_dlp = MPID_Dataloop_alloc(new_loop_sz);
-    assert(new_dlp != NULL);
+    if (!new_dlp) {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+					 MPIR_ERR_RECOVERABLE,
+					 "MPID_Dataloop_create_contiguous",
+					 __LINE__,
+					 MPI_ERR_OTHER,
+					 "**nomem",
+					 0);
+	return mpi_errno;
+	/* --END ERROR HANDLING-- */
+    }
 
     if (is_builtin)
     {
@@ -271,5 +291,5 @@ void MPID_Dataloop_create_contiguous(int count,
     *dlp_p  = new_dlp;
     *dlsz_p = new_loop_sz;
     *dldepth_p = new_loop_depth;
-    return;
+    return MPI_SUCCESS;
 }

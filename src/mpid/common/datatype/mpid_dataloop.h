@@ -81,47 +81,47 @@
 /* NOTE: WE MAY WANT TO UNDEF EVERYTHING HERE FOR NON-INTERNAL COMPILATIONS */
 
 /* dataloop construction functions */
-void MPID_Dataloop_create_contiguous(int count,
-				     MPI_Datatype oldtype,
-				     MPID_Dataloop **dlp_p,
-				     int *dlsz_p,
-				     int *dldepth_p,
-				     int flags);
-void MPID_Dataloop_create_vector(int count,
-				 int blocklength,
-				 MPI_Aint stride,
-				 int strideinbytes,
+int MPID_Dataloop_create_contiguous(int count,
+				    MPI_Datatype oldtype,
+				    MPID_Dataloop **dlp_p,
+				    int *dlsz_p,
+				    int *dldepth_p,
+				    int flags);
+int MPID_Dataloop_create_vector(int count,
+				int blocklength,
+				MPI_Aint stride,
+				int strideinbytes,
+				MPI_Datatype oldtype,
+				MPID_Dataloop **dlp_p,
+				int *dlsz_p,
+				int *dldepth_p,
+				int flags);
+int MPID_Dataloop_create_blockindexed(int count,
+				      int blklen,
+				      void *disp_array,
+				      int dispinbytes,
+				      MPI_Datatype oldtype,
+				      MPID_Dataloop **dlp_p,
+				      int *dlsz_p,
+				      int *dldepth_p,
+				      int flags);
+int MPID_Dataloop_create_indexed(int count,
+				 int *blocklength_array,
+				 void *displacement_array,
+				 int dispinbytes,
 				 MPI_Datatype oldtype,
 				 MPID_Dataloop **dlp_p,
 				 int *dlsz_p,
 				 int *dldepth_p,
 				 int flags);
-void MPID_Dataloop_create_blockindexed(int count,
-				       int blklen,
-				       void *disp_array,
-				       int dispinbytes,
-				       MPI_Datatype oldtype,
-				       MPID_Dataloop **dlp_p,
-				       int *dlsz_p,
-				       int *dldepth_p,
-				       int flags);
-void MPID_Dataloop_create_indexed(int count,
-				  int *blocklength_array,
-				  void *displacement_array,
-				  int dispinbytes,
-				  MPI_Datatype oldtype,
-				  MPID_Dataloop **dlp_p,
-				  int *dlsz_p,
-				  int *dldepth_p,
-				  int flags);
-void MPID_Dataloop_create_struct(int count,
-				 int *blklen_array,
-				 MPI_Aint *disp_array,
-				 MPI_Datatype *oldtype_array,
-				 MPID_Dataloop **dlp_p,
-				 int *dlsz_p,
-				 int *dldepth_p,
-				 int flags);
+int MPID_Dataloop_create_struct(int count,
+				int *blklen_array,
+				MPI_Aint *disp_array,
+				MPI_Datatype *oldtype_array,
+				MPID_Dataloop **dlp_p,
+				int *dlsz_p,
+				int *dldepth_p,
+				int flags);
 
 /* flags for MPID_Dataloop_create_xxx calls */
 #define MPID_DATALOOP_HOMOGENEOUS 1

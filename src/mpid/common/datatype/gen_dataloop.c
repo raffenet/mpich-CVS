@@ -113,7 +113,7 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
 }
 
 /*@
-  Dataloop_size - return the size of the data described by the dataloop
+  Dataloop_stream_size - return the size of the data described by the dataloop
 
   Input Parameters:
 + dl_p   - pointer to dataloop for which we will return the size
@@ -178,8 +178,10 @@ PREPEND_PREFIX(Dataloop_stream_size)(struct DLOOP_Dataloop *dl_p,
 #endif
 		break;
 		default:
+		    /* --BEGIN ERROR HANDLING-- */
 		    assert(0);
 		    break;
+		    /* --END ERROR HANDLING-- */
 	    }
 
 	    if (dl_p->kind & DLOOP_FINAL_MASK) break;
@@ -278,12 +280,17 @@ void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
 	    }
 	    break;
 	default:
+	    /* --BEGIN ERROR HANDLING-- */
 	    assert(0);
 	    break;
+	    /* --END ERROR HANDLING-- */
     }
     return;
 }
 
+/* Note: BEGIN/END statements are for coverage scripts; leave in place */
+
+/* --BEGIN ERROR HANDLING-- */
 /*@
   Dataloop_print - dump a dataloop tree to stdout for debugging
   purposes
@@ -356,3 +363,4 @@ void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
     }
     return;
 }
+/* --END ERROR HANDLING-- */

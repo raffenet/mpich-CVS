@@ -8,26 +8,22 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
-#include <assert.h>
 
 /* #define MPID_TYPE_ALLOC_DEBUG */
+
+static int MPIDI_Type_create_resized_memory_error(void);
 
 int MPID_Type_create_resized(MPI_Datatype oldtype,
 			     MPI_Aint lb,
 			     MPI_Aint extent,
 			     MPI_Datatype *newtype_p)
 {
-    int mpi_errno;
     MPID_Datatype *new_dtp;
     struct MPID_Dataloop *dlp;
 
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
     /* --BEGIN ERROR HANDLING-- */
-    if (!new_dtp)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPID_Type_create_resized", __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	return mpi_errno;
-    }
+    if (!new_dtp) return MPIDI_Type_create_resized_memory_error();
     /* --END ERROR HANDLING-- */
 
     /* handle is filled in by MPIU_Handle_obj_alloc() */
@@ -62,7 +58,9 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 	/* allocate dataloop */
 	new_dtp->loopsize = sizeof(struct MPID_Dataloop);
 	dlp               = MPID_Dataloop_alloc(sizeof(struct MPID_Dataloop));
-	if (dlp == NULL) assert(0);
+	/* --BEGIN ERROR HANDLING-- */
+	if (dlp == NULL) return MPIDI_Type_create_resized_memory_error();
+	/* --END ERROR HANDLING-- */
 
 	new_dtp->loopinfo = dlp;
 
@@ -102,7 +100,9 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 	/* allocate dataloop */
 	new_dtp->loopsize = old_dtp->loopsize;
 	dlp               = MPID_Dataloop_alloc(new_dtp->loopsize);
-	if (dlp == NULL) assert(0);
+	/* --BEGIN ERROR HANDLING-- */
+	if (dlp == NULL) return MPIDI_Type_create_resized_memory_error();
+	/* --END ERROR HANDLING-- */
 
 	new_dtp->loopinfo = dlp;
 
@@ -115,3 +115,19 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 
     return MPI_SUCCESS;
 }
+
+/* --BEGIN ERROR HANDLING-- */
+static int MPIDI_Type_create_resized_memory_error(void)
+{
+    int mpi_errno;
+
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+				     MPIR_ERR_RECOVERABLE,
+				     "MPID_Type_create_resized",
+				     __LINE__,
+				     MPI_ERR_OTHER,
+				     "**nomem",
+				     0);
+    return mpi_errno;
+}
+/* --END ERROR HANDLING-- */

@@ -122,12 +122,12 @@ void MPIR_Datatype_init( void )
 		dptr->true_ub	   = dptr->size;
 		dptr->contents     = NULL; /* should never get referenced? */
 	    }
-	    /* --BEGIN ERROR CHECKING-- */
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (d != -1 && mpi_dtypes[i] != -1) {
 		/* We did not hit the end-of-list */
 		MPIU_Internal_error_printf( "Did not initialize all of the predefined datatypes (only did first %d)\n", i-1 );
 	    }
-	    /* --END ERROR CHECKING-- */
+	    /* --END ERROR HANDLING-- */
 	    is_init = 1;
 	}
 	MPID_Common_thread_unlock();

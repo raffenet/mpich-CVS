@@ -154,8 +154,20 @@ int MPI_Type_indexed(int count,
 	return MPI_SUCCESS;
     }
 
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_indexed", "**mpi_type_indexed %d %p %p %D %p", count, blocklens, indices, old_type, newtype);
+    /* --BEGIN ERROR HANDLING-- */
+    mpi_errno = MPIR_Err_create_code(mpi_errno,
+				     MPIR_ERR_RECOVERABLE,
+				     FCNAME,
+				     __LINE__,
+				     MPI_ERR_OTHER,
+				     "**mpi_type_indexed",
+				     "**mpi_type_indexed %d %p %p %D %p",
+				     count,
+				     blocklens,
+				     indices,
+				     old_type,
+				     newtype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_INDEXED);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }

@@ -41,15 +41,16 @@ int MPID_Type_commit(MPI_Datatype *datatype_p)
     last  = SEGMENT_IGNORE_LAST;
 
     MPID_Segment_count_contig_blocks(segp,
-		      first,
-		      &last,
-		      &count);
+				     first,
+				     &last,
+				     &count);
 
     datatype_ptr->n_contig_blocks = count;
 
     MPID_Segment_free(segp);
 
-    MPIU_DBG_PRINTF(("# contig blocks = %d\n", (int) datatype_ptr->n_contig_blocks));
+    MPIU_DBG_PRINTF(("# contig blocks = %d\n",
+		     (int) datatype_ptr->n_contig_blocks));
 
 #if 0
     MPIDI_Dataloop_dot_printf(datatype_ptr->loopinfo, 0, 1);

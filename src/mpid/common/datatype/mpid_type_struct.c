@@ -8,7 +8,6 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <limits.h>
 
 #undef MPID_STRUCT_FLATTEN_DEBUG
@@ -16,6 +15,7 @@
 
 int MPID_Type_struct_alignsize(int count,
 			       MPI_Datatype *oldtype_array);
+static int MPIDI_Dataloop_create_struct_memory_error(void);
 
 int MPID_Type_struct_alignsize(int count,
 			       MPI_Datatype *oldtype_array)
@@ -66,7 +66,7 @@ int MPID_Type_struct_alignsize(int count,
 . newtype - handle of new struct datatype
 
   Return Value:
-  0 on success, -1 on failure.
+  MPI_SUCCESS on success, MPI errno on failure.
 @*/
 int MPID_Type_struct(int count,
 		     int *blocklength_array,
@@ -324,18 +324,18 @@ int MPID_Type_struct(int count,
     }
 
     /* fill in dataloop */
-    MPID_Dataloop_create_struct(count,
-				blocklength_array,
-				displacement_array,
-				oldtype_array,
-				&(new_dtp->loopinfo),
-				&(new_dtp->loopsize),
-				&(new_dtp->loopinfo_depth),
-				MPID_DATALOOP_HOMOGENEOUS);
+    mpi_errno = MPID_Dataloop_create_struct(count,
+					    blocklength_array,
+					    displacement_array,
+					    oldtype_array,
+					    &(new_dtp->loopinfo),
+					    &(new_dtp->loopsize),
+					    &(new_dtp->loopinfo_depth),
+					    MPID_DATALOOP_HOMOGENEOUS);
 
     *newtype = new_dtp->handle;
 
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
 /*@
@@ -353,9 +353,9 @@ int MPID_Type_struct(int count,
 - dlsz_p - pointer to address in which to place size of new dataloop
 
   Return Value:
-  None
+  MPI_SUCCESS on success, MPI errno on failure.
 @*/
-void MPID_Dataloop_create_struct(int count,
+int MPID_Dataloop_create_struct(int count,
 				 int *blklen_array,
 				 MPI_Aint *disp_array,
 				 MPI_Datatype *oldtype_array,
@@ -364,7 +364,7 @@ void MPID_Dataloop_create_struct(int count,
 				 int *dldepth_p,
 				 int flags)
 {
-    int i, nr_basics = 0, nr_derived = 0, type_pos = 0;
+    int mpi_errno, i, nr_basics = 0, nr_derived = 0, type_pos = 0;
 
     MPI_Datatype first_basic = MPI_DATATYPE_NULL,
 	first_derived = MPI_DATATYPE_NULL;
@@ -372,13 +372,13 @@ void MPID_Dataloop_create_struct(int count,
     /* if count is zero, handle with contig code, call it a int */
     if (count == 0)
     {
-	MPID_Dataloop_create_contiguous(0,
-					MPI_INT,
-					dlp_p,
-					dlsz_p,
-					dldepth_p,
-					flags);
-	return;
+	mpi_errno = MPID_Dataloop_create_contiguous(0,
+						    MPI_INT,
+						    dlp_p,
+						    dlsz_p,
+						    dldepth_p,
+						    flags);
+	return mpi_errno;
     }
 
     /* browse the old types and characterize */
@@ -422,25 +422,21 @@ void MPID_Dataloop_create_struct(int count,
      * calculations here.
      */
 
-    if (nr_basics + nr_derived == 0)
-    {
-	/* WHAT DO WE DO HERE? */
-	assert(0);
-    }
-    else if (nr_basics + nr_derived == 1)
+    /* (nr_basics + nr_derived == 0) is handled by (count == 0) case */
+    if (nr_basics + nr_derived == 1)
     {
 	/* type_pos is index to only real type in array */
 	/* note: indexed call will a contig if possible */
-	MPID_Dataloop_create_indexed(1, /* count */
-				     &blklen_array[type_pos],
-				     &disp_array[type_pos],
-				     1, /* displacement in bytes */
-				     oldtype_array[type_pos],
-				     dlp_p,
-				     dlsz_p,
-				     dldepth_p,
-				     flags);
-	return;
+	mpi_errno = MPID_Dataloop_create_indexed(1, /* count */
+						 &blklen_array[type_pos],
+						 &disp_array[type_pos],
+						 1, /* displacement in bytes */
+						 oldtype_array[type_pos],
+						 dlp_p,
+						 dlsz_p,
+						 dldepth_p,
+						 flags);
+	return mpi_errno;
     }
     else if (((nr_derived == 0) && (first_basic != MPI_DATATYPE_NULL)) ||
 	     ((nr_basics == 0) && (first_derived != MPI_DATATYPE_NULL)))
@@ -453,9 +449,19 @@ void MPID_Dataloop_create_struct(int count,
 
 	/* count is an upper bound on number of type instances */
 	tmp_blklen_array = (int *) MPIU_Malloc(count * sizeof(int));
-	assert(tmp_blklen_array != NULL);
+	/* --BEGIN ERROR HANDLING-- */
+	if (!tmp_blklen_array) {
+	    return MPIDI_Dataloop_create_struct_memory_error();
+	}
+	/* --END ERROR HANDLING-- */
+
 	tmp_disp_array   = (MPI_Aint *) MPIU_Malloc(count * sizeof(MPI_Aint));
-	assert(tmp_disp_array != NULL);
+	/* --BEGIN ERROR HANDLING-- */
+	if (!tmp_disp_array) {
+	    MPIU_Free(tmp_blklen_array);
+	    return MPIDI_Dataloop_create_struct_memory_error();
+	}
+	/* --END ERROR HANDLING-- */
 
 	for (i=type_pos; i < count; i++)
 	{
@@ -467,18 +473,18 @@ void MPID_Dataloop_create_struct(int count,
 	    }
 	}
 
-	MPID_Dataloop_create_indexed(cur_pos,
-				     tmp_blklen_array,
-				     tmp_disp_array,
-				     1, /* displacement in bytes */
-				     oldtype_array[type_pos],
-				     dlp_p,
-				     dlsz_p,
-				     dldepth_p,
-				     flags);
+	mpi_errno = MPID_Dataloop_create_indexed(cur_pos,
+						 tmp_blklen_array,
+						 tmp_disp_array,
+						 1, /* displacement in bytes */
+						 oldtype_array[type_pos],
+						 dlp_p,
+						 dlsz_p,
+						 dldepth_p,
+						 flags);
 	MPIU_Free(tmp_blklen_array);
 	MPIU_Free(tmp_disp_array);
-	return;
+	return mpi_errno;
     }
     else if (nr_derived == 0 && ((flags & MPID_DATALOOP_HOMOGENEOUS) ||
 				 (flags & MPID_DATALOOP_ALL_BYTES)))
@@ -489,9 +495,21 @@ void MPID_Dataloop_create_struct(int count,
 
 	/* count is an upper bound on number of type instances */
 	tmp_blklen_array = (int *) MPIU_Malloc(count * sizeof(int));
-	assert(tmp_blklen_array != NULL);
-	tmp_disp_array   = (MPI_Aint *) MPIU_Malloc(count * sizeof(MPI_Aint));
-	assert(tmp_disp_array != NULL);
+
+	/* --BEGIN ERROR HANDLING-- */
+	if (!tmp_blklen_array) {
+	    return MPIDI_Dataloop_create_struct_memory_error();
+	}
+	/* --END ERROR HANDLING-- */
+
+	tmp_disp_array = (MPI_Aint *) MPIU_Malloc(count * sizeof(MPI_Aint));
+
+	/* --BEGIN ERROR HANDLING-- */
+	if (!tmp_disp_array) {
+	    MPIU_Free(tmp_blklen_array);
+	    return MPIDI_Dataloop_create_struct_memory_error();
+	}
+	/* --END ERROR HANDLING-- */
 
 	for (i=0; i < count; i++)
 	{
@@ -504,18 +522,18 @@ void MPID_Dataloop_create_struct(int count,
 		cur_pos++;
 	    }
 	}
-	MPID_Dataloop_create_indexed(cur_pos,
-				     tmp_blklen_array,
-				     tmp_disp_array,
-				     1, /* displacement in bytes */
-				     MPI_BYTE,
-				     dlp_p,
-				     dlsz_p,
-				     dldepth_p,
-				     flags);
+	mpi_errno = MPID_Dataloop_create_indexed(cur_pos,
+						 tmp_blklen_array,
+						 tmp_disp_array,
+						 1, /* displacement in bytes */
+						 MPI_BYTE,
+						 dlp_p,
+						 dlsz_p,
+						 dldepth_p,
+						 flags);
 	MPIU_Free(tmp_blklen_array);
 	MPIU_Free(tmp_disp_array);
-	return;
+	return mpi_errno;
     }
     else if ((flags & MPID_DATALOOP_HOMOGENEOUS) ||
 	     (flags & MPID_DATALOOP_ALL_BYTES))
@@ -529,6 +547,11 @@ void MPID_Dataloop_create_struct(int count,
 	int first_ind, last_ind;
 
 	segp = MPID_Segment_alloc();
+	/* --BEGIN ERROR HANDLING-- */
+	if (!segp) {
+	    return MPIDI_Dataloop_create_struct_memory_error();
+	}
+	/* --END ERROR HANDLING-- */
 
 	/* use segment code once to count contiguous regions */
 	for (i=0; i < count; i++)
@@ -564,11 +587,30 @@ void MPID_Dataloop_create_struct(int count,
 	nr_blks += 2; /* safety measure */
 
 	iov_array = (MPID_IOV *) MPIU_Malloc(nr_blks * sizeof(MPID_IOV));
-	assert(iov_array != NULL);
+	/* --BEGIN ERROR HANDLING-- */
+	if (!iov_array) {
+	    return MPIDI_Dataloop_create_struct_memory_error();
+	}
+	/* --END ERROR HANDLING-- */
+
 	tmp_blklen_array = (int *) MPIU_Malloc(nr_blks * sizeof(int));
-	assert(tmp_blklen_array != NULL);
+
+	/* --BEGIN ERROR HANDLING-- */
+	if (!tmp_blklen_array) {
+	    MPIU_Free(iov_array);
+	    return MPIDI_Dataloop_create_struct_memory_error();
+	}
+	/* --END ERROR HANDLING-- */
+
 	tmp_disp_array = (MPI_Aint *) MPIU_Malloc(nr_blks * sizeof(MPI_Aint));
-	assert(tmp_disp_array != NULL);
+
+	/* --BEGIN ERROR HANDLING-- */
+	if (!tmp_disp_array) {
+	    MPIU_Free(iov_array);
+	    MPIU_Free(tmp_blklen_array);
+	    return MPIDI_Dataloop_create_struct_memory_error();
+	}
+	/* --END ERROR HANDLING-- */
 
 	/* use segment code again to flatten the type */
 	first_ind = 0;
@@ -620,18 +662,18 @@ void MPID_Dataloop_create_struct(int count,
 	MPID_Segment_free(segp);
 	MPIU_Free(iov_array);
 
-	MPID_Dataloop_create_indexed(nr_blks,
-				     tmp_blklen_array,
-				     tmp_disp_array,
-				     1, /* displacement in bytes */
-				     MPI_BYTE,
-				     dlp_p,
-				     dlsz_p,
-				     dldepth_p,
-				     flags);
+	mpi_errno = MPID_Dataloop_create_indexed(nr_blks,
+						 tmp_blklen_array,
+						 tmp_disp_array,
+						 1, /* displacement in bytes */
+						 MPI_BYTE,
+						 dlp_p,
+						 dlsz_p,
+						 dldepth_p,
+						 flags);
 	MPIU_Free(tmp_blklen_array);
 	MPIU_Free(tmp_disp_array);
-	return;
+	return mpi_errno;
     }
     else /* general case, allow branches */
     {
@@ -675,7 +717,13 @@ void MPID_Dataloop_create_struct(int count,
 	    (nr_basics * sizeof(struct MPID_Dataloop));
 
 	new_dlp = (struct MPID_Dataloop *) MPID_Dataloop_alloc(new_loop_sz);
-	assert(new_dlp != NULL);
+	/* --BEGIN ERROR HANDLING-- */
+	if (!new_dlp)
+	{
+	    return MPIDI_Dataloop_create_struct_memory_error();
+	}
+	/* --END ERROR HANDLING-- */
+
 
 	new_dlp->kind = DLOOP_KIND_STRUCT;
 	new_dlp->el_size = -1; /* not valid for struct */
@@ -716,16 +764,18 @@ void MPID_Dataloop_create_struct(int count,
 		}
 
 		/* build a contig dataloop for this basic and point to that */
-		MPID_Dataloop_create_contiguous(blklen_array[i],
-						oldtype_array[i],
-						&dummy_dlp,
-						&dummy_sz,
-						&dummy_depth,
-						flags);
-						
-		assert((dummy_dlp != NULL) &&
-		       (dummy_sz == sizeof(struct MPID_Dataloop)) &&
-		       (dummy_depth == 1));
+		mpi_errno = MPID_Dataloop_create_contiguous(blklen_array[i],
+							    oldtype_array[i],
+							    &dummy_dlp,
+							    &dummy_sz,
+							    &dummy_depth,
+							    flags);
+		/* --BEGIN ERROR HANDLING-- */
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
 
 		MPID_Dataloop_copy(curpos, dummy_dlp, dummy_sz);
 		new_dlp->loop_params.s_t.dataloop_array[loop_idx] =
@@ -759,6 +809,22 @@ void MPID_Dataloop_create_struct(int count,
 	*dlsz_p    = new_loop_sz;
 	*dldepth_p = new_loop_depth;
 
-	return;
+	return MPI_SUCCESS;
     }
 }
+
+/* --BEGIN ERROR HANDLING-- */
+static int MPIDI_Dataloop_create_struct_memory_error(void)
+{
+    int mpi_errno;
+
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+				     MPIR_ERR_RECOVERABLE,
+				     "MPID_Dataloop_create_struct",
+				     __LINE__,
+				     MPI_ERR_OTHER,
+				     "**nomem",
+				     0);
+    return mpi_errno;
+}
+/* --END ERROR HANDLING-- */

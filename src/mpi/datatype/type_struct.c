@@ -176,8 +176,20 @@ int MPI_Type_struct(int count,
 	return MPI_SUCCESS;
     }
 
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_struct", "**mpi_type_struct %d %p %p %p %p", count, blocklens, indices, old_types, newtype);
+    /* --BEGIN ERROR HANDLING-- */
+    mpi_errno = MPIR_Err_create_code(mpi_errno,
+				     MPIR_ERR_RECOVERABLE,
+				     FCNAME,
+				     __LINE__,
+				     MPI_ERR_OTHER,
+				     "**mpi_type_struct",
+				     "**mpi_type_struct %d %p %p %p %p",
+				     count,
+				     blocklens,
+				     indices,
+				     old_types,
+				     newtype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_STRUCT);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }

@@ -179,8 +179,10 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	    dlp = dlp->loop_params.s_t.dataloop_array[0];
 	    break;
 	default:
+	    /* --BEGIN ERROR HANDLING-- */
 	    assert(0);
 	    break;
+	    /* --END ERROR HANDLING-- */
     }
 
     for (i=1; i < depth; i++) {
@@ -206,8 +208,10 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 		    dlp = dlp->loop_params.s_t.dataloop_array[0];
 		    break;
 		default:
+		    /* --BEGIN ERROR HANDLING-- */
 		    assert(0);
 		    break;
+		    /* --END ERROR HANDLING-- */
 	    }
 
 	}
@@ -400,8 +404,10 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 					       sizefn,
                                                NULL);
 	    
+	    /* --BEGIN ERROR HANDLING-- */
 	    /* verify that we're in the right location */
 	    if (tmp_last != first) assert(0);
+	    /* --END ERROR HANDLING-- */
 	}
 
 	DLOOP_SEGMENT_LOAD_LOCAL_VALUES;
@@ -479,7 +485,10 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    }
 		    break;
 		default:
+		    /* --BEGIN ERROR HANDLING-- */
 		    assert(0);
+		    break;
+		    /* --END ERROR HANDLING-- */
 	    }
 
 #ifdef DEBUG_DLOOP_MANIPULATE
@@ -697,8 +706,10 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			    DLOOP_STACKELM_STRUCT_BLOCKSIZE(cur_elmp, cur_elmp->orig_count - cur_elmp->curcount);
 			break;
 		    default:
+			/* --BEGIN ERROR HANDLING-- */
 			assert(0);
 			break;
+			/* --END ERROR HANDLING-- */
 		}
 		cur_elmp->curblock = cur_elmp->orig_block;
 	    }
@@ -726,8 +737,10 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 								  count_index);
 			break;
 		    default:
+			/* --BEGIN ERROR HANDLING-- */
 			assert(0);
 			break;
+			/* --END ERROR HANDLING-- */
 		}
 
 #ifdef DEBUG_DLOOP_MANIPULATE
@@ -777,8 +790,10 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			DLOOP_STACKELM_STRUCT_OFFSET(cur_elmp, count_index);
 		    break;
 		default:
+		    /* --BEGIN ERROR HANDLING-- */
 		    assert(0);
 		    break;
+		    /* --END ERROR HANDLING-- */
 	    }
 
 #ifdef DEBUG_DLOOP_MANIPULATE
@@ -811,8 +826,10 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    next_elmp->curoffset = next_elmp->orig_offset + DLOOP_STACKELM_STRUCT_OFFSET(next_elmp, 0);
 		    break;
 		default:
+		    /* --BEGIN ERROR HANDLING-- */
 		    assert(0);
 		    break;
+		    /* --END ERROR HANDLING-- */
 	    }
 
 #ifdef DEBUG_DLOOP_MANIPULATE
@@ -865,8 +882,10 @@ static inline int DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp)
 	    return dlp->loop_params.s_t.blocksize_array[elmp->orig_count - elmp->curcount];
 	    break;
 	default:
+	    /* --BEGIN ERROR HANDLING-- */
 	    assert(0);
 	    break;
+	    /* --END ERROR HANDLING-- */
     }
     return -1;
 }
@@ -900,8 +919,10 @@ static inline int DLOOP_Stackelm_offset(struct DLOOP_Dataloop_stackelm *elmp)
 	    return dlp->loop_params.s_t.offset_array[elmp->orig_count - elmp->curcount];
 	    break;
 	default:
+	    /* --BEGIN ERROR HANDLING-- */
 	    assert(0);
 	    break;
+	    /* --END ERROR HANDLING-- */
     }
     return -1;
 }

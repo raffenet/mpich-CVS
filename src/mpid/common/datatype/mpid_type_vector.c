@@ -8,7 +8,6 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
-#include <assert.h>
 
 /* #define MPID_TYPE_ALLOC_DEBUG */
 
@@ -177,36 +176,50 @@ int MPID_Type_vector(int count,
     new_dtp->is_contig = (new_dtp->size == new_dtp->extent) ? old_is_contig : 0;
 
     /* fill in dataloop */
-    MPID_Dataloop_create_vector(count,
-				blocklength,
-				stride,
-				strideinbytes,
-				oldtype,
-				&(new_dtp->loopinfo),
-				&(new_dtp->loopsize),
-				&(new_dtp->loopinfo_depth),
-				0);
+    mpi_errno = MPID_Dataloop_create_vector(count,
+					    blocklength,
+					    stride,
+					    strideinbytes,
+					    oldtype,
+					    &(new_dtp->loopinfo),
+					    &(new_dtp->loopsize),
+					    &(new_dtp->loopinfo_depth),
+					    0);
 
     *newtype = new_dtp->handle;
 
 #ifdef MPID_TYPE_ALLOC_DEBUG
     MPIU_dbg_printf("(h)vector type %x created.\n", new_dtp->handle);
 #endif
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
+/*@
+   MPID_Dataloop_create_vector
 
-void MPID_Dataloop_create_vector(int count,
-				 int blocklength,
-				 MPI_Aint stride,
-				 int strideinbytes,
-				 MPI_Datatype oldtype,
-				 MPID_Dataloop **dlp_p,
-				 int *dlsz_p,
-				 int *dldepth_p,
-				 int flags)
+   Arguments:
++  int count
+.  int blocklength
+.  MPI_Aint stride
+.  int strideinbytes
+.  MPI_Datatype oldtype
+.  MPID_Dataloop **dlp_p
+.  int *dlsz_p
+.  int *dldepth_p
+-  int flags
+
+@*/
+int MPID_Dataloop_create_vector(int count,
+				int blocklength,
+				MPI_Aint stride,
+				int strideinbytes,
+				MPI_Datatype oldtype,
+				MPID_Dataloop **dlp_p,
+				int *dlsz_p,
+				int *dldepth_p,
+				int flags)
 {
-    int is_builtin;
+    int mpi_errno, is_builtin;
     int new_loop_sz, new_loop_depth;
 
     MPID_Datatype *old_dtp = NULL;
@@ -216,13 +229,13 @@ void MPID_Dataloop_create_vector(int count,
     if (count == 0)
     {
 
-	MPID_Dataloop_create_contiguous(0,
-					MPI_INT,
-					dlp_p,
-					dlsz_p,
-					dldepth_p,
-					flags);
-	return;
+	mpi_errno = MPID_Dataloop_create_contiguous(0,
+						    MPI_INT,
+						    dlp_p,
+						    dlsz_p,
+						    dldepth_p,
+						    flags);
+	return mpi_errno;
     }
 
     /* optimization:
@@ -230,13 +243,13 @@ void MPID_Dataloop_create_vector(int count,
      * if count == 1, store as a contiguous rather than a vector dataloop.
      */
     if (count == 1) {
-	MPID_Dataloop_create_contiguous(blocklength,
-					oldtype,
-					dlp_p,
-					dlsz_p,
-					dldepth_p,
-					flags);
-	return;
+	mpi_errno = MPID_Dataloop_create_contiguous(blocklength,
+						    oldtype,
+						    dlp_p,
+						    dlsz_p,
+						    dldepth_p,
+						    flags);
+	return mpi_errno;
     }
 
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
@@ -254,7 +267,19 @@ void MPID_Dataloop_create_vector(int count,
     }
 
     new_dlp = MPID_Dataloop_alloc(new_loop_sz);
-    assert(new_dlp != NULL);
+    /* --BEGIN ERROR HANDLING-- */
+    if (!new_dlp)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+					 MPIR_ERR_RECOVERABLE,
+					 "MPID_Dataloop_create_vector",
+					 __LINE__,
+					 MPI_ERR_OTHER,
+					 "**nomem",
+					 0);
+	return mpi_errno;
+    }
+    /* --END ERROR HANDLING-- */
 
     if (is_builtin) {
 	new_dlp->kind                  = DLOOP_KIND_VECTOR | DLOOP_FINAL_MASK;
@@ -302,5 +327,5 @@ void MPID_Dataloop_create_vector(int count,
     *dlsz_p = new_loop_sz;
     *dldepth_p = new_loop_depth;
 
-    return;
+    return MPI_SUCCESS;
 }

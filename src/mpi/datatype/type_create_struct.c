@@ -119,8 +119,8 @@ int MPI_Type_create_struct(int count,
 	MPID_Datatype_get_ptr(*newtype, new_dtp);
 	mpi_errno = MPID_Datatype_set_contents(new_dtp,
 					       MPI_COMBINER_STRUCT,
-					       count+1, /* ints (count, blocklengths) */
-					       count, /* aints (displacements) */
+					       count+1, /* ints (cnt,blklen) */
+					       count, /* aints (disps) */
 					       count, /* types */
 					       ints,
 					       array_of_displacements,
@@ -135,9 +135,20 @@ int MPI_Type_create_struct(int count,
 	return MPI_SUCCESS;
     }
 
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_create_struct", "**mpi_type_create_struct %d %p %p %p %p",
-	count, array_of_blocklengths, array_of_displacements, array_of_types, newtype);
+    /* --BEGIN ERROR HANDLING-- */
+    mpi_errno = MPIR_Err_create_code(mpi_errno,
+				     MPIR_ERR_RECOVERABLE,
+				     FCNAME,
+				     __LINE__,
+				     MPI_ERR_OTHER,
+				     "**mpi_type_create_struct",
+				     "**mpi_type_create_struct %d %p %p %p %p",
+				     count,
+				     array_of_blocklengths,
+				     array_of_displacements,
+				     array_of_types,
+				     newtype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_STRUCT);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }

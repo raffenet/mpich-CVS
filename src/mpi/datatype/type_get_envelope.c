@@ -83,17 +83,28 @@ int MPI_Type_get_envelope(MPI_Datatype datatype,
 				       num_addresses,
 				       num_datatypes,
 				       combiner);
-    if (mpi_errno != MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_type_get_envelope", "**mpi_type_get_envelope %D %p %p %p %p",
-	    datatype, num_integers, num_addresses, num_datatypes, combiner);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_ENVELOPE);
-	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+	return MPI_SUCCESS;
     }
 
+    /* --BEGIN ERROR HANDLING-- */
+    mpi_errno = MPIR_Err_create_code(mpi_errno,
+				     MPIR_ERR_RECOVERABLE,
+				     FCNAME,
+				     __LINE__,
+				     MPI_ERR_OTHER,
+				     "**mpi_type_get_envelope",
+				     "**mpi_type_get_envelope %D %p %p %p %p",
+				     datatype,
+				     num_integers,
+				     num_addresses,
+				     num_datatypes,
+				     combiner);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_ENVELOPE);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }
 
 

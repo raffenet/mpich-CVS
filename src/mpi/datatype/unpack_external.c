@@ -98,8 +98,18 @@ int MPI_Unpack_external(char *datarep,
     segp = MPID_Segment_alloc();
     if (segp == NULL)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment");
-	goto fn_exit;
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+					 MPIR_ERR_RECOVERABLE,
+					 FCNAME,
+					 __LINE__,
+					 MPI_ERR_OTHER,
+					 "**nomem",
+					 "**nomem %s",
+					 "MPID_Segment");
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK_EXTERNAL);
+	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+	/* --END ERROR HANDLING-- */
     }
     mpi_errno = MPID_Segment_init(outbuf, outcount, datatype, segp);
     if (mpi_errno != MPI_SUCCESS)
@@ -123,14 +133,28 @@ int MPI_Unpack_external(char *datarep,
     MPID_Segment_free(segp);
 
 fn_exit:
-    if (mpi_errno != MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_unpack_external", "**mpi_unpack_external %s %p %d %p %p %d %D",
-	    datarep, inbuf, insize, position, outbuf, outcount, datatype);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK_EXTERNAL);
-	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+	return MPI_SUCCESS;
     }
+
+    /* --BEGIN ERROR HANDLING-- */
+    mpi_errno = MPIR_Err_create_code(mpi_errno,
+				     MPIR_ERR_RECOVERABLE,
+				     FCNAME,
+				     __LINE__,
+				     MPI_ERR_OTHER,
+				     "**mpi_unpack_external",
+				     "**mpi_unpack_external %s %p %d %p %p %d %D",
+				     datarep,
+				     inbuf,
+				     insize,
+				     position,
+				     outbuf,
+				     outcount,
+				     datatype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK_EXTERNAL);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }

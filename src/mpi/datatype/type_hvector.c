@@ -98,7 +98,7 @@ int MPI_Type_hvector(int count,
 	MPID_Datatype_get_ptr(*newtype_p, new_dtp);
 	mpi_errno = MPID_Datatype_set_contents(new_dtp,
 					       MPI_COMBINER_HVECTOR,
-					       2, /* ints (count, blocklength) */
+					       2, /* ints (count, blocklen) */
 					       1, /* aints */
 					       1, /* types */
 					       ints,
@@ -112,9 +112,21 @@ int MPI_Type_hvector(int count,
 	return MPI_SUCCESS;
     }
 
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_hvector", "**mpi_type_hvector %d %d %d %D %p", count, blocklen, stride, old_type, newtype_p);
+    /* --BEGIN ERROR HANDLING-- */
+    mpi_errno = MPIR_Err_create_code(mpi_errno,
+				     MPIR_ERR_RECOVERABLE,
+				     FCNAME,
+				     __LINE__,
+				     MPI_ERR_OTHER,
+				     "**mpi_type_hvector",
+				     "**mpi_type_hvector %d %d %d %D %p",
+				     count,
+				     blocklen,
+				     stride,
+				     old_type,
+				     newtype_p);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HVECTOR);  
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }
 

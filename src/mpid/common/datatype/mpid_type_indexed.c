@@ -8,7 +8,6 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #undef MPID_TYPE_ALLOC_DEBUG
 
@@ -67,9 +66,13 @@ int MPID_Type_indexed(int count,
     /* --BEGIN ERROR HANDLING-- */
     if (!new_dtp)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					 "MPID_Type_indexed", __LINE__,
-					 MPI_ERR_OTHER, "**nomem", 0);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+					 MPIR_ERR_RECOVERABLE,
+					 "MPID_Type_indexed",
+					 __LINE__,
+					 MPI_ERR_OTHER,
+					 "**nomem",
+					 0);
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
@@ -113,18 +116,18 @@ int MPID_Type_indexed(int count,
 	new_dtp->n_elements = 0;
 	new_dtp->is_contig  = 1;
 
-	MPID_Dataloop_create_indexed(0,
-				     NULL,
-				     NULL,
-				     0,
-				     MPI_INT, /* dummy type */
-				     &(new_dtp->loopinfo),
-				     &(new_dtp->loopsize),
-				     &(new_dtp->loopinfo_depth),
-				     0);
+	mpi_errno = MPID_Dataloop_create_indexed(0,
+						 NULL,
+						 NULL,
+						 0,
+						 MPI_INT, /* dummy type */
+						 &(new_dtp->loopinfo),
+						 &(new_dtp->loopsize),
+						 &(new_dtp->loopinfo_depth),
+						 0);
 	*newtype = new_dtp->handle;
 	
-	return MPI_SUCCESS;
+	return mpi_errno;
     }
     else if (is_builtin)
     {
@@ -240,31 +243,49 @@ int MPID_Type_indexed(int count,
     }
 
     /* fill in dataloop */
-    MPID_Dataloop_create_indexed(count,
-				 blocklength_array,
-				 displacement_array,
-				 dispinbytes,
-				 oldtype,
-				 &(new_dtp->loopinfo),
-				 &(new_dtp->loopsize),
-				 &(new_dtp->loopinfo_depth),
-				 0);
+    mpi_errno = MPID_Dataloop_create_indexed(count,
+					     blocklength_array,
+					     displacement_array,
+					     dispinbytes,
+					     oldtype,
+					     &(new_dtp->loopinfo),
+					     &(new_dtp->loopsize),
+					     &(new_dtp->loopinfo_depth),
+					     0);
 
     *newtype = new_dtp->handle;
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
-void MPID_Dataloop_create_indexed(int count,
-				  int *blocklength_array,
-				  void *displacement_array,
-				  int dispinbytes,
-				  MPI_Datatype oldtype,
-				  MPID_Dataloop **dlp_p,
-				  int *dlsz_p,
-				  int *dldepth_p,
-				  int flags)
+/*@
+   MPID_Dataloop_create_indexed
+
+   Arguments:
++  int count
+.  int *blocklength_array
+.  void *displacement_array
+.  int dispinbytes
+.  MPI_Datatype oldtype
+.  MPID_Dataloop **dlp_p
+.  int *dlsz_p
+.  int *dldepth_p
+-  int flags
+
+.N Errors
+.N MPI_SUCCESS
+@*/
+
+int MPID_Dataloop_create_indexed(int count,
+				 int *blocklength_array,
+				 void *displacement_array,
+				 int dispinbytes,
+				 MPI_Datatype oldtype,
+				 MPID_Dataloop **dlp_p,
+				 int *dlsz_p,
+				 int *dldepth_p,
+				 int flags)
 {
-    int is_builtin;
+    int mpi_errno = MPI_SUCCESS, is_builtin;
     int i, old_loop_sz, new_loop_sz, old_loop_depth, blksz;
     int contig_count, old_type_count = 0;
 
@@ -277,13 +298,13 @@ void MPID_Dataloop_create_indexed(int count,
     /* if count is zero, handle with contig code, call it a int */
     if (count == 0)
     {
-	MPID_Dataloop_create_contiguous(0,
-					MPI_INT,
-					dlp_p,
-					dlsz_p,
-					dldepth_p,
-					flags);
-	return;
+	mpi_errno = MPID_Dataloop_create_contiguous(0,
+						    MPI_INT,
+						    dlp_p,
+						    dlsz_p,
+						    dldepth_p,
+						    flags);
+	return mpi_errno;
     }
 
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
@@ -323,13 +344,13 @@ void MPID_Dataloop_create_indexed(int count,
 	((!dispinbytes && ((int *) displacement_array)[0] == 0) ||
 	 (dispinbytes && ((MPI_Aint *) displacement_array)[0] == 0)))
     {
-	MPID_Dataloop_create_contiguous(old_type_count,
-					oldtype,
-					dlp_p,
-					dlsz_p,
-					dldepth_p,
-					flags);
-	return;
+	mpi_errno = MPID_Dataloop_create_contiguous(old_type_count,
+						    oldtype,
+						    dlp_p,
+						    dlsz_p,
+						    dldepth_p,
+						    flags);
+	return mpi_errno;
     }
 
     /* optimization:
@@ -340,16 +361,16 @@ void MPID_Dataloop_create_indexed(int count,
      */
     if (contig_count == 1)
     {
-	MPID_Dataloop_create_blockindexed(1,
-					  old_type_count,
-					  displacement_array,
-					  dispinbytes,
-					  oldtype,
-					  dlp_p,
-					  dlsz_p,
-					  dldepth_p,
-					  flags);
-	return;
+	mpi_errno = MPID_Dataloop_create_blockindexed(1,
+						      old_type_count,
+						      displacement_array,
+						      dispinbytes,
+						      oldtype,
+						      dlp_p,
+						      dlsz_p,
+						      dldepth_p,
+						      flags);
+	return mpi_errno;
     }
 
     /* optimization:
@@ -368,16 +389,16 @@ void MPID_Dataloop_create_indexed(int count,
     }
     if (blksz == blocklength_array[0])
     {
-	MPID_Dataloop_create_blockindexed(count,
-					  blocklength_array[0],
-					  displacement_array,
-					  dispinbytes,
-					  oldtype,
-					  dlp_p,
-					  dlsz_p,
-					  dldepth_p,
-					  flags);
-	return;
+	mpi_errno = MPID_Dataloop_create_blockindexed(count,
+						      blocklength_array[0],
+						      displacement_array,
+						      dispinbytes,
+						      oldtype,
+						      dlp_p,
+						      dlsz_p,
+						      dldepth_p,
+						      flags);
+	return mpi_errno;
     }
 
     /* note: blockindexed looks for the vector optimization */
@@ -464,7 +485,7 @@ void MPID_Dataloop_create_indexed(int count,
     *dlsz_p    = new_loop_sz;
     *dldepth_p = old_loop_depth + 1;
 
-    return;
+    return MPI_SUCCESS;
 }
 
 

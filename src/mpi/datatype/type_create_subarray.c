@@ -279,7 +279,9 @@ int MPI_Type_create_subarray(int ndims,
 
     /* Save contents */
     ints = (int *) MPIU_Malloc((3 * ndims + 2) * sizeof(int));
+    /* --BEGIN ERROR HANDLING-- */
     assert(ints != NULL);
+    /* --END ERROR HANDLING-- */
 
     ints[0] = ndims;
     for (i=0; i < ndims; i++) {
@@ -309,5 +311,7 @@ int MPI_Type_create_subarray(int ndims,
     MPIR_Nest_decr();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }
