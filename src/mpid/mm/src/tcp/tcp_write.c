@@ -247,7 +247,14 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     /* if the entire mpi segment has been written, enqueue the car in the completion queue */
     if (car_ptr->data.tcp.buf.vec_write.total_num_written == buf_ptr->vec.segment_last)
     {
-	tcp_car_dequeue(car_ptr->vc_ptr, car_ptr);
+#ifdef MPICH_DEV_BUILD
+	if (car_ptr != car_ptr->vc_ptr->writeq_head)
+	{
+	    err_printf("Error: tcp_write_vec not dequeueing the head write car.\n");
+	}
+#endif
+	tcp_car_dequeue_write(car_ptr->vc_ptr);
+	car_ptr->next_ptr = NULL; /* prevent the next car from being enqueued by cq_handle_write_car() */
 	mm_cq_enqueue(car_ptr);
     }
 
@@ -284,7 +291,14 @@ int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     {
 	dbg_printf("num_written: %d\n", car_ptr->data.tcp.buf.tmp.num_written);
 	/* remove from write queue and insert in completion queue */
-	tcp_car_dequeue(vc_ptr, car_ptr);
+#ifdef MPICH_DEV_BUILD
+	if (car_ptr != vc_ptr->writeq_head)
+	{
+	    err_printf("Error: tcp_write_tmp not dequeueing the head write car.\n");
+	}
+#endif
+	tcp_car_dequeue_write(vc_ptr);
+	car_ptr->next_ptr = NULL; /* prevent the next car from being enqueued by cq_handle_write_car() */
 	mm_cq_enqueue(car_ptr);
     }
 

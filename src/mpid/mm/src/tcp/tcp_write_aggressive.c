@@ -207,13 +207,13 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	/* if the entire mpi segment has been written, enqueue the car in the completion queue */
 	if (car_ptr->data.tcp.buf.vec_write.total_num_written == buf_ptr->vec.segment_last)
 	{
-	    tcp_car_dequeue(car_ptr->vc_ptr, car_ptr);
-	    if (car_ptr->next_ptr && (*num_written_ptr == num_written))
-	    {
-		/* if this is the last car written and it has a next car pointer,
-		 * enqueue the next car for writing */
-		car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr); /*** danger will rogers, is this correct? ***/
-	    }
+#ifdef MPICH_DEV_BUILD
+	if (car_ptr != car_ptr->vc_ptr->writeq_head)
+	{
+	    err_printf("Error: tcp_update_car_num_written not dequeueing the head write car.\n");
+	}
+#endif
+	    tcp_car_dequeue_write(car_ptr->vc_ptr);
 	    /*printf("dec cc: written vec: %d\n", num_written);fflush(stdout);*/
 	    mm_dec_cc(car_ptr->request_ptr);
 	    mm_car_free(car_ptr);
@@ -234,13 +234,13 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	{
 	    dbg_printf("num_written: %d\n", car_ptr->data.tcp.buf.tmp.num_written);
 	    /* remove from write queue and insert in completion queue */
-	    tcp_car_dequeue(car_ptr->vc_ptr, car_ptr);
-	    if (car_ptr->next_ptr && (*num_written_ptr == num_written))
+#ifdef MPICH_DEV_BUILD
+	    if (car_ptr != car_ptr->vc_ptr->writeq_head)
 	    {
-		/* if this is the last car written and it has a next car pointer,
-		 * enqueue the next car for writing */
-		car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr); /*** danger will rogers, is this correct? ***/
+		err_printf("Error: tcp_update_car_num_written not dequeueing the head write car.\n");
 	    }
+#endif
+	    tcp_car_dequeue_write(car_ptr->vc_ptr);
 	    /*printf("dec cc: written tmp buffer: %d\n", num_written);fflush(stdout);*/
 	    mm_dec_cc(car_ptr->request_ptr);
 	    mm_car_free(car_ptr);
@@ -265,9 +265,17 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
     return MPI_SUCCESS;
 }
 
+/*@
+   tcp_write_aggressive - write as many cars as possible
+
+   Parameters:
++  MPIDI_VC *vc_ptr - vc
+
+   Notes:
+@*/
 int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 {
-    MM_Car *car_ptr, *next_car_ptr;
+    MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
     MPID_VECTOR vec[MPID_VECTOR_LIMIT];
     int cur_pos = 0;
@@ -336,6 +344,7 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 	}
 	if (stop)
 	    break;
+#define REALLY_AGGRESSIVE_WRITE
 #ifdef REALLY_AGGRESSIVE_WRITE
 	car_ptr = (car_ptr->next_ptr) ? 
 	    car_ptr->next_ptr : /* go to the next car in the list */
@@ -378,22 +387,14 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 	}
 
 	/* update all the cars and buffers affected by the bwrite action */
-	car_ptr = vc_ptr->writeq_head;
 	while (num_written)
 	{
-	    /* Save the next pointer because it might not be available after updating the current car. */
-	    /* The vc queue has the heads of car chains enqueued in it. */
-	    /* Iteration is down the chain of cars and then over to the next chain in the queue. */
-	    /* So, set next_car_ptr to either the next_ptr or if that doesn't exist, the vcqnext_ptr. */
-	    next_car_ptr = car_ptr->next_ptr ? car_ptr->next_ptr : car_ptr->vcqnext_ptr;
-	    /* update the current car */
-	    if (tcp_update_car_num_written(car_ptr, &num_written) != MPI_SUCCESS)
+	    /* the head gets dequeued and the next car takes its place */
+	    if (tcp_update_car_num_written(vc_ptr->writeq_head, &num_written) != MPI_SUCCESS)
 	    {
 		err_printf("tcp_write_aggressive:tcp_update_car_num_written failed.\n");
 		return -1;
 	    }
-	    /* move to the next one */
-	    car_ptr = next_car_ptr;
 	}
     }
 

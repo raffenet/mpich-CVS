@@ -203,39 +203,43 @@ int tcp_make_progress()
 	return MPI_SUCCESS;
     }
 
-    vc_iter = TCP_Process.read_list;
-    while (vc_iter)
+    if ((vc_iter = TCP_Process.read_list) != NULL)
     {
-	if (BFD_ISSET(vc_iter->data.tcp.bfd, &readset))
+	do
 	{
-	    /* read data */
-	    tcp_read(vc_iter);
-	    nready--;
-	}
-	if (nready == 0)
-	{
-	    MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
-	    return MPI_SUCCESS;
-	}
-	vc_iter = vc_iter->read_next_ptr;
+	    if (BFD_ISSET(vc_iter->data.tcp.bfd, &readset))
+	    {
+		/* read data */
+		tcp_read(vc_iter);
+		nready--;
+	    }
+	    if (nready == 0)
+	    {
+		MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
+		return MPI_SUCCESS;
+	    }
+	    vc_iter = vc_iter->read_next_ptr;
+	}while (vc_iter);
     }
 
-    vc_iter = TCP_Process.write_list;
-    while (vc_iter)
+    if ((vc_iter = TCP_Process.write_list) != NULL)
     {
-	if (BFD_ISSET(vc_iter->data.tcp.bfd, &writeset))
+	do
 	{
-	    /* write data */
-	    /*tcp_write(vc_iter);*/
-	    tcp_write_aggressive(vc_iter);
-	    nready--;
-	}
-	if (nready == 0)
-	{
-	    MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
-	    return MPI_SUCCESS;
-	}
-	vc_iter = vc_iter->write_next_ptr;
+	    if (BFD_ISSET(vc_iter->data.tcp.bfd, &writeset))
+	    {
+		/* write data */
+		/*tcp_write(vc_iter);*/
+		tcp_write_aggressive(vc_iter);
+		nready--;
+	    }
+	    if (nready == 0)
+	    {
+		MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
+		return MPI_SUCCESS;
+	    }
+	    vc_iter = vc_iter->write_next_ptr;
+	}while (vc_iter);
     }
 
     if (nready == 0)
@@ -254,6 +258,7 @@ int tcp_make_progress()
 	}
     }
 
+#ifdef MPICH_DEV_BUILD
     if (nready)
     {
 	err_printf("Error: %d sockets still signalled after traversing read_list, write_list and listener.");
@@ -261,6 +266,7 @@ int tcp_make_progress()
 	MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
 	return -1;
     }
+#endif
 
     MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
     return MPI_SUCCESS;

@@ -162,6 +162,7 @@ int cq_handle_read_car(MM_Car *car_ptr)
     return ret_val;
 }
 
+#ifdef FOO
 int cq_handle_write_head_car(MM_Car *car_ptr)
 {
     MM_ENTER_FUNC(CQ_HANDLE_WRITE_HEAD_CAR);
@@ -220,6 +221,20 @@ int cq_handle_write_car(MM_Car *car_ptr)
     MM_EXIT_FUNC(CQ_HANDLE_WRITE_CAR);
     return ret_val;
 }
+
+#else
+
+int cq_handle_write_car(MM_Car *car_ptr)
+{
+    MM_ENTER_FUNC(CQ_HANDLE_WRITE_CAR);
+
+    mm_dec_cc(car_ptr->request_ptr);
+    mm_car_free(car_ptr);
+
+    MM_EXIT_FUNC(CQ_HANDLE_WRITE_CAR);
+    return MPI_SUCCESS;
+}
+#endif
 
 int mm_cq_test()
 {

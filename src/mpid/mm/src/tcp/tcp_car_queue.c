@@ -7,54 +7,6 @@
 #include "tcpimpl.h"
 
 /*@
-   tcp_car_queue_replace_head - replace the head car in the queue
-
-   Parameters:
-+  MPIDI_VC *vc_ptr - vc
--  MM_Car *car_ptr - car
-
-   Notes:
-@*/
-int tcp_car_queue_replace_head(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
-{
-    MM_ENTER_FUNC(TCP_CAR_HEAD_ENQUEUE);
-
-    if (car_ptr->type & MM_WRITE_CAR)
-    {
-	if (vc_ptr->writeq_head == NULL)
-	{
-	    err_printf("Error: tcp_car_queue_replace_head called with no write head.\n");
-	    MM_EXIT_FUNC(TCP_CAR_HEAD_ENQUEUE);
-	    return -1;
-	}
-
-	/* enqueue at the head */
-	car_ptr->vcqnext_ptr = vc_ptr->writeq_head->vcqnext_ptr;
-	if (vc_ptr->writeq_tail == vc_ptr->writeq_head)
-	    vc_ptr->writeq_tail = car_ptr;
-	vc_ptr->writeq_head = car_ptr;
-    }
-    if (car_ptr->type & MM_READ_CAR)
-    {
-	if (vc_ptr->readq_head == NULL)
-	{
-	    err_printf("Error: tcp_car_queue_replace_head called with no read head.\n");
-	    MM_EXIT_FUNC(TCP_CAR_HEAD_ENQUEUE);
-	    return -1;
-	}
-
-	/* enqueue at the head */
-	car_ptr->vcqnext_ptr = vc_ptr->readq_head->vcqnext_ptr;
-	if (vc_ptr->readq_tail == vc_ptr->readq_head)
-	    vc_ptr->readq_tail = car_ptr;
-	vc_ptr->readq_head = car_ptr;
-    }
-
-    MM_EXIT_FUNC(TCP_CAR_HEAD_ENQUEUE);
-    return MPI_SUCCESS;
-}
-
-/*@
    tcp_car_head_enqueue - enqueue a car in a vc at the head
 
    Parameters:
@@ -143,16 +95,14 @@ int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	/* enqueue the write car in the vc_ptr write queue */
 	if (vc_ptr->writeq_tail != NULL)
 	{
-	    /* enqueue the list of cars as a single entity
-	     * by setting their vcqnext_ptrs to the same next car
-	     */
+	    /* set all the vcqnext_ptrs in the tail chain to the same next car */
 	    iter_ptr = vc_ptr->writeq_tail;
 	    do
 	    {
 		iter_ptr->vcqnext_ptr = car_ptr;
 		iter_ptr = iter_ptr->next_ptr;
 	    } while (iter_ptr);
-	    /* enqueue only the head car */
+	    /* OR enqueue only the head car */
 	    /*vc_ptr->writeq_tail->vcqnext_ptr = car_ptr;*/
 	}
 	else
@@ -172,16 +122,14 @@ int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	/* enqueue the read car in the vc_ptr read queue */
 	if (vc_ptr->readq_tail != NULL)
 	{
-	    /* enqueue the list of cars as a single entity
-	     * by setting their vcqnext_ptrs to the same next car
-	     */
+	    /* set all the vcqnext_ptrs in the tail chain to the same next car */
 	    iter_ptr = vc_ptr->readq_tail;
 	    do
 	    {
 		iter_ptr->vcqnext_ptr = car_ptr;
 		iter_ptr = iter_ptr->next_ptr;
 	    } while (iter_ptr);
-	    /* enqueue only the head car */
+	    /* OR enqueue only the head car */
 	    /*vc_ptr->readq_tail->vcqnext_ptr = car_ptr;*/
 	}
 	else
@@ -206,24 +154,59 @@ int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 static int tcp_vc_dequeue_write(MPIDI_VC *vc_ptr)
 {
     MPIDI_VC *iter_ptr;
+    /* remove the vc from the global write set */
     BFD_CLR(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
+    /* decrement the reference count for the writers */
     TCP_Process.num_writers--;
+    /* check the head of the list */
     if (vc_ptr == TCP_Process.write_list)
     {
 	TCP_Process.write_list = vc_ptr->write_next_ptr;
 	return MPI_SUCCESS;
     }
+    /* iterate through the rest of the list */
     iter_ptr = TCP_Process.write_list;
     while (iter_ptr->write_next_ptr)
     {
 	if (iter_ptr->write_next_ptr == vc_ptr)
 	{
+	    /* set the write_next_ptr to jump over the vc being removed */
 	    iter_ptr->write_next_ptr = vc_ptr->write_next_ptr;
 	    return MPI_SUCCESS;
 	}
 	iter_ptr = iter_ptr->write_next_ptr;
     }
     return MPI_ERR_ARG;
+}
+
+/*@
+   tcp_car_dequeue_write - dequeue head write car from vc
+
+   Parameters:
++  MPIDI_VC *vc_ptr - vc
+
+   Notes:
+@*/
+int tcp_car_dequeue_write(MPIDI_VC *vc_ptr)
+{
+    MM_ENTER_FUNC(TCP_CAR_DEQUEUE_WRITE);
+
+#ifdef MPICH_DEV_BUILD
+    if (vc_ptr->writeq_head == NULL)
+    {
+	err_printf("tcp_car_dequeue_write called on empty queue\n");
+    }
+#endif
+    vc_ptr->writeq_head = vc_ptr->writeq_head->next_ptr ? vc_ptr->writeq_head->next_ptr : vc_ptr->writeq_head->vcqnext_ptr;
+    if (vc_ptr->writeq_head == NULL)
+    {
+	vc_ptr->writeq_tail = NULL;
+	/* If the write queue becomes empty, remove the vc from the process active vc write list */
+	tcp_vc_dequeue_write(vc_ptr);
+    }
+
+    MM_EXIT_FUNC(TCP_CAR_DEQUEUE_WRITE);
+    return MPI_SUCCESS;
 }
 
 /*@
@@ -235,167 +218,18 @@ static int tcp_vc_dequeue_write(MPIDI_VC *vc_ptr)
 
    Notes:
 @*/
-#ifdef FOO
 int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MM_Car *iter_ptr, *next_ptr;
 
     MM_ENTER_FUNC(TCP_CAR_DEQUEUE);
-
-    if (car_ptr->type & MM_WRITE_CAR)
-    {
-	/* dequeue the car from the vc_ptr write queue */
-	if (vc_ptr->writeq_head == NULL)
-	{
-	    MM_EXIT_FUNC(TCP_CAR_DEQUEUE);
-	    return MPI_SUCCESS;
-	}
-	if (vc_ptr->writeq_head == car_ptr)
-	{
-	    vc_ptr->writeq_head = car_ptr->next_ptr ? car_ptr->next_ptr : vc_ptr->writeq_head->vcqnext_ptr;
-	    if (vc_ptr->writeq_head == NULL)
-		vc_ptr->writeq_tail = NULL;
-	}
-	else
-	{
-	    iter_ptr = vc_ptr->writeq_head;
-	    while (iter_ptr->vcqnext_ptr)
-	    {
-		if (iter_ptr->vcqnext_ptr == car_ptr)
-		{
-		    if (car_ptr->next_ptr)
-		    {
-			do
-			{
-			    iter_ptr->vcqnext_ptr = car_ptr->next_ptr;
-			    iter_ptr = iter_ptr->next_ptr;
-			} while (iter_ptr);
-		    }
-		    else
-		    {
-			if (iter_ptr->vcqnext_ptr == vc_ptr->writeq_tail)
-			    vc_ptr->writeq_tail = iter_ptr;
-			/* make the entire list of cars point to the new vcqnext car */
-			next_ptr = iter_ptr->vcqnext_ptr->vcqnext_ptr;
-			do
-			{
-			    iter_ptr->vcqnext_ptr = next_ptr;
-			    iter_ptr = iter_ptr->next_ptr;
-			} while (iter_ptr);
-		    }
-		    /* make only the head car point to the new vcqnext car */
-		    /*iter_ptr->vcqnext_ptr = iter_ptr->vcqnext_ptr->vcqnext_ptr;*/
-		    break;
-		}
-		iter_ptr = iter_ptr->vcqnext_ptr;
-	    }
-	}
-	/* If the write queue becomes empty, remove the vc from the process active vc write list */
-	if (vc_ptr->writeq_head == NULL)
-	    tcp_vc_dequeue_write(car_ptr->vc_ptr);
-    }
-    if (car_ptr->type & MM_READ_CAR)
-    {
-	/* dequeue the car from the vc_ptr read queue */
-	if (vc_ptr->readq_head == NULL)
-	{
-	    MM_EXIT_FUNC(TCP_CAR_DEQUEUE);
-	    return MPI_SUCCESS;
-	}
-	if (vc_ptr->readq_head == car_ptr)
-	{
-	    vc_ptr->readq_head = vc_ptr->readq_head->vcqnext_ptr;
-	    if (vc_ptr->readq_head == NULL)
-		vc_ptr->readq_tail = NULL;
-	}
-	else
-	{
-	    iter_ptr = vc_ptr->readq_head;
-	    while (iter_ptr->vcqnext_ptr)
-	    {
-		if (iter_ptr->vcqnext_ptr == car_ptr)
-		{
-		    if (iter_ptr->vcqnext_ptr == vc_ptr->readq_tail)
-			vc_ptr->readq_tail = iter_ptr;
-		    /* make the entire list of cars point to the new vcqnext car */
-		    next_ptr = iter_ptr->vcqnext_ptr->vcqnext_ptr;
-		    do
-		    {
-			iter_ptr->vcqnext_ptr = next_ptr;
-			iter_ptr = iter_ptr->next_ptr;
-		    } while (iter_ptr);
-		    /* make only the head car point to the new vcqnext car */
-		    /*iter_ptr->vcqnext_ptr = iter_ptr->vcqnext_ptr->vcqnext_ptr;*/
-		    break;
-		}
-		iter_ptr = iter_ptr->vcqnext_ptr;
-	    }
-	}
-    }
 
 #ifdef MPICH_DEV_BUILD
-    iter_ptr = car_ptr;
-    while (iter_ptr)
-    {
-	iter_ptr->vcqnext_ptr = NULL;
-	iter_ptr = iter_ptr->next_ptr;
-    }
-#else
-    car_ptr->vcqnext_ptr = NULL;
-#endif
-
-    MM_EXIT_FUNC(TCP_CAR_DEQUEUE);
-    return MPI_SUCCESS;
-}
-#endif
-
-int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
-{
-    MM_Car *iter_ptr, *next_ptr;
-
-    MM_ENTER_FUNC(TCP_CAR_DEQUEUE);
-
     if (car_ptr->type & MM_WRITE_CAR)
     {
-	/* dequeue the car from the vc_ptr write queue */
-	if (vc_ptr->writeq_head == NULL)
-	{
-	    MM_EXIT_FUNC(TCP_CAR_DEQUEUE);
-	    return MPI_SUCCESS;
-	}
-	if (vc_ptr->writeq_head == car_ptr)
-	{
-	    vc_ptr->writeq_head = vc_ptr->writeq_head->vcqnext_ptr;
-	    if (vc_ptr->writeq_head == NULL)
-		vc_ptr->writeq_tail = NULL;
-	}
-	else
-	{
-	    iter_ptr = vc_ptr->writeq_head;
-	    while (iter_ptr->vcqnext_ptr)
-	    {
-		if (iter_ptr->vcqnext_ptr == car_ptr)
-		{
-		    if (iter_ptr->vcqnext_ptr == vc_ptr->writeq_tail)
-			vc_ptr->writeq_tail = iter_ptr;
-		    /* make the entire list of cars point to the new vcqnext car */
-		    next_ptr = iter_ptr->vcqnext_ptr->vcqnext_ptr;
-		    do
-		    {
-			iter_ptr->vcqnext_ptr = next_ptr;
-			iter_ptr = iter_ptr->next_ptr;
-		    } while (iter_ptr);
-		    /* make only the head car point to the new vcqnext car */
-		    /*iter_ptr->vcqnext_ptr = iter_ptr->vcqnext_ptr->vcqnext_ptr;*/
-		    break;
-		}
-		iter_ptr = iter_ptr->vcqnext_ptr;
-	    }
-	}
-	/* If the write queue becomes empty, remove the vc from the process active vc write list */
-	if (vc_ptr->writeq_head == NULL)
-	    tcp_vc_dequeue_write(car_ptr->vc_ptr);
+	err_printf("you should call tcp_car_dequeue_write.\n");
     }
+#endif
     if (car_ptr->type & MM_READ_CAR)
     {
 	/* dequeue the car from the vc_ptr read queue */

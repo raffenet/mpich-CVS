@@ -97,7 +97,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     else
     {
 	/* This is the case for collective operations */
-	/* Will putting the uncommon case in a function call make the 
+	/* Does putting the uncommon case in a function call make the 
 	 * common case faster?  The code used to be inline here.  Having a
 	 * function call makes the else jump shorter.
 	 * Does this prevent speculative branch execution down the else block?
@@ -119,10 +119,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     pRequest->mm.dtype = dtype;
     pRequest->mm.first = first;
     pRequest->mm.size = count * MPID_Datatype_get_size(dtype);
-    if (last == MPID_DTYPE_END)
-	pRequest->mm.last = pRequest->mm.size;
-    else
-	pRequest->mm.last = last;
+    pRequest->mm.last = (last == MPID_DTYPE_END) ? pRequest->mm.size : last;
 
     MPID_Segment_init(buf, count, dtype, &pRequest->mm.segment);
 

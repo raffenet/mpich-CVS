@@ -30,6 +30,7 @@ int unpacker_finalize()
     MM_ENTER_FUNC(UNPACKER_FINALIZE);
 
     mm_vc_free(MPID_Process.unpacker_vc_ptr);
+    MPID_Process.unpacker_vc_ptr = NULL;
 
     MM_EXIT_FUNC(UNPACKER_FINALIZE);
     return MPI_SUCCESS;
