@@ -58,10 +58,11 @@ public abstract class ScrollableObject extends JComponent
     {
         // Check if the number of images is an ODD number
         if ( NumImages % 2 == 0 || NumImages < 3 ) {
-            System.err.println( "ScrollableObject(): NumImages = "
-                              + NumImages + " which is invalid, "
-                              + "i.e. either an EVEN number or < 3." );
-            System.exit( 1 );
+            String err_msg = "ScrollableObject(): NumImages = "
+                           + NumImages + " which is invalid, "
+                           + "i.e. either an EVEN number or < 3.";
+            throw new IllegalStateException( err_msg );
+            // System.exit( 1 );
         }
 
         this.model = model;
