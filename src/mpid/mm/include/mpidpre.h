@@ -69,6 +69,7 @@ typedef int MM_CAR_TYPE;
 #define MM_WRITE_CAR     0x04
 #define MM_PACKER_CAR    0x08
 #define MM_UNPACKER_CAR  0x10
+#define MM_UNEX_HEAD_CAR 0x20
 
 /* packet definitions */
 typedef struct MPID_Packet

@@ -144,6 +144,7 @@ MPID_Request * mm_request_alloc();
 
 /* queues */
            int mm_post_recv(MM_Car *car_ptr);
+	   int mm_post_read_pkt(MPIDI_VC *vc_ptr);
 	   int mm_post_send(MM_Car *car_ptr);
 	   int mm_cq_test();
 	   int mm_cq_wait();

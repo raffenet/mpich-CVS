@@ -15,29 +15,40 @@ int mm_cq_test()
      * after checking the cq?
      * only if the cq is empty?
      */
+    if (MPID_Process.cq_head == NULL)
+    {
 #ifdef WITH_METHOD_TCP
-    tcp_cq_test();
+	tcp_cq_test();
 #endif
 #ifdef WITH_METHOD_SHM
-    shm_cq_test();
+	shm_cq_test();
 #endif
 #ifdef WITH_METHOD_VIA
-    via_cq_test();
+	via_cq_test();
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
-    via_rdma_cq_test();
+	via_rdma_cq_test();
 #endif
 #ifdef WITH_METHOD_NEW
-    new_cq_test();
+	new_cq_test();
 #endif
+    }
 
-    /* good place for an atomic swap? */
+    /* lock */
     car_ptr = MPID_Process.cq_head;
     MPID_Process.cq_head = NULL;
+    MPID_Process.cq_tail = NULL;
+    /* unlock */
 
     while (car_ptr)
     {
 	/* handle completed car */
+	if (car_ptr->type & MM_UNEX_HEAD_CAR)
+	{
+	    /* find in posted_q */
+	    /* else allocate a temp buffer, place in the unex_q, and post a read */
+	}
+	mm_dec_cc(car_ptr->request_ptr);
 
 	/* free car */
 	old_car_ptr = car_ptr;
