@@ -1197,7 +1197,7 @@ fi
 PAC_FUNC_STRERROR
 if test -z "$srcdir" -o "$srcdir" = "." ; then srcdir="$ROMIO_HOME" ; fi
 AC_SUBST(srcdir)
-if test "$FROM_MPICH2" = no ; then 
+if test "$FROM_MPICH2" = no -a "$FROM_MPICH" = no ; then 
     if test -z "$LIBNAME"; then
         LIBNAME="$ROMIO_HOME/lib/$ARCH/libmpio.a"
     fi
