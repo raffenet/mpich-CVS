@@ -13,6 +13,9 @@
 \topmargin=-.50in
 \newread\testfile
 
+\newcommand{\mpich}{\texttt{mpich}}
+\newcommand{\Mpich}{\texttt{Mpich}}
+
 %
 % For now, let findex be the same as index.  This will allow us to
 % more easily separate function and nonfunction index entries later.
@@ -163,7 +166,7 @@ may want to replace that module with one carefully tuned to their
 specific platform.
 
 Not included in this list is the ADIO module used to support MPI-IO.
-See \cite{ThakurGroLus96} and \gb\url{http://www.mcs.anl.gov/~thakur/adio} 
+See \cite{ThakurGroLus96} and \url{http://www.mcs.anl.gov/~thakur/adio} 
 %\cite{romio-adio-manual} 
 %(ROMIO ADIO Manual)
 for a description of that module.
@@ -1151,10 +1154,10 @@ wait/test functions and add some useful generalizations.  For
 example,
 
 \begin{center}
-\begin{tabular}[lll]
-      min\_count  & max\_count&    equivalent routine\\\hline
+\begin{tabular}{lll}
+      min_count  & max_count&    equivalent routine\\\hline
       0          & 1        &    test or testany\\
-      0          & count    &    testsome or testall (what is the difference?)
+      0          & count    &    testsome or testall (what is the difference?)\\
       1          & 1        &    wait or waitany\\
       1          & count    &    waitsome\\
       count      & count    &    waitall
@@ -1162,8 +1165,8 @@ example,
 \end{center}
   This allows the generalization:
 \begin{center}
-\begin{tabular}[lll]
-      min_count  & max\_count&    equivalent routine\\\hline
+\begin{tabular}{lll}
+      min_count  & max_count&    equivalent routine\\\hline
       0          & 4        &    testforatmost(4)
 \end{tabular}
 \end{center}
