@@ -117,7 +117,9 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
 
 	/* are the accesses of different processes interleaved? */
 	for (i=1; i<nprocs; i++)
-	    if (st_offsets[i] < end_offsets[i-1]) interleave_count++;
+	    if ((st_offsets[i] < end_offsets[i-1]) && 
+                (st_offsets[i] <= end_offsets[i]))
+                interleave_count++;
 	/* This is a rudimentary check for interleaving, but should suffice
 	   for the moment. */
     }
