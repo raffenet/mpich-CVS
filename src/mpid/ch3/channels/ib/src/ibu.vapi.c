@@ -402,7 +402,7 @@ static void * ibuBlockAlloc(ibuBlockAllocator p)
 
 	q->alloc_fn = p->alloc_fn;
 	q->free_fn = p->free_fn;
-	q->nIncrementSize = p->nIncrementsize;
+	q->nIncrementSize = p->nIncrementSize;
 	q->pNextAllocation = NULL;
 	q->nCount = p->nCount;
 	q->nBlockSize = p->nBlockSize;
