@@ -1159,9 +1159,6 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 				RelativePath=".\src\mpi\coll\alltoallw.c">
 			</File>
 			<File
-				RelativePath=".\src\util\mem\argstr.c">
-			</File>
-			<File
 				RelativePath=".\src\mpi\romio\adio\common\async_list.c">
 			</File>
 			<File
@@ -1367,9 +1364,6 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			</File>
 			<File
 				RelativePath=".\src\mpi\errhan\error_string.c">
-			</File>
-			<File
-				RelativePath=".\src\mpi\errhan\errutil.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\coll\exscan.c">
@@ -2027,9 +2021,6 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\rsend_init.c">
-			</File>
-			<File
-				RelativePath=".\src\util\mem\safestr.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\coll\scan.c">

@@ -620,10 +620,19 @@
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm">
 			<File
+				RelativePath="..\mem\argstr.c">
+			</File>
+			<File
 				RelativePath="dbg_printf.c">
 			</File>
 			<File
+				RelativePath="..\..\mpi\errhan\errutil.c">
+			</File>
+			<File
 				RelativePath="..\msgs\msgprint.c">
+			</File>
+			<File
+				RelativePath="..\mem\safestr.c">
 			</File>
 		</Filter>
 		<Filter

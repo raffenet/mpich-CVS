@@ -116,13 +116,13 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="lib/mpich2mmcd.lib"/>
+				OutputFile="lib/mpich2ssmd.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Combining libraries into mpich2mmcd.lib"
-				CommandLine="lib lib\mpich2mmcd.lib lib\ch3ssmd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib"/>
+				Description="Combining libraries into mpich2ssmd.lib"
+				CommandLine="lib lib\mpich2ssmd.lib lib\ch3ssmd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -162,13 +162,13 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="lib/mpich2mmc.lib"/>
+				OutputFile="lib/mpich2ssm.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Combining libraries into mpich2mmc.lib"
-				CommandLine="lib lib\mpich2mmc.lib lib\ch3ssm.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib"/>
+				Description="Combining libraries into mpich2ssm.lib"
+				CommandLine="lib lib\mpich2ssm.lib lib\ch3ssm.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -776,9 +776,6 @@
 				RelativePath="src\mpi\coll\alltoallw.c">
 			</File>
 			<File
-				RelativePath=".\src\util\mem\argstr.c">
-			</File>
-			<File
 				RelativePath="src\mpi\romio\adio\common\async_list.c">
 			</File>
 			<File
@@ -984,9 +981,6 @@
 			</File>
 			<File
 				RelativePath="src\mpi\errhan\error_string.c">
-			</File>
-			<File
-				RelativePath="src\mpi\errhan\errutil.c">
 			</File>
 			<File
 				RelativePath="src\mpi\coll\exscan.c">
@@ -1812,9 +1806,6 @@
 			</File>
 			<File
 				RelativePath="src\mpi\pt2pt\rsend_init.c">
-			</File>
-			<File
-				RelativePath="src\util\mem\safestr.c">
 			</File>
 			<File
 				RelativePath="src\mpi\coll\scan.c">
