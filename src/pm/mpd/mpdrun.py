@@ -204,7 +204,6 @@ def mpdrun():
     msgToSend['stdin_goes_to_who'] = stdinGoesToWho
 
     mpd_send_one_msg(conSocket,msgToSend)
-    print "HOSTS=", msgToSend['hosts']
     msg = recv_one_msg_with_timeout(conSocket,5)
     if not msg:
         mpd_raise('no msg recvd from mpd when expecting ack of request')
