@@ -69,11 +69,14 @@ int MPI_Group_free(MPI_Group *group)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    MPIU_Object_release_ref(group_ptr,&flag);
-    if (!flag) {
-	/* Only if refcount is 0 do we actually free. */
-	MPIU_Free( group_ptr->lrank_to_lpid );
-	MPIU_Handle_obj_free( &MPID_Group_mem, group_ptr );
+    /* Do not free MPI_GROUP_EMPTY */
+    if (*group != MPI_GROUP_EMPTY) {
+	MPIU_Object_release_ref(group_ptr,&flag);
+	if (!flag) {
+	    /* Only if refcount is 0 do we actually free. */
+	    MPIU_Free( group_ptr->lrank_to_lpid );
+	    MPIU_Handle_obj_free( &MPID_Group_mem, group_ptr );
+	}
     }
     *group = MPI_GROUP_NULL;
     /* ... end of body of routine ... */
