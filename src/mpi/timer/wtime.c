@@ -17,7 +17,13 @@
 #endif
 /* -- End Profiling Symbol Block */
 
-#include "mpiimpl.h"
+/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
+   the MPI routines */
+#ifndef MPICH_MPI_FROM_PMPI
+#define MPI_Wtime PMPI_Wtime
+
+/* Any internal routines can go here.  Make them static if possible */
+#endif
 
 
 /*@

@@ -1,0 +1,20 @@
+/* Include the appropriate files */
+#define USE_GETHRTIME 1
+#define USE_CLOCK_GETTIME 2
+#define USE_GETTIMEOFDAY 3
+#define USE_LINUX86 4
+#define USE_LINUXALPHA 5
+#define MPICH_TIMER_KIND @MPICH_TIMER_KIND@
+#if MPICH_TIMER_KIND == USE_GETHRTIME 
+#include <sys/time.h>
+#elif MPICH_TIMER_KIND == USE_CLOCK_GETTIME
+#include <time.h>
+#elif MPICH_TIMER_KIND == USE_GETTIMEOFDAY
+#include <sys/types.h>
+#include <sys/time.h>
+#elif MPICH_TIMER_KIND == USE_LINUX86
+#elif MPICH_TIMER_KIND == USE_LINUXALPHA
+#endif
+
+/* Define a time stamp */
+typedef @MPID_TIMER_TYPE@ MPID_Time_t;
