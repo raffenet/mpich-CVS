@@ -33,7 +33,7 @@
    Arguments:
 +  int count - count
 .  int blocklens[] - blocklens
-.  MPI_Aint indices[] - indices
+.  MPI_Aint indices[] - indices (in bytes)
 .  MPI_Datatype old_type - old datatype
 -  MPI_Datatype *newtype - new datatype
 
@@ -44,7 +44,11 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_hindexed(int count, int blocklens[], MPI_Aint indices[], MPI_Datatype old_type, MPI_Datatype *newtype)
+int MPI_Type_hindexed(int count,
+		      int blocklens[],
+		      MPI_Aint indices[],
+		      MPI_Datatype old_type,
+		      MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_hindexed";
     int mpi_errno = MPI_SUCCESS;
@@ -72,6 +76,13 @@ int MPI_Type_hindexed(int count, int blocklens[], MPI_Aint indices[], MPI_Dataty
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    mpi_errno = MPID_Type_indexed(count,
+				  blocklens,
+				  indices,
+				  1, /* displacements in bytes */
+				  old_type,
+				  newtype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);
-    return MPI_SUCCESS;
+    if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
+    else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }

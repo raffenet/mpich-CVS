@@ -33,7 +33,7 @@
    Arguments:
 +  int count - count
 .  int blocklens[] - blocklens
-.  int indices[] - indices
+.  int indices[] - indices (in terms of old datatypes)
 .  MPI_Datatype old_type - old datatype
 -  MPI_Datatype *newtype - new datatype
 

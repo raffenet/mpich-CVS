@@ -251,10 +251,16 @@ typedef struct DLOOP_Dataloop {
   Fields:
 + curcount - Current loop count value (between 0 and 
              loop.loop_params.count-1) 
+. orig_count - original count value (cached so we don't have to look it up)
 . curoffset - Offset into memory relative to the pointer to the buffer
               passed in by the user.  Used to maintain our position as we
               move up and down the stack.  NEED MORE NOTES ON THIS!!!
+. orig_offset - original offset, set before the stackelm is processed, so that
+                we know where the offset was.  this is used in processing indexed
+                types and maybe others (but not contig or vector for sure)...
 . curblock - Current block value...NEED MORE NOTES ON THIS!!!
+. orig_block - original block value (caches so we don't have to look it up);
+               not used in indexed type (?)
 - loop_p  - pointer to Loop-based description of the dataloop
 
 S*/
@@ -264,6 +270,7 @@ typedef struct DLOOP_Dataloop_stackelm {
     DLOOP_Count curblock; /* NOTE: THIS WASN'T HERE IN MPICH2 VERSION??? */
     struct DLOOP_Dataloop *loop_p;
     DLOOP_Count orig_count;
+    DLOOP_Offset orig_offset;
     DLOOP_Count orig_block;
     /* TODO: DON'T NEED ORIG_OFFSET, RIGHT? */
 } DLOOP_Dataloop_stackelm;

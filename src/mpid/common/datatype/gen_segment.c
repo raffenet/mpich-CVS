@@ -125,12 +125,16 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	 * an index into something, but I think the savings in the other cases 
 	 * outweigh this.
 	 */
-	elmp->curcount   = dlp->loop_params.count;
-	elmp->orig_count = elmp->curcount;
-	elmp->loop_p     = dlp; /* DO NOT MOVE THIS BELOW THE Stackelm CALLS! */
-	elmp->curoffset  = DLOOP_Stackelm_offset(elmp); /* NOTE: ONLY MATTERS FOR THE TOPMOST LOOP */
-	elmp->curblock   = DLOOP_Stackelm_blocksize(elmp);
-	elmp->orig_block = elmp->curblock;
+	elmp->curcount    = dlp->loop_params.count;
+	elmp->orig_count  = elmp->curcount;
+	elmp->loop_p      = dlp; /* DO NOT MOVE THIS BELOW THE Stackelm CALLS! */
+
+	/* TODO: ACCOUNT FOR LB HERE */
+	/* NOTE: CUROFFSET ONLY VALID FOR THE TOPMOST LOOP */
+	elmp->orig_offset = 0;
+	elmp->curoffset   = elmp->orig_offset + DLOOP_Stackelm_offset(elmp);
+	elmp->curblock    = DLOOP_Stackelm_blocksize(elmp);
+	elmp->orig_block  = elmp->curblock;
 
 	if (i < depth-1) {
 	    /* not at last point in the stack */
@@ -211,7 +215,10 @@ do { \
     stream_off = segp->stream_off; \
 } while (0)
 
-/* NOTE: NO GOOD FOR STRUCTS */
+/* NOTE: NO GOOD FOR STRUCTS!!!
+ *
+ * ALSO, DOESN'T HANDLE LB YET.
+ */
 #define DLOOP_STACKELM_RESET_VALUES \
 do { \
     cur_elmp->curcount   = cur_elmp->orig_count; \
@@ -405,8 +412,15 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			else {
 			    cur_elmp->orig_block = DLOOP_Stackelm_blocksize(cur_elmp);
 			    cur_elmp->curblock   = cur_elmp->orig_block;
-			    cur_elmp->curoffset  = cur_elmp->loop_p->loop_params.i_t.offset_array[cur_elmp->orig_count - cur_elmp->curcount];
+			    cur_elmp->curoffset  = cur_elmp->orig_offset +
+				DLOOP_Stackelm_offset(cur_elmp);
 			}
+#ifdef M_VERBOSE
+			printf("\tnew region: origoff = %d; curoff = %d; blksz = %d\n",
+			       (int) cur_elmp->orig_offset,
+			       (int) cur_elmp->curoffset,
+			       (int) cur_elmp->curblock);
+#endif
 			break;
 		    case DLOOP_KIND_VECTOR:
 			cur_elmp->curoffset += piece_size; /* ??? */
@@ -483,14 +497,18 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
 	    switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		case DLOOP_KIND_CONTIG:
+		    next_elmp->curcount = next_elmp->orig_count;
 		    next_elmp->curoffset = cur_elmp->curoffset +
 			count_index * cur_elmp->loop_p->el_extent;
+		    next_elmp->curblock = next_elmp->orig_block;
 		    break;
 		case DLOOP_KIND_VECTOR:
 		    /* NOTE: stride is in bytes */
+		    next_elmp->curcount = next_elmp->orig_count;
 		    next_elmp->curoffset = cur_elmp->curoffset +
 			count_index * cur_elmp->loop_p->loop_params.v_t.stride +
 			block_index * cur_elmp->loop_p->el_extent;
+		    next_elmp->curblock = next_elmp->orig_block;
 #ifdef M_VERBOSE
 		    printf("outer vec el_size = %d, el_extent = %d, stride = %d\n",
 			   cur_elmp->loop_p->el_size, cur_elmp->loop_p->el_extent,
@@ -501,7 +519,11 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    assert(0);
 		    break;
 		case DLOOP_KIND_INDEXED:
-		    next_elmp->curoffset = cur_elmp->curoffset; /* ??? */
+		    next_elmp->curcount    = next_elmp->orig_count;
+		    next_elmp->orig_offset = cur_elmp->curoffset +
+			DLOOP_Stackelm_offset(next_elmp);
+		    next_elmp->curoffset   = next_elmp->orig_offset;
+		    next_elmp->curblock    = DLOOP_Stackelm_blocksize(next_elmp);
 		    break;
 		default:
 		    assert(0);
@@ -509,8 +531,6 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
 	    /* TODO: HANDLE NON-ZERO OFFSETS IN NEXT_ELMP HERE? */
 
-	    next_elmp->curcount = next_elmp->orig_count;
-	    next_elmp->curblock = next_elmp->orig_block;
 
 	    cur_elmp->curblock--;
 	    cur_sp++; /* let cur_elmp be reset at top of loop */

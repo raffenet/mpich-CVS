@@ -79,7 +79,7 @@ int MPI_Type_hvector(int count,
 
     mpi_errno = MPID_Type_vector(count,
 				 blocklen,
-				 stride,
+				 (MPI_Aint) stride,
 				 1, /* stride in bytes */
 				 old_type,
 				 newtype_p);

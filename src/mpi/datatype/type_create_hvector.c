@@ -33,7 +33,7 @@
    Arguments:
 +  int count - count
 .  int blocklength - block length
-.  MPI_Aint stride - stride
+.  MPI_Aint stride - stride (in bytes)
 .  MPI_Datatype oldtype - old datatype
 -  MPI_Datatype *newtype - new datatype
 
@@ -44,10 +44,14 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_create_hvector(int count, int blocklength, MPI_Aint stride, MPI_Datatype oldtype, MPI_Datatype *newtype)
+int MPI_Type_create_hvector(int count,
+			    int blocklength,
+			    MPI_Aint stride,
+			    MPI_Datatype oldtype,
+			    MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_create_hvector";
-    int mpi_errno = MPI_SUCCESS;
+    int mpi_errno = MPI_SUCCESS, ret;
     MPID_Datatype *datatype_ptr = NULL;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_HVECTOR);
@@ -64,6 +68,17 @@ int MPI_Type_create_hvector(int count, int blocklength, MPI_Aint stride, MPI_Dat
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    /* If comm_ptr is not value, it will be reset to null */
+
+	    if (count < 0) 
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_COUNT, "**countneg",
+						  "**countneg %d", count );
+	    if (blocklength < 0) 
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, "**argneg",
+						  "**argneg %s %d", 
+						  "blocklength", blocklength );
+	    /* MPICH 1 code also checked for old type equal to MPI_UB or LB.
+	       We may want to check on length 0 datatypes */
+
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HVECTOR);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -73,6 +88,16 @@ int MPI_Type_create_hvector(int count, int blocklength, MPI_Aint stride, MPI_Dat
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    ret = MPID_Type_vector(count,
+			   blocklength,
+			   stride,
+			   1, /* stride in bytes */
+			   old_type,
+			   newtype_p);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HVECTOR);
-    return MPI_SUCCESS;
+    if (ret == MPI_SUCCESS) return MPI_SUCCESS;
+    else return MPIR_Err_return_comm(0, FCNAME, ret);
 }
+
+
+

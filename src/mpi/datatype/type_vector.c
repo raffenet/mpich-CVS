@@ -47,8 +47,11 @@ Output Parameter:
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Type_vector(int count, int blocklength, int stride, 
-		    MPI_Datatype old_type, MPI_Datatype *newtype_p)
+int MPI_Type_vector(int count,
+		    int blocklength,
+		    int stride, 
+		    MPI_Datatype old_type,
+		    MPI_Datatype *newtype_p)
 {
     static const char FCNAME[] = "MPI_Type_vector";
     int ret;
@@ -98,14 +101,13 @@ int MPI_Type_vector(int count, int blocklength, int stride,
 
     ret = MPID_Type_vector(count,
 			   blocklength,
-			   stride,
+			   (MPI_Aint) stride,
 			   0, /* stride not in bytes, but in terms of type extent */
 			   old_type,
 			   newtype_p);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
     if (ret == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, ret);
-
 }
 
 

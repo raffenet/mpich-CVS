@@ -42,7 +42,7 @@ int MPID_Type_indexed(int count,
 
 int MPID_Type_vector(int count,
 		     int blocklength,
-		     int stride,
+		     MPI_Aint stride,
 		     int strideinbytes,
 		     MPI_Datatype oldtype,
 		     MPI_Datatype *newtype);
