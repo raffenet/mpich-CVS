@@ -9,15 +9,20 @@
 #include "mpitest.h"
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_STDARG_H
+#include <stdarg.h>
+#endif
 
-static int dbgflag = 0;
-static int wrank = -1;
+static int dbgflag = 0;         /* Flag used for debugging */
+static int wrank = -1;          /* World rank */
+static int verbose = 0;         /* Message level (0 is none) */
 /* 
  * Initialize and Finalize MTest
  */
 void MTest_Init( int *argc, char ***argv )
 {
     int flag;
+    char *envval = 0;
 
     MPI_Initialized( &flag );
     if (!flag) {
@@ -27,6 +32,27 @@ void MTest_Init( int *argc, char ***argv )
     if (getenv( "MPITEST_DEBUG" )) {
 	dbgflag = 1;
 	MPI_Comm_rank( MPI_COMM_WORLD, &wrank );
+    }
+
+    /* Check for verbose control */
+    envval = getenv( "MPITEST_VERBOSE" );
+    if (envval) {
+	char *s;
+	long val = strtol( envval, &s, 0 );
+	if (s == envval) {
+	    /* This is the error case for strtol */
+	    fprintf( stderr, "Warning: %s not valid for MPITEST_VERBOSE\n", 
+		     envval );
+	}
+	else {
+	    if (val >= 0) {
+		verbose = val;
+	    }
+	    else {
+		fprintf( stderr, "Warning: %s not valid for MPITEST_VERBOSE\n", 
+			 envval );
+	    }
+	}
     }
 }
 
@@ -668,7 +694,19 @@ void MTestPrintErrorMsg( const char msg[], int errcode )
     printf( "%s: Error class %d (%s)\n", msg, errclass, string ); 
     fflush( stdout );
 }
+/* ------------------------------------------------------------------------ */
+void MTestPrintfMsg( int level, const char format[], ... )
+{
+    va_list list;
 
+    if (verbose && level >= verbose) {
+	va_start(list,format);
+	n = vprintf( format, list );
+	va_end(list);
+    }
+}
+
+/* ------------------------------------------------------------------------ */
 #ifdef HAVE_MPI_WIN_CREATE
 /*
  * Create MPI Windows

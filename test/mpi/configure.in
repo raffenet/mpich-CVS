@@ -55,7 +55,7 @@ if test "$pac_cv_have_long_long" ; then
 fi
 #
 # General headers
-AC_CHECK_HEADERS(unistd.h)
+AC_CHECK_HEADERS(unistd.h stdarg.h)
 
 # Define functionality that we support
 AC_DEFINE(HAVE_MPI_WIN_CREATE,1,[Define if MPI_Win_create is available])
