@@ -10,6 +10,9 @@
 #include <string.h>
 #include <errno.h>
 
+#include "mpi.h"
+#define RLOG_timestamp PMPI_Wtime
+
 static int WriteFileData(const char *pBuffer, int length, FILE *fout)
 {
     int num_written;
