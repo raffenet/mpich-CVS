@@ -69,6 +69,8 @@ TEST_CC=""
 TEST_F77=""
 TRY_WEAK_SYMBOLS=1
 #
+have_aio=no
+#
 known_filesystems="nfs ufs pfs piofs pvfs pvfs2 testfs xfs hfs sfs"
 known_mpi_impls="mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi"
 #
@@ -252,18 +254,124 @@ fi
 #
 # Here begin the architecture-specific tests.  
 # --------------------------------------------------------------------------
-if test -n "$arch_sun4" ; then 
-    CC=${CC:-gcc}
-    F77=${FC:-f77}
-    if test $DEBUG = "yes"; then
-	if test "$CC" = "gcc"; then
-           CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
-	else
-           CFLAGS="$CFLAGS -g"
-        fi
-    else 
-        CFLAGS="$CFLAGS -O"
+# We must first select the C and Fortran compilers.  Because of the 
+# way that the PROG_CC autoconf macro works (and all of the macros that
+# require it, includint CHECK_HEADERS), that macro must occur exactly
+# once in the configure.in file, at least as of autoconf 2.57 .  
+# Unfortunately, this requirement is not enforced.  To handle this,
+# we first case on the architecture; then use PROG_CC, then case on the
+# architecture again for any arch-specific features.  We also set the
+# C_DEBUG_FLAG and F77_DEBUG_FLAG in case debugging is selected.
+# 
+# For the MPICH and MPICH2 configures, the compilers will already be
+# selected, so most of the compiler-selection code will be bypassed.
+# --------------------------------------------------------------------------
+C_DEBUG_FLAG="-g"
+F77_DEBUG_FLAG="-g"
+C_OPT_FLAG="-O"
+case $ARCH in 
+     sun4)
+     CC=${CC:-gcc}
+     F77=${FC:-f77}
+     ;;
+
+     solaris|solaris86)
+     CC=${CC:-cc}
+     F77=${FC:-f77}
+     if test "$CC" != "gcc" ; then
+	C_DEBUG_FLAG="-g -v"
+     fi
+     ;;
+     
+     rs6000)
+     F77=${FC}
+     # Try to use mpcc if no CC specified
+     AC_PROGRAMS_CHECK(CC, mpcc, cc)
+     if test $NOF77 = 0 && test -z "$F77"; then 
+        AC_PROGRAMS_CHECK(F77, mpxlf, f77)
+     fi
+     ;;
+
+     paragon)
+     CC=${CC:-icc}
+     F77=${FC:-if77}
+     if test "$CC" = "icc"; then
+         C_OPT_FLAG="-Knoieee -Mvect -O3"
+     fi
+     ;;
+
+     tflop|tflops)
+     CC=${CC:-pgcc}
+     F77=${FC:-pgf77}
+     CFLAGS="$CFLAGS -cougar -D__PUMA"
+     if test "$CC" = "pgcc" ; then
+         C_OPT_FLAG="-Knoieee -Mvect -O3"
+     fi
+     ;;
+     
+     freebsd|LINUX|netbsd|openbsd|LINUX_ALPHA)
+     CC=${CC:-gcc}
+     # Let the prog_f77 file g77/f77/others
+     F77=${FC} 
+     ;;
+
+     SX4)
+     CC=${CC:-mpicc}
+     F77=${FC:-mpif90}
+     if test $DEBUG != "yes" ; then
+        USER_FFLAGS="$FFLAGS -Chopt"
+        F77_OPT_FLAG="-Chopt"
     fi
+    ;;
+
+    hpux|sppux)
+    C_DEBUG_FLAG="-g +w1"
+    ;;
+
+    alpha|ALPHA)
+    CC=${CC:-cc}
+    F77=${FC:-f77}
+    dnl CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose"
+    C_DEBUG_FLAG="-g -verbose"
+    ;;
+
+    CRAY)
+    CC=${CC:-cc}
+    F77=${FC:-f90}
+    NOF77=1
+    CFLAGS="$CFLAGS -D_UNICOS"
+    ;;
+
+    sgi|IRIX64|IRIX32|IRIXN32)
+    arch_IRIX=1
+    CC=${CC:-cc}
+    F77=${FC:-f77}
+    C_DEBUG_FLAG="-g -fullwarn"
+    ;;
+
+    sgi5)
+    ;;
+
+    *)
+    # Fall-through case.  Take FC 
+    F77=${FC:-f77}
+    ;;
+esac
+
+AC_PROG_CC
+AC_PROG_F77
+if test "$CC" = "gcc" -a -z "$C_DEBUG_FLAG" ; then
+     C_DEBUG_FLAG="-g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
+fi
+if test $DEBUG = "yes" ; then
+    CFLAGS="$CFLAGS $C_DEBUG_FLAG"
+else 
+    CFLAGS="$CFLAGS $C_OPT_FLAG"
+fi
+# ---------------------------------------------------------------------------
+# Here go the rest of the tests
+# ---------------------------------------------------------------------------
+if test -n "$arch_sun4" ; then 
     if test "$enable_aio" != "no" ; then
         # Check for aio
 	AC_SEARCH_LIBS(aiowrite,aio rt)
@@ -274,9 +382,10 @@ if test -n "$arch_sun4" ; then
         fi
     fi
     if test "$enable_aio" = "no" ; then
-        AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+        have_aio=no
     else 
-        AC_DEFINE(AIO_SUN,,[Define for SUN0S 4])
+        AC_DEFINE(AIO_SUN,1,[Define for SUN0S 4])
+	have_aio=yes
     fi
 
     if test -z "$MPI" ; then
@@ -292,17 +401,6 @@ if test -n "$arch_sun4" ; then
 fi
 #
 if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
-    CC=${CC:-cc}
-    F77=${FC:-f77}
-    if test $DEBUG = "yes"; then
-        if test "$CC" = "gcc" ; then
-            CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
-        else 
-            CFLAGS="$CFLAGS -g -v"
-        fi
-    else 
-        CFLAGS="$CFLAGS -O"
-    fi
     if test "$enable_aio" != "no" ; then
         # Check for aio
 	AC_SEARCH_LIBS(aiowrite,aio rt)
@@ -314,9 +412,10 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
         fi
     fi
     if test "$enable_aio" = "no" ; then
-        AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+        have_aio=no
     else 
-        AC_DEFINE(AIO_SUN,,[Define for SUN0S 4])
+        AC_DEFINE(AIO_SUN,1,[Define for SUN0S 4])
+	have_aio=yes
     fi
 
     if test -z "$MPI" ; then
@@ -329,7 +428,7 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
         FILE_SYSTEM="ufs nfs"
         AC_MSG_RESULT([configuring for file systems ufs and nfs])
     fi
-    AC_DEFINE(SOLARIS,,[Define for Solaris])
+    AC_DEFINE(SOLARIS,1,[Define for Solaris])
     if test $MPI = "mpich" ; then
         TEST_CC=mpicc
         TEST_F77=mpif77
@@ -344,20 +443,6 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
 fi
 #
 if test -n "$arch_rs6000"; then
-    F77=$FC
-    if test -z "$CC"; then
-       AC_PROGRAMS_CHECK(CC, mpcc, cc)
-       echo "Using $CC"
-    fi
-    if test $NOF77 = 0 && test -z "$FC"; then 
-       AC_PROGRAMS_CHECK(F77, mpxlf, f77)
-       echo "Using $F77"
-    fi
-    if test $DEBUG = "yes"; then
-        CFLAGS="$CFLAGS -g"
-    else 
-        CFLAGS="$CFLAGS -O"
-    fi
     # Check that aio is available (many systems appear to have aio
     # either installed improperly or turned off).
     # The test is the following: if not cross compiling, try to run a 
@@ -376,10 +461,11 @@ int main( int argc, char **argv )
         enable_aio=no
     fi
     if test "$enable_aio" = "no" ; then
-        AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+        have_aio=no
     else
-        AC_DEFINE(NO_FD_IN_AIOCB,,[Define for no fd in the aiocb])
-        AC_DEFINE(AIO_HANDLE_IN_AIOCB,,[Define for aio handle in aiocb])
+        AC_DEFINE(NO_FD_IN_AIOCB,1,[Define for no fd in the aiocb])
+        AC_DEFINE(AIO_HANDLE_IN_AIOCB,1,[Define for aio handle in aiocb])
+	have_aio=yes
     fi
     if test -z "$MPI" ; then
         MPI=mpich
@@ -397,7 +483,7 @@ int main( int argc, char **argv )
         file_system_nfs=1
         FILE_SYSTEM="$FILE_SYSTEM ufs nfs"
     fi
-    AC_DEFINE(AIX,,[Define for AIX])
+    AC_DEFINE(AIX,1,[Define for AIX])
 # assume long long exists.
     longlongsize=${longlongsize:-8} 
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
@@ -405,17 +491,6 @@ int main( int argc, char **argv )
 fi    
 #
 if test -n "$arch_paragon"; then
-    CC=${CC:-icc}
-    F77=${FC:-if77}
-    if test $DEBUG = "yes"; then
-        CFLAGS="$CFLAGS -g"
-    else 
-	if test "$CC" = "icc"; then
-           CFLAGS="$CFLAGS -Knoieee -Mvect -O3"
-	else
-           CFLAGS="$CFLAGS -O"
-        fi
-    fi
     AR="ar860 cr$AR_LOCAL"
     MPI_LIB="$MPI_LIB -nx"
     if test -z "$MPI" ; then
@@ -429,29 +504,18 @@ if test -n "$arch_paragon"; then
         FILE_SYSTEM="pfs ufs nfs"
         AC_MSG_RESULT([configuring for file systems pfs, ufs, and nfs])
     fi
-    AC_DEFINE(PARAGON,,[Define for Intel Paragon])
-    AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+    AC_DEFINE(PARAGON,1,[Define for Intel Paragon])
+    have_aio=no
 # NO_AIO is if configuring for NFS/UFS. It doesn't affect PFS asynch. I/O.
 # long long does not exist
     longlongsize=${longlongsize:-0} 
 fi    
 #
 if test -n "$arch_tflop" || test -n "$arch_tflops"; then
-    CC=${CC:-pgcc}
-    F77=${FC:-pgf77}
-    TFLOP_FLAGS="-cougar -D__PUMA"
-    AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
-    if test $DEBUG = "yes"; then
-        CFLAGS="$CFLAGS -g $TFLOP_FLAGS"
-    else
-       if test "$CC" = "pgcc"; then
-           CFLAGS="$CFLAGS -Knoieee -Mvect -O3 $TFLOP_FLAGS"
-       else
-           CFLAGS="$CFLAGS -O $TFLOP_FLAGS"
-       fi
-    fi
+    # TFLOP_FLAGS="-cougar -D__PUMA"
+    have_aio=no
     AR="xar cr$AR_LOCAL"
-        RANLIB="xranlib"
+    RANLIB="xranlib"
     MPI_LIB="$MPI_LIB"
     if test -z "$MPI" ; then
         MPI=mpich
@@ -465,10 +529,8 @@ if test -n "$arch_tflop" || test -n "$arch_tflops"; then
 fi
 #
 if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPHA" || test -n "$arch_netbsd" || test -n "$arch_openbsd" ; then
-    CC=${CC:-gcc}
     if test -n "$arch_freebsd" || test -n "$arch_netbsd" || test -n "$arch_openbsd"; then
-       F77=${FC:-f77}
-       AC_DEFINE(FREEBSD,,[Define for FreeBSD])
+       AC_DEFINE(FREEBSD,1,[Define for FreeBSD])
        PAC_HAVE_MOUNT_NFS
        if test "$ROMIO_HAVE_MOUNT_NFS" = "1"; then
        		AC_MSG_CHECKING([for struct statfs.f_fstypename])
@@ -491,22 +553,12 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
        longlongsize=${longlongsize:-0}
 # printf doesn't work properly and no integer*8 as far as I can tell
     else 
-       F77=${FC:-g77}
-       AC_DEFINE(LINUX,,[Define for Linux])
-    fi
-    if test $DEBUG = "yes" ; then
-	if test "$CC" = "gcc" ; then
-            CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
-        else
-	    CFLAGS="$CFLAGS -g"
-        fi
-    else 
-        CFLAGS="$CFLAGS -O"
+       AC_DEFINE(LINUX,1,[Define for Linux])
     fi
     # Find the CPP before the header check
     AC_PROG_CPP
     if test "$enable_aio" != "yes" ; then
-        AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+        have_aio=no
     else
         # Try to find the aio routines
 	use_aio=no
@@ -529,12 +581,13 @@ has_pthread=yes],[has_pthread=no])
 [aiocb_t a;],has_aiocb_t=yes,has_aiocb_t=no)
 	AC_MSG_RESULT($has_aiocb_t)
 	if test "$has_aiocb_t" = "no" ; then 
-	    AC_DEFINE(NEEDS_AIOCB_T,,[Define for aiocb_t definition needed])
+	    AC_DEFINE(NEEDS_AIOCB_T,1,[Define for aiocb_t definition needed])
         fi
 	if test "$use_aio" = "yes" ; then
 	    ROMIO_LIBLIST="$ROMIO_LIBLIST $add_lib"
+	    have_aio=yes
 	else
-            AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+	    have_aio=no
 	fi
     fi
     if test -z "$MPI" ; then
@@ -550,18 +603,8 @@ has_pthread=yes],[has_pthread=no])
 fi    
 #
 if test -n "$arch_SX4" ; then
-    CC=${CC:-mpicc}
-    F77=${FC:-mpif90}
-    if test $DEBUG = "yes" ; then
-        CFLAGS="$CFLAGS -g"
-        FFLAGS="$FFLAGS -g"
-    else
-        USER_FFLAGS="$FFLAGS -Chopt"
-        CFLAGS="$CFLAGS -O"
-        FFLAGS="$FFLAGS -Chopt"
-    fi
-    AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
-    AC_DEFINE(SX4,,[Define for NEC SX4])
+    have_aio=no
+    AC_DEFINE(SX4,1,[Define for NEC SX4])
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -577,12 +620,7 @@ if test -n "$arch_SX4" ; then
 fi
 #
 if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
-    if test $DEBUG = "yes"; then
-        CFLAGS="$CFLAGS -g +w1"
-    else 
-        CFLAGS="$CFLAGS -O"
-    fi
-    AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+    have_aio=no
     RANLIB=":"
     if test -z "$MPI"; then
         if test -f "/opt/mpi/include/mpi.h" ; then
@@ -610,14 +648,14 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     FTESTDEFINE="external iargc, getarg"
     if test -n "$arch_hpux" ; then
         CFLAGS="$CFLAGS -D_LARGEFILE64_SOURCE"
-        AC_DEFINE(HPUX,,[Define for HPUX])
+        AC_DEFINE(HPUX,1,[Define for HPUX])
         if test $MPI = "hp" ; then
            F77=${FC:-mpif90 +U77}
         else
            F77=${FC:-f90 +U77}
         fi
     else
-        AC_DEFINE(SPPUX,,[Define for SPPUX (Convex)])
+        AC_DEFINE(SPPUX,1,[Define for SPPUX (Convex)])
     fi
     if test -z "$FILE_SYSTEM" ; then
         if test -n "$arch_hpux" ; then
@@ -651,15 +689,7 @@ struct flock64 fl; int i=F_SETLKW64;],flock64_ok="yes",flock64_ok="no")
 fi
 #
 if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
-    CC=${CC:-cc}
-    F77=${FC:-f77}
-    if test $DEBUG = "yes"; then
-        dnl CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose"
-        CFLAGS="$CFLAGS -g -verbose"
-    else 
-        CFLAGS="$CFLAGS -O"
-    fi
-    AC_DEFINE(AIO_PRIORITY_DEFAULT,,[Define for AIO priority is default])
+    AC_DEFINE(AIO_PRIORITY_DEFAULT,1,[Define for AIO priority is default])
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -670,35 +700,27 @@ if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
         FILE_SYSTEM="ufs nfs"
         AC_MSG_RESULT([configuring for file systems ufs and nfs])
     fi
-    AC_DEFINE(DEC,,[Define for DEC/Compaq/HP Alpha])
+    AC_DEFINE(DEC,1,[Define for DEC/Compaq/HP Alpha])
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
     ROMIO_LIBLIST="$ROMIO_LIBLIST -laio"
 fi    
 #
 if test -n "$arch_CRAY" ; then
-    CC=${CC:-cc}
-    F77=${FC:-f90}
     NOF77=1
     FTESTDEFINE="integer ilen"
     F77GETARG="call pxfgetarg(i, str, ilen, ierr)"
-    if test $DEBUG = "yes"; then
-        CFLAGS="$CFLAGS -g"
-    else 
-        CFLAGS="$CFLAGS -O"
-    fi
-    AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+    have_aio=no
     RANLIB=":"
-    CFLAGS="$CFLAGS -D_UNICOS"
-    AC_DEFINE(CRAY,,[Define if Cray])
+    AC_DEFINE(CRAY,1,[Define if Cray])
     if test -z "$MPI" || test -n "$mpi_sgi" ; then
         MPI=cray
         mpi_cray=1
         mpi_sgi=""
 # above is to disable configure tests specific to SGI MPI
-        AC_DEFINE(MPISGI,,[Define if SGI MPI])
-        AC_DEFINE(HAVE_MPI_COMBINERS,,[Define if MPI supports datatype combiners])
-        AC_DEFINE(NO_MPI_SGI_type_is_contig,,[Define if no types show contig])
+        AC_DEFINE(MPISGI,1,[Define if SGI MPI])
+        AC_DEFINE(HAVE_MPI_COMBINERS,1,[Define if MPI supports datatype combiners])
+        AC_DEFINE(NO_MPI_SGI_type_is_contig,1,[Define if no types show contig])
     fi
 #       MPISGI needed because of error in Cray's and SGI's 
 #       MPI_Type_get_contents (does not increment reference count).
@@ -744,17 +766,10 @@ if test -n "$arch_sgi5"; then
 # now set arch_IRIX to 1
    arch_IRIX=1
    echo "IRIX-specific architecture is $IRIXARCH"
-   AC_DEFINE(IRIX,,[Define if IRIX])
+   AC_DEFINE(IRIX,1,[Define if IRIX])
 fi
 #
 if test -n "$arch_IRIX"; then
-    CC=${CC:-cc}
-    F77=${FC:-f77}
-    if test $DEBUG = "yes"; then
-        CFLAGS="$CFLAGS -g -fullwarn"
-    else 
-        CFLAGS="$CFLAGS -O"
-    fi
    if test $osversion = 4 ; then
 	RANLIB="ar ts"
         if test -n "$mpi_sgi"; then
@@ -781,7 +796,7 @@ if test -n "$arch_IRIX"; then
             fi            
 	fi
         RANLIB=":"
-        AC_DEFINE(AIO_SIGNOTIFY_NONE,,[Define if no signotify])
+        AC_DEFINE(AIO_SIGNOTIFY_NONE,1,[Define if no signotify])
 	if test $cputype -ge 5000 ; then
             MIPS=4
         else 
@@ -810,21 +825,22 @@ if test -n "$arch_IRIX"; then
        fi
        AC_MSG_RESULT([configuring for file systems $FILE_SYSTEM])
    fi
-   AC_DEFINE(IRIX,,[Define if IRIX])
+   AC_DEFINE(IRIX,1,[Define if IRIX])
    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
    MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
 fi
 
 #
 # If we haven't found an architecture, try for a default
-if test -z "$CC" ; then
-    AC_PROG_CC
-    AC_PROG_F77
-    if test -z "$FILE_SYSTEM" ; then
+if test -z "$FILE_SYSTEM" ; then
         FILE_SYSTEM="ufs"
-    fi
-    AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
 fi
+# 
+# If no system selected, turn of AIO
+if test "$have_aio" != yes ; then
+    AC_DEFINE(NO_AIO,1,[Define if AIO should not be used])
+fi
+
 
 AC_HAVE_FUNCS(memalign)
 
@@ -868,7 +884,7 @@ else
 fi
 ])
 if test "$pac_cv_int_hold_pointer" != yes ; then
-    AC_DEFINE(INT_LT_POINTER,,[Define if int smaller than pointer])
+    AC_DEFINE(INT_LT_POINTER,1,[Define if int smaller than pointer])
 fi
 #
 dnl The original ROMIO configure used a set of complex tests here; this
@@ -878,7 +894,7 @@ CROSS_SIZEOF_LONG_LONG=${CROSS_SIZEOF_LONG_LONG:-0}
 AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
 if test "$ac_sizeof_long_long" != 0 ; then
     if test "$ac_sizeof_long_long" = "8" ; then
-       AC_DEFINE(HAVE_LONG_LONG_64,,[Define if long long is 64 bits])
+       AC_DEFINE(HAVE_LONG_LONG_64,1,[Define if long long is 64 bits])
        MPI_OFFSET_TYPE="long long"
        DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer*8"
@@ -887,7 +903,7 @@ if test "$ac_sizeof_long_long" != 0 ; then
        MPI_OFFSET_TYPE="int"
        DEFINE_MPI_OFFSET="typedef int MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer"
-       AC_DEFINE(MPI_OFFSET_IS_INT,,[Define if MPI_Offset is int])
+       AC_DEFINE(MPI_OFFSET_IS_INT,1,[Define if MPI_Offset is int])
        LL="\%d"
        MPI_OFFSET_KIND1="!"
        MPI_OFFSET_KIND2="!"
@@ -916,7 +932,7 @@ if test -n "$longlongsize"; then
    if test $WITHIN_KNOWN_MPI_IMPL = no ; then
        PAC_MPI_LONG_LONG_INT
    else
-       AC_DEFINE(HAVE_MPI_LONG_LONG_INT,,[Define if supports long long int])
+       AC_DEFINE(HAVE_MPI_LONG_LONG_INT,1,[Define if supports long long int])
    fi
 fi
 #
@@ -937,7 +953,7 @@ fi
 if test $WITHIN_KNOWN_MPI_IMPL = no ; then
    PAC_MPI_INFO
 else
-   AC_DEFINE(HAVE_MPI_INFO,,[Define if MPI Info is available])
+   AC_DEFINE(HAVE_MPI_INFO,1,[Define if MPI Info is available])
    HAVE_MPI_INFO="#define HAVE_MPI_INFO"
    MPI_FINFO1="!"
    MPI_FINFO2="!"
@@ -958,7 +974,7 @@ fi
 if test $WITHIN_KNOWN_MPI_IMPL = no -o $FROM_MPICH2 != no ; then
    PAC_MPI_DARRAY_SUBARRAY
 else
-   AC_DEFINE(HAVE_MPI_DARRAY_SUBARRAY,,[Define if Darray is available])
+   AC_DEFINE(HAVE_MPI_DARRAY_SUBARRAY,1,[Define if Darray is available])
    HAVE_MPI_DARRAY_SUBARRAY="#define HAVE_MPI_DARRAY_SUBARRAY"
    MPI_FARRAY1="!"
    MPI_FARRAY2="!"
@@ -968,9 +984,6 @@ else
    MPI_FARRAY6="!"
    MPI_FARRAY7="!"
 fi   
-#
-# Check to see if the compiler accepts prototypes
-dnl PAC_CHECK_CC_PROTOTYPES(AC_DEFINE(HAVE_PROTOTYPES))
 #
 #
 # Test for weak symbol support...
@@ -1023,8 +1036,7 @@ EOF
   fi
   if test "$has_pragma_weak" = 1 ; then
     HAVE_WEAK_SYMBOLS=1
-    AC_DEFINE(HAVE_WEAK_SYMBOLS,,[Define if weak symbols available])
-    AC_DEFINE(HAVE_PRAGMA_WEAK,,[Define if pragma weak available])
+    AC_DEFINE(HAVE_PRAGMA_WEAK,1,[Define if pragma weak available])
   else
     AC_TRY_LINK([
 #pragma _HP_SECONDARY_DEF Foo PFoo
@@ -1033,8 +1045,7 @@ int Foo(a) { return a; }
     if test "$has_pragma_hp_secondary" = 1 ; then 
         AC_MSG_RESULT([pragma _HP_SECONDARY_DEF])
         HAVE_WEAK_SYMBOLS=1
-        AC_DEFINE(HAVE_WEAK_SYMBOLS,,[Define if weak symbols available])
-        AC_DEFINE(HAVE_PRAGMA_HP_SEC_DEF,,[Define for HP weak pragma])
+        AC_DEFINE(HAVE_PRAGMA_HP_SEC_DEF,1,[Define for HP weak pragma])
     else
         AC_TRY_LINK([
 #pragma _CRI duplicate PFoo as Foo
@@ -1043,13 +1054,15 @@ int Foo(a) { return a; }
         if test "$has_pragma_cri_duplicate" = 1 ; then
 	    AC_MSG_RESULT([pragma _CRI duplicate x as y])
 	    HAVE_WEAK_SYMBOLS=1
-	    AC_DEFINE(HAVE_WEAK_SYMBOLS,,[Define if weak symbols available])
-	    AC_DEFINE(HAVE_PRAGMA_CRI_DUP,,[Define for CRAY weak dup])
+	    AC_DEFINE(HAVE_PRAGMA_CRI_DUP,1,[Define for CRAY weak dup])
         else    
             AC_MSG_RESULT(no)
         fi
     fi
   fi
+fi
+if test "$HAVE_WEAK_SYMBOLS" = 1 ; then
+    AC_DEFINE(HAVE_WEAK_SYMBOLS,1,[Define if weak symbols available])
 fi
 AC_SUBST(HAVE_WEAK_SYMBOLS)
 #
@@ -1095,19 +1108,19 @@ users manual for instructions on fixing this])
     fi
 fi
 if test -n "$file_system_nfs"; then
-    AC_DEFINE(NFS,,[Define for NFS])
+    AC_DEFINE(NFS,1,[Define for NFS])
 fi
 if test -n "$file_system_ufs"; then
-    AC_DEFINE(UFS,,[Define for UFS])
+    AC_DEFINE(UFS,1,[Define for UFS])
 fi
 if test -n "$file_system_hfs"; then
-    AC_DEFINE(HFS,,[Define for HFS])
+    AC_DEFINE(HFS,1,[Define for HFS])
 fi
 if test -n "$file_system_sfs"; then
-    AC_DEFINE(SFS,,[Define for SFS])
+    AC_DEFINE(SFS,1,[Define for SFS])
 fi
 if test -n "$file_system_xfs"; then
-    AC_DEFINE(XFS,,[Define for XFS])
+    AC_DEFINE(XFS,1,[Define for XFS])
     # Check for memalign value (this was P A C_GET_XFS_MEMALIGN,
     # switched to autoconf 2)
     AC_CACHE_CHECK([for memory alignment needed for direct I/O],
@@ -1142,40 +1155,40 @@ fi
 
 if test -n "$file_system_pvfs"; then
    # Use ROMIO_PVFS instead of PVFS because FREEBSD defines PVFS.
-    AC_DEFINE(ROMIO_PVFS,,[Define for Romio with PVFS])
+    AC_DEFINE(ROMIO_PVFS,1,[Define for Romio with PVFS])
 fi
 if test -n "$file_system_pvfs2"; then
-    AC_DEFINE(ROMIO_PVFS2,,[Define for Romio with PVFS2])
+    AC_DEFINE(ROMIO_PVFS2,1,[Define for Romio with PVFS2])
 fi
 if test -n "$file_system_pfs"; then
-    AC_DEFINE(PFS,,[Define for PFS])
+    AC_DEFINE(PFS,1,[Define for PFS])
 fi
 if test -n "$file_system_testfs"; then
-    AC_DEFINE(ROMIO_TESTFS,,[Define for TESTFS])
+    AC_DEFINE(ROMIO_TESTFS,1,[Define for TESTFS])
 fi
 if test -n "$file_system_piofs"; then
-    AC_DEFINE(PIOFS,,[Define for PIOFS])
+    AC_DEFINE(PIOFS,1,[Define for PIOFS])
     USER_CFLAGS="$USER_CFLAGS -bI:/usr/include/piofs/piofs.exp"
     ROMIO_LFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
     USER_FFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
 fi
 if test -n "$mpi_mpich"; then
    if test "$FROM_MPICH2" = no; then
-      AC_DEFINE(NEEDS_MPI_TEST,,[Define if mpi_test needed])
-      AC_DEFINE(MPICH,,[Define if using MPICH])
+      AC_DEFINE(NEEDS_MPI_TEST,1,[Define if mpi_test needed])
+      AC_DEFINE(MPICH,1,[Define if using MPICH])
       if test -z "$arch_SX4" ; then
          MPIOF_H_INCLUDED=1
       fi
    fi
 fi
 if test -n "$mpi_sgi"; then
-   AC_DEFINE(MPISGI,,[Define if SGI MPI])
+   AC_DEFINE(MPISGI,1,[Define if SGI MPI])
 fi
 if test -n "$mpi_lam"; then
-   AC_DEFINE(MPILAM,,[Define if using LAM/MPI])
+   AC_DEFINE(MPILAM,1,[Define if using LAM/MPI])
 fi
 if test -n "$mpi_hp"; then
-   AC_DEFINE(MPIHP,,[Define if using HP MPI])
+   AC_DEFINE(MPIHP,1,[Define if using HP MPI])
    if test "$NOF77" = 0; then
       PAC_CHECK_MPIOF_H
    fi
@@ -1244,7 +1257,7 @@ if test $FROM_MPICH = yes ; then
       TEST_F77=$MPI_BIN_DIR/mpif77
    fi
    CC=$MPI_BIN_DIR/mpicc
-   AC_DEFINE(HAVE_STATUS_SET_BYTES,,[Define if status_set_bytes available])
+   AC_DEFINE(HAVE_STATUS_SET_BYTES,1,[Define if status_set_bytes available])
    EXTRA_DIRS="mpi-io/fortran mpi2-other/info mpi2-other/info/fortran mpi2-other/array mpi2-other/array/fortran"
    # Some older implementations of the ADI do not include the 
    # MPID_Status_set_bytes routine.   This uses either the 
@@ -1287,8 +1300,8 @@ elif test $FROM_MPICH2 = yes ; then
    #
    # Turn off the building of the Fortran interface and the Info routines
    EXTRA_DIRS=""
-   AC_DEFINE(HAVE_STATUS_SET_BYTES,,[Define if status_set_bytes available])
-   AC_DEFINE(HAVE_MPI_GREQUEST,,[Define if generalized requests avaliable])
+   AC_DEFINE(HAVE_STATUS_SET_BYTES,1,[Define if status_set_bytes available])
+   AC_DEFINE(HAVE_MPI_GREQUEST,1,[Define if generalized requests avaliable])
 fi
 #
 #
@@ -1298,7 +1311,7 @@ fi
 if test $WITHIN_KNOWN_MPI_IMPL = no ; then
    PAC_TEST_MPIR_STATUS_SET_BYTES
    PAC_TEST_MPI_GREQUEST
-   AC_DEFINE(PRINT_ERR_MSG,,[Define for printing error messages])
+   AC_DEFINE(PRINT_ERR_MSG,1,[Define for printing error messages])
 fi
 #
 if test -z "$TEST_CC" ; then
