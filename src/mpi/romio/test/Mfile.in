@@ -30,7 +30,7 @@ FFLAGS = $(OPTFLAGS) @FFLAGS@
 # Use LIBS to add any special libraries for C programs
 LIBS = @LIB_PATH@ @LIB_LIST@
 # Use FLIBS to add any special libraries for Fortran programs
-FLIBS = @FLIB_PATH@ @LIB_LIST@
+FLIBS = @FLIB_PATH@ @LIB_LIST@ @F77EXTRALIBS@
 EXECS = $(CTESTS) $(FTESTS)
 OTHEREXECS = 
 CTESTS = simple perf async coll_test coll_perf misc file_info excl \
@@ -57,13 +57,13 @@ fperf: ${srcdir}/fperf.f
 # Some of the Fortran tests must be derived, so their code will be in the
 # LOCAL directory
 fcoll_test: fcoll_test.f
-	$(F77) $(USER_FFLAGS) -o  $@ $< $(FLIBS)
+	$(F77) $(USER_FFLAGS) -o  fcoll_test fcoll_test.f $(FLIBS)
 
 fmisc: fmisc.f
-	$(F77) $(USER_FFLAGS) -o  $@ $< $(FLIBS)
+	$(F77) $(USER_FFLAGS) -o  fmisc fmisc.f $(FLIBS)
 
 pfcoll_test: pfcoll_test.f	
-	$(F77) $(USER_FFLAGS) -o  $@ $< $(FLIBS)
+	$(F77) $(USER_FFLAGS) -o  pfcoll_test pfcoll_test.f $(FLIBS)
 
 #
 # Make sure that we remove executables for specific architectures
