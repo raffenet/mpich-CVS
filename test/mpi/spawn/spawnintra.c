@@ -49,13 +49,6 @@ int main( int argc, char *argv[] )
 	    for (i=0; i<rsize; i++) {
 		MPI_Send( &i, 1, MPI_INT, i, 0, intercomm );
 	    }
-	    /* We could use intercomm reduce to get the errors from the 
-	       children, but we'll use a simpler loop to make sure that
-	       we get valid data */
-	    for (i=0; i<rsize; i++) {
-		MPI_Recv( &err, 1, MPI_INT, i, 1, intercomm, MPI_STATUS_IGNORE );
-		errs += err;
-	    }
 	}
     }
     else {
@@ -71,8 +64,6 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    printf( "Unexpected rank on child %d (%d)\n", rank, i );
 	}
-	/* Send the errs back to the master process */
-	MPI_Ssend( &errs, 1, MPI_INT, 0, 1, intercomm );
     }
 
     /* At this point, try to form the intracommunicator */
@@ -106,6 +97,23 @@ int main( int argc, char *argv[] )
 		errs++;
 		printf( "Intracomm rank %d (from parent) should have rank %d\n",
 			icrank, wrank );
+	    }
+	}
+    }
+
+    /* Update error count */
+    if (isChild) {
+	/* Send the errs back to the master process */
+	MPI_Ssend( &errs, 1, MPI_INT, 0, 1, intercomm );
+    }
+    else {
+	if (rank == 0) {
+	    /* We could use intercomm reduce to get the errors from the 
+	       children, but we'll use a simpler loop to make sure that
+	       we get valid data */
+	    for (i=0; i<rsize; i++) {
+		MPI_Recv( &err, 1, MPI_INT, i, 1, intercomm, MPI_STATUS_IGNORE );
+		errs += err;
 	    }
 	}
     }
