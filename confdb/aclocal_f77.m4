@@ -383,13 +383,13 @@ $fxx_module
         integer i, j
         character*20 s
         $f77_getargdecl
-	i = 0
+        i = 0
         $f77_getarg
         i=$f77_iargc
-	if (i .gt. 1) then
-	    j = i - $f77_iargc
-	    j = 1.0 / j
-	endif
+        if (i .gt. 1) then
+            j = i - $f77_iargc
+            j = 1.0 / j
+        endif
         end
 EOF
     found_answer="no"
@@ -611,13 +611,13 @@ $FXX_MODULE
         integer i, j
         character*20 s
         $F77_GETARGDECL
-	i = 0
+        i = 0
         $F77_GETARG
         i=$F77_IARGC
-	if (i .gt. 1) then
-	    j = i - $F77_IARGC
-	    j = 1.0 / j
-	endif
+        if (i .gt. 1) then
+            j = i - $F77_IARGC
+            j = 1.0 / j
+        endif
         end
 EOF
     #
@@ -1016,4 +1016,39 @@ else
     AC_MSG_ERROR([Could not compile Fortran test program])
 fi
 AC_LANG_RESTORE
+])
+dnl
+dnl
+dnl
+AC_DEFUN(PAC_PROG_F77_CHECK_FLIBS,
+[AC_MSG_CHECKING([Whether C can link with $FLIBS])
+# Try to link a C program with all of these libraries
+save_LIBS="$LIBS"
+LIBS="$LIBS $FLIBS"
+AC_TRY_LINK(,[int a;],runs=yes,runs=no)
+LIBS="$save_LIBS"
+AC_MSG_RESULT($runs)
+if test "$runs" = "no" ; then
+    AC_MSG_CHECKING([which libraries can be used])
+    pac_ldirs=""
+    pac_libs=""
+    pac_other=""
+    for name in $FLIBS ; do
+        case $name in 
+        -l*) pac_libs="$pac_libs $name" ;;
+        -L*) pac_ldirs="$pac_ldirs $name" ;;
+        *)   pac_other="$pac_other $name" ;;
+        esac
+    done
+    save_LIBS="$LIBS"
+    keep_libs=""
+    for name in $pac_libs ; do 
+        LIBS="$save_LIBS $pac_ldirs $pac_other $name"
+        AC_TRY_LINK(,[int a;],runs=yes,runs=no)
+        if test $runs = "yes" ; then keep_libs="$keep_libs $name" ; fi
+    done
+    AC_MSG_RESULT($keep_libs)
+    LIBS="$save_LIBS"
+    FLIBS="$pac_ldirs $pac_other $keep_libs"
+fi
 ])
