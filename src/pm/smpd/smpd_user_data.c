@@ -395,9 +395,17 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 			    }
 			}
 		    }
+		    else
+		    {
+			printf("unable to read the contents of %s\n", smpd_process.smpd_filename);
+		    }
 		    free(buffer);
 		}
 		fclose(fin);
+	    }
+	    else
+	    {
+		printf("unable to open %s\n", smpd_process.smpd_filename);
 	    }
 	    node = list;
 	    while (node)
