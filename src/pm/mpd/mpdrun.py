@@ -398,6 +398,7 @@ def process_cmdline_args():
 
     if len(argv) < 3:
         usage()
+    argidx = 1
     if argv[1] == '-delxmlfile':  # special case for mpiexec
 	delArgsFile = 1
         argsFilename = argv[2]   # initialized to '' in main
@@ -407,8 +408,7 @@ def process_cmdline_args():
             print 'cannot use -f with other args'
 	    usage()
         argsFilename = argv[2]   # initialized to '' in main
-    else:
-        argidx = 1
+        argidx = 3
     if not argsFilename:
         while pgm == '':
 	    if argidx >= len(argv):
