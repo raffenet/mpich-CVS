@@ -66,7 +66,7 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
 		icount = 0;
 		if (info_ptrs[i] != NULL)
 		{
-		    mpi_errno = PMPI_Info_get_nkeys(info_ptrs[i]->handle, &icount);
+		    mpi_errno = NMPI_Info_get_nkeys(info_ptrs[i]->handle, &icount);
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
@@ -78,13 +78,13 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
 		iter = info_ptrs[i];
 		for (j=0; j<icount; j++)
 		{
-		    mpi_errno = PMPI_Info_get_nthkey(info_ptrs[i]->handle, j, key);
+		    mpi_errno = NMPI_Info_get_nthkey(info_ptrs[i]->handle, j, key);
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 			goto fn_exit;
 		    }
-		    mpi_errno = PMPI_Info_get_valuelen(info_ptrs[i]->handle, key, &vallen, &flag);
+		    mpi_errno = NMPI_Info_get_valuelen(info_ptrs[i]->handle, key, &vallen, &flag);
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
@@ -97,7 +97,7 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
 		    }
 		    info_keyval_vectors[i][j].key = MPIU_Strdup(key);
 		    info_keyval_vectors[i][j].val = MPIU_Malloc((vallen + 1)* sizeof(char));
-		    mpi_errno = PMPI_Info_get(info_ptrs[i]->handle, key, vallen+1, info_keyval_vectors[i][j].val, &flag);
+		    mpi_errno = NMPI_Info_get(info_ptrs[i]->handle, key, vallen+1, info_keyval_vectors[i][j].val, &flag);
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
