@@ -49,6 +49,8 @@ int MPI_File_get_atomicity(MPI_File mpi_fh, int *flag)
     /* --END ERROR HANDLING-- */
 
     *flag = fh->atomicity;
+
+fn_exit:
     MPID_CS_EXIT();
     return MPI_SUCCESS;
 }
