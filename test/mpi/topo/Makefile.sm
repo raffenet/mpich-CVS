@@ -1,6 +1,6 @@
 INCLUDES = -I../include -I${srcdir}/../include
 LDADD = ../util/mtest.o 
-DEPADD = @MPILIBLOC@
+DEPADD = @MPILIBLOC@ ../util/mtest.o
 smvar_do_sharedlibs = 0
 
 cartmap1_SOURCES = cartmap1.c
@@ -15,3 +15,8 @@ graphcr_SOURCES = graphcr.c
 
 ../util/mtest.o: 
 	(cd ../util && make mtest.o)
+
+testing:
+	../../runtests -srcdir=$(srcdir) -tests=testlist \
+			-mpiexec=$(bindir)/mpiexec \
+		   	-xmlfile=summary.xml
