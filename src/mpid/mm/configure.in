@@ -279,6 +279,7 @@ for method in $method_subdirs ; do
     fi
     if test "$method" = "ib" ; then
        AC_DEFINE(WITH_METHOD_IB, 1, [infiniband method enabled])
+       echo infiniband method enabled
     fi
 done
 dnl

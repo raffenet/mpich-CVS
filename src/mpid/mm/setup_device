@@ -1,0 +1,4 @@
+#! /bin/sh
+CPPFLAGS="$CPPFLAGS -I/usr/local/PSC1200/include -DLINUX -DNORCSID"
+LDFLAGS="$LDFLAGS -L/usr/local/PSC1200/lib -Xlinker -t"
+LIBS="$LIBS /usr/local/PSC1200/lib/libibos.so -ldl -lpthread"

@@ -934,8 +934,10 @@ dnl
 #   LIBS="-lmywierdlib"
 if test -x src/mpid/$device_name/setup_device ; then
     . ./src/mpid/$device_name/setup_device
+    echo sourcing ./src/mpid/$device_name/setup_device
 elif test -x $use_top_srcdir/src/mpid/$device_name/setup_device ; then
     . $use_top_srcdir/src/mpid/$device_name/setup_device
+    echo sourcing $use_top_srcdir/src/mpid/$device_name/setup_device
 fi
 dnl
 dnl Set the libraries to use in building programs
