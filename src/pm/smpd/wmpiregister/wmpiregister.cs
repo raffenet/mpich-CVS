@@ -26,6 +26,7 @@ namespace wmpiregister
 		private System.Windows.Forms.Label usage2_label;
 		private System.Windows.Forms.Label example_label;
 		private System.Windows.Forms.TextBox result_textBox;
+		private System.Windows.Forms.Button ok_button;
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -77,6 +78,7 @@ namespace wmpiregister
 			this.usage2_label = new System.Windows.Forms.Label();
 			this.example_label = new System.Windows.Forms.Label();
 			this.result_textBox = new System.Windows.Forms.TextBox();
+			this.ok_button = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// account_label
@@ -110,24 +112,27 @@ namespace wmpiregister
 			// 
 			// register_button
 			// 
-			this.register_button.Location = new System.Drawing.Point(24, 216);
+			this.register_button.Location = new System.Drawing.Point(8, 216);
 			this.register_button.Name = "register_button";
+			this.register_button.Size = new System.Drawing.Size(64, 23);
 			this.register_button.TabIndex = 4;
 			this.register_button.Text = "Register";
 			this.register_button.Click += new System.EventHandler(this.register_button_Click);
 			// 
 			// remove_button
 			// 
-			this.remove_button.Location = new System.Drawing.Point(104, 216);
+			this.remove_button.Location = new System.Drawing.Point(80, 216);
 			this.remove_button.Name = "remove_button";
+			this.remove_button.Size = new System.Drawing.Size(64, 23);
 			this.remove_button.TabIndex = 5;
 			this.remove_button.Text = "Remove";
 			this.remove_button.Click += new System.EventHandler(this.remove_button_Click);
 			// 
 			// cancel_button
 			// 
-			this.cancel_button.Location = new System.Drawing.Point(200, 216);
+			this.cancel_button.Location = new System.Drawing.Point(216, 216);
 			this.cancel_button.Name = "cancel_button";
+			this.cancel_button.Size = new System.Drawing.Size(64, 23);
 			this.cancel_button.TabIndex = 6;
 			this.cancel_button.Text = "Cancel";
 			this.cancel_button.Click += new System.EventHandler(this.cancel_button_Click);
@@ -168,10 +173,20 @@ namespace wmpiregister
 			this.result_textBox.TabIndex = 10;
 			this.result_textBox.Text = "";
 			// 
+			// ok_button
+			// 
+			this.ok_button.Location = new System.Drawing.Point(152, 216);
+			this.ok_button.Name = "ok_button";
+			this.ok_button.Size = new System.Drawing.Size(56, 23);
+			this.ok_button.TabIndex = 11;
+			this.ok_button.Text = "OK";
+			this.ok_button.Click += new System.EventHandler(this.ok_button_Click);
+			// 
 			// wmpiregister
 			// 
 			this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
 			this.ClientSize = new System.Drawing.Size(288, 323);
+			this.Controls.Add(this.ok_button);
 			this.Controls.Add(this.result_textBox);
 			this.Controls.Add(this.example_label);
 			this.Controls.Add(this.usage2_label);
@@ -293,6 +308,11 @@ namespace wmpiregister
 		}
 
 		private void cancel_button_Click(object sender, System.EventArgs e)
+		{
+			Close();
+		}
+
+		private void ok_button_Click(object sender, System.EventArgs e)
 		{
 			Close();
 		}
