@@ -10,4 +10,4 @@ srtest_SOURCES = srtest.c
 wtime_SOURCES = wtime.c
 netpipe_SOURCES = netmpi.c GetOpt.c
 patterns_SOURCES = patterns.c
-
+adapt_SOURCES = adapt.c GetOpt.c
