@@ -354,7 +354,8 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 #else
 	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_UFS,
 				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
+	*error_code =  ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
+	return;
 #endif
 #else
 	*ops = &ADIO_NFS_operations;
