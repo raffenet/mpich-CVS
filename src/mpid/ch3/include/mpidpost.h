@@ -492,18 +492,10 @@ void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sd
 /*
  * Device level progress engine macros
  */
-#if defined(MPICH_SINGLE_THREADED)
-#define MPID_Progress_start()
-#define MPID_Progress_end()
-#define MPID_Progress_test() (MPIDI_CH3_Progress(FALSE))
-#define MPID_Progress_wait() {MPIDI_CH3_Progress(TRUE);}
-#define MPID_Progress_poke() {MPIDI_CH3_Progress_poke();}
-#else
 #define MPID_Progress_start() {MPIDI_CH3_Progress_start();}
 #define MPID_Progress_end()   {MPIDI_CH3_Progress_end();}
 #define MPID_Progress_test()  (MPIDI_CH3_Progress(FALSE))
 #define MPID_Progress_wait()  {MPIDI_CH3_Progress(TRUE);}
 #define MPID_Progress_poke()  {MPIDI_CH3_Progress_poke();}
-#endif
 
 #endif /* !defined(MPICH_MPIDPOST_H_INCLUDED) */

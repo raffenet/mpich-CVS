@@ -51,6 +51,7 @@ static inline void connection_post_recv_pkt(MPIDI_CH3I_Connection_t * conn);
 static void connection_send_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno);
 static void connection_recv_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno);
 
+#if !defined(MPIDI_CH3_Progress_start)
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_start
 #undef FCNAME
@@ -63,6 +64,7 @@ void MPIDI_CH3_Progress_start()
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_START);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_START);
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress
@@ -360,6 +362,7 @@ void MPIDI_CH3_Progress_poke()
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
 }
 
+#if !defined(MPIDI_CH3_Progress_end)
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_end
 #undef FCNAME
@@ -372,6 +375,7 @@ void MPIDI_CH3_Progress_end()
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_END);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_END);
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress_init
