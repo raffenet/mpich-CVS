@@ -317,7 +317,7 @@ int MPIDI_CH3_Progress_test(void);
   DESIGNERS:
   Thread specific storage could be avoided if a progress context were passed into the progress routines.
 E*/
-int MPIDI_CH3_Progress_wait();
+int MPIDI_CH3_Progress_wait(void);
 
 /*E
   MPIDI_CH3_Progress_poke - Give the channel implementation a moment of opportunity to make progress on outstanding communication.
