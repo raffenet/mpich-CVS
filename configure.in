@@ -1269,38 +1269,60 @@ export MPI_INTEGER16
 if test "$ac_cv_sizeof_float" = "4" ; then
     MPI_REAL4="0x4c000425"
     MPI_COMPLEX8="0x4c000426"
+    MPIR_REAL4_CTYPE=float
 fi
 if test "$ac_cv_sizeof_double" = "8" ; then
     MPI_REAL8="0x4c000427"
     MPI_COMPLEX16="0x4c000428"
+    MPIR_REAL8_CTYPE=double
 fi
 if test "$ac_cv_sizeof_long_double" = "16" ; then
     MPI_REAL16="0x4c000429"
     MPI_COMPLEX32="0x4c00042a"
+    MPIR_REAL16_TYPE="long double"
 fi
+if test -n "$MPIR_REAL4_CTYPE" ; then
+    AC_DEFINE_UNQUOTED(MPIR_REAL4_CTYPE,$MPIR_REAL4_CTYPE,[C type to use for MPI_REAL4])
+fi
+if test -n "$MPIR_REAL8_CTYPE" ; then
+    AC_DEFINE_UNQUOTED(MPIR_REAL8_CTYPE,$MPIR_REAL8_CTYPE,[C type to use for MPI_REAL8])
+fi
+if test -n "$MPIR_REAL16_CTYPE" ; then
+    AC_DEFINE_UNQUOTED(MPIR_REAL16_CTYPE,$MPIR_REAL16_CTYPE,[C type to use for MPI_REAL16])
+fi
+# For complex 8/16/32, we assume that these are 2 consequetive real4/8/16
+#
 # Search for the integer types
 for type in char short int long long_long ; do
+    # ctype is a valid C type which we can use to declare a C version of 
+    # this item
+    ctype=`echo $type | sed 's/_/ /'`
     eval len=\$ac_cv_sizeof_$type
     if test -n "$len" ; then 
     case $len in 
     1) if test "$MPI_INTEGER1" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER1="0x4c00012b"
+	   MPIR_INTEGER1_CTYPE="$ctype"
        fi
        ;;
     2) if test "$MPI_INTEGER2" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER2="0x4c00022c"
+	   MPIR_INTEGER2_CTYPE="$ctype"
        fi
        ;;
     4) if test "$MPI_INTEGER4" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER4="0x4c00042d"
+	   MPIR_INTEGER4_CTYPE="$ctype"
        fi
        ;;
     8) if test "$MPI_INTEGER8" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER8="0x4c00082e"
+	   MPIR_INTEGER8_CTYPE="$ctype"
        fi
        ;;
     16) if test "$MPI_INTEGER16" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER16="0x4c00102f"
+	   MPIR_INTEGER16_CTYPE="$ctype"
        fi
        ;;
     *)
@@ -1308,6 +1330,25 @@ for type in char short int long long_long ; do
     esac
     fi
 done
+#
+# Add the definitions of these types
+if test -n "$MPIR_INTEGER1_CTYPE" ; then
+    AC_DEFINE_UNQUOTED(MPIR_INTEGER1_CTYPE,$MPIR_INTEGER1_CTYPE,[C type to use for MPI_INTEGER1])
+fi
+if test -n "$MPIR_INTEGER2_CTYPE" ; then
+   AC_DEFINE_UNQUOTED(MPIR_INTEGER2_CTYPE,$MPIR_INTEGER2_CTYPE,[C type to use for MPI_INTEGER2])
+fi
+if test -n "$MPIR_INTEGER4_CTYPE" ; then
+   AC_DEFINE_UNQUOTED(MPIR_INTEGER4_CTYPE,$MPIR_INTEGER4_CTYPE,[C type to use for MPI_INTEGER4])
+fi
+if test -n "$MPIR_INTEGER8_CTYPE" ; then
+   AC_DEFINE_UNQUOTED(MPIR_INTEGER8_CTYPE,$MPIR_INTEGER8_CTYPE,[C type to use for MPI_INTEGER8])
+fi
+if test -n "$MPIR_INTEGER16_CTYPE" ; then
+   AC_DEFINE_UNQUOTED(MPIR_INTEGER16_CTYPE,$MPIR_INTEGER16_CTYPE,[C type to use for MPI_INTEGER16])
+fi
+
+dnl
 dnl Is char * the byte address?
 AC_CACHE_CHECK([if char * pointers use give byte addresses],
 pac_cv_c_char_p_is_byte,[
@@ -1743,6 +1784,7 @@ if test "$enable_f77" = "yes" -a -s src/binding/f77/mpif77.conf ; then
 	;;
     esac
 else
+    # These are Fortran datatypes ONLY.  Set to null if no Fortran compiler.
     for name in CHARACTER INTEGER REAL LOGICAL COMPLEX DOUBLE_PRECISION \
 	2INTEGER 2REAL DOUBLE_COMPLEX 2COMPLEX 2DOUBLE_PRECISION \
 	2DOUBLE_COMPLEX ; do
