@@ -91,9 +91,8 @@ def mpdrun():
 	if delArgsFile:
 	    unlink(argsFilename)
         parsedArgs = parseString(args)
-        ## if parsedArgs.doctype.name != 'PMRequests':
-        if parsedArgs.documentElement.tagName != 'PMRequests':
-            print 'expecting PMRequests; got unrecognized doctype %s' % \
+        if parsedArgs.documentElement.tagName != 'create-process-group':
+            print 'expecting create-process-group; got unrecognized doctype: %s' % \
                   (parsedArgs.documentElement.tagName)
             exit(-1)
         createReq = parsedArgs.getElementsByTagName('create-process-group')[0]
@@ -102,98 +101,98 @@ def mpdrun():
         else:
             print '** totalprocs not specified in %s' % argsFilename
             exit(-1)
-        if createReq.hasAttribute('line_labels'):
+        if createReq.hasAttribute('dont_try_0_locally'):
+	    try0Locally = 0
+        if createReq.hasAttribute('output')  and  \
+           createReq.getAttribute('output') == 'label':
 	    lineLabels = 1
-        if createReq.hasAttribute('jobalias'):
+        if createReq.hasAttribute('pgid'):    # our jobalias
             jobAlias = createReq.getAttribute('jobalias')
         if createReq.hasAttribute('stdin_goes_to_all'):
             stdinGoesToWho = int(createReq.getAttribute('stdin_goes_to_all'))
 
-	hosts  = extract_from_xml(createReq,'host','name','_any_')
-	execs  = extract_from_xml(createReq,'exec','name','')
-	paths  = extract_from_xml(createReq,'path','name','')
-	users  = extract_from_xml(createReq,'user','name',username)
-	cwds   = extract_from_xml(createReq,'cwd','name',cwd)
+        nextHost = 0
+        hostList = []
+        hostSpec = createReq.getElementsByTagName('host-spec')
+        for hostname in hostSpec[0].childNodes:
+            hostname = hostname.data.strip()
+            if hostname:
+                hostList.append(hostname)
 
-	# handle cmd-line args
-        covered = [0] * nprocs
-        args = {}
-        if createReq.hasAttribute('args'):
-            defaultArgs = createReq.getAttribute('args')
-	else:
-            defaultArgs = ''
-	defaultArgs = findall(r'\S+',defaultArgs)
-        argsElements = createReq.getElementsByTagName('args')
-        for elem in argsElements:
-            ranks = elem.getAttribute('range').split('-')
-            if len(ranks) == 1:
-                ranks = (ranks[0],ranks[0])
-            ranks = tuple(map(int,ranks))
-	    for i in range(ranks[0],ranks[1]+1):
-	        if i >= nprocs:
-		    print '*** exiting; rank %d is greater than nprocs for args' % i
-		    exit(-1)
-	        if covered[i]:
-		    print '*** exiting; rank %d is multiply covered for args' % (i)
-		    exit(-1)
-	        covered[i] = 1
-            argVals = []
-            argList = elem.getElementsByTagName('arg')
-            for argElem in argList:
-                arg = argElem.getAttribute('value')
-                arg = unquote(arg)
-                argVals.append(arg)
-            args[ranks] = argVals
-        i = 0
-        while i < len(covered):
-	    if not covered[i]:
-	        s = i
-	        while i < len(covered)  and  not covered[i]:
-	            i += 1
-	        args[(s,i-1)] = defaultArgs
-	    else:
-	        i += 1
-
-	# handle env vars
-        covered = [0] * nprocs
+        execs   = {}
+        users   = {}
+        cwds    = {}
+        paths   = {}
+        args    = {}
         envvars = {}
-        if createReq.hasAttribute('envvars'):
-            defaultEnvVars = createReq.getAttribute('envvars')
-	else:
-            defaultEnvVars = ''
-        envVarsElements = createReq.getElementsByTagName('envvars')
-        for elem in envVarsElements:
-            ranks = elem.getAttribute('range').split('-')
-            if len(ranks) == 1:
-                ranks = (ranks[0],ranks[0])
-            ranks = tuple(map(int,ranks))
-	    for i in range(ranks[0],ranks[1]+1):
-	        if i >= nprocs:
-		    print '*** exiting; rank %d is greater than nprocs for envvars' % i
-		    exit(-1)
-	        if covered[i]:
-		    print '*** exiting; rank %d is multiply covered for envvars' % (i)
-		    exit(-1)
-	        covered[i] = 1
+        hosts   = {}
+
+        covered = [0] * nprocs 
+        procSpec = createReq.getElementsByTagName('process-spec')
+        for p in procSpec:
+            if p.hasAttribute('range'):
+                range = p.getAttribute('range')
+                splitRange = range.split('-')
+                (loRange,hiRange) = (int(splitRange[0]),int(splitRange[1]))
+            else:
+                (loRange,hiRange) = (0,nprocs-1)
+            for i in xrange(loRange,hiRange+1):
+                if i >= nprocs:
+                    print '*** exiting; rank %d is greater than nprocs for args'
+                    exit(-1)
+                if covered[i]:
+                    print '*** exiting; rank %d is doubly used in proc specs'
+                    exit(-1)
+                covered[i] = 1
+            if p.hasAttribute('exec'):
+                execs[(loRange,hiRange)] = p.getAttribute('exec')
+            else:
+                print '*** exiting; range %d-%d has no exec' % (loRange,hiRange)
+                exit(-1)
+            if p.hasAttribute('user'):
+                users[(loRange,hiRange)] = p.getAttribute('user')
+            else:
+                users[(loRange,hiRange)] = username
+            if p.hasAttribute('cwd'):
+                cwds[(loRange,hiRange)] = p.getAttribute('cwd')
+            else:
+                cwds[(loRange,hiRange)] = cwd
+            if p.hasAttribute('path'):
+                paths[(loRange,hiRange)] = p.getAttribute('path')
+            else:
+                paths[(loRange,hiRange)] = environ['PATH']
+
+            argDict = {}
+            argList = p.getElementsByTagName('arg')
+            for argElem in argList:
+                argDict[int(argElem.getAttribute('idx'))] = argElem.getAttribute('value')
+            argVals = [0] * len(argList)
+            for i in argDict.keys():
+                argVals[i-1] = unquote(argDict[i])
+            args[(loRange,hiRange)] = argVals
+
             envVals = []
-            envVarList = elem.getElementsByTagName('envvar')
+            envVarList = p.getElementsByTagName('env')
             for envVarElem in envVarList:
-                envkey = envVarElem.getAttribute('key')
+                envkey = envVarElem.getAttribute('name')
                 envval = envVarElem.getAttribute('value')
                 envVals.append('%s=%s' % (envkey,envval) )
-            envvars[ranks] = envVals
-        i = 0
-        while i < len(covered):
-	    if not covered[i]:
-	        s = i
-	        while i < len(covered)  and  not covered[i]:
-		    i += 1
-	        envvars[(s,i-1)] = defaultEnvVars
-	    else:
-	        i += 1
+            envvars[(loRange,hiRange)] = envVals
 
-        if createReq.getElementsByTagName('dont_try_0_locally'):
-	    try0Locally = 0
+            if hostList:
+                lo = loRange
+                hi = hiRange
+                while lo <= hi:
+                    hosts[(lo,lo)] = hostList[nextHost]
+                    nextHost += 1
+                    if nextHost >= len(hostList):
+                        nextHost = 0
+                    lo += 1
+            else:
+                hosts[(loRange,hiRange)] = '_any_'
+
+        ## exit(-1)    #####  RMB TEMP
+
     else:
         if not nprocs:
 	    print 'you have to indicate how many processes to start'
@@ -502,38 +501,6 @@ def process_cmdline_args():
         pgmArgs.append(argv[argidx])
         argidx += 1
 
-def extract_from_xml(createReq,attr,name,defaultVal):
-    global nprocs
-    if createReq.hasAttribute(attr):
-	defaultVal = createReq.getAttribute(attr)
-    attrList = createReq.getElementsByTagName(attr)
-    covered = [0] * nprocs
-    attrs = {}
-    for a in attrList:
-	ranks = a.getAttribute('range').split('-')
-	if len(ranks) == 1:
-	    ranks = (ranks[0],ranks[0])
-	ranks = tuple(map(int,ranks))
-	for i in range(ranks[0],ranks[1]+1):
-	    if i >= nprocs:
-		print '*** exiting; rank %d is greater than nprocs' % i
-		exit(-1)
-	    if covered[i]:
-		print '*** exiting; rank %d is multiply covered for %s' % (i,attr)
-		exit(-1)
-	    covered[i] = 1
-	attrs[ranks] = a.getAttribute(name)
-    i = 0
-    while i < len(covered):
-	if not covered[i]:
-	    s = i
-	    while i < len(covered)  and  not covered[i]:
-		i += 1
-	    attrs[(s,i-1)] = defaultVal
-	else:
-	    i += 1
-    return attrs
-                    
 def usage():
     print 'mpdrun for mpd version: %s' % str(mpd_version)
     print 'usage: mpdrun [args] pgm_to_execute [pgm_args]'

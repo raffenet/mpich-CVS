@@ -107,21 +107,27 @@ def mpiexec():
                     gargIdx += 2
                 else:
                     print 'unrecognized arg: %s' % (defaultArgs[gargIdx])
+                    usage()
         xmlDOC = xml.dom.minidom.Document()
-        xmlPMR = xmlDOC.createElement('PMRequests')
-        xmlDOC.appendChild(xmlPMR)
         xmlCPG = xmlDOC.createElement('create-process-group')
-        xmlPMR.appendChild(xmlCPG)
+        xmlDOC.appendChild(xmlCPG)
+        xmlHOSTSPEC = xmlDOC.createElement('host-spec')    # append to CPG after proc-specs
         argset = get_next_argset()
         while argset:
-	    handle_argset(argset,xmlDOC,xmlCPG)
+            xmlPROCSPEC = xmlDOC.createElement('process-spec')
+            xmlCPG.appendChild(xmlPROCSPEC)
+	    handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC)
             argset = get_next_argset()
+        xmlCPG.appendChild(xmlHOSTSPEC)
         xmlCPG.setAttribute('totalprocs', str(totalProcs) )  # after handling argsets
         if linelabels:
-            xmlCPG.setAttribute('line_labels', '1')
-        xmlFilename = '/tmp/%s_tempxml_%d' % (getpwuid(getuid())[0],getpid())
+            xmlCPG.setAttribute('output', 'label')
+        submitter = getpwuid(getuid())[0]
+        xmlCPG.setAttribute('submitter', submitter)
+        xmlFilename = '/tmp/%s_tempxml_%d' % (submitter,getpid())
         xmlFile = open(xmlFilename,'w')
         print >>xmlFile, xmlDOC.toprettyxml(indent='   ')
+        # print xmlDOC.toprettyxml(indent='   ')    #### RMB TEMP DEBUG
         xmlFile.close()
     fullDirName = path.abspath(path.split(argv[0])[0])  # normalize for platform also
     mpdrun = path.join(fullDirName,'mpdrun.py')
@@ -156,7 +162,7 @@ def get_next_argset():
 	    except: colonPos = -1
     return argset
 
-def handle_argset(argset,xmlDOC,xmlCPG):
+def handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC):
     global totalProcs, nextRange, setenvall, appnum, usize
     global gEnv, gHost, gWDIR, gPath, gNProcs
     host   = gHost
@@ -195,56 +201,42 @@ def handle_argset(argset,xmlDOC,xmlCPG):
     totalProcs += nProcs
 
     if host:
-        xmlHOST = xmlDOC.createElement('host')
-        xmlCPG.appendChild(xmlHOST)
-        xmlHOST.setAttribute('name',host)
-        xmlHOST.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]) ) 
+        xmlHOSTNAME = xmlDOC.createTextNode(host)
+        xmlHOSTSPEC.appendChild(xmlHOSTNAME)
 
-    xmlPATH = xmlDOC.createElement('path')
-    xmlCPG.appendChild(xmlPATH)
-    xmlPATH.setAttribute('name',wpath)
-    xmlPATH.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]) ) 
+    xmlPROCSPEC.setAttribute('user',getpwuid(getuid())[0])
+    xmlPROCSPEC.setAttribute('exec',cmdAndArgs[0])
+    xmlPROCSPEC.setAttribute('path',wpath)
+    xmlPROCSPEC.setAttribute('cwd',wdir)
+    xmlPROCSPEC.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]))
 
-    xmlCWD = xmlDOC.createElement('cwd')
-    xmlCPG.appendChild(xmlCWD)
-    xmlCWD.setAttribute('name',wdir)
-    xmlCWD.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]) ) 
-
-    xmlEXEC = xmlDOC.createElement('exec')
-    xmlCPG.appendChild(xmlEXEC)
-    xmlEXEC.setAttribute('name',cmdAndArgs[0])
-    xmlEXEC.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]) ) 
-
-    xmlARGS = xmlDOC.createElement('args')
-    xmlCPG.appendChild(xmlARGS)
-    xmlARGS.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]) ) 
-    for arg in cmdAndArgs[1:]:
+    for i in xrange(1,len(cmdAndArgs[1:])+1):
+        arg = cmdAndArgs[i]
         xmlARG = xmlDOC.createElement('arg')
-        xmlARGS.appendChild(xmlARG)
+        xmlPROCSPEC.appendChild(xmlARG)
+        xmlARG.setAttribute('idx', '%d' % (i) )
         xmlARG.setAttribute('value', '%s' % (quote(arg)))
 
-    xmlENVVARS = xmlDOC.createElement('envvars')
-    xmlCPG.appendChild(xmlENVVARS)
-    xmlENVVARS.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]) ) 
     if setenvall:
         for envvar in environ.keys():
-            xmlENVVAR = xmlDOC.createElement('envvar')
-            xmlENVVARS.appendChild(xmlENVVAR)
-            xmlENVVAR.setAttribute('key', '%s' % (envvar))
+            xmlENVVAR = xmlDOC.createElement('env')
+            xmlPROCSPEC.appendChild(xmlENVVAR)
+            xmlENVVAR.setAttribute('name',  '%s' % (envvar))
             xmlENVVAR.setAttribute('value', '%s' % (environ[envvar]))
     for envvar in gEnv.keys():
-        xmlENVVAR = xmlDOC.createElement('envvar')
-        xmlENVVARS.appendChild(xmlENVVAR)
-        xmlENVVAR.setAttribute('key', '%s' % (envvar))
+        xmlENVVAR = xmlDOC.createElement('env')
+        xmlPROCSPEC.appendChild(xmlENVVAR)
+        xmlENVVAR.setAttribute('name',  '%s' % (envvar))
         xmlENVVAR.setAttribute('value', '%s' % (gEnv[envvar]))
-    xmlENVVAR = xmlDOC.createElement('envvar')
-    xmlENVVARS.appendChild(xmlENVVAR)
-    xmlENVVAR.setAttribute('key', 'MPI_UNIVERSE_SIZE')
+    xmlENVVAR = xmlDOC.createElement('env')
+    xmlPROCSPEC.appendChild(xmlENVVAR)
+    xmlENVVAR.setAttribute('name', 'MPI_UNIVERSE_SIZE')
     xmlENVVAR.setAttribute('value', '%s' % (usize))
-    xmlENVVAR = xmlDOC.createElement('envvar')
-    xmlENVVARS.appendChild(xmlENVVAR)
-    xmlENVVAR.setAttribute('key', 'MPI_APPNUM')
+    xmlENVVAR = xmlDOC.createElement('env')
+    xmlPROCSPEC.appendChild(xmlENVVAR)
+    xmlENVVAR.setAttribute('name', 'MPI_APPNUM')
     xmlENVVAR.setAttribute('value', '%s' % str(appnum))
+
     appnum += 1
 
 
@@ -253,13 +245,17 @@ def usage():
     print 'mpiexec [ -h   or  -help   or  --help ]'
     print 'mpiexec -file filename  # where filename contains pre-built xml for mpdrun'
     print 'mpiexec -configfile filename  # where filename contains cmd-line arg-sets'
-    print 'mpiexec -default defaultArgs -n <n> -host <h> -wdir <w> -path <p> cmd args : more_arg_sets : ...'
+    print 'mpiexec [ -default defaultArgs : ] argset : more_arg_sets : ...'
+    print '    where each argset contains some of:'
+    print '        -n <n> -host <h> -wdir <w> -path <p> cmd args '
+    print '    note: cmd must be specfied for each argset; it can not be a default arg'
     print '    other default arguments can be -l (line labels on stdout, stderr) and'
     print '    -setenvall (pass entire environment of mpiexec to all processes),'
     print '    -env KEY1=VALUE1 -env KEY2=VALUE2 ...'
     print '    defaultArgs are passed to all processes unless overridden'
-    print 'sample execution:'
-    print '    mpiexec.py  -default -n 2 -wdir /bin -env RMB3=e3 : pwd : -wdir /tmp pwd : printenv'
+    print 'sample executions:'
+    print '    mpiexec.py  -n 1 pwd : -wdir /tmp pwd : printenv'
+    print '    mpiexec.py  -default -n 2 -wdir /bin -env RMB3=e3 : pwd : printenv'
     print ''
     exit(-1)
 
