@@ -1118,6 +1118,8 @@ typedef int MPI_File;\
     # Other routines
     print $OUTFD "extern void Init(void);\n";
     print $OUTFD "extern void Init(int &, char **& );\n";
+    print $OUTFD "extern int Init_thread(int);\n";
+    print $OUTFD "extern int Init_thread(int &, char **&, int );\n";
     print $OUTFD "extern void Finalize(void);\n";
     print $OUTFD "extern Aint Get_address( void * );\n";
     print $OUTFD "extern double Wtime(void);\n";
@@ -1740,6 +1742,7 @@ sub build_specials {
     &print_attr;
     print $OUTFD "{\n";
     print $OUTFD "    MPI_Init( 0, 0 );\n";
+    &printCoverageInitialize( $OUTFD );
     print $OUTFD "}\n";
 
     #
@@ -1751,9 +1754,34 @@ sub build_specials {
     print $OUTFD "void Init( int &argc, char **&argv )
 {
     MPI_Init( &argc, &argv );\n";
-
     &printCoverageInitialize( $OUTFD );
     print $OUTFD "}\n";
+
+    print $OUTFD "int Init_thread";
+    $args = "int";
+    &print_args( $OUTFD, $args );
+    &print_attr;
+    print $OUTFD "{
+    int provided;
+    MPI_Init_thread( 0, 0, v1, &provided );\n";
+    &printCoverageInitialize( $OUTFD );
+    print $OUTFD "\
+    return provided;
+}\n";
+
+    #
+    # The following may not be quite right because they don't include
+    # any attributes that we may include with the definitions.  However,
+    # this is easier than forcing the print_args routine to handle these
+    # simple cases.
+    #
+    print $OUTFD "int Init_thread( int &argc, char **&argv, int req )
+{
+    int provided;
+    MPI_Init_thread( &argc, &argv, req, &provided );\n";
+
+    &printCoverageInitialize( $OUTFD );
+    print $OUTFD "    return provided;\n}\n";
 
     print $OUTFD "void Finalize"; 
     $args = "";
@@ -1960,7 +1988,7 @@ void MPIR_Call_errhandler_fn( int kind, int *handle, int *errcode,
 	    break;
     case 1: // file
 	    {
-		MPI::File fh = (MPI_File)*handle;
+		MPI::File fh = (MPI_File)*(MPI_File*)handle;
 		MPI::File::Errhandler_fn *f = (MPI::File::Errhandler_fn *)cxxfn;
 		(*f)( fh, errcode );
 	    }
