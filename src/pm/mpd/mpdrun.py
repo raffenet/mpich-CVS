@@ -521,13 +521,18 @@ def mpdrun():
                             for i in range(nprocs):
                                 line = mpd_read_one_line(manCliStdoutSocket.fileno())
                                 # print "^%s$" % line
-                            print '(gdb) '
+			    if nprocs == 1:
+			        ranks = '0'
+			    else:
+			        ranks = '0-%d' % (nprocs-1)
+                            print '%s: (gdb) ' % (ranks),
                             continue
                         line = mpd_read_one_line(manCliStdoutSocket.fileno())
                         if not line:
                             del socketsToSelect[readySocket]
                             done += 1
                         else:
+                            line = line.replace('(gdb)\n','(gdb) ')
                             (rank,rest) = line.split(':',1)
                             rank = int(rank)
                             linesToRanks.setdefault(rest,[])
@@ -549,10 +554,10 @@ def mpdrun():
                                         linesToRanks[line].sort()
                                         fsr = format_sorted_ranks(linesToRanks[line])
                                         print '%s: %s' % (fsr,line),
-                                    stdout.flush()
                                     linesToRanks = {}
                                     linesOrdered = []
                                     ranksCached = {}
+                            stdout.flush()
                     else:
                         msg = manCliStdoutSocket.recv(1024)
                         if not msg:
