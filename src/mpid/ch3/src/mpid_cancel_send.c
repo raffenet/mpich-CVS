@@ -12,55 +12,50 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 void MPID_Cancel_send(MPID_Request * sreq)
 {
-    MPIDI_VC * vc;
-    int proto;
+#if 0    
     MPIDI_STATE_DECL(MPID_STATE_MPID_CANCEL_SEND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CANCEL_SEND);
-    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
-    
     assert(sreq->kind == MPID_REQUEST_SEND);
+    /* XXX - need to handle persistent requests */
 
-    vc = sreq->comm->vcr[sreq->ch3.match.rank];
+    /* Check to see if the send is still in the send queue.  If so, remove it,
+       mark cancelled, decrement completion counter, and release reference to
+       object. */
 
-    proto = MPIDI_Request_get_msg_type(sreq);
-
-    if (proto == MPIDI_REQUEST_SELF_MSG)
+    /* MT - need to lock the request queue */
     {
-/* FIXME FIXME FIXME */
-	abort();
-	goto fn_exit;
+	/* message can only be removed from the send queue if the first packet
+           has not been sent */
     }
+    /* MT - need to unlock the request queue */
+    
 
-#if 0    
-    /* Check to see if the send is still in the send queue.  If so, remove it, mark the request and cancelled and complete, and
-       release the device's reference to the request object.  QUESTION: what is the right interface for MPIDI_CH3_Send_cancel()?
-       It needs to be able to cancel requests to send a RTS packet for this request.  Perhaps we can use the partner request
-       field to track RTS requests. */
-    if (MPIDI_CH3_Send_cancel(vc, sreq->ch3.match, sreq->handle))
+    if (MPIDI_Request_get_msg_type(sreq) == MPIDI_REQUEST_EAGER_MSG ||
+	MPIDI_Request_get_rndv_state(sreq) != MPIDI_REQUEST_RNDV_SENDING)
     {
-	sreq->status.cancelled = TRUE;
-	MPID_Request_set_complete(sreq);
-	MPID_Request_release(sreq);
-	goto fn_exit;
-    }
-#endif    
-
-    /* Part or all of the message has already been sent, so we need to send a cancellation request to the receiver in an attempt
-       to catch the message before it is matched.  OPTIMIZATION: if this is a rendezvous message and the clear to send has
-       already been received, then we already know that we cannot cancel the message. */
-    {
-	/* The completion counter _and_ reference count are incremented to keep the request around long enough to receive a
-	   response regardless of what the user does (free the request before waiting, etc.). */
-	MPIDI_CH3U_Request_increment_cc(sreq);
-	MPIDI_CH3_Request_add_ref(sreq);
+	/* If this is a rendezvous message and the clear to send has already
+	   been received or a ready send, then we cannot cancel the message.
+	   In all other cases, a cancellation request be sent to the receiver
+	   in an attempt to catch the message before it is matched.  The
+	   completion counter _and_ reference count are incremented to keep the
+	   request around long enough to receive a response regardless of what
+	   the user does (free the request before waiting, etc.). */
     }
     
-    /* FIXME: if send cancellation packets are allowed to arrive out-of-order with respect to send packets, then we need to
-       timestamp send and cancel packets to insure that a cancellation request does not bypass the send packet to be cancelled
-       and erroneously cancel a previously sent message with the same request handle. */
-
-  fn_exit:
-    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
+    /* NOTE: if we decide to send cancellation requests out-of-band, then we
+       need to timestamp messages and cancellation request to insure that a
+       cancellation request does not bypass the message to be cancelled and
+       erroneous cancel a previously sent message that is buffered at the
+       receiver. */
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CANCEL_SEND);
+#endif
+
+    {
+	int mpi_errno;
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**cancelsend", 0 );
+	MPIR_Err_return_comm( 0, "MPI_Cancel", mpi_errno );
+	/* fall back */
+	MPID_Abort( 0, mpi_errno );
+    }
 }
