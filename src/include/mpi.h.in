@@ -336,6 +336,24 @@ typedef struct MPI_Status {
 #define MPI_Win_c2f(win)   (MPI_Fint)(win)
 #define MPI_Win_f2c(win)   (MPI_Win)(win)
 
+/* PMPI versions of the handle transfer functions.  See section 4.17 */
+#define PMPI_Comm_c2f(comm) (MPI_Fint)(comm)
+#define PMPI_Comm_f2c(comm) (MPI_Comm)(comm)
+#define PMPI_Type_c2f(datatype) (MPI_Fint)(datatype)
+#define PMPI_Type_f2c(datatype) (MPI_Datatype)(datatype)
+#define PMPI_Group_c2f(group) (MPI_Fint)(group)
+#define PMPI_Group_f2c(group) (MPI_Group)(group)
+#define PMPI_Info_c2f(info) (MPI_Fint)(info)
+#define PMPI_Info_f2c(info) (MPI_Info)(info)
+#define PMPI_Request_f2c(request) (MPI_Request)(request)
+#define PMPI_Request_c2f(request) (MPI_Fint)(request)
+#define PMPI_Op_c2f(op) (MPI_Fint)(op)
+#define PMPI_Op_f2c(op) (MPI_Op)(op)
+#define PMPI_Errhandler_c2f(errhandler) (MPI_Fint)(errhandler)
+#define PMPI_Errhandler_f2c(errhandler) (MPI_Errhandler)(errhandler)
+#define PMPI_Win_c2f(win)   (MPI_Fint)(win)
+#define PMPI_Win_f2c(win)   (MPI_Win)(win)
+
 #define MPI_STATUS_IGNORE (MPI_Status *)1
 #define MPI_STATUSES_IGNORE (MPI_Status *)1
 #define MPI_ERRCODES_IGNORE (int *)0
@@ -774,6 +792,13 @@ int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *, MPI_Errhandler *);
 int MPI_Win_get_errhandler(MPI_Win, MPI_Errhandler *);
 int MPI_Win_set_errhandler(MPI_Win, MPI_Errhandler);
 
+/* Fortran 90-related functions.  These routines are available only if
+   Fortran 90 support is enabled 
+*/
+int MPI_Type_create_f90_integer( int, MPI_Datatype * );
+int MPI_Type_create_f90_real( int, int, MPI_Datatype * );
+int MPI_Type_create_f90_complex( int, int, MPI_Datatype * );
+
 /* End Prototypes */
 #endif /* MPICH_SUPPRESS_PROTOTYPES */
 
@@ -1026,6 +1051,13 @@ int PMPI_Win_get_attr(MPI_Win, int, void *, int *);
 int PMPI_Win_get_name(MPI_Win, char *, int *);
 int PMPI_Win_set_attr(MPI_Win, int, void *);
 int PMPI_Win_set_name(MPI_Win, char *);
+
+/* Fortran 90-related functions.  These routines are available only if
+   Fortran 90 support is enabled 
+*/
+int PMPI_Type_create_f90_integer( int, MPI_Datatype * );
+int PMPI_Type_create_f90_real( int, int, MPI_Datatype * );
+int PMPI_Type_create_f90_complex( int, int, MPI_Datatype * );
 
 /* Miscellany */
 #ifdef FOO
