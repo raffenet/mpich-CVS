@@ -95,7 +95,11 @@ typedef struct MPIDI_CH3I_SHM_Buffer_t
     unsigned int num_bytes;
     void *buffer;
     unsigned int bufflen;
+#ifdef USE_SHM_IOV_COPY
     MPID_IOV iov[MPID_IOV_LIMIT];
+#else
+    MPID_IOV *iov;
+#endif
     int iovlen;
     int index;
     int total;

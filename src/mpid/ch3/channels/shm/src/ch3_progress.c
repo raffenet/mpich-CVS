@@ -82,7 +82,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 	    handle_written(vc_ptr);
 	    break;
 	case SHM_WAIT_ERROR:
-	    err_printf("MPIDI_CH3I_SHM_wait returned error %d\n", error);
+	    MPIDI_err_printf("MPIDI_CH3_Progress", "MPIDI_CH3I_SHM_wait returned error %d\n", error);
 	    break;
 	default:
 	    assert(FALSE);

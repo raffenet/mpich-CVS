@@ -597,15 +597,20 @@ int MPIDI_CH3I_SHM_post_read(MPIDI_VC *vc, void *buf, int len, int (*rfn)(int, v
 int MPIDI_CH3I_SHM_post_readv(MPIDI_VC *vc, MPID_IOV *iov, int n, int (*rfn)(int, void*))
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
+#ifdef USE_SHM_IOV_COPY
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
+#endif
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
     vc->shm.read.total = 0;
+#ifdef USE_SHM_IOV_COPY
     /* This isn't necessary if we require the iov to be valid for the duration of the operation */
-    /*vc->shm.read.iov = iov;*/
     MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
     memcpy(vc->shm.read.iov, iov, sizeof(MPID_IOV) * n);
     MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+#else
+    vc->shm.read.iov = iov;
+#endif
     vc->shm.read.iovlen = n;
     vc->shm.read.index = 0;
     vc->shm.read.use_iov = TRUE;
