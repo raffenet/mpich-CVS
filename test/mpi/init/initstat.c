@@ -25,7 +25,7 @@ int main( int argc, char *argv[] )
     MPI_Query_thread( &claimed );
     if (claimed != provided) {
 	errs++;
-	printf( "Query thread gave thead level %d but Init_thread gave %d\n",
+	printf( "Query thread gave thread level %d but Init_thread gave %d\n",
 		claimed, provided );
     }
 
