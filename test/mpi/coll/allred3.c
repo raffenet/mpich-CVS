@@ -11,6 +11,11 @@
 
 static char MTEST_Descrip[] = "Test MPI_Allreduce with non-commutative user-defined operations";
 
+/* We make the error count global so that we can easily control the output
+   of error information (in particular, limiting it after the first 10 
+   errors */
+int errs = 0;
+
 /* This implements a simple matrix-matrix multiply.  This is an associative
    but not commutative operation.  The matrix size is set in matSize;
    the number of matrices is the count argument. The matrix is stored
@@ -27,31 +32,29 @@ void uop( void *cinPtr, void *coutPtr, int *count, MPI_Datatype *dtype )
     int i, j, k, nmat;
     int tempcol[MAXCOL];
     int offset1, offset2;
+    int matsize2 = matSize*maxSize;
 
-    for (nmat = 0; nmat < *count; nmat++)
-    {
-	for (j=0; j<matSize; j++)
-	{
-	    for (i=0; i<matSize; i++)
-	    {
+    for (nmat = 0; nmat < *count; nmat++) {
+	for (j=0; j<matSize; j++) {
+	    for (i=0; i<matSize; i++) {
 		tempcol[i] = 0;
-		for (k=0; k<matSize; k++)
-		{
+		for (k=0; k<matSize; k++) {
 		    /* col[i] += cin(i,k) * cout(k,j) */
-		    offset1 = k+i*matSize;
-		    offset2 = j+k*matSize;
+		    offset1    = k+i*matSize;
+		    offset2    = j+k*matSize;
 		    assert(offset1 < max_offset);
 		    assert(offset2 < max_offset);
 		    tempcol[i] += cin[offset1] * cout[offset2];
 		}
 	    }
-	    for (i=0; i<matSize; i++)
-	    {
-		offset1 = j+i*matSize;
+	    for (i=0; i<matSize; i++) {
+		offset1       = j+i*matSize;
 		assert(offset1 < max_offset);
 		cout[offset1] = tempcol[i];
 	    }
 	}
+	cin  += matsize2;
+	cout += matsize2;
     }
 }
 
@@ -67,28 +70,23 @@ static void initMat( MPI_Comm comm, int mat[] )
     MPI_Comm_rank( comm, &rank );
     MPI_Comm_size( comm, &size );
 
-    for (i=0; i<size*size; i++)
-    {
+    for (i=0; i<size*size; i++) {
 	assert(i < max_offset);
 	mat[i] = 0;
     }
 
-    for (i=0; i<size; i++)
-    {
-	if (i == rank)
-	{
+    for (i=0; i<size; i++) {
+	if (i == rank) {
 	    offset = ((i+1)%size) + i * size;
 	    assert(offset < max_offset);
 	    mat[offset] = 1;
 	}
-	else if (i == ((rank + 1)%size))
-	{
+	else if (i == ((rank + 1)%size)) {
 	    offset = ((i+size-1)%size) + i * size;
 	    assert(offset < max_offset);
 	    mat[offset] = 1;
 	}
-	else
-	{
+	else {
 	    offset = i+i*size;
 	    assert(offset < max_offset);
 	    mat[offset] = 1;
@@ -105,26 +103,28 @@ static int isIdentity( MPI_Comm comm, int mat[] )
     MPI_Comm_rank( comm, &rank );
     MPI_Comm_size( comm, &size );
 
-    for (i=0; i<size; i++)
-    {
-	for (j=0; j<size; j++)
-	{
-	    if (i == j)
-	    {
+    for (i=0; i<size; i++) {
+	for (j=0; j<size; j++) {
+	    if (i == j) {
 		offset = j+i*size;
 		assert(offset < max_offset);
-		if (mat[offset] != 1)
-		{
+		if (mat[offset] != 1) {
 		    errs++;
+		    if (errs < 10) {
+			printf( "[%d] mat[%d,%d] = %d, expected 1 for comm %s\n", 
+				rank, i,j, MTestGetIntracommName() )
+		    }
 		}
 	    }
-	    else
-	    {
+	    else {
 		offset = j+i*size;
 		assert(offset < max_offset);
-		if (mat[offset] != 0)
-		{
+		if (mat[offset] != 0) {
 		    errs++;
+		    if (errs < 10) {
+			printf( "[%d] mat[%d,%d] = %d, expected 0 for comm %s\n", 
+				rank, i,j, MTestGetIntracommName() )
+		    }
 		}
 	    }
 	}
@@ -134,7 +134,6 @@ static int isIdentity( MPI_Comm comm, int mat[] )
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0;
     int size;
     int minsize = 2, count; 
     MPI_Comm      comm;
@@ -146,10 +145,8 @@ int main( int argc, char *argv[] )
 
     MPI_Op_create( uop, 0, &op );
     
-    while (MTestGetIntracommGeneral( &comm, minsize, 1 ))
-    {
-	if (comm == MPI_COMM_NULL)
-	{
+    while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
+	if (comm == MPI_COMM_NULL) {
 	    continue;
 	}
 	MPI_Comm_size( comm, &size );
@@ -164,13 +161,11 @@ int main( int argc, char *argv[] )
 
 	max_offset = count * size * size;
 	buf = (int *)malloc( max_offset * sizeof(int) );
-	if (!buf)
-	{
+	if (!buf) {
 	    MPI_Abort( MPI_COMM_WORLD, 1 );
 	}
 	bufout = (int *)malloc( max_offset * sizeof(int) );
-	if (!bufout)
-	{
+	if (!bufout) {
 	    MPI_Abort( MPI_COMM_WORLD, 1 );
 	}
 
