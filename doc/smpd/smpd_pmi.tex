@@ -105,21 +105,30 @@ environment variables to be set:
 \item PMI\_ RANK = my rank in the process group ( 0 to N-1 )
 \item PMI\_ SIZE = process group size ( N )
 \item PMI\_ KVS = my keyval space name unique to my process group
+\item PMI\_ DOMAIN = my keyval space domain name
 \item *PMI\_ CLIQUE = my node neighbors in the form of a clique.  A clique is
 a comma separated list of ranges and numbers.  Example: 0,2..4,7
 \item PMI\_ SMPD\_ ID = my smpd manager node id
 \item PMI\_ SMPD\_ KEY = ctx\_ key value to be included with PMI commands 
 from this process.
-\item PMI\_ SMPD\_ FD = file descriptor/handle to convert into the PMI 
+\item **PMI\_ SMPD\_ FD = file descriptor/handle to convert into the PMI 
 socket context.
 \item PMI\_ SPAWN = 0 or 1 if this process was started by a 
 PMI\_ Spawn\_ multiple command.
-\item *PMI\_ ROOT\_ HOST = root host to connect to to establish the PMI 
+\item **PMI\_ ROOT\_ HOST = root host to connect to to establish the PMI 
 socket context.
-\item *PMI\_ ROOT\_ PORT = root listening port number
+\item **PMI\_ ROOT\_ PORT = root listening port number
+\item **PMI\_ ROOT\_ LOCAL = 0 or 1 if the root process is to act as the root smpd manager.
+If PMI\_ ROOT\_ LOCAL is specfied and it is 1, the root MPICH process starts a separate
+thread or process to act as the smpd manager.  This manager listens on the specified port
+for pmi socket contexts to connect from all the processes in the job and handles smpd pmi
+commands for them.  It is an error if PMI\_ ROOT\_ HOST is not the same as the host where
+rank 0 is launched.
 \end{description}
 
-* optional.
+* If not specified, default clique contains only the local process.
+
+** Only one option may be specified.
 
 PMI\_ SMPD\_ FD is mutually exclusive with the 
 PMI\_ ROOT\_ HOST/PMI\_ ROOT\_ PORT pair.  If PMI\_ SMPD\_ FD exists then 
@@ -158,6 +167,14 @@ No more PMI commands, close the context.  This command is sent from the
 child directly to its SMPD manager and does not receive a reply.
 
 Example: \code{cmd=done src=3 dest=3 tag=14 ctx\_ key=0}
+\item[\code{exit_on_done}]\mbox{}\\
+The root smpd manager can and should exit when all done commands are received.
+This command is sent by the root process.
+
+Example: \code{cmd=exit_on_done src=1 dest=1 tag=13 ctx\_ key=0}
+
+Is this command necessary?  Shouldn't the root smpd know that it is a root smpd
+and exit automatically when all its pmi contexts close?
 \item[\code{barrier}]\mbox{}\\
 Barrier across a set of processes. 
 Add \code{name=barrier\_ name value=number\_ of\_ participants}.
