@@ -26,8 +26,13 @@ int ib_setup_connections()
     MPID_Comm *comm_ptr;
     int mpi_errno;
     MPIDI_VC *vc_ptr;
-    int i;
-    char key[100], value[100];
+    int i, len;
+    char *key, *value;
+
+    len = PMI_KVS_Get_key_length_max();
+    key = (char*)malloc(len * sizeof(char));
+    len = PMI_KVS_Get_value_length_max();
+    value = (char*)malloc(len * sizeof(char));
 
     /* setup the vc's on comm_world */
     comm_ptr = MPIR_Process.comm_world;
@@ -37,6 +42,8 @@ int ib_setup_connections()
     if (mpi_errno != MPI_SUCCESS)
     {
 	MPIU_dbg_printf("MPID_VCRT_Create failed, error %d\n", mpi_errno);
+	free(key);
+	free(value);
 	MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_FROM_COMMUNICATOR);
 	return -1;
     }
@@ -45,6 +52,8 @@ int ib_setup_connections()
     if (mpi_errno != MPI_SUCCESS)
     {
 	MPIU_dbg_printf("MPID_VCRT_Get_ptr failed, error %d\n", mpi_errno);
+	free(key);
+	free(value);
 	MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_FROM_COMMUNICATOR);
 	return -1;
     }
@@ -72,11 +81,16 @@ int ib_setup_connections()
 	    vc_ptr->rank = i;
 	}
 	sprintf(key, "ib_lid_%d", i);
+	MPIU_dbg_printf("calling PMI_KVS_Get\n");
 	PMI_KVS_Get(vc_ptr->pmi_kvsname, key, value);
-	MPIU_dbg_printf("key: %s, value: %s\n", key, value);
+	MPIU_dbg_printf("kvs: %s, key: %s, value: %s\n", 
+			vc_ptr->pmi_kvsname, key, value);
     }
 
     PMI_Barrier();
+
+    free(key);
+    free(value);
 
     return MPI_SUCCESS;
 }
