@@ -14,6 +14,7 @@ outdir=/home/gropp/projects/mpich2-tests
 date=`date "+%Y-%m-%d"`
 # default outfile
 outfile=testbuild.xml
+tests="mpich;mpicxx;intel"
 #
 # Option options to checkbuild
 other_opts=""
@@ -28,6 +29,7 @@ for arg in $@ ; do
     case $arg in 
     -outfile=*) outfile=$argval ;;
     -outdir=*)  outdir=$argval ;;
+    -tests=*)   tests=$argval ;;
     -echo) set -x ;;
     *) other_opts="$other_opts $arg" ;;
     esac
@@ -68,6 +70,6 @@ fi
 # Use -tests="mpich;mpicxx" to get a smaller list of tests.
 $rundir/maint/checkbuilds -rundir=$rundir \
 			  -envopt="CC;cc;gcc" -envopt="FC;f77;g77" \
-			  -tests="mpich;mpicxx;intel" -tmpdir=$tmpdir \
+			  -tests="$tests" -tmpdir=$tmpdir \
 			  -xml -maxcount=1 -outfile=$outfile $other_opts
 
