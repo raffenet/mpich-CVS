@@ -733,7 +733,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 
     int i, j, m, size, ntimes, max_ntimes, buftype_is_contig;
     ADIO_Offset st_loc=-1, end_loc=-1, off, done, real_off, req_off;
-    char *read_buf, *tmp_buf;
+    char *read_buf = NULL, *tmp_buf;
     int *curr_offlen_ptr, *count, *send_size, *recv_size;
     int *partial_send, *recd_from_proc, *start_pos, for_next_iter;
     int *recv_buf_idx, *curr_from_proc, *done_from_proc;
@@ -1025,8 +1025,8 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
                          int *done_from_proc, int iter, 
 			 MPI_Aint buftype_extent, int *buf_idx)
 {
-    int i, j, k, tmp, nprocs_recv, nprocs_send;
-    char **recv_buf; 
+    int i, j, k=0, tmp=0, nprocs_recv, nprocs_send;
+    char **recv_buf = NULL; 
     MPI_Request *requests;
     MPI_Datatype send_type;
     MPI_Status *statuses;

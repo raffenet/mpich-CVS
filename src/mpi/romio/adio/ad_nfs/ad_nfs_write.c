@@ -148,7 +148,7 @@ void ADIOI_NFS_WriteStrided(ADIO_File fd, void *buf, int count,
     MPI_Aint filetype_extent, buftype_extent; 
     int buf_count, buftype_is_contig, filetype_is_contig;
     ADIO_Offset userbuf_off;
-    ADIO_Offset off, req_off, disp, end_offset, writebuf_off, start_off;
+    ADIO_Offset off, req_off, disp, end_offset=0, writebuf_off, start_off;
     char *writebuf, *value;
     int flag, st_fwr_size, st_n_filetypes, writebuf_len, write_sz;
     int new_bwr_size, new_fwr_size, err_flag=0, info_flag, max_bufsize;

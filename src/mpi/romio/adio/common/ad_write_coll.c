@@ -251,9 +251,9 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
    array to a file, where each local array is 8Mbytes, requiring
    at least another 8Mbytes of temp space is unacceptable. */
 
-    int hole, i, j, m, size, ntimes, max_ntimes, buftype_is_contig;
+    int hole, i, j, m, size=0, ntimes, max_ntimes, buftype_is_contig;
     ADIO_Offset st_loc=-1, end_loc=-1, off, done, req_off;
-    char *write_buf;
+    char *write_buf=NULL;
     int *curr_offlen_ptr, *count, *send_size, req_len, *recv_size;
     int *partial_recv, *sent_to_proc, *start_pos, flag;
     int *send_buf_idx, *curr_to_proc, *done_to_proc;
@@ -515,7 +515,7 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
                          int *error_code)
 {
     int i, j, k, *tmp_len, nprocs_recv, nprocs_send, err;
-    char **send_buf; 
+    char **send_buf = NULL; 
     MPI_Request *requests;
     MPI_Datatype *recv_types;
     MPI_Status *statuses, status;

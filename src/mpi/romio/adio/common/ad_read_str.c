@@ -53,7 +53,7 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
     MPI_Aint filetype_extent, buftype_extent; 
     int buf_count, buftype_is_contig, filetype_is_contig;
     ADIO_Offset userbuf_off;
-    ADIO_Offset off, req_off, disp, end_offset, readbuf_off, start_off;
+    ADIO_Offset off, req_off, disp, end_offset=0, readbuf_off, start_off;
     char *readbuf, *tmp_buf, *value;
     int flag, st_frd_size, st_n_filetypes, readbuf_len;
     int new_brd_size, new_frd_size, info_flag, max_bufsize;
