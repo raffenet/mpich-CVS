@@ -21,11 +21,17 @@ static BOOL bInitialized = FALSE;
 static HANDLE hOutputMutex = NULL;
 #endif
 
+#define SMPD_MAX_INDENT 20
+static char indent[SMPD_MAX_INDENT+1] = "";
+static int cur_indent = 0;
+
 char * get_sock_error_string(int error)
 {
     static char str[256];
     switch (error)
     {
+    case SOCK_SUCCESS:
+	return "operation completed successfully";
     case SOCK_FAIL:
 	return "generic sock failure";
     case SOCK_EOF:
@@ -46,6 +52,8 @@ char * get_sock_error_string(int error)
 	return "invalid buffer";
     case SOCK_ERR_OP_IN_PROGRESS:
 	return "socket operation in progress";
+    case SOCK_ERR_OP_ABORTED:
+	return "socket operation aborted";
     case SOCK_ERR_OS_SPECIFIC:
 	return "operating system specific socket error occurred";
     default:
@@ -111,7 +119,11 @@ int smpd_err_printf(char *str, ...)
 	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
 	{
 	    /* prepend output with the process tree node id */
-	    fprintf(stdout, "[%d]ERROR:", smpd_process.id);
+	    fprintf(stdout, "[%d]%sERROR:", smpd_process.id, indent);
+	}
+	else
+	{
+	    fprintf(stdout, "%s", indent);
 	}
 
 	/* print the formatted string */
@@ -125,11 +137,11 @@ int smpd_err_printf(char *str, ...)
 	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
 	{
 	    /* prepend output with the process tree node id */
-	    fprintf(smpd_process.dbg_fout, "[%d]ERROR:", smpd_process.id);
+	    fprintf(smpd_process.dbg_fout, "[%d]%sERROR:", smpd_process.id, indent);
 	}
 	else
 	{
-	    fprintf(smpd_process.dbg_fout, "ERROR:");
+	    fprintf(smpd_process.dbg_fout, "%sERROR:", indent);
 	}
 
 	/* print the formatted string */
@@ -172,7 +184,11 @@ int smpd_dbg_printf(char *str, ...)
 	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
 	{
 	    /* prepend output with the tree node id */
-	    printf("[%d]", smpd_process.id);
+	    printf("[%d]%s", smpd_process.id, indent);
+	}
+	else
+	{
+	    printf("%s", indent);
 	}
 
 	/* print the formatted string */
@@ -186,7 +202,11 @@ int smpd_dbg_printf(char *str, ...)
 	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
 	{
 	    /* prepend output with the process tree node id */
-	    fprintf(smpd_process.dbg_fout, "[%d]:", smpd_process.id);
+	    fprintf(smpd_process.dbg_fout, "[%d]%s", smpd_process.id, indent);
+	}
+	else
+	{
+	    fprintf(smpd_process.dbg_fout, "%s", indent);
 	}
 
 	/* print the formatted string */
@@ -205,13 +225,10 @@ int smpd_dbg_printf(char *str, ...)
     return n;
 }
 
-#define SMPD_MAX_INDENT 20
-static char indent[SMPD_MAX_INDENT+1] = "";
-static int cur_indent = 0;
-
 int smpd_enter_fn(char *fcname)
 {
-    smpd_dbg_printf("%sentering %s\n", indent, fcname);
+    /*smpd_dbg_printf("%sentering %s\n", indent, fcname);*/
+    smpd_dbg_printf("entering %s\n", fcname);
     if (cur_indent >= 0 && cur_indent < SMPD_MAX_INDENT)
     {
 	indent[cur_indent] = '.';
@@ -228,6 +245,7 @@ int smpd_exit_fn(char *fcname)
 	indent[cur_indent-1] = '\0';
     }
     cur_indent--;
-    smpd_dbg_printf("%sexiting %s\n", indent, fcname);
+    /*smpd_dbg_printf("%sexiting %s\n", indent, fcname);*/
+    smpd_dbg_printf("exiting  %s\n", fcname);
     return SMPD_SUCCESS;
 }
