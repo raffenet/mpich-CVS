@@ -1,0 +1,257 @@
+%
+%  This is a latex file that generates a reference manual for
+%  the wire protocol between an mpich2 process and a smpd manager.
+%
+\documentclass{article}
+\usepackage{tpage}
+\usepackage{../../doc/adi3/refman}
+\usepackage{url}
+\usepackage{epsf}
+%\usepackage{psfig}
+%hyperref - do not remove this comment
+
+\textheight=9in
+\textwidth=6.1in
+\oddsidemargin=.2in
+\topmargin=-.50in
+\newread\testfile
+
+\let\findex=\index
+%
+% Modify the way titles are handled for no breaks between pages
+\def\mantitle#1#2#3{\pagerule\nobreak
+\ifmancontents\addcontentsline{toc}{subsection}{#1}\fi
+\index{#1}}
+
+\makeindex
+
+\begin{document}
+
+\markright{SMPD PMI Wire Protocol Reference Manual}
+
+\def\nopound{\catcode`\#=13}
+{\nopound\gdef#{{\tt \char`\#}}}
+\catcode`\_=13
+\def_{{\tt \char`\_}}
+\catcode`\_=11
+\def\code#1{{\tt #1}}
+%\let\url=\code
+\def\makeussubscript{\catcode`\_=8}
+\def\makeustext{\catcode`\_=11}
+%\tpageoneskip
+\ANLTMTitle{SMPD PMI Wire Protocol\\
+Version 1.0\\
+Reference Manual\\\ \\Draft of \today}{\em 
+David Ashton\\
+Brian R. Toonen\\
+Mathematics and Computer Science Division\\
+Argonne National Laboratory}{00}{\today}
+
+\clearpage
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+
+\pagenumbering{arabic}
+\pagestyle{headings}
+
+\section{Introduction}
+
+When a user builds MPICH2 they have the option to choose the SMPD process
+manager to launch and manage processes in MPICH2 jobs.  MPICH2 provides
+an implementation of smpd and mpiexec to launch MPICH2 jobs.  When user
+applications are built, they use the PMI library for smpd to provide the 
+implementation of PMI for communicating with SMPD process managers. 
+This document describes the environment and wire protocol between the 
+MPICH2 application and the SMPD manager.
+
+If a process manager implementor replicates the environment and protocol
+described in this document, they would be able to launch and manage MPICH2 
+jobs compiled for SMPD.
+
+An SMPD manager communicates with its child process through environment
+variables and a socket.  This document describes the environment and the 
+wire protocol on that socket.
+
+\section{SMPD manager topology}
+This section describes how SMPD is organized in MPICH2.  An implementation
+of a process manager that uses the protocol described in this document is 
+not required to use this topology.  It is provided for reference.
+
+In the idle state, SMPDs reside on each node unconnected.  
+When a new job is to be launched, mpiexec first selects a list of hosts 
+to launch a job on.  Then it connects to the SMPDs and they fork or spawn 
+new managers resulting in a connected tree with mpiexec at the root.
+See figure~\ref{fig:tree}.  This tree remains for the duration of the job.
+It can grow as a result of spawn commands.  Each SMPD manager has
+a id in the tree used to route commands.  Each manager can manage multiple
+child processes.  The control socket connections between the SMPD manager
+and the child processes are referenced by context ids provided by the
+SMPD manager to the child when it launches a process.
+
+\begin{figure}
+\centerline{\epsfbox{smpd_tree.eps}}
+\caption{SMPD Manager tree}
+\label{fig:tree}
+\end{figure}
+
+\section{Child process environment}
+SMPD managers launch and manage child processes in an MPICH2 job.
+MPICH2 processes compiled with the SMPD PMI library expect the following
+environment variables to be set:
+
+\begin{description}
+\item PMI\_ RANK = my rank in the process group ( 0 to N-1 )
+\item PMI\_ SIZE = process group size ( N )
+\item PMI\_ KVS = my keyval space name unique to my process group
+\item *PMI\_ CLIQUE = my node neighbors in the form of a clique.  A clique is
+a comma separated list of ranges and numbers.  Example: 0,2..4,7
+\item PMI\_ SMPD\_ ID = my smpd manager node id
+\item PMI\_ SMPD\_ KEY = ctx\_ key value to be included with PMI commands 
+from this process.
+\item PMI\_ SMPD\_ FD = file descriptor/handle to convert into the PMI 
+socket context.
+\item PMI\_ SPAWN = 0 or 1 if this process was started by a 
+PMI\_ Spawn\_ multiple command.
+\item *PMI\_ ROOT\_ HOST = root host to connect to to establish the PMI 
+socket context.
+\item *PMI\_ ROOT\_ PORT = root listening port number
+\end{description}
+
+* optional.
+
+PMI\_ SMPD\_ FD is mutually exclusive with the 
+PMI\_ ROOT\_ HOST/PMI\_ ROOT\_ PORT pair.  If PMI\_ SMPD\_ FD exists then 
+the process uses that handle as its connection to the SMPD manager 
+otherwise it makes a socket connection to the
+host/port described by PMI\_ ROOT\_ HOST/PMI\_ ROOT\_ PORT.
+
+\section{SMPD wire commands}
+This section describes the wire protocol for PMI commands from the child
+process to the smpd manager.
+
+\subsection{Comand Format}
+Commands are variable length.
+Each command begins with a 13 byte header.  Bytes are 8 bits.  The header 
+is a NULL terminated ascii string representation of the length of the 
+command to follow the header.  After the header is a string of the length 
+described by the header.  Both the header and the command are NULL terminated.
+The header is always 13 bytes no matter where the NULL character falls.  The
+command string begins at the 14th bytes and the length of the command must 
+include the NULL character.
+
+Commands contain \code{key=value} strings to describe the components of 
+the command.  All commands will have the following keys:
+
+\code{cmd=command src=my\_ smpd\_ id dest=dest\_ smpd\_ id 
+tag=command\_ tag ctx\_ key=pmi\_ smpd\_ key}
+
+Additional command specific keys are described in the following section.
+
+\subsection{Commands}
+\begin{description}
+%\item[\code{exit\_ on\_ done}]\mbox{}\\
+%Tell the root to exit when all done commands are received - used in rPMI only.
+\item[\code{done}]\mbox{}\\
+No more PMI commands, close the context.  This command is sent from the 
+child directly to its SMPD manager and does not receive a reply.
+
+Example: \code{cmd=done src=3 dest=3 tag=14 ctx\_ key=0}
+\item[\code{barrier}]\mbox{}\\
+Barrier across a set of processes. 
+Add \code{name=barrier\_ name value=number\_ of\_ participants}.
+The result command returns SUCCESS or FAIL.
+
+Example: \code{cmd=barrier src=2 dest=1 tag=3 ctx\_ key=1 name=kvsname value=2}
+\item[\code{dbcreate}]\mbox{}\\
+Create a new keyval space.  If \code{name=kvsname} is added to the command
+then the keyval space is created with the provided name, otherwise the 
+implementation chooses a name.
+The result command returns SUCCESS or FAIL and \code{name=kvsname}.
+
+Example: \code{cmd=dbcreate src=1 dest=1 tag=100 ctx\_ key=0}
+\item[\code{dbdestroy}]\mbox{}\\
+Destroy a keyval space.  Add \code{name=kvsname}.
+The result command returns SUCCESS or FAIL.
+
+Example: \code{cmd=dbdestroy src=4 dest=1 tag=13 ctx\_ key=1 name=kvsname}
+\item[\code{dbput}]\mbox{}\\
+Put a keyval into a kvs space.  Add \code{name=kvsname key=user\_ key 
+value=user\_ value}.
+The result command returns SUCCESS or FAIL.
+
+Example \code{cmd=dbput src=3 dest=1 tag=100 ctx\_ key=0 name=kvsname key=foo value=bar}
+\item[\code{dbget}]\mbox{}\\
+Get a kevyal from a kvs space.  Add \code{name=kvsname key=user\_ key}.
+The result command returns SUCCESS or FAIL and \code{value=val}.
+
+Example: \code{cmd=dbget src=4 dest=1 tag=0 ctx\_ key=0 name=kvsname key=foo}
+\item[\code{dbfirst}]\mbox{}\\
+Start the keyval space iterator.  Add \code{name=kvsname}.
+The result command returns SUCCESS or FAIL and \code{key=key value=val}.
+
+Example: \code{cmd=dbfirst src=1 dest=1 tag=22 ctx\_ key=0 name=kvsname}
+\item[\code{dbnext}]\mbox{}\\
+Get the next keyval from the iterator.  Add \code{name=kvsname}.
+The result command returns SUCCESS or FAIL and \code{key=key value=val}.
+
+Example: \code{cmd=dbnext src=2 dest=1 tag=12 ctx\_ key=0 name=kvsname}
+\item[\code{spawn}]\mbox{}\\
+Spawn a new process group.  See the next section for a complete description.
+\item[\code{result}]\mbox{}\\
+The result of a previous command.  Result commands will always have two 
+fields, \code{cmd\_ tag=command\_ tag} and \code{result=result\_ string}.
+The \code{command\_ tag} matches the tag of the command the result command 
+refers to.  The \code{result\_ string} is SUCCESS or a failure message. 
+Other return fields will be present as specified by the issued command.
+\end{description}
+
+\subsection{spawn command}
+The \code{spawn} command is issued by a single node to launch a set of 
+processes in a new process group.
+
+The \code{spawn} command is used to implement PMI\_ Spawn\_ multiple.
+
+The keys to the \code{spawn} command are the following:
+\begin{description}
+\item \code{ncmds = x number of commands}
+\item \code{cmd0 = command}
+\item \code{cmd1 = command}
+\item \code{...}
+\item \code{argv0 = string1 string2 string3 ...}
+\item \code{argv1 = string1 string2 string3 ...}
+\item \code{...}
+\item \code{maxprocs = n0 n1 n2 ... nx-1}
+\item \code{nkeyvals = n0 n1 n2 ... nx-1}
+\item \code{keyvals0 = ``0=$\backslash$``key=val$\backslash$'' 
+1=$\backslash$``key=val$\backslash$'' ... 
+n0-1=$\backslash$``key=val$\backslash$''''}
+\item \code{keyvals1 = ``0=$\backslash$``key=val$\backslash$'' 
+1=$\backslash$``key=val$\backslash$'' ... 
+n1-1=$\backslash$``key=val$\backslash$''''}
+\item \code{...}
+\item \code{npreput = number of preput keyvals}
+\item \code{preput = ``0=$\backslash$``key=val$\backslash$'' 
+1=$\backslash$``key=val$\backslash$'' ... 
+n-1=$\backslash$``key=val$\backslash$''''}
+\end{description}
+
+The \code{ncmds} key represents the size of the rest of the vector arguments.
+There will be \code{ncmds} \code{cmd} and \code{argv} keys.  \code{maxprocs}
+and \code{nkeyvals} will contain \code{ncmds} entries.  The values in
+\code{maxprocs} represent the requested number of processes to launch for the
+corresponding \code{cmd} command.  There will be \code{ncmds} \code{keyvals}
+keys and each \code{keyvals} key will contain nx keys where nx is the 
+corresponding value in \code{nkeyvals}.  \code{npreput} represents the 
+number of keys in the \code{preput} key.  The keys in the \code{preput} key
+are to be put in the keyval space of the spawned process group before any
+of the processes are launched.
+
+Example: \code{cmd=spawn src=3 dest=0 tag=4 ctx\_ key=0 ncmds=1 cmd0=myapp
+argv0=``one $\backslash$``two args$\backslash$'' three'' maxprocs=4 
+nkeyvals=2 keyvals0=``0=$\backslash$``host=toad$\backslash$'' 
+1=$\backslash$``path=/home/me$\backslash$'''' 
+npreput=1 preput=``0=$\backslash$``port=1244$\backslash$''''}
+
+\end{document}
