@@ -30,6 +30,7 @@
    given below. (You can replace "+" with any other scan operator.)
    The result is stored in recvbuf.
 
+ .vb
    partial_scan = sendbuf;
    mask = 0x1;
    while (mask < size) {
@@ -55,6 +56,7 @@
       }
       mask <<= 1;
    }  
+.ve
 
    End Algorithm: MPI_Exscan
 */

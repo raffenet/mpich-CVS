@@ -30,6 +30,7 @@
    given below. (You can replace "+" with any other scan operator.)
    The result is stored in recvbuf.
 
+ .vb
    recvbuf = sendbuf;
    partial_scan = sendbuf;
    mask = 0x1;
@@ -53,6 +54,7 @@
       }
       mask <<= 1;
    }  
+ .ve
 
    End Algorithm: MPI_Scan
 */
