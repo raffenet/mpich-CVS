@@ -5,6 +5,7 @@
 #if !defined( _CLOG_BUFFER )
 #define _CLOG_BUFFER
 
+#include "clog_common.h"
 #include "clog_preamble.h"
 #include "clog_block.h"
 
@@ -44,7 +45,7 @@ typedef struct {
     int               local_mpi_rank;
 
     int               local_fd;
-    char             *local_filename;
+    char              local_filename[ CLOG_PATH_STRLEN ];
     off_t             timeshift_fptr;
     int               delete_localfile;
 

@@ -59,7 +59,7 @@ CLOG_Buffer_t* CLOG_Buffer_create( void )
     buffer->num_used_blocks  = 0;
 
     buffer->local_fd         = CLOG_NULL_FILE;
-    buffer->local_filename   = NULL;
+    strcpy( buffer->local_filename, "" );
     buffer->timeshift_fptr   = 0;
     buffer->delete_localfile = CLOG_BOOL_TRUE;
     buffer->status           = CLOG_UNINIT;
@@ -156,13 +156,13 @@ void CLOG_Buffer_init( CLOG_Buffer_t *buffer, const char *local_tmpfile_name )
     buffer->num_mpi_procs  = 1;
 #endif
 
-    buffer->local_filename  = (char *) local_tmpfile_name;
-    if ( buffer->local_filename == NULL ) {
-        buffer->local_filename = CLOG_Util_get_tmpfilename();
-        if ( buffer->local_filename == NULL ) {
+    if ( local_tmpfile_name != NULL )
+        strcpy( buffer->local_filename, local_tmpfile_name );
+    if ( strlen( buffer->local_filename ) == 0 ) {
+        CLOG_Util_set_tmpfilename( buffer->local_filename );
+        if ( strlen( buffer->local_filename ) == 0 ) {
             fprintf( stderr, __FILE__":CLOG_Buffer_init() - \n"
-                             "\t""CLOG_Util_get_tmpfilename() "
-                             "returns NULL.\n");
+                             "\t""CLOG_Util_set_tmpfilename() fails.\n" );
             fflush( stderr );
             CLOG_Util_abort( 1 );
         }
@@ -458,7 +458,7 @@ void CLOG_Buffer_localIO_finalize( CLOG_Buffer_t *buffer )
         close( buffer->local_fd );
         buffer->local_fd = CLOG_NULL_FILE;
         if (    buffer->delete_localfile == CLOG_BOOL_TRUE
-             && buffer->local_filename != NULL )
+             && strlen( buffer->local_filename ) != 0 )
             unlink( buffer->local_filename );
     }
 }
