@@ -16,37 +16,3 @@ dbginit.o: dbginit.c
 doc_HTML_SOURCES = ${mpi_sources}
 doc_MAN_SOURCES = ${mpi_sources}
 doc_LATEX_SOURCES = ${mpi_sources}
-
-# The dll for Totalview (and any other debugger) requires a shared library
-# build in all cases.
-# This is built as an optional file, so the top-level build needs to 
-# invoke it.  It gets built in this directory.
-# Don't generate a rule for libtvmpich.so because we want to use
-# our own rules for it (to keep it separate from the MPICH shared library
-# rules)
-# libtvmpich_so_SOURCES = dll_tvmpich.c
-# Files that require special build instructions must be defined by hand
-# Define special rules for building the totalview library.  By using
-# a separate set of rules, we can use a different compiler to produce the
-# shared libraries than we use for the MPICH library.
-C_COMPILE_SHL_DBG   = $(CC_SHL_DBG) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
-CC_SHL_DBG = @CC_SHL_DBG@
-dll_tvmpich.lo: dll_tvmpich.c
-	$(C_COMPILE_SHL_DBG) -c -DFOR_MPI2=0 $<
-	@mv -f $*.o $*.lo
-C_LINK_SHL_DBG = @C_LINK_SHL_DBG@
-libtvmpich.so: dll_tvmpich.lo
-	if [ -d ./.tmp ] ; then rm -rf ./.tmp ; fi
-	mkdir ./.tmp
-	cp dll_tvmpich.lo .tmp/dll_tvmpich.o
-	(cd ./.tmp && ${C_LINK_SHL_DBG} -o ../libtvmpich.so dll_tvmpich.o)
-	rm -rf ./.tmp
-# Add the step to build libtvmpich.so if requested
-all-local:
-	@rm -f libtvmpich.so
-	if [ "@BUILD_TVDLL@" = yes ] ; then $(MAKE) libtvmpich.so ; fi
-
-# Remove the dll so that we do not accidently make use of one built
-# for a different system.
-clean-local:
-	rm -f libtvmpich.so
