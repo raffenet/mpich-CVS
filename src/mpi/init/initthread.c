@@ -32,11 +32,13 @@ MPICH_PerThread_t  MPIR_Thread;
 int MPIR_Init_thread( int required, int *provided )
 {
     if (required > MPID_MAX_THREAD_LEVEL) {
-	*provided = MPID_MAX_THREAD_LEVEL;
+	MPIR_Process.thread_provided = MPID_MAX_THREAD_LEVEL;
     }
     else {
-	*provided = required;
+	MPIR_Process.thread_provided = required;
     }
+    if (provided) *provided =  MPIR_Process.thread_provided;
+
 #ifdef MPICH_SINGLE_THREADED
 #else
     MPIR_Process.thread_key = MPID_GetThreadKey();
@@ -45,7 +47,6 @@ int MPIR_Init_thread( int required, int *provided )
     MPIR_Thread_lock_init( MPIR_Process.allocation_lock );
 #endif    
     /* Remember level of thread support promised */
-    MPIR_Process.thread_provided = *provided;
 
     /* Eventually this will support commandline and environment options
      for controlling error checks.  It will use a common routine (pre init 
@@ -54,14 +55,15 @@ int MPIR_Init_thread( int required, int *provided )
 
     /* Initialize necessary subsystems and setup the predefined attribute
        values.  Subsystems may change these values. */
-    MPIR_Process.PreDefined_attrs.appnum          = 0;
-    MPIR_Process.PreDefined_attrs.host            = 0;
-    MPIR_Process.PreDefined_attrs.io              = 0;
-    MPIR_Process.PreDefined_attrs.lastusedcode    = 0;
-    MPIR_Process.PreDefined_attrs.tag_ub          = 0;
-    MPIR_Process.PreDefined_attrs.universe        = 1;
-    MPIR_Process.PreDefined_attrs.wtime_is_global = 0;
+    MPIR_Process.attrs.appnum          = 0;
+    MPIR_Process.attrs.host            = 0;
+    MPIR_Process.attrs.io              = 0;
+    MPIR_Process.attrs.lastusedcode    = 0;
+    MPIR_Process.attrs.tag_ub          = 0;
+    MPIR_Process.attrs.universe        = 1;
+    MPIR_Process.attrs.wtime_is_global = 0;
 
+    MPIR_Process.initialized           = MPICH_WITHIN_MPI;
     return 0;
 }
 #endif
@@ -103,9 +105,9 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
+            if (MPIR_Process.initialized != MPICH_PRE_INIT) {
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
+                            "**inittwice", 0 );
 	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);

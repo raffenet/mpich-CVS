@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpiinfo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Info_Get */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -49,7 +50,7 @@ Output Parameters:
 int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value, 
 		 int *flag)
 {
-    MPI_Info curr_ptr, info_ptr;
+    MPID_Info *curr_ptr, *info_ptr;
     static const char FCNAME[] = "MPI_Info_Get";
     int mpi_errno = MPI_SUCCESS;
 
@@ -89,7 +90,7 @@ int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value,
             MPID_Info_valid_ptr( info_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET);
-                return MPIR_Err_return_comm( 0, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;

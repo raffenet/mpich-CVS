@@ -42,7 +42,7 @@
 .N MPI_SUCCESS
 .N ... others
 @*/
-int MPI_Is_thread_main( int *flag );
+int MPI_Is_thread_main( int *flag )
 {
     static const char FCNAME[] = "MPI_Is_thread_main";
     int mpi_errno = MPI_SUCCESS;
@@ -60,7 +60,7 @@ int MPI_Is_thread_main( int *flag );
             }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IS_THREAD_MAIN);
-                return MPIR_Err_return_comm( 0, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -68,7 +68,7 @@ int MPI_Is_thread_main( int *flag );
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-#ifdef MPID_MAX_THREAD_LEVEL <= MPI_THREAD_FUNNELED
+#if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_FUNNELED
     *flag = 1;
 #else
     *flag = (MPIR_Process.master_thread == MPID_GetThreadId());

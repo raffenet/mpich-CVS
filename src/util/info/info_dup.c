@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpiinfo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Info_dup */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -45,7 +46,7 @@ Output Arguments:
 @*/
 int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
 {
-    MPID_Info *curr_old, *curr_new;
+    MPID_Info *info_ptr, *curr_old, *curr_new;
     static const char FCNAME[] = "MPI_Info_dup";
     int mpi_errno = MPI_SUCCESS;
 
@@ -64,7 +65,7 @@ int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
             MPID_Info_valid_ptr( info_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_DUP);
-                return MPIR_Err_return_comm( 0, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -84,10 +85,10 @@ int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
 
     curr_old        = info_ptr->next;
     while (curr_old) {
-	curr_new->next = MPID_Info_create();
+	curr_new->next = MPIU_Info_create();
 	if (!curr_new->next) {
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-	    return MPIR_Err_return_comm( 0, mpi_errno );
+	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}
 	curr_new	 = curr_new->next;
 	curr_new->key	 = MPIU_Strdup(curr_old->key);

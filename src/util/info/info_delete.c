@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpiinfo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Info_delete */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -41,11 +42,11 @@
 .N MPI_SUCCESS
 .N ... others
 @*/
-int MPI_Info_delete( MPI_Comm comm, int a ) 
+int MPI_Info_delete( MPI_Info info, char *key )
 {
     static const char FCNAME[] = "MPI_Info_delete";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Info *info_ptr;
+    MPID_Info *info_ptr, *prev_ptr, *curr_ptr;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_DELETE);
     /* Get handles to MPI objects. */
@@ -75,7 +76,7 @@ int MPI_Info_delete( MPI_Comm comm, int a )
             MPID_Info_valid_ptr( info_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_DELETE);
-                return MPIR_Err_return_comm( 0, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -104,7 +105,7 @@ int MPI_Info_delete( MPI_Comm comm, int a )
 				     "**infonokey %s", 1, key );
 	
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_DELETE);
-	return MPIR_Err_return_comm( 0, mpi_errno );
+	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
 
     /* ... end of body of routine ... */

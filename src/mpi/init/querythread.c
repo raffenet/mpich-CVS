@@ -62,7 +62,7 @@ int MPI_Query_thread( int *provided )
             }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_QUERY_THREAD);
-                return MPIR_Err_return_comm( 0, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;

@@ -1,4 +1,4 @@
-* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*  $Id$
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -115,12 +115,17 @@ typedef enum {
 #define HANDLE_MASK 0x07FFFFFF
 #define HANDLE_INDEX(a) ((a)& HANDLE_MASK)
 
+/* Handle block is between 1 and 2048 *elements* */
+#define HANDLE_BLOCK_SIZE 256
+/* Index size is bewtween 1 and 65536 *elements* */
+#define HANDLE_BLOCK_INDEX_SIZE 1024
+
 /* Handles conversion */
 #define MPID_Get_ptr(kind,a,ptr) \
-     switch (CONSTRUCT(TYPE(a)) {\
+     switch (CONSTRUCT_TYPE(a)) {\
          case CONSTRUCT_INVALID: ptr=0; break;\
          case CONSTRUCT_BUILTIN: ptr=0;break;\
-         case CONSTRUCT_DIRECT: ptr=MPID##kind##direct+HANDLE_INDEX(a);break;\
+         case CONSTRUCT_DIRECT: ptr=MPID_##kind##_direct+HANDLE_INDEX(a);break;\
          case CONSTRUCT_INDIRECT: ptr=MPID_##kind##_Get_ptr_indirect(a);break;\
      }
 #define MPID_Comm_get_ptr(a,ptr)
@@ -131,6 +136,25 @@ typedef enum {
 #define MPID_Op_get_ptr(a,ptr)
 #define MPID_Info_get_ptr(a,ptr) MPID_Get_ptr(Info,a,ptr)
 #define MPID_Win_get_ptr(a,ptr)
+
+/* Valid pointer checks */
+/* This test is lame.  Should eventually include cookie test 
+   and in-range addresses */
+#define MPID_Valid_ptr(kind,ptr,err) if (!(ptr)) { err = 1; }
+
+#define MPID_Info_valid_ptr(ptr,err) MPID_Valid_ptr(Info,ptr,err)
+
+/* Info */
+typedef struct MPID_Info_s {
+    int                id;
+    char               *key;
+    char               *value;
+    struct MPID_Info_s *next;
+} MPID_Info;
+/* Preallocated info objects */
+extern MPID_Info MPID_Info_direct[];
+/* Function to access indirect objects */
+extern MPID_Info *MPID_Info_Get_ptr_indirect( int handle );
 
 /* Error Handlers */
 typedef union {
@@ -272,7 +296,7 @@ typedef pthread_mutex_t MPID_Thread_lock_t;
 typedef enum { MPICH_PRE_INIT=0, MPICH_WITHIN_MPI=1,
                MPICH_POST_FINALIZED=2 } MPIR_MPI_State_t;
 
-typedef PreDefined_attrs struct {
+typedef struct {
     int appnum;          /* Application number provided by mpiexec (MPI-2) */
     int host;            /* host */
     int io;              /* standard io allowed */
@@ -280,7 +304,7 @@ typedef PreDefined_attrs struct {
     int tag_ub;          /* Maximum message tag */
     int universe;        /* Universe size from mpiexec (MPI-2) */
     int wtime_is_global; /* Wtime is global over processes in COMM_WORLD */
-};
+} PreDefined_attrs;
 
 typedef struct {
     MPIR_MPI_State_t  initialized;      /* Is MPI initalized? */
@@ -293,7 +317,7 @@ typedef struct {
     int               do_error_checks;  /* runtime error check control */
     MPID_Comm         *comm_world;      /* Easy access to comm_world for
                                            error handler */
-    PreDefined        attrs;            /* Predefined attribute values */
+    PreDefined_attrs  attrs;            /* Predefined attribute values */
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 
@@ -307,7 +331,7 @@ extern int MPID_THREAD_LEVEL;
 #endif
 
 /* Allocation locks */
-#ifdef MPID_MAX_THREAD_LEVEL >= MPI_THREAD_FUNNELED
+#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_FUNNELED
 #define MPID_Allocation_lock()
 #define MPID_Allocation_unlock()
 #else

@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpiinfo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Info_set */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -33,7 +34,6 @@ Input Parameters:
 + info - info object (handle)
 . key - key (string)
 - value - value (string)
-
 
    Notes:
 
@@ -85,7 +85,7 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
             MPID_Info_valid_ptr( info_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_SET);
-                return MPIR_Err_return_comm( 0, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -110,7 +110,13 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
     if (!curr_ptr) {
 	/* Key not present, insert value */
 	curr_ptr         = MPIU_Info_create();
-	prev->next       = curr_ptr;
+	if (!curr_ptr) {
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, 
+					      "**nomem" );
+	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	}
+	/*printf( "Inserting new elm %x at %x\n", curr_ptr->id, prev_ptr->id );*/
+	prev_ptr->next   = curr_ptr;
 	curr_ptr->key    = MPIU_Strdup(key);
 	curr_ptr->value  = MPIU_Strdup(value);
 	curr_ptr->next   = 0;

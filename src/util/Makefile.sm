@@ -1,1 +1,1 @@
-SUBDIRS = mem util thread .
+SUBDIRS = mem info thread .

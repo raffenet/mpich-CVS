@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpiinfo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Info_get_valuelen */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -21,12 +22,6 @@
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Info_get_valuelen PMPI_Info_get_valuelen
-
-/* Any internal routines can go here.  Make them static if possible */
-int MPIR_Info_get_valuelen_util( int a, MPID_Comm *comm )
-{
-...
-}
 #endif
 
 #undef FUNCNAME
@@ -86,7 +81,7 @@ int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
             MPID_Info_valid_ptr( info_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_VALUELEN);
-                return MPIR_Err_return_comm( 0, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;

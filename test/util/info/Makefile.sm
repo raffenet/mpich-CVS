@@ -1,4 +1,6 @@
 # This is temporary until the tests have their own configure
 infotest_SOURCES = infotest.c
-INCLUDES = -I../../src/include -I${top_srcdir}/src/include
-infotest_LDADD = -L ../../lib -lmpich
+infotest_LDADD = -L ../../../lib -lmpich
+infomany_SOURCES = infomany.c
+infomany_LDADD = -L ../../../lib -lmpich
+INCLUDES = -I../../../src/include -I${top_srcdir}/src/include

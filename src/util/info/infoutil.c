@@ -6,11 +6,12 @@
  */
 
 #include "mpiimpl.h"
+#include "mpiinfo.h"
 
 /* This is the utility file for info that contains the basic info items
    and storage management */
 #ifndef MPID_INFO_PREALLOC 
-#define MPID_INFO_PREALLOC 64
+#define MPID_INFO_PREALLOC 8
 #endif
 
 /* Preallocated info objects */
@@ -21,15 +22,17 @@ static int initialized = 0;
 static MPID_Info *avail = 0;
 
 /* Extension objects */
-static MPID_Info (*MPID_Info_indirect)[] = 0;
+static MPID_Info *(*MPID_Info_indirect)[] = 0;
 static int MPID_Info_indirect_size = 0;
 
 /* 
  * Get an pointer to dynamically allocated storage for Info objects.
- *
+ * This has an MPID prefix to simplify the "get object" routines
  */
-MPID_Info *MPIU_Info_Get_ptr_indirect( int handle )
+MPID_Info *MPID_Info_Get_ptr_indirect( int handle )
 {
+    int block_num, index_num;
+
     /* Check for a valid handle type */
     if (HANDLE_KIND(handle) != MPID_INFO) {
 	return 0;
@@ -43,15 +46,17 @@ MPID_Info *MPIU_Info_Get_ptr_indirect( int handle )
     
     /* Find the entry */
     index_num = HANDLE_BLOCK_INDEX(handle);
-    return &MPID_Info_indirect[block_num][index_num];
+    return &(*MPID_Info_indirect)[block_num][index_num];
 }
 
 /* This routine is called by finalize when MPI exits */
 static int MPIU_Info_finalize( void *extra )
 {
+    int i;
+    
     /* Remove any allocated storage */
     for (i=0; i<MPID_Info_indirect_size; i++) {
-	MPIU_Free( MPID_Info_indirect[i] );
+	MPIU_Free( (*MPID_Info_indirect)[i] );
     }
     if (MPID_Info_indirect) {
 	MPIU_Free( MPID_Info_indirect );
@@ -73,7 +78,7 @@ static int MPIU_Info_finalize( void *extra )
  */
 MPID_Info *MPIU_Info_create( void )
 {
-    MPID_Info *ptr;
+    MPID_Info *ptr, *block_ptr;
     int       i;
 
     /* Lock if necessary */
@@ -82,8 +87,10 @@ MPID_Info *MPIU_Info_create( void )
     if (avail) {
 	ptr     = avail;
 	avail   = avail->next;
+	ptr->next = 0;
 	/* Unlock */
 	MPID_Allocation_unlock();
+	/* printf ("returning info %x\n", ptr->id ); */
 	return ptr;
     }
 
@@ -111,7 +118,8 @@ MPID_Info *MPIU_Info_create( void )
     /* Must create new storage for dynamically allocated objects */
     /* Create the table */
     if (!MPID_Info_indirect) {
-	MPID_Info_indirect = (MPID_Info **)MPIU_Calloc( HANDLE_BLOCK_SIZE,
+	/* printf( "Creating indirect table\n" ); */
+	MPID_Info_indirect = (MPID_Info *(*)[])MPIU_Calloc( HANDLE_BLOCK_SIZE,
 							 sizeof(MPID_Info*) );
 	if (!MPID_Info_indirect) { 
 	    /* Unlock */
@@ -119,12 +127,20 @@ MPID_Info *MPIU_Info_create( void )
 	    return 0;
 	}
     }
+
+    if (MPID_Info_indirect_size >= HANDLE_BLOCK_SIZE-1) {
+	/* unlock */
+	MPID_Allocation_unlock();
+	return 0;
+    }
     
     /* Create the next block */
+    /* printf( "Adding indirect block %d\n", MPID_Info_indirect_size ); */
     block_ptr = (MPID_Info*)MPIU_Calloc( HANDLE_BLOCK_INDEX_SIZE,
 					  sizeof(MPID_Info) );
     if (!block_ptr) { 
 	/* unlock */
+	MPID_Allocation_unlock();
 	return 0;
     }
     for (i=0; i<HANDLE_BLOCK_INDEX_SIZE; i++) {
@@ -134,8 +150,12 @@ MPID_Info *MPIU_Info_create( void )
     }
     block_ptr[i-1].next = 0;
     ptr   = &block_ptr[0];
+    ptr->next = 0;
+    /* We're here because avail is null, so there is no need to set 
+       the last block ptr to avail */
     avail = &block_ptr[1];
-    MPID_Info_indirect[MPID_Info_indirect_size++] = block_ptr;
+    /* printf( "loc of update is %x\n", &(*MPID_Info_indirect)[MPID_Info_indirect_size] ); */
+    (*MPID_Info_indirect)[MPID_Info_indirect_size++] = block_ptr;
 
     /* Unlock */
     MPID_Allocation_unlock();
@@ -145,18 +165,18 @@ MPID_Info *MPIU_Info_create( void )
 /* Free an info structure */
 void MPIU_Info_free( MPID_Info *info_ptr )
 {
-    MPID_Info *curr_ptr, *next_ptr, *last_ptr;
+    MPID_Info *curr_ptr, *last_ptr;
 
     curr_ptr = info_ptr->next;
     last_ptr = info_ptr;
 
+    /* printf( "Returning info %x\n", info_ptr->id ); */
     /* First, free the string storage */
     while (curr_ptr) {
-	next_ptr = curr_ptr->next;
 	MPIU_Free(curr_ptr->key);
 	MPIU_Free(curr_ptr->value);
 	last_ptr = curr_ptr;
-	curr_ptr = next_ptr;
+	curr_ptr = curr_ptr->next;
     }
 
     /* Lock because updating avail list */
@@ -181,3 +201,27 @@ void MPIU_Info_destroy( MPID_Info *info_ptr )
     MPID_Allocation_unlock();
  }
 
+void print_handle( int handle )
+{
+    int type, kind, block, index;
+
+    type = CONSTRUCT_TYPE(handle);
+    kind = HANDLE_KIND(handle);
+    switch (type) {
+    case CONSTRUCT_INVALID:
+	printf( "invalid" );
+	break;
+    case CONSTRUCT_BUILTIN:
+	printf( "builtin" );
+	break;
+    case CONSTRUCT_DIRECT:
+	index = HANDLE_INDEX(handle);
+	printf( "direct: %d", index );
+	break;
+    case CONSTRUCT_INDIRECT:
+	block = HANDLE_BLOCK(handle);
+	index = HANDLE_BLOCK_INDEX(handle);
+	printf( "indirect: block %d index %d", block, index );
+	break;
+    }
+}

@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpiinfo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Info_free */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -47,7 +48,7 @@ int MPI_Info_free( MPI_Info *info )
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_FREE);
     /* Get handles to MPI objects. */
-    MPID_Info_get_ptr( info, info_ptr );
+    MPID_Info_get_ptr( *info, info_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -60,7 +61,7 @@ int MPI_Info_free( MPI_Info *info )
             MPID_Info_valid_ptr( info_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_FREE);
-                return MPIR_Err_return_comm( 0, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;

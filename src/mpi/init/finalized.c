@@ -40,7 +40,7 @@ Output Argument:
 .N MPI_SUCCESS
 .N ... others
 @*/
-int MPI_Finalized( MPI_Comm comm, int a ) 
+int MPI_Finalized( int * flag )
 {
     static const char FCNAME[] = "MPI_Finalized";
     int mpi_errno = MPI_SUCCESS;
@@ -54,7 +54,7 @@ int MPI_Finalized( MPI_Comm comm, int a )
         {
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FINALIZED);
-                return MPIR_Err_return_comm( 0, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;

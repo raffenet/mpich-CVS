@@ -256,8 +256,11 @@ AC_OUTPUT(Makefile src/Makefile \
           src/mpi/Makefile \
           src/mpi/init/Makefile src/mpi/errhan/Makefile \
 	  src/util/Makefile \
+	  src/util/info/Makefile \
 	  src/util/mem/Makefile \
 	  src/util/thread/Makefile \
           src/include/mpi.h \
+	  test/Makefile test/util/Makefile \
+	  test/util/info/Makefile \
 	  examples/Makefile )
 PAC_SUBDIR_CACHE_CLEANUP

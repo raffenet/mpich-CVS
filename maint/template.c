@@ -75,7 +75,7 @@ int MPI_Foo( MPI_Comm comm, int a )
 	    /* If comm_ptr is not value, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
-                return MPIR_Err_return_comm( comm_ptr, mpi_errno );
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;

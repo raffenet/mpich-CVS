@@ -781,6 +781,13 @@ sub TargetPrograms {
 	    $pgmobjs .= "$obj ";
             $linelen += length($obj) + 1;
         }
+	# Add dependencies on libraries if requested
+	if (1) {
+	    # convert -L dir -lname into dir/libname.a
+	    $libdep=$pgm_ldadd{$pgm};
+	    $libdep =~ s/-L\s*([\w\.\/]*)\s*-l(\w*)//;
+	    print FD " $1/lib$2.a";
+	}
 	# Use the link rule appropriate for this program type
 	$pgmtype = $pgmsrctype{$pgm};
 	print FD "\n\t$progrules{$pgmsrctype{$pgm}} -o $pgm $pgmobjs $pgmlibs{$pgm} $pgm_ldadd{$pgm} \${LIBS}\n";
@@ -945,7 +952,7 @@ sub ProfileTargets {
 PMPI_OBJECTS = \${OBJECTS:.o=.pf}\
 # Convert foo.pf to _foo.o, then archive all at once\
 ${libbuild_dir}/lib\@PMPILIBNAME\@.a: \${PMPI_OBJECTS}\
-        \@echo "Rename xxx.pf to _xxx.o for profiling interface."\
+        \@echo \"Rename xxx.pf to _xxx.o for profiling interface.\"\
         \@if [ ! -d .tmp ] ; then mkdir .tmp ; else rm -f .tmp/*.o ; fi\
         \@for file in $? ; do \\\
             bname=`basename $$file .pf`; \\\

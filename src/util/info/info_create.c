@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpiinfo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Info_create */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -38,14 +39,14 @@
 .N MPI_SUCCESS
 .N ... others
 @*/
-int MPI_Info_create( MPI_Comm comm, int a ) 
+int MPI_Info_create( MPI_Info *info )
 {
+    MPID_Info *info_ptr;
     static const char FCNAME[] = "MPI_Info_create";
     int mpi_errno = MPI_SUCCESS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_CREATE);
     /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -56,7 +57,7 @@ int MPI_Info_create( MPI_Comm comm, int a )
             }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_CREATE);
-                return MPIR_Err_return_comm( 0, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -64,11 +65,11 @@ int MPI_Info_create( MPI_Comm comm, int a )
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    info_ptr = MPID_Info_create();
+    info_ptr = MPIU_Info_create();
     if (!info_ptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_CREATE);
-	return MPIR_Err_return_comm( 0, mpi_errno );
+	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
     *info	    = info_ptr->id;
     /* (info_ptr)->cookie = MPIR_INFO_COOKIE; */

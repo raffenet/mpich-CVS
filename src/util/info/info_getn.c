@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpiinfo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Info_get_nkeys */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -45,7 +46,7 @@ Output Arguments:
 @*/
 int MPI_Info_get_nkeys( MPI_Info info, int *nkeys )
 {
-    MPI_Info info_ptr;
+    MPID_Info *info_ptr;
     int      n;
     static const char FCNAME[] = "MPI_Info_get_nkeys";
     int mpi_errno = MPI_SUCCESS;
@@ -65,7 +66,7 @@ int MPI_Info_get_nkeys( MPI_Info info, int *nkeys )
             MPID_Info_valid_ptr( info_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_NKEYS);
-                return MPIR_Err_return_comm( 0, mpi_errno );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -77,6 +78,7 @@ int MPI_Info_get_nkeys( MPI_Info info, int *nkeys )
     n = 0;
 
     while (info_ptr) {
+	/*printf( "Looking at %x\n", info_ptr->id );*/
 	info_ptr = info_ptr->next;
 	n ++;
     }
