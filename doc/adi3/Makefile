@@ -99,3 +99,5 @@ lists: findmod
 	-fig2dev -L eps -l landscape $*.fig > $*.eps
 	if [ ! -s $*.eps ] ; then \
 		fig2dev -L ps -l landscape $*.fig > $*.eps ; fi
+
+goals.dvi: goals.tex adi-ov.eps
