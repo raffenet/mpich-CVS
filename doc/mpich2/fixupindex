@@ -32,6 +32,8 @@
 		  "MPI_WIN_SIZE" => 1, "MPI_WIN_BASE" => 1,
 		  "MPI_WIN_DISP_UNIT" => 1, "MPI_SUCCESS" => 1,
 		  "MPI_STATUSES_IGNORE" => 1,
+		  "MPID_WIN_CONST_BASE" => 1, "MPID_WIN_CONST_DISP" => 1,
+		  "MPID_WIN_NO_LOCKS" => 1,
 		  "MPI_PROC_NULL" => 1 );
 while (<>) {
     # Remove the \_ expansion

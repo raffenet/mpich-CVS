@@ -79,6 +79,7 @@ Argonne National Laboratory}{00}{\today}
 \tableofcontents
 \clearpage
 
+\raggedright
 \pagenumbering{arabic}
 \pagestyle{headings}
 
@@ -631,91 +632,11 @@ instead, routine calls implement remote memory operations.  Examples
 of this include VIA, Cray SHMEM, and IBM LAPI.
 \end{description}
 
-\subsection{Attributes and Info}
+\subsection{Attributes}
 
 Error values defined for keyvals and attributes:
 \mpiconst{MPI_ERR_KEYVAL}
 
-\paragraph{Info.}
-
-Error values defined for info:
-\mpiconst{MPI_ERR_INFO_KEY},
-\mpiconst{MPI_ERR_INFO_VALUE},
-\mpiconst{MPI_ERR_INFO_NOKEY}.
-
-Constants defined for info: 
-\mpiconst{MPI_MAX_INFO_KEY},
-\mpiconst{MPI_MAX_INFO_VAL}.
-Note that the MPI standard sets limits on the ranges that these can take.
-
-Predefined info keys are:
-\mpiconst{access_style}\index{MPI_Info!access_style}, 
-\mpiconst{appnum}\index{MPI_Info!appnum}, 
-\mpiconst{arch}\index{MPI_Info!arch}, 
-\mpiconst{cb_block_size}\index{MPI_Info!cb_block_size}, 
-\mpiconst{cb_buffer_size}\index{MPI_Info!cb_buffer_size}, 
-\mpiconst{cb_nodes}\index{MPI_Info!cb_nodes}, 
-\mpiconst{chunked}\index{MPI_Info!chunked}, 
-\mpiconst{chunked_item}\index{MPI_Info!chunked_item}, 
-\mpiconst{chunked_size}\index{MPI_Info!chunked_size}, 
-\mpiconst{collective_buffering}\index{MPI_Info!collective_buffering}, 
-\mpiconst{external32}\index{MPI_Info!external32}, 
-\mpiconst{false}\index{MPI_Info!false}, 
-\mpiconst{file}\index{MPI_Info!file}, 
-\mpiconst{file_perm}\index{MPI_Info!file_perm}, 
-\mpiconst{filename}\index{MPI_Info!filename}, 
-\mpiconst{host}\index{MPI_Info!host}, 
-\mpiconst{internal}\index{MPI_Info!internal}, 
-\mpiconst{io_node_list}\index{MPI_Info!io_node_list}, 
-\mpiconst{ip_address}\index{MPI_Info!ip_address}, 
-\mpiconst{ip_port}\index{MPI_Info!ip_port}, 
-\mpiconst{native}\index{MPI_Info!native}, 
-\mpiconst{nb_proc}\index{MPI_Info!nb_proc}, 
-\mpiconst{no_locks}\index{MPI_Info!no_locks}, 
-\mpiconst{num_io_nodes}\index{MPI_Info!num_io_nodes}, 
-\mpiconst{path}\index{MPI_Info!path}, 
-\mpiconst{random}\index{MPI_Info!random}, 
-\mpiconst{read_mostly}\index{MPI_Info!read_mostly}, 
-\mpiconst{read_once}\index{MPI_Info!read_once}, 
-\mpiconst{reverse_sequential}\index{MPI_Info!reverse_sequential}, 
-\mpiconst{sequential}\index{MPI_Info!sequential}, 
-\mpiconst{soft}\index{MPI_Info!soft}, 
-\mpiconst{striping_factor}\index{MPI_Info!striping_factor}, 
-\mpiconst{striping_unit}\index{MPI_Info!striping_unit}, 
-\mpiconst{true}\index{MPI_Info!true}, 
-\mpiconst{wdir}\index{MPI_Info!wdir}, 
-\mpiconst{write_mostly}\index{MPI_Info!write_mostly}, 
-\mpiconst{write_once}.
-
-\paragraph{Defining New Keys.}
-The MPI Forum has not resolved an ambiguity in the definition of
-info.  While it was clear during many of the discussions that the
-expectation was that \code{MPI_Info}\index{MPI_Info} could be used by
-layered implementations of parts of MPI, particularly the I/O part,
-IBM did not interpret the standard this way and their interpretation
-is both consistent with the standard and offers a feature not
-otherwise available (specifically, the ability to determine what info
-keys are recognized by the implementation).
-
-Note also that the interface to access the info values is not
-thread-safe, since it has the implicit assumption that the number of
-keys in an info object does not change unless ...
-For example, consider this sequence:
-\begin{verbatim}
-    MPI_Info_get_nkeys( info, &nkeys );
-    MPI_Info_get_nthkey( info, nkeys-1, keystring );
-\end{verbatim}
-In a multi-threaded environment, another thread may have called
-\begin{verbatim}
-   MPI_Info_delete( info, "any-key-in-info");
-\end{verbatim}
-after \mpifunc{MPI_Info_get_nkeys} but before
-\mpifunc{MPI_Info_get_nthkey}.  There's no way to really fix this, but
-we can at least raise the issue in the manual pages and generate
-helpful error messages in this case.  We may also want to add an
-extension that raises a special error code if a different thread
-modifies an \code{MPI_Info} while any of the routines with a notion of
-the ``current'' state of info are operating on it.
 
 \paragraph{MPI-1 Attribute Functions.}
 The following five functions are deprecated.  These are implemented in
@@ -730,7 +651,7 @@ user will indicate \code{MPI_ATTR_DELETE}, not
 \subsubsection{\mpifunc{MPI_ATTR_DELETE}}
 \begin{adi3}
 Set error handler to return on error (see
-Section~\label{sec:err-handling-nested}).
+Section~\ref{sec:err-handling-nested}).
 Call \mpifunc{PMPI_COMM_DELETE_ATTR}.
 Restore error handler and if an error, invoke the correct handler.
 All layered calls manage the error handler in this way.
@@ -838,6 +759,88 @@ This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
 %\subsubsection{\mpifunc{MPI_WIN_NULL_COPY_FN}}
 
 \subsection{Info}
+\paragraph{Info.}
+
+Error values defined for info:
+\mpiconst{MPI_ERR_INFO_KEY},
+\mpiconst{MPI_ERR_INFO_VALUE},
+\mpiconst{MPI_ERR_INFO_NOKEY}.
+
+Constants defined for info: 
+\mpiconst{MPI_MAX_INFO_KEY},
+\mpiconst{MPI_MAX_INFO_VAL}.
+Note that the MPI standard sets limits on the ranges that these can take.
+
+Predefined info keys are:
+\mpiconst{access_style}\index{MPI_Info!access_style}, 
+\mpiconst{appnum}\index{MPI_Info!appnum}, 
+\mpiconst{arch}\index{MPI_Info!arch}, 
+\mpiconst{cb_block_size}\index{MPI_Info!cb_block_size}, 
+\mpiconst{cb_buffer_size}\index{MPI_Info!cb_buffer_size}, 
+\mpiconst{cb_nodes}\index{MPI_Info!cb_nodes}, 
+\mpiconst{chunked}\index{MPI_Info!chunked}, 
+\mpiconst{chunked_item}\index{MPI_Info!chunked_item}, 
+\mpiconst{chunked_size}\index{MPI_Info!chunked_size}, 
+\mpiconst{collective_buffering}\index{MPI_Info!collective_buffering}, 
+\mpiconst{external32}\index{MPI_Info!external32}, 
+\mpiconst{false}\index{MPI_Info!false}, 
+\mpiconst{file}\index{MPI_Info!file}, 
+\mpiconst{file_perm}\index{MPI_Info!file_perm}, 
+\mpiconst{filename}\index{MPI_Info!filename}, 
+\mpiconst{host}\index{MPI_Info!host}, 
+\mpiconst{internal}\index{MPI_Info!internal}, 
+\mpiconst{io_node_list}\index{MPI_Info!io_node_list}, 
+\mpiconst{ip_address}\index{MPI_Info!ip_address}, 
+\mpiconst{ip_port}\index{MPI_Info!ip_port}, 
+\mpiconst{native}\index{MPI_Info!native}, 
+\mpiconst{nb_proc}\index{MPI_Info!nb_proc}, 
+\mpiconst{no_locks}\index{MPI_Info!no_locks}, 
+\mpiconst{num_io_nodes}\index{MPI_Info!num_io_nodes}, 
+\mpiconst{path}\index{MPI_Info!path}, 
+\mpiconst{random}\index{MPI_Info!random}, 
+\mpiconst{read_mostly}\index{MPI_Info!read_mostly}, 
+\mpiconst{read_once}\index{MPI_Info!read_once}, 
+\mpiconst{reverse_sequential}\index{MPI_Info!reverse_sequential}, 
+\mpiconst{sequential}\index{MPI_Info!sequential}, 
+\mpiconst{soft}\index{MPI_Info!soft}, 
+\mpiconst{striping_factor}\index{MPI_Info!striping_factor}, 
+\mpiconst{striping_unit}\index{MPI_Info!striping_unit}, 
+\mpiconst{true}\index{MPI_Info!true}, 
+\mpiconst{wdir}\index{MPI_Info!wdir}, 
+\mpiconst{write_mostly}\index{MPI_Info!write_mostly}, 
+\mpiconst{write_once}.
+
+\paragraph{Defining New Keys.}
+The MPI Forum has not resolved an ambiguity in the definition of
+info.  While it was clear during many of the discussions that the
+expectation was that \code{MPI_Info}\index{MPI_Info} could be used by
+layered implementations of parts of MPI, particularly the I/O part,
+IBM did not interpret the standard this way and their interpretation
+is both consistent with the standard and offers a feature not
+otherwise available (specifically, the ability to determine what info
+keys are recognized by the implementation).
+
+Note also that the interface to access the info values is not
+thread-safe, since it has the implicit assumption that the number of
+keys in an info object does not change unless ...
+For example, consider this sequence:
+\begin{verbatim}
+    MPI_Info_get_nkeys( info, &nkeys );
+    MPI_Info_get_nthkey( info, nkeys-1, keystring );
+\end{verbatim}
+In a multi-threaded environment, another thread may have called
+\begin{verbatim}
+   MPI_Info_delete( info, "any-key-in-info");
+\end{verbatim}
+after \mpifunc{MPI_Info_get_nkeys} but before
+\mpifunc{MPI_Info_get_nthkey}.  There's no way to really fix this, but
+we can at least raise the issue in the manual pages and generate
+helpful error messages in this case.  We may also want to add an
+extension that raises a special error code if a different thread
+modifies an \code{MPI_Info} while any of the routines with a notion of
+the ``current'' state of info are operating on it.
+
+\paragraph{Implementing Info}
 There are two ways to handle \code{MPI_Info}.  One is to implement a general
 mechanism for handling key/value pairs, much like the code that is part of
 \file{mpich/src/misc2}.  The other is to implement only the defined keys that
@@ -976,7 +979,7 @@ sizes of the predefined language datatypes such as \code{char} and
 multiple of the alignment size.
 \end{algorithm}
 Note that the choice of alignment rule is made at runtime, using the
-routines in Section~\label{sec:runtime-params}.  The default alignment
+routines in Section~\ref{sec:runtime-params}.  The default alignment
 rule is determined by configure using \code{PAC_C_STRUCT_ALIGNMENT}.
 
 \subsubsection{\mpifunc{MPI_ADDRESS}}
@@ -2141,7 +2144,7 @@ that the datatype code places everything in shared memory (e.g.,
 index arrays)?  Should the lock/unlock operations
 be direct rather than using \mpidconst{MPID_Hid_lock_op}?
 If the message queues are stored in shared memory, how does that
-change the various routines?  For example, does a \shmem\ device not
+change the various routines?  For example, does a \shmemname\ device not
 use \mpidconst{MPID_Hid_short}, using instead direct access to shared
 memory so as to reduce the latency of short messages?
 
@@ -3367,64 +3370,64 @@ better integration:
   should follow the rest of MPICH-2.
 \end{itemize}
 
-% \code{MPI_FILE_CALL_ERRHANDLER}\\
-% \code{MPI_FILE_CLOSE}\\
-% \code{MPI_FILE_CREATE_ERRHANDLER}\\
-% \code{MPI_FILE_DELETE}\\
-% \code{MPI_FILE_GET_AMODE}\\
-% \code{MPI_FILE_GET_ATOMICITY}\\
-% \code{MPI_FILE_GET_BYTE_OFFSET}\\
-% \code{MPI_FILE_GET_ERRHANDLER}\\
-% \code{MPI_FILE_GET_GROUP}\\
-% \code{MPI_FILE_GET_INFO}\\
-% \code{MPI_FILE_GET_POSITION}\\
-% \code{MPI_FILE_GET_POSITION_SHARED}\\
-% \code{MPI_FILE_GET_SIZE}\\
-% \code{MPI_FILE_GET_TYPE_EXTENT}\\
-% \code{MPI_FILE_GET_VIEW}\\
-% \code{MPI_FILE_IREAD}\\
-% \code{MPI_FILE_IREAD_AT}\\
-% \code{MPI_FILE_IREAD_SHARED}\\
-% \code{MPI_FILE_IWRITE}\\
-% \code{MPI_FILE_IWRITE_AT}\\
-% \code{MPI_FILE_IWRITE_SHARED}\\
-% \code{MPI_FILE_OPEN}\\
-% \code{MPI_FILE_PREALLOCATE}\\
-% \code{MPI_FILE_READ}\\
-% \code{MPI_FILE_READ_ALL_BEGIN}\\
-% \code{MPI_FILE_READ_AT}\\
-% \code{MPI_FILE_READ_AT_ALL_BEGIN}\\
-% \code{MPI_FILE_READ_ORDERED}\\
-% \code{MPI_FILE_READ_ORDERED_BEGIN}\\
-% \code{MPI_FILE_READ_SHARED}\\
-% \code{MPI_FILE_SEEK}\\
-% \code{MPI_FILE_SEEK_SHARED}\\
-% \code{MPI_FILE_SET_ATOMICITY}\\
-% \code{MPI_FILE_SET_ERRHANDLER}\\
-% \code{MPI_FILE_SET_INFO}\\
-% \code{MPI_FILE_SET_SIZE}\\
-% \code{MPI_FILE_SET_VIEW}\\
-% \code{MPI_FILE_SYNC}\\
-% \code{MPI_FILE_WRITE}\\
-% \code{MPI_FILE_WRITE_ALL_BEGIN}\\
-% \code{MPI_FILE_WRITE_AT}\\
-% \code{MPI_FILE_WRITE_AT_ALL_BEGIN}\\
-% \code{MPI_FILE_WRITE_ORDERED}\\
-% \code{MPI_FILE_WRITE_ORDERED_BEGIN}\\
-% \code{MPI_FILE_WRITE_SHARED}\\
+% \subsubsection{\mpifunc{MPI_FILE_CALL_ERRHANDLER}}
+% \subsubsection{\mpifunc{MPI_FILE_CLOSE}}
+% \subsubsection{\mpifunc{MPI_FILE_CREATE_ERRHANDLER}}
+% \subsubsection{\mpifunc{MPI_FILE_DELETE}}
+% \subsubsection{\mpifunc{MPI_FILE_GET_AMODE}}
+% \subsubsection{\mpifunc{MPI_FILE_GET_ATOMICITY}}
+% \subsubsection{\mpifunc{MPI_FILE_GET_BYTE_OFFSET}}
+% \subsubsection{\mpifunc{MPI_FILE_GET_ERRHANDLER}}
+% \subsubsection{\mpifunc{MPI_FILE_GET_GROUP}}
+% \subsubsection{\mpifunc{MPI_FILE_GET_INFO}}
+% \subsubsection{\mpifunc{MPI_FILE_GET_POSITION}}
+% \subsubsection{\mpifunc{MPI_FILE_GET_POSITION_SHARED}}
+% \subsubsection{\mpifunc{MPI_FILE_GET_SIZE}}
+% \subsubsection{\mpifunc{MPI_FILE_GET_TYPE_EXTENT}}
+% \subsubsection{\mpifunc{MPI_FILE_GET_VIEW}}
+% \subsubsection{\mpifunc{MPI_FILE_IREAD}}
+% \subsubsection{\mpifunc{MPI_FILE_IREAD_AT}}
+% \subsubsection{\mpifunc{MPI_FILE_IREAD_SHARED}}
+% \subsubsection{\mpifunc{MPI_FILE_IWRITE}}
+% \subsubsection{\mpifunc{MPI_FILE_IWRITE_AT}}
+% \subsubsection{\mpifunc{MPI_FILE_IWRITE_SHARED}}
+% \subsubsection{\mpifunc{MPI_FILE_OPEN}}
+% \subsubsection{\mpifunc{MPI_FILE_PREALLOCATE}}
+% \subsubsection{\mpifunc{MPI_FILE_READ}}
+% \subsubsection{\mpifunc{MPI_FILE_READ_ALL_BEGIN}}
+% \subsubsection{\mpifunc{MPI_FILE_READ_AT}}
+% \subsubsection{\mpifunc{MPI_FILE_READ_AT_ALL_BEGIN}}
+% \subsubsection{\mpifunc{MPI_FILE_READ_ORDERED}}
+% \subsubsection{\mpifunc{MPI_FILE_READ_ORDERED_BEGIN}}
+% \subsubsection{\mpifunc{MPI_FILE_READ_SHARED}}
+% \subsubsection{\mpifunc{MPI_FILE_SEEK}}
+% \subsubsection{\mpifunc{MPI_FILE_SEEK_SHARED}}
+% \subsubsection{\mpifunc{MPI_FILE_SET_ATOMICITY}}
+% \subsubsection{\mpifunc{MPI_FILE_SET_ERRHANDLER}}
+% \subsubsection{\mpifunc{MPI_FILE_SET_INFO}}
+% \subsubsection{\mpifunc{MPI_FILE_SET_SIZE}}
+% \subsubsection{\mpifunc{MPI_FILE_SET_VIEW}}
+% \subsubsection{\mpifunc{MPI_FILE_SYNC}}
+% \subsubsection{\mpifunc{MPI_FILE_WRITE}}
+% \subsubsection{\mpifunc{MPI_FILE_WRITE_ALL_BEGIN}}
+% \subsubsection{\mpifunc{MPI_FILE_WRITE_AT}}
+% \subsubsection{\mpifunc{MPI_FILE_WRITE_AT_ALL_BEGIN}}
+% \subsubsection{\mpifunc{MPI_FILE_WRITE_ORDERED}}
+% \subsubsection{\mpifunc{MPI_FILE_WRITE_ORDERED_BEGIN}}
+% \subsubsection{\mpifunc{MPI_FILE_WRITE_SHARED}}
 
 % Related constants
-% \code{MPI_MODE_APPEND}\\
-% \code{MPI_MODE_CREATE}\\
-% \code{MPI_MODE_DELETE_ON_CLOSE}\\
-% \code{MPI_MODE_NOCHECK}\\
-% \code{MPI_MODE_RDONLY}\\
-% \code{MPI_MODE_SEQUENTIAL}\\
-% \code{MPI_MODE_UNIQUE_OPEN}\\
-% \code{MPI_SEEK_CUR}\\
-% \code{MPI_SEEK_END}\\
-% \code{MPI_SEEK_SET}\\
-% \code{MPI_DISPLACEMENT_CURRENT}\\
+% \mpiconst{MPI_MODE_APPEND}
+% \mpiconst{MPI_MODE_CREATE}
+% \mpiconst{MPI_MODE_DELETE_ON_CLOSE}
+% \mpiconst{MPI_MODE_NOCHECK}
+% \mpiconst{MPI_MODE_RDONLY}
+% \mpiconst{MPI_MODE_SEQUENTIAL}
+% \mpiconst{MPI_MODE_UNIQUE_OPEN}
+% \mpiconst{MPI_SEEK_CUR}
+% \mpiconst{MPI_SEEK_END}
+% \mpiconst{MPI_SEEK_SET}
+% \mpiconst{MPI_DISPLACEMENT_CURRENT}
 
 \section{Portability}
 
