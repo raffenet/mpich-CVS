@@ -669,6 +669,8 @@ with MPI_Alloc_mem.
 **shm_open %s %d:unable to open shared memory object %s (errno %d)
 **ftruncate:unable to resize the shared memory object
 **ftruncate %s %d %d:unable to resize the shared memory object %s to size %d (errno %d)
+**shmhost:process not on the same host
+**shmhost %s %s:process not on the same host (%s != %s)
 
 #
 # Sock
