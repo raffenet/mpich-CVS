@@ -172,6 +172,14 @@ case $ac_mpi_type in
 	fi	
 	;;
 	*)
+	# Find the compilers
+	PAC_PROG_CC
+	AC_PROG_F77
+	AC_PROG_CXX
+	PAC_PROG_F90
+	# Set defaults for the TEST versions
+	TESTCC=${CC:=cc}; TESTF77=${F77:=f77}; 
+	TESTCXX=${CXX:=CC}; TESTF90=${F90:=f90}
 	;;
 esac
 ])
