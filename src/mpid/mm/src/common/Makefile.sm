@@ -1,2 +1,3 @@
-lib${MPILIBNAME}_a_SOURCES = mm_choose_buffer.c mm_get_vc.c mm_vcutil.c
+lib${MPILIBNAME}_a_SOURCES = mm_choose_buffer.c mm_get_vc.c mm_vcutil.c \
+ mm_connector_connect.c mm_connector_read.c mm_connector_write.c
 INCLUDES = -I../../include -I${top_srcdir}/include -I../../../../include -I${master_top_srcdir}/src/include

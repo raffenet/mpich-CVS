@@ -8,15 +8,18 @@
 #include "blockallocator.h"
 
 static BlockAllocator MM_VCTable_allocator;
+static BlockAllocator MM_Connector_vc_allocator;
 
-void mm_vctable_init()
+void mm_vcutil_init()
 {
     MM_VCTable_allocator = BlockAllocInit(sizeof(MPIDI_VCRT), 100, 100, malloc, free);
+    MM_Connector_vc_allocator = BlockAllocInit(sizeof(MPIDI_VC), 100, 100, malloc, free);
 }
 
-void mm_vctable_finalize()
+void mm_vcutil_finalize()
 {
     BlockAllocFinalize(&MM_VCTable_allocator);
+    BlockAllocFinalize(&MM_Connector_vc_allocator);
 }
 
 int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
@@ -65,5 +68,30 @@ int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
 
     *vc_pptr = vcrt->table_ptr;
 
+    return MPI_SUCCESS;
+}
+
+int mm_connector_vc_alloc(MPID_Comm *comm_ptr, int rank)
+{
+    MPIDI_VC *vc_ptr;
+    vc_ptr = (MPIDI_VC*)BlockAlloc(MM_Connector_vc_allocator);
+    vc_ptr->rank = rank;
+    vc_ptr->pmi_kvsname = comm_ptr->mm.pmi_kvsname;
+    vc_ptr->write = mm_connector_write;
+    vc_ptr->read = mm_connector_read;
+    vc_ptr->type = MM_VC_CONNECTOR;
+    vc_ptr->ref_count = 1;
+#ifdef MPICH_DEV_BUILD
+    vc_ptr->recvq = NULL;
+    vc_ptr->writeq_head = NULL;
+    vc_ptr->writeq_tail = NULL;
+#endif
+    comm_ptr->vcr[rank] = vc_ptr;
+    return MPI_SUCCESS;
+}
+
+int mm_connector_vc_free(MPIDI_VC *ptr)
+{
+    BlockFree(MM_Connector_vc_allocator, ptr);
     return MPI_SUCCESS;
 }

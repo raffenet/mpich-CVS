@@ -28,6 +28,7 @@ extern MPID_PerProcess_t MPID_Process;
 typedef enum MPIDI_VC_TYPE
 {
     MM_VC_INVALID,
+    MM_VC_CONNECTOR,
     MM_VC_TMP,
 #ifdef WITH_METHOD_SHM
     MM_VC_SHM,
@@ -54,6 +55,10 @@ typedef struct MPIDI_VC
     struct MM_Car * writeq_head;
     struct MM_Car * writeq_tail;
     struct MM_Car * recvq;
+    char *pmi_kvsname; /* name of the key_value database where the remote process put its business card */
+    int rank; /* the rank of the remote process relative to MPI_COMM_WORLD in the key_value database described by pmi_kvsname */
+    int (*write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+    int (*read)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 } MPIDI_VC;
 
 typedef struct MPIDI_VCRT
@@ -77,8 +82,13 @@ MM_Car* mm_car_alloc();
 void mm_car_free(MM_Car *car_ptr);
 int mm_choose_buffer(MPID_Request *request_ptr);
 MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int rank);
-void mm_vctable_init();
-void mm_vctable_finalize();
+void mm_vcutil_init();
+void mm_vcutil_finalize();
+int mm_connector_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+int mm_connector_read(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+int mm_connector_connect(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+int mm_connector_vc_alloc(MPID_Comm *comm_ptr, int rank);
+int mm_connector_vc_free(MPIDI_VC *ptr);
 
 /*
 What is an xfer block? - A block is defined by an init call, followed by one or more

@@ -12,34 +12,36 @@
 
    Parameters:
 +  MPID_Comm *comm_ptr - communicator
--  int dest - destination
+-  int rank - rank
 
    Notes:
 @*/
 MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int rank)
 {
+    int mpi_errno;
     MPIDI_VC *vc_ptr;
 
-    if ((rank < 0) || (rank >= comm_ptr->size))
+#ifdef MPICH_DEV_BUILD
+    if ((comm_ptr == NULL) || (rank < 0) || (rank >= comm_ptr->size))
 	return NULL;
+#endif
 
     if (comm_ptr->vcrt == NULL)
     {
-	MPID_VCRT_Create(comm_ptr->size, &comm_ptr->vcrt);
-	MPID_VCRT_Get_ptr(comm_ptr->vcrt, &comm_ptr->vcr);
+	mpi_errno = MPID_VCRT_Create(comm_ptr->size, &comm_ptr->vcrt);
+	if (mpi_errno != MPI_SUCCESS)
+	    return NULL;
+	mpi_errno = MPID_VCRT_Get_ptr(comm_ptr->vcrt, &comm_ptr->vcr);
+	if (mpi_errno != MPI_SUCCESS)
+	    return NULL;
     }
 
     vc_ptr = comm_ptr->vcr[rank];
     if (vc_ptr == NULL)
     {
-	/* insert code to figure out which method to use for this rank */
-	char key[100], *value;
-	int valuelen = PMI_KVS_Get_value_length_max();
-
-	value = (char*)malloc(valuelen+1);
-	snprintf(key, 100, "tcpinfo-%d", rank);
-	PMI_KVS_Get(MPID_Process.pmi_kvsname, key, value);
-	/*tcp_alloc_vc(comm_ptr);*/
+	mpi_errno = mm_connector_vc_alloc(comm_ptr, rank);
+	if (mpi_errno != MPI_SUCCESS)
+	    return NULL;
     }
 
     return vc_ptr;

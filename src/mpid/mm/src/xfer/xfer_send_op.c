@@ -41,6 +41,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     }
 
     pRequest->mm.op_valid = TRUE;
+    /* point the completion counter to the primary request */
     pRequest->cc_ptr = &request_ptr->cc;
     pRequest->mm.next_ptr = NULL;
 

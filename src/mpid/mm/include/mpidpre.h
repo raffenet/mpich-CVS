@@ -190,4 +190,11 @@ typedef struct MM_Segment
 
 #define MPID_DEV_REQUEST_DECL MM_Segment mm;
 
+typedef struct MM_Comm_struct
+{
+    char *pmi_kvsname;
+} MM_Comm_struct;
+
+#define MPID_DEV_COMM_DECL MM_Comm_struct mm;
+
 #endif
