@@ -8,7 +8,7 @@ from os     import environ, system, path
 from getopt import getopt
 from sys    import argv, exit
 from popen2 import Popen3, popen2
-from socket import gethostname
+from socket import gethostname, gethostbyname_ex
 from select import select, error
 from time   import sleep
 from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_raise, mpdError, mpd_same_ips
@@ -47,7 +47,18 @@ def mpdboot():
             if   opt[0] == '-h' or opt[0] == '--help':
                 usage()
             elif opt[0] == '-e' or opt[0] == '--entry':
+		if ':' not in opt[1]:
+		    print 'invalid pair of entry host and entry port for -e option'
+		    usage()
                 (entryHost,entryPort) = opt[1].split(':')
+    		try:
+        	    ip = gethostbyname_ex(entryHost)[2]    # may fail if invalid host
+                except:
+		    print 'invalid entry host for entryHost'
+		    usage()
+		if not entryPort.isdigit():
+		    print 'invalid (nonumeric) entry port for entryPort'
+		    usage()
                 entryHost = '-h ' + entryHost
                 entryPort = '-p ' + entryPort
             elif opt[0] == '-z':
@@ -184,16 +195,24 @@ def mpdboot():
         assert status is 0, '%s bombed with status %d' % (cmd,status)
         numStarted += 1
 
+    ok = 0
     for cntr in range(10):
-        (sout,sin) = popen2('mpdtrace |wc -l')
-        line = sout.readline().strip().split(' ')
-        n = int(line[0])
+        (sout,sin) = popen2('mpdtrace')
+        lines = sout.readlines()
+	if lines[0].startswith('cannot'):
+	    print "failed to start some mpds:"
+	    for line in lines:
+	        print ' ', line,
+	    break
+	n = len(lines)
         if n >= totalNum:
+	    ok = 1
             break
         print '%d out of %d mpds started; waiting for more ...' % (n,totalNum)
         sleep(1)
 
-    print '%d out of %d mpds started ' % (n,totalNum)
+    if ok:
+    	print '%d out of %d mpds started ' % (n,totalNum)
 
 def usage():
     print 'usage:  mpdboot --totalnum=<n_to_start> [--file=<hostsfile>]  [--help] \ '
