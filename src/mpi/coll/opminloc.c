@@ -178,6 +178,8 @@ void MPIR_MINLOC(
         MPICH_PerThread_t *p;
         MPID_GetPerThread(p);
         p->op_errno = MPIR_Err_create_code( MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_MINLOC" );
+	/* FIXME - temp for debugging */
+	printf( "datatype is %x\n", *type );
         break;
     }
     }

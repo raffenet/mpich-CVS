@@ -45,7 +45,8 @@ void MPIR_LAND (
         break;
     }
 #if defined(HAVE_LONG_LONG_INT)
-    case MPI_LONG_LONG: case MPI_LONG_LONG_INT: {
+    case MPI_LONG_LONG: {
+	/* case MPI_LONG_LONG_INT: defined to be the same as long_long */
         long long * restrict a = (long long *)inoutvec; 
         long long * restrict b = (long long *)invec;
         for ( i=0; i<len; i++ )
