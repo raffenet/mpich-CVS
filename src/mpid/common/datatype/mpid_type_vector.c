@@ -138,45 +138,49 @@ int MPID_Type_vector(int count,
 	int new_loopsize;
 	MPID_Datatype *old_dtp;
 	char *curpos;
+	MPI_Aint eff_stride;
 
 	/* get pointer to old datatype from handle */
 	MPID_Datatype_get_ptr(oldtype, old_dtp); /* fills in old_dtp */
 
 	/* fill in datatype */
 	new_dtp->size           = old_dtp->size * count * blocklength;
-	new_dtp->extent         = ((count - 1) * stride + blocklength) * old_dtp->extent; /* ??? */
 	new_dtp->has_sticky_ub  = old_dtp->has_sticky_ub;
 	new_dtp->has_sticky_lb  = old_dtp->has_sticky_lb;
 	new_dtp->loopinfo_depth = old_dtp->loopinfo_depth + 1;
 
+	/* calculate the effective stride; in bytes */
+	if (strideinbytes) eff_stride = stride;
+	else eff_stride = stride * old_dtp->extent;
 
 	/* calculate lb, ub, true_lb, and true_ub */
-	if (stride >= 0 && old_dtp->extent >= 0) {
-	    new_dtp->lb         = old_dtp->lb;
-	    new_dtp->true_lb    = old_dtp->true_lb;
-	    if (strideinbytes) {
-		/* FIXME */
-	    }
-	    else {
-		/* FIXME */
-	    }
+	if (eff_stride >= 0 && old_dtp->extent >= 0) {
+	    /* easiest case -- stride and extent are non-negative */
+	    new_dtp->lb      = old_dtp->lb;
+	    new_dtp->ub      = old_dtp->ub + old_dtp->extent * (blocklength-1) + eff_stride * (count-1);
 	}
-	else if (stride < 0 && old_dtp->extent >= 0) {
+	else if (eff_stride < 0 && old_dtp->extent >= 0) {
+	    /* negative stride, non-negative extent */
+	    new_dtp->lb      = old_dtp->lb + eff_stride * (count-1);
+	    new_dtp->ub      = old_dtp->ub + old_dtp->extent * (blocklength-1);
 	}
-	else if (stride > 0 && old_dtp->extent < 0) {
-	    assert(0);
+	else if (eff_stride > 0 && old_dtp->extent < 0) {
+	    /* non-negative stride, negative extent (ub < lb) */
+	    new_dtp->lb      = old_dtp->lb + old_dtp->extent * (blocklength-1);
+	    new_dtp->ub      = old_dtp->ub + eff_stride * (count-1);
 	}
-	else /* stride < 0 && old_dtp->extent < 0 */ {
-	    assert(0);
+	else /* eff_stride < 0 && old_dtp->extent < 0 */ {
+	    new_dtp->lb      = old_dtp->lb + old_dtp->extent * (blocklength-1) + eff_stride * (count-1);
+	    new_dtp->ub      = old_dtp->ub;
 	}
+	new_dtp->true_lb     = new_dtp->lb + (old_dtp->true_lb - old_dtp->lb);
+	new_dtp->true_ub     = new_dtp->ub + (old_dtp->true_ub - old_dtp->ub);
+	new_dtp->extent      = new_dtp->ub - new_dtp->lb;
 
-	new_dtp->extent         = new_dtp->ub - new_dtp->lb;
+	new_dtp->alignsize   = old_dtp->alignsize;
+	new_dtp->n_elements  = old_dtp->n_elements * count * blocklength; /* ??? */
 
-	new_dtp->alignsize      = old_dtp->alignsize;
-	new_dtp->n_elements     = old_dtp->n_elements * count * blocklength; /* ??? */
-
-
-	if (old_dtp->is_contig && (stride == blocklength || count == 1)) new_dtp->is_contig = 1;
+	if (old_dtp->is_contig && (stride == blocklength || count == 1)) new_dtp->is_contig = 1; /* ??? */
 	else new_dtp->is_contig = 0;
 
 	/* allocate space for dataloop */

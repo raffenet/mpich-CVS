@@ -127,7 +127,8 @@ int MPID_Type_indexed(int count,
 	new_dtp->has_sticky_ub  = 0;
 	new_dtp->has_sticky_lb  = 0;
 	new_dtp->loopinfo_depth = 1;
-	new_dtp->true_lb        = 0;
+	new_dtp->true_lb        = min_disp; /* ? */
+	new_dtp->true_ub        = max_disp; /* ? */
 	new_dtp->alignsize      = oldsize;
 	new_dtp->n_elements     = -1; /* ??? */
 	new_dtp->is_contig      = 0; /* ??? */
@@ -167,7 +168,7 @@ int MPID_Type_indexed(int count,
 	new_dtp->has_sticky_ub  = old_dtp->has_sticky_ub;
 	new_dtp->has_sticky_lb  = old_dtp->has_sticky_lb;
 	new_dtp->loopinfo_depth = old_dtp->loopinfo_depth + 1;
-	new_dtp->true_lb        = old_dtp->true_lb; /* ??? */
+	new_dtp->true_lb        = old_dtp->true_lb; /* WRONG */
 	new_dtp->alignsize      = old_dtp->alignsize;
 	new_dtp->n_elements     = -1; /* ??? */
 

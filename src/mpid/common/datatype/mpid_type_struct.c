@@ -179,6 +179,8 @@ int MPID_Type_struct(int count,
 	    new_dtp->ub            = ub_disp;
 	}
 
+	new_dtp->extent = new_dtp->ub - new_dtp->lb;
+
 	return mpi_errno;
     }
 
