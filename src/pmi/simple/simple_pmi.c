@@ -619,6 +619,8 @@ int PMI_KVS_Iter_next(const char kvsname[], char key[], int key_len, char val[],
 
 /******************************** Process Creation functions *************************/
 
+/* PMI_Spawn obsolete? (replaced by PMI_Spawn_multiple, of which it is a special case */
+
 int PMI_Spawn(const char *command, const char *argv[], 
 	      const int maxprocs, char *kvsname, int kvsnamelen )
 {
@@ -664,17 +666,6 @@ int PMI_Spawn(const char *command, const char *argv[],
     return( -1 );
 }
 
-/*****
-int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
-                       const int *maxprocs, const void *info, int *errors, 
-                       int *same_domain, const void *preput_info)
-
-int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
-                       const int *maxprocs, const void *info, int *errors, 
-                       int *same_domain, int preput_num,
-		       const char *preput_keys[], const char *preput_vals[])
-*****/
-
 int PMI_Spawn_multiple(int count,
                        const char * cmds[],
                        const char ** argvs[],
@@ -697,7 +688,11 @@ int PMI_Spawn_multiple(int count,
 	/* FIXME: Check for buf too short */
         MPIU_Snprintf(buf, PMIU_MAXLINE, "mcmd=spawn\nnprocs=%d\nexecname=%s\n",
 	          maxprocs[spawncnt], cmds[spawncnt] );
-    
+
+	MPIU_Snprintf(tempbuf, PMIU_MAXLINE,"totspawns=%d\nspawnssofar=%d\n",
+		      count, spawncnt+1);
+	MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
+
         argcnt = 0;
         if ((argvs != NULL) && (argvs[spawncnt] != NULL)) {
             for (i=0; argvs[spawncnt][i] != NULL; i++)
@@ -768,20 +763,20 @@ int PMI_Spawn_multiple(int count,
 	/* FIXME: Check for error (buf too short for line) */
         MPIU_Strnapp(buf, "endcmd\n", PMIU_MAXLINE);
         PMIU_writeline( PMI_fd, buf );
-        PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
-        PMIU_parse_keyvals( buf ); 
-        PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
-        if ( strncmp( cmd, "spawn_result", PMIU_MAXLINE ) != 0 ) {
-	    PMIU_printf( 1, "got unexpected response to spawn :%s:\n", buf );
+    }
+    PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
+    PMIU_parse_keyvals( buf ); 
+    PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
+    if ( strncmp( cmd, "spawn_result", PMIU_MAXLINE ) != 0 ) {
+	PMIU_printf( 1, "got unexpected response to spawn :%s:\n", buf );
+	return( -1 );
+    }
+    else {
+	PMIU_getval( "rc", buf, PMIU_MAXLINE );
+	rc = atoi( buf );
+	if ( rc != 0 ) {
 	    return( -1 );
-        }
-        else {
-	    PMIU_getval( "rc", buf, PMIU_MAXLINE );
-	    rc = atoi( buf );
-	    if ( rc != 0 ) {
-	        return( -1 );
-	    }
-        }
+	}
     }
     return( 0 );
 }
