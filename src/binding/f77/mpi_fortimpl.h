@@ -139,8 +139,14 @@ extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
    patterns for the other.  This is just like C, where 0 is false and 
    anything not zero is true.  Modify this test as necessary for your
    system.
+
+   We check against FALSE instead of TRUE because many (perhaps all at this
+   point) Fortran compilers use 0 for false and some non-zero value for
+   true.  By using this test, it is possible to use the same Fortran
+   interface library for multiple compilers that differ only in the 
+   value used for Fortran .TRUE. .
  */
-#define MPIR_FROM_FLOG(a) ( (a) == MPIR_F_TRUE ? 1 : 0 )
+#define MPIR_FROM_FLOG(a) ( (a) == MPIR_F_FALSE ? 0 : 1 )
 
 #else
 /* CRAY Vector processors only; these are defined in /usr/include/fortran.h 
