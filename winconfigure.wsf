@@ -1126,8 +1126,9 @@ Function GenerateStatesFiles()
 		fout.Close()
 
 	Else
-
-		WScript.Echo("Missing file: maint\genstates.in")
+		If InStr(1, WScript.FullName, "cscript") > 0 Then
+			WScript.Echo("Missing file: maint\genstates.in")
+		End If
   
 	End If
 	
