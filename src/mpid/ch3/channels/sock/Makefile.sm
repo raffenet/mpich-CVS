@@ -1,0 +1,8 @@
+SUBDIRS = ../../../common/sock src .
+
+distclean-local:
+	-rm -f include/mpidi_ch3i_sock_conf.h
+
+maintainerclean-local:
+	-rm -f include/mpidi_ch3i_sock_conf.h.in
+

@@ -1,0 +1,9 @@
+#! /bin/sh
+# Add any libraries needed by the sock channel
+LIBS="$LIBS @SOCK_LIBS@"
+
+# See if there are any definitions from the sock implementation
+if test -s ../../../common/sock/localdefs ; then
+    . ../../../common/sock/localdefs
+fi
+
