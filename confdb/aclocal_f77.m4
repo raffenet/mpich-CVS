@@ -352,6 +352,14 @@ dnl link; they aren't added just because they exist.
 dnl
 dnl f77argdef
 dnlD*/
+dnl
+dnl Random notes
+dnl You can export the command line arguments from C to the g77 compiler
+dnl using
+dnl    extern char **__libc_argv;
+dnl    extern int  __libc_argc;
+dnl    f_setarg( __libc_argc, __libc_argv );
+dnl
 AC_DEFUN(PAC_PROG_F77_CMDARGS,[
 found_cached="yes"
 AC_MSG_CHECKING([for routines to access the command line from Fortran 77])
@@ -406,14 +414,14 @@ EOF
     # Grumph.  Here are a bunch of different approaches
     # We have several axes the check:
     # Library to link with (none, -lU77 (HPUX), -lg2c (LINUX f77))
+    # PEPCF90 (Intel ifc)
     # The first line is a dummy
     # (we experimented with using a <space>, but this caused other 
     # problems because we need <space> in the IFS)
-if test "$NOG2C" = "1" ; then
-    trial_LIBS="0 -lU77"
-else
-    trial_LIBS="0 -lU77 -lg2c"
-fi
+    trial_LIBS="0 -lU77 -lPEPCF90"
+    if test "$NOG2C" != "1" ; then
+        trial_LIBS="$trial_LIBS -lg2c"
+    fi
     # Discard libs that are not availble:
     save_IFS="$IFS"
     # Make sure that IFS includes a space, or the tests that run programs
@@ -547,8 +555,8 @@ $flag"
 	   FXX_MODULE=""
 	   F77_GETARGDECL="external pxfgetarg"
 	   F77_GETARG="call pxfgetarg(i,s,l,ier)"
-	   F77_IARGC="ipxfiargc()"
-	   MSG="pxfgetarg and ipxfiargc"
+	   F77_IARGC="ipxfargc()"
+	   MSG="pxfgetarg and ipxfargc"
 	   ;;
 	4) # Nag f90_unix_env module
 	   FXX_MODULE="        use f90_unix_env"
