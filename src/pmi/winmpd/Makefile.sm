@@ -1,2 +1,0 @@
-lib${MPILIBNAME}_a_SOURCES = crypt.c mpdutil.c mpichinfo.c pmi.c pmi_spawn.c redirectio.c
-INCLUDES = -I../../../include -I${top_srcdir}/src/include
