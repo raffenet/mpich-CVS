@@ -942,11 +942,14 @@ def get_vals_for_attach():
     else:
         if len(sjobid) == 1:
             sjobid.append(msg['id'])
+    got_info = 0
     while 1:
         msg = mpd_recv_one_msg(conSocket)
         if not msg.has_key('cmd'):
-            raise RuntimeError, 'mpdlistjobs: INVALID msg=:%s:' % (msg)
+            print 'mpdlistjobs: INVALID msg=:%s:' % (msg)
+            exit(-1)
         if msg['cmd'] == 'mpdlistjobs_info':
+            got_info = 1
             smjobid = msg['jobid'].split('  ')  # jobnum, mpdid, and alias (if present)
             if sjobid[0] == smjobid[0]  and  sjobid[1] == smjobid[1]:  # jobnum and mpdid
                 rank = int(msg['rank'])
@@ -958,8 +961,14 @@ def get_vals_for_attach():
                 args[(rank,rank)]    = [msg['clipid']]
                 envvars[(rank,rank)] = {}
                 limits[(rank,rank)]  = {}
+        elif  msg['cmd'] == 'mpdlistjobs_trailer':
+            if not got_info:
+                print 'no info on this jobid; probably invalid'
+                exit(-1)
+            break
         else:
-            break  # mpdlistjobs_trailer
+            print 'invaild msg from mpd :%s:' % (msg)
+            exit(-1)
     nprocs = len(execs.keys())    # all dicts are the same len here
 
 
