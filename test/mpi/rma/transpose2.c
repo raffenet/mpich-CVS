@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
     MPI_Aint disp[2];
     MPI_Win win;
     MPI_Datatype column, column1, type[2];
-    int errs;
+    int errs=0;
  
     MTest_Init(&argc,&argv); 
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs); 
