@@ -383,8 +383,10 @@ fi
 # check if $UNINSTALLFILE lives under $sbindir
 uninstall_basename=`echo $UNINSTALLFILE | sed -e "s%^$sbindir%%"`
 if [ "$UNINSTALLFILE" != "$uninstall_basename" ] ; then
-    echo "Creating ${pkgname}'s sbin"
-    MkDir $sbindir
+    if [ ! -d $sbindir ] ; then
+        echo "Creating ${pkgname}'s sbin"
+        MkDir $sbindir
+    fi
 fi
 
 if [ "$copymode" = "all" -o "$copymode" = "core" ] ; then
