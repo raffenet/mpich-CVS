@@ -191,7 +191,10 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 
     /* strip off prefix if there is one */
     tmp = strchr(filename, ':');
-    if (tmp) filename = tmp + 1;
+    /* Only skip prefixes greater than length one to allow for windows drive specification (c:\...)*/
+    /*if (tmp) filename = tmp + 1;*/
+    if (tmp > filename + 1)
+	filename = tmp + 1;
 
     orig_amode = amode;
     MPI_Comm_rank(dupcomm, &rank);
