@@ -63,6 +63,13 @@ install:
 	     ./sbin/mpeinstall ; \
 	 fi
 
+installcheck:
+	@if [ -n "$(PREFIX)" ] ; then \
+	     ./sbin/mpeinstallcheck -prefix=$(PREFIX) ; \
+	 else \
+	     ./sbin/mpeinstallcheck ; \
+	 fi
+
 uninstall:
 	@./sbin/mpeuninstall
 

@@ -13,7 +13,7 @@
 # in the top-level MPE __build__ directory which could be the same
 # or different from the source directory
 #
- 
+
 MAKE="@MAKE@"
 
 # Location of sources
@@ -445,12 +445,12 @@ for pkg in logging graphics ; do
         MkDir $examplesdir
 #       Copy MPE Example C and Fortran programs
         CopyDirRecurP $top_srcdir/$dirvalue $examplesdir
-    
+
 #       Create MPE examples Makefile
         cd $DESTDIR$examplesdir && \
         FixInstallFile $libbuild_dir/../$dirvalue/Makefile \
                        $examplesdir/Makefile
-    
+
         if [ -x $bindir/mpiexec -o -x $DESTDIR$bindir/mpiexec ] ; then
             $Show "( cd $DESTDIR$examplesdir && \
                      $RM -f mpiexec && \
@@ -461,18 +461,6 @@ for pkg in logging graphics ; do
                      $RM -f mpirun && \
                      $LN_S $bindir/mpirun mpirun )"
             filelist="$filelist $examplesdir/mpirun" 
-        fi
-    
-#       Run installation test only if DESTDIR is empty
-        if [ -z "$DESTDIR" ] ; then
-            if [ -f $examplesdir/Makefile ] ; then
-                echo "Running installation test for C $pkg program..."
-                $Show "( cd $examplesdir && $MAKE linktest_C )"
-                if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
-                    echo "Running installation test for Fortran $pkg program..."
-                    $Show "( cd $examplesdir && $MAKE linktest_F77 )"
-                fi
-            fi
         fi
     fi
 done
@@ -529,14 +517,14 @@ fi
 for dir in $dirlist ; do
     echo "if [ -d $dir ] ; then rmdir $dir ; fi" >> $UNINSTALLFILE
 done
- 
+
 if [ "$appendUninstall" = 0 ] ; then
     cp $UNINSTALLFILE $sbinbuild_dir/mpeuninstall
 #
     echo "Installed MPE in $DESTDIR$prefix"
     echo "$UNINSTALLFILE may be used to remove the installation"
 fi
- 
+
 if [ $errs -gt 0 ] ; then
     rc=1
 else

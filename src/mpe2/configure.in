@@ -565,8 +565,11 @@ AC_OUTPUT_COMMANDS( [
 if test ! -x ./sbin/mpeinstall -a -s ./sbin/mpeinstall; then
     chmod u+x ./sbin/mpeinstall
 fi
+if test ! -x ./sbin/mpeinstallcheck -a -s ./sbin/mpeinstallcheck; then
+    chmod u+x ./sbin/mpeinstallcheck
+fi
 ] )
-AC_OUTPUT( Makefile sbin/mpeinstall )
+AC_OUTPUT( Makefile sbin/mpeinstall sbin/mpeinstallcheck )
 
 configured_pkgs=""
 for pkg in $selected_pkgs ; do
