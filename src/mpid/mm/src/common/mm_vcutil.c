@@ -124,6 +124,16 @@ int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
     return MPI_SUCCESS;
 }
 
+int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr)
+{
+    return MPI_SUCCESS;
+}
+
+int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR *new_vcr)
+{
+    return MPI_SUCCESS;
+}
+
 /*@
    mm_vc_alloc - allocate a virtual connection
 

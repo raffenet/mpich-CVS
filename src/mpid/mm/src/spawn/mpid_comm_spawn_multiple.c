@@ -71,3 +71,9 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
     return MPI_SUCCESS;
 }
+
+int MPID_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, int root,
+		    MPID_Comm *comm, MPID_Comm *intercomm, int array_of_errcodes[])
+{
+    return MPI_SUCCESS;
+}
