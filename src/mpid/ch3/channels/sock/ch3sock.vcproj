@@ -120,7 +120,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\..\..\lib\ch3sock.lib"/>
+				OutputFile="..\..\..\..\..\lib\ch3sockp.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -164,7 +164,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\..\..\lib\ch3sock.lib"/>
+				OutputFile="..\..\..\..\..\lib\ch3sockpl.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool

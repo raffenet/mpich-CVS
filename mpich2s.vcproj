@@ -103,7 +103,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -116,13 +116,13 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="lib/mpich2ssmd.lib"/>
+				OutputFile="lib/mpich2ssmsd.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Combining libraries into mpich2ssmd.lib"
-				CommandLine="lib lib\mpich2ssmd.lib lib\ch3ssmd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib"/>
+				Description="Combining libraries into mpich2ssmsd.lib"
+				CommandLine="lib lib\mpich2ssmsd.lib lib\ch3ssmd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -149,7 +149,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -162,13 +162,13 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="lib/mpich2ssm.lib"/>
+				OutputFile="lib/mpich2ssms.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Combining libraries into mpich2ssm.lib"
-				CommandLine="lib lib\mpich2ssm.lib lib\ch3ssm.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib"/>
+				Description="Combining libraries into mpich2ssms.lib"
+				CommandLine="lib lib\mpich2ssms.lib lib\ch3ssm.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -193,7 +193,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -207,13 +207,13 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="lib/mpich2sockd.lib"/>
+				OutputFile="lib/mpich2socksd.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Combining libraries into mpich2sockd.lib"
-				CommandLine="lib lib\mpich2sockd.lib lib\ch3sockd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib lib\mpich2ffd.lib lib\smpd_utild.lib"/>
+				Description="Combining libraries into mpich2socksd.lib"
+				CommandLine="lib lib\mpich2socksd.lib lib\ch3sockd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib lib\mpich2ffd.lib lib\smpd_utild.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -240,7 +240,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING;HAVE_FORTRAN_BINDING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -254,13 +254,13 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="lib/mpich2sock.lib"/>
+				OutputFile="lib/mpich2socks.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Combining libraries into mpich2sock.lib"
-				CommandLine="lib lib\mpich2sock.lib lib\ch3sock.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib lib\mpich2ff.lib lib\mpich2ff.lib lib\smpd_util.lib"/>
+				Description="Combining libraries into mpich2socks.lib"
+				CommandLine="lib lib\mpich2socks.lib lib\ch3sock.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib lib\mpich2ff.lib lib\mpich2ff.lib lib\smpd_util.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -285,7 +285,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -298,13 +298,13 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="lib/mpich2shmd.lib"/>
+				OutputFile="lib/mpich2shmsd.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Combining libraries into mpich2shmd.lib"
-				CommandLine="lib lib\mpich2shmd.lib lib\ch3shmd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib"/>
+				Description="Combining libraries into mpich2shmsd.lib"
+				CommandLine="lib lib\mpich2shmsd.lib lib\ch3shmd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -331,7 +331,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -344,13 +344,13 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="lib/mpich2shm.lib"/>
+				OutputFile="lib/mpich2shms.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Combining libraries into mpich2shm.lib"
-				CommandLine="lib lib\mpich2shm.lib lib\ch3shm.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib"/>
+				Description="Combining libraries into mpich2shms.lib"
+				CommandLine="lib lib\mpich2shms.lib lib\ch3shm.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -375,7 +375,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\ch3\channels\sshm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\ch3\channels\sshm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -388,13 +388,13 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="lib/mpich2ssmd.lib"/>
+				OutputFile="lib/mpich2ssmsd.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Combining libraries into mpich2ssmd.lib"
-				CommandLine="lib lib\mpich2sshmd.lib lib\ch3sshmd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib"/>
+				Description="Combining libraries into mpich2ssmsd.lib"
+				CommandLine="lib lib\mpich2sshmsd.lib lib\ch3sshmd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -421,7 +421,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H;MPIO_BUILD_PROFILING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -434,13 +434,13 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="lib/mpich2ssm.lib"/>
+				OutputFile="lib/mpich2ssms.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Combining libraries into mpich2ssm.lib"
-				CommandLine="lib lib\mpich2sshm.lib lib\ch3sshm.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib"/>
+				Description="Combining libraries into mpich2ssms.lib"
+				CommandLine="lib lib\mpich2sshms.lib lib\ch3sshm.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool

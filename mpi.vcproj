@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="pmandel_spaserv"
-	ProjectGUID="{491B0550-63A6-4DE2-82EF-E4243DBDC77F}"
+	Name="mpi"
+	ProjectGUID="{EAC12E9B-4B5D-4D26-8FAE-2425A48E3804}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -14,13 +14,13 @@
 			Name="Debug|Win32"
 			OutputDirectory="Debug"
 			IntermediateDirectory="Debug"
-			ConfigurationType="1"
+			ConfigurationType="2"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\src\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;HAVE_WINDOWS_H"
+				AdditionalIncludeDirectories="src\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MPI_EXPORTS"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -32,18 +32,22 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpid.lib"
-				OutputFile="$(OutDir)/pmandel_spaserv.exe"
+				OutputFile="lib/mpich2mpid.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\lib"
+				ModuleDefinitionFile=".\mpi.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/pmandel_spaserv.pdb"
-				SubSystem="1"
+				ProgramDatabaseFile="$(OutDir)/mpi.pdb"
+				SubSystem="2"
+				ImportLibrary=".\$(ConfigurationName)/mpid.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="copying mpich2mpid.dll to system32 directory"
+				CommandLine="copy lib\mpich2mpid.dll %SystemRoot%\system32\mpich2mpid.dll
+copy $(ConfigurationName)\mpid.lib lib\mpid.lib
+"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -65,12 +69,12 @@
 			Name="Release|Win32"
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"
-			ConfigurationType="1"
+			ConfigurationType="2"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\src\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;HAVE_WINDOWS_H"
+				AdditionalIncludeDirectories="src\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MPI_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -80,19 +84,23 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpi.lib"
-				OutputFile="$(OutDir)/pmandel_spaserv.exe"
+				OutputFile="lib/mpich2mpi.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\lib"
+				ModuleDefinitionFile=".\mpi.def"
 				GenerateDebugInformation="TRUE"
-				SubSystem="1"
+				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				ImportLibrary=".\$(ConfigurationName)/mpi.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="copying mpich2mpi.dll to system32 directory"
+				CommandLine="copy lib\mpich2mpi.dll %SystemRoot%\system32\mpich2mpi.dll
+copy $(ConfigurationName)\mpi.lib lib\mpi.lib
+"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -119,13 +127,25 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath=".\pmandel_spaserv.c">
+				RelativePath=".\src\binding\mpi\mpi.c">
+			</File>
+			<File
+				RelativePath=".\mpi.def">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
+			<File
+				RelativePath=".\src\include\mpi.h">
+			</File>
+			<File
+				RelativePath=".\src\include\mpicxx.h">
+			</File>
+			<File
+				RelativePath=".\src\include\mpio.h">
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
