@@ -23,7 +23,7 @@ foreach $arg (@ARGV) {
 	if (-d $arg) {
 	    # Add all .c files from directory $arg to the list of files 
 	    # to process (this lets shorten the arg list)
-	    @newfiles = &ExpandDir( $arg );
+	    @files = (@files, &ExpandDir( $arg ));
 	}
 	else {
 	    $files[$#files+1] = $arg;
@@ -444,14 +444,14 @@ sub ExpandDir {
     my @files = ();
     opendir DIR, "$dir";
     while ($filename = readdir DIR) {
-	if ($filename =~ /^\./ || $filename =~ /CVS/) {
+	if ($filename =~ /^\./ || $filename eq "CVS") {
 	    next;
 	}
-	elsif (-d $filename) {
-	    $otherdirs[$#otherdirs+1] = $filename;
+	elsif (-d "$dir/$filename") {
+	    $otherdirs[$#otherdirs+1] = "$dir/$filename";
 	}
 	elsif ($filename =~ /(.*\.c)$/) {
-	    $files[$#files + 1] = $filename;
+	    $files[$#files + 1] = "$dir/$filename";
 	}
     }
     closedir DIR;

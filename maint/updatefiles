@@ -148,8 +148,9 @@ if [ -x maint/extracterrmsgs -a $do_geterrmsgs = "yes" ] ; then
            echo "Because of errors in extracting error messages, the file"
            echo "src/mpi/errhan/defmsg.h was not updated."
            update_errdefs=no
+	   rm -f .tmp
        fi
-       rm -f .tmp .err .err2
+       rm -f .err .err2
     else
        # Incase it exists but has zero size
        rm -f .err
