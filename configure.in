@@ -38,8 +38,6 @@ dnl
 AC_ARG_ENABLE(echo, 
 [--enable-echo  - Turn on strong echoing. The default is enable=no.] ,set -x)
 dnl
-dnl # MPICH-1 used -Wshadow as well.
-dnl 
 AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],,enable_strict=no)
 dnl
 AC_ARG_ENABLE(coverage,
@@ -89,10 +87,7 @@ implementation.  option may be a list of common separated names including
 dnl
 dnl
 dnl --enable-sharedlibs=kind is set with the PAC_ARG_SHAREDLIBS macro 
-dnl
-AC_ARG_ENABLE(internat,
-[--enable-internat - Enable internationalization of messages.
- Not yet supported])
+dnl sharedlibs support has been withdrawn
 dnl
 dnl --enable-fast
 AC_ARG_ENABLE(fast,
@@ -108,10 +103,6 @@ dnl
 AC_ARG_ENABLE(romio,
 [--enable-romio - Enable ROMIO MPI I/O implementation],
 ,enable_romio=yes)
-dnl
-AC_ARG_ENABLE(debugger,
-[--enable-debugger - Enable support for debuggers],
-,enable_debugger=no)
 dnl
 AC_ARG_ENABLE(nmpi-as-mpi,
 [--enable-nmpi-as-mpi - Use MPI rather than PMPI routines for MPI routines,
@@ -384,32 +375,7 @@ for option in $enable_g ; do
 done
 IFS="$save_IFS"
 
-if test "$enable_f90" = "yes" -a "$enable_f77" != "yes" ; then
-   # Fortran 90 support requires compatible Fortran 77 support
-   AC_MSG_WARN([Fortran 90 support requires compatible Fortran 77 support])
-   enable_f77=yes
-fi
-if test "$enable_debugger" = "yes" ; then
-    debugger_dir=debugger
-    AC_DEFINE(HAVE_DEBUGGER_SUPPORT,1,[Define if debugger support is included])
-    # The debugger support requires a shared library.  This is handled 
-    # below, after we check for compiler support for shared libraries
-    # Note: if libdir contains exec_prefix, handle the fact that the
-    # default exec_prefix is NONE, which (much later in configure)
-    # gets turned into the value of prefix
-    if test "x$exec_prefix" = xNONE ; then
-        saveExecPrefix=$exec_prefix
-	exec_prefix=$prefix
-        eval dlldir=$libdir/libtvmpich.so
-	exec_prefix=$saveExecPrefix
-    else
-        eval dlldir=$libdir/libtvmpich.so
-    fi
-    dlldir='"'$dlldir'"'
-    AC_DEFINE_UNQUOTED(MPICH_INFODLL_LOC,$dlldir,[Define as the name of the debugger support library])
-fi
 AC_SUBST(debugger_dir)
-dnl
 pac_cross_compiling=no
 if test "$with_cross" != "no" ; then
     if test -s "$with_cross" ; then
@@ -421,7 +387,7 @@ if test "$with_cross" != "no" ; then
 	cross_compiling=yes
 	ac_cv_prog_cc_cross=yes
 	ac_cv_prog_f77_cross=yes
-	ac_cv_prog_f90_cross=yes
+dnl 	ac_cv_prog_f90_cross=yes
         ac_cv_prog_cxx_cross=yes
         export cross_compiling
 	# Export all cross variables.  Any subsidiary configure should also
@@ -709,21 +675,6 @@ if test "$pac_cross_compiling" = "yes" -a "$ac_cv_prog_cc_cross" = "no" ; then
     ac_cv_prog_f77_cross=yes
     ac_cv_prog_cxx_cross=yes
 fi
-dnl
-dnl Check for strict.  Do this *first* because the -ansi switch changes what
-dnl gcc will accept
-dnl
-dnl [BRT] I removed the -ansi option.  It caused some necessary functions to
-dnl not be defined, which resulted in the code failing to compile and
-dnl the developers not to use --enable-strict.
-dnl
-dnl if test "$enable_strict" = "yes" ; then
-dnl     if test "$ac_cv_prog_gcc" = "yes" ; then
-dnl        CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast"
-dnl     else 
-dnl        AC_MSG_WARN([--enable-strict only supported for GCC])
-dnl    fi
-dnl fi
 AC_CHECK_PROGS(AR,ar)
 # Note that we set RANLIB to true if we don't find it (some systems neither
 # need it nor provide it)
@@ -746,56 +697,22 @@ PAC_PROG_MKDIR_P
 
 # Don't setup the shared libraries until we know which compiler we will be
 # using
-PAC_ARG_SHAREDLIBS
-ENABLE_SHLIB=$enable_sharedlibs
+dnl We do not support shared libraries.  
+dnl PAC_ARG_SHAREDLIBS
+dnl ENABLE_SHLIB=$enable_sharedlibs
 if test -z "$ENABLE_SHLIB" -o "$ENABLE_SHLIB" = "no" ; then
     ENABLE_SHLIB=none
 fi
 AC_SUBST(ENABLE_SHLIB)
+AC_SUBST(C_LINKPATH_SHL)
 
 # 
 # Add the steps for debugger support
 BUILD_TVDLL=no
-if test "$enable_debugger" = "yes" ; then
-   # We can build the Totalview interface DLL only if we know how to build
-   # shared libraries.  For now, require that enable_sharedlibs is not none
-   # Also, we may want to put some of this into a configure in the debugger
-   # directory
-   if test "$ENABLE_SHLIB" != "none" ; then
-        BUILD_TVDLL=yes
-	CC_SHL_DBG="$CC_SHL"
-	C_LINK_SHL_DBG="$C_LINK_SHL"
-   else
-        # Try to determine how to build the tv shared library
-	AC_MSG_CHECKING([for how to build shared library for debugger interface])
-        PAC_CC_SHAREDLIBS(,CC_SHL_DBG,C_LINK_SHL_DBG)
-	if test "$CC_SHL_DBG" = true ; then
-	    AC_MSG_RESULT([none found])
-            AC_MSG_WARN([Debugger support requires shared libraries])      
-	else
-	    AC_MSG_RESULT($CC_SHL_DBG)
-	    BUILD_TVDLL=yes
-        fi
-   fi
-   # One more nasty problem.  Totalview relies on debugger symbols 
-   # being present in the executable.  Some experimental versions of
-   # gcc (3.2 20020329 for ia64) do *not* include the object symbols
-   # when debugging.  For HPUX, the necessary linking options are
-   #    +noobjdebug
-   # for C, Fortran, and C++.  We don't have a good test for this yet,
-   # so we add a warning
-   if test "$ac_cv_prog_gcc" = "yes" ; then
-       AC_MSG_WARN([Some versions of gcc do not include debugging information
-within the executable.  Totalview requires this information to detect
-an MPICH code.  If you have trouble, try linking with the additional
-option 
-    +noobjdebug
-on all link lines (consider adding it to LDFLAGS)])
-   fi
-   AC_SUBST(BUILD_TVDLL)
-   AC_SUBST(CC_SHL_DBG)
-   AC_SUBST(C_LINK_SHL_DBG)
-fi
+AC_SUBST(BUILD_TVDLL)
+AC_SUBST(CC_SHL_DBG)
+AC_SUBST(C_LINK_SHL_DBG)
+
 
 # We need the full path to perl since we'll use it as the interpreter for
 # a shell script.
@@ -1598,19 +1515,6 @@ void foo1( char *fmt, ... ) {
 ],[foo1("a test %d", 3);],pac_cv_func___va_copy=yes,pac_cv_func___va_copy=no)])
     if test "$pac_cv_func___va_copy" = "yes" ; then
     AC_DEFINE(HAVE___VA_COPY,1,[Define if we have __va_copy])
-    fi
-fi
-
-dnl If internationalization selected, try to find the needed functions
-if test "$enable_internat" = "yes" ; then
-    AC_CHECK_HEADERS(libintl.h)
-    AC_CHECK_FUNCS(gettext dgettext)
-    if test "$ac_cv_header_libintl" = "yes" -a \
-	    "$ac_cv_func_gettext" = "yes" -a \
-	    "$ac_cv_func_dgettext" = "yes" ; then
-	AC_DEFINE(USE_GETTEXT,1,[Define if messages should use gettext])
-    else
-        AC_MSG_WARN([Cannot use internationalization because necessary headers and functions are not available])
     fi
 fi
 dnl

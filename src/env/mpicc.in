@@ -37,7 +37,6 @@ libdir=@libdir@
 # Determined by a combination of environment variables and tests within
 # configure (e.g., determining whehter -lsocket is needee)
 CC="@CC@"
-C_LINKPATH_SHL="@C_LINKPATH_SHL@"
 MPI_CFLAGS="@MPI_CFLAGS@"
 MPI_LDFLAGS="@MPI_LDFLAGS@"
 MPILIBNAME="@MPILIBNAME@"
@@ -204,10 +203,6 @@ fi
 # file or an object file.  Instead, we just check for an option that
 # suppressing linking, such as -c or -M.
 if [ "$linking" = yes ] ; then
-    if [ -n "$C_LINKPATH_SHL" ] ; then
-        # Prepend the path for the shared libraries to the library list
-        mpilibs="$C_LINKPATH_SHL$libdir $mpilibs"
-    fi
     $Show $CC $CFLAGS $LDFLAGS -I$includedir -L$libdir $allargs $mpilibs $MPI_OTHERLIBS
     rc=$?
 else
