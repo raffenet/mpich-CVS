@@ -1,0 +1,98 @@
+\begin{comment}
+This is the state machine for the smpd listener process.
+Graph [smpd listener],
+      [size="7.5, 10"]
+\end{comment}
+\begin{verbatim}
+State [smpd listening],[label="smpd\nlistening"]
+	Event [accept]
+		Change_State([smpd listening], [label="accept"])
+		Change_State([writing challenge string], [label="new context" style=dotted])
+State [writing challenge string], [label="writing challenge string"]
+	Event [data written]
+		Change_State([reading challenge response])
+State [reading challenge response], [label="reading challenge response"]
+	Event [data read]
+		Change_State([writing connect result])
+State [writing connect result]
+	Event [data written]
+		if accepted
+			Change_State([reading session request], [label="accepted"])
+		else rejected
+			Change_State([closing], [label="rejected"])
+State [reading session request],[label="reading session request"]
+	Event [data read]
+		if process_cred
+			Change_State([writing cred request],[label="process"])
+		else if process_nocred
+			Change_State([writing nocred request],[label="process"])
+		else if smpd_pwd
+			Change_State([writing pwd request],[label="smpd"])
+		else
+			Change_State([writing nopwd request],[label="smpd"])
+State [writing cred request],[label="writing cred request"]
+	Event [data written]
+		Change_State([reading account])
+State [writing nocred request],[label="writing nocred request"]
+	Event [data written]
+		if win
+			Change_State([writing reconnect request],[label="win"])
+		else
+			Change_State([writing noreconnect request],[label="unix"])
+State [writing pwd request],[label="writing pwd request"]
+	Event [data written]
+		Change_State([reading smpd password])
+State [writing nopwd request],[label="writing nopwd request"]
+	Event [data written]
+		Change_State([reading session header])
+State [reading account],[label="reading account"]
+	Event [data read]
+		Change_State([reading password])
+State [reading smpd password],[label="reading smpd password"]
+	Event [data read]
+		if accepted
+			Change_State([writing session accept],[label="accept"])
+		else
+			Change_State([writing session reject],[label="reject"])
+State [reading password],[label="reading password"]
+	Event [data read]
+		if win
+			Change_State([writing reconnect request],[label="win"])
+		else
+			Change_State([writing noreconnect request],[label="unix"])
+State [writing session accept],[label="writing session accept"]
+	Event [data written]
+		Change_State([reading session header])
+State [writing session reject],[label="writing session reject"]
+	Event [data written]
+		Change_State([closing])
+State [writing reconnect request],[label="writing reconnect request"]
+	Event [data written]
+		if new process
+			Change_State([mgr listening],[label="new process" style=dotted])
+		else
+			Change_State([closing])
+State [writing noreconnect request],[label="writing noreconnect request"]
+	Event [data written]
+		if forkee
+			Change_State([reading session header],[label="unix forkee"])
+		else
+			Change_State([closing],[label="unix forker"])
+State [mgr listening],[label="mgr listening"]
+	Event [accept]
+		Change_State([closing], [label="accept"])
+		Change_State([reading session header],[label="new context" style=dotted])
+State [reading session header],[label="reading session header"]
+	Event [data read]
+		Change_State([reading cmd header])
+State [reading cmd header],[label="reading cmd header"]
+	Event [data read]
+		Change_State([reading cmd])
+State [reading cmd],[label="reading cmd"]
+	Event [data read]
+		Change_State([reading cmd header])
+State [closing]
+	Event [close]
+		Change_State([done], [label="closed"])
+State [done]
+\end{verbatim}
