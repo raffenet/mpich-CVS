@@ -11,6 +11,40 @@
 #include <assert.h>
 #include <limits.h>
 
+int MPID_Type_struct_alignsize(int count,
+			       MPI_Datatype *oldtype_array);
+
+int MPID_Type_struct_alignsize(int count,
+			       MPI_Datatype *oldtype_array)
+{
+    int i, max_alignsize = 0, tmp_alignsize;
+
+    for (i=0; i < count; i++) {
+	/* shouldn't be called with an LB or UB, but we'll handle it nicely */
+	if (oldtype_array[i] == MPI_LB || oldtype_array[i] == MPI_UB) continue;
+	else if (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN) {
+	    tmp_alignsize = MPID_Datatype_get_basic_size(oldtype_array[i]);
+	}
+	else {
+	    MPID_Datatype *dtp;	    
+
+	    MPID_Datatype_get_ptr(oldtype_array[i], dtp);
+	    tmp_alignsize = dtp->alignsize;
+	}
+	if (max_alignsize < tmp_alignsize) max_alignsize = tmp_alignsize;
+    }
+
+#ifdef HAVE_MAX_STRUCT_ALIGNMENT
+    if (max_alignsize > HAVE_MAX_STRUCT_ALIGNMENT) max_alignsize = HAVE_MAX_STRUCT_ALIGNMENT;
+#endif
+    /* if we didn't calculate a maximum struct alignment (above), then the
+     * alignment was either "largest", in which case we just use what we found,
+     * or "unknown", in which case what we found is as good a guess as any.
+     */
+    return max_alignsize;
+}
+
+
 /*@
   MPID_Type_struct - create a struct datatype
  
@@ -88,13 +122,16 @@ int MPID_Type_struct(int count,
 				      1, /* displacement in bytes */
 				      *oldtype_array,
 				      newtype);
+
+	/* alignsize and padding should be ok in this case */
+
 	return mpi_errno;
     }
     else if (all_basics && !has_lb && !has_ub) {
 	/* no derived types and no ub/lb, but not all the same -- just convert
 	 * everything to bytes.
 	 */
-	int *tmp_blocklength_array;
+	int *tmp_blocklength_array, alignsize, epsilon;
 	
 	tmp_blocklength_array = (int *) MPIU_Malloc(count * sizeof(int));
 
@@ -111,6 +148,16 @@ int MPID_Type_struct(int count,
 				      MPI_BYTE,
 				      newtype);
 	MPIU_Free(tmp_blocklength_array);
+
+	/* account for padding */
+	MPID_Datatype_get_ptr(*newtype, new_dtp);
+	alignsize = MPID_Type_struct_alignsize(count, oldtype_array);
+	new_dtp->alignsize = alignsize;
+	epsilon = new_dtp->extent % alignsize;
+	if (epsilon) {
+	    new_dtp->ub += (alignsize - epsilon);
+	    new_dtp->extent = new_dtp->ub - new_dtp->lb;
+	}
 
 	return mpi_errno;
     } /* end of all basics w/out lb or ub case */
@@ -186,6 +233,8 @@ int MPID_Type_struct(int count,
 	}
 	new_dtp->extent = new_dtp->ub - new_dtp->lb;
 
+	/* TODO: don't bother with alignsize because of the lb/ub (?) */
+
 	return mpi_errno;
     } /* end of all basics w/ lb and/or ub case */
     else if (nr_real_types == 1) {
@@ -193,7 +242,7 @@ int MPID_Type_struct(int count,
 	 * 
 	 * steps:
 	 * - find the locations of the UB and LB, index of actual type
-	 * - 
+	 * - ...
 	 *
 	 * NOTE: if displacement of type is zero, we can dup and adjust
 	 * lb/ub/extent.  otherwise we need to deal with the displacement.
@@ -251,11 +300,13 @@ int MPID_Type_struct(int count,
 	    new_dtp->ub            = ub_disp;
 	}
 	new_dtp->extent = new_dtp->ub - new_dtp->lb;
-	   
+	
+	/* alignsize and padding should be ok in this case */
+
 	return mpi_errno;
     } /* end of single derived type case */
     else {
-	int nr_pieces = 0, first = 0, last, bytes, found_lb = 0, found_ub = 0;
+	int nr_pieces = 0, first = 0, last, bytes, found_lb = 0, found_ub = 0, epsilon, alignsize;
 	int *tmp_blocklength_array;
 	MPI_Aint *tmp_displacement_array, lb_disp = 0, ub_disp = 0;
 	MPID_IOV *iov_array;
@@ -384,6 +435,16 @@ int MPID_Type_struct(int count,
 	    new_dtp->ub            = ub_disp;
 	}
 	new_dtp->extent = new_dtp->ub - new_dtp->lb;
+
+	/* account for padding */
+	MPID_Datatype_get_ptr(*newtype, new_dtp);
+	alignsize = MPID_Type_struct_alignsize(count, oldtype_array);
+	new_dtp->alignsize = alignsize;
+	epsilon = new_dtp->extent % alignsize;
+	if (epsilon) {
+	    new_dtp->ub += (alignsize - epsilon);
+	    new_dtp->extent = new_dtp->ub - new_dtp->lb;
+	}
 
 	return mpi_errno;
     } /* end of general case */
