@@ -1288,9 +1288,6 @@ if test $FROM_MPICH2 = 1 ; then
    AC_DEFINE(HAVE_MPI_GREQUEST,,[Define if generalized requests avaliable])
 fi
 #
-if test $MPI != "mpich" ; then
-   AC_DEFINE(PRINT_ERR_MSG,,[Define for printing error messages])
-fi
 #
 # feature tests:  we can't test features if building as part of MPICH because
 # we don't yet have an implementation against which we can test
@@ -1298,6 +1295,7 @@ fi
 if test "$FROM_MPICH2" = 0 -a "$FROM_MPICH" = 0 ; then
    PAC_TEST_MPIR_STATUS_SET_BYTES
    PAC_TEST_MPI_GREQUEST
+   AC_DEFINE(PRINT_ERR_MSG,,[Define for printing error messages])
 fi
 #
 if test -z "$TEST_CC" ; then
