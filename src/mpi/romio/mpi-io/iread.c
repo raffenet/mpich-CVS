@@ -122,7 +122,7 @@ int MPIOI_File_iread(MPI_File mpi_fh,
     MPI_Type_size(datatype, &datatype_size);
 
     /* --BEGIN ERROR HANDLING-- */
-    MPIOI_CHECK_INTEGRAL_ETYPE(fh, count, datatype_size, myname, error_code);
+    MPIO_CHECK_INTEGRAL_ETYPE(fh, count, datatype_size, myname, error_code);
     MPIO_CHECK_READABLE(fh, myname, error_code);
     MPIO_CHECK_NOT_SEQUENTIAL_MODE(fh, myname, error_code);
     /* --END ERROR HANDLING-- */
