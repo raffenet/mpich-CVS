@@ -1,7 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* 
- *   $Id$    
- *
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
  */
@@ -65,8 +63,8 @@ int MPI_File_read(MPI_File fh, void *buf, int count,
 #endif /* MPI_hpux */
 
 
-    error_code = file_read(fh, 0, ADIO_INDIVIDUAL, buf, count,
-			   datatype, myname, status);
+    error_code = file_read(fh, (MPI_Offset) 0, ADIO_INDIVIDUAL, buf,
+			   count, datatype, myname, status);
 
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, fh, datatype, count);

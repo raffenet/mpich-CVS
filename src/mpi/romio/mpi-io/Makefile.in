@@ -22,7 +22,7 @@ mpi_sources = close.c read.c open.c write.c set_view.c \
       seek.c get_posn.c \
       delete.c read_all.c \
       read_atall.c iread_at.c iwrite_at.c write_all.c get_bytoff.c \
-      write_at.c write_atall.c get_view.c get_group.c get_amode.c \
+      write_atall.c get_view.c get_group.c get_amode.c \
       get_extent.c fsync.c get_atom.c set_atom.c \
       set_size.c get_size.c prealloc.c file_f2c.c file_c2f.c \
       ioreq_f2c.c ioreq_c2f.c set_info.c get_info.c \
@@ -38,7 +38,7 @@ MPIO_OBJECTS = close.o read.o open.o write.o set_view.o \
       seek.o get_posn.o \
       delete.o read_all.o \
       read_atall.o iread_at.o iwrite_at.o write_all.o get_bytoff.o \
-      write_at.o write_atall.o get_view.o get_group.o get_amode.o \
+      write_atall.o get_view.o get_group.o get_amode.o \
       get_extent.o fsync.o get_atom.o set_atom.o \
       set_size.o get_size.o prealloc.o file_f2c.o file_c2f.o \
       ioreq_f2c.o ioreq_c2f.o set_info.o get_info.o \
@@ -62,7 +62,7 @@ MPIO_TMP_POBJECTS = close.p read.p open.p write.p get_extent.p \
       seek.p \
       delete.p read_all.p \
       read_atall.p iread_at.p iwrite_at.p get_posn.p \
-      write_all.p write_at.p write_atall.p get_bytoff.p \
+      write_all.p write_atall.p get_bytoff.p \
       set_view.p get_view.p get_group.p get_amode.p \
       fsync.p get_atom.p set_atom.p set_size.p get_size.p prealloc.p \
       file_f2c.p file_c2f.p ioreq_f2c.p ioreq_c2f.p set_info.p get_info.p \
@@ -83,7 +83,7 @@ MPIO_REAL_POBJECTS = _close.o _read.o _open.o _get_extent.o \
       _get_posn.o \
       _delete.o _read_all.o _get_bytoff.o \
       _read_atall.o _iread_at.o _iwrite_at.o _get_group.o _get_amode.o \
-      _write_all.o _write_at.o _write_atall.o _get_view.o \
+      _write_all.o _write_atall.o _get_view.o \
       _fsync.o _get_atom.o _set_atom.o _set_size.o _get_size.o \
       _file_f2c.o _file_c2f.o _ioreq_f2c.o _ioreq_c2f.o \
       _set_info.o _get_info.o \
