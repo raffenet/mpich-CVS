@@ -57,7 +57,7 @@ implementation.  option may be a list of common separated names including
     all   - All of the above choices],,enable_g=none)
 dnl
 dnl
-AC_ARG_ENABLE(sharedlibs,
+AC_ARG_ENABLE(sharedlis,
 [--enable-sharedlibs=kind - Enable shared libraries.  kind may be
     gnu     - Standard gcc and GNU ld options for creating shared libraries
     libtool - GNU libtool 
@@ -377,8 +377,8 @@ dnl AC_SYS_LONG_FILE_NAMES
 dnl
 dnl
 dnl Setup other replaceable values
-dnl MPILIBNAME=mpich
-dnl AC_SUBST(MPILIBNAME)
+MPILIBNAME=mpich
+AC_SUBST(MPILIBNAME)
 dnl MPI_AINT=int
 dnl for type in int long long_long short ; do
 dnl     eval len=\$ac_cv_sizeof_$type
