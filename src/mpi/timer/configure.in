@@ -12,6 +12,8 @@ AC_CONFIG_AUX_DIR(../../../confdb)
 dnl
 dnl Use AC_ARG_ENABLE to look for --enable-feature and AC_ARG_WITH to look for
 dnl --with-capability
+dnl Enable better caching control
+PAC_ARG_CACHING
 AC_ARG_ENABLE(echo, 
 [--enable-echo  - Turn on strong echoing. The default is enable=no.] ,set -x)
 AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],

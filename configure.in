@@ -15,6 +15,10 @@ AC_CONFIG_AUX_DIR(confdb)
 dnl
 dnl Use AC_ARG_ENABLE to look for --enable-feature and AC_ARG_WITH to look for
 dnl --with-capability
+dnl
+dnl Enable better caching control
+PAC_ARG_CACHING
+dnl
 AC_ARG_ENABLE(echo, 
 [--enable-echo  - Turn on strong echoing. The default is enable=no.] ,set -x)
 dnl
@@ -205,6 +209,7 @@ export AR
 export RANLIB
 export MPILIBNAME
 export CC
+PAC_SUBDIR_CACHE
 AC_CONFIG_SUBDIRS(src/mpi/timer $subsystems )
 dnl Generate the Makefiles from Makefile.in
 dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
@@ -217,3 +222,4 @@ AC_OUTPUT(Makefile src/Makefile \
 	  src/util/thread/Makefile \
           src/include/mpi.h \
 	  examples/Makefile )
+PAC_SUBDIR_CACHE_CLEANUP
