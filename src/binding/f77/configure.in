@@ -955,6 +955,9 @@ force it to allow unaligned accesses.)])
 #
 # Bsend overhead is sent down from the top level configure.
 # Set a conservative default if it isn't provided.
+# If you change the default size (128 below) for BSEND_OVERHEAD,
+# make the same change in configure.in (where there is 
+# a default value for BSEND_OVERHEAD if no value is provided).
 BSEND_OVERHEAD=${BSEND_OVERHEAD:-128}
 AC_SUBST(BSEND_OVERHEAD)
 
