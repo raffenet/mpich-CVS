@@ -2,12 +2,13 @@
 \lyxformat 221
 \textclass book
 \begin_preamble
-\usepackage[bookmarksopen=true]{hyperref}
+\usepackage[bookmarksopen=true,pdftex]{hyperref}
 \end_preamble
 \language english
 \inputencoding auto
 \fontscheme default
 \graphics default
+\float_placement hbp
 \paperfontsize 12
 \spacing single 
 \papersize Default
@@ -17,19 +18,19 @@
 \use_natbib 0
 \use_numerical_citations 0
 \paperorientation portrait
-\leftmargin 0.5in
+\leftmargin 0.7in
 \topmargin 0.5in
-\rightmargin 0.5in
+\rightmargin 0.7in
 \bottommargin 0.5in
-\secnumdepth 4
-\tocdepth 4
+\secnumdepth 3
+\tocdepth 3
 \paragraph_separation skip
 \defskip medskip
 \quotes_language english
 \quotes_times 2
 \papercolumns 1
 \papersides 1
-\paperpagestyle default
+\paperpagestyle fancy
 
 \layout Title
 
@@ -75,6 +76,21 @@ gropp@mcs.anl.gov
 
 \newline 
 Mathematics and Computer Science Divsion, Argonne National Laboratory
+\layout Section*
+
+Acknowledgements
+\layout Standard
+
+One of the authors of this work, Anthony Chan, would like to thank Dave
+ Wootton of IBM Poughkeepsie for his valuable suggestions and comments during
+ the development of this tool.
+ The software in this work was in part developed by the DOE-supported ASCI/Allia
+nce Center for Astrophysical Thermonuclear Flashes at the University of
+ Chicago.
+ This work was supported by the Mathematical, Information, and Computational
+ Sciences Division subprogram of the Office of Advanced Scientific Computing
+ Research, Office of Science, U.S.
+ Department of Energy, under Contract W-31-109-ENG-38.
 \layout Standard
 
 
@@ -85,7 +101,7 @@ Mathematics and Computer Science Divsion, Argonne National Laboratory
 
 \layout Chapter
 
-Abstract
+Introduction
 \layout Standard
 
 Jumpshot-4 is the visualization program for the improved scalable logfile
@@ -95,7 +111,7 @@ on.
  The new scalable logfile format allows the display program to provide functiona
 lities never made possible before.
  Level-of-detail support through preview drawables which provides high-level
- abstraction of the details without reading in hugh amount of data into
+ abstraction of the details without reading in huge amount of data into
  the graphical display engine.
  New Jumpshot allows seamless scrolling from the begining till the end of
  logfile at any zoom-level.
@@ -110,10 +126,10 @@ lities never made possible before.
  is expected by most users.
 \layout Chapter
 
-Introduction to SLOG-2 and Jumpshot-4
+Data Model
 \layout Section
 
-Relationship between SLOG-2 and Jumpshot-4
+Understanding the Drawable
 \layout Standard
 
 The main visual component in the SLOG-2 visualization program, Jumpshot-4,
@@ -195,46 +211,15 @@ Category
 object, e.g.
  color, legend name, topology and other shared description of a drawable.
  Both the category and drawable definitions are stored in the SLOG-2 file.
- These definition are interpreted and displayed by the display program,
+ These definitions are interpreted and displayed by the display program,
  Jumpshot-4.
-\layout Standard
-
-
-\begin_inset Float figure
-placement h
-wide false
-collapsed false
-
-\layout Standard
-
-
-\begin_inset Graphics
-	filename pic/legend_popup.png
-	lyxscale 70
-	clip
-	special scale=0.7
-
-\end_inset 
-
-
-\layout Caption
-
-
-\begin_inset LatexCommand \label{fig:legend_popup}
-
-\end_inset 
-
- A typical Legend window when slog2 file is first loaded into Jumpshot-4.
-\end_inset 
-
-
 \layout Section
 
 Understanding the Preview Drawable
 \layout Standard
 
-Preview drawable is created as a result of the renormalization process of
- the SLOG-2 format.
+A preview drawable is created as a result of the renormalization process
+ of the SLOG-2 format.
  The renormalized object provides a high-level description of what is going
  on within the (timeline vs time) region where the prevew object spans.
  Preview drawable is designed to amalgamate real drawables of same topological
@@ -299,8 +284,22 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/timeline_preview_detail_0.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -379,8 +378,22 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\layout Standard
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/timeline_preview_detail_1.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -472,8 +485,22 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\layout Standard
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/timeline_preview_detail_2.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -568,8 +595,22 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\layout Standard
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/timeline_preview_detail_3.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -621,14 +662,29 @@ Further zooming into the white lines marked region in Figure
 
 
 \begin_inset Float figure
+placement h
 wide false
 collapsed false
 
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\layout Standard
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/timeline_preview_detail_4.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -659,15 +715,28 @@ Main Window
 
 
 \begin_inset Float figure
-placement h
 wide false
 collapsed false
 
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/main.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -686,7 +755,7 @@ collapsed false
 \layout Standard
 
 The first window that pops up when inovking Jumpshot-4 is called Main window
- as shown in Figure
+ as shown in Figure 
 \begin_inset LatexCommand \ref{fig:main}
 
 \end_inset 
@@ -783,8 +852,9 @@ Function
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Open24.gif
-	clip
+	filename pic/gif2png/Open24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -816,7 +886,9 @@ display a File Chooser dialog to select logfile to be processed
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Properties24.gif
+	filename pic/gif2png/Properties24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -848,7 +920,9 @@ display the Legend window of the selected logfile if it is hidden
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/New24.gif
+	filename pic/gif2png/New24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -880,7 +954,9 @@ display the Timeline window of the selected logfile if it is hidden
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Preferences24.gif
+	filename pic/gif2png/Preferences24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -912,7 +988,9 @@ display the Preference window that adjusts Jumpshot's properties
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Help24.gif
+	filename pic/gif2png/Help24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -944,7 +1022,9 @@ show the User's Manual of this program
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Information24.gif
+	filename pic/gif2png/Information24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -987,6 +1067,75 @@ show the FAQs of this program
 \layout Section
 
 Legend Window
+\layout Standard
+
+As soon as a SLOG-2 file is selected in Main window, the Legend window like
+ the one shown in Figure 
+\begin_inset LatexCommand \ref{fig:legend_popup}
+
+\end_inset 
+
+ will be displayed.
+ 
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
+\begin_inset Graphics
+	filename pic/legend_popup.png
+	lyxscale 70
+	scale 60
+	keepAspectRatio
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:legend_popup}
+
+\end_inset 
+
+ A typical Legend window when slog2 file is first loaded into Jumpshot-4.
+\end_inset 
+
+
+\layout Standard
+
+The Legend window contains mainly the 4 columns legend table.
+ The 4 columns are labeled as 
+\emph on 
+Topo, Name, V 
+\emph default 
+and 
+\emph on 
+S
+\emph default 
+ as in Table 
+\begin_inset LatexCommand \ref{table:legend_column_ops}
+
+\end_inset 
+
+.
 \layout Standard
 
 
@@ -1047,6 +1196,8 @@ Right Mouse Click on Column Cell or Left Mouse Click on Column Title
 
 \begin_inset Graphics
 	filename pic/legend_topo.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -1092,6 +1243,8 @@ None
 
 \begin_inset Graphics
 	filename pic/legend_name.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -1137,6 +1290,8 @@ Sort Order menu (Figure
 
 \begin_inset Graphics
 	filename pic/legend_v.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -1182,6 +1337,8 @@ Checkbox Operations Menu (Figure
 
 \begin_inset Graphics
 	filename pic/legend_s.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -1236,29 +1393,7 @@ Checkbox Operations Menu (Figure
 
 \layout Standard
 
-As soon as a SLOG-2 file is selected in Main window, the Legend window like
- the one shown in Figure 
-\begin_inset LatexCommand \ref{fig:legend_popup}
-
-\end_inset 
-
- will be displayed.
- The Legend window contains mainly the 4 columns legend table.
- The 4 columns are labeled as 
-\emph on 
-Topo, Name, V 
-\emph default 
-and 
-\emph on 
-S
-\emph default 
- as in Table 
-\begin_inset LatexCommand \ref{table:legend_column_ops}
-
-\end_inset 
-
-.
- Table 
+Table 
 \begin_inset LatexCommand \ref{table:legend_column_ops}
 
 \end_inset 
@@ -1277,8 +1412,22 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/legend_color_chooser.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -1318,8 +1467,22 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/legend_sort_menu.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -1387,8 +1550,22 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/legend_checkbox_menu.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -1599,10 +1776,24 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/timeline_popup.png
-	lyxscale 70
-	special angle=90,scale=0.75
+	lyxscale 75
+	scale 60
+	keepAspectRatio
+	rotateOrigin center
 
 \end_inset 
 
@@ -1763,6 +1954,18 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/mouse_zoom_mode.png
 
@@ -1790,6 +1993,18 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/mouse_hand_mode.png
 
@@ -1814,15 +2029,26 @@ Dragged Zoom
 
 
 \begin_inset Float figure
-placement h
 wide false
 collapsed false
 
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/ZoomPlusUpLeft25.gif
+	filename pic/gif2png/ZoomPlusUpLeft25.png
 
 \end_inset 
 
@@ -1891,15 +2117,26 @@ Instant Zoom
 
 
 \begin_inset Float figure
-placement h
 wide false
 collapsed false
 
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/ZoomMinusUpLeft25.gif
+	filename pic/gif2png/ZoomMinusUpLeft25.png
 
 \end_inset 
 
@@ -1958,15 +2195,26 @@ Grasp and Scroll
 
 
 \begin_inset Float figure
-placement h
 wide false
 collapsed false
 
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/HandOpenUpLeft25.gif
+	filename pic/gif2png/HandOpenUpLeft25.png
 
 \end_inset 
 
@@ -1987,15 +2235,26 @@ collapsed false
 
 
 \begin_inset Float figure
-placement h
 wide false
 collapsed false
 
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/HandCloseUpLeft25.gif
+	filename pic/gif2png/HandCloseUpLeft25.png
 
 \end_inset 
 
@@ -2090,8 +2349,22 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\layout Standard
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/timeline_infobox_preview_state.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -2261,8 +2534,22 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/timeline_infobox_real_primitive.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -2325,8 +2612,22 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/timeline_infobox_duration.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -2375,8 +2676,22 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/timeline_infobox_time.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -2474,7 +2789,9 @@ Function
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Up24.gif
+	filename pic/gif2png/Up24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -2514,7 +2831,9 @@ Scroll upward by half a screen
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Down24.gif
+	filename pic/gif2png/Down24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -2554,7 +2873,9 @@ Scroll downward by half of a screen
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Edit24.gif
+	filename pic/gif2png/Edit24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -2594,7 +2915,9 @@ Mark the timeline(s)
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Paste24.gif
+	filename pic/gif2png/Paste24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -2634,7 +2957,9 @@ Move the marked timeline(s)
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Delete24.gif
+	filename pic/gif2png/Delete24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -2674,7 +2999,9 @@ Delete the marked timeline(s)
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/TreeExpand24.gif
+	filename pic/gif2png/TreeExpand24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -2714,7 +3041,9 @@ Expand the Y-axis tree label by 1 level
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/TreeCollapse24.gif
+	filename pic/gif2png/TreeCollapse24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -2763,7 +3092,9 @@ Collapse the Y-axis tree label by 1 level
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Backward24.gif
+	filename pic/gif2png/Backward24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -2803,7 +3134,9 @@ Scroll Backward by half a screen
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Forward24.gif
+	filename pic/gif2png/Forward24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -2843,7 +3176,9 @@ Scroll Forward by half a screen
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/WinUndo.gif
+	filename pic/gif2png/WinUndo.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -2892,7 +3227,9 @@ Undo the previous zoom operation
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/ZoomOut24.gif
+	filename pic/gif2png/ZoomOut24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -2941,7 +3278,9 @@ Zoom Out by 1 level in time
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Home24.gif
+	filename pic/gif2png/Home24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -2990,7 +3329,9 @@ Reset zoom to the initial resolution in time
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/ZoomIn24.gif
+	filename pic/gif2png/ZoomIn24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -3030,7 +3371,9 @@ Zoom In by 1 level in time
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/WinRedo.gif
+	filename pic/gif2png/WinRedo.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -3079,7 +3422,9 @@ Redo the previous zoom operation
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/FindBack24.gif
+	filename pic/gif2png/FindBack24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -3128,7 +3473,9 @@ Search backward in time
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Find24.gif
+	filename pic/gif2png/Find24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -3168,7 +3515,9 @@ Search Initialization from last popup InfoBox's time
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/FindFore24.gif
+	filename pic/gif2png/FindFore24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -3217,7 +3566,9 @@ Search forward in time
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Refresh24.gif
+	filename pic/gif2png/Refresh24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -3329,7 +3680,9 @@ Preference/Legend window
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Print24.gif
+	filename pic/gif2png/Print24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -3369,7 +3722,9 @@ Print the Timeline window
 
 
 \begin_inset Graphics
-	filename /home/chan/slog2/slog2sdk_1r/src/images/Stop24.gif
+	filename pic/gif2png/Stop24.png
+	scale 80
+	keepAspectRatio
 
 \end_inset 
 
@@ -3458,8 +3813,22 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/yaxis_label_panel_simple.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -3534,18 +3903,47 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/adj_row_count.png
+	scale 60
+	keepAspectRatio
 	subcaption
 	subcaptionText "Row Count mode"
 
 \end_inset 
 
- 
-\hfill 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
 
 \begin_inset Graphics
 	filename pic/adj_row_height.png
+	scale 60
+	keepAspectRatio
 	subcaption
 	subcaptionText "Row Height mode"
 
@@ -3578,8 +3976,22 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/preference_pview_state.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -3625,9 +4037,21 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset  Tabular
 <lyxtabular version="3" rows="16" columns="3">
-<features islongtable="true">
+<features islongtable="true" headTopDL="true" headBottomDL="true">
 <column alignment="center" valignment="top" leftline="true" width="0(null)">
 <column alignment="block" valignment="top" leftline="true" width="1.1in">
 <column alignment="block" valignment="top" leftline="true" rightline="true" width="3.5in">
@@ -3664,14 +4088,7 @@ Description
 \layout Standard
 
 
-\family roman 
-\series medium 
-\shape up 
-\size normal 
-\emph off 
-\bar no 
-\noun off 
-\color none
+\size small 
 Y_AXIS_ROOT_LABEL
 \end_inset 
 </cell>
@@ -4264,6 +4681,18 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset  Tabular
 <lyxtabular version="3" rows="12" columns="3">
 <features islongtable="true">
@@ -4758,8 +5187,22 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/timeline_search_preview.png
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 
@@ -4854,13 +5297,26 @@ is located at the end of the original 3D bordered box and it is marked by
 
 \begin_inset Float figure
 wide false
-collapsed true
+collapsed false
 
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/timeline_search_preview_zoomed.png
+	scale 60
 
 \end_inset 
 
@@ -4914,10 +5370,23 @@ collapsed false
 \layout Standard
 
 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
+
+\backslash 
+centering
+\newline 
+
+\end_inset 
+
+
 \begin_inset Graphics
 	filename pic/timeline_popup_more.png
 	lyxscale 70
-	special angle=90, scale=0.75
+	scale 60
+	keepAspectRatio
 
 \end_inset 
 

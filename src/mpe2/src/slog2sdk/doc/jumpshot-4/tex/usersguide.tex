@@ -4,9 +4,11 @@
 \usepackage[]{fontenc}
 \usepackage[latin1]{inputenc}
 \usepackage{geometry}
-\geometry{verbose,letterpaper,tmargin=0.5in,bmargin=0.5in,lmargin=0.5in,rmargin=0.5in}
-\setcounter{secnumdepth}{4}
-\setcounter{tocdepth}{4}
+\geometry{verbose,letterpaper,tmargin=0.5in,bmargin=0.5in,lmargin=0.7in,rmargin=0.7in}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
 \setlength\parskip{\medskipamount}
 \setlength\parindent{0pt}
 \usepackage{array}
@@ -22,7 +24,7 @@
 \providecommand{\tabularnewline}{\\}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
-\usepackage[bookmarksopen=true]{hyperref}
+\usepackage[bookmarksopen=true,pdftex]{hyperref}
 
 \usepackage{babel}
 \makeatother
@@ -43,10 +45,23 @@
 Mathematics and Computer Science Divsion, Argonne National Laboratory}
 
 \maketitle
+
+\section*{Acknowledgements}
+
+One of the authors of this work, Anthony Chan, would like to thank
+Dave Wootton of IBM Poughkeepsie for his valuable suggestions and
+comments during the development of this tool. The software in this
+work was in part developed by the DOE-supported ASCI/Alliance Center
+for Astrophysical Thermonuclear Flashes at the University of Chicago.
+This work was supported by the Mathematical, Information, and Computational
+Sciences Division subprogram of the Office of Advanced Scientific
+Computing Research, Office of Science, U.S. Department of Energy,
+under Contract W-31-109-ENG-38.
+
 \tableofcontents{}
 
 
-\chapter{Abstract}
+\chapter{Introduction}
 
 Jumpshot-4 is the visualization program for the improved scalable
 logfile format, SLOG-2, which provides a hierarchical structure to
@@ -54,7 +69,7 @@ store a large number of drawable objects in a very scalable and efficient
 way for visualization. The new scalable logfile format allows the
 display program to provide functionalities never made possible before.
 Level-of-detail support through preview drawables which provides high-level
-abstraction of the details without reading in hugh amount of data
+abstraction of the details without reading in huge amount of data
 into the graphical display engine. New Jumpshot allows seamless scrolling
 from the begining till the end of logfile at any zoom-level. In addition,
 new functionlities like dragged-zoom, grasp and scroll, instant zoom
@@ -66,10 +81,10 @@ easy. The new viewer also attempts to conform to the standard Look
 and Feel that is expected by most users.
 
 
-\chapter{Introduction to SLOG-2 and Jumpshot-4}
+\chapter{Data Model}
 
 
-\section{Relationship between SLOG-2 and Jumpshot-4}
+\section{Understanding the Drawable}
 
 The main visual component in the SLOG-2 visualization program, Jumpshot-4,
 is the \emph{timeline canvas} which is zoomable and scrollable in
@@ -97,25 +112,13 @@ composite drawables.%
 attributes of a drawable is stored in its corresponding \emph{Category}
 object, e.g. color, legend name, topology and other shared description
 of a drawable. Both the category and drawable definitions are stored
-in the SLOG-2 file. These definition are interpreted and displayed
+in the SLOG-2 file. These definitions are interpreted and displayed
 by the display program, Jumpshot-4.
-
-%
-\begin{figure}[h]
-\includegraphics[%
-  clip,
-scale=0.7]{pic/legend_popup.png}
-
-
-\caption{\label{fig:legend_popup} A typical Legend window when slog2 file
-is first loaded into Jumpshot-4.}
-\end{figure}
-
 
 
 \section{Understanding the Preview Drawable}
 
-Preview drawable is created as a result of the renormalization process
+A preview drawable is created as a result of the renormalization process
 of the SLOG-2 format. The renormalized object provides a high-level
 description of what is going on within the (timeline vs time) region
 where the prevew object spans. Preview drawable is designed to amalgamate
@@ -144,8 +147,10 @@ buried by their preview drawables. In the figure, there are preview
 arrows, preview states and some long running real states.
 
 %
-\begin{figure}
-\includegraphics{pic/timeline_preview_detail_0.png}
+\begin{figure}[hbp]
+\centering
+\includegraphics[%
+  scale=0.6]{pic/timeline_preview_detail_0.png}
 
 
 \caption{\label{fig:timeline_preview_detail_0} A typical zoom-out view of
@@ -186,8 +191,11 @@ of load balancing problem before zooming into seeing all the real
 states. 
 
 \noindent %
-\begin{figure}
-\includegraphics{pic/timeline_preview_detail_1.png}
+\begin{figure}[hbp]
+\centering
+
+\includegraphics[%
+  scale=0.6]{pic/timeline_preview_detail_1.png}
 
 
 \caption{\label{fig:timeline_preview_detail_1} The next zoom-in view of Figure
@@ -221,8 +229,11 @@ This indicates that the white, turquoise and grey real states will
 be all nested inside the long running orange and dark royal blue states.
 
 %
-\begin{figure}
-\includegraphics{pic/timeline_preview_detail_2.png}
+\begin{figure}[hbp]
+\centering
+
+\includegraphics[%
+  scale=0.6]{pic/timeline_preview_detail_2.png}
 
 
 \caption{\label{fig:timeline_preview_detail_2} The next zoom-in view of Figure
@@ -254,8 +265,11 @@ objects within the zoomed region. This can be achieved by right clicking
 on the preview drawable and the result is shown in Figure \ref{fig:timeline_infobox_preview_state}.
 
 %
-\begin{figure}
-\includegraphics{pic/timeline_preview_detail_3.png}
+\begin{figure}[hbp]
+\centering
+
+\includegraphics[%
+  scale=0.6]{pic/timeline_preview_detail_3.png}
 
 
 \caption{\label{fig:timeline_preview_detail_3} The next zoom-in view of Figure
@@ -272,8 +286,11 @@ enlarges the real drawables into easily separable objects as shown
 in Figure \ref{fig:timeline_preview_detail_4}.
 
 %
-\begin{figure}
-\includegraphics{pic/timeline_preview_detail_4.png}
+\begin{figure}[h]
+\centering
+
+\includegraphics[%
+  scale=0.6]{pic/timeline_preview_detail_4.png}
 
 
 \caption{\label{fig:timeline_preview_detail_4} The next zoom-in view of Figure
@@ -288,8 +305,10 @@ in Figure \ref{fig:timeline_preview_detail_4}.
 \section{Main Window}
 
 %
-\begin{figure}[h]
-\includegraphics{pic/main.png}
+\begin{figure}[hbp]
+\centering
+\includegraphics[%
+  scale=0.6]{pic/main.png}
 
 
 \caption{\label{fig:main} The main control window of Jumpshot-4.}
@@ -297,7 +316,7 @@ in Figure \ref{fig:timeline_preview_detail_4}.
 
 
 The first window that pops up when inovking Jumpshot-4 is called Main
-window as shown in Figure\ref{fig:main}. The buttons shown in toolbar
+window as shown in Figure \ref{fig:main}. The buttons shown in toolbar
 are shortcuts to the sub menu items in the top menubar. The function
 of each of these buttons is listed in the Table \ref{table:main_toolbar}.
 There are 2 textfields that display crucial information about the
@@ -313,7 +332,7 @@ Map. Only IBM's UTE trace converted SLOG-2 file contains multiple
 ViewMaps.
 
 %
-\begin{table}
+\begin{table}[hbp]
 \begin{longtable}{|c|c|c|}
 \hline 
 Icon&
@@ -322,27 +341,32 @@ Function\tabularnewline
 \hline
 \hline 
 \includegraphics[%
-  clip]{/home/chan/slog2/slog2sdk_1r/src/images/Open24.gif}&
+  scale=0.8]{pic/gif2png/Open24.png}&
 File Selection &
 display a File Chooser dialog to select logfile to be processed\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Properties24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Properties24.png}&
 Show Legend Window&
 display the Legend window of the selected logfile if it is hidden\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/New24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/New24.png}&
 Show Timeline Window&
 display the Timeline window of the selected logfile if it is hidden\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Preferences24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Preferences24.png}&
 Edit Preferences&
 display the Preference window that adjusts Jumpshot's properties\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Help24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Help24.png}&
 Show User's Manual&
 show the User's Manual of this program\tabularnewline
 \hline
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Information24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Information24.png}&
 Show FAQs&
 show the FAQs of this program\tabularnewline
 \hline
@@ -356,8 +380,27 @@ show the FAQs of this program\tabularnewline
 
 \section{Legend Window}
 
+As soon as a SLOG-2 file is selected in Main window, the Legend window
+like the one shown in Figure \ref{fig:legend_popup} will be displayed. 
+
 %
-\begin{table}
+\begin{figure}[hbp]
+\centering
+\includegraphics[%
+  scale=0.6]{pic/legend_popup.png}
+
+
+\caption{\label{fig:legend_popup} A typical Legend window when slog2 file
+is first loaded into Jumpshot-4.}
+\end{figure}
+
+
+The Legend window contains mainly the 4 columns legend table. The
+4 columns are labeled as \emph{Topo, Name, V} and \emph{S} as in Table
+\ref{table:legend_column_ops}.
+
+%
+\begin{table}[hbp]
 \begin{longtable}{|c|c|>{\centering}p{2in}|>{\centering}m{2in}|}
 \hline 
 \multicolumn{1}{|c|}{Icon}&
@@ -366,22 +409,26 @@ Left Mouse Click on Column Cell&
 Right Mouse Click on Column Cell or Left Mouse Click on Column Title\tabularnewline
 \hline
 \hline 
-\includegraphics{pic/legend_topo.png}&
+\includegraphics[%
+  scale=0.8]{pic/legend_topo.png}&
 Topology&
 Pick new Color (Figure \ref{fig:legend_color_chooser})&
 None\tabularnewline
 \hline 
-\includegraphics{pic/legend_name.png}&
+\includegraphics[%
+  scale=0.8]{pic/legend_name.png}&
 Name&
 Edit Name&
 Sort Order menu (Figure \ref{fig:legend_sort_order})\tabularnewline
 \hline 
-\includegraphics{pic/legend_v.png}&
+\includegraphics[%
+  scale=0.8]{pic/legend_v.png}&
 Visibility&
 Check or Uncheck&
 Checkbox Operations Menu (Figure \ref{fig:legend_checkbox_ops})\tabularnewline
 \hline 
-\includegraphics{pic/legend_s.png}&
+\includegraphics[%
+  scale=0.8]{pic/legend_s.png}&
 Searchability&
 Check or Uncheck&
 Checkbox Operations Menu (Figure \ref{fig:legend_checkbox_ops})\tabularnewline
@@ -394,19 +441,16 @@ columns.}
 \end{table}
 
 
-As soon as a SLOG-2 file is selected in Main window, the Legend window
-like the one shown in Figure \ref{fig:legend_popup} will be displayed.
-The Legend window contains mainly the 4 columns legend table. The
-4 columns are labeled as \emph{Topo, Name, V} and \emph{S} as in Table
-\ref{table:legend_column_ops}. Table \ref{table:legend_column_ops}
-also lists out all defined mouse operations that are provided in each
-column. The operations are left mouse clicking on the column title
-icon and on the column cell as well as right mouse clicking in any
-column cell. 
+Table \ref{table:legend_column_ops} also lists out all defined mouse
+operations that are provided in each column. The operations are left
+mouse clicking on the column title icon and on the column cell as
+well as right mouse clicking in any column cell. 
 
 %
-\begin{figure}
-\includegraphics{pic/legend_color_chooser.png}
+\begin{figure}[hbp]
+\centering
+\includegraphics[%
+  scale=0.6]{pic/legend_color_chooser.png}
 
 
 \caption{\label{fig:legend_color_chooser} Color Chooser Dialog for column
@@ -422,8 +466,10 @@ used to update the icon button. The update won't be carried out in
 the timeline canvas automatically, explicit screen redraw is needed.
 
 %
-\begin{figure}
-\includegraphics{pic/legend_sort_menu.png}
+\begin{figure}[hbp]
+\centering
+\includegraphics[%
+  scale=0.6]{pic/legend_sort_menu.png}
 
 
 \caption{\label{fig:legend_sort_order} Sort Order operation menu for the
@@ -447,8 +493,10 @@ serve to facilitate the continuous selection of the category rows
 in the legend table. 
 
 %
-\begin{figure}
-\includegraphics{pic/legend_checkbox_menu.png}
+\begin{figure}[hbp]
+\centering
+\includegraphics[%
+  scale=0.6]{pic/legend_checkbox_menu.png}
 
 
 \caption{\label{fig:legend_checkbox_ops} Checkbox Operation menu for column
@@ -466,7 +514,7 @@ in checkbox operation menu allow easy enabling and disabling of visibility
 as well as searchability checkboxes.
 
 %
-\begin{table}
+\begin{table}[hbp]
 \begin{longtable}{|c|>{\centering}m{4in}|}
 \hline 
 Left Mouse Operation&
@@ -505,9 +553,10 @@ canvas until the CanvasReDraw button in the Timeline window is pressed.
 \section{Timeline Window}
 
 %
-\begin{figure}
+\begin{figure}[hbp]
+\centering
 \includegraphics[%
-angle=90,scale=0.75]{pic/timeline_popup.png}
+  scale=0.6]{pic/timeline_popup.png}
 
 
 \caption{\label{fig:timeline_popup} The initial display of the Timeline window
@@ -563,7 +612,8 @@ knob, clicking the end buttons and in the space between the knob and
 scrollbar's end buttons.
 
 %
-\begin{figure}
+\begin{figure}[hbp]
+\centering
 \includegraphics{pic/mouse_zoom_mode.png}
 
 
@@ -573,7 +623,8 @@ mode.}
 
 
 %
-\begin{figure}
+\begin{figure}[hbp]
+\centering
 \includegraphics{pic/mouse_hand_mode.png}
 
 
@@ -586,8 +637,9 @@ mode.}
 \subsubsection{Dragged Zoom}
 
 %
-\begin{figure}[h]
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/ZoomPlusUpLeft25.gif}
+\begin{figure}[hbp]
+\centering
+\includegraphics{pic/gif2png/ZoomPlusUpLeft25.png}
 
 
 \caption{\label{fig:zoom_plus_cursor} Zoom-plus cursor that indicates the
@@ -618,8 +670,9 @@ display panel.
 \subsubsection{Instant Zoom}
 
 %
-\begin{figure}[h]
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/ZoomMinusUpLeft25.gif}
+\begin{figure}[hbp]
+\centering
+\includegraphics{pic/gif2png/ZoomMinusUpLeft25.png}
 
 
 \caption{\label{fig:zoom_minus_cursor} Zoom-minus cursor that indicates the
@@ -643,8 +696,9 @@ The zoom factor is 2 in this case.
 \subsubsection{Grasp and Scroll}
 
 %
-\begin{figure}[h]
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/HandOpenUpLeft25.gif}
+\begin{figure}[hbp]
+\centering
+\includegraphics{pic/gif2png/HandOpenUpLeft25.png}
 
 
 \caption{\label{fig:hand_open_cursor} Open hand cursor indicates that left
@@ -653,8 +707,9 @@ mouse clicking is ready to grasp and scroll.}
 
 
 %
-\begin{figure}[h]
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/HandCloseUpLeft25.gif}
+\begin{figure}[hbp]
+\centering
+\includegraphics{pic/gif2png/HandCloseUpLeft25.png}
 
 
 \caption{\label{fig:hand_close_cursor} Close hand cursor indicates that left
@@ -702,8 +757,11 @@ drawable.
 \subparagraph{Drawable Info Box for Preview Drawable}
 
 %
-\begin{figure}
-\includegraphics{pic/timeline_infobox_preview_state.png}
+\begin{figure}[hbp]
+\centering
+
+\includegraphics[%
+  scale=0.6]{pic/timeline_infobox_preview_state.png}
 
 
 \caption{\label{fig:timeline_infobox_preview_state} Drawable Info Box for
@@ -772,8 +830,10 @@ each real categories.
 \subparagraph{Drawable Info Box for Real Drawable}
 
 %
-\begin{figure}
-\includegraphics{pic/timeline_infobox_real_primitive.png}
+\begin{figure}[hbp]
+\centering
+\includegraphics[%
+  scale=0.6]{pic/timeline_infobox_real_primitive.png}
 
 
 \caption{\label{fig:timeline_infobox_real_primitive} Drawable Info Box for
@@ -799,8 +859,10 @@ arrow is 1600 byte.
 \paragraph{Duration Info Box}
 
 %
-\begin{figure}
-\includegraphics{pic/timeline_infobox_duration.png}
+\begin{figure}[hbp]
+\centering
+\includegraphics[%
+  scale=0.6]{pic/timeline_infobox_duration.png}
 
 
 \caption{\label{fig:timeline_infobox_duration} Duration Info Box shows the
@@ -823,8 +885,10 @@ Info Box, it appears the total durations are the same.
 \paragraph{Time Info Box}
 
 %
-\begin{figure}
-\includegraphics{pic/timeline_infobox_time.png}
+\begin{figure}[hbp]
+\centering
+\includegraphics[%
+  scale=0.6]{pic/timeline_infobox_time.png}
 
 
 \caption{\label{fig:timeline_infobox_time} Time Info Box displays the time
@@ -844,7 +908,7 @@ services to the Timeline window. Table \ref{table:timeline_toolbar}
 contains the list of functionalities of the buttons found in the toolbar.
 
 %
-\begin{table}
+\begin{table}[hbp]
 \begin{longtable}{|c|c|c|>{\centering}m{3.5in}|}
 \hline 
 Icon&
@@ -853,103 +917,123 @@ Shortcut&
 Function\tabularnewline
 \hline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Up24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Up24.png}&
 Up&
 Alt-UP&
 Scroll upward by half a screen\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Down24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Down24.png}&
 Down&
 Alt-DOWN&
 Scroll downward by half of a screen\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Edit24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Edit24.png}&
 LabelMark&
 none&
 Mark the timeline(s)\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Paste24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Paste24.png}&
 LabelMove&
 none&
 Move the marked timeline(s)\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Delete24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Delete24.png}&
 LabelDelete&
 none&
 Delete the marked timeline(s)\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/TreeExpand24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/TreeExpand24.png}&
 LabelExpand&
 Alt-E&
 Expand the Y-axis tree label by 1 level\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/TreeCollapse24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/TreeCollapse24.png}&
 LabelCollapse&
 Alt-C&
 Collapse the Y-axis tree label by 1 level\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Backward24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Backward24.png}&
 Backward&
 Alt-LEFT&
 Scroll Backward by half a screen\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Forward24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Forward24.png}&
 Forward&
 Alt-RIGHT&
 Scroll Forward by half a screen\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/WinUndo.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/WinUndo.png}&
 ZoomUndo&
 Alt-U&
 Undo the previous zoom operation\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/ZoomOut24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/ZoomOut24.png}&
 ZoomOut&
 Alt-O&
 Zoom Out by 1 level in time\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Home24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Home24.png}&
 ZoomHome&
 Alt-H&
 Reset zoom to the initial resolution in time\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/ZoomIn24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/ZoomIn24.png}&
 ZoomIn&
 Alt-I&
 Zoom In by 1 level in time\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/WinRedo.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/WinRedo.png}&
 ZoomRedo&
 Alt-R&
 Redo the previous zoom operation\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/FindBack24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/FindBack24.png}&
 SearchBackward&
 Alt-B&
 Search backward in time\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Find24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Find24.png}&
 SeachInitialize&
 Alt-S&
 Search Initialization from last popup InfoBox's time\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/FindFore24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/FindFore24.png}&
 SearchForward&
 Alt-F&
 Search forward in time\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Refresh24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Refresh24.png}&
 CanvasReDraw&
 Alt-D&
 Redraw canvas to synchronize changes from Preference/Legend window
 or Yaxis label panel.\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Print24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Print24.png}&
 Print&
 none&
 Print the Timeline window\tabularnewline
 \hline 
-\includegraphics{/home/chan/slog2/slog2sdk_1r/src/images/Stop24.gif}&
+\includegraphics[%
+  scale=0.8]{pic/gif2png/Stop24.png}&
 Exit&
 none&
 Exit the Timeline window\tabularnewline
@@ -981,8 +1065,10 @@ i.e. user needs to press the CanvasReDraw button in the toolbar to
 update the Timeline window with the changes from the label panel.
 
 %
-\begin{figure}
-\includegraphics{pic/yaxis_label_panel_simple.png}
+\begin{figure}[hbp]
+\centering
+\includegraphics[%
+  scale=0.6]{pic/yaxis_label_panel_simple.png}
 
 
 \caption{\label{fig:yaxis_label_panel_simple} A simple 1 level Yaxis label
@@ -1020,8 +1106,11 @@ with window resize, the row adjustment panel allows user to magnify
 or shrink the height of the timeline as one desires.
 
 %
-\begin{figure}
-\subfigure[Row Count mode]{\includegraphics{pic/adj_row_count.png}} \hfill{}\subfigure[Row Height mode]{\includegraphics{pic/adj_row_height.png}}
+\begin{figure}[hbp]
+\centering
+\subfigure[Row Count mode]{\includegraphics[%
+  scale=0.6]{pic/adj_row_count.png}}~~~~~~~~~~~~~~~\subfigure[Row Height mode]{\includegraphics[%
+  scale=0.6]{pic/adj_row_height.png}}
 
 
 \caption{\label{fig:row_adjustment_panel} Row Adjustmemt Panel determines
@@ -1035,8 +1124,10 @@ simultaneously.}
 \section{Preference Window}
 
 %
-\begin{figure}
-\includegraphics{pic/preference_pview_state.png}
+\begin{figure}[hbp]
+\centering
+\includegraphics[%
+  scale=0.6]{pic/preference_pview_state.png}
 
 
 \caption{\label{fig:preference_pview_state} The Preference window that shows
@@ -1050,7 +1141,8 @@ program. A list of the parameters and their definitions are listed
 in Tables \ref{table:preference_data1} and \ref{table:preference_data2}.
 
 %
-\begin{table}
+\begin{table}[hbp]
+\centering
 \begin{longtable}{|c|p{1.1in}|p{3.5in}|}
 \hline 
 Parameter&
@@ -1058,7 +1150,7 @@ Values&
 Description\tabularnewline
 \hline
 \hline 
-Y\_AXIS\_ROOT\_LABEL&
+{\small Y\_AXIS\_ROOT\_LABEL}&
 any text&
 Label for the root node of the Y-axis tree label in the left panel.\tabularnewline
 \hline 
@@ -1135,7 +1227,8 @@ window. }
 
 
 %
-\begin{table}
+\begin{table}[hbp]
+\centering
 \begin{longtable}{|c|p{1.1in}|p{3.5in}|}
 \hline 
 Parameter&
@@ -1236,8 +1329,10 @@ drawable with searchable category can be returned by the search facility.
 By default, all categories in Legend window are searchable. 
 \end{enumerate}
 %
-\begin{figure}
-\includegraphics{pic/timeline_search_preview.png}
+\begin{figure}[hbp]
+\centering
+\includegraphics[%
+  scale=0.6]{pic/timeline_search_preview.png}
 
 
 \caption{\label{fig:timeline_search_preview} Search of state \emph{eos} in
@@ -1270,8 +1365,10 @@ figure, the real \emph{eos} is located at the end of the original
 3D bordered box and it is marked by the Drawable Info Box.
 
 %
-\begin{figure}
-\includegraphics{pic/timeline_search_preview_zoomed.png}
+\begin{figure}[hbp]
+\centering
+\includegraphics[%
+  scale=0.6]{pic/timeline_search_preview_zoomed.png}
 
 
 \caption{\label{fig:timeline_search_preview_zoomed} Dragged zoom the region
@@ -1298,9 +1395,10 @@ process will be automated in the later version of Jumpshot-4.
 \section{Tuning of the Timeline Window}
 
 %
-\begin{figure}
+\begin{figure}[hbp]
+\centering
 \includegraphics[%
-angle=90, scale=0.75]{pic/timeline_popup_more.png}
+  scale=0.6]{pic/timeline_popup_more.png}
 
 
 \caption{\label{fig:timeline_popup_finer} The initial Timeline window with
