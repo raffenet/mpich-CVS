@@ -45,11 +45,11 @@
     The MPI library may be used with any compiler that uses the same 
     lengths for basic data objects (such as 'long double') and that 
     uses compatible run-time libraries.  On many systems, the various
-    compilers are compatible and may be used interchangable.  There are 
+    compilers are compatible and may be used interchangably.  There are 
     exceptions; if you use the 'MPICH_CC' environment variable or the 
     '-cc=name' command-line argument to override the choice of compiler 
-    and encounter problems, try reconfiguring MPICH2 with the new compiler, 
-    installing MPICH2 in a separate location.  See the installation manual 
+    and encounter problems, try reconfiguring MPICH2 with the new compiler
+    and installing MPICH2 in a separate location.  See the installation manual
     for more details.
 
     Examples:
@@ -70,18 +70,18 @@ is a convenient way to build simple programs.
 
  Selecting a Profiling Library:
  The '-profile=name' argument allows you to specify an MPI profiling
- library to be used.  'name' can have two forms:
-.vb
- A library in the same directory as the MPI library 
- The name of a profile configuration file - 
-.ve
+ library to be used.  'name' can have two forms\:
+
+.n A library in the same directory as the MPI library 
+.n The name of a profile configuration file
+.n
  If 'name' is a library, then this library is included before the MPI 
  library.  This allows the simple use of libraries that make use of the
  MPI profiling interface and that are installed in the same directory as 
  the MPI library.
 
  If 'name.conf' is the name of a file in the sysconfdir directory, then this
- is read and may define the following variables:
+ is read and may define the following variables\:
 + PROFILE_PRELIB - Libraries (and paths) to include before the MPI library
 . PROFILE_POSTLIB - Libraries to include after the MPI library
 - PROFILE_INCPATHS - C preprocessor arguments for any include files
