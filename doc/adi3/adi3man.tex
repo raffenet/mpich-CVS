@@ -67,7 +67,7 @@ device-specific implementation.  Even in the cases where an
 implementation of the ADI replaces a module, the generic
 implementation of that module will often serve as a guide.
 
-There are rougly three classes of modules:
+There are roughly three classes of modules:
 \begin{enumerate}
 \item The core: basic process creation and communication. This
 contains one module, MPID CORE. 
@@ -108,6 +108,8 @@ debugging, and to provide a common interface to OS services that have
 different interfaces on different platforms.
 \item[Environment]This module contains both compile-time and run-time
 constants that describe the environment. 
+\item[Communication] The routines that carry out communication among MPI
+  processes. 
 \end{description}
 
 By dividing the ADI into these modules, it becomes easy to implement
@@ -119,10 +121,10 @@ trying to get the maximum performance for point-to-point operations
 may want to replace that module with one carefully tuned to their
 specific platform.
 
-\subsection{The Minimal Implementation}
+\subsection{The Core}
 \label{sec-minimal}
 
-The minimal implementation consists of the following routines:
+The core of MPID consists of the following routines:
 
 \begin{description}
 \item[MPID Init thread]This is the device's counterpart to
@@ -133,7 +135,7 @@ The minimal implementation consists of the following routines:
 \item[MPID Put]This is used for data movement; it is roughly an
 \code{MPI_Put} using only contiguous data.  However, it uses a
 different mechanism for indicating completion of data transfers (see \code{MPID_Waitsome} and \code{MPID_Testsome})
-\item[MPID Rhcv]This is used for messages; it is rougly an
+\item[MPID Rhcv]This is used for messages; it is roughly an
 active-message call.  However, only predefined actions are allowed,
 and these actions are enumerated.
 \item[MPID Waitsome, MPID Testsome]These are used to complete \code{MPID_Rhcv}
@@ -152,10 +154,15 @@ is not needed.  In other words, this routine is provided to
 add that, that is, what few other functions to add.}
 
 
-From these routines, all of MPI can be implemented\footnote{See
+From these routines, together with the implementation of MPI in terms of MPID
+that we are planning to carry out, all of MPI can be implemented\footnote{See
 Section~\ref{sec-passive-target} for some caveats about pure polling
 implementations}.  However, this approach may sacrifice performance
-for simplicity.  
+for simplicity.  For increased performance, one might want to do direct
+implementations of some of the non-core MPID routines, such as
+\code{MPID_Isend}, directly, without relying on core routines.  For example, a
+shared-memory implementation might want to rely on \code{memcpy} directly
+instead of \code{MPID_Rhcv}.
 
 This is not the only small set of routines from which MPI can be
 implemented.  However, the one-sided operations defined in MPI-2 make
@@ -188,7 +195,7 @@ usual limits of available memory) on the size of this message.  Since
 no interconnects provide a way to send arbitrarily large
 non-contiguous messages (and even in shared memory, the complexity of
 handling the layouts of both the sending and receiving datatypes), an
-ADI must provide a was to pack and unpack datatypes to and from
+ADI must provide a way to pack and unpack datatypes to and from
 contiguous buffers.  
 Further, because the message may be arbitrarily large, an internal
 buffer,
@@ -202,7 +209,7 @@ datatypes in pieces (or segments) is that an ADI interface that
 provides MPI-like point-to-point operations, but only for contiguous
 data, cannot be used without significant modification.  
 
-\textbf{To see how, look at the old RMQ design that I did; it used
+\textbf{To see what the modifications would look like, see the old RMQ design that I did; it used
 handlers within the ack-loop.} 
 
 \subsubsection{Passive Target RMA}
@@ -219,12 +226,11 @@ special memory, separating out the buffer used for the final receive
 data type) and the memory from which the message could be forwarded is
 an important goal.  Further, store and
 forward operations often should be \emph{pipelined}; that is, sent in
-chuncks, where each chunck is forwarded it as it is received.
+chunks, where each chunk is forwarded it as it is received.
 Just to make things more complex, in collective algorithms, the data
 received is often processed (e.g., for reduce) and/or forwarded to
 multiple destinations.  These needs, taken together, encourage the
-definition of a store and forward ``building block'' routine
-\textbf{not yet defined}.
+definition of the store and forward ``building block'' routines.
 
 \item Scatter/Gather --- A number of algorithms rely on dividing the
 message up into separate pieces, based on viewing the message as a
@@ -239,7 +245,7 @@ operations is that they are blocking.  This allows the code
 implementing the collective operation to remain in control; in
 particular, it can wait for an operation to complete and then perform
 the next step.  This feature influenced the design of the
-\textbf{store and forward building block yet to be defined}.
+store and forward routines.
 \end{enumerate}
 
 \subsection{Multi-method Communication}
@@ -264,11 +270,13 @@ In ADI-1 and ADI-2, non-contiguous datatypes were handled by first
 allocating a buffer large enough to hold the \emph{entire} message and
 then either packing the message into that buffer (for a send) or
 unpacking it after it was delivered (for a receive).  This was a
-reasonable expediant when the original MPICH implementation was done,
+reasonable expedient when the original MPICH implementation was done,
 but is not acceptable in a mature package.
 
-\section{Things left to do}
-Dynamic processes.  What is the ADI interface?
+\section{Things Left to do}
+Dynamic processes.  What is the ADI interface?  What relationship does it
+have to the BNR interface?  Should there be a connection between BNR groups
+and MPID groups?
 
 \code{MPID_Join} involves sockets, to we might make it part of the
 utility module.  But what routines from \code{MPID_Core} must it call
@@ -299,6 +307,146 @@ Still to do.  This section needs to cover:
 \input DSOverview.tex
 \input Constants.tex
 \input DyOverview.tex
+
+\section{Summary of MPID Routines by Module}
+
+\subsection{MPID Core}
+\begin{verbatim}
+    MPID_Abort
+    MPID_Close_port
+    MPID_Comm_accept
+    MPID_Comm_connect
+    MPID_Comm_disconnect
+    MPID_Comm_spawn_multiple
+    MPID_Finalize
+    MPID_Flags_testsome
+    MPID_Flags_waitsome
+    MPID_Hid_Cancel (handler)
+    MPID_Hid_Request_to_send (handler)
+    MPID_Open_port
+    MPID_Put
+    MPID_Rhcv
+    MPID_Thread_init
+\end{verbatim}
+
+\subsection{Handlers}
+\begin{verbatim}
+    Need enumeration of non-core handlers for MPID_Rhcv.  Perhaps these 
+    belong in various modules.
+\end{verbatim}
+
+\subsection{Attributes}
+\begin{verbatim}
+    MPID_Attr_delete
+    MPID_Attr_find
+    MPID_Attr_list_walk
+    MPID_Attr_predefined
+    MPID_Comm_attr_delete
+    MPID_Comm_attr_set
+    MPID_Lang_t
+\end{verbatim}
+
+\subsection{Datatypes}
+\begin{verbatim}
+    MPID_Datatype_free
+    MPID_Datatype_incr
+    MPID_Datatype_new
+    MPID_Datatype
+    MPID_Pack_size
+    MPID_Pack
+    MPID_Unpack
+    MPID_Segment_free
+    MPID_Segment_init_pack
+    MPID_Segment_init_unpack
+    MPID_Segment_pack
+    MPID_Segment
+    MPID_Segment_unpack
+\end{verbatim}
+
+\subsection{Groups}
+\begin{verbatim}
+    MPID_Group_free
+    MPID_Group_incr
+    MPID_Group_new
+    MPID_Group
+    MPID_Lpidmask
+\end{verbatim}
+
+\subsection{Communicators}
+\begin{verbatim}
+    MPID_Comm_create
+    MPID_Comm_free
+    MPID_Comm_incr
+    MPID_Comm
+    MPID_Comm_thread_lock
+    MPID_Comm_thread_unlock
+\end{verbatim}
+
+\subsection{Requests}
+\begin{verbatim}
+    MPID_Request_cancel
+    MPID_Request_FOA
+    MPID_Request_free
+    MPID_Request_iprobe
+    MPID_Request_new
+    MPID_Request_ready
+\end{verbatim}
+
+\subsection{Communication}
+\begin{verbatim}
+    MPID_Flags_testall
+    MPID_Flags_waitall
+    MPID_Get
+    MPID_Isend
+    MPID_Memory_register
+    MPID_Memory_unregister
+    MPID_Rhc
+    MPID_tBsend
+\end{verbatim}
+
+\subsection{Streams}
+\begin{verbatim}
+    MPID_Iforward_stream
+    MPID_Irecv_stream
+    MPID_Isend_stream
+    MPID_Wait_stream
+\end{verbatim}
+
+\subsection{Window Objects}
+\begin{verbatim}
+    MPID_Alloc_mem
+    MPID_Free_mem
+    MPID_Win
+\end{verbatim}
+
+\subsection{Timers}
+\begin{verbatim}
+    MPID_Gwtick
+    MPID_Gwtime_init
+    MPID_Wtick
+    MPID_Wtime_diff
+    MPID_Wtime
+\end{verbatim}
+
+\subsection{Topology}
+\begin{verbatim}
+    MPID_Topo_cluster_info
+\end{verbatim}
+
+\subsection{Utility}
+\begin{verbatim}
+    MPID_Calloc
+    MPID_Free
+    MPID_Malloc
+    MPID_Memcpy
+    MPID_Strdup
+\end{verbatim}
+
+\subsection{Environment}
+\begin{verbatim}
+    MPID_MAX_THREAD_LEVEL
+    MPID_THREAD_LEVEL
+\end{verbatim}
 
 \section{MPID Core}
 \input MPID_CORE-list.tex
