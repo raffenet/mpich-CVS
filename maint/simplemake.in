@@ -19,6 +19,13 @@ $do_dependencies = "dynamic"; # set to no, static, or dynamic to attempt
 			      # recursive ops) but no actions
 $makeInclude = "include";     # set to the include command to use.
                               # This is more robust if it ignores missing files
+$arAllAtOnce = 1;             # Set to 1 to ar all objects in the 
+                              # profiling target at once, rather than
+                              # one at a time.  Change to 0 if 
+                              # failures are encountered due to line-length
+                              # limits.  Use the smvar_name option to
+                              # control this on a file-by-file basis.
+
 # Set the names for the autoconf and autoheader program, along with 
 # the optional args and the argument used to specify the include dir for
 # autoconf/autoheader (autoconf 2.57 changed the command-line interface
@@ -108,6 +115,11 @@ $debug = 0;                 # General debugging
 $debug_dirs = 0;            # Debug the choice of directories
 $debug_confdir = 0;         # Track the directory containing the controlling
                             # configure.in
+# Allow us to set the debug variables from the environment:
+if (defined($ENV{"DEBUG"})) { $debug = 1; }
+if (defined($ENV{"DEBUG_DIRS"})) { $debug_dirs = 1; }
+if (defined($ENV{"DEBUG_CONFDIR"})) { $debug_confdir = 1; }
+
 $quiet = 0;
 
 %libdir = ();
@@ -123,7 +135,7 @@ $quiet = 0;
 # Assembler *output* definitions
 	      'c:s' => '$(C_COMPILE) -S $<',
 	      'f:s' => '$(F77_COMPILE) -S $<',
-# C preprocessor *output* definitions.  We don' use cpp as the 
+# C preprocessor *output* definitions.  We don't use cpp as the 
 # output suffix to avoid conflicts with C++ 
 	      'c:txt' => '$(CPP) $(INCLUDES) $< >$*.txt',
 	      'F:txt' => '$(CPP) $(INCLUDES) $<  >$*.txt',
@@ -338,7 +350,9 @@ $distcleanfiles = "";
                          # are part of the subdirs but are not 
                          # simplemake dirs
 
+# ---------------------------------------------------------------------------
 @keepargs = ();    # Used to recreate simplemake invocation for make target
+$foundFile = "no";
 foreach $_ (@ARGV) {
     $keepargs[$#keepargs+1] = $_;    # Add all args by default
     if (/-nocomments/) { $nocomments = 1; }
@@ -430,8 +444,16 @@ foreach $_ (@ARGV) {
     }
     else {
 	$#keepargs--;  # Remove filename from list
+	$foundFile = "yes";
 	&ProcessFile ( $_ );
     }
+}
+
+# If there is no argument and the default filename, then process it
+print "found file = $foundFile\n" if $debug;
+if ($foundFile ne "yes" && -s "Makefile.sm") {
+    print "about to process file\n";
+    &ProcessFile( "Makefile.sm" );
 }
 
 
@@ -1099,6 +1121,7 @@ sub DefaultRules {
 	# dependencies (We use $acincdir_arg incase autoconf 2.57 is used,
 	# in which case the argument is -I or -B, or in case autoconf 2.58
 	# or later is used, in which case the argument may be changed again.
+	# Argh.  In autoconf 2.59, -B doesn't work
 	if ($aargs =~ /$acincdir_arg\s*([\.\/\w]*)/) {
 	    $macroloc = $1;
 	    # HACK.  If we've messed up the location, don't include it
@@ -1123,7 +1146,10 @@ sub DefaultRules {
 	# 
 	# With Autoconf 2.57, there is a "cache" that like all automake
 	# caches, isn't reliable and must be removed 
-	&print_make_longline( FD, "\t\@if [ -d autom4te.cache ] ; then rm -rf autom4te.cache ; fi$newline" );
+#	&print_make_longline( FD, "\t\@if [ -d autom4te.cache ] ; then rm -rf autom4te.cache ; fi" );
+	# With some versions of autoconf, this cache has the version
+	# number in it (!)
+	&print_make_longline( FD, "\t\@rm -rf autom4te*.cache" );
 	if ($configure_has_config_headers ne "no") {
 	    &print_make_longline( FD,  "\t(cd \${srcdir} && $autoheader_prog $aargs && \\$newline\t$autoconf $aargs )" );
 	}
@@ -1181,6 +1207,7 @@ sub DefaultRules {
 	}
 	$relcurdir = $curdir;
 	$relcurdir =~ s/^$last_config_dir//;
+	print STDOUT "curdir is $curdir and relcurdir is $relcurdir\n" if $debug_confdir;
 	print FD "\t${ignore_step}if [ -x config.status ] ; then CONFIG_FILES=${relcurdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status ; fi$newline";
     }
     # Clean targets
@@ -1196,12 +1223,12 @@ sub DefaultRules {
 # then generate code by using keys(%ext_seen).  Allows general
 # extensions and simpler handling of rules (like adding .F and .f90 )
 sub FindSrcTypes {
-    $source = $_[0];
-    $files = "";
-    foreach $sym (split(/\s+/,$source)) {
+    my $source = $_[0];
+    my $files = "";
+    foreach my $sym (split(/\s+/,$source)) {
 	print STDERR "Is $sym a make variable?\n" if $debug;
 	$vsym = $sym;
-	if ($vsym =~ /\$[\{\(]?([A-Za-z0-9_]*)[\}\)]?/) {
+	if ($vsym =~ /\$[\{\(]?(\w*)[\}\)]?/) {
 	    $vsym = $1;
 	}
 	if (defined($makevars{$vsym})) {
@@ -1212,7 +1239,7 @@ sub FindSrcTypes {
 	    $files .= " $sym";
 	}
     }
-    foreach $file (split(/\s+/,$files)) {
+    foreach my $file (split(/\s+/,$files)) {
 	($name,$ext) = split('\.',$file);
 	if (defined($ext) && $ext ne "") {
 	    $ext_seen{$ext} = 1;
@@ -1238,26 +1265,6 @@ sub SaveSrcNames {
 	foreach $name (split(/\s+/,$file)) {
 	    $files[$#files+1] = $name;
 	}
-# 	if ($file =~ /\$[{\(](.*)[}\)]/) {
-# 	    #print STDERR "Adding $file to src list\n";
-# 	    $varname = $1;
-# 	    if (defined($makevars{$varname})) {
-# 		$file = $makevars{$varname};
-# 		foreach my $name (split(/\s+/,$file)) {
-# 		    if ($name =~ /\$/) {
-# 			print STDERR "Nested variables in source names unsupported\n";
-# 		    }
-# 		    $files[$#files+1] = $name;
-# 		}
-# 	    }
-# 	    else {
-# 		$files[$#files+1] = $file;
-# 	    }
-# 	}
-# 	else {
-# 	    # Just keep the file.
-# 	    $files[$#files+1] = $file;
-# 	}
     }
     
     foreach $file (@files) {
@@ -1358,10 +1365,11 @@ sub ClearVars {
 sub ExpandMakeVars {
     # look for ${\w*} and replace with the value of $makevars{$1}
     $_ = $_[0];
+    my $count = 0;   # Protect against near-infinite loops 
     print "Looking at $_\n" if $debug;
-    while (/\${(\w*)}/) {
+    while (/\$[{\(](\w*)[}\)]/ && $count++ < 100) {
 	print "replacing $1\n" if $debug;
-	$mvar = $1;
+	my $mvar = $1;
 	s/\${$mvar}/$makevars{$mvar}/g;
     }
     print "expanded to $_\n" if $debug;
@@ -1458,7 +1466,7 @@ sub ProcessFile {
 		print "File $curdir$dir/$file does not exist\n"; 
 	    }
 	    next M; }
-	chdir $dir;
+	chdir $dir || die "Cannot change to directory $dir\n";
 	$curdir .= "$dir/";
 	$curdir = &CleanCurDir( $curdir );
 	if ($dir =~ /\.\./) {
@@ -1482,6 +1490,8 @@ sub ProcessFile {
 	}
 	print "rootdir = $rootdirpath\n" if $debug_confdir;
 	print "curdir = $curdir\n" if $debug_confdir;
+	# Remember the last place that we saw a configure; push and
+	# pop for each file that we process.
 	$config_dir[$#config_dir+1] = $last_config_dir; 
 	print "config stack has depth $#config_dir\n" if $debug_confdir;
 	print "relative path to configure dir is " . &GetPathToParent( $curdir, $last_config_dir ) . "\n" if $debug_confdir;
@@ -1514,18 +1524,38 @@ sub ListTargets {
 #
 # Add to a target the designate operation in all subdirs (except for .)
 #     &RecursiveOp( "target" [, optional array of directories ] );
+# Special notes:
+#    For a small number of directories, use a simpler (non loop) approach
+#    
 sub RecursiveOp {
-    $target = $_[0];
-    $subdirname = $_[1];
+    my $target = $_[0];
+    my $subdirname = $_[1];
+    my $forThreashold = 3;
+
+    # Get the optional arrays
     if ($subdirname ne "") {
 	@dirs = @$subdirname;
     }
     else {
 	@dirs = (@extra_dirs, @subdirs);
     }
+
+    # Entries that are shell or autoconf variables have unknown count.
+    # 
+    my $dirlistHasVariable = 0;
+    foreach $dir (@dirs) {
+	if ($dir =~ /@[^@]*@/) {
+	    $dirlistHasVariable = 1;
+	}
+	elsif ($dir =~ /\$/) {
+	    $dirlistHasVariable = 1;
+	}
+    }
+
     print "n dirs = $#dirs\n" if $debug;
     if ($#dirs == 0 && $dirs[0] eq ".") { return; }
-    if ($#dirs >= 0) { 
+    if ($#dirs >= $forThreashold || $subdirs_has_autoconf ||
+	$dirlistHasVariable) { 
         print FD "\tfor dir in";
         foreach $dir (@dirs) {
 	    if ($dir ne ".") { print FD " $dir"; }
@@ -1545,6 +1575,41 @@ sub RecursiveOp {
           print FD " ; do \\$newline\t\t(cd \$\$dir && \${MAKE} $target ; ) ; " .
 	    "done$newline";
         }
+    }
+    elsif ($#dirs >= 0) {
+	foreach $dir (@dirs) {
+	    # Skip . and any empty names
+	    if ($dir ne "." && $dir =~ /\S/) {
+		print FD "\t(cd $dir && \$(MAKE) $target )$newline";
+	    }
+	}
+    }
+}
+
+# A version of RecuriveOps for optional directories; this is careful
+# to check for existence of both the directory and the Makefile
+# RecursiveOpForOptionalDirs( dirs, target )
+sub RecursiveOpForOptionalDirs {
+    my $subdirs = $_[0];
+    my $target = $_[1];
+    my $forThreshold = 3;
+
+    if ($subdirs ne "") {
+	# Count the number of directories
+	my @sdirs = split(/\s+/,$subdirs);
+	if ($#sdirs >= $forThreshold) {
+	    print FD "\t-\@for dir in $subdirs ; do \\$newline";
+	    print FD "\t    if [ -s \$\$dir/Makefile ] ; then \\$newline";
+	    print FD "\t      (cd \$\$dir && \${MAKE} $target ;) ; fi ; \\$newline";
+	    print FD "\tdone$newline";
+	}
+	else {
+	    foreach my $dir (@sdirs) {
+		if ($dir ne "." && $dir =~ /\S/) {
+		    print FD "\t(cd $dir && \$(MAKE) $target )$newline";
+		}
+	    }
+	}
     }
 }
 
@@ -1700,13 +1765,40 @@ sub TargetPostamble {
 # ===========================================================================
 # The "clean" target
 # 
-# Produces clean: and distclean: .
-# If clean-local or distclean-local were defined, they are included in
-# the dependency lists
+# Produces clean:, distclean:, and maintainerclean:
+# If clean-local, distclean-local, or maintainer-clean-local were defined, 
+# they are included in the dependency lists
 # 
 # The default for quietLine makes the clean lines quiet (no echo of the
 # command).
+#
+# Notes:
+# The clean target is relatively easy, because it involves only files
+# created *after* the configure step.  
+# The distclean and maintainer-clean steps are more complicated, because
+# there is some interaction with the generated steps.  In particular,
+# distclean must remove Makefile, but once the makefiles are gone, 
+# you can't execute another make step.  If you run maintainer-clean first,
+# the the dependencies on Makefile:Makefile.in:Makefile.sm will force
+# a reconstruction of some of the files that were just removed.
+# Thus, we need to separate from the distclean and maintainer-clean targets
+# the steps that remove the makefiles.  Thus, we have the
+# following intermediate targets:
+#    remove-makefile
+#    remove-genmakefiles
+# To simplify the construction of the targets, we use internal targets.
+# Thus, distclean becomes:
+# distclean: clean distclean-local distclean-xxx remove-makefile
+#
+# and maintainer-clean becomes
+# maintainer-clean: clean maintainer-clean-local distclean-local \
+#     distclean-xxx maintainer-clean-xxx remove-genmakefiles
+# 
+#
+#
 sub TargetClean {
+    my $otherMakefiles;
+
     $programnames = join( ' ', keys(%programs));
     print FD "clean:";
     if (defined($usertargets{"clean-local"})) { print FD " clean-local"; }
@@ -1719,27 +1811,46 @@ sub TargetClean {
 	    print FD " $name.exe";
 	}
 	print FD "$newline";
+	# Remove core files, including core files with process numbers 
+	# (produced by some versions of Linux)
+	print FD "\t-${quietLine}rm -f core core.[0-9]*$newline";
     }
 
-    #if ($do_sharedlibs) {
-        # Output this in all cases to clear any old files.  
-	print FD "\t-${quietLine}rm -f *.lo \${srcdir}/*.lo$newline";
-    #}
+    # Output this in all cases to clear any old files.  
+    # (Don't make this conditional because it is important to remove
+    # these files even if we're not building for enabling shared libraries
+    # this time around.
+    print FD "\t-${quietLine}rm -f *.lo \${srcdir}/*.lo$newline";
+
     if ($do_profilelibs && $found_profilelib) {
 	print FD "\t-${quietLine}rm -f *.pf \${srcdir}/*.pf$newline";
     }
+
     # Clean coverage analysis files
     &GcovClean;
+
+    # We can put a hook here to add additional clean targets.  For 
+    # the moment, we'll add an MPICH-2 specific target for this
+    if ($programnames ne "") {
+	# Testing of parallel program may produce log files.  This will remove
+	# any existing irlog files
+	print FD "\t-${quietLine}rm -f *.irlog*$newline";
+    }
+    
 
     # Finally, execute make clean in any subdirs
     &RecursiveOp( "clean" );
 
+    # --------------------------------------------
     # distclean target
     print FD "distclean: clean";
     if (defined($usertargets{"distclean-local"})) { 
 	print FD " distclean-local";
     }
+    print FD " distclean-xxx remove-makefile";
     print FD "$newline";
+    
+    print FD "distclean-xxx:$newline";
     &RecursiveOp( "distclean" );
     # Remove any local files last (in case this file is one of them)
     $rmfile = "";
@@ -1747,9 +1858,15 @@ sub TargetClean {
     $lcurdir =~ s/\/$//;
     if (defined($autoconf_files_by_dir{$lcurdir})) {
 	$rmfile = $autoconf_files_by_dir{$lcurdir};
+	# Remove the Makefile.in from this list because it will
+	# be handled separately
+	if ($rmfile =~ /Makefile.in/) {
+	    $otherMakefiles .= "Makefile.in ";
+	    $rmfile =~ s/Makefile.in\s*//;
+	}
 	print FD "\t-${quietLine}rm -f $rmfile$newline";
-	# Remove the configure cache that autoconf 2.57 adds
-	print FD "\t-${quietLine}rm -rf autom4te.cache$newline";
+	# Remove the configure cache that autoconf 2.57+ adds
+	print FD "\t-${quietLine}rm -rf autom4te*.cache$newline";
     }
     if ($configure_has_config_headers ne "no") {
 	# Add the AC_CONFIG_HEADER file, if any.
@@ -1771,12 +1888,7 @@ sub TargetClean {
     # a SUBDIRS = foo \@bar\@ 
     # line (without the \, included since the simplemake.in file is
     # itself processed with autoconf)
-    if ($subdir_optionals ne "") {
-	print FD "\t-\@for dir in $subdir_optionals ; do \\$newline";
-	print FD "\t    if [ -s \$\$dir/Makefile ] ; then \\$newline";
-	print FD "\t      (cd \$\$dir && \${MAKE} distclean ;) ; fi ; \\$newline";
-	print FD "\tdone$newline";
-    }
+    &RecursiveOpForOptionalDirs( $subdir_optionals, "distclean" );
 
     &DistCleanDependencies;
 
@@ -1785,16 +1897,22 @@ sub TargetClean {
     }
     print FD "\t-${quietLine}rm -f TAGS$newline";
 
+    # --------------------------
     if ($maint_targets) {
-	# Should maintainerclean also perform a distclean?
-	print FD "maintainerclean:";
-	if (defined($usertargets{"maintainerclean-local"})) {
-	    print FD " maintainerclean-local";
+	# Should maintainer-clean also perform a distclean?
+	# No, because distclean needs to remove the Makefiles, and 
+	# this target needs to remove entries that have dependencies
+	# (e.g., the Makefile : Makefile.in : Makefile.sm dependency)
+	print FD "maintainer-clean:";
+	if (defined($usertargets{"maintainer-clean-local"})) {
+	    print FD " maintainer-clean-local";
 	}
+	print FD " distclean-xxx remove-genmakefiles";
 	print FD "$newline";
-	&RecursiveOp( "maintainerclean" );
+	&RecursiveOp( "maintainer-clean" );
 	# Remove the file that simplemake creates
-	print FD "\t-rm -f $output_name$newline";
+	$otherMakefiles .= " $output_name";
+	#print FD "\t-rm -f $output_name$newline";
 	# eventually, this should also invoke distclean, but it must
 	# do that only once (not recursively) and only after all other
 	# uses of the Makefile, since distclean removes the Makefile
@@ -1815,8 +1933,27 @@ sub TargetClean {
 	}
 	# We also need to remove configure and autom4ate/ if present
     }
+    &TargetRmMakefiles( $otherMakefiles );
+
 }
 
+#
+# Generate the makefile removal targets
+# TargetRmMakfiles( otherMakefiles )
+#
+# These are *NOT* recursive targets because they are local to the
+# particular directory.
+sub TargetRmMakefiles {
+    my $otherMakefiles = $_[0];
+    print FD "remove-makefile:$newline";
+    print FD "\trm -f Makefile$newline";
+    print FD "remove-genmakefiles:$newline";
+    print FD "\trm -f $otherMakefiles Makefile$newline";
+}
+#
+# Generate the core part of the distclean target
+sub TargetDistclean {
+}
 #
 # ===========================================================================
 # Libraries
@@ -1932,8 +2069,13 @@ sub TargetProfileLibraries {
 	    # for a single file, so this approach is O(length*nfiles).
 	    # The only reason not to do this is that a particularly long
 	    # command line may exceed commandline length limits.
-	    print FD "\tfor file in .tmp/*.o ; do \\$newline";
-	    print FD "\t\${AR} cr ${libloc}lib$proflib_name.a \$\$file ; done;$newline";
+	    if ($arAllAtOnce) {
+		print FD "\t\${AR} cr ${libloc}lib$proflib_name.a .tmp/*.o$newline";
+	    }
+	    else {
+		print FD "\tfor file in .tmp/*.o ; do \\$newline";
+		print FD "\t\${AR} cr ${libloc}lib$proflib_name.a \$\$file ; done;$newline";
+	    }
 	    if ($ranliblib) { 
 		print FD "\t\${RANLIB} ${libloc}lib$proflib_name.a$newline"; 
 		# To handle timestamp problems with recursive makes, 
@@ -1948,7 +2090,53 @@ sub TargetProfileLibraries {
 	}
     }
 }
-
+#
+# ===========================================================================
+# The following is a cache of comments on using libtool, based on the
+# targets created by automake.  
+# Issues include 
+#   Handling the simultaneous generation of dependency information
+#    (automake assumes a GNU environment, including gnumake and gcc, unless
+#    you work really, really hard)
+#   
+# .c.lo: (target in the automake is %.lo: %.c)  is roughly
+# @echo '$(LTCOMPILE) -c $<'
+# @$(LTCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
+# @sed -e 's/^\([^:]*\)\.o[\t ]*;/\1.lo \1.o :/' \ <.deps/$(*F).pp > \
+#   .deps/$(*F).P; \
+# tr ' ' '\012' < .deps/$(*F).pp \ 
+#  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
+#  >> .deps/$(*F).P
+# @rm -f .deps/$(*F).pp
+#
+# Most of this is used to handle the dependency generation, including
+# makint the files refer to .lo and .o instead of just .o.  Also note that
+# LTCOMPILE generates BOTH .o and .lo files.
+# (most of this is similar to the .c.o target generated by automake
+#
+# Another important step is the install step, which is roughly
+# install-libLTLIBRARIES: $(lib_LTLIBRARIES)
+#   @$(NORMAL_INSTALL)
+#   $(mkinstalldirs) $(DESTDIR)$(libdir)
+#   @list='$(lib_LTLIBRARIES)'; for p in $$list ; do \
+#     if test -f $$p; then \
+#        echo "$(LIBTOOL) --mode=install $(INSTALL) $$p $(DESTDIR)$(libdir)/$$p" ;\
+#        $(LIBTOOL) --mode=install $(INSTALL) $$p $(DESTDIR)$(libdir)/$$p ;\
+#     else : ; fi ; done
+# uninstall-libLTLIBRARIES:
+#   @$(NORMAL_UNINSTALL)
+#   @list='$(lib_LTLIBRARIES)'; for p in $$list ; do \
+#        $(LIBTOOL) --mode=uninstall $(INSTALL) rm -f $(DESTDIR)$(libdir)/$$p ;\
+#     done
+#
+# clean target for libtool adds .libs and _libs (may be directories)
+# 
+# NORMAL_INSTALL and UNINSTALL seem to be hooks; the base definition is :
+# 
+# DESTDIR is a newer automake thing to make it easier to retarget an install
+# into a test directory.
+#
+# ---------------------------------------------------------------------------
 # This routine creates the library of shared objects.  There is a separate
 # step that builds the shared library (which is really a kind of partially
 # linked executable).
@@ -2829,6 +3017,7 @@ sub CleanCurDir {
     my $depth = 0;
 
     # Handle any /.. at the end
+    print "Cleaning directory name $dir...\n" if $debug_confdir;
     $dir =~ s/\/$//;
     while ($dir =~ /\/\.\.$/) {
 	$depth++;
@@ -2844,7 +3033,9 @@ sub CleanCurDir {
 	print "Changing $dir to $1$2\n" if $debug_confdir;
 	$dir = "$1$2";
     }
-    return "$dir/";
+    if ($dir ne "") { $dir .= "/"; }
+    print "Cleaned directory name is $dir\n" if $debug_confdir;
+    return "$dir";
 }    
 #
 # ===========================================================================
