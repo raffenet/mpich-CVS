@@ -109,6 +109,8 @@ int sock_readv(sock_t sock, SOCK_IOV * iov, int n, sock_size_t * num_read);
 int sock_write(sock_t sock, void * buf, sock_size_t len, sock_size_t * num_written);
 int sock_writev(sock_t sock, SOCK_IOV * iov, int n, sock_size_t * num_written);
 
+int sock_native_to_sock(sock_set_t set, SOCK_NATIVE_FD fd, void *user_ptr, sock_t *sock_ptr);
+
 /* extended functions */
 int sock_getid(sock_t sock);
 
