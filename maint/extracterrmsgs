@@ -3,6 +3,7 @@
 require "maint/parse.sub";
 
 $debug = 0;
+$careful = 0;        # Set careful to 1 to flag unused messages
 $entrycount = 0;
 %defined_args = ();
 $showfiles = 0;
@@ -18,6 +19,7 @@ foreach $arg (@ARGV) {
     elsif( $arg =~ /-quiet/) { $quiet = 1; }
     elsif( $arg =~ /-notest/) { $build_test_pgm = 0; }
     elsif( $arg =~ /-outfile=(.*)/) { $outfile = $1; }
+    elsif( $arg =~ /-careful/) { $careful = 1; }
     else {
 	print "Adding $arg to files\n" if $debug;
 	if (-d $arg) {
@@ -62,6 +64,21 @@ if ($build_test_pgm) {
     print TESTFD "    MPI_Finalize();\n    return 0;\n}\n";
 }    
 
+#
+# Generate a list of unused keys
+if ($careful) {
+    foreach $shortname (keys(%longnames)) {
+	if (!defined($longnamesUsed{$shortname}) ||
+	    $longnamesUsed{$shortname} < 1) {
+	    $loc = $longnamesDefined{$shortname};
+	    print STDERR "Name $shortname is defined in $loc but never used\n";
+	}
+    }
+}
+
+#-----------------------------------------------------------------------------
+# ROUTINES
+# ----------------------------------------------------------------------------
 # From the data collected above, generate the file containing the error message
 # text.
 # This is a temporary routine; the exact output form will be defined later
@@ -93,11 +110,16 @@ sub CreateErrmsgsHeader {
 # static const namemap[] = { {short1, long1}, {...} }
 sub CreateErrMsgMapping {
     my $OUTFD = $_[0];
+    my $sourcefile = "src/mpi/errhan/errnames.txt";
     #
     # Read the file with the long names
+    # Create the hash %longnames that maps the short names to the long names,
+    # $longnames{shortname} => longname.
     #...
-    open( FD, "<src/mpi/errhan/errnames.txt" ) || return 0;
+    open( FD, "<$sourcefile" ) || return 0;
+    my $linecount = 0;
     while (<FD>) {
+	$linecount++;
 	if (/^\s*\#/) { next; }
 	if (/^\s*(\*\*[^:]*):(.*)$/) {
 	    my $name = $1;
@@ -110,6 +132,7 @@ sub CreateErrMsgMapping {
 		# multiline messages
 		$repl =~ s/\\\s*$//;
 		my $inline = <FD>;
+		$linecount++;
 		$inline =~ s/^\s*//;   # remove leading spaces
 		$repl .= $inline;
 		$repl =~ s/[\r\n]*$//g; # remove newlines
@@ -122,6 +145,7 @@ sub CreateErrMsgMapping {
 	    if (!defined($longnames{"\"$name\""}))
 	    {
 		$longnames{"\"$name\""} = $repl;
+		$longnamesDefined{"\"$name\""} = "$sourcefile:$linecount";
 	    }
 	    else
 	    {
@@ -178,6 +202,10 @@ sub CreateErrMsgMapping {
 	    print STDERR "Shortname $key has no expansion (first seen in file $seenfile)\n";
 	    next;
 	}
+	else {
+	    # Keep track of which messages we have seen
+	    $longnamesUsed{$key} += 1;
+	}
 	
 	# Escape any naked quotes
 	$longvalue = s/(?<!\\)\"/\\\"/;
@@ -216,6 +244,10 @@ sub CreateErrMsgMapping {
 	{
 	    print STDERR "Shortname $key has no expansion (first seen in file $specific_loc{$key})\n";
 	    next;
+	}
+	else {
+	    # Keep track of which messages we have seen
+	    $longnamesUsed{$key} += 1;
 	}
 
 	# Escape any naked quotes
