@@ -109,6 +109,22 @@ dnl
 if test -z "$timer_type" ; then 
     AC_CHECK_FUNCS(clock_gettime clock_getres gethrtime gettimeofday)
     if test "$ac_cv_func_gethrtime" = "yes" ; then
+        # Sigh.  The Solaris include files do not define hrtime_t
+	# Before we accept this choice, make sure that we can 
+	# do arithmetic with hrtime_t .
+        AC_CACHE_CHECK([that hrtime_t is properly defined for gethrtime],
+	pac_cv_hrtime_works,[
+	AC_TRY_COMPILE([
+#include <sys/time.h>
+],[hrtime_t t1, t2; t1 = 1; t2 = 2; t1 = t1 + t2;],
+pac_cv_hrtime_works=yes,pac_cv_hrtime_works=no)])
+	# A more ambitious test would look to see if casting an 
+	# hrtime_t to int64_t works, and even more ambitious
+	# would check whether long or long long was 64 bits (or even
+	# better, the sizeof hrtime_t).  
+    fi
+    if test "$ac_cv_func_gethrtime" = "yes" -a \
+            "$pac_cv_hrtime_works" = "yes" ; then
         timer_type=gethrtime
     elif test "$ac_cv_func_clock_gettime" = "yes" ; then
         timer_type=clock_gettime
