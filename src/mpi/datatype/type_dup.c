@@ -72,15 +72,7 @@ int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
-	/* make a contig out of it so that we have a placeholder type, since
-         * now we have to keep up with the contents and envelope data
-	 */
-	mpi_errno = MPID_Type_contiguous(1, datatype, newtype);
-    }
-    else {
-	mpi_errno = MPID_Type_dup(datatype, newtype);
-    }
+    mpi_errno = MPID_Type_dup(datatype, newtype);
 
     if (mpi_errno == MPI_SUCCESS)
     {
@@ -123,8 +115,10 @@ int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DUP);
 	return MPI_SUCCESS;
     }
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_dup", "**mpi_type_dup %D %p", datatype, newtype);
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_type_dup", "**mpi_type_dup %D %p",
+				     datatype, newtype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DUP);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 }
