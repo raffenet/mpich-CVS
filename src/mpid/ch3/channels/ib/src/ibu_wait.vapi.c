@@ -128,7 +128,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    }
 	    MPIU_DBG_PRINTFX(("exiting ibu_wait 1\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-	    return IBU_SUCCESS;
+	    return MPI_SUCCESS;
 	}
 
 	status = VAPI_poll_cq(
@@ -147,16 +147,17 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		*op_ptr = IBU_OP_TIMEOUT;
 		MPIU_DBG_PRINTFX(("exiting ibu_wait 2\n"));
 		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		return IBU_SUCCESS;
+		return MPI_SUCCESS;
 	    }
 	    continue;
 	}
 	if (status != VAPI_OK)
 	{
-	    MPIU_Internal_error_printf("%s: error: VAPI_poll_cq did not return VAPI_OK, %s\n", FCNAME, VAPI_strerror(status));
+	    /*MPIU_Internal_error_printf("%s: error: VAPI_poll_cq did not return VAPI_OK, %s\n", FCNAME, VAPI_strerror(status));*/
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", VAPI_strerror(status));
 	    MPIU_DBG_PRINTFX(("exiting ibu_wait 3\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-	    return IBU_FAIL;
+	    return mpi_errno;
 	}
 	/*
 	if (completion_data.status != VAPI_SUCCESS)
@@ -185,11 +186,12 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    {
 		MPIU_Internal_error_printf("%s: send completion status = %s\n",
                     FCNAME, VAPI_wc_status_sym(completion_data.status));
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", VAPI_wc_status_sym(completion_data.status));
 		PrintWC(&completion_data);
 		MPIU_DBG_PRINTF(("at time of error: total_s: %d, total_r: %d, posted_r: %d, posted_s: %d, g_pr: %d, g_ps: %d\n", g_num_sent, g_num_received, g_num_posted_receives, g_num_posted_sends, g_pr, g_ps));
 		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
 		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		return IBU_FAIL;
+		return mpi_errno;
 	    }
 	    /*if (ibu->state & IBU_RDMA_WRITING)*/
 	    {
@@ -197,11 +199,11 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		int complete = 0;
 		ibu->state &= ~IBU_RDMA_WRITING;
 		sreq = (MPID_Request*)mem_ptr;
-		/*printf("sreq after rdma write: sreq=0x%x, rreq=0x%x\n", sreq->handle, sreq->dev.rdma_request);fflush(stdout);*/
+		MPIU_DBG_PRINTF(("sreq after rdma write: sreq=0x%x, rreq=0x%x\n", sreq->handle, sreq->dev.rdma_request));
 		rreq_cached = sreq->dev.rdma_request;
 		if (sreq->ch.reload_state & MPIDI_CH3I_RELOAD_SENDER)
 		{
-		    /*printf("unregistering and reloading the sender's iov.\n");fflush(stdout);*/
+		    MPIU_DBG_PRINTF(("unregistering and reloading the sender's iov.\n"));
 		    /* unpin the sender's iov */
 		    for (i=0; i<sreq->dev.iov_count; i++)
 		    {
@@ -212,6 +214,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update request after rdma write");
+			MPIU_DBG_PRINTFX(("exiting ibu_wait a\n"));
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			return mpi_errno;
 		    }
@@ -222,7 +225,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    MPIDI_CH3_Pkt_rdma_reload_t * reload_pkt = &pkt.reload;
 		    MPID_Request *reload_sreq = NULL;
 
-		    /*printf("sending a reload/done packet (sreq=0x%x, rreq=0x%x).\n", sreq->handle, rreq_cached);fflush(stdout);*/
+		    MPIU_DBG_PRINTF(("sending a reload/done packet (sreq=0x%x, rreq=0x%x).\n", sreq->handle, rreq_cached));
 		    /* send the reload/done packet to the receiver */
 		    reload_pkt->rreq = rreq_cached/*sreq->dev.rdma_request*/;
 		    reload_pkt->sreq = sreq->handle;
@@ -233,8 +236,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			MPIU_DBG_PRINTFX(("exiting ibu_wait b\n"));
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-			return IBU_FAIL;
+			return mpi_errno;
 		    }
 		    /* --END ERROR HANDLING-- */
 		    if (reload_sreq != NULL)
@@ -246,7 +250,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		if (sreq->ch.reload_state & MPIDI_CH3I_RELOAD_SENDER && !complete)
 		{
 		    /* pin the sender's iov */
-		    /*printf("registering the sender's iov.\n");fflush(stdout);*/
+		    MPIU_DBG_PRINTF(("registering the sender's iov.\n"));
 		    for (i=0; i<sreq->dev.iov_count; i++)
 		    {
 			ibu_register_memory(sreq->dev.iov[i].MPID_IOV_BUF, sreq->dev.iov[i].MPID_IOV_LEN, &sreq->ch.local_iov_mem[i]);
@@ -261,6 +265,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			MPIU_DBG_PRINTFX(("exiting ibu_wait c\n"));
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			return mpi_errno;
 		    }
@@ -273,8 +278,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    *num_bytes_ptr = 0;
 		    *vc_pptr = ibu->vc_ptr;
 		    *op_ptr = IBU_OP_WAKEUP;
+		    MPIU_DBG_PRINTFX(("exiting ibu_wait d\n"));
 		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		    return IBU_SUCCESS;
+		    return MPI_SUCCESS;
 		}
 	    }
 	    break;
@@ -283,11 +289,12 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    {
 		MPIU_Internal_error_printf("%s: send completion status = %s\n",
                     FCNAME, VAPI_wc_status_sym(completion_data.status));
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", VAPI_wc_status_sym(completion_data.status));
 		PrintWC(&completion_data);
 		MPIU_DBG_PRINTF(("at time of error: total_s: %d, total_r: %d, posted_r: %d, posted_s: %d, g_pr: %d, g_ps: %d\n", g_num_sent, g_num_received, g_num_posted_receives, g_num_posted_sends, g_pr, g_ps));
 		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
 		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		return IBU_FAIL;
+		return mpi_errno;
 	    }
 	    /*if (ibu->state & IBU_RDMA_READING)*/
 	    {
@@ -295,11 +302,11 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		int complete = 0;
 		ibu->state &= ~IBU_RDMA_READING;
 		rreq = (MPID_Request*)mem_ptr;
-		/*printf("rreq after rdma read: rreq=0x%x, sreq=0x%x\n", rreq->handle, rreq->dev.rdma_request);fflush(stdout);*/
+		MPIU_DBG_PRINTF(("rreq after rdma read: rreq=0x%x, sreq=0x%x\n", rreq->handle, rreq->dev.rdma_request));
 		sreq_cached = rreq->dev.rdma_request;
 		if (rreq->ch.reload_state & MPIDI_CH3I_RELOAD_RECEIVER)
 		{
-		    /*printf("unregistering and reloading the receiver's iov.\n");fflush(stdout);*/
+		    MPIU_DBG_PRINTF(("unregistering and reloading the receiver's iov.\n"));
 		    /* unpin the receiver's iov */
 		    for (i=0; i<rreq->dev.iov_count; i++)
 		    {
@@ -312,6 +319,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update request after rdma read");
+			MPIU_DBG_PRINTFX(("exiting ibu_wait e\n"));
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			return mpi_errno;
 		    }
@@ -322,7 +330,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    MPIDI_CH3_Pkt_rdma_reload_t * reload_pkt = &pkt.reload;
 		    MPID_Request *reload_rreq = NULL;
 
-		    /*printf("sending a reload/done packet (sreq=0x%x, rreq=0x%x).\n", rreq->handle, sreq_cached);fflush(stdout);*/
+		    MPIU_DBG_PRINTF(("sending a reload/done packet (sreq=0x%x, rreq=0x%x).\n", rreq->handle, sreq_cached));
 		    /* send the reload/done packet to the sender */
 		    reload_pkt->sreq = sreq_cached/*rreq->dev.rdma_request*/;
 		    reload_pkt->rreq = rreq->handle;
@@ -333,8 +341,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			MPIU_DBG_PRINTFX(("exiting ibu_wait f\n"));
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-			return IBU_FAIL;
+			return mpi_errno;
 		    }
 		    /* --END ERROR HANDLING-- */
 		    if (reload_rreq != NULL)
@@ -347,7 +356,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		if (rreq->ch.reload_state & MPIDI_CH3I_RELOAD_RECEIVER && !complete)
 		{
 		    /* pin the receiver's iov */
-		    /*printf("registering the receiver's iov.\n");fflush(stdout);*/
+		    MPIU_DBG_PRINTF(("registering the receiver's iov.\n"));
 		    for (i=0; i<rreq->dev.iov_count; i++)
 		    {
 			ibu_register_memory(rreq->dev.iov[i].MPID_IOV_BUF,
@@ -364,6 +373,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			MPIU_DBG_PRINTFX(("exiting ibu_wait g\n"));
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			return mpi_errno;
 		    }
@@ -376,8 +386,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    *num_bytes_ptr = 0;
 		    *vc_pptr = ibu->vc_ptr;
 		    *op_ptr = IBU_OP_WAKEUP;
+		    MPIU_DBG_PRINTFX(("exiting ibu_wait h\n"));
 		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		    return IBU_SUCCESS;
+		    return MPI_SUCCESS;
 		}
 	    }
 	    break;
@@ -387,16 +398,17 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    {
 		MPIU_Internal_error_printf("%s: send completion status = %s\n",
                     FCNAME, VAPI_wc_status_sym(completion_data.status));
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", VAPI_wc_status_sym(completion_data.status));
 		PrintWC(&completion_data);
 		MPIU_DBG_PRINTF(("at time of error: total_s: %d, total_r: %d, posted_r: %d, posted_s: %d, g_pr: %d, g_ps: %d\n", g_num_sent, g_num_received, g_num_posted_receives, g_num_posted_sends, g_pr, g_ps));
-		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
+		MPIU_DBG_PRINTFX(("exiting ibu_wait 40\n"));
 		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		return IBU_FAIL;
+		return mpi_errno;
 	    }
 	    MPIU_DBG_PRINTF(("", g_ps--));
 	    if (mem_ptr == (void*)-1)
 	    {
-		/*printf("ack sent\n");fflush(stdout);*/
+		MPIU_DBG_PRINTF(("ack sent\n"));
 		/* flow control ack completed, no user data so break out here */
 		MPIU_DBG_PRINTF(("ack sent.\n"));
 		break;
@@ -411,18 +423,19 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    *vc_pptr = ibu->vc_ptr;
 	    MPIU_DBG_PRINTFX(("exiting ibu_wait 5\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-	    return IBU_SUCCESS;
+	    return MPI_SUCCESS;
 	    break;
 	case VAPI_CQE_RQ_SEND_DATA:
 	    if (completion_data.status != VAPI_SUCCESS)
 	    {
 		MPIU_Internal_error_printf("%s: recv completion status = %s\n",
                     FCNAME, VAPI_wc_status_sym(completion_data.status));
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", VAPI_wc_status_sym(completion_data.status));
 		PrintWC(&completion_data);
 		MPIU_DBG_PRINTF(("at time of error: total_s: %d, total_r: %d, posted_r: %d, posted_s: %d, g_pr: %d, g_ps: %d\n", g_num_sent, g_num_received, g_num_posted_receives, g_num_posted_sends, g_pr, g_ps));
-		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
+		MPIU_DBG_PRINTFX(("exiting ibu_wait 41\n"));
 		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		return IBU_FAIL;
+		return mpi_errno;
 	    }
 	    MPIU_DBG_PRINTF(("", g_pr--));
 	    if (completion_data.imm_data_valid)
@@ -446,15 +459,13 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		{
 		    if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3_PKT_RTS_IOV)
 		    {
-			/*
-			printf("received rts packet(sreq=0x%x).\n",
-			       ((MPIDI_CH3_Pkt_rdma_rts_iov_t*)mem_ptr)->sreq);
-			fflush(stdout);
-			*/
+			MPIU_DBG_PRINTF(("received rts packet(sreq=0x%x).\n",
+					 ((MPIDI_CH3_Pkt_rdma_rts_iov_t*)mem_ptr)->sreq));
 			rreq = MPID_Request_create();
 			if (rreq == NULL)
 			{
 			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+			    MPIU_DBG_PRINTFX(("exiting ibu_wait h\n"));
 			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			    return mpi_errno;
 			}
@@ -474,12 +485,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    }
 		    else if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3_PKT_CTS_IOV)
 		    {
-			/*
-			printf("received cts packet(sreq=0x%x, rreq=0x%x).\n",
-			       ((MPIDI_CH3_Pkt_rdma_cts_iov_t*)mem_ptr)->sreq,
-			       ((MPIDI_CH3_Pkt_rdma_cts_iov_t*)mem_ptr)->rreq);
-			fflush(stdout);
-			*/
+			MPIU_DBG_PRINTF(("received cts packet(sreq=0x%x, rreq=0x%x).\n",
+					 ((MPIDI_CH3_Pkt_rdma_cts_iov_t*)mem_ptr)->sreq,
+					 ((MPIDI_CH3_Pkt_rdma_cts_iov_t*)mem_ptr)->rreq));
 			MPID_Request_get_ptr(((MPIDI_CH3_Pkt_rdma_cts_iov_t*)mem_ptr)->sreq, sreq);
 			sreq->dev.rdma_request = ((MPIDI_CH3_Pkt_rdma_cts_iov_t*)mem_ptr)->rreq;
 			sreq->dev.rdma_iov_count = ((MPIDI_CH3_Pkt_rdma_cts_iov_t*)mem_ptr)->iov_len;
@@ -487,6 +495,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			if (rreq == NULL)
 			{
 			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+			    MPIU_DBG_PRINTFX(("exiting ibu_wait i\n"));
 			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			    return mpi_errno;
 			}
@@ -504,13 +513,14 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    {
 			if ( ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->send_recv == MPIDI_CH3_PKT_RELOAD_SEND )
 			{
-			    /*printf("received sender's iov packet, posting a read of %d iovs.\n", ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->iov_len);fflush(stdout);*/
+			    MPIU_DBG_PRINTF(("received sender's iov packet, posting a read of %d iovs.\n", ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->iov_len));
 			    MPID_Request_get_ptr(((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->req, sreq);
 			    sreq->dev.rdma_iov_count = ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->iov_len;
 			    rreq = MPID_Request_create();
 			    if (rreq == NULL)
 			    {
 				mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+				MPIU_DBG_PRINTFX(("exiting ibu_wait j\n"));
 				MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 				return mpi_errno;
 			    }
@@ -526,13 +536,14 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			}
 			else if ( ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->send_recv == MPIDI_CH3_PKT_RELOAD_RECV )
 			{
-			    /*printf("received receiver's iov packet, posting a read of %d iovs.\n", ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->iov_len);fflush(stdout);*/
+			    MPIU_DBG_PRINTF(("received receiver's iov packet, posting a read of %d iovs.\n", ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->iov_len));
 			    MPID_Request_get_ptr(((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->req, rreq);
 			    rreq->dev.rdma_iov_count = ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->iov_len;
 			    sreq = MPID_Request_create();
 			    if (sreq == NULL)
 			    {
 				mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+				MPIU_DBG_PRINTFX(("exiting ibu_wait k\n"));
 				MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 				return mpi_errno;
 			    }
@@ -549,6 +560,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			else
 			{
 			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "received invalid MPIDI_CH3_PKT_IOV packet");
+			    MPIU_DBG_PRINTFX(("exiting ibu_wait l\n"));
 			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			    return mpi_errno;
 			}
@@ -557,9 +569,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    {
 			if (((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->send_recv == MPIDI_CH3_PKT_RELOAD_SEND)
 			{
-			    /*printf("received reload send packet (sreq=0x%x).\n", ((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->sreq);fflush(stdout);*/
+			    MPIU_DBG_PRINTF(("received reload send packet (sreq=0x%x).\n", ((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->sreq));
 			    MPID_Request_get_ptr(((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->sreq, sreq);
-			    /*printf("unregistering the sender's iov.\n");fflush(stdout);*/
+			    MPIU_DBG_PRINTF(("unregistering the sender's iov.\n"));
 			    for (i=0; i<sreq->dev.iov_count; i++)
 			    {
 				ibu_deregister_memory(sreq->dev.iov[i].MPID_IOV_BUF, sreq->dev.iov[i].MPID_IOV_LEN,
@@ -569,6 +581,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			    if (mpi_errno != MPI_SUCCESS)
 			    {
 				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update send request after receiving a reload packet");
+				MPIU_DBG_PRINTFX(("exiting ibu_wait m\n"));
 				MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 				return mpi_errno;
 			    }
@@ -578,13 +591,13 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 				MPID_Request * rts_sreq;
 				MPIDI_CH3_Pkt_t pkt;
 
-				/*printf("registering the sender's iov.\n");fflush(stdout);*/
+				MPIU_DBG_PRINTF(("registering the sender's iov.\n"));
 				for (i=0; i<sreq->dev.iov_count; i++)
 				{
 				    ibu_register_memory(sreq->dev.iov[i].MPID_IOV_BUF, sreq->dev.iov[i].MPID_IOV_LEN,
 							&sreq->ch.local_iov_mem[i]);
 				}
-				/*printf("sending reloaded send iov of length %d\n", sreq->dev.iov_count);fflush(stdout);*/
+				MPIU_DBG_PRINTF(("sending reloaded send iov of length %d\n", sreq->dev.iov_count));
 				pkt.iov.type = MPIDI_CH3_PKT_IOV;
 				pkt.iov.send_recv = MPIDI_CH3_PKT_RELOAD_SEND;
 				pkt.iov.req = ((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->rreq;
@@ -605,6 +618,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 				    MPIDI_CH3_Request_destroy(sreq);
 				    sreq = NULL;
 				    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rtspkt", 0);
+				    MPIU_DBG_PRINTFX(("exiting ibu_wait n\n"));
 				    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 				    return mpi_errno;
 				}
@@ -618,9 +632,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			}
 			else if (((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->send_recv == MPIDI_CH3_PKT_RELOAD_RECV)
 			{
-			    /*printf("received reload recv packet (rreq=0x%x).\n", ((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->rreq);fflush(stdout);*/
+			    MPIU_DBG_PRINTF(("received reload recv packet (rreq=0x%x).\n", ((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->rreq));
 			    MPID_Request_get_ptr(((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->rreq, rreq);
-			    /*printf("unregistering the receiver's iov.\n");fflush(stdout);*/
+			    MPIU_DBG_PRINTF(("unregistering the receiver's iov.\n"));
 			    for (i=0; i<rreq->dev.iov_count; i++)
 			    {
 				ibu_deregister_memory(rreq->dev.iov[i].MPID_IOV_BUF, rreq->dev.iov[i].MPID_IOV_LEN,
@@ -630,6 +644,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			    if (mpi_errno != MPI_SUCCESS)
 			    {
 				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update request after receiving a reload packet");
+				MPIU_DBG_PRINTFX(("exiting ibu_wait o\n"));
 				MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 				return mpi_errno;
 			    }
@@ -639,13 +654,13 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 				MPID_Request * cts_sreq;
 				MPIDI_CH3_Pkt_t pkt;
 
-				/*printf("registering the receiver's iov.\n");fflush(stdout);*/
+				MPIU_DBG_PRINTF(("registering the receiver's iov.\n"));
 				for (i=0; i<rreq->dev.iov_count; i++)
 				{
 				    ibu_register_memory(rreq->dev.iov[i].MPID_IOV_BUF, rreq->dev.iov[i].MPID_IOV_LEN,
 							&rreq->ch.local_iov_mem[i]);
 				}
-				/*printf("sending reloaded recv iov of length %d\n", rreq->dev.iov_count);fflush(stdout);*/
+				MPIU_DBG_PRINTF(("sending reloaded recv iov of length %d\n", rreq->dev.iov_count));
 				pkt.iov.type = MPIDI_CH3_PKT_IOV;
 				pkt.iov.send_recv = MPIDI_CH3_PKT_RELOAD_RECV;
 				pkt.iov.req = ((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->sreq;
@@ -668,6 +683,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 				    MPIDI_CH3_Request_destroy(rreq);
 				    rreq = NULL;
 				    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|ctspkt", 0);
+				    MPIU_DBG_PRINTFX(("exiting ibu_wait p\n"));
 				    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 				    return mpi_errno;
 				}
@@ -682,6 +698,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			else
 			{
 			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			    MPIU_DBG_PRINTFX(("exiting ibu_wait q\n"));
 			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			    return mpi_errno;
 			}
@@ -690,7 +707,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			recv_vc_ptr->ch.reading_pkt = TRUE;
 			if (num_bytes > sizeof(MPIDI_CH3_Pkt_t))
 			{
-			    /*printf("pkt handled with %d bytes remaining to be buffered.\n", num_bytes);*/
+			    MPIU_DBG_PRINTF(("pkt handled with %d bytes remaining to be buffered.\n", num_bytes));
 			    ibui_buffer_unex_read(ibu, mem_ptr_orig, sizeof(MPIDI_CH3_Pkt_t), num_bytes);
 			}
 			else
@@ -702,12 +719,14 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			*num_bytes_ptr = 0;
 			*vc_pptr = recv_vc_ptr;
 			*op_ptr = IBU_OP_WAKEUP;
+			MPIU_DBG_PRINTFX(("exiting ibu_wait q\n"));
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-			return IBU_SUCCESS;
+			return MPI_SUCCESS;
 		    }
 		    else
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "shared memory read progress unable to handle unknown rdma packet");
+			MPIU_DBG_PRINTFX(("exiting ibu_wait r\n"));
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			return mpi_errno;
 		    }
@@ -719,8 +738,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "infiniband read progress unable to handle incoming packet");
+			MPIU_DBG_PRINTFX(("exiting ibu_wait s\n"));
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-			return IBU_SUCCESS;
+			return mpi_errno;
 		    }
 		}
 		if (recv_vc_ptr->ch.recv_active == NULL)
@@ -753,7 +773,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		}
 		if (recv_vc_ptr->ch.recv_active == NULL)
 		{
-		    /*printf("pkt handled with %d bytes remaining to be buffered.\n", num_bytes);*/
+		    MPIU_DBG_PRINTF(("pkt handled with %d bytes remaining to be buffered.\n", num_bytes));
 		    ibui_buffer_unex_read(ibu, mem_ptr_orig, sizeof(MPIDI_CH3_Pkt_t), num_bytes);
 		    break;
 		}
@@ -765,7 +785,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    if (!(ibu->state & IBU_READING))
 	    {
 #ifdef USE_INLINE_PKT_RECEIVE
-		/*printf("a:buffering %d bytes.\n", num_bytes);*/
+		MPIU_DBG_PRINTF(("a:buffering %d bytes.\n", num_bytes));
 		ibui_buffer_unex_read(ibu, mem_ptr_orig, pkt_offset, num_bytes);
 #else
 		ibui_buffer_unex_read(ibu, mem_ptr, 0, num_bytes);
@@ -820,7 +840,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		{
 		    /* save the unused but received data */
 #ifdef USE_INLINE_PKT_RECEIVE
-		    /*printf("b:buffering %d bytes (offset,pkt = %d,%d).\n", num_bytes, offset, pkt_offset);*/
+		    MPIU_DBG_PRINTF(("b:buffering %d bytes (offset,pkt = %d,%d).\n", num_bytes, offset, pkt_offset));
 		    ibui_buffer_unex_read(ibu, mem_ptr_orig, offset + pkt_offset, num_bytes);
 #else
 		    ibui_buffer_unex_read(ibu, mem_ptr, offset, num_bytes);
@@ -845,14 +865,24 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			}
 			MPIU_DBG_PRINTFX(("exiting ibu_wait 6\n"));
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-			return IBU_SUCCESS;
+			return MPI_SUCCESS;
 		    }
 #ifdef MPIDI_CH3_CHANNEL_RNDV
 		    else if (recv_vc_ptr->ch.recv_active->kind == MPIDI_CH3I_RTS_IOV_READ_REQUEST)
 		    {
 			int found;
-			/*printf("received rts iov_read.\n");fflush(stdout);*/
+			MPIU_DBG_PRINTF(("received rts iov_read.\n"));
 
+			rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(
+			    &recv_vc_ptr->ch.recv_active->ch.pkt.rndv_req_to_send.match, &found);
+			if (rreq == NULL)
+			{
+			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomemreq", 0);
+			    MPIU_DBG_PRINTFX(("exiting ibu_wait t\n"));
+			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+			    return mpi_errno;
+			}
+#if 0
 			mpi_errno = MPIDI_CH3U_Handle_recv_pkt_rtsA(recv_vc_ptr,
 								    &recv_vc_ptr->ch.recv_active->ch.pkt,
 								    &rreq, &found);
@@ -860,10 +890,12 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			if (mpi_errno != MPI_SUCCESS)
 			{
 			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "ibu read progress unable to handle incoming rts(get) packet");
+			    MPIU_DBG_PRINTFX(("exiting ibu_wait u\n"));
 			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			    return mpi_errno;
 			}
 			/* --END ERROR HANDLING-- */
+#endif
 
 			for (i=0; i<recv_vc_ptr->ch.recv_active->dev.rdma_iov_count; i++)
 			{
@@ -874,13 +906,14 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			rreq->dev.rdma_iov_count = recv_vc_ptr->ch.recv_active->dev.rdma_iov_count;
 			rreq->dev.rdma_request = recv_vc_ptr->ch.recv_active->dev.rdma_request;
 
-			mpi_errno = MPIDI_CH3U_Handle_recv_pkt_rtsB(recv_vc_ptr,
+			mpi_errno = MPIDI_CH3U_Handle_recv_rndv_pkt(recv_vc_ptr,
 								    &recv_vc_ptr->ch.recv_active->ch.pkt,
 								    rreq, found);
 			/* --BEGIN ERROR HANDLING-- */
 			if (mpi_errno != MPI_SUCCESS)
 			{
 			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "ibu read progress unable to handle incoming rts(get) packet");
+			    MPIU_DBG_PRINTFX(("exiting ibu_wait v\n"));
 			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			    return mpi_errno;
 			}
@@ -897,17 +930,18 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    }
 		    else if (recv_vc_ptr->ch.recv_active->kind == MPIDI_CH3I_IOV_READ_REQUEST)
 		    {
-			/*printf("received iov_read.\n");fflush(stdout);*/
+			MPIU_DBG_PRINTF(("received iov_read.\n"));
 			rreq = recv_vc_ptr->ch.recv_active;
 
 			/* A new sender's iov has arrived so set the offset back to zero. */
 			rreq->ch.req->ch.siov_offset = 0;
 
-			mpi_errno = MPIDI_CH3_do_cts(recv_vc_ptr, rreq->ch.req);
+			mpi_errno = MPIDI_CH3_iStartRndvTransfer(recv_vc_ptr, rreq->ch.req);
 			/* --BEGIN ERROR HANDLING-- */
 			if (mpi_errno != MPI_SUCCESS)
 			{
 			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "ibu read progress unable to handle incoming rts(get) iov");
+			    MPIU_DBG_PRINTFX(("exiting ibu_wait v\n"));
 			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			    return mpi_errno;
 			}
@@ -922,7 +956,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    }
 		    else if (recv_vc_ptr->ch.recv_active->kind == MPIDI_CH3I_IOV_WRITE_REQUEST)
 		    {
-			/*printf("received iov_write.\n");fflush(stdout);*/
+			MPIU_DBG_PRINTF(("received iov_write.\n"));
 
 			/* A new receiver's iov has arrived so set the offset back to zero. */
 			recv_vc_ptr->ch.recv_active->ch.req->ch.riov_offset = 0;
@@ -932,6 +966,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			if (mpi_errno != MPI_SUCCESS)
 			{
 			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			    MPIU_DBG_PRINTFX(("exiting ibu_wait w\n"));
 			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			    return mpi_errno;
 			}
@@ -944,14 +979,16 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			*num_bytes_ptr = 0;
 			*vc_pptr = recv_vc_ptr;
 			*op_ptr = IBU_OP_WAKEUP;
+			MPIU_DBG_PRINTFX(("exiting ibu_wait x\n"));
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-			return IBU_SUCCESS;
+			return MPI_SUCCESS;
 			break;
 		    }
 /*#endif*/ /* MPIDI_CH3_CHANNEL_RNDV */
 		    else
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "invalid request type", recv_vc_ptr->ch.recv_active->kind);
+			MPIU_DBG_PRINTFX(("exiting ibu_wait y\n"));
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			return mpi_errno;
 		    }
@@ -967,7 +1004,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    memcpy(ibu->read.buffer, mem_ptr, ibu->read.bufflen);
 		    ibu->read.total = ibu->read.bufflen;
 #ifdef USE_INLINE_PKT_RECEIVE
-		    /*printf("c:buffering %d bytes.\n", num_bytes - ibu->read.bufflen);*/
+		    MPIU_DBG_PRINTF(("c:buffering %d bytes.\n", num_bytes - ibu->read.bufflen));
 		    ibui_buffer_unex_read(ibu, mem_ptr_orig,
 					  ibu->read.bufflen + pkt_offset,
 					  num_bytes - ibu->read.bufflen);
@@ -1006,7 +1043,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    }
 		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 		    MPIU_DBG_PRINTFX(("exiting ibu_wait 7\n"));
-		    return IBU_SUCCESS;
+		    return MPI_SUCCESS;
 		}
 	    }
 	    break;
@@ -1015,20 +1052,23 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    {
 		MPIU_Internal_error_printf("%s: unknown completion status = %s != VAPI_SUCCESS\n", 
 		    FCNAME, VAPI_strerror(completion_data.status));
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", VAPI_strerror(completion_data.status));
 		MPIU_DBG_PRINTF(("at time of error: total_s: %d, total_r: %d, posted_r: %d, posted_s: %d\n", g_num_sent, g_num_received, g_num_posted_receives, g_num_posted_sends));
-		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
+		MPIU_DBG_PRINTFX(("exiting ibu_wait 42\n"));
 		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		return IBU_FAIL;
+		return mpi_errno;
 	    }
 	    MPIU_Internal_error_printf("%s: unknown ib opcode: %s\n", FCNAME, op2str(completion_data.opcode));
-	    return IBU_FAIL;
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", op2str(completion_data.opcode));
+	    MPIU_DBG_PRINTFX(("exiting ibu_wait z\n"));
+	    return mpi_errno;
 	    break;
 	}
     }
 
     MPIU_DBG_PRINTFX(("exiting ibu_wait 8\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-    return IBU_SUCCESS;
+    return MPI_SUCCESS;
 }
 
 #endif /* USE_IB_VAPI */

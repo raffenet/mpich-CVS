@@ -6,7 +6,7 @@ lib${MPILIBNAME}_a_SOURCES = \
  ch3_setup_connections.c ch3_progress.c \
  ch3_cancel_send.c ch3_comm_spawn_multiple.c \
  ch3_open_port.c ch3_comm_accept.c ch3_comm_connect.c \
- ch3_abort.c ch3_do_rts.c ch3_do_cts.c \
+ ch3_abort.c ch3_istartrndvmsg.c ch3_istartrndvtransfer.c \
  ibu.vapi.c ibu_regmem.vapi.c ibu_memutil.vapi.c \
  ibu_rdma.vapi.c ibu_wait.vapi.c \
  ibu.ibal.c ibu_regmem.ibal.c ibu_memutil.ibal.c \

@@ -193,7 +193,6 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	}
 	/* finish the queue pair connection */
 	MPIU_DBG_PRINTF(("calling ibu_finish_qp(%d:%d)\n", dlid, dest_qp_num));
-	/*printf("calling ibu_finish_qp(%d:%d)\n", dlid, dest_qp_num);fflush(stdout);*/
 	mpi_errno = ibu_finish_qp(vc->ch.ibu, dlid, dest_qp_num);
 	if (mpi_errno != MPI_SUCCESS)
 	{

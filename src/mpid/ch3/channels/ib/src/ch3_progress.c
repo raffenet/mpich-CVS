@@ -210,8 +210,8 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	mpi_errno = ibu_wait(MPIDI_CH3I_Process.set, 0, (void*)&vc_ptr, &num_bytes, &wait_result);
 	if (mpi_errno != IBU_SUCCESS)
 	{
-	    MPIU_Internal_error_printf("ibu_wait returned IBU_FAIL\n");
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibu_wait", "**ibu_wait %d", mpi_errno);
+	    /*MPIU_Internal_error_printf("ibu_wait returned IBU_FAIL\n");*/
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibu_wait", "**ibu_wait %d", mpi_errno);
 	    goto fn_exit;
 	}
 	switch (wait_result)
@@ -338,6 +338,10 @@ int MPIDI_CH3I_Progress_finalize()
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
+
+    /* With the new close protocol you can't do a MPI_Barrier here because the VC's have already
+       been torn down.
+    */
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);

@@ -49,7 +49,7 @@ void *ib_malloc_register(size_t size, VAPI_mr_hndl_t *mhp, VAPI_lkey_t *lp, VAPI
 
     MPIU_DBG_PRINTF(("entering ib_malloc_register\n"));
 
-    /*printf("ib_malloc_register(%d) called\n", size);*/
+    MPIU_DBG_PRINTF(("ib_malloc_register(%d) called\n", size));
 
     ptr = MPIU_Malloc(size);
     if (ptr == NULL)
