@@ -12,18 +12,15 @@
                               Known Deficiencies
 -------------------------------------------------------------------------------
 
-- Several of the tests in the MPICH2 test suite fail.  On the other hand, a
+- Several of the tests in the MPICH2 test suite may fail.  On the other hand, a
   few hundred pass :-)
 
   The scancel test is expected to fail for all configurations.
 
-  Due to limitations in the current implementation of MPI_COMM_CONNECT and
-  MPI_COMM_ACCEPT, many tests associated with these routines will fail.
-  The limitation are described below.
-
-  The sock channel is the only channel that implements MPI_COMM_SPAWN.  All
-  other channels will experience failures for tests exercising
-  MPI_COMM_SPAWN functionality.
+  The sock channel is the only channel that implements dynamic process support
+  (i.e., MPI_COMM_SPAWN, MPI_COMM_CONNECT, MPI_COMM_ACCEPT, etc.).  All other
+  channels will experience failures for tests exercising dynamic process
+  functionality.
 
   The implementation of MPI-IO has a few outstanding issues with 64-bit
   pointers, so test failures in these areas are expected on 64-bit platforms.
