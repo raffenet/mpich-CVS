@@ -76,6 +76,7 @@ static int PMII_Connect_to_pm( char *, int );
 
 #ifdef USE_PMI_PORT
 static void mpd_singinit();
+static int PMI_totalview = 0;
 #endif
 static int accept_one_connection(int);
 static char cached_singinit_key[PMIU_MAXLINE];
@@ -87,6 +88,7 @@ int PMI_Init( int *spawned )
 {
     char *p;
     int notset = 1;
+    char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
     /* setvbuf(stdout,0,_IONBF,0); */
     setbuf(stdout,NULL);
@@ -176,7 +178,21 @@ int PMI_Init( int *spawned )
 	/* Leave unchanged otherwise, which indicates that no value
 	   was set */
     }
-	
+
+#ifdef USE_PMI_PORT
+    if ( ( p = getenv( "PMI_TOTALVIEW" ) ) )
+	PMI_totalview = atoi( p );
+    if ( PMI_totalview ) {
+	PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
+	PMIU_parse_keyvals( buf );
+	PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
+	if ( strncmp( cmd, "tv_ready", PMIU_MAXLINE ) != 0 ) {
+	    PMIU_printf( 1, "expecting cmd=tv_ready, got %s\n", buf );
+	    return( PMI_FAIL );
+	}
+    }
+#endif
+
     PMII_getmaxes( &PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max );
 
     if ( ( p = getenv( "PMI_SPAWNED" ) ) )
@@ -1115,6 +1131,7 @@ static int PMII_Set_from_port( int fd, int id )
 }
 
 
+static void mpd_singinit(void);
 static void mpd_singinit()
 {
     int pid, rc, len;
