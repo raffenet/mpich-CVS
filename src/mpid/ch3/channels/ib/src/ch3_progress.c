@@ -204,6 +204,103 @@ static inline void post_queued_send(MPIDI_VC * vc)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static inline void handle_read(MPIDI_VC *vc, int nb)
 {
+    MPID_Request * req;
+    MPIDI_STATE_DECL(MPID_STATE_HANDLE_READ);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_READ);
+    
+    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
+
+    req = vc->ib.recv_active;
+    if (req == NULL)
+    {
+	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+	MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
+	return;
+    }
+
+    if (nb > 0)
+    {
+	if (MPIDI_CH3I_Request_adjust_iov(req, nb))
+	{
+	    /* Read operation complete */
+	    MPIDI_CA_t ca = req->ch3.ca;
+	    
+	    vc->ib.recv_active = NULL;
+	    
+	    if (ca == MPIDI_CH3I_CA_HANDLE_PKT)
+	    {
+		MPIDI_CH3_Pkt_t * pkt = &req->ib.pkt;
+		
+		if (pkt->type < MPIDI_CH3_PKT_END_CH3)
+		{
+		    MPIDI_DBG_PRINTF((65, FCNAME, "received CH3 packet %d, calllng CH3U_Handle_recv_pkt()", pkt->type));
+		    MPIDI_CH3U_Handle_recv_pkt(vc, pkt);
+		    MPIDI_DBG_PRINTF((65, FCNAME, "CH3U_Handle_recv_pkt() returned"));
+		    if (vc->ib.recv_active == NULL)
+		    {
+			DBGMSG((65, "complete; posting new recv packet"));
+			post_pkt_recv(vc);
+			MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+			MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
+			return;
+		    }
+		}
+	    }
+	    else if (ca == MPIDI_CH3_CA_COMPLETE)
+	    {
+		MPIDI_DBG_PRINTF((65, FCNAME, "received requested data, decrementing CC"));
+		/* mark data transfer as complete adn decrment CC */
+		req->ch3.iov_count = 0;
+		MPIDI_CH3U_Request_complete(req);
+		post_pkt_recv(vc);
+		MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+		MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
+		return;
+	    }
+	    else if (ca < MPIDI_CH3_CA_END_CH3)
+	    {
+	    /* XXX - This code assumes that if another read is not posted by the device during the callback, then the
+	    device is not expecting any more data for request.  As a result, the channels posts a read for another
+		packet */
+		MPIDI_DBG_PRINTF((65, FCNAME, "finished receiving iovec, calling CH3U_Handle_recv_req()"));
+		MPIDI_CH3U_Handle_recv_req(vc, req);
+		if (vc->ib.recv_active == NULL)
+		{
+		    DBGMSG((65, "request (assumed) complete"));
+		    DBGMSG((65, "posting new recv packet"));
+		    post_pkt_recv(vc);
+		    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+		    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
+		    return;
+		}
+	    }
+	    else
+	    {
+		assert(ca < MPIDI_CH3_CA_END_CH3);
+	    }
+	}
+	else
+	{
+	    assert(req->ib.iov_offset < req->ch3.iov_count);
+	    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+	    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
+	    return;
+	}
+    }
+    else
+    {
+	MPIDI_DBG_PRINTF((65, FCNAME, "Read args were iov=%x, count=%d\n",
+	    req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset));
+    }
+    
+    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
+}
+
+#if 0
+static inline void handle_read(MPIDI_VC *vc, int nb)
+{
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_READ);
@@ -312,6 +409,7 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
 
     MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME handle_written
