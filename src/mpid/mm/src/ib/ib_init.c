@@ -275,7 +275,7 @@ int ib_setup_connections()
 	ib->m_snd_posted = 0;
 	/* ***************************************** */
 	MPIU_dbg_printf("creating the send/recv completion queues\n");
-	max_cq_entries = IB_MAX_CW_ENTRIES + 1;
+	max_cq_entries = IB_MAX_CQ_ENTRIES + 1;
 	status = ib_cq_create_us(IB_Process.hca_handle, 
 				 IB_Process.cqd_handle,
 				 &max_cq_entries,
