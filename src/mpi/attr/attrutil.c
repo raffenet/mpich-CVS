@@ -114,34 +114,41 @@ int MPIR_Comm_attr_delete( MPID_Comm *comm_ptr, MPID_Attribute *attr )
 #ifdef HAVE_CXX_BINDING
 	case MPID_LANG_CXX: 
 #endif
-	    mpi_errno = delfn.C_CommDeleteFunction( comm_ptr->handle, 
-					  p->keyval->handle, 
-					  p->value, p->keyval->extra_state );
+	    if (delfn.C_CommDeleteFunction) {
+		mpi_errno = delfn.C_CommDeleteFunction( comm_ptr->handle, 
+						p->keyval->handle, 
+						p->value, 
+						p->keyval->extra_state );
+	    }
 	    break;
 #ifdef HAVE_FORTRAN_BINDING
 	case MPID_LANG_FORTRAN: 
 	    {
 		MPI_Fint fcomm, fkeyval, fvalue, fextra, ierr;
-		fcomm   = (MPI_Fint) (comm_ptr->handle);
-		fkeyval = (MPI_Fint) (p->keyval->handle);
-		fvalue  = (MPI_Fint) (p->value);
-		fextra  = (MPI_Fint) (p->keyval->extra_state );
-		delfn.F77_DeleteFunction( &fcomm, &fkeyval, &fvalue, &fextra, 
-					  &ierr );
-		if (ierr) mpi_errno = (int)ierr;
+		if (delfn.F77_DeleteFunction) {
+		    fcomm   = (MPI_Fint) (comm_ptr->handle);
+		    fkeyval = (MPI_Fint) (p->keyval->handle);
+		    fvalue  = (MPI_Fint) (p->value);
+		    fextra  = (MPI_Fint) (p->keyval->extra_state );
+		    delfn.F77_DeleteFunction( &fcomm, &fkeyval, &fvalue, 
+					      &fextra, &ierr );
+		    if (ierr) mpi_errno = (int)ierr;
+		}
 	    }
 	    break;
 	case MPID_LANG_FORTRAN90: 
 	    {
 		MPI_Fint fcomm, fkeyval, ierr;
 		MPI_Aint fvalue, fextra;
-		fcomm   = (MPI_Fint) (comm_ptr->handle);
-		fkeyval = (MPI_Fint) (p->keyval->handle);
-		fvalue  = (MPI_Aint) (p->value);
-		fextra  = (MPI_Aint) (p->keyval->extra_state );
-		delfn.F90_DeleteFunction( &fcomm, &fkeyval, &fvalue, &fextra, 
-				      &ierr );
-		if (ierr) mpi_errno = (int)ierr;
+		if (delfn.F90_DeleteFunction) {
+		    fcomm   = (MPI_Fint) (comm_ptr->handle);
+		    fkeyval = (MPI_Fint) (p->keyval->handle);
+		    fvalue  = (MPI_Aint) (p->value);
+		    fextra  = (MPI_Aint) (p->keyval->extra_state );
+		    delfn.F90_DeleteFunction( &fcomm, &fkeyval, &fvalue, 
+					      &fextra, &ierr );
+		    if (ierr) mpi_errno = (int)ierr;
+		}
 	    }
 	    break;
 #endif

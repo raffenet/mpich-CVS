@@ -1,0 +1,7 @@
+LDADD = -L ../../../lib
+DEPADD = ../../../lib/libmpich.a
+attrt_SOURCES = attrt.c
+attrt_LDADD = ../util/mtest.o
+attrerr_SOURCES = attrerr.c
+attrerr_LDADD = ../util/mtest.o
+INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include

@@ -1,1 +1,1 @@
-SUBDIRS = basic util datatype coll comm errhan group .
+SUBDIRS = util attr basic datatype coll comm errhan group .

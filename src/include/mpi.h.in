@@ -182,17 +182,23 @@ typedef void (MPI_Win_errhandler_fn)(MPI_Win *, int *, ...);
       /* #define MPIR_ERRORS_WARN     ((MPI_Errhandler)0x54000002) */
 typedef int MPI_Errhandler;
 
-/* Make the C names for the null functions all upper-case.  Note that 
-   this is required for systems that use all uppercase names for Fortran 
+/* Make the C names for the dup function mixed case.
+   This is required for systems that use all uppercase names for Fortran 
    externals.  */
 /* MPI 1 names */
-#define MPI_NULL_COPY_FN   MPIR_null_copy_fn
-#define MPI_NULL_DELETE_FN MPIR_null_delete_fn
-#define MPI_DUP_FN         MPIR_dup_fn
+#define MPI_NULL_COPY_FN   ((MPI_Copy_function *)0)
+#define MPI_NULL_DELETE_FN ((MPI_Delete_function *)0)
+#define MPI_DUP_FN         MPI_Dup_fn
 /* MPI 2 names */
-#define MPI_COMM_NULL_COPY_FN MPI_NULL_COPY_FN
-#define MPI_COMM_NULL_DELETE_FN MPI_NULL_DELETE_FN
-#define MPI_COMM_DUP_FN MPI_DUP_FN
+#define MPI_COMM_NULL_COPY_FN ((MPI_Comm_copy_attr_function*)0)
+#define MPI_COMM_NULL_DELETE_FN ((MPI_Comm_delete_attr_function*)0)
+#define MPI_COMM_DUP_FN  ((MPI_Comm_copy_attr_function *)MPI_DUP_FN)
+#define MPI_WIN_NULL_COPY_FN ((MPI_Win_copy_attr_function*)0)
+#define MPI_WIN_NULL_DELETE_FN ((MPI_Win_delete_attr_function*)0)
+#define MPI_WIN_DUP_FN   ((MPI_Win_copy_attr_function*)MPI_DUP_FN)
+#define MPI_TYPE_NULL_COPY_FN ((MPI_Type_copy_attr_function*)0)
+#define MPI_TYPE_NULL_DELETE_FN ((MPI_Type_delete_attr_function*)0)
+#define MPI_TYPE_DUP_FN ((MPI_Type_copy_attr_function*)MPI_DUP_FN)
 
 /* MPI request opjects */
 typedef int MPI_Request;
@@ -379,7 +385,14 @@ extern int MPICHX_TOPOLOGY_COLORS;
 #define MPI_ERR_UNSUPPORTED_OPERATION 44 /* */
 #define MPI_ERR_WIN         45      /* */
 
-#define MPI_ERR_KEYVAL      46      /* Erroneous attribute key */
+#define MPI_ERR_BASE        46      /* */
+#define MPI_ERR_LOCKTYPE    47      /* */
+#define MPI_ERR_KEYVAL      48      /* Erroneous attribute key */
+#define MPI_ERR_RMA_CONFLICT 49     /* */
+#define MPI_ERR_RMA_SYNC    50      /* */ 
+#define MPI_ERR_SIZE        51      /* */
+#define MPI_ERR_DISP        52      /* */
+#define MPI_ERR_ASSERT      53      /* */
 
 #define MPI_ERR_LASTCODE    0x3FFFFFFF      /* Last error code*/
 /* End of MPI's error classes */
@@ -554,8 +567,6 @@ int MPI_Abort(MPI_Comm, int);
    stdargs are supported */
 int MPI_Pcontrol(const int, ...);
 
-int MPI_NULL_COPY_FN ( MPI_Comm, int, void *, void *, void *, int * );
-int MPI_NULL_DELETE_FN ( MPI_Comm, int, void *, void * );
 int MPI_DUP_FN ( MPI_Comm, int, void *, void *, void *, int * );
 
 
