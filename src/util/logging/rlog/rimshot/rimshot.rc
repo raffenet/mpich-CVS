@@ -123,6 +123,7 @@ BEGIN
         MENUITEM "&Toolbar",                    ID_VIEW_TOOLBAR
         MENUITEM "&Status Bar",                 ID_VIEW_STATUS_BAR
         MENUITEM "&Uniform",                    ID_VIEW_UNIFORM
+        MENUITEM "&Zoom",                       ID_VIEW_ZOOM
     END
     POPUP "&Help"
     BEGIN
@@ -169,6 +170,31 @@ BEGIN
     LTEXT           "rimshot Version 1.0",IDC_STATIC,40,10,119,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 2002",IDC_STATIC,40,25,119,8
     DEFPUSHBUTTON   "OK",IDOK,178,7,50,14,WS_GROUP
+END
+
+IDD_ZOOM_DLG DIALOG DISCARDABLE  0, 0, 186, 146
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Set Zoom"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,129,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,129,25,50,14
+    LTEXT           "Left",IDC_STATIC,129,52,13,8
+    LTEXT           "Right",IDC_STATIC,129,74,18,8
+    EDITTEXT        IDC_LEFT,41,49,81,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_RIGHT,41,71,81,14,ES_AUTOHSCROLL
+    GROUPBOX        "",IDC_STATIC,7,40,172,99
+    CONTROL         "",IDC_LEFT_RIGHT_RADIO,"Button",BS_AUTORADIOBUTTON,15,
+                    63,8,8
+    CONTROL         "",IDC_WIDTH_RADIO,"Button",BS_AUTORADIOBUTTON,15,98,8,8
+    EDITTEXT        IDC_WIDTH,41,95,81,14,ES_AUTOHSCROLL
+    LTEXT           "Width",IDC_STATIC,129,98,20,8
+    LTEXT           "Enter the leftmost and rightmost times or specify the total width centered about the current event or the time per screen pixel.",
+                    IDC_STATIC,7,7,119,36
+    CONTROL         "",IDC_PERPIXEL_RADIO,"Button",BS_AUTORADIOBUTTON,15,119,
+                    8,8
+    EDITTEXT        IDC_PERPIXEL,41,116,81,14,ES_AUTOHSCROLL
+    LTEXT           "time/pixel",IDC_STATIC,129,119,31,8
 END
 
 
@@ -229,6 +255,14 @@ BEGIN
         RIGHTMARGIN, 228
         TOPMARGIN, 7
         BOTTOMMARGIN, 48
+    END
+
+    IDD_ZOOM_DLG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 139
     END
 END
 #endif    // APSTUDIO_INVOKED

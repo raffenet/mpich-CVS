@@ -5,6 +5,14 @@
       integer, parameter :: IDD_ABOUTBOX                    = 100
       integer, parameter :: IDR_MAINFRAME                   = 128
       integer, parameter :: IDR_RIMSHOTYPE                  = 129
+      integer, parameter :: IDD_ZOOM_DLG                    = 130
+      integer, parameter :: IDC_LEFT                        = 1000
+      integer, parameter :: IDC_RIGHT                       = 1001
+      integer, parameter :: IDC_LEFT_RIGHT_RADIO            = 1002
+      integer, parameter :: IDC_WIDTH_RADIO                 = 1003
+      integer, parameter :: IDC_WIDTH                       = 1004
+      integer, parameter :: IDC_PERPIXEL_RADIO              = 1005
+      integer, parameter :: IDC_PERPIXEL                    = 1006
       integer, parameter :: ID_PREVIOUS                     = 32771
       integer, parameter :: ID_NEXT                         = 32772
       integer, parameter :: ID_ZOOM_IN                      = 32773
@@ -13,3 +21,4 @@
       integer, parameter :: ID_ZOOM_TO                      = 32776
       integer, parameter :: ID_TOGGLE_ARROWS                = 32777
       integer, parameter :: ID_VIEW_UNIFORM                 = 32778
+      integer, parameter :: ID_VIEW_ZOOM                    = 32779

@@ -7,6 +7,7 @@
 #include "rimshotDoc.h"
 #include "rimshotView.h"
 #include "rimshot_draw.h"
+#include "zoomdlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -33,6 +34,7 @@ BEGIN_MESSAGE_MAP(CRimshotView, CView)
 	ON_COMMAND(ID_TOGGLE_ARROWS, OnToggleArrows)
 	ON_WM_LBUTTONDOWN()
 	ON_COMMAND(ID_VIEW_UNIFORM, OnViewUniform)
+	ON_COMMAND(ID_VIEW_ZOOM, OnViewZoom)
 	//}}AFX_MSG_MAP
 	// Standard printing commands
 	ON_COMMAND(ID_FILE_PRINT, CView::OnFilePrint)
@@ -734,4 +736,59 @@ void CRimshotView::OnViewUniform()
 	pMenu->CheckMenuItem(ID_VIEW_UNIFORM, MF_BYCOMMAND | m_Draw.bDrawUniform ? MF_CHECKED : MF_UNCHECKED);
     StopDrawing();
     StartDrawing();
+}
+
+void CRimshotView::OnViewZoom() 
+{
+    CRimshotDoc* pDoc = GetDocument();
+    if (pDoc->m_pInput)
+    {
+	CZoomDlg dlg;
+	CRect rect;
+	
+	GetClientRect(&rect);
+	dlg.m_dLeft = pDoc->m_dLeft;
+	dlg.m_dRight = pDoc->m_dRight;
+	dlg.m_dWidth = pDoc->m_dRight - pDoc->m_dLeft;
+	dlg.m_dPerPixel = dlg.m_dWidth / (double)rect.Width();
+
+	if (dlg.DoModal() == IDOK)
+	{
+	    if (dlg.m_bLR)
+	    {
+		if (dlg.m_dLeft < dlg.m_dRight)
+		{
+		    RLOG_EVENT event;
+		    pDoc->m_dLeft = dlg.m_dLeft;
+		    pDoc->m_dRight = dlg.m_dRight;
+		    RLOG_FindGlobalEventBeforeTimestamp(pDoc->m_pInput, (dlg.m_dLeft + dlg.m_dRight) / 2.0, &event);
+		    StopDrawing();
+		    StartDrawing();
+		}
+	    }
+	    if (dlg.m_bWidth)
+	    {
+		if (dlg.m_dWidth > 0.0)
+		{
+		    double middle = (pDoc->m_dLeft + pDoc->m_dRight) / 2.0;
+		    pDoc->m_dLeft = middle - (dlg.m_dWidth / 2.0);
+		    pDoc->m_dRight = middle + (dlg.m_dWidth / 2.0);
+		    StopDrawing();
+		    StartDrawing();
+		}
+	    }
+	    if (dlg.m_bPerPixel)
+	    {
+		dlg.m_dWidth = dlg.m_dPerPixel * (double)rect.Width();
+		if (dlg.m_dWidth > 0.0)
+		{
+		    double middle = (pDoc->m_dLeft + pDoc->m_dRight) / 2.0;
+		    pDoc->m_dLeft = middle - (dlg.m_dWidth / 2.0);
+		    pDoc->m_dRight = middle + (dlg.m_dWidth / 2.0);
+		    StopDrawing();
+		    StartDrawing();
+		}
+	    }
+	}
+    }
 }

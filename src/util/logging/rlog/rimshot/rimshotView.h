@@ -70,6 +70,7 @@ protected:
 	afx_msg void OnToggleArrows();
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnViewUniform();
+	afx_msg void OnViewZoom();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };
