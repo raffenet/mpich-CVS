@@ -938,15 +938,6 @@ int PMPI_Error_string(int, char *, int *);
 int PMPI_Error_class(int, int *);
 
 int PMPI_Type_get_envelope(MPI_Datatype, int *, int *, int *, int *); 
-int PMPI_Info_create(MPI_Info *);
-int PMPI_Info_set(MPI_Info, char *, char *);
-int PMPI_Info_delete(MPI_Info, char *);
-int PMPI_Info_get(MPI_Info, char *, int, char *, int *);
-int PMPI_Info_get_valuelen(MPI_Info, char *, int *, int *);
-int PMPI_Info_get_nkeys(MPI_Info, int *);
-int PMPI_Info_get_nthkey(MPI_Info, int, char *);
-int PMPI_Info_dup(MPI_Info, MPI_Info *);
-int PMPI_Info_free(MPI_Info *);
 
 /* Wtime done above */
 int PMPI_Init(int *, char ***);
@@ -955,18 +946,6 @@ int PMPI_Initialized(int *);
 int PMPI_Abort(MPI_Comm, int);
 
 int PMPI_Pcontrol(const int, ...);
-
-/* Misc 2 */
-
-int PMPI_Info_create(MPI_Info *);
-int PMPI_Info_set(MPI_Info, char *, char *);
-int PMPI_Info_delete(MPI_Info, char *);
-int PMPI_Info_get(MPI_Info, char *, int, char *, int *);
-int PMPI_Info_get_valuelen(MPI_Info, char *, int *, int *);
-int PMPI_Info_get_nkeys(MPI_Info, int *);
-int PMPI_Info_get_nthkey(MPI_Info, int, char *);
-int PMPI_Info_dup(MPI_Info, MPI_Info *);
-int PMPI_Info_free(MPI_Info *info);
 
 /* MPI-2 functions */
 
