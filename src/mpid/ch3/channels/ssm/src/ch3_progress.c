@@ -249,12 +249,21 @@ int MPID_CH3I_Message_queue_progress()
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Progress_test()
 {
+    /* This function has a problem that is #if 0'd out.
+     * The commented out code causes test to only probe the message queue for connection attempts
+     * every MPIDI_CH3I_MSGQ_ITERATIONS iterations.  This can delay shm connection formation for 
+     * codes that call test infrequently.
+     * But the uncommented code also has the problem that the overhead of checking the message queue
+     * is incurred with every call to test.
+     */
     int mpi_errno = MPI_SUCCESS;
     int rc;
     sock_event_t event;
     int num_bytes;
     MPIDI_VC *vc_ptr;
+#if 0
     static int msgqIter = 0;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_TEST);
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_YIELD);
 
@@ -299,11 +308,15 @@ int MPIDI_CH3_Progress_test()
 	MPIDI_CH3I_active_flag |= MPID_CH3I_SOCK_BIT;
     }
 
+#if 0
     if (msgqIter++ == MPIDI_CH3I_MSGQ_ITERATIONS)
     {
 	msgqIter = 0;
 	MPID_CH3I_Message_queue_progress();
     }
+#else
+    MPID_CH3I_Message_queue_progress();
+#endif
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_TEST);
     return mpi_errno;
