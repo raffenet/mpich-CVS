@@ -260,13 +260,13 @@ MPI_Request_get_status,1,1,1,2,Bill,,done
 MPI_Status_c2f,1,1,1,2,Bill,,.01,3/25/02
 MPI_Status_f2c,1,1,1,2,Bill,,.01,3/25/02
 MPI_Type_c2f,1,1,1,2,Bill,,.01,3/25/02
-MPI_Type_create_darray,,,,,,MPIR_Type_compute_extent
+MPI_Type_create_darray,,,,,Rob,,done
 MPI_Type_create_hindexed,,,,,Rob,,done,10/30/2002
 MPI_Type_create_hvector,,,,,Rob,,done,10/30/2002
 MPI_Type_create_indexed_block,,,,,Rob,,done
-MPI_Type_create_resized,,,,,Rob,MPIR_Type_compute_extent
+MPI_Type_create_resized,,,,,Rob,,done
 MPI_Type_create_struct,,,,,Rob,,done,10/30/2002
-MPI_Type_create_subarray,,,,,,MPIR_Type_compute_extent
+MPI_Type_create_subarray,,,,,Rob,,done
 MPI_Type_f2c,1,1,1,2,Bill,,.01,3/25/02
 MPI_Type_get_extent,1,1,2,1,Rob,,.01,10/09/02
 MPI_Type_get_true_extent,1,1,2,1,Rob,,.01,10/09/02
