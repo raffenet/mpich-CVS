@@ -930,7 +930,7 @@ int sock_set_user_ptr(sock_t sock, void *user_ptr)
     MPIDI_STATE_DECL(MPID_STATE_SOCK_SET_USER_PTR);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_SET_USER_PTR);
-    if (sock == SOCK_INVALID_SOCKET)
+    if (sock == NULL)
     {
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_SET_USER_PTR);
 	return SOCK_FAIL;

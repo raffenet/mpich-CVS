@@ -214,7 +214,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 #ifdef WITH_METHOD_SOCKET
     case MM_SOCKET_METHOD:
 	/* data members */
-	vc_ptr->data.socket.sock = SOCK_INVALID_SOCKET;
+	vc_ptr->data.socket.sock = NULL; /*SOCK_INVALID_SOCKET;*/
 	vc_ptr->data.socket.state = 0; /*SOCKET_INVALID_STATE;*/
 	vc_ptr->data.socket.connect_vc_ptr = NULL;
 	/* function pointers */

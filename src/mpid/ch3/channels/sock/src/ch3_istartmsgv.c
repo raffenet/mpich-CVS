@@ -97,7 +97,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 		
 		while (offset < n_iov)
 		{
-		    if (nb >= iov[offset].MPID_IOV_LEN)
+		    if (nb >= (int)iov[offset].MPID_IOV_LEN)
 		    {
 			nb -= iov[offset].MPID_IOV_LEN;
 			offset++;

@@ -55,7 +55,7 @@ MPIDI_CH3I_Pkt_sock_open_req_t sock_open_req;	\
 MPIDI_CH3I_Pkt_sock_open_resp_t sock_open_resp;	\
 MPIDI_CH3I_Pkt_sock_close_t sock_close;
 
-typedef enum
+typedef enum MPIDI_CH3I_VC_state
 {
     MPIDI_CH3I_VC_STATE_UNCONNECTED,
     MPIDI_CH3I_VC_STATE_CONNECTING,
@@ -73,6 +73,7 @@ struct MPIDI_CH3I_VC				\
     struct MPID_Request * sendq_tail;		\
     MPIDI_CH3I_VC_state_t state;		\
     sock_t sock;				\
+    struct MPIDI_CH3I_conn_info *info;          \
 } sc;
 
 

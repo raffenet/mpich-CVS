@@ -6,8 +6,12 @@
 
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
+#endif
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
@@ -113,7 +117,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     assert(hostname != NULL);
     rc = gethostname(hostname, MAXHOSTNAMELEN);
     assert(rc != -1);
-    assert(strlen(hostname) + 1 < val_max_sz);
+    assert((int)strlen(hostname) + 1 < val_max_sz);
     
     rc = snprintf(key, key_max_sz, "P%d-hostname", pg_rank);
     assert(rc > -1 && rc < key_max_sz);

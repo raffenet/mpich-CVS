@@ -14,6 +14,10 @@
 #include <assert.h>
 #endif
 
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 256
+#endif
+
 typedef struct MPIDI_CH3I_Process_s
 {
     MPIDI_CH3I_Process_group_t * pg;

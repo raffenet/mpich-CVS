@@ -54,6 +54,18 @@ Package=<4>
 
 ###############################################################################
 
+Project: "ib"=.\src\mpid\ch3\channels\ib\ib.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "irlog2rlog"=.\src\util\logging\rlog\irlog2rlog.dsp - Package Owner=<4>
 
 Package=<5>
@@ -108,10 +120,10 @@ Package=<4>
     Project_Dep_Name pmi
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name mm
+    Project_Dep_Name rlog
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name rlog
+    Project_Dep_Name shm
     End Project Dependency
 }}}
 
@@ -199,6 +211,18 @@ Package=<4>
 ###############################################################################
 
 Project: "rlog"=.\src\util\logging\rlog\rlog.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "shm"=.\SRC\MPID\CH3\CHANNELS\shm\shm.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

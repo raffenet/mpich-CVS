@@ -11,15 +11,15 @@
 	</Platforms>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			Name="ch3mmDebug|Win32"
+			OutputDirectory="ch3mmDebug"
+			IntermediateDirectory="ch3mmDebug"
 			ConfigurationType="4"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".,iocp,..\..\..\include"
+				AdditionalIncludeDirectories=".,iocp,..\..\..\include,..\..\ch3\channels\mm\include,..\..\ch3\include,..\datatype"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -47,9 +47,9 @@
 				Name="VCWebServiceProxyGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			Name="ch3mmRelease|Win32"
+			OutputDirectory="ch3mmRelease"
+			IntermediateDirectory="ch3mmRelease"
 			ConfigurationType="4"
 			CharacterSet="2">
 			<Tool
@@ -57,7 +57,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories=".,iocp,..\..\..\include"
+				AdditionalIncludeDirectories=".,iocp,..\..\..\include,..\..\ch3\channels\mm\include,..\..\ch3\include,..\datatype"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -85,7 +85,7 @@
 				Name="VCWebServiceProxyGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="sockch3Debug|Win32"
+			Name="ch3sockDebug|Win32"
 			OutputDirectory="sockch3Debug"
 			IntermediateDirectory="sockch3Debug"
 			ConfigurationType="4"
@@ -93,7 +93,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".,iocp,..\..\..\include,..\..\ch3\channels\mm\include,..\..\ch3\include,..\datatype"
+				AdditionalIncludeDirectories=".,iocp,..\..\..\include,..\..\ch3\channels\sock\include,..\..\ch3\include,..\datatype"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -121,7 +121,7 @@
 				Name="VCWebServiceProxyGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="sockch3Release|Win32"
+			Name="ch3sockRelease|Win32"
 			OutputDirectory="sockch3Release"
 			IntermediateDirectory="sockch3Release"
 			ConfigurationType="4"
@@ -131,7 +131,81 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories=".,iocp,..\..\..\include,..\..\ch3\channels\mm\include,..\..\ch3\include,..\datatype"
+				AdditionalIncludeDirectories=".,iocp,..\..\..\include,..\..\ch3\channels\sock\include,..\..\ch3\include,..\datatype"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="..\..\..\..\lib\sock.lib"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="mmDebug|Win32"
+			OutputDirectory="mmDebug"
+			IntermediateDirectory="mmDebug"
+			ConfigurationType="4"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories=".,iocp,..\..\..\include,..\..\mm\include,..\..\ch3\include,..\datatype"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="..\..\..\..\lib\sockd.lib"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="mmRelease|Win32"
+			OutputDirectory="mmRelease"
+			IntermediateDirectory="mmRelease"
+			ConfigurationType="4"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				OmitFramePointers="TRUE"
+				AdditionalIncludeDirectories=".,iocp,..\..\..\include,..\..\mm\include,..\..\ch3\include,..\datatype"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"

@@ -78,7 +78,7 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 		
 		while (offset < n_iov)
 		{
-		    if (iov[offset].MPID_IOV_LEN <= nb)
+		    if ((int)iov[offset].MPID_IOV_LEN <= nb)
 		    {
 			nb -= iov[offset].MPID_IOV_LEN;
 			offset++;

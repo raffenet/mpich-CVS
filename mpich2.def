@@ -63,16 +63,16 @@ EXPORTS
 ;	MPI_Cart_sub=PMPI_Cart_sub
 ;	PMPI_Cartdim_get
 ;	MPI_Cartdim_get=PMPI_Cartdim_get
-	PMPI_Close_port
-	MPI_Close_port=PMPI_Close_port
-	PMPI_Comm_accept
-	MPI_Comm_accept=PMPI_Comm_accept
+;	PMPI_Close_port
+;	MPI_Close_port=PMPI_Close_port
+;	PMPI_Comm_accept
+;	MPI_Comm_accept=PMPI_Comm_accept
 	PMPI_Comm_call_errhandler
 	MPI_Comm_call_errhandler=PMPI_Comm_call_errhandler
 ;	PMPI_Comm_compare
 ;	MPI_Comm_compare=PMPI_Comm_compare
-	PMPI_Comm_connect
-	MPI_Comm_connect=PMPI_Comm_connect
+;	PMPI_Comm_connect
+;	MPI_Comm_connect=PMPI_Comm_connect
 ;	PMPI_Comm_create
 ;	MPI_Comm_create=PMPI_Comm_create
 	PMPI_Comm_create_errhandler
@@ -81,8 +81,8 @@ EXPORTS
 ;	MPI_Comm_create_keyval=PMPI_Comm_create_keyval
 ;	PMPI_Comm_delete_attr
 ;	MPI_Comm_delete_attr=PMPI_Comm_delete_attr
-	PMPI_Comm_disconnect
-	MPI_Comm_disconnect=PMPI_Comm_disconnect
+;	PMPI_Comm_disconnect
+;	MPI_Comm_disconnect=PMPI_Comm_disconnect
 ;	PMPI_Comm_dup
 ;	MPI_Comm_dup=PMPI_Comm_dup
 	PMPI_Comm_free
@@ -117,8 +117,8 @@ EXPORTS
 	MPI_Comm_size=PMPI_Comm_size
 ;	PMPI_Comm_spawn
 ;	MPI_Comm_spawn=PMPI_Comm_spawn
-	PMPI_Comm_spawn_multiple
-	MPI_Comm_spawn_multiple=PMPI_Comm_spawn_multiple
+;	PMPI_Comm_spawn_multiple
+;	MPI_Comm_spawn_multiple=PMPI_Comm_spawn_multiple
 ;	PMPI_Comm_split
 ;	MPI_Comm_split=PMPI_Comm_split
 ;	PMPI_Comm_test_inter
@@ -361,8 +361,8 @@ EXPORTS
 ;	MPI_Op_create=PMPI_Op_create
 ;	PMPI_Op_free
 ;	MPI_Op_free=PMPI_Op_free
-	PMPI_Open_port
-	MPI_Open_port=PMPI_Open_port
+;	PMPI_Open_port
+;	MPI_Open_port=PMPI_Open_port
 	PMPI_Pack
 	MPI_Pack=PMPI_Pack
 ;	PMPI_Pack_external
@@ -487,12 +487,12 @@ EXPORTS
 ;	MPI_Type_get_contents=PMPI_Type_get_contents
 ;	PMPI_Type_get_envelope
 ;	MPI_Type_get_envelope=PMPI_Type_get_envelope
-;	PMPI_Type_get_extent
-;	MPI_Type_get_extent=PMPI_Type_get_extent
+	PMPI_Type_get_extent
+	MPI_Type_get_extent=PMPI_Type_get_extent
 ;	PMPI_Type_get_name
 ;	MPI_Type_get_name=PMPI_Type_get_name
-;	PMPI_Type_get_true_extent
-;	MPI_Type_get_true_extent=PMPI_Type_get_true_extent
+	PMPI_Type_get_true_extent
+	MPI_Type_get_true_extent=PMPI_Type_get_true_extent
 ;	PMPI_Type_hindexed
 ;	MPI_Type_hindexed=PMPI_Type_hindexed
 ;	PMPI_Type_hvector
@@ -507,8 +507,8 @@ EXPORTS
 ;	MPI_Type_set_attr=PMPI_Type_set_attr
 ;	PMPI_Type_set_name
 ;	MPI_Type_set_name=PMPI_Type_set_name
-;	PMPI_Type_size
-;	MPI_Type_size=PMPI_Type_size
+	PMPI_Type_size
+	MPI_Type_size=PMPI_Type_size
 ;	PMPI_Type_struct
 ;	MPI_Type_struct=PMPI_Type_struct
 ;	PMPI_Type_ub
