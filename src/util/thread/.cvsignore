@@ -9,4 +9,6 @@ Makefile.in
 .deps
 .libs
 configure
+config.*
+*.cache
 mpe_thread_conf.h.in
