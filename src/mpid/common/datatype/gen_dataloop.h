@@ -257,7 +257,8 @@ typedef struct DLOOP_Dataloop {
               move up and down the stack.  NEED MORE NOTES ON THIS!!!
 . orig_offset - original offset, set before the stackelm is processed, so that
                 we know where the offset was.  this is used in processing indexed
-                types and maybe others (but not contig or vector for sure)...
+                types and possibly others.  it is set for all types, but not
+		referenced in some cases.
 . curblock - Current block value...NEED MORE NOTES ON THIS!!!
 . orig_block - original block value (caches so we don't have to look it up);
                not used in indexed type (?)
