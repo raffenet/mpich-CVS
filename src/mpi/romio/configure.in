@@ -1157,34 +1157,10 @@ fi
 
 if test -n "$file_system_nfs" ; then
    # Check for problems with locks
-   AC_MSG_CHECKING([whether file locks work with NFS])
-   AC_TRY_RUN([
-#include <fcntl.h>
-#include <errno.h>
-#include <unistd.h>
-
-int main()
-{
-    struct flock lock;
-    int fd, err;
-
-    lock.l_type = F_WRLCK;
-    lock.l_start = 0;
-    lock.l_whence = SEEK_SET;
-    lock.l_len = 100;
-
-    fd = open("conftest.dat", O_RDWR | O_CREAT, 0644);
-
-    err = fcntl(fd, F_SETLKW, &lock);
-
-   /* printf("err = %d, errno = %d\n", err, errno); */
-    close(fd);
-    return err;
-}],nfs_locks_work=yes,nfs_locks_work=no,nfs_locks_work=unknown)
-    AC_MSG_RESULT($nfs_locks_work)
-    if test "$nfs_locks_work" != "yes" ; then
-        AC_MSG_WARN([File locks do not work with NFS.  See the Installation and
-users manual for instructions on fixing this])
+   # We no longer do this within the configure test.  Instead,
+   # we suggest tha the user run maint/nfslock.c
+   AC_MSG_WARN([File locks may not work with NFS.  See the Installation and
+users manual for instructions on testing and if necessary fixing this])
     fi
 fi
 if test -n "$file_system_nfs"; then
