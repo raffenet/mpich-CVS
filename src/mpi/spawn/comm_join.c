@@ -136,6 +136,8 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_JOIN);
 
     /* ... body of routine ...  */
+
+    MPIR_Nest_incr();
     
     MPIU_CHKLMEM_MALLOC(local_port, char *, MPI_MAX_PORT_NAME, mpi_errno, "local port name");
     MPIU_CHKLMEM_MALLOC(remote_port, char *, MPI_MAX_PORT_NAME, mpi_errno, "remote port name");
@@ -169,6 +171,7 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
 
   fn_exit:
     MPIU_CHKLMEM_FREEALL();
+    MPIR_Nest_decr();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_JOIN);
     MPID_CS_EXIT();
     return mpi_errno;
