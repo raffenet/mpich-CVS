@@ -463,13 +463,17 @@ that is not portable.
 
 \item 
 The first executable statement starts the timer (and in general,
-any profiling) for the routine.  This
+  any profiling) for the routine.  This
   is a macro that will expand into the appropriate code, including no code for
   the fastest production version and logging code for SLOG output.
   Since the intent is to bracket the body of the function and to
   allow other more general operations, this is a macro.
   The expansion of this macro is controlled by the
   \cfgoption{--enable-timing} argument to \code{configure}.
+  
+  The simplify instrumentation of the code, the macro
+  \code{MPID_MPI_STATE_DECLS} is used to provide for any local
+  variables (such as a variable to hold the elapsed time within the routine).
 
 % [BRT] should this be more generic, such as MPID_MPI_FUNC_ENTER, to allow
 % more flexibility?  We should probably define a CPP macro with the name
@@ -610,7 +614,8 @@ int MPIR_Foo_util( int a, MPID_Comm *comm )
 int MPI_Foo( MPI_Comm comm, int a ) 
 {
     static const char FCNAME[] = "MPI_Foo";
-    int mpi_errno;
+    int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FOO);
     /* Get handles to MPI objects. */
@@ -1566,6 +1571,7 @@ state recording calls also collect statistics, allowing a build to
 choose between full state logging, simple statistics collection, and
 no data collection at all.  Separate statistics-collection calls are
 provided to augment, not replace, the state recording calls.
+The files for these are in \file{util/instrm} (for ``instrumentation'').
 
 \subsubsection{Basic Timer Routines.}
 These provide a basic mechanism for accessing a fast timer.  The value of the
@@ -1623,14 +1629,14 @@ Simple informational routines such as \code{MPI_Comm_size} and
 %\textbf{Question: Also keep track of max/min times and either sum of squares
 %  or a histogram of times?  See the discussion of the statistics routines}
 
-Question: should we allow func enter/exit at general
-locations, so that it can be used to surround other routines, rather
-than introducing another set of functions?  One answer is no, because
-the \code{MPID_MPI_FUNC_ENTER} and \code{EXIT} routines really refer
-to function entrance and exit, and using them within the body of a
-function may be confusing.  As defined here, it doesn't matter that
-much, but we may choose to add features to them that are more closely
-tied to function entrance and exit.
+% Question: should we allow func enter/exit at general
+% locations, so that it can be used to surround other routines, rather
+% than introducing another set of functions?  One answer is no, because
+% the \code{MPID_MPI_FUNC_ENTER} and \code{EXIT} routines really refer
+% to function entrance and exit, and using them within the body of a
+% function may be confusing.  As defined here, it doesn't matter that
+% much, but we may choose to add features to them that are more closely
+% tied to function entrance and exit.
 
 Each state belongs to a class; there are at most 32 classes (so that we can use
 bitwise tests on a 32 bit \code{unsigned int}).  Instrumentation can be
