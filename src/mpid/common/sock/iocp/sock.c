@@ -160,12 +160,22 @@ static void translate_error(int error, char *msg, char *prepend)
 	MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
 	(LPTSTR) &str,
 	0,0);
-    if (prepend == NULL)
-	memcpy(msg, str, num_bytes+1);
+    if (num_bytes == 0)
+    {
+	if (prepend != NULL)
+	    strcpy(msg, prepend);
+	else
+	    *msg = '\0';
+    }
     else
-	sprintf(msg, "%s%s", prepend, (const char*)str);
-    LocalFree(str);
-    strtok(msg, "\r\n");
+    {
+	if (prepend == NULL)
+	    memcpy(msg, str, num_bytes+1);
+	else
+	    sprintf(msg, "%s%s", prepend, (const char*)str);
+	LocalFree(str);
+	strtok(msg, "\r\n");
+    }
 }
 
 static char *get_error_string(int error_code)
