@@ -26,6 +26,7 @@ int main( int argc, char *argv[] )
        product of dims is the number of input nodes */
     nnodes = 2*3*5*7*11;
     ndims  = 2;
+    dims[0] = dims[1] = 0;
     MPI_Dims_create( nnodes, ndims, dims );
     if (prodof(ndims,dims) != nnodes) {
 	errs++;
@@ -35,6 +36,7 @@ int main( int argc, char *argv[] )
 
     nnodes = 2*2*3*3*5*7*11;
     ndims  = 2;
+    dims[0] = dims[1] = 0;
     MPI_Dims_create( nnodes, ndims, dims );
     if (prodof(ndims,dims) != nnodes) {
 	errs++;
@@ -44,6 +46,7 @@ int main( int argc, char *argv[] )
 
     nnodes = 11;
     ndims  = 2;
+    dims[0] = dims[1] = 0;
     MPI_Dims_create( nnodes, ndims, dims );
     if (prodof(ndims,dims) != nnodes) {
 	errs++;
@@ -53,6 +56,7 @@ int main( int argc, char *argv[] )
 
     nnodes = 5*7*11;
     ndims  = 4;
+    dims[0] = dims[1] = dims[2] = dims[3] = 0;
     MPI_Dims_create( nnodes, ndims, dims );
     if (prodof(ndims,dims) != nnodes) {
 	errs++;
@@ -62,6 +66,7 @@ int main( int argc, char *argv[] )
 
     nnodes = 64;
     ndims  = 4;
+    dims[0] = dims[1] = dims[2] = dims[3] = 0;
     MPI_Dims_create( nnodes, ndims, dims );
     if (prodof(ndims,dims) != nnodes) {
 	errs++;
