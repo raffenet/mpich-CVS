@@ -322,6 +322,7 @@ typedef struct MPI_Status {
 #define MPI_STATUSES_IGNORE (MPI_Status *)1
 #define MPI_ERRCODES_IGNORE (int *)0
 #define MPI_ARGV_NULL (char **)0
+#define MPI_ARGVS_NULL (char ***)0
 
 /* For supported thread levels */
 #define MPI_THREAD_SINGLE 0
