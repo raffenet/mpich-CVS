@@ -112,7 +112,8 @@ int main(int argc, char *argv[])
     int i, j, n, nq,		/* Loop indices					*/
 	bufoffset = 0,		/* Align buffer to this				*/
 	bufalign = 16*1024,	/* Boundary to align buffer to			*/
-	nrepeat,		/* Number of time to do the transmission	*/
+	nrepeat01, nrepeat12,	/* Number of time to do the transmission	*/
+	nrepeat012,
 	len,			/* Number of bytes to be transmitted		*/
 	inc = 1,		/* Increment value				*/
 	pert,			/* Perturbation value				*/
@@ -260,23 +261,23 @@ int main(int argc, char *argv[])
 	    if (args01.tr)
 	    {
 		if (args01.bufflen == 0)
-		    nrepeat = args01.latency_reps;
+		    nrepeat01 = args01.latency_reps;
 		else
-		    nrepeat = (int)(MAX((RUNTM / ((double)args01.bufflen /
+		    nrepeat01 = (int)(MAX((RUNTM / ((double)args01.bufflen /
 			           (args01.bufflen - inc + 1.0) * tlast01)), TRIALS));
-		SendReps(&args01, &nrepeat);
+		SendReps(&args01, &nrepeat01);
 	    }
 	    else
 	    {
-		RecvReps(&args01, &nrepeat);
+		RecvReps(&args01, &nrepeat01);
 	    }
 
 	    /* Allocate the buffer */
 	    args01.bufflen = len + pert;
-	    /* printf("allocating %d bytes\n", args01.bufflen * nrepeat + bufalign); */
+	    /* printf("allocating %d bytes\n", args01.bufflen * nrepeat01 + bufalign); */
 	    if (bNoCache)
 	    {
-		if ((args01.sbuff = (char *)malloc(args01.bufflen * nrepeat + bufalign)) == (char *)NULL)
+		if ((args01.sbuff = (char *)malloc(args01.bufflen * nrepeat01 + bufalign)) == (char *)NULL)
 		{
 		    fprintf(stdout,"Couldn't allocate memory\n");
 		    fflush(stdout);
@@ -292,7 +293,7 @@ int main(int argc, char *argv[])
 		    break;
 		}
 	    }
-	    /* if ((args01.rbuff = (char *)malloc(args01.bufflen * nrepeat + bufalign)) == (char *)NULL) */
+	    /* if ((args01.rbuff = (char *)malloc(args01.bufflen * nrepeat01 + bufalign)) == (char *)NULL) */
 	    if ((args01.rbuff = (char *)malloc(args01.bufflen + bufalign)) == (char *)NULL)
 	    {
 		fprintf(stdout,"Couldn't allocate memory\n");
@@ -318,7 +319,7 @@ int main(int argc, char *argv[])
 	    if (args01.tr && printopt)
 	    {
 		fprintf(stdout,"%3d: %9d bytes %4d times --> ",
-		    n, args01.bufflen, nrepeat);
+		    n, args01.bufflen, nrepeat01);
 		fflush(stdout);
 	    }
 	    
@@ -345,7 +346,7 @@ int main(int argc, char *argv[])
 		    
 		    Sync(&args01);
 		    t0 = When();
-		    for (j = 0; j < nrepeat; j++)
+		    for (j = 0; j < nrepeat01; j++)
 		    {
 			SendData(args01);
 			RecvData(args01);
@@ -355,7 +356,7 @@ int main(int argc, char *argv[])
 			    /* args01.rbuff += args01.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/(2 * nrepeat);
+		    t = (When() - t0)/(2 * nrepeat01);
 
 		    t1 += t;
 		    bwdata01[n].t = MIN(bwdata01[n].t, t);
@@ -384,7 +385,7 @@ int main(int argc, char *argv[])
 		    
 		    Sync(&args01);
 		    t0 = When();
-		    for (j = 0; j < nrepeat; j++)
+		    for (j = 0; j < nrepeat01; j++)
 		    {
 			RecvData(args01);
 			SendData(args01);
@@ -394,14 +395,14 @@ int main(int argc, char *argv[])
 			    /* args01.rbuff += args01.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/(2 * nrepeat);
+		    t = (When() - t0)/(2 * nrepeat01);
 		}
 		RecvTime(&args01, &bwdata01[n].t);
 	    }
 	    tlast01 = bwdata01[n].t;
 	    bwdata01[n].bits = args01.bufflen * CHARSIZE;
 	    bwdata01[n].bps = bwdata01[n].bits / (bwdata01[n].t * 1024 * 1024);
-	    bwdata01[n].repeat = nrepeat;
+	    bwdata01[n].repeat = nrepeat01;
 	    
 	    if (args01.tr)
 	    {
@@ -465,23 +466,23 @@ skip_01_trial:
 	    if (args12.tr)
 	    {
 		if (args12.bufflen == 0)
-		    nrepeat = args12.latency_reps;
+		    nrepeat12 = args12.latency_reps;
 		else
-		    nrepeat = (int)(MAX((RUNTM / ((double)args12.bufflen /
+		    nrepeat12 = (int)(MAX((RUNTM / ((double)args12.bufflen /
 			           (args12.bufflen - inc + 1.0) * tlast12)), TRIALS));
-		SendReps(&args12, &nrepeat);
+		SendReps(&args12, &nrepeat12);
 	    }
 	    else
 	    {
-		RecvReps(&args12, &nrepeat);
+		RecvReps(&args12, &nrepeat12);
 	    }
 	    
 	    /* Allocate the buffer */
 	    args12.bufflen = len + pert;
-	    /* printf("allocating %d bytes\n", args12.bufflen * nrepeat + bufalign); */
+	    /* printf("allocating %d bytes\n", args12.bufflen * nrepeat12 + bufalign); */
 	    if (bNoCache)
 	    {
-		if ((args12.sbuff = (char *)malloc(args12.bufflen * nrepeat + bufalign)) == (char *)NULL)
+		if ((args12.sbuff = (char *)malloc(args12.bufflen * nrepeat12 + bufalign)) == (char *)NULL)
 		{
 		    fprintf(stdout,"Couldn't allocate memory\n");
 		    fflush(stdout);
@@ -497,7 +498,7 @@ skip_01_trial:
 		    break;
 		}
 	    }
-	    /* if ((args12.rbuff = (char *)malloc(args12.bufflen * nrepeat + bufalign)) == (char *)NULL) */
+	    /* if ((args12.rbuff = (char *)malloc(args12.bufflen * nrepeat12 + bufalign)) == (char *)NULL) */
 	    if ((args12.rbuff = (char *)malloc(args12.bufflen + bufalign)) == (char *)NULL)
 	    {
 		fprintf(stdout,"Couldn't allocate memory\n");
@@ -522,7 +523,7 @@ skip_01_trial:
 	    
 	    if (args12.tr && printopt)
 	    {
-		printf("%3d: %9d bytes %4d times --> ", n, args12.bufflen, nrepeat);
+		printf("%3d: %9d bytes %4d times --> ", n, args12.bufflen, nrepeat12);
 		fflush(stdout);
 	    }
 	    
@@ -549,7 +550,7 @@ skip_01_trial:
 		    
 		    Sync(&args12);
 		    t0 = When();
-		    for (j = 0; j < nrepeat; j++)
+		    for (j = 0; j < nrepeat12; j++)
 		    {
 			SendData(args12);
 			RecvData(args12);
@@ -559,7 +560,7 @@ skip_01_trial:
 			    /* args12.rbuff += args12.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/(2 * nrepeat);
+		    t = (When() - t0)/(2 * nrepeat12);
 
 		    t1 += t;
 		    bwdata12[n].t = MIN(bwdata12[n].t, t);
@@ -588,7 +589,7 @@ skip_01_trial:
 		    
 		    Sync(&args12);
 		    t0 = When();
-		    for (j = 0; j < nrepeat; j++)
+		    for (j = 0; j < nrepeat12; j++)
 		    {
 			RecvData(args12);
 			SendData(args12);
@@ -598,14 +599,14 @@ skip_01_trial:
 			    /* args12.rbuff += args12.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/(2 * nrepeat);
+		    t = (When() - t0)/(2 * nrepeat12);
 		}
 		RecvTime(&args12, &bwdata12[n].t);
 	    }
 	    tlast12 = bwdata12[n].t;
 	    bwdata12[n].bits = args12.bufflen * CHARSIZE;
 	    bwdata12[n].bps = bwdata12[n].bits / (bwdata12[n].t * 1024 * 1024);
-	    bwdata12[n].repeat = nrepeat;
+	    bwdata12[n].repeat = nrepeat12;
 
 	    if (args12.tr)
 	    {
@@ -663,23 +664,23 @@ skip_12_trial:
 	    if (g_nIproc == 0)
 	    {
 		if (args012.bufflen == 0)
-		    nrepeat = g_latency012_reps;
+		    nrepeat012 = g_latency012_reps;
 		else
-		    nrepeat = (int)(MAX((RUNTM / ((double)args012.bufflen /
+		    nrepeat012 = (int)(MAX((RUNTM / ((double)args012.bufflen /
 			           (args012.bufflen - inc + 1.0) * tlast012)), TRIALS));
-		MPI_Bcast(&nrepeat, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&nrepeat012, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	    }
 	    else
 	    {
-		MPI_Bcast(&nrepeat, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&nrepeat012, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	    }
 
 	    /* Allocate the buffer */
 	    args012.bufflen = len + pert;
-	    /* printf("allocating %d bytes\n", args12.bufflen * nrepeat + bufalign); */
+	    /* printf("allocating %d bytes\n", args12.bufflen * nrepeat012 + bufalign); */
 	    if (bNoCache)
 	    {
-		if ((args012.sbuff = (char *)malloc(args012.bufflen * nrepeat + bufalign)) == (char *)NULL)
+		if ((args012.sbuff = (char *)malloc(args012.bufflen * nrepeat012 + bufalign)) == (char *)NULL)
 		{
 		    fprintf(stdout,"Couldn't allocate memory\n");
 		    fflush(stdout);
@@ -695,7 +696,7 @@ skip_12_trial:
 		    break;
 		}
 	    }
-	    /* if ((args012.rbuff = (char *)malloc(args012.bufflen * nrepeat + bufalign)) == (char *)NULL) */
+	    /* if ((args012.rbuff = (char *)malloc(args012.bufflen * nrepeat012 + bufalign)) == (char *)NULL) */
 	    if ((args012.rbuff = (char *)malloc(args012.bufflen + bufalign)) == (char *)NULL)
 	    {
 		fprintf(stdout,"Couldn't allocate memory\n");
@@ -720,7 +721,7 @@ skip_12_trial:
 	    
 	    if (g_nIproc == 0 && printopt)
 	    {
-		printf("%3d: %9d bytes %4d times --> ", n, args012.bufflen, nrepeat);
+		printf("%3d: %9d bytes %4d times --> ", n, args012.bufflen, nrepeat012);
 		fflush(stdout);
 	    }
 	    
@@ -748,7 +749,7 @@ skip_12_trial:
 		    
 		    Sync012(&args012);
 		    t0 = When();
-		    for (j = 0; j < nrepeat; j++)
+		    for (j = 0; j < nrepeat012; j++)
 		    {
 			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
 			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
@@ -758,7 +759,7 @@ skip_12_trial:
 			    /* args012.rbuff += args012.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/(2 * nrepeat);
+		    t = (When() - t0)/(2 * nrepeat012);
 
 		    t1 += t;
 		    bwdata012[n].t = MIN(bwdata012[n].t, t);
@@ -786,7 +787,7 @@ skip_12_trial:
 		    
 		    Sync012(&args012);
 		    t0 = When();
-		    for (j = 0; j < nrepeat; j++)
+		    for (j = 0; j < nrepeat012; j++)
 		    {
 			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
 			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD);
@@ -798,7 +799,7 @@ skip_12_trial:
 			    /* args012.rbuff += args012.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/(2 * nrepeat);
+		    t = (When() - t0)/(2 * nrepeat012);
 		}
 		MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, g_left_rank, MPI_COMM_WORLD);
 		break;
@@ -823,7 +824,7 @@ skip_12_trial:
 		    
 		    Sync012(&args012);
 		    t0 = When();
-		    for (j = 0; j < nrepeat; j++)
+		    for (j = 0; j < nrepeat012; j++)
 		    {
 			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
 			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
@@ -833,7 +834,7 @@ skip_12_trial:
 			    /* args012.rbuff += args012.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/(2 * nrepeat);
+		    t = (When() - t0)/(2 * nrepeat012);
 		}
 		MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, g_left_rank, MPI_COMM_WORLD);
 		break;
@@ -841,7 +842,7 @@ skip_12_trial:
 	    tlast012 = bwdata012[n].t;
 	    bwdata012[n].bits = args012.bufflen * CHARSIZE;
 	    bwdata012[n].bps = bwdata012[n].bits / (bwdata012[n].t * 1024 * 1024);
-	    bwdata012[n].repeat = nrepeat;
+	    bwdata012[n].repeat = nrepeat012;
 
 	    if (g_nIproc == 0)
 	    {
