@@ -63,8 +63,9 @@ int MPI_Pcontrol(const int level, ...)
        use by the user (or a tool) with the profiling interface */
     
     /* ... end of body of routine ... */
-
+#if 0
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PCONTROL);
     MPID_CS_EXIT();
     return mpi_errno;
