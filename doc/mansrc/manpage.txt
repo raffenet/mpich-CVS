@@ -6,8 +6,7 @@
 
 Description:
 
-MPI stands for Message Passing Interface. , simply
-
+MPI stands for Message Passing Interface.
 MPI is a specification (like C or Fortran) and there are a number of 
 implementations.  The rest of this man page describes the use of the MPICH
 implementation of MPI.
@@ -18,24 +17,32 @@ Add MPI to your path
 .vb
 	% set path = ( $path /usr/local/mpi/bin )
 .ve
-Compute pi to a given resolution on 8 processors or threads
+for the 'csh' and 'tcsh' shells, or
+.vb
+        % export path=$path:/usr/local/mpi/bin
+.ve
+for 'sh', 'ksh', and 'bash' shells.
+
+Compute pi to a given resolution on 8 processes
 .vb
 	% mpiexec -n 8 /usr/local/mpi/examples/cpi
 .ve
 
 You can compile and link your own MPI programs with the commands 'mpicc',
-'mpif77', and 'mpicxx'\:
+'mpif77', 'mpicxx', and 'mpif90'\:
 .vb
         % mpicc -o cpi cpi.c
         % mpif77 -o fpi fpi.f
 	% mpicxx -o cxxpi cxxpi.cxx
+        % mpif790 -o pi3f90 pi3f90.f90
 .ve
+using the source code from `/usr/local/mpi/examples`.
 
 Documentation:
 
-Postscript documentation can be found in directory
-/usr/local/mpi/doc/.  These include an introductory guide
-(guide.ps) and a user manual (manual.ps).
+PDF documentation can be found in directory
+'/usr/local/mpi/doc/'.  These include an installation manual ('install.pdf') 
+and a user's manual ('usermanual.pdf').
 
 Man pages exist for every MPI subroutine and function.  The man pages are
 also available on the Web at 'http://www.mcs.anl.gov/mpi/www'.
@@ -45,13 +52,13 @@ that use MPI, and pointers to other MPI resources.
 
 Version:
 
-MPICH2 version 0.92
+MPICH2 version 0.97
 
 License:
 
-Copyright 20028 University of Chicago
-See COPYRIGHT for details.  The source code is freely available
-by anonymous ftp from ftp.mcs.anl.gov in pub/mpi/mpich2-beta.tar.gz .
+Copyright 2002 University of Chicago.
+See the file 'COPYRIGHT' for details.  The source code is freely available
+by anonymous ftp from 'ftp.mcs.anl.gov' in 'pub/mpi/mpich2-beta.tar.gz' .
 
 Files:
 
@@ -68,8 +75,7 @@ Files:
 
 Contact:
 
-For comments regarding the local installation of MPI, please send mail
-to support@mcs.anl.gov.  MPI-specific suggestions and bug reports should
-be sent directly to mpi-bugs@mcs.anl.gov.
+MPI-specific suggestions and bug reports should
+be sent to 'mpich2-maint@mcs.anl.gov'.
 
 D*/
