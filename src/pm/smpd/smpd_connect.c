@@ -37,7 +37,8 @@ smpd_process_t smpd_process =
       "", "",
       SMPD_FALSE, SMPD_FALSE,
       "", "", "",
-      0 };
+      0,
+      SMPD_DBG_STATE_ERROUT, NULL };
 
 #ifdef HAVE_SIGACTION
 void child_handler(int code)
@@ -58,6 +59,9 @@ int smpd_init_process(void)
 #endif
 
     smpd_enter_fn("smpd_init_process");
+
+    /* initialize the debugging output print engine */
+    smpd_init_printf();
 
     /* tree data */
     smpd_process.parent_id = -1;

@@ -109,6 +109,9 @@
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm">
 			<File
+				RelativePath="mp_connect_tree.c">
+			</File>
+			<File
 				RelativePath="mp_util.c">
 			</File>
 			<File
@@ -118,6 +121,9 @@
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc">
+			<File
+				RelativePath="mpiexec.h">
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

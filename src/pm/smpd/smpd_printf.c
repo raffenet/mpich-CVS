@@ -55,11 +55,41 @@ char * get_sock_error_string(int error)
     return NULL;
 }
 
+int smpd_init_printf(void)
+{
+    char * envstr;
+
+    smpd_process.dbg_state = SMPD_DBG_STATE_ERROUT;
+
+    envstr = getenv("SMPD_DBG_OUTPUT");
+    if (envstr == NULL)
+    {
+	return SMPD_SUCCESS;
+    }
+
+    if (strstr(envstr, "stdout"))
+	smpd_process.dbg_state |= SMPD_DBG_STATE_STDOUT;
+    if (strstr(envstr, "log"))
+	smpd_process.dbg_state |= SMPD_DBG_STATE_LOGFILE;
+
+#ifdef HAVE_WINDOWS_H
+    if (!bInitialized)
+    {
+	hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
+	bInitialized = TRUE;
+    }
+#endif
+    return SMPD_SUCCESS;
+}
+
 int smpd_err_printf(char *str, ...)
 {
-    int n;
+    int n = 0;
     va_list list;
     char *format_str;
+
+    if (smpd_process.dbg_state == 0)
+	return 0;
 
 #ifdef HAVE_WINDOWS_H
     if (!bInitialized)
@@ -70,18 +100,34 @@ int smpd_err_printf(char *str, ...)
     WaitForSingleObject(hOutputMutex, INFINITE);
 #endif
 
-    /* use stdout instead of stderr so that ordering will be consistent with dbg messages */
-
-    /* prepend output with the process tree node id */
-    fprintf(stdout, "[%d]ERROR:", smpd_process.id);
-
-    /* print the formatted string */
     va_start(list, str);
-    format_str = str;
-    n = vfprintf(stdout, format_str, list);
-    va_end(list);
 
-    fflush(stdout);
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_ERROUT)
+    {
+	/* use stdout instead of stderr so that ordering will be consistent with dbg messages */
+
+	/* prepend output with the process tree node id */
+	fprintf(stdout, "[%d]ERROR:", smpd_process.id);
+
+	/* print the formatted string */
+	format_str = str;
+	n = vfprintf(stdout, format_str, list);
+
+	fflush(stdout);
+    }
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE)
+    {
+	/* prepend output with the process tree node id */
+	fprintf(smpd_process.dbg_fout, "[%d]ERROR:", smpd_process.id);
+
+	/* print the formatted string */
+	format_str = str;
+	n = vfprintf(smpd_process.dbg_fout, format_str, list);
+
+	fflush(smpd_process.dbg_fout);
+    }
+
+    va_end(list);
 
 #ifdef HAVE_WINDOWS_H
     ReleaseMutex(hOutputMutex);
@@ -91,9 +137,12 @@ int smpd_err_printf(char *str, ...)
 
 int smpd_dbg_printf(char *str, ...)
 {
-    int n;
+    int n = 0;
     va_list list;
     char *format_str;
+
+    if (smpd_process.dbg_state == SMPD_DBG_STATE_ERROUT)
+	return 0;
 
 #ifdef HAVE_WINDOWS_H
     if (!bInitialized)
@@ -104,16 +153,32 @@ int smpd_dbg_printf(char *str, ...)
     WaitForSingleObject(hOutputMutex, INFINITE);
 #endif
 
-    /* prepend output with the tree node id */
-    printf("[%d]", smpd_process.id);
-
-    /* print the formatted string */
     va_start(list, str);
-    format_str = str;
-    n = vfprintf(stdout, format_str, list);
-    va_end(list);
 
-    fflush(stdout);
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_STDOUT)
+    {
+	/* prepend output with the tree node id */
+	printf("[%d]", smpd_process.id);
+
+	/* print the formatted string */
+	format_str = str;
+	n = vfprintf(stdout, format_str, list);
+
+	fflush(stdout);
+    }
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE)
+    {
+	/* prepend output with the process tree node id */
+	fprintf(smpd_process.dbg_fout, "[%d]:", smpd_process.id);
+
+	/* print the formatted string */
+	format_str = str;
+	n = vfprintf(smpd_process.dbg_fout, format_str, list);
+
+	fflush(smpd_process.dbg_fout);
+    }
+
+    va_end(list);
 
 #ifdef HAVE_WINDOWS_H
     ReleaseMutex(hOutputMutex);
@@ -128,53 +193,23 @@ static int cur_indent = 0;
 
 int smpd_enter_fn(char *fcname)
 {
-#ifdef HAVE_WINDOWS_H
-    if (!bInitialized)
-    {
-	hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
-	bInitialized = TRUE;
-    }
-    WaitForSingleObject(hOutputMutex, INFINITE);
-#endif
-
-    printf("[%d]%sentering %s\n", smpd_process.id, indent, fcname);
-    fflush(stdout);
+    smpd_dbg_printf("%sentering %s\n", indent, fcname);
     if (cur_indent >= 0 && cur_indent < SMPD_MAX_INDENT)
     {
 	indent[cur_indent] = '.';
 	indent[cur_indent+1] = '\0';
     }
     cur_indent++;
-
-#ifdef HAVE_WINDOWS_H
-    ReleaseMutex(hOutputMutex);
-#endif
-
     return SMPD_SUCCESS;
 }
 
 int smpd_exit_fn(char *fcname)
 {
-#ifdef HAVE_WINDOWS_H
-    if (!bInitialized)
-    {
-	hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
-	bInitialized = TRUE;
-    }
-    WaitForSingleObject(hOutputMutex, INFINITE);
-#endif
-
     if (cur_indent > 0 && cur_indent < SMPD_MAX_INDENT)
     {
 	indent[cur_indent-1] = '\0';
     }
     cur_indent--;
-    printf("[%d]%sexiting %s\n", smpd_process.id, indent, fcname);
-    fflush(stdout);
-
-#ifdef HAVE_WINDOWS_H
-    ReleaseMutex(hOutputMutex);
-#endif
-
+    smpd_dbg_printf("%sexiting %s\n", indent, fcname);
     return SMPD_SUCCESS;
 }

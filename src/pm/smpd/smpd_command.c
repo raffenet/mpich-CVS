@@ -245,6 +245,7 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
     smpd_init_command(cmd_ptr);
     cmd_ptr->src = src;
     cmd_ptr->dest = dest;
+    cmd_ptr->tag = smpd_process.cur_tag++;
 
     if (strlen(cmd) >= SMPD_MAX_CMD_STR_LENGTH)
     {
@@ -280,7 +281,7 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
 	smpd_exit_fn("smpd_create_command");
 	return SMPD_FAIL;
     }
-    result = smpd_add_int_arg(&str, &len, "tag", smpd_process.cur_tag++);
+    result = smpd_add_int_arg(&str, &len, "tag", cmd_ptr->tag);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the command.\n");
@@ -465,6 +466,7 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
     smpd_enter_fn("smpd_post_write_command");
 
     smpd_package_command(cmd);
+    smpd_dbg_printf("command after packaging: \"%s\"\n", cmd->cmd);
     cmd->next = NULL;
     cmd->state = SMPD_CMD_WRITING_CMD;
 
@@ -487,8 +489,11 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
     cmd->iov[0].SOCK_IOV_LEN = SMPD_CMD_HDR_LENGTH;
     cmd->iov[1].SOCK_IOV_BUF = cmd->cmd;
     cmd->iov[1].SOCK_IOV_LEN = cmd->length;
+    smpd_dbg_printf("command at this moment: \"%s\"\n", cmd->cmd);
     smpd_dbg_printf("smpd_post_write_command on sock %d: %d bytes for command: \"%s\"\n",
-	sock_getid(context->sock), cmd->iov[0].SOCK_IOV_LEN + cmd->iov[1].SOCK_IOV_LEN, cmd->cmd);
+	sock_getid(context->sock),
+	cmd->iov[0].SOCK_IOV_LEN + cmd->iov[1].SOCK_IOV_LEN,
+	cmd->cmd);
     result = sock_post_writev(context->sock, cmd->iov, 2, NULL);
     if (result != SOCK_SUCCESS)
     {

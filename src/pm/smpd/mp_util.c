@@ -19,33 +19,59 @@
 
 int g_bUseProcessSession = 0;
 
+#if 0
 int mp_dbg_printf(char *str, ...)
 {
     int n;
     va_list list;
     char *format_str;
 
+    if (smpd_process.dbg_state == SMPD_DBG_STATE_ERROUT)
+	return 0;
+
     va_start(list, str);
-    format_str = str;
-    n = vfprintf(stdout, format_str, list);
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_STDOUT)
+    {
+	fprintf(stdout, "[%d]", smpd_process.id);
+	format_str = str;
+	n = vfprintf(stdout, format_str, list);
+    }
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE)
+    {
+	format_str = str;
+	n = vfprintf(smpd_process.dbg_fout, format_str, list);
+    }
     va_end(list);
 
     fflush(stdout);
 
     return n;
 }
+
 int mp_err_printf(char *str, ...)
 {
-    int n;
+    int n = 0;
     va_list list;
     char *format_str;
 
+    if (smpd_process.dbg_state == 0)
+	return 0;
+
     va_start(list, str);
-    format_str = str;
-    n = vfprintf(stderr, format_str, list);
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_ERROUT)
+    {
+	fprintf(stdout, "[%d]", smpd_process.id);
+	format_str = str;
+	n = vfprintf(stdout, format_str, list);
+    }
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE)
+    {
+	format_str = str;
+	n = vfprintf(smpd_process.dbg_fout, format_str, list);
+    }
     va_end(list);
 
-    fflush(stderr);
+    fflush(stdout);
 
     return n;
 }
@@ -56,8 +82,7 @@ static int cur_indent = 0;
 
 int mp_enter_fn(char *fcname)
 {
-    printf("[%d]%sentering %s\n", smpd_process.id, indent, fcname);
-    fflush(stdout);
+    mp_dbg_printf("%sentering %s\n", indent, fcname);
     if (cur_indent >= 0 && cur_indent < MP_MAX_INDENT)
     {
 	indent[cur_indent] = '.';
@@ -75,11 +100,11 @@ int mp_exit_fn(char *fcname)
 	indent[cur_indent-1] = '\0';
     }
     cur_indent--;
-    printf("[%d]%sexiting %s\n", smpd_process.id, indent, fcname);
-    fflush(stdout);
+    mp_dbg_printf("%sexiting %s\n", indent, fcname);
 
     return SMPD_SUCCESS;
 }
+#endif
 
 int mp_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr)
 {
@@ -122,7 +147,7 @@ int mp_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr)
 
 int handle_result(smpd_context_t *context)
 {
-    int result;
+    int result, ret_val;
     char str[1024];
     smpd_command_t *iter, *trailer;
     int match_tag;
@@ -141,9 +166,23 @@ int handle_result(smpd_context_t *context)
     {
 	if (iter->tag == match_tag)
 	{
+	    ret_val = SMPD_SUCCESS;
 	    if (smpd_get_string_arg(context->read_cmd.cmd, "result", str, 1024))
 	    {
-		mp_dbg_printf("command: '%s'\nresult: '%s'\n", iter->cmd, str);
+		if (strcmp(iter->cmd_str, "connect") == 0)
+		{
+		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
+			ret_val = SMPD_CONNECTED;
+		    else
+		    {
+			mp_err_printf("connect failed: %s\n", str);
+			ret_val = SMPD_FAIL;
+		    }
+		}
+		else
+		{
+		    mp_err_printf("result returned for unhandled command:\n command: '%s'\n result: '%s'\n", iter->cmd, str);
+		}
 	    }
 	    else
 	    {
@@ -163,7 +202,11 @@ int handle_result(smpd_context_t *context)
 		mp_err_printf("unable to free command in the wait_list\n");
 	    }
 	    mp_exit_fn("handle_result");
-	    return SMPD_SUCCESS;
+	    return ret_val;
+	}
+	else
+	{
+	    mp_dbg_printf("tag %d != match_tag %d\n", iter->tag, match_tag);
 	}
 	if (trailer != iter)
 	    trailer = trailer->next;
@@ -381,9 +424,11 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
 	    }
 	    mp_dbg_printf("read command: \"%s\"\n", context->read_cmd.cmd);
 	    ret_val = handle_command(context);
-	    if (ret_val == SMPD_SUCCESS)
+	    if (ret_val == SMPD_SUCCESS || ret_val == SMPD_CONNECTED)
 	    {
-		ret_val = smpd_post_read_command(context);
+		result = smpd_post_read_command(context);
+		if (result != SMPD_SUCCESS)
+		    ret_val = result;
 	    }
 	    else
 	    {
@@ -507,6 +552,7 @@ int handle_written(smpd_context_t *context, int num_written, int error)
 	    else
 	    {
 		/* otherwise free the command immediately. */
+		mp_dbg_printf("freeing written command: '%s'\n", cmd->cmd);
 		ret_val = smpd_free_command(cmd);
 		if (ret_val != SMPD_SUCCESS)
 		{

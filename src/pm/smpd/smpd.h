@@ -17,6 +17,7 @@
 #define SMPD_SUCCESS                        0
 #define SMPD_FAIL                          -1
 #define SMPD_CLOSE                          2
+#define SMPD_CONNECTED                      3
 
 #define SMPD_TRUE                           1
 #define SMPD_FALSE                          0
@@ -54,6 +55,10 @@
 #define SMPD_NO_RECONNECT_PORT_STR        "-1"
 #define SMPD_SUCCESS_STR                  "SUCCESS"
 #define SMPD_FAIL_STR                     "FAIL"
+
+#define SMPD_DBG_STATE_STDOUT             0x1
+#define SMPD_DBG_STATE_ERROUT             0x2
+#define SMPD_DBG_STATE_LOGFILE            0x4
 
 #define DBS_SUCCESS_STR	                  "DBS_SUCCESS"
 #define DBS_FAIL_STR	                  "DBS_FAIL"
@@ -140,6 +145,8 @@ typedef struct smpd_process_t
     char UserAccount[100];
     char UserPassword[100];
     int cur_tag;
+    int dbg_state;
+    FILE *dbg_fout;
 } smpd_process_t;
 
 extern smpd_process_t smpd_process;
@@ -155,6 +162,7 @@ HANDLE smpd_decode_handle(char *str);
 
 /* smpd_util */
 int smpd_init_process(void);
+int smpd_init_printf(void);
 int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_set_t set, sock_t sock, int id);
 int smpd_init_command(smpd_command_t *cmd);
 int smpd_create_command(char *cmd_str, int src, int dest, int want_reply, smpd_command_t **cmd_pptr);

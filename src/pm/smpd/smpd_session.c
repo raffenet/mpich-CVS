@@ -220,9 +220,9 @@ int handle_command(smpd_context_t *context)
     {
 	if (smpd_process.root_smpd)
 	{
-	    smpd_err_printf("the root smpd is not allowed to connect to other smpds, ignoring command.\n");
+	    smpd_err_printf("the root smpd is not allowed to connect to other smpds.\n");
 	    /* send connect failed return command */
-	    result = smpd_create_command("result", smpd_process.id, context->id, SMPD_FALSE, &temp_cmd);
+	    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to create a result command for the connect request.\n");
@@ -257,7 +257,7 @@ int handle_command(smpd_context_t *context)
 	if (smpd_process.closing)
 	{
 	    smpd_err_printf("connect command received while session is closing, ignoring connect.\n");
-	    result = smpd_create_command("result", smpd_process.id, context->id, SMPD_FALSE, &temp_cmd);
+	    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to create a result command for the connect request.\n");
@@ -329,7 +329,7 @@ int handle_command(smpd_context_t *context)
 	{
 	    smpd_err_printf("unable to connect to %s\n", host);
 	    /* send fail connect command back */
-	    result = smpd_create_command("result", smpd_process.id, context->id, SMPD_FALSE, &temp_cmd);
+	    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to create a result command for the connect request.\n");

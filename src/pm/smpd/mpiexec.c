@@ -12,30 +12,6 @@ int g_bDoConsole = 0;
 char g_pszConsoleHost[SMPD_MAX_HOST_LENGTH];
 mp_host_node_t *g_host_list = NULL;
 
-int mp_connect_next(int *parent_ptr, int *id_ptr)
-{
-    static int parent = 1;
-    static int id = 2;
-    int bit, mask, temp;
-
-    *parent_ptr = parent;
-    *id_ptr = id;
-    
-    id++;
-
-    temp = id >> 2;
-    bit = 1;
-    while (temp)
-    {
-	bit <<= 1;
-	temp >>= 1;
-    }
-    mask = bit - 1;
-    parent = bit | (id & mask);
-
-    return SMPD_SUCCESS;
-}
-
 int mp_parse_command_args(int *argcp, char **argvp[])
 {
     mp_host_node_t *node;
@@ -196,7 +172,8 @@ int main(int argc, char* argv[])
 {
     int result;
     int port = SMPD_LISTENER_PORT;
-    mp_host_node_t *hnode;
+    smpd_command_t *cmd_ptr;
+    sock_event_t event;
 
     mp_enter_fn("main");
 
@@ -229,20 +206,102 @@ int main(int argc, char* argv[])
     /* handle a console session or a job session */
     if (g_bDoConsole)
     {
+	/* do a console session */
+
 	result = mp_console(g_pszConsoleHost);
     }
     else
     {
 	/* do mpi job */
-	hnode = g_host_list;
-	while (g_host_list)
+
+	/* connect to all the hosts in the job */
+	result = mp_connect_tree(g_host_list);
+	if (result != SMPD_SUCCESS)
 	{
-	    hnode = g_host_list;
-	    g_host_list = g_host_list->next;
-	    printf("host: %s, id:%d\n", hnode->host, hnode->id);
-	    free(hnode);
+	    mp_err_printf("unable to connect all the hosts in the job.\n");
+	    goto quit_job;
+	}
+
+	/* initialize the pmi database engine on the root node */
+
+	/* create the list of processes to launch */
+
+	/* launch the processes */
+
+	/* wait for them all to exit */
+
+	/* close the tree */
+	result = smpd_create_command("close", 0, 1, SMPD_FALSE, &cmd_ptr);
+	if (result != SMPD_SUCCESS)
+	{
+	    mp_err_printf("unable to create the close command to tear down the job tree.\n");
+	    goto quit_job;
+	}
+	result = smpd_post_write_command(smpd_process.left_context, cmd_ptr);
+	if (result != SMPD_SUCCESS)
+	{
+	    mp_err_printf("unable to post a write of the close command to tear down the job tree.\n");
+	    goto quit_job;
+	}
+	result = SMPD_SUCCESS;
+	while (result == SMPD_SUCCESS)
+	{
+	    mp_dbg_printf("sock_waiting for next event.\n");
+	    result = sock_wait(smpd_process.set, SOCK_INFINITE_TIME, &event);
+	    if (result != SOCK_SUCCESS)
+	    {
+		mp_err_printf("sock_wait failed, error:\n%s\n", get_sock_error_string(result));
+		smpd_close_connection(smpd_process.set, smpd_process.left_context->sock);
+		goto quit_job;
+	    }
+
+	    switch (event.op_type)
+	    {
+	    case SOCK_OP_READ:
+		result = handle_read(event.user_ptr, event.num_bytes, event.error, NULL);
+		if (result == SMPD_CLOSE)
+		{
+		    mp_dbg_printf("handle_read returned SMPD_CLOSE\n");
+		    break;
+		}
+		if (result != SMPD_SUCCESS)
+		{
+		    mp_err_printf("handle_read() failed.\n");
+		}
+		break;
+	    case SOCK_OP_WRITE:
+		result = handle_written(event.user_ptr, event.num_bytes, event.error);
+		if (result != SMPD_SUCCESS)
+		{
+		    mp_err_printf("handle_written() failed.\n");
+		}
+		break;
+	    case SOCK_OP_ACCEPT:
+		mp_err_printf("unexpected accept event returned by sock_wait.\n");
+		break;
+	    case SOCK_OP_CONNECT:
+		mp_err_printf("unexpected connect event returned by sock_wait.\n");
+		break;
+	    case SOCK_OP_CLOSE:
+		mp_err_printf("unexpected close event returned by sock_wait.\n");
+		free(smpd_process.left_context);
+		mp_dbg_printf("closing the session.\n");
+		result = sock_destroy_set(smpd_process.set);
+		if (result != SOCK_SUCCESS)
+		{
+		    mp_err_printf("error destroying set: %s\n", get_sock_error_string(result));
+		}
+		mp_exit_fn("mp_connect_tree");
+		return SMPD_FAIL;
+		break;
+	    default:
+		mp_err_printf("unknown event returned by sock_wait: %d\n", event.op_type);
+		break;
+	    }
 	}
     }
+
+quit_job: /* use a goto label to avoid deep indenting in the above code */
 
     /* finalize */
     mp_dbg_printf("calling sock_finalize\n");
