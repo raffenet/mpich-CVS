@@ -24,7 +24,11 @@ typedef struct bootstrap_msg
 #endif /* HAVE_WINDOWS_H */
 
 #ifdef USE_SINGLE_MSG_QUEUE
+#ifdef USE_POSIX_SHM
 #define MPICH_MSG_QUEUE_ID 12345
+#else
+#define MPICH_MSG_QUEUE_NAME "/mpich_msg_queue"
+#endif
 #endif
 
 typedef struct MPIDI_CH3I_BootstrapQ_struct
@@ -33,7 +37,7 @@ typedef struct MPIDI_CH3I_BootstrapQ_struct
 #ifdef USE_SINGLE_MSG_QUEUE
     int pid;
     int id;
-#elif defined(HAVE_MSGGET)
+#elif defined(USE_SYSV_MQ) || defined(USE_POSIX_MQ)
     int id;
 #elif defined (HAVE_WINDOWS_H)
     bootstrap_msg *msg_list;
@@ -232,7 +236,8 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_BootstrapQ_struct *queue;
-    int id, key;
+    int key;
+    int id;
     int nb;
     struct msgbuf {
 	long mtype;
@@ -296,10 +301,17 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_BootstrapQ_struct *queue;
-#ifdef HAVE_MSGGET
+#if defined(USE_POSIX_MQ)
+    char key[100];
+    mode_t mode;
+    struct mq_attr attr;
+    mqd_t id;
+#elif defined(USE_SYSV_MQ)
     int id, key;
 #elif defined(HAVE_WINDOWS_H)
     DWORD dwThreadID;
+#else
+#error No bootstrap queue mechanism defined
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE);
@@ -315,9 +327,33 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
     queue->next = g_queue_list;
     g_queue_list = queue;
 
-#ifdef HAVE_MSGGET
+#ifdef USE_POSIX_MQ
 
-    srand(time(0));
+    srand(getpid());
+    sprintf("%s%d", MPICH_MSG_QUEUE_NAME, rand());
+    mode = 0666;
+    memset(&attr, 0, sizeof(attr));
+    attr.mq_maxmsg = BOOTSTRAP_MAX_NUM_MSGS;
+    attr.mq_msgsize = BOOTSTRAP_MAX_MSG_SIZE;
+    id = mq_open(key, O_CREAT | O_RDWR | O_NONBLOCK, mode, &attr);
+    while (id == -1)
+    {
+	if (errno != EEXIST)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**mq_open", "**mq_open %d", errno);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE);
+	    return mpi_errno;
+	}
+	sprintf("%s%d", MPICH_MSG_QUEUE_NAME, rand());
+	id = mq_open(key, O_CREAT | O_RDWR | O_NONBLOCK, mode, &attr);
+    }
+    queue->id = id;
+    strcpy(queue->name, key);
+    MPIU_DBG_PRINTF(("created message queue: %s\n", queue->name));
+
+#elif defined(USE_SYSV_MQ)
+
+    srand(getpid());
     key = rand();
     id = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     while (id == -1)
@@ -354,6 +390,8 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
     CloseHandle(queue->hReadyEvent);
     queue->hReadyEvent = NULL;
 
+#else
+#error No bootstrap queue mechanism defined
 #endif
 
     *queue_ptr = queue;
@@ -385,7 +423,18 @@ int MPIDI_CH3I_BootstrapQ_destroy(MPIDI_CH3I_BootstrapQ queue)
 #ifdef USE_SINGLE_MSG_QUEUE
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_DESTROY);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_DESTROY);
-#elif defined(HAVE_MSGGET)
+#elif defined(USE_POSIX_MQ)
+    int result;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_DESTROY);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_DESTROY);
+    result = mq_close(queue->id);
+    if (result == -1)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mq_close", "**mq_close %d", errno);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_DESTROY);
+	return mpi_errno;
+    }
+#elif defined(USE_SYSV_MQ)
     int result;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_DESTROY);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_DESTROY);
@@ -400,6 +449,8 @@ int MPIDI_CH3I_BootstrapQ_destroy(MPIDI_CH3I_BootstrapQ queue)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_DESTROY);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_DESTROY);
     PostMessage(queue->hWnd, WM_DESTROY, 0, 0);
+#else
+#error No bootstrap queue mechanism defined
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_DESTROY);
     return MPI_SUCCESS;
@@ -471,7 +522,45 @@ int MPIDI_CH3I_BootstrapQ_attach(char *name, MPIDI_CH3I_BootstrapQ * queue_ptr)
 int MPIDI_CH3I_BootstrapQ_attach(char *name, MPIDI_CH3I_BootstrapQ * queue_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
-#ifdef HAVE_MSGGET
+#if defined(USE_POSIX_MQ)
+
+    int id;
+    MPIDI_CH3I_BootstrapQ_struct *iter = g_queue_list;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_ATTACH);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_ATTACH);
+
+    while (iter)
+    {
+	if (strcmp(iter->name, name) == 0)
+	{
+	    *queue_ptr = iter;
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_ATTACH);
+	    return MPI_SUCCESS;
+	}
+	iter = iter->next;
+    }
+    iter = (MPIDI_CH3I_BootstrapQ_struct*)MPIU_Malloc(sizeof(MPIDI_CH3I_BootstrapQ_struct));
+    if (iter == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_ATTACH);
+	return mpi_errno;
+    }
+    MPIU_Strncpy(iter->name, name, MPIDI_BOOTSTRAP_NAME_LEN);
+    id = mq_open(name, O_RDWR | O_NONBLOCK);
+    if (id == -1)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**mq_open", "**mq_open %d", errno);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_ATTACH);
+	return mpi_errno;
+    }
+    iter->id = id;
+    iter->next = g_queue_list;
+    /*iter->next = NULL;*/
+    *queue_ptr = iter;
+    /*printf("attached to message queue: %s\n", name);fflush(stdout);*/
+
+#elif defined(USE_SYSV_MQ)
 
     int id, key;
     MPIDI_CH3I_BootstrapQ_struct *iter = g_queue_list;
@@ -500,11 +589,13 @@ int MPIDI_CH3I_BootstrapQ_attach(char *name, MPIDI_CH3I_BootstrapQ * queue_ptr)
     id = msgget(key, IPC_CREAT | 0666);
     if (id == -1)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**msgget", "**msgget %d", errno());
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**msgget", "**msgget %d", errno);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_ATTACH);
 	return mpi_errno;
     }
     iter->id = id;
+    iter->next = g_queue_list;
+    /*iter->next = NULL;*/
     *queue_ptr = iter;
     /*printf("attached to message queue: %s\n", name);fflush(stdout);*/
 
@@ -550,7 +641,11 @@ int MPIDI_CH3I_BootstrapQ_attach(char *name, MPIDI_CH3I_BootstrapQ * queue_ptr)
     iter->msg_list = NULL;
     iter->hMsgThread = NULL;
     iter->hMessageArrivedEvent = NULL;
+    iter->next = g_queue_list;
+    /*iter->next = NULL;*/
     *queue_ptr = iter;
+#else
+#error No bootstrap queue mechanism defined
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_ATTACH);
     return MPI_SUCCESS;
@@ -562,6 +657,7 @@ int MPIDI_CH3I_BootstrapQ_detach(MPIDI_CH3I_BootstrapQ queue)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_DETACH);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_DETACH);
+    /* remove the queue from the global list? */
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_DETACH);
     return MPI_SUCCESS;
 }
@@ -573,7 +669,7 @@ int MPIDI_CH3I_BootstrapQ_detach(MPIDI_CH3I_BootstrapQ queue)
 int MPIDI_CH3I_BootstrapQ_send_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, int length)
 {
     int mpi_errno = MPI_SUCCESS;
-#if defined(HAVE_MSGGET) || defined(USE_SINGLE_MSG_QUEUE)
+#if defined(USE_POSIX_MQ) || defined(USE_SYSV_MQ) || defined(USE_SINGLE_MSG_QUEUE)
     struct msgbuf {
 	long mtype;
 	char data[BOOTSTRAP_MAX_MSG_SIZE];
@@ -590,12 +686,23 @@ int MPIDI_CH3I_BootstrapQ_send_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
 #endif
     memcpy(msg.data, buffer, length);
     MPIU_DBG_PRINTF(("sending message %d on queue %d\n", msg.mtype, queue->id));
+#ifdef USE_POSIX_MQ
+    if (mq_send(queue->id, &msg, length, 0))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**mq_send", "**mq_send %d", errno);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_SEND_MSG);
+	return mpi_errno;
+    }
+#elif defined (USE_SYSV_MQ)
     if (msgsnd(queue->id, &msg, length, 0) == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**msgsnd", "**msgsnd %d", errno);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_SEND_MSG);
 	return mpi_errno;
     }
+#else
+#error No bootstrap queue mechanism defined
+#endif
     MPIU_DBG_PRINTF(("message sent: %d bytes\n", length));
 
 #elif defined(HAVE_WINDOWS_H)
@@ -620,7 +727,7 @@ int MPIDI_CH3I_BootstrapQ_send_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
 int MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, int length, int *num_bytes_ptr, BOOL blocking)
 {
     int mpi_errno = MPI_SUCCESS;
-#if defined(HAVE_MSGGET) || defined(USE_SINGLE_MSG_QUEUE)
+#if defined(USE_POSIX_MQ) || defined(USE_SYSV_MQ) || defined(USE_SINGLE_MSG_QUEUE)
     int nb;
     struct msgbuf {
 	long mtype;
@@ -635,8 +742,14 @@ int MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
     msg.mtype = queue->pid;
     nb = msgrcv(queue->id, &msg, BOOTSTRAP_MAX_MSG_SIZE, queue->pid, blocking ? 0 : IPC_NOWAIT);
 #else
+#ifdef USE_POSIX_MQ
+    nb = mq_receive(queue->id, &msg, BOOTSTRAP_MAX_MSG_SIZE, NULL);
+#elif defined(USE_SYSV_MQ)
     msg.mtype = 100;
     nb = msgrcv(queue->id, &msg, BOOTSTRAP_MAX_MSG_SIZE, 0, blocking ? 0 : IPC_NOWAIT);
+#else
+#error No bootstrap queue mechanism defined
+#endif
 #endif
     if (nb == -1)
     {
@@ -646,7 +759,11 @@ int MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_RECV_MSG);
 	    return MPI_SUCCESS;
 	}
+#ifdef USE_POSIX_MQ
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**mq_receive", "**mq_receive %d", errno);
+#else
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**msgrcv", "**msgrcv %d", errno);
+#endif
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_RECV_MSG);
 	return mpi_errno;
     }
