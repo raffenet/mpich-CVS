@@ -214,7 +214,7 @@ int MPIR_Err_create_code( int class, const char def_string[], ... )
 	    vsprintf( str, inst_string, Argp );
 #else
 	    /* For now, just punt */
-	    strncpy( str, def_string, MPI_MAX_ERROR_STRING );
+	    MPIU_Strncpy( str, def_string, MPI_MAX_ERROR_STRING );
 #endif
 
 	    /* Create a simple hash function of the message to serve as
@@ -227,7 +227,7 @@ int MPIR_Err_create_code( int class, const char def_string[], ... )
 	    error_ring_seq[ring_idx] = ring_seq;
 	}
 	else {
-	    strncpy( str, def_string, MPI_MAX_ERROR_STRING );
+	    MPIU_Strncpy( str, def_string, MPI_MAX_ERROR_STRING );
 	}
 	err_code |= (ring_idx << ERROR_SPECIFIC_INDEX_SHIFT);
 	err_code |= (ring_seq << ERROR_SPECIFIC_SEQ_SHIFT);
