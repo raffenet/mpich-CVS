@@ -18,6 +18,7 @@
  * We use indices instead of pointers for the group and the kvs space.
  */
 #define MAXKVSNAME  256         /* max length of a kvsname */
+
 typedef struct PMI_Process {
   int  fd;          /* Fd for PMI communications */
   int  group;       /* Index to the PMI group */
@@ -26,6 +27,13 @@ typedef struct PMI_Process {
 /* Note that the fd may be duplicated within the process structure managed by 
    the mpiexec implementation to simplify setting up the select/poll loops */
 
+extern int PMIServ_Init( int, char [] );
 /* This routine is called when there is input on the fd for the given 
    process */
 extern int PMIServ_handle_input_fd ( PMI_Process * );
+
+/* Possible return values for PMIServ_handle_input_fd : */
+#define PMI_OK 0
+#define PMI_FINALIZED 1
+#define PMI_ALLEXIT 2
+#define PMI_DIED 3

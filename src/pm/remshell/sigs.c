@@ -7,6 +7,31 @@
 
 #include "remshellconf.h"
 
+#include <stdio.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+#if defined(USE_SIGNAL) || defined(USE_SIGACTION)
+#include <signal.h>
+#else
+#error no signal choice
+#endif
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
+
+#include "remshell.h"
+
 #ifdef USE_SIGCHLD_HANDLER
 /* 
  * Signal handler.  Detect a SIGCHLD exit.  The routines are
@@ -20,13 +45,9 @@
  * Sometimes we do *not* want to kill the children; particularly when
  * we are debugging.
  *
+ * Because this is a signal handler, it needs access to the process table
+ * through a global variable, ptable.
  */
-
-#if defined(USE_SIGNAL) || defined(USE_SIGACTION)
-#include <signal.h>
-#else
-#error no signal choice
-#endif
 
 int handle_sigchild( int sig )
 {
@@ -54,15 +75,15 @@ int handle_sigchild( int sig )
 	}
 	if (sigval || rc) {
 	    /* Look up this pid in the exitstatus */
-	    for (i=0; i<maxfdentryInUse ; i++) {
-		if (fdtable[i].pid == pid) {
+	    for (i=0; i<ptable->nProcesses; i++) {
+		if (ptable->table[i].pid == pid) {
 		    if (debug) {
 			DBG_FPRINTF( stderr, "Found process %d\n", pid );
 			fflush( stderr );
 		    }
-		    fdtable[i].active   = 0;
-		    exitstatus[i].rc  = rc;
-		    exitstatus[i].sig = sigval;
+		    ptable->table[i].state      = GONE;
+		    ptable->table[i].exitStatus = rc;
+		    ptable->table[i].exitSig    = sigval;
 		    break;
 		}
 	    }
@@ -115,14 +136,15 @@ void setup_sigchild( void )
 #endif
 
 /* Send a given signal to all processes */
-void SignalAllProcesses( int sig, const char msg[] )
+void SignalAllProcesses( ProcessTable_t *ptable, int sig, const char msg[] )
 {
     int   i, rc;
     pid_t pid;
 
-    for (i=0; i<=maxfdentryInUse; i++) {
-	if (fdtable[i].active) {
-	    pid = fdtable[i].pid;
+    for (i=0; i<=ptable->nProcesses; i++) {
+	/* FIXME - GONE isn't the right test */
+	if (ptable->table[i].state != GONE) {
+	    pid = ptable->table[i].pid;
 	    if (pid > 0) {
 		if (debug) {
 		    DBG_PRINTF( "sig %d to %d\n", sig, pid ); fflush( stdout );
@@ -144,7 +166,8 @@ void SignalAllProcesses( int sig, const char msg[] )
  * error code or with a signal *and* (b) the "kill-on-failure" feature is
  * selected (on by default).
  */
-void KillChildren( void )
+static inKillChildren = 0;
+void KillChildren( ProcessTable_t *ptable )
 {
     int i, pid, rc;
 
@@ -157,27 +180,29 @@ void KillChildren( void )
     /* Loop through the processes and try to kill them; gently first,
      * then brutally 
      */
-    
-    KillTracedProcesses( );
 
-    SignalAllProcesses( SIGINT, "Could not kill with sigint" );
+#if defined(HAVE_PTRACE) && defined(HAVE_PTRACE_CONT) 
+    KillTracedProcesses( );
+#endif
+
+    SignalAllProcesses( ptable, SIGINT, "Could not kill with SIGINT" );
 
     /* We should wait here to give time for the processes to exit */
     
     sleep( 1 );
-    SignalAllProcesses( SIGQUIT, "Could not kill with sigquit" );
+    SignalAllProcesses( ptable, SIGQUIT, "Could not kill with SIGQUIT" );
     
     /* Try to wait for the processes */
-    for (i=0; i<=maxfdentryInUse; i++) {
-	if (fdtable[i].active) {
-	    pid = fdtable[i].pid;
+    for (i=0; i<=ptable->nProcesses; i++) {
+	/* FIXME - is GONE the right test? */
+	if (ptable->table[i].state != GONE) {
+	    pid = ptable->table[i].pid;
 	    if (pid > 0) {
 		if (debug) {
 		    DBG_PRINTF( "Wait on %d\n", pid ); fflush( stdout );
 		}
 		/* Nonblocking wait */
 		rc = waitOnProcess( i, 0, KILLED );
-		
 	    }
 	}
     }

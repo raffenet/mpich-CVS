@@ -22,6 +22,10 @@
 
 #include "remshellconf.h"
 #include <stdio.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include "simple_pmiutil.h"
 #include "pmiserv.h"
 
@@ -45,10 +49,15 @@
 
 #define MAXPMICMD   256         /* max length of a PMI command */
 
+#define MAXGROUPSIZE 256        /* max size of a group */
 /* Each group has a size, name, and supports a barrier operation that
    is implemented by counting the number in the barrier */
 typedef struct {
     int  groupsize;
+    int  fds[MAXGROUPSIZE];     /* The fds for sending messages to all
+				   members of this group */
+    pid_t pids[MAXGROUPSIZE];   /* The corresponding pids of the group 
+				   members */
     int  num_in_barrier;
     char kvsname[MAXKVSNAME];
 } PMIGroup;
@@ -79,7 +88,6 @@ typedef struct {
 static PMIState pmi = { 0, 0, };   /* Arrays are uninitialized */
 
 /* Functions that handle PMI requests */
-int  fPMI_Init( PMI_Process *, char [] );
 static int  fPMI_Allocate_kvs( int *, char [] );
 static int  fPMI_Allocate_kvs_group( void );
 
@@ -96,77 +104,63 @@ static void fPMI_Handle_getbyidx( PMI_Process * );
 
 /* 
  * Process input from the socket connecting the mpiexec process to the
- * child process 
+ * child process.
+ * The return status indicates the state of the process that this
+ * handler interacted with.
  */
 int PMIServ_handle_input_fd ( PMI_Process *pentry )
 {
-    int all_done = 0;
     int  rc;
+    int  returnCode = 0;
     char inbuf[PMIU_MAXLINE], outbuf[PMIU_MAXLINE], cmd[MAXPMICMD];
 
-    /* printf( "handling client input for rank %d\n", fdtable[idx].rank ); */
     if ( ( rc = PMIU_readline( pentry->fd, inbuf, PMIU_MAXLINE ) ) > 0 ) {
-      PMIU_parse_keyvals( inbuf );
-      PMIU_getval( "cmd", cmd, MAXPMICMD );
-      if ( strncmp( cmd, "barrier_in", MAXPMICMD ) == 0 ) {
-	fPMI_Handle_barrier( pentry );
-      }
-      else if ( strncmp( cmd, "finalize", MAXPMICMD ) == 0 ) {
-	fdtable[idx].state = FINALIZED;
-      }
-      else if ( strncmp( cmd, "abort", MAXPMICMD ) == 0 ) {
-	/* No PMI abort command has yet been implemented! */
-	KillChildren();
-	all_done = 1;
-      }
-      else if ( strncmp( cmd, "get_my_kvsname", MAXPMICMD ) == 0 ) {
-	fPMI_Handle_get_my_kvsname( pentry );
-      }
-      else if ( strncmp( cmd, "init", MAXPMICMD ) == 0 ) {
-	fPMI_Handle_init( pentry );
-      }
-      else if ( strncmp( cmd, "get_maxes", MAXPMICMD ) == 0 ) {
-	fPMI_Handle_get_maxes( pentry );
-      }
-      else if ( strncmp( cmd, "create_kvs", MAXPMICMD ) == 0 ) {
-	fPMI_Handle_create_kvs( pentry );
-      }
-      else if ( strncmp( cmd, "destroy_kvs", MAXPMICMD ) == 0 ) {
-	fPMI_Handle_destroy_kvs( pentry );
-      }
-      else if ( strncmp( cmd, "put", MAXPMICMD ) == 0 ) {
-	fPMI_Handle_put( pentry );
-      }
-      else if ( strncmp( cmd, "get", MAXPMICMD ) == 0 ) {
-	fPMI_Handle_get( pentry );
-      }
-      else if ( strncmp( cmd, "getbyidx", MAXPMICMD ) == 0 ) {
-	fPMI_Handle_getbyidx( pentry );
-      }
-      else {
-	PMIU_printf( 1, "unknown cmd %s\n", cmd );
-      }
+	PMIU_parse_keyvals( inbuf );
+	PMIU_getval( "cmd", cmd, MAXPMICMD );
+	if ( strncmp( cmd, "barrier_in", MAXPMICMD ) == 0 ) {
+	    fPMI_Handle_barrier( pentry );
+	}
+	else if ( strncmp( cmd, "finalize", MAXPMICMD ) == 0 ) {
+	    returnCode = PMI_FINALIZED;
+	}
+	else if ( strncmp( cmd, "abort", MAXPMICMD ) == 0 ) {
+	    /* No PMI abort command has yet been implemented! */
+	    returnCode = PMI_ALLEXIT;
+	}
+	else if ( strncmp( cmd, "get_my_kvsname", MAXPMICMD ) == 0 ) {
+	    fPMI_Handle_get_my_kvsname( pentry );
+	}
+	else if ( strncmp( cmd, "init", MAXPMICMD ) == 0 ) {
+	    fPMI_Handle_init( pentry );
+	}
+	else if ( strncmp( cmd, "get_maxes", MAXPMICMD ) == 0 ) {
+	    fPMI_Handle_get_maxes( pentry );
+	}
+	else if ( strncmp( cmd, "create_kvs", MAXPMICMD ) == 0 ) {
+	    fPMI_Handle_create_kvs( pentry );
+	}
+	else if ( strncmp( cmd, "destroy_kvs", MAXPMICMD ) == 0 ) {
+	    fPMI_Handle_destroy_kvs( pentry );
+	}
+	else if ( strncmp( cmd, "put", MAXPMICMD ) == 0 ) {
+	    fPMI_Handle_put( pentry );
+	}
+	else if ( strncmp( cmd, "get", MAXPMICMD ) == 0 ) {
+	    fPMI_Handle_get( pentry );
+	}
+	else if ( strncmp( cmd, "getbyidx", MAXPMICMD ) == 0 ) {
+	    fPMI_Handle_getbyidx( pentry );
+	}
+	else {
+	    PMIU_printf( 1, "unknown cmd %s\n", cmd );
+	}
     }
     else {                        /* lost contact with client */
-      close( pentry->fd ); 
-      pentry->fd = -1;          /* forget the fd now that it is not valid */
-      fdtable[idx].active = 0;
-      rc = waitOnProcess( idx, 1, NORMAL );
-      if (rc) {
-	MPIU_Internal_error_printf( "Error waiting on process %d\n",
-				    fdtable[idx].pid );
-      }
-      if (fdtable[idx].state != FINALIZED) {
-	/* Process exited before finalize */
-	KillChildren();
-	all_done = 1;
-      }
-      if ( num_exited  == numprocs ) {
-	/* Set the global done flag */
-	all_done = 1;
-      }
+	close( pentry->fd ); 
+	pentry->fd = -1;          /* forget the fd now that it is not valid */
+	returnCode = PMI_DIED;
     }
-    return all_done;
+    return returnCode;
 }
 
 /*
@@ -177,7 +171,7 @@ int PMIServ_handle_input_fd ( PMI_Process *pentry )
  * kvsname is the initial kvs name (provide a string of size MAXKVSNAME.
  * Return value: groupid
  */
-int fPMI_Init( int nprocs, char kvsname[] )
+int PMIServ_Init( int nprocs, char kvsname[] )
 {
     int i;
     for ( i = 0; i < MAXKVSS; i++ )
@@ -185,6 +179,9 @@ int fPMI_Init( int nprocs, char kvsname[] )
 
     /* set up group */
     pmi.grouptable[pmi.nextnewgroup].groupsize = nprocs;
+    for (i=0; i<nprocs; i++) {
+	pmi.grouptable[pmi.nextnewgroup].fds[i] = -1;
+    }
 
     /* set up keyval space for this group */
     fPMI_Allocate_kvs( &pmi.kvsid, kvsname );
@@ -192,8 +189,16 @@ int fPMI_Init( int nprocs, char kvsname[] )
     return pmi.nextnewgroup++;   /* ++ missing in forker ? */
 }
 
+int PMIServ_addto_group( int group, int rank, pid_t pid, int fd )
+{
+    pmi.grouptable[group].fds[rank]  = fd;
+    pmi.grouptable[group].pids[rank] = pid;
+}
+/* ------------------------------------------------------------------------- */
+/* The rest of these routines are internal                                   */
+/* ------------------------------------------------------------------------ */
 /* kvsname is output */
-int fPMI_Allocate_kvs( int *kvsid, char kvsname[] )
+static int fPMI_Allocate_kvs( int *kvsid, char kvsname[] )
 {
     int i, j;
     
@@ -218,14 +223,14 @@ int fPMI_Allocate_kvs( int *kvsid, char kvsname[] )
     }
 }
 
-int fPMI_Allocate_kvs_group( void )
+static int fPMI_Allocate_kvs_group( void )
 {
     return pmi.nextnewgroup++;
 }
 
 /* 
  * Handle an incoming "barrier" command
-
+ *
  * Need a structure that has the fds for all members of a pmi group
  */
 static void fPMI_Handle_barrier( PMI_Process *pentry )
@@ -236,10 +241,9 @@ static void fPMI_Handle_barrier( PMI_Process *pentry )
     pmi.grouptable[group].num_in_barrier++;
     if ( pmi.grouptable[group].num_in_barrier ==
 	 pmi.grouptable[group].groupsize ) {
-	for ( i = 0; i < MAXFDENTRIES; i++ ) {
-	    if ( fdtable[i].active &&
-		 fdtable[i].group == fdtable[idx].group )
-		PMIU_writeline(fdtable[i].fd, "cmd=barrier_out\n" );
+	for ( i = 0; i < pmi.grouptable[group].groupsize; i++ ) {
+	    PMIU_writeline(pmi.grouptable[group].fds[i], 
+			   "cmd=barrier_out\n" );
 	}
 	pmi.grouptable[group].num_in_barrier = 0;
     }

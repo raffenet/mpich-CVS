@@ -1,30 +1,63 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*  $Id$
+ *
+ *  (C) 2003 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
+#include "remshellconf.h"
+
+#include <stdio.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+#if defined(USE_SIGNAL) || defined(USE_SIGACTION)
+#include <signal.h>
+#else
+#error no signal choice
+#endif
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
+
+#include "remshell.h"
+
 /* 
  * This routine can be called to handle the result of a wait.  
  * This is in a separate routine so that it can be used anywhere
  * waitpid or wait are called.
  */
-void HandleWaitStatus( pid_t pid, int client_stat, exit_state_t sigstate,
+void HandleWaitStatus( ProcessState *ps, int client_stat, 
 		       int has_finalized ) 
 {
     /* Get the status of the exited process */
     if (WIFEXITED(client_stat)) {
 	/* true if the process exited normally */
-	exitstatus[num_exited].rc = WEXITSTATUS(client_stat);
+	ps->exitStatus = WEXITSTATUS(client_stat);
     }
     else {
-	exitstatus[num_exited].rc = -1; /* For unknown, since valid
-					   returns in 0-255 */
+	ps->exitStatus = -1; /* For unknown, since valid
+				returns in 0-255 */
     }
 	
     if (WIFSIGNALED(client_stat)) {
-	exitstatus[num_exited].sig        = WTERMSIG(client_stat);
-	exitstatus[num_exited].exit_state = sigstate;
-	num_aborted++;
+	ps->exitSig        = WTERMSIG(client_stat);
+	/* ps->exitReason     = sigstate; */
+	/* Add to ptable the number aborted ? */
     }
     else {
-	exitstatus[num_exited].sig= 0;
-	exitstatus[num_exited].exit_state = 
-	    has_finalized ? NORMAL : NOFINALIZE;
+	ps->exitSig    = 0;
+	ps->exitReason = has_finalized ? NORMAL : NOFINALIZE;
 
     }
 }
@@ -37,7 +70,7 @@ void HandleWaitStatus( pid_t pid, int client_stat, exit_state_t sigstate,
  * from processes that died because they received a signal from a 
  * different source (e.g., SIGFPE or SIGSEGV)
  */
-int waitOnProcess( int idx, int blocking, exit_state_t sigstate )
+int waitOnProcess( ProcessState *ps, int blocking )
 {
     int client_stat, rc, has_finalized;
     pid_t pid;
@@ -46,10 +79,10 @@ int waitOnProcess( int idx, int blocking, exit_state_t sigstate )
        do something like kill the process */
     if (debug) {
 	DBG_FPRINTF( stderr, "Waiting on status of process %d\n",
-		 fdtable[idx].pid );
+		 ps->pid );
 	fflush( stderr );
     }
-    pid = fdtable[idx].pid;
+    pid = ps->pid;
     if (pid <= 0) return -1;
 
     if (blocking)
@@ -64,13 +97,15 @@ int waitOnProcess( int idx, int blocking, exit_state_t sigstate )
 	return 0;
     }
     if (debug) {
-	DBG_FPRINTF( stderr, "Wait on %d completed\n", fdtable[idx].pid );
+	DBG_FPRINTF( stderr, "Wait on %d completed\n", pid );
 	fflush( stderr );
     }
 
-    has_finalized = fdtable[idx].state == FINALIZED;
-    HandleWaitStatus( pid, client_stat, sigstate, has_finalized );
+    has_finalized = ps->state == FINALIZED;
+    HandleWaitStatus( ps, client_stat, has_finalized );
 
-    num_exited++;
+    /* Add to ptable the number exited? */
+    /* (We need to know when we're done */
+
     return 0;
 }

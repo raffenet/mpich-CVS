@@ -35,6 +35,9 @@
    process table */
 #include "remshell.h"
 
+/* Debug definitions */
+#define DEBUG_ARGS
+
 /* Temporary definitions for memory management */
 #ifndef MPIU_Malloc
 #define MPIU_Malloc(a)    malloc((unsigned)(a))
@@ -97,7 +100,9 @@ int main( int argc, char *argv[] )
     if (debug) 
 	mpiexecPrintTable( &processTable );
 
-    /* Create the PMI INET socket */
+    /* Create the PMI INET socket.
+       The simple PMI implementation reads and writes to an fd; this 
+       fd may be a pipe or a socket (this mpiexec program uses a socket) */
     rc = mpiexecGetPort( &fdPMI, &portnum );
     if (debug) {
 	DBG_PRINTF( "rc = %d, Using port %d and fd %d\n", rc, portnum, fdPMI );
@@ -105,14 +110,25 @@ int main( int argc, char *argv[] )
     if (rc) return rc;
 
     /* Optionally stage the executables */
-    
-    /* Start the remote shell processes ooncurrently */
+#ifdef MPI_STAGE_EXECUTABLES
+    if (stageExes) {
+	mpiexecStageExes( &processTable );
+    }
+#endif    
+
+    /* Get ths host name for the PMI socket contact address (combine 
+       with the port number above) */
     rc = mpiexecGetMyHostName( myname );
     if (rc) {
 	MPIU_Internal_error_printf( "Could not get my hostname\n" );
 	return 1;
     }
+
+    /* Start the remote shell processes ooncurrently */
     rc = mpiexecStartProcesses( &processTable, myname, portnum );
+    if (rc) {
+	MPIU_Error_printf( "Failure while creating processes" );
+    }
 
     /* Poll on the active FDs and handle each input type */
     rc = mpiexecPollFDs( &processTable );
@@ -150,11 +166,14 @@ int mpiexecGetPort( int *fdout, int *portout )
        the system to choose */
     range_ptr = getenv( "MPIEXEC_PORTRANGE" );
     if (!range_ptr) {
-	/* Under cygwin we may want to use 1024 */
+	/* Under cygwin we may want to use 1024 as a low port number */
+	/* a low and high port of zero allows the system to choose 
+	   the port value */
 	low_port  = 0;
 	high_port = 0;
     }
     else {
+	/* FIXME: Look for n:m format */
 	MPIU_Error_printf( "ranges not supported for ports\n" );
 	return 1;
     }
@@ -255,7 +274,9 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
     snprintf( port_as_string, 1024, "%s:%d", myname, port );
 
     for (i=0; i<ptable->nProcesses; i++) {
-	int read_out_pipe[2], write_in_pipe[2], read_err_pipe[2];
+	int read_out_pipe[2], write_in_pipe[2], read_err_pipe[2],
+	    pmi_pipe[2];
+	int useRemshell = 1;
 	ProcessState *ps;
 	char **myargv;
 	int rshNargs, j, rc;
@@ -269,26 +290,46 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 
 	/* Note that each process has its OWN myargv */
 	myargv = (char **)MPIU_Malloc( (ps->nArgs + 30) * sizeof(char *) );
-	/* FIXME: remote shell command may have multiple args */
-	rshNargs = mpiexecGetRemshellArgv( myargv, 30 );
-	/* Look for %h (hostname) and %e (executable).  If not
-	   found, then use the following.  
-	   FIXME: Assume no %h and %e */
-	myargv[rshNargs++] = (char *)(ps->hostname);
-	/* FIXME: no option for user name (e.g., -l username) */
-	/* FIXME: Do we start with -n, or do we let mpiexec handle that? */
-	/* myargv[rshNargs++] = "-n"; */
-	/* FIXME: this assumes a particular shell syntax (csh) */
-	myargv[rshNargs++] = "setenv";
-	myargv[rshNargs++] = "MPIEXEC_PORT";
-	myargv[rshNargs++] = port_as_string;
-	myargv[rshNargs++] = "\\;";
+
+	/* Allow the special case of either local host or this host.
+	   If selected, just fork to create the process.  This allows
+	   us to bypass the potentially expensive step of invoking a 
+	   remote shell program and also allows most of this code to
+	   be tested with with local processes */
+	if (strcmp(ps->hostname,myname) == 0 ||
+	    strcmp(ps->hostname,"localhost") == 0) {
+	    useRemshell = 0;
+	}
+	if (useRemshell) {
+	    /* FIXME: remote shell command may have multiple args */
+	    rshNargs = mpiexecGetRemshellArgv( myargv, 30 );
+	    /* Look for %h (hostname) and %e (executable).  If not
+	       found, then use the following.  
+	       FIXME: Assume no %h and %e */
+	    myargv[rshNargs++] = (char *)(ps->hostname);
+	    /* FIXME: no option for user name (e.g., -l username) */
+	    /* FIXME: Do we start with -n, or do we let mpiexec handle that? */
+	    /* myargv[rshNargs++] = "-n"; */
+	    /* FIXME: this assumes a particular shell syntax (csh) */
+	    myargv[rshNargs++] = "setenv";
+	    myargv[rshNargs++] = "MPIEXEC_PORT";
+	    myargv[rshNargs++] = port_as_string;
+	    myargv[rshNargs++] = "\\;";
+	}
+	else {
+	    rshNargs = 0;
+	    socketpair( AF_UNIX, SOCK_STREAM, 0, pmi_pipe );
+	}
 	myargv[rshNargs++] = (char *)(ps->exename);
+	/* Some broken versions of remote shell programs look at options
+	   passed to the *program*!  Unfortunately, the default inetutils
+	   rsh command, used in many Linux distributions, has this bug.
+	   To fix this, we'll need to consider escaping some of the 
+	   arguments to keep the broken remshell program from seeing them. */
 	for (j=0; j<ps->nArgs; j++) 
 	    myargv[rshNargs++] = (char *)(ps->args[j]);
 	myargv[rshNargs++] = 0;
-#define DEBUG
-#ifdef DEBUG
+#ifdef DEBUG_ARGS
 	{ int k;
 	  for (k=0; myargv[k]; k++) {
 	      DBG_PRINTF( "%s ", myargv[k] );
@@ -319,6 +360,25 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	    ps->fdStdout = read_out_pipe[0];
 	    ps->fdStderr = read_err_pipe[0];
 	    ps->fdStdin  = write_in_pipe[1];
+
+	    /* We could add an option to use a pipe for this one when
+	       we don't use a remote shell */
+	    if (useRemshell) {
+		ps->fdPMI    = -1;   /* No socket until attached */
+	    }
+	    else {
+		ps->fdPMI    = pmi_pipe[0];
+		/* register this process in the PMI group */
+		/* FIXME: Adds to group 0 only */
+		PMIServ_addto_group( 0, i, pid, ps->fdPMI );
+		close( pmi_pipe[1] );
+	    }
+
+	    ps->pid      = pid;
+	    ps->state    = UNINITIALIZED;
+
+	    /* We add this process to the PMI process group when it checks 
+	       in */
 	}
 	else if (pid == 0) {
 	    char **myargv;
@@ -345,6 +405,17 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	    dup2(write_in_pipe[0],0);
 	    close(write_in_pipe[0]); 
 
+	    if (!useRemshell) {
+		/*
+		char portstring[256];
+		MPIU_Strncpy( portstring, "MPIEXEC_PORT=", 256 );
+		MPIU_Strnapp( portstring, port_as_string, 256 );
+		putenv( portstring );
+		*/
+		close( pmi_pipe[0] );
+		/* Must set PMI_RANK, PMI_SIZE, PMI_DEBUG, PMI_FD 
+		   environment variables */
+	    }
 	    rc = execvp( myargv[0], myargv );
 	    if (rc) {
 		MPIU_Error_printf( "Error from execvp: %d\n", errno );
@@ -359,6 +430,7 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	    return -1;
 	}
     }
+    return 0;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -372,9 +444,10 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 /* ----------------------------------------------------------------------- */
 const char defaultRemoteshell[] = DEFAULT_REMOTE_SHELL;
 
+#define MAX_REMSHELL_ARGS 10
 int mpiexecGetRemshellArgv( char *argv[], int nargv )
 {
-    static char *(remshell[10]);
+    static char *(remshell[MAX_REMSHELL_ARGS]);
     static int  remargs = 0;
     int i;
 
@@ -393,14 +466,14 @@ int mpiexecGetRemshellArgv( char *argv[], int nargv )
 	    else 
 		len = strlen(rem);
 
-	    remshell[remargs] = (char *)MPIU_Malloc( len + 1 ); /* Add the null */
+	    remshell[remargs] = (char *)MPIU_Malloc( len + 1 ); 
 	    MPIU_Strncpy( remshell[remargs], rem, len );
 	    remshell[remargs][len] = 0;
 	    remargs++;
 	    if (next_parm) {
 		rem = next_parm + 1;
 		while (*rem == ' ') rem++;
-		if (remargs == 10) {
+		if (remargs >= MAX_REMSHELL_ARGS) {
 		    /* FIXME */
 		    MPIU_Error_printf( "Remote shell command is too complex\n" );
 		    exit(1);
@@ -447,6 +520,28 @@ int mpiexecPrintTable( ProcessTable_t *ptable )
    available.  As a special case, don't accept data with the sink for the
    data is not available.  I.e., if stderr is not available for writing, 
    do not accept data from the fdStderr fd of any created process.
+
+   We use the following mapping from the process table to the array
+   of poll fds:
+   
+   For process i
+   4*i   = processes stdin
+   4*i+1 = processes stdout
+   4*i+2 = processes stderr
+   4*i+3 = processes pmi
+
+   The last 3 fds are for mpiexec itself.  To make these eaiser to find,
+   the index "mpiexecFdIdx gives the first of these:
+   mpiexecFdIdx    = mpiexec stdin
+   mpiexecFdIdx +1 = mpiexec stdout
+   mpiexecFdIdx +2 = mpiexec stderr
+
+   An alternate approach is to attach to each fd a handler function.
+   
+   Another alternative is to keep an array that maps from the pollarray 
+   (in groups of 4) to the process table.  This would allow us to compress
+   the pollarray as processes are removed.
+   
 /* ----------------------------------------------------------------------- */
 #include <sys/poll.h>
 
@@ -454,6 +549,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 {
     struct pollfd *pollarray;
     int i, j, nfds, nprocess;
+    int mpiexecFdIdx;
 
     /* Compute the array size needed for the poll operation */
     nprocess = ptable->nProcesses;
@@ -465,11 +561,9 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 	return 1;
     }
 
-    /* Fill to poll array.  We'll exploit the fact that there are four
-       fd's per process 
-       Question: should we arrange these differently to make it easier to
-       process any events?
-    */
+    /* 
+     * Fill to poll array.  Initialize all of the fds.
+     */
     j = 0;
     for (i=0; i<nprocess; i++) {
 	pollarray[j].fd = ptable->table[i].fdStdin;
@@ -486,6 +580,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 	j++;
     }
     /* Add the last three */
+    mpiexecFdIdx = j;
     pollarray[j].fd = 0; 
     pollarray[j].events = POLLIN;
     j++;
@@ -497,17 +592,47 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 
     while (1) {
 	int timeout, rc;
+
 	/* Compute the timeout until we must abort this run */
 	/* (A negative value is infinite) */
+	timeout = GetRemainingTime();
 	rc = poll( pollarray, nfds, timeout );
 
 	/* loop through the entries, looking at the processes first */
 	j = 0;
 	for (i=0; i<nprocess; i++) {
 	    if (pollarray[j].revents == POLLOUT) {
-		;
+		rc = mpiexecHandleStdin( pollarray[j].fd, 
+					 &ptable->table[i].stdinBuf );
 	    }
-	    
+	    j++;
+	    if (pollarray[j].revents == POLLIN) {
+		rc = mpiexecHandleStdout( pollarray[j].fd, 
+					  &ptable->table[i].stdoutBuf, 1 );
+	    }
+	    j++;
+	    if (pollarray[j].revents == POLLIN) {
+		rc = mpiexecHandleStdout( pollarray[j].fd, 
+					  &ptable->table[i].stderrBuf, 2 );
+	    }
+	    j++;
+	    if (pollarray[j].revents == POLLIN) {
+		rc = mpiexecHandleStdin( pollarray[j].fd, 
+					 &ptable->table[i].stdinBuf );
+	    }
+	}
+	if (pollarray[mpiexecFdIdx].revents == POLLIN) {
+	    /* We need to read in some data and distribute it to 
+	       the selected processes.  We do this by reading data in
+	       and then copying it to the selected processes.  
+	       To simplify buffering, we 
+	    */
+	}
+	/* Currently, we ignore the stdout/err fd's because we write
+	   directly to them and do not adjust for input */
+	if (pollarray[mpiexecFdIdx+1].revents == POLLOUT) {
+	}
+	if (pollarray[mpiexecFdIdx+2].revents == POLLOUT) {
 	}
 
 	/* If the mpiexec stdout or stdin becomes full, turn off 
@@ -538,3 +663,59 @@ if (!isatty(0)) {
     }
 #endif
 }
+
+/* ------------------------------------------------------------------------ */
+
+/*
+ * Handle the stdin, stdout, stderr.  This is very simple, with 
+ * any remaining data moved to the beginning of the buffer.  A 
+ * more sophisticated system could use a circular buffer, though that makes
+ * the code to read/write more complex.
+ */
+int mpiexecHandleStdin( int fd, charbuf *buf )
+{
+    int n;
+    /* Attempt to write the awaiting data to the fd */
+    
+    n = write( fd, buf->firstchar, buf->nleft );
+    if (n >= 0) {
+	buf->firstchar += n;
+	buf->nleft -= n;
+	if (buf->nleft == 0) {
+	    /* reset */
+	    buf->firstchar = buf->buf;
+	}
+    }
+    else {
+	/* Error writing.  EAGAIN is ok; others are real errors */
+    }
+    return 0;
+}
+
+int mpiexecHandleStdout( int infd, charbuf *buf, int outfd )
+{
+    int n, nout;
+    
+    n = read( infd, buf->firstchar, buf->nleft );
+    if (n >= 0) {
+	buf->nleft -= n;
+	/* Try to write to outfd */
+	nout = write( outfd, buf->buf, MAXCHARBUF - buf->nleft );
+	
+	if (nout >= 0) {
+	    if (nout == MAXCHARBUF - buf->nleft ) {
+		/* Everything was sent */
+	    }
+	    else {
+		/* Move the data to the front of the buffer */
+		/* FIXME */
+	    }
+	}
+	else {
+	    /* Unless EAGAIN we have a problem */
+	}
+	
+    }
+}    
+
+

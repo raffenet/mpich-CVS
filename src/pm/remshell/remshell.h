@@ -44,7 +44,8 @@ typedef enum { NORMAL,     /* Normal exit (possibly with nonzero status) */
 	       KILLED      /* Process was killed by mpiexec */ 
              } exit_state_t;
 
-/* We must buffer the stdin, out, and err output.  A minimal memory approach
+/* 
+   We must buffer the stdin, out, and err output.  A minimal memory approach
    would be to provide buffers only for the 3 fd's at mpiexec; that is, 
    only provide buffers for fd's 0, 1, and 2.  
    Instead, we will provide buffering for each created process for 
@@ -59,9 +60,10 @@ typedef enum { NORMAL,     /* Normal exit (possibly with nonzero status) */
 #define MAXCHARBUF 1024
 typedef struct {
     char buf[MAXCHARBUF];  /* buffer for text */
-    char *firstchar;       /* pointer to first character in buffer */
+    char *firstchar;       /* pointer to first free character in buffer */
     int  nleft;            /* number of characters left to transfer */
 } charbuf;
+
 /* Record each process, including the fd's used to handle standard input
    and output, and any process-specific details about each process, 
    such as the working directory and specific requirements about the 
@@ -69,7 +71,10 @@ typedef struct {
 typedef struct { 
     int            fdStdin, fdStdout, fdStderr, /* fds for std io */
 	fdPMI;                       /* fds for process management */
+
     client_state_t state;            /* state of process */
+    pid_t         pid;               /* pid of process */
+    
     const char    *exename;          /* Executable to run */
     const char    **args;            /* Pointer into the array of args */
     const char    *hostname;         /* Host for process */
@@ -78,6 +83,10 @@ typedef struct {
     const char    *wdir;             /* Working directory */
     int            nArgs;            /* Number of args (list is *not* null
 					terminated) */
+
+    charbuf        stdinBuf;         /* data awaiting processes stdin */
+    charbuf        stdoutBuf;        /* data from processes stdout */
+    charbuf        stderrBuf;        /* data from processes stderr */
 
     int            rank;             /* rank in comm_world (or universe) */
 
@@ -97,7 +106,8 @@ typedef struct {
    structure to make it easier to pass this information to other routines */
 typedef struct {
     int          nProcesses;         /* Number of processes created */
-    int          maxProcesses;
+    int          maxProcesses;       /* Maximum number of processes available;
+					set to MAXPROCESSES */
     ProcessState table[MAXPROCESSES];
 } ProcessTable_t;
 
