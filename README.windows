@@ -8,14 +8,24 @@ administrative privileges on your machines.
 2) cd into the mpich2 directory
 3) run winconfigure to generate mpi.h and other header files.
 
-4) build the process launcher, mpd.exe, and its supporting libraries.
+4) build a process manager:
+
+A) winmpd
+Build the mpd process launcher and its supporting libraries.
 This solution is found in mpich2\src\pm\winmpd\mpi2.sln.  Install mpd.exe 
 on each machine by copying mpd.exe to a local directory on each machine and
 executing "mpd -install" while logged on as a user with adminstrator privileges.
 Use mpd.exe from the smpd project not the mpd project.
-
-5) build mpirun.exe
+B) build mpirun.exe
 This solution is found in mpich2\src\pm\winmpd\mpich1\mpich1.sln
+
+OR
+
+B) smpd
+Build the smpd process launcher.  It is found in mpich2\src\pm\smpd\smpd.sln.
+Install smpd.exe on each machine by copying smpd.exe to a local directory
+on each machine and executing "smpd -install" while logged on as a user with
+administrator privileges.
 
 6) build the mpich2 dlls and import libraries.
 This solution is found in mpich2\mpich2.sln.
@@ -23,7 +33,7 @@ The mpich2 dlls can be built to use shared memory communication, tcp socket comm
 or both.
 Select the ch3sockDebug or ch3sockRelease configurations to build the sockets only dlls.
 Select the ch3shmDebug or ch3shmRelease configurations to build the shmem only dlls.
-Select the ch3mmDebug or ch3mmRelease configurations to build the sockets+shmem dlls.
+Select the ch3ssmDebug or ch3ssmRelease configurations to build the sockets+shmem dlls.
 
 7) compile an mpi application.  Use mpi.h from mpich2\src\include and 
 the mpich2 import libraries in mpich2\lib
@@ -31,7 +41,8 @@ the mpich2 import libraries in mpich2\lib
 8) Place your executable along with the mpich2 dlls somewhere accessable to
 all the machines.
 
-9) Execute a job by running "mpirun -mpich2 -np 3 myapp.exe".
+9) Execute a job by running:
+A) If you installed mpd  -> "mpirun -mpich2 -np 3 myapp.exe".
+B) If you installed smpd -> "mpiexec -n 3 myapp.exe".
 
-Read the user's guide for complete options to mpirun and mpd.
 Email bugs and error reports to mpich2-maint@mcs.anl.gov.
