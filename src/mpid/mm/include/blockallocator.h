@@ -92,7 +92,7 @@ static inline int MPIDU_Compare_swap( void **dest, void *new_val, void *compare_
        original_val = value of dest prior to this operation */
 
 #ifdef HAVE_NT_LOCKS
-    //*original_val = (void*)InterlockedCompareExchange(dest, new_val, compare_val);
+    /* *original_val = (void*)InterlockedCompareExchange(dest, new_val, compare_val); */
     *original_val = InterlockedCompareExchangePointer(dest, new_val, compare_val);
 #elif defined(HAVE_COMPARE_AND_SWAP)
     if (compare_and_swap((volatile long *)dest, (long)compare_val, (long)new_val))

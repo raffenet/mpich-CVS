@@ -31,15 +31,17 @@ int MPID_Comm_accept(char *port_name, MPID_Info *info_ptr, int root, MPID_Comm *
 {
     static const char FCNAME[] = "MPID_Comm_accept";
     int conn;
-//    char value[10];
-//    int same_domain;
+/*
+    char value[10];
+    int same_domain;
+*/
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_COMM_ACCEPT);
 
     if (comm_ptr->rank == root)
     {
 	conn = MM_Accept(info_ptr, port_name);
-//	PMPI_Info_get(info, MPICH_PMI_SAME_DOMAIN_KEY, 10, value, &same_domain);
+	/*PMPI_Info_get(info, MPICH_PMI_SAME_DOMAIN_KEY, 10, value, &same_domain);*/
 
 	/* Transfer stuff */
 

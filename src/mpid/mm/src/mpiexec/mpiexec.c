@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
     char ***argvs;
     int *maxprocs;
     void *infos;
-    //MPI_Comm intercomm;
+    /*MPI_Comm intercomm;*/
     int *errors;
 
     CreateParameters(&argc, &argv, &count, &cmds, &argvs, &maxprocs, &infos, &errors);

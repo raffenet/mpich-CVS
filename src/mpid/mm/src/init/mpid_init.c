@@ -44,7 +44,7 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     if (spawned)
     {
 	PMI_KVS_Get(MPID_Process.pmi_kvsname, MPICH_PARENT_PORT_KEY, pszPortName);
-	//PMPI_Comm_connect(pszPortName, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &MPID_Process.comm_parent);
+	/*PMPI_Comm_connect(pszPortName, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &MPID_Process.comm_parent); */
     }
     else
     {

@@ -50,17 +50,17 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_
 	PMPI_Info_create(&prepost_info);
 	PMPI_Open_port(MPI_INFO_NULL, pszPortName);
 	PMPI_Info_set(prepost_info, MPICH_PARENT_PORT_KEY, pszPortName);
-	//if (g_bSpawnCalledFromMPIExec) PMPI_Info_set(prepost_info, MPICH_EXEC_IS_PARENT_KEY, "yes");
+	/*if (g_bSpawnCalledFromMPIExec) PMPI_Info_set(prepost_info, MPICH_EXEC_IS_PARENT_KEY, "yes");*/
 	PMI_Spawn_multiple(count, (const char **)array_of_commands, (const char ***)array_of_argv, array_of_maxprocs, array_of_info, array_of_errcodes, 
 	    &same_domain, (void*)prepost_info);
 	PMPI_Info_free(&prepost_info);
 	if (same_domain)
 	{
-	    // set same domain for accept
+	    /* set same domain for accept */
 	    PMPI_Info_set(info, MPICH_PMI_SAME_DOMAIN_KEY, "yes");
 	}
     }
-//    PMPI_Comm_accept(pszPortName, info, root, comm, intercomm);
+    /*PMPI_Comm_accept(pszPortName, info, root, comm, intercomm);*/
     if (comm_ptr->rank == root)
     {
 	PMPI_Close_port(pszPortName);
