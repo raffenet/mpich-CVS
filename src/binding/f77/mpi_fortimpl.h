@@ -38,10 +38,8 @@
 #define FUNC_ATTRIBUTES
 #endif
 
-/* mpi_fortconf must come before mpi.h because a few defines (e.g., USE_STDARG)
-   are defined in mpi_fortconf for mpi.h */
+/* mpi.h includes the definitions of MPI_Fint */
 #include "mpi.h"
-#include "mpi_fortdefs.h"
 
 /* Utility functions */
 
