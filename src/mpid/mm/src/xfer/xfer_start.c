@@ -19,9 +19,9 @@ int xfer_start(MPID_Request *request_ptr)
     int mpi_errno;
     MPID_Request *pRequest;
     MM_Car *pCar, *pCarIter;
-    MPID_STATE_DECL(MPID_STATE_XFER_START);
+    MPIDI_STATE_DECL(MPID_STATE_XFER_START);
 
-    MPID_FUNC_ENTER(MPID_STATE_XFER_START);
+    MPIDI_FUNC_ENTER(MPID_STATE_XFER_START);
 
 #ifdef MPICH_DEV_BUILD
     if (request_ptr == NULL)
@@ -38,14 +38,14 @@ int xfer_start(MPID_Request *request_ptr)
 	mpi_errno = mm_choose_buffer(pRequest);
 	if (mpi_errno != MPI_SUCCESS)
 	{
-	    MPID_FUNC_EXIT(MPID_STATE_XFER_START);
+	    MPIDI_FUNC_EXIT(MPID_STATE_XFER_START);
 	    return mpi_errno;
 	}
 	/* reset the cars */
 	mpi_errno = mm_reset_cars(pRequest);
 	if (mpi_errno != MPI_SUCCESS)
 	{
-	    MPID_FUNC_EXIT(MPID_STATE_XFER_START);
+	    MPIDI_FUNC_EXIT(MPID_STATE_XFER_START);
 	    return mpi_errno;
 	}
 	pRequest = pRequest->mm.next_ptr;
@@ -100,6 +100,6 @@ int xfer_start(MPID_Request *request_ptr)
 	pRequest = pRequest->mm.next_ptr;
     } while (pRequest);
 
-    MPID_FUNC_EXIT(MPID_STATE_XFER_START);
+    MPIDI_FUNC_EXIT(MPID_STATE_XFER_START);
     return MPI_SUCCESS;
 }

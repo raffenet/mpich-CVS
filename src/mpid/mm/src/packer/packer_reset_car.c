@@ -9,14 +9,14 @@
 int packer_reset_car(MM_Car *car_ptr)
 {
     MM_Segment_buffer *buf_ptr;
-    MPID_STATE_DECL(MPID_STATE_PACKER_RESET_CAR);
+    MPIDI_STATE_DECL(MPID_STATE_PACKER_RESET_CAR);
 
-    MPID_FUNC_ENTER(MPID_STATE_PACKER_RESET_CAR);
+    MPIDI_FUNC_ENTER(MPID_STATE_PACKER_RESET_CAR);
 
     buf_ptr = car_ptr->buf_ptr;
     if (buf_ptr == NULL)
     {
-	MPID_FUNC_EXIT(MPID_STATE_PACKER_RESET_CAR);
+	MPIDI_FUNC_EXIT(MPID_STATE_PACKER_RESET_CAR);
 	return -1;
     }
 
@@ -56,6 +56,6 @@ int packer_reset_car(MM_Car *car_ptr)
 	break;
     }
 
-    MPID_FUNC_EXIT(MPID_STATE_PACKER_RESET_CAR);
+    MPIDI_FUNC_EXIT(MPID_STATE_PACKER_RESET_CAR);
     return MPI_SUCCESS;
 }

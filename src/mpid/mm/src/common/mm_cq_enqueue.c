@@ -8,8 +8,8 @@
 
 int mm_cq_enqueue(MM_Car *car_ptr)
 {
-    MPID_STATE_DECL(MPID_STATE_MM_CQ_ENQUEUE);
-    MPID_FUNC_ENTER(MPID_STATE_MM_CQ_ENQUEUE);
+    MPIDI_STATE_DECL(MPID_STATE_MM_CQ_ENQUEUE);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_CQ_ENQUEUE);
 
     MPID_Thread_lock(MPID_Process.cqlock);
     if (MPID_Process.cq_tail)
@@ -20,6 +20,6 @@ int mm_cq_enqueue(MM_Car *car_ptr)
     MPID_Process.cq_tail = car_ptr;
     MPID_Thread_unlock(MPID_Process.cqlock);
 
-    MPID_FUNC_EXIT(MPID_STATE_MM_CQ_ENQUEUE);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_CQ_ENQUEUE);
     return MPI_SUCCESS;
 }

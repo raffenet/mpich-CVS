@@ -26,9 +26,9 @@ int tcp_merge_unexpected_data(MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, i
 {
     int ret_val;
     MM_Segment_buffer *buf_ptr;
-    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
 
-    MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
 
     if (vc_ptr->data.tcp.connecting)
     {
@@ -36,7 +36,7 @@ int tcp_merge_unexpected_data(MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, i
 	{
 	    err_printf("Error:tcp_merge_unexpected_data: tcp_read_connecting failed.\n");
 	}
-	MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
 	return 0;
     }
 
@@ -47,44 +47,44 @@ int tcp_merge_unexpected_data(MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, i
     {
     case MM_VEC_BUFFER:
 	ret_val = tcp_merge_vec(vc_ptr, car_ptr, buf_ptr, buffer, length);
-	MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
 	return ret_val;
 	break;
     case MM_SIMPLE_BUFFER:
 	ret_val = tcp_merge_simple(vc_ptr, car_ptr, buf_ptr, buffer, length);
-	MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
 	return ret_val;
 	break;
     case MM_TMP_BUFFER:
 	ret_val = tcp_merge_tmp(vc_ptr, car_ptr, buf_ptr, buffer, length);
-	MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
 	return ret_val;
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_BUFFER:
 	ret_val = tcp_merge_shm(vc_ptr, car_ptr, buf_ptr, buffer, length);
-	MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
 	return ret_val;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA
     case MM_VIA_BUFFER:
 	ret_val = tcp_merge_via(vc_ptr, car_ptr, buf_ptr, buffer, length);
-	MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
 	return ret_val;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
     case MM_VIA_RDMA_BUFFER:
 	ret_val = tcp_merge_via_rdma(vc_ptr, car_ptr, buf_ptr, buffer, length);
-	MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
 	return ret_val;
 	break;
 #endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD_BUFFER:
 	ret_val = tcp_merge_new(vc_ptr, car_ptr, buf_ptr, buffer, length);
-	MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
 	return ret_val;
 	break;
 #endif
@@ -96,16 +96,16 @@ int tcp_merge_unexpected_data(MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, i
 	break;
     }
 
-    MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
     return length;
 }
 
 #ifdef WITH_METHOD_SHM
 int tcp_merge_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length)
 {
-    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_SHM);
-    MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_SHM);
-    MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_SHM);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_MERGE_SHM);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_MERGE_SHM);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_SHM);
     return MPI_SUCCESS;
 }
 #endif
@@ -113,9 +113,9 @@ int tcp_merge_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
 #ifdef WITH_METHOD_VIA
 int tcp_merge_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length)
 {
-    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_VIA);
-    MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_VIA);
-    MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_VIA);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_MERGE_VIA);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_MERGE_VIA);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_VIA);
     return MPI_SUCCESS;
 }
 #endif
@@ -123,9 +123,9 @@ int tcp_merge_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
 #ifdef WITH_METHOD_VIA_RDMA
 int tcp_merge_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length)
 {
-    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_VIA_RDMA);
-    MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_VIA_RDMA);
-    MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_VIA_RDMA);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_MERGE_VIA_RDMA);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_MERGE_VIA_RDMA);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_VIA_RDMA);
     return MPI_SUCCESS;
 }
 #endif
@@ -134,9 +134,9 @@ int tcp_merge_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
 {
     int num_read = 0;
     int num_left, i;
-    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_VEC);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_MERGE_VEC);
 
-    MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_VEC);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_MERGE_VEC);
 
     if (buf_ptr->vec.num_cars_outstanding == 0)
     {
@@ -210,16 +210,16 @@ int tcp_merge_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
 	err_printf("Error: tcp_merge_vec: data lost.\n");
     }
 
-    MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_VEC);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_VEC);
     return num_read;
 }
 
 int tcp_merge_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length)
 {
     int num_read;
-    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_TMP);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_MERGE_TMP);
 
-    MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_TMP);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_MERGE_TMP);
 
     if (buf_ptr->tmp.buf == NULL)
     {
@@ -244,16 +244,16 @@ int tcp_merge_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
 	mm_cq_enqueue(car_ptr);
     }
 
-    MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_TMP);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_TMP);
     return MPI_SUCCESS;
 }
 
 int tcp_merge_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length)
 {
     int num_read;
-    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_SIMPLE);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_MERGE_SIMPLE);
 
-    MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_SIMPLE);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_MERGE_SIMPLE);
 
     if (buf_ptr->simple.buf == NULL)
     {
@@ -280,6 +280,6 @@ int tcp_merge_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_p
 	mm_cq_enqueue(car_ptr);
     }
 
-    MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_SIMPLE);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_SIMPLE);
     return MPI_SUCCESS;
 }

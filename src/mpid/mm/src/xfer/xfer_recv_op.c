@@ -85,9 +85,9 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     MPID_Request *pRequest;
     BOOL bNeedHeader = TRUE;
     long dtype_sz;
-    MPID_STATE_DECL(MPID_STATE_XFER_RECV_OP);
+    MPIDI_STATE_DECL(MPID_STATE_XFER_RECV_OP);
 
-    MPID_FUNC_ENTER(MPID_STATE_XFER_RECV_OP);
+    MPIDI_FUNC_ENTER(MPID_STATE_XFER_RECV_OP);
     dbg_printf("xfer_recv_op\n");
 
     /* Get a pointer to the current unused request, allocating if necessary. */
@@ -177,6 +177,6 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     /*printf("inc cc: recv unpack car\n");fflush(stdout);*/
     mm_inc_cc(pRequest);
 
-    MPID_FUNC_EXIT(MPID_STATE_XFER_RECV_OP);
+    MPIDI_FUNC_EXIT(MPID_STATE_XFER_RECV_OP);
     return MPI_SUCCESS;
 }

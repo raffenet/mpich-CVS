@@ -23,20 +23,20 @@ int tcp_write(MPIDI_VC *vc_ptr)
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
     int ret_val;
-    MPID_STATE_DECL(MPID_STATE_TCP_WRITE);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_WRITE);
 
-    MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_WRITE);
 
     if (!vc_ptr->data.tcp.connected)
     {
-	MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE);
 	return MPI_SUCCESS;
     }
 
     if (vc_ptr->writeq_head == NULL)
     {
 	msg_printf("tcp_write: write called with no vc's in the write queue.\n");
-	MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE);
 	return MPI_SUCCESS;
     }
 
@@ -48,43 +48,43 @@ int tcp_write(MPIDI_VC *vc_ptr)
 #ifdef WITH_METHOD_SHM
     case MM_SHM_BUFFER:
 	ret_val = tcp_write_shm(vc_ptr, car_ptr, buf_ptr);
-	MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE);
 	return ret_val;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA
     case MM_VIA_BUFFER:
 	ret_val = tcp_write_via(vc_ptr, car_ptr, buf_ptr);
-	MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE);
 	return ret_val;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
     case MM_VIA_RDMA_BUFFER:
 	ret_val = tcp_write_via_rdma(vc_ptr, car_ptr, buf_ptr);
-	MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE);
 	return ret_val;
 	break;
 #endif
     case MM_VEC_BUFFER:
 	ret_val = (buf_ptr->vec.num_cars_outstanding > 0) ? tcp_write_vec(vc_ptr, car_ptr, buf_ptr) : MPI_SUCCESS;
-	MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE);
 	return ret_val;
 	break;
     case MM_SIMPLE_BUFFER:
 	ret_val = tcp_write_simple(vc_ptr, car_ptr, buf_ptr);
-	MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE);
 	return ret_val;
 	break;
     case MM_TMP_BUFFER:
 	ret_val = tcp_write_tmp(vc_ptr, car_ptr, buf_ptr);
-	MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE);
 	return ret_val;
 	break;
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD_BUFFER:
 	ret_val = tcp_write_new(vc_ptr, car_ptr, buf_ptr);
-	MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE);
 	return ret_val;
 	break;
 #endif
@@ -96,16 +96,16 @@ int tcp_write(MPIDI_VC *vc_ptr)
 	break;
     }
 
-    MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE);
     return -1;
 }
 
 #ifdef WITH_METHOD_SHM
 int tcp_write_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECL(MPID_STATE_TCP_WRITE_SHM);
-    MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE_SHM);
-    MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE_SHM);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_WRITE_SHM);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_WRITE_SHM);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE_SHM);
     return MPI_SUCCESS;
 }
 #endif
@@ -113,9 +113,9 @@ int tcp_write_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 #ifdef WITH_METHOD_VIA
 int tcp_write_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECL(MPID_STATE_TCP_WRITE_VIA);
-    MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE_VIA);
-    MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE_VIA);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_WRITE_VIA);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_WRITE_VIA);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE_VIA);
     return MPI_SUCCESS;
 }
 #endif
@@ -123,9 +123,9 @@ int tcp_write_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 #ifdef WITH_METHOD_VIA_RDMA
 int tcp_write_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECL(MPID_STATE_TCP_WRITE_VIA_RDMA);
-    MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE_VIA_RDMA);
-    MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE_VIA_RDMA);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_WRITE_VIA_RDMA);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_WRITE_VIA_RDMA);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE_VIA_RDMA);
     return MPI_SUCCESS;
 }
 #endif
@@ -136,11 +136,11 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     int cur_index;
     MPID_IOV *car_vec, *buf_vec;
     int num_left, i;
-    MPID_STATE_DECL(MPID_STATE_TCP_WRITE_VEC);
-    MPID_STATE_DECL(MPID_STATE_BWRITE);
-    MPID_STATE_DECL(MPID_STATE_BWRITEV);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_WRITE_VEC);
+    MPIDI_STATE_DECL(MPID_STATE_BWRITE);
+    MPIDI_STATE_DECL(MPID_STATE_BWRITEV);
     
-    MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE_VEC);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_WRITE_VEC);
 
 #ifdef MPICH_DEV_BUILD
     /* this function assumes that buf_ptr->vec.num_cars_outstanding > 0 */
@@ -206,34 +206,34 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	/* write */
 	if (car_ptr->data.tcp.buf.vec_write.vec_size == 1) /* optimization for single buffer writes */
 	{
-	    MPID_FUNC_ENTER(MPID_STATE_BWRITE);
+	    MPIDI_FUNC_ENTER(MPID_STATE_BWRITE);
 	    num_written = bwrite(vc_ptr->data.tcp.bfd, 
 		car_ptr->data.tcp.buf.vec_write.vec[car_ptr->data.tcp.buf.vec_write.cur_index].MPID_IOV_BUF,
 		car_ptr->data.tcp.buf.vec_write.vec[car_ptr->data.tcp.buf.vec_write.cur_index].MPID_IOV_LEN);
-	    MPID_FUNC_EXIT(MPID_STATE_BWRITE);
+	    MPIDI_FUNC_EXIT(MPID_STATE_BWRITE);
 	    if (num_written == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();
 		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 		err_printf("tcp_write: bwrite failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-		MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE_VEC);
+		MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE_VEC);
 		return -1;
 	    }
 	}
 	else
 	{
-	    MPID_FUNC_ENTER(MPID_STATE_BWRITEV);
+	    MPIDI_FUNC_ENTER(MPID_STATE_BWRITEV);
 	    num_written = bwritev(
 		vc_ptr->data.tcp.bfd, 
 		&car_ptr->data.tcp.buf.vec_write.vec[car_ptr->data.tcp.buf.vec_write.cur_index], 
 		car_ptr->data.tcp.buf.vec_write.vec_size);
-	    MPID_FUNC_EXIT(MPID_STATE_BWRITEV);
+	    MPIDI_FUNC_EXIT(MPID_STATE_BWRITEV);
 	    if (num_written == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();
 		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 		err_printf("tcp_write: bwritev failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-		MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE_VEC);
+		MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE_VEC);
 		return -1;
 	    }
 	}
@@ -292,30 +292,30 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	mm_cq_enqueue(car_ptr);
     }
 
-    MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE_VEC);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE_VEC);
     return MPI_SUCCESS;
 }
 
 int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_written;
-    MPID_STATE_DECL(MPID_STATE_TCP_WRITE_TMP);
-    MPID_STATE_DECL(MPID_STATE_BWRITE);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_WRITE_TMP);
+    MPIDI_STATE_DECL(MPID_STATE_BWRITE);
 
-    MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE_TMP);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_WRITE_TMP);
 
     if ((car_ptr->data.tcp.buf.tmp.num_written == buf_ptr->tmp.num_read) || (buf_ptr->tmp.num_read == 0))
     {
-	MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE_TMP);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE_TMP);
 	return MPI_SUCCESS;
     }
 
     /* write as much as possible */
-    MPID_FUNC_ENTER(MPID_STATE_BWRITE);
+    MPIDI_FUNC_ENTER(MPID_STATE_BWRITE);
     num_written = bwrite(vc_ptr->data.tcp.bfd, 
 	(char*)(buf_ptr->tmp.buf) + car_ptr->data.tcp.buf.tmp.num_written,
 	buf_ptr->tmp.num_read - car_ptr->data.tcp.buf.tmp.num_written);
-    MPID_FUNC_EXIT(MPID_STATE_BWRITE);
+    MPIDI_FUNC_EXIT(MPID_STATE_BWRITE);
     if (num_written == SOCKET_ERROR)
     {
 	err_printf("tcp_write_tmp:bread failed, error %d\n", beasy_getlasterror());
@@ -339,30 +339,30 @@ int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	mm_cq_enqueue(car_ptr);
     }
 
-    MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE_TMP);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE_TMP);
     return MPI_SUCCESS;
 }
 
 int tcp_write_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_written;
-    MPID_STATE_DECL(MPID_STATE_TCP_WRITE_SIMPLE);
-    MPID_STATE_DECL(MPID_STATE_BWRITE);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_WRITE_SIMPLE);
+    MPIDI_STATE_DECL(MPID_STATE_BWRITE);
 
-    MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE_SIMPLE);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_WRITE_SIMPLE);
 
     if ((car_ptr->data.tcp.buf.simple.num_written == buf_ptr->simple.num_read) || (buf_ptr->simple.num_read == 0))
     {
-	MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE_SIMPLE);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE_SIMPLE);
 	return MPI_SUCCESS;
     }
 
     /* write as much as possible */
-    MPID_FUNC_ENTER(MPID_STATE_BWRITE);
+    MPIDI_FUNC_ENTER(MPID_STATE_BWRITE);
     num_written = bwrite(vc_ptr->data.tcp.bfd, 
 	(char*)(buf_ptr->simple.buf) + car_ptr->data.tcp.buf.simple.num_written,
 	buf_ptr->simple.num_read - car_ptr->data.tcp.buf.simple.num_written);
-    MPID_FUNC_EXIT(MPID_STATE_BWRITE);
+    MPIDI_FUNC_EXIT(MPID_STATE_BWRITE);
     if (num_written == SOCKET_ERROR)
     {
 	err_printf("tcp_write_tmp:bread failed, error %d\n", beasy_getlasterror());
@@ -386,6 +386,6 @@ int tcp_write_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_p
 	mm_cq_enqueue(car_ptr);
     }
 
-    MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE_SIMPLE);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE_SIMPLE);
     return MPI_SUCCESS;
 }

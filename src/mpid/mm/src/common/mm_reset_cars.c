@@ -17,9 +17,9 @@
 int mm_reset_cars(MPID_Request *request_ptr)
 {
     MM_Car *car_ptr;
-    MPID_STATE_DECL(MPID_STATE_MM_RESET_CARS);
+    MPIDI_STATE_DECL(MPID_STATE_MM_RESET_CARS);
 
-    MPID_FUNC_ENTER(MPID_STATE_MM_RESET_CARS);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_RESET_CARS);
 
     car_ptr = &request_ptr->mm.rcar[0];
     while (car_ptr)
@@ -49,6 +49,6 @@ int mm_reset_cars(MPID_Request *request_ptr)
 	car_ptr = car_ptr->opnext_ptr;
     }
 
-    MPID_FUNC_EXIT(MPID_STATE_MM_RESET_CARS);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_RESET_CARS);
     return MPI_SUCCESS;
 }

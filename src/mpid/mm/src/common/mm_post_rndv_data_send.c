@@ -10,9 +10,9 @@ int mm_post_rndv_data_send(MM_Car *rndv_cts_car_ptr)
 {
     MPID_Rndv_data_pkt *rndv_data_ptr;
     MM_Car *sender_car_ptr;
-    MPID_STATE_DECL(MPID_STATE_MM_POST_RNDV_DATA_SEND);
+    MPIDI_STATE_DECL(MPID_STATE_MM_POST_RNDV_DATA_SEND);
 
-    MPID_FUNC_ENTER(MPID_STATE_MM_POST_RNDV_DATA_SEND);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_POST_RNDV_DATA_SEND);
 
     /* convert the sender car into a rndv data car */
 #ifdef MPICH_DEV_BUILD
@@ -34,6 +34,6 @@ int mm_post_rndv_data_send(MM_Car *rndv_cts_car_ptr)
     sender_car_ptr->vc_ptr->post_write(sender_car_ptr->vc_ptr, sender_car_ptr);
     /*mm_dec_cc(sender_car_ptr->request_ptr);*/ /* decrement once for the unsent msg header car */
 
-    MPID_FUNC_EXIT(MPID_STATE_MM_POST_RNDV_DATA_SEND);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_POST_RNDV_DATA_SEND);
     return MPI_SUCCESS;
 }

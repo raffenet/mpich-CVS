@@ -17,8 +17,8 @@
 @*/
 int packer_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
-    MPID_STATE_DECL(MPID_STATE_PACKER_CAR_ENQUEUE);
-    MPID_FUNC_ENTER(MPID_STATE_PACKER_CAR_ENQUEUE);
+    MPIDI_STATE_DECL(MPID_STATE_PACKER_CAR_ENQUEUE);
+    MPIDI_FUNC_ENTER(MPID_STATE_PACKER_CAR_ENQUEUE);
 
     if (car_ptr->type & MM_WRITE_CAR)
     {
@@ -41,7 +41,7 @@ int packer_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 
     car_ptr->vcqnext_ptr = NULL;
 
-    MPID_FUNC_EXIT(MPID_STATE_PACKER_CAR_ENQUEUE);
+    MPIDI_FUNC_EXIT(MPID_STATE_PACKER_CAR_ENQUEUE);
     return MPI_SUCCESS;
 }
 
@@ -57,16 +57,16 @@ int packer_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 int packer_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MM_Car *iter_ptr;
-    MPID_STATE_DECL(MPID_STATE_PACKER_CAR_DEQUEUE);
+    MPIDI_STATE_DECL(MPID_STATE_PACKER_CAR_DEQUEUE);
 
-    MPID_FUNC_ENTER(MPID_STATE_PACKER_CAR_DEQUEUE);
+    MPIDI_FUNC_ENTER(MPID_STATE_PACKER_CAR_DEQUEUE);
 
     if (car_ptr->type & MM_WRITE_CAR)
     {
 	/* dequeue the car from the vc_ptr write queue */
 	if (vc_ptr->writeq_head == NULL)
 	{
-	    MPID_FUNC_EXIT(MPID_STATE_PACKER_CAR_DEQUEUE);
+	    MPIDI_FUNC_EXIT(MPID_STATE_PACKER_CAR_DEQUEUE);
 	    return MPI_SUCCESS;
 	}
 	if (vc_ptr->writeq_head == car_ptr)
@@ -96,7 +96,7 @@ int packer_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	/* dequeue the car from the vc_ptr read queue */
 	if (vc_ptr->readq_head == NULL)
 	{
-	    MPID_FUNC_EXIT(MPID_STATE_PACKER_CAR_DEQUEUE);
+	    MPIDI_FUNC_EXIT(MPID_STATE_PACKER_CAR_DEQUEUE);
 	    return MPI_SUCCESS;
 	}
 	if (vc_ptr->readq_head == car_ptr)
@@ -124,6 +124,6 @@ int packer_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 
     car_ptr->vcqnext_ptr = NULL;
 
-    MPID_FUNC_EXIT(MPID_STATE_PACKER_CAR_DEQUEUE);
+    MPIDI_FUNC_EXIT(MPID_STATE_PACKER_CAR_DEQUEUE);
     return MPI_SUCCESS;
 }

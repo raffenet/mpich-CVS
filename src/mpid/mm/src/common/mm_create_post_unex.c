@@ -12,9 +12,9 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
     MPID_Header_pkt *hdr_ptr;
-    MPID_STATE_DECL(MPID_STATE_MM_CREATE_POST_UNEX);
+    MPIDI_STATE_DECL(MPID_STATE_MM_CREATE_POST_UNEX);
 
-    MPID_FUNC_ENTER(MPID_STATE_MM_CREATE_POST_UNEX);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_CREATE_POST_UNEX);
 
     hdr_ptr = &unex_head_car_ptr->msg_header.pkt.u.hdr;
 
@@ -30,7 +30,7 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     if (request_ptr == NULL)
     {
 	err_printf("mm_create_post_unex failed to allocate a request.\n");
-	MPID_FUNC_EXIT(MPID_STATE_MM_CREATE_POST_UNEX);
+	MPIDI_FUNC_EXIT(MPID_STATE_MM_CREATE_POST_UNEX);
 	return -1;
     }
 
@@ -110,6 +110,6 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
 	car_ptr->vc_ptr->enqueue_read_at_head(car_ptr->vc_ptr, car_ptr);
     }
 
-    MPID_FUNC_EXIT(MPID_STATE_MM_CREATE_POST_UNEX);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_CREATE_POST_UNEX);
     return MPI_SUCCESS;
 }

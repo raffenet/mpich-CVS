@@ -9,9 +9,9 @@
 int mm_release_buffers_tmp(MPID_Request *request_ptr)
 {
     MM_Segment_buffer *buf_ptr;
-    MPID_STATE_DECL(MPID_STATE_MM_RELEASE_BUFFERS_TMP);
+    MPIDI_STATE_DECL(MPID_STATE_MM_RELEASE_BUFFERS_TMP);
 
-    MPID_FUNC_ENTER(MPID_STATE_MM_RELEASE_BUFFERS_TMP);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_RELEASE_BUFFERS_TMP);
 
     buf_ptr = &request_ptr->mm.buf;
 
@@ -26,16 +26,16 @@ int mm_release_buffers_tmp(MPID_Request *request_ptr)
     MPIU_Free(buf_ptr->tmp.buf);
     buf_ptr->tmp.buf = NULL;
 
-    MPID_FUNC_EXIT(MPID_STATE_MM_RELEASE_BUFFERS_TMP);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_RELEASE_BUFFERS_TMP);
     return MPI_SUCCESS;
 }
 
 int mm_get_buffers_tmp(MPID_Request *request_ptr)
 {
     MM_Segment_buffer *buf_ptr;
-    MPID_STATE_DECL(MPID_STATE_MM_GET_BUFFERS_TMP);
+    MPIDI_STATE_DECL(MPID_STATE_MM_GET_BUFFERS_TMP);
 
-    MPID_FUNC_ENTER(MPID_STATE_MM_GET_BUFFERS_TMP);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_GET_BUFFERS_TMP);
 
     buf_ptr = &request_ptr->mm.buf;
 
@@ -49,42 +49,42 @@ int mm_get_buffers_tmp(MPID_Request *request_ptr)
     buf_ptr->tmp.buf = MPIU_Malloc(request_ptr->mm.size);
     buf_ptr->tmp.len = request_ptr->mm.size;
 
-    MPID_FUNC_EXIT(MPID_STATE_MM_GET_BUFFERS_TMP);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_GET_BUFFERS_TMP);
     return MPI_SUCCESS;
 }
 
 int tmp_buffer_init(MPID_Request *request_ptr)
 {
-    MPID_STATE_DECL(MPID_STATE_TMP_BUFFER_INIT);
-    MPID_FUNC_ENTER(MPID_STATE_TMP_BUFFER_INIT);
+    MPIDI_STATE_DECL(MPID_STATE_TMP_BUFFER_INIT);
+    MPIDI_FUNC_ENTER(MPID_STATE_TMP_BUFFER_INIT);
     
     request_ptr->mm.buf.type = MM_TMP_BUFFER;
     request_ptr->mm.buf.tmp.buf = NULL;
     request_ptr->mm.buf.tmp.len = 0;
     request_ptr->mm.buf.tmp.num_read = 0;
     
-    MPID_FUNC_EXIT(MPID_STATE_TMP_BUFFER_INIT);
+    MPIDI_FUNC_EXIT(MPID_STATE_TMP_BUFFER_INIT);
     return MPI_SUCCESS;
 }
 
 int simple_buffer_init(MPID_Request *request_ptr)
 {
-    MPID_STATE_DECL(MPID_STATE_SIMPLE_BUFFER_INIT);
-    MPID_FUNC_ENTER(MPID_STATE_SIMPLE_BUFFER_INIT);
+    MPIDI_STATE_DECL(MPID_STATE_SIMPLE_BUFFER_INIT);
+    MPIDI_FUNC_ENTER(MPID_STATE_SIMPLE_BUFFER_INIT);
 
     request_ptr->mm.buf.type = MM_SIMPLE_BUFFER;
     request_ptr->mm.buf.simple.buf = NULL;
     request_ptr->mm.buf.simple.len = 0;
     request_ptr->mm.buf.simple.num_read = 0;
 
-    MPID_FUNC_EXIT(MPID_STATE_SIMPLE_BUFFER_INIT);
+    MPIDI_FUNC_EXIT(MPID_STATE_SIMPLE_BUFFER_INIT);
     return MPI_SUCCESS;
 }
 
 int mm_get_buffers_vec(MPID_Request *request_ptr)
 {
-    MPID_STATE_DECL(MPID_STATE_MM_GET_BUFFERS_VEC);
-    MPID_FUNC_ENTER(MPID_STATE_MM_GET_BUFFERS_VEC);
+    MPIDI_STATE_DECL(MPID_STATE_MM_GET_BUFFERS_VEC);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_GET_BUFFERS_VEC);
 
     /* set first and last to be the current last and the end of the segment */
     request_ptr->mm.buf.vec.first = request_ptr->mm.buf.vec.last;
@@ -102,14 +102,14 @@ int mm_get_buffers_vec(MPID_Request *request_ptr)
     /* the size of the current vector is the amount of data that was packed */
     request_ptr->mm.buf.vec.buf_size = request_ptr->mm.buf.vec.last - request_ptr->mm.buf.vec.first;
 
-    MPID_FUNC_EXIT(MPID_STATE_MM_GET_BUFFERS_VEC);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_GET_BUFFERS_VEC);
     return MPI_SUCCESS;
 }
 
 int vec_buffer_init(MPID_Request *request_ptr)
 {
-    MPID_STATE_DECL(MPID_STATE_VEC_BUFFER_INIT);
-    MPID_FUNC_ENTER(MPID_STATE_VEC_BUFFER_INIT);
+    MPIDI_STATE_DECL(MPID_STATE_VEC_BUFFER_INIT);
+    MPIDI_FUNC_ENTER(MPID_STATE_VEC_BUFFER_INIT);
 
     request_ptr->mm.buf.type = MM_VEC_BUFFER;
     request_ptr->mm.buf.vec.vec_size = MPID_IOV_LIMIT;
@@ -121,6 +121,6 @@ int vec_buffer_init(MPID_Request *request_ptr)
     request_ptr->mm.buf.vec.num_cars_outstanding = 0;
     request_ptr->mm.buf.vec.num_cars = 0;
 
-    MPID_FUNC_EXIT(MPID_STATE_VEC_BUFFER_INIT);
+    MPIDI_FUNC_EXIT(MPID_STATE_VEC_BUFFER_INIT);
     return MPI_SUCCESS;
 }

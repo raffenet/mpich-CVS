@@ -12,9 +12,9 @@ int mm_accept(MPID_Info *info_ptr, char *port_name)
     int error;
     int bfd;
     OpenPortNode *p;
-    MPID_STATE_DECL(MPID_STATE_MM_ACCEPT);
+    MPIDI_STATE_DECL(MPID_STATE_MM_ACCEPT);
 
-    MPID_FUNC_ENTER(MPID_STATE_MM_ACCEPT);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_ACCEPT);
 
     p = MPID_Process.port_list;
     while (p)
@@ -26,16 +26,16 @@ int mm_accept(MPID_Info *info_ptr, char *port_name)
 	    {
 		error = beasy_getlasterror();
 		err_printf("beasy_accept failed, error %d\n", error);
-		MPID_FUNC_EXIT(MPID_STATE_MM_ACCEPT);
+		MPIDI_FUNC_EXIT(MPID_STATE_MM_ACCEPT);
 		return BFD_INVALID_SOCKET;
 	    }
-	    MPID_FUNC_EXIT(MPID_STATE_MM_ACCEPT);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MM_ACCEPT);
 	    return bfd;
 	}
 	p = p->next;
     }
 
-    MPID_FUNC_EXIT(MPID_STATE_MM_ACCEPT);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_ACCEPT);
     return BFD_INVALID_SOCKET;
 }
 

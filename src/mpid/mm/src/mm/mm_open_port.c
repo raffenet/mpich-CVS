@@ -14,22 +14,22 @@ int mm_open_port(MPID_Info *info_ptr, char *port_name)
     char host[40];
     int port;
     OpenPortNode *p;
-    MPID_STATE_DECL(MPID_STATE_MM_OPEN_PORT);
+    MPIDI_STATE_DECL(MPID_STATE_MM_OPEN_PORT);
 
-    MPID_FUNC_ENTER(MPID_STATE_MM_OPEN_PORT);
+    MPIDI_FUNC_ENTER(MPID_STATE_MM_OPEN_PORT);
 
     if (beasy_create(&bfd, ADDR_ANY, INADDR_ANY) == SOCKET_ERROR)
     {
 	error = beasy_getlasterror();
 	err_printf("beasy_create failed, error %d\n", error);
-	MPID_FUNC_EXIT(MPID_STATE_MM_OPEN_PORT);
+	MPIDI_FUNC_EXIT(MPID_STATE_MM_OPEN_PORT);
 	return error;
     }
     if (blisten(bfd, 5) == SOCKET_ERROR)
     {
 	error = beasy_getlasterror();
 	err_printf("blisten failed, error %d\n", error);
-	MPID_FUNC_EXIT(MPID_STATE_MM_OPEN_PORT);
+	MPIDI_FUNC_EXIT(MPID_STATE_MM_OPEN_PORT);
 	return error;
     }
     beasy_get_sock_info(bfd, host, &port);
@@ -43,6 +43,6 @@ int mm_open_port(MPID_Info *info_ptr, char *port_name)
     p->next = MPID_Process.port_list;
     MPID_Process.port_list = p;
 
-    MPID_FUNC_EXIT(MPID_STATE_MM_OPEN_PORT);
+    MPIDI_FUNC_EXIT(MPID_STATE_MM_OPEN_PORT);
     return 0;
 }

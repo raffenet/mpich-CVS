@@ -9,15 +9,15 @@ int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MM_Car *rndv_car_ptr;
     MPID_Header_pkt *rndv_rts_ptr;
-    MPID_STATE_DECL(MPID_STATE_TCP_POST_WRITE);
+    MPIDI_STATE_DECL(MPID_STATE_TCP_POST_WRITE);
 
-    MPID_FUNC_ENTER(MPID_STATE_TCP_POST_WRITE);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_POST_WRITE);
 
 #ifdef MPICH_DEV_BUILD
     if (!(car_ptr->type & MM_HEAD_CAR))
     {
 	err_printf("tcp_post_write: only head cars can be posted.\n");
-	MPID_FUNC_EXIT(MPID_STATE_TCP_POST_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_POST_WRITE);
 	return -1;
     }
 #endif
@@ -57,6 +57,6 @@ int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	tcp_car_enqueue(vc_ptr, rndv_car_ptr);
     }
 
-    MPID_FUNC_EXIT(MPID_STATE_TCP_POST_WRITE);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_POST_WRITE);
     return MPI_SUCCESS;
 }
