@@ -13,6 +13,21 @@
 /*  define if <jni.h> is found  */
 #undef HAVE_JNI_H
 
+/* The number of bytes in a __int64.  */
+#undef SIZEOF___INT64
+
+/* The number of bytes in a int.  */
+#undef SIZEOF_INT
+
+/* The number of bytes in a long.  */
+#undef SIZEOF_LONG
+
+/* The number of bytes in a long long.  */
+#undef SIZEOF_LONG_LONG
+
+/* The number of bytes in a void*.  */
+#undef SIZEOF_VOIDP
+
 /* Define if you have the strstr function.  */
 #undef HAVE_STRSTR
 

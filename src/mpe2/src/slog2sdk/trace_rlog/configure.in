@@ -107,6 +107,11 @@ AC_CHECK_HEADERS( stdlib.h stdio.h string.h ctype.h errno.h )
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_BIGENDIAN
+AC_CHECK_SIZEOF( void*, $CROSS_SIZEOF_VOIDP )
+AC_CHECK_SIZEOF( int, $CROSS_SIZEOF_INT )
+AC_CHECK_SIZEOF( long, $CROSS_SIZEOF_LONG )
+AC_CHECK_SIZEOF( long long, $CROSS_SIZEOF_LONG_LONG )
+AC_CHECK_SIZEOF( __int64, $CROSS_SIZEOF___INT64 )
 
 LIBSO_PREFIX="lib"
 AC_CANONICAL_HOST
