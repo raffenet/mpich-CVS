@@ -233,6 +233,8 @@ def mpdrun():
     if (msg['cmd'] == 'job_started'):
         # print 'mpdrun: job %s started' % (msg['jobid'])
         pass
+    else:
+	mpd_raise('mpdrun: from man, unknown msg=:%s:' % (msg) )
 
     (manCliStdoutSocket,addr) = listenSocket.accept()
     (manCliStderrSocket,addr) = listenSocket.accept()
@@ -244,10 +246,17 @@ def mpdrun():
             for readySocket in readySockets:
                 if readySocket == manSocket:
                     msg = mpd_recv_one_msg(manSocket)
-                    if not msg or not msg.has_key('cmd'):
+                    if not msg:
+			pass
+                        mpd_raise('mpdrun: empty msg from man; it must have terminated early')
+		    elif not msg.has_key('cmd'):
                         mpd_raise('mpdrun: from man, invalid msg=:%s:' % (msg) )
-                    if (msg['cmd'] == 'job_terminated'):
-                        # print 'mpdrun: job %d terminated' % (msg['jobid'])
+                    elif msg['cmd'] == 'job_terminated_early':
+                        print 'mpdrun: job %s terminated early by %s' % (msg['jobid'], msg['id'])
+                        del socketsToSelect[readySocket]
+                        readySocket.close()
+                        done += 1
+                    elif (msg['cmd'] == 'job_terminated'):
                         del socketsToSelect[readySocket]
                         readySocket.close()
                         done += 1

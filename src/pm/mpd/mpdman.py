@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from os     import environ, getpid, pipe, fork, fdopen, read, write, close, dup2, \
-                   chdir, execvpe, kill, _exit
+                   chdir, execvpe, kill, access, X_OK, _exit
 from sys    import exit
 from socket import gethostname, fromfd, AF_INET, SOCK_STREAM
 from select import select, error
@@ -68,6 +68,7 @@ def mpdman():
     default_kvsname = sub('\.','_',default_kvsname)  # chg magpie.cs to magpie_cs
     exec('%s = {}' % (default_kvsname) )
     kvs_next_id = 1
+    pmiCollectiveJob = 0
 
     if nprocs == 1:  # one-man ring
         lhsSocket = mpd_get_inet_socket_and_connect(host0,port0)  # to myself
@@ -148,17 +149,17 @@ def mpdman():
         environ['PMI_SIZE'] = str(nprocs)
         environ['PMI_RANK'] = str(myRank)
         environ['PMI_DEBUG'] = str(0)
-	for envvar in clientPgmEnv:
-	    (envkey,envval) = envvar.split('=')
-	    environ[envkey] = envval
+        for envvar in clientPgmEnv:
+            (envkey,envval) = envvar.split('=')
+            environ[envkey] = envval
         ## mpd_print(0000, 'execing clientPgm=:%s:' % (clientPgm) )
         try:
             execvpe(clientPgm,clientPgmArgs,environ)    # client
         except Exception, errmsg:
             ## mpd_raise('execvpe failed for client %s; errmsg=:%s:' % (clientPgm,errmsg) )
-	    print '%s: program not found: %s' % (myId,clientPgm)
-	    exit(0)
-	_exit(0)  # just in case (does no cleanup)
+            print '%s: execvpe failed for: %s' % (myId,clientPgm)
+            exit(0)
+        _exit(0)  # just in case (does no cleanup)
     close(pipe_write_cli_stdout)
     close(pipe_write_cli_stderr)
     clientStdoutFD = pipe_read_cli_stdout
@@ -251,9 +252,9 @@ def mpdman():
                           'jobid' : jobid }
             mpd_send_one_msg(mpdSocket,msgToSend)
             msg = mpd_recv_one_msg(mpdSocket)
-	    if msg['sigtype'].isdigit():
-	        signum = int(msg['sigtype'])
-	    else:
+            if msg['sigtype'].isdigit():
+                signum = int(msg['sigtype'])
+            else:
                 import signal as tmpimp  # just to get valid SIG's
                 exec('signum = %s' % 'tmpimp.SIG' + msg['sigtype'])
             try:    
@@ -365,15 +366,17 @@ def mpdman():
                         else:
                             mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'pmi_get_response':
-		    if msg['to_rank'] == myRank:
+                    if msg['to_rank'] == myRank:
                         pmiMsgToSend = 'cmd=get_result rc=0 value=%s\n' % (msg['value'])
                         mpd_send_one_line(pmiSocket,pmiMsgToSend)
-		    else:
-		        mpd_send_one_msg(rhsSocket,msg)
-                elif msg['cmd'] == 'cannot_execute_client':
-                    mpd_send_one_msg(conSocket,msgToSend)
+                    else:
+                        mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'signal':
                     if msg['signo'] == 'SIGINT':
+                        if myRank == 0:
+                            msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'id' : myId }
+                            mpd_send_one_msg(conSocket,msgToSend)
+                            conSocket.close()
                         if rhsSocket in socketsToSelect.keys():  # still alive ?
                             mpd_send_one_msg(rhsSocket,msg)
                             rhsSocket.close()
@@ -395,7 +398,7 @@ def mpdman():
                 del socketsToSelect[rhsSocket]
                 rhsSocket.close()
             elif readySocket == clientStdoutFD:
-		line = read(clientStdoutFD,1024)
+                line = read(clientStdoutFD,1024)
                 # line = clientStdoutFile.readline()
                 if not line:
                     del socketsToSelect[clientStdoutFD]
@@ -413,8 +416,8 @@ def mpdman():
                             msgToSend = {'cmd' : 'end_barrier_loop_1'}
                             mpd_send_one_msg(rhsSocket,msgToSend)
                 else:
-		    if parentStdoutSocket:
-			if lineLabels:
+                    if parentStdoutSocket:
+                        if lineLabels:
                             splitLine = line.split('\n',1024)
                             if startLineLabel:
                                 line = myLineLabel
@@ -433,7 +436,7 @@ def mpdman():
                         mpd_send_one_line(parentStdoutSocket,line)
                         # parentStdoutSocket.sendall('STDOUT by %d: |%s|' % (myRank,line) )
             elif readySocket == clientStderrFD:
-		line = read(clientStderrFD,1024)
+                line = read(clientStderrFD,1024)
                 # line = clientStderrFile.readline()
                 if not line:
                     del socketsToSelect[clientStderrFD]
@@ -451,8 +454,8 @@ def mpdman():
                             msgToSend = {'cmd' : 'end_barrier_loop_1'}
                             mpd_send_one_msg(rhsSocket,msgToSend)
                 else:
-		    if parentStderrSocket:
-			# note not handling linelabels for stderr right now
+                    if parentStderrSocket:
+                        # note not handling linelabels for stderr right now
                         mpd_send_one_line(parentStderrSocket,line)
             elif readySocket in childrenStdoutTreeSockets:
                 line = readySocket.recv(1024)
@@ -472,7 +475,7 @@ def mpdman():
                             msgToSend = {'cmd' : 'end_barrier_loop_1'}
                             mpd_send_one_msg(rhsSocket,msgToSend)
                 else:
-		    if parentStdoutSocket:
+                    if parentStdoutSocket:
                         mpd_send_one_line(parentStdoutSocket,line)
                         # parentStdoutSocket.sendall('FWD by %d: |%s|' % (myRank,line) )
             elif readySocket in childrenStderrTreeSockets:
@@ -493,7 +496,7 @@ def mpdman():
                             msgToSend = {'cmd' : 'end_barrier_loop_1'}
                             mpd_send_one_msg(rhsSocket,msgToSend)
                 else:
-		    if parentStderrSocket:
+                    if parentStderrSocket:
                         mpd_send_one_line(parentStderrSocket,line)
                         # parentStdoutSocket.sendall('FWD by %d: |%s|' % (myRank,line) )
             elif readySocket in spawnedChildSockets:
@@ -523,6 +526,18 @@ def mpdman():
                 if not line:
                     del socketsToSelect[pmiSocket]
                     pmiSocket.close()
+                    if pmiCollectiveJob:
+			# treat it as a sigint to the entire job
+			if myRank == 0:
+			    msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'id' : myId }
+			    mpd_send_one_msg(conSocket,msgToSend)
+			    conSocket.close()
+			if rhsSocket in socketsToSelect.keys():  # still alive ?
+			    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
+			    mpd_send_one_msg(rhsSocket,msgToSend)
+			    rhsSocket.close()
+			kill(0,SIGKILL)  # pid 0 -> all in my process group
+			_exit(0)
                 else:
                     parsedMsg = parse_pmi_msg(line)
                     if parsedMsg['cmd'] == 'get_my_kvsname':
@@ -532,6 +547,7 @@ def mpdman():
                         pmiMsgToSend = 'cmd=maxes kvsname_max=4096 ' + \
                                        'keylen_max=4096 vallen_max=4096\n'
                         mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                        pmiCollectiveJob = 1    # really needs a pmi init
                     elif parsedMsg['cmd'] == 'create_kvs':
                         new_kvsname = kvsname_template + str(kvs_next_id)
                         exec('%s = {}' % (new_kvsname))
@@ -616,22 +632,24 @@ def mpdman():
                         msgToSend = { 'cmd' : 'spawn',
                                       'conhost'  : gethostname(),
                                       'conport'  : myPort,
-		                      'spawned'  : 1,
-		                      'nstarted' : 0,
+                                      'spawned'  : 1,
+                                      'nstarted' : 0,
                                       'nprocs'   : nprocs,
-		                      'hosts'    : hosts,
+                                      'hosts'    : hosts,
                                       'execs'    : execs,
                                       'users'    : users,
                                       'cwds'     : cwds,
                                       'paths'    : paths,
                                       'args'     : args,
                                       'envvars'  : envvars
-		                    }
+                                    }
                         numWithIO += 2    # this proc may produce stdout and stderr
                         mpd_send_one_msg(mpdSocket,msgToSend)
-			# we send a result back to client after exchging kvs with spawnee
+                        # we send a result back to client after exchging kvs with spawnee
                         mpdSocket.close()
                         mpdSocket = 0
+                    elif parsedMsg['cmd'] == 'finalize':
+                        pmiCollectiveJob = 0
                     else:
                         mpd_print(1, "unrecognized pmi msg :%s:" % line )
             elif readySocket == conSocket:
@@ -685,10 +703,9 @@ if __name__ == '__main__':
     if not environ.has_key('MPDMAN_CLI_PGM'):    # assume invoked from keyboard
         print 'mpdman for mpd version: %s' % str(mpd_version)
         print 'mpdman does NOT run as a console program; should be execd by mpd'
-	exit(-1)
+        exit(-1)
     try:
         mpdman()
     except mpdError, errmsg:
-	## RMB
-	print 'mpdman failed; cause: %s' % (errmsg)
-	pass
+        print 'mpdman failed; cause: %s' % (errmsg)  ##
+        pass
