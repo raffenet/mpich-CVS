@@ -42,8 +42,10 @@ State [handle result]
 	Event [data read]
 		if success
 			Change_State([writing cred ack yes],[label="success"])
-		else fail
+		if fail
 			Change_State([writing cred ack no],[label="fail"])
+		if sspi
+			Change_State([writing cred ack sspi],[label="sspi"])
 State [writing cred ack sspi]
         Event [data written]
                 Change_State([writing sspi_init])
