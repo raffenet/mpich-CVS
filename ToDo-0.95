@@ -2,12 +2,25 @@ Designs/Discussions/Decissions (to be made):
 
 * what are the requirements for the Sept 25 release?
 
+  * OSC: testing, active target only acceptible, passive target would be great
+
+  * dynamic processes: implementation and testing; doesn't need to be for all
+    channels
+
+  * service routines: generalized requests
+
+  * intercommunicator collectives
+
+  * coverage analysis to be happy (test/mpi)
+
+  * no thread-multiple
+
 * deprecate sock channel in favor of ssm? this depends on performance and CPU
-  load issues.
+  load issues.  NOT YET
 
 * threads: user vs. device.  how do we separate them but reuse code and make
   them peacefully coexist?  (the device may use threads even if
-  MPICH_SINGLE_THREADED is defined)
+  MPICH_SINGLE_THREADED is defined)  <deferred>
 
 * fault tolerance: required for master/slave (Rusty) and dynamic process
   support.  we need a design that defines appropriate actions for fault
@@ -32,6 +45,8 @@ Open Tasks:
 
 * (doc, req #125) documentation generator [Bill/?]
 
+* failures on 64-bit platforms
+
 * (util, req #125) parameter interface and implementation [Bill/?]
 
 * (util/sock) revisit the sock interface and redo sock implementations to
@@ -45,6 +60,16 @@ Open Tasks:
 * (ch3:sock/ssm) rework progress engine to use improved sock interface and
   significant improve dynamic process support.  also, increase robustness and
   error reporting [Brian/David/Rajeev]
+
+* (ch3/ch3:all) CH3U_Request_complete() potentially frees the request.  The
+  caller then typically looks at the iov_count field in the request.  The CH3
+  device should be using CH3U_Request_set_io_complete() instead.  The channels
+  should use CH3U_Request_get_io_complete() and then only call
+  CH3U_Request_complete() if the I/O is complete.  Furthermore,
+  CH3_Progress_signal_completion() may not need to be called by
+  CH3_Request_complete() in all cases, suggesting that it be taken out of
+  CH3U_Request_complete() and a new macro
+  CH3U_Request_complete_and_signal_progress() be added.
 
 * (ch3:all) threaded progress engine to support passive target RMA
   [Brian/David]
@@ -69,14 +94,19 @@ Open Tasks:
 
 * (ch3:shm/ssm) IA-64 assembly [Brian/David]
 
-* (ch3:shm/ssm) support for non-Intel architectures (generic solution)
-  [David/Brian]
-
 * (ch3:ssm) topology/protocol specification [Bill/Rusty/David/Brian]
 
 * (mpi/ch3/ch3:all) support for user threads.  afirst cut of MPI pt2pt and CH3
   device exists, but better thread abstraction, etc. neecs to be worked out.
   this should be broken into multiple tasks as items are discovered.
+
+* (ch3) MPID_Finalize() must barrier across all connected processes.  We will
+  need to track all connections (as defined by the MPI standard), probably by
+  tracking all connected communicators.  MPID_Finalize() could then call
+  MPI_Comm_disconnect on each communicator (ordering may be a problem,
+  i.e. deadlock).  NOTE: calling MPI_Comm_free() on a communicator does not
+  disconnect the processes involved in the communicator.  Only
+  MPI_Comm_disconnect() does that.
 
 * (ch3) flow control [Brian]
 
@@ -176,6 +206,9 @@ Open Tasks:
 * (req #16) DNS scalability - reduce number of name (and reverse name) lookups
   in sock and ssm channels [Brian/David]
 
+* (ch3:shm/ssm) support for non-Intel architectures (generic solution)
+  [David/Brian]
+
 * measure and compare performance of sock and ssm (using sock) [David]
 
 * measure and compare performance of shm and ssm (using shm) [David]
@@ -219,6 +252,7 @@ Deferred Items:
 
 * (doc, ch3) write CH3 design paper [Brian/Bill/others?]
 
+* Totalview integration
 
 ===============================================================================
 
