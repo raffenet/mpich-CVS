@@ -19,35 +19,50 @@ while (<>) {
     # Remove the \_ expansion
     s/\\discretionary \{-\}\{\}\{\}//g;
     s/{\\texttt{\\char *`\\_ *}/_/g;
-    if (/\\indexentry{MPID_(.)([A-Za-z0-9_]*)}{(.*)}/) {
+    if (/\\indexentry{MPID_(.)([A-Za-z0-9_]*)(!?[A-Za-z0-9_]*)}{(.*)}/) {
         $firstchar = $1;
         $name = $2;
-	$rest = $3;
+        $subitem=$3;
+	$rest = $4;
         $key="MPID_$firstchar$name";
 	if (!defined($specialnames{$key})) {
   	    $name =~ tr/A-Z/a-z/;				     
         }
-        print "\\indexentry{$firstchar${name}_MPID}{$rest}\n";
+        print "\\indexentry{$firstchar${name}_MPID$subitem}{$rest}\n";
         }
-    elsif (/\\indexentry{MPI_(ERR_[A-Za-z0-9_]*)}{(.*)}/) {
+    elsif (/\\indexentry{MPIi_(.)([A-Za-z0-9_]*)(!?[A-Za-z0-9_]*)}{(.*)}/) {
+        $firstchar = $1;
+        $name = $2;
+        $subitem=$3;
+	$rest = $4;
+        $key="MPIi_$firstchar$name";
+	if (!defined($specialnames{$key})) {
+  	    $name =~ tr/A-Z/a-z/;				     
+        }
+        print "\\indexentry{$firstchar${name}_MPIi$subitem}{$rest}\n";
+        }
+    elsif (/\\indexentry{MPI_(ERR_[A-Za-z0-9_]*)(!?[A-Za-z0-9_]*)}{(.*)}/) {
         $name = $1;
-	$rest = $2;
-        print "\\indexentry{${name}_MPI}{$rest}\n";
+        $subitem = $2;
+	$rest = $3;
+        print "\\indexentry{${name}_MPI$subitem}{$rest}\n";
 	}
     elsif (/\\indexentry{MPI_(COMBINER_[A-Za-z0-9_]*)}{(.*)}/) {
         $name = $1;
 	$rest = $2;
         print "\\indexentry{${name}_MPI}{$rest}\n";
 	}
-    elsif (/\\indexentry{MPI_(.)([A-Za-z0-9_]*)}{(.*)}/) {
-        $firstchar = $1;
-        $name = $2;
-	$rest = $3;
+    elsif (/\\indexentry{(P?)MPI_(.)([A-Za-z0-9_\(\)]*)(!?[A-Za-z0-9_]*)}{(.*)}/) {
+        $leadchar  = $1;
+        $firstchar = $2;
+        $name      = $3;
+        $subitem   = $4;
+	$rest      = $5;
         $key="MPI_$firstchar$name";
 	if (!defined($specialnames{$key})) {
 	    $name =~ tr/A-Z/a-z/;
         }
-        print "\\indexentry{$firstchar${name}_MPI}{$rest}\n";
+        print "\\indexentry{$firstchar${name}_${leadchar}MPI$subitem}{$rest}\n";
         }
     else {
 	print $_;
