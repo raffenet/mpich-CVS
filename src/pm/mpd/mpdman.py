@@ -75,7 +75,7 @@ def mpdman():
     default_kvsname = sub('\-','_',default_kvsname)  # chg node-0 to node_0
     KVSs[default_kvsname] = {}
     x = [y for y in clientPgmEnv.keys() if (y.startswith('MPI_UNIVERSE_SIZE') or \
-                                            y.startswith('MPI_APPNUM'))]
+                                            y.startswith('MPI_APP_NUM'))]
     for k in x:
         KVSs[default_kvsname][k] = clientPgmEnv[k]
     kvs_next_id = 1
@@ -723,7 +723,8 @@ def mpdman():
                         users   = { (0,nprocs-1) : mpd_get_my_username() }
                         cwds    = { (0,nprocs-1) : environ['MPDMAN_CWD'] }
                         paths   = { (0,nprocs-1) : '' }
-                        envvars = { (0,nprocs-1) : '' }
+                        envvars = { (0,nprocs-1) : { 'MPI_UNIVERSE_SIZE' : '1000',
+                                                     'MPI_APP_NUM' : '736' }
                         ##### args    = { (0,nprocs-1) : [ parsedMsg['args'] ] }
                         ##### args    = { (0,nprocs-1) : [ 'AA', 'BB', 'CC' ] }
                         cliArgs = []
