@@ -420,7 +420,7 @@ def process_cmdline_args():
                 elif argv[argidx] == '-l':
                     lineLabels = 1
                     argidx += 1
-                elif argv[argidx] == '-1':
+                elif argv[argidx] == '-1' or argv[argidx] == '-nolocal':
                     try0Locally = 0
                     argidx += 1
                 elif argv[argidx] == '-s':
