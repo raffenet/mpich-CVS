@@ -393,6 +393,10 @@ with MPI_Alloc_mem.
 #
 # CH3 errors
 #
+**opundefined:only predefined ops valid
+**opundefined %d:only predefined ops valid (op = %d)
+**opundefined_rma:RMA target received unknown RMA operation
+**opundefined_rma %d:RMA target received unknown RMA operation type %d
 
 #
 # CH3:sock errors
@@ -414,6 +418,8 @@ with MPI_Alloc_mem.
 **ch3|sock|badbuscard:[ch3:sock] GetHostAndPort: Invalid business card
 **ch3|sock|badbuscard %s:[ch3:sock] GetHostAndPort: Invalid business card (%s)
 **ch3|sock|connallocfailed:[ch3:sock] unable to allocate a connection structure
+**ch3|sock|pmi_finalize:PMI_Finalize failed
+**ch3|sock|pmi_finalize %d:PMI_Finalize failed, error %d
 
 #
 # CH3:mm

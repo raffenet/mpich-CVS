@@ -33,7 +33,7 @@ int MPIDI_CH3_Finalize()
     rc = PMI_Finalize();
     if (rc != 0)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**pmi_finalize", "**pmi_finalize %d", rc);
+	mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|pmi_finalize", "**ch3|sock|pmi_finalize %d", rc);
     }
 
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
