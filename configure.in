@@ -706,6 +706,24 @@ if test "$pac_cv_int32_t" = "no" ; then
 else
     AC_DEFINE(HAVE_INT32_T,,[Define if int32_t is supported by the C compiler])
 fi
+AC_CACHE_CHECK([for int64_t],pac_cv_int64_t,[
+AC_TRY_COMPILE([#include <sys/types.h>],[int64_t a=0;],
+pac_cv_int64_t=yes,pac_cv_int64_t=no)])
+dnl
+dnl If there is not int64_t, try to define one
+if test "$pac_cv_int64_t" = "no" ; then
+    if test -z "$CROSS_SIZEOF_LONG_LONG" ; then CROSS_SIZEOF_LONG_LONG=8 ; fi
+    AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_LONG_LONG)
+    if test "$ac_cv_sizeof_long_long" = 8 ; then 
+        INT64_T=long long
+    else
+        # No good alternative
+        INT64_T=long long
+    fi
+    AC_SUBST(INT64_T)
+else
+    AC_DEFINE(HAVE_INT64_T,,[Define if int64_t is supported by the C compiler])
+fi
 dnl
 dnl Generate a hex version of the size of each type
 for type in short int long long_long float double long_double wchar_t \
