@@ -23,5 +23,10 @@ default: $(LIBNAME)
 $(LIBNAME): $(AD_UFS_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_UFS_OBJECTS)
 
+coverage:
+	-@for file in  ${AD_UFS_OBJECTS:.o=.c} ; do \
+		gcov -b -f $$file ; done
+
+
 clean:
 	@rm -f *.o

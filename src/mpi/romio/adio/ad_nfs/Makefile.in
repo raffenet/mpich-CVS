@@ -22,5 +22,9 @@ default: $(LIBNAME)
 $(LIBNAME): $(AD_NFS_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_NFS_OBJECTS)
 
+coverage:
+	-@for file in  ${AD_NFS_OBJECTS:.o=.c} ; do \
+		gcov -b -f $$file ; done
+
 clean:
 	@rm -f *.o

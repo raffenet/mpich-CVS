@@ -149,6 +149,11 @@ profile:
             done \
 	fi
 
+coverage:
+	(cd mpi-io && make coverage)
+	(cd adio/ad_ufs && make coverage
+	(cd adio/ad_nfs && make coverage)
+
 cleanall:
 	@dirs=`echo "$(ALL_DIRS)"`; \
 	echo "cleaning test directory" ;\

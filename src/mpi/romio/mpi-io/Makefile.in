@@ -77,6 +77,10 @@ profile: $(MPIO_TMP_POBJECTS) $(MPIO_EXTRA_TMP_POBJECTS)
 	$(AR) $(LIBNAME) $(MPIO_REAL_POBJECTS) $(MPIO_EXTRA_REAL_POBJECTS)
 	@rm -f _*.o
 
+coverage:
+	-@for file in  ${MPIO_OBJECTS:.o=.c} ; do \
+		gcov -b -f $$file ; done
+
 $(LIBNAME): $(MPIO_OBJECTS) $(MPIO_EXTRA_OBJECTS)
 	$(AR) $(LIBNAME) $(MPIO_OBJECTS) $(MPIO_EXTRA_OBJECTS)
 
