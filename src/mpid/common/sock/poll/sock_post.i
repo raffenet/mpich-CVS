@@ -97,6 +97,7 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
      * FIXME: this should handle failures caused by a backed up listener queue at the remote process.  It should also use a
      * specific interface if one is specified by the user.
      */
+    strtok(host_description, " ");
     hostent = gethostbyname(host_description);
     if (hostent == NULL || hostent->h_addrtype != AF_INET)
     {
