@@ -13,7 +13,8 @@ int main(int argc, char *argv[])
 {
     /* Variable declarations */
     int a[100][100], b[100][100];
-    int row, xpose, sizeofint;
+    MPI_Datatype row, xpose;
+    int sizeofint;
 	
     int err, errs = 0;
     int bufsize, position;
@@ -42,7 +43,7 @@ int main(int argc, char *argv[])
 	
     /* Pack it. */
     MPI_Pack_size(1, xpose, MPI_COMM_WORLD, &bufsize);
-    buffer = (void *) malloc((unsigned) bufsize);
+    buffer = (char *) malloc((unsigned) bufsize);
 
     err = MPI_Pack(a,
 		   1,

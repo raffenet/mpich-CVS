@@ -25,14 +25,14 @@
   Return Value:
   0 on success, -1 on failure.
 
-  This routine calls MPID_Dataloop_copy() to create the loops for this
-  new datatype.  It calls MPIU_Handle_obj_alloc() to allocate space for the new
-  datatype.
+  This version relies on other MPID_Type routines in order to create the
+  final type.
+
+  The resulting type will bear little resemblance to what was passed in, and
+  currently get contents/envelope would not work.
 @*/
 
-/* NOTE: This isn't a good example to copy, because the extent calculations
- * made me move code blocks into odd places. -- Rob Ross
- *
+/*
  * THIS VERSION CONVERTS THE STRUCT INTO AN HINDEXED, SO IT'S ONLY GOOD FOR
  * HOMOGENOUS SYSTEMS!!!
  */
