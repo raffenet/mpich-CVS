@@ -792,6 +792,37 @@ if test -n "$arch_alpha" ; then
     ROMIO_LIBLIST="-laio"
 fi    
 #
+if test -n "$arch_CRAY" ; then
+    CC=${CC:-cc}
+    F77=${FC:-f90}
+    NOF77=1
+    if test $DEBUG = 1; then
+        CFLAGS="$CFLAGS -g -D__NO_AIO"
+    else 
+        CFLAGS="$CFLAGS -O -D__NO_AIO"
+    fi
+    RANLIB=":"
+    CFLAGS="$CFLAGS -D__CRAY"
+    if test -z "$MPI" || test -n "$mpi_sgi" ; then
+        MPI=cray
+        mpi_cray=1
+        mpi_sgi=""
+# above is to disable configure tests specific to SGI MPI
+        CFLAGS="$CFLAGS -D__MPISGI -D__HAS_MPI_COMBINERS -D__NO_MPI_SGI_type_is_contig"
+    fi
+#       __MPISGI needed because of error in Cray's and SGI's 
+#       MPI_Type_get_contents (does not increment reference count).
+#       Others needed because __MPISGI needed.
+    if test -z "$FILE_SYSTEM" ; then
+        file_system_ufs=1
+        file_system_nfs=1
+        FILE_SYSTEM="ufs nfs"
+        echo "configuring for file systems ufs and nfs"
+    fi
+    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
+    MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
+fi
+#
 if test -n "$arch_sgi" ; then
     arch_IRIX=1
     ARCH=IRIX
@@ -1089,7 +1120,7 @@ echo $ac_n "checking if pread64 is defined""... $ac_c"
 else
 echo $ac_n "checking if pread64 is defined""... $ac_c" 1>&1
 fi
-  \rm -f conftest.c
+  rm -f conftest.c
   cat > conftest.c <<EOF
 #include <unistd.h>
      main()
@@ -1099,9 +1130,9 @@ fi
          pread64(fd, &buf, i, off);
      }
 EOF
-  \rm -f a.out
+  rm -f a.out
   $CC $USER_CFLAGS conftest.c > /dev/null 2>&1
-  if test -s a.out ; then
+  if test -x a.out ; then
       if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -1122,7 +1153,7 @@ else
 echo "$ac_t""no" 1>&1
 fi
   fi
-\rm -f a.out conftest.c
+rm -f a.out conftest.c
 
 #
    if test -z "$FILE_SYSTEM" ; then
@@ -1191,7 +1222,7 @@ fi
 if test $NOF77 = 0 ; then
     echo "checking Fortran external names"
     
-   \rm -f confftest.f confftest.o
+   rm -f confftest.f confftest.o
    cat > confftest.f <<EOF
        subroutine mpir_init_fop( a )
        integer a
@@ -1218,7 +1249,7 @@ EOF
      nameform3=`strings -a confftest.o | grep mpir_init_fop   | head -1`
      nameform4=`strings -a confftest.o | grep mpir_init_fop__ | head -1`
     fi
-    \rm -f confftest.f confftest.o
+    rm -f confftest.f confftest.o
     if test -n "$nameform4" ; then
 	echo "Fortran externals are lower case and have two trailing underscores"
 	FORTRANNAMES="FORTRANDOUBLEUNDERSCORE"
@@ -1562,7 +1593,7 @@ echo $ac_n "checking if the compiler prints long longs correctly with %lld""... 
 else
 echo $ac_n "checking if the compiler prints long longs correctly with %lld""... $ac_c" 1>&1
 fi
-\rm -f conftestll
+rm -f conftestll
 cat > conftest.c <<EOF
 #include "confdefs.h"
 #include <stdio.h>
@@ -1582,7 +1613,7 @@ else
   Pac_CV_NAME=""
 fi
 rm -fr conftest*
-\rm -f conftestll
+rm -f conftestll
 if test "$Pac_CV_NAME" = 8 ; then
     if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
@@ -1651,7 +1682,7 @@ else
   Pac_CV_NAME=""
 fi
 rm -fr conftest*
-    \rm -f conftestll
+    rm -f conftestll
     if test "$Pac_CV_NAME" = 8 ; then
        if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
@@ -1695,7 +1726,7 @@ fi
          MPI_OFFSET_KIND2="!"
       fi
    else 
-      \rm -f ltest.c
+      rm -f ltest.c
       cat > ltest.c <<EOF
         main()
         {
@@ -1703,11 +1734,11 @@ fi
            return 0;
         }
 EOF
-      \rm -f a.out
+      rm -f a.out
       $CC $USER_CFLAGS ltest.c > /dev/null 2>&1
-      if test -s a.out ; then
+      if test -x a.out ; then
          echo "assuming size of long long is 8bytes; use '-longlongsize' to indicate otherwise"
-         \rm -f a.out ltest.c
+         rm -f a.out ltest.c
          echo "defining MPI_Offset as long long in C and integer*8 in Fortran" 
          
 {
@@ -1762,7 +1793,7 @@ echo $ac_n "checking if MPI_LONG_LONG_INT is defined in mpi.h""... $ac_c"
 else
 echo $ac_n "checking if MPI_LONG_LONG_INT is defined in mpi.h""... $ac_c" 1>&1
 fi
-  \rm -f mpitest.c
+  rm -f mpitest.c
   cat > mpitest.c <<EOF
 #include "mpi.h"
      main(int argc, char **argv)
@@ -1773,9 +1804,9 @@ fi
          MPI_Finalize(); 
      }
 EOF
-  \rm -f a.out
+  rm -f a.out
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -s a.out ; then
+  if test -x a.out ; then
       if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -1796,7 +1827,7 @@ else
 echo "$ac_t""no" 1>&1
 fi
   fi
-  \rm -f a.out mpitest.c
+  rm -f a.out mpitest.c
 
    else
        
@@ -1902,7 +1933,7 @@ echo $ac_n "checking if MPI_Info functions are defined in the MPI implementation
 else
 echo $ac_n "checking if MPI_Info functions are defined in the MPI implementation""... $ac_c" 1>&1
 fi
-  \rm -f mpitest.c
+  rm -f mpitest.c
   cat > mpitest.c <<EOF
 #include "mpi.h"
      main(int argc, char **argv)
@@ -1913,9 +1944,9 @@ fi
          MPI_Finalize(); 
      }
 EOF
-  \rm -f a.out
+  rm -f a.out
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -s a.out ; then
+  if test -x a.out ; then
       if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -1946,7 +1977,7 @@ fi
       MPI_FINFO3="      INTEGER MPI_INFO_NULL"
       MPI_FINFO4="      PARAMETER (MPI_INFO_NULL=0)"
   fi
-  \rm -f a.out mpitest.c
+  rm -f a.out mpitest.c
 
 else
    
@@ -1992,7 +2023,7 @@ echo $ac_n "checking if MPI_INFO_NULL is defined in mpi.h""... $ac_c"
 else
 echo $ac_n "checking if MPI_INFO_NULL is defined in mpi.h""... $ac_c" 1>&1
 fi
-  \rm -f mpitest.c
+  rm -f mpitest.c
   cat > mpitest.c <<EOF
 #include "mpi.h"
      main(int argc, char **argv)
@@ -2001,15 +2032,15 @@ fi
 	i = MPI_INFO_NULL;
      }
 EOF
-  \rm -f a.out
+  rm -f a.out
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -s a.out ; then
+  if test -x a.out ; then
       if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
 echo "$ac_t""yes" 1>&1
 fi
-      \cp adio/sgi/mpi3.1/*.h include
+      cp adio/sgi/mpi3.1/*.h include
   else
       if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""no"
@@ -2017,7 +2048,7 @@ else
 echo "$ac_t""no" 1>&1
 fi
   fi
-  \rm -f a.out mpitest.c
+  rm -f a.out mpitest.c
   # is MPI_INFO_NULL defined in mpi.h?
    fi
    
@@ -2046,7 +2077,7 @@ echo $ac_n "checking if MPI_SGI_type_is_contig is defined""... $ac_c"
 else
 echo $ac_n "checking if MPI_SGI_type_is_contig is defined""... $ac_c" 1>&1
 fi
-  \rm -f mpitest.c
+  rm -f mpitest.c
   cat > mpitest.c <<EOF
 #include "mpi.h"
      main(int argc, char **argv)
@@ -2059,9 +2090,9 @@ fi
          MPI_Finalize(); 
      }
 EOF
-  \rm -f a.out
+  rm -f a.out
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -s a.out ; then
+  if test -x a.out ; then
      if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -2082,7 +2113,7 @@ DEFS="$DEFS -D__NO_MPI_SGI_type_is_contig=1"
 }
 
   fi
-  \rm -f a.out mpitest.c
+  rm -f a.out mpitest.c
 
    
   if test -z "$ac_echo_n" ; then
@@ -2110,7 +2141,7 @@ echo $ac_n "checking if MPI-2 combiners are defined in mpi.h""... $ac_c"
 else
 echo $ac_n "checking if MPI-2 combiners are defined in mpi.h""... $ac_c" 1>&1
 fi
-  \rm -f mpitest.c
+  rm -f mpitest.c
   cat > mpitest.c <<EOF
 #include "mpi.h"
      main(int argc, char **argv)
@@ -2122,9 +2153,9 @@ fi
          MPI_Finalize(); 
      }
 EOF
-  \rm -f a.out
+  rm -f a.out
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -s a.out ; then
+  if test -x a.out ; then
      if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -2145,7 +2176,7 @@ else
 echo "$ac_t""no" 1>&1
 fi
   fi
-  \rm -f a.out mpitest.c
+  rm -f a.out mpitest.c
 
 fi
 #
@@ -2177,7 +2208,7 @@ echo $ac_n "checking if darray and subarray constructors are defined in the MPI 
 else
 echo $ac_n "checking if darray and subarray constructors are defined in the MPI implementation""... $ac_c" 1>&1
 fi
-  \rm -f mpitest.c
+  rm -f mpitest.c
   cat > mpitest.c <<EOF
 #include "mpi.h"
      main(int argc, char **argv)
@@ -2190,9 +2221,9 @@ fi
          MPI_Finalize(); 
      }
 EOF
-  \rm -f a.out
+  rm -f a.out
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -s a.out ; then
+  if test -x a.out ; then
       if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -2229,7 +2260,7 @@ fi
       MPI_FARRAY6="      PARAMETER (MPI_DISTRIBUTE_NONE=123)"
       MPI_FARRAY7="      PARAMETER (MPI_DISTRIBUTE_DFLT_DARG=-49767)"
   fi
-  \rm -f a.out mpitest.c
+  rm -f a.out mpitest.c
 
 else
    
@@ -2314,7 +2345,7 @@ echo $ac_n "checking if mpiof.h is included in mpif.h""... $ac_c"
 else
 echo $ac_n "checking if mpiof.h is included in mpif.h""... $ac_c" 1>&1
 fi
-  \rm -f mpitest.f
+  rm -f mpitest.f
   cat > mpitest.f <<EOF
       program main
       implicit none
@@ -2324,9 +2355,9 @@ fi
       stop
       end
 EOF
-  \rm -f a.out
+  rm -f a.out
   $F77 $FFLAGS -I$MPI_INCLUDE_DIR mpitest.f $MPI_LIB > /dev/null 2>&1
-  if test -s a.out ; then
+  if test -x a.out ; then
       if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -2340,7 +2371,7 @@ else
 echo "$ac_t""no" 1>&1
 fi
   fi
-  \rm -f a.out mpitest.f
+  rm -f a.out mpitest.f
 
    fi
 fi
@@ -2434,7 +2465,7 @@ echo $ac_n "checking if a simple MPI program compiles and links""... $ac_c"
 else
 echo $ac_n "checking if a simple MPI program compiles and links""... $ac_c" 1>&1
 fi
-  \rm -f mpitest.c
+  rm -f mpitest.c
   cat > mpitest.c <<EOF
 #include "mpi.h"
      main(int argc, char **argv)
@@ -2443,17 +2474,17 @@ fi
          MPI_Finalize(); 
      }
 EOF
-  \rm -f a.out
+  rm -f a.out
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test ! -s a.out ; then
+  if test ! -x a.out ; then
       echo " "
       print_error "Unable to compile a simple MPI program"
       print_error "Use the -mpi, -mpiincdir, and -mpilib options to configure to specify the"
       print_error "MPI implementation, the include path for mpi.h, and the MPI library to link"
-      \rm -f a.out mpitest.c
+      rm -f a.out mpitest.c
       exit 1
   else
-      \rm -f a.out mpitest.c
+      rm -f a.out mpitest.c
   fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
@@ -2495,7 +2526,7 @@ fi
          i = 0;
      }
 EOF
-  \rm -f mpitest1.o
+  rm -f mpitest1.o
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -c mpitest1.c > /dev/null 2>&1
   if test ! -s mpitest1.o ; then
       NEEDS_MPI_FINT="#define __NEEDS_MPI_FINT"
@@ -2505,7 +2536,7 @@ echo "$ac_t""no"
 else
 echo "$ac_t""no" 1>&1
 fi
-      \rm -f mpitest1.o mpitest1.c
+      rm -f mpitest1.o mpitest1.c
   else
       NEEDS_MPI_FINT=""
       if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -2513,14 +2544,19 @@ echo "$ac_t""yes"
 else
 echo "$ac_t""yes" 1>&1
 fi
-      \rm -f mpitest1.o mpitest1.c
+      rm -f mpitest1.o mpitest1.c
   fi
 
 else
    NEEDS_MPI_FINT=""
 fi
 #
-ROMIO_INCLUDE="-I$ROMIO_HOME/include"
+if test "$MPI_INCLUDE_DIR" = "." ; then
+   ROMIO_INCLUDE="-I$ROMIO_HOME/include"
+else 
+   ROMIO_INCLUDE="-I$ROMIO_HOME/include -I$MPI_INCLUDE_DIR"
+fi
+#
 TEST_LIBNAME=$LIBNAME
 MPIRUN=mpirun
 #

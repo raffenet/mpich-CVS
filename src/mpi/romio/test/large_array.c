@@ -1,5 +1,5 @@
 #include "mpi.h"
-#include "mpio.h"
+#include "mpio.h"  /* not necessary with MPICH 1.1.1 or HPMPI 1.4 */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -13,7 +13,7 @@
 /* This program will work only if the MPI implementation defines MPI_Aint 
    as a 64-bit integer. */
    
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     MPI_Datatype newtype;
     int i, ndims, array_of_gsizes[3], array_of_distribs[3];
@@ -61,7 +61,7 @@ main(int argc, char **argv)
 
     array_of_gsizes[0] = 1024;
     array_of_gsizes[1] = 1024;
-    array_of_gsizes[2] = 1024;
+    array_of_gsizes[2] = 4*1024/sizeof(int);
 
     array_of_distribs[0] = MPI_DISTRIBUTE_BLOCK;
     array_of_distribs[1] = MPI_DISTRIBUTE_BLOCK;
@@ -137,4 +137,5 @@ main(int argc, char **argv)
     }
 
     MPI_Finalize();
+    return 0;
 }
