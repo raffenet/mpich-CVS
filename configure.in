@@ -167,7 +167,7 @@ else
 fi
 dnl with-pmi
 if test "$with_pmi" = "default" ; then
-    with_pmi=mpd
+    with_pmi=forker
 fi
 pmi_name=$with_pmi
 dnl
