@@ -6,6 +6,7 @@
 
 #include "mpiimpl.h"
 #include "mpiu_events.h"
+#include "mpidu_process_locks.h" /* MPIDU_Yield */
 /*#include "mpimem.h"*/
 #include "mpi.h"
 #include <stdio.h>
@@ -323,10 +324,12 @@ int MPIU_Event_create(MPIU_Event *event, char *name, int length)
 
 int MPIU_Event_open(MPIU_Event *event, char *name)
 {
-    int mpi_errno;
+    int n;
     int *p;
-    sscanf(name, "%p", &p);
-    return MPI_SUCCESS;
+    n = sscanf(name, "%p", &p);
+    if (n == 1)
+	return MPI_SUCCESS;
+    return -1;
 }
 
 int MPIU_Event_close(MPIU_Event event)
@@ -397,11 +400,11 @@ int MPIU_Event_test_multiple(MPIU_Event *events, int num_events, int *any_set_fl
     {
 	if (*events[i] != 0)
 	{
-	    *any_set = 1;
+	    *any_set_flag = 1;
 	    return MPI_SUCCESS;
 	}
     }
-    *any_set = 0;
+    *any_set_flag = 0;
     return MPI_SUCCESS;
 }
 
