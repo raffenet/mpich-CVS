@@ -13,7 +13,17 @@
 #include "mpimem.h"
 
 #include "mpi.h"
-#define RLOG_timestamp PMPI_Wtime
+/*#define RLOG_timestamp PMPI_Wtime*/
+#include "timerconf.h"
+#include "mpichtimer.h"
+double RLOG_timestamp()
+{
+    double d;
+    MPID_Time_t t;
+    MPID_Wtime(&t);
+    MPID_Wtime_todouble(&t, &d);
+    return d;
+}
 
 static int WriteFileData(const char *pBuffer, int length, FILE *fout)
 {
@@ -109,12 +119,12 @@ int RLOG_FinishLog(RLOG_Struct* pRLOG, const char *filename)
 
 void RLOG_EnableLogging(RLOG_Struct* pRLOG)
 {
-    pRLOG->bLogging = TRUE;
+    pRLOG->bLogging = RLOG_TRUE;
 }
 
 void RLOG_DisableLogging(RLOG_Struct* pRLOG)
 {
-    pRLOG->bLogging = FALSE;
+    pRLOG->bLogging = RLOG_FALSE;
 }
 
 void RLOG_SaveFirstTimestamp(RLOG_Struct* pRLOG)
@@ -155,7 +165,7 @@ void WriteCurrentDataAndLogEvent(RLOG_Struct *pRLOG, int event, double starttime
 #ifndef RLOG_LogEvent
 void RLOG_LogEvent(RLOG_Struct *pRLOG, int event, double starttime, double endtime, int recursion)
 {
-    if (pRLOG->bLogging == FALSE)
+    if (pRLOG->bLogging == RLOG_FALSE)
 	return;
 
     if (pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER) + sizeof(RLOG_EVENT) > pRLOG->pOutput->pEnd)
@@ -179,7 +189,7 @@ void RLOG_LogEvent(RLOG_Struct *pRLOG, int event, double starttime, double endti
 
 void RLOG_LogSend(RLOG_Struct* pRLOG, int dest, int tag, int size)
 {
-    if (pRLOG->bLogging == FALSE)
+    if (pRLOG->bLogging == RLOG_FALSE)
 	return;
 
     if (pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER) + sizeof(RLOG_IARROW) > pRLOG->pOutput->pEnd)
@@ -206,7 +216,7 @@ void RLOG_LogSend(RLOG_Struct* pRLOG, int dest, int tag, int size)
 
 void RLOG_LogRecv(RLOG_Struct* pRLOG, int src, int tag, int size)
 {
-    if (pRLOG->bLogging == FALSE)
+    if (pRLOG->bLogging == RLOG_FALSE)
 	return;
 
     if (pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER) + sizeof(RLOG_IARROW) > pRLOG->pOutput->pEnd)
@@ -236,7 +246,7 @@ void RLOG_LogCommID(RLOG_Struct* pRLOG, int comm_id)
     RLOG_HEADER *pHeader;
     RLOG_COMM *pComm;
 
-    if (pRLOG->bLogging == FALSE)
+    if (pRLOG->bLogging == RLOG_FALSE)
 	return;
 
     if (pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER) + sizeof(RLOG_COMM) > pRLOG->pOutput->pEnd)
@@ -264,7 +274,7 @@ void RLOG_DescribeState(RLOG_Struct* pRLOG, int state, char *name, char *color)
     RLOG_HEADER *pHeader;
     RLOG_STATE *pState;
 
-    if (pRLOG->bLogging == FALSE)
+    if (pRLOG->bLogging == RLOG_FALSE)
 	return;
 
     if (pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER) + sizeof(RLOG_STATE) > pRLOG->pOutput->pEnd)
