@@ -30,7 +30,7 @@
 #define CREATE_DIFFERENCE_CURVES
 #undef CREATE_SINGLE_CURVE
 
-#define MAX_NUM_O12_TRIALS 20
+#define MAX_NUM_O12_TRIALS 18
 #define TRIALS          7
 #define PERT            3
 #define LONGTIME        1e99
@@ -1181,7 +1181,7 @@ skip_12_trial:
 		}
 #endif
 	    }
-	    /* get the lef stuff out */
+	    /* get the left stuff out */
 	    MPI_Bcast(&index01, 1, MPI_INT, g_left_rank, MPI_COMM_WORLD);
 	    MPI_Bcast(&bwdata01[n-index01].bits, 1, MPI_INT, g_left_rank, MPI_COMM_WORLD);
 	    MPI_Bcast(&bwdata01[n-index01].bps, 1, MPI_DOUBLE, g_left_rank, MPI_COMM_WORLD);
@@ -1190,34 +1190,6 @@ skip_12_trial:
 	    MPI_Bcast(&index12, 1, MPI_INT, g_middle_rank, MPI_COMM_WORLD);
 	    MPI_Bcast(&bwdata12[n-index12].bps, 1, MPI_DOUBLE, g_middle_rank, MPI_COMM_WORLD);
 	    MPI_Bcast(&bwdata12[n-index12].t, 1, MPI_DOUBLE, g_middle_rank, MPI_COMM_WORLD);
-	    /*
-	    if (g_proc_loc == LEFT_PROCESS && g_nIproc != 0)
-	    {
-		MPI_Send(&index01, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
-		MPI_Send(&bwdata01[n-index01].bits, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
-		MPI_Send(&bwdata01[n-index01].bps, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
-		MPI_Send(&bwdata01[n-index01].t, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
-	    }
-	    if (g_proc_loc != LEFT_PROCESS && g_nIproc == 0)
-	    {
-		MPI_Recv(&index01, 1, MPI_INT, g_left_rank, 1, MPI_COMM_WORLD, &status);
-		MPI_Recv(&bwdata01[n-index01].bits, 1, MPI_INT, g_left_rank, 1, MPI_COMM_WORLD, &status);
-		MPI_Recv(&bwdata01[n-index01].bps, 1, MPI_DOUBLE, g_left_rank, 1, MPI_COMM_WORLD, &status);
-		MPI_Recv(&bwdata01[n-index01].t, 1, MPI_DOUBLE, g_left_rank, 1, MPI_COMM_WORLD, &status);
-	    }
-	    if (g_proc_loc == MIDDLE_PROCESS && g_nIproc != 0)
-	    {
-		MPI_Send(&index12, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
-		MPI_Send(&bwdata12[n-index12].bps, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
-		MPI_Send(&bwdata12[n-index12].t, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
-	    }
-	    if (g_proc_loc != MIDDLE_PROCESS && g_nIproc == 0)
-	    {
-		MPI_Recv(&index12, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, &status);
-		MPI_Recv(&bwdata12[n-index12].bps, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &status);
-		MPI_Recv(&bwdata12[n-index12].t, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &status);
-	    }
-	    */
 	    if (g_nIproc == 0)
 	    {
 		if (bUseMegaBytes)
