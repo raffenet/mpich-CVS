@@ -1265,7 +1265,7 @@ void *MPIR_F_MPI_BOTTOM = 0;
 # CheckAutoconf - returns 0 if autoconf works, 1 if broken.
 sub CheckAutoconf {
     if (! -d "tmp") {
-        mkdir "tmp" || die "Cannot create temporary directory\n";
+        mkdir "tmp", 0777 || die "Cannot create temporary directory\n";
     }
     open (ACFD, ">tmp/configure.in" ) || die "Cannot create test configure.in\n";
     print ACFD "AC_INIT(configure.in)\nAC_LANG_FORTRAN77\n";
