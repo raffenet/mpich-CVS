@@ -32,8 +32,8 @@ MPI-1 functions
 
 Point-to-Point Communication
 
-MPI_Send,
-MPI_Recv,
+MPI_Send,,,,,Brian,,done
+MPI_Recv,,,,,Brian,,done
 MPI_Get_count,
 MPI_Bsend,
 MPI_Ssend,
@@ -45,7 +45,7 @@ MPI_Ibsend,
 MPI_Issend,
 MPI_Irsend,
 MPI_Irecv,
-MPI_Wait,
+MPI_Wait,,,,,Brian,,done
 MPI_Test,
 MPI_Request_free,
 MPI_Waitany,
@@ -388,27 +388,29 @@ MPI_Type_match_size,
 
 --------------------------------------------------
 
-MPID functions
+MPID functions for single-threaded CH3 device without error checking
 
 Data Structures
+
 MPID_Request_kind
-MPID_Request
-MPID_Comm
+MPID_Request,,,,,Brian
+MPID_Comm,,,,,Brian
+MPIDI_VC,,,,,Brian
 
 Basic Point-to-Point
 
-MPID_Send,
-MPID_Ssend,
-MPID_Rsend,
-MPID_Isend,
-MPID_Issend,
-MPID_Irsend,
-MPID_tBsend,
-MPID_Recv,
-MPID_Irecv,
-MPID_Request_free,
-MPID_Cancel_send,
-MPID_Cancel_recv,
+MPID_Send,,,,,Brian,MPIDI_CH3_iStartMsg MPIDI_CH3_iStartMsgv MPIDI_CH3_iSend MPIDI_CH3_Request_create
+MPID_Ssend,,,,,Brian,MPIDI_CH3_iSend MPIDI_CH3_Request_create
+MPID_Rsend,,,,,Brian,MPIDI_CH3_iStartMsgv
+MPID_Isend,,,,,Brian,MPIDI_CH3_iStartMsg MPIDI_CH3_iStartMsgv MPIDI_CH3_iSend MPIDI_CH3_Request_create
+MPID_Issend,,,,,Brian,MPIDI_CH3_iSend MPIDI_CH3_Request_create
+MPID_Irsend,,,,,Brian,MPIDI_CH3_iStartMsgv
+MPID_tBsend,,,,,Brian
+MPID_Recv,,,,,Brian
+MPID_Irecv,,,,,Brian
+MPID_Request_free,,,,,Brian,MPIDI_CH3_Request_release_ref MPIDI_CH3_Request_destroy,done
+MPID_Cancel_send,,,,,Brian
+MPID_Cancel_recv,,,,,Brian
 MPID_Iprobe,
 MPID_Probe,
 
@@ -422,17 +424,17 @@ MPID_Startall,
 
 Progress Engine
 
-MPID_Progress_start,
-MPID_Progress_end,
-MPID_Progress_test,
-MPID_Progress_wait,
-MPID_Progress_poke,
+MPID_Progress_start,,,,,Brian,MPIDI_CH3_Progress_start,done
+MPID_Progress_end,,,,,Brian,MPIDI_CH3_Progress_end,done
+MPID_Progress_test,,,,,Brian,MPIDI_CH3_Progress,done
+MPID_Progress_wait,,,,,Brian,MPIDI_CH3_Progress,done
+MPID_Progress_poke,,,,,Brian,MPIDI_CH3_Progress_poke,done
 
 Starting and stopping
 
-MPID_Init,
-MPID_Finalize,
-MPID_Abort,
+MPID_Init,,,,,Brian,MPIDI_CH3_Init,done
+MPID_Finalize,,,,,Brian,MPIDI_CH3_Finalize,done
+MPID_Abort,,,,,Brian
 
 RMA
 
@@ -485,39 +487,43 @@ MPID_Dev_xxx_destroy_hook,
 
 -------------------------------------------------
 
-CH3 functions
+CH3 functions for single-threaded TCP channel without error checking
 
 Requests
 
-CH3_new_request,
-CH3_iStartMsg,
-CH3_iStartmsgv,
-CH3_free_request,
+MPIDI_CH3_Request_create,,,,,Brian,,done
+MPIDI_CH3_iStartMsg,,,,,Brian
+MPIDI_CH3_iStartmsgv,,,,,Brian
+MPIDI_CH3_Request_add_ref,,,,,Brian,,done
+MPIDI_CH3_Request_release_ref,,,,,Brian,,done
+MPIDI_CH3_Request_destroy,,,,,Brian,,done
 
 Send/Recv
 
-CH3_iSend,
-CH3_iSendv,
-CH3_iWrite,
-CH3_iRead,
+MPIDI_CH3_iSend,,,,,Brian
+MPIDI_CH3_iSendv,,,,,Brian
+MPIDI_CH3_iWrite,,,,,Brian
+MPIDI_CH3_iRead,,,,,Brian
 
 Progress
 
-CH3_Progress_start,
-CH3_Progress_end,
-CH3_Progress,
-CH3_Progress_poke,
+MPIDI_CH3I_Progress_init,,,,,Brian,,done
+MPIDI_CH3I_Progress_finalize,,,,,Brian
+MPIDI_CH3_Progress_start,,,,,Brian,,done
+MPIDI_CH3_Progress_end,,,,,Brian,,done
+MPIDI_CH3_Progress,,,,,Brian
+MPIDI_CH3_Progress_poke,,,,,Brian,,done
 
 Startup/shutdown
 
-CH3_Init,
-CH3_Finalize,
-CH3_InitParent,
+MPIDI_CH3_Init,,,,1,Brian,MPIDI_CH3I_Progress_init,done
+MPIDI_CH3_Finalize,,,,1,Brian,MPIDI_CH3I_Progress_finalize,done
+MPIDI_CH3_InitParent,,,,,Brian
 
 RMA
 
-CH3_iPut,
-CH3_iStartRead,
+MPIDI_CH3_iPut,
+MPIDI_CH3_iStartRead,
 
 -------------------------------------------------
 
