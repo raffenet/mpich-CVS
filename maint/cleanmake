@@ -6,6 +6,19 @@
 # -W options for gcc, and successful compiles.
 $last_line = "";
 while (<>) {
+    # skip lines that start with for and are continued.
+    if (/^\s*for dir in .*\/$/) {
+	while (<>) {
+	    if (! /\/$/) { last; }
+	}
+    }
+    # skip line that start with if and ar continued
+    if (/^\s*if \[ ! -d lib.*\/$/) {
+	while (<>) {
+	    if (! /\/$/) { last; }
+	}
+    }
+
     if (/^[ag]?cc\s/) {
 	s/-I[^\s]*\s*//g;
 	s/-DHAVE_CONFIG_H\s*//g;
@@ -26,6 +39,8 @@ while (<>) {
 	s/-ansi\s*//g;
     }
     
+    if (/^\s*make /) { next; }
+
     if (/Nothing to be done for /) {
 	next;
     }
@@ -34,10 +49,16 @@ while (<>) {
     }
     if (/^\s*rm /) { next; }
     
+    if (/^\s*ar /) { $_ = "...ar step\n"; }
+
+    # Skip the time adjust step
+    if (/^perl -e/) { next; }
     if ($last_line =~ /[^\s]/) { 
 	# Decide if we want to print this, based on the current line.
 	if ($last_line =~ /^[ag]?cc\s/ || $last_line =~ /^mpicc\s/) {
-	    if (! (/^[ag]?cc\s/) && ! (/^mpicc\s/)) { 
+	    if (! (/^[ag]?cc\s/) && ! (/^mpicc\s/) && ! (/^\.\.\.ar/) ) { 
+		# Add a new line to help the compile line stand out.
+		print "\n";
 		print $last_line; 
 	    }
 	}
