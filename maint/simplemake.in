@@ -78,6 +78,12 @@ $doc_heading = "MPI";
 %doc_extra   = ();  # for kinds html, man, latex
 #
 $fixup_for_timestamps = 1; # make is broken
+# FIXME:
+# The sleep amount should be parameterized.  One developer at IBM 
+# needed 10 seconds, not 1, because of the variation in file system times
+# between the local machine and the file server.  Perhaps something like
+# \@INTERDIR_SLEEP\@ or 
+# if [ -z "$(INTERDIR_SLEEP)" ] ; then INTERDIR_SLEEP=1 ; fi ; sleep $(INTERDIR_SLEEP)
 $SleepSlow = "sleep 1";
 $SleepFast = "perl -e \'\$\$now=time;\$\$now-=10;utime \$\$now, \$\$now, \"LIB\";\'";
 $Sleep = $SleepFast;
@@ -162,6 +168,9 @@ CXX_COMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 	    'cpp:o' => 'CXX         = @CXX@
 CXXFLAGS    = @CXXFLAGS@
 CXX_COMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
+	    'cs:o'  => 'CSHARP      = @CSHARP@
+CSFLAGS     = @CSFLAGS@
+CSHARP_COMPILE = $(CSHARP) $(DEFS) $(INCLUDES) $(CSFLAGS) $(CPPFLAGS)',
 	    's:o'   => 'AS          = @AS@
 AS_COMPILE  = $(AS)',
 	    'f90:o'   => 'F90          = @F90@
@@ -182,12 +191,14 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 %progrules = ( 'c' => '$(C_LINK) $(LDFLAGS)',
 	       'cxx' => '$(CXX_LINK) $(LDFLAGS)',
 	       'cpp' => '$(CXX_LINK) $(LDFLAGS)',
+	       'cs'  => '$(CSHARP_LINK) $(LDFLAGS)',
 	       'f'   => '$(F77_LINK) $(LDFLAGS)',
 	       'f90' => '$(F90_LINK) $(LDFLAGS)',
 	      );
 %progdefs = ( 'c' =>   'C_LINK      = $(CC)',
 	      'cxx' => 'CXX_LINK    = $(CXX)',
 	      'cpp' => 'CXX_LINK    = $(CXX)',
+	      'cs'  => 'CSHARP_LINK = $(CSHARP)',
 	      'f'   => 'F77_LINK    = $(FC)',
 	      'f90' => 'F90_LINK    = $(F90)',
 	     );
@@ -712,6 +723,13 @@ sub WriteMfile {
     }
     # Ensure that the default target takes us to "all"
     print FD "all: all-redirect$newline$newline";
+    # Autoconf sets a number of directories that some tools (such as libtool)
+    # may rely on.  
+    # We use the master_top_builddir instead of top_builddir because
+    # we manage subdirectory builds in a different way than the Automake and
+    # Autoconf style
+    print FD "top_builddir = \@master_top_builddir\@$newline";
+    print FD "builddir     = \@builddir\@$newline";
     if ($useinclude) {
         print FD "SHELL = \@SHELL\@$newline";
         print FD "include $includedir/$makefilebase$newline";
@@ -845,10 +863,16 @@ sub DefaultRules {
     $out_mkdir_p = 0;
     if ($do_sharedlibs) {
 	if (defined($optinstall_files{'SHLIB'})) {
+	    # Add the definition of libtool incase we're using
+	    # libtool to provide the shared library.
+	    print FD "LIBTOOL = \@LIBTOOL\@$newline";
 	    print FD "$shlibdefs{'c'}$newline";
 	}
 	elsif ($found_sharedlib) {
 	    # No install target, but a shared library is begin built
+	    # Add the definition of libtool incase we're using
+	    # libtool to provide the shared library.
+	    print FD "LIBTOOL = \@LIBTOOL\@$newline";
 	    print FD "$shlibdefs{'c'}$newline";
 	    $out_mkdir_p = 1;
 	    print FD "MKDIR_P         = \@MKDIR_P\@$newline";
@@ -934,6 +958,8 @@ sub DefaultRules {
 
     # Definitions for each possible program type seen
     $any_prog_def = 0;
+    $libtool_def = 0;   # Keep track of whether libtool definitions have 
+                        # been made.
     foreach $ext (keys(%ext_seen)) {
 	print "ext seen is :$ext:\n" if $debug;
 	$extkey = "$ext:o";
@@ -945,6 +971,10 @@ sub DefaultRules {
 	    $any_prog_def = 1;
 	}
 	if ($do_sharedlibs || $found_sharedlib) {
+	    if (!$libtool_def) {
+		$libtool_def = 1;
+		print FD "LIBTOOL  = \@LIBTOOL\@$newline";
+	    }
 	    $extkey = "$ext:lo";
 	    print FD "$extdef{$extkey}$newline";
 	}
@@ -2570,7 +2600,7 @@ sub TargetDependenciesDynamic {
 
 	# We always use a "newalldeps" incase there is a failure 
 	# creating the new list of dependency files.
-	print FD "\t}rm -f .deps/newalldeps$newline";
+	print FD "\trm -f .deps/newalldeps$newline";
 	foreach $lib (keys(%libraries)) {
 	    foreach $sourcefile (split(/\s+/,&ExpandMakeVars($libraries{$lib}))) {
 		$ext = $sourcefile;
