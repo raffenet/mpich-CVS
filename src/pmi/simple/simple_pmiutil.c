@@ -22,6 +22,9 @@
 #include <errno.h>
 #include "simple_pmiutil.h"
 
+/* Use the memory definitions from mpich2/src/include */
+#include "mpimem.h"
+
 #define MAXVALLEN 1024
 #define MAXKEYLEN   32
 
@@ -32,7 +35,7 @@ struct PMIU_keyval_pairs {
     char key[MAXKEYLEN];
     char value[MAXVALLEN];	
 };
-static struct PMIU_keyval_pairs PMIU_keyval_tab[64] = { {0} };
+static struct PMIU_keyval_pairs PMIU_keyval_tab[64] = { { {0} } };
 static int  PMIU_keyval_tab_idx = 0;
 
 /* This is used to prepend printed output.  Set the initial value to 
@@ -41,7 +44,7 @@ static char PMIU_print_id[PMIU_IDSIZE] = "unset";
 
 void PMIU_Set_rank( int PMI_rank )
 {
-    snprintf( PMIU_print_id, PMIU_IDSIZE, "cli_%d", PMI_rank );
+    MPIU_Snprintf( PMIU_print_id, PMIU_IDSIZE, "cli_%d", PMI_rank );
 }
 
 /* This should be combined with the message routines */
@@ -119,6 +122,10 @@ int PMIU_writeline( int fd, char *buf )
     return 0;
 }
 
+/*
+ * Given an input string st, parse it into internal storage that can be
+ * queried by routines such as PMIU_getval.
+ */
 int PMIU_parse_keyvals( char *st )
 {
     char *p, *keystart, *valstart;
