@@ -1,0 +1,76 @@
+% 
+%   This is a latex file that generates a reference manual for 
+%   ADI-3 
+%
+\documentclass{article}
+\usepackage{tpage}
+\usepackage{refman}
+\usepackage{url} 
+\usepackage{epsf}
+\usepackage{psfig}
+%hyperref - do not remove this comment
+
+\textheight=9in
+\textwidth=6.1in
+\oddsidemargin=.2in
+\topmargin=-.50in
+\newread\testfile
+
+%
+% For now, let findex be the same as index.  This will allow us to
+% more easily separate function and nonfunction index entries later.
+\let\findex=\index
+%
+% Modify the way titles are handled for no breaks between pages
+\def\mantitle#1#2#3{\pagerule\nobreak
+\ifmancontents\addcontentsline{toc}{subsection}{#1}\fi
+\index{#1}}
+
+\makeindex
+
+\begin{document}
+
+\markright{CH3 Reference Manual}
+
+\def\nopound{\catcode`\#=13}
+{\nopound\gdef#{{\tt \char`\#}}}
+\catcode`\_=13
+\def_{{\tt \char`\_}}
+\catcode`\_=11
+\def\code#1{{\tt #1}}
+%\let\url=\code
+\def\makeussubscript{\catcode`\_=8}
+\def\makeustext{\catcode`\_=11}
+%\tpageoneskip
+\ANLTMTitle{MPICH Abstract Device Interface\\
+Version 3.3\\
+Reference Manual\\\ \\Draft of \today}{\em 
+William Gropp\\
+Ewing Lusk\\
+Brian R. Toonen\\
+Your Name Here\\
+Mathematics and Computer Science Division\\
+Argonne National Laboratory}{00}{\today}
+
+\clearpage
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+
+\pagenumbering{arabic}
+\pagestyle{headings}
+
+\section{Introduction}
+\section{Functions}
+
+% Index
+%\openin\testfile{ch3.ind}
+%\ifeof\testfile\else
+\let\SaveIndex=\theindex
+\long\def\theindex#1{\SaveIndex{#1}\addcontentsline{toc}{section}{Index}}
+\input ch3.ind
+%\fi
+%\closein\testfile
+
+\end{document}
