@@ -33,15 +33,82 @@
 #endif
 #ifdef ROMIO_PVFS
 #include "pvfs_config.h"
+#include <sys/param.h>
+#include <unistd.h>
 #endif
 #ifdef tflops
 #include <sys/mount.h>
 #endif
 
+static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep);
 static void ADIO_FileSysType_prefix(char *filename, int *fstype, 
 				    int *error_code);
 static void ADIO_FileSysType_fncall(char *filename, int *fstype, 
 				    int *error_code);
+
+/*
+ ADIO_FileSysType_parentdir - determines a string pathname for the
+ parent directory of a given filename.
+
+Input Parameters:
+. filename - pointer to file name character array
+
+Output Parameters:
+. dirnamep - pointer to location in which to store a pointer to a string
+
+ Note that the caller should free the memory located at the pointer returned
+ after the string is no longer needed.
+*/
+static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep)
+{
+    int err;
+    char *dir, *slash;
+    struct stat statbuf;
+    
+    err = lstat(filename, &statbuf);
+
+    if (err || (!S_ISLNK(statbuf.st_mode))) {
+	/* no such file, or file is not a link; these are the "normal"
+	 * cases where we can just return the parent directory.
+	 */
+	dir = strdup(filename);
+    }
+    else {
+	/* filename is a symlink.  we've presumably already tried
+	 * to stat it and found it to be missing (dangling link),
+	 * but this code doesn't care if the target is really there
+	 * or not.
+	 */
+	char *linkbuf;
+
+	linkbuf = ADIOI_Malloc(MAXPATHLEN+1);
+	err = readlink(filename, linkbuf, MAXPATHLEN+1);
+	if (err) {
+	    /* something strange has happened between the time that
+	     * we determined that this was a link and the time that
+	     * we attempted to read it; punt and use the old name.
+	     */
+	    dir = strdup(filename);
+	}
+	else {
+	    /* successfully read the link */
+	    dir = strdup(linkbuf);
+	    ADIOI_Free(linkbuf);
+	}
+    }
+
+    slash = strrchr(dir, '/');
+    if (!slash) strcpy(dir, ".");
+    else {
+	if (slash == dir) *(dir + 1) = 0;
+	else *slash = '\0';
+    }
+
+    *dirnamep = dir;
+    return;
+}
+
+
 /*
  ADIO_FileSysType_fncall - determines the file system type for a given file 
  using a system-dependent function call
@@ -61,7 +128,7 @@ Output Parameters:
  */
 static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code)
 {
-    char *dir, *slash;
+    char *dir;
 #ifndef ROMIO_NTFS
     int err;
 #endif
@@ -80,21 +147,16 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 
     *error_code = MPI_SUCCESS;
 
-    dir = strdup(filename);
-    slash = strrchr(dir, '/');
-    if (!slash) strcpy(dir, ".");
-    else {
-	if (slash == dir) *(dir + 1) = 0;
-	else *slash = '\0';
-    }
-
 #if (defined(HPUX) || defined(SPPUX) || defined(IRIX) || defined(SOLARIS) || defined(AIX) || defined(DEC) || defined(CRAY))
     do {
 	err = statvfs(filename, &vfsbuf);
     } while (err && (errno == ESTALE));
 
-    if (err && (errno == ENOENT)) err = statvfs(dir, &vfsbuf);
-    free(dir);
+    if (err && (errno == ENOENT)) {
+	ADIO_FileSysType_parentdir(filename, &dir);
+	err = statvfs(dir, &vfsbuf);
+	free(dir);
+    }
 
     if (err) *error_code = MPI_ERR_UNKNOWN;
     else {
@@ -119,8 +181,11 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	err = statfs(filename, &fsbuf);
     } while (err && (errno == ESTALE));
 
-    if (err && (errno == ENOENT)) err = statfs(dir, &fsbuf);
-    free(dir);
+    if (err && (errno == ENOENT)) {
+	ADIO_FileSysType_parentdir(filename, &dir);
+	err = statfs(dir, &fsbuf);
+	free(dir);
+    }
 
     if (err) *error_code = MPI_ERR_UNKNOWN;
     else {
@@ -136,8 +201,11 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	err = statfs(filename, &fsbuf);
     } while (err && (errno == ESTALE));
 
-    if (err && (errno == ENOENT)) err = statfs(dir, &fsbuf);
-    free(dir);
+    if (err && (errno == ENOENT)) {
+	ADIO_FileSysType_parentdir(filename, &dir);
+	err = statfs(dir, &fsbuf);
+	free(dir);
+    }
 
     if (err) *error_code = MPI_ERR_UNKNOWN;
     else {
@@ -153,8 +221,11 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	err = statpfs(filename, &ebuf, 0, 0);
     } while (err && (errno == ESTALE));
 
-    if (err && (errno == ENOENT)) err = statpfs(dir, &ebuf, 0, 0);
-    free(dir);
+    if (err && (errno == ENOENT)) {
+	ADIO_FileSysType_parentdir(filename, &dir);
+	err = statpfs(dir, &ebuf, 0, 0);
+	free(dir);
+    }
 
     if (err) *error_code = MPI_ERR_UNKNOWN;
     else {
@@ -167,8 +238,11 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	err = statfs(filename, &fsbuf);
     } while (err && (errno == ESTALE));
 
-    if (err && (errno == ENOENT)) err = statfs(dir, &fsbuf);
-    free(dir);
+    if (err && (errno == ENOENT)) {
+	ADIO_FileSysType_parentdir(filename, &dir);
+	err = statfs(dir, &fsbuf);
+	free(dir);
+    }
 
     if (err) *error_code = MPI_ERR_UNKNOWN;
     else {
@@ -181,8 +255,11 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	err = stat(filename, &sbuf);
     } while (err && (errno == ESTALE));
 
-    if (err && (errno == ENOENT)) err = stat(dir, &sbuf);
-    free(dir);
+    if (err && (errno == ENOENT)) {
+	ADIO_FileSysType_parentdir(filename, &dir);
+	err = stat(dir, &sbuf);
+	free(dir);
+    }
     
     if (err) *error_code = MPI_ERR_UNKNOWN;
     else {
@@ -191,7 +268,6 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
     }
 #else
     /* on other systems, make NFS the default */
-    free(dir);
 # ifdef ROMIO_NTFS
     *fstype = ADIO_NTFS;
 # else
