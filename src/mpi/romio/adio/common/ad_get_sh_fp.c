@@ -17,6 +17,7 @@ void ADIO_Get_shared_fp(ADIO_File fd, int incr, ADIO_Offset *shared_fp,
 {
     ADIO_Status status;
     ADIO_Offset new_fp;
+    MPI_Comm dupcommself;
 
 #ifdef __NFS
     if (fd->file_system == ADIO_NFS) {
@@ -26,7 +27,8 @@ void ADIO_Get_shared_fp(ADIO_File fd, int incr, ADIO_Offset *shared_fp,
 #endif
 
     if (fd->shared_fp_fd == ADIO_FILE_NULL) {
-	fd->shared_fp_fd = ADIO_Open(MPI_COMM_SELF, fd->shared_fp_fname, 
+	MPI_Comm_dup(MPI_COMM_SELF, &dupcommself);
+	fd->shared_fp_fd = ADIO_Open(dupcommself, fd->shared_fp_fname, 
              fd->file_system, ADIO_CREATE | ADIO_RDWR | ADIO_DELETE_ON_CLOSE, 
              0, MPI_BYTE, MPI_BYTE, M_ASYNC, MPI_INFO_NULL, 
              ADIO_PERM_NULL, error_code);
