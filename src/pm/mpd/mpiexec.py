@@ -4,6 +4,40 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+"""
+usage:
+mpiexec [-h or -help or --help]    # get this message
+mpiexec -file filename             # filename contains XML job description
+mpiexec [global args] [local args] executable [args]
+   where global args may be
+      -l                           # line labels by MPI rank
+      -bnr                         # MPICH1 compatibility mode
+      -genvall                     # pass all env vars in current environment
+      -genvnone                    # pass no env vars
+      -genvlist <list of env var names> # pass current values of these vars
+      -genv <name> <value>         # pass this value of this env var
+      -g<local arg name>           # global version of local arg (below)
+    and local args may be
+      -n <n> or -np <n>            # number of processes to start
+      -wdir <dirname>              # working directory to start in
+      -path <dirname>              # place to look for executables
+      -host <hostname>             # host to start on
+mpiexec [global args] [local args] executable args : [local args] executable...
+mpiexec -configfile filename       # filename contains cmd line segs as lines
+  (See User Guide for more details)
+
+Examples:
+   mpiexec -l -n 10 cpi 100
+   mpiexec -genv QPL_LICENSE 4705 -n 3 a.out
+   mpiexec -n 1 -host foo master : -n 4 -host mysmp slave
+"""
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
+
+
 from sys    import argv, exit
 from os     import environ, execvpe, getpid, getuid, getcwd, access, X_OK, path, unlink, \
                    open, fdopen, O_CREAT, O_WRONLY, O_EXCL, O_RDONLY
@@ -282,31 +316,7 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
 
 
 def usage():
-    print 'usage:'
-    print 'mpiexec [-h or -help or --help]    # get this message'
-    print 'mpiexec -file filename             # filename contains XML job description'
-    print 'mpiexec [global args] [local args] executable [args]'
-    print '   where global args may be'
-    print '      -l                           # line labels by MPI rank'
-    print '      -bnr                         # MPICH1 compatibility mode'
-    print '      -genvall                     # pass all env vars in current environment'
-    print '      -genvnone                    # pass no env vars'
-    print '      -genvlist <list of env var names> # pass current values of these vars'
-    print '      -genv <name> <value>         # pass this value of this env var'
-    print '      -g<local arg name>           # global version of local arg (below)'
-    print '    and local args may be'
-    print '      -n <n> or -np <n>            # number of processes to start'
-    print '      -wdir <dirname>              # working directory to start in'
-    print '      -path <dirname>              # place to look for executables'
-    print '      -host <hostname>             # host to start on'
-    print 'mpiexec [global args] [local args] executable args : [local args] executable...'
-    print 'mpiexec -configfile filename       # filename contains cmd line segs as lines'
-    print '  (See User Guide for more details)'
-    print ''
-    print 'Examples:'
-    print '   mpiexec -l -n 10 cpi 100'
-    print '   mpiexec -genv QPL_LICENSE 4705 -n 3 a.out'
-    print '   mpiexec -n 1 -host foo master : -n 4 -host mysmp slave'
+    print __doc__
     exit(-1)
 
 
