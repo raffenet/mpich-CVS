@@ -66,7 +66,7 @@ int ib_make_progress()
     switch (completion_data.op_type)
     {
     case OP_SEND:
-	ib_handle_written(vc_ptr, mem_ptr, completion_data.bytes_num);
+	ib_handle_written(vc_ptr, mem_ptr, ibu_next_num_written());
 	break;
     case OP_RECEIVE:
 	ib_handle_read(vc_ptr, mem_ptr, completion_data.bytes_num);

@@ -45,5 +45,6 @@ int ib_write_aggressive(MPIDI_VC *vc_ptr);
 int ibu_post_receive(MPIDI_VC *vc_ptr);
 int ibu_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_update)(int, void*));
 int ibu_post_writev(MPIDI_VC *vc_ptr, MPID_IOV *iov, int n, int (*write_progress_update)(int, void*));
+int ibu_next_num_written();
 
 #endif

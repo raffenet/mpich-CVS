@@ -38,6 +38,28 @@ int ibu_post_receive(MPIDI_VC *vc_ptr)
     return MPI_SUCCESS;
 }
 
+typedef struct ibu_num_written_node_t
+{
+    int num_bytes;
+    struct ibu_num_written_node_t *next;
+} ibu_num_written_node_t;
+
+ibu_num_written_node_t *g_write_list_head = NULL, *g_write_list_tail = NULL;
+
+int ibu_next_num_written()
+{
+    ibu_num_written_node_t *p;
+    int num_bytes;
+
+    p = g_write_list_head;
+    g_write_list_head = g_write_list_head->next;
+    if (g_write_list_head == NULL)
+	g_write_list_tail = NULL;
+    num_bytes = p->num_bytes;
+    free(p);
+    return num_bytes;
+}
+
 int ibu_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_update)(int, void*))
 {
     ib_uint32_t status;
@@ -45,6 +67,20 @@ int ibu_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_up
     ib_data_segment_t data;
     ib_work_req_send_t work_req;
     void *mem_ptr;
+    ibu_num_written_node_t *p;
+
+    p = malloc(sizeof(ibu_num_written_node_t));
+    p->next = NULL;
+    p->num_bytes = len;
+    if (g_write_list_tail)
+    {
+	g_write_list_tail->next = p;
+    }
+    else
+    {
+	g_write_list_head = p;
+    }
+    g_write_list_tail = p;
 
     mem_ptr = BlockAlloc(vc_ptr->data.ib.info.m_allocator);
     memcpy(mem_ptr, buf, len);
