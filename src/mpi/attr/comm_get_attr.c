@@ -64,11 +64,11 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
 	    /* Validate keyval */
 	    if (HANDLE_GET_MPI_KIND(comm_keyval) != MPID_KEYVAL) {
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
-						  "**notkeyval", 0 );
+						  "**keyval", 0 );
 	    } 
 	    else if (((comm_keyval&&0x3c000000) >> 18) != MPID_COMM) {
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
-						  "**notcommkeyval", 0 );
+						  "**keyvalnotcomm", 0 );
 	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_ATTR);
