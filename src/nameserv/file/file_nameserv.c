@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "mpiimpl.h"
+#include "namepub.h"
 
 /* style: allow:fprintf:1 sig:0 */   /* For writing the name/service pair */
 
@@ -29,7 +30,6 @@ struct MPID_NS_Handle {
     char dirname[MAXPATHLEN];            /* Directory for all files */
     char *(filenames[MPID_MAX_NAMEPUB]); /* All created files */
 };
-typedef struct MPID_NS_Handle *MPID_NS_Handle;
 
 /* Create a structure that we will use to remember files created for
    publishing.  */
@@ -38,7 +38,6 @@ typedef struct MPID_NS_Handle *MPID_NS_Handle;
 int MPID_NS_Create( const MPID_Info *info_ptr, MPID_NS_Handle *handle_ptr )
 {
     static const char FCNAME[] = "MPID_NS_Create";
-    int        i;
     const char *dirname;
     struct stat st;
     int        err;
@@ -66,7 +65,7 @@ int MPID_NS_Create( const MPID_Info *info_ptr, MPID_NS_Handle *handle_ptr )
     if (stat( (*handle_ptr)->dirname, &st ) || !S_ISDIR(st.st_mode) ) {
 	/* This mode is rwx by owner only.  */
 	if (mkdir( (*handle_ptr)->dirname, 00700 )) {
-	    /* An error.  Ignore most ? */
+	    /* FIXME: An error.  Ignore most ? */
 	    ;
 	}
     }
@@ -133,7 +132,7 @@ int MPID_NS_Lookup( MPID_NS_Handle handle, const MPID_Info *info_ptr,
     if (!fp) {
 	/* printf( "No file for service name %s\n", service_name ); */
 	port[0] = 0;
-	return MPI_ERR_NAME;
+	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_NAME, "**namepubnotpub", "**namepubnotpub %s", service_name );
     }
     else {
 	/* The first line is the name, the second is the
@@ -189,7 +188,7 @@ int MPID_NS_Unpublish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 #define FUNCNAME MPID_NS_Free
 int MPID_NS_Free( MPID_NS_Handle *handle_ptr )
 {
-    static const char FCNAME[] = "MPID_NS_Free";
+    /* static const char FCNAME[] = "MPID_NS_Free"; */
     int i;
     MPID_NS_Handle handle = *handle_ptr;
     
