@@ -4,7 +4,7 @@ RANLIB      = @RANLIB@
 LIBNAME     = @LIBNAME@
 srcdir      = @srcdir@
 
-INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I../../include -I${srcdir}/../../adio/include -I${srcdir}/..
+INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I../../include -I${srcdir}/../../adio/include -I../../adio/include -I${srcdir}/..
 CFLAGS      = -DMPIO_FORTRAN_SRC @CFLAGS@ $(MPIOPROFILE) $(INCLUDE_DIR)
 
 @VPATH@
