@@ -1240,6 +1240,7 @@ mv test/tmp test/runtests
 chmod 755 test/runtests
 #
 rm -f *.o
+if test "$ROMIO_NO_BANNER" != "yes" -a "$FROM_MPICH" = 0 ; then
 print_error " "
 print_error Please register your copy of ROMIO with us by sending email
 print_error to majordomo@mcs.anl.gov with the message
@@ -1247,6 +1248,7 @@ print_error subscribe romio-users
 print_error This will enable us to notify you of new releases of ROMIO
 print_error as well as bug fixes.
 print_error " "
+fi
 if test $FROM_MPICH = 0 ; then
    print_error Configure done. Now type make
    print_error " "
