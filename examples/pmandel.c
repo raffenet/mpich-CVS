@@ -16,7 +16,7 @@
 /* definitions */
 
 #define PROMPT 1
-#define USE_PPM /* define to output a color image, otherwise a grayscale image is output */
+#define USE_PPM /* define to output a color image, otherwise output is a grayscale pgm image */
 
 #ifndef MIN
 #define MIN(x, y)	(((x) < (y))?(x):(y))
@@ -27,7 +27,7 @@
 
 #define NOVALUE 99999       /* indicates a parameter is as of yet unspecified */
 #define MAX_ITERATIONS 10000 /* maximum 'depth' to look for mandelbrot value */
-#define INFINITE_LIMIT 1.0  /* evalue when fractal is considered diverging */
+#define INFINITE_LIMIT 4.0  /* evalue when fractal is considered diverging */
 #define MAX_X_VALUE 2.0     /* the highest x can go for the mandelbrot, usually 1.0 */
 #define MIN_X_VALUE -2.0    /* the lowest x can go for the mandelbrot, usually -1.0 */
 #define MAX_Y_VALUE 2.0     /* the highest y can go for the mandelbrot, usually 1.0 */
@@ -81,6 +81,13 @@ int additive_mandelbrot_point(complex_t coord_point,
 int subtractive_mandelbrot_point(complex_t coord_point, 
 			    complex_t c_constant,
 			    int Max_iterations, double divergent_limit);
+complex_t exponential_complex(complex_t in_complex);
+complex_t multiply_complex(complex_t in_one_complex, complex_t in_two_complex);
+complex_t divide_complex(complex_t in_one_complex, complex_t in_two_complex);
+complex_t inverse_complex(complex_t in_complex);
+complex_t add_complex(complex_t in_one_complex, complex_t in_two_complex);
+complex_t subtract_complex(complex_t in_one_complex, complex_t in_two_complex);
+double absolute_complex(complex_t in_complex);
 void dumpimage(char *filename, int in_grid_array[], int in_pixels_across, int in_pixels_down,
 	  int in_max_pixel_value, char input_string[], int num_colors, color_t colors[]);
 int single_mandelbrot_point(complex_t coord_point, 
@@ -102,17 +109,13 @@ const char *default_filename = "pmandel.pgm";
 /* Solving the Mandelbrot set
  
    Set a maximum number of iterations to calculate before forcing a terminate
-   in the Mandelbrot loop (this might take some prototyping).  This is set
-   in "mandelbrot_globals.h", which is used by the parameter-handling routine,
-   'check_mand_params.c'
+   in the Mandelbrot loop.
 */
 
 /* Command-line parameters are all optional, and include:
    -xmin # -xmax #      Limits for the x-axis for calculating and plotting
    -ymin # -ymax #      Limits for the y-axis for calculating and plotting
-   -xscale # -yscale #  Number of pixels to divide our desired region
-                        into (larger values = better resolution but slower
-			calculation)
+   -xscale # -yscale #  output pixel width and height
    -depth #             Number of iterations before we give up on a given
                         point and move on to calculate the next
    -diverge #           Criteria for assuming the calculation has been
@@ -969,12 +972,6 @@ int subtractive_mandelbrot_point(complex_t coord_point,
 				 complex_t c_constant,
 				 int Max_iterations, double divergent_limit)
 {
-    /* define the external functions here, for safety */
-    complex_t multiply_complex(complex_t, complex_t);
-    complex_t add_complex(complex_t, complex_t);
-    complex_t subtract_complex(complex_t, complex_t);
-    complex_t exponential_complex(complex_t);
-    double absolute_complex(complex_t);
     complex_t z_point, a_point; /* we need 2 pts to use in our calculation */
     int num_iterations;  /* a counter to track the number of iterations done */
 
@@ -1014,12 +1011,6 @@ int additive_mandelbrot_point(complex_t coord_point,
 			      complex_t c_constant,
 			      int Max_iterations, double divergent_limit)
 {
-    /* define the external functions here, for safety */
-    complex_t multiply_complex(complex_t, complex_t);
-    complex_t add_complex(complex_t, complex_t);
-    complex_t subtract_complex(complex_t, complex_t);
-    complex_t exponential_complex(complex_t);
-    double absolute_complex(complex_t);
     complex_t z_point, a_point; /* we need 2 pts to use in our calculation */
     int num_iterations;  /* a counter to track the number of iterations done */
 
@@ -1058,12 +1049,6 @@ int exponential_mandelbrot_point(complex_t coord_point,
 				 complex_t c_constant,
 				 int Max_iterations, double divergent_limit)
 {
-    /* define the external functions here, for safety */
-    complex_t multiply_complex(complex_t, complex_t);
-    complex_t add_complex(complex_t, complex_t);
-    complex_t subtract_complex(complex_t, complex_t);
-    complex_t exponential_complex(complex_t);
-    double absolute_complex(complex_t);
     complex_t z_point, a_point; /* we need 2 pts to use in our calculation */
     int num_iterations;  /* a counter to track the number of iterations done */
 
@@ -1254,10 +1239,6 @@ int single_mandelbrot_point(complex_t coord_point,
 			    complex_t c_constant,
 			    int Max_iterations, double divergent_limit)
 {
-    /* define the external functions here, for safety */
-    complex_t multiply_complex(complex_t, complex_t);
-    complex_t add_complex(complex_t, complex_t);
-    double absolute_complex(complex_t);
     complex_t z_point;  /* we need a point to use in our calculation */
     int num_iterations;  /* a counter to track the number of iterations done */
 
