@@ -14,11 +14,15 @@ import java.io.DataInput;
 
 public class TimeBoundingBox
 {
-    public  static final int BYTESIZE = 8  /* earliest_time */
-                                      + 8  /* latest_time */  ;
+    public  static final TimeBoundingBox  ALL_TIMES
+                         = new TimeBoundingBox( Double.NEGATIVE_INFINITY,
+                                                Double.POSITIVE_INFINITY );
 
-    private double      earliest_time;
-    private double      latest_time;
+    public  static final int              BYTESIZE = 8  /* earliest_time */
+                                                   + 8  /* latest_time */  ;
+
+    private              double           earliest_time;
+    private              double           latest_time;
 
     public TimeBoundingBox()
     {
@@ -45,6 +49,12 @@ public class TimeBoundingBox
             earliest_time = Double.POSITIVE_INFINITY;
             latest_time   = Double.NEGATIVE_INFINITY;
         }
+    }
+
+    private TimeBoundingBox( double starttime, double finaltime )
+    {
+        earliest_time = starttime;
+        latest_time   = finaltime;
     }
 
     public void reinitialize()
@@ -177,6 +187,70 @@ public class TimeBoundingBox
     {
         return    ( this.earliest_time == endtimes.earliest_time )
                && ( this.latest_time == endtimes.latest_time );
+    }
+
+    /*
+       containsWithinLeft()/containsWithinRight() are for logformat.slog2.Print
+       Or they are for logformat.slog2.input.InputLog.iterator()
+    */
+    public boolean containsWithinLeft( double timestamp )
+    {
+        return    ( this.earliest_time <= timestamp )
+               && ( timestamp < this.latest_time );
+    }
+
+    public boolean containsWithinRight( double timestamp )
+    {
+        return    ( this.earliest_time < timestamp )
+               && ( timestamp <= this.latest_time );
+    }
+
+    public TimeBoundingBox getIntersection( final TimeBoundingBox endtimes )
+    {
+        TimeBoundingBox  intersect_endtimes;
+        double           intersect_earliest_time, intersect_latest_time;
+
+        if ( this.overlaps( endtimes ) ) {
+            if ( this.earliest_time < endtimes.earliest_time )
+                intersect_earliest_time = endtimes.earliest_time;
+            else
+                intersect_earliest_time = this.earliest_time;
+            if ( this.latest_time < endtimes.latest_time )
+                intersect_latest_time   = this.latest_time;
+            else
+                intersect_latest_time   = endtimes.latest_time;
+            intersect_endtimes = new TimeBoundingBox();
+            intersect_endtimes.earliest_time  = intersect_earliest_time;
+            intersect_endtimes.latest_time    = intersect_latest_time;
+            return intersect_endtimes;
+        }
+        else
+            return null;
+    }
+
+    public double getIntersectionDuration( final TimeBoundingBox endtimes )
+    {
+        double           intersect_earliest_time, intersect_latest_time;
+        double           intersect_duration;
+
+        if ( this.overlaps( endtimes ) ) {
+            if ( this.earliest_time < endtimes.earliest_time )
+                intersect_earliest_time = endtimes.earliest_time;
+            else
+                intersect_earliest_time = this.earliest_time;
+            if ( this.latest_time < endtimes.latest_time )
+                intersect_latest_time   = this.latest_time;
+            else
+                intersect_latest_time   = endtimes.latest_time;
+            intersect_duration  = intersect_latest_time
+                                - intersect_earliest_time;
+            if ( intersect_duration > 0.0d )
+                return intersect_duration;
+            else
+                return 0.0d;
+        }
+        else
+            return 0.0d;
     }
 
     /* For SLOG-2 Input API & viewer */

@@ -338,28 +338,40 @@ public class Composite extends Drawable
         public ItrOfPrimes( final TimeBoundingBox  tframe )
         {
             timeframe       = tframe;
-            next_primitive  = null;
+
             next_prime_idx  = 0;
+            if ( primes != null )
+                next_primitive  = this.getNextInQueue();
+            else 
+                next_primitive  = null;
+        }
+
+        private Primitive getNextInQueue()
+        {
+            Primitive  next_prime;
+            while ( next_prime_idx < primes.length ) {
+                if ( primes[ next_prime_idx ].overlaps( timeframe ) ) {
+                    next_prime  = primes[ next_prime_idx ];
+                    next_prime_idx++;
+                    return next_prime;
+                }
+            }
+            return null;
         }
 
         public boolean hasNext()
         {
-            if ( primes == null )
-                return false;
-
-            while ( next_prime_idx < primes.length ) {
-                if ( primes[ next_prime_idx ].overlaps( timeframe ) ) {
-                    next_primitive  = primes[ next_prime_idx ];
-                    next_prime_idx++;
-                    return true;
-                }
-            }
-            return false;
+            return next_primitive != null;
         }
 
         public Object next()
         {
-            return next_primitive;
+            Primitive        returning_prime;
+
+            returning_prime = next_primitive;
+            next_primitive  = this.getNextInQueue();  
+
+            return returning_prime;
         }
 
         public void remove() {}

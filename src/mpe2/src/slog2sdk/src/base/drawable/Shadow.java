@@ -64,7 +64,7 @@ public class Shadow extends Primitive
         map_type2twgt    = new HashMap();
         map_type2dobjs   = null;
 
-        //  Make a depp copy of shade's map_type2twgt
+        //  Make a deep copy of shade's map_type2twgt
         CategoryWeight  shade_twgt;
         Iterator        shade_twgts_itr;
         shade_twgts_itr = shade.map_type2twgt.values().iterator();
@@ -169,7 +169,7 @@ public class Shadow extends Primitive
             this_twgts_itr = this.map_type2twgt.values().iterator();
             while ( this_twgts_itr.hasNext() ) {
                 this_twgt = (CategoryWeight) this_twgts_itr.next(); 
-                this_twgt.rescaleWeight( duration_ratio ); 
+                this_twgt.rescaleRatio( duration_ratio ); 
             }
         }
 
@@ -184,11 +184,11 @@ public class Shadow extends Primitive
             this_twgt = (CategoryWeight) this.map_type2twgt.get( sobj_type ); 
             if ( this_twgt == null ) {
                 this_twgt = new CategoryWeight( sobj_twgt );// sobj_twgt's clone
-                this_twgt.rescaleWeight( duration_ratio ); 
+                this_twgt.rescaleRatio( duration_ratio ); 
                 map_type2twgt.put( sobj_type, this_twgt );
             }
             else
-                this_twgt.addWeight( sobj_twgt, duration_ratio );
+                this_twgt.addRatio( sobj_twgt, duration_ratio );
         }
 
         // System.err.println( "Shadow.mergeWithShadow(): END" );
@@ -291,7 +291,7 @@ public class Shadow extends Primitive
         if ( this.map_type2twgt.size() > 0 ) {
             Object[]  twgts;
             twgts = this.map_type2twgt.values().toArray();
-            Arrays.sort( twgts, CategoryWeight.WEIGHT_ORDER );
+            Arrays.sort( twgts, CategoryWeight.RATIO_ORDER );
             int  twgts_length = twgts.length;
             outs.writeInt( twgts_length );
             for ( int idx = 0; idx < twgts_length; idx++ )
@@ -392,7 +392,8 @@ public class Shadow extends Primitive
         rStart = (float) rowID - nesting_ftr / 2.0f;
         rFinal = rStart + nesting_ftr;
 
-        return PreviewState.draw( g, twgt_ary, Empty_Border, coord_xform,
+        return PreviewState.draw( g, color,
+                                  twgt_ary, Empty_Border, coord_xform,
                                   drawn_boxes.getLastStatePos( rowID ),
                                   tStart, rStart, tFinal, rFinal );
         // return State.draw( g, color, Empty_Border, coord_xform,
