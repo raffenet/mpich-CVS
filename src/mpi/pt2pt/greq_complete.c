@@ -7,13 +7,13 @@
 
 #include "mpiimpl.h"
 
-/* -- Begin Profiling Symbol Block for routine MPI_Foo */
+/* -- Begin Profiling Symbol Block for routine MPI_Grequest_complete */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPI_Foo = PMPI_Foo
+#pragma weak MPI_Grequest_complete = PMPI_Grequest_complete
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_Foo  MPI_Foo
+#pragma _HP_SECONDARY_DEF PMPI_Grequest_complete  MPI_Grequest_complete
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPI_Foo as PMPI_Foo
+#pragma _CRI duplicate MPI_Grequest_complete as PMPI_Grequest_complete
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -21,7 +21,7 @@
    the MPI routines.  You can use USE_WEAK_SYMBOLS to see if MPICH is
    using weak symbols to implement the MPI routines. */
 #ifndef MPICH_MPI_FROM_PMPI
-#define MPI_Foo PMPI_Foo
+#define MPI_Grequest_complete PMPI_Grequest_complete
 
 /* Any internal routines can go here.  Make them static if possible.  If they
    are used by both the MPI and PMPI versions, use PMPI_LOCAL instead of 
@@ -34,17 +34,13 @@ int MPIR_Foo_util( int a, MPID_Comm *comm )
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPI_Foo
+#define FUNCNAME MPI_Grequest_complete
 
 /*@
-   MPI_Foo - short description
+   MPI_Grequest_complete - short description
 
    Input Arguments:
-+  first - 
-.  middle - 
--  last - 
-
-   Output Arguments:
+.  request - Generalized request to mark as complete
 
    Notes:
 
@@ -52,32 +48,29 @@ int MPIR_Foo_util( int a, MPID_Comm *comm )
 
 .N Errors
 .N MPI_SUCCESS
-.N ... others
 @*/
-int MPI_Foo( MPI_Comm comm, int a ) 
+int MPI_Grequest_complete( MPI_Request request )
 {
-    static const char FCNAME[] = "MPI_Foo";
+    static const char FCNAME[] = "MPI_Grequest_complete";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Comm *comm_ptr = NULL;
+    MPID_Request *request_ptr;
     MPID_MPI_STATE_DECLS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FOO);
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GREQUEST_FOO);
     /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+    MPID_Request_get_ptr( request, request_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (a < 0) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
-                            "**negarg", "**negarg %s %d", "a", a );
-            } 
-            /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not valid, it will be reset to null */
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPID_Request_valid_ptr(request_ptr,mpi_errno);
+	    if (request_ptr && request_ptr->kind != MPID_UREQUEST) {
+ 	        mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
+						  "**notgenreq" 0 );
+	    }
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_FOO);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
@@ -86,15 +79,9 @@ int MPI_Foo( MPI_Comm comm, int a )
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    /* Some routines must ensure only one thread modifies a communicator
-       at a time, e.g., MPI_Comm_set_attr.  */
-    MPID_Comm_thread_lock( comm_ptr );
-    {
-        ... actual code ...
-    }
-    MPID_Comm_thread_unlock( comm_ptr );
+    MPID_Request_set_completed( request_ptr );
     /* ... end of body of routine ... */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_FOO);
     return MPI_SUCCESS;
 }

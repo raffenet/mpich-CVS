@@ -643,7 +643,12 @@ typedef struct MPID_Request {
     MPI_Status status;
     /* Persistent requests have their own, "real" requests */
     struct MPID_Request *active_request;
-    /* Still missing: user-defined request support */
+    /* User-defined request support */
+    MPI_Grequest_cancel_function *cancel_fn;
+    MPI_Grequest_free_function *free_fn;
+    MPI_Grequest_query_function *query_fn;
+    void *grequest_extra_state;
+    
     /* Other, device-specific information */
 #ifdef MPID_DEV_REQUEST_DECL
     MPID_DEV_REQUEST_DECL

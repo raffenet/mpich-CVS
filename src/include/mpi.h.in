@@ -164,8 +164,6 @@ typedef void (MPI_Handler_function) ( MPI_Comm *, int *, ... );
 typedef int (MPI_Comm_copy_attr_function)(MPI_Comm, int, void *, void *, 
 					  void *, int *);
 typedef int (MPI_Comm_delete_attr_function)(MPI_Comm, int, void *, void *);
-typedef int (MPI_Grequest_cancel_function)(void *, int); 
-typedef int (MPI_Grequest_free_function)(void *); 
 typedef int (MPI_Type_copy_attr_function)(MPI_Datatype, int, void *, void *, 
 					  void *, int *);
 typedef int (MPI_Type_delete_attr_function)(MPI_Datatype, int, void *, void *);
@@ -290,6 +288,11 @@ typedef struct {
 #define MPI_THREAD_SERIALIZED 2
 #define MPI_THREAD_MULTIPLE 3
 
+/* Typedefs for generalized requests */
+typedef int (MPI_Grequest_cancel_function)(void *, int); 
+typedef int (MPI_Grequest_free_function)(void *); 
+typedef int (MPI_Grequest_query_function)(void *, MPI_Status *); 
+
 /********************** MPI-2 FEATURES END HERE ***************************/
 
 /*************** Experimental MPICH FEATURES BEGIN HERE *******************/
@@ -380,7 +383,6 @@ typedef int (MPI_Datarep_conversion_function)(void *, MPI_Datatype, int,
              void *, MPI_Offset, void *);
 typedef int (MPI_Datarep_extent_function)(MPI_Datatype datatype, MPI_Aint *,
 					  void *);
-typedef int (MPI_Grequest_query_function)(void *, MPI_Status *); 
 
 /* The following definitions are used to support a single source tree for
    both Unix and Windows NT versions of MPICH.  For Unix users, the 
