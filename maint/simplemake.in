@@ -1610,8 +1610,11 @@ sub TargetSharedLibraryFinal {
     print FD "# Build the shared library from the shared object files\n";
     print FD "$libdir/$newlibname: $libdir/$libname\n";
     print FD "\tif [ -d $libdir/.tmp ] ; then rm -rf $libdir/.tmp ; fi\n";
+    print FD "\tmkdir $libdir/.tmp\n";
     print FD "\t(cd $libdir/.tmp && ar x ../$libname && \\\n";
-    print FD "\t\${C_LINK_SHL} -o ../$newlibname *.lo)\n";
+    print FD "\tfor file in *.lo ; bfile=\`basename \$\$file .lo\`;\\\n";
+    print FD "\t\tmv \$\$file \$\$bfile.o ; done\\\n";
+    print FD "\t\${C_LINK_SHL} -o ../$newlibname *.o)\n";
     print FD "\trm -rf $libdir/.tmp\n";
 }
 #
