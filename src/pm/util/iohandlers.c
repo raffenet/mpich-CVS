@@ -16,7 +16,11 @@
 /*
  * IO handlers for stdin, out, and err.
  * These are fairly simple, but allow useful control, such as labeling the
- * output of each line
+ * output of each line.
+ *
+ * An alternative to the code in this file might be to use "fd shipping",
+ * but that is not portable or as flexible as the approach in this 
+ * file.
  */
 #define MAXCHARBUF 1024
 #define MAXLEADER  32

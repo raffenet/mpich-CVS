@@ -27,6 +27,7 @@
 /* parameter value MPIEXEC_PORTRANGE, which has the format low:high,       */
 /* where both low and high are positive integers.  Unless this program is  */
 /* privaledged, the numbers must be greater than 1023.                     */
+/* Return -1 on error                                                      */
 /* ----------------------------------------------------------------------- */
 #include <errno.h>
 #include <netinet/in.h>
@@ -43,22 +44,29 @@ int mpiexecGetPort( int *fdout, int *portout )
     int                optval = 1;
     int                portnum;
     char               *range_ptr;
-    int                low_port, high_port;
+    int                low_port=0, high_port=0;
+
+    /* Under cygwin we may want to use 1024 as a low port number */
+    /* a low and high port of zero allows the system to choose 
+       the port value */
     
     /* Get the low and high portnumber range.  zero may be used to allow
        the system to choose */
     range_ptr = getenv( "MPIEXEC_PORTRANGE" );
-    if (!range_ptr) {
-	/* Under cygwin we may want to use 1024 as a low port number */
-	/* a low and high port of zero allows the system to choose 
-	   the port value */
-	low_port  = 0;
-	high_port = 0;
-    }
-    else {
-	/* FIXME: Look for n:m format */
-	MPIU_Error_printf( "ranges not supported for ports\n" );
-	return 1;
+    if (range_ptr) {
+	char *p;
+	/* Look for n:m format */
+	p = range_ptr;
+	while (*p && iswhite(*p)) p++;
+	while (*p && isdigit(*p)) low_port = 10 * low_port + (*p++ - '0');
+	if (*p == ':') {
+	    while (*p && isdigit(*p)) high_port = 10 * high_port + (*p++ - '0');
+	}
+	if (!*p) {
+	    MPIU_Error_printf( "Invalid character %c in MPIEXEC_PORTRANGE\n", 
+			       *p );
+	    return -1;
+	}
     }
 
     for (portnum=low_port; portnum<=high_port; portnum++) {

@@ -19,6 +19,7 @@
 /* one will be provided in a subsequent step                               */
 /* ----------------------------------------------------------------------- */
 /*
+-n num - number of processes
 -host hostname
 -arch architecture name
 -wdir working directory (cd to this one BEFORE running executable?)
@@ -27,7 +28,8 @@
 -file name - implementation-defined specification file
 -configfile name - file containing specifications of host/program, 
    one per line, with # as a comment indicator, e.g., the usual
-   mpiexec input, but with ":" replaced with a newline.
+   mpiexec input, but with ":" replaced with a newline.  That is,
+   the configfile contains lines with -soft, -n etc.
 */
 
 /*
@@ -48,8 +50,8 @@
  * we see an executable.
  */
 static int getInt( int, int, char *[] );
-int getIntValue( const char [], int );
 static int mpiexecParseSoftspec( const char *, SoftSpec * );
+static int ReadConfigFile( const char *, ProcessList *, int );
 
 int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist, 
 		 int (*ProcessArg)( int, char *[], void *), void *extraData )
@@ -65,6 +67,9 @@ int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist,
     const char *exename=0;
     int        indexOfFirstArg=-1;
     int        curplist = 0; /* Index of current ProcessList element */
+    int        optionArgs = 0; /* Keep track of where we got 
+				 the options */
+    int        optionCmdline = 0;
 
     /* Get values from the environment first.  Command line options
        override the environment */
@@ -72,39 +77,60 @@ int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist,
 	if ( strncmp( argv[i], "-n",  strlen( argv[i] ) ) == 0 ||
 	     strncmp( argv[i], "-np", strlen( argv[i] ) ) == 0 ) {
 	    np = getInt( i+1, argc, argv );
+	    optionArgs = 1;
 	    i++;
 	}
-	else if ( strncmp( argv[i], "-soft", 6 ) == 0 )
+	else if ( strncmp( argv[i], "-soft", 6 ) == 0 ) {
 	    if ( i+1 < argc )
 		soft = argv[++i];
 	    else {
 		mpiexec_usage( "Missing argument to -soft\n" );
 	    }
-	else if ( strncmp( argv[i], "-host", 6 ) == 0 )
+	    optionArgs = 1;
+	}
+	else if ( strncmp( argv[i], "-host", 6 ) == 0 ) {
 	    if ( i+1 < argc )
 		host = argv[++i];
 	    else 
-		mpiexec_usage( "Missing argument to -host\n" );		    
-	else if ( strncmp( argv[i], "-arch", 6 ) == 0 )
+		mpiexec_usage( "Missing argument to -host\n" );
+	    optionArgs = 1;
+	}
+	else if ( strncmp( argv[i], "-arch", 6 ) == 0 ) {
 	    if ( i+1 < argc )
 		arch = argv[++i];
 	    else
-		mpiexec_usage( "Missing argument to -arch\n" );		    
-	else if ( strncmp( argv[i], "-wdir", 6 ) == 0 )
+		mpiexec_usage( "Missing argument to -arch\n" );
+	    optionArgs = 1;
+	}
+	else if ( strncmp( argv[i], "-wdir", 6 ) == 0 ) {
 	    if ( i+1 < argc )
 		wdir = argv[++i];
 	    else
-		mpiexec_usage( "Missing argument to -wdir\n" );		    
-	else if ( strncmp( argv[i], "-path", 6 ) == 0 )
+		mpiexec_usage( "Missing argument to -wdir\n" );
+	    optionArgs = 1;
+	}
+	else if ( strncmp( argv[i], "-path", 6 ) == 0 ) {
 	    if ( i+1 < argc )
 		path = argv[++i];
 	    else
-		mpiexec_usage( "Missing argument to -path\n" );		    
+		mpiexec_usage( "Missing argument to -path\n" );
+	    optionArgs = 1;
+	}
+	else if ( strncmp( argv[i], "-configfile", 12 ) == 0) {
+	    if ( i+1 < argc ) {
+		/* Ignore the other command line arguments */
+		ReadConfigFile( argv[++i], plist, nplist );
+	    }
+	    else
+		mpiexec_usage( "Missing argument to -configfile\n" );
+	    optionCmdline = 1;
+	} 
 	else if (argv[i][0] != '-') {
 	    exename = argv[i];
 
 	    /* if the executable name is relative to the current
-	       directory, convert it to an absolute name.  FIXME */
+	       directory, convert it to an absolute name.  
+	       FIXME: Make this optional (MPIEXEC_EXEPATH_ABSOLUTE?) */
 	    /* We may not want to do this, if the idea is that that
 	       executable should be found in the PATH at the destionation */
 	    /* wd = getwd( curdir ) */
@@ -183,6 +209,10 @@ int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist,
 	    }
 	}
     }
+    if (optionArgs && optionCmdline) {
+	MPIU_Error_printf( "-configfile may not be used with other options\n" );
+	return -1;
+    }
     return curplist;
 }
 
@@ -217,7 +247,7 @@ static int getInt( int argnum, int argc, char *argv[] )
  * Try to get an integer value from the enviroment.  Return the default
  * if the value is not available or invalid
  */
-int getIntValue( const char name[], int default_val )
+int mpiexecGetIntValue( const char name[], int default_val )
 {
     const char *env_val;
     int  val = default_val;
@@ -309,6 +339,80 @@ static int mpiexecParseSoftspec( const char *str, SoftSpec *sspec )
 	if (*p == ',') p++;
     }
     return maxproc;
+}
+
+/*
+ * Read a file of mpiexec arguments, with a newline between groups.
+ * Initialize the values in plist, and return the number of entries.
+ * Return -1 on error.
+ */
+#define MAXLINEBUF 2048
+#define MAXARGV    256
+static int LineToArgv( char *buf, char *(argv[]), int maxargc );
+
+static int ReadConfigFile( const char *filename, 
+			   ProcessList *plist, int nplist)
+{
+    FILE *fp = 0;
+    int curplist = 0;
+    char linebuf[MAXLINEBUF];
+    char *(argv[MAXARGV]);       /* A kind of dummy argv */
+    int  argc, newplist;
+
+    fp = fopen( filename, "r" );
+    if (!fp) {
+	MPIU_Error_printf( "Unable to open configfile %s\n", filename );
+	return -1;
+    }
+
+    /* Read until we get eof */
+    while (fgets( linebuf, MAXLINEBUF, fp )) {
+	/* Convert the line into an argv array */
+	argc = LineToArgv( linebuf, argv, MAXARGV );
+	
+	/* Process this argv.  We can use the same routine as for the
+	   command line (this allows slightly more than the standard
+	   requires for configfile, but the extension (allowing :)
+	   is not prohibited by the standard */
+	newplist = mpiexecArgs( argc, argv, 
+				&plist[curplist], nplist - curplist, 0, 0 );
+	if (newplist > 0) 
+	    curplist += newplist;
+	else 
+	    /* An error occurred */
+	    break;
+    }
+
+    fclose( fp );
+    return curplist;
+}
+
+/* 
+   Convert a line into an array of pointers to the arguments, which are
+   all null-terminated.  The argument values copy the values in linebuf 
+   so that the line buffer may be reused.
+*/
+static int LineToArgv( char *linebuf, char *(argv[]), int maxargv )
+{
+    int argc = 0;
+    char *p;
+
+    p = linebuf;
+    while (*p) {
+	while (iswhite(*p)) p++;
+	if (argc >= maxargv) {
+	    MPIU_Error_printf( "Too many arguments in configfile line\n" );
+	    return -1;
+	}
+	argv[argc] = p;
+	/* Skip over the arg and insert a null at end */
+	while (*p && !iswhite(*p)) p++;
+
+	/* Convert the entry into a copy */
+	argv[argc] = MPIU_Strdup( argv[argc] );
+	argc++;
+	*p++ = 0;
+    }
 }
 
 /*

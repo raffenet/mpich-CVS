@@ -9,6 +9,8 @@
    Still to do:
    Register group membership so that it is separate from the
    process manager's list of processes
+
+   FIXME: also get any new spawn commands and other changes.
  */
 /*
  * This is a simple PMI server implementation.  This file implements
@@ -118,6 +120,10 @@ typedef struct {
     /* ProcessState contains a PMIProcess member */
 } PMIData;
 
+/*
+ * Initialize the information needed to communicate the the PMI client 
+ * process (usually an MPI job).
+ */
 int IOSetupPMIHandler( IOSpec *ios, int fd, ProcessState *pstate,
 		       int pmigroup, int np, int rank )
 {
@@ -313,7 +319,7 @@ static int fPMI_Allocate_kvs( int *kvsid, char kvsname[] )
 	    pmi.kvstable[i].pairs[j].key[0] = '\0';
 	    pmi.kvstable[i].pairs[j].val[0] = '\0';
 	}
-	snprintf( pmi.kvstable[i].kvsname, MAXKVSNAME, "kvs_%d", i );
+	MPIU_Snprintf( pmi.kvstable[i].kvsname, MAXKVSNAME, "kvs_%d", i );
 	MPIU_Strncpy( kvsname, pmi.kvstable[i].kvsname, MAXKVSNAME ); 
 	*kvsid = i;
 	return( 0 );
@@ -359,7 +365,7 @@ static void fPMI_Handle_create_kvs( PMIProcess *pentry )
     char kvsname[MAXKVSNAME], outbuf[PMIU_MAXLINE];
 
     fPMI_Allocate_kvs( &kvsidx, kvsname );
-    snprintf( outbuf, PMIU_MAXLINE, "cmd=newkvs kvsname=%s\n", kvsname );
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=newkvs kvsname=%s\n", kvsname );
     PMIU_writeline( pentry->fd, outbuf );
     if (pmidebug) {
 	DBG_PRINTF( "Handle_create_kvs new %d name %s\n", kvsidx, kvsname );
@@ -380,12 +386,12 @@ static void fPMI_Handle_destroy_kvs( PMIProcess *pentry )
 	if ( strncmp( pmi.kvstable[i].kvsname, kvsname, MAXKVSNAME ) == 0 ) {
 	    if ( pmi.kvstable[i].active ) {
 		pmi.kvstable[i].active = 0;
-		snprintf( message, PMIU_MAXLINE,
+		MPIU_Snprintf( message, PMIU_MAXLINE,
 			  "KVS_%s_successfully_destroyed", kvsname );
 		rc = 0;
 	    }
 	    else {
-		snprintf( message, PMIU_MAXLINE, "KVS_%s_previously_destroyed",
+		MPIU_Snprintf( message, PMIU_MAXLINE, "KVS_%s_previously_destroyed",
 			  kvsname );
 		rc = -1;
 	    }
@@ -394,9 +400,9 @@ static void fPMI_Handle_destroy_kvs( PMIProcess *pentry )
     }
     if ( i == MAXKVSS ) {
 	rc = -1;
-	snprintf( message, PMIU_MAXLINE, "KVS %s not found", kvsname );
+	MPIU_Snprintf( message, PMIU_MAXLINE, "KVS %s not found", kvsname );
     }
-    snprintf( outbuf, PMIU_MAXLINE, "cmd=kvs_destroyed rc=%d msg=%s\n",
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=kvs_destroyed rc=%d msg=%s\n",
 	      rc, message );
     PMIU_writeline( pentry->fd, outbuf );
 }
@@ -424,7 +430,7 @@ static void fPMI_Handle_put( PMIProcess *pentry )
 	    for ( j = 0; j < MAXPAIRS; j++ ) {
 		if ( strncmp( pmi.kvstable[i].pairs[j].key, key, MAXKEYLEN ) == 0 ) {
 		    rc = -1;          /* no duplicate keys allowed */
-		    snprintf( message, PMIU_MAXLINE, "duplicate_key %s", key );
+		    MPIU_Snprintf( message, PMIU_MAXLINE, "duplicate_key %s", key );
 		    break;
 		}
 		else if ( strncmp( pmi.kvstable[i].pairs[j].key, "", MAXKEYLEN ) == 0 ) {
@@ -439,7 +445,7 @@ static void fPMI_Handle_put( PMIProcess *pentry )
 	    }
 	    if ( j == MAXPAIRS ) {
 		rc = -1;
-		snprintf( message, PMIU_MAXLINE, "no_room_in_kvs_%s",
+		MPIU_Snprintf( message, PMIU_MAXLINE, "no_room_in_kvs_%s",
 			  kvsname );
 	    }
 	}
@@ -447,9 +453,9 @@ static void fPMI_Handle_put( PMIProcess *pentry )
     }
     if ( i == MAXKVSS ) {
 	rc = -1;
-	snprintf( message, PMIU_MAXLINE, "kvs_%s_not_found", kvsname );
+	MPIU_Snprintf( message, PMIU_MAXLINE, "kvs_%s_not_found", kvsname );
     }
-    snprintf( outbuf, PMIU_MAXLINE, "cmd=put_result rc=%d msg=%s\n",
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=put_result rc=%d msg=%s\n",
 	      rc, message );
     PMIU_writeline( pentry->fd, outbuf );
 }
@@ -484,7 +490,7 @@ static void fPMI_Handle_get( PMIProcess *pentry )
 	    if ( j == MAXPAIRS ) {
 		rc = -1;
 		MPIU_Strncpy( value, "unknown", PMIU_MAXLINE );
-		snprintf( message, PMIU_MAXLINE, "key_%s_not_found", kvsname );
+		MPIU_Snprintf( message, PMIU_MAXLINE, "key_%s_not_found", kvsname );
 	    }
 	}
 	break;
@@ -492,9 +498,9 @@ static void fPMI_Handle_get( PMIProcess *pentry )
     if ( i == MAXKVSS ) {
 	rc = -1;
 	MPIU_Strncpy( value, "unknown", PMIU_MAXLINE );
-	snprintf( message, PMIU_MAXLINE, "kvs_%s_not_found", kvsname );
+	MPIU_Snprintf( message, PMIU_MAXLINE, "kvs_%s_not_found", kvsname );
     }
-    snprintf( outbuf, PMIU_MAXLINE, "cmd=get_result rc=%d msg=%s value=%s\n",
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=get_result rc=%d msg=%s value=%s\n",
 	      rc, message, value );
     PMIU_writeline( pentry->fd, outbuf );
     DBG_PRINTF( "%s", outbuf );
@@ -504,7 +510,7 @@ static void fPMI_Handle_get( PMIProcess *pentry )
 static void fPMI_Handle_get_my_kvsname( PMIProcess *pentry )
 {
     char outbuf[PMIU_MAXLINE];
-    snprintf( outbuf, PMIU_MAXLINE, "cmd=my_kvsname kvsname=%s\n",
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=my_kvsname kvsname=%s\n",
 	      pmi.kvstable[pentry->kvs].kvsname );
     PMIU_writeline( pentry->fd, outbuf );
 }
@@ -519,7 +525,7 @@ static void fPMI_Handle_init( PMIProcess *pentry )
 static void fPMI_Handle_get_maxes( PMIProcess *pentry )
 {
     char outbuf[PMIU_MAXLINE];
-    snprintf( outbuf, PMIU_MAXLINE,
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE,
 	      "cmd=maxes kvsname_max=%d keylen_max=%d vallen_max=%d\n",
 	      MAXKVSNAME, MAXKEYLEN, MAXVALLEN );
     PMIU_writeline( pentry->fd, outbuf );
@@ -541,11 +547,11 @@ static void fPMI_Handle_getbyidx( PMIProcess *pentry )
 	    j = atoi( j_char );
 	    if ( ( j > MAXPAIRS ) ||
 		 strncmp( pmi.kvstable[i].pairs[j].key, "", MAXKEYLEN ) == 0 ) {
-		snprintf( outbuf, PMIU_MAXLINE, "cmd=getbyidx_results rc=-1 "
+		MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=getbyidx_results rc=-1 "
 			  "reason=no_more_keyvals\n" );
 	    }
 	    else {
-		snprintf( outbuf, PMIU_MAXLINE, "cmd=getbyidx_results "
+		MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=getbyidx_results "
 			  "rc=0 nextidx=%d key=%s val=%s\n",
 			  j + 1,
 			  pmi.kvstable[i].pairs[j].key,
@@ -555,7 +561,7 @@ static void fPMI_Handle_getbyidx( PMIProcess *pentry )
 	break;
     }
     if ( i == MAXKVSS ) {
-	snprintf( outbuf, PMIU_MAXLINE, "cmd=getbyidx_results rc=-1 "
+	MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=getbyidx_results rc=-1 "
 		  "reason=kvs_%s_not_found\n", kvsname );
     }
     PMIU_writeline( pentry->fd, outbuf );
@@ -569,11 +575,11 @@ static void fPMI_Handle_init_port( PMIProcess *pentry )
 	DBG_PRINTF( "Entering fPMI_Handle_init to start connection\n" );
     }
 
-    snprintf( outbuf, PMIU_MAXLINE, "cmd=set size=%d\n", pentry->nProcesses );
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set size=%d\n", pentry->nProcesses );
     PMIU_writeline( pentry->fd, outbuf );
-    snprintf( outbuf, PMIU_MAXLINE, "cmd=set rank=%d\n", pentry->rank );
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set rank=%d\n", pentry->rank );
     PMIU_writeline( pentry->fd, outbuf );
-    snprintf( outbuf, PMIU_MAXLINE, "cmd=set debug=%d\n", 1 );
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set debug=%d\n", 1 );
     PMIU_writeline( pentry->fd, outbuf );
 }
 
@@ -587,6 +593,20 @@ static void fPMI_Handle_spawn( PMIProcess *pentry )
     */
 }
 
+/*  
+ * FIXME:
+ * Question: What does this need to do?
+ * 1.  Is nproces in range?
+ * 2.  Is the program executable?
+ * 3.  Create the KVS group
+ * 4.  Invoke startup -> the process startup procedure must have
+ *     been registered by the calling program (e.g., usually by
+ *     mpiexec, but possibly a separate pmiserver process)
+ * 5. return kvsname; return code
+ *    How do we handle soft (no specific return size required).
+ *    Also, is part fo the group associated with these processes or
+ *    another group (the spawner?) of processes?
+ */
 void PMI_Init_remote_proc( int fd, PMIProcess *pentry,
 			   int rank, int np, int debug )
 {
