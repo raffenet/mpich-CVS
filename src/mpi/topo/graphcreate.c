@@ -101,6 +101,22 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    int j;
+
+	    /* Check that the communicator is large enough */
+	    if (nnodes > comm_ptr->remote_size) {
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG,
+				  "**topotoolarge", "**topotoolarge %d %d",
+					  nnodes, comm_ptr->remote_size );
+	    }
+	    
+	    /* Perform the remaining tests only if nnodes is valid.  
+	       This avoids SEGVs from accessing invalid parts of the
+	       edges or index arrays */
+            if (mpi_errno) {
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE);
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+            }
+	    
 	    /* Check that index is monotone nondecreasing */
 	    /* Use ERR_ARG instead of ERR_TOPOLOGY because there is not
 	       topology yet */
@@ -123,12 +139,6 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 			      "**edgeoutrange", "**edgeoutrange %d %d %d", 
 						      i, edges[i], nnodes );
 		}
-	    }
-	    /* Check that the communicator is large enough */
-	    if (nnodes > comm_ptr->remote_size) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG,
-				  "**topotoolarge", "**topotoolarge %d %d",
-					  nnodes, comm_ptr->remote_size );
 	    }
 	    /* We could also check that no edge is from a node to itself.
 	       This gives us an excuse to run over the entire arrays. 
