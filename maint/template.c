@@ -51,7 +51,7 @@ int MPIR_Foo_util( int a, MPID_Comm *comm )
 int MPI_Foo( MPI_Comm comm, int a ) 
 {
     static const char FCNAME[] = "MPI_Foo";
-    int mpi_errno;
+    int mpi_errno = MPI_SUCCESS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FOO);
     /* Get handles to MPI objects. */
@@ -73,7 +73,7 @@ int MPI_Foo( MPI_Comm comm, int a )
             if (!comm_ptr) { comm_ptr = MPIR_Process.comm_world; }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
-                return MPIR_Return( comm_ptr->errhandler, mpi_errno );
+                return MPIR_Err_return_comm( comm_ptr, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;

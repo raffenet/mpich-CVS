@@ -13,7 +13,10 @@ $maint_targets = 1;  # set to 0 for distribution versions
 $verbose = 0;        # set to 1 to get more information
 $am_a = "";          # set to _a for automake style input
 $smdir = "";         # directory containing simplemake
+$do_dependencies = 1;# set to 1 to attempt to generate dependency information
 $autoconf_args = ""; # Extra arguments for autoconf
+$root_tags = 1;
+$local_tags = 0;
 $create_configure_input = 1;  # Changes file.sm to file.in .  Set to 0
                               # for file.sm to file .
 %libdir = ();
@@ -96,12 +99,25 @@ foreach $_ (@ARGV) {
 	if ($val eq "no") { $vpath_config = 0; } 
 	else { $vpath_config = 1; }
     }
+    elsif (/-depend/) {
+	$do_dependencies = 1;
+    }
     elsif (/-help/) {
 	&printHelp;
 	exit 0;
     }
     else {
 	&ProcessFile ( $_ );
+    }
+}
+
+# Check that gcc is available if we need it
+if ($do_dependencies) {
+    if (open (TFD, "gcc --version | 2>&1" )) {
+	close TFD;
+    }
+    else {
+	$do_dependencies = 0;
     }
 }
 
@@ -244,6 +260,10 @@ sub WriteMfile {
 
     # Next, the programs
     &TargetPrograms;
+
+    if ($do_dependencies) {
+	&TargetDependencies;
+    }
 
     # Tags
     &TargetTags;
@@ -663,13 +683,39 @@ sub TargetPrograms {
 #
 # ===========================================================================
 sub TargetTags {
+    if (!$local_tags && !$root_tags) { return; }
+    
+    # Generate a listing of header and source files
+    $has_sources = 0;
+    $has_headers = 0;
+    if ($regular_sources ne "") {
+	print FD "SOURCES = $regular_sources\n";
+	$has_sources = 1;
+    }
+    if ($regular_headers ne "") {
+	print FD "HEADERS = $regular_headers\n";
+	$has_headers = 1;
+    }
     print FD "TAGS:";
     # Only generate a local etags call if there are local sources
-    if (0) {
-	print FD '${HEADERS} ${SOURCES}
+    # This target is designed for VPATH builds to build a TAGS file in
+    # a vpath location.
+    if ($has_headers || $has_sources) {
+        if ($local_tags) {
+	    print FD '${HEADERS} ${SOURCES}
 	here=`pwd`;\
 	(cd ${srcdir} && etags -o $$here/TAGS --append ${HEADERS} ${SOURCES};)
 ';
+        }
+        elsif ($root_tags) {
+	    print FD "\${HEADERS} \${SOURCES}\n";
+	    $rpath = $rootdirpath;
+	    $rpath =~ s/\/$//;
+	    print FD "\tetags -o $rpath/TAGS --append \${HEADERS} \${SOURCES}\n";
+        }
+        else {
+	    print FD "\n";
+        }
     }
     else {
 	print FD "\n";
@@ -720,4 +766,55 @@ simplemake [ -nocomments ] [ -am ] [ -libdir=NAME=DIR ] [ -include=LIST ]\
     -include=LIST    - CPP style list of include directories (e.g., -Ia -Ib)\
                        These define INCLUDES unless a Makefile.sm defines\
                        that value\n";
+}
+
+#
+# Generate dependency information when possible.  This version simply 
+# uses gcc -MM; if that doesn't work, does nothing.  
+#
+# Automake strives to generate the dependencies.  This is a better approach,
+# but it is very difficult to implement in practice, particularly where the
+# development environment is not GNU.  
+sub AddDependency {
+    $target = $_[0];
+    if (defined($makevars{"INCLUDES"})) {
+	$include = $makevars{"INCLUDES"};
+    }
+    else {
+	$include = $include_list;
+    }
+    print "Trying gcc -MM $include $target\n" if $debug;
+    open( DEPFD, "gcc -MM $include $target |" ) || return;
+    while (<DEPFD>) {
+	print FD $_;
+    }
+    close( DEPFD );
+}
+sub TargetDependencies {
+    print FD "# Dependencies\n";
+    # Libraries first
+    foreach $lib (keys(%libraries)) {
+        foreach $sourcefile (split(/\s\s*/,&ExpandMakeVars($libraries{$lib}))) {
+            $obj = $sourcefile;
+            # Get extension
+	    $ext = $sourcefile;
+	    $ext =~ s/^.*\.//g;
+	    # We only know about C for now.
+	    if ($ext eq "c") {
+		&AddDependency( $sourcefile );
+	    }
+        }
+    }
+    # Programs
+    foreach $pgm (keys(%programs)) {
+	foreach $sourcefile (split(/\s\s*/,$programs{$pgm})) {
+            $obj = $sourcefile;
+	    $ext = $sourcefile;
+	    $ext =~ s/^.*\.//g;
+	    # We only know about C for now.
+	    if ($ext eq "c") {
+		&AddDependency( $sourcefile );
+	    }
+	}
+    }
 }
