@@ -24,7 +24,7 @@
     } \
     MPIU_Object_set_ref(sreq, 2); \
     sreq->kind = MPID_REQUEST_SEND; \
-    memcpy(sreq->dev.iov, iov, iov_count * sizeof(MPID_IOV)); \
+    memcpy(sreq->dev.iov, iov, count * sizeof(MPID_IOV)); \
     /*for (i = 0; i < count; i++) { sreq->dev.iov[i] = iov[i]; }*/ \
     if (offset == 0) \
     { \
