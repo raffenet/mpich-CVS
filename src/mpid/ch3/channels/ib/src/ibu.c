@@ -1046,7 +1046,7 @@ int ibu_init()
         HCA_QUERY_HCA_STATIC | HCA_QUERY_PORT_INFO_STATIC | HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
     IBU_Process.attr_p = calloc(attr_size, sizeof(ib_uint8_t));
     status = ib_hca_query_us(IBU_Process.hca_handle, IBU_Process.attr_p, 
-	HCA_QUERY_HCA_STATIC | HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
+	HCA_QUERY_HCA_STATIC | HCA_QUERY_PORT_INFO_STATIC | HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
     if (status != IBU_SUCCESS)
     {
 	err_printf("ibu_init: ib_hca_query_us(HCA_QUERY_HCA_STATIC) failed, status %d\n", status);
