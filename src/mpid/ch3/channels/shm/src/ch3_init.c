@@ -179,7 +179,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     }
     for (p = 0; p < pg_size; p++)
     {
-	MPID_VCR_Dup(&vc_table[p], &comm->vcr[p]);
+	mpi_errno = MPID_VCR_Dup(&vc_table[p], &comm->vcr[p]);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_vcrdup", 0);
+	    return mpi_errno;
+	}
     }
 
     /* Initialize MPI_COMM_SELF object */
@@ -198,7 +203,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_getptr", 0);
 	return mpi_errno;
     }
-    MPID_VCR_Dup(&vc_table[pg_rank], &comm->vcr[0]);
+    mpi_errno = MPID_VCR_Dup(&vc_table[pg_rank], &comm->vcr[0]);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_vcrdup", 0);
+	return mpi_errno;
+    }
 
     /* Initialize Progress Engine */
     mpi_errno = MPIDI_CH3I_Progress_init();
@@ -232,23 +242,68 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	if (pg_rank == 0)
 	{
 	    generate_shm_string(shmemkey);
-	    MPIU_Strncpy(key, "SHMEMKEY", key_max_sz);
-	    MPIU_Strncpy(val, shmemkey, val_max_sz);
-	    PMI_KVS_Put(pg->kvs_name, key, val);
-	    PMI_KVS_Commit(pg->kvs_name);
-	    PMI_Barrier();
+	    if (MPIU_Strncpy(key, "SHMEMKEY", key_max_sz))
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
+		return mpi_errno;
+	    }
+	    if (MPIU_Strncpy(val, shmemkey, val_max_sz))
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
+		return mpi_errno;
+	    }
+	    mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
+	    if (mpi_errno != 0)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
+		return mpi_errno;
+	    }
+	    mpi_errno = PMI_KVS_Commit(pg->kvs_name);
+	    if (mpi_errno != 0)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", mpi_errno);
+		return mpi_errno;
+	    }
+	    mpi_errno = PMI_Barrier();
+	    if (mpi_errno != 0)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
+		return mpi_errno;
+	    }
 	}
 	else
 	{
-	    MPIU_Strncpy(key, "SHMEMKEY", key_max_sz);
-	    PMI_Barrier();
-	    PMI_KVS_Get(pg->kvs_name, key, val);
-	    MPIU_Strncpy(shmemkey, val, val_max_sz);
+	    if (MPIU_Strncpy(key, "SHMEMKEY", key_max_sz))
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
+		return mpi_errno;
+	    }
+	    mpi_errno = PMI_Barrier();
+	    if (mpi_errno != 0)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
+		return mpi_errno;
+	    }
+	    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val);
+	    if (mpi_errno != 0)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
+		return mpi_errno;
+	    }
+	    if (MPIU_Strncpy(shmemkey, val, val_max_sz))
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
+		return mpi_errno;
+	    }
 	}
 
 	MPIU_DBG_PRINTF(("KEY = %s\n", shmemkey));
 #if defined(USE_POSIX_SHM) || defined(USE_WINDOWS_SHM)
-	MPIU_Strncpy(pg->key, shmemkey, MPIDI_MAX_SHM_NAME_LENGTH);
+	if (MPIU_Strncpy(pg->key, shmemkey, MPIDI_MAX_SHM_NAME_LENGTH))
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
+	    return mpi_errno;
+	}
 #elif defined (USE_SYSV_SHM)
 	pg->key = atoi(shmemkey);
 #else
@@ -338,9 +393,20 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	return mpi_errno;
     }
 #ifdef USE_POSIX_SHM
-    shm_unlink(pg->key);
+    if (shm_unlink(pg->key))
+    {
+	/* Everyone is unlinking the same object so failure is ok? */
+	/*
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_unlink", "**shm_unlink %s %d", pg->key, errno);
+	return mpi_errno;
+	*/
+    }
 #elif defined (USE_SYSV_SHM)
-    shmctl(pg->id, IPC_RMID, NULL);
+    if (shmctl(pg->id, IPC_RMID, NULL))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmctl", "**shmctl %d", errno);
+	return mpi_errno;
+    }
 #endif
 
     MPIU_Free(val);

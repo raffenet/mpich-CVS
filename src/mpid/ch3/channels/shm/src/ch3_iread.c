@@ -17,7 +17,7 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 {
-    int mpi_errno;
+    int mpi_errno = MPI_SUCCESS;
 #ifdef USE_AGGRESSIVE_READ
     void *mem_ptr;
     char *iter_ptr;
@@ -39,13 +39,21 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	rreq->shm.iov_offset = 0;
 	vc->shm.recv_active = rreq;
 	mpi_errno = MPIDI_CH3I_SHM_post_readv(vc, rreq->ch3.iov + rreq->shm.iov_offset, rreq->ch3.iov_count - rreq->shm.iov_offset, NULL);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
 	return mpi_errno;
     }
 
     pkt_ptr = &vc->shm.read_shmq->packet[index];
     mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
     num_bytes = pkt_ptr->num_bytes;
-    assert(num_bytes > 0);
+#ifdef MPICH_DBG_OUTPUT
+    if (num_bytes < 1)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_shmq", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
+	return mpi_errno;
+    }
+#endif
 
     iter_ptr = mem_ptr;
 
@@ -109,10 +117,10 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 
     rreq->shm.iov_offset = 0;
     vc->shm.recv_active = rreq;
-    MPIDI_CH3I_SHM_post_readv(vc, rreq->ch3.iov + rreq->shm.iov_offset, rreq->ch3.iov_count - rreq->shm.iov_offset, NULL);
+    mpi_errno = MPIDI_CH3I_SHM_post_readv(vc, rreq->ch3.iov + rreq->shm.iov_offset, rreq->ch3.iov_count - rreq->shm.iov_offset, NULL);
 
 #endif /* USE_AGGRESSIVE_READ */
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }

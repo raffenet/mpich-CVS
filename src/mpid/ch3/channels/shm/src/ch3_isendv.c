@@ -19,7 +19,14 @@
     } \
     if (offset == 0) \
     { \
-	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t)); \
+	/* assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t); */ \
+	if (iov[0].MPID_IOV_LEN != sizeof(MPIDI_CH3_Pkt_t)) \
+	{ \
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0); \
+	    MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST); \
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV); \
+	    return mpi_errno; \
+	} \
 	sreq->shm.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
 	sreq->ch3.iov[0].MPID_IOV_BUF = (void*)&sreq->shm.pkt; \
     } \
@@ -42,9 +49,20 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
     MPIU_DBG_PRINTF(("ch3_isendv\n"));
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    assert(n_iov <= MPID_IOV_LIMIT);
-    assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
-
+#ifdef MPICH_DBG_OUTPUT
+    if (n_iov > MPID_IOV_LIMIT)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
+	return mpi_errno;
+    }
+    if (iov[0].MPID_IOV_LEN > sizeof(MPIDI_CH3_Pkt_t))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
+	return mpi_errno;
+    }
+#endif
     /* The SHM implementation uses a fixed length header, the size of which is the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     

@@ -83,8 +83,9 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len, int *num_bytes_ptr)
 #define FUNCNAME MPIDI_CH3I_SHM_writev
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
+int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr)
 {
+    int mpi_errno = MPI_SUCCESS;
     int i;
     unsigned int total = 0;
     unsigned int num_bytes;
@@ -95,21 +96,29 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
     for (i=0; i<n; i++)
     {
-	num_bytes = MPIDI_CH3I_SHM_write(vc, 
+	mpi_errno = MPIDI_CH3I_SHM_write(vc, 
 					 iov[i].MPID_IOV_BUF, 
-					 iov[i].MPID_IOV_LEN);
+					 iov[i].MPID_IOV_LEN,
+					 &num_bytes);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
+	    return mpi_errno;
+	}
 	total += num_bytes;
 	if (num_bytes < iov[i].MPID_IOV_LEN)
 	{
+	    *num_bytes_ptr = total;
 	    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
-	    return total;
+	    return MPI_SUCCESS;
 	}
     }
-    
+
+    *num_bytes_ptr = total;
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
-    return total;
+    return MPI_SUCCESS;
 }
 
 #else
@@ -413,7 +422,7 @@ int shmi_readv_unex(MPIDI_VC *vc_ptr)
 #define FUNCNAME MPIDI_CH3I_SHM_wait
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, shm_wait_t *shm_out, int *error_ptr)
+int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, shm_wait_t *shm_out)
 {
     void *mem_ptr;
     char *iter_ptr;
@@ -441,7 +450,6 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 
 	    *num_bytes_ptr = MPIDI_CH3I_Process.unex_finished_list->shm.read.total;
 	    *vc_pptr = MPIDI_CH3I_Process.unex_finished_list;
-	    *error_ptr = 0;
 	    /* remove this vc from the finished list */
 	    temp_vc_ptr = MPIDI_CH3I_Process.unex_finished_list;
 	    MPIDI_CH3I_Process.unex_finished_list = MPIDI_CH3I_Process.unex_finished_list->shm.unex_finished_next;
@@ -581,7 +589,6 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		    recv_vc_ptr->shm.shm_state &= ~SHM_READING_BIT;
 		    *num_bytes_ptr = recv_vc_ptr->shm.read.total;
 		    *vc_pptr = recv_vc_ptr;
-		    *error_ptr = 0;
 		    *shm_out = SHM_WAIT_READ;
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 		    return MPI_SUCCESS;
@@ -622,7 +629,6 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		    recv_vc_ptr->shm.shm_state &= ~SHM_READING_BIT;
 		    *num_bytes_ptr = recv_vc_ptr->shm.read.total;
 		    *vc_pptr = recv_vc_ptr;
-		    *error_ptr = 0;
 		    *shm_out = SHM_WAIT_READ;
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 		    return MPI_SUCCESS;

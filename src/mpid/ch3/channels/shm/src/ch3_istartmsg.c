@@ -55,7 +55,15 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 
     MPIU_DBG_PRINTF(("ch3_istartmsg\n"));
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    assert(pkt_sz <= sizeof(MPIDI_CH3_Pkt_t));
+#ifdef MPICH_DBG_OUTPUT
+    /*assert(pkt_sz <= sizeof(MPIDI_CH3_Pkt_t));*/
+    if (pkt_sz > sizeof(MPIDI_CH3_Pkt_t))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+	return mpi_errno;
+    }
+#endif
 
     /* The SHM implementation uses a fixed length header, the size of which is
        the maximum of all possible packet headers */
@@ -97,11 +105,15 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 	    MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - connection failed, "
 		"errno=%d:%s", errno, strerror(errno)));
 	    sreq = MPIDI_CH3_Request_create();
-	    assert(sreq != NULL);
+	    if (sreq == NULL)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+		return mpi_errno;
+	    }
 	    sreq->kind = MPID_REQUEST_SEND;
 	    sreq->cc = 0;
-	    /* TODO: Create an appropriate error message based on the value
-	             of errno */
+	    /* TODO: Create an appropriate error message based on the value of errno */
 	    sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 	}
     }
