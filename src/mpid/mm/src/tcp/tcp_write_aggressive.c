@@ -46,7 +46,7 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
     if ((*cur_pos_ptr == MPID_VECTOR_LIMIT) ||
         (car_ptr->data.tcp.buf.vec_write.num_read_copy == buf_ptr->vec.num_read))
     {
-	MM_EXIT_FUNC(TCP_STUFF_VECTOR_TMP);
+	MM_EXIT_FUNC(TCP_STUFF_VECTOR_VEC);
 	return FALSE;
     }
     
@@ -72,8 +72,8 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
     }
     *cur_pos_ptr = cur_pos;
 
-    MM_EXIT_FUNC(TCP_STUFF_VECTOR_TMP);
-    return (num_avail == 0 && final_segment)
+    MM_EXIT_FUNC(TCP_STUFF_VECTOR_VEC);
+    return (num_avail == 0 && final_segment);
     /*
     if (buf_ptr->vec.vec_size == 1)
     {
@@ -125,8 +125,10 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
 	/* at this point the vec in the car describes all the currently read data */
     }
 #endif
+    /*
     MM_EXIT_FUNC(TCP_STUFF_VECTOR_VEC);
     return FALSE;
+    */
 }
 
 int tcp_stuff_vector_tmp(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
