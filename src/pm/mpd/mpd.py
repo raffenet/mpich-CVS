@@ -588,7 +588,19 @@ def _do_mpdrun(msg):
             manLhsHost = msg['lhshost']
             manLhsPort = msg['lhsport']
         (tempSocket,tempPort) = mpd_get_inet_listen_socket('',0)
+        if not tempSocket:
+            mpd_print(1,'_do_mpdrun failed to obtain listen socket')
+            if g.conSocket:
+                mpd_send_one_msg(g.conSocket, {'cmd' : 'job_failed',
+                                               'reason' : 'failed_to_get_listen_socket'})
+            return
         (toManSocket,toMpdSocket) = mpd_socketpair()
+        if not toManSocket:
+            mpd_print(1,'_do_mpdrun failed to obtain socketpair')
+            if g.conSocket:
+                mpd_send_one_msg(g.conSocket, {'cmd' : 'job_failed',
+                                               'reason' : 'failed_to_get_socketpair'})
+            return
         msg['lhshost'] = g.myHost
         msg['lhsport'] = tempPort
         if currRank == 0:
@@ -771,6 +783,9 @@ def _handle_rhs_input():
             mpd_print(0000,"DID CONN TO MYSELF %s %s" % (g.rhsHost,g.rhsPort))
             return
         g.rhsSocket = mpd_get_inet_socket_and_connect(g.rhsHost,g.rhsPort)
+        if not g.rhsSocket:
+            mpd_print(1,'_handle_rhs_input failed to obtain rhs socket')
+            return
         _add_active_socket(g.rhsSocket,'rhs','_handle_rhs_input',g.rhsHost,g.rhsPort)
         msgToSend = { 'cmd' : 'request_to_enter_as_lhs',
                       'host' : g.myHost,

@@ -239,6 +239,8 @@ def mpdrun():
             elif  msg['reason'] == 'invalid_username':
                 print 'mpdrun: invalid username %s at host %s' % \
                       (msg['username'],msg['host'])
+            else:
+                print 'mpdrun: job failed; reason=:%s:' % (msg['reason'])
             myExitStatus = -1  # used in main
             exit(myExitStatus) # really forces jump back into main
         else:

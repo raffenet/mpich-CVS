@@ -251,24 +251,32 @@ def mpd_recv_one_msg(sock):
     return msg
 
 def mpd_get_inet_listen_socket(host,port):
-    sock = socket(AF_INET,SOCK_STREAM)
+    try:
+        sock = socket(AF_INET,SOCK_STREAM)
+    except Exception, data:
+        mpd_print(1, 'mpd_get_listen_sock: socket failed' % ( data.__class__, data) )
+        return (None,None)
     rc = sock.setsockopt(SOL_SOCKET,SO_REUSEADDR,1)
     # print "PORT=%d rc=%s" % (port,str(rc))  # rc may be None
     sock.bind((host,port))  # note user may specify port 0 (anonymous)
     sock.listen(5)
     actualPort = sock.getsockname()[1]
-    return(sock,actualPort)
+    return (sock,actualPort)
 
 def mpd_get_inet_socket_and_connect(host,port):
-    tempSocket = socket(AF_INET,SOCK_STREAM)
-    # tempSocket.setsockopt(SOL_SOCKET,SO_REUSEADDR,1)
     try:
-        tempSocket.connect((host,port))  # note double parens
-    except:
-        mpd_print(0, 'connect failed to host %s  port %s' % (host,port) )
-        tempSocket.close()
+        sock = socket(AF_INET,SOCK_STREAM)
+    except Exception, data:
+        mpd_print(1, 'mpd_get_sock_and_conn: socket failed' % ( data.__class__, data) )
         return None
-    return tempSocket
+    # sock.setsockopt(SOL_SOCKET,SO_REUSEADDR,1)
+    try:
+        sock.connect((host,port))  # note double parens
+    except error, data:
+        mpd_print(0, 'connect failed to host %s  port %s' % (host,port) )
+        sock.close()
+        return None
+    return sock
 
 def mpd_get_ranks_in_binary_tree(myRank,nprocs):
     if myRank == 0:
@@ -284,15 +292,34 @@ def mpd_get_ranks_in_binary_tree(myRank,nprocs):
     return (parent,lchild,rchild)
 
 def mpd_socketpair():
-    socket1 = socket(AF_INET,SOCK_STREAM)
-    socket1.bind(('localhost',0))
-    socket1.listen(1)
-    port1 = socket1.getsockname()[1]
-    socket2 = socket(AF_INET,SOCK_STREAM)
-    mpd_connect(socket2,'localhost',port1)
-    (socket3,addr) = mpd_accept(socket1)
-    socket1.close()
-    return (socket2,socket3)
+    try:
+        sock1 = socket(AF_INET,SOCK_STREAM)
+    except Exception, data:
+        mpd_print(1, 'mpd_socketpair: sock1 failed' % ( data.__class__, data) )
+        return (None,'sock1 failed')
+    sock1.bind(('localhost',0))
+    sock1.listen(1)
+    port1 = sock1.getsockname()[1]
+    try:
+        sock2 = socket(AF_INET,SOCK_STREAM)
+    except Exception, data:
+        mpd_print(1, 'mpd_socketpair: sock2 failed' % ( data.__class__, data) )
+        sock1.close()
+        return (None,'sock2 failed')
+    rc = mpd_connect(sock2,'localhost',port1)
+    if rc == 0:
+        mpd_print(1, 'mpd_socketpair: conn failed')
+        sock1.close()
+        sock2.close()
+        return (None,'conn failed')
+    (sock3,addr) = mpd_accept(sock1)
+    if not sock3:
+        mpd_print(1, 'mpd_socketpair: accept failed')
+        sock1.close()
+        sock2.close()
+        return (None,'accept failed')
+    sock1.close()
+    return (sock2,sock3)
 
 def mpd_connect(sock,host,port):
     done = 0
