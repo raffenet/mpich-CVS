@@ -163,6 +163,20 @@ Return values:
 int PMI_Get_universe_size( int *size );
 
 /*@
+PMI_Get_appnum - obtain the application number
+
+Output Parameters:
+. appnum - pointer to an integer that receives the application number
+
+Return values:
++ PMI_SUCCESS - size successfully obtained
+. PMI_ERR_INVALID_ARG - invalid argument
+- PMI_FAIL - unable to return the size
+
+@*/
+int PMI_Get_appnum( int *appnum );
+
+/*@
 PMI_Get_id - obtain the id of the process group
 
 Input Parameter:

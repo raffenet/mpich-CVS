@@ -1151,6 +1151,19 @@ int iPMI_Get_universe_size(int *size)
     return PMI_SUCCESS;
 }
 
+int iPMI_Get_appnum(int *appnum)
+{
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (appnum == NULL)
+	return PMI_ERR_INVALID_ARG;
+
+    /* FIXME: insert implementation here */
+    *appnum = -1;
+
+    return PMI_SUCCESS;
+}
+
 int iPMI_Get_clique_size( int *size )
 {
     if (pmi_process.init_finalized == PMI_FINALIZED)
