@@ -167,13 +167,16 @@ int MTestGetDatatypes( MTest_Datatype *sendtype, MTest_Datatype *recvtype )
 	break;
     case 4:
 	MPI_Type_dup( MPI_INT, &sendtype->datatype );
+	MPI_Type_set_name( sendtype->datatype, "dup of MPI_INT" );
 	MPI_Type_dup( MPI_INT, &recvtype->datatype );
+	MPI_Type_set_name( recvtype->datatype, "dup of MPI_INT" );
 	break;
     case 5:
 	/* vector send type and contiguous receive type */
 	sendtype->stride = 3;
 	MPI_Type_vector( recvtype->count, 1, sendtype->stride, MPI_INT, 
 			 &sendtype->datatype );
+	MPI_Type_set_name( sendtype->datatype, "int-vector" );
 	sendtype->count    = 1;
 	recvtype->datatype = MPI_INT;
 	recvtype->isBasic  = 1;
@@ -411,6 +414,7 @@ int MTestGetWin( MPI_Win *win, int mustBePassive )
 	/* Active target window */
 	MPI_Win_create( actbuf, 1024, 1, MPI_INFO_NULL, MPI_COMM_WORLD, 
 			win );
+	winName = "active-window";
 	break;
     case 1:
 	/* Passive target window */
@@ -418,6 +422,7 @@ int MTestGetWin( MPI_Win *win, int mustBePassive )
 	/* FIXME: storage leak */
 	MPI_Win_create( pasbuf, 1024, 1, MPI_INFO_NULL, MPI_COMM_WORLD, 
 			win );
+	winName = "passive-window";
 	break;
     case 2:
 	/* Active target; all windows different sizes */
@@ -430,6 +435,7 @@ int MTestGetWin( MPI_Win *win, int mustBePassive )
 	    buf = 0;
 	MPI_Win_create( buf, n, 1, MPI_INFO_NULL, MPI_COMM_WORLD, 
 			win );
+	winName = "active-all-different-win";
 	break;
     default:
 	win_index = -1;
@@ -439,6 +445,7 @@ int MTestGetWin( MPI_Win *win, int mustBePassive )
 }
 const char *MTestGetWinName( void )
 {
+    
     return winName;
 }
 /* #endif */
