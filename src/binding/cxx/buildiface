@@ -712,7 +712,6 @@ if (!$build_sep_files) {
 #
 # Within a "namespace" qualifier, the namespace name should not be used.
 # Thus, we use Offset, not MPI::Offset.
-# FIXME: The types for these should be determined by configure first.
 print $OUTFD "
 // Typedefs for basic int types
 typedef MPI_Offset Offset;
