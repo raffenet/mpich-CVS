@@ -851,3 +851,94 @@ else
 fi
 rm -f conftest*
 ])
+dnl
+dnl PAC_PROG_F77_IN_C_LIBS
+dnl
+dnl Find the essential libraries that are needed to use the C linker to 
+dnl create a program that includes a trival Fortran code.  
+dnl
+dnl For example, all pgf90 compiled objects include a reference to the
+dnl symbol pgf90_compiled, found in libpgf90 .
+dnl
+AC_DEFUN(PAC_PROG_F77_IN_C_LIBS,[
+AC_MSG_CHECKING([what Fortran libraries are needed to link C with Fortran])
+F77_IN_C_LIBS="$FLIBS"
+/bin/rm -f conftest*
+cat <<EOF > conftest.f
+        subroutine ftest
+        end
+EOF
+dnl
+if test "X$ac_fcompile" = "X" ; then
+    ac_fcompile='${F77-f77} -c $FFLAGS conftest.f 1>&AC_FD_CC'
+fi
+if AC_TRY_EVAL(ac_fcompile) && test -s conftest.o ; then
+    mv conftest.o mconftestf.o
+    AC_LANG_SAVE
+    AC_LANG_C
+    save_LIBS="$LIBS"
+    dnl First try with no libraries
+    LIBS="mconftestf.o $save_LIBS"
+    AC_TRY_LINK([#include <stdio.h>],[
+#ifdef F77_NAME_UPPER
+#define ftest_ FTEST
+#elif defined(F77_NAME_LOWER) || defined(F77_NAME_MIXED)
+#define ftest_ ftest
+#endif
+ftest_();
+], [link_worked=yes], [link_worked=no] )
+    if test "$link_worked" = "no" ; then
+        flibdirs=`echo $FLIBS | tr ' ' '\012' | grep '\-L' | tr '\012' ' '`
+        fliblibs=`echo $FLIBS | tr ' ' '\012' | grep -v '\-L' | tr '\012' ' '`
+        for flibs in $fliblibs ; do
+            LIBS="mconftestf.o $flibdirs $flibs $save_LIBS"
+            AC_TRY_LINK([#include <stdio.h>],[
+#ifdef F77_NAME_UPPER
+#define ftest_ FTEST
+#elif defined(F77_NAME_LOWER) || defined(F77_NAME_MIXED)
+#define ftest_ ftest
+#endif
+ftest_();
+], [link_worked=yes], [link_worked=no] )
+            if test "$link_worked" = "yes" ; then 
+	        F77_IN_C_LIBS="$flibdirs $flibs"
+                break
+            fi
+        done
+    if test "$link_worked" = "no" ; then
+	# try to add libraries until it works...
+        flibscat=""
+        for flibs in $fliblibs ; do
+	    flibscat="$flibscat $flibs"
+            LIBS="mconftestf.o $flibdirs $flibscat $save_LIBS"
+            AC_TRY_LINK([#include <stdio.h>],[
+#ifdef F77_NAME_UPPER
+#define ftest_ FTEST
+#elif defined(F77_NAME_LOWER) || defined(F77_NAME_MIXED)
+#define ftest_ ftest
+#endif
+ftest_();
+], [link_worked=yes], [link_worked=no] )
+            if test "$link_worked" = "yes" ; then 
+	        F77_IN_C_LIBS="$flibdirs $flibscat"
+                break
+            fi
+        done
+    fi
+    else
+	# No libraries needed
+	F77_IN_C_LIBS=""
+    fi
+    LIBS="$save_LIBS"
+    AC_LANG_RESTORE
+else 
+    echo "configure: failed program was:" >&AC_FD_CC
+    cat conftest.f >&AC_FD_CC
+fi
+rm -f conftest* mconftest*
+if test -z "$F77_IN_C_LIBS" ; then
+    AC_MSG_RESULT(none)
+else
+    AC_MSG_RESULT($F77_IN_C_LIBS)
+fi
+])
