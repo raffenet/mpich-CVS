@@ -635,7 +635,15 @@ dnl Generate a hex version of the size of each type
 for type in short int long long_long float double long_double wchar_t \
     float_int double_int long_int short_int 2_int long_double_int ; do
     eval len=\$ac_cv_sizeof_$type
-    if test -z "$len" ; then len=0 ; fi
+    if test -z "$len" ; then 
+       len=0
+       # Check for sizes from the CHECK_SIZEOF_DERIVED macro
+       eval pclen=\$pac_cv_sizeof_$type
+       if test -n "$pclen" ; then
+           len=$pclen
+       fi
+    fi
+
     if test $len -le 0 ; then
          eval len_$type="00"
     elif test $len -le 9 ; then 
