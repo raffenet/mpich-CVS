@@ -4,7 +4,6 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-
 #if 0
 
 #include "mpiimpl.h"
@@ -180,10 +179,13 @@ int MPI_Type_create_subarray(int ndims,
     }
     else /* MPI_ORDER_C */ {
 	/* dimension ndims-1 changes fastest */
-	if (ndims == 1)
+	if (ndims == 1) {
 	    mpi_errno = MPID_Type_contiguous(array_of_subsizes[0],
 					     oldtype,
 					     &tmp1);
+
+	    MPIDI_Datatype_dot_printf(tmp1, 0, 1);
+	}
 	else {
 	    mpi_errno = MPID_Type_vector(array_of_subsizes[ndims-2],
 					 array_of_subsizes[ndims-1],
@@ -192,17 +194,22 @@ int MPI_Type_create_subarray(int ndims,
 					 oldtype,
 					 &tmp1);
 	    
+	    MPIDI_Datatype_dot_printf(tmp1, 0, 1);
+
 	    size = array_of_sizes[ndims-1]*extent;
 	    for (i=ndims-3; i>=0; i--) {
 		size *= array_of_sizes[i+1];
 		mpi_errno = MPID_Type_vector(array_of_subsizes[i],
-					     1,
-					     size,
-					     1, /* stride in bytes */
-					     tmp1,
+					     1,    /* blocklen */
+					     size, /* stride */
+					     1,    /* stride in bytes */
+					     tmp1, /* old type */
 					     &tmp2);
+
 		NMPI_Type_free(&tmp1);
 		tmp1 = tmp2;
+
+		MPIDI_Datatype_dot_printf(tmp1, 0, 1);
 	    }
 	}
 	
@@ -227,7 +234,16 @@ int MPI_Type_create_subarray(int ndims,
     types[1] = tmp1;
     types[2] = MPI_UB;
     
-    /* TODO: CAN WE DO THIS MORE SIMPLY? */
+    /* TODO:
+     * if we were to do all this as an mpid function, we could just
+     * directly adjust the LB and UB in the MPID_Datatype structure
+     * instead of jumping through this hoop.
+     *
+     * i suppose we could do the same thing here...
+     *
+     * another alternative would be to use MPID_Type_create_resized() 
+     * instead of building the struct.  that would also be cleaner.
+     */
     mpi_errno = MPID_Type_struct(3,
 				 blklens,
 				 disps,
@@ -275,5 +291,4 @@ int MPI_Type_create_subarray(int ndims,
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }
-
 #endif
