@@ -115,7 +115,7 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
 					      "**nomem", "**nomem %s", "MPI_Info" );
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		"**mpi_info_set", "**mpi_info_set %I %p %p", info, key, value);
+		"**mpi_info_set", "**mpi_info_set %I %s %s", info, key, value);
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_SET);
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}

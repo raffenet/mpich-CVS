@@ -116,7 +116,7 @@ int MPI_Win_post(MPI_Group group, int assert, MPI_Win win)
     }
 
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_win_post", "**mpi_win_post %G %d %W", group, assert, win);
+	"**mpi_win_post", "**mpi_win_post %G %A %W", group, assert, win);
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_POST);
     return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
 }

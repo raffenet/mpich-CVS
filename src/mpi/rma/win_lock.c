@@ -112,7 +112,7 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
 
     /* --BEGIN ERROR HANDLING-- */
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_win_lock", "**mpi_win_lock %d %d %d %W", lock_type, rank, assert, win);
+	"**mpi_win_lock", "**mpi_win_lock %d %d %A %W", lock_type, rank, assert, win);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_LOCK);
     return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */
