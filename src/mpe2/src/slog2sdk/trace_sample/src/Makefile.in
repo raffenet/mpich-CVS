@@ -85,7 +85,7 @@ INSTALL_LIBSO: $(LOBJ)
 	    $(LIBTOOL) --mode=link $(CC) -o $(LIB_TRACE) $(LOBJ) $(LDFLAGS) \
 	               -rpath $(LIBDIR) ; \
 	fi
-	$(LIBTOOL) --mode=install $(INSTALL) $(LIB_TRACE) $(LIBDIR)
+	$(LIBTOOL) --mode=install $(INSTALL) $(LIB_TRACE) $(DESTDIR)$(LIBDIR)
 	$(LIBTOOL) --finish $(LIBDIR)
 
 $(PGM_PRINT): $(OBJ4T)

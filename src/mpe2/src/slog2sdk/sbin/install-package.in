@@ -83,7 +83,7 @@ appendUninstall=0
 if [ -z "$UNINSTALLFILE" ] ; then
     INSTALL_base=`basename $0`
     UNINSTALL_base=`echo $INSTALL_base | sed -e 's/install/uninstall/'`
-    UNINSTALLFILE=${sbindir}/${UNINSTALL_base}
+    UNINSTALLFILE=$DESTDIR${sbindir}/${UNINSTALL_base}
 fi
 
 # Update the $prefix if necessary
@@ -162,10 +162,12 @@ if [ -z "$3" ] ; then
 else
     mode=$3
 fi
-if [ -d $2 ] ; then
-    dest=$2/`basename $1`
+if [ -d $DESTDIR$2 ] ; then
+    dest=$DESTDIR$2/`basename $1`
+    destfile=$2/`basename $1`
 else
-    dest=$2
+    dest=$DESTDIR$2
+    destfile=$2
 fi
 if [ $replace = 0 -a -f $dest ] ; then
     if [ $verbose = 1 ] ; then echo "$dest exists; not changed" ; fi
@@ -177,12 +179,19 @@ elif [ ! -f $1 ] ; then
     echo "**File $1 does not exist (or is not a regular file)!"
     errs=`expr $errs + 1`
     if [ $failmode = "hard" ] ; then exit 1 ; fi
+elif [ "$1" = "$dest" ] ; then
+    echo "**File $1 is being copied to itself!"
+    errs=`expr $errs + 1`
+    if [ $failmode = "hard" ] ; then exit 1 ; fi
 else
     if [ $verbose = 1 ] ; then echo "Copying $1 to $dest" ; fi
     # We don't delete the file in the event that we are copying the
     # file over itself (we SHOULD check for that separately, by checking 
     # that directories are distinct)
-    #if [ -f $dest ] ; then $Show $RM $dest ; fi
+    if [ -f $dest ] ; then
+        echo "Replacing existing file $dest..."
+        $Show $RM $dest
+    fi
     $Show $CP $1 $dest
     rc=$?
     if [ $rc != 0 ] ; then
@@ -191,7 +200,7 @@ else
         if [ $failmode = "hard" ] ; then exit $rc ; fi
     else
         # store the destination filename copied
-        filelist="$filelist $dest"
+        filelist="$filelist $destfile"
     fi
     $Show chmod $mode $dest
     rc=$?
@@ -228,7 +237,7 @@ if [ -n "$1" -a -n "$2" ] ; then
         set $1 $2 ${3:-$MODE} `pwd`
         cd $1
         for file in * ; do
-            if [ -f $file -a ! -f $2/$file ] ; then
+            if [ -f $file ] ; then
                 CopyFileP $file $2/$file $3
             fi
         done
@@ -253,17 +262,18 @@ fi
 # Make the given directory.  This handles building intermediate directories
 # as required, and maintains a list of created directories in dirlist.
 MkDir() {
-if [ ! -d $1 ] ; then
-    dir=`echo $1 | sed 's%/% /%g'`
+dest=$DESTDIR$1
+if [ ! -d $dest ] ; then
+    dir=`echo $dest | sed 's%/% /%g'`
     path_to_date=''
     for path in $dir ; do
         path_to_date="$path_to_date$path"
         if [ ! -d $path_to_date ] ; then
-            if [ $verbose = 1 ] ; then echo "Creating directory $1" ; fi
+            if [ $verbose = 1 ] ; then echo "Creating directory $dest" ; fi
             $Show "mkdir $path_to_date"
             rc=$?
             if [ $rc != 0 ] ; then
-                echo "**Error making directory $1**"
+                echo "**Error making directory $dest**"
                 errs=`expr $errs + 1`
                 if [ $failmode = "hard" ] ; then exit $rc ; fi
                 echo "Failed to create directory $path_to_date"
@@ -275,7 +285,7 @@ if [ ! -d $1 ] ; then
             $Show chmod $XMODE $path_to_date
             rc=$?
             if [ $rc != 0 ] ; then
-                echo "**Error setting mode on directory $path_to_date**"
+                echo "**Error setting mode to $XMODE on directory $path_to_date**"
                 errs=`expr $errs + 1`
                 if [ $chmodfailmode = "hard" ] ; then exit $rc ; fi
             fi
@@ -296,10 +306,12 @@ FixupFileForInstall() {
     # Change the FIRST libpath to the new form.  This allows 
     # the LIB_PATH to contain multiple names, as long as the MPICH libpath
     # is first
-if [ -d $2 ] ; then
-    dest=$2/`basename $1`
+if [ -d $DESTDIR$2 ] ; then
+    dest=$DESTDIR$2/`basename $1`
+    destfile=$2/`basename $1`
 else
-    dest=$2
+    dest=$DESTDIR$2
+    destfile=$2
 fi
 if [ $replace = 0 -a -f $dest ] ; then
     if [ $verbose = 1 ] ; then echo "$dest exists; not changed" ; fi
@@ -318,7 +330,7 @@ else
             if [ $failmode = "hard" ] ; then exit $rc ; fi
         else
             # store the destination filename copied
-            filelist="$filelist $dest"
+            filelist="$filelist $destfile"
         fi
     else
         if [ $verbose = 1 ] ; then echo "Fixup $1.in and copy to $dest" ; fi
@@ -329,10 +341,10 @@ if [ -z "$3" ] ; then
 else
     mode=$3
 fi
-$Show chmod $mode $2
+$Show chmod $mode $dest
 rc=$?
 if [ $rc != 0 ] ; then
-    echo "**Error setting mode on file $2**"
+    echo "**Error setting mode on file $dest**"
     errs=`expr $errs + 1`
     if [ $failmode = "hard" ] ; then exit $rc ; fi
 fi
@@ -353,8 +365,10 @@ if [ $verbose = 1 ] ; then
     echo "Install into $prefix"
 fi
 
-if [ -d $prefix ] ; then
-    if [ $verbose = 1 ] ; then echo "using existing directory $prefix" ; fi
+if [ -d $DESTDIR$prefix ] ; then
+    if [ $verbose = 1 ] ; then
+        echo "using existing directory $DESTDIR$prefix"
+    fi
 else
     MkDir $prefix
 fi
@@ -368,7 +382,7 @@ if [ "$prefix_override" = 1 ] ; then
     sharedir=$prefix/share
     logfilesdir=$prefix/logfiles
     if [ $appendUninstall = 0 ] ; then
-        UNINSTALLFILE=${sbindir}/${UNINSTALL_base}
+        UNINSTALLFILE=$DESTDIR${sbindir}/${UNINSTALL_base}
     fi
 fi
 
@@ -381,9 +395,9 @@ fi
 # echo "UNINSTALLFILE = $UNINSTALLFILE"
 
 # check if $UNINSTALLFILE lives under $sbindir
-uninstall_basename=`echo $UNINSTALLFILE | sed -e "s%^$sbindir%%"`
-if [ "$UNINSTALLFILE" != "$uninstall_basename" ] ; then
-    if [ ! -d $sbindir ] ; then
+uninstall_dirname=`dirname $UNINSTALLFILE`
+if [ "$uninstall_dirname" = "$DESTDIR$sbindir" ] ; then
+    if [ ! -d $DESTDIR$sbindir ] ; then
         echo "Creating ${pkgname}'s sbin"
         MkDir $sbindir
     fi
@@ -399,7 +413,7 @@ if [ "$copymode" = "all" -o "$copymode" = "core" ] ; then
             if [ -d $fromdir_value ] ; then
                 echo "Copying ${pkgname}'s $type"
                 if [ $verbose = 1 ] ; then
-                    echo "$fromdir_value -> $todir_value"
+                    echo "$fromdir_value -> $DESTDIR$todir_value"
                 fi
                 CopyDirRecurP $fromdir_value $todir_value $MODE
             fi
@@ -409,7 +423,7 @@ fi
 
 if [ "$copymode" = "all" ] ; then
     if [ -n "$PKGS" ] ; then
-        if [ ! -d $sharedir ] ; then
+        if [ ! -d $DESTDIR$sharedir ] ; then
             echo "Creating ${pkgname}'s share"
             MkDir $sharedir
         fi
@@ -424,7 +438,7 @@ if [ "$copymode" = "all" ] ; then
             if [ -d $fromdir_value ] ; then
                 echo "Copying ${pkgname}'s $type"
                 if [ $verbose = 1 ] ; then
-                    echo "$fromdir_value -> $todir_value"
+                    echo "$fromdir_value -> $DESTDIR$todir_value"
                 fi
                 CopyDirRecurP $fromdir_value $todir_value $MODE
             fi
@@ -478,7 +492,7 @@ if [ "$copymode" = "core" ] ; then
     for pkg in $PKGS ; do
         if [ -d $binbuild_dir/../$pkg ] ; then
             if [ "X$pkg" = "Xtrace_rlog" ] ; then
-                ( cd $binbuild_dir/../$pkg ; \
+                ( cd $binbuild_dir/../$pkg && \
                   if [ -x ./sbin/install-package ] ; then \
                       ./sbin/install-package -prefix=$prefix \
                                              -uninstall=$UNINSTALLFILE \
@@ -493,15 +507,16 @@ if [ "$copymode" = "all" ] ; then
     for pkg in $PKGS ; do
         if [ -d $binbuild_dir/../$pkg ] ; then
             if [ "X$pkg" = "Xtrace_rlog" ] ; then
-                ( cd $binbuild_dir/../$pkg ; \
+                ( cd $binbuild_dir/../$pkg && \
                   if [ -x ./sbin/install-package ] ; then \
                       ./sbin/install-package -prefix=$prefix \
                                              -uninstall=$UNINSTALLFILE \
                                              -mode=$MODE -xmode=$XMODE ; \
                   fi )
             else
-                ( cd $binbuild_dir/../$pkg ; \
-                  if [ -x ./sbin/install-package -a -d $sharedir ] ; then \
+                ( cd $binbuild_dir/../$pkg && \
+                  if [    -x ./sbin/install-package \
+                       -a -d $DESTDIR$sharedir ] ; then \
                       ./sbin/install-package -prefix=$sharedir/$pkg \
                                              -uninstall=$UNINSTALLFILE \
                                              -mode=$MODE -xmode=$XMODE ; \
@@ -523,7 +538,7 @@ for dir in $dirlist ; do
 done
 
 #
-echo "Installed ${pkgname} in $prefix"
+echo "Installed ${pkgname} in $DESTDIR$prefix"
 echo "$UNINSTALLFILE may be used to remove the installation"
 #
 if [ $errs -gt 0 ] ; then
