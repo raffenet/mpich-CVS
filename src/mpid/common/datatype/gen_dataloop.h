@@ -269,7 +269,7 @@ typedef struct DLOOP_Segment {
 		              * processing.  in other words, how many bytes have
 			      * we created/used by parsing so far?  that amount + 1.
 			      */
-    struct DLOOP_Dataloop_stackelm stackelm[DLOOP_MAX_DATATYPE_DEPTH];
+    DLOOP_Dataloop_stackelm stackelm[DLOOP_MAX_DATATYPE_DEPTH];
     int  cur_sp;   /* Current stack pointer when using loopinfo */
     int  valid_sp; /* maximum valid stack pointer.  This is used to 
                       maintain information on the stack after it has
