@@ -53,12 +53,14 @@ int MPIDI_CH3_Progress(int is_blocking)
 		}
 		else
 		{
-#endif
 		    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 		    MPIDU_Yield();
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
-#ifdef USE_SLEEP_YIELD
 		}
+#else
+		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
+		MPIDU_Yield();
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
 #endif
 	    }
 	    spin_count++;
