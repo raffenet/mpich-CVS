@@ -61,6 +61,7 @@ if test "$enable_coverage" = "yes" ; then
 	# definitions.
 	DEFINE_FOR_COVERAGE="#define USE_COVERAGE 1"
 	DEFINE_FOR_COVERAGE_KIND="#define USE_COVERAGE_SIMPLE"
+	AC_PATH_PROG(PERL,perl)
     else
         AC_MSG_WARN([--enable-coverage only supported for G++])
     fi
@@ -69,6 +70,8 @@ AC_SUBST(DEFINE_FOR_COVERAGE)
 AC_SUBST(DEFINE_FOR_COVERAGE_KIND)
 AC_SUBST(COVERAGE_SRC)
 AC_SUBST(COVERAGE_OBJ)
+builddir=`pwd`
+AC_SUBST(builddir)
 
 # Here are the commands to substitute the compilers to be used to create
 # shared libraries.  The choices for the first two come down from the
@@ -114,19 +117,21 @@ AC_SUBST(NEEDSPLIB)
 dnl
 dnl Copy mpicxx and the header files to the local bin and include
 dnl directories to simplify some testing.
-AC_OUTPUT_COMMANDS([chmod a+x mpicxx ;
+eval evalsrcdir=$srcdir
+AC_OUTPUT_COMMANDS([chmod a+x mpicxx cov2html ;
    if test ! -d ../../../bin  ; then mkdir ../../../bin ; fi 
    sed -e 's%includedir=.*%includedir='$includebuild_dir% \
        -e 's%libdir=.*%libdir='$libbuild_dir% mpicxx > ../../../bin/mpicxx ;
    chmod a+x ../../../bin/mpicxx 
    cp mpicxx.h ../../../src/include/mpicxx.h 
    if test "$enable_coverage" = "yes" -a -s mpicxxcov.h ; then
-      cp mpicxxcov.h ../../../src/include/mpicxxcov.h
-      cp mpicovsimple.h ../../../src/include/mpicovsimple.h
+      cp $evalsrcdir/mpicxxcov.h ../../../src/include/mpicxxcov.h
+      cp $evalsrcdir/mpicovsimple.h ../../../src/include/mpicovsimple.h
    fi
 ],
 includebuild_dir=$includebuild_dir
 libbuild_dir=$libbuild_dir
 enable_coverage=$enable_coverage
+evalsrcdir=$evalsrcdir
 )
-AC_OUTPUT(Makefile mpicxx mpicxx.h mpicxx.conf) 
+AC_OUTPUT(Makefile mpicxx mpicxx.h mpicxx.conf cov2html) 

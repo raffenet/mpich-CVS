@@ -12,8 +12,12 @@
 
 #include <iostream.h>
 #include <fstream.h>
+#include <string.h>
 
 #include "mpicovsimple.h"
+
+/* For remove */
+#include <stdio.h>
 
 // Find the matching entry or insert and initialize a new one
 covinfo * MPIX_Coverage::findOrInsert( const char name[], int argcount )

@@ -174,7 +174,9 @@ sub CoverageSummary {
     foreach $name (sort(keys(%uncoveredRoutines))) {
 	if ($col == 1) { print FD "<TR>"; }
 	my ($routine,$argcnt) = split(/-/,$name);
-	print FD "<TD>$routine</TD>";
+	my $where = $uncoveredRoutines{$name};
+	$where =~ s/.*\///;
+	print FD "<TD>$routine($where)</TD>";
 	if ($col++ == $maxcol) {$col = 1; print FD "</TR>\n"; }
 	if (defined($unseenRoutines{$routine})) {
 	    delete $unseenRoutines{$routine};
@@ -247,6 +249,16 @@ sub HTMLify {
 #
 # Temp for testing
 &ReadAllList( "mpi.dat" );
+# Remove those deprecated MPI routines that are not in the C++ binding
+# FIXME: Check that C++ binding does not include these
+foreach my $oldname ("Type_ub", "Type_lb", "Attr_delete", "Attr_get", 
+		     "Attr_put", "Keyval_free", "Keyval_create", 
+		     "Errhandler_get", "Errhandler_set", 
+                     "Errhandler_create", "Address", "Type_struct", 
+                     "Type_extent", "Type_hvector", "Type_hindexed" ) {
+    delete $allRoutines{$oldname};
+}
+
 &ReadCovData( "cov.dat" );
 
 # Generate the output
