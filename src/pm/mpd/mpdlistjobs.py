@@ -85,7 +85,7 @@ def mpdlistjobs():
                 smjobid[2] = '          '  # just for printing
             if print_based_on_uname and (print_based_on_jobid or print_based_on_jobalias):
                 if '-sss' in argv:
-                    print "%s %s %s"%(msg['host'],msg['clipid'],'')
+                    print "%s %s %s"%(msg['host'],msg['clipid'],msg['sid'])
                 else:
                     print 'jobid    = %s@%s' % (smjobid[0],smjobid[1])
                     print 'jobalias = %s'    % (smjobid[2])
