@@ -69,6 +69,9 @@ AC_ARG_WITH(device,
 [--with-device=name - Specify the communication device for MPICH.],,
 with_device=default)
 dnl
+AC_ARG_WITH(pmi,
+[--with-pmi=name - Specify the pmi interface for MPICH.],,
+with_pmi=default)
 dnl Process any enable or with values
 dnl error-checking
 case "$enable_error_checking" in 
@@ -131,6 +134,30 @@ case "$enable_g" in
     AC_MSG_WARN([Unknown value $enable_g for enable-g])
     ;;
 esac
+dnl
+dnl with-pmi
+if test "$with_pmi" = "dafault" ; then
+    with_pmi=mpd
+fi
+pmi_name=`echo $with_pmi | sed -e 's/:.*//g'`
+changequote(<<,>>)
+pmi_args=`echo $with_pmi | sed -e 's/[^:]*://g'`
+changequote(<<,>>)
+dnl
+if test -z "$top_srcdir" ; then
+    use_top_srcdir=$srcdir
+else
+    use_top_srcdir=$top_srcdir
+fi
+if test ! -d $use_top_srcdir/src/pmi/impls/$pmi_name ; then
+    AC_MSG_WARN([pmi $pmi_name is unknown])
+elif test ! -x $use_top_srcdir/src/pmi/impls/$pmi_name/configure ; then
+    AC_MSG_WARN([pmi $pmi_name has no configure])
+    pmi_name=""
+else
+    subsystems="$subsystems src/pmi/$pmi_name"
+    AC_SUBST(pmi_name)
+fi
 dnl
 dnl with-device
 if test "$with_device" = "default" ; then
@@ -402,7 +429,7 @@ export RANLIB
 export MPILIBNAME
 export CC
 PAC_SUBDIR_CACHE
-AC_CONFIG_SUBDIRS(src/mpi/timer $subsystems )
+AC_CONFIG_SUBDIRS(src/mpi/timer $subsystems)
 dnl
 # Temporary values for MPI_Fint (need help from the Fortran subsystem)
 MPI_FINT=int
