@@ -9,6 +9,8 @@
 int mm_post_recv(MM_Car *car_ptr)
 {
     MM_Car *iter_ptr, *trailer_ptr;
+
+    dbg_printf("mm_post_recv\n");
     
     /* find in unex_q or enqueue into the posted_q */
     MPID_Thread_lock(MPID_Process.qlock);

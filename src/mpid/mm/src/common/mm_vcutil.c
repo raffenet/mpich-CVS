@@ -126,6 +126,8 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 {
     MPIDI_VC *vc_ptr;
 
+    dbg_printf("mm_vc_alloc\n");
+
     vc_ptr = (MPIDI_VC*)BlockAlloc(MPID_Process.VC_allocator);
     vc_ptr->method = method;
     vc_ptr->ref_count = 1;
@@ -218,18 +220,26 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
     char key[100];
     char *value;
     int value_len;
-    char methods[256];
+    char *methods;
 #ifdef WITH_METHOD_VIA
     char *temp;
 #endif
+
+    dbg_printf("mm_vc_connect_alloc(rank:%d)\n", rank);
     
     kvs_name = comm_ptr->mm.pmi_kvsname;
 
+    dbg_printf("+PMI_KVS_Get_value_length_max");
     value_len = PMI_KVS_Get_value_length_max();
+    dbg_printf("-\n");
     value = (char*)MPIU_Malloc(value_len);
-    
+    methods = (char*)MPIU_Malloc(value_len);
+
+    dbg_printf("A:remote_rank: %d\n", rank);
     snprintf(key, 100, "businesscard:%d", rank);
+    dbg_printf("+PMI_KVS_Get(%s):", key);
     PMI_KVS_Get(kvs_name, key, methods);
+    dbg_printf("%s-\n", methods);
     
     /* choose method */
     
@@ -238,9 +248,12 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
     if (strstr(methods, "tcp"))
     {
 	/* get the tcp method business card */
+	dbg_printf("B: remote rank: %d\n", rank);
 	snprintf(key, 100, "business_card_tcp:%d", rank);
+	dbg_printf("+PMI_KVS_Get(%s):", key);
 	PMI_KVS_Get(kvs_name, key, value);
-	
+	dbg_printf("%s-\n", value);
+
 	/* check to see if we can connect with this business card */
 	if (tcp_can_connect(value))
 	{
@@ -253,6 +266,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    tcp_post_connect(vc_ptr, value);
 	    
 	    MPIU_Free(value);
+	    MPIU_Free(methods);
 	    return vc_ptr;
 	}
     }
@@ -277,6 +291,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    shm_post_connect(vc_ptr, value);
 	    
 	    MPIU_Free(value);
+	    MPIU_Free(methods);
 	    return vc_ptr;
 	}
     }
@@ -301,6 +316,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    via_rdma_post_connect(vc_ptr, value);
 	    
 	    MPIU_Free(value);
+	    MPIU_Free(methods);
 	    return vc_ptr;
 	}
     }
@@ -329,6 +345,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    via_post_connect(vc_ptr, value);
 	    
 	    MPIU_Free(value);
+	    MPIU_Free(methods);
 	    return vc_ptr;
 	}
     }
@@ -353,11 +370,13 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    tcp_post_connect(vc_ptr, value);
 	    
 	    MPIU_Free(value);
+	    MPIU_Free(methods);
 	    return vc_ptr;
 	}
     }
 #endif
 
+    MPIU_Free(value);
     MPIU_Free(value);
     return NULL;
 }

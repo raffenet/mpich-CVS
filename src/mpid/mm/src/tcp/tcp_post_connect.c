@@ -11,6 +11,8 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
     int port;
     char *token;
 
+    dbg_printf("tcp_post_connect\n");
+
     if (vc_ptr->data.tcp.connected)
 	return MPI_SUCCESS;
     MPID_Thread_lock(vc_ptr->lock);
@@ -89,6 +91,8 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
     vc_ptr->data.tcp.connecting = TRUE;
     vc_ptr->data.tcp.reject_received = FALSE;
     MPID_Thread_unlock(vc_ptr->lock);
+
+    dbg_printf("tcp_post_connect returning MPI_SUCCESS\n");
 	
     return MPI_SUCCESS;
 }

@@ -72,12 +72,16 @@ typedef int BOOL;
    routines for error messages or msg_printf etc. for general messages 
    (msg_printf will go through gettext).  
 */
-#define dbg_printf printf
+#ifdef MPICH_DBG_OUTPUT
+int dbg_printf(char *str, ...);
+#else
+#define dbg_printf
+#endif
 #define dbg_fprintf fprintf
 /* The following are temporary definitions */
-#define msg_printf printf
+int msg_printf(char *str, ...);
 #define msg_fprintf fprintf
-#define err_printf printf
+int err_printf(char *str, ...);
 #define err_fprintf fprintf
 
 #include "mpiimplthread.h"

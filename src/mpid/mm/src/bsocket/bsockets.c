@@ -144,6 +144,7 @@ static void log_warning(char *str, ...)
 @*/
 unsigned int bget_fd(int bfd)
 {
+    //dbg_printf("bget_fd\n");
     return (unsigned int)(((BFD_Buffer*)bfd)->real_fd);
 }
 
@@ -159,6 +160,7 @@ unsigned int bget_fd(int bfd)
 void bset(int bfd, bfd_set *s)
 {
     int i;
+    //dbg_printf("bset\n");
     FD_SET( bget_fd(bfd), & (s) -> set );
     for (i=0; i<s->n; i++)
     {
@@ -182,6 +184,8 @@ void bclr(int bfd, bfd_set *s)
 {
     int i;
     BFD_Buffer* p;
+
+    //dbg_printf("bclr\n");
 
     FD_CLR( bget_fd(bfd), & (s) -> set );
 
@@ -228,6 +232,7 @@ int bsocket_init(void)
 	return err;
     }
 #else
+    dbg_printf("bsocket_init\n");
     if (g_nInitRefCount)
     {
 	g_nInitRefCount++;
@@ -258,6 +263,7 @@ bsocket_finalize - finalize
 @*/
 int bsocket_finalize(void)
 {
+    dbg_printf("bsocket_finalize\n");
     g_nInitRefCount--;
     if (g_nInitRefCount < 1)
 	g_nInitRefCount = 0;
@@ -289,6 +295,7 @@ int bsocket(int family, int type, int protocol)
     BFD_Buffer *pbfd;
     
     DBG_MSG("Enter bsocket\n");
+    //dbg_printf("bsocket\n");
     
     pbfd = (BFD_Buffer *)BlockAlloc( Bsocket_mem );
     if (pbfd == 0) 
@@ -325,6 +332,7 @@ int bbind(int bfd, const struct sockaddr *servaddr,
 	  socklen_t servaddr_len)
 {
     DBG_MSG("Enter bbind\n");
+    //dbg_printf("bbind\n");
     
     return bind(((BFD_Buffer*)bfd)->real_fd, servaddr, servaddr_len);
 }
@@ -340,6 +348,7 @@ Parameters:
 @*/
 int blisten(int bfd, int backlog)
 {
+    //dbg_printf("blisten\n");
     return listen(((BFD_Buffer*)bfd)->real_fd, backlog);
 }
 
@@ -358,6 +367,7 @@ bsetsockopt - setsockopt
 int bsetsockopt(int bfd, int level, int optname, const void *optval,		    
 		socklen_t optlen)
 {
+    //dbg_printf("bsetsockopt\n");
     return setsockopt(((BFD_Buffer*)bfd)->real_fd, level, optname, optval, optlen);
 }
 
@@ -377,6 +387,7 @@ int baccept(int bfd, struct sockaddr *cliaddr, socklen_t *clilen)
     BFD_Buffer 	       *new_bfd;
     
     DBG_MSG("Enter baccept\n");
+    //dbg_printf("baccept\n");
     
     conn_fd = accept(((BFD_Buffer*)bfd)->real_fd, cliaddr, clilen);
     if (conn_fd == SOCKET_ERROR) 
@@ -412,6 +423,7 @@ bconnect - connect
 int bconnect(int bfd, const struct sockaddr *servaddr,		    
 	     socklen_t servaddr_len)
 {
+    //dbg_printf("bconnect\n");
     return connect(((BFD_Buffer*)bfd)->real_fd, servaddr, servaddr_len);
 }
 
@@ -436,6 +448,7 @@ int bselect(int maxfds, bfd_set *readbfds, bfd_set *writebfds,
     int            i;
 
     DBG_MSG("Enter bselect\n");
+    //dbg_printf("bselect\n");
     
     if (readbfds)
     {
@@ -501,6 +514,7 @@ bwrite - write
 @*/
 int bwrite(int bfd, char *ubuf, int len)
 {
+    //dbg_printf("bwrite\n");
     return write(((BFD_Buffer*)bfd)->real_fd, ubuf, len);
 }
 
@@ -546,6 +560,7 @@ int bwritev(int bfd, B_VECTOR *pIOVec, int n)
     return dwNumSent;
 #else
     int nWritten;
+    //dbg_printf("bwritev\n");
     nWritten = writev(((BFD_Buffer*)bfd)->real_fd, pIOVec, n);
     return nWritten;
 #endif
@@ -571,6 +586,7 @@ int bread(int bfd, char *ubuf, int len)
     BFD_Buffer *pbfd;
     
     DBG_MSG("Enter bread\n");
+    //dbg_printf("bread\n");
     
     pbfd = (BFD_Buffer*)bfd;
 
@@ -698,7 +714,8 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
     B_VECTOR pVector[B_VECTOR_LIMIT];
     int iVector;
 
-    DBG_MSG("Enter bread\n");
+    DBG_MSG("Enter breadv\n");
+    //dbg_printf("breadv\n");
     
     pbfd = (BFD_Buffer*)bfd;
     
@@ -835,6 +852,7 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 int bclose(int bfd)
 {
     DBG_MSG("Enter bclose\n");
+    //dbg_printf("bclose\n");
 
     close(((BFD_Buffer*)bfd)->real_fd);
     memset((void*)bfd, 0, sizeof(BFD_Buffer));
@@ -855,6 +873,7 @@ bgetsockname -
 @*/
 int bgetsockname(int bfd, struct sockaddr *name, int *namelen)
 {
+    //dbg_printf("bgetsockname\n");
     return getsockname(((BFD_Buffer*)bfd)->real_fd, name, namelen);
 }
 
@@ -873,6 +892,7 @@ int bmake_nonblocking(int bfd)
     int      rc;
     
     DBG_MSG("Enter make_nonblocking\n");
+    //dbg_printf("bmake_nonblocking\n");
     
 #ifdef HAVE_WINDOWS_SOCKET
     rc = ioctlsocket(((BFD_Buffer*)bfd)->real_fd, FIONBIO, &flag);
@@ -897,6 +917,7 @@ int bmake_blocking(int bfd)
     int      rc;
     
     DBG_MSG("Enter make_blocking\n");
+    //dbg_printf("bmake_blocking\n");
     
 #ifdef HAVE_WINDOWS_SOCKET
     rc = ioctlsocket(((BFD_Buffer*)bfd)->real_fd, FIONBIO, &flag);
@@ -921,6 +942,8 @@ int beasy_create(int *bfd, int port, unsigned long addr)
     struct sockaddr_in sin;
     int optval = 1;
     struct linger linger;
+
+    //dbg_printf("beasy_create\n");
 
     /* Create a new bsocket */
     *bfd = bsocket(AF_INET, SOCK_STREAM, 0);
@@ -972,6 +995,9 @@ int beasy_connect(int bfd, char *host, int port)
     /* use this array to make sure the warning only gets logged once */
     BOOL bWarningLogged[4] = { FALSE, FALSE, FALSE, FALSE };
 #endif
+
+    dbg_printf("beasy_connect(%s:%d)\n", host, port);
+
     memset(&sockAddr,0,sizeof(sockAddr));
     
     sockAddr.sin_family = AF_INET;
@@ -1082,6 +1108,8 @@ int beasy_accept(int bfd)
     int len;
     int client;
 
+    dbg_printf("beasy_accept\n");
+
     len = sizeof(addr);
     client = baccept(bfd, &addr, &len);
 
@@ -1137,6 +1165,7 @@ int beasy_closesocket(int bfd)
     else
 	shutdown(bget_fd(bfd), SD_BOTH);
 #endif
+    dbg_printf("beasy_closesocket\n");
     bclose(bfd);
     return 0;
 }
@@ -1156,9 +1185,14 @@ int beasy_get_sock_info(int bfd, char *name, int *port)
     struct sockaddr_in addr;
     int name_len = sizeof(addr);
 
+    dbg_printf("beasy_get_sock_info: ");
+
     getsockname(bget_fd(bfd), (struct sockaddr*)&addr, &name_len);
     *port = ntohs(addr.sin_port);
     gethostname(name, 100);
+
+    dbg_printf("%s:%d\n", name, *port);
+
     return 0;
 }
 
@@ -1176,6 +1210,8 @@ int beasy_get_ip_string(char *ipstring)
     unsigned int a, b, c, d;
     struct hostent *pH;
 
+    dbg_printf("beasy_get_ip_string: ");
+
     gethostname(hostname, 100);
     pH = gethostbyname(hostname);
     if (pH == NULL)
@@ -1185,6 +1221,9 @@ int beasy_get_ip_string(char *ipstring)
     c = (unsigned char)(pH->h_addr_list[0][2]);
     d = (unsigned char)(pH->h_addr_list[0][3]);
     snprintf(ipstring, 100, "%u.%u.%u.%u", a, b, c, d);
+
+    dbg_printf("%s\n", ipstring);
+
     return 0;
 }
 
@@ -1200,6 +1239,8 @@ int beasy_get_ip(unsigned long *ip)
 {
     char hostname[100];
     struct hostent *pH;
+
+    dbg_printf("beasy_get_ip\n");
 
     gethostname(hostname, 100);
     pH = gethostbyname(hostname);
@@ -1223,6 +1264,8 @@ int beasy_receive(int bfd, char *buffer, int len)
     int num_received;
     bfd_set readfds;
     int total = len;
+
+    //dbg_printf("beasy_receive\n");
     
     num_received = bread(bfd, buffer, len);
     if (num_received == SOCKET_ERROR)
@@ -1286,6 +1329,8 @@ int beasy_receive_some(int bfd, char *buffer, int len)
     int ret_val;
     int num_received;
     bfd_set readfds;
+
+    //dbg_printf("beasy_receive_some\n");
     
     num_received = bread(bfd, buffer, len);
     if (num_received == SOCKET_ERROR)
@@ -1342,6 +1387,8 @@ int beasy_receive_timeout(int bfd, char *buffer, int len, int timeout)
     bfd_set readfds;
     struct timeval tv;
     int total = len;
+
+    //dbg_printf("beasy_receive_timeout\n");
     
     /*
     num_received = bread(bfd, buffer, len);
@@ -1441,6 +1488,8 @@ int beasy_send(int bfd, char *buffer, int length)
     int num_written;
     bfd_set writefds;
     int total = length;
+
+    //dbg_printf("beasy_send\n");
     
     num_written = write(((BFD_Buffer*)bfd)->real_fd, buffer, length);
     if (num_written == SOCKET_ERROR)
@@ -1489,6 +1538,7 @@ int beasy_send(int bfd, char *buffer, int length)
 
 int beasy_getlasterror()
 {
+    //dbg_printf("beasy_getlasterror\n");
 #ifdef HAVE_WINSOCK2_H
     return WSAGetLastError();
 #else
@@ -1519,7 +1569,8 @@ int beasy_error_to_string(int error, char *str, int length)
     LocalFree(str);
     strtok(str, "\r\n"); /* remove any CR/LF characters from the output */
 #else
-    snprintf(str, length, "error %d", error);
+    //dbg_printf("beasy_error_to_string\n");
+    strncpy(str, strerror(error), length);
 #endif
     return 0;
 }

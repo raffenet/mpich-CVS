@@ -24,8 +24,11 @@ int MPID_Finalize( void )
     mm_car_finalize();
     mm_vc_finalize();
 
+    dbg_printf("+PMI_Barrier");
     PMI_Barrier();
+    dbg_printf("-\n+PMI_Finalize");
     PMI_Finalize();
+    dbg_printf("-\n");
 
     bsocket_finalize();
 

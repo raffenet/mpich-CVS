@@ -20,6 +20,8 @@ int xfer_start(MPID_Request *request_ptr)
     MPID_Request *pRequest;
     MM_Car *pCar, *pCarIter;
 
+    dbg_printf("xfer_start\n");
+
     /* choose the buffers scheme to satisfy each segment */
     pRequest = request_ptr;
     while (pRequest)

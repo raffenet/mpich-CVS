@@ -21,6 +21,8 @@ int mm_choose_buffer(MPID_Request *request_ptr)
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
 
+    dbg_printf("mm_choose_buffer\n");
+
     /* look at the read car and all of the write cars */
     /* pick the best buffer type that everyone can handle */
     /* if there are incompatible cars, allocate other requests and 

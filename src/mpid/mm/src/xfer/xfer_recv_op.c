@@ -26,6 +26,8 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     MPID_Request *pRequest, *pRequestIter;
     BOOL bNeedHeader = TRUE;
 
+    dbg_printf("xfer_recv_op\n");
+
     /* Get a pointer to the current unused request, allocating if necessary. */
     if (request_ptr->mm.op_valid == FALSE)
     {

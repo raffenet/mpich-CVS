@@ -591,6 +591,7 @@ AC_OUTPUT(Makefile src/Makefile \
 	  src/util/mem/Makefile \
 	  src/util/param/Makefile \
 	  src/util/thread/Makefile \
+          src/util/dbg/Makefile \
           src/include/mpi.h \
 	  test/Makefile test/util/Makefile \
 	  test/util/info/Makefile \

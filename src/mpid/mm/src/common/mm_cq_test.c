@@ -13,6 +13,8 @@ int mm_cq_test()
     int found;
     int complete;
 
+    dbg_printf(".");
+
     /* Should we call make_progress on all the methods?
      * before checking the cq?
      * after checking the cq?
@@ -151,6 +153,8 @@ int mm_post_unex_rndv(MM_Car *unex_head_car_ptr)
 {
     MM_Car *car_ptr;
 
+    dbg_printf("mm_post_unex_rndv\n");
+
     car_ptr = mm_car_alloc();
 
     car_ptr->msg_header = unex_head_car_ptr->msg_header;
@@ -171,6 +175,8 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     MPID_Request *request_ptr;
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
+
+    dbg_printf("mm_creat_post_unex\n");
 
     request_ptr = mm_request_alloc();
     if (request_ptr == NULL)

@@ -27,6 +27,8 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     BOOL bNeedHeader = TRUE;
     MM_Car *pCarIter;
 
+    dbg_printf("xfer_send_op\n");
+
     /* Get a pointer to the current unused request, allocating if necessary. */
     if (request_ptr->mm.op_valid == FALSE)
     {

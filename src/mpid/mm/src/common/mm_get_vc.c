@@ -21,6 +21,8 @@ MPIDI_VC * mm_vc_from_communicator(MPID_Comm *comm_ptr, int rank)
     int mpi_errno;
     MPIDI_VC *vc_ptr;
 
+    dbg_printf("mm_vc_from_communicator\n");
+
 #ifdef MPICH_DEV_BUILD
     if ((comm_ptr == NULL) || (rank < 0) || (rank >= comm_ptr->remote_size))
 	return NULL;
@@ -62,6 +64,8 @@ MPIDI_VC * mm_vc_from_context(int comm_context, int rank)
     int mpi_errno;
     MPIDI_VC *vc_ptr;
     MPID_Comm *comm_ptr;
+
+    dbg_printf("mm_vc_from_context\n");
 
     /*comm_ptr = MPID_Get_comm_from_context(comm_context); */
     comm_ptr = MPIR_Process.comm_world;
