@@ -111,6 +111,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	vc_table[p].shm.unex_list = NULL;
 #endif
 	vc_table[p].shm.shm = NULL;
+	vc_table[p].shm.read_shmq = NULL;
+	vc_table[p].shm.write_shmq = NULL;
     }
     pg->vc_table = vc_table;
     
@@ -200,9 +202,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     /* initialize each shared memory queue */
     for (i=0; i<pg_size; i++)
     {
-	vc_table[i].shm.shm = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * i));
 	if (i == pg_rank)
 	{
+	    vc_table[i].shm.shm = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * i));
 	    for (j=0; j<pg_size; j++)
 	    {
 		vc_table[i].shm.shm[j].head_index = 0;
@@ -216,7 +218,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	}
 	else
 	{
-	    vc_table[i].shm.shm += pg_rank;
+	    /*vc_table[i].shm.shm += pg_rank;*/
+	    vc_table[i].shm.shm = NULL;
+	    vc_table[i].shm.write_shmq = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * i)) + pg_rank;
+	    vc_table[i].shm.read_shmq = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * pg_rank)) + i;
 	    /* post a read of the first packet header */
 	    vc_table[i].shm.shm_reading_pkt = TRUE;
 	    /*

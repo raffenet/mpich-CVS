@@ -118,7 +118,7 @@ typedef struct MPIDI_CH3I_VC
 {
     MPIDI_CH3I_Process_group_t * pg;
     int pg_rank;
-    struct MPIDI_CH3I_SHM_Queue_t * shm;
+    struct MPIDI_CH3I_SHM_Queue_t * shm, * read_shmq, * write_shmq;
     struct MPID_Request * sendq_head;
     struct MPID_Request * sendq_tail;
     struct MPID_Request * send_active;
