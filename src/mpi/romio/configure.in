@@ -926,6 +926,10 @@ if test -z "$FILE_SYSTEM" ; then
     FILE_SYSTEM="ufs nfs"
 fi
 
+# no matter what, always build testfs
+file_system_testfs=1
+FILE_SYSTEM="testfs $FILE_SYSTEM"
+
 #
 # Print list of configured file systems
 #
