@@ -1115,7 +1115,6 @@ static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int offset, 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_BUFFER_UNEX_READ);
 
     MPIU_dbg_printf("ibui_buffer_unex_read, %d bytes\n", num_bytes);
-    msg_printf("ibui_buffer_unex_read, %d bytes\n", num_bytes);
 
     p = (ibu_unex_read_t *)malloc(sizeof(ibu_unex_read_t));
     p->mem_ptr = mem_ptr;
@@ -1329,6 +1328,7 @@ int ibui_readv_unex(ibu_t ibu)
 	    msg_printf("ibui_readv_unex: copying %d bytes\n", num_bytes);
 	    /* copy the received data */
 	    memcpy(ibu->read.iov[ibu->read.index].IBU_IOV_BUF, ibu->unex_list->buf, num_bytes);
+	    ibu->read.total += num_bytes;
 	    ibu->unex_list->buf += num_bytes;
 	    ibu->unex_list->length -= num_bytes;
 	    /* update the iov */
@@ -1362,6 +1362,7 @@ int ibui_readv_unex(ibu_t ibu)
 	
 	if (ibu->read.iovlen == 0)
 	{
+	    msg_printf("read finished in ibui_readv_unex\n");
 	    ibu->state &= ~IBU_READING;
 	    ibu->unex_finished_queue = IBU_Process.unex_finished_list;
 	    IBU_Process.unex_finished_list = ibu;
