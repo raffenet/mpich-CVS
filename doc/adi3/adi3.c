@@ -1094,6 +1094,9 @@ int MPID_probe( int source, int tag, MPID_Comm *comm,
   Input Parameter:
 . request - Send request to cancel
 
+  Return Value:
+  MPI error code.
+  
   Notes:
   Cancel is a tricky operation, particularly for sends.  Read the
   discussion in the MPI-1 and MPI-2 documents carefully.  This call
@@ -1105,7 +1108,7 @@ int MPID_probe( int source, int tag, MPID_Comm *comm,
   Request
 
   @*/
-void MPID_Cancel_send( MPID_Request *request )
+int MPID_Cancel_send( MPID_Request *request )
 {
 }
 
@@ -1115,6 +1118,9 @@ void MPID_Cancel_send( MPID_Request *request )
   Input Parameter:
 . request - Receive request to cancel
 
+  Return Value:
+  MPI error code.
+  
   Notes:
   This cancels a pending receive request.  In many cases, this is implemented
   by simply removing the request from a pending receive request queue.  
@@ -1128,7 +1134,7 @@ void MPID_Cancel_send( MPID_Request *request )
   Request
 
   @*/
-void MPID_Cancel_recv( MPID_Request *request )
+int MPID_Cancel_recv( MPID_Request *request )
 {
 }
 
