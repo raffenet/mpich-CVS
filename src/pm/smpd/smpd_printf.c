@@ -295,6 +295,7 @@ void smpd_trim_logfile_new()
 	/*printf("unable to open the smpd log file\n");*/
 	return;
     }
+    setvbuf(fout, NULL, _IONBF, 0);
     fseek(fout, 0, SEEK_END);
     size = ftell(fout);
     if (size > smpd_process.dbg_file_size)
@@ -315,6 +316,10 @@ void smpd_trim_logfile_new()
 	    {
 		fclose(fout);
 		fout = fopen(smpd_process.dbg_filename, "rb");
+		if (fout == NULL)
+		{
+		}
+		setvbuf(fout, NULL, _IONBF, 0);
 		fseek(fout, -4, SEEK_END);
 		fread(&a, 1, 4, fout);
 		fclose(fout);
@@ -346,6 +351,10 @@ void smpd_trim_logfile_new()
 		    */
 		    fclose(fout);
 		    fout = fopen(smpd_process.dbg_filename, "rb");
+		    if (fout == NULL)
+		    {
+		    }
+		    setvbuf(fout, NULL, _IONBF, 0);
 		    fseek(fout, -4, SEEK_END);
 		    fread(&b, 1, 4, fout);
 		    fclose(fout);
