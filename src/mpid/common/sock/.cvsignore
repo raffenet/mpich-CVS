@@ -10,3 +10,5 @@ sockconf.h
 *.bbg
 *.da
 *.gcov
+*Debug*
+*Release*
