@@ -800,6 +800,12 @@ dnl Include a defined value for Fint is int
 if test "$MPI_FINT" = "int" ; then
     AC_DEFINE(HAVE_FINT_IS_INT,1,[Define if Fortran integer are the same size as C ints])
 fi
+dnl 
+dnl Also get sizeof_integer (== sizeof_mpi_fint) and sizeof_int.  
+dnl These are available as SIZEOF_F77_INTEGER and SIZEOF_INT
+if test "$SIZEOF_F77_INTEGER" != "$SIZEOF_INT" ; then
+   AC_MSG_WARN([Fortran integers and C ints are not the same size.  The current Fortran binding does not support this case])
+fi
 
 #
 # Set size of MPI_Status.  We may need sizeof_int here as well
