@@ -643,12 +643,6 @@ sub DefaultRules {
     print FD "$newline";
 #    foreach $ext (keys(%pgmlinktypes)) {
 #    }
-    # To make it easier to build programs, conditionally add a 
-    # default "build program" rule from the seen sourcecode extensions
-    foreach $ext (keys(%ext_seen)) {
-	$extkey = "$ext:";
-	print FD "$extdef{$extkey}$newline";
-    }
 
     if ($vpath_config) {
         print FD '@VPATH@'; print FD "$newline";
@@ -676,6 +670,8 @@ sub DefaultRules {
 	print FD ".SUFFIXES: $suffixes $ExplicitSuffixes$newline";
     }
 
+    # To make it easier to build programs, conditionally add a 
+    # default "build program" rule from the seen sourcecode extensions
     foreach $ext (keys(%ext_seen)) {
 	print FD ".$ext.o:$newline";
 	if ($found_profilelib) {
@@ -695,6 +691,13 @@ sub DefaultRules {
 	if ($found_profilelib && $ext eq "c" && $do_profilelibs) {
 	    $extkey = "$ext:pf";
 	    print FD ".c.pf:$newline";
+	    print FD "\t$extrules{$extkey}$newline";
+	}
+	$extkey = "$ext:";
+	# We may want to make this conditional, only generating it
+	# when desired.
+	if (defined($extrules{$extkey})) {
+	    print FD "$extkey$newline";
 	    print FD "\t$extrules{$extkey}$newline";
 	}
     }
