@@ -369,8 +369,19 @@ int MPIR_Err_create_code( int class, const char def_string[], ... )
        text string */
 #if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS
     specific_idx = FindMsgIndex( def_string );
-    if (specific_idx >= 0)
+    if (specific_idx >= 0) {
 	err_code |= specific_idx << ERROR_GENERIC_SHIFT;
+    }
+#ifdef DEBUG
+    else {
+	if (def_string[0] == '*' && def_string[1] == '*') {
+	    /* Internal error.  Generate some debugging information; 
+	       FIXME for the general release */
+	    fprintf( stderr, "Could not find %s in list of messages\n", 
+		     def_string );
+	}
+    }
+#endif
 #endif
 
     /* Handle the instance-specific part of the error message */
