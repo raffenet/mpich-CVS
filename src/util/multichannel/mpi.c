@@ -18,7 +18,7 @@
  * This file implements an mpi binding that calls another dynamically loaded mpi binding.
  * The environment variables MPI_DLL_NAME and MPICH2_CHANNEL control which library should be loaded.
  * The default library is mpich2.dll or mpich2d.dll.
- * A wrapper dll can also be name to replace only the MPI functions using the MPI_WRAP_DLL_NAME
+ * A wrapper dll can also be named to replace only the MPI functions using the MPI_WRAP_DLL_NAME
  * environment variable.
  *
  * The motivation for this binding is to allow compiled mpi applications to be able
