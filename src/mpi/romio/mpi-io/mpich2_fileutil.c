@@ -12,8 +12,11 @@ int MPIR_Err_return_file( MPI_File file_ptr, const char fcname[], int errcode )
     /* First, check the nesting level */
     /*if (MPIR_Nest_value()) return errcode;*/ /* Is there any recursion in the MPI_File_... interface? */
 
+    /* If the file pointer is not valid, we use the handler on
+       MPI_FILE_NULL (MPI-2, section 9.7).  For now, this code assumes that 
+       MPI_FILE_NULL has the default handler (return).  FIXME */
     if (MPIR_Err_is_fatal(errcode) ||
-	file_ptr == NULL || file_ptr->err_handler == MPI_ERRORS_ARE_FATAL)
+	(file_ptr != NULL && file_ptr->err_handler == MPI_ERRORS_ARE_FATAL))
     {
 	if (MPIR_Err_print_stack_flag)
 	{
