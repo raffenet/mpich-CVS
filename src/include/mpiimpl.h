@@ -311,7 +311,7 @@ int MPIU_Handle_free( void *((*)[]), int );
 /* This test is lame.  Should eventually include cookie test 
    and in-range addresses */
 #define MPID_Valid_ptr(kind,ptr,err) \
-  {if (!(ptr)) { err = MPIR_Err_create_code( MPI_ERR_OTHER, "**nullptr" ); } }
+  {if (!(ptr)) { err = MPIR_Err_create_code( MPI_ERR_OTHER, "**nullptr", 0 ); } }
 
 #define MPID_Info_valid_ptr(ptr,err) MPID_Valid_ptr(Info,ptr,err)
 #define MPID_Comm_valid_ptr(ptr,err) MPID_Valid_ptr(Comm,ptr,err)
@@ -377,6 +377,9 @@ typedef struct {
     MPID_DEV_ERRHANDLER_DECL
 #endif
 } MPID_Errhandler;
+extern MPIU_Object_alloc_t MPID_Errhandler_mem;
+/* Preallocated errhandler objects */
+extern MPID_Errhandler MPID_Errhandler_direct[];
 
 /* Lists and attributes */
 typedef struct MPID_List_elm {
@@ -760,8 +763,8 @@ extern int MPID_THREAD_LEVEL;
 extern void MPID_TimerStateBegin( int, MPID_Time_t * );
 extern void MPID_TimerStateEnd( int, MPID_Time_t * );
 #define MPID_MPI_STATE_DECLS  MPID_Time_t time_stamp
-#define MPID_MPI_FUNC_EXIT(a) MPID_TimerStateBegin( a, &time_stamp )
-#define MPID_MPI_FUNC_ENTER(a) MPID_TimerStateEnd( a, &time_stamp )
+#define MPID_MPI_FUNC_EXIT(a) MPID_TimerStateEnd( a, &time_stamp )
+#define MPID_MPI_FUNC_ENTER(a) MPID_TimerStateBegin( a, &time_stamp )
 /* Statistics macros aren't defined yet */
 /* All uses of these are protected by the symbol COLLECT_STATS, so they
    do not need to be defined in the non-HAVE_TIMING branch. */
@@ -797,6 +800,48 @@ extern void MPID_TimerStateEnd( int, MPID_Time_t * );
 #define MPID_BEGIN_ERROR_CHECKS
 #define MPID_END_ERROR_CHECKS
 #endif /* HAVE_ERROR_CHECKING */
+
+/* 
+ *  Standardized error checking macros.  These provide the correct tests for
+ *  common tests.  These set err with the encoded error value.
+ */
+#define MPIR_ERRTEST_INITIALIZED(err) \
+  if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {\
+      err = MPIR_Err_create_code( MPI_ERR_OTHER, "**initialized", 0 ); }
+#define MPIR_ERRTEST_SEND_TAG(tag,err) \
+  if ((tag) < 0 || (tag) > MPIR_Process.attrs.tag_ub) {\
+      err = MPIR_Err_create_code( MPI_ERR_TAG, "**tag", "**tag %d", tag);}
+#define MPIR_ERRTEST_RECV_TAG(tag,err) \
+  if ((tag) < MPI_ANY_TAG || (tag) > MPIR_Process.attrs.tag_ub) {\
+      err = MPIR_Err_create_code( MPI_ERR_TAG, "**tag", "**tag %d", tag );}
+#define MPIR_ERRTEST_SEND_RANK(comm_ptr,rank,err) \
+  if ((rank) < MPI_PROC_NULL || (rank) >= (comm_ptr)->remote_size) {\
+      err = MPIR_Err_create_code( MPI_ERR_RANK, "**rank", "**rank %d", rank );}
+#define MPIR_ERRTEST_RECV_RANK(comm_ptr,rank,err) \
+  if ((rank) < MPI_ANY_SOURCE || (rank) >= (comm_ptr)->remote_size) {\
+      err = MPIR_Err_create_code( MPI_ERR_RANK, "**rank", "**rank %d", rank );}
+#define MPIR_ERRTEST_COUNT(count,err) \
+    if ((count) < 0) {\
+        err = MPIR_Err_create_code( MPI_ERR_COUNT, "**countneg", "**countneg %d", count );}
+#define MPIR_ERRTEST_ALIAS(ptr1,ptr2,err) \
+    if ((ptr1)==(ptr2) && (ptr1) != MPI_BOTTOM) {\
+        err = MPIR_Err_create_code( MPI_ERR_BUFFER, "**bufalias", 0 );}
+#define MPIR_ERRTEST_ARGNULL(arg,arg_name,err) \
+   if (!arg) {\
+       err = MPIR_Err_create_code( MPI_ERR_ARG, "**nullptr", "**nullptr %s", arg_name ); } 
+
+
+/* The following are placeholders.  We haven't decided yet whether these
+   should take a handle or pointer, or if they should take a handle and return 
+   a pointer if the handle is valid.  These need to be rationalized with the
+   MPID_xxx_valid_ptr and MPID_xxx_get_ptr.
+*/
+#define MPIR_ERRTEST_OP(op,err)
+#define MPIR_ERRTEST_GROUP(group,err)
+#define MPIR_ERRTEST_COMM(comm,err)
+#define MPIR_ERRTEST_REQUEST(request,err)
+#define MPIR_ERRTEST_DATATYPE(datatype,err)
+#define MPIR_ERRTEST_ERRHANDLER(errhandler,err)
 
 /*
  * Standardized general-purpose atomic update routines.  Some comments:
