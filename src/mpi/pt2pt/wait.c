@@ -77,7 +77,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	    /* Validate request_ptr */
             MPID_Request_valid_ptr( request_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WAIT);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
