@@ -1,4 +1,6 @@
 #include "mpi.h"
+#include <stdlib.h>
+#include <stdio.h>
 
 #define NINTS 4123
 #define ROOT 0
