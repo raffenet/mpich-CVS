@@ -153,6 +153,12 @@ END
 ])
 
 dnl FIXME: fixup paths to be configurable so that MPE can also use this package
-AC_OUTPUT(Makefile ../../include/mpe_thread.h:mpe_thread.h.in localdefs)
+AC_OUTPUT(Makefile mpe_thread.h localdefs,[
+if test ! -d ../../include ; then
+    mkdir ../../include
+fi
+echo "moving mpe_thread.h to ../../include"
+mv -f mpe_thread.h ../../include/mpe_thread.h
+])
 
 PAC_SUBDIR_CACHE_CLEANUP
