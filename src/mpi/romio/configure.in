@@ -1246,7 +1246,7 @@ AC_SUBST(srcdir)
 # The master_top_srcdir is the location of the source for the building
 # package.  This is used only as part of the MPICH2 build, including 
 # the documentation targets mandoc, htmldoc, and latexdoc
-if test -x "$master_top_srcdir" ; then
+if test -z "$master_top_srcdir" ; then
     if test "$FROM_MPICH2" = yes ; then
         AC_MSG_WARN([Could not determine master_top_srcdir])
     fi
