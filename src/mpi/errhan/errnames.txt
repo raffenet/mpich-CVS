@@ -480,6 +480,7 @@ with MPI_Alloc_mem.
 **ch3|unhandled_connection_state:encountered an unexpected connection state
 **ch3|unhandled_connection_state %p %d:encountered an unexpected connection state (vc=%p, state=%d)
 **ch3|send_close_ack:an error occurred when the device attempted to acknowledge the closing of a connection
+**ch3|close_progress:an error occurred while the device was waiting for all open connections to close
 
 #
 # To be removed
