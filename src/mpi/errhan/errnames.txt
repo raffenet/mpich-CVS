@@ -52,6 +52,7 @@ also the value at index %d
 **indexnonmonotone:Index values in graph topology must be monotone nondecreasing
 **indexnonmonotone %d %d %d:Index values in graph topology must be monotone \
  nondecreasing but index[%d] is %d but the next index value is %d
+**graphnnodes:Number of graph nodes exceeds size of communicator.
 **rangedup:The range array specifies duplicate entries
 **rangedup %d %d %d:The range array specifies duplicate entries; process %d \
  specified in range array %d was previously specified in range array %d

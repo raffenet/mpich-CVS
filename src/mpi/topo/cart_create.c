@@ -148,6 +148,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 	cart_ptr->topo.cart.dims[i]     = dims[i];
 	cart_ptr->topo.cart.periodic[i] = periods[i];
 	nranks = nranks / dims[i];
+	/* FIXME: nranks could be zero (?) */
 	cart_ptr->topo.cart.position[i] = rank / nranks;
 	rank = rank % nranks;
     }

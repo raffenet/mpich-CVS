@@ -133,6 +133,8 @@ static int MPIR_Topology_copy_fn ( MPI_Comm comm, int keyval, void *extra_data,
 	/* Unknown topology */
 	return MPI_ERR_TOPOLOGY;
     }
+    *(void **)attr_out = (void *)copy_topology;
+    *flag = 1;
     /* Return mpi_errno in case one of the copy array functions failed */
     return mpi_errno;
 }
