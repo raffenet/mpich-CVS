@@ -94,7 +94,7 @@ Utility-Sock
 S*/
 typedef struct MPIDU_Sock_event
 {
-    MPIDU_Sock_op_t op_typea;
+    MPIDU_Sock_op_t op_type;
     MPIDU_Sock_size_t num_bytes;
     void * user_ptr;
     int error;
