@@ -42,6 +42,11 @@
  * do (sizeof(BsendData_t) + size) to get total_size).
  */
 
+/* #define DEBUG(a) a;fflush(stdout)  */
+#define DEBUG(a) 
+#define DEBUG1(a) 
+/* #define PRINT_AVAIL */
+/* #define DEBUG1(a) a;fflush(stdout)  */
 /* Private structures for the bsend buffers */
 
 /* BsendMsg is used to hold all of the message particulars in case
@@ -58,7 +63,8 @@ typedef struct {
 /* BsendData describes a bsend request */
 typedef struct BsendData {
     int              size;             /* size that is available for data */
-    int              total_size;       /* total size of this segment */
+    int              total_size;       /* total size of this segment, 
+					  including all headers */
     struct BsendData *next, *prev;
     MPID_Request     *request;
     BsendMsg_t       msg;
@@ -186,10 +192,14 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
     /* Find a free segment and copy the data into it.  If we could 
        have, we would already have used tBsend to send the message with
        no copying.
+
+       We may want to decide here whether we need to pack at all 
+       or if we can just use (a memcpy) of the buffer.
     */
 
     (void)NMPI_Pack_size( count, dtype, comm_ptr->handle, &packsize );
 
+    DEBUG1(printf("looking for buffer of size %d\n", packsize));
     /*
      * Use two passes.  Each pass is the same; between the two passes,
      * attempt to complete any active requests, and start any pending
@@ -201,6 +211,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	
 	p = MPIR_Bsend_find_buffer( packsize );
 	if (p) {
+	    DEBUG(printf("found buffer of size %d with address %x\n",packsize,p));
 	    /* Found a segment */
 	    
 	    /* Pack the data into the buffer */
@@ -210,10 +221,14 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	    p->msg.count = 0;
 	    (void)NMPI_Pack( buf, count, dtype, p->msg.msgbuf, packsize, 
 			     &p->msg.count, comm_ptr->handle );
-	    /* Try to send the message */
-	    mpi_errno = MPID_Send(p->msg.msgbuf, p->msg.count, MPI_PACKED, 
-				  dest, tag, comm_ptr,
-				  MPID_CONTEXT_INTRA_PT2PT, &p->request );
+	    /* Try to send the message.  We must use MPID_Isend
+	       because this call must not block */
+	    mpi_errno = MPID_Isend(p->msg.msgbuf, p->msg.count, MPI_PACKED, 
+				   dest, tag, comm_ptr,
+				   MPID_CONTEXT_INTRA_PT2PT, &p->request );
+	    if(mpi_errno) {
+		printf ("Surprise! err = %d\n", mpi_errno );
+	    }
 	    /* If the error is "request not available", put this on the
 	       pending list */
 	    /* FIXME: NOT YET DONE */
@@ -230,10 +245,20 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 		   Use a generalized request here? */
 	    }
 	    else if (p->request) {
+		DEBUG(printf("saving request %x in %x\n",p->request,p));
 		/* Only remove this block from the avail list if the 
 		   message has not been sent (MPID_Send may have already 
 		   sent the data, in which case it returned a null
 		   request) */
+#if 0
+		/* If the request is already complete, bypass the step
+		   of saving the require and taking the buffer */
+		if (p->request->cc_ptr == 0) {
+		    mpi_errno = MPIR_Request_complete(p->request->handle, 
+						      p->requestr, 
+					      MPI_STATUS_IGNORE, &active_flag);
+		}
+#endif
 		MPIR_Bsend_take_buffer( p, p->msg.count );
 		*request = p->request;
 	    }
@@ -243,6 +268,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	    break;
 	}
 	if (p && pass == 2) break;
+	DEBUG(printf("Could not find storage, checking active\n" ));
 	/* Try to complete some pending bsends */
 	MPIR_Bsend_check_active( );
 	/* Give priority to any pending operations */
@@ -252,7 +278,9 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
     
     if (!p) {
 	/* Return error for no buffer space found */
-	return 1;
+	return MPIR_Err_create_code( MPI_ERR_BUFFER, "**bufbsend", 
+				     "**bufbsend %d %d", packsize, 
+				     BsendBuffer.buffer_size );
     }
     else {
 	return MPI_SUCCESS;
@@ -266,34 +294,55 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
  *
  */
 
-/* Add block p to the free list. Merge into adjacent blocks */
+/* Add block p to the free list. Merge into adjacent blocks.  Used only 
+   within the check_active */
 static void MPIR_Bsend_free_segment( BsendData_t *p )
 {
-    BsendData_t *prev = p->prev, *avail = BsendBuffer.avail;
+    BsendData_t *prev = p->prev, *avail = BsendBuffer.avail, *avail_prev;
     int         inserted = 0;
 
+    DEBUG1(printf("Freeing bsend segment at %x of size %d, next at %x\n",
+		 p,p->size, ((char *)p)+p->total_size));
     /* Remove the segment from the free list */
     if (prev) {
+	DEBUG(printf("free segment is within active list\n"));
 	prev->next = p->next;
     }
     else {
+	/* p was at the head of the active list */
+	DEBUG(printf("free segment is head of active list\n"));
 	BsendBuffer.active = p->next;
     }
     if (p->next) {
 	p->next->prev = prev;
     }
 
+#ifdef PRINT_AVAIL_LIST
+    {
+	BsendData_t *a = BsendBuffer.avail;
+	printf( "Avail list is:\n" );
+	while (a) {
+	    printf( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
+		   a->total_size );
+	    a = a->next;
+	}
+    }
+#endif
     /* Merge into the avail list */
+    avail_prev = 0;
     while (avail) {
 	if ((char *)avail + avail->total_size == (char *)p) {
+	    DEBUG(printf("merge with previous block at %x\n", avail));
 	    /* Add p to avail, set p to this block and continue through
 	       the loop to catch p+size == next avail */
 	    avail->total_size += p->total_size;
 	    p = avail;
 	    inserted = 1;
-	    /* No break */
+	    /* No break because we may want to merge with the next 
+	     block */
 	}
 	else if ((char *)p + p->total_size == (char *)avail) {
+	    DEBUG(printf("merge with next block at %x\n", avail));
 	    /* Exact fit to the next entry.  Replace that entry 
 	       with this one */
 	    p->total_size += avail->total_size;
@@ -309,6 +358,7 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 	    BsendData_t *prev = avail->prev;
 	    if (inserted) break;   /* Exit if already inserted (top case) */
 	    /* Insert p before avail */
+	    DEBUG(printf("insert before next block at %x\n", avail ));
 	    p->next = avail;
 	    p->prev = prev;
 	    avail->prev = p;
@@ -318,7 +368,29 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 		BsendBuffer.avail = p;
 	    break;
 	}
-	avail = avail->next;
+	avail_prev = avail;    /* Save for end-of-list processing */
+	avail      = avail->next;
+    }
+    
+    /* If p is at the end of the list, avail will be null */
+    if (!avail && !inserted) {
+	/* We hit the end without finding the location */
+	if (avail_prev) {
+	    avail_prev->next = p;
+	    p->prev	     = avail_prev;
+	    p->next          = 0;
+	}
+	else {
+	    if (!BsendBuffer.avail) {
+		BsendBuffer.avail = p;
+		p->next           = 0;
+		p->prev           = 0;
+	    }
+	    else {
+		/* Something is wrong */
+		printf ( "PANIC!\n" );
+	    }
+	}
     }
 }
 
@@ -331,6 +403,7 @@ static void MPIR_Bsend_check_active( void )
 {
     BsendData_t *active = BsendBuffer.active, *next_active;
 
+    DEBUG(printf("Checking active starting at %x\n", active ));
     while (active) {
 	MPI_Request r = active->request->handle;
 	int         flag;
@@ -339,9 +412,11 @@ static void MPIR_Bsend_check_active( void )
 	NMPI_Test( &r, &flag, MPI_STATUS_IGNORE );
 	if (flag) {
 	    /* We're done.  Remove this segment */
+	    DEBUG(printf("Removing segment %x\n", active ));
 	    MPIR_Bsend_free_segment( active );
 	}
 	active = next_active;
+	DEBUG(printf("Next active is %x\n",active));
     }
 }
 
@@ -406,6 +481,7 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
 	   carve out a new block */
 	BsendData_t *newp;
 	
+	DEBUG(printf("Breaking block into used and allocated at %x\n", p ));
 	newp = (BsendData_t *)( (char *)p + sizeof(BsendData_t) + alloc_size );
 	newp->total_size = p->total_size - alloc_size - sizeof(BsendData_t);
 	newp->size = newp->total_size - sizeof(BsendData_t) + sizeof(double);
@@ -418,7 +494,8 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
 	if (p->next) {
 	    p->next->prev = newp;
 	}
-	p->next = newp;
+	p->next       = newp;
+	p->total_size = (char *)newp - (char*)p;
     }
 
     /* Remove p from the avail list and add it to the active list */
@@ -437,9 +514,10 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
     if (BsendBuffer.active) {
 	BsendBuffer.active->prev = p;
     }
-    p->next	      = BsendBuffer.active;
-    p->prev	      = 0;
+    p->next	       = BsendBuffer.active;
+    p->prev	       = 0;
     BsendBuffer.active = p;
+    DEBUG(printf("segment %x now head of active\n", p ));
 }
 
 /* Ignore p */

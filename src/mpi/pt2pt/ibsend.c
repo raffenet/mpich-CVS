@@ -79,6 +79,7 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 		MPIR_ERRTEST_SEND_TAG(tag,mpi_errno);
 		MPIR_ERRTEST_SEND_RANK(comm_ptr,dest,mpi_errno)
 	    }
+
 	    /* Validate datatype */
 	    MPIR_ERRTEST_DATATYPE(count,datatype,mpi_errno);
 

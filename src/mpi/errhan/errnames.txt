@@ -114,12 +114,12 @@ be in the range 0 to %d
 **bufnull:Null buffer pointer
 **intercommcoll:Intercommunicator collective operations have not been implemented
 **intercommcoll %s:Intercommunicator collective operation for %s has not been implemented
+**bufbsend:Insufficient space in Bsend buffer
+**bufbsend %d %d:Insufficient space in Bsend buffer; requested %d; total \
+ buffer size is %d
 #---- The messages below this line haven't been used yet.
 
 **buffer:Invalid buffer pointer
-**bufbsend:Insufficient space in Bsend buffer
-**bufbsend %d %d:Insufficient space in Bsend buffer; requested %d but only %d \
-available.
 **bufalias:Buffers must not be aliased
 **bufalias %s %s:Buffer parameters %s and %s must not be aliased 
 **bufsize:Invalid buffer size
