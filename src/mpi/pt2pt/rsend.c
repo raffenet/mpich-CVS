@@ -114,12 +114,6 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    if (dest == MPI_PROC_NULL)
-    {
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND);
-	return MPI_SUCCESS;
-    }
-
     mpi_errno = MPID_Rsend(buf, count, datatype, dest, tag, comm_ptr,
 			   MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
     if (mpi_errno == MPI_SUCCESS)

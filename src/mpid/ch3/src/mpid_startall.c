@@ -68,6 +68,11 @@ int MPID_Startall(int count, MPID_Request * requests[])
 		    &preq->partner_request);
 		break;
 	    }
+
+	    default:
+	    {
+		abort();
+	    }
 	}
 	
 	if (rc == MPI_SUCCESS)

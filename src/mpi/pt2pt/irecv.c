@@ -113,26 +113,6 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    if (source == MPI_PROC_NULL)
-    {
-	request_ptr = MPID_Request_create();
-	if (request_ptr != NULL)
-	{
-	    request_ptr->status.MPI_SOURCE = MPI_PROC_NULL;
-	    request_ptr->status.MPI_TAG = MPI_ANY_TAG;
-	    request_ptr->kind = MPID_REQUEST_RECV;
-	    request_ptr->cc = 0;
-	    request_ptr->cc_ptr = &request_ptr->cc;
-	    *request = request_ptr->handle;
-	
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IRECV);
-	    return MPI_SUCCESS;
-	}
-	
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IRECV);
-	return MPI_ERR_NOMEM;
-    }
-
     mpi_errno = MPID_Irecv(buf, count, datatype, source, tag, comm_ptr,
 			   MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
 

@@ -120,13 +120,6 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    if (source == MPI_PROC_NULL)
-    {
-	MPIR_Status_set_empty(status);
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV);
-	return MPI_SUCCESS;
-    }
-
     mpi_errno = MPID_Recv(buf, count, datatype, source, tag, comm_ptr,
 			  MPID_CONTEXT_INTRA_PT2PT, status, &request_ptr);
     if (mpi_errno == MPI_SUCCESS)

@@ -31,6 +31,11 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype,
     MPIDI_DBG_PRINTF((15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
 		      comm->context_id + context_offset));
 
+    if (rank == MPI_PROC_NULL)
+    {
+	goto fn_exit;
+    }
+
     if (rank == comm->rank)
     {
 	MPIDI_Message_match match;

@@ -25,6 +25,14 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
     MPIDI_DBG_PRINTF((15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
 		      comm->context_id + context_offset));
     
+    if (rank == MPI_PROC_NULL)
+    {
+	MPIR_Status_set_empty(status);
+	status->MPI_SOURCE = MPI_PROC_NULL;
+	rreq = NULL;
+	goto fn_exit;
+    }
+
     rreq = MPIDI_CH3U_Request_FDU_or_AEP(
 	rank, tag, comm->context_id + context_offset, &found);
     assert(rreq != NULL);

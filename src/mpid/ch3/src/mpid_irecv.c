@@ -28,6 +28,32 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
     MPIDI_DBG_PRINTF((15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
 		      comm->context_id + context_offset));
     
+    if (rank == MPI_PROC_NULL)
+    {
+	rreq = MPIDI_CH3_Request_create();
+	if (rreq != NULL)
+	{
+	    rreq->ref_count = 1;
+	    rreq->cc = 0;
+	    rreq->kind = MPID_REQUEST_RECV;
+	    MPIR_Status_set_empty(&rreq->status);
+	    rreq->status.MPI_SOURCE = MPI_PROC_NULL;
+	    /* DEBUG: the following are provided for debugging purposes only */
+	    rreq->comm = comm;
+	    rreq->ch3.match.rank = rank;
+	    rreq->ch3.match.tag = tag;
+	    rreq->ch3.match.context_id = comm->context_id + context_offset;
+	    rreq->ch3.user_buf = buf;
+	    rreq->ch3.user_count = count;
+	    rreq->ch3.datatype = datatype;
+	}
+	else
+	{
+	    mpi_errno = MPI_ERR_NOMEM;
+	}
+	goto fn_exit;
+    }
+
     rreq = MPIDI_CH3U_Request_FDU_or_AEP(
 	rank, tag, comm->context_id + context_offset, &found);
     assert(rreq != NULL);
