@@ -188,14 +188,6 @@ int CH3U_Describe_timer_states()
 		       "MPIDI_CH3_Progress_poke",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE,
-		       "MPIDI_CH3_Progress_finalize",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3_PROGRESS_INIT,
-		       "MPIDI_CH3_Progress_init",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3_REQUEST_CREATE,
 		       "MPIDI_CH3_Request_create",
 		       get_random_color_str());
@@ -216,6 +208,14 @@ int CH3U_Describe_timer_states()
 		       "MPIDI_CH3I_Listener_get_port",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE,
+		       "MPIDI_CH3I_Progress_finalize",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3_PROGRESS_INIT,
+		       "MPIDI_CH3I_Progress_init",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT,
 		       "MPIDI_CH3I_VC_post_connect",
 		       get_random_color_str());
@@ -230,6 +230,38 @@ int CH3U_Describe_timer_states()
     RLOG_DescribeState(g_pRLOG,
 		       MPID_STATE_MPIDI_CH3U_BUFFER_COPY,
 		       "MPIDI_CH3U_buffer_copy",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_UPDATE_REQUEST,
+		       "update_request",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_CONNECTION_ALLOC,
+		       "connection_alloc",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_CONNECTION_FREE,
+		       "connection_free",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_CONNECTION_POST_SENDQ_REQ,
+		       "connection_post_sendq_req",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_CONNECTION_POST_SEND_PKT,
+		       "connection_post_send_pkt",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_CONNECTION_POST_RECV_PKT,
+		       "connection_post_recv_pkt",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_CONNECTION_SEND_FAIL,
+		       "connection_send_fail",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_CONNECTION_RECV_FAIL,
+		       "connection_recv_fail",
 		       get_random_color_str());
     return Sock_describe_timer_states();
 }
