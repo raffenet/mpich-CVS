@@ -113,7 +113,7 @@ dnl If a cycle counter is not available the code reverts to fixed spin waits.  S
 dnl  AC_MSG_ERROR([gcc x86 cycle counter is not available on this system])
 fi
 
-AC_MSG_CHECKING([for x86 mfence instruction])
+AC_MSG_CHECKING([for x86 mfence instruction using __asm__])
 AC_TRY_RUN([
 int main(int argc, char *argv[])
 {
@@ -128,7 +128,7 @@ if test "$lac_cv_have_gcc_asm_and_x86_mfence" = "yes" ; then
     AC_DEFINE(HAVE_GCC_ASM_AND_X86_MFENCE, 1, [Define if using gcc on a x86 system with the mfence instruction])
 fi
 
-AC_MSG_CHECKING([for x86 sfence instruction])
+AC_MSG_CHECKING([for x86 sfence instruction using __asm__])
 AC_TRY_RUN([
 int main(int argc, char *argv[])
 {
@@ -143,7 +143,7 @@ if test "$lac_cv_have_gcc_asm_and_x86_sfence" = "yes" ; then
     AC_DEFINE(HAVE_GCC_ASM_AND_X86_SFENCE, 1, [Define if using gcc on a x86 system with the sfence instruction])
 fi
 
-AC_MSG_CHECKING([for x86 lfence instruction])
+AC_MSG_CHECKING([for x86 lfence instruction using __asm__])
 AC_TRY_RUN([
 int main(int argc, char *argv[])
 {
@@ -160,7 +160,7 @@ fi
 
 dnl icc checking
 
-AC_MSG_CHECKING([for x86 mfence instruction])
+AC_MSG_CHECKING([for x86 mfence instruction using __asm])
 AC_TRY_RUN([
 int main(int argc, char *argv[])
 {
@@ -175,7 +175,7 @@ if test "$lac_cv_have___asm_and_x86_mfence" = "yes" ; then
     AC_DEFINE(HAVE___ASM_AND_X86_MFENCE, 1, [Define if using __asm on a x86 system with the mfence instruction])
 fi
 
-AC_MSG_CHECKING([for x86 sfence instruction])
+AC_MSG_CHECKING([for x86 sfence instruction using __asm])
 AC_TRY_RUN([
 int main(int argc, char *argv[])
 {
@@ -190,7 +190,7 @@ if test "$lac_cv_have___asm_and_x86_sfence" = "yes" ; then
     AC_DEFINE(HAVE___ASM_AND_X86_SFENCE, 1, [Define if using __asm on a x86 system with the sfence instruction])
 fi
 
-AC_MSG_CHECKING([for x86 lfence instruction])
+AC_MSG_CHECKING([for x86 lfence instruction using __asm])
 AC_TRY_RUN([
 int main(int argc, char *argv[])
 {
@@ -203,6 +203,53 @@ AC_MSG_RESULT(no); lac_cv_have___asm_and_x86_lfence=no,
 AC_MSG_RESULT(not checking when cross compiling), lac_cv_have___asm_and_x86_lfence=no)
 if test "$lac_cv_have___asm_and_x86_lfence" = "yes" ; then
     AC_DEFINE(HAVE___ASM_AND_X86_LFENCE, 1, [Define if using __asm on a x86 system with the lfence instruction])
+fi
+
+dnl pgcc checking
+
+AC_MSG_CHECKING([for x86 mfence instruction using asm()])
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+    asm("_emit 0x0f __asm _emit 0xae __asm _emit 0xf0");
+    exit(0);
+}
+],
+AC_MSG_RESULT(yes); lac_cv_have_asm_and_x86_mfence=yes,
+AC_MSG_RESULT(no); lac_cv_have_asm_and_x86_mfence=no,
+AC_MSG_RESULT(not checking when cross compiling), lac_cv_have_asm_and_x86_mfence=no)
+if test "$lac_cv_have_asm_and_x86_mfence" = "yes" ; then
+    AC_DEFINE(HAVE_ASM_AND_X86_MFENCE, 1, [Define if using asm() on a x86 system with the mfence instruction])
+fi
+
+AC_MSG_CHECKING([for x86 sfence instruction using asm()])
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+    asm("sfence");
+    exit(0);
+}
+],
+AC_MSG_RESULT(yes); lac_cv_have_asm_and_x86_sfence=yes,
+AC_MSG_RESULT(no); lac_cv_have_asm_and_x86_sfence=no,
+AC_MSG_RESULT(not checking when cross compiling), lac_cv_have_asm_and_x86_sfence=no)
+if test "$lac_cv_have_asm_and_x86_sfence" = "yes" ; then
+    AC_DEFINE(HAVE_ASM_AND_X86_SFENCE, 1, [Define if using asm() on a x86 system with the sfence instruction])
+fi
+
+AC_MSG_CHECKING([for x86 lfence instruction using asm()])
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+    asm("_emit 0x0f __asm _emit 0xae __asm _emit 0xe8");
+    exit(0);
+}
+],
+AC_MSG_RESULT(yes); lac_cv_have_asm_and_x86_lfence=yes,
+AC_MSG_RESULT(no); lac_cv_have_asm_and_x86_lfence=no,
+AC_MSG_RESULT(not checking when cross compiling), lac_cv_have_asm_and_x86_lfence=no)
+if test "$lac_cv_have_asm_and_x86_lfence" = "yes" ; then
+    AC_DEFINE(HAVE_ASM_AND_X86_LFENCE, 1, [Define if using asm() on a x86 system with the lfence instruction])
 fi
 
 AC_MSG_CHECKING([for _InterlockedExchange intrinsic])
