@@ -402,15 +402,16 @@ def mpdrun():
                         # print "exit info: rank=%d  host=%s  pid=%d  status=%d" % \
                               # (msg['cli_rank'],msg['cli_host'],
                                # msg['cli_pid'],msg['cli_status'])
-			# if WIFSIGNALED(status):
-			    # if status > myExitStatus:
-			        # myExitStatus = status
-			    # killed_status = status & 0x007f  # AND off core flag
+			status = msg['cli_status']
+			if WIFSIGNALED(status):
+			    if status > myExitStatus:
+			        myExitStatus = status
+			    killed_status = status & 0x007f  # AND off core flag
 		            # # print 'exit status of rank %d: killed by signal %d ' % (msg['cli_rank'],killed_status)
-			# else:
-			    # exit_status = WEXITSTATUS(status)
-			    # if exit_status > myExitStatus:
-			        # myExitStatus = exit_status
+			else:
+			    exit_status = WEXITSTATUS(status)
+			    if exit_status > myExitStatus:
+			        myExitStatus = exit_status
 		            # # print 'exit status of rank %d: return code %d ' % (msg['cli_rank'],exit_status)
 		    else:
 		        print 'unrecognized msg from manager :%s:' % msg
