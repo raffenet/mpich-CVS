@@ -95,8 +95,12 @@ $(PGM_CHECK): $(OBJ4E)
 	$(CC) -o $(binbuild_dir)/$@ $(OBJ4E) $(MEMLIBS)
 
 clean:
-	$(RM) *.o *.lo
+	@-$(RM) *.o *.lo *.la
 
 realclean: clean
 	$(LIBTOOL) --mode=uninstall $(RM) $(libbuild_dir)/$(LIB_TRACE)
-	$(RM) $(binbuild_dir)/$(PGM_PRINT) $(binbuild_dir)/$(PGM_CHECK)
+	@-$(RM) $(binbuild_dir)/$(PGM_PRINT) $(binbuild_dir)/$(PGM_CHECK)
+	@-$(RM) -r .libs
+
+distclean: realclean
+	@-$(RM) Makefile

@@ -39,12 +39,31 @@ rmprog:
 	      fi ; \
 	  done
 
-distclean: rmprog
+distclean-misc:
+	@-$(RM) sbin/install-package
+	@-$(RM) Makefile
+	@-$(RM) simple.class simple.jar simple_swing.class simple_swing.jar
+	@-$(RM) config.log config.status
+	@-$(RM) -r autom4te*.cache
+
+distclean: rmprog distclean-misc
 	@-for pkg in $(PKGS) ; do \
 	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
 	          ( cd $$pkg && $(MAKE) distclean ) ; \
 	      fi ; \
 	  done
-	@-if [ -d doc/tex ] ; then cd doc/tex && $(MAKE) distclean ; fi
-	@-$(RM) sbin/*
-	@-$(RM) config.log config.status
+
+maintainer-clean: rmprog distclean-misc
+	@-for pkg in $(PKGS) ; do \
+	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
+	          ( cd $$pkg && $(MAKE) maintainer-clean ) ; \
+	      fi ; \
+	  done
+
+owner-clean: rmprog distclean-misc
+	@-for pkg in $(PKGS) ; do \
+	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
+	          ( cd $$pkg && $(MAKE) owner-clean ) ; \
+	      fi ; \
+	  done
+	@-$(RM) configure
