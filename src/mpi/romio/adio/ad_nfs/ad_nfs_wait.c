@@ -126,8 +126,7 @@ void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 
 	if (err == -1) {
 #ifdef MPICH2
-			*error_code
-					MPIR_Err_create_code(MPI_ERR_IO, "**io",
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
 									"**io %s", strerror(errno));
 			MPIR_Err_return_file((*request)->fd, myname, *error_code);
 #elif defined(PRINT_ERR_MSG)
