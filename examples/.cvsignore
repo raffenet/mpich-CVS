@@ -24,3 +24,5 @@ parent
 *Debug*
 *Release*
 .deps
+*.stackdump
+*.exe

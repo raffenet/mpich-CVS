@@ -36,3 +36,4 @@ adi3new
 *.gcov
 *.out
 .deps
+Makefile
