@@ -191,6 +191,7 @@ int tcp_get_business_card(char *value, int length)
     unsigned int a, b, c, d;
     int num_nics, i;
     char *value_orig;
+    struct hostent *h;
     MPIDI_STATE_DECL(MPID_STATE_TCP_GET_BUSINESS_CARD);
 
     MPIDI_FUNC_ENTER(MPID_STATE_TCP_GET_BUSINESS_CARD);
@@ -206,9 +207,16 @@ int tcp_get_business_card(char *value, int length)
 	c = (unsigned char)(((unsigned char *)(&local_ip[i]))[2]);
 	d = (unsigned char)(((unsigned char *)(&local_ip[i]))[3]);
 
-	value += sprintf(value, "%u.%u.%u.%u:%d:", a, b, c, d, TCP_Process.port);
+	if (a != 127)
+	{
+	    h = gethostbyaddr((const char *)&local_ip[i], sizeof(int), AF_INET);
+	    if (h->h_name != NULL)
+		value += sprintf(value, "%s:%d:", h->h_name, TCP_Process.port);
+	    else
+		value += sprintf(value, "%u.%u.%u.%u:%d:", a, b, c, d, TCP_Process.port);
+	}
     }
-    printf("tcp business card:\n<%s>\n", value_orig);fflush(stdout);sleep(1);
+    printf("tcp business card:\n<%s>\n", value_orig);fflush(stdout);
 
 /*
     sprintf(value, "192.168.113.1:%d", TCP_Process.port);
