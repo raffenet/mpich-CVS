@@ -65,7 +65,7 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 #if (defined(HPUX) || defined(SPPUX) || defined(IRIX) || defined(SOLARIS) || defined(AIX) || defined(DEC) || defined(CRAY))
     struct statvfs vfsbuf;
 #endif
-#if (defined(LINUX) || defined(FREEBSD)) || defined(tflops))
+#if (defined(LINUX) || defined(FREEBSD) || defined(tflops))
     struct statfs fsbuf;
 #endif
 #ifdef PARAGON
