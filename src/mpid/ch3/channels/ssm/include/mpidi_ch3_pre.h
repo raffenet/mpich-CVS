@@ -170,7 +170,7 @@ typedef struct MPIDI_CH3I_VC
     struct MPIDI_VC *shm_next_reader, *shm_next_writer;
 } MPIDI_CH3I_VC;
 
-#define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ssm;
+#define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;
 
 
 /*
@@ -194,7 +194,7 @@ struct MPIDI_CH3I_Request									\
 												\
     /*  pkt is used to temporarily store a packet header associated with this request */	\
     MPIDI_CH3_Pkt_t pkt;									\
-} ssm;
+} ch;
 
 #define MPID_STATE_LIST_CH3 \
 MPID_STATE_MPIDI_CH3_CANCEL_SEND, \

@@ -208,30 +208,30 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
     }
 
     /* create the write queue */
-    mpi_errno = MPIDI_CH3I_SHM_Get_mem(sizeof(MPIDI_CH3I_SHM_Queue_t), &vc->ssm.shm_write_queue_info);
+    mpi_errno = MPIDI_CH3I_SHM_Get_mem(sizeof(MPIDI_CH3I_SHM_Queue_t), &vc->ch.shm_write_queue_info);
     if (mpi_errno != MPI_SUCCESS)
     {
 	*flag = FALSE;
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmconnect_getmem", 0);
 	return mpi_errno;
     }
-    /* printf("rank %d sending queue(%s) to rank %d\n", MPIR_Process.comm_world->rank, vc->ssm.shm_write_queue_info.name,
-       vc->ssm.pg_rank); */
+    /* printf("rank %d sending queue(%s) to rank %d\n", MPIR_Process.comm_world->rank, vc->ch.shm_write_queue_info.name,
+       vc->ch.pg_rank); */
     
-    vc->ssm.write_shmq = vc->ssm.shm_write_queue_info.addr;
-    vc->ssm.write_shmq->head_index = 0;
-    vc->ssm.write_shmq->tail_index = 0;
+    vc->ch.write_shmq = vc->ch.shm_write_queue_info.addr;
+    vc->ch.write_shmq->head_index = 0;
+    vc->ch.write_shmq->tail_index = 0;
     MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq head = 0"));
     MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = 0"));
     for (i=0; i<MPIDI_CH3I_NUM_PACKETS; i++)
     {
-	vc->ssm.write_shmq->packet[i].offset = 0;
-	vc->ssm.write_shmq->packet[i].avail = MPIDI_CH3I_PKT_EMPTY;
+	vc->ch.write_shmq->packet[i].offset = 0;
+	vc->ch.write_shmq->packet[i].avail = MPIDI_CH3I_PKT_EMPTY;
     }
 
     /* send the queue connection information */
-    /*MPIU_DBG_PRINTF(("write_shmq: %p, name - %s\n", vc->ssm.write_shmq, vc->ssm.shm_write_queue_info.key));*/
-    shm_info.info = vc->ssm.shm_write_queue_info;
+    /*MPIU_DBG_PRINTF(("write_shmq: %p, name - %s\n", vc->ch.write_shmq, vc->ch.shm_write_queue_info.key));*/
+    shm_info.info = vc->ch.shm_write_queue_info;
     shm_info.pg_id = 0;
     shm_info.pg_rank = MPIR_Process.comm_world->rank;
     shm_info.pid = getpid();
@@ -239,8 +239,8 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
     mpi_errno = MPIDI_CH3I_BootstrapQ_send_msg(queue, &shm_info, sizeof(shm_info));
     if (mpi_errno != MPI_SUCCESS)
     {
-	MPIDI_CH3I_SHM_Unlink_mem(&vc->ssm.shm_write_queue_info);
-	MPIDI_CH3I_SHM_Release_mem(&vc->ssm.shm_write_queue_info);
+	MPIDI_CH3I_SHM_Unlink_mem(&vc->ch.shm_write_queue_info);
+	MPIDI_CH3I_SHM_Release_mem(&vc->ch.shm_write_queue_info);
 	*flag = FALSE;
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_send", 0);
 	return mpi_errno;
@@ -251,8 +251,8 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
     mpi_errno = MPIDI_CH3I_BootstrapQ_detach(queue);
     if (mpi_errno != MPI_SUCCESS)
     {
-	MPIDI_CH3I_SHM_Unlink_mem(&vc->ssm.shm_write_queue_info);
-	MPIDI_CH3I_SHM_Release_mem(&vc->ssm.shm_write_queue_info);
+	MPIDI_CH3I_SHM_Unlink_mem(&vc->ch.shm_write_queue_info);
+	MPIDI_CH3I_SHM_Release_mem(&vc->ch.shm_write_queue_info);
 	*flag = FALSE;
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_detach", 0);
 	return mpi_errno;
@@ -283,14 +283,14 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
-    if (vc->ssm.state != MPIDI_CH3I_VC_STATE_UNCONNECTED)
+    if (vc->ch.state != MPIDI_CH3I_VC_STATE_UNCONNECTED)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**vc_state", "**vc_state %d", vc->ssm.state);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**vc_state", "**vc_state %d", vc->ch.state);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_VC_POST_CONNECT);
 	return mpi_errno;
     }
 
-    vc->ssm.state = MPIDI_CH3I_VC_STATE_CONNECTING;
+    vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 
     /* get the business card */
     mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
@@ -314,13 +314,13 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	return mpi_errno;
     }
 
-    rc = snprintf(key, key_max_sz, "P%d-businesscard", vc->ssm.pg_rank);
+    rc = snprintf(key, key_max_sz, "P%d-businesscard", vc->ch.pg_rank);
     if (rc < 0 || rc > key_max_sz)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", rc);
 	return mpi_errno;
     }
-    rc = PMI_KVS_Get(vc->ssm.pg->kvs_name, key, val, val_max_sz);
+    rc = PMI_KVS_Get(vc->ch.pg->kvs_name, key, val, val_max_sz);
     if (rc != PMI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", rc);
@@ -346,7 +346,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	MPIU_Free(key);
 
 	/*MPIU_DBG_PRINTF(("shmem connected\n"));*/
-	vc->ssm.shm_next_writer = MPIDI_CH3I_Process.shm_writing_list;
+	vc->ch.shm_next_writer = MPIDI_CH3I_Process.shm_writing_list;
 	MPIDI_CH3I_Process.shm_writing_list = vc;
 
 	/* If there are more shm connections than cpus, reduce the spin count to one. */
@@ -355,15 +355,15 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	while (iter)
 	{
 	    count++;
-	    iter = iter->ssm.shm_next_writer;
+	    iter = iter->ch.shm_next_writer;
 	}
 	if (count >= MPIDI_CH3I_Process.num_cpus)
 	    MPIDI_CH3I_Process.pg->nShmWaitSpinCount = 1;
 
-	vc->ssm.state = MPIDI_CH3I_VC_STATE_CONNECTED;
-	vc->ssm.bShm = TRUE;
-	vc->ssm.shm_reading_pkt = TRUE;
-	vc->ssm.send_active = MPIDI_CH3I_SendQ_head(vc); /* MT */
+	vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;
+	vc->ch.bShm = TRUE;
+	vc->ch.shm_reading_pkt = TRUE;
+	vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc); /* MT */
 
 	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
@@ -394,8 +394,8 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     mpi_errno = MPIDU_Sock_post_connect(sock_set, conn, host_description, port, &conn->sock);
     if (mpi_errno == MPI_SUCCESS)
     {
-	vc->ssm.sock = conn->sock;
-	vc->ssm.conn = conn;
+	vc->ch.sock = conn->sock;
+	vc->ch.conn = conn;
 	conn->vc = vc;
 	conn->state = CONN_STATE_CONNECTING;
 	conn->send_active = NULL;
@@ -407,12 +407,12 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	if (rc == SOCK_ERR_HOST_LOOKUP)
 	{ 
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**hostlookup", "**hostlookup %d %d %s",
-					     /* FIXME: pgid*/ -1, conn->vc->ssm.pg_rank, val);
+					     /* FIXME: pgid*/ -1, conn->vc->ch.pg_rank, val);
 	}
 	else if (rc == SOCK_ERR_CONN_REFUSED)
 	{ 
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**connrefused", "**connrefused %d %d %s",
-					     /* FIXME: pgid */ -1, conn->vc->ssm.pg_rank, val);
+					     /* FIXME: pgid */ -1, conn->vc->ch.pg_rank, val);
 	}
 	else
 	{
@@ -421,7 +421,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 #endif
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**post_connect", 0);
 
-	vc->ssm.state = MPIDI_CH3I_VC_STATE_FAILED;
+	vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
 	connection_free(conn);
     }
 

@@ -76,14 +76,14 @@ int MPIDI_CH3_Progress(int is_blocking)
 	    vc_ptr = MPIDI_CH3I_Process.shm_writing_list;
 	    while (vc_ptr)
 	    {
-		if (vc_ptr->ssm.send_active != NULL)
+		if (vc_ptr->ch.send_active != NULL)
 		{
 		    if (MPIDI_CH3I_SHM_write_progress(vc_ptr) != 0)
 		    {
 			bShmProgressMade = TRUE;
 		    }
 		}
-		vc_ptr = vc_ptr->ssm.shm_next_writer;
+		vc_ptr = vc_ptr->ch.shm_next_writer;
 	    }
 	}
 
@@ -166,20 +166,20 @@ int MPIDI_CH3_Progress(int is_blocking)
 	    if (num_bytes)
 	    {
 		vc_ptr = &MPIDI_CH3I_Process.pg->vc_table[info.pg_rank];
-		rc = MPIDI_CH3I_SHM_Attach_to_mem(&info.info, &vc_ptr->ssm.shm_read_queue_info);
+		rc = MPIDI_CH3I_SHM_Attach_to_mem(&info.info, &vc_ptr->ch.shm_read_queue_info);
 		if (rc != MPI_SUCCESS)
 		{
-		    mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**attach_to_mem", "**attach_to_mem %d", vc_ptr->ssm.shm_read_queue_info.error);
+		    mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**attach_to_mem", "**attach_to_mem %d", vc_ptr->ch.shm_read_queue_info.error);
 		    goto fn_exit;
 		}
 		MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
-		/*vc_ptr->ssm.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
-		vc_ptr->ssm.bShm = TRUE;
-		vc_ptr->ssm.read_shmq = vc_ptr->ssm.shm_read_queue_info.addr;/*info.info.addr;*/
-		MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ssm.read_shmq));
-		vc_ptr->ssm.shm_reading_pkt = TRUE;
+		/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
+		vc_ptr->ch.bShm = TRUE;
+		vc_ptr->ch.read_shmq = vc_ptr->ch.shm_read_queue_info.addr;/*info.info.addr;*/
+		MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
+		vc_ptr->ch.shm_reading_pkt = TRUE;
 		/* add this VC to the global list to be shm_waited on */
-		vc_ptr->ssm.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
+		vc_ptr->ch.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
 		MPIDI_CH3I_Process.shm_reading_list = vc_ptr;
 	    }
 	}
@@ -246,20 +246,20 @@ int MPIDI_CH3I_Message_queue_progress()
 	vc_ptr = &MPIDI_CH3I_Process.pg->vc_table[info.pg_rank];
 	/* printf("rank %d attaching to shm(%s) from rank %d\n", MPIR_Process.comm_world->rank, info.info.name, info.pg_rank); */
 	mpi_errno = MPIDI_CH3I_SHM_Attach_to_mem(
-	    &info.info, &vc_ptr->ssm.shm_read_queue_info);
+	    &info.info, &vc_ptr->ch.shm_read_queue_info);
 	if (mpi_errno != MPI_SUCCESS)
 	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MPIDI_CH3I_SHM_Attach_to_mem", "**MPIDI_CH3I_SHM_Attach_to_mem %d", vc_ptr->ssm.shm_read_queue_info.error);
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MPIDI_CH3I_SHM_Attach_to_mem", "**MPIDI_CH3I_SHM_Attach_to_mem %d", vc_ptr->ch.shm_read_queue_info.error);
 	    return mpi_errno;
 	}
 	MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
-	/*vc_ptr->ssm.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
-	vc_ptr->ssm.bShm = TRUE;
-	vc_ptr->ssm.read_shmq = vc_ptr->ssm.shm_read_queue_info.addr;
-	MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ssm.read_shmq));
-	vc_ptr->ssm.shm_reading_pkt = TRUE;
+	/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
+	vc_ptr->ch.bShm = TRUE;
+	vc_ptr->ch.read_shmq = vc_ptr->ch.shm_read_queue_info.addr;
+	MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
+	vc_ptr->ch.shm_reading_pkt = TRUE;
 	/* add this VC to the global list to be shm_waited on */
-	vc_ptr->ssm.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
+	vc_ptr->ch.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
 	MPIDI_CH3I_Process.shm_reading_list = vc_ptr;
     }
     return MPI_SUCCESS;
@@ -314,11 +314,11 @@ int MPIDI_CH3_Progress_test()
 	vc_ptr = MPIDI_CH3I_Process.shm_writing_list;
 	while (vc_ptr)
 	{
-	    if (vc_ptr->ssm.send_active != NULL)
+	    if (vc_ptr->ch.send_active != NULL)
 	    {
 		MPIDI_CH3I_SHM_write_progress(vc_ptr);
 	    }
-	    vc_ptr = vc_ptr->ssm.shm_next_writer;
+	    vc_ptr = vc_ptr->ch.shm_next_writer;
 	}
     }
 
@@ -463,7 +463,7 @@ int MPIDI_CH3_Progress_wait()
 		vc_ptr = MPIDI_CH3I_Process.shm_writing_list;
 		while (vc_ptr)
 		{
-		    if (vc_ptr->ssm.send_active != NULL)
+		    if (vc_ptr->ch.send_active != NULL)
 		    {
 			if (MPIDI_CH3I_SHM_write_progress(vc_ptr) != 0)
 			{
@@ -478,7 +478,7 @@ int MPIDI_CH3_Progress_wait()
 			    }
 			}
 		    }
-		    vc_ptr = vc_ptr->ssm.shm_next_writer;
+		    vc_ptr = vc_ptr->ch.shm_next_writer;
 		}
 	    }
 /*
@@ -700,20 +700,20 @@ int MPIDI_CH3I_Message_queue_progress()
     {
 	vc_ptr = &MPIDI_CH3I_Process.pg->vc_table[info.pg_rank];
 	rc = MPIDI_CH3I_SHM_Attach_to_mem(
-	    &info.info, &vc_ptr->ssm.shm_read_queue_info);
+	    &info.info, &vc_ptr->ch.shm_read_queue_info);
 	if (rc != MPI_SUCCESS)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MPIDI_CH3I_SHM_Attach_to_mem", "**MPIDI_CH3I_SHM_Attach_to_mem %d", vc_ptr->ssm.shm_read_queue_info.error); /*"MPIDI_CH3I_SHM_Attach_to_mem failed, error %d\n", vc_ptr->ssm.shm_read_queue_info.error);*/
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MPIDI_CH3I_SHM_Attach_to_mem", "**MPIDI_CH3I_SHM_Attach_to_mem %d", vc_ptr->ch.shm_read_queue_info.error); /*"MPIDI_CH3I_SHM_Attach_to_mem failed, error %d\n", vc_ptr->ch.shm_read_queue_info.error);*/
 	    return mpi_errno;
 	}
 	MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
-	/*vc_ptr->ssm.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
-	vc_ptr->ssm.bShm = TRUE;
-	vc_ptr->ssm.read_shmq = vc_ptr->ssm.shm_read_queue_info.addr;
-	MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ssm.read_shmq));
-	vc_ptr->ssm.shm_reading_pkt = TRUE;
+	/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
+	vc_ptr->ch.bShm = TRUE;
+	vc_ptr->ch.read_shmq = vc_ptr->ch.shm_read_queue_info.addr;
+	MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
+	vc_ptr->ch.shm_reading_pkt = TRUE;
 	/* add this VC to the global list to be shm_waited on */
-	vc_ptr->ssm.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
+	vc_ptr->ch.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
 	MPIDI_CH3I_Process.shm_reading_list = vc_ptr;
     }
     return MPI_SUCCESS;
@@ -819,7 +819,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 		vc_ptr = MPIDI_CH3I_Process.shm_writing_list;
 		while (vc_ptr)
 		{
-		    if (vc_ptr->ssm.send_active != NULL)
+		    if (vc_ptr->ch.send_active != NULL)
 		    {
 			if (MPIDI_CH3I_SHM_write_progress(vc_ptr) != 0)
 			{
@@ -834,7 +834,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 			    }
 			}
 		    }
-		    vc_ptr = vc_ptr->ssm.shm_next_writer;
+		    vc_ptr = vc_ptr->ch.shm_next_writer;
 		}
 	    }
 	    if (spin_count++ >= MPIDI_CH3I_Process.pg->nShmWaitSpinCount)

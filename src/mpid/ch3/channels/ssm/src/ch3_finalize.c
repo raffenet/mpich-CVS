@@ -28,13 +28,13 @@ int MPIDI_CH3_Finalize()
     /* Free resources allocated in CH3_Init() */
     while (MPIDI_CH3I_Process.shm_reading_list)
     {
-	MPIDI_CH3I_SHM_Release_mem(&MPIDI_CH3I_Process.shm_reading_list->ssm.shm_read_queue_info);
-	MPIDI_CH3I_Process.shm_reading_list = MPIDI_CH3I_Process.shm_reading_list->ssm.shm_next_reader;
+	MPIDI_CH3I_SHM_Release_mem(&MPIDI_CH3I_Process.shm_reading_list->ch.shm_read_queue_info);
+	MPIDI_CH3I_Process.shm_reading_list = MPIDI_CH3I_Process.shm_reading_list->ch.shm_next_reader;
     }
     while (MPIDI_CH3I_Process.shm_writing_list)
     {
-	MPIDI_CH3I_SHM_Release_mem(&MPIDI_CH3I_Process.shm_writing_list->ssm.shm_write_queue_info);
-	MPIDI_CH3I_Process.shm_writing_list = MPIDI_CH3I_Process.shm_writing_list->ssm.shm_next_writer;
+	MPIDI_CH3I_SHM_Release_mem(&MPIDI_CH3I_Process.shm_writing_list->ch.shm_write_queue_info);
+	MPIDI_CH3I_Process.shm_writing_list = MPIDI_CH3I_Process.shm_writing_list->ch.shm_next_writer;
     }
     mpi_errno = MPIDI_CH3I_BootstrapQ_destroy(MPIDI_CH3I_Process.pg->bootstrapQ);
     if (mpi_errno != MPI_SUCCESS)
