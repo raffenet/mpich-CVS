@@ -177,6 +177,7 @@ recv_initf.c
 recvf.c
 redscatf.c
 reducef.c
+register_datarepf.c
 reqgetstatf.c
 request_freef.c
 rsend_initf.c
