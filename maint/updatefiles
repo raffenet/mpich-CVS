@@ -181,6 +181,12 @@ if [ "$has_unix_find" = "yes" ] ; then
 	    # sed -e '/"\"/d' -e 's/\//g'
 	    # (the first removes case statements on \^M, the second
 	    # removes the \^M from the ac_config_files statement
+	    if grep 'src/Makefile \\ src' configure 2>&1 >/dev/null ; then 
+		rm -f c.tmp 
+		sed -e '/"\\/d' -e 's/\\//g' configure > c.tmp
+		rm -f configure
+		mv c.tmp configure
+            fi
         fi
     done
 else
