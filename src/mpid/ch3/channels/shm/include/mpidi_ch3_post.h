@@ -11,7 +11,7 @@
  * MPIDI_CH3_EAGER_MAX_MSG_SIZE - threshold for switch between the eager and rendezvous protocolsa
  */
 #if !defined(MPIDI_CH3_EAGER_MAX_MSG_SIZE)
-#   define MPIDI_CH3_EAGER_MAX_MSG_SIZE 128000
+#   define MPIDI_CH3_EAGER_MAX_MSG_SIZE 10000
 #endif
 
 /*
