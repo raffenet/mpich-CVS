@@ -436,7 +436,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     }
                     else {
                         mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
-                                                          "**opundefined","**opundefined %s", "only predefined ops valid for MPI_Accumulate" );
+                                                          "**opundefined", "**opundefined %d", op );
                         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                         return mpi_errno;
                     }
@@ -497,7 +497,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     break;
                 default:
                     mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
-                                                      "****intern","**opundefined %s", "RMA target received unknown RMA operation" );
+                                                      "**opundefined_rma","**opundefined_rma %d", rma_op_infos[total_op_count].type );
                     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                     return mpi_errno;
                 }

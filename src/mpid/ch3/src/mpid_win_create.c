@@ -300,7 +300,7 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                     }
                     else {
                         mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
-                                                           "**opundefined","**opundefined %s", "only predefined ops valid for MPI_Accumulate" );
+                                                           "**opundefined", "**opundefined %d", op );
                         return (THREAD_RETURN_TYPE)mpi_errno;
                     }
 
@@ -360,7 +360,7 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                     break;
                 default:
                     mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
-                                                       "****intern","**opundefined %s", "RMA target received unknown RMA operation" );
+                                                       "**opundefined", "**opundefined %d", rma_op_info.type );
                     return (THREAD_RETURN_TYPE)mpi_errno;
                 }
 

@@ -189,7 +189,7 @@ int MPID_Win_wait(MPID_Win *win_ptr)
                 }
                 else {
                     mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
-                                                      "**opundefined","**opundefined %s", "only predefined ops valid for MPI_Accumulate" );
+                                                      "**opundefined", "**opundefined %d", op );
                     return mpi_errno;
                 }
                 (*uop)(tmp_buf, (char *) win_ptr->base +
@@ -201,7 +201,7 @@ int MPID_Win_wait(MPID_Win *win_ptr)
                 break;
             default:
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
-                                                  "****intern","**opundefined %s", "RMA target received unknown RMA operation" );
+                                                  "**opundefined", "**opundefined %d", rma_op_info.type );
                 return mpi_errno;
             }
             
