@@ -2282,6 +2282,7 @@ sub build_specials {
 /* leave name alone */
 #else
 #define mpirinitc_ mpirinitc
+#define mpirinitc2_ mpirinitc2
 #endif
 ";
     # These are here rather than in initf.c to solve some link order 
