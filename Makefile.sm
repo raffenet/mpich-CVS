@@ -1,3 +1,5 @@
 SUBDIRS = . src examples test
 all-local:
 	if [ ! -d lib ] ; then mkdir lib ; fi
+distclean-local:
+	-@rm -f lib/libmpich.a

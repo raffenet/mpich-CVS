@@ -1,2 +1,5 @@
 lib${MPILIBNAME}_a_SOURCES = wtime.c mpidtime.c wtick.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include
+
+distclean-local:
+	@-rm -f ${top_srcdir}/src/include/mpichtimer.h ../../include/mpichtimer.h
