@@ -238,7 +238,7 @@ sub RunMPIProgram {
 	 die "Could not run $programname\n";
     if ($ResultTest ne "") {
 	# Read and process the output
-	($found_error, $inline) = &$ResultTest( MPIOUT );
+	($found_error, $inline) = &$ResultTest( MPIOUT, $programname );
     }
     else {
 	$inline = "";
@@ -266,8 +266,12 @@ sub RunMPIProgram {
 		# passed the test.
 		if (!$found_error) {
 		    $run_status = $?;
+		    $signal_num = $run_status & 127;
 		    if ($run_status > 255) { $run_status >>= 8; }
 		    print STDERR "Program $programname exited with non-zero status $run_status\n";
+		    if ($signal_num != 0) {
+			print STDERR "Program $programname exited with signal $signal_num\n";
+		    }
 		    $found_error = 1;
 		    $err_count ++;
 		}
@@ -307,6 +311,7 @@ sub CleanUpAfterRun {
 # status return is NONZERO
 sub TestStatus {
     my $MPIOUT = $_[0];
+    my $programname = $_[1];
     my $found_error = 0;
 
     my $inline = "";
@@ -327,6 +332,7 @@ sub TestStatus {
     $rc = close ( MPIOUT );
     if ($rc == 0) {
 	$run_status = $?;
+	$signal_num = $run_status & 127;
 	if ($run_status > 255) { $run_status >>= 8; }
     }
     else {
@@ -335,6 +341,52 @@ sub TestStatus {
 	$err_count ++;
 	$inline .= "mpiexec returned a zero status but the program returned a nonzero status\n";
     }
+    return ($found_error,$inline);
+}
+#
+# TestTimeout is a special test that reports success *only* when the 
+# status return is NONZERO and there are no processes left over.
+# This test currently checks only for the return status.
+sub TestTimeout {
+    my $MPIOUT = $_[0];
+    my $programname = $_[1];
+    my $found_error = 0;
+
+    my $inline = "";
+    while (<$MPIOUT>) {
+	#print STDOUT $_ if $verbose;
+	# Skip FORTRAN STOP
+	if (/FORTRAN STOP/) { next; }
+	$inline .= $_;
+	if (/[Tt]imeout/) { next; }
+	# ANY output is an error (other than timeout) 
+	if (! /^\s*$/) {
+	    print STDERR "Unexpected output in $programname: $_";
+	    if (!$found_error) {
+		$found_error = 1;
+		$err_count ++;
+	    }
+	}
+    }
+    $rc = close ( MPIOUT );
+    if ($rc == 0) {
+	$run_status = $?;
+	$signal_num = $run_status & 127;
+	if ($run_status > 255) { $run_status >>= 8; }
+    }
+    else {
+	# This test *requires* non-zero return codes
+	$found_error = 1;
+	$err_count ++;
+	$inline .= "mpiexec returned a zero status but the program returned a nonzero status\n";
+    }
+    #
+    # Here should go a check of the processes
+    # open( PFD, "ps -fu $LOGNAME | grep -v grep | grep $programname |" );
+    # while (<PFD>) {
+    #     
+    # }
+    # close PFD;
     return ($found_error,$inline);
 }
 
