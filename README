@@ -307,25 +307,6 @@ described above.  The file mpich2-0.97/src/pm/mpd/README has more
 information about interactive commands for managing the ring of mpds.
 
 
-forker
-------
-
-Forker is a process manager that creates processes on a single machine,
-by having mpiexec itself fork and exec them.  It is useful for
-shared-memory multiprocessors (SMPs) where you want to create all the
-processes on the same machine, and also for debugging, where it is often
-convenient to run all the processes on a single machine, since parallel
-performance is less important.  The forker version of mpiexec may not
-support all the standard options and arguments.  It also does not yet
-support the dynamic process management functions.
-
-specify that you want to use forker by doing 
-
-  --with-pm=forker  
-
-on the configure command line.
-
-
 smpd
 ---- 
 
@@ -551,3 +532,33 @@ are under development)
 
 Some routines, such as the intercommunicator extensions to the
 collective routines, have not been extensively tested.
+
+Other Changes
+=============
+Previous releases of MPICH2 supported the "forker" process manager.  This
+process manager is still available but is unsupported and untested.  It does
+not support the dynamic-process operations in MPI-2 and thus will fail many of
+the tests included with MPICH2.  We plan to support additional process
+managers (probably including a new version of forker) at some future time,
+but we do not have a scheduled for it yet.  
+Information on forker from previous versions of the README is included below.  
+
+forker
+------
+
+Forker is a process manager that creates processes on a single machine,
+by having mpiexec itself fork and exec them.  It is useful for
+shared-memory multiprocessors (SMPs) where you want to create all the
+processes on the same machine, and also for debugging, where it is often
+convenient to run all the processes on a single machine, since parallel
+performance is less important.  The forker version of mpiexec may not
+support all the standard options and arguments.  It also does not yet
+support the dynamic process management functions.
+
+specify that you want to use forker by doing 
+
+  --with-pm=forker  
+
+on the configure command line.
+
+
