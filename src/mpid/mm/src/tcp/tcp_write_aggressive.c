@@ -194,6 +194,25 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	    while (num_left > 0)
 	    {
 		/* subtract the length of the current vector */
+
+		num_left -= buf_ptr->vec.vec[i].MPID_VECTOR_LEN;
+		if (num_left > 0)
+		{
+		    /* the entire vector was written so move to the next index */
+		    i++;
+		}
+		else
+		{
+		    /* this vector was only partially written, so update the buf and len fields */
+		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_BUF = 
+			buf_ptr->vec.vec[i].MPID_VECTOR_BUF +
+			buf_ptr->vec.vec[i].MPID_VECTOR_LEN + 
+			num_left;
+		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN = -num_left;
+		}
+#ifdef FOO
+		/* ****** ERROR ***** */
+		/* data.tcp.buf.vec_write is all zeros */
 		num_left -= car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN;
 		if (num_left > 0)
 		{
@@ -209,6 +228,7 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 			num_left;
 		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN = -num_left;
 		}
+#endif
 	    }
 	    car_ptr->data.tcp.buf.vec_write.cur_index = i;
 	}
