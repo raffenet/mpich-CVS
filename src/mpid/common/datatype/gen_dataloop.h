@@ -323,7 +323,7 @@ void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 
 struct DLOOP_Dataloop * PREPEND_PREFIX(Dataloop_alloc)(int sz);
 
-void PREPEND_PREFIX(Dataloop_free)(struct DLOOP_Dataloop *dataloop);
+void PREPEND_PREFIX(Dataloop_free)(struct DLOOP_Dataloop **dataloop);
 
 /* Segment functions */
 struct DLOOP_Segment * PREPEND_PREFIX(Segment_alloc)(void);

@@ -63,10 +63,11 @@ struct DLOOP_Dataloop * PREPEND_PREFIX(Dataloop_alloc)(int sz)
   Input Parameters:
 . dataloop - pointer to dataloop structure
 @*/
-void PREPEND_PREFIX(Dataloop_free)(struct DLOOP_Dataloop *dataloop)
+void PREPEND_PREFIX(Dataloop_free)(struct DLOOP_Dataloop **dataloop)
 {
-    memset(dataloop, 0, sizeof(DLOOP_Dataloop_common));
-    DLOOP_Free(dataloop);
+    memset(*dataloop, 0, sizeof(DLOOP_Dataloop_common));
+    DLOOP_Free(*dataloop);
+    *dataloop = NULL;
     return;
 }
 /*@

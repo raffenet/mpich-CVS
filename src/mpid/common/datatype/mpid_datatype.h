@@ -552,7 +552,7 @@ void MPID_Dataloop_print(struct MPID_Dataloop *dataloop,
 
 struct MPID_Dataloop * MPID_Dataloop_alloc(int sz);
 
-void MPID_Dataloop_free(struct MPID_Dataloop *dataloop);
+void MPID_Dataloop_free(struct MPID_Dataloop **dataloop);
 
 /* Segment functions */
 void MPID_Segment_pack(struct DLOOP_Segment *segp,
