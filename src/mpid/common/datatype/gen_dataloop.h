@@ -322,14 +322,13 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 
 void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 					DLOOP_Offset first, 
-					DLOOP_Offset *lastp,
-					int (*piecefn)(DLOOP_Handle,
-						       int,
-						       int,
-						       void *,
-						       void *), 
+					DLOOP_Offset *lastp, 
+					int (*piecefn) (int *blocks_p,
+							int el_size,
+							DLOOP_Offset rel_off,
+							void *bufp,
+							void *v_paramp),
 					void *pieceparams);
-
 
 #endif
 

@@ -272,11 +272,11 @@ do {						\
 void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 					DLOOP_Offset first, 
 					DLOOP_Offset *lastp, 
-					int (*piecefn)(DLOOP_Handle,
-						       int,
-						       int,
-						       void *,
-						       void *), 
+					int (*piecefn) (int *blocks_p,
+							int el_size,
+							DLOOP_Offset rel_off,
+							void *bufp,
+							void *v_paramp),
 					void *pieceparams)
 {
     int cur_sp, valid_sp;
@@ -325,8 +325,8 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 #endif
 
 	if (cur_elmp->loop_p->kind & DLOOP_FINAL_MASK) {
-	    int partial_flag, piecefn_indicated_exit;
-	    DLOOP_Offset piece_size, basic_size;
+	    int partial_flag, piecefn_indicated_exit, myblocks;
+	    DLOOP_Offset basic_size;
 	    /* process data region */
 
 	    /* First discover how large a region we *could* process, if it
@@ -341,13 +341,13 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		case DLOOP_KIND_CONTIG:
          	case DLOOP_KIND_BLOCKINDEXED:
 		case DLOOP_KIND_INDEXED:
-		    piece_size = cur_elmp->curblock * basic_size;
+		    myblocks = cur_elmp->curblock;
 		    break;
 		case DLOOP_KIND_VECTOR:
 		    /* TODO: RECOGNIZE ABILITY TO DO STRIDED COPIES --
 		     * ONLY GOOD FOR THE NON-VECTOR CASES...
 		     */
-		    piece_size = cur_elmp->curblock * basic_size;
+		    myblocks = cur_elmp->curblock;
 		    break;
 		default:
 		    assert(0);
@@ -355,25 +355,33 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
 #ifdef DLOOP_M_VERBOSE
 	    DLOOP_dbg_printf("\thit leaf; cur_sp=%d, elmp=%x, piece_sz=%d\n", cur_sp,
-		       (unsigned) cur_elmp, piece_size);
+		       (unsigned) cur_elmp, myblocks * basic_size);
 #endif
 
 	    /* ??? SHOULD THIS BE >= FOR SOME REASON ??? */
-	    if (stream_off + piece_size > (unsigned long) last) {
+	    if (stream_off + myblocks * basic_size > (unsigned long) last) {
 		/* Cannot process the entire "piece" -- round down */
-		piece_size = ((last - stream_off) / basic_size) * basic_size;
+		myblocks = ((last - stream_off) / basic_size);
 #ifdef DLOOP_M_VERBOSE
-		DLOOP_dbg_printf("\tpartial piece_size=%d\n", piece_size);
+		DLOOP_dbg_printf("\tpartial block count=%d\n", myblocks);
 #endif
+		if (myblocks == 0) {
+#ifdef DLOOP_M_VERBOSE
+		    DLOOP_dbg_printf("partial flag and no whole blocks, returning sooner than expected.\n");
+#endif
+		    DLOOP_SEGMENT_SAVE_LOCAL_VALUES;
+		    return;
+		}
 		partial_flag = 1;
 	    }
 	    else {
 		partial_flag = 0; /* handling everything left for this type */
 	    }
-	    if (piecefn) piecefn_indicated_exit = piecefn((DLOOP_Handle) 0,
-							  cur_elmp->curoffset,
-							  piece_size,
-							  segp->ptr,
+
+	    if (piecefn) piecefn_indicated_exit = piecefn(&myblocks,
+							  basic_size, /* this will become a type later probably */
+							  cur_elmp->curoffset, /* relative to bufptr */
+							  segp->ptr, /* start of buffer (from segment) */
 							  pieceparams);
 	    else {
 		piecefn_indicated_exit = 0;
@@ -381,25 +389,25 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		DLOOP_dbg_printf("\tNULL piecefn for this piece\n");
 #endif
 	    }
-	    stream_off += piece_size;
+	    stream_off += myblocks * basic_size;
 
 	    /* TODO: MAYBE REORGANIZE? */
-	    if (partial_flag) {
-		/* Definitely stopping after this. */
-		cur_elmp->curoffset += piece_size;
+	    if (myblocks < cur_elmp->curblock) {
+		/* Definitely stopping after this.  Either piecefn stopped short or we did due to last param */
+		cur_elmp->curoffset += myblocks * basic_size;
 
 		/* NOTE: THIS CODE ASSUMES THAT WE STOP ON WHOLE BASIC SIZES!!! */
 		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		    case DLOOP_KIND_CONTIG:
 		    case DLOOP_KIND_BLOCKINDEXED:
 		    case DLOOP_KIND_INDEXED:
-			cur_elmp->curblock -= piece_size / basic_size;
+			cur_elmp->curblock -= myblocks;
 			break;
 		    case DLOOP_KIND_VECTOR:
 			/* TODO: RECOGNIZE ABILITY TO DO STRIDED COPIES --
 			 * ONLY GOOD FOR THE NON-VECTOR CASES...
 			 */
-			cur_elmp->curblock -= piece_size / basic_size;
+			cur_elmp->curblock -= myblocks;
 			break;
 		}
 #ifdef DLOOP_M_VERBOSE

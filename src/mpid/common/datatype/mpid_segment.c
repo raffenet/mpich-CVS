@@ -41,28 +41,23 @@ struct MPID_Segment_piece_params {
     } u;
 };
 
-#if 0
-static int MPID_Segment_piece_print(DLOOP_Handle handle,
-				    DLOOP_Offset dbufoff, 
-				    int size,
-				    void *dbufp,
-				    void *paramp);
-#endif
-static int MPID_Segment_piece_pack(DLOOP_Handle handle,
-				   DLOOP_Offset dbufoff, 
-				   int size,
-				   void *dbufp,
-				   void *paramp);
-static int MPID_Segment_piece_pack_vector(DLOOP_Handle handle,
-					  DLOOP_Offset dbufoff, 
-					  int size,
-					  void *dbufp,
-					  void *paramp);
-static int MPID_Segment_piece_unpack(DLOOP_Handle handle,
-				     DLOOP_Offset dbufoff, 
-				     int size,
-				     void *dbufp,
-				     void *paramp);
+static int MPID_Segment_contig_pack_to_iov(int *blocks_p,
+					   int el_size,
+					   DLOOP_Offset rel_off,
+					   void *bufp,
+					   void *v_paramp);
+
+static int MPID_Segment_contig_unpack_to_buf(int *blocks_p,
+					     int el_size,
+					     DLOOP_Offset rel_off,
+					     void *bufp,
+					     void *v_paramp);
+
+static int MPID_Segment_contig_pack_to_buf(int *blocks_p,
+					   int el_size,
+					   DLOOP_Offset rel_off,
+					   void *bufp,
+					   void *v_paramp);
 
 /* Segment_pack - we need to implement this if for no other reason
  * than for performance testing
@@ -97,7 +92,7 @@ void MPID_Segment_pack(struct DLOOP_Segment *segp,
     MPID_Segment_manipulate(segp,
 			    first,
 			    lastp,
-			    MPID_Segment_piece_pack, 
+			    MPID_Segment_contig_pack_to_buf, 
 			    &pack_params);
     return;
 }
@@ -119,7 +114,7 @@ void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
     assert(*lengthp > 0);
 
     MPID_Segment_manipulate(segp, first, lastp, 
-			    MPID_Segment_piece_pack_vector, 
+			    MPID_Segment_contig_pack_to_iov, 
 			    &packvec_params);
 
     /* last value already handled by MPID_Segment_manipulate */
@@ -138,32 +133,35 @@ void MPID_Segment_unpack(struct DLOOP_Segment *segp,
     
     unpack_params.u.unpack.unpack_buffer = (DLOOP_Buffer) unpack_buffer;
     MPID_Segment_manipulate(segp, first, lastp, 
-			    MPID_Segment_piece_unpack, 
+			    MPID_Segment_contig_unpack_to_buf, 
 			    &unpack_params);
     return;
 }
 
 
-/* MPID_Segment_piece_pack_vector
+/* MPID_Segment_contig_pack_to_iov
  */
-static int MPID_Segment_piece_pack_vector(DLOOP_Handle handle,
-					  DLOOP_Offset dbufoff, 
-					  int size,
-					  void *dbufp,
-					  void *v_paramp)
+static int MPID_Segment_contig_pack_to_iov(int *blocks_p,
+					   int el_size,
+					   DLOOP_Offset rel_off,
+					   void *bufp,
+					   void *v_paramp)
 {
-    /* TODO: IS THIS IN ANY WAY A BAD THING TO DO? */
+    int size;
     struct MPID_Segment_piece_params *paramp = v_paramp;
+
+    size = *blocks_p * el_size;
+
 #ifdef MPID_SP_VERBOSE
     MPIU_dbg_printf("\t[index = %d, loc = (%x + %x) = %x, size = %d]\n",
 		    paramp->u.pack_vector.index,
-		    (unsigned) dbufp,
-		    (unsigned) dbufoff,
-		    (unsigned) dbufp + dbufoff,
+		    (unsigned) bufp,
+		    (unsigned) rel_off,
+		    (unsigned) bufp + rel_off,
 		    size);
 #endif
     
-    if (paramp->u.pack_vector.index > 0 && ((char *)dbufp + dbufoff) ==
+    if (paramp->u.pack_vector.index > 0 && ((char *) bufp + rel_off) ==
 	(((char *) paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_BUF) +
 	 paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_LEN))
     {
@@ -171,7 +169,7 @@ static int MPID_Segment_piece_pack_vector(DLOOP_Handle handle,
 	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_LEN += size;
     }
     else {
-	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_BUF = (char*) dbufp + dbufoff;
+	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_BUF = (char *) bufp + rel_off;
 	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_LEN = size;
 	paramp->u.pack_vector.index++;
 	/* check to see if we have used our entire vector buffer, and if so return 1 to stop processing */
@@ -194,35 +192,41 @@ void MPID_Segment_unpack_vector(struct DLOOP_Segment *segp,
     return;
 }
 
-/* MPID_Segment_piece_unpack
+/* MPID_Segment_contig_unpack_to_buf
  */
-static int MPID_Segment_piece_unpack(DLOOP_Handle handle,
-				     DLOOP_Offset dbufoff, 
-				     int size,
-				     void *dbufp,
-				     void *v_paramp)
+static int MPID_Segment_contig_unpack_to_buf(int *blocks_p,
+					     int el_size,
+					     DLOOP_Offset rel_off,
+					     void *bufp,
+					     void *v_paramp)
 {
+    int size;
     struct MPID_Segment_piece_params *paramp = v_paramp;
+
+    size = *blocks_p * el_size;
 
 #ifdef MPID_SU_VERBOSE
     dbg_printf("\t[h=%x, do=%d, dp=%x, bp=%x, sz=%d]\n", handle, dbufoff, 
 	       (unsigned) dbufp, (unsigned) paramp->u.unpack.unpack_buffer, size);
 #endif
     
-    memcpy((char*)dbufp+dbufoff, paramp->u.unpack.unpack_buffer, size);
+    memcpy((char *) bufp + rel_off, paramp->u.unpack.unpack_buffer, size);
     paramp->u.unpack.unpack_buffer += size;
     return 0;
 }
 
-/* MPID_Segment_piece_pack
+/* MPID_Segment_contig_pack_to_buf
  */
-static int MPID_Segment_piece_pack(DLOOP_Handle handle,
-				   DLOOP_Offset dbufoff,
-				   int size, 
-				   void *dbufp,
-				   void *v_paramp)
+static int MPID_Segment_contig_pack_to_buf(int *blocks_p,
+					   int el_size,
+					   DLOOP_Offset rel_off,
+					   void *bufp,
+					   void *v_paramp)
 {
+    int size;
     struct MPID_Segment_piece_params *paramp = v_paramp;
+
+    size = *blocks_p * el_size;
 
     /*
      * h  = handle value
@@ -233,29 +237,17 @@ static int MPID_Segment_piece_pack(DLOOP_Handle handle,
      *      we wanted...)
      */
 #ifdef MPID_SP_VERBOSE
-    dbg_printf("\t[h=%x, do=%d, dp=%x, bp=%x, sz=%d]\n", handle, dbufoff, 
-	       (unsigned) dbufp, (unsigned) paramp->u.pack.pack_buffer, size);
+    dbg_printf("\t[h=%x, do=%d, dp=%x, bp=%x, sz=%d]\n", handle, rel_off, 
+	       (unsigned) bufp, (unsigned) paramp->u.pack.pack_buffer, size);
 #endif
 
-    memcpy(paramp->u.pack.pack_buffer, (char*)dbufp+dbufoff, size);
+    /* TODO: DEAL WITH CASE WHERE ALL DATA DOESN'T FIT! */
+
+    memcpy(paramp->u.pack.pack_buffer, (char *) bufp + rel_off, size);
     paramp->u.pack.pack_buffer += size;
     return 0;
 }
 
-#if 0
-/* MPID_Segment_piece_print
- */
-static int MPID_Segment_piece_print(DLOOP_Handle handle,
-				    DLOOP_Offset dbufoff,
-				    int size,
-				    void *dbufp,
-				    void *v_paramp)
-{
-    struct MPID_Segment_piece_params *paramp = v_paramp;
-#ifdef MPID_D_VERBOSE
-    dbg_printf("\t[h=%x, do=%d, dp=%x, sz=%d]\n", handle, dbufoff, 
-	       (unsigned) dbufp, size);
-#endif
-    return 0;
-}
-#endif
+
+
+
