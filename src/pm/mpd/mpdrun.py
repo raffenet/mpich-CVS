@@ -325,8 +325,10 @@ def mpdrun():
 		    elif not msg.has_key('cmd'):
                         mpd_raise('mpdrun: from man, invalid msg=:%s:' % (msg) )
                     elif msg['cmd'] == 'invalid_executable':
-                        print 'rank %d (%s) in job %s failed to find executable %s' % \
-                              ( msg['rank'], msg['src'], msg['jobid'], msg['exec'] )
+                        # print 'rank %d (%s) in job %s failed to find executable %s' % \
+                              # ( msg['rank'], msg['src'], msg['jobid'], msg['exec'] )
+                        host = msg['src'].split('_')[0]
+                        print 'Invalid executable %s on %s' % (msg['exec'],host)
                         # keep going until all man's finish
                     elif msg['cmd'] == 'job_aborted_early':
                         print 'rank %d in job %s caused collective abort of all ranks' % \
