@@ -27,7 +27,7 @@ from os         import getuid, read, strerror, access, X_OK, environ
 from os.path    import isdir
 from grp        import getgrall
 from pwd        import getpwnam, getpwuid
-from errno      import EINTR
+from errno      import EINTR, ECONNRESET
 
 global mpd_version
 mpd_version = (0,5,0,'September, 2004 release')  # major, minor, micro, special
