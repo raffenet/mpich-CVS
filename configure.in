@@ -16,7 +16,11 @@ AC_SUBST(VERSION)
 CONFIGURE_ARGUMENTS="$*"
 AC_SUBST(CONFIGURE_ARGUMENTS)
 dnl
-echo "Configuring MPICH2 version $VERSION with $@"
+if test -n "$@" ; then
+    echo "Configuring MPICH2 version $VERSION with $@"
+else 
+    echo "Configuring MPICH2 version $VERSION"
+fi
 dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 AC_CONFIG_HEADER(src/include/mpichconf.h)
@@ -1161,6 +1165,7 @@ MPI_LONG_LONG="0x4c00${len_long_long}09"
 MPI_FLOAT="0x4c00${len_float}0a"
 MPI_DOUBLE="0x4c00${len_double}0b"
 MPI_LONG_DOUBLE="0x4c00${len_long_double}0c"
+# If you change MPI_BYTE, you must change it in src/binding/f77/buildiface
 MPI_BYTE="0x4c00010d"
 MPI_WCHAR_T="0x4c00${len_wchar_t}0e"
 MPI_PACKED="0x4c00010f"
