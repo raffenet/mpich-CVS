@@ -55,14 +55,14 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
+    
+    MPIR_Nest_incr();
 
     if (comm_ptr->rank == root)
     {
 	/* convert the infos into PMI keyvals */
         info_keyval_sizes = (int *) MPIU_Malloc(count * sizeof(int));
 	info_keyval_vectors = (PMI_keyval_t**) MPIU_Malloc(count * sizeof(PMI_keyval_t*));
-
-        MPIR_Nest_incr();
 
         for (i=0; i<count; i++)
 	{
@@ -129,8 +129,6 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
 		info_keyval_vectors[i] = NULL;
 	    }
 	}
-
-        MPIR_Nest_decr();
 
 	/* create an array for the pmi error codes */
 	total_num_processes = 0;
@@ -202,6 +200,7 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
     }
 
  fn_exit:
+    MPIR_Nest_decr();
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
     return mpi_errno;
 }
