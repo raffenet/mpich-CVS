@@ -59,7 +59,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     if ((disp < 0) && (disp != MPI_DISPLACEMENT_CURRENT)) {
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG, 
-											"**iobaddisp", "**iobaddisp");
+					    "**iobaddisp", 0);
 			return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_set_view: Invalid disp argument\n");
