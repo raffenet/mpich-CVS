@@ -433,6 +433,7 @@ AC_OUTPUT(maint/testmerge \
 	  f77/rma/Makefile \
           f77/io/Makefile \
 	  f77/io/iooffset.h \
+	  f77/io/iodisp.h \
 	  cxx/Makefile \
 	  cxx/util/Makefile \
 	  cxx/comm/Makefile \

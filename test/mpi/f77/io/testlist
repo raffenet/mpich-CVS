@@ -13,3 +13,5 @@ writeordbef 4
 fileerrf 1
 fileinfof 3
 shpositionf 4
+atomicityf 8
+miscfilef 4

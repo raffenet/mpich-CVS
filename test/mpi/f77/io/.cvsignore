@@ -23,6 +23,7 @@ writeatallbef
 writeallbef
 *.o
 iooffset.h
+iodisp.h
 Makefile.in
 Makefile
 *ebug*
