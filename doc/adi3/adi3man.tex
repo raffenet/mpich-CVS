@@ -892,6 +892,52 @@ message as either \code{char} or \code{wchar_t}.
 
 \input Error-list.tex
 
+\subsection{Implementation of Error Reporting}
+\label{sec:error-report-impl}
+The MPICH-1 error reporting routines use the X/Open \code{catgets} message
+catalog routines.  These have the advantage of being fairly common and
+portable.  Unfortunately, they are a nightmare to use because messages must be
+managed as numbers (actually, a \emph{pair} of numbers) that must be kept
+consistant with a central database.  An 
+alternative interface, used by GNU and Sun, is the \code{gettext} interface.
+This identifies messages by a string rather than a number.
+Because there are portable implementations of \code{gettext}
+(\url{http://www.gnu.org/software/gettext/gettext.html}) and because it is
+easy to implement a version of \code{gettext} that does not support multiple
+languages, we plan to implement the error handling on top of the GNU
+\code{gettext} tools.  The GNU \code{gettext} distribution includes utilities
+and \code{emacs} modes for creating and maintaing files of messages.
+
+Here is a short primer on using the \code{gettext} routines.  Note that for
+the most part these will not be used directly in the MPICH code; rather, they
+will be used as part of the implementation of the error reporting ADI3
+routines.
+
+The initialization is performed with this code:
+\begin{verbatim}
+   /* Initialization */
+   /* GNU recommends LC_ALL but other systems may prefer LC_MESSAGES */
+   setlocale( LC_ALL, "" );
+   /* LOCALEDIR is a const char * to the directory containing the
+      messages.  It should come from the runtime parameter system */
+   bindtextdomain( "mpich", LOCALEDIR );
+   textdomain( "mpich" );
+\end{verbatim}
+
+Any message is translated by using \code{gettext}:
+\begin{verbatim}
+    printf( gettext( "Aborting Program with code %d\n" ), code );
+\end{verbatim}
+The message translations are maintained in a \code{PO} file (for ``portable
+object'').  These files are converted into \code{MO} files (for ``machine
+object'') by a message compiler (\code{msgfmt}).  These files are placed in
+the \code{LOCALEDIR} with \file{/usr/share/locale/<LANG>/<PACKAGE>.mo}
+For example, in Linux, they might be installed in
+\file{/usr/share/locale/en_US/LC_MESSAGES/mpich.mo}.   For Linux, the default
+\code{LOCALEDIR} is \file{/usr/share/locale}.  
+Question: these directory names aren't consistent (the documentation is
+poor).  What should they be?
+
 \subsection{Error Handling}
 \label{sec:error-handling}
 
