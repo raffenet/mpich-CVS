@@ -1,0 +1,26 @@
+BUILDING MPICH2 under Windows
+
+requirements:
+MS Visual Studio .NET
+administrative privileges on your machines.
+
+1) build the process launcher, mpd.exe, and its supporting libraries.
+This solution is found in mpich2\src\pm\winmpd\winmpd.sln.  Install mpd.exe 
+on each machine by copying mpd.exe to a local directory on each machine and
+executing "mpd -install" while logged on as a user with adminstrator privileges.
+
+2) build the mpich2 dlls and mpirun for mpich2.
+This solution is found in mpich2\mpich2.sln.
+Select the ch3sockDebug or ch3sockRelease configurations to build the sockets only dlls.
+Select the ch3shmDebug or ch3shmRelease configurations to build the shmem only dlls.
+Select the ch3mmDebug or ch3mmRelease configurations to build the sockets/shmem dlls.
+
+3) compile an mpi application.  Use mpi.h from mpich2\src\include and 
+the mpich2 link libraries in mpich2\lib
+
+4) Place your executable along with the mpich2 dlls somewhere accessable to
+all the machines.
+
+5) Execute a job by running "mpirun -np 3 myapp.exe".  Mpirun for mpich2 is not
+as complete as mpirun for mpich1.  It supports configuration files, the -np 
+option, and the -hosts option.
