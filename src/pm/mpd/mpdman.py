@@ -22,7 +22,7 @@ from mpdlib   import mpd_set_my_id, mpd_print, mpd_print_tb, \
                      mpd_send_one_line, mpd_send_one_line_noprint, mpd_recv_one_line, \
                      mpd_get_inet_listen_socket, mpd_get_inet_socket_and_connect, \
                      mpd_get_my_username, mpd_raise, mpdError, mpd_version, \
-                     mpd_socketpair, mpd_get_ranks_in_binary_tree
+                     mpd_socketpair, mpd_get_ranks_in_binary_tree, mpd_recv
 
 global clientPid, clientExited, clientExitStatus, clientExitStatusSent
 
@@ -711,7 +711,7 @@ def mpdman():
                                 line = line + '\n'
                         mpd_send_one_line_noprint(parentStderrSocket,line)
             elif readySocket in childrenStdoutTreeSockets:
-                line = readySocket.recv(1024)
+                line = mpd_recv(readySocket,1024)
                 if not line:
                     del socketsToSelect[readySocket]
                     readySocket.close()
@@ -728,7 +728,7 @@ def mpdman():
                         mpd_send_one_line_noprint(parentStdoutSocket,line)
                         # parentStdoutSocket.sendall('FWD by %d: |%s|' % (myRank,line) )
             elif readySocket in childrenStderrTreeSockets:
-                line = readySocket.recv(1024)
+                line = mpd_recv(readySocket,1024)
                 if not line:
                     del socketsToSelect[readySocket]
                     readySocket.close()

@@ -328,6 +328,22 @@ def mpd_accept(sock):
             return 0
     return rv
 
+def mpd_recv(sock,nbytes):
+    rv = ''
+    done = 0
+    while not done:
+        try:
+            rv = sock.recv(nbytes)
+            done = 1
+        except error, data:
+            if data[0] == EINTR:        # will come here if receive SIGCHLD, for example
+                continue
+            else:
+                mpd_print(1, 'recv error: %s' % strerror(data[0]))
+        except Exception, data:
+            mpd_print(1, 'other error after recv %s :%s:' % ( data.__class__, data) )
+    return rv
+
 def mpd_get_my_username():
     return getpwuid(getuid())[0]    #### instead of environ['USER']
 
