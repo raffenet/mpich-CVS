@@ -165,16 +165,51 @@ int PMI_Get_universe_size( int *size );
 /*@
 PMI_Get_appnum - obtain the application number
 
-Output Parameters:
-. appnum - pointer to an integer that receives the application number
+Output parameters:
+. appnum - pointer to an integer that receives the appnum
 
 Return values:
-+ PMI_SUCCESS - size successfully obtained
++ PMI_SUCCESS - appnum successfully obtained
 . PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to return the size
 
+
 @*/
 int PMI_Get_appnum( int *appnum );
+
+/*@
+PMI_Publish_name - publish a name 
+
+Input parameters:
+. service_name - string representing the service being published
+. port - string representing the port on which to contact the service
+
+Return values:
++ PMI_SUCCESS - port for service successfully published
+. PMI_ERR_INVALID_ARG - invalid argument
+- PMI_FAIL - unable to publish service
+
+
+@*/
+int PMI_Publish_name( const char service_name[], const char port[] );
+
+/*@
+PMI_Lookup_name - lookup a service by name
+
+Input parameters:
+. service_name - string representing the service being published
+
+Output parameters:
+. port - string representing the port on which to contact the service
+
+Return values:
++ PMI_SUCCESS - port for service successfully obtained
+. PMI_ERR_INVALID_ARG - invalid argument
+- PMI_FAIL - unable to lookup service
+
+
+@*/
+int PMI_Lookup_name( const char service_name[], char port[] );
 
 /*@
 PMI_Get_id - obtain the id of the process group
