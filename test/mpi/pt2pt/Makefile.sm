@@ -7,6 +7,7 @@ smvar_do_sharedlibs = 0
 # isendirecv contains features that not all systems support (e.g., the
 # sincos call, not available on IRIX).
 EXTRA_PROGRAMS = bsend1cxx isendirecv
+bottom_SOURCES = bottom.c
 bsend1_SOURCES = bsend1.c
 bsend2_SOURCES = bsend2.c
 bsend3_SOURCES = bsend3.c
