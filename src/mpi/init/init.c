@@ -23,6 +23,10 @@
 #define MPI_Init PMPI_Init
 
 /* Any internal routines can go here.  Make them static if possible */
+MPICH_PerProcess_t MPIR_Process;
+#ifdef MPICH_SINGLE_THREADED
+MPICH_PerThread_t  MPIR_Thread;
+#endif
 #endif
 
 #undef FUNCNAME
@@ -56,7 +60,7 @@ int MPI_Init( int *argc, char ***argv )
                             "**initialized", 0 );
 	    }
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT);
                 return MPIR_Return( 0, mpi_errno );
             }
         }
@@ -64,7 +68,7 @@ int MPI_Init( int *argc, char ***argv )
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPIR_Init_thread( );
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
+    MPIR_Init_thread( MPI_THREAD_SINGLE, (int *)0 );
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT);
     return MPI_SUCCESS;
 }

@@ -23,6 +23,35 @@
 #define MPI_Finalize PMPI_Finalize
 
 /* Any internal routines can go here.  Make them static if possible */
+
+/* The following routines provide a callback facility for modules that need 
+   some code called on exit.  This method allows us to avoid forcing 
+   MPI_Finalize to know the routine names a priori.  Any module that wants to 
+   have a callback calls MPIR_Add_finalize( routine, extra ).
+ */
+typedef struct {
+    int (*f)( void * );
+    void *extra_data;
+} Finalize_func_t;
+#define MAX_FINALIZE_FUNC 16
+static Finalize_func_t fstack[MAX_FINALIZE_FUNC];
+static fstack_sp = 0;
+
+void MPIR_Add_finalize( int (*f)( void * ), void *extra_data )
+{
+    if (fstack_sp >= MAX_FINALIZE_FUNC) {
+    }
+    fstack[fstack_sp].f            = f;
+    fstack[fstack_sp++].extra_data = extra_data;
+}
+static void MPIR_Call_finalize( void )
+{
+    int i;
+    for (i=fstack_sp-1; i>=0; i--) {
+	if (fstack[i].f) fstack[i].f( fstack[i].extra_data );
+    }
+    fstack_sp = 0;
+}
 #endif
 
 #undef FUNCNAME
@@ -68,6 +97,7 @@ int MPI_Finalize( void )
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    MPIR_Call_finalize();
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
     return MPI_SUCCESS;

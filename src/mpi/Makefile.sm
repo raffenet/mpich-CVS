@@ -1,1 +1,1 @@
-SUBDIRS = init timer .
+SUBDIRS = errhan init timer .

@@ -485,7 +485,7 @@ sub ListTargets {
 #     &RecursiveOp( "target" );
 sub RecursiveOp {
     $target = $_[0];
-    print "n subdirs = $#subdirs\n";
+    print "n subdirs = $#subdirs\n" if $debug;
     if ($#subdirs == 0 && $subdirs[0] eq ".") { return; }
     if ($#subdirs >= 0) { 
         print FD "\tfor dir in";
