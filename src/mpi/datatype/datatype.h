@@ -9,3 +9,4 @@
 /* Definitions private to the datatype code */
 extern void MPIR_Datatype_init( void );
 extern void MPIR_Datatype_init_names( void );
+extern void MPIR_Datatype_iscontig( MPI_Datatype , int * );

@@ -7,6 +7,11 @@
 
 #include "mpiimpl.h"
 
+/* prototype for fn used in MPIR_Localcopy */
+/* implementation in src/mpi/datatype/typeutil.c */
+extern void MPIR_Datatype_iscontig( MPI_Datatype , int * );
+
+
 /* These functions are used in the implementation of collective
    operations. They are wrappers around MPID send/recv functions. They do
    sends/receives by setting the context offset to
