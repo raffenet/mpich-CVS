@@ -1311,6 +1311,8 @@ dnl Get the size for the bsendoverhead
 rm -f conftestval
 dnl FIXME This should really use code from bsendutil.c.  Types
 dnl defined in the mpiimpl.h file or in mpi.h have been replaced here. 
+dnl The sizeof(void*)-1 allows us to force the first byte of the 
+dnl buffer to be aligned.
 AC_CACHE_CHECK([for size of MPI_BSEND_OVERHEAD],pac_cv_mpi_bsend_overhead,[
 AC_TRY_RUN([
 #include <stdio.h>
@@ -1334,7 +1336,7 @@ typedef struct BsendData {
 int main( int argc, char *argv[] ){
   FILE *f=fopen("conftestval", "w");
   if (!f) exit(1);
-  fprintf(f, "%d\n", sizeof(BsendData_t));
+  fprintf(f, "%d\n", sizeof(BsendData_t)+sizeof(void*)-1);
   exit(0);
 }
 ],pac_cv_mpi_bsend_overhead=`cat conftestval`,pac_cv_mpi_bsend_overhead=256,pac_cv_mpi_bsend_overhead=256)

@@ -82,10 +82,22 @@ typedef struct BsendData {
 #define BSENDDATA_HEADER_TRUE_SIZE (sizeof(BsendData_t) - sizeof(double))
 
 /* BsendBuffer is the structure that describes the overall Bsend buffer */
+/* 
+ * We use separate buffer and origbuffer because we may need to align
+ * the buffer (we *could* always memcopy the header to an aligned region,
+ * but it is simpler to just align it internally.  This does increase the
+ * BSEND_OVERHEAD, but that is already relatively large.  We could instead
+ * make sure that the initial header was set at an aligned location (
+ * taking advantage of the "alignpad"), but this would require more changes.
+ */
 static struct BsendBuffer {
     void               *buffer;        /* Pointer to the begining of the user-
 					  provided buffer */
     int                buffer_size;    /* Size of the user-provided buffer */
+    void               *origbuffer;    /* Pointer to the buffer provided by
+					  the user */
+    int                origbuffer_size; /* Size of the buffer as provided 
+					    by the user */
     BsendData_t        *avail;         /* Pointer to the first available block
 					  of space */
     BsendData_t        *pending;       /* Pointer to the first message that
@@ -98,7 +110,7 @@ static struct BsendBuffer {
     MPID_Thread_lock_t bsend_lock;     /* Thread lock for bsend access */
 #endif
 
-} BsendBuffer = { 0, 0, 0, 0, 0 };
+} BsendBuffer = { 0, 0, 0, 0, 0, 0, 0 };
 
 static int initialized = 0;   /* keep track of the first call to any
 				 bsend routine */
@@ -117,13 +129,15 @@ static int MPIR_Bsend_finalize( void * );
 int MPIR_Bsend_attach( void *buffer, int buffer_size )
 {
     BsendData_t *p;
+    long        offset;
 
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if (BsendBuffer.buffer) {
-		return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_attach", __LINE__, MPI_ERR_BUFFER, 
+		return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+                         "MPIR_Bsend_attach", __LINE__, MPI_ERR_BUFFER, 
 					     "**bufexists", 0 );
 	    }
 	    if (buffer_size < MPI_BSEND_OVERHEAD) {
@@ -144,11 +158,22 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
 	MPIR_Add_finalize( MPIR_Bsend_finalize, (void *)0, 10 );
     }
 
-    BsendBuffer.buffer	    = buffer;
-    BsendBuffer.buffer_size = buffer_size;
-    BsendBuffer.avail	    = buffer;
-    BsendBuffer.pending	    = 0;
-    BsendBuffer.active	    = 0;
+    BsendBuffer.origbuffer	= buffer;
+    BsendBuffer.origbuffer_size	= buffer_size;
+    BsendBuffer.buffer		= buffer;
+    BsendBuffer.buffer_size	= buffer_size;
+    offset = ((long)buffer) % sizeof(void *);
+    if (offset) {
+	/* Make sure that the buffer that we use is aligned for pointers,
+	   because the code assumes that */
+	offset = sizeof(void *) - offset;
+	buffer = (char *)buffer + offset;
+	BsendBuffer.buffer      = buffer;
+	BsendBuffer.buffer_size -= offset;
+    }
+    BsendBuffer.avail		= buffer;
+    BsendBuffer.pending		= 0;
+    BsendBuffer.active		= 0;
 #if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
     MPID_Thread_initlock( BsendBuffer.bsend_lock );
 #endif
@@ -170,11 +195,13 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
 int MPIR_Bsend_detach( void *bufferp, int *size )
 {
     if (BsendBuffer.pending) {
-	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_detach", __LINE__, MPI_ERR_OTHER, "**notimpl", 0 );
+	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+             "MPIR_Bsend_detach", __LINE__, MPI_ERR_OTHER, "**notimpl", 0 );
     }
     if (BsendBuffer.buffer == 0) {
 	/* Error - detaching an already detached buffer */
-	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_detach", __LINE__, MPI_ERR_OTHER, "**bsendnobuf", 0 );
+	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+             "MPIR_Bsend_detach", __LINE__, MPI_ERR_OTHER, "**bsendnobuf", 0 );
     }
     if (BsendBuffer.active) {
 	/* Loop through each active element and wait on it */
@@ -189,8 +216,8 @@ int MPIR_Bsend_detach( void *bufferp, int *size )
 	MPIR_Nest_decr();
     }
 
-    *(void **) bufferp  = BsendBuffer.buffer;
-    *size = BsendBuffer.buffer_size;
+    *(void **) bufferp  = BsendBuffer.origbuffer;
+    *size = BsendBuffer.origbuffer_size;
     BsendBuffer.buffer  = 0;
     BsendBuffer.avail   = 0;
     BsendBuffer.active  = 0;

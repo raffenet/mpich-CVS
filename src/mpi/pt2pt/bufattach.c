@@ -93,9 +93,13 @@ int MPI_Buffer_attach(void *buffer, int size)
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BUFFER_ATTACH);
     if (mpi_errno)
     {
+	/* --BEGIN ERROR HANDLING-- */
+	/* FIXME: This is wrong, since the internal routine returns the
+	   correct message for the user */
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_buffer_attach", "**mpi_buffer_attach %p %d", buffer, size);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	/* --END ERROR HANDLING-- */
     }	
     /* ... end of body of routine ... */
     return MPI_SUCCESS;
