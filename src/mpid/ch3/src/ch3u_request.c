@@ -298,7 +298,7 @@ int MPIDI_CH3U_Request_DP(MPID_Request * rreq)
     prev_rreq = NULL;
     cur_rreq = MPIDI_Process.recv_posted_head;
     found = FALSE;
-    while (rreq != NULL)
+    while (cur_rreq != NULL)
     {
 	if (cur_rreq == rreq)
 	{
@@ -319,8 +319,8 @@ int MPIDI_CH3U_Request_DP(MPID_Request * rreq)
 	    break;
 	}
 	    
-	prev_rreq = rreq;
-	rreq = rreq->ch3.next;
+	prev_rreq = cur_rreq;
+	cur_rreq = cur_rreq->ch3.next;
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_DP);
