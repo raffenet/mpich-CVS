@@ -32,33 +32,38 @@ distclean-local:
 	-@rm -f src/include/mpio.h
 	-@rm -f bin/mpicc
 
-# Build a distribution tarfile
-#  Extract into a temporary directory
-#  Rename the directory
-#  Run updatefiles with distribution options
-#  Tar it up
 PACKAGE = mpich2
 # Version < 1 is pre MPI-1 release.
 # Version >= 2 contains MPI-2
 # Version between 1 and 2 contains all of MPI1 and parts of MPI-2
 VERSION = 0.94-CVS
 MPICVSHOME = @MPICVSHOME@
+#
+# Build a distribution tarfile
+#  Extract into a temporary directory
+#     cvs update output into cvsexp.log to reduce the volume of noise
+#     in the output
+#  Rename the directory
+#  Run updatefiles with distribution options
+#  Extract the mpe files into the directory (this way we avoid the 
+#     updatefile with code check on the older MPE directories)
+#  Tar it up
 dist:
 	version=${VERSION} ; export version ; \
 	prever=`echo ${VERSION} | sed -e 's/^[^-]*//'` ; \
 	if test "$$prever" = "-CVS" ; then version=$${version}-`date "+%Y%m%d"` ; fi ; \
 	echo "Cutting version $${version} of the MPICH2 distribution" ; \
 	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi ; \
+	rm -f cvsexp.log ; \
 	if [ -n "${TAG}" ] ; then \
-	    ( cd tmpdir && cvs -d $(MPICVSHOME) export -r ${TAG} mpich2all ) ;\
+	    ( cd tmpdir && \
+	    cvs -d $(MPICVSHOME) export -r ${TAG} mpich2all >cvsexp.log 2>&1 ) ;\
 	else \
-	    ( cd tmpdir && cvs -d $(MPICVSHOME) export -D 'now' mpich2all ) ;\
+	    ( cd tmpdir && \
+	    cvs -d $(MPICVSHOME) export -D 'now' mpich2all >cvsexp.log 2>&1 ) ;\
 	fi ; \
-	(cd tmpdir/mpich2/src && cvs -d $(MPICVSHOME) export -D 'now' mpe && \
-	rm -rf mpe/slog_api mpe/viewers mpe/profiling ) ; \
-	(cd tmpdir/mpich2/src/mpe && cvs -d $(MPICVSHOME) export -D 'now' slog2sdk ) ; \
-	cp -rp confdb tmpdir/mpich2 ; \
-	( cd tmpdir/mpich2 && sed -e "s/VERSION =.*/VERSION = $${version}/" Makefile.sm >.tmp && mv .tmp Makefile.sm ) ; \
+	cp -rp ${srcdir}/confdb tmpdir/mpich2 ; \
+	( cd tmpdir/mpich2 && sed -e "s/VERSION = .*/VERSION = $${version}/" Makefile.sm >.tmp && mv .tmp Makefile.sm ) ; \
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-$${version} ; \
 	( cd tmpdir/${PACKAGE}-$${version} && maint/updatefiles --with-codecheck=-distcheck ) ; \
 	cp -r tmpdir/${PACKAGE}-$${version} tmpdir2 ; \
@@ -70,6 +75,9 @@ dist:
 	cp -r tmpdir2/doc/refman tmpdir/${PACKAGE}-$${version}/doc ; \
 	rm -rf tmpdir2 ; \
 	( cd tmpdir/${PACKAGE}-$${version} && maint/updatefiles -distrib --without-codecheck ) ; \
+	(cd tmpdir/${PACKAGE}-$${version}/src && cvs -d $(MPICVSHOME) export -D 'now' mpe >>cvsexp.log 2>&1 && \
+	rm -rf mpe/slog_api mpe/viewers mpe/profiling ) ; \
+	(cd tmpdir/${PACKAGE}-$${version}/src/mpe && cvs -d $(MPICVSHOME) export -D 'now' slog2sdk >>cvsexp.log 2>&1 ) ; \
 	( cd tmpdir/${PACKAGE}-$${version}/doc && /bin/rm -rf notes ) ; \
 	( cd tmpdir/${PACKAGE}-$${version}/doc/adi3 && ${MAKE} && ${MAKE} clean ) ; \
 	( cd tmpdir/${PACKAGE}-$${version}/doc/mpich2 && ${MAKE} && ${MAKE} clean ) ; \
