@@ -76,9 +76,6 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
     ADIO_Offset *fd_start, *fd_end, fd_size, min_st_offset, *end_offsets;
     ADIO_Offset off;
     char *value;
-#ifdef HAVE_STATUS_SET_BYTES
-    int bufsize, size;
-#endif
 
 #ifdef PROFILE
 	MPE_Log_event(13, 0, "start computation");
@@ -221,9 +218,13 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
     ADIOI_Free(fd_end);
 
 #ifdef HAVE_STATUS_SET_BYTES
-    MPI_Type_size(datatype, &size);
-    bufsize = size * count;
-    MPIR_Status_set_bytes(status, datatype, bufsize);
+    if (status) {
+      int bufsize, size;
+      /* Don't set status if it isn't needed */
+      MPI_Type_size(datatype, &size);
+      bufsize = size * count;
+      MPIR_Status_set_bytes(status, datatype, bufsize);
+    }
 /* This is a temporary way of filling in status. The right way is to 
    keep track of how much data was actually written during collective I/O. */
 #endif
