@@ -249,7 +249,7 @@ int MPIDI_CH3I_BootstrapQ_create_unique_name(char *name, int length)
     {
 	return -1;
     }
-    uuid_generate(&guid);
+    uuid_generate(guid);
     uuid_unparse(guid, name);
 #endif
     return MPI_SUCCESS;
@@ -262,8 +262,10 @@ int MPIDI_CH3I_BootstrapQ_create_unique_name(char *name, int length)
 int MPIDI_CH3I_BootstrapQ_create_named(MPIDI_CH3I_BootstrapQ *queue_ptr, char *name)
 {
     int mpi_errno = MPI_SUCCESS;
+#ifdef USE_MQSHM
     MPIDI_CH3I_BootstrapQ_struct *queue;
     int id;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE);
 
