@@ -41,15 +41,15 @@ public class TraceName
     //private static final String DELIMITERS = "[]{}()~!@#$%^&*\\;`/? \t\n\r\f";
 
     // Get rid of all possible file separator characters
-    private static final String DELIMITERS = "[]{}()~!@#$%^&*;:`? \t\n\r\f";
+    private static final String DELIMITERS = "[]{}()~!@#$%^&*;`? \t\n\r\f";
 
     private static String stripInvalidChar( String tracename )
     {
         String  delims;
         if ( System.getProperty( "file.separator" ).equals( "/" ) )
-            delims  = DELIMITERS + "\\";
+            delims  = DELIMITERS + ":\\";   // Unix
         else
-            delims  = DELIMITERS + "/";
+            delims  = DELIMITERS + "/";     // Windows
         StringTokenizer  tokens = new StringTokenizer( tracename, delims );
         StringBuffer     strbuf = new StringBuffer();
         if ( tokens.hasMoreTokens() ) {
