@@ -73,20 +73,6 @@ MPIU_Object_add_ref(req)
 #define MPID_Progress_wait() {MPIDI_CH3_Progress(TRUE);}
 #define MPID_Progress_poke() {MPIDI_CH3_Progress_poke();}
 
-/*
- * Debugging tools
- */
-void MPIDI_dbg_printf(int, char *, char *, ...);
-#define MPIDI_dbg_printf(level, func, fmt, args...)			\
-{									\
-    printf("%d (%d) %s(): " ## fmt ## "\n",				\
-	   MPIR_Process.comm_world->rank, level, func, ## args);	\
-    fflush(stdout);							\
-}
-
-#define MPIDI_QUOTE(A) MPIDI_QUOTE2(A)
-#define MPIDI_QUOTE2(A) #A
-
 /* Include definitions from the channel which require items defined by this
    file (mpidimpl.h) or the file it includes (mpiimpl.h).  NOTE: This include
    requires the device to copy mpidi_ch3_post.h to the src/include directory in
