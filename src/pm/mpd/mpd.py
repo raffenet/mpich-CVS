@@ -452,7 +452,7 @@ def _do_mpdrun(msg):
         for ranks in envvars.keys():
             (lo,hi) = ranks
             if currRank >= lo  and  currRank <= hi:
-                pgmEnvVars = envvars[ranks]
+                pgmEnvVars = dumps(envvars[ranks])
                 break
         cwds = msg['cwds']
         for ranks in cwds.keys():

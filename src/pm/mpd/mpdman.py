@@ -34,8 +34,7 @@ def mpdman():
         # print errmsg    ## may syslog it in some cases ?
     clientPgm = environ['MPDMAN_CLI_PGM']
     clientPgmArgs = loads(environ['MPDMAN_PGM_ARGS'])
-    clientPgmEnv = environ['MPDMAN_PGM_ENVVARS']
-    clientPgmEnv = findall('\S+',clientPgmEnv)
+    clientPgmEnv = loads(environ['MPDMAN_PGM_ENVVARS'])
     mpd_print(0000, 'entering mpdman to exec %s' % (clientPgm) )
     jobid = environ['MPDMAN_JOBID']
     nprocs = int(environ['MPDMAN_NPROCS'])
@@ -164,6 +163,9 @@ def mpdman():
         for envvar in clientPgmEnv:
             (envkey,envval) = envvar.split('=')
             environ[envkey] = envval
+        for key in environ.keys():
+            if key.startswith('MPDMAN_'):
+                del environ[key]
         ## mpd_print(0000, 'execing clientPgm=:%s:' % (clientPgm) )
         try:
             execvpe(clientPgm,clientPgmArgs,environ)    # client

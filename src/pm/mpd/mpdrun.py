@@ -13,7 +13,7 @@ from re              import findall
 from urllib          import unquote
 from mpdlib          import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
                             mpd_get_inet_listen_socket, mpd_get_my_username, \
-                            mpd_raise, mpdError, mpd_version
+                            mpd_raise, mpdError, mpd_version, mpd_print
 
 class mpdrunInterrupted(Exception):
     def __init__(self,args=None):
@@ -162,13 +162,13 @@ def mpdrun():
 		    print '*** exiting; rank %d is multiply covered for envvars' % (i)
 		    exit(-1)
 	        covered[i] = 1
-            evnVarStr = ''
-            evnVarList = elem.getElementsByTagName('envvar')
-            for evnVarElem in evnVarList:
-                envkey = evnVarElem.getAttribute('key')
-                envval = evnVarElem.getAttribute('value')
-                evnVarStr = evnVarStr + ' ' + envkey + '=' + envval
-            envvars[ranks] = evnVarStr
+            envVals = []
+            envVarList = elem.getElementsByTagName('envvar')
+            for envVarElem in envVarList:
+                envkey = envVarElem.getAttribute('key')
+                envval = envVarElem.getAttribute('value')
+                envVals.append('%s=%s' % (envkey,envval) )
+            envvars[ranks] = envVals
         i = 0
         while i < len(covered):
 	    if not covered[i]:
