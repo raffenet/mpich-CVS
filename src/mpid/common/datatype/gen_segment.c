@@ -234,6 +234,10 @@ void PREPEND_PREFIX(Segment_free)(struct DLOOP_Segment *segp)
  * last is a byte offset to the byte just past the last byte in the stream 
  * to operate on.  this makes the calculations all over MUCH cleaner.
  *
+ * stream_off, stream_el_size, first, and last are all working in terms of the
+ * types and sizes for the stream, which might be different from the local sizes
+ * (in the heterogeneous case).
+ *
  * This is a horribly long function.  Too bad; it's complicated :)! -- Rob
  *
  * NOTE: THIS IMPLEMENTATION CANNOT HANDLE STRUCT DATALOOPS.
@@ -295,7 +299,11 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 					DLOOP_Offset first, 
 					DLOOP_Offset *lastp, 
 					int (*contigfn) (DLOOP_Offset *blocks_p,
+#ifdef DLOOP_HETEROGENEOUS_SUPPORT
+							 DLOOP_Type el_type,
+#else
 							 int el_size,
+#endif
 							 DLOOP_Offset rel_off,
 							 void *bufp,
 							 void *v_paramp),
@@ -303,7 +311,11 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 							 int count,
 							 int blklen,
 							 DLOOP_Offset stride,
+#ifdef DLOOP_HETEROGENEOUS_SUPPORT
+							 DLOOP_Type el_type,
+#else
 							 int el_size,
+#endif
 							 DLOOP_Offset rel_off,
 							 void *bufp,
 							 void *v_paramp),
@@ -311,10 +323,17 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 							int count,
 							int *blockarray,
 							DLOOP_Offset *offsetarray,
+#ifdef DLOOP_HETEROGENEOUS_SUPPORT
+							DLOOP_Type el_type,
+#else
 							int el_size,
+#endif
 							DLOOP_Offset rel_off,
 							void *bufp,
 							void *v_paramp),
+#ifdef DLOOP_HETEROGENEOUS_SUPPORT
+					DLOOP_Offset (*sizefn) (DLOOP_Type el_type),
+#endif
 					void *pieceparams)
 {
     /* these four variables are the "local values": cur_sp, valid_sp, last, stream_off */
@@ -363,20 +382,31 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
     for (;;) {
 #ifdef DEBUG_DLOOP_MANIPULATE
-        DLOOP_dbg_printf("looptop; cur_sp=%d, cur_elmp=%x\n", cur_sp, (unsigned) cur_elmp);
+        DLOOP_dbg_printf("looptop; cur_sp=%d, cur_elmp=%x\n",
+			 cur_sp, (unsigned) cur_elmp);
 #endif
 
 	if (cur_elmp->loop_p->kind & DLOOP_FINAL_MASK) {
 	    int piecefn_indicated_exit = -1;
-	    DLOOP_Offset myblocks, basic_type_size;
+	    DLOOP_Offset myblocks, local_el_size, stream_el_size;
+#ifdef DLOOP_HETEROGENEOUS_SUPPORT
+	    DLOOP_Type el_type;
+#endif
 
 	    /* pop immediately on zero count */
 	    if (cur_elmp->curcount == 0) DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
 
-	    /* this is the size of the int, double, etc. that is the base type for the datatype */
-	    basic_type_size = cur_elmp->loop_p->el_size;
+	    /* size on this system of the int, double, etc. that is the elem. type */
+#ifdef DLOOP_HETEROGENEOUS_SUPPORT
+	    local_el_size  = cur_elmp->loop_p->el_size;
+	    el_type        = cur_elmp->loop_p->el_type;
+	    stream_el_size = sizefn(el_type);
+#else
+	    local_el_size  = cur_elmp->loop_p->el_size;
+	    stream_el_size = local_el_size;
+#endif
 
-	    /* calculate number of basic types to work on and function to use.
+	    /* calculate number of elem. types to work on and function to use.
 	     * default is to use the contig piecefn (if there is one).
 	     */
 	    myblocks = cur_elmp->curblock;
@@ -390,7 +420,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    assert(0);
 		    break;
 		case DLOOP_KIND_INDEXED:
-		    /* we only use the index piecefn if we're at the start of the index type */
+		    /* only use the index piecefn if at the start of the index type */
 		    if (indexfn &&
 			cur_elmp->orig_block == cur_elmp->curblock &&
 			cur_elmp->orig_count == cur_elmp->curcount)
@@ -401,7 +431,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    }
 		    break;
 		case DLOOP_KIND_VECTOR:
-		    /* we only use the vector piecefn if we're at the start of a
+		    /* only use the vector piecefn if at the start of a
 		     * contiguous block.
 		     */
 		    if (vectorfn && cur_elmp->orig_block == cur_elmp->curblock) {
@@ -415,12 +445,14 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
 #ifdef DEBUG_DLOOP_MANIPULATE
 	    DLOOP_dbg_printf("\thit leaf; cur_sp=%d, elmp=%x, piece_sz=%d\n", cur_sp,
-		       (unsigned) cur_elmp, myblocks * basic_type_size);
+		       (unsigned) cur_elmp, myblocks * local_el_size);
 #endif
 
 	    /* enforce the last parameter if necessary by reducing myblocks */
-	    if (last != SEGMENT_IGNORE_LAST && (stream_off + (myblocks * basic_type_size) > last)) {
-		myblocks = ((last - stream_off) / basic_type_size);
+	    if (last != SEGMENT_IGNORE_LAST &&
+		(stream_off + (myblocks * stream_el_size) > last))
+	    {
+		myblocks = ((last - stream_off) / stream_el_size);
 #ifdef DEBUG_DLOOP_MANIPULATE
 		DLOOP_dbg_printf("\tpartial block count=%d\n", myblocks);
 #endif
@@ -440,48 +472,65 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    break;
 		case PF_CONTIG:
 		    assert(myblocks <= cur_elmp->curblock);
-		    piecefn_indicated_exit = contigfn(&myblocks,
-						      basic_type_size, /* for hetero this is a type */
-						      cur_elmp->curoffset, /* relative to segp->ptr */
-						      segp->ptr, /* start of buffer (from segment) */
-						      pieceparams);
+		    piecefn_indicated_exit =
+			contigfn(&myblocks,
+#ifdef DLOOP_HETEROGENEOUS_SUPPORT
+				 el_type,
+#else
+				 local_el_size,
+#endif
+				 cur_elmp->curoffset, /* relative to segp->ptr */
+				 segp->ptr, /* start of buffer (from segment) */
+				 pieceparams);
 		    break;
 		case PF_VECTOR:
-		    piecefn_indicated_exit = vectorfn(&myblocks,
-						      cur_elmp->curcount,
-						      cur_elmp->orig_block,
-						      cur_elmp->loop_p->loop_params.v_t.stride,
-						      basic_type_size, /* for hetero this is a type */
-						      cur_elmp->curoffset, /* relative to segp->ptr */
-						      segp->ptr, /* start of buffer (from segment) */
-						      pieceparams);
+		    piecefn_indicated_exit =
+			vectorfn(&myblocks,
+				 cur_elmp->curcount,
+				 cur_elmp->orig_block,
+				 cur_elmp->loop_p->loop_params.v_t.stride,
+#ifdef DLOOP_HETEROGENEOUS_SUPPORT
+				 el_type,
+#else
+				 local_el_size,
+#endif
+				 cur_elmp->curoffset, /* relative to segp->ptr */
+				 segp->ptr, /* start of buffer (from segment) */
+				 pieceparams);
 		    break;
 		case PF_BLOCKINDEXED:
 		    assert(0);
 		    break;
 		case PF_INDEXED:
-		    piecefn_indicated_exit = indexfn(&myblocks,
-						     cur_elmp->curcount,
-						     cur_elmp->loop_p->loop_params.i_t.blocksize_array,
-						     cur_elmp->loop_p->loop_params.i_t.offset_array,
-						     basic_type_size,
-						     cur_elmp->orig_offset, /* indexfn adds in offset array value */
-						     segp->ptr,
-						     pieceparams);
+		    piecefn_indicated_exit =
+			indexfn(&myblocks,
+				cur_elmp->curcount,
+				cur_elmp->loop_p->loop_params.i_t.blocksize_array,
+				cur_elmp->loop_p->loop_params.i_t.offset_array,
+#ifdef DLOOP_HETEROGENEOUS_SUPPORT
+				el_type,
+#else
+				local_el_size,
+#endif
+				cur_elmp->orig_offset, /* indexfn adds offset value */
+				segp->ptr,
+				pieceparams);
 		    break;
 	    }
 
-	    /* update local values based on piecefn returns (myblocks and piecefn_indicated_exit) */
+	    /* update local values based on piecefn returns (myblocks and
+	     * piecefn_indicated_exit)
+	     */
 	    assert(piecefn_indicated_exit >= 0);
 	    assert(myblocks >= 0);
-	    stream_off += myblocks * basic_type_size;
+	    stream_off += myblocks * stream_el_size;
 
 	    if (myblocks == 0) {
 		DLOOP_SEGMENT_SAVE_LOCAL_VALUES;
 		return;
 	    }
 	    else if (myblocks < cur_elmp->curblock) {
-		cur_elmp->curoffset += myblocks * basic_type_size;
+		cur_elmp->curoffset += myblocks * local_el_size;
 		cur_elmp->curblock  -= myblocks;
 
 		DLOOP_SEGMENT_SAVE_LOCAL_VALUES;
@@ -490,10 +539,12 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    else /* myblocks >= cur_elmp->curblock */ {
 		int count_index = 0;
 
-		/* this assumes we're either *just* processing the last parts of the current block,
-		 * or we're processing as many blocks as we like starting at the beginning of one.
+		/* this assumes we're either *just* processing the last parts
+		 * of the current block, or we're processing as many blocks as
+		 * we like starting at the beginning of one.
 		 */
-		assert(myblocks == cur_elmp->curblock || cur_elmp->curblock == cur_elmp->orig_block);
+		assert(myblocks == cur_elmp->curblock ||
+		       cur_elmp->curblock == cur_elmp->orig_block);
 
 		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		    case DLOOP_KIND_INDEXED:
@@ -503,11 +554,12 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			    assert(cur_elmp->curcount >= 0);
 
 			    count_index = cur_elmp->orig_count - cur_elmp->curcount;
-			    cur_elmp->curblock = DLOOP_STACKELM_INDEXED_BLOCKSIZE(cur_elmp, count_index);
+			    cur_elmp->curblock =
+				DLOOP_STACKELM_INDEXED_BLOCKSIZE(cur_elmp, count_index);
 			}
 
 			if (cur_elmp->curcount == 0) {
-			    /* don't bother to fill in values since we're popping anyway */
+			    /* don't bother to fill in values; we're popping anyway */
 			    assert(myblocks == 0);
 			    DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
 			}
@@ -517,7 +569,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 				DLOOP_STACKELM_INDEXED_OFFSET(cur_elmp, count_index);
 			    
 			    cur_elmp->curblock  -= myblocks;
-			    cur_elmp->curoffset += myblocks * basic_type_size;
+			    cur_elmp->curoffset += myblocks * local_el_size;
 			}
 			break;
 		    case DLOOP_KIND_VECTOR:
@@ -537,12 +589,14 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			    cur_elmp->curoffset = cur_elmp->orig_offset +
 				((cur_elmp->orig_count - cur_elmp->curcount) *
 				 cur_elmp->loop_p->loop_params.v_t.stride) +
-				((cur_elmp->orig_block - cur_elmp->curblock) * basic_type_size);
+				((cur_elmp->orig_block - cur_elmp->curblock) *
+				 local_el_size);
 			}
 			break;
 		    case DLOOP_KIND_CONTIG:
 			/* contigs that reach this point have always been completely processed */
-			assert(myblocks == cur_elmp->curblock && cur_elmp->curcount == 1);
+			assert(myblocks == cur_elmp->curblock &&
+			       cur_elmp->curcount == 1);
 			DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
 			break;
 		    case DLOOP_KIND_BLOCKINDEXED:
