@@ -82,8 +82,6 @@ void ADIOI_UFS_IwriteStrided(ADIO_File fd, void *buf, int count,
 		       *error_code);
 void ADIOI_UFS_Flush(ADIO_File fd, int *error_code);
 void ADIOI_UFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
-ADIO_Offset ADIOI_UFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
-                       int whence, int *error_code);
 void ADIOI_UFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 
 #endif

@@ -17,7 +17,7 @@ struct ADIOI_Fns_struct ADIO_PFS_operations = {
     ADIOI_PFS_WriteContig, /* WriteContig */
     ADIOI_GEN_ReadStridedColl, /* ReadStridedColl */
     ADIOI_GEN_WriteStridedColl, /* WriteStridedColl */
-    ADIOI_PFS_SeekIndividual, /* SeekIndividual */
+    ADIOI_GEN_SeekIndividual, /* SeekIndividual */
     ADIOI_PFS_Fcntl, /* Fcntl */
     ADIOI_PFS_SetInfo, /* SetInfo */
     ADIOI_GEN_ReadStrided, /* ReadStrided */
