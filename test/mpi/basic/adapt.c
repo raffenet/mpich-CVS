@@ -1181,6 +1181,16 @@ skip_12_trial:
 		}
 #endif
 	    }
+	    /* get the lef stuff out */
+	    MPI_Bcast(&index01, 1, MPI_INT, g_left_rank, MPI_COMM_WORLD);
+	    MPI_Bcast(&bwdata01[n-index01].bits, 1, MPI_INT, g_left_rank, MPI_COMM_WORLD);
+	    MPI_Bcast(&bwdata01[n-index01].bps, 1, MPI_DOUBLE, g_left_rank, MPI_COMM_WORLD);
+	    MPI_Bcast(&bwdata01[n-index01].t, 1, MPI_DOUBLE, g_left_rank, MPI_COMM_WORLD);
+	    /* get the right stuff out */
+	    MPI_Bcast(&index12, 1, MPI_INT, g_middle_rank, MPI_COMM_WORLD);
+	    MPI_Bcast(&bwdata12[n-index12].bps, 1, MPI_DOUBLE, g_middle_rank, MPI_COMM_WORLD);
+	    MPI_Bcast(&bwdata12[n-index12].t, 1, MPI_DOUBLE, g_middle_rank, MPI_COMM_WORLD);
+	    /*
 	    if (g_proc_loc == LEFT_PROCESS && g_nIproc != 0)
 	    {
 		MPI_Send(&index01, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
@@ -1195,7 +1205,6 @@ skip_12_trial:
 		MPI_Recv(&bwdata01[n-index01].bps, 1, MPI_DOUBLE, g_left_rank, 1, MPI_COMM_WORLD, &status);
 		MPI_Recv(&bwdata01[n-index01].t, 1, MPI_DOUBLE, g_left_rank, 1, MPI_COMM_WORLD, &status);
 	    }
-	    MPI_Barrier(MPI_COMM_WORLD); /* prevent the any source recvs from overlapping */
 	    if (g_proc_loc == MIDDLE_PROCESS && g_nIproc != 0)
 	    {
 		MPI_Send(&index12, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
@@ -1208,6 +1217,7 @@ skip_12_trial:
 		MPI_Recv(&bwdata12[n-index12].bps, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &status);
 		MPI_Recv(&bwdata12[n-index12].t, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &status);
 	    }
+	    */
 	    if (g_nIproc == 0)
 	    {
 		if (bUseMegaBytes)
