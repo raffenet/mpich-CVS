@@ -6,6 +6,10 @@
 
 #include "mpidi_ch3_impl.h"
 
+#ifdef USE_IB_VAPI
+#include "ibuimpl.vapi.h"
+#endif
+
 #ifdef MPIDI_CH3_CHANNEL_RNDV
 
 #undef FUNCNAME
@@ -15,11 +19,12 @@
 int MPIDI_CH3_iStartRndvTransfer(MPIDI_VC_t * vc, MPID_Request * rreq)
 {
     int mpi_errno = MPI_SUCCESS;
+    int ibu_reg_status = IBU_SUCCESS;
 #ifdef USE_RDMA_GET
     int i;
 #else
     MPIDI_CH3_Pkt_t pkt;
-    MPID_Request *request_ptr;
+    MPID_Request *request_ptr = NULL;
     int i;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTRNDVTRANSFER);
@@ -38,11 +43,58 @@ int MPIDI_CH3_iStartRndvTransfer(MPIDI_VC_t * vc, MPID_Request * rreq)
     }
 #endif
     MPIU_DBG_PRINTF(("registering the receiver's iov.\n"));
+    rreq->ch.rndv_status = IBU_RNDV_NO_DEREG;
     for (i=0; i<rreq->dev.iov_count; i++)
     {
-	ibu_register_memory(rreq->dev.iov[i].MPID_IOV_BUF,
-			    rreq->dev.iov[i].MPID_IOV_LEN,
-			    &rreq->ch.local_iov_mem[i]);
+	rreq->ch.rndv_status = IBU_RNDV_SUCCESS;	
+	ibu_reg_status = ibu_register_memory(
+	    rreq->dev.iov[i].MPID_IOV_BUF,
+	    rreq->dev.iov[i].MPID_IOV_LEN,
+	    &rreq->ch.local_iov_mem[i]);
+	if (ibu_reg_status != IBU_SUCCESS) break;
+    }
+    if (ibu_reg_status != IBU_SUCCESS)
+    {
+	rreq->ch.rndv_status = IBU_RNDV_CTS_IOV_FAIL;
+	/* Deregister all register buffers we are not going to use */ 
+	MPIU_DBG_PRINTF(("ibu_register_memory failed. deregistering the sender's iov.\n"));
+	if (i > 0) 
+	{
+	    for (i-=1; i==0; i--) /* take last i's value one down, since last did not succeed*/
+	    {
+		ibu_reg_status = ibu_deregister_memory(
+		    rreq->dev.iov[i].MPID_IOV_BUF, 
+		    rreq->dev.iov[i].MPID_IOV_LEN, 
+		    &rreq->ch.local_iov_mem[i]);
+		/* --BEGIN ERROR HANDLING-- */
+		if (ibu_reg_status != IBU_SUCCESS)
+		{
+		    MPIU_Object_set_ref(rreq, 0);
+		    MPIDI_CH3_Request_destroy(rreq);
+		    rreq = NULL;
+		    MPIU_DBG_PRINTF(("failed deregistering receivers's iov.\n"));
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    goto fn_exit;
+		}
+		/* --END ERROR HANDLING-- */
+	    }
+	}
+#ifdef USE_IB_VAPI
+	/* Send a CTS_IOV_REG_ERROR packet. */
+	mpi_errno = ibui_post_rndv_cts_iov_reg_err(vc->ch.ibu, rreq);
+
+	/* --BEGIN ERROR HANDLING-- */
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    goto fn_exit;
+	}
+#else
+	/* IBAL code doesn't handle failure yet */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "failed to register memory");
+#endif
+	/* --END ERROR HANDLING-- */
+	goto fn_exit;        
     }
     mpi_errno = MPIDI_CH3I_rdma_readv(vc, rreq);
     /* --BEGIN ERROR HANDLING-- */
@@ -55,7 +107,7 @@ int MPIDI_CH3_iStartRndvTransfer(MPIDI_VC_t * vc, MPID_Request * rreq)
 
 #else
 
-    MPIDI_Pkt_init(&pkt.cts_iov, MPIDI_CH3_PKT_CTS_IOV);
+    pkt.cts_iov.type = MPIDI_CH3_PKT_CTS_IOV;
     pkt.cts_iov.sreq = rreq->dev.sender_req_id;
     pkt.cts_iov.rreq = rreq->handle;
     pkt.cts_iov.iov_len = rreq->dev.iov_count;
@@ -76,12 +128,60 @@ int MPIDI_CH3_iStartRndvTransfer(MPIDI_VC_t * vc, MPID_Request * rreq)
     }
 #endif
     MPIU_DBG_PRINTF(("registering the receiver's iov.\n"));
+    rreq->ch.rndv_status = IBU_RNDV_NO_DEREG;
     for (i=0; i<rreq->dev.iov_count; i++)
     {
-	ibu_register_memory(rreq->dev.iov[i].MPID_IOV_BUF,
-			    rreq->dev.iov[i].MPID_IOV_LEN,
-			    &rreq->ch.local_iov_mem[i]);
+	rreq->ch.rndv_status = IBU_RNDV_SUCCESS;
+	ibu_reg_status = ibu_register_memory(
+	    rreq->dev.iov[i].MPID_IOV_BUF,
+	    rreq->dev.iov[i].MPID_IOV_LEN,
+	    &rreq->ch.local_iov_mem[i]);
+	if (ibu_reg_status != IBU_SUCCESS) break;
     }
+    if (ibu_reg_status != IBU_SUCCESS)
+    {
+	rreq->ch.rndv_status = IBU_RNDV_CTS_IOV_FAIL;		
+	/* Deregister all register buffers we are not going to use */ 		
+	MPIU_DBG_PRINTF(("ibu_register_memory failed. deregistering the receivers's iov.\n"));
+	if (i > 0) 
+	{
+	    for (i-=1; i==0; i--) /* take last i's value one down, since last did not succeed*/
+	    {
+		ibu_reg_status = ibu_deregister_memory(
+		    rreq->dev.iov[i].MPID_IOV_BUF, 
+		    rreq->dev.iov[i].MPID_IOV_LEN, 
+		    &rreq->ch.local_iov_mem[i]);
+		/* --BEGIN ERROR HANDLING-- */
+		if (ibu_reg_status != IBU_SUCCESS)
+		{
+		    MPIU_Object_set_ref(rreq, 0);
+		    MPIDI_CH3_Request_destroy(rreq);
+		    rreq = NULL;
+		    MPIU_DBG_PRINTF(("failed deregistering receivers's iov.\n"));
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    goto fn_exit;
+		}
+		/* --END ERROR HANDLING-- */
+	    }
+	}		
+#ifdef USE_IB_VAPI
+	/* Send a CTS_IOV_REG_ERROR packet. */
+	mpi_errno = ibui_post_rndv_cts_iov_reg_err(vc->ch.ibu, rreq);
+
+	/* --BEGIN ERROR HANDLING-- */
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    goto fn_exit;
+	}
+#else
+	/* IBAL code doesn't handle failure yet */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "failed to register memory");
+#endif
+	/* --END ERROR HANDLING-- */
+	goto fn_exit;        
+    }
+
     mpi_errno = MPIDI_CH3_iStartMsgv(vc, rreq->dev.rdma_iov, 3, &request_ptr);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
@@ -93,6 +193,7 @@ int MPIDI_CH3_iStartRndvTransfer(MPIDI_VC_t * vc, MPID_Request * rreq)
 	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
+
     if (request_ptr != NULL)
     {
 	/* The sender doesn't need to know when the message has been sent.

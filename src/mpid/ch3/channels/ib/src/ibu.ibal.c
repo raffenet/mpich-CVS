@@ -18,15 +18,6 @@
 
 #include "ibuimpl.ibal.h"
 
-#ifdef MPICH_DBG_OUTPUT
-int g_num_received = 0;
-int g_num_sent = 0;
-int g_num_posted_receives = 0;
-int g_num_posted_sends = 0;
-int g_ps = 0;
-int g_pr = 0;
-#endif
-
 ibuBlockAllocator g_workAllocator = NULL;
 IBU_Global IBU_Process;
 ibu_num_written_t g_num_bytes_written_stack[IBU_MAX_POSTED_SENDS];
@@ -1063,7 +1054,7 @@ int ibui_read_unex(ibu_t ibu)
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_READ_UNEX);
     MPIU_DBG_PRINTF(("entering ibui_read_unex\n"));
 
-    assert(ibu->unex_list);
+    MPIU_Assert(ibu->unex_list);
 
     /* copy the received data */
     while (ibu->unex_list)
@@ -1086,7 +1077,7 @@ int ibui_read_unex(ibu_t ibu)
 	    {
 		MPIU_Internal_error_printf("ibui_read_unex: mem_ptr == NULL\n");
 	    }
-	    assert(ibu->unex_list->mem_ptr != NULL);
+	    MPIU_Assert(ibu->unex_list->mem_ptr != NULL);
 	    ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
 	    /* MPIU_Free the unexpected data node */
 	    temp = ibu->unex_list;
@@ -1156,7 +1147,7 @@ int ibui_readv_unex(ibu_t ibu)
 	    {
 		MPIU_Internal_error_printf("ibui_readv_unex: mem_ptr == NULL\n");
 	    }
-	    assert(ibu->unex_list->mem_ptr != NULL);
+	    MPIU_Assert(ibu->unex_list->mem_ptr != NULL);
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockFreeIB(mem_ptr)"));
 	    ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
 	    /* MPIU_Free the unexpected data node */
@@ -1220,9 +1211,7 @@ int ibu_post_read(ibu_t ibu, void *buf, int len)
     ibu->read.bufflen = len;
     ibu->read.use_iov = FALSE;
     ibu->state |= IBU_READING;
-#ifdef USE_INLINE_PKT_RECEIVE
     ibu->vc_ptr->ch.reading_pkt = FALSE;
-#endif
     ibu->pending_operations++;
     /* copy any pre-received data into the buffer */
     if (ibu->unex_list)
@@ -1263,9 +1252,7 @@ int ibu_post_readv(ibu_t ibu, MPID_IOV *iov, int n)
     ibu->read.index = 0;
     ibu->read.use_iov = TRUE;
     ibu->state |= IBU_READING;
-#ifdef USE_INLINE_PKT_RECEIVE
     ibu->vc_ptr->ch.reading_pkt = FALSE;
-#endif
     ibu->pending_operations++;
     /* copy any pre-received data into the iov */
     if (ibu->unex_list)
@@ -1358,7 +1345,6 @@ int ibu_get_lid()
     return IBU_Process.lid;
 }
 
-#ifdef USE_INLINE_PKT_RECEIVE
 #undef FUNCNAME
 #define FUNCNAME post_pkt_recv
 #undef FCNAME
@@ -1407,7 +1393,7 @@ int post_pkt_recv(MPIDI_VC_t *recv_vc_ptr)
 	{
 	    MPIU_Internal_error_printf("ibui_readv_unex: mem_ptr == NULL\n");
 	}
-	assert(ibu->unex_list->mem_ptr != NULL);
+	MPIU_Assert(ibu->unex_list->mem_ptr != NULL);
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockFreeIB(mem_ptr)"));
 	ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
 	/* MPIU_Free the unexpected data node */
@@ -1420,7 +1406,7 @@ int post_pkt_recv(MPIDI_VC_t *recv_vc_ptr)
 
     if (recv_vc_ptr->ch.recv_active == NULL)
     {
-	MPIU_DBG_PRINTF(("packet %d with no data handled.\n", g_num_received));
+	MPIU_DBG_PRINTF(("packet with no data handled.\n"));
 	recv_vc_ptr->ch.reading_pkt = TRUE;
     }
     else
@@ -1431,6 +1417,5 @@ int post_pkt_recv(MPIDI_VC_t *recv_vc_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV);
     return mpi_errno;
 }
-#endif
 
 #endif /* USE_IB_IBAL */

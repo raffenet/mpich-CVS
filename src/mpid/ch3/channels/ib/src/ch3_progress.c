@@ -1,8 +1,8 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+*  (C) 2001 by Argonne National Laboratory.
+*      See COPYRIGHT in top-level directory.
+*/
 
 #include "mpidi_ch3_impl.h"
 #include "mpidu_process_locks.h"
@@ -22,11 +22,11 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
 }
 
 /*
- * MPIDI_CH3I_Request_adjust_iov()
- *
- * Adjust the iovec in the request by the supplied number of bytes.  If the iovec has been consumed, return true; otherwise return
- * false.
- */
+* MPIDI_CH3I_Request_adjust_iov()
+*
+* Adjust the iovec in the request by the supplied number of bytes.  If the iovec has been consumed, return true; otherwise return
+* false.
+*/
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Request_adjust_iov
 #undef FCNAME
@@ -38,7 +38,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
-    
+
     while (offset < count)
     {
 	if (req->dev.iov[offset].MPID_IOV_LEN <= (unsigned int)nb)
@@ -56,7 +56,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
 	    return FALSE;
 	}
     }
-    
+
     req->ch.iov_offset = 0;
 
     MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning TRUE"));
@@ -76,7 +76,7 @@ static inline int handle_read(MPIDI_VC_t *vc, int nb)
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_READ);
-    
+
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
     req = vc->ch.recv_active;
@@ -100,6 +100,7 @@ static inline int handle_read(MPIDI_VC_t *vc, int nb)
 	    if (complete)
 	    {
 		post_pkt_recv(vc);
+		vc->ch.recv_active = NULL; /* Mellanox: Dafna, August 29th*/
 	    }
 	    else
 	    {
@@ -113,7 +114,7 @@ static inline int handle_read(MPIDI_VC_t *vc, int nb)
 	MPIDI_DBG_PRINTF((65, FCNAME, "Read args were iov=%x, count=%d",
 	    req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset));
     }
-    
+
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
     return mpi_errno;
@@ -130,7 +131,7 @@ static inline int handle_written(MPIDI_VC_t * vc)
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_WRITTEN);
 
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_WRITTEN);
-    
+
     /*MPIDI_DBG_PRINTF((60, FCNAME, "entering"));*/
     while (vc->ch.send_active != NULL)
     {
@@ -205,9 +206,14 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS);
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
+
     do
     {
+#ifdef USE_IB_VAPI
+	mpi_errno = ibu_wait(0, (void*)&vc_ptr, &num_bytes, &wait_result);
+#else
 	mpi_errno = ibu_wait(MPIDI_CH3I_Process.set, 0, (void*)&vc_ptr, &num_bytes, &wait_result);
+#endif
 	if (mpi_errno != IBU_SUCCESS)
 	{
 	    /*MPIU_Internal_error_printf("ibu_wait returned IBU_FAIL\n");*/

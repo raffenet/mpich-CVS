@@ -7,6 +7,9 @@
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
 #include "ibu.h"
+#ifdef USE_IB_VAPI
+#include "ibuimpl.vapi.h"
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Setup_connections
@@ -21,6 +24,11 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
     int val_max_sz;
     int i, dlid;
     int qp_num, dest_qp_num;
+#ifdef USE_IB_VAPI
+    VAPI_lkey_t dest_rdma_buf_rkey;
+    ibu_rdma_buf_t *RDMA_buf, *pdest_rdma_buf;
+    VAPI_rkey_t rkey;
+#endif
     MPIDI_VC_t *vc;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SETUP_CONNECTIONS);
 
@@ -30,30 +38,30 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
     if (mpi_errno != PMI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
-					 __LINE__, MPI_ERR_OTHER, "**fail",
-					 "**fail %d", mpi_errno);
+	    __LINE__, MPI_ERR_OTHER, "**fail",
+	    "**fail %d", mpi_errno);
 	return mpi_errno;
     }
     key = MPIU_Malloc(key_max_sz);
     if (key == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
-				       __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	    __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
     }
     mpi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
     if (mpi_errno != PMI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
-					 __LINE__, MPI_ERR_OTHER, "**fail",
-					 "**fail %d", mpi_errno);
+	    __LINE__, MPI_ERR_OTHER, "**fail",
+	    "**fail %d", mpi_errno);
 	return mpi_errno;
     }
     val = MPIU_Malloc(val_max_sz);
     if (val == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
-				       __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	    __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
     }
 
@@ -71,8 +79,8 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	if (vc->ch.ibu == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
-					     FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**nomem", 0);
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**nomem", 0);
 	    return mpi_errno;
 	}
 	/* set the user pointer to be a pointer to the VC */
@@ -81,18 +89,18 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	if (mpi_errno < 0 || mpi_errno > key_max_sz)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
-					     FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**snprintf", "**snprintf %d",
-					     mpi_errno);
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**snprintf", "**snprintf %d",
+		mpi_errno);
 	    return mpi_errno;
 	}
-	mpi_errno = snprintf(val, val_max_sz, "%d", qp_num);
+	mpi_errno = MPIU_Snprintf(val, val_max_sz, "%d", qp_num);
 	if (mpi_errno < 0 || mpi_errno > val_max_sz)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
-					     FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**snprintf", "**snprintf %d",
-					     mpi_errno);
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**snprintf", "**snprintf %d",
+		mpi_errno);
 	    return mpi_errno;
 	}
 	MPIU_DBG_PRINTF(("putting qp_num (%s => %s)\n", key, val));
@@ -100,33 +108,106 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	if (mpi_errno != 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL,
-					     FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**pmi_kvs_put", "**pmi_kvs_put %d",
-					     mpi_errno);
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**pmi_kvs_put", "**pmi_kvs_put %d",
+		mpi_errno);
 	    return mpi_errno;
 	}
 	/*MPIU_DBG_PRINTF(("Published qp_num = %d\n", qp_num));*/
+
+#ifdef USE_IB_VAPI
+	/*Mellanox -sleybo */
+	RDMA_buf = ibui_RDMA_buf_init(vc->ch.ibu, &rkey);
+	if (RDMA_buf == NULL)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**nomem", 0);
+	    return mpi_errno;
+	}
+
+	mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d:%d-RDMA_buf", pg_rank,i);
+	if (mpi_errno < 0 || mpi_errno > key_max_sz)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**snprintf", "**snprintf %d",
+		mpi_errno);
+	    return mpi_errno;
+	}
+	mpi_errno = MPIU_Snprintf(val, val_max_sz, "%p", RDMA_buf);
+	if (mpi_errno < 0 || mpi_errno > val_max_sz)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**snprintf", "**snprintf %d",
+		mpi_errno);
+	    return mpi_errno;
+	}
+	MPIU_DBG_PRINTF(("putting rdma buf (%s => %s)\n", key, val));
+	mpi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
+	if (mpi_errno != 0)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL,
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**pmi_kvs_put", "**pmi_kvs_put %d",
+		mpi_errno);
+	    return mpi_errno;
+	}
+	mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d:%d-RDMA_buf_rkey", pg_rank,i);
+	if (mpi_errno < 0 || mpi_errno > key_max_sz)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**snprintf", "**snprintf %d",
+		mpi_errno);
+	    return mpi_errno;
+	}
+	mpi_errno = MPIU_Snprintf(val, val_max_sz, "%d", rkey);
+	if (mpi_errno < 0 || mpi_errno > val_max_sz)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**snprintf", "**snprintf %d",
+		mpi_errno);
+	    return mpi_errno;
+	}
+	MPIU_DBG_PRINTF(("putting rdma buf rkeys (%s => %s)\n", key, val));
+	mpi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
+	if (mpi_errno != 0)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL,
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**pmi_kvs_put", "**pmi_kvs_put %d",
+		mpi_errno);
+	    return mpi_errno;
+	}
+#endif
+	/*MPIU_DBG_PRINTF(("Published qp_num = %d\n", qp_num));*/
     }
+
+
 
     /* commit the qp_num puts and barrier so gets can happen */
     mpi_errno = PMI_KVS_Commit(pg->ch.kvs_name);
     if (mpi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
-					 __LINE__, MPI_ERR_OTHER,
-					 "**pmi_kvs_commit", "**pmi_kvs_commit %d",
-					 mpi_errno);
+	    __LINE__, MPI_ERR_OTHER,
+	    "**pmi_kvs_commit", "**pmi_kvs_commit %d",
+	    mpi_errno);
 	return mpi_errno;
     }
     mpi_errno = PMI_Barrier();
     if (mpi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
-					 __LINE__, MPI_ERR_OTHER,
-					 "**pmi_barrier", "**pmi_barrier %d",
-					 mpi_errno);
+	    __LINE__, MPI_ERR_OTHER,
+	    "**pmi_barrier", "**pmi_barrier %d",
+	    mpi_errno);
 	return mpi_errno;
     }
+
 
     /* complete the queue pairs and post the receives */
     for (i=0; i<MPIDI_PG_Get_size(pg); i++)
@@ -141,26 +222,26 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	if (mpi_errno < 0 || mpi_errno > key_max_sz)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
-					     FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**snprintf", "**snprintf %d",
-					     mpi_errno);
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**snprintf", "**snprintf %d",
+		mpi_errno);
 	    return mpi_errno;
 	}
 	mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
 	if (mpi_errno != 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
-					     FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**pmi_kvs_get", "**pmi_kvs_get %d",
-					     mpi_errno);
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**pmi_kvs_get", "**pmi_kvs_get %d",
+		mpi_errno);
 	    return mpi_errno;
 	}
 	dlid = atoi(val);
 	if (dlid < 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
-					     FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**arg", 0);
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**arg", 0);
 	    return mpi_errno;
 	}
 
@@ -169,26 +250,26 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	if (mpi_errno < 0 || mpi_errno > key_max_sz)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
-					     FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**snprintf", "**snprintf %d",
-					     mpi_errno);
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**snprintf", "**snprintf %d",
+		mpi_errno);
 	    return mpi_errno;
 	}
 	mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
 	if (mpi_errno != 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
-					     FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**pmi_kvs_get", "**pmi_kvs_get %d",
-					     mpi_errno);
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**pmi_kvs_get", "**pmi_kvs_get %d",
+		mpi_errno);
 	    return mpi_errno;
 	}
 	dest_qp_num = atoi(val);
 	if (dest_qp_num < 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
-					     FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**arg", 0);
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**arg", 0);
 	    return mpi_errno;
 	}
 	/* finish the queue pair connection */
@@ -197,25 +278,60 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
-					     __LINE__, MPI_ERR_OTHER,
-					     "**finish_qp", 0);
+		__LINE__, MPI_ERR_OTHER,
+		"**finish_qp", 0);
 	    return mpi_errno;
 	}
+
+#ifdef USE_IB_VAPI
+	/* get the destination RDMA bufeer address and keys from the pmi database */
+	mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d:%d-RDMA_buf", vc->pg_rank, pg_rank);
+	if (mpi_errno < 0 || mpi_errno > key_max_sz)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**snprintf", "**snprintf %d",
+		mpi_errno);
+	    return mpi_errno;
+	}
+	mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
+	if (mpi_errno != 0)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**pmi_kvs_get", "**pmi_kvs_get %d",
+		mpi_errno);
+	    return mpi_errno;
+	}
+	sscanf((val), "%p", &pdest_rdma_buf);
+
+	mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d:%d-RDMA_buf_rkey", vc->pg_rank, pg_rank);
+	if (mpi_errno < 0 || mpi_errno > key_max_sz)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**snprintf", "**snprintf %d",
+		mpi_errno);
+	    return mpi_errno;
+	}
+	mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
+	if (mpi_errno != 0)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
+		FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**pmi_kvs_get", "**pmi_kvs_get %d",
+		mpi_errno);
+	    return mpi_errno;
+	}
+	dest_rdma_buf_rkey = (VAPI_rkey_t)atoi(val);
+
+	ibui_update_remote_RDMA_buf(vc->ch.ibu, pdest_rdma_buf, dest_rdma_buf_rkey);
+#endif
 
 	/* set the state to connected */
 	vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;
 	/* post a read of the first packet */
 	post_pkt_recv(vc);
-#if 0
-	MPIU_DBG_PRINTF(("posting first packet receive of %d bytes\n", sizeof(MPIDI_CH3_Pkt_t)));
-	vc->ch.req->dev.iov[0].MPID_IOV_BUF = (void *)&vc->ch.req->ch.pkt;
-	vc->ch.req->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
-	vc->ch.req->dev.iov_count = 1;
-	vc->ch.req->ch.iov_offset = 0;
-	vc->ch.req->dev.ca = MPIDI_CH3I_CA_HANDLE_PKT;
-	vc->ch.recv_active = vc->ch.req;
-	mpi_errno = ibu_post_read(vc->ch.ibu, &vc->ch.req->ch.pkt, sizeof(MPIDI_CH3_Pkt_t));
-#endif
     }
 
     PMI_Barrier();

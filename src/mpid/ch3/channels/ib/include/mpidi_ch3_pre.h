@@ -28,7 +28,10 @@ MPIDI_CH3I_Process_group_t;
 MPIDI_CH3_Pkt_rdma_rts_iov_t rts_iov; \
 MPIDI_CH3_Pkt_rdma_cts_iov_t cts_iov; \
 MPIDI_CH3_Pkt_rdma_reload_t reload; \
-MPIDI_CH3_Pkt_rdma_iov_t iov;
+MPIDI_CH3_Pkt_rdma_iov_t iov; \
+MPIDI_CH3_Pkt_rdma_limit_upt_t limit_upt; \
+MPIDI_CH3_Pkt_rndv_reg_error_t rndv_reg_error; \
+MPIDI_CH3_Pkt_rndv_eager_send_t rndv_eager_send;
 
 #define MPIDI_CH3_PKT_DEFS \
 typedef struct MPIDI_CH3_Pkt_rdma_rts_iov_t \
@@ -55,14 +58,36 @@ typedef struct MPIDI_CH3_Pkt_rdma_iov_t \
     MPI_Request req; \
     int send_recv; \
     int iov_len; \
-} MPIDI_CH3_Pkt_rdma_iov_t;
+} MPIDI_CH3_Pkt_rdma_iov_t; \
+typedef struct MPIDI_CH3_Pkt_rdma_limit_upt_t \
+{ \
+    MPIDI_CH3_Pkt_type_t type; \
+    int iov_len; \
+} MPIDI_CH3_Pkt_rdma_limit_upt_t; \
+typedef struct MPIDI_CH3_Pkt_rndv_reg_error \
+{ \
+    MPIDI_CH3_Pkt_type_t type; \
+    int iov_len; \
+    MPI_Request sreq, rreq; \
+} MPIDI_CH3_Pkt_rndv_reg_error_t; \
+typedef struct MPIDI_CH3_Pkt_rndv_eager_send \
+{ \
+    MPIDI_CH3_Pkt_type_t type; \
+    MPIDI_Message_match match; \
+    MPI_Request sender_req_id, receiver_req_id;	\
+    MPIDI_msg_sz_t data_sz; \
+    ibu_seqnum_t \
+} MPIDI_CH3_Pkt_rndv_eager_send_t;
 
 #define MPIDI_CH3_PKT_ENUM \
     MPIDI_CH3_PKT_RTS_PUT, \
     MPIDI_CH3_PKT_RTS_IOV, \
     MPIDI_CH3_PKT_CTS_IOV, \
     MPIDI_CH3_PKT_RELOAD,  \
-    MPIDI_CH3_PKT_IOV
+    MPIDI_CH3_PKT_IOV,  \
+    MPIDI_CH3_PKT_LMT_UPT, \
+    MPIDI_CH3_PKT_RNDV_EAGER_SEND, \
+    MPIDI_CH3_PKT_RNDV_CTS_IOV_REG_ERR
 
 #define MPIDI_CH3_PKT_RELOAD_SEND 1
 #define MPIDI_CH3_PKT_RELOAD_RECV 0
@@ -125,6 +150,7 @@ struct MPIDI_CH3I_Request						\
     int reload_state;							\
     ibu_mem_t local_iov_mem[MPID_IOV_LIMIT];                            \
     ibu_mem_t remote_iov_mem[MPID_IOV_LIMIT];                           \
+    ibu_rndv_status_t rndv_status;                           \
 } ch;
 
 /*

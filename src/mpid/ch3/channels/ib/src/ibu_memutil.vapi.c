@@ -186,7 +186,7 @@ ibuQueue_t *ibuBlockAllocInitIB()
     }
     q->block[IBU_PACKET_COUNT-1].next = NULL;
     q->pNextFree = &q->block[0];
-    IBU_Process.offset_to_lkey = (char*)&b[1].data - (char*)&b[1];
+    IBU_Process.offset_to_lkey = (long)((char*)&b[1].data - (char*)&b[1]);
     return q;
 }
 
@@ -206,14 +206,14 @@ int ibuBlockAllocFinalizeIB(ibuQueue_t *p)
     if (p == NULL)
 	return 0;
     ibuBlockAllocFinalizeIB(p->next_q);
-    ib_free_deregister(p);
+    ib_free_deregister(p/*,p->block->handle*/);
     return 0;
 }
 
 void * ibuBlockAlloc(ibuBlockAllocator p)
 {
     void *pVoid;
-    
+
     if (p->pNextFree == NULL)
     {
 	ibuBlockAllocator q;
@@ -281,12 +281,12 @@ void * ibuBlockAllocIB(ibuQueue_t *p)
 	}
 	q->block[IBU_PACKET_COUNT-1].next = NULL;
 	q->pNextFree = &q->block[0];
-	IBU_Process.offset_to_lkey = (int)((char*)&b[1].data - (char*)&b[1]);
+	IBU_Process.offset_to_lkey = (long)((char*)&b[1].data - (char*)&b[1]);
 
 	p->next_q = q;
 	p->pNextFree = q->pNextFree;
     } 
-    pVoid = p->pNextFree->data;
+    pVoid = (p->pNextFree->data).alignment; /* Mellanox added by Dafna July 7th 2004*/
     p->pNextFree = p->pNextFree->next;
 
 #if 0
@@ -317,6 +317,35 @@ int ibuBlockFreeIB(ibuQueue_t *p, void *pBlock)
     b = (ibuBlock_t *)((char *)pBlock - IBU_Process.offset_to_lkey);
     b->next = p->pNextFree;
     p->pNextFree = b;
+    return 0;
+}
+
+
+
+ibu_rdma_buf_t* ibuRDMAAllocInitIB(ibu_mem_t *mem_handle)
+{
+    ibu_rdma_buf_t *buf;
+    VAPI_lkey_t lkey;
+    VAPI_rkey_t rkey;
+    VAPI_mr_hndl_t handle;
+    buf = (ibu_rdma_buf_t*)ib_malloc_register((sizeof(ibu_rdma_buf_t)*(IBU_NUM_OF_RDMA_BUFS+1)), &handle, &lkey, &rkey);
+    buf = (ibu_rdma_buf_t*)((UINT_PTR)((unsigned char*)buf + (IBU_RDMA_BUF_SIZE -1))&(~(IBU_RDMA_BUF_SIZE-1)));
+    if (buf == NULL)
+    {
+	return NULL;
+    }    
+    mem_handle->handle = handle;
+    mem_handle->lkey = lkey;
+    mem_handle->rkey = rkey;
+
+    return buf;
+}
+
+int ibuRDMAAllocFinalizeIB(ibu_rdma_buf_t *buf, VAPI_mr_hndl_t mem_handle)
+{
+    if (buf == NULL)
+	return 0;
+    ib_free_deregister(buf/*,mem_handle*/);
     return 0;
 }
 
