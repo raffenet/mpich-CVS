@@ -1074,8 +1074,10 @@ EOF
   $CC $USER_CFLAGS -o conftest conftest.c > /dev/null 2>&1
   if test -x conftest ; then
      AC_MSG_RESULT(yes)
+     ROMIO_HAVE_MOUNT_NFS=1
      AC_DEFINE(HAVE_MOUNT_NFS,,[Define if MOUNT_NFS defined])
   else
+     ROMIO_HAVE_MOUNT_NFS=0
      AC_MSG_RESULT(no)
   fi
   rm -f conftest conftest.c
