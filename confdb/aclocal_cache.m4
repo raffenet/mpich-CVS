@@ -36,6 +36,8 @@ define([AC_CACHE_LOAD],
         cache_system=`echo $cache_file | sed -e 's%^\(.*/\)[^/]*%\1/config.system%'`
 	changequote([,])
         test "x$cache_system" = "x$cache_file" && cache_system="config.system"
+    else
+        enable_cache=no
     fi
 fi
 dnl
