@@ -567,7 +567,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
     temp = MPIU_Strdup(business_card);
     if (temp == NULL)
     {
-	/*err_printf("GetHostAndPort: MPIU_Strdup failed\n");*/
+	/*MPIDI_err_printf("GetHostAndPort", "MPIU_Strdup failed\n");*/
 	return MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|strdup", 0);
     }
     /* move to the host part */
@@ -575,7 +575,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
     if (token == NULL)
     {
 	MPIU_Free(temp);
-	/*err_printf("GetHostAndPort: invalid business card\n");*/
+	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
 	return MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|badbuscard", "**ch3|sock|badbuscard %s", business_card);
     }
     /*strcpy(host, token);*/
@@ -584,7 +584,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
     if (token == NULL)
     {
 	MPIU_Free(temp);
-	/*err_printf("GetHostAndPort: invalid business card\n");*/
+	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
 	return MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|badbuscard", "**ch3|sock|badbuscard %s", business_card);
     }
     MPIU_Strncpy(host, token, MAXHOSTNAMELEN); /* use the ip string instead of the hostname, it's more reliable */
@@ -593,7 +593,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
     if (token == NULL)
     {
 	MPIU_Free(temp);
-	/*err_printf("GetHostAndPort: invalid business card\n");*/
+	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
 	return MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|badbuscard", "**ch3|sock|badbuscard %s", business_card);
     }
     *port = atoi(token);
