@@ -16,20 +16,25 @@
  * get away with this thanks to PVFS2's stateless design 
  */
 
-void ADIOI_PVFS2_Flush(ADIO_File fd, int *error_code) { int ret,
-    dummy=0, dummy_in=0; ADIOI_PVFS2_fs *pvfs_fs;
+void ADIOI_PVFS2_Flush(ADIO_File fd, int *error_code) 
+{ 
+    int ret, rank, dummy=0, dummy_in=0; 
+    ADIOI_PVFS2_fs *pvfs_fs;
 
     *error_code = MPI_SUCCESS;
 
     pvfs_fs = (ADIOI_PVFS2_fs*)fd->fs_ptr;
 
+    MPI_Comm_rank(fd->comm, &rank);
+
+
     /* unlike ADIOI_PVFS2_Resize, MPI_File_sync() does not perform any
      * syncronization */
     MPI_Reduce(&dummy_in, &dummy, 1, MPI_INT, MPI_SUM, 
-	    fd->worker_rank, fd->comm);
+	    fd->hints->ranklist[0], fd->comm);
 
     /* io_worker computed in ADIO_Open */
-    if (fd->io_worker) {
+    if (rank == fd->hints->ranklist[0]) {
 	ret = PVFS_sys_flush(pvfs_fs->pinode_refn, pvfs_fs->credentials);
 	MPI_Bcast(&ret, 1, MPI_INT, 0, fd->comm);
     } else {

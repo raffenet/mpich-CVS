@@ -14,12 +14,16 @@
  * else.  fortunately, this operation is defined to be collective */
 void ADIOI_PVFS2_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 {
-    int ret;
+    int ret, rank;
     ADIOI_PVFS2_fs *pvfs_fs;
 
     *error_code = MPI_SUCCESS;
 
     pvfs_fs = (ADIOI_PVFS2_fs*)fd->fs_ptr;
+
+    MPI_Comm_rank(fd->comm, &rank)
+
+
 
     /* We desginate one node in the communicator to be an 'io_worker' in 
      * ADIO_Open.  This node can perform operations on files and then 
@@ -28,7 +32,7 @@ void ADIOI_PVFS2_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
     /* we know all processes have reached this point because we did an
      * MPI_Barrier in MPI_File_set_size() */
 
-    if (fd->io_worker) {
+    if (rank == fd->hints->ranklist[0]) {
 	ret = PVFS_sys_truncate(pvfs_fs->pinode_refn, 
 		size, pvfs_fs->credentials);
 	MPI_Bcast(&ret, 1, MPI_INT, 0, fd->comm);
