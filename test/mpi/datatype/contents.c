@@ -1,5 +1,7 @@
 #include "mpi.h"
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <stdio.h>
 #include <malloc.h>
 
@@ -112,7 +114,7 @@ int vector_of_vectors_test(void)
     MPI_Datatype outer_vector;
 
     int nints, nadds, ntypes, combiner, *ints;
-    MPI_Aint *adds;
+    MPI_Aint *adds = NULL;
     MPI_Datatype *types;
 
     int err, errs = 0;
@@ -292,7 +294,7 @@ int optimizable_vector_of_basics_test(void)
     MPI_Datatype parent_type;
 
     int nints, nadds, ntypes, combiner, *ints;
-    MPI_Aint *adds;
+    MPI_Aint *adds = NULL;
     MPI_Datatype *types;
 
     int err, errs = 0;
@@ -373,7 +375,7 @@ int indexed_of_basics_test(void)
     int s_displacements[3] = { 10, 20, 30 };
 
     int nints, nadds, ntypes, combiner, *ints;
-    MPI_Aint *adds;
+    MPI_Aint *adds = NULL;
     MPI_Datatype *types;
 
     int err, errs = 0;
@@ -462,7 +464,7 @@ int indexed_of_vectors_test(void)
     int i_displacements[3] = { 10, 20, 30 };
 
     int nints, nadds, ntypes, combiner, *ints;
-    MPI_Aint *adds;
+    MPI_Aint *adds = NULL;
     MPI_Datatype *types;
 
     int err, errs = 0;
@@ -650,7 +652,7 @@ int struct_of_basics_test(void)
     MPI_Datatype s_types[3] = { MPI_CHAR, MPI_INT, MPI_FLOAT };
 
     int nints, nadds, ntypes, combiner, *ints;
-    MPI_Aint *adds;
+    MPI_Aint *adds = NULL;
     MPI_Datatype *types;
 
     int err, errs = 0;
@@ -780,6 +782,7 @@ char *combiner_to_string(int combiner)
 
 int parse_args(int argc, char **argv)
 {
+#ifdef HAVE_GET_OPT
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)
@@ -790,6 +793,8 @@ int parse_args(int argc, char **argv)
 		break;
 	}
     }
+#else
+#endif
     return 0;
 }
 
