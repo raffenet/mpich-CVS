@@ -9,6 +9,10 @@ constants
    Datatypes are of type 'MPI_Datatype' in C and of tyep 'INTEGER' in Fortran.
 N*/
 
+We may want to enlarge on some of these.  For example, the description of 
+communicators could include information from the standard, and/or links to the 
+standard.
+
 /*D
    Constants - Meaning of MPI's defined constants
 
