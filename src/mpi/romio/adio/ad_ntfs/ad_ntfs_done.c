@@ -6,6 +6,8 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
+/* style:c++ header */
+
 #include "ad_ntfs.h"
 
 int ADIOI_NTFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_code)  

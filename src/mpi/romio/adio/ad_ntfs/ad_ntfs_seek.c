@@ -6,6 +6,8 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
+/* style:c++ header */
+
 #include "ad_ntfs.h"
 //#include "adio.h"
 #include "adio_extern.h"

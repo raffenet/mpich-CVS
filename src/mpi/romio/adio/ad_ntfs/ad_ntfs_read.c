@@ -6,6 +6,7 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
+/* style:c++ header */
 #include "ad_ntfs.h"
 
 void ADIOI_NTFS_ReadContig(ADIO_File fd, void *buf, int count, 
