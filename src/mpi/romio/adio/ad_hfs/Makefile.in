@@ -18,4 +18,4 @@ $(LIBNAME): $(AD_HFS_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_HFS_OBJECTS)
 
 clean:
-	\rm *.o
+	rm *.o

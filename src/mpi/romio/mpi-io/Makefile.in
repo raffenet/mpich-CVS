@@ -43,11 +43,11 @@ all: $(LIBNAME)
 .c.p:
 	@\cp $*.c _$*.c
 	$(CC) $(CFLAGS) -c _$*.c
-	@\rm -f _$*.c
+	@rm -f _$*.c
 
 profile: $(MPIO_TMP_POBJECTS)
 	$(AR) $(LIBNAME) $(MPIO_REAL_POBJECTS)
-	@\rm -f _*.o
+	@rm -f _*.o
 
 $(LIBNAME): $(MPIO_OBJECTS)
 	$(AR) $(LIBNAME) $(MPIO_OBJECTS)

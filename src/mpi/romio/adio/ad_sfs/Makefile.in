@@ -18,4 +18,4 @@ $(LIBNAME): $(AD_SFS_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_SFS_OBJECTS)
 
 clean:
-	\rm *.o
+	rm *.o
