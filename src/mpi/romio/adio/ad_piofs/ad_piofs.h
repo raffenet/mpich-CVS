@@ -50,10 +50,6 @@ void ADIOI_PIOFS_WriteStrided(ADIO_File fd, void *buf, int count,
 		       MPI_Datatype datatype, int file_ptr_type,
 		       ADIO_Offset offset, ADIO_Status *status, int
 		       *error_code);
-void ADIOI_PIOFS_ReadStrided(ADIO_File fd, void *buf, int count,
-		       MPI_Datatype datatype, int file_ptr_type,
-		       ADIO_Offset offset, ADIO_Status *status, int
-		       *error_code);
 void ADIOI_PIOFS_WriteStridedColl(ADIO_File fd, void *buf, int count,
 		       MPI_Datatype datatype, int file_ptr_type,
 		       ADIO_Offset offset, ADIO_Status *status, int

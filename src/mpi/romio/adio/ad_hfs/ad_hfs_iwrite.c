@@ -57,8 +57,8 @@ void ADIOI_HFS_IwriteStrided(ADIO_File fd, void *buf, int count,
     (*request)->queued = 0;
     (*request)->datatype = datatype;
 
-    ADIOI_HFS_WriteStrided(fd, buf, count, datatype, file_ptr_type, 
-			    offset, &status, error_code);  
+    ADIO_WriteStrided(fd, buf, count, datatype, file_ptr_type, 
+		      offset, &status, error_code);  
 
     fd->async_count++;
 

@@ -74,13 +74,3 @@ void ADIOI_PFS_ReadContig(ADIO_File fd, void *buf, int count,
     }
     else *error_code = MPI_SUCCESS;
 }
-
-
-void ADIOI_PFS_ReadStrided(ADIO_File fd, void *buf, int count,
-			   MPI_Datatype datatype, int file_ptr_type,
-			   ADIO_Offset offset, ADIO_Status *status, int
-			   *error_code)
-{
-    ADIOI_GEN_ReadStrided(fd, buf, count, datatype, file_ptr_type,
-			  offset, status, error_code);
-}

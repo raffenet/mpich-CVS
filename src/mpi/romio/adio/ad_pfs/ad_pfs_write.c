@@ -75,13 +75,3 @@ void ADIOI_PFS_WriteContig(ADIO_File fd, void *buf, int count,
     }
     else *error_code = MPI_SUCCESS;
 }
-
-
-void ADIOI_PFS_WriteStrided(ADIO_File fd, void *buf, int count,
-			    MPI_Datatype datatype, int file_ptr_type,
-			    ADIO_Offset offset, ADIO_Status *status, int
-			    *error_code)
-{
-    ADIOI_GEN_WriteStrided(fd, buf, count, datatype, file_ptr_type,
-			   offset, status, error_code);
-}

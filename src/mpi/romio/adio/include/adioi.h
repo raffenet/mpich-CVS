@@ -309,7 +309,14 @@ void ADIOI_Get_byte_offset(ADIO_File fd, ADIO_Offset offset, ADIO_Offset *disp);
 
 void ADIOI_GEN_Flush(ADIO_File fd, int *error_code);
 void ADIOI_GEN_Delete(char *filename, int *error_code);
-
+void ADIOI_GEN_ReadContig(ADIO_File fd, void *buf, int count, 
+			  MPI_Datatype datatype, int file_ptr_type,
+			  ADIO_Offset offset, ADIO_Status *status,
+			  int *error_code);
+void ADIOI_GEN_WriteContig(ADIO_File fd, void *buf, int count, 
+			   MPI_Datatype datatype, int file_ptr_type,
+			   ADIO_Offset offset, ADIO_Status *status,
+			   int *error_code);
 void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
                        MPI_Datatype datatype, int file_ptr_type,
                        ADIO_Offset offset, ADIO_Status *status, int

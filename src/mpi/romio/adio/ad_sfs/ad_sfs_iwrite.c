@@ -25,8 +25,8 @@ void ADIOI_SFS_IwriteContig(ADIO_File fd, void *buf, int count,
 
     MPI_Type_size(datatype, &typesize);
     len = count * typesize;
-    ADIOI_SFS_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, &status,
-		    error_code);  
+    ADIO_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, &status,
+		     error_code);  
 
 #ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
@@ -56,8 +56,8 @@ void ADIOI_SFS_IwriteStrided(ADIO_File fd, void *buf, int count,
     (*request)->queued = 0;
     (*request)->datatype = datatype;
 
-    ADIOI_SFS_WriteStrided(fd, buf, count, datatype, file_ptr_type, 
-			    offset, &status, error_code);  
+    ADIO_WriteStrided(fd, buf, count, datatype, file_ptr_type, 
+		      offset, &status, error_code);  
 
     fd->async_count++;
 #ifdef HAVE_STATUS_SET_BYTES

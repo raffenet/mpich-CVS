@@ -99,8 +99,8 @@ void ADIOI_PFS_IwriteStrided(ADIO_File fd, void *buf, int count,
     (*request)->handle = 0;
 
 /* call the blocking version. It is faster because it does data sieving. */
-    ADIOI_PFS_WriteStrided(fd, buf, count, datatype, file_ptr_type, 
-                            offset, &status, error_code);  
+    ADIO_WriteStrided(fd, buf, count, datatype, file_ptr_type, 
+		      offset, &status, error_code);  
 
     fd->async_count++;
 #ifdef HAVE_STATUS_SET_BYTES

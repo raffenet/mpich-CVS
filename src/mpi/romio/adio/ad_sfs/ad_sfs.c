@@ -13,8 +13,8 @@
 
 struct ADIOI_Fns_struct ADIO_SFS_operations = {
     ADIOI_SFS_Open, /* Open */
-    ADIOI_SFS_ReadContig, /* ReadContig */
-    ADIOI_SFS_WriteContig, /* WriteContig */
+    ADIOI_GEN_ReadContig, /* ReadContig */
+    ADIOI_GEN_WriteContig, /* WriteContig */
     ADIOI_GEN_ReadStridedColl, /* ReadStridedColl */
     ADIOI_GEN_WriteStridedColl, /* WriteStridedColl */
     ADIOI_GEN_SeekIndividual, /* SeekIndividual */

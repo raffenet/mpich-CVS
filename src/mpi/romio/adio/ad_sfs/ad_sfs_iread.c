@@ -25,7 +25,7 @@ void ADIOI_SFS_IreadContig(ADIO_File fd, void *buf, int count,
 
     MPI_Type_size(datatype, &typesize);
     len = count * typesize;
-    ADIOI_SFS_ReadContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, &status,
+    ADIO_ReadContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, &status,
 		    error_code);  
 
 #ifdef HAVE_STATUS_SET_BYTES
@@ -57,8 +57,8 @@ void ADIOI_SFS_IreadStrided(ADIO_File fd, void *buf, int count,
     (*request)->queued = 0;
     (*request)->datatype = datatype;
 
-    ADIOI_SFS_ReadStrided(fd, buf, count, datatype, file_ptr_type, 
-                            offset, &status, error_code);  
+    ADIO_ReadStrided(fd, buf, count, datatype, file_ptr_type, 
+		     offset, &status, error_code);  
 
     fd->async_count++;
 #ifdef HAVE_STATUS_SET_BYTES

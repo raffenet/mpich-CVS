@@ -32,8 +32,8 @@ void ADIOI_UFS_IwriteContig(ADIO_File fd, void *buf, int count,
     /* HP, FreeBSD, Linux */
     /* no support for nonblocking I/O. Use blocking I/O. */
 
-    ADIOI_UFS_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, 
-			  &status, error_code);  
+    ADIO_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, 
+		     &status, error_code);  
     (*request)->queued = 0;
 #ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
@@ -88,8 +88,8 @@ void ADIOI_UFS_IwriteStrided(ADIO_File fd, void *buf, int count,
     (*request)->handle = 0;
 
 /* call the blocking version. It is faster because it does data sieving. */
-    ADIOI_UFS_WriteStrided(fd, buf, count, datatype, file_ptr_type, 
-                            offset, &status, error_code);  
+    ADIO_WriteStrided(fd, buf, count, datatype, file_ptr_type, 
+		      offset, &status, error_code);  
 
     fd->async_count++;
 
