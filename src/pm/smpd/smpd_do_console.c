@@ -13,6 +13,8 @@ int smpd_do_console()
     smpd_context_t *context;
     sock_set_t set;
     sock_t sock;
+    SMPD_BOOL no_smpd = SMPD_FALSE;
+    int saved_state = 0;
 
     smpd_enter_fn("smpd_do_console");
 
@@ -42,14 +44,26 @@ int smpd_do_console()
     /* set the id of the mpiexec node to zero */
     smpd_process.id = 0;
 
+    /* turn off output if do_status is selected to supress error messages */
+    if (smpd_process.do_status)
+    {
+	saved_state = smpd_process.dbg_state;
+	smpd_process.dbg_state = 0;
+    }
+
     /* start connecting the tree by posting a connect to the first host */
     result = sock_post_connect(set, NULL, smpd_process.console_host, smpd_process.port, &sock);
     if (result != SOCK_SUCCESS)
     {
 	smpd_err_printf("Unable to connect to '%s:%d',\nsock error: %s\n",
 	    smpd_process.console_host, smpd_process.port, get_sock_error_string(result));
+	no_smpd = SMPD_TRUE;
 	goto quit_job;
     }
+    /* turn output back on */
+    if (smpd_process.do_status)
+	smpd_process.dbg_state = saved_state;
+
     result = smpd_create_context(SMPD_CONTEXT_LEFT_CHILD, set, sock, 1, &context);
     if (result != SMPD_SUCCESS)
     {
@@ -65,15 +79,27 @@ int smpd_do_console()
 	    get_sock_error_string(result));
 	goto quit_job;
     }
+    /* turn off output if do_status is selected to supress error messages */
+    if (smpd_process.do_status)
+	smpd_process.dbg_state = 0;
     result = smpd_enter_at_state(set, SMPD_MPIEXEC_CONNECTING_SMPD);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("state machine failed.\n");
+	no_smpd = SMPD_TRUE;
 	goto quit_job;
     }
+    /* turn output back on */
+    if (smpd_process.do_status)
+	smpd_process.dbg_state = saved_state;
 
 quit_job:
 
+    if (smpd_process.do_status && no_smpd)
+    {
+	printf("no smpd running on %s\n", smpd_process.console_host);
+	smpd_process.dbg_state = saved_state;
+    }
     /* finalize */
     smpd_dbg_printf("calling sock_finalize\n");
     result = sock_finalize();
