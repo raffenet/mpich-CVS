@@ -638,6 +638,9 @@ sub WriteMfile {
 	&TargetProfileLibraries;
     }
 
+    # Coverage analysis
+    &TargetGcov;
+
     # Next, the programs
     &TargetPrograms;
 
@@ -914,9 +917,18 @@ sub DefaultRules {
 	print FD "\t\tMakefile.sm )$newline";
 	print FD "Makefile: \${srcdir}/Makefile.in$newline";
 	my $topdir = $rootdirpath;
-	if ($topdir eq "") {	
-	    $topdir = ".";
-	}		
+#  	my $topdir = $last_config_dir;
+# 	print "last config dir = $topdir\n";
+ 	if ($topdir eq "") {	
+ 	    $topdir = ".";
+ 	}		
+#  	else {
+#  	    # We remove the last config dir from curdir
+#  	    $topdir = $curdir;
+# 	    print "top dir is $topdir\n";
+#  	    $topdir =~ s/$last_config_dir//;
+#  	    if ($topdir eq "") { $topdir = "."; }
+#  	}
 	# We need to use the enclosing configure, not always the top-level
 	# configure.  Thus, we need to keep track of the directory of the
 	# current configure, and the path to get to that configure.
@@ -1064,12 +1076,18 @@ sub ExpandMakeVars {
 
 #
 # ===========================================================================
+@config_dir = ();    # Stack of the location of the most recently seen
+                     # configure script.  Used to create targets that
+                     # need to run config.status from that directory.
+
+$last_config_dir = "";
 sub ProcessFile {
     $file = $_[0];
 
     print "Processing $curdir$file\n" if (!$quiet);
     if (-s "configure.in") {
 	&ReadAutoconf;
+	$last_config_dir = $curdir;
     }
     &ReadMfile( $file );
     $output_name = $file;
@@ -1110,7 +1128,9 @@ sub ProcessFile {
 	$rootdirpath .= "../";
 	print "rootdir = $rootdirpath\n" if $debug;
 	print "curdir = $curdir\n" if $debug;
+	$config_dir[$#config_dir+1] = $last_config_dir; 
 	&ProcessFile( $file );
+	$last_config_dir = $config_dir[$#config_dir--];
 	$rootdirpath =~ s/\.\.\/$//;
 	chdir "..";
 	$curdir =~ s/[^\/]*\/$//;
@@ -1301,6 +1321,9 @@ sub TargetClean {
     if ($do_profilelibs && $found_profilelib) {
 	print FD "\t-rm -f *.pf \${srcdir}/*.pf$newline";
     }
+    # Clean coverage analysis files
+    &GcovClean;
+
     &RecursiveOp( "clean" );
     print FD "distclean: clean";
     if (defined($usertargets{"distclean-local"})) { 
@@ -2095,6 +2118,59 @@ sub FindWorkingAutoconf {
 	$autoconf = $lastfile;
     }
 }
+#
+# ----------------------------------------------------------------------------
+# Coverage analysis
+# One useful target for package maintainers is coverage analysis.  
+# The following code creates the targets for the gcc coverage analyzer, 
+# gcov.  In tests, this analyzer worked with programs built from libraries
+# and with sources in multiple directories.
+#
+# To use the gcc coverage analyzer, the following steps must be taken
+# 1.  All file must be compiled with -fprofile-arcs -ftest-coverage, and
+#     without optimization
+# 2.  Programs are run as usual
+# 3.  To create coverage data, run
+#         gcov -f -b sourcefile
+#     over all source files.  The result is (for each sourcefile) a
+#     new file, "sourcefile.gcov", which annotates the source file with
+#     the number of times each statement was executed
+#
+# To add support for these, simplemake adds the following targets in
+# maintenance target mode (e.g., not in the distributed version):
+#     Add to clean (all with ${srcdir}) *.bb, *.bbg, *.da, *.c.gcov .  
+#         These are all created by either gcc or by running programs
+#         built with -ftest-coverage.
+#     Add a recursive coverage target that does:
+#         Run gcov on each source file (if any), where a .da file is present
+#     We may be able to use a target like:
+#         $*.c.gcov depends on $*.da (.da.gcov)
+#     We let the configure step add the compiler options (so that a 
+#     separate simplemake build is not required to add or remove 
+#     coverage analysis.
+#
+# ToDo: 
+# ----------------------------------------------------------------------------
+# Add the clean target for the coverage analyzer
+sub GcovClean {
+    if ($maint_targets) {
+	print FD "\t-rm -f \${srcdir}/*.bb \${srcdir}/*.bbg \${srcdir}/*.da$newline";
+    }
+}
+
+# coverage target
+sub TargetGcov {
+    if (!$maint_targets) { return; }
+    print FD "coverage:$newline";
+    foreach $lib (keys(%libraries)) {
+	$sourcefiles = $libraries{$lib};
+	print FD "\t-${quietmake}for file in $sourcefiles ; do \\$newline";
+	print FD "\t\tgcov -b -f \$\$file ; done$newline";
+    }
+    &RecursiveOp( "coverage" );
+}
+# 
+# ----------------------------------------------------------------------------
 #
 # ToDo
 # Shoule we add a target to strip debugging information from the object files?

@@ -26,6 +26,10 @@ dnl # MPICH-1 used -Wshadow as well.
 AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],
 CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi")
 dnl
+AC_ARG_ENABLE(coverage,
+[--enable-coverage - Turn on coverage analysis using gcc and gcov],
+CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage")
+dnl
 AC_ARG_ENABLE(error-checking,
 [--enable-error-checking=level - Control the amount of error checking.  
 level may be 
@@ -673,7 +677,7 @@ dnl
 dnl Look for Standard headers
 AC_HEADER_STDC
 dnl Check for a specific header
-AC_CHECK_HEADERS(sys/types.h)
+AC_CHECK_HEADERS(stdarg.h sys/types.h)
 dnl
 dnl Check for functions.  This invokes another test if the function is 
 dnl found.  The braces around the second test are essential. 
