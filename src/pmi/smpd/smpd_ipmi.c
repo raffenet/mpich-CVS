@@ -983,19 +983,19 @@ int iPMI_Finalize()
     if (result != PMI_SUCCESS)
     {
 	pmi_err_printf("PMI_Finalize failed: unable to create an finalize command.\n");
-	return PMI_FAIL;
+	goto fn_fail;
     }
 
     /* parse the result of the command */
     if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_Finalize failed: no result string in the result command.\n");
-	return PMI_FAIL;
+	goto fn_fail;
     }
     if (strcmp(str, SMPD_SUCCESS_STR))
     {
 	pmi_err_printf("PMI_Finalize failed: %s\n", str);
-	return PMI_FAIL;
+	goto fn_fail;
     }
 
     PMI_Barrier();
@@ -1005,7 +1005,7 @@ int iPMI_Finalize()
     if (result != PMI_SUCCESS)
     {
 	pmi_err_printf("failed.\n");
-	return PMI_FAIL;
+	goto fn_fail;
     }
 
     if (pmi_process.sock != MPIDU_SOCK_INVALID_SOCK)
@@ -1018,9 +1018,13 @@ int iPMI_Finalize()
     }
 
     pmi_process.init_finalized = PMI_FINALIZED;
-
     /*printf("iPMI_Finalize success.\n");fflush(stdout);*/
     return PMI_SUCCESS;
+
+fn_fail:
+    /* set the state to finalized so PMI_Abort will not dereference mangled structures due to a failure */
+    pmi_process.init_finalized = PMI_FINALIZED;
+    return PMI_FAIL;
 }
 
 int iPMI_Abort(int exit_code, const char error_msg[])
