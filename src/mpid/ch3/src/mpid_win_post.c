@@ -19,6 +19,10 @@
 
 THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg);
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Win_post
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 {
 #ifdef HAVE_WINTHREADS
@@ -99,7 +103,7 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
 
     nops_from_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
     if (!nops_from_proc) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         return (THREAD_RETURN_TYPE)mpi_errno;
     }
 
@@ -112,12 +116,12 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
 
     ranks_in_post_grp = (int *) MPIU_Malloc(post_grp_size * sizeof(int));
     if (!ranks_in_post_grp) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         return (THREAD_RETURN_TYPE)mpi_errno;
     }
     ranks_in_win_grp = (int *) MPIU_Malloc(post_grp_size * sizeof(int));
     if (!ranks_in_win_grp) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         return (THREAD_RETURN_TYPE)mpi_errno;
     }
 
@@ -130,13 +134,13 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
 
     reqs = (MPI_Request *)  MPIU_Malloc(post_grp_size*sizeof(MPI_Request));
     if (!reqs) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         return (THREAD_RETURN_TYPE)mpi_errno;
     }
     
     tags = (int *) MPIU_Calloc(comm_size, sizeof(int)); 
     if (!tags) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         return (THREAD_RETURN_TYPE)mpi_errno;
     }
 
@@ -184,7 +188,7 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                 /* recv dataloop */
                 dataloop = (void *) MPIU_Malloc(dtype_info.loopsize);
                 if (!dataloop) {
-                    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
                     return (THREAD_RETURN_TYPE)mpi_errno;
                 }
 
@@ -199,7 +203,7 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                 /* allocate new datatype object and handle */
                 new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
                 if (!new_dtp) {
-                    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**nomem", 0);
+                    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
                     return (THREAD_RETURN_TYPE)mpi_errno;
                 }
                     
@@ -272,7 +276,7 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                 tmp_buf = MPIU_Malloc(rma_op_info.count * 
                                       (MPIR_MAX(extent,true_extent)));  
                 if (!tmp_buf) {
-                    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
                     return (THREAD_RETURN_TYPE)mpi_errno;
                 }
                 /* adjust for potential negative lower bound in datatype */
@@ -291,8 +295,8 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                     uop = MPIR_Op_table[op%16 - 1];
                 }
                 else {
-                    mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
-                                                      "**opundefined", "**opundefined %d", op );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP,
+                                                      "**opnotpredefined", "**opnotpredefined %d", op );
                     return (THREAD_RETURN_TYPE)mpi_errno;
                 }
 
@@ -327,7 +331,7 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                         MPIU_Malloc(vec_len * sizeof(DLOOP_VECTOR));
                     if (!dloop_vec) {
                         mpi_errno = MPIR_Err_create_code(
-                            MPI_ERR_OTHER, "**nomem", 0 ); 
+                            MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 ); 
                         return (THREAD_RETURN_TYPE)mpi_errno;
                     }
                     
@@ -350,7 +354,7 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                 MPIU_Free((char*)tmp_buf + true_lb);
                 break;
             default:
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP,
                                                   "**opundefined_rma","**opundefined_rma %d", rma_op_info.type );
                 return (THREAD_RETURN_TYPE)mpi_errno;
             }

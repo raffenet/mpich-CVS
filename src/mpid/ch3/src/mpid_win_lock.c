@@ -6,6 +6,10 @@
 
 #include "mpidimpl.h"
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Win_lock
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -23,7 +27,7 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
 
     new_ptr = (MPIU_RMA_ops *) MPIU_Malloc(sizeof(MPIU_RMA_ops));
     if (!new_ptr) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_LOCK);
         return mpi_errno;
     }

@@ -6,6 +6,10 @@
 
 #include "mpidimpl.h"
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Win_unlock
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
 {
     int mpi_errno=MPI_SUCCESS, nops_to_proc;
@@ -63,7 +67,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
 
     reqs = (MPI_Request *) MPIU_Malloc((4*nops_to_proc+1)*sizeof(MPI_Request));
     if (!reqs) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
@@ -84,7 +88,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         MPIU_Malloc((nops_to_proc+1) * sizeof(MPIU_RMA_op_info));
     /* allocate one extra to avoid 0 size malloc */ 
     if (!rma_op_infos) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
@@ -93,7 +97,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         MPIU_Malloc((nops_to_proc+1)*sizeof(MPIU_RMA_dtype_info));
     /* allocate one extra to avoid 0 size malloc */ 
     if (!dtype_infos) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
@@ -101,7 +105,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     dataloops = (void **) MPIU_Malloc((nops_to_proc+1)*sizeof(void*));
     /* allocate one extra to avoid 0 size malloc */ 
     if (!dataloops) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
@@ -174,7 +178,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
             
             dataloops[i] = MPIU_Malloc(dtp->loopsize);
             if (!dataloops[i]) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
                 return mpi_errno;
             }

@@ -6,6 +6,10 @@
 
 #include "mpidimpl.h"
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Win_complete
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Win_complete(MPID_Win *win_ptr)
 {
     int mpi_errno = MPI_SUCCESS, comm_size, *nops_to_proc, dest;
@@ -55,7 +59,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 
     nops_to_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
     if (!nops_to_proc) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
@@ -77,13 +81,13 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 
     ranks_in_start_grp = (int *) MPIU_Malloc(start_grp_size * sizeof(int));
     if (!ranks_in_start_grp) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
     ranks_in_win_grp = (int *) MPIU_Malloc(start_grp_size * sizeof(int));
     if (!ranks_in_win_grp) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
@@ -98,14 +102,14 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     reqs = (MPI_Request *)
         MPIU_Malloc((start_grp_size+4*total_op_count)*sizeof(MPI_Request));
     if (!reqs) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
     
     tags = (int *) MPIU_Calloc(comm_size, sizeof(int)); 
     if (!tags) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
@@ -132,7 +136,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         MPIU_Malloc((total_op_count+1) * sizeof(MPIU_RMA_op_info));
     /* allocate one extra to prevent 0 size malloc */
     if (!rma_op_infos) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
@@ -141,7 +145,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         MPIU_Malloc((total_op_count+1)*sizeof(MPIU_RMA_dtype_info));
     /* allocate one extra to prevent 0 size malloc */
     if (!dtype_infos) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
@@ -149,7 +153,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     dataloops = (void **) MPIU_Malloc((total_op_count+1)*sizeof(void*));
     /* allocate one extra to prevent 0 size malloc */
     if (!dataloops) {
-        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
@@ -207,7 +211,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 
             dataloops[i] = MPIU_Malloc(dtp->loopsize);
             if (!dataloops[i]) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
                 return mpi_errno;
             }
