@@ -333,7 +333,7 @@ conftest%.dep: %.c
 	@cat \[$]< >\[$]@
 EOF
 date > conftest.c
-if ${MAKE} -f conftestmm conftestconftest.dep 1>&AC_FD_CC 2>&1 ; then
+if ${MAKE} -f conftestmm conftestconftest.dep 1>&AC_FD_CC 2>&1 </dev/null ; then
     pac_cv_prog_make_has_patterns="yes"
 else
     pac_cv_prog_make_has_patterns="no"
