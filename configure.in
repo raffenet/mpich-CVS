@@ -216,7 +216,15 @@ if test "$enable_fast" = "yes" ; then
     enable_error_checking=no
     enable_error_messages=no
     enable_timing=no
-    enable_g=no
+dnl
+dnl [BRT] removed the reseting of enable_g so that --with-enable=dbg,meminit
+dnl can be specified with -enable-fast.  This change was largely made for the
+dnl PETSc folks who want to use --enable-fast to eliminate parameter checking
+dnl overhead, but also wish to use meminit to eliminate initialization
+dnl warnings from valgrind.
+dnl
+dnl enable_g=no
+dnl
     AC_DEFINE(NDEBUG,1,[Define to suppress assertions])
 fi
 dnl error-checking
