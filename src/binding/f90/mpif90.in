@@ -240,7 +240,7 @@ done
 # (MPI_SIZEOF is handled in lib${MPILIBNAME)f90, for example).
 mpilibs="-l${MPILIBNAME}f90 -l$MPILIBNAME"
 if [ "$NEEDSPLIB" = yes ] ; then
-     mpilibs="$mpilibs -lp$MPILIBNAME -l$MPILIBNAME -lp$MPILIBNAME"
+     mpilibs="$mpilibs -lp$MPILIBNAME -l$MPILIBNAME -lp$MPILIBNAME -l$MPILIBNAME"
 fi
 #
 # Concatenate the user flags with the ones needed by MPI

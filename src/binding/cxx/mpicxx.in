@@ -158,7 +158,7 @@ done
 # options (if any)
 mpilibs=-l$MPILIBNAME
 if [ "$NEEDSPLIB" = yes ] ; then
-     mpilibs="$mpilibs -lp$MPILIBNAME -l$MPILIBNAME -lp$MPILIBNAME"
+     mpilibs="$mpilibs -lp$MPILIBNAME -l$MPILIBNAME -lp$MPILIBNAME -l$MPILIBNAME"
 fi
 cxxlibs=
 if [ "$MPICXXLIBNAME" != "$MPILIBNAME" ] ; then
