@@ -24,7 +24,7 @@ int main( int argc, char **argv )
     MPI::Op sumop;
     MPI::Intracomm comm = MPI::COMM_WORLD;
     int errs = 0;
-    int size, i, count;
+    int size, i, count, rank;
 
     MTest_Init( );
 
@@ -43,20 +43,23 @@ int main( int argc, char **argv )
 	comm.Exscan( vin, vout, count, MPI::INT, sumop );
 	if (rank == 0) {
 	    for (i=0; i<count; i++) {
-		if (vout[i] != -1)) {
-		errs++;
-		if (errs < 10) 
-		    std::cerr << "vout[" << i << "] = " << vout[i] << 
-			std::endl;
+ 		if (vout[i] != -1) {
+		    errs++;
+		    if (errs < 10) {
+			std::cerr << "vout[" << i << "] = " << vout[i] << 
+			    std::endl;
+		    }
+		}
 	    }
 	}
 	else {
 	    for (i=0; i<count; i++) {
 		if (vout[i] != i * (rank)) {
 		    errs++;
-		    if (errs < 10) 
+		    if (errs < 10) {
 			std::cerr << "vout[" << i << "] = " << vout[i] << 
 			    std::endl;
+		    }
 		}
 	    }
 	}

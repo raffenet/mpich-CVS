@@ -37,11 +37,11 @@ int main( int argc, char **argv )
     for (root=0; root<size; root++) {
 	for (i=0; i<n; i++) vecout[i] = -1.0;
 	if (rank == root) {
-	    MPI_Scatter( vecin, 1, vec, MPI_IN_PLACE, -1, MPI_TYPE_NULL, root, 
+	    MPI_Scatter( vecin, 1, vec, MPI_IN_PLACE, -1, MPI_DATATYPE_NULL, root, 
 			 MPI_COMM_WORLD );
 	}
 	else {
-	    MPI_Scatter( NULL, -1, MPI_TYPE_NULL, vecout, n, MPI_DOUBLE, root, 
+	    MPI_Scatter( NULL, -1, MPI_DATATYPE_NULL, vecout, n, MPI_DOUBLE, root, 
 			 MPI_COMM_WORLD );
 	    ivalue = rank * ((n-1) * stride + 1);
 	    for (i=0; i<n; i++) {

@@ -24,7 +24,7 @@ int main( int argc, char **argv )
     MPI::Op sumop;
     MPI::Intracomm comm = MPI::COMM_WORLD;
     int errs = 0;
-    int size, i, count;
+    int size, i, count, rank;
 
     MTest_Init( );
 

@@ -15,7 +15,9 @@
 int main( int argc, char **argv )
 {
     MPI_Datatype vec;
+    MPI_Comm     comm;
     double *vecin, *vecout, ivalue;
+    int    minsize = 2, count;
     int    root, i, n, stride, errs = 0;
     int    rank, size;
 
@@ -48,7 +50,8 @@ int main( int argc, char **argv )
 			    errs++;
 			    if (errs < 10) {
 				fprintf( stderr, "vecout[%d]=%d\n",
-					 i, vecout[i] )
+					 i, vecout[i] );
+			    }
 			}
 		    }
 		}
