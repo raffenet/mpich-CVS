@@ -12,7 +12,10 @@ CFLAGS      = @CFLAGS@ $(MPIOPROFILE) $(INCLUDE_DIR)
 # EXTRA objects are ones that need to be included for all but MPICH2
 
 MPIO_OBJECTS = close.o read.o open.o write.o set_view.o \
-      iread.o iwrite.o iotest.o iowait.o seek.o get_posn.o \
+      iread.o iwrite.o iotest.o iowait.o \
+	iowaitall.o iowaitany.o \
+	iotestall.o iotestany.o \
+      seek.o get_posn.o \
       delete.o read_all.o read_at.o \
       read_atall.o iread_at.o iwrite_at.o write_all.o get_bytoff.o \
       write_at.o write_atall.o get_view.o get_group.o get_amode.o \
@@ -28,7 +31,10 @@ MPIO_OBJECTS = close.o read.o open.o write.o set_view.o \
 MPIO_EXTRA_OBJECTS = get_errh.o set_errh.o
 
 MPIO_TMP_POBJECTS = close.p read.p open.p write.p get_extent.p \
-      iread.p iwrite.p iotest.p iowait.p seek.p \
+      iread.p iwrite.p iotest.p iowait.p \
+	iowaitall.p iowaitany.p \
+	iotestall.p iotestany.p \
+      seek.p \
       delete.p read_all.p read_at.p \
       read_atall.p iread_at.p iwrite_at.p get_posn.p \
       write_all.p write_at.p write_atall.p get_bytoff.p \
@@ -45,7 +51,10 @@ MPIO_EXTRA_TMP_POBJECTS = get_errh.p set_errh.p
 
 MPIO_REAL_POBJECTS = _close.o _read.o _open.o _get_extent.o \
       _write.o _set_view.o _seek.o _read_at.o _prealloc.o \
-      _iread.o _iwrite.o _iotest.o _iowait.o _get_posn.o \
+      _iread.o _iwrite.o _iotest.o _iowait.o \
+	_iowaitall.o _iowaitany.o \
+	_iotestall.o _iotestany.o \
+	_get_posn.o \
       _delete.o _read_all.o _get_bytoff.o \
       _read_atall.o _iread_at.o _iwrite_at.o _get_group.o _get_amode.o \
       _write_all.o _write_at.o _write_atall.o _get_view.o \
