@@ -888,9 +888,17 @@ def _handle_rhs_challenge_response(responseSocket):
     msg = mpd_recv_one_msg(responseSocket)
     if (not msg)   or  \
        (not msg.has_key('cmd'))   or  (not msg.has_key('response'))  or  \
-       (not msg.has_key('host'))  or  (not msg.has_key('port'))  or  \
-       (msg['response'] != g.correctChallengeResponse[responseSocket]):
+       (not msg.has_key('host'))  or  (not msg.has_key('port')):
         mpd_print(1, 'INVALID msg for rhs response msg=:%s: from host=%s port=%d' % \
+                  (msg,g.activeSockets[responseSocket].rhsHost,
+                   g.activeSockets[responseSocket].rhsPort) )
+        msgToSend = { 'cmd' : 'invalid_response' }
+        mpd_send_one_msg(responseSocket,msgToSend)
+        del g.correctChallengeResponse[responseSocket]
+        del g.activeSockets[responseSocket]
+        responseSocket.close()
+    elif msg['response'] != g.correctChallengeResponse[responseSocket]:
+        mpd_print(1, 'INVALID response in rhs response msg=:%s: from host=%s port=%d' % \
                   (msg,g.activeSockets[responseSocket].rhsHost,
                    g.activeSockets[responseSocket].rhsPort) )
         msgToSend = { 'cmd' : 'invalid_response' }
@@ -1022,7 +1030,8 @@ def _enter_existing_ring():
     msg = mpd_recv_one_msg(g.lhsSocket)
     if (not msg) or  \
        (not msg.has_key('cmd')) or (msg['cmd'] != 'OK_to_enter_as_rhs'):
-        mpd_raise('NOT OK to enter ring')
+        print('NOT OK to enter ring; one likely cause: mismatched secretwords')
+        mpd_raise('failed to enter ring')
     if (not msg.has_key('rhshost'))  or (not msg.has_key('rhsport')):
         mpd_raise('invalid OK msg: %s' % (msg) )
     g.rhsHost = msg['rhshost']
@@ -1051,7 +1060,7 @@ def _enter_existing_ring():
     if (not msg) or  \
        (not msg.has_key('cmd')) or  \
        (msg['cmd'] != 'OK_to_enter_as_lhs'):
-        mpd_raise('NOT OK to enter ring; msg=:%s:' % (msg) )
+        mpd_raise('failed to enter ring; msg=:%s:' % (msg) )
     return 0
 
 def _create_ring_of_one_mpd():
