@@ -1065,6 +1065,44 @@ void smpd_parse_account_domain(char *domain_account, char *account, char *domain
 
 /* Unix code */
 
+static void set_environment_variables(char *bEnv)
+{
+    char name[1024]="", value[8192]="";
+    char *pChar;
+    
+    pChar = name;
+    while (*bEnv != '\0')
+    {
+	if (*bEnv == '=')
+	{
+	    *pChar = '\0';
+	    pChar = value;
+	}
+	else
+	{
+	    if (*bEnv == ';')
+	    {
+		*pChar = '\0';
+		pChar = name;
+		smpd_dbg_printf("env: %s=%s\n", name, value);
+		setenv(name, value);
+	    }
+	    else
+	    {
+		*pChar = *bEnv;
+		pChar++;
+	    }
+	}
+	bEnv++;
+    }
+    *pChar = '\0';
+    if (name[0] != '\0')
+    {
+	smpd_dbg_printf("env: %s=%s\n", name, value);
+	setenv(name, value);
+    }
+}
+
 int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set)
 {
     int result;
@@ -1173,6 +1211,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	sprintf(str, "%d", process->id);
 	smpd_dbg_printf("env: PMI_SMPD_KEY=%s\n", str);
 	setenv("PMI_SMPD_KEY", str, 1);
+
+	set_environment_variables(process->env);
 
 	result = dup2(stdin_pipe_fds[0], 0);   /* dup a new stdin */
 	if (result == -1)
