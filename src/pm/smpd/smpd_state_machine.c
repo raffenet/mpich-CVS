@@ -1451,6 +1451,17 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		}
 		else
 		{
+		    /* close the listener in the child */
+		    smpd_process.listener_context->state = SMPD_CLOSING;
+		    result = sock_post_close(smpd_process.listener_context->sock);
+		    if (result != SOCK_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a close on the listener, sock error:\n%s\n",
+			    get_sock_error_string(result));
+			smpd_exit_fn("smpd_enter_at_state");
+			return SMPD_FAIL;
+		    }
+		    /* post a read of the session header */
 		    context->read_state = SMPD_READING_SESSION_HEADER;
 		    result = sock_post_read(context->sock, context->session_header, SMPD_MAX_SESSION_HEADER_LENGTH, NULL);
 		    if (result != SOCK_SUCCESS)
