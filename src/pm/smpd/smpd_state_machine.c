@@ -2307,14 +2307,14 @@ int smpd_state_reading_pwd_request(smpd_context_t *context, MPIDU_Sock_event_t *
 	if (smpd_process.builtin_cmd == SMPD_CMD_ASSOCIATE_JOB_KEY)
 	    context->sspi_type = SMPD_SSPI_DELEGATE;
 	else
-	    context->sspi_type = SMPD_SSPI_IDENTIFY;
+	    context->sspi_type = SMPD_SSPI_IMPERSONATE;/*SMPD_SSPI_IDENTIFY;*/
 	if (dest_context == NULL)
 	{
 	    /* I am node 0 so handle the command here. */
 	    if (smpd_process.builtin_cmd == SMPD_CMD_ASSOCIATE_JOB_KEY)
 		type = SMPD_SSPI_DELEGATE;
 	    else
-		type = SMPD_SSPI_IDENTIFY;
+		type = SMPD_SSPI_IMPERSONATE;/*SMPD_SSPI_IDENTIFY;*/
 	    smpd_dbg_printf("calling smpd_sspi_init with host=%s and port=%d\n", smpd_process.console_host, smpd_process.port);
 	    result = smpd_sspi_context_init(&context->sspi_context, smpd_process.console_host, smpd_process.port, type);
 	    if (result != SMPD_SUCCESS)
@@ -2871,13 +2871,17 @@ int smpd_state_reading_client_sspi_header(smpd_context_t *context, MPIDU_Sock_ev
     {
 	if (context->target == SMPD_TARGET_SMPD)
 	{
-	    if (context->sspi_type == SMPD_SSPI_IDENTIFY)
+	    switch (context->sspi_type)
 	    {
+	    case SMPD_SSPI_IDENTIFY:
 		strcpy(context->sspi_header, "identify");
-	    }
-	    else
-	    {
+		break;
+	    case SMPD_SSPI_IMPERSONATE:
+		strcpy(context->sspi_header, "no");
+		break;
+	    default:
 		strcpy(context->sspi_header, "yes");
+		break;
 	    }
 	}
 	else
@@ -3156,7 +3160,6 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
     char err_msg[256];
     const char *result_str = SMPD_SUCCESS_STR;
     SECURITY_STATUS sec_result;
-    /*SecPkgCredentials_Names user_name;*/
     HANDLE user_handle;
     BOOL duplicate_result;
 
@@ -3173,33 +3176,6 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
     }
     smpd_dbg_printf("delegate request result: '%s'\n", context->sspi_header);
 
-#if 0 /* This gives the wrong user */
-    smpd_dbg_printf("calling QueryCredentialsAttributes\n");
-    sec_result = smpd_process.sec_fn->QueryCredentialsAttributes(&context->sspi_context->credential, SECPKG_CRED_ATTR_NAMES, &user_name);
-    if (sec_result == SEC_E_OK)
-    {
-	strcpy(context->account, user_name.sUserName);
-	smpd_dbg_printf("sspi identified user: '%s'\n", context->account);
-    }
-    else
-    {
-	switch (sec_result)
-	{
-	case SEC_E_INVALID_HANDLE:
-	    smpd_err_printf("QueryCredentialsAttributes failed: SEC_E_INVALID_HANDLE\n");
-	    break;
-	case SEC_E_UNSUPPORTED_FUNCTION:
-	    smpd_err_printf("QueryCredentialsAttributes failed: SEC_E_UNSUPPORTED_FUNCTION\n");
-	    break;
-	case SEC_E_INSUFFICIENT_MEMORY:
-	    smpd_err_printf("QueryCredentialsAttributes failed: SEC_E_INSUFFICIENT_MEMORY\n");
-	    break;
-	default:
-	    smpd_err_printf("QueryCredentialsAttributes failed: error %d\n", sec_result);
-	    break;
-	}
-    }
-#endif
     if (context->sspi_type == SMPD_SSPI_IDENTIFY || (strcmp(context->sspi_header, "identify") == 0))
     {
 	DWORD len = SMPD_MAX_ACCOUNT_LENGTH;
@@ -3210,92 +3186,12 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 	GetUserName(context->account, &len);
 	if (sec_result == SEC_E_OK)
 	{
-	    /*smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);*/
-	    /*smpd_dbg_printf("impersonated user: '%s'\n", context->account);*/
+	    smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
+	    smpd_dbg_printf("impersonated user: '%s'\n", context->account);
 	}
 	else
 	{
 	    smpd_err_printf("ImpersonateSecurityContext failed: %d\n", sec_result);
-	}
-	if (context->target == SMPD_TARGET_SMPD)
-	{
-	    if (sec_result == SEC_E_OK)
-	    {
-		/* FIXME: insert implementation here: */
-		/* verify local admin */
-		BOOL b = FALSE;
-		int error;
-		SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
-		PSID AdministratorsGroup;
-		context->access = SMPD_ACCESS_NONE;
-		result_str = SMPD_FAIL_STR;
-		if (AllocateAndInitializeSid(
-		    &NtAuthority,
-		    2,
-		    SECURITY_BUILTIN_DOMAIN_RID,
-		    DOMAIN_ALIAS_RID_ADMINS,
-		    0, 0, 0, 0, 0, 0,
-		    &AdministratorsGroup))
-		{
-		    if (CheckTokenMembership(NULL, AdministratorsGroup, &b)) 
-		    {
-			smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
-			if (b)
-			{
-			    smpd_dbg_printf("allowing admin access to smpd\n");
-			    context->access = SMPD_ACCESS_ADMIN;
-			    result_str = SMPD_SUCCESS_STR;
-			}
-			else
-			{
-			    smpd_dbg_printf("CheckTokenMembership returned %s is not an administrator, denying admin access to smpd.\n", context->account);
-			}
-		    }
-		    else
-		    {
-			error = GetLastError();
-			smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
-			smpd_dbg_printf("CheckTokenMembership returned false, %d, denying admin access to smpd.\n", error);
-		    }
-		    FreeSid(AdministratorsGroup); 
-		}
-		else
-		{
-		    smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
-		    smpd_err_printf("AllocateAndInitializeSid failed: %d\n", GetLastError());
-		}
-		/* revert must be called before any smpd_dbg_printfs will work */
-		/*smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);*/
-		smpd_dbg_printf("impersonated user: '%s'\n", context->account);
-	    }
-	    else
-	    {
-		result_str = SMPD_FAIL_STR;
-	    }
-	    /* Clean up the sspi structures */
-	    smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context->context);
-	    smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_context->credential);
-
-	    context->read_state = SMPD_IDLE;
-	    context->write_state = SMPD_WRITING_IMPERSONATE_RESULT;
-	    MPIU_Strncpy(context->sspi_header, result_str, SMPD_SSPI_HEADER_LENGTH);
-	    result = MPIDU_Sock_post_write(context->sock, context->sspi_header, SMPD_SSPI_HEADER_LENGTH, SMPD_SSPI_HEADER_LENGTH, NULL);
-	    if (result != MPI_SUCCESS)
-	    {
-		smpd_err_printf("unable to post a write of the impersonate result,\nsock error: %s\n", get_sock_error_string(result));
-		context->state = SMPD_CLOSING;
-		result = MPIDU_Sock_post_close(context->sock);
-		smpd_exit_fn(FCNAME);
-		return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
-	    }
-
-	    smpd_exit_fn(FCNAME);
-	    return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
-	}
-	if (sec_result == SEC_E_OK)
-	{
-	    smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
-	    smpd_dbg_printf("impersonated user: '%s'\n", context->account);
 	}
 
 	if (strcmp(context->sspi_header, "key") != 0)
@@ -3331,8 +3227,87 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 	return SMPD_SUCCESS;
     }
 
-    /*smpd_dbg_printf("calling ImpersonateSecurityContext\n");*/
-    /*sec_result = smpd_process.sec_fn->ImpersonateSecurityContext(&context->sspi_context->context);*/
+    if (context->target == SMPD_TARGET_SMPD && (strcmp(context->sspi_header, "no") == 0))
+    {
+	DWORD len = SMPD_MAX_ACCOUNT_LENGTH;
+	context->sspi_type = SMPD_SSPI_IMPERSONATE;
+	sec_result = smpd_process.sec_fn->ImpersonateSecurityContext(&context->sspi_context->context);
+	/* revert must be called before any smpd_dbg_printfs will work */
+	context->account[0] = '\0';
+	GetUserName(context->account, &len);
+
+	if (sec_result == SEC_E_OK)
+	{
+	    /* verify local admin */
+	    BOOL b = FALSE;
+	    int error;
+	    SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+	    PSID AdministratorsGroup;
+	    context->access = SMPD_ACCESS_NONE;
+	    result_str = SMPD_FAIL_STR;
+	    if (AllocateAndInitializeSid(
+		&NtAuthority,
+		2,
+		SECURITY_BUILTIN_DOMAIN_RID,
+		DOMAIN_ALIAS_RID_ADMINS,
+		0, 0, 0, 0, 0, 0,
+		&AdministratorsGroup))
+	    {
+		if (CheckTokenMembership(NULL, AdministratorsGroup, &b)) 
+		{
+		    smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
+		    if (b)
+		    {
+			smpd_dbg_printf("allowing admin access to smpd\n");
+			context->access = SMPD_ACCESS_ADMIN;
+			result_str = SMPD_SUCCESS_STR;
+		    }
+		    else
+		    {
+			smpd_dbg_printf("CheckTokenMembership returned %s is not an administrator, denying admin access to smpd.\n", context->account);
+		    }
+		}
+		else
+		{
+		    error = GetLastError();
+		    smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
+		    smpd_dbg_printf("CheckTokenMembership returned false, %d, denying admin access to smpd.\n", error);
+		}
+		FreeSid(AdministratorsGroup); 
+	    }
+	    else
+	    {
+		smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
+		smpd_err_printf("AllocateAndInitializeSid failed: %d\n", GetLastError());
+	    }
+	    smpd_dbg_printf("impersonated user: '%s'\n", context->account);
+	}
+	else
+	{
+	    smpd_err_printf("ImpersonateSecurityContext failed: %d\n", sec_result);
+	    result_str = SMPD_FAIL_STR;
+	}
+	/* Clean up the sspi structures */
+	smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context->context);
+	smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_context->credential);
+
+	context->read_state = SMPD_IDLE;
+	context->write_state = SMPD_WRITING_IMPERSONATE_RESULT;
+	MPIU_Strncpy(context->sspi_header, result_str, SMPD_SSPI_HEADER_LENGTH);
+	result = MPIDU_Sock_post_write(context->sock, context->sspi_header, SMPD_SSPI_HEADER_LENGTH, SMPD_SSPI_HEADER_LENGTH, NULL);
+	if (result != MPI_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the impersonate result,\nsock error: %s\n", get_sock_error_string(result));
+	    context->state = SMPD_CLOSING;
+	    result = MPIDU_Sock_post_close(context->sock);
+	    smpd_exit_fn(FCNAME);
+	    return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+	}
+
+	smpd_exit_fn(FCNAME);
+	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+    }
+
     smpd_dbg_printf("calling QuerySecurityContextToken\n");
     sec_result = smpd_process.sec_fn->QuerySecurityContextToken(&context->sspi_context->context, &context->sspi_context->user_handle);
     if (sec_result == SEC_E_OK)
@@ -3382,8 +3357,6 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 	    CloseHandle(context->sspi_context->user_handle);
 	    result_str = SMPD_FAIL_STR;
 	}
-	/*smpd_dbg_printf("calling RevertSecurityContext\n");*/
-	/*smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);*/
     }
     else
     {
@@ -3659,8 +3632,16 @@ int smpd_state_writing_impersonate_result(smpd_context_t *context, MPIDU_Sock_ev
 
     if (context->target == SMPD_TARGET_SMPD)
     {
-	if (context->sspi_type != SMPD_SSPI_IDENTIFY)
+	switch (context->sspi_type)
+	{
+	case SMPD_SSPI_IDENTIFY:
+	    break;
+	case SMPD_SSPI_IMPERSONATE:
+	    break;
+	default:
 	    context->access = SMPD_ACCESS_USER;
+	    break;
+	}
 	context->write_state = SMPD_IDLE;
 	context->read_state = SMPD_READING_SESSION_HEADER;
 	result = MPIDU_Sock_post_read(context->sock, context->session_header, SMPD_MAX_SESSION_HEADER_LENGTH, SMPD_MAX_SESSION_HEADER_LENGTH, NULL);

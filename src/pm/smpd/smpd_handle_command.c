@@ -3939,7 +3939,10 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const
     switch (type)
     {
     case SMPD_SSPI_IDENTIFY:
-	sspi_context->flags = /*ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT | ISC_REQ_CONFIDENTIALITY |*/ ISC_REQ_IDENTIFY;
+	sspi_context->flags = ISC_REQ_IDENTIFY;
+	break;
+    case SMPD_SSPI_IMPERSONATE:
+	sspi_context->flags = ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT | ISC_REQ_CONFIDENTIALITY;
 	break;
     case SMPD_SSPI_DELEGATE:
 	sspi_context->flags = ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT | ISC_REQ_CONFIDENTIALITY | ISC_REQ_MUTUAL_AUTH | ISC_REQ_DELEGATE;
@@ -5785,7 +5788,7 @@ int smpd_handle_command(smpd_context_t *context)
 		}
 		else
 		{
-		    smpd_err_printf("returning error for unknown session command: \"%s\"\n", cmd->cmd);
+		    smpd_err_printf("returning error for unknown smpd session command: \"%s\"\n", cmd->cmd);
 		    result = smpd_fail_unexpected_command(context);
 		    smpd_exit_fn(FCNAME);
 		    return result;
@@ -5793,7 +5796,7 @@ int smpd_handle_command(smpd_context_t *context)
 	    }
 	    else
 	    {
-		smpd_err_printf("returning error for unknown session command: \"%s\"\n", cmd->cmd);
+		smpd_err_printf("returning error for unknown process session command: \"%s\"\n", cmd->cmd);
 		result = smpd_fail_unexpected_command(context);
 		smpd_exit_fn(FCNAME);
 		return result;
@@ -5824,7 +5827,7 @@ int smpd_handle_command(smpd_context_t *context)
 	}
 	else
 	{
-	    smpd_err_printf("returning error for unknown session command: \"%s\"\n", cmd->cmd);
+	    smpd_err_printf("returning error for unknown smpd user session command: \"%s\"\n", cmd->cmd);
 	    result = smpd_fail_unexpected_command(context);
 	    smpd_exit_fn(FCNAME);
 	    return result;

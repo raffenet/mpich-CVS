@@ -361,6 +361,7 @@ typedef struct smpd_sspi_client_context_t
 typedef enum smpd_sspi_type_t
 {
     SMPD_SSPI_IDENTIFY,
+    SMPD_SSPI_IMPERSONATE,
     SMPD_SSPI_DELEGATE
 } smpd_sspi_type_t;
 

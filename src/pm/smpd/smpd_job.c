@@ -120,9 +120,12 @@ int smpd_lookup_job_key(const char *key, const char *username, HANDLE *user_hand
 	{
 	    if (strcmp(iter->username, username) == 0)
 	    {
-		*user_handle = iter->user_handle;
-		smpd_exit_fn(FCNAME);
-		return SMPD_SUCCESS;
+		if (iter->user_handle != INVALID_HANDLE_VALUE)
+		{
+		    *user_handle = iter->user_handle;
+		    smpd_exit_fn(FCNAME);
+		    return SMPD_SUCCESS;
+		}
 	    }
 	}
 	iter = iter->next;
