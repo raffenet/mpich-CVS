@@ -44,16 +44,35 @@ int MPI_Request_free(MPI_Request *request)
 {
     static const char FCNAME[] = "MPI_Request_free";
     int mpi_errno = MPI_SUCCESS;
+    MPID_Request *request_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REQUEST_FREE);
+    /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+            if (mpi_errno) {
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+	    
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REQUEST_FREE);
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Request_get_ptr( *request, request_ptr );
+
+    /* Validate parameters if error checking is enabled */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    /* Validate request_ptr */
+            MPID_Request_valid_ptr( request_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_FREE);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -62,7 +81,12 @@ int MPI_Request_free(MPI_Request *request)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+    
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REQUEST_FREE);
 
+    MPID_Request_release(request_ptr);
+    *request = MPI_REQUEST_NULL;
+    
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_FREE);
     return MPI_SUCCESS;
 }
