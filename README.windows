@@ -18,20 +18,23 @@ Build the libraries:
 the mpich2f project to get various Fortran bindings.
 7) do a solution build with the Release or Debug configuration to build mpiexec and smpd
 
-Optionally build a different configuration of the mpich2 dlls:
+Optionally build different channel mpich2 dlls:
 8) build the channel of your choice:
 The mpich2 dlls can be built to use shared memory communication, tcp socket communication,
 or both.
 Select the ch3sockDebug or ch3sockRelease configurations to build the sockets only dlls.
 Select the ch3shmDebug or ch3shmRelease configurations to build the shmem only dlls.
+Select the ch3sshmDebug or ch3sshmRelease configurations to build the scalable shmem only dlls.
 Select the ch3ssmDebug or ch3ssmRelease configurations to build the sockets+shmem dlls.
+Select the ch3essmDebug or ch3essmRelease configurations to build the non-polling-sockets+shmem dlls.
+Select the ch3ibDebug or ch3ibRelease configurations to build the infiniband dlls.
 
 Install the launcher:
 9) copy smpd.exe to a local directory on all the nodes.
 10) Log on to each node as an administrator and execute "smpd.exe -install"
 
 Compile and run an MPI application:
-10) compile an mpi application.  Use mpi.h from mpich2\src\include and 
+10) compile an mpi application.  Use mpi.h from mpich2\src\include\win32 and 
 the mpich2 import libraries in mpich2\lib
 11) Place your executable along with the mpich2 dlls somewhere accessable to
 all the machines.
