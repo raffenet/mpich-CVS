@@ -1,14 +1,17 @@
 #! /usr/bin/perl
+# (Tested with -w; 9/7/04)
 # 
 require "maint/parse.sub";
 
 $debug = 0;
 $careful = 0;        # Set careful to 1 to flag unused messages
-$entrycount = 0;
-%defined_args = ();
 $showfiles = 0;
 $quiet = 0;
 $build_test_pgm = 1;
+
+# Strict is used to control checking of error message strings.
+$gStrict = 0;
+if (defined($ENV{"DEBUG_STRICT"})) { $gStrict = 1; }
 
 # Check for special args
 @files = ();
@@ -20,6 +23,7 @@ foreach $arg (@ARGV) {
     elsif( $arg =~ /-notest/) { $build_test_pgm = 0; }
     elsif( $arg =~ /-outfile=(.*)/) { $outfile = $1; }
     elsif( $arg =~ /-careful/) { $careful = 1; }
+    elsif( $arg =~ /-strict/)  { $gStrict = 1; }
     else {
 	print "Adding $arg to files\n" if $debug;
 	if (-d $arg) {
@@ -172,7 +176,11 @@ sub CreateErrMsgMapping {
     while (<FD>)
     {
 	s/#.*$//;
-	($mpiname,$num,$shortmsg) = split(/\s\s*/);
+	my ($mpiname,$num,$shortmsg) = split(/\s\s*/);
+	if (!defined($shortmsg)) {
+	    # Incase there is no short message entry (!)
+	    $shortmsg = "";
+	}
 	if ($shortmsg ne "")
 	{
 	    if ($shortmsg =~ /\%/)
@@ -217,8 +225,9 @@ sub CreateErrMsgMapping {
 	    $longnamesUsed{$key} += 1;
 	}
 	
-	# Escape any naked quotes
-	$longvalue = s/(?<!\\)\"/\\\"/;
+	# Escape any naked quotes (This should be applied somewhere else?)
+#	$longvalue = s/(?<!\\)\"/\\\"/;
+
 	$longvalue = "\"" . $longnames{$key} . "\"";
 
 	print $OUTFD "static const char short_gen$num\[\] = \"$key\";\n";
@@ -230,7 +239,7 @@ sub CreateErrMsgMapping {
     }
     # Generate the mapping of short to long names
     print $OUTFD "\nstatic const int generic_msgs_len = $num;\n";
-    my $i = 0;
+
     # The sentinals should be hardcoded into the source file that
     # uses this file to ensure that the sentinal tests are ok.
     my $sentinal1 = "0xacebad03";
@@ -244,7 +253,7 @@ sub CreateErrMsgMapping {
     print $OUTFD "};\n";
     print $OUTFD "#endif\n\n";
 
-    my $num = 0;
+    $num = 0;
     # Now output the instance specific messages
     print $OUTFD "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_GENERIC\n";
     foreach $key (sort keys %specific_msgs)
@@ -271,10 +280,10 @@ sub CreateErrMsgMapping {
 	$num ++;
     }
     # Generate the mapping of short to long names
-    my $i = 0;
+
     print $OUTFD "\nstatic const int specific_msgs_len = $num;\n";
     print $OUTFD "static const msgpair specific_err_msgs[] = {\n";
-    for ($i = 0; $i < $num ; $i ++) {
+    for (my $i = 0; $i < $num ; $i ++) {
 	print $OUTFD "{ $sentinal1, short_spc$i, long_spc$i, $sentinal2 }";
 	print $OUTFD "," if ($i < $num - 1);
 	print $OUTFD "\n";
@@ -286,7 +295,7 @@ sub CreateErrMsgMapping {
     $maxval = $#class_msgs + 1;
     print $OUTFD "#define MPIR_MAX_ERROR_CLASS_INDEX $maxval\n";
     print $OUTFD "static int class_to_index[] = {\n";
-    for ($i=0; $i<=$#class_msgs; $i++) {
+    for (my $i=0; $i<=$#class_msgs; $i++) {
 	print $OUTFD "$short_to_num{$class_msgs[$i]}";
 	print $OUTFD "," if ($i < $#class_msgs);
 	print $OUTFD "\n" if !(($i + 1) % 10);
@@ -464,7 +473,9 @@ sub ProcessFile
 	if (/int\s*MPIR_Err_create_code/) { $remainder = ""; next; }
 	while (/MPIR_Err_create_code\s*(\(.*$)/) {
 	    ($leader, $remainder, @args ) = &GetSubArgs( FD, $1 );
+	    # Discard leader 
 	    if ($debug) {
+		print "Line begins with $leader\n";   # Use $leader to keep -w happy
 		foreach $arg (@args) {
 		    print "|$arg|\n";
 		}
@@ -524,9 +535,53 @@ sub ProcessFile
 	    {
 		print STDERR "Warning: instance specific message $specific_msg in $filename contains no format control\n";
 	    }
+	    if ($specific_msg =~ /%/) {
+		# Specific message includes format values.  Check
+		# for number and for valid strings if %s
+		my $nargs = 0;
+		my $tmpmsg = $specific_msg;
+		my @stringLocs = ();
+		while ($tmpmsg =~ /[^%]*%(.)(.*)/) {
+		    $tmpmsg = $2;
+		    my $followchar = $1;
+		    if ($followchar eq "s") {
+			$stringLocs[$#stringLocs+1] = $nargs;
+		    }
+		    if ($followchar ne "%") {
+			$nargs ++;
+		    }
+		    if (! ($followchar =~ /[%sdpDCRWOEIGFA]/) ) {
+			print STDERR "Warning: Unrecognized format specifier in specific message $specific_msg in $filename\n";
+		    }
+		}
+		if ($nargs != $#args - 6) {
+		    my $actargs = $#args - 6;
+		    print STDERR "Warning: wrong number of arguments for instance specific message $specific_msg in $filename; expected $nargs but found $actargs\n";
+		}
+		elsif ($#stringLocs >= 0 && $gStrict) {
+		    # Check for reasonable strings if strict checking requested
+		    for (my $i=0; $i<=$#stringLocs; $i++) {
+			my $index = $stringLocs[$i];
+			my $string = $args[7+$index];
+			if ($string =~ /\"/) {
+			    # Allow a few special cases:
+			    # Always: all uppercase and _, single word
+			    my $stringOk = 0;
+			    if ($string =~ /^\"[A-Z_]*\"$/) {
+				$stringOk = 1;
+			    }
+			    elsif ($string =~ /^\"\w*\"$/) {
+				if (1) { $stringOk = 1; }
+			    }
+			    if (!$stringOk) {
+				print STDERR "Warning: explicit string as argument to specific message $specific_msg in $filename; explicit string is $string\n";
+			    }
+			}
+		    }
+		}
+	    }
 
-	    if ($build_test_pgm)
-	    {
+	    if ($build_test_pgm) {
 		&AddTestCall( @args )
 	    }
 

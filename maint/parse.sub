@@ -120,7 +120,7 @@ sub GetString {
 sub GetSubArgs {
     my @args = ();
     my $curline;
-    my $outer, $leader, $remainder, $arg;
+    my ($outer, $leader, $remainder, $arg);
 
     $FD = $_[0];
     $curline = $_[1];
@@ -180,6 +180,12 @@ sub GetSubArgs {
 # removes comments from a line and returns the line.  Read more if necessary
 # Places the comment into $comment_line;
 # The external "cxx_header" adds // to the comments stripped
+
+# Set a default value for cxx_header
+if (!defined($cxx_header)) {
+    $cxx_header = 0;
+}
+
 sub StripComments {
     my $FD = $_[0];
     my $curline = $_[1];
