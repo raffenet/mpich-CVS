@@ -619,7 +619,7 @@ Return values:
 Notes:
  This function frees the data returned by 'PMI_Args_to_keyval'.
  Using this routine instead of 'free' allows the PMI package to track 
- allocation of storage or 
+ allocation of storage or to use interal storage as it sees fit.
 @*/
 int PMI_Free_keyvals(PMI_keyval_t keyvalp[], int size);
 
@@ -641,9 +641,7 @@ Return values:
 - PMI_FAIL - fail
 
 Notes:
- This function frees the data returned by 'PMI_Args_to_keyval'.
- Using this routine instead of 'free' allows the PMI package to track 
- allocation of storage or to use interal storage as it sees fit.
+ This function returns the command line options specific to the pmi implementation
 @*/
 int PMI_Get_options(char *str, int *length);
 
