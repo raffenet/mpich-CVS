@@ -721,6 +721,27 @@ int PMI_Spawn_multiple(int count,
 	    /* FIXME: Check for error (buf too short for line) */
 	    MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
         } 
+	/* FIXME: Check for tempbuf too short */
+        MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"info_num=%d\n", info_keyval_sizes[spawncnt]);
+	/* FIXME: Check for error (buf too short for line) */
+        MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
+	for (i=0; i < info_keyval_sizes[spawncnt]; i++)
+	{
+	    /****
+	    printf("RMB: SPAWN_MULT: for cmd %d  keyval%d = (%s,%s)\n",
+		   spawncnt,i,
+		   info_keyval_vectors[spawncnt][i].key,
+		   info_keyval_vectors[spawncnt][i].val);
+	    ****/
+	    /* FIXME: Check for tempbuf too short */
+	    MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"info_key_%d=%s\n",i,info_keyval_vectors[spawncnt][i].key);
+	    /* FIXME: Check for error (buf too short for line) */
+	    MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
+	    /* FIXME: Check for tempbuf too short */
+	    MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"info_val_%d=%s\n",i,info_keyval_vectors[spawncnt][i].val);
+	    /* FIXME: Check for error (buf too short for line) */
+	    MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
+	}
 
 	/* FIXME: Check for error (buf too short for line) */
         MPIU_Strnapp(buf, "endcmd\n", PMIU_MAXLINE);
