@@ -78,17 +78,16 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
        as on Unix */
 
     ADIOI_Flatlist_node *flat_buf, *flat_file;
-    int i, j, k, err=-1, bwr_size, fwr_size=0, st_index=0;
-    int bufsize, size, sum, n_etypes_in_filetype, size_in_filetype;
+    int i, j, k, bwr_size, fwr_size=0, st_index=0;
+    int bufsize, sum, n_etypes_in_filetype, size_in_filetype;
     int n_filetypes, etype_in_filetype;
     ADIO_Offset abs_off_in_filetype=0;
     int filetype_size, etype_size, buftype_size;
     MPI_Aint filetype_extent, buftype_extent;
     int buf_count, buftype_is_contig, filetype_is_contig;
-    ADIO_Offset userbuf_off;
     ADIO_Offset off, disp, start_off;
     int flag, st_fwr_size, st_n_filetypes;
-    int new_bwr_size, new_fwr_size, err_flag=0;
+    int err_flag=0;
 
     int mem_list_count, file_list_count;
     PVFS_size * mem_offsets;
@@ -207,7 +206,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 			    PVFS_BYTE, &file_req);
 		    if (err_flag < 0) break;
 		    err_flag = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, 
-			    off, PVFS_BOTTOM, mem_req, 
+			    file_offsets, PVFS_BOTTOM, mem_req, 
 			    pvfs_fs->credentials, &resp_io);
 		  
 		    /* in the case of error or the last read list call, 
@@ -383,8 +382,11 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		    file_offsets, PVFS_BYTE, &file_req);
 	    if (err_flag < 0)
 		goto error_state;
-	    err_flag = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, off, 
-		    buf, mem_req, pvfs_fs->credentials, &resp_io);
+	    /* PVFS_Request_hindexed already expresses the offsets into the
+	     * file, so we should not pass in an offset if we are using
+	     * hindexed for the file type */
+	    err_flag = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, 0, 
+		    mem_offsets, mem_req, pvfs_fs->credentials, &resp_io);
 	    if (err_flag < 0)
 		goto error_state;
 
@@ -424,8 +426,9 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		    file_offsets, PVFS_BYTE, &file_req);
 	    if (err_flag < 0)
 		goto error_state;
-	    err_flag = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, off, 
-		    buf, mem_req, pvfs_fs->credentials, &resp_io);
+	    /* as above, use 0 for 'offset' when using hindexed file type*/
+	    err_flag = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, 0, 
+		    mem_offsets, mem_req, pvfs_fs->credentials, &resp_io);
 	    if (err_flag < 0)
 		goto error_state;
         }
