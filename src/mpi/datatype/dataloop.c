@@ -55,7 +55,7 @@ void MPID_Segment_pack( MPID_Dataloop *loopinfo,
 {
     int cur_sp = 0, valid_sp = 0;
     MPID_Dataloop_stackelm stackelm[MAX_DATALOOP_STK], * restrict curstackelm;
-    MPID_Dataloop *curloopinfo = loopinfo;
+    MPID_Dataloop * restrict curloopinfo = loopinfo;
     int kind;
 
     curstackelm = &stackelm[0];
@@ -155,12 +155,12 @@ void MPID_Segment_pack( MPID_Dataloop *loopinfo,
 	    cur_sp++;
 	    curstackelm++;
 	    curstackelm->curcount = 0;
-	    curloopinfo = &curstacklem->loopinfo;
+	    curloopinfo = &curstackelm->loopinfo;
 	}
 	if (cur_sp < 0) break; /* Exit from loop */
 	/* Otherwise, prepare for the next iteration */
 	curloopinfo = &curstackelm->loopinfo;
-    } /* No while since the test is within the loop */
+    } while(1);/* No while since the test is within the loop */
 }
 
 
