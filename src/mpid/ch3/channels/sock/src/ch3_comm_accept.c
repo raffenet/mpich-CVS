@@ -787,12 +787,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
 	}
 	/* --END ERROR HANDLING-- */
         sendtag++;
-
-        /* All communication with remote root done. Release the
-           communicator. */
-        MPIR_Comm_release(tmp_comm);
     }
-
 
     /* release the kvscomm if it ws created */
     if (n_local_pgs != 1)
@@ -888,6 +883,33 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     MPIU_Free(remote_pgs_array);
 
     if (bizcards) MPIU_Free(bizcards);
+
+    mpi_errno = MPIR_Barrier(comm_ptr);
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS)
+    {
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+        goto fn_exit;
+    }
+    /* --END ERROR HANDLING-- */
+
+    /* synchronize with remote root */
+    if (rank == root) {
+        mpi_errno = MPIC_Sendrecv(&i, 0, MPI_INT, 0,
+                                  sendtag, &j, 0, MPI_INT,
+                                  0, recvtag, tmp_comm->handle,
+                                  MPI_STATUS_IGNORE);
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno != MPI_SUCCESS)
+        {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+            goto fn_exit;
+        }
+
+        /* All communication with remote root done. Release the
+           communicator. */
+        MPIR_Comm_release(tmp_comm);
+    }
 
     mpi_errno = MPIR_Barrier(comm_ptr);
     /* --BEGIN ERROR HANDLING-- */
