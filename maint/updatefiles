@@ -54,7 +54,7 @@ if [ $at_top = "yes" -a ! -d confdb ] ; then
     elif [ -d /home/gropp/cvsMaster_z ] ; then 
         cvs -q -d /home/gropp/cvsMaster_z checkout confdb
     else
-        echo "Checkout confdb from /home/gropp/cvsMaster_z" and rerun
+        echo "Checkout confdb from /home/gropp/cvsMaster_z and rerun"
 	exit 1
     fi
 fi
