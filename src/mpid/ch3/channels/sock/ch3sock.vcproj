@@ -20,7 +20,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\common\datatype,..\..\..\common\locks,..\..\..\common\sock,,..\..\..\common\sock\iocp"
-				PreprocessorDefinitions="USE_WINCONF_H"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="5"
@@ -58,7 +58,7 @@
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\common\datatype,..\..\..\common\locks,..\..\..\common\sock,,..\..\..\common\sock\iocp"
-				PreprocessorDefinitions="USE_WINCONF_H"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO"
 				StringPooling="TRUE"
 				RuntimeLibrary="4"
 				EnableFunctionLevelLinking="TRUE"
@@ -96,7 +96,7 @@
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\common\datatype,..\..\..\common\locks,..\..\..\common\sock,,..\..\..\common\sock\iocp"
-				PreprocessorDefinitions="USE_WINCONF_H"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO,HAVE_TIMING=MPID_TIMING_KIND_LOG,USE_LOGGING=MPID_LOGGING_RLOG"
 				StringPooling="TRUE"
 				RuntimeLibrary="4"
 				EnableFunctionLevelLinking="TRUE"
@@ -378,6 +378,9 @@
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc">
 			<File
+				RelativePath="..\..\..\common\datatype\mpid_datatype.h">
+			</File>
+			<File
 				RelativePath="include\mpidi_ch3_impl.h">
 			</File>
 			<File
@@ -394,6 +397,9 @@
 			</File>
 			<File
 				RelativePath="..\..\include\mpidpre.h">
+			</File>
+			<File
+				RelativePath="..\..\include\winmpidi_ch3_conf.h">
 			</File>
 		</Filter>
 		<Filter

@@ -22,7 +22,7 @@
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="src\include,src\mpid\mm\include,src\mpid\common\datatype,src\mpid\mm\src\ib\paceline"
-				PreprocessorDefinitions="USE_WINCONF_H"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -86,7 +86,7 @@ copy mmRelease\mpich2.lib lib\mpich2.lib
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks"
-				PreprocessorDefinitions="USE_WINCONF_H"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -151,7 +151,7 @@ copy shmDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="src\include,src\mpid\mm\include,src\mpid\common\datatype,src\mpid\mm\src\ib\paceline"
-				PreprocessorDefinitions="USE_WINCONF_H"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -216,7 +216,7 @@ copy mmDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks"
-				PreprocessorDefinitions="USE_WINCONF_H"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -280,7 +280,7 @@ copy shmRelease\mpich2.lib lib\mpich2.lib
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\mm\include,src\mpid\ch3\include,src\mpid\common\locks"
-				PreprocessorDefinitions="USE_WINCONF_H"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -345,7 +345,7 @@ copy ch3mmDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\mm\include,src\mpid\ch3\include,src\mpid\common\locks"
-				PreprocessorDefinitions="USE_WINCONF_H"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -409,7 +409,7 @@ copy ch3mmRelease\mpich2.lib lib\mpich2.lib
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include"
-				PreprocessorDefinitions="USE_WINCONF_H"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -479,7 +479,7 @@ copy ch3sockDebug\mpich2d.lib lib\mpich2d.lib
 				EnableIntrinsicFunctions="TRUE"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include"
-				PreprocessorDefinitions="USE_WINCONF_H"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="FALSE"
@@ -550,7 +550,7 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				EnableIntrinsicFunctions="TRUE"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include"
-				PreprocessorDefinitions="USE_WINCONF_H"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO,HAVE_TIMING=MPID_TIMING_KIND_LOG,USE_LOGGING=MPID_LOGGING_RLOG"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="FALSE"
@@ -600,6 +600,71 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
+		<Configuration
+			Name="ch3mmPDebug|Win32"
+			OutputDirectory="ch3mmPDebug"
+			IntermediateDirectory="ch3mmPDebug"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\mm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO,HAVE_TIMING=MPID_TIMING_KIND_LOG,USE_LOGGING=MPID_LOGGING_RLOG"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\ch3mmPDebug/mpich2.pch"
+				AssemblerListingLocation=".\ch3mmPDebug/"
+				ObjectFile=".\ch3mmPDebug/"
+				ProgramDataBaseFileName=".\ch3mmPDebug/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="4"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="rlogd.lib sockd.lib ch3mmd.lib pmid.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
+				OutputFile="lib/mpich2d.dll"
+				LinkIncremental="2"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="src\pm\winmpd\bsocket2\debug,src\pm\winmpd\mpdutil\debug,src\pm\winmpd\mpichinfo\debug,src\pm\winmpd\crypt\debug,lib"
+				ModuleDefinitionFile=".\mpich2.def"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\ch3mmPDebug/mpich2d.pdb"
+				ImportLibrary=".\ch3mmPDebug/mpich2d.lib"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\ch3mmPDebug/mpich2.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying mpich2d.dll to system32 directory"
+				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
+copy ch3mmDebug\mpich2d.lib lib\mpich2d.lib
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
 				Culture="1033"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
@@ -670,6 +735,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\errhan\add_error_class.c">
@@ -723,6 +794,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -784,6 +861,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\errhan\add_error_string.c">
@@ -837,6 +920,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -931,6 +1020,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\coll\allgatherv.c">
@@ -988,6 +1083,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\rma\alloc_mem.c">
@@ -1041,6 +1142,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1111,6 +1218,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\attr\attr_delete.c">
@@ -1164,6 +1277,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1224,6 +1343,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1294,6 +1419,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\bsend_init.c">
@@ -1347,6 +1478,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1408,6 +1545,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\buffree.c">
@@ -1461,6 +1604,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1522,6 +1671,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\topo\cart_coords.c">
@@ -1575,6 +1730,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1636,6 +1797,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\topo\cart_get.c">
@@ -1689,6 +1856,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1750,6 +1923,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\topo\cart_rank.c">
@@ -1803,6 +1982,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1864,6 +2049,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\topo\cart_sub.c">
@@ -1917,6 +2108,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1978,6 +2175,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\spawn\close_port.c">
@@ -2023,6 +2226,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\spawn\comm_accept.c">
@@ -2064,6 +2273,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -2128,6 +2343,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\spawn\comm_connect.c">
@@ -2169,6 +2390,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -2226,6 +2453,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -2290,6 +2523,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\attr\comm_delete_attr.c">
@@ -2347,6 +2586,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\spawn\comm_disconnect.c">
@@ -2388,6 +2633,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -2449,6 +2700,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\comm\comm_free.c">
@@ -2505,6 +2762,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -2572,6 +2835,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\spawn\comm_get_parent.c">
@@ -2625,6 +2894,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -2686,6 +2961,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\spawn\comm_join.c">
@@ -2739,6 +3020,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -2803,6 +3090,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\comm\comm_remote_size.c">
@@ -2860,6 +3153,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\attr\comm_set_attr.c">
@@ -2913,6 +3212,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -2977,6 +3282,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\comm\comm_size.c">
@@ -3037,6 +3348,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\spawn\comm_spawn_multiple.c">
@@ -3078,6 +3395,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -3139,6 +3462,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\comm\comm_test_inter.c">
@@ -3196,6 +3525,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\commreq_free.c">
@@ -3249,6 +3584,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -3313,6 +3654,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\create_send.c">
@@ -3370,6 +3717,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\dataloop.c">
@@ -3423,6 +3776,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -3486,6 +3845,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -3571,6 +3936,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\errhan\file_call_errhandler.c">
@@ -3580,6 +3951,18 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 			</File>
 			<File
 				RelativePath=".\src\mpi\errhan\file_get_errhandler.c">
+				<FileConfiguration
+					Name="ch3mmDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						GeneratePreprocessedFile="0"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						GeneratePreprocessedFile="0"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\errhan\file_set_errhandler.c">
@@ -3633,6 +4016,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -3703,6 +4092,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\coll\gather.c">
@@ -3760,6 +4155,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\coll\gatherv.c">
@@ -3813,6 +4214,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -3876,6 +4283,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -3976,6 +4389,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\topo\graph_map.c">
@@ -4029,6 +4448,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -4090,6 +4515,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\topo\graphcreate.c">
@@ -4143,6 +4574,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -4204,6 +4641,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\topo\graphnbrcnt.c">
@@ -4257,6 +4700,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -4318,6 +4767,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\group\group_difference.c">
@@ -4371,6 +4826,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -4432,6 +4893,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\group\group_free.c">
@@ -4485,6 +4952,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -4546,6 +5019,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\group\group_intersection.c">
@@ -4599,6 +5078,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -4660,6 +5145,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\group\group_range_incl.c">
@@ -4713,6 +5204,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -4774,6 +5271,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\group\group_size.c">
@@ -4827,6 +5330,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -4888,6 +5397,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\group\group_union.c">
@@ -4941,6 +5456,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -5007,6 +5528,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -5107,6 +5634,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\comm\intercomm_merge.c">
@@ -5164,6 +5697,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\iprobe.c">
@@ -5217,6 +5756,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -5281,6 +5826,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\isend.c">
@@ -5337,6 +5888,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -5398,6 +5955,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\attr\keyval_create.c">
@@ -5451,6 +6014,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -5512,6 +6081,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\spawn\lookup_name.c">
@@ -5565,6 +6140,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -5686,6 +6267,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\coll\opland.c">
@@ -5773,6 +6360,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\pack_external_size.c">
@@ -5826,6 +6419,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -5890,6 +6489,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\probe.c">
@@ -5943,6 +6548,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -6004,6 +6615,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\rma\put.c">
@@ -6061,6 +6678,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\init\querythread.c">
@@ -6114,6 +6737,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -6178,6 +6807,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\coll\reduce.c">
@@ -6234,6 +6869,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -6295,6 +6936,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\rsend.c">
@@ -6352,6 +6999,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\rsend_init.c">
@@ -6405,6 +7058,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -6469,6 +7128,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\coll\scatter.c">
@@ -6526,6 +7191,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\coll\scatterv.c">
@@ -6579,6 +7250,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -6649,6 +7326,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\ssend.c">
@@ -6702,6 +7385,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -6763,6 +7452,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\start.c">
@@ -6816,6 +7511,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -6877,6 +7578,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\status_set_cancelled.c">
@@ -6934,6 +7641,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\status_set_elements.c">
@@ -6987,6 +7700,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -7051,6 +7770,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\testall.c">
@@ -7104,6 +7829,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -7165,6 +7896,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\testsome.c">
@@ -7218,6 +7955,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -7282,6 +8025,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\util\mem\trmem.c">
@@ -7338,6 +8087,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -7399,6 +8154,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\type_create_darray.c">
@@ -7452,6 +8213,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -7513,6 +8280,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\type_create_hvector.c">
@@ -7566,6 +8339,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -7627,6 +8406,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\attr\type_create_keyval.c">
@@ -7680,6 +8465,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -7741,6 +8532,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\type_create_struct.c">
@@ -7794,6 +8591,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -7855,6 +8658,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\attr\type_delete_attr.c">
@@ -7908,6 +8717,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -7969,6 +8784,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\type_extent.c">
@@ -8022,6 +8843,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -8083,6 +8910,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\attr\type_free_keyval.c">
@@ -8136,6 +8969,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -8197,6 +9036,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\type_get_contents.c">
@@ -8254,6 +9099,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\type_get_envelope.c">
@@ -8307,6 +9158,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -8371,6 +9228,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\type_get_true_extent.c">
@@ -8427,6 +9290,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -8491,6 +9360,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\attr\type_set_attr.c">
@@ -8548,6 +9423,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\type_set_name.c">
@@ -8601,6 +9482,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -8665,6 +9552,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\type_ub.c">
@@ -8718,6 +9611,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -8785,6 +9684,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\spawn\unpublish_name.c">
@@ -8838,6 +9743,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -8905,6 +9816,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\waitsome.c">
@@ -8958,6 +9875,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -9022,6 +9945,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\rma\win_create.c">
@@ -9075,6 +10004,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -9139,6 +10074,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\attr\win_delete_attr.c">
@@ -9192,6 +10133,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -9253,6 +10200,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\rma\win_free.c">
@@ -9306,6 +10259,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -9367,6 +10326,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\attr\win_get_attr.c">
@@ -9420,6 +10385,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -9484,6 +10455,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\rma\win_get_name.c">
@@ -9537,6 +10514,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -9598,6 +10581,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\rma\win_post.c">
@@ -9655,6 +10644,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\attr\win_set_attr.c">
@@ -9708,6 +10703,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -9772,6 +10773,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\rma\win_start.c">
@@ -9825,6 +10832,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -9886,6 +10899,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\rma\win_unlock.c">
@@ -9939,6 +10958,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -10000,6 +11025,12 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\rma\winutil.c">
@@ -10025,12 +11056,6 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 			</File>
 			<File
 				RelativePath=".\src\mpi\init\mpi_init.h">
-			</File>
-			<File
-				RelativePath=".\src\include\mpichconf.h">
-			</File>
-			<File
-				RelativePath=".\src\include\mpichtimer.h">
 			</File>
 			<File
 				RelativePath=".\src\mpi\comm\mpicomm.h">
@@ -10061,6 +11086,15 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 			</File>
 			<File
 				RelativePath=".\src\include\rlog_macros.h">
+			</File>
+			<File
+				RelativePath="src\include\winmpichconf.h">
+			</File>
+			<File
+				RelativePath="src\include\winmpichtimer.h">
+			</File>
+			<File
+				RelativePath="src\include\winmpidconf.h">
 			</File>
 		</Filter>
 		<Filter

@@ -342,8 +342,8 @@ static inline int easy_get_sock_info(SOCKET sock, char *name, int *port)
 
 static inline void init_state_struct(sock_state_t *p)
 {
-    p->listen_sock = SOCK_INVALID_SOCKET;
-    p->sock = SOCK_INVALID_SOCKET;
+    p->listen_sock = SOCK_INVALID_SOCK;
+    p->sock = SOCK_INVALID_SOCK;
     p->set = INVALID_HANDLE_VALUE;
     p->user_ptr = NULL;
     p->type = 0;
@@ -593,7 +593,7 @@ int sock_post_connect(sock_set_t set, void * user_ptr, char *host, int port, soc
     return SOCK_SUCCESS;
 }
 
-int sock_accept(sock_set_t set, void * user_ptr, sock_t listener, sock_t *accepted)
+int sock_accept(sock_t listener, sock_set_t set, void * user_ptr, sock_t *accepted)
 {
     BOOL b;
     struct linger linger;
@@ -913,10 +913,8 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 	    /* interpret error, return appropriate SOCK_ERR_... macro */
 	    if (error == WAIT_TIMEOUT)
 	    {
-		out->op_type = SOCK_OP_TIMEOUT;
-		out->error = SOCK_ERR_TIMEOUT;
 		MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
-		return SOCK_SUCCESS;
+		return SOCK_ERR_TIMEOUT;
 	    }
 	    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 	    return SOCK_FAIL;

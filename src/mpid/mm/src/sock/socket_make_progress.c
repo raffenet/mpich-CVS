@@ -70,48 +70,46 @@ int socket_make_progress(void)
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_MAKE_PROGRESS);
 
     error = sock_wait(SOCKET_Process.set, 0, &SOCKET_Process.out);
-    if (error != SOCK_SUCCESS)
+    if (error == SOCK_SUCCESS)
     {
-	if (SOCKET_Process.out.error != SOCK_ERR_TIMEOUT)
+	switch (SOCKET_Process.out.op_type)
+	{
+	case SOCK_OP_READ:
+	    socket_handle_read(SOCKET_Process.out.user_ptr, SOCKET_Process.out.num_bytes);
+	    break;
+	case SOCK_OP_WRITE:
+	    socket_handle_written(SOCKET_Process.out.user_ptr, SOCKET_Process.out.num_bytes);
+	    break;
+	case SOCK_OP_CONNECT:
+	    socket_handle_connect(SOCKET_Process.out.user_ptr);
+	    break;
+	case SOCK_OP_ACCEPT:
+	    socket_handle_accept();
+	    break;
+#ifdef MPICH_DEV_BUILD
+	case SOCK_OP_CLOSE:
+	    if (SOCKET_Process.out.user_ptr != NULL)
+	    {
+		MPIU_DBG_PRINTF(("socket(%d) closed.\n", sock_getid(((MPIDI_VC*)SOCKET_Process.out.user_ptr)->data.socket.sock)));
+	    }
+	    else
+	    {
+		MPIU_DBG_PRINTF(("socket closed.\n"));
+	    }
+	    break;
+#endif
+	default:
+	    break;
+	}
+    }
+    else
+    {
+	if (error != SOCK_ERR_TIMEOUT)
 	{
 	    socket_format_sock_error(SOCKET_Process.out.error);
 	    err_printf("socket_make_progress: sock_wait failed, error %d, out.error %d - %s\n", error, 
 		SOCKET_Process.out.error, SOCKET_Process.err_msg);
 	}
-	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_MAKE_PROGRESS);
-	return MPI_SUCCESS;
-    }
-
-    switch (SOCKET_Process.out.op_type)
-    {
-    case SOCK_OP_READ:
-	socket_handle_read(SOCKET_Process.out.user_ptr, SOCKET_Process.out.num_bytes);
-	break;
-    case SOCK_OP_WRITE:
-	socket_handle_written(SOCKET_Process.out.user_ptr, SOCKET_Process.out.num_bytes);
-	break;
-    case SOCK_OP_CONNECT:
-	socket_handle_connect(SOCKET_Process.out.user_ptr);
-	break;
-    case SOCK_OP_ACCEPT:
-	socket_handle_accept();
-	break;
-#ifdef MPICH_DEV_BUILD
-    case SOCK_OP_CLOSE:
-	if (SOCKET_Process.out.user_ptr != NULL)
-	{
-	    MPIU_DBG_PRINTF(("socket(%d) closed.\n", sock_getid(((MPIDI_VC*)SOCKET_Process.out.user_ptr)->data.socket.sock)));
-	}
-	else
-	{
-	    MPIU_DBG_PRINTF(("socket closed.\n"));
-	}
-	break;
-#endif
-    case SOCK_OP_TIMEOUT:
-	break;
-    default:
-	break;
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_MAKE_PROGRESS);
