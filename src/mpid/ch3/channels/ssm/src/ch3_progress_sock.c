@@ -116,7 +116,7 @@ int handle_sock_op(MPIDU_Sock_event_t *event_ptr)
 			if (conn->vc->ssm.sock != conn->sock)
 			{
 			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**bad_sock", "**bad_sock %d %d",
-				MPIDU_Sock_getid(conn->vc->ssm.sock), MPIDU_Sock_getid(conn->sock));
+				MPIDU_Sock_get_sock_id(conn->vc->ssm.sock), MPIDU_Sock_get_sock_id(conn->sock));
 			    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SOCK_OP);
 			    return mpi_errno;
 			}
