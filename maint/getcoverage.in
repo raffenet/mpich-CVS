@@ -44,6 +44,7 @@ $annoteBaseDir = "";
 %AnnoteMissed   = ();   # Clear the mapping of filenames to "missed;total" lines
 %AnnoteFilesToOrig = (); # Map from annoted file key to original name (used for
                          # indexing into AnnoteMissed)
+$gDebug = 0;
 #
 # Keep track of coverage amounts
 $GrandTotal       = 0;
@@ -73,6 +74,10 @@ for (@ARGV) {
 	my $indexdir = $1;
 	$indexfile = "$indexdir/index.htm";
 	$coveredindexfile = "$indexdir/covered.htm";
+	next;
+    }
+    elsif (/-debug/) { 
+    	$gDebug = 1;
 	next;
     }
 
@@ -157,8 +162,8 @@ sub CountUncoveredLines {
 	    while (<FD>) {
 		$linecount++;
 		if (/^\s/) { $fileline++; }
-		if (/^\s+#\s*endif/ || /^\s*#\s*els/
-		    /^\s*-:\s*\d+:#\s*endif/ || /^\s*-:\s*\d+:#\s*els/) { 
+		if (/^\s+#\s*endif/ || /^\s*#\s*els/ ||
+		    /^\s*-:\s*\d+:\s*#\s*endif/ || /^\s*-:\s*\d+:\s*#\s*els/) { 
 		    last; 
 		}
 	    }
@@ -200,7 +205,7 @@ sub CountUncoveredLines {
 		    print STDERR "Possible missing END ERROR HANDLING in $filename at $linecount; saw \"$cleanline\"\n";
 		}
 		if (/^\s*\/\*\s+--END ERROR HANDLING--\s+\*\/\s*/ ||
-		    /^\s*-:\s*\d+:\/\*\s+--END ERROR HANDLING--\s+\*\/\s*/) {
+		    /^\s*-:\s*\d+:\s*\/\*\s+--END ERROR HANDLING--\s+\*\/\s*/) {
 		    last; 
 		}
 	    }
@@ -229,7 +234,7 @@ sub CountUncoveredLines {
 		    last; 
 		}
 		if (/^\s*\/\*\s*--\s*END\s+EXPERIMENTAL\s*--\s*\*\/\s*/ ||
-		    /^\s*-:\s*\d+:\/\*\s*--\s*END\s+EXPERIMENTAL\s*--\s*\*\/\s*/) {
+		    /^\s*-:\s*\d+:\s*\/\*\s*--\s*END\s+EXPERIMENTAL\s*--\s*\*\/\s*/) {
 		    print STDERR "Mangled line: $_";
 		    last; 
 		}
@@ -357,7 +362,9 @@ sub AnnotateUncoveredLines {
 	if (/^\s*\#\#\#\#\#\#?/) {
 	    $newstate = "unex";
 	}
-	elsif (/^\s*[0-9]+\s/) {
+	elsif (/^\s*\d+\s/ ||
+	       /^\s*\d+:\s*\d+:/ ||
+	       /^\s*-:\s*\d+:/) {
 	    $newstate = "exec";
 	}
 	else {
@@ -394,6 +401,7 @@ sub AnnotateUncoveredLines {
 
 	# If there is a change in state, generate the correct code
 	if ($newstate ne $curstate) {
+	    print "Newstate = $newstate\n" if $gDebug;
 	    if ($curstate ne "init") {
 		# Finish off the current state
 		print $outfile "</PRE></TD></TR>";
@@ -419,11 +427,12 @@ sub AnnotateUncoveredLines {
 	if (/^\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/ ||
 	    /^\s*-:\s*\d+:\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
 	    my $sawend = 0;
+	    print "Skipping HAVE_ERROR_CHECKING\n" if $gDebug; 
 	    while (<FD>) {
 		if (!/^\s/) { next; }
 	        print $outfile &HTMLify($_);
 		if (/^\s+\#\s*endif/ || /^\s*\#\s*els/ ||
-		    /^\s*-:\s*\d+:\s+\#\s*endif/ || 
+		    /^\s*-:\s*\d+:\s*\#\s*endif/ || 
 		    /^\s*-:\s*\d+:\s*\#\s*els/) { 
 		    $sawend = 1;
 		    last; 
@@ -439,6 +448,7 @@ sub AnnotateUncoveredLines {
 	if (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\// ||
 	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
 	    my $sawend=0;
+	    print "Skipping BEGIN DEBUG\n" if $gDebug; 
 	    while (<FD>) {
 		if (/^\s/) { print $outfile &HTMLify($_); }
 		if (/^\s*\/\*\s+--END DEBUG--\s+\*\// ||
@@ -457,6 +467,7 @@ sub AnnotateUncoveredLines {
 	if (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\// ||
 	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
 	    my $sawend = 0;
+	    print "Skipping ERROR HANDLING\n" if $gDebug;
 	    while (<FD>) {
 		if (/^\s/) { print $outfile &HTMLify($_); }
 		if (/^\s*\/\*\s+--END ERROR HANDLING--\s+\*\// ||
