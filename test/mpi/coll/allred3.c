@@ -6,6 +6,7 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "mpitest.h"
 
 static char MTEST_Descrip[] = "Test MPI_Allreduce with non-commutative user-define operations";
@@ -23,7 +24,7 @@ void uop( void *cinPtr, void *coutPtr, int *count, MPI_Datatype *dtype )
     const int *cin = (const int *)cinPtr;
     int *cout = (int *)coutPtr;
     int i, j, k, nmat;
-    int tempCol[MAXCOL];
+    int tempcol[MAXCOL];
 
     for (nmat = 0; nmat < *count; nmat++) {
 	for (j=0; j<matSize; j++) {
@@ -89,11 +90,11 @@ static int isIdentity( MPI_Comm comm, int mat[] )
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
-    int rank, size;
+    int errs = 0;
+    int size;
     int minsize = 2, count; 
     MPI_Comm      comm;
-    int *buf, i;
+    int *buf, *bufout;
     MPI_Op op;
     MPI_Datatype mattype;
 
@@ -109,13 +110,13 @@ int main( int argc, char *argv[] )
 	count = 1;
 
 	/* A single matrix, the size of the communicator */
-	MPI_Type_contig( size*size, MPI_INT, &mattype );
+	MPI_Type_contiguous( size*size, MPI_INT, &mattype );
 	MPI_Type_commit( &mattype );
 	
 	buf = (int *)malloc( count * size * size * sizeof(int) );
-	if (!buf) MPI_Abort( MPI_COMM_WORLD, 1, );
+	if (!buf) MPI_Abort( MPI_COMM_WORLD, 1 );
 	bufout = (int *)malloc( count * size * size * sizeof(int) );
-	if (!bufout) MPI_Abort( MPI_COMM_WORLD, 1, );
+	if (!bufout) MPI_Abort( MPI_COMM_WORLD, 1 );
 
 	initMat( comm, buf );
 	MPI_Allreduce( buf, bufout, count, mattype, op, comm );
