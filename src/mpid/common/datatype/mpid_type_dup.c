@@ -81,5 +81,6 @@ int MPID_Type_dup(MPI_Datatype oldtype,
     /* NOTE: new_dtp->handle is filled in by MPIU_Handle_obj_alloc() */
     dlp->handle                = new_dtp->handle;
 
+    *newtype = new_dtp->handle;
     return mpi_errno;
 }

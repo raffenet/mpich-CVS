@@ -82,15 +82,6 @@ int MPID_Type_struct(int count,
 
     MPID_Datatype *new_dtp, *old_dtp;
 
-#if 0
-    MPIU_dbg_printf("MPID_Type_struct: count = %d\n", count);
-    for (i=0; i < count; i++) {
-	MPIU_dbg_printf("\t(blk, disp)[i] = (%d, %x)\n",
-			(int) blocklength_array[i],
-			(int) displacement_array[i]);
-    }
-#endif
-
     if (count == 1) {
 	/* simplest case: count == 1 */
 	/* NOTE: this could be done with a contig with an LB I think? */
@@ -104,20 +95,26 @@ int MPID_Type_struct(int count,
     }
 
     
-    if (HANDLE_GET_KIND(*oldtype_array) != HANDLE_KIND_BUILTIN) all_basics = 0;
-    else if (*oldtype_array == MPI_LB) has_lb = 1;
+    if (*oldtype_array == MPI_LB) has_lb = 1;
     else if (*oldtype_array == MPI_UB) has_ub = 1;
+    else if (HANDLE_GET_KIND(*oldtype_array) != HANDLE_KIND_BUILTIN) {
+	all_basics = 0;
+	nr_real_types = 1;
+    }
+    else {
+	nr_real_types = 1;
+    }
 
     /* have a quick look at the types to see if there are any easy simplifications
      * that we can make.
      */
     for (i=1; i < count; i++) {
-	if (HANDLE_GET_KIND(oldtype_array[i]) != HANDLE_KIND_BUILTIN) {
+	if (oldtype_array[i] == MPI_LB) has_lb = 1;
+	else if (oldtype_array[i] == MPI_UB) has_ub = 1;
+	else if (HANDLE_GET_KIND(oldtype_array[i]) != HANDLE_KIND_BUILTIN) {
 	    all_basics = 0;
 	    nr_real_types++;
 	}
-	else if (oldtype_array[i] == MPI_LB) has_lb = 1;
-	else if (oldtype_array[i] == MPI_UB) has_ub = 1;
 	else /* builtin that isn't an LB or UB */ nr_real_types++;
 
 	if (oldtype_array[i] != *oldtype_array) all_same = 0;
@@ -278,7 +275,7 @@ int MPID_Type_struct(int count,
 	    else real_type_idx = i;
 	}
 
-	if (displacement_array[real_type_idx] == 0 && blocklength_array[real_type_idx] == 0) {
+	if (displacement_array[real_type_idx] == 0 && blocklength_array[real_type_idx] == 1) {
 	    mpi_errno = MPID_Type_dup(oldtype_array[real_type_idx],
 				      newtype);
 	}
@@ -404,22 +401,30 @@ int MPID_Type_struct(int count,
 	     * Note that we're going to get back values in bytes, so that will
 	     * be our new element type.
 	     */
-	    MPID_Segment_init((char *) displacement_array[i],
-			      blocklength_array[i],
-			      oldtype_array[i],
-			      segp);
-
-	    last = nr_pieces;
-	    bytes = INT_MAX;
-	    /* TODO: CREATE MANIPULATION ROUTINES THAT TAKE THE LEN AND DISP
-	     * ARRAYS AND FILL THEM IN DIRECTLY.
-	     */
-	    MPID_Segment_pack_vector(segp,
-				     0,
-				     &bytes, /* don't care, just want it to go */
-				     &iov_array[first],
-				     &last);
-	    first = last;
+	    if (oldtype_array[i] != MPI_UB && oldtype_array[i] != MPI_LB) {
+		int j;
+		MPID_Segment_init((char *) displacement_array[i],
+				  blocklength_array[i],
+				  oldtype_array[i],
+				  segp);
+	    
+		last = nr_pieces;
+		bytes = INT_MAX;
+		/* TODO: CREATE MANIPULATION ROUTINES THAT TAKE THE LEN AND DISP
+		 * ARRAYS AND FILL THEM IN DIRECTLY.
+		 */
+		MPID_Segment_pack_vector(segp,
+					 0,
+					 &bytes, /* don't care, just want it to go */
+					 &iov_array[first],
+					 &last);
+	        for (j=0; j < last; j++) {
+		    MPIU_dbg_printf("a[%d] = (%d, %d)\n", j,
+				    iov_array[i].MPID_IOV_BUF,
+				    iov_array[i].MPID_IOV_LEN);
+		}
+		first = last;
+	    }
 	}
 
 	for (i=0; i < last; i++) {
