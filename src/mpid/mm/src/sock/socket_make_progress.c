@@ -36,12 +36,12 @@ int socket_handle_accept()
 	return -1;
     }
 
-    MPIU_dbg_printf("socket_handle_accept - %d\n", sock_getid(sock));
+    MPIU_dbg_printf("socket_handle_accept(%d)\n", sock_getid(sock));
 
     /* save the socket */
     vc_ptr->data.socket.sock = sock;
 
-    MPIU_dbg_printf("sock_post_read(%d:MPID_Connect_pkt)\n", sock_getid(sock));
+    MPIU_dbg_printf("sock_post_read(%d:context)\n", sock_getid(sock));
 
     if ((error = sock_post_read(sock, &vc_ptr->pkt_car.msg_header.pkt.u.connect, sizeof(MPID_Connect_pkt), NULL)) != SOCK_SUCCESS)
     {
@@ -98,7 +98,10 @@ int socket_make_progress()
 	socket_handle_accept();
 	break;
     case SOCK_OP_CLOSE:
-	MPIU_dbg_printf("socket closed.\n");
+	if (SOCKET_Process.out.user_ptr != NULL)
+	    MPIU_dbg_printf("socket(%d) closed.\n", sock_getid(((MPIDI_VC*)SOCKET_Process.out.user_ptr)->data.socket.sock));
+	else
+	    MPIU_dbg_printf("socket closed.\n");
 	break;
     case SOCK_OP_TIMEOUT:
 	break;

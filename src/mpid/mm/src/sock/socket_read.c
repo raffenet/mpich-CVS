@@ -41,7 +41,7 @@ int socket_read_header(MPIDI_VC *vc_ptr)
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_READ_HEADER);
 #ifdef MPICH_DEV_BUILD
-    if (!vc_ptr->data.socket.state & SOCKET_CONNECTED)
+    if (!(vc_ptr->data.socket.state & SOCKET_CONNECTED))
     {
 	err_printf("socket_read_header called on an unconnected vc\n");
     }
@@ -68,7 +68,7 @@ int socket_read_data(MPIDI_VC *vc_ptr)
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_READ_DATA);
 
 #ifdef MPICH_DEV_BUILD
-    if (vc_ptr->data.socket.state & SOCKET_CONNECTING)
+    if (!(vc_ptr->data.socket.state & SOCKET_CONNECTED))
     {
 	err_printf("Error: socket_read_data called on connecting vc\n");
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_READ_DATA);
@@ -162,9 +162,9 @@ int socket_handle_read_data(MPIDI_VC *vc_ptr, int num_read)
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_HANDLE_READ_DATA);
 
 #ifdef MPICH_DEV_BUILD
-    if (vc_ptr->data.socket.state & SOCKET_CONNECTING)
+    if (!(vc_ptr->data.socket.state & SOCKET_CONNECTED))
     {
-	err_printf("Error: socket_read_data called on connecting vc\n");
+	err_printf("Error: socket_handle_read_data called on connecting vc\n");
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ_DATA);
 	return -1;
     }

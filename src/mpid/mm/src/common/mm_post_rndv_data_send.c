@@ -32,7 +32,7 @@ int mm_post_rndv_data_send(MM_Car *rndv_cts_car_ptr)
     rndv_data_ptr->type = MPID_RNDV_DATA_PKT;
 
     sender_car_ptr->vc_ptr->post_write(sender_car_ptr->vc_ptr, sender_car_ptr);
-    /*mm_dec_cc(sender_car_ptr->request_ptr);*/ /* decrement once for the unsent msg header car */
+    /*mm_dec_cc_atomic(sender_car_ptr->request_ptr);*/ /* decrement once for the unsent msg header car */
 
     MPIDI_FUNC_EXIT(MPID_STATE_MM_POST_RNDV_DATA_SEND);
     return MPI_SUCCESS;

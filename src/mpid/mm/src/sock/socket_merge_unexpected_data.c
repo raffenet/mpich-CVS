@@ -36,7 +36,7 @@ int socket_merge_unexpected_data(MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_MERGE_UNEXPECTED_DATA);
 
-    if (vc_ptr->data.socket.state & SOCKET_CONNECTING)
+    if (!(vc_ptr->data.socket.state & SOCKET_CONNECTED))
     {
 	/*
 	if (socket_read_connecting(vc_ptr) != MPI_SUCCESS)

@@ -30,7 +30,7 @@ int tcp_merge_with_unexpected(MM_Car *posted_car_ptr, MM_Car *unex_car_ptr)
 
     /* mark the head car as completed */
     /*printf("dec cc: read eager head car\n");fflush(stdout);*/
-    mm_dec_cc(posted_car_ptr->request_ptr);
+    mm_dec_cc_atomic(posted_car_ptr->request_ptr);
     posted_car_ptr = posted_car_ptr->next_ptr;
     while (num_left)
     {

@@ -39,7 +39,7 @@ int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	rndv_car_ptr->request_ptr = car_ptr->request_ptr;
 	/* increment the completion counter for this rts packet */
 	/*printf("inc cc: rts\n");fflush(stdout);*/
-	mm_inc_cc(car_ptr->request_ptr);
+	mm_inc_cc_atomic(car_ptr->request_ptr);
 
 	/* set up the rts header packet, pointing it to the original car */
 	rndv_rts_ptr = &rndv_car_ptr->msg_header.pkt.u.hdr;

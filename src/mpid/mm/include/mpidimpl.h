@@ -91,12 +91,9 @@ typedef union VC_Method_data
 #ifdef WITH_METHOD_SOCKET
     struct vc_socket
     {
+	int freeme;
+	struct MPIDI_VC *connect_vc_ptr;
 	int state;
-	/*
-	int connected;
-	int ack_received;
-	int accept_called;
-	*/
 	int connect_state;
 	sock_t sock;
     } socket;
@@ -262,6 +259,8 @@ MPID_Request * mm_request_alloc(void);
 */
 #define mm_inc_cc(request_ptr) (*((request_ptr)->cc_ptr))++
 #define mm_dec_cc(request_ptr) (*((request_ptr)->cc_ptr))--
+#define mm_inc_cc_atomic(request_ptr) (*((request_ptr)->cc_ptr))++
+#define mm_dec_cc_atomic(request_ptr) (*((request_ptr)->cc_ptr))--
 /*
 #define mm_inc_cc(request_ptr) { printf("mm_inc_cc(%d,", (*((request_ptr)->cc_ptr))++); printf("%d)\n", *((request_ptr)->cc_ptr)); fflush(stdout); }
 #define mm_dec_cc(request_ptr) { printf("mm_dec_cc(%d,", (*((request_ptr)->cc_ptr))--); printf("%d)\n", *((request_ptr)->cc_ptr)); fflush(stdout); }

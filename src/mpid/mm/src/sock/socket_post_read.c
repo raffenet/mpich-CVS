@@ -22,9 +22,10 @@ int socket_post_read_pkt(MPIDI_VC *vc_ptr)
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_POST_READ_PKT);
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_POST_READ_PKT);
 
-    MPIU_dbg_printf("*** socket_post_read_pkt - sock %d, num_bytes %d ***\n", sock_getid(vc_ptr->data.socket.sock), sizeof(MPID_Packet));
+    MPIU_dbg_printf("socket_post_read_pkt(%d), %d bytes\n", sock_getid(vc_ptr->data.socket.sock), sizeof(MPID_Packet));
+
 #ifdef MPICH_DEV_BUILD
-    if (!vc_ptr->data.socket.state & SOCKET_CONNECTED)
+    if (!(vc_ptr->data.socket.state & SOCKET_CONNECTED))
     {
 	err_printf("Error: socket_post_read_pkt cannot change to reading_header state until the vc is connected.\n");
     }
@@ -32,7 +33,7 @@ int socket_post_read_pkt(MPIDI_VC *vc_ptr)
     /* possibly insert state to indicate a header is being read? */
     SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_READING_HEADER);
     SOCKET_CLR_BIT(vc_ptr->data.socket.state, SOCKET_READING_DATA);
-    MPIU_dbg_printf("socket state: 0x%x\n", vc_ptr->data.socket.state);
+    /*MPIU_dbg_printf("socket state: 0x%x\n", vc_ptr->data.socket.state);*/
     sock_post_read(vc_ptr->data.socket.sock, &vc_ptr->pkt_car.msg_header.pkt, sizeof(MPID_Packet), NULL);
 
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_POST_READ_PKT);
@@ -41,28 +42,58 @@ int socket_post_read_pkt(MPIDI_VC *vc_ptr)
 
 int socket_handle_read_ack(MPIDI_VC *vc_ptr, int num_read)
 {
+    MPIDI_VC *temp_vc_ptr;
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_HANDLE_READ_ACK);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_HANDLE_READ_ACK);
 
-    MPIU_dbg_printf("socket_handle_read_ack(%d) - %d bytes\n", sock_getid(vc_ptr->data.socket.sock), num_read);
+    /*MPIU_dbg_printf("socket_handle_read_ack(%d) - %d byte\n", sock_getid(vc_ptr->data.socket.sock), num_read);*/
 
     SOCKET_CLR_BIT(vc_ptr->data.socket.connect_state, SOCKET_READING_ACK);
-    SOCKET_CLR_BIT(vc_ptr->data.socket.state, SOCKET_CONNECTING);
+    /*SOCKET_CLR_BIT(vc_ptr->data.socket.state, SOCKET_CONNECTING);*/
 
     switch (vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_in)
     {
     case SOCKET_ACCEPT_CONNECTION:
+	SOCKET_CLR_BIT(vc_ptr->data.socket.state, SOCKET_CONNECTING);
+	/*SOCKET_CLR_BIT(vc_ptr->data.socket.state, SOCKET_ACCEPTING);*/
 	SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_CONNECTED);
-	MPIU_dbg_printf("socket_handle_read_ack - %d = accept\n", sock_getid(vc_ptr->data.socket.sock));
+	/*SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_READ_CONNECTED);*/
+	MPIU_dbg_printf("socket_handle_read_ack(%d) = accept\n", sock_getid(vc_ptr->data.socket.sock));
 	socket_post_read_pkt(vc_ptr);
 	socket_write_aggressive(vc_ptr);
 	break;
     case SOCKET_REJECT_CONNECTION:
-	MPIU_dbg_printf("socket_handle_read_ack - %d = reject\n", sock_getid(vc_ptr->data.socket.sock));
+	/*MPIU_dbg_printf("socket_handle_read_ack(%d) = reject\n", sock_getid(vc_ptr->data.socket.sock));*/
+	if (vc_ptr->data.socket.freeme)
+	{
+	    MPIU_dbg_printf("socket_handle_read_ack(%d) = reject, freeme\n", sock_getid(vc_ptr->data.socket.sock));
+	    /* close the socket in VC */
+	    sock_set_user_ptr(vc_ptr->data.socket.sock, NULL);
+	    MPIU_dbg_printf("sock_post_close(%d)\n", sock_getid(vc_ptr->data.socket.sock));
+	    sock_post_close(vc_ptr->data.socket.sock);
+	    /* copy the temporary VC into the real VC */
+	    temp_vc_ptr = vc_ptr->data.socket.connect_vc_ptr;
+	    vc_ptr->data.socket.sock = temp_vc_ptr->data.socket.sock;
+	    vc_ptr->data.socket.connect_vc_ptr = NULL;
+	    sock_set_user_ptr(vc_ptr->data.socket.sock, vc_ptr);
+	    SOCKET_CLR_BIT(vc_ptr->data.socket.state, SOCKET_CONNECTING);
+	    SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_CONNECTED);
+	    /* post a read of the first header packet */
+	    socket_post_read_pkt(vc_ptr);
+	    socket_write_aggressive(vc_ptr);
+	    /* free the temporary VC */
+	    mm_vc_free(temp_vc_ptr);
+	}
+	else
+	{
+	    MPIU_dbg_printf("socket_handle_read_ack(%d) = reject, !freeme\n", sock_getid(vc_ptr->data.socket.sock));
+	    vc_ptr->data.socket.freeme = TRUE;
+	}
 	break;
     default:
-	MPIU_dbg_printf("socket_handle_read_ack - %d = unknown ack #%d\n", sock_getid(vc_ptr->data.socket.sock), (int)vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_in);
+	MPIU_dbg_printf("socket_handle_read_ack(%d) = unknown ack #%d\n", 
+	    sock_getid(vc_ptr->data.socket.sock), (int)vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_in);
 	break;
     }
 
@@ -70,9 +101,17 @@ int socket_handle_read_ack(MPIDI_VC *vc_ptr, int num_read)
     return MPI_SUCCESS;
 }
 
+void swap_vc_data(MPIDI_VC *v1, MPIDI_VC *v2)
+{
+    MPIDI_VC v;
+    v.data = v1->data;
+    v1->data = v2->data;
+    v2->data = v.data;
+}
+
 int socket_handle_read_connect_pkt(MPIDI_VC *temp_vc_ptr, int num_read)
 {
-    int error;
+    /*int error;*/
     MPIDI_VC *vc_ptr;
     sock_t sock;
     int remote_rank;
@@ -87,61 +126,96 @@ int socket_handle_read_connect_pkt(MPIDI_VC *temp_vc_ptr, int num_read)
     remote_rank = temp_vc_ptr->pkt_car.msg_header.pkt.u.connect.rank;
     sock = temp_vc_ptr->data.socket.sock;
 
-    mm_vc_free(temp_vc_ptr);
-    temp_vc_ptr = NULL;
-
     MPID_Thread_lock(vc_ptr->lock);
     
+    /*
     if ((error = sock_set_user_ptr(sock, vc_ptr)) != SOCK_SUCCESS)
     {
 	socket_print_sock_error(error, "socket_handle_accept: sock_set_user_ptr failed.");
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_ACCEPT);
 	return -1;
     }
+    */
 
     /* Copy this setting from the temporary vc to the real vc */
-    SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_ACCEPTING);
-    /* This is unnecessary because the flag was set in the temporary vc and not this one.
-     * The clr_bit shouldn't do anything but it is here for completeness. */
-    SOCKET_CLR_BIT(vc_ptr->data.socket.connect_state, SOCKET_READING_CONNECT_PKT);
+    /*SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_ACCEPTING);*/
+    SOCKET_CLR_BIT(temp_vc_ptr->data.socket.connect_state, SOCKET_READING_CONNECT_PKT);
 
-    if (vc_ptr->data.socket.state & SOCKET_CONNECTING)
+    if (vc_ptr->data.socket.state & SOCKET_CONNECTING || vc_ptr->data.socket.freeme)
     {
 	/* Head to head connections made.
 	   Keep the connection from the higher rank and close the lower rank socket.
 	 */
+	vc_ptr->data.socket.connect_vc_ptr = temp_vc_ptr;
+	temp_vc_ptr->data.socket.connect_vc_ptr = vc_ptr;
+
 	if (remote_rank > MPIR_Process.comm_world->rank)
 	{
+	    /*
+	    swap_vc_data(vc_ptr, temp_vc_ptr);
+	    sock_set_user_ptr(vc_ptr->data.socket.sock, vc_ptr);
+	    sock_set_user_ptr(temp_vc_ptr->data.socket.sock, temp_vc_ptr);
+	    */
 	    /* close the socket */
-	    MPIU_dbg_printf("closing old socket: %d\n", sock_getid(vc_ptr->data.socket.sock));
+	    /*SOCKET_CLR_BIT(vc_ptr->data.socket.state, SOCKET_ACCEPTING);
+	    SOCKET_CLR_BIT(vc_ptr->data.socket.state, SOCKET_CONNECTING);*/
+	    /*
+	    MPIU_dbg_printf("sock_post_close(%d) - closing connect socket, rank %d < remote_rank %d\n", 
+		sock_getid(vc_ptr->data.socket.sock), MPIR_Process.comm_world->rank, remote_rank);
 	    sock_post_close(vc_ptr->data.socket.sock);
-	    /* save the new connection */
-	    vc_ptr->data.socket.sock = sock;
+	    */
+
+	    /* make the temp VC the real VC */
+	    /* This won't work because there already are aliases to vc_ptr stored in the request structures */
+	    /**(vc_ptr->vc_pptr) = temp_vc_ptr;*/
+
 	    /* send an accept ack */
+	    /*
 	    SOCKET_SET_BIT(vc_ptr->data.socket.connect_state, SOCKET_WRITING_ACK);
 	    MPIU_dbg_printf("sock_post_write(%d:accept ack)\n", sock_getid(sock));
 	    vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_out = SOCKET_ACCEPT_CONNECTION;
 	    sock_post_write(sock, (void*)&vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_out, 1, NULL);
+	    */
+	    temp_vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_out = SOCKET_ACCEPT_CONNECTION;
+	    MPIU_dbg_printf("sock_post_write(%d:accept ack)\n", sock_getid(sock));
 	}
 	else
 	{
+	    /*sock_set_user_ptr(sock, NULL);*/
 	    /* send a reject acknowledgement */
-	    SOCKET_SET_BIT(vc_ptr->data.socket.connect_state, SOCKET_WRITING_ACK);
+	    /*SOCKET_CLR_BIT(vc_ptr->data.socket.state, SOCKET_ACCEPTING);*/
+	    /*
+	    SOCKET_SET_BIT(temp_vc_ptr->data.socket.connect_state, SOCKET_WRITING_ACK);
 	    MPIU_dbg_printf("sock_post_write(%d:reject ack)\n", sock_getid(sock));
-	    vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_out = SOCKET_REJECT_CONNECTION;
-	    sock_post_write(sock, (void*)&vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_out, 1, NULL);
+	    temp_vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_out = SOCKET_REJECT_CONNECTION;
+	    sock_post_write(sock, (void*)&temp_vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_out, 1, NULL);
+	    */
 	    /* close the new socket and keep the old */
-	    MPIU_dbg_printf("closing new socket: %d\n", sock_getid(sock));
+	    /*
+	    MPIU_dbg_printf("sock_post_close(%d) - closing accept socket, rank %d > remote_rank %d\n", 
+		sock_getid(sock), MPIR_Process.comm_world->rank, remote_rank);
 	    sock_post_close(sock);
+	    */
+	    temp_vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_out = SOCKET_REJECT_CONNECTION;
+	    MPIU_dbg_printf("sock_post_write(%d:reject ack)\n", sock_getid(sock));
 	}
+	SOCKET_SET_BIT(temp_vc_ptr->data.socket.connect_state, SOCKET_WRITING_ACK);
+	sock_post_write(sock, (void*)&temp_vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_out, 1, NULL);
     }
     else
     {
+	MPIU_dbg_printf("accepted non-headtohead connection, posting accept ack.\n");
+	/* free the temporary VC */
+	mm_vc_free(temp_vc_ptr);
+	/* move the sock from the temp VC to the real VC */
+	vc_ptr->data.socket.sock = sock;
+	vc_ptr->data.socket.connect_vc_ptr = NULL;
+	sock_set_user_ptr(sock, vc_ptr);
+	/* post an accept acknowledgement */
 	SOCKET_SET_BIT(vc_ptr->data.socket.connect_state, SOCKET_WRITING_ACK);
 	MPIU_dbg_printf("sock_post_write(%d:accept ack)\n", sock_getid(sock));
 	vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_out = SOCKET_ACCEPT_CONNECTION;
 	sock_post_write(sock, (void*)&vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_out, 1, NULL);
-	vc_ptr->data.socket.sock = sock;
     }
     
     MPID_Thread_unlock(vc_ptr->lock);
@@ -155,7 +229,15 @@ int socket_handle_read(MPIDI_VC *vc_ptr, int num_bytes)
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_HANDLE_READ);
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_HANDLE_READ);
 
-    if (vc_ptr->data.socket.state & SOCKET_CONNECT_MASK)
+    if (vc_ptr == NULL)
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ);
+	return MPI_SUCCESS;
+    }
+
+    if (!(vc_ptr->data.socket.state & SOCKET_CONNECTED))
+    {
+    /*if (vc_ptr->data.socket.state & SOCKET_CONNECT_MASK)*/
     {
 	MPIU_dbg_printf("socket_handle_read(%d) - %d bytes\n", sock_getid(vc_ptr->data.socket.sock), num_bytes);
 
@@ -173,11 +255,12 @@ int socket_handle_read(MPIDI_VC *vc_ptr, int num_bytes)
 	}
 	else
 	{
-	    err_printf("socket_read_connecting: unknown ack char #%d received in read function.\n", (int)vc_ptr->pkt_car.msg_header.pkt.u.connect.ack_in);
+	    err_printf("socket_handle_read: unexpectedly read %d bytes while in connecting state.\n", num_bytes);
 	}
 
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ);
 	return MPI_SUCCESS;
+    }
     }
 
     if (vc_ptr->data.socket.state & SOCKET_READING_HEADER)

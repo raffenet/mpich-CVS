@@ -323,7 +323,7 @@ int socket_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 #endif
 	    socket_car_dequeue_write(car_ptr->vc_ptr);
 	    /*printf("dec cc: written vec: %d\n", num_written);fflush(stdout);*/
-	    mm_dec_cc(car_ptr->request_ptr);
+	    mm_dec_cc_atomic(car_ptr->request_ptr);
 	    mm_car_free(car_ptr);
 	}
 	else
@@ -356,7 +356,7 @@ int socket_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 #endif
 	    socket_car_dequeue_write(car_ptr->vc_ptr);
 	    /*printf("dec cc: written tmp buffer: %d\n", num_written);fflush(stdout);*/
-	    mm_dec_cc(car_ptr->request_ptr);
+	    mm_dec_cc_atomic(car_ptr->request_ptr);
 	    mm_car_free(car_ptr);
 	}
 	break;
@@ -385,7 +385,7 @@ int socket_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 #endif
 	    socket_car_dequeue_write(car_ptr->vc_ptr);
 	    /*printf("dec cc: written simple buffer: %d\n", num_written);fflush(stdout);*/
-	    mm_dec_cc(car_ptr->request_ptr);
+	    mm_dec_cc_atomic(car_ptr->request_ptr);
 	    mm_car_free(car_ptr);
 	}
 	break;
@@ -425,7 +425,12 @@ int socket_write_aggressive(MPIDI_VC *vc_ptr)
     int error;
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
+
+    /* This needs to be available until the posted write finishes */
+    /* A quick fix was to copy the array into the sock structure */
+    /* Maybe this array can be kept in the VC */
     MPID_IOV vec[MPID_IOV_LIMIT];
+
     int cur_pos = 0;
     BOOL stop = FALSE;
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_WRITE_AGGRESSIVE);
@@ -434,7 +439,7 @@ int socket_write_aggressive(MPIDI_VC *vc_ptr)
 
     MPIU_dbg_printf("socket_write_aggressive\n");
 
-    if (!vc_ptr->data.socket.state & SOCKET_CONNECTED)
+    if (!(vc_ptr->data.socket.state & SOCKET_CONNECTED))
     {
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_WRITE_AGGRESSIVE);
 	return MPI_SUCCESS;
@@ -519,10 +524,10 @@ int socket_write_aggressive(MPIDI_VC *vc_ptr)
 
     if (cur_pos > 0)
     {
-	MPIU_dbg_printf("posting write on socket %d\n", sock_getid(vc_ptr->data.socket.sock));
 	/* post a write of the data */
 	if (cur_pos == 1)
 	{
+	    MPIU_dbg_printf("sock_post_write(%d), %d bytes\n", sock_getid(vc_ptr->data.socket.sock), vec[0].MPID_IOV_LEN);
 	    if ((error = sock_post_write(vc_ptr->data.socket.sock, vec[0].MPID_IOV_BUF, vec[0].MPID_IOV_LEN, NULL)) != SOCK_SUCCESS)
 	    {
 		socket_print_sock_error(error, "socket_write_aggressive: sock_post_write failed.");
@@ -532,6 +537,22 @@ int socket_write_aggressive(MPIDI_VC *vc_ptr)
 	}
 	else
 	{
+	    /*** debugging printout */
+	    {
+		char str[1024], *s = str;
+		int i, n=0;
+		s += sprintf(s, "sock_post_writev(%d) ", sock_getid(vc_ptr->data.socket.sock));
+		for (i=0; i<cur_pos; i++)
+		{
+		    s += sprintf(s, "%d+", vec[i].SOCK_IOV_LEN);
+		    n += vec[i].MPID_IOV_LEN;
+		}
+		s--;
+		sprintf(s, "=%d bytes\n", n);
+		MPIU_dbg_printf("%s", str);
+	    }
+	    /*** end debugging printout */
+
 	    if ((error = sock_post_writev(vc_ptr->data.socket.sock, vec, cur_pos, NULL)) != SOCK_SUCCESS)
 	    {
 		socket_print_sock_error(error, "socket_write_aggressive: sock_writev failed.");
@@ -551,9 +572,17 @@ int socket_handle_written(MPIDI_VC *vc_ptr, int num_written)
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_HANDLE_WRITTEN);
 
+    if (vc_ptr == NULL)
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_WRITTEN);
+	return MPI_SUCCESS;
+    }
+
     MPIU_dbg_printf("socket_handle_written(%d) - %d bytes\n", sock_getid(vc_ptr->data.socket.sock), num_written);
 
-    if (vc_ptr->data.socket.state & SOCKET_CONNECT_MASK)
+    /*if (vc_ptr->data.socket.state & SOCKET_CONNECT_MASK)*/
+    /*if (!(vc_ptr->data.socket.state & SOCKET_WRITE_CONNECTED))*/
+    if (!(vc_ptr->data.socket.state & SOCKET_CONNECTED))
     {
 	if (vc_ptr->data.socket.connect_state & SOCKET_WRITING_ACK)
 	{

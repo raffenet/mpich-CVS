@@ -323,7 +323,7 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 #endif
 	    tcp_car_dequeue_write(car_ptr->vc_ptr);
 	    /*printf("dec cc: written vec: %d\n", num_written);fflush(stdout);*/
-	    mm_dec_cc(car_ptr->request_ptr);
+	    mm_dec_cc_atomic(car_ptr->request_ptr);
 	    mm_car_free(car_ptr);
 	}
 	else
@@ -356,7 +356,7 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 #endif
 	    tcp_car_dequeue_write(car_ptr->vc_ptr);
 	    /*printf("dec cc: written tmp buffer: %d\n", num_written);fflush(stdout);*/
-	    mm_dec_cc(car_ptr->request_ptr);
+	    mm_dec_cc_atomic(car_ptr->request_ptr);
 	    mm_car_free(car_ptr);
 	}
 	break;
@@ -385,7 +385,7 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 #endif
 	    tcp_car_dequeue_write(car_ptr->vc_ptr);
 	    /*printf("dec cc: written simple buffer: %d\n", num_written);fflush(stdout);*/
-	    mm_dec_cc(car_ptr->request_ptr);
+	    mm_dec_cc_atomic(car_ptr->request_ptr);
 	    mm_car_free(car_ptr);
 	}
 	break;
