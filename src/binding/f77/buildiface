@@ -1356,7 +1356,7 @@ $cchar       This file created by buildiface $arg_string\n";
 	&print_mpif_int( "MPI_$key" );
     }
     # Attributes
-    foreach $key (TAG_UB, HOST, IO, WTIME_IS_GLOBAL, UNIVERSE, LASTUSEDCODE, APPNUM) {
+    foreach $key (TAG_UB, HOST, IO, WTIME_IS_GLOBAL, UNIVERSE_SIZE, LASTUSEDCODE, APPNUM) {
 	# Special cast:  The Fortran versions of these attributes have 
 	# value 1 greater than the C versions
 	$attrval = $mpidef{"MPI_$key"};
@@ -2045,14 +2045,9 @@ sub CheckAutoconf {
 # In MPICH1, there is also code for the case where the sizes of 
 # the C and Fortran integers are not known.  Roughly, the code could look 
 # like
-# #ifdef HAVE_FINT_IS_INT
+# #ifdef SIZEOF_F77_INTEGER = SIZEOF_INT
 #   straight-forward code
 # #else
-# #ifdef HAVE_FINT_TYPE_UNKNOWN
-# if (sizeof(int) == sizeof(MPI_Fint)) {
-#  straight-forward code
-# } else
-# #endif
 # {
 #   code that converts arrays, calls routine, frees arrays
 # }
@@ -2063,6 +2058,14 @@ sub CheckAutoconf {
 # use a predeclared array (and signal an error if too large)
 # For the others, use a predeclared array with a special case
 # for extra-large
+#
+# Scalars:
+# FintToint_in_decl: int *vi$count;
+# FintToint_in_arg: vi$count
+# FintToint_ftoc: vi$count = (int)v$count
+# similar for intToFint_out
+# For arrays,
+# FintTointArray_in_decl ...
 #
 # ----------------------------------------------------------------------------
 # Character buffer handling for choice arguments
