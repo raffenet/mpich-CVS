@@ -14,35 +14,49 @@ def mpiexec():
     xmlForArgsets = []
     xmlString = ""
 
-    configFile = 0
-    if argv[1] == '-configfile':
-        configFile = open(argv[2],'r')
+    if len(argv) < 2:
+	usage()
+    if argv[1] == '-file':
+	if len(argv) != 3:
+	    usage()
+        xmlFilename = argv[2]
+	delXmlFile = 0
     else:
-        argvCopy = argv[1:]
-        argvCopy.append(':')   # stick an extra : on the end
-    argset = get_next_argset()
-    while argset:
-	xmlForArgset = handle_argset(argset)
-	xmlString += xmlForArgset
-	argset = get_next_argset()
-
-    xmlString = "<PMRequests>\n"                             +  \
-                "    <create-process-group\n"                +  \
-                "        totalprocs='%d'\n" % (totalProcs)   +  \
-                "        >\n"                                +  \
-                xmlString                                    +  \
-                "    </create-process-group>\n"              +  \
-                "</PMRequests>\n"
-    xmlFilename = '/tmp/%s_tempxml_%d' % (getpwuid(getuid())[0],getpid())
-    xmlFile = open(xmlFilename,'w')
-    print >>xmlFile, xmlString
-    xmlFile.close()
+        configFile = 0
+        if argv[1] == '-configfile':
+	    if len(argv) != 3:
+	        usage()
+            configFile = open(argv[2],'r')
+        else:
+            argvCopy = argv[1:]
+            argvCopy.append(':')   # stick an extra : on the end
+        argset = get_next_argset()
+        while argset:
+	    xmlForArgset = handle_argset(argset)
+	    xmlString += xmlForArgset
+	    argset = get_next_argset()
+    
+        xmlString = "<PMRequests>\n"                             +  \
+                    "    <create-process-group\n"                +  \
+                    "        totalprocs='%d'\n" % (totalProcs)   +  \
+                    "        >\n"                                +  \
+                    xmlString                                    +  \
+                    "    </create-process-group>\n"              +  \
+                    "</PMRequests>\n"
+        xmlFilename = '/tmp/%s_tempxml_%d' % (getpwuid(getuid())[0],getpid())
+        xmlFile = open(xmlFilename,'w')
+        print >>xmlFile, xmlString
+        xmlFile.close()
+	delXmlFile = 1
     fullDirName = path.abspath(path.split(argv[0])[0])  # normalize for platform also
     mpdrun = path.normpath(fullDirName + '/mpdrun.py')
     if not access(mpdrun,X_OK):
         print 'mpiexec: cannot execute mpdrun %s' % mpdrun
         exit(0);
-    execvpe(mpdrun,[mpdrun,'-mpiexec',xmlFilename],environ)
+    if delXmlFile:
+        execvpe(mpdrun,[mpdrun,'-delxmlfile',xmlFilename],environ)
+    else:
+        execvpe(mpdrun,[mpdrun,'-f',xmlFilename],environ)
     print 'mpiexec: exec failed for %s' % mpdrun
     exit(0);
 
@@ -67,7 +81,9 @@ def get_next_argset():
 
 def handle_argset(argset):
     global totalProcs, nextRange
-    host = ''   # default
+    host  = ''   # default
+    wdir  = path.abspath(getcwd())   # default
+    wpath = environ['PATH']   # default ; avoid name conflict with python path module
     nProcs = 1  # default
     pgmAndArgs = []
     i = 0    # can not use range here
@@ -79,6 +95,15 @@ def handle_argset(argset):
             elif argset[i] == '-host':
                 host = argset[i+1]
                 i += 1
+            elif argset[i] == '-wdir':
+                wdir = argset[i+1]
+                i += 1
+            elif argset[i] == '-path':
+                wpath = argset[i+1]
+                i += 1
+	    else:
+	        print 'unrecognized option: %s' % argset[i]
+		usage()
         else:
             pgmAndArgs.append(argset[i])
         i += 1
@@ -93,9 +118,9 @@ def handle_argset(argset):
         xmlForArgset += "        <host name='%s' range='%d-%d'/>\n" % \
             (host,thisRange[0],thisRange[1])
     xmlForArgset += "        <path name='%s' range='%d-%d'/>\n" % \
-        (environ['PATH'],thisRange[0],thisRange[1])
+        (wpath,thisRange[0],thisRange[1])
     xmlForArgset += "        <cwd name='%s' range='%d-%d'/>\n" % \
-        (path.abspath(getcwd()),thisRange[0],thisRange[1])
+        (wdir,thisRange[0],thisRange[1])
     xmlForArgset += "        <exec name='%s' range='%d-%d'/>\n" % \
         (pgmAndArgs[0],thisRange[0],thisRange[1])
     xmlForArgset += "        <args range='%d-%d'>\n" % \
@@ -108,13 +133,10 @@ def handle_argset(argset):
 
 def usage():
     print ''
-    print 'mpiexec -h '
-    print 'Long options:'
-    print '  --help '
-    print """
-mpiexec does something cool
-mpiexec is cool
-"""
+    print 'mpiexec -n <n> -host <h> -wdir <w> -path <p> cmd args : more_arg_sets : ...'
+    print 'mpiexec -configfile filename  # where filename contains arg_sets'
+    print 'mpiexec -file filename  # where filename contains pre-built xml for mpdrun'
+    exit(-1)
 
 if __name__ == '__main__':
     try:

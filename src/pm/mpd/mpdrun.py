@@ -387,7 +387,7 @@ def process_cmdline_args():
 
     if len(argv) < 3:
         usage()
-    if argv[1] == '-mpiexec':  # special case for MPI
+    if argv[1] == '-delxmlfile':  # special case for mpiexec
         argsFilename = argv[2]   # initialized to '' in main
 	argidx = 3
 	delArgsFile = 1
