@@ -36,6 +36,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     int key_max_sz;
     int val_max_sz;
     char queue_name[100];
+    char *business_card, *bc_orig;
+    int bc_length;
+    char host_description[256];
+    int port;
 
     srand(getpid());
 
@@ -231,14 +235,58 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
     }
+    business_card = MPIU_Malloc(val_max_sz);
+    if (business_card == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	return mpi_errno;
+    }
+    bc_length = val_max_sz;
+    bc_orig = business_card;
 
-    /* put the sock business card */
+    /* add the sock business card pieces */
+    /*
     mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d-sock_businesscard", pg_rank);
     if (mpi_errno < 0 || mpi_errno > key_max_sz)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
 	return mpi_errno;
     }
+    */
+    port = MPIDI_CH3I_Listener_get_port();
+    mpi_errno = MPIDU_Sock_get_host_description(host_description, 256);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_description", 0);
+	return mpi_errno;
+    }
+    mpi_errno = MPIU_Str_add_int_arg(&business_card, &bc_length, MPIDI_CH3I_PORT_KEY, port);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	if (mpi_errno == MPIU_STR_NOMEM)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
+	}
+	else
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	}
+	return mpi_errno;
+    }
+    mpi_errno = MPIU_Str_add_string_arg(&business_card, &bc_length, MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	if (mpi_errno == MPIU_STR_NOMEM)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
+	}
+	else
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	}
+	return mpi_errno;
+    }
+    /*
     mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz);
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -251,6 +299,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
 	return mpi_errno;
     }
+    */
     gethostname(pg->shm_hostname, 256);
     /*
     MPIU_Strncpy(pg->shm_hostname, val, 256);
@@ -260,13 +309,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	return mpi_errno;
     }
     */
-
-#   if defined(DEBUG)
-    {
-	dbg_printf("[%d] Sock business card: <%s>\n", pg_rank, val);
-	fflush(stdout);
-    }
-#   endif
 
 #ifdef USE_MQSHM
 
@@ -359,7 +401,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_tostring", 0);
 	return mpi_errno;
     }
-    /* put the shmem business card */
+    /* add the shmem business card pieces */
+#if 0
     mpi_errno = snprintf(key, key_max_sz, "P%d-shm_businesscard", pg_rank);
     if (mpi_errno < 0 || mpi_errno > key_max_sz)
     {
@@ -375,6 +418,48 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	return mpi_errno;
     }
     MPIU_DBG_PRINTF(("shm_businesscard: %s\n", val));
+#endif
+    mpi_errno = MPIU_Str_add_string_arg(&business_card, &bc_length, MPIDI_CH3I_SHM_HOST_KEY, pg->shm_hostname);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	if (mpi_errno == MPIU_STR_NOMEM)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
+	}
+	else
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	}
+	return mpi_errno;
+    }
+
+    mpi_errno = MPIU_Str_add_string_arg(&business_card, &bc_length, MPIDI_CH3I_SHM_QUEUE_KEY, queue_name);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	if (mpi_errno == MPIU_STR_NOMEM)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
+	}
+	else
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	}
+	return mpi_errno;
+    }
+
+    /* put the business card */
+    mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d-businesscard", pg_rank);
+    if (mpi_errno < 0 || mpi_errno > key_max_sz)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
+	return mpi_errno;
+    }
+    mpi_errno = PMI_KVS_Put(pg->kvs_name, key, bc_orig);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
+	return mpi_errno;
+    }
 
     /* commit the puts */
     mpi_errno = PMI_KVS_Commit(pg->kvs_name);
@@ -394,26 +479,19 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     {
 	for (p = 0; p < pg_size; p++)
 	{
-	    rc = snprintf(key, key_max_sz, "P%d-sock_businesscard", p);
+	    rc = snprintf(key, key_max_sz, "P%d-businesscard", p);
 	    assert(rc > -1 && rc < key_max_sz);
 	    rc = PMI_KVS_Get(pg->kvs_name, key, val);
 	    assert(rc == 0);
 
-	    dbg_printf("[%d] sock_businesscard=%s\n", pg_rank, val);
-
-	    rc = snprintf(key, key_max_sz, "P%d-shm_businesscard", p);
-	    assert(rc > -1 && rc < key_max_sz);
-	    rc = PMI_KVS_Get(pg->kvs_name, key, val);
-	    assert(rc == 0);
-
-	    dbg_printf("[%d] shm_businesscard=%s\n", pg_rank, val);
-	    fflush(stdout);
+	    dbg_printf("[%d] businesscard=%s\n", pg_rank, val);
 	}
     }
 #   endif
     
     MPIU_Free(val);
     MPIU_Free(key);
+    MPIU_Free(bc_orig);
     
     *has_args = TRUE;
     *has_env = TRUE;

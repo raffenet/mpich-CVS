@@ -167,26 +167,28 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
 {
     int mpi_errno;
     char hostname[256];
-    char *queue_name;
+    char queue_name[100];
     MPIDI_CH3I_BootstrapQ queue;
     MPIDI_CH3I_Shmem_queue_info shm_info;
     int i;
 
-    hostname[0] = '\0';
-    MPIU_Strncpy(hostname, business_card, 256);
-    queue_name = strtok(hostname, ":");
-    if (queue_name == NULL)
+    /* get the host and queue from the business card */
+    mpi_errno = MPIU_Str_get_string_arg(business_card, MPIDI_CH3I_SHM_HOST_KEY, hostname, 256);
+    if (mpi_errno != MPIU_STR_SUCCESS)
     {
 	*flag = FALSE;
-	return MPI_SUCCESS;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_shmhost", 0);
+	return mpi_errno;
     }
-    queue_name = strtok(NULL, "\n");
-    if (queue_name == NULL)
+    mpi_errno = MPIU_Str_get_string_arg(business_card, MPIDI_CH3I_SHM_QUEUE_KEY, queue_name, 100);
+    if (mpi_errno != MPIU_STR_SUCCESS)
     {
 	*flag = FALSE;
-	return MPI_SUCCESS;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_shmq", 0);
+	return mpi_errno;
     }
 
+    /* compare this host's name with the business card host name */
     if (strcmp(MPIDI_CH3I_Process.pg->shm_hostname, hostname) != 0)
     {
 	*flag = FALSE;
@@ -269,7 +271,6 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     char * val;
     int key_max_sz;
     int val_max_sz;
-    /*char host[MAXHOSTNAMELEN];*/
     char host_description[256];
     int port;
     int rc;
@@ -282,7 +283,6 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
-    /*assert(vc->ssm.state == MPIDI_CH3I_VC_STATE_UNCONNECTED);*/
     if (vc->ssm.state != MPIDI_CH3I_VC_STATE_UNCONNECTED)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**vc_state", "**vc_state %d", vc->ssm.state);
@@ -292,6 +292,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 
     vc->ssm.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 
+    /* get the business card */
     key_max_sz = PMI_KVS_Get_key_length_max();
     key = MPIU_Malloc(key_max_sz);
     if (key == NULL)
@@ -307,7 +308,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	return mpi_errno;
     }
 
-    rc = snprintf(key, key_max_sz, "P%d-shm_businesscard", vc->ssm.pg_rank);
+    rc = snprintf(key, key_max_sz, "P%d-businesscard", vc->ssm.pg_rank);
     if (rc < 0 || rc > key_max_sz)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", rc);
@@ -320,6 +321,9 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	return mpi_errno;
     }
 
+    MPIU_DBG_PRINTF(("%s: %s\n", key, val));
+
+    /* attempt to connect through shared memory */
     connected = FALSE;
     mpi_errno = MPIDI_CH3I_Shm_connect(vc, val, &connected);
     if (mpi_errno != MPI_SUCCESS)
@@ -360,19 +364,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	return mpi_errno;
     }
 
-    rc = snprintf(key, key_max_sz, "P%d-sock_businesscard", vc->ssm.pg_rank);
-    if (rc < 0 || rc > key_max_sz)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", rc);
-	return mpi_errno;
-    }
-    rc = PMI_KVS_Get(vc->ssm.pg->kvs_name, key, val);
-    if (rc != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", rc);
-	return mpi_errno;
-    }
-
+    /* attempt to connect through sockets */
     mpi_errno = MPIU_Str_get_string_arg(val, MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description, 256);
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
@@ -385,15 +377,6 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_port", 0);
 	return mpi_errno;
     }
-    /*
-    rc = GetHostAndPort(host, &port, val);
-    if (rc != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**post_connect", "**post_connect %s", "GetHostAndPort");
-	return mpi_errno;
-    }
-    */
-    /*MPIU_DBG_PRINTF(("Connecting to: host %s, port %d\n", host, port));*/
 
     conn = connection_alloc();
     if (conn == NULL)
@@ -431,8 +414,6 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	}
 #endif
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**post_connect", 0);
-
-	/*MPID_Abort(NULL, mpi_errno);*/
 
 	vc->ssm.state = MPIDI_CH3I_VC_STATE_FAILED;
 	connection_free(conn);

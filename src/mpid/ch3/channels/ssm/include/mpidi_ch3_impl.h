@@ -231,6 +231,8 @@ int MPIDI_CH3I_Get_business_card(char *value, int length);
 #define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
 #define MPIDI_CH3I_HOST_KEY              "host"
 #define MPIDI_CH3I_PORT_KEY              "port"
+#define MPIDI_CH3I_SHM_HOST_KEY          "shm_host"
+#define MPIDI_CH3I_SHM_QUEUE_KEY         "shm_queue"
 
 #define MPIDI_BOOTSTRAP_NAME_LEN 100
 #define BOOTSTRAP_MAX_NUM_MSGS 2048
