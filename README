@@ -46,6 +46,14 @@ instead return an MPI error code (also an integer).  The implication being that
 while the semantics changed, the type signatures did not.
 *******************************************************************************
 
+The function used to create error codes, MPIR_Err_create_code(), has also
+changed.  It now takes additional parameters, allowing it create a stack of
+errors and making it possible for the reporting function to indicate in which
+function and on which line the error occurred.  It also allows an error
+to be designated as fatal or recoverable.  Fatal errors always result in
+program termination regardless of the error handler installed by the
+application.
+
 A RDMA channel has been added and includes communication methods for shared
 memory and shmem.  This is recent development and the RDMA interface is still
 in flux.
