@@ -43,14 +43,6 @@ AC_ARG_ENABLE(weak-symbols,
     (default)],
 enable_weak=$enableval,enable_weak="yes")
 
-AC_ARG_ENABLE(f90,
-[--enable-f90 - Find and use a Fortran 90 compiler (default:enable)],
-enable_f90=$enableval,enable_f90="yes")
-
-AC_ARG_ENABLE(f90modules,
-[--enable-f90modules - Build an MPI module for use with Fortran 90],
-do_f90_modules=$enableval,do_f90_modules="yes")
-
 AC_ARG_ENABLE(use-pointer,
 [--enable-use-pointer - Use the common pointer extension for MPI_BOTTOM and
     related special values],
@@ -252,19 +244,6 @@ if test -z "$FLINKER" ; then
    FLINKER="$F77"
 fi
 AC_SUBST(FLINKER)
-# We need F90 to get the OFFSET_KIND and ADDRESS_KIND values.
-if test "$enable_f90" != "no" ; then
-    PAC_PROG_F90
-    if test -z "$F90" ; then
-        enable_f90=no
-    else
-        if test -z "$F90LINKER" ; then
-            F90LINKER="$F90"
-        fi
-    fi
-    AC_SUBST(F90LINKER)
-fi
-dnl
 dnl Checks for programs
 PAC_PROG_MAKE
 
@@ -1207,7 +1186,13 @@ if test -n "$F90" ; then
     fi
     PAC_LANG_POP_COMPILERS
 fi
-
+# Make sure that address kind and offset kind have values.
+if test -z "$ADDRESS_KIND" ; then
+    ADDRESS_KIND=0
+fi
+if test -z "$OFFSET_KIND" ; then
+    OFFSET_KIND=0
+fi
 AC_SUBST(ADDRESS_KIND)
 AC_SUBST(OFFSET_KIND)
 #
@@ -1215,65 +1200,6 @@ AC_SUBST(OFFSET_KIND)
 # offsets and for addresses, so that we can pass that information back 
 # up to allow other tools (such as user programs and test suites)
 # to properly declare the variables
-
-dnl Check for other Fortran 90 features, such as different include/use
-dnl module directory and special flags.  Build modules if requested
-if test -n "$F90" -a "$enable_f90" != "no" ; then
-    F90_SUFFIX="$ac_f90ext"
-    # For now, top_srcdir_val is MPIR_HOME; 
-    # The build dir is relative at ../..
-    top_srcdir_val="$MPIR_HOME"
-    if test "$do_f90_modules" = "yes" -a -n "$top_srcdir_val" ; then
-        echo "Setting up F90 Module support"
-	if test ! -d ../../f90modules ; then mkdir ../../f90modules ; fi
-	# if we're the developers, we may need to create the
-	# initial configure files.
-	if test ! -x $top_srcdir_val/f90modules/configure -a \
-	          -s $top_srcdir_val/f90modules/configure.in -a \
-		  -x $top_srcdir_val/f90modules/makeconfigure ; then
-	    (cd $top_srcdir_val/f90modules ; ./makeconfigure)
-	fi
-	# Should F90LINKER be F90TESTLINKER?
-        (cd ../../f90modules ; \
-	            export F90 ; export MPIR_HOME ; export VPATH ; \
-	   	    export libbuild_dir ; export includebuild_dir ; \
-		    export MAKE ; F90LINKER="$F90LINKER" ; \
-		    export F90LINKER ; export F77 ; \
- 	   	    $top_srcdir_val/f90modules/configure --with-mpich)
-        if test ! -s ../../f90modules/Makefile ; then 
-	    # turn off f90
-	    F90=""
-	else		    
- 	    F90_MODINCFLAG="`$MAKE -f ../../f90modules/Makefile f90modflag`"
-  	    F90MODINCSPEC="`$MAKE -f ../../f90modules/Makefile f90modspec`"
-            if test -z "$USER_SET_F90INC" -a -z "$F90INC" ; then 
-	        # This should use a test or try to get it from the f90module.
-	        F90INC=`$MAKE -f ../../f90modules/Makefile f90incflag`
-            fi
-        fi
-    fi
-else 
-     # Remove the f90modules/Makefile since this is the only way
-     # to tell the top-level makefile not to build the f90 modules.
-     # (We need a better way)
-     rm -f ../../f90modules/Makefile
-fi
-AC_SUBST(F90_SUFFIX)
-f90includedir='${includedir}'
-f90libdir='${libdir}'
-AC_SUBST(f90includedir)
-AC_SUBST(f90libdir)
-AC_SUBST(F90_LDFLAGS)
-AC_SUBST(F90INC)
-AC_SUBST(F90_MODINCFLAG)
-AC_SUBST(F90MODINCSPEC)
-AC_SUBST(F90FLAGS)
-AC_SUBST(F90LINKER)
-AC_SUBST(F90LIB_PATH)
-if test -z "$F90_LIBDIR_LEADER" ; then 
-    F90_LIBDIR_LEADER="-L"
-fi
-AC_SUBST(F90_LIBDIR_LEADER)
 
 dnl
 dnl If both C and Fortran are gnu, define the following to simplify 
@@ -1358,30 +1284,4 @@ libbuild_dir=$libbuild_dir
 )
 AC_OUTPUT_COMMANDS([cp mpif.h ../../../src/include])
 AC_OUTPUT(Makefile mpif.h mpif77.conf mpif77 setbotf.f)
-exit 0
-dnl
-dnl The following needs to be moved into AC_OUTPUT_COMMANDS (and generally
-dnl cleaned up)
-dnl Add the following to the output step after the AC_OUTPUT
 
-if test -n "$F90" ; then
-    # Remove all comments from mpif.h
-    /bin/rm -f $includebuild_dir/mpif.h.copy
-    cp $includebuild_dir/mpif.h $includebuild_dir/mpif.h.copy
-    if test "$fixupmpif" = "no" ; then
-	# Regular Fortran doesn't have ! for comments, so we just delete them
-        sed -e '/^C/d' -e 's/\!.*$//g' $includebuild_dir/mpif.h.copy > $includebuild_dir/mpif.h
-    else
-        sed -e 's/^C/\!/g' $includebuild_dir/mpif.h.copy > $includebuild_dir/mpif.h
-    fi
-    /bin/rm -f $includebuild_dir/mpif.h.copy
-else
-    # ROMIO might have added ! comments to mpif.h
-    if test -z "$fixupmpif" -o "$fixupmpif" = "no" ; then
-        /bin/rm -f $includebuild_dir/mpif.h.copy
-        cp $includebuild_dir/mpif.h $includebuild_dir/mpif.h.copy
-	# Regular Fortran doesn't have ! for comments, so we just delete them
-        sed -e '/^C/d' -e 's/\!.*$//g' $includebuild_dir/mpif.h.copy > $includebuild_dir/mpif.h
-        /bin/rm -f $includebuild_dir/mpif.h.copy
-    fi
-fi
