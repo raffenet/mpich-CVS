@@ -1,1 +1,1 @@
-SUBDIRS = util attr datatype coll pt2pt rma spawn
+SUBDIRS = util attr datatype coll pt2pt info rma spawn io
