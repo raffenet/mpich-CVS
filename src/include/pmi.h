@@ -42,6 +42,7 @@ D*/
 #define PMI_ERR_INVALID_VAL_LENGTH  5
 #define PMI_ERR_INVALID_LENGTH      6
 #define PMI_ERR_INIT                7
+#define PMI_ERR_NOMEM               8
 
 typedef int PMI_BOOL;
 #define PMI_TRUE     1
