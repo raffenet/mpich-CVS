@@ -9,11 +9,84 @@
 #include "ad_pvfs2.h"
 #include "ad_pvfs2_common.h"
 
-struct open_status {
+struct open_status_s {
     int error;
     PVFS_pinode_reference pinode_refn;
 };
+typedef struct open_status_s open_status;
     
+    /* steps for getting a handle:  (it gets a little convoluted, but at least
+     * it's deterministic) 
+     * . lookup the file.  
+     * . if lookup succeeds, but we were passed MPI_MODE_EXCL, that's an error
+     * . if lookup fails, the file might not exist. 
+     *		in that case, create the file if we were passed MPI_MODE_CREATE 
+     * . if the create fails, that means someone else created the file between
+     *    our call to lookup and our call to create (like if N processors all
+     *    open the same file with MPI_COMM_SELF)
+     *
+     * the good news is that only one processor does this and broadcasts the
+     * handle to everyone else in the communicator
+     */
+void fake_an_open(ADIO_File fd, PVFS_fs_id fs_id, ADIOI_PVFS2_fs *pvfs2_fs, 
+	open_status *o_status)
+{
+    int ret;
+    PVFS_sysresp_lookup resp_lookup;
+    PVFS_sysresp_getparent resp_getparent;
+    PVFS_sysresp_create resp_create;
+    PVFS_object_attr attribs;
+
+    ADIOI_PVFS2_makeattribs(&attribs);
+
+    memset(&resp_lookup, 0, sizeof(resp_lookup));
+    memset(&resp_getparent, 0, sizeof(resp_getparent));
+    memset(&resp_create, 0, sizeof(resp_create));
+
+    ret = PVFS_sys_lookup(fs_id, fd->filename, 
+	    pvfs2_fs->credentials, &resp_lookup);
+    if ( (ret < 0) ) { /* XXX: check what the error was */
+	if (fd->access_mode & MPI_MODE_CREATE)  {
+	    ret = PVFS_sys_getparent(fs_id, fd->filename, 
+		    pvfs2_fs->credentials, &resp_getparent); 
+	    if (ret < 0) {
+		fprintf(stderr, "pvfs_sys_getparent returns with %d\n", ret);
+		o_status->error = ret;
+		return;
+	    } 
+	    ret = PVFS_sys_create(resp_getparent.basename, 
+		    resp_getparent.parent_refn, attribs, 
+		    pvfs2_fs->credentials, &resp_create); 
+
+	    if (ret < 0) { /* XXX: should only do this for EEXISTS */
+		ret = PVFS_sys_lookup(ADIOI_PVFS2_fs_id_list[0], 
+			fd->filename, pvfs2_fs->credentials, &resp_lookup);
+		if ( ret < 0 ) {
+		    o_status->error = ret;
+		    return;
+		}
+		o_status->error = ret;
+		o_status->pinode_refn = resp_lookup.pinode_refn;
+		return;
+	    }
+	    o_status->pinode_refn = resp_create.pinode_refn;
+	} else {
+	    fprintf(stderr, "cannot create file without MPI_MODE_CREATE\n");
+	    o_status->error = ret;
+	    return;
+	}
+    } else if (fd->access_mode & MPI_MODE_EXCL) {
+	/* lookup should not succeed if opened with EXCL */
+	o_status->error = -1; /* XXX: what should it be? */
+	return;
+    } else {
+	o_status->pinode_refn = resp_lookup.pinode_refn;
+    }
+    o_status->error = ret;
+    return;
+
+}
+
 
 /* if MPI_File_open was called with MPI_MODE_CREATE|MPI_MODE_EXCL, then we have
  * a little problem: our usua open-and-broadcast test will not work because
@@ -21,19 +94,14 @@ struct open_status {
  */
 void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 {
-    int ret, rank;
+    int rank;
     ADIOI_PVFS2_fs *pvfs2_fs;
-    PVFS_object_attr attribs;
-
-    PVFS_sysresp_lookup resp_lookup;
-    PVFS_sysresp_create resp_create;
-    PVFS_sysresp_getparent resp_getparent;
 
     /* since one process is doing the open, that means one process is also
      * doing the error checking.  define a struct for both the pinode and the
      * error code to broadcast to all the processors */
 
-    struct open_status o_status;
+    open_status o_status;
     MPI_Datatype open_status_type;
     MPI_Datatype types[2] = {MPI_INT, MPI_BYTE};
     int lens[2] = {1, sizeof(PVFS_pinode_reference)};
@@ -61,78 +129,47 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 	return;
     }
 
-    ADIOI_PVFS2_makeattribs(&attribs);
     ADIOI_PVFS2_makecredentials(&(pvfs2_fs->credentials));
 
-    /* lookup the file.  if we get an error, it might not exist. in that case,
-     * create the file if we have MPI_MODE_CREATE */
-
     /* we only have to do this on one node. we'll broadcast the handle to
-     * everyone else */
+     * everyone else in the communicator */
+
     if (rank == fd->hints->ranklist[0]) {
-	ret = PVFS_sys_lookup(ADIOI_PVFS2_fs_id_list[0], fd->filename, 
-		pvfs2_fs->credentials, &resp_lookup);
-	if ( (ret < 0) ) {
-	    if (fd->access_mode & MPI_MODE_CREATE)  {
-		ret = PVFS_sys_getparent(ADIOI_PVFS2_fs_id_list[0], 
-			fd->filename, pvfs2_fs->credentials, &resp_getparent);
-		if (ret < 0) {
-		    fprintf(stderr, "pvfs_sys_getparent returns with %d\n", ret);
-		    o_status.error = ret;
-		    goto error_getparent;
-		} 
-		ret = PVFS_sys_create(resp_getparent.basename, 
-		    resp_getparent.parent_refn, attribs, 
-		    pvfs2_fs->credentials, &resp_create); 
-		if (ret < 0) {
-		    fprintf(stderr, "pvfs_sys_create returns with %d\n", ret);
-		    o_status.error = ret;
-		    goto error_create;
-		}
-		o_status.pinode_refn = resp_create.pinode_refn;
-	    } else {
-		fprintf(stderr, "cannot create file without MPI_MODE_CREATE\n");
-		o_status.error = ret;
-		goto error_modes;
-	    }
-	} else if (fd->access_mode & MPI_MODE_EXCL) {
-	    /* lookup should not succeed if opened with EXCL */
-	    o_status.error = -1; /* XXX: what should it be? */
-	    goto error_excl;
-	} else {
-	    o_status.pinode_refn = resp_lookup.pinode_refn;
-	}
-	o_status.error = ret;
+	fake_an_open(fd, ADIOI_PVFS2_fs_id_list[0], pvfs2_fs, &o_status);
     }
-    /* fall through into the error codes: if things went well, we'll have a
-     * real pinode reference */
+
     /* NOTE: if MPI_MODE_EXCL was set, ADIO_Open will call
-     * ADIOI_PVFS2_Open from just one processor.  Since ADIO_Open will call
-     * ADIOI_PVFS2_Open again (but w/o EXCL), we can bail out right here and
-     * return early */
+     * ADIOI_PVFS2_Open from just one processor.  This really confuses MPI when
+     * one procesor on a communicator broadcasts to no listners.  
+     *
+     * Since ADIO_Open will close the file and call ADIOI_PVFS2_Open again (but
+     * w/o EXCL), we can bail out right here and return early */
     if ( (fd->access_mode & MPI_MODE_EXCL)  ) {
-	*error_code = MPI_SUCCESS;
+	if (o_status.error == 0) {
+	    *error_code = MPI_SUCCESS;
+	    fd->fs_ptr = pvfs2_fs;
+	} else {
+	    ADIOI_Free(pvfs2_fs);
+	    ADIOI_PVFS2_pvfs_error_convert(o_status.error, error_code);
+	} 
 	MPI_Type_free(&open_status_type);
-	fd->fs_ptr = pvfs2_fs;
 	return;
     } 
+
     /* broadcast status and (if successful) valid pinode refn */
     MPI_Bcast(MPI_BOTTOM, 1, open_status_type, 0, fd->comm);
-    if (o_status.error != 0 ) {
-	goto error_status;
-    } else {
-	pvfs2_fs->pinode_refn = o_status.pinode_refn;
-	*error_code = MPI_SUCCESS;
-    }
-    MPI_Type_free(&open_status_type);
-    fd->fs_ptr = pvfs2_fs;
-    return;
 
-error_excl:
-error_status:
-error_modes:
-error_create:
-error_getparent:
-    ADIOI_PVFS2_pvfs_error_convert(o_status.error, error_code);
+    if (o_status.error != 0 ) { 
+	ADIOI_Free(pvfs2_fs);
+	ADIOI_PVFS2_pvfs_error_convert(o_status.error, error_code);
+	return;
+    }
+
+    pvfs2_fs->pinode_refn = o_status.pinode_refn;
+    fd->fs_ptr = pvfs2_fs;
+
+    MPI_Type_free(&open_status_type);
+
+    *error_code = MPI_SUCCESS;
     return;
 }
