@@ -317,6 +317,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 #ifdef WITH_METHOD_VIA
     char *temp;
 #endif
+    int i;
     MPIDI_STATE_DECL(MPID_STATE_MM_VC_CONNECT_ALLOC);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MM_VC_CONNECT_ALLOC);
@@ -338,119 +339,163 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
     
     /* choose method */
     
-    /* match socket first so I can test the socket method */
-    /* begin test code ****************/
-    if (strstr(methods, "socket"))
+    for (i=0; i<MPID_Process.num_ordered_methods; i++)
     {
-	/* get the tcp method business card */
-	//dbg_printf("B: remote rank: %d\n", rank);
-	snprintf(key, 100, "business_card_socket:%d", rank);
-	//dbg_printf("+PMI_KVS_Get(%s):", key);
-	PMI_KVS_Get(kvs_name, key, value);
-	//dbg_printf("%s-\n", value);
-
-	/* check to see if we can connect with this business card */
-	if (socket_can_connect(value))
+	switch (MPID_Process.method_order[i])
 	{
-	    /* allocate a vc for this method */
-	    vc_ptr = mm_vc_alloc(MM_SOCKET_METHOD);
-	    /* copy the kvs name and rank into the vc. this may not be necessary */
-	    vc_ptr->pmi_kvsname = kvs_name;
-	    vc_ptr->rank = rank;
-	    /* post a connection request to the method */
-	    socket_post_connect(vc_ptr, value);
-	    
-	    MPIU_Free(value);
-	    MPIU_Free(methods);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
-	    return vc_ptr;
-	}
-    }
-    /* end test code ******************/
-    
 #ifdef WITH_METHOD_SHM
-    if (strstr(methods, "shm"))
-    {
-	/* get the shm method business card */
-	snprintf(key, 100, "business_card_shm:%d", rank);
-	PMI_KVS_Get(kvs_name, key, value);
-	
-	/* check to see if we can connect with this business card */
-	if (shm_can_connect(value))
-	{
-	    /* allocate a vc for this method */
-	    vc_ptr = mm_vc_alloc(MM_SHM_METHOD);
-	    /* copy the kvs name and rank into the vc. this may not be necessary */
-	    vc_ptr->pmi_kvsname = kvs_name;
-	    vc_ptr->rank = rank;
-	    /* post a connection request to the method */
-	    shm_post_connect(vc_ptr, value);
-	    
-	    MPIU_Free(value);
-	    MPIU_Free(methods);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
-	    return vc_ptr;
-	}
-    }
+	case MM_SHM_METHOD:
+	    if (strstr(methods, "shm"))
+	    {
+		/* get the shm method business card */
+		snprintf(key, 100, "business_card_shm:%d", rank);
+		PMI_KVS_Get(kvs_name, key, value);
+		
+		/* check to see if we can connect with this business card */
+		if (shm_can_connect(value))
+		{
+		    /* allocate a vc for this method */
+		    vc_ptr = mm_vc_alloc(MM_SHM_METHOD);
+		    /* copy the kvs name and rank into the vc. this may not be necessary */
+		    vc_ptr->pmi_kvsname = kvs_name;
+		    vc_ptr->rank = rank;
+		    /* post a connection request to the method */
+		    shm_post_connect(vc_ptr, value);
+		    
+		    MPIU_Free(value);
+		    MPIU_Free(methods);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
+		    return vc_ptr;
+		}
+	    }
+	    break;
 #endif
     
 #ifdef WITH_METHOD_VIA_RDMA
-    if (strstr(methods, "via_rdma"))
-    {
-	/* get the via method business card */
-	snprintf(key, 100, "business_card_via_rdma:%d", rank);
-	PMI_KVS_Get(kvs_name, key, value);
-	
-	/* check to see if we can connect with this business card */
-	if (via_rdma_can_connect(value))
-	{
-	    /* allocate a vc for this method */
-	    vc_ptr = mm_vc_alloc(MM_VIA_RDMA_METHOD);
-	    /* copy the kvs name and rank into the vc. this may not be necessary */
-	    vc_ptr->pmi_kvsname = kvs_name;
-	    vc_ptr->rank = rank;
-	    /* post a connection request to the method */
-	    via_rdma_post_connect(vc_ptr, value);
-	    
-	    MPIU_Free(value);
-	    MPIU_Free(methods);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
-	    return vc_ptr;
-	}
-    }
+	case MM_VIA_RDMA_METHOD:
+	    if (strstr(methods, "via_rdma"))
+	    {
+		/* get the via method business card */
+		snprintf(key, 100, "business_card_via_rdma:%d", rank);
+		PMI_KVS_Get(kvs_name, key, value);
+		
+		/* check to see if we can connect with this business card */
+		if (via_rdma_can_connect(value))
+		{
+		    /* allocate a vc for this method */
+		    vc_ptr = mm_vc_alloc(MM_VIA_RDMA_METHOD);
+		    /* copy the kvs name and rank into the vc. this may not be necessary */
+		    vc_ptr->pmi_kvsname = kvs_name;
+		    vc_ptr->rank = rank;
+		    /* post a connection request to the method */
+		    via_rdma_post_connect(vc_ptr, value);
+		    
+		    MPIU_Free(value);
+		    MPIU_Free(methods);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
+		    return vc_ptr;
+		}
+	    }
+	    break;
 #endif
     
 #ifdef WITH_METHOD_VIA
-    /* check for a false match with the via_rdma method */
-    temp = strstr(methods, "via_rdma");
-    if (temp != NULL)
-	*temp = 'x';
-    if (strstr(methods, "via"))
-    {
-	/* get the via rdma method business card */
-	snprintf(key, 100, "business_card_via:%d", rank);
-	PMI_KVS_Get(kvs_name, key, value);
-	
-	/* check to see if we can connect with this business card */
-	if (via_can_connect(value))
-	{
-	    /* allocate a vc for this method */
-	    vc_ptr = mm_vc_alloc(MM_VIA_METHOD);
-	    /* copy the kvs name and rank into the vc. this may not be necessary */
-	    vc_ptr->pmi_kvsname = kvs_name;
-	    vc_ptr->rank = rank;
-	    /* post a connection request to the method */
-	    via_post_connect(vc_ptr, value);
-	    
-	    MPIU_Free(value);
-	    MPIU_Free(methods);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
-	    return vc_ptr;
-	}
-    }
+	case MM_VIA_METHOD:
+	    /* check for a false match with the via_rdma method */
+	    temp = strstr(methods, "via_rdma");
+	    if (temp != NULL)
+		*temp = 'x';
+	    if (strstr(methods, "via"))
+	    {
+		/* get the via rdma method business card */
+		snprintf(key, 100, "business_card_via:%d", rank);
+		PMI_KVS_Get(kvs_name, key, value);
+		
+		/* check to see if we can connect with this business card */
+		if (via_can_connect(value))
+		{
+		    /* allocate a vc for this method */
+		    vc_ptr = mm_vc_alloc(MM_VIA_METHOD);
+		    /* copy the kvs name and rank into the vc. this may not be necessary */
+		    vc_ptr->pmi_kvsname = kvs_name;
+		    vc_ptr->rank = rank;
+		    /* post a connection request to the method */
+		    via_post_connect(vc_ptr, value);
+		    
+		    MPIU_Free(value);
+		    MPIU_Free(methods);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
+		    return vc_ptr;
+		}
+	    }
+	    break;
 #endif
     
 #ifdef WITH_METHOD_TCP
+	case MM_TCP_METHOD:
+	    if (strstr(methods, "tcp"))
+	    {
+		/* get the tcp method business card */
+		snprintf(key, 100, "business_card_tcp:%d", rank);
+		PMI_KVS_Get(kvs_name, key, value);
+		
+		/* check to see if we can connect with this business card */
+		if (tcp_can_connect(value))
+		{
+		    /* allocate a vc for this method */
+		    vc_ptr = mm_vc_alloc(MM_TCP_METHOD);
+		    /* copy the kvs name and rank into the vc. this may not be necessary */
+		    vc_ptr->pmi_kvsname = kvs_name;
+		    vc_ptr->rank = rank;
+		    /* post a connection request to the method */
+		    tcp_post_connect(vc_ptr, value);
+		    
+		    MPIU_Free(value);
+		    MPIU_Free(methods);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
+		    return vc_ptr;
+		}
+	    }
+	    break;
+#endif
+
+#ifdef WITH_METHOD_SOCKET
+	case MM_SOCKET_METHOD:
+	    if (strstr(methods, "socket"))
+	    {
+		/* get the tcp method business card */
+		//dbg_printf("B: remote rank: %d\n", rank);
+		snprintf(key, 100, "business_card_socket:%d", rank);
+		//dbg_printf("+PMI_KVS_Get(%s):", key);
+		PMI_KVS_Get(kvs_name, key, value);
+		//dbg_printf("%s-\n", value);
+		
+		/* check to see if we can connect with this business card */
+		if (socket_can_connect(value))
+		{
+		    /* allocate a vc for this method */
+		    vc_ptr = mm_vc_alloc(MM_SOCKET_METHOD);
+		    /* copy the kvs name and rank into the vc. this may not be necessary */
+		    vc_ptr->pmi_kvsname = kvs_name;
+		    vc_ptr->rank = rank;
+		    /* post a connection request to the method */
+		    socket_post_connect(vc_ptr, value);
+		    
+		    MPIU_Free(value);
+		    MPIU_Free(methods);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
+		    return vc_ptr;
+		}
+	    }
+	    break;
+#endif
+	default:
+	    break;
+	}
+    }
+	    
+#ifdef WITH_METHOD_TCP
+    /* If no method is selected from the ordered list, attempt to make a tcp connection */
     if (strstr(methods, "tcp"))
     {
 	/* get the tcp method business card */

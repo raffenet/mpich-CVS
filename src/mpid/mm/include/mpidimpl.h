@@ -34,27 +34,6 @@ typedef struct OpenPortNode {
     struct OpenPortNode *next;
 } OpenPortNode;
 
-typedef struct MPID_PerProcess {
-      MPID_Thread_lock_t lock;
-      MPID_Thread_lock_t qlock;
-         struct MM_Car * posted_q_head;    /* unmatched posted read operations */
-         struct MM_Car * posted_q_tail;
-         struct MM_Car * unex_q_head;      /* active un-matched read operations */
-         struct MM_Car * unex_q_tail;
-      MPID_Thread_lock_t cqlock;
-         struct MM_Car * cq_head;          /* completion queue head */
-         struct MM_Car * cq_tail;          /* completion queue tail */
-                    char pmi_kvsname[MM_KVS_NAME_LENGTH];
-             MPID_Comm * comm_parent;
-          OpenPortNode * port_list;
-          BlockAllocator VCTable_allocator; /* memory allocator for vc tables */
-          BlockAllocator VC_allocator;      /* memory allocator for vc's */
-       struct MPIDI_VC * packer_vc_ptr;
-       struct MPIDI_VC * unpacker_vc_ptr;
-} MPID_PerProcess;
-
-extern MPID_PerProcess MPID_Process;
-
 typedef enum MM_METHOD { 
     MM_NULL_METHOD,
     MM_UNBOUND_METHOD,
@@ -80,6 +59,29 @@ typedef enum MM_METHOD {
 #endif
     MM_END_MARKER_METHOD
 } MM_METHOD;
+
+typedef struct MPID_PerProcess {
+      MPID_Thread_lock_t lock;
+      MPID_Thread_lock_t qlock;
+         struct MM_Car * posted_q_head;    /* unmatched posted read operations */
+         struct MM_Car * posted_q_tail;
+         struct MM_Car * unex_q_head;      /* active un-matched read operations */
+         struct MM_Car * unex_q_tail;
+      MPID_Thread_lock_t cqlock;
+         struct MM_Car * cq_head;          /* completion queue head */
+         struct MM_Car * cq_tail;          /* completion queue tail */
+                    char pmi_kvsname[MM_KVS_NAME_LENGTH];
+             MPID_Comm * comm_parent;
+          OpenPortNode * port_list;
+          BlockAllocator VCTable_allocator; /* memory allocator for vc tables */
+          BlockAllocator VC_allocator;      /* memory allocator for vc's */
+       struct MPIDI_VC * packer_vc_ptr;
+       struct MPIDI_VC * unpacker_vc_ptr;
+               MM_METHOD method_order[MM_END_MARKER_METHOD];
+	             int num_ordered_methods;
+} MPID_PerProcess;
+
+extern MPID_PerProcess MPID_Process;
 
 typedef union VC_Method_data
 {

@@ -10,6 +10,161 @@
 
 MPID_PerProcess MPID_Process;
 
+static void order_methods_from_environment()
+{
+    char *pEnv, *order, *orig;
+    unsigned int i;
+    
+    pEnv = getenv("MPICH_MM_ORDER");
+
+    if (!pEnv)
+	return;
+
+    orig = order = strdup(pEnv);
+    if (order == NULL)
+	return;
+    for (i=0; i<strlen(order); i++)
+	order[i] = toupper(order[i]);
+    order = strtok(order, ":");
+
+    MPID_Process.num_ordered_methods = 0;
+
+    while (order)
+    {
+	if (MPID_Process.num_ordered_methods == MM_END_MARKER_METHOD)
+	{
+	    free(orig);
+	    return;
+	}
+
+#ifdef WITH_METHOD_SHM
+	if (strcmp(order, "SHM") == 0)
+	{
+	    MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_SHM_METHOD;
+	    MPID_Process.num_ordered_methods++;
+	}
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+	if (strcmp(order, "VIA_RDMA") == 0)
+	{
+	    MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_VIA_RDMA_METHOD;
+	    MPID_Process.num_ordered_methods++;
+	}
+#endif
+#ifdef WITH_METHOD_VIA
+	if (strcmp(order, "VIA") == 0)
+	{
+	    MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_VIA_METHOD;
+	    MPID_Process.num_ordered_methods++;
+	}
+#endif
+#ifdef WITH_METHOD_TCP
+	if (strcmp(order, "TCP") == 0)
+	{
+	    MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_TCP_METHOD;
+	    MPID_Process.num_ordered_methods++;
+	}
+#endif
+#ifdef WITH_METHOD_SOCKET
+	if ((strcmp(order, "SOCKET") == 0) || (strcmp(order, "SOCK") == 0))
+	{
+	    MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_SOCKET_METHOD;
+	    MPID_Process.num_ordered_methods++;
+	}
+#endif
+#ifdef WITH_METHOD_NEW
+	if (strcmp(order, "NEW") == 0)
+	{
+	    MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_NEW_METHOD;
+	    MPID_Process.num_ordered_methods++;
+	}
+#endif
+	order =  strtok(NULL, ":");
+    }
+
+    free(orig);
+}
+
+static void order_methods()
+{
+    int i, found;
+
+    MPID_Process.num_ordered_methods = 0;
+    order_methods_from_environment();
+#ifdef WITH_METHOD_SHM
+    for (i=0, found = FALSE; i<MPID_Process.num_ordered_methods; i++)
+    {
+	if (MPID_Process.method_order[i] == MM_SHM_METHOD)
+	    found = TRUE;
+    }
+    if (!found)
+    {
+	MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_SHM_METHOD;
+	MPID_Process.num_ordered_methods++;
+    }
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+    for (i=0, found = FALSE; i<MPID_Process.num_ordered_methods; i++)
+    {
+	if (MPID_Process.method_order[i] == MM_VIA_RDMA_METHOD)
+	    found = TRUE;
+    }
+    if (!found)
+    {
+	MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_VIA_RDMA_METHOD;
+	MPID_Process.num_ordered_methods++;
+    }
+#endif
+#ifdef WITH_METHOD_VIA
+    for (i=0, found = FALSE; i<MPID_Process.num_ordered_methods; i++)
+    {
+	if (MPID_Process.method_order[i] == MM_VIA_METHOD)
+	    found = TRUE;
+    }
+    if (!found)
+    {
+	MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_VIA_METHOD;
+	MPID_Process.num_ordered_methods++;
+    }
+#endif
+#ifdef WITH_METHOD_TCP
+    for (i=0, found = FALSE; i<MPID_Process.num_ordered_methods; i++)
+    {
+	if (MPID_Process.method_order[i] == MM_TCP_METHOD)
+	    found = TRUE;
+    }
+    if (!found)
+    {
+	MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_TCP_METHOD;
+	MPID_Process.num_ordered_methods++;
+    }
+#endif
+#ifdef WITH_METHOD_SOCKET
+    for (i=0, found = FALSE; i<MPID_Process.num_ordered_methods; i++)
+    {
+	if (MPID_Process.method_order[i] == MM_SOCKET_METHOD)
+	    found = TRUE;
+    }
+    if (!found)
+    {
+	MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_SOCKET_METHOD;
+	MPID_Process.num_ordered_methods++;
+    }
+#endif
+#ifdef WITH_METHOD_NEW
+    for (i=0, found = FALSE; i<MPID_Process.num_ordered_methods; i++)
+    {
+	if (MPID_Process.method_order[i] == MM_NEW_METHOD)
+	    found = TRUE;
+    }
+    if (!found)
+    {
+	MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_NEW_METHOD;
+	MPID_Process.num_ordered_methods++;
+    }
+#endif
+}
+
 /*@
    MPID_Init - Initialize the mm device
 
@@ -189,6 +344,10 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, sCapabilities);
     /*dbg_printf("-\n+PMI_KVS_Commit");*/
     PMI_KVS_Commit(MPID_Process.pmi_kvsname);
+
+    /* order the methods in the way inter-process connections should be attempted */
+    order_methods();
+    
     /*dbg_printf("-\n+PMI_Barrier");*/
     PMI_Barrier();
     /*dbg_printf("-\n");*/
