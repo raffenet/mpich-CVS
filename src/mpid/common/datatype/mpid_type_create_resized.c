@@ -55,9 +55,8 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 	new_dtp->is_contig      = (extent == oldsize) ? 1 : 0;
         new_dtp->eltype         = oldtype;
 
-	/* allocate dataloop */
-	new_dtp->dataloop_size = sizeof(struct MPID_Dataloop);
-	dlp               = MPID_Dataloop_alloc(sizeof(struct MPID_Dataloop));
+	MPID_Dataloop_alloc(DLOOP_KIND_CONTIG, 1, &dlp,
+			    &(new_dtp->dataloop_size));
 	/* --BEGIN ERROR HANDLING-- */
 	if (dlp == NULL) return MPIDI_Type_create_resized_memory_error();
 	/* --END ERROR HANDLING-- */
@@ -82,7 +81,7 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 	new_dtp->size           = old_dtp->size;
 	new_dtp->has_sticky_ub  = 1;
 	new_dtp->has_sticky_lb  = 1;
-	new_dtp->dataloop_depth = 1;
+	new_dtp->dataloop_depth = old_dtp->dataloop_depth;
 	new_dtp->true_lb        = old_dtp->true_lb;
 	new_dtp->lb             = lb;
 	new_dtp->true_ub        = old_dtp->true_ub;
@@ -91,24 +90,19 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 	new_dtp->alignsize      = old_dtp->alignsize;
 	new_dtp->n_elements     = old_dtp->n_elements;
 	new_dtp->element_size   = old_dtp->element_size;
+        new_dtp->eltype         = old_dtp->eltype;
 
 	/* TODO: COULD BE MORE AGGRESSIVE ON IS_CONTIG */
 	new_dtp->is_contig      =
 	    (extent == old_dtp->size) ? old_dtp->is_contig : 0;
-        new_dtp->eltype         = old_dtp->eltype;
 
-	/* allocate dataloop */
-	new_dtp->dataloop_size = old_dtp->dataloop_size;
-	dlp               = MPID_Dataloop_alloc(new_dtp->dataloop_size);
+	MPID_Dataloop_dup(old_dtp->dataloop, old_dtp->dataloop_size, &dlp);
 	/* --BEGIN ERROR HANDLING-- */
 	if (dlp == NULL) return MPIDI_Type_create_resized_memory_error();
 	/* --END ERROR HANDLING-- */
 
-	new_dtp->dataloop = dlp;
-
-	/* make a copy of the dataloop from the old type (no changes) */
-	curpos = (char *) dlp;
-	MPID_Dataloop_copy(curpos, old_dtp->dataloop, old_dtp->dataloop_size);
+	new_dtp->dataloop      = dlp;
+	new_dtp->dataloop_size = old_dtp->dataloop_size;
     }
 
     *newtype_p = new_dtp->handle;

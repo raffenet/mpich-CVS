@@ -45,7 +45,7 @@ int MPID_Type_indexed(int count,
 		      MPI_Datatype oldtype,
 		      MPI_Datatype *newtype)
 {
-    int mpi_errno = MPI_SUCCESS;
+    int err, mpi_errno = MPI_SUCCESS;
     int is_builtin, old_is_contig;
     int i, contig_count;
     int el_sz, el_ct, old_ct, old_sz;
@@ -226,27 +226,39 @@ int MPID_Type_indexed(int count,
     }
 
     /* fill in dataloop(s) */
-    mpi_errno = MPID_Dataloop_create_indexed(count,
-					     blocklength_array,
-					     displacement_array,
-					     dispinbytes,
-					     oldtype,
-					     &(new_dtp->dataloop),
-					     &(new_dtp->dataloop_size),
-					     &(new_dtp->dataloop_depth),
-					     0);
-    if (mpi_errno == MPI_SUCCESS) {
+    err = MPID_Dataloop_create_indexed(count,
+				       blocklength_array,
+				       displacement_array,
+				       dispinbytes,
+				       oldtype,
+				       &(new_dtp->dataloop),
+				       &(new_dtp->dataloop_size),
+				       &(new_dtp->dataloop_depth),
+				       0);
+    if (!err) {
 	/* heterogeneous dataloop representation */
-	mpi_errno = MPID_Dataloop_create_indexed(count,
-						 blocklength_array,
-						 displacement_array,
-						 dispinbytes,
-						 oldtype,
-						 &(new_dtp->hetero_dloop),
-						 &(new_dtp->hetero_dloop_size),
-						 &(new_dtp->hetero_dloop_depth),
-						 0);
+	err = MPID_Dataloop_create_indexed(count,
+					   blocklength_array,
+					   displacement_array,
+					   dispinbytes,
+					   oldtype,
+					   &(new_dtp->hetero_dloop),
+					   &(new_dtp->hetero_dloop_size),
+					   &(new_dtp->hetero_dloop_depth),
+					   0);
     }
+    /* --BEGIN ERROR HANDLING-- */
+    if (err) {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+					 MPIR_ERR_RECOVERABLE,
+					 "MPID_Dataloop_create_blockindexed",
+					 __LINE__,
+					 MPI_ERR_OTHER,
+					 "**nomem",
+					 0);
+	return mpi_errno;
+    }
+    /* --END ERROR HANDLING-- */
 
     *newtype = new_dtp->handle;
     return mpi_errno;
@@ -324,7 +336,7 @@ int MPIDI_Type_indexed_count_contig(int count,
 
 static int MPIDI_Type_indexed_zero_size(MPID_Datatype *new_dtp)
 {
-    int mpi_errno;
+    int err, mpi_errno = MPI_SUCCESS;
     new_dtp->has_sticky_ub = 0;
     new_dtp->has_sticky_lb = 0;
     
@@ -342,27 +354,39 @@ static int MPIDI_Type_indexed_zero_size(MPID_Datatype *new_dtp)
     new_dtp->n_elements = 0;
     new_dtp->is_contig  = 1;
     
-    mpi_errno = MPID_Dataloop_create_indexed(0,
-					     NULL,
-					     NULL,
-					     0,
-					     MPI_INT, /* dummy type */
-					     &(new_dtp->dataloop),
-					     &(new_dtp->dataloop_size),
-					     &(new_dtp->dataloop_depth),
-					     0);
-    if (mpi_errno == MPI_SUCCESS) {
+    err = MPID_Dataloop_create_indexed(0,
+				       NULL,
+				       NULL,
+				       0,
+				       MPI_INT, /* dummy type */
+				       &(new_dtp->dataloop),
+				       &(new_dtp->dataloop_size),
+				       &(new_dtp->dataloop_depth),
+				       0);
+    if (!err) {
 	/* heterogeneous dataloop representation */
-	mpi_errno = MPID_Dataloop_create_indexed(0,
-						 NULL,
-						 NULL,
-						 0,
-						 MPI_INT,
-						 &(new_dtp->hetero_dloop),
-						 &(new_dtp->hetero_dloop_size),
-						 &(new_dtp->hetero_dloop_depth),
-						 0);
+	err = MPID_Dataloop_create_indexed(0,
+					   NULL,
+					   NULL,
+					   0,
+					   MPI_INT,
+					   &(new_dtp->hetero_dloop),
+					   &(new_dtp->hetero_dloop_size),
+					   &(new_dtp->hetero_dloop_depth),
+					   0);
     }
-    
+    /* --BEGIN ERROR HANDLING-- */
+    if (err) {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+					 MPIR_ERR_RECOVERABLE,
+					 "MPID_Dataloop_create_blockindexed",
+					 __LINE__,
+					 MPI_ERR_OTHER,
+					 "**nomem",
+					 0);
+	return mpi_errno;
+    }
+    /* --END ERROR HANDLING-- */
+
     return mpi_errno;
 }

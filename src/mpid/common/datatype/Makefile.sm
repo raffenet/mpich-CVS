@@ -1,6 +1,5 @@
-lib${MPILIBNAME}_a_SOURCES = gen_segment.c \
+lib${MPILIBNAME}_a_SOURCES = \
 	mpid_type_debug.c \
-	gen_dataloop.c \
 	mpid_segment.c \
 	mpid_ext32_segment.c \
 	mpid_ext32_datatype.c \
@@ -9,21 +8,23 @@ lib${MPILIBNAME}_a_SOURCES = gen_segment.c \
 	mpir_type_flatten.c \
 	mpid_type_commit.c \
 	mpid_type_vector.c \
-	gen_type_vector.c \
 	mpid_type_contiguous.c \
-	gen_type_contiguous.c \
 	mpid_type_create_resized.c \
 	mpid_type_blockindexed.c \
-	gen_type_blockindexed.c \
 	mpid_type_indexed.c \
-	gen_type_indexed.c \
 	mpid_type_struct.c \
-	gen_type_struct.c \
 	mpid_type_get_envelope.c \
 	mpid_datatype_free.c \
 	mpid_datatype_contents.c \
 	mpid_type_get_contents.c \
-	mpid_type_create_pairtype.c
+	mpid_type_create_pairtype.c \
+	gen_segment.c \
+	gen_dataloop.c \
+	gen_type_contiguous.c \
+	gen_type_vector.c \
+	gen_type_blockindexed.c \
+	gen_type_indexed.c \
+	gen_type_struct.c
 
 HEADERS = gen_dataloop.h mpid_dataloop.h mpid_datatype.h \
 	mpid_ext32_segment.h segment_states.h

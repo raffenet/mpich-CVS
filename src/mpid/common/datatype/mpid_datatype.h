@@ -550,8 +550,26 @@ void MPID_Dataloop_copy(void *dest,
 void MPID_Dataloop_print(struct MPID_Dataloop *dataloop,
 			 int depth);
 
-struct MPID_Dataloop * MPID_Dataloop_alloc(int sz);
+void MPID_Dataloop_alloc(int kind,
+			 int count,
+			 DLOOP_Dataloop **new_loop_p,
+			 int *new_loop_sz_p);
 
+void MPID_Dataloop_alloc_and_copy(int kind,
+				  int count,
+				  struct DLOOP_Dataloop *old_loop,
+				  int old_loop_sz,
+				  struct DLOOP_Dataloop **new_loop_p,
+				  int *new_loop_sz_p);
+void MPID_Dataloop_struct_alloc(int count,
+				int old_loop_sz,
+				int basic_ct,
+				DLOOP_Dataloop **old_loop_p,
+				DLOOP_Dataloop **new_loop_p,
+				int *new_loop_sz_p);
+void MPID_Dataloop_dup(DLOOP_Dataloop *old_loop,
+		       int old_loop_sz,
+		       DLOOP_Dataloop **new_loop_p);
 void MPID_Dataloop_free(struct MPID_Dataloop **dataloop);
 
 /* Segment functions */

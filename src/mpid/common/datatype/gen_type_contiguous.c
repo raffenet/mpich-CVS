@@ -9,7 +9,7 @@
 #include <mpiimpl.h>
 
 /*@
-   MPID_Dataloop_contiguous - create the dataloop representation for a
+   Dataloop_contiguous - create the dataloop representation for a
    contiguous datatype
 
    Arguments:
@@ -21,7 +21,7 @@
 -  int flags
 
 .N Errors
-.N MPI_SUCCESS
+.N Returns 0 on success, -1 on failure.
 @*/
 int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
 					       DLOOP_Type oldtype,
@@ -30,7 +30,7 @@ int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
 					       int *dldepth_p,
 					       int flags)
 {
-    int mpi_errno, is_builtin, apply_contig_coalescing = 0;
+    int is_builtin, apply_contig_coalescing = 0;
     int new_loop_sz, new_loop_depth;
 
     DLOOP_Dataloop *new_dlp;
@@ -39,7 +39,6 @@ int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
 
     if (is_builtin)
     {
-	new_loop_sz    = sizeof(DLOOP_Dataloop);
 	new_loop_depth = 1;
     }
     else
@@ -60,34 +59,25 @@ int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
 	{
 	    /* will just copy contig and multiply count */
 	    apply_contig_coalescing = 1;
-	    new_loop_sz             = old_loop_sz;
 	    new_loop_depth          = old_loop_depth;
 	}
 	else
 	{
-	    /* TODO: ACCOUNT FOR PADDING IN LOOP_SZ HERE */
-	    new_loop_sz    = sizeof(DLOOP_Dataloop) + old_loop_sz;
 	    new_loop_depth = old_loop_depth + 1;
 	}
-    }
-
-    new_dlp = PREPEND_PREFIX(Dataloop_alloc)(new_loop_sz);
-    if (!new_dlp) {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
-					 MPIR_ERR_RECOVERABLE,
-					 "MPID_Dataloop_create_contiguous",
-					 __LINE__,
-					 MPI_ERR_OTHER,
-					 "**nomem",
-					 0);
-	return mpi_errno;
-	/* --END ERROR HANDLING-- */
     }
 
     if (is_builtin)
     {
 	int basic_sz = 0;
+
+	PREPEND_PREFIX(Dataloop_alloc)(DLOOP_KIND_CONTIG,
+				       count,
+				       &new_dlp,
+				       &new_loop_sz);
+	/* --BEGIN ERROR HANDLING-- */
+	if (!new_dlp) return -1;
+	/* --END ERROR HANDLING-- */
 
 	DLOOP_Handle_get_size_macro(oldtype, basic_sz);
 	new_dlp->kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
@@ -106,8 +96,6 @@ int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
 	    new_dlp->el_type   = oldtype;
 	}
 
-	new_dlp->loop_params.c_t.dataloop = NULL;
-
 	new_dlp->loop_params.c_t.count = count;
     }
     else
@@ -121,27 +109,43 @@ int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
 
 	if (apply_contig_coalescing)
 	{
-	    PREPEND_PREFIX(Dataloop_copy)(new_dlp, old_loop_ptr,
-					  old_loop_sz);
+	    /* make a copy of the old loop and multiply the count */
+	    PREPEND_PREFIX(Dataloop_dup)(old_loop_ptr,
+					 old_loop_sz,
+					 &new_dlp);
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (!new_dlp) return -1;
+	    /* --END ERROR HANDLING-- */
+
 	    new_dlp->loop_params.c_t.count *= count;
+
+	    new_loop_sz = old_loop_sz;
+	    DLOOP_Handle_get_loopdepth_macro(oldtype, new_loop_depth, 0);
 	}
 	else
 	{
-	    char *curpos;
+	    DLOOP_Dataloop *old_loop_ptr;
+	    int old_loop_sz = 0;
+
+	    DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, 0);
+	    DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, 0);
+
+	    /* allocate space for new loop including copy of old */
+	    PREPEND_PREFIX(Dataloop_alloc_and_copy)(DLOOP_KIND_CONTIG,
+						    count,
+						    old_loop_ptr,
+						    old_loop_sz,
+						    &new_dlp,
+						    &new_loop_sz);
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (!new_dlp) return -1;
+	    /* --END ERROR HANDLING-- */
 
 	    new_dlp->kind = DLOOP_KIND_CONTIG;
 	    DLOOP_Handle_get_size_macro(oldtype, new_dlp->el_size);
 	    DLOOP_Handle_get_extent_macro(oldtype, new_dlp->el_extent);
 	    DLOOP_Handle_get_basic_type_macro(oldtype, new_dlp->el_type);
 	    
-	    /* copy in old dataloop */
-	    curpos = (char *) new_dlp;
-	    curpos += sizeof(DLOOP_Dataloop);
-	    /* TODO: ACCOUNT FOR PADDING HERE */
-	    
-	    PREPEND_PREFIX(Dataloop_copy)(curpos, old_loop_ptr, old_loop_sz);
-
-	    new_dlp->loop_params.c_t.dataloop = (DLOOP_Dataloop *) curpos;
 	    new_dlp->loop_params.c_t.count = count;
 	}
     }
@@ -150,5 +154,5 @@ int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
     *dlsz_p    = new_loop_sz;
     *dldepth_p = new_loop_depth;
 
-    return MPI_SUCCESS;
+    return 0;
 }

@@ -9,7 +9,7 @@
 #include <mpiimpl.h>
 
 /*@
-   MPID_Dataloop_create_vector
+   Dataloop_create_vector
 
    Arguments:
 +  int count
@@ -22,6 +22,8 @@
 .  int *dldepth_p
 -  int flags
 
+   Returns 0 on success, -1 on failure.
+
 @*/
 int PREPEND_PREFIX(Dataloop_create_vector)(int count,
 					   int blocklength,
@@ -33,7 +35,7 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
 					   int *dldepth_p,
 					   int flags)
 {
-    int mpi_errno, is_builtin;
+    int err, is_builtin;
     int new_loop_sz, new_loop_depth;
 
     DLOOP_Dataloop *new_dlp;
@@ -44,13 +46,13 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
     if (count == 0 || blocklength == 0)
     {
 
-	mpi_errno = PREPEND_PREFIX(Dataloop_create_contiguous)(0,
-							       MPI_INT,
-							       dlp_p,
-							       dlsz_p,
-							       dldepth_p,
-							       flags);
-	return mpi_errno;
+	err = PREPEND_PREFIX(Dataloop_create_contiguous)(0,
+							 MPI_INT,
+							 dlp_p,
+							 dlsz_p,
+							 dldepth_p,
+							 flags);
+	return err;
     }
 
     /* optimization:
@@ -58,13 +60,13 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
      * if count == 1, store as a contiguous rather than a vector dataloop.
      */
     if (count == 1) {
-	mpi_errno = PREPEND_PREFIX(Dataloop_create_contiguous)(blocklength,
-							       oldtype,
-							       dlp_p,
-							       dlsz_p,
-							       dldepth_p,
-							       flags);
-	return mpi_errno;
+	err = PREPEND_PREFIX(Dataloop_create_contiguous)(blocklength,
+							 oldtype,
+							 dlp_p,
+							 dlsz_p,
+							 dldepth_p,
+							 flags);
+	return err;
     }
 
     is_builtin = (DLOOP_Handle_hasloop_macro(oldtype)) ? 0 : 1;
@@ -84,24 +86,17 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
 	new_loop_depth = old_loop_depth + 1;
     }
 
-    new_dlp = PREPEND_PREFIX(Dataloop_alloc)(new_loop_sz);
-    /* --BEGIN ERROR HANDLING-- */
-    if (!new_dlp)
-    {
-	/* TODO: NO MORE MPI ERROR CREATE CODES */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
-					 MPIR_ERR_RECOVERABLE,
-					 "MPID_Dataloop_create_vector",
-					 __LINE__,
-					 MPI_ERR_OTHER,
-					 "**nomem",
-					 0);
-	return mpi_errno;
-    }
-    /* --END ERROR HANDLING-- */
 
     if (is_builtin) {
 	int basic_sz = 0;
+
+	PREPEND_PREFIX(Dataloop_alloc)(DLOOP_KIND_VECTOR,
+				       count,
+				       &new_dlp,
+				       &new_loop_sz);
+	/* --BEGIN ERROR HANDLING-- */
+	if (!new_dlp) return -1;
+	/* --END ERROR HANDLING-- */
 
 	DLOOP_Handle_get_size_macro(oldtype, basic_sz);
 	new_dlp->kind = DLOOP_KIND_VECTOR | DLOOP_FINAL_MASK;
@@ -120,29 +115,28 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
 	    new_dlp->el_extent = new_dlp->el_size;
 	    new_dlp->el_type   = oldtype;
 	}
-
-	new_dlp->loop_params.c_t.dataloop = NULL;
     }
     else /* user-defined base type (oldtype) */ {
-	char *curpos;
 	DLOOP_Dataloop *old_loop_ptr;
 	int old_loop_sz = 0;
+
+	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, 0);
+	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, 0);
+
+	PREPEND_PREFIX(Dataloop_alloc_and_copy)(DLOOP_KIND_VECTOR,
+						count,
+						old_loop_ptr,
+						old_loop_sz,
+						&new_dlp,
+						&new_loop_sz);
+	/* --BEGIN ERROR HANDLING-- */
+	if (!new_dlp) return -1;
+	/* --END ERROR HANDLING-- */
 
 	new_dlp->kind = DLOOP_KIND_VECTOR;
 	DLOOP_Handle_get_size_macro(oldtype, new_dlp->el_size);
 	DLOOP_Handle_get_extent_macro(oldtype, new_dlp->el_extent);
 	DLOOP_Handle_get_basic_type_macro(oldtype, new_dlp->el_type);
-
-	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, 0);
-	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, 0);
-
-	/* copy in old dataloop */
-	curpos = (char *) new_dlp;
-	curpos += sizeof(struct MPID_Dataloop);
-	/* TODO: ACCOUNT FOR PADDING HERE */
-
-	PREPEND_PREFIX(Dataloop_copy)(curpos, old_loop_ptr, old_loop_sz);
-	new_dlp->loop_params.c_t.dataloop = (DLOOP_Dataloop *) curpos;
     }
 
     /* vector-specific members
@@ -158,5 +152,5 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
     *dlsz_p    = new_loop_sz;
     *dldepth_p = new_loop_depth;
 
-    return MPI_SUCCESS;
+    return 0;
 }

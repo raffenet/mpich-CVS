@@ -21,7 +21,7 @@ static void DLOOP_Type_blockindexed_array_copy(int count,
 					       MPI_Aint old_extent);
 
 /*@
-   MPID_Dataloop_create_blockindexed - create blockindexed dataloop
+   Dataloop_create_blockindexed - create blockindexed dataloop
 
    Arguments:
 +  int count
@@ -34,38 +34,36 @@ static void DLOOP_Type_blockindexed_array_copy(int count,
 -  int flags
 
 .N Errors
-.N MPI_SUCCESS
+.N Returns 0 on success, -1 on failure.
 @*/
-int MPID_Dataloop_create_blockindexed(int count,
-				      int blklen,
-				      void *disp_array,
-				      int dispinbytes,
-				      DLOOP_Type oldtype,
-				      DLOOP_Dataloop **dlp_p,
-				      int *dlsz_p,
-				      int *dldepth_p,
-				      int flags)
+int PREPEND_PREFIX(Dataloop_create_blockindexed)(int count,
+						 int blklen,
+						 void *disp_array,
+						 int dispinbytes,
+						 DLOOP_Type oldtype,
+						 DLOOP_Dataloop **dlp_p,
+						 int *dlsz_p,
+						 int *dldepth_p,
+						 int flags)
 {
-    int mpi_errno, is_builtin, is_vectorizable = 1;
-    int i, old_loop_sz, new_loop_sz, old_loop_depth;
+    int err, is_builtin, is_vectorizable = 1;
+    int i, new_loop_sz, old_loop_depth;
     int contig_count;
 
     DLOOP_Offset old_extent, eff_disp0, eff_disp1, last_stride;
-    char *curpos;
-    DLOOP_Dataloop *old_loop_ptr = NULL;
 
     DLOOP_Dataloop *new_dlp;
 
     /* if count or blklen are zero, handle with contig code, call it a int */
     if (count == 0 || blklen == 0)
     {
-	mpi_errno = MPID_Dataloop_create_contiguous(0,
-						    MPI_INT,
-						    dlp_p,
-						    dlsz_p,
-						    dldepth_p,
-						    flags);
-	return mpi_errno;
+	err = PREPEND_PREFIX(Dataloop_create_contiguous)(0,
+							 MPI_INT,
+							 dlp_p,
+							 dlsz_p,
+							 dldepth_p,
+							 flags);
+	return err;
     }
 
     is_builtin = (DLOOP_Handle_hasloop_macro(oldtype)) ? 0 : 1;
@@ -73,13 +71,11 @@ int MPID_Dataloop_create_blockindexed(int count,
     if (is_builtin)
     {
 	old_extent     = MPID_Datatype_get_basic_size(oldtype);
-	old_loop_sz    = 0;
 	old_loop_depth = 0;
     }
     else
     {
 	DLOOP_Handle_get_extent_macro(oldtype, old_extent);
-	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, 0);
 	DLOOP_Handle_get_loopdepth_macro(oldtype, old_loop_depth, 0);
     }
 
@@ -99,13 +95,13 @@ int MPID_Dataloop_create_blockindexed(int count,
 	((!dispinbytes && ((int *) disp_array)[0] == 0) ||
 	 (dispinbytes && ((DLOOP_Offset *) disp_array)[0] == 0)))
     {
-	mpi_errno = PREPEND_PREFIX(Dataloop_create_contiguous)(count * blklen,
-							       oldtype,
-							       dlp_p,
-							       dlsz_p,
-							       dldepth_p,
-							       flags);
-	return mpi_errno;
+	err = PREPEND_PREFIX(Dataloop_create_contiguous)(count * blklen,
+							 oldtype,
+							 dlp_p,
+							 dlsz_p,
+							 dldepth_p,
+							 flags);
+	return err;
     }
 
     /* optimization:
@@ -145,16 +141,16 @@ int MPID_Dataloop_create_blockindexed(int count,
 	}
 	if (is_vectorizable)
 	{
-	    mpi_errno = PREPEND_PREFIX(Dataloop_create_vector)(count,
-							       blklen,
-							       last_stride,
-							       1, /* strideinbytes */
-							       oldtype,
-							       dlp_p,
-							       dlsz_p,
-							       dldepth_p,
-							       flags);
-	    return mpi_errno;
+	    err = PREPEND_PREFIX(Dataloop_create_vector)(count,
+							 blklen,
+							 last_stride,
+							 1, /* strideinbytes */
+							 oldtype,
+							 dlp_p,
+							 dlsz_p,
+							 dldepth_p,
+							 flags);
+	    return err;
 	}
     }
 
@@ -176,27 +172,16 @@ int MPID_Dataloop_create_blockindexed(int count,
      * INDEXED WITH FEWER CONTIG BLOCKS (IF CONTIG_COUNT IS SMALL)?
      */
 
-    new_loop_sz = sizeof(DLOOP_Dataloop) + 
-	(count * sizeof(DLOOP_Offset)) + old_loop_sz;
-    /* TODO: ACCOUNT FOR PADDING IN LOOP_SZ HERE */
-
-    new_dlp = PREPEND_PREFIX(Dataloop_alloc)(new_loop_sz);
-    /* --BEGIN ERROR HANDLING-- */
-    if (!new_dlp)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
-					 MPIR_ERR_RECOVERABLE,
-					 "MPID_Dataloop_create_blockindexed",
-					 __LINE__,
-					 MPI_ERR_OTHER,
-					 "**nomem",
-					 0);
-	return mpi_errno;
-    }
-    /* --END ERROR HANDLING-- */
-
     if (is_builtin)
     {
+	PREPEND_PREFIX(Dataloop_alloc)(DLOOP_KIND_BLOCKINDEXED,
+				       count,
+				       &new_dlp,
+				       &new_loop_sz);
+	/* --BEGIN ERROR HANDLING-- */
+	if (!new_dlp) return -1;
+	/* --END ERROR HANDLING-- */
+
 	new_dlp->kind = DLOOP_KIND_BLOCKINDEXED | DLOOP_FINAL_MASK;
 
 	/* TODO: MPID FLAGS? */
@@ -213,42 +198,42 @@ int MPID_Dataloop_create_blockindexed(int count,
 	    new_dlp->el_extent = old_extent;
 	    new_dlp->el_type   = oldtype;
 	}
-
-	new_dlp->loop_params.bi_t.count     = count;
-	new_dlp->loop_params.bi_t.dataloop  = NULL;
-	new_dlp->loop_params.bi_t.blocksize = blklen;
     }
     else
     {
+	DLOOP_Dataloop *old_loop_ptr = NULL;
+	int old_loop_sz = 0;
+
+	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, 0);
+	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, 0);
+
+	PREPEND_PREFIX(Dataloop_alloc_and_copy)(DLOOP_KIND_BLOCKINDEXED,
+						count,
+						old_loop_ptr,
+						old_loop_sz,
+						&new_dlp,
+						&new_loop_sz);
+	/* --BEGIN ERROR HANDLING-- */
+	if (!new_dlp) return -1;
+	/* --END ERROR HANDLING-- */
+
 	new_dlp->kind = DLOOP_KIND_BLOCKINDEXED;
+
 	DLOOP_Handle_get_size_macro(oldtype, new_dlp->el_size);
 	DLOOP_Handle_get_extent_macro(oldtype, new_dlp->el_extent);
 	DLOOP_Handle_get_basic_type_macro(oldtype, new_dlp->el_type);
-
-	new_dlp->loop_params.bi_t.count     = count;
-	new_dlp->loop_params.bi_t.dataloop  = NULL;
-	new_dlp->loop_params.bi_t.blocksize = blklen;
-
-	/* copy old dataloop and set pointer to it */
-	curpos = (char *) new_dlp;
-	curpos += (new_loop_sz - old_loop_sz);
-
-	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, 0);
-	PREPEND_PREFIX(Dataloop_copy)(curpos, old_loop_ptr, old_loop_sz);
-	new_dlp->loop_params.bi_t.dataloop = (DLOOP_Dataloop *) curpos;
     }
+
+    new_dlp->loop_params.bi_t.count     = count;
+    new_dlp->loop_params.bi_t.blocksize = blklen;
 
     /* copy in displacement parameters
      *
      * regardless of dispinbytes, we store displacements in bytes in loop.
      */
-    curpos = (char *) new_dlp;
-    curpos += sizeof(MPID_Dataloop);
-    new_dlp->loop_params.bi_t.offset_array = (DLOOP_Offset *) curpos;
-
     DLOOP_Type_blockindexed_array_copy(count,
 				       disp_array,
-				       (DLOOP_Offset *) curpos,
+				       new_dlp->loop_params.bi_t.offset_array,
 				       dispinbytes,
 				       old_extent);
 
@@ -256,13 +241,13 @@ int MPID_Dataloop_create_blockindexed(int count,
     *dlsz_p    = new_loop_sz;
     *dldepth_p = old_loop_depth + 1;
 
-    return MPI_SUCCESS;
+    return 0;
 }
 
-/* MPIDI_Type_blockindexed_array_copy
+/* DLOOP_Type_blockindexed_array_copy
  *
  * Unlike the indexed version, this one does not compact adjacent
- * blocks.
+ * blocks, because that would really mess up the blockindexed type!
  */
 static void DLOOP_Type_blockindexed_array_copy(int count,
 					       void *in_disp_array,

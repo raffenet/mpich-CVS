@@ -12,7 +12,7 @@
 #include <mpid_dataloop.h>
 #include <mpiimpl.h>
 
-#undef DEBUG_DLOOP_MANIPULATE
+#undef DLOOP_DEBUG_MANIPULATE
 
 #ifndef GEN_DATALOOP_H
 #error "You must explicitly include a header that sets the PREPEND_PREFIX and includes gen_dataloop.h"
@@ -59,7 +59,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
     struct DLOOP_Dataloop_stackelm *elmp;
     struct DLOOP_Dataloop *dlp = 0, *sblp = &segp->builtin_loop;
     
-#ifdef DEBUG_DLOOP_MANIPULATE
+#ifdef DLOOP_DEBUG_MANIPULATE
     DLOOP_dbg_printf("DLOOP_Segment_init: count = %d, buf = %x\n",
 		    count,
 		    buf);
@@ -385,7 +385,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
     /* first we ensure that stream_off and first are in the same spot */
     if (first != stream_off) {
-#ifdef DEBUG_DLOOP_MANIPULATE
+#ifdef DLOOP_DEBUG_MANIPULATE
 	DLOOP_dbg_printf("first=%d; stream_off=%ld; resetting.\n", first, stream_off);
 #endif
 
@@ -416,14 +416,14 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
 	DLOOP_SEGMENT_LOAD_LOCAL_VALUES;
 
-#ifdef DEBUG_DLOOP_MANIPULATE
+#ifdef DLOOP_DEBUG_MANIPULATE
 	DLOOP_dbg_printf("done repositioning stream_off; first=%d, stream_off=%ld, last=%d\n",
 		   first, stream_off, last);
 #endif
     }
 
     for (;;) {
-#ifdef DEBUG_DLOOP_MANIPULATE
+#ifdef DLOOP_DEBUG_MANIPULATE
 #if 0
         DLOOP_dbg_printf("looptop; cur_sp=%d, cur_elmp=%x\n",
 			 cur_sp, (unsigned) cur_elmp);
@@ -495,7 +495,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    /* --END ERROR HANDLING-- */
 	    }
 
-#ifdef DEBUG_DLOOP_MANIPULATE
+#ifdef DLOOP_DEBUG_MANIPULATE
 	    DLOOP_dbg_printf("\thit leaf; cur_sp=%d, elmp=%x, piece_sz=%d\n", cur_sp,
 		             (unsigned) cur_elmp, myblocks * local_el_size);
 #endif
@@ -505,7 +505,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		(stream_off + (myblocks * stream_el_size) > last))
 	    {
 		myblocks = ((last - stream_off) / stream_el_size);
-#ifdef DEBUG_DLOOP_MANIPULATE
+#ifdef DLOOP_DEBUG_MANIPULATE
 		DLOOP_dbg_printf("\tpartial block count=%d (%d bytes)\n", myblocks,
                                  (int) myblocks * stream_el_size);
 #endif
@@ -519,7 +519,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    switch (piecefn_type) {
 		case PF_NULL:
 		    piecefn_indicated_exit = 0;
-#ifdef DEBUG_DLOOP_MANIPULATE
+#ifdef DLOOP_DEBUG_MANIPULATE
 		    DLOOP_dbg_printf("\tNULL piecefn for this piece\n");
 #endif
 		    break;
@@ -683,13 +683,13 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    }
 	} /* end of if leaf */
 	else if (cur_elmp->curblock == 0) {
-#ifdef DEBUG_DLOOP_MANIPULATE
+#ifdef DLOOP_DEBUG_MANIPULATE
 	    DLOOP_dbg_printf("\thit end of block; elmp=%x [%d]\n",
 			    (unsigned) cur_elmp, cur_sp);
 #endif
 	    cur_elmp->curcount--;
 	    if (cur_elmp->curcount == 0) {
-#ifdef DEBUG_DLOOP_MANIPULATE
+#ifdef DLOOP_DEBUG_MANIPULATE
 		DLOOP_dbg_printf("\talso hit end of count; elmp=%x [%d]\n",
 				(unsigned) cur_elmp, cur_sp);
 #endif
@@ -729,7 +729,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    /* reload the next stackelm if necessary */
 	    next_elmp = &(segp->stackelm[cur_sp + 1]);
 	    if (cur_elmp->may_require_reloading) {
-		DLOOP_Dataloop *load_dlp;
+		DLOOP_Dataloop *load_dlp = NULL;
 		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		    case DLOOP_KIND_CONTIG:
 		    case DLOOP_KIND_VECTOR:
@@ -748,7 +748,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			/* --END ERROR HANDLING-- */
 		}
 
-#ifdef DEBUG_DLOOP_MANIPULATE
+#ifdef DLOOP_DEBUG_MANIPULATE
 		DLOOP_dbg_printf("\tloading dlp=%x, elmp=%x [%d]\n",
 				 (unsigned) load_dlp,
 				 (unsigned) next_elmp,
@@ -760,7 +760,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 				    1);
 	    }
 
-#ifdef DEBUG_DLOOP_MANIPULATE
+#ifdef DLOOP_DEBUG_MANIPULATE
 	    DLOOP_dbg_printf("\tpushing type, elmp=%x [%d], count=%d, block=%d\n",
 			    (unsigned) cur_elmp, cur_sp, count_index, block_index);
 #endif
@@ -801,7 +801,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    /* --END ERROR HANDLING-- */
 	    }
 
-#ifdef DEBUG_DLOOP_MANIPULATE
+#ifdef DLOOP_DEBUG_MANIPULATE
 	    DLOOP_dbg_printf("\tstep 1: next orig_offset = %d (0x%x)\n",
 			     next_elmp->orig_offset,
 			     next_elmp->orig_offset);
@@ -837,7 +837,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    /* --END ERROR HANDLING-- */
 	    }
 
-#ifdef DEBUG_DLOOP_MANIPULATE
+#ifdef DLOOP_DEBUG_MANIPULATE
 	    DLOOP_dbg_printf("\tstep 2: next curoffset = %d (0x%x)\n",
 			     next_elmp->curoffset,
 			     next_elmp->curoffset);
@@ -848,7 +848,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	} /* end of else push the stackelm */
     } /* end of for (;;) */
 
-#ifdef DEBUG_DLOOP_MANIPULATE
+#ifdef DLOOP_DEBUG_MANIPULATE
     DLOOP_dbg_printf("hit end of datatype\n");
 #endif
 

@@ -75,16 +75,22 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 	new_dtp->element_size  = old_dtp->element_size;
 	new_dtp->eltype        = old_dtp->eltype;
 	
-	/* copy dataloop */
-	dlp = MPID_Dataloop_alloc(old_dtp->dataloop_size);
-	if (dlp == NULL) MPIU_Assert(0);
+	MPID_Dataloop_dup(old_dtp->dataloop, old_dtp->dataloop_size, &dlp);
+
+	/* --BEGIN ERROR HANDLING-- */
+	if (dlp == NULL) {
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					     "MPID_Type_dup", __LINE__,
+					     MPI_ERR_OTHER,
+					     "**nomem", 0);
+	    return mpi_errno;
+	}
+	/* --END ERROR HANDLING-- */
 	
 	new_dtp->dataloop       = dlp;
 	new_dtp->dataloop_depth = old_dtp->dataloop_depth;
-	new_dtp->dataloop_size       = old_dtp->dataloop_size;
+	new_dtp->dataloop_size  = old_dtp->dataloop_size;
 	
-	MPID_Dataloop_copy(dlp, old_dtp->dataloop, old_dtp->dataloop_size);
-
 	*newtype = new_dtp->handle;
     }
 

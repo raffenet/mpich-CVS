@@ -321,7 +321,25 @@ PREPEND_PREFIX(Dataloop_stream_size)(struct DLOOP_Dataloop *dl_p,
 void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 				    int depth);
 
-struct DLOOP_Dataloop * PREPEND_PREFIX(Dataloop_alloc)(int sz);
+void PREPEND_PREFIX(Dataloop_alloc)(int kind,
+				    int count,
+				    DLOOP_Dataloop **new_loop_p,
+				    int *new_loop_sz_p);
+void PREPEND_PREFIX(Dataloop_alloc_and_copy)(int kind,
+					     int count,
+					     struct DLOOP_Dataloop *old_loop,
+					     int old_loop_sz,
+					     struct DLOOP_Dataloop **new_loop_p,
+					     int *new_loop_sz_p);
+void PREPEND_PREFIX(Dataloop_struct_alloc)(int count,
+					   int old_loop_sz,
+					   int basic_ct,
+					   DLOOP_Dataloop **old_loop_p,
+					   DLOOP_Dataloop **new_loop_p,
+					   int *new_loop_sz_p);
+void PREPEND_PREFIX(Dataloop_dup)(DLOOP_Dataloop *old_loop,
+				  int old_loop_sz,
+				  DLOOP_Dataloop **new_loop_p);
 
 void PREPEND_PREFIX(Dataloop_free)(struct DLOOP_Dataloop **dataloop);
 

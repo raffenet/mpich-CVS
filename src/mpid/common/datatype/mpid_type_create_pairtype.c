@@ -49,7 +49,7 @@
 int MPID_Type_create_pairtype(MPI_Datatype type,
 			      MPID_Datatype *new_dtp)
 {
-    int mpi_errno = MPI_SUCCESS;
+    int err, mpi_errno = MPI_SUCCESS;
     int type_size, el_size;
     MPI_Aint type_extent, true_ub;
 
@@ -186,25 +186,38 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
     new_dtp->n_contig_blocks = (type_size == type_extent) ? 1 : 2;
 
     /* fill in dataloop(s) */
-    mpi_errno = MPID_Dataloop_create_struct(2,
-					    blocks,
-					    disps,
-					    types,
-					    &(new_dtp->dataloop),
-					    &(new_dtp->dataloop_size),
-					    &(new_dtp->dataloop_depth),
-					    MPID_DATALOOP_HOMOGENEOUS);
-    if (mpi_errno == MPI_SUCCESS) {
+    err = MPID_Dataloop_create_struct(2,
+				      blocks,
+				      disps,
+				      types,
+				      &(new_dtp->dataloop),
+				      &(new_dtp->dataloop_size),
+				      &(new_dtp->dataloop_depth),
+				      MPID_DATALOOP_HOMOGENEOUS);
+    if (!err) {
 	/* heterogeneous dataloop representation */
-	mpi_errno = MPID_Dataloop_create_struct(2,
-						blocks,
-						disps,
-						types,
-						&(new_dtp->hetero_dloop),
-						&(new_dtp->hetero_dloop_size),
-						&(new_dtp->hetero_dloop_depth),
-						0);
+	err = MPID_Dataloop_create_struct(2,
+					  blocks,
+					  disps,
+					  types,
+					  &(new_dtp->hetero_dloop),
+					  &(new_dtp->hetero_dloop_size),
+					  &(new_dtp->hetero_dloop_depth),
+					  0);
     }
+    /* --BEGIN ERROR HANDLING-- */
+    if (err) {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+					 MPIR_ERR_RECOVERABLE,
+					 "MPID_Dataloop_create_struct",
+					 __LINE__,
+					 MPI_ERR_OTHER,
+					 "**nomem",
+					 0);
+	return mpi_errno;
+
+    }
+    /* --END ERROR HANDLING-- */
 
     return mpi_errno;
 }
