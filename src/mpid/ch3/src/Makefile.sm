@@ -1,5 +1,5 @@
 lib${MPILIBNAME}_a_SOURCES = \
-    mpid_init.c mpid_finalize.c mpid_vcrt.c \
+    mpid_init.c mpid_finalize.c mpid_abort.c mpid_vcrt.c \
     mpid_send.c mpid_isend.c mpid_recv.c mpid_irecv.c \
     ch3u_request.c ch3u_handle_recv_pkt.c ch3u_handle_recv_req.c \
     ch3u_handle_send_req.c
