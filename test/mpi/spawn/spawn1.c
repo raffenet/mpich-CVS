@@ -6,7 +6,7 @@
  */
 #include "mpi.h"
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 #include "mpitest.h"
 
 static char MTEST_Descrip[] = "A simple test of Comm_spawn";
