@@ -176,6 +176,8 @@ def _mpd_init():
     else:
         _create_ring_of_one_mpd()
     
+    g.pmi_published_names = {}
+
     signal(SIGCHLD,sigchld_handler)
 
 
@@ -591,6 +593,40 @@ def _handle_lhs_input():
                           'host_list' : msg['host_list'] }
             mpd_send_one_msg(g.conSocket,msgToSend)
         else:
+            mpd_send_one_msg(g.rhsSocket,msg)
+    elif msg['cmd'] == 'pmi_lookup_name':
+        if msg['src'] == g.myId:
+            if msg.has_key('port') and msg['port'] != 0:
+                msgToSend = msg
+                msgToSend['cmd'] = 'lookup_result'
+                msgToSend['info'] = 'ok'
+            else:
+                msgToSend = { 'cmd' : 'lookup_result', 'info' : 'unknown_service',
+                              'port' : 0}
+            jobid = msg['jobid']
+            manpid = msg['manpid']
+            manSocket = g.activeJobs[jobid][manpid]['socktoman']
+            mpd_send_one_msg(manSocket,msgToSend)
+        else:
+            if g.pmi_published_names.has_key(msg['service']):
+                msg['port'] = g.pmi_published_names[msg['service']]
+            mpd_send_one_msg(g.rhsSocket,msg)
+    elif msg['cmd'] == 'pmi_unpublish_name':
+        if msg['src'] == g.myId:
+            if msg.has_key('done'):
+                msgToSend = msg
+                msgToSend['cmd'] = 'unpublish_result'
+                msgToSend['info'] = 'ok'
+            else:
+                msgToSend = { 'cmd' : 'unpublish_result', 'info' : 'unknown_service' }
+            jobid = msg['jobid']
+            manpid = msg['manpid']
+            manSocket = g.activeJobs[jobid][manpid]['socktoman']
+            mpd_send_one_msg(manSocket,msgToSend)
+        else:
+            if g.pmi_published_names.has_key(msg['service']):
+                del g.pmi_published_names[msg['service']]
+                msg['done'] = 1
             mpd_send_one_msg(g.rhsSocket,msg)
     else:
         mpd_print(1, 'unrecognized cmd from lhs: %s' % (msg) )
@@ -1042,6 +1078,29 @@ def _handle_man_msgs(manSocket):
         msg['totalview'] = 0
         mpd_send_one_msg(g.rhsSocket,msg)
         ## mpd_send_one_msg(manSocket, {'cmd' : 'mpdrun_ack', } )
+    elif msg['cmd'] == 'publish_name':
+        g.pmi_published_names[msg['service']] = msg['port']
+        msgToSend = { 'cmd' : 'publish_result', 'info' : 'ok' }
+        mpd_send_one_msg(manSocket,msgToSend)
+    elif msg['cmd'] == 'lookup_name':
+        if g.pmi_published_names.has_key(msg['service']):
+            msgToSend = { 'cmd' : 'lookup_result', 'info' : 'ok',
+                          'port' : g.pmi_published_names[msg['service']] }
+            mpd_send_one_msg(manSocket,msgToSend)
+        else:
+            msg['cmd'] = 'pmi_lookup_name'    # add pmi_
+            msg['src'] = g.myId
+            msg['port'] = 0    # invalid
+            mpd_send_one_msg(g.rhsSocket,msg)
+    elif msg['cmd'] == 'unpublish_name':
+        if g.pmi_published_names.has_key(msg['service']):
+            del g.pmi_published_names[msg['service']]
+            msgToSend = { 'cmd' : 'unpublish_result', 'info' : 'ok' }
+            mpd_send_one_msg(manSocket,msgToSend)
+        else:
+            msg['cmd'] = 'pmi_unpublish_name'    # add pmi_
+            msg['src'] = g.myId
+            mpd_send_one_msg(g.rhsSocket,msg)
     else:
         mpd_print(1, 'INVALID request from man msg=:%s:' % (msg) )
         msgToSend = { 'cmd' : 'invalid_request' }

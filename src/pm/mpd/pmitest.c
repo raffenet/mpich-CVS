@@ -41,6 +41,8 @@ int main(int argc, char *argv[])
         msg_recvd[n] = '\0';
     printf("%d: recvd msg=:%s:\n",pmi_rank,msg_recvd);
 
+
+#ifdef TEST_THESE
     strcpy(msg_to_send,"cmd=get_maxes\n");
     write(pmi_sock,msg_to_send,strlen(msg_to_send));
     printf("sent get_maxes\n");
@@ -100,15 +102,32 @@ int main(int argc, char *argv[])
     write(pmi_sock,msg_to_send,strlen(msg_to_send));
     printf("sent spawn\n");
     ***/
+#endif
 
-    /**********
-    if (pmi_rank == 0)
-	exit(-1);
-    printf("GOING INTO INFINITE LOOP\n");
-    while (1)
-	;
-    **********/
-
+    sprintf(msg_to_send,"cmd=publish_name service=rmb port=9999\n");
+    write(pmi_sock,msg_to_send,strlen(msg_to_send));
+    printf("sent publish_name\n");
+    n = read(pmi_sock,msg_recvd,1024);
+    if (n >= 0)
+        msg_recvd[n] = '\0';
+    printf("%d: recvd msg=:%s:\n",pmi_rank,msg_recvd);
+	
+    sprintf(msg_to_send,"cmd=lookup_name service=rmb\n");
+    write(pmi_sock,msg_to_send,strlen(msg_to_send));
+    printf("sent lookup_name\n");
+    n = read(pmi_sock,msg_recvd,1024);
+    if (n >= 0)
+        msg_recvd[n] = '\0';
+    printf("%d: recvd msg=:%s:\n",pmi_rank,msg_recvd);
+	
+    sprintf(msg_to_send,"cmd=unpublish_name service=rmb\n");
+    write(pmi_sock,msg_to_send,strlen(msg_to_send));
+    printf("sent unpublish_name\n");
+    n = read(pmi_sock,msg_recvd,1024);
+    if (n >= 0)
+        msg_recvd[n] = '\0';
+    printf("%d: recvd msg=:%s:\n",pmi_rank,msg_recvd);
+	
     strcpy(msg_to_send,"cmd=finalize\n");
     write(pmi_sock,msg_to_send,strlen(msg_to_send));
 }

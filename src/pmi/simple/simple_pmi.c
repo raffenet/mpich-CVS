@@ -78,7 +78,7 @@ static int PMII_Set_from_port( int, int );
 static int PMII_Connect_to_pm( char *, int );
 
 #ifdef USE_PMI_PORT
-static void mpd_singinit();
+static void mpd_singinit(void);
 static int PMI_totalview = 0;
 #endif
 static int accept_one_connection(int);
@@ -671,17 +671,103 @@ int PMI_KVS_Iter_next(const char kvsname[], char key[], int key_len, char val[],
 
 int PMI_Publish_name( const char service_name[], const char port[] )
 {
+    char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
+
     printf("PMI_Publish_name called for service name %s, port %s\n", service_name, port);
+    if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
+    {
+        MPIU_Snprintf( cmd, PMIU_MAXLINE, "cmd=publish_name service=%s port=%s\n",
+		       service_name, port );
+	PMIU_writeline( PMI_fd, cmd );
+	PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
+	PMIU_parse_keyvals( buf );
+	PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
+        if ( strncmp( cmd, "publish_result", PMIU_MAXLINE ) != 0 ) {
+	    PMIU_printf( 1, "got unexpected response to publish :%s:\n", buf );
+	    return( PMI_FAIL );
+        }
+        else {
+	    PMIU_getval( "info", buf, PMIU_MAXLINE );
+	    if ( strcmp(buf,"ok") != 0 ) {
+	        PMIU_printf( 1, "publish failed; reason = %s\n", buf );
+	        return( PMI_FAIL );
+	    }
+        }
+    }
+    else
+    {
+	PMIU_printf( 1, "PMI_Publish_name called before init\n", buf );
+	return( PMI_FAIL );
+    }
+
+    return( PMI_SUCCESS );
 }
 
 int PMI_Unpublish_name( const char service_name[] )
 {
+    char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
+
     printf("PMI_Unpublish_name called for service name %s\n", service_name);
+    if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
+    {
+        MPIU_Snprintf( cmd, PMIU_MAXLINE, "cmd=unpublish_name service=%s\n", service_name );
+	PMIU_writeline( PMI_fd, cmd );
+	PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
+	PMIU_parse_keyvals( buf );
+	PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
+        if ( strncmp( cmd, "unpublish_result", PMIU_MAXLINE ) != 0 ) {
+	    PMIU_printf( 1, "got unexpected response to unpublish :%s:\n", buf );
+	    return( PMI_FAIL );
+        }
+        else {
+	    PMIU_getval( "info", buf, PMIU_MAXLINE );
+	    if ( strcmp(buf,"ok") != 0 ) {
+	        PMIU_printf( 1, "unpublish failed; reason = %s\n", buf );
+	        return( PMI_FAIL );
+	    }
+        }
+    }
+    else
+    {
+	PMIU_printf( 1, "PMI_Unpublish_name called before init\n", buf );
+	return( PMI_FAIL );
+    }
+
+    return( PMI_SUCCESS );
 }
 
 int PMI_Lookup_name( const char service_name[], char port[] )
 {
+    char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
+
     printf("PMI_Lookup_name called for service name %s\n", service_name);
+    if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
+    {
+        MPIU_Snprintf( cmd, PMIU_MAXLINE, "cmd=lookup_name service=%s\n", service_name );
+	PMIU_writeline( PMI_fd, cmd );
+	PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
+	PMIU_parse_keyvals( buf );
+	PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
+        if ( strncmp( cmd, "lookup_result", PMIU_MAXLINE ) != 0 ) {
+	    PMIU_printf( 1, "got unexpected response to lookup :%s:\n", buf );
+	    return( PMI_FAIL );
+        }
+        else {
+	    PMIU_getval( "info", buf, PMIU_MAXLINE );
+	    if ( strcmp(buf,"ok") != 0 ) {
+	        PMIU_printf( 1, "lookup failed; reason = %s\n", buf );
+	        return( PMI_FAIL );
+	    }
+	    PMIU_getval( "port", port, PMIU_MAXLINE );
+        }
+    }
+    else
+    {
+	PMIU_printf( 1, "PMI_Lookup_name called before init\n", buf );
+	return( PMI_FAIL );
+    }
+
+    return( PMI_SUCCESS );
 }
 
 

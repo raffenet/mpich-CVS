@@ -899,6 +899,25 @@ def mpdman():
                 elif parsedMsg['cmd'] == 'get_appnum':
                     pmiMsgToSend = 'cmd=appnum appnum=%s\n' % (appnum)
                     mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                elif parsedMsg['cmd'] == 'publish_name':
+                    msgToSend = { 'cmd' : 'publish_name',
+                                  'service' : parsedMsg['service'],
+                                  'port' : parsedMsg['port'],
+                                  'jobid' : jobid,
+                                  'manpid' : getpid() }
+                    mpd_send_one_msg(mpdSocket,msgToSend)
+                elif parsedMsg['cmd'] == 'unpublish_name':
+                    msgToSend = { 'cmd' : 'unpublish_name',
+                                  'service' : parsedMsg['service'],
+                                  'jobid' : jobid,
+                                  'manpid' : getpid() }
+                    mpd_send_one_msg(mpdSocket,msgToSend)
+                elif parsedMsg['cmd'] == 'lookup_name':
+                    msgToSend = { 'cmd' : 'lookup_name',
+                                  'service' : parsedMsg['service'],
+                                  'jobid' : jobid,
+                                  'manpid' : getpid() }
+                    mpd_send_one_msg(mpdSocket,msgToSend)
                 elif parsedMsg['cmd'] == 'create_kvs':
                     new_kvsname = kvsname_template + str(kvs_next_id)
                     KVSs[new_kvsname] = {}
@@ -1211,6 +1230,16 @@ def mpdman():
                         kill(pgrp,signum)
                     except Exception, errmsg:
                         mpd_print(1, 'invalid signal (%d) from mpd' % (signum) )
+                elif msg['cmd'] == 'publish_result':
+                    pmiMsgToSend = 'cmd=publish_result info=%s\n' % (msg['info'])
+                    mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                elif msg['cmd'] == 'unpublish_result':
+                    pmiMsgToSend = 'cmd=unpublish_result info=%s\n' % (msg['info'])
+                    mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                elif msg['cmd'] == 'lookup_result':
+                    pmiMsgToSend = 'cmd=lookup_result info=%s port=%s\n' % \
+                                   (msg['info'],msg['port'])
+                    mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 else:
                     mpd_print(1, 'invalid msg recvd on mpdSocket :%s:' % msg )
             elif readySocket == pmiListenSocket:
