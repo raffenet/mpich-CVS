@@ -33,5 +33,12 @@ MPI_Delete_function ADIOI_End_call;
 #  include "mpioinst.h"
 #endif /* MPI_hpux */
 
+#ifdef MPICH2
+int MPIR_Err_return_file( MPI_File, const char [], int );
+int MPIR_Err_create_code( int, const char [], ... );
+const char * MPIR_Err_get_string(int);
+int MPIR_Err_set_msg( int code, const char *msg_string );
+#endif
+
 #endif
 
