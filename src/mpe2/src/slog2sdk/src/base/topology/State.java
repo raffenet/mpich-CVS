@@ -31,9 +31,16 @@ public class State
                                      double final_time, float final_ypos )
     {
         int      iStart, jStart, iFinal, jFinal;
-
         iStart   = coord_xform.convertTimeToPixel( start_time );
         iFinal   = coord_xform.convertTimeToPixel( final_time );
+
+        /* Determine if State should be drawn */
+        if ( last_drawn_pos.coversState( iStart, iFinal ) )
+            return 0; // too small to be drawn in previously drawn location
+        last_drawn_pos.set( iStart, iFinal );
+
+        jStart   = coord_xform.convertRowToPixel( start_ypos );
+        jFinal   = coord_xform.convertRowToPixel( final_ypos );
 
         boolean  isStartVtxInImg, isFinalVtxInImg;
         isStartVtxInImg = iStart >= 0 ;
@@ -45,21 +52,13 @@ public class State
             iHead = iStart;
         else
             iHead = 0;
+        jHead    = jStart;
 
         // jTail = slope * ( iTail - iFinal ) + jFinal
         if ( isFinalVtxInImg )
             iTail = iFinal;
         else
             iTail = coord_xform.getImageWidth() - 1;
-
-        /* Determine if State should be drawn */
-        if ( last_drawn_pos.coversState( iHead, iTail ) )
-            return 0; // too small to be drawn in previously drawn location
-        last_drawn_pos.set( iHead, iTail );
-
-        jStart   = coord_xform.convertRowToPixel( start_ypos );
-        jFinal   = coord_xform.convertRowToPixel( final_ypos );
-        jHead    = jStart;
         jTail    = jFinal;
             
         // Fill the color of the rectangle
