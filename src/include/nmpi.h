@@ -23,7 +23,7 @@
  * are implemented over MPI point-to-point.
  */
 
-#ifndef USE_MPI_FOR_NMPI
+#ifdef USE_MPI_FOR_NMPI
 #define NMPI_Abort MPI_Abort
 #define NMPI_Bcast MPI_Bcast
 #define NMPI_Get_count MPI_Get_count
