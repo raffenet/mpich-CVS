@@ -1,5 +1,10 @@
 The ROMIO Users Guide is in the file users-guide.ps.gz.
 
+The book ``Using MPI-2: Advanced Features of the Message-Passing
+Interface,'' by William Gropp, Ewing Lusk, and Rajeev Thakur, 
+MIT Press, 1999, serves as a tutorial introduction to all aspects of
+MPI-2, including I/O. It has lots of example programs.
+
 The following papers related to ROMIO are available online:
 
 * R. Thakur, W. Gropp, and E. Lusk, ``On Implementing MPI-IO Portably
