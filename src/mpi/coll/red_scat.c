@@ -121,7 +121,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
     /* Lock for collective operation */
     MPID_Comm_thread_lock( comm_ptr );
 
-    if (nbytes > MPIR_REDUCE_SCATTER_SHORT_MSG) {
+    if (nbytes >= MPIR_REDUCE_SCATTER_SHORT_MSG) {
         /* for long messages, use (p-1) pairwise exchanges */ 
         
         if (sendbuf != MPI_IN_PLACE) {
