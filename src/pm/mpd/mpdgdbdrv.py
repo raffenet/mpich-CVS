@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from sys    import argv, exit, stdin, stdout, stderr
-from os     import kill, getpid, write
+from os     import kill, getpid, write, strerror
 from popen2 import Popen4
 from signal import signal, SIGUSR1, SIGINT, SIGKILL
 from errno  import EINTR
