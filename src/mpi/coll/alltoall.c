@@ -45,7 +45,7 @@
    End Algorithm: MPI_Alltoall
 */
 
-
+/* begin:nested */
 PMPI_LOCAL int MPIR_Alltoall( 
     void *sendbuf, 
     int sendcount, 
@@ -97,7 +97,8 @@ PMPI_LOCAL int MPIR_Alltoall(
         }
         
         /* adjust for potential negative lower bound in datatype */
-        PMPI_Type_lb( sendtype, &lb );
+	/* FIXME: should this be true_lb ? */
+        NMPI_Type_lb( sendtype, &lb );
         tmp_buf = (void *)((char*)tmp_buf - lb);
         
         /* copy local sendbuf into tmp_buf at location indexed by rank */
@@ -310,8 +311,9 @@ PMPI_LOCAL int MPIR_Alltoall(
     
     return (mpi_errno);
 }
+/* end:nested */
 
-
+/* begin:nested */
 PMPI_LOCAL int MPIR_Alltoall_inter( 
     void *sendbuf, 
     int sendcount, 
@@ -383,7 +385,7 @@ PMPI_LOCAL int MPIR_Alltoall_inter(
     
     return (mpi_errno);
 }
-
+/* end:nested */
 #endif
 
 #undef FUNCNAME
@@ -477,6 +479,7 @@ int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recv
     }
     else
     {
+	MPIR_Nest_incr();
         if (comm_ptr->comm_kind == MPID_INTRACOMM) 
             /* intracommunicator */
             mpi_errno = MPIR_Alltoall(sendbuf, sendcount, sendtype,
@@ -491,6 +494,7 @@ int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recv
                                             recvcount, recvtype,
                                             comm_ptr); */
         }
+	MPIR_Nest_decr();
     }
     if (mpi_errno == MPI_SUCCESS)
     {

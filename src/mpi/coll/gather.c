@@ -41,6 +41,7 @@
 */
 
 /* not declared static because it is called in intercomm. allgather */
+/* begin:nested */
 int MPIR_Gather ( 
 	void *sendbuf, 
 	int sendcnt, 
@@ -293,8 +294,9 @@ int MPIR_Gather (
     
     return (mpi_errno);
 }
+/* end:nested */
 
-
+/* begin:nested */
 PMPI_LOCAL int MPIR_Gather_inter ( 
 	void *sendbuf, 
 	int sendcnt, 
@@ -371,7 +373,8 @@ PMPI_LOCAL int MPIR_Gather_inter (
                     return mpi_errno;
                 }
                 /* adjust for potential negative lower bound in datatype */
-                MPI_Type_lb( sendtype, &lb );
+		/* FIXME: should this be true_lb? */
+                NMPI_Type_lb( sendtype, &lb );
                 tmp_buf = (void *)((char*)tmp_buf - lb);
             }
             
@@ -417,7 +420,7 @@ PMPI_LOCAL int MPIR_Gather_inter (
 
     return mpi_errno;
 }
-
+/* end:nested */
 #endif
 
 #undef FUNCNAME
@@ -519,6 +522,7 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf,
     }
     else
     {
+	MPIR_Nest_incr();
         if (comm_ptr->comm_kind == MPID_INTRACOMM) 
             /* intracommunicator */
             mpi_errno = MPIR_Gather(sendbuf, sendcnt, sendtype,
@@ -533,6 +537,7 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf,
                                           recvbuf, recvcnt, recvtype, root,
                                           comm_ptr);*/
         }
+	MPIR_Nest_decr();
     }
     if (mpi_errno == MPI_SUCCESS)
     {

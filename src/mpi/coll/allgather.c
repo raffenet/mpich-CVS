@@ -42,7 +42,7 @@
 
    End Algorithm: MPI_Allgather
 */
-
+/* begin:nested */
 PMPI_LOCAL int MPIR_Allgather ( 
     void *sendbuf, 
     int sendcount, 
@@ -357,8 +357,9 @@ PMPI_LOCAL int MPIR_Allgather (
     
     return (mpi_errno);
 }
+/* end:nested */
 
-
+/* begin:nested */
 PMPI_LOCAL int MPIR_Allgather_inter ( 
     void *sendbuf, 
     int sendcount, 
@@ -396,7 +397,9 @@ PMPI_LOCAL int MPIR_Allgather_inter (
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
-        MPI_Type_lb( sendtype, &lb );
+	/* FIXME: Should this be true_lb? */
+        mpi_errno = NMPI_Type_lb( sendtype, &lb );
+	if (mpi_errno) return mpi_errno;
         tmp_buf = (void *)((char*)tmp_buf - lb);
     }
 
@@ -445,7 +448,7 @@ PMPI_LOCAL int MPIR_Allgather_inter (
 
     return mpi_errno;
 }
-
+/* end:nested */
 #endif
 
 #undef FUNCNAME
@@ -540,6 +543,7 @@ int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *rec
     }
     else
     {
+	MPIR_Nest_incr();
         if (comm_ptr->comm_kind == MPID_INTRACOMM) 
             /* intracommunicator */
             mpi_errno = MPIR_Allgather(sendbuf, sendcount, sendtype,
@@ -554,6 +558,7 @@ int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *rec
                                              recvbuf, recvcount, recvtype,
                                              comm_ptr);            */
         }
+	MPIR_Nest_decr();
     }
     if (mpi_errno == MPI_SUCCESS)
     {

@@ -40,6 +40,7 @@
    End Algorithm: MPI_Allgatherv
 */
 
+/* begin:nested */
 PMPI_LOCAL int MPIR_Allgatherv ( 
     void *sendbuf, 
     int sendcount,   
@@ -378,8 +379,9 @@ PMPI_LOCAL int MPIR_Allgatherv (
 
   return (mpi_errno);
 }
+/* end:nested */
 
-
+/* begin:nested */
 PMPI_LOCAL int MPIR_Allgatherv_inter ( 
     void *sendbuf, 
     int sendcount,  
@@ -462,7 +464,7 @@ PMPI_LOCAL int MPIR_Allgatherv_inter (
 
     return mpi_errno;
 }
-
+/* end:nested */
 #endif
 
 #undef FUNCNAME
@@ -567,6 +569,7 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
     }
     else
     {
+	MPIR_Nest_incr();
         if (comm_ptr->comm_kind == MPID_INTRACOMM) 
             /* intracommunicator */
             mpi_errno = MPIR_Allgatherv(sendbuf, sendcount, 
@@ -583,6 +586,7 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
                                         recvcounts, displs,
                                         recvtype, comm_ptr); */
         }
+	MPIR_Nest_decr();
     }
     if (mpi_errno == MPI_SUCCESS)
     {

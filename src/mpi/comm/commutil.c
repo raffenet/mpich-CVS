@@ -134,8 +134,10 @@ int MPIR_Get_contextid( MPI_Comm comm )
 	initialize_context_mask = 0;
     }
     memcpy( local_mask, context_mask, MAX_CONTEXT_MASK * sizeof(int) );
+    MPIR_Nest_incr();
     NMPI_Allreduce( MPI_IN_PLACE, local_mask, MAX_CONTEXT_MASK, MPI_INT, 
 		    MPI_BAND, comm );
+    MPIR_Nest_decr();
     
     for (i=0; i<MAX_CONTEXT_MASK; i++) {
 	if (local_mask[i]) {
@@ -225,8 +227,10 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 
     /* Make sure that all of the local processes now have this
        id */
+    MPIR_Nest_incr();
     NMPI_Bcast( &final_context_id, 1, MPI_INT, 
 		0, comm_ptr->local_comm->handle );
+    MPIR_Nest_decr();
     /* If we did not choose this context, free it.  We won't do this
        once we have MPI2 intercomms (at least, not for intercomms that
        are not subsets of MPI_COMM_WORLD) - FIXME */

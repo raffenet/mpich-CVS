@@ -43,6 +43,7 @@
    End Algorithm: MPI_Scatter
 */
 
+/* begin:nested */
 PMPI_LOCAL int MPIR_Scatter ( 
 	void *sendbuf, 
 	int sendcnt, 
@@ -248,8 +249,8 @@ PMPI_LOCAL int MPIR_Scatter (
              tmp_buf and see by how much 'position' is incremented. */
 
             position = 0;
-            MPI_Pack(sendbuf, 1, sendtype, tmp_buf, tmp_buf_size,
-                     &position, comm);
+            NMPI_Pack(sendbuf, 1, sendtype, tmp_buf, tmp_buf_size,
+		      &position, comm);
             nbytes = position*sendcnt;
 
             curr_cnt = nbytes*comm_size;
@@ -294,8 +295,8 @@ PMPI_LOCAL int MPIR_Scatter (
 
             /* calculate nbytes */
             position = 0;
-            MPI_Pack(recvbuf, 1, recvtype, tmp_buf, tmp_buf_size,
-                     &position, comm);
+            NMPI_Pack(recvbuf, 1, recvtype, tmp_buf, tmp_buf_size,
+		      &position, comm);
             nbytes = position*recvcnt;
 
             curr_cnt = 0;
@@ -353,8 +354,9 @@ PMPI_LOCAL int MPIR_Scatter (
     
     return (mpi_errno);
 }
+/* end:nested */
 
-
+/* begin:nested */
 PMPI_LOCAL int MPIR_Scatter_inter ( 
 	void *sendbuf, 
 	int sendcnt, 
@@ -426,7 +428,8 @@ PMPI_LOCAL int MPIR_Scatter_inter (
                     return mpi_errno;
                 }
                 /* adjust for potential negative lower bound in datatype */
-                MPI_Type_lb( recvtype, &lb );
+		/* FIXME: Should this be true_lb? */
+                NMPI_Type_lb( recvtype, &lb );
                 tmp_buf = (void *)((char*)tmp_buf - lb);
 
                 MPID_Comm_thread_lock( comm_ptr );
@@ -472,7 +475,7 @@ PMPI_LOCAL int MPIR_Scatter_inter (
 
     return mpi_errno;
 }
-
+/* end:nested */
 #endif
 
 #undef FUNCNAME
@@ -576,6 +579,7 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
     }
     else
     {
+	MPIR_Nest_incr();
         if (comm_ptr->comm_kind == MPID_INTRACOMM) 
             /* intracommunicator */
             mpi_errno = MPIR_Scatter(sendbuf, sendcnt, sendtype,
@@ -590,6 +594,7 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                                            recvbuf, recvcnt, recvtype, root,
                                            comm_ptr); */
         }
+	MPIR_Nest_decr();
     }
     if (mpi_errno == MPI_SUCCESS)
     {

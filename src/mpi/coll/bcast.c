@@ -58,6 +58,7 @@
    End Algorithm: MPI_Bcast
 */
 
+/* begin:nested */
 /* not declared static because it is called in intercomm. allgather */
 int MPIR_Bcast ( 
 	void *buffer, 
@@ -422,8 +423,9 @@ int MPIR_Bcast (
 
   return mpi_errno;
 }
+/* end:nested */
 
-
+/* begin:nested */
 PMPI_LOCAL int MPIR_Bcast_inter ( 
     void *buffer, 
     int count, 
@@ -483,7 +485,7 @@ PMPI_LOCAL int MPIR_Bcast_inter (
     
     return mpi_errno;
 }
-
+/* end:nested */
 #endif
 
 #undef FUNCNAME
@@ -573,6 +575,7 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
     }
     else
     {
+	MPIR_Nest_incr();
         if (comm_ptr->comm_kind == MPID_INTRACOMM) 
             /* intracommunicator */
             mpi_errno = MPIR_Bcast( buffer, count, datatype, root, comm_ptr );
@@ -583,8 +586,8 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
 					      "**intercommcoll %s", FCNAME );
             /*mpi_errno = MPIR_Bcast_inter( buffer, count, datatype,
 	      root, comm_ptr );*/
-
         }
+	MPIR_Nest_decr();
     }
     if (mpi_errno == MPI_SUCCESS)
     {

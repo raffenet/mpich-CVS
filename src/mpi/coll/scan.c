@@ -57,7 +57,7 @@
    End Algorithm: MPI_Scan
 */
 
-
+/* begin:nested */
 PMPI_LOCAL int MPIR_Scan ( 
     void *sendbuf, 
     void *recvbuf, 
@@ -118,7 +118,8 @@ PMPI_LOCAL int MPIR_Scan (
         return mpi_errno;
     }
     /* adjust for potential negative lower bound in datatype */
-    MPI_Type_lb( datatype, &lb );
+    /* FIXME: should his be true_lb ? */
+    NMPI_Type_lb( datatype, &lb );
     partial_scan = (void *)((char*)partial_scan - lb);
     
     /* need to allocate temporary buffer to store incoming data*/
@@ -128,7 +129,8 @@ PMPI_LOCAL int MPIR_Scan (
         return mpi_errno;
     }
     /* adjust for potential negative lower bound in datatype */
-    MPI_Type_lb( datatype, &lb );
+    /* FIXME: should this be true_lb? */
+    NMPI_Type_lb( datatype, &lb );
     tmp_buf = (void *)((char*)tmp_buf - lb);
     
     /* Since this is an inclusive scan, copy local contribution into
@@ -192,6 +194,7 @@ PMPI_LOCAL int MPIR_Scan (
 
     return (mpi_errno);
 }
+/* end:nested */
 #endif
 
 #undef FUNCNAME
@@ -286,8 +289,10 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI
     }
     else
     {
+	MPIR_Nest_incr();
 	mpi_errno = MPIR_Scan(sendbuf, recvbuf, count, datatype,
                               op, comm_ptr); 
+	MPIR_Nest_decr();
     }
     if (mpi_errno == MPI_SUCCESS)
     {

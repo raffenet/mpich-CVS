@@ -78,12 +78,15 @@ PMPI_LOCAL int MPIR_Allreduce (
     if (!is_homogeneous) {
         /* heterogeneous. To get the same result on all processes, we
            do a reduce to 0 and then broadcast. */
+	MPIR_Nest_incr();
         mpi_errno = NMPI_Reduce ( sendbuf, recvbuf, count, datatype,
                                   op, 0, comm );
         if (mpi_errno == MPI_ERR_OP || mpi_errno == MPI_SUCCESS) {
+	    /* Allow MPI_ERR_OP since we can continue from this error */
             rc = NMPI_Bcast  ( recvbuf, count, datatype, 0, comm );
             if (rc) mpi_errno = rc;
         }
+	MPIR_Nest_decr();
     }
     else {
         /* homogeneous. Use recursive doubling algorithm similar to the
@@ -126,7 +129,13 @@ PMPI_LOCAL int MPIR_Allreduce (
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
-        NMPI_Type_lb( datatype, &lb );
+	MPIR_Nest_incr();
+	/* FIXME: This must be the true lb, not any artificial LB.
+	   is MPI_Type_true_extent ready? */
+        mpi_errno = NMPI_Type_lb( datatype, &lb );
+	if (mpi_errno) return mpi_errno;
+	MPIR_Nest_decr();
+
         tmp_buf = (void *)((char*)tmp_buf - lb);
         
         /* copy local data into recvbuf */

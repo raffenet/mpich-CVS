@@ -43,7 +43,7 @@
    End Algorithm: MPI_Reduce_scatter
 */
 
-
+/* begin:nested */
 PMPI_LOCAL int MPIR_Reduce_scatter ( 
     void *sendbuf, 
     void *recvbuf, 
@@ -77,7 +77,8 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
 
     MPID_Datatype_get_size_macro(datatype, type_size);
     MPID_Datatype_get_extent_macro(datatype, extent);
-    MPI_Type_lb( datatype, &lb );
+    /* FIXME: should this be true_lb? */
+    NMPI_Type_lb( datatype, &lb );
     
     if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
         is_commutative = 1;
@@ -437,8 +438,9 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
 
     return (mpi_errno);
 }
+/* end:nested */
 
-
+/* begin:nested */
 PMPI_LOCAL int MPIR_Reduce_scatter_inter ( 
     void *sendbuf, 
     void *recvbuf, 
@@ -493,7 +495,8 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
-        MPI_Type_lb( datatype, &lb );
+	/* FIXME: should this be true_lb? */
+        NMPI_Type_lb( datatype, &lb );
         tmp_buf = (void *)((char*)tmp_buf - lb);
     }
 
@@ -548,7 +551,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
     return mpi_errno;
 
 }
-
+/* end:nested */
 #endif
 
 #undef FUNCNAME
@@ -649,6 +652,7 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype
     }
     else
     {
+	MPIR_Nest_incr();
         if (comm_ptr->comm_kind == MPID_INTRACOMM) 
             /* intracommunicator */
             mpi_errno = MPIR_Reduce_scatter(sendbuf, recvbuf,
@@ -663,6 +667,7 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype
                                                   recvcnts, datatype, 
                                                   op, comm_ptr);           */
         }
+	MPIR_Nest_decr();
     }
     if (mpi_errno == MPI_SUCCESS)
     {

@@ -37,6 +37,7 @@
 */
 
 /* not declared static because it is called in intercomm. allreduce */
+/* begin:nested */
 int MPIR_Reduce ( 
     void *sendbuf, 
     void *recvbuf, 
@@ -129,7 +130,8 @@ int MPIR_Reduce (
         return mpi_errno;
     }
     /* adjust for potential negative lower bound in datatype */
-    PMPI_Type_lb( datatype, &lb );
+    /* FIXME: should this be true_lb? */
+    NMPI_Type_lb( datatype, &lb );
     buffer = (void *)((char*)buffer - lb);
     
     /* If I'm not the root, then my recvbuf may not be valid, therefore
@@ -217,7 +219,9 @@ int MPIR_Reduce (
 
     return (mpi_errno);
 }
+/* end:nested */
 
+/* begin:nested */
 PMPI_LOCAL int MPIR_Reduce_inter ( 
     void *sendbuf, 
     void *recvbuf, 
@@ -276,7 +280,8 @@ PMPI_LOCAL int MPIR_Reduce_inter (
                 return mpi_errno;
             }
             /* adjust for potential negative lower bound in datatype */
-            PMPI_Type_lb( datatype, &lb );
+	    /* FIXME: should this be true_lb? */
+            NMPI_Type_lb( datatype, &lb );
             tmp_buf = (void *)((char*)tmp_buf - lb);
         }
         
@@ -304,6 +309,7 @@ PMPI_LOCAL int MPIR_Reduce_inter (
     
     return mpi_errno;
 }
+/* end:nested */
 #endif
 
 #undef FUNCNAME
@@ -398,6 +404,7 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
     }
     else
     {
+	MPIR_Nest_incr();
         if (comm_ptr->comm_kind == MPID_INTRACOMM) {
             /* intracommunicator */
             mpi_errno = MPIR_Reduce(sendbuf, recvbuf, count, datatype,
@@ -411,6 +418,7 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
             /*mpi_errno = MPIR_Reduce_inter(sendbuf, recvbuf, count, datatype,
 	      op, root, comm_ptr); */
         }
+	MPIR_Nest_decr();
     }
     if (mpi_errno == MPI_SUCCESS)
     {

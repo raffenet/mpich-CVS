@@ -39,7 +39,8 @@
 
    End Algorithm: MPI_Alltoallv
 */
-
+ 
+/* begin:nested */
 PMPI_LOCAL int MPIR_Alltoallv ( 
 	void *sendbuf, 
 	int *sendcnts, 
@@ -132,8 +133,9 @@ PMPI_LOCAL int MPIR_Alltoallv (
     
     return (mpi_errno);
 }
+/* end:nested */
 
-
+/* begin:nested */
 PMPI_LOCAL int MPIR_Alltoallv_inter ( 
     void *sendbuf, 
     int *sendcnts, 
@@ -211,7 +213,7 @@ PMPI_LOCAL int MPIR_Alltoallv_inter (
     
     return (mpi_errno);
 }
-
+/* end:nested */
 #endif
 
 #undef FUNCNAME
@@ -311,6 +313,7 @@ int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype sendt
     }
     else
     {
+	MPIR_Nest_incr();
         if (comm_ptr->comm_kind == MPID_INTRACOMM) 
             /* intracommunicator */
             mpi_errno = MPIR_Alltoallv(sendbuf, sendcnts, sdispls,
@@ -325,6 +328,7 @@ int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype sendt
                                              sendtype, recvbuf, recvcnts,
                                              rdispls, recvtype, comm_ptr);*/
         }
+	MPIR_Nest_decr();
     }
     if (mpi_errno == MPI_SUCCESS)
     {

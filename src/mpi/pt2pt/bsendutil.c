@@ -167,11 +167,13 @@ int MPIR_Bsend_detach( void *bufferp, int *size )
 	/* Loop through each active element and wait on it */
 	BsendData_t *p = BsendBuffer.active;
 	
+	MPIR_Nest_incr();
 	while (p) {
 	    MPI_Request r = p->request->handle;
 	    NMPI_Wait( &r, MPI_STATUS_IGNORE );
 	    p = p->next;
 	}
+	MPIR_Nest_decr();
     }
 
     *(void **) bufferp = BsendBuffer.buffer;
@@ -199,6 +201,8 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
        We may want to decide here whether we need to pack at all 
        or if we can just use (a memcpy) of the buffer.
     */
+
+    MPIR_Nest_incr();
 
     (void)NMPI_Pack_size( count, dtype, comm_ptr->handle, &packsize );
 
@@ -280,6 +284,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	MPIR_Bsend_retry_pending( );
     }
     MPID_Thread_unlock( &BsendBuffer.bsend_lock );
+    MPIR_Nest_decr();
     
     if (!p) {
 	/* Return error for no buffer space found */
@@ -301,6 +306,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 
 /* Add block p to the free list. Merge into adjacent blocks.  Used only 
    within the check_active */
+/* begin:nested */
 static void MPIR_Bsend_free_segment( BsendData_t *p )
 {
     BsendData_t *prev = p->prev, *avail = BsendBuffer.avail, *avail_prev;
@@ -400,7 +406,7 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 	}
     }
 }
-
+/* end:nested */
 /* 
  * The following routine tests for completion of active sends and 
  * frees the related storage
