@@ -4033,7 +4033,8 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT /*| ISC_REQ_CONFIDENTIALITY | ISC_REQ_DELEGATE*/,
 	0,
 	/*SECURITY_NATIVE_DREP, */SECURITY_NETWORK_DREP,
-	&inbound_descriptor, 0, &sspi_context->context, &outbound_descriptor, &attr, &ts);
+	&inbound_descriptor, 0, &sspi_context->context,
+	&outbound_descriptor, &attr, &ts);
     switch (sec_result)
     {
     case SEC_E_OK:
@@ -4063,8 +4064,10 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	{
 	    smpd_dbg_printf("SEC_I_CONTINUE_NEEDED\n");
 	}
+	/*
 	*sspi_buffer_pptr = outbound_buffer.pvBuffer;
 	*length_ptr = outbound_buffer.cbBuffer;
+	*/
 	break;
     default:
 	/* error occurred */
@@ -4072,6 +4075,16 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	smpd_err_printf("InitializeSecurityContext failed with error %d: %s\n", sec_result, err_msg);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
+    }
+    if (outbound_buffer.cbBuffer > 0)
+    {
+	*sspi_buffer_pptr = outbound_buffer.pvBuffer;
+	*length_ptr = outbound_buffer.cbBuffer;
+    }
+    else
+    {
+	*sspi_buffer_pptr = NULL;
+	*length_ptr = 0;
     }
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
