@@ -68,7 +68,8 @@ Notes:
 .N MPI_SUCCESS
 .N MPI_ERR_COMM
 
-.seealso: MPI_Comm_free, MPI_Keyval_create, MPI_Attr_set, MPI_Attr_delete
+.seealso: MPI_Comm_free, MPI_Keyval_create, MPI_Attr_put, MPI_Attr_delete,
+ MPI_Comm_create_keyval, MPI_Comm_set_attr, MPI_Comm_delete_attr
 @*/
 int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 {
