@@ -369,6 +369,18 @@ int PMI_Get_rank(int *rank)
     return PMI_SUCCESS;
 }
 
+int PMI_Get_clique_size( int *size )
+{
+    *size = 1;
+    return PMI_SUCCESS;
+}
+
+int PMI_Get_clique_ranks( int *ranks )
+{
+    *ranks = pmi_process.iproc;
+    return PMI_SUCCESS;
+}
+
 int PMI_Barrier()
 {
     int result;
