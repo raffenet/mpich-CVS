@@ -107,7 +107,10 @@ typedef struct MPIDI_CH3I_Shmem_block_request_result
     int error;
     void *addr;
     unsigned int size;
-#ifdef HAVE_SHMGET
+#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+    char key[100];
+    int id;
+#elif defined (HAVE_SHMGET)
     int key;
     int id;
 #elif defined (HAVE_MAPVIEWOFFILE)

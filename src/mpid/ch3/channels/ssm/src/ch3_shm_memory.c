@@ -16,6 +16,8 @@ static void generate_shm_string(char *str)
 	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
 	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
     MPIU_DBG_PRINTF(("GUID = %s\n", str));
+#elif defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+    sprintf(str, "/mpich_shm_%d", rand());
 #else
     sprintf(str, "%d", getpid());
 #endif
@@ -93,7 +95,24 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
     }
 
     /* Create the shared memory object */
-#ifdef HAVE_SHMGET
+#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+    srand(getpid());
+    for (i=0; i<10; i++)
+    {
+	generate_shm_string(pOutput->key);
+	pOutput->id = shm_open(pOutput->key, O_RDWR | O_CREAT, 0600);
+	if (pOutput->id != -1)
+	    break;
+    }
+    if (pOutput->id == -1)
+    {
+	pOutput->error = errno;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_open", "**shm_open %s %d", pOutput->key, pOutput->error);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+	return mpi_errno;
+    }
+    ftruncate(pOutput->id, size);
+#elif defined (HAVE_SHMGET)
     srand(getpid());
     for (i=0; i<10; i++)
     {
@@ -130,7 +149,16 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
 #endif
 
     pOutput->addr = NULL;
-#ifdef HAVE_SHMAT
+#if defined (HAVE_MMAP) && defined (HAVE_SHM_OPEN)
+    pOutput->addr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED /* | MAP_NORESERVE*/, pOutput->id, 0);
+    if (pOutput->addr == MAP_FAILED)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**mmap", "**mmap %d", errno);
+	pg->addr = NULL;
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+	return mpi_errno;
+    }
+#elif defined (HAVE_SHMAT)
     pOutput->addr = shmat(pOutput->id, NULL, SHM_RND);
     if (pOutput->addr == (void*)-1)
     {
@@ -183,7 +211,16 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_ATTACH_TO_MEM);
 
     /* Create the shared memory object */
-#ifdef HAVE_SHMGET
+#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+    pOutput->id = shm_open(pInput->key, O_RDWR | O_CREAT, 0600);
+    if (pOutput->id == -1)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_open", "**shm_open %s %d", pInput->key, errno);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ATTACH_TO_MEM);
+	return mpi_errno;
+    }
+    /*ftruncate(pOutput->id, size);*/
+#elif defined (HAVE_SHMGET)
     pOutput->id = shmget(pInput->key, pInput->size, SHM_R | SHM_W);
     if (pOutput->id == -1)
     {
@@ -213,7 +250,15 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
 #endif
 
     pOutput->addr = NULL;
-#ifdef HAVE_SHMAT
+#if defined (HAVE_MMAP) && defined (HAVE_SHM_OPEN)
+    pOutput->addr = mmap(NULL, pInput->size, PROT_READ | PROT_WRITE, MAP_SHARED /* | MAP_NORESERVE*/, pOutput->id, 0);
+    if (pOutput->addr == MAP_FAILED)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**mmap", "**mmap %d", errno);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ATTACH_TO_MEM);
+	return mpi_errno;
+    }
+#elif defined (HAVE_SHMAT)
     pOutput->addr = shmat(pOutput->id, NULL, SHM_RND);
     if (pOutput->addr == (void*)-1)
     {
@@ -223,7 +268,7 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ATTACH_TO_MEM);
 	return mpi_errno;
     }
-#ifdef HAVE_SHMCTL
+#if defined (HAVE_SHMCTL) && !(defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP))
     shmctl(pOutput->id, IPC_RMID, NULL);
 #endif
 #elif defined(HAVE_MAPVIEWOFFILE)
@@ -263,7 +308,10 @@ int MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Shmem_block_request_result *p)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
     
-#ifdef HAVE_SHMDT
+#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+    close(p->id);
+    shm_unlink(p->key);
+#elif defined (HAVE_SHMDT)
     shmdt(p->addr);
 #endif
 #ifdef HAVE_UNMAPVIEWOFFILE

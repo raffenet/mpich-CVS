@@ -25,7 +25,8 @@ PAC_PROG_MAKE
 AC_DEFINE(USE_PROCESS_LOCKS,,[Define to use process locks])
 dnl AC_DEFINE(HAVE_SHARED_PROCESS_READ,,[Define to use /proc directory for shared process reads])
 
-AC_CHECK_FUNCS( sysconf shmget shmat shmdt shmctl shm_open mmap shm_unlink )
+AC_CHECK_FUNCS( sysconf shmget shmat shmdt shmctl mmap shm_unlink )
+AC_SEARCH_LIBS( shm_open, rt, AC_DEFINE(HAVE_SHM_OPEN,,[Define if shm_open is available]) )
 
 AC_CHECK_HEADERS(				\
     assert.h					\
