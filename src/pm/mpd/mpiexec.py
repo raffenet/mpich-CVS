@@ -66,7 +66,7 @@ def get_next_argset():
     if configFile:
         line = configFile.readline().strip()
         if line:
-            # next line: prepend an _ to avoid problems with -n to echo
+            # next line: prepend an _ to avoid problems with -n as arg to echo
             shOut = Popen3("/bin/sh -c 'for a in $*; do echo _$a; done' -- %s" % line)
             for line in shOut.fromchild:
                 argset.append(line[1:].strip())
@@ -85,28 +85,30 @@ def handle_argset(argset):
     wdir  = path.abspath(getcwd())   # default
     wpath = environ['PATH']   # default ; avoid name conflict with python path module
     nProcs = 1  # default
-    pgmAndArgs = []
-    i = 0    # can not use range here
-    while i < len(argset):
-        if argset[i][0] == '-':
-            if argset[i] == '-n':
-                nProcs = int(argset[i+1])
-                i += 1
-            elif argset[i] == '-host':
-                host = argset[i+1]
-                i += 1
-            elif argset[i] == '-wdir':
-                wdir = argset[i+1]
-                i += 1
-            elif argset[i] == '-path':
-                wpath = argset[i+1]
-                i += 1
-	    else:
-	        print 'unrecognized option: %s' % argset[i]
-		usage()
+    cmdAndArgs = []
+    argidx = 0    # can not use range here
+    while argidx < len(argset):
+        if argset[argidx][0] != '-':
+            break
+        if argset[argidx] == '-n':
+            nProcs = int(argset[argidx+1])
+        elif argset[argidx] == '-host':
+            host = argset[argidx+1]
+        elif argset[argidx] == '-wdir':
+            wdir = argset[argidx+1]
+        elif argset[argidx] == '-path':
+            wpath = argset[argidx+1]
         else:
-            pgmAndArgs.append(argset[i])
-        i += 1
+            print 'unsupported or unrecognized option: %s' % argset[i]
+            usage()
+        argidx += 2  # currently, all args have subargs
+    while argidx < len(argset):
+        cmdAndArgs.append(argset[argidx])
+        argidx += 1
+    if not cmdAndArgs:
+        print 'no cmd specified'
+        usage()
+
     if nProcs == 1:
         thisRange = (nextRange,nextRange)
     else:
@@ -122,10 +124,10 @@ def handle_argset(argset):
     xmlForArgset += "        <cwd name='%s' range='%d-%d'/>\n" % \
         (wdir,thisRange[0],thisRange[1])
     xmlForArgset += "        <exec name='%s' range='%d-%d'/>\n" % \
-        (pgmAndArgs[0],thisRange[0],thisRange[1])
+        (cmdAndArgs[0],thisRange[0],thisRange[1])
     xmlForArgset += "        <args range='%d-%d'>\n" % \
             (thisRange[0],thisRange[1])
-    for arg in pgmAndArgs[1:]:
+    for arg in cmdAndArgs[1:]:
         xmlForArgset += "            <arg value='%s'/>\n" % (arg)
     xmlForArgset += "        </args>\n"
     # print xmlForArgset
