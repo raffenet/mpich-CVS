@@ -122,7 +122,10 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
     /* Lock for collective operation */
     MPID_Comm_thread_lock( comm_ptr );
 
-    if (nbytes > MPIR_REDUCE_SCATTER_SHORT_MSG) {
+/*    if (nbytes > MPIR_REDUCE_SCATTER_SHORT_MSG) { */
+/* temporarily disabled short-msg algo until bug found */
+
+    if (nbytes > -1) {
         /* for long messages, use (p-1) pairwise exchanges */ 
         
         if (sendbuf != MPI_IN_PLACE) {
@@ -368,7 +371,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
                         (rank < tree_root + nprocs_completed)
                         && (dst >= tree_root + nprocs_completed)) {
                         /* send the current result */
-                        mpi_errno = MPIC_Send(tmp_recvbuf, 1, recvtype,
+                        mpi_errno = MPIC_Send(tmp_results, 1, recvtype,
                                               dst, MPIR_REDUCE_SCATTER_TAG,
                                               comm);  
                         if (mpi_errno) return mpi_errno;
@@ -378,35 +381,10 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
                     else if ((dst < rank) && 
                              (dst < tree_root + nprocs_completed) &&
                              (rank >= tree_root + nprocs_completed)) {
-                        mpi_errno = MPIC_Recv(tmp_recvbuf, 1, recvtype, dst,
+                        mpi_errno = MPIC_Recv(tmp_results, 1, recvtype, dst,
                                               MPIR_REDUCE_SCATTER_TAG,
                                               comm, &status); 
                         if (mpi_errno) return mpi_errno;
-                        
-                        if (is_commutative || (dst_tree_root <
-                                               my_tree_root)) { 
-                            (*uop)(tmp_recvbuf, tmp_results, &blklens[0],
-                                   &datatype); 
-                            (*uop)(((char *)tmp_recvbuf + dis[1]*extent),
-                                   ((char *)tmp_results + dis[1]*extent),
-                                   &blklens[1], &datatype); 
-                        }
-                        else {
-                            (*uop)(tmp_results, tmp_recvbuf, &blklens[0],
-                                   &datatype); 
-                            (*uop)(((char *)tmp_results + dis[1]*extent),
-                                   ((char *)tmp_recvbuf + dis[1]*extent),
-                                   &blklens[1], &datatype); 
-                            /* copy result back into tmp_results */
-                            mpi_errno = MPIC_Sendrecv(tmp_recvbuf, 1,
-                                                      recvtype, rank, 
-                                                      MPIR_REDUCE_SCATTER_TAG, 
-                                                      tmp_results, 1,
-                                                      recvtype, rank, 
-                                                      MPIR_REDUCE_SCATTER_TAG, 
-                                                      comm, &status);
-                            if (mpi_errno) return mpi_errno;
-                        }
                     }
                     tmp_mask >>= 1;
                     k--;

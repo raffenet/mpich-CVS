@@ -51,36 +51,67 @@ PMPI_LOCAL int MPIR_Allgatherv (
     MPI_Datatype recvtype, 
     MPID_Comm *comm_ptr )
 {
-    int        comm_size, rank, j, i, tmp_buf_size;
+    MPI_Comm comm;
+    int        comm_size, rank, j, i, jnext, left, right;
     int        mpi_errno = MPI_SUCCESS;
     MPI_Status status;
     MPI_Aint   recv_extent;
+
+#ifdef FOO
     int curr_cnt, mask, dst, dst_tree_root, my_tree_root, is_homogeneous,
         send_offset, recv_offset, last_recv_cnt, nprocs_completed, k,
-        offset, tmp_mask, tree_root, position, nbytes, total_count;
+        offset, tmp_mask, tree_root, position, nbytes, total_count,
+        tmp_buf_size; 
     void *tmp_buf;
-    MPI_Comm comm;
+#endif
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
     
+    MPID_Datatype_get_extent_macro( recvtype, recv_extent );
+    
+    /* First, load the "local" version in the recvbuf. */
+    mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype, 
+                               ((char *)recvbuf + displs[rank]*recv_extent),
+                               recvcounts[rank], recvtype);
+    if (mpi_errno) return mpi_errno;
+
+    left  = (comm_size + rank - 1) % comm_size;
+    right = (rank + 1) % comm_size;
+  
+    /* Lock for collective operation */
+    MPID_Comm_thread_lock( comm_ptr );
+
+    j     = rank;
+    jnext = left;
+    for (i=1; i<comm_size; i++) {
+        mpi_errno = MPIC_Sendrecv(((char *)recvbuf+displs[j]*recv_extent),
+                                  recvcounts[j], recvtype, right,
+                                  MPIR_ALLGATHERV_TAG, 
+                                  ((char *)recvbuf + displs[jnext]*recv_extent),
+                                  recvcounts[jnext], recvtype, left, 
+                                  MPIR_ALLGATHERV_TAG, comm, &status );
+        if (mpi_errno) break;
+        j	    = jnext;
+        jnext = (comm_size + jnext - 1) % comm_size;
+    }
+    
+
+/* coment out recursive doubling algorithm */
+#ifdef FOO
+
     is_homogeneous = 1;
 #ifdef MPID_HAS_HETERO
     if (comm_ptr->is_hetero)
         is_homogeneous = 0;
 #endif
     
-    MPID_Datatype_get_extent_macro( recvtype, recv_extent );
-    
     total_count = 0;
     for (i=0; i<comm_size; i++)
         total_count += recvcounts[i];
 
     if (total_count == 0) return MPI_SUCCESS;
-    
-    /* Lock for collective operation */
-    MPID_Comm_thread_lock( comm_ptr );
     
     /* use recursive doubling algorithm */
     
@@ -373,6 +404,8 @@ PMPI_LOCAL int MPIR_Allgatherv (
         
         MPIU_Free(tmp_buf);
   }
+
+#endif
 
   /* Unlock for collective operation */
     MPID_Comm_thread_unlock( comm_ptr );
