@@ -22,6 +22,8 @@ fi
 
 PAC_PROG_MAKE
 
+AC_DEFINE(IBU_TYPE_UNIX,,[Define to use unix iovecs])
+
 AC_CHECK_HEADERS(				\
     assert.h					\
     errno.h					\

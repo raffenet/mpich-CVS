@@ -11,7 +11,8 @@ extern "C" {
 #endif
 
 /* config header file */
-#include "mpichconf.h"
+//#include "mpichconf.h"
+#include "mpidi_ch3i_ib_conf.h"
 #include "iba.h"
 #include "psc_iba.h"
 
@@ -51,10 +52,8 @@ typedef enum IBU_OP
 
 
 
-#define WITH_IBU_TYPE IBU_WINDOWS
-
 /* definitions/structures specific to Windows */
-#if (WITH_IBU_TYPE == IBU_WINDOWS)
+#ifdef IBU_TYPE_WINDOWS
 
 #include <winsock2.h>
 #define IBU_IOV             WSABUF
@@ -68,7 +67,7 @@ typedef ib_cq_handle_t ibu_set_t;
 typedef struct ibu_state_t * ibu_t;
 
 /* definitions/structures specific to Unix */
-#elif (WITH_IBU_TYPE == IBU_UNIX)
+#elif defined(IBU_TYPE_UNIX)
 
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
@@ -84,7 +83,7 @@ typedef ib_cq_handle_t ibu_set_t;
 typedef int ibu_t;
 
 #else
-#error Error: WITH_IBU_TYPE not defined
+#error Error: IBU_TYPE not defined
 #endif
 
 

@@ -34,7 +34,7 @@ typedef int IBU_STATE;
 typedef struct ibu_buffer
 {
     int use_iov;
-    DWORD num_bytes;
+    unsigned int num_bytes;
     void *buffer;
     int bufflen;
     IBU_IOV iov[IBU_IOV_MAXLEN];
@@ -1170,7 +1170,6 @@ int ibu_post_read(ibu_t ibu, void *buf, int len, int (*rfn)(int, void*))
 
 int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*rfn)(int, void*))
 {
-    DWORD flags = 0;
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_READV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_READV);
