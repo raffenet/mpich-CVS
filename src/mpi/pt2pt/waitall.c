@@ -91,13 +91,13 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
 	    status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ?
 		&array_of_statuses[i] : MPI_STATUS_IGNORE;
 	    rc = NMPI_Wait(&array_of_requests[i], status_ptr);
+	    if (array_of_statuses != MPI_STATUSES_IGNORE)
+	    {
+		array_of_statuses[i] = *status_ptr;
+		array_of_statuses[i].MPI_ERROR = rc;
+	    }
 	    if (rc != MPI_SUCCESS)
 	    {
-		if (rc != MPI_ERR_IN_STATUS)
-		{
-		    array_of_statuses[i].MPI_ERROR = rc;
-		    /* XXX - set other fields??? */
-		}
 		mpi_errno = MPI_ERR_IN_STATUS;
 	    }
 	}
@@ -105,5 +105,6 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
     MPIR_Nest_decr();
     
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITALL);
-    return MPI_SUCCESS;
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
+	MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
 }

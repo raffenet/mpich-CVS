@@ -44,10 +44,8 @@
 int MPI_Wait(MPI_Request *request, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Wait";
-    int mpi_errno = MPI_SUCCESS;
     MPID_Request * request_ptr = NULL;
-    MPID_Comm * comm_ptr = NULL;
-    int error = FALSE;
+    int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WAIT);
 
     /* Verify that MPI has been initialized */
@@ -56,6 +54,11 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(request,"request",mpi_errno);
+	    if (request != NULL)
+	    {
+		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
+	    }
             if (mpi_errno) {
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
@@ -65,61 +68,114 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 #   endif /* HAVE_ERROR_CHECKING */
 	    
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_WAIT);
+
+    /* If this is a null request handle, then return an empty status */
+    if (*request == MPI_REQUEST_NULL)
+    {
+	if (status != MPI_STATUS_IGNORE)
+	{
+	    status->MPI_SOURCE = MPI_ANY_SOURCE;
+	    status->MPI_TAG = MPI_ANY_TAG;
+	    status->MPI_ERROR = MPI_SUCCESS;
+	    status->count = 0;
+	    status->cancelled = FALSE;
+	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
+	    return MPI_SUCCESS;
+	}
+    }
     
-    /* Convert MPI object handles to object pointers */
-    MPID_Request_get_ptr( *request, request_ptr );
-    comm_ptr = request_ptr->comm;
+    /* Convert MPI request handle to a request object pointer */
+    MPID_Request_get_ptr(*request, request_ptr);
     
-    /* Validate parameters if error checking is enabled */
+    /* Validate object pointers if error checking is enabled */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    /* Validate request_ptr */
-	    MPIR_ERRTEST_ARGNULL(request,"request",mpi_errno);
-	    if (request != NULL)
-	    {
-		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
-	    }
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
-                return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
-            }
-	    
             MPID_Request_valid_ptr( request_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
-                return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+                return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
             }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPIR_Wait(request_ptr);
-    
-    if (request_ptr->kind == MPID_UREQUEST)
+    switch (request_ptr->kind)
     {
-	mpi_errno = (request_ptr->query_fn)(
-	    request_ptr->grequest_extra_state, &request_ptr->status);
-	request_ptr->status.MPI_ERROR = mpi_errno;
-	mpi_errno = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
-	if (mpi_errno != MPI_SUCCESS)
+	case MPID_REQUEST_SEND:
+	case MPID_REQUEST_RECV:
 	{
-	    request_ptr->status.MPI_ERROR = mpi_errno;
+	    *request = MPI_REQUEST_NULL;
+	    MPIR_Wait(request_ptr);
+	    break;
+	}
+	
+	case MPID_PREQUEST_SEND:
+	case MPID_PREQUEST_RECV:
+	{
+	    /* The device uses a partner request to track the actual
+               communication.  If a partner request is not found, then the
+               persistent request is inactive and an empty status is
+               returned. */
+	    if (request_ptr->partner_request != NULL)
+	    {
+		request_ptr = request_ptr->partner_request;
+		MPIR_Wait(request_ptr);
+	    }
+	    else
+	    {
+		status->MPI_SOURCE = MPI_ANY_SOURCE;
+		status->MPI_TAG = MPI_ANY_TAG;
+		status->MPI_ERROR = MPI_SUCCESS;
+		status->count = 0;
+		status->cancelled = FALSE;
+		MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
+		return MPI_SUCCESS;
+	    }
+	    
+	    break;
+	}
+	
+	case MPID_UREQUEST:
+	{
+	    int rc;
+	
+	    *request = MPI_REQUEST_NULL;
+	    
+	    MPIR_Wait(request_ptr);
+	    
+	    rc = (request_ptr->query_fn)(
+		request_ptr->grequest_extra_state, &request_ptr->status);
+	    if (mpi_errno == MPI_SUCCESS)
+	    {
+		mpi_errno = rc;
+	    }
+	    
+	    rc = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
+	    if (mpi_errno == MPI_SUCCESS)
+	    {
+		mpi_errno = rc;
+	    }
+
+	    break;
 	}
     }
     
-    error = (request_ptr->status.MPI_ERROR != MPI_SUCCESS);
     if (status != MPI_STATUS_IGNORE)
     {
 	*status = request_ptr->status;
     }
 
-    *request = MPI_REQUEST_NULL;
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	mpi_errno = request_ptr->status.MPI_ERROR;
+    }
+
     MPID_Request_release(request_ptr);
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
-    return !error ? MPI_SUCCESS :
-	MPIR_Err_return_comm(comm_ptr, FCNAME, MPI_ERR_IN_STATUS);
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
+	MPIR_Err_return_comm(request_ptr->comm, FCNAME, mpi_errno);
 }
