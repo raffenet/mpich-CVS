@@ -1095,7 +1095,6 @@ dnl If so, add -fno-common to CFLAGS
 dnl An alternative is to use, on some systems, ranlib -c to force 
 dnl the system to find common symbols.
 dnl
-dnl NOT TESTED
 AC_DEFUN(PAC_PROG_C_BROKEN_COMMON,[
 AC_CACHE_CHECK([whether global variables handled properly],
 ac_cv_prog_cc_globals_work,[
@@ -1371,4 +1370,64 @@ pac_cv_gnu_attr_format=yes,pac_cv_gnu_attr_format=no)])
         AC_DEFINE(HAVE_GCC_ATTRIBUTE,1,[Define if GNU __attribute__ is supported])
     fi
 fi
+])
+dnl
+dnl Check for a broken install (fails to preserve file modification times,
+dnl thus breaking libraries.
+dnl
+dnl Create a library, install it, and then try to link against it.
+AC_DEFUN([PAC_PROG_INSTALL_BREAKS_LIBS],[
+AC_CACHE_CHECK([whether install breaks libraries],
+ac_cv_prog_install_breaks_libs,[
+AC_REQUIRE([AC_PROG_RANLIB])
+AC_REQUIRE([AC_PROG_INSTALL])
+AC_REQUIRE([AC_PROG_CC])
+ac_cv_prog_install_breaks_libs=yes
+rm -f libconftest* conftest*
+echo 'int foo(int);int foo(int a){return a;}' > conftest1.c
+echo 'extern int foo(int); int main( int argc, char **argv){ return foo(0); }' > conftest2.c
+if ${CC-cc} $CFLAGS -c conftest1.c >conftest.out 2>&1 ; then
+    if ${AR-ar} cr libconftest.a conftest1.o >/dev/null 2>&1 ; then
+        if ${RANLIB-:} libconftest.a >/dev/null 2>&1 ; then
+	    # Anything less than sleep 10, and Mac OS/X (Darwin) 
+	    # will claim that install works because ranlib won't complain
+	    sleep 10
+	    libinstall="$INSTALL_DATA"
+	    eval "libinstall=\"$libinstall\""
+	    if ${libinstall} libconftest.a libconftest1.a  >/dev/null 2>&1 ; then
+                if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest1.a 2>&1 >>conftest.out && test -x conftest ; then
+		    # Success!  Install works
+ 	            ac_cv_prog_install_breaks_libs=no
+	        else
+	            # Failure!  Does install -p work?	
+		    rm -f libconftest1.a
+		    if ${libinstall} -p libconftest.a libconftest1.a >/dev/null 2>&1 ; then
+                        if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest1.a >>conftest.out 2>&1 && test -x conftest ; then
+			# Success!  Install works
+			    ac_cv_prog_install_breaks_libs="no, with -p"
+			fi
+		    fi
+                fi
+            fi
+        fi
+    fi
+fi
+rm -f conftest* libconftest*])
+
+if test -z "$RANLIB_AFTER_INSTALL" ; then
+    RANLIB_AFTER_INSTALL=no
+fi
+case "$ac_cv_prog_install_breaks_libs" in
+	yes)
+	    RANLIB_AFTER_INSTALL=yes
+	;;
+	"no, with -p")
+	    INSTALL_DATA="$INSTALL_DATA -p"
+	;;
+	*)
+	# Do nothing
+	:
+	;;
+esac
+AC_SUBST(RANLIB_AFTER_INSTALL)
 ])

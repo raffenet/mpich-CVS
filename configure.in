@@ -726,6 +726,8 @@ PAC_PROG_C_BROKEN_COMMON
 #
 AC_PROG_INSTALL
 #
+# On Mac OS/X, install breaks libraries unless used with the -p switch
+PAC_PROG_INSTALL_BREAKS_LIBS
 # We also need mkdir -p.
 PAC_PROG_MKDIR_P
 
