@@ -85,7 +85,6 @@ void PrintWC(VAPI_wc_desc_t *p)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op_t *op_ptr)
 {
-    int i;
     VAPI_ret_t status;
     VAPI_wc_desc_t completion_data;
     void *mem_ptr;
@@ -100,8 +99,11 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
     void *mem_ptr_orig;
     int mpi_errno;
     int pkt_offset;
+#ifdef MPIDI_CH3_CHANNEL_RNDV
     MPID_Request *sreq, *rreq;
     int complete;
+    int i;
+#endif
 #endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
 
@@ -154,6 +156,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	if (status != VAPI_OK)
 	{
 	    /*MPIU_Internal_error_printf("%s: error: VAPI_poll_cq did not return VAPI_OK, %s\n", FCNAME, VAPI_strerror(status));*/
+	    /*MPIU_dump_dbg_memlog_to_stdout();*/
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", VAPI_strerror(status));
 	    MPIU_DBG_PRINTFX(("exiting ibu_wait 3\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);

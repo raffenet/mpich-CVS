@@ -247,7 +247,7 @@ static int ibui_add_nodes_to_cache(ibu_mem_node_t *node)
     return IBU_SUCCESS;
 }
 
-int ibu_free_pin_cache()
+int ibu_clean_pin_cache()
 {
     ibu_mem_node_t *iter;
     ibui_free_pin_tree(ibu_pin_cache);
@@ -297,7 +297,7 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
 	    {
 		if (g_total_mem_pinned > IBU_MAX_PINNED && EVENODD(g_onoff))
 		{
-		    ibu_free_pin_cache();
+		    ibu_clean_pin_cache();
 		    goto start_over;
 		}
 
@@ -318,7 +318,7 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
 	    {
 		if (g_total_mem_pinned > IBU_MAX_PINNED && EVENODD(g_onoff))
 		{
-		    ibu_free_pin_cache();
+		    ibu_clean_pin_cache();
 		    goto start_over;
 		}
 

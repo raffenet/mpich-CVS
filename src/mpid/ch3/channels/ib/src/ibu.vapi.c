@@ -13,6 +13,11 @@
 #include <malloc.h>
 #endif
 #include "mpidi_ch3_impl.h"
+#ifdef HAVE_WINDOWS_H
+#ifdef USE_DEBUG_ALLOCATION_HOOK
+#include <crtdbg.h>
+#endif
+#endif
 
 #ifdef USE_IB_VAPI
 
@@ -763,6 +768,29 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
     return IBU_SUCCESS;
 }
 
+#ifdef HAVE_WINDOWS_H
+#ifdef USE_DEBUG_ALLOCATION_HOOK
+int __cdecl ibu_allocation_hook(int nAllocType, void * pvData, size_t nSize, int nBlockUse, long lRequest, const unsigned char * szFileName, int nLine) 
+{
+    /*nBlockUse = _FREE_BLOCK, _NORMAL_BLOCK, _CRT_BLOCK, _IGNORE_BLOCK, _CLIENT_BLOCK */
+    if ( nBlockUse == _CRT_BLOCK ) /* Ignore internal C runtime library allocations */
+	return( TRUE ); 
+
+    /*nAllocType = _HOOK_ALLOC, _HOOK_REALLOC, _HOOK_FREE */
+    if (nAllocType == _HOOK_FREE)
+    {
+	/* remove from cache */
+	if ( pvData != NULL )
+	{
+	    ibu_invalidate_memory(pvData, nSize);
+	}
+    }
+
+    return( TRUE ); /* Allow the memory operation to proceed */
+}
+#endif
+#endif
+
 #undef FUNCNAME
 #define FUNCNAME ibu_init
 #undef FCNAME
@@ -794,6 +822,11 @@ int ibu_init()
 #endif
 #ifdef M_MMAP_MAX
     mallopt(M_MMAP_MAX, 0);
+#endif
+#ifdef HAVE_WINDOWS_H
+#ifdef USE_DEBUG_ALLOCATION_HOOK
+    _CrtSetAllocHook(ibu_allocation_hook);
+#endif
 #endif
 #endif
 
