@@ -73,22 +73,6 @@
 #endif
 
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
-#define HAVE_COMPARE_AND_SWAP
-static inline char
-__attribute__ ((unused))
-     compare_and_swap (volatile long int *p, long int oldval, long int newval)
-{
-  char ret;
-  long int readval;
-
-  __asm__ __volatile__ ("lock; cmpxchgl %3, %1; sete %0"
-                : "=q" (ret), "=m" (*p), "=a" (readval)
-            : "r" (newval), "m" (*p), "a" (oldval));
-  return ret;
-}
-#endif
-
-#ifdef HAVE_GCC_AND_PENTIUM_ASM
 #define MPID_WRITE_BARRIER()
 #define MPID_READ_BARRIER()
 #define MPID_READ_WRITE_BARRIER()
@@ -230,12 +214,15 @@ int MPIDI_CH3I_SSM_VC_post_read(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_SSM_VC_post_write(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_Get_business_card(char *value, int length);
 
-#define BOOTSTRAP_MAX_NUM_MSGS 8192
+#define BOOTSTRAP_MAX_NUM_MSGS 2048
 #define BOOTSTRAP_MAX_MSG_SIZE sizeof(MPIDI_CH3I_Shmem_queue_info)
 
+int MPIDI_CH3I_BootstrapQ_create_unique_name(char *name, int length);
+int MPIDI_CH3I_BootstrapQ_create_named(MPIDI_CH3I_BootstrapQ *queue_ptr, const char *name, const int initialize);
 int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr);
 int MPIDI_CH3I_BootstrapQ_tostring(MPIDI_CH3I_BootstrapQ queue, char *name, int length);
 int MPIDI_CH3I_BootstrapQ_destroy(MPIDI_CH3I_BootstrapQ queue);
+int MPIDI_CH3I_BootstrapQ_unlink(MPIDI_CH3I_BootstrapQ queue);
 int MPIDI_CH3I_BootstrapQ_attach(char *name, MPIDI_CH3I_BootstrapQ * queue_ptr);
 int MPIDI_CH3I_BootstrapQ_detach(MPIDI_CH3I_BootstrapQ queue);
 int MPIDI_CH3I_BootstrapQ_send_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, int length);
@@ -267,7 +254,7 @@ extern int MPIDI_CH3I_shm_read_active, MPIDI_CH3I_shm_write_active;
 extern int MPIDI_CH3I_sock_read_active, MPIDI_CH3I_sock_write_active;
 
 #ifdef USE_MQSHM
-int MPIDI_CH3I_mqshm_create(const char *name, int *id);
+int MPIDI_CH3I_mqshm_create(const char *name, int initialize, int *id);
 int MPIDI_CH3I_mqshm_close(int id);
 int MPIDI_CH3I_mqshm_unlink(int id);
 int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, const int tag, int *num_sent, int blocking);
