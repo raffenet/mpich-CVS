@@ -832,20 +832,31 @@ int ibu_init()
 {
     VAPI_ret_t status;
     VAPI_cqe_num_t max_cq_entries = IBU_MAX_CQ_ENTRIES+1;
+    EVAPI_hca_profile_t sugg_profile;
+    VAPI_hca_id_t id = "InfiniHost0";
     MPIDI_STATE_DECL(MPID_STATE_IBU_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_INIT);
 
     /* Initialize globals */
     /* get a handle to the host channel adapter */
-    status = VAPI_open_hca("InfiniHost0", &IBU_Process.hca_handle);
+#if 0
+    status = VAPI_open_hca(id, &IBU_Process.hca_handle);
     if (status != VAPI_OK)
     {
 	err_printf("ibu_init: VAPI_open_hca failed, status %d\n", status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
-    status = EVAPI_get_hca_hndl("InfiniHost0", &IBU_Process.hca_handle);
+#endif
+    status = EVAPI_open_hca(id, NULL, &sugg_profile);
+    if (status != VAPI_OK)
+    {
+	err_printf("ibu_init: EVAPI_open_hca failed, status %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
+	return status;
+    }
+    status = EVAPI_get_hca_hndl(id, &IBU_Process.hca_handle);
     if (status != VAPI_OK)
     {
 	err_printf("ibu_init: EVAPI_get_hca_hndl failed, status %d\n", status);
