@@ -351,7 +351,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		    }
 		    else
 		    {
-			MPIDI_DBG_PRINTF((55, FCNAME, "posting writev, vc=0x%p, sreq=0x%08x", conn->vc, sreq->handle));
+			MPIDI_DBG_PRINTF((55, FCNAME, "posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
 			mpi_errno = MPIDU_Sock_post_writev(conn->sock, sreq->dev.iov, sreq->dev.iov_count, NULL);
 			if (mpi_errno != MPI_SUCCESS)
 			{

@@ -27,7 +27,6 @@ static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, i
     }
     sreq->dev.iov[iov_offset].MPID_IOV_BUF = (char *) sreq->dev.iov[iov_offset].MPID_IOV_BUF + nb;
     sreq->dev.iov[iov_offset].MPID_IOV_LEN -= nb;
-    sreq->ch.iov_offset = iov_offset;
     sreq->dev.iov_count = iov_count;
 
     MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST);
@@ -40,6 +39,7 @@ static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, i
 int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
 {
     int mpi_errno = MPI_SUCCESS;
+    int complete;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
@@ -98,11 +98,17 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 			MPIDI_DBG_PRINTF((55, FCNAME, "partial write, request enqueued at head"));
 			update_request(sreq, iov, n_iov, offset, nb);
 			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-			mpi_errno = MPIDI_CH3I_VC_post_write(vc, sreq);
+			MPIDI_DBG_PRINTF((55, FCNAME, "posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
+			vc->ch.conn->send_active = sreq;
+			mpi_errno = MPIDU_Sock_post_writev(vc->ch.conn->sock, sreq->dev.iov + offset,
+							   sreq->dev.iov_count - offset, NULL);
 			if (mpi_errno != MPI_SUCCESS)
 			{
-			    MPID_Abort(NULL, mpi_errno, 13);
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+							     "**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
+							     sreq, vc->ch.conn, vc);
 			}
+
 			break;
 		    }
 
@@ -111,12 +117,24 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 		{
 		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    MPIDI_CH3U_Handle_send_req(vc, sreq);
-		    if (sreq->dev.iov_count == 0)
+		    MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
+		    if (complete)
 		    {
 			/* NOTE: dev.iov_count is used to detect completion instead of cc because the transfer may be complete, but
                            the request may still be active (see MPI_Ssend()) */
 			MPIDI_CH3I_SendQ_dequeue(vc);
+		    }
+		    else
+		    {
+			MPIDI_DBG_PRINTF((55, FCNAME, "posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
+			vc->ch.conn->send_active = sreq;
+			mpi_errno = MPIDU_Sock_post_writev(vc->ch.conn->sock, sreq->dev.iov, sreq->dev.iov_count, NULL);
+			if (mpi_errno != MPI_SUCCESS)
+			{
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+							     "**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
+							     sreq, vc->ch.conn, vc);
+			}
 		    }
 		}
 	    }

@@ -17,7 +17,6 @@ static void update_request(MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_s
     sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt + nb;
     sreq->dev.iov[0].MPID_IOV_LEN = hdr_sz - nb;
     sreq->dev.iov_count = 1;
-    sreq->ch.iov_offset = 0;
     MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST);
 }
 
@@ -28,6 +27,7 @@ static void update_request(MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_s
 int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_sz)
 {
     int mpi_errno = MPI_SUCCESS;
+    int complete;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
@@ -67,12 +67,24 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_sz
 		{
 		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete %d bytes, calling MPIDI_CH3U_Handle_send_req()", nb));
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    MPIDI_CH3U_Handle_send_req(vc, sreq);
-		    if (sreq->dev.iov_count == 0)
+		    MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
+		    if (complete)
 		    {
 			/* NOTE: dev.iov_count is used to detect completion instead of cc because the transfer may be complete,
 			   but the request may still be active (see MPI_Ssend()) */
 			MPIDI_CH3I_SendQ_dequeue(vc);
+		    }
+		    else
+		    {
+			MPIDI_DBG_PRINTF((55, FCNAME, "posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
+			vc->ch.conn->send_active = sreq;
+			mpi_errno = MPIDU_Sock_post_writev(vc->ch.conn->sock, sreq->dev.iov, sreq->dev.iov_count, NULL);
+			if (mpi_errno != MPI_SUCCESS)
+			{
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+							     "**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
+							     sreq, vc->ch.conn, vc);
+			}
 		    }
 		}
 		else
@@ -80,10 +92,15 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_sz
 		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write of %d bytes, request enqueued at head", nb));
 		    update_request(sreq, hdr, hdr_sz, nb);
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    mpi_errno = MPIDI_CH3I_VC_post_write(vc, sreq);
+		    MPIDI_DBG_PRINTF((55, FCNAME, "posting write, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
+		    vc->ch.conn->send_active = sreq;
+		    mpi_errno = MPIDU_Sock_post_write(vc->ch.conn->sock, sreq->dev.iov[0].MPID_IOV_BUF,
+						      sreq->dev.iov[0].MPID_IOV_LEN, sreq->dev.iov[0].MPID_IOV_LEN, NULL);
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
-			MPID_Abort(NULL, mpi_errno, 13);
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+							 "**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
+							 sreq, vc->ch.conn, vc);
 		    }
 		}
 	    }

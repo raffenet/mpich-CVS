@@ -154,41 +154,6 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int iov
 
 
 /*E
-  MPIDI_CH3_iWrite - A non-blocking request to send more data.  The buffer containing the data to be sent is described by the I/O
-  vector in the send request.  When the send is complete the channel implementation will call MPIDI_CH3U_Handle_send_req().
-
-  Input Parameters:
-+ vc - virtual connection over which to send the data 
-- sreq - pointer to the send request object
-
-  Return value:
-  An mpi error code.
-  
-  IMPLEMENTORS:
-  If the send completes immediately, the channel implementation still must call MPIDI_CH3U_Handle_send_req().
-E*/
-int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * sreq);
-
-
-/*E
-  MPIDI_CH3_iRead - A non-blocking request to receive more data.  The buffer in which to recieve the data is described by the
-  I/O vector in the receive request.  When the receive is complete the channel implementation will call
-  MPIDI_CH3U_Handle_recv_req().
-
-  Input Parameters:
-+ vc - virtual connection over which to send the data 
-- sreq - pointer to the send request object
-
-  Return value:
-  An mpi error code.
-  
-  IMPLEMENTORS:
-  If the receive completes immediately, the channel implementation still must call MPIDI_CH3U_Handle_recv_req().
-E*/
-int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq);
-
-
-/*E
   MPIDI_CH3_Cancel_send - Attempt to cancel a send request by removing the request from the local send queue.
 
   Input Parameters:
@@ -371,13 +336,16 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm
 + vc - virtual connection over which the packet was received
 - pkt - pointer to the CH3 packet
 
+  Output Parameter:
+. rreqp - receive request defining data to be received; may be NULL
+
   NOTE:
   Multiple threads may note simultaneously call this routine with the same virtual connection.  This constraint eliminates the
   need to lock the VC and thus improves performance.  If simultaneous upcalls for a single VC are a possible, then the calling
   routine must serialize the calls (perhaps by locking the VC).  Special consideration may need to be given to packet ordering
   if the channel has made guarantees about ordering.
 E*/
-int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
+int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp);
 
 
 /*E
@@ -387,20 +355,26 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
   Input Parameters:
 + vc - virtual connection over which the data was received
 - rreq - pointer to the receive request object
+
+  Output Parameter:
+. complete - data transfer for the request has completed
 E*/
-int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq);
+int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complete);
 
 
 /*E
-  MPIDI_CH3U_Handle_send_req- Process a send request for which all of the data described the request's IOV has been completely
+  MPIDI_CH3U_Handle_send_req - Process a send request for which all of the data described the request's IOV has been completely
   buffered and/or sent.
 
   Input Parameters:
 + vc - virtual connection over which the data was sent
 - sreq - pointer to the send request object
+
+  Output Parameter:
+. complete - data transfer for the request has completed
 E*/
 
-int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq);
+int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq, int * complete);
 
 
 /*E

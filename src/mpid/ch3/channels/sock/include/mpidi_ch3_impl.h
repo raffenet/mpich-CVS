@@ -32,6 +32,35 @@ MPIDI_CH3I_Process_t;
 
 extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
+enum MPIDI_CH3I_Conn_state
+{
+    CONN_STATE_UNCONNECTED,
+    CONN_STATE_LISTENING,
+    CONN_STATE_CONNECTING,
+    CONN_STATE_CONNECT_ACCEPT, 
+    CONN_STATE_OPEN_CSEND,
+    CONN_STATE_OPEN_CRECV,
+    CONN_STATE_OPEN_LRECV_PKT,
+    CONN_STATE_OPEN_LRECV_DATA,
+    CONN_STATE_OPEN_LSEND,
+    CONN_STATE_CONNECTED,
+    CONN_STATE_CLOSING,
+    CONN_STATE_CLOSED,
+    CONN_STATE_FAILED
+};
+
+typedef struct MPIDI_CH3I_Connection
+{
+    MPIDI_VC * vc;
+    MPIDU_Sock_t sock;
+    enum MPIDI_CH3I_Conn_state state;
+    MPID_Request * send_active;
+    MPID_Request * recv_active;
+    MPIDI_CH3_Pkt_t pkt;
+    char * pg_id;
+    MPID_IOV iov[2];
+} MPIDI_CH3I_Connection_t;
+
 #define MPIDI_CH3I_SendQ_enqueue(vc, req)									\
 {														\
     /* MT - not thread safe! */											\
@@ -79,8 +108,6 @@ int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 short MPIDI_CH3I_Listener_get_port(void);
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC *);
-int MPIDI_CH3I_VC_post_read(MPIDI_VC *, MPID_Request *);
-int MPIDI_CH3I_VC_post_write(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_Get_business_card(char *value, int length);
 int  MPIDI_CH3I_Connect_to_root(char *port_name, MPIDI_VC **new_vc);
 
