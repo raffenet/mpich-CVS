@@ -1008,6 +1008,7 @@ static void socki_handle_write(struct pollfd * const pollfd, struct pollinfo * c
 
     if (nb > 0)
     {
+	/* printf("[%d] %s(): wrote %d bytes\n", MPIR_Process.comm_world->rank, FCNAME, nb); */
 	pollinfo->write_nb += nb;
 	
 	if (socki_adjust_iov(nb, pollinfo->write_iov, pollinfo->write_iov_count, &pollinfo->write_iov_offset))
