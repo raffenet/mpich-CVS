@@ -47,6 +47,11 @@ tresized2_LDADD = ../util/mtest.o
 
 tfree_SOURCES = tfree.c
 tfree_LDADD = ../util/mtest.o 
+
+sizedtypes_SOURCES = sizedtypes.c
+sizedtypes_LDADD = ../util/mtest.o
+
+contigstruct_SOURCES = contigstruct.c
 		 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o )
