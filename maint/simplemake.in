@@ -18,6 +18,9 @@ $autoconf_args = ""; # Extra arguments for autoconf
 $do_sharedlibs  = 0; # set to 1 the generate targets for shared libraries
 $root_tags = 1;
 $local_tags = 0;
+# 
+$fixup_autoconf_cd = 1;
+#
 $fixup_for_timestamps = 1; # make is broken
 $SleepSlow = "sleep 1";
 $SleepFast = "perl -e \'\$\$now=time;\$\$now-=10;utime \$\$now, \$\$now, \"LIB\";\'";
@@ -503,6 +506,10 @@ sub DefaultRules {
 	}
 	print FD "\nconfigure: configure.in $autoconf_deps\n";
 	print FD "\tautoheader $aargs\n\tautoconf $aargs\n";
+	if ($fixup_autoconf_cd) {
+	    # This is needed for DOS in case the pwd contains blanks
+	    print FD "\tsed -e 's/cd *\$\$ac_popdir/cd \"\$\$ac_popdir\"/g' configure > c.tmp ; mv -f c.tmp configure ; chmod a+x configure\n";
+	}
     }
     if ($maint_targets && "$smdir" ne "") {
 	print FD "\nMakefile.in: Makefile.sm\n\t$smdir/simplemake Makefile.sm\n";
