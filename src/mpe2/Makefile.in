@@ -138,3 +138,7 @@ dependencies:
 
 # Allow a coverage target
 coverage:
+
+# Allow a tags target
+tags: TAGS
+TAGS:
