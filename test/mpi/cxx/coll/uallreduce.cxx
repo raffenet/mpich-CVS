@@ -5,8 +5,19 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpi.h"
-#include "mpitestcxx.h"
+#include "mpitestconf.h"
+#ifdef HAVE_IOSTREAM
+// Not all C++ compilers have iostream instead of iostream.h
 #include <iostream>
+#ifdef HAVE_NAMESPACE_STD
+// Those that do often need the std namespace; otherwise, a bare "cout"
+// is likely to fail to compile
+using namespace std;
+#endif
+#else
+#include <iostream.h>
+#endif
+#include "mpitestcxx.h"
 
 void uop( const void *invec, void *inoutvec, int count, 
 	  const MPI::Datatype &datatype )
@@ -45,7 +56,7 @@ int main( int argc, char **argv )
 	    if (vout[i] != i * size) {
 		errs++;
 		if (errs < 10) 
-		    std::cerr << "vout[" << i << "] = " << vout[i] << std::endl;
+		    cerr << "vout[" << i << "] = " << vout[i] << endl;
 	    }
 	}
 	

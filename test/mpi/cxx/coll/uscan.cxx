@@ -5,8 +5,20 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpi.h"
-#include "mpitestcxx.h"
+#include "mpitestconf.h"
+#ifdef HAVE_IOSTREAM
+// Not all C++ compilers have iostream instead of iostream.h
 #include <iostream>
+#ifdef HAVE_NAMESPACE_STD
+// Those that do often need the std namespace; otherwise, a bare "cout"
+// is likely to fail to compile
+using namespace std;
+#endif
+#else
+#include <iostream.h>
+#endif
+#include "mpitestcxx.h"
+
 static int RealCount = -1;
 static int uopErrs = 0;
 void uop( const void *invec, void *inoutvec, int count, 
@@ -18,8 +30,8 @@ void uop( const void *invec, void *inoutvec, int count,
     if (count != RealCount) {
 	uopErrs++;
 	if (uopErrs < 2) {
-	    std::cerr << "Wrong count, got " << count << " expected " << RealCount 
-		 << std::endl;
+	    cerr << "Wrong count, got " << count << " expected " << RealCount 
+		 << endl;
 	}
     }
     for (i=0; i<count; i++) {
@@ -55,8 +67,8 @@ int main( int argc, char **argv )
 	    if (vout[i] != i * (rank+1)) {
 		errs++;
 		if (errs < 10) 
-		    std::cerr << "vout[" << i << "] = " << vout[i] << 
-			" expected " << i * (rank + 1) << std::endl;
+		    cerr << "vout[" << i << "] = " << vout[i] << 
+			" expected " << i * (rank + 1) << endl;
 	    }
 	}
 	

@@ -1,4 +1,18 @@
 Makefile.in
 Makefile
 *.o
+uallreduce
+ureduce
+uscan
+uexscan
+icbcastx
+icbarrierx
+icgatherx
+icgathervx
+icscatterx
+icscattervx
+icallgatherx
+icallgathervx
+icallreducex
+
 
