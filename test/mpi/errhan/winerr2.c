@@ -58,7 +58,7 @@ int main( int argc, char *argv[] )
     int buf[2];
     MPI_Win       win;
     MPI_Comm      comm;
-    MPI_Errhandler newerr1, olderr;
+    MPI_Errhandler newerr1, newerr2, olderr;
 
 
     MTest_Init( &argc, &argv );
