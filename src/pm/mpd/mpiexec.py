@@ -322,8 +322,14 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
         for envvar in environ.keys():
             envToSend[envvar] = environ[envvar]
     for envvar in globalArgs['-genvlist']:
+        if not environ.has_key(envvar):
+            print '%s in envlist does not exist in your env' % (envvar)
+            exit(-1)
         envToSend[envvar] = environ[envvar]
     for envvar in localEnvlist:
+        if not environ.has_key(envvar):
+            print '%s in envlist does not exist in your env' % (envvar)
+            exit(-1)
         envToSend[envvar] = environ[envvar]
     for envvar in globalArgs['-genv'].keys():
         envToSend[envvar] = globalArgs['-genv'][envvar]
