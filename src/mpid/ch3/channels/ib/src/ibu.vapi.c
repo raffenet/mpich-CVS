@@ -774,7 +774,7 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 #endif
 
 	/*sanity_check_send(&work_req);*/
-	if (msg_size < ibu->max_inline_size)
+	if (msg_size < (unsigned int)ibu->max_inline_size)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "EVAPI_post_inline_sr(%d bytes)", msg_size));
 	    status = EVAPI_post_inline_sr( IBU_Process.hca_handle,
@@ -816,11 +816,10 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 int ibu_init()
 {
     VAPI_ret_t status;
-    EVAPI_hca_profile_t sugg_profile;
     VAPI_hca_id_t id = "InfiniHost0";
     VAPI_hca_vendor_t vendor;
     VAPI_hca_cap_t hca_cap;
-    VAPI_rkey_t rkey;
+    /*VAPI_rkey_t rkey;*/
     MPIDI_STATE_DECL(MPID_STATE_IBU_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_INIT);
@@ -939,8 +938,6 @@ int ibu_create_set(ibu_set_t *set)
 {
     VAPI_ret_t status;
     VAPI_cqe_num_t max_cq_entries = IBU_Process.cq_size;
-    EVAPI_compl_handler_hndl_t ch;
-    EVAPI_async_handler_hndl_t ah;
     MPIDI_STATE_DECL(MPID_STATE_IBU_CREATE_SET);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_CREATE_SET);
