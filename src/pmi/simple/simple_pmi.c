@@ -9,7 +9,8 @@
 
 #include "pmiconf.h" 
 
-#define PMI_VERSION "1.1"
+#define PMI_VERSION    1
+#define PMI_SUBVERSION 1
 
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
@@ -899,7 +900,10 @@ static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
     MPIU_Strncpy(iter, "\n", maxlen);
     PMIU_writeline( PMI_fd, buf );
 #else
-    PMIU_writeline( PMI_fd, "cmd=init pmi_version=" PMI_VERSION "\n" );
+    MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=init pmi_version=%d pmi_subversion=%d\n",
+		   PMI_VERSION, PMI_SUBVERSION );
+
+    PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf );
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
@@ -908,10 +912,13 @@ static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
 	PMI_Abort( -1, errmsg );
     }
     else {
+	char buf1[PMIU_MAXLINE];
         PMIU_getval( "rc", buf, PMIU_MAXLINE );
         if ( strncmp( buf, "0", PMIU_MAXLINE ) != 0 ) {
             PMIU_getval( "pmi_version", buf, PMIU_MAXLINE );
-	    sprintf(errmsg, "pmi_version mismatch; :%s: ? :%s:\n", PMI_VERSION,buf );
+            PMIU_getval( "pmi_subversion", buf1, PMIU_MAXLINE );
+	    sprintf(errmsg, "pmi_version mismatch; client=%d.%d mgr=%d.%d\n",
+		    PMI_VERSION, PMI_SUBVERSION, buf, buf1 );
 	    PMI_Abort( -1, errmsg );
         }
     }
