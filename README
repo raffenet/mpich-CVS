@@ -14,19 +14,18 @@ This is an early release of MPICH2.  It has been tested by us on a
 variety of machines in our own environment, but not extensively tested
 by outside users.  If you have problems, please report them to
 mpich2-maint@mcs.anl.gov; we are interested in incorporating user
-experiences as quickly as possible.  The web site
-http://www.mcs.anl.gov/mpi/mpich2 will also have information on bug
-fixes and new releases.  This README should be enough to get you
-started; more extensive intstallation and user guides are in progress.
+experiences as quickly as possible.
 
-In addition to several bug fixes, the 0.971 release includes new end
-user documentation in the form of a User Guide and an Installation
-Guide.  These guides are located in the files doc/userguide/user.pdf and
-doc/installguide/install.pdf respectively.  More information can be
-found at the end of this README under "Status of MPI-2 Features in
-MPICH2", in the CHANGES file in the top-level directory, and in the
-RELEASE_NOTES file, where certain restrictions are detailed.
-
+This README file should contain enough information to get you started
+with MPICH2.  More extensive intstallation and user guides can be found
+in the doc/installguide/install.pdf and doc/userguide/user.pdf files
+respectively.  Additional information regarding the contents of the
+release can be found at the end of this README under "Status of MPI-2
+Features in MPICH2", in the CHANGES file in the top-level directory, and
+in the RELEASE_NOTES file, where certain restrictions are detailed.
+Finally, the MPICH2 web site, http://www.mcs.anl.gov/mpi/mpich2,
+contains information on bug fixes and new releases.
+  
 Windows users should see the file README.windows in this directory. 
 
 
