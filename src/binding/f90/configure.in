@@ -295,6 +295,29 @@ AC_SUBST(F90_INTEGER_MODEL)
 if test -z "$CROSS_F90_INTEGER_MODEL_MAP" ; then
     AC_MSG_CHECKING([for available integer kinds and ranges])
     rm -f conftest.*
+    # First, create a C routine to provide the size in bytes 
+    # of a variable
+    cat <<EOF > conftestc.c
+#include <stdio.h>
+#include "confdefs.h"
+#ifdef F77_NAME_UPPER
+#define cisize_ CISIZE
+#define isize_ ISIZE
+#elif defined(F77_NAME_LOWER) || defined(F77_NAME_MIXED)
+#define cisize_ cisize
+#define isize_ isize
+#endif
+int cisize_(char *,char*);
+int cisize_(char *i1p, char *i2p)
+{ 
+    int isize_val=0;
+    isize_val = (int)(i2p - i1p);
+    return isize_val;
+}
+EOF
+    pac_tmp_compile='$CC -c $CFLAGS $CPPFLAGS conftestc.c >&5'
+
+    # Now, create the program to find the kinds and sizes
     cat >conftest.$ac_f90ext <<EOF
       program main
       integer r, lastkind
@@ -302,7 +325,8 @@ if test -z "$CROSS_F90_INTEGER_MODEL_MAP" ; then
       do r=2,30
            k = selected_int_kind(r)
            if (k .ne. lastkind) then
-                print *, r-1,",",lastkind,","    
+	        sz = getintsize( lastkind )
+                print *, r-1,",",lastkind,",",sz,","    
                 lastkind = k
            endif
            if (k .le. 0) then
@@ -310,6 +334,11 @@ if test -z "$CROSS_F90_INTEGER_MODEL_MAP" ; then
            endif
       enddo
       end 
+      integer function getintsize( k )
+      integer (kind=k) a(2)
+      getintsize = cisize( a(1), a(2) )
+      return
+      end
 EOF
     if AC_TRY_EVAL(ac_f90link) && test -s conftest${ac_exeext} ; then
         ./conftest > conftest.out 2>&AC_FD_CC

@@ -5,6 +5,13 @@
  */
 
 #include "mpiimpl.h"
+/* 
+   mpif90conf.h contains definitions that define the data types that are
+   available to Fortran 90.  These define a sequence of integers
+   that define precision and range (for real and complex), and 
+   range for integers.  It also defines a mapping of range to 
+   Fortran 90 "kind" values for integers.
+*/
 #include "mpif90conf.h"
 
 /* This gives the maximum number of distinct types returned by any one of the
