@@ -1,4 +1,5 @@
 MPE_THREAD_LIB_NAME=@MPE_THREAD_LIB_NAME@
+lib${MPE_THREAD_LIB_NAME}_a_DIR = ROOTDIR/lib
 lib${MPE_THREAD_LIB_NAME}_a_SOURCES = mpe_thread.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 

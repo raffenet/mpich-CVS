@@ -157,8 +157,10 @@ AC_OUTPUT(Makefile mpe_thread.h localdefs,[
 if test ! -d ../../include ; then
     mkdir ../../include
 fi
-echo "moving mpe_thread.h to ../../include"
-mv -f mpe_thread.h ../../include/mpe_thread.h
+if test -f mpe_thread.h ; then
+    echo "moving mpe_thread.h to ../../include"
+    mv -f mpe_thread.h ../../include/mpe_thread.h
+fi
 ])
 
 PAC_SUBDIR_CACHE_CLEANUP
