@@ -19,12 +19,12 @@
 **nullptr %s:Null pointer in parameter %s
 **nullptrtype:Null pointer
 **nullptrtype %s:Null %s pointer
-**commnamelen: Specified communicator name is too long
-**commnamelen %d: Specified communicator name is too long (%d characters)
-**winnamelen: Specified window object name is too long
-**winnamelen %d: Specified window object name is too long (%d characters)
-**typenamelen: Specified datatype name is too long
-**typenamelen %d: Specified datatype name is too long (%d characters)
+**commnamelen:Specified communicator name is too long
+**commnamelen %d:Specified communicator name is too long (%d characters)
+**winnamelen:Specified window object name is too long
+**winnamelen %d:Specified window object name is too long (%d characters)
+**typenamelen:Specified datatype name is too long
+**typenamelen %d:Specified datatype name is too long (%d characters)
 **success:No MPI error
 **fileexist:File exists
 **fileexist %s:File %s exists
@@ -48,7 +48,7 @@ also the value at index %d
 **dimsmany %d %d:Number of dimensions %d is too large (maximum is %d)
 **dimspartition:Cannot partition nodes as requested 
 **cartcoordinvalid:Cartesian coordinate is invalid (not in range)
-**cartcoordinvalid %d %d %d: Cartesian coordinate for the %d coordinate \
+**cartcoordinvalid %d %d %d:Cartesian coordinate for the %d coordinate \
  is %d but must be between 0 and %d
 **cartdim:Size of Cartesian grid is larger than the size of the communicator
 **cartdim %d %d:Size of the communicator (%d) is smaller than the size of the \
@@ -149,8 +149,8 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **nouniquehigh:Could not determine which group to place first in merged \
  intracommunicator.  Please use the parameter high to choose which group \
  should be placed first.
-**f90typetoomany: Too many requests for unnamed, predefined f90 types
-**f90typetoomany %s %d: Too many requests for unnamed, predefined f90 %s \
+**f90typetoomany:Too many requests for unnamed, predefined f90 types
+**f90typetoomany %s %d:Too many requests for unnamed, predefined f90 %s \
  types; no more than %d allowed.
 #
 #---- The messages below this line haven't been used yet.
@@ -232,7 +232,7 @@ Fortran integer (value is %ld)
  is %d but must have value 1
 **darrayunknown:Unknown distribution type 
 **darrayblock:Value of m must be positive for block(m) distribution
-**darrayblock %d: Value of m in block(m) distribution is %d must must be \
+**darrayblock %d:Value of m in block(m) distribution is %d must must be \
  positive
 **darrayblock2:m * nprocs is less than array_size and is not valid for \
       block(m) distribution \
@@ -294,7 +294,7 @@ Fortran integer (value is %ld)
  MPI_REGISTER_DATAREP
 **datarepused %s:The requested datarep name %s has already been specified to \
  MPI_REGISTER_DATAREP
-**datarepextent: Invalid extent callback
+**datarepextent:Invalid extent callback
 **fileinuse:File in use by some process
 **fileinuse %s:File %s is in use by some process
 **file:Invalid MPI_File
@@ -326,7 +326,7 @@ Fortran integer (value is %ld)
 **ioasyncwaiting:There are outstanding nonblocking I/O operations on this file
 **ioneedrdwr:Read/write access is required to this file
 **ioneedrd:Read access is required to this file
-**ioneedwr: Write access is required to this file
+**ioneedwr:Write access is required to this file
 **iofiletype:Filetype must be constructed out of one or more etypes
 **iosharedunsupported:Shared file pointers not supported
 **iosharedunsupported %s:Shared file pointers not supported on filesystem %s
@@ -429,12 +429,12 @@ with MPI_Alloc_mem.
 **usercancel %d:user request cancel function returned error code %d
 **userfree %d:user request free function returned error code %d
 **oremote_fail:open failed on a remote node
-**join_portname: local and remote port names are the same
-**join_portname %s %s: local %s, remote %s
-**join_send: send on the socket failed
-**join_send %d: send on the socket failed (errno %d)
-**join_recv: recv from the socket failed
-**join_recv %d: recv from the socket failed (errno %d)
+**join_portname:local and remote port names are the same
+**join_portname %s %s:local %s, remote %s
+**join_send:send on the socket failed
+**join_send %d:send on the socket failed (errno %d)
+**join_recv:recv from the socket failed
+**join_recv %d:recv from the socket failed (errno %d)
 
 
 # Duplicates?
@@ -510,8 +510,8 @@ with MPI_Alloc_mem.
 #
 **ch3|pg_init:unable to initialize the process group management module
 **ch3|pg_create:unable to create a new process group
-**ch3|pg_not_found: the specified process group object could not be located
-**ch3|pg_not_found %p: the specified process group object could not be located (pg=%p)
+**ch3|pg_not_found:the specified process group object could not be located
+**ch3|pg_not_found %p:the specified process group object could not be located (pg=%p)
 
 #
 # CH3:sock errors
@@ -560,18 +560,18 @@ with MPI_Alloc_mem.
 **ch3|sock|badhost %s %d %s:[ch3:sock] invalid host description, %s:%d (%s)
 **pglookup:unable to find the process group structure
 **pglookup %s:unable to find the process group structure with id <%s>
-**ch3|sock|handle_sock_event: an error occurred while handling an event returned by MPIDU_Sock_Wait()
-**ch3|sock|pgsize_cache: process group size does not match the one in the cache
-**ch3|sock|pgsize_cache %d %d: size in cache %d, size passed %d
-**ch3|sock|bizcard_cache: business card does not match the one in the cache
-**ch3|sock|bizcard_cache %s %s: business card in cache: %s, business card passed: %s
-**ch3|sock|pgrank_cache: rank must be less than process group size in the cache
-**ch3|sock|pgrank_cache %d %d: pg size in cache %d, rank passed %d
-**ch3|sock|pg_limit: reached the limit of process groups for spawn/connect/accept
-**ch3|sock|pgsize: process group sizes don't match
-**ch3|sock|pgsize %d %d: existing pg size %d, matching pg size %d
-**ch3|sock|pgrank: rank must be less than process group size
-**ch3|sock|pgrank %d %d: pg size %d, rank passed %d
+**ch3|sock|handle_sock_event:an error occurred while handling an event returned by MPIDU_Sock_Wait()
+**ch3|sock|pgsize_cache:process group size does not match the one in the cache
+**ch3|sock|pgsize_cache %d %d:size in cache %d, size passed %d
+**ch3|sock|bizcard_cache:business card does not match the one in the cache
+**ch3|sock|bizcard_cache %s %s:business card in cache: %s, business card passed: %s
+**ch3|sock|pgrank_cache:rank must be less than process group size in the cache
+**ch3|sock|pgrank_cache %d %d:pg size in cache %d, rank passed %d
+**ch3|sock|pg_limit:reached the limit of process groups for spawn/connect/accept
+**ch3|sock|pgsize:process group sizes don't match
+**ch3|sock|pgsize %d %d:existing pg size %d, matching pg size %d
+**ch3|sock|pgrank:rank must be less than process group size
+**ch3|sock|pgrank %d %d:pg size %d, rank passed %d
 
 #
 # CH3:ssm
@@ -807,7 +807,7 @@ with MPI_Alloc_mem.
 **finalize_release_mem:Release shared memory failed
 **shmgetmem:Unable to allocate shared memory
 **mmap:unable to map memory, mmap failed
-**mmap %d: unable to map memory, mmap failed (errno %d)
+**mmap %d:unable to map memory, mmap failed (errno %d)
 **shm_open:unable to open a shared memory object
 **shm_open %s %d:unable to open shared memory object %s (errno %d)
 **ftruncate:unable to resize the shared memory object
@@ -849,10 +849,10 @@ with MPI_Alloc_mem.
 **sock|closed:sock has been closed locally
 **sock|getport:failed to obtain port number of the listener
 **sock|hostres:unable to resolve host name to an address
-**sock|listener_bad_sock: supplied sock is not a listener
-**sock|listener_bad_sock %d %d: supplied sock is not a listener (set=%d,sock=%d)
-**sock|listener_bad_state: supplied listener sock is in a bad state
-**sock|listener_bad_state %d %d %d: supplied listener sock is in a bad state (set=%d,sock=%d,state=%d)
+**sock|listener_bad_sock:supplied sock is not a listener
+**sock|listener_bad_sock %d %d:supplied sock is not a listener (set=%d,sock=%d)
+**sock|listener_bad_state:supplied listener sock is in a bad state
+**sock|listener_bad_state %d %d %d:supplied listener sock is in a bad state (set=%d,sock=%d,state=%d)
 **sock|listener_read:read operation not allowed on a listener
 **sock|listener_read %d %d:read operation not allowed on a listener (set=%d,sock=%d)
 **sock|listener_write:write operation not allowed on a listener
