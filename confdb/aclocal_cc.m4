@@ -1185,9 +1185,12 @@ int main( int argc, char *argv[] )
     return 0;
 }],
 pac_cv_c_struct_align=`cat ctest.out`
-,pac_cv_c_struct_align="unknown",pac_cv_c_struct_align="unknown")
+,pac_cv_c_struct_align="unknown",pac_cv_c_struct_align="$CROSS_STRUCT_ALIGN")
 rm -f ctest.out
 ])
+if test -z "$pac_cv_c_struct_align" ; then
+    pac_cv_c_struct_align="unknown"
+fi
 ])
 dnl
 dnl
