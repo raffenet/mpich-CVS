@@ -296,4 +296,6 @@ void MPID_Segment_unpack(MPID_Segment *segp, int first, int *lastp, void *unpack
 void MPID_Segment_pack_vector(MPID_Segment *segp, int first, int *lastp, MPID_VECTOR *vector, int *lengthp);
 void MPID_Segment_unpack_vector(MPID_Segment *segp, int first, int *lastp, MPID_VECTOR *vector, int *lengthp);
 
+void MPIR_Segment_pack( MPID_Dataloop *loopinfo, char * restrict src_buf, char * restrict dest_buf );
+
 #endif
