@@ -874,7 +874,7 @@ static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 	    /* user buffer is contiguous and large enough to store the
 	       entire message */
 	    MPIDI_DBG_PRINTF((35, FCNAME, "IOV loaded for contiguous read"));
-	    rreq->dev.iov[0].MPID_IOV_BUF = rreq->dev.user_buf + dt_true_lb;
+	    rreq->dev.iov[0].MPID_IOV_BUF = (char*)(rreq->dev.user_buf) + dt_true_lb;
 	    rreq->dev.iov[0].MPID_IOV_LEN = data_sz;
 	    rreq->dev.iov_count = 1;
 	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
