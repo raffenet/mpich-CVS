@@ -374,7 +374,7 @@ PMPI_LOCAL int MPIR_Allgather_inter (
    intracommunicator, and then does an intercommunicator broadcast.
 */
 
-    int rank, local_size, remote_size, mpi_errno, inleftgroup, root;
+    int rank, local_size, remote_size, mpi_errno, root;
     MPI_Comm newcomm;
     MPI_Aint true_extent, true_lb;
     void *tmp_buf=NULL;
@@ -412,10 +412,7 @@ PMPI_LOCAL int MPIR_Allgather_inter (
 
     /* first broadcast from left to right group, then from right to
        left group */
-#ifdef UNIMPLEMENTED
-    inleftgroup = yes_or_no;  /* not done */
-#endif
-    if (inleftgroup) {
+    if (comm_ptr->is_low_group) {
         /* bcast to right*/
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
         mpi_errno = MPIR_Bcast(tmp_buf, sendcount*local_size,

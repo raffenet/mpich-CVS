@@ -269,19 +269,14 @@ PMPI_LOCAL int MPIR_Allreduce_inter (
    broadcasts because it would require allocation of a temporary buffer. 
 */
 
-    int rank, mpi_errno, inleftgroup, root;
+    int rank, mpi_errno, root;
     MPID_Comm *newcomm_ptr = NULL;
 
     rank = comm_ptr->rank;
 
     /* first do a reduce from right group to rank 0 in left group,
        then from left group to rank 0 in right group*/
-#ifdef UNIMPLEMENTED
-    inleftgroup = yes_or_no;  /* not done */
-#else
-    inleftgroup = TRUE;
-#endif
-    if (inleftgroup) {
+    if (comm_ptr->is_low_group) {
         /* reduce from right group to rank 0*/
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
         mpi_errno = MPIR_Reduce(sendbuf, recvbuf, count, datatype, op,

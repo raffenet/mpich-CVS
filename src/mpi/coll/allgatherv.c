@@ -401,7 +401,7 @@ PMPI_LOCAL int MPIR_Allgatherv_inter (
    and then does an intracommunicator broadcast. 
 */
 
-    int remote_size, mpi_errno, inleftgroup, root, rank;
+    int remote_size, mpi_errno, root, rank;
     MPID_Comm *newcomm_ptr = NULL;
     MPI_Datatype newtype;
 
@@ -410,10 +410,7 @@ PMPI_LOCAL int MPIR_Allgatherv_inter (
 
     /* first do an intercommunicator gatherv from left to right group,
        then from right to left group */
-#ifdef UNIMPLEMENTED
-    inleftgroup = yes_or_no;  /* not done */
-#endif
-    if (inleftgroup) {
+    if (comm_ptr->is_low_group) {
         /* gatherv from right group */
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
         mpi_errno = MPIR_Gatherv(sendbuf, sendcount, sendtype, recvbuf,

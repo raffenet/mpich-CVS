@@ -457,7 +457,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
    by local intracommunicator scattervs in each group.
 */
     
-    int rank, mpi_errno, inleftgroup, root, local_size, total_count, i;
+    int rank, mpi_errno, root, local_size, total_count, i;
     MPI_Aint true_extent, true_lb;
     void *tmp_buf=NULL;
     int *displs=NULL;
@@ -500,10 +500,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
 
     /* first do a reduce from right group to rank 0 in left group,
        then from left group to rank 0 in right group*/
-#ifdef UNIMPLEMENTED
-    inleftgroup = yes_or_no;  /* not done */
-#endif
-    if (inleftgroup) {
+    if (comm_ptr->is_low_group) {
         /* reduce from right group to rank 0*/
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
         mpi_errno = MPIR_Reduce(sendbuf, tmp_buf, total_count, datatype, op,
