@@ -1,7 +1,7 @@
 #
 # Not yet a conforming Makefile...
 #
-SHELL = /bin/sh
+SHELL = @SHELL@
 
 SOURCES = aclocal.m4 aclocal_cache.m4 aclocal_cc.m4 aclocal_cross.m4 \
 	  aclocal_f77.m4 aclocal_make.m4 \
@@ -35,8 +35,9 @@ acconfig.h: ${config_SOURCES}
 	cat ${config_SOURCES} | sed '/#include/d' > acconfig.h
 
 clean:
-	-rm -f *~
+	-rm -f *~ tex/*.log tex/*.aux tex/*.dvi
 
 dist-clean: clean
+	rm -f config.cache config.log config.status Makefile
 
 maintainer-clean: dist-clean
