@@ -310,13 +310,31 @@ void MPID_Dataloop_create_indexed(int count,
 	((!dispinbytes && ((int *) displacement_array)[0] == 0) ||
 	 (dispinbytes && ((MPI_Aint *) displacement_array)[0] == 0)))
     {
-
 	MPID_Dataloop_create_contiguous(old_type_count,
 					oldtype,
 					dlp_p,
 					dlsz_p,
 					dldepth_p,
 					flags);
+	return;
+    }
+
+    /* optimization:
+     *
+     * if contig_count == 1 (and displacement != 0), store this as
+     * a single element blockindexed rather than a lot of individual
+     * blocks.
+     */
+    if (contig_count == 1) {
+	MPID_Dataloop_create_blockindexed(1,
+					  old_type_count,
+					  displacement_array,
+					  dispinbytes,
+					  oldtype,
+					  dlp_p,
+					  dlsz_p,
+					  dldepth_p,
+					  flags);
 	return;
     }
 
