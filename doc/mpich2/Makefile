@@ -63,6 +63,23 @@ pt2ptdesc.dvi: pt2ptdesc.tex Makefile template.orig
 	latex template
 	mv template.dvi pt2ptdesc.dvi
 
+colldesc.dvi: colldesc.tex Makefile template.orig
+	sed -e s/@dummy@/colldesc.tex/ \
+	    -e s/@paragraph@/paragraph/g \
+	    -e s/@newparagraph@/subsubsection/g \
+	    -e s/@subsubsection@/subsubsection/g \
+	    -e s/@newsubsubsection@/subsection/g \
+	    -e s/@subsection@/subsection/g \
+	    -e s/@newsubsection@/section/g \
+	    -e s/@section@/section/g \
+	    -e s/@newsection@/section/g \
+	    template.orig > template.tex
+	latex template
+	-bibtex template
+	latex template
+	mv template.dvi colldesc.dvi
+
+
 # This uses the full-featured date program in Linux
 install-web: mpich2.ps
 	cp mpich2.ps /mcs/www-unix/mpi/mpich/adi3

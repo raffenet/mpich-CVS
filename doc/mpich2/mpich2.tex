@@ -174,7 +174,7 @@ static variable (see Section~\ref{sec:pmpi-routines}) such as
 \mpidconst{MPIi_File_errhandler}. 
 \end{enumerate}
 
-\input errcodes.tex 
+\input{errcodes}
 
 \subsubsection{Error handling and Fault Tolerance}
 \label{sec:errs-and-faults}
@@ -676,6 +676,32 @@ respect to any values.
 
 % Scenarios (move to ADI doc?)
 \input{pt2ptdesc}
+
+\section{Special Issues}
+\label{sec:special-issues}
+
+\subsection{Heterogenity}
+\label{sec:hetero-issues}
+
+Handling communication between systems with (potentially) different data
+representations is difficult, particularly when the differences are more than
+just differences in the lengths of datatypes (non-IEEE floating point formats
+are particularly painful).
+
+Some issues that have come up:
+\begin{enumerate}
+\item When using XDR\index{XDR}, the assignment of native types to XDR types
+  is not as easy as it appears.  For example, the external representation for
+  a C \code{long} provided by the \code{xdr_long} actually moves 32 bits
+  even for systems where a \code{long} is 64 bits.  I.e., the XDR types (e.g.,
+  in \code{xdr_long} match a specific set of sizes, not the particular sizes
+  chosen by the C compiler.  Thus, when choosing the XDR routines to use, the
+  sizes of the datatypes need to be considered, as well as whether the local
+  processor provides \code{xdr_longlong} or \code{xdr_hyper} (note that the
+  XDR type ``hyper'' is defined as an 8-byte integer (see RFC1014) and should
+  be available everywhere).
+
+\end{enumerate}
 
 \section{MPI Operations}
 \label{sec:mpi-operations}
@@ -3070,92 +3096,10 @@ Like \tcpname, except some data can be transfered without the agent
 (remote read and write (get/put) operations).
 \end{via}
 
-\subsection{Collective Communication and Computation}
-One of the major changes in MPICH2 is in the implementation of the
-collective routines.  The MPICH2 implementation will exploit
-pipelining and store and forward algorithms; these are supported by
-the \code{MPID_Stream_xxx} routines.  
-
-Since each system may have some feature that provides for even faster
-implementation of the collective routines, it will be possible to
-substitute a system-specific implementation for any of the collective
-routines.  The purpose of the implementations provided with MPICH is
-to provide a level of performance that will be adequate
-for many users.  
-
-The $\alpha$-tree approach described in
-\cite{bern:mpi-collective:hpcn99} should be considered; this is a
-simple variation on the binomial tree approach used in the MPICH
-implementations of many of the collective routines.  We will consider
-combining this with the pipelining and scatter/gather approaches
-championed by van de Geijn (\cite{vandegeijn} isn't quite the right
-reference but it will do for now).
-
-\subsubsection{Reduction functions}
-The reduction functions must use the \code{restrict}\index{restrict} qualifier.
-
-Question:
-The MPICH code uses one gigantic file, \file{global_ops.c}, to implement
-all of the reduction functions.  There are two problems with this.
-First, some compilers become unhappy with it and do not optimize it
-very well.  Second, all applications must load all of the routines
-even though only a few (typically one) reduction function is used.  We
-could break this into separate routines for each operation.  Those
-could further be broken down by basic datatype, since the datatype is
-known by the routine that calls the specific reduction function.  
-For example, we could have \code{MPIR_SUM_Double},
-\code{MPIR_SUM_Int}, etc.  This would also allow us to use Fortran
-code for some or all of these routines, since Fortran compilers
-typically produce better code for this kind of operation (though the
-new definitions, using \code{restrict}, may be much better than the
-current C code).
-
-The down side of this is that, particularly in unstripped code, each
-file (particularly if it includes any significant header files)
-includes a significant amount of information.  A latency, if you will,
-for each file.  That is, if putting all of the routines into a single
-file takes $n$ bytes, putting them into $k$ files takes $n + (k-1)m$,
-where $m$ is the size of the header.  In practice, the value of $m$ can be
-relatively large (several kilobytes).
-
-If we want to use the Fortran compiler for some or all of these, we'll
-need a Fortran compiler and a backup when there is no Fortran compiler.
-
-\subsubsection{Code Structure for the Implementation of the Collective
-  functions} 
-
-The MPICH code uses one gigantic file, \file{intraops.c}, to provide a
-generic implementation of each collective operation.  Each
-communicator has a structure of pointers to functions.  Unless
-otherwise set, each communicator points to the predefined structure
-\code{MPIR_intra_collops}\index{MPIR_intra_collops} which is
-initialized to point to \emph{all} of 
-these functions.  
-
-For MPICH2, I'd prefer that the default case have no structure, and
-each of the MPI functions (in its own file) contains the generic
-implementation of the collective operation, based (most likely) on the
-stream operations.  This will simplify the process of tuning each
-operation; it will also reduce the size of (unshared) executables since few if
-any programs use all of the collective operations.
-See the discussion of the implementation of PMPI.
-
-Question: Now that MPI-2 defines intercommunicator collective
-routines, do we want these in the same file as the intracommunicator
-routines, or in an alternate file.  E.g., should \file{bcast.c} contain
-the intracommunicator implementation of \mpifunc{MPI_Bcast} and
-\file{ibcast.c} contain the intercommunicator implementation.
-
-We may want to have multiple ``generic'' implementations and an easy
-way, say with the runtime parameter routines, to select among them at runtime.
-
-We may want to compute and save things like the neighbors for each
-collective communication pattern; this can be done either when the
-collective operation is first encountered or at communicator creation
-time (the descision could be a runtime attribute).  Question: how do
-we modularize this?  Is there a ``collective'' 
-attribute?
-
+% subsection collective communication and computation; contains the
+% discussion.  The description of each individual routine remains in the
+% mpich2.tex file for now.
+\input{colldesc}
 
 \subsubsection{Collective Computation}
 
