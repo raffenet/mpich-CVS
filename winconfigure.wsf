@@ -1418,7 +1418,7 @@ Function ReplaceAts( str, use_f77 )
 			Case "@configure_input@"
 				'str = Replace(str, "@configure_input@", "")
 			Case "@DLLIMPORT@"
-				str = Replace(str, "@DLLIMPORT@", "CDEC$ ATTRIBUTES DLLIMPORT::/MPIPRIV/")
+				str = Replace(str, "@DLLIMPORT@", "CDEC$ ATTRIBUTES DLLIMPORT::/MPIPRIV1/" & vbNewLine & "CDEC$ ATTRIBUTES DLLIMPORT::/MPIPRIV2/" & vbNewLine & "CDEC$ ATTRIBUTES DLLIMPORT::/MPIPRIVC/")
 			Case Else
 				unhandled_ats = unhandled_ats & Match & vbNewLine
 		End Select
@@ -1942,6 +1942,8 @@ Sub AddDefinitions( fout, filename )
 					'fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS 1")
 				Case "HAVE_MALLOC_H"
 					fout.WriteLine("#define HAVE_MALLOC_H 1")
+				Case "MPICH_DBG_MEMINIT"
+					fout.WriteLine("/* #undef MPICH_DEBUG_MEMINIT */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
@@ -2403,7 +2405,7 @@ If bRemoveFortran Then
 	Set fin = f.OpenTextFile("mpich2.def")
 	contents = fin.ReadAll()
 	fin.Close()
-	regEx.Pattern = "(.*MPIPRIV)"
+	regEx.Pattern = "(.*MPIPRIV.*)"
 	contents = regEx.Replace(contents, ";$1")
 	regEx.Pattern = "(.*MPIR_Keyval_set_fortran)"
 	contents = regEx.Replace(contents, ";$1")
