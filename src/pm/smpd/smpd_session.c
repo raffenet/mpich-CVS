@@ -1437,7 +1437,8 @@ int smpd_session(sock_set_t set, sock_t sock)
 			    }
 
 			    /* create the process exited command */
-			    smpd_dbg_printf("creating an exit command.\n");
+			    smpd_dbg_printf("creating an exit command for %d:%d, exit code %d.\n",
+				iter->rank, iter->pid, iter->exitcode);
 			    result = smpd_create_command("exit", smpd_process.id, 0, SMPD_FALSE, &temp_cmd);
 			    if (result != SMPD_SUCCESS)
 			    {
