@@ -129,9 +129,15 @@ typedef int MPI_Op;
 #define MPI_HOST             0x64400003
 #define MPI_IO               0x64400005
 #define MPI_WTIME_IS_GLOBAL  0x64400007
-#define MPI_UNIVERSE         0x64400009
+#define MPI_UNIVERSE_SIZE    0x64400009
 #define MPI_LASTUSEDCODE     0x6440000b
 #define MPI_APPNUM           0x6440000d
+
+/* In addition, there are 3 predefined window attributes that are
+   defined for every window */
+#define MPI_WIN_BASE         0x66000001
+#define MPI_WIN_SIZE         0x66000003
+#define MPI_WIN_DISP_UNIT    0x66000005
 
 /* Define some null objects */
 #define MPI_COMM_NULL      ((MPI_Comm)0x04000000)
