@@ -390,8 +390,14 @@ def process_cmdline_args():
 	            print 'Cannot use other args with -f'
 		    usage()
                 if argv[argidx] == '-np' or argv[argidx] == '-n':
-                    nprocs = int(argv[argidx+1])
-                    argidx += 2
+                    if not argv[argidx+1].isdigit():
+                        usage()
+                    else:
+                        nprocs = int(argv[argidx+1])
+                        if nprocs < 1:
+                            usage()
+                        else:
+                            argidx += 2
                 elif argv[argidx] == '-f':
                     argsFilename = argv[argidx+1]
                     argidx += 2
@@ -460,6 +466,7 @@ def usage():
     print 'mpdrun for mpd version: %s' % str(mpd_version)
     print 'usage: mpdrun [args] pgm_to_execute [pgm_args]'
     print '   where args may be: -a alias -np nprocs -cpm master_copgm -cpr remote_copgm -l -1 -s'
+    print '       (nprocs must be a positive integer)'
     print '       (-l means attach line labels identifying which client prints each line)'
     print '       (-1 means do NOT start the first process locally)'
     print '       (-a means assign this alias to the job)'
