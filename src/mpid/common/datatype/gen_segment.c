@@ -318,17 +318,17 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	/* reset to beginning of stream */
 	DLOOP_SEGMENT_RESET_VALUES;
 
-	/* TODO: AVOID CALLING MANIP. IF FIRST == 0 */
-
-	/* Note: we're simply using the manipulate function with a NULL piecefn
-	 * to handle this case.  It's one more function call, but it dramatically
-	 * simplifies this code.
-	 */
-	tmp_last = first;
-	PREPEND_PREFIX(Segment_manipulate)(segp, 0, &tmp_last, NULL, NULL, NULL);
-	
-	/* verify that we're in the right location */
-	if (tmp_last != first) assert(0);
+	if (first > 0) {
+	    /* Note: we're simply using the manipulate function with a NULL piecefn
+	     * to handle this case.  It's one more function call, but it dramatically
+	     * simplifies this code.
+	     */
+	    tmp_last = first;
+	    PREPEND_PREFIX(Segment_manipulate)(segp, 0, &tmp_last, NULL, NULL, NULL);
+	    
+	    /* verify that we're in the right location */
+	    if (tmp_last != first) assert(0);
+	}
 
 	DLOOP_SEGMENT_LOAD_LOCAL_VALUES;
 
