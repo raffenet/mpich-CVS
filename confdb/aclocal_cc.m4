@@ -985,6 +985,10 @@ if test "$enable_strict_done" != "yes" ; then
             COPTIONS="${COPTIONS} -Wall -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL"
         fi
 	;;
+	no)
+	# Accept and ignore this value
+	:
+	;;
 	*)
 	AC_MSG_WARN([Unrecognized value for enable-strict:$enable_strict])
 	;;
@@ -1028,6 +1032,10 @@ if test "$enable_strict_done" != "yes" ; then
 	else 
 	    AC_MSG_WARN([enable strict supported only for gcc])
     	fi
+	;;
+	no)
+	# Accept and ignore this value
+	:
 	;;
 	*)
 	AC_MSG_WARN([Unrecognized value for enable-strict:$enable_strict])
