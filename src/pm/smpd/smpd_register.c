@@ -528,6 +528,6 @@ SMPD_BOOL smpd_get_cached_password(char *account, char *password)
 
 int smpd_delete_cached_password()
 {
-    RegDeleteKey(HKEY_CURRENT_USER, MPICH_REGISTRY_KEY"\\cache");
+    RegDeleteKey(HKEY_CURRENT_USER, SMPD_REGISTRY_CACHE_KEY);
     return SMPD_SUCCESS;
 }

@@ -389,7 +389,7 @@ typedef struct smpd_global_t
     int local_root;
     int use_iproot;
     int use_process_session;
-    int nproc;
+    int nproc, nproc_launched, nproc_exited;
     int verbose;
     int shutdown, restart, validate; /* built in commands */
 #ifdef HAVE_WINDOWS_H

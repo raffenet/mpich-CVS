@@ -82,6 +82,8 @@ smpd_global_t smpd_process =
       SMPD_FALSE,       /* use_iproot             */
       SMPD_FALSE,       /* use_process_session    */
       0,                /* nproc                  */
+      0,                /* nproc_launched         */
+      0,                /* nproc_exited           */
       SMPD_FALSE,       /* verbose                */
       SMPD_FALSE,       /* shutdown               */
       SMPD_FALSE,       /* restart                */
@@ -150,7 +152,7 @@ int smpd_post_abort_command(char *fmt, ...)
     {
 	if (smpd_process.left_context == NULL)
 	{
-	    printf("aborting: %s\n", error_str);
+	    printf("Aborting: %s\n", error_str);
 	    fflush(stdout);
 	    smpd_exit_fn("smpd_post_abort_command");
 	    smpd_exit(-1);

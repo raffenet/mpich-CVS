@@ -44,6 +44,8 @@ int main(int argc, char* argv[])
 	goto quit_job;
     }
 
+    smpd_process.dbg_state = SMPD_DBG_STATE_ERROUT;
+
     /* parse the command line */
     smpd_dbg_printf("parsing the command line.\n");
     result = mp_parse_command_args(&argc, &argv);

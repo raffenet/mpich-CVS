@@ -276,12 +276,14 @@ int smpd_handle_result(smpd_context_t *context)
 		}
 		else if (strcmp(iter->cmd_str, "launch") == 0)
 		{
+		    smpd_process.nproc_launched++;
 		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
 		    {
 			smpd_dbg_printf("successfully launched: '%s'\n", iter->cmd);
 		    }
 		    else
 		    {
+			smpd_process.nproc_exited++;
 			if (smpd_get_string_arg(context->read_cmd.cmd, "error", err_msg, SMPD_MAX_ERROR_LEN))
 			{
 			    smpd_err_printf("launch failed: %s\n", err_msg);
@@ -1839,8 +1841,12 @@ int smpd_handle_command(smpd_context_t *context)
 	    printf("process %d exited with exit code %d\n", iproc, exitcode);
 	    fflush(stdout);
 	}
+	smpd_process.nproc_exited++;
+	if (smpd_process.nproc == smpd_process.nproc_exited)
+	/*
 	smpd_process.nproc--;
 	if (smpd_process.nproc == 0)
+	*/
 	{
 	    smpd_dbg_printf("last process exited, returning SMPD_EXIT.\n");
 	    smpd_exit_fn("smpd_handle_command");
