@@ -198,6 +198,12 @@ sub ReadMfile {
 	    print "Setting libdir{$1} to $2/\n";
             $libdir{$1}  = "$2/";
         }
+	elsif (/^doc_(\w*)_SOURCES\s*=\s*(.*)\s*$/) {
+	    $docsrc{$1} = $2;
+	}
+	elsif (/^doc_(\w*)_DIR\s*=\s*(.*)\s*$/) {
+	    $docdir{$1} = $2;
+	}
         elsif (/^SUBDIRS\s*=\s*(.*)\s*$/) {
             @subdirs = split(/ /,$1);
         }
@@ -293,6 +299,11 @@ sub WriteMfile {
 
     # Next, the programs
     &TargetPrograms;
+
+    # Documentation
+    if ($maint_targets) {
+	&TargetDocs;
+    }
 
     if ($do_dependencies) {
 	&TargetDependencies;
@@ -520,6 +531,9 @@ sub ClearVars {
     @subdirs = ();
     # Suffix definitions
     $ExplicitSuffixes = "";
+    # Document sources and directories
+    %docdir = ();
+    %docsrc = ();
 }	
 
 #
@@ -836,6 +850,31 @@ sub TargetTags {
 	print FD "\n";
     }
     &RecursiveOp( "TAGS" );
+}
+
+sub TargetDocs {
+    foreach $kind (keys(%docsrc)) {
+	print FD "$kind:\n";
+	if (defined($docdir{$kind})) { 
+	    $loc = "-mpath $docdir{$kind}";
+	}
+	else {
+	    $loc = "";
+	}
+	print FD "\tdoctext -$kind $loc -heading MPI -quotefmt \\\n\t";
+	# Eventually need to add default files (e.g., fortnotes, errnotes)
+	# Web version needs indexdir, defn, mapref, ...
+	$linelen = 8;
+	foreach $sourcefile (split(/\s\s*/,$docsrc{$kind})) {
+            if (length($sourcefile) + $linelen + 2 >= $maxline) {
+	        print FD "\\\n\t";
+                $linelen = 8;
+            }
+            print FD "sourcefile ";
+	    $pgmobjs .= "$sourcefile ";
+            $linelen += length($sourcefile) + 1;
+        }
+    }
 }
 
 #
