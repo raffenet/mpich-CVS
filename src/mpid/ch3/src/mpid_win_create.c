@@ -38,9 +38,9 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     int mpi_errno, i, comm_size, rank;
     void **tmp_buf;
 
-    MPIDI_STATE_DECL(MPID_STATE_MPI_WIN_CREATE);
+    MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_CREATE);
 
-    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_CREATE);
+    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_CREATE);
     
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
@@ -48,7 +48,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     *win_ptr = (MPID_Win *)MPIU_Handle_obj_alloc( &MPID_Win_mem );
     if (!(*win_ptr)) {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-        MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);
+        MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
         return mpi_errno;
     }
 
@@ -130,7 +130,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
 
 #endif
 
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
 
     return mpi_errno;
 }
