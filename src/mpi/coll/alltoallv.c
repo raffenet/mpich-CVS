@@ -131,7 +131,7 @@ int MPIR_Alltoallv (
 
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_ERR_IN_STATUS) {
-        for (i=0; i<2*comm_size; i++) {
+        for (i=0; i<req_cnt; i++) {
             if (starray[i].MPI_ERROR != MPI_SUCCESS) 
                 mpi_errno = starray[i].MPI_ERROR;
         }
