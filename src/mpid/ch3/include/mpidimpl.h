@@ -351,6 +351,11 @@ int MPIDI_Isend_self(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int
 /* Prototypes for collective operations supplied by the device (or channel) */
 int MPIDI_Barrier(MPID_Comm *);
 
+#ifdef MPICH_DBG_OUTPUT
+void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt);
+#else
+#define MPIDI_DBG_Print_packet(a)
+#endif
 
 /* NOTE: Channel function prototypes are in mpidi_ch3_post.h since some of the macros require their declarations. */
 
