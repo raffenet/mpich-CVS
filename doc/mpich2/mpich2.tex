@@ -2239,7 +2239,10 @@ These considerations lead to the following goals:
 
 \begin{enumerate}
 \item All memory allocations are checked; failure causes an error return (i.e.,
-set \code{mpi_errno} and go to \code{fn_fail}). 
+set \code{mpi_errno} and go to \code{fn_fail}).  This takes advantage of the
+uniform approach to handling error handling used in many MPICH2 routines,
+where a single block of code is provided, reached by a \code{goto fn_fail;}
+statement. 
 \item If multiple memory allocations have been made and a failure occurs (in a
 memory routine or not), all allocated memory is freed unless it is known
 to be ok (e.g., memory attached to an MPI object that is still valid need not
@@ -4874,6 +4877,8 @@ datatypes, or should the datatype structure contain a pointer to the
 function that understands the datatype?  
 I prefer a function pointer
 within the datatype structure.
+
+
 
 \subsubsection{\mpifunc{MPI_TYPE_GET_ENVELOPE}}
 Uses \code{dataloop} field to identify how the datatype was constructed.
