@@ -2,5 +2,10 @@ config.h.in
 autom4te.cache
 config.log
 config.cache
+config.status
 configure
 simple.class
+simple.jar
+simple_swing.class
+simple_swing.jar
+Makefile
