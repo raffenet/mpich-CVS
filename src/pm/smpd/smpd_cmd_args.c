@@ -8,6 +8,8 @@
 #ifdef HAVE_WINDOWS_H
 #include "smpd_service.h"
 #endif
+#include <sys/stat.h>
+#include <sys/types.h>
 
 int smpd_parse_command_args(int *argcp, char **argvp[])
 {
@@ -21,6 +23,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     DWORD num_written, num_read;
 #endif
     int dbg_flag;
+    char pwdfile[SMPD_MAX_FILENAME];
 
     smpd_enter_fn("smpd_parse_command_args");
 
@@ -274,6 +277,39 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	smpd_process.do_console = 1;
 	smpd_process.restart = 1;
 #endif
+    }
+
+    smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+    if (smpd_get_opt_string(argcp, argvp, "pwdfile", pwdfile, SMPD_MAX_FILENAME))
+    {
+	FILE *fin;
+	char line[SMPD_PASSPHRASE_MAX_LENGTH+3];
+	struct stat s;
+
+	fin = fopen(pwdfile, "r");
+	if (fin != NULL)
+	{
+	    if (fstat(fileno(fin), &s) == 0)
+	    {
+		/* fail if the file is read/writeable by more than the current user */
+		if (s.st_mode && 0x077)
+		{
+		    printf("pwdfile cannot be readable by anyone other than the current user.\n");
+		}
+	    }
+	    fgets(line, SMPD_PASSPHRASE_MAX_LENGTH+2, fin);
+	    line[SMPD_PASSPHRASE_MAX_LENGTH] = '\0';
+	    if (strlen(line) > 0)
+	    {
+		while (strlen(line) > 0 && (line[strlen(line)-1] == '\r' || line[strlen(line)-1] == '\n'))
+		    line[strlen(line)-1] = '\0';
+		if (strlen(line) > 0)
+		{
+		    strcpy(smpd_process.passphrase, line);
+		}
+	    }
+	    fclose(fin);
+	}
     }
 
     if (smpd_process.do_console)

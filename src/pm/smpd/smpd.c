@@ -9,6 +9,9 @@
 #ifdef HAVE_WINDOWS_H
 #include "smpd_service.h"
 #endif
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif

@@ -232,12 +232,15 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		}
 		smpd_dbg_printf("read challenge string: '%s'\n", context->pszChallengeResponse);
 		context->read_state = SMPD_IDLE;
+		/*
 		if (smpd_get_smpd_data("phrase", phrase, SMPD_PASSPHRASE_MAX_LENGTH) != SMPD_SUCCESS)
 		{
 		    smpd_dbg_printf("failed to get the phrase\n");
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
 		}
+		*/
+		strcpy(phrase, smpd_process.passphrase);
 		/* crypt the passphrase + the challenge*/
 		if (strlen(phrase) + strlen(context->pszChallengeResponse) > SMPD_PASSPHRASE_MAX_LENGTH)
 		{
@@ -2184,12 +2187,15 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    return SMPD_FAIL;
 		}
 
+		/*
 		if (smpd_get_smpd_data("phrase", phrase, SMPD_PASSPHRASE_MAX_LENGTH) != SMPD_SUCCESS)
 		{
 		    smpd_dbg_printf("failed to get the phrase\n");
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
 		}
+		*/
+		strcpy(phrase, smpd_process.passphrase);
 		/* generate the challenge string and the encrypted result*/
 		if (smpd_gen_authentication_strings(phrase, new_context->pszChallengeResponse, new_context->pszCrypt) != SMPD_SUCCESS)
 		{

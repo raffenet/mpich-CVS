@@ -448,6 +448,8 @@ int smpd_init_process(void)
     smpd_process.hBombDiffuseEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 #endif
 
+    smpd_get_smpd_data("phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+
     smpd_exit_fn("smpd_init_process");
     return SMPD_SUCCESS;
 }
