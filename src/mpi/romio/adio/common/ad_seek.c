@@ -80,21 +80,7 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 #ifdef PROFILE
     MPE_Log_event(11, 0, "start seek");
 #endif
-#ifdef ROMIO_NTFS
-	{
-#ifdef HAVE_INT64
-		DWORD dwTemp;
-		dwTemp = ( (DWORD) ( (off >> 32) & (__int64) 0xFFFFFFFF ) );
-		err = SetFilePointer(fd->fd_sys, 
-			( (DWORD) ( off & (__int64) 0xFFFFFFFF ) ), &dwTemp, 
-			FILE_BEGIN);
-#else
-		err = SetFilePointer(fd->fd_sys, off, NULL, FILE_BEGIN);
-#endif
-	}
-#else
     err = lseek(fd->fd_sys, off, SEEK_SET);
-#endif
 #ifdef PROFILE
     MPE_Log_event(12, 0, "end seek");
 #endif
