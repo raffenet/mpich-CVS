@@ -1051,11 +1051,10 @@ while (1) {
   Note that this process must read the data since it is being sent.  Since
   this is an error case, there is no reason to try and optimize this case by
   asking the sender to stop sending the data.
-
-  Question: do we also want to generate an error message?  Do we want to
-  invoke the error handler on the intended communicator on the receiving
-  process?  Brian votes yes for generating an error message.  Bill votes for
-  using the error handler on the intended communicator.  
+  
+  Question: do we also want to generate an error message?  Do we want to invoke
+  the error handler on the intended communicator on the receiving process?
+  Brian and Bill vote for using the error handler on the intended communicator.
 
 \item If it isn't a ready-send, then we need to allocate space to hold the
   data and copy it in.  We allocate the space with
@@ -1434,6 +1433,36 @@ Another approach is to both send a message and set a flag.  Then the receiver
 can continue receiving if data is available but is guaranteed to continue
 later if he has gone off to do other work (without having to check every
 pending request). 
+
+Still another approach is to use multiple buffers (more than two), and a
+combination of flags and messages.  In a sustained transfer of data, the sender
+would set a flag associated with buffer once the buffer has been filled and the
+receiver would clear the flag once the associated buffer had been emptied
+(copied).  Multiple buffers are used to allow for short-delays on either side
+which might otherwise can the other side to stall.  Having multiple buffers
+essentially acts as a smoothing function eliminating stalls and the need for
+messaging except for large interruptions or imbalances in workload.
+
+Unfortunately, sometimes these large interruptions or workload imbalances
+occur, allowing the buffers to reach a state of all full or all empty.  To
+reduce the duration of stalls associated with this situation and reduce
+polling overheads, a request-for-service message is used to signal the other
+process, guaranteeing forward progress and hopefully re-establishing a state of
+sustained transfer.  In this approach, when the sender encounters the situation
+where all buffers are full, it sends a request-for-service message to the
+receiver, indicating the specific transfer area (set of buffers) or request
+that needs servicing.  The receiver will likely want to send an acknowledgement
+once the first buffer has been consumed, thus increasing the likelihood of
+reaching a state of sustained transfer again.  A similar approach might be
+taken if the receiver finds itself with no filled buffers to consume.
+
+A slight variation of this approach uses high and low water marks to determine
+when to send a request-for-service message.  (The previous scheme is
+essentially a high and low water mark approach where the high water mark is all
+buffers are full and the low water mark is all buffers are empty.)  While this
+is only subtly different from the previous approach, it does require that the
+number of consumed or available buffers be tracked (or recounted each
+iteration).
 
 The major role of the communication agent is to respond to messages, and to
 ensure that the stream operations make progress.
