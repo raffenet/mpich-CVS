@@ -439,7 +439,7 @@ int MPIU_Str_get_binary_arg(const char *str, const char *flag, char *buffer, int
     return MPIU_STR_FAIL;
 }
 
-int MPIU_Str_hide_string_arg(char *str, const char *flag)
+MPIU_BOOL MPIU_Str_hide_string_arg(char *str, const char *flag)
 {
     /* line up with the first token */
     str = (char*)first_token(str);

@@ -126,6 +126,8 @@ char *MPIU_Strdup( const char * );
 #define MPIU_TRUE  1
 #define MPIU_FALSE 0
 
+typedef int MPIU_BOOL;
+
 /*@ MPIU_Str_get_string_arg - Extract an option from a string with a maximum length
   
     Input Parameters:
@@ -278,7 +280,7 @@ int MPIU_Str_add_int_arg(char **str_ptr, int *maxlen_ptr, const char *key, int v
   Module:
   Utility
   @*/
-int MPIU_Str_hide_string_arg(char *str, const char *key);
+MPIU_BOOL MPIU_Str_hide_string_arg(char *str, const char *key);
 
 /*@ MPIU_Str_add_string - Add a string to a string
   
