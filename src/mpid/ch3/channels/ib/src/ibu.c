@@ -668,7 +668,7 @@ static int ibui_post_receive(ibu_t ibu)
     printf("ibui_post_receive %d\n", s_cur_receive++);
     g_num_receive_posted++;
     */
-    MPIU_DBG_PRINTF(("."));
+    MPIU_DBG_PRINTF(("ibui_post_receive()\n"));
 
     status = ib_post_rcv_req_us(IBU_Process.hca_handle, 
 				ibu->qp_handle,
