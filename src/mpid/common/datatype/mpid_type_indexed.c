@@ -79,7 +79,7 @@ int MPID_Type_indexed(int count,
 	if (dispinbytes)
 	    eff_disp = ((MPI_Aint *) displacement_array)[0];
 	else
-	    eff_disp = ((MPI_Aint *) displacement_array)[0] * el_size;
+	    eff_disp = ((MPI_Aint) ((int *) displacement_array)[0]) * el_size;
 
 	min_lb = eff_disp;
 	max_ub = min_lb + (MPI_Aint) blocklength_array[0] * el_size;
@@ -92,7 +92,7 @@ int MPID_Type_indexed(int count,
 	    if (dispinbytes)
 		eff_disp = ((MPI_Aint *) displacement_array)[i];
 	    else
-		eff_disp = ((MPI_Aint *) displacement_array)[i] * el_size;
+		eff_disp = ((MPI_Aint) ((int *) displacement_array)[i]) * el_size;
 	    
 	    /* calculate ub and lb for this block */
 	    tmp_lb = eff_disp;
@@ -158,7 +158,7 @@ int MPID_Type_indexed(int count,
 	if (dispinbytes)
 	    eff_disp = ((MPI_Aint *) displacement_array)[0];
 	else
-	    eff_disp = ((MPI_Aint *) displacement_array)[0] * el_extent;
+	    eff_disp = ((MPI_Aint) ((int *) displacement_array)[0]) * el_extent;
 	
 	/* MPID_DATATYPE_BLOCK_LB_UB() is defined in mpid_datatype.h */
 	MPID_DATATYPE_BLOCK_LB_UB((MPI_Aint) blocklength_array[0],
@@ -178,7 +178,7 @@ int MPID_Type_indexed(int count,
 	    if (dispinbytes)
 		eff_disp = ((MPI_Aint *) displacement_array)[i];
 	    else
-		eff_disp = ((MPI_Aint *) displacement_array)[i] * el_extent;
+		eff_disp = ((MPI_Aint) ((int *) displacement_array)[i]) * el_extent;
 	    
 	    /* calculate ub and lb for this block */
 	    MPID_DATATYPE_BLOCK_LB_UB((MPI_Aint) blocklength_array[i],
