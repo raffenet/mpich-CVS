@@ -38,7 +38,7 @@ Input Parameters:
 - oldtype - old datatype (handle) 
 
 Output Parameter:
-. newtype - new datatype (handle) 
+. newtype_p - new datatype (handle) 
 
    Notes:
 
@@ -48,9 +48,10 @@ Output Parameter:
 .N MPI_SUCCESS
 @*/
 int MPI_Type_vector(int count, int blocklength, int stride, 
-		    MPI_Datatype old_type, MPI_Datatype *newtype)
+		    MPI_Datatype old_type, MPI_Datatype *newtype_p)
 {
     static const char FCNAME[] = "MPI_Type_vector";
+    int ret;
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *old_ptr = NULL, *new_ptr;
     MPID_MPI_STATE_DECLS;
@@ -91,6 +92,11 @@ int MPI_Type_vector(int count, int blocklength, int stride,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    ret = MPID_Type_vector(count, blocklength, stride, old_type, newtype_p);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
+    return ret;
+
+#if 0
     /* ... body of routine ...  */
     new_ptr = (MPID_Datatype *)MPIU_Handle_obj_alloc( &MPID_Datatype_mem );
     if (!new_ptr) {
@@ -163,4 +169,5 @@ int MPI_Type_vector(int count, int blocklength, int stride,
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
     return MPI_SUCCESS;
+#endif
 }

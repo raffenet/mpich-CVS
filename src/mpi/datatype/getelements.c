@@ -27,6 +27,8 @@ static int MPIR_Type_get_elements( int m_rem, MPID_Datatype *datatype_ptr )
 {
     int mpi_errno;
 
+#if 0
+	/* MPI calls shouldn't be looking at loops for now? */
     if ( (datatype_ptr->loopinfo->kind & DATALOOP_KIND_MASK) == MPID_DTYPE_STRUCT) {
 	/* This is the hard case; we must loop through the components of the 
 	   datatype */
@@ -40,6 +42,7 @@ static int MPIR_Type_get_elements( int m_rem, MPID_Datatype *datatype_ptr )
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**notimpl", 0 );
 	MPIR_Err_return_comm( 0, "Get_elements", mpi_errno );
     }
+#endif
     return 0;
 }
 #endif
