@@ -5,7 +5,7 @@
  */
 #include "shmimpl.h"
 
-int shm_cq_test()
+int shm_make_progress()
 {
     return MPI_SUCCESS;
 }

@@ -5,7 +5,7 @@
  */
 #include "viaimpl.h"
 
-int via_cq_test()
+int via_make_progress()
 {
     return MPI_SUCCESS;
 }

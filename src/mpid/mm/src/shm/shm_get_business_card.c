@@ -5,8 +5,9 @@
  */
 #include "shmimpl.h"
 
-int shm_get_business_card(char *value)
+int shm_get_business_card(char *value, int length)
 {
-    strcpy(value, SHM_Process.host);
+    strncpy(value, SHM_Process.host, length-1);
+    value[length-1] = '\0';
     return MPI_SUCCESS;
 }

@@ -5,7 +5,7 @@
  */
 #include "viaimpl.h"
 
-int via_get_business_card(char *value)
+int via_get_business_card(char *value, int length)
 {
     return MPI_SUCCESS;
 }

@@ -5,7 +5,7 @@
  */
 #include "via_rdmaimpl.h"
 
-int via_rdma_cq_test()
+int via_rdma_make_progress()
 {
     return MPI_SUCCESS;
 }

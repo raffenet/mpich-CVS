@@ -125,19 +125,6 @@ typedef union MM_Car_data
 #endif
 } MM_Car_data;
 
-/* Communication agent request */
-typedef struct MM_Car
-{
-    int freeme;
-    struct MPID_Request *request_ptr;
-    union MM_Segment_buffer *buf_ptr;
-    struct MPIDI_VC *vc_ptr;
-    int src, dest;
-    MM_CAR_TYPE type;
-    MM_Car_data data;
-    struct MM_Car *next_ptr, *opnext_ptr, *qnext_ptr, *mnext_ptr;
-} MM_Car;
-
 typedef union MM_Segment_buffer
 {
     MM_BUFFER_TYPE type;
@@ -188,6 +175,19 @@ typedef union MM_Segment_buffer
     }
 #endif
 } MM_Segment_buffer;
+
+/* Communication agent/action request */
+typedef struct MM_Car
+{
+    int freeme;
+    struct MPID_Request *request_ptr;
+    union MM_Segment_buffer *buf_ptr;
+    struct MPIDI_VC *vc_ptr;
+    int src, dest;
+    MM_CAR_TYPE type;
+    MM_Car_data data;
+    struct MM_Car *next_ptr, *opnext_ptr, *qnext_ptr, *mnext_ptr;
+} MM_Car;
 
 /* multi-method segment */
 typedef struct MM_Segment

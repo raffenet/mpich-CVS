@@ -5,9 +5,9 @@
  */
 #include "tcpimpl.h"
 
-int tcp_get_business_card(char *value)
+int tcp_get_business_card(char *value, int length)
 {
-    sprintf(value, "%s:%d", TCP_Process.host, TCP_Process.port);
+    snprintf(value, length, "%s:%d", TCP_Process.host, TCP_Process.port);
 
     return MPI_SUCCESS;
 }

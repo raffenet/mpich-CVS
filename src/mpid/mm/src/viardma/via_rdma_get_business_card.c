@@ -5,7 +5,7 @@
  */
 #include "via_rdmaimpl.h"
 
-int via_rdma_get_business_card(char *value)
+int via_rdma_get_business_card(char *value, int length)
 {
     return MPI_SUCCESS;
 }

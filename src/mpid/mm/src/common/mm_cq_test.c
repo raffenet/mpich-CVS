@@ -14,7 +14,7 @@ int mm_cq_test()
     MM_Segment_buffer *buf_ptr;
     int complete;
 
-    /* Should we call cq_test on all the methods?
+    /* Should we call make_progress on all the methods?
      * before checking the cq?
      * after checking the cq?
      * only if the cq is empty?
@@ -22,27 +22,27 @@ int mm_cq_test()
     if (MPID_Process.cq_head == NULL)
     {
 #ifdef WITH_METHOD_TCP
-	tcp_cq_test();
+	tcp_make_progress();
 #endif
 #ifdef WITH_METHOD_SHM
-	shm_cq_test();
+	shm_make_progress();
 #endif
 #ifdef WITH_METHOD_VIA
-	via_cq_test();
+	via_make_progress();
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
-	via_rdma_cq_test();
+	via_rdma_make_progress();
 #endif
 #ifdef WITH_METHOD_NEW
-	new_cq_test();
+	new_make_progress();
 #endif
     }
 
-    /* lock */
+    MPID_Thread_lock(MPID_Process.cqlock);
     car_ptr = MPID_Process.cq_head;
     MPID_Process.cq_head = NULL;
     MPID_Process.cq_tail = NULL;
-    /* unlock */
+    MPID_Thread_unlock(MPID_Process.cqlock);
 
     while (car_ptr)
     {

@@ -32,6 +32,7 @@ typedef struct MPID_PerProcess {
 	 struct MM_Car * posted_q_tail;
          struct MM_Car * unex_q_head;      /* active un-matched read operations */
 	 struct MM_Car * unex_q_tail;
+      MPID_Thread_lock_t cqlock;
          struct MM_Car * cq_head;          /* completion queue head */
 	 struct MM_Car * cq_tail;          /* completion queue tail */
          struct MM_Car * pkr_read_list;    /* active pack read operations */
@@ -195,6 +196,7 @@ MPID_Request * mm_request_alloc();
 	   int mm_post_send(MM_Car *car_ptr);
 	   int mm_cq_test();
 	   int mm_cq_wait();
+	   int mm_cq_enqueue(MM_Car *car_ptr);
 
 /* requests */
 /*

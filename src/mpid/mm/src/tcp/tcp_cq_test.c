@@ -19,21 +19,21 @@ int tcp_accept_connection()
     {
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-	err_printf("tcp_cq_test: beasy_accpet failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	err_printf("tcp_accept_connection: beasy_accpet failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
 	return -1;
     }
     if (beasy_receive(bfd, (void*)&remote_rank, sizeof(int)) == SOCKET_ERROR)
     {
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-	err_printf("tcp_cq_test: beasy_receive(rank) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	err_printf("tcp_accept_connection: beasy_receive(rank) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
 	return -1;
     }
     if (beasy_receive(bfd, (void*)&context, sizeof(int)) == SOCKET_ERROR)
     {
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-	err_printf("tcp_cq_test: beasy_receive(context) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	err_printf("tcp_accept_connection: beasy_receive(context) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
 	return -1;
     }
 
@@ -119,7 +119,7 @@ int tcp_accept_connection()
     return MPI_SUCCESS;
 }
 
-int tcp_cq_test()
+int tcp_make_progress()
 {
     int nready = 0;
     struct timeval tv;
