@@ -53,6 +53,7 @@ int MPI_Type_indexed(int count,
     static const char FCNAME[] = "MPI_Type_indexed";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_INDEXED);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_INDEXED);
     /* Get handles to MPI objects. */

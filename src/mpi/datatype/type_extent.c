@@ -47,6 +47,7 @@ int MPI_Type_extent(MPI_Datatype datatype, MPI_Aint *extent)
     int mpi_errno = MPI_SUCCESS;
     int type_extent;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_EXTENT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_EXTENT);
     /* Get handles to MPI objects. */

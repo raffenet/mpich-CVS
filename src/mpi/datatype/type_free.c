@@ -45,6 +45,7 @@ int MPI_Type_free(MPI_Datatype *datatype)
     static const char FCNAME[] = "MPI_Type_free";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_FREE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_FREE);
     /* Get handles to MPI objects. */

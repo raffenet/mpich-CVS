@@ -60,6 +60,7 @@ int MPI_Unpack(void *inbuf,
     MPID_Comm *comm_ptr = NULL;
     MPID_Datatype *datatype_ptr = NULL;
     MPID_Segment *segp;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_UNPACK);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_UNPACK);
     /* Get handles to MPI objects. */

@@ -53,6 +53,7 @@ int MPI_Pack_size(int incount,
     int typesize;
     MPID_Comm *comm_ptr = NULL;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_PACK_SIZE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PACK_SIZE);
     /* Get handles to MPI objects. */

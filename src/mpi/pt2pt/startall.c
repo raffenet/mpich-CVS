@@ -109,7 +109,7 @@ int MPI_Startall(int count, MPI_Request array_of_requests[])
 		MPID_Request_valid_ptr( request_ptrs[i], mpi_errno );
 	    }
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_STARTALL);
                 return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
             }
         }
@@ -124,7 +124,7 @@ int MPI_Startall(int count, MPI_Request array_of_requests[])
 	MPIU_Free(request_ptrs);
     }
     
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_STARTALL);
     return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
 	MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
 }
