@@ -660,6 +660,8 @@ dnl          src/mpid/mm/Makefile \
 
 
 PAC_SUBDIR_CACHE_CLEANUP
+echo 'Configuration completed.'
+
 
 
 
