@@ -119,8 +119,8 @@ MPID_Request * MPIDI_CH3U_Request_FUOAP(
 	else
 	{
 	    MPIDI_Process.recv_posted_head = req;
-	    MPIDI_Process.recv_posted_tail = req;
 	}
+	MPIDI_Process.recv_posted_tail = req;
     }
     
     *found = 0;
@@ -185,8 +185,8 @@ MPID_Request * MPIDI_CH3U_Request_FPOAU(
 	else
 	{
 	    MPIDI_Process.recv_unexpected_head = req;
-	    MPIDI_Process.recv_unexpected_tail = req;
 	}
+	MPIDI_Process.recv_unexpected_tail = req;
     }
     
     *found = 0;
