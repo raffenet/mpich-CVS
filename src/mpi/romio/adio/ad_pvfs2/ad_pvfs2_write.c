@@ -31,27 +31,23 @@ void ADIOI_PVFS2_WriteContig(ADIO_File fd, void *buf, int count,
 	goto error_request;
     }
 
+    ret = PVFS_Request_contiguous(len, PVFS_BYTE, &file_req);
+    if (ret < 0) {
+	fprintf(stderr, "pvfs_request_contig returns with %d\n", ret);
+	goto error_request;
+    }
+
     if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
-	ret = PVFS_Request_hindexed(1, &len, &offset, PVFS_BYTE, &file_req);
-	if (ret < 0 ) {
-	    fprintf(stderr, "pvfs_request_hindexed returns with %d\n", ret);
-	    goto error_request;
-	}
-	ret = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, 0,  buf, mem_req, 
-		pvfs_fs->credentials, &resp_io);
+	ret = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, offset,  buf, 
+		mem_req, pvfs_fs->credentials, &resp_io);
 	if (ret < 0 ) {
 	    fprintf(stderr, "pvfs_sys_write returns with %d\n", ret);
 	    goto error_write;
 	}
 	fd->fp_sys_posn = offset + (int) resp_io.total_completed;
     } else {
-	ret = PVFS_Request_hindexed(1, &len, &(fd->fp_ind), PVFS_BYTE, &file_req);
-	if (ret < 0 ) {
-	    fprintf(stderr, "pvfs_request_hindexed returns with %d\n", ret);
-	    goto error_request;
-	}
-	ret = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, 0, buf, mem_req, 
-	    pvfs_fs->credentials, &resp_io);
+	ret = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, fd->fp_ind, buf, 
+		mem_req, pvfs_fs->credentials, &resp_io);
 	if (ret < 0) {
 	    fprintf(stderr, "pvfs_sys_write returns with %d\n", ret);
 	    goto error_write;
@@ -67,7 +63,7 @@ void ADIOI_PVFS2_WriteContig(ADIO_File fd, void *buf, int count,
 
 error_request:
 error_write:
-    *error_code = MPI_UNDEFINED;
+    ADIOI_PVFS2_pvfs_error_convert(ret, error_code);
 }
 
 void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
@@ -812,6 +808,3 @@ error_state:
 
     if (!buftype_is_contig) ADIOI_Delete_flattened(datatype);
 }
-
-/*
- */
