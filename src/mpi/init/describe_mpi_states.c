@@ -344,7 +344,10 @@ int MPIR_Describe_mpi_timer_states()
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_SEND, "MPIC_Send", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_RECV, "MPIC_Recv", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_SENDRECV, "MPIC_Sendrecv", get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIR_WAIT, "MPIR_Wait", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_IRECV, "MPIC_Irecv", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_ISEND, "MPIC_Isend", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_WAIT, "MPIC_Wait", get_random_color_str());
+
 
     /* BEGINNING OF BLOCK OF AUTOMATICALLY GENERATED ENTRIES */
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_ADD_ERROR_CLASS, "MPI_Add_error_class", get_random_color_str());
@@ -445,9 +448,6 @@ int MPIR_Describe_mpi_timer_states()
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_WIN_TEST, "MPI_Win_test", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_WIN_UNLOCK, "MPI_Win_unlock", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_WIN_WAIT, "MPI_Win_wait", get_random_color_str());
-
-    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_IRECV, "MPIC_Irecv", get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIC_ISEND, "MPIC_Isend", get_random_color_str());
 
     /* END OF BLOCK OF AUTOMATICALLY GENERATED ENTRIES */
 
