@@ -53,7 +53,7 @@
    this algorithm will perform better.
 
    For very long messages, we use a ring algorithm for the allgather, which
-   takes p-1 steps because it performs better than recursive doubling.
+   takes p-1 steps, because it performs better than recursive doubling.
    Total Cost = (lgp+p-1).alpha + 2.n.((p-1)/p).beta
 
    Possible improvements: 
@@ -142,7 +142,7 @@ int MPIR_Bcast (
 
   if ((nbytes < MPIR_BCAST_SHORT_MSG) || (comm_size <= MPIR_BCAST_MIN_PROCS)) {
 
-      /* Use short message algorithm, namely, minimum spanning tree */
+      /* Use short message algorithm, namely, binary tree */
 
       /* Algorithm:
          This uses a fairly basic recursive subdivision algorithm.
