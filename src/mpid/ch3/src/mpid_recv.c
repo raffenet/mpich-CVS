@@ -77,9 +77,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 	    }
 	    
 	    /* MT - this check needs to be thread safe */
-	    /* NOTE - rreq->cc is used here instead of rreq->cc_ptr.  We are assuming that for simple sends and receives the
-	       request's internal completion counter will always be used. */
-	    if (rreq->cc == 0)
+	    if (*rreq->cc_ptr == 0)
 	    {
 		/* All of the data has arrived, we need to unpack the data and then free the buffer and the request. */
 		if (rreq->ch3.recv_data_sz > 0)

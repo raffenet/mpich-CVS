@@ -103,7 +103,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 		}
 	    }
 
-	    if (rreq->cc == 0)
+	    if (*rreq->cc_ptr == 0)
 	    {
 		/* All of the data has arrived, we need to copy the data and then free the buffer and the request. */
 		if (rreq->ch3.recv_data_sz > 0)
