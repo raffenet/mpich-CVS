@@ -45,6 +45,10 @@ else
      SSM_LIBS="$SSM_LIBS $ac_cv_search_mq_open" 
  fi
 fi
+AC_SEARCH_LIBS( uuid_generate, uuid )
+if test "$ac_cv_search_uuid_generate" != "none required" ; then
+    SSM_LIBS="$SSM_LIBS $ac_cv_search_uuid_generate" 
+fi
 
 cpu_gcc_x86_cycle=no
 AC_TRY_COMPILE(,[
