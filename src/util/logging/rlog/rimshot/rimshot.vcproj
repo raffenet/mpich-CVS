@@ -134,9 +134,9 @@
 				Name="VCWebDeploymentTool"/>
 		</Configuration>
 		<Configuration
-			Name="shmRelease|Win32"
-			OutputDirectory="shmRelease"
-			IntermediateDirectory="shmRelease"
+			Name="ch3shmRelease|Win32"
+			OutputDirectory="ch3shmRelease"
+			IntermediateDirectory="ch3shmRelease"
 			ConfigurationType="1"
 			UseOfMFC="1"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -219,7 +219,7 @@
 						UsePrecompiledHeader="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="shmRelease|Win32">
+					Name="ch3shmRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						UsePrecompiledHeader="1"/>

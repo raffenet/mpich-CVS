@@ -134,9 +134,9 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="shmRelease|Win32"
-			OutputDirectory="shmRelease"
-			IntermediateDirectory="shmRelease"
+			Name="ch3shmRelease|Win32"
+			OutputDirectory="ch3shmRelease"
+			IntermediateDirectory="ch3shmRelease"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"

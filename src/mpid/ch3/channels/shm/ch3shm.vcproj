@@ -11,7 +11,7 @@
 	</Platforms>
 	<Configurations>
 		<Configuration
-			Name="shmDebug|Win32"
+			Name="ch3shmDebug|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
@@ -26,10 +26,10 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\shmDebug/shm.pch"
-				AssemblerListingLocation=".\shmDebug/"
-				ObjectFile=".\shmDebug/"
-				ProgramDataBaseFileName=".\shmDebug/"
+				PrecompiledHeaderFile=".\ch3shmDebug/shm.pch"
+				AssemblerListingLocation=".\ch3shmDebug/"
+				ObjectFile=".\ch3shmDebug/"
+				ProgramDataBaseFileName=".\ch3shmDebug/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -63,7 +63,7 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="shmRelease|Win32"
+			Name="ch3shmRelease|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
@@ -79,10 +79,10 @@
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\Release/shm.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				PrecompiledHeaderFile=".\ch3shmRelease/ch3shm.pch"
+				AssemblerListingLocation=".\ch3shmRelease/"
+				ObjectFile=".\ch3shmRelease/"
+				ProgramDataBaseFileName=".\ch3shmRelease/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
