@@ -91,12 +91,12 @@ pac_namecheck=`echo X$pac_cv_prog_f77_name_mangle | sed 's/ /-/g'`
 ifelse([$1],,[
 case $pac_namecheck in
     X) AC_MSG_WARN([Cannot determine Fortran naming scheme]) ;;
-    Xlower) AC_DEFINE(F77_NAME_LOWER) ;;
-    Xlower-underscore) AC_DEFINE(F77_NAME_LOWER_USCORE) ;;
-    Xlower-doubleunderscore) AC_DEFINE(F77_NAME_LOWER_2USCORE) ;;
-    Xupper) AC_DEFINE(F77_NAME_UPPER) ;;
-    Xmixed) AC_DEFINE(F77_NAME_MIXED) ;;
-    Xmixed-underscore) AC_DEFINE(F77_NAME_MIXED_USCORE) ;;
+    Xlower) AC_DEFINE(F77_NAME_LOWER,,[Define if Fortran names are lowercase]) ;;
+    Xlower-underscore) AC_DEFINE(F77_NAME_LOWER_USCORE,,[Define if Fortran names are lowercase with a trailing underscore]) ;;
+    Xlower-doubleunderscore) AC_DEFINE(F77_NAME_LOWER_2USCORE,,[Define if Fortran names containing an underscore have two trailing underscores]) ;;
+    Xupper) AC_DEFINE(F77_NAME_UPPER,,[Define if Fortran names are uppercase]) ;;
+    Xmixed) AC_DEFINE(F77_NAME_MIXED,,[Define if Fortran names preserve the original case]) ;;
+    Xmixed-underscore) AC_DEFINE(F77_NAME_MIXED_USCORE,,[Define if Fortran names preserve the original case and add a trailing underscore]) ;;
     *) AC_MSG_WARN([Unknown Fortran naming scheme]) ;;
 esac
 ],[$1])
@@ -183,7 +183,7 @@ else
     ifelse([$2],,eval PAC_CV_NAME=0,eval PAC_CV_NAME=$2)
 fi
 ])
-AC_DEFINE_UNQUOTED(PAC_TYPE_NAME,$PAC_CV_NAME)
+AC_DEFINE_UNQUOTED(PAC_TYPE_NAME,$PAC_CV_NAME,[Define size of PAC_TYPE_NAME])
 undefine([PAC_TYPE_NAME])
 undefine([PAC_CV_NAME])
 ])
