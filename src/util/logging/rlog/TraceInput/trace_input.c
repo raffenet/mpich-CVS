@@ -2,7 +2,7 @@
 //
 
 #include "stdafx.h"
-#include "TraceInput.h"
+#include "trace_input.h"
 #include "rlog.h"
 #include <stdlib.h>
 
