@@ -209,13 +209,6 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 	MPIC_Sendrecv( &context_id, 1, MPI_INT, 0, tag,
 		       &remote_context_id, 1, MPI_INT, 0, tag, 
 		       comm_ptr->handle, MPI_STATUS_IGNORE );
-	/*printf( "sent %d received %d\n", context_id, remote_context_id );fflush(stdout);*/
-	if (remote_context_id < 0) { 
-	    /* FIXME: there is a problem with the receive buffer not being set */
-	    printf( "PANIC: Internal error in Sendrecv used to get intercomm context\n" );fflush( stdout);
-	    remote_context_id = context_id;
-	}
-	/* printf( "sent %d received %d\n", context_id, remote_context_id );fflush(stdout); */
 
 	/* We need to do something with the context ids.  For 
 	   MPI1, we can just take the min of the two context ids and

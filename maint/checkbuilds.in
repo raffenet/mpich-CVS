@@ -320,6 +320,7 @@ sub time_left {
 # for each test.
 #
 sub RunTestSuites {
+    my $run_status = 0;
     foreach my $testname (split(';',$tests)) {
 	if ($testname eq "") { next; }
 	print $OUTFD "Running test $testname...\n";
@@ -364,6 +365,7 @@ sub RunTestSuites {
 		}
 	    }
 	    else {
+		$run_status = $rc;
 		print $OUTFD "Configure step for test failed\n";
 		print $OUTFD "Could not execute " . join(" ", @config) . "\n";
 		print $OUTFD "Enviroment was ";
@@ -381,6 +383,7 @@ sub RunTestSuites {
 	    print $OUTFD "Unrecognized test $testname\n";
 	}
     }
+    return $run_status;
 }
 # ---------------------------------------------------------------------------
 #
