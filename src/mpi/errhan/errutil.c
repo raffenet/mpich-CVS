@@ -52,6 +52,16 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 {
     /* First, check the nesting level */
     if (MPIR_Nest_value()) return errcode;
+    
+    if (!comm_ptr) {
+	/* Try to replace with the default handler, which is the one
+	   on MPI_COMM_WORLD.  This gives us correct behavior
+	   for the case where the error handler on MPI_COMM_WORLD
+	   has been changed. */
+	if (MPIR_Process.comm_world) {
+	    comm_ptr = MPIR_Process.comm_world;
+	}
+    }
 
     /* Now, invoke the error handler for the communicator */
     if (!comm_ptr || !(comm_ptr->errhandler) || 
