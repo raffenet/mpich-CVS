@@ -1,8 +1,6 @@
-dnl
-dnl This has been derived from the MPICH-1 configure for the Fortran
-dnl binding.  It still needs major editing.
-dnl
 AC_INIT(Makefile.in)
+# Set use_alias_types to yes to allow some of the MPI named types to be
+# aliases for others (allowed under MPI-1 but not MPI-2).
 use_alias_types=no
 dnl
 dnl Cygwin uses PREREQ to decide which autoconf/autoheader to run.  
@@ -393,11 +391,11 @@ rm -f mpif_bottom.h
 if test "$f77_has_pointer" = "yes" -a "$use_pointer_in_f77" = "yes" ; then
     cat >>mpif_bottom.h <<EOF
 C
-C     (C) 2001 by Argonne National Laboratory.\n";
-C     See COPYRIGHT in top-level directory.\n";
+C     (C) 2001 by Argonne National Laboratory.
+C     See COPYRIGHT in top-level directory.
 C
-C     DO NOT EDIT";
-C     This file created by buildiface $arg_string\n";
+C     DO NOT EDIT
+C     This file created by configure
 C
         pointer (MPI_BOTTOM_PTR,MPI_BOTTOM)
 	pointer (MPI_STATUS_IG_PTR,MPI_STATUS_IGNORE)
@@ -411,11 +409,11 @@ EOF
 else
     cat >>mpif_bottom.h <<EOF
 C
-C     (C) 2001 by Argonne National Laboratory.\n";
-C     See COPYRIGHT in top-level directory.\n";
+C     (C) 2001 by Argonne National Laboratory.
+C     See COPYRIGHT in top-level directory.
 C
-C     DO NOT EDIT";
-C     This file created by buildiface $arg_string\n";
+C     DO NOT EDIT
+C     This file created by configure
 C
       COMMON /MPIPRIV/ MPI_BOTTOM,MPI_STATUS_IGNORE,MPI_STATUSES_IGNORE      
 C
@@ -447,14 +445,62 @@ PAC_PROG_F77_CHECK_SIZEOF_EXT(double precision,$CROSS_F77_SIZEOF_DOUBLE_PRECISIO
 # If we have sizes for real and double, we do not need to call mpir_get_fsize
 # at run time.
 #
+AC_MSG_CHECKING([whether integer*1 is supported])
 AC_TRY_COMPILE(,[      integer*1 i],has_integer_1=1,has_integer_1=0)
+if test "$has_integer_1" != 0 ; then 
+    AC_MSG_RESULT(yes)
+else
+    AC_MSG_RESULT(no)
+fi
+AC_MSG_CHECKING([whether integer*2 is supported])
 AC_TRY_COMPILE(,[      integer*2 i],has_integer_2=2,has_integer_2=0)
+if test "$has_integer_2" != 0 ; then 
+    AC_MSG_RESULT(yes)
+else
+    AC_MSG_RESULT(no)
+fi
+AC_MSG_CHECKING([whether integer*4 is supported])
 AC_TRY_COMPILE(,[      integer*4 i],has_integer_4=4,has_integer_4=0)
+if test "$has_integer_4" != 0 ; then 
+    AC_MSG_RESULT(yes)
+else
+    AC_MSG_RESULT(no)
+fi
+AC_MSG_CHECKING([whether integer*8 is supported])
 AC_TRY_COMPILE(,[      integer*8 i],has_integer_8=8,has_integer_8=0)
+if test "$has_integer_8" != 0 ; then 
+    AC_MSG_RESULT(yes)
+else
+    AC_MSG_RESULT(no)
+fi
+AC_MSG_CHECKING([whether integer*16 is supported])
 AC_TRY_COMPILE(,[      integer*16 i],has_integer_16=16,has_integer_16=0)
+if test "$has_integer_16" != 0 ; then 
+    AC_MSG_RESULT(yes)
+else
+    AC_MSG_RESULT(no)
+fi
+AC_MSG_CHECKING([whether real*4 is supported])
 AC_TRY_COMPILE(,[      real*4 a],has_real_4=4,has_real_4=0)
+if test "$has_real_4" != 0 ; then 
+    AC_MSG_RESULT(yes)
+else
+    AC_MSG_RESULT(no)
+fi
+AC_MSG_CHECKING([whether real*8 is supported])
 AC_TRY_COMPILE(,[      real*8 a],has_real_8=8,has_real_8=0)
+if test "$has_real_8" != 0 ; then 
+    AC_MSG_RESULT(yes)
+else
+    AC_MSG_RESULT(no)
+fi
+AC_MSG_CHECKING([whether real*16 is supported])
 AC_TRY_COMPILE(,[      real*16 a],has_real_16=16,has_real_16=0)
+if test "$has_real_16" != 0 ; then 
+    AC_MSG_RESULT(yes)
+else
+    AC_MSG_RESULT(no)
+fi
 
 # Create the default datatype names for the standard MPI Fortran types
 MPI_CHARACTER=0x4c00011a
@@ -993,7 +1039,7 @@ cat >conftest.f <<EOF
        end
 EOF
 # Compile the two files
-    pac_tmp_compile='$CC -c $CFLAGS $CPPFLAGS conftestc.c >&5'
+    pac_tmp_compile='$CC -c $CFLAGS $CPPFLAGS conftestc.c >&AC_FD_CC'
     if AC_TRY_EVAL(pac_tmp_compile) && test -s conftestc.o ; then
         AC_LANG_SAVE
         AC_LANG_FORTRAN77
@@ -1037,44 +1083,47 @@ fi
 
 PAC_LANG_POP_COMPILERS
 
-# If the system is Cray or Cray-like, then we need to handle character
-# data in a special way.  This code does that.
-if test "$target_os" = "CRAY" ; then
-    # If tested code does NOT compile, then define _TWO_WORD_FCD
-    AC_MSG_CHECKING([whether TWO_WORD_FCDs are used])
-    AC_TRY_COMPILE([#include <fortran.h>],
-[void  *buf;_fcd temp;temp = _fcdtocp(buf);],
-compile_check=yes,compile_check=no)
-    AC_MSG_RESULT($compile_check)
-    if test "$compile_check" = "no" ; then
-        TEMP_CFLAGS=$CFLAGS
-        CFLAGS="-D_TWO_WORD_FCD $CFLAGS"
-        AC_MSG_CHECKING([whether program compiles if _TWO_WORD_FCD is defined ])
-        AC_TRY_COMPILE([#include <fortran.h>],
-[void  *buf;_fcd temp;temp = _fcdtocp(buf);],
-compile_check=yes,compile_check=no)
-        AC_MSG_RESULT($compile_check)
-        if test "$compile_check" = "no" ; then
-	    AC_MSG_WARN([You may have problems compiling the Fortran interface
-specifically calls to  _fcdtocp])
-        elif test "$compile_check" = "yes" ; then
-            AC_DEFINE(_TWO_WORD_FCD,1,[Define if characters use two-word descriptors])
-        fi
-        CFLAGS=$TEMP_CFLAGS
-    fi
-fi
-
-if test -n "$arch_UXPM" -o -n "$arch_uxpv" ; then
-    # This asserts that Fortran passes functions by passing the address of the
-    # pointer to the function.
-    # We really need a TEST for this
-    AC_DEFINE(FORTRAN_SPECIAL_FUNCTION_PTR,1,[Define if Fortran functions are passed by passing the address of the pointer to the function])
-    # Suggested values for these are
-    dnl CFLAGS=-O
-    dnl    #FFLAGS=-Oe,-U -Aabe ( Parameter e is not supported on  uxp/m )
-    dnl FLINKER=frt
-    dnl FLIBS="$FLIB_PATH $LIB_LIST"
-fi
+dnl The following two features are not currently supported in the 
+dnl Fortran interface.  The code is left here in case we need it
+dnl for some system.  We have removed it because we cannot test it
+dnl # If the system is Cray or Cray-like, then we need to handle character
+dnl # data in a special way.  This code does that.
+dnl if test "$target_os" = "CRAY" ; then
+dnl     # If tested code does NOT compile, then define _TWO_WORD_FCD
+dnl     AC_MSG_CHECKING([whether TWO_WORD_FCDs are used])
+dnl     AC_TRY_COMPILE([#include <fortran.h>],
+dnl [void  *buf;_fcd temp;temp = _fcdtocp(buf);],
+dnl compile_check=yes,compile_check=no)
+dnl     AC_MSG_RESULT($compile_check)
+dnl     if test "$compile_check" = "no" ; then
+dnl         TEMP_CFLAGS=$CFLAGS
+dnl         CFLAGS="-D_TWO_WORD_FCD $CFLAGS"
+dnl         AC_MSG_CHECKING([whether program compiles if _TWO_WORD_FCD is defined ])
+dnl         AC_TRY_COMPILE([#include <fortran.h>],
+dnl [void  *buf;_fcd temp;temp = _fcdtocp(buf);],
+dnl compile_check=yes,compile_check=no)
+dnl         AC_MSG_RESULT($compile_check)
+dnl         if test "$compile_check" = "no" ; then
+dnl 	    AC_MSG_WARN([You may have problems compiling the Fortran interface
+dnl specifically calls to  _fcdtocp])
+dnl         elif test "$compile_check" = "yes" ; then
+dnl             AC_DEFINE(_TWO_WORD_FCD,1,[Define if characters use two-word descriptors])
+dnl         fi
+dnl         CFLAGS=$TEMP_CFLAGS
+dnl     fi
+dnl fi
+dnl 
+dnl if test -n "$arch_UXPM" -o -n "$arch_uxpv" ; then
+dnl     # This asserts that Fortran passes functions by passing the address of the
+dnl     # pointer to the function.
+dnl     # We really need a TEST for this
+dnl     AC_DEFINE(FORTRAN_SPECIAL_FUNCTION_PTR,1,[Define if Fortran functions are passed by passing the address of the pointer to the function])
+dnl     # Suggested values for these are
+dnl     dnl CFLAGS=-O
+dnl     dnl    #FFLAGS=-Oe,-U -Aabe ( Parameter e is not supported on  uxp/m )
+dnl     dnl FLINKER=frt
+dnl     dnl FLIBS="$FLIB_PATH $LIB_LIST"
+dnl fi
 
 #
 # Most systems allow the Fortran compiler to process .F and .F90 files
@@ -1152,6 +1201,7 @@ if test -n "$F90" ; then
     PAC_LANG_FORTRAN90
     # Offset kind should be for 8 bytes if possible (Romio prefers that)
     # address should be sizeof void *
+    # FIXME: make offset kind match the length of MPI_Offset.
     testsize=$ac_cv_sizeof_voidp
     if test "$testsize" = 0 ; then
         # Set a default
