@@ -19,12 +19,18 @@ int MPIDI_CH3I_Setup_connections()
     MPIDI_VC *vc;
 
     key_max_sz = PMI_KVS_Get_key_length_max();
+    /*
     MPIU_dbg_printf("mallocing %d bytes for key\n", key_max_sz);
     key = MPIU_Malloc(key_max_sz);
+    */
+    key = malloc(key_max_sz);
     assert(key != NULL);
     val_max_sz = PMI_KVS_Get_value_length_max();
+    /*
     MPIU_dbg_printf("mallocing %d bytes for value\n", val_max_sz);
     val = MPIU_Malloc(val_max_sz);
+    */
+    val = malloc(val_max_sz);
     assert(val != NULL);
     
     /* create a queue pair connection to each process */
