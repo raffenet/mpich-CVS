@@ -166,7 +166,7 @@ int beasy_receive(int bfd, char *buffer, int len);
 int beasy_receive_timeout(int bfd, char *buffer, int len, int timeout);
 int beasy_receive_some(int bfd, char *buffer, int len);
 int beasy_send(int bfd, char *buffer, int length);
-int beasy_getlasterror();
+int beasy_getlasterror(void);
 int beasy_error_to_string(int error, char *str, int length);
 
 #ifdef __cplusplus
