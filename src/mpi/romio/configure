@@ -282,7 +282,7 @@ case $arg in
   -f90=* | --f90=*)
      F90=`echo A$arg|sed 's/A-*f90=//'`
      ;;
-  -echo)
+  -echo | --enable-echo | -enable-echo )
      set -x
      ;;
   -disable-weak-symbols|--disable-weak-symbols)
@@ -505,8 +505,9 @@ echo "$ac_t""$ARCH" 1>&1
 fi
 fi
 #
-# check for valid architecture
-grep _"$ARCH"_ $srcdir/.config_params > /dev/null 2>&1
+# check for valid architecture.  Use __ so that _ALPHA_ does not match
+# LINUX_ALPHA_
+grep __"$ARCH"_ $srcdir/.config_params > /dev/null 2>&1
 if test $? != 0 ; then
    echo "Unknown architecture $arch... proceeding anyway"
 fi
@@ -1077,7 +1078,7 @@ rm -f conftest*
     fi
 fi
 #
-if test -n "$arch_alpha" ; then
+if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
     CC=${CC:-cc}
     F77=${FC:-f77}
     if test $DEBUG = 1; then
