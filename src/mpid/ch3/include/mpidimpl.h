@@ -33,6 +33,29 @@ extern MPIDI_Process_t MPIDI_Process;
 #define MPID_REQUEST_STATE_EAGER_MSG 0
 #define MPID_REQUEST_STATE_RNDV_MSG 0
 
+/*
+ * Debugging tools
+ */
+void MPIDI_dbg_printf(int, char *, char *, ...);
+#define MPIDI_dbg_printf(level, func, fmt, args...)			\
+{									\
+    printf("%d (%d) %s(): " ## fmt ## "\n",				\
+	   MPIR_Process.comm_world->rank, level, func, ## args);	\
+    fflush(stdout);							\
+}
+
+#define MPIDI_QUOTE(A) MPIDI_QUOTE2(A)
+#define MPIDI_QUOTE2(A) #A
+
+/*
+ * CH3 Utilities
+ */
+#define MPIDI_CH3U_Request_decrement_cc(req, cc)	\
+{							\
+    *cc = --(*req->cc_ptr);				\
+}
+
+
 /* Channel function prototypes are in mpidi_ch3_post.h since some of the macros
    require their declarations. */
 
