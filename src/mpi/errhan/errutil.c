@@ -707,6 +707,11 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 
     va_start(Argp, specific_msg);
 
+    if (error_class == MPI_ERR_OTHER && lastcode != MPI_SUCCESS)
+    {
+	error_class = lastcode & (ERROR_CLASS_MASK | ERROR_DYN_MASK);
+    }
+
     err_code = error_class;
 
     /* Handle the generic message.  This selects a subclass, based on a text string */
