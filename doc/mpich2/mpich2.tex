@@ -1643,6 +1643,8 @@ controlled:
  \file{mpiimpl.h}, and having code in \file{mpiimpl.h} check the class
  when defining these macros.
 
+ (not yet implemented)
+
 \item[at run time]with the \code{MPICH_TIMING} environment variable or
   \code{-mpich-timing} command line argument; the value is a string of timing
   class names.
@@ -1659,7 +1661,8 @@ In addition, nontrivial system calls should be timed because they can
 sometimes take surprising amounts of time (e.g., \code{gethostbyname}).
 These can be timed using the same macros, with state names that include the
 function name (e.g., \code{MPID_STATE_SYS_GETHOSTBYNAME}).  The state
-names for all system routines start with \code{MPID_STATE_SYS_}.  
+names for all system routines start with \code{MPID_STATE_SYS_}, and
+are defined in the file \file{mpisysstates.h}.
 
 While it would be nice to dynamically allocate the state ids, this part of the
 code should be fast; this argues for predefined state numbers
@@ -1674,7 +1677,7 @@ There are two additional items to watch:
 There are three levels to the state timers:
 \begin{description}
 \item[none]No data is available (macros evaluate to empty).  This is
-  appropriate for production versions of MPICH.
+  appropriate for production versions of MPICH, and is the default value.
 \item[time]Only the total accumulate time in each state is available.
 \item[log]Logfiles are collected (using slog).
 \end{description}
@@ -1912,13 +1915,13 @@ declared within the routine.  A typical use might be
 % although it would be a nop in the implementation described above.
 
 \subsubsection{Testing for Memory Errors}
-The \file{util/mem/trmem} (TRacing MEMory package) provides both tests for
+The \file{util/mem/trmem.c} (TRacing MEMory package) provides both tests for
 memory 
 leaks and for memory overruns by using sentinels; it can also
 pre-initialize all allocated memory to various patterns.  These tests
 should be made a part of the nightly rounds (even in MPICH).  
 Memory tests are enabled by the configure option
-\cfgoption{--enable-g=trmem} or \code{--enable-g=all}.
+\cfgoption{--enable-g=trmem} or \cfgoption{--enable-g=all}.
 % Question: what is the configure command to enable memory tracing, and
 % what are the command-line/environment variables that are used to
 % control the level of detail when tracing is enabled?
@@ -1927,11 +1930,14 @@ Memory tests are enabled by the configure option
 (not written; covers how to name routines)
 
 \paragraph{Creating and Destroying Structures.}
-This section should explain the new/delete, alloc/free, create/destroy set of
-names, and mention that the MPI ``free'' routines tend only to decrement a
-reference count and free if zero.  To avoid conflicts with the first two pairs
-of names, we use create/destroy for routines that create and recover data
-structures.
+The routines to create and destroy structures use \code{create} and
+\code{destory}.  The names \code{new} and \code{delete} are used by
+C++ and \code{alloc} and \code{free} are used by both MPI and C. 
+To avoid conflicts and misunderstandings, particularly since the
+semantics of the operations are slightly different (e.g., in MPI, a
+\code{free} operation only (effectively) decrements a reference count
+and does not actually recover the space until the reference count
+reaches zero).
 
 \subsection{Runtime Parameters}
 \label{sec:runtime-params}
@@ -2260,7 +2266,8 @@ Global variables should also be initialized to avoid problems with
 some object library formats\footnote{Uninitialized global variables
 are given type ``common'' by many Unix C compilers; initialized
 variables have type ``global''.  Some \texttt{ar} or \texttt{ranlib}
-programs won't load common symbols(!) unless special options are used.}.
+programs won't include common symbols as defining the use of a name(!)
+unless special options are used; this causes link steps to fail.}. 
 \end{description}
 
 \subsection{Other Subsystems}
@@ -6890,7 +6897,9 @@ static int MPID_Nameserver_finalize( void *ptr )
 ...
 /* if an error seen, use */
 str = ldap_err2string( err );
-MPIR_Err_setcode( "Error from ldap library during %s operation: %s", 
+MPIR_Err_create_code( MPI_ERR_OTHER, 
+                  "Error from LDAP library",
+                  "Error from LDAP library during %s operation: %s", 
                   routine_name, str );
 \end{verbatim}
 
@@ -7503,13 +7512,16 @@ Tools already available:
 \begin{description}
 \item[checkforglobs]Check for global symbol names.  Currently part of the
   \code{sowing} package in \file{sowing/bin/checkforglobs}. 
-\item[tool-to-be-created]Check for use of banned routines (e.g., \code{printf},
-\code{alloca})
+\item[codingcheck]Check for use of banned routines (e.g., \code{printf},
+\code{alloca}) and other coding style problems.  This routine is in
+\file{mpich2/maint}.  This also check for C preprocessor names that
+may indicate a portability problem, such as the use of tests on
+particular system names or features.
 \item[gcc -Wall etc.]Missing prototypes, return values, etc.  This can be set
   in \code{configure} with the \code{PAC_ARG_STRICT} macro.
-\item[finddefines]Check for OS name or system type in a preprocessor
-  statement (look for \emph{all} \code{\#ifdef} or \code{\#if defined()} and
-  check against permitted values).  (Only partially implemented.  Currently in \file{/home/MPI/maint/util}.)
+% \item[finddefines]Check for OS name or system type in a preprocessor
+%   statement (look for \emph{all} \code{\#ifdef} or \code{\#if defined()} and
+%   check against permitted values).  (Only partially implemented.  Currently in \file{/home/MPI/maint/util}.)
 \end{description}
 
 We also need tools for the following:
@@ -7543,7 +7555,12 @@ ban those values entirely?  Should we define a general output routine
 that can be implemented to output to a file, stdout, or a graphical display?
 Answer: We should define replacement routines.  These should implement
 something like the \code{DLAST} feature of MPICH (e.g., hold the last 100
-messages).  Question: what is the \code{--enable} value for this?
+messages).  
+The configure option that controls this is
+\cfgoption{--enable-msgtrack}.  The values may be
+\begin{description}
+\item[n]The size of the buffer (e.g., \code{--enable-msgtrack=100}).
+\end{description}
 
 Question:  Should we have something like the following:
 \begin{verbatim}
@@ -7616,6 +7633,11 @@ configure or provided by the user.
 These can be created automatically in a way similar to the current
 Fortran 90 interface.
 
+This has been added to the Fortran 90 support in MPICH-1, although the
+handling of type sizes should be better; sizes are set expecting the
+\code{*n} format.  If another format is used, such as plain type
+names, the current code chooses the common (but not universal) defaults.
+
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_F90_INTEGER}}
 This searches through a global list (pointed at by
 \mpidconst{MPID_F90_Predefined_types_head}) to see if the requested type has
@@ -7667,10 +7689,10 @@ define \code{MPICH_REQUEST_C_IS_F77} etc.?
 \subsubsection{Fortran Datatypes}
 There are several special Fortran datatypes.  These are
 \begin{description}
-\item[\code{LOGICAL}]Roughly like the \code{bool} type in C++, the choice of
+\item[\code{LOGICAL}.]Roughly like the \code{bool} type in C++, the choice of
   value for \code{.true.} and \code{.false.} is left to the implementation.
   In MPICH, we use \code{MPIR_F_TRUE} and \code{MPIR_F_FALSE} as values.
-\item[\code{COMPLEX} and \code{COMPLEX*16}]These are universally implemented
+\item[\code{COMPLEX} and \code{COMPLEX*16}.]These are universally implemented
   as a pair of \code{REAL}s or \code{DOUBLE PRECISION} values.
 \end{description}
 
