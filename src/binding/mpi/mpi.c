@@ -55,9 +55,11 @@
 #define MPI_ENV_MPIWRAP_DLL_NAME  "MPI_WRAP_DLL_NAME"
 #ifdef _DEBUG
 #define MPI_DEFAULT_DLL_NAME      "mpich2d.dll"
+#define MPI_DEFAULT_WRAP_DLL_NAME "mpich2mped.dll"
 #define DLL_FORMAT_STRING         "mpich2%sd.dll"
 #else
 #define MPI_DEFAULT_DLL_NAME      "mpich2.dll"
+#define MPI_DEFAULT_WRAP_DLL_NAME "mpich2mpe.dll"
 #define DLL_FORMAT_STRING         "mpich2%s.dll"
 #endif
 #define MAX_DLL_NAME              100
@@ -1684,6 +1686,10 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 	    if (wrapper_dll_name)
 	    {
 		/* FIXME: Should we allow for short wrapper names like 'mpe'? */
+		if (strncmp(wrapper_dll_name, "mpe", 4) == 0)
+		{
+		    wrapper_dll_name = MPI_DEFAULT_WRAP_DLL_NAME;
+		}
 	    }
 
 	    /* Load the functions */
