@@ -437,7 +437,6 @@ if test -z "$master_top_srcdir" ; then
     # This needs to be an absolute pathname
     case "$use_top_srcdir" in
     /) ;;
-    \.) ;;
     *)
         use_top_srcdir=`(cd $use_top_srcdir ; pwd)`
 	;;	
