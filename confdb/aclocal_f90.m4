@@ -4,30 +4,41 @@ dnl
 dnl We'd like to have a PAC_LANG_FORTRAN90 that worked with AC_TRY_xxx, but
 dnl that would require too many changes to autoconf macros.
 AC_DEFUN(PAC_LANG_FORTRAN90,
-[define([AC_LANG], [FORTRAN90])dnl
-ac_f90ext=f90
-ac_f90compile='${F90-f90} -c $F90FLAGS conftest.$ac_f90ext 1>&AC_FD_CC'
-ac_f90link='${F90-f90} -o conftest${ac_exeext} $F90FLAGS $LDFLAGS conftest.$ac_f90ext $LIBS 1>&AC_FD_CC'
-cross_compiling=$ac_cv_prog_f90_cross
+[AC_REQUIRE([PAC_PROG_F90])
+define([AC_LANG], [FORTRAN90])dnl
+ac_ext=$pac_cv_f90_ext
+ac_compile='${F90-f90} -c $F90FLAGS conftest.$ac_ext 1>&AC_FD_CC'
+ac_link='${F90-f90} -o conftest${ac_exeext} $F90FLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&AC_FD_CC'
+cross_compiling=$pac_cv_prog_f90_cross
 ])
+dnl
+dnl This is an addition for AC_TRY_COMPILE, but for f90.  If the current 
+dnl language is not f90, it does a save/restore
 AC_DEFUN(PAC_TRY_F90_COMPILE,
 [AC_REQUIRE([PAC_LANG_FORTRAN90])
-cat > conftest.$ac_f90ext <<EOF
+ifelse(AC_LANG, FORTRAN90,,[AC_LANG_SAVE
+PAC_LANG_FORTRAN90
+define([NEED_POP],yes)])
+cat > conftest.$ac_ext <<EOF
       program main
 [$2]
       end
 EOF
-if AC_TRY_EVAL(ac_f90compile); then
+if AC_TRY_EVAL(ac_compile); then
   ifelse([$3], , :, [rm -rf conftest*
   $3])
 else
   echo "configure: failed program was:" >&AC_FD_CC
-  cat conftest.$ac_f90ext >&AC_FD_CC
+  cat conftest.$ac_ext >&AC_FD_CC
 ifelse([$4], , , [  rm -rf conftest*
   $4
 ])dnl
 fi
-rm -f conftest*])
+rm -f conftest*
+ifelse(NEED_POP,yes,[
+undefine([NEED_POP])
+AC_LANG_RESTORE)]
+])
 dnl
 dnl PAC_F90_MODULE_EXT(action if found,action if not found)
 dnl
@@ -192,3 +203,70 @@ EOF
     fi # not cached
 fi # Has Fortran 90
 ])dnl
+dnl
+dnl
+AC_DEFUN(PAC_PROG_F90,[
+if test -z "$F90" ; then
+    AC_CHECK_PROGS(F90, f90 xlf90 pgf90)
+    test -z "$F90" && AC_MSG_WARN([no acceptable Fortran 90 compiler found in \$PATH])
+fi
+PAC_PROG_F90_WORKS
+dnl Cache these so we don't need to change in and out of f90 mode
+ac_f90ext=$pac_cv_f90_ext
+ac_f90compile='${F90-f90} -c $F90FLAGS conftest.$ac_f90ext 1>&AC_FD_CC'
+ac_f90link='${F90-f90} -o conftest${ac_exeext} $F90FLAGS $LDFLAGS conftest.$ac_f90ext $LIBS 1>&AC_FD_CC'
+])
+dnl Internal routine for testing F90
+dnl PAC_PROG_F90_WORKS()
+AC_DEFUN(PAC_PROG_F90_WORKS,
+[AC_MSG_CHECKING([for extension for Fortran 90 programs])
+pac_cv_f90_ext="f90"
+cat > conftest.$pac_cv_f90_ext <<EOF
+      program conftest
+      end
+EOF
+ac_compile='${F90-f90} -c $F90FLAGS conftest.$pac_cv_f90_ext 1>&AC_FD_CC'
+if AC_TRY_EVAL(ac_compile) ; then
+    AC_MSG_RESULT([f90])
+else
+    rm -f conftest*
+    pac_cv_f90_ext="f"
+    cat > conftest.$pac_cv_f90_ext <<EOF
+      program conftest
+      end
+EOF
+    if AC_TRY_EVAL(ac_compile) ; then
+	AC_MSG_RESULT([f])
+    else
+        AC_MSG_RESULT([unknown!])
+    fi
+fi
+AC_MSG_CHECKING([whether the Fortran 90 compiler ($F90 $F90FLAGS $LDFLAGS) works])
+AC_LANG_SAVE
+PAC_LANG_FORTRAN90
+cat >conftest.$ac_ext <<EOF
+      program conftest
+      end
+EOF
+if AC_TRY_EVAL(ac_link) && test -s conftest${ac_exeect} ; then
+    pac_cv_prog_f90_works="yes"
+    if (./conftest; exit) 2>/dev/null ; then
+        pac_cv_prog_f90_cross="no"
+    else
+        pac_cv_prog_f90_cross="yes"
+    fi
+else
+  echo "configure: failed program was:" >&AC_FD_CC
+  cat conftest.$ac_ext >&AC_FD_CC
+  pac_cv_prog_f90_works="no"
+fi
+rm -f conftest*
+AC_LANG_RESTORE
+AC_MSG_RESULT($pac_cv_prog_f90_works)
+if test $pac_cv_prog_f90_works = no; then
+  AC_MSG_WARN([installation or configuration problem: Fortran 90 compiler cannot create executables.])
+fi
+AC_MSG_CHECKING([whether the Fortran 90 compiler ($F90 $F90FLAGS $LDFLAGS) is a cross-compiler])
+AC_MSG_RESULT($pac_cv_prog_f90_cross)
+cross_compiling=$pac_cv_prog_f90_cross
+])

@@ -142,6 +142,9 @@ cat <<EOF > conftest.f
       call cisize( i(1), i(2) )
       end
 EOF
+if test "X$ac_fcompile" = "X" ; then
+    ac_fcompile='${F77-f77} -c $FFLAGS conftest.f 1>&AC_FD_CC'
+fi
 if AC_TRY_EVAL(ac_fcompile) && test -s conftest.o ; then
     mv conftest.o conftestf.o
     AC_LANG_SAVE
@@ -260,7 +263,7 @@ if AC_TRY_EVAL(ac_fscompilelink) && test -x conftest ; then
       if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
          AC_MSG_RESULT(yes)
          AC_MSG_CHECKING([that routines compiled with $1 can be linked with ones compiled  without $1])       
-         /bin/rm -f conftest.out
+         /bin/rm -f conftest2.out
          /bin/rm -f conftest.bas
 	 ac_fscompile3='${F77-f77} -c $save_FFLAGS conftest2.f >conftest2.out 2>&1'
 	 ac_fscompilelink4='${F77-f77} $FFLAGS -o conftest conftest2.o conftest.f >conftest.bas 2>&1'
@@ -268,10 +271,27 @@ if AC_TRY_EVAL(ac_fscompilelink) && test -x conftest ; then
             if AC_TRY_EVAL(ac_fscompilelink4) && test -x conftest ; then
                if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
 	          ac_result="yes"
+	       else 
+		  echo "configure: Compiler output differed in two cases" >&AC_FD_CC
+                  diff -b conftest.out conftest.bas >&AC_FD_CC
 	       fi
+	    else
+	       echo "configure: failed program was:" >&AC_FD_CC
+	       cat conftest.f >&AC_FD_CC
 	    fi
+	  else
+	    echo "configure: failed program was:" >&AC_FD_CC
+	    cat conftest2.f >&AC_FD_CC
 	  fi
+      else
+	# diff
+        echo "configure: Compiler output differed in two cases" >&AC_FD_CC
+        diff -b conftest.out conftest.bas >&AC_FD_CC
       fi
+   else
+      # try_eval(fscompilelink2)
+      echo "configure: failed program was:" >&AC_FD_CC
+      cat conftest.f >&AC_FD_CC
    fi
    if test "$ac_result" != "yes" -a -s conftest.out ; then
 	cat conftest.out >&AC_FD_CC
@@ -666,10 +686,25 @@ AC_CACHE_CHECK([whether Fortran allows unused externals],
 pac_cv_prog_f77_allows_unused_externals,[
 AC_LANG_SAVE
 AC_LANG_FORTRAN77
-AC_TRY_LINK(,[
-        external bar
-],pac_cv_prog_f77_allows_unused_externals="yes",
-pac_cv_prog_f77_allows_unused_externals="no")
+dnl We can't use TRY_LINK, because it wants a routine name, not a 
+dnl declaration.  The following is the body of TRY_LINK, slightly modified.
+cat > conftest.$ac_ext <<EOF
+       program main
+       external bar
+       end
+EOF
+if AC_TRY_EVAL(ac_link) && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  pac_cv_prog_f77_allows_unused_externals="yes"
+else
+  echo "configure: failed program was:" >&AC_FD_CC
+  cat conftest.$ac_ext >&AC_FD_CC
+  rm -rf conftest*
+  pac_cv_prog_f77_allows_unused_externals="no"
+  $4
+fi
+rm -f conftest*
+#
 AC_LANG_RESTORE
 ])
 if test "X$pac_cv_prog_f77_allows_unused_externals" = "Xyes" ; then
@@ -701,4 +736,42 @@ if test "$pac_cv_prog_f77_has_pointer" = "yes" ; then
 else
     ifelse([$2],,:,[$2])
 fi
+])
+dnl
+dnl pac_prog_f77_run_proc_from_c( c main program, fortran routine, 
+dnl                               action-if-works, action-if-fails, 
+dnl                               cross-action )
+dnl Fortran routine MUST be named ftest unless you include code
+dnl to select the appropriate Fortran name.
+dnl 
+AC_DEFUN(PAC_PROG_F77_RUN_PROC_FROM_C,[
+/bin/rm -f conftest*
+cat <<EOF > conftest.f
+$2
+EOF
+dnl
+if test "X$ac_fcompile" = "X" ; then
+    ac_fcompile='${F77-f77} -c $FFLAGS conftest.f 1>&AC_FD_CC'
+fi
+if AC_TRY_EVAL(ac_fcompile) && test -s conftest.o ; then
+    mv conftest.o conftestf.o
+    AC_LANG_SAVE
+    AC_LANG_C
+    save_LIBS="$LIBS"
+    LIBS="conftestf.o $LIBS"
+    AC_TRY_RUN([#include <stdio.h>
+#ifdef F77_NAME_UPPER
+#define ftest_ FTEST
+#elif defined(F77_NAME_LOWER) || defined(F77_NAME_MIXED)
+#define ftest_ ftest
+#endif
+$1
+], [$3], [$4], [$5] )
+    LIBS="$save_LIBS"
+    AC_LANG_RESTORE
+else 
+    echo "configure: failed program was:" >&AC_FD_CC
+    cat conftest.f >&AC_FD_CC
+fi
+rm -f conftest*
 ])

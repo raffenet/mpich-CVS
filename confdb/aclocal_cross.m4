@@ -32,6 +32,10 @@ if test "X$pac_save_level" = "X" ; then
     pac_save_CXX="$CXX"
     pac_save_F77="$F77"
     pac_save_F90="$F90"
+    pac_save_prog_cc_cross="$ac_cv_prog_cc_cross"
+    pac_save_prog_f77_cross="$ac_cv_prog_f77_cross"
+    pac_save_prog_cxx_cross="$ac_cv_prog_cxx_cross"
+    pac_save_prog_f90_cross="$pac_cv_prog_f90_cross"
     if test "X$CPP" = "X" ; then
 	AC_PROG_CPP
     fi
@@ -45,6 +49,29 @@ if test "X$pac_save_level" = "X" ; then
     fi
     CPP="${TESTCPP:=$CPP}"
     pac_save_level="0"
+    # Recompute cross_compiling values and set for the current language
+    # This is just:
+    AC_LANG_SAVE
+    AC_LANG_C
+    AC_TRY_COMPILER([main(){return(0);}], ac_cv_prog_cc_works, ac_cv_prog_cc_cross)
+    AC_LANG_RESTORE
+    # Ignore Fortran if we aren't using it.
+    if test -n "$F77" ; then
+        AC_LANG_SAVE
+        AC_LANG_FORTRAN77
+        AC_TRY_COMPILER(dnl
+[      program conftest
+      end
+], ac_cv_prog_f77_works, ac_cv_prog_f77_cross)
+        AC_LANG_RESTORE
+    fi
+    # Ignore C++ if we aren't using it.
+    if test -n "$CXX" ; then
+        AC_LANG_SAVE
+        AC_LANG_CPLUSPLUS
+        AC_TRY_COMPILER([int main(){return(0);}], ac_cv_prog_cxx_works, ac_cv_prog_cxx_cross)
+        AC_LANG_RESTORE
+    fi
 fi
 pac_save_level=`expr $pac_save_level + 1`
 ])
@@ -73,6 +100,10 @@ if test "X$pac_save_level" = "X0" ; then
     F77="$pac_save_F77"
     F90="$pac_save_F90"
     CPP="$pac_save_CPP"
+    ac_cv_prog_cc_cross="$pac_save_prog_cc_cross"
+    ac_cv_prog_f77_cross="$pac_save_prog_f77_cross"
+    ac_cv_prog_cxx_cross="$pac_save_prog_cxx_cross"
+    pac_cv_prog_f90_cross="$pac_save_prog_f90_cross"
     pac_save_level=""
 fi
 ])

@@ -24,7 +24,7 @@ AC_DEFUN(PAC_PROG_CC,[
 AC_PROVIDE([AC_PROG_CC])
 AC_CHECK_PROGS(CC, cc xlC xlc pgcc gcc )
 test -z "$CC" && AC_MSG_ERROR([no acceptable cc found in \$PATH])
-AC_PROG_CC_WORKS
+PAC_PROG_CC_WORKS
 AC_PROG_CC_GNU
 if test $ac_cv_prog_gcc = yes; then
   GCC=yes
@@ -176,6 +176,7 @@ dnl #
 dnl # Dependency processing
 dnl .SUFFIXES: .dep
 dnl DEP_SOURCES = ${SOURCES:%.c=.dep/%.dep}
+dnl C_DEPEND_DIR = .dep
 dnl Depends: ${DEP_SOURCES}
 dnl         @-rm -f Depends
 dnl         cat .dep/*.dep >Depends
@@ -250,7 +251,9 @@ for copt in "-xM1" "-c -xM1" "-xM" "-c -xM" "-MM" "-M" "-c -M"; do
 	    C_DEPEND_MV='mv $[*].d ${C_DEPEND_DIR}/$[*].dep'
             pac_dep_file=conftest.d 
         else
-	    C_DEPEND_OUT='>${C_DEPEND_DIR}/$[*].dep'
+	    dnl C_DEPEND_OUT='>${C_DEPEND_DIR}/$[*].dep'
+	    dnl This for is needed for VPATH.  Perhaps the others should match.
+	    C_DEPEND_OUT='>$@'
 	    C_DEPEND_MV=:
             pac_dep_file=conftest.out
         fi
@@ -485,7 +488,7 @@ dnl PAC_C_TRY_COMPILE_CLEAN command.
 dnl
 dnlD*/
 AC_DEFUN(PAC_HEADER_STDARG,[
-AC_CHECK_HEADER(stdarg,h)
+AC_CHECK_HEADER(stdarg.h)
 dnl Sets ac_cv_header_stdarg_h
 if test "$ac_cv_header_stdarg_h" = "yes" ; then
     dnl results are yes,oldstyle,no.
@@ -711,5 +714,22 @@ else
 	;;
     esac
     ifelse([$1],,:,[$1])
+fi
+])
+#
+# This is a replacement that checks that FAILURES are signaled as well
+# (later configure macros look for the .o file, not just success from the
+# compiler, but they should not HAVE to
+#
+AC_DEFUN(PAC_PROG_CC_WORKS,
+[AC_PROG_CC_WORKS
+AC_MSG_CHECKING([whether the C compiler sets its return status correctly])
+AC_LANG_SAVE
+AC_LANG_C
+AC_TRY_COMPILE(,[int a = bzzzt;],notbroken=no,notbroken=yes)
+AC_MSG_RESULT($notbroken)
+if test "$notbroken" = "no" ; then
+    AC_MSG_ERROR([installation or configuration problem: C compiler does not
+correctly set error code when a fatal error occurs])
 fi
 ])
