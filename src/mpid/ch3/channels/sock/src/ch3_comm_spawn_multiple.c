@@ -21,7 +21,7 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
                                   **intercomm, int *errcodes) 
 {
     char port_name[MPI_MAX_PORT_NAME];
-    int *info_keyval_sizes, same_domain, i, mpi_errno=MPI_SUCCESS;
+    int *info_keyval_sizes, i, mpi_errno=MPI_SUCCESS;
     PMI_keyval_t **info_keyval_vectors, preput_keyval_vector;
 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
@@ -48,7 +48,7 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
                                        (const PMI_keyval_t **)
                                        info_keyval_vectors, 1, 
                                        &preput_keyval_vector,
-                                       errcodes, &same_domain);
+                                       errcodes);
 
         if (mpi_errno != 0)
         {
@@ -77,7 +77,7 @@ int MPIDI_CH3_Comm_spawn(const char *command, const char *argv[],
 {
     int mpi_errno = MPI_SUCCESS;
     char *kvsname;
-    int kvsnamelen, same_domain;
+    int kvsnamelen;
     MPIDI_CH3I_Process_group_t * pg;
     MPIDI_VC * vc_table;
     int p, rc, i;
