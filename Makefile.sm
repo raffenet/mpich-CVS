@@ -104,8 +104,6 @@ dist-with-version:
 	(cd tmpdir/${PACKAGE}-${version}/src/mpe && cvs -d $(MPICVSHOME) export -r ${tag} slog2sdk >>cvsexp.log 2>&1 )
 	( cd tmpdir/${PACKAGE}-${version}/doc && /bin/rm -rf notes )
 	( cd tmpdir/${PACKAGE}-${version} && rm -f ToDo* )
-	( cd tmpdir/${PACKAGE}-${version} && rm -rf src/mpid/ch3/channels/shm)
-	( cd tmpdir/${PACKAGE}-${version} && rm -rf src/mpid/ch3/channels/ssm)
 	( cd tmpdir && tar cf ${PACKAGE}-${version}.tar ${PACKAGE}-${version} )
 	mv -f tmpdir/${PACKAGE}-${version}.tar . 
 	rm -rf tmpdir
