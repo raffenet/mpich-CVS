@@ -48,6 +48,7 @@ Version 3.3\\
 Reference Manual\\\ \\Draft of \today}{\em 
 William Gropp\\
 Ewing Lusk\\
+Your Name Here\\
 Mathematics and Computer Science Division\\
 Argonne National Laboratory}{00}{\today}
 
@@ -78,6 +79,14 @@ device-dependent modules.
 \input adi3man/MPID_Request_kind.tex
 \input adi3man/MPID_Request.tex
 \input adi3man/MPID_Comm.tex
+\input adi3man/MPID_Segment.tex
+\input adi3man/MPID_Dataloop.tex
+\input adi3man/MPID_Dataloop_contig.tex
+\input adi3man/MPID_Dataloop_vector.tex
+\input adi3man/MPID_Dataloop_blockindexed.tex
+\input adi3man/MPID_Dataloop_indexed.tex
+\input adi3man/MPID_Dataloop_struct.tex
+\input adi3man/MPID_Datatype.tex
 
 \section{Basic Point-to-Point}
 \input adi3man/MPID_Send.tex
@@ -101,6 +110,14 @@ device-dependent modules.
 \input adi3man/MPID_Rsend_init.tex
 \input adi3man/MPID_Recv_init.tex
 \input adi3man/MPID_Startall.tex
+
+\section{Data Segment}
+\label{sec:segment-fcns}
+\input adi3man/MPID_Segment_init_pack
+\input adi3man/MPID_Segment_pack
+\input adi3man/MPID_Segment_init_unpack
+\input adi3man/MPID_Segment_unpack
+\input adi3man/MPID_Segment_free
 
 \section{Progress Engine}
 \input adi3man/MPID_Progress_start.tex

@@ -13,6 +13,13 @@ memory access such as Infiniband, large symmetric multiprocessors
 (SMPs), and experimental systems (particularly in support of research
 into MPI implementations).  
 
+\subsection{Other Work}
+\label{sec:other-work}
+This section will briefly review other MPI implementation designs.
+
+An example of the use of both lock-free shared-memory operations and threads
+as MPI ``processes'' is presented in \cite{tang00:mpi-impl}.  
+
 \subsection{MPI Overview}
 In order to better understand the design of the ADI, we first review
 MPI communication.  MPI-1 defined both point-to-point and collective
@@ -25,7 +32,7 @@ the data is described by an MPI call made by the destination process, the
 data cannot be delivered to its final (user-specified) destination
 until the matching MPI call is made by the destination process.  This feature
 has led many (but not all) MPI implementations to adopt a
-\emph{polling} mode of communication where communication for MPI
+\emph{polling}\index{polling} mode of communication where communication for MPI
 happens only within MPI calls, not asynchronously.  An alternative
 approach uses either one more more separate threads or an interrupt to
 cause communication to happen outside of MPI calls made by the
@@ -39,8 +46,10 @@ access (also called one-sided communication) provides a way to express
 put, get, and accumulate operations into memory in a remote process.
 In MPI, these operations are all nonblocking; to ensure that these
 operations are locally complete, an additional MPI routine must be
-called.  MPI provides two ``flavors'' of RMA completion: \emph{active target}
-and \emph{passive target}.  In active target, the target process of an
+called.  MPI provides two ``flavors'' of RMA completion: \emph{active
+target}\index{active target}
+and \emph{passive target}\index{passive target}.  In active target,
+the target process of an 
 RMA operation (that is, the process that did \emph{not} initiate the
 RMA operation) must call an MPI routine before the RMA completes.  The
 simplest such routine is \code{MPI_Win_fence}; this is a collective call over
@@ -104,7 +113,7 @@ tests before calling the ADI routines.
 \item Completion of MPI operations (e.g., \code{MPI_Wait}) is handled
 by a combination of busy flags in requests and ADI calls to make
 progress, rather than through calls similar to the MPI wait and test
-calls. 
+calls.  There is no \code{MPID_Wait} or \code{MPID_Test} operation.
 
 \item RMA (remote memory access) operations are complemented by a
 special interface for low-latency operations, particularly in the
@@ -118,7 +127,7 @@ communication.
 
 \item Dynamic process operations use a similar interface to MPI, but the
 process of building the new intercommunicator is made more explicit
-through the use of \emph{virtual connections}.
+through the use of \emph{virtual connections}\index{virtual connections}.
 \end{enumerate}
 
 In addition, the ADI is \emph{not} responsible for the construction
@@ -136,7 +145,9 @@ shared memory.
 An even simpler interface based on only nonblocking \code{readv} and
 \code{writev}-like operations will also be defined.  This will replace
 the ``channel'' interface defined in ADI-2.  An implementation of
-ADI-3 will be provided with MPICH that is built on this simple interface.
+ADI-3 will be provided with MPICH that is built on this simple
+interface; the channel interface and this implementation are described
+in \cite{channel3-tcp}.
 
 \section{High-level Overview}
 \label{sec:high-level}
@@ -144,7 +155,8 @@ ADI-3 will be provided with MPICH that is built on this simple interface.
 The ADI is relatively rich in functionality.  Before diving into some of the
 details, we provide a brief overview of the ADI.
 Communication in the ADI takes place between processes.  We call the object
-that describes the communication between two processes a \emph{connection},
+that describes the communication between two processes a
+\emph{connection}\index{connection},
 and show a simplified block diagram of the objects used by the ADI in
 Figure~\ref{fig:adi-overview}.
 On each connection, we assume that the low-level communication is
@@ -212,7 +224,8 @@ send-receive operation.  This typically involves coordination between
 the sender and the receiver, handling such items as flow control,
 rendezvous messaging, and eager message delivery.  Many low-latency
 implementations of this kind of communication rely on \emph{polling}
-to advance the communication (make \emph{progress} in MPI terms).
+to advance the communication (make \emph{progress}\index{progress} in
+MPI terms). 
 Others may use a separate thread or an interrupt-driven mechanism (or
 a hybrid of both polling and non-polling). 
 Because MPI semantics support nonblocking communication of arbitrary
@@ -265,7 +278,7 @@ underlying system.
 
 The ADI design makes no explicit choice between polling and
 non-polling implementations.  Instead, it defines several kinds of
-polling \emph{points} but allows a purely non-polling
+polling \emph{points}\index{polling!points} but allows a purely non-polling
 (interrupt-driven or separate communication thread) implementation as well.
 
 The four types of communication, of course, can be implemented by a
@@ -364,9 +377,11 @@ low-level communication routines (such as TCP \code{write} or
 \code{writev}) and by high-performance algorithms for collective
 communication, we have introduced a new data structure that is used to
 pack and unpack buffers described by MPI datatypes.  This new
-structure is called a \emph{segment} and is stored in a structure
-type named \code{MPID_Segment}.  Segments are discussed in more
-detail later. 
+structure is called a \emph{segment}\index{segment} and is stored in a
+structure 
+type named \code{MPID_Segment}\index{MPID_Segment}.  Segments are
+discussed in more 
+detail in Section~\ref{sec:segment}.
 
 Thus, to handle the need to pack and unpack data, MPI requests also
 contain a segment.  Combined with the datatype and the user-buffer,
@@ -458,7 +473,7 @@ where \code{xxxx} may be \code{COMM}, \code{DATATYPE}, etc.  This
 provides a simple way to extend the objects defined by the MPI layer
 without forcing the ADI to provide a complete implementation.
 Whenever an object is created or destroyed, the MPI layer can call a
-\emph{hook} routine with a name of the form
+\emph{hook}\index{hook routine} routine with a name of the form
 \begin{verbatim}
     MPID_Dev_xxxx_create_hook( pointer to object, ... )
     MPID_Dev_xxxx_destroy_hook( pointer to object, ... )
@@ -466,6 +481,9 @@ Whenever an object is created or destroyed, the MPI layer can call a
 The other parameters will be defined as it becomes clear what is needed.  For
 example, in the case of communicator creation, a pointer to the old
 communicator may be needed.
+
+These routines are called after all other creation operations take
+place and before any of the destroy operations take place.
 
 \subsubsection{Communication Contexts and Groups}
 
@@ -590,6 +608,73 @@ multi-party communication operations.  It is the intent of ADI-3,
 however, to develop an efficient method for describing and
 implementing the operations needed for the MPI collective operations.
 
+\subsection{Data Segments}
+\label{sec:segment}
+
+MPI datatypes are very general; a single instance of a datatype can
+describe an arbitrarily large amount of data that is not necessarily
+contiguous in memory.  Further, MPI datatypes can be very concise;
+a vector datatype of a structure (that itself is not contiguous)
+describes a very complex memory layout with just a few words of
+memory.  Because few if any low-level communication layers support the
+full generality of MPI datatypes, it is sometimes necessary to pack
+and unpack data to intermediate buffers.  In addition, it may be
+necessary to pack or unpack a single MPI datatype with multiple calls;
+this operation is not supported by the \code{MPI_Pack} and
+\code{MPI_Unpack} routines.  For example, the code
+\begin{verbatim}
+    MPI_Type_vector( 1000000, 1, 237, MPI_DOUBLE, &newtype );
+    MPI_Type_commit( &newtype );
+    MPI_Send( buf, 1, newtype, ... );
+\end{verbatim}
+passes a single instance of an MPI datatype that describes 8 MB of
+data.  Further, because this is a vector type, it cannot be
+represented efficiently with a \code{struct iovec}.  If the
+underlying communication layer can only send a maximum of 64K at a
+time (for example, using a shared memory pool or a remote-memory
+communication area), it is necessary to incrementally pack this
+datatype, 64K at a time, into a temporary buffer.  The segment
+routines provide this capability.
+
+These routines are also needed for some implementations of the
+collective communication routines.  Many of the better (and in some
+cases, the best) algorithms for the collective operations in MPI can
+be cast, at least for systems that are homogeneous is data
+representation, in terms of operations that view the data to be
+communicated as a contiguous range of bytes and that send different
+parts to different processes.  To implement these algorithms for MPI
+requires handling MPI datatypes; even in a single collective
+operation, some MPI processes may provide a simple, contiguous data
+buffer while others specify a complex datatype.  To implement these
+algorithms requires a method to extract parts of a data buffer, viewed
+as a range of bytes.  This is a simple variation on the routines that
+can incrementally pack (and unpack) a data buffer described by an MPI
+datatype.  
+
+
+\textbf{Question: We need to tie down the details of the segment
+creation and pack/unpack operations.}
+
+Issues with the segment routines:
+\begin{enumerate}
+\item Who allocates storage for the segment?  That is, where does the
+contiguous buffer come from?  In many cases, it would be nice if it
+was memory that was convenient for the ADI-3 device.  In the case of
+shared memory or RMA-networks, using special memory saves a memory
+copy.
+
+\item Who sets the amount of data to pack or unpack in each call?
+The specific concern here is to not stop in the middle of a natural
+data item, e.g., 3/8ths of the way through a double.  The design here
+allows the routines to make slight adjustments in the amount of data
+packed or unpacked in order to stay on ``natural'' boundaries.  
+
+\item How much do these routines need to know about MPI Datatypes?
+We'd like them to be generic so that they could be shared with other
+projects such as PVFS and HDF5.  
+\end{enumerate}
+
+
 \subsection{Remote Memory Access}
 \label{sec:rma-design}
 The MPI remote memory access model was deliberately designed to have
@@ -606,8 +691,10 @@ implementation to exploit special hardware capabilities.
 % with the details of MPI RMA.
 The MPI specification is very careful in describing when a process's
 memory window is accessible to other processes (the \emph{exposure
-epoch}) and when a process may be performing RMA operations (the
-\emph{access epoch}).  Understanding these is necessary in developing
+epoch}\index{exposure epoch}\index{epoch!exposure}) and when a process
+may be performing RMA operations (the 
+\emph{access epoch}\index{access epoch}\index{epoch!access}).
+Understanding these is necessary in developing 
 a correct MPI implementation.  However, these concepts are
 deliberately made as general as possible to allow the greatest
 flexibility to an MPI implementation.  In the discussion below, we
@@ -731,7 +818,8 @@ by the implementation.
 
 MPI also requires that communication within different
 communicators be noninterfering.  Most implementations achieve this by
-using a hidden (to the MPI user) \emph{context id}, which is simply an
+using a hidden (to the MPI user) \emph{context id}\index{context id},
+which is simply an 
 integer that is communicated along with the tag, source, etc.  
 One approach that can be used to ensure that
 communication of different types be non-interfering is to use
@@ -754,7 +842,10 @@ offset as a parameter.  These offsets have the following values.  For
 intracommunicators: 0--point to point communication, 1--collective
 communication, 2--communication for files, 3--communication for window
 objects.  For intercommunicators: 0--point to point, 1--collective in
-group A, 2--collective in group B, 3--collective over both groups.
+group A, 2--collective in group B, 3--collective over both groups
+(Note that a single context value for ``collective in local group'' is
+adequate; however, having separate context values provides stronger
+separation and aids in debugging.)
 %
 % A single context for file and window may not be enough.  However, it
 % may, given the collective operation of the calls within the IO and
@@ -809,7 +900,7 @@ This section outlines several possible implementations.
 Socket-based communication provides a two-party communication similar
 to the type 1 communication in Section~\ref{sec:comm-types}.  A simple
 implementation can map all four kinds of communication into simple
-\code{read} and \code{write} calls as follows (with some caveats)
+\code{read} and \code{write} calls as follows (with some caveats):
 \begin{enumerate}
 \item Point to point communication is a close match.  Some care is
 needed to handle flow control.
@@ -950,6 +1041,31 @@ incoming messages.  This routine is nonblocking and is
 \begin{verbatim}
 MPID_Progress_poke
 \end{verbatim}
+
+\subsection{Data Segments}
+The routines to incrementally pack and unpack a data buffer given a
+user buffer and an MPI datatype are:
+\begin{verbatim}
+MPID_Segment_pack_init
+MPID_Segment_pack
+MPID_Segment_unpack_init
+MPID_Segment_unpack
+MPID_Segment_free
+\end{verbatim}
+These are used to implement both the \code{MPI_Pack} and
+\code{MPI_Unpack} routines as well as in the default implementations
+of the MPI collective communications routines.  Most implementations
+of the ADI-3 will also use these routines to handle packing and
+unpacking messages defined by MPI datatypes.
+
+Comments:  For some MPI datatypes, it is sometimes possible to
+describe the buffer with a Unix-style \code{struct iovec}.  Many
+devices provide low-level and sometimes even efficient for
+\code{iovec} descriptions.  One unanswered question is whether we
+should have a \code{MPID_Segment_pack_iovec} or whether there should
+be a way to check whether the Segment routines are needed at all
+(i.e., they aren't needed for datatypes that are contiguous or that
+are described efficiently by a \code{struct iovec}).  
 
 \subsection{Starting and stopping}
 The routines to start and stop the ADI match the MPI counterparts.

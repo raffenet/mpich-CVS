@@ -40,7 +40,7 @@
   of the handles is covered in more detail in the MPICH2 Design Document.
   For the most part, the ADI uses pointers to the underlying structures
   rather than the handles themselves.  However, each structure contains an 
-  'id' field that is the corresponding integer handle for the MPI object.
+  'handle' field that is the corresponding integer handle for the MPI object.
 
   MPID objects (objects used within the implementation of MPI) are not opaque.
 
@@ -209,7 +209,7 @@ typedef union {
 
   S*/
 typedef struct {
-    int                  id;
+    int                  handle;
     volatile int         ref_count;
     MPID_Lang_t          language;
     MPID_Object_kind     kind;
@@ -285,7 +285,7 @@ typedef struct {
   Info-DS
   S*/
 typedef struct MPID_Info_s {
-    int                id;
+    int                handle;
     struct MPID_Info_s *next;
     char               *key;
     char               *value;
@@ -511,7 +511,7 @@ typedef struct dataloop_ {
 	MPID_Dataloop_struct       s_t;
     } loop_params;
     MPI_Aint extent;
-    int id;                       /* Having the id here allows us to find the
+    int handle;                   /* Having the id here allows us to find the
 				     full datatype structure from the 
 				     Dataloop description */
 } MPID_Dataloop;
@@ -567,7 +567,7 @@ typedef struct dataloop_ {
 
   S*/
 typedef struct { 
-    int           id;            /* value of MPI_Datatype for this structure */
+    int           handle;        /* value of MPI_Datatype for this structure */
     volatile int  ref_count;
     int           is_contig;     /* True if data is contiguous (even with 
 				    a (count,datatype) pair) */
@@ -638,7 +638,7 @@ typedef struct {
 
  S*/
 typedef struct {
-    int          id;
+    int          handle;
     volatile int ref_count;
     int          size;           /* Size of a group */
     int          rank;           /* Rank of this process in this group */
@@ -691,7 +691,7 @@ typedef union {
   ErrHand-DS
   S*/
 typedef struct {
-  int                id;
+  int                handle;
   volatile int       ref_count;
   MPID_Lang_t        language;
   MPID_Object_kind   kind;
@@ -741,10 +741,11 @@ typedef struct {
   communicator have acked.
   S*/
 typedef struct { 
-    int           id;            /* value of MPI_Comm for this structure */
+    int           handle;        /* value of MPI_Comm for this structure */
     volatile int ref_count;
     int16_t       context_id;    /* Assigned context id */
-    int           size;          /* Value of MPI_Comm_(remote)_size */
+    int           remote_size;   /* Value of MPI_Comm_(remote)_size */
+    int           local_size;    /* Value of MPI_Comm_size */
     int           rank;          /* Value of MPI_Comm_rank */
     MPID_VC *(*virtural connection)[]; /* Virtual connection table */
     int           comm_kind;     /* MPID_INTRACOMM or MPID_INTERCOMM */
@@ -796,7 +797,7 @@ typedef struct {
 
   S*/
 typedef struct {
-    int          id;             /* value of MPI_Win for this structure */
+    int          handle;         /* value of MPI_Win for this structure */
     volatile int ref_count;
     void         *start_address; /* Address and length of *local* window */
     MPI_Aint     length;        
@@ -953,7 +954,7 @@ typedef { MPID_REQ_SEND, MPID_REQ_RECV, MPID_REQ_PERSISTENT_SEND,
   
   S*/
 typedef struct {
-    int          id;      /* Value of MPI_Request for this structure */
+    int          handle;  /* Value of MPI_Request for this structure */
     volatile int ref_count;
     volatile int busy;    /* Set to zero when the request is completed */
     MPID_Request_kind kind; /* Kind of request */
