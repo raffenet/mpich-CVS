@@ -79,9 +79,10 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	    status->MPI_ERROR = MPI_SUCCESS;
 	    status->count = 0;
 	    status->cancelled = FALSE;
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
-	    return MPI_SUCCESS;
 	}
+	
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
+	return MPI_SUCCESS;
     }
     
     /* Convert MPI request handle to a request object pointer */
@@ -130,11 +131,15 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	    }
 	    else
 	    {
-		status->MPI_SOURCE = MPI_ANY_SOURCE;
-		status->MPI_TAG = MPI_ANY_TAG;
-		status->MPI_ERROR = MPI_SUCCESS;
-		status->count = 0;
-		status->cancelled = FALSE;
+		if (status != MPI_STATUS_IGNORE)
+		{
+		    status->MPI_SOURCE = MPI_ANY_SOURCE;
+		    status->MPI_TAG = MPI_ANY_TAG;
+		    status->MPI_ERROR = MPI_SUCCESS;
+		    status->count = 0;
+		    status->cancelled = FALSE;
+		}
+		
 		MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
 		return MPI_SUCCESS;
 	    }
