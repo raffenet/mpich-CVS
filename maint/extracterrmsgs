@@ -20,7 +20,14 @@ foreach $arg (@ARGV) {
     elsif( $arg =~ /-outfile=(.*)/) { $outfile = $1; }
     else {
 	print "Adding $arg to files\n" if $debug;
-	$files[$#files+1] = $arg;
+	if (-d $arg) {
+	    # Add all .c files from directory $arg to the list of files 
+	    # to process (this lets shorten the arg list)
+	    @newfiles = &ExpandDir( $arg );
+	}
+	else {
+	    $files[$#files+1] = $arg;
+	}
     }
 }
 
@@ -430,6 +437,31 @@ sub ProcessFile
     close FD;
 }
 
+# Get all of the .c files from the named directory, including any subdirs
+sub ExpandDir {
+    my $dir = $_[0];
+    my @otherdirs = ();
+    my @files = ();
+    opendir DIR, "$dir";
+    while ($filename = readdir DIR) {
+	if ($filename =~ /^\./ || $filename =~ /CVS/) {
+	    next;
+	}
+	elsif (-d $filename) {
+	    $otherdirs[$#otherdirs+1] = $filename;
+	}
+	elsif ($filename =~ /(.*\.c)$/) {
+	    $files[$#files + 1] = $filename;
+	}
+    }
+    closedir DIR;
+    # (almost) tail recurse on otherdirs (we've closed the directory handle,
+    # so we don't need to worry about it anymore)
+    foreach $dir (@otherdirs) {
+	@files = (@files, &ExpandDir( $dir ) );
+    }
+    return @files;
+}
 #
 # Other todos:
 # It would be good to keep track of any .N MPI_ERR_xxx names in the structured
@@ -439,3 +471,4 @@ sub ProcessFile
 # layer, forcing all routines to document all MPI error classes that they might
 # return (this is like requiring routines to document the exceptions that 
 # they may throw).
+
