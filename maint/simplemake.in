@@ -1195,6 +1195,9 @@ sub TargetProfileLibraries {
     }
 }
 
+# This routine creates the library of shared objects.  There is a separate
+# step that builds the shared library (which is really a kind of partially
+# linked executable).
 sub TargetSharedLibraries {
     foreach $lib (keys(%libraries)) {
 	$libloc = &GetLibLoc( $lib );
@@ -1205,6 +1208,23 @@ sub TargetSharedLibraries {
     }
 }
 
+#
+# This is the routine that creates a shared library from a library of
+# shared objects.  NOT TESTED
+# This must be called from the directory containing the library.
+# Still to do: provide a separate directory for the library, so 
+# that a build library may be used instead
+# 
+# If we can't use .lo as an object extension, then after extracting,
+# rename everything as .o and then build.
+# TargetSharedLibraryFinal( "libmpich.a", "libmpich.so.1" )
+sub TargetSharedLibraryFinal {
+    $libname = $_[0];
+    $newlibname = $_[1];
+    print FD "if [ -d .tmp ] ; then rm -rf .tmp ; fi\n";
+    print FD "(cd .tmp && ar x ../$libname && \\\n";
+    print FD "${C_SHL_LNK} -o ../$newlibname *.lo)\n";
+}
 #
 # ===========================================================================
 sub TargetPrograms {
