@@ -39,11 +39,14 @@ Major Changes in This Version:
   file system for Linux clusters, developed at Clemson University
   (see http://www.parl.clemson.edu/pvfs ). To use it, you must first install
   PVFS and then when configuring ROMIO, specify "-file_system=pvfs" in 
-  addition to any other options to "configure". You will need to
-  specify the path to the PVFS include files via the "cflags" option to 
-  configure, for example, "configure -cflags=-I/usr/pvfs/include". To compile 
-  the test programs, you will need to add the full pathname of the PVFS 
-  library in the Makefile in the test directory.
+  addition to any other options to "configure". (As usual, you can configure
+  for multiple file systems by using "+"; for example, 
+  "-file_system=pvfs+ufs+nfs".)  You will need to specify the path 
+  to the PVFS include files via the "-cflags" option to configure, 
+  for example, "configure -cflags=-I/usr/pvfs/include". You
+  will also need to specify the full path name of the PVFS library.
+  The best way to do this is via the "-lib" option to MPICH's 
+  configure script (assuming you are using ROMIO from within MPICH). 
 
 * Uses weak symbols (where available) for building the profiling version,
   i.e., the PMPI routines. As a result, the size of the library is reduced
