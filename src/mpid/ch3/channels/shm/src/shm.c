@@ -200,7 +200,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr
 	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	    MPID_WRITE_BARRIER();
 	    vc->ch.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_USED;
-	    cur_pos = iov[i].MPID_IOV_BUF + dest_avail;
+	    cur_pos = (unsigned char *)(iov[i].MPID_IOV_BUF) + dest_avail;
 	    cur_avail = iov[i].MPID_IOV_LEN - dest_avail;
 	    while (cur_avail)
 	    {
