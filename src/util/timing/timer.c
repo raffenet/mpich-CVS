@@ -4,6 +4,12 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/*
+ * Notes: This is a temporary file; the various dlog and rlog routines will 
+ * eventually be moved into src/util/logging/{dlog,rlog}/, where they 
+ * belong.  This file will then contain only the utility functions
+ */
+
 #include "mpiimpl.h"
 #ifdef HAVE_TIMING
 
@@ -235,7 +241,7 @@ int MPIU_Timer_init(int rank, int size)
     return MPI_SUCCESS;
 }
 
-int MPIU_Timer_finalize()
+int MPIU_Timer_finalize(void)
 {
     int i;
     

@@ -5,6 +5,13 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/*
+ * Notes: This is a temporary file; the various dlog and rlog routines will 
+ * eventually be moved into src/util/logging/{dlog,rlog}/, where they 
+ * belong.  This file will then contain only the utility functions
+ */
+
+
 #include "mpiimpl.h"
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
