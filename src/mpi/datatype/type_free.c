@@ -72,6 +72,8 @@ int MPI_Type_free(MPI_Datatype *datatype)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* NOTE: DON'T FREE UNTIL WE'VE GOT REFCOUNTS RIGHT!!! */
+#if 0
     MPIU_Object_release_ref(datatype_ptr,&inuse);
     if (!inuse) {
 	/* FIXME - We need to free the structure */
@@ -83,6 +85,7 @@ int MPI_Type_free(MPI_Datatype *datatype)
             }
 	}
     }
+#endif
     *datatype = MPI_DATATYPE_NULL;
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_FREE);
