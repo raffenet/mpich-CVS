@@ -585,7 +585,7 @@ with MPI_Alloc_mem.
 **invalid_listener:invalid listener
 **invalid_listener %p:invalid listener (%p)
 **pkt_type:invalid packet type
-**pkt_type:invalid packet type (%d)
+**pkt_type %d:invalid packet type (%d)
 **pkt_ptr:invalid shm queue packet pointer
 **pkt_ptr %p %p:invalid shm queue packet pointer (%p != %p)
 **bad_sock:bad sock
