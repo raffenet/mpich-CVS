@@ -9,7 +9,7 @@
 int main( int argc, char **argv )
 {
   double wscale = 10.0, scale;
-  int numprocs, myid,i,namelen;
+  int numprocs, myid,i;
 
   MPI_Init(&argc,&argv);
   MPI_Comm_size(MPI_COMM_WORLD,&numprocs);

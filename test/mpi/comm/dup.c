@@ -5,7 +5,7 @@
 int main( int argc, char **argv )
 {
     int errs = 0;
-    int i, j, rank, size, wrank, wsize, dest, a, b;
+    int rank, size, wrank, wsize, dest, a, b;
     MPI_Comm newcomm;
     MPI_Status status;
 

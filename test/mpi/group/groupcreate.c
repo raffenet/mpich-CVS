@@ -1,3 +1,8 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 #include "mpi.h"
 #include <stdio.h>
 /* stdlib.h Needed for malloc declaration */
@@ -6,6 +11,7 @@
 int main( int argc, char **argv )
 {
     int i, n, n_goal = 2048, n_all, rc, n_ranks, *ranks, rank, size, len;
+    int group_size;
     MPI_Group *group_array, world_group;
     char msg[MPI_MAX_ERROR_STRING];
 
@@ -31,6 +37,17 @@ int main( int argc, char **argv )
 	    fprintf( stderr, "%s\n", msg );
 	    n = i + 1;
 	    break;
+	}
+	else {
+	    /* Check that the group was created (and that any errors were
+	       caught) */
+	    rc = MPI_Group_size( group_array[i], &group_size );
+	    if (group_size != size) {
+		fprintf( stderr, "Group number %d not correct (size = %d)\n", 
+			 i, size );
+		n = i + 1; 
+		break;
+	    }
 	}
 	
     }
@@ -60,6 +77,8 @@ implementation\n" );
 	    printf( " No Errors\n" );
 	}
     }
+
+    free( group_array );
 
     MPI_Finalize( );
     return 0;

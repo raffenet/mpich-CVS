@@ -7,6 +7,20 @@ MPI Profiling interface
    for the MPI calls are defined only for the pmpi versions (as they should
    be) but some of the ADI routines are only in the mpich library.  
 
+   The LIBS variable is correctly set by the top level configure to include
+   the necessary libraries.
 
 It would be nice if the top-level configure echoed its arguments as the
 first line of output like some of the subdirectory configures do.
+   Done - wdg, 9/15/02
+
+Finalize steps:
+   Invoke the attribute delete functions on MPI_COMM_WORLD and
+   MPI_COMM_SELF (see MPI-2 standard).  Perhaps use a function within 
+   a finalize callback registered as part of the keyval finalize handler
+   or the comm world/self handler.
+
+   If a group is created by MPI_Comm_group on a predefined communicator,
+   we need to free the group during MPI_Finalize.  
+
+

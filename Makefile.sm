@@ -44,8 +44,8 @@ dist:
 	-rm -rf tmpdir
 
 # Set the document sources and types (empty lists still cause recursion)
-doc_HTML_SOURCES =
-doc_MAN_SOURCES = 
+doc_HTML_SOURCES  =
+doc_MAN_SOURCES   = 
 doc_LATEX_SOURCES = 
 
 install_LIB = lib/lib${MPILIBNAME}.a

@@ -1,8 +1,8 @@
 #! /usr/bin/perl
 #
-require "parse.sub";
+require "maint/parse.sub";
 
-$debug = 0;
+$debug = 1;
 while (<>) {
     print "Input line $_" if $debug;
     $remainder = StripComments( STDIN, $_ );

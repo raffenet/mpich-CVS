@@ -1,6 +1,9 @@
 #include "mpi.h"
 #include <stdio.h>
-
+#ifdef HAVE_STRING_H
+/* For strncmp */
+#include <string.h>
+#endif
 
 int main( int argc, char **argv )
 {

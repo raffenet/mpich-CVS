@@ -1,4 +1,6 @@
 LDADD = -L ../../../lib 
+DEPADD = ../../../lib/libmpich.a
 errstring_SOURCES = errstring.c
+errcode_SOURCES = errcode.c errmsg.c
 
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include

@@ -11,6 +11,13 @@
 #endif
 
 #define DEFAULT_RNDV_SIZE 24*1024
+/* Prototypes */
+int SendRecvTest(int, int);
+int IsendIrecvTest(int);
+int IsenIrecvTest2(int,int);
+int OutOfOrderTest(int,int);
+int ForceUnexpectedTest(int,int);
+int RndvTest(int,int,int);
 
 int SendRecvTest(int rank, int n)
 {

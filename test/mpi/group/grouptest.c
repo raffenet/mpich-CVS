@@ -15,7 +15,7 @@
 int main( int argc, char *argv[] )
 {
     MPI_Group g1, g2, g4, g5, g45;
-    int ranks[16], size, rank, myrank, mysize, range[1][3];
+    int ranks[16], size, rank, myrank, range[1][3];
     int errs = 0;
     int i, rin[3], rout[3], result;
 
@@ -29,9 +29,11 @@ int main( int argc, char *argv[] )
 #else
 	MPI_Comm_group( MPI_COMM_WORLD, &g1 );
 	MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
-	MPI_Comm_size( MPI_COMM_WORLD, &mysize );
-	if (mysize < 8) {
-	    fprintf( stderr, "Test requires 8 processes (16 prefered)\n" );
+	MPI_Comm_size( MPI_COMM_WORLD, &size );
+	if (size < 8) {
+	    fprintf( stderr, 
+		  "Test requires 8 processes (16 prefered) only %d provided\n",
+		     size );
 	    errs++;
 	}
 #endif

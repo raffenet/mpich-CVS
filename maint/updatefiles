@@ -258,6 +258,7 @@ if [ ! -x maint/codingcheck -a -s maint/codingcheck ] ; then
     chmod +x maint/codingcheck
 fi
 if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
+    echo ""
     echo "Running coding check"
     echo ""
     # codingcheck now understands directories.
