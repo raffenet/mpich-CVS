@@ -6,7 +6,7 @@
 
 #include "mpidimpl.h"
 
-int MPID_Segment_init(void *buf, int count, MPI_Datatype handle, MPID_Segment *segp)
+int MPID_Segment_init(const void *buf, int count, MPI_Datatype handle, MPID_Segment *segp)
 {
     return 0;
 }

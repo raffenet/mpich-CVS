@@ -275,8 +275,6 @@ typedef struct MPID_Segment_st {
     /* other, device-specific information */
 } MPID_Segment;
 
-//void MPID_Segment_pack( MPID_Dataloop *, char *, char * );
-
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
 #define MPID_VECTOR         WSABUF
@@ -292,7 +290,7 @@ typedef struct MPID_Segment_st {
 #endif
 #define MPID_VECTOR_LIMIT   16
 
-int MPID_Segment_init(void *buf, int count, MPI_Datatype handle, MPID_Segment *segp);
+int MPID_Segment_init(const void *buf, int count, MPI_Datatype handle, MPID_Segment *segp);
 void MPID_Segment_pack(MPID_Segment *segp, int first, int *lastp, void *pack_buffer);
 void MPID_Segment_unpack(MPID_Segment *segp, int first, int *lastp, void *unpack_buffer);
 void MPID_Segment_pack_vector(MPID_Segment *segp, int first, int *lastp, MPID_VECTOR *vector, int *lengthp);

@@ -58,6 +58,8 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     pRequest->mm.rcar.vc_ptr = mm_get_packer_vc();
     pRequest->mm.rcar.next_ptr = NULL;
 
+    MPID_Segment_init(buf, count, dtype, &pRequest->mm.segment);
+
     /* allocate a write car */
     if (request_ptr->mm.write_list == NULL)
     {

@@ -78,5 +78,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     pCar->vc_ptr = mm_get_unpacker_vc();
     pCar->next_ptr = NULL;
 
+    MPID_Segment_init(buf, count, dtype, &pRequest->mm.segment);
+
     return MPI_SUCCESS;
 }
