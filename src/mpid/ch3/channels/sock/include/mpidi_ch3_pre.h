@@ -7,7 +7,7 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
-#include "sock.h"
+#include "mpidu_sock.h"
 
 /*#define MPID_USE_SEQUENCE_NUMBERS*/
 
@@ -84,7 +84,7 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_Request * sendq_head;
     struct MPID_Request * sendq_tail;
     MPIDI_CH3I_VC_state_t state;
-    sock_t sock;
+    MPIDU_Sock_t sock;
     struct MPIDI_CH3I_Connection * conn;
 } MPIDI_CH3I_VC;
 

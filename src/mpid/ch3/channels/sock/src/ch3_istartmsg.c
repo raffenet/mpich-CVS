@@ -6,7 +6,7 @@
 
 #include "mpidi_ch3_impl.h"
 
-static MPID_Request * create_request(void * hdr, MPIDI_msg_sz_t hdr_sz, sock_size_t nb)
+static MPID_Request * create_request(void * hdr, MPIDI_msg_sz_t hdr_sz, MPIU_Size_t nb)
 {
     MPID_Request * sreq;
     MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST);
@@ -59,15 +59,15 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_R
 	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
-	    sock_size_t nb;
+	    MPIU_Size_t nb;
 	    int rc;
 
 	    MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
 	    
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                not also try to write */
-	    rc = sock_write(vc->sc.sock, hdr, hdr_sz, &nb);
-	    if (rc == SOCK_SUCCESS)
+	    rc = MPIDU_Sock_write(vc->sc.sock, hdr, hdr_sz, &nb);
+	    if (rc == MPI_SUCCESS)
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %ld bytes", (unsigned long) nb));
 		
@@ -91,7 +91,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_R
 	    }
 	    else
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - sock_write failed, rc=%d", rc));
+		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - MPIDU_Sock_write failed, rc=%d", rc));
 		sreq = MPIDI_CH3_Request_create();
 		assert(sreq != NULL);
 		sreq->kind = MPID_REQUEST_SEND;

@@ -15,21 +15,20 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 {
-    int sock_errno;
-    sock_size_t nb;
+    MPIU_Size_t nb;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IREAD);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IREAD);
     assert(vc->sc.state == MPIDI_CH3I_VC_STATE_CONNECTED);
 
-    sock_errno = sock_readv(vc->sc.sock, rreq->ch3.iov, rreq->ch3.iov_count, &nb);
-    if (sock_errno == SOCK_SUCCESS)
+    mpi_errno = MPIDU_Sock_readv(vc->sc.sock, rreq->ch3.iov, rreq->ch3.iov_count, &nb);
+    if (mpi_errno == MPI_SUCCESS)
     {
 	rreq->sc.iov_offset = 0;
 	while (rreq->sc.iov_offset < rreq->ch3.iov_count)
 	{
-	    if ((sock_size_t)rreq->ch3.iov[rreq->sc.iov_offset].MPID_IOV_LEN <= nb)
+	    if ((MPIU_Size_t)rreq->ch3.iov[rreq->sc.iov_offset].MPID_IOV_LEN <= nb)
 	    {
 		nb -= rreq->ch3.iov[rreq->sc.iov_offset].MPID_IOV_LEN;
 		rreq->sc.iov_offset += 1;
@@ -48,7 +47,7 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     }
     else
     {
-	mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(FCNAME, sock_errno);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
     }
 
   fn_exit:

@@ -6,7 +6,7 @@
 
 #include "mpidi_ch3_impl.h"
 
-static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, int iov_offset, sock_size_t nb)
+static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, int iov_offset, MPIU_Size_t nb)
 {
     int i;
     MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST);
@@ -57,7 +57,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
-	    sock_size_t nb;
+	    MPIU_Size_t nb;
 	    int rc;
 
 	    MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
@@ -67,8 +67,8 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 
 	    /* FIXME: the current code only agressively writes the first IOV.  Eventually it should be changed to agressively write
                as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
-	    rc = sock_writev(vc->sc.sock, iov, n_iov, &nb);
-	    if (rc == SOCK_SUCCESS)
+	    rc = MPIDU_Sock_writev(vc->sc.sock, iov, n_iov, &nb);
+	    if (rc == MPI_SUCCESS)
 	    {
 		int offset = 0;
 
@@ -108,14 +108,14 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 		    }
 		}
 	    }
-	    else if (rc == SOCK_ERR_NOMEM)
+	    else if (MPIR_ERR_GET_CLASS(rc) == MPIDU_SOCK_ERR_NOMEM)
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "sock_writev failed, out of memory"));
+		MPIDI_DBG_PRINTF((55, FCNAME, "MPIDU_Sock_writev failed, out of memory"));
 		sreq->status.MPI_ERROR = MPIR_ERR_MEMALLOCFAILED;
 	    }
 	    else
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "sock_writev failed, rc=%d", rc));
+		MPIDI_DBG_PRINTF((55, FCNAME, "MPIDU_Sock_writev failed, rc=%d", rc));
 		/* Connection just failed.  Mark the request complete and return an error. */
 		vc->sc.state = MPIDI_CH3I_VC_STATE_FAILED;
 		/* TODO: Create an appropriate error message based on the return value (rc) */

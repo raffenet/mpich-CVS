@@ -102,7 +102,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	vc_table[p].sc.sendq_head = NULL;
 	vc_table[p].sc.sendq_tail = NULL;
 	vc_table[p].sc.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-	vc_table[p].sc.sock = SOCK_INVALID_SOCK;
+	vc_table[p].sc.sock = MPIDU_SOCK_INVALID_SOCK;
 	vc_table[p].sc.conn = NULL;
     }
     pg->vc_table = vc_table;
@@ -355,7 +355,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	vc_table[p].sc.sendq_head = NULL;
 	vc_table[p].sc.sendq_tail = NULL;
 	vc_table[p].sc.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-	vc_table[p].sc.sock = SOCK_INVALID_SOCK;
+	vc_table[p].sc.sock = MPIDU_SOCK_INVALID_SOCK;
 	vc_table[p].sc.conn = NULL;
     }
     pg->vc_table = vc_table;
@@ -620,7 +620,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
             vc_table[p].sc.sendq_head = NULL;
             vc_table[p].sc.sendq_tail = NULL;
             vc_table[p].sc.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-            vc_table[p].sc.sock = SOCK_INVALID_SOCK;
+            vc_table[p].sc.sock = MPIDU_SOCK_INVALID_SOCK;
             vc_table[p].sc.conn = NULL;
         }
         pg->vc_table = vc_table;

@@ -6,7 +6,7 @@
 
 #include "mpidi_ch3_impl.h"
 
-static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offset, sock_size_t nb)
+static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offset, MPIU_Size_t nb)
 {
     MPID_Request * sreq;
     int i;
@@ -82,14 +82,14 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
 	    int rc;
-	    sock_size_t nb;
+	    MPIU_Size_t nb;
 
 	    MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
 	    
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                also try to write */
-	    rc = sock_writev(vc->sc.sock, iov, n_iov, &nb);
-	    if (rc == SOCK_SUCCESS)
+	    rc = MPIDU_Sock_writev(vc->sc.sock, iov, n_iov, &nb);
+	    if (rc == MPI_SUCCESS)
 	    {
 		int offset = 0;
     
@@ -124,7 +124,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	    }
 	    else
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - sock_writev failed, rc=%d", rc));
+		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - MPIDU_Sock_writev failed, rc=%d", rc));
 		sreq = MPIDI_CH3_Request_create();
 		assert(sreq != NULL);
 		sreq->kind = MPID_REQUEST_SEND;
