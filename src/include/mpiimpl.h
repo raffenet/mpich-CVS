@@ -1181,7 +1181,7 @@ extern int MPID_THREAD_LEVEL;
 }
 
 /*
- * Check that the tripple (buf,count,datatype) does not specify a null
+ * Check that the triple (buf,count,datatype) does not specify a null
  * buffer.  This does not guarantee that the buffer is valid but does
  * catch the most common problems.
  * Question:
