@@ -21,7 +21,6 @@ from os              import environ, fork, execvpe, getuid, getpid, path, getcwd
 from socket          import socket, fromfd, AF_UNIX, SOCK_STREAM, gethostname
 from select          import select
 from exceptions      import Exception
-from xml.dom.minidom import parseString
 from re              import findall
 from urllib          import unquote
 from mpdlib          import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
@@ -90,6 +89,11 @@ def mpdrun():
         args = argsFile.read()
 	if delArgsFile:
 	    unlink(argsFilename)
+        try: 
+            from xml.dom.minidom import parseString   #import only if needed
+        except:
+            print 'need xml parser like xml.dom.minidom'
+            exit(-1)
         parsedArgs = parseString(args)
         if parsedArgs.documentElement.tagName != 'create-process-group':
             print 'expecting create-process-group; got unrecognized doctype: %s' % \
