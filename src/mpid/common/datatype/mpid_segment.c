@@ -114,6 +114,8 @@ void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
     packvec_params.u.pack_vector.index   = 0;
     packvec_params.u.pack_vector.length  = *lengthp;
 
+    assert(*lengthp > 0);
+
     MPID_Segment_manipulate(segp, first, lastp, 
 			    MPID_Segment_piece_pack_vector, 
 			    &packvec_params);
