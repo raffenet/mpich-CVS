@@ -33,6 +33,10 @@ int main( int argc, char *argv[] )
 	errs++;
 	printf( "cart sub to size 0 did not give self\n" );
     }
+
+    /* Free the new communicator so that storage leak tests will
+       be happy */
+    MPI_Comm_free( &newcomm );
     
     MTest_Finalize( errs );
     MPI_Finalize();
