@@ -94,6 +94,12 @@ C See the C version (typename.c) for the relevant MPI sections
            print *, "Expected MPI_CHARACTER but got "//name(1:namelen)
       endif
 
+      call MPI_Type_get_name( MPI_BYTE, name, namelen, ierr )
+      if (name(1:namelen) .ne. "MPI_BYTE") then
+           errs = errs + 1
+           print *, "Expected MPI_BYTE but got "//name(1:namelen)
+      endif
+
       if (MPI_REAL4 .ne. MPI_DATATYPE_NULL) then
           call MPI_Type_get_name( MPI_REAL4, name, namelen, ierr )
           if (name(1:namelen) .ne. "MPI_REAL4") then
