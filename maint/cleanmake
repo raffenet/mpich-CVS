@@ -19,11 +19,11 @@ while (<>) {
 	}
     }
 
-    if (/^[ag]?cc\s/) {
+    if (/^[agi]?cc\s/) {
 	s/-I[^\s]*\s*//g;
 	s/-DHAVE_CONFIG_H\s*//g;
     }
-    if (/^[ag]?c\+\+\s/ || /^CC\s/) {
+    if (/^[agi]?c\+\+\s/ || /^CC\s/) {
 	s/-I[^\s]*\s*//g;
 	s/-DHAVE_CONFIG_H\s*//g;
     }
@@ -55,7 +55,7 @@ while (<>) {
     if (/^perl -e/) { next; }
     if ($last_line =~ /[^\s]/) { 
 	# Decide if we want to print this, based on the current line.
-	if ($last_line =~ /^[ag]?cc\s/ || $last_line =~ /^mpicc\s/) {
+	if ($last_line =~ /^[agi]?cc\s/ || $last_line =~ /^mpicc\s/) {
 	    if (! (/^[ag]?cc\s/) && ! (/^mpicc\s/) && ! (/^\.\.\.ar/) ) { 
 		# Add a new line to help the compile line stand out.
 		print "\n";
