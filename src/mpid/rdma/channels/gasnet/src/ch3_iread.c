@@ -18,6 +18,7 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     int i;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IREAD);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IREAD);
     printf_d ("Entering "FCNAME "\n");
     printf_d ("  rreq->gasnet.iov_offset = %d\n", rreq->gasnet.iov_offset);
     printf_d ("  rreq->dev.iov_count = %d\n", rreq->dev.iov_count);
@@ -59,7 +60,6 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 
 fn_exit:
     printf_d ("Exiting "FCNAME "\n");
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IREAD);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
     return MPI_SUCCESS;
 }
