@@ -76,7 +76,7 @@ int PMI_Init( int *spawned )
 
     /* setvbuf(stdout,0,_IONBF,0); */
     setbuf(stdout,NULL);
-    PMIU_printf( 1, "PMI_INIT\n" );
+    /* PMIU_printf( 1, "PMI_INIT\n" ); */
     if ( ( p = getenv( "PMI_FD" ) ) )
 	PMI_fd = atoi( p );
 #ifdef USE_PMI_PORT
