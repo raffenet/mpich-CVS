@@ -19,6 +19,9 @@ int MPID_Parse_option(int num_args, char *args[], int *num_parsed, MPI_Info *inf
     MPIDI_STATE_DECL(MPID_STATE_MPID_PARSE_OPTION);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_PARSE_OPTION);
+
+    MPIR_Nest_incr();
+    
     mpi_errno = PMI_Parse_option(num_args, args, num_parsed, &keyvals, &size);
     if (mpi_errno != PMI_SUCCESS)
     {
@@ -37,29 +40,23 @@ int MPID_Parse_option(int num_args, char *args[], int *num_parsed, MPI_Info *inf
 	default:
 	    break;
 	}
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPID_PARSE_OPTION);
-	return mpi_errno;
+	MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**fail");
     }
     mpi_errno = NMPI_Info_create(info);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPID_PARSE_OPTION);
-	return mpi_errno;
-    }
+    MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**fail");
+    
     for (i=0; i<size; i++)
     {
 	mpi_errno = NMPI_Info_set(*info, keyvals[i].key, keyvals[i].val);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPID_PARSE_OPTION);
-	    return mpi_errno;
-	}
+	MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**fail");
     }
     PMI_Free_keyvals(keyvals, size);
 
+  fn_exit:
+    MPIR_Nest_decr();
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_PARSE_OPTION);
     return mpi_errno;
+
+  fn_fail:
+    goto fn_exit;
 }

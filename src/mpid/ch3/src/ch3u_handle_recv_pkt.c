@@ -777,8 +777,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
                 MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_ACCUM_RESP);
                 req->dev.datatype = accum_pkt->datatype;
 
-                mpi_errno = NMPI_Type_get_true_extent(accum_pkt->datatype, 
-                                                      &true_lb, &true_extent);
+		MPIR_Nest_incr();
+                mpi_errno = NMPI_Type_get_true_extent(accum_pkt->datatype, &true_lb, &true_extent);
+		MPIR_Nest_decr();
 		/* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno)
 		{

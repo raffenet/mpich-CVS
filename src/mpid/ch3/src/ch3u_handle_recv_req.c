@@ -633,8 +633,9 @@ static int do_accumulate_op(MPID_Request *rreq)
 
  fn_exit:
     /* free the temporary buffer */
-    mpi_errno = NMPI_Type_get_true_extent(rreq->dev.datatype, 
-                                          &true_lb, &true_extent);
+    MPIR_Nest_incr();
+    mpi_errno = NMPI_Type_get_true_extent(rreq->dev.datatype, &true_lb, &true_extent);
+    MPIR_Nest_decr();
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
     {
