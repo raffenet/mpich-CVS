@@ -1,6 +1,6 @@
 DOC_SUBDIRS = mansrc userguide installguide smpd logging
 
-DEVELOPER_SUBDIRS = adi3 ch3 mpich2 pmi namepub develop
+DEVELOPER_SUBDIRS = pmi namepub develop
 
 devdocs:
 	for dir in $(DEVELOPER_SUBDIRS) ; do \
