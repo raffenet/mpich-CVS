@@ -945,6 +945,55 @@ AC_LANG_POP
 fi # is not cross compiling
 ])dnl
 dnl
+dnl PAC_F90_AND_F77_COMPATIBLE([action-if-true],[action-if-false])
+dnl
+AC_DEFUN([PAC_F90_AND_F77_COMPATIBLE],[
+AC_REQUIRE([PAC_PROG_F90_WORKS])
+AC_CACHE_CHECK([whether Fortran 90 works with Fortran 77],
+pac_cv_f90_and_f77,[
+pac_cv_f90_and_f77="unknown"
+rm -f conftest*
+if test -z "$ac_ext_f90" ; then ac_ext_f90=$pac_cv_f90_ext ; fi
+# Define the two language-specific steps
+link_f90='${F90-f90} -o conftest${ac_exeext} $F90FLAGS $LDFLAGS conftest1.$ac_ext_f90 conftest2.o $LIBS 1>&AC_FD_CC'
+compile_f77='${F77-f77} -c $FFLAGS conftest2.f 1>&AC_FD_CC'
+# Create test programs
+cat > conftest1.$ac_ext_f90 <<EOF
+       program main
+       integer a
+       a = 1
+       call t1(a)
+       end
+EOF
+cat > conftest2.f <<EOF
+       subroutine t1(b)
+       integer b
+       b = b + 1
+       end
+EOF
+# compile the f77 program and link with the f90 program
+# The reverse may not work because the Fortran 90 environment may
+# expect to be in control (and to provide library files unknown to any other
+# environment, even Fortran 77!)
+if AC_TRY_EVAL(compile_f77) ; then
+    if AC_TRY_EVAL(link_f90) && test -x conftest ; then
+        pac_cv_f90_and_f77="yes"
+    else 
+        pac_cv_f90_and_f77="no"
+    fi
+    # Some versions of the Intel compiler produce these two files
+    rm -f work.pc work.pcl
+else
+    pac_cv_f90_and_f77="yes"
+fi])
+# Perform the requested action based on whether the test succeeded
+if test "$pac_cv_f90_and_f77" = yes ; then
+    ifelse($1,,:,[$1])
+else
+    ifelse($2,,:,[$2])
+fi
+])
+dnl
 dnl Backwards compatibility features
 dnl
 AC_DEFUN([PAC_PROG_F90],[AC_PROG_F90])
