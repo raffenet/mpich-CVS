@@ -65,6 +65,6 @@ AC_SUBST(master_top_srcdir)
 PAC_SUBDIR_CACHE
 AC_CONFIG_SUBDIRS(channels/${channel_name})
 
-AC_OUTPUT(Makefile src/Makefile channels/Makefile)
+AC_OUTPUT(Makefile src/Makefile channels/Makefile localdefs)
 
 PAC_SUBDIR_CACHE_CLEANUP

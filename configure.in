@@ -978,6 +978,12 @@ dnl
 #   LIBS="$LIBS -lmywierdlib",
 # not
 #   LIBS="-lmywierdlib"
+# In some cases (particularly for LIBS), we want to perform this update
+# *after* the configure step.  This is done by including the file
+# localdefs if it exists.  Note that the use of a file *after* the configure
+# of subdirectories means that the subdir configures will not get the 
+# value.  This is normally ok for libraries but not for include paths,
+# which is why there is a pre and post step
 if test -f $use_top_srcdir/src/mpid/$device_name/setup_device ; then
     echo sourcing $use_top_srcdir/src/mpid/$device_name/setup_device
     . $use_top_srcdir/src/mpid/$device_name/setup_device
@@ -989,6 +995,8 @@ dnl
 dnl Gastly problem.  CONFIG_SUBDIRS only adds the directories to the
 dnl list of directories to be configured.  It does NOT control the
 dnl timing of the configuration.  For that, we must do something different.
+dnl Our solution is to use a separate macro that does cause 
+dnl immediate configure
 export AR
 export RANLIB
 export MPILIBNAME
@@ -999,6 +1007,14 @@ PAC_CONFIG_SUBDIRS_IMMEDIATE(src/mpi/timer $subsystems)
 #
 # Make subsystems available to makefiles.
 AC_SUBST(subsystems)
+# Check for any localdefs files.  These may be created, so we look in
+# the local directory first.
+if test -f src/mpid/$device_name/localdefs ; then
+    . src/mpid/$device_name/localdefs
+elif test -f $use_top_srcdir/src/mpid/$device_name/localdefs ; then
+    . $use_top_srcdir/src/mpid/$device_name/localdefs
+fi
+#
 dnl
 dnl Once the subsystems are configured, we can inquire about what
 dnl they have been found.  For example, we need the values for the
