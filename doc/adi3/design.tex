@@ -444,7 +444,8 @@ issue, it is the cost of initializing and managing the request).
 Recall
 that in the receive case, there are two kinds of receives: posted (but
 unmatched by an incoming send) and unexpected (sent but unmatched by a
-receive).  For thread-safety, operations on these two lists must be
+receive).  For thread-safety\index{thread safety!issues}, operations on these
+two lists must be 
 made atomically.  These operations include 
 \begin{itemize}
 \item check posted and return if found; else insert into unexpected 
@@ -528,7 +529,8 @@ In the absence of threads, a simple interface would look like
    }
 \end{verbatim}
 However, if there are multiple threads, particularly if there are
-separate threads that can complete communication, then this API is
+separate threads that can complete communication\index{thread safety!issues},
+then this API is 
 incorrect.  Instead, a slightly more complex interface is needed to
 eliminate any race conditions.  For example,
 \begin{verbatim}
