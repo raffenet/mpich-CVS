@@ -155,7 +155,7 @@ void *MPIU_trmalloc( unsigned int a, int lineno, const char fname[] )
     nsize = a;
     if (nsize & TR_ALIGN_MASK) 
 	nsize += (TR_ALIGN_BYTES - (nsize & TR_ALIGN_MASK));
-    if (allocated + nsize > TRMaxMemAllow && TRMaxMemAllow) {
+    if ((allocated + (long)nsize > TRMaxMemAllow) && TRMaxMemAllow) {
 	/* Return a null when memory would be exhausted */
 	fprintf( stderr, "Exceeded allowed memory! \n" );
 	return 0;
