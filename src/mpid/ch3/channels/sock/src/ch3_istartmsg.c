@@ -50,7 +50,14 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_R
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSG);
     
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
+#ifdef MPICH_DBG_OUTPUT
+    if (hdr_sz > sizeof(MPIDI_CH3_Pkt_t))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+	return mpi_errno;
+    }
+#endif
 
     /* The SOCK channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
     hdr_sz = sizeof(MPIDI_CH3_Pkt_t);
