@@ -429,6 +429,22 @@ sub AnnotateUncoveredLines {
 	    }
 	    next;	       
 	}
+
+	if (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
+	    my $sawend = 0;
+	    while (<FD>) {
+		if (/^\s/) { print $outfile &HTMLify($_); }
+		if (/^\s*\/\*\s+--END EXPERIMENTAL--\s+\*\//) {
+		    $sawend = 1;
+		    last; 
+		}
+	    }
+	    if (!$sawend) {
+		print STDERR "File $filename ended in --BEGIN EXPERIMENTAL-- block\n";
+	    }
+	    next;	       
+	}
+
 #	# If requested, skip obvious error checking lines
 #	if ($skipErrExits && 
 #	    (/FUNC_EXIT.*STATE/ || /MPIR_Err_return_/ || 
