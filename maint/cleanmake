@@ -115,7 +115,7 @@ while (<>) {
     if (/Info: File not optimized/) { next; }
 
     if ($no_lib_steps) {
-	if (/^\s*ar\s/ || /^\s*ranlib\s/ || /^\s*true\s/) { 
+	if (/^\s*ar\s/ || /^\s*ranlib\s/ || /^\s*true\s/) {
 	    $last_line = ""; 
 	    next; }
     }
@@ -124,7 +124,9 @@ while (<>) {
     }
 
     # Skip the time adjust step
-    if (/^perl -e/) { next; }
+    # The sleep line is often added to handle problems in 
+    # file-system synchronization
+    if (/^\s*perl -e/ || /^\s*sleep\s+\d*/) { next; }
 
     if ($last_line =~ /[^\s]/) { 
 	# Decide if we want to print this, based on the current line.
