@@ -60,6 +60,11 @@ from popen2 import Popen3
 from select import select, error
 
 
+# This block will provide 'something' if a user does pydoc on this pgm
+if argv[0].find('pydoc') >= 0:
+    print __doc__
+    exit(0)
+
 do_ssh = 0
 fullDirName = path.abspath(path.split(argv[0])[0])  # normalize
 hostsFromFile = []
