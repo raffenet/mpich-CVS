@@ -4,13 +4,18 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+from signal          import signal, alarm, SIG_DFL, SIG_IGN, SIGINT, SIGTSTP, \
+                            SIGCONT, SIGALRM
+signal(SIGINT,SIG_IGN)
+signal(SIGTSTP,SIG_IGN)
+signal(SIGCONT,SIG_IGN)
+
 from sys             import argv, exit, stdin, stdout, stderr
 from os              import environ, fork, execvpe, getuid, getpid, path, getcwd, \
                             close, wait, waitpid, kill, unlink, _exit,  \
 			    WIFSIGNALED, WEXITSTATUS
 from socket          import socket, fromfd, AF_UNIX, SOCK_STREAM, gethostname
 from select          import select
-from signal          import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from exceptions      import Exception
 from xml.dom.minidom import parseString
 from re              import findall
@@ -286,6 +291,9 @@ def mpdrun():
     (manCliStderrSocket,addr) = listenSocket.accept()
     socketsToSelect = { manSocket : 1, manCliStdoutSocket : 1, manCliStderrSocket : 1,
                         stdin : 1 }
+    signal(SIGINT,sig_handler)
+    signal(SIGTSTP,sig_handler)
+    signal(SIGCONT,sig_handler)
     done = 0
     while done < 3:    # man, client stdout, and client stderr
         try:
@@ -321,7 +329,9 @@ def mpdrun():
 			        myExitStatus = exit_status
 		            print '  exit status of rank %d: return code %d ' % \
                                   (msg['rank'],exit_status)
-                    elif (msg['cmd'] == 'client_exit_status'):
+                    elif msg['cmd'] == 'job_aborted':
+                        print 'job aborted; reason = %s' % (msg['reason'])
+                    elif msg['cmd'] == 'client_exit_status':
 			status = msg['status']
 			if WIFSIGNALED(status):
 			    if status > myExitStatus:
@@ -540,10 +550,6 @@ if __name__ == '__main__':
 
     manSocket = 0    # set when we get conn'd to a manager
     myExitStatus = 0
-
-    signal(SIGINT,sig_handler)
-    signal(SIGTSTP,sig_handler)
-    signal(SIGCONT,sig_handler)
 
     try:
         mpdrun()

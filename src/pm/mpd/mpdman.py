@@ -14,8 +14,8 @@ from signal  import signal, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_DFL
 from md5     import new
 from cPickle import loads
 from mpdlib  import mpd_set_my_id, mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
-                   mpd_send_one_msg, mpd_recv_one_msg, \
-                   mpd_send_one_line, mpd_recv_one_line, \
+                   mpd_send_one_msg, mpd_send_one_msg_noprint, mpd_recv_one_msg, \
+                   mpd_send_one_line, mpd_send_one_line_noprint, mpd_recv_one_line, \
                    mpd_get_inet_listen_socket, mpd_get_inet_socket_and_connect, \
                    mpd_get_my_username, mpd_raise, mpdError, mpd_version, \
                    mpd_socketpair
@@ -287,7 +287,7 @@ def mpdman():
                 elif msg['cmd'] == 'jobgo':
 		    if myRank == 0:
 			msgToSend = { 'cmd' : 'job_started', 'jobid' : jobid }
-			mpd_send_one_msg(conSocket,msgToSend)
+			mpd_send_one_msg_noprint(conSocket,msgToSend)
 		    else:
 			mpd_send_one_msg(rhsSocket,msg)  # forward it on
 		    write(pipe_man_end,'go')
@@ -382,7 +382,7 @@ def mpdman():
                         if myRank != 0:
                             if rhsSocket:  # still alive ?
                                 mpd_send_one_msg(rhsSocket,msg)
-                            try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                            try:    kill(clientPid,SIGKILL)   # may be reaped by sighandler
                             except: pass
                     elif msg['signo'] == 'SIGTSTP':
                         if msg['dest'] != myId:
@@ -395,7 +395,7 @@ def mpdman():
                 elif msg['cmd'] == 'client_exit_status':
                     if myRank == 0:
                         if conSocket:
-                            mpd_send_one_msg(conSocket,msg)
+                            mpd_send_one_msg_noprint(conSocket,msg)
                     else:
                         if rhsSocket:
                             mpd_send_one_msg(rhsSocket,msg)
@@ -408,8 +408,8 @@ def mpdman():
                         msgToSend = { 'cmd' : 'job_aborted_early', 'jobid' : jobid,
                                       'rank' : msg['rank'], 
                                       'exit_status' : msg['exit_status'] }
-                        mpd_send_one_msg(conSocket,msgToSend)
-                    try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                        mpd_send_one_msg_noprint(conSocket,msgToSend)
+                    try:    kill(clientPid,SIGKILL)    # may be reaped by sighandler
                     except: pass
                 elif msg['cmd'] == 'invalid_executable':
                     jobEndingEarly = 1
@@ -417,8 +417,8 @@ def mpdman():
                         if rhsSocket:  # still alive ?
                             mpd_send_one_msg(rhsSocket,msg)
                         if conSocket:
-                            mpd_send_one_msg(conSocket,msg)
-                    try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                            mpd_send_one_msg_noprint(conSocket,msg)
+                    try:    kill(clientPid,SIGKILL)    # may be reaped by sighandler
                     except: pass
                 elif msg['cmd'] == 'stdin_from_user':
                     if msg['src'] != myId:
@@ -480,7 +480,7 @@ def mpdman():
                             line = line + splitLine[-1]
                             if startStdoutLineLabel:
                                 line = line + '\n'
-                        mpd_send_one_line(parentStdoutSocket,line)
+                        mpd_send_one_line_noprint(parentStdoutSocket,line)
                         # parentStdoutSocket.sendall('STDOUT by %d: |%s|' % (myRank,line) )
             elif readySocket == clientStderrFD:
                 line = read(clientStderrFD,1024)
@@ -518,7 +518,7 @@ def mpdman():
                             line = line + splitLine[-1]
                             if startStderrLineLabel:
                                 line = line + '\n'
-                        mpd_send_one_line(parentStderrSocket,line)
+                        mpd_send_one_line_noprint(parentStderrSocket,line)
             elif readySocket in childrenStdoutTreeSockets:
                 line = readySocket.recv(1024)
                 if not line:
@@ -538,7 +538,7 @@ def mpdman():
                             mpd_send_one_msg(rhsSocket,msgToSend)
                 else:
                     if parentStdoutSocket:
-                        mpd_send_one_line(parentStdoutSocket,line)
+                        mpd_send_one_line_noprint(parentStdoutSocket,line)
                         # parentStdoutSocket.sendall('FWD by %d: |%s|' % (myRank,line) )
             elif readySocket in childrenStderrTreeSockets:
                 line = readySocket.recv(1024)
@@ -559,7 +559,7 @@ def mpdman():
                             mpd_send_one_msg(rhsSocket,msgToSend)
                 else:
                     if parentStderrSocket:
-                        mpd_send_one_line(parentStderrSocket,line)
+                        mpd_send_one_line_noprint(parentStderrSocket,line)
                         # parentStdoutSocket.sendall('FWD by %d: |%s|' % (myRank,line) )
             elif readySocket in spawnedChildSockets:
                 msg = mpd_recv_one_msg(readySocket)
@@ -594,7 +594,7 @@ def mpdman():
                                   'id' : myId, 'rank' : myRank }
                     if myRank == 0:
                         if conSocket:
-                            mpd_send_one_msg(conSocket,msgToSend)
+                            mpd_send_one_msg_noprint(conSocket,msgToSend)
                     else:
                         if rhsSocket:
                             mpd_send_one_msg(rhsSocket,msgToSend)
@@ -607,7 +607,7 @@ def mpdman():
                                 msgToSend = { 'cmd' : 'collective_abort', 'src' : myId,
                                               'rank' : myRank, 'exit_status' : status }
                                 mpd_send_one_msg(rhsSocket,msgToSend)
-                        try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                        try:    kill(clientPid,SIGKILL)    # may be reaped by sighandler
                         except: pass
                 else:
                     parsedMsg = parse_pmi_msg(line)
@@ -617,7 +617,7 @@ def mpdman():
                                       'rank' : myRank, 'exec' : clientPgm }
                         mpd_send_one_msg(rhsSocket,msgToSend)
                         if conSocket:
-                            mpd_send_one_msg(conSocket,msgToSend)
+                            mpd_send_one_msg_noprint(conSocket,msgToSend)
                     elif parsedMsg['cmd'] == 'init':
                         pmiCollectiveJob = 1
                     elif parsedMsg['cmd'] == 'get_my_kvsname':
@@ -795,22 +795,22 @@ def mpdman():
                     if rhsSocket:
 	                msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
                         mpd_send_one_msg(rhsSocket,msgToSend)
-                    try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                    try:    kill(clientPid,SIGKILL)    # may be reaped by sighandler
                     except: pass
                 elif msg['cmd'] == 'signal':
                     if msg['signo'] == 'SIGINT':
                         mpd_send_one_msg(rhsSocket,msg)
-                        try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                        try:    kill(clientPid,SIGKILL)    # may be reaped by sighandler
                         except: pass
                     elif msg['signo'] == 'SIGTSTP':
                         msg['dest'] = myId
                         mpd_send_one_msg(rhsSocket,msg)
-                        try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                        try:    kill(clientPid,SIGTSTP) 
                         except: pass
                     elif msg['signo'] == 'SIGCONT':
                         msg['dest'] = myId
                         mpd_send_one_msg(rhsSocket,msg)
-                        try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                        try:    kill(clientPid,SIGCONT) 
                         except: pass
                 elif msg['cmd'] == 'stdin_from_user':
                     if stdinGoesToWho == 1:    # 1 -> all processes
@@ -829,7 +829,7 @@ def mpdman():
                     if conSocket:
                         msgToSend = { 'cmd' : 'job_aborted', 'reason' : 'mpd disappeared',
                                       'jobid' : jobid }
-                        mpd_send_one_msg(conSocket,msgToSend)
+                        mpd_send_one_msg_noprint(conSocket,msgToSend)
                         del socketsToSelect[conSocket]
                         conSocket.close()
                         conSocket = 0

@@ -135,7 +135,15 @@ def mpd_send_one_line(sock,line):
         sock.sendall(line)
     except Exception, errmsg:
         mpd_print_tb(1, 'mpd_send_one_line: sock=%s errmsg=:%s:' % (sock,errmsg) )
-        return 0
+
+# This is a copy of the above function but doesn't print an error message if the
+# send fails. We use it when the destination may have vanished (mpdrun got killed)
+# and we don't care.
+def mpd_send_one_line_noprint(sock,line):
+    try:
+        sock.sendall(line)
+    except Exception, errmsg:
+        return 0                        # note: 0 is failure
     return 1
 
 def mpd_recv_one_line(sock):
@@ -165,12 +173,26 @@ def mpd_send_one_msg(sock,msg):
         sock.sendall('%08d%s' % (len(pickledMsg),pickledMsg) )
     except StandardError, errmsg:    # any built-in exceptions
         mpd_print_tb(1, 'mpd_send_one_msg: errmsg=:%s:' % (errmsg) )
-        return 0
     except Exception, errmsg:
         mpd_print_tb(1, 'mpd_send_one_msg: sock=%s errmsg=:%s:' % (sock,errmsg) )
-        return 0
     except:
         mpd_print_tb(1, 'mpd_send_one_msg failed on sock %s' % sock)
+
+# This is a copy of the above function but doesn't print an error message if the
+# send fails. We use it when the destination may have vanished (mpdrun got killed)
+# and we don't care.
+def mpd_send_one_msg_noprint(sock,msg):
+    pickledMsg = dumps(msg)
+    try:
+        sock.sendall('%08d%s' % (len(pickledMsg),pickledMsg) )
+    except StandardError, errmsg:    # any built-in exceptions
+        # mpd_print_tb(1, 'mpd_send_one_msg: errmsg=:%s:' % (errmsg) )
+        return 0
+    except Exception, errmsg:
+        # mpd_print_tb(1, 'mpd_send_one_msg: sock=%s errmsg=:%s:' % (sock,errmsg) )
+        return 0
+    except:
+        # mpd_print_tb(1, 'mpd_send_one_msg failed on sock %s' % sock)
         return 0
     return 1
 
@@ -184,10 +206,8 @@ def mpd_recv_one_msg(sock):
             msg = loads(pickledMsg)
     except StandardError, errmsg:    # any built-in exceptions
         mpd_print_tb(0, 'mpd_recv_one_msg: errmsg=:%s:' % (errmsg) )
-        msg = {}
     except:
         mpd_print_tb(0, 'mpd_recv_one_msg failed on sock %s' % sock)
-        msg = {}
     return msg
 
 def mpd_get_inet_listen_socket(host,port):

@@ -4,6 +4,10 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+from signal          import signal, SIG_IGN, SIGINT
+
+signal(SIGINT,SIG_IGN)
+
 from sys    import argv, exit
 from os     import environ, execvpe, getpid, getuid, getcwd, access, X_OK, path
 from popen2 import Popen3
