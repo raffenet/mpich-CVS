@@ -1,14 +1,14 @@
 
 
-                         MPICH2 Release 1.0
+			 MPICH2 Release 1.0.1
 
 MPICH2 is an all-new implementation of MPI from the group at Argonne
 National Laboratory.  It shares many goals with the original MPICH but
-no actual code.  It is portable, high-performance
-implementation of the entire MPI-2 standard.  This release has 
-all MPI-2 functions and features required by the standard with the
-exeption of support for the "external32" portable I/O format.
-It also currently supports only a few communication methods.
+no actual code.  It is portable, high-performance implementation of
+the entire MPI-2 standard.  This release has all MPI-2 functions and
+features required by the standard with the exeption of support for the
+"external32" portable I/O format.  It also currently supports only a
+few communication methods.
 
 This is the first complete release of MPICH2.  It has been tested by us
 on a variety of machines in our own environment, but not all of it has
@@ -39,7 +39,7 @@ later, in the section "Alternative configurations".
 
 1.  You will need the following prerequisites.
 
-    - This tar file mpich2-1.0.tar.gz
+    - This tar file mpich2-1.0.1.tar.gz
 
     - A C compiler (gcc is sufficient)
 
@@ -63,13 +63,13 @@ later, in the section "Alternative configurations".
 2.  Unpack the tar file and go to the top level directory:
 
       tar xfz mpich2.tar.gz
-      cd mpich2-1.0
+      cd mpich2-1.0.1
 
     If your tar doesn't accept the z option, use
 
       gunzip mpich2.tar.gz
       tar xf mpich2.tar
-      cd mpich2-1.0
+      cd mpich2-1.0.1
 
 3.  Choose an installation directory (the default is /usr/local/bin):
 
@@ -131,7 +131,7 @@ later, in the section "Alternative configurations".
     MPD, which is a ring of daemons on the machines where you will run
     your MPI programs.  In the next few steps, you will get his ring up
     and tested.  More details on interacting with MPD can be found in
-    the README file in mpich2-1.0/src/pm/mpd, such as how to list
+    the README file in mpich2-1.0.1/src/pm/mpd, such as how to list
     running jobs, kill, suspend, or otherwise signal them, and how to
     use the mpigdb debugger.  The instructions given here should be
     enough to get you started.
@@ -205,7 +205,7 @@ later, in the section "Alternative configurations".
 
     to see which machines are in the ring so far.  More details on
     mpdboot and other options for starting the mpd's are in
-    mpich2-1.0/src/pm/mpd/README.
+    mpich2-1.0.1/src/pm/mpd/README.
 
 
 12. Test the ring you have just created:
@@ -242,9 +242,9 @@ later, in the section "Alternative configurations".
 14. Now we will run an MPI job, using the mpiexec command as specified
     in the MPI-2 standard.  There are some examples in the install
     directory, which you have already put in your path, as well as in
-    the directory mpich2-1.0/examples.  One of them is the classic cpi
-    example, which computes the value of pi by numerical integration in
-    parallel.   
+    the directory mpich2-1.0.1/examples.  One of them is the classic
+    cpi example, which computes the value of pi by numerical
+    integration in parallel.
 
       mpiexec -n 5 cpi
 
@@ -308,18 +308,25 @@ Alternative Process Managers
 
 mpd
 ---
-
 MPD is the default process manager.  Its setup and use have been
-described above.  The file mpich2-1.0/src/pm/mpd/README has more 
+described above.  The file mpich2-1.0.1/src/pm/mpd/README has more 
 information about interactive commands for managing the ring of mpds.
 
 smpd
 ---- 
-
 SMPD is a process management system for both Microsoft Windows and UNIX.
 SMPD is capable of starting a job where some processes are running on
 Windows and others are running on a variant of UNIX.  For more
-information, please see mpich2-1.0/src/pm/smpd/README.
+information, please see mpich2-1.0.1/src/pm/smpd/README.
+
+gforker
+-------
+gforker is a process manager that creates processes on a single machine,
+by having mpiexec directly fork and exec them.  This mechanism is
+particularly appropriate for shared-memory multiprocessors (SMPs) where
+you want to create all the processes on the same machine.  gforker is
+also useful for debugging, where run all the processes on a single
+machine is often convenient.
 
 
 Alternative Channels and Devices
@@ -477,6 +484,17 @@ MPI Features:
   --with-file-system - When used with --enable-romio, specifies
                  filesystems ROMIO should support.  See README.romio.
 
+  --enable-threads - Build MPICH2 with support for multi-threaded
+                 applications.  This option is not on by default since
+                 it introduces extra overhead that is not required for
+                 single-threaded applications.
+
+  --with-thread-package - When used with --enable-threads, this option
+                 specifies the thread package to use.  This option
+                 defaults to "posix".  At the moment, only POSIX
+                 threads are supported on UNIX platforms.  We plan to
+                 support Solaris threads in the future.
+
 Language bindings:
 
   --enable-f77 - Build the Fortran 77 bindings.  This is the default.
@@ -555,26 +573,9 @@ ring.
 Some routines, such as the intercommunicator extensions to the
 collective routines, have not been extensively tested.
 
-MPICH2 1.0 is only thread safe at the MPI_THREAD_FUNNELLED level,
-although an upcoming release will be safe at the MPI_THREAD_MULTIPLE
-level.  MPI_Init_thread works according to the standard.
-
-Other Changes
-=============
-
-forker and gforker
-------------------
-
-Forker is a process manager that creates processes on a single machine,
-by having mpiexec itself fork and exec them.  It is useful for
-shared-memory multiprocessors (SMPs) where you want to create all the
-processes on the same machine, and also for debugging, where it is often
-convenient to run all the processes on a single machine, since parallel
-performance is less important.  The new version of the forker is called
-gforker. 
-
-specify that you want to use gforker by doing 
-
-  --with-pm=gforker  
-
-on the configure command line.
+As of the 1.0.1 release, MPICH2 now supports MPI_THREAD_SERIALIZED and
+MPI_THREAD_MULTIPLE (see --enable-threads option above).  While we have
+performed preliminary testing, support for multi-threaded applications
+has not been rigorously tested.  We expect to provide a suite of
+multi-threaded tests, similar in nature to the existing tests, in the
+next major release.
