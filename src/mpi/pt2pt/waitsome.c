@@ -56,6 +56,16 @@ While it is possible to list a request handle more than once in the
 array_of_requests, such an action is considered erroneous and may cause the
 program to unexecpectedly terminate or produce incorrect results.
 
+'MPI_Waitsome' provides an interface much like the Unix 'select' or 'poll' 
+calls and, in a high qualilty implementation, indicates all of the requests
+that have completed when 'MPI_Waitsome' is called.  
+However, 'MPI_Waitsome' only guarantees that at least one
+request has completed; there is no guarantee that `all` completed requests 
+will be returned, or that the entries in 'array_of_indices' will be in 
+increasing order. Also, requests that are completed while 'MPI_Waitsome' is
+executing may or may not be returned, depending on the timing of the 
+completion of the message.  
+
 .N waitstatus
 
 .N Fortran
