@@ -555,6 +555,9 @@ ring.
 Some routines, such as the intercommunicator extensions to the
 collective routines, have not been extensively tested.
 
+MPICH2 1.0 is only thread safe at the MPI_THREAD_FUNNELLED level,
+although an upcoming release will be safe at the MPI_THREAD_MULTIPLE
+level.  MPI_Init_thread works according to the standard.
 
 Other Changes
 =============
