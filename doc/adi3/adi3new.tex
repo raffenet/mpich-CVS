@@ -87,15 +87,22 @@ This section contains descriptions of the data structures using in the
 ADI3 definition.  These include both the major enumerated types and
 the structure definitions.
 
+\subsection{Basic enumerations and types}
+\input adi3man/MPID_Object_kind.tex
+\input adi3man/MPID_Lang_t.tex
 \input adi3man/MPID_Request_kind.tex
-\input adi3man/MPID_Request.tex
 \input adi3man/MPID_Comm_kind_t.tex
+\input adi3man/MPID_Errhandler_fn.tex
+\input adi3man/MPID_Op_kind.tex
+\input adi3man/MPID_User_function.tex
+\input adi3man/MPID_Copy_function.tex
+\input adi3man/MPID_Delete_function.tex
+
+\subsection{Major MPI Objects}
+\input adi3man/MPID_Request.tex
 \input adi3man/MPID_Comm.tex
 \input adi3man/MPID_Group.tex
-\input adi3man/MPID_Errhandler_fn.tex
 \input adi3man/MPID_Win.tex
-\input adi3man/MPID_User_function.tex
-\input adi3man/MPID_Op_kind.tex
 \input adi3man/MPID_Op.tex
 %\input adi3man/MPID_Segment.tex
 %\input adi3man/MPID_Dataloop.tex
@@ -109,8 +116,20 @@ the structure definitions.
 \input adi3man/MPID_Errhandler.tex
 \input adi3man/MPID_Keyval.tex
 \input adi3man/MPID_Attribute.tex
-\input adi3man/MPID_Copy_function.tex
-\input adi3man/MPID_Delete_function.tex
+
+\subsection{Threads}
+Thread support in MPI requires both a thread-safe device and
+thread-safe handling of MPI objects that may be shared among threads.
+These routines provide for atomic updates to reference counts on MPI
+objects.  Other routines provide thread locks on a communicator basis,
+as well as a process-wide thread lock that may be used when such a
+coarse-grain lock is sufficient.
+
+\input adi3man/MPID_MAX_THREAD_LEVEL.tex
+\input adi3man/MPID_Object_add_ref.tex
+\input adi3man/MPID_Object_release_ref.tex
+\input adi3man/MPID_Comm_thread_lock.tex
+\input adi3man/MPID_Comm_thread_unlock.tex
 
 \section{Basic Point-to-Point}
 \label{sec:pt-2-pt}
@@ -164,6 +183,15 @@ requests.
 %% \input adi3man/MPID_Segment_init_unpack
 %% \input adi3man/MPID_Segment_unpack
 %% \input adi3man/MPID_Segment_free
+
+\section{Process Topology}
+This section describes a routine that allows the device to communicate
+information on the process topology to the MPI process topology
+routines.  This routine is designed for hierarchically-organized
+machines.  Additional routines for other topologies (e.g., a scalable
+mesh topology) will be considered as needed.
+
+\input adi3man/MPID_Topo_cluster_info.tex
 
 \section{Progress Engine}
 \label{sec:progress}
@@ -223,6 +251,11 @@ for some additional requirements on the progress engine.
 %\input adi3man/MPID_Win_local_lock.tex
 %\input adi3man/MPID_Win_local_unlock.tex
 
+\subsection{Memory Allocation for RMA}
+\input adi3man/MPID_Mem_alloc.tex
+\input adi3man/MPID_Mem_free.tex
+\input adi3man/MPID_Mem_was_alloced.tex
+
 \section{Dynamic Processes}
 (not yet designed)
 
@@ -252,6 +285,17 @@ references to these tables; group operations use the local process id
 %\section{Available Utility Functions}
 %\input adi3man/MPIU_Object_add_ref.tex
 %\input adi3man/MPIU_Object_release_ref.tex
+
+\section{Timers}
+Timer support is defined so that the device may either provide or use
+the timers.  We expect most devices to use one of the timers defined
+in \file{src/mpi/timer}
+\input adi3man/MPID_Wtime.tex
+\input adi3man/MPID_Wtick.tex
+\input adi3man/MPID_Wtime_diff.tex
+\input adi3man/MPID_Wtime_init.tex
+\input adi3man/MPID_Wtime_todouble.tex
+\input adi3man/MPID_Wtime_acc.tex
 
 \let\SaveBibliography=\thebibliography
 \def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}
