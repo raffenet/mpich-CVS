@@ -75,14 +75,14 @@ int MPIR_Comm_call_attr_delete( MPI_Comm comm, MPID_Attribute *attr_p )
 #ifdef HAVE_FORTRAN_BINDING
     case MPID_LANG_FORTRAN: 
 	{
-	    MPI_Fint fcomm, fkeyval, fvalue, fextra, ierr;
+	    MPI_Fint fcomm, fkeyval, fvalue, *fextra, ierr;
 	    if (delfn.F77_DeleteFunction) {
 		fcomm   = (MPI_Fint) (comm);
 		fkeyval = (MPI_Fint) (attr_p->keyval->handle);
 		fvalue  = (MPI_Fint) (attr_p->value);
-		fextra  = (MPI_Fint) (attr_p->keyval->extra_state );
+		fextra  = (MPI_Fint*) (attr_p->keyval->extra_state);
 		delfn.F77_DeleteFunction( &fcomm, &fkeyval, &fvalue, 
-					  &fextra, &ierr );
+					  fextra, &ierr );
 		if (ierr) mpi_errno = (int)ierr;
 	    }
 	}
@@ -90,14 +90,14 @@ int MPIR_Comm_call_attr_delete( MPI_Comm comm, MPID_Attribute *attr_p )
     case MPID_LANG_FORTRAN90: 
 	{
 	    MPI_Fint fcomm, fkeyval, ierr;
-	    MPI_Aint fvalue, fextra;
+	    MPI_Aint fvalue, *fextra;
 	    if (delfn.F90_DeleteFunction) {
 		fcomm   = (MPI_Fint) (comm);
 		fkeyval = (MPI_Fint) (attr_p->keyval->handle);
 		fvalue  = (MPI_Aint) (attr_p->value);
-		fextra  = (MPI_Aint) (attr_p->keyval->extra_state );
+		fextra  = (MPI_Aint*) (attr_p->keyval->extra_state );
 		delfn.F90_DeleteFunction( &fcomm, &fkeyval, &fvalue, 
-					  &fextra, &ierr );
+					  fextra, &ierr );
 		if (ierr) mpi_errno = (int)ierr;
 	    }
 	}
@@ -145,14 +145,14 @@ int MPIR_Comm_attr_dup_list( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
 #ifdef HAVE_FORTRAN_BINDING
 	case MPID_LANG_FORTRAN: 
 	    {
-		MPI_Fint fcomm, fkeyval, fvalue, fextra, fflag, fnew, ierr;
 		if (copyfn.F77_CopyFunction) {
+		    MPI_Fint fcomm, fkeyval, fvalue, *fextra, fflag, fnew, ierr;
 		    fcomm   = (MPI_Fint) (comm_ptr->handle);
 		    fkeyval = (MPI_Fint) (p->keyval->handle);
 		    fvalue  = (MPI_Fint) (p->value);
-		    fextra  = (MPI_Fint) (p->keyval->extra_state );
-		    copyfn.F77_CopyFunction( &fcomm, &fkeyval, &fextra,
-					     &fvalue, &fnew, &flag, &ierr );
+		    fextra  = (MPI_Fint*) (p->keyval->extra_state );
+		    copyfn.F77_CopyFunction( &fcomm, &fkeyval, fextra,
+					     &fvalue, &fnew, &fflag, &ierr );
 		    if (ierr) mpi_errno = (int)ierr;
 		    flag      = fflag;
 		    new_value = (void *)fnew;
@@ -161,14 +161,14 @@ int MPIR_Comm_attr_dup_list( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
 	    break;
 	case MPID_LANG_FORTRAN90: 
 	    {
-		MPI_Fint fcomm, fkeyval, fflag, ierr;
-		MPI_Aint fvalue, fnew, fextra;
 		if (copyfn.F90_CopyFunction) {
+		    MPI_Fint fcomm, fkeyval, fflag, ierr;
+		    MPI_Aint fvalue, fnew, *fextra;
 		    fcomm   = (MPI_Fint) (comm_ptr->handle);
 		    fkeyval = (MPI_Fint) (p->keyval->handle);
 		    fvalue  = (MPI_Aint) (p->value);
-		    fextra  = (MPI_Aint) (p->keyval->extra_state );
-		    copyfn.F90_CopyFunction( &fcomm, &fkeyval, &fextra,
+		    fextra  = (MPI_Aint*) (p->keyval->extra_state );
+		    copyfn.F90_CopyFunction( &fcomm, &fkeyval, fextra,
 					     &fvalue, &fnew, &fflag, &ierr );
 		    if (ierr) mpi_errno = (int)ierr;
 		    flag = fflag;
