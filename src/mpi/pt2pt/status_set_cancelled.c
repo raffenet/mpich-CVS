@@ -28,11 +28,11 @@
 #define FUNCNAME MPI_Status_set_cancelled
 
 /*@
-   MPI_Status_set_cancelled - status_set_cancelled
+   MPI_Status_set_cancelled - Sets the cancelled state associated with a Status object
 
-   Arguments:
-+  MPI_Status *status - status
--  int flag - flag
+Input Parameters:
++  MPI_Status *status - status to associate cancel flag with (Status)
+-  int flag - if true indicates request was cancelled (logical)
 
    Notes:
 

@@ -28,23 +28,28 @@
 #define FUNCNAME MPI_Bsend_init
 
 /*@
-   MPI_Bsend_init - bsend init
+    MPI_Bsend_init - Builds a handle for a buffered send
 
-   Arguments:
-+  void *buf - buffer
-.  int count - count
-.  MPI_Datatype datatype - datatype
-.  int dest - dest
-.  int tag - tag
-.  MPI_Comm comm - communicator
--  MPI_Request *request - request
+Input Parameters:
++ buf - initial address of send buffer (choice) 
+. count - number of elements sent (integer) 
+. datatype - type of each element (handle) 
+. dest - rank of destination (integer) 
+. tag - message tag (integer) 
+- comm - communicator (handle) 
 
-   Notes:
+Output Parameter:
+. request - communication request (handle) 
 
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_RANK
+.N MPI_ERR_TAG
 @*/
 int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {

@@ -28,14 +28,20 @@
 #define FUNCNAME MPI_Request_get_status
 
 /*@
-   MPI_Request_get_status - get request status
+   MPI_Request_get_status - Nondestructive test for the completion of a Request
 
-   Arguments:
-+  MPI_Request request - request
-.  int *flag - flag
--  MPI_Status *status - status
+Input Parameter:
+.  MPI_Request request - request handle
+
+Output Parameters:
++  int *flag - true if operation has completed (logical)
+-  MPI_Status *status - status object (Status).  May be 'MPI_STATUS_NULL'.
 
    Notes:
+
+   Unlike MPI_Test, MPI_Request_get_status does not deallocate or deactivate
+   the request.  A call to one of the test/wait routines or MPI_Request_free
+   should be made to release the request object.
 
 .N Fortran
 

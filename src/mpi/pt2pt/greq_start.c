@@ -35,13 +35,13 @@
 /*@
    MPI_Grequest_start - Create and return a user-defined request
 
-   Input Parameters:
+Input Parameters:
 + query_fn - callback function invoked when request status is queried (function)  
 . free_fn - callback function invoked when request is freed (function) 
 . cancel_fn - callback function invoked when request is cancelled (function) 
 - extra_state - Extra state passed to the above functions.
 
-   Output Parameters:
+Output Parameter:
 .  request - Generalized request (handle)
 
    Notes:

@@ -33,7 +33,7 @@
 #define FUNCNAME MPI_Grequest_complete
 
 /*@
-   MPI_Grequest_complete - short description
+   MPI_Grequest_complete - Notify MPI that a user-defined request is complete
 
    Input Arguments:
 .  request - Generalized request to mark as complete
