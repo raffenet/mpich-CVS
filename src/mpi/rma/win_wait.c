@@ -81,9 +81,9 @@ int MPI_Win_wait(MPI_Win win)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_Win_wait(win_ptr);
+    mpi_errno = MPID_Win_wait(win_ptr);
 
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_WAIT);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 

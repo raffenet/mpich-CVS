@@ -1,5 +1,6 @@
 #include "mpi.h" 
 #include "stdio.h"
+#include "mpitest.h"
 
 /* tests a series of puts, gets, and accumulate on 2 processes using fence */
 

@@ -13,4 +13,5 @@ lib${MPILIBNAME}_a_SOURCES = \
     mpid_win_wait.c mpid_win_post.c mpid_win_unlock.c mpid_win_create.c \
     mpid_win_lock.c mpid_win_free.c \
     mpid_close_port.c mpid_comm_accept.c mpid_comm_connect.c \
-    mpid_comm_disconnect.c mpid_comm_spawn_multiple.c mpid_open_port.c
+    mpid_comm_disconnect.c mpid_comm_spawn_multiple.c mpid_open_port.c \
+    mpid_win_test.c

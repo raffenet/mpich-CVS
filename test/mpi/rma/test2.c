@@ -1,5 +1,6 @@
 #include "mpi.h" 
 #include "stdio.h"
+#include "mpitest.h"
 
 /* tests put and get with post/start/complete/wait on 2 processes */
 

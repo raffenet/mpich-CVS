@@ -55,6 +55,22 @@ int MPI_Win_test(MPI_Win win, int *flag)
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_TEST);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_TEST);
+
+    /* Verify that MPI has been initialized */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) {
+		MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_TEST);
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+            }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
     /* Get handles to MPI objects. */
     MPID_Win_get_ptr( win, win_ptr );
 #   ifdef HAVE_ERROR_CHECKING
@@ -74,8 +90,10 @@ int MPI_Win_test(MPI_Win win, int *flag)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    mpi_errno = MPID_Win_test(win_ptr, flag);
+
     /* FIXME: UNIMPLEMENTED */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_TEST);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 

@@ -1,6 +1,7 @@
 #include "mpi.h" 
 #include "stdio.h"
 #include "stdlib.h"
+#include "mpitest.h"
 
 /* Tests the example in Fig 6.8, pg 142, MPI-2 standard. Process 1 has
    a blocking MPI_Recv between the Post and Wait. Therefore, this

@@ -2685,6 +2685,7 @@ int MPID_Get(void *, int, MPI_Datatype, int, MPI_Aint, int,
 int MPID_Accumulate(void *, int, MPI_Datatype, int, MPI_Aint, int, 
 		   MPI_Datatype,  MPI_Op, MPID_Win *);
 int MPID_Win_free(MPID_Win **); 
+int MPID_Win_test(MPID_Win *win_ptr, int *flag);
 int MPID_Win_wait(MPID_Win *win_ptr);
 int MPID_Win_complete(MPID_Win *win_ptr);
 int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr);
