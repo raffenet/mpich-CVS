@@ -65,7 +65,7 @@ def mpiexec():
         else:
             if argv[1] == '-default':
                 i = 2
-                while argv[i] != ':':
+                while argv[i] != ':' and i <= len(argv):
                     defaultArgs.append(argv[i])
                     i += 1
                 i += 1  # skip the :
@@ -81,6 +81,9 @@ def mpiexec():
                     setenvall = 1
                     gargIdx += 1
                 elif defaultArgs[gargIdx] == '-env':
+                    if len(defaultArgs) < (gargIdx+3):
+                        print '** missing args to env'
+                        usage()
                     var = defaultArgs[gargIdx+1]
                     val = defaultArgs[gargIdx+2]
                     gEnv[var] = val
@@ -89,21 +92,36 @@ def mpiexec():
                     linelabels = 1
                     gargIdx += 1
                 elif defaultArgs[gargIdx] == '-usize':
+                    if len(defaultArgs) < (gargIdx+2):
+                        print '** missing arg to usize'
+                        usage()
                     usize = defaultArgs[gargIdx+1]
                     if not usize.isdigit():
                         print 'non-numeric usize: %s' % usize
                         usage()
                     gargIdx += 2
                 elif defaultArgs[gargIdx] == '-host':
+                    if len(defaultArgs) < (gargIdx+2):
+                        print '** missing arg to host'
+                        usage()
                     gHost = defaultArgs[gargIdx+1]
                     gargIdx += 2
                 elif defaultArgs[gargIdx] == '-wdir':
+                    if len(defaultArgs) < (gargIdx+2):
+                        print '** missing arg to wdir'
+                        usage()
                     gWDIR = defaultArgs[gargIdx+1]
                     gargIdx += 2
                 elif defaultArgs[gargIdx] == '-path':
+                    if len(defaultArgs) < (gargIdx+2):
+                        print '** missing arg to path'
+                        usage()
                     gPath = defaultArgs[gargIdx+1]
                     gargIdx += 2
                 elif defaultArgs[gargIdx] == '-n'  or  defaultArgs[gargIdx] == '-np':
+                    if len(defaultArgs) < (gargIdx+2):
+                        print '** missing arg to -n (-np)'
+                        usage()
                     gNProcs = int(defaultArgs[gargIdx+1])
                     gargIdx += 2
                 else:
@@ -179,18 +197,37 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
         if argset[argidx][0] != '-':    
             break                       # since now at executable
         if argset[argidx] == '-n' or argset[argidx] == '-np':
-            nProcs = int(argset[argidx+1])
+            if len(argset) < (argidx+2):
+                print '** missing arg to -n (-np)'
+                usage()
+            nProcs = argset[argidx+1]
+            if not nProcs.isdigit():
+                print '** non-numeric arg to -n: %s' % nProcs
+                usage()
+            nProcs = int(nProcs)
             argidx += 2
         elif argset[argidx] == '-host':
+            if len(argset) < (argidx+2):
+                print '** missing arg to -host'
+                usage()
             host = argset[argidx+1]
             argidx += 2
         elif argset[argidx] == '-wdir':
+            if len(argset) < (argidx+2):
+                print '** missing arg to -wdir'
+                usage()
             wdir = argset[argidx+1]
             argidx += 2
         elif argset[argidx] == '-path':
+            if len(argset) < (argidx+2):
+                print '** missing arg to -path'
+                usage()
             wpath = argset[argidx+1]
             argidx += 2
         elif argset[argidx] == '-env':
+            if len(argset) < (argidx+3):
+                print '** missing arg to -env'
+                usage()
             var = argset[argidx+1]
             val = argset[argidx+2]
             lEnv[var] = val
@@ -259,7 +296,7 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
 
 
 def usage():
-    print ''
+    print 'usage:'
     print 'mpiexec [ -h   or  -help   or  --help ]'
     print 'mpiexec -file filename  # where filename contains xml for job description'
     print 'mpiexec -configfile filename  # where filename contains cmd-line arg-sets'
