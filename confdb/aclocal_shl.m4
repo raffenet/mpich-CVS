@@ -76,6 +76,7 @@ dnl
 dnl Other, such as solaris-cc
     *)
     AC_MSG_WARN([Unknown value $enable_sharedlibs for enable-sharedlibs])
+    enable_sharedlibs=no
     ;;  
 esac
 AC_SUBST(CC_SHL)
