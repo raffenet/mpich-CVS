@@ -28,10 +28,11 @@
 @*/
 int MPID_Comm_connect(char *port_name, MPID_Info *info_ptr, int root, MPID_Comm *comm_ptr, MPID_Comm **newcomm)
 {
+    int mpi_errno=MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_COMM_CONNECT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_COMM_CONNECT);
-    assert(FALSE);
+    mpi_errno = MPIDI_CH3_Comm_connect(port_name, root, comm_ptr, newcomm); 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_COMM_CONNECT);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }

@@ -12,6 +12,8 @@ spawntest
 spawner
 spawnee
 cpi
+pm2
+cm2
 *.bb
 *.bbg
 *.da

@@ -343,7 +343,21 @@ E*/
 void MPIDI_CH3_Progress_signal_completion(void);
 
 
-int MPIDI_CH3_Comm_spawn(const char *, const char *[], const int , MPI_Info, const int, MPID_Comm *, MPID_Comm *, int []);
+/* int MPIDI_CH3_Comm_spawn(const char *, const char *[], const int , MPI_Info, const int, MPID_Comm *, MPID_Comm *, int []); */
+
+int MPIDI_CH3_Open_port(char *port_name);
+
+int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands, 
+                                  char ***argvs, int *maxprocs, 
+                                  MPID_Info **info_ptrs, int root,
+                                  MPID_Comm *comm_ptr, MPID_Comm
+                                  **intercomm, int *errcodes);
+
+int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm
+                          *comm_ptr, MPID_Comm **newcomm); 
+
+int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm
+                           *comm_ptr, MPID_Comm **newcomm); 
 
 
 /*
@@ -411,6 +425,7 @@ void MPIDI_CH3U_Request_create(MPID_Request * req);
   This routine must be called by MPIDI_CH3_Request_destroy().
 E*/
 void MPIDI_CH3U_Request_destroy(MPID_Request * req);
+
 
 
 /*

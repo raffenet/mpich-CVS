@@ -60,9 +60,10 @@
 int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_of_argv[], int array_of_maxprocs[], MPI_Info array_of_info[], int root, MPI_Comm comm, MPI_Comm *intercomm, int array_of_errcodes[]) 
 {
     static const char FCNAME[] = "MPI_Comm_spawn_multiple";
-    int mpi_errno = MPI_SUCCESS;
+    int mpi_errno = MPI_SUCCESS, i;
     MPID_Comm *comm_ptr = NULL;
     MPID_Comm *intercomm_ptr = NULL;
+    MPID_Info **array_of_info_ptrs;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SPAWN_MULTIPLE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SPAWN_MULTIPLE);
@@ -85,15 +86,29 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_o
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_Comm_thread_lock( comm_ptr );
+    array_of_info_ptrs = (MPID_Info **) MPIU_Malloc(count * sizeof(MPID_Info*));
+    for (i=0; i<count; i++)
+        MPID_Info_get_ptr(array_of_info[i], array_of_info_ptrs[i]);
 
-    MPID_Comm_spawn_multiple(count, array_of_commands, array_of_argv, 
-			     array_of_maxprocs, array_of_info, root, 
-			     comm_ptr, &intercomm_ptr, array_of_errcodes);
-    /* *intercomm = MPID_Comm_ptr_to_MPI_Comm(intercomm_ptr); */
+    /* TODO: add error check to see if this collective function is
+       being called from multiple threads. */
+    mpi_errno = MPID_Comm_spawn_multiple(count, array_of_commands,
+                                         array_of_argv,
+                                         array_of_maxprocs,
+                                         array_of_info_ptrs, root, 
+                                         comm_ptr, &intercomm_ptr,
+                                         array_of_errcodes); 
 
-    MPID_Comm_thread_unlock( comm_ptr );
+    
+    *intercomm = intercomm_ptr->handle;
+    MPIU_Free(array_of_info_ptrs);
+
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPAWN_MULTIPLE);
+	return MPI_SUCCESS;
+    }
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPAWN_MULTIPLE);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

@@ -11,7 +11,7 @@
 
 /*#define MPID_USE_SEQUENCE_NUMBERS*/
 
-typedef struct MPIDI_Process_group_s
+typedef struct MPIDI_CH3I_Process_group_s
 {
     volatile int ref_count;
     char * kvs_name;
@@ -20,8 +20,16 @@ typedef struct MPIDI_Process_group_s
 }
 MPIDI_CH3I_Process_group_t;
 
+typedef struct MPIDI_CH3I_Acceptq_s
+{
+    struct MPIDI_VC *vc;
+    struct MPIDI_CH3I_Acceptq_s *next;
+}
+MPIDI_CH3I_Acceptq_t;
+
 #define MPIDI_CH3_PKT_ENUM			\
 MPIDI_CH3I_PKT_SC_OPEN_REQ,			\
+MPIDI_CH3I_PKT_SC_CONN_ACCEPT,		        \
 MPIDI_CH3I_PKT_SC_OPEN_RESP,			\
 MPIDI_CH3I_PKT_SC_CLOSE
 
@@ -34,11 +42,11 @@ typedef struct															  \
 																  \
     /* FIXME - We need some notion of a global process group ID so that we can tell the remote process which process is		  \
        connecting to it */													  \
-    int pg_id;															  \
+    MPIDI_CH3I_Process_group_t * pg_ptr;											  \
     int pg_rank;														  \
 }																  \
 MPIDI_CH3I_Pkt_sc_open_req_t;													  \
-																  \
+                                                                                                                                  \
 typedef struct															  \
 {																  \
     MPIDI_CH3_Pkt_type_t type;													  \
@@ -50,10 +58,13 @@ typedef struct															  \
 {																  \
     MPIDI_CH3_Pkt_type_t type;													  \
 }																  \
-MPIDI_CH3I_Pkt_sc_close_t;
+MPIDI_CH3I_Pkt_sc_close_t;                                                                                                        \
+                                                                                                                                  \
+typedef MPIDI_CH3I_Pkt_sc_close_t MPIDI_CH3I_Pkt_sc_conn_accept_t;
 
 #define MPIDI_CH3_PKT_DECL			\
 MPIDI_CH3I_Pkt_sc_open_req_t sc_open_req;	\
+MPIDI_CH3I_Pkt_sc_conn_accept_t sc_conn_accept;	\
 MPIDI_CH3I_Pkt_sc_open_resp_t sc_open_resp;	\
 MPIDI_CH3I_Pkt_sc_close_t sc_close;
 

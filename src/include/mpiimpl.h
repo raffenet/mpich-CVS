@@ -2376,10 +2376,8 @@ int MPID_Close_port(char *);
 int MPID_Comm_accept(char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 int MPID_Comm_connect(char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 int MPID_Comm_disconnect(MPID_Comm *);
-int MPID_Comm_spawn_multiple(int, char *[], char* *[], int [], MPI_Info [],
+int MPID_Comm_spawn_multiple(int, char *[], char* *[], int [], MPID_Info* [],
                              int, MPID_Comm *, MPID_Comm **, int []);
-int MPID_Comm_spawn(char *, char *[], int, MPI_Info, int, MPID_Comm *,
-		    MPID_Comm *, int []);
 
 /*@
   MPID_Send - MPID entry point for MPI_Send
@@ -3233,5 +3231,11 @@ int MPIR_Scatterv (void *sendbuf, int *sendcnts, int *displs,
 int MPIR_Setup_intercomm_localcomm( MPID_Comm * );
 
 int MPIR_Comm_create( MPID_Comm *, MPID_Comm ** );
+
+/* Collective functions cannot be called from multiple threads. These
+   are stubs used in the collective communication calls to check for
+   user error. Currently they are just being macroed out. */
+#define MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER(comm_ptr)
+#define MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT(comm_ptr)
 
 #endif /* MPIIMPL_INCLUDED */

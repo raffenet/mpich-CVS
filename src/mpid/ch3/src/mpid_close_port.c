@@ -22,10 +22,12 @@
 @*/
 int MPID_Close_port(char *port_name)
 {
+    int mpi_errno=MPI_SUCCESS;
+
     MPIDI_STATE_DECL(MPID_STATE_MPID_CLOSE_PORT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CLOSE_PORT);
-    assert(FALSE);
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CLOSE_PORT);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }

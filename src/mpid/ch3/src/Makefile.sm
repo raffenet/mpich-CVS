@@ -3,7 +3,7 @@ lib${MPILIBNAME}_a_SOURCES = \
     ch3u_buffer.c ch3u_handle_recv_pkt.c ch3u_handle_recv_req.c \
     ch3u_handle_send_req.c ch3u_recvq.c ch3u_request.c \
     mpid_abort.c mpid_bsend_init.c mpid_cancel_recv.c \
-    mpid_cancel_send.c mpid_comm_spawn.c mpid_describe_states.c \
+    mpid_cancel_send.c mpid_describe_states.c \
     mpid_finalize.c mpid_getpname.c mpid_init.c mpid_iprobe.c \
     mpid_irecv.c mpid_irsend.c mpid_isend.c mpid_issend.c mpid_probe.c \
     mpid_recv.c mpid_recv_init.c mpid_rsend.c mpid_rsend_init.c \

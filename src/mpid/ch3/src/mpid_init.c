@@ -107,17 +107,6 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	return mpi_errno;
     }
 
-#ifdef FOO
-    /* MPIR_Process.parent_comm is set to a real communicator when the current process group is spawned by another MPI job using
-       MPI_Comm_spawn or MPI_Comm_spawn_multiple. */
-    if (has_parent)
-    {
-	/* FIXME: functionality is not yet supported */
-	MPIDI_ERR_PRINTF((FCNAME, "initialization of parent communicator is UNIMPLEMENTED"));
-	MPID_Abort(NULL, MPI_ERR_INTERN);
-    }
-#endif
-    
     /* MT:  only single threaded applications are supported at the moment... */
     if (provided != NULL)
     {

@@ -205,7 +205,7 @@ static int GetLocalIPs(int32_t *pIP, int max)
 
 #endif /* HAVE_WINDOWS_H */
 
-int MPIDI_CH3I_Get_business_card(char *value, int length)
+int MPIDI_CH3I_Get_business_card(char *value, int length, MPIDI_CH3I_Process_group_t * pg_ptr)
 {
     int32_t local_ip[MAX_NUM_NICS];
     unsigned int a, b, c, d;
@@ -222,6 +222,10 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
     /*snprintf(value, length, "%s:%d", host, port);*/
 
     value_orig = value;
+
+    /* prepend the business card with the pg_ptr */
+    value += sprintf(value, "%p:", pg_ptr);
+
     num_nics = GetLocalIPs(local_ip, MAX_NUM_NICS);
     for (i=0; i<num_nics; i++)
     {
@@ -245,7 +249,8 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 				 port);
 	}
     }
-    /*printf("Business card:\n<%s>\n", value_orig);*/
+
+/*    printf("Business card:\n<%s>\n", value_orig); */
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
     return MPI_SUCCESS;
