@@ -116,13 +116,13 @@ typedef int MPI_Op;
    for communicator (0x1 in bits 22-25)
    
  */
-#define MPI_TAG_UB           0x5c400001
-#define MPI_HOST             0x5c400002
-#define MPI_IO               0x5c400003
-#define MPI_WTIME_IS_GLOBAL  0x5c400004
-#define MPI_UNIVERSE         0x5c400005
-#define MPI_LASTUSEDCODE     0x5c400006
-#define MPI_APPNUM           0x5c400007
+#define MPI_TAG_UB           0x64400001
+#define MPI_HOST             0x64400002
+#define MPI_IO               0x64400003
+#define MPI_WTIME_IS_GLOBAL  0x64400004
+#define MPI_UNIVERSE         0x64400005
+#define MPI_LASTUSEDCODE     0x64400006
+#define MPI_APPNUM           0x64400007
 
 /* Define some null objects */
 #define MPI_COMM_NULL      ((MPI_Comm)0x04000000)
