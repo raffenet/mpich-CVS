@@ -232,7 +232,7 @@ should implement the quickest-to-implement first.
 
 \begin{description}
 \item[As MPD console program] This is ready-to-go as a minor change to
-  mpdcon.c, except that the BNR interface might need to be updated to match
+  \code{mpdcon.c}, except that the BNR interface might need to be updated to match
   the current specification.  A version of MPI_Info is needed for the new
   BNR_Spawn, but not for anything else, so MPI-1 routines should be OK.  I.e,
   the database part of BNR is already running.  All handling of \code{stdio}
@@ -244,8 +244,9 @@ should implement the quickest-to-implement first.
   plan.
 \item[As an MPI program] This is the idea in the current MPICH2 document.  It
   relies on \code{MPI_Connect}, etc.  It requires the above plus the MM component
-  of the BNR interface, to set up the connections.  
-\item[As an ``immediate scheduler''] This makes \code{mpiexec} into a standing
+  of the BNR interface, to set up the connections.  This approach as the
+  advantage of providinga ``universal'' \code{mpiexec}. 
+\item[As an ``immediate scheduler''] This makes \code{mpiexec} into a stand-in
   for the sheduler component of the Scalable System Software Project.  It is
   much like the ``MPD console'' option, but instead of using the existing
   console code to contact a local MPD, it sends the standard XML defined by
@@ -253,15 +254,15 @@ should implement the quickest-to-implement first.
   startup component.  It requires hooking in an XML parser like \code{xpat}
   into the MPD and having \code{mpiexec} emit XML code.
 \item[As a ``one-host-only'' process starter] The \code{mpiexec} process could
-  simply fork the applications.  This requires a new but simple implementation
-  of the put/get/fence part of the BNR interface.  The original \code{mpiexec}
-  process could become the database server part after forking.
+  simply fork the application processes.  This requires a new but simple
+  implementation of the put/get/fence part of the BNR interface.  The original
+  \code{mpiexec} process could become the database server part after forking.
 \end{description}
 
 The first and last options seem to present the shortest paths to getting
 something running that we can use to debug the coming avalanche of code with.
 
-Any of these needs to contain with the argument-processing code for the defined
+Any of these need to contain the argument-processing code for the defined
 standard arguments to \code{mpiexec}.  These are defined in Volume 1 of {\em
   MPI -- The Complete Reference}, starting on page 353.  There are multiple
 approaches to dealing with arguments.

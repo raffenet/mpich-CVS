@@ -1,4 +1,4 @@
-ALL: adi3new.ps
+ALL: adi3new.ps tcpadi3.ps
 SHELL = /bin/sh
 
 #
