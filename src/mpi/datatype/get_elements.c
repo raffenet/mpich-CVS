@@ -18,6 +18,10 @@
 #endif
 /* -- End Profiling Symbol Block */
 
+#ifndef MIN
+#define MIN(__a, __b) (((__a) < (__b)) ? (__a) : (__b))
+#endif
+
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
@@ -27,69 +31,104 @@
  * in the case where we don't have weak symbols.
  */
 
-/* MPIR_Type_get_reduction_type_elements()
+/* MPIR_Type_get_basic_type_elements()
  *
- * As per section 4.9.3 of the MPI 1.1 specification, these types are to be
- * treated as structs of the constituent types.  So we have to do something
- * special to handle them correctly in here.
+ * Arguments:
+ * - bytes_p - input/output byte count
+ * - count - maximum number of this type to subtract from the bytes; a count
+ *           of -1 indicates use as many as we like
+ * - datatype - input datatype
+ *
+ * Returns number of elements available given the two constraints of number of
+ * bytes and count of types.  Also reduces the byte count by the amount taken
+ * up by the types.
+ *
+ * Assumptions:
+ * - the type passed to this function must be a basic
+ *
+ * As per section 4.9.3 of the MPI 1.1 specification, the two-part reduction
+ * types are to be treated as structs of the constituent types.  So we have to
+ * do something special to handle them correctly in here.
+ *
+ * As per section 3.12.5 get_count and get_elements report the same value for
+ * basic datatypes; I'm currently interpreting this to *not* include these
+ * reduction types, as they are considered structs.
  */
-PMPI_LOCAL int MPIR_Type_get_reduction_type_elements(int *bytes_p,
-						     MPI_Datatype datatype)
+PMPI_LOCAL int MPIR_Type_get_basic_type_elements(int *bytes_p,
+						 int count,
+						 MPI_Datatype datatype)
 {
-    int elements, type1_sz, type2_sz;
+    int elements, usable_bytes, used_bytes, type1_sz, type2_sz;
+
+    if (count == 0) return 0;
+
+    /* determine the maximum number of bytes we should take from the
+     * byte count.
+     */
+    if (count < 0) {
+	usable_bytes = *bytes_p;
+    }
+    else {
+	usable_bytes = MIN(*bytes_p,
+			   count * MPID_Datatype_get_basic_size(datatype));
+    }
 
     switch (datatype) {
+	/* we don't get valid fortran datatype handles in all cases... */
 #ifdef HAVE_FORTRAN_BINDING
 	case MPI_2REAL:
- 	    type1_sz = MPID_Datatype_get_basic_size(MPI_REAL);
-	    elements = *bytes_p / type1_sz;
+ 	    type1_sz = type2_sz = MPID_Datatype_get_basic_size(MPI_REAL);
 	    break;
 	case MPI_2DOUBLE_PRECISION:
- 	    type1_sz = MPID_Datatype_get_basic_size(MPI_DOUBLE_PRECISION);
-	    elements = *bytes_p / type1_sz;
+ 	    type1_sz = type2_sz =
+		MPID_Datatype_get_basic_size(MPI_DOUBLE_PRECISION);
 	    break;
 	case MPI_2INTEGER:
- 	    type1_sz = MPID_Datatype_get_basic_size(MPI_INTEGER);
-	    elements = *bytes_p / type1_sz;
+ 	    type1_sz = type2_sz = MPID_Datatype_get_basic_size(MPI_INTEGER);
 	    break;
 	case MPI_2INT:
- 	    type1_sz = MPID_Datatype_get_basic_size(MPI_INT);
-	    elements = *bytes_p / type1_sz;
+ 	    type1_sz = type2_sz = MPID_Datatype_get_basic_size(MPI_INT);
 	    break;
 #endif
 	case MPI_FLOAT_INT:
 	    type1_sz = MPID_Datatype_get_basic_size(MPI_FLOAT);
 	    type2_sz = MPID_Datatype_get_basic_size(MPI_INT);
-	    elements = 2 * (*bytes_p / (type1_sz + type2_sz));
-	    if (*bytes_p % (type1_sz + type2_sz) >= type1_sz) elements++;
 	    break;
 	case MPI_DOUBLE_INT:
 	    type1_sz = MPID_Datatype_get_basic_size(MPI_DOUBLE);
 	    type2_sz = MPID_Datatype_get_basic_size(MPI_INT);
-	    elements = 2 * (*bytes_p / (type1_sz + type2_sz));
-	    if (*bytes_p % (type1_sz + type2_sz) >= type1_sz) elements++;
 	    break;
 	case MPI_LONG_INT:
 	    type1_sz = MPID_Datatype_get_basic_size(MPI_LONG);
 	    type2_sz = MPID_Datatype_get_basic_size(MPI_INT);
-	    elements = 2 * (*bytes_p / (type1_sz + type2_sz));
-	    if (*bytes_p % (type1_sz + type2_sz) >= type1_sz) elements++;
 	    break;
 	case MPI_SHORT_INT:
 	    type1_sz = MPID_Datatype_get_basic_size(MPI_SHORT);
 	    type2_sz = MPID_Datatype_get_basic_size(MPI_INT);
-	    elements = 2 * (*bytes_p / (type1_sz + type2_sz));
-	    if (*bytes_p % (type1_sz + type2_sz) >= type1_sz) elements++;
 	    break;
 	case MPI_LONG_DOUBLE_INT:
 	    type1_sz = MPID_Datatype_get_basic_size(MPI_LONG_DOUBLE);
 	    type2_sz = MPID_Datatype_get_basic_size(MPI_INT);
-	    elements = 2 * (*bytes_p / (type1_sz + type2_sz));
-	    if (*bytes_p % (type1_sz + type2_sz) >= type1_sz) elements++;
 	    break;
 	default:
-	    assert(0);
+	    /* all other types.  this is more complicated than
+	     * necessary for handling these types, but it puts us in the
+	     * same code path for all the basics, so we stick with it.
+	     */
+	    type1_sz = type2_sz = MPID_Datatype_get_basic_size(datatype);
+	    break;
     }
+
+    /* determine the number of elements in the region */
+    elements = 2 * (usable_bytes / (type1_sz + type2_sz));
+    if (usable_bytes % (type1_sz + type2_sz) >= type1_sz) elements++;
+
+    /* determine how many bytes we used up with those elements */
+    used_bytes = ((elements / 2) * (type1_sz + type2_sz));
+    if (elements % 2 == 1) used_bytes += type1_sz;
+
+    *bytes_p -= used_bytes;
+
     return elements;
 }
 
@@ -151,15 +190,22 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 	return m_count * type_elements;
     }
     else {
-	/* we have bytes left and still don't have a single element size; must recurse */
+	/* we have bytes left and still don't have a single element size; must
+         * recurse.
+	 */
 	int i, j, typecount = 0, *ints, nr_elements = 0, last_nr_elements;
 	MPI_Aint *aints;
 	MPI_Datatype *types;
 
-	/* Establish locations of arrays; perhaps this should be a fn. call or this fn. should be an MPID one? */
-	types = (MPI_Datatype *) (((char *) datatype_ptr->contents) + sizeof(MPID_Datatype_contents));
-	ints  = (int *) (((char *) types) + datatype_ptr->contents->nr_types * sizeof(MPI_Datatype));
-	aints = (MPI_Aint *) (((char *) ints) + datatype_ptr->contents->nr_ints * sizeof(int));
+	/* Establish locations of arrays; perhaps this should be a fn. call or
+         * this fn. should be an MPID one?
+	 */
+	types = (MPI_Datatype *) (((char *) datatype_ptr->contents) +
+				  sizeof(MPID_Datatype_contents));
+	ints  = (int *) (((char *) types) +
+			 datatype_ptr->contents->nr_types * sizeof(MPI_Datatype));
+	aints = (MPI_Aint *) (((char *) ints) +
+			      datatype_ptr->contents->nr_ints * sizeof(int));
 
 	switch (datatype_ptr->contents->combiner) {
 	    case MPI_COMBINER_NAMED:
@@ -182,24 +228,29 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 	    case MPI_COMBINER_HINDEXED_INTEGER:
 	    case MPI_COMBINER_HINDEXED:
 		for (i=0; i < (*ints); i++) {
-		    typecount += ints[i+1]; /* add up all the blocklengths to get a max. # of the next type */
+		    /* add up the blocklengths to get a max. # of the next type */
+		    typecount += ints[i+1];
 		}
 		return MPIR_Type_get_elements(bytes_p, count * typecount, *types);
 		break;
 	    case MPI_COMBINER_STRUCT_INTEGER:
 	    case MPI_COMBINER_STRUCT:
-		/* In this case we can't simply multiply the count of the next type by the
-		 * count of the current type, because we need to cycle through the types
-		 * just as the struct would.  thus the nested loops.
+		/* In this case we can't simply multiply the count of the next
+		 * type by the count of the current type, because we need to
+		 * cycle through the types just as the struct would.  thus the
+		 * nested loops.
 		 *
-		 * We need to keep going until we see a "0" elements returned or we run
-		 * out of bytes.
+		 * We need to keep going until we see a "0" elements returned
+		 * or we run out of bytes.
 		 */
 		last_nr_elements = 1; /* dummy value */
-		for (j=0; j < count && *bytes_p > 0 && last_nr_elements > 0; j++) {
+		for (j=0; j < count && *bytes_p > 0 && last_nr_elements > 0; j++)
+		{
 		    /* recurse on each type */
 		    for (i=0; i < (*ints); i++) {
-			last_nr_elements = MPIR_Type_get_elements(bytes_p, ints[i+1], types[i]);
+			last_nr_elements = MPIR_Type_get_elements(bytes_p,
+								  ints[i+1],
+								  types[i]);
 			nr_elements += last_nr_elements;
 		    }
 		}
@@ -283,32 +334,20 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 	 */
 	int bytes = status->count;
 
+	/* in both cases we do not limit the number of types that might
+	 * be in bytes
+	 */
 	if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
-	    datatype = datatype_ptr->eltype;
+	    *elements = MPIR_Type_get_basic_type_elements(&bytes,
+							  -1,
+							  datatype_ptr->eltype);
 	}
-
-	/* handle all the two-part types as a special case */
-	switch (datatype) {
-#ifdef HAVE_FORTRAN_BINDING
-	    case MPI_2REAL:
-	    case MPI_2DOUBLE_PRECISION:
-	    case MPI_2INTEGER:
-	    case MPI_2INT:
-#endif
-	    case MPI_FLOAT_INT:
-	    case MPI_DOUBLE_INT:
-	    case MPI_LONG_INT:
-	    case MPI_SHORT_INT:
-	    case MPI_LONG_DOUBLE_INT:
-		*elements = MPIR_Type_get_reduction_type_elements(&bytes,
-								  datatype);
-		break;
-	    default:
-		type_size = MPID_Datatype_get_basic_size(datatype);
-		*elements = bytes / type_size;
-		break;
+	else {
+	    *elements = MPIR_Type_get_basic_type_elements(&bytes,
+							  -1,
+							  datatype);
 	}
-
+	assert(bytes >= 0);
     }
     else /* derived type with weird element type or weird size */ {
 	type_size = datatype_ptr->size;
