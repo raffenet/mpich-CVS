@@ -1,9 +1,27 @@
+# All of these routines are internal
 mpi_sources = 
 
 lib${MPILIBNAME}_a_SOURCES = dbginit.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 #
+# We may want to add some documentation on using the various debugger
+# interfaces by adding the appropriate files to the doc lists
 doc_HTML_SOURCES = ${mpi_sources}
 doc_MAN_SOURCES = ${mpi_sources}
 doc_LATEX_SOURCES = ${mpi_sources}
+
+# The dll for Totalview (and any other debugger) requires a shared library
+# build in all cases.
+# This is built as an optional file, so the top-level build needs to 
+# invoke it.  It gets built in this directory.
+libtvmpich_so_SOURCES = dll_tvmpich.c
+# Files that require special build instructions must be defined by hand
+dll_tvmpich.lo: dll_tvmpich.c
+	$(C_COMPILE_SHL) -c -DFOR_MPI2=0 $<
+	@mv -f $*.o $*.lo
+
+# Remove the dll so that we do not accidently make use of one built
+# for a different system.
+clean-local:
+	rm -f libtvmpich.so
