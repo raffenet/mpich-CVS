@@ -33,8 +33,8 @@ extern RLOG_Struct *g_pRLOG;
 { \
     g_pRLOG->nRecursion++; \
     time_stamp = RLOG_timestamp(); \
-    RLOG_LogSend( g_pRLOG, dest, sendtag, count ); \
-    RLOG_LogRecv( g_pRLOG, source, recvtag, count ); \
+    RLOG_LogSend( g_pRLOG, dest, sendtag, sendcount ); \
+    RLOG_LogRecv( g_pRLOG, source, recvtag, recvcount ); \
 }
 #else
 #define MPID_MPI_PT2PT_FUNC_ENTER_FRONT MPID_MPI_FUNC_ENTER

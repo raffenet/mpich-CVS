@@ -88,8 +88,8 @@ int MPID_Timer_finalize();
 #define MPID_MPI_PT2PT_FUNC_ENTER_BOTH(a) \
 { \
     DLOG_LogOpenEvent( g_pDLOG, g_timer_state[ a ].in_id, g_timer_state[ a ].num_calls++ ); \
-    DLOG_LogSend( g_pDLOG, dest, sendtag, count ); \
-    DLOG_LogRecv( g_pDLOG, source, recvtag, count ); \
+    DLOG_LogSend( g_pDLOG, dest, sendtag, sendcount ); \
+    DLOG_LogRecv( g_pDLOG, source, recvtag, recvcount ); \
 }
 #else
 #define MPID_MPI_PT2PT_FUNC_ENTER_FRONT MPID_FUNC_ENTER
