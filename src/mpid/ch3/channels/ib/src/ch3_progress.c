@@ -237,8 +237,8 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
 		    if (pkt->type < MPIDI_CH3_PKT_END_CH3)
 		    {
 			MPIDI_DBG_PRINTF((65, FCNAME, "received CH3 packet %d, calllng CH3U_Handle_recv_pkt()", pkt->type));
-			
 			MPIDI_CH3U_Handle_recv_pkt(vc, pkt);
+			MPIDI_DBG_PRINTF((65, FCNAME, "CH3U_Handle_recv_pkt() returned"));
 			if (vc->ib.recv_active == NULL)
 			{
 			    DBGMSG((65, "complete; posting new recv packet"));
