@@ -44,8 +44,8 @@ char CollChk_begin_str[128];
 
 /* the hash struct */
 typedef struct {
-        int hash_val; 
-        int hash_cnt;
+        unsigned int hash_val; 
+        unsigned int hash_cnt;
 } CollChk_hash_struct;
 
 /* constants */
@@ -86,10 +86,13 @@ int CollChk_same_amode(MPI_Comm comm, int amode, char* call);
 int CollChk_same_call(MPI_Comm comm, char* call);
 int CollChk_same_datarep(MPI_Comm comm, char* datarep, char *call);
 
-void CollChk_h(int a, int n, int b, int m, int *hash_val, int *hash_cnt);
+void CollChk_hash_add(unsigned int alpha, unsigned int n,
+                      unsigned int beta, unsigned int m,
+                      unsigned int *hash_val, unsigned int *hash_cnt);
 int CollChk_get_val(MPI_Datatype dt);
 int CollChk_get_cnt(int n, int *ints, int combiner);
-void CollChk_hash_dtype(MPI_Datatype dt, int cnt, int *hash_val, int *hash_cnt);
+void CollChk_hash_dtype(MPI_Datatype dt, int cnt,
+                        unsigned int *hash_val, unsigned int *hash_cnt);
 int CollChk_same_dtype(MPI_Comm comm, int cnt, MPI_Datatype dt, char* call);
 int CollChk_same_dtype_vector(MPI_Comm comm, int root, int cnt,
                               int *rootcnts, MPI_Datatype dt, char *call);
