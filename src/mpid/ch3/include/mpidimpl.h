@@ -452,21 +452,6 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt);
 /* ------------------------------------------------------------------------- */
 /* mpirma.h (in src/mpi/rma?) */
 /* ------------------------------------------------------------------------- */
-typedef struct MPIDI_RMA_ops { 
-/* for keeping track of puts and gets, which will be executed at fence */
-    struct MPIDI_RMA_ops *next;  /* pointer to next element in list */
-    int type;  /* MPIDI_RMA_PUT, MPID_REQUEST_GET,
-                  MPIDI_RMA_ACCUMULATE */  
-    void *origin_addr;
-    int origin_count;
-    MPI_Datatype origin_datatype;
-    int target_rank;
-    MPI_Aint target_disp;
-    int target_count;
-    MPI_Datatype target_datatype;
-    MPI_Op op;  /* for accumulate */
-    int lock_type;  /* for win_lock */
-} MPIDI_RMA_ops;
 
 #define MPIDI_RMA_PUT 23
 #define MPIDI_RMA_GET 24
@@ -474,8 +459,6 @@ typedef struct MPIDI_RMA_ops {
 #define MPIDI_RMA_LOCK 26
 #define MPIDI_RMA_DATATYPE_BASIC 50
 #define MPIDI_RMA_DATATYPE_DERIVED 51
-
-extern MPIDI_RMA_ops *MPIDI_RMA_ops_list; /* list of outstanding RMA requests */
 
 int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
                             int *decr_addr, MPIDI_RMA_dtype_info

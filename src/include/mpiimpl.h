@@ -1319,6 +1319,8 @@ typedef struct MPID_Win {
     int *disp_units;      /* array of displacement units of all windows */
     int **all_counters;    /* array of addresses of the completion
                                  counters of all processes */
+    MPIDI_RMA_ops *rma_ops_list; /* list of outstanding RMA requests */
+
 #ifdef USE_THREADED_WINDOW_CODE
     /* These were causing compilation errors.  We need to figure out how to
        integrate threads into MPICH2 before including these fields. */

@@ -90,7 +90,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     }
     
     total_op_count = 0;
-    curr_ptr = MPIDI_RMA_ops_list;
+    curr_ptr = win_ptr->rma_ops_list;
     while (curr_ptr != NULL) {
         nops_to_proc[curr_ptr->target_rank]++;
         total_op_count++;
@@ -137,7 +137,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     }
 
     i = 0;
-    curr_ptr = MPIDI_RMA_ops_list;
+    curr_ptr = win_ptr->rma_ops_list;
     while (curr_ptr != NULL) {
         /* The completion counter at the target is decremented
            only on the last operation on the target. Otherwise, we
@@ -247,13 +247,13 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     }
 
     /* free MPIDI_RMA_ops_list */
-    curr_ptr = MPIDI_RMA_ops_list;
+    curr_ptr = win_ptr->rma_ops_list;
     while (curr_ptr != NULL) {
         next_ptr = curr_ptr->next;
         MPIU_Free(curr_ptr);
         curr_ptr = next_ptr;
     }
-    MPIDI_RMA_ops_list = NULL;
+    win_ptr->rma_ops_list = NULL;
     
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
     return mpi_errno;

@@ -24,8 +24,8 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
     return mpi_errno;
 #endif
 
-    curr_ptr = MPIDI_RMA_ops_list;
-    prev_ptr = MPIDI_RMA_ops_list;
+    curr_ptr = win_ptr->rma_ops_list;
+    prev_ptr = curr_ptr;
     while (curr_ptr != NULL) {
         prev_ptr = curr_ptr;
         curr_ptr = curr_ptr->next;
@@ -40,7 +40,7 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
     if (prev_ptr != NULL)
         prev_ptr->next = new_ptr;
     else 
-        MPIDI_RMA_ops_list = new_ptr;
+        win_ptr->rma_ops_list = new_ptr;
 
     new_ptr->next = NULL;  
     new_ptr->type = MPIDI_RMA_LOCK;

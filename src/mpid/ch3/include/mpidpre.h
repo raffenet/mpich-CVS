@@ -360,6 +360,22 @@ MPID_REQUEST_DECL
 /* This function is called from MPIDU_Describe_timer_states() in mpid_describe_states.c */
 int CH3U_Describe_timer_states(void);
 
+/* for keeping track of RMA ops, which will be executed at the next sync call */
+typedef struct MPIDI_RMA_ops { 
+    struct MPIDI_RMA_ops *next;  /* pointer to next element in list */
+    int type;  /* MPIDI_RMA_PUT, MPID_REQUEST_GET,
+                  MPIDI_RMA_ACCUMULATE */  
+    void *origin_addr;
+    int origin_count;
+    MPI_Datatype origin_datatype;
+    int target_rank;
+    MPI_Aint target_disp;
+    int target_count;
+    MPI_Datatype target_datatype;
+    MPI_Op op;  /* for accumulate */
+    int lock_type;  /* for win_lock */
+} MPIDI_RMA_ops;
+
 /* define the device state list to be the concatenation of the mpid
  * list and the channel list */
 #define MPID_STATE_LIST_MPID MPID_STATE_LIST_MPIDI MPID_STATE_LIST_CH3

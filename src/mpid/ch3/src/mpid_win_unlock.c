@@ -48,11 +48,11 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     /* First inform target process how many
        RMA ops from this process is it the target for.
        There could be ops destined for other processes in
-       MPIDI_RMA_ops_list because there could be multiple MPI_Win_locks
+       the rma_ops_list because there could be multiple MPI_Win_locks
        outstanding */
 
     nops_to_proc = 0;
-    curr_ptr = MPIDI_RMA_ops_list;
+    curr_ptr = win_ptr->rma_ops_list;
     while (curr_ptr != NULL) {
         if (curr_ptr->target_rank == dest) nops_to_proc++;
         curr_ptr = curr_ptr->next;
@@ -108,7 +108,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     i = 0;
     tag = 234;
     req_cnt = 1;
-    curr_ptr = MPIDI_RMA_ops_list;
+    curr_ptr = win_ptr->rma_ops_list;
     while (curr_ptr != NULL) {
         rma_op_infos[i].type = curr_ptr->type;
         rma_op_infos[i].disp = curr_ptr->target_disp;
@@ -282,14 +282,14 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
             MPIU_Free(dataloops[i]);
     MPIU_Free(dataloops);
 
-    /* free MPIDI_RMA_ops_list */
-    curr_ptr = MPIDI_RMA_ops_list;
+    /* free rma_ops_list */
+    curr_ptr = win_ptr->rma_ops_list;
     while (curr_ptr != NULL) {
         next_ptr = curr_ptr->next;
         MPIU_Free(curr_ptr);
         curr_ptr = next_ptr;
     }
-    MPIDI_RMA_ops_list = NULL;
+    win_ptr->rma_ops_list = NULL;
     
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
 

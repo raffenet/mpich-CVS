@@ -59,6 +59,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     (*win_ptr)->start_group_ptr = NULL; 
     (*win_ptr)->start_assert = 0; 
     (*win_ptr)->attributes = NULL;
+    (*win_ptr)->rma_ops_list = NULL;
     
     MPIR_Nest_incr();
 

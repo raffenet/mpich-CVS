@@ -6,8 +6,6 @@
 
 #include "mpidimpl.h"
 
-MPIDI_RMA_ops *MPIDI_RMA_ops_list=NULL;
-
 #undef FUNCNAME
 #define FUNCNAME MPID_Win_fence
 #undef FCNAME
@@ -70,7 +68,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         /* set rma_target_proc[i] to 1 if rank i is a target of RMA
            ops from this process */
         total_op_count = 0;
-        curr_ptr = MPIDI_RMA_ops_list;
+        curr_ptr = win_ptr->rma_ops_list;
         while (curr_ptr != NULL) {
             total_op_count++;
             rma_target_proc[curr_ptr->target_rank] = 1;
@@ -136,7 +134,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         MPIU_Free(rma_target_proc);
 
         i = 0;
-        curr_ptr = MPIDI_RMA_ops_list;
+        curr_ptr = win_ptr->rma_ops_list;
         while (curr_ptr != NULL) {
             /* The completion counter at the target is decremented
                only on the last operation on the target. Otherwise, we
@@ -212,13 +210,13 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         }
 
         /* free MPIDI_RMA_ops_list */
-        curr_ptr = MPIDI_RMA_ops_list;
+        curr_ptr = win_ptr->rma_ops_list;
         while (curr_ptr != NULL) {
             next_ptr = curr_ptr->next;
             MPIU_Free(curr_ptr);
             curr_ptr = next_ptr;
         }
-        MPIDI_RMA_ops_list = NULL;
+        win_ptr->rma_ops_list = NULL;
 
         /* wait for all operations from other processes to finish */
         while (win_ptr->my_counter) {
