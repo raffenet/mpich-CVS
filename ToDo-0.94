@@ -1,29 +1,15 @@
 Open Items:
 
-* MPICH2 req buzz [all] (Friday, 08/15/2003, 13:00)
-
-* add PMI_Get_id() to obtain unique job identifier [Brian/David/Rusty/Rajeev]
-
-* (ssm) topology/protocol specification [Bill/Rusty/David/Brian] (Thursday,
-  08/07/2003, 13:00)
-
 * number of parameters for MPID_Abort(), fix MPI_Abort() [Brian]
-  (Thursday, 08/07/2003, 13:00)
 
-* (shm/ssm) investigate (and fix?) few remaining test failures
-  [Brian/David]
-
-* POSIX shared memory and message queues [David/Brian] (use new job id to
-  allocate per job message queue in ssm)
+* (ch3:shm/ssm) investigate (and fix?) few remaining test failures
+  [David/Brian]
 
 * (req #23) modify configure to ensure --with-pm and --with-pmi consistency
   [Brian] (could be deferred)
 
 * documentation: installation and usage document(s) [Rusty]
   (see below)
-
-* MPE/slog2sdk integration (configure) and testing [Bill/Anthony/David/Brian]
-  (the code is now being checked out into src/util/slog2sdk)
 
 * (req #91,84,76,71,70,62,61,53,52,48,47,39,46,33,27) MPD problems
   [Rusty/Ralph] (fixed?)
@@ -36,9 +22,15 @@ Open Items:
 * (req #65) add configure checks for va_copy(), etc. and update dbg_printf.c
   [Brian]
 
+* measure and compare performance of sock and ssm (using sock) [David]
+
+* measure and compare performance of shm and ssm (using shm) [David]
+
 ----
 
 Finished Items:
+
+* (ch3:shm/ssm) POSIX shared memory [David/Brian]
 
 * temporary fix for ROMIO test failures [Brian]
 
@@ -46,16 +38,60 @@ Finished Items:
 
 * datatype test suite failures [Rob R.]
 
-* (shm/ssm) bug fixes so that a majority of the tests are passing
+* (ch3:shm/ssm) bug fixes so that a majority of the tests are passing
   [Brian/David]
 
-* split CH3_Progress() into CH3_Progress_wait() and
+* (ch3) split CH3_Progress() into CH3_Progress_wait() and
   CH3_Progress_test() to avoid extra overhead associated with checking
   blocking flag and branching [David/Brian]
+
+* slog2sdk added to src/util/slog2sdk allowing logging with rlog
+  [Anthony/David/Brian]
+
+* (ch3:sock) active target OSC working for CH3 sock channel [Rajeev]
 
 -----
 
 Deferred Items:
+
+* MPICH2 req buzz [all] (Friday, 08/22/2003, 13:00)
+
+* (ch3:ssm) topology/protocol specification [Bill/Rusty/David/Brian]
+
+* POSIX message queues (use new job id to allocate per job message queue in
+  ssm) [David/Brian]
+
+* add PMI_Get_id() to obtain unique job identifier [Brian/David/Rusty/Rajeev]
+
+* MPE full integration and testing (slog2sdk is now being checked out into
+  src/util/slog2sdk to support rlog) [Bill/Anthony/David/Brian]
+
+* (ch3) active target OSC for all channels (includes moving code from existing
+  CAs to special OSC CAs) [Rajeev/Brian]
+
+* (ch3) dynamic process (spawn/connect/accept) implementation (partially
+  working for sock channel) [Rajeev/Brian]
+
+* (util/sock) revisit the sock interface and redo sock implementations to
+  support multi-threaded codes, and increase robustness and error reporting
+  [Brian/David]
+
+* (ch3:sock) rework sock channel to support disconnect of dynamic processes,
+  and increase robustness and error reporting [Brian/David/Rajeev]
+
+* (ch3) add new function to notify the channel when the VC reference count
+  reaches zero.  this gives the channel an opportunity to release references to
+  internal channel structures and cleanly shutdown of the any underlying
+  connection(s) (this is needed for MPI_Comm_free() and MPI_Comm_disconnect())
+  [Brian]
+
+* (mpi) MPI_Comm_disconnect() must wait for all bsend communication associated
+  with the comm to complete.  It should call MPID_Comm_disconnect() so that
+  devices that buffer sends can complete those sends and release VC
+  resources. [Brian?]
+
+* (ch3) define CH3 interface to support the use of RDMA operations for OSC
+  (first draft complete but needs work) [Bill/Rajeev/Brian]
 
 * add MPI_Type_create_{darray,subarray} to MPICH2 and update ROMIO to properly
   handle these new types [Rob R.]
@@ -71,15 +107,15 @@ Deferred Items:
 
 * improved distribution cutting script [Brian/Rusty]
 
-* measure and compare performance of sock and ssm (using sock) [David]
-
-* measure and compare performance of shm and ssm (using shm) [David]
-
 * (sock/ssm) connection formation code should not fail after the
   first attempt since the listener has a limited queue of pending
   connections [Brian/David]
 
-* CH3 flow control [Brian]
+* (ch3) flow control [Brian]
+
+* (ch3) for rendezvous protocol, only amount of data that will fit in the
+  receive buffer (there is no need to send all of the data because truncation
+  can be detected on the receive side) [Brian]
 
 * add MPIDI_CH3_Abort() [Brian]
 
@@ -119,7 +155,7 @@ Deferred Items:
 * (req #16) DNS scalability - reduce number of name (and reverse name) lookups
   in sock and ssm channels [Brian/David]
 
-================================================================================
+===============================================================================
 
 Documentation - Rusty
 
