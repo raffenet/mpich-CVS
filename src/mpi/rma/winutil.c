@@ -7,11 +7,11 @@
 #include "mpiimpl.h"
 
 #ifndef MPID_WIN_PREALLOC 
-#define MPID_WIN_PREALLOC (8 + MPID_WIN_RESERVED)
+#define MPID_WIN_PREALLOC 8
 #endif
 
 /* Preallocated window objects */
 MPID_Win MPID_Win_direct[MPID_WIN_PREALLOC];
 MPIU_Object_alloc_t MPID_Win_mem = { 0, 0, 0, 0, MPID_WIN, 
 				      sizeof(MPID_Win), MPID_Win_direct,
-                                      MPID_WIN_PREALLOC, MPID_WIN_RESERVED};
+                                      MPID_WIN_PREALLOC};

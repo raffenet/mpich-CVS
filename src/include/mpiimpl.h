@@ -42,14 +42,6 @@ typedef short int16_t;
 typedef int int32_t;
 #endif
 
-/* Define reserved space for MPID objects */
-#define MPID_COMM_RESERVED 2 /* 3 ??? 1 for MPI_COMM_NULL? */
-#define MPID_DATATYPE_RESERVED 33
-#define MPID_GROUP_RESERVED 0 /* 1 or 2 ???) */
-#define MPID_FILE_RESERVED 0 /* 1 for FILE_NULL ???) */
-#define MPID_WIN_RESERVED 0 /* 1 for WIN_NULL ???) */
-
-
 /* Thread basics */
 #ifdef MPICH_SINGLE_THREADED
 typedef int MPID_Thread_key_t;
@@ -212,8 +204,6 @@ typedef struct {
     void               *direct;         /* Pointer to direct block, used 
 					   for allocation */
     int                direct_size;     /* Size of direct block */
-    int                n_reserved;      /* Number of reserved objects in
-					   the direct block */
 } MPIU_Object_alloc_t;
 extern void *MPIU_Handle_obj_new( MPIU_Object_alloc_t * );
 extern void MPIU_Handle_obj_free( MPIU_Object_alloc_t *, void * );
@@ -251,20 +241,54 @@ void *MPIU_Handle_direct_init( void *, int, int, int );
 void *MPIU_Handle_indirect_init( void *(**)[], int *, int, int, int, int );
 int MPIU_Handle_free( void *((*)[]), int );
 */
-/* Handles conversion */
+/* Convert Handles to objects for MPI types that have predefined objects */
 /* Question.  Should this do ptr=0 first, particularly if doing --enable-strict
    complication? */
-#define MPID_Get_ptr(kind,a,ptr) \
-   switch (HANDLE_GET_KIND(a)) {\
-      case HANDLE_KIND_INVALID: ptr=0; break;\
-      case HANDLE_KIND_BUILTIN: ptr=0;break;\
-      case HANDLE_KIND_DIRECT: ptr=MPID_##kind##_direct+HANDLE_INDEX(a);break;\
-      case HANDLE_KIND_INDIRECT: \
-      ptr=(MPID_##kind*)MPIU_Handle_get_ptr_indirect(a,&MPID_##kind##_mem);break;\
-     }
-#define MPID_Comm_get_ptr(a,ptr) MPID_Get_ptr(Comm,a,ptr)
-#define MPID_Group_get_ptr(a,ptr) MPID_Get_ptr(Group,a,ptr)
-#define MPID_Datatype_get_ptr(a,ptr) MPID_Get_ptr(Datatype,a,ptr)
+#define MPID_Getb_ptr(kind,a,ptr)					\
+{									\
+   switch (HANDLE_GET_KIND(a)) {					\
+      case HANDLE_KIND_INVALID:						\
+          ptr=0;							\
+	  break;							\
+      case HANDLE_KIND_BUILTIN:						\
+          ptr=MPID_##kind##_builtin+HANDLE_INDEX(a);			\
+          break;							\
+      case HANDLE_KIND_DIRECT:						\
+          ptr=MPID_##kind##_direct+HANDLE_INDEX(a);			\
+          break;							\
+      case HANDLE_KIND_INDIRECT:					\
+          ptr=((MPID_##kind*)						\
+               MPIU_Handle_get_ptr_indirect(a,&MPID_##kind##_mem));	\
+          break;							\
+    }									\
+}
+
+/* Convert handles to objects for MPI types that do _not_ have any predefined
+   objects */
+/* Question.  Should this do ptr=0 first, particularly if doing --enable-strict
+   complication? */
+#define MPID_Get_ptr(kind,a,ptr)					\
+{									\
+   switch (HANDLE_GET_KIND(a)) {					\
+      case HANDLE_KIND_INVALID:						\
+          ptr=0;							\
+	  break;							\
+      case HANDLE_KIND_BUILTIN:						\
+          ptr=0;                                                        \
+          break;							\
+      case HANDLE_KIND_DIRECT:						\
+          ptr=MPID_##kind##_direct+HANDLE_INDEX(a);			\
+          break;							\
+      case HANDLE_KIND_INDIRECT:					\
+          ptr=((MPID_##kind*)						\
+               MPIU_Handle_get_ptr_indirect(a,&MPID_##kind##_mem));	\
+          break;							\
+    }									\
+}
+
+#define MPID_Comm_get_ptr(a,ptr) MPID_Getb_ptr(Comm,a,ptr)
+#define MPID_Group_get_ptr(a,ptr) MPID_Getb_ptr(Group,a,ptr)
+#define MPID_Datatype_get_ptr(a,ptr) MPID_Getb_ptr(Datatype,a,ptr)
 #define MPID_File_get_ptr(a,ptr) MPID_Get_ptr(File,a,ptr)
 #define MPID_Errhandler_get_ptr(a,ptr) MPID_Get_ptr(Errhandler,a,ptr)
 #define MPID_Op_get_ptr(a,ptr) MPID_Get_ptr(Op,a,ptr)
@@ -387,6 +411,8 @@ typedef struct {
 
 extern MPIU_Object_alloc_t MPID_Group_mem;
 /* Preallocated group objects */
+#define MPID_GROUP_N_BUILTIN 1
+extern MPID_Group MPID_Group_builtin[MPID_GROUP_N_BUILTIN];
 extern MPID_Group MPID_Group_direct[];
 
 /* Communicators */
@@ -415,6 +441,8 @@ typedef struct {
 } MPID_Comm;
 extern MPIU_Object_alloc_t MPID_Comm_mem;
 /* Preallocated comm objects */
+#define MPID_COMM_N_BUILTIN 2
+extern MPID_Comm MPID_Comm_builtin[MPID_COMM_N_BUILTIN];
 extern MPID_Comm MPID_Comm_direct[];
 
 /* Requests */
@@ -513,6 +541,8 @@ typedef struct MPID_Datatype_st {
 } MPID_Datatype;
 extern MPIU_Object_alloc_t MPID_Datatype_mem;
 /* Preallocated datatype objects */
+#define MPID_DATATYPE_N_BUILTIN 33
+extern MPID_Datatype MPID_Datatype_builtin[MPID_DATATYPE_N_BUILTIN];
 extern MPID_Datatype MPID_Datatype_direct[];
 
 /* Collective operations */
@@ -688,7 +718,7 @@ int MPID_Comm_connect(char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 int MPID_Comm_disconnect(MPID_Comm *);
 int MPID_Comm_spawn_multiple(int, char *[], char* *[], int [], MPI_Info [], int, MPID_Comm *, MPID_Comm **, int []);
 int MPID_Finalize(void);
-int MPID_Init(void);
+int MPID_Init(int *, char ***, int, int *, int *, int *);
 int MPID_Open_port(MPID_Info *, char *);
 int MPID_Isend(void *, int, MPID_Datatype *, int, int, MPID_Comm *, MPID_Request **);
 int MPID_Irecv(void *, int, MPID_Datatype *, int, int, MPID_Comm *, MPID_Request **);
