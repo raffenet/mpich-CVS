@@ -523,7 +523,10 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Request_get_ptr(a,ptr)    MPID_Get_ptr(Request,a,ptr)
 /* Keyvals have a special format. This is roughly MPID_Get_ptrb, but
    the handle index is in a smaller bit field.  In addition, 
-   there is no storage for the builtin keyvals */
+   there is no storage for the builtin keyvals.  
+   For the indirect case, we mask off the part of the keyval that is
+   in the bits normally used for the indirect block index.
+*/
 #define MPID_Keyval_get_ptr(a,ptr)     \
 {                                                                       \
    switch (HANDLE_GET_KIND(a)) {                                        \
@@ -531,11 +534,11 @@ int MPIU_Handle_free( void *((*)[]), int );
           ptr=0;                                                        \
           break;                                                        \
       case HANDLE_KIND_DIRECT:                                          \
-          ptr=MPID_Keyval_direct+((a)&0x3fffff);                       \
+          ptr=MPID_Keyval_direct+((a)&0x3fffff);                        \
           break;                                                        \
       case HANDLE_KIND_INDIRECT:                                        \
           ptr=((MPID_Keyval*)                                           \
-               MPIU_Handle_get_ptr_indirect(a,&MPID_Keyval_mem));       \
+             MPIU_Handle_get_ptr_indirect((a)&0xfc3fffff,&MPID_Keyval_mem)); \
           break;                                                        \
       case HANDLE_KIND_INVALID:                                         \
       default:								\
@@ -910,6 +913,12 @@ typedef struct MPID_Win {
     HANDLE wait_thread_id;
     HANDLE passive_target_thread_id;
 #endif
+    /* These are COPIES of the values so that addresses to them
+       can be returned as attributes.  They are initialized by the
+       MPI_Win_get_attr function */
+    int  copyDispUnit;
+    MPI_Aint copySize;
+    
     char          name[MPI_MAX_OBJECT_NAME];  
   /* Other, device-specific information */
 #ifdef MPID_DEV_WIN_DECL
