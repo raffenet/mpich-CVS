@@ -45,12 +45,14 @@ $has_cxx = 1;
 		  'sharedlibs',
 #                 'threads;single;multiple',
 );
+%chosenEnable = ();
 @with_array = (
 	       'logging;none;rlog;dlog',
-#	       'pmi;uni',
-	       'pm;forker;mpd',
+	       'pmi;simple;uni',
+	       'pm;forker;mpd', #;remshell
 	       'device;ch3;ch3:shm',
 );
+%chosenWith = ();
 @env_array = (
 #	      'CC;gcc;cc;pgcc;ecc;xlc',
 #	      'FC;f77;pgf77;efc;xlf',
@@ -82,6 +84,8 @@ $MakeStart   = " -- Begin Make Step --\n";
 $MakeEnd     = " -- End   Make Step --\n";
 $GlobNameStart = " -- Begin Check of global names --\n";
 $GlobNameEnd   = " -- End   Check of global names --\n";
+$UsedNameStart = " -- Begin Check of used names --\n";
+$UsedNameEnd   = " -- End   Check of used names --\n";
 $MakeInstStart = " -- Begin Make Install Step --\n";
 $MakeInstEnd   = " -- End   Make Install Step --\n";
 $RunTestStart  = " -- Begin Run Test Step --\n";
@@ -218,11 +222,11 @@ sub RunTest {
     my $makepgm;
     # 
     # Create the with and enable options
-    @enable_chosen = ();
-    @with_chosen = ();
     #$enable_args = "--enable-strict";  # Only if compiler is gcc
     # Chosen *without* replacement.  If an option is chosen twice, 
     # then there will be fewer options
+    %chosenWith = ();
+    %chosenEnable = ();
     if ($use_rand_args) {
 	$enable_args = &RandArgs( $n_enable, "enable_array", "enable", "disable" );
 	$with_args   = &RandArgs ( $n_with, "with_array", "with", "without" );
@@ -231,6 +235,33 @@ sub RunTest {
 	# then process the env array to set the environment
 	$env_args    = &RandArgs( $n_env, "env_array", "env" );
     }
+    foreach my $en (split(/\s+/,$enable_args)) {
+	if ($en =~ /--enable-([-A-Za-z0-9=]*)/) {
+	    my $name = $1;
+	    if ($name =~ /(.*)=(.*)/) {
+		$chosenEnable{$1} = $2;
+		$name = $1;
+	    }
+	    else {
+		$chosenEnable{$name} = "yes";
+	    }
+	    print STDERR "setting chosen enable of $name to $chosenEnable{$name}\n" if $debug;
+	}
+    }
+    foreach my $en (split(/\s+/,$with_args)) {
+	if ($en =~ /--with-([-A-Za-z0-9=]*)/) {
+	    my $name = $1;
+	    if ($name =~ /(.*)=(.*)/) {
+		$chosenWith{$1} = $2;
+		$name = $1;
+	    }
+	    else {
+		$chosenWith{$name} = "yes";
+	    }
+	    print STDERR "setting chosen with of $name to $chosenWith{$name}\n" if $debug;
+	}
+    }
+
     $envset = "";
     %saveENV = %ENV;
     foreach $_ (split(/ /,$env_args)) {
@@ -261,6 +292,7 @@ sub RunTest {
     $config_status    = "none";
     $make_status      = "none";
     $globcheck_status = "none";
+    $usedname_status  = "none";
     $install_status   = "none";
     $test_status      = "none";
     if ($show) {
@@ -315,11 +347,34 @@ sub RunTest {
 		    # over the files to check for unsubstituted names
 		}
 
+		# Sometimes build the hellow test
+		if (-x "examples/hellow" && -x "maint/showsizes") {
+		    my $cwd = `pwd`;
+		    chomp $cwd;
+		    $rc = chdir "examples";
+		    if ($rc) {
+			my @pgm = split( /\s+/, 
+					"../maint/showsizes -mpionly hellow" );
+			print $OUTFD $UsedNameStart;
+			$usedname_status = &RunProgram( @pgm );
+			print $OUTFD $UsedNameEnd;
+		    }
+		    $rc = chdir $cwd;
+		    if (!$rc) {
+			print STDERR "Could not change to $cwd\n";
+		    }
+		}
+
 		# Install the libraries
 		print $OUTFD $MakeInstStart;
 		# Clean the install directory
 		# ????
 		$install_status = &RunProgram( "$makepgm install" );
+		if ($install_status) {
+		    my $cwd = `pwd`;
+		    chomp $cwd;
+		    print $OUTFD "Current directory is $cwd\n";
+		}
 		print $OUTFD $MakeInstEnd;
 		if ($install_status == 0) {
 		    # Get mpd status from the with args ...
@@ -462,13 +517,18 @@ sub RunTestSuites {
 sub RunMpichTestSuite {
     my $nargs;
     $cwd = `pwd`;
+    chomp $cwd;
     my @config;
 # Make sure that the tests run past a failure to build an
 # executable.  Without this, the summary doesn't include
 # any tests in the same directory that completed.
     $ENV{"MPITEST_CONTINUE"} = "always";
 
-    chdir $mpich_test_dir || die "Cannot change to $mpich_test_dir\n";
+    $rc = chdir $mpich_test_dir;
+    if (!$rc) {
+	#print STDERR "Cannot change to $mpich_test_dir\n";
+	return;
+    }
 
     # A special hack for the io part 
     # If there is no link or io directory, create one and populate it
@@ -484,7 +544,13 @@ sub RunMpichTestSuite {
     $config[$nargs++] = "$mpich1_dir/examples/test/configure";
     $config[$nargs++] = "--prefix=$instdir";
     $config[$nargs++] = "-mpilibname=mpich";
-    $config[$nargs++] = "--enable-io";
+    if (defined($chosenEnable{"romio"})) {
+	$config[$nargs++] = "--enable-io";
+    }
+    if (!defined($chosenEnable{"f77"}) || ! $has_f77) {
+	$config[$nargs++] = "--disable-f77";
+    }
+
 # This isn't right, since these need to use the compilation 
 # scripts.  We'll approximate this by trying to use the
 # compilation scripts if they're found
@@ -507,9 +573,6 @@ sub RunMpichTestSuite {
     }
     else {
 	$config[$nargs++] = "-fc=$fcname -I$instdir/include -L$instdir/lib";
-    }
-    if (! $has_f77) {
-	$config[$nargs++] = "--disable-f77";
     }
     # Add $config[$nargs++] = "--enable-coverage"; 
     # if we build mpich2 with the coverage switch.
@@ -555,15 +618,21 @@ sub RunMpichTestSuite {
 sub RunCxxTestSuite {
     my $nargs = 0;
     $cwd = `pwd`;
+    chomp $cwd;
     my @config;
 
     #
     # First, check for the mpicxx program
-    if (! -x "$instdir/bin/mpicxx") { 
+    if (! -x "$instdir/bin/mpicxx" || !defined($chosenEnable{"cxx"})) { 
 	# Probably built without C++ support
+	$run_status = 0;  
 	return;
     }
-    chdir $mpicxx_test_dir || die "Cannot change to $mpicxx_test_dir\n";
+    $rc = chdir $mpicxx_test_dir;
+    if (!$rc) {
+	#print STDERR "Cannot change to $mpicxx_test_dir\n";
+	return;
+    }
     $config[$nargs++] = "$projects_dir/mpicxxtest/configure";
     $config[$nargs++] = "--with-mpich=$instdir";
     $config[$nargs++] = "--enable-xml";
@@ -605,16 +674,26 @@ sub RunCxxTestSuite {
     %ENV = %saveENV;
     chdir $cwd;
 }
+
 sub RunIntelTestSuite {
     my $nargs = 0;
 
     $cwd = `pwd`;
+    chomp $cwd;
 
     my @config;
 
-    chdir $intel_test_dir || die "Cannot change to $intel_test_dir\n";
+    $rc = chdir $intel_test_dir;
+    if (!$rc) {
+	#print STDERR "Cannot change to $intel_test_dir\n";
+	return;
+    }
+
     $config[$nargs++] = "$projects_dir/MPITEST/configure";
     $config[$nargs++] = "--with-mpich2=$instdir";
+    if (!defined($chosenEnable{"f77"})) {
+	$config[$nargs++] = "--disable-f77";
+    }
     if (defined($ENV{"MAKE"})) {
 	$makepgm = $ENV{"MAKE"};
     }
@@ -763,6 +842,8 @@ sub XMLStyle {
     $MakeEnd       = "</MAKE>\n";
     $GlobNameStart = "<GLOBNAME>\n";
     $GlobNameEnd   = "</GLOBNAME>\n";
+    $UsedNameStart = "<USEDNAMES>\n";
+    $UsedNameEnd   = "</USEDNAMES>\n";
     $MakeInstStart = "<MAKEINST>\n";
     $MakeInstEnd   = "</MAKEINST>\n";
     $RunTestStart  = "<RUNTEST>\n";
