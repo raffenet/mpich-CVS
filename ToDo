@@ -98,3 +98,7 @@ Check Fortran MPI_Type_get_contents, Type_create_hindexed, Type_create_struct,
 that args 6, 3, and 3 resp are pointers to the correct type (pointers to int
 but should be pointer to long)?
     Yes, uses INTEGER(KIND=MPI_ADDRESS_KIND) for those args.  Not fixed.
+
+Miscellaneous Build Issues
+Restore -ansi to --enable-strict .   This is essential to ensure that MPICH2
+can build in non-GNU environments.
