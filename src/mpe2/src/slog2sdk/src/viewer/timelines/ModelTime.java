@@ -460,7 +460,13 @@ public class ModelTime extends DefaultBoundedRangeModel
         (tView_init , tView_extent ) are before Zoom In/Out operations
         (tView_init^, tView_extent^) are after  Zoom In/Out operations
 
-        tView_init + tView_extent/2 = tView_init^ + tView_extent^/2 = constant
+        where user clicks should be constant before & after zoom in/out,
+        define  tView_ratio = ( tView_center - tView_init ) / tView_extent
+        e.g. if tView_center is the middle of viewport, tView_ratio = 1/2
+
+           tView_init + tView_extent * tView_ratio
+         = tView_init^ + tView_extent^ * tView_ratio
+         = constant
 
         when tView_focus is within viewport
             constant = tView_focus
@@ -472,6 +478,7 @@ public class ModelTime extends DefaultBoundedRangeModel
         this.updateZoomStack( zoom_undo_stack );
 
         double tZoom_center;
+        double tView_ratio;
 
         tZoomScale  *= tZoomFactor;
         if (    tView_init  < tZoom_focus
@@ -479,8 +486,9 @@ public class ModelTime extends DefaultBoundedRangeModel
             tZoom_center = tZoom_focus;
         else
             tZoom_center = tView_init + tView_extent / 2.0;
+        tView_ratio  = ( tZoom_center - tView_init ) / tView_extent;
         this.setTimeViewExtent( tView_extent / tZoomFactor );
-        this.setTimeViewPosition( tZoom_center - tView_extent / 2.0 );
+        this.setTimeViewPosition( tZoom_center - tView_extent * tView_ratio );
 
         iViewPerTime = iView_width / tView_extent;
         this.updatePixelCoords();
@@ -492,6 +500,7 @@ public class ModelTime extends DefaultBoundedRangeModel
         this.updateZoomStack( zoom_undo_stack );
 
         double tZoom_center;
+        double tView_ratio;
 
         tZoomScale  /= tZoomFactor;
         if (    tView_init  < tZoom_focus
@@ -499,8 +508,9 @@ public class ModelTime extends DefaultBoundedRangeModel
             tZoom_center = tZoom_focus;
         else
             tZoom_center = tView_init + tView_extent / 2.0;
+        tView_ratio  = ( tZoom_center - tView_init ) / tView_extent;
         this.setTimeViewExtent( tView_extent * tZoomFactor );
-        this.setTimeViewPosition( tZoom_center - tView_extent / 2.0 );
+        this.setTimeViewPosition( tZoom_center - tView_extent * tView_ratio );
 
         iViewPerTime = iView_width / tView_extent;
         this.updatePixelCoords();

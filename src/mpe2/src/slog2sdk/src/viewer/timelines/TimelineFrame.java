@@ -46,6 +46,12 @@ public class TimelineFrame extends JFrame
         /* setVisible( true ); */
     }
 
+    public void setVisible( boolean val )
+    {
+        super.setVisible( val );
+        TopWindow.Control.setShowTimelineButtonEnabled( !val );
+    }
+
     public void init()
     {
         top_panel.init();

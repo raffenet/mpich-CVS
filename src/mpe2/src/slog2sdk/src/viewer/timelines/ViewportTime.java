@@ -643,6 +643,10 @@ public class ViewportTime extends JViewport
                 return;
             }
 
+            if ( mouse_evt.isShiftDown() )
+                if ( Routines.isCursorSetToZoomMinus( this ) )
+                    Routines.setAllCursorsToZoomPlus( this );
+
             vport_click = mouse_evt.getPoint();
             click_time  = coord_xform.convertPixelToTime( vport_click.x );
             if ( SwingUtilities.isLeftMouseButton( mouse_evt ) ) {
