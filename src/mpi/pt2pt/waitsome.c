@@ -28,21 +28,35 @@
 #define FUNCNAME MPI_Waitsome
 
 /*@
-   MPI_Waitsome - waitsome
+    MPI_Waitsome - Waits for some given communications to complete
 
-   Arguments:
-+  int incount - incount
-.  MPI_Request array_of_requests[] - requests
-.  int *outcount - outcount
-.  int array_of_indices[] - indices
--  MPI_Status array_of_statuses[] - statuses
+Input Parameters:
++ incount - length of array_of_requests (integer) 
+- array_of_requests - array of requests (array of handles) 
 
-   Notes:
+Output Parameters:
++ outcount - number of completed requests (integer) 
+. array_of_indices - array of indices of operations that 
+completed (array of integers) 
+- array_of_statuses - array of status objects for 
+    operations that completed (array of Status).  May be 'MPI_STATUSES_NULL'.
 
-.N Fortran
+Notes:
+  The array of indicies are in the range '0' to 'incount - 1' for C and 
+in the range '1' to 'incount' for Fortran.  
+
+Null requests are ignored; if all requests are null, then the routine
+returns with 'outcount' set to 'MPI_UNDEFINED'.
+
+.N waitstatus
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_REQUEST
+.N MPI_ERR_ARG
+.N MPI_ERR_IN_STATUS
 @*/
 int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 {

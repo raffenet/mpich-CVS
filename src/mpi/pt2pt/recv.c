@@ -28,23 +28,33 @@
 #define FUNCNAME MPI_Recv
 
 /*@
-   MPI_Recv - receive
+    MPI_Recv - Basic receive
 
-   Arguments:
-+  void *buf - buffer
-.  int count - count
-.  MPI_Datatype datatype - datatype
-.  int source - source
-.  int tag - tag
-.  MPI_Comm comm - communicator
--  MPI_Status *status - status
+Output Parameters:
++ buf - initial address of receive buffer (choice) 
+- status - status object (Status) 
 
-   Notes:
+Input Parameters:
++ count - maximum number of elements in receive buffer (integer) 
+. datatype - datatype of each receive buffer element (handle) 
+. source - rank of source (integer) 
+. tag - message tag (integer) 
+- comm - communicator (handle) 
 
-.N Fortran
+Notes:
+The 'count' argument indicates the maximum length of a message; the actual 
+number can be determined with 'MPI_Get_count'.  
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_TYPE
+.N MPI_ERR_COUNT
+.N MPI_ERR_TAG
+.N MPI_ERR_RANK
+
 @*/
 int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	     MPI_Comm comm, MPI_Status *status)

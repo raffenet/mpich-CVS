@@ -28,18 +28,15 @@
 #define FUNCNAME MPI_Test_cancelled
 
 /*@
-   MPI_Test_cancelled - test cancelled
+  MPI_Test_cancelled - Tests to see if a request was cancelled
 
-   Arguments:
-+  MPI_Status *status - status
--  int *flag - flag
+Input Parameter:
+. status - status object (Status) 
 
-   Notes:
+Output Parameter:
+. flag - (logical) 
 
-.N Fortran
-
-.N Errors
-.N MPI_SUCCESS
+.N fortran
 @*/
 int MPI_Test_cancelled(MPI_Status *status, int *flag)
 {

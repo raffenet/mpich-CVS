@@ -28,21 +28,27 @@
 #define FUNCNAME MPI_Testsome
 
 /*@
-   MPI_Testsome - testsome
+    MPI_Testsome - Tests for some given communications to complete
 
-   Arguments:
-+  int incount - incount
-.  MPI_Request array_of_requests[] - requests
-.  int *outcount - outcount
-.  int array_of_indices[] - indices
--  MPI_Status array_of_statuses[] - statuses
+Input Parameters:
++ incount - length of array_of_requests (integer) 
+- array_of_requests - array of requests (array of handles) 
 
-   Notes:
+Output Parameters:
++ outcount - number of completed requests (integer) 
+. array_of_indices - array of indices of operations that 
+completed (array of integers) 
+- array_of_statuses - array of status objects for 
+    operations that completed (array of Status).  May be 'MPI_STATUSES_NULL'.
 
-.N Fortran
+.N waitstatus
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_IN_STATUS
+
 @*/
 int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 {

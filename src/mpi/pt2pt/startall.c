@@ -32,11 +32,11 @@
 #define FUNCNAME MPI_Startall
 
 /*@
-   MPI_Startall - startall
+  MPI_Startall - Starts a collection of requests 
 
-   Arguments:
-+  int count - count
--  MPI_Request array_of_requests[] - requests
+Input Parameters:
++ count - list length (integer) 
+- array_of_requests - array of requests (array of handle) 
 
    Notes:
 
@@ -46,7 +46,7 @@
    defined by the MPI standard.  If well defined error reporting and behavior
    are required, multiple calls to MPI_Start() should be used instead.
 
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS

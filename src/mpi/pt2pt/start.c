@@ -28,17 +28,17 @@
 #define FUNCNAME MPI_Start
 
 /*@
-   MPI_Start - start
+    MPI_Start - Initiates a communication with a persistent request handle
 
-   Arguments:
-.  MPI_Request *request - request
+Input Parameter:
+. request - communication request (handle) 
 
-   Notes:
-
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_REQUEST
+
 @*/
 int MPI_Start(MPI_Request *request)
 {

@@ -28,20 +28,23 @@
 #define FUNCNAME MPI_Probe
 
 /*@
-   MPI_Probe - probe
+    MPI_Probe - Blocking test for a message
 
-   Arguments:
-+  int source - source
-.  int tag - tag
-.  MPI_Comm comm - communicator
--  MPI_Status *status - status
+Input Parameters:
++ source - source rank, or 'MPI_ANY_SOURCE' (integer) 
+. tag - tag value or 'MPI_ANY_TAG' (integer) 
+- comm - communicator (handle) 
 
-   Notes:
+Output Parameter:
+. status - status object (Status) 
 
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_TAG
+.N MPI_ERR_RANK
 @*/
 int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 {

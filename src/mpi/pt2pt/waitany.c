@@ -28,20 +28,29 @@
 #define FUNCNAME MPI_Waitany
 
 /*@
-   MPI_Waitany - waitany
+    MPI_Waitany - Waits for any specified send or receive to complete
 
-   Arguments:
-+  int count - count
-.  MPI_Request array_of_requests[] - requests
-.  int *index - index
--  MPI_Status *status - status
+Input Parameters:
++ count - list length (integer) 
+- array_of_requests - array of requests (array of handles) 
 
-   Notes:
+Output Parameters:
++ index - index of handle for operation that completed (integer).  In the
+range '0' to 'count-1'.  In Fortran, the range is '1' to 'count'.
+- status - status object (Status).  May be 'MPI_STATUS_NULL'.
 
-.N Fortran
+Notes:
+If all of the requests are 'MPI_REQUEST_NULL', then 'index' is returned as 
+'MPI_UNDEFINED', and 'status' is returned as an empty status.
+
+.N waitstatus
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_REQUEST
+.N MPI_ERR_ARG
 @*/
 int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Status *status)
 {

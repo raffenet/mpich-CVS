@@ -28,23 +28,29 @@
 #define FUNCNAME MPI_Issend
 
 /*@
-   MPI_Issend - issend
+    MPI_Issend - Starts a nonblocking synchronous send
 
-   Arguments:
-+  void *buf - buffer
-.  int count - count
-.  MPI_Datatype datatype - datatype
-.  int dest - destination
-.  int tag - tag
-.  MPI_Comm comm - communicator
--  MPI_Request *request - request
+Input Parameters:
++ buf - initial address of send buffer (choice) 
+. count - number of elements in send buffer (integer) 
+. datatype - datatype of each send buffer element (handle) 
+. dest - rank of destination (integer) 
+. tag - message tag (integer) 
+- comm - communicator (handle) 
 
-   Notes:
+Output Parameter:
+. request - communication request (handle) 
 
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_TAG
+.N MPI_ERR_RANK
+.N MPI_ERR_EXHAUSTED
 @*/
 int MPI_Issend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	       MPI_Comm comm, MPI_Request *request)

@@ -28,25 +28,23 @@
 #define FUNCNAME MPI_Irecv
 
 /*@
-   MPI_Irecv - irecv
+    MPI_Irecv - Begins a nonblocking receive
 
-   Arguments:
-+  void *buf - buffer
-.  int count - count
-.  MPI_Datatype datatype - datatype
-.  int source - source
-.  int tag - tag
-.  MPI_Comm comm - communicator
--  MPI_Request *request - request
+Input Parameters:
++ buf - initial address of receive buffer (choice) 
+. count - number of elements in receive buffer (integer) 
+. datatype - datatype of each receive buffer element (handle) 
+. source - rank of source (integer) 
+. tag - message tag (integer) 
+- comm - communicator (handle) 
 
-   Notes:
+Output Parameter:
+. request - communication request (handle) 
 
-.N Fortran
-
-.N Errors
-.N MPI_SUCCESS
+.N fortran
 @*/
-int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request)
+int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
+	      int tag, MPI_Comm comm, MPI_Request *request)
 {
     static const char FCNAME[] = "MPI_Irecv";
     int mpi_errno = MPI_SUCCESS;

@@ -28,25 +28,33 @@
 #define FUNCNAME MPI_Sendrecv_replace
 
 /*@
-   MPI_Sendrecv_replace - sendrecv replace
+    MPI_Sendrecv_replace - Sends and receives using a single buffer
 
-   Arguments:
-+  void *buf - buffer
-.  int count - count
-.  MPI_Datatype datatype - datatype
-.  int dest - destination
-.  int sendtag - send tag
-.  int source - source
-.  int recvtag - receive tag
-.  MPI_Comm comm - communicator
--  MPI_Status *status - status
+Input Parameters:
++ count - number of elements in send and receive buffer (integer) 
+. datatype - type of elements in send and receive buffer (handle) 
+. dest - rank of destination (integer) 
+. sendtag - send message tag (integer) 
+. source - rank of source (integer) 
+. recvtag - receive message tag (integer) 
+- comm - communicator (handle) 
 
-   Notes:
+Output Parameters:
++ buf - initial address of send and receive buffer (choice) 
+- status - status object (Status) 
 
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_TAG
+.N MPI_ERR_RANK
+.N MPI_ERR_TRUNCATE
+.N MPI_ERR_EXHAUSTED
+
 @*/
 int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, int sendtag, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
 {

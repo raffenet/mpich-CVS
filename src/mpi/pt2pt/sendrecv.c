@@ -28,28 +28,34 @@
 #define FUNCNAME MPI_Sendrecv
 
 /*@
-   MPI_Sendrecv - sendrecv
+    MPI_Sendrecv - Sends and receives a message
 
-   Arguments:
-+  void *sendbuf - send buffer
-.  int sendcount - send count
-.  MPI_Datatype sendtype - send datatype
-.  int dest - destination
-.  int sendtag - send tag
-.  void *recvbuf - receive buffer
-.  int recvcount - receive count
-.  MPI_Datatype recvtype - receive datatype
-.  int source - source
-.  int recvtag - receive tag
-.  MPI_Comm comm - communicator
--  MPI_Status *status - status
+Input Parameters:
++ sendbuf - initial address of send buffer (choice) 
+. sendcount - number of elements in send buffer (integer) 
+. sendtype - type of elements in send buffer (handle) 
+. dest - rank of destination (integer) 
+. sendtag - send tag (integer) 
+. recvcount - number of elements in receive buffer (integer) 
+. recvtype - type of elements in receive buffer (handle) 
+. source - rank of source (integer) 
+. recvtag - receive tag (integer) 
+- comm - communicator (handle) 
 
-   Notes:
-
-.N Fortran
+Output Parameters:
++ recvbuf - initial address of receive buffer (choice) 
+- status - status object (Status).  This refers to the receive operation.
+  
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_TAG
+.N MPI_ERR_RANK
+
 @*/
 int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, int recvcount, MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
 {

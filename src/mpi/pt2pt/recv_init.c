@@ -28,23 +28,31 @@
 #define FUNCNAME MPI_Recv_init
 
 /*@
-   MPI_Recv_init - recv_init
+    MPI_Recv_init - Builds a handle for a receive
 
-   Arguments:
-+  void *buf - buffer
-.  int count - count
-.  MPI_Datatype datatype - datatype
-.  int source - source
-.  int tag - tag
-.  MPI_Comm comm - communicator
--  MPI_Request *request - request
+Input Parameters:
++ buf - initial address of receive buffer (choice) 
+. count - number of elements received (integer) 
+. datatype - type of each element (handle) 
+. source - rank of source or 'MPI_ANY_SOURCE' (integer) 
+. tag - message tag or 'MPI_ANY_TAG' (integer) 
+- comm - communicator (handle) 
 
-   Notes:
+Output Parameter:
+. request - communication request (handle) 
 
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_RANK
+.N MPI_ERR_TAG
+.N MPI_ERR_COMM
+.N MPI_ERR_EXHAUSTED
+
+.seealso: MPI_Start, MPI_Request_free
 @*/
 int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request)
 {

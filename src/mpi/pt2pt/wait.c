@@ -28,18 +28,22 @@
 #define FUNCNAME MPI_Wait
 
 /*@
-   MPI_Wait - wait
+    MPI_Wait  - Waits for an MPI send or receive to complete
 
-   Arguments:
-+  MPI_Request  *request - request
--  MPI_Status   *status - status
+Input Parameter:
+. request - request (handle) 
 
-   Notes:
+Output Parameter:
+. status - status object (Status) .  May be 'MPI_STATUS_NULL'.
 
-.N Fortran
+.N waitstatus
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_REQUEST
+.N MPI_ERR_ARG
 @*/
 int MPI_Wait(MPI_Request *request, MPI_Status *status)
 {

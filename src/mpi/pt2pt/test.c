@@ -28,19 +28,23 @@
 #define FUNCNAME MPI_Test
 
 /*@
-   MPI_Test - test
+    MPI_Test  - Tests for the completion of a send or receive
 
-   Arguments:
-+  MPI_Request *request - request
-.  int *flag - flag
--  MPI_Status *status - status
+Input Parameter:
+. request - communication request (handle) 
 
-   Notes:
+Output Parameter:
++ flag - true if operation completed (logical) 
+- status - status object (Status).  May be 'MPI_STATUS_NULL'.
 
-.N Fortran
+.N waitstatus
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_REQUEST
+.N MPI_ERR_ARG
 @*/
 int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 {

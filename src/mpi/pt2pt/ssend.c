@@ -28,22 +28,25 @@
 #define FUNCNAME MPI_Ssend
 
 /*@
-   MPI_Ssend - ssend
+    MPI_Ssend - Basic synchronous send
 
-   Arguments:
-+  void *buf - buffer
-.  int count - count
-.  MPI_Datatype datatype - datatype
-.  int dest - destination
-.  int tag - tag
--  MPI_Comm comm - communicator
+Input Parameters:
++ buf - initial address of send buffer (choice) 
+. count - number of elements in send buffer (nonnegative integer) 
+. datatype - datatype of each send buffer element (handle) 
+. dest - rank of destination (integer) 
+. tag - message tag (integer) 
+- comm - communicator (handle) 
 
-   Notes:
-
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_TAG
+.N MPI_ERR_RANK
 @*/
 int MPI_Ssend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	      MPI_Comm comm)

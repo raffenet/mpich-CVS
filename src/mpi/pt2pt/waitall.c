@@ -28,19 +28,30 @@
 #define FUNCNAME MPI_Waitall
 
 /*@
-   MPI_Waitall - waitall
+    MPI_Waitall - Waits for all given communications to complete
 
-   Arguments:
-+  int count - count
-.  MPI_Request array_of_requests[] - requests
--  MPI_Status array_of_statuses[] - statuses
+Input Parameters:
++ count - list length (integer) 
+- array_of_requests - array of request handles (array of handles)
 
-   Notes:
+Output Parameter:
+. array_of_statuses - array of status objects (array of Statuses).  May be
+  'MPI_STATUSES_NULL'
 
-.N Fortran
+Notes:
+
+XXX - MPI_ERR_PENDING should be explained here.  It should not have been listed
+as a possible error return code.
+
+.N waitstatus
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_REQUEST
+.N MPI_ERR_ARG
+.N MPI_ERR_IN_STATUS
 @*/
 int MPI_Waitall(int count, MPI_Request array_of_requests[],
 		MPI_Status array_of_statuses[])

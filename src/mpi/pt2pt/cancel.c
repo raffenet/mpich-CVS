@@ -28,17 +28,34 @@
 #define FUNCNAME MPI_Cancel
 
 /*@
-   MPI_Cancel - cancel
+    MPI_Cancel - Cancels a communication request
 
-   Arguments:
-.  MPI_Request *request - request
+Input Parameter:
+. request - communication request (handle) 
 
-   Notes:
+Note:
+Cancel has only been implemented for receive requests; it is a no-op for
+send requests.  The primary expected use of MPI_Cancel is in multi-buffering
+schemes, where speculative MPI_Irecvs are made.  When the computation 
+completes, some of these receive requests may remain; using MPI_Cancel allows
+the user to cancel these unsatisfied requests.  
 
-.N Fortran
+Cancelling a send operation is much more difficult, in large part because the 
+send will usually be at least partially complete (the information on the tag,
+size, and source are usually sent immediately to the destination).  As of
+version 1.2.0, MPICH supports cancelling of sends.  Users are
+advised that cancelling a send, while a local operation (as defined by the MPI
+standard), is likely to be expensive (usually generating one or more internal
+messages). 
+
+.N fortran
+
+.N NULL
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_REQUEST
+.N MPI_ERR_ARG
 @*/
 int MPI_Cancel(MPI_Request *request)
 {

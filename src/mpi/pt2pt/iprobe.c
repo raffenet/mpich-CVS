@@ -28,21 +28,25 @@
 #define FUNCNAME MPI_Iprobe
 
 /*@
-   MPI_Iprobe - iprobe
+    MPI_Iprobe - Nonblocking test for a message
 
-   Arguments:
-+  int source - source
-.  int tag - tag
-.  MPI_Comm comm - communicator
-.  int *flag - flag
--  MPI_Status *status - status
+Input Parameters:
++ source - source rank, or  'MPI_ANY_SOURCE' (integer) 
+. tag - tag value or  'MPI_ANY_TAG' (integer) 
+- comm - communicator (handle) 
 
-   Notes:
+Output Parameter:
++ flag - (logical) 
+- status - status object (Status) 
 
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_TAG
+.N MPI_ERR_RANK
+
 @*/
 int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, 
 	       MPI_Status *status)

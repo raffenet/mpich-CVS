@@ -28,17 +28,35 @@
 #define FUNCNAME MPI_Request_free
 
 /*@
-   MPI_Request_free - free request
+    MPI_Request_free - Frees a communication request object
 
-   Arguments:
-.  MPI_Request *request - request
+Input Parameter:
+. request - communication request (handle) 
 
-   Notes:
+Notes:
 
-.N Fortran
+This routine is normally used to free inactive persistent requests created with
+either 'MPI_Recv_init' or 'MPI_Send_init' and friends.  It `is` also
+permissible to free an active request.  However, once freed, the request can no
+longer be used in a wait or test routine (e.g., 'MPI_Wait') to determine
+completion.
+
+This routine may also be used to free a non-persistent requests such as those
+created with 'MPI_Irecv' or 'MPI_Isend' and friends.  Like active persistent
+requests, once freed, the request can no longer be used with test/wait routines
+to determine completion.
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_REQUEST
+.N MPI_ERR_ARG
+
+.see also: MPI_Isend, MPI_Irecv, MPI_Issend, MPI_Ibsend, MPI_Irsend,
+MPI_Recv_init, MPI_Send_init, MPI_Ssend_init, MPI_Rsend_init, MPI_Wait,
+MPI_Test, MPI_Waitall, MPI_Waitany, MPI_Waitsome, MPI_Testall, MPI_Testany,
+MPI_Testsome
 @*/
 int MPI_Request_free(MPI_Request *request)
 {

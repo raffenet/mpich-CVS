@@ -28,23 +28,30 @@
 #define FUNCNAME MPI_Send_init
 
 /*@
-   MPI_Send_init - send_init
+    MPI_Send_init - Builds a handle for a standard send
 
-   Arguments:
-+  void *buf - buffer
-.  int count - count
-.  MPI_Datatype datatype - datatype
-.  int dest - destination
-.  int tag - tag
-.  MPI_Comm comm - communicator
--  MPI_Request *request - request
+Input Parameters:
++ buf - initial address of send buffer (choice) 
+. count - number of elements sent (integer) 
+. datatype - type of each element (handle) 
+. dest - rank of destination (integer) 
+. tag - message tag (integer) 
+- comm - communicator (handle) 
+Output Parameter:
+. request - communication request (handle) 
 
-   Notes:
-
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_RANK
+.N MPI_ERR_TAG
+.N MPI_ERR_COMM
+.N MPI_ERR_EXHAUSTED
+
+.seealso: MPI_Start, MPI_Startall, MPI_Request_free
 @*/
 int MPI_Send_init(void *buf, int count, MPI_Datatype datatype, int dest,
 		  int tag, MPI_Comm comm, MPI_Request *request)

@@ -28,18 +28,22 @@
 #define FUNCNAME MPI_Testany
 
 /*@
-   MPI_Testany - testany
+    MPI_Testany - Tests for completion of any previdously initiated 
+                  communication
 
-   Arguments:
-+  int count - count
-.  MPI_Request array_of_requests[] - requests
-.  int *index - index
-.  int *flag - flag
--  MPI_Status *status - status
+Input Parameters:
++ count - list length (integer) 
+- array_of_requests - array of requests (array of handles) 
 
-   Notes:
+Output Parameters:
++ index - index of operation that completed, or 'MPI_UNDEFINED'  if none 
+  completed (integer) 
+. flag - true if one of the operations is complete (logical) 
+- status - status object (Status).  May be 'MPI_STATUS_NULL'.
 
-.N Fortran
+.N waitstatus
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
