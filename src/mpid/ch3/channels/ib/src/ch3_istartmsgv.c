@@ -110,16 +110,17 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 		    MPIU_dbg_printf("ch3_istartmsgv: ibu_post_writev did not complete the send, allocating request\n");
 		    sreq = create_request(iov, n_iov, offset, nb);
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    /*MPIDI_CH3I_IB_post_write(vc, sreq);*/
+		    /*MPIDI_CH3I_IB_post_write(vc, sreq);*/ vc->ib.send_active = sreq;
 		    break;
 		}
 	    }
 	}
 	else if (nb == 0)
 	{
+	    MPIU_dbg_printf("ch3_istartmsgv: this should be an error because the sendQ is empty but ibu_post_writev() returned 0 bytes.\n");
 	    sreq = create_request(iov, n_iov, 0, 0);
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-	    /*MPIDI_CH3I_IB_post_write(vc, sreq);*/
+	    /*MPIDI_CH3I_IB_post_write(vc, sreq);*/ vc->ib.send_active = sreq;
 	}
 	else
 	{
