@@ -251,7 +251,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	    if(mpi_errno) {
 		/* This is a printf (instead of an MPIU_Error_printf) because
 		   this is a bug that needs to be fixed! */
-		printf ("Surprise! err = %d\n", mpi_errno );
+		MPIU_Internal_error_printf ("Bsend internal error: isend returned err = %d\n", mpi_errno );
 	    }
 	    /* If the error is "request not available", put this on the
 	       pending list */
