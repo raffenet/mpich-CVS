@@ -107,11 +107,12 @@ unhandled_ats = ""
 ' Miscellaneous settings
 '
 MPI_MAX_PROCESSOR_NAME = "128"
-BSEND_OVERHEAD         = "52"
 If bWin64 Then
   MPI_AINT               = "__int64"
+  BSEND_OVERHEAD         = "95"
 Else
   MPI_AINT               = "int"
+  BSEND_OVERHEAD         = "59"
 End If
 MPI_FINT               = "int"
 'MPI_OFFSET             = "long long"
@@ -129,6 +130,7 @@ For arg = 0 To argCount - 1
   If argValue = "--win64" Then
     bWin64 = True
     MPI_AINT = "__int64"
+    BSEND_OVERHEAD = "95"
   ElseIf argValue = "--win32" Then
     bWin64 = False
   ElseIf argValue = "--enable-timer-type=x86cycle" Then
@@ -1904,6 +1906,16 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("#define HAVE_NAMESPACE_STD 1")
 				Case "HAVE_STDDEF_H"
 					fout.WriteLine("#define HAVE_STDDEF_H 1")
+				Case "MPICH_THREAD_LEVEL"
+					fout.WriteLine("#define MPICH_THREAD_LEVEL MPI_THREAD_SINGLE")
+				Case "USE_THREAD_IMPL"
+					fout.WriteLine("#define USE_THREAD_IMPL MPICH_THREAD_IMPL_NONE")
+				Case "USE_THREAD_PKG"
+					fout.WriteLine("#define USE_THREAD_PKG MPICH_THREAD_PKG_NONE /*MPICH_THREAD_PKG_POSIX*/")
+				Case "_REENTRANT"
+					fout.WriteLine("/* #undef _REENTRANT */")
+				Case "_THREAD_SAFE"
+					fout.WriteLine("/* #undef _THREAD_SAFE */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
