@@ -135,7 +135,7 @@ Both the MPICH distribution and the MPICH2 CVS module will contain additional
 items, including the MPE and perftest modules.  
 
 Even though they are separate modules (and can be used independently
-of MPICH), this tree include the ROMIO and BNR modules.  This is done
+of MPICH), this tree includes the ROMIO and PMI modules.  This is done
 because an MPI implementation is not complete without these components.
 
 \begin{description}
@@ -222,7 +222,7 @@ because an MPI implementation is not complete without these components.
     \begin{description}
     \item[info]Info (Section~\ref{sec:info}).  This is the MPIU
     version of info, provided so 
-    that all part of MPI (including implementations of BNR) can use it.
+    that all part of MPI (including implementations of PMI) can use it.
     \item[param]Runtime parameter routines (e.g., like PETSc options database)
     \item[mem]Memory allocation and management.  These include the tracing
       malloc routines (\file{tr2} in the MPICH implementation) and
@@ -242,34 +242,21 @@ because an MPI implementation is not complete without these components.
     Question: we may also want a \file{include} directory under the
     \file{mpid} directory into which include files needed by the
     device (and only the device) can be placed.
-  \item[bnr]Process manager interface.  This contains the BNR
-      definition and the MPD implementation (as well as a remote shell
-      implementatio).  The configure option
-      \cfgoption{--with-bnr=dir} can be used to select an alternative
-      implementation of BNR not in MPICH, or to select the
-      \code{remsh} implementation for those who don't want
-      free-running demons.
-
-%       \textbf{This organization (with BNR here) does not provide a
-%     clean separation between the functions of packages like mpd and
-%     providing an implementation of BNR.  Is there a better
-%     organization, perhaps with a pmi directory that contains process
-%     manager tools, and bnr simply contains the implementation of bnr
-%     in terms of those tools?}
+  \item[pmi]Implementations of the Process Manager Interface.  The ``simple''
+    implementation, which interfaces with the MPD and forker process managers,
+    is built by default.   The configure option \cfgoption{--with-pmi=dir} can
+    be used to select an alternative implementation, such as the \code{remsh}
+    implementation (for those who don't want free-running demons) or even a
+    an implementation not in the MPICH distribution.
     \begin{description}
-      \item[include]BNR header files
-      \item[impls]Implementations of BNR in terms of various process managers
-      \begin{description}
-          \item[mpd]Implementation of \code{bnr} in terms of \code{mpd}, 
-           including the mpd \file{configure}.  
-          \item[remsh]Implementation of \code{bnr} in terms of remote
-          shell (\code{rsh}, \code{ssh}, or \code{remsh}).
-          \item[windows]Implementation of \code{bnr} for Windows (this is
-          probably not the correct name, but it is important that one or
-          more Windows implementations be included here)
+          \item[simple]Implementation of \code{pmi} which uses the simple
+            process management protocol to interface with the \code{mpd} and
+            \code{forker} process managers
+          \item[remsh]Implementation of \code{pmi} in terms of remote
+            shell (\code{rsh}, \code{ssh}, or \code{remsh}).
+          \item[winmpd]Implementation of \code{pmi} for the Windows MPD
           \item[bproc]Scyld bproc
           \item[openpbs]OpenPBS process-manager interface
-      \end{description}
     \end{description}
 % [BRT] BNR is an interface provide by a variety of process managers.
 % It should not be a directory in the MPICH2 tree; although we do need
@@ -277,16 +264,14 @@ because an MPI implementation is not complete without these components.
 % to define how BNR implementation needs to present itself)
 % [WDG] Added some discussion.  This is really a compromise; but BNR
 % is likely to exist only in or for MPICH.
-    \item[pm]Process managers.  
+    \item[pm]Process managers.  The default process manager for UNIX is
+      \code{mpd}.  An alternative process manager can be selected using the
+      \cfgoptions{--with-pm=dir} configure option.  No MPICH code includes
+      any files here.  MPICH code can only include PMI header files.
         \begin{description}
-        \item[mpd]Note that mpd is available as
-            a seperate CVS module.
-          \begin{description}
-          \item[src]Source files for \code{mpd}
-          \item[include]Include files for \code{mpd}.  No MPICH code includes
-           any files here (MPICH code can only include BNR includes).
-          \end{description}
-        \item[windows]
+        \item[mpd]Note that MPD is available as a seperate CVS module.
+        \item[forker]
+        \item[winmpd]
         \end{description}
 
   \item[binding]Alternative Language bindings (C is the primary
