@@ -5,7 +5,6 @@
  */
 
 #include <stdio.h>
-#include "mpiexec.h"
 #include "smpd.h"
 #include <stdlib.h>
 #ifdef HAVE_UNISTD_H
@@ -22,6 +21,9 @@
 #endif
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
+#ifdef HAVE_STRING_H
+#include <string.h>
 #endif
 
 #ifdef HAVE_SIGACTION

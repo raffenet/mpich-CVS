@@ -505,6 +505,7 @@ int smpd_get_smpd_data_default(const char *key, char *value, int value_len)
 	strncpy(value, "no", value_len);
 	value[value_len-1] = '\0';
     }
+    /*
     else if (strcmp(key, "hosts") == 0)
     {
 	if (gethostname(value, value_len) != 0)
@@ -513,6 +514,7 @@ int smpd_get_smpd_data_default(const char *key, char *value, int value_len)
 	    return SMPD_FAIL;
 	}
     }
+    */
     else
     {
 	smpd_exit_fn("smpd_get_smpd_data_default");
