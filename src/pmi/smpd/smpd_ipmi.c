@@ -125,6 +125,7 @@ static int pmi_create_post_command(const char *command, const char *name, const 
     int result;
     smpd_command_t *cmd_ptr;
     int dest = 1;
+    int add_id = 0;
 
     if (!pmi_process.rpmi)
     {
@@ -132,6 +133,11 @@ static int pmi_create_post_command(const char *command, const char *name, const 
 	{
 	    /* done commands go to the immediate smpd, not the root */
 	    dest = pmi_process.smpd_id;
+	}
+	if ((strcmp(command, "init") == 0) || (strcmp(command, "finalize") == 0))
+	{
+	    add_id = 1;
+	    dest = 0;
 	}
     }
 
@@ -174,6 +180,16 @@ static int pmi_create_post_command(const char *command, const char *name, const 
 	if (result != SMPD_SUCCESS)
 	{
 	    pmi_err_printf("unable to add the value('%s') to the %s command.\n", value, command);
+	    return PMI_FAIL;
+	}
+    }
+
+    if (add_id)
+    {
+	result = smpd_add_command_int_arg(cmd_ptr, "node_id", pmi_process.smpd_id);
+	if (result != SMPD_SUCCESS)
+	{
+	    pmi_err_printf("unable to add the node_id(%d) to the %s command.\n", pmi_process.smpd_id, command);
 	    return PMI_FAIL;
 	}
     }
@@ -326,12 +342,18 @@ static int parse_clique(const char *str_orig)
 static int uPMI_ConnectToHost(char *host, int port, smpd_state_t state)
 {
     int result;
+    char error_msg[MPI_MAX_ERROR_STRING];
+    int len;
 
-    /*printf("posting a connect to %s:%d\n", pmi_process.root_host, pmi_process.root_port);*/
+    /*printf("posting a connect to %s:%d\n", host, port);fflush(stdout);*/
     result = MPIDU_Sock_post_connect(pmi_process.set, NULL, host, port, &pmi_process.sock);
     if (result != MPI_SUCCESS)
     {
-	pmi_err_printf("PMI_ConnectToHost failed: unable to post a connect to %s:%d, error: %d\n", host, port, result);
+	printf("MPIDU_Sock_post_connect failed.\n");fflush(stdout);
+	len = MPI_MAX_ERROR_STRING;
+	PMPI_Error_string(result, error_msg, &len);
+	pmi_err_printf("PMI_ConnectToHost failed: unable to post a connect to %s:%d, error: %s\n", host, port, error_msg);
+	printf("uPMI_ConnectToHost returning PMI_FAIL\n");fflush(stdout);
 	return PMI_FAIL;
     }
 
@@ -658,6 +680,8 @@ int iPMI_Init(int *spawned)
 {
     char *p;
     int result;
+    char rank_str[100], size_str[100];
+    char str[1024];
 
     if (spawned == NULL)
 	return PMI_ERR_INVALID_ARG;
@@ -879,6 +903,27 @@ int iPMI_Init(int *spawned)
 
     pmi_process.init_finalized = PMI_INITIALIZED;
 
+    sprintf(rank_str, "%d", pmi_process.iproc);
+    sprintf(size_str, "%d", pmi_process.nproc);
+    result = pmi_create_post_command("init", pmi_process.kvs_name, rank_str, size_str);
+    if (result != PMI_SUCCESS)
+    {
+	pmi_err_printf("PMI_Init failed: unable to create an init command.\n");
+	return PMI_FAIL;
+    }
+
+    /* parse the result of the command */
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024) != MPIU_STR_SUCCESS)
+    {
+	pmi_err_printf("PMI_Init failed: no result string in the result command.\n");
+	return PMI_FAIL;
+    }
+    if (strcmp(str, SMPD_SUCCESS_STR))
+    {
+	pmi_err_printf("PMI_Init failed: %s\n", str);
+	return PMI_FAIL;
+    }
+
     /*
     if (*spawned && pmi_process.iproc == 0)
     {
@@ -906,6 +951,8 @@ int iPMI_Init(int *spawned)
 int iPMI_Finalize()
 {
     int result;
+    char rank_str[100];
+    char str[1024];
 
     if (pmi_process.init_finalized == PMI_FINALIZED)
 	return PMI_SUCCESS;
@@ -925,6 +972,26 @@ int iPMI_Finalize()
 	smpd_dbs_finalize();
 	pmi_process.init_finalized = PMI_FINALIZED;
 	return PMI_SUCCESS;
+    }
+
+    sprintf(rank_str, "%d", pmi_process.iproc);
+    result = pmi_create_post_command("finalize", pmi_process.kvs_name, rank_str, NULL);
+    if (result != PMI_SUCCESS)
+    {
+	pmi_err_printf("PMI_Finalize failed: unable to create an finalize command.\n");
+	return PMI_FAIL;
+    }
+
+    /* parse the result of the command */
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024) != MPIU_STR_SUCCESS)
+    {
+	pmi_err_printf("PMI_Finalize failed: no result string in the result command.\n");
+	return PMI_FAIL;
+    }
+    if (strcmp(str, SMPD_SUCCESS_STR))
+    {
+	pmi_err_printf("PMI_Finalize failed: %s\n", str);
+	return PMI_FAIL;
     }
 
     PMI_Barrier();
@@ -949,6 +1016,114 @@ int iPMI_Finalize()
     pmi_process.init_finalized = PMI_FINALIZED;
 
     /*printf("iPMI_Finalize success.\n");fflush(stdout);*/
+    return PMI_SUCCESS;
+}
+
+int iPMI_Abort(int exit_code, const char error_msg[])
+{
+    int result;
+    smpd_command_t *cmd_ptr;
+
+    /* flush any output before aborting */
+    fflush(stdout);
+    fflush(stderr);
+
+    if (pmi_process.local_kvs)
+    {
+	if (smpd_process.verbose_abort_output)
+	{
+	    printf("\njob aborted:\n");
+	    printf("process: node: exit code: error message:\n");
+	    printf("0: localhost: %d", exit_code);
+	    if (error_msg != NULL)
+	    {
+		printf(": %s", error_msg);
+	    }
+	    printf("\n");
+	}
+	else
+	{
+	    if (error_msg != NULL)
+	    {
+		printf("%s\n", error_msg);
+	    }
+	}
+	fflush(stdout);
+	smpd_dbs_finalize();
+	pmi_process.init_finalized = PMI_FINALIZED;
+#ifdef HAVE_WINDOWS_H
+	ExitProcess(exit_code);
+#else
+	exit(exit_code);
+#endif
+	return PMI_FAIL;
+    }
+
+    result = smpd_create_command("abort_job", pmi_process.smpd_id, 0, SMPD_FALSE, &cmd_ptr);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("unable to create an abort command.\n");
+	return PMI_FAIL;
+    }
+
+    result = smpd_add_command_arg(cmd_ptr, "name", pmi_process.kvs_name);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("unable to add the kvs name('%s') to the abort command.\n", pmi_process.kvs_name);
+	return PMI_FAIL;
+    }
+
+    result = smpd_add_command_int_arg(cmd_ptr, "rank", pmi_process.iproc);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("unable to add the rank %d to the abort command.\n", pmi_process.iproc);
+	return PMI_FAIL;
+    }
+
+    result = smpd_add_command_arg(cmd_ptr, "error", (char*)error_msg);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("unable to add the error message('%s') to the abort command.\n", error_msg);
+	return PMI_FAIL;
+    }
+
+    result = smpd_add_command_int_arg(cmd_ptr, "exit_code", exit_code);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("unable to add the exit code(%d) to the abort command.\n", exit_code);
+	return PMI_FAIL;
+    }
+
+    /* post the write of the command */
+    result = smpd_post_write_command(pmi_process.context, cmd_ptr);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("unable to post a write of the abort command.\n");
+	return PMI_FAIL;
+    }
+
+    /* and post a read for the result */
+    /*
+    result = smpd_post_read_command(pmi_process.context);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("unable to post a read of the next command on the pmi context.\n");
+	return PMI_FAIL;
+    }
+    */
+
+    /* let the state machine send the command and receive the result */
+    result = smpd_enter_at_state(pmi_process.set, SMPD_WRITING_CMD);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("the state machine logic failed to handle the abort command.\n");
+	return PMI_FAIL;
+    }
+#ifdef HAVE_WINDOWS_H
+    ExitProcess(exit_code);
+#else
+    exit(exit_code);
+#endif
     return PMI_SUCCESS;
 }
 
@@ -1222,7 +1397,7 @@ int iPMI_KVS_Destroy(const char kvsname[])
 	return PMI_FAIL;
     }
 
-    return PMI_FAIL;
+    return PMI_SUCCESS;
 }
 
 int iPMI_KVS_Put(const char kvsname[], const char key[], const char value[])
@@ -1488,6 +1663,7 @@ int iPMI_Spawn_multiple(int count,
     int path_specified = 0;
     char path[SMPD_MAX_PATH_LENGTH] = "";
     int *info_keyval_sizes;
+    int total_num_processes;
 
     if (pmi_process.init_finalized == PMI_FINALIZED)
 	return PMI_ERR_INIT;
@@ -1524,7 +1700,25 @@ int iPMI_Spawn_multiple(int count,
     for (i=0; i<count; i++)
     {
 	sprintf(key, "cmd%d", i);
+#ifdef HAVE_WINDOWS_H
+	if (strlen(cmds[i]) > 2)
+	{
+	    if (cmds[i][0] == '.' && cmds[i][1] == '/')
+	    {
+		result = smpd_add_command_arg(cmd_ptr, key, (char*)&cmds[i][2]);
+	    }
+	    else
+	    {
+		result = smpd_add_command_arg(cmd_ptr, key, (char*)cmds[i]);
+	    }
+	}
+	else
+	{
+	    result = smpd_add_command_arg(cmd_ptr, key, (char*)cmds[i]);
+	}
+#else
 	result = smpd_add_command_arg(cmd_ptr, key, (char*)cmds[i]);
+#endif
 	if (result != SMPD_SUCCESS)
 	{
 	    pmi_err_printf("unable to add %s(%s) to the spawn command.\n", key, cmds[i]);
@@ -1541,8 +1735,11 @@ int iPMI_Spawn_multiple(int count,
 		{
 		    result = MPIU_Str_add_string(&iter, &maxlen, argvs[i][j]);
 		}
-		iter--;
-		*iter = '\0'; /* erase the trailing space */
+		if (iter > buffer)
+		{
+		    iter--;
+		    *iter = '\0'; /* erase the trailing space */
+		}
 	    }
 	    sprintf(key, "argv%d", i);
 	    result = smpd_add_command_arg(cmd_ptr, key, buffer);
@@ -1553,10 +1750,12 @@ int iPMI_Spawn_multiple(int count,
 	    }
 	}
     }
-    /* add the maxprocs array */
+    /* add the maxprocs array and count the total number of processes */
+    total_num_processes = 0;
     buffer[0] = '\0';
     for (i=0; i<count; i++)
     {
+	total_num_processes += maxprocs[i];
 	if (i < count-1)
 	    sprintf(key, "%d ", maxprocs[i]);
 	else
@@ -1609,7 +1808,7 @@ int iPMI_Spawn_multiple(int count,
     }
     for (i=0; i<count; i++)
     {
-	info_keyval_sizes[i] = info_keyval_sizes[i];
+	info_keyval_sizes[i] = cinfo_keyval_sizes[i];
     }
 
     /* add the keyvals */
@@ -1637,7 +1836,7 @@ int iPMI_Spawn_multiple(int count,
 			pmi_err_printf("unable to allocate memory for the path key.\n");
 			return PMI_FAIL;
 		    }
-		    printf("creating path %d: <%s>;<%s>\n", val2len, info_keyval_vectors[i][j].val, path);fflush(stdout);
+		    /*printf("creating path %d: <%s>;<%s>\n", val2len, info_keyval_vectors[i][j].val, path);fflush(stdout);*/
 		    MPIU_Snprintf(val2, val2len, "%s;%s", info_keyval_vectors[i][j].val, path);
 		    result = MPIU_Str_add_string_arg(&iter2, &maxlen2, info_keyval_vectors[i][j].key, val2);
 		    if (result != MPIU_STR_SUCCESS)
@@ -1658,8 +1857,11 @@ int iPMI_Spawn_multiple(int count,
 			return PMI_FAIL;
 		    }
 		}
-		iter2--;
-		*iter2 = '\0'; /* remove the trailing space */
+		if (iter2 > keyval_buf)
+		{
+		    iter2--;
+		    *iter2 = '\0'; /* remove the trailing space */
+		}
 		sprintf(key, "%d", j);
 		result = MPIU_Str_add_string_arg(&iter, &maxlen, key, keyval_buf);
 		if (result != MPIU_STR_SUCCESS)
@@ -1793,8 +1995,11 @@ int iPMI_Spawn_multiple(int count,
 		pmi_err_printf("unable to add %s=%s to the spawn command.\n", preput_keyval_vector[i].key, preput_keyval_vector[i].val);
 		return PMI_FAIL;
 	    }
-	    iter2--;
-	    *iter2 = '\0'; /* remove the trailing space */
+	    if (iter2 > keyval_buf)
+	    {
+		iter2--;
+		*iter2 = '\0'; /* remove the trailing space */
+	    }
 	    sprintf(key, "%d", i);
 	    result = MPIU_Str_add_string_arg(&iter, &maxlen, key, keyval_buf);
 	    if (result != MPIU_STR_SUCCESS)
@@ -1841,6 +2046,11 @@ int iPMI_Spawn_multiple(int count,
 	/*printf("PMI_Spawn_multiple returning failure.\n");fflush(stdout);*/
 	pmi_err_printf("the state machine logic failed to get the result of the spawn command.\n");
 	return PMI_FAIL;
+    }
+
+    for (i=0; i<total_num_processes; i++)
+    {
+	errors[i] = PMI_SUCCESS;
     }
     /*printf("PMI_Spawn_multiple returning success.\n");fflush(stdout);*/
     return PMI_SUCCESS;

@@ -322,6 +322,14 @@ int PMI_Finalize( )
     return( 0 );
 }
 
+int PMI_Abort(int exit_code, const char error_msg[])
+{
+    fprintf(stderr, "aborting job:\n%s\n", error_msg);
+    fflush(stderr);
+    exit(exit_code);
+    return -1;
+}
+
 /**************************************** Keymap functions *************************/
 
 int PMI_KVS_Get_my_name( char kvsname[], int length )

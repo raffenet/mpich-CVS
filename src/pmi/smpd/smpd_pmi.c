@@ -47,7 +47,7 @@
 /* global variables */
 static ipmi_functions_t fn =
 {
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 int PMI_Init(int *spawned)
@@ -83,6 +83,7 @@ int PMI_Init(int *spawned)
 	    fn.PMI_Barrier = (int (*)(void))PMIGetProcAddress(hModule, "PMI_Barrier");
 	    fn.PMI_Get_clique_size = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Get_clique_size");
 	    fn.PMI_Get_clique_ranks = (int (*)(int [], int))PMIGetProcAddress(hModule, "PMI_Get_clique_ranks");
+	    fn.PMI_Abort = (int (*)(int, const char[]))PMIGetProcAddress(hModule, "PMI_Abort");
 	    fn.PMI_KVS_Get_my_name = (int (*)(char [], int))PMIGetProcAddress(hModule, "PMI_KVS_Get_my_name");
 	    fn.PMI_KVS_Get_name_length_max = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_KVS_Get_name_length_max");
 	    fn.PMI_KVS_Get_key_length_max = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_KVS_Get_key_length_max");
@@ -114,6 +115,7 @@ int PMI_Init(int *spawned)
     fn.PMI_Barrier = iPMI_Barrier;
     fn.PMI_Get_clique_size = iPMI_Get_clique_size;
     fn.PMI_Get_clique_ranks = iPMI_Get_clique_ranks;
+    fn.PMI_Abort = iPMI_Abort;
     fn.PMI_KVS_Get_my_name = iPMI_KVS_Get_my_name;
     fn.PMI_KVS_Get_name_length_max = iPMI_KVS_Get_name_length_max;
     fn.PMI_KVS_Get_key_length_max = iPMI_KVS_Get_key_length_max;
@@ -201,6 +203,13 @@ int PMI_Barrier()
     if (fn.PMI_Barrier == NULL)
 	return PMI_FAIL;
     return fn.PMI_Barrier();
+}
+
+int PMI_Abort(int exit_code, const char error_msg[])
+{
+    if (fn.PMI_Abort == NULL)
+	return PMI_FAIL;
+    return fn.PMI_Abort(exit_code, error_msg);
 }
 
 int PMI_KVS_Get_my_name(char kvsname[], int length)

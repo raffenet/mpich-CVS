@@ -55,6 +55,7 @@ int iPMI_Get_id_length_max( int *maxlen);      /* get the maximum length the id 
 int iPMI_Barrier( void );                /* barrier across processes in process group */
 int iPMI_Get_clique_size( int *size );   /* get the number of processes on my node */
 int iPMI_Get_clique_ranks( int ranks[], int length ); /* get the ranks on my node */
+int iPMI_Abort(int exit_code, const char error_msg[]); /* abort this process group */
 
 /* PMI Keymap functions */
 int iPMI_KVS_Get_my_name( char kvsname[], int length );       /* get name of keyval space */
@@ -107,6 +108,7 @@ typedef struct ipmi_functions_t
     int (*PMI_Barrier)( void );
     int (*PMI_Get_clique_size)( int * );
     int (*PMI_Get_clique_ranks)( int [], int );
+    int (*PMI_Abort)( int, const char [] );
     int (*PMI_KVS_Get_my_name)( char [], int );
     int (*PMI_KVS_Get_name_length_max)( int * );
     int (*PMI_KVS_Get_key_length_max)( int * );
