@@ -4938,7 +4938,6 @@ int smpd_handle_pmi_listen_command(smpd_context_t *context)
     result = MPIDU_Sock_listen(context->set, NULL, &listener_port, &sock_pmi_listener); 
     if (result != MPI_SUCCESS)
     {
-	/* If another smpd is running and listening on this port, tell it to shutdown or restart? */
 	smpd_err_printf("MPIDU_Sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;

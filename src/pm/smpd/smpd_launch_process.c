@@ -805,7 +805,6 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	    nError = MPIDU_Sock_listen(set, NULL, &listener_port, &sock_pmi_listener); 
 	    if (nError != MPI_SUCCESS)
 	    {
-		/* If another smpd is running and listening on this port, tell it to shutdown or restart? */
 		smpd_err_printf("MPIDU_Sock_listen failed,\nsock error: %s\n", get_sock_error_string(nError));
 		goto CLEANUP;
 	    }
