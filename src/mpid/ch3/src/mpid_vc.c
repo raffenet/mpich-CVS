@@ -106,7 +106,7 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 			
 		    MPIU_Assert(vc->state != MPIDI_VC_STATE_LOCAL_CLOSE && vc->state != MPIDI_VC_STATE_CLOSE_ACKED);
 		    
-		    close_pkt->type = MPIDI_CH3_PKT_CLOSE;
+		    MPIDI_Pkt_init(close_pkt, MPIDI_CH3_PKT_CLOSE);
 		    close_pkt->ack = (vc->state == MPIDI_VC_STATE_ACTIVE) ? FALSE : TRUE;
 		    
 		    /* MT: this is not thread safe */

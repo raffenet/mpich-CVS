@@ -64,7 +64,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	    
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending zero length message"));
-	eager_pkt->type = MPIDI_CH3_PKT_EAGER_SEND;
+	MPIDI_Pkt_init(eager_pkt, MPIDI_CH3_PKT_EAGER_SEND);
 	eager_pkt->match.rank = comm->rank;
 	eager_pkt->match.tag = tag;
 	eager_pkt->match.context_id = comm->context_id + context_offset;
@@ -101,7 +101,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	
 	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
 	
-	eager_pkt->type = MPIDI_CH3_PKT_EAGER_SEND;
+	MPIDI_Pkt_init(eager_pkt, MPIDI_CH3_PKT_EAGER_SEND);
 	eager_pkt->match.rank = comm->rank;
 	eager_pkt->match.tag = tag;
 	eager_pkt->match.context_id = comm->context_id + context_offset;
@@ -199,7 +199,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	   allocating the RTS request early to avoid a race condition. */
 	sreq->partner_request = NULL;
 	
-	rts_pkt->type = MPIDI_CH3_PKT_RNDV_REQ_TO_SEND;
+	MPIDI_Pkt_init(rts_pkt, MPIDI_CH3_PKT_RNDV_REQ_TO_SEND);
 	rts_pkt->match.rank = comm->rank;
 	rts_pkt->match.tag = tag;
 	rts_pkt->match.context_id = comm->context_id + context_offset;

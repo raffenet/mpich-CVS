@@ -236,7 +236,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             MPIDI_CH3_Pkt_put_t *put_pkt = &upkt.put;
             MPIDI_VC_t * vc;
 
-            put_pkt->type = MPIDI_CH3_PKT_PUT;
+            MPIDI_Pkt_init(put_pkt, MPIDI_CH3_PKT_PUT);
             put_pkt->addr = NULL;
             put_pkt->count = 0;
             put_pkt->datatype = MPI_INT;

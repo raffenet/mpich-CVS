@@ -55,7 +55,7 @@ int MPIDI_CH3_iStartRndvTransfer(MPIDI_VC_t * vc, MPID_Request * rreq)
 
 #else
 
-    pkt.cts_iov.type = MPIDI_CH3_PKT_CTS_IOV;
+    MPIDI_Pkt_init(&pkt.cts_iov, MPIDI_CH3_PKT_CTS_IOV);
     pkt.cts_iov.sreq = rreq->dev.sender_req_id;
     pkt.cts_iov.rreq = rreq->handle;
     pkt.cts_iov.iov_len = rreq->dev.iov_count;

@@ -96,7 +96,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 		MPID_Request * esa_req;
 		    
 		MPIDI_DBG_PRINTF((30, FCNAME, "sending eager sync ack"));
-		esa_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_ACK;
+		MPIDI_Pkt_init(esa_pkt, MPIDI_CH3_PKT_EAGER_SYNC_ACK);
 		esa_pkt->sender_req_id = rreq->dev.sender_req_id;
 		mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
 		/* --BEGIN ERROR HANDLING-- */
@@ -175,7 +175,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 		
 	    MPIDI_DBG_PRINTF((15, FCNAME, "rndv RTS in the request, sending rndv CTS"));
 	    
-	    cts_pkt->type = MPIDI_CH3_PKT_RNDV_CLR_TO_SEND;
+	    MPIDI_Pkt_init(cts_pkt, MPIDI_CH3_PKT_RNDV_CLR_TO_SEND);
 	    cts_pkt->sender_req_id = rreq->dev.sender_req_id;
 	    cts_pkt->receiver_req_id = rreq->handle;
 	    mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);

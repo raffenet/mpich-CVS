@@ -155,7 +155,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	    MPIDI_CH3_Request_add_ref(sreq);
 	}
 
-	csr_pkt->type = MPIDI_CH3_PKT_CANCEL_SEND_REQ;
+	MPIDI_Pkt_init(csr_pkt, MPIDI_CH3_PKT_CANCEL_SEND_REQ);
 	csr_pkt->match.rank = sreq->comm->rank;
 	csr_pkt->match.tag = sreq->dev.match.tag;
 	csr_pkt->match.context_id = sreq->dev.match.context_id;

@@ -354,6 +354,19 @@ extern volatile int MPIDI_Outstanding_close_ops;
 /*--------------------
   BEGIN PACKET SECTION
   --------------------*/
+#if !defined(MPICH_DEBUG_MEMINIT)
+#   define MPIDI_Pkt_init(pkt_, type_)		\
+    {						\
+	(pkt_)->type = (type_);			\
+    }
+#else
+#   define MPIDI_Pkt_init(pkt_, type_)				\
+    {								\
+	memset((void *) (pkt_), 0xfc, sizeof(MPIDI_CH3_Pkt_t));	\
+	(pkt_)->type = (type_);					\
+    }
+#endif
+
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
 #   define MPIDI_Pkt_set_seqnum(pkt_, seqnum_)	\
     {						\

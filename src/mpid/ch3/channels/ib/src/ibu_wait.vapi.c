@@ -227,9 +227,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 
 		    MPIU_DBG_PRINTF(("sending a reload/done packet (sreq=0x%x, rreq=0x%x).\n", sreq->handle, rreq_cached));
 		    /* send the reload/done packet to the receiver */
+		    MPIDI_Pkt_init(reload_pkt, MPIDI_CH3_PKT_RELOAD);
 		    reload_pkt->rreq = rreq_cached/*sreq->dev.rdma_request*/;
 		    reload_pkt->sreq = sreq->handle;
-		    reload_pkt->type = MPIDI_CH3_PKT_RELOAD;
 		    reload_pkt->send_recv = MPIDI_CH3_PKT_RELOAD_RECV;
 		    mpi_errno = MPIDI_CH3_iStartMsg(ibu->vc_ptr, reload_pkt, sizeof(*reload_pkt), &reload_sreq);
 		    /* --BEGIN ERROR HANDLING-- */
@@ -332,9 +332,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 
 		    MPIU_DBG_PRINTF(("sending a reload/done packet (sreq=0x%x, rreq=0x%x).\n", rreq->handle, sreq_cached));
 		    /* send the reload/done packet to the sender */
+		    MPIDI_Pkt_init(reload_pkt, MPIDI_CH3_PKT_RELOAD);
 		    reload_pkt->sreq = sreq_cached/*rreq->dev.rdma_request*/;
 		    reload_pkt->rreq = rreq->handle;
-		    reload_pkt->type = MPIDI_CH3_PKT_RELOAD;
 		    reload_pkt->send_recv = MPIDI_CH3_PKT_RELOAD_SEND;
 		    mpi_errno = MPIDI_CH3_iStartMsg(ibu->vc_ptr, reload_pkt, sizeof(*reload_pkt), &reload_rreq);
 		    /* --BEGIN ERROR HANDLING-- */
@@ -598,7 +598,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 							&sreq->ch.local_iov_mem[i]);
 				}
 				MPIU_DBG_PRINTF(("sending reloaded send iov of length %d\n", sreq->dev.iov_count));
-				pkt.iov.type = MPIDI_CH3_PKT_IOV;
+				MPIDI_Pkt_init(&pkt.iov, MPIDI_CH3_PKT_IOV);
 				pkt.iov.send_recv = MPIDI_CH3_PKT_RELOAD_SEND;
 				pkt.iov.req = ((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->rreq;
 				pkt.iov.iov_len = sreq->dev.iov_count;
@@ -661,7 +661,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 							&rreq->ch.local_iov_mem[i]);
 				}
 				MPIU_DBG_PRINTF(("sending reloaded recv iov of length %d\n", rreq->dev.iov_count));
-				pkt.iov.type = MPIDI_CH3_PKT_IOV;
+				MPIDI_Pkt_init(&pkt.iov, MPIDI_CH3_PKT_IOV);
 				pkt.iov.send_recv = MPIDI_CH3_PKT_RELOAD_RECV;
 				pkt.iov.req = ((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->sreq;
 				pkt.iov.iov_len = rreq->dev.iov_count;

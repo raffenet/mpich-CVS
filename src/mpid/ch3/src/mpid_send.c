@@ -74,7 +74,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	MPIDI_CH3_Pkt_eager_send_t * const eager_pkt = &upkt.eager_send;
 
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending zero length message"));
-	eager_pkt->type = MPIDI_CH3_PKT_EAGER_SEND;
+	MPIDI_Pkt_init(eager_pkt, MPIDI_CH3_PKT_EAGER_SEND);
 	eager_pkt->match.rank = comm->rank;
 	eager_pkt->match.tag = tag;
 	eager_pkt->match.context_id = comm->context_id + context_offset;
@@ -114,7 +114,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	MPIDI_CH3_Pkt_eager_send_t * const eager_pkt = &upkt.eager_send;
 	MPID_IOV iov[MPID_IOV_LIMIT];
 	    
-	eager_pkt->type = MPIDI_CH3_PKT_EAGER_SEND;
+	MPIDI_Pkt_init(eager_pkt, MPIDI_CH3_PKT_EAGER_SEND);
 	eager_pkt->match.rank = comm->rank;
 	eager_pkt->match.tag = tag;
 	eager_pkt->match.context_id = comm->context_id + context_offset;
@@ -223,7 +223,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
            information.  Also, some of the fields can be set after the message has been sent.  These issues should be looked at
            more closely when we are trying to squeeze those last few nanoseconds out of the code.  */
 	
-	rts_pkt->type = MPIDI_CH3_PKT_RNDV_REQ_TO_SEND;
+	MPIDI_Pkt_init(rts_pkt, MPIDI_CH3_PKT_RNDV_REQ_TO_SEND);
 	rts_pkt->match.rank = comm->rank;
 	rts_pkt->match.tag = tag;
 	rts_pkt->match.context_id = comm->context_id + context_offset;

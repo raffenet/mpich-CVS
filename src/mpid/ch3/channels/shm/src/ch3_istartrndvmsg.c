@@ -27,7 +27,7 @@ int MPIDI_CH3_iStartRndvMsg(MPIDI_VC_t * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTRNDVMSG);
 
 #ifdef USE_SHM_RDMA_GET
-    pkt.rts_iov.type = MPIDI_CH3_PKT_RTS_IOV;
+    MPIDI_Pkt_init(&pkt.rts_iov, MPIDI_CH3_PKT_RTS_IOV);
     pkt.rts_iov.sreq = sreq->handle;
     pkt.rts_iov.iov_len = sreq->dev.iov_count;
 

@@ -96,7 +96,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         /* Send a lock packet over to the target. wait for the lock_granted
          * reply. then do all the RMA ops. */ 
     
-        lock_pkt->type = MPIDI_CH3_PKT_LOCK;
+        MPIDI_Pkt_init(lock_pkt, MPIDI_CH3_PKT_LOCK);
         lock_pkt->target_win_handle = win_ptr->all_win_handles[dest];
         lock_pkt->source_win_handle = win_ptr->handle;
         lock_pkt->lock_type = rma_op->lock_type;
@@ -460,7 +460,7 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
     win_ptr->pt_rma_puts_accs[rma_op->target_rank]++;
 
     if (rma_op->type == MPIDI_RMA_PUT) {
-        lock_put_unlock_pkt->type = MPIDI_CH3_PKT_LOCK_PUT_UNLOCK;
+        MPIDI_Pkt_init(lock_put_unlock_pkt, MPIDI_CH3_PKT_LOCK_PUT_UNLOCK);
         lock_put_unlock_pkt->target_win_handle = 
             win_ptr->all_win_handles[rma_op->target_rank];
         lock_put_unlock_pkt->source_win_handle = win_ptr->handle;
@@ -478,7 +478,7 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
     }
     
     else if (rma_op->type == MPIDI_RMA_ACCUMULATE) {        
-        lock_accum_unlock_pkt->type = MPIDI_CH3_PKT_LOCK_ACCUM_UNLOCK;
+        MPIDI_Pkt_init(lock_accum_unlock_pkt, MPIDI_CH3_PKT_LOCK_ACCUM_UNLOCK);
         lock_accum_unlock_pkt->target_win_handle = 
             win_ptr->all_win_handles[rma_op->target_rank];
         lock_accum_unlock_pkt->source_win_handle = win_ptr->handle;
@@ -667,7 +667,7 @@ static int MPIDI_CH3I_Send_lock_get(MPID_Win *win_ptr)
            request is freed. */  
     }
 
-    lock_get_unlock_pkt->type = MPIDI_CH3_PKT_LOCK_GET_UNLOCK;
+    MPIDI_Pkt_init(lock_get_unlock_pkt, MPIDI_CH3_PKT_LOCK_GET_UNLOCK);
     lock_get_unlock_pkt->target_win_handle = 
         win_ptr->all_win_handles[rma_op->target_rank];
     lock_get_unlock_pkt->source_win_handle = win_ptr->handle;

@@ -59,7 +59,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 
     MPIDI_Comm_get_vc(comm, rank, &vc);
     
-    ready_pkt->type = MPIDI_CH3_PKT_READY_SEND;
+    MPIDI_Pkt_init(ready_pkt, MPIDI_CH3_PKT_READY_SEND);
     ready_pkt->match.rank = comm->rank;
     ready_pkt->match.tag = tag;
     ready_pkt->match.context_id = comm->context_id + context_offset;

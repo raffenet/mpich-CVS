@@ -373,7 +373,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 		    
 		MPIDI_DBG_PRINTF((30, FCNAME, "sending eager sync ack"));
 			
-		esa_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_ACK;
+		MPIDI_Pkt_init(esa_pkt, MPIDI_CH3_PKT_EAGER_SYNC_ACK);
 		esa_pkt->sender_req_id = rreq->dev.sender_req_id;
 		mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
 		/* --BEGIN ERROR HANDLING-- */
@@ -444,7 +444,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 		/* FIXME: What if the receive user buffer is not big enough to hold the data about to be cleared for sending? */
 
 		MPIDI_DBG_PRINTF((30, FCNAME, "sending rndv CTS packet"));
-		cts_pkt->type = MPIDI_CH3_PKT_RNDV_CLR_TO_SEND;
+		MPIDI_Pkt_init(cts_pkt, MPIDI_CH3_PKT_RNDV_CLR_TO_SEND);
 		cts_pkt->sender_req_id = rts_pkt->sender_req_id;
 		cts_pkt->receiver_req_id = rreq->handle;
 		mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
@@ -509,7 +509,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 		MPID_Request_release(rts_sreq);
 	    }
 	    
-	    rs_pkt->type = MPIDI_CH3_PKT_RNDV_SEND;
+	    MPIDI_Pkt_init(rs_pkt, MPIDI_CH3_PKT_RNDV_SEND);
 	    rs_pkt->receiver_req_id = cts_pkt->receiver_req_id;
 	    iov[0].MPID_IOV_BUF = (void*)rs_pkt;
 	    iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
@@ -604,7 +604,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 		resp_pkt->ack = FALSE;
 	    }
 	    
-	    resp_pkt->type = MPIDI_CH3_PKT_CANCEL_SEND_RESP;
+	    MPIDI_Pkt_init(resp_pkt, MPIDI_CH3_PKT_CANCEL_SEND_RESP);
 	    resp_pkt->sender_req_id = req_pkt->sender_req_id;
 	    mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), &resp_sreq);
 	    /* --BEGIN ERROR HANDLING-- */
@@ -875,7 +875,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
                 MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_GET_RESP); 
                 req->kind = MPID_REQUEST_SEND;
 
-                get_resp_pkt->type = MPIDI_CH3_PKT_GET_RESP;
+                MPIDI_Pkt_init(get_resp_pkt, MPIDI_CH3_PKT_GET_RESP);
                 get_resp_pkt->request_handle = get_pkt->request_handle;
                 
                 iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;
@@ -1293,7 +1293,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
                 MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_GET_RESP); 
                 req->kind = MPID_REQUEST_SEND;
 
-                get_resp_pkt->type = MPIDI_CH3_PKT_GET_RESP;
+                MPIDI_Pkt_init(get_resp_pkt, MPIDI_CH3_PKT_GET_RESP);
                 get_resp_pkt->request_handle = lock_get_unlock_pkt->request_handle;
                 
                 iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;
@@ -1383,7 +1383,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 		MPIDI_CH3_Pkt_close_t * resp_pkt = &upkt.close;
 		MPID_Request * resp_sreq;
 
-		resp_pkt->type = MPIDI_CH3_PKT_CLOSE;
+		MPIDI_Pkt_init(resp_pkt, MPIDI_CH3_PKT_CLOSE);
 		resp_pkt->ack = TRUE;
 
 		MPIDI_DBG_PRINTF((30, FCNAME, "sending close(TRUE) to %d", vc->pg_rank));
@@ -1610,7 +1610,7 @@ int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC_t *vc, MPI_Win source_win_handle)
     int mpi_errno;
 
     /* send lock granted packet */
-    lock_granted_pkt->type = MPIDI_CH3_PKT_LOCK_GRANTED;
+    MPIDI_Pkt_init(lock_granted_pkt, MPIDI_CH3_PKT_LOCK_GRANTED);
     lock_granted_pkt->source_win_handle = source_win_handle;
         
     mpi_errno = MPIDI_CH3_iStartMsg(vc, lock_granted_pkt,

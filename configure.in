@@ -93,10 +93,12 @@ dnl
 AC_ARG_ENABLE(g,
 [--enable-g=option - Control the level of debugging support in the MPICH
 implementation.  option may be a list of common separated names including
-    none   - No debugging
-    handle - Trace handle operations
-    dbg    - Add compiler -g flags
-    all    - All of the above choices],,enable_g=none)
+    none     - No debugging
+    handle   - Trace handle operations
+    dbg      - Add compiler -g flags
+    meminit  - Preinitialize memory associated structures and unions to
+               eliminate access warnings from programs like valgrind
+    all      - All of the above choices],,enable_g=none)
 dnl
 dnl
 dnl --enable-sharedlibs=kind is set with the PAC_ARG_SHAREDLIBS macro 
@@ -431,10 +433,14 @@ for option in $enable_g ; do
 	handle)
 	AC_DEFINE(MPICH_DEBUG_HANDLES,1,[Define to enable handle checking])
 	;;
+	meminit)
+	perform_meminit=yes
+	;;
 	all|yes)
 	AC_DEFINE(MPICH_DEBUG_INTERNAL,1,[Define to compile in optional debugging tests and output])
 	AC_DEFINE(MPICH_DEBUG_NESTING,1,[Define to check nesting level on exit])
 	CFLAGS="$CFLAGS -g"
+	perform_meminit=yes
 	;;
 	*)
 	AC_MSG_WARN([Unknown value $enable_g for enable-g])
@@ -442,6 +448,9 @@ for option in $enable_g ; do
     esac
 done
 IFS="$save_IFS"
+if test -n "$perform_meminit" ; then
+    AC_DEFINE(MPICH_DEBUG_MEMINIT,1,[Define to enable preinitialization of memory used by structures and unions])
+fi
 
 AC_SUBST(debugger_dir)
 pac_cross_compiling=no

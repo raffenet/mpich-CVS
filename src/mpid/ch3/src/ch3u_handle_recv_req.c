@@ -222,7 +222,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
 		sreq->dev.target_win_handle = rreq->dev.target_win_handle;
 		sreq->dev.source_win_handle = rreq->dev.source_win_handle;
 		
-                get_resp_pkt->type = MPIDI_CH3_PKT_GET_RESP;
+                MPIDI_Pkt_init(get_resp_pkt, MPIDI_CH3_PKT_GET_RESP);
                 get_resp_pkt->request_handle = rreq->dev.request_handle;
                 
                 iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;
@@ -802,7 +802,7 @@ int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t *vc, MPI_Win source_win_handle)
     MPID_Request *req;
     int mpi_errno=MPI_SUCCESS;
 
-    pt_rma_done_pkt->type = MPIDI_CH3_PKT_PT_RMA_DONE;
+    MPIDI_Pkt_init(pt_rma_done_pkt, MPIDI_CH3_PKT_PT_RMA_DONE);
     pt_rma_done_pkt->source_win_handle = source_win_handle;
 
     mpi_errno = MPIDI_CH3_iStartMsg(vc, pt_rma_done_pkt,
@@ -884,7 +884,7 @@ static int do_simple_get(MPID_Win *win_ptr, MPIDI_Win_lock_queue *lock_queue)
     MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_GET_RESP); 
     req->kind = MPID_REQUEST_SEND;
     
-    get_resp_pkt->type = MPIDI_CH3_PKT_GET_RESP;
+    MPIDI_Pkt_init(get_resp_pkt, MPIDI_CH3_PKT_GET_RESP);
     get_resp_pkt->request_handle = lock_queue->pt_single_op->request_handle;
     
     iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;

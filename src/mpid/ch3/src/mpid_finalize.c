@@ -63,7 +63,7 @@ int MPID_Finalize()
 		MPIDI_CH3_Pkt_close_t * close_pkt = &upkt.close;
 		MPID_Request * sreq;
 		    
-		close_pkt->type = MPIDI_CH3_PKT_CLOSE;
+		MPIDI_Pkt_init(close_pkt, MPIDI_CH3_PKT_CLOSE);
 		close_pkt->ack = (vc->state == MPIDI_VC_STATE_ACTIVE) ? FALSE : TRUE;
 		
 		/* MT: this is not thread safe */

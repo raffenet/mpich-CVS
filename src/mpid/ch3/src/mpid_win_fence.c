@@ -392,7 +392,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
 
     if (rma_op->type == MPIDI_RMA_PUT)
     {
-        put_pkt->type = MPIDI_CH3_PKT_PUT;
+        MPIDI_Pkt_init(put_pkt, MPIDI_CH3_PKT_PUT);
         put_pkt->addr = (char *) win_ptr->base_addrs[rma_op->target_rank] +
             win_ptr->disp_units[rma_op->target_rank] * rma_op->target_disp;
 
@@ -407,7 +407,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
     }
     else
     {
-        accum_pkt->type = MPIDI_CH3_PKT_ACCUMULATE;
+        MPIDI_Pkt_init(accum_pkt, MPIDI_CH3_PKT_ACCUMULATE);
         accum_pkt->addr = (char *) win_ptr->base_addrs[rma_op->target_rank] +
             win_ptr->disp_units[rma_op->target_rank] * rma_op->target_disp;
         accum_pkt->count = rma_op->target_count;
@@ -645,7 +645,7 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
            request is freed. */  
     }
 
-    get_pkt->type = MPIDI_CH3_PKT_GET;
+    MPIDI_Pkt_init(get_pkt, MPIDI_CH3_PKT_GET);
     get_pkt->addr = (char *) win_ptr->base_addrs[rma_op->target_rank] +
         win_ptr->disp_units[rma_op->target_rank] * rma_op->target_disp;
     get_pkt->count = rma_op->target_count;
