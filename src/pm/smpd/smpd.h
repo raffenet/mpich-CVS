@@ -257,6 +257,7 @@ typedef struct smpd_host_node_t
     int id, parent;
     char host[SMPD_MAX_HOST_LENGTH];
     int nproc;
+    SMPD_BOOL connected;
     struct smpd_host_node_t *next;
 } smpd_host_node_t;
 

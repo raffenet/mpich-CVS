@@ -1520,6 +1520,7 @@ int smpd_handle_connect_command(smpd_context_t *context)
     strcpy(dest->connect_to->host, host);
     dest->connect_to->id = dest_id;
     dest->connect_to->nproc = 1;
+    dest->connect_to->connected = SMPD_FALSE;
     dest->connect_to->parent = smpd_process.id;
     dest->connect_to->next = NULL;
     dest->connect_return_id = cmd->src;
@@ -2439,6 +2440,8 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     PMI_keyval_t *info;
     char key_temp[SMPD_MAX_NAME_LENGTH], val_temp[SMPD_MAX_VALUE_LENGTH];
     int cur_iproc;
+    smpd_host_node_t *host_node_ptr, *host_list;
+    int nproc;
 
     smpd_enter_fn("smpd_handle_spawn_command");
 
@@ -2620,6 +2623,15 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    return SMPD_FAIL;
 	}
 	/*printf("%s = %s\n", key, node.args);fflush(stdout);*/
+
+	/* interpret the infos for this command */
+	/* host */
+	/* env */
+	/* path */
+	/* wdir */
+	/* map */
+	/* etc */
+
 	/* create launch nodes for the current command */
 	for (j=0; j<maxprocs[i]; j++)
 	{
@@ -2658,15 +2670,13 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    launch_iter->env_data[0] = '\0';
 	    launch_iter->env = launch_iter->env_data;
 	    launch_iter->exe[0] = '\0';
-	    launch_iter->host_id = 0;
+	    launch_iter->host_id = -1;
 	    launch_iter->map_list = NULL;
 	    launch_iter->path[0] = '\0';
 	    launch_iter->next = NULL;
 
 	    strcpy(launch_iter->exe, node.exe);
 	    strcpy(launch_iter->args, node.args);
-
-	    /* interpret the infos for this command */
 	}
     }
     if (info != NULL)
@@ -2710,18 +2720,62 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 
     /* do the spawn stuff */
 
+    /* count the number of processes to spawn */
+    nproc = 0;
+    launch_iter = launch_list;
+    while (launch_iter)
+    {
+	nproc++;
+	launch_iter = launch_iter->next;
+    }
+
     /* create the host list */
+    host_list = NULL;
+    launch_iter = launch_list;
+    while (launch_iter)
+    {
+	if (launch_iter->host_id == -1)
+	{
+	    smpd_get_next_host(&host_list, launch_iter);
+	}
+	launch_iter->nproc = nproc;
+	launch_iter = launch_iter->next;
+    }
+    smpd_create_cliques(launch_list);
+
     /* connect up the new smpd hosts */
     /* create the new kvs space */
     /* send the launch commands */
 
+    printf("host tree:\n");
+    host_node_ptr = smpd_process.host_list;
+    if (!host_node_ptr)
+	printf("<none>\n");
+    while (host_node_ptr)
+    {
+	printf(" host: %s, parent: %d, id: %d, connected: %s\n",
+	    host_node_ptr->host,
+	    host_node_ptr->parent, host_node_ptr->id,
+	    host_node_ptr->connected ? "yes" : "no");
+	host_node_ptr = host_node_ptr->next;
+    }
+
+    printf("launch nodes:\n");
     launch_iter = launch_list;
+    if (!launch_iter)
+	printf("<none>\n");
     while (launch_iter)
     {
-	printf("launch_node:\n");
-	printf(" rank: %d\n", launch_iter->iproc);
-	printf(" exe: %s\n", launch_iter->exe);
-	printf(" args: %s\n", launch_iter->args);
+	printf(" launch_node:\n");
+	printf("  id  : %d\n", launch_iter->host_id);
+	printf("  rank: %d\n", launch_iter->iproc);
+	printf("  size: %d\n", launch_iter->nproc);
+	printf("  clique: %s\n", launch_iter->clique);
+	printf("  exe : %s\n", launch_iter->exe);
+	if (launch_iter->args[0] != '\0')
+	    printf("  args: %s\n", launch_iter->args);
+	if (launch_iter->path[0] != '\0')
+	    printf("  path: %s\n", launch_iter->path);
 	launch_temp = launch_iter;
 	launch_iter = launch_iter->next;
 	free(launch_temp);

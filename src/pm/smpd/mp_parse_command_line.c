@@ -629,6 +629,7 @@ configfile_loop:
 		    return SMPD_FAIL;
 		}
 		host_list->next = NULL;
+		host_list->connected = SMPD_FALSE;
 		host_list->nproc = -1;
 		strncpy(host_list->host, (*argvp)[2], SMPD_MAX_HOST_LENGTH);
 		num_args_to_strip = 2;
@@ -678,6 +679,7 @@ configfile_loop:
 				return SMPD_FAIL;
 			    }
 			    host_node_ptr->next = NULL;
+			    host_node_ptr->connected = SMPD_FALSE;
 			    host_node_ptr->nproc = 1;
 			    strncpy(host_node_ptr->host, (*argvp)[index], SMPD_MAX_HOST_LENGTH);
 			    index++;
@@ -1009,6 +1011,7 @@ configfile_loop:
 		drive_map_list->ref_count++;
 	    }
 	    strcpy(launch_node->exe, exe);
+	    launch_node->args[0] = '\0';
 #ifdef MPIEXEC_INORDER_LAUNCH
 	    /* insert the node in order */
 	    launch_node->next = NULL;

@@ -165,6 +165,7 @@ SMPD_BOOL smpd_parse_machine_file(char *file_name)
 	    }
 	    node = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
 	    strcpy(node->host, hostname);
+	    node->connected = SMPD_FALSE;
 	    node->id = -1;
 	    node->parent = -1;
 	    node->nproc = nproc;
@@ -232,6 +233,8 @@ int smpd_get_host_id(char *host, int *id_ptr)
     strcpy(node->host, host);
     node->parent = smpd_process.tree_parent;
     node->id = smpd_process.tree_id;
+    node->connected = SMPD_FALSE;
+    node->nproc = -1;
     node->next = NULL;
 
     /* move to the next id and parent */
@@ -258,6 +261,12 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
     int result;
     char host[SMPD_MAX_HOST_LENGTH];
     smpd_host_node_t *host_node_ptr;
+
+    if (host_node_pptr == NULL)
+    {
+	smpd_err_printf("invalid host_node_pptr argument.\n");
+	return SMPD_FAIL;
+    }
 
     if (*host_node_pptr == NULL)
     {

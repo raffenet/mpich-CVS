@@ -742,6 +742,7 @@ int smpd_get_default_hosts()
 	    }
 	    strcpy(smpd_process.default_host_list->host, hosts);
 	    smpd_process.default_host_list->nproc = 1;
+	    smpd_process.default_host_list->connected = SMPD_FALSE;
 	    smpd_process.default_host_list->next = smpd_process.default_host_list;
 	    smpd_process.cur_default_host = smpd_process.default_host_list;
 	    smpd_exit_fn("smpd_get_default_hosts");
@@ -764,6 +765,7 @@ int smpd_get_default_hosts()
 		}
 		strcpy(smpd_process.default_host_list->host, hosts);
 		smpd_process.default_host_list->nproc = 1;
+		smpd_process.default_host_list->connected = SMPD_FALSE;
 		smpd_process.default_host_list->next = smpd_process.default_host_list;
 		smpd_process.cur_default_host = smpd_process.default_host_list;
 		/* add this host to the dynamic_hosts key */
@@ -811,8 +813,10 @@ int smpd_get_default_hosts()
 	cur_host = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
 	if (cur_host != NULL)
 	{
+	    printf("default host: %s\n", host);
 	    strcpy(cur_host->host, host);
 	    cur_host->nproc = 1;
+	    cur_host->connected = SMPD_FALSE;
 	    cur_host->next = NULL;
 	    if (smpd_process.default_host_list == NULL)
 	    {

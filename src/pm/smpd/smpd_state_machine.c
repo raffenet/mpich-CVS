@@ -904,6 +904,10 @@ int smpd_state_reading_cmd(smpd_context_t *context, MPIDU_Sock_event_t *event_pt
 	    smpd_exit_fn("smpd_state_reading_cmd");
 	    return SMPD_FAIL;
 	}
+
+	/* mark the node as connected */
+	context->connect_to->connected = SMPD_TRUE;
+
 	/* send the next connect command or start_dbs command */
 	/* create a command to connect to the next host in the tree */
 	context->connect_to = context->connect_to->next;
@@ -2406,6 +2410,9 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 	    smpd_exit_fn("smpd_state_writing_session_header");
 	    return SMPD_FAIL;
 	}
+
+	/* mark the node as connected */
+	context->connect_to->connected = SMPD_TRUE;
 
 	/* create a command to connect to the next host in the tree */
 	context->connect_to = context->connect_to->next;
