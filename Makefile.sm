@@ -64,6 +64,9 @@ dist: dist-check
 	if test "$$prever" = "-CVS" ; then version=$${version}-`date "+%Y%m%d"` ; fi ; \
 	$(MAKE) version=$${version} dist-with-version
 
+#
+# For 0.96, we include only the socket channel and the example ib/gasnet/rdma
+# channels
 dist-with-version:
 	@if [ -z "$(version)" ] ; then \
 	    echo "Must invoke with make version=value dist-with-version" ;\
@@ -103,6 +106,8 @@ dist-with-version:
 	(cd tmpdir/${PACKAGE}-${version}/src/mpe && cvs -d $(MPICVSHOME) export -D 'now' slog2sdk >>cvsexp.log 2>&1 )
 	( cd tmpdir/${PACKAGE}-${version}/doc && /bin/rm -rf notes )
 	( cd tmpdir/${PACKAGE}-${version} && rm -f ToDo* )
+	( cd tmpdir/${PACKAGE}-${version} && rm -rf src/mpid/ch3/channels/shm)
+	( cd tmpdir/${PACKAGE}-${version} && rm -rf src/mpid/ch3/channels/shm)
 	( cd tmpdir && tar cf ${PACKAGE}-${version}.tar ${PACKAGE}-${version} )
 	mv -f tmpdir/${PACKAGE}-${version}.tar . 
 	rm -rf tmpdir
