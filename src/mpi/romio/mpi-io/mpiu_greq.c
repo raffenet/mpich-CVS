@@ -1,5 +1,11 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2003 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 #include <string.h>
 #include "mpioimpl.h"
+#include "mpiu_greq.h"
 
 int MPIU_Greq_query_fn(void *extra_state, MPI_Status *status)
 {
