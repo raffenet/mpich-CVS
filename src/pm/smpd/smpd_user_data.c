@@ -391,6 +391,7 @@ int smpd_set_smpd_data(const char *key, const char *value)
 	    if (smpd_add_string_arg(&str, &maxlen, node->name, node->value) == SMPD_SUCCESS)
 	    {
 		buffer[strlen(buffer)-1] = '\0'; /* remove the trailing space */
+		smpd_dbg_printf("writing '%s' to .smpd file\n", buffer);
 		fprintf(fout, "%s\n", buffer);
 	    }
 	}
@@ -403,6 +404,7 @@ int smpd_set_smpd_data(const char *key, const char *value)
 	if (smpd_add_string_arg(&str, &maxlen, key, value) == SMPD_SUCCESS)
 	{
 	    buffer[strlen(buffer)-1] = '\0'; /* remove the trailing space */
+	    smpd_dbg_printf("writing '%s' to .smpd file\n", buffer);
 	    fprintf(fout, "%s\n", buffer);
 	}
 	fclose(fout);
@@ -585,6 +587,7 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 	    if (strcmp(key, node->name) == 0)
 	    {
 		smpd_get_string(node->value, value, value_len, &num_bytes);
+		smpd_dbg_printf("smpd data: %s=%s\n", key, value);
 		found = 1;
 	    }
 	    free(node);
@@ -597,6 +600,10 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
     }
 
     result = smpd_get_smpd_data_default(key, value, value_len);
+    if (result == SMPD_SUCCESS)
+	smpd_dbg_printf("smpd data: %s=%s\n", key, value);
+    else
+	smpd_dbg_printf("smpd data: failed to get %s\n", key);
 
     smpd_exit_fn("smpd_get_smpd_data");
     return result;
