@@ -8,7 +8,6 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <limits.h>
 
 void MPID_Datatype_create_dataloop(MPID_Datatype *dtp,
@@ -27,7 +26,7 @@ void MPID_Datatype_create_dataloop(MPID_Datatype *dtp,
     MPI_Aint stride;
     MPI_Aint *disps;
 
-    assert(dtp->contents);
+    MPIU_Assert(dtp->contents);
 
     cp = dtp->contents;
 
@@ -36,7 +35,7 @@ void MPID_Datatype_create_dataloop(MPID_Datatype *dtp,
     ints  = ((char *) types) + cp->nr_types * sizeof(MPI_Datatype);
     aints = ((char *) ints) + cp->nr_ints * sizeof(int);
 
-    assert(cp->combiner != MPI_COMBINER_NAMED);
+    MPIU_Assert(cp->combiner != MPI_COMBINER_NAMED);
 
     switch(cp->combiner) {
 	case MPI_COMBINER_CONTIGUOUS:
@@ -163,7 +162,7 @@ void MPID_Datatype_create_dataloop(MPID_Datatype *dtp,
 	case MPI_COMBINER_F90_INTEGER:
 	    /* TODO: WHAT DO I DO HERE? */
 	default:
-	    assert(0);
+	    MPIU_Assert(0);
     }
 
     return;

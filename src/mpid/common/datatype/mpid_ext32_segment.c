@@ -7,7 +7,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #include <mpichconf.h>
 #include <mpiimpl.h>
@@ -72,7 +71,7 @@ static int external32_basic_convert(char *dest_buf,
     char *src_ptr = src_buf, *dest_ptr = dest_buf;
     char *src_end = (char *)(src_buf + ((int)count * src_el_size));
 
-    assert(dest_buf && src_buf);
+    MPIU_Assert(dest_buf && src_buf);
 
     if (src_el_size == dest_el_size)
     {
@@ -126,7 +125,7 @@ static int external32_float_convert(char *dest_buf,
     char *src_ptr = src_buf, *dest_ptr = dest_buf;
     char *src_end = (char *)(src_buf + ((int)count * src_el_size));
 
-    assert(dest_buf && src_buf);
+    MPIU_Assert(dest_buf && src_buf);
 
     if (src_el_size == dest_el_size)
     {
@@ -174,7 +173,7 @@ static int MPID_Segment_contig_pack_external32_to_buf(DLOOP_Offset *blocks_p,
 
     src_el_size = MPID_Datatype_get_basic_size(el_type);
     dest_el_size = MPIDI_Datatype_get_basic_size_external32(el_type);
-    assert(dest_el_size);
+    MPIU_Assert(dest_el_size);
 
     /*
      * h  = handle value
@@ -233,7 +232,7 @@ static int MPID_Segment_contig_unpack_external32_to_buf(DLOOP_Offset *blocks_p,
 
     src_el_size = MPID_Datatype_get_basic_size(el_type);
     dest_el_size = MPIDI_Datatype_get_basic_size_external32(el_type);
-    assert(dest_el_size);
+    MPIU_Assert(dest_el_size);
 
     /*
      * h  = handle value

@@ -8,7 +8,6 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <limits.h>
 
 int MPID_Datatype_set_contents(MPID_Datatype *new_dtp,
@@ -30,7 +29,7 @@ int MPID_Datatype_set_contents(MPID_Datatype *new_dtp,
 	nr_aints * sizeof(MPI_Aint) + nr_types * sizeof(MPI_Datatype);
 
     cp = (MPID_Datatype_contents *) MPIU_Malloc(contents_size);
-    if (cp == NULL) assert(0);
+    if (cp == NULL) MPIU_Assert(0);
 
     cp->combiner = combiner;
     cp->nr_ints  = nr_ints;

@@ -8,7 +8,6 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <limits.h>
 
 /* MPI datatype debugging helper routines.
@@ -172,7 +171,7 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
 	    }
 	    break;
 	default:
-	    assert(0);
+	    MPIU_Assert(0);
     }
 
     if (!(loop_p->kind & DLOOP_FINAL_MASK)) {

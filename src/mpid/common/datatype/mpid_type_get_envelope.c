@@ -9,7 +9,6 @@
 #include <mpiimpl.h>
 #include <mpid_datatype.h>
 #include <mpid_dataloop.h>
-#include <assert.h>
 
 /*@
   MPID_Type_get_envelope - get envelope information from datatype
@@ -32,7 +31,7 @@ int MPID_Type_get_envelope(MPI_Datatype datatype,
 {
     MPID_Datatype *dtp;
 
-    assert(HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN);
+    MPIU_Assert(HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN);
 
     MPID_Datatype_get_ptr(datatype, dtp);
 

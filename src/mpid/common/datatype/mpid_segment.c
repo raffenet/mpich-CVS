@@ -7,7 +7,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
@@ -302,7 +301,7 @@ void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
     packvec_params.u.pack_vector.index   = 0;
     packvec_params.u.pack_vector.length  = *lengthp;
 
-    assert(*lengthp > 0);
+    MPIU_Assert(*lengthp > 0);
 
     MPID_Segment_manipulate(segp,
 			    first,
@@ -364,7 +363,7 @@ void MPID_Segment_flatten(struct DLOOP_Segment *segp,
     packvec_params.u.flatten.index   = 0;
     packvec_params.u.flatten.length  = *lengthp;
 
-    assert(*lengthp > 0);
+    MPIU_Assert(*lengthp > 0);
 
     MPID_Segment_manipulate(segp,
 			    first,
@@ -586,7 +585,7 @@ static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
     /* if we get here then we processed ALL the blocks; don't need to update
      * blocks_p
      */
-    assert(blocks_left == 0);
+    MPIU_Assert(blocks_left == 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_VECTOR_PACK_TO_IOV);
     return 0;
 }
@@ -710,7 +709,7 @@ static int MPID_Segment_vector_flatten(DLOOP_Offset *blocks_p,
 
     }
     /* --BEGIN ERROR HANDLING-- */
-    assert(blocks_left == 0);
+    MPIU_Assert(blocks_left == 0);
     /* --END ERROR HANDLING-- */
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_VECTOR_FLATTEN);
     return 0;
@@ -1125,7 +1124,7 @@ static int MPID_Segment_index_pack_to_buf(DLOOP_Offset *blocks_p,
 #endif
 
     while (blocks_left) {
-	assert(curblock < count);
+	MPIU_Assert(curblock < count);
 	cur_block_sz = blockarray[curblock];
 	cbufp = (char *) bufp + rel_off + offsetarray[curblock];
 
@@ -1181,7 +1180,7 @@ static int MPID_Segment_blkidx_pack_to_buf(DLOOP_Offset *blocks_p,
     el_size = MPID_Datatype_get_basic_size(el_type);
 
     while (blocks_left) {
-	assert(curblock < count);
+	MPIU_Assert(curblock < count);
 	cbufp = (char *) bufp + rel_off + offsetarray[curblock];
 
 	if (blocklen > blocks_left) blocklen = blocks_left;

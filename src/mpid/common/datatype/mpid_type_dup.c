@@ -8,7 +8,6 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
-#include <assert.h>
 
 /* #define MPID_TYPE_ALLOC_DEBUG */
 
@@ -78,7 +77,7 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 	
 	/* copy dataloop */
 	dlp = MPID_Dataloop_alloc(old_dtp->dataloop_size);
-	if (dlp == NULL) assert(0);
+	if (dlp == NULL) MPIU_Assert(0);
 	
 	new_dtp->dataloop       = dlp;
 	new_dtp->dataloop_depth = old_dtp->dataloop_depth;

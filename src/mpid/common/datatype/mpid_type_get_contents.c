@@ -9,7 +9,6 @@
 #include <mpiimpl.h>
 #include <mpid_datatype.h>
 #include <mpid_dataloop.h>
-#include <assert.h>
 
 /*@
   MPID_Type_get_contents - get content information from datatype
@@ -51,7 +50,7 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 
     MPID_Datatype_get_ptr(datatype, dtp);
     cp = dtp->contents;
-    assert(cp != NULL);
+    MPIU_Assert(cp != NULL);
 
     /* --BEGIN ERROR HANDLING-- */
     if (max_integers < cp->nr_ints ||

@@ -7,7 +7,6 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <limits.h>
 
 /* #define MPID_TYPE_ALLOC_DEBUG */

@@ -8,7 +8,6 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
-#include <assert.h>
 
 /*@
   MPIR_Type_get_contig_blocks
@@ -35,7 +34,7 @@ int MPIR_Type_get_contig_blocks(MPI_Datatype type,
     }
 
     MPID_Datatype_get_ptr(type, datatype_ptr);
-    assert(datatype_ptr->is_committed);
+    MPIU_Assert(datatype_ptr->is_committed);
 
     *nr_blocks_p = datatype_ptr->n_contig_blocks;
     return 0;

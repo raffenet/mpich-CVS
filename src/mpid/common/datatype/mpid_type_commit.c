@@ -8,7 +8,6 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
-#include <assert.h>
 
 /*@
   MPID_Type_commit
@@ -28,7 +27,7 @@ int MPID_Type_commit(MPI_Datatype *datatype_p)
     MPID_Datatype *datatype_ptr;
     MPID_Segment *segp;
 
-    assert(HANDLE_GET_KIND(*datatype_p) != HANDLE_KIND_BUILTIN);
+    MPIU_Assert(HANDLE_GET_KIND(*datatype_p) != HANDLE_KIND_BUILTIN);
 
     MPID_Datatype_get_ptr(*datatype_p, datatype_ptr);
 
