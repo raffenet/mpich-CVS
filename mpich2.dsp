@@ -1310,6 +1310,10 @@ SOURCE=.\src\mpi\errhan\defmsg.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\mpi\errhan\errcodes.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\include\mpi.h
 # End Source File
 # Begin Source File
@@ -1342,7 +1346,15 @@ SOURCE=.\src\mpi\pt2pt\mpir_pt2pt.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\include\mpistates.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\include\mpitimerimpl.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\include\nmpi.h
 # End Source File
 # Begin Source File
 
