@@ -329,6 +329,10 @@ sub CheckForBadSubs {
 		   );
 sub CheckName {
     my $name = $_[0];
+    
+    # Remove blanks from around name
+    $name =~ s/\s//g;
+
     foreach $good (@GoodNames) {
 	if ($name =~ /$good/) { return 0; }
     }
