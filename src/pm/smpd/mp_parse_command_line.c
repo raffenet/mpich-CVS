@@ -20,6 +20,9 @@
 #if defined(HAVE_DIRECT_H) || defined(HAVE_WINDOWS_H)
 #include <direct.h>
 #endif
+#ifdef HAVE_WINDOWS_H
+#include <crtdbg.h>
+#endif
 
 void mp_print_options(void)
 {
@@ -195,6 +198,16 @@ void timeout_function(int signo)
 }
 #endif
 
+#ifdef HAVE_WINDOWS_H
+int assert_hook( int reportType, char *message, int *returnValue )
+{
+    fprintf(stderr, "%s", message);
+    if (returnValue != NULL)
+	exit(*returnValue);
+    exit(-1);
+}
+#endif
+
 int mp_parse_command_args(int *argcp, char **argvp[])
 {
     int cur_rank;
@@ -232,6 +245,12 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     smpd_enter_fn("mp_parse_command_args");
 
 #ifdef HAVE_WINDOWS_H
+    /* prevent mpiexec from bringing up an error message window if it crashes */
+    _CrtSetReportMode( _CRT_ASSERT, _CRTDBG_MODE_FILE );
+    _CrtSetReportFile( _CRT_ASSERT, _CRTDBG_FILE_STDERR );
+    _CrtSetReportHook(assert_hook);
+
+    /* check for windows specific arguments */
     if (*argcp > 1)
     {
 	if (strcmp((*argvp)[1], "-register") == 0)
