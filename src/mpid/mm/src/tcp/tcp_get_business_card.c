@@ -10,7 +10,7 @@
 static int GetLocalIPs(unsigned int *pIP, int max)
 {
     char hostname[100], **hlist;
-    HOSTENT *h = NULL;
+    struct hostent *h = NULL;
     int error;
     int n = 0;
     
