@@ -16,8 +16,8 @@
 #endif
 
 /* Preallocated datatype objects */
-MPID_Datatype MPID_Datatype_builtin[MPID_DATATYPE_N_BUILTIN] = { 0 };
-MPID_Datatype MPID_Datatype_direct[MPID_DATATYPE_PREALLOC] = { 0 };
+MPID_Datatype MPID_Datatype_builtin[MPID_DATATYPE_N_BUILTIN];
+MPID_Datatype MPID_Datatype_direct[MPID_DATATYPE_PREALLOC];
 MPIU_Object_alloc_t MPID_Datatype_mem = { 0, 0, 0, 0, MPID_DATATYPE, 
 			      sizeof(MPID_Datatype), MPID_Datatype_direct,
 					  MPID_DATATYPE_PREALLOC};
