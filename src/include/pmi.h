@@ -16,7 +16,7 @@ int PMI_KVS_Get_key_length_max( );              /* contents to a foreign domain 
 int PMI_KVS_Get_value_length_max( );
 int PMI_KVS_Create( char *kvsname );            /* make a new one, get name */
 int PMI_KVS_Destroy( const char *kvsname );     /* finish with one */
-int PMI_KVS_Put( char *kvsname, const char *key,
+int PMI_KVS_Put( const char *kvsname, const char *key,
                 const char *value);             /* put data */
 int PMI_KVS_Commit( const char *kvsname );      /* block until all pending put
                                                    operations from this process
