@@ -33,8 +33,10 @@ typedef enum DLOG_RECORD_TYPE
     DLOG_INVALID_TYPE = 0,
     DLOG_ENDLOG_TYPE,
     DLOG_EVENT_TYPE,
+    DLOG_OPEN_EVENT_TYPE,
     DLOG_ARROW_TYPE,
     DLOG_STATE_TYPE,
+    DLOG_OPEN_STATE_TYPE,
     DLOG_COMM_TYPE
 } DLOG_RECORD_TYPE;
 
@@ -50,17 +52,32 @@ typedef struct DLOG_HEADER
 typedef struct DLOG_STATE
 {
     int stateid;		/* integer identifier for state */
-    int startetype;		/* starting event for state */
-    int endetype;		/* ending event for state */
     int pad;
     char color[DLOG_COLOR_LENGTH];		/* string for color */
     char description[DLOG_DESCRIPTION_LENGTH];	/* string describing state */
 } DLOG_STATE;
 
-typedef struct DLOG_EVENT
+typedef struct DLOG_OPEN_STATE
+{
+    int stateid;		/* integer identifier for state */
+    int startetype;		/* starting event for state */
+    int endetype;		/* ending event for state */
+    int pad;
+    char color[DLOG_COLOR_LENGTH];		/* string for color */
+    char description[DLOG_DESCRIPTION_LENGTH];	/* string describing state */
+} DLOG_OPEN_STATE;
+
+typedef struct DLOG_OPEN_EVENT
 {
     int event;
     int data;
+} DLOG_OPEN_EVENT;
+
+typedef struct DLOG_EVENT
+{
+    int event;
+    double start_time;
+    double end_time;
 } DLOG_EVENT;
 
 typedef struct DLOG_ARROW
@@ -84,7 +101,9 @@ typedef struct DLOG_IOStruct
     union DLOG_DATA
     {
 	DLOG_STATE state;
+	DLOG_OPEN_STATE ostate;
 	DLOG_EVENT event;
+	DLOG_OPEN_EVENT oevent;
 	DLOG_ARROW arrow;
 	DLOG_COMM comm;
     } record;
@@ -105,7 +124,7 @@ typedef struct DLOG_Struct
     double dFirstTimestamp;
     int nDiskEventIDIn, nDiskEventIDOut;
     DLOG_HEADER DiskHeader;
-    DLOG_EVENT DiskEvent;
+    DLOG_OPEN_EVENT DiskEvent;
 
     DLOG_IOStruct *pOutput;
 } DLOG_Struct;
@@ -116,11 +135,13 @@ typedef struct DLOG_Struct
 
 DLOG_Struct* DLOG_InitLog(int rank, int size);
 int DLOG_FinishLog(DLOG_Struct* pDLOG, char *filename);
-void DLOG_LogEvent(DLOG_Struct* pDLOG, int event, int data);
+void DLOG_LogEvent(DLOG_Struct *pDLOG, int event, double starttime);
+void DLOG_LogOpenEvent(DLOG_Struct* pDLOG, int event, int data);
 void DLOG_LogSend(DLOG_Struct* pDLOG, int dest, int tag, int size);
 void DLOG_LogRecv(DLOG_Struct* pDLOG, int src, int tag, int size);
 void DLOG_LogCommID(DLOG_Struct* pDLOG, int id);
-void DLOG_DescribeState(DLOG_Struct* pDLOG, int start, int end, char *name, char *color);
+void DLOG_DescribeState(DLOG_Struct* pDLOG, int state, char *name, char *color);
+void DLOG_DescribeOpenState(DLOG_Struct* pDLOG, int start, int end, char *name, char *color);
 void DLOG_EnableLogging(DLOG_Struct* pDLOG);
 void DLOG_DisableLogging(DLOG_Struct* pDLOG);
 int DLOG_GetNextEvent(DLOG_Struct* pDLOG);

@@ -10,18 +10,19 @@
 int mm_send(int conn, char *buffer, int length)
 {
     int error;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(MM_SEND);
+    MPID_FUNC_ENTER(MPID_STATE_MM_SEND);
 
     if (beasy_send(conn, buffer, length) != SOCKET_ERROR)
     {
-	MM_EXIT_FUNC(MM_SEND);
+	MPID_FUNC_EXIT(MPID_STATE_MM_SEND);
 	return length;
     }
     error = beasy_getlasterror();
     err_printf("beasy_send failed, error %d\n", error);
 
-    MM_EXIT_FUNC(MM_SEND);
+    MPID_FUNC_EXIT(MPID_STATE_MM_SEND);
     return SOCKET_ERROR;
 }
 

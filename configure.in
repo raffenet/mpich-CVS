@@ -292,7 +292,7 @@ fi
 AC_SUBST(pmi_name)
 dnl with-logging
 if test "$with_logging" = "yes" ; then
-    with_logging=dlog
+    with_logging=rlog
 fi
 logging_name=$with_logging
 if test "$with_logging" != "no" ; then
@@ -315,6 +315,11 @@ if test "$logging_name" = "dlog" ; then
     logging_subdirs="slog_api dlog dlog2slog"
     subsystems="$subsystems src/util/logging/slog_api"
 fi
+if test "$logging_name" = "rlog" ; then
+    logging_subdirs="rlog"
+fi
+use_logging_variable="USE_LOGGING_`echo $logging_name | tr a-z A-Z`"
+AC_DEFINE($use_logging_variable)
 AC_SUBST(logging_name)
 AC_SUBST(logging_subdirs)
 dnl The recommended order for items in a configure.in file is
@@ -664,6 +669,7 @@ AC_OUTPUT(Makefile src/Makefile \
           src/mpid/Makefile \
           src/mpid/common/Makefile \
           src/mpid/common/datatype/Makefile \
+          src/mpid/common/logging/Makefile \
           src/pmi/Makefile \
           src/pmi/impls/Makefile \
 	  src/util/Makefile \

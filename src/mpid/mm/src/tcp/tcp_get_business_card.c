@@ -7,10 +7,11 @@
 
 int tcp_get_business_card(char *value, int length)
 {
-    MM_ENTER_FUNC(TCP_GET_BUSINESS_CARD);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_TCP_GET_BUSINESS_CARD);
 
     snprintf(value, length, "%s:%d", TCP_Process.host, TCP_Process.port);
 
-    MM_EXIT_FUNC(TCP_GET_BUSINESS_CARD);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_GET_BUSINESS_CARD);
     return MPI_SUCCESS;
 }

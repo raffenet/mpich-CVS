@@ -24,8 +24,8 @@ typedef struct MM_Timer_state
 extern MM_Timer_state g_timer_state[MM_NUM_TIMER_STATES];
 extern DLOG_Struct *g_pDLOG;
 
-#define MM_ENTER_FUNC(a) DLOG_LogEvent( g_pDLOG, g_timer_state[ a##_INDEX ].in_id, g_timer_state[ a##_INDEX ].num_calls++ )
-#define MM_EXIT_FUNC(a) DLOG_LogEvent( g_pDLOG, g_timer_state[ a##_INDEX ].out_id, g_timer_state[ a##_INDEX ].num_calls++ )
+#define MPID_FUNC_ENTER(a) DLOG_LogEvent( g_pDLOG, g_timer_state[ a##_INDEX ].in_id, g_timer_state[ a##_INDEX ].num_calls++ )
+#define MPID_FUNC_EXIT(a) DLOG_LogEvent( g_pDLOG, g_timer_state[ a##_INDEX ].out_id, g_timer_state[ a##_INDEX ].num_calls++ )
 
 int prof_init(int rank, int size);
 int prof_finalize();

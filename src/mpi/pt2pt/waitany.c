@@ -48,7 +48,7 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
     static const char FCNAME[] = "MPI_Waitany";
     int mpi_errno = MPI_SUCCESS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WAITANY);
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_WAITANY);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -58,7 +58,7 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
                             "**initialized", 0 );
             }
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WAITANY);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITANY);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
@@ -66,6 +66,6 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WAITANY);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITANY);
     return MPI_SUCCESS;
 }

@@ -49,7 +49,7 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, in
     static const char FCNAME[] = "MPI_Testsome";
     int mpi_errno = MPI_SUCCESS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TESTSOME);
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_TESTSOME);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -59,7 +59,7 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, in
                             "**initialized", 0 );
             }
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TESTSOME);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTSOME);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
@@ -67,6 +67,6 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, in
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TESTSOME);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTSOME);
     return MPI_SUCCESS;
 }

@@ -13,9 +13,6 @@
 
 #ifdef USE_MPE_PROFILING
 #include "mm_mpe_prof.h"
-#else
-#define MM_ENTER_FUNC(a)
-#define MM_EXIT_FUNC(a)
 #endif
 
 #ifdef MPICH_DEV_BUILD

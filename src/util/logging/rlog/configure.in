@@ -1,0 +1,91 @@
+dnl Process this file with autoconf to produce a configure script.
+dnl
+dnl The file name here refers to a file in the source being configured
+AC_INIT(rlog.c)
+dnl
+dnl Definitions will be placed in this file rather than in the DEFS variable
+AC_CONFIG_HEADER(rlogconf.h)
+dnl
+echo "RUNNING CONFIGURE FOR RLOG"
+dnl
+dnl
+dnl Enable better caching control
+PAC_ARG_CACHING
+dnl
+AC_ARG_ENABLE(echo, 
+[--enable-echo  - Turn on strong echoing. The default is enable=no.] ,set -x)
+dnl
+AC_ARG_ENABLE(strict,
+[--enable-strict - Turn on strict debugging with gcc],
+CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes")
+dnl
+AC_ARG_ENABLE(g,
+[--enable-g=option - Control the level of debugging support in the implementation.  
+option may be a list of common separated names including
+    none  - No debugging
+    all   - All of the above choices],,enable_g=none)
+dnl
+dnl
+AC_ARG_ENABLE(sharedlibs,
+[--enable-sharedlibs=kind - Enable shared libraries.  kind may be
+    gnu     - Standard gcc and GNU ld options for creating shared libraries
+    libtool - GNU libtool 
+This option is currently ignored])
+dnl enable-g
+case "$enable_g" in 
+    no|none)
+    ;;
+    mem|all)
+    AC_DEFINE(USE_MEMORY_TRACING,,[Define to enable memory tracing])
+    enable_g_mem=yes
+    CFLAGS="$CFLAGS -g"
+    ;;
+    *)
+    AC_MSG_WARN([Unknown value $enable_g for enable-g])
+    ;;
+esac
+dnl This test is complicated by the fact that top_srcdir is not set until
+dnl the very end of configure.  Instead, we get it ourselves
+if test -z "$top_srcdir" ; then
+   use_top_srcdir=$srcdir   
+else
+   use_top_srcdir=$top_srcdir
+fi
+if test -z "$master_top_srcdir" ; then 
+    master_top_srcdir=$use_top_srcdir
+fi
+AC_SUBST(master_top_srcdir)
+export master_top_srcdir
+dnl
+dnl Find a C compiler (choose gcc first)
+AC_PROG_CC
+AC_PATH_PROG(AR,ar)
+AC_PATH_PROG(RANLIB,ranlib)
+dnl
+dnl AC_PROG_MAKE_SET
+PAC_PROG_MAKE
+dnl
+dnl     check for compiler characteristics
+dnl PAC_PROG_C_WEAK_SYMBOLS
+AC_C_CONST
+PAC_C_VOLATILE
+PAC_C_RESTRICT
+AC_C_INLINE
+dnl PAC_C_STRUCT_ALIGNMENT
+dnl
+dnl Look for Standard headers
+AC_HEADER_STDC
+dnl
+MPILIBNAME=mpich
+AC_SUBST(MPILIBNAME)
+
+dnl AC_SEARCH_LIBS(socket, socket)
+dnl AC_CHECK_LIB(thread, mutex_init)
+dnl AC_CHECK_HEADERS(foo.h bar.h)
+dnl AC_CHECK_FUNCS(baz biff)
+
+AC_OUTPUT_COMMANDS(cp ./rlogconf.h ../../../include)
+
+dnl Generate the Makefiles from Makefile.in
+
+AC_OUTPUT(Makefile)

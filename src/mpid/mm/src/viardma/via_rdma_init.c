@@ -12,8 +12,9 @@
 @*/
 int via_rdma_init( void )
 {
-    MM_ENTER_FUNC(VIA_RDMA_INIT);
-    MM_EXIT_FUNC(VIA_RDMA_INIT);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_VIA_RDMA_INIT);
+    MPID_FUNC_EXIT(MPID_STATE_VIA_RDMA_INIT);
     return MPI_SUCCESS;
 }
 
@@ -24,7 +25,8 @@ int via_rdma_init( void )
 @*/
 int via_rdma_finalize( void )
 {
-    MM_ENTER_FUNC(VIA_RDMA_FINALIZE);
-    MM_EXIT_FUNC(VIA_RDMA_FINALIZE);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_VIA_RDMA_FINALIZE);
+    MPID_FUNC_EXIT(MPID_STATE_VIA_RDMA_FINALIZE);
     return MPI_SUCCESS;
 }

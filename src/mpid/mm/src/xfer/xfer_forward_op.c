@@ -19,7 +19,8 @@
 @*/
 int xfer_forward_op(MPID_Request *request_ptr, int size, int src, int dest)
 {
-    MM_ENTER_FUNC(XFER_FORWARD_OP);
-    MM_EXIT_FUNC(XFER_FORWARD_OP);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_XFER_FORWARD_OP);
+    MPID_FUNC_EXIT(MPID_STATE_XFER_FORWARD_OP);
     return MPI_SUCCESS;
 }

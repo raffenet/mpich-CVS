@@ -9,13 +9,14 @@
 int unpacker_reset_car(MM_Car *car_ptr)
 {
     MM_Segment_buffer *buf_ptr;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(UNPACKER_RESET_CAR);
+    MPID_FUNC_ENTER(MPID_STATE_UNPACKER_RESET_CAR);
 
     buf_ptr = car_ptr->buf_ptr;
     if (buf_ptr == NULL)
     {
-	MM_EXIT_FUNC(UNPACKER_RESET_CAR);
+	MPID_FUNC_EXIT(MPID_STATE_UNPACKER_RESET_CAR);
 	return -1;
     }
 
@@ -58,6 +59,6 @@ int unpacker_reset_car(MM_Car *car_ptr)
 	break;
     }
 
-    MM_EXIT_FUNC(UNPACKER_RESET_CAR);
+    MPID_FUNC_EXIT(MPID_STATE_UNPACKER_RESET_CAR);
     return MPI_SUCCESS;
 }

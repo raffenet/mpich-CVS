@@ -7,7 +7,9 @@
 
 int tcp_merge_with_posted(MM_Car *pkt_car_ptr, MM_Car *posted_car_ptr)
 {
-    MM_ENTER_FUNC(TCP_MERGE_WITH_POSTED);
+    MPID_STATE_DECLS;
+
+    MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_WITH_POSTED);
     
     /* copy the packet into the posted packet */
     posted_car_ptr->msg_header.pkt = pkt_car_ptr->msg_header.pkt;
@@ -34,6 +36,6 @@ int tcp_merge_with_posted(MM_Car *pkt_car_ptr, MM_Car *posted_car_ptr)
 	    pkt_car_ptr->msg_header.pkt.u.hdr.type);
     }
     
-    MM_EXIT_FUNC(TCP_MERGE_WITH_POSTED);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_WITH_POSTED);
     return MPI_SUCCESS;
 }

@@ -47,7 +47,7 @@ int MPI_Test_cancelled(MPI_Status *status, int *flag)
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECLS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TEST_CANCELLED);
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_TEST_CANCELLED);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -56,7 +56,7 @@ int MPI_Test_cancelled(MPI_Status *status, int *flag)
 	    MPIR_ERRTEST_ARGNULL( status, "status", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( flag, "flag", mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TEST_CANCELLED);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TEST_CANCELLED);
                 return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
         }
@@ -66,7 +66,7 @@ int MPI_Test_cancelled(MPI_Status *status, int *flag)
 
     *flag = status->cancelled;
     
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TEST_CANCELLED);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TEST_CANCELLED);
     return MPI_SUCCESS;
 }
 

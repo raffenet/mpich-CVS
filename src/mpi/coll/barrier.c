@@ -171,7 +171,7 @@ int MPI_Barrier( MPI_Comm comm )
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_BARRIER);
+    MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_BARRIER);
     
     /* Convert handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
@@ -183,7 +183,7 @@ int MPI_Barrier( MPI_Comm comm )
 	    /* Validate communicator */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
+                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
@@ -202,14 +202,14 @@ int MPI_Barrier( MPI_Comm comm )
 	mpi_errno = MPIR_Barrier( comm_ptr );
     }
     if (mpi_errno == MPI_SUCCESS)
-	{
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
-	    return MPI_SUCCESS;
-	}
+    {
+	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
+	return MPI_SUCCESS;
+    }
     else
-	{
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
-	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-	}
+    {
+	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
     /* ... end of body of routine ... */
 }

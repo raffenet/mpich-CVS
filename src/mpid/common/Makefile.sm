@@ -1,1 +1,1 @@
-SUBDIRS = datatype .
+SUBDIRS = datatype logging .

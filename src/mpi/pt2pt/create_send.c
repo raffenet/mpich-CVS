@@ -52,7 +52,7 @@ int MPI_Send_init(void *buf, int count, MPI_Datatype datatype, int dest, int tag
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_SEND_INIT);
+    MPID_MPI_PT2T_FUNC_ENTER(MPID_STATE_MPI_SEND_INIT);
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
 #   ifdef HAVE_ERROR_CHECKING
@@ -75,6 +75,6 @@ int MPI_Send_init(void *buf, int count, MPI_Datatype datatype, int dest, int tag
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND_INIT);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SEND_INIT);
     return MPI_SUCCESS;
 }

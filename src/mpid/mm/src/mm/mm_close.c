@@ -9,9 +9,10 @@
 
 int mm_close(int conn)
 {
-    MM_ENTER_FUNC(MM_CLOSE);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_MM_CLOSE);
     beasy_closesocket(conn);
-    MM_EXIT_FUNC(MM_CLOSE);
+    MPID_FUNC_EXIT(MPID_STATE_MM_CLOSE);
     return 0;
 }
 

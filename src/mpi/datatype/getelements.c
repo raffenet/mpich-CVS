@@ -25,9 +25,9 @@
 /* Return the number of elements */
 static int MPIR_Type_get_elements( int m_rem, MPID_Datatype *datatype_ptr )
 {
+#if 0
     int mpi_errno;
 
-#if 0
 	/* MPI calls shouldn't be looking at loops for now? */
     if ( (datatype_ptr->loopinfo->kind & DATALOOP_KIND_MASK) == MPID_DTYPE_STRUCT) {
 	/* This is the hard case; we must loop through the components of the 

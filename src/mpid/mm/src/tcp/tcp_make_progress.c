@@ -13,8 +13,9 @@ int tcp_accept_connection()
     MPIDI_VC *vc_ptr;
     char ack;
     BOOL inwriteset;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(TCP_ACCEPT_CONNECTION);
+    MPID_FUNC_ENTER(MPID_STATE_TCP_ACCEPT_CONNECTION);
 
     /* accept new connection */
     bfd = beasy_accept(TCP_Process.listener);
@@ -23,7 +24,7 @@ int tcp_accept_connection()
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 	err_printf("tcp_accept_connection: beasy_accpet failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-	MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_ACCEPT_CONNECTION);
 	return -1;
     }
     /* receive the remote rank */
@@ -32,7 +33,7 @@ int tcp_accept_connection()
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 	err_printf("tcp_accept_connection: beasy_receive(rank) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-	MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_ACCEPT_CONNECTION);
 	return -1;
     }
     /* receive the remote context */
@@ -41,7 +42,7 @@ int tcp_accept_connection()
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 	err_printf("tcp_accept_connection: beasy_receive(context) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-	MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_ACCEPT_CONNECTION);
 	return -1;
     }
 
@@ -93,14 +94,14 @@ int tcp_accept_connection()
 	{
 	    err_printf("Error:tcp_accept_connection: vc is already connected with method %d\n", vc_ptr->method);
 	    MPID_Thread_unlock(vc_ptr->lock);
-	    MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
+	    MPID_FUNC_EXIT(MPID_STATE_TCP_ACCEPT_CONNECTION);
 	    return -1;
 	}
 	if (!vc_ptr->data.tcp.connecting || vc_ptr->data.tcp.connected)
 	{
 	    err_printf("Error:tcp_accept_connection: vc is already connected.\n");
 	    MPID_Thread_unlock(vc_ptr->lock);
-	    MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
+	    MPID_FUNC_EXIT(MPID_STATE_TCP_ACCEPT_CONNECTION);
 	    return -1;
 	}
 #endif
@@ -170,7 +171,7 @@ int tcp_accept_connection()
 	MPID_Thread_unlock(vc_ptr->lock);
     }
 
-    MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_ACCEPT_CONNECTION);
     return MPI_SUCCESS;
 }
 
@@ -185,14 +186,15 @@ int tcp_make_progress()
     struct timeval tv;
     MPIDI_VC *vc_iter;
     bfd_set readset, writeset;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(TCP_MAKE_PROGRESS);
+    MPID_FUNC_ENTER(MPID_STATE_TCP_MAKE_PROGRESS);
 
     if ((TCP_Process.num_readers == 0) &&
 	(TCP_Process.num_writers == 0))
     {
 	/* shortcut out because there are no sockets in either the read set or the write set */
-	MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_MAKE_PROGRESS);
 	return MPI_SUCCESS;
     }
 
@@ -205,16 +207,16 @@ int tcp_make_progress()
 	writeset = TCP_Process.writeset;
 
     /* select */
-    MM_ENTER_FUNC(BSELECT);
+    MPID_FUNC_ENTER(MPID_STATE_BSELECT);
     nready = bselect(TCP_Process.max_bfd, 
 	TCP_Process.num_readers ? &readset : NULL,
 	TCP_Process.num_writers ? &writeset : NULL,
 	NULL, &tv);
-    MM_EXIT_FUNC(BSELECT);
+    MPID_FUNC_EXIT(MPID_STATE_BSELECT);
 
     if (nready == 0)
     {
-	MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_MAKE_PROGRESS);
 	return MPI_SUCCESS;
     }
 
@@ -231,7 +233,7 @@ int tcp_make_progress()
 	    }
 	    if (nready == 0)
 	    {
-		MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
+		MPID_FUNC_EXIT(MPID_STATE_TCP_MAKE_PROGRESS);
 		return MPI_SUCCESS;
 	    }
 	    vc_iter = vc_iter->read_next_ptr;
@@ -252,7 +254,7 @@ int tcp_make_progress()
 	    }
 	    if (nready == 0)
 	    {
-		MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
+		MPID_FUNC_EXIT(MPID_STATE_TCP_MAKE_PROGRESS);
 		return MPI_SUCCESS;
 	    }
 	    vc_iter = vc_iter->write_next_ptr;
@@ -261,7 +263,7 @@ int tcp_make_progress()
 
     if (nready == 0)
     {
-	MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_MAKE_PROGRESS);
 	return MPI_SUCCESS;
     }
 
@@ -271,7 +273,7 @@ int tcp_make_progress()
 	nready--;
 	if (tcp_accept_connection() != MPI_SUCCESS)
 	{
-	    MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
+	    MPID_FUNC_EXIT(MPID_STATE_TCP_MAKE_PROGRESS);
 	    return -1;
 	}
     }
@@ -281,11 +283,11 @@ int tcp_make_progress()
     {
 	err_printf("Error: %d sockets still signalled after traversing read_list, write_list and listener.");
 	/* return some error */
-	MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_MAKE_PROGRESS);
 	return -1;
     }
 #endif
 
-    MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_MAKE_PROGRESS);
     return MPI_SUCCESS;
 }

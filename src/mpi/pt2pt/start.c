@@ -45,7 +45,7 @@ int MPI_Start(MPI_Request *request)
     static const char FCNAME[] = "MPI_Start";
     int mpi_errno = MPI_SUCCESS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_START);
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_START);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -55,7 +55,7 @@ int MPI_Start(MPI_Request *request)
                             "**initialized", 0 );
             }
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_START);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
@@ -63,6 +63,6 @@ int MPI_Start(MPI_Request *request)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_START);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
     return MPI_SUCCESS;
 }

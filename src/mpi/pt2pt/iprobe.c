@@ -67,7 +67,7 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 	    
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IPROBE);
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_IPROBE);
     
     /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
@@ -80,7 +80,7 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
 	    /* Validate communicator */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
@@ -91,7 +91,7 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
     mpi_errno = MPID_Iprobe(source, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, 
 			    flag, status);
     
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
     if (mpi_errno == MPI_SUCCESS)
     {
 	return MPI_SUCCESS;

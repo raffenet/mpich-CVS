@@ -15,8 +15,9 @@ TCP_PerProcess TCP_Process;
 int tcp_init()
 {
     int error;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(TCP_INIT);
+    MPID_FUNC_ENTER(MPID_STATE_TCP_INIT);
 
     error = bsocket_init();
     if (error)
@@ -49,7 +50,7 @@ int tcp_init()
     TCP_Process.num_readers = 0;
     TCP_Process.num_writers = 0;
 
-    MM_EXIT_FUNC(TCP_INIT);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_INIT);
     return MPI_SUCCESS;
 }
 
@@ -60,13 +61,14 @@ int tcp_init()
 @*/
 int tcp_finalize()
 {
-    MM_ENTER_FUNC(TCP_FINALIZE);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_TCP_FINALIZE);
 
     beasy_closesocket(TCP_Process.listener);
     TCP_Process.listener = BFD_INVALID_SOCKET;
 
     bsocket_finalize();
 
-    MM_EXIT_FUNC(TCP_FINALIZE);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_FINALIZE);
     return MPI_SUCCESS;
 }

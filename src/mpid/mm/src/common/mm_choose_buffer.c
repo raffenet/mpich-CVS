@@ -20,8 +20,9 @@ int mm_choose_buffer(MPID_Request *request_ptr)
 {
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(MM_CHOOSE_BUFFER);
+    MPID_FUNC_ENTER(MPID_STATE_MM_CHOOSE_BUFFER);
 
     dbg_printf("mm_choose_buffer\n");
 
@@ -101,6 +102,6 @@ int mm_choose_buffer(MPID_Request *request_ptr)
 	request_ptr->mm.get_buffers = NULL;
     }
 
-    MM_EXIT_FUNC(MM_CHOOSE_BUFFER);
+    MPID_FUNC_EXIT(MPID_STATE_MM_CHOOSE_BUFFER);
     return MPI_SUCCESS;
 }

@@ -63,7 +63,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
 
     /* This is a temporary version to support the testing library */
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ALLREDUCE);
+    MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_ALLREDUCE);
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
 #   ifdef HAVE_ERROR_CHECKING
@@ -79,7 +79,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
+                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
@@ -91,21 +91,22 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
        single-process test codes to use the common test runtime 
        routines */
     /* ... body of routine ...  */
-    if (comm_ptr->remote_size > 1) {
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, 
-					      "**notimpl", 0 );
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
+    if (comm_ptr->remote_size > 1)
+    {
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**notimpl", 0 );
+	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
-    else {
+    else
+    {
 	/* count in bytes */
 	/* This also assumes that the datatypes are basic */
 	int dtype_size;
 
-	if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, 
-					      "**notimpl", 0 );
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
+	if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+	{
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**notimpl", 0 );
+	    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
 	dtype_size = MPID_Datatype_get_size(datatype);
@@ -114,6 +115,6 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
     }
     /* ... end of body of routine ... */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
+    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
     return MPI_SUCCESS;
 }

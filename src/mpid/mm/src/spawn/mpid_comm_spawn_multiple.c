@@ -35,8 +35,9 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_
     char pszPortName[MPI_MAX_PORT_NAME];
     MPI_Info info, prepost_info;
     int same_domain;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(MPID_COMM_SPAWN_MULTIPLE);
+    MPID_FUNC_ENTER(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
 
     MPID_Comm_thread_lock( comm_ptr );
 
@@ -65,6 +66,6 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_
 
     MPID_Comm_thread_unlock( comm_ptr );
 
-    MM_EXIT_FUNC(MPID_COMM_SPAWN_MULTIPLE);
+    MPID_FUNC_EXIT(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
     return MPI_SUCCESS;
 }

@@ -16,11 +16,12 @@
 @*/
 int MPID_Progress_test( void )
 {
-    MM_ENTER_FUNC(MPID_PROGRESS_TEST);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_MPID_PROGRESS_TEST);
 
     /* test the completion queue */
     mm_cq_test();
 
-    MM_EXIT_FUNC(MPID_PROGRESS_TEST);
+    MPID_FUNC_EXIT(MPID_STATE_MPID_PROGRESS_TEST);
     return 0;
 }

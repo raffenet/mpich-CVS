@@ -29,8 +29,9 @@
 int MPID_Comm_connect(char *port_name, MPID_Info *info_ptr, int root, MPID_Comm *comm_ptr, MPID_Comm **newcomm)
 {
     int conn;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(MPID_COMM_CONNECT);
+    MPID_FUNC_ENTER(MPID_STATE_MPID_COMM_CONNECT);
 
     if (comm_ptr->rank == root)
     {
@@ -47,6 +48,6 @@ int MPID_Comm_connect(char *port_name, MPID_Info *info_ptr, int root, MPID_Comm 
 	/* Bcast resulting intercommunicator stuff */
     }
 
-    MM_EXIT_FUNC(MPID_COMM_CONNECT);
+    MPID_FUNC_EXIT(MPID_STATE_MPID_COMM_CONNECT);
     return MPI_SUCCESS;
 }

@@ -12,11 +12,12 @@
 @*/
 int packer_init()
 {
-    MM_ENTER_FUNC(PACKER_INIT);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_PACKER_INIT);
 
     MPID_Process.packer_vc_ptr = mm_vc_alloc(MM_PACKER_METHOD);
 
-    MM_EXIT_FUNC(PACKER_INIT);
+    MPID_FUNC_EXIT(MPID_STATE_PACKER_INIT);
     return MPI_SUCCESS;
 }
 
@@ -27,7 +28,8 @@ int packer_init()
 @*/
 int packer_finalize()
 {
-    MM_ENTER_FUNC(PACKER_FINALIZE);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_PACKER_FINALIZE);
 
     if (MPID_Process.packer_vc_ptr != NULL)
     {
@@ -35,6 +37,6 @@ int packer_finalize()
 	MPID_Process.packer_vc_ptr = NULL;
     }
 
-    MM_EXIT_FUNC(PACKER_FINALIZE);
+    MPID_FUNC_EXIT(MPID_STATE_PACKER_FINALIZE);
     return MPI_SUCCESS;
 }

@@ -31,8 +31,9 @@ int MPID_Comm_accept(char *port_name, MPID_Info *info_ptr, int root, MPID_Comm *
     char value[10];
     int same_domain;
 */
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(MPID_COMM_ACCEPT);
+    MPID_FUNC_ENTER(MPID_STATE_MPID_COMM_ACCEPT);
 
     if (comm_ptr->rank == root)
     {
@@ -50,6 +51,6 @@ int MPID_Comm_accept(char *port_name, MPID_Info *info_ptr, int root, MPID_Comm *
 	/* Bcast resulting intercommunicator stuff */
     }
 
-    MM_EXIT_FUNC(MPID_COMM_ACCEPT);
+    MPID_FUNC_EXIT(MPID_STATE_MPID_COMM_ACCEPT);
     return MPI_SUCCESS;
 }

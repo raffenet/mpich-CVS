@@ -18,13 +18,14 @@ MPIU_Object_alloc_t MPID_Request_mem = { 0, 0, 0, 0, 0,
 MPID_Request * mm_request_alloc()
 {
     MPID_Request *p;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(MM_REQUEST_ALLOC);
+    MPID_FUNC_ENTER(MPID_STATE_MM_REQUEST_ALLOC);
 
     p = MPIU_Handle_obj_alloc(&MPID_Request_mem);
     if (p == NULL)
     {
-	MM_EXIT_FUNC(MM_REQUEST_ALLOC);
+	MPID_FUNC_EXIT(MPID_STATE_MM_REQUEST_ALLOC);
 	return p;
     }
     p->cc = 0;
@@ -40,13 +41,14 @@ MPID_Request * mm_request_alloc()
     /* insert stuff like "ptr = INVALID_POINTER" here */
 #endif
 
-    MM_EXIT_FUNC(MM_REQUEST_ALLOC);
+    MPID_FUNC_EXIT(MPID_STATE_MM_REQUEST_ALLOC);
     return p;
 }
 
 void mm_request_free(MPID_Request *request_ptr)
 {
-    MM_ENTER_FUNC(MM_REQUEST_FREE);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_MM_REQUEST_FREE);
 
     /* insert reference count code here */
 
@@ -57,21 +59,24 @@ void mm_request_free(MPID_Request *request_ptr)
     /* free the request */
     MPIU_Handle_obj_free(&MPID_Request_mem, request_ptr);
 
-    MM_EXIT_FUNC(MM_REQUEST_FREE);
+    MPID_FUNC_EXIT(MPID_STATE_MM_REQUEST_FREE);
 }
 
 void MPID_Request_release(MPID_Request *request_ptr)
 {
-    MM_ENTER_FUNC(MPID_REQUEST_RELEASE);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_MPID_REQUEST_RELEASE);
 
     if (request_ptr == NULL)
     {
-	MM_EXIT_FUNC(MPID_REQUEST_RELEASE);
+	MPID_FUNC_EXIT(MPID_STATE_MPID_REQUEST_RELEASE);
 	return;
     }
 
-    MPID_Request_release(request_ptr->mm.next_ptr);
+    /* do a depth first traversal of the request structures to free them */
+    if (request_ptr->mm.next_ptr)
+	MPID_Request_release(request_ptr->mm.next_ptr);
     mm_request_free(request_ptr);
 
-    MM_EXIT_FUNC(MPID_REQUEST_RELEASE);
+    MPID_FUNC_EXIT(MPID_STATE_MPID_REQUEST_RELEASE);
 }

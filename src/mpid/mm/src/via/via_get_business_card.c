@@ -7,15 +7,16 @@
 
 int via_get_business_card(char *value, int length)
 {
-    MM_ENTER_FUNC(VIA_GET_BUSINESS_CARD);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_VIA_GET_BUSINESS_CARD);
 
     if (length < 1)
     {
-	MM_EXIT_FUNC(VIA_GET_BUSINESS_CARD);
+	MPID_FUNC_EXIT(MPID_STATE_VIA_GET_BUSINESS_CARD);
 	return -1;
     }
     snprintf(value, length, "none");
 
-    MM_EXIT_FUNC(VIA_GET_BUSINESS_CARD);
+    MPID_FUNC_EXIT(MPID_STATE_VIA_GET_BUSINESS_CARD);
     return MPI_SUCCESS;
 }

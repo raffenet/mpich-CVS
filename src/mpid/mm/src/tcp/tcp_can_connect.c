@@ -7,7 +7,8 @@
 
 int tcp_can_connect(char *business_card)
 {
-    MM_ENTER_FUNC(TCP_CAN_CONNECT);
-    MM_EXIT_FUNC(TCP_CAN_CONNECT);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_TCP_CAN_CONNECT);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_CAN_CONNECT);
     return TRUE;
 }

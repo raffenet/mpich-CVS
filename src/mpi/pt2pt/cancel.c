@@ -60,7 +60,7 @@ int MPI_Cancel(MPI_Request *request)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CANCEL);
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_CANCEL);
     
     /* Convert MPI object handles to object pointers */
     MPID_Request_get_ptr( *request, request_ptr );
@@ -73,7 +73,7 @@ int MPI_Cancel(MPI_Request *request)
 	    /* Validate request_ptr */
             MPID_Request_valid_ptr( request_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
@@ -91,7 +91,7 @@ int MPI_Cancel(MPI_Request *request)
 
 	case MPID_PREQUEST_RECV:
 	{
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
+	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, 
 					      "**cancelperrecv", 0 );
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -105,7 +105,7 @@ int MPI_Cancel(MPI_Request *request)
 
 	case MPID_PREQUEST_SEND:
 	{
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
+	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, 
 					      "**cancelpersend", 0 );
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -113,7 +113,7 @@ int MPI_Cancel(MPI_Request *request)
 
 	case MPID_UREQUEST:
 	{
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
+	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
 	    mpi_errno = (request_ptr->cancel_fn)( 
 		request_ptr->grequest_extra_state, 
 		(request_ptr->cc == 0) );
@@ -122,13 +122,13 @@ int MPI_Cancel(MPI_Request *request)
 
 	default:
 	{
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
+	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
 	    mpi_errno = MPIR_Err_create_code(
 		MPI_ERR_INTERN, "**cancelunknown", 0 );
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}
     }
     
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
     return MPI_SUCCESS;
 }

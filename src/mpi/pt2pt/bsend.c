@@ -53,7 +53,7 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECLS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_BSEND);
+    MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPI_BSEND);
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
 #   ifdef HAVE_ERROR_CHECKING
@@ -71,7 +71,7 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	    }
 
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BSEND);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
@@ -83,7 +83,7 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 #ifdef MPID_HAS_TBSEND
     mpi_errno = MPID_tBsend( buf, count, datatype, dest, tag, comm_ptr, 0 );
     if (mpi_errno == MPI_SUCCESS) {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BSEND);
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
 	return MPI_SUCCESS;
     }
     /* Check for MPID_WOULD_BLOCK? */
@@ -91,6 +91,6 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     
     /* ... end of body of routine ... */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BSEND);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
     return MPI_SUCCESS;
 }

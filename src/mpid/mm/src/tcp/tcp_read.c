@@ -22,8 +22,9 @@ int tcp_read_connecting(MPIDI_VC *vc_ptr);
 int tcp_read_header(MPIDI_VC *vc_ptr)
 {
     int num_read;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(TCP_READ_HEADER);
+    MPID_FUNC_ENTER(MPID_STATE_TCP_READ_HEADER);
 #ifdef MPICH_DEV_BUILD
     if (vc_ptr->data.tcp.bytes_of_header_read == sizeof(MPID_Packet))
     {
@@ -34,17 +35,17 @@ int tcp_read_header(MPIDI_VC *vc_ptr)
 	err_printf("tcp_read_header called on an unconnected vc\n");
     }
 #endif
-    MM_ENTER_FUNC(BREAD);
+    MPID_FUNC_ENTER(MPID_STATE_BREAD);
     num_read = bread(vc_ptr->data.tcp.bfd, 
 	&((char*)(&vc_ptr->pkt_car.msg_header.pkt))[vc_ptr->data.tcp.bytes_of_header_read],
 	sizeof(MPID_Packet) - vc_ptr->data.tcp.bytes_of_header_read);
-    MM_EXIT_FUNC(BREAD);
+    MPID_FUNC_EXIT(MPID_STATE_BREAD);
     if (num_read == SOCKET_ERROR)
     {
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 	err_printf("tcp_read_connecting: bread failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-	MM_EXIT_FUNC(TCP_READ_HEADER);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_READ_HEADER);
 	return -1;
     }
 
@@ -60,7 +61,7 @@ int tcp_read_header(MPIDI_VC *vc_ptr)
 	mm_cq_enqueue(&vc_ptr->pkt_car);
     }
 
-    MM_EXIT_FUNC(TCP_READ_HEADER);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_READ_HEADER);
     return MPI_SUCCESS;
 }
 
@@ -69,22 +70,23 @@ int tcp_read_data(MPIDI_VC *vc_ptr)
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
     int ret_val;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(TCP_READ_DATA);
+    MPID_FUNC_ENTER(MPID_STATE_TCP_READ_DATA);
 
 #ifdef MPICH_DEV_BUILD
     if (vc_ptr->data.tcp.connecting)
     {
 	err_printf("Error: tcp_read_data called on connecting vc\n");
 	ret_val = tcp_read_connecting(vc_ptr);
-	MM_EXIT_FUNC(TCP_READ_DATA);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_READ_DATA);
 	return ret_val;
     }
 #endif
 
     if (vc_ptr->readq_head == NULL)
     {
-	MM_EXIT_FUNC(TCP_READ_DATA);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_READ_DATA);
 	return MPI_SUCCESS;
     }
 
@@ -95,44 +97,44 @@ int tcp_read_data(MPIDI_VC *vc_ptr)
     {
     case MM_VEC_BUFFER:
 	ret_val = tcp_read_vec(vc_ptr, car_ptr, buf_ptr);
-	MM_EXIT_FUNC(TCP_READ_DATA);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_READ_DATA);
 	return ret_val;
 	break;
     case MM_SIMPLE_BUFFER:
 	ret_val = tcp_read_simple(vc_ptr, car_ptr, buf_ptr);
-	MM_EXIT_FUNC(TCP_READ_DATA);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_READ_DATA);
 	return ret_val;
 	break;
     case MM_TMP_BUFFER:
 	ret_val = tcp_read_tmp(vc_ptr, car_ptr, buf_ptr);
-	MM_EXIT_FUNC(TCP_READ_DATA);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_READ_DATA);
 	return ret_val;
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_BUFFER:
 	ret_val = tcp_read_shm(vc_ptr, car_ptr, buf_ptr);
-	MM_EXIT_FUNC(TCP_READ_DATA);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_READ_DATA);
 	return ret_val;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA
     case MM_VIA_BUFFER:
 	ret_val = tcp_read_via(vc_ptr, car_ptr, buf_ptr);
-	MM_EXIT_FUNC(TCP_READ_DATA);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_READ_DATA);
 	return ret_val;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
     case MM_VIA_RDMA_BUFFER:
 	ret_val = tcp_read_via_rdma(vc_ptr, car_ptr, buf_ptr);
-	MM_EXIT_FUNC(TCP_READ_DATA);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_READ_DATA);
 	return ret_val;
 	break;
 #endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD_BUFFER:
 	ret_val = tcp_read_new(vc_ptr, car_ptr, buf_ptr);
-	MM_EXIT_FUNC(TCP_READ_DATA);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_READ_DATA);
 	return ret_val;
 	break;
 #endif
@@ -144,15 +146,16 @@ int tcp_read_data(MPIDI_VC *vc_ptr)
 	break;
     }
 
-    MM_EXIT_FUNC(TCP_READ_DATA);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_READ_DATA);
     return -1;
 }
 
 #ifdef WITH_METHOD_SHM
 int tcp_read_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MM_ENTER_FUNC(TCP_READ_SHM);
-    MM_EXIT_FUNC(TCP_READ_SHM);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_TCP_READ_SHM);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_READ_SHM);
     return MPI_SUCCESS;
 }
 #endif
@@ -160,8 +163,9 @@ int tcp_read_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 #ifdef WITH_METHOD_VIA
 int tcp_read_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MM_ENTER_FUNC(TCP_READ_VIA);
-    MM_EXIT_FUNC(TCP_READ_VIA);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_TCP_READ_VIA);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_READ_VIA);
     return MPI_SUCCESS;
 }
 #endif
@@ -169,8 +173,9 @@ int tcp_read_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 #ifdef WITH_METHOD_VIA_RDMA
 int tcp_read_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MM_ENTER_FUNC(TCP_READ_VIA_RDMA);
-    MM_EXIT_FUNC(TCP_READ_VIA_RDMA);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_TCP_READ_VIA_RDMA);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_READ_VIA_RDMA);
     return MPI_SUCCESS;
 }
 #endif
@@ -179,8 +184,9 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_read;
     int num_left, i;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(TCP_READ_VEC);
+    MPID_FUNC_ENTER(MPID_STATE_TCP_READ_VEC);
 
     if (buf_ptr->vec.num_cars_outstanding == 0)
     {
@@ -207,33 +213,33 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	/* read */
 	if (car_ptr->data.tcp.buf.vec_read.vec_size == 1) /* optimization for single buffer reads */
 	{
-	    MM_ENTER_FUNC(BREAD);
+	    MPID_FUNC_ENTER(MPID_STATE_BREAD);
 	    num_read = bread(vc_ptr->data.tcp.bfd,
 		car_ptr->data.tcp.buf.vec_read.vec[car_ptr->data.tcp.buf.vec_read.cur_index].MPID_IOV_BUF,
 		car_ptr->data.tcp.buf.vec_read.vec[car_ptr->data.tcp.buf.vec_read.cur_index].MPID_IOV_LEN);
-	    MM_EXIT_FUNC(BREAD);
+	    MPID_FUNC_EXIT(MPID_STATE_BREAD);
 	    if (num_read == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();
 		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 		err_printf("tcp_read_vec: bread failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-		MM_EXIT_FUNC(TCP_READ_VEC);
+		MPID_FUNC_EXIT(MPID_STATE_TCP_READ_VEC);
 		return -1;
 	    }
 	}
 	else
 	{
-	    MM_ENTER_FUNC(BREADV);
+	    MPID_FUNC_ENTER(MPID_STATE_BREADV);
 	    num_read = breadv(vc_ptr->data.tcp.bfd,
 		&car_ptr->data.tcp.buf.vec_read.vec[car_ptr->data.tcp.buf.vec_read.cur_index],
 		car_ptr->data.tcp.buf.vec_read.vec_size);
-	    MM_EXIT_FUNC(BREADV);
+	    MPID_FUNC_EXIT(MPID_STATE_BREADV);
 	    if (num_read == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();
 		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 		err_printf("tcp_read_vec: breadv failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-		MM_EXIT_FUNC(TCP_READ_VEC);
+		MPID_FUNC_EXIT(MPID_STATE_TCP_READ_VEC);
 		return -1;
 	    }
 	}
@@ -281,15 +287,16 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	mm_cq_enqueue(car_ptr);
     }
 
-    MM_EXIT_FUNC(TCP_READ_VEC);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_READ_VEC);
     return MPI_SUCCESS;
 }
 
 int tcp_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_read;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(TCP_READ_TMP);
+    MPID_FUNC_ENTER(MPID_STATE_TCP_READ_TMP);
 
     if (buf_ptr->tmp.buf == NULL)
     {
@@ -298,11 +305,11 @@ int tcp_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     }
 
     /* read as much as possible */
-    MM_ENTER_FUNC(BREAD);
+    MPID_FUNC_ENTER(MPID_STATE_BREAD);
     num_read = bread(vc_ptr->data.tcp.bfd, 
 	(char*)(buf_ptr->tmp.buf) + buf_ptr->tmp.num_read, 
 	buf_ptr->tmp.len - buf_ptr->tmp.num_read);
-    MM_EXIT_FUNC(BREAD);
+    MPID_FUNC_EXIT(MPID_STATE_BREAD);
     if (num_read == SOCKET_ERROR)
     {
 	err_printf("tcp_read_tmp:bread failed, error %d\n", beasy_getlasterror());
@@ -322,15 +329,16 @@ int tcp_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	mm_cq_enqueue(car_ptr);
     }
 
-    MM_EXIT_FUNC(TCP_READ_TMP);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_READ_TMP);
     return MPI_SUCCESS;
 }
 
 int tcp_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_read;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(TCP_READ_SIMPLE);
+    MPID_FUNC_ENTER(MPID_STATE_TCP_READ_SIMPLE);
 
     if (buf_ptr->simple.buf == NULL)
     {
@@ -341,11 +349,11 @@ int tcp_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_pt
     }
 
     /* read as much as possible */
-    MM_ENTER_FUNC(BREAD);
+    MPID_FUNC_ENTER(MPID_STATE_BREAD);
     num_read = bread(vc_ptr->data.tcp.bfd, 
 	(char*)(buf_ptr->simple.buf) + buf_ptr->simple.num_read, 
 	buf_ptr->simple.len - buf_ptr->simple.num_read);
-    MM_EXIT_FUNC(BREAD);
+    MPID_FUNC_EXIT(MPID_STATE_BREAD);
     if (num_read == SOCKET_ERROR)
     {
 	err_printf("tcp_read_tmp:bread failed, error %d\n", beasy_getlasterror());
@@ -365,22 +373,23 @@ int tcp_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_pt
 	mm_cq_enqueue(car_ptr);
     }
 
-    MM_EXIT_FUNC(TCP_READ_TMP);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_READ_TMP);
     return MPI_SUCCESS;
 }
 
 int tcp_read_connecting(MPIDI_VC *vc_ptr)
 {
     char ack;
+    MPID_STATE_DECLS;
     
-    MM_ENTER_FUNC(TCP_READ_CONNECTING);
+    MPID_FUNC_ENTER(MPID_STATE_TCP_READ_CONNECTING);
 
     if (beasy_receive(vc_ptr->data.tcp.bfd, &ack, 1) == SOCKET_ERROR)
     {
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
 	err_printf("tcp_read_connecting: beasy_receive(ack) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-	MM_EXIT_FUNC(TCP_READ_CONNECTING);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_READ_CONNECTING);
 	return -1;
     }
     if (ack == TCP_ACCEPT_CONNECTION)
@@ -402,6 +411,6 @@ int tcp_read_connecting(MPIDI_VC *vc_ptr)
     vc_ptr->data.tcp.read = tcp_read_header;
     vc_ptr->data.tcp.bytes_of_header_read = 0;
 
-    MM_EXIT_FUNC(TCP_READ_CONNECTING);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_READ_CONNECTING);
     return MPI_SUCCESS;
 }

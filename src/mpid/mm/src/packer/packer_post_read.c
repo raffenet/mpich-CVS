@@ -7,20 +7,22 @@
 
 int packer_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
-    MM_ENTER_FUNC(PACKER_POST_READ);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_PACKER_POST_READ);
 
     packer_car_enqueue(vc_ptr, car_ptr);
 
-    MM_EXIT_FUNC(PACKER_POST_READ);
+    MPID_FUNC_EXIT(MPID_STATE_PACKER_POST_READ);
     return MPI_SUCCESS;
 }
 
 int packer_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
 {
-    MM_ENTER_FUNC(PACKER_MERGE_WITH_UNEXPECTED);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_PACKER_MERGE_WITH_UNEXPECTED);
 
     err_printf("packer_merge_with_unexpected: Congratulations,\nyou win the opportuninty to report a bug.  I thought this function would never be called.\n");
 
-    MM_EXIT_FUNC(PACKER_MERGE_WITH_UNEXPECTED);
+    MPID_FUNC_EXIT(MPID_STATE_PACKER_MERGE_WITH_UNEXPECTED);
     return MPI_SUCCESS;
 }

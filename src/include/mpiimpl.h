@@ -1021,37 +1021,8 @@ extern int MPID_THREAD_LEVEL;
 #define MPID_Allocation_unlock() MPID_Thread_unlock( &MPIR_Procss.allocation_lock )
 #endif
 
-/* Routine tracing (see --enable-timing for control of this) */
-#ifdef HAVE_TIMING
-/* Possible values for timing */
-#define MPID_TIMING_KIND_OFF 0
-#define MPID_TIMING_KIND_TIME 1
-#define MPID_TIMING_KIND_LOG 2
-#define MPID_TIMING_KIND_ALL 3
-#define MPID_TIMING_KIND_RUNTIME 4
-
-/* These next two include files contain the static state definitions */
-#include "mpistates.h"
-#include "mpisysstates.h"
-extern void MPID_TimerStateBegin( int, MPID_Time_t * );
-extern void MPID_TimerStateEnd( int, MPID_Time_t * );
-#define MPID_MPI_STATE_DECLS  MPID_Time_t time_stamp
-#define MPID_MPI_FUNC_EXIT(a) MPID_TimerStateEnd( a, &time_stamp )
-#define MPID_MPI_FUNC_ENTER(a) MPID_TimerStateBegin( a, &time_stamp )
-/* Statistics macros aren't defined yet */
-/* All uses of these are protected by the symbol COLLECT_STATS, so they
-   do not need to be defined in the non-HAVE_TIMING branch. */
-#define MPID_STAT_BEGIN
-#define MPID_STAT_END
-#define MPID_STAT_ACC(statid,val)
-#define MPID_STAT_ACC_RANGE(statid,rng)
-#define MPID_STAT_ACC_SIMPLE(statid,val)
-#define MPID_STAT_MISC(a) a
-#else
-#define MPID_MPI_STATE_DECLS
-#define MPID_MPI_FUNC_EXIT(a)
-#define MPID_MPI_FUNC_ENTER(a)
-#endif
+/* set up the timing macros */
+#include "mpitimerimpl.h"
 
 /* Error checking (see --enable-error-checking for control of this) */
 #ifdef HAVE_ERROR_CHECKING

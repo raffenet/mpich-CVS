@@ -9,8 +9,9 @@
 int mm_post_recv(MM_Car *car_ptr)
 {
     MM_Car *iter_ptr, *trailer_ptr;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(MM_POST_RECV);
+    MPID_FUNC_ENTER(MPID_STATE_MM_POST_RECV);
     dbg_printf("mm_post_recv\n");
     
     /* find in unex_q or enqueue into the posted_q */
@@ -25,7 +26,7 @@ int mm_post_recv(MM_Car *car_ptr)
 	    if (iter_ptr->msg_header.pkt.u.hdr.size > car_ptr->msg_header.pkt.u.hdr.size)
 	    {
 		err_printf("Error: unex msg size %d > posted msg size %d\n", iter_ptr->msg_header.pkt.u.hdr.size, car_ptr->msg_header.pkt.u.hdr.size);
-		MM_EXIT_FUNC(MM_POST_RECV);
+		MPID_FUNC_EXIT(MPID_STATE_MM_POST_RECV);
 		return -1;
 	    }
 	    /* dequeue the car from the unex_q */
@@ -44,7 +45,7 @@ int mm_post_recv(MM_Car *car_ptr)
 	    MPID_Thread_unlock(MPID_Process.qlock);
 	    /* merge the unex car with the posted car using the method in the vc */
 	    iter_ptr->vc_ptr->merge_with_unexpected(car_ptr, iter_ptr);
-	    MM_EXIT_FUNC(MM_POST_RECV);
+	    MPID_FUNC_EXIT(MPID_STATE_MM_POST_RECV);
 	    return MPI_SUCCESS;
 	}
 	if (trailer_ptr != iter_ptr)
@@ -66,6 +67,6 @@ int mm_post_recv(MM_Car *car_ptr)
 
     MPID_Thread_unlock(MPID_Process.qlock);
 
-    MM_EXIT_FUNC(MM_POST_RECV);
+    MPID_FUNC_EXIT(MPID_STATE_MM_POST_RECV);
     return MPI_SUCCESS;
 }

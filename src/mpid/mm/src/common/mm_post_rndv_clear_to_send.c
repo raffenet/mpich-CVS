@@ -10,8 +10,9 @@ int mm_post_rndv_clear_to_send(MM_Car *posted_car_ptr, MM_Car *rndv_rts_car_ptr)
 {
     MM_Car *rndv_car_ptr;
     MPID_Rndv_clear_to_send_pkt *rndv_cts_ptr;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(MM_POST_RNDV_CLEAR_TO_SEND);
+    MPID_FUNC_ENTER(MPID_STATE_MM_POST_RNDV_CLEAR_TO_SEND);
 
     rndv_car_ptr = mm_car_alloc();
     
@@ -43,6 +44,6 @@ int mm_post_rndv_clear_to_send(MM_Car *posted_car_ptr, MM_Car *rndv_rts_car_ptr)
 
     posted_car_ptr->vc_ptr->post_write(posted_car_ptr->vc_ptr, rndv_car_ptr);
 
-    MM_EXIT_FUNC(MM_POST_RNDV_CLEAR_TO_SEND);
+    MPID_FUNC_EXIT(MPID_STATE_MM_POST_RNDV_CLEAR_TO_SEND);
     return MPI_SUCCESS;
 }

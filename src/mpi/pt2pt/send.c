@@ -69,7 +69,7 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 	    
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_SEND);
+    MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPI_SEND);
     
     /* ... body of routine ...  */
     
@@ -89,14 +89,14 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	    MPIR_ERRTEST_SEND_TAG(tag, mpi_errno);
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SEND);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
 	    
 	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SEND);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
@@ -111,7 +111,7 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     {
 	if (request_ptr == NULL)
 	{
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
+		MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SEND);
 		return MPI_SUCCESS;
 	}
 	else
@@ -125,7 +125,7 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 		
 	    if (mpi_errno == MPI_SUCCESS)
 	    {
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
+		MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SEND);
 		return MPI_SUCCESS;
 	    }
 	}
@@ -133,6 +133,6 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     
     /* ... end of body of routine ... */
     
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SEND);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

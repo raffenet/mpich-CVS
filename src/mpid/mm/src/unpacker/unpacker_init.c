@@ -12,11 +12,12 @@
 @*/
 int unpacker_init()
 {
-    MM_ENTER_FUNC(UNPACKER_INIT);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_UNPACKER_INIT);
 
     MPID_Process.unpacker_vc_ptr = mm_vc_alloc(MM_UNPACKER_METHOD);
 
-    MM_EXIT_FUNC(UNPACKER_INIT);
+    MPID_FUNC_EXIT(MPID_STATE_UNPACKER_INIT);
     return MPI_SUCCESS;
 }
 
@@ -27,11 +28,12 @@ int unpacker_init()
 @*/
 int unpacker_finalize()
 {
-    MM_ENTER_FUNC(UNPACKER_FINALIZE);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_UNPACKER_FINALIZE);
 
     mm_vc_free(MPID_Process.unpacker_vc_ptr);
     MPID_Process.unpacker_vc_ptr = NULL;
 
-    MM_EXIT_FUNC(UNPACKER_FINALIZE);
+    MPID_FUNC_EXIT(MPID_STATE_UNPACKER_FINALIZE);
     return MPI_SUCCESS;
 }

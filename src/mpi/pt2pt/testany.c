@@ -53,7 +53,7 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
     MPID_Request *request_ptr;
     MPID_MPI_STATE_DECLS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TESTANY);
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_TESTANY);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -62,7 +62,7 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
 	    MPIR_ERRTEST_ARGNULL(index,"index",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(flag,"flag",mpi_errno);
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TESTANY);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTANY);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
@@ -103,6 +103,6 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
 	}
     }
     /* ... end of body of routine ... */
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TESTANY);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTANY);
     return MPI_SUCCESS;
 }

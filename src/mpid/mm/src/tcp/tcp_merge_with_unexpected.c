@@ -9,8 +9,9 @@ int tcp_merge_with_unexpected(MM_Car *posted_car_ptr, MM_Car *unex_car_ptr)
 {
     int num_left, num_updated;
     char *unex_data_ptr;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(TCP_MERGE_WITH_UNEXPECTED);
+    MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_WITH_UNEXPECTED);
 
     /* copy the unexpected packet into the posted packet */
     posted_car_ptr->msg_header.pkt = unex_car_ptr->msg_header.pkt;
@@ -42,6 +43,6 @@ int tcp_merge_with_unexpected(MM_Car *posted_car_ptr, MM_Car *unex_car_ptr)
     /* free the temporary buffer and request */
     mm_request_free(unex_car_ptr->request_ptr);
 
-    MM_EXIT_FUNC(TCP_MERGE_WITH_UNEXPECTED);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_WITH_UNEXPECTED);
     return MPI_SUCCESS;
 }

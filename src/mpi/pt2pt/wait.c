@@ -65,7 +65,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 	    
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WAIT);
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_WAIT);
     
     /* Convert MPI object handles to object pointers */
     MPID_Request_get_ptr( *request, request_ptr );
@@ -79,7 +79,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	    /* Validate request_ptr */
             MPID_Request_valid_ptr( request_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WAIT);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
                 return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
             }
         }
@@ -110,7 +110,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     *request = MPI_REQUEST_NULL;
     MPID_Request_release(request_ptr);
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WAIT);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
     return !error ? MPI_SUCCESS :
 	MPIR_Err_return_comm(comm_ptr, FCNAME, MPI_ERR_IN_STATUS);
 }

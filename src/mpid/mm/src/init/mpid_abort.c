@@ -18,11 +18,12 @@
 @*/
 int MPID_Abort( MPID_Comm *comm_ptr, int err_code )
 {
-    MM_ENTER_FUNC(MPID_ABORT);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_MPID_ABORT);
 
     err_printf("MPID_Abort: error %d\n", err_code);
     exit(err_code);
 
-    MM_EXIT_FUNC(MPID_ABORT);
+    MPID_FUNC_EXIT(MPID_STATE_MPID_ABORT);
     return MPI_SUCCESS;
 }

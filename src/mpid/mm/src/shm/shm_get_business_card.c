@@ -7,11 +7,12 @@
 
 int shm_get_business_card(char *value, int length)
 {
-    MM_ENTER_FUNC(SHM_GET_BUSINESS_CARD);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_SHM_GET_BUSINESS_CARD);
 
     strncpy(value, SHM_Process.host, length-1);
     value[length-1] = '\0';
 
-    MM_EXIT_FUNC(SHM_GET_BUSINESS_CARD);
+    MPID_FUNC_EXIT(MPID_STATE_SHM_GET_BUSINESS_CARD);
     return MPI_SUCCESS;
 }

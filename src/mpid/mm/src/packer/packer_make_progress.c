@@ -16,8 +16,9 @@ int packer_make_progress()
     MM_Segment_buffer *buf_ptr;
     BOOL finished;
     MM_Car *next_qhead;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(PACKER_MAKE_PROGRESS);
+    MPID_FUNC_ENTER(MPID_STATE_PACKER_MAKE_PROGRESS);
 
     /* assign car_ptr to the first non-empty qhead, either
      * readq_head or writeq_head.  Then set next_qhead to
@@ -29,7 +30,7 @@ int packer_make_progress()
 	if (MPID_Process.packer_vc_ptr->writeq_head == NULL)
 	{
 	    /* shortcut out if the queues are empty */
-	    MM_EXIT_FUNC(PACKER_MAKE_PROGRESS);
+	    MPID_FUNC_EXIT(MPID_STATE_PACKER_MAKE_PROGRESS);
 	    return MPI_SUCCESS;
 	}
 	car_ptr = MPID_Process.packer_vc_ptr->writeq_head;
@@ -179,6 +180,6 @@ int packer_make_progress()
 	next_qhead = NULL;
     } while (car_ptr);
 
-    MM_EXIT_FUNC(PACKER_MAKE_PROGRESS);
+    MPID_FUNC_EXIT(MPID_STATE_PACKER_MAKE_PROGRESS);
     return MPI_SUCCESS;
 }

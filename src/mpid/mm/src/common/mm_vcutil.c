@@ -14,12 +14,13 @@
 @*/
 void mm_vc_init()
 {
-    MM_ENTER_FUNC(MM_VC_INIT);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_MM_VC_INIT);
 
     MPID_Process.VCTable_allocator = BlockAllocInit(sizeof(MPIDI_VCRT), 100, 100, malloc, free);
     MPID_Process.VC_allocator = BlockAllocInit(sizeof(MPIDI_VC), 100, 100, malloc, free);
     
-    MM_EXIT_FUNC(MM_VC_INIT);
+    MPID_FUNC_EXIT(MPID_STATE_MM_VC_INIT);
 }
 
 /*@
@@ -29,12 +30,13 @@ void mm_vc_init()
 @*/
 void mm_vc_finalize()
 {
-    MM_ENTER_FUNC(MM_VC_FINALIZE);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_MM_VC_FINALIZE);
     
     BlockAllocFinalize(&MPID_Process.VCTable_allocator);
     BlockAllocFinalize(&MPID_Process.VC_allocator);
     
-    MM_EXIT_FUNC(MM_VC_FINALIZE);
+    MPID_FUNC_EXIT(MPID_STATE_MM_VC_FINALIZE);
 }
 
 /*@
@@ -133,8 +135,9 @@ int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
 MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 {
     MPIDI_VC *vc_ptr;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(MM_VC_ALLOC);
+    MPID_FUNC_ENTER(MPID_STATE_MM_VC_ALLOC);
     dbg_printf("mm_vc_alloc\n");
 
     vc_ptr = (MPIDI_VC*)BlockAlloc(MPID_Process.VC_allocator);
@@ -244,7 +247,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	break;
     }
 
-    MM_EXIT_FUNC(MM_VC_ALLOC);
+    MPID_FUNC_EXIT(MPID_STATE_MM_VC_ALLOC);
     return vc_ptr;
 }
 
@@ -268,8 +271,9 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 #ifdef WITH_METHOD_VIA
     char *temp;
 #endif
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(MM_VC_CONNECT_ALLOC);
+    MPID_FUNC_ENTER(MPID_STATE_MM_VC_CONNECT_ALLOC);
     dbg_printf("mm_vc_connect_alloc(rank:%d)\n", rank);
     
     kvs_name = comm_ptr->mm.pmi_kvsname;
@@ -312,7 +316,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    
 	    MPIU_Free(value);
 	    MPIU_Free(methods);
-	    MM_EXIT_FUNC(MM_VC_CONNECT_ALLOC);
+	    MPID_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
 	    return vc_ptr;
 	}
     }
@@ -338,7 +342,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    
 	    MPIU_Free(value);
 	    MPIU_Free(methods);
-	    MM_EXIT_FUNC(MM_VC_CONNECT_ALLOC);
+	    MPID_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
 	    return vc_ptr;
 	}
     }
@@ -364,7 +368,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    
 	    MPIU_Free(value);
 	    MPIU_Free(methods);
-	    MM_EXIT_FUNC(MM_VC_CONNECT_ALLOC);
+	    MPID_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
 	    return vc_ptr;
 	}
     }
@@ -394,7 +398,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    
 	    MPIU_Free(value);
 	    MPIU_Free(methods);
-	    MM_EXIT_FUNC(MM_VC_CONNECT_ALLOC);
+	    MPID_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
 	    return vc_ptr;
 	}
     }
@@ -420,7 +424,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    
 	    MPIU_Free(value);
 	    MPIU_Free(methods);
-	    MM_EXIT_FUNC(MM_VC_CONNECT_ALLOC);
+	    MPID_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
 	    return vc_ptr;
 	}
     }
@@ -429,7 +433,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
     MPIU_Free(value);
     MPIU_Free(value);
 
-    MM_EXIT_FUNC(MM_VC_CONNECT_ALLOC);
+    MPID_FUNC_EXIT(MPID_STATE_MM_VC_CONNECT_ALLOC);
     return NULL;
 }
 
@@ -443,17 +447,18 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 @*/
 int mm_vc_free(MPIDI_VC *ptr)
 {
-    MM_ENTER_FUNC(MM_VC_FREE);
+    MPID_STATE_DECLS;
+    MPID_FUNC_ENTER(MPID_STATE_MM_VC_FREE);
 
     if (ptr->method == MM_PACKER_METHOD || ptr->method == MM_UNPACKER_METHOD)
     {
-	MM_EXIT_FUNC(MM_VC_FREE);
+	MPID_FUNC_EXIT(MPID_STATE_MM_VC_FREE);
 	return MPI_SUCCESS;
     }
 
     BlockFree(MPID_Process.VC_allocator, ptr);
 
-    MM_EXIT_FUNC(MM_VC_FREE);
+    MPID_FUNC_EXIT(MPID_STATE_MM_VC_FREE);
     return MPI_SUCCESS;
 }
 

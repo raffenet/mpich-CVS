@@ -9,8 +9,9 @@
 int mm_enqueue_request_to_send(MM_Car *unex_head_car_ptr)
 {
     MM_Car *car_ptr;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(MM_ENQUEUE_REQUEST_TO_SEND);
+    MPID_FUNC_ENTER(MPID_STATE_MM_ENQUEUE_REQUEST_TO_SEND);
     dbg_printf("mm_enqueue_request_to_send\n");
 
     /*printf("mm_enqueue_request_to_send\n");fflush(stdout);*/
@@ -45,6 +46,6 @@ int mm_enqueue_request_to_send(MM_Car *unex_head_car_ptr)
 	MPID_Process.unex_q_tail->qnext_ptr = car_ptr;
     MPID_Process.unex_q_tail = car_ptr;
 
-    MM_EXIT_FUNC(MM_ENQUEUE_REQUEST_TO_SEND);
+    MPID_FUNC_EXIT(MPID_STATE_MM_ENQUEUE_REQUEST_TO_SEND);
     return MPI_SUCCESS;
 }

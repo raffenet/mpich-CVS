@@ -73,7 +73,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
     }
 #   endif /* HAVE_ERROR_CHECKING */
 	    
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_SENDRECV);
+    MPID_MPI_PT2PT_FUNC_ENTER_BOTH(MPID_STATE_MPI_SENDRECV);
     
     /* Convert handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
@@ -89,7 +89,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 	    /* Validate communicator */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
 	    
@@ -99,7 +99,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
             MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
             MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
@@ -111,7 +111,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 			   comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &reqs[0]);
     if (mpi_errno)
     {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
 
@@ -122,7 +122,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
     if (mpi_errno)
     {
 	MPID_Request_release(reqs[0]);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
 
@@ -149,6 +149,6 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
     MPID_Request_release(reqs[0]);
     MPID_Request_release(reqs[1]);
     
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
     return MPI_SUCCESS;
 }

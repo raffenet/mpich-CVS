@@ -31,11 +31,12 @@
 int MPID_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPID_Comm *comm_ptr, int mode, MPI_Status *status_ptr, MPID_Request **request_pptr)
 {
     int mpi_errno;
+    MPID_STATE_DECLS;
 
-    MM_ENTER_FUNC(MPID_RECV);
+    MPID_FUNC_ENTER(MPID_STATE_MPID_RECV);
 
     mpi_errno = MPID_Irecv(buf, count, datatype, source, tag, comm_ptr, mode, request_pptr);
 
-    MM_EXIT_FUNC(MPID_RECV);
+    MPID_FUNC_EXIT(MPID_STATE_MPID_RECV);
     return mpi_errno;
 }

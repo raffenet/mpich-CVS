@@ -1,0 +1,8 @@
+lib${MPILIBNAME}_a_SOURCES = rlog.c rlogutil.c irlogutil.c
+irlog2rlog_SOURCES = irlog2rlog.c
+printirlog_SOURCES = printirlog.c
+printirlog_LDADD = -L ../../../../lib -L ${master_top_srcdir}/lib -lmpich
+printrlog_SOURCES = printrlog.c
+printrlog_LDADD = -L ../../../../lib -L ${master_top_srcdir}/lib -lmpich
+libTraceInput_a_SOURCES = logformat_trace_InputLog.c trace_input.c
+INCLUDES = -I../../../include -I${master_top_srcdir}/src/include
