@@ -262,6 +262,8 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
     echo ""
     # codingcheck now understands directories.
     # skip *only* files provided by an outside source
+    # vipl.h is probably ok, even though copyrighted.  Question:
+    # Should there be three versions or just one?
     maint/codingcheck -skipfile=./src/pmi/impls/winmpd/crypt.c \
 		      -skipfile=./src/pmi/impls/winmpd/des.c \
 		      -skipfile=./src/pmi/impls/winmpd/des.h \
@@ -269,5 +271,8 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
 		      -skipfile=./src/pmi/impls/mpd/sigcatcher.c \
 		      -skipfile=./src/pmi/impls/mpd/sleeploop.c \
 		      -skipfile=./src/pmi/impls/mpd/infloop.c \
+		      -skipfile=./src/mpid/mm/include/vipl.h \
+		      -skipfile=./src/mpid/mm/src/via/vipl.h \
+		      -skipfile=./src/mpid/mm/src/viardma/vipl.h \
 			src 
 fi
