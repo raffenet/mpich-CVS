@@ -322,6 +322,9 @@ static int rPMI_Init(int *spawned)
     char *p;
     int result;
 
+    if (spawned == NULL)
+	return PMI_ERR_INVALID_ARG;
+
     /* initialize to defaults */
     smpd_process.id = 1;
     pmi_process.smpd_id = 1;
@@ -582,6 +585,9 @@ int iPMI_Init(int *spawned)
     char *p;
     int result;
 
+    if (spawned == NULL)
+	return PMI_ERR_INVALID_ARG;
+
     /* don't allow pmi_init to be called more than once */
     if (pmi_process.init_finalized == PMI_INITIALIZED)
 	return PMI_SUCCESS;
@@ -771,8 +777,10 @@ int iPMI_Finalize()
 
 int iPMI_Get_size(int *size)
 {
-    if (pmi_process.init_finalized == PMI_FINALIZED || size == NULL)
-	return PMI_FAIL;
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (size == NULL)
+	return PMI_ERR_INVALID_ARG;
 
     *size = pmi_process.nproc;
 
@@ -781,8 +789,10 @@ int iPMI_Get_size(int *size)
 
 int iPMI_Get_rank(int *rank)
 {
-    if (pmi_process.init_finalized == PMI_FINALIZED || rank == NULL)
-	return PMI_FAIL;
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (rank == NULL)
+	return PMI_ERR_INVALID_ARG;
 
     *rank = pmi_process.iproc;
 
@@ -791,8 +801,10 @@ int iPMI_Get_rank(int *rank)
 
 int iPMI_Get_clique_size( int *size )
 {
-    if (pmi_process.init_finalized == PMI_FINALIZED || size == NULL)
-	return PMI_FAIL;
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (size == NULL)
+	return PMI_ERR_INVALID_ARG;
 
     if (pmi_process.clique_size == 0)
 	*size = 1;
@@ -805,8 +817,12 @@ int iPMI_Get_clique_ranks( int ranks[], int length )
 {
     int i;
 
-    if (pmi_process.init_finalized == PMI_FINALIZED || ranks == NULL || length < pmi_process.clique_size)
-	return PMI_FAIL;
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (ranks == NULL)
+	return PMI_ERR_INVALID_ARG;
+    if (length < pmi_process.clique_size)
+	return PMI_ERR_INVALID_LENGTH;
 
     if (pmi_process.clique_size == 0)
     {
@@ -847,7 +863,11 @@ int iPMI_Get_id_length_max(int *maxlen)
 int iPMI_Get_kvs_domain_id(char id_str[], int length)
 {
     if (pmi_process.init_finalized == PMI_FINALIZED)
-	return PMI_FAIL;
+	return PMI_ERR_INIT;
+    if (id_str == NULL)
+	return PMI_ERR_INVALID_ARG;
+    if (length < PMI_MAX_KVS_NAME_LENGTH)
+	return PMI_ERR_INVALID_LENGTH;
 
     id_str[0] = '1';
     id_str[1] = '\0';
@@ -861,7 +881,7 @@ int iPMI_Barrier()
     char str[1024];
     
     if (pmi_process.init_finalized == PMI_FINALIZED)
-	return PMI_FAIL;
+	return PMI_ERR_INIT;
 
     if (pmi_process.nproc == 1)
 	return PMI_SUCCESS;
@@ -894,8 +914,12 @@ int iPMI_Barrier()
 
 int iPMI_KVS_Get_my_name(char kvsname[], int length)
 {
-    if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL)
-	return PMI_FAIL;
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (kvsname == NULL)
+	return PMI_ERR_INVALID_ARG;
+    if (length < PMI_MAX_KVS_NAME_LENGTH)
+	return PMI_ERR_INVALID_LENGTH;
 
     strncpy(kvsname, pmi_process.kvs_name, length);
 
@@ -908,6 +932,8 @@ int iPMI_KVS_Get_my_name(char kvsname[], int length)
 
 int iPMI_KVS_Get_name_length_max(int *maxlen)
 {
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
     if (maxlen == NULL)
 	return PMI_ERR_INVALID_ARG;
     *maxlen = PMI_MAX_KVS_NAME_LENGTH;
@@ -916,6 +942,8 @@ int iPMI_KVS_Get_name_length_max(int *maxlen)
 
 int iPMI_KVS_Get_key_length_max(int *maxlen)
 {
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
     if (maxlen == NULL)
 	return PMI_ERR_INVALID_ARG;
     *maxlen = PMI_MAX_KEY_LEN;
@@ -924,6 +952,8 @@ int iPMI_KVS_Get_key_length_max(int *maxlen)
 
 int iPMI_KVS_Get_value_length_max(int *maxlen)
 {
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
     if (maxlen == NULL)
 	return PMI_ERR_INVALID_ARG;
     *maxlen = PMI_MAX_VALUE_LEN;
@@ -935,8 +965,12 @@ int iPMI_KVS_Create(char kvsname[], int length)
     int result;
     char str[1024];
 
-    if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL)
-	return PMI_FAIL;
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (kvsname == NULL)
+	return PMI_ERR_INVALID_ARG;
+    if (length < PMI_MAX_KVS_NAME_LENGTH)
+	return PMI_ERR_INVALID_LENGTH;
 
     if (pmi_process.local_kvs)
     {
@@ -977,8 +1011,10 @@ int iPMI_KVS_Destroy(const char kvsname[])
     int result;
     char str[1024];
 
-    if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL)
-	return PMI_FAIL;
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (kvsname == NULL)
+	return PMI_ERR_INVALID_ARG;
 
     if (pmi_process.local_kvs)
     {
@@ -1013,8 +1049,14 @@ int iPMI_KVS_Put(const char kvsname[], const char key[], const char value[])
     int result;
     char str[1024];
 
-    if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL || key == NULL || value == NULL)
-	return PMI_FAIL;
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (kvsname == NULL)
+	return PMI_ERR_INVALID_ARG;
+    if (key == NULL)
+	return PMI_ERR_INVALID_KEY;
+    if (value == NULL)
+	return PMI_ERR_INVALID_VAL;
 
     /*
     printf("putting <%s:%s:%s>\n", kvsname, key, value);
@@ -1051,8 +1093,10 @@ int iPMI_KVS_Put(const char kvsname[], const char key[], const char value[])
 
 int iPMI_KVS_Commit(const char kvsname[])
 {
-    if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL)
-	return PMI_FAIL;
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (kvsname == NULL)
+	return PMI_ERR_INVALID_ARG;
 
     if (pmi_process.local_kvs)
     {
@@ -1071,8 +1115,14 @@ int iPMI_KVS_Get(const char kvsname[], const char key[], char value[], int lengt
     int result;
     char str[1024];
 
-    if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL || key == NULL || value == NULL)
-	return PMI_FAIL;
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (kvsname == NULL)
+	return PMI_ERR_INVALID_ARG;
+    if (key == NULL)
+	return PMI_ERR_INVALID_KEY;
+    if (value == NULL)
+	return PMI_ERR_INVALID_VAL;
 
     if (pmi_process.local_kvs)
     {
@@ -1112,8 +1162,18 @@ int iPMI_KVS_Iter_first(const char kvsname[], char key[], int key_len, char valu
     int result;
     char str[1024];
 
-    if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL || key == NULL || value == NULL)
-	return PMI_FAIL;
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (kvsname == NULL)
+	return PMI_ERR_INVALID_ARG;
+    if (key == NULL)
+	return PMI_ERR_INVALID_KEY;
+    if (key_len < PMI_MAX_KEY_LEN)
+	return PMI_ERR_INVALID_KEY_LENGTH;
+    if (value == NULL)
+	return PMI_ERR_INVALID_VAL;
+    if (val_len < PMI_MAX_VALUE_LEN)
+	return PMI_ERR_INVALID_VAL_LENGTH;
 
     if (pmi_process.local_kvs)
     {
@@ -1165,8 +1225,18 @@ int iPMI_KVS_Iter_next(const char kvsname[], char key[], int key_len, char value
     int result;
     char str[1024];
 
-    if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL || key == NULL || value == NULL)
-	return PMI_FAIL;
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (kvsname == NULL)
+	return PMI_ERR_INVALID_ARG;
+    if (key == NULL)
+	return PMI_ERR_INVALID_KEY;
+    if (key_len < PMI_MAX_KEY_LEN)
+	return PMI_ERR_INVALID_KEY_LENGTH;
+    if (value == NULL)
+	return PMI_ERR_INVALID_VAL;
+    if (val_len < PMI_MAX_VALUE_LEN)
+	return PMI_ERR_INVALID_VAL_LENGTH;
 
     if (pmi_process.local_kvs)
     {
@@ -1232,8 +1302,10 @@ int iPMI_Spawn_multiple(int count,
     char *iter, *iter2;
     int i, j, maxlen, maxlen2;
 
-    if (pmi_process.init_finalized == PMI_FINALIZED || count < 1 || cmds == NULL || maxprocs == NULL || preput_keyval_size < 0)
-	return PMI_FAIL;
+    if (pmi_process.init_finalized == PMI_FINALIZED)
+	return PMI_ERR_INIT;
+    if (count < 1 || cmds == NULL || maxprocs == NULL || preput_keyval_size < 0)
+	return PMI_ERR_INVALID_ARG;
 
     if (pmi_process.local_kvs)
     {
@@ -1440,6 +1512,8 @@ int iPMI_Spawn_multiple(int count,
 
 int iPMI_Args_to_keyval(int *argcp, char **argvp[], PMI_keyval_t *keyvalp[], int *size)
 {
+    if (argcp == NULL || argvp == NULL || keyvalp == NULL || size == NULL)
+	return PMI_ERR_INVALID_ARG;
     return PMI_SUCCESS;
 }
 
