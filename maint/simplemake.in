@@ -72,7 +72,9 @@ if ($smdir =~/^[^\/]/) {
 $smdir =~ s/\/?simplemake$//;
 #print "smdir = $smdir\n";
 
-$debug = 0;
+$debug = 0;                 # General debugging
+$debug_confdir = 0;         # Track the directory containing the controlling
+                            # configure.in
 $quiet = 0;
 
 %libdir = ();
@@ -916,30 +918,27 @@ sub DefaultRules {
 	}
 	print FD "\t\tMakefile.sm )$newline";
 	print FD "Makefile: \${srcdir}/Makefile.in$newline";
-	my $topdir = $rootdirpath;
-#  	my $topdir = $last_config_dir;
-# 	print "last config dir = $topdir\n";
+
+	my $topdir = &GetPathToParent( $curdir, $last_config_dir );
+ 	print "last config dir = $last_config_dir, topdir = $topdir\n" if $debug_confdir;
  	if ($topdir eq "") {	
  	    $topdir = ".";
  	}		
-#  	else {
-#  	    # We remove the last config dir from curdir
-#  	    $topdir = $curdir;
-# 	    print "top dir is $topdir\n";
-#  	    $topdir =~ s/$last_config_dir//;
-#  	    if ($topdir eq "") { $topdir = "."; }
-#  	}
+
 	# We need to use the enclosing configure, not always the top-level
 	# configure.  Thus, we need to keep track of the directory of the
 	# current configure, and the path to get to that configure.
 	# We also allow this step to fail; for example, the 
 	# config.status may already have been removed.
+
 	$ignore_step = "-";
 	if ($topdir ne ".") {
 	    print FD "\t-cd $topdir && \\$newline";
 	    $ignore_step = "";
 	}
-	print FD "\t${ignore_step}CONFIG_FILES=${curdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status$newline";
+	$relcurdir = $curdir;
+	$relcurdir =~ s/^$last_config_dir//;
+	print FD "\t${ignore_step}CONFIG_FILES=${relcurdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status$newline";
     }
     # Clean targets
     &TargetClean;
@@ -1087,6 +1086,7 @@ sub ProcessFile {
     print "Processing $curdir$file\n" if (!$quiet);
     if (-s "configure.in") {
 	&ReadAutoconf;
+	print "Found configure.in in $curdir\n" if $debug_confdir;
 	$last_config_dir = $curdir;
     }
     &ReadMfile( $file );
@@ -1126,11 +1126,15 @@ sub ProcessFile {
 	chdir $dir;
 	$curdir .= "$dir/";
 	$rootdirpath .= "../";
-	print "rootdir = $rootdirpath\n" if $debug;
-	print "curdir = $curdir\n" if $debug;
+	print "rootdir = $rootdirpath\n" if $debug_confdir;
+	print "curdir = $curdir\n" if $debug_confdir;
 	$config_dir[$#config_dir+1] = $last_config_dir; 
+	print "config stack has depth $#config_dir\n" if $debug_confdir;
+	print "relative path to configure dir is " . &GetPathToParent( $curdir, $last_config_dir ) . "\n" if $debug_confdir;
 	&ProcessFile( $file );
-	$last_config_dir = $config_dir[$#config_dir--];
+	$last_config_dir = $config_dir[$#config_dir-1]; $#config_dir--;
+	print "after processing, last_config_dir = $last_config_dir\n" if $debug_confdir;
+	print "config stack has depth $#config_dir\n" if $debug_confdir;
 	$rootdirpath =~ s/\.\.\/$//;
 	chdir "..";
 	$curdir =~ s/[^\/]*\/$//;
@@ -1733,29 +1737,6 @@ sub TargetDocs {
 	}
     }
 }
-# old version
-#  sub TargetDocs {
-#      if (! $do_docs) { return; }
-#      foreach $kind (keys(%docsrc)) {
-#  	print FD "$kind:$newline";
-#  	if (defined($docdir{$kind})) { 
-#  	    $loc = "-mpath $docdir{$kind}";
-#  	}
-#  	else {
-#  	    $loc = "";
-#  	}
-#  	print FD "\tdoctext -$kind $loc -heading $doc_heading -quotefmt $doc_extra{$kind}\\$newline\t";
-#  	# Eventually need to add default files (e.g., fortnotes, errnotes)
-#  	# Web version needs indexdir, defn, mapref, ...
-#  	&print_make_setpos( 8 );
-#  	foreach $sourcefile (split(/\s\s*/,$docsrc{$kind})) {
-#  	    &print_make_line( FD, "$sourcefile " );
-#  	    # Why add sourcefile to pgmobjs?
-#  	    #$pgmobjs .= "$sourcefile ";
-#          }
-#  	&print_make_endline( FD );
-#      }
-#  }
 
 #
 # Installation is complicated by VPATH builds; files that are derived and
@@ -2012,6 +1993,17 @@ sub ReadAutoconf {
 	}
     }
     close FDCONF;
+}
+#
+# Find how to get from path_child to path_parent.  Return as
+# ../.. etc, suitable for using cd to get to the parent
+sub GetPathToParent {
+    my ($path_child, $path_parent) = @_;
+    # Remove parent path from child path
+    $path_child =~ s/^$path_parent//;
+    # convert all of the non directory separators into ..
+    $path_child =~ s/[^\/\.]*\//..\//g;
+    return $path_child;
 }
 
 #
