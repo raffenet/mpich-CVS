@@ -396,7 +396,9 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		if (strcmp(context->pwd_request, SMPD_AUTHENTICATION_ACCEPTED_STR))
 		{
 		    char *host_ptr;
+#ifdef HAVE_WINDOWS_H
 		    smpd_delete_cached_password();
+#endif
 		    if (smpd_process.do_console && smpd_process.console_host[0] != '\0')
 			host_ptr = smpd_process.console_host;
 		    else if (context->connect_to && context->connect_to->host[0] != '\0')
