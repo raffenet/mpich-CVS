@@ -160,12 +160,12 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 {
-    int error;
+    int mpi_errno;
     int nb;
     int total = 0;
-    MPIDI_STATE_DECL(MPID_STATE_HANDLE_SHM_WRITTEN);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WRITE_PROGRESS);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_SHM_WRITTEN);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WRITE_PROGRESS);
     
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
     while (vc->ch.send_active != NULL)
@@ -175,18 +175,25 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 #ifdef MPICH_DBG_OUTPUT
 	if (req->ch.iov_offset >= req->dev.iov_count)
 	{
-	    error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ch.iov_offset, req->dev.iov_count);
-	    MPID_Abort(MPIR_Process.comm_world, error, -1);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ch.iov_offset, req->dev.iov_count);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE_PROGRESS);
+	    return mpi_errno;
 	}
 	/*assert(req->ch.iov_offset < req->dev.iov_count);*/
 #endif
 	/* Check here or inside shm_writev?
 	if (vc->ch.write_shmq->packet[vc->ch.write_shmq->tail_index].avail == MPIDI_CH3I_PKT_EMPTY)
-	    error = MPIDI_CH3I_SHM_writev(vc, req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset, &nb);
+	    mpi_errno = MPIDI_CH3I_SHM_writev(vc, req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset, &nb);
 	else
 	    nb = 0;
 	*/
-	error = MPIDI_CH3I_SHM_writev(vc, req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset, &nb);
+	mpi_errno = MPIDI_CH3I_SHM_writev(vc, req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset, &nb);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_writev", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE_PROGRESS);
+	    return mpi_errno;
+	}
 
 	if (nb > 0)
 	{
@@ -267,6 +274,6 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 
-    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_WRITTEN);
-    return total;
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE_PROGRESS);
+    return MPI_SUCCESS;
 }

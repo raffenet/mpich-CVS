@@ -23,7 +23,6 @@ int MPIDI_CH3I_Progress(int is_blocking)
     MPIDI_CH3I_Shmem_queue_info info;
     int num_bytes;
     MPIDI_VC *vc_ptr;
-    static int spin_count = 1;
     static int msg_queue_count = 0;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_YIELD);
@@ -73,48 +72,22 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	    {
 		if (vc_ptr->ch.send_active != NULL)
 		{
-		    if (MPIDI_CH3I_SHM_write_progress(vc_ptr) != 0)
+		    mpi_errno = MPIDI_CH3I_SHM_write_progress(vc_ptr);
+		    if (mpi_errno != MPI_SUCCESS)
 		    {
-			bShmProgressMade = TRUE;
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
+			goto fn_exit;
 		    }
+		    /*bShmProgressMade = TRUE;*/
 		}
 		vc_ptr = vc_ptr->ch.shm_next_writer;
 	    }
 	}
 
-	if (bShmProgressMade)
+	if (!bShmProgressMade)
 	{
-	    spin_count = 1;
-#ifdef USE_SLEEP_YIELD
-	    MPIDI_Sleep_yield_count = 0;
-#endif
-	    continue;
+	    MPIDU_Yield(); /* always yield for now */
 	}
-
-	if (spin_count >= MPIDI_CH3I_Process.pg->nShmWaitSpinCount)
-	{
-#ifdef USE_SLEEP_YIELD
-	    if (spin_count >= MPIDI_CH3I_Process.pg->nShmWaitYieldCount)
-	    {
-		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SLEEP_YIELD);
-		MPIDU_Sleep_yield();
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SLEEP_YIELD);
-	    }
-	    else
-	    {
-		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
-		MPIDU_Yield();
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
-	    }
-#else
-	    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
-	    MPIDU_Yield();
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
-	    spin_count = 1;
-#endif
-	}
-	else MPIDU_Yield(); /* always yield for now */
-	spin_count++;
 
 	if ((msg_queue_count++ % MPIDI_CH3I_MSGQ_ITERATIONS) == 0)
 	{
