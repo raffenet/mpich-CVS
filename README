@@ -38,3 +38,12 @@ follows.
 
     cd examples
     ../bin/mpiexec -np 2 hellow
+
+What compiles but doesn't work:
+We don't guarantee that *anything* works yet.  However, we have run parts of 
+the MPICH-1 test suite and some of the tests included with this release.
+Among the routines that compile but that are known not to work yet are:
+
+MPI_Bsend and friends
+MPI_Dims_create
+
