@@ -57,8 +57,8 @@ int PMI_Init(int *spawned)
 	    fn.PMI_KVS_Put = (int (*)(const char *, const char *, const char *))GetProcAddress(hModule, "PMI_KVS_Put");
 	    fn.PMI_KVS_Commit = (int (*)(const char *))GetProcAddress(hModule, "PMI_KVS_Commit");
 	    fn.PMI_KVS_Get = (int (*)(const char *, const char *, char *))GetProcAddress(hModule, "PMI_KVS_Get");
-	    fn.PMI_KVS_Iter_first = (int (*)(const char *, char *, char *))GetProcAddress(hModule, "PMI_KVS_iter_first");
-	    fn.PMI_KVS_Iter_next = (int (*)(const char *, char *, char *))GetProcAddress(hModule, "PMI_KVS_iter_next");
+	    fn.PMI_KVS_Iter_first = (int (*)(const char *, char *, char *))GetProcAddress(hModule, "PMI_KVS_Iter_first");
+	    fn.PMI_KVS_Iter_next = (int (*)(const char *, char *, char *))GetProcAddress(hModule, "PMI_KVS_Iter_next");
 	    fn.PMI_Spawn_multiple = (int (*)(int, const char **, const char ***, const int *, const int *, const PMI_keyval_t **, int, const PMI_keyval_t *, int *, int *))GetProcAddress(hModule, "PMI_Spawn_multiple");
 	    fn.PMI_Args_to_info = (int (*)(int *, char ***, void *))GetProcAddress(hModule, "PMI_Args_to_info");
 	    return fn.PMI_Init(spawned);
