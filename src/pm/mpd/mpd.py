@@ -10,7 +10,7 @@ from os        import environ, getpid, fork, setpgrp, waitpid, kill, chdir, \
                       umask, close, access, path, stat, unlink, strerror, \
                       dup2, R_OK, X_OK, WNOHANG
 from pwd       import getpwnam
-from socket    import socket, AF_UNIX, SOCK_STREAM, gethostname
+from socket    import socket, AF_UNIX, SOCK_STREAM, gethostname, gethostbyname_ex
 from errno     import EINTR
 from select    import select, error
 from getopt    import getopt
@@ -448,24 +448,21 @@ def _do_mpdrun(msg):
         hosts = msg['hosts']
         currRank = msg['nstarted']
         found = 0
-        hostSpecForCurrRank = ''
+        hostSpecForCurrRank = '_any_'
         for ranks in hosts.keys():
             (lo,hi) = ranks
             if currRank >= lo and currRank <= hi:
                 hostSpecForCurrRank = hosts[ranks]
-        if not hostSpecForCurrRank:
-            hostSpecForCurrRank = '_any_'
         if hostSpecForCurrRank == '_any_':
             handled_one__any_ = 1
             found = 1
-        elif mpd_same_ips(g.myHost,hostSpecForCurrRank):
+        elif g.myIP == hostSpecForCurrRank  or  g.myHost == hostSpecForCurrRank:
             found = 1
         elif hostSpecForCurrRank == '_any_from_pool_':
-            for host in msg['host_spec_pool']:
-                if mpd_same_ips(host,g.myHost):
-                    found = 1
-                    handled_one__any_ = 1
-                    break
+            host_spec_pool = msg['host_spec_pool']
+            if g.myIP in host_spec_pool  or  g.myHost in host_spec_pool:
+                found = 1
+                handled_one__any_ = 1
         if not found:
             break
         if lo < hi:
@@ -915,6 +912,7 @@ def _process_cmdline_args():
     except:
         usage()
 
+    g.myIP = gethostbyname_ex(g.myHost)[2][0]
     for opt in opts:
         if   opt[0] == '-h'  or  opt[0] == '--host':
             g.entryHost = opt[1]

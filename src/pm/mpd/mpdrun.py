@@ -18,7 +18,8 @@ from sys             import argv, exit, stdin, stdout, stderr
 from os              import environ, fork, execvpe, getuid, getpid, path, getcwd, \
                             close, wait, waitpid, kill, unlink, _exit,  \
 			    WIFSIGNALED, WEXITSTATUS
-from socket          import socket, fromfd, AF_UNIX, SOCK_STREAM, gethostname
+from socket          import socket, fromfd, AF_UNIX, SOCK_STREAM, gethostname, \
+                            gethostbyname_ex
 from select          import select
 from exceptions      import Exception
 from re              import findall
@@ -121,7 +122,11 @@ def mpdrun():
         for hostname in hostSpec[0].childNodes:
             hostname = hostname.data.strip()
             if hostname:
-                hostList.append(hostname)
+                ipaddr = gethostbyname_ex(hostname)[2][0]
+                if ipaddr.startswith('127.0.0'):
+                    hostList.append(gethostname())
+                else:
+                    hostList.append(ipaddr)
 
         execs   = {}
         users   = {}
