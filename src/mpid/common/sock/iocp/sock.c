@@ -847,35 +847,6 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char *host_descripti
  fn_exit:
     socki_free_host_list(list);
 
-#if 0
-    /* The old way */
-    h = gethostbyname(hostname);
-    if (h == NULL)
-    {
-	mpi_errno = WSAGetLastError();
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock_byname", "**sock_byname %s %d", get_error_string(mpi_errno), mpi_errno);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
-	return mpi_errno;
-    }
-    
-    hlist = h->h_addr_list;
-    while (*hlist != NULL && n<max)
-    {
-	pIP[n] = *(int32_t*)(*hlist);
-
-	/*{	
-	unsigned int a, b, c, d;
-	a = ((unsigned char *)(&pIP[n]))[0];
-	b = ((unsigned char *)(&pIP[n]))[1];
-	c = ((unsigned char *)(&pIP[n]))[2];
-	d = ((unsigned char *)(&pIP[n]))[3];
-	printf("ip: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);
-	}*/
-
-	hlist++;
-	n++;
-    }
-#endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
     return mpi_errno;
 }
@@ -1137,7 +1108,7 @@ int MPIDU_Sock_accept(MPIDU_Sock_t listener_sock, MPIDU_Sock_set_t set, void * u
 {
     int mpi_errno;
     BOOL b;
-    struct linger linger;
+    /*struct linger linger;*/
     int optval, len;
     sock_state_t *accept_state, *iter;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_ACCEPT);
@@ -1162,6 +1133,7 @@ int MPIDU_Sock_accept(MPIDU_Sock_t listener_sock, MPIDU_Sock_set_t set, void * u
 
     accept_state->type = SOCKI_SOCKET;
 
+    /* find the listener copy that satisfied the acceptex call and post another accept */
     iter = listener_sock->list;
     while (iter != NULL && iter->accepted == 0)
 	iter = iter->next;
@@ -1186,9 +1158,11 @@ int MPIDU_Sock_accept(MPIDU_Sock_t listener_sock, MPIDU_Sock_set_t set, void * u
     ioctlsocket(accept_state->sock, FIONBIO, &optval);
 
     /* set the linger option */
+    /*
     linger.l_onoff = 1;
     linger.l_linger = 60;
     setsockopt(accept_state->sock, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof(linger));
+    */
 
     /* set the socket buffers */
     len = sizeof(int);
@@ -1670,6 +1644,9 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 	return SOCK_ERR_OP_IN_PROGRESS;
 	*/
 	/* posting a close cancels all outstanding operations */
+	/* It would be nice to cancel the outstanding reads or writes and then close the socket after handling the cancelled operations */
+	/* But it cannot be done because CancelIo only cancels operations started by the current thread.  There is no way to cancel all operations. */
+	/*CancelIo(sock->sock);*/
     }
 
     sock->closing = TRUE;
@@ -1692,6 +1669,7 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 	}
 	else
 	{
+	    /* shutdown the listener */
 	    shutdown(s, SD_BOTH);
 	}
 	closesocket(s);
