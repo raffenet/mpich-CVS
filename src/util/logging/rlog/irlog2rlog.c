@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <ctype.h> /* isdigit */
 
 #ifndef BOOL
 #define BOOL int
@@ -658,6 +659,52 @@ void ReadAllArrows(IRLOG_IOStruct **ppInput, int nNumInputs)
     }
 }
 
+BOOL IsNumber(char *str)
+{
+    if (str == NULL)
+	return FALSE;
+    while (*str != '\0')
+    {
+	if (!isdigit(*str))
+	    return FALSE;
+	str++;
+    }
+    return TRUE;
+}
+
+static BOOL s_bFreeArgv = FALSE;
+void GenerateNewArgv(int *pargc, char ***pargv, int n)
+{
+    int argc;
+    char **argv;
+    int length, i;
+    char *buffer, *str;
+
+    length = (sizeof(char*) * (n+3)) +strlen((*pargv)[0]) + 1 + strlen((*pargv)[1]) + 1 + (15 * n);
+    buffer = (char*)malloc(length);
+
+    argc = n+2;
+    argv = (char**)buffer;
+    str = buffer + (sizeof(char*) * (n+4));
+    argv[0] = str;
+    str += sprintf(str, "%s", (*pargv)[0]);
+    *str++ = '\0';
+    argv[1] = str;
+    str += sprintf(str, "%s", (*pargv)[1]);
+    *str++ = '\0';
+    for (i=0; i<n; i++)
+    {
+	argv[i+2] = str;
+	str += sprintf(str, "log%d.irlog", i);
+	*str++ = '\0';
+    }
+    argv[n+3] = NULL;
+
+    *pargc = argc;
+    *pargv = argv;
+    s_bFreeArgv = TRUE;
+}
+
 int main(int argc, char *argv[])
 {
     RLOG_FILE_HEADER header;
@@ -683,7 +730,13 @@ int main(int argc, char *argv[])
     if (argc < 3)
     {
 	printf("Usage: irlog2rlog out.rlog in0.irlog in1.irlog ...\n");
+	printf("       irlog2rlog out.rlog n\n");
 	return 0;
+    }
+
+    if (argc == 3 && IsNumber(argv[2]))
+    {
+	GenerateNewArgv(&argc, &argv, atoi(argv[2]));
     }
 
     nNumInputs = argc - 2;
@@ -860,6 +913,9 @@ int main(int argc, char *argv[])
 	fclose(g_fArrow);
 	unlink(g_pszArrowFilename);
     }
+
+    if (s_bFreeArgv)
+	free(argv);
 
     return 0;
 }
