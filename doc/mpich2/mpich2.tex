@@ -73,8 +73,9 @@ Section~\ref{sec:mpi-operations}.
 % Outline:
 This document is structured as follows.  Section~\ref{sec:general} discusses
 the general layout of MPICH project and recommendations for coding the
-routines.  Section~\ref{sec:pt-2-pt-scenarios} provides a discussion of
-point-to-point communication by looking at particular implementations.
+routines.  
+%Section~\ref{sec:pt-2-pt-scenarios} provides a discussion of
+%point-to-point communication by looking at particular implementations.
 Section~\ref{sec:mpi-operations} describes the implementation of
 MPI on a routine-by-routine basis.  Section~\ref{sec:portability} covers some
 of the more subtle issues in achieving a highly portable implementation.
@@ -258,7 +259,7 @@ because an MPI implementation is not complete without these components.
 
   \item[binding]Alternative Language bindings (C is the primary
   binding).
-	Each of these include their own configure to handle issues
+        Each of these include their own configure to handle issues
   specific to compilers for the   respective languages.
     \begin{description}
     \item[cxx]C++ binding (includes \file{configure}); \code{cxx} is
@@ -274,7 +275,7 @@ because an MPI implementation is not complete without these components.
       \item[include]
       \end{description}
     \item[fortran90]Fortran 90 binding (includes \file{configure}).
-	The Fortran 90 configure may require that Fortran 77 be
+        The Fortran 90 configure may require that Fortran 77 be
   configured first.
       \begin{description}
       \item[src]
@@ -462,7 +463,7 @@ lock that is held is a potential problem for fault-tolerant code.
 That is, if we support the loss of an MPI process, then if a process
 dies while holding a lock, it is difficult to recover.  Where
 possible, use atomic operations (such as atomic increment, provided by
-\code{MPID_Comm_incr} etc.) instead of lock/unlock.  
+\code{MPID_Object_add_ref} etc.) instead of lock/unlock.  
 % [BRT] Again, I like to see the code protected by a mutex explicitly placed
 % in a separate block to make it clear what is protected and what is
 % not.
@@ -2478,18 +2479,10 @@ they do not simultaneously try to access the \emph{same} element, it
 is necessary to ensure that the list operations have no race
 conditions.  The simplest way to do this is to use a thread-lock
 around parts of the code that access or modify the list pointers that
-connected items within an \code{MPI_Info} object.
-
-Question: The implementation outlines for the info routines shown
-below use a lock around the info object to prevent separate user
-threads from updating the same info object concurrently.  This is
-(probably) not necessary; it is (need to check the standard) a
-user-error to update the same object simultaneously from two separate
-threads.  In that case, a lock is needed only to update the common
-info allocation array, since all info objects share that common
-storage.  The current implementation does not contain the general
-locks but does use an allocation lock for updating the common info
-allocation array.
+connected items within an \code{MPI_Info} object.  A more sophisticated code
+could use processor-atomic operations to update the list without using locks.
+The descriptions below use the term ``lock'' only to indicate the need to
+perform the operations atomically.
 
 \subsubsection{\mpifunc{MPI_INFO_CREATE}}
 Call \mpidfunc{MPIU_Handle_obj_create}.
@@ -2503,7 +2496,7 @@ find key and remove key and associated value
 %decrement count.
 unlock info
 \end{algorithm}
-Note that this lock must look at the global threadedness to decide if
+Note that this lock should look at the global threadedness to decide if
 the lock is necessary.  
 
 % The ``check that object is valid'' looks at the
@@ -2514,7 +2507,9 @@ the lock is necessary.
 The ``check that object is valid'' happens within
 the lock to ensure that the object is never deleted by another thread
 between the check and acquring the lock (this is a simple test to
-detect a user-error).
+detect a user-error).  This is an optional test.  That is, it is shown here to
+indicate where the test should be placed for maximum effectiveness in catching
+thread-race conditions.
 
 \subsubsection{\mpifunc{MPI_INFO_DUP}}
 Note that this routine must be thread-safe.  This requires info routines that
@@ -2538,7 +2533,7 @@ used).
 \subsubsection{\mpifunc{MPI_INFO_FREE}}
 Call \mpidfunc{MPID_Info_free}.  We may want to lock the info object
 while removing the individual entries.  While inside the lock, we
-could also mark the object as invalid in some way
+could also mark the object as invalid in some way.
 %We could set the 
 %\code{HANDLE_KIND} field in the \mpids{MPID_Info}{id} to some
 %''info-invalid'' value (allowing us to detect invalid infos instead
@@ -2555,6 +2550,9 @@ free with MPIU_Handle_obj_destroy
 The ``mark as invalid'' serves as a
 useful check that the user is not accessing an already deleted
 object.  
+
+Note that since there is no way to create an additional reference to an
+\code{MPI_Info} object, there is no reference count to check.
 
 \subsubsection{\mpifunc{MPI_INFO_GET}}
 \begin{algorithm}
@@ -2586,25 +2584,9 @@ find indicated key and return name
 unlock info
 \end{algorithm}
 
-The following has not yet been implemented:
-
-Since the most likely use of this routine is to search for all keys,
-we remember the index and location in the list of the last key
-returned (or modified).  This value is stored in the 
-first info element (using the otherwise unused \code{key} and
-\code{value} fields).  This change lowers the cost of extracting every 
-key from $n^2$ in the length of the list to $n$.  
-
-Inorder to get the
-\emph{value} that matches the key, we may want to check that
-particular entry first when searching for a \code{key}.
-
-
-Question:  Do we want to have this return an error if the info list is 
-modified by another thread?  Is there any way to actually do this?  For
-example, the self-id of a thread could record itself in the info object when
-ever the object is modified.  This routine could (optionally) return an error
-if the list is modified by another thread after \code{MPI_INFO_GET_NKEYS}.
+For applications that are accessing each element of an info list, this forces
+a complexity that is the square of the number of elements in the info list.  
+An alternative approach that is linear is described in the rationale.
 
 \subsubsection{\mpifunc{MPI_INFO_GET_VALUELEN}}
 \begin{algorithm}
@@ -2621,7 +2603,7 @@ lock info
 check that object is valid
 find indicated key.  
 If found, set the value,
-else add the key and value; also increment count of keys
+else add the key and value.
 unlock info
 \end{algorithm}
 
@@ -2657,6 +2639,10 @@ loop that packs or unpacks data.  Each dataloop represents a single loop and
 thus a single level of combiner in datatypes.  A very general datatype may be
 constructured from multiple derived datatypes.  Thus, in general, a datatype
 may need to be described with multiple dataloops.  
+The MPICH2 implementation of datatypes also separates out the \emph{extent} of
+the datatype from the description of the data to move (the dataloop).  This
+permits more efficient implementation of a number of powerful data movement
+patterns without forcing the use of the most general (and slowest) code.
 
 Applying a dataloop to pack or unpack a datatype requires some additional
 data.  Since the datatype description in terms of dataloops is recursive, a
@@ -2677,7 +2663,7 @@ The handles for the predefined datatypes corresponding to the language types
 within the handle.  The format is
 \begin{verbatim}
     (in bits)
-    01 010 000 (16 bits for index ) (8 bits for the length in bytes)
+    01 0010 00 (16 bits for index ) (8 bits for the length in bytes)
     (in hex)
     0x50xxxxyy
     xxxx is the index and yy the length
@@ -2700,6 +2686,8 @@ Here are the steps to create and return a new datatype.
 \item Allocate a new object.
 \item Allocate two dataloops: one to hold the description as given (needed to
   return the contents and envelope) and one to hold the optimized loop.
+  If the two loops are identical, only the optimized loop is allocated; the
+  other is left null.
 \item Initialize the fields and datatype name.
 \item Setup the two dataloops.  For datatypes that require copies of input
   arrays (e.g., \code{MPI_Type_indexed}), only the
@@ -2709,7 +2697,8 @@ Here are the steps to create and return a new datatype.
   be used.  This will become clearer below.
   
   Setting up the \code{dataloop} is relatively easy.  The combiner (e.g.,
-  \mpiconst{MPI_COMBINER_HVECTOR} is stored in the combiner fields in the
+  \mpiconst{MPI_COMBINER_HVECTOR} is stored in the
+  \mpids{MPID_Datatype}{combiner} field in the 
   datatype.  
 
   For the basic types, just select the corresponding dataloop type,
@@ -2726,9 +2715,11 @@ Here are the steps to create and return a new datatype.
     \item Are the elements all multiples of 2, 4, or 8 bytes in size?
     \item Are the elements aligned on a multiple of the element size?
       If all elements are aligned on a multiple of 2, 4, or 8, the 
-      element-size field in \mpids{MPID_Dataloop}{kind} is set to 1, 2, or 3
+      element-size field in \mpids{MPID_Dataloop}{kind} is set to 1, 2, 4, or 8
       respectively.  All values in the dataloop (including any offsets or
       sizes) are adjusted to be in multiples of the element size.
+      (Question: we could also store the power of 2 instead, giving a more 
+      compact representation.  Which makes the code faster and clearer?)
     \item Do the elements describe a contiguous section of memory (not
       counting the effect of any extent)?
       If so, replace the dataloop type with \code{MPID_CONTIG}.
@@ -2764,7 +2755,7 @@ Error classes include \mpiconst{MPI_ERR_TYPE},
 out-of-memory allocating internal fields).
 
 The ADI defines a datatype structure that is believed to be a good
-choice for implementing operatoins that involve datatypes, such as
+choice for implementing operations that involve datatypes, such as
 \mpifunc{MPI_Pack} and \mpifunc{MPI_Unpack}.
 
 \subsubsection{Computing the Extent}
@@ -2774,17 +2765,17 @@ computation is a bit complex.  Here is the rule for the extent:
 \begin{algorithm}
 /* Compute the \mpids{MPI_Datatype}{ub} */
 If a sticky ub exists for the old datatype (datatypes for struct), then
-    use the \mpids{MPI_Datatype}{sticky_ub} and set the sticky ub flag
-    (\mpids{MPI_Datatype}{MPID_TYPE_STICKY_UB}).
+    use the \mpids{MPID_Datatype}{ub} and set the sticky ub flag
+    (\mpids{MPID_Datatype}{has_ub}).
 else
     use the \mpids{MPI_Datatype}{true_ub}
 /* Similar for the \mpids{MPI_Datatype}{lb},
-   \mpids{MPI_Datatype}{sticky_lb},
-   \mpids{MPI_Datatype}{MPID_TYPE_STICKY_LB}   and
-   \mpids{MPI_Datatype}{true_lb}. */
-\mpids{MPI_Datatype}{extent} = \mpids{MPI_Datatype}{ub} - \mpids{MPI_Datatype}{lb} + PAD.
+   \mpids{MPID_Datatype}{lb},
+   \mpids{MPID_Datatype}{has_lb}  and
+   \mpids{MPID_Datatype}{true_lb}. */
+\mpids{MPID_Datatype}{extent} = \mpids{MPID_Datatype}{ub} - \mpids{MPID_Datatype}{lb} + PAD.
 where PAD is determined by alignment rules.  
-/* Similar for \mpids{MPI_Datatype}{true_extent} */
+/* Similar for \mpids{MPID_Datatype}{true_extent} */
 
 For the alignment rules, each datatype keeps track of the largest
 alignment obect in \mpids{MPI_Datatype}{alignment_size}; these are the
@@ -2808,8 +2799,8 @@ Questions about the implementation of datatypes:
    within the current representation by creating new dataloop
    structures for the re-ordered loops.  
 
-\item We need to provide for the important special cases of aligned moves
-   of sizes 1, 2, 4, 8, and perhaps 16.
+% \item We need to provide for the important special cases of aligned moves
+%    of sizes 1, 2, 4, 8, and perhaps 16.
 
 \item We could even compile code to pack and unpack the given datatype
    and dynamically load the code.  PETSc has code for this for some
@@ -2828,9 +2819,9 @@ Questions about the implementation of datatypes:
    optimize for the transfers by reordering loops, will we want
    different versions for each direction)?
 
-\item In dataloop, kind should include information on basic alignment
-   and/or length (to allow fast loops using wide moves based on long
-   or double instead of char).
+% \item In dataloop, kind should include information on basic alignment
+%    and/or length (to allow fast loops using wide moves based on long
+%    or double instead of char).
 
 \item For types that do not contain struct, we can preload the entire
    processing stack, since the elements never change (just the
@@ -2857,14 +2848,18 @@ Questions about the implementation of datatypes:
 
 \item For pack and unpack code, we need to handle the tests for sizes of
     the output buffers efficiently, hoisting the tests out of the
-    loops where possible.  
+    loops where possible.  This is the reason for the
+    \mpids{MPID_Dataloop}{size} field; it allows a quick check at the top of
+    the loop to see if the loop can simply be executed or if more careful
+    steps are needed to avoid overrunning a buffer.
 
 \item For the homogeneous case, some struct types (those that contain
     only basic datatypes) can be changed into indexed types (as if
-    they were all \code{MPI_BYTE}).
+    they were all \code{MPI_BYTE}).  Note that in the homogeneous data
+    representation case, there are \emph{no} struct leaf nodes.
 
 \item Structs with no gaps (except at the ends, possibly because of 
-    structure padding, an \code{MPI_UB}, or an explicit resize,
+    structure padding, an \code{MPI_UB}, or an explicit resize),
     should be replaced with a strided type.  In the heterogeneous
     case, this can only be done when the struct contains a single
     basic type.
@@ -2970,53 +2965,57 @@ not want to call the new function.  Note that the combiner name is
 See the MPICH-1 \mpifunc{MPI_ADDRESS} in \file{mpich/src/pt2pt/address.c}.
 The preprocessor symbol \mpidconst{CHAR_PTR_IS_BYTE} is set by
 \code{configure} if casting a \code{char *} pointer to \code{MPI_Aint}
-gives a byte address (assumes that a \code{char} is a byte). 
+gives a byte address (this assumes that a \code{char} is a byte). 
 
 \subsubsection{\mpifunc{MPI_TYPE_CONTIGUOUS}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
+Create a new datatype with \mpidfunc{MPIU_Handle_obj_create} and fill in the dataloop
 with type \mpidconst{MPID_Contig}.  
 
 \subsubsection{\mpifunc{MPI_TYPE_INDEXED}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
+Create a new datatype with \mpidfunc{MPIU_Handle_obj_create} and fill in the dataloop
 with type \mpidconst{MPID_Indexed}.
 While copying index values, check for monotone increasing or
 decreasing.  Note that a datatype used to specify a file type must be
 monotonically nondecreasing (MPI Section 9.3, ``File Views'').
 
 \subsubsection{\mpifunc{MPI_TYPE_VECTOR}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
-with type \mpidconst{MPID_Vector}.
+Create a new datatype with \mpidfunc{MPIU_Handle_obj_create} and fill in the dataloop
+with type \mpidconst{MPID_VECTOR}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_DARRAY}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the
+Create a new datatype with \mpidfunc{MPIU_Handle_obj_create} and fill in the
 dataloops (the number depends on the dimension of the darray) 
-with type \mpidconst{MPID_Vector}.
+with type \mpidconst{MPID_VECTOR}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_HINDEXED}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
-with type \mpidconst{MPID_Indexed}.  While copying index values, check
+Create a new datatype with \mpidfunc{MPIU_Handle_obj_create} and fill in the dataloop
+with type \mpidconst{MPID_INDEXED}.  While copying index values, check
 for monotone increasing values.
 
+In addition, ignore (generate no entries for and do not set the extent) any
+elements with a blocklength of zero.  However, such elements must be
+remembered in the dataloop that is used to implement the get contents routines.
+
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_HVECTOR}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
-with type \mpidconst{MPID_Vector}.
+Create a new datatype with \mpidfunc{MPIU_Handle_obj_create} and fill in the dataloop
+with type \mpidconst{MPID_VECTOR}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_INDEXED_BLOCK}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
-with type \mpidconst{MPID_BlockIndexed}.
+Create a new datatype with \mpidfunc{MPIU_Handle_obj_create} and fill in the dataloop
+with type \mpidconst{MPID_BLOCKINDEXED}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_STRUCT}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
-with type \mpidconst{MPID_Struct}.  Check for contiguous elements
+Create a new datatype with \mpidfunc{MPIU_Handle_obj_create} and fill in the dataloop
+with type \mpidconst{MPID_STRUCT}.  Check for contiguous elements
 while setting up arrays.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_SUBARRAY}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the
+Create a new datatype with \mpidfunc{MPIU_Handle_obj_create} and fill in the
 dataloops (the number depends on the dimension of the subarray) 
-with type \mpidconst{MPID_Vector}.
+with type \mpidconst{MPID_VECTOR}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_RESIZED}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and copy in the
+Create a new datatype with \mpidfunc{MPIU_Handle_obj_create} and copy in the
 dataloop from the old type.  Then change the
 \mpids{MPI_Datatype}{extent} of the type as specified by the
 \code{extent} argument and the lowerbound by the \code{lb} argument. 
@@ -3026,13 +3025,17 @@ Optimize the datatype for communication.
 
 Question:  How do we want to organize the optimization code for datatypes?  We
 shouldn't embed it within the \code{MPI_TYPE_COMMIT} function.  Should each of
-the dataloop types (e.g., \code{MPID_Vector}) have a corresponding routine
+the dataloop types (e.g., \code{MPID_VECTOR}) have a corresponding routine
 that is called with the entire datatype (not just the specific dataloop)?
 
 One special case is to identify datatypes that are contiguous.  
-Question: should this set a field in the datatype, a bit in
-\mpids{MPI_Datatype}{_flags}, or a bit in the id for the
-\mpiconst{MPI_Datatype}? 
+
+Note that MPI-2 explicitly allows an already committed datatype to be
+committed again.
+
+% Question: should this set a field in the datatype, a bit in
+% \mpids{MPI_Datatype}{_flags}, or a bit in the id for the
+% \mpiconst{MPI_Datatype}? 
 
 \subsubsection{\mpifunc{MPI_TYPE_DUP}}
 Duplicate a datatype.  Invoke the common attribute copy code (e.g., the same
@@ -3045,10 +3048,16 @@ erroneous user programs, we can use the same strategy as used for the
 \mpiconst{MPI_Info} routines.
 
 \subsubsection{\mpifunc{MPI_TYPE_FREE}}
-This first calls \mpidfunc{MPID_Datatype_incr} with an increment of $-1$.  If
+This first calls \mpidfunc{MPID_Object_release_ref}.  If
 the returned value is zero, it should free the contents of \code{dataloop} and
-then call \mpidfunc{MPID_Datatype_free}.  Invoke the common attribute list
+then call \mpidfunc{MPIR_Datatype_free}.  Invoke the common attribute list
 delete code.
+
+Question:  Should each (major) datatype contain its own free function?  Then
+the datatype could contain a pointer to the function needed to free whatever
+datatype-specific storage that it has used.  Common code, such as the
+attribute delete code, would be handled by the \code{MPIR_Datatype_free}
+routine.  
 
 \subsubsection{\mpifunc{MPI_TYPE_EXTENT}}
 Simply uses the \mpids{MPI_Datatype}{extent} field in the structure.
@@ -3121,11 +3130,11 @@ Uses the \mpids{MPI_Datatype}{name} field.  Note that the Fortran
 versions must be careful to 
 blank-pad the value rather than null-terminating it.
 
-Question: We should have a common routine to handle the Fortran version of all
-of the get/set name routines.  I propose \mpidfunc{MPIR_C2F_get_name} and
-\mpidfunc{MPIR_F2C_set_name}; these can be used for any character string and
-are not limited to the datatype, communicator, or window name.  Names are
-stored in C style (null terminated) in all MPI data structures.
+% Question: We should have a common routine to handle the Fortran version of all
+% of the get/set name routines.  I propose \mpidfunc{MPIR_C2F_get_name} and
+% \mpidfunc{MPIR_F2C_set_name}; these can be used for any character string and
+% are not limited to the datatype, communicator, or window name.  Names are
+% stored in C style (null terminated) in all MPI data structures.
 
 \subsubsection{\mpifunc{MPI_TYPE_SET_NAME}}
 Sets the \mpids{MPI_Datatype}{name} field.  Returns error if supplied
@@ -3269,10 +3278,16 @@ routines should accept a general data representation defined by this routine
 so that they may be used in an MPI I/O implementation.
 
 Where are the list of datareps stored?  We need a list of datareps,
-containing functions.  This list needs a lock so that multiple threads
+containing functions.  This list needs a lock (it can use the
+\mpids{MPIR_Process}{global_lock}) so that multiple threads
 can define new datareps.  Note that there is no deregister for
-datareps, but we need one for \mpifunc{MPI_Finalize}.
-\mpidfunc{MPIR_Datarep_finalize}? 
+datareps, but we need one for \mpifunc{MPI_Finalize} (so that memory leak
+checks will not report a leak due to a user-defined datarep).  
+
+Datareps should be setup using lazy initialization (so no datarep routines are
+included if they are not explicitly referenced by the user).  In addition, the
+initialization step should register a callback with finalize to remove any
+allocated storage.
 
 \subsubsection{Heterogeneity}
 \label{sec:hetero}
@@ -3289,7 +3304,11 @@ than special macros.  For example,
 ...
 #endif
 \end{verbatim}
-even if some code is duplicated as a result.
+even if some code is duplicated as a result.  This is an exception to the ``no
+duplicated code'' rule, partly because in fact we expect little code to be
+duplicated and in part because the duplicated code will be close by in the
+file rather than off in some other file where it may be overlooked when a bug
+is fixed.
 
 \subsection{Groups}
 \label{sec:groups}
@@ -3301,7 +3320,7 @@ Groups are simple.  The key point here is to make sure that the use of
 groups to map from ranks in a communicator to a particular destination
 process is fast.
 To provide a fast implementation of \mpifunc{MPI_COMM_GROUP}, groups must
-have reference counts (\mpids{MPI_Group}{ref_count})
+have reference counts (\mpids{MPI_Group}{ref_count}).
 
 Question: Do we want a special case for the groups of self and comm
 world?  This would eliminate a lookup in the group table for the a very
@@ -3400,7 +3419,6 @@ set \code{result} to \mpiconst{MPI_IDENT} and return.
 Question: what routines should we use to manage the marker arrays?
 
 \subsubsection{\mpifunc{MPI_GROUP_EXCL}}
-\begin{adi3}
   Construct new group from the designated subset of
   \mpids{MPI_Group}{lrank_to_lpid} field of input group.
 
@@ -3421,36 +3439,31 @@ Question: what routines should we use to manage the marker arrays?
 
   We may want an \mpidfunc{MPIR_Group_create_from_marker} for this and many of
   the other group creation routines.
-\end{adi3}
 
 \subsubsection{\mpifunc{MPI_GROUP_INCL}}
-\begin{adi3}
   Construct new group from subset of \mpids{MPI_Group}{lrank_to_lpid} field of
   input group.
 
   Make sure to check for duplicate input ranges (invalid input).  Use the
   \mpidconst{marker_array} approach from \mpifunc{MPI_GROUP_EXCL}, but start
   with zero in each element; any element over one indicates an error.
-\end{adi3}
 
 \subsubsection{\mpifunc{MPI_GROUP_RANGE_EXCL}}
   Check that the ranges terminate.  
-\begin{adi3}
+
   Construct new group from subset of \mpids{MPI_Group}{lrank_to_lpid} field of
   input group.  This is a little tricky because multiple ranges can be
   specified and they can exclude overlapping ranges of ranks.  
   Use the \mpidconst{marker_array} with each element initialized to one; zero
   out each rank specified by each range.  Create the new group from the
   corresponding processes that have a positive entry.
-\end{adi3}
 
 \subsubsection{\mpifunc{MPI_GROUP_RANGE_INCL}}
   Check that the ranges terminate.
-\begin{adi3}
+
   Construct new group from subset of \mpids{MPI_Group}{lrank_to_lpid} field of
   input group.  Like \mpifunc{MPI_GROUP_RANGE_EXCL}, but start with zero in
   each element of the \mpidconst{marker_array}.
-\end{adi3}
 
 \subsubsection{\mpifunc{MPI_GROUP_DIFFERENCE}}
 
@@ -3652,19 +3665,15 @@ structures.  Calls \mpidfunc{MPID_Comm_free}.
 
 
 \subsubsection{\mpifunc{MPI_COMM_GROUP}}
-\begin{adi3}
   Returns a duplicate (shallow copy) of the local group.  Calls
-  \mpidfunc{MPID_Group_incr} to do this. 
-\end{adi3}
+  \mpidfunc{MPID_Object_add_ref} to do this. 
 
 \subsubsection{\mpifunc{MPI_COMM_RANK}}
 Return the \mpids{MPI_Comm}{rank} field.
 
 \subsubsection{\mpifunc{MPI_COMM_REMOTE_GROUP}}
-\begin{adi3}
   Return a duplicate (shallow copy) of the remote group.  Call
-  \mpidfunc{MPID_Group_incr}. 
-\end{adi3}
+  \mpidfunc{MPID_Object_add_ref}. 
 
 \subsubsection{\mpifunc{MPI_COMM_REMOTE_SIZE}}
 See \code{MPI_COMM_SIZE}.  This is actually not an unusual operation,
@@ -3870,8 +3879,10 @@ asymmetric.  Do we want to have a virtual split, allowing either zero,
 one, or two agents?  
 
 \subsubsection{\mpifunc{MPI_PROBE}}
-\begin{adi3}
-Call \mpidfunc{MPID_Request_probe}.
+
+Call \mpidfunc{MPID_Request_probe}.  An implementation of this routine 
+might look something like:
+
 \begin{mmadi}
 Look for a match in the unexpected receive queue. 
 If no match is found, then wait until another message is receive and check
@@ -3949,7 +3960,6 @@ queue.  Unfortunately, cancel does just that.
 In fact, we may want to consider a higher-level abstraction, such as monitors,
 which could (usually would) be implemented using locks and condition variables.
 \end{mmadi}
-\end{adi3}
 
 \paragraph{Buffered send.}
 The buffered send (both blocking and nonblocking) should first use
@@ -3980,7 +3990,7 @@ complete (locally); thus the \mpidfunc{MPIR_Bsend_finalize} needs to
 be called before any of the routines that free any data structures or state.
 
 The bsend operations are roughly:
-\begin{adi3}
+
 Try \mpidfunc{MPID_tBsend}; if it succeeds, done.
 Otherwise, find the first block in the buffer that is large enough for
 the data, stored as packed with \mpifunc{MPI_Pack}.  
@@ -3999,7 +4009,7 @@ request, there needs to be some way for the communication agent to
 know that it needs to try to send messages once requests become
 available.
 
-\end{adi3}
+
 We take advantage of \mpiconst{MPI_BSEND_OVERHEAD} to ensure that each
 block is aligned on a \code{double} (question: should we make it a
 cacheline?)
@@ -4022,8 +4032,8 @@ or to \code{tail} if the buffer is empty.
 Question: for the nonblocking versions, in principle, we could wait to
 copy into the buffer until the wait/test.  Maybe in 2008.
 
-\begin{mmadi}
-MPID_tBsend:
+An implementation of \mpidfunc{MPID_tBsend} might look like:
+
 Check message size.  
 If not within eager limit, return false
 If flow control allows, send and return true, 
@@ -4031,7 +4041,6 @@ else return false
 
 Note that the flow control check may require a lock so that another
 thread doesn't also try to send and change the flow control state.
-\end{mmadi}
 
 
 \subsubsection{\mpifunc{MPI_IBSEND}}
@@ -4047,12 +4056,12 @@ standard's model implementation.  This should setup a persistant
 request in the same way as the other persistent routines.
 
 \subsubsection{\mpifunc{MPI_BUFFER_ATTACH}}
-\begin{adi3}
+
 If a buffer is already attached, return error.
 Otherwise, attach the designated buffer and initialize the buffer as empty.
 The buffer is organized as a circular buffer as described in the model
 implementation of buffered mode in the MPI standard.
-\end{adi3}
+
 
 \subsubsection{\mpifunc{MPI_BUFFER_DETACH}}
 Buffer detach must first wait for all operations to complete before
@@ -4064,52 +4073,49 @@ a \mpiconst{MPI_ERR_OTHER} class of type \code{THREAD_RACE} if the flag is
 set.
 
 \subsubsection{\mpifunc{MPI_CANCEL}}
-\begin{adi3}\mpidfunc{MPID_Request_cancel}
-\begin{mmadi}
+Call \mpidfunc{MPID_Request_cancel}, which may be implemented as follows:
 Start by separating the cases:
 \begin{itemize}
 \item Inactive persistent.  Return error.
 \item Active persistent.  Handle as a non-persistent of the same type.
 \item Receive.  If already complete or in progess, cancel fails.  
-\begin{core} 
-Otherwise, remove request from receive queue (atomically).  In many
-ADIs, this is a local operation.  However, some systems may require
-logic similar to the send branch (this is the speculative receive
-case, where information on a receive with a designated source is sent
-directly to the sender).
+% \begin{core} 
+% Otherwise, remove request from receive queue (atomically).  In many
+% ADIs, this is a local operation.  However, some systems may require
+% logic similar to the send branch (this is the speculative receive
+% case, where information on a receive with a designated source is sent
+% directly to the sender).
 
-Question: The check-and-remove must be done atomically.  This needs a
-variation of the find-or-allocate that performs a find-and-remove.
+% Question: The check-and-remove must be done atomically.  This needs a
+% variation of the find-or-allocate that performs a find-and-remove.
 
-\end{core}
+% \end{core}
 \item Send. If already complete or in progress, cancel fails.
-\begin{core} 
-Otherwise use \mpidfunc{MPID_Rhcv} to send a cancel
-request (\mpidconst{MPID_Hid_cancel}).  The cancel operation must wait for a
-acknowledgement that 
-indicates whether the cancel succeeded or failed.  
+% \begin{core} 
+% Otherwise use \mpidfunc{MPID_Rhcv} to send a cancel
+% request (\mpidconst{MPID_Hid_cancel}).  The cancel operation must wait for a
+% acknowledgement that 
+% indicates whether the cancel succeeded or failed.  
 
-Question: How is this wait managed?  For a polling implementation, should this
-use some (possibly higher latency) alternate communication path (e.g., a
-\code{SIGIO} handler for TCP or \code{SIGUSR1} for shared memory)?
+% Question: How is this wait managed?  For a polling implementation, should this
+% use some (possibly higher latency) alternate communication path (e.g., a
+% \code{SIGIO} handler for TCP or \code{SIGUSR1} for shared memory)?
 
-Again, the check and send if not in progress must be atomic.  
-Essentially, the cancel matches the send request in the queue and
-marks it as satisfied.
+% Again, the check and send if not in progress must be atomic.  
+% Essentially, the cancel matches the send request in the queue and
+% marks it as satisfied.
 
-How is the send identified?  By the same request id that is used by
-the \mpidconst{MPID_Hid_ok_to_send}?  
+% How is the send identified?  By the same request id that is used by
+% the \mpidconst{MPID_Hid_ok_to_send}?  
 
-Note that if we receive an ok-to-send on this request, it means that
-the send cancel has failed.  No separate negative-ack is required.
-That is, in the communication agent, if the send is in progress, the
-cancel request may be discarded without further action, at least in
-cases where a separate acknowledgement is required to initiate the
-data transfer described by a send.
-\end{core}
+% Note that if we receive an ok-to-send on this request, it means that
+% the send cancel has failed.  No separate negative-ack is required.
+% That is, in the communication agent, if the send is in progress, the
+% cancel request may be discarded without further action, at least in
+% cases where a separate acknowledgement is required to initiate the
+% data transfer described by a send.
+% \end{core}
 \end{itemize}
-\end{mmadi}
-\end{adi3}
 
 Question: do we want to have an attribute that indicates that there
 are no send-cancels?  Handling send-cancel is the only part of MPI-1
@@ -4142,42 +4148,42 @@ until the cancel is known to either have succeeded or failed
 guarantees that no mismatch can occur.
 
 \subsubsection{\mpifunc{MPI_IPROBE}}
-\begin{adi3}\mpidfunc{MPID_Request_iprobe}
-\begin{mmadi}
-This is the same code as \mpidfunc{MPID_Request_recv_FOA}, but without
-the allocation if no matching request is found.  See
-\mpifunc{MPI_Probe} for additional discussion; \mpifunc{MPI_Iprobe},
-of course, does not block.
-\end{mmadi}
-\end{adi3}
+\mpidfunc{MPID_Request_iprobe}
+% \begin{mmadi}
+% This is the same code as \mpidfunc{MPID_Request_recv_FOA}, but without
+% the allocation if no matching request is found.  See
+% \mpifunc{MPI_Probe} for additional discussion; \mpifunc{MPI_Iprobe},
+% of course, does not block.
+% \end{mmadi}
+
 
 \subsubsection{\mpifunc{MPI_IRECV}}
 \begin{adi3}
 \mpidfunc{MPID_Irecv}
-\begin{mmadi}
-\mpidfunc{MPID_Segment}\\
-\mpidfunc{MPID_Request_recv_FOA}\\
-\mpidfunc{MPID_Stream_irecv}
-\begin{core}
-This should ensure that any polling call is made.  Question: what is
-the interface with the communication agent?  Note that the agent will
-arrange the actual data transfer.  In a multithreaded case, the
-calling (user) thread only enqueues the request.
+% \begin{mmadi}
+% \mpidfunc{MPID_Segment}\\
+% \mpidfunc{MPID_Request_recv_FOA}\\
+% \mpidfunc{MPID_Stream_irecv}
+% \begin{core}
+% This should ensure that any polling call is made.  Question: what is
+% the interface with the communication agent?  Note that the agent will
+% arrange the actual data transfer.  In a multithreaded case, the
+% calling (user) thread only enqueues the request.
 
-The implementation of \mpidfunc{MPID_Request_recv_FOA} might include:
-\begin{mmadi}
-Determine source.  If a specific source, find or add (atomically) to
-the queue for that method. 
-If \mpiconst{MPI_ANY_SOURCE}, then 
-    lock common queue
-    find or add (atomially) to each method's queue; stop if there is a
-    match
-    add to common queue
-    unlock common queue.
-\end{mmadi}
+% The implementation of \mpidfunc{MPID_Request_recv_FOA} might include:
+% \begin{mmadi}
+% Determine source.  If a specific source, find or add (atomically) to
+% the queue for that method. 
+% If \mpiconst{MPI_ANY_SOURCE}, then 
+%     lock common queue
+%     find or add (atomially) to each method's queue; stop if there is a
+%     match
+%     add to common queue
+%     unlock common queue.
+% \end{mmadi}
 
-\end{core}
-\end{mmadi}
+% \end{core}
+% \end{mmadi}
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_IRSEND}}
@@ -4191,22 +4197,22 @@ matched by a posted receive.  This requires a bit for ready mode in the
 \subsubsection{\mpifunc{MPI_ISEND}}
 \begin{adi3}
 \mpidfunc{MPID_Isend}
-\begin{mmadi}
-\mpidfunc{MPID_Segment}\\
-\mpidfunc{MPID_Request_send_FOA}\\
-\mpidfunc{MPID_Stream_isend}
-\begin{core}
-If the message is small in total size and flow control allows it, send
-the data with \mpidconst{MPID_Hid_short} using \mpidfunc{MPID_Rhcv}.
-Otherwise, send a \mpidconst{MPID_Hid_request_to_send} with
-\mpidfunc{MPID_Rhcv}.  
-\end{core}
-\begin{via}
-Attempt to register the source memory so that direct memory operations may be
-used on it.  If this is not possible (e.g., no more memory can be pinned),
-then copy to some preallocated space.
-\end{via}
-\end{mmadi}
+% \begin{mmadi}
+% \mpidfunc{MPID_Segment}\\
+% \mpidfunc{MPID_Request_send_FOA}\\
+% \mpidfunc{MPID_Stream_isend}
+% \begin{core}
+% If the message is small in total size and flow control allows it, send
+% the data with \mpidconst{MPID_Hid_short} using \mpidfunc{MPID_Rhcv}.
+% Otherwise, send a \mpidconst{MPID_Hid_request_to_send} with
+% \mpidfunc{MPID_Rhcv}.  
+% \end{core}
+% \begin{via}
+% Attempt to register the source memory so that direct memory operations may be
+% used on it.  If this is not possible (e.g., no more memory can be pinned),
+% then copy to some preallocated space.
+% \end{via}
+% \end{mmadi}
 \end{adi3}
 
 Question: do we want a special case for short messages that reduces
@@ -4228,31 +4234,31 @@ load/increment/store?
 \subsubsection{\mpifunc{MPI_ISSEND}}
 Same as \code{MPI_ISEND}, but with the synchronous mode set.  
 
-\begin{core}
-For all sizes, use \mpidconst{MPID_Hid_request_to_send} with
-\mpidfunc{MPID_Rhcv}.  Note that this includes messages of size zero.
-In the absence of a speculative receive, this will never complete
-before the routine an exit.
+% \begin{core}
+% For all sizes, use \mpidconst{MPID_Hid_request_to_send} with
+% \mpidfunc{MPID_Rhcv}.  Note that this includes messages of size zero.
+% In the absence of a speculative receive, this will never complete
+% before the routine an exit.
 
-\end{core}
-Note that an alternate approach is possible for short messages that uses
-\mpidconst{MPID_Hid_short} but requires an acknowledgement when the message is
-matched at the destination.  At least for now, we don't plan to implement this
-approach (it was used in MPICH/ADI-1, but was not really worth the effort). 
+% \end{core}
+% Note that an alternate approach is possible for short messages that uses
+% \mpidconst{MPID_Hid_short} but requires an acknowledgement when the message is
+% matched at the destination.  At least for now, we don't plan to implement this
+% approach (it was used in MPICH/ADI-1, but was not really worth the effort). 
 
 \subsubsection{\mpifunc{MPI_RECV}}
 This can simply be \code{MPI_IRECV} followed by an \code{MPI_WAIT}.  However,
 we might want to let the partner (matching sender) know that this is blocking
 a thread or process.  
 
-Note that an early version of MPICH waiting for a specific tag,
+Note that an early version of MPICH waited for a specific tag,
 context-id, and source tuple.  This sped up the process of matching
 against the message queue (incoming messages were first matched
 against that tuple), but it isn't correct if the queue already
 contains entries with wild cards (e.g., \mpiconst{MPI_ANY_SOURCE}).
 
 \subsubsection{\mpifunc{MPI_RECV_INIT}}
-\begin{adi3}
+
 Create a persistent request and save the message
 parameters (\mpids{MPI_Request(persistent)}{communicator}, 
 \mpids{MPI_Request(persistent)}{tag}, \mpids{MPI_Request(persistent)}{source_rank}, 
@@ -4269,7 +4275,7 @@ to identify it as a persistent request and a pointer to a normal
 used to indicate whether the persistent request is active, rather than
 using a separate field.  This field could be
 \mpids{MPI_Request}{active_request}.
-\end{adi3}
+
 
 Note that \mpidfunc{MPID_Memory_register} must fix both the physical
 memory and the virtual to physical mapping, so that both any
@@ -4357,12 +4363,12 @@ communication calls, such as \mpifunc{MPI_Send} and
 giving us enough information to decide whether to piggyback acks on a
 data stream.
 \subsubsection{\mpifunc{MPI_SENDRECV_REPLACE}}
-Question: Should this use the segment code to bound the memory buffer that
-must be allocated for the replacement?
-\begin{adi3}
-\mpidfunc{MPID_Segment}, \mpidfunc{MPID_Stream_irecv}, and
-\mpidfunc{MPID_Stream_isend}. 
-\end{adi3}
+% Question: Should this use the segment code to bound the memory buffer that
+% must be allocated for the replacement?
+% \begin{adi3}
+% \mpidfunc{MPID_Segment}, \mpidfunc{MPID_Stream_irecv}, and
+% \mpidfunc{MPID_Stream_isend}. 
+% \end{adi3}
 
 \subsubsection{\mpifunc{MPI_SEND_INIT}}
 See \mpifunc{MPI_RECV_INIT}.
@@ -4489,198 +4495,198 @@ subtle operations such as cancelling of nonblocking sends.  This agent may be
 invoked explicitly (a polling interface) or implicitly (e.g., in response to
 an I/O interrupt or a thread-schedule event).  
 
-\begin{tcp}
-Receive a message header.  This is a message sent with \mpidfunc{MPID_Rhcv},
-and the header is one of the \mpidconst{MPID_Hid_xxx_t} structures.
-Based on the header type, invoke the appropriate processing routine (there
-should be one for each header type, such as
-\mpidfunc{MPID_Hid_xxx_method}). 
+% \begin{tcp}
+% Receive a message header.  This is a message sent with \mpidfunc{MPID_Rhcv},
+% and the header is one of the \mpidconst{MPID_Hid_xxx_t} structures.
+% Based on the header type, invoke the appropriate processing routine (there
+% should be one for each header type, such as
+% \mpidfunc{MPID_Hid_xxx_method}). 
 
-Still to do:  List the detailed behavior of head message type.
-\begin{description}
-\item[\mpidconst{MPID_Hid_short}.]
-Call \mpidfunc{MPID_Request_recv_FOA}.  If found, transfer data using
-\mpidfunc{MPID_Unpack}.  Otherwise, save data (transfer with \code{memcpy}) in
-message buffer area.  Update flow control.
-Special case: If ready-message bit is set and no matching message
-exists, use \mpidconst{MPID_Hid_control} to return a remote error
-indication.
-Fields include \mpids{MPID_Hid_short}{size},
-\mpids{MPID_Hid_short}{tag}, \mpids{MPID_Hid_short}{context_id},
-\mpids{MPID_Hid_short}{source_rank}, and
-\mpids{MPID_Hid_short}{data}.  It may also include
-\mpids{MPID_Hid_short}{type_sig}, containing the shortened type
-signagure, and \mpids{MPID_Hid_short}{flags}, containing various flags
-(such as \mpidconst{MPID_READY_SEND}).  Heterogeneous systems must
-also contain \mpids{MPID_Hid_short}{data_format}, which may include
-the rank of the process that packed the data for data sent with
-\mpiconst{MPI_PACKED} (see Section~\ref{sec:mpi-unpack}).
+% Still to do:  List the detailed behavior of head message type.
+% \begin{description}
+% \item[\mpidconst{MPID_Hid_short}.]
+% Call \mpidfunc{MPID_Request_recv_FOA}.  If found, transfer data using
+% \mpidfunc{MPID_Unpack}.  Otherwise, save data (transfer with \code{memcpy}) in
+% message buffer area.  Update flow control.
+% Special case: If ready-message bit is set and no matching message
+% exists, use \mpidconst{MPID_Hid_control} to return a remote error
+% indication.
+% Fields include \mpids{MPID_Hid_short}{size},
+% \mpids{MPID_Hid_short}{tag}, \mpids{MPID_Hid_short}{context_id},
+% \mpids{MPID_Hid_short}{source_rank}, and
+% \mpids{MPID_Hid_short}{data}.  It may also include
+% \mpids{MPID_Hid_short}{type_sig}, containing the shortened type
+% signagure, and \mpids{MPID_Hid_short}{flags}, containing various flags
+% (such as \mpidconst{MPID_READY_SEND}).  Heterogeneous systems must
+% also contain \mpids{MPID_Hid_short}{data_format}, which may include
+% the rank of the process that packed the data for data sent with
+% \mpiconst{MPI_PACKED} (see Section~\ref{sec:mpi-unpack}).
 
-\item[\mpidconst{MPID_Hid_request_to_send}.]
-Call \mpidfunc{MPID_Request_recv_FOA}.  If found, reply with
-\mpidconst{MPID_Hid_ok_to_send} sent with \mpidfunc{MPID_Rhcv}.  Otherwise,
-store message id in newly allocated request and mark request as ready
-for use.  
-Fields include \mpids{MPID_Hid_request_to_send}{size},
-\mpids{MPID_Hid_request_to_send}{tag},
-\mpids{MPID_Hid_request_to_send}{context_id}, 
-\mpids{MPID_Hid_request_to_send}{source_rank}, and a
-\mpids{MPID_Hid_request_to_send}{request_id}, which is used to
-identify this operation to the sender when it is acknowledged.  
-It may also include
-\mpids{MPID_Hid_request_to_send}{type_sig}, containing the
-request_to_sendened type 
-signagure, and \mpids{MPID_Hid_request_to_send}{flags}, containing
-various flags 
-(such as \mpidconst{MPID_READY_SEND}).  Heterogeneous systems must
-also contain \mpids{MPID_Hid_request_to_send}{data_format}, which may include
-the rank of the process that packed the data for data sent with
-\mpiconst{MPI_PACKED} (see Section~\ref{sec:mpi-unpack}).
+% \item[\mpidconst{MPID_Hid_request_to_send}.]
+% Call \mpidfunc{MPID_Request_recv_FOA}.  If found, reply with
+% \mpidconst{MPID_Hid_ok_to_send} sent with \mpidfunc{MPID_Rhcv}.  Otherwise,
+% store message id in newly allocated request and mark request as ready
+% for use.  
+% Fields include \mpids{MPID_Hid_request_to_send}{size},
+% \mpids{MPID_Hid_request_to_send}{tag},
+% \mpids{MPID_Hid_request_to_send}{context_id}, 
+% \mpids{MPID_Hid_request_to_send}{source_rank}, and a
+% \mpids{MPID_Hid_request_to_send}{request_id}, which is used to
+% identify this operation to the sender when it is acknowledged.  
+% It may also include
+% \mpids{MPID_Hid_request_to_send}{type_sig}, containing the
+% request_to_sendened type 
+% signagure, and \mpids{MPID_Hid_request_to_send}{flags}, containing
+% various flags 
+% (such as \mpidconst{MPID_READY_SEND}).  Heterogeneous systems must
+% also contain \mpids{MPID_Hid_request_to_send}{data_format}, which may include
+% the rank of the process that packed the data for data sent with
+% \mpiconst{MPI_PACKED} (see Section~\ref{sec:mpi-unpack}).
 
-Question: In order to implement the store and forward stream
-operation, should there be a ``disposition'' field that indicates what
-to do with the raw (pre-unpacked) data?
+% Question: In order to implement the store and forward stream
+% operation, should there be a ``disposition'' field that indicates what
+% to do with the raw (pre-unpacked) data?
 
-\item[\mpidconst{MPID_Hid_ok_to_send}.]Send the requested data back
-with a header of \mpidconst{MPID_Hid_data}.  Note that this may be
-only a subset of the full data.  That is, a long message may be sent
-as multiple pieces.  Each piece requires an \mpidconst{MPID_Hid_data}
-header.
-Fields include \mpids{MPID_Hid_ok_to_send}{request_id} and
-\mpids{MPID_Hid_ok_to_send}{recv_id}, which is used to identify the
-data in \mpidconst{MPID_Hid_data}.  
+% \item[\mpidconst{MPID_Hid_ok_to_send}.]Send the requested data back
+% with a header of \mpidconst{MPID_Hid_data}.  Note that this may be
+% only a subset of the full data.  That is, a long message may be sent
+% as multiple pieces.  Each piece requires an \mpidconst{MPID_Hid_data}
+% header.
+% Fields include \mpids{MPID_Hid_ok_to_send}{request_id} and
+% \mpids{MPID_Hid_ok_to_send}{recv_id}, which is used to identify the
+% data in \mpidconst{MPID_Hid_data}.  
 
-Question: do we also want to return a maximum data length to indicate
-the maximum amount of data that should be returned?
+% Question: do we also want to return a maximum data length to indicate
+% the maximum amount of data that should be returned?
 
-\item[\mpidconst{MPID_Hid_data}.]Is this just \mpidconst{MPID_Hid_put}
-where the address has been sent with \mpidconst{MPID_Hid_ok_to_send}?
-The fields in this structure include \mpids{MPID_Hid_data}{recv_id},
-\mpids{MPID_Hid_data}{size}, and \mpids{MPID_Hid_data}{data}.  We may
-also want to include the corresponding
-\mpids{MPID_Hid_data}{request_id} to simplify the process of handling
-the case wheere the data is delivered in several parts.
+% \item[\mpidconst{MPID_Hid_data}.]Is this just \mpidconst{MPID_Hid_put}
+% where the address has been sent with \mpidconst{MPID_Hid_ok_to_send}?
+% The fields in this structure include \mpids{MPID_Hid_data}{recv_id},
+% \mpids{MPID_Hid_data}{size}, and \mpids{MPID_Hid_data}{data}.  We may
+% also want to include the corresponding
+% \mpids{MPID_Hid_data}{request_id} to simplify the process of handling
+% the case wheere the data is delivered in several parts.
 
-\item[\mpidconst{MPID_Hid_cancel}.]Attempt to access a previous
-request.  If unmatched, remove it and return a success
-\mpidconst{MPID_Hid_cancel_ack} using \mpidfunc{MPID_Rhcv}.
-Otherwise, return a failure and leave the request as unchanged.
-The fields here include \mpids{MPID_Hid_cancel}{request_id} (matching
-a \mpidconst{MPID_Hid_request_to_send}).
+% \item[\mpidconst{MPID_Hid_cancel}.]Attempt to access a previous
+% request.  If unmatched, remove it and return a success
+% \mpidconst{MPID_Hid_cancel_ack} using \mpidfunc{MPID_Rhcv}.
+% Otherwise, return a failure and leave the request as unchanged.
+% The fields here include \mpids{MPID_Hid_cancel}{request_id} (matching
+% a \mpidconst{MPID_Hid_request_to_send}).
 
-\item[\mpidconst{MPID_Hid_cancel_ack}.]Set the cancel success/failure
-field of the indicated request.  Question: Do requests need a separate
-field to indicate failed cancel, or can \mpifunc{MPI_Test_cancelled}
-return failure if it doesn't find success (e.g., do we need to
-distinquish between cancel attempted and failed and never attempted?
-Question: Should there be a single cancel type with an operation
-subfield that combines \mpidconst{MPID_Hid_cancel} and
-\mpidconst{MPID_Hid_cancel_ack}?
-The fields here include \mpids{MPID_Hid_cancel_ack}{request_id} and
-\mpids{MPID_Hid_cancel_ack}{flag}, indicating success or failure.
+% \item[\mpidconst{MPID_Hid_cancel_ack}.]Set the cancel success/failure
+% field of the indicated request.  Question: Do requests need a separate
+% field to indicate failed cancel, or can \mpifunc{MPI_Test_cancelled}
+% return failure if it doesn't find success (e.g., do we need to
+% distinquish between cancel attempted and failed and never attempted?
+% Question: Should there be a single cancel type with an operation
+% subfield that combines \mpidconst{MPID_Hid_cancel} and
+% \mpidconst{MPID_Hid_cancel_ack}?
+% The fields here include \mpids{MPID_Hid_cancel_ack}{request_id} and
+% \mpids{MPID_Hid_cancel_ack}{flag}, indicating success or failure.
 
-Question: do we ever need the failure, since that will mean that a
-\mpidconst{MPID_Hid_ok_to_send} was generated for the request?
+% Question: do we ever need the failure, since that will mean that a
+% \mpidconst{MPID_Hid_ok_to_send} was generated for the request?
 
-\item[\mpidconst{MPID_Hid_lock_op}.]Manipulate a lock on the indicated
-window object.  The operation are lock, lock-exclusive, unlock, and
-lock-grant (we don't need an unlock-grant).  The window object is
-specified by the window object id (previous set as part of the
-\mpifunc{MPI_Win_create} step).
-Fields include \mpids{MPID_Hid_lock_op}{source_rank},
-\mpids{MPID_Hid_lock_op}{window_id}, and
-\mpids{MPID_Hid_lock_op}{flags}, which indicate whether this is a lock
-or unlock, and whether it is exclusive or not.
+% \item[\mpidconst{MPID_Hid_lock_op}.]Manipulate a lock on the indicated
+% window object.  The operation are lock, lock-exclusive, unlock, and
+% lock-grant (we don't need an unlock-grant).  The window object is
+% specified by the window object id (previous set as part of the
+% \mpifunc{MPI_Win_create} step).
+% Fields include \mpids{MPID_Hid_lock_op}{source_rank},
+% \mpids{MPID_Hid_lock_op}{window_id}, and
+% \mpids{MPID_Hid_lock_op}{flags}, which indicate whether this is a lock
+% or unlock, and whether it is exclusive or not.
 
-\item[\mpidconst{MPID_Hid_win_count_op}.]Modify one of the local window
-start/complete counters (see \mpifunc{MPI_Win_start}).  
+% \item[\mpidconst{MPID_Hid_win_count_op}.]Modify one of the local window
+% start/complete counters (see \mpifunc{MPI_Win_start}).  
 
-\item[\mpidconst{MPID_Hid_put}.]Emulate a put operation.  The handler
-contains the offset of the destination and window object id, as well
-as the size.  
-Question: should we have the sender convert the offset to an address?
-Question: does this assume contiguous data?  If it does, do we want a
-strided access version?
-Fields include \mpids{MPID_Hid_put}{offset},
-\mpids{MPID_Hid_put}{window_id}, \mpids{MPID_Hid_put}{datatype_id},
-and \mpids{MPID_Hid_put}{count}.
+% \item[\mpidconst{MPID_Hid_put}.]Emulate a put operation.  The handler
+% contains the offset of the destination and window object id, as well
+% as the size.  
+% Question: should we have the sender convert the offset to an address?
+% Question: does this assume contiguous data?  If it does, do we want a
+% strided access version?
+% Fields include \mpids{MPID_Hid_put}{offset},
+% \mpids{MPID_Hid_put}{window_id}, \mpids{MPID_Hid_put}{datatype_id},
+% and \mpids{MPID_Hid_put}{count}.
 
-Question: do we really want a stream version of this instead?  How do
-we implement streams without it?
+% Question: do we really want a stream version of this instead?  How do
+% we implement streams without it?
 
-\item[\mpidconst{MPID_Hid_accumulate}.]Emulate an accumulate
-operation.  Much like \mpidconst{MPID_Hid_put}.
+% \item[\mpidconst{MPID_Hid_accumulate}.]Emulate an accumulate
+% operation.  Much like \mpidconst{MPID_Hid_put}.
 
-\item[\mpidconst{MPID_Hid_get}.]Like \mpidconst{MPID_Hid_put}, but for
-the get operation.  Question: Should there be a single RMA type, with
-put, get, and accumulate as separate subtypes?
+% \item[\mpidconst{MPID_Hid_get}.]Like \mpidconst{MPID_Hid_put}, but for
+% the get operation.  Question: Should there be a single RMA type, with
+% put, get, and accumulate as separate subtypes?
 
-\item[\mpidconst{MPID_Hid_flow}.]Flow control.  This sends an update
-about the free resources of the sender.  Should a variation of this
-request an update?  Also, do we want to a version that request more or
-less resources for buffering?  Do we want to piggyback flow control
-information on all headers?  E.g., we could use a single signed char
-(byte) to update the number of data blocks in use; this would reduce
-the number of flow-control only messages.
+% \item[\mpidconst{MPID_Hid_flow}.]Flow control.  This sends an update
+% about the free resources of the sender.  Should a variation of this
+% request an update?  Also, do we want to a version that request more or
+% less resources for buffering?  Do we want to piggyback flow control
+% information on all headers?  E.g., we could use a single signed char
+% (byte) to update the number of data blocks in use; this would reduce
+% the number of flow-control only messages.
 
-\item[\mpidconst{MPID_Hid_datatype_desc}.]Cache a datatype description
-to be used in RMA operations.  This is similar to a
-\mpidconst{MPID_Hid_request_to_send}, including the need to use a
-rendezvous to send complex and lengthy datatypes (e.g., indexed
-types).
-Question: As for \mpidconst{MPID_Hid_lock_op}, should there be a
-single type with subfields?  
+% \item[\mpidconst{MPID_Hid_datatype_desc}.]Cache a datatype description
+% to be used in RMA operations.  This is similar to a
+% \mpidconst{MPID_Hid_request_to_send}, including the need to use a
+% rendezvous to send complex and lengthy datatypes (e.g., indexed
+% types).
+% Question: As for \mpidconst{MPID_Hid_lock_op}, should there be a
+% single type with subfields?  
 
-\item[\mpidconst{MPID_Hid_control}.]This is a general-purpose control
-message.  For example, this could be used to implement an abort,
-disconnect, deadlock detection, remote error indication (e.g., a ready
-send that was not matched), and orderly exit.
-\end{description}
+% \item[\mpidconst{MPID_Hid_control}.]This is a general-purpose control
+% message.  For example, this could be used to implement an abort,
+% disconnect, deadlock detection, remote error indication (e.g., a ready
+% send that was not matched), and orderly exit.
+% \end{description}
 
-Questions and comments:
+% Questions and comments:
 
-The communication agent for methods based on network read/write
-operations such as TCP should probably use a buffered read to reduce
-the number of system 
-calls.  The buffering code should be able to switch to direct read when a
-large amount of data is being moved (by emptying the buffer and then switching
-to direct read).  
+% The communication agent for methods based on network read/write
+% operations such as TCP should probably use a buffered read to reduce
+% the number of system 
+% calls.  The buffering code should be able to switch to direct read when a
+% large amount of data is being moved (by emptying the buffer and then switching
+% to direct read).  
 
-How is flow control handled?  Should flow control be bundled with the buffered
-read/write logic?
+% How is flow control handled?  Should flow control be bundled with the buffered
+% read/write logic?
 
-Are there separate stream operations?  Are there stream operations
-instead of the \mpidconst{MPID_Hid_request_to_send} etc. operations?
-\end{tcp}
+% Are there separate stream operations?  Are there stream operations
+% instead of the \mpidconst{MPID_Hid_request_to_send} etc. operations?
+% \end{tcp}
 
-\begin{shmem}
-Is this the same as \tcpname, but with slightly different message
-types?
-Where are there differences?  For example, should datatypes be stored
-in shared memory, thus eliminating the
-\mpidconst{MPID_Hid_datatype_desc}?  If so, how does the device ensure
-that the datatype code places everything in shared memory (e.g.,
-\mpifunc{MPI_TYPE_CREATE_INDEXED} cannot use \code{malloc} to save the
-index arrays)?  Should the lock/unlock operations
-be direct rather than using \mpidconst{MPID_Hid_lock_op}?
-If the message queues are stored in shared memory, how does that
-change the various routines?  For example, does a \shmemname\ device not
-use \mpidconst{MPID_Hid_short}, using instead direct access to shared
-memory so as to reduce the latency of short messages?
+% \begin{shmem}
+% Is this the same as \tcpname, but with slightly different message
+% types?
+% Where are there differences?  For example, should datatypes be stored
+% in shared memory, thus eliminating the
+% \mpidconst{MPID_Hid_datatype_desc}?  If so, how does the device ensure
+% that the datatype code places everything in shared memory (e.g.,
+% \mpifunc{MPI_TYPE_CREATE_INDEXED} cannot use \code{malloc} to save the
+% index arrays)?  Should the lock/unlock operations
+% be direct rather than using \mpidconst{MPID_Hid_lock_op}?
+% If the message queues are stored in shared memory, how does that
+% change the various routines?  For example, does a \shmemname\ device not
+% use \mpidconst{MPID_Hid_short}, using instead direct access to shared
+% memory so as to reduce the latency of short messages?
 
-Note that since the assumption is that only some memory is shared, it
-isn't possible to implement most message operations without using a
-communication agent at the destination to implement the transfer of
-data into user-defined buffers that are not in shared memory.
+% Note that since the assumption is that only some memory is shared, it
+% isn't possible to implement most message operations without using a
+% communication agent at the destination to implement the transfer of
+% data into user-defined buffers that are not in shared memory.
 
-Question:  Do we want a separate case for systems that can share all
-of process memory (Windows and Linux)?
-\end{shmem}
+% Question:  Do we want a separate case for systems that can share all
+% of process memory (Windows and Linux)?
+% \end{shmem}
 
-\begin{via}
-Like \tcpname, except some data can be transfered without the agent
-(remote read and write (get/put) operations).
-\end{via}
+% \begin{via}
+% Like \tcpname, except some data can be transfered without the agent
+% (remote read and write (get/put) operations).
+% \end{via}
 
 % subsection collective communication and computation; contains the
 % discussion.  The description of each individual routine remains in the
@@ -4982,10 +4988,14 @@ want to call \mpidfunc{MPID_Cart_map} to allow subdimensions to be reordered
 when requested.
 
 \subsubsection{\mpifunc{MPI_DIMS_CREATE}}
-This routine calls \mpidfunc{MPID_Dims_create}, which trys to return a
+This routine calls \mpidfunc{MPID_Dims_compute}, which trys to return a
 ``good'' set of dimensions.  It could use \mpidfunc{MPID_Topo_cluster_info} to
 provide a good match to a cluster; otherwise, it should strive to create a
 decomposition that is as even as possible.
+
+The name of the internal routine does not use ``create'' because we use
+create and destroy to describe the routines that allocate and deallocate
+objects, particularly the structures corresponding to MPI objects.  
 
 \subsubsection{\mpifunc{MPI_GRAPHDIMS_GET}}
 Access the topology description and return the number of dimensions of
@@ -5117,78 +5127,78 @@ Note that the target address is computed as base address of target window +
 Among the errors to check for is offset out of range.  This is
 \mpiconst{MPI_ERR_DISP}; are there any subcases?
 
-\begin{tcp}
-The assumption here is that the target process must perform the operation.
+% \begin{tcp}
+% The assumption here is that the target process must perform the operation.
 
-Determine if destination datatype is known at target.  If not, send it using
-\mpidfunc{MPID_Rhcv} with a type of \mpidconst{MPID_Hid_datatype_desc}.  Note
-that if this is a complex datatype, this operation may require a rendezvous.
+% Determine if destination datatype is known at target.  If not, send it using
+% \mpidfunc{MPID_Rhcv} with a type of \mpidconst{MPID_Hid_datatype_desc}.  Note
+% that if this is a complex datatype, this operation may require a rendezvous.
 
-In that case, do we want a \mpidconst{MPID_Hid_datatype_desc_rts} (rts for
-request to send)?  
-\mpidconst{MPID_Hid_datatype_desc} needs either to specify an id for this
-datatype (for future use) or an acknowledgment needs to indicate what id to
-use.  Note that the ids are not global; beyond the predefined types, the ids
-are valid only between the particular pair of processes that established them.
+% In that case, do we want a \mpidconst{MPID_Hid_datatype_desc_rts} (rts for
+% request to send)?  
+% \mpidconst{MPID_Hid_datatype_desc} needs either to specify an id for this
+% datatype (for future use) or an acknowledgment needs to indicate what id to
+% use.  Note that the ids are not global; beyond the predefined types, the ids
+% are valid only between the particular pair of processes that established them.
 
-This operation should have an MPID routine since Put and Get also require it. 
+% This operation should have an MPID routine since Put and Get also require it. 
 
-Once the datatype is known at the target, the data can be sent with
-\mpidfunc{MPID_Stream_isend}.  Using a stream allows the receiver to receive
-part of the data and combine that with the target buffer without either
-allocating a temporary buffer the size of the full message or waiting for the
-all of data to be delivered.  In fact, a double-buffer arrangement can be used
-(the Stream operations should support this).  
+% Once the datatype is known at the target, the data can be sent with
+% \mpidfunc{MPID_Stream_isend}.  Using a stream allows the receiver to receive
+% part of the data and combine that with the target buffer without either
+% allocating a temporary buffer the size of the full message or waiting for the
+% all of data to be delivered.  In fact, a double-buffer arrangement can be used
+% (the Stream operations should support this).  
 
-Question: how is this stream matched between the sender and receiver?  Should
-this use a ``\code{Stream_put}'' instead, where the target sends the buffer
-address 
-to use, or do we just use a context from a communicator within in the Window
-object, combined with a unique tag value?  How is completion handled?
+% Question: how is this stream matched between the sender and receiver?  Should
+% this use a ``\code{Stream_put}'' instead, where the target sends the buffer
+% address 
+% to use, or do we just use a context from a communicator within in the Window
+% object, combined with a unique tag value?  How is completion handled?
 
-Note that high-latency systems may want to defer any communication until the
-access epoch completes (i.e., the closing \mpifunc{MPI_Win_fence},
-\mpifunc{MPI_Win_complete}, or \mpifunc{MPI_Win_unlock}).  Exploiting that
-requires merging messages into a 
-single message (as seen by the OS).  The above description doesn't handle this
-case. 
+% Note that high-latency systems may want to defer any communication until the
+% access epoch completes (i.e., the closing \mpifunc{MPI_Win_fence},
+% \mpifunc{MPI_Win_complete}, or \mpifunc{MPI_Win_unlock}).  Exploiting that
+% requires merging messages into a 
+% single message (as seen by the OS).  The above description doesn't handle this
+% case. 
 
-Question: do we want to use offsets or should we provide the address?  Is
-there a special window object that exposes all of a processes memory, for use
-by the MPI implementation in delivering messages?
-\end{tcp}
+% Question: do we want to use offsets or should we provide the address?  Is
+% there a special window object that exposes all of a processes memory, for use
+% by the MPI implementation in delivering messages?
+% \end{tcp}
 
 
-\begin{shmem}
-\begin{enumerate}
-\item If the target window is in shared memory, 
-If both origin and target datatypes are simple, then the origin process simply
-applies the 
-operation (e.g., both contiguous or both vectors).  Otherwise, move through an
-intermediate form (e.g., contiguous).  
+% \begin{shmem}
+% \begin{enumerate}
+% \item If the target window is in shared memory, 
+% If both origin and target datatypes are simple, then the origin process simply
+% applies the 
+% operation (e.g., both contiguous or both vectors).  Otherwise, move through an
+% intermediate form (e.g., contiguous).  
 
-An alternate implementation would have the target process rather than the
-origin process perform the operation.  The difficulty with this is that the
-origin buffer need not be in shared memory, so it is less likely that this
-single-move form can be carried out.  
+% An alternate implementation would have the target process rather than the
+% origin process perform the operation.  The difficulty with this is that the
+% origin buffer need not be in shared memory, so it is less likely that this
+% single-move form can be carried out.  
 
-[BRT] The act of communicating the need for the target process to do
-work on behalf of the origin process introduces extra overhead.  I
-fail to see how passing the work onto the target process will result
-in a performance gain that outweighs the extra overhead.  Perhaps I am
-missing something important...
+% [BRT] The act of communicating the need for the target process to do
+% work on behalf of the origin process introduces extra overhead.  I
+% fail to see how passing the work onto the target process will result
+% in a performance gain that outweighs the extra overhead.  Perhaps I am
+% missing something important...
 
-Question: how is completion handled?  
+% Question: how is completion handled?  
 
-\item Otherwise (If the target window is not in shared memory),
-use the \tcpname\ code (send datatype description, use stream to deposit
-data).
+% \item Otherwise (If the target window is not in shared memory),
+% use the \tcpname\ code (send datatype description, use stream to deposit
+% data).
 
-\end{enumerate}
-\end{shmem}
-\begin{via}
-Use the \tcpname\ code.  
-\end{via}
+% \end{enumerate}
+% \end{shmem}
+% \begin{via}
+% Use the \tcpname\ code.  
+% \end{via}
 
 One question is whether active and passive target operations should be handled
 separately.  For example, a TCP device could establish two sockets for each
@@ -5218,86 +5228,85 @@ non-threaded implementation, a similar solution could be used,
 replacing the message handling thread with a SIGALRM signal handler.
 
 \subsubsection{\mpifunc{MPI_PUT}}
-\begin{adi3}\mpidfunc{MPID_Put}
-\begin{mmadi}If target and origin datatype are
-\mpids{MPI_Datatype}{contiguous}, use 
-  \mpidfunc{MPID_Put_contig}.  Otherwise, if they are the same (and system is
-  homogeneous?), use \mpidfunc{MPID_Put_sametype}.  
-  Otherwise, what?
+\mpidfunc{MPID_Put}
+% \begin{mmadi}If target and origin datatype are
+% \mpids{MPI_Datatype}{contiguous}, use 
+%   \mpidfunc{MPID_Put_contig}.  Otherwise, if they are the same (and system is
+%   homogeneous?), use \mpidfunc{MPID_Put_sametype}.  
+%   Otherwise, what?
 
-\begin{tcp}
-Like \code{MPI_ACCUMULATE}, with \mpiconst{MPI_REPLACE} as the operation. 
-This should be optimized for this case.  
-\end{tcp}
+% \begin{tcp}
+% Like \code{MPI_ACCUMULATE}, with \mpiconst{MPI_REPLACE} as the operation. 
+% This should be optimized for this case.  
+% \end{tcp}
 
-\begin{shmem}
-Like \code{MPI_ACCUMULATE}, with \mpiconst{MPI_REPLACE} as the operation.  
-This should be optimized for this case.  
-\end{shmem}
+% \begin{shmem}
+% Like \code{MPI_ACCUMULATE}, with \mpiconst{MPI_REPLACE} as the operation.  
+% This should be optimized for this case.  
+% \end{shmem}
 
-\begin{via}
-If the target datatype is supported (e.g., contiguous) and the target window
-is registered, then use \code{MPID_Put_contig}.  Question: do we want a
-special version that works only on registered memory?  If the origin datatype
-is \emph{not} simple, this will require copying the data to cannonical form.
-Question: do we want to define an \code{MPID_Put_contig_stream} that would
-allow an overlap of packing and sending?
+% \begin{via}
+% If the target datatype is supported (e.g., contiguous) and the target window
+% is registered, then use \code{MPID_Put_contig}.  Question: do we want a
+% special version that works only on registered memory?  If the origin datatype
+% is \emph{not} simple, this will require copying the data to cannonical form.
+% Question: do we want to define an \code{MPID_Put_contig_stream} that would
+% allow an overlap of packing and sending?
 
-Otherwise, like \code{MPI_ACCUMULATE}, with \mpiconst{MPI_REPLACE} as the
-operation.  
+% Otherwise, like \code{MPI_ACCUMULATE}, with \mpiconst{MPI_REPLACE} as the
+% operation.  
 
-Question: how is completion handled?
-\end{via}
+% Question: how is completion handled?
+% \end{via}
 
-\end{mmadi}
-\end{adi3}
+% \end{mmadi}
 
 \subsubsection{\mpifunc{MPI_GET}}
-\begin{tcp}
-This is roughly like \code{MPI_PUT}, except the target is requested to send
-the data.  
-\end{tcp}
-\begin{shmem}
-\begin{enumerate}
-\item If the target window is in shared memory, 
-If both origin and target datatypes are simple, then the origin process simply
-reads the data from the target window and stores it in the origin buffer.
-Otherwise, move through an intermediate form (e.g., contiguous).  
+% \begin{tcp}
+% This is roughly like \code{MPI_PUT}, except the target is requested to send
+% the data.  
+% \end{tcp}
+% \begin{shmem}
+% \begin{enumerate}
+% \item If the target window is in shared memory, 
+% If both origin and target datatypes are simple, then the origin process simply
+% reads the data from the target window and stores it in the origin buffer.
+% Otherwise, move through an intermediate form (e.g., contiguous).  
 
-\item Otherwise (the target window is not in shared memory), 
-use \tcpname\ approach.
-\end{enumerate}
-\end{shmem}
-\begin{via}
-If the target datatype is supported (e.g., contiguous) and the target window
-is registered, then use \code{MPID_Get_contig}.  The destination on the origin
-process is either the origin buffer (if registered) or a temporary registered
-buffer.  
+% \item Otherwise (the target window is not in shared memory), 
+% use \tcpname\ approach.
+% \end{enumerate}
+% \end{shmem}
+% \begin{via}
+% If the target datatype is supported (e.g., contiguous) and the target window
+% is registered, then use \code{MPID_Get_contig}.  The destination on the origin
+% process is either the origin buffer (if registered) or a temporary registered
+% buffer.  
 
-Question: If a temporary buffer is used, we must signal completion to the
-origin somehow.  How?
+% Question: If a temporary buffer is used, we must signal completion to the
+% origin somehow.  How?
 
-Otherwise, use \tcpname\ approach.
-\end{via}
+% Otherwise, use \tcpname\ approach.
+% \end{via}
 
 \subsubsection{\mpifunc{MPI_WIN_FENCE}}
-\begin{tcp}
-This can be viewed as a special case of the post/start/complete/wait
-synchronization, with a carefully chosen set of neighbors (e.g., the usual
-barrier tree).  Or just use \mpifunc{MPI_BARRIER}.  
+% \begin{tcp}
+% This can be viewed as a special case of the post/start/complete/wait
+% synchronization, with a carefully chosen set of neighbors (e.g., the usual
+% barrier tree).  Or just use \mpifunc{MPI_BARRIER}.  
 
-Question: do VIA-like remote memory access require any cache flush operations?
-\end{tcp}
+% Question: do VIA-like remote memory access require any cache flush operations?
+% \end{tcp}
 
-\begin{shmem}
-As for \tcpname, this can be viewed as a special case of the
-post/start/complete/wait synchronization. 
-\end{shmem}
+% \begin{shmem}
+% As for \tcpname, this can be viewed as a special case of the
+% post/start/complete/wait synchronization. 
+% \end{shmem}
 
-\begin{via}
-As for \tcpname, this can be viewed as a special case of the
-post/start/complete/wait synchronization. 
-\end{via}
+% \begin{via}
+% As for \tcpname, this can be viewed as a special case of the
+% post/start/complete/wait synchronization. 
+% \end{via}
 
 In all cases, any pending RMA operations must complete first before
 \mpifunc{MPI_WIN_FENCE} may return.
@@ -5371,7 +5380,7 @@ have this information.  Further, knowing whether the target window is
 in shared (or registered for \vianame) memory is necessary when
 implementing the RMA operations.
 
-Comment [BRT]: \tcpname can benefit from collecting the sizes and
+Comment [BRT]: \tcpname\ can benefit from collecting the sizes and
 displacement units, as it allows the origin to identify out-of-bounds
 errors prior to sending requests to the target.
 
@@ -5480,23 +5489,23 @@ simple operation.  However, it may still be advantageous to ask the target to
 perform the operation so as to maintain memory locality for the lock
 variables.
 
-\begin{tcp}
-Send a message of type \mpidconst{MPID_Hid_lock_op} with
-\mpidfunc{MPID_Rhcv}.  The message indicates whether the lock is
-exclusive or not.  If this needs to wait for an acknowledgement,
-either wait for the lock-granted flag to be set (spin loop!?) or make
-this into a (internal generalized) request and use
-\mpidfunc{MPID_Waitsome} to wait for the acknowledgement.
-\end{tcp}
-\begin{shmem}
-The locks are allocated in shared memory as part of the window object
-creation.  Access the lock directly.  Note that, in the multithreaded
-case, if an OS lock is used, that lock must not block any other threads.
-\end{shmem}
-\begin{via}
-Like \tcpname.  Note that some distributed memory systems provide some
-support for remote locks; use them if they are available.
-\end{via}
+% \begin{tcp}
+% Send a message of type \mpidconst{MPID_Hid_lock_op} with
+% \mpidfunc{MPID_Rhcv}.  The message indicates whether the lock is
+% exclusive or not.  If this needs to wait for an acknowledgement,
+% either wait for the lock-granted flag to be set (spin loop!?) or make
+% this into a (internal generalized) request and use
+% \mpidfunc{MPID_Waitsome} to wait for the acknowledgement.
+% \end{tcp}
+% \begin{shmem}
+% The locks are allocated in shared memory as part of the window object
+% creation.  Access the lock directly.  Note that, in the multithreaded
+% case, if an OS lock is used, that lock must not block any other threads.
+% \end{shmem}
+% \begin{via}
+% Like \tcpname.  Note that some distributed memory systems provide some
+% support for remote locks; use them if they are available.
+% \end{via}
 
 The \code{assert} value \mpiconst{MPI_MODE_NOCHECK} can be used to eliminate
 the need to wait for the lock to be acquired.  This allows
@@ -5646,13 +5655,11 @@ Like \mpifunc{MPI_WIN_POST}, but for the complete counter.
 \label{sec:init}
 
 \subsubsection{\mpifunc{MPI_ABORT}}
-\begin{adi3}
 \mpidfunc{MPID_Abort}.  This should abort only the specified communicator.  If
 no communicator is specified, abort all.  
 
 Question: What is the BNR call for aborting processes?  Is there one for
 subsets?  
-\end{adi3}
 
 \subsubsection{\mpifunc{MPI_INIT_THREAD}}
 
@@ -5668,10 +5675,11 @@ handling the case where this process is created by \mpifunc{MPI_Comm_spawn} or
    BNR_Barrier();
    if (spawned) {
        if (my rank == root) {
-	       BNR_KM_Get(dbname, MPICH_PARENT_PORT_KEY, pszPortName);
+               BNR_KM_Get(dbname, MPICH_PARENT_PORT_KEY, pszPortName);
        }
    <construct intercommunicator for parent>
-   PMPI_Comm_connect(pszPortName, MPI_INFO_NULL, root, MPI_COMM_WORLD, &comm_parent);
+   PMPI_Comm_connect(pszPortName, MPI_INFO_NULL, root, MPI_COMM_WORLD, 
+                     &comm_parent);
    MPID_COMM_PARENT = comm_parent;
    }
    else {
@@ -5682,40 +5690,39 @@ handling the case where this process is created by \mpifunc{MPI_Comm_spawn} or
 The initialization of the processes in (the local) \mpiconst{MPI_COMM_WORLD}
 are carried out with \mpidfunc{MPID_Init}.
 
-\begin{adi3}
 \mpidfunc{MPID_Init}
 Each device and method in a device will also require initialization.  
-\begin{tcp}
-Acquire enough information to establish a connection with each process
-in \mpiconst{MPI_COMM_WORLD}.  This may include host and port for
-TCP.  This is likely to use something like the following:
-\begin{verbatim}
-   <Get contact port>
-   sprintf( key, "%d:contact", rank );
-   sprintf( value, "%s:%d", hostname, port );
-   BNR_KM_Put( dbname, key, value );
-\end{verbatim}
-\end{tcp}
-\begin{shmem}
-Create a shared memory area for \mpidconst{MPID_Request}s, short
-messages, and an area for streams (used to move long messages).
-Exchange information on the addresses (or ensure that all 
-processes have mapped the shared area into the same local addresses).
-Create a shared memory area for use by \mpidfunc{MPI_Mem_alloc}.
-\end{shmem}
-\begin{via}
-Acquire enough information to establish connections (this is
-particularly critical because connections may be a scarce resource).  
-Consider pre-establishing some connections based on runtime parameter
-values (e.g., a \mpidconst{MPICH_NBRLIST} value that, for each
-process, contains the ranks in \mpiconst{MPI_COMM_WORLD} that that
-process should start connected to).  
+% \begin{tcp}
+% Acquire enough information to establish a connection with each process
+% in \mpiconst{MPI_COMM_WORLD}.  This may include host and port for
+% TCP.  This is likely to use something like the following:
+% \begin{verbatim}
+%    <Get contact port>
+%    sprintf( key, "%d:contact", rank );
+%    sprintf( value, "%s:%d", hostname, port );
+%    BNR_KM_Put( dbname, key, value );
+% \end{verbatim}
+% \end{tcp}
+% \begin{shmem}
+% Create a shared memory area for \mpidconst{MPID_Request}s, short
+% messages, and an area for streams (used to move long messages).
+% Exchange information on the addresses (or ensure that all 
+% processes have mapped the shared area into the same local addresses).
+% Create a shared memory area for use by \mpidfunc{MPI_Mem_alloc}.
+% \end{shmem}
+% \begin{via}
+% Acquire enough information to establish connections (this is
+% particularly critical because connections may be a scarce resource).  
+% Consider pre-establishing some connections based on runtime parameter
+% values (e.g., a \mpidconst{MPICH_NBRLIST} value that, for each
+% process, contains the ranks in \mpiconst{MPI_COMM_WORLD} that that
+% process should start connected to).  
 
-For each connection, register some memory that can be used for
-communication in the event that a message buffer cannot be registered.
-Initialize the list of registered memory.
-\end{via}
-\end{adi3}
+% For each connection, register some memory that can be used for
+% communication in the event that a message buffer cannot be registered.
+% Initialize the list of registered memory.
+% \end{via}
+
 This should also set the value \mpidfunc{MPID_THREAD_PROVIDED}.
 Note that for processes that were spawned from another MPI process, we will
 want to limit the level of thread support to what that in the spawning
@@ -5745,10 +5752,9 @@ established.  For example, for \tcpname, the code might look like
 \end{verbatim}\index{BNR_KM_Get}
 
 \subsubsection{\mpifunc{MPI_QUERY_THREAD}}
-This returns the level of thread support provided.  Should there be an
-\mpidfunc{MPID_THREAD_PROVIDED} variable?  This could be a static
-variable within the file that implements the (PMPI version of the)
-thread-related functions. 
+This returns the level of thread support provided from the
+\mpids{MPICH_PerProcess_t}{thread_provided} value in the \code{MPIR_Process}
+structure. 
 
 \subsubsection{\mpifunc{MPI_IS_THREAD_MAIN}}
 This make use of the \mpids{MPICH_PerProcess_t}{master_thread} value in the
@@ -5795,47 +5801,49 @@ modules to attach ``end-of-job'' actions to \code{MPI_Finalize}.
 Just as \mpifunc{MPI_INIT_THREAD} invokes initialization routines for
 the various subsystems, \mpifunc{MPI_FINALIZE} should invoke
 \mpidfunc{MPI_xxx_finalize} for those systems, in reverse order.
+However, some subsystems use lazy initialization.  Those subsystems will
+register a callback that \code{MPI_Finalize} will execute using the routine
+\mpidfunc{MPIR_Add_finalize}.  
 
-Question: instead of having particular \code{MPI_xxx_finalize}
-routines, an alternative for the less-used subsystems, such as
-topologies and name servers, is to allow those subsystems to register
-routines to be called when \mpifunc{MPI_Finalize} is called.  For
-example, we could include a file containing
-\begin{verbatim}
-typedef struct {
-    int (*f)( void * );
-    void *extra_data;
-} Finalize_func_t;
+% Question: instead of having particular \code{MPI_xxx_finalize}
+% routines, an alternative for the less-used subsystems, such as
+% topologies and name servers, is to allow those subsystems to register
+% routines to be called when \mpifunc{MPI_Finalize} is called.  For
+% example, we could include a file containing
+% \begin{verbatim}
+% typedef struct {
+%     int (*f)( void * );
+%     void *extra_data;
+% } Finalize_func_t;
 
-#define MAX_FINALIZE_FUNC 16
-Finalize_func_t fstack[MAX_FINALIZE_FUNC];
-int fstack_sp = 0;  /* First free entry */
+% #define MAX_FINALIZE_FUNC 16
+% Finalize_func_t fstack[MAX_FINALIZE_FUNC];
+% int fstack_sp = 0;  /* First free entry */
 
-void MPIR_Add_finalize( int (*f)( void * ), void *extra_data )
-{
-    if (fstack_sp >= MAX_FINALIZE_FUNC) {
-        /* panic ! */
-        }
-    fstack[fstack_sp].f = f;
-    fstack[fstack_sp++].extra_data = extra_data;
-}
-void MPIR_Call_finalize( void )
-{
-    int i;
-    for (i=fstack_sp-1; i>=0; i--) {
-        if (fstack[i].f) fstack[i].f( fstack[i].extra_data );
-    }
-    fstack_sp = 0;
-}
-\end{verbatim}
-and have \mpifunc{MPI_Finalize} call \mpidfunc{MPIR_Call_finalize}.
+% void MPIR_Add_finalize( int (*f)( void * ), void *extra_data )
+% {
+%     if (fstack_sp >= MAX_FINALIZE_FUNC) {
+%         /* panic ! */
+%         }
+%     fstack[fstack_sp].f = f;
+%     fstack[fstack_sp++].extra_data = extra_data;
+% }
+% void MPIR_Call_finalize( void )
+% {
+%     int i;
+%     for (i=fstack_sp-1; i>=0; i--) {
+%         if (fstack[i].f) fstack[i].f( fstack[i].extra_data );
+%     }
+%     fstack_sp = 0;
+% }
+% \end{verbatim}
+% and have \mpifunc{MPI_Finalize} call \mpidfunc{MPIR_Call_finalize}.
 
 The advantage to this is that applications that do not use parts of
 MPI that require additional libraries (such as \code{ldap} for the
 name server) do not need to load those libraries just to resolve
 symbols that appear only in the functions that appear in code called
 during \mpifunc{MPI_Finalize}.  
-
 
 A partial list of subsystems that we might handle with these finalize
 callbacks include 
@@ -5845,6 +5853,7 @@ callbacks include
 \item Topologies
 \item Generalized requests
 \item Datareps
+\item Groups (for group structure allocation)
 \item Fortran 90 types created with \mpifunc{MPI_Type_create_f90_int} etc.
 \item Info (for info structure allocation)
 %\item RMA (e.g., free any allocated shared memory)
@@ -5992,6 +6001,7 @@ Question: Why are keymaps managed by string name instead of a handle?
 If a serialized name is needed for external identification, that could be 
 given by a separate function.  - WDG.
 
+\begin{small}
 \begin{verbatim}
   int BNR_KM_Get_my_name(char *dbname)        - get name of keymap
   int BNR_KM_Get_name_length_max()            - needed to communicate keymap
@@ -6010,6 +6020,7 @@ given by a separate function.  - WDG.
   int BNR_KM_iter_first(const char *dbname, char *key, char *val)  - loop through the
   int BNR_KM_iter_next(const char *dbname, char *key, char *val)      pairs in the db
 \end{verbatim}
+\end{small}
   
 On a \code{BNR_KM_Put}, multiple puts to the same key in the keymap is illegal.
 On a \code{BNR_KM_Get}, if there is no pair with matching key, the return value is -1.
@@ -6034,8 +6045,8 @@ In this section are the process creation routines.
 
 \begin{verbatim}
 int BNR_Spawn_multiple(int count, const char **cmds, const char ***argvs, 
-		       const int *maxprocs, const void *info, [OUT] int *errors, 
-		       [OUT] bool_t *same_domain, const void *preput_info);
+                       const int *maxprocs, const void *info, [OUT] int *errors, 
+                       [OUT] bool_t *same_domain, const void *preput_info);
 \end{verbatim}
 
 ({\em Rationale:\/}  The \code{same_domain} argument lets the process manager
@@ -6126,6 +6137,7 @@ not in an infinite loop here.)
 
 Question: Is \code{BNR_Convert_args_to_info} defined?
 
+\begin{small}
 \begin{verbatim}
 mpiexec::main()
 {
@@ -6342,6 +6354,7 @@ int MPI_Comm_connect(port_name, info, root, comm, intercomm)
 */
 }
 \end{verbatim}
+\end{small}
 
 
 \subsubsection{Previous Dynamic Processes Section }
@@ -6808,6 +6821,7 @@ This is a simple stub and performs no action other than returning
 \mpiconst{MPI_SUCCESS} as the result.  See the MPICH-1 implementation.
 
 \subsection{I/O}
+\label{sec:io}
 MPI I/O will be provided by ROMIO.  We expect to update ROMIO to exploit both
 MPI-2 functions and to make use of MPID functions (such as the Stream and
 Segment modules) when ROMIO is part of MPICH.
@@ -7732,10 +7746,10 @@ the spirit of the MPI Forum and allow users to create their own keys.
   \item Groups.
   \item Point-to-point.  
     \begin{enumerate}
-    \item Make the scenario (Section~\ref{sec:pt-2-pt-scenarios})
-      consistent with the description of the individual routines and with
-      the most current discussions of the active queue implementation,
-      including the support of collective communication.
+%     \item Make the scenario (Section~\ref{sec:pt-2-pt-scenarios})
+%       consistent with the description of the individual routines and with
+%       the most current discussions of the active queue implementation,
+%       including the support of collective communication.
     \item Define the communicator data structure, including the handling
       of processes that are not part of the original
       \mpiconst{MPI_COMM_WORLD}.
@@ -8212,6 +8226,35 @@ values.
 
 Question: Do we want the list to be sorted by key name?  The current
 implementation uses a linear list, which is probably ok for most uses.
+
+\paragraph{An alternative for \code{MPI_INFO_GET_NTHKEY}}
+
+Since the most likely use of this routine is to search for all keys,
+we remember the index and location in the list of the last key
+returned (or modified).  This value is stored in the 
+first info element (using the otherwise unused \code{key} and
+\code{value} fields).  This change lowers the cost of extracting every 
+key from $n^2$ in the length of the list to $n$.  
+
+Inorder to get the
+\emph{value} that matches the key, we may want to check that
+particular entry first when searching for a \code{key}.
+
+Note that if this approach is implemented, other routines such as
+\code{MPI_Info_set} and \code{MPI_Info_delete} must update the number of keys
+in the list.
+
+Question:  Do we want to have this return an error if the info list is 
+modified by another thread?  Is there any way to actually do this?  For
+example, the self-id of a thread could record itself in the info object when
+ever the object is modified.  This routine could (optionally) return an error
+if the list is modified by another thread after \code{MPI_INFO_GET_NKEYS}.
+Note that it is incorrect in general to signal an error in this case because
+MPI allows the user to change an info in one thread while using these get nth
+key and nkeys routines in another.  However, an option in MPICH that checked
+the assertion that ``only one thread accesses or modifies a particular object
+at a time'' (common in many programs) could be helpful to users.
+
 \subsection{Datatypes}
 \subsection{Groups}
 \subsection{Point-to-point}  
@@ -8309,12 +8352,27 @@ Files produced by \code{automake} must be modified.  If we use
   particularly for distributions (it doesn't ensure that the correct versions
   of the various autotools are used; the stock \code{automake} doesn't even
   generate a correct \file{Makefile.in}).  Of particular importance is
-  removing the \code{stamp-h} target and dependencies.
-\item Cleans up empty targets and dependencies.  While not essential, the
-  \file{Makefile.in}s generated by \code{automake} are very messy; user's are
+  removing the \code{stamp-h} target and dependencies.  This is the most 
+  serious problem with \code{automake}; an unlucky user can have
+  \code{automake} destroy the \file{Makefile.in}s with no way to recover them
+  short of starting over and unpacking the distribution from the tarball.
+
+\item Cleans up empty targets and dependencies.  While this is not essential,
+  the 
+  \file{Makefile.in}s generated by \code{automake} are very messy; users are
   used to looking at \file{Makefile}s and understanding what is going on.  For
   example, this pass can eliminate the many hook targets such as
   \code{check-am}.
+
+\item \code{Automake}, when used with \code{libtool}, only allows libraries to
+  be created in the current directory, not in a directory ``above'' the
+  current one in the directory tree.  For large packages that use multiple
+  source directories, this leads to the construction of a library in each
+  directory whose sole purpose is to be unpacked and used to create a
+  different library in a different directory.  This is particularly
+  inconvenient during development, when you'd like to simply replace the (few)
+  files that have changed in the library.
+
 \item Fixes errors.  Some of these have been fixed in some of the
   \code{automake} installations, but there will undoubtably be others.
 \end{enumerate}
