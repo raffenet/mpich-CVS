@@ -86,10 +86,12 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
 
     /* FIXME: This should be MPID_Mem_alloc */
     ap = MPIU_Malloc(size);
+    /* --BEGIN ERROR HANDLING-- */
     if (!ap) {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_NO_MEM, "**allocmem", 0 );
-        return mpi_errno;
+        return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
+    /* --END ERROR HANDLING-- */
     *(void **)baseptr = ap;
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLOC_MEM);
