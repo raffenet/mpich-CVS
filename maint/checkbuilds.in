@@ -1,4 +1,5 @@
 #! @PERL@
+# -*- Mode: perl; -*-
 #
 # Configure and build mpich2 with some of the options
 #
