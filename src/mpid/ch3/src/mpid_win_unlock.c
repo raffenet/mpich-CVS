@@ -38,9 +38,9 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     MPI_Request *reqs;
     MPID_Datatype *dtp;
 
-    MPIDI_STATE_DECL(MPID_STATE_MPI_WIN_UNLOCK);
+    MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_UNLOCK);
 
-    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_UNLOCK);
+    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_UNLOCK);
 
     MPIR_Nest_incr();
 
@@ -62,7 +62,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     reqs = (MPI_Request *) MPIU_Malloc((4*nops_to_proc+1)*sizeof(MPI_Request));
     if (!reqs) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_UNLOCK);
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
     
@@ -70,7 +70,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     mpi_errno = NMPI_Isend(&nops_to_proc, 1, MPI_INT, dest,
                            tag, comm, reqs);
     if (mpi_errno) {
-        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_UNLOCK);
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
 
@@ -83,7 +83,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     /* allocate one extra to avoid 0 size malloc */ 
     if (!rma_op_infos) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_UNLOCK);
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
 
@@ -248,7 +248,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
             tag++;
         }
         if (mpi_errno) {
-            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_UNLOCK);
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
             return mpi_errno;
         }
         
@@ -258,7 +258,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
 
     mpi_errno = NMPI_Waitall(req_cnt, reqs, MPI_STATUSES_IGNORE);
     if (mpi_errno) {
-        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_UNLOCK);
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
 
@@ -268,7 +268,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
                           MPIDI_PASSIVE_TARGET_DONE_TAG, comm,
                           MPI_STATUS_IGNORE); 
     if (mpi_errno) {
-        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_UNLOCK);
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
 
@@ -291,7 +291,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     }
     MPIU_RMA_ops_list = NULL;
     
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_UNLOCK);
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
 
     return mpi_errno;
 }
