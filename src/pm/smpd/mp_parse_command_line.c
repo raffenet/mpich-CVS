@@ -946,7 +946,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 
 		    if (stat(smpdpwdfilename, &s) == 0)
 		    {
-			if (s.st_mode & 0x00077)
+			if (s.st_mode & 00077)
 			{
 			    printf("Error: smpd password file cannot be readable by anyone other than the current user.\n");
 			    smpd_exit_fn("mp_parse_command_args");
