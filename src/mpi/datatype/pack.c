@@ -108,9 +108,13 @@ int MPI_Pack(void *inbuf,
 
 #ifdef HAVE_ERROR_CHECKING /* IMPLEMENTATION-SPECIFIC ERROR CHECKS */
     {
+	int tmp_sz;
+
 	MPID_BEGIN_ERROR_CHECKS;
 	/* Verify that there is space in the buffer to pack the type */
-	if (datatype_ptr->size * incount > outcount - *position) {
+	MPID_Datatype_get_size_macro(datatype, tmp_sz);
+
+	if (tmp_sz * incount > outcount - *position) {
 	    mpi_errno = MPIR_Err_create_code(MPI_ERR_ARG, "**arg", 0);
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK);
 	    return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
