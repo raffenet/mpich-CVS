@@ -1,6 +1,4 @@
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: LOCAL
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: Makefile
-diff -rb autoconf-2.13/acgeneral.m4 /homes/gropp/sowing-proj/related/autoconf-2.13/acgeneral.m4
+diff -rb autoconf-2.13/acgeneral.m4 bugfix/autoconf-2.13/acgeneral.m4
 1672c1672
 < ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 ---
@@ -18,7 +16,7 @@ diff -rb autoconf-2.13/acgeneral.m4 /homes/gropp/sowing-proj/related/autoconf-2.
 <       call [$2]
 ---
 >       [$2]
-diff -rb autoconf-2.13/acspecific.m4 /homes/gropp/sowing-proj/related/autoconf-2.13/acspecific.m4
+diff -rb autoconf-2.13/acspecific.m4 bugfix/autoconf-2.13/acspecific.m4
 2040a2041,2048
 > dnl WDG - Fix for g77: g77 echos a line "Driving: g77 -v ... -lg2c -lm"
 > dnl This causes the autoconf code to add the libraries -lg2c and -lm 
@@ -28,17 +26,3 @@ diff -rb autoconf-2.13/acspecific.m4 /homes/gropp/sowing-proj/related/autoconf-2
 > if test -n "$g77_p" ; then
 >   foutput=`${F77} -v -o conftest conftest.f 2>&1 | sed '/^Driving:/d'`
 > fi
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: autoconf
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: autoconf.m4f
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: autoconf.ps
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: autoheader
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: autoheader.m4f
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: autoreconf
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: autoscan
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: autoupdate
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: config.cache
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: config.log
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: config.status
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: configure.tmp
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13: ifnames
-Only in /homes/gropp/sowing-proj/related/autoconf-2.13/testsuite: Makefile
