@@ -2,6 +2,12 @@
                               Known Deficiencies
 -------------------------------------------------------------------------------
 
+- The CH3 device does not presently support heterogeneous communication.  That
+  is to say that the processes involved in a job must use the same basic type
+  sizes and format.  The sizes and format are typically determined by the
+  processor architecture, although it may also be influenced by compiler
+  options.
+
 - MPI_IRECV operations that are not explicitly completed before MPI_FINALIZE is
   called may fail to complete before MPI_FINALIZE returns, and thus never
   complete.  Furthermore, any matching send operations may erroneously fail.
