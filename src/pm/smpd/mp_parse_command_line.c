@@ -457,6 +457,46 @@ int mp_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *laun
     return SMPD_SUCCESS;
 }
 
+SMPD_BOOL mp_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp)
+{
+    /* maximum of 8192 characters per line and 1023 args */
+    static char line[8192];
+    static char *argv[1024];
+    char *token;
+    int index;
+
+    smpd_enter_fn("mp_get_argcv_from_file");
+
+    argv[0] = "bogus.exe";
+    while (fgets(line, 8192, fin))
+    {
+	index = 1;
+	token = strtok(line, " \r\n");
+	while (token)
+	{
+	    argv[index] = token;
+	    index++;
+	    if (index == 1024)
+	    {
+		argv[1023] = NULL;
+		break;
+	    }
+	    token = strtok(NULL, " \r\n");
+	}
+	if (index != 1)
+	{
+	    if (index < 1024)
+		argv[index] = NULL;
+	    *argcp = index;
+	    *argvp = argv;
+	    return SMPD_TRUE;
+	}
+    }
+
+    smpd_exit_fn("mp_get_argcv_from_file");
+    return SMPD_FALSE;
+}
+
 int mp_parse_command_args(int *argcp, char **argvp[])
 {
     int cur_rank;
@@ -488,6 +528,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     int total;
     char path[SMPD_MAX_PATH_LENGTH];
     char temp_password[SMPD_MAX_PASSWORD_LENGTH];
+    FILE *fin_config;
 
     smpd_enter_fn("mp_parse_command_args");
 
@@ -637,6 +678,8 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	argcp = &argc;
 
 	/* reset block global variables */
+	use_configfile = SMPD_FALSE;
+configfile_loop:
 	nproc = 0;
 	drive_map_list = NULL;
 	env_list = NULL;
@@ -646,9 +689,55 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	host_list = NULL;
 	no_drive_mapping = SMPD_FALSE;
 	use_priorities = SMPD_FALSE;
-	use_configfile = SMPD_FALSE;
 	use_machine_file = SMPD_FALSE;
 	path[0] = '\0';
+
+	/* Check for the -file option.  It must be the first and only option in a group. */
+	if ((*argvp)[1] && (*argvp)[1][0] == '-')
+	{
+	    if ((*argvp)[1][1] == '-')
+	    {
+		/* double -- option provided, trim it to a single - */
+		index = 2;
+		while ((*argvp)[1][index] != '\0')
+		{
+		    (*argvp)[1][index-1] = (*argvp)[1][index];
+		    index++;
+		}
+		(*argvp)[1][index-1] = '\0';
+	    }
+	    if (strcmp(&(*argvp)[1][1], "file") == 0)
+	    {
+		if (use_configfile)
+		{
+		    printf("Error: -file option is not valid from within a configuration file.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		if (argc < 3)
+		{
+		    printf("Error: no filename specifed after -file option.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		strncpy(configfilename, (*argvp)[2], SMPD_MAX_FILENAME);
+		use_configfile = SMPD_TRUE;
+		fin_config = fopen(configfilename, "r");
+		if (fin_config == NULL)
+		{
+		    printf("Error: unable to open config file '%s'\n", configfilename);
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		if (!mp_get_argcv_from_file(fin_config, argcp, argvp))
+		{
+		    fclose(fin_config);
+		    printf("Error: unable to parse config file '%s'\n", configfilename);
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+	    }
+	}
 
 	/* parse the current block */
 
@@ -825,6 +914,10 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "file") == 0)
 	    {
+		printf("Error: The -file option must be the first and only option specified in a block.\n");
+		smpd_exit_fn("mp_parse_command_args");
+		return SMPD_FAIL;
+		/*
 		if (argc < 3)
 		{
 		    printf("Error: no filename specifed after -file option.\n");
@@ -834,6 +927,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		strncpy(configfilename, (*argvp)[2], SMPD_MAX_FILENAME);
 		use_configfile = SMPD_TRUE;
 		num_args_to_strip = 2;
+		*/
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "host") == 0)
 	    {
@@ -1116,62 +1210,53 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    strip_args(argcp, argvp, num_args_to_strip);
 	}
 
-	if (use_configfile)
+
+	/* remaining args are the executable and it's args */
+	if (argc < 2)
 	{
-	    /* parse configuration file */
-	    smpd_err_printf("configuration file parsing not implemented yet.\n");
+	    printf("Error: no executable specified\n");
 	    smpd_exit_fn("mp_parse_command_args");
 	    return SMPD_FAIL;
 	}
-	else
-	{
-	    /* remaining args are the executable and it's args */
-	    if (argc < 2)
-	    {
-		printf("Error: no executable specified\n");
-		smpd_exit_fn("mp_parse_command_args");
-		return SMPD_FAIL;
-	    }
 
-	    if (!((*argvp)[1][0] == '\\' && (*argvp)[1][1] == '\\') && (*argvp)[1][0] != '/' &&
-		!(strlen((*argvp)[1]) > 3 && (*argvp)[1][1] == ':' && (*argvp)[1][2] == '\\') )
+	if (!((*argvp)[1][0] == '\\' && (*argvp)[1][1] == '\\') && (*argvp)[1][0] != '/' &&
+	    !(strlen((*argvp)[1]) > 3 && (*argvp)[1][1] == ':' && (*argvp)[1][2] == '\\') )
+	{
+	    /* an absolute path was not specified so find the executable an save the path */
+	    if (smpd_get_full_path_name((*argvp)[1], SMPD_MAX_EXE_LENGTH, exe_path, &namepart))
 	    {
-		/* an absolute path was not specified so find the executable an save the path */
-		if (smpd_get_full_path_name((*argvp)[1], SMPD_MAX_EXE_LENGTH, exe_path, &namepart))
+		if (path[0] != '\0')
 		{
-		    if (path[0] != '\0')
+		    if (strlen(path) < SMPD_MAX_PATH_LENGTH)
 		    {
-			if (strlen(path) < SMPD_MAX_PATH_LENGTH)
-			{
-			    strcat(path, ";");
-			    strncat(path, exe_path, SMPD_MAX_PATH_LENGTH - strlen(path));
-			    path[SMPD_MAX_PATH_LENGTH-1] = '\0';
-			}
+			strcat(path, ";");
+			strncat(path, exe_path, SMPD_MAX_PATH_LENGTH - strlen(path));
+			path[SMPD_MAX_PATH_LENGTH-1] = '\0';
 		    }
-		    else
-		    {
-			strncpy(path, exe_path, SMPD_MAX_PATH_LENGTH);
-		    }
-		    total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, namepart);
 		}
 		else
 		{
-		    total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, (*argvp)[1]);
+		    strncpy(path, exe_path, SMPD_MAX_PATH_LENGTH);
 		}
+		total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, namepart);
 	    }
 	    else
 	    {
-		/* an absolute path was specified */
 		total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, (*argvp)[1]);
 	    }
-	    for (i=2; i<argc; i++)
-	    {
-		total += smpd_add_string(&exe[total], SMPD_MAX_EXE_LENGTH - total, (*argvp)[i]);
-	    }
-	    /* remove the trailing space */
-	    exe[strlen(exe)-1] = '\0';
-	    smpd_dbg_printf("handling executable:\n%s\n", exe);
 	}
+	else
+	{
+	    /* an absolute path was specified */
+	    total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, (*argvp)[1]);
+	}
+	for (i=2; i<argc; i++)
+	{
+	    total += smpd_add_string(&exe[total], SMPD_MAX_EXE_LENGTH - total, (*argvp)[i]);
+	}
+	/* remove the trailing space */
+	exe[strlen(exe)-1] = '\0';
+	smpd_dbg_printf("handling executable:\n%s\n", exe);
 
 	if (nproc == 0)
 	{
@@ -1256,6 +1341,13 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		s_host_list = s_host_list->next;
 		free(host_node_iter);
 	    }
+	}
+
+	if (use_configfile)
+	{
+	    if (mp_get_argcv_from_file(fin_config, argcp, argvp))
+		goto configfile_loop;
+	    fclose(fin_config);
 	}
 
 	/* move to the next block */
