@@ -34,6 +34,8 @@ int MPIR_Comm_create( MPID_Comm *oldcomm_ptr, MPID_Comm **newcomm_ptr )
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
+    (*newcomm_ptr)->ref_count = 1;
+
     /* If there is a context id cache in oldcomm, use it here.  Otherwise,
        use the appropriate algorithm to get a new context id */
     (*newcomm_ptr)->context_id = new_context_id = 
