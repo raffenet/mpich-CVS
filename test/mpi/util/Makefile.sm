@@ -1,4 +1,4 @@
 # This is temporary until the tests have their own configure
-mtest.o: mtest.c
-all-local: mtest.o
+#mtest.o: mtest.c
+#all-local: mtest.o
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include -I${top_srcdir}/test/mpi/include
