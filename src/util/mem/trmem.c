@@ -114,8 +114,6 @@ static TRSPACE *TRhead = 0;
 static int     TRid = 0;
 static int     TRlevel = 0;
 #define MAX_TR_STACK 20
-static int     TRstack[MAX_TR_STACK];
-static int     TRstackp = 0;
 static int     TRdebugLevel = 0;
 #define TR_MALLOC 0x1
 #define TR_FREE   0x2
@@ -530,31 +528,6 @@ void MPIU_trlevel( int level )
     TRlevel = level;
 }
 
-/*+C
-   MPIU_trpush - Push an "id" value for the tracing space routines
-
-   Input Parameters:
-.  a      - value to push
-+*/
-void MPIU_trpush( int a )
-{
-    if (TRstackp < MAX_TR_STACK - 1)
-	TRstack[++TRstackp] = a;
-    TRid = a;
-}
-
-/*+C
-  MPIU_trpop - Pop an "id" value for the tracing space routines
-+*/
-void MPIU_trpop( void )
-{
-    if (TRstackp > 1) {
-	TRstackp--;
-	TRid = TRstack[TRstackp];
-    }
-    else
-	TRid = 0;
-}
 
 /*+C
     MPIU_trDebugLevel - set the level of debugging for the space management routines
