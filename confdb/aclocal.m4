@@ -21,8 +21,8 @@ dnl Perform the configuration *now*
 AC_DEFUN(PAC_CONFIG_SUBDIRS_IMMEDIATE,
 [AC_REQUIRE([AC_CONFIG_AUX_DIR_DEFAULT])dnl
 SAVE_subdirs="$subdirs"
-subdirs=$1
-AC_OUTPUT_SUBDIRS
+subdirs="$1"
+AC_OUTPUT_SUBDIRS($1)
 subdirs="$SAVE_subdirs"
 ])
 
