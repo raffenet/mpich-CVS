@@ -116,8 +116,8 @@ int IOHandleLoop( ProcessTable *ptable )
     maxfd   = -1;
     nactive = 0;
     for (i=0; i<ptable->nProcesses; i++) {
-	//	if (pstate[i].state == GONE) continue;
-	printf( "state is %d\n", pstate[i].state );
+	/* if (pstate[i].state == GONE) continue; */
+	/* printf( "state is %d\n", pstate[i].state ); */
 	for (j=0; j<pstate[i].nIos; j++) {
 	    fd = pstate[i].ios[j].fd;
 	    if (pstate[i].ios[j].fdstate == IO_PENDING) {
@@ -136,7 +136,7 @@ int IOHandleLoop( ProcessTable *ptable )
     if (maxfd == -1) return 0;
 
     if (debug) {
-	printf( "Found %d active processes\n", nactive );
+	printf( "Found %d active fds\n", nactive );
     }
 
     /* A null timeout is wait forever.  
@@ -157,7 +157,7 @@ int IOHandleLoop( ProcessTable *ptable )
 	for (i=0; i<ptable->nProcesses; i++) {
 	    /* FIXME: We may want to drain processes that have 
 	       exited */
-	    //	    if (pstate[i].state == GONE) continue;
+	    /*	    if (pstate[i].state == GONE) continue; */
 	    for (j=0; j<pstate[i].nIos; j++) {
 		if (pstate[i].ios[j].fdstate == IO_PENDING) {
 		    int err;
@@ -167,6 +167,10 @@ int IOHandleLoop( ProcessTable *ptable )
 			    err = (pstate[i].ios[j].handler)( fd, 
 					    pstate[i].ios[j].extra_state );
 			    if (err < 0) {
+				if (debug) {
+				    printf( "closing io handler %d on %d\n",
+					    j, i );
+				}
 				pstate[i].ios[j].fdstate = IO_FINISHED;
 			    }
 			}
@@ -176,6 +180,10 @@ int IOHandleLoop( ProcessTable *ptable )
 			    err = (pstate[i].ios[j].handler)( fd, 
 					    pstate[i].ios[j].extra_state );
 			    if (err <= 0) {
+				if (debug) {
+				    printf( "closing io handler %d on %d\n",
+					    j, i );
+				}
 				pstate[i].ios[j].fdstate = IO_FINISHED;
 			    }
 			}
@@ -185,4 +193,20 @@ int IOHandleLoop( ProcessTable *ptable )
 	}
     }
     return nactive;
+}
+
+/* 
+ * This routine is used to close the open file descriptors prior to executing 
+ * an exec.  This is normally used after a fork.  Use the first np entries
+ * of pstate (this allows you to pass in any set of consequetive entries)
+ */
+void IOHandlersCloseAll( ProcessState *pstate, int np )
+{
+    int i, j;
+
+    for (i=0; i<np; i++) {
+	for (j=0; j<pstate[i].nIos; j++) {
+	    close( pstate[i].ios[j].fd );
+	}
+    }
 }

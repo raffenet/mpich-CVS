@@ -3,6 +3,7 @@
 *.bbg
 *.da
 *.gcov
+*.lo
 Makefile.in
 Makefile
 config.log

@@ -28,8 +28,9 @@
 #include <sys/types.h>
 #endif
 
+/* pmutil.h includes pmiserv.h */
+#include "pmutil.h"
 #include "simple_pmiutil.h"
-#include "pmiserv.h"
 #define DBG_PRINTF printf
 /*
  * The following structures and arrays are used to implement the PMI 
@@ -98,27 +99,68 @@ static int pmidebug = 1;
 static int  fPMI_Allocate_kvs( int *, char [] );
 static int  fPMI_Allocate_kvs_group( void );
 
-static void fPMI_Handle_barrier( PMI_Process * );
-static void fPMI_Handle_create_kvs( PMI_Process * );
-static void fPMI_Handle_destroy_kvs( PMI_Process * );
-static void fPMI_Handle_put( PMI_Process * );
-static void fPMI_Handle_get( PMI_Process * );
-static void fPMI_Handle_get_my_kvsname( PMI_Process * );
-static void fPMI_Handle_init( PMI_Process * );
-static void fPMI_Handle_get_maxes( PMI_Process * );
-static void fPMI_Handle_getbyidx( PMI_Process * );
-static void fPMI_Handle_init_port( PMI_Process * );
+static void fPMI_Handle_barrier( PMIProcess * );
+static void fPMI_Handle_create_kvs( PMIProcess * );
+static void fPMI_Handle_destroy_kvs( PMIProcess * );
+static void fPMI_Handle_put( PMIProcess * );
+static void fPMI_Handle_get( PMIProcess * );
+static void fPMI_Handle_get_my_kvsname( PMIProcess * );
+static void fPMI_Handle_init( PMIProcess * );
+static void fPMI_Handle_get_maxes( PMIProcess * );
+static void fPMI_Handle_getbyidx( PMIProcess * );
+static void fPMI_Handle_init_port( PMIProcess * );
+static void fPMI_Handle_spawn( PMIProcess * );
 
+int PMIServHandleInput( int fd, void *extra );
 
+typedef struct {
+    ProcessState *pstate;
+    /* ProcessState contains a PMIProcess member */
+} PMIData;
+
+int IOSetupPMIHandler( IOSpec *ios, int fd, ProcessState *pstate,
+		       int pmigroup, int np, int rank )
+{
+    PMIData *pmidata;
+
+    pmidata = (PMIData *)MPIU_Malloc( sizeof(PMIData) );
+    pmidata->pstate			 = pstate;
+    pmidata->pstate->pmientry.fd	 = fd;
+    pmidata->pstate->pmientry.group	 = pmigroup;
+    pmidata->pstate->pmientry.kvs	 = pmi.kvsid;   /* Use current kvsid */
+    /* These next two values are used to setup the initial MPI_COMM_WORLD
+       on a created group of processes */
+    pmidata->pstate->pmientry.nProcesses = np;
+    pmidata->pstate->pmientry.rank	 = rank;
+    
+    ios->extra_state			 = (void *)pmidata;
+    ios->isWrite			 = 0;
+    ios->handler			 = PMIServHandleInput;
+    ios->fd				 = fd;
+
+    return 0;
+}
 /* 
  * Process input from the socket connecting the mpiexec process to the
  * child process.
  * The return status indicates the state of the process that this
  * handler interacted with.
  */
+int PMIServHandleInput( int fd, void *extra )
+{
+    PMIData *pmidata = (PMIData *)extra;
+    int     err;
+
+    err = PMIServHandleInputFd( fd, -1, &pmidata->pstate->pmientry );
+
+    if (err == PMI_DIED) return 0;
+    
+    return 1;
+}
+
 int PMIServHandleInputFd ( int fd, int pidx, void *extra )
 {
-    PMI_Process *pentry = (PMI_Process *)extra;
+    PMIProcess *pentry = (PMIProcess *)extra;
     int  rc;
     int  returnCode = 0;
     char inbuf[PMIU_MAXLINE], outbuf[PMIU_MAXLINE], cmd[MAXPMICMD];
@@ -177,7 +219,7 @@ int PMIServHandleInputFd ( int fd, int pidx, void *extra )
 	}
     }
     else {                        /* lost contact with client */
-	close( pentry->fd ); 
+	/* close( pentry->fd );  */
 	pentry->fd = -1;          /* forget the fd now that it is not valid */
 	returnCode = PMI_DIED;
     }
@@ -205,7 +247,7 @@ int PMIServInit( int nprocs )
     }
 
     /* set up keyval space for this group */
-    fPMI_Allocate_kvs( &pmi.kvsid, &pmi.kvsname );
+    fPMI_Allocate_kvs( &pmi.kvsid, pmi.kvsname );
 
     return pmi.nextnewgroup++;   /* ++ missing in forker ? */
 }
@@ -213,26 +255,30 @@ int PMIServInit( int nprocs )
 /* 
  * Initialize an entry as empty
  */
-int PMIServInitEntry( PMI_Process *pmientry )
+int PMIServInitEntry( PMIProcess *pmientry )
 {
     pmientry->fd         = -1;
     pmientry->group      = -1;
     pmientry->kvs        = -1;
     pmientry->nProcesses = 1;
     pmientry->rank       = 0;
+
+    return 0;
 }
 
 /*
  * Setup an entry for a created process
  */
 int PMIServSetupEntry( int pmifd, int pmigroup, int np, int rank, 
-		       PMI_Process *pmientry )
+		       PMIProcess *pmientry )
 {
     pmientry->fd         = pmifd;
     pmientry->group      = pmigroup;
     pmientry->kvs        = pmi.kvsid;   /* Use current kvsid */
     pmientry->nProcesses = np;
     pmientry->rank       = rank;
+
+    return 0;
 }
 
 /*
@@ -242,6 +288,8 @@ int PMIServAddtoGroup( int group, int rank, pid_t pid, int fd )
 {
     pmi.grouptable[group].fds[rank]  = fd;
     pmi.grouptable[group].pids[rank] = pid;
+
+    return 0;
 }
 /* ------------------------------------------------------------------------- */
 /* The rest of these routines are internal                                   */
@@ -282,7 +330,7 @@ static int fPMI_Allocate_kvs_group( void )
  *
  * Need a structure that has the fds for all members of a pmi group
  */
-static void fPMI_Handle_barrier( PMI_Process *pentry )
+static void fPMI_Handle_barrier( PMIProcess *pentry )
 {
     int i;
     int group = pentry->group;
@@ -305,7 +353,7 @@ static void fPMI_Handle_barrier( PMI_Process *pentry )
 /* 
  * Handle an incoming "create_kvs" command
  */
-static void fPMI_Handle_create_kvs( PMI_Process *pentry )
+static void fPMI_Handle_create_kvs( PMIProcess *pentry )
 {
     int  kvsidx;
     char kvsname[MAXKVSNAME], outbuf[PMIU_MAXLINE];
@@ -321,7 +369,7 @@ static void fPMI_Handle_create_kvs( PMI_Process *pentry )
 /* 
  * Handle an incoming "destroy_kvs" command 
  */
-static void fPMI_Handle_destroy_kvs( PMI_Process *pentry )
+static void fPMI_Handle_destroy_kvs( PMIProcess *pentry )
 {
     int  i, rc=0;
     char kvsname[MAXKVSNAME];
@@ -356,7 +404,7 @@ static void fPMI_Handle_destroy_kvs( PMI_Process *pentry )
 /* 
  * Handle an incoming "put" command
  */
-static void fPMI_Handle_put( PMI_Process *pentry )
+static void fPMI_Handle_put( PMIProcess *pentry )
 {
     int  i, j, rc=0;
     char kvsname[MAXKVSNAME];
@@ -409,7 +457,7 @@ static void fPMI_Handle_put( PMI_Process *pentry )
 /*
  * Handle incoming "get" command
  */
-static void fPMI_Handle_get( PMI_Process *pentry )
+static void fPMI_Handle_get( PMIProcess *pentry )
 {
     int  i, j, rc=0;
     char kvsname[MAXKVSNAME];
@@ -453,7 +501,7 @@ static void fPMI_Handle_get( PMI_Process *pentry )
 }
 
 /* Handle an incoming get_my_kvsname command */
-static void fPMI_Handle_get_my_kvsname( PMI_Process *pentry )
+static void fPMI_Handle_get_my_kvsname( PMIProcess *pentry )
 {
     char outbuf[PMIU_MAXLINE];
     snprintf( outbuf, PMIU_MAXLINE, "cmd=my_kvsname kvsname=%s\n",
@@ -462,13 +510,13 @@ static void fPMI_Handle_get_my_kvsname( PMI_Process *pentry )
 }
 
 /* Handle an incoming "init" command */
-static void fPMI_Handle_init( PMI_Process *pentry )
+static void fPMI_Handle_init( PMIProcess *pentry )
 {
     /* nothing to do at present */
 }
 
 /* Handle an incoming "get_maxes" command */
-static void fPMI_Handle_get_maxes( PMI_Process *pentry )
+static void fPMI_Handle_get_maxes( PMIProcess *pentry )
 {
     char outbuf[PMIU_MAXLINE];
     snprintf( outbuf, PMIU_MAXLINE,
@@ -480,7 +528,7 @@ static void fPMI_Handle_get_maxes( PMI_Process *pentry )
 /*
  * Handle incoming "getbyidx" command
  */
-static void fPMI_Handle_getbyidx( PMI_Process *pentry )
+static void fPMI_Handle_getbyidx( PMIProcess *pentry )
 {
     int i, j;
     char kvsname[MAXKVSNAME], j_char[8], outbuf[PMIU_MAXLINE];
@@ -513,7 +561,7 @@ static void fPMI_Handle_getbyidx( PMI_Process *pentry )
     PMIU_writeline( pentry->fd, outbuf );
 }
 
-static void fPMI_Handle_init_port( PMI_Process *pentry )
+static void fPMI_Handle_init_port( PMIProcess *pentry )
 {
     char outbuf[PMIU_MAXLINE];
 
@@ -529,7 +577,7 @@ static void fPMI_Handle_init_port( PMI_Process *pentry )
     PMIU_writeline( pentry->fd, outbuf );
 }
 
-static void fPMI_Handle_spawn( PMI_Process *pentry )
+static void fPMI_Handle_spawn( PMIProcess *pentry )
 {
     /* Input:
        nprocs=%d execname=%s arg=%s
@@ -539,7 +587,7 @@ static void fPMI_Handle_spawn( PMI_Process *pentry )
     */
 }
 
-void PMI_Init_remote_proc( int fd, PMI_Process *pentry,
+void PMI_Init_remote_proc( int fd, PMIProcess *pentry,
 			   int rank, int np, int debug )
 {
     pentry->fd	       = fd;

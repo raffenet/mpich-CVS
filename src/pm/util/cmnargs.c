@@ -56,16 +56,15 @@ int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist,
 {
     int         i;
     int         np=1;      /* These 6 values are set by command line options */
+    int         appnum=0;
     const char *host=0;    /* These are the defaults.  When a program name */
     const char *arch=0;    /* is seen, the values in these variables are */
     const char *wdir=0;    /* used to initialize the ProcessState entries */
     const char *path=0;
     const char *soft=0;
     const char *exename=0;
-    /*char pathname[PATH_MAX]; 
-      char wdirname[MAXNAMELEN]; */
     int        indexOfFirstArg=-1;
-    int         curplist = 0; /* Index of current ProcessList element */
+    int        curplist = 0; /* Index of current ProcessList element */
 
     /* Get values from the environment first.  Command line options
        override the environment */
@@ -149,7 +148,9 @@ int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist,
 		plist[curplist].soft.nelm = 0;
 		plist[curplist].soft.tuples = 0;
 	    }
+	    plist[curplist].appnum = appnum;
 	    curplist++;
+	    appnum++;
 
 	    /* Now, clear all of the values for the next set */
 	    host = arch = wdir = path = soft = exename = 0;

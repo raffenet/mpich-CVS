@@ -109,6 +109,8 @@ typedef struct {
 typedef struct {
     ProcessSpec spec;                /* Specifications for this process */
     int         np;                  /* Number of processes */
+    int         appnum;              /* The "appnum" for the MPI_APPNUM
+					attribute */
     SoftSpec    soft;                /* The "soft" specification, if any */
 } ProcessList;
 
@@ -144,7 +146,7 @@ typedef struct {
 
     int            rank;             /* rank in comm_world (or universe) */
 
-    PMI_Process    pmientry;         /* PMI information.  This allows
+    PMIProcess     pmientry;         /* PMI information.  This allows
 					the pmi implementation to 
 					define whatever it needs */
     ProcessExitStatus status;        /* return code of the process when

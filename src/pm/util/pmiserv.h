@@ -19,19 +19,19 @@
  */
 #define MAXKVSNAME  256         /* max length of a kvsname */
 
-typedef struct PMI_Process {
+typedef struct _PMIProcess {
     int  fd;          /* Fd for PMI communications */
     int  group;       /* Index to the PMI group */
     int  kvs;         /* Index to the KVS space */
     int  nProcesses;  /* Total number of processes */
     int  rank;        /* Rank in 0 .. nProcesses - 1 */
-} PMI_Process;
+} PMIProcess;
 /* Note that the fd may be duplicated within the process structure managed by 
    the mpiexec implementation to simplify setting up the select/poll loops */
 
 extern int PMIServInit( int );
-extern int PMIServInitEntry( PMI_Process * );
-extern int PMIServSetupEntry( int, int, int, int, PMI_Process * );
+extern int PMIServInitEntry( PMIProcess * );
+extern int PMIServSetupEntry( int, int, int, int, PMIProcess * );
 
 /* This routine is called when there is input on the fd for the given 
    process */
