@@ -1043,8 +1043,8 @@ int iPMI_Abort(int exit_code, const char error_msg[])
 	ExitProcess(exit_code);
 #else
 	exit(exit_code);
-#endif
 	return PMI_FAIL;
+#endif
     }
 
     result = smpd_create_command("abort_job", pmi_process.smpd_id, 0, SMPD_FALSE, &cmd_ptr);
@@ -1111,8 +1111,8 @@ int iPMI_Abort(int exit_code, const char error_msg[])
     ExitProcess(exit_code);
 #else
     exit(exit_code);
+    return PMI_FAIL;
 #endif
-    return PMI_SUCCESS;
 }
 
 int iPMI_Get_size(int *size)
@@ -1491,7 +1491,7 @@ int iPMI_KVS_Get(const char kvsname[], const char key[], char value[], int lengt
 	pmi_err_printf("PMI_KVS_Get failed: '%s'\n", str);
 	return PMI_FAIL;
     }
-    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "value", value, PMI_MAX_VALUE_LEN) != MPIU_STR_SUCCESS)
+    if (MPIU_Str_get_string_arg(pmi_process.context->read_cmd.cmd, "value", value, length) != MPIU_STR_SUCCESS)
     {
 	pmi_err_printf("PMI_KVS_Get failed: no value in the result command for the get: '%s'\n", pmi_process.context->read_cmd.cmd);
 	return PMI_FAIL;
@@ -2231,6 +2231,9 @@ static int root_smpd(void *p)
     int send_kvs = 0;
     int pipe_fd;
 #endif
+
+    /* unreferenced parameter */
+    p;
 
     smpd_process.id = 1;
     smpd_process.root_smpd = SMPD_FALSE;
