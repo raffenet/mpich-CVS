@@ -8,6 +8,42 @@
 \def\URL#1{\texttt{#1}}
 \let\note=\marginpar
 
+%
+% Include an entire FILE in verbatim format.  This is cribbed from old TeX
+% code; I may have to make some changes to make it work under LaTeX
+% We'd like blank lines at the tops of pages to disappear.  To do this,
+% the line must be entirely blank (so that the \par is in vmode)
+\makeatletter
+\def\@eatpar{\futurelet\next\@checkpar}
+\def\@checkpar#1{\ifx\next\par\else#1\fi}
+\def\uncatcode#1{\catcode`#1=12}
+\def\@esp{\ \ \ \ \ \ \ \ }%
+{\obeyspaces\global\let =\ }%
+{\catcode`\^^I=\active \gdef\obeytabs{\catcode`\^^I=\active \let^^I=\@esp}}%
+\def\fileinclude#1{\begingroup\@fileverbatim\input#1\endgroup}
+\def\@fileverbatim{%
+  \hsize=6in
+  \tt
+  \parskip=\z@
+  \parindent=\z@
+    % include blank lines
+  %\def\par{\leavevmode\endgraf}%
+    % Make blank lines into vskip
+  \def\par{\ifvmode\vskip\baselineskip\else\endgraf\fi}
+    % defeat \tt ligitures for Spanish (!)
+%  \catcode`\`=\active
+    % make ^^M into a \par
+  \obeylines
+    % make | active
+%  \catcode`|=\z@
+    % remove the active chars
+  \let\do=\uncatcode
+  \dospecials
+  \obeytabs
+   % make spaces active
+  \obeyspaces\@eatpar}
+\makeatother
+
 \begin{document}
 
 \title{A Third Generation Abstract Device Interface for MPICH}
@@ -271,6 +307,12 @@ The operations on a Communicator are
 \item[CommFree( Comm * )]
 \end{description}
 
+Question:  Communication will be on \emph{links}; finding a link from a
+relative rank 
+in a communicator must be fast.  How opaque are links as objects?  For
+example, the RMQ device will want to attach methods to links, but methods are
+not an ADI-3 concept.
+
 \subsubsection{Datatypes}
 Because datatypes need to be manipulated by the MPIR routines, their
 definition, like that of communicators, is more constrained.
@@ -295,6 +337,10 @@ The operations on a Datatype are
 \item[DatatypeFree( Datatype * )]
 \item[DatatypeCommit( Datatype )]
 \end{description}
+
+Note that the one-sided operations may need to send a datatype to a remote
+process.  To make this more efficient, we will cache datatypes at the
+destination.  We will record this fact within the datatype.
 
 \subsubsection{Windows}
 
@@ -589,31 +635,69 @@ that the device prefers.  In most cases, these \emph{transfer functions}
 should be no-ops.
 
 \section{The RMQ device}
-The Remote Memory Queue device replaces the channel device as the simple,
-low-level device that is easy to implement.   The implementation of the device
-assumes only that the device can send data between processes.
+The Remote Memory Queue (RMQ) device replaces the channel device as the simple,
+low-level device that is easy to implement.   The RMQ device provides a simple
+device that can support multiple \emph{methods} or ways to move data between
+processes.  
+The implementation of the RMQ device
+assumes only that the device can send data between processes.  To provide for
+efficient implementations, there are two types of data communications: control
+and streams.  Control information is generally a small amount of data, and is
+sent as a single operation.  Stream data may be arbitrarily long, and may be
+both sent and received in parts.  
+
+Adding a method to the RMQ device requires providing only a few routines.  The
+common RMQ device code calls these routines as required in order to implement
+the ADI-3 interface.  
+
+\subsection{A Quick Overview}
+The RMQ device is, roughly, an event-driven device.  Each method provides a
+routine, \code{POLL\_METHOD}, that checks for incoming data and, for each
+control message, calls \code{RMQ\_Dispatch\_packet}.  In addition, the routine
+\code{POLL\_METHOD\_COST} provides an estimate of the cost of calling
+\code{POLL\_METHOD}, in microseconds.  
+
+Outgoing data is sent with one of two routines.  The first, \code{PUT\_PACKET},
+sends a small amount of data.  
+This routine is blocking in the MPI sense; when
+it returns, the buffer given as input may be re-used. Question: do we want
+this, or should this be \code{ENQUEUE\_PACKET}?
+
+The second, \code{PUT\_STREAM}, begins sending stream data.
 
 
-The RMQ operations include:
+
+The operations that a method must define for the RMQ device include:
 \begin{description}
-\item[INIT-RMQ]
+\item[INIT-METHOD]
 \item[INIT-LINK]? Returns buffering on link?
-\item[ENQUE-ENVELOPE]
-\item[PUT-DATA]
-\item[REG-MEMORY]
-\item[POLL-RMQ]
-\item[POLL-RMQ-FREQ]
+\item[CLOSE-LINK]
+\item[PUT-PACKET]
+\item[PUT-STREAM]
+\item[POLL-METHOD]
+\item[POLL-METHOD-COST]
 \end{description}
 
-The \code{POLL-RMQ} routine is called by all processes either whenever there
+In addition, the following may be defined; if undefined, the RMQ device will
+use generic versions
+\begin{description}
+\item[INIT-STREAM-IN]Initialize the source of a stream
+\item[INIT-STREAM-OUT]Initialize the destination of a stream
+\item[FREE-STREAM]Free a stream
+\item[GET-STREAM]Get a stream ID
+\end{description}
+
+The \code{POLL-METHOD} routine is called by all processes either whenever there
 is I/O activity (e.g., in response to a \code{SIGIO}), during MPI calls (ADI-3
 hook for poke-progress), or in response to a timer (\code{SIGALRM}).  In a
-system with true one-sided operations, the \code{POLL-RMQ} may be undefined or
-null.  \code{POLL-RMQ-FREQ} provides a hint of the frequency at which POLL-RMQ
-should be called relative to other methods (if any).
+system with true one-sided operations, the \code{POLL-METHOD} may be undefined
+or 
+null.  \code{POLL-METHOD-COST} provides a hint of the cost of
+\code{POLL-METHOD} and may be used to adjust the frequency at which
+\code{POLL-METHOD} should be called relative to other methods (if any).
 
-Question: Should we allow a separate \code{POLL-RMQ} for each link as well as
-a combined operation?
+Question: Should we allow a separate \code{POLL-METHOD-LINK} for each link as
+well as a combined operation?
 
 All other ADI-3 operations are provided by generic implementations built from
 these simple operations.  Each class of ADI-3 operations, such as datatype
@@ -626,57 +710,13 @@ directory, as shown in Figure~\ref{fig:mpid-dirs}.
 \label{fig:mpid-dirs}
 \end{figure}
 
-\subsection{Example Implementation of the RMQ}
+\subsection{Example Implementation of the RMQ for TCP}
 The following shows how the RMQ could be implemented for communication by
 sockets.  The code shown is pseudocode and does not include error handling or
 all required arguments.
 
-\begin{verbatim}
-INIT-RMQ()
-{
-    Initialize internal data structures to nil.
-}
-INIT-LINK( int link )
-{
-    Create socket connection to link, remember fd
-    Return socket buffer size
-}
-ENQUE-ENVELOPE( Request request )
-{
-    THREAD-LOCK(request->link)
-    write( request->packet )
-    if (not all written) {
-       add to pending write queue
-    }
-    THREAD-UNLOCK(request->link)
-}
-PUT-DATA( Request request )
-{
-    THREAD-LOCK(request->link)
-    writev( send-data packet header, request->data )
-    if (not all written) {
-       add to pending write queue
-    }
-    THREAD-UNLOCK(request->link)
-}
-POLL-RMQ( blocking )
-{
-    for each link (in increasing order), THREAD-LOCK(request->link)
-    select( open fds, timeout = (blocking ? NULL:0) );
-    for each unselected link, THREAD-UNLOCK(request->link)
-    for each set fd {
-       if (read) {
-           read packet
-           // process incoming data (locking for access)
-           RMQ_Process( &packet, methodid );
-           // Use ADI3 routines to access message queues
-       }
-       if (write)
-           advance pending writes (locking for access)
-       THREAD-UNLOCK(link corresponding to fd)
-    }
-}
-\end{verbatim}
+\fileinclude{rmq-tcp.txt}
+
 Question: Thread locks on I/O operations.  Are they needed per fd or per OS
 call (i.e., can separate threads write to seperate fds at the same time)?
 
@@ -694,19 +734,93 @@ required to convert requests from the canonical form to the form required by
 TCP.  For example, the TCP data may need to be send in network byte order, or
 it may require some additional data (such as TCP-specific flow control).
 
+\subsection{Example Implementation of the RMQ for Shared Memory}
+
+\fileinclude{rmq-shmem.txt}
+
+\subsection{Example Implementation of the RMQ for VIA}
+
+\fileinclude{rmq-via.txt}
+
 \subsection{Implementation of the ADI by RMQ}
 In the RMQ implementation, the ADI operations are provided by selecting the
 appropriate operation from a small set.  This set provides for such ADI
 required services as flow control, cancel, and collective communication.
+
+\subsection{Progress Engine Implementations}
+The definition of \code{POLL\_METHOD} was defined to allow different
+implementations of the RMQ ``progress engine.''  The progress engine is the
+code that reads packets and data and ensures that progress towards completion
+of communication occurs.  Many different implementations are possible; we
+discuss a few here.
+
+\subsubsection{Thread Agents}
+One approach that guarantees nearly continuous progress and good
+responsiveness uses one thread for each method, plus a thread for the RMQ
+device.  For each method, there is a thread running
+\begin{verbatim}
+    while (not done) {
+        POLL_METHOD( blocking = true );
+    }
+\end{verbatim}
+The routine \code{RMQ\_Dispatch\_packet} simply adds a packet to a shared queue
+of incoming packets (in a thread-safe way, using lock-free queue update
+operations).  Another thread runs 
+\begin{verbatim}
+    while (not done) {
+        RMQ_Dequeue_packet( &packet );
+        RMQ_Process_packet( &packet );
+    }
+\end{verbatim}
+The \code{RMQ\_Dispatch\_packet} may cause this RMQ service thread to be
+scheduled if the thread system supports that operation.
+
+Another implementation is single-threaded.  In this case, the RMQ code
+calls \code{RMQ\_Check} frequently; this routine looks roughly like
+\begin{verbatim}
+    do { 
+        int found_incoming=0;
+        for each method {
+            if (method_test_count ++ > method_cost) {
+                found_incoming += POLL_METHOD( blocking = false );
+            }
+        }
+    } while (blocking && found_incoming > 0);
+\end{verbatim}
+The value of \code{method\_cost} is computed from \code{POLL\_METHOD\_COST}.
+In addition, the routine \code{RMQ\_Dispatch\_packet} in this case simply calls
+\code{RMQ\_Process\_packet}.  More sophisticated versions are possible
+\cite{isca92*256}. 
+
+It is also possible to switch between different progress engine approaches or
+even to combine them.  For example, it might be more efficient to have the
+same thread that is sending or receiving data process the operation by calling
+\code{POLL\_METHOD} directly; the seperate service threads would handle
+messages that arrived when the other threads were in long computation loops.
+Of course, there would be some overhead, as all operations would need to be
+thread-safe and reentrant.
+
+\subsection{The RMQ implementation}
+The bulk of the RMQ implementation is in the routine
+\code{RMQ\_Process\_packet}.  This routine takes a packet and, based on its
+type and content, performs various actions.  This section describes the packet
+types and sketches the operation of \code{RMQ\_Process\_packet}.
 
 \subsubsection{Packet Types}
 This enumerates all of the packet types supported in the queue oriented
 device.  For each type, there is a rationale for that type.  Some are
 optional, provided for performance optimizations.
 
+Question:  Should some packet types be subtypes?  E.g., should there be a
+single RMA type with subtypes for the RMA operations (allowing different RMA
+implementations with a simple change to the routine called by 
+\code{RMQ\_Process\_packet})? Similarly for the collective packet types?
+
+Question: Should RENDEZVOUS-xxx be STREAM-xxx instead?
+
 \begin{description}
 \item[ROUTE]This contains a packet of arbitrary type, and simply indicates
-  that the packet should be set on the route specified.
+  that the packet should be sent (forwarded) on the route specified.
 \item[SHORT]
 \item[LONG]
 \item[SEND-REQ]
@@ -726,12 +840,16 @@ optional, provided for performance optimizations.
 \item[COPY](copy value to local location and forward)
 \item[REGISTER-GROUP]
 
-\item[RECV-REQ]Support renezvous receive (for long-haul connections)
+\item[RECV-REQ]Support rendezvous receive (for long-haul connections)
 \item[RECV-ACK]
 \item[CANCEL-RECV-REQ]
 \item[CANCEL-RECV-REQ-ACK]
 
-\item[RMA operations?]
+\item[RMA-PUT]
+\item[RMA-GET]
+\item[RMA-ACCUMULATE]
+\item[RMA-DATATYPE]
+\item[RMA-DATATYPE-ACK]
 \end{description}
 
 For collective operations, it would help to have an error flag indicator as
@@ -741,6 +859,13 @@ In heterogeneous systems, the packet structure must specify a data
 representation.  We may want to use receiver-makes-right, at least where
 possible, because this makes it easy to use native representation in many
 cases.  
+
+The RMA operations need to cache datatypes; because cached datatypes will use
+space, they need to be recovered, either because the process that created that
+datatype no longer needs it, or because the process with the cached datatype
+has decided to remove that cached element.  In these cases, we need to
+implement a cache-coherence policy; the RMA packet types must include these
+cache coherence operations.
 
 \section{Evaluation}
 
@@ -762,7 +887,8 @@ The steps are
 \item Validate arguments if error checking is enabled.
 \item Lookup the ``method'' to use, based on the destination.  This requires
   translating the ``local rank of destination'' to an absolute rank of a
-  ``connection''. (Should we call this a link?)  (no longer a rank in \code{MPI\_Comm\_world}, because of
+  ``connection''. (Should we call this a link?)  (no longer a rank in
+  \code{MPI\_Comm\_world}, because of 
   dynamic processes) This is a no-op
   if only one method is supported.
 \item Invoke the send operation for the method
