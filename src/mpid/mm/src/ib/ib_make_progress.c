@@ -49,7 +49,7 @@ int ib_make_progress()
     if (status == IBA_CQ_EMPTY)
     {
 	count++;
-	if (count > 500)
+	/*if (count > 500)*/
 	    usleep(1);
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MAKE_PROGRESS);
 	return MPI_SUCCESS;
