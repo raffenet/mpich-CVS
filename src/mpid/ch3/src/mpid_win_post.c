@@ -13,6 +13,9 @@ void *MPIDI_Win_wait_thread(void *arg);
 
 int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 {
+#ifdef HAVE_WINTHREADS
+    DWORD dwThreadID;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_POST);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_POST);
@@ -20,8 +23,14 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
     win_ptr->post_group_ptr = group_ptr;
     MPIU_Object_add_ref( group_ptr );
 
+#ifdef HAVE_PTHREAD_H
     pthread_create(&(win_ptr->wait_thread_id), NULL,
                    MPIDI_Win_wait_thread, (void *) win_ptr);  
+#elif defined(HAVE_WINTHREADS)
+    win_ptr->wait_thread_id = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)MPIDI_Win_wait_thread, win_ptr, 0, &dwThreadID);
+#else
+#error Error: No thread package specified.
+#endif
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_POST);
     return MPI_SUCCESS;
@@ -64,16 +73,11 @@ void *MPIDI_Win_wait_thread(void *arg)
     MPI_Group win_grp, post_grp;
     int post_grp_size, *ranks_in_post_grp, *ranks_in_win_grp;
     MPID_Win *win_ptr;
-    int *mpi_errno;
+    int mpi_errno;
     MPID_Datatype *new_dtp=NULL;
     void *win_buf_addr;
 
-    mpi_errno = (int *) MPIU_Malloc(sizeof(int));
-    if (!mpi_errno) {
-        *mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-        return mpi_errno;
-    }
-    *mpi_errno = MPI_SUCCESS;
+    mpi_errno = MPI_SUCCESS;
 
     win_ptr = (MPID_Win *) arg;
 
@@ -88,8 +92,8 @@ void *MPIDI_Win_wait_thread(void *arg)
 
     nops_from_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
     if (!nops_from_proc) {
-        *mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-        return mpi_errno;
+        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        return (void*)mpi_errno;
     }
 
     /* We need to translate the ranks of the processes in
@@ -101,13 +105,13 @@ void *MPIDI_Win_wait_thread(void *arg)
 
     ranks_in_post_grp = (int *) MPIU_Malloc(post_grp_size * sizeof(int));
     if (!ranks_in_post_grp) {
-        *mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-        return mpi_errno;
+        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        return (void*)mpi_errno;
     }
     ranks_in_win_grp = (int *) MPIU_Malloc(post_grp_size * sizeof(int));
     if (!ranks_in_win_grp) {
-        *mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-        return mpi_errno;
+        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        return (void*)mpi_errno;
     }
 
     for (i=0; i<post_grp_size; i++)
@@ -119,29 +123,29 @@ void *MPIDI_Win_wait_thread(void *arg)
 
     reqs = (MPI_Request *)  MPIU_Malloc(post_grp_size*sizeof(MPI_Request));
     if (!reqs) {
-        *mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-        return mpi_errno;
+        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        return (void*)mpi_errno;
     }
     
     tags = (int *) MPIU_Calloc(comm_size, sizeof(int)); 
     if (!tags) {
-        *mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-        return mpi_errno;
+        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        return (void*)mpi_errno;
     }
 
     for (i=0; i<post_grp_size; i++) {
         src = ranks_in_win_grp[i];
-        *mpi_errno = NMPI_Irecv(&nops_from_proc[src], 1, MPI_INT, src,
+        mpi_errno = NMPI_Irecv(&nops_from_proc[src], 1, MPI_INT, src,
                                tags[src], comm, &reqs[i]);
-        if (*mpi_errno) return mpi_errno;
+        if (mpi_errno) return (void*)mpi_errno;
         tags[src]++;
     }
 
     MPIU_Free(ranks_in_win_grp);
     MPIU_Free(ranks_in_post_grp);
 
-    *mpi_errno = NMPI_Waitall(post_grp_size, reqs, MPI_STATUSES_IGNORE);
-    if (*mpi_errno) return mpi_errno;
+    mpi_errno = NMPI_Waitall(post_grp_size, reqs, MPI_STATUSES_IGNORE);
+    if (mpi_errno) return (void*)mpi_errno;
 
     /* Now for each op for which this process is a target, first
        get the info regarding that op and then post an isend or
@@ -153,34 +157,34 @@ void *MPIDI_Win_wait_thread(void *arg)
         src = (rank + i) % comm_size;
         
         for (j=0; j<nops_from_proc[src]; j++) {
-            *mpi_errno = NMPI_Recv(&rma_op_info,
+            mpi_errno = NMPI_Recv(&rma_op_info,
                                   sizeof(MPIU_RMA_op_info), MPI_BYTE, 
                                   src, tags[src], comm,
                                   MPI_STATUS_IGNORE);
-            if (*mpi_errno) return mpi_errno;
+            if (mpi_errno) return (void*)mpi_errno;
             tags[src]++;
             
             if (rma_op_info.datatype_kind == MPID_RMA_DATATYPE_DERIVED) {
                 /* recv the derived datatype info and create
                    derived datatype */
-                *mpi_errno = NMPI_Recv(&dtype_info,
+                mpi_errno = NMPI_Recv(&dtype_info,
                                       sizeof(MPIU_RMA_dtype_info),
                                       MPI_BYTE, src, tags[src], comm,
                                       MPI_STATUS_IGNORE);
-                if (*mpi_errno) return mpi_errno;
+                if (mpi_errno) return (void*)mpi_errno;
                 tags[src]++;
 
                 /* recv dataloop */
                 dataloop = (void *) MPIU_Malloc(dtype_info.loopsize);
                 if (!dataloop) {
-                    *mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-                    return mpi_errno;
+                    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                    return (void*)mpi_errno;
                 }
 
-                *mpi_errno = NMPI_Recv(dataloop, dtype_info.loopsize,
+                mpi_errno = NMPI_Recv(dataloop, dtype_info.loopsize,
                                        MPI_BYTE, src, tags[src], comm,
                                        MPI_STATUS_IGNORE);
-                if (*mpi_errno) return mpi_errno;
+                if (mpi_errno) return (void*)mpi_errno;
                 tags[src]++;
 
                 /* create derived datatype */
@@ -188,8 +192,8 @@ void *MPIDI_Win_wait_thread(void *arg)
                 /* allocate new datatype object and handle */
                 new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
                 if (!new_dtp) {
-                    *mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**nomem", 0);
-                    return mpi_errno;
+                    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**nomem", 0);
+                    return (void*)mpi_errno;
                 }
                     
                 /* Note: handle is filled in by MPIU_Handle_obj_alloc() */
@@ -229,50 +233,50 @@ void *MPIDI_Win_wait_thread(void *arg)
             switch (rma_op_info.type) {
             case MPID_REQUEST_PUT:
                 /* recv the put */
-                *mpi_errno = NMPI_Recv((char *) win_ptr->base +
+                mpi_errno = NMPI_Recv((char *) win_ptr->base +
                                       win_ptr->disp_unit *
                                       rma_op_info.disp,
                                       rma_op_info.count,
                                       rma_op_info.datatype,
                                       src, tags[src], comm,
                                       MPI_STATUS_IGNORE);
-                if (*mpi_errno) return mpi_errno;
+                if (mpi_errno) return (void*)mpi_errno;
                 break;
             case MPID_REQUEST_GET:
                 /* send the get */
-                *mpi_errno = NMPI_Send((char *) win_ptr->base +
+                mpi_errno = NMPI_Send((char *) win_ptr->base +
                                       win_ptr->disp_unit *
                                       rma_op_info.disp,
                                       rma_op_info.count,
                                       rma_op_info.datatype,
                                       src, tags[src], comm);
-                if (*mpi_errno) return mpi_errno;
+                if (mpi_errno) return (void*)mpi_errno;
                 break;
             case MPID_REQUEST_ACCUMULATE:
                 /* recv the data into a temp buffer and perform
                    the reduction operation */
-                *mpi_errno =
+                mpi_errno =
                     NMPI_Type_get_true_extent(rma_op_info.datatype, 
                                               &true_lb, &true_extent);  
-                if (*mpi_errno) return mpi_errno;
+                if (mpi_errno) return (void*)mpi_errno;
 
                 MPID_Datatype_get_extent_macro(rma_op_info.datatype, 
                                                extent); 
                 tmp_buf = MPIU_Malloc(rma_op_info.count * 
                                       (MPIR_MAX(extent,true_extent)));  
                 if (!tmp_buf) {
-                    *mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-                    return mpi_errno;
+                    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                    return (void*)mpi_errno;
                 }
                 /* adjust for potential negative lower bound in datatype */
                 tmp_buf = (void *)((char*)tmp_buf - true_lb);
 
-                *mpi_errno = NMPI_Recv(tmp_buf,
+                mpi_errno = NMPI_Recv(tmp_buf,
                                       rma_op_info.count,
                                       rma_op_info.datatype,
                                       src, tags[src], comm,
                                       MPI_STATUS_IGNORE);
-                if (*mpi_errno) return mpi_errno;
+                if (mpi_errno) return (void*)mpi_errno;
                 
                 op = rma_op_info.op;
                 if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
@@ -280,9 +284,9 @@ void *MPIDI_Win_wait_thread(void *arg)
                     uop = MPIR_Op_table[op%16 - 1];
                 }
                 else {
-                    *mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
+                    mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
                                                       "**opundefined","**opundefined %s", "only predefined ops valid for MPI_Accumulate" );
-                    return mpi_errno;
+                    return (void*)mpi_errno;
                 }
 
                 win_buf_addr = (char *) win_ptr->base +
@@ -315,9 +319,9 @@ void *MPIDI_Win_wait_thread(void *arg)
                      dloop_vec = (DLOOP_VECTOR *)
                         MPIU_Malloc(vec_len * sizeof(DLOOP_VECTOR));
                     if (!dloop_vec) {
-                        *mpi_errno = MPIR_Err_create_code(
+                        mpi_errno = MPIR_Err_create_code(
                             MPI_ERR_OTHER, "**nomem", 0 ); 
-                        return mpi_errno;
+                        return (void*)mpi_errno;
                     }
                     
                     MPID_Segment_pack_vector(segp, first, &last,
@@ -339,9 +343,9 @@ void *MPIDI_Win_wait_thread(void *arg)
                 MPIU_Free((char*)tmp_buf + true_lb);
                 break;
             default:
-                *mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
+                mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
                                                   "****intern","**opundefined %s", "RMA target received unknown RMA operation" );
-                return mpi_errno;
+                return (void*)mpi_errno;
             }
             tags[src]++;
 
@@ -362,5 +366,5 @@ void *MPIDI_Win_wait_thread(void *arg)
     MPIR_Group_release(win_ptr->post_group_ptr);
     win_ptr->post_group_ptr = NULL; 
 
-    return mpi_errno;
+    return (void*)mpi_errno;
 }

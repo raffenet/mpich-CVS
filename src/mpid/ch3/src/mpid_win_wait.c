@@ -11,15 +11,23 @@
 
 int MPID_Win_wait(MPID_Win *win_ptr)
 {
-    int mpi_errno, *err;
+    int mpi_errno, err;
 
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_WAIT);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_WAIT);
 
+#ifdef HAVE_PTHREAD_H
     pthread_join(win_ptr->wait_thread_id, (void **) &err);
-    mpi_errno = *err;
-    MPIU_Free(err);
+#elif defined(HAVE_WINTHREADS)
+    if (WaitForSingleObject(win_ptr->wait_thread_id, INFINITE) == WAIT_OBJECT_0)
+	err = GetExitCodeThread(win_ptr->wait_thread_id, &err);
+    else
+	err = GetLastError();
+#else
+#error Error: No thread package specified.
+#endif
+    mpi_errno = err;
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);
     return mpi_errno;
