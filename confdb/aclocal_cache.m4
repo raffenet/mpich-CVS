@@ -15,13 +15,15 @@ dnl before the cache file will be loaded.
 dnl
 dnl To use this version of 'AC_CACHE_LOAD', you need to include
 dnl 'aclocal_cache.m4' in your 'aclocal.m4' file.  The sowing 'aclocal.m4'
-dnl file include this file.
+dnl file includes this file.
 dnl
 dnl If no --enable-cache or --disable-cache option is selected, the
 dnl command causes configure to keep track of the system being configured
 dnl in a config.system file; if the current system matches the value stored
 dnl in that file (or there is neither a config.cache nor config.system file),
-dnl configure will enable caching.
+dnl configure will enable caching.  In order to ensure that the configure
+dnl tests make sense, the values of CC, F77, and CXX are also included 
+dnl in the config.system file.
 dnl
 dnl See Also:
 dnl PAC_ARG_CACHING
@@ -44,7 +46,9 @@ dnl is null.  Just in case autoconf ever fixes this, we test both cases.
 if test "X$enable_cache" = "Xnotgiven" -o "X$enable_cache" = "X" ; then
     # check for valid cache file
     if uname -srm >/dev/null 2>&1 ; then
-        testval="`uname -srm`"
+	dnl cleanargs=`echo "$*" | tr '"' ' '`
+	cleanargs=`echo "$CC $F77 $CXX" | tr '"' ' '`
+        testval="`uname -srm` $cleanargs"
         if test -f "$cache_system" -a -n "$testval" ; then
 	    if test "$testval" = "`cat $cache_system`" ; then
 	        enable_cache="yes"

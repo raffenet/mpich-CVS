@@ -128,7 +128,7 @@ case $ac_mpi_type in
         dnl from the mpicc and mpif77 scripts or mpireconfig
         save_PATH="$PATH"
         if test "$with_mpich" != "yes" -a "$with_mpich" != "no" ; then 
-            PATH=$ac_mpich_withval:${PATH}
+            PATH=$with_mpich:${PATH}
         fi
         AC_PATH_PROG(MPICC,mpicc)
         TESTCC=${CC-cc}
