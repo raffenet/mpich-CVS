@@ -54,7 +54,7 @@ struct DLOOP_Segment_piece_params {
     } u;
 };
 
-static inline int DLOOP_Stackelm_blocksize(DLOOP_Dataloop_stackelm *elmp);
+static inline int DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp);
 
 static int DLOOP_Segment_piece_print(DLOOP_Handle handle,
 				     int dbufoff, 
@@ -77,7 +77,7 @@ static int DLOOP_Segment_piece_unpack(DLOOP_Handle handle,
 				      void *dbufp,
 				      struct DLOOP_Segment_piece_params *paramp);
 
-static void DLOOP_Segment_manipulate(DLOOP_Segment_ptr segp,
+static void DLOOP_Segment_manipulate(struct DLOOP_Segment *segp,
 				     int first, 
 				     int *lastp,
 				     int (*piecefn)(DLOOP_Handle,
@@ -104,10 +104,10 @@ static void DLOOP_Segment_manipulate(DLOOP_Segment_ptr segp,
 int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 				 DLOOP_Count count,
 				 DLOOP_Handle handle, 
-				 DLOOP_Segment_ptr segp)
+				 struct DLOOP_Segment *segp)
 {
-    DLOOP_Dataloop_stackelm *elmp;
-    DLOOP_Dataloop_ptr dlp = 0;
+    struct DLOOP_Dataloop_stackelm *elmp;
+    struct DLOOP_Dataloop *dlp = 0;
     
     /* first figure out what to do with the datatype/count.
      * there are three cases:
@@ -134,7 +134,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
     }
     else if (count == 1) {
 	/* don't use the builtin */
-	DLOOP_Handle_get_loopptr_macro(handle,dlp);
+	DLOOP_Handle_get_loopptr_macro(handle, dlp);
     }
     else {
 	/* need to use builtin to handle contig; must check loop depth first */
@@ -187,9 +187,9 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 /* Segment_alloc
  *
  */
-DLOOP_Segment_ptr PREPEND_PREFIX(Segment_alloc)(void)
+struct DLOOP_Segment * PREPEND_PREFIX(Segment_alloc)(void)
 {
-    return (DLOOP_Segment_ptr) DLOOP_Malloc(sizeof(DLOOP_Segment));
+    return (struct DLOOP_Segment *) DLOOP_Malloc(sizeof(struct DLOOP_Segment));
 }
 
 /* Segment_free
@@ -197,7 +197,7 @@ DLOOP_Segment_ptr PREPEND_PREFIX(Segment_alloc)(void)
  * Input Parameters:
  * segp - pointer to segment
  */
-void PREPEND_PREFIX(Segment_free)(DLOOP_Segment_ptr segp)
+void PREPEND_PREFIX(Segment_free)(struct DLOOP_Segment *segp)
 {
     DLOOP_Free(segp);
     return;
@@ -226,7 +226,7 @@ void PREPEND_PREFIX(Segment_free)(DLOOP_Segment_ptr segp)
  * algorithm for parsing.
  *
  */
-void PREPEND_PREFIX(Segment_pack)(DLOOP_Segment_ptr segp,
+void PREPEND_PREFIX(Segment_pack)(struct DLOOP_Segment *segp,
 				  int first,
 				  int *lastp, 
 				  void *pack_buffer)
@@ -241,7 +241,7 @@ void PREPEND_PREFIX(Segment_pack)(DLOOP_Segment_ptr segp,
 
 /* MPID_Segment_pack_vector
  */
-void PREPEND_PREFIX(Segment_pack_vector)(DLOOP_Segment_ptr segp,
+void PREPEND_PREFIX(Segment_pack_vector)(struct DLOOP_Segment *segp,
 					 DLOOP_Offset first,
 					 DLOOP_Offset *lastp,
 					 DLOOP_VECTOR *vectorp,
@@ -264,7 +264,7 @@ void PREPEND_PREFIX(Segment_pack_vector)(DLOOP_Segment_ptr segp,
 
 /* Segment_unpack
  */
-void PREPEND_PREFIX(Segment_unpack)(DLOOP_Segment_ptr segp,
+void PREPEND_PREFIX(Segment_unpack)(struct DLOOP_Segment *segp,
 				    DLOOP_Offset first,
 				    DLOOP_Offset *lastp,
 				    DLOOP_Buffer unpack_buffer)
@@ -314,7 +314,7 @@ static int DLOOP_Segment_piece_pack_vector(DLOOP_Handle handle,
  *
  * Q: Should this be any different from pack vector???
  */
-void PREPEND_PREFIX(Segment_unpack_vector)(DLOOP_Segment_ptr segp,
+void PREPEND_PREFIX(Segment_unpack_vector)(struct DLOOP_Segment *segp,
 					   DLOOP_Offset first,
 					   DLOOP_Offset *lastp,
 					   DLOOP_VECTOR *vectorp,
@@ -401,7 +401,7 @@ do { \
 } while (0)
 
 
-static void DLOOP_Segment_manipulate(DLOOP_Segment_ptr segp,
+static void DLOOP_Segment_manipulate(struct DLOOP_Segment *segp,
 				     int first, 
 				     int *lastp, 
 				     int (*piecefn)(DLOOP_Handle,
@@ -414,7 +414,7 @@ static void DLOOP_Segment_manipulate(DLOOP_Segment_ptr segp,
     int last;
     int cur_sp, valid_sp, count_index, block_index;
     unsigned long stream_off;
-    DLOOP_Dataloop_stackelm *elmp, *new_elmp;
+    struct DLOOP_Dataloop_stackelm *elmp, *new_elmp;
 
     /* if we have parsed past first already, reset to beginning */ 
     if (first < segp->stream_off) {
@@ -673,7 +673,7 @@ static void DLOOP_Segment_manipulate(DLOOP_Segment_ptr segp,
         /* for now don't do the don't copy optimization */
         else if (1) {
 #endif
-            DLOOP_Dataloop_stackelm *new_elmp = &(segp->stackelm[cur_sp+1]);
+            struct DLOOP_Dataloop_stackelm *new_elmp = &(segp->stackelm[cur_sp+1]);
 
 #ifdef S_VERBOSE
             printf("\tnon-struct invalid case\n");
@@ -775,9 +775,9 @@ static void DLOOP_Segment_manipulate(DLOOP_Segment_ptr segp,
  * called.
  *
  */
-static inline int DLOOP_Stackelm_blocksize(DLOOP_Dataloop_stackelm *elmp)
+static inline int DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp)
 {
-    DLOOP_Dataloop_ptr dlp = elmp->loop_p;
+    struct DLOOP_Dataloop *dlp = elmp->loop_p;
     int datatype_index;
        
     switch(dlp->kind) {

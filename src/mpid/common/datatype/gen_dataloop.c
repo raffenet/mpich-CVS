@@ -36,7 +36,7 @@
  * Don't have locks in place at this time!
  */
 
-static void DLOOP_Dataloop_update(DLOOP_Dataloop *dataloop,
+static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
 				  int ptrdiff, 
 				  DLOOP_Handle handle);
 
@@ -46,9 +46,9 @@ static void DLOOP_Dataloop_update(DLOOP_Dataloop *dataloop,
   Input Parameters:
 . none
 @*/
-DLOOP_Dataloop_ptr PREPEND_PREFIX(Dataloop_alloc)(void)
+struct DLOOP_Dataloop * PREPEND_PREFIX(Dataloop_alloc)(void)
 {
-    return DLOOP_Malloc(sizeof(DLOOP_Dataloop));
+    return DLOOP_Malloc(sizeof(struct DLOOP_Dataloop));
 }
 
 /*@
@@ -57,7 +57,7 @@ DLOOP_Dataloop_ptr PREPEND_PREFIX(Dataloop_alloc)(void)
   Input Parameters:
 . dataloop - pointer to dataloop structure
 @*/
-void PREPEND_PREFIX(Dataloop_free)(DLOOP_Dataloop_ptr dataloop)
+void PREPEND_PREFIX(Dataloop_free)(struct DLOOP_Dataloop *dataloop)
 {
     DLOOP_Free(dataloop);
     return;
@@ -120,13 +120,13 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
   This function is used to recursively update all the pointers and ids in a
   dataloop tree.
 @*/
-static void DLOOP_Dataloop_update(DLOOP_Dataloop *dataloop,
+static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
 				  int ptrdiff, 
 				  DLOOP_Handle handle)
 {
     /* OPT: only declare these variables down in the Struct case */
     int i;
-    DLOOP_Dataloop **looparray;
+    struct DLOOP_Dataloop **looparray;
 
 #if 0
     /* easy part, update id to match new id */
@@ -143,14 +143,14 @@ static void DLOOP_Dataloop_update(DLOOP_Dataloop *dataloop,
 	 * However, some compilers spit out warnings about casting on the
 	 * LHS, so we get this much nastier form instead: 
          */
-	dataloop->loop_params.c_t.dataloop = (DLOOP_Dataloop *) 
+	dataloop->loop_params.c_t.dataloop = (struct DLOOP_Dataloop *) 
 	    ((char *) dataloop->loop_params.c_t.dataloop + ptrdiff);
 
 	DLOOP_Dataloop_update(dataloop->loop_params.c_t.dataloop, ptrdiff, handle);
 	break;
 
     case DLOOP_KIND_VECTOR:
-	dataloop->loop_params.v_t.dataloop = (DLOOP_Dataloop *)
+	dataloop->loop_params.v_t.dataloop = (struct DLOOP_Dataloop *)
 	    ((char *) dataloop->loop_params.v_t.dataloop + ptrdiff);
 
 	DLOOP_Dataloop_update(dataloop->loop_params.v_t.dataloop, ptrdiff, handle);
@@ -159,7 +159,7 @@ static void DLOOP_Dataloop_update(DLOOP_Dataloop *dataloop,
     case DLOOP_KIND_BLOCKINDEXED:
 	dataloop->loop_params.bi_t.offset_array = (int *)
 	    ((char *) dataloop->loop_params.bi_t.offset_array + ptrdiff);
-	dataloop->loop_params.bi_t.dataloop = (DLOOP_Dataloop *)
+	dataloop->loop_params.bi_t.dataloop = (struct DLOOP_Dataloop *)
 	    ((char *) dataloop->loop_params.bi_t.dataloop + ptrdiff);
 
 	DLOOP_Dataloop_update(dataloop->loop_params.bi_t.dataloop, ptrdiff, handle);
@@ -170,7 +170,7 @@ static void DLOOP_Dataloop_update(DLOOP_Dataloop *dataloop,
 	    ((char *) dataloop->loop_params.i_t.blocksize_array + ptrdiff);
 	dataloop->loop_params.i_t.offset_array = (int *)
 	    ((char *) dataloop->loop_params.i_t.offset_array + ptrdiff);
-	dataloop->loop_params.i_t.dataloop = (DLOOP_Dataloop *)
+	dataloop->loop_params.i_t.dataloop = (struct DLOOP_Dataloop *)
 	    ((char *) dataloop->loop_params.i_t.dataloop + ptrdiff);
 
 	DLOOP_Dataloop_update(dataloop->loop_params.i_t.dataloop, ptrdiff, handle);
@@ -181,13 +181,13 @@ static void DLOOP_Dataloop_update(DLOOP_Dataloop *dataloop,
 	    ((char *) dataloop->loop_params.s_t.blocksize_array + ptrdiff);
 	dataloop->loop_params.s_t.offset_array = (int *)
 	    ((char *) dataloop->loop_params.s_t.offset_array + ptrdiff);
-	dataloop->loop_params.s_t.dataloop_array = (DLOOP_Dataloop **)
+	dataloop->loop_params.s_t.dataloop_array = (struct DLOOP_Dataloop **)
 	    ((char *) dataloop->loop_params.s_t.dataloop_array + ptrdiff);
 
 	/* fix the N dataloop pointers too */
 	looparray = dataloop->loop_params.s_t.dataloop_array;
 	for (i=0; i < dataloop->loop_params.s_t.count; i++) {
-	    looparray[i] = (DLOOP_Dataloop *)
+	    looparray[i] = (struct DLOOP_Dataloop *)
 		((char *) looparray[i] + ptrdiff);
 	}
 
@@ -212,7 +212,7 @@ static void DLOOP_Dataloop_update(DLOOP_Dataloop *dataloop,
 + dataloop - root of tree to dump
 - depth - starting depth; used to help keep up with where we are in the tree
 @*/
-void PREPEND_PREFIX(Dataloop_print)(DLOOP_Dataloop_ptr dataloop,
+void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 				    int depth)
 {
     int i;

@@ -33,8 +33,6 @@
 
 /* Redefine all of the internal structures in terms of the prefix */
 #define DLOOP_Dataloop              PREPEND_PREFIX(Dataloop)
-#define DLOOP_Dataloop_st           PREPEND_PREFIX(Dataloop_st)
-#define DLOOP_Dataloop_ptr          PREPEND_PREFIX(Dataloop_ptr)
 #define DLOOP_Dataloop_contig       PREPEND_PREFIX(Dataloop_contig)
 #define DLOOP_Dataloop_vector       PREPEND_PREFIX(Dataloop_vector)
 #define DLOOP_Dataloop_blockindexed PREPEND_PREFIX(Dataloop_blockindexed)
@@ -42,8 +40,6 @@
 #define DLOOP_Dataloop_struct       PREPEND_PREFIX(Dataloop_struct)
 #define DLOOP_Dataloop_common       PREPEND_PREFIX(Dataloop_common)
 #define DLOOP_Segment               PREPEND_PREFIX(Segment)
-#define DLOOP_Segment_st            PREPEND_PREFIX(Segment_st)
-#define DLOOP_Segment_ptr           PREPEND_PREFIX(Segment_ptr)
 #define DLOOP_Dataloop_stackelm     PREPEND_PREFIX(Dataloop_stackelm)
 
 /*
@@ -69,10 +65,10 @@
   Module:
   Datatype
   S*/
-typedef struct {
+struct DLOOP_Dataloop_contig {
     DLOOP_Count count;
-    struct DLOOP_Dataloop_st *dataloop;
-} DLOOP_Dataloop_contig;
+    struct DLOOP_Dataloop *dataloop;
+};
 
 /*S
   DLOOP_Dataloop_vector - Description of a vector or strided dataloop
@@ -86,12 +82,12 @@ typedef struct {
   Module:
   Datatype
   S*/
-typedef struct { 
+struct DLOOP_Dataloop_vector { 
     DLOOP_Count count;
-    struct DLOOP_Dataloop_st *dataloop;
+    struct DLOOP_Dataloop *dataloop;
     DLOOP_Count blocksize;
     DLOOP_Offset stride;
-} DLOOP_Dataloop_vector;
+};
 
 /*S
   DLOOP_Dataloop_blockindexed - Description of a block-indexed dataloop
@@ -106,12 +102,12 @@ typedef struct {
   Datatype
 
   S*/
-typedef struct {
+struct DLOOP_Dataloop_blockindexed {
     DLOOP_Count count;
-    struct DLOOP_Dataloop_st *dataloop;
+    struct DLOOP_Dataloop *dataloop;
     DLOOP_Count blocksize;
     DLOOP_Offset *offset_array;
-} DLOOP_Dataloop_blockindexed;
+};
 
 /*S
   DLOOP_Dataloop_indexed - Description of an indexed dataloop
@@ -126,12 +122,12 @@ typedef struct {
   Datatype
 
   S*/
-typedef struct {
+struct DLOOP_Dataloop_indexed {
     DLOOP_Count count;
-    struct DLOOP_Dataloop_st *dataloop;
+    struct DLOOP_Dataloop *dataloop;
     DLOOP_Count *blocksize_array;
     DLOOP_Offset *offset_array;
-} DLOOP_Dataloop_indexed;
+};
 
 /*S
   DLOOP_Dataloop_struct - Description of a structure dataloop
@@ -146,12 +142,12 @@ typedef struct {
   Datatype
 
   S*/
-typedef struct {
+struct DLOOP_Dataloop_struct {
     DLOOP_Count count;
-    struct DLOOP_Dataloop_st **dataloop_array;
+    struct DLOOP_Dataloop **dataloop_array;
     DLOOP_Count *blocksize_array;
     DLOOP_Offset *offset_array;
-} DLOOP_Dataloop_struct;
+};
 
 /* In many cases, we need the count and the next dataloop item. This
    common structure gives a quick access to both.  Note that all other 
@@ -159,10 +155,10 @@ typedef struct {
    Question: should we put the pointer first in case 
    sizeof(pointer)>sizeof(int) ? 
 */
-typedef struct {
+struct DLOOP_Dataloop_common {
     DLOOP_Count count;
-    struct DLOOP_Dataloop_st *dataloop;
-} DLOOP_Dataloop_common;
+    struct DLOOP_Dataloop *dataloop;
+};
 
 /*S
   DLOOP_Dataloop - Description of the structure used to hold a dataloop
@@ -196,27 +192,25 @@ typedef struct {
   Datatype
 
   S*/
-typedef struct DLOOP_Dataloop_st { 
+struct DLOOP_Dataloop { 
     int kind;                  /* Contains both the loop type 
 				  (contig, vector, blockindexed, indexed,
 				  or struct) and a bit that indicates 
 				  whether the dataloop is a leaf type. */
     union {
-	DLOOP_Count                 count;
-	DLOOP_Dataloop_contig       c_t;
-	DLOOP_Dataloop_vector       v_t;
-	DLOOP_Dataloop_blockindexed bi_t;
-	DLOOP_Dataloop_indexed      i_t;
-	DLOOP_Dataloop_struct       s_t;
-	DLOOP_Dataloop_common       cm_t;
+	DLOOP_Count                        count;
+	struct DLOOP_Dataloop_contig       c_t;
+	struct DLOOP_Dataloop_vector       v_t;
+	struct DLOOP_Dataloop_blockindexed bi_t;
+	struct DLOOP_Dataloop_indexed      i_t;
+	struct DLOOP_Dataloop_struct       s_t;
+	struct DLOOP_Dataloop_common       cm_t;
     } loop_params;
     DLOOP_Offset el_size; /* I don't feel like dealing with the bit manip. 
 			   * needed to get the packed size right at the moment.
 			   */
     DLOOP_Offset el_extent;
-} DLOOP_Dataloop;
-
-typedef DLOOP_Dataloop * DLOOP_Dataloop_ptr;
+};
 
 #define DLOOP_FINAL_MASK 0x00000008
 #define DLOOP_KIND_MASK  0x00000007
@@ -245,12 +239,12 @@ typedef DLOOP_Dataloop * DLOOP_Dataloop_ptr;
 - loop_p  - pointer to Loop-based description of the dataloop
 
 S*/
-typedef struct {
+struct DLOOP_Dataloop_stackelm {
     DLOOP_Count curcount;
     DLOOP_Offset curoffset;
     DLOOP_Count curblock; /* NOTE: THIS WASN'T HERE IN MPICH2 VERSION??? */
-    DLOOP_Dataloop_ptr loop_p;
-} DLOOP_Dataloop_stackelm;
+    struct DLOOP_Dataloop *loop_p;
+};
 
 
 
@@ -266,30 +260,28 @@ typedef struct {
   Questions:
   Should this have an id for allocation and similarity purposes?
   S*/
-typedef struct DLOOP_Segment_st { 
+struct DLOOP_Segment { 
     void *ptr; /* pointer to datatype buffer */
     DLOOP_Handle handle;
     DLOOP_Offset stream_off; /* next offset into data stream resulting from datatype
 		              * processing.  in other words, how many bytes have
 			      * we created/used by parsing so far?  that amount + 1.
 			      */
-    DLOOP_Dataloop_stackelm stackelm[DLOOP_MAX_DATATYPE_DEPTH];
+    struct DLOOP_Dataloop_stackelm stackelm[DLOOP_MAX_DATATYPE_DEPTH];
     int  cur_sp;   /* Current stack pointer when using loopinfo */
     int  valid_sp; /* maximum valid stack pointer.  This is used to 
                       maintain information on the stack after it has
                       been placed there by following the datatype field
                       in a DLOOP_Dataloop_st for any type except struct */
 
-    DLOOP_Dataloop builtin_loop; /* used for both predefined types (which
-				  * won't have a loop already) and for 
+    struct DLOOP_Dataloop builtin_loop; /* used for both predefined types (which
+		         		  * won't have a loop already) and for 
 				  * situations where a count is passed in 
 				  * and we need to create a contig loop
 				  * to handle it
 				  */
     /* other, device-specific information */
-} DLOOP_Segment;
-
-typedef DLOOP_Segment * DLOOP_Segment_ptr;
+};
 
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
@@ -312,40 +304,40 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
 				   DLOOP_Handle handle,
 				   int size);
 
-void PREPEND_PREFIX(Dataloop_print)(DLOOP_Dataloop_ptr dataloop,
+void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 				    int depth);
 
-DLOOP_Dataloop_ptr PREPEND_PREFIX(Dataloop_alloc)(void);
+struct DLOOP_Dataloop * PREPEND_PREFIX(Dataloop_alloc)(void);
 
-void PREPEND_PREFIX(Dataloop_free)(DLOOP_Dataloop_ptr dataloop);
+void PREPEND_PREFIX(Dataloop_free)(struct DLOOP_Dataloop *dataloop);
 
 /* Segment functions */
-DLOOP_Segment_ptr PREPEND_PREFIX(Segment_alloc)(void);
+struct DLOOP_Segment * PREPEND_PREFIX(Segment_alloc)(void);
 
-void PREPEND_PREFIX(Segment_free)(DLOOP_Segment_ptr segp);
+void PREPEND_PREFIX(Segment_free)(struct DLOOP_Segment *segp);
 
 int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 				 DLOOP_Count count,
 				 DLOOP_Handle handle,
-				 DLOOP_Segment_ptr segp);
+				 struct DLOOP_Segment *segp);
 
-void PREPEND_PREFIX(Segment_pack)(DLOOP_Segment_ptr segp,
+void PREPEND_PREFIX(Segment_pack)(struct DLOOP_Segment *segp,
 				  DLOOP_Offset first,
 				  DLOOP_Offset *lastp,
 				  DLOOP_Buffer pack_buffer);
 
-void PREPEND_PREFIX(Segment_unpack)(DLOOP_Segment_ptr segp,
+void PREPEND_PREFIX(Segment_unpack)(struct DLOOP_Segment *segp,
 				    DLOOP_Offset first,
 				    DLOOP_Offset *lastp,
 				    DLOOP_Buffer unpack_buffer);
 
-void PREPEND_PREFIX(Segment_pack_vector)(DLOOP_Segment_ptr segp,
+void PREPEND_PREFIX(Segment_pack_vector)(struct DLOOP_Segment *segp,
 					 DLOOP_Offset first,
 					 DLOOP_Offset *lastp,
 					 DLOOP_VECTOR *vector,
 					 DLOOP_Offset *lengthp);
 
-void PREPEND_PREFIX(Segment_unpack_vector)(DLOOP_Segment_ptr segp,
+void PREPEND_PREFIX(Segment_unpack_vector)(struct DLOOP_Segment *segp,
 					   DLOOP_Offset first,
 					   DLOOP_Offset *lastp,
 					   DLOOP_VECTOR *vector,
