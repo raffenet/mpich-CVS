@@ -1,4 +1,7 @@
-SUBDIRS = mpiexec
+#SUBDIRS = mpiexec
+# Do not build the example mpiexec by default (since this is not the 
+# mpiexec that we want users to use)
+OTHER_DIRS = mpiexec
 #OTHER_DIRS = f77 f90 cxx
 
 INCLUDES = -I../src/include -I${top_srcdir}/src/include
