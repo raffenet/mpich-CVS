@@ -71,8 +71,7 @@ while (<>) {
 	$prefix = ""
     }
     elsif (/^.*,.*,.*,.*,.*,.*/) { 
-	($routine,$min,$max,$avg,$priority,$name,$depend,$actual,$finished) = 
-	    split(/,/);
+	($routine,$min,$max,$avg,$priority,$name,$depend,$actual,$finished,$limits) = split(/,/);
 	if ($mpi1_only) {
 	    # Skip if not an MPI function
 	    $ucroutine = $routine;
@@ -111,6 +110,7 @@ while (<>) {
 	$nametodepend{$routine} = $depend;
 	$nametoowner{$routine} = $name;
 	$idtoname[$id] = $routine;
+	$nametolimits{$routine} = $limits;
 	$id ++;
     }
     elsif (/^([^,]*),/) {	
@@ -230,11 +230,17 @@ sub PrintAsHtml {
 	    $dependlist = convert_depend( $depend );
 	    $owner   = $nametoowner{$routine};
 	    $finished = $nametofinished{$routine};
+	    $limits = $nametolimits{$routine};
 	    $color = "FF0000";
 	    if ($finished ne "") { 
 		$done_count++;
 		$finished = "done";
-	        $color = "00D010";
+		if ($limits ne "") {
+		    $color = "D0D000";
+		}
+		else {
+		    $color = "00D010";
+		}
 	    }
 #	    print "<TR><TD><FONT COLOR=\"$color\">$routine</FONT><TD>$finished<TD>$owner</TR>\n";
 	    @table[$#table+1] = "<FONT COLOR=\"$color\">$routine</FONT>";

@@ -8,7 +8,7 @@ functions, for example for TCP and VIA.
 
 Format:
 
-Function, min, max, avg, priority, your name, dependencies
+Function, min, max, avg, priority, your name, dependencies,
 
 For example: 
 
@@ -17,7 +17,7 @@ MPI_Finalize, 2, 4, 3, 1, Peter, MPI_Init
 
 Completed routines are marked as 
 
-routine,,,,your name,dependencies,actual time,date-done
+routine,,,,your name,dependencies,actual time,date-done,limitations
 
 e.g.,
 
@@ -28,6 +28,9 @@ MPI_Comm_rank,1,1,2,2,Bill,,done,
 
 Dependencies should list routines, separated by blanks.
 
+Limitations can indicate that a routine is mostly done but doesn't do
+everything yet.  For example, if only intracommunicators are handled,
+MPI_Bcast,,,,,Bill,,done,intracomm only
 For blocks of routines with different versions, surround them as a block 
 with 
 BEGIN blockname
@@ -121,8 +124,8 @@ MPI_Pack_size,
 
 Collective Communication
 
-MPI_Barrier,,,,,,Bill,,done
-MPI_Bcast,,,,,,Rajeev,,done
+MPI_Barrier,,,,,Bill,,done
+MPI_Bcast,,,,,Rajeev,,done,,intracomm only
 MPI_Gather,,,,,Rajeev,,done
 MPI_Gatherv,,,,,Rajeev,,done
 MPI_Scatter,,,,,Rajeev,,done
