@@ -862,7 +862,8 @@ void smpd_parse_account_domain(char *domain_account, char *account, char *domain
 int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set)
 {
     int result;
-    int stdin_pipe_fds[2], stdout_pipe_fds[2], stderr_pipe_fds[2], pmi_pipe_fds[2];
+    int stdin_pipe_fds[2], stdout_pipe_fds[2];
+    int  stderr_pipe_fds[2], pmi_pipe_fds[2];
     int pid;
     sock_t sock_in, sock_out, sock_err, sock_pmi;
     char args[SMPD_MAX_EXE_LENGTH];
@@ -881,28 +882,13 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     str_iter = process->exe;
     while (str_iter)
     {
-	str_iter = smpd_get_string(str_iter, &args[total], SMPD_MAX_EXE_LENGTH - total, &num_chars);
+	str_iter = smpd_get_string(str_iter, &args[total],
+				   SMPD_MAX_EXE_LENGTH - total, &num_chars);
 	argv[i] = &args[total];
 	i++;
 	total += num_chars+1; /* move over the null termination */
     }
     argv[i] = NULL;
-
-#if 0
-    args[0] = '\0';
-    strcpy(args, process->exe);
-    i = 0;
-    token = strtok(args, " ");
-    while (token)
-    {
-	argv[i] = token;
-	token = strtok(NULL, " ");
-	i++;
-	if (i > 1022)
-	    break;
-    }
-    argv[i] = NULL;
-#endif
 
     /* create pipes for redirecting I/O */
     /*
@@ -951,29 +937,31 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	if (result < 0)
 	    chdir( getenv( "HOME" ) );
 
+/* It is dangerous to do dbg_printfs here because we are the forked child process*/
 	sprintf(str, "%d", process->rank);
-	smpd_dbg_printf("env: PMI_RANK=%s\n", str);
+	/*smpd_dbg_printf("env: PMI_RANK=%s\n", str);*/
 	setenv("PMI_RANK", str, 1);
 	sprintf(str, "%d", process->nproc);
-	smpd_dbg_printf("env: PMI_SIZE=%s\n", str);
+	/*smpd_dbg_printf("env: PMI_SIZE=%s\n", str);*/
 	setenv("PMI_SIZE", str, 1);
 	sprintf(str, "%s", process->kvs_name);
-	smpd_dbg_printf("env: PMI_KVS=%s\n", str);
+	/*smpd_dbg_printf("env: PMI_KVS=%s\n", str);*/
 	setenv("PMI_KVS", str, 1);
 	sprintf(str, "%d", pmi_pipe_fds[1]);
-	smpd_dbg_printf("env: PMI_SMPD_FD=%s\n", str);
+	/*smpd_dbg_printf("env: PMI_SMPD_FD=%s\n", str);*/
 	setenv("PMI_SMPD_FD", str, 1);
 	sprintf(str, "%d", smpd_process.id);
-	smpd_dbg_printf("env: PMI_SMPD_ID=%s\n", str);
+	/*smpd_dbg_printf("env: PMI_SMPD_ID=%s\n", str);*/
 	setenv("PMI_SMPD_ID", str, 1);
 	sprintf(str, "%d", process->id);
-	smpd_dbg_printf("env: PMI_SMPD_KEY=%s\n", str);
+	/*smpd_dbg_printf("env: PMI_SMPD_KEY=%s\n", str);*/
 	setenv("PMI_SMPD_KEY", str, 1);
 	/*result = execvp( process->exe, NULL );*/
 	result = execvp( argv[0], argv );
 
 	result = errno;
-	fprintf(stderr, "error %d, unable to exec '%s'.\n", result, process->exe);
+	fprintf(stderr, "Unable to exec '%s'.\nError %d - %s", process->exe,
+		result, strerror(result));
 	exit(result);
     }
 
