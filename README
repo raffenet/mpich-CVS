@@ -4,7 +4,7 @@
 
 MPICH2 is an all-new implementation of MPI from the group at Argonne
 National Laboratory.  It shares many goals with the original MPICH but
-no actual code.  It is portable, high-performance implementation of
+no actual code.  It is a portable, high-performance implementation of
 the entire MPI-2 standard.  This release has all MPI-2 functions and
 features required by the standard with the exeption of support for the
 "external32" portable I/O format.  It also currently supports only a
@@ -209,6 +209,9 @@ later, in the section "Alternative configurations".
     mpdboot and other options for starting the mpd's are in
     mpich2-1.0.1/src/pm/mpd/README.
 
+    If you are still having problems getting the mpd ring established,
+    see the Installation Guide for instructions on how to diagnose
+    problems with your system configuration that may be preventing it.
 
 12. Test the ring you have just created:
 
@@ -291,6 +294,10 @@ later, in the section "Alternative configurations".
 If you have completed all of the above steps, you have successfully
 installed MPICH2 and run an MPI example.  
 
+More details on arguments to mpiexec are given in the User's Guide in
+the doc subdirectory.
+
+
 Alternatives
 ============
 
@@ -327,7 +334,7 @@ gforker is a process manager that creates processes on a single machine,
 by having mpiexec directly fork and exec them.  This mechanism is
 particularly appropriate for shared-memory multiprocessors (SMPs) where
 you want to create all the processes on the same machine.  gforker is
-also useful for debugging, where run all the processes on a single
+also useful for debugging, where running all the processes on a single
 machine is often convenient.
 
 
@@ -363,8 +370,8 @@ scalable shared memory channel (sshm), an Infiniband channel (ib) and a
 GASNet channel (gasnet).  These channels have been tested by their
 authors, but are not run through the nightly test suites.
 
-The scalable shared channel, like the shm channel, uses shared memory
-for communication.  However, unlike the shm channel which allocates a
+The scalable shared memory channel, like the shm channel, uses shared memory
+for communication.  However, unlike the shm channel, which allocates a
 NxN array of queues in shared memory during MPI_INIT, the sshm channel
 only allocates a queue in shared memory when a pair of processes
 communicate for the first time.  Since the communication patterns in
@@ -569,8 +576,15 @@ routines (MPI_Win_Lock, MPI_Win_Unlock) are working according to the MPI
 standard, but may not perform as expected, since they will not complete
 until an MPI call is made at the target.
 
+The dynamic process management routines (MPI_Comm_spawn,
+MPI_Comm_Connect, and MPI_Comm_Accept, and their relations) are
+supported for the mpd and smpd process managers.
+
 Name publishing is supported on shared file systems and within an mpd
 ring.
+
+The "singleton init" feature, whereby a process not started by mpiexec
+can become an MPI process, is supported under the mpd process manager.
 
 Some routines, such as the intercommunicator extensions to the
 collective routines, have not been extensively tested.
