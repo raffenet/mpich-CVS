@@ -3767,6 +3767,8 @@ If bRemoveFortran Then
 	end if
 	contents = fin.ReadAll()
 	fin.Close()
+	contents = Replace(contents, ",HAVE_FORTRAN_BINDING", "")
+	contents = Replace(contents, ";HAVE_FORTRAN_BINDING", "")
 	contents = Replace(contents, "lib\mpich2ffd.lib", "")
 	contents = Replace(contents, "lib\mpich2ff.lib", "")
 	'regEx.Pattern = ".*<File.*\s*.*c2f\.c\s*.*</File>.*[\r\n]*"
