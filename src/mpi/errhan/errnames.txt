@@ -290,6 +290,8 @@ Fortran integer (value is %ld)
 **iosplitcollnone:No split collective I/O operation is active
 **ioasyncwaiting:There are outstanding nonblocking I/O operations on this file
 **ioneedrdwr:Read/write access is required to this file
+**ioneedrd:Read access is required to this file
+**ioneedwr: Write access is required to this file
 **iofiletype:Filetype must be constructed out of one or more etypes
 **iosharedunsupported:Shared file pointers not supported
 **iosharedunsupported %s:Shared file pointers not supported on filesystem %s
@@ -299,8 +301,25 @@ Fortran integer (value is %ld)
     MPI_MODE_SEQUENTIAL
 **iowronly:Cannot read from a file opened with amode MPI_MODE_WRONLY
 **iosequnsupported:MPI_MODE_SEQUENTIAL not supported on this file system
-
 **iosequnsupported %s:MPI_MODE_SEQUENTIAL not supported on file system %s
+**iodispifseq:disp must be set to MPI_DISPLACEMENT_CURRENT since file \
+    was opened with MPI_MODE_SEQUENTIAL
+**iodispnotcurrent:Displacement must be set to MPI_DISPLACEMENT_CURRENT \
+    since file was opened with MPI_MODE_SEQUENTIAL
+**iobaddisp:Invalid disp argument
+**iobadoffset:Invalid offset argument
+**ionegoffset:Negative offset argument
+**iobadcount:Invalid count argument
+**iobadwhence:Invalid whence argument
+**iobadfh:Invalid file handle
+**iopreallocrdwr:Must open file with MPI_MODE_RDWR to preallocate disk space
+**ioRMWrdwr:Must open file with MPI_MODE_RDWR for read-modify-write 
+**ioagnomatch:No aggregators match
+**iofilenull:Null file handle
+**iofilecorrupt:File corrupt
+**iobadsize:Invalid size argument
+**unsupporteddatarep:Only native data representation currently supported
+**iodatarepnomem:User must allocate memory for datarep
 **servicename:Attempt to lookup an unknown service name 
 **servicename %s:Attempt to lookup an unknown service name %s
 **allocmem:Unable to allocate memory for MPI_Alloc_mem
