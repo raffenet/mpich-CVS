@@ -16,7 +16,6 @@
 
 #define IB_EAGER_LIMIT            (1024 * 1024 * 6)
 #define IB_ERROR_MSG_LENGTH       256
-#define IB_LISTENER_POINTER       &IB_Process
 //#define IB_PINNED_MEMORY_SIZE  2*1024*1024
 #define IB_PACKET_SIZE            (1024 * 64)
 #define IB_PACKET_COUNT           64
