@@ -106,6 +106,8 @@ install:
 	-@cp -f ${srcdir}/mpdlib.py ${bindir}/mpdlib.py
 	-@( rm -f ${bindir}/mpiexec >/dev/null 2>&1 || exit 0 )
 	-@cd ${bindir} && @LN_S@ -f mpdrun mpiexec
+	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
+	-@cd ${bindir} && @LN_S@ -f mpdrun mpirun
 
 
 mpich2-build-install: mpich2-mpdroot install
