@@ -192,14 +192,16 @@ int MPI_File_iread(MPI_File fh, void *buf, int count,
 	    
 	    off = fh->fp_ind;
 	    if ((fh->file_system != ADIO_PIOFS) && 
-	       (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS))
+	       (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS)
+	       && (fh->file_system != ADIO_PVFS2))
 		ADIOI_WRITE_LOCK(fh, off, SEEK_SET, bufsize);
 		
 	    ADIO_ReadContig(fh, buf, count, datatype, ADIO_INDIVIDUAL, 0, 
                     &status, &error_code);  
 
 	    if ((fh->file_system != ADIO_PIOFS) && 
-	       (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS))
+	       (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS)
+	       && (fh->file_system != ADIO_PVFS2))
 		ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
 
 	    fh->async_count++;

@@ -131,7 +131,7 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
 #endif
     }
 
-    if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS)) {
+    if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS) || (fh->file_system == ADIO_PVFS2)) {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, 
 	    "**iosharedunsupported", 0);

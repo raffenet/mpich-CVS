@@ -199,7 +199,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
      * invalid flags through some functional interface rather than having
      *  these tests here. -- Rob, 06/06/2001
      */
-    if (((file_system == ADIO_PIOFS) || (file_system == ADIO_PVFS)) && 
+    if (((file_system == ADIO_PIOFS) || (file_system == ADIO_PVFS) || (file_system == ADIO_PVFS2)) && 
         (amode & MPI_MODE_SEQUENTIAL)) {
 #ifdef MPICH2
 	    error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, 
@@ -231,9 +231,10 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 
     /* determine name of file that will hold the shared file pointer */
     /* can't support shared file pointers on a file system that doesn't
-       support file locking, e.g., PIOFS, PVFS */
+       support file locking, e.g., PIOFS, PVFS, PVFS2 */
     if ((error_code == MPI_SUCCESS) && ((*fh)->file_system != ADIO_PIOFS)
-          && ((*fh)->file_system != ADIO_PVFS)) {
+          && ((*fh)->file_system != ADIO_PVFS) 
+	  && ((*fh)->file_system != ADIO_PVFS2) ){
 	MPI_Comm_rank(dupcomm, &rank);
 	ADIOI_Shfp_fname(*fh, rank);
 

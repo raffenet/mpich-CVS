@@ -198,14 +198,16 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
 	    (*request)->handle = 0;
 
             if ((fh->file_system != ADIO_PIOFS) && 
-              (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS))
+              (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS)
+	      && (fh->file_system != ADIO_PVFS2))
                 ADIOI_WRITE_LOCK(fh, off, SEEK_SET, bufsize);
 
             ADIO_WriteContig(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET, off, 
                     &status, &error_code);  
 
             if ((fh->file_system != ADIO_PIOFS) && 
-               (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS))
+               (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS)
+	       && (fh->file_system != ADIO_PVFS2))
                 ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
 
             fh->async_count++;

@@ -53,7 +53,7 @@ int MPI_File_close(MPI_File *fh)
     ADIOI_TEST_FILE_HANDLE(*fh, myname);
 #endif
 
-    if (((*fh)->file_system != ADIO_PIOFS) && ((*fh)->file_system != ADIO_PVFS)) {
+    if (((*fh)->file_system != ADIO_PIOFS) && ((*fh)->file_system != ADIO_PVFS) && ((*fh)->file_system != ADIO_PVFS2)) {
 	ADIOI_Free((*fh)->shared_fp_fname);
 	if ((*fh)->shared_fp_fd != ADIO_FILE_NULL)
 	    ADIO_Close((*fh)->shared_fp_fd, &error_code);

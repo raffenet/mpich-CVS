@@ -167,14 +167,16 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
            work on PIOFS and PVFS, and on NFS it is done in the ADIO_WriteContig.*/
 
         if ((fh->atomicity) && (fh->file_system != ADIO_PIOFS) && 
-            (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS))
+            (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS) &&
+	    	(fh->file_system != ADIO_PVFS2))
             ADIOI_WRITE_LOCK(fh, off, SEEK_SET, bufsize);
 
 	ADIO_WriteContig(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
 		     off, status, &error_code); 
 
         if ((fh->atomicity) && (fh->file_system != ADIO_PIOFS) && 
-            (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS))
+            (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS)&&
+	    	(fh->file_system != ADIO_PVFS2))
             ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
     }
     else

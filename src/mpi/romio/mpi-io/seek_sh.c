@@ -66,7 +66,7 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 #endif
     }
 
-    if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS)) {
+    if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS)|| (fh->file_system == ADIO_PVFS2)) {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, 
 	    "**iosharedunsupported", 0);

@@ -174,7 +174,8 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
 
     /* reset shared file pointer to zero */
 
-    if ((fh->file_system != ADIO_PIOFS) && (fh->file_system != ADIO_PVFS) && 
+    if ((fh->file_system != ADIO_PIOFS) && (fh->file_system != ADIO_PVFS) &&
+		    (fh->file_system != ADIO_PVFS2) && 
         (fh->shared_fp_fd != ADIO_FILE_NULL)) 
 	ADIO_Set_shared_fp(fh, 0, &error_code);
     /* only one process needs to set it to zero, but I don't want to 
@@ -186,7 +187,8 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
        relative to the current view, whereas indiv. file pointer is
        stored in bytes. */
 
-    if ((fh->file_system != ADIO_PIOFS) && (fh->file_system != ADIO_PVFS))
+    if ((fh->file_system != ADIO_PIOFS) && (fh->file_system != ADIO_PVFS) &&
+		    (fh->file_system != ADIO_PVFS2 ) )
 	MPI_Barrier(fh->comm); /* for above to work correctly */
 
     return error_code;
