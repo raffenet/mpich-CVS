@@ -7,6 +7,10 @@
 
 #include "mpiimpl.h"
 
+#if !defined(MPID_REQUEST_PTR_ARRAY_SIZE)
+#define MPID_REQUEST_PTR_ARRAY_SIZE 16
+#endif
+
 /* -- Begin Profiling Symbol Block for routine MPI_Waitsome */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Waitsome = PMPI_Waitsome
@@ -61,26 +65,141 @@ returns with 'outcount' set to 'MPI_UNDEFINED'.
 int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 {
     static const char FCNAME[] = "MPI_Waitsome";
+    MPID_Request * request_ptr_array[MPID_REQUEST_PTR_ARRAY_SIZE];
+    MPID_Request ** request_ptrs = NULL;
+    int i;
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WAITSOME);
 
-    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_WAITSOME);
+    /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITSOME);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+            }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+	    
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_WAITSOME);
+
+    /* Check the arguments */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_COUNT(incount, mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests",
+				 mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(outcount, "outcount", mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(array_of_indices, "array_of_indices",
+				 mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses",
+				 mpi_errno);
+	    if (array_of_requests != NULL && incount > 0)
+	    {
+		for (i = 0; i < incount; i++)
+		{
+		    MPIR_ERRTEST_REQUEST(array_of_requests[i], mpi_errno);
+		}
+	    }
+            if (mpi_errno) {
+                goto fn_exit;
+            }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+    
+    *outcount = 0;
+    
+    /* Convert MPI request handles to a request object pointers */
+    if (incount <= MPID_REQUEST_PTR_ARRAY_SIZE)
+    {
+	request_ptrs = request_ptr_array;
+    }
+    else
+    {
+	request_ptrs = MPIU_Malloc(incount * sizeof(MPID_Request *));
+	if (request_ptrs == NULL)
+	{
+	    mpi_errno = MPI_ERR_NOMEM;
+	    goto fn_exit;
+	}
+    }
+
+    for (i = 0; i < incount; i++)
+    {
+	MPID_Request_get_ptr(array_of_requests[i], request_ptrs[i]);
+    }
+    
+    /* Validate object pointers if error checking is enabled */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    for (i = 0; i < incount; i++)
+	    {
+		MPID_Request_valid_ptr( request_ptrs[i], mpi_errno );
+	    }
+            if (mpi_errno) {
+		goto fn_exit;
             }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* Bill G. says MPI_Waitsome() is expected to wait for progress, so we kick
+       the pipes once and then fall into a loop checking for completion and
+       waiting for progress. */
+    MPID_Progress_test();
+    
+    for(;;)
+    {
+	MPID_Progress_start();
+
+	for (i = 0; i < incount; i++)
+	{
+	    if ((*request_ptrs[i]->cc_ptr) == 0)
+	    {
+		MPI_Status * status_ptr;
+		int rc;
+		    
+		status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ?
+		    &array_of_statuses[*outcount] : MPI_STATUS_IGNORE;
+		rc = MPIR_Request_complete(&array_of_requests[i],
+					   request_ptrs[i],
+					   status_ptr);
+		if (rc != MPI_SUCCESS)
+		{
+		    mpi_errno = MPI_ERR_IN_STATUS;
+		}
+		(*outcount)++;
+	    }
+	    
+	}
+	
+	if (*outcount > 0)
+	{
+	    MPID_Progress_end();
+	    break;
+	}
+
+	MPID_Progress_wait();
+    }
+
+  fn_exit:
+    if (request_ptrs != request_ptr_array && request_ptrs != NULL)
+    {
+	MPIU_Free(request_ptrs);
+    }
+
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITSOME);
-    return MPI_SUCCESS;
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
+	MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
 }

@@ -83,3 +83,5 @@ AC_OUTPUT_COMMANDS(echo "copying gen_dataloop.h to src/include" ;
                    cp $topdir/../common/datatype/gen_dataloop.h \
 		       ../../include/)
 AC_OUTPUT(Makefile src/Makefile channels/Makefile)
+
+PAC_SUBDIR_CACHE_CLEANUP

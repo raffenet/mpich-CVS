@@ -1268,16 +1268,6 @@ extern int MPID_THREAD_LEVEL;
 #define MPID_Dev_comm_destroy_hook( a )
 #endif
 
-#define MPIR_Test(request_ptr, flag)		\
-{						\
-    flag = (*request_ptr->cc_ptr == 0);		\
-    if (!flag)					\
-    {						\
-	MPID_Progress_test();			\
-	flag = (*request_ptr->cc_ptr == 0);	\
-    }						\
-}
-
 #ifdef MPICH_MACROS_ARE_FUNCTIONS
 void MPIR_Wait(MPID_Request *);
 #else
@@ -1286,7 +1276,7 @@ void MPIR_Wait(MPID_Request *);
     while((*request_ptr->cc_ptr) != 0)		\
     {						\
         MPID_Progress_start();			\
-        					\
+						\
         if ((*request_ptr->cc_ptr) != 0)	\
         {					\
             MPID_Progress_wait();		\
@@ -1324,6 +1314,7 @@ int MPIR_Comm_copy( MPID_Comm *, int, MPID_Comm ** );
 int MPIR_Group_create( int, MPID_Group ** );
 
 int MPIR_dup_fn ( MPI_Comm, int, void *, void *, void *, int * );
+int MPIR_Request_complete(MPI_Request *, MPID_Request *, MPI_Status *);
 
 /* ADI Bindings */
 int MPID_Init(int *, char ***, int, int *, int *, int *);

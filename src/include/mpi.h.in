@@ -289,8 +289,8 @@ typedef struct {
 #define MPI_Win_c2f(win)   (MPI_Fint)(win)
 #define MPI_Win_f2c(win)   (MPI_Win)(win)
 
-#define MPI_STATUS_IGNORE (MPI_Status *)0
-#define MPI_STATUSES_IGNORE (MPI_Status *)0
+#define MPI_STATUS_IGNORE (MPI_Status *)1
+#define MPI_STATUSES_IGNORE (MPI_Status *)1
 #define MPI_ERRCODES_IGNORE (int *)0
 #define MPI_ARGV_NULL (char **)0
 
