@@ -32,8 +32,9 @@ int main(int argc, char *argv[])
         snprintf(console_name,NAME_LEN,"/tmp/mpd2.console_%s", pwent->pw_name );
         if (s = getenv("MPD_CON_EXT"))
         {
-            strcat(console_name,"_");
-            strcat(console_name,s);
+            strncat(console_name,"_",1);
+            strncat(console_name,s,(NAME_LEN-strlen(console_name)));
+            console_name[NAME_LEN-1] = '\0';  /* just to be safe */
         }
 
         /* handle undocumented options: */
@@ -103,7 +104,8 @@ int main(int argc, char *argv[])
     {
         cmd[0] = '\0';
     }
-    strcat(cmd,"mpdchkpyver.py");
+    strncat(cmd,"mpdchkpyver.py",(NAME_LEN-strlen(cmd)));
+    cmd[NAME_LEN-1] = '\0';  /* just to be safe */
     /* printf("MPDROOT: CMD=%s\n",cmd); */
     newargv[0] = cmd;
     for (i=0; i < argc; i++)
