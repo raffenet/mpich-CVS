@@ -216,7 +216,8 @@ PMPI_LOCAL int MPIR_Alltoall(
                              (rank >= tree_root + nprocs_completed)) {
                         mpi_errno = MPIC_Recv(((char *)tmp_buf +
                                                dst_tree_root*sendbuf_extent),
-                                              last_recv_cnt, sendtype,
+                                              sendcount*comm_size*mask, 
+                                              sendtype,   
                                               dst, MPIR_ALLTOALL_TAG,
                                               comm, &status); 
                         if (mpi_errno) return mpi_errno;
