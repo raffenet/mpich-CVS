@@ -275,12 +275,10 @@ def mpdrun():
 			status = msg['status']
 			if WIFSIGNALED(status):
 			    killed_status = status & 0x007f  # AND off core flag
-		            print 'exit status of rank %d: killed by signal %d ' % \
-			          (msg['rank'],killed_status)
+		            # print 'exit status of rank %d: killed by signal %d ' % (msg['rank'],killed_status)
 			else:
 			    exit_status = WEXITSTATUS(status)
-		            print 'exit status of rank %d: return code %d ' % \
-			          (msg['rank'],exit_status)
+		            # print 'exit status of rank %d: return code %d ' % (msg['rank'],exit_status)
 		    else:
 		        print 'unrecognized msg from manager :%s:' % msg
                 elif readySocket == manCliStdoutSocket:
