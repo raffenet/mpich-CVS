@@ -1397,7 +1397,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
     {
 	if (IBU_Process.unex_finished_list)
 	{
-	    MPIU_dbg_printf("ibu_wait returning previously received %d bytes\n", ibu->read.total);
+	    MPIU_dbg_printf("ibu_wait returning previously received %d bytes\n", IBU_Process.unex_finished_list->read.total);
 	    /* remove this ibu from the finished list */
 	    ibu = IBU_Process.unex_finished_list;
 	    IBU_Process.unex_finished_list = IBU_Process.unex_finished_list->unex_finished_queue;
