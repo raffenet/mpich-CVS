@@ -416,7 +416,7 @@ int sock_get_last_os_error(void)
 
 static int easy_create(SOCKET *sock, int port, unsigned long addr)
 {
-    struct linger linger;
+    /*struct linger linger;*/
     int optval, len;
     SOCKET temp_sock;
     SOCKADDR_IN sockAddr;
@@ -436,9 +436,11 @@ static int easy_create(SOCKET *sock, int port, unsigned long addr)
 	    return SOCK_FAIL;
     
     /* Set the linger on close option */
+    /*
     linger.l_onoff = 1 ;
     linger.l_linger = 60;
     setsockopt(temp_sock, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof(linger));
+    */
 
     /* set the socket to non-blocking */
     /*
@@ -1068,6 +1070,27 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 		}
 		if (ovl == &sock->read.ovl)
 		{
+		    if (num_bytes == 0)
+		    {
+			/* socket closed */
+			MPIU_DBG_PRINTF(("sock_wait readv returning %d bytes and EOF\n", sock->read.total));
+			out->op_type = SOCK_OP_READ;
+			out->num_bytes = sock->read.total;
+			out->error = SOCK_EOF;
+			out->user_ptr = sock->user_ptr;
+			sock->pending_operations--;
+			sock->state ^= SOCK_READING; /* remove the SOCK_READING bit */
+			if (sock->closing && sock->pending_operations == 0)
+			{
+			    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", sock_getid(sock)));
+			    FlushFileBuffers((HANDLE)sock->sock);
+			    shutdown(sock->sock, SD_BOTH);
+			    closesocket(sock->sock);
+			    sock->sock = INVALID_SOCKET;
+			}
+			MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+			return SOCK_SUCCESS;
+		    }
 		    MPIU_DBG_PRINTF(("sock_wait read%s update: %d bytes\n", sock->read.use_iov ? "v" : "", num_bytes));
 		    sock->read.total += num_bytes;
 		    if (sock->read.use_iov)
@@ -1254,6 +1277,27 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 		    }
 		    else
 		    {
+			if (num_bytes == 0)
+			{
+			    /* socket closed */
+			    MPIU_DBG_PRINTF(("sock_wait wreadv returning %d bytes and EOF\n", sock->write.total));
+			    out->op_type = SOCK_OP_WRITE;
+			    out->num_bytes = sock->write.total;
+			    out->error = SOCK_EOF;
+			    out->user_ptr = sock->user_ptr;
+			    sock->pending_operations--;
+			    sock->state ^= SOCK_WRITING; /* remove the SOCK_WRITING bit */
+			    if (sock->closing && sock->pending_operations == 0)
+			    {
+				MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov write completed.\n", sock_getid(sock)));
+				FlushFileBuffers((HANDLE)sock->sock);
+				shutdown(sock->sock, SD_BOTH);
+				closesocket(sock->sock);
+				sock->sock = INVALID_SOCKET;
+			    }
+			    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+			    return SOCK_SUCCESS;
+			}
 			MPIU_DBG_PRINTF(("sock_wait: write update, total = %d + %d = %d\n", sock->write.total, num_bytes, sock->write.total + num_bytes));
 			sock->write.total += num_bytes;
 			if (sock->write.use_iov)
