@@ -390,6 +390,11 @@ sub RunTestSuites {
 	if ($testname eq "mpich") {
 	    $cwd = `pwd`;
 	    my @config;
+	    # Make sure that the tests run past a failure to build an
+	    # executable.  Without this, the summary doesn't include
+	    # any tests in the same directory that completed.
+	    $ENV{"MPITEST_CONTINUE"} = "always";
+
 	    chdir $mpich_test_dir || die "Cannot change to $mpich_test_dir\n";
 	    $config[0] = "$mpich1_dir/examples/test/configure";
 	    $config[1] = "--prefix=$instdir";
@@ -412,7 +417,7 @@ sub RunTestSuites {
 		$config[3] = "-cc=$ccname -I$instdir/include -L$instdir/lib";
 	    }
 	    if (-x "$instdir/bin/mpif77" ) {
-		$config[3] = "-cf=$instdir/bin/mpif77";
+		$config[4] = "-fc=$instdir/bin/mpif77";
 	    }
 	    else {
 		$config[4] = "-fc=$fcname -I$instdir/include -L$instdir/lib";
@@ -480,26 +485,45 @@ sub RunProgram {
     # By reopening stdout and stderr, we can ensure that all of the 
     # output goes to the specified files.  Unfortunately, we can't
     # force perl to correctly flush files without open/close
-    if ($outfile ne "") {
-	close $OUTFD;
-    }
+    #
+    # We now use a different approach that uses a open that creates a 
+    # fork and associates file handle (CFD for Child FD).
+    #if ($outfile ne "") {
+#	close $OUTFD;
+#    }
     @args = @_;
-    $pid = fork();
+    #$pid = fork();
+    $pid = open(CFD,"-|");
     if ($pid == 0) {
         open STDIN, '/dev/null';
 	# Do we want to allow an output filter, e.g., to convert the 
 	# output into well-formed XML?
-        open STDOUT, ">>$outfile";
+       # open STDOUT, ">>$outfile";
         open STDERR, ">>&STDOUT";
         exec @args;
     }
     else {
-        waitpid $pid,0;
+	# Read from the child
+	while (<CFD>) {
+	    if ($is_xml) {
+		# xml-ify the line by escaping the special characters
+		s/</\*AMP\*lt;/g;
+		s/>/\*AMP\*gt;/g;
+		s/&/\*AMP\*amp;/g;
+		s/\*AMP\*/&/g;
+	    }
+	    print $OUTFD $_;
+	}
+	# Closing a pipe implicitly waits for the command on the other
+	# end to complete, and puts the exit status into $?
+	close CFD;
+	# end of read from the child
+        #waitpid $pid,0;
         $rc = $?;
     }
-    if ($outfile ne "") {
-	open( $OUTFD, ">>$outfile" ) || die "Could not reopen $outfile\n";
-    }
+#    if ($outfile ne "") {
+#	open( $OUTFD, ">>$outfile" ) || die "Could not reopen $outfile\n";
+#    }
     return $rc;
 }
 # ---------------------------------------------------------------------------
@@ -523,7 +547,7 @@ sub XMLStyle {
     $SumConfigStart = "<STATUS NAME=\"configure\">";
     $SumConfigEnd   = "</STATUS>\n";
     $SumMakeStart  = "<STATUS NAME=\"make\">";
-    $SumMakeEnd    = "</STATUST>\n";
+    $SumMakeEnd    = "</STATUS>\n";
     $SumInstStart  = "<STATUS NAME=\"install\">";
     $SumInstEnd    = "</STATUS>\n";
     $SumTestRunStart = "<STATUS NAME=\"test\">";
