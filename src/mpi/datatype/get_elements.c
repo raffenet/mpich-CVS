@@ -36,7 +36,9 @@
  *
  * TODO: MOVE THIS INTO THE MPID TREE?
  */
-PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p, int count, MPI_Datatype datatype)
+PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
+				      int count,
+				      MPI_Datatype datatype)
 {
     int m_rem, m_count, type_size, type_elements, type_element_size;
     MPID_Datatype *datatype_ptr = NULL;
@@ -217,7 +219,10 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 	type_element_size = datatype_ptr->element_size;
     }
 
-    if (type_size == 0) {
+    if (type_size > 0) {
+	*elements = status->count / type_element_size;
+    }
+    else if (type_size == 0) {
 	if (status->count > 0)
 	    (*elements) = MPI_UNDEFINED;
 	else {
@@ -229,6 +234,8 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 	}
     }
     else {
+	assert(type_size == -1);
+
 	byte_count = status->count;
 	*elements = MPIR_Type_get_elements(&byte_count, -1, datatype);
     }
