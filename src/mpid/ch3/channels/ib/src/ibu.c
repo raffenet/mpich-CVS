@@ -616,7 +616,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	work_req.sg_list           = sg_list;
 	work_req.signaled_f        = 0;
 	
-	/* store the VC ptr and the mem ptr in the work id */
+	/* store the ibu ptr and the mem ptr in the work id */
 	((ibu_work_id_handle_t*)&work_req.work_req_id)->data.ptr = (ib_uint32_t)ibu;
 	((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)mem_ptr;
 	

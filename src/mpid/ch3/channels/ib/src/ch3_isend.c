@@ -11,13 +11,13 @@ static void update_request(MPID_Request * sreq, void * hdr, int hdr_sz, int nb)
     MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST);
 
     MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST);
-    /* memcpy(&sreq->tcp.pkt, hdr, hdr_sz); */
+    /* memcpy(&sreq->ib.pkt, hdr, hdr_sz); */
     assert(hdr_sz == sizeof(MPIDI_CH3_Pkt_t));
-    sreq->tcp.pkt = *(MPIDI_CH3_Pkt_t *) hdr;
-    sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->tcp.pkt + nb;
+    sreq->ib.pkt = *(MPIDI_CH3_Pkt_t *) hdr;
+    sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->ib.pkt + nb;
     sreq->ch3.iov[0].MPID_IOV_LEN = hdr_sz - nb;
     sreq->ch3.iov_count = 1;
-    sreq->tcp.iov_offset = 0;
+    sreq->ib.iov_offset = 0;
     MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST);
 }
 
@@ -38,7 +38,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
     /* The TCP implementation uses a fixed length header, the size of which is the maximum of all possible packet headers */
     hdr_sz = sizeof(MPIDI_CH3_Pkt_t);
     
-    if (vc->tcp.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
+    if (vc->ib.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
 	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
@@ -52,7 +52,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 	    do
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_WRITE);
-		nb = write(vc->tcp.fd, hdr, hdr_sz);
+		/*************nb = write(vc->ib.fd, hdr, hdr_sz);***************/
 		MPIDI_FUNC_EXIT(MPID_STATE_WRITE);
 	    }
 	    while (nb == -1 && errno == EINTR);
@@ -90,7 +90,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 	    {
 		/* Connection just failed. Mark the request complete and return
                    an error. */
-		vc->tcp.state = MPIDI_CH3I_VC_STATE_FAILED;
+		vc->ib.state = MPIDI_CH3I_VC_STATE_FAILED;
 		/* TODO: Create an appropriate error message based on the value
                    of errno */
 		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
@@ -105,7 +105,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
-    else if (vc->tcp.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
+    else if (vc->ib.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
     {
 	/* Form a new connection, queuing the data so it can be sent later. */
 	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  enqueuing request"));
@@ -113,7 +113,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 	update_request(sreq, hdr, hdr_sz, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
-    else if (vc->tcp.state != MPIDI_CH3I_VC_STATE_FAILED)
+    else if (vc->ib.state != MPIDI_CH3I_VC_STATE_FAILED)
     {
 	/* Unable to send data at the moment, so queue it for later */
 	MPIDI_DBG_PRINTF((55, FCNAME, "still connecting.  enqueuing request"));

@@ -17,13 +17,13 @@ static MPID_Request * create_request(void * hdr, int hdr_sz, int nb)
     assert(sreq != NULL);
     MPIU_Object_set_ref(sreq, 2);
     sreq->kind = MPID_REQUEST_SEND;
-    /* memcpy(&sreq->tcp.pkt, hdr, hdr_sz); */
+    /* memcpy(&sreq->ib.pkt, hdr, hdr_sz); */
     assert(hdr_sz == sizeof(MPIDI_CH3_Pkt_t));
-    sreq->tcp.pkt = *(MPIDI_CH3_Pkt_t *) hdr;
-    sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->tcp.pkt + nb;
+    sreq->ib.pkt = *(MPIDI_CH3_Pkt_t *) hdr;
+    sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->ib.pkt + nb;
     sreq->ch3.iov[0].MPID_IOV_LEN = hdr_sz - nb;
     sreq->ch3.iov_count = 1;
-    sreq->tcp.iov_offset = 0;
+    sreq->ib.iov_offset = 0;
     sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
     
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST);
@@ -57,7 +57,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
        the maximum of all possible packet headers */
     hdr_sz = sizeof(MPIDI_CH3_Pkt_t);
     
-    if (vc->tcp.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
+    if (vc->ib.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
 	/* Connection already formed.  If send queue is empty attempt to send
            data, queuing any unsent data. */
@@ -71,7 +71,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 	    do
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_WRITE);
-		nb = write(vc->tcp.fd, hdr, hdr_sz);
+		/*********************nb = write(vc->ib.fd, hdr, hdr_sz);********************************/
 		MPIDI_FUNC_EXIT(MPID_STATE_WRITE);
 	    }
 	    while (nb == -1 && errno == EINTR);
@@ -119,7 +119,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
-    else if (vc->tcp.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
+    else if (vc->ib.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
     {
 	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  requesting connection "
 			  "and enqueuing send request"));
@@ -131,7 +131,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 	sreq = create_request(hdr, hdr_sz, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
-    else if (vc->tcp.state != MPIDI_CH3I_VC_STATE_FAILED)
+    else if (vc->ib.state != MPIDI_CH3I_VC_STATE_FAILED)
     {
 	/* Unable to send data at the moment, so queue it for later */
 	MPIDI_DBG_PRINTF((55, FCNAME, "forming connection, request enqueued"));

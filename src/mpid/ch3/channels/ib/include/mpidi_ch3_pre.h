@@ -112,9 +112,7 @@ struct MPIDI_CH3I_VC				\
     struct MPID_Request * sendq_head;		\
     struct MPID_Request * sendq_tail;		\
     MPIDI_CH3I_VC_state_t state;		\
-    int poll_elem;				\
-    int fd; /* cached value */			\
-} tcp;
+} ib;
 
 
 /*
@@ -140,7 +138,7 @@ struct MPIDI_CH3I_Request						\
     /*  pkt is used to temporarily store a packet header associated	\
        with this request */						\
     MPIDI_CH3_Pkt_t pkt;						\
-} tcp;
+} ib;
 
 #define MPID_STATE_LIST_CH3 \
 MPID_STATE_MAKE_PROGRESS, \

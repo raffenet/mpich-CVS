@@ -23,7 +23,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     MPID_Comm * comm;
     int p;
 	
-    char * hostname;
     short port;
     char * key;
     char * val;
@@ -63,13 +62,11 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     for (p = 0; p < pg_size; p++)
     {
 	MPIDI_CH3U_VC_init(&vc_table[p], p);
-	vc_table[p].tcp.pg = pg;
-	vc_table[p].tcp.pg_rank = p;
-	vc_table[p].tcp.sendq_head = NULL;
-	vc_table[p].tcp.sendq_tail = NULL;
-	vc_table[p].tcp.poll_elem = -1;
-	vc_table[p].tcp.fd = -1;
-	vc_table[p].tcp.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+	vc_table[p].ib.pg = pg;
+	vc_table[p].ib.pg_rank = p;
+	vc_table[p].ib.sendq_head = NULL;
+	vc_table[p].ib.sendq_tail = NULL;
+	vc_table[p].ib.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
     }
     pg->vc_table = vc_table;
     
@@ -114,20 +111,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     val = MPIU_Malloc(val_max_sz);
     assert(val != NULL);
     
-    hostname = MPIU_Malloc(MAXHOSTNAMELEN + 1);
-    assert(hostname != NULL);
-    rc = gethostname(hostname, MAXHOSTNAMELEN);
-    assert(rc != -1);
-    assert(strlen(hostname) + 1 < (unsigned int)val_max_sz);
+    port = MPIDI_CH3I_get_lid();
     
-    rc = snprintf(key, key_max_sz, "P%d-hostname", pg_rank);
-    assert(rc > -1 && rc < key_max_sz);
-    rc = PMI_KVS_Put(pg->kvs_name, key, hostname);
-    assert(rc == 0);
-    
-    port = MPIDI_CH3I_Listener_get_port();
-    
-    rc = snprintf(key, key_max_sz, "P%d-port", pg_rank);
+    rc = snprintf(key, key_max_sz, "P%d-lid", pg_rank);
     assert(rc > -1 && rc < key_max_sz);
     rc = snprintf(val, val_max_sz, "%d", port);
     assert(rc > -1 && rc < val_max_sz);
@@ -136,7 +122,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 
 #   if defined(DEBUG)
     {
-	dbg_printf("[%d] Published hostname=%s port=%d\n", pg_rank, hostname, port);
+	dbg_printf("[%d] Published lid=%d\n", pg_rank, port);
 	fflush(stdout);
     }
 #   endif
@@ -146,7 +132,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     rc = PMI_Barrier();
     assert(rc == 0);
 
-    MPIU_Free(hostname);
     MPIU_Free(val);
     MPIU_Free(key);
     
@@ -154,17 +139,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     {
 	for (p = 0; p < pg_size; p++)
 	{
-	    rc = snprintf(key, key_max_sz, "P%d-hostname", p);
-	    assert(rc > -1 && rc < key_max_sz);
-	    rc = PMI_KVS_Get(pg->kvs_name, key, host);
-	    assert(rc == 0);
-	    
-	    rc = snprintf(key, key_max_sz, "P%d-port", p);
+	    rc = snprintf(key, key_max_sz, "P%d-lid", p);
 	    assert(rc > -1 && rc < key_max_sz);
 	    rc = PMI_KVS_Get(pg->kvs_name, key, port);
 	    assert(rc == 0);
 	    
-	    dbg_printf("[%d] hostname[%d]=%s port[%d]=%s\n", pg_rank, p, host, p, port);
+	    dbg_printf("[%d] port[%d]=%s\n", pg_rank, p, port);
 	    fflush(stdout);
 	}
     }

@@ -26,14 +26,14 @@ static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offs
     }
     if (iov_offset == 0)
     {
-	/* memcpy(&sreq->tcp.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */
+	/* memcpy(&sreq->ib.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */
 	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));
-	sreq->tcp.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
-	sreq->ch3.iov[0].MPID_IOV_BUF = (void*)&sreq->tcp.pkt;
+	sreq->ib.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
+	sreq->ch3.iov[0].MPID_IOV_BUF = (void*)&sreq->ib.pkt;
     }
     (char *) sreq->ch3.iov[iov_offset].MPID_IOV_BUF += nb;
     sreq->ch3.iov[iov_offset].MPID_IOV_LEN -= nb;
-    sreq->tcp.iov_offset = iov_offset;
+    sreq->ib.iov_offset = iov_offset;
     sreq->ch3.iov_count = iov_count;
     sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
 
@@ -81,7 +81,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
        the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     
-    if (vc->tcp.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
+    if (vc->ib.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
 	/* Connection already formed.  If send queue is empty attempt to send
            data, queuing any unsent data. */
@@ -95,7 +95,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	    do
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_WRITEV);
-		nb = writev(vc->tcp.fd, iov, n_iov);
+		/**********************nb = writev(vc->ib.fd, iov, n_iov);********************************/
 		MPIDI_FUNC_EXIT(MPID_STATE_WRITEV);
 	    }
 	    while (nb == -1 && errno == EINTR);
@@ -143,14 +143,14 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
-    else if (vc->tcp.state == MPIDI_CH3I_VC_STATE_UNCONNECTED)
+    else if (vc->ib.state == MPIDI_CH3I_VC_STATE_UNCONNECTED)
     {
 	/* Form a new connection, queuing the data so it can be sent later. */
 	MPIDI_CH3I_TCP_post_connect(vc);
 	sreq = create_request(iov, n_iov, 0, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
-    else if (vc->tcp.state != MPIDI_CH3I_VC_STATE_FAILED)
+    else if (vc->ib.state != MPIDI_CH3I_VC_STATE_FAILED)
     {
 	/* Unable to send data at the moment, so queue it for later */
 	sreq = create_request(iov, n_iov, 0, 0);
