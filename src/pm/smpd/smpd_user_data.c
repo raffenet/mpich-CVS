@@ -318,8 +318,7 @@ int smpd_set_smpd_data(const char *key, const char *value)
 	list = list->next;
 	if (strcmp(key, node->name) == 0)
 	{
-	    smpd_add_string(node->value, SMPD_MAX_VALUE_LENGTH, value);
-	    buffer[strlen(buffer)-1] = '\0'; /* remove the trailing space */
+	    strcpy(node->value, value);
 	    found = 1;
 	}
 	if (fout)
