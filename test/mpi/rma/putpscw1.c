@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include "mpitest.h"
 
-static char MTEST_Descrip[] = "Put with Fence";
+static char MTEST_Descrip[] = "Put with Post/Start/Complete/Wait";
 
 int main( int argc, char *argv[] )
 {
@@ -18,6 +18,7 @@ int main( int argc, char *argv[] )
     MPI_Comm      comm;
     MPI_Win       win;
     MPI_Aint      extent;
+    MPI_Group     wingroup, neighbors;
     MTestDatatype sendtype, recvtype;
 
     MTest_Init( &argc, &argv );
@@ -42,22 +43,29 @@ int main( int argc, char *argv[] )
 		MPI_Type_extent( recvtype.datatype, &extent );
 		MPI_Win_create( recvtype.buf, recvtype.count * extent, 
 				extent, MPI_INFO_NULL, comm, &win );
-		MPI_Win_fence( 0, win );
+		MPI_Win_get_group( win, &wingroup );
 		if (rank == source) {
 		    sendtype.InitBuf( &sendtype );
 		    
+		    /* Neighbor is dest only */
+		    MPI_Group_incl( wingroup, 1, &dest, &neighbors );
+		    MPI_Win_start( neighbors, 0, win );
+		    MPI_Group_free( &neighbors );
 		    err = MPI_Put( sendtype.buf, sendtype.count, 
 				    sendtype.datatype, dest, 0, 
 				   recvtype.count, recvtype.datatype, win );
+		    MPI_Win_complete( win );
 		    if (err) {
 			errs++;
 			MTestPrintError( err );
 		    }
-		    MPI_Win_fence( 0, win );
 		    MTestFreeDatatype( &sendtype );
 		}
 		else if (rank == dest) {
-		    MPI_Win_fence( 0, win );
+		    MPI_Group_incl( wingroup, 1, &source, &neighbors );
+		    MPI_Win_post( neighbors, 0, win );
+		    MPI_Group_free( &neighbors );
+		    MPI_Win_wait( win );
 		    /* This should have the same effect, in terms of
 		       transfering data, as a send/recv pair */
 		    err = MTestCheckRecv( 0, &recvtype );
@@ -66,9 +74,12 @@ int main( int argc, char *argv[] )
 		    }
 		}
 		else {
-		    MPI_Win_fence( 0, win );
+		    /* Nothing; the other processes need not call any 
+		       MPI routines */
+		    ;
 		}
 		MTestFreeDatatype( &recvtype );
+		MPI_Group_free( &wingroup );
 		MPI_Win_free( &win );
 	    }
 	}
