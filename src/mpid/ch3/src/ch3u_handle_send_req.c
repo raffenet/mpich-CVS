@@ -39,6 +39,13 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * req)
 	
 	case MPIDI_CH3_CA_COMPLETE:
 	{
+	    int cc;
+		
+	    MPIDI_CH3U_Request_decrement_cc(req, &cc);
+	    if (cc == 0)
+	    {
+		MPID_Request_free(req);
+	    }
 	    break;
 	}
 	
