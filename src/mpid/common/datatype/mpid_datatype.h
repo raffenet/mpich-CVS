@@ -532,6 +532,9 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 			   MPI_Aint array_of_addresses[], 
 			   MPI_Datatype array_of_datatypes[]);
 
+int MPID_Type_create_pairtype(MPI_Datatype datatype,
+                              MPID_Datatype *new_dtp);
+
 /* internal debugging functions */
 void MPIDI_Datatype_printf(MPI_Datatype type,
 			   int depth,
