@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\include,..\..\include\win32"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HAVE_WINDOWS_H;USE_WINCONF_H;_CRT_SECURE_NO_DEPRECATE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HAVE_WINDOWS_H;USE_WINCONF_H;_CRT_SECURE_NO_DEPRECATE;_WIN32_WINNT=0x0500"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -108,7 +108,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\include,..\..\include\win64"
-				PreprocessorDefinitions="_DEBUG;_LIB;HAVE_WINDOWS_H;USE_WINCONF_H;WIN64;_CRT_SECURE_NO_DEPRECATE"
+				PreprocessorDefinitions="_DEBUG;_LIB;HAVE_WINDOWS_H;USE_WINCONF_H;WIN64;_CRT_SECURE_NO_DEPRECATE;_WIN32_WINNT=0x0500"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -174,7 +174,7 @@
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\include,..\..\include\win32"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HAVE_WINDOWS_H;USE_WINCONF_H;_CRT_SECURE_NO_DEPRECATE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HAVE_WINDOWS_H;USE_WINCONF_H;_CRT_SECURE_NO_DEPRECATE;_WIN32_WINNT=0x0500"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -241,7 +241,7 @@
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\include,..\..\include\win64"
-				PreprocessorDefinitions="NDEBUG;_LIB;HAVE_WINDOWS_H;USE_WINCONF_H;WIN64;_CRT_SECURE_NO_DEPRECATE"
+				PreprocessorDefinitions="NDEBUG;_LIB;HAVE_WINDOWS_H;USE_WINCONF_H;WIN64;_CRT_SECURE_NO_DEPRECATE;_WIN32_WINNT=0x0500"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -288,6 +288,46 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm"
 			>
 			<File
+				RelativePath=".\smpd_ad.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\smpd_adreg.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="UNICODE;_UNICODE;_WIN32_WINNT=0x0500"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="UNICODE;_UNICODE;_WIN32_WINNT=0x0500"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="UNICODE;_UNICODE;_WIN32_WINNT=0x0500"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="UNICODE;_UNICODE;_WIN32_WINNT=0x0500"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="smpd_authenticate.c"
 				>
 			</File>
@@ -305,10 +345,6 @@
 			</File>
 			<File
 				RelativePath=".\smpd_database.c"
-				>
-			</File>
-			<File
-				RelativePath=".\smpd_delegation.c"
 				>
 			</File>
 			<File
