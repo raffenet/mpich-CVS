@@ -190,6 +190,16 @@ int send_xyminmax(double xmin, double ymin, double xmax, double ymax)
     double temp[4];
     int result, total;
     char err[100];
+    RECT r;
+
+    if (xmin != xmax && ymin != ymax && g_hDC)
+    {
+	r.left = 0;
+	r.right = g_width;
+	r.top = 0;
+	r.bottom = g_height;
+	FillRect(g_hDC, &r, (HBRUSH)GetStockObject(BLACK_BRUSH));
+    }
 
     total = 4 * sizeof(double);
     temp[0] = xmin;

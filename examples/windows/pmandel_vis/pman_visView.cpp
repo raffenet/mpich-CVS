@@ -175,9 +175,12 @@ void Cpman_visView::OnFileConnect()
     dlg.m_nPort = 0;
     if (dlg.DoModal() == IDOK)
     {
+	if (connect_to_pmandel(dlg.m_pszHost, dlg.m_nPort, g_width, g_height) != 0)
+	{
+	    return;
+	}
 	g_hWnd = m_hWnd;
 	g_hDC = CreateCompatibleDC(NULL);
-	connect_to_pmandel(dlg.m_pszHost, dlg.m_nPort, g_width, g_height);
 	canvas = new CBitmap();
 	canvas->CreateBitmap(
 		g_width, 
@@ -234,7 +237,7 @@ void Cpman_visView::OnMouseMove(UINT nFlags, CPoint point)
 
 void Cpman_visView::OnLButtonUp(UINT nFlags, CPoint point)
 {
-    RECT r;//, r2;
+    RECT r;
     double x1,y1,x2,y2;
     double width, height, pixel_width, pixel_height;
     CDC *pDC;
@@ -260,24 +263,25 @@ void Cpman_visView::OnLButtonUp(UINT nFlags, CPoint point)
 	if (m_p1.y > g_height)
 	    m_p1.y = g_height;
 	m_p2 = point;
-	r.left = min(point.x, m_p1.x);
-	r.right = max(point.x, m_p1.x);
-	r.top = min(point.y, m_p1.y);
-	r.bottom = max(point.y, m_p1.y);
+	r = m_rLast;
 	width = g_xmax - g_xmin;
 	height = g_ymax - g_ymin;
 	pixel_width = g_width;
 	pixel_height = g_height;
 	x1 = g_xmin + ((double)r.left * width / pixel_width);
 	x2 = g_xmin + ((double)r.right * width / pixel_width);
-	y1 = g_ymin + ((double)r.top * height / pixel_height);
-	y2 = g_ymin + ((double)r.bottom * height / pixel_height);
+	y2 = g_ymin + ((double)(pixel_height - r.top) * height / pixel_height);
+	y1 = g_ymin + ((double)(pixel_height - r.bottom) * height / pixel_height);
 	g_xmin = x1;
 	g_xmax = x2;
 	g_ymin = y1;
 	g_ymax = y2;
 	g_bDrawing = true;
-	m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)work_thread, NULL, 0, NULL);
+	/*
+	GetClientRect(&r);
+	pDC->FillSolidRect(&r, 0);
+	*/
+ 	m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)work_thread, NULL, 0, NULL);
     }
     CView::OnLButtonUp(nFlags, point);
 }
