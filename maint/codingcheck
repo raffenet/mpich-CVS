@@ -34,6 +34,7 @@ sub ProcessFile {
     $filename = $_[0];
     %AllowedRoutines = ();
     $cxx_comments_found = 0;
+    &ClearPreamble;
     %warningmsgs = ();
     &ClearMismatchedStates;
     open( FD, "<$filename" ) || die "Could not open $filename";
@@ -54,7 +55,10 @@ sub ProcessFile {
             # But for now, we do:
 	    $AllowedRoutines{$1} = $2;
 	}
+	# The preamble is within a comment
+	&CheckForPreamble( $_ );
 	$_ = StripComments( FD, $_ );
+	if ($comment_line ne "") { &CheckForPreamble( $comment_line ); }
 	# Check for C++ style comments
 	if (/\/\//) {
 	    $cxx_comments_found ++;
@@ -82,6 +86,7 @@ sub ProcessFile {
     if ($cxx_comments_found > 1) {
 	print "$cxx_comments_found C++ comments found in $filename\n";
     }
+    &ReportOnPreamble( $filename );
 }
 
 #
@@ -232,5 +237,34 @@ sub CheckForMismatchedStates {
 	if ($statename ne $endname) {
 	    print "Warning: State $statename ended with $endname in $filename\n";
 	}
+    }
+}
+
+#
+# Check for proper preamble.  Record during file reading and check at end
+$saw_c_style = 0;
+$saw_copyright = 0;
+
+sub ClearPreamble {
+    $saw_c_style = 0;
+    $saw_copyright = 0;
+}    
+sub CheckForPreamble {
+    my $curline = $_[0];
+    if ($curline =~ /-\*-\s*Mode:\s*C;\s*c-basic-offset:4/) {
+	$saw_c_style = 1;
+    }
+    elsif ($curline =~ /See COPYRIGHT/) {
+	$saw_copyright = 1;
+    }
+}
+sub ReportOnPreamble {
+    my $filename = $_[0];
+
+    if (! $saw_c_style) {
+	print "C style header (c-basic-offset:4) missing in $filename\n";
+    }
+    if (! $saw_copyright) {
+	print "Copyright statement missing from $filename\n";
     }
 }

@@ -169,17 +169,23 @@ sub GetSubArgs {
 
 # remainder = StripComments( FD, inputline )
 # removes comments from a line and returns the line.  Read more if necessary
+# Places the comment into $comment_line;
 sub StripComments {
     my $FD = $_[0];
     my $curline = $_[1];
     my $remainder = "";
+    $comment_line = "";
     while ($curline =~ /\/\*/) {
 	print "Curline = $curline\n" if $debug;
-	if ($curline =~ /\/\*.*?\*\//s) {
+	if ($curline =~ /(\/\*.*?\*\/)/s) {
+	    $comment_line = $1;
 	    $curline =~ s/\/\*.*?\*\///s;
 	    print "Removed comment, now is $curline\n" if $debug;
+	    # Keep looking for comments incase the line has multiple 
+	    # comments
 	}
 	else {
+	    # Keep collecting until we find the end of the comment
 	    $curline .= <$FD>;
 	    if (eof($FD)) {
 		print STDERR "Unterminated comment found$errsrc!\n";
