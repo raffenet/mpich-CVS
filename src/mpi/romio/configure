@@ -335,6 +335,10 @@ case $arg in
   -disable-weak-symbols|--disable-weak-symbols)
      TRY_WEAK_SYMBOLS=0
      ;;
+
+  --without-setbytes | -without-setbytes)
+  with_setbytes=no
+  ;;
   -enable-* | --enable-* | -disable-* | --disable-* )
      # ignore
   ;;
@@ -4938,7 +4942,13 @@ if test $FROM_MPICH = 1 ; then
       TEST_F77=$MPI_BIN_DIR/mpif77
    fi
    CC=$MPI_BIN_DIR/mpicc
-      
+      # Some older implementations of the ADI do not include the 
+   # MPID_Status_set_bytes routine.   This uses either the 
+   # environment variable ADI3_WITHOUT_SET_BYTES or the
+   # with arg --without-setbytes
+   if test "$ADI2_WITHOUT_SET_BYTES" != yes -a \
+           "$with_setbytes" != no ; then
+       
 {
 test -n "$verbose" && \
 echo "	defining HAVE_STATUS_SET_BYTES"
@@ -4950,6 +4960,7 @@ SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_STATUS_SET_BYTES\${SEDdB}HAVE_STATUS_SET_BYTES\
 "
 }
 
+   fi
 elif test $FROM_LAM = 1 ; then
    # LAM does have the status set bytes functionality
    
