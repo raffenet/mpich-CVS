@@ -1095,6 +1095,14 @@ void MPID_Progress_wait(void);
 void MPID_Progress_poke(void);
 #endif
 
+#if !defined(MPID_Request_create)
+MPID_Request * MPID_Request_create(void);
+#endif
+
+#if !defined(MPID_Request_set_completed)
+void MPID_Request_set_completed(MPID_Request *);
+#endif
+
 #if !defined(MPID_Request_release)
 void MPID_Request_release(MPID_Request *);
 #endif
