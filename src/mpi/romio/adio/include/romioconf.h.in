@@ -68,6 +68,7 @@
 #undef XFS
 #undef NEEDS_AIOCB_T
 #undef HAVE_MPI_GREQUEST
+#undef ROMIO_HAVE_STATFS_F_FSTYPENAME
 
 /* Define if you have memalign.  */
 #undef HAVE_MEMALIGN
