@@ -22,7 +22,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
     MPIDI_dbg_printf(15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
 		     comm->context_id + context_offset);
     
-    rreq = MPIDI_CH3U_Request_FUOAP(
+    rreq = MPIDI_CH3U_Request_FDU_or_AEP(
 	rank, tag, comm->context_id + context_offset, &found);
     assert(rreq != NULL);
 
@@ -58,7 +58,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 		
 		*status = rreq->status;
 		MPIU_Free(rreq->ch3.tmp_buf);
-		MPID_Request_free(rreq);
+		MPID_Request_release(rreq);
 		rreq = NULL;
 		
 		mpi_errno = status->MPI_ERROR;
@@ -94,7 +94,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 		/* XXX: Ideally we could specify that a req not be returned.
 		   This would avoid our having to decrement the reference count
 		   on a req we don't want/need. */
-		MPID_Request_free(cts_req);
+		MPID_Request_release(cts_req);
 	    }
 	}
     }
