@@ -122,7 +122,7 @@ PMPI_LOCAL int MPIR_Alltoall(
         }
         
         /* adjust for potential negative lower bound in datatype */
-        MPI_Type_lb( sendtype, &lb );
+        PMPI_Type_lb( sendtype, &lb );
         tmp_buf = (void *)((char*)tmp_buf - lb);
         
         /* copy local sendbuf into tmp_buf at location indexed by rank */

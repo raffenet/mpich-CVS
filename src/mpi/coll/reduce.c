@@ -129,7 +129,7 @@ int MPIR_Reduce (
         return mpi_errno;
     }
     /* adjust for potential negative lower bound in datatype */
-    MPI_Type_lb( datatype, &lb );
+    PMPI_Type_lb( datatype, &lb );
     buffer = (void *)((char*)buffer - lb);
     
     /* If I'm not the root, then my recvbuf may not be valid, therefore
@@ -276,7 +276,7 @@ PMPI_LOCAL int MPIR_Reduce_inter (
                 return mpi_errno;
             }
             /* adjust for potential negative lower bound in datatype */
-            MPI_Type_lb( datatype, &lb );
+            PMPI_Type_lb( datatype, &lb );
             tmp_buf = (void *)((char*)tmp_buf - lb);
         }
         
