@@ -256,9 +256,10 @@ def mpdrun():
             exit(-1)
         elif msg['cmd'] == 'job_failed'  and  msg['reason'] == 'some_procs_not_started':
             print 'mpdrun: unable to start all procs; may have invalid machine names'
-            print '    remaining hosts:'
+            print '    remaining specified hosts:'
             for host in msg['remaining_hosts'].values():
-                print '        %s' % (host)
+		if host != '_any_':
+                    print '        %s' % (host)
             exit(-1)
         else:
             mpd_raise('unexpected message from mpd: %s' % (msg) )
