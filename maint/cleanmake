@@ -83,6 +83,7 @@ while (<>) {
 
     # Skip the time adjust step
     if (/^perl -e/) { next; }
+
     if ($last_line =~ /[^\s]/) { 
 	# Decide if we want to print this, based on the current line.
 	if ($last_line =~ /^[agi]?cc\s/ || $last_line =~ /^mpicc\s/ ||

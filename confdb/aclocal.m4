@@ -27,6 +27,7 @@ dnl
 dnl There is a bug in AC_OUTPUT_SUBDIRS that is tickled by this
 dnl code.  There is no step to create any of the intermediate
 dnl directories in the case that this is a vpath build.  
+dnl
 AC_DEFUN(PAC_CONFIG_SUBDIRS_IMMEDIATE,
 [AC_REQUIRE([AC_CONFIG_AUX_DIR_DEFAULT])dnl
 SAVE_subdirs="$subdirs"
