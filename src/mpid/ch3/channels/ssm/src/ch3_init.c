@@ -267,12 +267,38 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
 	return mpi_errno;
     }
+#ifdef USE_MQSHM
+    if (pg_rank == 0)
+    {
+	mpi_errno = MPIDI_CH3I_BootstrapQ_create_unique_name(queue_name, 100);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
+	    return mpi_errno;
+	}
+	PMI_KVS_Put(pg->kvs_name, "bootstrapQ_name", queue_name);
+	PMI_KVS_Commit(pg->kvs_name);
+	PMI_Barrier();
+    }
+    else
+    {
+	PMI_Barrier();
+	PMI_KVS_Get(pg->kvs_name, "bootstrapQ_name", queue_name);
+    }
+    mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg->bootstrapQ, queue_name);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
+	return mpi_errno;
+    }
+#else
     mpi_errno = MPIDI_CH3I_BootstrapQ_create(&pg->bootstrapQ);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
 	return mpi_errno;
     }
+#endif
     queue_name[0] = '\0';
     mpi_errno = MPIDI_CH3I_BootstrapQ_tostring(pg->bootstrapQ, queue_name, 100);
     if (mpi_errno != MPI_SUCCESS)
