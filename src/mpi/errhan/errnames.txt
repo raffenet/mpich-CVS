@@ -642,6 +642,14 @@ with MPI_Alloc_mem.
 **ch3progress %d:Channel progress engine failed on line %d
 
 #
+# CH3:ib
+#
+**ibu_wait:ibu_wait failed
+**ibu_wait %d:ibu_wait failed (errno %d)
+**init_ibu:infiniband initialization failed
+**init_ibu_set:unable to create an infinband completion queue
+
+#
 # pmi
 #
 **pmi_init:PMI_Init failed
