@@ -782,7 +782,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	memcpy(mem_ptr, buf, length);
 	total += length;
 	
-	MPIU_DBG_PRINTF(("write[%d].length = %d\n", g_cur_write_stack_index, length));
+	MPIU_DBG_PRINTF(("g_write_stack[%d].length = %d\n", g_cur_write_stack_index, length));
 	g_num_bytes_written_stack[g_cur_write_stack_index].length = length;
 	g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
 	g_cur_write_stack_index++;
@@ -884,7 +884,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	    data[index].va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
 	    data[index].l_key = ibu->lkey;
 
-	    MPIU_DBG_PRINTF(("write[%d].length = %d\n", g_cur_write_stack_index, len));
+	    MPIU_DBG_PRINTF(("g_write_stack[%d].length = %d\n", g_cur_write_stack_index, len));
 	    g_num_bytes_written_stack[g_cur_write_stack_index].length = len;
 	    g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
 	    g_cur_write_stack_index++;
@@ -911,7 +911,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 		data[index].va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
 		data[index].l_key = ibu->lkey;
 
-		MPIU_DBG_PRINTF(("write[%d].length = %d\n", g_cur_write_stack_index, length));
+		MPIU_DBG_PRINTF(("g_write_stack[%d].length = %d\n", g_cur_write_stack_index, length));
 		g_num_bytes_written_stack[g_cur_write_stack_index].length = length;
 		g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
 		g_cur_write_stack_index++;
@@ -930,7 +930,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     }
 
     // tell the stack how many elements were pushed on it
-    MPIU_DBG_PRINTF(("write[%d].length = %d\n", g_cur_write_stack_index, -index));
+    MPIU_DBG_PRINTF(("g_write_stack[%d].length = %d\n", g_cur_write_stack_index, -index));
     g_num_bytes_written_stack[g_cur_write_stack_index].length = -index;
     g_cur_write_stack_index++;
     MPIU_DBG_PRINTF(("ibui_post_writev: posting send with %d ib buffers\n", index));
@@ -1351,7 +1351,7 @@ int ibui_readv_unex(ibu_t ibu)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_READV_UNEX);
 
-    MPIU_dbg_printf("ibui_readv_unex\n");
+    MPIU_dbg_printf("ibui_readv_unex()\n");
 
     while (ibu->unex_list)
     {
@@ -1420,7 +1420,7 @@ int ibui_readv_unex(ibu_t ibu)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_READV_UNEX);
 
-    MPIU_dbg_printf("ibui_readv_unex\n");
+    MPIU_dbg_printf("ibui_readv_unex()\n");
 
     while (ibu->unex_list)
     {
