@@ -11,7 +11,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     int result;
     smpd_command_t *cmd, *temp_cmd;
     char ctx_key[100];
-    int ncmds, *maxprocs, *nkeyvals, i, j/*, npreput*/;
+    int ncmds, *maxprocs, *nkeyvals, i, j;
     smpd_launch_node_t node;
     char key[100], val[1024];
     char *iter1, *iter2;
@@ -236,6 +236,14 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	/* host */
 	/* env */
 	/* path */
+	for (j=0; j<nkeyvals[i]; j++)
+	{
+	    if (strcmp(info[j].key, "path") == 0)
+	    {
+		strcpy(node.path, info[j].val);
+		smpd_dbg_printf("path = %s\n", info[j].val);
+	    }
+	}
 	/* wdir */
 	/* map */
 	/* etc */
@@ -285,7 +293,13 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    launch_iter->next = NULL;
 
 	    strcpy(launch_iter->exe, node.exe);
-	    strcpy(launch_iter->args, node.args);
+	    /*strcpy(launch_iter->args, node.args);*/
+	    if (strlen(node.args) > 0)
+	    {
+		strncat(launch_iter->exe, " ", SMPD_MAX_EXE_LENGTH);
+		strncat(launch_iter->exe, node.args, SMPD_MAX_EXE_LENGTH);
+	    }
+	    strcpy(launch_iter->path, node.path);
 	}
     }
     if (info != NULL)
