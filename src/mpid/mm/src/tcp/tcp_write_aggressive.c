@@ -97,6 +97,12 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
 	/* at this point the vec in the car describes all the currently read data */
     }
 
+    if (car_ptr->data.tcp.buf.vec_write.cur_num_written == car_ptr->data.tcp.buf.vec_write.num_read_copy)
+    {
+	MM_EXIT_FUNC(TCP_STUFF_VECTOR_VEC);
+	return FALSE;
+    }
+
     /* copy as much of the car vector into the stuffed vector as possible */
     cur_pos = *cur_pos_ptr;
     cur_index = car_ptr->data.tcp.buf.vec_write.cur_index;

@@ -17,7 +17,14 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
 
     hdr_ptr = &unex_head_car_ptr->msg_header.pkt.u.hdr;
 
-    /* XFER_INIT */
+#ifdef MPICH_DEV_BUILD
+    if (hdr_ptr->type != MPID_EAGER_PKT && hdr_ptr->type != MPID_RNDV_REQUEST_TO_SEND_PKT)
+    {
+	err_printf("Error: mm_create_post_unex called with an invalid packet header type: %d\n", hdr_ptr->type);
+	return -1;
+    }
+#endif
+
     request_ptr = mm_request_alloc();
     if (request_ptr == NULL)
     {
@@ -27,13 +34,12 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     }
 
     request_ptr->comm = MPIR_Process.comm_world; /* ??? We don't know the comm yet. */
+    /*request_ptr->comm = MPID_Get_comm_from_context(hdr_ptr->context);*/
     request_ptr->mm.tag = hdr_ptr->tag;
     request_ptr->mm.op_valid = TRUE;
     request_ptr->cc = 0;
     request_ptr->cc_ptr = &request_ptr->cc;
-    /* END XFER_INIT */
 
-    /* XFER_RECV_OP */
     request_ptr->mm.next_ptr = NULL;
     request_ptr->mm.user_buf.recv = NULL;
     request_ptr->mm.count = hdr_ptr->size;
@@ -62,7 +68,7 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     
     /* allocate a temporary buffer to hold the unexpected data */
     car_ptr->type = MM_READ_CAR;
-    car_ptr->src = /*unex_head_car_ptr->src;*/ hdr_ptr->src;
+    car_ptr->src = hdr_ptr->src;
     car_ptr->vc_ptr = unex_head_car_ptr->vc_ptr;
     car_ptr->request_ptr = request_ptr;
     car_ptr->freeme = FALSE;
@@ -74,12 +80,10 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
 
     buf_ptr = car_ptr->buf_ptr = &request_ptr->mm.buf;
     buf_ptr->type = MM_TMP_BUFFER;
-    buf_ptr->tmp.buf = MPIU_Malloc(unex_head_car_ptr->msg_header.pkt.u.hdr.size);
-    buf_ptr->tmp.len = unex_head_car_ptr->msg_header.pkt.u.hdr.size;
+    buf_ptr->tmp.buf = MPIU_Malloc(hdr_ptr->size);
+    buf_ptr->tmp.len = hdr_ptr->size;
     buf_ptr->tmp.num_read = 0;
-    /* END XFER_RECV_OP */
-    
-    /* XFER_START */
+
     /* enqueue the head car in the unexpected queue so it can be matched */
     if (MPID_Process.unex_q_tail == NULL)
     {
@@ -96,7 +100,6 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
 	/* post a read of the unexpected data */
 	car_ptr->vc_ptr->enqueue_read_at_head(car_ptr->vc_ptr, car_ptr);
     }
-    /* END XFER_START */
 
     MM_EXIT_FUNC(MM_CREATE_POST_UNEX);
     return MPI_SUCCESS;
