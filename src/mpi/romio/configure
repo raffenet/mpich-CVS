@@ -116,7 +116,7 @@ available, for building the profiling interface.
 "
 #
 echo " "
-echo "Configuring ROMIO Version 1.0.3"
+echo "Configuring ROMIO Version 1.2.3"
 echo " "
 CONFIGURE_ARGS="$*"
 if test -n "$CONFIGURE_ARGS" ; then
@@ -2162,6 +2162,46 @@ SEDDEFS="${SEDDEFS}\${SEDdA}IRIX\${SEDdB}IRIX\${SEDdC}1\${SEDdD}
    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
    MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
 fi
+
+for func in memalign
+do
+trfunc=HAVE_`echo $func | tr '[a-z]' '[A-Z]'`
+echo checking for ${func}
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <ctype.h>
+int main() { exit(0); }
+int t() { 
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_${func}) || defined (__stub___${func})
+choke me
+#else
+/* Override any gcc2 internal prototype to avoid an error.  */
+extern char ${func}(); ${func}();
+#endif
+ }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  {
+test -n "$verbose" && \
+echo "	defining ${trfunc}"
+echo "#define" ${trfunc} 1 >> confdefs.h
+DEFS="$DEFS -D${trfunc}=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}${trfunc}\${SEDdB}${trfunc}\${SEDdC}1\${SEDdD}
+\${SEDuA}${trfunc}\${SEDuB}${trfunc}\${SEDuC}1\${SEDuD}
+\${SEDeA}${trfunc}\${SEDeB}${trfunc}\${SEDeC}1\${SEDeD}
+"
+}
+
+
+fi
+rm -f conftest*
+done
+
+
 if test $NOF77 = 0 ; then
     echo "checking Fortran external names"
     

@@ -120,7 +120,7 @@ available, for building the profiling interface.
 "
 #
 echo " "
-echo "Configuring ROMIO Version 1.0.3"
+echo "Configuring ROMIO Version 1.2.3"
 echo " "
 CONFIGURE_ARGS="$*"
 if test -n "$CONFIGURE_ARGS" ; then
@@ -1047,6 +1047,9 @@ if test -n "$arch_IRIX"; then
 fi
 dnl
 dnl
+
+AC_HAVE_FUNCS(memalign)
+
 if test $NOF77 = 0 ; then
     echo "checking Fortran external names"
     PAC_GET_FORTNAMES
