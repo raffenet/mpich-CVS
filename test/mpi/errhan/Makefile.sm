@@ -1,5 +1,5 @@
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
-LDADD = -L ../../../lib 
+LDADD = -L../../../lib 
 DEPADD = ../../../lib/lib${MPILIBNAME}.a
 
 errstring_SOURCES = errstring.c

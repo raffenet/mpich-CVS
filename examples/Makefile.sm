@@ -10,4 +10,4 @@ spawnee_SOURCES = spawnee.c
 cpi_SOURCES = cpi.c
 cpi_LDADD = -lm
 INCLUDES = -I../src/include -I${top_srcdir}/src/include
-LDADD = -L ../lib
+LDADD = -L../lib

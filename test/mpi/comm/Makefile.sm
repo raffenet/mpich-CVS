@@ -1,4 +1,4 @@
-LDADD = -L ../../../lib 
+LDADD = -L../../../lib 
 dup_LDADD = ../util/mtest.o
 dup_SOURCES=dup.c
 ic1_LDADD = ../util/mtest.o

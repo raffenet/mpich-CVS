@@ -1,6 +1,6 @@
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include \
 	 -I${srcdir}/../include
-LDADD = -L ../../../lib
+LDADD = -L../../../lib
 DEPADD = ../../../lib/lib${MPILIBNAME}.a
 EXTRA_PROGRAMS = bsend1cxx
 bsend1_SOURCES = bsend1.c

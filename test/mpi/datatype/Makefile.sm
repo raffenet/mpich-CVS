@@ -1,4 +1,4 @@
-LDADD = -L ../../../lib -lmpich
+LDADD = -L../../../lib -lmpich
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
 
 typename_SOURCES = typename.c
