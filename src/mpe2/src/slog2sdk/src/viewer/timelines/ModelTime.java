@@ -629,47 +629,6 @@ public class ModelTime extends DefaultBoundedRangeModel
             Debug.println( "ModelTime: AdjustmentValueChanged()'s END: " );
     }
 
-    private static final  double  MATH_LOG_10 = Math.log( 10.0 );
-    /*
-       getRulerIncrement() takes in an estimated time increment and
-       returns a more appropriate time increment
-    */
-    public static double getRulerIncrement( double t_incre )
-    {
-        double incre, incre_expo, incre_ftr, tmp_mant, incre_mant;
-        incre      = t_incre;
-        incre_expo = Math.ceil( Math.log( incre ) / MATH_LOG_10 );
-        incre_ftr  = Math.pow( 10.0, incre_expo );
-        tmp_mant   = incre / incre_ftr;
-        if ( tmp_mant < 0.1125 )
-            incre_mant = 0.1;
-        else if ( tmp_mant < 0.1625 )
-            incre_mant = 0.125;
-        else if ( tmp_mant < 0.225 )
-            incre_mant = 0.2;
-        else if ( tmp_mant < 0.325 )
-            incre_mant = 0.25;
-        else if ( tmp_mant < 0.45 )
-            incre_mant = 0.4;
-        else if ( tmp_mant < 0.75 )
-            incre_mant = 0.5;
-        else
-            incre_mant = 1.0;
-
-        if ( Debug.isActive() )
-            Debug.println( "ModelTime.getRulerIncrement(" + t_incre + ") = "
-                         + incre_mant * incre_ftr );
-        return incre_mant * incre_ftr;
-    }
-    
-    public static double getRulerFirstMark( double t_init, double t_incre )
-    {
-        double quotient;
-        // quotient = Math.ceil( t_init / t_incre );
-        quotient = Math.floor( t_init / t_incre );
-        return quotient * t_incre;
-    }
-
     public String toString()
     {
         String str_rep = super.toString() + ",  "

@@ -23,6 +23,7 @@ import base.drawable.Shadow;
 import base.drawable.NestingStacks;
 import base.drawable.DrawnBoxSet;
 import base.drawable.Method;
+import base.statistics.BufForTimeAveBoxes;
 import logformat.slog2.input.TreeNode;
 import logformat.slog2.input.TreeTrunk;
 import viewer.common.Dialogs;
@@ -556,4 +557,9 @@ public class CanvasTime extends ScrollableObject
             return null;
     }
 
+    public BufForTimeAveBoxes
+    createBufForTimeAveBoxes( final TimeBoundingBox timebox )
+    {
+        return tree_search.createBufForTimeAveBoxes( timebox );
+    }
 }

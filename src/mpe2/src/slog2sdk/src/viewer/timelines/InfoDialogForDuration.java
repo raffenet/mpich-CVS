@@ -28,7 +28,8 @@ public class InfoDialogForDuration extends InfoDialog
     private              TimeBoundingBox timebox;
 
     public InfoDialogForDuration( final Frame            frame,
-                                  final TimeBoundingBox  times )
+                                  final TimeBoundingBox  times,
+                                  final ScrollableObject scrollable )
        
     {
         super( frame, "Duration Info Box", times.getLatestTime() );
@@ -75,7 +76,17 @@ public class InfoDialogForDuration extends InfoDialog
             text_area.setRows( num_rows );
             text_area.setEditable( false );
             text_area.setLineWrap( true );
-        root_panel.add( new JScrollPane( text_area ) );
+        JScrollPane scroller = new JScrollPane( text_area );
+        scroller.setAlignmentX( Component.LEFT_ALIGNMENT );
+        root_panel.add( scroller );
+
+        if ( scrollable instanceof CanvasTime ) {
+            JPanel ops4d_panel;
+            ops4d_panel = new OperationDurationPanel( timebox,
+                                                      (CanvasTime) scrollable );
+            ops4d_panel.setAlignmentX( Component.LEFT_ALIGNMENT );
+            root_panel.add( ops4d_panel );
+        }
 
         root_panel.add( super.getCloseButtonPanel() );
     }

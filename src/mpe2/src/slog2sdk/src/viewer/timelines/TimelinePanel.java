@@ -54,6 +54,7 @@ public class TimelinePanel extends JPanel
     private ViewportTimePanel       time_canvas_panel;
 
 
+    private PreviewStateComboBox    preview_state_combobox;
     private RowAdjustments          row_adjs;
     private String                  err_msg;
 
@@ -196,6 +197,7 @@ public class TimelinePanel extends JPanel
 
                 /* "VIEW" title */
                 Insets canvas_panel_insets = time_canvas_panel.getInsets();
+                /*
                 JLabel y_title_top = new JLabel( lineIDmap.getTitle() );
                 y_title_top.setMinimumSize(
                   new Dimension( 0, canvas_panel_insets.top ) );
@@ -205,6 +207,16 @@ public class TimelinePanel extends JPanel
                   new Dimension( 20, canvas_panel_insets.top ) );
                 y_title_top.setBorder( BorderFactory.createEtchedBorder() );
                 y_title_top.setAlignmentX( Component.CENTER_ALIGNMENT );
+                */
+                preview_state_combobox = new PreviewStateComboBox();
+                preview_state_combobox.setMinimumSize(
+                  new Dimension( 0, canvas_panel_insets.top ) );
+                preview_state_combobox.setMaximumSize(
+                  new Dimension( Short.MAX_VALUE, canvas_panel_insets.top ) );
+                preview_state_combobox.setPreferredSize(
+                  new Dimension( 20, canvas_panel_insets.top ) );
+                preview_state_combobox.setAlignmentX(
+                                       Component.CENTER_ALIGNMENT );
 
                 /* YaxisTree View for SLOG-2 */
                 y_scroller.setAlignmentX( Component.CENTER_ALIGNMENT );
@@ -247,7 +259,8 @@ public class TimelinePanel extends JPanel
                 // y_title_btm.setAlignmentX( Component.CENTER_ALIGNMENT );
 
             left_panel.add( treetrunk_panel );
-            left_panel.add( y_title_top );
+            // left_panel.add( y_title_top );
+            left_panel.add( preview_state_combobox );
             left_panel.add( y_scroller );
             // left_panel.add( y_title_btm );
             left_panel.add( y_colpanel );
@@ -350,6 +363,7 @@ public class TimelinePanel extends JPanel
         */ 
             y_tree.init();
             row_adjs.initYLabelTreeSize();
+            preview_state_combobox.init( toolbar.refresh_btn );
     }
 
     public void init()

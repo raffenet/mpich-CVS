@@ -39,6 +39,8 @@ public class RulerTime extends ScrollableObject
     {
         super( model );
         time_model  = model;
+        tRange      = 0.0d;
+        tIncrement  = 0.0d;
         fmt         = (DecimalFormat) NumberFormat.getInstance();
         fmt.applyPattern( Const.RULER_TIME_FORMAT );
     }
@@ -96,7 +98,7 @@ public class RulerTime extends ScrollableObject
             if ( timebounds.getDuration() != tRange ) {
                 tRange     = timebounds.getDuration();
                 tIncrement = tRange / ( NumViewsPerImage * 10.0 );
-                tIncrement = ModelTime.getRulerIncrement( tIncrement );
+                tIncrement = Routines.getTimeRulerIncrement( tIncrement );
             }
 
             double time, tInitMark, tFinalMark;
@@ -107,7 +109,7 @@ public class RulerTime extends ScrollableObject
                 Debug.print( "RulerTime.drawOffImage at : " );
             double t_init = timebounds.getEarliestTime();
             i_X_0 = super.time2pixel( t_init );
-            tInitMark  = ModelTime.getRulerFirstMark( t_init, tIncrement );
+            tInitMark  = Routines.getTimeRulerFirstMark( t_init, tIncrement );
             tFinalMark = timebounds.getLatestTime() + tIncrement;
             for ( time = tInitMark; time < tFinalMark; time += tIncrement ) {
                 i_X = super.time2pixel( time ) - i_X_0;

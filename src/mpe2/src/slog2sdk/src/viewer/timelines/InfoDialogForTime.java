@@ -53,7 +53,9 @@ public class InfoDialogForTime extends InfoDialog
             text_area.setRows( num_rows );
             text_area.setEditable( false );
             text_area.setLineWrap( true );
-        root_panel.add( new JScrollPane( text_area ) );
+        JScrollPane scroller = new JScrollPane( text_area );
+        scroller.setAlignmentX( Component.LEFT_ALIGNMENT );
+        root_panel.add( scroller );
 
         root_panel.add( super.getCloseButtonPanel() );
     }

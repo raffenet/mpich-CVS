@@ -26,7 +26,7 @@ SRC       = Diagnosis.java Debug.java Profile.java SearchDialog.java \
             TimeEvent.java TimeListener.java \
             ModelTime.java ScrollbarTime.java \
             ModelTimePanel.java TreeTrunkPanel.java \
-            TimeFormat.java InfoDialog.java \
+            OperationDurationPanel.java TimeFormat.java InfoDialog.java \
             InfoDialogForTime.java InfoDialogForDuration.java \
             InfoPanelForDrawable.java InfoDialogForDrawable.java \
             ScrollableView.java ScrollableObject.java SearchableView.java \
@@ -46,7 +46,8 @@ SRC       = Diagnosis.java Debug.java Profile.java SearchDialog.java \
             ActionSearchInit.java \
             ActionSearchForward.java ActionSearchBackward.java \
             ActionPptyRefresh.java ActionPptyPrint.java ActionPptyStop.java \
-            TimelineToolBar.java TimelinePanel.java TimelineFrame.java
+            TimelineToolBar.java PreviewStateComboBox.java \
+            TimelinePanel.java TimelineFrame.java
 
 OBJ       = $(SRC:.java=.class)
 
@@ -77,7 +78,7 @@ $(TARGET): $(OBJ)
 	echo "Main-Class: $(PACKAGE).TimelineFrame" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
 	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
-	for dir in base/io/ base/topology/ base/drawable/ \
+	for dir in base/io/ base/topology/ base/drawable/ base/statistics/ \
 	           logformat/slog2/ logformat/slog2/input/ \
 	           viewer/common/ viewer/legends/ $(PKGDIR)/ ; do \
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \

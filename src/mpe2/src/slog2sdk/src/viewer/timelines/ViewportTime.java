@@ -682,6 +682,7 @@ public class ViewportTime extends JViewport
         {
             ScrollableObject  scrollable;
             InfoDialog        info_popup;
+            Frame             frame;
             Point             vport_click, view_click, global_click;
             double            click_time, focus_time;
 
@@ -733,16 +734,16 @@ public class ViewportTime extends JViewport
                     info_timebox.setLatestTime( click_time );
                 else
                     info_timebox.setEarliestTime( click_time );
+                scrollable = (ScrollableObject) view_img;
                 // if ( info_timebox.getDuration() > 0.0d ) {
                 if (    Math.abs(vport_click.x - mouse_pressed_Xloc)
                      >= Parameters.MIN_WIDTH_TO_DRAG ) {
-                    Frame  frame;
                     frame = (Frame) SwingUtilities.windowForComponent( this );
                     info_popup = new InfoDialogForDuration( frame,
-                                                            info_timebox );
+                                                            info_timebox,
+                                                            scrollable );
                 }
                 else {
-                    scrollable = (ScrollableObject) view_img;
                     view_click = SwingUtilities.convertPoint( this,
                                                               vport_click,
                                                               scrollable );

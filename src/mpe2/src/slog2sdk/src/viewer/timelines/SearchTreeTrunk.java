@@ -14,7 +14,9 @@ import java.util.Iterator;
 import base.drawable.DrawOrderComparator;
 import base.drawable.TimeBoundingBox;
 import base.drawable.Drawable;
+import base.drawable.Shadow;
 import base.drawable.Category;
+import base.statistics.BufForTimeAveBoxes;
 import logformat.slog2.input.TreeTrunk;
 
 public class SearchTreeTrunk
@@ -23,8 +25,6 @@ public class SearchTreeTrunk
     private static final boolean              IS_NESTABLE           = true;
     private static final DrawOrderComparator  DRAWING_ORDER
                                               = new DrawOrderComparator();
-
-    private static       TimeBoundingBox      Infinite_TimeBox;
 
     private              TreeTrunk            treetrunk;
     private              boolean              isConnectedComposite;
@@ -38,10 +38,6 @@ public class SearchTreeTrunk
         criteria              = new SearchCriteria( y_tree );
         isConnectedComposite  = isComposite;
         last_found_dobj       = null;
-
-        Infinite_TimeBox      = new TimeBoundingBox();
-        Infinite_TimeBox.setEarliestTime( Double.NEGATIVE_INFINITY );
-        Infinite_TimeBox.setLatestTime( Double.POSITIVE_INFINITY );
     }
 
     // This is for a backward NEW SEARCH
@@ -53,7 +49,7 @@ public class SearchTreeTrunk
            Use an infinite TimeBoundingBox so iteratorOfAllDrawables() returns
            all drawables in the memory disregarding the treefloor's timebounds
         */
-        dobjs = treetrunk.iteratorOfAllDrawables( Infinite_TimeBox,
+        dobjs = treetrunk.iteratorOfAllDrawables( TimeBoundingBox.ALL_TIMES,
                                                   isConnectedComposite,
                                                   !INCRE_STARTTIME_ORDER,
                                                   IS_NESTABLE );
@@ -87,7 +83,7 @@ public class SearchTreeTrunk
            Use an infinite TimeBoundingBox so iteratorOfAllDrawables() returns
            all drawables in the memory disregarding the treefloor's timebounds
         */
-        dobjs = treetrunk.iteratorOfAllDrawables( Infinite_TimeBox,
+        dobjs = treetrunk.iteratorOfAllDrawables( TimeBoundingBox.ALL_TIMES,
                                                   isConnectedComposite,
                                                   !INCRE_STARTTIME_ORDER,
                                                   IS_NESTABLE );
@@ -115,7 +111,7 @@ public class SearchTreeTrunk
            Use an infinite TimeBoundingBox so iteratorOfAllDrawables() returns
            all drawables in the memory disregarding the treefloor's timebounds
         */
-        dobjs = treetrunk.iteratorOfAllDrawables( Infinite_TimeBox,
+        dobjs = treetrunk.iteratorOfAllDrawables( TimeBoundingBox.ALL_TIMES,
                                                   isConnectedComposite,
                                                   INCRE_STARTTIME_ORDER,
                                                   IS_NESTABLE );
@@ -149,7 +145,7 @@ public class SearchTreeTrunk
            Use an infinite TimeBoundingBox so iteratorOfAllDrawables() returns
            all drawables in the memory disregarding the treefloor's timebounds
         */
-        dobjs = treetrunk.iteratorOfAllDrawables( Infinite_TimeBox,
+        dobjs = treetrunk.iteratorOfAllDrawables( TimeBoundingBox.ALL_TIMES,
                                                   isConnectedComposite,
                                                   INCRE_STARTTIME_ORDER,
                                                   IS_NESTABLE );
@@ -166,5 +162,73 @@ public class SearchTreeTrunk
         }
         last_found_dobj = null;
         return null;
+    }
+
+    public BufForTimeAveBoxes
+    createBufForTimeAveBoxes( final TimeBoundingBox timebox )
+    {
+        BufForTimeAveBoxes  buf2statboxes;
+        Iterator            dobjs, sobjs;
+        Drawable            dobj;
+        Shadow              sobj;
+
+        buf2statboxes   = new BufForTimeAveBoxes( timebox );
+        criteria.initMatch();
+
+        // Merge Nestable Real Drawables
+        dobjs = treetrunk.iteratorOfRealDrawables( timebox,
+                                                   isConnectedComposite,
+                                                   INCRE_STARTTIME_ORDER,
+                                                   IS_NESTABLE );
+        while ( dobjs.hasNext() ) {
+            dobj = (Drawable) dobjs.next();
+            if (    dobj.getCategory().isVisiblySearchable()
+                 && dobj.containSearchable()
+                 && criteria.isMatched( dobj ) ) {
+                buf2statboxes.merge( dobj );
+            }
+        }
+
+        // Merge Nestless Real Drawables
+        dobjs = treetrunk.iteratorOfRealDrawables( timebox,
+                                                   isConnectedComposite,
+                                                   INCRE_STARTTIME_ORDER,
+                                                   !IS_NESTABLE );
+        while ( dobjs.hasNext() ) {
+            dobj = (Drawable) dobjs.next();
+            if (    dobj.getCategory().isVisiblySearchable()
+                 && dobj.containSearchable()
+                 && criteria.isMatched( dobj ) ) {
+                buf2statboxes.merge( dobj );
+            }
+        }
+
+        // Merge Nestable Shadows
+        sobjs = treetrunk.iteratorOfLowestFloorShadows( timebox,
+                                                        INCRE_STARTTIME_ORDER,
+                                                        IS_NESTABLE );
+        while ( sobjs.hasNext() ) {
+            sobj = (Shadow) sobjs.next();
+            if (    sobj.getCategory().isVisiblySearchable()
+                 && sobj.containSearchable()
+                 && criteria.isMatched( sobj ) ) {
+                buf2statboxes.merge( sobj );
+            }
+        }
+
+        // Merge Nestless Shadows
+        sobjs = treetrunk.iteratorOfLowestFloorShadows( timebox,
+                                                        INCRE_STARTTIME_ORDER,
+                                                        !IS_NESTABLE );
+        while ( sobjs.hasNext() ) {
+            sobj = (Shadow) sobjs.next();
+            if (    sobj.getCategory().isVisiblySearchable()
+                 && sobj.containSearchable()
+                 && criteria.isMatched( sobj ) ) {
+                buf2statboxes.merge( sobj );
+            }
+        }
+
+        return buf2statboxes;
     }
 }
