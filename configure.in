@@ -481,6 +481,13 @@ if test "$enable_romio" = "yes" ; then
    export top_build_dir
 fi
 dnl
+#
+if test "$enable_f77" = "yes" ; then
+   # We must add the include directories.  We have to wait until here
+   # so that the paths will be defined.
+   CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/src/binding/f77 -I`pwd`/src/binding/f77"
+fi
+#
 if test ! -d $use_top_srcdir/src/mpid/$device_name ; then
 dnl     WAIT UNTIL WE INCLUDE A DEVICE
 dnl     AC_MSG_ERROR([Device $device_name is unknown)]

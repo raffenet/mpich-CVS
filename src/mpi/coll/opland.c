@@ -6,7 +6,9 @@
  */
 
 #include "mpiimpl.h"
-
+#ifdef HAVE_FORTRAN_BINDING
+#include "mpi_fortimpl.h"
+#endif
 /* 
  * In MPI-1, this operation is valid only for  C integer, Fortran logical
  * data items (4.9.2 Predefined reduce operations)
