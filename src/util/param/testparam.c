@@ -4,6 +4,7 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+/* style: allow:printf:1 sig:0 */   /* For testing only */
 #include "param.h"
 #include <stdio.h>
 
