@@ -2266,10 +2266,13 @@ int PMIX_Stop_root_smpd()
 	return PMI_FAIL;
     }
 #else
+    kill(pmi_process.root_pid, SIGKILL);
+    /*
     if (waitpid(pmi_process.root_pid, &status, WUNTRACED) == -1)
     {
 	return PMI_FAIL;
     }
+    */
 #endif
     return PMI_SUCCESS;
 }
