@@ -45,7 +45,10 @@
 .N MPI_ERR_TYPE
 .N MPI_ERR_ARG
 @*/
-int MPI_Pack_external_size(char *datarep, int incount, MPI_Datatype datatype, MPI_Aint *size)
+int MPI_Pack_external_size(char *datarep,
+			   int incount,
+			   MPI_Datatype datatype,
+			   MPI_Aint *size)
 {
     static const char FCNAME[] = "MPI_Pack_external_size";
     int mpi_errno = MPI_SUCCESS;
@@ -72,7 +75,8 @@ int MPI_Pack_external_size(char *datarep, int incount, MPI_Datatype datatype, MP
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    /* FIXME: unimplemented */
+    *size = incount * MPID_Datatype_size_external32(datatype);
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL_SIZE);
     return MPI_SUCCESS;
 }
