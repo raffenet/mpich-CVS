@@ -514,6 +514,32 @@ with MPI_Alloc_mem.
 **boot_attach:failed to attach to a bootstrap queue
 **boot_attach %s:failed to attach to a bootstrap queue - %s
 
+**attach_to_mem:attach to shared memory segment failed
+**boot_detach:detaching from message queue failed
+**boot_recv:receiving bootstrap message failed
+**boot_send:sending bootstrap message failed
+**finalize_boot:destroying the message queue failed
+**finalize_progress:finalizing the progress engine failed
+**handle_sock_op:handle_sock_op failed
+**pfinal_sockclose:sock_close failed
+**pmi_get:PMI_KVS_Get failed
+**pmi_name:PMI_Get_my_name failed
+**pmi_rank:PMI_Get_rank failed
+**pmi_size:PMI_Get_size failed
+**post_connect:failed to post a connection
+**progress_handle_sock_op:handle_sock_op failed
+**progress_sock_wait:sock_wait failed
+**shm_read_progress:shared memory read progress failed
+**shmconnect_getmem:failed to allocate shared memory for a write queue
+**shmwrite:shared memory write failed
+**attach_to_mem %d:attach to shared memory returned error %d
+**nomem %s:out of memory, unable to allocate: %s
+**pmi_get %d:PMI_KVS_Get returned %d
+**pmi_name %d:PMI_Get_my_name returned %d
+**pmi_rank %d:PMI_Get_rank returned %d
+**pmi_size %d:PMI_Get_size returned %d
+**post_connect %s:%s failed in VC_post_connect
+
 #
 # CH3:shm
 #
