@@ -44,7 +44,10 @@
 .N MPI_SUCCESS
 .N MPI_ERR_TYPE
 @*/
-int MPI_Type_create_resized(MPI_Datatype oldtype, MPI_Aint lb, MPI_Aint extent, MPI_Datatype *newtype)
+int MPI_Type_create_resized(MPI_Datatype oldtype,
+			    MPI_Aint lb,
+			    MPI_Aint extent,
+			    MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_create_resized";
     int mpi_errno = MPI_SUCCESS;
@@ -71,8 +74,27 @@ int MPI_Type_create_resized(MPI_Datatype oldtype, MPI_Aint lb, MPI_Aint extent, 
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    /* FIXME UNIMPLEMENTED */
+    mpi_errno = MPID_Type_create_resized(oldtype, lb, extent, newtype);
+    if (mpi_errno == MPI_SUCCESS) {
+	MPID_Datatype *new_dtp;
+	MPI_Aint aints[2];
+
+	aints[0] = lb;
+	aints[1] = extent;
+
+	MPID_Datatype_get_ptr(*newtype, new_dtp);
+	mpi_errno = MPID_Datatype_set_contents(new_dtp,
+					       MPI_COMBINER_RESIZED,
+					       0,
+					       2, /* Aints */
+					       1,
+					       NULL,
+					       aints,
+					       &oldtype);
+    }
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_RESIZED);
-    return MPI_SUCCESS;
+    if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
+    else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }
+
