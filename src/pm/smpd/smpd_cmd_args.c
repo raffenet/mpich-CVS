@@ -28,6 +28,7 @@ void smpd_print_options(void)
     printf(" -status [hostname]\n");
     printf("unix only options:\n");
     printf(" -s\n");
+    printf(" -r\n");
     printf(" -smpdfile <filename>\n");
     printf("windows only options:\n");
     printf(" -install or -regserver\n");
@@ -35,15 +36,15 @@ void smpd_print_options(void)
     printf(" -start\n");
     printf(" -stop\n");
     printf("\n");
-    printf(" bracketed items are optional\n");
+    printf("bracketed [] items are optional\n");
     printf("\n");
-    printf("Executing \"smpd -s\" will start the smpd in daemon mode for the\n");
-    printf("current user under unix.\n");
-    printf("Executing smpd will start the smpd in debug mode under Windows.\n");
-    printf("The Windows service mode is started by installing smpd (smpd -install).\n");
-    printf("This must be done by a user with administrator privileges and then all\n");
-    printf("users can launch processes with mpiexec.\n");
-    printf("The equivalent root daemon mode for unix is not yet implemented.\n");
+    printf("\"smpd -d\" will start the smpd in debug mode.\n");
+    printf("\"smpd -s\" will start the smpd in daemon mode for the current unix user.\n");
+    printf("\"smpd -install\" will install and start the smpd in Windows service mode.\n");
+    printf(" This must be done by a user with administrator privileges and then all\n");
+    printf(" users can launch processes with mpiexec.\n");
+    printf("Not yet implemented:\n");
+    printf("\"smpd -r\" will start the smpd in root daemon mode for unix.\n");
 }
 
 int smpd_parse_command_args(int *argcp, char **argvp[])

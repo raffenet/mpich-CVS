@@ -72,9 +72,11 @@ int main(int argc, char* argv[])
 #ifdef HAVE_WINDOWS_H
     if (smpd_process.bService)
     {
+	/*
 	printf( "\nStartServiceCtrlDispatcher being called.\n" );
 	printf( "This may take several seconds.  Please wait.\n" );
 	fflush(stdout);
+	*/
 
 	/* If StartServiceCtrlDispatcher returns true the service has exited */
 	result = StartServiceCtrlDispatcher(dispatchTable);
@@ -91,10 +93,15 @@ int main(int argc, char* argv[])
 	    smpd_exit_fn("main");
 	    smpd_exit(0);
 	}
+	smpd_print_options();
+	smpd_exit_fn("main");
+	smpd_exit(0);
     }
+    /*
     printf("\nRunning smpd from the console, not as a service.\n");
     fflush(stdout);
     smpd_process.bService = SMPD_FALSE;
+    */
 #endif
 
     if (smpd_process.passphrase[0] == '\0')

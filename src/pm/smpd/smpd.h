@@ -467,7 +467,8 @@ int smpd_parse_command_args(int *argcp, char **argvp[]);
 char *smpd_encode_handle(char *str, HANDLE h);
 HANDLE smpd_decode_handle(char *str);
 #endif
-int smpd_entry_point();
+void smpd_print_options(void);
+int smpd_entry_point(void);
 int smpd_enter_at_state(sock_set_t set, smpd_state_t state);
 int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr);
 int smpd_init_process(void);
