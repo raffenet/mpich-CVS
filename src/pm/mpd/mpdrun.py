@@ -146,6 +146,8 @@ def mpdrun():
             print 'cannot connect to local mpd (%s); possible causes:' % consoleName
             print '    1. no mpd running on this host'
             print '    2. mpd is running but was started without a "console" (-n option)'
+	    print 'you can start an mpd with the "mpd" command; to get help, run:'
+	    print '    mpd -h'
             myExitStatus = -1  # used in main
             exit(myExitStatus) # really forces jump back into main
             # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
