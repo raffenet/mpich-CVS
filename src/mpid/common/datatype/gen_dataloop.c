@@ -215,7 +215,8 @@ void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 	    DLOOP_dbg_printf("\tcount=%d, datatype=%x\n", 
 			     dataloop->loop_params.c_t.count, 
 			     (int) dataloop->loop_params.c_t.dataloop);
-	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.c_t.dataloop, depth+1);
+	    if (!(dataloop->kind | DLOOP_FINAL_MASK))
+		PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.c_t.dataloop, depth+1);
 	    break;
 	case DLOOP_KIND_VECTOR:
 	    DLOOP_dbg_printf("\tcount=%d, blksz=%d, stride=%d, datatype=%x\n",
@@ -223,7 +224,8 @@ void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 			     dataloop->loop_params.v_t.blocksize, 
 			     dataloop->loop_params.v_t.stride,
 			     (int) dataloop->loop_params.v_t.dataloop);
-	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.v_t.dataloop, depth+1);
+	    if (!(dataloop->kind | DLOOP_FINAL_MASK))
+		PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.v_t.dataloop, depth+1);
 	    break;
 	case DLOOP_KIND_BLOCKINDEXED:
 	    DLOOP_dbg_printf("\tcount=%d, blksz=%d, datatype=%x\n",
@@ -231,14 +233,16 @@ void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 			     dataloop->loop_params.bi_t.blocksize, 
 			     (int) dataloop->loop_params.bi_t.dataloop);
 	    /* print out offsets later */
-	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.bi_t.dataloop, depth+1);
+	    if (!(dataloop->kind | DLOOP_FINAL_MASK))
+		PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.bi_t.dataloop, depth+1);
 	    break;
 	case DLOOP_KIND_INDEXED:
 	    DLOOP_dbg_printf("\tcount=%d, datatype=%x\n",
 			     dataloop->loop_params.i_t.count,
 			     (int) dataloop->loop_params.i_t.dataloop);
 	    /* print out blocksizes and offsets later */
-	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.i_t.dataloop, depth+1);
+	    if (!(dataloop->kind | DLOOP_FINAL_MASK))
+		PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.i_t.dataloop, depth+1);
 	    break;
 	case DLOOP_KIND_STRUCT:
 	    DLOOP_dbg_printf("\tcount=%d\n\tblocksizes: ", dataloop->loop_params.s_t.count);
@@ -251,6 +255,8 @@ void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 	    for (i=0; i < dataloop->loop_params.s_t.count; i++)
 		DLOOP_dbg_printf("%x ", (int) dataloop->loop_params.s_t.dataloop_array[i]);
 	    DLOOP_dbg_printf("\n");
+	    if (dataloop->kind | DLOOP_FINAL_MASK) break;
+
 	    for (i=0; i < dataloop->loop_params.s_t.count; i++) {
 		PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.s_t.dataloop_array[i],depth+1);
 	    }
