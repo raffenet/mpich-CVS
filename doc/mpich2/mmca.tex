@@ -31,8 +31,8 @@ and performance analysis.
 % point-to-point
 % 
 % narrow scope for this subsection: no wildcards, persistent sends, etc...(look
-% at lists below :)).  also not dealing with complex datatypes or heterogeneity.
-% 
+% at lists below :)).  also not dealing with complex datatypes or
+% heterogeneity.
 
 In this section we will describe the components necessary for an unoptimized,
 multi-method, point-to-point (P2P) messaging system.  The scope of this system
@@ -88,8 +88,6 @@ An asynchronous send (\mpifunc{MPI_ISEND}) first results in the allocation and
 initialization of a \mpids{MPI_Request} object (described previously in
 XXX).  A \emph{completion counter} is included in this structure, and it is
 initialized at this point (to 1).
-%
-
 
 \begin{comment}
   \emph{we should explain why the completion counter is set to a value of 1, or
@@ -102,14 +100,12 @@ initialized at this point (to 1).
   buffer.
 \end{comment}
 
-%
 Next the \emph{virtual connection} (VC) is determined from the communicator
 passed into the send call.  A reference to the appropriate method for moving
 data on this VC is found within the VC object.
 
-%
 Finally the method function for posting a send is called, passing it the buffer
-and envelope information supplied to \mpifunc{MPI_SEND}. 
+and envelope information supplied to \code{MPI_SEND}. 
 
 
 % posting (async recv, posted before data arrives)
@@ -120,12 +116,9 @@ and envelope information supplied to \mpifunc{MPI_SEND}.
 % - is there anything really different from above (at this level)?
 
 An asynchronous receive (\mpifunc{MPI_IRECV} is handled in a similar manner.  A
-\mpids{MPI_Request} object is allocated and the completion counter is
+\code{MPI_Request} object is allocated and the completion counter is
 initialized (to 1).
-%
 
-
-%
 The appropriate VC is determined by looking at the communicator passed to the
 receive call.  From the VC object the appropriate method function for posting a
 receive is found and called.
@@ -207,7 +200,7 @@ system as a whole (both intra- and inter-method).
 Once all data has been copied out of the sender's buffer (either onto the wire
 or into some other buffer), the send is considered complete from the
 application point of view.  On the receive side things aren't complete until
-all data has been received into the buffer supplied to \mpifunc{MPI_RECV}.
+all data has been received into the buffer supplied to \code{MPI_RECV}.
 %
 At this point the completion counter is decremented, and since it is now zero,
 the request is considered complete.  The P2P communication system, however,
@@ -217,14 +210,14 @@ application as a reference to the operation.
 A \mpifunc{MPI_TEST} would indicate that
 the request completed, and a \mpifunc{MPI_WAIT} could return.
 %
-When the \mpifunc{MPI_WAIT} is called, the request may be deallocated.
+When the \code{MPI_WAIT} is called, the request may be deallocated.
 %
 The use of a counter when the value may only be one or zero might seem
 unnecessary, but we will see in Section~XXXX that having a counter is
 necessary for our implementation of collective operations.
 
 \begin{comment}
-  \emph{\mpifunc{MPI_TEST} and \mpifunc{MPI_WAIT} do the same thing on
+  \emph{\code{MPI_TEST} and \code{MPI_WAIT} do the same thing on
     completion.  The above text needs a little cleanup to make that clear.}
 \end{comment}
 
@@ -233,27 +226,351 @@ following section.
 
 \subsubsection{Components}
 
-components needs to perform point-to-point communication:
-\begin{itemize}
-\item assumed knowledge stuff -- requests, communicators, datatypes, segments, buffers, messages, envelopes
-\item virtual connections
-\item methods --
-interface to convey messages to be sent and received
-\item requst matching
-\item progress engine --
-only poll methods that might have work to do.  need a low cost way to
-communicate amount of work between method and progress engine.
-\end{itemize}
+% components needs to perform point-to-point communication:
+% \begin{itemize}
+% \item assumed knowledge stuff -- requests, communicators, datatypes,
+%       segments, buffers, messages, envelopes
+% \item virtual connections
+% \item methods --
+% interface to convey messages to be sent and received
+% \item requst matching
+% \item progress engine --
+% only poll methods that might have work to do.  need a low cost way to
+% communicate amount of work between method and progress engine.
+% \end{itemize}
+%
+% talk about specific functions as they come up
 
-talk about specific functions as they come up
+
+\paragraph{Method}
+
+% method
+% - implementation of an abstract interface mapping to a network device or API
+% - examples:
+%   - TCP
+%   - VIA
+%   - unbound
+% - role of unbound method (optimization -- still include???)
+%   - special case
+%   - chooses a method for communicating with another process
+% - functions:
+%   - query/get_description() -- returns string describing local process 
+%     capability and contact information for this particular method
+%   - match_description() -- determines if the local process is able to
+%     contact some other process described by a string passed to the
+%     function...
+%   - post a simple send
+%   - post a simple receive
+%   - poll -- progress opportunity; must provide feedback on
+%     progress/completion
+%     - there should be some ``time allowed to block'' abstract 
+%       value that is passed into this function
+%     - returns # of completions
+
+To simplify multi-method communication in MPICH, we introduce a
+\emph{multi-method interface} to abstract away the details of any particular
+network device or API.  In priciple, the method interface serves a similar
+purpose to that of the MPICH device interface.  However, the method interface
+further reduces the number of MPI structures crossing the interface boundary.
+This simplifies the understanding of MPI required by the method implementor and
+decreases the replication of code across the various methods.
+
+The \emph{communication method} (or more simply the ``method'') is a layer of
+software that implements this multi-method interface for a particular
+networking model, device or interface such as TCP, VIA or shared memory.
+
+\begin{verbatim}
+int method::get_description(char ** description)
+
+int method::match_description(char * description)
+
+int method::post_send(void * buf, int count, MPI_Datatype datatype,
+                      int dest, int tag, MPI_Comm comm,
+                      MPI_Request * request)
+
+int method::post_recv(void * buf, int count, MPI_Datatype datatype,
+                      int source, int tag, MPI_Comm comm,
+                      MPI_Request * request)
+
+int method::poll(int quanta, int * completions)
+\end{verbatim}
+
+
+Since several methods of communication are likely to be at the disposal of a
+process, we need a mechanism for resolving which method will be used for
+communicating between a particular pair of processes.  This mechanism should
+include utilizing user supplied information that dictates the method to be used
+for each process pair; however it is desirable to automate the selection of
+communication methods when the user chooses not supply the necessary
+information.  Therefore, we need a mechanism whereby a remote process can
+describe its communication capabilities in such as way that the local process
+can programmatically determine the method it will use to communicate with a
+remote process.
+
+Rather than attempt to create a capability description language that can be
+understood by a method independent routine, we chose to push all understanding
+of the description into the method.  We prove two functions to satisfy the
+above state requirements.  The first function, \code{method::get_description},
+returns a string encoding of both the capability description and any associated
+contact information.  By looping across the methods, a collection of these
+description strings can be constructed, the result of which describes the set
+of communication capabilities and contact information for the process.  This
+collection can then be published into a database available to all processes in
+the job, making the capabilities and contact information known to all
+processes.
+
+Given the collection of descriptions for a remote process, a local process can
+now select a method.  The capability description string for a particular method
+is passed to the \code{method::match_description} function which is responsible
+for determining if it is capable of communicating with the remote process using
+the method in question.  If the processes are capable of communicating using
+the method, \code{match_description} extract the contact information from the
+description string and stores it for later use.
+
+\begin{comment}
+  \emph{Where does the contact information get stored?  In the VC?  What if
+    multiple method match?  Does only the last method get to store its contact
+    information?}
+\end{comment}
+
+\emph{TODO: describe communication functions...}
+
+Once requests have been posted, we need a mechanism to make progress on them.
+One option is to have one or more threads responsible for sending and receiving
+data.  Hoever, the overhead of context switching between those threads is
+fairly high, especially when compared to the latencies typically of high
+performance networking resources.  Therefore, while the use of threads may be
+acceptible for some methods, we need to provide a low overhead means of polling
+in order to make progress on outstanding requests.
+
+\emph{TODO: describe poll function...}
+
+\paragraph{Virtual Connection}
+
+% virtual connections
+% - object representing an abstract connection between two processes
+% - (communicator, rank) is used to resolve to a virtual connection 
+%   (unidirectional mapping)
+% - binding/selection of method
+% - points to a method
+% - concept of ``unbound'' method (which does the binding) as mechanism for 
+%   binding
+% 
+% (steal some text from agent.tex)
+% 
+% - state machine diagram
+% - functions (methods):
+%   - MPID_VC_get_method
+%   - MPID_VC_set_method ???
+% - elements:
+%   - send queue
+%   - posted receive structure (maybe a list of queues?)
+
+In MPI, the application expresses the desire to communicate with particular
+remote process by specifying a communicator and a rank.  The MPI implementation
+is responsible for mapping these (communicator, rank) tuples to some underlying
+set of network resources and performing the communication using those
+resources.  To minimize startup time and avoid unnecessary resource
+consumption, it is desirable for the multi-method implementation to defer
+binding to specific network resoures until those resources are needed.  To
+faciliate late binding, we introduce \emph{virtual connection object}.
+
+The virtual connection object, or VC, represents an abstract connection between
+two processes.  To communicate, the VC must be bound to a communication method
+which understands how to form a real connection and pass messages between the
+two processes associated with the VC.  The process of binding to a method is
+part of the \mpidfunc{MPID_VC_get_method} function, which selects an
+appropriate method for the VC when it detects that the VC is in the unbound
+state.  Once a VC is bound to a method, that binding persists for the remainder
+of the programs exectution.
+
+The virtual connection object is also used to house any per connection data
+structures needed by the method, or what we refer to as \emph{method specific
+  data}.  These data structures will likely include those necessary to track
+posted send and receive operations, and the state of the underlying connection.
+
+\begin{comment}
+  \emph{The above paragraph should fleshed out as the details become clear.}
+\end{comment}
+
+\emph{Note to implementor:} For performance reasons, it may make sense to cache
+the method function table in the VC object.  This would avoid an extra lookup
+each time a communication operation needed to be performed.  The downside is
+that an ``unbound'' method would need to be introduced which would contain a
+set of binding functions in its function table.  These functions would be
+responsible for binding the VC to a chosen method and then calling the
+equivalent function in that method's function table.
+
+\begin{comment}
+  \emph{I did not include the original state machine diagram as it became clear
+    that the VC object was not responsible for establishing connections as the
+    original diagram depicted.  The states for the VC object itself have been
+    reduced to unbound and bound.  Connection establishment state should be
+    part of the method specific data.}
+\end{comment}
+
+
+\paragraph{Request Arbiter}
+
+% request arbiter
+% - performs matching between posted requests and incoming messages, handling 
+%   specifics of mpi semantics for matching and ordering
+% - global unexpected queue (not needed yet, but we keep it for later)
+% - walks posted receive structure for appropriate VC first
+% - not worrying about wildcards yet
+% - functions:
+%   - recv_posted_foa() -- allocate a new recv request and post it to the VC 
+%     unless the request already exists in the unexpected list
+%   - recv_incoming_foa() -- search the VC posted recv structure for a request
+%     that matches the supplied envelope information; if one is not find
+%     allocate a new request and place it on the ordered unexpected list
+% - elements:
+%   - ordered unexpected list
+
+
+\paragraph{Progress Engine}
+
+% progress engine
+% - choses methods which will be given the opportunity to make progress and 
+%   gives them that opportunity by calling their poll function
+% - functions:
+%   - make_progress() -- determines who to call and how long they can work;
+%     needs to know (via input parameter) if allowed to block
+%     - returns # of completions
+
+As discussed earlier, each of the methods must be routinely given the
+opportunity to make progress.  This is accomplished by calling the method's
+\code{poll} function.  In theory, this could be accomplishws by looping over
+all of the methods, calling each of their \code{poll} functions anytime an
+opportunity existed to make progress.  In practice, however, this would prove
+to be inefficient and result in poor communication performance.  Rather, we
+introduce a \emph{progress engine} component which is responsible for
+presenting the methods with an opportunity to make progress on a schedule that
+accounts for communication performance and method workload.
+
+
 
 \subsubsection{Walkthrough}
 \label{sssec:walkthrough}
 
+% - lay out a scenario (same as above, more detailed)
+%   - there are lots of scenarios in another part of the document
+
+Now that we have introduced the components involved in sending and receiving
+messages, we will revisit the simple send-receive scenerio we discussed at the
+beginning of this section.  This time, we discuss the control flow and data
+movement in more detail, explicitly listing the components and functions
+involved.
+
+% - posting
+%   - getting the request (MPID thing)
+%   - getting the vc
+%   - getting the method from vc
+%   - method binding
+%   - forming connections (TCP)
+
+To post a send request, the application code calls \mpifunc{MPI_ISEND} which in
+turn calls \mpidfunc{MPID_Isend}, the device-level function responsible for
+responsible for initiating a send.  \code{MPID_Isend} begins by allocating the
+\mpids{MPI_Request} object using \mpidfunc{MPID_Request_alloc}.  Next, the
+request completion counter, \mpids{MPI_Request}{ccnt}, is set to one indicating
+that a single operation is outstanding.  Once the request structure is
+initialized, the communicator and destination rank supplied by the application
+are passed to \mpidfunc{MPID_Comm_get_vc} to obtain the associated virtual
+connection object.
+
+As mentioned earlier, the virtual connection object allows us to defer
+selecting a method of communication until the connection will be used.  The
+method object bound to the VC is obtained by calling
+\mpidfunc{MPID_VC_get_method}.  If this first time the VC has been referenced,
+the VC will be in the unbound state, meaning that it is presently not
+associated with any method.  In this case, \code{MPID_VC_get_method} will
+select select an appropriate communication method and bind it to the VC.
+
+\begin{comment}
+  \emph{An interesting artifact of not caching the method function table in the
+    virtual connection object is that we no longer need the ``unbound'' method.
+    Instead, \code{MPID_VC_get_method} becomes solely responsible for binding
+    to a method should the VC not already be bound.  This seems much cleaner,
+    at least from a design perspective.}
+\end{comment}
+
+Once we have both the method and virtual connection objects, we can use the
+\code{method::post_send} function to post a send operation on the VC.  This
+method specific function is responsible for insuring that the message is sent
+according to MPI messaging semantics.  To help accomplish this task, the VC has
+space for method specific data, which \code{post_send} can use to track
+outstanding posted messaging requests.
+
+In an atttempt to be more specific, we shall look at one possible
+implementation of the \code{post_send} function for the TCP method.  In the TCP
+method, socket connections are only formed between processes when it becomes
+necessary for those processes to communicate.  This implies that a socket
+connection may not exist for a particular virtual connection when
+\code{post_send} is called, and that \code{post_send} may need to form such a
+connection before it can begin sending data.  Assuming a socket connection has
+been formed, the \code{post_send} function can begin sending data to the remote
+process immediately if no other outgoing messaging requests are enqueued on the
+VC.  If other requests are present, then \code{post_send} will need to enqueue
+the request and let the progress engine handle sending the message once
+previous requests have been satisfied.
+
+To post a receive request the application calls \mpifunc{MPI_IRECV} which in
+turn calls \mpidfunc{MPID_Irecv}.  \code{MPID_Irecv} is the device-level
+function responsible for posting receive requests to the appropriate method.
+For the moment, we are ignoring receive requests posted with a source of
+\code{MPI_ANY_SOURCE}, or what are frequently referred to as ``wildcard
+receives''.  Wildcard receives present an interesting set of challenges for a
+multi-method device and will be discussed later.
+
+Like \code{MPID_Isend}, \code{MPID_Irecv} must resolve the (communicator, rank)
+tuple to a virutal connection and obtain a reference to the method associated
+with that virtual connection.  All of the previous discussion concerning the
+binding of a VC to a method applies here as well.
+
+The ordering of a incoming message with the posting of a matching requests
+presents two possible execution paths.  We determine which of those paths apply
+to a particular request having \code{MPID_Irecv} call
+\code{MPID_Recv_post_foa}.  \code{MPID_Recv_post_foa} either finds an already
+arrived message that matches the envelope supplied to \code{MPI_Irecv} and
+returns an associated existing request, or it returns a new request object
+which has been atomically added to the receive list (\emph{hmm, that can't be
+  stored in method specific data -- may have to rethink above text}).
+
+\begin{comment}
+  \emph{The use of request within the device is getting confusing.  We may need
+    to introduce multi-method requests now in order to avoid confusing the
+    reader later (or now for that matter).}
+\end{comment}
+
+\emph{TODO: need to talk about \code{method::post_recv}}
+
+% - progress
+%   - where/when make_progress() is called
+%   - deciding when a method's poll function is called (don't call if there 
+%     are no outstanding operations)
+%     - what is the interface for figuring out how many operations are 
+%       outstanding? -- values in method elements
+%   - send and receive state machines
+%     - simplify -- cut out the flow control, buffer mgmt., optimizations
+
+\emph{TODO: talk about progress}
+
+% - completion
+%   - completion reported from method
+%   - decrementing counters
+%   - when requests are finally freed
+%     - interface!  -- should be an MPID thing...
+
+\emph{TODO: talk about completion}
 
 \subsubsection{Summary}
 
-tables describing interfaces
+% - what did we just talk about? -- state of the design
+%   - recap the capabilities at this point
+%   - recap the components we have developed
+% - tables describing interfaces (?)
+% - lead into next subsection (add some new capabilities)
 
 %------------------------------------------------------------------------------
 
@@ -261,12 +578,20 @@ tables describing interfaces
 
 wildcards
 - request matching as a cross-method component (see, we told you!)
+- request abritrator element - secret magic wildcard stuff
+
 
 persistent sends
 
 request cancellation
 
 threaded implementation and usage???
+- threads, VCs, and changing methods (from unbound to bound) during runtime
+  - having the unbound method hold a lock on the vc can prevent additional
+    threads from also attempting to rebind the VC
+  - the newly bound method may receive requests from other threads while
+    it is forming a connection.  it must insure that requests are queued
+    and handled in the proper order once this connection is established
 
 %------------------------------------------------------------------------------
 
@@ -292,6 +617,10 @@ memory, reducing the number of data from two to one when using the
 shared memory method.
 
 special blocking send/recv optimizations?
+
+adaptive polling and such
+- perhaps methods have elements that hold progress information; progress 
+  engine looks at these elements when making decisions
 
 %------------------------------------------------------------------------------
 
