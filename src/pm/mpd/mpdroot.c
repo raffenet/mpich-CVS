@@ -30,7 +30,9 @@ int main(int argc, char *argv[])
         /* setup default console */
         snprintf(console_name,NAME_LEN,"/tmp/mpd2.console_%s", pwent->pw_name );
 
-        /* handle undocumented options to 'use user console' even if setuid root */
+        /* handle undocumented options: */
+	/*   'use user console' even if setuid root; */
+	/*   either set an env var or place --mpduuc on cmd-line */
         if (getenv("MPD_USE_USER_CONSOLE"))
         {
 	    /* nothing to do; just stick with default console */
