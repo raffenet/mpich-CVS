@@ -6,8 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#define HAVE_USLEEP
-#define USE_COVERAGE
 
 /* -- Begin Profiling Symbol Block for routine MPI_Finalize */
 #if defined(HAVE_PRAGMA_WEAK)
