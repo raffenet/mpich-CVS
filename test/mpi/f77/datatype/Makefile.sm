@@ -7,6 +7,7 @@ typenamef_SOURCES  = typenamef.f
 typesnamef_SOURCES = typesnamef.f
 typecntsf_SOURCES  = typecntsf.f
 typem2f_SOURCES    = typem2f.f
+gaddressf_SOURCES  = gaddressf.f
 packef_SOURCES     = packef.f
 
 ../util/mtestf.o: 
