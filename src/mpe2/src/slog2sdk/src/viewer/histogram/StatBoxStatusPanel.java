@@ -50,10 +50,20 @@ public class StatBoxStatusPanel extends JPanel
         super.add( combobox );
     }
 
-    public void init( JButton  btn )
+    public void addRedrawListener( JButton  btn )
     {
         canvas_redraw_btn = btn;
         combobox.addActionListener( new DisplayModeActionListener() );
+    }
+
+    public void init()
+    {
+        /*
+            Since JComboBox.setSelectedItem() invokes ActionListener which
+            call canvas_redraw_btn.doClick(), i.e. JComboBox.setSelectedItem()
+            redraws the Statline window.  There init() needs to be called
+            after RowAdjustment.initSlidersAndTextFields().
+        */
         combobox.setSelectedItem( DRAW_STATES );
     }
 

@@ -354,8 +354,10 @@ public class StatlinePanel extends JPanel
         */
             y_tree.init();
             row_adjs.initYLabelTreeSize();
-            status_panel.init( toolbar.getPropertyRefreshButton() );
-            summary_state_combobox.init( toolbar.getPropertyRefreshButton() );
+            status_panel.addRedrawListener(
+                         toolbar.getPropertyRefreshButton() );
+            summary_state_combobox.addRedrawListener(
+                                   toolbar.getPropertyRefreshButton() );
     }
 
     public void init()
@@ -363,6 +365,14 @@ public class StatlinePanel extends JPanel
         // Initialize toolbar after creation of YaxisTree view
         toolbar.init();
         row_adjs.initSlidersAndTextFields();
+        /*
+            status_panel & summary_state_combobox listen canvas redraw events,
+            They cannot be initialized before RowAdjustment has been
+            initialized, i.e. before rumber of timelines has been set in
+            the JTextField.
+        */
+        status_panel.init();
+        summary_state_combobox.init();
         if ( err_msg != null )
             Dialogs.error( root_window, err_msg );
 
