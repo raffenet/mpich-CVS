@@ -93,6 +93,7 @@ while (<>) {
 	    # line as necessary)
 	    $last_line =~ /^(.*\s+)([^\s]+)\s*$/;
 	    $srcname = $2;
+	    # Need to quote any metacharacters in srcname FIXME
 	    #print " src name = $srcname, other = $1\n";
 	    # skip line ONLY if all that is on it is the file name, 
 	    # to allow "filename: message"
