@@ -69,6 +69,9 @@ int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint *displacement)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) *displacement = 0;
+    else *displacement = datatype_ptr->lb;
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_LB);
     return MPI_SUCCESS;
 }

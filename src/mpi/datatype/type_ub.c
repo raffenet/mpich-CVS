@@ -69,6 +69,11 @@ int MPI_Type_ub(MPI_Datatype datatype, MPI_Aint *displacement)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
+	*displacement = MPID_Datatype_get_basic_size(datatype);
+    else
+	*displacement = datatype_ptr->ub;
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_UB);
     return MPI_SUCCESS;
 }
