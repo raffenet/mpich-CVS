@@ -1,4 +1,8 @@
 /*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
+/*
  * Gcc in particular tends to defer to the system's prototypes, even
  * when Gcc purports to provide them.  This file contains a set of
  * replacements for those needed in MPICH and MPE which may be used

@@ -1,5 +1,11 @@
-/* MPE_Graphics should not be included here in case the system does not
-   support the graphics features. */
+/*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
+/*
+   MPE_Graphics should not be included here in case the system does not
+   support the graphics features.
+*/
 
 #ifndef _MPE_INCLUDE
 #define _MPE_INCLUDE
