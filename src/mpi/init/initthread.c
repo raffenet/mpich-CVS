@@ -186,6 +186,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_OTHER
 @*/
 int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 {
