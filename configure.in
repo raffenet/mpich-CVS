@@ -291,7 +291,7 @@ else
 fi
 AC_SUBST(pmi_name)
 dnl with-logging
-if test "$with_logging" = "default" -o "$with_logging" = "yes" ; then
+if test "$with_logging" = "yes" ; then
     with_logging=dlog
 fi
 logging_name=$with_logging
@@ -300,7 +300,7 @@ if test "$with_logging" != "no" ; then
 fi
 AC_SUBST(logging_dir)
 dnl
-if test "$with_logging" = "no" ; then
+if test "$with_logging" = "default" -o "$with_logging" = "no" ; then
     logging_name=""
 elif test ! -d $use_top_srcdir/src/util/logging/$logging_name ; then
     AC_MSG_WARN([$use_top_srcdir/src/util/logging/$logging_name does not exist.  Logging library is unknown])
