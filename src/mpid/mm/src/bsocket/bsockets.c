@@ -1458,7 +1458,8 @@ int beasy_receive(int bfd, char *buffer, int len)
     num_received = bread(bfd, buffer, len);
     if (num_received == SOCKET_ERROR)
     {
-	return SOCKET_ERROR;
+	if ((errno != EINTR) || (errno != EAGAIN))
+	    return SOCKET_ERROR;
     }
     else
     {

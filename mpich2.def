@@ -1,8 +1,8 @@
 ;LIBRARY mpich
 
 EXPORTS
-;	PMPI_Abort
-;	MPI_Abort=PMPI_Abort
+	PMPI_Abort
+	MPI_Abort=PMPI_Abort
 ;	PMPI_Accumulate
 ;	MPI_Accumulate=PMPI_Accumulate
 ;	PMPI_Add_error_class
@@ -19,12 +19,12 @@ EXPORTS
 ;	MPI_Allgatherv=PMPI_Allgatherv
 ;	PMPI_Alloc_mem
 ;	MPI_Alloc_mem=PMPI_Alloc_mem
-;	PMPI_Allreduce
-;	MPI_Allreduce=PMPI_Allreduce
-;	PMPI_Alltoall
-;	MPI_Alltoall=PMPI_Alltoall
-;	PMPI_Alltoallv
-;	MPI_Alltoallv=PMPI_Alltoallv
+	PMPI_Allreduce
+	MPI_Allreduce=PMPI_Allreduce
+	PMPI_Alltoall
+	MPI_Alltoall=PMPI_Alltoall
+	PMPI_Alltoallv
+	MPI_Alltoallv=PMPI_Alltoallv
 ;	PMPI_Alltoallw
 ;	MPI_Alltoallw=PMPI_Alltoallw
 ;	PMPI_Attr_delete
@@ -33,10 +33,10 @@ EXPORTS
 ;	MPI_Attr_get=PMPI_Attr_get
 ;	PMPI_Attr_put
 ;	MPI_Attr_put=PMPI_Attr_put
-;	PMPI_Barrier
-;	MPI_Barrier=PMPI_Barrier
-;	PMPI_Bcast
-;	MPI_Bcast=PMPI_Bcast
+	PMPI_Barrier
+	MPI_Barrier=PMPI_Barrier
+	PMPI_Bcast
+	MPI_Bcast=PMPI_Bcast
 ;	PMPI_Bsend
 ;	MPI_Bsend=PMPI_Bsend
 ;	PMPI_Bsend_init
@@ -67,16 +67,16 @@ EXPORTS
 	MPI_Close_port=PMPI_Close_port
 	PMPI_Comm_accept
 	MPI_Comm_accept=PMPI_Comm_accept
-;	PMPI_Comm_call_errhandler
-;	MPI_Comm_call_errhandler=PMPI_Comm_call_errhandler
+	PMPI_Comm_call_errhandler
+	MPI_Comm_call_errhandler=PMPI_Comm_call_errhandler
 ;	PMPI_Comm_compare
 ;	MPI_Comm_compare=PMPI_Comm_compare
 	PMPI_Comm_connect
 	MPI_Comm_connect=PMPI_Comm_connect
 ;	PMPI_Comm_create
 ;	MPI_Comm_create=PMPI_Comm_create
-;	PMPI_Comm_create_errhandler
-;	MPI_Comm_create_errhandler=PMPI_Comm_create_errhandler
+	PMPI_Comm_create_errhandler
+	MPI_Comm_create_errhandler=PMPI_Comm_create_errhandler
 ;	PMPI_Comm_create_keyval
 ;	MPI_Comm_create_keyval=PMPI_Comm_create_keyval
 ;	PMPI_Comm_delete_attr
@@ -89,10 +89,10 @@ EXPORTS
 	MPI_Comm_free=PMPI_Comm_free
 ;	PMPI_Comm_free_keyval
 ;	MPI_Comm_free_keyval=PMPI_Comm_free_keyval
-;	PMPI_Comm_get_attr
-;	MPI_Comm_get_attr=PMPI_Comm_get_attr
-;	PMPI_Comm_get_errhandler
-;	MPI_Comm_get_errhandler=PMPI_Comm_get_errhandler
+	PMPI_Comm_get_attr
+	MPI_Comm_get_attr=PMPI_Comm_get_attr
+	PMPI_Comm_get_errhandler
+	MPI_Comm_get_errhandler=PMPI_Comm_get_errhandler
 ;	PMPI_Comm_get_name
 ;	MPI_Comm_get_name=PMPI_Comm_get_name
 ;	PMPI_Comm_get_parent
@@ -109,8 +109,8 @@ EXPORTS
 ;	MPI_Comm_remote_size=PMPI_Comm_remote_size
 ;	PMPI_Comm_set_attr
 ;	MPI_Comm_set_attr=PMPI_Comm_set_attr
-;	PMPI_Comm_set_errhandler
-;	MPI_Comm_set_errhandler=PMPI_Comm_set_errhandler
+	PMPI_Comm_set_errhandler
+	MPI_Comm_set_errhandler=PMPI_Comm_set_errhandler
 ;	PMPI_Comm_set_name
 ;	MPI_Comm_set_name=PMPI_Comm_set_name
 	PMPI_Comm_size
@@ -125,22 +125,22 @@ EXPORTS
 ;	MPI_Comm_test_inter=PMPI_Comm_test_inter
 ;	PMPI_Dims_create
 ;	MPI_Dims_create=PMPI_Dims_create
-;	PMPI_Errhandler_create
-;	MPI_Errhandler_create=PMPI_Errhandler_create
-;	PMPI_Errhandler_free
-;	MPI_Errhandler_free=PMPI_Errhandler_free
-;	PMPI_Errhandler_get
-;	MPI_Errhandler_get=PMPI_Errhandler_get
-;	PMPI_Errhandler_set
-;	MPI_Errhandler_set=PMPI_Errhandler_set
-;	PMPI_Error_class
-;	MPI_Error_class=PMPI_Error_class
-;	PMPI_Error_string
-;	MPI_Error_string=PMPI_Error_string
+	PMPI_Errhandler_create
+	MPI_Errhandler_create=PMPI_Errhandler_create
+	PMPI_Errhandler_free
+	MPI_Errhandler_free=PMPI_Errhandler_free
+	PMPI_Errhandler_get
+	MPI_Errhandler_get=PMPI_Errhandler_get
+	PMPI_Errhandler_set
+	MPI_Errhandler_set=PMPI_Errhandler_set
+	PMPI_Error_class
+	MPI_Error_class=PMPI_Error_class
+	PMPI_Error_string
+	MPI_Error_string=PMPI_Error_string
 ;	PMPI_Exscan
 ;	MPI_Exscan=PMPI_Exscan
-;	PMPI_File_call_errhandler
-;	MPI_File_call_errhandler=PMPI_File_call_errhandler
+	PMPI_File_call_errhandler
+	MPI_File_call_errhandler=PMPI_File_call_errhandler
 ;	PMPI_File_close
 ;	MPI_File_close=PMPI_File_close
 ;	PMPI_File_create_errhandler
@@ -263,10 +263,10 @@ EXPORTS
 ;	MPI_Get=PMPI_Get
 ;	PMPI_Get_address
 ;	MPI_Get_address=PMPI_Get_address
-;	PMPI_Get_count
-;	MPI_Get_count=PMPI_Get_count
-;	PMPI_Get_elements
-;	MPI_Get_elements=PMPI_Get_elements
+	PMPI_Get_count
+	MPI_Get_count=PMPI_Get_count
+	PMPI_Get_elements
+	MPI_Get_elements=PMPI_Get_elements
 ;	PMPI_Get_processor_name
 ;	MPI_Get_processor_name=PMPI_Get_processor_name
 ;	PMPI_Graph_create
@@ -385,8 +385,8 @@ EXPORTS
 	MPI_Recv=PMPI_Recv
 ;	PMPI_Recv_init
 ;	MPI_Recv_init=PMPI_Recv_init
-;	PMPI_Reduce
-;	MPI_Reduce=PMPI_Reduce
+	PMPI_Reduce
+	MPI_Reduce=PMPI_Reduce
 ;	PMPI_Reduce_scatter
 ;	MPI_Reduce_scatter=PMPI_Reduce_scatter
 ;	PMPI_Register_datarep
@@ -409,8 +409,8 @@ EXPORTS
 	MPI_Send=PMPI_Send
 ;	PMPI_Send_init
 ;	MPI_Send_init=PMPI_Send_init
-;	PMPI_Sendrecv
-;	MPI_Sendrecv=PMPI_Sendrecv
+	PMPI_Sendrecv
+	MPI_Sendrecv=PMPI_Sendrecv
 ;	PMPI_Sendrecv_replace
 ;	MPI_Sendrecv_replace=PMPI_Sendrecv_replace
 ;	PMPI_Ssend
@@ -529,14 +529,14 @@ EXPORTS
 ;	MPI_Waitany=PMPI_Waitany
 ;	PMPI_Waitsome
 ;	MPI_Waitsome=PMPI_Waitsome
-;	PMPI_Win_call_errhandler
-;	MPI_Win_call_errhandler=PMPI_Win_call_errhandler
+	PMPI_Win_call_errhandler
+	MPI_Win_call_errhandler=PMPI_Win_call_errhandler
 ;	PMPI_Win_complete
 ;	MPI_Win_complete=PMPI_Win_complete
 ;	PMPI_Win_create
 ;	MPI_Win_create=PMPI_Win_create
-;	PMPI_Win_create_errhandler
-;	MPI_Win_create_errhandler=PMPI_Win_create_errhandler
+	PMPI_Win_create_errhandler
+	MPI_Win_create_errhandler=PMPI_Win_create_errhandler
 ;	PMPI_Win_create_keyval
 ;	MPI_Win_create_keyval=PMPI_Win_create_keyval
 ;	PMPI_Win_delete_attr
@@ -549,8 +549,8 @@ EXPORTS
 ;	MPI_Win_free_keyval=PMPI_Win_free_keyval
 ;	PMPI_Win_get_attr
 ;	MPI_Win_get_attr=PMPI_Win_get_attr
-;	PMPI_Win_get_errhandler
-;	MPI_Win_get_errhandler=PMPI_Win_get_errhandler
+	PMPI_Win_get_errhandler
+	MPI_Win_get_errhandler=PMPI_Win_get_errhandler
 ;	PMPI_Win_get_name
 ;	MPI_Win_get_name=PMPI_Win_get_name
 ;	PMPI_Win_lock
@@ -559,8 +559,8 @@ EXPORTS
 ;	MPI_Win_post=PMPI_Win_post
 ;	PMPI_Win_set_attr
 ;	MPI_Win_set_attr=PMPI_Win_set_attr
-;	PMPI_Win_set_errhandler
-;	MPI_Win_set_errhandler=PMPI_Win_set_errhandler
+	PMPI_Win_set_errhandler
+	MPI_Win_set_errhandler=PMPI_Win_set_errhandler
 ;	PMPI_Win_set_name
 ;	MPI_Win_set_name=PMPI_Win_set_name
 ;	PMPI_Win_start
