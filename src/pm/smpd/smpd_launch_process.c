@@ -245,6 +245,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     sock_t sock_in, sock_out, sock_err, sock_pmi;
     SECURITY_ATTRIBUTES saAttr;
     char str[100], sock_str[20];
+    BOOL bSuccess = TRUE;
 
     smpd_enter_fn("smpd_launch_process");
 
@@ -480,6 +481,9 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     {
 	nError = GetLastError();
 	smpd_err_printf("CreateProcess('%s') failed, error %d\n", process->exe, nError);
+	snprintf(process->err_msg, SMPD_MAX_ERROR_LEN, "CreateProcess failed, error %d.", nError);
+	psInfo.hProcess = INVALID_HANDLE_VALUE;
+	bSuccess = FALSE;
     }
 
     FreeEnvironmentStrings((TCHAR*)pEnv);
@@ -492,37 +496,48 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     SetEnvironmentVariable("PMI_SMPD_ID", NULL);
     SetEnvironmentVariable("PMI_SMPD_KEY", NULL);
 
-    /* make sock structures out of the sockets */
-    nError = sock_native_to_sock(set, hIn, NULL, &sock_in);
-    if (nError != SOCK_SUCCESS)
+    if (bSuccess)
     {
-	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
-    }
-    nError = sock_native_to_sock(set, (SOCK_NATIVE_FD)hSockStdoutR, NULL, &sock_out);
-    if (nError != SOCK_SUCCESS)
-    {
-	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
-    }
-    nError = sock_native_to_sock(set, (SOCK_NATIVE_FD)hSockStderrR, NULL, &sock_err);
-    if (nError != SOCK_SUCCESS)
-    {
-	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
-    }
-    nError = sock_native_to_sock(set, (SOCK_NATIVE_FD)hSockPmiR, NULL, &sock_pmi);
-    if (nError != SOCK_SUCCESS)
-    {
-	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
-    }
+	/* make sock structures out of the sockets */
+	nError = sock_native_to_sock(set, hIn, NULL, &sock_in);
+	if (nError != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+	}
+	nError = sock_native_to_sock(set, (SOCK_NATIVE_FD)hSockStdoutR, NULL, &sock_out);
+	if (nError != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+	}
+	nError = sock_native_to_sock(set, (SOCK_NATIVE_FD)hSockStderrR, NULL, &sock_err);
+	if (nError != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+	}
+	nError = sock_native_to_sock(set, (SOCK_NATIVE_FD)hSockPmiR, NULL, &sock_pmi);
+	if (nError != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+	}
 
-    process->in->sock = sock_in;
-    process->out->sock = sock_out;
-    process->err->sock = sock_err;
-    process->pmi->sock = sock_pmi;
-    process->pid = process->in->id = process->out->id = process->err->id = psInfo.dwProcessId;
-    sock_set_user_ptr(sock_in, process->in);
-    sock_set_user_ptr(sock_out, process->out);
-    sock_set_user_ptr(sock_err, process->err);
-    sock_set_user_ptr(sock_pmi, process->pmi);
+	process->in->sock = sock_in;
+	process->out->sock = sock_out;
+	process->err->sock = sock_err;
+	process->pmi->sock = sock_pmi;
+	process->pid = process->in->id = process->out->id = process->err->id = psInfo.dwProcessId;
+	sock_set_user_ptr(sock_in, process->in);
+	sock_set_user_ptr(sock_out, process->out);
+	sock_set_user_ptr(sock_err, process->err);
+	sock_set_user_ptr(sock_pmi, process->pmi);
+    }
+    else
+    {
+	/* close all the sockets and handles allocated in this function */
+	CloseHandle(hIn);
+	CloseHandle((HANDLE)hSockStdoutR);
+	CloseHandle((HANDLE)hSockStderrR);
+	CloseHandle((HANDLE)hSockPmiR);
+    }
 
 RESTORE_CLEANUP:
     /* Restore stdin, stdout, stderr */
