@@ -458,9 +458,10 @@ sub print_endline {
 sub print_header {
     my $routine_name = $_[0];
     my $lcname = $_[1];
-     
+    my $args = $_[2];
+ 
     &print_copyright( );
-    &print_profiling_block( $routine_name, $lcname );
+    &print_profiling_block( $routine_name, $lcname, $args );
     &print_name_map_block( $routine_name, $lcname );
 }
 
@@ -478,9 +479,13 @@ sub print_copyright {
 
 #
 # Print the (ugly) profiling name definition block.
+# This is made more complex by the need, new with gcc 3.2, to 
+# generate an extern declaration of the routine *before* the pragma
+# 
 sub print_profiling_block {
     my $routine_name = $_[0];
     my $lcname = $_[1];
+    my $args   = $_[2];
     my $ucname = uc($lcname);
 
     if ($do_weak) {
@@ -489,13 +494,21 @@ sub print_profiling_block {
 #if defined(HAVE_WEAK_SYMBOLS)\
 #if defined(HAVE_PRAGMA_WEAK)\
 
-#if defined(F77_NAME_UPPER)\
+#if defined(F77_NAME_UPPER)\n";
+        &print_weak_decl( $OUTFD, "MPI_$ucname", $args );
+        print $OUTFD "\
 #pragma weak MPI_$ucname = PMPI_$ucname\
-#elif defined(F77_NAME_LOWER_2USCORE)\
+#elif defined(F77_NAME_LOWER_2USCORE)\n";
+        &print_weak_decl( $OUTFD, "mpi_${lcname}__", $args );
+	print $OUTFD "\
 #pragma weak mpi_${lcname}__ = pmpi_${lcname}__\
-#elif !defined(F77_NAME_LOWER_USCORE)\
+#elif !defined(F77_NAME_LOWER_USCORE)\n";
+        &print_weak_decl( $OUTFD, "mpi_$lcname", $args );
+	print $OUTFD "\
 #pragma weak mpi_$lcname = pmpi_$lcname\
-#else\
+#else\n";
+        &print_weak_decl( $OUTFD, "mpi_${lcname}_", $args );
+	print $OUTFD "\
 #pragma weak mpi_${lcname}_ = pmpi_${lcname}_\
 #endif\
 \
@@ -583,6 +596,7 @@ sub print_args {
     my $OUTFD = $_[0];
     my $count = 1;
     my $last_args = "";
+    my $prototype_only = $_[2];
 
     # Clear the @arg_addresses array.
     $#arg_addresses = -1;
@@ -604,7 +618,12 @@ sub print_args {
 	    # and FORT_END_LEN(d) at the end
 	    # FORT_END_LEN and FORT_MIXED_LEN contain the necessary comman
 	    # if they are prsent at all.
-	    print $OUTFD "char *v$count FORT_MIXED_LEN(d$count), ";
+	    if ($prototype_only) {
+		print $OUTFD "char * FORT_MIXED_LEN(), ";
+	    }
+	    else {
+		print $OUTFD "char *v$count FORT_MIXED_LEN(d$count), ";
+	    }
 	    $last_args .= "FORT_END_LEN(d$count) ";
 	}
 	elsif ($parm =~/\[/) {
@@ -639,7 +658,12 @@ sub print_args {
 		    $star_count++;
 		}
 	    }
-	    print $OUTFD "$basetype v$count\[\], ";
+	    if ($prototype_only) {
+		print $OUTFD "$basetype \[\], ";
+	    }
+	    else {
+		print $OUTFD "$basetype v$count\[\], ";
+	    }
 	}
 	else {
 	    $nstar_before = ($parm =~ /\*/);
@@ -653,7 +677,12 @@ sub print_args {
 	    if ($parm =~ /\w$/) {
 		$leadspace = " ";
 	    }
-	    print $OUTFD "${parm}${leadspace}v$count, ";
+	    if ($prototype_only) {
+		print $OUTFD "${parm}, ";
+	    }
+	    else {
+		print $OUTFD "${parm}${leadspace}v$count, ";
+	    }
 	    $star_count = 0;
 	    if ($nstar_before != $nstar_after) {
 		$star_count = 1;
@@ -663,7 +692,12 @@ sub print_args {
 	$count++;
     }
     # Add the new error return code
-    print $OUTFD "MPI_Fint *ierr ${last_args}";
+    if ($prototype_only) {
+	print $OUTFD "MPI_Fint * ${last_args}";
+    }
+    else {
+	print $OUTFD "MPI_Fint *ierr ${last_args}";
+    }
     print $OUTFD ")";
 }
 
@@ -713,13 +747,25 @@ sub print_call_args {
 }
 
 # Print the option function attribute; this supports GCC, particularly 
-# the __atribute__ weak option.
+# the __atribute__ ((weak)) option.  Unfortunately, the name must be
+# made into a string and inserted into the attribute list.
 sub print_attr {
+    my $OUTFD = $_[0];
+    my $name  = $_[1];
     if ($do_weak) {
-	print $OUTFD " FUNC_ATTRIBUTES\n";
+	print $OUTFD " FUNC_ATTRIBUTES($name)\n";
     }
 }
 
+sub print_weak_decl {
+    my $OUTFD = $_[0];
+    my $name  = $_[1];
+    my $args  = $_[2];
+
+    print $OUTFD "extern FORTRAN_API void FORT_CALL $name";
+    &print_args( $OUTFD, $args, 1 );
+    print $OUTFD ";\n";
+}
 #
 # Special processing
 # Buffer pointers
@@ -1297,7 +1343,7 @@ sub build_specials {
     $OUTFD = "INITFFD";
     open( $OUTFD, ">initf.c" ) || die "Cannot open initf.c\n";
     $files[$#files+1] = "initf.c";
-    &print_header( "MPI_Init", "init" );
+    &print_header( "MPI_Init", "init", "" );
     # This is temporary.  Eventually, these should move into
     # support file.
     # Note that the global variables have values.  This is to work around
@@ -1324,8 +1370,10 @@ void *MPI_F_STATUSES_IGNORE = 0;
 
     &print_routine_type_decl( $OUTFD, "init" );
     $args = "";
-    &print_args( $OUTFD, $args );
-    &print_attr;
+    &print_args( $OUTFD, $args, 0 );
+    # If an attribute can be added before the code, then do that here.
+    # Gcc only allows attributes on the prototypes, not the function
+    # definitions
     print $OUTFD "{\n";
     print $OUTFD "#ifndef F77_RUNTIME_VALUES
     /* any compile/link time values go here */
@@ -1344,7 +1392,7 @@ void *MPI_F_STATUSES_IGNORE = 0;
     close ($OUTFD);
     if ($build_prototypes) {
 	&print_routine_type_decl( PROTOFD, "init" );
-	&print_args( PROTOFD, $args );
+	&print_args( PROTOFD, $args, 1 );
 	print PROTOFD ";\n";
     }
 
@@ -1377,29 +1425,29 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
     $OUTFD = "PCONTROLFFD";
     open( $OUTFD, ">pcontrolf.c" ) || die "Cannot open pcontrolf.c\n";
     $files[$#files+1] = "pcontrolf.c";
-    &print_header( "MPI_Pcontrol", "pcontrol" );
-    &print_routine_type_decl( $OUTFD, "pcontrol" );
     $args = "int";
-    &print_args( $OUTFD, $args );
-    &print_attr;
+    &print_header( "MPI_Pcontrol", "pcontrol", $args );
+    &print_routine_type_decl( $OUTFD, "pcontrol" );
+    &print_args( $OUTFD, $args, 0 );
+    #&print_attr;
     print $OUTFD "{\n";
     print $OUTFD "    *ierr = MPI_Pcontrol( (int)*v1 );\n";
     print $OUTFD "}\n";
     close ($OUTFD);
     if ($build_prototypes) {
 	&print_routine_type_decl( PROTOFD, "pcontrol" );
-	&print_args( PROTOFD, $args );
+	&print_args( PROTOFD, $args, 1 );
 	print PROTOFD ";\n";
     }
 
     $OUTFD = "ADDRESSFFD";
     open ($OUTFD, ">addressf.c" ) || die "Cannot open addressf.c\n";
     $files[$#files+1] = "addressf.c";
-    &print_header( "MPI_Address", "address" );
-    &print_routine_type_decl( $OUTFD, "address" );
     $args = "void *, int *";
-    &print_args( $OUTFD, $args );
-    &print_attr;
+    &print_header( "MPI_Address", "address", $args );
+    &print_routine_type_decl( $OUTFD, "address" );
+    &print_args( $OUTFD, $args, 0 );
+    #&print_attr;
     print $OUTFD "{
     MPI_Aint a, b;
     *ierr = MPI_Address( v1, &a );
@@ -1420,18 +1468,18 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
     close ($OUTFD);
     if ($build_prototypes) {
 	&print_routine_type_decl( PROTOFD, "address" );
-	&print_args( PROTOFD, $args );
+	&print_args( PROTOFD, $args, 1 );
 	print PROTOFD ";\n";
     }
 
     $OUTFD = "WTIMEFD";
     open( $OUTFD, ">wtimef.c" ) || die "Cannot open wtimef.c\n";
     $files[$#files+1] = "wtimef.c";
-    &print_header( "MPI_Wtime", "wtime" );
+    &print_header( "MPI_Wtime", "wtime", "" );
     # mpiimpl.h is needed for the timer definitions
     print $OUTFD "#include \"mpiimpl.h\"\n";
     print $OUTFD "double mpi_wtime_( void ) ";
-    &print_attr;
+    #&print_attr;
     print $OUTFD "{\n";
     print $OUTFD "    double d; MPID_Time_t t;\n
     MPID_Wtime( &t );
@@ -1446,11 +1494,11 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
     $OUTFD = "WTICKFD";
     open( $OUTFD, ">wtickf.c" ) || die "Cannot open wtickf.c\n";
     $files[$#files+1] = "wtickf.c";
-    &print_header( "MPI_Wtick", "wtick" );
+    &print_header( "MPI_Wtick", "wtick", "" );
     # mpiimpl.h is needed for the timer definitions
     print $OUTFD "#include \"mpiimpl.h\"\n";
     print $OUTFD "double mpi_wtick_( void ) ";
-    &print_attr;
+    #&print_attr;
     print $OUTFD "{\n";
     print $OUTFD "    double d; 
     d = MPID_Wtick( );
@@ -1464,11 +1512,11 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
     $OUTFD = "KEYVALCREATEF";
     open ($OUTFD, ">keyval_createf.c" ) || die "Cannot open keyval_createf.c\n";
     $files[$#files+1] = "keyval_createf.c";
-    &print_header( "MPI_Keyval_create", "keyval_create" );
-    &print_routine_type_decl( $OUTFD, "keyval_create" );
     $args = "MPI_Copy_function , MPI_Delete_function , int *, void *";
-    &print_args( $OUTFD, $args );
-    &print_attr;
+    &print_header( "MPI_Keyval_create", "keyval_create", $args );
+    &print_routine_type_decl( $OUTFD, "keyval_create" );
+    &print_args( $OUTFD, $args, 0 );
+    #&print_attr;
     print $OUTFD "{
         *ierr = PMPI_Comm_create_keyval( v1, v2, v3, v4 );
         if (!*ierr) {
@@ -1478,18 +1526,18 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
     close ($OUTFD);
     if ($build_prototypes) {
 	&print_routine_type_decl( PROTOFD, "keyval_create" );
-	&print_args( PROTOFD, $args );
+	&print_args( PROTOFD, $args, 1 );
 	print PROTOFD ";\n";
     }
 
     $OUTFD = "DUPFN";
     open ($OUTFD, ">dup_fnf.c" ) || die "Cannot open dup_fnf.c\n";
     $files[$#files+1] = "dup_fnf.c";
-    &print_header( "mpi_dup_fn", "dup_fn" );
-    &print_routine_type_decl( $OUTFD, "dup_fn" );
     $args = "MPI_Fint, MPI_Fint *, void *, void **, void **, MPI_Fint *";
-    &print_args( $OUTFD, $args );
-    &print_attr;
+    &print_header( "mpi_dup_fn", "dup_fn", $args );
+    &print_routine_type_decl( $OUTFD, "dup_fn" );
+    &print_args( $OUTFD, $args, 0 );
+    #&print_attr;
     print $OUTFD "{
         *v5 = *v4;
         *v6 = MPIR_TO_FLOG(1);
@@ -1498,36 +1546,36 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
     close ($OUTFD);
     if ($build_prototypes) {
 	&print_routine_type_decl( PROTOFD, "dup_fn" );
-	&print_args( PROTOFD, $args );
+	&print_args( PROTOFD, $args, 1 );
 	print PROTOFD ";\n";
     }
 
     $OUTFD = "NULLDELFN";
     open ($OUTFD, ">null_del_fnf.c" ) || die "Cannot open null_del_fnf.c\n";
     $files[$#files+1] = "null_del_fnf.c";
-    &print_header( "mpi_null_delete_fn", "null_delete_fn" );
-    &print_routine_type_decl( $OUTFD, "null_delete_fn" );
     $args = "MPI_Fint *, MPI_Fint *, void *, void *";
-    &print_args( $OUTFD, $args );
-    &print_attr;
+    &print_header( "mpi_null_delete_fn", "null_delete_fn", $args );
+    &print_routine_type_decl( $OUTFD, "null_delete_fn" );
+    &print_args( $OUTFD, $args, 0 );
+    #&print_attr;
     print $OUTFD "{
         *ierr = MPI_SUCCESS;
 }\n";
     close ($OUTFD);
     if ($build_prototypes) {
 	&print_routine_type_decl( PROTOFD, "null_delete_fn" );
-	&print_args( PROTOFD, $args );
+	&print_args( PROTOFD, $args, 1 );
 	print PROTOFD ";\n";
     }
 
     $OUTFD = "NULLCOPYFN";
     open ($OUTFD, ">null_copy_fnf.c" ) || die "Cannot open null_copy_fnf.c\n";
     $files[$#files+1] = "null_copy_fnf.c";
-    &print_header( "mpi_null_copy_fn", "null_copy_fn" );
-    &print_routine_type_decl( $OUTFD, "null_copy_fn" );
     $args = "MPI_Fint *, MPI_Fint *, void *, void *, void *, int *";
-    &print_args( $OUTFD, $args );
-    &print_attr;
+    &print_header( "mpi_null_copy_fn", "null_copy_fn", $args );
+    &print_routine_type_decl( $OUTFD, "null_copy_fn" );
+    &print_args( $OUTFD, $args, 0 );
+    #&print_attr;
     print $OUTFD "{
         *ierr = MPI_SUCCESS;
         *v6 = MPIR_TO_FLOG(0);
@@ -1535,7 +1583,7 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
     close ($OUTFD);
     if ($build_prototypes) {
 	&print_routine_type_decl( PROTOFD, "null_copy_fn" );
-	&print_args( PROTOFD, $args );
+	&print_args( PROTOFD, $args, 1 );
 	print PROTOFD ";\n";
     }
 
@@ -1692,7 +1740,7 @@ sub ReadAndProcessInterface {
 		else {
 		    $OUTFD = STDOUT;
 		}
-		&print_header( $routine_name, $lcname );
+		&print_header( $routine_name, $lcname, $args );
 		if ($do_subdecls) {
 		    print $OUTFD "FORTRAN_API void FORT_CALL ";
 		}
@@ -1707,9 +1755,9 @@ sub ReadAndProcessInterface {
 		# by reference, many value parameters in the C calls are 
 		# replaced by reference parameters in the Fortran interface.
 		print "Printing arguments for mpi_${lcname}_\n" if $debug;
-		&print_args( $OUTFD, $args );
+		&print_args( $OUTFD, $args, 0 );
 
-		&print_attr;
+		#&print_attr;
 		print $OUTFD "{\n";
 		&print_special_decls( $routine_name );
 		print $OUTFD "    *ierr = $routine_prefix$routine_name";
@@ -1723,12 +1771,13 @@ sub ReadAndProcessInterface {
 		}
 		if ($build_prototypes) {
 		    if ($do_subdecls) {
-			print PROTOFD "FORTRAN_API void FORT_CALL ${out_prefix}${lcname}_ ";
+			print PROTOFD "extern FORTRAN_API void FORT_CALL ${out_prefix}${lcname}_ ";
 		    }
 		    else {
-			print PROTOFD "void ${out_prefix}${lcname}_ ";
+			print PROTOFD "extern void ${out_prefix}${lcname}_ ";
 		    }
-		    &print_args( PROTOFD, $args );
+		    &print_args( PROTOFD, $args, 0 );
+		    &print_attr( PROTOFD, "${out_prefix}${lcname}_" );
 		    print PROTOFD ";\n";
 		}
 	    }

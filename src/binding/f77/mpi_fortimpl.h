@@ -45,9 +45,9 @@
 /* Support an alternate approach for declaring a weak symbol supported by
    some versions of gcc */
 #ifdef USE_WEAK_ATTRIBUTE
-#define FUNC_ATTRIBUTES __attribute__ weak
+#define FUNC_ATTRIBUTES(name) __attribute__ ((weak,alias(#name)))
 #else
-#define FUNC_ATTRIBUTES
+#define FUNC_ATTRIBUTES(name)
 #endif
 
 /* mpi.h includes the definitions of MPI_Fint */
