@@ -570,7 +570,10 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
 	ADIOI_Datatype_iscontig(types[0], &old_is_contig);
 	if ((old_combiner != MPI_COMBINER_NAMED) && (!old_is_contig))
 	    count = ADIOI_Count_contiguous_blocks(types[0], curr_index);
-	else count = 1;
+	else {
+		count = 1;
+		(*curr_index)++;
+	}
         break;
 #endif
 #ifdef MPIIMPL_HAVE_MPI_COMBINER_SUBARRAY
