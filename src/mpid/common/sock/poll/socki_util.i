@@ -60,7 +60,7 @@ static int inline MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, in
 #define MPIDU_SOCKI_GET_SOCKET_ERROR(pollinfo_, os_errno_, mpi_errno_, fail_label_)				\
 {														\
     int rc__;													\
-    int sz__;													\
+    socklen_t sz__;												\
 														\
     sz__ = sizeof(os_errno_);											\
     rc__ = getsockopt((pollinfo_)->fd, SOL_SOCKET, SO_ERROR, &(os_errno_), &sz__);				\

@@ -26,34 +26,40 @@ fi
 
 PAC_PROG_MAKE
 
+dnl
+dnl _XOPEN_SOURCE_EXTENDED=1 is required for Solaris to build properly */
+dnl
+CFLAGS="$CFLAGS -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1"
+
+AC_CHECK_FUNC(poll,pac_cv_have_func_poll=yes,pac_cv_have_func_poll=no)
+if test "$pac_cv_have_func_poll" != yes ; then
+    if test -f /sw/include/sys/poll.h ; then
+        dnl This is for Mac OSX (Darwin) which doesn't have a poll function is the standard libraries.  Instead we use a
+        dnl  contributedlibrary found off in la la land (/sw).
+        CFLAGS="$CFLAGS -I/sw/include"
+        TCP_LIBS="$TCP_LIBS -L/sw/lib -lpoll"
+    else
+        AC_MSG_ERROR([This device requires the poll function])
+    fi
+fi
+
 AC_CHECK_HEADERS(                               \
     assert.h                                    \
     errno.h                                     \
     fcntl.h                                     \
+    limits.h                                    \
     netdb.h                                     \
     netinet/in.h                                \
     netinet/tcp.h                               \
+    poll.h					\
     stdlib.h                                    \
     sys/param.h                                 \
     sys/poll.h                                  \
     sys/types.h                                 \
     sys/uio.h					\
-    limits.h                                    \
     unistd.h)
 
-AC_CHECK_FUNC(poll,pac_cv_have_func_poll=yes,pac_cv_have_func_poll=no)
-if test "$pac_cv_have_func_poll" != yes ; then
-dnl    AC_MSG_ERROR([This device requires the poll function])
-  dnl This is for Mac OSX (Darwin) which doesn't have a poll function is the standard libraries.  Instead we use a contributed
-  dnl library found off in la la land (/sw).
-  AC_CHECK_HEADER(/sw/include/sys/poll.h,lac_cv_have_header_poll=yes,lac_cv_have_header_poll=no)
-  if test "$lac_cv_have_header_poll" = yes ; then
-    AC_DEFINE(HAVE__SW_INCLUDE_SYS_POLL_H,,[define if /sw/include/sys/poll/.h is available])
-    TCP_LIBS="$TCP_LIBS -L/sw/lib -lpoll"
-  else
-    AC_DEFINE(USE_SELECT_FOR_POLL, 1, [Define to use select implementation of poll])
-  fi
-fi
+
 saveLIBS="$LIBS"
 LIBS=""
 AC_SEARCH_LIBS(socket,socket,,,$saveLIBS)

@@ -5,23 +5,20 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#define _XOPEN_SOURCE
-
 #include "mpidu_sock.h"
 #include "mpiimpl.h"
 
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <unistd.h>
 #include <sys/uio.h>
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <fcntl.h>
-#ifdef HAVE_SYS_POLL_H
+#if defined(HAVE_POLL_H)
 #include <sys/poll.h>
-#endif
-#ifdef HAVE__SW_INCLUDE_SYS_POLL_H
-#include "/sw/include/sys/poll.h"
+#elif defined(HAVE_SYS_POLL_H)
+#include <sys/poll.h>
 #endif
 #include <netdb.h>
 #include <errno.h>
