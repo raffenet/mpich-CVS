@@ -131,9 +131,11 @@ typedef char *MPID_FCHAR_T;
 /* style: allow:malloc:1 sig:0 */
 /* style: allow:free:1 sig:0 */
 /* style: allow:calloc:1 sig:0 */
+#ifndef MPIU_Malloc
 #define MPIU_Malloc(a)    malloc((unsigned)(a))
 #define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
 #define MPIU_Free(a)      free((void *)(a))
+#endif
 
 #ifndef MPIR_USE_LOCAL_ARRAY
 #define MPIR_USE_LOCAL_ARRAY 32
