@@ -7,28 +7,17 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
-#if ! defined (NDEBUG) && ! defined (DEBUG)
-#define NDEBUG
-#define GASNET_SEQ 
-#include "gasnet.h"
-#undef NDEBUG
-#else
-#define GASNET_SEQ 
-#include "gasnet.h"
+#if ! GASNET_NDEBUG && ! GASNET_DEBUG
+#define GASNET_NDEBUG 1
 #endif
+
+#define GASNET_SEQ 
+
+#include "gasnet.h"
 
 /*#define MPID_USE_SEQUENCE_NUMBERS*/
 
 /*#define MPIDI_CH3_CHANNEL_RNDV*/
-
-typedef struct MPIDI_CH3I_Process_group_s
-{
-    volatile int ref_count;
-    char * kvs_name;
-    int size;
-    struct MPIDI_VC * vc_table;
-}
-MPIDI_CH3I_Process_group_t;
 
 typedef enum MPIDI_CH3I_VC_state
 {
@@ -41,7 +30,6 @@ MPIDI_CH3I_VC_state_t;
 
 typedef struct MPIDI_CH3I_VC
 {
-    MPIDI_CH3I_Process_group_t * pg;
     int pg_rank;
     int data_sz;
     void * data;

@@ -12,6 +12,12 @@ for arg in "${_conf_array[@]}" ; do
     --with-gasnet-lib=* ) 
       gasnet_lib_dir=`echo "$arg" | sed 's/--with-gasnet-lib=//'` 
       ;;
+    --with-gm=* ) 
+      gm_dir=`echo "$arg" | sed 's/--with-gm=//'` 
+      ;;
+    --with-gm-include=* ) 
+      gm_include_dir=`echo "$arg" | sed 's/--with-gm-include=//'` 
+      ;;
     --with-gm-lib=* ) 
       gm_lib_dir=`echo "$arg" | sed 's/--with-gm-lib=//'` 
       ;;

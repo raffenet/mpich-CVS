@@ -15,6 +15,8 @@
 #include "pmi.h"
 
 int MPIDI_CH3_packet_len;
+void *MPIDI_CH3_packet_buffer;
+
 MPIDI_VC *MPIDI_CH3_vc_table;
 
 int MPIDI_CH3I_my_rank;
@@ -43,7 +45,7 @@ gasnet_handlerentry_t MPIDI_CH3_gasnet_handler_table[] =
     { MPIDI_CH3_reload_IOV_reply_handler_id, MPIDI_CH3_reload_IOV_reply_handler }
 };
 
-MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
+/* MPIDI_CH3I_Process_t MPIDI_CH3I_Process; */
 
 /* XXX - all calls to assert() need to be turned into real error checking and
    return meaningful errors */
@@ -55,9 +57,7 @@ MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 {
     int gn_errno;
-    int mpi_errno;
-    MPIDI_CH3I_Process_group_t * pg;
-    
+    int mpi_errno;    
     int pg_rank;
     int pg_size;
     MPIDI_VC * vc_table;
@@ -71,65 +71,75 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     char **null_argv = 0;
 
     MPIDI_CH3I_inside_handler = 0;
-    
-    /* Pass in null args */
-    gn_errno = gasnet_init (&null_argc, &null_argv);
-    if (gn_errno != GASNET_OK)
+
+#if HYBRID_ENABLED_GASNET
+    if (gasnet_isInit ())
     {
-        mpi_errno = MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
-                                          __LINE__, MPI_ERR_OTHER, "**init",
-                                          "gasnet_init failed %d", gn_errno);
-        return mpi_errno;
+	/* gasnet has already been initialized (eg in a hybrid UPC/MPI
+	 * environment), so all we have to do is register additional
+	 * handlers (and hope the handler ids don't collide)
+	 */
+	gn_errno = gasnet_registerHandlers (MPIDI_CH3_gasnet_handler_table,
+				  sizeof (MPIDI_CH3_gasnet_handler_table) /
+				  sizeof (gasnet_handlerentry_t));
+	if (gn_errno != GASNET_OK)
+	{
+	    mpi_errno = MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
+					      __LINE__, MPI_ERR_OTHER, "**init",
+					      "gasnet_registerHandlers failed %d",
+					      gn_errno);
+	    return mpi_errno;
+	}
     }
-
-
-    /* by specifying a 0 segsize, we're disabling remote memory
-     * access.  For now, we're just using medium AM messages */
-    gn_errno = gasnet_attach (MPIDI_CH3_gasnet_handler_table,
-			      sizeof (MPIDI_CH3_gasnet_handler_table) /
-			      sizeof (gasnet_handlerentry_t),
-			      0, (uintptr_t)-1);
-    if (gn_errno != GASNET_OK)
+    else
+#endif
     {
-        mpi_errno = MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
-                                          __LINE__, MPI_ERR_OTHER, "**init",
-                                          "gasnet_attach failed %d", gn_errno);
-        return mpi_errno;
+	/* gasnet has not been initialized, so we initialize and attach */
+	
+	/* Pass in null args */
+	gn_errno = gasnet_init (&null_argc, &null_argv);
+	if (gn_errno != GASNET_OK)
+	{
+	    mpi_errno = MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
+					      __LINE__, MPI_ERR_OTHER, "**init",
+					      "gasnet_init failed %d", gn_errno);
+	    return mpi_errno;
+	}
+
+
+	/* by specifying a 0 segsize, we're disabling remote memory
+	 * access.  For now, we're just using medium AM messages */
+	gn_errno = gasnet_attach (MPIDI_CH3_gasnet_handler_table,
+				  sizeof (MPIDI_CH3_gasnet_handler_table) /
+				  sizeof (gasnet_handlerentry_t),
+				  0, (uintptr_t)-1);
+	if (gn_errno != GASNET_OK)
+	{
+	    mpi_errno = MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
+					      __LINE__, MPI_ERR_OTHER, "**init",
+					      "gasnet_attach failed %d",
+					      gn_errno);
+	    return mpi_errno;
+	}
     }
 
     /*MPIDI_CH3_packet_len = gasnet_AMMaxMedium ();*/
     /* 16K gives better performance than 64K */
-    /* FIXME:  This should probably be a #DEFINE or something */
+    /* FIXME:  This should probably be a #define or something */
     MPIDI_CH3_packet_len = 16384;
 
+    MPIDI_CH3_packet_buffer = MPIU_Malloc (MPIDI_CH3_packet_len);
+    if (MPIDI_CH3_packet_buffer == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
+					 __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	return mpi_errno;
+    }
+    
     pg_rank = gasnet_mynode ();
     pg_size = gasnet_nodes ();
 
     MPIDI_CH3I_my_rank = pg_rank;
-
-    /* Allocate process group data structure and populate */
-    pg = MPIU_Malloc(sizeof(MPIDI_CH3I_Process_group_t));
-    if (pg == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
-					 __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	return mpi_errno;
-    }
-    pg->size = pg_size;
-    mpi_errno = PMI_KVS_Get_name_length_max(&name_sz);
-    if (mpi_errno != PMI_SUCCESS)
-    {
-	MPID_Abort (NULL, MPI_SUCCESS, -1);
-    }
-    pg->kvs_name = MPIU_Malloc(name_sz + 1);
-    if (pg->kvs_name == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
-					 __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	return mpi_errno;
-    }
-    pg->ref_count = 1;
-    MPIDI_CH3I_Process.pg = pg;
     
     /* Allocate and initialize the VC table associated with this
      * process group (and thus COMM_WORLD) */
@@ -140,15 +150,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 					 __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
     }
-    pg->ref_count += pg_size;
     for (p = 0; p < pg_size; p++)
     {
 	MPIDI_CH3U_VC_init(&vc_table[p], p);
-	vc_table[p].gasnet.pg = pg;
 	vc_table[p].gasnet.pg_rank = p;
 	vc_table[p].gasnet.recv_active = NULL;
     }
-    pg->vc_table = vc_table;
     MPIDI_CH3_vc_table = vc_table;
     
     /* set MPIDI_Process->lpid_counter to pg_size */

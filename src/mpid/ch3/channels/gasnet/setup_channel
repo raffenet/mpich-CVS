@@ -55,6 +55,13 @@ fi
 LIBS="$LIBS -lgasnet-gm-seq"
 
 #include gm
+if test -n "$gm_dir" ; then
+  LDFLAGS="$LDFLAGS -L${gm_dir}/lib"
+  CPPFLAGS="$CPPFLAGS -I${gm_dir}/include"
+fi
+if test -n "$gm_include_dir" ; then
+  CPPFLAGS="$CPPFLAGS -I${gm_include_dir}"
+fi
 if test -n "$gm_lib_dir" ; then
   LDFLAGS="$LDFLAGS -L${gm_lib_dir}"
 fi

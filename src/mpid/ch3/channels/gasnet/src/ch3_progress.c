@@ -637,3 +637,39 @@ static int do_put (MPIDI_VC *vc, MPID_Request *sreq)
     MPIDI_FUNC_EXIT(MPID_STATE_DO_PUT);
     return mpi_errno;
 }
+
+
+#ifndef MPIDI_CH3_GASNET_TAKES_IOV
+
+/* I modified a version of gasnet and added this function there, but
+   then was too lazy to make the same modifications on a newer version
+   of gasnet.  I'm also too lazy to remove all of the references to
+   gasnet_AMRequestMediumv0() from the channel code (and then
+   re-verify the new code), so I'm just including this function
+   here. --Darius
+   FIXME: Remove references to gasnet_AMRequestMediumv0 --DARIUS
+*/
+int
+gasnet_AMRequestMediumv0 (gasnet_node_t dest, gasnet_handler_t handler,
+			  struct iovec *iov, size_t n_iov)
+{
+    int i;
+    int len;
+    char *buf;
+
+    buf = (char *)MPIDI_CH3_packet_buffer;
+    len = MPIDI_CH3_packet_len;
+    
+    for (i = 0; i < n_iov; ++i)
+    {
+	if (len < iov[i].MPID_IOV_LEN)
+	    return GASNET_ERR_BAD_ARG;
+	memcpy (buf, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN);
+	buf += iov[i].MPID_IOV_LEN;
+	len -= iov[i].MPID_IOV_LEN;
+    }
+    
+    return gasnet_AMRequestMedium0 (dest, handler, MPIDI_CH3_packet_buffer,
+				    MPIDI_CH3_packet_len - len);
+}
+#endif

@@ -10,13 +10,8 @@
 #define printf_d(x...) //do { printf ("%d: ", MPIDI_CH3I_my_rank); printf (x); fflush(stdout); } while(0)
 extern int MPIDI_CH3I_my_rank;
 
-#ifdef USE_WINCONF_H
-#include "winmpidi_ch3i_gasnet_conf.h"
-#include "winmpidi_ch3_conf.h"
-#else
 #include "mpidi_ch3i_gasnet_conf.h"
 #include "mpidi_ch3_conf.h"
-#endif
 #include "mpidimpl.h"
 
 #if defined(HAVE_ASSERT_H)
@@ -31,6 +26,7 @@ extern int MPIDI_CH3I_inside_handler;
 extern gasnet_token_t MPIDI_CH3I_gasnet_token;
 
 extern int MPIDI_CH3_packet_len;
+extern void *MPIDI_CH3_packet_buffer;
 
 extern MPIDI_VC *MPIDI_CH3_vc_table;
 
@@ -41,14 +37,6 @@ extern MPIDI_VC *MPIDI_CH3_vc_table;
 extern struct MPID_Request *MPIDI_CH3I_sendq_head[CH3_NUM_QUEUES];
 extern struct MPID_Request *MPIDI_CH3I_sendq_tail[CH3_NUM_QUEUES];
 extern struct MPID_Request *MPIDI_CH3I_active_send[CH3_NUM_QUEUES];
-
-typedef struct MPIDI_CH3I_Process_s
-{
-    MPIDI_CH3I_Process_group_t * pg;
-}
-MPIDI_CH3I_Process_t;
-
-extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
 #define MPIDI_CH3I_SendQ_enqueue(req, queue)					\
 {										\
@@ -95,7 +83,10 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
 #define MPIDI_CH3I_SendQ_empty(queue) (MPIDI_CH3I_sendq_head[queue] == NULL)
 
-
+#ifndef MPIDI_CH3_GASNET_TAKES_IOV
+int gasnet_AMRequestMediumv0(gasnet_node_t dest, gasnet_handler_t handler,
+			     struct iovec *iov, size_t n_iov);
+#endif
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 short MPIDI_CH3I_Listener_get_port(void);

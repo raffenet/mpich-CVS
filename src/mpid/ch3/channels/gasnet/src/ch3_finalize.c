@@ -7,8 +7,6 @@
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
 
-extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
-
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Finalize
 #undef FCNAME
@@ -23,9 +21,6 @@ int MPIDI_CH3_Finalize()
     /* Free resources allocated in CH3_Init() */
     MPID_VCRT_Release (MPIR_Process.comm_self->vcrt);
     MPID_VCRT_Release (MPIR_Process.comm_world->vcrt);
-    MPIU_Free (MPIDI_CH3I_Process.pg->vc_table);
-    MPIU_Free (MPIDI_CH3I_Process.pg->kvs_name);
-    MPIU_Free (MPIDI_CH3I_Process.pg);
     
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
 
