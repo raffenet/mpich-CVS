@@ -28,6 +28,19 @@ builtin(include,aclocal_shl.m4)
 dnl builtin(include,aclocal_tcl.m4)
 builtin(include,aclocal_java.m4)
 
+dnl
+dnl Newer versions of autoconf support AC_EXEEXT and AC_OBJEXT.
+dnl If these are not available, just set them as empty
+ifdef([AC_EXEEXT],,[
+AC_DEFUN(AC_EXEEXT,[
+EXEEXT=
+AC_SUBST(EXEEXT)
+])])
+ifdef([AC_OBJEXT],,[
+AC_DEFUN(AC_OBJEXT,[
+OBJEXT=
+AC_SUBST(OBJEXT)
+])])
 dnl PAC_CONFIG_SUBDIRS_IMMEDIATE(DIR ...)
 dnl Perform the configuration *now*
 dnl 
