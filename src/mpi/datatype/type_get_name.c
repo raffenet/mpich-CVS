@@ -55,12 +55,15 @@ static mpi_names_t mpi_names[] = {
     { MPI_PACKED, "MPI_PACKED" },
     { MPI_LB, "MPI_LB" },
     { MPI_UB, "MPI_UB" },
+
+/* The maxloc/minloc types are not builtin because they're size and
+   extent may not be the same. */
+/*
     { MPI_FLOAT_INT, "MPI_FLOAT_INT" },
     { MPI_DOUBLE_INT, "MPI_DOUBLE_INT" },
     { MPI_LONG_INT, "MPI_LONG_INT" },
     { MPI_SHORT_INT, "MPI_SHORT_INT" },
-    { MPI_2INT, "MPI_2INT" },
-    { MPI_LONG_DOUBLE_INT, "MPI_LONG_DOUBLE_INT" },
+*/
     /* Fortran */
     { MPI_COMPLEX, "MPI_COMPLEX" },
     { MPI_DOUBLE_COMPLEX, "MPI_DOUBLE_COMPLEX" },
@@ -89,6 +92,15 @@ static mpi_names_t mpi_names[] = {
     { 0, (char *)0 },  /* Sentinal used to indicate the last element */
 };
 
+static mpi_names_t mpi_maxloc_names[] = {
+    { MPI_FLOAT_INT, "MPI_FLOAT_INT" },
+    { MPI_DOUBLE_INT, "MPI_DOUBLE_INT" },
+    { MPI_LONG_INT, "MPI_LONG_INT" },
+    { MPI_SHORT_INT, "MPI_SHORT_INT" },
+    { MPI_2INT, "MPI_2INT" },
+    { MPI_LONG_DOUBLE_INT, "MPI_LONG_DOUBLE_INT" },
+    { 0, (char *)0 },  /* Sentinal used to indicate the last element */
+};
 /* This routine is also needed by type_set_name */
 
 int MPIR_Datatype_init_names( void ) 
@@ -117,7 +129,8 @@ int MPIR_Datatype_init_names( void )
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, 
+				 FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		return mpi_errno;
 	    }
 	    /* --END ERROR HANDLING-- */
@@ -142,11 +155,6 @@ int MPIR_Datatype_init_names( void )
 		    return mpi_errno;
 		}
 		if (!datatype_ptr) {
-		    /*
-		    MPIU_dbg_printf("IMPLEMENTATION ERROR for datatype %d\n", 
-			     i );
-		    continue;
-		    */
 		    MPIU_Snprintf(error_msg, 1024, "Did not initialize name for all of the predefined datatypes (only did first %d)\n", i-1 );
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**fail", "**fail %s", error_msg);
 		    return mpi_errno;
@@ -154,6 +162,21 @@ int MPIR_Datatype_init_names( void )
 		/* --END ERROR HANDLING-- */
 		/* MPIU_dbg_printf("mpi_names[%d].name = %x\n", i, (int) mpi_names[i].name ); */
 		MPIU_Strncpy( datatype_ptr->name, mpi_names[i].name, 
+			      MPI_MAX_OBJECT_NAME );
+	    }
+	    /* Handle the minloc/maxloc types */
+	    for (i=0; mpi_maxloc_names[i].name != 0; i++) {
+		MPID_Datatype_get_ptr( mpi_maxloc_names[i].dtype, 
+				       datatype_ptr );
+		/* --BEGIN ERROR HANDLING-- */
+		if (!datatype_ptr) {
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
+					MPIR_ERR_FATAL, FCNAME, __LINE__, 
+					MPI_ERR_INTERN, "**fail", 0 );
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
+		MPIU_Strncpy( datatype_ptr->name, mpi_maxloc_names[i].name, 
 			      MPI_MAX_OBJECT_NAME );
 	    }
 	    setup = 1;
