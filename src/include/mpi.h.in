@@ -424,6 +424,8 @@ extern int MPICHX_TOPOLOGY_COLORS;
 #define MPI_ERR_DISP        52      /* */
 #define MPI_ERR_ASSERT      53      /* */
 
+#define MPICH_ERR_LAST_CLASS 53
+    
 #define MPI_ERR_LASTCODE    0x7FFFFFFF      /* Last error code*/
 /* End of MPI's error classes */
 
