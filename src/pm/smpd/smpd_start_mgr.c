@@ -141,7 +141,6 @@ int smpd_start_win_mgr(smpd_context_t *context)
 	    result = CreateProcess(
 		NULL, cmd, NULL, NULL, TRUE,
 		0,
-		/*CREATE_NEW_CONSOLE,*/
 		NULL, NULL, &sInfo, &pInfo);
 	}
 

@@ -5,16 +5,3 @@
  */
 #include "smpd.h"
 
-typedef struct DatabaseElementStruct
-{
-    char pszKey[SMPD_MAX_DBS_KEY_LEN];
-    char pszValue[SMPD_MAX_DBS_VALUE_LEN];
-    struct DatabaseElementStruct *pNext;
-} DatabaseElement;
-
-typedef struct DatabaseNodeStruct
-{
-    char pszName[SMPD_MAX_DBS_NAME_LEN];
-    DatabaseElement *pData, *pIter;
-    struct DatabaseNodeStruct *pNext;
-} DatabaseNode;

@@ -102,19 +102,20 @@
 typedef enum smpd_state_t
 {
     SMPD_IDLE,
-    /* mpiexec process states */
+    SMPD_EXITING,
+    SMPD_DONE,
+    SMPD_CLOSING,
+    SMPD_SMPD_LISTENING,
+    SMPD_MGR_LISTENING,
     SMPD_MPIEXEC_CONNECTING_TREE,
-    SMPD_MPIEXEC_DBS_STARTING,
-    SMPD_MPIEXEC_LAUNCHING,
-    SMPD_MPIEXEC_EXIT_WAITING,
     SMPD_MPIEXEC_CONNECTING_SMPD,
-    /* smpd states */
     SMPD_CONNECTING,
+    SMPD_RECONNECTING,
     SMPD_READING_CHALLENGE_STRING,
-    SMPD_WRITING_CHALLENGE_RESPONSE,
-    SMPD_READING_CONNECT_RESULT,
     SMPD_WRITING_CHALLENGE_STRING,
     SMPD_READING_CHALLENGE_RESPONSE,
+    SMPD_WRITING_CHALLENGE_RESPONSE,
+    SMPD_READING_CONNECT_RESULT,
     SMPD_WRITING_CONNECT_RESULT,
     SMPD_READING_STDIN,
     SMPD_READING_STDOUT,
@@ -122,34 +123,30 @@ typedef enum smpd_state_t
     SMPD_READING_CMD_HEADER,
     SMPD_READING_CMD,
     SMPD_WRITING_CMD,
-    SMPD_SMPD_LISTENING,
-    SMPD_MGR_LISTENING,
     SMPD_READING_SESSION_REQUEST,
     SMPD_WRITING_SMPD_SESSION_REQUEST,
     SMPD_WRITING_PROCESS_SESSION_REQUEST,
+    SMPD_READING_PWD_REQUEST,
     SMPD_WRITING_PWD_REQUEST,
     SMPD_WRITING_NO_PWD_REQUEST,
-    SMPD_READING_PWD_REQUEST,
     SMPD_READING_SMPD_PASSWORD,
     SMPD_WRITING_SMPD_PASSWORD,
-    SMPD_WRITING_CRED_REQUEST,
-    SMPD_READING_ACCOUNT,
-    SMPD_READING_PASSWORD,
-    SMPD_WRITING_ACCOUNT,
-    SMPD_WRITING_PASSWORD,
-    SMPD_WRITING_NO_CRED_REQUEST,
     SMPD_READING_CRED_REQUEST,
+    SMPD_WRITING_CRED_REQUEST,
+    SMPD_WRITING_NO_CRED_REQUEST,
+    SMPD_READING_ACCOUNT,
+    SMPD_WRITING_ACCOUNT,
+    SMPD_READING_PASSWORD,
+    SMPD_WRITING_PASSWORD,
+    SMPD_READING_RECONNECT_REQUEST,
     SMPD_WRITING_RECONNECT_REQUEST,
     SMPD_WRITING_NO_RECONNECT_REQUEST,
-    SMPD_READING_RECONNECT_REQUEST,
     SMPD_READING_SESSION_HEADER,
     SMPD_WRITING_SESSION_HEADER,
     SMPD_READING_SMPD_RESULT,
     SMPD_WRITING_SESSION_ACCEPT,
     SMPD_WRITING_SESSION_REJECT,
-    SMPD_RECONNECTING,
-    SMPD_EXITING,
-    SMPD_CLOSING
+    SMPD_END_MARKER_NUM_STATES
 } smpd_state_t;
 
 typedef enum smpd_context_type_t
@@ -240,6 +237,7 @@ typedef struct smpd_context_t
 
 typedef struct smpd_process_t
 {
+    int id;
     int num_valid_contexts;
     smpd_context_t *in, *out, *err, *pmi;
     int context_refcount;
@@ -249,8 +247,10 @@ typedef struct smpd_process_t
     char dir[SMPD_MAX_EXE_LENGTH];
     char path[SMPD_MAX_EXE_LENGTH];
     int rank;
+    int nproc;
     smpd_pwait_t wait;
     int exitcode;
+    char kvs_name[SMPD_MAX_DBS_NAME_LEN];
     struct smpd_process_t *next;
 } smpd_process_t;
 
@@ -259,29 +259,60 @@ typedef struct smpd_launch_node_t
     char exe[SMPD_MAX_EXE_LENGTH];
     char *env, env_data[SMPD_MAX_ENV_LENGTH];
     int host_id;
-    long iproc;
+    int iproc;
+    int nproc;
     struct smpd_launch_node_t *next;
 } smpd_launch_node_t;
 
-typedef struct smpd_env_node
+typedef struct smpd_env_node_t
 {
     char name[SMPD_MAX_NAME_LENGTH];
     char value[SMPD_MAX_VALUE_LENGTH];
-    struct smpd_env_node *next;
-} smpd_env_node;
+    struct smpd_env_node_t *next;
+} smpd_env_node_t;
 
-typedef struct smpd_map_drive_node
+typedef struct smpd_map_drive_node_t
 {
     char drive;
     char share[SMPD_MAX_EXE_LENGTH];
-    struct smpd_map_drive_node *next;
-} smpd_map_drive_node;
+    struct smpd_map_drive_node_t *next;
+} smpd_map_drive_node_t;
+
+typedef struct smpd_database_element_t
+{
+    char pszKey[SMPD_MAX_DBS_KEY_LEN];
+    char pszValue[SMPD_MAX_DBS_VALUE_LEN];
+    struct smpd_database_element_t *pNext;
+} smpd_database_element_t;
+
+typedef struct smpd_database_node_t
+{
+    char pszName[SMPD_MAX_DBS_NAME_LEN];
+    smpd_database_element_t *pData, *pIter;
+    struct smpd_database_node_t *pNext;
+} smpd_database_node_t;
+
+typedef struct smpd_barrier_in_t
+{
+    smpd_context_t *context;
+    int dest;
+    int cmd_tag;
+    char ctx_key[100];
+} smpd_barrier_in_t;
+
+typedef struct smpd_barrier_node_t
+{
+    char name[SMPD_MAX_DBS_NAME_LEN];
+    int count;
+    int in;
+    smpd_barrier_in_t *in_array;
+    struct smpd_barrier_node_t *next;
+} smpd_barrier_node_t;
 
 /* If you add elements to the process structure you must add the appropriate
    initializer in smpd_connect.c where the global variable, smpd_process, lives */
 typedef struct smpd_global_t
 {
-    /* stuff used by smpd */
     smpd_state_t state;
     int id, parent_id;
     int level;
@@ -303,7 +334,6 @@ typedef struct smpd_global_t
     FILE *dbg_fout;
     int have_dbs;
     char kvs_name[SMPD_MAX_DBS_NAME_LEN];
-    /* stuff used by mpiexec */
 #ifdef HAVE_WINDOWS_H
     HANDLE hCloseStdinThreadEvent;
     HANDLE hStdinThread;
@@ -323,6 +353,19 @@ typedef struct smpd_global_t
     int shutdown_console;
     int nproc;
     int verbose;
+    int shutdown, restart; /* built in commands */
+#ifdef HAVE_WINDOWS_H
+    BOOL bOutputInitialized;
+    HANDLE hOutputMutex;
+#endif
+#ifdef USE_WIN_MUTEX_PROTECT
+    HANDLE hDBSMutex;
+#endif
+    smpd_database_node_t *pDatabase;
+    smpd_database_node_t *pDatabaseIter;
+    int nNextAvailableDBSID;
+    int nInitDBSRefCount;
+    smpd_barrier_node_t *barrier_list;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
@@ -409,5 +452,6 @@ void StdinThread(SOCKET hWrite);
 #endif
 int smpd_handle_command(smpd_context_t *context);
 int smpd_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr);
+int smpd_handle_barrier_command(smpd_context_t *context);
 
 #endif

@@ -5,44 +5,36 @@
  */
 #include "smpd_dbs_internal.h"
 
-#ifdef USE_WIN_MUTEX_PROTECT
-HANDLE g_hMutex = NULL;
-#endif
-static DatabaseNode *g_pDatabase = NULL;
-static DatabaseNode *g_pDatabaseIter = NULL;
-static int g_nNextAvailableID = 0;
-static int s_nInitRefCount = 0;
-
 int smpd_dbs_init()
 {
     smpd_enter_fn("smpd_dbs_init");
 #ifdef USE_WIN_MUTEX_PROTECT
-    if (s_nInitRefCount == 0)
+    if (smpd_process.nInitDBSRefCount == 0)
     {
-	g_hMutex = CreateMutex(NULL, FALSE, NULL);
+	smpd_process.hDBSMutex = CreateMutex(NULL, FALSE, NULL);
     }
 #endif
-    s_nInitRefCount++;
+    smpd_process.nInitDBSRefCount++;
     smpd_exit_fn("smpd_dbs_init");
     return SMPD_DBS_SUCCESS;
 }
 
 int smpd_dbs_finalize()
 {
-    DatabaseNode *pNode, *pNext;
-    DatabaseElement *pElement;
+    smpd_database_node_t *pNode, *pNext;
+    smpd_database_element_t *pElement;
 
     smpd_enter_fn("smpd_dbs_finalize");
 
-    s_nInitRefCount--;
+    smpd_process.nInitDBSRefCount--;
 
-    if (s_nInitRefCount == 0)
+    if (smpd_process.nInitDBSRefCount == 0)
     {
 #ifdef USE_WIN_MUTEX_PROTECT
-	WaitForSingleObject(g_hMutex, INFINITE);
+	WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
 #endif
 
-	pNode = g_pDatabase;
+	pNode = smpd_process.pDatabase;
 	while (pNode)
 	{
 	    pNext = pNode->pNext;
@@ -58,13 +50,13 @@ int smpd_dbs_finalize()
 	    pNode = pNext;
 	}
 
-	g_pDatabase = NULL;
-	g_pDatabaseIter = NULL;
+	smpd_process.pDatabase = NULL;
+	smpd_process.pDatabaseIter = NULL;
 
 #ifdef USE_WIN_MUTEX_PROTECT
-	ReleaseMutex(g_hMutex);
-	CloseHandle(g_hMutex);
-	g_hMutex = NULL;
+	ReleaseMutex(smpd_process.hDBSMutex);
+	CloseHandle(smpd_process.hDBSMutex);
+	smpd_process.hDBSMutex = NULL;
 #endif
     }
 
@@ -74,36 +66,36 @@ int smpd_dbs_finalize()
 
 int smpd_dbs_create(char *name)
 {
-    DatabaseNode *pNode, *pNodeTest;
+    smpd_database_node_t *pNode, *pNodeTest;
 
     smpd_enter_fn("smpd_dbs_create");
 
 #ifdef USE_WIN_MUTEX_PROTECT
     /* Lock */
-    WaitForSingleObject(g_hMutex, INFINITE);
+    WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
 #endif
 
-    pNode = g_pDatabase;
+    pNode = smpd_process.pDatabase;
     if (pNode)
     {
 	while (pNode->pNext)
 	    pNode = pNode->pNext;
-	pNode->pNext = (DatabaseNode*)malloc(sizeof(DatabaseNode));
+	pNode->pNext = (smpd_database_node_t*)malloc(sizeof(smpd_database_node_t));
 	pNode = pNode->pNext;
     }
     else
     {
-	g_pDatabase = (DatabaseNode*)malloc(sizeof(DatabaseNode));
-	pNode = g_pDatabase;
+	smpd_process.pDatabase = (smpd_database_node_t*)malloc(sizeof(smpd_database_node_t));
+	pNode = smpd_process.pDatabase;
     }
     pNode->pNext = NULL;
     pNode->pData = NULL;
     pNode->pIter = NULL;
     do
     {
-	sprintf(pNode->pszName, "%d", g_nNextAvailableID);
-	g_nNextAvailableID++;
-	pNodeTest = g_pDatabase;
+	sprintf(pNode->pszName, "%d", smpd_process.nNextAvailableDBSID);
+	smpd_process.nNextAvailableDBSID++;
+	pNodeTest = smpd_process.pDatabase;
 	while (strcmp(pNodeTest->pszName, pNode->pszName) != 0)
 	    pNodeTest = pNodeTest->pNext;
     } while (pNodeTest != pNode);
@@ -111,7 +103,7 @@ int smpd_dbs_create(char *name)
 
 #ifdef USE_WIN_MUTEX_PROTECT
     /* Unlock */
-    ReleaseMutex(g_hMutex);
+    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
     smpd_exit_fn("smpd_dbs_create");
@@ -120,7 +112,7 @@ int smpd_dbs_create(char *name)
 
 int smpd_dbs_create_name_in(char *name)
 {
-    DatabaseNode *pNode;
+    smpd_database_node_t *pNode;
 
     smpd_enter_fn("smpd_dbs_create_name_in");
 
@@ -132,18 +124,18 @@ int smpd_dbs_create_name_in(char *name)
 
 #ifdef USE_WIN_MUTEX_PROTECT
     /* Lock */
-    WaitForSingleObject(g_hMutex, INFINITE);
+    WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
 #endif
 
     /* Check if the name already exists */
-    pNode = g_pDatabase;
+    pNode = smpd_process.pDatabase;
     while (pNode)
     {
 	if (strcmp(pNode->pszName, name) == 0)
 	{
 #ifdef USE_WIN_MUTEX_PROTECT
 	    /* Unlock */
-	    ReleaseMutex(g_hMutex);
+	    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 	    /*return SMPD_DBS_FAIL;*/
 	    /* Empty database? */
@@ -153,18 +145,18 @@ int smpd_dbs_create_name_in(char *name)
 	pNode = pNode->pNext;
     }
 
-    pNode = g_pDatabase;
+    pNode = smpd_process.pDatabase;
     if (pNode)
     {
 	while (pNode->pNext)
 	    pNode = pNode->pNext;
-	pNode->pNext = (DatabaseNode*)malloc(sizeof(DatabaseNode));
+	pNode->pNext = (smpd_database_node_t*)malloc(sizeof(smpd_database_node_t));
 	pNode = pNode->pNext;
     }
     else
     {
-	g_pDatabase = (DatabaseNode*)malloc(sizeof(DatabaseNode));
-	pNode = g_pDatabase;
+	smpd_process.pDatabase = (smpd_database_node_t*)malloc(sizeof(smpd_database_node_t));
+	pNode = smpd_process.pDatabase;
     }
     pNode->pNext = NULL;
     pNode->pData = NULL;
@@ -173,7 +165,7 @@ int smpd_dbs_create_name_in(char *name)
     
 #ifdef USE_WIN_MUTEX_PROTECT
     /* Unlock */
-    ReleaseMutex(g_hMutex);
+    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
     smpd_exit_fn("smpd_dbs_create_name_in");
@@ -182,16 +174,16 @@ int smpd_dbs_create_name_in(char *name)
 
 int smpd_dbs_get(char *name, char *key, char *value)
 {
-    DatabaseNode *pNode;
-    DatabaseElement *pElement;
+    smpd_database_node_t *pNode;
+    smpd_database_element_t *pElement;
 
     smpd_enter_fn("smpd_dbs_get");
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(g_hMutex, INFINITE);
+    WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
 #endif
 
-    pNode = g_pDatabase;
+    pNode = smpd_process.pDatabase;
     while (pNode)
     {
 	if (strcmp(pNode->pszName, name) == 0)
@@ -203,7 +195,7 @@ int smpd_dbs_get(char *name, char *key, char *value)
 		{
 		    strcpy(value, pElement->pszValue);
 #ifdef USE_WIN_MUTEX_PROTECT
-		    ReleaseMutex(g_hMutex);
+		    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 		    smpd_exit_fn("smpd_dbs_get");
 		    return SMPD_DBS_SUCCESS;
@@ -215,7 +207,7 @@ int smpd_dbs_get(char *name, char *key, char *value)
     }
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(g_hMutex);
+    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
     smpd_exit_fn("smpd_dbs_get");
@@ -224,16 +216,16 @@ int smpd_dbs_get(char *name, char *key, char *value)
 
 int smpd_dbs_put(char *name, char *key, char *value)
 {
-    DatabaseNode *pNode;
-    DatabaseElement *pElement;
+    smpd_database_node_t *pNode;
+    smpd_database_element_t *pElement;
 
     smpd_enter_fn("smpd_dbs_put");
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(g_hMutex, INFINITE);
+    WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
 #endif
 
-    pNode = g_pDatabase;
+    pNode = smpd_process.pDatabase;
     while (pNode)
     {
 	if (strcmp(pNode->pszName, name) == 0)
@@ -245,20 +237,20 @@ int smpd_dbs_put(char *name, char *key, char *value)
 		{
 		    strcpy(pElement->pszValue, value);
 #ifdef USE_WIN_MUTEX_PROTECT
-		    ReleaseMutex(g_hMutex);
+		    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 		    smpd_exit_fn("smpd_dbs_put");
 		    return SMPD_DBS_SUCCESS;
 		}
 		pElement = pElement->pNext;
 	    }
-	    pElement = (DatabaseElement*)malloc(sizeof(DatabaseElement));
+	    pElement = (smpd_database_element_t*)malloc(sizeof(smpd_database_element_t));
 	    pElement->pNext = pNode->pData;
 	    strcpy(pElement->pszKey, key);
 	    strcpy(pElement->pszValue, value);
 	    pNode->pData = pElement;
 #ifdef USE_WIN_MUTEX_PROTECT
-	    ReleaseMutex(g_hMutex);
+	    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 	    smpd_exit_fn("smpd_dbs_put");
 	    return SMPD_DBS_SUCCESS;
@@ -267,7 +259,7 @@ int smpd_dbs_put(char *name, char *key, char *value)
     }
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(g_hMutex);
+    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
     smpd_exit_fn("smpd_dbs_put");
@@ -276,16 +268,16 @@ int smpd_dbs_put(char *name, char *key, char *value)
 
 int smpd_dbs_delete(char *name, char *key)
 {
-    DatabaseNode *pNode;
-    DatabaseElement *pElement, *pElementTrailer;
+    smpd_database_node_t *pNode;
+    smpd_database_element_t *pElement, *pElementTrailer;
 
     smpd_enter_fn("smpd_dbs_delete");
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(g_hMutex, INFINITE);
+    WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
 #endif
 
-    pNode = g_pDatabase;
+    pNode = smpd_process.pDatabase;
     while (pNode)
     {
 	if (strcmp(pNode->pszName, name) == 0)
@@ -301,7 +293,7 @@ int smpd_dbs_delete(char *name, char *key)
 			pNode->pData = pElement->pNext;
 		    free(pElement);
 #ifdef USE_WIN_MUTEX_PROTECT
-		    ReleaseMutex(g_hMutex);
+		    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 		    smpd_exit_fn("smpd_dbs_delete");
 		    return SMPD_DBS_SUCCESS;
@@ -310,7 +302,7 @@ int smpd_dbs_delete(char *name, char *key)
 		pElement = pElement->pNext;
 	    }
 #ifdef USE_WIN_MUTEX_PROTECT
-	    ReleaseMutex(g_hMutex);
+	    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 	    smpd_exit_fn("smpd_dbs_delete");
 	    return SMPD_DBS_FAIL;
@@ -319,7 +311,7 @@ int smpd_dbs_delete(char *name, char *key)
     }
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(g_hMutex);
+    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
     smpd_exit_fn("smpd_dbs_delete");
@@ -328,16 +320,16 @@ int smpd_dbs_delete(char *name, char *key)
 
 int smpd_dbs_destroy(char *name)
 {
-    DatabaseNode *pNode, *pNodeTrailer;
-    DatabaseElement *pElement;
+    smpd_database_node_t *pNode, *pNodeTrailer;
+    smpd_database_element_t *pElement;
 
     smpd_enter_fn("smpd_dbs_destroy");
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(g_hMutex, INFINITE);
+    WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
 #endif
 
-    pNodeTrailer = pNode = g_pDatabase;
+    pNodeTrailer = pNode = smpd_process.pDatabase;
     while (pNode)
     {
 	if (strcmp(pNode->pszName, name) == 0)
@@ -349,12 +341,12 @@ int smpd_dbs_destroy(char *name)
 		free(pElement);
 	    }
 	    if (pNodeTrailer == pNode)
-		g_pDatabase = g_pDatabase->pNext;
+		smpd_process.pDatabase = smpd_process.pDatabase->pNext;
 	    else
 		pNodeTrailer->pNext = pNode->pNext;
 	    free(pNode);
 #ifdef USE_WIN_MUTEX_PROTECT
-	    ReleaseMutex(g_hMutex);
+	    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 	    smpd_exit_fn("smpd_dbs_destroy");
 	    return SMPD_DBS_SUCCESS;
@@ -364,7 +356,7 @@ int smpd_dbs_destroy(char *name)
     }
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(g_hMutex);
+    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
     smpd_exit_fn("smpd_dbs_destroy");
@@ -373,17 +365,17 @@ int smpd_dbs_destroy(char *name)
 
 int smpd_dbs_first(char *name, char *key, char *value)
 {
-    DatabaseNode *pNode;
+    smpd_database_node_t *pNode;
 
     smpd_enter_fn("smpd_dbs_first");
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(g_hMutex, INFINITE);
+    WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
 #endif
 
     if (key != NULL)
 	key[0] = '\0';
-    pNode = g_pDatabase;
+    pNode = smpd_process.pDatabase;
     while (pNode)
     {
 	if (strcmp(pNode->pszName, name) == 0)
@@ -404,7 +396,7 @@ int smpd_dbs_first(char *name, char *key, char *value)
 		pNode->pIter = pNode->pData;
 	    }
 #ifdef USE_WIN_MUTEX_PROTECT
-	    ReleaseMutex(g_hMutex);
+	    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 	    smpd_exit_fn("smpd_dbs_first");
 	    return SMPD_DBS_SUCCESS;
@@ -413,7 +405,7 @@ int smpd_dbs_first(char *name, char *key, char *value)
     }
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(g_hMutex);
+    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
     smpd_exit_fn("smpd_dbs_first");
@@ -422,16 +414,16 @@ int smpd_dbs_first(char *name, char *key, char *value)
 
 int smpd_dbs_next(char *name, char *key, char *value)
 {
-    DatabaseNode *pNode;
+    smpd_database_node_t *pNode;
 
     smpd_enter_fn("smpd_dbs_next");
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(g_hMutex, INFINITE);
+    WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
 #endif
 
     key[0] = '\0';
-    pNode = g_pDatabase;
+    pNode = smpd_process.pDatabase;
     while (pNode)
     {
 	if (strcmp(pNode->pszName, name) == 0)
@@ -445,7 +437,7 @@ int smpd_dbs_next(char *name, char *key, char *value)
 	    else
 		key[0] = '\0';
 #ifdef USE_WIN_MUTEX_PROTECT
-	    ReleaseMutex(g_hMutex);
+	    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 	    smpd_exit_fn("smpd_dbs_next");
 	    return SMPD_DBS_SUCCESS;
@@ -454,7 +446,7 @@ int smpd_dbs_next(char *name, char *key, char *value)
     }
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(g_hMutex);
+    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
     smpd_exit_fn("smpd_dbs_next");
@@ -466,20 +458,20 @@ int smpd_dbs_firstdb(char *name)
     smpd_enter_fn("smpd_dbs_firstdb");
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(g_hMutex, INFINITE);
+    WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
 #endif
 
-    g_pDatabaseIter = g_pDatabase;
+    smpd_process.pDatabaseIter = smpd_process.pDatabase;
     if (name != NULL)
     {
-	if (g_pDatabaseIter)
-	    strcpy(name, g_pDatabaseIter->pszName);
+	if (smpd_process.pDatabaseIter)
+	    strcpy(name, smpd_process.pDatabaseIter->pszName);
 	else
 	    name[0] = '\0';
     }
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(g_hMutex);
+    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
     smpd_exit_fn("smpd_dbs_firstdb");
@@ -491,22 +483,22 @@ int smpd_dbs_nextdb(char *name)
     smpd_enter_fn("smpd_dbs_nextdb");
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(g_hMutex, INFINITE);
+    WaitForSingleObject(smpd_process.hDBSMutex, INFINITE);
 #endif
 
-    if (g_pDatabaseIter == NULL)
+    if (smpd_process.pDatabaseIter == NULL)
 	name[0] = '\0';
     else
     {
-	g_pDatabaseIter = g_pDatabaseIter->pNext;
-	if (g_pDatabaseIter)
-	    strcpy(name, g_pDatabaseIter->pszName);
+	smpd_process.pDatabaseIter = smpd_process.pDatabaseIter->pNext;
+	if (smpd_process.pDatabaseIter)
+	    strcpy(name, smpd_process.pDatabaseIter->pszName);
 	else
 	    name[0] = '\0';
     }
 
 #ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(g_hMutex);
+    ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
     smpd_exit_fn("smpd_dbs_nextdb");

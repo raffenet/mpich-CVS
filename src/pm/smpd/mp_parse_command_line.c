@@ -283,8 +283,8 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     int run_local = SMPD_FALSE;
     char machine_file_name[SMPD_MAX_EXE_LENGTH];
     int use_machine_file = SMPD_FALSE;
-    smpd_map_drive_node *map_node, *drive_map_list;
-    smpd_env_node *env_node, *env_list;
+    smpd_map_drive_node_t *map_node, *drive_map_list;
+    smpd_env_node_t *env_node, *env_list;
     char *equal_sign_pos;
     char wdir[SMPD_MAX_EXE_LENGTH];
     int logon;
@@ -539,7 +539,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		}
 		if ((strlen((*argvp)[2]) > 2) && (*argvp)[2][1] == ':')
 		{
-		    map_node = (smpd_map_drive_node*)malloc(sizeof(smpd_map_drive_node));
+		    map_node = (smpd_map_drive_node_t*)malloc(sizeof(smpd_map_drive_node_t));
 		    if (map_node == NULL)
 		    {
 			printf("Error: malloc failed to allocate map structure.\n");
@@ -572,7 +572,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-		env_node = (smpd_env_node*)malloc(sizeof(smpd_env_node));
+		env_node = (smpd_env_node_t*)malloc(sizeof(smpd_env_node_t));
 		if (env_node == NULL)
 		{
 		    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
@@ -922,6 +922,14 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	if (*next_argv)
 	    **argvp = exe_ptr;
     } while (*next_argv);
+
+    /* add nproc to all the launch nodes */
+    launch_node_iter = smpd_process.launch_list;
+    while (launch_node_iter)
+    {
+	launch_node_iter->nproc = cur_rank;
+	launch_node_iter = launch_node_iter->next;
+    }
 
     smpd_exit_fn("mp_parse_command_args");
     return SMPD_SUCCESS;

@@ -110,6 +110,9 @@
 				RelativePath="smpd_authenticate.c">
 			</File>
 			<File
+				RelativePath=".\smpd_barrier.c">
+			</File>
+			<File
 				RelativePath="smpd_command.c">
 			</File>
 			<File

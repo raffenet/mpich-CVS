@@ -33,39 +33,64 @@
 #endif
 
 smpd_global_t smpd_process = 
-    { SMPD_IDLE,
-      -1, -1, -1, 
-      NULL, NULL, NULL, NULL,
-      NULL,
-      NULL,
-      SMPD_FALSE, SMPD_FALSE,
-      SOCK_INVALID_SET,
-      "", "",
-      SMPD_FALSE, SMPD_FALSE,
-      "", "", "",
-      0,
-      SMPD_DBG_STATE_ERROUT, NULL,
-      SMPD_FALSE,
-      "",
+    { SMPD_IDLE,        /* state                  */
+      -1,               /* id                     */
+      -1,               /* parent_id              */
+      -1,               /* level                  */
+      NULL,             /* left_context           */
+      NULL,             /* right_context          */
+      NULL,             /* parent_context         */
+      NULL,             /* context_list           */
+      NULL,             /* listener_context       */
+      NULL,             /* process_list           */
+      SMPD_FALSE,       /* closing                */
+      SMPD_FALSE,       /* root_smpd              */
+      SOCK_INVALID_SET, /* set                    */
+      "",               /* host                   */
+      "",               /* pszExe                 */
+      SMPD_FALSE,       /* bService               */
+      SMPD_FALSE,       /* bPasswordProtect       */
+      "",               /* SMPDPassword           */
+      "",               /* UserAccount            */
+      "",               /* UserPassword           */
+      0,                /* cur_tag                */
+      SMPD_DBG_STATE_ERROUT, /* dbg_state         */
+      NULL,             /* dbg_fout               */
+      SMPD_FALSE,       /* have_dbs               */
+      "",               /* kvs_name               */
 #ifdef HAVE_WINDOWS_H
-      NULL,        /* hCloseStdinThreadEvent */
-      NULL,        /* hStdinThread           */
+      NULL,             /* hCloseStdinThreadEvent */
+      NULL,             /* hStdinThread           */
 #endif
-      SMPD_FALSE,  /* do_console             */
-      SMPD_LISTENER_PORT, /* smpd port       */
-      "",          /* console_host           */
-      NULL,        /* host_list              */
-      NULL,        /* launch_list            */
-      SMPD_TRUE,   /* credentials_prompt     */
-      SMPD_TRUE,   /* do_multi_color_output  */
-      SMPD_FALSE,  /* no_mpi                 */
-      SMPD_FALSE,  /* output_exit_codes      */
-      SMPD_FALSE,  /* local_root             */
-      SMPD_FALSE,  /* use_iproot             */
-      SMPD_FALSE,  /* use_process_session    */
-      SMPD_FALSE,  /* shutdown_console       */
-      0,           /* nproc                  */
-      SMPD_FALSE   /* verbose                */
+      SMPD_FALSE,       /* do_console             */
+      SMPD_LISTENER_PORT, /* smpd port            */
+      "",               /* console_host           */
+      NULL,             /* host_list              */
+      NULL,             /* launch_list            */
+      SMPD_TRUE,        /* credentials_prompt     */
+      SMPD_TRUE,        /* do_multi_color_output  */
+      SMPD_FALSE,       /* no_mpi                 */
+      SMPD_FALSE,       /* output_exit_codes      */
+      SMPD_FALSE,       /* local_root             */
+      SMPD_FALSE,       /* use_iproot             */
+      SMPD_FALSE,       /* use_process_session    */
+      SMPD_FALSE,       /* shutdown_console       */
+      0,                /* nproc                  */
+      SMPD_FALSE,       /* verbose                */
+      SMPD_FALSE,       /* shutdown               */
+      SMPD_FALSE,       /* restart                */
+#ifdef HAVE_WINDOWS_H
+      FALSE,            /* bOutputInitialized     */
+      NULL,             /* hOutputMutex           */
+#endif
+#ifdef USE_WIN_MUTEX_PROTECT
+      NULL,             /* hDBSMutext             */
+#endif
+      NULL,             /* pDatabase              */
+      NULL,             /* pDatabaseIter          */
+      0,                /* nNextAvailableDBSID    */
+      0,                /* nInitDBSRefCount       */
+      NULL              /* barrier_list           */
     };
 
 #ifdef HAVE_SIGACTION

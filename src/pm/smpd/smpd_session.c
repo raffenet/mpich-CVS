@@ -10,6 +10,7 @@ int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
 {
     int result;
     smpd_process_t *p;
+    static int cur_id = 0;
 
     smpd_enter_fn("smpd_create_process_struct");
 
@@ -20,7 +21,10 @@ int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
 	smpd_exit_fn("smpd_create_process_struct");
 	return SMPD_FAIL;
     }
+    p->id = cur_id++; /* MT - If smpd is to be thread safe, this will have to be changed */
     p->rank = rank;
+    p->nproc = 1;
+    p->kvs_name[0] = '\0';
     p->exe[0] = '\0';
     p->env[0] = '\0';
     p->dir[0] = '\0';
@@ -71,6 +75,7 @@ int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
     p->in->process = p;
     p->out->process = p;
     p->err->process = p;
+    p->pmi->process = p;
     p->next = NULL;
 
     *process_ptr = p;

@@ -63,12 +63,6 @@ char * smpd_get_state_string(smpd_state_t state)
 	return "SMPD_IDLE";
     case SMPD_MPIEXEC_CONNECTING_TREE:
 	return "SMPD_MPIEXEC_CONNECTING_TREE";
-    case SMPD_MPIEXEC_DBS_STARTING:
-	return "SMPD_MPIEXEC_DBS_STARTING";
-    case SMPD_MPIEXEC_LAUNCHING:
-	return "SMPD_MPIEXEC_LAUNCHING";
-    case SMPD_MPIEXEC_EXIT_WAITING:
-	return "SMPD_MPIEXEC_EXIT_WAITING";
     case SMPD_MPIEXEC_CONNECTING_SMPD:
 	return "SMPD_MPIEXEC_CONNECTING_SMPD";
     case SMPD_CONNECTING:
@@ -213,7 +207,13 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		/* don't print EOF errors because they usually aren't errors */
 		if (event.error != SOCK_EOF)
 		{
-		    smpd_err_printf("error: %s\n", get_sock_error_string(event.error));
+		    /* don't print errors from the pmi context because processes that don't 
+		       call PMI_Finalize will get read errors that don't need to be printed.
+		       */
+		    if (context->type != SMPD_CONTEXT_PMI)
+		    {
+			smpd_err_printf("error: %s\n", get_sock_error_string(event.error));
+		    }
 		}
 	    }
 	    switch (context->read_state)
@@ -441,7 +441,26 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		break;
 	    case SMPD_READING_STDOUT:
 	    case SMPD_READING_STDERR:
-		if (event.error == SOCK_SUCCESS)
+		if (event.error != SOCK_SUCCESS)
+		{
+		    if (event.error != SOCK_EOF)
+		    {
+			smpd_dbg_printf("sock_post_read failed (%s), assuming %s is closed, calling sock_post_close(%d).\n",
+			    get_sock_error_string(result), smpd_get_context_str(context), sock_getid(context->sock));
+		    }
+		    /*
+		    context->state = SMPD_CLOSING;
+		    result = sock_post_close(context->sock);
+		    if (result != SOCK_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a close on a broken %s context.\n", smpd_get_context_str(context));
+			smpd_exit_fn("smpd_enter_at_state");
+			return SMPD_FAIL;
+		    }
+		    */
+		    break;
+		}
+
 		{
 		    sock_size_t num_read;
 		    char buffer[SMPD_MAX_CMD_LENGTH];
@@ -515,27 +534,11 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 			}
 		    }
 		}
-		else
-		{
-		    if (event.error != SOCK_EOF)
-		    {
-			smpd_dbg_printf("sock_post_read failed (%s), assuming %s is closed, calling sock_post_close(%d).\n",
-			    get_sock_error_string(result), smpd_get_context_str(context), sock_getid(context->sock));
-		    }
-		    context->state = SMPD_CLOSING;
-		    result = sock_post_close(context->sock);
-		    if (result != SOCK_SUCCESS)
-		    {
-			smpd_err_printf("unable to post a close on a broken %s context.\n", smpd_get_context_str(context));
-			smpd_exit_fn("smpd_enter_at_state");
-			return SMPD_FAIL;
-		    }
-		}
 		break;
 	    case SMPD_READING_CMD_HEADER:
 		if (event.error != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to read the cmd header.\n");
+		    smpd_err_printf("unable to read the cmd header on the %s context.\n", smpd_get_context_str(context));
 		    break;
 		}
 		smpd_dbg_printf("read command header\n");
@@ -686,6 +689,10 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		}
 		else if (result == SMPD_DBS_RETURN)
 		{
+		    /*
+		    printf("SMPD_DBS_RETURN returned, not posting read for the next command.\n");
+		    fflush(stdout);
+		    */
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_SUCCESS;
 		}
@@ -1065,6 +1072,18 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    smpd_get_state_string(context->read_state));
 		break;
 	    }
+	    if (event.error != SOCK_SUCCESS)
+	    {
+		smpd_dbg_printf("SOCK_OP_READ failed, closing %s context.\n", smpd_get_context_str(context));
+		context->state = SMPD_CLOSING;
+		result = sock_post_close(context->sock);
+		if (result != SOCK_SUCCESS)
+		{
+		    smpd_err_printf("unable to post a close on a broken %s context.\n", smpd_get_context_str(context));
+		    smpd_exit_fn("smpd_enter_at_state");
+		    return SMPD_FAIL;
+		}
+	    }
 	    break;
 	case SOCK_OP_WRITE:
 	    smpd_dbg_printf("SOCK_OP_WRITE\n");
@@ -1184,6 +1203,22 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 			smpd_free_command(cmd_ptr);
 			smpd_exit_fn("smpd_enter_at_state");
 			smpd_exit(0);
+		    }
+		    smpd_free_command(cmd_ptr);
+		    break;
+		}
+		else if (strcmp(cmd_ptr->cmd_str, "done") == 0)
+		{
+		    smpd_dbg_printf("done command written, posting a close of the %s context\n", smpd_get_context_str(context));
+		    context->state = SMPD_DONE;
+		    result = sock_post_close(context->sock);
+		    if (result != SOCK_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a close of the sock after writing a 'done' command, sock error:\n%s\n",
+			    get_sock_error_string(result));
+			smpd_free_command(cmd_ptr);
+			smpd_exit_fn("smpd_enter_at_state");
+			return SMPD_FAIL;
 		    }
 		    smpd_free_command(cmd_ptr);
 		    break;
@@ -1766,6 +1801,18 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		}
 		break;
 	    }
+	    if (event.error != SOCK_SUCCESS)
+	    {
+		smpd_dbg_printf("SOCK_OP_WRITE failed, closing %d context.\n", smpd_get_context_str(context));
+		context->state = SMPD_CLOSING;
+		result = sock_post_close(context->sock);
+		if (result != SOCK_SUCCESS)
+		{
+		    smpd_err_printf("unable to post a close on a broken %s context.\n", smpd_get_context_str(context));
+		    smpd_exit_fn("smpd_enter_at_state");
+		    return SMPD_FAIL;
+		}
+	    }
 	    break;
 	case SOCK_OP_ACCEPT:
 	    smpd_dbg_printf("SOCK_OP_ACCEPT\n");
@@ -1950,6 +1997,18 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		}
 		break;
 	    }
+	    if (event.error != SOCK_SUCCESS)
+	    {
+		smpd_dbg_printf("SOCK_OP_CONNECT failed, closing %d context.\n", smpd_get_context_str(context));
+		context->state = SMPD_CLOSING;
+		result = sock_post_close(context->sock);
+		if (result != SOCK_SUCCESS)
+		{
+		    smpd_err_printf("unable to post a close on a broken %s context.\n", smpd_get_context_str(context));
+		    smpd_exit_fn("smpd_enter_at_state");
+		    return SMPD_FAIL;
+		}
+	    }
 	    break;
 	case SOCK_OP_CLOSE:
 	    smpd_dbg_printf("SOCK_OP_CLOSE\n");
@@ -1962,6 +2021,10 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 	    case SMPD_MGR_LISTENING:
 		smpd_process.listener_context = NULL;
 		break;
+	    case SMPD_DONE:
+		smpd_free_context(context);
+		smpd_exit_fn("smpd_enter_at_state");
+		return SMPD_SUCCESS;
 	    case SMPD_EXITING:
 		if (smpd_process.listener_context)
 		{
@@ -1981,7 +2044,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		smpd_exit_fn("smpd_enter_at_state");
 		return SMPD_SUCCESS;
 	    case SMPD_CLOSING:
-		if (context->type == SMPD_CONTEXT_STDOUT || context->type == SMPD_CONTEXT_STDERR)
+		if (context->process && (context->type == SMPD_CONTEXT_STDOUT || context->type == SMPD_CONTEXT_STDERR || context->type == SMPD_CONTEXT_PMI))
 		{
 		    context->process->context_refcount--;
 		    if (context->process->context_refcount < 1)
@@ -2055,6 +2118,9 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 				case SMPD_CONTEXT_STDERR:
 				    context->process->err = NULL;
 				    break;
+				case SMPD_CONTEXT_PMI:
+				    context->process->pmi = NULL;
+				    break;
 				}
 				/* free the process structure */
 				smpd_free_process_struct(iter);
@@ -2082,6 +2148,9 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 			    break;
 			case SMPD_CONTEXT_STDERR:
 			    context->process->err = NULL;
+			    break;
+			case SMPD_CONTEXT_PMI:
+			    context->process->pmi = NULL;
 			    break;
 			}
 		    }

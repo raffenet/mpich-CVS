@@ -461,21 +461,15 @@ int smpd_forward_command(smpd_context_t *src, smpd_context_t *dest)
 int smpd_post_read_command(smpd_context_t *context)
 {
     int result;
-    char *str;
 
     smpd_enter_fn("smpd_post_read_command");
 
     /* post a read for the next command header */
-    if (context == smpd_process.parent_context)
-	str = "parent";
-    else if (context == smpd_process.left_context)
-	str = "left";
-    else if (context == smpd_process.right_context)
-	str = "right";
-    else
-	str = "unknown";
-    /*smpd_dbg_printf("posting a read for a command header on the %s context, sock %d: %d bytes\n", str, sock_getid(context->sock), SMPD_CMD_HDR_LENGTH);*/
-    smpd_dbg_printf("posting a read for a command header on the %s context, sock %d\n", str, sock_getid(context->sock));
+    /*
+    printf("posting a read for a command header on the %s context, sock %d\n", smpd_get_context_str(context), sock_getid(context->sock));
+    fflush(stdout);
+    */
+    smpd_dbg_printf("posting a read for a command header on the %s context, sock %d\n", smpd_get_context_str(context), sock_getid(context->sock));
     context->read_state = SMPD_READING_CMD_HEADER;
     context->read_cmd.state = SMPD_CMD_READING_HDR;
     result = sock_post_read(context->sock, context->read_cmd.cmd_hdr_str, SMPD_CMD_HDR_LENGTH, NULL);

@@ -16,11 +16,6 @@
 #include <stdlib.h>
 #endif
 
-#ifdef HAVE_WINDOWS_H
-static BOOL bInitialized = FALSE;
-static HANDLE hOutputMutex = NULL;
-#endif
-
 #define SMPD_MAX_INDENT 20
 static char indent[SMPD_MAX_INDENT+1] = "";
 static int cur_indent = 0;
@@ -120,10 +115,10 @@ int smpd_init_printf(void)
 	smpd_process.dbg_state |= SMPD_DBG_STATE_PREPEND_RANK;
 
 #ifdef HAVE_WINDOWS_H
-    if (!bInitialized)
+    if (!smpd_process.bOutputInitialized)
     {
-	hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
-	bInitialized = TRUE;
+	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
+	smpd_process.bOutputInitialized = TRUE;
     }
 #endif
     return SMPD_SUCCESS;
@@ -139,12 +134,12 @@ int smpd_err_printf(char *str, ...)
 	return 0;
 
 #ifdef HAVE_WINDOWS_H
-    if (!bInitialized)
+    if (!smpd_process.bOutputInitialized)
     {
-	hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
-	bInitialized = TRUE;
+	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
+	smpd_process.bOutputInitialized = TRUE;
     }
-    WaitForSingleObject(hOutputMutex, INFINITE);
+    WaitForSingleObject(smpd_process.hOutputMutex, INFINITE);
 #endif
 
     va_start(list, str);
@@ -191,7 +186,7 @@ int smpd_err_printf(char *str, ...)
     va_end(list);
 
 #ifdef HAVE_WINDOWS_H
-    ReleaseMutex(hOutputMutex);
+    ReleaseMutex(smpd_process.hOutputMutex);
 #endif
     return n;
 }
@@ -206,12 +201,12 @@ int smpd_dbg_printf(char *str, ...)
 	return 0;
 
 #ifdef HAVE_WINDOWS_H
-    if (!bInitialized)
+    if (!smpd_process.bOutputInitialized)
     {
-	hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
-	bInitialized = TRUE;
+	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
+	smpd_process.bOutputInitialized = TRUE;
     }
-    WaitForSingleObject(hOutputMutex, INFINITE);
+    WaitForSingleObject(smpd_process.hOutputMutex, INFINITE);
 #endif
 
     va_start(list, str);
@@ -256,7 +251,7 @@ int smpd_dbg_printf(char *str, ...)
     va_end(list);
 
 #ifdef HAVE_WINDOWS_H
-    ReleaseMutex(hOutputMutex);
+    ReleaseMutex(smpd_process.hOutputMutex);
 #endif
 
     return n;

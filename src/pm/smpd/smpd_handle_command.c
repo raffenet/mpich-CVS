@@ -109,6 +109,18 @@ int smpd_launch_processes()
 	    smpd_err_printf("unable to add the rank to the launch command: %d\n", launch_node_ptr->iproc);
 	    goto launch_failure;
 	}
+	result = smpd_add_command_int_arg(cmd_ptr, "n", launch_node_ptr->nproc);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the nproc field to the launch command: %d\n", launch_node_ptr->nproc);
+	    goto launch_failure;
+	}
+	result = smpd_add_command_arg(cmd_ptr, "k", smpd_process.kvs_name);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the kvs name('%s') to the launch command\n", smpd_process.kvs_name);
+	    goto launch_failure;
+	}
 
 	/* send the launch command */
 	result = smpd_post_write_command(smpd_process.left_context, cmd_ptr);
@@ -136,13 +148,54 @@ int smpd_handle_result(smpd_context_t *context)
     char str[1024];
     smpd_command_t *iter, *trailer;
     int match_tag;
+    char ctx_key[100];
+    int process_id;
+    smpd_context_t *pmi_context;
 
     smpd_enter_fn("handle_result");
+
+    if (context->type != SMPD_CONTEXT_PMI && smpd_get_string_arg(context->read_cmd.cmd, "ctx_key", ctx_key, 100))
+    {
+	/*
+	printf("forwarding dbs result from %s context\n", smpd_get_context_str(context));
+	fflush(stdout);
+	*/
+
+	smpd_dbg_printf("forwarding the dbs result command to the pmi context.\n");
+	process_id = atoi(ctx_key);
+	pmi_context = smpd_process.context_list;
+	while (pmi_context)
+	{
+	    if (pmi_context->id == process_id)
+		break;
+	    pmi_context = pmi_context->next;
+	}
+	if (pmi_context == NULL)
+	{
+	    /*
+	    printf("dbs result key does not exist: %d\n", process_id);
+	    fflush(stdout);
+	    */
+
+	    smpd_err_printf("received dbs result for a pmi context that doesn't exist: unmatched id = %d\n", process_id);
+	    smpd_exit_fn("smpd_handle_result");
+	    return SMPD_SUCCESS;
+	}
+
+	/*
+	printf("forwarding dbs result to %s context.\n", smpd_get_context_str(pmi_context));
+	fflush(stdout);
+	*/
+
+	result = smpd_forward_command(context, pmi_context);
+	smpd_exit_fn("smpd_handle_result");
+	return result;
+    }
 
     if (!smpd_get_int_arg(context->read_cmd.cmd, "cmd_tag", &match_tag))
     {
 	smpd_err_printf("result command received without a cmd_tag field: '%s'\n", context->read_cmd.cmd);
-	smpd_exit_fn("handle_result");
+	smpd_exit_fn("smpd_handle_result");
 	return SMPD_FAIL;
     }
 
@@ -213,6 +266,22 @@ int smpd_handle_result(smpd_context_t *context)
 			ret_val = SMPD_FAIL;
 		    }
 		}
+		else if (iter->cmd_str[0] == 'd' && iter->cmd_str[1] == 'b')
+		{
+		    /*
+		    printf("dbs result matched, returning SMPD_DBS_RETURN.\n");
+		    fflush(stdout);
+		    */
+		    ret_val = SMPD_DBS_RETURN;
+		}
+		else if (strcmp(iter->cmd_str, "barrier") == 0)
+		{
+		    /*
+		    printf("barrier result matched, returning SMPD_DBS_RETURN.\n");
+		    fflush(stdout);
+		    */
+		    ret_val = SMPD_DBS_RETURN;
+		}
 		else
 		{
 		    smpd_err_printf("result returned for unhandled command:\n command: '%s'\n result: '%s'\n", iter->cmd, str);
@@ -235,7 +304,7 @@ int smpd_handle_result(smpd_context_t *context)
 	    {
 		smpd_err_printf("unable to free command in the wait_list\n");
 	    }
-	    smpd_exit_fn("handle_result");
+	    smpd_exit_fn("smpd_handle_result");
 	    return ret_val;
 	}
 	else
@@ -254,8 +323,37 @@ int smpd_handle_result(smpd_context_t *context)
     {
 	smpd_err_printf("result command did not match any commands in the wait_list.\n");
     }
-    smpd_exit_fn("handle_result");
+    smpd_exit_fn("smpd_handle_result");
     return SMPD_FAIL;
+}
+
+static int get_name_key_value(char *str, char *name, char *key, char *value)
+{
+    if (str == NULL)
+	return SMPD_FAIL;
+
+    if (name != NULL)
+    {
+	if (!smpd_get_string_arg(str, "name", name, SMPD_MAX_DBS_NAME_LEN))
+	{
+	    return SMPD_FAIL;
+	}
+    }
+    if (key != NULL)
+    {
+	if (!smpd_get_string_arg(str, "key", key, SMPD_MAX_DBS_KEY_LEN))
+	{
+	    return SMPD_FAIL;
+	}
+    }
+    if (value != NULL)
+    {
+	if (!smpd_get_string_arg(str, "value", value, SMPD_MAX_DBS_VALUE_LEN))
+	{
+	    return SMPD_FAIL;
+	}
+    }
+    return SMPD_SUCCESS;
 }
 
 int smpd_handle_dbs_command(smpd_context_t *context)
@@ -265,35 +363,64 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     char name[SMPD_MAX_DBS_NAME_LEN+1] = "";
     char key[SMPD_MAX_DBS_KEY_LEN+1] = "";
     char value[SMPD_MAX_DBS_VALUE_LEN+1] = "";
+    char ctx_key[100];
     char *result_str;
 
-    smpd_enter_fn("handle_dbs_command");
+    smpd_enter_fn("smpd_handle_dbs_command");
 
     cmd = &context->read_cmd;
 
+    /*
+    printf("handling dbs command on %s context, sock %d.\n", smpd_get_context_str(context), sock_getid(context->sock));
+    fflush(stdout);
+    */
+
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for the dbs command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_dbs_command");
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for dbs command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_dbs_command");
+	return SMPD_FAIL;
+    }
+    /* copy the ctx_key for pmi control channel lookup */
+    if (!smpd_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100))
+    {
+	smpd_err_printf("no ctx_key in the db command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_dbs_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "ctx_key", ctx_key);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the ctx_key to the result command for dbs command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_dbs_command");
+	return SMPD_FAIL;
+    }
+
+    /* check to make sure this node is running the dbs */
     if (!smpd_process.have_dbs)
     {
+	/*
+	printf("havd_dbs is false for this process %s context.\n", smpd_get_context_str(context));
+	fflush(stdout);
+	*/
+
 	/* create a failure reply because this node does not have an initialized database */
 	smpd_dbg_printf("sending a failure reply because this node does not have an initialized database.\n");
-	result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to create a result command for the dbs command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("handle_dbs_command");
-	    return SMPD_FAIL;
-	}
-	result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to add the tag to the result command for dbs command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("handle_dbs_command");
-	    return SMPD_FAIL;
-	}
 	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - smpd does not have an initialized database.");
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command for dbs command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("handle_dbs_command");
+	    smpd_exit_fn("smpd_handle_dbs_command");
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
@@ -301,16 +428,18 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', dbs cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	    smpd_exit_fn("handle_dbs_command");
+	    smpd_exit_fn("smpd_handle_dbs_command");
 	    return SMPD_FAIL;
 	}
-	smpd_exit_fn("handle_dbs_command");
+	smpd_exit_fn("smpd_handle_dbs_command");
 	return SMPD_SUCCESS;
     }
 
+    /* do the dbs request */
     if (strcmp(cmd->cmd_str, "dbput") == 0)
     {
-	/*GetNameKeyValue(&p->pszIn[6], name, key, value);*/
+	if (get_name_key_value(cmd->cmd, name, key, value) != SMPD_SUCCESS)
+	    goto invalid_dbs_command;
 	if (smpd_dbs_put(name, key, value) == SMPD_SUCCESS)
 	    result_str = DBS_SUCCESS_STR;
 	else
@@ -318,10 +447,16 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     }
     else if (strcmp(cmd->cmd_str, "dbget") == 0)
     {
-	/*GetNameKeyValue(&p->pszIn[6], name, key, NULL);*/
+	if (get_name_key_value(cmd->cmd, name, key, NULL) != SMPD_SUCCESS)
+	    goto invalid_dbs_command;
 	if (smpd_dbs_get(name, key, value) == SMPD_SUCCESS)
 	{
-	    /*result_str = value;*/
+	    result = smpd_add_command_arg(temp_cmd, "value", value);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the get value('%s') to the result command.\n", value);
+		return SMPD_FAIL;
+	    }
 	    result_str = DBS_SUCCESS_STR;
 	}
 	else
@@ -329,25 +464,31 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     }
     else if (strcmp(cmd->cmd_str, "dbcreate") == 0)
     {
-	if (smpd_dbs_create(name) == SMPD_SUCCESS)
+	if (smpd_get_string_arg(cmd->cmd, "name", name, SMPD_MAX_DBS_NAME_LEN))
 	{
-	    /*result_str = name;*/
-	    result_str = DBS_SUCCESS_STR;
+	    result = smpd_dbs_create_name_in(name);
 	}
 	else
-	    result_str = DBS_FAIL_STR;
-    }
-    else if (strcmp(cmd->cmd_str, "dbcreate") == 0)
-    {
-	/*GetNameKeyValue(&p->pszIn[9], name, NULL, NULL);*/
-	if (smpd_dbs_create_name_in(name) == SMPD_SUCCESS)
+	{
+	    result = smpd_dbs_create(name);
+	}
+	if (result == SMPD_SUCCESS)
+	{
+	    result = smpd_add_command_arg(temp_cmd, "name", name);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the dbcreate name('%s') to the result command.\n", name);
+		return SMPD_FAIL;
+	    }
 	    result_str = DBS_SUCCESS_STR;
+	}
 	else
 	    result_str = DBS_FAIL_STR;
     }
     else if (strcmp(cmd->cmd_str, "dbdestroy") == 0)
     {
-	/*GetNameKeyValue(&p->pszIn[10], name, NULL, NULL);*/
+	if (get_name_key_value(cmd->cmd, name, NULL, NULL) != SMPD_SUCCESS)
+	    goto invalid_dbs_command;
 	if (smpd_dbs_destroy(name) == SMPD_SUCCESS)
 	    result_str = DBS_SUCCESS_STR;
 	else
@@ -355,19 +496,36 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     }
     else if (strcmp(cmd->cmd_str, "dbfirst") == 0)
     {
-	/*GetNameKeyValue(&p->pszIn[8], name, NULL, NULL);*/
+	if (get_name_key_value(cmd->cmd, name, NULL, NULL) != SMPD_SUCCESS)
+	    goto invalid_dbs_command;
 	if (smpd_dbs_first(name, key, value) == SMPD_SUCCESS)
 	{
 	    if (*key == '\0')
 	    {
-		/*result_str = DBS_END_STR;*/
-		result_str = DBS_SUCCESS_STR;
+		/* this can be changed to a special end_key if we don't want DBS_END_STR to be a reserved key */
+		result = smpd_add_command_arg(temp_cmd, "key", DBS_END_STR);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the dbfirst key('%s') to the result command.\n", key);
+		    return SMPD_FAIL;
+		}
 	    }
 	    else
 	    {
-		/*_snprintf(p->pszOut, MAX_CMD_LENGTH, "key=%s value=%s", key, value);*/
-		result_str = DBS_SUCCESS_STR;
+		result = smpd_add_command_arg(temp_cmd, "key", key);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the dbfirst key('%s') to the result command.\n", key);
+		    return SMPD_FAIL;
+		}
+		result = smpd_add_command_arg(temp_cmd, "value", value);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the dbfirst value('%s') to the result command.\n", value);
+		    return SMPD_FAIL;
+		}
 	    }
+	    result_str = DBS_SUCCESS_STR;
 	}
 	else
 	{
@@ -376,19 +534,36 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     }
     else if (strcmp(cmd->cmd_str, "dbnext") == 0)
     {
-	/*GetNameKeyValue(&p->pszIn[7], name, NULL, NULL);*/
+	if (get_name_key_value(cmd->cmd, name, NULL, NULL) != SMPD_SUCCESS)
+	    goto invalid_dbs_command;
 	if (smpd_dbs_next(name, key, value) == SMPD_SUCCESS)
 	{
 	    if (*key == '\0')
 	    {
-		/*result_str = DBS_END_STR;*/
-		result_str = DBS_SUCCESS_STR;
+		/* this can be changed to a special end_key if we don't want DBS_END_STR to be a reserved key */
+		result = smpd_add_command_arg(temp_cmd, "key", DBS_END_STR);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the dbndext key('%s') to the result command.\n", key);
+		    return SMPD_FAIL;
+		}
 	    }
 	    else
 	    {
-		/*_snprintf(p->pszOut, MAX_CMD_LENGTH, "key=%s value=%s", key, value);*/
-		result_str = DBS_SUCCESS_STR;
+		result = smpd_add_command_arg(temp_cmd, "key", key);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the dbnext key('%s') to the result command.\n", key);
+		    return SMPD_FAIL;
+		}
+		result = smpd_add_command_arg(temp_cmd, "value", value);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the dbnext value('%s') to the result command.\n", value);
+		    return SMPD_FAIL;
+		}
 	    }
+	    result_str = DBS_SUCCESS_STR;
 	}
 	else
 	{
@@ -399,12 +574,16 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     {
 	if (smpd_dbs_firstdb(name) == SMPD_SUCCESS)
 	{
-	    /*
+	    /* this can be changed to a special end_key if we don't want DBS_END_STR to be a reserved key */
 	    if (*name == '\0')
-		strcpy(p->pszOut, DBS_END_STR);
+		result = smpd_add_command_arg(temp_cmd, "name", DBS_END_STR);
 	    else
-		_snprintf(p->pszOut, MAX_CMD_LENGTH, "name=%s", name);
-	    */
+		result = smpd_add_command_arg(temp_cmd, "name", name);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the dbfirstdb name('%s') to the result command.\n", name);
+		return SMPD_FAIL;
+	    }
 	    result_str = DBS_SUCCESS_STR;
 	}
 	else
@@ -416,12 +595,16 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     {
 	if (smpd_dbs_nextdb(name) == SMPD_SUCCESS)
 	{
-	    /*
+	    /* this can be changed to a special end_key if we don't want DBS_END_STR to be a reserved key */
 	    if (*name == '\0')
-		strcpy(p->pszOut, DBS_END_STR);
+		result = smpd_add_command_arg(temp_cmd, "name", DBS_END_STR);
 	    else
-		_snprintf(p->pszOut, MAX_CMD_LENGTH, "name=%s", name);
-	    */
+		result = smpd_add_command_arg(temp_cmd, "name", name);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the dbnextdb name('%s') to the result command.\n", name);
+		return SMPD_FAIL;
+	    }
 	    result_str = DBS_SUCCESS_STR;
 	}
 	else
@@ -431,7 +614,8 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     }
     else if (strcmp(cmd->cmd_str, "dbdelete") == 0)
     {
-	/*GetNameKeyValue(&p->pszIn[9], name, key, NULL);*/
+	if (get_name_key_value(cmd->cmd, name, key, NULL) != SMPD_SUCCESS)
+	    goto invalid_dbs_command;
 	if (smpd_dbs_delete(name, key) == SMPD_SUCCESS)
 	    result_str = DBS_SUCCESS_STR;
 	else
@@ -439,30 +623,17 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     }
     else
     {
-	smpd_err_printf("unknown dbs command '%s'", cmd->cmd_str);
+	smpd_err_printf("unknown dbs command '%s', replying with failure.\n", cmd->cmd_str);
+	goto invalid_dbs_command;
     }
 
-    /* create a reply */
+    /* send the reply */
     smpd_dbg_printf("sending reply to dbs command '%s'.\n", cmd->cmd);
-    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
-    if (result != SMPD_SUCCESS)
-    {
-	smpd_err_printf("unable to create a result command for the dbs command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("handle_dbs_command");
-	return SMPD_FAIL;
-    }
-    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
-    if (result != SMPD_SUCCESS)
-    {
-	smpd_err_printf("unable to add the tag to the result command for dbs command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("handle_dbs_command");
-	return SMPD_FAIL;
-    }
-    result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+    result = smpd_add_command_arg(temp_cmd, "result", result_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result string to the result command for dbs command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("handle_dbs_command");
+	smpd_exit_fn("smpd_handle_dbs_command");
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
@@ -470,10 +641,31 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', dbs cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	smpd_exit_fn("handle_dbs_command");
+	smpd_exit_fn("smpd_handle_dbs_command");
 	return SMPD_FAIL;
     }
-    smpd_exit_fn("handle_dbs_command");
+
+    smpd_exit_fn("smpd_handle_dbs_command");
+    return SMPD_SUCCESS;
+
+invalid_dbs_command:
+
+    result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - invalid dbs command.");
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result string to the result command for dbs command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_dbs_command");
+	return SMPD_FAIL;
+    }
+    smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', dbs cmd '%s'", temp_cmd->cmd, cmd->cmd);
+	smpd_exit_fn("smpd_handle_dbs_command");
+	return SMPD_FAIL;
+    }
+    smpd_exit_fn("smpd_handle_dbs_command");
     return SMPD_SUCCESS;
 }
 
@@ -508,6 +700,8 @@ int smpd_handle_launch_command(smpd_context_t *context)
     smpd_get_string_arg(cmd->cmd, "e", process->env, SMPD_MAX_ENV_LENGTH);
     smpd_get_string_arg(cmd->cmd, "d", process->dir, SMPD_MAX_EXE_LENGTH);
     smpd_get_string_arg(cmd->cmd, "p", process->path, SMPD_MAX_EXE_LENGTH);
+    smpd_get_string_arg(cmd->cmd, "k", process->kvs_name, SMPD_MAX_DBS_NAME_LEN);
+    smpd_get_int_arg(cmd->cmd, "n", &process->nproc);
 
     /* launch the process */
     smpd_dbg_printf("launching: '%s'\n", process->exe);
@@ -1174,11 +1368,11 @@ int smpd_handle__command(smpd_context_t *context)
     int result;
     smpd_command_t *cmd, *temp_cmd;
 
-    smpd_enter_fn("handle__command");
+    smpd_enter_fn("smpd_handle__command");
 
     cmd = &context->read_cmd;
 
-    smpd_exit_fn("handle__command");
+    smpd_exit_fn("smpd_handle__command");
     return result;
 }
 #endif
@@ -1208,7 +1402,7 @@ int smpd_handle_command(smpd_context_t *context)
     result = smpd_command_destination(cmd->dest, &dest);
     if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("invalid command received, unable to determine the destination.\n");
+	smpd_err_printf("invalid command received, unable to determine the destination: '%s'\n", cmd->cmd);
 	smpd_exit_fn("smpd_handle_command");
 	return SMPD_SUCCESS;
     }
@@ -1320,6 +1514,12 @@ int smpd_handle_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
+    else if (strcmp(cmd->cmd_str, "barrier") == 0)
+    {
+	result = smpd_handle_barrier_command(context);
+	smpd_exit_fn("smpd_handle_command");
+	return result;
+    }
     else if (strcmp(cmd->cmd_str, "down") == 0)
     {
 	context->state = SMPD_EXITING;
@@ -1333,6 +1533,24 @@ int smpd_handle_command(smpd_context_t *context)
 	}
 	smpd_exit_fn("smpd_handle_command");
 	return SMPD_EXITING;
+    }
+    else if (strcmp(cmd->cmd_str, "done") == 0)
+    {
+	if (context->type != SMPD_CONTEXT_PMI)
+	{
+	    smpd_err_printf("done command read on %s context.\n", smpd_get_context_str(context));
+	}
+	context->state = SMPD_CLOSING;
+	result = sock_post_close(context->sock);
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a close on sock %d, sock error:\n%s\n",
+		sock_getid(context->sock), get_sock_error_string(result));
+	    smpd_exit_fn("smpd_handle_command");
+	    return SMPD_FAIL;
+	}
+	smpd_exit_fn("smpd_handle_command");
+	return SMPD_CLOSE;
     }
     else
     {
