@@ -1060,7 +1060,9 @@ sub print_special_decls {
 # --------------------------------------------------------------------------
 # Create mpif.h.in from mpi.h
 #
-
+# Need to put this into a routine similar to the ReadInterface routine
+# in the c++ version.  This will allow us to read both mpi.h.in
+# and mpio.h.in (or other files)
 open ( MPIFD, "<$prototype_file" ) || die "Could not open $prototype_file\n";
 #
 # First, find the values that we need
@@ -1213,13 +1215,15 @@ sub clean_args {
     my $newargs = "";
     my $comma = "";
     for $parm (split(',',$args)) {
-	if ( ($parm =~ /^\s*([A-Za-z0-9_]+)\s+[A-Za-z0-9_]+$/) ) {
+	# Remove any leading or trailing spaces
+	$parm =~ s/^\s*//;
+	$parm =~ s/\s*$//;
+	# Handle parameters with parameter names
+	# First if handles "int foo", second handles "int *foo"
+	if ( ($parm =~ /^([A-Za-z0-9_]+)\s+[A-Za-z0-9_]+$/) ) {
 	    $parm = $1;
 	}
-	elsif ( ($parm =~ /\s*([A-Za-z0-9_]+\s*\*)\s*[A-Za-z0-9_]+$/) ) {
-	    $parm = $1;
-	}
-	elsif ( ($parm =~ /^\s+([^\s].*)\s*$/) ) {
+	elsif ( ($parm =~ /([A-Za-z0-9_]+\s*\*)\s*[A-Za-z0-9_]+$/) ) {
 	    $parm = $1;
 	}
 	$newargs .= "$comma$parm";
