@@ -87,8 +87,16 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	vc->shm.read_shmq->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
     }
 
-    /* FIXME: excessive recursion... */
-    MPIDI_CH3U_Handle_recv_req(vc, rreq);
+    if (rreq->ch3.ca == MPIDI_CH3_CA_COMPLETE)
+    {
+	/* mark data transfer as complete and decrement CC */
+	MPIDI_CH3U_Request_complete(rreq);
+    }
+    else
+    {
+	/* FIXME: excessive recursion... */
+	MPIDI_CH3U_Handle_recv_req(vc, rreq);
+    }
 
 #else
 
