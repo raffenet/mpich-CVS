@@ -1,3 +1,4 @@
+AC_PREREQ(2.59)
 AC_INIT(initcxx.cpp)
 AC_CONFIG_HEADER(mpicxxconf.h)
 dnl We need install.sh, config.guess, etc. for the code that

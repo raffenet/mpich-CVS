@@ -1,3 +1,4 @@
+AC_PREREQ(2.59)
 AC_INIT(Makefile.in)
 # Set use_alias_types to yes to allow some of the MPI named types to be
 # aliases for others (allowed under MPI-1 but not MPI-2).
