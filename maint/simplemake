@@ -93,8 +93,8 @@ foreach $_ (@ARGV) {
     }
     elsif (/-vpath=?(.*)/) {
 	$val = $1;
-	if ($val eq "no") { vpath_config = 0; } 
-	else { vpath_config = 1; }
+	if ($val eq "no") { $vpath_config = 0; } 
+	else { $vpath_config = 1; }
     }
     elsif (/-help/) {
 	&printHelp;
@@ -485,11 +485,15 @@ sub ListTargets {
 #     &RecursiveOp( "target" );
 sub RecursiveOp {
     $target = $_[0];
-    print FD "\tfor dir in";
-    foreach $dir (@subdirs) {
-	if ($dir ne ".") { print FD " $dir"; }
+    print "n subdirs = $#subdirs\n";
+    if ($#subdirs == 0 && $subdirs[0] eq ".") { return; }
+    if ($#subdirs >= 0) { 
+        print FD "\tfor dir in";
+        foreach $dir (@subdirs) {
+	    if ($dir ne ".") { print FD " $dir"; }
+        }
+        print FD " ; do \\\n\t\t(cd \$\$dir ; \${MAKE} $target ; ) ; done\n";
     }
-    print FD " ; do \\\n\t\t(cd \$\$dir ; \${MAKE} $target ) ; done\n";
 }
 
 #
@@ -510,10 +514,12 @@ sub GetLibLoc {
 # Look for autoconf directory variables that are used 
 sub LookForAutoconfDirs {
     $line = $_[0];
+    print "Looking at $line\n" if $debug;
     # Look for \$\{\w*\} and \$\(\w*\) 
-    while ($line =~ /^[^\$]*\$[\{\(](\w*)[\}\)](.*)\$/) {
+    while ($line =~ /^[^\$]*\$[\{\(](\w*)[\}\)](.*)$/) {
 	$varname = $1;
 	$line = $2;
+	print "Found $varname in line\n" if $debug;
 	# Look for varname in the known names; add to dirs_seen
 	if (defined($dirdefs{$varname})) {
 	    $dirs_seen{$varname} = $varname;
