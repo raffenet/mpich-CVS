@@ -60,9 +60,11 @@ void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 	nsec -= 1.0e9;
 	sec++;
     }
-    t3->sec = sec;
-    t3->nsec = nsec;
+    t3->tv_sec = sec;
+    t3->tv_nsec = nsec;
 }
+double MPID_Generic_wtick(void);
+
 double MPID_Wtick( void )
 {
     struct timespec res;
