@@ -503,13 +503,16 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 
 		    if (rreq == NULL)
 		    {
-			/* conn->recv_active = NULL;  -- already set to NULL */
-			mpi_errno = connection_post_recv_pkt(conn);
-			if (mpi_errno != MPI_SUCCESS)
+			if (conn->state != CONN_STATE_CLOSING)
 			{
-			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN,
-							     "**fail", NULL);
-			    goto fn_exit;
+			    /* conn->recv_active = NULL;  -- already set to NULL */
+			    mpi_errno = connection_post_recv_pkt(conn);
+			    if (mpi_errno != MPI_SUCCESS)
+			    {
+				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN,
+				    "**fail", NULL);
+				goto fn_exit;
+			    }
 			}
 		    }
 		    else
