@@ -75,7 +75,3 @@ c                                 node 0 prints the answer.
  30   call MPI_FINALIZE(rc)
       stop
       end
-
-
-
-
