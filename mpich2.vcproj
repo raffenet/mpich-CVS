@@ -229,7 +229,8 @@ copy mmDebug\mpich2d.lib lib\mpich2d.lib
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			CharacterSet="2"
+			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
@@ -1834,6 +1835,12 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 				RelativePath=".\src\mpid\common\datatype\mpid_datatype_free.c">
 			</File>
 			<File
+				RelativePath=".\src\mpid\common\datatype\mpid_ext32_datatype.c">
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\mpid_ext32_segment.c">
+			</File>
+			<File
 				RelativePath=".\src\mpid\common\datatype\mpid_segment.c">
 			</File>
 			<File
@@ -2448,9 +2455,6 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			Filter="h;hpp;hxx;hm;inl;fi;fd">
 			<File
 				RelativePath=".\src\mpi\romio\adio\ad_ntfs\ad_ntfs.h">
-			</File>
-			<File
-				RelativePath=".\src\mpi\errhan\defmsg.h">
 			</File>
 			<File
 				RelativePath=".\src\mpi\errhan\errcodes.h">
