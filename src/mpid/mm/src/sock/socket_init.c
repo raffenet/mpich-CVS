@@ -34,6 +34,7 @@ MPIDI_VC_functions g_socket_vc_functions =
 int socket_init(void)
 {
     int error;
+    char *env;
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_INIT);
@@ -43,6 +44,15 @@ int socket_init(void)
     if (error != SOCK_SUCCESS)
     {
 	err_printf("socket_init: sock_init failed, error %d\n", error);
+    }
+
+    SOCKET_Process.nSOCKET_EAGER_LIMIT = SOCKET_EAGER_LIMIT;
+    env = getenv("MPICH_SOCKET_EAGER_LIMIT");
+    if (env)
+    {
+	SOCKET_Process.nSOCKET_EAGER_LIMIT = atoi(env);
+	if (SOCKET_Process.nSOCKET_EAGER_LIMIT < 1)
+	    SOCKET_Process.nSOCKET_EAGER_LIMIT = SOCKET_EAGER_LIMIT;
     }
 
     gethostname(SOCKET_Process.host, 100);

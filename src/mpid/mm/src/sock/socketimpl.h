@@ -12,7 +12,7 @@
 #define SOCKET_ACCEPT_CONNECTION 0
 #define SOCKET_REJECT_CONNECTION 1
 
-#define SOCKET_EAGER_LIMIT       (1024 * 20)
+#define SOCKET_EAGER_LIMIT       (1024 * 120)
 #define SOCKET_ERROR_MSG_LENGTH  256
 #define SOCKET_LISTENER_POINTER  &SOCKET_Process
 
@@ -23,6 +23,7 @@ typedef struct SOCKET_PerProcess {
                 sock_t listener;
 		   int port;
 		  char host[100];
+		   int nSOCKET_EAGER_LIMIT;
 		   int error;
 		  char err_msg[SOCKET_ERROR_MSG_LENGTH];
 } SOCKET_PerProcess;
