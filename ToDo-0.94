@@ -1,48 +1,33 @@
 Open Items:
 
-* (ssm) topology/protocol specification [Rusty/David/Brian] (Thursday,
+* unique job identifier [Brian/David/Rusty/Rajeev]
+
+* (ssm) topology/protocol specification [Bill/Rusty/David/Brian] (Thursday,
   08/07/2003, 13:00)
 
 * number of parameters for MPID_Abort(), fix MPI_Abort() [Brian]
   (Thursday, 08/07/2003, 13:00)
 
-* MPICH2 req buzz [all] (Friday, 08/08/2003, 10:30)
+* MPICH2 req buzz [all] (Friday, 08/15/2003, 13:00)
 
 * (shm/ssm) investigate (and fix?) few remaining test failures
   [Brian/David]
 
 * POSIX shared memory and message queues [David/Brian]
 
-* (sock/ssm) connection formation code should not fail after the
-  first attempt since the listener has a limited queue of pending
-  connections [Brian/David]
-
 * (req #23) modify configure to ensure --with-pm and --with-pmi consistency
-  [Brian]
+  [Brian] (could be deferred)
 
 * documentation: installation and usage document(s) [Rusty]
   (see below)
 
-* MPE/slog2sdk integration (configure) and testing [David/Brian/Anthony]
+* MPE/slog2sdk integration (configure) and testing [Bill/Anthony/David/Brian]
   (the code is now being checked out into src/util/slog2sdk)
 
-* configure option to specify level/depth of logging [Brian/David]
-
-* check out ROMIO test failures [Rob R.]
-
-* measure and compare performance of sock and ssm (using sock) [David]
-
-* measure and compare performance of shm and ssm (using shm) [David]
-
-* improved distribution cutting script [Brian/Rusty]
-
-* IA-64 support in shm and ssm channels [Brian/David]
-
-* (req #93) select() implementation of sock for Mac OS X (possibly augment
-  poll() implementation) [Brian/David]
+* solve ROMIO test failures [Brian]
 
 * (req #91,84,76,71,70,62,61,53,52,48,47,39,46,33,27) MPD problems
-  [Rusty/Ralph)
+  [Rusty/Ralph] (fixed?)
 
 * (req #87) fix hello world hang on Alpha (Redhat 7.2, gcc 2.96) [Brian]
 
@@ -52,13 +37,11 @@ Open Items:
 * (req #65) add configure checks for va_copy(), etc. and update dbg_printf.c
   [Brian]
 
-* (req #24) check for valid timer types in configure [Brian]
-
-* (req #23) remove uni implementation of PMI [Bill/Brian]
-
 ----
 
 Finished Items:
+
+* configure option to specify level/depth of logging [Brian/David]
 
 * datatype test suite failures [Rob R.]
 
@@ -72,6 +55,25 @@ Finished Items:
 -----
 
 Deferred Items:
+
+* (req #23) remove uni implementation of PMI [Bill/Brian]
+
+* (req #24) check for valid timer types in configure [Brian]
+
+* (req #93) select() implementation of sock for Mac OS X (possibly augment
+  poll() implementation) [Brian/David]
+
+* IA-64 support in shm and ssm channels [Brian/David]
+
+* improved distribution cutting script [Brian/Rusty]
+
+* measure and compare performance of sock and ssm (using sock) [David]
+
+* measure and compare performance of shm and ssm (using shm) [David]
+
+* (sock/ssm) connection formation code should not fail after the
+  first attempt since the listener has a limited queue of pending
+  connections [Brian/David]
 
 * CH3 flow control [Brian]
 
