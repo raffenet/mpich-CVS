@@ -22,6 +22,66 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Barrier PMPI_Barrier
 
+
+/* This is the default implementation of the barrier operation.  The
+   algorithm is:
+   
+   Algorithm: MPI_Barrier
+
+   We use the dissemination algorithm described in:
+   Debra Hensgen, Raphael Finkel, and Udi Manbet, "Two Algorithms for
+   Barrier Synchronization," International Journal of Parallel
+   Programming, 17(1):1-17, 1988.  
+
+   It uses ceiling(lgp) steps. In step k, 0 <= k <= (ceiling(lgp)-1),
+   process i sends to process (i + 2^k) % p and receives from process 
+   (i - 2^k + p) % p.
+
+   Possible improvements: 
+
+   End Algorithm: MPI_Barrier
+
+   This is an intracommunicator barrier only!
+*/
+PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
+{
+    int size, rank, src, dst, mask, mpi_errno=MPI_SUCCESS;
+    MPI_Comm comm;
+
+    size = comm_ptr->local_size;
+    /* Trivial barriers return immediately */
+    if (size == 1) return MPI_SUCCESS;
+
+    rank = comm_ptr->rank;
+    comm = comm_ptr->handle;
+
+    MPIR_Nest_incr();
+    /* Only one collective operation per communicator can be active at any
+       time */
+    MPID_Comm_thread_lock( comm_ptr );
+
+    mask = 0x1;
+    while (mask < size) {
+        dst = (rank + mask) % size;
+        src = (rank - mask + size) % size;
+        mpi_errno = NMPI_Sendrecv(NULL, 0, MPI_BYTE, dst,
+                                  MPIR_BARRIER_TAG, NULL, 0, MPI_BYTE,
+                                  src, MPIR_BARRIER_TAG, comm,
+                                  MPI_STATUS_IGNORE);
+        if (mpi_errno) return mpi_errno;
+        mask <<= 1;
+    }
+
+    MPID_Comm_thread_unlock( comm_ptr );
+    MPIR_Nest_decr();
+
+    return mpi_errno;
+}
+
+
+
+#ifdef OLD
+
 /* This is the default implementation of the barrier operation.  The
    algorithm is:
    
@@ -121,6 +181,8 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 
     return MPI_SUCCESS;
 }
+#endif
+
 #endif
 
 #undef FUNCNAME
