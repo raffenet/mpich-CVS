@@ -65,6 +65,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 #endif
     /* The SHM implementation uses a fixed length header, the size of which is the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
+    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF);
     
     /* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
@@ -82,14 +83,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 	mpi_errno = (n_iov > 1) ?
 	    MPIDI_CH3I_SHM_writev(vc, iov, n_iov, &nb) :
 	    MPIDI_CH3I_SHM_write(vc, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, &nb);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmwrite", 0);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
-	    return mpi_errno;
-	}
-
-	if (nb > 0)
+	if (mpi_errno == MPI_SUCCESS)
 	{
 	    int offset = 0;
 	    
@@ -124,19 +118,12 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 		}
 	    }
 	}
-	else if (nb == 0)
-	{
-	    MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
-	    update_request(sreq, iov, n_iov, 0, 0);
-	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-	    vc->ch.send_active = sreq;
-	}
 	else
 	{
 	    /* Connection just failed.  Mark the request complete and return an error. */
 	    vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
 	    /* TODO: Create an appropriate error message based on the value of errno */
-	    sreq->status.MPI_ERROR = MPI_ERR_INTERN;
+	    sreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmwrite", 0);
 	    /* MT - CH3U_Request_complete performs write barrier */
 	    MPIDI_CH3U_Request_complete(sreq);
 	}
@@ -150,6 +137,6 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
     
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
