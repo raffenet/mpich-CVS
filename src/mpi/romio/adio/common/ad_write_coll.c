@@ -68,13 +68,12 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
        whose request lies in this process's file domain. */
 
     int i, filetype_is_contig, nprocs, nprocs_for_coll, myrank;
-    int *len_list, contig_access_count, interleave_count, info_flag;
+    int *len_list, contig_access_count, interleave_count;
     int buftype_is_contig, *buf_idx;
     int *count_my_req_per_proc, count_my_req_procs, count_others_req_procs;
     ADIO_Offset *offset_list, start_offset, end_offset, *st_offsets, orig_fp;
     ADIO_Offset *fd_start, *fd_end, fd_size, min_st_offset, *end_offsets;
     ADIO_Offset off;
-    char *value;
 
 #ifdef PROFILE
 	MPE_Log_event(13, 0, "start computation");

@@ -70,7 +70,7 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
        whose request lies in this process's file domain. */
 
     int i, filetype_is_contig, nprocs, nprocs_for_coll, myrank;
-    int *len_list, contig_access_count, interleave_count, info_flag;
+    int *len_list, contig_access_count, interleave_count;
     int *count_my_req_per_proc, count_my_req_procs, count_others_req_procs;
     int buftype_is_contig, *buf_idx;
     ADIO_Offset *offset_list, start_offset, end_offset, *st_offsets, orig_fp;
@@ -478,8 +478,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
     MPI_Status status;
     ADIOI_Flatlist_node *flat_buf=NULL;
     MPI_Aint buftype_extent;
-    int info_flag, coll_bufsize;
-    char *value;
+    int coll_bufsize;
 
     *error_code = MPI_SUCCESS;  /* changed below if error */
     /* only I/O errors are currently reported */
