@@ -123,7 +123,34 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 		MPIU_DBG_PRINTF((" ack .......... %d\n", pkt->cancel_send_resp.ack));
 		break;
 	    case MPIDI_CH3_PKT_PUT:
-		MPIU_DBG_PRINTF((" PUT\n"));
+		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_PUT\n"));
+		MPIU_DBG_PRINTF((" addr ......... 0x%08X\n", pkt->put.addr));
+		MPIU_DBG_PRINTF((" count ........ %d\n", pkt->put.count));
+		MPIU_DBG_PRINTF((" datatype ..... 0x%08X\n", pkt->put.datatype));
+		MPIU_DBG_PRINTF((" dataloop_size. 0x%08X\n", pkt->put.dataloop_size));
+		MPIU_DBG_PRINTF((" decr_ctr ..... 0x%08X\n", pkt->put.decr_ctr));
+		break;
+	    case MPIDI_CH3_PKT_ACCUMULATE:
+		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_ACCUMULATE\n"));
+		MPIU_DBG_PRINTF((" addr ......... 0x%08X\n", pkt->accum.addr));
+		MPIU_DBG_PRINTF((" count ........ %d\n", pkt->accum.count));
+		MPIU_DBG_PRINTF((" datatype ..... 0x%08X\n", pkt->accum.datatype));
+		MPIU_DBG_PRINTF((" dataloop_size. %d\n", pkt->accum.dataloop_size));
+		MPIU_DBG_PRINTF((" op ........... 0x%08X\n", pkt->accum.op));
+		MPIU_DBG_PRINTF((" decr_ctr ..... 0x%08X\n", pkt->accum.decr_ctr));
+		break;
+	    case MPIDI_CH3_PKT_GET:
+		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_GET\n"));
+		MPIU_DBG_PRINTF((" addr ......... 0x%08X\n", pkt->get.addr));
+		MPIU_DBG_PRINTF((" count ........ %d\n", pkt->get.count));
+		MPIU_DBG_PRINTF((" datatype ..... 0x%08X\n", pkt->get.datatype));
+		MPIU_DBG_PRINTF((" dataloop_size. %d\n", pkt->get.dataloop_size));
+		MPIU_DBG_PRINTF((" request ...... 0x%08X\n", pkt->get.request));
+		MPIU_DBG_PRINTF((" decr_ctr ..... 0x%08X\n", pkt->get.decr_ctr));
+		break;
+	    case MPIDI_CH3_PKT_GET_RESP:
+		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_GET_RESP\n"));
+		MPIU_DBG_PRINTF((" request ...... 0x%08X\n", pkt->get_resp.request));
 		break;
 	    case MPIDI_CH3_PKT_FLOW_CNTL_UPDATE:
 		MPIU_DBG_PRINTF((" FLOW_CNTRL_UPDATE\n"));
