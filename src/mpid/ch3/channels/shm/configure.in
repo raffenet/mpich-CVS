@@ -25,7 +25,7 @@ PAC_PROG_MAKE
 AC_DEFINE(USE_PROCESS_LOCKS,,[Define to use process locks])
 
 AC_CHECK_FUNCS( yield sched_yield usleep sleep select )
-AC_CHECK_FUNCS( mutex_init compare_and_swap )
+AC_CHECK_FUNCS( mutex_init compare_and_swap shmget shmat shmdt shmctl )
 AC_CHECK_FUNCS( pthread_mutexattr_init pthread_mutexattr_setpshared )
 
 AC_CHECK_HEADERS(				\
