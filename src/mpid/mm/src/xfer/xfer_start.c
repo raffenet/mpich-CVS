@@ -56,7 +56,8 @@ int xfer_start(MPID_Request *request_ptr)
 	    {
 		/* add up the size of the message and put it in the packet */
 		pCar->data.pkt.size = 0;
-		pCarIter = pCar;
+		/* figure out the total size by adding up the size fields of the data cars */
+		pCarIter = pCar->next_ptr; /* skip the header car */
 		while (pCarIter)
 		{
 		    pCar->data.pkt.size += pCarIter->request_ptr->mm.size;
