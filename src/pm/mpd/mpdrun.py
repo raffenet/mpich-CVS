@@ -572,6 +572,8 @@ def mpdrun():
 	            ### manSocket = 0
                     ### done += 1
 	        # exit(-1)
+                myExitStatus = -1  # used in main
+                exit(myExitStatus) # really forces jump back into main
 	    elif errmsg.args == 'SIGTSTP':
 	        if manSocket:
 	            msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGTSTP' }
