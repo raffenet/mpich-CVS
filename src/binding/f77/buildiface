@@ -196,7 +196,8 @@ foreach $_ (@ARGV) {
 # routines are handled with the special argument processing)
 %special_routines = ( 'Init' => 1, 'Init_thread' => 1, 'Pcontrol' => '1',
 		      'Address' => 1, 'Get_address' => 1,
-		      'Keyval_create' => 1 );
+		      'Keyval_create' => 1,
+		      );
 # 
 # Note that wtime and wtick aren't found because they don't match the 
 # int MPI_xxx format.  They're handled directly by the special routine
@@ -1404,6 +1405,63 @@ void *MPIR_F_MPI_BOTTOM = 0;
     close ($OUTFD);
     if ($build_prototypes) {
 	&print_routine_type_decl( PROTOFD, "keyval_create" );
+	&print_args( PROTOFD, $args );
+	print PROTOFD ";\n";
+    }
+
+    $OUTFD = "DUPFN";
+    open ($OUTFD, ">dup_fnf.c" ) || die "Cannot open dup_fnf.c\n";
+    $files[$#files+1] = "dup_fnf.c";
+    &print_header( "mpi_dup_fn", "dup_fn" );
+    &print_routine_type_decl( $OUTFD, "dup_fn" );
+    $args = "MPI_Fint, MPI_Fint *, void *, void **, void **, MPI_Fint *";
+    &print_args( $OUTFD, $args );
+    &print_attr;
+    print $OUTFD "{
+        *v4 = *v5;
+        *v6 = MPIR_TO_FLOG(1);
+        *ierr = MPI_SUCCESS;
+}\n";
+    close ($OUTFD);
+    if ($build_prototypes) {
+	&print_routine_type_decl( PROTOFD, "dup_fn" );
+	&print_args( PROTOFD, $args );
+	print PROTOFD ";\n";
+    }
+
+    $OUTFD = "NULLDELFN";
+    open ($OUTFD, ">null_del_fnf.c" ) || die "Cannot open null_del_fnf.c\n";
+    $files[$#files+1] = "null_del_fnf.c";
+    &print_header( "mpi_null_delete_fn", "null_delete_fn" );
+    &print_routine_type_decl( $OUTFD, "null_delete_fn" );
+    $args = "MPI_Fint *, MPI_Fint *, void *, void *";
+    &print_args( $OUTFD, $args );
+    &print_attr;
+    print $OUTFD "{
+        *ierr = MPI_SUCCESS;
+}\n";
+    close ($OUTFD);
+    if ($build_prototypes) {
+	&print_routine_type_decl( PROTOFD, "null_delete_fn" );
+	&print_args( PROTOFD, $args );
+	print PROTOFD ";\n";
+    }
+
+    $OUTFD = "NULLCOPYFN";
+    open ($OUTFD, ">null_copy_fnf.c" ) || die "Cannot open null_copy_fnf.c\n";
+    $files[$#files+1] = "null_copy_fnf.c";
+    &print_header( "mpi_null_copy_fn", "null_copy_fn" );
+    &print_routine_type_decl( $OUTFD, "null_copy_fn" );
+    $args = "MPI_Fint *, MPI_Fint *, void *, void *, void *, int *";
+    &print_args( $OUTFD, $args );
+    &print_attr;
+    print $OUTFD "{
+        *ierr = MPI_SUCCESS;
+        *v6 = MPIR_TO_FLOG(0);
+}\n";
+    close ($OUTFD);
+    if ($build_prototypes) {
+	&print_routine_type_decl( PROTOFD, "null_copy_fn" );
 	&print_args( PROTOFD, $args );
 	print PROTOFD ";\n";
     }
