@@ -1595,6 +1595,347 @@ int ibui_readv_unex(ibu_t ibu)
     return IBU_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_rdma_writev
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int i;
+    char *rbuf, *sbuf;
+    int rbuf_len, riov_offset;
+    int sbuf_len;
+    int len;
+    int num_written;
+    MPID_IOV *send_iov, *recv_iov;
+    int send_count, recv_count;
+    int complete;
+    MPIDI_CH3_Pkt_t pkt;
+    MPIDI_CH3_Pkt_rdma_reload_t * reload_pkt = &pkt.reload;
+    MPID_Request * reload_sreq;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
+
+    /* save the receiver's request to send back with the reload packet */
+    reload_pkt->rreq = sreq->dev.rdma_request;
+    reload_pkt->sreq = sreq->handle;
+
+    for (;;)
+    {
+	send_iov = sreq->dev.iov;
+	send_count = sreq->dev.iov_count;
+	recv_iov = sreq->dev.rdma_iov;
+	recv_count = sreq->dev.rdma_iov_count;
+
+	/*
+	printf("shm_rdma: writing %d send buffers into %d recv buffers.\n", send_count, recv_count);fflush(stdout);
+	for (i=0; i<send_count; i++)
+	{
+	    printf("shm_rdma: send buf[%d] = %p, len = %d\n", i, send_iov[i].MPID_IOV_BUF, send_iov[i].MPID_IOV_LEN);
+	}
+	for (i=0; i<recv_count; i++)
+	{
+	    printf("shm_rdma: recv buf[%d] = %p, len = %d\n", i, recv_iov[i].MPID_IOV_BUF, recv_iov[i].MPID_IOV_LEN);
+	}
+	fflush(stdout);
+	*/
+	rbuf = recv_iov[0].MPID_IOV_BUF;
+	rbuf_len = recv_iov[0].MPID_IOV_LEN;
+	riov_offset = 0;
+	for (i=sreq->ch.iov_offset; i<send_count; i++)
+	{
+	    sbuf = send_iov[i].MPID_IOV_BUF;
+	    sbuf_len = send_iov[i].MPID_IOV_LEN;
+	    while (sbuf_len)
+	    {
+		len = MPIDU_MIN(sbuf_len, rbuf_len);
+		printf("writing %d bytes to remote process.\n", len);fflush(stdout);
+
+		/* insert rmda write code here *
+		if (!WriteProcessMemory(vc->ch.hSharedProcessHandle, rbuf, sbuf, len, &num_written))
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "WriteProcessMemory failed", GetLastError());
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
+		    return mpi_errno;
+		}
+		*/
+		num_written = len;
+
+		if (num_written == -1)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "WriteProcessMemory returned -1 bytes written");
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
+		    return mpi_errno;
+		}
+
+		/*printf("wrote %d bytes to remote process\n", num_written);fflush(stdout);*/
+		if (num_written < rbuf_len)
+		{
+		    rbuf = rbuf + num_written;
+		    rbuf_len = rbuf_len - num_written;
+		}
+		else
+		{
+		    riov_offset = riov_offset + 1;
+		    if (riov_offset < recv_count)
+		    {
+			rbuf = recv_iov[riov_offset].MPID_IOV_BUF;
+			rbuf_len = recv_iov[riov_offset].MPID_IOV_LEN;
+		    }
+		}
+		sbuf = sbuf + num_written;
+		sbuf_len = sbuf_len - num_written;
+		if (riov_offset == recv_count)
+		{
+		    if ( (i != (send_count - 1)) || (sbuf_len != 0) )
+		    {
+			/* the recv iov needs to be reloaded */
+			if (sbuf_len != 0)
+			{
+			    sreq->dev.iov[i].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)sbuf;
+			    sreq->dev.iov[i].MPID_IOV_LEN = sbuf_len;
+			}
+			sreq->ch.iov_offset = i;
+
+			/* send the reload packet to the receiver */
+			reload_pkt->type = MPIDI_CH3_PKT_RELOAD;
+			reload_pkt->send_recv = MPIDI_CH3_PKT_RELOAD_RECV;
+			mpi_errno = MPIDI_CH3_iStartMsg(vc, reload_pkt, sizeof(*reload_pkt), &reload_sreq);
+			/* --BEGIN ERROR HANDLING-- */
+			if (mpi_errno != MPI_SUCCESS)
+			{
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
+			    return mpi_errno;
+			}
+			/* --END ERROR HANDLING-- */
+			if (reload_sreq != NULL)
+			{
+			    /* The sender doesn't need to know when the packet has been sent.  So release the request immediately */
+			    MPID_Request_release(reload_sreq);
+			}
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
+			return MPI_SUCCESS;
+		    }
+		}
+	    }
+	}
+
+	/* update the sender's request */
+	mpi_errno = MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update request after rdma write");
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
+	    return mpi_errno;
+	}
+
+	if (complete)
+	{
+	    /* send the reload/done packet to the receiver */
+	    reload_pkt->type = MPIDI_CH3_PKT_RELOAD;
+	    reload_pkt->send_recv = MPIDI_CH3_PKT_RELOAD_RECV;
+	    mpi_errno = MPIDI_CH3_iStartMsg(vc, reload_pkt, sizeof(*reload_pkt), &reload_sreq);
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
+	    if (reload_sreq != NULL)
+	    {
+		/* The sender doesn't need to know when the packet has been sent.  So release the request immediately */
+		MPID_Request_release(reload_sreq);
+	    }
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
+	    return MPI_SUCCESS;
+	}
+    }
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
+    return mpi_errno;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_rdma_readv
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_rdma_readv(MPIDI_VC *vc, MPID_Request *rreq)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int i;
+    char *rbuf, *sbuf;
+    int rbuf_len;
+    int sbuf_len, siov_offset;
+    int len;
+    int num_read;
+    MPID_IOV *send_iov, *recv_iov;
+    int send_count, recv_count;
+    int complete;
+    MPIDI_CH3_Pkt_t pkt;
+    MPIDI_CH3_Pkt_rdma_reload_t * reload_pkt = &pkt.reload;
+    MPID_Request * reload_rreq;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_RDMA_READV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_RDMA_READV);
+
+    /* save the sender's request to send back with the reload packet */
+    /*reload_pkt->req = rreq->dev.rdma_request;*/
+    reload_pkt->sreq = rreq->dev.sender_req_id;
+    reload_pkt->rreq = rreq->handle;
+
+    for (;;)
+    {
+	recv_iov = rreq->dev.iov;
+	recv_count = rreq->dev.iov_count;
+	send_iov = rreq->dev.rdma_iov;
+	send_count = rreq->dev.rdma_iov_count;
+	siov_offset = rreq->dev.rdma_iov_offset;
+
+	/*
+	printf("shm_rdma: reading %d send buffers into %d recv buffers.\n", send_count, recv_count);fflush(stdout);
+	for (i=siov_offset; i<send_count; i++)
+	{
+	    printf("shm_rdma: send buf[%d] = %p, len = %d\n", i, send_iov[i].MPID_IOV_BUF, send_iov[i].MPID_IOV_LEN);
+	}
+	for (i=0; i<recv_count; i++)
+	{
+	    printf("shm_rdma: recv buf[%d] = %p, len = %d\n", i, recv_iov[i].MPID_IOV_BUF, recv_iov[i].MPID_IOV_LEN);
+	}
+	fflush(stdout);
+	*/
+	sbuf = send_iov[siov_offset].MPID_IOV_BUF;
+	sbuf_len = send_iov[siov_offset].MPID_IOV_LEN;
+	for (i=rreq->ch.iov_offset; i<recv_count; i++)
+	{
+	    rbuf = recv_iov[i].MPID_IOV_BUF;
+	    rbuf_len = recv_iov[i].MPID_IOV_LEN;
+	    while (rbuf_len)
+	    {
+		len = MPIDU_MIN(rbuf_len, sbuf_len);
+		printf("reading %d bytes from the remote process.\n", len);fflush(stdout);
+
+		/* insert rdma read code here *
+		if (!ReadProcessMemory(vc->ch.hSharedProcessHandle, sbuf, rbuf, len, &num_read))
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ReadProcessMemory failed", GetLastError());
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
+		    return mpi_errno;
+		}
+		*/
+		num_read = len;
+
+		if (num_read == -1)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "ReadProcessMemory returned -1 bytes written");
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
+		    return mpi_errno;
+		}
+
+		/*printf("read %d bytes from the remote process\n", num_read);fflush(stdout);*/
+		if (num_read < sbuf_len)
+		{
+		    sbuf = sbuf + num_read;
+		    sbuf_len = sbuf_len - num_read;
+		}
+		else
+		{
+		    siov_offset = siov_offset + 1;
+		    if (siov_offset < send_count)
+		    {
+			sbuf = send_iov[siov_offset].MPID_IOV_BUF;
+			sbuf_len = send_iov[siov_offset].MPID_IOV_LEN;
+		    }
+		    else
+		    {
+			sbuf_len = 0;
+		    }
+		}
+		rbuf = rbuf + num_read;
+		rbuf_len = rbuf_len - num_read;
+		if (siov_offset == send_count)
+		{
+		    if ( (i != (recv_count - 1)) || (rbuf_len != 0) )
+		    {
+			/* the send iov needs to be reloaded */
+			if (rbuf_len != 0)
+			{
+			    rreq->dev.iov[i].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rbuf;
+			    rreq->dev.iov[i].MPID_IOV_LEN = rbuf_len;
+			}
+			rreq->ch.iov_offset = i;
+
+			/* send the reload packet to the sender */
+			/*printf("sending reload packet to the sender.\n");fflush(stdout);*/
+			reload_pkt->type = MPIDI_CH3_PKT_RELOAD;
+			reload_pkt->send_recv = MPIDI_CH3_PKT_RELOAD_SEND;
+			mpi_errno = MPIDI_CH3_iStartMsg(vc, reload_pkt, sizeof(*reload_pkt), &reload_rreq);
+			/* --BEGIN ERROR HANDLING-- */
+			if (mpi_errno != MPI_SUCCESS)
+			{
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
+			    return mpi_errno;
+			}
+			/* --END ERROR HANDLING-- */
+			if (reload_rreq != NULL)
+			{
+			    /* The sender doesn't need to know when the packet has been sent.  So release the request immediately */
+			    MPID_Request_release(reload_rreq);
+			}
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
+			return MPI_SUCCESS;
+		    }
+		}
+	    }
+	}
+
+	/* update the sender's request */
+	mpi_errno = MPIDI_CH3U_Handle_recv_req(vc, rreq, &complete);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update request after rdma read");
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
+	    return mpi_errno;
+	}
+
+	if (complete || (siov_offset == send_count))
+	{
+	    /*printf("sending reload send packet.\n");fflush(stdout);*/
+	    /* send the reload/done packet to the sender */
+	    reload_pkt->type = MPIDI_CH3_PKT_RELOAD;
+	    reload_pkt->send_recv = MPIDI_CH3_PKT_RELOAD_SEND;
+	    mpi_errno = MPIDI_CH3_iStartMsg(vc, reload_pkt, sizeof(*reload_pkt), &reload_rreq);
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
+	    if (reload_rreq != NULL)
+	    {
+		/* The sender doesn't need to know when the packet has been sent.  So release the request immediately */
+		MPID_Request_release(reload_rreq);
+	    }
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
+	    return MPI_SUCCESS;
+	}
+
+	rreq->dev.rdma_iov_offset = siov_offset;
+	rreq->dev.rdma_iov[siov_offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)sbuf;
+	rreq->dev.rdma_iov[siov_offset].MPID_IOV_LEN = sbuf_len;
+    }
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
+    return mpi_errno;
+}
+
 /*#define PRINT_IBU_WAIT*/
 #ifdef PRINT_IBU_WAIT
 #define MPIU_DBG_PRINTFX(a) MPIU_DBG_PRINTF(a)
@@ -1678,6 +2019,8 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
     void *mem_ptr_orig;
     int mpi_errno;
     int pkt_offset;
+    MPID_Request *sreq, *rreq;
+    int complete;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
 
@@ -1840,12 +2183,215 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    pkt_offset = 0;
 	    if (recv_vc_ptr->ch.reading_pkt)
 	    {
-		mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
-		if (mpi_errno != MPI_SUCCESS)
+		if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type > MPIDI_CH3_PKT_END_CH3)
 		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "infiniband read progress unable to handle incoming packet");
-		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		    return IBU_SUCCESS;
+		    if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3_PKT_RTS_IOV)
+		    {
+			/*printf("received rts packet.\n");fflush(stdout);*/
+			rreq = MPID_Request_create();
+			if (rreq == NULL)
+			{
+			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+			    return mpi_errno;
+			}
+			MPIU_Object_set_ref(rreq, 1);
+			rreq->kind = MPIDI_CH3I_RTS_IOV_READ_REQUEST;
+			rreq->dev.rdma_request = ((MPIDI_CH3_Pkt_rdma_rts_iov_t*)mem_ptr)->sreq;
+			rreq->dev.rdma_iov_count = ((MPIDI_CH3_Pkt_rdma_rts_iov_t*)mem_ptr)->iov_len;
+			rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)&rreq->dev.rdma_iov;
+			rreq->dev.iov[0].MPID_IOV_LEN = rreq->dev.rdma_iov_count * sizeof(MPID_IOV);
+			rreq->dev.iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)&rreq->ch.pkt;
+			rreq->dev.iov[1].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
+			rreq->dev.iov_count = 2;
+			rreq->ch.req = NULL;
+			recv_vc_ptr->ch.recv_active = rreq;
+		    }
+		    else if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3_PKT_CTS_IOV)
+		    {
+			/*printf("received cts packet.\n");fflush(stdout);*/
+			MPID_Request_get_ptr(((MPIDI_CH3_Pkt_rdma_cts_iov_t*)mem_ptr)->sreq, sreq);
+			sreq->dev.rdma_request = ((MPIDI_CH3_Pkt_rdma_cts_iov_t*)mem_ptr)->rreq;
+			sreq->dev.rdma_iov_count = ((MPIDI_CH3_Pkt_rdma_cts_iov_t*)mem_ptr)->iov_len;
+			rreq = MPID_Request_create();
+			if (rreq == NULL)
+			{
+			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+			    return mpi_errno;
+			}
+			MPIU_Object_set_ref(rreq, 1);
+			rreq->kind = MPIDI_CH3I_IOV_WRITE_REQUEST;
+			rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)&sreq->dev.rdma_iov;
+			rreq->dev.iov[0].MPID_IOV_LEN = sreq->dev.rdma_iov_count * sizeof(MPID_IOV);
+			rreq->dev.iov_count = 1;
+			rreq->ch.req = sreq;
+			recv_vc_ptr->ch.recv_active = rreq;
+			/*MPIDI_CH3I_post_read(recv_vc_ptr, &sreq->ch.rdma_iov, sreq->ch.rdma_iov_count * sizeof(MPID_IOV), NULL);*/
+		    }
+		    else if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3_PKT_IOV)
+		    {
+			if ( ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->send_recv == MPIDI_CH3_PKT_RELOAD_SEND )
+			{
+			    /*printf("received sender's iov packet, posting a read of %d iovs.\n", ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->iov_len);fflush(stdout);*/
+			    MPID_Request_get_ptr(((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->req, sreq);
+			    sreq->dev.rdma_iov_count = ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->iov_len;
+			    rreq = MPID_Request_create();
+			    if (rreq == NULL)
+			    {
+				mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+				MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+				return mpi_errno;
+			    }
+			    MPIU_Object_set_ref(rreq, 1);
+			    rreq->kind = MPIDI_CH3I_IOV_READ_REQUEST;
+			    rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)&sreq->dev.rdma_iov;
+			    rreq->dev.iov[0].MPID_IOV_LEN = sreq->dev.rdma_iov_count * sizeof(MPID_IOV);
+			    rreq->dev.iov_count = 1;
+			    rreq->ch.req = sreq;
+			    recv_vc_ptr->ch.recv_active = rreq;
+			}
+			else if ( ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->send_recv == MPIDI_CH3_PKT_RELOAD_RECV )
+			{
+			    /*printf("received receiver's iov packet, posting a read of %d iovs.\n", ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->iov_len);fflush(stdout);*/
+			    MPID_Request_get_ptr(((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->req, rreq);
+			    rreq->dev.rdma_iov_count = ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->iov_len;
+			    sreq = MPID_Request_create();
+			    if (sreq == NULL)
+			    {
+				mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+				MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+				return mpi_errno;
+			    }
+			    MPIU_Object_set_ref(sreq, 1);
+			    sreq->kind = MPIDI_CH3I_IOV_WRITE_REQUEST;
+			    sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)&rreq->dev.rdma_iov;
+			    sreq->dev.iov[0].MPID_IOV_LEN = rreq->dev.rdma_iov_count * sizeof(MPID_IOV);
+			    sreq->dev.iov_count = 1;
+			    sreq->ch.req = rreq;
+			    recv_vc_ptr->ch.recv_active = sreq;
+			}
+			else
+			{
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "received invalid MPIDI_CH3_PKT_IOV packet");
+			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+			    return mpi_errno;
+			}
+		    }
+		    else if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3_PKT_RELOAD)
+		    {
+			if (((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->send_recv == MPIDI_CH3_PKT_RELOAD_SEND)
+			{
+			    /*printf("received reload send packet.\n");fflush(stdout);*/
+			    MPID_Request_get_ptr(((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->sreq, sreq);
+			    mpi_errno = MPIDI_CH3U_Handle_send_req(recv_vc_ptr, sreq, &complete);
+			    if (mpi_errno != MPI_SUCCESS)
+			    {
+				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update send request after receiving a reload packet");
+				MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+				return mpi_errno;
+			    }
+			    if (!complete)
+			    {
+				/* send a new iov */
+				MPID_Request * rts_sreq;
+				MPIDI_CH3_Pkt_t pkt;
+
+				/*printf("sending reloaded send iov of length %d\n", sreq->dev.iov_count);fflush(stdout);*/
+				pkt.iov.type = MPIDI_CH3_PKT_IOV;
+				pkt.iov.send_recv = MPIDI_CH3_PKT_RELOAD_SEND;
+				pkt.iov.req = ((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->rreq;
+				pkt.iov.iov_len = sreq->dev.iov_count;
+
+				sreq->dev.rdma_iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)&pkt;
+				sreq->dev.rdma_iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
+				sreq->dev.rdma_iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)sreq->dev.iov;
+				sreq->dev.rdma_iov[1].MPID_IOV_LEN = sreq->dev.iov_count * sizeof(MPID_IOV);
+
+				mpi_errno = MPIDI_CH3_iStartMsgv(recv_vc_ptr, sreq->dev.rdma_iov, 2, &rts_sreq);
+				/* --BEGIN ERROR HANDLING-- */
+				if (mpi_errno != MPI_SUCCESS)
+				{
+				    MPIU_Object_set_ref(sreq, 0);
+				    MPIDI_CH3_Request_destroy(sreq);
+				    sreq = NULL;
+				    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rtspkt", 0);
+				    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+				    return mpi_errno;
+				}
+				/* --END ERROR HANDLING-- */
+				if (rts_sreq != NULL)
+				{
+				    /* The sender doesn't need to know when the message has been sent.  So release the request immediately */
+				    MPID_Request_release(rts_sreq);
+				}
+			    }
+			}
+			else if (((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->send_recv == MPIDI_CH3_PKT_RELOAD_RECV)
+			{
+			    /*printf("received reload recv packet.\n");fflush(stdout);*/
+			    MPID_Request_get_ptr(((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->rreq, rreq);
+			    mpi_errno = MPIDI_CH3U_Handle_recv_req(recv_vc_ptr, rreq, &complete);
+			    if (mpi_errno != MPI_SUCCESS)
+			    {
+				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update request after receiving a reload packet");
+				MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+				return mpi_errno;
+			    }
+			    if (!complete)
+			    {
+				/* send a cts_iov packet and the new iov */
+				mpi_errno = MPIDI_CH3_do_cts(recv_vc_ptr, rreq);
+				if (mpi_errno != MPI_SUCCESS)
+				{
+				    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+				    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+				    return mpi_errno;
+				}
+			    }
+			}
+			else
+			{
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+			    return mpi_errno;
+			}
+
+			recv_vc_ptr->ch.recv_active = NULL;
+			recv_vc_ptr->ch.reading_pkt = TRUE;
+			if (num_bytes > sizeof(MPIDI_CH3_Pkt_t))
+			{
+			    /*printf("pkt handled with %d bytes remaining to be buffered.\n", num_bytes);*/
+			    ibui_buffer_unex_read(ibu, mem_ptr_orig, sizeof(MPIDI_CH3_Pkt_t), num_bytes);
+			}
+			else
+			{
+			    ibuBlockFreeIB(ibu->allocator, mem_ptr_orig);
+			    ibui_post_receive(ibu);
+			}
+			/* return from the wait */
+			*num_bytes_ptr = 0;
+			*vc_pptr = recv_vc_ptr;
+			*op_ptr = IBU_OP_WAKEUP;
+			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+			return MPI_SUCCESS;
+		    }
+		    else
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "shared memory read progress unable to handle unknown rdma packet");
+			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+			return mpi_errno;
+		    }
+		}
+		else
+		{
+		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active, NULL, 0);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "infiniband read progress unable to handle incoming packet");
+			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+			return IBU_SUCCESS;
+		    }
 		}
 		if (recv_vc_ptr->ch.recv_active == NULL)
 		{
@@ -2169,7 +2715,7 @@ int post_pkt_recv(MPIDI_VC *recv_vc_ptr)
 	return mpi_errno;
     }
 
-    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
+    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active, NULL, 0);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "infiniband read progress unable to handle incoming packet");

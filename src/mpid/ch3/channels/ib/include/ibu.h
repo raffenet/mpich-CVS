@@ -43,7 +43,8 @@ typedef enum ibu_op_e
     IBU_OP_TIMEOUT,
     IBU_OP_READ,
     IBU_OP_WRITE,
-    IBU_OP_CLOSE
+    IBU_OP_CLOSE,
+    IBU_OP_WAKEUP
 } ibu_op_t;
 
 /* insert error codes here */

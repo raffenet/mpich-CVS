@@ -119,5 +119,7 @@ int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_Request_adjust_iov(MPID_Request *, MPIDI_msg_sz_t);
 int MPIDI_CH3I_Setup_connections();
+int MPIDI_CH3I_rdma_readv(MPIDI_VC *vc, MPID_Request *rreq);
+int MPIDI_CH3I_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq);
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */
