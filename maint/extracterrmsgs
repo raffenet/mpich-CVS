@@ -512,9 +512,9 @@ sub ProcessFile
 	# Then check that the arguments match if there is a 
 	# specific string (number of args matches the number present)
 	# (MPIU_ERR_CHKANDJUMP[0-4]?(cond,code,class,gmsg[,smsg,args])
-	# (MPIU_ERR_SETANDJUMP[0-4]?(cond,code,class,gmsg[,smsg,args])
-	# (MPIU_ERR_CHKANDSTMT[0-4]?(cond,code,class,gmsg[,smsg,args],stmt)
-	# (MPIU_ERR_SETANDSTMT[0-4]?(cond,code,class,gmsg[,smsg,args],stmt)
+	# (MPIU_ERR_SETANDJUMP[0-4]?(code,class,gmsg[,smsg,args])
+	# (MPIU_ERR_CHKANDSTMT[0-4]?(cond,code,class,stmt,gmsg[,smsg,args])
+	# (MPIU_ERR_SETANDSTMT[0-4]?(code,class,stmt,gmsg[,smsg,args])
 	# Value is a tuple of:
 	#  the count of args where the generic msg begins (starting from 0)
 	#  location of __LINE__ (-1 for none)
@@ -525,12 +525,17 @@ sub ProcessFile
 			      'MPIU_ERR_SETFATALANDSTMT'  => '3:-1:0:1',
 			      'MPIU_ERR_SETANDSTMT1'      => '3:-1:1:1', 
 			      'MPIU_ERR_SETFATALANDSTMT1' => '3:-1:1:1', 
+			      'MPIU_ERR_SETANDSTMT2'      => '3:-1:1:1', 
+			      'MPIU_ERR_SETFATALANDSTMT2' => '3:-1:1:1', 
 			      'MPIU_ERR_SETANDJUMP'       => '2:-1:0:1',
 			      'MPIU_ERR_SETANDJUMP1'      => '2:-1:1:1', 
-			      'MPIU_ERR_CHKANDSTMT'       => '3:-1:0:1', 
-			      'MPIU_ERR_CHKANDSTMT1'      => '3:-1:1:1', 
+			      'MPIU_ERR_SETANDJUMP2'      => '2:-1:1:1', 
+			      'MPIU_ERR_CHKANDSTMT'       => '4:-1:0:1', 
+			      'MPIU_ERR_CHKANDSTMT1'      => '4:-1:1:1', 
+			      'MPIU_ERR_CHKANDSTMT2'      => '4:-1:1:1', 
 			      'MPIU_ERR_CHKANDJUMP'       => '3:-1:0:1',
 			      'MPIU_ERR_CHKANDJUMP1'      => '3:-1:1:1',
+			      'MPIU_ERR_CHKANDJUMP2'      => '3:-1:1:1',
 			      );
 	while (/(MPI[OUR]_[A-Za-z0-9_]+)\s*(\(.*)$/) {
 	    my $routineName = $1;
