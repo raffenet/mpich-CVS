@@ -113,8 +113,8 @@ typedef struct smpd_command_t
 {
     smpd_command_state_t state;
     char cmd_hdr_str[SMPD_CMD_HDR_LENGTH];
-    char cmd_str[SMPD_MAX_CMD_LENGTH];
-    char cmd[SMPD_MAX_CMD_STR_LENGTH];
+    char cmd_str[SMPD_MAX_CMD_STR_LENGTH];
+    char cmd[SMPD_MAX_CMD_LENGTH];
     SOCK_IOV iov[2];
     int length;
     int src, dest, tag;
