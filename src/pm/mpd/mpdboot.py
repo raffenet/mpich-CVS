@@ -99,7 +99,7 @@ def mpdboot():
             if shell == 'bourne':
                 shellRedirect = ' > /dev/null 2>&1 '
             # cmd = "%s %s %s -n '%s    %s -h %s -p %s </dev/null %s &'" % \
-	    cmd = "%s %s %s -n '%s -d %s -h %s -p %s </dev/null %s'" % \
+	    cmd = "%s %s %s -n '%s -d %s -h %s -p %s </dev/null %s' & " % \
                   (rshCmd, xOpt, host, mpdCmd, remoteConsoleVal,
                    myHost, myPort, shellRedirect)
             if debug:
