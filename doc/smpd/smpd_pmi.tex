@@ -34,11 +34,11 @@ Argonne National Laboratory}
 
 When a user builds MPICH2 they have the option to choose the SMPD process
 manager to launch and manage processes in MPICH2 jobs.  MPICH2 provides
-an implementation of smpd and mpiexec to launch MPICH2 jobs.  When user
-applications are built, they use the PMI library for smpd to provide the 
-implementation of PMI for communicating with SMPD process managers. 
-This document describes the environment and wire protocol between the 
-MPICH2 application and the SMPD manager.
+an implementation of smpd and mpiexec to launch MPICH2 jobs.  MPICH2 
+applications communicate with the process manager using the PMI interface.
+The PMI library for smpd provides an implementation of PMI for communicating
+with SMPD process managers. This document describes the environment and wire
+protocol between the MPICH2 application and the SMPD manager.
 
 If a process manager implementor replicates the environment and protocol
 described in this document, they would be able to launch and manage MPICH2 
@@ -61,8 +61,8 @@ See figure~\ref{fig:tree}.  This tree remains for the duration of the job.
 It can grow as a result of spawn commands.  Each SMPD manager has
 a id in the tree used to route commands.  Each manager can manage multiple
 child processes.  The control socket connections between the SMPD manager
-and the child processes are referenced by context ids provided by the
-SMPD manager to the child when it launches a process.
+and the child processes are referenced by context ids.  The SMPD manager
+provides the context id to the child when it launches a process.
 
 \begin{figure}
 \centerline{\epsfbox{smpd_tree.eps}}
@@ -85,10 +85,13 @@ a comma separated list of ranges and numbers.  Example: 0,2..4,7
 \item PMI\_SMPD\_ID = my smpd manager node id
 \item PMI\_SMPD\_KEY = ctx\_key value to be included with PMI commands 
 from this process.
-\item **PMI\_SMPD\_FD = file descriptor/handle to convert into the PMI 
-socket context.
 \item PMI\_SPAWN = 0 or 1 if this process was started by a 
 PMI\_Spawn\_multiple command.
+\item PMI\_APPNUM = index of the command that started the local process
+\item **PMI\_SMPD\_FD = file descriptor/handle to convert into the PMI 
+socket context.
+\item **PMI\_HOST = host description as specified by the MPIDU_Sock interface
+\item **PMI\_PORT = port PMI\_Host is listening on
 \item **PMI\_ROOT\_HOST = root host to connect to to establish the PMI 
 socket context.
 \item **PMI\_ROOT\_PORT = root listening port number
@@ -102,13 +105,12 @@ rank 0 is launched.
 
 * If not specified, default clique contains only the local process.
 
-** Only one option may be specified.
+** Only one set of options may be specified.
 
-PMI\_SMPD\_FD is mutually exclusive with the 
-PMI\_ROOT\_HOST/PMI\_ROOT\_PORT pair.  If PMI\_SMPD\_FD exists then 
-the process uses that handle as its connection to the SMPD manager 
-otherwise it makes a socket connection to the
-host/port described by PMI\_ROOT\_HOST/PMI\_ROOT\_PORT.
+The three options, PMI\_SMPD\_FD, PMI\_ROOT\_HOST/PMI\_ROOT\_PORT and PMI\_HOST/PMI\_PORT
+are mutually exclusive.  If PMI\_SMPD\_FD exists then the process uses that handle
+as its connection to the SMPD manager otherwise it makes a socket connection to
+the host/port described by PMI\_ROOT\_HOST/PMI\_ROOT\_PORT or PMI\_HOST/PMI\_PORT.
 
 \section{SMPD wire commands}
 This section describes the wire protocol for PMI commands from the child
