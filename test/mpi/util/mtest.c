@@ -1,5 +1,6 @@
 #include "mpi.h"
 #include "mpitest.h"
+#include <stdio.h>
 
 /* 
  * Initialize and Finalize MTest
@@ -16,13 +17,14 @@ void MTest_Init( int *argc, char ***argv )
 
 void MTest_Finalize( int errs )
 {
-    int size, rank, toterrs;
+    int rank, toterrs;
+
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
     
     MPI_Allreduce( &errs, &toterrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
     if (rank == 0) {
 	if (toterrs) {
-	    printf( " Found %d errors\n" );
+	    printf( " Found %d errors\n", toterrs );
 	}
 	else {
 	    printf( " No errors\n" );

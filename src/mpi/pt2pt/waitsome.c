@@ -48,7 +48,6 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, in
 {
     static const char FCNAME[] = "MPI_Waitsome";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Comm *comm_ptr = NULL;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WAITSOME);
 #   ifdef HAVE_ERROR_CHECKING

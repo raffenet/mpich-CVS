@@ -18,6 +18,7 @@ typedef struct _MTest_Datatype {
     int  count;
 } MTest_Datatype;
 
+int MTest_Check_recv( MPI_Status *, MTest_Datatype * );
 int MTest_Get_datatypes( MTest_Datatype *, MTest_Datatype * );
 void MTest_Reset_datatypes( void );
 

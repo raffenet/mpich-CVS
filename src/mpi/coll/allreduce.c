@@ -58,7 +58,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
 {
     static const char FCNAME[] = "MPI_Allreduce";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Comm *comm_ptr;
+    MPID_Comm *comm_ptr = 0;
 
     /* This is a temporary version to support the testing library */
 
@@ -95,7 +95,10 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
     MPID_Comm_thread_lock( comm_ptr );
     {
         if (comm_ptr->size > 1) {
-	    printf( "Not implemented for communication yet\n" );
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, 
+					      "**notimpl", 0 );
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
+	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
 	else {
 	    /* count in bytes */

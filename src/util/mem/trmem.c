@@ -649,7 +649,7 @@ void *MPIU_trstrdup( const char *str, int lineno, const char *fname )
 
     p = MPIU_trmalloc( len, lineno, (char *)fname );
     if (p) {
-	memcpy( p, str, len + 1 );
+	memcpy( p, str, len );
     }
     return p;
 }

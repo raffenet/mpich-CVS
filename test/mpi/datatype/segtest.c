@@ -1,6 +1,7 @@
 #include "mpi.h"
 #include "mpiimpl.h"
 #include "../../../src/mpi/datatype/dataloop.h"
+#include <stdio.h>
 
 /* 
  * Simple segment test, including timing code
@@ -193,6 +194,7 @@ int main( int argc, char **argv )
     printf( "Timer for hand vector pack (int) is %e\n", (r2-r1)/100 );
     
     MPI_Finalize();
+    return 0;
 }
 
 /*

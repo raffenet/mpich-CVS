@@ -4,6 +4,7 @@
 
 #define MAX_INFOS 256
 #define info_list 16
+/* #define DBG */
 
 int main( int arg, char *argv[] )
 {

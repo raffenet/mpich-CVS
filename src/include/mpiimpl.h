@@ -158,6 +158,19 @@ typedef enum {
 
 #define PREDEFINED_HANDLE(name,index) \
      (CONSTRUCT_DIRECT << 30) | (MPID_##name <<27) | index
+
+/* ALL handle objects have the id as the first value. */
+typedef struct {
+    int  id;
+    void *next;   /* Free handles use this field to point to the next
+		     free object */
+} MPIU_Handle_common;
+
+/* Routines to initialize handle allocations */
+void *MPIU_Handle_direct_init( void *, int, int, int );
+void *MPIU_Handle_indirect_init( void *(**)[], int *, int, int, int, int );
+int MPIU_Handle_free( void *((*)[]), int );
+
 /* Handles conversion */
 /* Question.  Should this do ptr=0 first, particularly if doing --enable-strict
    complication? */
@@ -188,9 +201,9 @@ typedef enum {
 /* Info */
 typedef struct MPID_Info_s {
     int                id;
+    struct MPID_Info_s *next;
     char               *key;
     char               *value;
-    struct MPID_Info_s *next;
 } MPID_Info;
 /* Preallocated info objects */
 extern MPID_Info MPID_Info_direct[];
@@ -259,6 +272,7 @@ typedef struct {
 } MPID_Attribute;
 
 typedef struct {
+    int          id;
     volatile int ref_count;
     int          size;           /* Size of a group */
     int          *lrank_to_lpid; /* Array mapping a local rank to local 
@@ -268,11 +282,11 @@ typedef struct {
 
 /* Communicators */
 typedef struct { 
+    int           id;            /* value of MPI_Comm for this structure */
     volatile int ref_count;
     int16_t       context_id;    /* Assigned context id */
     int           size;          /* Value of MPI_Comm_(remote)_size */
     int           rank;          /* Value of MPI_Comm_rank */
-    int           id;            /* value of MPI_Comm for this structure */
     MPID_List     attributes;    /* List of attributes */
     MPID_Group    *local_group,  /* Groups in communicator. */
                   *remote_group; /* The local and remote groups are the

@@ -20,8 +20,9 @@ static int initialized = 0;
 
 /* Next available comm object */
 typedef struct _MPID_Comm_list { 
+    int    id;
     struct _MPID_Comm_list *next; } MPID_Comm_list;
-static MPID_Comm_list *avail = 0;
+static MPIU_Handle_common *avail = 0;
 
 /* Extension objects */
 static MPID_Comm *(*MPID_Comm_indirect)[] = 0;
@@ -54,15 +55,8 @@ MPID_Comm *MPID_Comm_Get_ptr_indirect( int handle )
 /* This routine is called by finalize when MPI exits */
 static int MPIU_Comm_finalize( void *extra )
 {
-    int i;
-    
-    /* Remove any allocated storage */
-    for (i=0; i<MPID_Comm_indirect_size; i++) {
-	MPIU_Free( (*MPID_Comm_indirect)[i] );
-    }
-    if (MPID_Comm_indirect) {
-	MPIU_Free( MPID_Comm_indirect );
-    }
+    (void)MPIU_Handle_free( (void *(*)[])MPID_Comm_indirect, 
+			    MPID_Comm_indirect_size );
     /* This does *not* remove any Comm objects that the user created 
        and then did not destroy */
     return 0;
@@ -80,14 +74,13 @@ static int MPIU_Comm_finalize( void *extra )
  */
 MPID_Comm *MPIU_Comm_create( void )
 {
-    MPID_Comm *ptr, *block_ptr;
-    int       i;
+    MPID_Comm *ptr;
 
     /* Lock if necessary */
     MPID_Allocation_lock();
 
     if (avail) {
-	ptr     = (MPID_Comm*)avail;
+	ptr     = (MPID_Comm *)avail;
 	avail   = avail->next;
 	/* Unlock */
 	MPID_Allocation_unlock();
@@ -103,59 +96,23 @@ MPID_Comm *MPIU_Comm_create( void )
 	MPIR_Add_finalize( MPIU_Comm_finalize, 0 );
 
 	initialized = 1;
-	for (i=0; i<MPID_COMM_PREALLOC; i++) {
-	    ((MPID_Comm_list*)&MPID_Comm_direct[i])->next = (MPID_Comm_list*)(MPID_Comm_direct + i + 1);
-	    MPID_Comm_direct[i].id = (CONSTRUCT_DIRECT << 30) |
-	    (MPID_COMM << 27) | i;
-	}
-	((MPID_Comm_list *)&MPID_Comm_direct[i-1])->next = 0;
-	avail = (MPID_Comm_list *)&MPID_Comm_direct[1];
-	ptr   = &MPID_Comm_direct[0];
+	ptr   = MPIU_Handle_direct_init( MPID_Comm_direct, MPID_COMM_PREALLOC,
+					 sizeof(MPID_Comm), MPID_COMM );
+	if (ptr)
+	    avail = ((MPIU_Handle_common *)ptr)->next;
 	/* unlock */
 	MPID_Allocation_unlock();
 	return ptr;
     }
 
     /* Must create new storage for dynamically allocated objects */
-    /* Create the table */
-    if (!MPID_Comm_indirect) {
-	/* printf( "Creating indirect table\n" ); */
-	MPID_Comm_indirect = (MPID_Comm *(*)[])MPIU_Calloc( HANDLE_BLOCK_SIZE,
-							 sizeof(MPID_Comm*) );
-	if (!MPID_Comm_indirect) { 
-	    /* Unlock */
-	    MPID_Allocation_unlock();
-	    return 0;
-	}
-    }
-
-    if (MPID_Comm_indirect_size >= HANDLE_BLOCK_SIZE-1) {
-	/* unlock */
-	MPID_Allocation_unlock();
-	return 0;
-    }
-    
-    /* Create the next block */
-    /* printf( "Adding indirect block %d\n", MPID_Comm_indirect_size ); */
-    block_ptr = (MPID_Comm*)MPIU_Calloc( HANDLE_BLOCK_INDEX_SIZE,
-					  sizeof(MPID_Comm) );
-    if (!block_ptr) { 
-	/* unlock */
-	MPID_Allocation_unlock();
-	return 0;
-    }
-    for (i=0; i<HANDLE_BLOCK_INDEX_SIZE; i++) {
-	((MPID_Comm_list *)&block_ptr[i])->next = (MPID_Comm_list*)(block_ptr + i + 1);
-	block_ptr[i].id   = (CONSTRUCT_INDIRECT << 30) |
-	    (MPID_COMM << 27) | (MPID_Comm_indirect_size << 16) | i;
-    }
-    ((MPID_Comm_list*)&block_ptr[i-1])->next = 0;
-    ptr   = &block_ptr[0];
-    /* We're here because avail is null, so there is no need to set 
-       the last block ptr to avail */
-    avail = (MPID_Comm_list *)&block_ptr[1];
-    /* printf( "loc of update is %x\n", &(*MPID_Comm_indirect)[MPID_Comm_indirect_size] ); */
-    (*MPID_Comm_indirect)[MPID_Comm_indirect_size++] = block_ptr;
+    ptr = MPIU_Handle_indirect_init( (void *(**)[])&MPID_Comm_indirect, 
+				     &MPID_Comm_indirect_size, 
+				     HANDLE_BLOCK_SIZE, 
+				     HANDLE_BLOCK_INDEX_SIZE,
+				     sizeof(MPID_Comm), MPID_COMM );
+    if (ptr)
+	avail = ((MPIU_Handle_common *)ptr)->next;
 
     /* Unlock */
     MPID_Allocation_unlock();
@@ -169,8 +126,8 @@ void MPIU_Comm_free( MPID_Comm *comm_ptr )
     MPID_Allocation_lock();
 
     /* Return comm to the avail list */
-    ((MPID_Comm_list *)comm_ptr)->next = avail;
-    avail          = (MPID_Comm_list *)comm_ptr;
+    ((MPIU_Handle_common *)comm_ptr)->next = avail;
+    avail          = (MPIU_Handle_common *)comm_ptr;
     /* Unlock */
     MPID_Allocation_unlock();
 }
@@ -181,8 +138,8 @@ void MPIU_Comm_destroy( MPID_Comm *comm_ptr )
 {
     /* Lock */
     MPID_Allocation_lock();
-    ((MPID_Comm_list *)comm_ptr)->next = avail;
-    avail          = (MPID_Comm_list *)comm_ptr;
+    ((MPIU_Handle_common *)comm_ptr)->next = avail;
+    avail          = (MPIU_Handle_common *)comm_ptr;
     /* Unlock */
     MPID_Allocation_unlock();
 }
