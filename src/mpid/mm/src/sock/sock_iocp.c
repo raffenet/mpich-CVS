@@ -12,7 +12,7 @@
 #include <mswsock.h>
 #include <stdio.h>
 
-typedef enum { SOCK_INVALID, SOCK_LISTENER, SOCK_SOCKET } SOCK_TYPE;
+typedef enum SOCK_TYPE { SOCK_INVALID, SOCK_LISTENER, SOCK_SOCKET } SOCK_TYPE;
 
 typedef int SOCK_STATE;
 #define SOCK_ACCEPTING  0x0001

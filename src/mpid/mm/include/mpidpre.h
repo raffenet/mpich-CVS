@@ -77,7 +77,7 @@ typedef enum MM_BUFFER_TYPE {
 } MM_BUFFER_TYPE;
 
 /* Packet header type */
-typedef enum { 
+typedef enum MPID_Packet_type { 
     MPID_INVALID_PKT,
     MPID_EAGER_PKT,
     MPID_RNDV_REQUEST_TO_SEND_PKT,
