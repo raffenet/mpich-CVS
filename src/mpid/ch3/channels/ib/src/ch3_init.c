@@ -23,7 +23,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     MPIDI_CH3I_Process_group_t * pg;
     int pg_rank;
     int pg_size;
-    MPIDI_VC * vc_table;
+    MPIDI_VC_t * vc_table;
     MPID_Comm * comm, *intercomm, *commworld;
     int p;
     int port;
@@ -115,7 +115,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     
     /* Allocate and initialize the VC table associated with this process
        group (and thus COMM_WORLD) */
-    vc_table = MPIU_Malloc(sizeof(MPIDI_VC) * pg_size);
+    vc_table = MPIU_Malloc(sizeof(MPIDI_VC_t) * pg_size);
     if (vc_table == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);

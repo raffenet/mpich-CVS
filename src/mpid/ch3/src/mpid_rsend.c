@@ -26,7 +26,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
     MPID_Datatype * dt_ptr;
     MPID_Request * sreq = NULL;
     MPID_IOV iov[MPID_IOV_LIMIT];
-    MPIDI_VC * vc;
+    MPIDI_VC_t * vc;
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
     MPID_Seqnum_t seqnum;
 #endif    
@@ -49,9 +49,9 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	goto fn_exit;
     }
 
-    MPIDI_CH3U_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
+    MPIDI_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
 
-    vc = comm->vcr[rank];
+    MPIDI_Comm_get_vc(comm, rank, &vc);
     
     ready_pkt->type = MPIDI_CH3_PKT_READY_SEND;
     ready_pkt->match.rank = comm->rank;
@@ -64,8 +64,8 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
     {
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending zero length message"));
 	
-	MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
-	MPIDI_CH3U_Pkt_set_seqnum(ready_pkt, seqnum);
+	MPIDI_VC_FAI_send_seqnum(vc, seqnum);
+	MPIDI_Pkt_set_seqnum(ready_pkt, seqnum);
 	
 	mpi_errno = MPIDI_CH3_iStartMsg(vc, ready_pkt, sizeof(*ready_pkt), &sreq);
 	/* --BEGIN ERROR HANDLING-- */
@@ -77,7 +77,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	/* --END ERROR HANDLING-- */
 	if (sreq != NULL)
 	{
-	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
+	    MPIDI_Request_set_seqnum(sreq, seqnum);
 	    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_RSEND);
 	    /* sreq->comm = comm;
 	       MPIR_Comm_add_ref(comm); -- not needed for blocking operations */
@@ -97,8 +97,8 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	iov[1].MPID_IOV_BUF = (void *)((char *) buf + dt_true_lb);
 	iov[1].MPID_IOV_LEN = data_sz;
 	    
-	MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
-	MPIDI_CH3U_Pkt_set_seqnum(ready_pkt, seqnum);
+	MPIDI_VC_FAI_send_seqnum(vc, seqnum);
+	MPIDI_Pkt_set_seqnum(ready_pkt, seqnum);
 	    
 	mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, 2, &sreq);
 	/* --BEGIN ERROR HANDLING-- */
@@ -110,7 +110,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	/* --END ERROR HANDLING-- */
 	if (sreq != NULL)
 	{
-	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
+	    MPIDI_Request_set_seqnum(sreq, seqnum);
 	    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_RSEND);
 	    /* sreq->comm = comm;
 	       MPIR_Comm_add_ref(comm); -- not needed for blocking operations */
@@ -122,7 +122,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending non-contiguous ready-mode message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
-	MPIDI_CH3M_create_sreq(sreq, mpi_errno, goto fn_exit);
+	MPIDI_Request_create_sreq(sreq, mpi_errno, goto fn_exit);
 	MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_RSEND);
 	    
 	MPID_Segment_init(buf, count, datatype, &sreq->dev.segment, 0);
@@ -135,9 +135,9 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	{
 	    iov_n += 1;
 		
-	    MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
-	    MPIDI_CH3U_Pkt_set_seqnum(ready_pkt, seqnum);
-	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
+	    MPIDI_VC_FAI_send_seqnum(vc, seqnum);
+	    MPIDI_Pkt_set_seqnum(ready_pkt, seqnum);
+	    MPIDI_Request_set_seqnum(sreq, seqnum);
 	    
 	    if (sreq->dev.ca != MPIDI_CH3_CA_COMPLETE)
 	    {

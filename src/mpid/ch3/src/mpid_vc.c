@@ -6,6 +6,7 @@
 
 #include "mpidimpl.h"
 
+
 /*
  * MPIDI_VCRT - virtual connection reference table
  *
@@ -20,9 +21,9 @@ typedef struct MPIDI_VCRT
     int handle;
     volatile int ref_count;
     int size;
-    MPIDI_VC * vcr_table[1];
+    MPIDI_VC_t * vcr_table[1];
 }
-MPIDI_VCRT;
+MPIDI_VCRT_t;
 
 
 #undef FUNCNAME
@@ -31,13 +32,13 @@ MPIDI_VCRT;
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
 {
-    MPIDI_VCRT * vcrt;
+    MPIDI_VCRT_t * vcrt;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCRT_CREATE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCRT_CREATE);
     
-    vcrt = MPIU_Malloc(sizeof(MPIDI_VCRT) + (size - 1) * sizeof(MPIDI_VC));
+    vcrt = MPIU_Malloc(sizeof(MPIDI_VCRT_t) + (size - 1) * sizeof(MPIDI_VC_t *));
     if (vcrt != NULL)
     {
 	MPIU_Object_set_ref(vcrt, 1);
@@ -73,9 +74,11 @@ int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
 int MPID_VCRT_Release(MPID_VCRT vcrt)
 {
     int count;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCRT_RELEASE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCRT_RELEASE);
+    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
 
     MPIU_Object_release_ref(vcrt, &count);
     if (count == 0)
@@ -84,13 +87,71 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 
 	for (i = 0; i < vcrt->size; i++)
 	{
-	    MPID_VCR_Release(vcrt->vcr_table[i]);
+	    MPIDI_VC_t * const vc = vcrt->vcr_table[i];
+	    
+	    MPIU_Object_release_ref(vc, &count);
+	    if (count == 0)
+	    {
+		/* If the VC is myself then skip the close message */
+		if (vc->pg == MPIDI_Process.my_pg && vc->pg_rank == MPIDI_Process.my_pg_rank)
+		{
+		    continue;
+		}
+		
+		if (vc->state != MPIDI_VC_STATE_INACTIVE)
+		{
+		    MPIDI_CH3_Pkt_t upkt;
+		    MPIDI_CH3_Pkt_close_t * close_pkt = &upkt.close;
+		    MPID_Request * sreq;
+			
+		    MPIU_Assert(vc->state != MPIDI_VC_STATE_LOCAL_CLOSE && vc->state != MPIDI_VC_STATE_CLOSE_ACKED);
+		    
+		    close_pkt->type = MPIDI_CH3_PKT_CLOSE;
+		    close_pkt->ack = (vc->state == MPIDI_VC_STATE_ACTIVE) ? FALSE : TRUE;
+		    
+		    mpi_errno = MPIDI_CH3_iStartMsg(vc, close_pkt, sizeof(*close_pkt), &sreq);
+		    /* --BEGIN ERROR HANDLING-- */
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+							 "**ch3|send_close_ack", 0);
+			continue;
+		    }
+		    /* --END ERROR HANDLING-- */
+		    
+		    if (sreq != NULL)
+		    {
+			MPID_Request_release(sreq);
+		    }
+
+		    /* MT: this is not thread safe */
+		    MPIDI_Outstanding_close_ops += 1;
+		    MPIDI_DBG_PRINTF((30, FCNAME, "sending close(%s) to %d, ops = %d", close_pkt->ack ? "TRUE" : "FALSE",
+				      i, MPIDI_Outstanding_close_ops));
+
+		    if (vc->state == MPIDI_VC_STATE_ACTIVE)
+		    { 
+			vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
+		    }
+		    else /* if (vc->state == MPIDI_VC_STATE_REMOTE_CLOSE) */
+		    {
+			vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
+		    }
+		}
+		else
+		{
+		    MPIDI_DBG_PRINTF((30, FCNAME, "not sending a close to %d, vc in state %s", i,
+				      MPIDI_VC_Get_state_description(vc->state)));
+		}
+	    }
 	}
-	
+
 	MPIU_Free(vcrt);
     }
+    
+    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_RELEASE);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
 #undef FUNCNAME
@@ -119,22 +180,6 @@ int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr)
     MPIU_Object_add_ref(orig_vcr);
     *new_vcr = orig_vcr;
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCR_DUP);
-    return MPI_SUCCESS;
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPID_VCR_Release
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_VCR_Release(MPID_VCR vcr)
-{
-    int count;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_VCR_RELEASE);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCR_RELEASE);
-    MPIU_Object_release_ref(vcr, &count);
-    /* FIXME: if necessary, update number of active VCs in the VC table */
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCR_RELEASE);
     return MPI_SUCCESS;
 }
 

@@ -6,7 +6,8 @@
 
 #include "mpidi_ch3_impl.h"
 
-#define ZERO_RANK 0x10101010
+/*#define ZERO_RANK 0x10101010*/
+#define ZERO_RANK 0x12345678
 
 #undef USE_SYNCHRONIZE_SHMAPPING
 
@@ -15,7 +16,7 @@
 #define FUNCNAME InitSharedProcesses
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
+static int InitSharedProcesses(MPIDI_PG_t *pg, int nRank)
 {
     int mpi_errno;
 #ifndef HAVE_WINDOWS_H
@@ -23,20 +24,19 @@ static int InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
 #endif
     int i;
     MPIDI_CH3I_Shared_process_t *pSharedProcess;
-    int nRank, nProc;
+    int nProc;
 
-    nRank = pg->rank;
-    nProc = pg->size;
+    nProc = MPIDI_PG_Get_size(pg);
 
     /* initialize arrays */
 #ifdef HAVE_WINDOWS_H
-    pg->pSharedProcessHandles = (HANDLE*)MPIU_Malloc(sizeof(HANDLE) * pg->size);
+    pg->ch.pSharedProcessHandles = (HANDLE*)MPIU_Malloc(sizeof(HANDLE) * nProc);
 #else
-    pg->pSharedProcessIDs = (int*)MPIU_Malloc(sizeof(int) * pg->size);
-    pg->pSharedProcessFileDescriptors = (int*)MPIU_Malloc(sizeof(int) * pg->size);
+    pg->ch.pSharedProcessIDs = (int*)MPIU_Malloc(sizeof(int) * pg->ch.size);
+    pg->ch.pSharedProcessFileDescriptors = (int*)MPIU_Malloc(sizeof(int) * nProc);
 #endif
 
-    pSharedProcess = pg->pSHP;
+    pSharedProcess = pg->ch.pSHP;
 
 #ifdef HAVE_WINDOWS_H
     pSharedProcess[nRank].nPid = GetCurrentProcessId();
@@ -65,19 +65,20 @@ static int InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
 	    }
 #ifdef HAVE_WINDOWS_H
             /*MPIU_DBG_PRINTF(("Opening process[%d]: %d\n", i, pSharedProcess[i].nPid));*/
-            pg->pSharedProcessHandles[i] =
+            pg->ch.pSharedProcessHandles[i] =
                 OpenProcess(STANDARD_RIGHTS_REQUIRED | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION, 
                             FALSE, pSharedProcess[i].nPid);
-            if (pg->pSharedProcessHandles[i] == NULL)
+            if (pg->ch.pSharedProcessHandles[i] == NULL)
             {
                 int err = GetLastError();
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**OpenProcess", "**OpenProcess %d %d", i, err); /*"unable to open process %d, error %d\n", i, err);*/
+		return mpi_errno;
             }
 #else
             sprintf(filename, "/proc/%d/mem", pSharedProcess[i].nPid);
-            pg->pSharedProcessIDs[i] = pSharedProcess[i].nPid;
-            pg->pSharedProcessFileDescriptors[i] = open(filename, O_RDONLY);
-            if (pg->pSharedProcessFileDescriptors[i] == -1)
+            pg->ch.pSharedProcessIDs[i] = pSharedProcess[i].nPid;
+            pg->ch.pSharedProcessFileDescriptors[i] = open(filename, O_RDONLY);
+            if (pg->ch.pSharedProcessFileDescriptors[i] == -1)
 	    {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**open", "**open %s %d %d", filename, pSharedProcess[i].nPid, errno);
 		return mpi_errno;
@@ -87,10 +88,10 @@ static int InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
         else
         {
 #ifdef HAVE_WINDOWS_H
-            pg->pSharedProcessHandles[i] = NULL;
+            pg->ch.pSharedProcessHandles[i] = NULL;
 #else
-            pg->pSharedProcessIDs[i] = 0;
-            pg->pSharedProcessFileDescriptors[i] = 0;
+            pg->ch.pSharedProcessIDs[i] = 0;
+            pg->ch.pSharedProcessFileDescriptors[i] = 0;
 #endif
         }
     }
@@ -100,6 +101,10 @@ static int InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
         {
             while (pSharedProcess[i].bFinished != TRUE)
                 MPIDU_Yield();
+	}
+	/* Why are the fields erased here? */
+	for (i=1; i<nProc; i++)
+	{
             pSharedProcess[i].nPid = -1;
             pSharedProcess[i].bFinished = -1;
             pSharedProcess[i].nRank = -1;
@@ -127,13 +132,13 @@ static int InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
 -  int nNproc
 
    Notes:
-    Set the global variables pg->addr, pg->size, pg->id
+    Set the global variables pg->ch.addr, pg->ch.size, pg->ch.id
 @*/
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_SHM_Get_mem
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc, BOOL bUseShm)
+int MPIDI_CH3I_SHM_Get_mem(MPIDI_PG_t *pg, int nTotalSize, int nRank, int nNproc, BOOL bUseShm)
 {
     int mpi_errno;
 #ifdef HAVE_SHARED_PROCESS_READ
@@ -161,7 +166,7 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
     {
 	/*MPIDI_err_printf("MPIDI_CH3I_SHM_Get_mem", "unable to allocate %d bytes of shared memory: must be greater than zero.\n", nTotalSize);*/
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	pg->addr = NULL;
+	pg->ch.addr = NULL;
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	return mpi_errno;
     }
@@ -170,18 +175,18 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
     {
 	/* Create the shared memory object */
 #ifdef USE_POSIX_SHM
-	pg->id = shm_open(pg->key, O_RDWR | O_CREAT, 0600);
-	if (pg->id == -1)
+	pg->ch.id = shm_open(pg->ch.key, O_RDWR | O_CREAT, 0600);
+	if (pg->ch.id == -1)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_open", "**shm_open %s %d", pg->key, errno);
-	    pg->addr = NULL;
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_open", "**shm_open %s %d", pg->ch.key, errno);
+	    pg->ch.addr = NULL;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	    return mpi_errno;
 	}
-	ftruncate(pg->id, nTotalSize);
+	ftruncate(pg->ch.id, nTotalSize);
 #elif defined (USE_SYSV_SHM)
-	pg->id = shmget(pg->key, nTotalSize, IPC_CREAT | SHM_R | SHM_W);
-	if (pg->id == -1) 
+	pg->ch.id = shmget(pg->ch.key, nTotalSize, IPC_CREAT | SHM_R | SHM_W);
+	if (pg->ch.id == -1) 
 	{
 	    if (errno == EINVAL)
 	    {
@@ -191,22 +196,22 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmget", "**shmget %d", errno);
 	    }
-	    pg->addr = NULL;
+	    pg->ch.addr = NULL;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	    return mpi_errno;
 	}
 #elif defined (USE_WINDOWS_SHM)
-	pg->id = CreateFileMapping(
+	pg->ch.id = CreateFileMapping(
 	    INVALID_HANDLE_VALUE,
 	    NULL,
 	    PAGE_READWRITE,
 	    0, 
 	    nTotalSize,
-	    pg->key);
-	if (pg->id == NULL) 
+	    pg->ch.key);
+	if (pg->ch.id == NULL) 
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**CreateFileMapping", "**CreateFileMapping %d", GetLastError()); /*"Error in CreateFileMapping, %d\n", GetLastError());*/
-	    pg->addr = NULL;
+	    pg->ch.addr = NULL;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	    return mpi_errno;
 	}
@@ -229,59 +234,59 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
 	    SetEvent(hSyncEvent2);
 	}
 #endif
-	pg->addr = NULL;
+	pg->ch.addr = NULL;
 	MPIU_DBG_PRINTF(("[%d] mapping shared memory\n", nRank));
 #ifdef USE_POSIX_SHM
-	pg->addr = mmap(NULL, nTotalSize, PROT_READ | PROT_WRITE, MAP_SHARED /* | MAP_NORESERVE*/, pg->id, 0);
-	if (pg->addr == MAP_FAILED)
+	pg->ch.addr = mmap(NULL, nTotalSize, PROT_READ | PROT_WRITE, MAP_SHARED /* | MAP_NORESERVE*/, pg->ch.id, 0);
+	if (pg->ch.addr == MAP_FAILED)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**mmap", "**mmap %d", errno);
-	    pg->addr = NULL;
+	    pg->ch.addr = NULL;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	    return mpi_errno;
 	}
 #elif defined (USE_SYSV_SHM)
-	pg->addr = shmat(pg->id, NULL, SHM_RND);
-	if (pg->addr == (void*)-1)
+	pg->ch.addr = shmat(pg->ch.id, NULL, SHM_RND);
+	if (pg->ch.addr == (void*)-1)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmat", "**shmat %d", errno); /*"Error from shmat %d\n", errno);*/
-	    pg->addr = NULL;
+	    pg->ch.addr = NULL;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	    return mpi_errno;
 	}
 #elif defined(USE_WINDOWS_SHM)
-	pg->addr = MapViewOfFileEx(
-	    pg->id,
+	pg->ch.addr = MapViewOfFileEx(
+	    pg->ch.id,
 	    FILE_MAP_WRITE,
 	    0, 0,
 	    nTotalSize,
 	    NULL
 	    );
 	MPIU_DBG_PRINTF(("."));
-	if (pg->addr == NULL)
+	if (pg->ch.addr == NULL)
 	{
 	    /*MPIDI_err_printf("MPIDI_CH3I_SHM_Get_mem", "Error in MapViewOfFileEx, %d\n", GetLastError());*/
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MapViewOfFileEx", 0);
-	    pg->addr = NULL;
+	    pg->ch.addr = NULL;
 	    return mpi_errno;
 	}
 #else
 #error No shared memory subsystem defined
 #endif
-	MPIU_DBG_PRINTF(("\n[%d] finished mapping shared memory: addr:%x\n", nRank, pg->addr));
+	MPIU_DBG_PRINTF(("\n[%d] finished mapping shared memory: addr:%x\n", nRank, pg->ch.addr));
 
 #ifdef HAVE_SHARED_PROCESS_READ
 
-	pg->pSHP = (MPIDI_CH3I_Shared_process_t*)((char*)pg->addr + shp_offset);
-	InitSharedProcesses(pg);
+	pg->ch.pSHP = (MPIDI_CH3I_Shared_process_t*)((char*)pg->ch.addr + shp_offset);
+	InitSharedProcesses(pg, nRank);
 #endif
     }
     else
     {
-	pg->addr = MPIU_Malloc(nTotalSize);
+	pg->ch.addr = MPIU_Malloc(nTotalSize);
     }
 
-    MPIU_DBG_PRINTF(("[%d] made it: shm address: %x\n", nRank, pg->addr));
+    MPIU_DBG_PRINTF(("[%d] made it: shm address: %x\n", nRank, pg->ch.addr));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
     return MPI_SUCCESS;
 }
@@ -291,7 +296,7 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
 
    Notes:
 @*/
-int MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process_group_t *pg, BOOL bUseShm)
+int MPIDI_CH3I_SHM_Release_mem(MPIDI_PG_t *pg, BOOL bUseShm)
 {
 #ifdef HAVE_SHARED_PROCESS_READ
     int i;
@@ -303,36 +308,36 @@ int MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process_group_t *pg, BOOL bUseShm)
     if (bUseShm)
     {
 #ifdef USE_POSIX_SHM
-	close(pg->id);
+	close(pg->ch.id);
 #elif defined (USE_SYSV_SHM)
-        shmdt(pg->addr);
+        shmdt(pg->ch.addr);
 #elif defined (USE_WINDOWS_SHM)
-        UnmapViewOfFile(pg->addr);
-        pg->addr = NULL;
-        CloseHandle(pg->id);
-        pg->id = NULL;
+        UnmapViewOfFile(pg->ch.addr);
+        pg->ch.addr = NULL;
+        CloseHandle(pg->ch.id);
+        pg->ch.id = NULL;
 #else
 #error No shared memory subsystem defined
 #endif
 #ifdef HAVE_SHARED_PROCESS_READ
 #ifdef USE_WINDOWS_SHM
-	for (i=0; i<pg->size; i++)
-	    CloseHandle(pg->pSharedProcessHandles[i]);
-	MPIU_Free(pg->pSharedProcessHandles);
-	pg->pSharedProcessHandles = NULL;
+	for (i=0; i<MPIDI_PG_Get_size(pg); i++)
+	    CloseHandle(pg->ch.pSharedProcessHandles[i]);
+	MPIU_Free(pg->ch.pSharedProcessHandles);
+	pg->ch.pSharedProcessHandles = NULL;
 #else
-	for (i=0; i<pg->size; i++)
-	    close(pg->pSharedProcessFileDescriptors[i]);
-	MPIU_Free(pg->pSharedProcessFileDescriptors);
-	MPIU_Free(pg->pSharedProcessIDs);
-	pg->pSharedProcessFileDescriptors = NULL;
-	pg->pSharedProcessIDs = NULL;
+	for (i=0; i<pg->ch.size; i++)
+	    close(pg->ch.pSharedProcessFileDescriptors[i]);
+	MPIU_Free(pg->ch.pSharedProcessFileDescriptors);
+	MPIU_Free(pg->ch.pSharedProcessIDs);
+	pg->ch.pSharedProcessFileDescriptors = NULL;
+	pg->ch.pSharedProcessIDs = NULL;
 #endif
 #endif
     }
     else
     {
-        MPIU_Free(pg->addr);
+        MPIU_Free(pg->ch.addr);
     }
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
     return MPI_SUCCESS;

@@ -11,17 +11,13 @@
 #include "mpidi_ch3_conf.h"
 #include "mpidimpl.h"
 
-#if defined(HAVE_ASSERT_H)
-#include <assert.h>
-#endif
-
 #ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN 256
 #endif
 
 typedef struct MPIDI_CH3I_Process_s
 {
-    MPIDI_CH3I_Process_group_t * pg;
+    char * parent_port_name;
     MPIDI_CH3I_Acceptq_t * acceptq_head;
     MPIDI_CH3I_Acceptq_t * acceptq_tail;
 #if !defined(MPICH_SINGLE_THREADED)
@@ -51,7 +47,7 @@ enum MPIDI_CH3I_Conn_state
 
 typedef struct MPIDI_CH3I_Connection
 {
-    MPIDI_VC * vc;
+    MPIDI_VC_t * vc;
     MPIDU_Sock_t sock;
     enum MPIDI_CH3I_Conn_state state;
     MPID_Request * send_active;
@@ -109,11 +105,11 @@ typedef struct MPIDI_CH3I_Connection
 
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
-int MPIDI_CH3I_VC_post_connect(MPIDI_VC *);
+int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
 int MPIDI_CH3I_Get_business_card(char * value, int length);
-int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC ** new_vc);
+int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc);
 
-int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC * vc);
-int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC ** vc);
+int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc);
+int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc);
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

@@ -42,10 +42,7 @@ typedef struct MPIDI_CH3I_BootstrapQ_struct * MPIDI_CH3I_BootstrapQ;
 
 typedef struct MPIDI_Process_group_s
 {
-    volatile int ref_count;
     char * kvs_name;
-    int size;
-    struct MPIDI_VC * vc_table;
     int nShmEagerLimit;
 #ifdef HAVE_SHARED_PROCESS_READ
     int nShmRndvLimit;
@@ -56,6 +53,8 @@ typedef struct MPIDI_Process_group_s
     char shm_hostname[MAXHOSTNAMELEN];
 }
 MPIDI_CH3I_Process_group_t;
+
+#define MPIDI_CH3_PG_DECL MPIDI_CH3I_Process_group_t ch;
 
 #define MPIDI_CH3_PKT_ENUM			\
 MPIDI_CH3I_PKT_SC_OPEN_REQ,			\
@@ -142,8 +141,6 @@ typedef struct MPIDI_CH3I_Shmem_block_request_result
 
 typedef struct MPIDI_CH3I_VC
 {
-    MPIDI_CH3I_Process_group_t * pg;
-    int pg_rank;
     struct MPIDI_CH3I_SHM_Queue_t * shm, * read_shmq, * write_shmq;
     struct MPID_Request * sendq_head;
     struct MPID_Request * sendq_tail;
@@ -151,7 +148,6 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_Request * recv_active;
     struct MPID_Request * req;
     MPIDI_CH3I_VC_state_t state;
-    struct MPIDI_CH3I_Connection * conn;
     MPIDI_CH3I_Shmem_block_request_result shm_write_queue_info, shm_read_queue_info;
     int shm_reading_pkt;
     int shm_state;
@@ -192,5 +188,13 @@ struct MPIDI_CH3I_Request									\
     /*  pkt is used to temporarily store a packet header associated with this request */	\
     MPIDI_CH3_Pkt_t pkt;									\
 } ch;
+
+typedef struct MPIDI_CH3I_Progress_state
+{
+    int completion_count;
+}
+MPIDI_CH3I_Progress_state;
+
+#define MPIDI_CH3_PROGRESS_STATE_DECL MPIDI_CH3I_Progress_state ch;
 
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */

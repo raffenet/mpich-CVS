@@ -38,7 +38,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Comm_disconnect(MPI_Comm *comm)
+int MPI_Comm_disconnect(MPI_Comm * comm)
 {
     static const char FCNAME[] = "MPI_Comm_disconnect";
     int mpi_errno = MPI_SUCCESS;
@@ -51,7 +51,12 @@ int MPI_Comm_disconnect(MPI_Comm *comm)
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
-	    if (mpi_errno) goto fn_fail;
+	    if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+						 "**mpi_comm_disconnect", "**mpi_comm_disconnect %C", *comm);
+		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    }
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -68,26 +73,55 @@ int MPI_Comm_disconnect(MPI_Comm *comm)
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
-            if (mpi_errno) goto fn_fail;
+            if (mpi_errno)
+	    {
+		goto fn_fail;
+            }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Comm_disconnect(comm_ptr);
-
-    if (mpi_errno == MPI_SUCCESS)
+    /*
+     * Since outstanding I/O bumps the reference count on the communicator, we wait until we hold the last reference count to
+     * ensure that all communication has completed.
+     */
+    if (comm_ptr->ref_count > 1)
     {
-	*comm = MPI_COMM_NULL;
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DISCONNECT);
-	return MPI_SUCCESS;
+	MPID_Progress_state progress_state;
+	
+	MPID_Progress_start(&progress_state);
+	while (comm_ptr->ref_count > 1)
+	{
+	    mpi_errno = MPID_Progress_wait(&progress_state);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		/* --BEGIN ERROR HANDLING-- */
+		MPID_Progress_end(&progress_state);
+		goto fn_fail;
+		/* --END ERROR HANDLING-- */
+	    }
+	}
+	MPID_Progress_end(&progress_state);
     }
+    
+    mpi_errno = MPIR_Comm_release(comm_ptr);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	goto fn_fail;
+    }
+    
+    *comm = MPI_COMM_NULL;
 
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_comm_disconnect", "**mpi_comm_disconnect %p", comm);
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DISCONNECT);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    return MPI_SUCCESS;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_disconnect", "**mpi_comm_disconnect %C", *comm);
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

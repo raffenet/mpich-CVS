@@ -22,7 +22,7 @@ int MPID_Rsend_init(const void * buf, int count, MPI_Datatype datatype, int rank
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_RSEND_INIT);
 
-    MPIDI_CH3M_create_psreq(sreq, mpi_errno, goto fn_exit);
+    MPIDI_Request_create_psreq(sreq, mpi_errno, goto fn_exit);
     MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_RSEND);
     if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
     {

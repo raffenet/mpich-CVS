@@ -146,6 +146,9 @@
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm">
 			<File
+				RelativePath=".\src\ch3_abort.c">
+			</File>
+			<File
 				RelativePath="src\ch3_cancel_send.c">
 			</File>
 			<File
@@ -201,6 +204,9 @@
 			</File>
 			<File
 				RelativePath="..\..\src\ch3u_buffer.c">
+			</File>
+			<File
+				RelativePath="..\..\src\ch3u_handle_connection.c">
 			</File>
 			<File
 				RelativePath="..\..\src\ch3u_handle_recv_pkt.c">
@@ -344,10 +350,10 @@
 				RelativePath="..\..\src\mpid_win_wait.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpidi_barrier.c">
+				RelativePath="..\..\src\mpidi_isend_self.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpidi_isend_self.c">
+				RelativePath="..\..\src\mpidi_pg.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpidi_printf.c">

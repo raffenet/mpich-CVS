@@ -70,6 +70,7 @@ typedef enum MPIDI_CH3_Pkt_type
     MPIDI_CH3_PKT_LOCK_GET_UNLOCK, /* optimization for single gets */
     MPIDI_CH3_PKT_LOCK_ACCUM_UNLOCK, /* optimization for single accumulates */
     MPIDI_CH3_PKT_FLOW_CNTL_UPDATE,
+    MPIDI_CH3_PKT_CLOSE,
     MPIDI_CH3_PKT_END_CH3
 # if defined(MPIDI_CH3_PKT_ENUM)
     , MPIDI_CH3_PKT_ENUM
@@ -255,6 +256,14 @@ typedef struct MPIDI_CH3_Pkt_lock_accum_unlock
 }
 MPIDI_CH3_Pkt_lock_accum_unlock_t;
 
+
+typedef struct MPIDI_CH3_Pkt_close
+{
+    MPIDI_CH3_Pkt_type_t type;
+    int ack;
+}
+MPIDI_CH3_Pkt_close_t;
+
 typedef union MPIDI_CH3_Pkt
 {
     MPIDI_CH3_Pkt_type_t type;
@@ -277,6 +286,7 @@ typedef union MPIDI_CH3_Pkt
     MPIDI_CH3_Pkt_lock_put_unlock_t lock_put_unlock;
     MPIDI_CH3_Pkt_lock_get_unlock_t lock_get_unlock;
     MPIDI_CH3_Pkt_lock_accum_unlock_t lock_accum_unlock;
+    MPIDI_CH3_Pkt_close_t close;
 # if defined(MPIDI_CH3_PKT_DECL)
     MPIDI_CH3_PKT_DECL
 # endif
@@ -333,40 +343,86 @@ typedef enum MPIDI_CA
 }
 MPIDI_CA_t;
 
+typedef struct MPIDI_PG
+{
+    /* MPIU_Object field.  MPIDI_PG_t objects are not allocated using the MPIU_Object system, but we do use the associated
+       reference counting routines.  Therefore, handle must be present, but is not used. */
+    int handle;
+    volatile int ref_count;
+
+    /* Next pointer used to maintain a list of all process groups known to this process */
+    struct MPIDI_PG * next;
+
+    /* Number of processes in the process group */
+    int size;
+
+    /* VC table.  At present this is a pointer to an array of VC structures.  Someday we may want make this a pointer to an array
+       of VC references.  Thus, it is important to use MPIDI_PG_Get_vc() instead of directly referencing this field. */
+    struct MPIDI_VC * vct;
+
+    /* Pointer to the process group ID.  The actual ID is defined and allocated by the process group.  The pointer is kept in the
+       device space because it is necessary for the device to be able to find a particular process group. */
+    void * id;
+    
+#if defined(MPIDI_CH3_PG_DECL)
+    MPIDI_CH3_PG_DECL
+#endif    
+}
+MPIDI_PG_t;
+
+
+#define MPIDI_VC_STATE_INACTIVE 1
+#define MPIDI_VC_STATE_ACTIVE 2
+#define MPIDI_VC_STATE_LOCAL_CLOSE 3
+#define MPIDI_VC_STATE_REMOTE_CLOSE 4
+#define MPIDI_VC_STATE_CLOSE_ACKED 5
 
 typedef struct MPIDI_VC
 {
-    int handle;  /* not used; exists so that we may use the MPIU_Object routines for reference counting */
+    /* XXX - need better comment */
+    /* MPIU_Object fields.  MPIDI_VC_t objects are not allocated using the MPIU_Object system, but we do use the associated
+       reference counting routines.  The first field is normal a handle, but since we are not using MPIU_Object for allocation,
+       we instead replace the handle with a state field. */
+    int state;
     volatile int ref_count;
+
+    /* Process group to which this VC belongs */
+    MPIDI_PG_t * pg;
+
+    /* Rank of the process associated with this VC */
+    int pg_rank;
+
+    /* Local process ID */
     int lpid;
+    
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
+    /* Sequence number of the next packet to be sent */
     MPID_Seqnum_t seqnum_send;
 #endif
+    
 #if defined(MPIDI_CH3_MSGS_UNORDERED)
+    /* Sequence number of the next packet we expect to receive */
     MPID_Seqnum_t seqnum_recv;
+
+    /* Queue for holding packets received out of order.  NOTE: the CH3 device only orders packets.  Handling of out-of-order data
+       is the responsibility of the channel. */
     MPIDI_CH3_Pkt_send_container_t * msg_reorder_queue;
 #endif
+    
 # if defined(MPIDI_CH3_VC_DECL)
     MPIDI_CH3_VC_DECL
 # endif
 }
-MPIDI_VC;
+MPIDI_VC_t;
 
-/* to send derived datatype across in RMA ops */
-typedef struct MPIDI_RMA_dtype_info { /* for derived datatypes */
-    int           is_contig; 
-    int           n_contig_blocks;
-    int           size;     
-    MPI_Aint      extent;   
-    int           dataloop_size; /* not needed because this info is sent in packet header. remove it after lock/unlock is implemented in the device */
-    void          *dataloop;  /* pointer needed to update pointers
-                                 within dataloop on remote side */
-    int           dataloop_depth; 
-    int           eltype;
-    MPI_Aint ub, lb, true_ub, true_lb;
-    int has_sticky_ub, has_sticky_lb;
-} MPIDI_RMA_dtype_info;
+typedef enum MPIDI_VC_Event
+{
+    MPIDI_VC_EVENT_TERMINATED
+}
+MPIDI_VC_Event_t;
 
+typedef struct MPIDI_VCRT * MPID_VCRT;
+typedef struct MPIDI_VC * MPID_VCR;
 
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
 #   define MPIDI_REQUEST_SEQNUM	\
@@ -449,6 +505,21 @@ MPID_REQUEST_DECL
 #endif
 
 
+/* to send derived datatype across in RMA ops */
+typedef struct MPIDI_RMA_dtype_info { /* for derived datatypes */
+    int           is_contig; 
+    int           n_contig_blocks;
+    int           size;     
+    MPI_Aint      extent;   
+    int           dataloop_size; /* not needed because this info is sent in packet header. remove it after lock/unlock is implemented in the device */
+    void          *dataloop;  /* pointer needed to update pointers
+                                 within dataloop on remote side */
+    int           dataloop_depth; 
+    int           eltype;
+    MPI_Aint ub, lb, true_ub, true_lb;
+    int has_sticky_ub, has_sticky_lb;
+} MPIDI_RMA_dtype_info;
+
 /* for keeping track of RMA ops, which will be executed at the next sync call */
 typedef struct MPIDI_RMA_ops {
     struct MPIDI_RMA_ops *next;  /* pointer to next element in list */
@@ -480,7 +551,7 @@ typedef struct MPIDI_Win_lock_queue {
     struct MPIDI_Win_lock_queue *next;
     int lock_type;
     MPI_Win source_win_handle;
-    MPIDI_VC *vc;
+    MPIDI_VC_t * vc;
     struct MPIDI_PT_single_op *pt_single_op;  /* to store info for lock-put-unlock optimization */
 } MPIDI_Win_lock_queue;
 

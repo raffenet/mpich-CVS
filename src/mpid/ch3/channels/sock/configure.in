@@ -36,7 +36,6 @@ if test "$lac_cv_header_net_if_h" = "yes" ; then
 fi
 
 AC_CHECK_HEADERS(				\
-	assert.h				\
 	netdb.h					\
 	sys/ioctl.h				\
 	sys/socket.h				\

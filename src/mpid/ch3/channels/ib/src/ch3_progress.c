@@ -56,7 +56,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
 #define FUNCNAME handle_read
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline int handle_read(MPIDI_VC *vc, int nb)
+static inline int handle_read(MPIDI_VC_t *vc, int nb)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * req;
@@ -111,7 +111,7 @@ static inline int handle_read(MPIDI_VC *vc, int nb)
 #define FUNCNAME handle_written
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline int handle_written(MPIDI_VC * vc)
+static inline int handle_written(MPIDI_VC_t * vc)
 {
     int nb, mpi_errno = MPI_SUCCESS;
     int complete;
@@ -180,7 +180,7 @@ void MPIDI_CH3_Progress_start()
 int MPIDI_CH3I_Progress(int is_blocking)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_VC *vc_ptr;
+    MPIDI_VC_t *vc_ptr;
     int num_bytes;
     ibu_op_t wait_result;
     unsigned register count;

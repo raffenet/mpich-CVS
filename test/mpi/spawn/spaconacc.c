@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 	error = MPI_Barrier(comm_connector);
 	check_error(error, "MPI_Barrier");
 
-	printf(" No errors\n");
+	printf(" No Errors\n");
     }
     else if ((argc == 2) && (strcmp(argv[1], "acceptor") == 0))
     {

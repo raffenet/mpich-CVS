@@ -28,7 +28,7 @@ extern gasnet_token_t MPIDI_CH3I_gasnet_token;
 extern int MPIDI_CH3_packet_len;
 extern void *MPIDI_CH3_packet_buffer;
 
-extern MPIDI_VC *MPIDI_CH3_vc_table;
+extern MPIDI_VC_t *MPIDI_CH3_vc_table;
 
 #define CH3_NORMAL_QUEUE 0
 #define CH3_RNDV_QUEUE   1
@@ -90,9 +90,9 @@ int gasnet_AMRequestMediumv0(gasnet_node_t dest, gasnet_handler_t handler,
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 short MPIDI_CH3I_Listener_get_port(void);
-int MPIDI_CH3I_VC_post_connect(MPIDI_VC *);
-int MPIDI_CH3I_VC_post_read(MPIDI_VC *, MPID_Request *);
-int MPIDI_CH3I_VC_post_write(MPIDI_VC *, MPID_Request *);
+int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
+int MPIDI_CH3I_VC_post_read(MPIDI_VC_t *, MPID_Request *);
+int MPIDI_CH3I_VC_post_write(MPIDI_VC_t *, MPID_Request *);
 int MPIDI_CH3I_sock_errno_to_mpi_errno(char * fcname, int sock_errno);
 int MPIDI_CH3I_Get_business_card(char *value, int length);
 

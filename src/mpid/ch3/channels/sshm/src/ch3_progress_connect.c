@@ -6,13 +6,31 @@
 
 #include "ch3i_progress.h"
 
-volatile unsigned int MPIDI_CH3I_progress_completions = 0;
+volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Connection_terminate
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    /* There is no post_close for shm connections so handle them as closed immediately. */
+    mpi_errno = MPIDI_CH3U_Handle_connection(vc, MPIDI_VC_EVENT_TERMINATED);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
+    }
+
+    return mpi_errno;
+}
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Shm_connect
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
+int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag)
 {
     int mpi_errno;
     char hostname[256];
@@ -39,15 +57,15 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
     }
 
     /* compare this host's name with the business card host name */
-    if (strcmp(MPIDI_CH3I_Process.pg->shm_hostname, hostname) != 0)
+    if (strcmp(MPIDI_Process.my_pg->ch.shm_hostname, hostname) != 0)
     {
 	*flag = FALSE;
-	/*MPIU_DBG_PRINTF(("%s != %s\n", MPIDI_CH3I_Process.pg->shm_hostname, hostname));*/
+	/*MPIU_DBG_PRINTF(("%s != %s\n", MPIDI_Process.my_pg->ch.shm_hostname, hostname));*/
 	return MPI_SUCCESS;
     }
 
     *flag = TRUE;
-    /*MPIU_DBG_PRINTF(("%s == %s\n", MPIDI_CH3I_Process.pg->shm_hostname, hostname));*/
+    /*MPIU_DBG_PRINTF(("%s == %s\n", MPIDI_Process.my_pg->ch.shm_hostname, hostname));*/
 
     MPIU_DBG_PRINTF(("attaching to queue: %s\n", queue_name));
     mpi_errno = MPIDI_CH3I_BootstrapQ_attach(queue_name, &queue);
@@ -85,7 +103,8 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
     /* send the queue connection information */
     /*MPIU_DBG_PRINTF(("write_shmq: %p, name - %s\n", vc->ch.write_shmq, vc->ch.shm_write_queue_info.key));*/
     shm_info.info = vc->ch.shm_write_queue_info;
-    shm_info.pg_id = 0;
+    /*shm_info.pg_id = 0;*/
+    MPIU_Strncpy(shm_info.pg_id, vc->pg->id, 100);
     shm_info.pg_rank = MPIR_Process.comm_world->rank;
     shm_info.pid = getpid();
     MPIU_DBG_PRINTF(("MPIDI_CH3I_Shm_connect: sending bootstrap queue info from rank %d to msg queue %s\n", MPIR_Process.comm_world->rank, queue_name));
@@ -118,7 +137,7 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
 #define FUNCNAME MPIDI_CH3I_VC_post_connect
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
+int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 {
     char * key;
     char * val;
@@ -127,7 +146,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     int rc;
     int mpi_errno = MPI_SUCCESS;
     int connected;
-    MPIDI_VC *iter;
+    MPIDI_VC_t *iter;
     int count = 0;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
 
@@ -166,13 +185,13 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	return mpi_errno;
     }
 
-    rc = snprintf(key, key_max_sz, "P%d-businesscard", vc->ch.pg_rank);
+    rc = snprintf(key, key_max_sz, "P%d-businesscard", vc->pg_rank);
     if (rc < 0 || rc > key_max_sz)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", rc);
 	return mpi_errno;
     }
-    rc = PMI_KVS_Get(vc->ch.pg->kvs_name, key, val, val_max_sz);
+    rc = PMI_KVS_Get(vc->pg->ch.kvs_name, key, val, val_max_sz);
     if (rc != PMI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", rc);
@@ -211,7 +230,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 	iter = iter->ch.shm_next_writer;
     }
     if (count >= MPIDI_CH3I_Process.num_cpus)
-	MPIDI_CH3I_Process.pg->nShmWaitSpinCount = 1;
+	MPIDI_Process.my_pg->ch.nShmWaitSpinCount = 1;
 
     vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;
     vc->ch.shm_reading_pkt = TRUE;

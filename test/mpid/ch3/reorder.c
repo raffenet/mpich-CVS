@@ -41,7 +41,7 @@ int main(int argc, char * argv[])
 	    MPID_Request * req;
 	    MPI_Status status;
 	    MPID_Comm * comm;
-	    MPIDI_VC * vc;
+	    MPIDI_VC_t * vc;
 
 	    MPID_Comm_get_ptr(MPI_COMM_WORLD, comm);
 	    vc = comm->vcr[1];

@@ -53,7 +53,7 @@ static inline int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz
 #define FUNCNAME handle_shm_read
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int handle_shm_read(MPIDI_VC *vc, int nb)
+int handle_shm_read(MPIDI_VC_t *vc, int nb)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * req;
@@ -115,7 +115,7 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
 #define FUNCNAME MPIDI_CH3I_SHM_write_progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
+int MPIDI_CH3I_SHM_write_progress(MPIDI_VC_t * vc)
 {
     int mpi_errno;
     int nb;

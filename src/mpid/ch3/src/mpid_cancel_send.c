@@ -12,7 +12,7 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Cancel_send(MPID_Request * sreq)
 {
-    MPIDI_VC * vc;
+    MPIDI_VC_t * vc;
     int proto;
     int flag;
     int mpi_errno = MPI_SUCCESS;
@@ -38,8 +38,8 @@ int MPID_Cancel_send(MPID_Request * sreq)
     {
 	goto fn_exit;
     }
-    
-    vc = sreq->comm->vcr[sreq->dev.match.rank];
+
+    MPIDI_Comm_get_vc(sreq->comm, sreq->dev.match.rank, &vc);
 
     proto = MPIDI_Request_get_msg_type(sreq);
 

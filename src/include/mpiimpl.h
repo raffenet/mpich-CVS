@@ -1073,9 +1073,6 @@ extern MPID_Group MPID_Group_builtin[MPID_GROUP_N_BUILTIN];
 extern MPID_Group MPID_Group_direct[];
 /* ------------------------------------------------------------------------- */
 
-typedef struct MPIDI_VCRT * MPID_VCRT;
-typedef struct MPIDI_VC   * MPID_VCR;
-
 /*E
   MPID_Comm_kind_t - Name the two types of communicators
   E*/
@@ -2085,9 +2082,9 @@ int MPIR_Request_get_error(MPID_Request *);
   set as the user expects.  See below.
 
   Return value:
-  Returns '0' on success and an MPI error code on failure.  Failure can happen
-  when, for example, the device is unable to start or contact the number of
-  processes specified by the 'mpiexec' command.
+  Returns 'MPI_SUCCESS' on success and an MPI error code on failure.  Failure
+  can happen when, for example, the device is unable  to start or contact the
+  number of processes specified by the 'mpiexec' command.
 
   Notes:
   Null arguments for 'argc_p' and 'argv_p' `must` be valid (see MPI-2, section
@@ -2315,9 +2312,43 @@ int MPID_Abort( MPID_Comm *comm, int mpi_errno, int exit_code, char *error_msg )
 
 int MPID_Open_port(MPID_Info *, char *);
 int MPID_Close_port(char *);
+
+/*@
+   MPID_Comm_accept - MPID entry point for MPI_Comm_accept
+
+   Input Parameters:
++  port_name - port name
+.  info - info
+.  root - root
+-  comm - communicator
+
+   Output Parameters:
+.  MPI_Comm *newcomm - new communicator
+
+  Return Value:
+  'MPI_SUCCESS' or a valid MPI error code.
+@*/
 int MPID_Comm_accept(char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
+
+/*@
+   MPID_Comm_connect - MPID entry point for MPI_Comm_connect
+
+   Input Parameters:
++  port_name - port name
+.  info - info
+.  root - root
+-  comm - communicator
+
+   Output Parameters:
+.  newcomm_ptr - new intercommunicator
+
+  Return Value:
+  'MPI_SUCCESS' or a valid MPI error code.
+@*/
 int MPID_Comm_connect(char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
+
 int MPID_Comm_disconnect(MPID_Comm *);
+
 int MPID_Comm_spawn_multiple(int, char *[], char* *[], int [], MPID_Info* [],
                              int, MPID_Comm *, MPID_Comm **, int []);
 
@@ -3008,6 +3039,13 @@ int MPID_Get_processor_name( char *name, int *resultlen);
 
 void MPID_Errhandler_free(MPID_Errhandler *errhan_ptr);
 
+
+/*
+ * FIXME: VCs should not be exposed to the top layer, which implies that these routines should not be exposed either.  Instead,
+ * the creation, duplication and destruction of communicator objects should be communicated to the device, allowing the device to
+ * manage the underlying connections in a way that is appropriate (and efficient).
+ */
+
 /*@
   MPID_VCRT_Create - Create a virtual connection reference table
   @*/
@@ -3026,11 +3064,9 @@ int MPID_VCRT_Release(MPID_VCRT vcrt);
 int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr);
 
 /*@
-  MPID_VCR_Dup - 
+  MPID_VCR_Dup - Create a duplicate reference to a virtual connection
   @*/
 int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr);
-
-int MPID_VCR_Release(MPID_VCR vcr);
 
 /*@
    MPID_VCR_Get_lpid - Get the local process id that corresponds to a 

@@ -33,8 +33,8 @@ void MPIDI_CH3U_Buffer_copy(
     *smpi_errno = MPI_SUCCESS;
     *rmpi_errno = MPI_SUCCESS;
 
-    MPIDI_CH3U_Datatype_get_info(scount, sdt, sdt_contig, sdata_sz, sdt_ptr, sdt_true_lb);
-    MPIDI_CH3U_Datatype_get_info(rcount, rdt, rdt_contig, rdata_sz, rdt_ptr, rdt_true_lb);
+    MPIDI_Datatype_get_info(scount, sdt, sdt_contig, sdata_sz, sdt_ptr, sdt_true_lb);
+    MPIDI_Datatype_get_info(rcount, rdt, rdt_contig, rdata_sz, rdt_ptr, rdt_true_lb);
 
     /* --BEGIN ERROR HANDLING-- */
     if (sdata_sz > rdata_sz)

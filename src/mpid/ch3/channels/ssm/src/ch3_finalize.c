@@ -36,16 +36,11 @@ int MPIDI_CH3_Finalize()
 	MPIDI_CH3I_SHM_Release_mem(&MPIDI_CH3I_Process.shm_writing_list->ch.shm_write_queue_info);
 	MPIDI_CH3I_Process.shm_writing_list = MPIDI_CH3I_Process.shm_writing_list->ch.shm_next_writer;
     }
-    mpi_errno = MPIDI_CH3I_BootstrapQ_destroy(MPIDI_CH3I_Process.pg->bootstrapQ);
+    mpi_errno = MPIDI_CH3I_BootstrapQ_destroy(MPIDI_Process.my_pg->ch.bootstrapQ);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**finalize_boot", 0);
     }
-    MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);
-    MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
-    MPIU_Free(MPIDI_CH3I_Process.pg->vc_table);
-    MPIU_Free(MPIDI_CH3I_Process.pg->kvs_name);
-    MPIU_Free(MPIDI_CH3I_Process.pg);
 
     /* Let PMI know the process is about to exit */
     rc = PMI_Finalize();

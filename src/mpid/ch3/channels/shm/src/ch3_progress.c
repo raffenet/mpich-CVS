@@ -6,7 +6,19 @@
 
 #include "mpidi_ch3_impl.h"
 
-volatile unsigned int MPIDI_CH3I_progress_completions = 0;
+volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Connection_terminate
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
+{
+    int mpi_errno = MPI_SUCCESS;
+    /* There is no post_close for shm connections so handle them as closed immediately. */
+    mpi_errno = MPIDI_CH3U_Handle_connection(vc, MPIDI_VC_EVENT_TERMINATED);
+    return mpi_errno;
+}
 
 /*
  * MPIDI_CH3I_Request_adjust_iov()
@@ -73,7 +85,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
 #define FUNCNAME handle_read
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline int handle_read(MPIDI_VC *vc, int nb)
+static inline int handle_read(MPIDI_VC_t *vc, int nb)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * req;
@@ -128,7 +140,7 @@ static inline int handle_read(MPIDI_VC *vc, int nb)
 #define FUNCNAME handle_written
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline int handle_written(MPIDI_VC * vc)
+static inline int handle_written(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
     int nb;
@@ -184,27 +196,29 @@ static inline int handle_written(MPIDI_VC * vc)
     return mpi_errno;
 }
 
-void MPIDI_CH3_Progress_start()
+#if 0
+void MPIDI_CH3_Progress_start(MPID_Progress_state *state)
 {
     /* MT - This function is empty for the single-threaded implementation */
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Progress(int is_blocking)
+int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
-    MPIDI_VC *vc_ptr;
+    MPIDI_VC_t *vc_ptr;
     int num_bytes;
     shm_wait_t wait_result;
 #ifdef MPICH_DBG_OUTPUT
     unsigned register count;
 #endif
     int spin_count = 1;
-    unsigned completions = MPIDI_CH3I_progress_completions;
+    unsigned completions = MPIDI_CH3I_progress_completion_count;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_YIELD);
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SLEEP_YIELD);
@@ -223,10 +237,10 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	switch (wait_result)
 	{
 	case SHM_WAIT_TIMEOUT:
-	    if (spin_count >= MPIDI_CH3I_Process.pg->nShmWaitSpinCount)
+	    if (spin_count >= MPIDI_Process.my_pg->ch.nShmWaitSpinCount)
 	    {
 #ifdef USE_SLEEP_YIELD
-		if (spin_count >= MPIDI_CH3I_Process.pg->nShmWaitYieldCount)
+		if (spin_count >= MPIDI_Process.my_pg->ch.nShmWaitYieldCount)
 		{
 		    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SLEEP_YIELD);
 		    MPIDU_Sleep_yield();
@@ -295,11 +309,12 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	}
 
 	/* pound on the write queues since shm_wait currently does not return SHM_WAIT_WRITE */
-	for (i=0; i<MPIDI_CH3I_Process.vc->ch.pg->size; i++)
+	for (i=0; i<MPIDI_PG_Get_size(MPIDI_CH3I_Process.vc->pg); i++)
 	{
-	    if (MPIDI_CH3I_Process.pg->vc_table[i].ch.send_active != NULL)
+	    MPIDI_PG_Get_vc(MPIDI_CH3I_Process.vc->pg, i, &vc_ptr);
+	    if (/*MPIDI_Process.my_pg->ch.vc_table[i].*/vc_ptr->ch.send_active != NULL)
 	    {
-		mpi_errno = handle_written(&MPIDI_CH3I_Process.pg->vc_table[i]);
+		mpi_errno = handle_written(vc_ptr/*&MPIDI_Process.my_pg->ch.vc_table[i]*/);
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
@@ -309,11 +324,11 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	    }
 	}
     }
-    while (completions == MPIDI_CH3I_progress_completions && is_blocking);
+    while (completions == MPIDI_CH3I_progress_completion_count && is_blocking);
 
 fn_exit:
 #ifdef MPICH_DBG_OUTPUT
-    count = MPIDI_CH3I_progress_completions - completions;
+    count = MPIDI_CH3I_progress_completion_count - completions;
     if (is_blocking)
     {
 	MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", count));
@@ -330,6 +345,7 @@ fn_exit:
     return mpi_errno;
 }
 
+#if 0
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_poke
 #undef FCNAME
@@ -343,15 +359,18 @@ int MPIDI_CH3_Progress_poke()
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
     return mpi_errno;
 }
+#endif
 
+#if 0
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_end
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_Progress_end()
+void MPIDI_CH3_Progress_end(MPID_Progress_state *state)
 {
     /* MT - This function is empty for the single-threaded implementation */
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress_init
@@ -375,20 +394,6 @@ int MPIDI_CH3I_Progress_finalize()
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
 
-    /*
-     * Wait for any pending communication to complete.  This prevents another process from hanging if it performs a send and then
-     * attempts to cancel it.
-     */
-    MPIR_Nest_incr();
-    {
-	mpi_errno = NMPI_Barrier(MPI_COMM_WORLD);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_finalize", 0);
-	}
-    }
-    MPIR_Nest_decr();
-    
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
     return mpi_errno;

@@ -173,12 +173,15 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
             mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", mpi_errno);
             goto fn_exit;
         }
-	for (i=0; i<total_num_processes; i++)
-	{
-	    /* FIXME: translate the pmi error codes here */
-	    errcodes[i] = pmi_errcodes[i];
+	if (errcodes != MPI_ERRCODES_IGNORE)
+	{ 
+	    for (i=0; i<total_num_processes; i++)
+	    {
+		/* FIXME: translate the pmi error codes here */
+		errcodes[i] = pmi_errcodes[i];
+	    }
 	}
-
+	
 	free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
         MPIU_Free(info_keyval_sizes);
 	MPIU_Free(pmi_errcodes);

@@ -45,7 +45,7 @@ static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, i
 #define FUNCNAME MPIDI_CH3_iSendv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
+int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
 {
     int mpi_errno = MPI_SUCCESS;
     int complete;

@@ -6,15 +6,15 @@
 
 #include "mpidimpl.h"
 
-#define set_request_info(_rreq, _pkt, _msg_type)		\
+#define set_request_info(rreq_, pkt_, msg_type_)		\
 {								\
-    (_rreq)->status.MPI_SOURCE = (_pkt)->match.rank;		\
-    (_rreq)->status.MPI_TAG = (_pkt)->match.tag;		\
-    (_rreq)->status.count = (_pkt)->data_sz;			\
-    (_rreq)->dev.sender_req_id = (_pkt)->sender_req_id;		\
-    (_rreq)->dev.recv_data_sz = (_pkt)->data_sz;		\
-    MPIDI_CH3U_Request_set_seqnum((_rreq), (_pkt)->seqnum);	\
-    MPIDI_Request_set_msg_type((_rreq), (_msg_type));		\
+    (rreq_)->status.MPI_SOURCE = (pkt_)->match.rank;		\
+    (rreq_)->status.MPI_TAG = (pkt_)->match.tag;		\
+    (rreq_)->status.count = (pkt_)->data_sz;			\
+    (rreq_)->dev.sender_req_id = (pkt_)->sender_req_id;		\
+    (rreq_)->dev.recv_data_sz = (pkt_)->data_sz;		\
+    MPIDI_Request_set_seqnum((rreq_), (pkt_)->seqnum);		\
+    MPIDI_Request_set_msg_type((rreq_), (msg_type_));		\
 }
 
 /*
@@ -23,8 +23,8 @@
  * NOTE: Multiple threads may NOT simultaneously call this routine with the same VC.  This constraint eliminates the need to
  * lock the VC.  If simultaneous upcalls are a possible, the calling routine for serializing the calls.
  */
-int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
-int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
+int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt);
+int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt);
 #if defined(MPIDI_CH3_MSGS_UNORDERED)
 #define MPIDI_CH3U_Handle_unordered_recv_pkt MPIDI_CH3U_Handle_recv_pkt
 #else
@@ -34,13 +34,13 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
 #if defined(MPIDI_CH3_MSGS_UNORDERED)
 
 #define MPIDI_CH3U_Pkt_send_container_alloc() (MPIU_Malloc(sizeof(MPIDI_CH3_Pkt_send_container_t)))
-#define MPIDI_CH3U_Pkt_send_container_free(pc) MPIU_Free(pc)
+#define MPIDI_CH3U_Pkt_send_container_free(pc_) MPIU_Free(pc_)
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Handle_unordered_recv_pkt
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp)
+int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_UNORDERED_RECV_PKT);
@@ -173,7 +173,7 @@ int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, M
 #define FUNCNAME MPIDI_CH3U_Handle_ordered_recv_pkt
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp)
+int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp)
 {
     int type_size;
     static int in_routine = FALSE;
@@ -501,7 +501,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 	    iov[0].MPID_IOV_BUF = (void*)rs_pkt;
 	    iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
 
-	    MPIDI_CH3U_Datatype_get_info(sreq->dev.user_count, sreq->dev.datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
+	    MPIDI_Datatype_get_info(sreq->dev.user_count, sreq->dev.datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
 	
 	    if (dt_contig) 
 	    {
@@ -990,7 +990,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
                 /* --BEGIN ERROR HANDLING-- */
                 if (!new_ptr)
                 {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+						      "**nomem", 0 );
                     goto fn_exit;
                 }
                 /* --END ERROR HANDLING-- */
@@ -1081,7 +1082,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
                 /* --BEGIN ERROR HANDLING-- */
                 if (!new_ptr)
                 {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+						      "**nomem", 0 );
                     goto fn_exit;
                 }
                 /* --END ERROR HANDLING-- */
@@ -1090,7 +1092,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
                 /* --BEGIN ERROR HANDLING-- */
                 if (new_ptr->pt_single_op == NULL)
                 {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+						      "**nomem", 0 );
                     goto fn_exit;
                 }
                 /* --END ERROR HANDLING-- */
@@ -1124,7 +1127,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
                 /* --BEGIN ERROR HANDLING-- */
                 if (new_ptr->pt_single_op->data == NULL)
                 {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+						      "**nomem", 0 );
                     goto fn_exit;
                 }
                 /* --END ERROR HANDLING-- */
@@ -1176,7 +1180,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
             /* --BEGIN ERROR HANDLING-- */
             if (!new_ptr)
             {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+						  "**nomem", 0 );
                 goto fn_exit;
             }
             /* --END ERROR HANDLING-- */
@@ -1185,7 +1190,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
             /* --BEGIN ERROR HANDLING-- */
             if (new_ptr->pt_single_op == NULL)
             {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+						  "**nomem", 0 );
                 goto fn_exit;
             }
             /* --END ERROR HANDLING-- */
@@ -1222,7 +1228,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
             /* --BEGIN ERROR HANDLING-- */
             if (new_ptr->pt_single_op->data == NULL)
             {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+						  "**nomem", 0 );
                 goto fn_exit;
             }
             /* --END ERROR HANDLING-- */
@@ -1314,7 +1321,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
                 /* --BEGIN ERROR HANDLING-- */
                 if (!new_ptr)
                 {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+						      "**nomem", 0 );
                     goto fn_exit;
                 }
                 /* --END ERROR HANDLING-- */
@@ -1322,7 +1330,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
                 /* --BEGIN ERROR HANDLING-- */
                 if (new_ptr->pt_single_op == NULL)
                 {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+						      "**nomem", 0 );
                     goto fn_exit;
                 }
                 /* --END ERROR HANDLING-- */
@@ -1351,6 +1360,61 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
             break;
         }
 
+	case MPIDI_CH3_PKT_CLOSE:
+	{
+	    MPIDI_CH3_Pkt_close_t * close_pkt = &pkt->close;
+	    
+	    if (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE)
+	    {
+		MPIDI_CH3_Pkt_t upkt;
+		MPIDI_CH3_Pkt_close_t * resp_pkt = &upkt.close;
+		MPID_Request * resp_sreq;
+
+		resp_pkt->type = MPIDI_CH3_PKT_CLOSE;
+		resp_pkt->ack = TRUE;
+
+		MPIDI_DBG_PRINTF((30, FCNAME, "sending close(TRUE) to %d", vc->pg_rank));
+		mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), &resp_sreq);
+		/* --BEGIN ERROR HANDLING-- */
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						     "**ch3|send_close_ack", 0);
+		    goto fn_exit;
+		}
+		/* --END ERROR HANDLING-- */
+		    
+		if (resp_sreq != NULL)
+		{
+		    MPID_Request_release(resp_sreq);
+		}
+	    }
+
+	    if (close_pkt->ack == FALSE)
+	    {
+		if (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE)
+		{
+		    MPIDI_DBG_PRINTF((30, FCNAME, "received close(FALSE) from %d, moving to CLOSE_ACKED.", vc->pg_rank));
+		    vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
+		}
+		else /* (vc->state == MPIDI_VC_STATE_ACTIVE) */
+		{
+		    MPIDI_DBG_PRINTF((30, FCNAME, "received close(FALSE) from %d, moving to REMOTE_CLOSE.", vc->pg_rank));
+		    vc->state = MPIDI_VC_STATE_REMOTE_CLOSE;
+		}
+	    }
+	    else
+	    {
+		MPIDI_DBG_PRINTF((30, FCNAME, "received close(TRUE) from %d, moving to CLOSE_ACKED.", vc->pg_rank));
+		MPIU_Assert (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE || vc->state == MPIDI_VC_STATE_CLOSE_ACKED);
+		vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
+		mpi_errno = MPIDI_CH3_Connection_terminate(vc);
+	    }
+
+	    *rreqp = NULL;
+	    break;
+	}
+	
 	case MPIDI_CH3_PKT_FLOW_CNTL_UPDATE:
 	{
 	    /* --BEGIN ERROR HANDLING-- */
@@ -1383,7 +1447,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 #define FUNCNAME MPIDI_CH3U_Post_data_receive
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Post_data_receive(MPIDI_VC * vc, int found, MPID_Request ** rreqp)
+int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rreqp)
 {
     int dt_contig;
     MPI_Aint dt_true_lb;
@@ -1409,7 +1473,7 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC * vc, int found, MPID_Request ** rreqp
     {
 	MPIDI_DBG_PRINTF((30, FCNAME, "posted request found"));
 	
-	MPIDI_CH3U_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
+	MPIDI_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
 		
 	if (rreq->dev.recv_data_sz <= userbuf_sz)
 	{
@@ -1525,7 +1589,7 @@ int MPIDI_CH3I_Try_acquire_win_lock(MPID_Win *win_ptr, int requested_lock)
 }
 
 
-int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC *vc, MPI_Win source_win_handle)
+int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC_t *vc, MPI_Win source_win_handle)
 {
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_lock_granted_t *lock_granted_pkt = &upkt.lock_granted;

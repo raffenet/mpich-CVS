@@ -23,7 +23,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
     MPI_Aint dt_true_lb;
     MPID_Datatype * dt_ptr;
     MPID_Request * sreq;
-    MPIDI_VC * vc;
+    MPIDI_VC_t * vc;
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
     MPID_Seqnum_t seqnum;
 #endif    
@@ -41,7 +41,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	goto fn_exit;
     }
     
-    MPIDI_CH3M_create_sreq(sreq, mpi_errno, goto fn_exit);
+    MPIDI_Request_create_sreq(sreq, mpi_errno, goto fn_exit);
     MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
     
     if (rank == MPI_PROC_NULL)
@@ -51,9 +51,9 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	goto fn_exit;
     }
 
-    MPIDI_CH3U_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
+    MPIDI_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
     
-    vc = comm->vcr[rank];
+    MPIDI_Comm_get_vc(comm, rank, &vc);
     
     if (data_sz == 0)
     {
@@ -71,9 +71,9 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	eager_pkt->sender_req_id = sreq->handle;
 	eager_pkt->data_sz = 0;
 	
-	MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
-	MPIDI_CH3U_Pkt_set_seqnum(eager_pkt, seqnum);
-	MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
+	MPIDI_VC_FAI_send_seqnum(vc, seqnum);
+	MPIDI_Pkt_set_seqnum(eager_pkt, seqnum);
+	MPIDI_Request_set_seqnum(sreq, seqnum);
 	
 	mpi_errno = MPIDI_CH3_iSend(vc, sreq, eager_pkt, sizeof(*eager_pkt));
 	/* --BEGIN ERROR HANDLING-- */
@@ -120,9 +120,9 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    iov[1].MPID_IOV_BUF = (void *) ((char *)buf + dt_true_lb);
 	    iov[1].MPID_IOV_LEN = data_sz;
 
-	    MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
-	    MPIDI_CH3U_Pkt_set_seqnum(eager_pkt, seqnum);
-	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
+	    MPIDI_VC_FAI_send_seqnum(vc, seqnum);
+	    MPIDI_Pkt_set_seqnum(eager_pkt, seqnum);
+	    MPIDI_Request_set_seqnum(sreq, seqnum);
 	
 	    mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, 2);
 	    /* --BEGIN ERROR HANDLING-- */
@@ -150,9 +150,9 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    {
 		iov_n += 1;
 		
-		MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
-		MPIDI_CH3U_Pkt_set_seqnum(eager_pkt, seqnum);
-		MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
+		MPIDI_VC_FAI_send_seqnum(vc, seqnum);
+		MPIDI_Pkt_set_seqnum(eager_pkt, seqnum);
+		MPIDI_Request_set_seqnum(sreq, seqnum);
 	
 		mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
 		/* --BEGIN ERROR HANDLING-- */
@@ -206,9 +206,9 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	rts_pkt->sender_req_id = sreq->handle;
 	rts_pkt->data_sz = data_sz;
 
-	MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
-	MPIDI_CH3U_Pkt_set_seqnum(rts_pkt, seqnum);
-	MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
+	MPIDI_VC_FAI_send_seqnum(vc, seqnum);
+	MPIDI_Pkt_set_seqnum(rts_pkt, seqnum);
+	MPIDI_Request_set_seqnum(sreq, seqnum);
 
 #ifdef MPIDI_CH3_CHANNEL_RNDV
 

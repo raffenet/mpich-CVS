@@ -12,7 +12,7 @@ extern void *MPIDI_CH3_packet_buffer;
 #define FUNCNAME MPIDI_CH3_do_cts
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_do_cts(MPIDI_VC *vc, MPID_Request *rreq, MPI_Request sreq_id,
+int MPIDI_CH3_do_cts(MPIDI_VC_t *vc, MPID_Request *rreq, MPI_Request sreq_id,
 		     MPID_IOV *iov, int n_iov)
 {
     int mpi_errno = MPI_SUCCESS;

@@ -23,7 +23,7 @@ int MPIDI_CH3I_Setup_connections()
     int qp_num, dest_qp_num;
     MPIDI_CH3I_Process_group_t * pg;
     int pg_rank;
-    MPIDI_VC *vc;
+    MPIDI_VC_t *vc;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SETUP_CONNECTIONS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SETUP_CONNECTIONS);

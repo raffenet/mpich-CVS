@@ -15,7 +15,7 @@ static int do_simple_get(MPID_Win *win_ptr, MPIDI_Win_lock_queue *lock_queue);
 #define FUNCNAME MPIDI_CH3U_Handle_recv_req
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complete)
+int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * complete)
 {
     static int in_routine = FALSE;
     MPID_Win *win_ptr;
@@ -795,7 +795,7 @@ int MPIDI_CH3I_Release_lock(MPID_Win *win_ptr)
 }
 
 
-int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC *vc, MPI_Win source_win_handle)
+int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t *vc, MPI_Win source_win_handle)
 {
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_pt_rma_done_t *pt_rma_done_pkt = &upkt.pt_rma_done;

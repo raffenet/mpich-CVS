@@ -26,19 +26,14 @@ int MPIDI_CH3_Finalize()
     }
 
     /* Free resources allocated in CH3_Init() */
-    if (MPIDI_CH3I_Process.pg->size > 1)
-	mpi_errno = MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process.pg, TRUE);
+    if (MPIDI_PG_Get_size(MPIDI_Process.my_pg) > 1)
+	mpi_errno = MPIDI_CH3I_SHM_Release_mem(MPIDI_Process.my_pg, TRUE);
     else
-	mpi_errno = MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process.pg, FALSE);
+	mpi_errno = MPIDI_CH3I_SHM_Release_mem(MPIDI_Process.my_pg, FALSE);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**finalize_release_mem", 0);
     }
-    MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);
-    MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
-    MPIU_Free(MPIDI_CH3I_Process.pg->vc_table);
-    MPIU_Free(MPIDI_CH3I_Process.pg->kvs_name);
-    MPIU_Free(MPIDI_CH3I_Process.pg);
 
     /* Let PMI know the process is about to exit */
     rc = PMI_Finalize();

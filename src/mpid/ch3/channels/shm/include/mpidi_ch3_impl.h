@@ -145,8 +145,8 @@ typedef struct MPIDI_CH3I_SHM_Queue_t
 
 typedef struct MPIDI_CH3I_Process_s
 {
-    MPIDI_CH3I_Process_group_t * pg;
-    MPIDI_VC *unex_finished_list, *vc;
+    /*MPIDI_PG_t * pg;*/
+    MPIDI_VC_t *unex_finished_list, *vc;
 }
 MPIDI_CH3I_Process_t;
 
@@ -209,15 +209,15 @@ int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_Request_adjust_iov(MPID_Request *, MPIDI_msg_sz_t);
 
-int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc, BOOL bUseShm);
-int MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process_group_t *pg, BOOL bUseShm);
+int MPIDI_CH3I_SHM_Get_mem(MPIDI_PG_t *pg, int nTotalSize, int nRank, int nNproc, BOOL bUseShm);
+int MPIDI_CH3I_SHM_Release_mem(MPIDI_PG_t *pg, BOOL bUseShm);
 
-int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, shm_wait_t *shm_out);
-int MPIDI_CH3I_SHM_post_read(MPIDI_VC *vc, void *buf, int len, int (*read_progress_update)(int, void*));
-int MPIDI_CH3I_SHM_post_readv(MPIDI_VC *vc, MPID_IOV *iov, int n, int (*read_progress_update)(int, void*));
-int MPIDI_CH3I_SHM_write(MPIDI_VC *vc, void *buf, int len, int *num_bytes_ptr);
-int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr);
-int MPIDI_CH3I_SHM_read(MPIDI_VC *vc, void *buf, int len);
-int MPIDI_CH3I_SHM_readv(MPIDI_VC *vc, MPID_IOV *iov, int n);
+int MPIDI_CH3I_SHM_wait(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc_pptr, int *num_bytes_ptr, shm_wait_t *shm_out);
+int MPIDI_CH3I_SHM_post_read(MPIDI_VC_t *vc, void *buf, int len, int (*read_progress_update)(int, void*));
+int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int (*read_progress_update)(int, void*));
+int MPIDI_CH3I_SHM_write(MPIDI_VC_t *vc, void *buf, int len, int *num_bytes_ptr);
+int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_ptr);
+int MPIDI_CH3I_SHM_read(MPIDI_VC_t *vc, void *buf, int len);
+int MPIDI_CH3I_SHM_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n);
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */
