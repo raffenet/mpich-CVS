@@ -611,6 +611,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
+    return SHM_WAIT_TIMEOUT;
 }
 
 /* non-blocking functions */
