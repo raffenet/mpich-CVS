@@ -55,8 +55,8 @@ int MPIDI_Barrier(MPID_Comm * comm)
 	    {
 		p = rank ^ l;
 
-		MPID_Recv(NULL, 0, MPI_BYTE, p, MPIR_BARRIER_TAG, comm,
-			  MPID_CONTEXT_INTRA_COLL, &status, &rreq);
+		MPID_Irecv(NULL, 0, MPI_BYTE, p, MPIR_BARRIER_TAG, comm,
+			   MPID_CONTEXT_INTRA_COLL, &rreq);
 		MPID_Send(NULL, 0, MPI_BYTE, p, MPIR_BARRIER_TAG, comm,
 			  MPID_CONTEXT_INTRA_COLL, &sreq);
 		if (sreq != NULL)
@@ -64,11 +64,8 @@ int MPIDI_Barrier(MPID_Comm * comm)
 		    request = sreq->handle;
 		    MPI_Wait(&request, &status);
 		}
-		if (rreq != NULL)
-		{
-		    request = rreq->handle;
-		    MPI_Wait(&request, &status);
-		}
+		request = rreq->handle;
+		MPI_Wait(&request, &status);
 	    }
 
 	    /* If I have a partner in the set of extra processes, then notify
@@ -92,8 +89,8 @@ int MPIDI_Barrier(MPID_Comm * comm)
                of 2 less than size), then perform one exchange with my partner
                in the main set of processes. */
 	    p = rank - size_pow2;
-	    MPID_Recv(NULL, 0, MPI_BYTE, p, MPIR_BARRIER_TAG, comm,
-		      MPID_CONTEXT_INTRA_COLL, &status, &rreq);
+	    MPID_Irecv(NULL, 0, MPI_BYTE, p, MPIR_BARRIER_TAG, comm,
+		       MPID_CONTEXT_INTRA_COLL, &rreq);
 	    MPID_Send(NULL, 0, MPI_BYTE, p, MPIR_BARRIER_TAG, comm,
 		      MPID_CONTEXT_INTRA_COLL, &sreq);
 	    if (sreq != NULL)
@@ -101,11 +98,9 @@ int MPIDI_Barrier(MPID_Comm * comm)
 		request = sreq->handle;
 		MPI_Wait(&request, & status);
 	    }
-	    if (rreq != NULL)
-	    {
-		request = rreq->handle;
-		MPI_Wait(&request, & status);
-	    }
+	    request = rreq->handle;
+	    MPI_Wait(&request, & status);
+
 	}
     }
     
