@@ -26,6 +26,16 @@
 # If number-of-processes is missing, $np_default is used (this is 2 but can
 # be overridden with -np=new-value)
 #
+# Special feature:
+# Because these tests can take a long time to run, there is an
+# option to cause the tests to stop is a "stopfile" is found.
+# The stopfile can be created by a separate, watchdog process, to ensure that
+# tests end at a certain time.
+# The name of this file is (by default) .stoptest
+# in the  top-level run directory.  The environment variable
+#    MPITEST_STOPTEST
+# can specify a different file name.
+#
 
 # Global variables
 $mpiexec = "mpiexec";    # Name of mpiexec program (including path, if necessary)
@@ -57,10 +67,18 @@ $clean_pgms      = 1;
 # Get some arguments from the environment
 #   Currently, only the following are understood:
 #   VERBOSE
+#   MPITEST_STOPTEST
 #---------------------------------------------------------------------------
 if (defined($ENV{"VERBOSE"})) {
     $verbose = 1;
 }
+if (defined($ENV{"MPITEST_STOPTEST"})) {
+    $stopfile = $ENV{"MPITEST_STOPTEST"};
+}
+else {
+    $stopfile = `pwd` . "/.stoptest";
+}
+
 
 #---------------------------------------------------------------------------
 # Process arguments and override any defaults
@@ -188,6 +206,12 @@ sub RunList {
 	open( $LIST, "<$listfile" ) || die "Could not open $listfile\n";
     }
     while (<$LIST>) {
+	# Check for stop file
+	if (-s $stopfile) {
+	    # Exit because we found a stopfile
+	    print STDERR "Terminating test because stopfile $stopfile found\n";
+	    last;
+	}
 	# Skip comments
 	s/#.*//g;
 	# Remove any trailing newlines/returns
@@ -243,6 +267,12 @@ sub ProcessImplicitList {
 	print "Found executables\n" if $debug;
 	open (PGMS, "ls -1 |" ) || die "Cannot list programs\n";
 	while (<PGMS>) {
+	    # Check for stop file
+	    if (-s $stopfile) {
+		# Exit because we found a stopfile
+		print STDERR "Terminating test because stopfile $stopfile found\n";
+		last;
+	    }
 	    s/\r?\n//;
 	    $programname = $_;
 	    if (-d $programname) { next; }  # Ignore directories
@@ -258,6 +288,11 @@ sub ProcessImplicitList {
 	print "Found source files\n" if $debug;
 	open (PGMS, "ls -1 *.c |" ) || die "Cannot list programs\n";
 	while (<PGMS>) {
+	    if (-s $stopfile) {
+		# Exit because we found a stopfile
+		print STDERR "Terminating test because stopfile $stopfile found\n";
+		last;
+	    }
 	    s/\r?\n//;
 	    $programname = $_;
 	    # Skip messages from ls about no files
