@@ -77,6 +77,8 @@ int MPI_Win_delete_attr(MPI_Win win, int win_keyval)
     old_p = &win_ptr->attributes;
     p     = win_ptr->attributes;
     while (p) {
+
+/* ************ keyval_ptr is un-initialized ************** */
 	if (p->keyval->handle == keyval_ptr->handle) {
 	    break;
 	}
