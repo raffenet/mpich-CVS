@@ -369,7 +369,8 @@ void ADIOI_Calc_others_req(ADIO_File fd, int count_my_req_procs,
 				int *count_others_req_procs_ptr,
 				ADIOI_Access **others_req_ptr);  
 ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
-                      int whence, int *error_code);
+				     int whence, int *error_code);
+void ADIOI_GEN_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
 void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 void ADIOI_Shfp_fname(ADIO_File fd, int rank);
 int ADIOI_Error(ADIO_File fd, int error_code, char *string);

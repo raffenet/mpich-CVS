@@ -67,7 +67,6 @@ void ADIOI_SFS_IwriteStrided(ADIO_File fd, void *buf, int count,
 		       ADIO_Offset offset, ADIO_Request *request, int
 		       *error_code);
 void ADIOI_SFS_Flush(ADIO_File fd, int *error_code);
-void ADIOI_SFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
 void ADIOI_SFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 
 #endif

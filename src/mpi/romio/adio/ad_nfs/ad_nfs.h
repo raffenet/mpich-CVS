@@ -85,7 +85,6 @@ void ADIOI_NFS_IwriteStrided(ADIO_File fd, void *buf, int count,
 		       ADIO_Offset offset, ADIO_Request *request, int
 		       *error_code);
 void ADIOI_NFS_Flush(ADIO_File fd, int *error_code);
-void ADIOI_NFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
 void ADIOI_NFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 void ADIOI_NFS_Get_shared_fp(ADIO_File fd, int size, ADIO_Offset *shared_fp, 
 			 int *error_code);
