@@ -408,12 +408,6 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 	    {
 		printf("unable to open %s\n", smpd_process.smpd_filename);
 	    }
-	    node = list;
-	    while (node)
-	    {
-		printf("%s = %s\n", node->name, node->value);
-		node = node->next;
-	    }
 	}
     }
     if (list)
@@ -436,48 +430,9 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 	    return SMPD_SUCCESS;
 	}
     }
-    /*
-    if (strcmp(key, "phrase") == 0)
-    {
-	homedir = getenv("HOME");
-	strcpy(smpd_filename, homedir);
-	if (smpd_filename[strlen(smpd_filename)-1] != '/')
-	    strcat(smpd_filename, "/.smpd");
-	else
-	    strcat(smpd_filename, ".smpd");
 
-	if (stat(smpd_filename, &s) == 0)
-	{
-	    if (s.st_mode & 00077)
-	    {
-		printf("smpd passphrase file, %s, cannot be readable by anyone other than the current user, please set the permissions accordingly (0600).\n", smpd_filename);
-	    }
-	    else
-	    {
-		fin = fopen(smpd_filename, "r");
-		if (fin != NULL)
-		{
-		    fgets(line, SMPD_PASSPHRASE_MAX_LENGTH+2, fin);
-		    line[SMPD_PASSPHRASE_MAX_LENGTH] = '\0';
-		    if (strlen(line) > 0)
-		    {
-			while (strlen(line) > 0 && (line[strlen(line)-1] == '\r' || line[strlen(line)-1] == '\n'))
-			    line[strlen(line)-1] = '\0';
-			if (strlen(line) > 0)
-			{
-			    strcpy(smpd_process.passphrase, line);
-			    fclose(fin);
-			    smpd_exit_fn("smpd_get_smpd_data");
-			    return SMPD_SUCCESS;
-			}
-		    }
-		    fclose(fin);
-		}
-	    }
-	}
-    }
-    */
     result = smpd_get_smpd_data_default(key, value, value_len);
+
     smpd_exit_fn("smpd_get_smpd_data");
     return result;
 #endif
