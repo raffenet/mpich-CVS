@@ -58,8 +58,8 @@ dnl
 dnl The default is the usual MPICH library
 AC_ARG_WITH(flibname,
 [--with-flibname=name  - Specify name of library containing Fortran interface
-routines],[FLIBNAME=$withval;set_FLIBNAME="yes"],FLIBNAME=mpich)
-AC_SUBST(FLIBNAME)
+routines],[MPIFLIBNAME=$withval;set_MPIFLIBNAME="yes"],MPIFLIBNAME=mpich)
+AC_SUBST(MPIFLIBNAME)
 
 dnl
 dnl The default is a special wrapper library
@@ -166,8 +166,8 @@ if test -n "$subname" ; then
     f77includedir='${includedir}'"/${subname}"
     f77libdir='${libdir}'
     f77bindir='${bindir}'
-    if test "$set_FLIBNAME" != "yes" ; then
-	FLIBNAME="mpich$subname"
+    if test "$set_MPIFLIBNAME" != "yes" ; then
+	MPIFLIBNAME="mpich$subname"
     fi
     if test "$set_FWRAPNAME" != "yes" ; then
 	FWRAPNAME="fmpich$subname"
@@ -269,7 +269,7 @@ AC_SUBST(FC_SHL)
 AC_SUBST(FC_LINKPATH_SHL)
 if test "$ENABLE_SHLIB" = "gcc" ; then
    # Assume that the compiler is g77 if gcc style shared libraries chosen
-   FC_SHL="$FC -shared -fpic"
+   FC_SHL="$F77 -shared -fpic"
    FC_LINKPATH_SHL="-Wl,-rpath -Wl,"
 fi
 AC_SUBST(LIBTOOL)
