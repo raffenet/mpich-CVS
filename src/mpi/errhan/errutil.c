@@ -483,7 +483,94 @@ char * simplify_fmt_string(const char *str)
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
-int vsnprintf_ex(char *str, size_t maxlen, const char *fmt_orig, va_list list)
+static const char * GetDTypeString(MPI_Datatype d)
+{
+    static char default_str[64];
+    switch (d)
+    {
+    case MPI_CHAR:
+	return "MPI_CHAR";
+    case MPI_UNSIGNED_CHAR:
+	return "MPI_UNSIGNED_CHAR";
+    case MPI_BYTE:
+	return "MPI_BYTE";
+    case MPI_WCHAR_T:
+	return "MPI_WCHAR_T";
+    case MPI_SHORT:
+	return "MPI_SHORT";
+    case MPI_UNSIGNED_SHORT:
+	return "MPI_UNSIGNED_SHORT";
+    case MPI_INT:
+	return "MPI_INT";
+    case MPI_UNSIGNED:
+	return "MPI_UNSIGNED";
+    case MPI_LONG:
+	return "MPI_LONG";
+    case MPI_UNSIGNED_LONG:
+	return "MPI_UNSIGNED_LONG";
+    case MPI_FLOAT:
+	return "MPI_FLOAT";
+    case MPI_DOUBLE:
+	return "MPI_DOUBLE";
+    case MPI_LONG_DOUBLE:
+	return "MPI_LONG_DOUBLE";
+/*
+    case MPI_LONG_LONG_INT:
+	return "MPI_LONG_LONG_INT";
+*/
+    case MPI_LONG_LONG:
+	return "MPI_LONG_LONG";
+    case MPI_PACKED:
+	return "MPI_PACKED";
+    case MPI_LB:
+	return "MPI_LB";
+    case MPI_UB:
+	return "MPI_UB";
+    case MPI_FLOAT_INT:
+	return "MPI_FLOAT_INT";
+    case MPI_DOUBLE_INT:
+	return "MPI_DOUBLE_INT";
+    case MPI_LONG_INT:
+	return "MPI_LONG_INT";
+    case MPI_SHORT_INT:
+	return "MPI_SHORT_INT";
+    case MPI_2INT:
+	return "MPI_2INT";
+    case MPI_LONG_DOUBLE_INT:
+	return "MPI_LONG_DOUBLE_INT";
+    case MPI_COMPLEX:
+	return "MPI_COMPLEX";
+    case MPI_DOUBLE_COMPLEX:
+	return "MPI_DOUBLE_COMPLEX";
+    case MPI_LOGICAL:
+	return "MPI_LOGICAL";
+    case MPI_REAL:
+	return "MPI_REAL";
+    case MPI_DOUBLE_PRECISION:
+	return "MPI_DOUBLE_PRECISION";
+    case MPI_INTEGER:
+	return "MPI_INTEGER";
+    case MPI_2INTEGER:
+	return "MPI_2INTEGER";
+    case MPI_2COMPLEX:
+	return "MPI_2COMPLEX";
+    case MPI_2DOUBLE_COMPLEX:
+	return "MPI_2DOUBLE_COMPLEX";
+    case MPI_2REAL:
+	return "MPI_2REAL";
+    case MPI_2DOUBLE_PRECISION:
+	return "MPI_2DOUBLE_PRECISION";
+    case MPI_CHARACTER:
+	return "MPI_CHARACTER";
+    case MPI_DATATYPE_NULL:
+	return "MPI_DATATYPE_NULL";
+    }
+    /* default is not thread safe */
+    MPIU_Snprintf(default_str, 64, "%d", d);
+    return default_str;
+}
+
+static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list list)
 {
     char *begin, *end, *fmt;
     size_t len;
@@ -527,17 +614,28 @@ int vsnprintf_ex(char *str, size_t maxlen, const char *fmt_orig, va_list list)
 	    break;
 	case (int)'p':
 	    p = va_arg(list, void *);
+#ifdef HAVE_WINDOWS_H
+	    MPIU_Snprintf(str, maxlen, "0x%p", p);
+#else
 	    MPIU_Snprintf(str, maxlen, "%p", p);
+#endif
 	    break;
 	case (int)'C':
 	    C = va_arg(list, MPI_Comm);
-	    if (C == MPI_COMM_WORLD)
+	    switch (C)
 	    {
-		MPIU_Strncpy(str, "MPI_COMM_WORLD", sizeof("MPI_COMM_WORLD"));
-	    }
-	    else
-	    {
+	    case MPI_COMM_WORLD:
+		MPIU_Strncpy(str, "MPI_COMM_WORLD", maxlen);
+		break;
+	    case MPI_COMM_SELF:
+		MPIU_Strncpy(str, "MPI_COMM_SELF", maxlen);
+		break;
+	    case MPI_COMM_NULL:
+		MPIU_Strncpy(str, "MPI_COMM_NULL", maxlen);
+		break;
+	    default:
 		MPIU_Snprintf(str, maxlen, "%d", C);
+		break;
 	    }
 	    break;
 	case (int)'I':
@@ -546,7 +644,7 @@ int vsnprintf_ex(char *str, size_t maxlen, const char *fmt_orig, va_list list)
 	    break;
 	case (int)'D':
 	    D = va_arg(list, MPI_Datatype);
-	    MPIU_Snprintf(str, maxlen, "%d", D);
+	    MPIU_Snprintf(str, maxlen, "%s", GetDTypeString(D));
 	    break;
 #if 0
 	case (int)'F':
@@ -663,7 +761,7 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 		    specific_fmt = specific_msg;
 		}
 
-		vsnprintf_ex( ring_msg, MPI_MAX_ERROR_STRING, specific_fmt, Argp );
+		vsnprintf_mpi( ring_msg, MPI_MAX_ERROR_STRING, specific_fmt, Argp );
 #if 0
 		specific_fmt = simplify_fmt_string(specific_fmt);
 #               ifdef HAVE_VSNPRINTF
