@@ -167,7 +167,9 @@ def _mpd_init():
         
     g.generation = 0  # will chg when enter the ring
     if g.entryHost:
-        _enter_existing_ring()
+        rc = _enter_existing_ring()
+        if rc < 0:    # fails if next g.generation <= current
+            mpd_raise("Failed to enter existing ring at %s %d" % (g.entryHost,g.entryPort))
     else:
         _create_ring_of_one_mpd()
     
@@ -810,6 +812,9 @@ def reenter_ring():
             numTries -= 1
     else:
         _create_ring_of_one_mpd()
+        inRing = 1
+    if not inRing:
+        mpd_raise("Failed to reenter ring at %s %d" % (g.entryHost,g.entryPort))
 
 def _handle_rhs_input():
     if g.allExiting:
@@ -1088,14 +1093,17 @@ def _enter_existing_ring():
             g.lhsSocket.close()
             sleep(random())
     if not inRing:
-        msgToSend = { 'cmd' : 'challenge_response',
-                      'host' : g.myHost,
-                      'ip'   : g.myIP,
-                      'port' : g.myPort,
-                      'response' : 'bad_generation', 'gen' : g.generation }
-        mpd_send_one_msg(g.lhsSocket,msgToSend)
-        mpd_raise('Failed to enter ring at %s %s %d; my gen=%d other gen=%d ' % \
-                  (g.lhsHost,g.lhsIP,g.lhsPort,g.generation,g.generationFromMsg) ) 
+        if g.lhsSocket:
+            msgToSend = { 'cmd' : 'challenge_response',
+                          'host' : g.myHost,
+                          'ip'   : g.myIP,
+                          'port' : g.myPort,
+                          'response' : 'bad_generation', 'gen' : g.generation }
+            mpd_send_one_msg(g.lhsSocket,msgToSend)
+            mpd_raise('Failed to enter ring at %s %s %d; my gen=%d other gen=%d ' % \
+                      (g.lhsHost,g.lhsIP,g.lhsPort,g.generation,g.generationFromMsg) ) 
+        else:
+            return -1
     response = new(''.join([g.configParams['secretword'],msg['randnum']])).digest()
     msgToSend = { 'cmd' : 'challenge_response',
                   'response' : response,
