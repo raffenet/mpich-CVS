@@ -27,7 +27,7 @@ static int GetLocalIPs(unsigned int *pIP, int max)
 	return 0;
     }
     
-    h = (struct hostent *)gethostbyname(hostname);
+    h = (struct myhostent *)gethostbyname(hostname);
     if (h == NULL)
     {
 	return 0;
@@ -74,9 +74,9 @@ int tcp_get_business_card(char *value, int length)
 	c = (unsigned char)(((unsigned char *)(&local_ip[i]))[2]);
 	d = (unsigned char)(((unsigned char *)(&local_ip[i]))[3]);
 
-	value += sprintf(value, "%u.%u.%u.%u:%d\n", a, b, c, d, TCP_Process.port);
+	value += sprintf(value, "%u.%u.%u.%u:%d:", a, b, c, d, TCP_Process.port);
     }
-    printf("tcp business card:\n%s", value_orig);
+    printf("tcp business card:\n%s", value_orig);fflush(stdout);
 
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_GET_BUSINESS_CARD);
     return MPI_SUCCESS;
