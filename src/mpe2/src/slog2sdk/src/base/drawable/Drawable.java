@@ -9,20 +9,27 @@
 
 package base.drawable;
 
+import java.util.Comparator;
+import java.util.Map;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.util.Map;
 
 public abstract class Drawable extends InfoBox
 {
     // exclusion, nesting_ftr & row_ID are for Nestable Drawable, i.e. state.
-    public  static final float    NON_NESTABLE      = 1.0f; 
-    public  static final int      INVALID_ROW       = Integer.MIN_VALUE; 
+    public  static final float      NON_NESTABLE      = 1.0f; 
+    public  static final int        INVALID_ROW       = Integer.MIN_VALUE; 
 
-    private              double   exclusion;     // For SLOG-2 Output API
+    public  static final Comparator DRAWING_ORDER
+                         = new IncreasingStarttimeComparator();
 
-    private              float    nesting_ftr;   // For SLOG-2 Input API
-    private              int      row_ID;        // For SLOG-2 Input API
+    public  static final Comparator TRACING_ORDER
+                         = new IncreasingFinaltimeComparator();
+
+    private              double     exclusion;     // For SLOG-2 Output API
+
+    private              float      nesting_ftr;   // For SLOG-2 Input API
+    private              int        row_ID;        // For SLOG-2 Input API
 
     // non-null parent => this Drawable is part of a Composite Drawable
     private              Drawable parent;        // For SLOG-2 Input API
@@ -252,4 +259,126 @@ public abstract class Drawable extends InfoBox
             System.err.println( "Non-recognized Primitive type! " + this );
         return null;
     }
+
+    /*
+        This comparator to Collections.sort() will arrange Drawables
+        in increasing starttime order.  If starttimes are equals, Drawables
+        will then be arranged in decreasing finaltime order.
+
+        Since the comparator is used in the TreeMap of class
+        logformat/slog2/input/TreeFloorList.ForeItrOfDrawables
+        where the likelihood of equal starttime is high.  In order to avoid
+        over-written of iterators due to false equivalent drawables,
+        i.e. using starttime and endtime may not be enough.  We implement
+        a very strict form of comparator for drawable for drawing order.
+    */
+    private static class IncreasingStarttimeComparator implements Comparator
+    {
+        public int compare( Object o1, Object o2 )
+        {
+            Drawable  dobj1, dobj2;
+            dobj1 = (Drawable) o1;
+            dobj2 = (Drawable) o2;
+            int dobj_time_order;
+            dobj_time_order = TimeBoundingBox.INCRE_STARTTIME_ORDER.compare(
+                                              (TimeBoundingBox) dobj1,
+                                              (TimeBoundingBox) dobj2 );
+            if ( dobj_time_order != 0 )
+                return dobj_time_order;
+            else {
+                if ( dobj1 == dobj2 )
+                    return 0;
+                else {
+                    int dobj1_typeidx, dobj2_typeidx;
+                    dobj1_typeidx = dobj1.getCategoryIndex();
+                    dobj2_typeidx = dobj2.getCategoryIndex();
+                    if ( dobj1_typeidx != dobj2_typeidx )
+                        // arbitary order
+                        return dobj1_typeidx - dobj2_typeidx;
+                    else {
+                        int        dobj1_lineID, dobj2_lineID;
+                        dobj1_lineID = dobj1.getStartVertex().lineID;
+                        dobj2_lineID = dobj2.getStartVertex().lineID;
+                        if ( dobj1_lineID != dobj2_lineID )
+                            // arbitary order
+                            return dobj1_lineID - dobj2_lineID;
+                        else {
+                            dobj1_lineID = dobj1.getFinalVertex().lineID;
+                            dobj2_lineID = dobj2.getFinalVertex().lineID;
+                            if ( dobj1_lineID != dobj2_lineID )
+                                // arbitary order
+                                return dobj1_lineID - dobj2_lineID;
+                            else {
+                                System.err.println( "IncreStarttimeComparator: "
+                                          + "WARNING! Equal Drawables?\n"
+                                          + dobj1 + "\n" + dobj2 );
+                                return 0;
+                            }   // FinalVertex's lineID
+                        }   // StartVertex's lineID
+                    }   // CategoryIndex
+                }   // direct dobjX comparison
+            }
+        }
+    }
+
+    /*
+        This comparator to Collections.sort() will arrange Drawables
+        in increasing finaltime order.  If starttimes are equals, Drawables
+        will then be arranged in decreasing starttime order.
+
+        Since the comparator is used in the TreeMap of class
+        logformat/slog2/input/TreeFloorList.ForeItrOfDrawables
+        where the likelihood of equal starttime is high.  In order to avoid
+        over-written of iterators due to false equivalent drawables,
+        i.e. using starttime and endtime may not be enough.  We implement
+        a very strict form of comparator for drawable for drawing order.
+    */
+    private static class IncreasingFinaltimeComparator implements Comparator
+    {
+        public int compare( Object o1, Object o2 )
+        {
+            Drawable  dobj1, dobj2;
+            dobj1 = (Drawable) o1;
+            dobj2 = (Drawable) o2;
+            int dobj_time_order;
+            dobj_time_order = TimeBoundingBox.INCRE_FINALTIME_ORDER.compare(
+                                              (TimeBoundingBox) dobj1,
+                                              (TimeBoundingBox) dobj2 );
+            if ( dobj_time_order != 0 )
+                return dobj_time_order;
+            else {
+                if ( dobj1 == dobj2 )
+                    return 0;
+                else {
+                    int dobj1_typeidx, dobj2_typeidx;
+                    dobj1_typeidx = dobj1.getCategoryIndex();
+                    dobj2_typeidx = dobj2.getCategoryIndex();
+                    if ( dobj1_typeidx != dobj2_typeidx )
+                        // arbitary order
+                        return dobj1_typeidx - dobj2_typeidx;
+                    else {
+                        int        dobj1_lineID, dobj2_lineID;
+                        dobj1_lineID = dobj1.getStartVertex().lineID;
+                        dobj2_lineID = dobj2.getStartVertex().lineID;
+                        if ( dobj1_lineID != dobj2_lineID )
+                            // arbitary order
+                            return dobj1_lineID - dobj2_lineID;
+                        else {
+                            dobj1_lineID = dobj1.getFinalVertex().lineID;
+                            dobj2_lineID = dobj2.getFinalVertex().lineID;
+                            if ( dobj1_lineID != dobj2_lineID )
+                                // arbitary order
+                                return dobj1_lineID - dobj2_lineID;
+                            else {
+                                System.err.println( "IncreFinaltimeComparator: "                                          + "WARNING! Equal Drawables?\n"
+                                          + dobj1 + "\n" + dobj2 );
+                                return 0;
+                            }   // FinalVertex's lineID
+                        }   // StartVertex's lineID
+                    }   // CategoryIndex
+                }   // direct dobjX comparison
+            }
+        }
+    }
+
 }
