@@ -2586,6 +2586,9 @@ value might be "not yet heterogeneous").
   size will have to allocate memory (and can fail; note that there is an
   MPI error class for out-of-memory).
 
+  Question:
+  Do we want to have an aligned allocation routine?  E.g., aligned on a 
+  cache-line.
   D*/
 
 /*@
