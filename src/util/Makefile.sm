@@ -1,1 +1,1 @@
-SUBDIRS = mem info instrm param thread dbg .
+SUBDIRS = mem info msgs instrm param thread dbg .

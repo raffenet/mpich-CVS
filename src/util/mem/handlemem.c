@@ -337,6 +337,7 @@ void *MPIU_Handle_get_ptr_indirect( int handle, MPIU_Object_alloc_t *objmem )
 }
 
 /* For debugging */
+/* style: allow:printf:4 sig:0 */
 void MPIU_Print_handle( int handle )
 {
     int type, kind, block, index;

@@ -146,6 +146,10 @@ typedef struct { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_Mem_stack;
 #define MALLOC_STK_INIT memstack.n_alloc = 0
 #define MALLOC_STK_DECL MPIU_Mem_stack memstack
 
+/* Message printing */
+int MPIU_usage_printf( char *str, ... );
+int MPIU_error_printf( char *str, ... );
+
 /* Known language bindings */
 typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN, 
                MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;

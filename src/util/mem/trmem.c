@@ -424,23 +424,12 @@ void MPIU_trdump( FILE *fp )
    two major systems */
 #if defined(HAVE_SEARCH_H)
 
-/*
-   Old test ...
-   (!defined(__MSDOS__) && !defined(fx2800) && !defined(tc2000) && \
-    !defined(NeXT) && !defined(c2mp) && !defined(intelnx) && !defined(BSD386))
- */
 /* The following routine uses the tsearch routines to summarize the
    memory heap by id */
-/* rs6000 and paragon needs _XOPEN_SOURCE to use tsearch */
-#if (defined(rs6000) && !defined(_XOPEN_SOURCE)
-#define _NO_PROTO
-#define _XOPEN_SOURCE
-#endif
-#if defined(HPUX) && !defined(_INCLUDE_XOPEN_SOURCE)
-#define _INCLUDE_XOPEN_SOURCE
-#endif
+
 #include <search.h>
 typedef struct { int id, size, lineno; char *fname; } TRINFO;
+
 static int IntCompare( TRINFO *a, TRINFO *b )
 {
     return a->id - b->id;
@@ -479,7 +468,7 @@ void MPIU_trSummary( FILE *fp )
 	key->size   = 0;
 	key->lineno = head->lineno;
 	key->fname  = head->fname;
-#if !defined(IRIX) && !defined(solaris) && !defined(HPUX) && !defined(rs6000)
+#if defined(USE_TSEARCH_WITH_CHARP)
 	fnd    = (TRINFO **)tsearch( (char *) key, (char **) &root, IntCompare );
 #else
 	fnd    = (TRINFO **)tsearch( (void *) key, (void **) &root, 
