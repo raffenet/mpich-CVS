@@ -16,311 +16,21 @@
 
 #ifdef USE_IB_IBAL
 
-#ifndef min
-#define min(a, b) ((a) < (b) ? (a) : (b))
+#include "ibuimpl.ibal.h"
+
+#ifdef MPICH_DBG_OUTPUT
+int g_num_received = 0;
+int g_num_sent = 0;
+int g_num_posted_receives = 0;
+int g_num_posted_sends = 0;
+int g_ps = 0;
+int g_pr = 0;
 #endif
-
-#define IBU_ERROR_MSG_LENGTH       255
-#define IBU_PACKET_SIZE            (1024 * 64)
-#define IBU_PACKET_COUNT           128
-#define IBU_NUM_PREPOSTED_RECEIVES (IBU_ACK_WATER_LEVEL*3)
-#define IBU_MAX_CQ_ENTRIES         255
-#define IBU_MAX_POSTED_SENDS       8192
-#define IBU_MAX_DATA_SEGMENTS      100
-#define IBU_ACK_WATER_LEVEL        32
-
-#define TRACE_IBU
-
-#if 0
-#define GETLKEY(p) (((ibmem_t*)p) - 1)->lkey
-typedef struct ibmem_t
-{
-    ib_mr_handle_t handle;
-    uint32_t lkey;
-    uint32_t rkey;
-} ibmem_t;
-#endif
-
-typedef struct ibuBlock_t
-{
-    struct ibuBlock_t *next;
-    ib_mr_handle_t handle;
-    uint32_t lkey;
-    unsigned char data[IBU_PACKET_SIZE];
-} ibuBlock_t;
-
-typedef struct ibuQueue_t
-{
-    struct ibuQueue_t *next_q;
-    ibuBlock_t *pNextFree;
-    ibuBlock_t block[IBU_PACKET_COUNT];
-} ibuQueue_t;
-
-static int g_offset;
-#define GETLKEY(p) (((ibuBlock_t*)((char *)p - g_offset))->lkey)
-
-struct ibuBlockAllocator_struct
-{
-    void **pNextFree;
-    void *(* alloc_fn)(size_t size);
-    void (* free_fn)(void *p);
-    struct ibuBlockAllocator_struct *pNextAllocation;
-    unsigned int nBlockSize;
-    int nCount, nIncrementSize;
-};
-
-typedef struct ibuBlockAllocator_struct * ibuBlockAllocator;
-
-#ifdef HAVE_32BIT_POINTERS
-
-typedef union ibu_work_id_handle_t
-{
-    uint64_t id;
-    struct ibu_data
-    {
-	uint32_t ptr, mem;
-    } data;
-} ibu_work_id_handle_t;
-
-#else
-
-typedef struct ibu_work_id_handle_t
-{
-    void *ptr, *mem;
-} ibu_work_id_handle_t;
 
 ibuBlockAllocator g_workAllocator = NULL;
-
-#endif
-
-typedef int IBU_STATE;
-#define IBU_READING    0x0001
-#define IBU_WRITING    0x0002
-
-typedef struct ibu_buffer_t
-{
-    int use_iov;
-    unsigned int num_bytes;
-    void *buffer;
-    unsigned int bufflen;
-    MPID_IOV iov[MPID_IOV_LIMIT];
-    int iovlen;
-    int index;
-    int total;
-} ibu_buffer_t;
-
-typedef struct ibu_unex_read_t
-{
-    void *mem_ptr;
-    unsigned char *buf;
-    unsigned int length;
-    struct ibu_unex_read_t *next;
-} ibu_unex_read_t;
-
-typedef struct ibu_num_written_node_t
-{
-    int num_bytes;
-    struct ibu_num_written_node_t *next;
-} ibu_num_written_node_t;
-
-typedef struct ibu_state_t
-{
-    IBU_STATE state;
-    ib_qp_handle_t qp_handle;
-    ibuQueue_t * allocator;
-
-    ib_net16_t dlid;
-    uint32_t qp_num, dest_qp_num;
-
-    int closing;
-    int pending_operations;
-    /* read and write structures */
-    ibu_buffer_t read;
-    ibu_unex_read_t *unex_list;
-    ibu_buffer_t write;
-    int nAvailRemote, nUnacked;
-    /* vc pointer */
-    MPIDI_VC *vc_ptr;
-    /*void *user_ptr;*/
-    /* unexpected queue pointer */
-    struct ibu_state_t *unex_finished_queue;
-} ibu_state_t;
-
-typedef struct IBU_Global {
-    ib_al_handle_t   al_handle;
-    ib_ca_handle_t   hca_handle;
-    ib_pd_handle_t   pd_handle;
-    int              cq_size;
-    ib_net16_t       lid;
-    int              port;
-    ibu_state_t *    unex_finished_list;
-    int              error;
-    char             err_msg[IBU_ERROR_MSG_LENGTH];
-    /* hack to get around zero sized messages */
-    void *           ack_mem_ptr;
-    ib_mr_handle_t   ack_mr_handle;
-    uint32_t         ack_lkey;
-#ifdef TRACE_IBU
-    int outstanding_recvs, outstanding_sends, total_recvs, total_sends;
-#endif
-} IBU_Global;
-
 IBU_Global IBU_Process;
-
-typedef struct ibu_num_written_t
-{
-    void *mem_ptr;
-    int length;
-} ibu_num_written_t;
-
-static ibu_num_written_t g_num_bytes_written_stack[IBU_MAX_POSTED_SENDS];
-static int g_cur_write_stack_index = 0;
-
-/* local prototypes */
-static int ibui_post_receive(ibu_t ibu);
-static int ibui_post_receive_unacked(ibu_t ibu);
-#if 0
-static int ibui_post_write(ibu_t ibu, void *buf, int len);
-static int ibui_post_writev(ibu_t ibu, MPID_IOV *iov, int n);
-#endif
-static int ibui_post_ack_write(ibu_t ibu);
-
-/* utility allocator functions */
-
-static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p));
-static ibuQueue_t * ibuBlockAllocInitIB();
-static int ibuBlockAllocFinalize(ibuBlockAllocator *p);
-static int ibuBlockAllocFinalizeIB(ibuQueue_t *p);
-static void * ibuBlockAlloc(ibuBlockAllocator p);
-static void * ibuBlockAllocIB(ibuQueue_t *p);
-static int ibuBlockFree(ibuBlockAllocator p, void *pBlock);
-static int ibuBlockFreeIB(ibuQueue_t * p, void *pBlock);
-static void *ib_malloc_register(size_t size, ib_mr_handle_t *mhp, uint32_t *lp, uint32_t *rp);
-static void ib_free_deregister(void *p);
-
-static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p))
-{
-    ibuBlockAllocator p;
-    void **ppVoid;
-    int i;
-
-    p = alloc_fn( sizeof(struct ibuBlockAllocator_struct) + ((blocksize + sizeof(void**)) * count) );
-
-    p->alloc_fn = alloc_fn;
-    p->free_fn = free_fn;
-    p->nIncrementSize = incrementsize;
-    p->pNextAllocation = NULL;
-    p->nCount = count;
-    p->nBlockSize = blocksize;
-    p->pNextFree = (void**)(p + 1);
-
-    ppVoid = (void**)(p + 1);
-    for (i=0; i<count-1; i++)
-    {
-	*ppVoid = (void*)((char*)ppVoid + sizeof(void**) + blocksize);
-	ppVoid = *ppVoid;
-    }
-    *ppVoid = NULL;
-
-    return p;
-}
-
-static ibuQueue_t * ibuBlockAllocInitIB()
-{
-    ibuQueue_t *q;
-    int i;
-    ibuBlock_t b[2];
-    ib_mr_handle_t handle;
-    uint32_t lkey;
-    uint32_t rkey;
-
-    q = (ibuQueue_t*)ib_malloc_register(sizeof(ibuQueue_t), &handle, &lkey, &rkey);
-    if (q == NULL)
-    {
-	return NULL;
-    }
-    q->next_q = NULL;
-    for (i=0; i<IBU_PACKET_COUNT; i++)
-    {
-	q->block[i].next = &q->block[i+1];
-	q->block[i].handle = handle;
-	q->block[i].lkey = lkey;
-    }
-    q->block[IBU_PACKET_COUNT-1].next = NULL;
-    q->pNextFree = &q->block[0];
-    g_offset = (char*)&b[1].data - (char*)&b[1];
-    return q;
-}
-
-static int ibuBlockAllocFinalize(ibuBlockAllocator *p)
-{
-    if (*p == NULL)
-	return 0;
-    ibuBlockAllocFinalize(&(*p)->pNextAllocation);
-    if ((*p)->free_fn != NULL)
-	(*p)->free_fn(*p);
-    *p = NULL;
-    return 0;
-}
-
-static int ibuBlockAllocFinalizeIB(ibuQueue_t *p)
-{
-    if (p == NULL)
-	return 0;
-    ibuBlockAllocFinalizeIB(p->next_q);
-    ib_free_deregister(p);
-}
-
-static void * ibuBlockAlloc(ibuBlockAllocator p)
-{
-    void *pVoid;
-    
-    if (p->pNextFree == NULL)
-    {
-	MPIU_DBG_PRINTF(("ibuBlockAlloc returning NULL\n"));
-	return NULL;
-    }
-
-    pVoid = p->pNextFree + 1;
-    p->pNextFree = *(p->pNextFree);
-
-    return pVoid;
-}
-
-static void * ibuBlockAllocIB(ibuQueue_t * p)
-{
-    void *pVoid;
-
-    if (p->pNextFree == NULL)
-    {
-	MPIU_DBG_PRINTF(("ibuBlockAlloc returning NULL\n"));
-	return NULL;
-    }
-
-    pVoid = p->pNextFree->data;
-    p->pNextFree = p->pNextFree->next;
-
-    return pVoid;
-}
-
-static int ibuBlockFree(ibuBlockAllocator p, void *pBlock)
-{
-    ((void**)pBlock)--;
-    *((void**)pBlock) = p->pNextFree;
-    p->pNextFree = pBlock;
-
-    return 0;
-}
-
-static int ibuBlockFreeIB(ibuQueue_t * p, void *pBlock)
-{
-    ibuBlock_t *b;
-
-    b = (ibuBlock_t *)((char *)pBlock - g_offset);
-    b->next = p->pNextFree;
-    p->pNextFree = b;
-    return 0;
-}
+ibu_num_written_t g_num_bytes_written_stack[IBU_MAX_POSTED_SENDS];
+int g_cur_write_stack_index = 0;
 
 /* utility ibu functions */
 
@@ -328,7 +38,7 @@ static int ibuBlockFreeIB(ibuQueue_t * p, void *pBlock)
 #define FUNCNAME modifyQP
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static ib_api_status_t modifyQP( ibu_t ibu, ib_qp_state_t qp_state )
+ib_api_status_t modifyQP( ibu_t ibu, ib_qp_state_t qp_state )
 {
     ib_api_status_t status;
     ib_qp_mod_t qp_mod;
@@ -401,7 +111,7 @@ static ib_api_status_t modifyQP( ibu_t ibu, ib_qp_state_t qp_state )
     return IBU_SUCCESS;
 }
 
-static ib_api_status_t createQP(ibu_t ibu, ibu_set_t set)
+ib_api_status_t createQP(ibu_t ibu, ibu_set_t set)
 {
     ib_api_status_t status;
     ib_qp_create_t qp_init_attr;
@@ -448,7 +158,7 @@ static ib_api_status_t createQP(ibu_t ibu, ibu_set_t set)
 #define FUNCNAME ib_malloc_register
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static void *ib_malloc_register(size_t size, ib_mr_handle_t *mhp, uint32_t *lp, uint32_t *rp)
+void *ib_malloc_register(size_t size, ib_mr_handle_t *mhp, uint32_t *lp, uint32_t *rp)
 {
     ib_api_status_t status;
     void *ptr;
@@ -488,7 +198,7 @@ static void *ib_malloc_register(size_t size, ib_mr_handle_t *mhp, uint32_t *lp, 
 #define FUNCNAME ib_free_deregister
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static void ib_free_deregister(void *p)
+void ib_free_deregister(void *p)
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_FREE_DEREGISTER);
 
@@ -497,6 +207,136 @@ static void ib_free_deregister(void *p)
     MPIU_Free(p);
     MPIU_DBG_PRINTF(("exiting ib_free_derigster\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IB_FREE_DEREGISTER);
+}
+
+/*
+ * Test code to track registering/deregistering memory
+ *
+ */
+#ifdef TRACK_MEMORY_REGISTRATION
+typedef struct regmem_t
+{
+    void *ptr;
+    struct regmem_t *next;
+} regmem_t;
+regmem_t *g_list = NULL;
+int find_mem(void *p)
+{
+    regmem_t *iter = g_list;
+    while (iter)
+    {
+	if (iter->ptr == p)
+	    return 1;
+	iter = iter->next;
+    }
+    return 0;
+}
+void add_mem(void *p)
+{
+    regmem_t *r = (regmem_t*)malloc(sizeof(regmem_t));
+    if (find_mem(p))
+    {
+	printf("registering mem pointer twice: %p\n", p);
+	fflush(stdout);
+    }
+    else
+    {
+	printf("registered: %p\n", p);fflush(stdout);
+    }
+    r->ptr = p;
+    r->next = g_list;
+    g_list = r;
+}
+void remove_mem(void *p)
+{
+    regmem_t *iter, *trailer;
+    iter = trailer = g_list;
+    while (iter != NULL)
+    {
+	if (iter->ptr == p)
+	{
+	    if (iter == g_list)
+	    {
+		g_list = g_list->next;
+	    }
+	    else
+	    {
+		trailer->next = iter->next;
+	    }
+	    free(iter);
+	    printf("deregistered: %p\n", p);fflush(stdout);
+	    return;
+	}
+	if (trailer != iter)
+	    trailer = trailer->next;
+	iter = iter->next;
+    }
+    printf("removing pointer that was not registered: %p\n", p);fflush(stdout);
+}
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME ibu_register_memory
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
+{
+    ib_api_status_t status;
+    ib_mr_create_t mem;
+    MPIDI_STATE_DECL(MPID_STATE_IBU_REGISTER_MEMORY);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_REGISTER_MEMORY);
+
+    MPIU_DBG_PRINTF(("entering ibu_register_memory\n"));
+
+#ifdef TRACK_MEMORY_REGISTRATION
+    add_mem(buf);
+#endif
+    mem.vaddr = buf;
+    mem.length = (uint64_t)len;
+    mem.access_ctrl = IB_AC_LOCAL_WRITE | IB_AC_RDMA_WRITE;
+    status = ib_reg_mem(
+	IBU_Process.pd_handle,
+	&mem,
+	&state->lkey,
+	&state->rkey,
+	&state->handle);
+    if (status != IBU_SUCCESS)
+    {
+	MPIU_Internal_error_printf("ibu_register_memory: ib_reg_mem failed, error %s\n", ib_get_err_str(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_REGISTER_MEMORY);
+	return IBU_FAIL;
+    }
+
+    MPIU_DBG_PRINTF(("exiting ibu_register_memory\n"));
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_REGISTER_MEMORY);
+    return IBU_SUCCESS;
+}
+
+#undef FUNCNAME
+#define FUNCNAME ibu_deregister_memory
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int ibu_deregister_memory(void *buf, int len, ibu_mem_t *state)
+{
+    ib_api_status_t status;
+    MPIDI_STATE_DECL(MPID_STATE_IBU_DEREGISTER_MEMORY);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_DEREGISTER_MEMORY);
+
+#ifdef TRACK_MEMORY_REGISTRATION
+    remove_mem(buf);
+#endif
+    status = ib_dereg_mem(IBU_Process.pd_handle, state->handle);
+    if (status != IBU_SUCCESS)
+    {
+	MPIU_Internal_error_printf("ibu_deregister_memory: ib_dereg_mem failed, error %s\n", ib_get_err_str(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_DEREGISTER_MEMORY);
+	return IBU_FAIL;
+    }
+
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_DEREGISTER_MEMORY);
+    return IBU_SUCCESS;
 }
 
 #undef FUNCNAME
@@ -599,7 +439,7 @@ int ibu_finish_qp(ibu_t p, int dest_lid, int dest_qp_num)
 #define FUNCNAME ibui_post_receive_unacked
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int ibui_post_receive_unacked(ibu_t ibu)
+int ibui_post_receive_unacked(ibu_t ibu)
 {
     ib_api_status_t status;
     ib_local_ds_t data;
@@ -666,7 +506,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
 #define FUNCNAME ibui_post_receive
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int ibui_post_receive(ibu_t ibu)
+int ibui_post_receive(ibu_t ibu)
 {
     ib_api_status_t status;
     ib_local_ds_t data;
@@ -738,7 +578,7 @@ static int ibui_post_receive(ibu_t ibu)
 #define FUNCNAME ibui_post_ack_write
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int ibui_post_ack_write(ibu_t ibu)
+int ibui_post_ack_write(ibu_t ibu)
 {
     ib_api_status_t status;
     ib_local_ds_t data;
@@ -803,7 +643,7 @@ static int ibui_post_ack_write(ibu_t ibu)
 #define FUNCNAME ibui_post_ack_write
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int ibui_post_ack_write(ibu_t ibu)
+int ibui_post_ack_write(ibu_t ibu)
 {
     ib_api_status_t status;
     ib_local_ds_t data;
@@ -1095,7 +935,7 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 #define FUNCNAME ibui_get_first_active_ca
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int ibui_get_first_active_ca()
+int ibui_get_first_active_ca()
 {
     int mpi_errno;
     ib_api_status_t	status;
@@ -1373,7 +1213,7 @@ int ibu_destroy_set(ibu_set_t set)
 #define FUNCNAME ibui_buffer_unex_read
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int offset, unsigned int num_bytes)
+int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int offset, unsigned int num_bytes)
 {
     ibu_unex_read_t *p;
     MPIDI_STATE_DECL(MPID_STATE_IBUI_BUFFER_UNEX_READ);
@@ -1399,7 +1239,7 @@ static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int offset, 
 #define FUNCNAME ibui_read_unex
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int ibui_read_unex(ibu_t ibu)
+int ibui_read_unex(ibu_t ibu)
 {
     unsigned int len;
     ibu_unex_read_t *temp;
@@ -1525,470 +1365,6 @@ int ibui_readv_unex(ibu_t ibu)
     MPIU_DBG_PRINTF(("exiting ibui_readv_unex\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READV_UNEX);
     return IBU_SUCCESS;
-}
-
-/*#define PRINT_IBU_WAIT*/
-#ifdef PRINT_IBU_WAIT
-#define MPIU_DBG_PRINTFX(a) MPIU_DBG_PRINTF(a)
-#else
-#define MPIU_DBG_PRINTFX(a)
-#endif
-
-char * op2str(int wc_type)
-{
-    static char str[20];
-    switch(wc_type)
-    {
-    case IB_WC_SEND:
-	return "IB_WC_SEND";
-    case IB_WC_RDMA_WRITE:
-	return "IB_WC_RDMA_WRITE";
-    case IB_WC_RECV:
-	return "IB_WC_RECV";
-    case IB_WC_RDMA_READ:
-	return "IB_WC_RDMA_READ";
-    case IB_WC_MW_BIND:
-	return "IB_WC_MW_BIND";
-    case IB_WC_FETCH_ADD:
-	return "IB_WC_FETCH_ADD";
-    case IB_WC_COMPARE_SWAP:
-	return "IB_WC_COMPARE_SWAP";
-    case IB_WC_RECV_RDMA_WRITE:
-	return "IB_WC_RECV_RDMA_WRITE";
-    }
-    sprintf(str, "%d", wc_type);
-    return str;
-}
-
-/* Port me to ibal
-void PrintWC(VAPI_wc_desc_t *p)
-{
-    printf("Work Completion Descriptor:\n");
-    printf(" id: %d\n", (int)p->id);
-    printf(" opcode: %u = %s\n",
-	   p->opcode, VAPI_cqe_opcode_sym(p->opcode));
-    printf(" byte_len: %d\n", p->byte_len);
-    printf(" imm_data_valid: %d\n", (int)p->imm_data_valid);
-    printf(" imm_data: %u\n", (unsigned int)p->imm_data);
-    printf(" remote_node_addr:\n");
-    printf("  type: %u = %s\n",
-	   p->remote_node_addr.type,
-	   VAPI_remote_node_addr_sym(p->remote_node_addr.type));
-    printf("  slid: %d\n", (int)p->remote_node_addr.slid);
-    printf("  sl: %d\n", (int)p->remote_node_addr.sl);
-    printf("  qp: %d\n", (int)p->remote_node_addr.qp_ety.qp);
-    printf("  loc_eecn: %d\n", (int)p->remote_node_addr.ee_dlid.loc_eecn);
-    printf(" grh_flag: %d\n", (int)p->grh_flag);
-    printf(" pkey_ix: %d\n", p->pkey_ix);
-    printf(" status: %u = %s\n",
-	   (int)p->status, VAPI_wc_status_sym(p->status));
-    printf(" vendor_err_syndrome: %d\n", p->vendor_err_syndrome);
-    printf(" free_res_count: %d\n", p->free_res_count);
-    fflush(stdout);
-}
-*/
-
-#undef FUNCNAME
-#define FUNCNAME ibu_wait
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op_t *op_ptr)
-{
-    int i;
-    ib_api_status_t status;
-    ib_wc_t *p_in, *p_complete;
-    ib_wc_t completion_data;
-    void *mem_ptr;
-    char *iter_ptr;
-    ibu_t ibu;
-    int num_bytes;
-    unsigned int offset;
-#ifndef HAVE_32BIT_POINTERS
-    ibu_work_id_handle_t *id_ptr;
-#endif
-    int num_cq_entries;
-#ifdef TRACE_IBU
-    static int total_num_completions = 0;
-#endif
-#ifdef USE_INLINE_PKT_RECEIVE
-    MPIDI_VC *recv_vc_ptr;
-    void *mem_ptr_orig;
-    int pkt_offset;
-#endif
-    MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_WAIT);
-    MPIU_DBG_PRINTFX(("entering ibu_wait\n"));
-    for (;;) 
-    {
-	if (IBU_Process.unex_finished_list)
-	{
-	    MPIDI_DBG_PRINTF((60, FCNAME, "returning previously received %d bytes", IBU_Process.unex_finished_list->read.total));
-	    /* remove this ibu from the finished list */
-	    ibu = IBU_Process.unex_finished_list;
-	    IBU_Process.unex_finished_list = IBU_Process.unex_finished_list->unex_finished_queue;
-	    ibu->unex_finished_queue = NULL;
-
-	    *num_bytes_ptr = ibu->read.total;
-	    *op_ptr = IBU_OP_READ;
-	    *vc_pptr = ibu->vc_ptr;
-	    ibu->pending_operations--;
-	    if (ibu->closing && ibu->pending_operations == 0)
-	    {
-		ibu = IBU_INVALID_QP;
-	    }
-	    MPIU_DBG_PRINTFX(("exiting ibu_wait 1\n"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-	    return IBU_SUCCESS;
-	}
-
-	p_complete = NULL;
-	completion_data.p_next = NULL;
-	p_in = &completion_data;
-
-	/*
-	status = ib_rearm_cq(set, FALSE);
-	if (status != IB_SUCCESS)
-	{
-	    MPIU_Internal_error_printf("%s: error: ib_rearm_cq failed, %s\n", FCNAME, ib_get_err_str(status));
-	    MPIU_DBG_PRINTFX(("exiting ibu_wait -1\n"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-	    return IBU_FAIL;
-	}
-	*/
-
-	status = ib_poll_cq(set, &p_in, &p_complete); 
-	if (status == IB_NOT_FOUND && p_complete == NULL)
-	{
-	    /* ibu_wait polls until there is something in the queue */
-	    /* or the timeout has expired */
-	    if (millisecond_timeout == 0)
-	    {
-		*num_bytes_ptr = 0;
-		*vc_pptr = NULL;
-		*op_ptr = IBU_OP_TIMEOUT;
-		MPIU_DBG_PRINTFX(("exiting ibu_wait 2\n"));
-		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		return IBU_SUCCESS;
-	    }
-	    continue;
-	}
-	if (status != IB_SUCCESS)
-	{
-	    MPIU_Internal_error_printf("%s: error: ib_poll_cq did not return IB_SUCCESS, %s\n", FCNAME, ib_get_err_str(status));
-	    MPIU_DBG_PRINTFX(("exiting ibu_wait 3\n"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-	    return IBU_FAIL;
-	}
-	/*
-	if (completion_data.status != IB_SUCCESS)
-	{
-	    MPIU_Internal_error_printf("%s: completion status = %s != IB_SUCCESS\n", 
-		FCNAME, ib_get_err_str(completion_data.status));
-	    MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-	    return IBU_FAIL;
-	}
-	*/
-
-	/*printf("ib_poll_cq returned %d\n", completion_data.wc_type);fflush(stdout);*/
-
-#ifdef HAVE_32BIT_POINTERS
-	ibu = (ibu_t)(((ibu_work_id_handle_t*)&completion_data.wr_id)->data.ptr);
-	mem_ptr = (void*)(((ibu_work_id_handle_t*)&completion_data.wr_id)->data.mem);
-#else
-	id_ptr = *((ibu_work_id_handle_t**)&completion_data.wr_id);
-	ibu = (ibu_t)(id_ptr->ptr);
-	mem_ptr = (void*)(id_ptr->mem);
-	ibuBlockFree(g_workAllocator, (void*)id_ptr);
-#endif
-#ifdef USE_INLINE_PKT_RECEIVE
-	mem_ptr_orig = mem_ptr;
-#endif
-
-	switch (completion_data.wc_type)
-	{
-	case IB_WC_SEND:
-	    if (completion_data.status != IB_SUCCESS)
-	    {
-		num_cq_entries = 0;
-		status = ib_query_cq(set, &num_cq_entries);
-#ifdef TRACE_IBU
-		MPIU_Internal_error_printf("%s: send completion status = %d = %s != IB_SUCCESS, cq size = %d, total completions = %d\n", 
-					   FCNAME, completion_data.status, ib_get_err_str(completion_data.status), num_cq_entries, total_num_completions);
-		MPIU_Internal_error_printf("oustanding recvs: %d, total_recvs %d\noutstanding sends: %d, total_sends: %d\n", IBU_Process.outstanding_recvs, IBU_Process.total_recvs, IBU_Process.outstanding_sends, IBU_Process.total_sends);
-#else
-		MPIU_Internal_error_printf("%s: send completion status = %d = %s != IB_SUCCESS, cq size = %d\n", 
-					   FCNAME, completion_data.status, ib_get_err_str(completion_data.status), num_cq_entries);
-#endif
-		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
-		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		return IBU_FAIL;
-	    }
-#ifdef TRACE_IBU
-	    total_num_completions++;
-	    IBU_Process.outstanding_sends--;
-	    IBU_Process.total_sends++;
-#endif
-	    if (mem_ptr == (void*)-1)
-	    {
-		/* flow control ack completed, no user data so break out here */
-		break;
-	    }
-	    g_cur_write_stack_index--;
-	    num_bytes = g_num_bytes_written_stack[g_cur_write_stack_index].length;
-	    MPIDI_DBG_PRINTF((60, FCNAME, "send num_bytes = %d\n", num_bytes));
-	    if (num_bytes < 0)
-	    {
-		i = num_bytes;
-		num_bytes = 0;
-		for (; i<0; i++)
-		{
-		    g_cur_write_stack_index--;
-		    MPIDI_DBG_PRINTF((60, FCNAME, "num_bytes += %d\n", g_num_bytes_written_stack[g_cur_write_stack_index].length));
-		    num_bytes += g_num_bytes_written_stack[g_cur_write_stack_index].length;
-		    if (g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr == NULL)
-			MPIU_Internal_error_printf("ibu_wait: write stack has NULL mem_ptr at location %d\n", g_cur_write_stack_index);
-		    assert(g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr != NULL);
-		    ibuBlockFreeIB(ibu->allocator, g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr);
-		}
-	    }
-	    else
-	    {
-		if (mem_ptr == NULL)
-		    MPIU_Internal_error_printf("ibu_wait: send mem_ptr == NULL\n");
-		assert(mem_ptr != NULL);
-		ibuBlockFreeIB(ibu->allocator, mem_ptr);
-	    }
-
-	    *num_bytes_ptr = num_bytes;
-	    *op_ptr = IBU_OP_WRITE;
-	    *vc_pptr = ibu->vc_ptr;
-	    MPIU_DBG_PRINTFX(("exiting ibu_wait 5\n"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-	    return IBU_SUCCESS;
-	    break;
-	case IB_WC_RECV:
-	    if (completion_data.status != IB_SUCCESS)
-	    {
-		num_cq_entries = 0;
-		status = ib_query_cq(set, &num_cq_entries);
-#ifdef TRACE_IBU
-		MPIU_Internal_error_printf("%s: recv completion status = %d = %s != IB_SUCCESS, cq size = %d, total completions = %d\n", 
-					   FCNAME, completion_data.status, ib_get_err_str(completion_data.status), num_cq_entries, total_num_completions);
-		MPIU_Internal_error_printf("oustanding recvs: %d, total_recvs %d\noutstanding sends: %d, total_sends: %d\n", IBU_Process.outstanding_recvs, IBU_Process.total_recvs, IBU_Process.outstanding_sends, IBU_Process.total_sends);
-#else
-		MPIU_Internal_error_printf("%s: recv completion status = %d = %s != IB_SUCCESS, cq size = %d\n", 
-					   FCNAME, completion_data.status, ib_get_err_str(completion_data.status), num_cq_entries);
-#endif
-		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
-		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		return IBU_FAIL;
-	    }
-#ifdef TRACE_IBU
-	    total_num_completions++;
-	    IBU_Process.outstanding_recvs--;
-	    IBU_Process.total_recvs++;
-#endif
-	    if (completion_data.recv.conn.recv_opt & IB_RECV_OPT_IMMEDIATE)
-	    {
-		ibu->nAvailRemote += completion_data.recv.conn.immediate_data;
-		MPIDI_DBG_PRINTF((60, FCNAME, "%d packets acked, nAvailRemote now = %d", completion_data.recv.conn.immediate_data, ibu->nAvailRemote));
-		ibuBlockFreeIB(ibu->allocator, mem_ptr);
-		ibui_post_receive_unacked(ibu);
-		assert(completion_data.length == 1); /* check this after the printfs to see if the immediate data is correct */
-		break;
-	    }
-	    num_bytes = completion_data.length;
-#ifdef USE_INLINE_PKT_RECEIVE
-	    recv_vc_ptr = (MPIDI_VC *)(ibu->vc_ptr);
-	    pkt_offset = 0;
-	    if (recv_vc_ptr->ch.reading_pkt)
-	    {
-		/*mpi_errno =*/ MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
-		/*
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "infiniband read progress unable to handle incoming packet");
-		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		    return IBU_SUCCESS;
-		}
-		*/
-		if (recv_vc_ptr->ch.recv_active == NULL)
-		{
-		    MPIU_DBG_PRINTF(("packet %d with no data handled.\n", g_num_received));
-		    recv_vc_ptr->ch.reading_pkt = TRUE;
-		}
-		else
-		{
-		    /*mpi_errno =*/ ibu_post_readv(ibu, recv_vc_ptr->ch.recv_active->dev.iov, recv_vc_ptr->ch.recv_active->dev.iov_count);
-		}
-		mem_ptr = (unsigned char *)mem_ptr + sizeof(MPIDI_CH3_Pkt_t);
-		num_bytes -= sizeof(MPIDI_CH3_Pkt_t);
-
-		if (num_bytes == 0)
-		{
-		    ibuBlockFreeIB(ibu->allocator, mem_ptr_orig);
-		    ibui_post_receive(ibu);
-		    continue;
-		}
-		if (recv_vc_ptr->ch.recv_active == NULL)
-		{
-		    ibui_buffer_unex_read(ibu, mem_ptr_orig, sizeof(MPIDI_CH3_Pkt_t), num_bytes);
-		    continue;
-		}
-		pkt_offset = sizeof(MPIDI_CH3_Pkt_t);
-	    }
-#endif
-	    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes\n", num_bytes));
-	    /*MPIDI_DBG_PRINTF((60, FCNAME, "ibu_wait(recv finished %d bytes)", num_bytes));*/
-	    if (!(ibu->state & IBU_READING))
-	    {
-#ifdef USE_INLINE_PKT_RECEIVE
-		ibui_buffer_unex_read(ibu, mem_ptr_orig, pkt_offset, num_bytes);
-#else
-		ibui_buffer_unex_read(ibu, mem_ptr, 0, num_bytes);
-#endif
-		break;
-	    }
-	    MPIDI_DBG_PRINTF((60, FCNAME, "read update, total = %d + %d = %d\n", ibu->read.total, num_bytes, ibu->read.total + num_bytes));
-	    if (ibu->read.use_iov)
-	    {
-		iter_ptr = mem_ptr;
-		while (num_bytes && ibu->read.iovlen > 0)
-		{
-		    if ((int)ibu->read.iov[ibu->read.index].MPID_IOV_LEN <= num_bytes)
-		    {
-			/* copy the received data */
-			memcpy(ibu->read.iov[ibu->read.index].MPID_IOV_BUF, iter_ptr,
-			    ibu->read.iov[ibu->read.index].MPID_IOV_LEN);
-			iter_ptr += ibu->read.iov[ibu->read.index].MPID_IOV_LEN;
-			/* update the iov */
-			num_bytes -= ibu->read.iov[ibu->read.index].MPID_IOV_LEN;
-			ibu->read.index++;
-			ibu->read.iovlen--;
-		    }
-		    else
-		    {
-			/* copy the received data */
-			memcpy(ibu->read.iov[ibu->read.index].MPID_IOV_BUF, iter_ptr, num_bytes);
-			iter_ptr += num_bytes;
-			/* update the iov */
-			ibu->read.iov[ibu->read.index].MPID_IOV_LEN -= num_bytes;
-			ibu->read.iov[ibu->read.index].MPID_IOV_BUF = 
-			    (char*)(ibu->read.iov[ibu->read.index].MPID_IOV_BUF) + num_bytes;
-			num_bytes = 0;
-		    }
-		}
-		offset = (unsigned char*)iter_ptr - (unsigned char*)mem_ptr;
-		ibu->read.total += offset;
-		if (num_bytes == 0)
-		{
-		    /* put the receive packet back in the pool */
-		    if (mem_ptr == NULL)
-			MPIU_Internal_error_printf("ibu_wait: read mem_ptr == NULL\n");
-		    assert(mem_ptr != NULL);
-#ifdef USE_INLINE_PKT_RECEIVE
-		    ibuBlockFreeIB(ibu->allocator, mem_ptr_orig);
-#else
-		    ibuBlockFreeIB(ibu->allocator, mem_ptr);
-#endif
-		    ibui_post_receive(ibu);
-		}
-		else
-		{
-		    /* save the unused but received data */
-#ifdef USE_INLINE_PKT_RECEIVE
-		    ibui_buffer_unex_read(ibu, mem_ptr_orig, offset + pkt_offset, num_bytes);
-#else
-		    ibui_buffer_unex_read(ibu, mem_ptr, offset, num_bytes);
-#endif
-		}
-		if (ibu->read.iovlen == 0)
-		{
-		    ibu->state &= ~IBU_READING;
-		    *num_bytes_ptr = ibu->read.total;
-		    *op_ptr = IBU_OP_READ;
-		    *vc_pptr = ibu->vc_ptr;
-		    ibu->pending_operations--;
-		    if (ibu->closing && ibu->pending_operations == 0)
-		    {
-			MPIDI_DBG_PRINTF((60, FCNAME, "closing ibuet after iov read completed."));
-			ibu = IBU_INVALID_QP;
-		    }
-		    MPIU_DBG_PRINTFX(("exiting ibu_wait 6\n"));
-		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		    return IBU_SUCCESS;
-		}
-	    }
-	    else
-	    {
-		if ((unsigned int)num_bytes > ibu->read.bufflen)
-		{
-		    /* copy the received data */
-		    memcpy(ibu->read.buffer, mem_ptr, ibu->read.bufflen);
-		    ibu->read.total = ibu->read.bufflen;
-#ifdef USE_INLINE_PKT_RECEIVE
-		    ibui_buffer_unex_read(ibu, mem_ptr_orig,
-					  ibu->read.bufflen + pkt_offset,
-					  num_bytes - ibu->read.bufflen);
-#else
-		    ibui_buffer_unex_read(ibu, mem_ptr, ibu->read.bufflen, num_bytes - ibu->read.bufflen);
-#endif
-		    ibu->read.bufflen = 0;
-		}
-		else
-		{
-		    /* copy the received data */
-		    memcpy(ibu->read.buffer, mem_ptr, num_bytes);
-		    ibu->read.total += num_bytes;
-		    /* advance the user pointer */
-		    ibu->read.buffer = (char*)(ibu->read.buffer) + num_bytes;
-		    ibu->read.bufflen -= num_bytes;
-		    /* put the receive packet back in the pool */
-#ifdef USE_INLINE_PKT_RECEIVE
-		    ibuBlockFreeIB(ibu->allocator, mem_ptr_orig);
-#else
-		    ibuBlockFreeIB(ibu->allocator, mem_ptr);
-#endif
-		    ibui_post_receive(ibu);
-		}
-		if (ibu->read.bufflen == 0)
-		{
-		    ibu->state &= ~IBU_READING;
-		    *num_bytes_ptr = ibu->read.total;
-		    *op_ptr = IBU_OP_READ;
-		    *vc_pptr = ibu->vc_ptr;
-		    ibu->pending_operations--;
-		    if (ibu->closing && ibu->pending_operations == 0)
-		    {
-			MPIDI_DBG_PRINTF((60, FCNAME, "closing ibu after simple read completed."));
-			ibu = IBU_INVALID_QP;
-		    }
-		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		    MPIU_DBG_PRINTFX(("exiting ibu_wait 7\n"));
-		    return IBU_SUCCESS;
-		}
-	    }
-	    break;
-	default:
-	    if (completion_data.status != IB_SUCCESS)
-	    {
-		MPIU_Internal_error_printf("%s: unknown completion status = %s != IB_SUCCESS\n", 
-					   FCNAME, ib_get_err_str(completion_data.status));
-		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
-		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-		return IBU_FAIL;
-	    }
-	    MPIU_Internal_error_printf("%s: unknown ib wc_type: %s\n", FCNAME, op2str(completion_data.wc_type));
-	    return IBU_FAIL;
-	    break;
-	}
-    }
-
-    MPIU_DBG_PRINTFX(("exiting ibu_wait 8\n"));
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-    return MPI_SUCCESS;
 }
 
 #undef FUNCNAME
