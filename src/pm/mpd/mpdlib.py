@@ -373,6 +373,7 @@ def mpd_recv(sock,nbytes):
                 mpd_print(1, 'recv error: %s' % strerror(data[0]))
         except Exception, data:
             mpd_print(1, 'other error after recv %s :%s:' % ( data.__class__, data) )
+	    return 0
     return rv
 
 def mpd_read(fd,nbytes):
@@ -391,6 +392,7 @@ def mpd_read(fd,nbytes):
                 mpd_print(1, 'read error: %s' % strerror(data[0]))
         except Exception, data:
             mpd_print(1, 'other error after read %s :%s:' % ( data.__class__, data) )
+	    return 0
     return rv
 
 def mpd_get_my_username():
