@@ -20,7 +20,8 @@ RM           = @RM@
 
 TARGET  = $(libbuild_dir)/topology.jar
 PACKAGE = base.topology
-SRC     = Line.java Arrow.java StateBorder.java State.java PreviewState.java
+SRC     = Line.java Arrow.java StateBorder.java State.java \
+          PreviewState.java SummaryState.java
 
 OBJ     = $(SRC:.java=.class)
 
