@@ -303,37 +303,41 @@ def mpdrun():
                         # del socketsToSelect[readySocket]
                         # readySocket.close()
                         # done += 1
+                    elif (msg['cmd'] == 'job_terminated'):
+                        del socketsToSelect[readySocket]
+                        readySocket.close()
+                        done += 1
                     elif msg['cmd'] == 'job_aborted_early':
                         print 'rank %d in job %s caused collective abort of all ranks' % \
                               ( msg['rank'], msg['jobid'] )
 			status = msg['exit_status']
 			if WIFSIGNALED(status):
+			    if status > myExitStatus:
+			        myExitStatus = status
 			    killed_status = status & 0x007f  # AND off core flag
 		            print '  exit status of rank %d: killed by signal %d ' % \
                                   (msg['rank'],killed_status)
 			else:
 			    exit_status = WEXITSTATUS(status)
-		            print '  exit status of rank %d: return code %d ' % \
-                                  (msg['rank'],exit_status)
 			    if exit_status > myExitStatus:
 			        myExitStatus = exit_status
+		            print '  exit status of rank %d: return code %d ' % \
+                                  (msg['rank'],exit_status)
                         # del socketsToSelect[readySocket]
                         # readySocket.close()
                         # done += 1
-                    elif (msg['cmd'] == 'job_terminated'):
-                        del socketsToSelect[readySocket]
-                        readySocket.close()
-                        done += 1
                     elif (msg['cmd'] == 'client_exit_status'):
 			status = msg['status']
 			if WIFSIGNALED(status):
+			    if status > myExitStatus:
+			        myExitStatus = status
 			    killed_status = status & 0x007f  # AND off core flag
 		            # print 'exit status of rank %d: killed by signal %d ' % (msg['rank'],killed_status)
 			else:
 			    exit_status = WEXITSTATUS(status)
-		            # print 'exit status of rank %d: return code %d ' % (msg['rank'],exit_status)
 			    if exit_status > myExitStatus:
 			        myExitStatus = exit_status
+		            # print 'exit status of rank %d: return code %d ' % (msg['rank'],exit_status)
 		    else:
 		        print 'unrecognized msg from manager :%s:' % msg
                 elif readySocket == manCliStdoutSocket:
