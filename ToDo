@@ -104,3 +104,15 @@ Restore -ansi to --enable-strict .   This is essential to ensure that MPICH2
 can build in non-GNU environments.
 
 Add support for uninstall targets to simplemake.
+
+
+Post 1.0 Items
+--------------
+
+- Fix deficiencies noted in the release notes
+
+- Virtual connections
+  - Remove virtual connection references and tables from MPID_Comm
+  - Expose communicator operations to device through ADI3, allowing device to
+    manage communicator creation and destruction explicitly
+  - Provide utilities to help device with common tasks
