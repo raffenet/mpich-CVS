@@ -53,6 +53,9 @@ int main( int argc, char **argv )
     MPI_Finalize();
     if (errors)
         printf( "[%d] done with ERRORS(%d)!\n", rank, errors );
-    else printf("Done\n");
+    else {
+	if (rank == 0) 
+	    printf(" No Errors\n");
+    }
     return errors;
 }

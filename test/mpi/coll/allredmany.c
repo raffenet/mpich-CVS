@@ -19,8 +19,11 @@ int main( int argc, char **argv )
     MPI_Allreduce(&wscale,&scale,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
   }
 
+  if (myid == 0) {
+      /* If we get here at all, we're ok */
+      printf( " No Errors\n" );
+  }
   MPI_Finalize();
-  printf("Done\n");
   
   return 0;
 }

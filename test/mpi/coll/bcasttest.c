@@ -38,7 +38,10 @@ int main( int argc, char **argv)
 	}
     }
     
-    printf("Node %d done\n", rank);
+    /* printf("Node %d done\n", rank); */
+    if (rank == 0) 
+	printf(" No Errors\n");
+
     fflush(stdout);
     
     MPI_Finalize();

@@ -1,0 +1,113 @@
+#! @PERL5@
+#
+# This script is the beginnings of a script to run a sequence of test 
+# programs.  See the MPICH document for a description of the test
+# strategy and requirements.
+#
+# Description
+#   Tests are controlled by a file listing test programs; if the file is
+#   a directory, then all of the programs in the directory and subdirectories
+#   are run
+#
+#   To run a test, the following steps are executed
+#   Build the executable:
+#      make programname
+#   Run the executable
+#      mpiexec -n <np> ./programname >out 2>err
+#   Check the return code (non zero is failure)
+#   Check the stderr output (non empty is failure)
+#   Check the stdout output (No Errors or Test passed are the only valid
+#      output)
+#   Remove executable, out, err files
+#
+
+# Global variables
+$mpiexec = "mpiexec";    # Name of mpiexec program (including path, if necessary)
+$np_arg  = "-n";         # Name of argument to specify the number of processes
+$err_count = 0;          # Number of programs that failed.
+
+$verbose = 0;            # Set to true to get more output
+
+#---------------------------------------------------------------------------
+# Process arguments and override any defaults
+#---------------------------------------------------------------------------
+foreach $_ (@ARGV) {
+    if (/-mpiexec=(.*)/) { $mpiexec = $1; }
+    elsif (/-tests=(.*)/) { $listfiles = $1; }
+    elsif (/-verbose/) { $verbose = 1; }
+    else {
+	print STDERR "Unrecognized argument $_\n";
+    }
+}
+
+if ($listfiles eq "") {
+    # The default is to build every file in the current directory
+    open (PGMS, "ls -1 *.c |" ) || die "Cannot list programs\n";
+    while (<PGMS>) {
+	s/\r?\n//;
+	$programname = $_;
+	$programname =~ s/\.c//;
+	&BuildMPIProgram( $programname );
+	&RunMPIProgram( $programname, 2 );
+	&CleanUpAfterRun( $programname );
+    }
+}
+elsif (-d $listfiles) { 
+    print STDERR "Testing by directories not yet supported\n";
+}
+else {
+    &RunList( $listfiles );
+}
+
+#
+# ---------------------------------------------------------------------------
+# Routines
+# ---------------------------------------------------------------------------
+sub RunList { 
+    my $files = $_[0];
+    
+    open( LIST, "<$files" ) || die "Could not open $files\n";
+    while (<LIST>) {
+	s/\r?\n//;
+	my ($programname,$np) = split(/\s+/,$_);
+	if ($np eq "") { $np = 2; }
+	&BuildMPIProgram( $programname );
+	&RunMPIProgram( $programname, $np );
+	&CleanUpAfterRun( $programname );
+    }
+    close( LIST );
+}
+sub RunMPIProgram {
+    my ($programname,$np) = @_;
+    my $found_error = 0;
+
+    if ($verbose) {
+	print STDERR "$mpiexec $np_arg $np $programname\n";
+    }
+    open ( MPIOUT, "$mpiexec $np_arg $np $programname 2>err |" ) ||
+	 die "Could not run $programname\n";
+    $inline = "";
+    while (<MPIOUT>) {
+	$inline = $_;
+	if (! /^\s*No Errors\s*$/ && !/^\s*Test Passed\s*$/) {
+	    print STDERR "Unexpected output $_";
+	    if (!$found_error) {
+		$found_error = 1;
+		$err_count ++;
+	    }
+	}
+    }
+    close ( MPIOUT );
+}
+sub BuildMPIProgram {
+    my $programname = $_[0];
+    if ($verbose) { print STDERR "making $programname\n"; }
+    my $output = `make $programname 2>&1`;
+    if (! -x $programname) {
+	print STDERR "Failed to build $programname; $output\n";
+    }
+}
+sub CleanUpAfterRun {
+    my $programname = $_[0];
+    unlink $programname;
+}

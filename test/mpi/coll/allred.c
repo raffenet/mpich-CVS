@@ -17,7 +17,9 @@ count = 10;
 comm = MPI_COMM_WORLD;
 
 /* Test sum */
-if (rank == 0) printf( "Testing MPI_SUM...\n" );
+#ifdef DEBUG
+    if (rank == 0) printf( "Testing MPI_SUM...\n" );
+#endif
 
 {
 int *in, *out, *sol;
@@ -169,7 +171,9 @@ errcnt = 0;
 
 
 /* Test product */
-if (rank == 0) printf( "Testing MPI_PROD...\n" );
+#ifdef DEBUG
+    if (rank == 0) printf( "Testing MPI_PROD...\n" );
+#endif
 
 {
 int *in, *out, *sol;
@@ -322,7 +326,9 @@ errcnt = 0;
 
 
 /* Test max */
-if (rank == 0) printf( "Testing MPI_MAX...\n" );
+#ifdef DEBUG
+    if (rank == 0) printf( "Testing MPI_MAX...\n" );
+#endif
 
 {
 int *in, *out, *sol;
@@ -474,7 +480,9 @@ if (errcnt > 0)
 errcnt = 0;
 
 /* Test min */
-if (rank == 0) printf( "Testing MPI_MIN...\n" );
+#ifdef DEBUG
+    if (rank == 0) printf( "Testing MPI_MIN...\n" );
+#endif
 
 {
 int *in, *out, *sol;
@@ -627,7 +635,9 @@ errcnt = 0;
 
 
 /* Test LOR */
-if (rank == 0) printf( "Testing MPI_LOR...\n" );
+#ifdef DEBUG
+    if (rank == 0) printf( "Testing MPI_LOR...\n" );
+#endif
 
 {
 int *in, *out, *sol;
@@ -857,7 +867,9 @@ if (errcnt > 0)
 errcnt = 0;
 
 /* Test LXOR */
-if (rank == 0) printf( "Testing MPI_LXOR...\n" );
+#ifdef DEBUG
+    if (rank == 0) printf( "Testing MPI_LXOR...\n" );
+#endif
 
 {
 int *in, *out, *sol;
@@ -1201,7 +1213,9 @@ if (errcnt > 0)
 errcnt = 0;
 
 /* Test LAND */
-if (rank == 0) printf( "Testing MPI_LAND...\n" );
+#ifdef DEBUG
+    if (rank == 0) printf( "Testing MPI_LAND...\n" );
+#endif
 
 {
 int *in, *out, *sol;
@@ -1431,7 +1445,9 @@ if (errcnt > 0)
 errcnt = 0;
 
 /* Test BOR */
-if (rank == 0) printf( "Testing MPI_BOR...\n" );
+#ifdef DEBUG
+    if (rank == 0) printf( "Testing MPI_BOR...\n" );
+#endif
 
 {
 int *in, *out, *sol;
@@ -1565,7 +1581,9 @@ if (errcnt > 0)
 errcnt = 0;
 
 /* Test BAND */
-if (rank == 0) printf( "Testing MPI_BAND...\n" );
+#ifdef DEBUG
+    if (rank == 0) printf( "Testing MPI_BAND...\n" );
+#endif
 
 {
 int *in, *out, *sol;
@@ -1813,7 +1831,9 @@ if (errcnt > 0)
 errcnt = 0;
 
 /* Test BXOR */
-if (rank == 0) printf( "Testing MPI_BXOR...\n" );
+#ifdef DEBUG
+    if (rank == 0) printf( "Testing MPI_BXOR...\n" );
+#endif
 
 {
 int *in, *out, *sol;
@@ -2159,7 +2179,9 @@ errcnt = 0;
 
 #ifdef UNIMPLEMENTED
 /* Test Maxloc */
-if (rank == 0) printf( "Testing MPI_MAXLOC...\n" );
+#ifdef DEBUG
+    if (rank == 0) printf( "Testing MPI_MAXLOC...\n" );
+#endif
 
 {
 struct int_test { int a; int b; } *in, *out, *sol;
@@ -2298,7 +2320,9 @@ errcnt = 0;
 
 
 /* Test minloc */
-if (rank == 0) printf( "Testing MPI_MINLOC...\n" );
+#ifdef DEBUG
+    if (rank == 0) printf( "Testing MPI_MINLOC...\n" );
+#endif
 
 
 {
