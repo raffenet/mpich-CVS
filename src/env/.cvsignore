@@ -1,5 +1,6 @@
 Makefile.in
 Makefile
 mpicc
+mpichversion
 mpicc.conf
 .deps
