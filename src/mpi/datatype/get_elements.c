@@ -69,36 +69,52 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 {
     static const char FCNAME[] = "MPI_Get_elements";
     int mpi_errno = MPI_SUCCESS;
-    int m_count, m_rem;
+    MPI_Aint m_count, m_rem, type_size, type_elements, type_element_size;
     MPID_Datatype *datatype_ptr = NULL;
+
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_ELEMENTS);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_ELEMENTS);
-    /* Get handles to MPI objects. */
-    MPID_Datatype_get_ptr( datatype, datatype_ptr );
+
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(elements, "elements", mpi_errno);
             /* Validate datatype_ptr */
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
-		MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-		MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+		MPID_Datatype_get_ptr(datatype, datatype_ptr);
+		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+		if (mpi_errno == MPI_SUCCESS) MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
 	    }
-            if (mpi_errno) {
+            if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_ELEMENTS);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
             }
         }
         MPID_END_ERROR_CHECKS;
     }
+#   else
+    /* just grab the pointer */
+    MPID_Datatype_get_ptr(datatype, datatype_ptr);
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    /* INCOMPLETE */
-    /* Check for correct number of bytes */
-    if (datatype_ptr->size == 0) {
+
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
+	type_size = MPID_Datatype_get_basic_size(datatype);
+	type_elements = 1;
+	type_element_size = type_size;
+    }
+    else /* derived type */ {
+	type_size = datatype_ptr->size;
+	type_elements = datatype_ptr->n_elements;
+	type_element_size = datatype_ptr->element_size;
+    }
+
+    if (type_size == 0) {
 	if (status->count > 0)
 	    (*elements) = MPI_UNDEFINED;
 	else {
@@ -110,13 +126,13 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 	}
     }
     else {
-	m_count = status->count / datatype_ptr->size;
-	m_rem   = status->count % datatype_ptr->size;
+	m_count = status->count / type_size;
+	m_rem   = status->count % type_size;
 	if (m_rem == 0) {
-	    (*elements) = m_count * datatype_ptr->n_elements;
+	    (*elements) = m_count * type_elements;
 	}
-	else if (datatype_ptr->element_size > 0) {
-	    (*elements) = status->count / datatype_ptr->element_size;
+	else if (type_element_size > 0) {
+	    (*elements) = status->count / type_element_size;
 	}
 	else {
 	    /* element_size < 0 indicates that there was more than one basic type used */
@@ -135,3 +151,5 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_ELEMENTS);
     return MPI_SUCCESS;
 }
+
+
