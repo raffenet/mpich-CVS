@@ -114,10 +114,10 @@ int vector_of_vectors_test(void)
     MPI_Type_commit(&outer_vector);
 /*     MPI_Type_size(outer_vector, &sizeoftype); */
     MPI_Pack_external_size("external32", 1, outer_vector, &sizeoftype);
-    if (sizeoftype != 4*sizeof(int)) {
+    if (sizeoftype != 4*4) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of type = %d; should be %d\n",
-			     sizeoftype, 4*sizeof(int));
+			     sizeoftype, 4*4);
 	return errs;
     }
 
@@ -213,13 +213,12 @@ int optimizable_vector_of_basics_test(void)
 
     int err, errs = 0;
 
-/*     MPI_Type_size(MPI_INT, &sizeofint); */
-    MPI_Pack_external_size("external32", 1, MPI_INT, &sizeoftype);
+    MPI_Pack_external_size("external32", 1, MPI_INT, &sizeofint);
 
-    if (sizeofint != sizeof(int)) {
+    if (sizeofint != 4) {
 	errs++;
-	if (verbose) fprintf(stderr, "size of MPI_Int = %d; should be %d\n",
-			     sizeofint, sizeof(int));
+	if (verbose) fprintf(stderr, "size of external32 MPI_INT = %d; should be %d\n",
+			     sizeofint, 4);
     }
 
     /* set up type */
@@ -235,10 +234,10 @@ int optimizable_vector_of_basics_test(void)
     MPI_Pack_external_size("external32", 1, parent_type, &sizeoftype);
 
 
-    if (sizeoftype != 20 * sizeof(int)) {
+    if (sizeoftype != 20 * sizeofint) {
 	errs++;
 	if (verbose) fprintf(stderr, "size of vector = %d; should be %d\n",
-			     sizeoftype, 20 * sizeof(int));
+			     sizeoftype, 20 * sizeofint);
     }
 
     buf = (char *) malloc(sizeoftype);
