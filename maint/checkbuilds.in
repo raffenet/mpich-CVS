@@ -15,18 +15,20 @@ $rundir = "";
 		  'error-messages;all;generic;class;none',
 		  'timings;none;all;runtime',
 		  'mpi-macros',
-		  'g;none;all;mem;dbg',
+		  'g;none;all;handle;mem;dbg',
 		  'internat',
 		  'fast',
 		  'f77',
 		  'cxx',
+		  'romio',
 		  'coverage',
 		  'strict',
-#		  'debugger'
-
+		  'weak_symbols;no;yes',
+#		  'debugger',
+#                 'threads;single;multiple',
 );
 @with_array = (
-	       'logging;rlog;dlog',
+	       'logging;none;rlog;dlog',
 	       'pmi;uni',
 	       'pm;forker;mpd',
 );

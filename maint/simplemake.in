@@ -2159,6 +2159,8 @@ sub FindWorkingAutoconf {
     if ($autoconf_version ne "") {
 	foreach $file (split(/:/,$autoconf)) {
 	    $lastfile = $file;
+	    # Grumble.  I need to redirect stderr to stdout before this
+	    # open
 	    if (open( ACFD, "$file --version 2>&1 |" ) ) {
 		$found_version = "";
 		while (<ACFD>) {
