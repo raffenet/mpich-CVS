@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
     struct sockaddr_un sa;
     char console_name[NAME_LEN], cmd[NAME_LEN];
     struct passwd *pwent;
+    char *s, **newargv;
 
     if ((pwent = getpwuid(getuid())) == NULL)    /* for real id */
     {
@@ -79,11 +80,24 @@ int main(int argc, char *argv[])
     setreuid(getuid(),getuid());
     setregid(getgid(),getgid());
 
+    newargv = (char **) malloc(sizeof(char*) * argc + 2);  /* pad a bit */
     strncpy(cmd,argv[0],NAME_LEN);
-    strncat(cmd,".py",NAME_LEN);
-    argv[0] = cmd;
-    execvp(cmd,&argv[0]);
-    printf("mpdroot failed to exec :%s:\n",cmd);
+    if (s = strrchr(cmd,'/'))
+    {
+        *(s+1) = '\0';
+    }
+    else
+    {
+        cmd[0] = '\0';
+    }
+    strncat(cmd,"mpdchkpyver.py",NAME_LEN);
+    /* printf("MPDROOT: CMD=%s\n",cmd); */
+    newargv[0] = cmd;
+    for (i=0; i < argc; i++)
+	newargv[i+1] = argv[i];
+    newargv[i+1] = 0;
+    execvp(cmd,&newargv[0]);
+    printf("mpdroot failed to exec :%s:\n",newargv[0]);
 
     return(0);
 }

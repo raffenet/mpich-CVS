@@ -24,9 +24,11 @@ class mpdError(Exception):
         self.args = args
 
 def mpd_check_python_version():
-    version = version_info    # (major,minor,micro,releaselevel,serial)
-    if (version[0] < 2)  or (version[0] == 2 and version[1] < 2):
-        mpd_raise('python version must be 2.2 or greater')
+    vinfo = version_info    # (major,minor,micro,releaselevel,serial)
+    if (vinfo[0] < 2)  or (vinfo[0] == 2 and vinfo[1] < 2):
+        # mpd_raise('python version must be 2.2 or greater')
+        return vinfo
+    return 0
 
 def mpd_set_my_id(Id):
     global myId

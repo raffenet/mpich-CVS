@@ -43,6 +43,9 @@ def mpdallexit():
         if msg['cmd'] == 'already_have_a_console':
             print 'mpd already has a console (e.g. for long ringtest); try later'
             exit(-1)
+        elif msg['cmd'] == 'invalid_username_to_make_this_request':
+            print 'you can not stop this mpd; it must have been started by root'
+            exit(-1)
         else:
             print 'mpdallexit failed: unexpected message from mpd: %s' % (msg)
             exit(-1)

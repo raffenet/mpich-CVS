@@ -28,11 +28,12 @@ SOURCES   = ${mpdroot_SOURCES} ${example_SOURCES}
 OBJECTS   = ${mpdroot_OBJECTS} ${example_OBJECTS}
 HEADERS   = mpdconf.h mpdroot.h
 
-CMDS_LN_ROOT  =  mpiexec mpdrun mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob
-CMDS_NO_ROOT  =  mpdexit mpdallexit mpdcleanup mpdhelp mpdboot mpd
-PYTHON_SOURCE =  mpiexec.py mpdrun.py mpdtrace.py mpdringtest.py mpdlistjobs.py \
-                 mpdkilljob.py mpdsigjob.py mpdexit.py mpdallexit.py mpdcleanup.py \
-                 mpdhelp.py mpdboot.py mpd.py mpdgdbdrv.py mpdman.py mpdlib.py
+MPD      = mpd
+CMDS     = mpiexec mpdrun mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob \
+           mpdexit mpdallexit mpdcleanup mpdhelp
+HELPERS  = mpdgdbdrv mpdman mpdlib mpdchkpyver
+
+PYTHON_SOURCE =  ${MPD} ${CMDS} ${HELPERS}
 
 mpdroot_SOURCES  = mpdroot.c
 example_SOURCES	 = sigcatcher.c infloop.c
@@ -68,7 +69,7 @@ clean:
 # echo "some of the following might be executables you want to remove"
 # ls -l | grep rwx
 distclean: clean
-	/bin/rm -f Makefile mpdconf.h ${PROGRAMS} ${CMDS_LN_ROOT} ${CMDS_NO_ROOT} \
+	/bin/rm -f Makefile mpdconf.h ${PROGRAMS} ${PYTHON_SOURCE} \
                    config.status config.cache config.log
 
 
@@ -96,18 +97,13 @@ install: all
 	    ${INSTALL} -m  755 mpdroot ${bindir}/mpdroot ;\
 	fi
 	@echo "copying python files/links into " ${bindir}
-	-@for cmd in ${CMDS_NO_ROOT} ; do \
-	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
-	    ${INSTALL} -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd ; \
-	    ${INSTALL} -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd.py ; \
-	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
-	done
-	-@for cmd in ${CMDS_LN_ROOT} mpdlib mpdman mpdgdbdrv ; do \
+	-@for cmd in ${PYTHON_SOURCE} ; do \
 	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
 	    ${INSTALL} -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd.py; \
 	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
 	done
-	-@for cmd in ${CMDS_LN_ROOT} ; do \
+	( cd ${bindir} && @LN_S@ -f mpd.py mpd ; )
+	-@for cmd in ${CMDS} ; do \
 	    ( cd ${bindir} && @LN_S@ -f mpdroot $$cmd ; ) \
 	done
 	-@${INSTALL} -m 755 ${srcdir}/mpigdb.sh ${bindir}/mpigdb

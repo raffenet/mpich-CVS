@@ -1160,7 +1160,10 @@ def _cleanup():
 if __name__ == '__main__':
     try:
         g.myId = gethostname() + '_no_port_yet' + '_' + `getpid()`  # chgd later
-        mpd_check_python_version()
+        vinfo = mpd_check_python_version()
+        if vinfo:
+            print "mpd: your python version must be >= 2.2 ; current version is:", vinfo
+            exit(-1)
         mpd_set_my_id(g.myId)  # chgd later
         proceduresToTrace = []
         for (symbol,symtype) in globals().items():
