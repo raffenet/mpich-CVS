@@ -120,8 +120,10 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
        don't take this into account, but if the code to handle the general 
        case is too messy, we'll add this in.
     */
-    n = group_ptr->size;
     if (group_ptr->rank != MPI_UNDEFINED) {
+	n = group_ptr->size;
+	/*printf( "group size = %d comm size = %d\n", n, 
+	  comm_ptr->remote_size ); */
 	mapping = (int *)MPIU_Malloc( n * sizeof(int) );
 	if (!mapping) {
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
@@ -134,17 +136,22 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	    /* FIXME - BUBBLE SORT */
 	    /* FIXME - NEEDS COMM_WORLD SPECIALIZATION */
 	    mapping[i] = -1;
-	    for (j=0; j<=comm_ptr->remote_size; j++) {
+	    for (j=0; j<comm_ptr->remote_size; j++) {
 		int comm_lpid;
 		MPID_VCR_Get_lpid( comm_ptr->vcr[j], &comm_lpid );
+		/*printf( "commlpid = %d, group[%d]lpid = %d\n",
+		  comm_lpid, i, group_ptr->lrank_to_lpid[i].lpid ); */
 		if (comm_lpid == group_ptr->lrank_to_lpid[i].lpid) {
 		    mapping[i] = j;
 		    break;
 		}
 	    }
 	    if (mapping[i] == -1) {
+		/*printf( "failed for %d entry (pid=%d)\n", i,
+		  group_ptr->lrank_to_lpid[i].lpid); */
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_GROUP, 
-						  "**group", 0 );
+						  "**groupnotincomm", 
+						  "**groupnotincomm %d", i );
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE );
 		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	    }
@@ -167,6 +174,8 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	newcomm_ptr->remote_group = group_ptr;
 	MPIU_Object_add_ref( group_ptr );
 	MPIU_Object_add_ref( group_ptr );
+
+	newcomm_ptr->coll_fns = 0;
 
 	/* Setup the communicator's vc table */
 	MPID_VCRT_Create( n, &newcomm_ptr->vcrt );
