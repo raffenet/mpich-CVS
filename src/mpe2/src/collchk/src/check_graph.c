@@ -10,6 +10,7 @@ int CollChk_check_graph(MPI_Comm comm, int nnodes, int *index, int* edges,
     char err_str[256], check[20];
     int idx, e;
 
+    e = -1;
     if (    CollChk_same_int(comm, nnodes, call, "Nnodes", err_str)
          != MPI_SUCCESS ) {
         return CollChk_err_han(err_str, COLLCHK_ERR_GRAPH, call, comm);
