@@ -46,7 +46,8 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
+int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+	      MPI_Comm comm, MPI_Request *request)
 {
     static const char FCNAME[] = "MPI_Isend";
     int mpi_errno = MPI_SUCCESS;
@@ -59,9 +60,9 @@ int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MP
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno) {
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
 	}
@@ -71,26 +72,30 @@ int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MP
 	    
     MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPI_ISEND);
 
+    /* ... body of routine ...  */
+    
     /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
 
+    /* Validate parameters if error checking is enabled */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPID_Datatype *datatype_ptr = NULL;
-
-            /* Validate comm_ptr */
+	    MPID_Datatype * datatype_ptr = NULL;
+	    
+	    MPIR_ERRTEST_COUNT(count, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+	    MPIR_ERRTEST_SEND_RANK(comm_ptr, dest, mpi_errno);
+	    MPIR_ERRTEST_SEND_TAG(tag, mpi_errno);
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_ISEND);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
-
-	    /* Validate datatype */
-	    MPID_Datatype_get_ptr( datatype, datatype_ptr );
-	    MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+	    
+	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
+            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_ISEND);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -118,6 +123,8 @@ int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MP
 	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_ISEND);
 	return MPI_SUCCESS;
     }
+    
+    /* ... end of body of routine ... */
     
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_ISEND);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
