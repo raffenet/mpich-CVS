@@ -53,25 +53,35 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
 
     nops_to_proc = 0;
     curr_ptr = win_ptr->rma_ops_list;
-    while (curr_ptr != NULL) {
-        if (curr_ptr->target_rank == dest) nops_to_proc++;
+    while (curr_ptr != NULL)
+    {
+        if (curr_ptr->target_rank == dest)
+	{
+	    nops_to_proc++;
+	}
         curr_ptr = curr_ptr->next;
     }
 
     reqs = (MPI_Request *) MPIU_Malloc((4*nops_to_proc+1)*sizeof(MPI_Request));
-    if (!reqs) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (!reqs)
+    {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
     
     tag = MPIDI_PASSIVE_TARGET_RMA_TAG;
     mpi_errno = NMPI_Isend(&nops_to_proc, 1, MPI_INT, dest,
                            tag, comm, reqs);
-    if (mpi_errno) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno)
+    {
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     /* For each RMA op, first send the type (put or get), target
        displ, count, datatype. Then issue an isend for a 
@@ -80,36 +90,48 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     rma_op_infos = (MPIDI_RMA_op_info *) 
         MPIU_Malloc((nops_to_proc+1) * sizeof(MPIDI_RMA_op_info));
     /* allocate one extra to avoid 0 size malloc */ 
-    if (!rma_op_infos) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (!rma_op_infos)
+    {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     dtype_infos = (MPIDI_RMA_dtype_info *)
         MPIU_Malloc((nops_to_proc+1)*sizeof(MPIDI_RMA_dtype_info));
     /* allocate one extra to avoid 0 size malloc */ 
-    if (!dtype_infos) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (!dtype_infos)
+    {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
     
     dataloops = (void **) MPIU_Malloc((nops_to_proc+1)*sizeof(void*));
     /* allocate one extra to avoid 0 size malloc */ 
-    if (!dataloops) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (!dataloops)
+    {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
     for (i=0; i<nops_to_proc; i++)
+    {
         dataloops[i] = NULL;
+    }
 
     i = 0;
     tag = 234;
     req_cnt = 1;
     curr_ptr = win_ptr->rma_ops_list;
-    while (curr_ptr != NULL) {
+    while (curr_ptr != NULL)
+    {
         rma_op_infos[i].type = curr_ptr->type;
         rma_op_infos[i].disp = curr_ptr->target_disp;
         rma_op_infos[i].count = curr_ptr->target_count;
@@ -117,37 +139,46 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         rma_op_infos[i].op = curr_ptr->op;
         rma_op_infos[i].lock_type = curr_ptr->lock_type;
 
-        if (rma_op_infos[i].type == MPIDI_RMA_LOCK) {
+        if (rma_op_infos[i].type == MPIDI_RMA_LOCK)
+	{
             rma_op_infos[i].datatype_kind = -1; /* undefined */
             /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
             mpi_errno = NMPI_Isend(&rma_op_infos[i],
                                    sizeof(MPIDI_RMA_op_info), MPI_BYTE, 
                                    dest, tag, comm,
-                                   &reqs[req_cnt]); 
-            if (mpi_errno) {
+                                   &reqs[req_cnt]);
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
             req_cnt++;
             tag++;
         }
         else if (HANDLE_GET_KIND(curr_ptr->target_datatype) ==
-                 HANDLE_KIND_BUILTIN) {
+                 HANDLE_KIND_BUILTIN)
+	{
             /* basic datatype. send only the rma_op_info struct */
             rma_op_infos[i].datatype_kind = MPIDI_RMA_DATATYPE_BASIC;
             /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
             mpi_errno = NMPI_Isend(&rma_op_infos[i],
                                    sizeof(MPIDI_RMA_op_info), MPI_BYTE, 
                                    dest, tag, comm,
-                                   &reqs[req_cnt]); 
-            if (mpi_errno) {
+                                   &reqs[req_cnt]);
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
             req_cnt++;
             tag++;
         }
-        else {
+        else
+	{
             /* derived datatype. send rma_op_info_struct as well
                as derived datatype information */
             
@@ -170,11 +201,14 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
             dtype_infos[i].has_sticky_lb = dtp->has_sticky_lb;
             
             dataloops[i] = MPIU_Malloc(dtp->loopsize);
-            if (!dataloops[i]) {
+	    /* --BEGIN ERROR HANDLING-- */
+            if (!dataloops[i])
+	    {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
             memcpy(dataloops[i], dtp->loopinfo, dtp->loopsize);
             
             /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
@@ -182,10 +216,13 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
                                    sizeof(MPIDI_RMA_op_info), MPI_BYTE, 
                                    dest, tag, comm,
                                    &reqs[req_cnt]); 
-            if (mpi_errno) {
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
             req_cnt++;
             tag++;
             
@@ -195,10 +232,13 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
                                    sizeof(MPIDI_RMA_dtype_info), MPI_BYTE, 
                                    dest, tag, comm,
                                    &reqs[req_cnt]); 
-            if (mpi_errno) {
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
             req_cnt++;
             tag++;
             
@@ -206,10 +246,13 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
                                    dtp->loopsize, MPI_BYTE, 
                                    dest, tag, comm,
                                    &reqs[req_cnt]); 
-            if (mpi_errno) {
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
             req_cnt++;
             tag++;
             
@@ -219,58 +262,71 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
 
         /* now send or recv the data */
         if ((curr_ptr->type == MPIDI_RMA_PUT) ||
-            (curr_ptr->type == MPIDI_RMA_ACCUMULATE)) {
+            (curr_ptr->type == MPIDI_RMA_ACCUMULATE))
+	{
             mpi_errno = NMPI_Isend(curr_ptr->origin_addr,
                                    curr_ptr->origin_count,
                                    curr_ptr->origin_datatype,
                                    dest, tag, comm,
                                    &reqs[req_cnt]); 
             if (HANDLE_GET_KIND(curr_ptr->origin_datatype) !=
-                HANDLE_KIND_BUILTIN) {  
+                HANDLE_KIND_BUILTIN)
+	    {
                 MPID_Datatype_get_ptr(curr_ptr->origin_datatype, dtp);
                 MPID_Datatype_release(dtp);
             }
             req_cnt++;
             tag++;
         }
-        else if (curr_ptr->type == MPIDI_RMA_GET) {
+        else if (curr_ptr->type == MPIDI_RMA_GET)
+	{
             mpi_errno = NMPI_Irecv(curr_ptr->origin_addr,
                                    curr_ptr->origin_count,
                                    curr_ptr->origin_datatype,
                                    dest, tag, comm,
                                    &reqs[req_cnt]); 
             if (HANDLE_GET_KIND(curr_ptr->origin_datatype) !=
-                HANDLE_KIND_BUILTIN) {  
+                HANDLE_KIND_BUILTIN)
+	    {
                 MPID_Datatype_get_ptr(curr_ptr->origin_datatype, dtp);
                 MPID_Datatype_release(dtp);
             }
             req_cnt++;
             tag++;
         }
-        if (mpi_errno) {
+	/* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+	{
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
         
         curr_ptr = curr_ptr->next;
         i++;
     }        
 
     mpi_errno = NMPI_Waitall(req_cnt, reqs, MPI_STATUSES_IGNORE);
-    if (mpi_errno) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno)
+    {
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     /* Passive target RMA must be complete at target when unlock
        returns. Therefore we need ack from target that it is done. */
     mpi_errno = NMPI_Recv(&i, 0, MPI_INT, dest,
                           MPIDI_PASSIVE_TARGET_DONE_TAG, comm,
-                          MPI_STATUS_IGNORE); 
-    if (mpi_errno) {
+                          MPI_STATUS_IGNORE);
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno)
+    {
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     MPIR_Nest_decr();
 
@@ -278,13 +334,18 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     MPIU_Free(rma_op_infos);
     MPIU_Free(dtype_infos);
     for (i=0; i<nops_to_proc; i++)
-        if (dataloops[i] != NULL) 
+    {
+        if (dataloops[i] != NULL)
+	{
             MPIU_Free(dataloops[i]);
+	}
+    }
     MPIU_Free(dataloops);
 
     /* free rma_ops_list */
     curr_ptr = win_ptr->rma_ops_list;
-    while (curr_ptr != NULL) {
+    while (curr_ptr != NULL)
+    {
         next_ptr = curr_ptr->next;
         MPIU_Free(curr_ptr);
         curr_ptr = next_ptr;

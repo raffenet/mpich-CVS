@@ -57,7 +57,9 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     HPMP_IO_OPEN_START(fl_xmpi, comm);
 #endif /* MPI_hpux */
 
-    if (comm == MPI_COMM_NULL) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (comm == MPI_COMM_NULL)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_COMM, "**comm", 0);
 	return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
@@ -70,9 +72,12 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     MPI_Comm_test_inter(comm, &flag);
-    if (flag) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (flag)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_COMM, 
 	    "**commnotintra", 0);
@@ -88,7 +93,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     }
 
     if ( ((amode&MPI_MODE_RDONLY)?1:0) + ((amode&MPI_MODE_RDWR)?1:0) +
-	 ((amode&MPI_MODE_WRONLY)?1:0) != 1 ) {
+	 ((amode&MPI_MODE_WRONLY)?1:0) != 1 )
+    {
 #ifdef MPICH2
 	     error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_AMODE, 
 		 "**fileamodeone", 0);
@@ -104,7 +110,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     }
 
     if ((amode & MPI_MODE_RDONLY) && 
-            ((amode & MPI_MODE_CREATE) || (amode & MPI_MODE_EXCL))) {
+            ((amode & MPI_MODE_CREATE) || (amode & MPI_MODE_EXCL)))
+    {
 #ifdef MPICH2
 		error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_AMODE, 
 		    "**fileamoderead", 0);
@@ -119,7 +126,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 #endif
     }
 
-    if ((amode & MPI_MODE_RDWR) && (amode & MPI_MODE_SEQUENTIAL)) {
+    if ((amode & MPI_MODE_RDWR) && (amode & MPI_MODE_SEQUENTIAL))
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_AMODE, 
 	    "**fileamodeseq", 0);
@@ -133,6 +141,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
 /* check if amode is the same on all processes */
     MPI_Comm_dup(comm, &dupcomm);
@@ -148,7 +157,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 */
 
 /* check if ADIO has been initialized. If not, initialize it */
-    if (ADIO_Init_keyval == MPI_KEYVAL_INVALID) {
+    if (ADIO_Init_keyval == MPI_KEYVAL_INVALID)
+    {
 
 /* check if MPI itself has been initialized. If not, flag an error.
    Can't initialize it here, because don't know argc, argv */
@@ -180,7 +190,9 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 
     /* resolve file system type from file name; this is a collective call */
     ADIO_ResolveFileType(dupcomm, filename, &file_system, &fsops, &error_code);
-    if (error_code != MPI_SUCCESS) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (error_code != MPI_SUCCESS)
+    {
 	/* ADIO_ResolveFileType() will print as informative a message as it
 	 * possibly can or call MPIR_Err_setmsg.  We just need to propagate 
 	 * the error up.  In the PRINT_ERR_MSG case MPI_Abort has already
@@ -202,7 +214,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
      *  these tests here. -- Rob, 06/06/2001
      */
     if (((file_system == ADIO_PIOFS) || (file_system == ADIO_PVFS) || (file_system == ADIO_PVFS2)) && 
-        (amode & MPI_MODE_SEQUENTIAL)) {
+        (amode & MPI_MODE_SEQUENTIAL))
+    {
 #ifdef MPICH2
 	    error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, 
 		"**iosequnsupported", 0);
@@ -216,6 +229,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     /* strip off prefix if there is one */
     tmp = strchr(filename, ':');

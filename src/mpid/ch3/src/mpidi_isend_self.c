@@ -33,6 +33,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     match.tag = tag;
     match.context_id = comm->context_id + context_offset;
     rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&match, &found);
+    /* --BEGIN ERROR HANDLING-- */
     if (rreq == NULL)
     {
 	MPIU_Object_set_ref(sreq, 0);
@@ -41,6 +42,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_NO_MEM, "**nomem", 0);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     vc = comm->vcr[rank];
     MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
@@ -82,6 +84,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	}
 	else
 	{
+	    /* --BEGIN ERROR HANDLING-- */
 	    MPIDI_DBG_PRINTF((15, FCNAME, "ready send unable to find matching recv req"));
 	    sreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 							  "**rsendnomatch", "**rsendnomatch %d %d", rank, tag);
@@ -94,6 +97,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	    /* sreq has never been seen by the user or outside this thread, so it is safe to reset ref_count and cc */
 	    MPIU_Object_set_ref(sreq, 1);
 	    sreq->cc = 0;
+	    /* --END ERROR HANDLING-- */
 	}
 	    
 	MPIDI_Request_set_msg_type(rreq, MPIDI_REQUEST_SELF_MSG);

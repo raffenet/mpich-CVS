@@ -42,8 +42,10 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 #endif
     MPI_Offset curr_offset, eof_offset, tmp_offset;
 
+    /* --BEGIN ERROR HANDLING-- */
 #ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
+    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE))
+    {
 	FPRINTF(stderr, "MPI_File_seek_shared: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
@@ -51,7 +53,8 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
     ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
-    if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
+    if (fh->access_mode & MPI_MODE_SEQUENTIAL)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION,
 	    "**ioamodeseq", 0);
@@ -66,7 +69,8 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 #endif
     }
 
-    if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS)|| (fh->file_system == ADIO_PVFS2)) {
+    if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS)|| (fh->file_system == ADIO_PVFS2))
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, 
 	    "**iosharedunsupported", 0);
@@ -80,10 +84,13 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 	return ADIOI_Error(fh, error_code, myname);
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     tmp_offset = offset;
     MPI_Bcast(&tmp_offset, 1, ADIO_OFFSET, 0, fh->comm);
-    if (tmp_offset != offset) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (tmp_offset != offset)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG, "**notsame", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
@@ -96,10 +103,13 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 	return ADIOI_Error(fh, error_code, myname);
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     tmp_whence = whence;
     MPI_Bcast(&tmp_whence, 1, MPI_INT, 0, fh->comm);
-    if (tmp_whence != whence) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (tmp_whence != whence)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG,
 	    "**iobadwhence", 0);
@@ -113,15 +123,20 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 	return ADIOI_Error(fh, error_code, myname);
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     ADIOI_TEST_DEFERRED(fh, "MPI_File_seek_shared", &error_code);
 
     MPI_Comm_rank(fh->comm, &myrank);
 
-    if (!myrank) {
-	switch(whence) {
+    if (!myrank)
+    {
+	switch(whence)
+	{
 	case MPI_SEEK_SET:
-	    if (offset < 0) {
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (offset < 0)
+	    {
 #ifdef MPICH2
 		error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG,
 		    "**iobadoffset", 0);
@@ -130,27 +145,33 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 		FPRINTF(stderr, "MPI_File_seek_shared: Invalid offset argument\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_OFFSET_ARG,
+		error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_OFFSET_ARG,
 				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);	    
+		return ADIOI_Error(fh, error_code, myname);	    
 #endif
 	    }
+	    /* --END ERROR HANDLING-- */
 	    break;
 	case MPI_SEEK_CUR:
 	    /* get current location of shared file pointer */
 	    ADIO_Get_shared_fp(fh, 0, &curr_offset, &error_code);
-	    if (error_code != MPI_SUCCESS) {
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (error_code != MPI_SUCCESS)
+	    {
 #ifdef MPICH2
 		error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, myname, __LINE__, MPI_ERR_INTERN, 
-	    "**iosharedfailed", 0);
+		    "**iosharedfailed", 0);
 		return MPIR_Err_return_file(fh, myname, error_code);
 #else
 		FPRINTF(stderr, "MPI_File_seek_shared: Error! Could not access shared file pointer.\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
 #endif
 	    }
+	    /* --END ERROR HANDLING-- */
 	    offset += curr_offset;
-	    if (offset < 0) {
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (offset < 0)
+	    {
 #ifdef MPICH2
 		error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG,
 		    "**ionegoffset", 0);
@@ -159,17 +180,20 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 		FPRINTF(stderr, "MPI_File_seek_shared: offset points to a negative location in the file\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_OFFSET_ARG_NEG,
+		error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_OFFSET_ARG_NEG,
 				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);	    
+		return ADIOI_Error(fh, error_code, myname);	    
 #endif
 	    }
+	    /* --END ERROR HANDLING-- */
 	    break;
 	case MPI_SEEK_END:
 	    /* find offset corr. to end of file */
 	    ADIOI_Get_eof_offset(fh, &eof_offset);
 	    offset += eof_offset;
-	    if (offset < 0) {
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (offset < 0)
+	    {
 #ifdef MPICH2
 		error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG,
 		    "**ionegoffset", 0);
@@ -178,13 +202,15 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 		FPRINTF(stderr, "MPI_File_seek_shared: offset points to a negative location in the file\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_OFFSET_ARG_NEG,
+		error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_OFFSET_ARG_NEG,
 				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);	    
+		return ADIOI_Error(fh, error_code, myname);	    
 #endif
 	    }
+	    /* --END ERROR HANDLING-- */
 	    break;
 	default:
+	    /* --BEGIN ERROR HANDLING-- */
 #ifdef MPICH2
 	    error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG,
 		"**iobadwhence", 0);
@@ -197,6 +223,7 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 				     myname, (char *) 0, (char *) 0);
 	    return ADIOI_Error(fh, error_code, myname);
 #endif
+	    /* --END ERROR HANDLING-- */
 	}
 
 	ADIO_Set_shared_fp(fh, offset, &error_code);

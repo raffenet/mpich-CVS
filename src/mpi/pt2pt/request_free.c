@@ -145,7 +145,8 @@ int MPI_Request_free(MPI_Request *request)
 
     MPID_Request_release(request_ptr);
     *request = MPI_REQUEST_NULL;
-    
+
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
@@ -156,4 +157,5 @@ int MPI_Request_free(MPI_Request *request)
 #endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_FREE);
     return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

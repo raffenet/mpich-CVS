@@ -53,7 +53,13 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 	    {
                 /* accumulate data from tmp_buf into user_buf */
                 mpi_errno = do_accumulate_op(rreq);
-                if (mpi_errno) goto fn_exit;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    goto fn_exit;
+		}
+		/* --END ERROR HANDLING-- */
 
                 /* atomically decrement RMA completion counter */
                 /* FIXME: MT: this has to be done atomically */
@@ -91,12 +97,14 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
                 rreq->dev.segment_size = rreq->dev.recv_data_sz;
 
                 mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
+		/* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno != MPI_SUCCESS)
                 {
                     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
 						     "**ch3|loadrecviov", 0);
                     goto fn_exit;
                 }
+		/* --END ERROR HANDLING-- */
 
 		*complete = FALSE;
             }
@@ -119,7 +127,9 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
                                                       &true_lb, &true_extent);
 		MPIR_Nest_decr();
 		/* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno) {
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		    goto fn_exit;
 		}
 		/* --END ERROR HANDLING-- */
@@ -129,7 +139,8 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
                 tmp_buf = MPIU_Malloc(rreq->dev.user_count * 
                                       (MPIR_MAX(extent,true_extent)));  
 		/* --BEGIN ERROR HANDLING-- */
-                if (!tmp_buf) {
+                if (!tmp_buf)
+		{
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 						      "**nomem", 0 );
                     goto fn_exit;
@@ -156,12 +167,14 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
                 rreq->dev.segment_size = rreq->dev.recv_data_sz;
 
                 mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
+		/* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno != MPI_SUCCESS)
                 {
                     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
 						     "**ch3|loadrecviov", 0);
                     goto fn_exit;
                 }
+		/* --END ERROR HANDLING-- */
 
 		*complete = FALSE;
             }
@@ -208,6 +221,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
                     iov_n += 1;
 		
                     mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
+		    /* --BEGIN ERROR HANDLING-- */
                     if (mpi_errno != MPI_SUCCESS)
                     {
                         MPIU_Object_set_ref(sreq, 0);
@@ -217,12 +231,14 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 							 "**ch3|rmamsg", 0);
                         goto fn_exit;
                     }
+		    /* --END ERROR HANDLING-- */
                 }
 
                 /* mark receive data transfer as complete and decrement CC in receive request */
 		MPIDI_CH3U_Request_complete(rreq);
 		*complete = TRUE;
             }
+	    /* --BEGIN ERROR HANDLING-- */
 	    else
 	    {
 		/* We shouldn't reach this code because the only other request types are sends */
@@ -230,6 +246,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 		MPIDI_CH3U_Request_complete(rreq);
 		*complete = TRUE;
 	    }
+	    /* --END ERROR HANDLING-- */
 	    
 	    break;
 	}
@@ -274,7 +291,13 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 	    {
                 /* accumulate data from tmp_buf into user_buf */
                 mpi_errno = do_accumulate_op(rreq);
-                if (mpi_errno) goto fn_exit;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    goto fn_exit;
+		}
+		/* --END ERROR HANDLING-- */
 
                 /* atomically decrement RMA completion counter */
                 /* FIXME: MT: this has to be done atomically */
@@ -293,12 +316,14 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 	{
 	    MPIDI_CH3U_Request_unpack_srbuf(rreq);
 	    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadrecviov",
 						 "**ch3|loadrecviov %s", "MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV");
 		goto fn_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 	    *complete = FALSE;
 	    break;
 	}
@@ -306,16 +331,19 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 	case MPIDI_CH3_CA_RELOAD_IOV:
 	{
 	    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadrecviov",
 						 "**ch3|loadrecviov %s", "MPIDI_CH3_CA_RELOAD_IOV");
 		goto fn_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 	    *complete = FALSE;
 	    break;
 	}
-	
+
+	/* --BEGIN ERROR HANDLING-- */
 	default:
 	{
 	    *complete = TRUE;
@@ -323,6 +351,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 					     "**ch3|badca %d", rreq->dev.ca);
 	    break;
 	}
+	/* --END ERROR HANDLING-- */
     }
 
   fn_exit:
@@ -346,10 +375,13 @@ static int create_derived_datatype(MPID_Request *req, MPID_Datatype **dtp)
 
     /* allocate new datatype object and handle */
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
-    if (!new_dtp) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (!new_dtp)
+    {
         mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     *dtp = new_dtp;
             
@@ -394,31 +426,45 @@ static int do_accumulate_op(MPID_Request *rreq)
     MPI_Aint true_lb, true_extent;
     MPI_User_function *uop;
 
-    if (rreq->dev.op == MPI_REPLACE) {
+    if (rreq->dev.op == MPI_REPLACE)
+    {
         /* simply copy the data */
         mpi_errno = MPIR_Localcopy(rreq->dev.user_buf, rreq->dev.user_count,
                                    rreq->dev.datatype,
                                    rreq->dev.real_user_buf,
                                    rreq->dev.user_count,
-                                   rreq->dev.datatype);  
-        if (mpi_errno) return mpi_errno;
+                                   rreq->dev.datatype);
+	/* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
+	/* --END ERROR HANDLING-- */
         goto fn_exit;
     }
 
-    if (HANDLE_GET_KIND(rreq->dev.op) == HANDLE_KIND_BUILTIN) {
+    if (HANDLE_GET_KIND(rreq->dev.op) == HANDLE_KIND_BUILTIN)
+    {
         /* get the function by indexing into the op table */
         uop = MPIR_Op_table[(rreq->dev.op)%16 - 1];
     }
-    else {
+    else
+    {
+	/* --BEGIN ERROR HANDLING-- */
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP, "**opnotpredefined", "**opnotpredefined %d", rreq->dev.op );
         return mpi_errno;
+	/* --END ERROR HANDLING-- */
     }
     
-    if (HANDLE_GET_KIND(rreq->dev.datatype) == HANDLE_KIND_BUILTIN) {
+    if (HANDLE_GET_KIND(rreq->dev.datatype) == HANDLE_KIND_BUILTIN)
+    {
         (*uop)(rreq->dev.user_buf, rreq->dev.real_user_buf,
                &(rreq->dev.user_count), &(rreq->dev.datatype));
     }
-    else { /* derived datatype */
+    else
+    {
+	/* derived datatype */
         MPID_Segment *segp;
         DLOOP_VECTOR *dloop_vec;
         MPI_Aint first, last;
@@ -427,10 +473,13 @@ static int do_accumulate_op(MPID_Request *rreq)
         MPID_Datatype *dtp;
         
         segp = MPID_Segment_alloc();
-        if (!segp) {
+	/* --BEGIN ERROR HANDLING-- */
+        if (!segp)
+	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 ); 
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
         MPID_Segment_init(NULL, rreq->dev.user_count, rreq->dev.datatype, segp);
         first = 0;
         last  = SEGMENT_IGNORE_LAST;
@@ -440,16 +489,20 @@ static int do_accumulate_op(MPID_Request *rreq)
         /* +1 needed because Rob says so */
         dloop_vec = (DLOOP_VECTOR *)
             MPIU_Malloc(vec_len * sizeof(DLOOP_VECTOR));
-        if (!dloop_vec) {
+	/* --BEGIN ERROR HANDLING-- */
+        if (!dloop_vec)
+	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 ); 
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
         
         MPID_Segment_pack_vector(segp, first, &last, dloop_vec, &vec_len);
         
         type = dtp->eltype;
         type_size = MPID_Datatype_get_basic_size(type);
-        for (i=0; i<vec_len; i++) {
+        for (i=0; i<vec_len; i++)
+	{
             count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
             (*uop)((char *)rreq->dev.user_buf + POINTER_TO_AINT( dloop_vec[i].DLOOP_VECTOR_BUF ),
                    (char *)rreq->dev.real_user_buf + POINTER_TO_AINT( dloop_vec[i].DLOOP_VECTOR_BUF ),
@@ -463,8 +516,14 @@ static int do_accumulate_op(MPID_Request *rreq)
  fn_exit:
     /* free the temporary buffer */
     mpi_errno = NMPI_Type_get_true_extent(rreq->dev.datatype, 
-                                          &true_lb, &true_extent); 
-    if (mpi_errno) return mpi_errno;
+                                          &true_lb, &true_extent);
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	return mpi_errno;
+    }
+    /* --END ERROR HANDLING-- */
     
     MPIU_Free((char *) rreq->dev.user_buf + true_lb);
 

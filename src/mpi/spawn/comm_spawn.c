@@ -113,9 +113,11 @@ int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info,
 	return MPI_SUCCESS;
     }
 
+    /* --BEGIN ERROR HANDLING-- */
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_spawn", "**mpi_comm_spawn %s %p %d %I %d %C %p %p",
 	command, argv, maxprocs, info, root, comm, intercomm, array_of_errcodes);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPAWN);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

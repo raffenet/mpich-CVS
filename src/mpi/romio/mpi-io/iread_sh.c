@@ -76,8 +76,10 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
     ADIO_Status status;
     ADIO_Offset off, shared_fp;
 
+    /* --BEGIN ERROR HANDLING-- */
 #ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
+    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE))
+    {
 	FPRINTF(stderr, "MPI_File_iread_shared: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
@@ -85,7 +87,8 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
     ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
-    if (count < 0) {
+    if (count < 0)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG, "**iobadcount", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
@@ -99,7 +102,8 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
 #endif
     }
 
-    if (datatype == MPI_DATATYPE_NULL) {
+    if (datatype == MPI_DATATYPE_NULL)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_TYPE, 
 	    "**dtypenull", 0);
@@ -113,10 +117,13 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
 	return ADIOI_Error(fh, error_code, myname);	    
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     MPI_Type_size(datatype, &datatype_size);
 
-    if ((count*datatype_size) % fh->etype_size != 0) {
+    /* --BEGIN ERROR HANDLING-- */
+    if ((count*datatype_size) % fh->etype_size != 0)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, 
 	    "**ioetype", 0);
@@ -131,7 +138,8 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
 #endif
     }
 
-    if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS) || (fh->file_system == ADIO_PVFS2)) {
+    if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS) || (fh->file_system == ADIO_PVFS2))
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, 
 	    "**iosharedunsupported", 0);
@@ -145,6 +153,7 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
 	return ADIOI_Error(fh, error_code, myname);
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fh->filetype, &filetype_is_contig);
@@ -153,20 +162,27 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
 
     incr = (count*datatype_size)/fh->etype_size;
     ADIO_Get_shared_fp(fh, incr, &shared_fp, &error_code);
-    if (error_code != MPI_SUCCESS) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (error_code != MPI_SUCCESS)
+    {
 	FPRINTF(stderr, "MPI_File_iread_shared: Error! Could not access shared file pointer.\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
+    /* --END ERROR HANDLING-- */
 
     /* contiguous or strided? */
-    if (buftype_is_contig && filetype_is_contig) {
+    if (buftype_is_contig && filetype_is_contig)
+    {
     /* convert count and shared_fp to bytes */
 	bufsize = datatype_size * count;
 	off = fh->disp + fh->etype_size * shared_fp;
         if (!(fh->atomicity))
+	{
 	    ADIO_IreadContig(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
-			off, request, &error_code); 
-        else {
+			off, request, &error_code);
+	}
+        else
+	{
             /* to maintain strict atomicity semantics with other concurrent
               operations, lock (exclusive) and call blocking routine */
 
@@ -178,21 +194,28 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
 	    (*request)->handle = 0;
 
             if (fh->file_system != ADIO_NFS)
+	    {
                 ADIOI_WRITE_LOCK(fh, off, SEEK_SET, bufsize);
+	    }
 
             ADIO_ReadContig(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET, off, 
                     &status, &error_code);  
 
             if (fh->file_system != ADIO_NFS)
+	    {
                 ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
+	    }
 
             fh->async_count++;
             /* status info. must be linked to the request structure, so that it
                can be accessed later from a wait */
         }
     }
-    else ADIO_IreadStrided(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
-			   shared_fp, request, &error_code); 
+    else
+    {
+	ADIO_IreadStrided(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
+			   shared_fp, request, &error_code);
+    }
 
     return error_code;
 }

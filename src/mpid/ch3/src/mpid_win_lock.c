@@ -26,17 +26,21 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
 
     curr_ptr = win_ptr->rma_ops_list;
     prev_ptr = curr_ptr;
-    while (curr_ptr != NULL) {
+    while (curr_ptr != NULL)
+    {
         prev_ptr = curr_ptr;
         curr_ptr = curr_ptr->next;
     }
 
     new_ptr = (MPIDI_RMA_ops *) MPIU_Malloc(sizeof(MPIDI_RMA_ops));
-    if (!new_ptr) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (!new_ptr)
+    {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_LOCK);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
     if (prev_ptr != NULL)
         prev_ptr->next = new_ptr;
     else 

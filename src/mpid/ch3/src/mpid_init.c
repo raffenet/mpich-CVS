@@ -103,6 +103,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
      * Let the channel perform any necessary initialization
      */
     mpi_errno = MPIDI_CH3_Init(has_args, has_env, &has_parent);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init", 0);
@@ -116,6 +117,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	return mpi_errno;
     }
 #endif
+    /* --END ERROR HANDLING-- */
 
     /* MT:  only single threaded applications are supported at the moment... */
     if (provided != NULL)

@@ -44,8 +44,10 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
     static char myname[] = "MPI_FILE_WRITE_AT_ALL_BEGIN";
 #endif
 
+    /* --BEGIN ERROR HANDLING-- */
 #ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
+    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE))
+    {
 	FPRINTF(stderr, "MPI_File_write_at_all_begin: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
@@ -53,7 +55,8 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
     ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
-    if (offset < 0) {
+    if (offset < 0)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG, "**iobadoffset", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
@@ -67,7 +70,8 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
 #endif
     }
 
-    if (count < 0) {
+    if (count < 0)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG, "**iobadcount", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
@@ -81,7 +85,8 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
 #endif
     }
 
-    if (datatype == MPI_DATATYPE_NULL) {
+    if (datatype == MPI_DATATYPE_NULL)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_TYPE, 
 	    "**dtypenull", 0);
@@ -96,7 +101,8 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
 #endif
     }
 
-    if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
+    if (fh->access_mode & MPI_MODE_SEQUENTIAL)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, 
 	    "**ioamodeseq", 0);
@@ -111,7 +117,8 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
 #endif
     }
 
-    if (fh->split_coll_count) {
+    if (fh->split_coll_count)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, 
 	    "**iosplitcoll", 0);
@@ -125,11 +132,14 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
 	return ADIOI_Error(fh, error_code, myname);
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     fh->split_coll_count = 1;
 
     MPI_Type_size(datatype, &datatype_size);
-    if ((count*datatype_size) % fh->etype_size != 0) {
+    /* --BEGIN ERROR HANDLING-- */
+    if ((count*datatype_size) % fh->etype_size != 0)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, 
 	    "**ioetype", 0);
@@ -143,6 +153,7 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
 	return ADIOI_Error(fh, error_code, myname);	    
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     fh->split_datatype = datatype;
     ADIO_WriteStridedColl(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,

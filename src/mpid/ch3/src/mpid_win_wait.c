@@ -19,17 +19,24 @@ int MPID_Win_wait(MPID_Win *win_ptr)
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_WAIT);
 
     /* wait for all operations from other processes to finish */
-    while (win_ptr->my_counter) {
+    while (win_ptr->my_counter)
+    {
         MPID_Progress_start();
-        if (win_ptr->my_counter) {
+        if (win_ptr->my_counter)
+	{
             mpi_errno = MPID_Progress_wait();
-            if (mpi_errno != MPI_SUCCESS) {
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno != MPI_SUCCESS)
+	    {
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
         }
-        else 
+        else
+	{
             MPID_Progress_end();
+	}
     } 
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);

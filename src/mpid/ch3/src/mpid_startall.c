@@ -82,7 +82,9 @@ int MPID_Startall(int count, MPID_Request * requests[])
 		}
 		else
 		{
+		    /* --BEGIN ERROR HANDLING-- */
 		    rc = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		    /* --END ERROR HANDLING-- */
 		}
 		
 		break;
@@ -90,8 +92,10 @@ int MPID_Startall(int count, MPID_Request * requests[])
 
 	    default:
 	    {
+		/* --BEGIN ERROR HANDLING-- */
 		rc = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**ch3|badreqtype",
 					  "**ch3|badreqtype %d", MPIDI_Request_get_type(preq));
+		/* --END ERROR HANDLING-- */
 	    }
 	}
 	

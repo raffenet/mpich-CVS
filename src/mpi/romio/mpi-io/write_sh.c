@@ -59,7 +59,9 @@ int MPI_File_write_shared(MPI_File fh, void *buf, int count,
     ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
-    if (count < 0) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (count < 0)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG, 
 	    "**iobadcount", 0);
@@ -74,7 +76,8 @@ int MPI_File_write_shared(MPI_File fh, void *buf, int count,
 #endif
     }
 
-    if (datatype == MPI_DATATYPE_NULL) {
+    if (datatype == MPI_DATATYPE_NULL)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_TYPE, 
 	    "**dtypenull", 0);
@@ -88,6 +91,7 @@ int MPI_File_write_shared(MPI_File fh, void *buf, int count,
 	return ADIOI_Error(fh, error_code, myname);	    
 #endif
     }
+    /* --BEGIN ERROR HANDLING-- */
 
     MPI_Type_size(datatype, &datatype_size);
     if (count*datatype_size == 0) {
@@ -97,7 +101,9 @@ int MPI_File_write_shared(MPI_File fh, void *buf, int count,
 	return MPI_SUCCESS; 
     }
 
-    if ((count*datatype_size) % fh->etype_size != 0) {
+    /* --BEGIN ERROR HANDLING-- */
+    if ((count*datatype_size) % fh->etype_size != 0)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, 
 	    "**ioetype", 0);
@@ -112,7 +118,8 @@ int MPI_File_write_shared(MPI_File fh, void *buf, int count,
 #endif
     }
 
-    if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS)|| (fh->file_system == ADIO_PVFS2)) {
+    if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS)|| (fh->file_system == ADIO_PVFS2))
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, "**iosharedunsupported", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
@@ -125,6 +132,7 @@ int MPI_File_write_shared(MPI_File fh, void *buf, int count,
 	return ADIOI_Error(fh, error_code, myname);
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fh->filetype, &filetype_is_contig);
@@ -133,7 +141,9 @@ int MPI_File_write_shared(MPI_File fh, void *buf, int count,
 
     incr = (count*datatype_size)/fh->etype_size;
     ADIO_Get_shared_fp(fh, incr, &shared_fp, &error_code);
-    if (error_code != MPI_SUCCESS) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (error_code != MPI_SUCCESS)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, myname, __LINE__, MPI_ERR_INTERN, 
 					  "**iosharedfailed", 0);
@@ -143,9 +153,11 @@ int MPI_File_write_shared(MPI_File fh, void *buf, int count,
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     /* contiguous or strided? */
-    if (buftype_is_contig && filetype_is_contig) {
+    if (buftype_is_contig && filetype_is_contig)
+    {
         /* convert bufocunt and shared_fp to bytes */
 	bufsize = datatype_size * count;
 	off = fh->disp + fh->etype_size * shared_fp;
@@ -164,9 +176,11 @@ int MPI_File_write_shared(MPI_File fh, void *buf, int count,
             ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
     }
     else
+    {
 	ADIO_WriteStrided(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
-			 shared_fp, status, &error_code); 
-    /* For strided and atomic mode, locking is done in ADIO_WriteStrided */
+			 shared_fp, status, &error_code);
+	/* For strided and atomic mode, locking is done in ADIO_WriteStrided */
+    }
 
     return error_code;
 }

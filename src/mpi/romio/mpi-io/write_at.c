@@ -58,8 +58,10 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
     HPMP_IO_START(fl_xmpi, BLKMPIFILEWRITEAT, TRDTBLOCK, fh, datatype, count);
 #endif /* MPI_hpux */
 
+    /* --BEGIN ERROR HANDLING-- */
 #ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
+    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE))
+    {
 	FPRINTF(stderr, "MPI_File_write_at: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
@@ -67,7 +69,8 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
     ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
-    if (offset < 0) {
+    if (offset < 0)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG, 
 	    "**iobadoffset", 0);
@@ -82,7 +85,8 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
 #endif
     }
 
-    if (count < 0) {
+    if (count < 0)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG,
 	    "**iobadcount", 0);
@@ -97,7 +101,8 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
 #endif
     }
 
-    if (datatype == MPI_DATATYPE_NULL) {
+    if (datatype == MPI_DATATYPE_NULL)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_TYPE,
 	    "**dtypenull", 0);
@@ -111,9 +116,11 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
 	return ADIOI_Error(fh, error_code, myname);	    
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     MPI_Type_size(datatype, &datatype_size);
-    if (count*datatype_size == 0) {
+    if (count*datatype_size == 0)
+    {
 #ifdef MPI_hpux
 	HPMP_IO_END(fl_xmpi, fh, datatype, count);
 #endif /* MPI_hpux */
@@ -124,7 +131,9 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
 	return MPI_SUCCESS;
     }
 
-    if ((count*datatype_size) % fh->etype_size != 0) {
+    /* --BEGIN ERROR HANDLING-- */
+    if ((count*datatype_size) % fh->etype_size != 0)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO,
 	    "**ioetype", 0);
@@ -139,7 +148,8 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
 #endif
     }
 
-    if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
+    if (fh->access_mode & MPI_MODE_SEQUENTIAL)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION,
 	    "**ioamodeseq", 0);
@@ -153,7 +163,9 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
 	return ADIOI_Error(fh, error_code, myname);
 #endif
     }
-    if (fh->access_mode & MPI_MODE_RDONLY) {
+
+    if (fh->access_mode & MPI_MODE_RDONLY)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_READ_ONLY,
 	    "**filerdonly", "**filerdonly %s", fh->filename );
@@ -167,7 +179,7 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
 	return ADIOI_Error(fh, error_code, myname);
 #endif
     }
-
+    /* --END ERROR HANDLING-- */
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fh->filetype, &filetype_is_contig);
@@ -176,7 +188,8 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
 
     /* contiguous or strided? */
 
-    if (buftype_is_contig && filetype_is_contig) {
+    if (buftype_is_contig && filetype_is_contig)
+    {
     /* convert bufocunt and offset to bytes */
 	bufsize = datatype_size * count;
 	off = fh->disp + fh->etype_size * offset;
@@ -199,9 +212,11 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
             ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
     }
     else
+    {
 	ADIO_WriteStrided(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
-			 offset, status, &error_code); 
-    /* For strided and atomic mode, locking is done in ADIO_WriteStrided */
+			 offset, status, &error_code);
+	/* For strided and atomic mode, locking is done in ADIO_WriteStrided */
+    }
 
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, fh, datatype, count);

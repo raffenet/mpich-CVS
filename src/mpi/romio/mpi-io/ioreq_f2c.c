@@ -44,11 +44,13 @@ MPIO_Request MPIO_Request_f2c(MPI_Fint request)
 #ifndef INT_LT_POINTER
     return (MPIO_Request) request;
 #else
+    /* --BEGIN ERROR HANDLING-- */
     if (!request) return MPIO_REQUEST_NULL;
     if ((request < 0) || (request > ADIOI_Reqtable_ptr)) {
 	FPRINTF(stderr, "MPIO_Request_f2c: Invalid request\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
+    /* --END ERROR HANDLING-- */
     return ADIOI_Reqtable[request];
 #endif
 }

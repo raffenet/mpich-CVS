@@ -52,7 +52,9 @@ int MPI_File_get_position_shared(MPI_File fh, MPI_Offset *offset)
     ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
-    if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (fh->access_mode & MPI_MODE_SEQUENTIAL)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, 
 	    "**ioamodeseq", 0);
@@ -67,7 +69,8 @@ int MPI_File_get_position_shared(MPI_File fh, MPI_Offset *offset)
 #endif
     }
 
-    if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS) || (fh->file_system == ADIO_PVFS2)) {
+    if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS) || (fh->file_system == ADIO_PVFS2))
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, "**iosharedunsupported", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
@@ -80,6 +83,7 @@ int MPI_File_get_position_shared(MPI_File fh, MPI_Offset *offset)
 	return ADIOI_Error(fh, error_code, myname);
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     ADIOI_TEST_DEFERRED(fh, "MPI_File_get_position_shared", &error_code);
 

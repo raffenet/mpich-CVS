@@ -19,10 +19,13 @@ int MPID_Win_test(MPID_Win *win_ptr, int *flag)
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_TEST);
 
     mpi_errno = MPID_Progress_test();
-    if (mpi_errno != MPI_SUCCESS) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS)
+    {
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_TEST);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     *flag = (win_ptr->my_counter) ? 0 : 1;
 

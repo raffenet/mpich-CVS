@@ -25,21 +25,24 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_FENCE);
 
-    if (assert & MPI_MODE_NOPRECEDE) {
+    if (assert & MPI_MODE_NOPRECEDE)
+    {
         win_ptr->fence_cnt = (assert & MPI_MODE_NOSUCCEED) ? 0 : 1;
 
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
         return MPI_SUCCESS;
     }
 
-    if ((win_ptr->fence_cnt == 0) && ((assert & MPI_MODE_NOSUCCEED) != 1)) {
+    if ((win_ptr->fence_cnt == 0) && ((assert & MPI_MODE_NOSUCCEED) != 1))
+    {
         /* win_ptr->fence_cnt == 0 means either this is the very first
            call to fence or the preceding fence had the
            MPI_MODE_NOSUCCEED assert. 
            Do nothing except increment the count. */
         win_ptr->fence_cnt = 1;
     }
-    else {
+    else
+    {
         /* This is the second or later fence. Do all the preceding RMA ops. */
 
         MPID_Comm_get_ptr( win_ptr->comm, comm_ptr );
@@ -48,28 +51,35 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
            ops from this process */
         comm_size = comm_ptr->local_size;
         rma_target_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
-        if (!rma_target_proc) {
+	/* --BEGIN ERROR HANDLING-- */
+        if (!rma_target_proc)
+	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
 
         /* keep track of no. of ops to each proc. Needed for knowing
            whether or not to decrement the completion counter. The
            completion counter is decremented only on the last
            operation. */
         nops_to_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
-        if (!nops_to_proc) {
+	/* --BEGIN ERROR HANDLING-- */
+        if (!nops_to_proc)
+	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
 
         /* set rma_target_proc[i] to 1 if rank i is a target of RMA
            ops from this process */
         total_op_count = 0;
         curr_ptr = win_ptr->rma_ops_list;
-        while (curr_ptr != NULL) {
+        while (curr_ptr != NULL)
+	{
             total_op_count++;
             rma_target_proc[curr_ptr->target_rank] = 1;
             nops_to_proc[curr_ptr->target_rank]++;
@@ -77,38 +87,53 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         }
 
         curr_ops_cnt = (int *) MPIU_Calloc(comm_size, sizeof(int));
-        if (!curr_ops_cnt) {
+	/* --BEGIN ERROR HANDLING-- */
+        if (!curr_ops_cnt)
+	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
 
-        if (total_op_count != 0) {
+        if (total_op_count != 0)
+	{
             requests = (MPID_Request **) MPIU_Malloc(total_op_count *
                                                      sizeof(MPID_Request*));
-            if (!requests) {
+	    /* --BEGIN ERROR HANDLING-- */
+            if (!requests)
+	    {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
             
             dtype_infos = (MPIDI_RMA_dtype_info *)
                 MPIU_Malloc(total_op_count*sizeof(MPIDI_RMA_dtype_info));
-            if (!dtype_infos) {
+	    /* --BEGIN ERROR HANDLING-- */
+            if (!dtype_infos)
+	    {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
             
             dataloops = (void **) MPIU_Malloc(total_op_count*sizeof(void*));
             /* allocate one extra for use when receiving data. see below */
-            if (!dataloops) {
+	    /* --BEGIN ERROR HANDLING-- */
+            if (!dataloops)
+	    {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
             for (i=0; i<total_op_count; i++)
+	    {
                 dataloops[i] = NULL;
+	    }
         }
 
 
@@ -122,24 +147,32 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         /* set up the recvcnts array for reduce scatter */
 
         recvcnts = (int *) MPIU_Malloc(comm_size * sizeof(int));
-        if (!recvcnts) {
+	/* --BEGIN ERROR HANDLING-- */
+        if (!recvcnts)
+	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
-        for (i=0; i<comm_size; i++) recvcnts[i] = 1;
+	/* --END ERROR HANDLING-- */
+        for (i=0; i<comm_size; i++)
+	{
+	    recvcnts[i] = 1;
+	}
 
         MPIR_Nest_incr();
         mpi_errno = NMPI_Reduce_scatter(MPI_IN_PLACE, rma_target_proc, recvcnts,
                                    MPI_INT, MPI_SUM, win_ptr->comm);
         /* result is stored in rma_target_proc[0] */
         MPIR_Nest_decr();
+	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "The allreduce to send out the data to all the nodes in the fence failed");
 	    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
 	    return mpi_errno;
 	}
+	/* --END ERROR HANDLING-- */
 
         /* Set the completion counter */
         /* FIXME: MT: this needs to be done atomically because other
@@ -152,7 +185,8 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 
         i = 0;
         curr_ptr = win_ptr->rma_ops_list;
-        while (curr_ptr != NULL) {
+        while (curr_ptr != NULL)
+	{
             /* The completion counter at the target is decremented
                only on the last operation on the target. Otherwise, we
                pass NULL */
@@ -162,27 +196,32 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
             else 
                 decr_addr = NULL;
 
-            switch (curr_ptr->type) {
+            switch (curr_ptr->type)
+	    {
             case (MPIDI_RMA_PUT):
             case (MPIDI_RMA_ACCUMULATE):
                 mpi_errno = MPIDI_CH3I_Send_rma_msg(curr_ptr, win_ptr,
-                     decr_addr, &dtype_infos[i], &dataloops[i], &requests[i]); 
+                     decr_addr, &dtype_infos[i], &dataloops[i], &requests[i]);
+		/* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "sending the rma message failed");
 		    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
 		    return mpi_errno;
 		}
+		/* --END ERROR HANDLING-- */
                 break;
             case (MPIDI_RMA_GET):
                 mpi_errno = MPIDI_CH3I_Recv_rma_msg(curr_ptr, win_ptr,
-                     decr_addr, &dtype_infos[i], &dataloops[i], &requests[i]); 
+                     decr_addr, &dtype_infos[i], &dataloops[i], &requests[i]);
+		/* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "receiving the rma message failed");
 		    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
 		    return mpi_errno;
 		}
+		/* --END ERROR HANDLING-- */
                 break;
             default:
                 /* FIXME - return some error code here */
@@ -197,19 +236,26 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         MPIU_Free(curr_ops_cnt);
 
         done = 1;
-        while (total_op_count) {
+        while (total_op_count)
+	{
             MPID_Progress_start();
-            for (i=0; i<total_op_count; i++) {
-                if (requests[i] != NULL) {
+            for (i=0; i<total_op_count; i++)
+	    {
+                if (requests[i] != NULL)
+		{
                     if (*(requests[i]->cc_ptr) != 0)
                         done = 0;
-                    else {
+                    else
+		    {
                         mpi_errno = requests[i]->status.MPI_ERROR;
-                        if (mpi_errno != MPI_SUCCESS) {
+			/* --BEGIN ERROR HANDLING-- */
+                        if (mpi_errno != MPI_SUCCESS)
+			{
 			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "rma message operation failed");
                             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                             return mpi_errno;
                         }
+			/* --END ERROR HANDLING-- */
                         /* if origin datatype was a derived
                            datatype, it will get freed when the
                            request gets freed. */ 
@@ -218,34 +264,44 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     }
                 }
             }
-            if (!done) {
+            if (!done)
+	    {
                 mpi_errno = MPID_Progress_wait();
+		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
 		    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
 		    return mpi_errno;
 		}
+		/* --END ERROR HANDLING-- */
                 done = 1;
             }
-            else {
+            else
+	    {
                 MPID_Progress_end();
                 break;
             }
         } 
 
-        if (total_op_count != 0) {
+        if (total_op_count != 0)
+	{
             MPIU_Free(requests);
             MPIU_Free(dtype_infos);
             for (i=0; i<total_op_count; i++)
-                if (dataloops[i] != NULL) 
+	    {
+                if (dataloops[i] != NULL)
+		{
                     MPIU_Free(dataloops[i]);
+		}
+	    }
             MPIU_Free(dataloops);
         }
 
         /* free MPIDI_RMA_ops_list */
         curr_ptr = win_ptr->rma_ops_list;
-        while (curr_ptr != NULL) {
+        while (curr_ptr != NULL)
+	{
             next_ptr = curr_ptr->next;
             MPIU_Free(curr_ptr);
             curr_ptr = next_ptr;
@@ -253,22 +309,31 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         win_ptr->rma_ops_list = NULL;
 
         /* wait for all operations from other processes to finish */
-        while (win_ptr->my_counter) {
+        while (win_ptr->my_counter)
+	{
             MPID_Progress_start();
-            if (win_ptr->my_counter) {
+            if (win_ptr->my_counter)
+	    {
                 mpi_errno = MPID_Progress_wait();
-                if (mpi_errno != MPI_SUCCESS) {
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno != MPI_SUCCESS)
+		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
 		    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
 		    return mpi_errno;
                 }
+		/* --END ERROR HANDLING-- */
             }
-            else 
+            else
+	    {
                 MPID_Progress_end();
+	    }
         } 
 
-        if (assert & MPI_MODE_NOSUCCEED) 
+        if (assert & MPI_MODE_NOSUCCEED)
+	{
             win_ptr->fence_cnt = 0;
+	}
     }
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
@@ -294,7 +359,8 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SEND_RMA_MSG);
 
-    if (rma_op->type == MPIDI_RMA_PUT) {
+    if (rma_op->type == MPIDI_RMA_PUT)
+    {
         put_pkt->type = MPIDI_CH3_PKT_PUT;
         put_pkt->addr = (char *) win_ptr->base_addrs[rma_op->target_rank] +
             win_ptr->disp_units[rma_op->target_rank] * rma_op->target_disp;
@@ -306,7 +372,8 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         iov[0].MPID_IOV_BUF = (void*) put_pkt;
         iov[0].MPID_IOV_LEN = sizeof(*put_pkt);
     }
-    else {
+    else
+    {
         accum_pkt->type = MPIDI_CH3_PKT_ACCUMULATE;
         accum_pkt->addr = (char *) win_ptr->base_addrs[rma_op->target_rank] +
             win_ptr->disp_units[rma_op->target_rank] * rma_op->target_disp;
@@ -328,21 +395,28 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
     MPID_Comm_get_ptr(win_ptr->comm, comm_ptr);
     vc = comm_ptr->vcr[rma_op->target_rank];
 
-    if (HANDLE_GET_KIND(rma_op->origin_datatype) != HANDLE_KIND_BUILTIN) {
+    if (HANDLE_GET_KIND(rma_op->origin_datatype) != HANDLE_KIND_BUILTIN)
+    {
         origin_dt_derived = 1;
         MPID_Datatype_get_ptr(rma_op->origin_datatype, origin_dtp);
     }
-    else 
+    else
+    {
         origin_dt_derived = 0;
+    }
 
-    if (HANDLE_GET_KIND(rma_op->target_datatype) != HANDLE_KIND_BUILTIN) {
+    if (HANDLE_GET_KIND(rma_op->target_datatype) != HANDLE_KIND_BUILTIN)
+    {
         target_dt_derived = 1;
         MPID_Datatype_get_ptr(rma_op->target_datatype, target_dtp);
     }
-    else 
+    else
+    {
         target_dt_derived = 0;
+    }
 
-    if (target_dt_derived) {
+    if (target_dt_derived)
+    {
         /* derived datatype on target. fill derived datatype info */
         dtype_info->is_contig = target_dtp->is_contig;
         dtype_info->n_contig_blocks = target_dtp->n_contig_blocks;
@@ -360,29 +434,41 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         dtype_info->has_sticky_lb = target_dtp->has_sticky_lb;
 
         *dataloop = MPIU_Malloc(target_dtp->loopsize);
+	/* --BEGIN ERROR HANDLING-- */
         if (!(*dataloop))
 	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SEND_RMA_MSG);
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
         memcpy(*dataloop, target_dtp->loopinfo, target_dtp->loopsize);
 
         if (rma_op->type == MPIDI_RMA_PUT)
+	{
             put_pkt->dataloop_size = target_dtp->loopsize;
+	}
         else
+	{
             accum_pkt->dataloop_size = target_dtp->loopsize;
+	}
     }
 
     MPID_Datatype_get_size_macro(rma_op->origin_datatype, origin_type_size);
 
-    if (!origin_dt_derived) { /* basic datatype on origin */
-        if (!target_dt_derived) { /* basic datatype on target */
+    if (!origin_dt_derived)
+    {
+	/* basic datatype on origin */
+        if (!target_dt_derived)
+	{
+	    /* basic datatype on target */
             iov[1].MPID_IOV_BUF = rma_op->origin_addr;
             iov[1].MPID_IOV_LEN = rma_op->origin_count * origin_type_size;
             iovcnt = 2;
         }
-        else {  /* derived datatype on target */
+        else
+	{
+	    /* derived datatype on target */
             iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)dtype_info;
             iov[1].MPID_IOV_LEN = sizeof(*dtype_info);
             iov[2].MPID_IOV_BUF = *dataloop;
@@ -394,19 +480,27 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         }
 
         mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, iovcnt, request);
+	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno != MPI_SUCCESS)
         {
             mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rmamsg", 0);
 	    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SEND_RMA_MSG);
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
     }
+    else
+    {
+	/* derived datatype on origin */
 
-    else {  /* derived datatype on origin */
-
-        if (!target_dt_derived)  /* basic datatype on target */
+        if (!target_dt_derived)
+	{
+	    /* basic datatype on target */
             iovcnt = 1;
-        else {  /* derived datatype on target */
+	}
+        else
+	{
+	    /* derived datatype on target */
             iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)dtype_info;
             iov[1].MPID_IOV_LEN = sizeof(*dtype_info);
             iov[2].MPID_IOV_BUF = *dataloop;
@@ -437,6 +531,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
             iov_n += iovcnt;
             
             mpi_errno = MPIDI_CH3_iSendv(vc, *request, iov, iov_n);
+	    /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
             {
                 MPID_Datatype_release((*request)->dev.datatype_ptr);
@@ -447,9 +542,11 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
 		MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SEND_RMA_MSG);
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
         }
         else
         {
+	    /* --BEGIN ERROR HANDLING-- */
             MPID_Datatype_release((*request)->dev.datatype_ptr);
             MPIU_Object_set_ref(*request, 0);
             MPIDI_CH3_Request_destroy(*request);
@@ -457,11 +554,14 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
             mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadsendiov", 0);
 	    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SEND_RMA_MSG);
             return mpi_errno;
+	    /* --END ERROR HANDLING-- */
         }
     }
 
     if (target_dt_derived)
+    {
         MPID_Datatype_release(target_dtp);
+    }
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SEND_RMA_MSG);
     return mpi_errno;
@@ -499,7 +599,8 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
     req->dev.user_count = rma_op->origin_count;
     req->dev.datatype = rma_op->origin_datatype;
     req->dev.decr_ctr = NULL;
-    if (HANDLE_GET_KIND(req->dev.datatype) != HANDLE_KIND_BUILTIN) {
+    if (HANDLE_GET_KIND(req->dev.datatype) != HANDLE_KIND_BUILTIN)
+    {
         MPID_Datatype_get_ptr(req->dev.datatype, dtp);
         req->dev.datatype_ptr = dtp;
         /* this will cause the datatype to be freed when the
@@ -523,11 +624,13 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
     vc = comm_ptr->vcr[rma_op->target_rank];
 
     if (HANDLE_GET_KIND(rma_op->target_datatype) ==
-        HANDLE_KIND_BUILTIN) {
+        HANDLE_KIND_BUILTIN)
+    {
         /* basic datatype on target. simply send the get_pkt. */
         mpi_errno = MPIDI_CH3_iStartMsg(vc, get_pkt, sizeof(*get_pkt), &req);
     }
-    else {
+    else
+    {
         /* derived datatype on target. fill derived datatype info and
            send it along with get_pkt. */
 
@@ -548,12 +651,14 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         dtype_info->has_sticky_lb = dtp->has_sticky_lb;
 
         *dataloop = MPIU_Malloc(dtp->loopsize);
+	/* --BEGIN ERROR HANDLING-- */
         if (!(*dataloop))
 	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RECV_RMA_MSG);
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
         memcpy(*dataloop, dtp->loopinfo, dtp->loopsize);
 
         get_pkt->dataloop_size = dtp->loopsize;
@@ -571,16 +676,20 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         MPID_Datatype_release(dtp);
     }
 
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
         mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rmamsg", 0);
 	MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RECV_RMA_MSG);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     /* release the request returned by iStartMsg or iStartMsgv */
     if (req != NULL)
+    {
         MPID_Request_release(req);
+    }
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RECV_RMA_MSG);
     return mpi_errno;

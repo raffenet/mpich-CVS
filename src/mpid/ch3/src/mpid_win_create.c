@@ -46,11 +46,14 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     rank = comm_ptr->rank;
 
     *win_ptr = (MPID_Win *)MPIU_Handle_obj_alloc( &MPID_Win_mem );
-    if (!(*win_ptr)) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (!(*win_ptr))
+    {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     (*win_ptr)->fence_cnt = 0;
     (*win_ptr)->base = base;
@@ -64,43 +67,61 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     MPIR_Nest_incr();
 
     mpi_errno = NMPI_Comm_dup(comm_ptr->handle, &((*win_ptr)->comm));
-    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	return mpi_errno;
+    }
+    /* --END ERROR HANDLING-- */
 
     /* allocate memory for the base addresses, disp_units, and
        completion counters of all processes */ 
     (*win_ptr)->base_addrs = (void **) MPIU_Malloc(comm_size *
                                                    sizeof(int *));   
-    if (!(*win_ptr)->base_addrs) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (!(*win_ptr)->base_addrs)
+    {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
-    (*win_ptr)->disp_units = (int *) MPIU_Malloc(comm_size * sizeof(int));   
-    if (!(*win_ptr)->disp_units) {
+    (*win_ptr)->disp_units = (int *) MPIU_Malloc(comm_size * sizeof(int));
+    /* --BEGIN ERROR HANDLING-- */
+    if (!(*win_ptr)->disp_units)
+    {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     (*win_ptr)->all_counters = (int **) MPIU_Malloc(comm_size *
-                                                    sizeof(int *));   
-    if (!(*win_ptr)->all_counters) {
+                                                    sizeof(int *));
+    /* --BEGIN ERROR HANDLING-- */
+    if (!(*win_ptr)->all_counters)
+    {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     /* get the addresses of the window objects and completion counters
        of all processes */  
 
     /* allocate temp. buffer for communication */
     tmp_buf = (void **) MPIU_Malloc(3*comm_size*sizeof(void*));
-    if (!tmp_buf) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (!tmp_buf)
+    {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
         return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     /* FIXME: This cannot be right?  It assumes that ints can be stored in void*s.
        Then it assumes that void*s can be passed to MPI_Allgather as MPI_LONGs.
@@ -110,12 +131,19 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     tmp_buf[3*rank+2] = (void *) &((*win_ptr)->my_counter);
 
     mpi_errno = NMPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
-                               tmp_buf, 3, MPI_LONG, comm_ptr->handle); 
-    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+                               tmp_buf, 3, MPI_LONG, comm_ptr->handle);
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	return mpi_errno;
+    }
+    /* --END ERROR HANDLING-- */
 
     MPIR_Nest_decr();
 
-    for (i=0; i<comm_size; i++) {
+    for (i=0; i<comm_size; i++)
+    {
         (*win_ptr)->base_addrs[i] = tmp_buf[3*i];
         (*win_ptr)->disp_units[i] = (int) tmp_buf[3*i+1];
         (*win_ptr)->all_counters[i] = tmp_buf[3*i+2];
@@ -200,7 +228,8 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
        MPI_Win_free after all processes have called MPI_Barrier. Then
        this thread can safely exit. */
 
-    while (!MPIDI_Passive_target_thread_exit_flag) {
+    while (!MPIDI_Passive_target_thread_exit_flag)
+    {
 /* THE IPROBE BELOW HAS BEEN COMMENTED OUT OTHERWISE EVEN THE
    ACTIVE-TARGET RMA WILL NOT WORK BECAUSE OF THREAD-SAFETY
    ISSUES. UNCOMMENT THE LINE BELOW FOR PASSIVE TARGET TO WORK */
@@ -209,43 +238,78 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
         mpi_errno = NMPI_Iprobe(MPI_ANY_SOURCE,
                                  MPIDI_PASSIVE_TARGET_RMA_TAG, comm,
                                  &flag, &status);
-        if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
+	/* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return (THREAD_RETURN_TYPE)mpi_errno;
+	}
+	/* --END ERROR HANDLING-- */
 #elif 0
-       if (rank==0) {
+       if (rank==0)
+       {
            int k=0;
             mpi_errno = NMPI_Iprobe(MPI_ANY_SOURCE,
                                  MPIDI_PASSIVE_TARGET_RMA_TAG, comm,
                                  &flag, &status);
-            if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
-            if (flag) k++;
-            if (k==40) MPIDI_Passive_target_thread_exit_flag=1;
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return (THREAD_RETURN_TYPE)mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
+            if (flag)
+	    {
+		k++;
+	    }
+            if (k==40)
+	    {
+		MPIDI_Passive_target_thread_exit_flag=1;
+	    }
        }
-       else MPIDI_Passive_target_thread_exit_flag=1;
+       else
+       {
+	   MPIDI_Passive_target_thread_exit_flag=1;
+       }
 #else
 	memset(&status, 0, sizeof(status));
 #endif
 
-        if (flag) {
+        if (flag)
+	{
             src = status.MPI_SOURCE;
             mpi_errno = NMPI_Recv(&nops_from_proc, 1, MPI_INT, src,
                                     MPIDI_PASSIVE_TARGET_RMA_TAG, comm,
                                     MPI_STATUS_IGNORE); 
-            if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return (THREAD_RETURN_TYPE)mpi_errno;
+	    }
 
             /* Now for each op from the source, first
                get the info regarding that op and then post an isend or
                irecv to perform the operation. */
 
             tag = 234;
-            for (j=0; j<nops_from_proc; j++) {
+            for (j=0; j<nops_from_proc; j++)
+	    {
                 mpi_errno = NMPI_Recv(&rma_op_info,
                                        sizeof(MPIDI_RMA_op_info), MPI_BYTE, 
                                        src, tag, comm,
                                        MPI_STATUS_IGNORE);
-                if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return (THREAD_RETURN_TYPE)mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
                 tag++;
                 
-                if (rma_op_info.datatype_kind == MPIDI_RMA_DATATYPE_DERIVED) {
+                if (rma_op_info.datatype_kind == MPIDI_RMA_DATATYPE_DERIVED)
+		{
                     /* recv the derived datatype info and create
                        derived datatype */
             
@@ -253,30 +317,48 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                                            sizeof(MPIDI_RMA_dtype_info),
                                            MPI_BYTE, src, tag, comm,
                                            MPI_STATUS_IGNORE);
-                    if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
+		    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return (THREAD_RETURN_TYPE)mpi_errno;
+		    }
+		    /* --END ERROR HANDLING-- */
                     tag++;
 
                     /* recv dataloop */
                     dataloop = (void *) MPIU_Malloc(dtype_info.loopsize);
-                    if (!dataloop) {
+		    /* --BEGIN ERROR HANDLING-- */
+                    if (!dataloop)
+		    {
                         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                         return (THREAD_RETURN_TYPE)mpi_errno;
                     }
+		    /* --END ERROR HANDLING-- */
                     
                     mpi_errno = NMPI_Recv(dataloop, dtype_info.loopsize,
                                            MPI_BYTE, src, tag, comm,
                                            MPI_STATUS_IGNORE);
-                    if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
+		    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return (THREAD_RETURN_TYPE)mpi_errno;
+		    }
+		    /* --END ERROR HANDLING-- */
                     tag++;
                     
                     /* create derived datatype */
                     
                     /* allocate new datatype object and handle */
                     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
-                    if (!new_dtp) {
+		    /* --BEGIN ERROR HANDLING-- */
+                    if (!new_dtp)
+		    {
                         mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
                         return (THREAD_RETURN_TYPE)mpi_errno;
                     }
+		    /* --END ERROR HANDLING-- */
                     
                     /* Note: handle is filled in by MPIU_Handle_obj_alloc() */
                     MPIU_Object_set_ref(new_dtp, 1);
@@ -312,7 +394,8 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                 }
 
 
-                switch (rma_op_info.type) {
+                switch (rma_op_info.type)
+		{
                 case MPIDI_RMA_LOCK:
                     /* We don't need to do anything for a lock request
                        because all RMA requests from src 
@@ -328,7 +411,13 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                                            rma_op_info.datatype,
                                            src, tag, comm,
                                            MPI_STATUS_IGNORE);
-                    if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
+		    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return (THREAD_RETURN_TYPE)mpi_errno;
+		    }
+		    /* --END ERROR HANDLING-- */
                     tag++;
                     break;
                 case MPIDI_RMA_GET:
@@ -339,7 +428,13 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                                            rma_op_info.count,
                                            rma_op_info.datatype,
                                            src, tag, comm);
-                    if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
+		    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return (THREAD_RETURN_TYPE)mpi_errno;
+		    }
+		    /* --END ERROR HANDLING-- */
                     tag++;
                     break;
                 case MPIDI_RMA_ACCUMULATE:
@@ -347,17 +442,26 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                        the reduction operation */
                     mpi_errno =
                         NMPI_Type_get_true_extent(rma_op_info.datatype, 
-                                                  &true_lb, &true_extent);  
-                    if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
+                                                  &true_lb, &true_extent);
+		    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return (THREAD_RETURN_TYPE)mpi_errno;
+		    }
+		    /* --END ERROR HANDLING-- */
 
                     MPID_Datatype_get_extent_macro(rma_op_info.datatype, 
                                                    extent); 
                     tmp_buf = MPIU_Malloc(rma_op_info.count * 
-                                          (MPIR_MAX(extent,true_extent)));  
-                    if (!tmp_buf) {
+                                          (MPIR_MAX(extent,true_extent)));
+		    /* --BEGIN ERROR HANDLING-- */
+                    if (!tmp_buf)
+		    {
                         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                         return (THREAD_RETURN_TYPE)mpi_errno;
                     }
+		    /* --END ERROR HANDLING-- */
                     /* adjust for potential negative lower bound in datatype */
                     tmp_buf = (void *)((char*)tmp_buf - true_lb);
 
@@ -366,29 +470,42 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                                            rma_op_info.datatype,
                                            src, tag, comm,
                                            MPI_STATUS_IGNORE);
-                    if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
+		    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return (THREAD_RETURN_TYPE)mpi_errno;
+		    }
+		    /* --END ERROR HANDLING-- */
                     tag++;
                     
                     op = rma_op_info.op;
-                    if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
+                    if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN)
+		    {
                         /* get the function by indexing into the op table */
                         uop = MPIR_Op_table[op%16 - 1];
                     }
-                    else {
+                    else
+		    {
+			/* --BEGIN ERROR HANDLING-- */
                         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP,
                                                            "**opnotpredefined", "**opnotpredefined %d", op );
                         return (THREAD_RETURN_TYPE)mpi_errno;
+			/* --END ERROR HANDLING-- */
                     }
 
                     win_buf_addr = (char *) win_ptr->base +
                         win_ptr->disp_unit * rma_op_info.disp;
 
                     if (rma_op_info.datatype_kind ==
-                        MPIDI_RMA_DATATYPE_BASIC) {
+                        MPIDI_RMA_DATATYPE_BASIC)
+		    {
                         (*uop)(tmp_buf, win_buf_addr,
                            &(rma_op_info.count), &(rma_op_info.datatype));
                     }
-                    else { /* derived datatype */
+                    else
+		    {
+			/* derived datatype */
                         MPID_Segment *segp;
                         DLOOP_VECTOR *dloop_vec;
                         MPI_Aint first, last;
@@ -409,10 +526,13 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                                                       so */
                         dloop_vec = (DLOOP_VECTOR *)
                             MPIU_Malloc(vec_len * sizeof(DLOOP_VECTOR));
-                        if (!dloop_vec) {
+                        if (!dloop_vec)
+			{
+			    /* --BEGIN ERROR HANDLING-- */
                             mpi_errno = MPIR_Err_create_code(
                                 MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 ); 
                             return (THREAD_RETURN_TYPE)mpi_errno;
+			    /* --END ERROR HANDLING-- */
                         }
 
 
@@ -421,7 +541,8 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
 
                         type = new_dtp->eltype;
                         type_size = MPID_Datatype_get_basic_size(type);
-                        for (i=0; i<vec_len; i++) {
+                        for (i=0; i<vec_len; i++)
+			{
                             count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
                             (*uop)((char *)tmp_buf + POINTER_TO_AINT( dloop_vec[i].DLOOP_VECTOR_BUF ),
                                    (char *)win_buf_addr + POINTER_TO_AINT ( dloop_vec[i].DLOOP_VECTOR_BUF ),
@@ -435,12 +556,15 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                     MPIU_Free((char*)tmp_buf + true_lb);
                     break;
                 default:
+		    /* --BEGIN ERROR HANDLING-- */
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP,
                                                        "**opnotpredefined", "**opnotpredefined %d", rma_op_info.type );
                     return (THREAD_RETURN_TYPE)mpi_errno;
+		    /* --END ERROR HANDLING-- */
                 }
 
-                if (rma_op_info.datatype_kind == MPIDI_RMA_DATATYPE_DERIVED) {
+                if (rma_op_info.datatype_kind == MPIDI_RMA_DATATYPE_DERIVED)
+		{
                     MPIU_Handle_obj_free(&MPID_Datatype_mem, new_dtp);
                     MPIU_Free(dataloop);
                 }
@@ -450,8 +574,14 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                it can return from win_unlock. */
 
             mpi_errno = NMPI_Send(&i, 0, MPI_INT, src,
-                                   MPIDI_PASSIVE_TARGET_DONE_TAG, comm); 
-            if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
+                                   MPIDI_PASSIVE_TARGET_DONE_TAG, comm);
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return (THREAD_RETURN_TYPE)mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
         }
     }
 

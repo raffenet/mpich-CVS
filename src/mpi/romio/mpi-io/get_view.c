@@ -60,7 +60,9 @@ int MPI_File_get_view(MPI_File fh, MPI_Offset *disp, MPI_Datatype *etype,
     ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
-    if (datarep <= (char *) 0) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (datarep <= (char *) 0)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG, 
 	    "**iodatarepnomem", 0);
@@ -74,6 +76,7 @@ int MPI_File_get_view(MPI_File fh, MPI_Offset *disp, MPI_Datatype *etype,
 	return ADIOI_Error(fh, error_code, myname);
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     *disp = fh->disp;
     strcpy(datarep, "native");

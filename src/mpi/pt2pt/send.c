@@ -167,7 +167,9 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     
     /* ... end of body of routine ... */
 
+    /* --BEGIN ERROR HANDLING-- */
   fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SEND);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

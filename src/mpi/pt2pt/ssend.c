@@ -159,6 +159,7 @@ int MPI_Ssend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     }
     /* ... end of body of routine ... */
 
+    /* --BEGIN ERROR HANDLING-- */
   fn_exit:
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -167,4 +168,5 @@ int MPI_Ssend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     }
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

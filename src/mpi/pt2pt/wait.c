@@ -120,12 +120,14 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	if ((*(request_ptr)->cc_ptr) != 0)
 	{
 	    mpi_errno = MPID_Progress_wait();
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 		    "**mpi_wait", "**mpi_wait %p %p", request, status);
 		goto fn_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 	else
 	{

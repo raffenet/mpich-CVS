@@ -56,7 +56,9 @@ int MPI_File_delete(char *filename, MPI_Info info)
    /* check if MPI itself has been initialized. If not, flag an error.
    Can't initialize it here, because don't know argc, argv */
         MPI_Initialized(&flag);
-        if (!flag) {
+	/* --BEGIN ERROR HANDLING-- */
+        if (!flag)
+	{
 #ifdef MPICH2
 	    error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_INTERN, 
 					  "**initialized", 0);
@@ -65,7 +67,8 @@ int MPI_File_delete(char *filename, MPI_Info info)
             FPRINTF(stderr, "Error: MPI_Init() must be called before using MPI-IO\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
 #endif
-        }
+	}
+	/* --END ERROR HANDLING-- */
 
         MPI_Keyval_create(MPI_NULL_COPY_FN, ADIOI_End_call, &ADIO_Init_keyval,
                           (void *) 0);  
@@ -86,7 +89,9 @@ int MPI_File_delete(char *filename, MPI_Info info)
     /* resolve file system type from file name; this is a collective call */
     ADIO_ResolveFileType(MPI_COMM_SELF, filename, &file_system, &fsops, 
 			 &error_code);
-    if (error_code != MPI_SUCCESS) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (error_code != MPI_SUCCESS)
+    {
 	/* ADIO_ResolveFileType() will print as informative a message as it
 	 * possibly can or call MPIR_Err_setmsg.  We just need to propagate 
 	 * the error up.  In the PRINT_ERR_MSG case MPI_Abort has already
@@ -100,6 +105,7 @@ int MPI_File_delete(char *filename, MPI_Info info)
 	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     /* skip prefix on filename if there is one */
     tmp = strchr(filename, ':');

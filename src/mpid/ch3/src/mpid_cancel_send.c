@@ -84,13 +84,15 @@ int MPID_Cancel_send(MPID_Request * sreq)
 		
 		/* since we attempted to cancel a RTS request, then we are responsible for releasing that request */
 		MPID_Request_release(rts_sreq);
-		
+
+		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 						     "**ch3|cancelrndv", 0);
 		    goto fn_exit;
 		}
+		/* --END ERROR HANDLING-- */
 		
 		if (cancelled)
 		{
@@ -105,12 +107,14 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	else
 	{
 	    mpi_errno = MPIDI_CH3_Cancel_send(vc, sreq, &cancelled);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 						 "**ch3|canceleager", 0);
 		goto fn_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 	    if (cancelled)
 	    {
 		sreq->status.cancelled = TRUE;
@@ -148,12 +152,14 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	csr_pkt->sender_req_id = sreq->handle;
 	
 	mpi_errno = MPIDI_CH3_iStartMsg(vc, csr_pkt, sizeof(*csr_pkt), &csr_sreq);
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 					     "**ch3|cancelreq", 0);
 	    goto fn_exit;
 	}
+	/* --END ERROR HANDLING-- */
 	if (csr_sreq != NULL)
 	{
 	    MPID_Request_release(csr_sreq);

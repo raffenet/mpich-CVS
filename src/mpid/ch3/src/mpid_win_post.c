@@ -24,7 +24,8 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
     /* initialize the completion counter */
     win_ptr->my_counter = post_grp_size;
     
-    if ((assert & MPI_MODE_NOCHECK) == 0) {
+    if ((assert & MPI_MODE_NOCHECK) == 0)
+    {
         /* NOCHECK not specified. We need to notify the source
            processes that Post has been called. */  
 
@@ -37,29 +38,44 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
         NMPI_Comm_group(win_ptr->comm, &win_grp);
         
         ranks_in_post_grp = (int *) MPIU_Malloc(post_grp_size * sizeof(int));
-        if (!ranks_in_post_grp) {
+	/* --BEGIN ERROR HANDLING-- */
+        if (!ranks_in_post_grp)
+	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
         
         ranks_in_win_grp = (int *) MPIU_Malloc(post_grp_size * sizeof(int));
-        if (!ranks_in_win_grp) {
+	/* --BEGIN ERROR HANDLING-- */
+        if (!ranks_in_win_grp)
+	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
         
         for (i=0; i<post_grp_size; i++)
+	{
             ranks_in_post_grp[i] = i;
+	}
         
         post_grp = group_ptr->handle;
         NMPI_Group_translate_ranks(post_grp, post_grp_size,
                                    ranks_in_post_grp, win_grp, ranks_in_win_grp);
         
         /* Send a 0-byte message to the source processes */
-        for (i=0; i<post_grp_size; i++) {
+        for (i=0; i<post_grp_size; i++)
+	{
             dst = ranks_in_win_grp[i];
             mpi_errno = NMPI_Send(&i, 0, MPI_INT, dst, 100, win_ptr->comm);
-            if (mpi_errno) return mpi_errno;
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
         }
         
         MPIR_Nest_decr();

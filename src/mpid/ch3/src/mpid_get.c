@@ -26,7 +26,8 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype
     MPIDI_CH3U_Datatype_get_info(origin_count, origin_datatype,
                                  dt_contig, data_sz, dtp, dt_true_lb); 
 
-    if ((data_sz == 0) || (target_rank == MPI_PROC_NULL)) {
+    if ((data_sz == 0) || (target_rank == MPI_PROC_NULL))
+    {
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_GET);    
         return mpi_errno;
     }
@@ -38,31 +39,42 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype
     MPIR_Nest_decr();
 
     /* If the get is a local operation, do it here */
-    if (target_rank == rank) {
+    if (target_rank == rank)
+    {
         mpi_errno = MPIR_Localcopy((char *) win_ptr->base +
                                    win_ptr->disp_unit * target_disp,
                                    target_count, target_datatype,
                                    origin_addr, origin_count,
                                    origin_datatype);  
     }
-    else {  /* queue it up */
+    else
+    {
+	/* queue it up */
         curr_ptr = win_ptr->rma_ops_list;
         prev_ptr = curr_ptr;
-        while (curr_ptr != NULL) {
+        while (curr_ptr != NULL)
+	{
             prev_ptr = curr_ptr;
             curr_ptr = curr_ptr->next;
         }
         
         new_ptr = (MPIDI_RMA_ops *) MPIU_Malloc(sizeof(MPIDI_RMA_ops));
-        if (!new_ptr) {
+	/* --BEGIN ERROR HANDLING-- */
+        if (!new_ptr)
+	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_GET);
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
         if (prev_ptr != NULL)
+	{
             prev_ptr->next = new_ptr;
-        else 
+	}
+        else
+	{
             win_ptr->rma_ops_list = new_ptr;
+	}
         
         new_ptr->next = NULL;  
         new_ptr->type = MPIDI_RMA_GET;
@@ -76,11 +88,13 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype
         
         /* if source or target datatypes are derived, increment their
            reference counts */ 
-        if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN) {
+        if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN)
+	{
             MPID_Datatype_get_ptr(origin_datatype, dtp);
             MPID_Datatype_add_ref(dtp);
         }
-        if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN) {
+        if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN)
+	{
             MPID_Datatype_get_ptr(target_datatype, dtp);
             MPID_Datatype_add_ref(dtp);
         }

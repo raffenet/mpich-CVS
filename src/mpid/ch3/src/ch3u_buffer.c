@@ -35,6 +35,7 @@ void MPIDI_CH3U_Buffer_copy(
     MPIDI_CH3U_Datatype_get_info(scount, sdt, sdt_contig, sdata_sz, sdt_ptr, sdt_true_lb);
     MPIDI_CH3U_Datatype_get_info(rcount, rdt, rdt_contig, rdata_sz, rdt_ptr, rdt_true_lb);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (sdata_sz > rdata_sz)
     {
 	MPIDI_DBG_PRINTF((15, FCNAME, "message truncated, sdata_sz=" MPIDI_MSG_SZ_FMT " rdata_sz=" MPIDI_MSG_SZ_FMT,
@@ -42,6 +43,7 @@ void MPIDI_CH3U_Buffer_copy(
 	sdata_sz = rdata_sz;
 	*rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE, "**truncate", "**truncate %d %d", sdata_sz, rdata_sz );
     }
+    /* --END ERROR HANDLING-- */
     
     if (sdata_sz == 0)
     {
@@ -64,10 +66,12 @@ void MPIDI_CH3U_Buffer_copy(
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-unpack last=" MPIDI_MSG_SZ_FMT, last ));
 	MPID_Segment_unpack(&seg, 0, &last, (char*)sbuf + sdt_true_lb);
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-unpack last=" MPIDI_MSG_SZ_FMT, last ));
+	/* --BEGIN ERROR HANDLING-- */
 	if (last != sdata_sz)
 	{
 	    *rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtypemismatch", 0);
 	}
+	/* --END ERROR HANDLING-- */
 
 	*rsz = last;
     }
@@ -81,10 +85,12 @@ void MPIDI_CH3U_Buffer_copy(
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-pack last=" MPIDI_MSG_SZ_FMT, last ));
 	MPID_Segment_pack(&seg, 0, &last, (char*)rbuf + rdt_true_lb);
 	MPIDI_DBG_PRINTF((40, FCNAME, "post-pack last=" MPIDI_MSG_SZ_FMT, last ));
+	/* --BEGIN ERROR HANDLING-- */
 	if (last != sdata_sz)
 	{
 	    *rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtypemismatch", 0);
 	}
+	/* --END ERROR HANDLING-- */
 
 	*rsz = last;
     }
@@ -98,6 +104,7 @@ void MPIDI_CH3U_Buffer_copy(
 	MPIDI_msg_sz_t rfirst;
 
 	buf = MPIU_Malloc(MPIDI_COPY_BUFFER_SZ);
+	/* --BEGIN ERROR HANDLING-- */
 	if (buf == NULL)
 	{
 	    MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
@@ -106,6 +113,7 @@ void MPIDI_CH3U_Buffer_copy(
 	    *rsz = 0;
 	    goto fn_exit;
 	}
+	/* --END ERROR HANDLING-- */
 
 	MPID_Segment_init(sbuf, scount, sdt, &sseg);
 	MPID_Segment_init(rbuf, rcount, rdt, &rseg);
@@ -131,7 +139,9 @@ void MPIDI_CH3U_Buffer_copy(
 	    MPIDI_DBG_PRINTF((40, FCNAME, "pre-pack first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT, sfirst, last ));
 	    MPID_Segment_pack(&sseg, sfirst, &last, buf + buf_off);
 	    MPIDI_DBG_PRINTF((40, FCNAME, "post-pack first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT, sfirst, last ));
+	    /* --BEGIN ERROR HANDLING-- */
 	    assert(last > sfirst);
+	    /* --END ERROR HANDLING-- */
 	    
 	    buf_end = buf + buf_off + (last - sfirst);
 	    sfirst = last;
@@ -139,7 +149,9 @@ void MPIDI_CH3U_Buffer_copy(
 	    MPIDI_DBG_PRINTF((40, FCNAME, "pre-unpack first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT, rfirst, last ));
 	    MPID_Segment_unpack(&rseg, rfirst, &last, buf);
 	    MPIDI_DBG_PRINTF((40, FCNAME, "post-unpack first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT, rfirst, last ));
+	    /* --BEGIN ERROR HANDLING-- */
 	    assert(last > rfirst);
+	    /* --END ERROR HANDLING-- */
 
 	    rfirst = last;
 
@@ -148,14 +160,16 @@ void MPIDI_CH3U_Buffer_copy(
 		/* successful completion */
 		break;
 	    }
-	    
+
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (sfirst == sdata_sz)
 	    {
 		/* datatype mismatch -- remaining bytes could not be unpacked */
 		*rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtypemismatch", 0);
 		break;
 	    }
-	    
+	    /* --END ERROR HANDLING-- */
+
 	    buf_off = sfirst - rfirst;
 	    if (buf_off > 0)
 	    {

@@ -68,11 +68,13 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	MPIDI_CH3U_Pkt_set_seqnum(ready_pkt, seqnum);
 	
 	mpi_errno = MPIDI_CH3_iStartMsg(vc, ready_pkt, sizeof(*ready_pkt), &sreq);
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
 	    goto fn_exit;
 	}
+	/* --END ERROR HANDLING-- */
 	if (sreq != NULL)
 	{
 	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
@@ -99,11 +101,13 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	MPIDI_CH3U_Pkt_set_seqnum(ready_pkt, seqnum);
 	    
 	mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, 2, &sreq);
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
 	    goto fn_exit;
 	}
+	/* --END ERROR HANDLING-- */
 	if (sreq != NULL)
 	{
 	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
@@ -142,6 +146,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    }
 	    
 	    mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		MPIU_Object_set_ref(sreq, 0);
@@ -150,14 +155,17 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
 		goto fn_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 	else
 	{
+	    /* --BEGIN ERROR HANDLING-- */
 	    MPIU_Object_set_ref(sreq, 0);
 	    MPIDI_CH3_Request_destroy(sreq);
 	    sreq = NULL;
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadsendiov", 0);
 	    goto fn_exit;
+	    /* --END ERROR HANDLING-- */
 	}
     }
 

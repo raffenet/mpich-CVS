@@ -177,12 +177,14 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, in
     n_active = 0;
     
     mpi_errno = MPID_Progress_test();
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_testsome", "**mpi_testsome %d %p %p %p %p", incount, array_of_requests, outcount, array_of_indices, array_of_statuses);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     for (i = 0; i < incount; i++)
     {

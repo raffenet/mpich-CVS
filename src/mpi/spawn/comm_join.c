@@ -69,8 +69,10 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* --BEGIN ERROR HANDLING-- */
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION,
 	"**mpi_comm_join", "**mpi_comm_join %d %p", fd, intercomm);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_JOIN);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

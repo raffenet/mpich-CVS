@@ -46,17 +46,19 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq, int *complete
 	{
 	    sreq->dev.iov_count = MPID_IOV_LIMIT;
 	    mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, sreq->dev.iov, &sreq->dev.iov_count);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
 						 "**ch3|loadsendiov", 0);
 		goto fn_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 	    
 	    *complete = FALSE;
 	    break;
 	}
-	
+	/* --BEGIN ERROR HANDLING-- */
 	default:
 	{
 	    *complete = FALSE;
@@ -64,6 +66,7 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq, int *complete
 					     "**ch3|badca %d", sreq->dev.ca);
 	    break;
 	}
+	/* --END ERROR HANDLING-- */
     }
 
   fn_exit:

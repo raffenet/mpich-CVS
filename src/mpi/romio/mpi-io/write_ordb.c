@@ -47,8 +47,10 @@ int MPI_File_write_ordered_begin(MPI_File fh, void *buf, int count,
 #endif
     ADIO_Offset shared_fp;
 
+    /* --BEGIN ERROR HANDLING-- */
 #ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
+    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE))
+    {
 	FPRINTF(stderr, "MPI_File_write_ordered_begin: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
@@ -56,7 +58,8 @@ int MPI_File_write_ordered_begin(MPI_File fh, void *buf, int count,
     ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
-    if (count < 0) {
+    if (count < 0)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG,
 	    "**iobadcount", 0);
@@ -71,7 +74,8 @@ int MPI_File_write_ordered_begin(MPI_File fh, void *buf, int count,
 #endif
     }
 
-    if (datatype == MPI_DATATYPE_NULL) {
+    if (datatype == MPI_DATATYPE_NULL)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_TYPE,
 	    "**dtypenull", 0);
@@ -86,7 +90,8 @@ int MPI_File_write_ordered_begin(MPI_File fh, void *buf, int count,
 #endif
     }
 
-    if (fh->split_coll_count) {
+    if (fh->split_coll_count)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, 
 	    "**iosplitcoll", 0);
@@ -100,11 +105,14 @@ int MPI_File_write_ordered_begin(MPI_File fh, void *buf, int count,
 	return ADIOI_Error(fh, error_code, myname);
 #endif
     }
+    /* --END ERROR HANDLING-- */
 
     fh->split_coll_count = 1;
 
     MPI_Type_size(datatype, &datatype_size);
-    if ((count*datatype_size) % fh->etype_size != 0) {
+    /* --BEGIN ERROR HANDLING-- */
+    if ((count*datatype_size) % fh->etype_size != 0)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, 
 	    "**ioetype", 0);
@@ -120,7 +128,8 @@ int MPI_File_write_ordered_begin(MPI_File fh, void *buf, int count,
     }
 
     if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS) ||
-		    (fh->file_system == ADIO_PVFS2)) {
+		    (fh->file_system == ADIO_PVFS2))
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION,
 	    "**iosharedunsupported", 0);
@@ -136,6 +145,7 @@ int MPI_File_write_ordered_begin(MPI_File fh, void *buf, int count,
     }
 
     ADIOI_TEST_DEFERRED(fh, "MPI_File_write_ordered_begin", &error_code);
+    /* --END ERROR HANDLING-- */
 
     MPI_Comm_size(fh->comm, &nprocs);
     MPI_Comm_rank(fh->comm, &myrank);
@@ -148,7 +158,9 @@ int MPI_File_write_ordered_begin(MPI_File fh, void *buf, int count,
     if (dest >= nprocs) dest = MPI_PROC_NULL;
     MPI_Recv( NULL, 0, MPI_BYTE, source, 0, fh->comm, MPI_STATUS_IGNORE );
     ADIO_Get_shared_fp(fh, incr, &shared_fp, &error_code);
-    if (error_code != MPI_SUCCESS) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (error_code != MPI_SUCCESS)
+    {
 #ifdef MPICH2
 	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, myname, __LINE__, MPI_ERR_INTERN, 
 					  "**iosharedfailed", 0);
@@ -158,6 +170,7 @@ int MPI_File_write_ordered_begin(MPI_File fh, void *buf, int count,
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #endif
     }
+    /* --END ERROR HANDLING-- */
     MPI_Send( NULL, 0, MPI_BYTE, dest, 0, fh->comm );
 
     ADIO_WriteStridedColl(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,

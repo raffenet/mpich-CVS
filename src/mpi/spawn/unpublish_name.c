@@ -77,23 +77,30 @@ int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
        attempts to unpublish a name that is not published.  In this case, 
        MPI_Unpublish_name could be called before a name service structure
        is allocated. */
-    if (!MPIR_Namepub) {
+    if (!MPIR_Namepub)
+    {
 	mpi_errno = MPID_NS_Create( info_ptr, &MPIR_Namepub );
     }
-    if (mpi_errno == MPI_SUCCESS) 
+    if (mpi_errno == MPI_SUCCESS)
+    {
 	mpi_errno = MPID_NS_Unpublish( MPIR_Namepub, info_ptr, 
 				       (const char *)service_name );
+    }
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPUBLISH_NAME);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_unpublish_name", "**mpi_unpublish_name %s %I %s", service_name, info, port_name);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
+    /* --END ERROR HANDLING-- */
     return MPI_SUCCESS;
 #else
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPUBLISH_NAME);
+    /* --BEGIN ERROR HANDLING-- */
     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nonamepub", 0 );
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 #endif    
 }

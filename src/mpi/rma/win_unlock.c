@@ -78,9 +78,11 @@ int MPI_Win_unlock(int rank, MPI_Win win)
 	return MPI_SUCCESS;
     }
 
+    /* --BEGIN ERROR HANDLING-- */
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_win_unlock", "**mpi_win_unlock %d %W", rank, win);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_UNLOCK);
     return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }
 
