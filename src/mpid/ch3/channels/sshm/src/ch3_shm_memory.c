@@ -123,7 +123,6 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
 	return mpi_errno;
     }
 #elif defined (USE_SYSV_SHM)
-    srand(getpid());
     for (i=0; i<10; i++)
     {
 	pOutput->key = rand();
