@@ -551,18 +551,20 @@ static inline int post_next_accept(sock_state_t * listen_state)
 
 static BlockAllocator g_StateAllocator;
 
+/*
 SOCKET socki_get_handle(sock_t sock)
 {
     if (sock != NULL)
 	return sock->sock;
     return INVALID_SOCKET;
 }
+*/
 
-int socki_sock_from_socket(sock_set_t set, SOCKET sock_fd, void *user_ptr, sock_t *sock_ptr)
+int sock_native_to_sock(sock_set_t set, SOCK_NATIVE_FD fd, void *user_ptr, sock_t *sock_ptr)
 {
     int ret_val;
     sock_state_t *sock_state;
-    u_long optval;
+    /*u_long optval;*/
     MPIDI_STATE_DECL(MPID_STATE_SOCKI_SOCK_FROM_SOCKET);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKI_SOCK_FROM_SOCKET);
@@ -570,11 +572,13 @@ int socki_sock_from_socket(sock_set_t set, SOCKET sock_fd, void *user_ptr, sock_
     /* setup the structures */
     sock_state = (sock_state_t*)BlockAlloc(g_StateAllocator);
     init_state_struct(sock_state);
-    sock_state->sock = sock_fd;
+    sock_state->sock = (SOCKET)fd;
 
     /* set the socket to non-blocking */
+    /* leave the native handle in the state passed in?
     optval = TRUE;
     ioctlsocket(sock_state->sock, FIONBIO, &optval);
+    */
 
     sock_state->user_ptr = user_ptr;
     sock_state->type = SOCK_SOCKET;
@@ -582,7 +586,7 @@ int socki_sock_from_socket(sock_set_t set, SOCKET sock_fd, void *user_ptr, sock_
     sock_state->set = set;
 
     /* associate the socket with the completion port */
-    printf("CreateIOCompletionPort(%d, %p, %p, %d)\n", sock_state->sock, set, sock_state, g_num_cp_threads);fflush(stdout);
+    /*printf("CreateIOCompletionPort(%d, %p, %p, %d)\n", sock_state->sock, set, sock_state, g_num_cp_threads);fflush(stdout);*/
     if (CreateIoCompletionPort((HANDLE)sock_state->sock, set, (ULONG_PTR)sock_state, g_num_cp_threads) == NULL)
     {
 	ret_val = WinToSockError(GetLastError());
@@ -936,7 +940,11 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 		    out->error = SOCK_SUCCESS;
 		    out->op_type = SOCK_OP_CLOSE;
 		    out->user_ptr = sock->user_ptr;
-		    /*BlockFree(g_sock_allocator, sock);*/
+#if 0
+		    CloseHandle(sock->read.ovl.hEvent);
+		    CloseHandle(sock->write.ovl.hEvent);
+		    BlockFree(g_StateAllocator, sock); /* will this cause future io completion port errors since sock is the iocp user pointer? */
+#endif
 		    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 		    return SOCK_SUCCESS;
 		}
