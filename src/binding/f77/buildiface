@@ -1485,13 +1485,13 @@ if ($write_mpif) {
 
     
     # Now, write out the file
-    print MPIFFD "$cchar      ";
+    print MPIFFD "$cchar      \n";
     print MPIFFD "$cchar      (C) 2001 by Argonne National Laboratory.\n";
     print MPIFFD "$cchar      See COPYRIGHT in top-level directory.\n";
-    print MPIFFD "$cchar      ";
-    print MPIFFD "$cchar      DO NOT EDIT";
+    print MPIFFD "$cchar      \n";
+    print MPIFFD "$cchar      DO NOT EDIT\n";
     print MPIFFD "$cchar      This file created by buildiface $arg_string\n";
-    print MPIFFD "$cchar      ";
+    print MPIFFD "$cchar      \n";
     #
     # Status elements
     # FIXME: The offsets for the status elements are hardwired.  If they
