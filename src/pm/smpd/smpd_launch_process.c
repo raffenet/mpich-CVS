@@ -606,49 +606,49 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     }
     if (process->pmi != NULL)
     {
-    if (smpd_process.use_inherited_handles)
-    {
-	if (nError = smpd_make_socket_loop(&hSockPmiR, &hSockPmiW))
+	if (smpd_process.use_inherited_handles)
 	{
-	    smpd_err_printf("smpd_make_socket_loop failed, error %d\n", nError);
-	    goto CLEANUP;
+	    if (nError = smpd_make_socket_loop(&hSockPmiR, &hSockPmiW))
+	    {
+		smpd_err_printf("smpd_make_socket_loop failed, error %d\n", nError);
+		goto CLEANUP;
+	    }
 	}
-    }
-    else
-    {
-	listener_port = 0;
-	nError = MPIDU_Sock_listen(set, NULL, &listener_port, &sock_pmi_listener); 
-	if (nError != MPI_SUCCESS)
+	else
 	{
-	    /* If another smpd is running and listening on this port, tell it to shutdown or restart? */
-	    smpd_err_printf("MPIDU_Sock_listen failed,\nsock error: %s\n", get_sock_error_string(nError));
-	    goto CLEANUP;
-	}
-	smpd_dbg_printf("pmi listening on port %d\n", listener_port);
+	    listener_port = 0;
+	    nError = MPIDU_Sock_listen(set, NULL, &listener_port, &sock_pmi_listener); 
+	    if (nError != MPI_SUCCESS)
+	    {
+		/* If another smpd is running and listening on this port, tell it to shutdown or restart? */
+		smpd_err_printf("MPIDU_Sock_listen failed,\nsock error: %s\n", get_sock_error_string(nError));
+		goto CLEANUP;
+	    }
+	    smpd_dbg_printf("pmi listening on port %d\n", listener_port);
 
-	nError = smpd_create_context(SMPD_CONTEXT_PMI_LISTENER, set, sock_pmi_listener, -1, &listener_context);
-	if (nError != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to create a context for the pmi listener.\n");
-	    goto CLEANUP;
+	    nError = smpd_create_context(SMPD_CONTEXT_PMI_LISTENER, set, sock_pmi_listener, -1, &listener_context);
+	    if (nError != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to create a context for the pmi listener.\n");
+		goto CLEANUP;
+	    }
+	    nError = MPIDU_Sock_set_user_ptr(sock_pmi_listener, listener_context);
+	    if (nError != MPI_SUCCESS)
+	    {
+		smpd_err_printf("MPIDU_Sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(nError));
+		goto CLEANUP;
+	    }
+	    listener_context->state = SMPD_PMI_LISTENING;
+	    nError = MPIDU_Sock_get_host_description(host_description, 256);
+	    if (nError != MPI_SUCCESS)
+	    {
+		smpd_err_printf("MPIDU_Sock_get_host_description failed,\nsock error: %s\n", get_sock_error_string(nError));
+		goto CLEANUP;
+	    }
+	    /* save the listener sock in the slot reserved for the client sock so we can match the listener
+	    to the process structure when the client sock is accepted */
+	    process->pmi->sock = sock_pmi_listener;
 	}
-	nError = MPIDU_Sock_set_user_ptr(sock_pmi_listener, listener_context);
-	if (nError != MPI_SUCCESS)
-	{
-	    smpd_err_printf("MPIDU_Sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(nError));
-	    goto CLEANUP;
-	}
-	listener_context->state = SMPD_PMI_LISTENING;
-	nError = MPIDU_Sock_get_host_description(host_description, 256);
-	if (nError != MPI_SUCCESS)
-	{
-	    smpd_err_printf("MPIDU_Sock_get_host_description failed,\nsock error: %s\n", get_sock_error_string(nError));
-	    goto CLEANUP;
-	}
-	/* save the listener sock in the slot reserved for the client sock so we can match the listener
-	to the process structure when the client sock is accepted */
-	process->pmi->sock = sock_pmi_listener;
-    }
     }
 
     saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -805,48 +805,48 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     SetEnvironmentVariables(process->env);
     if (process->pmi != NULL)
     {
-    sprintf(str, "%d", process->rank);
-    smpd_dbg_printf("env: PMI_RANK=%s\n", str);
-    SetEnvironmentVariable("PMI_RANK", str);
-    sprintf(str, "%d", process->nproc);
-    smpd_dbg_printf("env: PMI_SIZE=%s\n", str);
-    SetEnvironmentVariable("PMI_SIZE", str);
-    sprintf(str, "%s", process->kvs_name);
-    smpd_dbg_printf("env: PMI_KVS=%s\n", str);
-    SetEnvironmentVariable("PMI_KVS", str);
-    sprintf(str, "%s", process->domain_name);
-    smpd_dbg_printf("env: PMI_DOMAIN=%s\n", str);
-    SetEnvironmentVariable("PMI_DOMAIN", str);
-    if (smpd_process.use_inherited_handles)
-    {
-	smpd_encode_handle(sock_str, (HANDLE)hSockPmiW);
-	sprintf(str, "%s", sock_str);
-	smpd_dbg_printf("env: PMI_SMPD_FD=%s\n", str);
-	SetEnvironmentVariable("PMI_SMPD_FD", str);
-    }
-    else
-    {
-	smpd_dbg_printf("env: PMI_HOST=%s\n", host_description);
-	SetEnvironmentVariable("PMI_HOST", host_description);
-	sprintf(str, "%d", listener_port);
-	smpd_dbg_printf("env: PMI_PORT=%s\n", str);
-	SetEnvironmentVariable("PMI_PORT", str);
-    }
-    sprintf(str, "%d", smpd_process.id);
-    smpd_dbg_printf("env: PMI_SMPD_ID=%s\n", str);
-    SetEnvironmentVariable("PMI_SMPD_ID", str);
-    sprintf(str, "%d", process->id);
-    smpd_dbg_printf("env: PMI_SMPD_KEY=%s\n", str);
-    SetEnvironmentVariable("PMI_SMPD_KEY", str);
-    if (process->clique[0] != '\0')
-    {
-	sprintf(str, "%s", process->clique);
-	smpd_dbg_printf("env: PMI_CLIQUE=%s\n", str);
-	SetEnvironmentVariable("PMI_CLIQUE", str);
-    }
-    sprintf(str, "%d", process->spawned);
-    smpd_dbg_printf("env: PMI_SPAWN=%s\n", str);
-    SetEnvironmentVariable("PMI_SPAWN", str);
+	sprintf(str, "%d", process->rank);
+	smpd_dbg_printf("env: PMI_RANK=%s\n", str);
+	SetEnvironmentVariable("PMI_RANK", str);
+	sprintf(str, "%d", process->nproc);
+	smpd_dbg_printf("env: PMI_SIZE=%s\n", str);
+	SetEnvironmentVariable("PMI_SIZE", str);
+	sprintf(str, "%s", process->kvs_name);
+	smpd_dbg_printf("env: PMI_KVS=%s\n", str);
+	SetEnvironmentVariable("PMI_KVS", str);
+	sprintf(str, "%s", process->domain_name);
+	smpd_dbg_printf("env: PMI_DOMAIN=%s\n", str);
+	SetEnvironmentVariable("PMI_DOMAIN", str);
+	if (smpd_process.use_inherited_handles)
+	{
+	    smpd_encode_handle(sock_str, (HANDLE)hSockPmiW);
+	    sprintf(str, "%s", sock_str);
+	    smpd_dbg_printf("env: PMI_SMPD_FD=%s\n", str);
+	    SetEnvironmentVariable("PMI_SMPD_FD", str);
+	}
+	else
+	{
+	    smpd_dbg_printf("env: PMI_HOST=%s\n", host_description);
+	    SetEnvironmentVariable("PMI_HOST", host_description);
+	    sprintf(str, "%d", listener_port);
+	    smpd_dbg_printf("env: PMI_PORT=%s\n", str);
+	    SetEnvironmentVariable("PMI_PORT", str);
+	}
+	sprintf(str, "%d", smpd_process.id);
+	smpd_dbg_printf("env: PMI_SMPD_ID=%s\n", str);
+	SetEnvironmentVariable("PMI_SMPD_ID", str);
+	sprintf(str, "%d", process->id);
+	smpd_dbg_printf("env: PMI_SMPD_KEY=%s\n", str);
+	SetEnvironmentVariable("PMI_SMPD_KEY", str);
+	if (process->clique[0] != '\0')
+	{
+	    sprintf(str, "%s", process->clique);
+	    smpd_dbg_printf("env: PMI_CLIQUE=%s\n", str);
+	    SetEnvironmentVariable("PMI_CLIQUE", str);
+	}
+	sprintf(str, "%d", process->spawned);
+	smpd_dbg_printf("env: PMI_SPAWN=%s\n", str);
+	SetEnvironmentVariable("PMI_SPAWN", str);
     }
     pEnv = GetEnvironmentStrings();
 
@@ -887,22 +887,22 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     RemoveEnvironmentVariables(process->env);
     if (process->pmi != NULL)
     {
-    SetEnvironmentVariable("PMI_RANK", NULL);
-    SetEnvironmentVariable("PMI_SIZE", NULL);
-    SetEnvironmentVariable("PMI_KVS", NULL);
-    SetEnvironmentVariable("PMI_DOMAIN", NULL);
-    if (smpd_process.use_inherited_handles)
-    {
-	SetEnvironmentVariable("PMI_SMPD_FD", NULL);
-    }
-    else
-    {
-	SetEnvironmentVariable("PMI_HOST", NULL);
-        SetEnvironmentVariable("PMI_PORT", NULL);
-    }
-    SetEnvironmentVariable("PMI_SMPD_ID", NULL);
-    SetEnvironmentVariable("PMI_SMPD_KEY", NULL);
-    SetEnvironmentVariable("PMI_SPAWN", NULL);
+	SetEnvironmentVariable("PMI_RANK", NULL);
+	SetEnvironmentVariable("PMI_SIZE", NULL);
+	SetEnvironmentVariable("PMI_KVS", NULL);
+	SetEnvironmentVariable("PMI_DOMAIN", NULL);
+	if (smpd_process.use_inherited_handles)
+	{
+	    SetEnvironmentVariable("PMI_SMPD_FD", NULL);
+	}
+	else
+	{
+	    SetEnvironmentVariable("PMI_HOST", NULL);
+	    SetEnvironmentVariable("PMI_PORT", NULL);
+	}
+	SetEnvironmentVariable("PMI_SMPD_ID", NULL);
+	SetEnvironmentVariable("PMI_SMPD_KEY", NULL);
+	SetEnvironmentVariable("PMI_SPAWN", NULL);
     }
 
     if (bSuccess)
@@ -1226,30 +1226,30 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 
 	if (process->pmi != NULL)
 	{
-	sprintf(str, "%d", process->rank);
-	smpd_dbg_printf("env: PMI_RANK=%s\n", str);
-	setenv("PMI_RANK", str, 1);
-	sprintf(str, "%d", process->nproc);
-	smpd_dbg_printf("env: PMI_SIZE=%s\n", str);
-	setenv("PMI_SIZE", str, 1);
-	sprintf(str, "%s", process->kvs_name);
-	smpd_dbg_printf("env: PMI_KVS=%s\n", str);
-	setenv("PMI_KVS", str, 1);
-	sprintf(str, "%s", process->domain_name);
-	smpd_dbg_printf("env: PMI_DOMAIN=%s\n", str);
-	setenv("PMI_DOMAIN", str, 1);
-	sprintf(str, "%d", pmi_pipe_fds[1]);
-	smpd_dbg_printf("env: PMI_SMPD_FD=%s\n", str);
-	setenv("PMI_SMPD_FD", str, 1);
-	sprintf(str, "%d", smpd_process.id);
-	smpd_dbg_printf("env: PMI_SMPD_ID=%s\n", str);
-	setenv("PMI_SMPD_ID", str, 1);
-	sprintf(str, "%d", process->id);
-	smpd_dbg_printf("env: PMI_SMPD_KEY=%s\n", str);
-	setenv("PMI_SMPD_KEY", str, 1);
-	sprintf(str, "%d", process->spawned);
-	smpd_dbg_printf("env: PMI_SPAWN=%s\n", str);
-	setenv("PMI_SPAWN", str, 1);
+	    sprintf(str, "%d", process->rank);
+	    smpd_dbg_printf("env: PMI_RANK=%s\n", str);
+	    setenv("PMI_RANK", str, 1);
+	    sprintf(str, "%d", process->nproc);
+	    smpd_dbg_printf("env: PMI_SIZE=%s\n", str);
+	    setenv("PMI_SIZE", str, 1);
+	    sprintf(str, "%s", process->kvs_name);
+	    smpd_dbg_printf("env: PMI_KVS=%s\n", str);
+	    setenv("PMI_KVS", str, 1);
+	    sprintf(str, "%s", process->domain_name);
+	    smpd_dbg_printf("env: PMI_DOMAIN=%s\n", str);
+	    setenv("PMI_DOMAIN", str, 1);
+	    sprintf(str, "%d", pmi_pipe_fds[1]);
+	    smpd_dbg_printf("env: PMI_SMPD_FD=%s\n", str);
+	    setenv("PMI_SMPD_FD", str, 1);
+	    sprintf(str, "%d", smpd_process.id);
+	    smpd_dbg_printf("env: PMI_SMPD_ID=%s\n", str);
+	    setenv("PMI_SMPD_ID", str, 1);
+	    sprintf(str, "%d", process->id);
+	    smpd_dbg_printf("env: PMI_SMPD_KEY=%s\n", str);
+	    setenv("PMI_SMPD_KEY", str, 1);
+	    sprintf(str, "%d", process->spawned);
+	    smpd_dbg_printf("env: PMI_SPAWN=%s\n", str);
+	    setenv("PMI_SPAWN", str, 1);
 	}
 	set_environment_variables(process->env);
 
@@ -1301,46 +1301,46 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 
 	if (process->pmi != NULL)
 	{
-	/* create the result command */
-	result = smpd_create_command("abort", smpd_process.id, 0, SMPD_FALSE, &cmd_ptr);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to create an abort command in response to failed launch command: '%s'\n", process->exe);
-	    exit(-1);
-	}
-	/* launch process should provide a reason for the error, for now just return FAIL */
-	result = smpd_add_command_arg(cmd_ptr, "result", SMPD_FAIL_STR);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to add the result field to the result command in response to launch command: '%s'\n", process->exe);
-	    exit(-1);
-	}
-	if (process->err_msg[0] != '\0')
-	{
-	    result = smpd_add_command_arg(cmd_ptr, "error", process->err_msg);
+	    /* create the result command */
+	    result = smpd_create_command("abort", smpd_process.id, 0, SMPD_FALSE, &cmd_ptr);
 	    if (result != SMPD_SUCCESS)
 	    {
-		smpd_err_printf("unable to add the error field to the abort command in response to failed launch command: '%s'\n", process->exe);
+		smpd_err_printf("unable to create an abort command in response to failed launch command: '%s'\n", process->exe);
 		exit(-1);
 	    }
-	}
+	    /* launch process should provide a reason for the error, for now just return FAIL */
+	    result = smpd_add_command_arg(cmd_ptr, "result", SMPD_FAIL_STR);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the result field to the result command in response to launch command: '%s'\n", process->exe);
+		exit(-1);
+	    }
+	    if (process->err_msg[0] != '\0')
+	    {
+		result = smpd_add_command_arg(cmd_ptr, "error", process->err_msg);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the error field to the abort command in response to failed launch command: '%s'\n", process->exe);
+		    exit(-1);
+		}
+	    }
 
-	/* send the result back */
-	smpd_package_command(cmd_ptr);
-	result = write(pmi_pipe_fds[1], cmd_ptr->cmd_hdr_str, SMPD_CMD_HDR_LENGTH);
-	if (result != SMPD_CMD_HDR_LENGTH)
-	{
-	    smpd_err_printf("unable to write the abort command header in response to failed launch command: '%s'\n", process->exe);
-	    exit(-1);
-	}
-	result = write(pmi_pipe_fds[1], cmd_ptr->cmd, cmd_ptr->length);
-	if (result != cmd_ptr->length)
-	{
-	    smpd_err_printf("unable to write the abort command in response to failed launch command: '%s'\n", process->exe);
-	    exit(-1);
-	}
+	    /* send the result back */
+	    smpd_package_command(cmd_ptr);
+	    result = write(pmi_pipe_fds[1], cmd_ptr->cmd_hdr_str, SMPD_CMD_HDR_LENGTH);
+	    if (result != SMPD_CMD_HDR_LENGTH)
+	    {
+		smpd_err_printf("unable to write the abort command header in response to failed launch command: '%s'\n", process->exe);
+		exit(-1);
+	    }
+	    result = write(pmi_pipe_fds[1], cmd_ptr->cmd, cmd_ptr->length);
+	    if (result != cmd_ptr->length)
+	    {
+		smpd_err_printf("unable to write the abort command in response to failed launch command: '%s'\n", process->exe);
+		exit(-1);
+	    }
 
-	/* send a closed message on the pmi socket? */
+	    /* send a closed message on the pmi socket? */
 	}
 
 	exit(result);
@@ -1374,11 +1374,11 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     }
     if (process->pmi != NULL)
     {
-    result = MPIDU_Sock_native_to_sock(set, pmi_pipe_fds[0], NULL, &sock_pmi);
-    if (result != MPI_SUCCESS)
-    {
-	smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
-    }
+	result = MPIDU_Sock_native_to_sock(set, pmi_pipe_fds[0], NULL, &sock_pmi);
+	if (result != MPI_SUCCESS)
+	{
+	    smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
+	}
     }
     process->in->sock = sock_in;
     process->out->sock = sock_out;
@@ -1405,11 +1405,11 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     }
     if (process->pmi != NULL)
     {
-    result = MPIDU_Sock_set_user_ptr(sock_pmi, process->pmi);
-    if (result != MPI_SUCCESS)
-    {
-	smpd_err_printf("MPIDU_Sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
-    }
+	result = MPIDU_Sock_set_user_ptr(sock_pmi, process->pmi);
+	if (result != MPI_SUCCESS)
+	{
+	    smpd_err_printf("MPIDU_Sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
+	}
     }
 
     process->context_refcount = (process->pmi != NULL) ? 3 : 2;
@@ -1433,13 +1433,13 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     }
     if (process->pmi != NULL)
     {
-    result = smpd_post_read_command(process->pmi);
-    if (result != SMPD_SUCCESS)
-    {
-	smpd_err_printf("unable to post a read of the first command on the pmi control context.\n");
-	smpd_exit_fn("smpd_launch_process");
-	return SMPD_FAIL;
-    }
+	result = smpd_post_read_command(process->pmi);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a read of the first command on the pmi control context.\n");
+	    smpd_exit_fn("smpd_launch_process");
+	    return SMPD_FAIL;
+	}
     }
     process->wait = process->in->wait = process->out->wait = process->err->wait = pid;
 
