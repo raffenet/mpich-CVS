@@ -5979,7 +5979,8 @@ and add it to our own.)
 ({\em Rationale:\/}  The \code{preput_info} argument contains key/value pairs
 to be put in the keymap associated with the new process group.  The new processes
 can access these values through \code{BNR_KM_Get} calls immediately after
-\code{BNR_Init}.  This eliminates the need to pass environment variables through
+\code{BNR_Init}.  This allows us to populate the keymap before the spawned 
+processes start and it eliminates the need to pass environment variables through
 the \code{info} parameter.
 )
 
