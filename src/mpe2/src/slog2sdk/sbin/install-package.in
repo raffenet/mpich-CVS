@@ -15,7 +15,7 @@
 #
 
 MAKE="@MAKE@"
-PKGS="@PKGS@"
+PKGS="@subdirs@"
 
 # Source locations
 top_srcdir=@top_srcdir_abs@
