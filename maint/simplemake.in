@@ -196,6 +196,7 @@ $includedir_name =           'includedir      = @' . "includedir"  . '@';
 $mandir_name =               'mandir          = @' . "mandir"      . '@';
 $htmldir_name =              'htmldir         = @' . "htmldir"     . '@';
 $docdir_name =               'docdir          = @' . "docdir"      . '@';
+$sysconfdir_name =           'sysconfdir      = @' . "sysconfdir"  . '@';
 
 %dirdefs = ( 'srcdir'     => $srcdir_name,
 	     'top_srcdir' => $topsrcdir_name,
@@ -209,6 +210,7 @@ $docdir_name =               'docdir          = @' . "docdir"      . '@';
 	     'mandir'     => $mandir_name,
 	     'htmldir'    => $htmldir_name,
 	     'docdir'     => $docdir_name,
+	     'sysconfdir' => $sysconfdir_name,
 	    );
 
 #install_dir maps XXX from install_XXX into the GNU name
@@ -219,6 +221,7 @@ $docdir_name =               'docdir          = @' . "docdir"      . '@';
 		 'MAN' => 'mandir',
 		 'HTML' => 'htmldir',
 		 'DOC' => 'docdir',
+		 'ETC' => 'sysconfdir',
 		);
 %install_methods = ( 'LIB'     => '$(INSTALL_DATA)',
 		     'BIN'     => '$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)',
@@ -227,6 +230,7 @@ $docdir_name =               'docdir          = @' . "docdir"      . '@';
 		     'MAN'     => '$(INSTALL_DATA)',
 		     'HTML'    => '$(INSTALL_DATA)',
 		     'DOC'     => '$(INSTALL_DATA)',
+		     'ETC'     => '$(INSTALL_DATA)',
 		    );
 # These give the directories that autoconf will require for the 
 %required_dirs = ( 'libdir'      => 'exec_prefix',
@@ -235,7 +239,9 @@ $docdir_name =               'docdir          = @' . "docdir"      . '@';
 		   'htmldir'     => 'prefix',
 		   'docdir'      => 'prefix',
 		   'includedir'  => 'prefix',
- 		   'exec_prefix' => 'prefix' );
+ 		   'exec_prefix' => 'prefix',
+		   'sysconfdir'  => 'prefix',
+		  );
 # etc.
 #
 # Remember which document types we've seen
@@ -1878,7 +1884,7 @@ sub InstallDocs {
 }
 
 # Add any dirs that are referred to by InstallDocs
-sub InstallDirs {
+sub InstallDocDirs {
     # Add target only at the top
     if (!$doc_attop) { return; }
 
@@ -1896,6 +1902,10 @@ sub TargetInstall {
     print FD "install:$newline";
     foreach $kind (keys(%install_files)) {
 	$dir = $install_dir{$kind};
+	if ($dir eq "") {
+	    print STDERR "No known installation dir for install_$kind\n";
+	    next;
+	}
 	if (!defined($dirschecked{$dir})) {
 	    # Check on dependent directories
 	    $checkdir = $required_dirs{$dir};
@@ -1911,7 +1921,7 @@ sub TargetInstall {
 	    $destfile =~ s/.*\///;
 	    $this_install_method = $install_methods{$kind};
 	    if ($this_install_method eq "") {
-		$this_install_method = '\$(INSTALL)';
+		$this_install_method = '$(INSTALL)';
 		}
 	    print FD "\t$this_install_method $file \${$dir}/$destfile$newline";
 	}
