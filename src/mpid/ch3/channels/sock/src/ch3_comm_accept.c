@@ -536,7 +536,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
 	/* --END ERROR HANDLING-- */
 	
         /* Allocate process group data structure and populate */
-	mpi_errno = MPIDI_PG_Create(remote_pgs_array[i]->size, remote_pg_ids[i], &new_pg);
+	mpi_errno = MPIDI_PG_Create(remote_pg_sizes[i], remote_pg_ids[i], &new_pg);
 	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno != MPI_SUCCESS)
         {
