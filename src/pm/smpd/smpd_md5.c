@@ -7,7 +7,14 @@
 #include "smpd.h"
 
 /* UINT4 defines a four byte word */
-typedef unsigned long int UINT4;
+#include "mpitypedefs.h"
+#ifdef MPIU_UINT32_T
+#define UINT4 MPIU_UINT32_T
+#elif defined(HAVE_U_INT32_T)
+#define UINT4 u_int32_t
+#else
+#define UINT4 unsigned int
+#endif
 
 /* Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
 rights reserved.
@@ -322,7 +329,7 @@ static void Decode(UINT4 *output, unsigned char *input, unsigned int len)
     }
 }
 
-#if 0
+#ifdef SMPD_BUILD_MD5_TEST
 /* Use MDTestSuite to test the smpd_hash code */
 /* Digests a string and prints the result. */
 static void MDString(char *string)
@@ -346,16 +353,20 @@ void MDTestSuite()
     MDString("abcdefghijklmnopqrstuvwxyz");
     MDString("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
     MDString("12345678901234567890123456789012345678901234567890123456789012345678901234567890");
+
+    printf("correct output:\n");
+    printf("MD5(\"\") = d41d8cd98f00b204e9800998ecf8427e\n");
+    printf("MD5(\"a\") = 0cc175b9c0f1b6a831c399e269772661\n");
+    printf("MD5(\"abc\") = 900150983cd24fb0d6963f7d28e17f72\n");
+    printf("MD5(\"message digest\") = f96b697d7cb7938d525a2f31aaf161d0\n");
+    printf("MD5(\"abcdefghijklmnopqrstuvwxyz\") = c3fcd3d76192e4007dfb496cca67e13b\n");
+    printf("MD5(\"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\") = d174ab98d277d9f5a5611c2c9f419d9f\n");
+    printf("MD5(\"12345678901234567890123456789012345678901234567890123456789012345678901234567890\") = 57edf4a22be3c955ac49da2e2107b67a\n");
 }
 
-/* correct output:
-MD5 test suite:
-MD5("") = d41d8cd98f00b204e9800998ecf8427e
-MD5("a") = 0cc175b9c0f1b6a831c399e269772661
-MD5("abc") = 900150983cd24fb0d6963f7d28e17f72
-MD5("message digest") = f96b697d7cb7938d525a2f31aaf161d0
-MD5("abcdefghijklmnopqrstuvwxyz") = c3fcd3d76192e4007dfb496cca67e13b
-MD5("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") = d174ab98d277d9f5a5611c2c9f419d9f
-MD5("12345678901234567890123456789012345678901234567890123456789012345678901234567890") = 57edf4a22be3c955ac49da2e2107b67a
-*/
+int main(int argc, char *argv[])
+{
+    MDTestSuite();
+    return 0;
+}
 #endif
