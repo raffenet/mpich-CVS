@@ -8,14 +8,14 @@ int CollChk_check_size(MPI_Comm comm, int size, char* call)
 {
     /* rank, size, counter, temp comm buffer, go flag, ok flag */
     int r, s, i, buff, go, ok;
-    char err_str[255];         /* error string */
+    char err_str[COLLCHK_STD_STRLEN];
     MPI_Status st;int tag=0;   /* needed for communications */
 
     /* get the rank and size */
     MPI_Comm_rank(comm, &r);
     MPI_Comm_size(comm, &s);
 
-    sprintf(err_str, "no error");
+    sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     if (r == 0) {
         /* send 0s size to all other processes */

@@ -7,7 +7,7 @@
 int MPI_Comm_disconnect(MPI_Comm *comm)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf(call, "COMM_DISCONNECT");
 

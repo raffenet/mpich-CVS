@@ -8,7 +8,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index,
                      int *edges, int reorder, MPI_Comm *comm_graph)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf(call, "GRAPH_CREATE");
 

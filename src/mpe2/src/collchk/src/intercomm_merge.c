@@ -7,7 +7,7 @@
 int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf(call, "INTERCOMM_MERGE");
 

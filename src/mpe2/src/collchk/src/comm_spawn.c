@@ -9,7 +9,7 @@ int MPI_Comm_spawn(char *command, char **argv, int maxprocs, MPI_Info info,
                    int *array_of_errcodes)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf(call, "COMM_SPAWN");
 

@@ -8,8 +8,8 @@ int MPI_File_read_ordered_begin(MPI_File fh, void *buff, int cnt,
                                 MPI_Datatype dtype)
 {
     int g2g = 1;
-    char call[25];
-    char err_str[255];
+    char call[COLLCHK_SM_STRLEN];
+    char err_str[COLLCHK_STD_STRLEN];
     MPI_Comm comm;
 
     sprintf(call, "FILE_READ_ORDERED_BEGIN");

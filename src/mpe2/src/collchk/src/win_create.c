@@ -8,7 +8,7 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit,
                    MPI_Info info, MPI_Comm comm, MPI_Win *win)
 {
     int g2g = 1, ierr;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf(call, "WIN_CREATE");
 

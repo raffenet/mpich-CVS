@@ -5,12 +5,12 @@
 #include "collchk.h" 
 
 int MPI_Allgatherv( void* sbuff, int scnt, MPI_Datatype stype,
-                    void* rbuff, int *rcnt, int *displs, MPI_Datatype rtype,
+                    void* rbuff, int *rcnts, int *displs, MPI_Datatype rtype,
                     MPI_Comm comm )
 {
-    int g2g = 1, r;
-    char call[25];
-    CollChk_hash_struct hs1, hs2;
+    char            call[COLLCHK_SM_STRLEN];
+    int             g2g = 1, r;
+    int             are2buffs;
 
     sprintf( call, "ALLGATHERV" );
 
@@ -25,23 +25,14 @@ int MPI_Allgatherv( void* sbuff, int scnt, MPI_Datatype stype,
         /* check MPI_IN_PLACE consistency */
         CollChk_check_buff( comm, sbuff, call );
 
-        /* check data signature consistancy */
-        CollChk_same_dtype_vector2( comm, rcnt, rtype, call );
-        if ( sbuff != MPI_IN_PLACE ) {
-            CollChk_hash_dtype( rtype, rcnt[r],
-                                &(hs1.hash_val), &(hs1.hash_cnt));
-            CollChk_hash_dtype( stype, scnt,
-                                &(hs2.hash_val), &(hs2.hash_cnt));
-            if (    (hs1.hash_val != hs2.hash_val)
-                 || (hs1.hash_cnt != hs2.hash_cnt)) {
-                CollChk_err_han( "Sending and Receiving Datatype Signatures "
-                                 "do not match", 
-                                 COLLCHK_ERR_DTYPE, call, comm );
-            }
-        }
+        /* check data signature consistency */
+        are2buffs = ( sbuff != MPI_IN_PLACE );
+        CollChk_dtype_allgatherv(comm, stype, scnt, rtype, rcnts,
+                                 are2buffs, call);
 
         /* make the call */
-        return PMPI_Allgatherv( sbuff, scnt, stype, rbuff, rcnt, displs, rtype,
+        return PMPI_Allgatherv( sbuff, scnt, stype,
+                                rbuff, rcnts, displs, rtype,
                                 comm );
     }
     else {

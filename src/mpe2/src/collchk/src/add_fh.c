@@ -6,12 +6,12 @@
 
 void CollChk_add_fh( MPI_File fh, MPI_Comm comm )
 {
-    CollChk_fh_struct new_fh;
+    CollChk_fh_t new_fh;
 
     /*get the memory*/
-    CollChk_fh_list = (CollChk_fh_struct *)
-                      realloc( CollChk_fh_list, (CollChk_fh_cnt+1)
-                                              * sizeof(CollChk_fh_struct) );
+    CollChk_fh_list = (CollChk_fh_t *) realloc( CollChk_fh_list,
+                                                (CollChk_fh_cnt+1)
+                                              * sizeof(CollChk_fh_t) );
 
     /*add the new_fh*/
     new_fh.fh = fh;

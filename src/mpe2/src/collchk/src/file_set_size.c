@@ -7,7 +7,7 @@
 int MPI_File_set_size(MPI_File fh, MPI_Offset size)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
     MPI_Comm comm;
 
     sprintf(call, "FILE_SET_SIZE");

@@ -7,14 +7,14 @@
 int CollChk_same_datarep(MPI_Comm comm, char* datarep, char *call)
 {
     int r, s, i, go, ok;     /* rank, size, counter, go flag, ok flag */
-    char buff[255];          /* temp communication buffer */
-    char err_str[255];       /* error string */
+    char buff[COLLCHK_STD_STRLEN];          /* temp communication buffer */
+    char err_str[COLLCHK_STD_STRLEN];       /* error string */
     MPI_Status st;int tag=0; /* needed for communication */
     int inter;               /* flag for inter or intra communicator */
     MPI_Comm usecomm;        /* needed if intercommunicator */
 
     /* set the error string */
-    sprintf(err_str, "no error");
+    sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* test if the communicator is intra of inter */
     MPI_Comm_test_inter(comm, &inter);
@@ -33,7 +33,7 @@ int CollChk_same_datarep(MPI_Comm comm, char* datarep, char *call)
     if (r == 0) {
         /* send the datarep to the other processes */
         strcpy(buff, datarep);
-        PMPI_Bcast(buff, 255, MPI_CHAR, 0, usecomm);
+        PMPI_Bcast(buff, COLLCHK_STD_STRLEN, MPI_CHAR, 0, usecomm);
         /* ask the other processes if they are ok to continue */
         go = 1;     /* sets the go flag */
         for(i=1; i<s; i++) {
@@ -47,7 +47,7 @@ int CollChk_same_datarep(MPI_Comm comm, char* datarep, char *call)
     }
     else {
         /* recieve 0's datarep */
-        PMPI_Bcast(buff, 255, MPI_CHAR, 0, usecomm);
+        PMPI_Bcast(buff, COLLCHK_STD_STRLEN, MPI_CHAR, 0, usecomm);
         /* check it against the local datarep */
         if (strcmp(buff, datarep) != 0) {
             /* at this point the call is not consistant */

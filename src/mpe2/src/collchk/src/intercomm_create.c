@@ -9,7 +9,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
                          int tag, MPI_Comm *newcomm)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf(call, "INTERCOMM_CREATE");
 

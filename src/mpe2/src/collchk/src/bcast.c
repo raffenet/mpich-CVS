@@ -7,7 +7,7 @@
 int MPI_Bcast(void* buff, int cnt, MPI_Datatype dt, int root, MPI_Comm comm)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf(call, "BCAST");
 
@@ -21,7 +21,7 @@ int MPI_Bcast(void* buff, int cnt, MPI_Datatype dt, int root, MPI_Comm comm)
         CollChk_same_root(comm, root, call);
 
         /* check datatype signature consistancy */
-        CollChk_same_dtype(comm, cnt, dt, call);
+        CollChk_dtype_bcast(comm, dt, cnt, 0, call);
 
         /* make the call */
         return (PMPI_Bcast(buff, cnt, dt, root, comm));

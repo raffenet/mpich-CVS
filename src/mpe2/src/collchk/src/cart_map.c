@@ -8,7 +8,7 @@ int MPI_Cart_map(MPI_Comm comm, int ndims, int *dims, int *periods,
                  int *newrank)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf(call, "CART_MAP");
 

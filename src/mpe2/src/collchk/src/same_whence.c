@@ -6,7 +6,7 @@
 
 int CollChk_same_whence(MPI_Comm comm, int whence, char* call)
 {
-    char err_str[256];
+    char err_str[COLLCHK_STD_STRLEN];
 
     if (    CollChk_same_int(comm, whence, call, "Whence", err_str)
          != MPI_SUCCESS) {

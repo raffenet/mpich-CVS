@@ -6,7 +6,7 @@
 
 int CollChk_same_high_low(MPI_Comm comm, int high_low, char* call)
 {
-    char err_str[256];
+    char err_str[COLLCHK_STD_STRLEN];
 
     if(    CollChk_same_int(comm, high_low, call, "High/Low", err_str)
         != MPI_SUCCESS ) {

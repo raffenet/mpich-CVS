@@ -14,7 +14,7 @@ int CollChk_same_int(MPI_Comm comm, int val, char* call, char* check,
     MPI_Comm usecomm;          /* needed if the communicator is inter */
 
     /* set the error string */
-    sprintf(err_str, "no error");
+    sprintf(err_str, COLLCHK_NO_ERROR_STR);
     /* see if the communicator is inter or intra */
     MPI_Comm_test_inter(comm, &inter);
     /* if it is make it an intra */

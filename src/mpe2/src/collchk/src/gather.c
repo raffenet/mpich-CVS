@@ -8,9 +8,9 @@ int MPI_Gather(void* sbuff, int scnt, MPI_Datatype stype,
                void* rbuff, int rcnt, MPI_Datatype rtype,
                int root, MPI_Comm comm)
 {
-    int g2g = 1, r;
-    char call[25];
-    CollChk_hash_struct hs1, hs2;
+    int             g2g = 1, rank;
+    char            call[COLLCHK_SM_STRLEN];
+    int             are2buffs;
 
     sprintf(call, "GATHER");
 
@@ -18,32 +18,17 @@ int MPI_Gather(void* sbuff, int scnt, MPI_Datatype stype,
     g2g = CollChk_is_init();
 
     if(g2g) {
-        MPI_Comm_rank(comm, &r);
+        MPI_Comm_rank(comm, &rank);
 
-        /* check for call consistancy */
+        /* check for call consistency */
         CollChk_same_call(comm, call);
-        /* check for root consistancy */
+        /* check for root consistency */
         CollChk_same_root(comm, root, call);
 
-        /* check for datatype signature consistancy */
-        if (r == root) {
-            CollChk_same_dtype(comm, rcnt, rtype, call);
-            if (sbuff != MPI_IN_PLACE) {
-                CollChk_hash_dtype(rtype, rcnt,
-                                   &(hs1.hash_val), &(hs1.hash_cnt));
-                CollChk_hash_dtype(stype, scnt,
-                                   &(hs2.hash_val), &(hs2.hash_cnt));
-                if (    (hs1.hash_val != hs2.hash_val)
-                     || (hs1.hash_cnt != hs2.hash_cnt) ) {
-                    CollChk_err_han("Sending and Receiving Datatype "
-                                    "Signatures do not match", 
-                                    COLLCHK_ERR_DTYPE, call, comm);
-                }
-            }
-        }
-        else {
-            CollChk_same_dtype(comm, scnt, stype, call);
-        }
+        /* check for datatype signature consistency */
+        are2buffs = ( rank == root ? sbuff != MPI_IN_PLACE : 1 );
+        CollChk_dtype_scatter(comm, rtype, rcnt, stype, scnt,
+                              root, are2buffs, call);
 
         /* make the call */
         return PMPI_Gather(sbuff, scnt, stype, rbuff, rcnt, rtype, root, comm);

@@ -4,11 +4,11 @@
 */
 #include "collchk.h" 
 
-int MPI_Reduce_scatter(void* sbuff, void* rbuff, int* rcnt, 
+int MPI_Reduce_scatter(void* sbuff, void* rbuff, int* rcnts, 
                        MPI_Datatype dt, MPI_Op op, MPI_Comm comm)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf(call, "REDUCE_SCATTER");
 
@@ -24,10 +24,10 @@ int MPI_Reduce_scatter(void* sbuff, void* rbuff, int* rcnt,
         CollChk_same_op(comm, op, call);
 
         /* check for same datatypes */
-        CollChk_same_dtype(comm, 1, dt, call);
+        CollChk_dtype_bcast(comm, dt, 1, 0, call);
 
         /* make the call */
-        return PMPI_Reduce_scatter(sbuff, rbuff, rcnt, dt, op, comm);
+        return PMPI_Reduce_scatter(sbuff, rbuff, rcnts, dt, op, comm);
     }
     else {
         /* init not called */

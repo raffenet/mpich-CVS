@@ -6,7 +6,7 @@
 
 int CollChk_same_local_leader(MPI_Comm comm, int ll, char* call)
 {
-    char err_str[256];
+    char err_str[COLLCHK_STD_STRLEN];
 
     if(    CollChk_same_int(comm, ll, call, "Local Leader", err_str)
         != MPI_SUCCESS) {

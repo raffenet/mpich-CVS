@@ -8,7 +8,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
                   MPI_Info info, MPI_File *fh)
 {
     int g2g = 1,i;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf(call, "FILE_OPEN");
 

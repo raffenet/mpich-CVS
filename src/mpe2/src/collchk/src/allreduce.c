@@ -8,7 +8,7 @@ int MPI_Allreduce( void* sbuff, void* rbuff, int cnt,
                    MPI_Datatype dt, MPI_Op op, MPI_Comm comm)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf( call, "ALLREDUCE" );
 
@@ -16,15 +16,15 @@ int MPI_Allreduce( void* sbuff, void* rbuff, int cnt,
     g2g = CollChk_is_init();
 
     if( g2g ) {
-        /* check for call consistancy */
+        /* check for call consistency */
         CollChk_same_call( comm, call );
-        /* check for MPI_IN_PLACE consistancy if needed */
+        /* check for MPI_IN_PLACE consistency if needed */
         CollChk_check_buff( comm, sbuff, call );
         /* check for same operations */
         CollChk_same_op( comm, op, call );
         
         /* check for same datatypes */
-        CollChk_same_dtype( comm, cnt, dt, call );
+        CollChk_dtype_bcast( comm, dt, cnt, 0, call );
         
         /* make the call */
         return PMPI_Allreduce( sbuff, rbuff, cnt, dt, op, comm );

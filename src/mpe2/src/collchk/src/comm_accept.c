@@ -8,7 +8,7 @@ int MPI_Comm_accept(char *portname, MPI_Info info, int root,
                     MPI_Comm comm, MPI_Comm *newcomm)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf(call, "COMM_ACCEPT");
 

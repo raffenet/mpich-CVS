@@ -6,7 +6,7 @@
 
 int CollChk_check_dims(MPI_Comm comm, int ndims, int *dims, char* call)
 {
-    char err_str[256], check[20];
+    char err_str[COLLCHK_STD_STRLEN], check[COLLCHK_SM_STRLEN];
     int i;
     
     if(CollChk_same_int(comm, ndims, call, "Ndims", err_str) != MPI_SUCCESS) {

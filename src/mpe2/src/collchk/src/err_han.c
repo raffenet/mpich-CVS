@@ -4,19 +4,21 @@
 */
 #include "collchk.h" 
 
-int CollChk_err_han(char * err_str, int err_code, char * call, MPI_Comm comm)
+int CollChk_err_han(char *err_str, int err_code, char *call, MPI_Comm comm)
 {
-    int r;
-    char err[255];
+    int   rank;
+    char  msg[COLLCHK_STD_STRLEN];
 
     if(err_code == COLLCHK_ERR_NOT_INIT) {
-        printf("VALIDATE %s --> %s\n", call, err_str); fflush(stdout);
+        printf("Collective Checking: %s --> %s\n", call, err_str);
+        fflush(stdout); fflush(stderr);
     }
-    else if (strcmp(err_str, "no error") != 0) {    
-        MPI_Comm_rank(comm, &r);
-        sprintf(err, "\n\nVALIDATE %s (Rank %d) --> %s\n\n", call, r, err_str);
-        fflush(stdout);
-        MPI_Add_error_string(err_code, err);
+    else if (strcmp(err_str, COLLCHK_NO_ERROR_STR) != 0) {    
+        MPI_Comm_rank(comm, &rank);
+        sprintf(msg, "\n\nCollective Checking: %s (Rank %d) --> %s\n\n",
+                     call, rank, err_str);
+        fflush(stdout); fflush(stderr);
+        MPI_Add_error_string(err_code, msg);
     }
     else {
         MPI_Add_error_string(err_code, "Error on another process");

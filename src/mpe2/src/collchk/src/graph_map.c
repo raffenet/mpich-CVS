@@ -8,7 +8,7 @@ int MPI_Graph_map(MPI_Comm comm, int nnodes,
                   int *index, int *edges, int *newrank)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf(call, "GRAPH_MAP");
 

@@ -8,7 +8,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
                       MPI_Datatype filetype, char *datarep, MPI_Info info)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
     MPI_Comm comm;
 
     sprintf(call, "FILE_SET_VIEW");
@@ -27,7 +27,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
         /* check for call consistancy */
         CollChk_same_call(comm, call);
         /* check type consistancy */
-        CollChk_same_dtype(comm, 1, etype, call);
+        CollChk_dtype_bcast(comm, etype, 1, 0, call);
         /* check datarep consistancy */
         CollChk_same_datarep(comm, datarep, call);
 

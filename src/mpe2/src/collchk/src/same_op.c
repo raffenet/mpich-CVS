@@ -54,9 +54,9 @@ char* CollChk_get_op_string(MPI_Op op)
 int CollChk_same_op(MPI_Comm comm, MPI_Op op, char* call)
 {
     int r, s, i, go, ok;    /* rank, size, counter, go flag, ok flag */
-    char buff[25];          /* temp communication buffer */
+    char buff[COLLCHK_SM_STRLEN];          /* temp communication buffer */
     char op_str[15];        /* the operation name in string format */
-    char err_str[255];      /* error string */
+    char err_str[COLLCHK_STD_STRLEN];      /* error string */
     int tag=0;              /* needed for communication */
     MPI_Status st;
 
@@ -64,7 +64,7 @@ int CollChk_same_op(MPI_Comm comm, MPI_Op op, char* call)
     MPI_Comm_rank(comm, &r);
     MPI_Comm_size(comm, &s);
 
-    sprintf(err_str, "no error");
+    sprintf(err_str, COLLCHK_NO_ERROR_STR);
     sprintf(op_str, CollChk_get_op_string(op));
 
     if (r == 0) {

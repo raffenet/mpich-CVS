@@ -6,12 +6,12 @@
 
 void CollChk_add_win( MPI_Win win, MPI_Comm comm )
 {
-    CollChk_win_struct new_win;
+    CollChk_win_t new_win;
 
     /* get the memory */
-    CollChk_win_list = (CollChk_win_struct *) 
-                       realloc( CollChk_win_list, (CollChk_win_cnt+1)
-                                                * sizeof(CollChk_win_struct) );
+    CollChk_win_list = (CollChk_win_t *) realloc( CollChk_win_list,
+                                                  (CollChk_win_cnt+1)
+                                                * sizeof(CollChk_win_t) );
 
     /* add the new_win */
     new_win.win = win;

@@ -8,7 +8,7 @@ int MPI_Scan(void* sbuff, void* rbuff, int cnt,
              MPI_Datatype dt, MPI_Op op, MPI_Comm comm)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf(call, "SCAN");
 
@@ -22,7 +22,7 @@ int MPI_Scan(void* sbuff, void* rbuff, int cnt,
         CollChk_same_op(comm, op, call);
 
         /* check datatype signature consistancy */
-        CollChk_same_dtype(comm, cnt, dt, call);
+        CollChk_dtype_bcast(comm, dt, cnt, 0, call);
 
         /* make the call */
         return PMPI_Scan(sbuff, rbuff, cnt, dt, op, comm);

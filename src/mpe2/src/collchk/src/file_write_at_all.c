@@ -8,8 +8,8 @@ int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, void *buff, int cnt,
                           MPI_Datatype dtype, MPI_Status *st)
 {
     int g2g = 1;
-    char call[25];
-    char err_str[255];
+    char call[COLLCHK_SM_STRLEN];
+    char err_str[COLLCHK_STD_STRLEN];
     MPI_Comm comm;
 
     sprintf(call, "FILE_WRITE_AT_ALL");

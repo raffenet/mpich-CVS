@@ -7,7 +7,7 @@
 int CollChk_check_graph(MPI_Comm comm, int nnodes, int *index, int* edges,
                         char* call)
 {
-    char err_str[256], check[20];
+    char err_str[COLLCHK_STD_STRLEN], check[COLLCHK_SM_STRLEN];
     int idx, e;
 
     e = -1;

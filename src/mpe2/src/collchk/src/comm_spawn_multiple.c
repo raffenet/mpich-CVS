@@ -10,7 +10,7 @@ int MPI_Comm_spawn_multiple(int count, char **array_of_commands,
                             MPI_Comm *intercomm, int *array_of_errcodes)
 {
     int g2g = 1;
-    char call[25];
+    char call[COLLCHK_SM_STRLEN];
 
     sprintf(call, "COMM_SPAWN_MULTIPLE");
 

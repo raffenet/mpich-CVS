@@ -4,13 +4,14 @@
 */
 #include "collchk.h" 
 
+#define BUFFS_NOT_SHARED 0
+
 int MPI_Alltoall( void* sbuff, int scnt, MPI_Datatype stype,
                   void* rbuff, int rcnt, MPI_Datatype rtype,
                   MPI_Comm comm)
 {
-    int g2g = 1;
-    char call[25];
-    CollChk_hash_struct hs1, hs2;
+    int             g2g = 1;
+    char            call[COLLCHK_SM_STRLEN];
 
     sprintf( call, "ALLTOALL" );
 
@@ -18,19 +19,13 @@ int MPI_Alltoall( void* sbuff, int scnt, MPI_Datatype stype,
     g2g = CollChk_is_init();
 
     if( g2g ) {
-        /* check call consistancy */
+        /* check call consistency */
         CollChk_same_call( comm, call );
         
-        /* check data signature consistancy */
-        CollChk_same_dtype( comm, rcnt, rtype, call );
-        CollChk_hash_dtype( rtype, rcnt, &(hs1.hash_val), &(hs1.hash_cnt) );
-        CollChk_hash_dtype( stype, scnt, &(hs2.hash_val), &(hs2.hash_cnt) );
-        if (    (hs1.hash_val != hs2.hash_val)
-             || (hs1.hash_cnt != hs2.hash_cnt))  {
-            CollChk_err_han( "Sending and Receiving Datatype Signatures "
-                             "do not match",
-                             COLLCHK_ERR_DTYPE, call, comm);
-        }
+        /* check datatype signature consistency */
+        /* This is the same datatype signature test as MPI_Allgather */
+        CollChk_dtype_allgather(comm, stype, scnt, rtype, rcnt,
+                                BUFFS_NOT_SHARED, call);
 
         /* make the call */
         return (PMPI_Alltoall(sbuff, scnt, stype, rbuff, rcnt, rtype, comm));
@@ -41,4 +36,3 @@ int MPI_Alltoall( void* sbuff, int scnt, MPI_Datatype stype,
                                 COLLCHK_ERR_NOT_INIT, call, comm );
     }
 }
-
