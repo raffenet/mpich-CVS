@@ -37,6 +37,7 @@ AC_PATH_PROG(AR,ar)
 # need it nor provide it)
 AC_CHECK_PROGS(RANLIB,ranlib,true)
 AC_PROG_INSTALL
+PAC_PROG_CHECK_INSTALL_WORKS
 PAC_PROG_MKDIR_P
 AC_LANG_CPLUSPLUS
 dnl     checks for libraries

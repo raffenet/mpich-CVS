@@ -792,6 +792,7 @@ PAC_CC_STRICT
 PAC_PROG_C_BROKEN_COMMON
 #
 AC_PROG_INSTALL
+PAC_PROG_CHECK_INSTALL_WORKS
 #
 # On Mac OS/X, install breaks libraries unless used with the -p switch
 PAC_PROG_INSTALL_BREAKS_LIBS

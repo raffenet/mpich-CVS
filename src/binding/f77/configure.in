@@ -243,6 +243,7 @@ PAC_PROG_MAKE
 
 AC_PATH_PROG(AR,ar)
 AC_PROG_INSTALL
+PAC_PROG_CHECK_INSTALL_WORKS
 PAC_PROG_MKDIR_P
 # Note that we set RANLIB to true if we don't find it (some systems neither
 # need it nor provide it)
