@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_File_c2f = PMPI_File_c2f
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_File_c2f = MPI_File_c2f
+#pragma _HP_SECONDARY_DEF PMPI_File_c2f MPI_File_c2f
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_File_c2f as PMPI_File_c2f
 /* end of weak pragmas */

@@ -40,13 +40,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_FILE_WRITE_ORDERED_BEGIN = MPI_FILE_WRITE_ORDERED_BEGIN
+#pragma _HP_SECONDARY_DEF PMPI_FILE_WRITE_ORDERED_BEGIN MPI_FILE_WRITE_ORDERED_BEGIN
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_write_ordered_begin__ = mpi_file_write_ordered_begin__
+#pragma _HP_SECONDARY_DEF pmpi_file_write_ordered_begin__ mpi_file_write_ordered_begin__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_write_ordered_begin = mpi_file_write_ordered_begin
+#pragma _HP_SECONDARY_DEF pmpi_file_write_ordered_begin mpi_file_write_ordered_begin
 #else
-#pragma _HP_SECONDARY_DEF pmpi_file_write_ordered_begin_ = mpi_file_write_ordered_begin_
+#pragma _HP_SECONDARY_DEF pmpi_file_write_ordered_begin_ mpi_file_write_ordered_begin_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

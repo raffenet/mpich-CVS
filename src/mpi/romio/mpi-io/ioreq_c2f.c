@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPIO_Request_c2f = PMPIO_Request_c2f
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIO_Request_c2f = MPIO_Request_c2f
+#pragma _HP_SECONDARY_DEF PMPIO_Request_c2f MPIO_Request_c2f
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPIO_Request_c2f as PMPIO_Request_c2f
 /* end of weak pragmas */

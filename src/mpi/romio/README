@@ -62,7 +62,7 @@ Major Changes in This Version:
 
 * Lots of miscellaneous bug fixes and other enhancements.
 
-* This version is included in MPICH 1.1.3. If you are using MPICH, you
+* This version is included in MPICH 1.2.0. If you are using MPICH, you
   need not download ROMIO separately; it gets built as part of MPICH.
   (The previous version of ROMIO is included in LAM, HP MPI, and SGI MPI.)
 
@@ -156,7 +156,7 @@ workstations (Sun, SGI, HP, IBM, DEC, Linux, and FreeBSD).
 Supported file systems are IBM PIOFS, Intel PFS, HP/Convex
 HFS, SGI XFS, NEC SFS, PVFS, NFS, and any Unix file system (UFS).
 
-This version of ROMIO is included in MPICH 1.1.3. The previous version
+This version of ROMIO is included in MPICH 1.2.0. The previous version
 is included in LAM, HP MPI, and SGI MPI. It can be used with NEC MPI.
 
 You can open files on multiple file systems in the same program. The

@@ -40,13 +40,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_INFO_GET = MPI_INFO_GET
+#pragma _HP_SECONDARY_DEF PMPI_INFO_GET MPI_INFO_GET
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_info_get__ = mpi_info_get__
+#pragma _HP_SECONDARY_DEF pmpi_info_get__ mpi_info_get__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_info_get = mpi_info_get
+#pragma _HP_SECONDARY_DEF pmpi_info_get mpi_info_get
 #else
-#pragma _HP_SECONDARY_DEF pmpi_info_get_ = mpi_info_get_
+#pragma _HP_SECONDARY_DEF pmpi_info_get_ mpi_info_get_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

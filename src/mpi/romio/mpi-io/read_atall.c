@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_File_read_at_all = PMPI_File_read_at_all
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_File_read_at_all = MPI_File_read_at_all
+#pragma _HP_SECONDARY_DEF PMPI_File_read_at_all MPI_File_read_at_all
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_File_read_at_all as PMPI_File_read_at_all
 /* end of weak pragmas */

@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_File_get_atomicity = PMPI_File_get_atomicity
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_File_get_atomicity = MPI_File_get_atomicity
+#pragma _HP_SECONDARY_DEF PMPI_File_get_atomicity MPI_File_get_atomicity
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_File_get_atomicity as PMPI_File_get_atomicity
 /* end of weak pragmas */

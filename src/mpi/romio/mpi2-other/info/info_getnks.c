@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Info_get_nkeys = PMPI_Info_get_nkeys
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_Info_get_nkeys = MPI_Info_get_nkeys
+#pragma _HP_SECONDARY_DEF PMPI_Info_get_nkeys MPI_Info_get_nkeys
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Info_get_nkeys as PMPI_Info_get_nkeys
 /* end of weak pragmas */

@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_File_read = PMPI_File_read
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_File_read = MPI_File_read
+#pragma _HP_SECONDARY_DEF PMPI_File_read MPI_File_read
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_File_read as PMPI_File_read
 /* end of weak pragmas */

@@ -40,13 +40,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_FILE_GET_ATOMICITY = MPI_FILE_GET_ATOMICITY
+#pragma _HP_SECONDARY_DEF PMPI_FILE_GET_ATOMICITY MPI_FILE_GET_ATOMICITY
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_get_atomicity__ = mpi_file_get_atomicity__
+#pragma _HP_SECONDARY_DEF pmpi_file_get_atomicity__ mpi_file_get_atomicity__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_get_atomicity = mpi_file_get_atomicity
+#pragma _HP_SECONDARY_DEF pmpi_file_get_atomicity mpi_file_get_atomicity
 #else
-#pragma _HP_SECONDARY_DEF pmpi_file_get_atomicity_ = mpi_file_get_atomicity_
+#pragma _HP_SECONDARY_DEF pmpi_file_get_atomicity_ mpi_file_get_atomicity_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

@@ -39,13 +39,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPIO_WAIT = MPIO_WAIT
+#pragma _HP_SECONDARY_DEF PMPIO_WAIT MPIO_WAIT
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpio_wait__ = mpio_wait__
+#pragma _HP_SECONDARY_DEF pmpio_wait__ mpio_wait__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpio_wait = mpio_wait
+#pragma _HP_SECONDARY_DEF pmpio_wait mpio_wait
 #else
-#pragma _HP_SECONDARY_DEF pmpio_wait_ = mpio_wait_
+#pragma _HP_SECONDARY_DEF pmpio_wait_ mpio_wait_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

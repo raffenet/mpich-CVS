@@ -40,13 +40,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_INFO_GET_NTHKEY = MPI_INFO_GET_NTHKEY
+#pragma _HP_SECONDARY_DEF PMPI_INFO_GET_NTHKEY MPI_INFO_GET_NTHKEY
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_info_get_nthkey__ = mpi_info_get_nthkey__
+#pragma _HP_SECONDARY_DEF pmpi_info_get_nthkey__ mpi_info_get_nthkey__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_info_get_nthkey = mpi_info_get_nthkey
+#pragma _HP_SECONDARY_DEF pmpi_info_get_nthkey mpi_info_get_nthkey
 #else
-#pragma _HP_SECONDARY_DEF pmpi_info_get_nthkey_ = mpi_info_get_nthkey_
+#pragma _HP_SECONDARY_DEF pmpi_info_get_nthkey_ mpi_info_get_nthkey_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

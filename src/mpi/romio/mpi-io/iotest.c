@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPIO_Test = PMPIO_Test
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIO_Test = MPIO_Test
+#pragma _HP_SECONDARY_DEF PMPIO_Test MPIO_Test
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPIO_Test as PMPIO_Test
 /* end of weak pragmas */

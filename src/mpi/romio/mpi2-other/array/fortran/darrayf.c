@@ -40,13 +40,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_TYPE_CREATE_DARRAY = MPI_TYPE_CREATE_DARRAY
+#pragma _HP_SECONDARY_DEF PMPI_TYPE_CREATE_DARRAY MPI_TYPE_CREATE_DARRAY
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_type_create_darray__ = mpi_type_create_darray__
+#pragma _HP_SECONDARY_DEF pmpi_type_create_darray__ mpi_type_create_darray__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_type_create_darray = mpi_type_create_darray
+#pragma _HP_SECONDARY_DEF pmpi_type_create_darray mpi_type_create_darray
 #else
-#pragma _HP_SECONDARY_DEF pmpi_type_create_darray_ = mpi_type_create_darray_
+#pragma _HP_SECONDARY_DEF pmpi_type_create_darray_ mpi_type_create_darray_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

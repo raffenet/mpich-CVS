@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_File_get_amode = PMPI_File_get_amode
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_File_get_amode = MPI_File_get_amode
+#pragma _HP_SECONDARY_DEF PMPI_File_get_amode MPI_File_get_amode
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_File_get_amode as PMPI_File_get_amode
 /* end of weak pragmas */

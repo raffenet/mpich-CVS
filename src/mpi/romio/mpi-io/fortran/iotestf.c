@@ -39,13 +39,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPIO_TEST = MPIO_TEST
+#pragma _HP_SECONDARY_DEF PMPIO_TEST MPIO_TEST
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpio_test__ = mpio_test__
+#pragma _HP_SECONDARY_DEF pmpio_test__ mpio_test__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpio_test = mpio_test
+#pragma _HP_SECONDARY_DEF pmpio_test mpio_test
 #else
-#pragma _HP_SECONDARY_DEF pmpio_test_ = mpio_test_
+#pragma _HP_SECONDARY_DEF pmpio_test_ mpio_test_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

@@ -40,13 +40,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_FILE_GET_TYPE_EXTENT = MPI_FILE_GET_TYPE_EXTENT
+#pragma _HP_SECONDARY_DEF PMPI_FILE_GET_TYPE_EXTENT MPI_FILE_GET_TYPE_EXTENT
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_get_type_extent__ = mpi_file_get_type_extent__
+#pragma _HP_SECONDARY_DEF pmpi_file_get_type_extent__ mpi_file_get_type_extent__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_get_type_extent = mpi_file_get_type_extent
+#pragma _HP_SECONDARY_DEF pmpi_file_get_type_extent mpi_file_get_type_extent
 #else
-#pragma _HP_SECONDARY_DEF pmpi_file_get_type_extent_ = mpi_file_get_type_extent_
+#pragma _HP_SECONDARY_DEF pmpi_file_get_type_extent_ mpi_file_get_type_extent_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

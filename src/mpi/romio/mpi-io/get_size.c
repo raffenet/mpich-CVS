@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_File_get_size = PMPI_File_get_size
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_File_get_size = MPI_File_get_size
+#pragma _HP_SECONDARY_DEF PMPI_File_get_size MPI_File_get_size
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_File_get_size as PMPI_File_get_size
 /* end of weak pragmas */

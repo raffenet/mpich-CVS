@@ -40,13 +40,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_TYPE_CREATE_SUBARRAY = MPI_TYPE_CREATE_SUBARRAY
+#pragma _HP_SECONDARY_DEF PMPI_TYPE_CREATE_SUBARRAY MPI_TYPE_CREATE_SUBARRAY
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_type_create_subarray__ = mpi_type_create_subarray__
+#pragma _HP_SECONDARY_DEF pmpi_type_create_subarray__ mpi_type_create_subarray__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_type_create_subarray = mpi_type_create_subarray
+#pragma _HP_SECONDARY_DEF pmpi_type_create_subarray mpi_type_create_subarray
 #else
-#pragma _HP_SECONDARY_DEF pmpi_type_create_subarray_ = mpi_type_create_subarray_
+#pragma _HP_SECONDARY_DEF pmpi_type_create_subarray_ mpi_type_create_subarray_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

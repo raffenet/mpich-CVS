@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_File_write_at = PMPI_File_write_at
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_File_write_at = MPI_File_write_at
+#pragma _HP_SECONDARY_DEF PMPI_File_write_at MPI_File_write_at
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_File_write_at as PMPI_File_write_at
 /* end of weak pragmas */

@@ -40,13 +40,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_INFO_GET_NKEYS = MPI_INFO_GET_NKEYS
+#pragma _HP_SECONDARY_DEF PMPI_INFO_GET_NKEYS MPI_INFO_GET_NKEYS
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_info_get_nkeys__ = mpi_info_get_nkeys__
+#pragma _HP_SECONDARY_DEF pmpi_info_get_nkeys__ mpi_info_get_nkeys__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_info_get_nkeys = mpi_info_get_nkeys
+#pragma _HP_SECONDARY_DEF pmpi_info_get_nkeys mpi_info_get_nkeys
 #else
-#pragma _HP_SECONDARY_DEF pmpi_info_get_nkeys_ = mpi_info_get_nkeys_
+#pragma _HP_SECONDARY_DEF pmpi_info_get_nkeys_ mpi_info_get_nkeys_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

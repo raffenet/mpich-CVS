@@ -40,13 +40,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_FILE_SET_SIZE = MPI_FILE_SET_SIZE
+#pragma _HP_SECONDARY_DEF PMPI_FILE_SET_SIZE MPI_FILE_SET_SIZE
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_set_size__ = mpi_file_set_size__
+#pragma _HP_SECONDARY_DEF pmpi_file_set_size__ mpi_file_set_size__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_set_size = mpi_file_set_size
+#pragma _HP_SECONDARY_DEF pmpi_file_set_size mpi_file_set_size
 #else
-#pragma _HP_SECONDARY_DEF pmpi_file_set_size_ = mpi_file_set_size_
+#pragma _HP_SECONDARY_DEF pmpi_file_set_size_ mpi_file_set_size_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

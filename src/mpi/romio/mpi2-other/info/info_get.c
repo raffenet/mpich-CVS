@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Info_get = PMPI_Info_get
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_Info_get = MPI_Info_get
+#pragma _HP_SECONDARY_DEF PMPI_Info_get MPI_Info_get
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Info_get as PMPI_Info_get
 /* end of weak pragmas */

@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Type_create_darray = PMPI_Type_create_darray
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_Type_create_darray = MPI_Type_create_darray
+#pragma _HP_SECONDARY_DEF PMPI_Type_create_darray MPI_Type_create_darray
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Type_create_darray as PMPI_Type_create_darray
 /* end of weak pragmas */

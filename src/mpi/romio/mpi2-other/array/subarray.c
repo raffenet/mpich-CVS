@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Type_create_subarray = PMPI_Type_create_subarray
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_Type_create_subarray = MPI_Type_create_subarray
+#pragma _HP_SECONDARY_DEF PMPI_Type_create_subarray MPI_Type_create_subarray
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Type_create_subarray as PMPI_Type_create_subarray
 /* end of weak pragmas */

@@ -630,8 +630,12 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
         CFLAGS="$CFLAGS -D__SPPUX"
     fi
     if test -z "$FILE_SYSTEM" ; then
-        AC_COMPILE_CHECK(struct flock64,[#include <fcntl.h>],[
+        if test -n "$arch_hpux" ; then
+           AC_COMPILE_CHECK(struct flock64,[#include <fcntl.h>],[
 struct flock64 fl;],flock64_ok="yes",flock64_ok="no")
+        else
+            flock64_ok="yes"
+        fi
         if test $flock64_ok = "yes" ; then
             file_system_hfs=1
             file_system_nfs=1

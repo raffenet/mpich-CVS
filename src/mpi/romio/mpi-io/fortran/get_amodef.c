@@ -40,13 +40,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_FILE_GET_AMODE = MPI_FILE_GET_AMODE
+#pragma _HP_SECONDARY_DEF PMPI_FILE_GET_AMODE MPI_FILE_GET_AMODE
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_get_amode__ = mpi_file_get_amode__
+#pragma _HP_SECONDARY_DEF pmpi_file_get_amode__ mpi_file_get_amode__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_get_amode = mpi_file_get_amode
+#pragma _HP_SECONDARY_DEF pmpi_file_get_amode mpi_file_get_amode
 #else
-#pragma _HP_SECONDARY_DEF pmpi_file_get_amode_ = mpi_file_get_amode_
+#pragma _HP_SECONDARY_DEF pmpi_file_get_amode_ mpi_file_get_amode_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

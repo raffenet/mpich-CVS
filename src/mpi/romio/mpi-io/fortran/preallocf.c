@@ -40,13 +40,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_FILE_PREALLOCATE = MPI_FILE_PREALLOCATE
+#pragma _HP_SECONDARY_DEF PMPI_FILE_PREALLOCATE MPI_FILE_PREALLOCATE
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_preallocate__ = mpi_file_preallocate__
+#pragma _HP_SECONDARY_DEF pmpi_file_preallocate__ mpi_file_preallocate__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_preallocate = mpi_file_preallocate
+#pragma _HP_SECONDARY_DEF pmpi_file_preallocate mpi_file_preallocate
 #else
-#pragma _HP_SECONDARY_DEF pmpi_file_preallocate_ = mpi_file_preallocate_
+#pragma _HP_SECONDARY_DEF pmpi_file_preallocate_ mpi_file_preallocate_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

@@ -43,13 +43,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_FILE_DELETE = MPI_FILE_DELETE
+#pragma _HP_SECONDARY_DEF PMPI_FILE_DELETE MPI_FILE_DELETE
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_delete__ = mpi_file_delete__
+#pragma _HP_SECONDARY_DEF pmpi_file_delete__ mpi_file_delete__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_delete = mpi_file_delete
+#pragma _HP_SECONDARY_DEF pmpi_file_delete mpi_file_delete
 #else
-#pragma _HP_SECONDARY_DEF pmpi_file_delete_ = mpi_file_delete_
+#pragma _HP_SECONDARY_DEF pmpi_file_delete_ mpi_file_delete_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

@@ -40,13 +40,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_FILE_WRITE_ALL = MPI_FILE_WRITE_ALL
+#pragma _HP_SECONDARY_DEF PMPI_FILE_WRITE_ALL MPI_FILE_WRITE_ALL
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_write_all__ = mpi_file_write_all__
+#pragma _HP_SECONDARY_DEF pmpi_file_write_all__ mpi_file_write_all__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_write_all = mpi_file_write_all
+#pragma _HP_SECONDARY_DEF pmpi_file_write_all mpi_file_write_all
 #else
-#pragma _HP_SECONDARY_DEF pmpi_file_write_all_ = mpi_file_write_all_
+#pragma _HP_SECONDARY_DEF pmpi_file_write_all_ mpi_file_write_all_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_File_get_position_shared = PMPI_File_get_position_shared
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_File_get_position_shared = MPI_File_get_position_shared
+#pragma _HP_SECONDARY_DEF PMPI_File_get_position_shared MPI_File_get_position_shared
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_File_get_position_shared as PMPI_File_get_position_shared
 /* end of weak pragmas */

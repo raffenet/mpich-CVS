@@ -40,13 +40,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_FILE_GET_BYTE_OFFSET = MPI_FILE_GET_BYTE_OFFSET
+#pragma _HP_SECONDARY_DEF PMPI_FILE_GET_BYTE_OFFSET MPI_FILE_GET_BYTE_OFFSET
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_get_byte_offset__ = mpi_file_get_byte_offset__
+#pragma _HP_SECONDARY_DEF pmpi_file_get_byte_offset__ mpi_file_get_byte_offset__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_get_byte_offset = mpi_file_get_byte_offset
+#pragma _HP_SECONDARY_DEF pmpi_file_get_byte_offset mpi_file_get_byte_offset
 #else
-#pragma _HP_SECONDARY_DEF pmpi_file_get_byte_offset_ = mpi_file_get_byte_offset_
+#pragma _HP_SECONDARY_DEF pmpi_file_get_byte_offset_ mpi_file_get_byte_offset_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

@@ -40,13 +40,13 @@
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(FORTRANCAPS)
-#pragma _HP_SECONDARY_DEF PMPI_FILE_IREAD = MPI_FILE_IREAD
+#pragma _HP_SECONDARY_DEF PMPI_FILE_IREAD MPI_FILE_IREAD
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_iread__ = mpi_file_iread__
+#pragma _HP_SECONDARY_DEF pmpi_file_iread__ mpi_file_iread__
 #elif !defined(FORTRANUNDERSCORE)
-#pragma _HP_SECONDARY_DEF pmpi_file_iread = mpi_file_iread
+#pragma _HP_SECONDARY_DEF pmpi_file_iread mpi_file_iread
 #else
-#pragma _HP_SECONDARY_DEF pmpi_file_iread_ = mpi_file_iread_
+#pragma _HP_SECONDARY_DEF pmpi_file_iread_ mpi_file_iread_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)

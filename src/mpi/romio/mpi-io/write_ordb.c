@@ -12,7 +12,7 @@
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_File_write_ordered_begin = PMPI_File_write_ordered_begin
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_File_write_ordered_begin = MPI_File_write_ordered_begin
+#pragma _HP_SECONDARY_DEF PMPI_File_write_ordered_begin MPI_File_write_ordered_begin
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_File_write_ordered_begin as PMPI_File_write_ordered_begin
 /* end of weak pragmas */
