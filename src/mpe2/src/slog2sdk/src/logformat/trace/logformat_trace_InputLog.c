@@ -44,6 +44,42 @@ static jmethodID  mid4NewPrime     = NULL;
 static jclass     cid4Cmplx        = NULL;    /* for Composite */
 static jmethodID  mid4NewCmplx     = NULL;
 
+/*
+ *      a Java long is a 64 bit entity by definition,
+ *      a C pointer may be 32 or 64 bits.
+ */
+void *Jlong2Cptr(jlong a_jlong)
+{
+#if SIZEOF_INT == SIZEOF_VOIDP
+    unsigned int tmp = (unsigned int) a_jlong;
+#elif SIZEOF_LONG == SIZEOF_VOIDP
+    unsigned long tmp = (unsigned long) a_jlong;
+#elif SIZEOF_LONG_LONG == SIZEOF_VOIDP
+    unsigned long long tmp = (unsigned long long) a_jlong;
+#elif SIZEOF___INT64 == SIZEOF_VOIDP
+    unsigned int64 tmp = (unsigned int64) a_jlong;
+#else
+    jlong tmp = a_jlong;
+#endif
+    return (void *) tmp;
+}
+
+jlong Cptr2Jlong(void *a_ptr)
+{
+#if SIZEOF_INT == SIZEOF_VOIDP
+    unsigned int tmp = (unsigned int) a_ptr;
+#elif SIZEOF_LONG == SIZEOF_VOIDP
+    unsigned long tmp = (unsigned long) a_ptr;
+#elif SIZEOF_LONG_LONG == SIZEOF_VOIDP
+    unsigned long long tmp = (unsigned long long) a_ptr;
+#elif SIZEOF___INT64 == SIZEOF_VOIDP
+    unsigned int64 tmp = (unsigned int64) a_ptr;
+#else
+    void *tmp = a_ptr;
+#endif
+    return (jlong) tmp;
+}
+
 JNIEXPORT void JNICALL
 Java_logformat_trace_InputLog_initIDs( JNIEnv *env , jclass myclass )
 {
@@ -79,7 +115,8 @@ Java_logformat_trace_InputLog_open( JNIEnv *env, jobject this )
     if ( tracefile != NULL ) {
         fprintf( outfile, "C: Opening trace %s ..... \n", c_filespec );
         fflush( outfile );
-        (*env)->SetLongField( env, this, fid4filehandle, (jlong) tracefile );
+        (*env)->SetLongField( env, this, fid4filehandle,
+                              Cptr2Jlong( tracefile ) );
         return JNI_TRUE;
     }
     else {
@@ -144,7 +181,7 @@ Java_logformat_trace_InputLog_close( JNIEnv *env, jobject this )
                           "Inaccessible filehandle in Java side\n" );
         return JNI_FALSE;
     }   
-    tracefile  = (TRACE_file) filehandle;
+    tracefile  = (TRACE_file) Jlong2Cptr( filehandle );
     fprintf( outfile, "C: Closing trace ..... \n" );
     fflush( outfile );
     ierr  = TRACE_Close( &tracefile );
@@ -171,7 +208,7 @@ Java_logformat_trace_InputLog_peekNextKindIndex( JNIEnv *env, jobject this )
                           "Inaccessible filehandle in Java side\n" );
         return TRACE_EOF;
     }   
-    tracefile  = (TRACE_file) filehandle;
+    tracefile  = (TRACE_file) Jlong2Cptr( filehandle );
 
     ierr = TRACE_Peek_next_kind( tracefile, &next_kind );
     if ( ierr != 0 ) {
@@ -209,7 +246,7 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
                           "Inaccessible filehandle in Java side\n" );
         return NULL;
     }   
-    tracefile  = (TRACE_file) filehandle;
+    tracefile  = (TRACE_file) Jlong2Cptr( filehandle );
 
     label_sz   = 0;
     legend_sz  = 0;
@@ -350,7 +387,7 @@ Java_logformat_trace_InputLog_getNextYCoordMap( JNIEnv *env, jobject this )
                           "Inaccessible filehandle in Java side\n" );
         return NULL;
     }   
-    tracefile  = (TRACE_file) filehandle;
+    tracefile  = (TRACE_file) Jlong2Cptr( filehandle );
 
     nrows            = 0;
     ncolumns         = 0;
@@ -497,7 +534,7 @@ Java_logformat_trace_InputLog_getNextPrimitive( JNIEnv *env, jobject this )
                           "Inaccessible filehandle in Java side\n" );
         return NULL;
     }   
-    tracefile  = (TRACE_file) filehandle;
+    tracefile  = (TRACE_file) Jlong2Cptr( filehandle );
 
     tcoord_sz  = 0;
     ycoord_sz  = 0;
@@ -615,7 +652,7 @@ Java_logformat_trace_InputLog_getNextComposite( JNIEnv *env, jobject this )
                           "Inaccessible filehandle in Java side\n" );
         return NULL;
     }   
-    tracefile  = (TRACE_file) filehandle;
+    tracefile  = (TRACE_file) Jlong2Cptr( filehandle );
 
     cm_info_sz = 0;
     ierr = TRACE_Peek_next_composite( tracefile,
