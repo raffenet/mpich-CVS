@@ -286,25 +286,27 @@ static int SetProcessExitStatus( ProcessTable *ptable,
     if (WIFSIGNALED(prog_stat)) {
 	sigval = WTERMSIG(prog_stat);
     }
-    if (sigval || rc) {
-	/* Look up this pid in the exitstatus */
-	for (i=0; i<ptable->nProcesses; i++) {
-	    if (ptable->table[i].pid == pid) {
-		if (debug) {
-		    DBG_FPRINTF( stderr, "Found process %d in table in sigchld handler\n", pid );
-		    fflush( stderr );
-		}
-		ptable->table[i].state             = GONE;
-		ptable->table[i].status.exitStatus = rc;
-		ptable->table[i].status.exitSig    = sigval;
-		ptable->nActive--;
-		break;
+    /* Look up this pid in the exitstatus */
+    for (i=0; i<ptable->nProcesses; i++) {
+	if (ptable->table[i].pid == pid) {
+	    if (debug) {
+		DBG_FPRINTF( stderr, "Found process %d in table in sigchld handler\n", pid );
+		fflush( stderr );
 	    }
+	    ptable->table[i].state             = GONE;
+	    /* Abnormal exit if either rc or sigval is set */
+	    ptable->table[i].status.exitStatus = rc;
+	    ptable->table[i].status.exitSig    = sigval;
+	    ptable->nActive--;
+	    break;
 	}
-	if (i == ptable->nProcesses) {
-	    /* Did not find the matching pid */
-	    ;
-	}
+    }
+    if (i == ptable->nProcesses) {
+	/* Did not find the matching pid */
+	;
+	/* FIXME: we could store the pid and status, and use
+	   it to handle the race condition where the process
+	   exits before the table is initialized */
     }
     return 0;
 }

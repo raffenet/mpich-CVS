@@ -60,27 +60,15 @@ typedef enum { NORMAL,     /* Normal exit (possibly with nonzero status) */
 	       KILLED      /* Process was killed by mpiexec */ 
              } exit_state_t;
 
-/* 
-   We must buffer the stdin, out, and err output.  A minimal memory approach
-   would be to provide buffers only for the 3 fd's at mpiexec; that is, 
-   only provide buffers for fd's 0, 1, and 2.  
-   Instead, we will provide buffering for each created process for 
-   each of the fds used by the spawned process.  This allows us greater
-   control over stdin funnelling to the processes, and it allows various
-   approaches for handling output, such as sending output only when full
-   lines are available, and labeling lines as coming from particular
-   processes.
-
-   Each of these buffers is described by the charbuf structure:
-*/
-#define MAXCHARBUF 1024
+typedef int IOHandler( int, void * );
+typedef enum { IO_PENDING, IO_QUIET, IO_FINISHED } FDState;
 typedef struct {
-    char buf[MAXCHARBUF];  /* buffer for text */
-    char *firstchar;       /* pointer to first free character in buffer */
-    int  nleft;            /* number of characters left to transfer */
-    int  destfd;           /* dest or src fd (the "other" fd used with
-			      this buffer) */
-} charbuf;
+    int       fd;          /* fd for this IO */
+    int       isWrite;     /* true if writing, else reading. No bidirection (?) */
+    FDState   fdstate;     /* state of the fd */
+    IOHandler *handler;    /* Routine to call to handle IO on this FD */
+    void      *extra_state;/* Point to extra state to pass to the handler */
+} IOSpec;
 
 /*---------------------------------------------------------------------------
  * Specifying a collection of processes.
@@ -140,19 +128,19 @@ typedef struct {
    and output, and any process-specific details about each process, 
    such as the working directory and specific requirements about the 
    host */
+#define MAXIOS 4
 typedef struct { 
-    int            fdStdin, fdStdout, fdStderr, /* fds for std io */
-	           fdPMI;                      /* fds for process management */
+    IOSpec       ios[MAXIOS];        /* Structures for the handling of
+					file descriptors such as stdin
+					and the PMI interface */
+    int          nIos;               /* Number of defined ios entries for
+					this process */
 
     client_state_t state;            /* state of process */
 
     pid_t         pid;               /* pid of process */
     
     ProcessSpec   spec;
-
-    charbuf        stdinBuf;         /* data awaiting processes stdin */
-    charbuf        stdoutBuf;        /* data from processes stdout */
-    charbuf        stderrBuf;        /* data from processes stderr */
 
     int            rank;             /* rank in comm_world (or universe) */
 
