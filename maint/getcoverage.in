@@ -211,6 +211,7 @@ sub CountUncoveredLines {
 # 		}
 		if (/^\s*\/\*\s+--END\sEXPERIMENTAL--\s+\*\/\s*/) {
 		    last; 
+		}
 		if (/^\s*\/\*\s*--\s*END\s+EXPERIMENTAL\s*--\s*\*\/\s*/) {
 		    print STDERR "Mangled line: $_";
 		    last; 
