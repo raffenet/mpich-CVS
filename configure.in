@@ -1106,6 +1106,7 @@ AC_OUTPUT(Makefile src/Makefile \
           src/include/mpi.h \
 	  test/Makefile test/runtests test/util/Makefile \
 	  test/mpid/Makefile \
+	  test/mpid/ch3/Makefile \
 	  test/util/info/Makefile \
 	  test/mpi/Makefile \
           test/mpi/basic/Makefile \
