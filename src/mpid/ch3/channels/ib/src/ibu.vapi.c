@@ -35,6 +35,40 @@ int g_cur_write_stack_index = 0;
 /* utility ibu functions */
 
 #undef FUNCNAME
+#define FUNCNAME getMaxInlineSize
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+VAPI_ret_t getMaxInlineSize( ibu_t ibu )
+{
+    VAPI_ret_t status;
+    VAPI_qp_attr_t qp_attr;
+    VAPI_qp_init_attr_t qp_init_attr;
+    VAPI_qp_attr_mask_t qp_attr_mask;
+    MPIDI_STATE_DECL(MPID_STATE_IBU_GETMAXINLINESIZE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_GETMAXINLINESIZE);
+
+    MPIU_DBG_PRINTF(("entering getMaxInlineSize\n"));
+
+    QP_ATTR_MASK_CLR_ALL(qp_attr_mask);
+    status = VAPI_query_qp(IBU_Process.hca_handle, 
+			   ibu->qp_handle, 
+			   &qp_attr,
+			   &qp_attr_mask, 
+			   &qp_init_attr );
+    if( status != VAPI_OK )
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_GETMAXINLINESIZE);
+	return status;
+    }
+    ibu->max_inline_size = qp_attr.cap.max_inline_data_sq;
+
+    MPIU_DBG_PRINTF(("exiting getMaxInlineSize\n"));
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_GETMAXINLINESIZE);
+    return IBU_SUCCESS;
+}
+
+#undef FUNCNAME
 #define FUNCNAME modifyQP
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
@@ -225,7 +259,7 @@ int ibu_finish_qp(ibu_t p, int dest_lid, int dest_qp_num)
     status = modifyQP(p, VAPI_INIT);
     if (status != IBU_SUCCESS)
     {
-	MPIU_Internal_error_printf("ibu_create_qp: modifyQP(INIT) failed, error %s\n", VAPI_strerror(status));
+	MPIU_Internal_error_printf("ibu_finish_qp: modifyQP(INIT) failed, error %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
 	return -1;
     }
@@ -233,7 +267,7 @@ int ibu_finish_qp(ibu_t p, int dest_lid, int dest_qp_num)
     status = modifyQP(p, VAPI_RTR);
     if (status != IBU_SUCCESS)
     {
-	MPIU_Internal_error_printf("ibu_create_qp: modifyQP(RTR) failed, error %s\n", VAPI_strerror(status));
+	MPIU_Internal_error_printf("ibu_finish_qp: modifyQP(RTR) failed, error %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
 	return -1;
     }
@@ -241,7 +275,15 @@ int ibu_finish_qp(ibu_t p, int dest_lid, int dest_qp_num)
     status = modifyQP(p, VAPI_RTS);
     if (status != IBU_SUCCESS)
     {
-	MPIU_Internal_error_printf("ibu_create_qp: modifyQP(RTS) failed, error %s\n", VAPI_strerror(status));
+	MPIU_Internal_error_printf("ibu_finish_qp: modifyQP(RTS) failed, error %s\n", VAPI_strerror(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
+	return -1;
+    }
+
+    status = getMaxInlineSize(p);
+    if (status != IBU_SUCCESS)
+    {
+	MPIU_Internal_error_printf("ibu_finish_qp: getMaxInlineSize() failed, error %s\n", VAPI_strerror(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
 	return -1;
     }
@@ -467,8 +509,8 @@ int ibui_post_ack_write(ibu_t ibu)
 #endif
 
     /*sanity_check_send(&work_req);*/
-    MPIDI_DBG_PRINTF((60, FCNAME, "VAPI_post_sr(%d byte ack)", ibu->nUnacked));
-    status = VAPI_post_sr( IBU_Process.hca_handle,
+    MPIDI_DBG_PRINTF((60, FCNAME, "EVAPI_post_inline_sr(%d byte ack)", ibu->nUnacked));
+    status = EVAPI_post_inline_sr( IBU_Process.hca_handle,
 	ibu->qp_handle, 
 	&work_req);
     if (status != VAPI_OK)
@@ -578,10 +620,20 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
 #endif
 
 	/*sanity_check_send(&work_req);*/
-	MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_sr(%d bytes)", length));
-	status = VAPI_post_sr( IBU_Process.hca_handle,
-	    ibu->qp_handle, 
-	    &work_req);
+	if (length < ibu->max_inline_size)
+	{
+	    MPIDI_DBG_PRINTF((60, FCNAME, "calling EVAPI_post_inline_sr(%d bytes)", length));
+	    status = EVAPI_post_inline_sr( IBU_Process.hca_handle,
+				   ibu->qp_handle, 
+				   &work_req);
+	}
+	else
+	{
+	    MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_sr(%d bytes)", length));
+	    status = VAPI_post_sr( IBU_Process.hca_handle,
+				   ibu->qp_handle, 
+				   &work_req);
+	}
 	if (status != VAPI_OK)
 	{
 	    MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
@@ -722,10 +774,20 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 #endif
 
 	/*sanity_check_send(&work_req);*/
-	MPIDI_DBG_PRINTF((60, FCNAME, "VAPI_post_sr(%d bytes)", msg_size));
-	status = VAPI_post_sr( IBU_Process.hca_handle,
-	    ibu->qp_handle, 
-	    &work_req);
+	if (msg_size < ibu->max_inline_size)
+	{
+	    MPIDI_DBG_PRINTF((60, FCNAME, "EVAPI_post_inline_sr(%d bytes)", msg_size));
+	    status = EVAPI_post_inline_sr( IBU_Process.hca_handle,
+				   ibu->qp_handle, 
+				   &work_req);
+	}
+	else
+	{
+	    MPIDI_DBG_PRINTF((60, FCNAME, "VAPI_post_sr(%d bytes)", msg_size));
+	    status = VAPI_post_sr( IBU_Process.hca_handle,
+				   ibu->qp_handle, 
+				   &work_req);
+	}
 	if (status != VAPI_OK)
 	{
 	    MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
@@ -763,6 +825,24 @@ int ibu_init()
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_INIT);
     MPIU_DBG_PRINTF(("entering ibu_init\n"));
+
+    /* FIXME: This is a temporary solution to prevent cached pointers from pointing to old
+       physical memory pages.  A better solution might be to add a user hook to free() to remove
+       cached pointers at that time.
+    */
+#ifdef MPIDI_CH3_CHANNEL_RNDV
+    /* taken from the OSU mvapich source: */
+    /* Set glibc/stdlib malloc options to prevent handing
+     * memory back to the system (brk) upon free.
+     * Also, dont allow MMAP memory for large allocations.
+     */
+#ifdef M_TRIM_THRESHOLD
+    mallopt(M_TRIM_THRESHOLD, -1);
+#endif
+#ifdef M_MMAP_MAX
+    mallopt(M_MMAP_MAX, 0);
+#endif
+#endif
 
     /* Initialize globals */
     status = EVAPI_get_hca_hndl(id, &IBU_Process.hca_handle);
@@ -831,7 +911,7 @@ int ibu_finalize()
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINALIZE);
     MPIU_DBG_PRINTF(("entering ibu_finalize\n"));
-#ifdef HAVE_32BIT_POINTERS
+#ifndef HAVE_32BIT_POINTERS
     ibuBlockAllocFinalize(&g_workAllocator);
 #endif
     MPIU_DBG_PRINTF(("exiting ibu_finalize\n"));
@@ -1197,6 +1277,8 @@ int post_pkt_recv(MPIDI_VC_t *recv_vc_ptr)
 	MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV);
 	return mpi_errno;
     }
+
+    /* This is not correct.  It must handle the same cases that ibu_wait does. */
 
     mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
     if (mpi_errno != MPI_SUCCESS)

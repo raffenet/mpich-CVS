@@ -134,6 +134,7 @@ typedef struct ibu_state_t
     /*void *user_ptr;*/
     /* unexpected queue pointer */
     struct ibu_state_t *unex_finished_queue;
+    int max_inline_size;
 } ibu_state_t;
 
 typedef struct IBU_Global {

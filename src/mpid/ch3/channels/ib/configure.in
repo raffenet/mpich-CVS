@@ -48,6 +48,7 @@ AC_DEFINE(MPID_IBU_TYPE_UNIX,,[Define to use unix iovecs])
 
 AC_CHECK_HEADERS(				\
     assert.h					\
+    malloc.h					\
     errno.h					\
     fcntl.h					\
     netdb.h					\
