@@ -1,7 +1,10 @@
+Debug*
+Release*
 Makefile.in
 Makefile
 *.o
 *.pf
+*.plg
 bcasttest
 allred
 alltoallv
