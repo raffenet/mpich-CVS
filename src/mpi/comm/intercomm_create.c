@@ -8,6 +8,9 @@
 #include "mpiimpl.h"
 #include "mpicomm.h"
 
+/* #define DEBUG(a) a;fflush(stdout)  */
+#define DEBUG(a) 
+
 /* -- Begin Profiling Symbol Block for routine MPI_Intercomm_create */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Intercomm_create = PMPI_Intercomm_create
@@ -55,21 +58,21 @@ PMPI_LOCAL int MPIR_CheckDisjointLpids( int lpids1[], int n1,
     for (i=0; i<n1; i++) {
 	idx = lpids1[i] / 32;
 	bit = lpids1[i] % 32;
-	lpidmask[i] = lpidmask[i] | (1 << bit);
+	lpidmask[idx] = lpidmask[idx] | (1 << bit);
     }    
 
     /* Look for any duplicates in the second array */
     for (i=0; i<n2; i++) {
 	idx = lpids2[i] / 32;
 	bit = lpids2[i] % 32;
-	if (lpidmask[i] | (1 << bit)) {
+	if (lpidmask[idx] & (1 << bit)) {
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
 					      "**dupprocesses", 
 					      "**dupprocesses %d", lpids2[i] );
 	    return mpi_errno;
 	}
 	/* Add a check on duplicates *within* group 2 */
-	lpidmask[i] = lpidmask[i] | (1 << bit);
+	lpidmask[idx] = lpidmask[idx] | (1 << bit);
     }
     
     return 0;
@@ -168,7 +171,9 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	    {
 		MPID_Comm_valid_ptr( peer_comm_ptr, mpi_errno );
 		/* peer comm must be an intracommunicator */
-		MPIR_ERRTEST_COMM_INTRA(peer_comm_ptr, mpi_errno );
+		if( peer_comm_ptr) {
+		    MPIR_ERRTEST_COMM_INTRA(peer_comm_ptr, mpi_errno );
+		}
 		if (!mpi_errno && peer_comm_ptr && 
 		    (remote_leader < 0 || 
 		     remote_leader >= peer_comm_ptr->local_size)) {
@@ -178,11 +183,13 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 					  local_leader, comm_ptr->local_size );
 		}
 		/* Check that the local leader and the remote leader are 
-		   different processes */
-		if (local_leader == remote_leader) {
+		   different processes.  This test requires looking at
+		   the lpid for the two ranks in their respective 
+		   communicators */
+/*		if (local_leader == remote_leader) {
 		    mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
 						      "**ranksdistinct", 0 );
-		}
+						      }*/
 		if (mpi_errno) {
 		    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
 		    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -201,12 +208,15 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	/* Exchange information with my peer.  Use sendrecv */
 	local_size = comm_ptr->local_size;
 
+	DEBUG(printf( "rank %d sendrecv to rank %d\n", peer_comm_ptr->rank, remote_leader ));
 	mpi_errno = NMPI_Sendrecv( &local_size,  1, MPI_INT, 
 				   remote_leader, tag,
 				   &remote_size, 1, MPI_INT, 
 				   remote_leader, tag, 
 				   peer_comm, MPI_STATUS_IGNORE );
-	
+
+	DEBUG(printf( "local size = %d, remote size = %d\n", local_size, 
+		      remote_size ));
 	/* With this information, we can now send and receive the 
 	   local process ids from the peer.  This works only
 	   for local process ids within MPI_COMM_WORLD, so this
@@ -263,13 +273,15 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
      * we know that the local and remote groups are disjoint, this 
      * step will complete 
      */
+    DEBUG(printf( "About to get contextid (commsize=%d) on %d\n",
+		  comm_ptr->local_size, comm_ptr->rank ));
     context_id = MPIR_Get_contextid( local_comm );
     if (context_id == 0) {
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**toomanycomm", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
-
+    DEBUG(printf( "Got contextid\n" ));
     /* Leaders can now swap context ids and then broadcast the value
        to the local group of processes */
     if (comm_ptr->rank == local_leader) {
@@ -292,12 +304,16 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	   along with the final context id */
 	comm_info[0] = remote_size;
 	comm_info[1] = final_context_id;
+	DEBUG(printf ("About to bcast on local_comm\n"));
 	NMPI_Bcast( comm_info, 2, MPI_INT, local_leader, local_comm );
 	NMPI_Bcast( remote_lpids, comm_info[0], MPI_INT, local_leader, 
 		    local_comm );
+	DEBUG(printf( "end of bcast on local_comm of size %d\n", 
+		      comm_ptr->local_size ));
     }
     else {
 	/* were the other processes */
+	DEBUG(printf ("About to receive bcast on local_comm\n"));
 	NMPI_Bcast( comm_info, 2, MPI_INT, local_leader, local_comm );
 	remote_size = comm_info[0];
 	remote_lpids = (int *)MPIU_Malloc( remote_size * sizeof(int) );
@@ -339,6 +355,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     newcomm_ptr->local_group  = 0;
     newcomm_ptr->remote_group = 0;
     newcomm_ptr->comm_kind    = MPID_INTERCOMM;
+    newcomm_ptr->local_comm   = 0;
     
     /* FIXME: for MPI1, all process ids are relative to MPI_COMM_WORLD.
        For MPI2, we'll need to do something more complex */
@@ -361,6 +378,12 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     MPID_VCRT_Get_ptr( newcomm_ptr->local_vcrt, &newcomm_ptr->local_vcr );
     for (i=0; i<comm_ptr->local_size; i++) {
 	MPID_VCR_Dup( comm_ptr->vcr[i], &newcomm_ptr->local_vcr[i] );
+    }
+
+    /* Inherit the error handler (if any) */
+    newcomm_ptr->errhandler = comm_ptr->errhandler;
+    if (comm_ptr->errhandler) {
+	MPIU_Object_add_ref( comm_ptr->errhandler );
     }
 	
     /* Notify the device of this new communicator */
