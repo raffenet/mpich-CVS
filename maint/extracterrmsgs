@@ -317,6 +317,51 @@ sub AddTestCall {
 		print TESTFD "    char s$narg\[\] = \"string$narg\";\n";
 		$args[$#args+1] = "s$narg";
 	    }
+	    elsif ($type eq "C")
+	    {
+		print TESTFD "    int i$narg = $narg;\n";
+		$args[$#args+1] = "i$narg";
+	    }
+	    elsif ($type eq "I")
+	    {
+		print TESTFD "    int i$narg = $narg;\n";
+		$args[$#args+1] = "i$narg";
+	    }
+	    elsif ($type eq "D")
+	    {
+		print TESTFD "    int i$narg = $narg;\n";
+		$args[$#args+1] = "i$narg";
+	    }
+	    elsif ($type eq "F")
+	    {
+		print TESTFD "    int i$narg = $narg;\n";
+		$args[$#args+1] = "i$narg";
+	    }
+	    elsif ($type eq "W")
+	    {
+		print TESTFD "    int i$narg = $narg;\n";
+		$args[$#args+1] = "i$narg";
+	    }
+	    elsif ($type eq "G")
+	    {
+		print TESTFD "    int i$narg = $narg;\n";
+		$args[$#args+1] = "i$narg";
+	    }
+	    elsif ($type eq "O")
+	    {
+		print TESTFD "    int i$narg = $narg;\n";
+		$args[$#args+1] = "i$narg";
+	    }
+	    elsif ($type eq "R")
+	    {
+		print TESTFD "    int i$narg = $narg;\n";
+		$args[$#args+1] = "i$narg";
+	    }
+	    elsif ($type eq "E")
+	    {
+		print TESTFD "    int i$narg = $narg;\n";
+		$args[$#args+1] = "i$narg";
+	    }
 	    else
 	    {
 		print STDERR "Unrecognized format type $type for $fullformat in $filename\n";
