@@ -27,16 +27,17 @@ int main( int argc, char * argv[] )
 	    exit( -1 );
 	}
     }
-    strncpy( executable, "/sandbox/lusk/holdit/mpich2-mpd-aug28/examples/spawnee", 128 );
+    strncpy( executable, "homes/thakur/cvs/mpich2/examples/spawnee", 128 );
     args[0] = "argument_1";
     args[1] = (char *) 0;
+/*
     rc = MPI_Comm_spawn( executable, args, maxprocs, MPI_INFO_NULL, 0, MPI_COMM_WORLD,
 			 &newintercomm, errcodes );
     if ( rc == MPI_SUCCESS )
 	printf( "spawner %d succeeded\n", rank );
     else
 	printf( "spawner %d returned %d\n", rank, rc );
-
+*/
     MPI_Finalize();
     return 0;
 }

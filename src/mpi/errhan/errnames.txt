@@ -132,6 +132,7 @@ be in the range 0 to %d
 **namepubnotpub:Lookup failed for service name 
 **namepubnotpub %s:Lookup failed for service name %s
 **nonamepub:No name publishing service available
+**needthreads:This function needs threads and threads have not been enabled
 #
 #---- The messages below this line haven't been used yet.
 #
