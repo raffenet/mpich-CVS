@@ -6,6 +6,39 @@
 
 #include "smpd.h"
 
+int smpd_handle_stdin_command(smpd_context_t *context)
+{
+    char data[SMPD_MAX_STDOUT_LENGTH];
+    smpd_command_t *cmd;
+    int num_decoded;
+    smpd_process_t *piter;
+
+    smpd_enter_fn("handle_stdin_command");
+
+    cmd = &context->read_cmd;
+    if (smpd_get_string_arg(cmd->cmd, "data", data, SMPD_MAX_STDOUT_LENGTH))
+    {
+	smpd_decode_buffer(data, data, SMPD_MAX_STDOUT_LENGTH, &num_decoded);
+	/*printf("[%d]", rank);*/
+	piter = smpd_process.process_list;
+	while (piter)
+	{
+	    if (piter->rank == 0 || smpd_process.stdin_toall)
+	    {
+		smpd_write(piter->in->sock, data, num_decoded);
+	    }
+	    piter = piter->next;
+	}
+    }
+    else
+    {
+	smpd_err_printf("unable to get the data from the stdin command: '%s'\n", cmd->cmd);
+    }
+
+    smpd_exit_fn("handle_stdin_command");
+    return SMPD_SUCCESS;
+}
+
 int smpd_handle_stdout_command(smpd_context_t *context)
 {
     int rank;
@@ -2041,6 +2074,12 @@ int smpd_handle_command(smpd_context_t *context)
     else if (strcmp(cmd->cmd_str, "abort") == 0)
     {
 	result = smpd_handle_abort_command(context);
+	smpd_exit_fn("smpd_handle_command");
+	return result;
+    }
+    else if (strcmp(cmd->cmd_str, "stdin") == 0)
+    {
+	result = smpd_handle_stdin_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
