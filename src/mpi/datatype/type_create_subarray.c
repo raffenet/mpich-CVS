@@ -5,6 +5,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#if 0
+
 #include "mpiimpl.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Type_create_subarray */
@@ -270,3 +272,5 @@ int MPI_Type_create_subarray(int ndims,
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }
+
+#endif

@@ -5,6 +5,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#if 0
+
 #include "mpiimpl.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Type_create_darray */
@@ -82,3 +84,5 @@ int MPI_Type_create_darray(int size, int rank, int ndims, int array_of_gsizes[],
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
     return MPI_SUCCESS;
 }
+
+#endif
