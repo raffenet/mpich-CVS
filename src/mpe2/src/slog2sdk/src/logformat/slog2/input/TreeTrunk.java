@@ -158,12 +158,13 @@ public class TreeTrunk extends TreeFloorList
                 }
             }
             else {  // if ( treenode.disjoints( time_win ) )
-                System.err.println( "TreeTrunk.growChildren(): ERROR!\n"
-                                  + "\t treenode.overlaps( time_win ) "
-                                  + "!= true\n"
-                                  + "\t " + treenode.getTreeNodeID()
-                                  + "does NOT overlap with " + time_win ); 
-                System.exit( 1 );
+                String err_msg = "TreeTrunk.growChildren(): ERROR!\n"
+                               + "\t treenode.overlaps( time_win ) "
+                               + "!= true\n"
+                               + "\t " + treenode.getTreeNodeID()
+                               + "does NOT overlap with " + time_win; 
+                throw new IllegalStateException( err_msg );
+                // System.exit( 1 );
             }
         }
     }

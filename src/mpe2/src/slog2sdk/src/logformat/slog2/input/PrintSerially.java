@@ -27,6 +27,10 @@ public class PrintSerially
     private static int            itrTopoLevel = InputLog.ITERATE_ALL;
     private static double         time_init_ftr  = 0.0;
     private static double         time_final_ftr = 1.0;
+    private static boolean        printCategoryMap  = true;
+    private static boolean        printTreeDir      = true;
+    private static boolean        printLineIDMaps   = true;
+    private static boolean        printDrawables    = true;
 
 
     public static final void main( String[] args )
@@ -53,7 +57,13 @@ public class PrintSerially
             InputLog.stdoutConfirmation();
         }
         slog_ins.initialize();
-        System.out.println( slog_ins );
+        System.out.println( slog_ins.toString( printCategoryMap,
+                                               printTreeDir,
+                                               printLineIDMaps ) );
+        if ( !printDrawables ) {
+            slog_ins.close();
+            System.exit( 0 );
+        }
 
         treedir = slog_ins.getTreeDir();
         // System.out.println( treedir );
@@ -131,6 +141,12 @@ public class PrintSerially
                                    + "Options: \n"
                                    + "\t [-h|-help|--help]           "
                                    + "\t Display this message.\n"
+                                   + "\t [-c|-category] DEF          "
+                                   + "\t Print category map only.\n"
+                                   + "\t [-d|-directory] DEF         "
+                                   + "\t Print directory tree only.\n"
+                                   + "\t [-y|-ycoordmap] DEF         "
+                                   + "\t Print Y-coord. map only.\n"
                                    + "\t [-s|-state] DEF             "
                                    + "\t Print states only.\n"
                                    + "\t [-a|-arrow] DEF             "
@@ -165,34 +181,64 @@ public class PrintSerially
                         System.out.flush();
                         System.exit( 0 );
                     }
+                    else if (  argv[ idx ].equals( "-c" )
+                            || argv[ idx ].equals( "-category" ) ) {
+                         printCategoryMap = true;
+                         printTreeDir     = false;
+                         printLineIDMaps  = false;
+                         printDrawables   = false;
+                         idx++;
+                    }
+                    else if (  argv[ idx ].equals( "-d" )
+                            || argv[ idx ].equals( "-directory" ) ) {
+                         printCategoryMap = false;
+                         printTreeDir     = true;
+                         printLineIDMaps  = false;
+                         printDrawables   = false;
+                         idx++;
+                    }
+                    else if (  argv[ idx ].equals( "-c" )
+                            || argv[ idx ].equals( "-ycoordmap" ) ) {
+                         printCategoryMap = false;
+                         printTreeDir     = false;
+                         printLineIDMaps  = true;
+                         printDrawables   = false;
+                         idx++;
+                    }
                     else if (  argv[ idx ].equals( "-is" )
                             || argv[ idx ].equals( "-incre_starttime" ) ) {
-                         dobj_order = Drawable.INCRE_STARTTIME_ORDER;
+                         dobj_order       = Drawable.INCRE_STARTTIME_ORDER;
+                         printDrawables   = true;
                          idx++;
                     }
                     else if (  argv[ idx ].equals( "-ds" )
                             || argv[ idx ].equals( "-decre_starttime" ) ) {
-                         dobj_order = Drawable.DECRE_STARTTIME_ORDER;
+                         dobj_order       = Drawable.DECRE_STARTTIME_ORDER;
+                         printDrawables   = true;
                          idx++;
                     }
                     else if (  argv[ idx ].equals( "-ie" )
                             || argv[ idx ].equals( "-incre_endtime" ) ) {
-                         dobj_order = Drawable.INCRE_FINALTIME_ORDER;
+                         dobj_order       = Drawable.INCRE_FINALTIME_ORDER;
+                         printDrawables   = true;
                          idx++;
                     }
                     else if (  argv[ idx ].equals( "-de" )
                             || argv[ idx ].equals( "-decre_endtime" ) ) {
-                         dobj_order = Drawable.DECRE_FINALTIME_ORDER;
+                         dobj_order       = Drawable.DECRE_FINALTIME_ORDER;
+                         printDrawables   = true;
                          idx++;
                     }
                     else if (  argv[ idx ].equals( "-s" )
                             || argv[ idx ].equals( "-state" ) ) {
-                         itrTopoLevel = InputLog.ITERATE_STATES;
+                         itrTopoLevel     = InputLog.ITERATE_STATES;
+                         printDrawables   = true;
                          idx++;
                     }
                     else if (  argv[ idx ].equals( "-a" )
                             || argv[ idx ].equals( "-arrow" ) ) {
-                         itrTopoLevel = InputLog.ITERATE_ARROWS;
+                         itrTopoLevel     = InputLog.ITERATE_ARROWS;
+                         printDrawables   = true;
                          idx++;
                     }
                     else if ( argv[ idx ].equals( "-ts" ) ) {

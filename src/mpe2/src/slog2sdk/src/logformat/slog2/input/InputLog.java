@@ -144,6 +144,11 @@ public class InputLog
         return filehdr.blockptr2treeroot;
     }
 
+    public int getTreeLeafByteSize()
+    {
+        return filehdr.getTreeLeafByteSize();
+    }
+
     public short getNumChildrenPerNode()
     {
         return filehdr.getNumChildrenPerNode();
@@ -362,8 +367,27 @@ public class InputLog
         return rep.toString();
     }
 
-    // orderItr=Drawable.INCRE_STARTTIME_ORDER : Increaing Starttime major order
-    // orderItr=Drawable.INCRE_FINALTIME_ORDER : Increaing Finaltime major order
+    public String toString( boolean printCategoryMap,
+                            boolean printTreeDir,
+                            boolean printLineIDMaps )
+    {
+        StringBuffer rep = new StringBuffer();
+        rep.append( filehdr.toString() + "\n" );
+        if ( printCategoryMap )
+            rep.append( objdefs.toString() + "\n" );
+        if ( printTreeDir )
+            rep.append( treedir.toString() + "\n" );
+        if ( printLineIDMaps )
+            rep.append( lineIDmaps.toString() + "\n" );
+        return rep.toString();
+    }
+
+    // "dobj_order" can be any one of the 4 predefined Drawable.Orders.
+    // i.e. INCRE_STARTTIME_ORDER, DECRE_STARTTIME_ORDER
+    //      INCRE_FINALTIME_ORDER, DECRE_FINALTIME_ORDER.
+    // where INCRE_STARTTIME_ORDER is the drawing order required by Jumpshot
+    // and   DECRE_STARTTIME_ORDER is the clickable search order in Jumpshot.
+    // and   INCRE_FINALTIME_ORDER is the drawable order iterated by TRACE-API
     public Iterator iteratorOfRealDrawables( TimeBoundingBox timeframe,
                                              Drawable.Order  dobj_order,
                                              int             itrTopoLevel )
