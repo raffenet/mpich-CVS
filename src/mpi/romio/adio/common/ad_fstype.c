@@ -421,7 +421,21 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 	*ops = &ADIO_PVFS_operations;
 #endif
     }
-
+    if (file_system == ADIO_TESTFS) {
+#ifndef ROMIO_TESTFS
+#ifdef PRINT_ERR_MSG
+	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the TESTFS file system\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_TESTFS,
+				     myname, (char *) 0, (char *) 0);
+	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
+	return;
+#endif
+#else
+	*ops = &ADIO_TESTFS_operations;
+#endif
+    }
     *error_code = MPI_SUCCESS;
     *fstype = file_system;
     return;
