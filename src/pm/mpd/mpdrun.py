@@ -137,7 +137,11 @@ def mpdrun():
             if p.hasAttribute('range'):
                 range = p.getAttribute('range')
                 splitRange = range.split('-')
-                (loRange,hiRange) = (int(splitRange[0]),int(splitRange[1]))
+                if len(splitRange) == 1:
+                    loRange = int(splitRange[0])
+                    hiRange = loRange
+                else:
+                    (loRange,hiRange) = (int(splitRange[0]),int(splitRange[1]))
             else:
                 (loRange,hiRange) = (0,nprocs-1)
             for i in xrange(loRange,hiRange+1):
