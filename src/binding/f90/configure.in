@@ -59,8 +59,15 @@ fi
 AC_SUBST(master_top_srcdir)
 export master_top_srcdir
 
+AC_PROG_INSTALL
+PAC_PROG_MKDIR_P
+
 # Find a Fortran 90 compiler.  Sets F90
 PAC_PROG_F90
+
+if test -z "$F90" ; then
+   AC_MSG_ERROR([Could not find a usable F90 compiler])
+fi
 
 # Find the extension that this compiler uses for modules.
 # Sets F90MODEXT (and adds it to the list substed)
@@ -72,6 +79,10 @@ PAC_F90_MODULE
 PAC_F90_EXT
 #
 # Determine the kind parameters for the MPI integer types
+if test -z "$sizeof_mpi_offset" ; then
+    AC_MSG_WARN([Size of MPI_Offset not specified; using 4])
+    sizeof_mpi_offset=4
+fi
 PAC_PROG_F90_INT_KIND(mpi_offset_kind,$sizeof_mpi_offset,$CROSS_SIZEOF_MPI_OFFSET)
 
 dnl Check for other Fortran 90 features, such as different include/use

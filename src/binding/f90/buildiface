@@ -13,6 +13,22 @@ $prototype_file = "../../include/mpi.h.in";
 	                               # replacement below)
 	     'bool' => 'LOGICAL',
 	     'bool[]' => 'LOGICAL %name%(*)',
+	     'MPI_Handler_function*' => 'EXTERNAL',
+	     'MPI_Win_errhandler_fn*' => 'EXTERNAL',
+	     'MPI_Comm_errhandler_fn*' => 'EXTERNAL',
+	     'MPI_File_errhandler_fn*' => 'EXTERNAL',
+	     'MPI_Comm_copy_attr_function*' => 'EXTERNAL',
+	     'MPI_Comm_delete_attr_function*' => 'EXTERNAL',
+	     'MPI_Type_copy_attr_function*' => 'EXTERNAL',
+	     'MPI_Type_delete_attr_function*' => 'EXTERNAL',
+	     'MPI_Win_copy_attr_function*' => 'EXTERNAL',
+	     'MPI_Win_delete_attr_function*' => 'EXTERNAL',
+	     'MPI_Copy_function*' => 'EXTERNAL',
+	     'MPI_Delete_function*' => 'EXTERNAL',
+	     'MPI_User_function*' => 'EXTERNAL',
+	     'MPI_Grequest_query_function*' => 'EXTERNAL',
+	     'MPI_Grequest_free_function*' => 'EXTERNAL',
+	     'MPI_Grequest_cancel_function*' => 'EXTERNAL',
 	     'MPI_Request' => 'INTEGER',
 	     'MPI_Request*' => 'INTEGER',
 	     'MPI_Request[]' => 'INTEGER %name%(*)',
@@ -34,7 +50,11 @@ $prototype_file = "../../include/mpi.h.in";
 	     'MPI_Aint[]' => 'INTEGER(KIND=MPI_ADDRESS_KIND) %name%(*)',
 	     'MPI_Info' => 'INTEGER',
 	     'MPI_Info*' => 'INTEGER', # Never an array of info
+	     'MPI_Info[]' => 'INTEGER %name%(*)',
 	     'char*' => 'CHARACTER (LEN=*)',
+	     'char*[]' => 'CHARACTER (LEN=*) %name%(*)',
+	     'char**[]' => 'CHARACTER (LEN=*) %name%(v0,*)',  #special case
+				# form Comm_Spawn_multiple
 	     'MPI_Win' => 'INTEGER',
 	     'MPI_Win*' => 'INTEGER', # Never an array of win
 	     'MPI_File' => 'INTEGER',
@@ -134,10 +154,12 @@ $prototype_file = "../../include/mpi.h.in";
 open (MPIFD, ">mpi.f90" ) || die "Could not open mpi.f90\n";
 print MPIFD "       MODULE MPI
        IMPLICIT NONE
+       INTERFACE
 !      This module was created by the script buildiface
        USE MPI_CONSTANTS,                                               &
      &      BASE_MPI_WTIME => MPI_WTIME, BASE_MPI_WTICK => MPI_WTICK
        USE MPIBASE
+       END INTERFACE
        END MODULE MPI\n";
   
 close (MPIFD);
@@ -145,7 +167,8 @@ close (MPIFD);
 open ( MPIBASEFD, ">mpibase.f90" ) || die "Could not open mpibase.f90\n";
 print MPIBASEFD "       MODULE MPIBASE
        IMPLICIT NONE
-!      This module was created by the script buildiface\n";
+!      This module was created by the script buildiface
+       INTERFACE\n";
 
 foreach $routine (keys(%mpi_routines)) {
     $ucname = uc($routine);
@@ -334,15 +357,23 @@ open ( MAKEFD, ">Makefile.sm" ) || die "Cannot create Makefile.sm";
 print MAKEFD "# DO NOT EDIT\n# This file created by buildiface $arg_string\n";
 
 print MAKEFD "smvar_do_dependencies = 0\n";
+print MAKEFD "MOD = \@F90MODEXT\@\n";
 
-print MAKEFD "mpi.\$(MOD): mpi.f90\
-\t\$(F90) -c \$(F90FLAGS) mpi.f90\n";
+print MAKEFD "mpi_constants.\$(MOD): \$(srcdir)/mpi_constants.f90\
+\t\$(F90) -c \$(F90FLAGS) \$(srcdir)/mpi_constants.f90\n";
+
+print MAKEFD "mpibase.\$(MOD): \$(srcdir)/mpibase.f90\
+\t\$(F90) -c \$(F90FLAGS) \$(srcdir)/mpibase.f90\n";
+
+print MAKEFD "mpi.\$(MOD): \$(srcdir)/mpi.f90 mpi_constants.\$(MOD) mpibase.\$(MOD)\
+\t\$(F90) -c \$(F90FLAGS) \$(srcdir)/mpi.f90\n";
 
 print MAKEFD "maint-clean:\
 \trm -f \${mpi_sources} fproto.h\n";
 
 print MAKEFD "install_BIN     = mpif90\n";
 print MAKEFD "install_ETC     = mpif90.conf\n";
+print MAKEFD "install_INCLUDE = mpi.\$(MOD) mpi_constants.\$(MOD) mpibase.\$(MOD)\n";
 
 # Since configure copies mpif90 to the bin dir, we need to remove it
 # in a distclean step.
