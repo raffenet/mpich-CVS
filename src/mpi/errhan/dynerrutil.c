@@ -106,6 +106,10 @@ static void MPIR_Init_err_dyncodes( void )
 #endif
 }
 
+#ifdef FCNAME
+#undef FCNAME
+#endif
+#define FCNAME "MPIR_Err_set_msg"
 /*+
   MPIR_Err_set_msg - Change the message for an error code or class
 
@@ -118,34 +122,54 @@ static void MPIR_Init_err_dyncodes( void )
  
   Module:
   Error
-@*/
++*/
 int MPIR_Err_set_msg( int code, const char *msg_string )
 {
     int errcode, errclass;
     size_t msg_len;
     char *str;
 
-    if (not_initialized)
+    /* --BEGIN ERROR HANDLING-- */
+    if (not_initialized) {
+	/* Just to keep the rest of the code more robust, we'll 
+	   initialize the dynamic error codes *anyway*, but this is 
+	   an error (see MPI_Add_error_string in the standard) */
 	MPIR_Init_err_dyncodes();
-
+	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+				     "MPIR_Err_set_msg", __LINE__, 
+				     MPI_ERR_ARG, "**argerrcode", 
+				     "**argerrcode %d", code );
+    }
+    /* --END ERROR HANDLING-- */
     
     /* Error strings are attached to a particular error code, not class.
        As a special case, if the code is 0, we use the class message */
     errclass = code & ERROR_CLASS_MASK;
     errcode  = (code & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT;
 
+    /* --BEGIN ERROR HANDLING-- */
     if (code & ~(ERROR_CLASS_MASK | ERROR_DYN_MASK | ERROR_GENERIC_MASK)) {
 	/* Check for invalid error code */
-	/* FIXME: make this instance specific */
-	return MPI_ERR_ARG;
+	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, 
+				     MPI_ERR_ARG, "**argerrcode", 
+				     "**argerrcode %d", code );
     }
+    /* --END ERROR HANDLING-- */
 
+    /* --------------------------------------------------------------------- */
     msg_len = strlen( msg_string );
     str = (char *)MPIU_Malloc( msg_len + 1 );
+    /* --BEGIN ERROR HANDLING-- */
     if (!str) {
-	/* FIXME: make this instance specific */
-	return MPI_ERR_OTHER;
+	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+				     FCNAME, __LINE__, MPI_ERR_OTHER, 
+				     "**nomem", "**nomem %s %d", 
+				     "error message string", msg_len );
     }
+    /* --END ERROR HANDLING-- */
+
+    /* --------------------------------------------------------------------- */
     MPIU_Strncpy( str, msg_string, msg_len + 1 );
     if (errcode) {
 	if (errcode < first_free_code) {
@@ -155,6 +179,7 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
 	    user_code_msgs[errcode] = (const char *)str;
 	}
 	else {
+	    /* FIXME: Unallocated error code? */
 	    MPIU_Free( str );
 	}
     }
@@ -166,6 +191,7 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
 	    user_class_msgs[errclass] = (const char *)str;
 	}
 	else {
+	    /* FIXME: Unallocated error code? */
 	    MPIU_Free( str );
 	}
     }
@@ -181,7 +207,7 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
   which case 'MPIR_Err_set_msg' should be called later.
 
   Return value:
-  An error class.
+  An error class.  Returns -1 if no more classes are available.
 
   Notes:
   This is used to implement 'MPI_Add_error_class'; it may also be used by a 
@@ -205,11 +231,17 @@ int MPIR_Err_add_class( const char *msg_string )
     /* Get new class */
     MPIR_Fetch_and_increment( &first_free_class, &new_class );
 
+    /* --BEGIN ERROR HANDLING-- */
     if (new_class >= ERROR_MAX_NCLASS) {
 	/* Fail if out of classes */
 	return -1;
     }
-    
+    /* --END ERROR HANDLING-- */
+
+    /* Note that the MPI interface always adds an error class without
+       a string.  The option for including a string was included 
+       as an eaiser way to add error messages for modules that are 
+       dynamically added to an MPICH2 implementation */
     if (msg_string) {
 	user_class_msgs[new_class] = MPIU_Strdup( msg_string );
     }
@@ -241,15 +273,19 @@ int MPIR_Err_add_code( int class, const char *msg_string )
 {
     int new_code;
 
+    /* Note that we can add codes to existing classes, so we may
+       need to initialize the dynamic error routines in this function */
     if (not_initialized)
 	MPIR_Init_err_dyncodes();
 
     /* Get the new code */
     MPIR_Fetch_and_increment( &first_free_code, &new_code );
+    /* --BEGIN ERROR HANDLING-- */
     if (new_code >= ERROR_MAX_NCODE) {
 	/* Fail if out of codes */
 	return -1;
     }
+    /* --END ERROR HANDLING-- */
 
     /* Create the full error code */
     new_code = class | ERROR_DYN_MASK | (new_code << ERROR_GENERIC_SHIFT);
@@ -257,6 +293,9 @@ int MPIR_Err_add_code( int class, const char *msg_string )
     return new_code;
 }
 
+#ifdef USE_ERRDELETE
+/* These were added for completeness and for any other modules that 
+   might be loaded with MPICH2.  No code uses these at this time */
 /*+
   MPIR_Err_delete_code - Delete an error code and its associated string
 
@@ -302,6 +341,7 @@ void MPIR_Err_delete_class( int class )
    alloc/dealloc to recover codes and classes independent of the order in
    which they are freed.
 */
+#endif
 
 /*+
   MPIR_Err_get_dynerr_string - Get the message string that corresponds to a
