@@ -85,17 +85,21 @@ static pmi_process_t pmi_process =
     -1                   /* port           */
 };
 
+static int silence = 0;
 static int pmi_err_printf(char *str, ...)
 {
-    int n;
+    int n=0;
     va_list list;
 
-    printf("[%d] ", pmi_process.iproc);
-    va_start(list, str);
-    n = vprintf(str, list);
-    va_end(list);
+    if (!silence)
+    {
+	printf("[%d] ", pmi_process.iproc);
+	va_start(list, str);
+	n = vprintf(str, list);
+	va_end(list);
 
-    fflush(stdout);
+	fflush(stdout);
+    }
 
     return n;
 }
@@ -2093,25 +2097,127 @@ int iPMI_Free_keyvals(PMI_keyval_t keyvalp[], int size)
     return PMI_SUCCESS;
 }
 
+static char * namepub_kvs = NULL;
+static int setup_name_service()
+{
+    int result;
+    char *pmi_namepub_kvs;
+
+    if (namepub_kvs != NULL)
+    {
+	/* FIXME: Should it be an error to call setup_name_service twice? */
+	MPIU_Free(namepub_kvs);
+    }
+
+    namepub_kvs = (char*)MPIU_Malloc(PMI_MAX_KVS_NAME_LENGTH);
+    if (!namepub_kvs)
+    {
+	pmi_err_printf("unable to allocate memory for the name publisher kvs.\n");
+	return PMI_FAIL;
+    }
+
+    pmi_namepub_kvs = getenv("PMI_NAMEPUB_KVS");
+    if (pmi_namepub_kvs)
+    {
+	strncpy(namepub_kvs, pmi_namepub_kvs, PMI_MAX_KVS_NAME_LENGTH);
+    }
+    else
+    {
+	/*result = PMI_KVS_Create(namepub_kvs, PMI_MAX_KVS_NAME_LENGTH);*/
+	result = iPMI_Get_kvs_domain_id(namepub_kvs, PMI_MAX_KVS_NAME_LENGTH);
+	if (result != PMI_SUCCESS)
+	{
+	    pmi_err_printf("unable to get the name publisher kvs name.\n");
+	    return result;
+	}
+    }
+
+    /*printf("namepub kvs: <%s>\n", namepub_kvs);fflush(stdout);*/
+    return PMI_SUCCESS;
+}
+
 int iPMI_Publish_name( const char service_name[], const char port[] )
 {
+    int result;
     if (service_name == NULL || port == NULL)
 	return PMI_ERR_INVALID_ARG;
-    return PMI_FAIL;
+    if (namepub_kvs == NULL)
+    {
+	result = setup_name_service();
+	if (result != PMI_SUCCESS)
+	    return result;
+    }
+    /*printf("publish kvs: <%s>\n", namepub_kvs);fflush(stdout);*/
+    result = iPMI_KVS_Put(namepub_kvs, service_name, port);
+    if (result != PMI_SUCCESS)
+    {
+	pmi_err_printf("unable to put the service name and port into the name publisher kvs.\n");
+	return result;
+    }
+    result = iPMI_KVS_Commit(namepub_kvs);
+    if (result != PMI_SUCCESS)
+    {
+	pmi_err_printf("unable to commit the name publisher kvs.\n");
+	return result;
+    }
+    return PMI_SUCCESS;
 }
 
 int iPMI_Unpublish_name( const char service_name[] )
 {
+    int result;
     if (service_name == NULL)
 	return PMI_ERR_INVALID_ARG;
-    return PMI_FAIL;
+    if (namepub_kvs == NULL)
+    {
+	result = setup_name_service();
+	if (result != PMI_SUCCESS)
+	    return result;
+    }
+    /*printf("unpublish kvs: <%s>\n", namepub_kvs);fflush(stdout);*/
+    /* This assumes you can put the same key more than once which breaks the PMI specification */
+    result = iPMI_KVS_Put(namepub_kvs, service_name, "");
+    if (result != PMI_SUCCESS)
+    {
+	pmi_err_printf("unable to put the blank service name and port into the name publisher kvs.\n");
+	return result;
+    }
+    result = iPMI_KVS_Commit(namepub_kvs);
+    if (result != PMI_SUCCESS)
+    {
+	pmi_err_printf("unable to commit the name publisher kvs.\n");
+	return result;
+    }
+    return PMI_SUCCESS;
 }
 
 int iPMI_Lookup_name( const char service_name[], char port[] )
 {
+    int result;
     if (service_name == NULL || port == NULL)
 	return PMI_ERR_INVALID_ARG;
-    return PMI_FAIL;
+    if (namepub_kvs == NULL)
+    {
+	result = setup_name_service();
+	if (result != PMI_SUCCESS)
+	    return result;
+    }
+    /*printf("lookup kvs: <%s>\n", namepub_kvs);fflush(stdout);*/
+    silence = 1;
+    result = iPMI_KVS_Get(namepub_kvs, service_name, port, MPI_MAX_PORT_NAME);
+    silence = 0;
+    if (result != PMI_SUCCESS)
+    {
+	/* fail silently */
+	/*pmi_err_printf("unable to get the service name and port from the name publisher kvs.\n");*/
+	return result;
+    }
+
+    if (port[0] == '\0')
+    {
+	return MPI_ERR_NAME;
+    }
+    return PMI_SUCCESS;
 }
 
 #ifndef HAVE_WINDOWS_H
