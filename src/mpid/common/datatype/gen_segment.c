@@ -510,6 +510,11 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		case DLOOP_KIND_CONTIG:
 		    next_elmp->curoffset = cur_elmp->curoffset +
 			count_index * cur_elmp->loop_p->el_extent;
+#ifdef DLOOP_M_VERBOSE
+		    MPIU_dbg_printf("outer contig el_size = %d, el_extent = %d\n",
+				    (int) cur_elmp->loop_p->el_size,
+				    (int) cur_elmp->loop_p->el_extent);
+#endif
 		    break;
 		case DLOOP_KIND_VECTOR:
 		    /* NOTE: stride is in bytes */
@@ -518,8 +523,9 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			block_index * cur_elmp->loop_p->el_extent;
 #ifdef DLOOP_M_VERBOSE
 		    MPIU_dbg_printf("outer vec el_size = %d, el_extent = %d, stride = %d\n",
-			       cur_elmp->loop_p->el_size, cur_elmp->loop_p->el_extent,
-			       cur_elmp->loop_p->loop_params.v_t.stride);
+				    (int) cur_elmp->loop_p->el_size,
+				    (int) cur_elmp->loop_p->el_extent,
+				    (int) cur_elmp->loop_p->loop_params.v_t.stride);
 #endif
 		    break;
 		case DLOOP_KIND_BLOCKINDEXED:

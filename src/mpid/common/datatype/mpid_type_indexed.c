@@ -33,9 +33,6 @@
   datatype.
 @*/
 
-/* NOTE: This isn't a good example to copy, because the extent calculations
- * made me move code blocks into odd places. -- Rob Ross
- */
 int MPID_Type_indexed(int count,
 		      int *blocklength_array,
 		      void *displacement_array,
@@ -44,15 +41,14 @@ int MPID_Type_indexed(int count,
 		      MPI_Datatype *newtype)
 {
     int mpi_errno = MPI_SUCCESS;
-    int i, new_loopsize, total_count, *iptr;
+    int i, new_loopsize, el_count, *iptr;
     char *curpos;
-    MPI_Aint el_extent;
 
-    MPID_Datatype *new_dtp, *old_dtp = NULL;
+    MPID_Datatype *new_dtp;
     struct MPID_Dataloop *dlp;
     MPI_Aint *aptr;
 
-    MPI_Aint min_disp = 0, max_disp = 0;
+    MPI_Aint min_lb = 0, max_ub = 0, eff_disp, el_extent, el_size;
 
     /* allocate new datatype object and handle */
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
@@ -68,69 +64,60 @@ int MPID_Type_indexed(int count,
 
     if (dispinbytes) new_dtp->combiner = MPI_COMBINER_HINDEXED;
     else new_dtp->combiner             = MPI_COMBINER_INDEXED;
+
     new_dtp->is_permanent = 0;
     new_dtp->is_committed = 0;
     new_dtp->attributes   = 0;
     new_dtp->cache_id     = 0;
     new_dtp->name[0]      = 0;
 
-    /* get extent of old type; needed for new extent calculation */
-    if (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN)
-	el_extent = MPID_Datatype_get_basic_size(oldtype);
-    else {
-	/* get pointer to old datatype from handle */
-	MPID_Datatype_get_ptr(oldtype, old_dtp); /* fills in old_dtp */
-	el_extent = old_dtp->extent;
-    }
-
-    /* count # of elements and find min and max displacements */
-    if (dispinbytes) {
-	min_disp = ((MPI_Aint *) displacement_array)[0];
-	max_disp = min_disp + (MPI_Aint) blocklength_array[0] * el_extent;
-    }
-    else {
-	min_disp = (MPI_Aint) ((int *) displacement_array)[0] * el_extent;
-	max_disp = (min_disp + (MPI_Aint) blocklength_array[0]) * el_extent;
-    }
-    total_count = blocklength_array[0];
-
-    /* TODO: IS MY EXTENT CALCULATING RIGHT??? */
-    /* TODO: ADD IN ALIGNMENT ISSUES IF ANY */
-
-    for (i=1; i < count; i++) {
-	total_count += blocklength_array[i];
-
-	if (dispinbytes) /* hindexed */ {
-	    if (((MPI_Aint *) displacement_array)[i] < min_disp)
-		min_disp = ((MPI_Aint *) displacement_array)[i];
-	    else if (((MPI_Aint *) displacement_array)[i] + blocklength_array[i] * el_extent > max_disp)
-		max_disp = ((MPI_Aint *) displacement_array)[i] + blocklength_array[i] * el_extent;
-	}
-	else {
-	    if ((MPI_Aint) ((int *) displacement_array)[i] * el_extent < min_disp)
-		min_disp = ((int *) displacement_array)[i];
-	    else if ((MPI_Aint) (((int *) displacement_array)[i] + blocklength_array[i]) * el_extent > max_disp)
-		max_disp = (MPI_Aint) (((int *) displacement_array)[i] + blocklength_array[i]) * el_extent;
-	}
-    }
-
     /* builtins are handled differently than user-defined types because they
      * have no associated dataloop or datatype structure.
      */
     if (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN) {
 	/* get old values directly from the handle using bit ops */
-	int oldsize = MPID_Datatype_get_basic_size(oldtype);
+	el_size = MPID_Datatype_get_basic_size(oldtype);
+	el_extent = el_size; /* needed at bottom of function at the very least */
+
+	el_count = blocklength_array[0]; /* also going to count # of oldtypes */
+	if (dispinbytes)
+	    eff_disp = ((MPI_Aint *) displacement_array)[0];
+	else
+	    eff_disp = ((MPI_Aint *) displacement_array)[0] * el_size;
+
+	min_lb = eff_disp;
+	max_ub = min_lb + (MPI_Aint) blocklength_array[0] * el_size;
+	
+	for (i=1; i < count; i++) {
+	    MPI_Aint tmp_lb, tmp_ub; /* mostly used for clarity; could remove */
+
+	    el_count += blocklength_array[i]; /* add more oldtypes */
+
+	    if (dispinbytes)
+		eff_disp = ((MPI_Aint *) displacement_array)[i];
+	    else
+		eff_disp = ((MPI_Aint *) displacement_array)[i] * el_size;
+	    
+	    /* calculate ub and lb for this block */
+	    tmp_lb = eff_disp;
+	    tmp_ub = eff_disp + (MPI_Aint) blocklength_array[i] * el_size;
+	    if (tmp_lb < min_lb) min_lb = tmp_lb;
+	    if (tmp_ub > max_ub) max_ub = tmp_ub;
+	}
 
 	/* fill in remainder of new datatype */
-	new_dtp->size           = total_count * oldsize;
-	new_dtp->extent         = max_disp - min_disp; /* in bytes */
+	new_dtp->size           = el_count * el_size;
 	new_dtp->has_sticky_ub  = 0;
 	new_dtp->has_sticky_lb  = 0;
 	new_dtp->loopinfo_depth = 1;
-	new_dtp->true_lb        = min_disp; /* ? */
-	new_dtp->true_ub        = max_disp; /* ? */
-	new_dtp->alignsize      = oldsize;
-	new_dtp->n_elements     = -1; /* ??? */
+
+	new_dtp->lb             = min_lb;
+	new_dtp->ub             = max_ub;
+	new_dtp->true_lb        = min_lb;
+	new_dtp->true_ub        = max_ub;
+	new_dtp->extent         = max_ub - min_lb;
+	new_dtp->alignsize      = el_size;
+	new_dtp->n_elements     = el_count;
 	new_dtp->is_contig      = 0; /* ??? */
 
 	/* allocate dataloop
@@ -143,10 +130,9 @@ int MPID_Type_indexed(int count,
 	 *
 	 * TODO: PADDING???
 	 */
-	new_loopsize            = sizeof(struct MPID_Dataloop) + 
-	    count * (sizeof(MPI_Aint) + sizeof(int));
+	new_loopsize = sizeof(struct MPID_Dataloop) + count * (sizeof(MPI_Aint) + sizeof(int));
 
-	dlp                     = (struct MPID_Dataloop *)MPIU_Malloc(new_loopsize);
+	dlp = (struct MPID_Dataloop *)MPIU_Malloc(new_loopsize);
 	if (dlp == NULL) assert(0);
 
 	new_dtp->opt_loopinfo   = dlp;
@@ -155,22 +141,76 @@ int MPID_Type_indexed(int count,
 
 	/* fill in dataloop, noting that this is a leaf.  no need to copy. */
 	/* NOTE: element size in kind is off. */
-	dlp->kind                       = DLOOP_KIND_INDEXED | DLOOP_FINAL_MASK | (oldsize << DLOOP_ELMSIZE_SHIFT);
+	dlp->kind                       = DLOOP_KIND_INDEXED | DLOOP_FINAL_MASK | (el_size << DLOOP_ELMSIZE_SHIFT);
 	dlp->handle                     = new_dtp->handle;
 	dlp->loop_params.i_t.count      = count;
 	dlp->loop_params.i_t.u.handle   = oldtype;
-	dlp->el_extent                  = oldsize; /* extent = size for basic types */
-	dlp->el_size                    = oldsize;
+	dlp->el_extent                  = el_size; /* extent = size for basic types */
+	dlp->el_size                    = el_size;
     }
     else /* user-defined base type */ {
-	new_dtp->size           = total_count * old_dtp->size; /* in bytes */
-	new_dtp->extent         = max_disp - min_disp; /* in bytes */
+	MPI_Aint el_lb, el_ub;
+	MPID_Datatype *old_dtp;
+	    
+	MPID_Datatype_get_ptr(oldtype, old_dtp);
+	el_size   = old_dtp->size;
+	el_extent = old_dtp->extent;
+	el_lb     = old_dtp->lb;
+	el_ub     = old_dtp->ub;
+
+	/* get some starting values for lb, ub */
+	el_count = blocklength_array[0]; /* also going to count # of oldtypes */
+	if (dispinbytes)
+	    eff_disp = ((MPI_Aint *) displacement_array)[0];
+	else
+	    eff_disp = ((MPI_Aint *) displacement_array)[0] * el_extent;
+
+	if (el_extent >= 0) {
+	    min_lb = el_lb + eff_disp;
+	    max_ub = el_ub + eff_disp + ((MPI_Aint) blocklength_array[0] - 1) * el_extent;
+	}
+	else /* el_extent < 0 */ {
+	    min_lb = el_lb + eff_disp + ((MPI_Aint) blocklength_array[0] - 1) * el_extent;;
+	    max_ub = el_ub + eff_disp;
+	}
+	
+	/* find smallest lb, largest ub */
+	for (i=1; i < count; i++) {
+	    MPI_Aint tmp_lb, tmp_ub; /* mostly used for clarity; could remove */
+
+	    el_count += blocklength_array[i]; /* add more oldtypes */
+
+	    if (dispinbytes)
+		eff_disp = ((MPI_Aint *) displacement_array)[i];
+	    else
+		eff_disp = ((MPI_Aint *) displacement_array)[i] * el_extent;
+	    
+	    /* calculate ub and lb for this block */
+	    if (el_extent >= 0) {
+		tmp_lb = el_lb + eff_disp;
+		tmp_ub = el_ub + eff_disp + ((MPI_Aint) blocklength_array[i] - 1) * el_extent;
+	    }
+	    else /* el_extent < 0 */ {
+		tmp_lb = el_lb + eff_disp + ((MPI_Aint) blocklength_array[i] - 1) * el_extent;;
+		tmp_ub = el_ub + eff_disp;
+	    }
+
+	    if (tmp_lb < min_lb) min_lb = tmp_lb;
+	    if (tmp_ub > max_ub) max_ub = tmp_ub;
+	}
+
+	new_dtp->size           = el_count * el_size; /* in bytes */
+	new_dtp->lb             = min_lb;
+	new_dtp->ub             = max_ub;
+	new_dtp->true_lb        = min_lb + (old_dtp->true_lb - el_lb);
+	new_dtp->true_ub        = max_ub + (old_dtp->true_ub - el_ub);
+	new_dtp->extent         = max_ub - min_lb;
+
 	new_dtp->has_sticky_ub  = old_dtp->has_sticky_ub;
 	new_dtp->has_sticky_lb  = old_dtp->has_sticky_lb;
 	new_dtp->loopinfo_depth = old_dtp->loopinfo_depth + 1;
-	new_dtp->true_lb        = old_dtp->true_lb; /* WRONG */
 	new_dtp->alignsize      = old_dtp->alignsize;
-	new_dtp->n_elements     = -1; /* ??? */
+	new_dtp->n_elements     = el_count * old_dtp->n_elements;
 
 	new_dtp->is_contig = 0; /* TODO: FIX THIS */
 
@@ -190,7 +230,7 @@ int MPID_Type_indexed(int count,
 	dlp->handle                     = new_dtp->handle; /* filled in by MPIU_Handle_obj_alloc */
 	dlp->loop_params.i_t.count      = count;
 	dlp->el_extent                  = el_extent;
-	dlp->el_size                    = old_dtp->size;
+	dlp->el_size                    = el_size;
 
 	/* copy in old dataloop */
 	curpos = (char *) dlp; /* NEED TO PAD? */
