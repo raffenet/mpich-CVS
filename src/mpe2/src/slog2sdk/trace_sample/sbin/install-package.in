@@ -384,8 +384,10 @@ for type in lib logfiles ; do
             fi
             CopyDirRecurP $fromdir_value $todir_value $MODE
         fi
-    fi 
+    fi
 done
+
+cd $libbuild_dir/../src ; $MAKE INSTALL_LIBSO LIBDIR=$libdir
 
 EXEFILES="@EXEFILES@"
 
