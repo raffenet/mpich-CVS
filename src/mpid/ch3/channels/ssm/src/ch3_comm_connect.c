@@ -16,6 +16,7 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm **newcomm)
 {
+#if 0
     int p, key_max_sz, val_max_sz, mpi_errno=MPI_SUCCESS;
     int i, bizcards_len, rank, kvs_namelen, recv_ints[3],
         send_ints[2], remote_pg_size, comm_size, context_id;
@@ -25,6 +26,9 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
     MPIDI_CH3I_Process_group_t * remote_pg;
     MPIDI_VC *vc_table, *vc;
     int *local_pg_ranks, *remote_pg_ranks;
+#else
+    int mpi_errno = MPI_SUCCESS;
+#endif
 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_COMM_CONNECT);
 
