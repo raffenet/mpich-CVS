@@ -1,0 +1,364 @@
+%
+% This file contains a discussion of the design goal and rationale of
+% the ADI design.
+
+\documentclass{article}
+
+\def\nopound{\catcode`\#=13}
+{\nopound\gdef#{{\tt \char`\#}}}
+\catcode`\_=13
+\def_{{\tt \char`\_}}
+\catcode`\_=11
+\def\code#1{\texttt{#1}}
+
+\begin{document}
+
+\title{ADI-3 Goals and Design Rationale}
+\author{}
+\maketitle
+
+\begin{abstract}
+
+\end{abstract}
+
+\section{Introduction}
+The goal of the MPICH-2 ADI-3 is to provide routines to support MPI-1
+and MPI-2 operations.  The target systems include clusters connected
+with either conventional networks or networks that support remote
+memory access such as Infiniband, large symmetric multiprocessors
+(SMPs), and experimental systems (particularly in support of research
+into MPI implementations).  
+
+In order to better understand the design of the ADI, we first review
+MPI communication.  MPI-1 defined both point-to-point and collective
+message-passing.  In both of these, the sender and the receiver
+actively participates in the communication in the sense that
+communication does not being until an MPI call is made to initiate it
+and the data is not guaranteed to be delivered until an MPI call is
+made by the destination process.  In fact, because the destination of
+the data is described by an MPI call by the destination process, the
+data cannot be delivered to its final (user-specified) destination
+until the matching MPI call is made by the destination.  This feature
+has led many (but not all) MPI implementations to adopt a
+\emph{polling} mode of communication where communication for MPI
+happens only within MPI calls, not asynchronously.  An alternative
+approach uses either one more more separate threads or an interrupt to
+cause communication to happen outside of MPI calls made by the user.
+
+MPI-2 introduced addition operations including remote memory access (RMA),
+dynamic process management, and parallel I/O.  The remote memory
+access (also called one-sided communication) provides a way to express
+put, get, and accumulate operations into memory in a remote process.
+In MPI, these operations are all non-blocking; to ensure that these
+operations are locally complete, an addition MPI routine must be
+called.  MPI provides two ``flavors'' of RMA completion: \emph{active target}
+and \emph{passive target}.  In active target, the target process of an
+RMA operation (that is, the process that did \emph{not} initiate the
+RMA operation) must call an MPI routine before the RMA completes.  The
+simplest is \code{MPI_Win_fence}; this is a collective call over all
+processes associated with the RMA window and is similar to a barrier.
+The other is the more esoteric ``scalable completion'' routines, which
+are called by a group of processes.  In both of these cases, an MPI
+implementation may rely on the target processes calling an MPI
+routine, and thus these may (but are not required to) use a polling
+implementation.   Unlike some other RMA packages, MPI active target
+RMA operations may be applied to any memory of the process.
+
+The other form of RMA completion is handled by calls made only by the
+originating process.  This is called passive target RMA.  Because the
+target process is not required to make any MPI calls, this kind of RMA
+requires either very capable hardware that can handle all MPI RMA
+operations or the use of a non-polling agent at the target process.
+Because these operations can be more difficult to implement
+efficiently, MPI allows an MPI implementation to require that passive
+target RMA operations act on memory allocated by
+\code{MPI_Mem_alloc}.  
+
+MPI-2 dynamic process management allows an MPI application both the
+create new processes and communicate with them and to connect two
+already running MPI programs together.  The number of processes in an
+MPI program can thus change over the lifetime of the program, though
+the MPI routines to create or connect to processes are collective over
+a communicator, allowing an MPI implementation to ensure that these
+operations are handled in a scalable fashion.
+
+The ADI described here is full-featured.  This allows an implementor
+to take advantage of the opportunities for more efficient
+communication.  However, to keep this flexibility from becoming a
+burder, the design of the ADI is also \emph{layered}: the more
+advanced features can be emulated by the more basic features.  The
+implementation of the ADI distributed with MPICH will include code to
+provide these more advanced features in terms of the more basic
+operations, allowing an implementor to quickly create a working
+implementation of the ADI and providing the opportunity to later
+enhance the performance by selectively replacing some of these
+emulations.
+
+The next section describes some of the design choices that these
+operations suggest.  These choices are not the only ones possible, but
+we believe that they provide a consistent and efficient way to realize
+the communication defined by MPI.
+
+\section{Basic Design Rationale}
+
+\subsection{Communication Types}
+
+While all MPI interprocess communication (including MPI-1 and MPI-2)
+can be supported by a single, suitably powerful mechanism such as
+active messages, the MPI communication semantics described above
+suggest four separate types of communication operations.  These are:
+
+\begin{enumerate}
+\item Two-party, point-to-point communication.  This is the classic
+send-receive operation.  This typically involves coordination between
+the sender and the receiver, handling such items as flow control,
+rendezvous messaging, and eager message delivery.  Many low-latency
+implementations of this kind of communication rely on \emph{polling}
+to advance the communication (make \emph{progress} in MPI terms).
+Others may use a separate thread or an interrupt-driven mechanism (or
+a hybrid of both polling and non-polling). 
+Because MPI semantics support nonblocking communication of arbitray
+message sizes, any low-level support for communication in MPI must
+provide nonblocking, point-to-point communication.  This is most
+easily accomplished if the low-level communications is also
+nonblocking.
+
+\item Communication that has the property of local-completion. That
+is, a communication operation that completes independent of any
+explicit action by the target (destination) process.  This is required
+in MPI-1 for the implementation of \code{MPI_Cancel} (in the send
+case in most implementations) and is useful for \code{MPI_Abort}.
+In MPI-2, local completion is also needed for \emph{passive target}
+remote memory access (RMA) opertions.  This kind of communication is
+typically implemented through the use of active messages or remote
+service requests (without polliing).
+
+\item Communication for active-target RMA.  In MPI, active target RMA
+operations include remote put, get, and accumulate.  These operations
+are completed by either an \code{MPI_Win_fence} call by all processes
+in the MPI window object or by the combination of
+\code{MPI_Win_complete} and \code{MPI_Win_wait} at the origin (process
+that initiating a put, get, or accumulate) and target (process
+containing the memory accessed by a put, get, or accumulate)
+processes.  This form is similar to the two-party, point-to-point
+communication because it can be implemented by using a pure polling
+interface. This communication form is separated from the point-to-point
+mode because the hardware in some systems allows some of the
+active-target RMA operations to be implemented directly.
+
+\item Communication for passive-target RMA.  These operations
+must complete locally.  If these operations must be implemented by
+communicating with an agent at the remote process, then some for of
+non-polling agent is required, such as an interrupt-driven active
+message or a separate communication thread.  As in case three, this
+communication form is separated from case 2 (local completion for
+MPI-1) because the hardware in some systems allows passive target RMA
+operations to be implemented directly.  We expect some systems to
+provide an extensive set of operations (e.g., direct access to memory
+on an SMP through a shared memory segment), others to provide more
+limited access (e.g., remote DMA through special network support), and
+others to be implemented on top of a non-polling communication layer
+such as active messages.  The ADI design is intended to provide a
+common set of entry points independent of the capabilities of the
+underlying system.
+
+\end{enumerate}
+
+The ADI design makes no explicit choice between polling and
+non-polling implementations.  Instead, it defines several kinds of
+polling \emph{points} but allows a purely non-polling
+(interrupt-driven or separate communication thread) implementation as well.
+
+The four types of communication, of course, can be implemented by a
+single, suitably powerful abstraction.  However, achieving high
+performance (particularly low latency) requires abstractions that are
+close to the operations that are efficiently implemented in hardware.
+The emergence of remote access-style operations in networks
+\cite{unet,via,infiniband} encourages their use as primatives
+(communication types 3 and 4).  Efficient handling of message-passing,
+particularly the need to manage the flow of point-to-point
+communications and scalable collective communications on top of more
+conventional two-sided communications such as TCP suggests
+communication type 1.  Finally, the need to handle a some MPI-1
+operations that are infrequent and not performance sensitive, but must
+be handled reliably, suggests communication type 2.  
+
+\begin{figure}
+\begin{verbatim}
+(sketch of figure to be completed later)
+1 can implement 3
+2 can implement 4
+1 can provide emulation of 2, but only approximately
+\end{verbatim}
+\caption{Sample dependencies between communication approaches}
+\label{fig:comm-depend}
+\end{figure}
+\end{document}
+
+\subsection{Additional Goals}
+To ensure that short messages have the lowest possible latency, the
+common cases should have direct paths to the low-level data transfer
+operations.  In particular, in these cases, the MPI and API layers
+should allow operations to to complete without requiring the creation
+of intermediate data structures.  For example, sending a single word
+(particularly from a blocking \code{MPI_Send} operation) should not
+require creating and initializing internal data structures.  However,
+to maintain a simple code base, we will strive to use a common code
+base.  This suggests that a basic operation is a simple ``attempt to
+send''; this allows the ADI to attempt to send a short data message
+and return success without creating, for example, a queue element that
+holds a pending communication operation.  Only if the data cannot be
+communicated immediately will the ADI create an intermediate data
+structure to hold the state of the incomplete communication.  
+
+\subsection{Other Relevant MPI Issues}
+MPI defines a number of objects such as requests, windows, and
+communicators.  In many cases, these objects are natural choices for
+use within the ADI.  Using these objects, rather than defining
+different objects and translating between them, avoids unnecessary
+overhead within the device.  Let us look at several of these objects.
+
+\paragraph{MPI Requests.}
+The use of nonblocking operations to implement the low-level
+communication requires an object to hold the current state of the
+communication and to record completion of the operation.  The natural
+place to store this within the MPI request.  Pending send operations must
+also be saved in a first-in-first-out queue (to maintain the message
+ordering guaranteed by MPI); this suggests that the queue contain MPI
+Requests.  On the receive side, the message-matching defined by MPI
+suggests saving the requests in an ordered list.  Note the asymmetry
+between sends and receives.  On the send side, requests are placed in
+a strict FIFO queue for each communication path (to maintain ordering
+of messages).  On the receive side, requests for unmatched receives
+are kept in an ordered 
+list, and this list, because of the wildcard source receive
+(\code{MPI_ANY_SOURCE}) is (logically at least) shared by all
+communication paths.  Similarly, requests for unexpected messages
+(messages sent but for which no matching receive has yet been issued)
+are kept in an ordered list.
+Requests are also the logical place to handle packing and
+unpacking from complex datatypes to simpler layouts such as contiguous
+data buffers.  This is discussed in more detail under MPI datatypes.
+
+\paragraph{MPI Datatypes.}
+MPI communication can be specified using datatypes that describe
+complex layouts in memory.  An MPI implementation must convert these
+descriptions into data layouts that can be conveniently moved by the
+low-level communication layers.  Such layers typically support only
+contiguous memory regions or Unix ``io vectors'' (\code{struct
+iovec}); MPI provides more general forms of data layouts.  However,
+while the MPI datatypes are sufficient to express most forms of
+communication, there are no MPI routines to pack or unpack only a
+fraction of a datatype.  For example, there is no MPI-defined method
+to pack as much as fits into a fixed sized buffer and return enough
+state so that a subsequent pack can pick up where the last left off.
+Such an operation is needed for any algorithm that packetizes data or
+that pipelines data transfers.  Because this operation is needed both
+to handle packing noncontiguous data into temporary buffers needed by
+low-level communication routines (such as TCP \code{write} or
+\code{writev}) and by high-performance algorithms for collective
+communication, we have introduced a new data structure that is used to
+pack and unpack buffers described by MPI datatypes.  This new
+structure is a called a \emph{segment} and is stored in a structure
+type named \code{MPID_Segment}.  Segments are discussed in more detail
+later. 
+
+Thus, to handle the need to pack and unpack data, MPI Requests also
+contain a segment.  Combined with the datatype and the user-buffer,
+this gives enough information to move the data to and from the user
+buffer, even if an intermediate buffer is needed.  Note that where
+possible, no intermediate buffer is used.  For contiguous data, and
+for more general data formats that the underlying communication level
+supports, data can be moved without using any extra buffers.  Segments
+are required to handle the general case.  
+
+\paragraph{Consequences}
+The above considerations suggest that the MPI request (more
+specificially, the internally-defined structure to which an MPI
+request refers, which is \code{MPID_Request}) is the key object.  The
+\code{MPID_Request} is used to store the progress of communication and
+order communication between processes.  The ADI will use the request
+as the basic object.
+
+The
+consequence of this is that the ADI routines communication routines
+should usually return a request.  The only exception is that blocking
+communication routines should not return a request if the
+communication is already complete.  
+This allows the blocking communication routines to
+return completion without ever creating and managing a request.
+This suggests that the ADI interface for point-to-point communication
+look something like the following: 
+\begin{verbatim}
+MPID_Send( buf, count, datatype, tag, <communicator info>, &request )
+MPID_Isend( buf, count, datatype, tag, <communicator info>, &request )
+MPID_Issend(...)
+... 
+\end{verbatim}
+The exact form of the arguments that specifiy the communicator
+information will be discussed later.
+This allows a ``blocking'' send to return a request if the operation
+has not completed.  This allows the calling routine more control over
+what steps to take to complete the request.
+
+An alternative design would have fewer routines but with additional
+arguments.  This design was chosen because it both provides a shorter
+code path (since the MPI send mode is known at compile time) and
+because it is easy to use C preprocessor macros to convert this form
+into calls to a single, parameterized routine but the reverse
+direction cannot be so implemented.
+
+The blocking receive case is similar to the blocking send case.  If,
+when the receive routine is called, the data is available, no request
+should be created (the cost of creating a request isn't the real
+issue, it is the cost of initializing and managing the request).  
+
+Recall
+that in the receive case, there are two kinds of receives: posted (but
+unmatched by an incoming send) and unexpected (sent but unmatched by a
+receive).  For thread-safety, operations on these two lists must be
+made atomically.  These operations include 
+\begin{itemize}
+\item check posted and return if found; else insert into unexpected
+\item check unexpected and return if found; else insert into posted
+\end{itemize}
+The MPID request is the appropriate list element to use in
+constructing these structures.
+
+\subsection{Beyond MPI Point-to-Point}
+When implementing collective communication algorithms, the ability to
+both store and forward data is important for performance.  For
+example, when complex MPI datatypes are used, it may be necessary when
+receiving data to first receive into a temporary buffer and then
+unpack that data into the user's buffer.  Forwarding this same data on
+(for example, within a broadcast) in a separate MPI send operation
+then requires repacking the data from the user into a temporary
+buffer.  To enable an ADI implementation to avoid this cost, and to
+make it easier to efficiently write the collective communication
+algorithms, the ADI provides a variety of store and forward, scatter,
+and gather operations.  Note that these operations can be emulated
+using only point-to-point; as described above, these can be built on
+top of simpler, point-to-point communication.  
+
+%If MPI providing only communication of contiguous (or simple io
+%vector) blocks of data, it might be possible to 
+
+\paragraph{Consequences.}
+Determining completion may involve more than one communication
+operation and possibly multiple communication methods.  This argues
+that the status of a communication be tracked with a completion
+counter rather than a simple flag, since multiple communication
+operations may be working with the same data buffer.  
+
+To best exploit the fact that the same data is both being received and
+sent, the ADI should be able to provide pointers to ``good'' memory
+for these operations.  For example, such memory may be in a special,
+pinned page or within a sophisticated NIC.  
+
+The algorithms for efficient collective communication provide some
+information on the kinds of multi-party operations that are required.
+The ADI does not support the most general of these operations; the
+goal is to allow an MPI implementation to efficiently and correctly
+support the more common collective communication operations such as
+\code{MPI_Bcast}, \code{MPI_Scatter}, and \code{MPI_Allgather}.
+
