@@ -1,0 +1,50 @@
+#! /usr/bin/perl
+# -*- Mode: perl; -*-
+#
+# This is a simple script to clean up the output from make by removing
+# various compilation options (such as the list of -I directories), 
+# -W options for gcc, and successful compiles.
+$last_line = "";
+while (<>) {
+    if (/^[ag]?cc\s/) {
+	s/-I[^\s]*\s*//g;
+	s/-DHAVE_CONFIG_H\s*//g;
+    }
+    if (/^[ag]?c\+\+\s/ || /^CC\s/) {
+	s/-I[^\s]*\s*//g;
+	s/-DHAVE_CONFIG_H\s*//g;
+    }
+    if (/^[-A-Za-z0-9\.\/]*mpicc\s/) {
+	s/[-A-Za-z0-9\.\/]*mpicc\s/mpicc /;
+	s/-I[^\s]*\s*//g;
+	s/-W[^\s]*\s*//g;
+	s/-ansi\s*//g;
+	s/-DHAVE_CONFIG_H\s*//g;
+    }
+    if (/^gcc /) {
+	s/-W[^\s]*\s*//g;
+	s/-ansi\s*//g;
+    }
+    
+    if (/Nothing to be done for /) {
+	next;
+    }
+    if (/cleaning directory/) {
+	next;
+    }
+    if (/^\s*rm /) { next; }
+    
+    if ($last_line =~ /[^\s]/) { 
+	# Decide if we want to print this, based on the current line.
+	if ($last_line =~ /^[ag]?cc\s/ || $last_line =~ /^mpicc\s/) {
+	    if (! (/^[ag]?cc\s/) && ! (/^mpicc\s/)) { 
+		print $last_line; 
+	    }
+	}
+	else {
+	    print $last_line;
+	}
+    }
+    $last_line = $_;
+}
+print $last_line;
