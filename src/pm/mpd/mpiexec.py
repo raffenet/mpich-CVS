@@ -5,6 +5,7 @@ from os     import environ, execvpe, getpid, getuid, getcwd, access, X_OK, path
 from popen2 import Popen3
 from pwd    import getpwuid
 from urllib import quote
+import xml.dom.minidom
 
 global totalProcs, nextRange, argvCopy, configFile
 
@@ -13,16 +14,16 @@ def mpiexec():
     totalProcs = 0
     nextRange  = 0
     xmlForArgsets = []
-    xmlString = ""
 
     if len(argv) < 2:
 	usage()
     if argv[1] == '-file':
+	delXmlFile = 0
 	if len(argv) != 3:
 	    usage()
         xmlFilename = argv[2]
-	delXmlFile = 0
     else:
+	delXmlFile = 1
         configFile = 0
         if argv[1] == '-configfile':
 	    if len(argv) != 3:
@@ -31,24 +32,20 @@ def mpiexec():
         else:
             argvCopy = argv[1:]
             argvCopy.append(':')   # stick an extra : on the end
+        xmlDOC = xml.dom.minidom.Document()
+        xmlPMR = xmlDOC.createElement('PMRequests')
+        xmlDOC.appendChild(xmlPMR)
+        xmlCPG = xmlDOC.createElement('create-process-group')
+        xmlPMR.appendChild(xmlCPG)
         argset = get_next_argset()
         while argset:
-	    xmlForArgset = handle_argset(argset)
-	    xmlString += xmlForArgset
-	    argset = get_next_argset()
-    
-        xmlString = "<PMRequests>\n"                             +  \
-                    "    <create-process-group\n"                +  \
-                    "        totalprocs='%d'\n" % (totalProcs)   +  \
-                    "        >\n"                                +  \
-                    xmlString                                    +  \
-                    "    </create-process-group>\n"              +  \
-                    "</PMRequests>\n"
+	    handle_argset(argset,xmlDOC,xmlCPG)
+            argset = get_next_argset()
+        xmlCPG.setAttribute('totalprocs', str(totalProcs) )  # after handling argsets
         xmlFilename = '/tmp/%s_tempxml_%d' % (getpwuid(getuid())[0],getpid())
         xmlFile = open(xmlFilename,'w')
-        print >>xmlFile, xmlString
+        print >>xmlFile, xmlDOC.toprettyxml(indent='   ')
         xmlFile.close()
-	delXmlFile = 1
     fullDirName = path.abspath(path.split(argv[0])[0])  # normalize for platform also
     mpdrun = path.normpath(fullDirName + '/mpdrun.py')
     if not access(mpdrun,X_OK):
@@ -80,7 +77,7 @@ def get_next_argset():
 	    except: colonPos = -1
     return argset
 
-def handle_argset(argset):
+def handle_argset(argset,xmlDOC,xmlCPG):
     global totalProcs, nextRange
     host  = ''   # default
     wdir  = path.abspath(getcwd())   # default
@@ -116,23 +113,36 @@ def handle_argset(argset):
         thisRange = (nextRange,nextRange+nProcs-1)
     nextRange += nProcs
     totalProcs += nProcs
-    xmlForArgset = ""
+
     if host:
-        xmlForArgset += "        <host name='%s' range='%d-%d'/>\n" % \
-            (host,thisRange[0],thisRange[1])
-    xmlForArgset += "        <path name='%s' range='%d-%d'/>\n" % \
-        (wpath,thisRange[0],thisRange[1])
-    xmlForArgset += "        <cwd name='%s' range='%d-%d'/>\n" % \
-        (wdir,thisRange[0],thisRange[1])
-    xmlForArgset += "        <exec name='%s' range='%d-%d'/>\n" % \
-        (cmdAndArgs[0],thisRange[0],thisRange[1])
-    xmlForArgset += "        <args range='%d-%d'>\n" % \
-            (thisRange[0],thisRange[1])
+        xmlHOST = xmlDOC.createElement('host')
+        xmlCPG.appendChild(xmlHOST)
+        xmlHOST.setAttribute('name',host)
+        xmlHOST.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]) ) 
+
+    xmlPATH = xmlDOC.createElement('path')
+    xmlCPG.appendChild(xmlPATH)
+    xmlPATH.setAttribute('name',wpath)
+    xmlPATH.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]) ) 
+
+    xmlCWD = xmlDOC.createElement('cwd')
+    xmlCPG.appendChild(xmlCWD)
+    xmlCWD.setAttribute('name',wdir)
+    xmlCWD.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]) ) 
+
+    xmlEXEC = xmlDOC.createElement('exec')
+    xmlCPG.appendChild(xmlEXEC)
+    xmlEXEC.setAttribute('name',cmdAndArgs[0])
+    xmlEXEC.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]) ) 
+
+    xmlARGS = xmlDOC.createElement('args')
+    xmlCPG.appendChild(xmlARGS)
+    xmlARGS.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]) ) 
+
     for arg in cmdAndArgs[1:]:
-        xmlForArgset += "            <arg value='%s'/>\n" % (quote(arg))
-    xmlForArgset += "        </args>\n"
-    # print xmlForArgset
-    return xmlForArgset
+        xmlARG = xmlDOC.createElement('arg')
+        xmlARGS.appendChild(xmlARG)
+        xmlARG.setAttribute('value', '%s' % (quote(arg)))
 
 def usage():
     print ''
