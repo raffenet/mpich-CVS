@@ -1,5 +1,5 @@
 ===============================================================================
-				Changes in 0.9x
+				Changes in 0.97
 ===============================================================================
 - MPI_Type_create_darray() and MPI_Type_create_subarray() implemented including
   the right contents and envelope data.
