@@ -298,7 +298,7 @@ static void * ibuBlockAlloc(ibuBlockAllocator p)
     /*** don't allocate more memory ***/
     if (p->pNextFree == NULL)
     {
-	printf("ibuBlockAlloc returning NULL\n");fflush(stdout);
+	msg_printf("ibuBlockAlloc returning NULL\n");
 	return NULL;
     }
     /******/
@@ -365,7 +365,7 @@ static ib_uint32_t modifyQP( ibu_t ibu, Ib_qp_state qp_state )
 	if ((attr_rec = (attr_rec_t *)
 	     malloc(sizeof (attr_rec_t) * 5)) == NULL )
 	{
-	    printf("Malloc failed %d\n", __LINE__);
+	    err_printf("Malloc failed %d\n", __LINE__);
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
 	    return IBU_FAIL;
 	}
@@ -400,7 +400,7 @@ static ib_uint32_t modifyQP( ibu_t ibu, Ib_qp_state qp_state )
 	if ((attr_rec = (attr_rec_t *)
 	     malloc(sizeof (attr_rec_t) * 6)) == NULL )
 	{
-	    printf("Malloc failed %d\n", __LINE__);
+	    err_printf("Malloc failed %d\n", __LINE__);
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
 	    return IBU_FAIL;
 	}
@@ -426,7 +426,7 @@ static ib_uint32_t modifyQP( ibu_t ibu, Ib_qp_state qp_state )
 	if ((attr_rec = (attr_rec_t *)
 	     malloc(sizeof (attr_rec_t) * 5)) == NULL )
 	{
-	    printf("Malloc failed %d\n", __LINE__);
+	    err_printf("Malloc failed %d\n", __LINE__);
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
 	    return IBU_FAIL;
 	}
@@ -528,7 +528,7 @@ static void *ib_malloc_register(size_t size)
     ptr = malloc(size);
     if (ptr == NULL)
     {
-	printf("malloc(%d) failed.\n", size);
+	err_printf("malloc(%d) failed.\n", size);
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
 	return NULL;
     }
@@ -542,7 +542,7 @@ static void *ib_malloc_register(size_t size)
 	&s_lkey, &rkey);
     if (status != IBU_SUCCESS)
     {
-	printf("ib_mr_register_us failed, error %d\n", status);
+	err_printf("ib_mr_register_us failed, error %d\n", status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
 	return NULL;
     }
@@ -633,10 +633,12 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
+/*
 static int s_cur_receive = 0;
 static int s_cur_send = 0;
 int g_num_receive_posted = 0;
 int g_num_send_posted = 0;
+*/
 
 static int ibui_post_receive(ibu_t ibu)
 {
@@ -662,15 +664,18 @@ static int ibui_post_receive(ibu_t ibu)
     ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.ptr = (ib_uint32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)mem_ptr;
 
+    /*
     printf("ibui_post_receive %d\n", s_cur_receive++);
     g_num_receive_posted++;
+    */
+    msg_printf(".");
 
     status = ib_post_rcv_req_us(IBU_Process.hca_handle, 
 				ibu->qp_handle,
 				&work_req);
     if (status != IBU_SUCCESS)
     {
-	printf("Error: failed to post ib receive, status = %d\n", status);
+	err_printf("Error: failed to post ib receive, status = %d\n", status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return status;
     }
@@ -815,7 +820,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	    &work_req);
 	if (status != IBU_SUCCESS)
 	{
-	    printf("Error: failed to post ib send, status = %d, %s\n", status, iba_errstr(status));
+	    err_printf("Error: failed to post ib send, status = %d, %s\n", status, iba_errstr(status));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITE);
 	    return status;
 	}
@@ -919,7 +924,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 
     // tell the stack how many elements were pushed on it
     g_num_bytes_written_stack[g_cur_write_stack_index++].length = -index;
-    printf("ibui_post_writev: posting send with %d ib buffers\n", index);fflush(stdout);
+    msg_printf("ibui_post_writev: posting send with %d ib buffers\n", index);
 
     sg_list.data_seg_p = data;
     sg_list.data_seg_num = index;
@@ -949,7 +954,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	&work_req);
     if (status != IBU_SUCCESS)
     {
-	printf("Error: failed to post ib send, status = %d, %s\n", status, iba_errstr(status));
+	err_printf("Error: failed to post ib send, status = %d, %s\n", status, iba_errstr(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
 	return status;
     }
@@ -1004,7 +1009,7 @@ int ibu_init()
     status = ib_hca_open_us(0 , &IBU_Process.hca_handle);
     if (status != IBU_SUCCESS)
     {
-	printf("ibu_init: ib_hca_open_us failed, status %d\n", status);
+	err_printf("ibu_init: ib_hca_open_us failed, status %d\n", status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
@@ -1012,7 +1017,7 @@ int ibu_init()
     status = ib_pd_allocate_us(IBU_Process.hca_handle, &IBU_Process.pd_handle);
     if (status != IBU_SUCCESS)
     {
-	printf("ibu_init: ib_pd_allocate_us failed, status %d\n", status);
+	err_printf("ibu_init: ib_pd_allocate_us failed, status %d\n", status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
@@ -1021,7 +1026,7 @@ int ibu_init()
 #if 0 /* for some reason this function fails when it really is ok */
     if (status != IBU_SUCCESS)
     {
-	printf("ib_init: ib_cqd_create_us failed, status %d\n", status);
+	err_printf("ib_init: ib_cqd_create_us failed, status %d\n", status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
@@ -1036,7 +1041,7 @@ int ibu_init()
 	HCA_QUERY_HCA_STATIC | HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
     if (status != IBU_SUCCESS)
     {
-	printf("ibu_init: ib_hca_query_us(HCA_QUERY_HCA_STATIC) failed, status %d\n", status);
+	err_printf("ibu_init: ib_hca_query_us(HCA_QUERY_HCA_STATIC) failed, status %d\n", status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
@@ -1077,7 +1082,7 @@ int ibu_create_set(ibu_set_t *set)
 	NULL);
     if (status != IBU_SUCCESS)
     {
-	printf("ibu_init: ib_cq_create_us failed, error %d\n", status);
+	err_printf("ibu_init: ib_cq_create_us failed, error %d\n", status);
     }
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
     return status;
@@ -1102,7 +1107,7 @@ static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int offset, 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_BUFFER_UNEX_READ);
 
     MPIU_dbg_printf("ibui_buffer_unex_read, %d bytes\n", num_bytes);
-    printf("ibui_buffer_unex_read, %d bytes\n", num_bytes);fflush(stdout);
+    msg_printf("ibui_buffer_unex_read, %d bytes\n", num_bytes);
 
     p = (ibu_unex_read_t *)malloc(sizeof(ibu_unex_read_t));
     p->mem_ptr = mem_ptr;
@@ -1420,13 +1425,13 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	}
 	if (status != IBA_OK)
 	{
-	    printf("error: ib_completion_poll_us did not return IBA_OK\n");
+	    err_printf("error: ib_completion_poll_us did not return IBA_OK\n");
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
 	}
 	if (completion_data.status != IB_COMP_ST_SUCCESS)
 	{
-	    printf("error: status = %d != IB_COMP_ST_SUCCESS, %s\n", 
+	    err_printf("error: status = %d != IB_COMP_ST_SUCCESS, %s\n", 
 		completion_data.status, iba_compstr(completion_data.status));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
@@ -1460,7 +1465,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		assert(mem_ptr != NULL);
 		ibuBlockFree(ibu->allocator, mem_ptr);
 	    }
-	    printf("ibu_wait: num_bytes sent = %d\n", num_bytes);fflush(stdout);
+	    msg_printf("ibu_wait: num_bytes sent = %d\n", num_bytes);
 	    MPIU_dbg_printf("ibu_wait: write update, total = %d + %d = %d\n", ibu->write.total, num_bytes, ibu->write.total + num_bytes);
 	    /*MPIU_dbg_printf("ibu_wait(send finished %d bytes)\n", num_bytes);*/
 	    ibu->write.total += num_bytes;
@@ -1494,7 +1499,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    ibu->pending_operations--;
 		    if (ibu->closing && ibu->pending_operations == 0)
 		    {
-			printf("ibu_wait: closing ibuet after iov write completed.\n");
+			MPIU_dbg_printf("ibu_wait: closing ibuet after iov write completed.\n");
 			ibu = IBU_INVALID_QP;
 		    }
 		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
@@ -1521,7 +1526,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    ibu->pending_operations--;
 		    if (ibu->closing && ibu->pending_operations == 0)
 		    {
-			printf("ibu_wait: closing ibuet after simple write completed.\n");
+			MPIU_dbg_printf("ibu_wait: closing ibuet after simple write completed.\n");
 			ibu = IBU_INVALID_QP;
 		    }
 		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
@@ -1536,7 +1541,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    break;
 	case OP_RECEIVE:
 	    num_bytes = completion_data.bytes_num;
-	    printf("ibu_wait: read %d bytes\n", num_bytes);fflush(stdout);
+	    msg_printf("ibu_wait: read %d bytes\n", num_bytes);
 	    /*MPIU_dbg_printf("ibu_wait(recv finished %d bytes)\n", num_bytes);*/
 	    if (!(ibu->state & IBU_READING))
 	    {
@@ -1598,7 +1603,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    ibu->pending_operations--;
 		    if (ibu->closing && ibu->pending_operations == 0)
 		    {
-			printf("ibu_wait: closing ibuet after iov read completed.\n");
+			MPIU_dbg_printf("ibu_wait: closing ibuet after iov read completed.\n");
 			ibu = IBU_INVALID_QP;
 		    }
 		    else
@@ -1647,7 +1652,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    ibu->pending_operations--;
 		    if (ibu->closing && ibu->pending_operations == 0)
 		    {
-			printf("ibu_wait: closing ibuet after simple read completed.\n");
+			MPIU_dbg_printf("ibu_wait: closing ibuet after simple read completed.\n");
 			ibu = IBU_INVALID_QP;
 		    }
 		    else
@@ -1668,7 +1673,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    }
 	    break;
 	default:
-	    printf("unknown ib op_type: %d\n", completion_data.op_type);
+	    err_printf("unknown ib op_type: %d\n", completion_data.op_type);
 	    break;
 	}
     }
