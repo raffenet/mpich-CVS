@@ -2647,7 +2647,7 @@ If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
 	fout.Close()
 End If
 
-If f.PathExists("src\mpe2") Then
+If f.FolderExists("src\mpe2") Then
 
 	'
 	' mpe_logging_conf.h
