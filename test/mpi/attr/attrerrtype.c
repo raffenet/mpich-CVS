@@ -16,16 +16,16 @@
 #include "mpi.h"
 #include "mpitest.h"
 
-int test_communicators ( void );
+int test_attrs ( void );
 void abort_msg ( char *, int );
-int copybomb_fn ( MPI_Comm, int, void *, void *, void *, int * );
-int deletebomb_fn ( MPI_Comm, int, void *, void * );
+int copybomb_fn ( MPI_Datatype, int, void *, void *, void *, int * );
+int deletebomb_fn ( MPI_Datatype, int, void *, void * );
 
 int main( int argc, char **argv )
 {
     int errs;
     MTest_Init( &argc, &argv );
-    errs = test_communicators();
+    errs = test_attrs();
     MTest_Finalize( errs );
     MPI_Finalize();
     return 0;
@@ -39,7 +39,7 @@ int main( int argc, char **argv )
  * Proposals to specify particular values (e.g., user's value) failed.
  */
 /* Return an error as the value */
-int copybomb_fn( MPI_Comm oldcomm, int keyval, void *extra_state,
+int copybomb_fn( MPI_Datatype oldtype, int keyval, void *extra_state,
 		void *attribute_val_in, void *attribute_val_out, int *flag)
 {
     /* Note that if (sizeof(int) < sizeof(void *), just setting the int
@@ -52,7 +52,7 @@ int copybomb_fn( MPI_Comm oldcomm, int keyval, void *extra_state,
 /* Set delete flag to 1 to allow the attribute to be deleted */
 static int delete_flag = 0;
 
-int deletebomb_fn( MPI_Comm comm, int keyval, void *attribute_val, 
+int deletebomb_fn( MPI_Datatype type, int keyval, void *attribute_val, 
 		   void *extra_state)
 {
     if (delete_flag) return MPI_SUCCESS;
@@ -65,9 +65,9 @@ void abort_msg( char *str, int code )
     MPI_Abort( MPI_COMM_WORLD, code );
 }
 
-int test_communicators( void )
+int test_attrs( void )
 {
-    MPI_Comm dup_comm_world, d2;
+    MPI_Datatype dup_type, d2;
     int world_rank, world_size, key_1;
     int err, errs = 0;
     MPI_Aint value;
@@ -80,22 +80,22 @@ int test_communicators( void )
     }
 #endif
 
-    MPI_Comm_dup( MPI_COMM_WORLD, &dup_comm_world );
-    MPI_Barrier( dup_comm_world );
+    
+    MPI_Type_dup( MPI_DOUBLE, &dup_type );
 
-    MPI_Errhandler_set( dup_comm_world, MPI_ERRORS_RETURN );
+    MPI_Errhandler_set( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
     value = - 11;
-    if ((err=MPI_Keyval_create( copybomb_fn, deletebomb_fn, &key_1, &value )))
+    if ((err=MPI_Type_create_keyval( copybomb_fn, deletebomb_fn, &key_1, &value )))
 	abort_msg( "Keyval_create", err );
 
-    err = MPI_Attr_put( dup_comm_world, key_1, (void *)world_rank );
+    err = MPI_Type_set_attr( dup_type, key_1, (void *)world_rank );
     if (err) {
 	errs++;
 	printf( "Error with first put\n" );
     }
 
-    err = MPI_Attr_put( dup_comm_world, key_1, (void *)(2*world_rank) );
+    err = MPI_Type_set_attr( dup_type, key_1, (void *)(2*world_rank) );
     if (err == MPI_SUCCESS) {
 	errs++;
 	printf( "delete function return code was MPI_SUCCESS in put\n" );
@@ -103,24 +103,24 @@ int test_communicators( void )
 
     /* Because the attribute delete function should fail, the attribute
        should *not be removed* */
-    err = MPI_Attr_delete( dup_comm_world, key_1 );
+    err = MPI_Type_delete_attr( dup_type, key_1 );
     if (err == MPI_SUCCESS) {
 	errs++;
 	printf( "delete function return code was MPI_SUCCESS in delete\n" );
     }
     
-    err = MPI_Comm_dup( dup_comm_world, &d2 );
+    err = MPI_Type_dup( dup_type, &d2 );
     if (err == MPI_SUCCESS) {
 	errs++;
 	printf( "copy function return code was MPI_SUCCESS in dup\n" );
     }
-    if (err && d2 != MPI_COMM_NULL) {
+    if (err && d2 != MPI_DATATYPE_NULL) {
 	errs++;
 	printf( "dup did not return MPI_COMM_NULL on error\n" );
     }
 
     delete_flag = 1;
-    MPI_Comm_free( &dup_comm_world );
+    MPI_Type_free( &dup_type );
 
     return errs;
 }

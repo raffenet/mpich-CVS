@@ -86,16 +86,16 @@ int test_communicators( void )
     MPI_Errhandler_set( dup_comm_world, MPI_ERRORS_RETURN );
 
     value = - 11;
-    if ((err=MPI_Keyval_create( copybomb_fn, deletebomb_fn, &key_1, &value )))
+    if ((err=MPI_Comm_create_keyval( copybomb_fn, deletebomb_fn, &key_1, &value )))
 	abort_msg( "Keyval_create", err );
 
-    err = MPI_Attr_put( dup_comm_world, key_1, (void *)world_rank );
+    err = MPI_Comm_set_attr( dup_comm_world, key_1, (void *)world_rank );
     if (err) {
 	errs++;
 	printf( "Error with first put\n" );
     }
 
-    err = MPI_Attr_put( dup_comm_world, key_1, (void *)(2*world_rank) );
+    err = MPI_Comm_set_attr( dup_comm_world, key_1, (void *)(2*world_rank) );
     if (err == MPI_SUCCESS) {
 	errs++;
 	printf( "delete function return code was MPI_SUCCESS in put\n" );
@@ -103,7 +103,7 @@ int test_communicators( void )
 
     /* Because the attribute delete function should fail, the attribute
        should *not be removed* */
-    err = MPI_Attr_delete( dup_comm_world, key_1 );
+    err = MPI_Comm_delete_attr( dup_comm_world, key_1 );
     if (err == MPI_SUCCESS) {
 	errs++;
 	printf( "delete function return code was MPI_SUCCESS in delete\n" );
