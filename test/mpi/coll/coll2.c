@@ -9,7 +9,6 @@ int main( int argc, char **argv )
     int              table[MAX_PROCESSES][MAX_PROCESSES];
     int              errors=0;
     int              participants;
-    MPI_Comm         testcomm;
 
     MPI_Init( &argc, &argv );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );

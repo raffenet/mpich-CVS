@@ -15,8 +15,9 @@
 int main( int argc, char *argv[] )
 {
     MPI_Group g1, g2;
-    int ranks[16], size, rank, myrank;
+    int ranks[16], size, rank, myrank, mysize;
     int errs = 0;
+    int i, rin[3], rout[3];
 
     MPI_Init(0,0);
 
@@ -28,9 +29,16 @@ int main( int argc, char *argv[] )
 #else
 	MPI_Comm_group( MPI_COMM_WORLD, &g1 );
 	MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
+	MPI_Comm_size( MPI_COMM_WORLD, &mysize );
+	if (mysize < 8) {
+	    fprintf( stderr, "Test requires 8 processes (16 prefered)\n" );
+	    errs++;
+	}
 #endif
 	/* 16 members, this process is rank 0, return in group 1 */
-	ranks[0] = 0; ranks[1] = 2; ranks[2] = 7;
+	ranks[0] = myrank; ranks[1] = 2; ranks[2] = 7;
+	if (myrank == 2) ranks[1] = 3;
+	if (myrank == 7) ranks[2] = 6;
 	MPI_Group_incl( g1, 3, ranks, &g2 );
 	
 	/* Check the resulting group */
@@ -46,6 +54,16 @@ int main( int argc, char *argv[] )
 	    errs++;
 	}
 
+	rin[0] = 0; rin[1] = 1; rin[2] = 2;
+	MPI_Group_translate_ranks( g2, 3, rin, g1, rout );
+	for (i=0; i<3; i++) {
+	    if (rout[i] != ranks[i]) {
+		fprintf( stderr, "translated rank[%d] %d should be %d\n", 
+			 i, rout[i], ranks[i] );
+		errs++;
+	    }
+	}
+	
 	/* Add tests for additional group operations */
 	/* 
 	   g2 = incl 1,3,7
@@ -62,6 +80,7 @@ int main( int argc, char *argv[] )
 	   union( g6, g7 ) => concat of entries, similar to world
 	   diff( w, g2 ) => g3
 	*/
+	MPI_Group_free( &g2 );
 #ifdef MPIR_TEST_GROUPS
         MPI_Group_free( &g1 );
     }
