@@ -160,7 +160,7 @@ SMPD_BOOL smpd_parse_machine_file(char *file_name)
 	{
 	    iter = hostname;
 	    /* move over the hostname and see if there is a number after it */
-	    while (*iter != '\0' && !isspace(*iter))
+	    while ((*iter != '\0') && !isspace(*iter) && (*iter != ':'))
 		iter++;
 	    if (*iter != '\0')
 	    {
