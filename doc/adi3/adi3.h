@@ -29,24 +29,6 @@
   0 for an invalid value and 1 for 'MPI_xxx_NULL'.
 
   MPID objects are not opaque.
-
-  Question: Should they be?  More precisely, should some of them be?  
-  For example, should 'MPID_List *' really be 'MPID_List_t', 
-  with something like\:
-.vb
- typedef struct MPID_List *MPID_List_t;
-.ve
- so that the form of 'MPID_List' is isolated to the list management routines?
- That is, if the typedef is to a pointer to a structure, the internals of the
- structure can be left unspecified except to the routines that actually 
- manipulate them.  In the 'MPID_List' case, this would allow the implementation
- to use simple lists, hash tables, or HB trees, or skip lists without 
- affecting or needing to recompile any code that simply refered to 'MPID_List'.
- 
- Current vote: No, no objects should be opaque.  However, more rationale 
- has been added and this should be revisited.
-
- 
   T*/
 
 /*
@@ -655,6 +637,17 @@ typedef struct {
   Module:
   Win
 
+  Notes:
+  The following 3 keyvals are defined for attributes on all MPI 
+  Window objects\:
+.vb
+ MPI_WIN_SIZE
+ MPI_WIN_BASE
+ MPI_WIN_DISP_UNIT
+.ve
+  These correspond to the values in 'length', 'start_address', and 
+  'disp_unit'.
+
   Question:
   Should a win be defined after 'MPID_Segment' in case the device wants to 
   store a queue of pending put/get operations, described with 'MPID_Segment'
@@ -666,12 +659,14 @@ typedef struct {
 
   Should there be a separate 'MPID_Group', or will we use the group of 
   the communicator?
+
   S*/
 typedef struct {
     int          id;             /* value of MPI_Win for this structure */
     volatile int ref_count;
     void         *start_address; /* Address and length of *local* window */
-    MPID_Aint    length;
+    MPID_Aint    length;        
+    int          disp_unit;      /* Displacement unit of *local* window */
     MPID_List    attributes;
     MPID_Comm    *comm;         /* communicator of window */
     char         name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
@@ -856,18 +851,16 @@ typedef enum { MPID_Hid_Request_to_send = 1,
 
   Other fields may also be included.  For example, a message-sequence
   number is helpful for message-matching tools when there are multiple
-  MPI threads.  Another example is the hash value of the datatype signature,
-  used to provide more complete error checking. 
+  MPI threads.  Two other examples are  the hash value of the datatype 
+  signature,   used to provide more complete error checking, and  
+  a bit to indicate an rsend message so that "no posted
+  receive" errors can be detected.
 
   Polling:
   This handler may be processed with polling.
 
   Module:
   MPID_CORE
-
-  Question: 
-  Should there be a bit to indicate an rsend message so that "no posted
-  receive" errors can be detected?
 
  S*/
 typedef struct {

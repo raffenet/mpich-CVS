@@ -5,6 +5,7 @@
 \documentclass{article}
 \usepackage{/home/gropp/data/share/refman}
 \usepackage{/home/gropp/sowing-proj/sowing/docs/doctext/tpage}
+\usepackage{url} 
 \usepackage{epsf}
 \textheight=9in
 \textwidth=6.1in
@@ -34,7 +35,7 @@
 \def_{{\tt \char`\_}}
 \catcode`\_=11
 \def\code#1{{\tt #1}}
-\let\url=\code
+%\let\url=\code
 \def\makeussubscript{\catcode`\_=8}
 \def\makeustext{\catcode`\_=11}
 %\tpageoneskip
@@ -162,7 +163,7 @@ may want to replace that module with one carefully tuned to their
 specific platform.
 
 Not included in this list is the ADIO module used to support MPI-IO.
-See \cite{ThakurGroLus96} and \url{http://www.mcs.anl.gov/~thakur/adio} 
+See \cite{ThakurGroLus96} and \gb\url{http://www.mcs.anl.gov/~thakur/adio} 
 %\cite{romio-adio-manual} 
 %(ROMIO ADIO Manual)
 for a description of that module.
@@ -200,7 +201,12 @@ and \code{MPID_Put_contig} operations (and non-core routines such as
 be called.  A device is permitted to define this as a no-op if polling
 is not needed.  In other words, this routine is provided to
 \emph{allow} polling implementations, not to \emph{require} them.
-Question: Is this routine still needed?
+This routine also provides a way for an MPI implementation that used
+ADI3 to express ``polling point,'' locations in the code where it
+would be a helpful to poll in a polling implementation.  Even a
+non-polling implementation may use these points to check for
+communication, allowing a clever implementation to avoid the cost of a
+context switch in some cases. 
 \item[\code{mpiexec}.] An implementation of \code{mpiexec}, as defined in the
   MPI-2 standard, for starting MPI jobs.  While not a routine, it must be 
   provided by any device.  
@@ -236,6 +242,17 @@ modules; it is the implementation of the ADI routines \emph{for the
 core device} that use \code{MPID_Rhcv}.  It is possible to implement
 the ADI without implementing \code{MPID_Rhcv} by implementing all of
 the other ADI modules.
+
+\textbf{Important Change.}  The current design uses different though
+related approach for the basic send and receive operations.  This
+involves the construction of a transfer object, which is really a
+collection of data blocks to move, along with some control over how
+they are moved.  This is similar to the \code{MPID_Rhcv} interface,
+but opens up the construction of the list of data to move so the more
+complex communications can be described.  This is important for
+optimizing collective communication.  It is a slighly different
+solution to the approach used in the second version of Illinois Fast
+Messages \cite{pakinxx}; FM provides a send-fragment operation.
 
 \subsection{Dynamic}
 For a full MPI-2 implementation, the dynamic module must also be
@@ -472,10 +489,39 @@ What relationship does the ADI interface to dynamic processes
 have to the BNR interface?  Should there be a connection between BNR groups
 and MPID groups?
 
-
 \code{MPID_Join} involves sockets, so we might make it part of the
 utility module.  But what routines from \code{MPID_Core} must it call
 to connect up the processes?
+
+One way to look at any design for MPI is to look at the following
+cases (see Section~\ref{sec:motivation} for more details):
+\begin{enumerate}
+\item \code{MPI_Testsome} and \code{MPI_Waitsome}.  These should be
+efficient and fair, not just loops over \code{MPI_Test}.
+\item Contiguous and simple (e.g., strided or Unix-style iov) should
+be handled efficiently and more complex datatypes can be handled
+without making a copy of the entire buffer.  
+\item Passive target RMA operations (e.g., \code{MPI_Accumulate} with
+\code{MPI_Win_lock} and \code{MPI_Win_unlock}).
+\item Implement fast collective algorithms for non-contiguous
+datatypes for \code{MPI_Bcast} and \code{MPI_Allreduce}.
+\end{enumerate}
+In addition, heterogeneous systems need also look at the handling of
+complex datatypes while maintaining the ability to send without first
+making a copy of the entire buffer.
+
+Another set of features that has not yet been handled is providing
+hooks so that a device can be informed about the creation and
+destruction of MPI objects, particularly communicators, datatypes, and
+files.  This is used in the version of the Globus device that allows
+the use of the vendor native MPI within a system.  It can also be used
+to help a device optimize for particular operatoins.
+
+Yet another task is to clearly reorganize this document around
+specific, important interfaces, such as BNR, Xfer, and the
+communication agent interface (Brian and Rob are working on this).
+The agent interface needs (1) progress, (2) intra method, (3) method
+progress, and (4) inter method operations.
 
 %Error reporting.  The ADI needs to know how to create MPI error codes.
 
@@ -489,9 +535,6 @@ to connect up the processes?
 \section{Integrating a Device into the MPICH build tree}
 Still to do.  This section needs to cover:
 \begin{enumerate}
-\item Directory structure.  Where will MPICH look for a new device?
-\item Local configure/setup script.  How should the top-level MPICH configure
-  invoke the device-specific setup scripts?
 \item mpiexec.  How does MPICH create the correct mpiexec?
 \item Installation.  How does MPICH get the proper device-specific files
   installed; e.g., the mpd for the mpd device?
@@ -500,7 +543,26 @@ Still to do.  This section needs to cover:
 \item Testing codes for device-specific functions.
 \end{enumerate}
 
+\subsection{Directory Structure}
+\label{sec:adi3-dirs}
+A device should be placed in a subdirectory of \file{mpich/src/mpid/};
+for example, \file{mpich/src/mpid/mm} is the multi-method ADI
+delivered with \mpich.  The directory name is the same as the device
+name specified to the \mpich\ \code{configure} with the
+\code{--with-device} option.
+
+\subsection{Device Configuration and Setup}
+\label{sec:adi3-setup}
+Each device must have a \code{configure} script.  This will be run by
+the \mpich\ \code{configure} as part of the top-level configuration.
+Any other commands that a device needs for setup should be run using
+the \code{AC_OUTPUT_COMMANDS} \code{autoconf} macro.  Autoconf version
+2.13 or later should be used.  Do not modify the \mpich\
+\code{configure} to support a device.
+
 \section{Motivation}
+\label{sec:motivation}
+
 Why is the ADI so complex?  Consider the following scenarios:
 \begin{enumerate}
 \item Consider
@@ -1047,6 +1109,114 @@ this for I/O in the form of
 \input None-list.tex
 \fi
 \closein\testfile
+
+\appendix
+\section{Rationales}
+\label{sec:rationales}
+This appendix contains rationales and discussion on some of the
+decisions made in the design of the ADI.
+
+\subsection{Opaque Handles and Objects}
+
+The ADI3 design provides only one level of isolation of objects: to
+the user, the handles to the objects are opaque (in fact, they are
+almost always an integer).  To all parts of the \mpich\ implementation,
+the objects are well-defined structures.  An alternative design would
+use more modular data encapsulation, so that only those modules that
+needed the internals of the object would have the definition of the
+structure.  For example, for the List type, instead of \code{MPID_List
+*} we could use \code{MPID_List_t}, defined as
+\begin{verbatim}
+ typedef struct MPID_List *MPID_List_t;
+\end{verbatim}
+so that the form of \code{MPID_List} is isolated to the list
+management routines.
+This uses the fact that if the typedef is to a pointer to a structure,
+the internals of the 
+structure can be left unspecified except to the routines that actually 
+manipulate them.  In the \code{MPID_List} case, this would allow the
+implementation 
+to use simple lists, hash tables, or HB trees, or skip lists without 
+affecting or needing to recompile any code that simply refered to
+\code{MPID_List}. 
+However, we decided, at least for now, to leave \code{MPID_List} and
+most other objects defined for all parts of the implementation.  If
+there is a need to allow for multiple implementations of some
+structure, we may revisit this.  
+
+\subsection{Generalized Waitsome}
+We can generalize \code{MPID_Flags_waitsome} by adding a min and max
+count to return.  This allows us to combine all 
+wait/test functions and add some useful generalizations.  For
+example,
+
+\begin{center}
+\begin{tabular}[lll]
+      min\_count  & max\_count&    equivalent routine\\\hline
+      0          & 1        &    test or testany\\
+      0          & count    &    testsome or testall (what is the difference?)
+      1          & 1        &    wait or waitany\\
+      1          & count    &    waitsome\\
+      count      & count    &    waitall
+\end{tabular}
+\end{center}
+  This allows the generalization:
+\begin{center}
+\begin{tabular}[lll]
+      min_count  & max\_count&    equivalent routine\\\hline
+      0          & 4        &    testforatmost(4)
+\end{tabular}
+\end{center}
+This may be useful for some uses where the flags to complete on must be 
+copied first into a temporary (allocated on the stack) variable.
+
+%  Votes: Rusty votes no.
+
+\subsection{Predefined Attribute Values}
+An earlier version of this interface defined a single routine to return the
+value of each attribute (e.g., \code{MPI_WTIME_IS_GLOBAL} or
+\code{MPI_IO}).  This interface is not the correct one because it is
+not modular.  In particular, separate modules such as the timer module
+have difficulty providing the correct value with this interface.
+Rather than defining a separate routine for each attribute value, we
+choose to make these values (all integers) available as part of the
+'MPIR_Process' per-process data structure.  
+
+% /*@
+%   MPID_Attr_predefined - Return the value of a predefined attribute
+
+%   Notes: 
+%   This is the wrong interface.  Each subsystem should provide the values
+%   separately.  Question: is it better just to include these values as
+%   part of the PerProcess block?  Then there is no need for this routine,
+%   and each system would just access the PerProcess block directly.
+
+%   Input Parameter:
+% . keyval - A predefined keyval (the C version).  Note that these are part of 
+%   'mpi.h', and thus are known to the device.
+
+%   Notes:
+
+
+%   Return value:
+%   Value of the attribute (the value itself, not a pointer to it).  For example,
+%   the value of 'MPI_TAG_UB' is the integer value of the largest tag.  
+
+%   Module:
+%   Attribute
+
+%   Question:
+%   The value of 'MPI_WTIME_IS_GLOBAL' is better known by the timer.  Should
+%   we let the timer package provide this value?  Similarly, the value
+%   of 'MPI_LASTUSECODE' is known by the error reporting module.  One 
+%   possibility is to require each of the modules to have an initialization 
+%   step, and for each modules'' initialization module to set the value for the
+%   appropriate attributes.
+
+%   @*/
+% int MPID_Attr_predefined( int keyval )
+% {
+% }
 
 \let\SaveBibliography=\thebibliography
 \def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}

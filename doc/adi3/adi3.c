@@ -75,17 +75,19 @@
   Because the data structures themselves may need to be in special memory 
   (e.g., shared) and/or need to contain device-specific information, the
   data structures are allocated and freed with MPID calls of the form
-  'MPID_<datastructure>_new' and 'MPID_<datastructure>_free'.
+  'MPID_<datastructure>_create' and 'MPID_<datastructure>_destroy'.
 
-  Question:  Many people don''t like new/free, because in C and C++ terms,
-  new is used with delete and free is used with malloc.  Free was chosen 
-  because the 
-  semantics defined for 'MPID_xxx_free' matches that of MPI routines that 
-  are named 'MPI_xxx_free'.  Should we use 'alloc' or 'malloc' instead of 
-  'new'?
+  The pair create/destroy were chosen because they are different from 
+  new/delete (C++ operations) and malloc/free.  Note, however, that 
+  'MPID_<datastructure>_destroy' has the semantics of the 'MPI_xxx_free' 
+  in that it only marks the object for deletion.  See reference counting
+  below.
+
+  Any name choice will have some conflicts with other uses, of course.
 
   Reference Counts:
-  The semantics of MPI require that objects that have been freed by the user
+  The semantics of MPI require that many objects that have been freed by the 
+  user 
   (e.g., with 'MPI_Type_free' or 'MPI_Comm_free') remain valid until all 
   pending
   references to that object (e.g., by an 'MPI_Irecv') are complete.  There
@@ -553,7 +555,25 @@ int MPID_Comm_incr( MPID_Comm *comm, int incr )
  *
  * In addition, there are seven predefined attributes that the device must
  * supply to the implementation.  This is accomplished through 
- * 'MPID_Attr_predefined'.
+ * data values that are part of the 'MPIR_Process' data block.
+ *  The predefined keyvals on 'MPI_COMM_WORLD' are\:
+ *.vb
+ * Keyval                     Related Module
+ * MPI_APPNUM                 Dynamic
+ * MPI_HOST                   Core
+ * MPI_IO                     Core
+ * MPI_LASTUSEDCODE           Error
+ * MPI_TAG_UB                 Communication
+ * MPI_UNIVERSE_SIZE          Dynamic
+ * MPI_WTIME_IS_GLOBAL        Timer
+ *.ve
+ * The values stored in the perProcess block are the actual values.  For 
+ * example, the value of 'MPI_TAG_UB' is the integer value of the largest tag.
+ * The
+ * value of 'MPI_WTIME_IS_GLOBAL' is a '1' for true and '0' for false.  Likely
+ * values for 'MPI_IO' and 'MPI_HOST' are 'MPI_ANY_SOURCE' and 'MPI_PROC_NULL'
+ * respectively.
+ *
  T*/
 /*@
   MPID_Comm_attr_notify - Inform the device about a change to an attribute
@@ -604,63 +624,6 @@ void MPID_Comm_attr_notify( MPID_Comm *comm, int keyval, void *attr_val,
 {
 }
 
-/*@
-  MPID_Attr_predefined - Return the value of a predefined attribute
-
-  Notes: 
-  This is the wrong interface.  Each subsystem should provide the values
-  separately.  Question: is it better just to include these values as
-  part of the PerProcess block?  Then there is no need for this routine,
-  and each system would just access the PerProcess block directly.
-
-  Input Parameter:
-. keyval - A predefined keyval (the C version).  Note that these are part of 
-  'mpi.h', and thus are known to the device.
-
-  Notes:
-  The predefined keyvals on 'MPI_COMM_WORLD' are\:
-.vb
- Keyval                     Related Module
- MPI_APPNUM                 Dynamic
- MPI_HOST                   Core
- MPI_IO                     Core
- MPI_LASTUSEDCODE           Error
- MPI_TAG_UB                 Communication
- MPI_UNIVERSE_SIZE          Dynamic
- MPI_WTIME_IS_GLOBAL        Timer
-.ve
-
-In addition, the following 3 keyvals are defined for attributes on all MPI 
-Window objects\:
-.vb
- MPI_WIN_SIZE
- MPI_WIN_BASE
- MPI_WIN_DISP_UNIT
-.ve
-
-  Return value:
-  Value of the attribute (the value itself, not a pointer to it).  For example,
-  the value of 'MPI_TAG_UB' is the integer value of the largest tag.  The
-  value of 'MPI_WTIME_IS_GLOBAL' is a '1' for true and '0' for false.  Likely
-  values for 'MPI_IO' and 'MPI_HOST' are 'MPI_ANY_SOURCE' and 'MPI_PROC_NULL'
-  respectively.
-
-  Module:
-  Attribute
-
-  Question:
-  The value of 'MPI_WTIME_IS_GLOBAL' is better known by the timer.  Should
-  we let the timer package provide this value?  Similarly, the value
-  of 'MPI_LASTUSECODE' is known by the error reporting module.  One 
-  possibility is to require each of the modules to have an initialization 
-  step, and for each modules'' initialization module to set the value for the
-  appropriate attributes.
-
-  @*/
-int MPID_Attr_predefined( int keyval )
-{
-}
-
 /*
  * Communicator locks for thread safety (?)
  * For example, in the MPI_THREAD_MULTIPLE mode, we must ensure that
@@ -688,6 +651,10 @@ int MPID_Attr_predefined( int keyval )
 
   It is invalid for a thread that has acquired the lock to attempt to 
   acquire it again.  The lock must be released by 'MPID_Comm_thread_unlock'.
+
+  Note that there is also a common per-process lock ('common_lock').  
+  That lock should be used instead of a lock on lock on 'MPI_COMM_WORLD' when
+  a lock across all threads is required.
 
   A high-quality implementation may wish to provide fair access to the lock.
 
@@ -1237,6 +1204,7 @@ int MPID_Putsametype( const void *origin_buf, int n, MPID_Datatype *dtype,
 
   Notes:
   See the discussion in 'MPID_Flags_waitall'.  
+
   Module:
   Communication
   @*/
@@ -1265,27 +1233,6 @@ int MPID_Flags_testall( int count, int *(flag_ptrs[]), int *found )
   Module:
   MPID_CORE
 
-  Question:
-  By adding a min and max count to return, we can combine all
-  wait/test functions and add some useful generalizations.  For
-  example,
-.vb
-      min_count   max_count    equivalent routine
-      0           1            test or testany
-      0           count        testsome or testall (what is the difference?)
-      1           1            wait or waitany
-      1           count        waitsome
-      count       count        waitall
-.ve
-  This allows the generalization\:
-.vb
-      0           4            testforatmost(4)
-.ve
-  This may be useful for some uses where the flags to complete on must be 
-  copied first into a temporary (allocated on the stack) variable.
-
-  Votes: Rusty votes no.
-
   @*/
 int MPID_Flags_waitsome( int count, int *(flag_ptrs[]) )
 {
@@ -1306,7 +1253,6 @@ int MPID_Flags_waitsome( int count, int *(flag_ptrs[]) )
   
   In a very rough sense, it corresponds to the Unix 'select', with a timeout
   of zero.
-  See question posed to 'MPID_Flags_waitsome'.
 
   Module:
   MPID_CORE
@@ -2522,7 +2468,7 @@ int MPID_Init( int *argc_p, char *(*argv_p)[],
   to kill the processes.  That brings up this question: should 
   'MPID_Abort' use 'BNR' to kill processes?  Should it be required to
   notify the process manager?  What about persistent resources (such 
-  as SYSV segments or forked processes?
+  as SYSV segments or forked processes)?
 
   'MPI_Finalize' requires that attributes on 'MPI_COMM_SELF' be deleted 
   before anything else happens; this allows libraries to attach end-of-job
@@ -2591,9 +2537,9 @@ value might be "not yet heterogeneous").
   MPICH explicity prohibits the appearence of 'malloc', 'free', 
   'calloc', 'realloc', or 'strdup' in any code implementing a device or 
   MPI call (of course, users may use any of these calls in their code).  
-  That is, you must use 'MPID_Malloc' etc.; if these are defined
+  That is, you must use 'MPIU_Malloc' etc.; if these are defined
   as 'malloc', that is allowed, but an explicit use of 'malloc' instead of
-  'MPID_Malloc' in the source code is not allowed.  This restriction is
+  'MPIU_Malloc' in the source code is not allowed.  This restriction is
   made to simplify the use of portable tools to test for memory leaks, 
   overwrites, and other consistency checks.
 
@@ -2614,7 +2560,7 @@ value might be "not yet heterogeneous").
   D*/
 
 /*@
-  MPID_Malloc - Allocated memory
+  MPIU_Malloc - Allocated memory
 
   Input Parameter:
 . len - Length of memory to allocate in bytes
@@ -2625,33 +2571,45 @@ value might be "not yet heterogeneous").
   Notes:
   This routine will often be implemented as the simple macro
 .vb
-  #define MPID_Malloc(n) malloc(n)
+  #define MPIU_Malloc(n) malloc(n)
 .ve
   However, it can also be defined as 
 .vb
-  #define MPID_Malloc(n) trmalloc(n,__FILE__,__LINE__)
+  #define MPIU_Malloc(n) MPIU_trmalloc(n,__FILE__,__LINE__)
 .ve
-  where 'trmalloc' is a tracing version of 'malloc' that is included with 
+  where 'MPIU_trmalloc' is a tracing version of 'malloc' that is included with 
   MPICH.
 
   Module:
   Utility
   @*/
-void *MPID_Malloc( size_t len )
+void *MPIU_Malloc( size_t len )
 {
 }
 
 /*@
-  MPID_Free - Free memory
+  MPIU_Free - Free memory
 
   Input Parameter:
 . ptr - Pointer to memory to be freed.  This memory must have been allocated
-  with 'MPID_Malloc'.
+  with 'MPIU_Malloc'.
+
+  Notes:
+  This routine will often be implemented as the simple macro
+.vb
+  #define MPIU_Free(n) free(n)
+.ve
+  However, it can also be defined as 
+.vb
+  #define MPIU_Free(n) MPIU_trfree(n,__FILE__,__LINE__)
+.ve
+  where 'MPIU_trfree' is a tracing version of 'free' that is included with 
+  MPICH.
 
   Module:
   Utility
   @*/
-void MPID_Free( void * ptr )
+void MPIU_Free( void * ptr )
 {
 }
 
@@ -2687,21 +2645,25 @@ void *MPID_Memcpy( void *dest, const void *src, size_t n )
 }
 
 /*@
-  MPID_Calloc - Allocate memory that is initialized to zero.
+  MPIU_Calloc - Allocate memory that is initialized to zero.
 
   Input Parameters:
 + nelm - Number of elements to allocate
 - elsize - Size of each element.
 
+  Notes:
+  Like 'MPIU_Malloc' and 'MPIU_Free', this will often be implemented as a 
+  macro but may use 'MPIU_Calloc' to provide a tracing version.
+
   Module:
   Utility
   @*/
-void *MPID_Calloc( size_t nelm, size_t elsize)
+void *MPIU_Calloc( size_t nelm, size_t elsize)
 {
 }
  
 /*@ 
-  MPID_Strdup - Duplicate a string
+  MPIU_Strdup - Duplicate a string
 
   Input Parameter:
 . str - null-terminated string to duplicate
@@ -2710,25 +2672,32 @@ void *MPID_Calloc( size_t nelm, size_t elsize)
   A pointer to a copy of the string, including the terminating null.  A
   null pointer is returned on error, such as out-of-memory.
 
+  Notes:
+  Like 'MPIU_Malloc' and 'MPIU_Free', this will often be implemented as a 
+  macro but may use 'MPIU_Strdup' to provide a tracing version.
+
   Module:
   Utility
   @*/
-char *MPID_Strdup( const char *str )
+char *MPIU_Strdup( const char *str )
 {
 }
 
 /*@
-  MPID_Trdump - Provide information on memory that is allocated
+  MPIU_Trdump - Provide information on memory that is allocated
 
   Input Parameters:
 . file - File opened for writing onto which the output should be sent.
+
+  Module:
+  Utility
 
   Question:
   Should this have a different output model to allow for a windows-style
   interface?  Should it take an output function and void pointer for
   extra data.
   @*/
-void MPID_Trdump( FILE *file )
+void MPIU_Trdump( FILE *file )
 {}
 
 /*
@@ -3118,11 +3087,15 @@ int MPID_Attr_delete( MPID_List *list, int keyval )
   discover the length of values and the number of keys are not
   necessary.
 
-  Questions
+  Notes:
   
   The routines listed here assume that an info is just a linked list of 
   info items.  Another implementation would make 'MPI_Info' an 'MPID_List',
-  and hang 'MPID_Info' records off of the list.  
+  and hang 'MPID_Info' records off of the list.  For simplicity, we have 
+  not abstracted the info data structures; routines that want to work
+  with the linked list may do so directly.  Because the 'MPI_Info' type is
+  a handle and not a pointer, MPIU (utility) routines are provided to handle
+  the allocation and deallocation of 'MPID_Info' elements.
 
   Thread Safety
 
@@ -3133,76 +3106,51 @@ int MPID_Attr_delete( MPID_List *list, int keyval )
   'MPI_Info' structure while 'MPI_INFO_DUP' is copying it, requires that the
   operation take place in a thread-safe manner.
 
-  We may want to have 'MPID_Info_find' fail if the list is modified by 
-  any thread after the initial 'MPID_Info' value is passed and until it 
-  returns the last element in the list.  
   T*/
 /*@
-  MPID_Info_find - Find a info value for a given key string
+  MPIU_Info_create - Create a new MPID_Info element
 
-  Input Parameters:
-+ info - Head of an Info object list.
-. key - key string
-- insert - True if info should be inserted if it is not found.
-
-  Return Value:
-  A pointer to the matching info structure, or null if no info matching the
-  key was found.
+  Returns:
+  Pointer to an 'MPID_Info' structure.  The 'id' field (used as the handle)
+  of this structure is already set.
 
   Notes:
-  Using a value of 0 for 'insert' makes it easy to implement 'MPI_Info_get';
-  a value of 1 is used for 'MPI_Info_set' 
-
-  Module:
-  Attribute
-
-  Question:
-  Do we want to require that updates to info are atomic in the 
-  multi-threaded case?  I believe that we should.
+  This routine handles all of the details of allocating storage for 'MPID_Info'
+  structures.  It initializes itself on first use and uses a 'MPI_Finalize' 
+  handler to free any allocated storage when MPI exits.  This helps maintain
+  smaller and faster MPI executables for those applications that only use
+  MPI-1 routines.
   @*/
-MPID_Info *MPID_Info_find( MPID_Info *info, const char key[], int insert )
-{
-}
-/*@
-  MPID_Info_list_walk - Walk through a list of info values
-
-  Input Parameters:
-+ info - Info list to walk through
-- prev - Previous info returned by this routine, or null.
-
-  Notes:
-  This routine returns each element of an info list in turn.
-  The first call should use 'NULL' for the value of 'prev'.  
-
-  Thread Safety:
-  This routine is not thread-safe.  If the 'MPID_Info' returned by 
-  'MPID_Info_list_walk' in one thread is deleted by 'MPID_Info_delete' in 
-  another thread, the behavior is undefined.  
-
-  Module:
-  Attribute
-  @*/
-MPID_Info *MPID_Info_list_walk( MPID_Info *info, MPID_Info *prev )
-{
-}
+MPID_Info *MPIU_Info_create( void )
+{}
 
 /*@
-  MPID_Info_delete - Remote a key/value pair from a info list
-
-  Input Parameters:
-+ info - Info list to search
-- key - key string to look for
+  MPIU_Info_free - Free an info structure
  
-  Return value:
-  Zero if the key was found and deleted, an MPI error code otherwise.
-  
-  Module:
-  Attribute
-  @*/
-int MPID_Info_delete( MPID_Info *info, const char key[] )
-{
-}
+  Input Parameters:
+. info_ptr - Pointer to an info list
 
+  Notes:
+  Frees all members of an info object.  In a multithreaded environment,
+  it ensures that 'MPID_Info' storage is reclaimed in a thread-safe fashion.
+ @*/
+void MPID_Info_free( MPID_Info *info_ptr )
+{}
+
+/*@
+  MPIU_Info_destroy - Reclaim a single info element
+
+  Input Parameter:
+. info_ptr - Element to reclaim
+
+  Notes:
+  Only the info element itself is reclaimed.  The string storage for the
+  'key' and 'value' elements should be freed before calling this routine.
+  In a multi-threaded environment, this frees info storage in a thread-safe
+  manner.
+  @*/
+void MPIU_Info_destroy( MPID_Info *info_ptr )
+{}
 
 /*T
  * Section : Environment
@@ -3362,9 +3310,6 @@ int MPID_Comm_disconnect( MPID_Comm *comm )
   Question:
   Do we want to have a procedural interface for defining the full message that
   corresponds to each predefined message?  
-
-  Do we want an alternative version for the predefined messages?  E.g., 
-  something like MPID_Err_create_code_predef( int precode, ... )?
   @*/
 int MPID_Err_create_code( int class, const char *generic_msg, 
                           const char *instance_msg, ... )

@@ -32,9 +32,12 @@ adi3man.ps: adi3man.tex adi3.c adi3.h Makefile
 	latex adi3man < /dev/null ;\
 	bibtex adi3man ;\
 	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
-	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' adi3man.idx > tmp.idx ; \
+	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' \
+	    -e 's/MPIU_\([A-Za-z0-9]*\)/\1_MPIU/g' \
+		adi3man.idx > tmp.idx ; \
 	makeindex tmp ;\
 	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
+	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
 	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3man.ind ; \
 	latex adi3man < /dev/null ;\
 	dvips adi3man )
