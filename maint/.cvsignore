@@ -7,8 +7,10 @@ getcoverage
 showsizes
 getcross
 f77tof90
+makerpm
 config.log
 config.cache
 config.status
+*config.cache
 autom4te.cache
 .deps

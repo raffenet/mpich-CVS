@@ -9,7 +9,7 @@ else
 fi
 AC_SUBST(VERSION)
 AC_PATH_PROG(PERL,perl)
-AC_OUTPUT_COMMANDS([chmod a+x simplemake checkbuilds getstates showsizes getcoverage f77tof90 genstates makerpm])
+AC_OUTPUT_COMMANDS([chmod a+x simplemake checkbuilds getstates showsizes getcoverage f77tof90 genstates makerpm findfixme])
 # We have to redefine the variables that autoconf always substitutes and that
 # are used in simplemake
 CFLAGS='@CFLAGS@'
@@ -20,4 +20,4 @@ CXXFLAGS='@CXXFLAGS@'
 # autoconf replacement.
 # Note that top_srcdir and srcdir are special cases (they must not
 # be changed in configure.in because configure uses them to find other files)
-AC_OUTPUT(simplemake checkbuilds getstates showsizes getcoverage f77tof90 genstates makerpm)
+AC_OUTPUT(simplemake checkbuilds getstates showsizes getcoverage f77tof90 genstates makerpm findfixme)
