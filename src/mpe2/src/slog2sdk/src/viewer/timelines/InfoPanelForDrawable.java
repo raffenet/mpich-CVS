@@ -181,12 +181,10 @@ public class InfoPanelForDrawable extends JPanel
                 textbuf.append( "\n" );
                 num_rows++;
 
-                    CategoryWeight  twgt;
-                    String          twgt_str;
-                    Iterator  twgts_itr = shade.iteratorOfCategoryWeights();
-                    while ( twgts_itr.hasNext() ) {
-                        twgt = (CategoryWeight) twgts_itr.next();
-                        twgt_str = twgt.toInfoBoxString();
+                    String            twgt_str;
+                    CategoryWeight[]  twgts = shade.arrayOfCategoryWeights();
+                    for ( idx = 0; idx < twgts.length; idx++ ) {
+                        twgt_str = twgts[ idx ].toInfoBoxString();
                         if ( num_cols < twgt_str.length() )
                             num_cols = twgt_str.length();
                         textbuf.append( "\n" + twgt_str );

@@ -47,6 +47,7 @@ public class TimelineToolBar extends JToolBar
 
     public  JButton                 zoomUndo_btn;
     public  JButton                 zoomOut_btn;
+    public  JButton                 zoomSet_btn;
     public  JButton                 zoomHome_btn;
     public  JButton                 zoomIn_btn;
     public  JButton                 zoomRedo_btn;
@@ -267,7 +268,7 @@ public class TimelineToolBar extends JToolBar
         if ( icon_URL != null )
             zoomHome_btn = new JButton( new ImageIcon( icon_URL ) );
         else
-            zoomHome_btn = new JButton( "Home" );
+            zoomHome_btn = new JButton( "ZoomHome" );
         zoomHome_btn.setToolTipText(
                      "Reset zoom to the initial resolution in time" );
         zoomHome_btn.setMnemonic( KeyEvent.VK_H );
@@ -301,6 +302,19 @@ public class TimelineToolBar extends JToolBar
         zoomRedo_btn.addActionListener(
                      new ActionZoomRedo( this, time_model ) );
         super.add( zoomRedo_btn );
+
+        super.addSeparator( mini_separator_size );
+
+        icon_URL = getURL( img_path + "ZoomSet24.gif" );
+        if ( icon_URL != null )
+            zoomSet_btn = new JButton( new ImageIcon( icon_URL ) );
+        else
+            zoomSet_btn = new JButton( "ZoomSet" );
+        zoomSet_btn.setToolTipText( "Set zoom paramter by a panel" );
+        // zoomHome_btn.setPreferredSize( btn_dim );
+        // zoomSet_btn.addActionListener(
+        //         new ActionZoomSet( this, time_model ) );
+        super.add( zoomSet_btn );
 
         super.addSeparator();
         super.addSeparator();
