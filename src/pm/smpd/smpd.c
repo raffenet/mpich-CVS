@@ -117,8 +117,8 @@ int main(int argc, char* argv[])
 	printf("Would you like to save this passphrase in '%s'? ", smpd_filename);
 	fflush(stdout);
 	fgets(response, 100, stdin);
-	if (strcmp(response, "yes") == 0 || strcmp(response, "Yes") == 0 || strcmp(response, "YES") == 0 ||
-	    strcmp(response, "Y") == 0 || strcmp(response, "y") == 0)
+	if (strcmp(response, "yes\n") == 0 || strcmp(response, "Yes\n") == 0 || strcmp(response, "YES\n") == 0 ||
+	    strcmp(response, "Y\n") == 0 || strcmp(response, "y\n") == 0)
 	{
 	    FILE *fout;
 	    umask(700);
