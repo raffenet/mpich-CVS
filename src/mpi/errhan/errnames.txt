@@ -457,6 +457,9 @@ with MPI_Alloc_mem.
 # CH3:shm
 #
 **GetMemTwice:Global shared memory initializer called more than once
+**finalize_progress_finalize:Progress finalize failed
+**finalize_release_mem:Release shared memory failed
+**shmgetmem:Unable to allocate shared memory
 
 #
 # Sock:poll
