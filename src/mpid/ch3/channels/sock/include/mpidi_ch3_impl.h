@@ -109,12 +109,11 @@ typedef struct MPIDI_CH3I_Connection
 
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
-short MPIDI_CH3I_Listener_get_port(void);
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC *);
-int MPIDI_CH3I_Get_business_card(char *value, int length);
-int  MPIDI_CH3I_Connect_to_root(char *port_name, MPIDI_VC **new_vc);
+int MPIDI_CH3I_Get_business_card(char * value, int length);
+int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC ** new_vc);
 
-int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC *vc);
-int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC **vc);
+int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC * vc);
+int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC ** vc);
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

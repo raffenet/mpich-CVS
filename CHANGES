@@ -13,6 +13,32 @@
   written.  If data transfer for the request is complete, the coomplete
   argument must be set to FALSE.
 
+- The semantics of MPID_Progress_{Start,Wait,End}() have changed.  A typical
+  blocking progress loop now looks like the following.
+
+  if (req->cc != 0)
+  {
+      MPID_Progress_state progress_state;
+
+      MPID_Progress_start(&progress_state);
+      while (req->cc != 0)
+      {
+          mpi_errno = MPID_Progress_wait(&progress_state);
+          if (mpi_errno != MPI_SUCCESS)
+          {
+              /* --BEGIN ERROR HANDLING-- */
+              MPID_Progress_end(&progress_state);
+              goto fn_fail;
+              /* --END ERROR HANDLING-- */
+          }
+      }
+      MPID_Progress_end(&progress_state);
+  }
+
+  NOTE: each of these routines now takes a single parameter, a pointer to a
+  thread local state variable.
+
+
 =============================================================================== 
                                Changes in 0.96p2
 ===============================================================================

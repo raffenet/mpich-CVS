@@ -51,18 +51,6 @@ AC_CHECK_HEADERS(				\
     sys/uio.h					\
     unistd.h)
 
-dnl # The RMA routines currently use a separate pthread
-dnl AC_CHECK_HEADERS( pthread.h )
-dnl saveLIBS="$LIBS"
-dnl LIBS=""
-dnl # OSF1 has __pthread_create but not pthread_create (because of 
-dnl # inconsistencies in the pthread spec).  Thus, we look for pthread_key_create
-dnl AC_SEARCH_LIBS(pthread_key_create,pthread,
-dnl 		AC_DEFINE(HAVE_PTHREAD_CREATE,,[Define for pthreads]))
-dnl EXTRA_LIBS="$LIBS"
-AC_SUBST(EXTRA_LIBS)
-dnl LIBS="$saveLIBS"
-
 AC_CHECK_FUNCS(gethostname)
 
 
@@ -89,6 +77,8 @@ AC_SUBST(master_top_builddir)
 dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
+
+AC_SUBST(EXTRA_LIBS)
 
 PAC_SUBDIR_CACHE
 AC_CONFIG_SUBDIRS(channels/${channel_name})

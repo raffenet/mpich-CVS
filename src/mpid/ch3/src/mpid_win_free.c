@@ -56,26 +56,26 @@ int MPID_Win_free(MPID_Win **win_ptr)
 
     MPIU_Free(recvcnts);
 
-    while (total_pt_rma_puts_accs != (*win_ptr)->my_pt_rma_puts_accs) {
+    if (total_pt_rma_puts_accs != (*win_ptr)->my_pt_rma_puts_accs)
+    {
+	MPID_Progress_state progress_state;
+	
         /* poke the progress engine until the two are equal */
-        MPID_Progress_start();
-            
-        if (total_pt_rma_puts_accs != (*win_ptr)->my_pt_rma_puts_accs)
+        MPID_Progress_start(&progress_state);
+	while (total_pt_rma_puts_accs != (*win_ptr)->my_pt_rma_puts_accs)
         {
-            mpi_errno = MPID_Progress_wait();
+            mpi_errno = MPID_Progress_wait(&progress_state);
             /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
             {
-                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
+		MPID_Progress_end(&progress_state);
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						 "**fail", "**fail %s", "making progress on the rma messages failed");
                 goto fn_exit;
             }
             /* --END ERROR HANDLING-- */
         }
-        else
-        {
-            MPID_Progress_end();
-            break;
-        }
+	MPID_Progress_end(&progress_state);
     }
 
 

@@ -74,7 +74,14 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(
+		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_sendrecv",
+		    "**mpi_sendrecv %p %d %D %d %d %p %d %D %d %d %C %p",
+		    sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status);
+		return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+	    }
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -149,57 +156,50 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
     }
     /* --END ERROR HANDLING-- */
 
-    while(1)
+    if (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
     {
-	MPID_Progress_start();
+	MPID_Progress_state progress_state;
 	
-	if (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
+	MPID_Progress_start(&progress_state);
+	while (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
 	{
-	    mpi_errno = MPID_Progress_wait();
-	    /* --BEGIN ERROR HANDLING-- */
+	    mpi_errno = MPID_Progress_wait(&progress_state);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
+		/* --BEGIN ERROR HANDLING-- */
+		MPID_Progress_end(&progress_state);
 		goto fn_exit;
+		/* --END ERROR HANDLING-- */
 	    }
-	    /* --END ERROR HANDLING-- */
 	}
-	else
-	{
-	    MPID_Progress_end();
-	    break;
-	}
+	MPID_Progress_end(&progress_state);
     }
 
-    if (status != MPI_STATUS_IGNORE)
-    {
-	*status = rreq->status;
-    }
-
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	mpi_errno = rreq->status.MPI_ERROR;
-    }
+    mpi_errno = rreq->status.MPI_ERROR;
+    MPIR_Request_extract_status(rreq, status);
+    MPID_Request_release(rreq);
     
     if (mpi_errno == MPI_SUCCESS)
     {
 	mpi_errno = sreq->status.MPI_ERROR;
     }
-    
     MPID_Request_release(sreq);
-    MPID_Request_release(rreq);
 
-fn_exit:
-    if (mpi_errno == MPI_SUCCESS)
+    if (mpi_errno != MPI_SUCCESS)
     {
-	MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPI_SENDRECV);
-	return MPI_SUCCESS;
+	goto fn_fail;
     }
-    /* --BEGIN ERROR HANDLING-- */
+    
+fn_exit:
+    MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPI_SENDRECV);
+    return mpi_errno;
+
 fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_sendrecv", "**mpi_sendrecv %p %d %D %d %d %p %d %D %d %d %C %p",
 	sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status);
-    MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPI_SENDRECV);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

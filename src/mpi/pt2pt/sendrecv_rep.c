@@ -180,25 +180,24 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	}
 	/* --END ERROR HANDLING-- */
 
-	while(1)
+	if (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
 	{
-	    MPID_Progress_start();
+	    MPID_Progress_state progress_state;
 	
-	    if (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
+	    MPID_Progress_start(&progress_state);
+	    while (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
 	    {
-		mpi_errno = MPID_Progress_wait();
-		/* --BEGIN ERROR HANDLING-- */
+		mpi_errno = MPID_Progress_wait(&progress_state);
 		if (mpi_errno != MPI_SUCCESS)
 		{
+		    /* --BEGIN ERROR HANDLING-- */
+		    MPID_Progress_end(&progress_state);
 		    goto blk_exit;
+		    /* --END ERROR HANDLING-- */
 		}
-		/* --END ERROR HANDLING-- */
 	    }
-	    else
-	    {
-		MPID_Progress_end();
-		break;
-	    }
+	    MPID_Progress_end(&progress_state);
+
 	}
 
 	if (status != MPI_STATUS_IGNORE)

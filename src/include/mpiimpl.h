@@ -91,6 +91,7 @@
 
 #include "mpiimplthread.h"
 #include "mpiatomic.h"
+#include "mpiu_monitors.h"
 
 #include "mpiutil.h"
 
@@ -1284,6 +1285,25 @@ extern MPID_Request MPID_Request_direct[];
 
 
 /* ------------------------------------------------------------------------- */
+/*S
+  MPID_Progress_state - object to hold progress state when using the blocking
+  progress routines.
+
+  Module:
+  Misc
+
+  Notes:
+  The device must define MPID_PROGRESS_STATE_DECL.  It should  include any state
+  that needs to be maintained between calls to MPID_Progress_{start,wait,end}.
+  S*/
+typedef struct MPID_Progress_state
+{
+    MPID_PROGRESS_STATE_DECL
+}
+MPID_Progress_state;
+/* ------------------------------------------------------------------------- */
+
+/* ------------------------------------------------------------------------- */
 /* end of mpirma.h (in src/mpi/rma?) */
 /* ------------------------------------------------------------------------- */
 
@@ -1830,7 +1850,10 @@ typedef struct MPICH_PerProcess_t {
        C++ interface and exported to C).  The first argument is used
        to specify the kind (comm,file,win) */
     void  (*cxx_call_errfn) ( int, int *, int *, void (*)(void) );
-#endif    
+#endif
+# if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX && USE_THREAD_PKG == MPICH_THREAD_PKG_POSIX)
+    pthread_mutex_t global_mutex;
+# endif
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 
@@ -2744,74 +2767,80 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr);
   MPID_Progress_start - Begin a block of operations that check the completion
   counters in requests.
 
+  Input parameters:
+. state - pointer to a progress state variable
+    
   Notes:
-  This routine is used to inform the progress engine that a block of code will
-  examine the completion counter of some 'MPID_Request' objects and then call
-  one of 'MPID_Progress_end', 'MPID_Progress_wait', or 'MPID_Progress_test'.
+  This routine is informs the progress engine that a block of code follows that
+  will examine the completion counter of some 'MPID_Request' objects and then
+  call 'MPID_Progress_wait' zero or more times followed by a call to
+  'MPID_Progress_end'.
   
-  This routine is needed to properly implement blocking tests when 
+  The progress state variable must be specific to the thread calling it.  If at
+  all possible, the state should be declared as an auto variable and thus
+  allocated on thread's stack.  Thread specific storage could be used instead,
+  but doing such would incur additional (and typically unnecessary) overhead.
+  
+  This routine is needed to properly implement blocking tests when
   multithreaded progress engines are used.  In a single-threaded implementation
   of the ADI, this may be defined as an empty macro.
 
   Module:
   Communication
   @*/
-void MPID_Progress_start(void);
+void MPID_Progress_start(MPID_Progress_state * state);
 /*@
-   MPID_Progress_end - End a block of operations begun with MPID_Progress_start
+  MPID_Progress_wait - Wait for some communication since 'MPID_Progress_start' 
 
-   Notes: 
-   This instructs the progress engine to end the block begun with 
-   'MPID_Progress_start'.  The progress engine is not required to check for
-   any pending communication.
-
-   The purpose of this call is to release any locks initiated by 
-   'MPID_Progess_start'.  It is typically used when checks of the 
-   relevant request completion counters found a completed request.  In a single
-   threaded ADI implementation, this may be defined as an empty macro.
-
-  Module:
-  Communication
-   @*/
-void MPID_Progress_end(void);
-/*@
-  MPID_Progress_test - Check for communication since 'MPID_Progress_start'
-
-  Return value:
-  An mpi error code.
-  
-  Notes:
-  Like 'MPID_Progress_end' and 'MPID_Progress_wait', this completes the block
-  begun with 'MPID_Progress_start'.  Unlike 'MPID_Progress_wait', it is a
-  nonblocking call.  It returns the number of communication events, which
-  is only indicates the maximum number of separate requests that were
-  completed.  The only restriction is that if the completion status of any 
-  request changed between 'MPID_Progress_start' and  'MPID_Progress_test',
-  the return value must be at least one.
-
-  This function used to return TRUE if one or more requests have completed, 
-  FALSE otherwise.  This functionality was not used so we removed it.
-
-  Module:
-  Communication
-  @*/
-int MPID_Progress_test(void);
-/*@ MPID_Progress_wait - Wait for some communication since 
-    'MPID_Progress_start' 
-
+    Input parameters:
+.   state - pointer to the progress state initialized by MPID_Progress_start
+    
     Return value:
     An mpi error code.
 
     Notes:
     This instructs the progress engine to wait until some communication event
     happens since 'MPID_Progress_start' was called.  This call blocks the 
-    calling thread (only, not the process).  Before returning, it releases
-    the block begun with 'MPID_Progress_start'.
+    calling thread (only, not the process).
 
   Module:
   Communication
  @*/
-int MPID_Progress_wait(void);
+int MPID_Progress_wait(MPID_Progress_state * state);
+/*@
+  MPID_Progress_end - End a block of operations begun with 'MPID_Progress_start'
+
+  Input parameters:
+  . state - pointer to the progress state variable passed to
+    'MPID_Progress_start'
+
+   Notes:
+   This routine instructs the progress engine to end the block begun with
+   'MPID_Progress_start'.  The progress engine is not required to check for any
+   pending communication.
+
+   The purpose of this call is to release any locks initiated by
+   'MPID_Progess_start' or 'MPID_Progess_wait'.  In a single threaded ADI
+   implementation, this may be defined as an empty macro.
+
+  Module:
+  Communication
+   @*/
+void MPID_Progress_end(MPID_Progress_state * stae);
+/*@
+  MPID_Progress_test - Check for communication
+
+  Return value:
+  An mpi error code.
+  
+  Notes:
+  Unlike 'MPID_Progress_wait', this routine is nonblocking.  Therefore, it
+  does not require the use of 'MPID_Progress_start' and 'MPID_Progress_end'.
+  
+  Module:
+  Communication
+  @*/
+int MPID_Progress_test(void);
 /*@
   MPID_Progress_poke - Allow a progress engine to check for pending 
   communication

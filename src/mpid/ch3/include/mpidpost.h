@@ -219,70 +219,79 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req);
 /*E
   MPIDI_CH3_Progress_start - Mark the beginning of a progress epoch.
 
+  Input Parameters:
+. state - pointer to a MPID_Progress_state object
+
+  Return value:
+  An MPI error code.
+  
   NOTE:
-  This routine need only be called if the code might call MPIDI_CH3_Progress(TRUE).  For example:
+  This routine need only be called if the code might call MPIDI_CH3_Progress_wait().  It is normally used as follows example:
 .vb
-      while(*req->cc_ptr != 0)
+      if (*req->cc_ptr != 0)
       {
-          MPIDI_CH3_Progress_start();
-          if (*req->cc_ptr != 0)
+          MPID_Progress_state state;
+          
+          MPIDI_CH3_Progress_start(&state);
           {
-              MPIDI_CH3_Progress(TRUE);
+              while(*req->cc_ptr != 0)
+              {
+                  MPIDI_CH3_Progress_wait(&state);
+              }
           }
-          else
-          {
-              MPIDI_CH3_Progress_end();
-          }
+          MPIDI_CH3_Progress_end(&state);
       }
 .ve
 
   IMPLEMENTORS:
-  A multi-threaded implementation might simply save the current value of a request completion counter in thread specific storage.
+  A multi-threaded implementation might save the current value of a request completion counter in the state.
 E*/
-void MPIDI_CH3_Progress_start(void);
+void MPIDI_CH3_Progress_start(MPID_Progress_state * state);
+
+
+/*E
+  MPIDI_CH3_Progress_wait - Give the channel implementation an opportunity to make progress on outstanding communication requests.
+
+  Input Parameters:
+. state - pointer to the same MPID_Progress_state object passed to MPIDI_CH3_Progress_start
+
+  Return value:
+  An MPI error code.
+  
+  NOTE:
+  MPIDI_CH3_Progress_start/end() need to be called.
+  
+  IMPLEMENTORS:
+  A multi-threaded implementation would return immediately if the a request had been completed between the call to
+  MPIDI_CH3_Progress_start() and MPIDI_CH3_Progress_wait().  This could be implemented by checking a request completion counter
+  in the progress state against a global counter, and returning if they did not match.
+E*/
+int MPIDI_CH3_Progress_wait(MPID_Progress_state * state);
 
 
 /*E
   MPIDI_CH3_Progress_end - Mark the end of a progress epoch.
+  
+  Input Parameters:
+. state - pointer to the same MPID_Progress_state object passed to MPIDI_CH3_Progress_start
 
-  NOTE:
-  This function should only be called if MPIDI_CH3_Progress_end() has been called and MPIDI_CH3_Progress() has not been called.
+  Return value:
+  An MPI error code.
 E*/
-void MPIDI_CH3_Progress_end(void);
+void MPIDI_CH3_Progress_end(MPID_Progress_state * state);
 
 
 /*E
   MPIDI_CH3_Progress_test - Give the channel implementation an opportunity to make progress on outstanding communication requests.
 
   Return value:
-  An mpi error code.
+  An MPI error code.
   
   NOTE:
-  This function implicitly marks the end of a progress epoch.
-  
-  DESIGNERS:
-  Thread specific storage could be avoided if a progress context were passed into the progress routines.
+  This function implicitly marks the beginning and end of a progress epoch.
 E*/
 int MPIDI_CH3_Progress_test(void);
 
-
-/*E
-  MPIDI_CH3_Progress_wait - Give the channel implementation an opportunity to make progress on outstanding communication requests.
-
-  Return value:
-  An mpi error code.
-  
-  NOTE:
-  MPIDI_CH3_Progress_start/end() needs to be called.  This function implicitly marks the end of a progress epoch.
-  
-  IMPLEMENTORS:
-  A multi-threaded implementation would return immediately if the request completion counter did not match the
-  value in thread specific storage.
-
-  DESIGNERS:
-  Thread specific storage could be avoided if a progress context were passed into the progress routines.
-E*/
-int MPIDI_CH3_Progress_wait(void);
 
 /*E
   MPIDI_CH3_Progress_poke - Give the channel implementation a moment of opportunity to make progress on outstanding communication.
@@ -303,7 +312,7 @@ int MPIDI_CH3_Progress_poke(void);
   IMPLEMENTORS:
   In a single-threaded environment, this routine can be implemented by incrementing a request completion counter.  In a
   multi-threaded environment, the request completion counter must be atomically incremented, and any threaded blocking in the
-  progress engine must be woken up.
+  progress engine must be woken up when a request is completed.
 E*/
 void MPIDI_CH3_Progress_signal_completion(void);
 
@@ -404,7 +413,7 @@ int MPIDI_CH3_Abort(int exit_code, char *error_msg);
 . rreqp - receive request defining data to be received; may be NULL
 
   NOTE:
-  Multiple threads may note simultaneously call this routine with the same virtual connection.  This constraint eliminates the
+  Multiple threads may not simultaneously call this routine with the same virtual connection.  This constraint eliminates the
   need to lock the VC and thus improves performance.  If simultaneous upcalls for a single VC are a possible, then the calling
   routine must serialize the calls (perhaps by locking the VC).  Special consideration may need to be given to packet ordering
   if the channel has made guarantees about ordering.
@@ -602,10 +611,10 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC * vc, int found, MPID_Request ** rreqp
 /*
  * Device level progress engine macros
  */
-#define MPID_Progress_start() {MPIDI_CH3_Progress_start();}
-#define MPID_Progress_end()   {MPIDI_CH3_Progress_end();}
-#define MPID_Progress_test()  MPIDI_CH3_Progress_test()
-#define MPID_Progress_wait()  MPIDI_CH3_Progress_wait()
-#define MPID_Progress_poke()  MPIDI_CH3_Progress_poke()
+#define MPID_Progress_start(progress_state_) MPIDI_CH3_Progress_start(progress_state_)
+#define MPID_Progress_wait(progress_state_)  MPIDI_CH3_Progress_wait(progress_state_)
+#define MPID_Progress_end(progress_state_)   MPIDI_CH3_Progress_end(progress_state_)
+#define MPID_Progress_test()                 MPIDI_CH3_Progress_test()
+#define MPID_Progress_poke()		     MPIDI_CH3_Progress_poke()
 
 #endif /* !defined(MPICH_MPIDPOST_H_INCLUDED) */

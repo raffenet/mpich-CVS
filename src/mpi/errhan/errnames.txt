@@ -515,6 +515,7 @@ with MPI_Alloc_mem.
 **ch3|sock|conparent %s:[ch3:sock] spawned group unable to connect back to the parent on port <%s>
 **pglookup:unable to find the process group structure
 **pglookup %s:unable to find the process group structure with id <%s>
+**ch3|sock|handle_sock_event: an error occurred while handling an event returned by MPIDU_Sock_Wait()
 
 #
 # CH3:ssm

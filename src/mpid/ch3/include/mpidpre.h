@@ -421,9 +421,9 @@ struct MPIDI_Request														\
     MPIDI_RMA_dtype_info *dtype_info;												\
     void *dataloop;													        \
     /* req. handle needed to implement derived datatype gets  */					                        \
-    MPI_Request request_handle;											                        \
-    MPI_Win target_win_handle;   										                        \
-    MPI_Win source_win_handle;   										                        \
+    MPI_Request request_handle;										                        \
+    MPI_Win target_win_handle;   									                        \
+    MPI_Win source_win_handle;   									                        \
     int single_op_opt;   /* to indicate a lock-put-unlock optimization case */                                                  \
     MPIDI_Win_lock_queue *lock_queue_entry; /* for single lock-put-unlock optimization */		                        \
 																\
@@ -440,6 +440,10 @@ MPIDI_CH3_REQUEST_DECL
 #define MPID_DEV_REQUEST_DECL			\
 MPID_REQUEST_DECL
 #endif
+
+
+#define MPID_PROGRESS_STATE_DECL MPIDI_CH3_PROGRESS_STATE_DECL
+
 
 /* for keeping track of RMA ops, which will be executed at the next sync call */
 typedef struct MPIDI_RMA_ops {

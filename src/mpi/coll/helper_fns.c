@@ -295,29 +295,27 @@ int MPIC_Wait(MPID_Request * request_ptr)
     MPIDI_STATE_DECL(MPID_STATE_MPIC_WAIT);
 
     MPIDI_PT2PT_FUNC_ENTER(MPID_STATE_MPIC_WAIT);
-    while((*(request_ptr)->cc_ptr) != 0)
+    if ((*(request_ptr)->cc_ptr) != 0)
     {
-	MPID_Progress_start();
-		
-	if ((*(request_ptr)->cc_ptr) != 0)
+	MPID_Progress_state progress_state;
+	
+	MPID_Progress_start(&progress_state);
+	while((*(request_ptr)->cc_ptr) != 0)
 	{
 	    int mpi_errno;
     
-	    mpi_errno = MPID_Progress_wait();
+	    mpi_errno = MPID_Progress_wait(&progress_state);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
+		MPID_Progress_end(&progress_state);
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		MPIDI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_WAIT);
 		return mpi_errno;
 	    }
 	    /* --END ERROR HANDLING-- */
 	}
-	else
-	{
-	    MPID_Progress_end();
-	    break;
-	}
+	MPID_Progress_end(&progress_state);
     }
 
     MPIDI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_WAIT);

@@ -206,33 +206,34 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     rank = comm_ptr->rank;
 
     if (rank == root) {
-
+	MPID_Progress_state progress_state;
+	
         /* dequeue the accept queue to see if a connection with the
            root on the connect side has been formed in the progress
            engine (the connection is returned in the form of a vc). If
            not, poke the progress engine. */
 
         vc = NULL;
-        while (vc == NULL) {
-            MPID_Progress_start();
-
+	MPID_Progress_start(&progress_state);
+        for(;;)
+	{
             MPIDI_CH3I_Acceptq_dequeue(&vc);
-
-            if (vc == NULL) {
-                mpi_errno = MPID_Progress_wait();
-		/* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		    goto fn_exit;
-		}
-		/* --END ERROR HANDLING-- */
-            }
-            else {
-                MPID_Progress_end();
-                break;
-            }
-        } 
+            if (vc != NULL)
+	    {
+		break;
+	    }
+	    
+	    mpi_errno = MPID_Progress_wait(&progress_state);
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (mpi_errno)
+	    {
+		MPID_Progress_end(&progress_state);
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		goto fn_exit;
+	    }
+	    /* --END ERROR HANDLING-- */
+        }
+	MPID_Progress_end(&progress_state);
 
         /* create and fill in the temporary intercommunicator between
            the two roots */ 

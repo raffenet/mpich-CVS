@@ -7,51 +7,70 @@
 #if !defined(MPICH_MPIDI_CH3_POST_H_INCLUDED)
 #define MPICH_MPIDI_CH3_POST_H_INCLUDED
 
-/* #define MPIDI_CH3_EAGER_MAX_MSG_SIZE (1500 - sizeof(MPIDI_CH3_Pkt_t)) */
-#define MPIDI_CH3_EAGER_MAX_MSG_SIZE 128000
+/*
+ * MPIDI_CH3_EAGER_MAX_MSG_SIZE - threshold for switch between the eager and rendezvous protocolsa
+ */
+#if !defined(MPIDI_CH3_EAGER_MAX_MSG_SIZE)
+#   define MPIDI_CH3_EAGER_MAX_MSG_SIZE 128000
+#endif
+
 
 /*
  * Channel level request management macros
  */
-#define MPIDI_CH3_Request_add_ref(req)				\
-{								\
-    assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);	\
-    MPIU_Object_add_ref(req);					\
+#define MPIDI_CH3_Request_add_ref(req)					\
+{									\
+    MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);	\
+    MPIU_Object_add_ref(req);						\
 }
 
-#define MPIDI_CH3_Request_release_ref(req, req_ref_count)	\
-{								\
-    assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);	\
-    MPIU_Object_release_ref(req, req_ref_count);		\
-    assert(req->ref_count >= 0);				\
+#define MPIDI_CH3_Request_release_ref(req, req_ref_count)		\
+{									\
+    MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);	\
+    MPIU_Object_release_ref(req, req_ref_count);			\
+    MPIU_Assert(req->ref_count >= 0);					\
 }
+
 
 /*
  * MPIDI_CH3_Progress_signal_completion() is used to notify the progress
  * engine that a completion has occurred.  The multi-threaded version will need
  * to wake up any (and all) threads blocking in MPIDI_CH3_Progress().
  */
-extern volatile unsigned int MPIDI_CH3I_progress_completions;
+extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
+#if (MPICH_THREAD_LEVEL == MPICH_THREAD_LEVEL_MULTIPLE)
+extern volatile int MPIDI_CH3I_progress_blocked;
+extern volatile int MPIDI_CH3I_progress_wakeup_signalled;
 
-#if defined(MPICH_SINGLE_THREADED)
-#define MPIDI_CH3_Progress_signal_completion()	\
-{						\
-    MPIDI_CH3I_progress_completions++;		\
-}
+void MPIDI_CH3I_Progress_wakeup(void);
+#endif
+
+#if (MPICH_THREAD_LEVEL != MPICH_THREAD_LEVEL_MULTIPLE)
+#   define MPIDI_CH3_Progress_signal_completion()	\
+    {							\
+        MPIDI_CH3I_progress_completion_count++;		\
+    }
 #else
-#error Multi-threaded MPIDI_CH3_Progress_notify_completion() not implemented.
-/* XXX - this routine need to wake up any threads blocking in the progress
-   engine */
+#   define MPIDI_CH3_Progress_signal_completion()							\
+    {													\
+	MPIDI_CH3I_progress_completion_count++;								\
+	if (MPIDI_CH3I_progress_blocked == TRUE && MPIDI_CH3I_progress_wakeup_signalled == FALSE)	\
+	{												\
+	    MPIDI_CH3I_progress_wakeup_signalled = TRUE;						\
+	    MPIDI_CH3I_Progress_wakeup();								\
+	}												\
+    }
 #endif
 
-#if defined(MPICH_SINGLE_THREADED)
-#define MPIDI_CH3_Progress_start()
-#define MPIDI_CH3_Progress_end()
-#endif
+int MPIDI_CH3I_Progress(int blocking, MPID_Progress_state * progress_state);
 
-int MPIDI_CH3I_Progress(int blocking);
-#define MPIDI_CH3_Progress_test() MPIDI_CH3I_Progress(FALSE)
-#define MPIDI_CH3_Progress_wait() MPIDI_CH3I_Progress(TRUE)
+#define MPIDI_CH3_Progress_start(progress_state_)					\
+{											\
+    (progress_state_)->ch.completion_count = MPIDI_CH3I_progress_completion_count;	\
+}
+#define MPIDI_CH3_Progress_end(progress_state_)
+#define MPIDI_CH3_Progress_poke() (MPIDI_CH3_Progress_test())
+
 
 /*
  * Enable optional functionality
@@ -59,3 +78,4 @@ int MPIDI_CH3I_Progress(int blocking);
 #define MPIDI_CH3_Comm_Spawn MPIDI_CH3_Comm_Spawn
 
 #endif /* !defined(MPICH_MPIDI_CH3_POST_H_INCLUDED) */
+

@@ -59,7 +59,12 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+						 "**mpi_wait", "**mpi_wait %p %p", request, status);
+		return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+	    }
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -107,38 +112,42 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    while((*(request_ptr)->cc_ptr) != 0)
+    if ((*(request_ptr)->cc_ptr) != 0)
     {
-	MPID_Progress_start();
-	
-	if ((*(request_ptr)->cc_ptr) != 0)
+	MPID_Progress_state progress_state;
+	    
+	MPID_Progress_start(&progress_state);
+	while((*(request_ptr)->cc_ptr) != 0)
 	{
-	    mpi_errno = MPID_Progress_wait();
-	    /* --BEGIN ERROR HANDLING-- */
+	    mpi_errno = MPID_Progress_wait(&progress_state);
 	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		/* --BEGIN ERROR HANDLING-- */
+		MPID_Progress_end(&progress_state);
 		goto fn_fail;
-	    /* --END ERROR HANDLING-- */
+		/* --END ERROR HANDLING-- */
+	    }
 	}
-	else
-	{
-	    MPID_Progress_end();
-	    break;
-	}
+	MPID_Progress_end(&progress_state);
     }
 
     mpi_errno = MPIR_Request_complete(request, request_ptr, status, &active_flag);
-
-fn_exit:
-    if (mpi_errno == MPI_SUCCESS)
+    if (mpi_errno != MPI_SUCCESS)
     {
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
-	return MPI_SUCCESS;
+	/* --BEGIN ERROR HANDLING-- */
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
     }
+
+  fn_exit:
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
+	return mpi_errno;
+	
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_wait", "**mpi_wait %p %p", request, status);
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
-    return MPIR_Err_return_comm(request_ptr ? request_ptr->comm : 0, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm((request_ptr != NULL) ? request_ptr->comm : NULL, FCNAME, mpi_errno);
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -71,6 +71,7 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
     MPID_Request * request_ptr_array[MPID_REQUEST_PTR_ARRAY_SIZE];
     MPID_Request ** request_ptrs = NULL;
     MPI_Status * status_ptr;
+    MPID_Progress_state progress_state;
     int i;
     int n_completed;
     int active_flag;
@@ -84,7 +85,13 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_exit;
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(
+		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_waitall",
+		    "**mpi_waitall %d %p %p", count, array_of_requests, array_of_statuses);
+		return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+	    }
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -108,8 +115,9 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
 		    MPIR_ERRTEST_REQUEST(array_of_requests[i], mpi_errno);
 		}
 	    }
-            if (mpi_errno) {
-                goto fn_exit;
+            if (mpi_errno != MPI_SUCCESS)
+	    {
+                goto fn_fail;
             }
 	}
         MPID_END_ERROR_CHECKS;
@@ -124,13 +132,14 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
     else
     {
 	request_ptrs = MPIU_Malloc(count * sizeof(MPID_Request *));
-	/* --BEGIN ERROR HANDLING-- */
 	if (request_ptrs == NULL)
 	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %d", count * sizeof(MPID_Request*));
-	    goto fn_exit;
+	    /* --BEGIN ERROR HANDLING-- */
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
+					     "**nomem %d", count * sizeof(MPID_Request*));
+	    goto fn_fail;
+	    /* --END ERROR HANDLING-- */
 	}
-	/* --END ERROR HANDLING-- */
     }
 
     n_completed = 0;
@@ -145,8 +154,9 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
 		MPID_BEGIN_ERROR_CHECKS;
 		{
 		    MPID_Request_valid_ptr( request_ptrs[i], mpi_errno );
-		    if (mpi_errno) {
-			goto fn_exit;
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			goto fn_fail;
 		    }
 		    
 		}
@@ -168,10 +178,9 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
 	goto fn_exit;
     }
     
+    MPID_Progress_start(&progress_state);
     for(;;)
     {
-	MPID_Progress_start();
-
 	for (i = 0; i < count; i++)
 	{
 	    if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
@@ -197,8 +206,6 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
 	
 	if (mpi_errno == MPI_ERR_IN_STATUS)
 	{
-	    MPID_Progress_end();
-	    
 	    if (array_of_statuses != MPI_STATUSES_IGNORE)
 	    {
 		for (i = 0; i < count; i++)
@@ -221,16 +228,19 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
 	}
 	else if (n_completed == count)
 	{
-	    MPID_Progress_end();
 	    break;
 	}
 
-	mpi_errno = MPID_Progress_wait();
+	mpi_errno = MPID_Progress_wait(&progress_state);
 	if (mpi_errno != MPI_SUCCESS)
 	{
-	    goto fn_exit;
+	    /* --BEGIN ERROR HANDLING-- */
+	    MPID_Progress_end(&progress_state);
+	    goto fn_fail;
+	    /* --END ERROR HANDLING-- */
 	}
     }
+    MPID_Progress_end(&progress_state);
 
   fn_exit:
     if (request_ptrs != request_ptr_array && request_ptrs != NULL)
@@ -238,13 +248,15 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
 	MPIU_Free(request_ptrs);
     }
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITALL);
-	return MPI_SUCCESS;
-    }
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITALL);
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_waitall", "**mpi_waitall %d %p %p", count, array_of_requests, array_of_statuses);
-    return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 

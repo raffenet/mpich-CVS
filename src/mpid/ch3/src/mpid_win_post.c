@@ -26,26 +26,26 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
      * we need to check whether there is a lock on the window, and if
      * there is a lock, poke the progress engine until the operartions
      * have completed and the lock is therefore released. */
-    while (win_ptr->current_lock_type != MPID_LOCK_NONE) {
+    if (win_ptr->current_lock_type != MPID_LOCK_NONE)
+    {
+	MPID_Progress_state progress_state;
+	
         /* poke the progress engine */
-        MPID_Progress_start();
-            
-        if (win_ptr->current_lock_type != MPID_LOCK_NONE)
+        MPID_Progress_start(&progress_state);
+	while (win_ptr->current_lock_type != MPID_LOCK_NONE)
         {
-            mpi_errno = MPID_Progress_wait();
+            mpi_errno = MPID_Progress_wait(&progress_state);
             /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
             {
-                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
+		MPID_Progress_end(&progress_state);
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						 "**fail", "**fail %s", "making progress on the rma messages failed");
                 goto fn_exit;
             }
             /* --END ERROR HANDLING-- */
         }
-        else
-        {
-            MPID_Progress_end();
-            break;
-        }
+	MPID_Progress_end(&progress_state);
     }
 
     post_grp_size = group_ptr->size;

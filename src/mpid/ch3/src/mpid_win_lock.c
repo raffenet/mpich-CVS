@@ -36,26 +36,25 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
          * is acquired. */
 
         /* poke the progress engine until lock is granted */
-        while (MPIDI_CH3I_Try_acquire_win_lock(win_ptr, lock_type) == 0) 
+	if (MPIDI_CH3I_Try_acquire_win_lock(win_ptr, lock_type) == 0)
         {
-            MPID_Progress_start();
-            
-            if (MPIDI_CH3I_Try_acquire_win_lock(win_ptr, lock_type) == 0)
+	    MPID_Progress_state progress_state;
+	    
+            MPID_Progress_start(&progress_state);
+	    while (MPIDI_CH3I_Try_acquire_win_lock(win_ptr, lock_type) == 0) 
             {
-                mpi_errno = MPID_Progress_wait();
+                mpi_errno = MPID_Progress_wait(&progress_state);
                 /* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno != MPI_SUCCESS)
                 {
-                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on rma messages failed");
+		    MPID_Progress_end(&progress_state);
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						     "**fail", "**fail %s", "making progress on rma messages failed");
                     goto fn_exit;
                 }
                 /* --END ERROR HANDLING-- */
             }
-            else
-            {
-                MPID_Progress_end();
-                break;
-            }
+	    MPID_Progress_end(&progress_state);
         }
         /* local lock acquired. local puts, gets, accumulates will be done 
            directly without queueing. */

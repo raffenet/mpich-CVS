@@ -125,26 +125,25 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
          * The handler for the packet sets the win_ptr->lock_granted flag to 1. */
     
         /* poke the progress engine until lock_granted flag is set to 1 */
-        while (win_ptr->lock_granted == 0)
+	if (win_ptr->lock_granted == 0)
         {
-            MPID_Progress_start();
-            
-            if (win_ptr->lock_granted == 0)
+	    MPID_Progress_state progress_state;
+	    
+	    MPID_Progress_start(&progress_state);
+	    while (win_ptr->lock_granted == 0)
             {
-                mpi_errno = MPID_Progress_wait();
+                mpi_errno = MPID_Progress_wait(&progress_state);
                 /* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno != MPI_SUCCESS)
                 {
-                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
+		    MPID_Progress_end(&progress_state);
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						     "**fail", "**fail %s", "making progress on the rma messages failed");
                     goto fn_exit;
                 }
                 /* --END ERROR HANDLING-- */
             }
-            else
-            {
-                MPID_Progress_end();
-                break;
-            }
+	    MPID_Progress_end(&progress_state);
         }
     
         /* Now do all the RMA operations */
@@ -160,26 +159,25 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
            0. */
 
         /* poke the progress engine until lock_granted flag is reset to 0 */
-        while (win_ptr->lock_granted != 0)
+	if (win_ptr->lock_granted != 0)
         {
-            MPID_Progress_start();
-            
-            if (win_ptr->lock_granted != 0)
+	    MPID_Progress_state progress_state;
+	    
+            MPID_Progress_start(&progress_state);
+	    while (win_ptr->lock_granted != 0)
             {
-                mpi_errno = MPID_Progress_wait();
+                mpi_errno = MPID_Progress_wait(&progress_state);
                 /* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno != MPI_SUCCESS)
                 {
-                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
+		    MPID_Progress_end(&progress_state);
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						     "**fail", "**fail %s", "making progress on the rma messages failed");
                     goto fn_exit;
                 }
                 /* --END ERROR HANDLING-- */
             }
-            else
-            {
-                MPID_Progress_end();
-                break;
-            }
+	    MPID_Progress_end(&progress_state);
         }
     }
     else
@@ -350,54 +348,62 @@ static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr, int *wait_for_rma
         curr_ptr = curr_ptr->next;
     }
     
-    done = 1;
-    while (nops)
+    if (nops)
     {
-        MPID_Progress_start();
-        for (i=0; i<nops; i++)
-        {
-            if (requests[i] != NULL)
-            {
-                if (*(requests[i]->cc_ptr) != 0)
-                {
-                    done = 0;
-                    break;
-                }
-                else
-                {
-                    mpi_errno = requests[i]->status.MPI_ERROR;
-                    /* --BEGIN ERROR HANDLING-- */
-                    if (mpi_errno != MPI_SUCCESS)
-                    {
-                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "rma message operation failed");
-                        goto fn_exit;
-                    }
-                    /* --END ERROR HANDLING-- */
-                    /* if origin datatype was a derived
-                       datatype, it will get freed when the
-                       request gets freed. */ 
-                    MPID_Request_release(requests[i]);
-                    requests[i] = NULL;
-                }
-            }
-        }
-        if (!done)
-        {
-            mpi_errno = MPID_Progress_wait();
-            /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno != MPI_SUCCESS)
-            {
-                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
-                goto fn_exit;
-            }
-            /* --END ERROR HANDLING-- */
-            done = 1;
-        }
-        else
-        {
-            MPID_Progress_end();
-            break;
-        }
+	MPID_Progress_state progress_state;
+	
+	done = 1;
+	MPID_Progress_start(&progress_state);
+	while (nops)
+	{
+	    for (i=0; i<nops; i++)
+	    {
+		if (requests[i] != NULL)
+		{
+		    if (*(requests[i]->cc_ptr) != 0)
+		    {
+			done = 0;
+			break;
+		    }
+		    else
+		    {
+			mpi_errno = requests[i]->status.MPI_ERROR;
+			/* --BEGIN ERROR HANDLING-- */
+			if (mpi_errno != MPI_SUCCESS)
+			{
+			    MPID_Progress_end(&progress_state);
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+							     "**fail", "**fail %s", "rma message operation failed");
+			    goto fn_exit;
+			}
+			/* --END ERROR HANDLING-- */
+			/* if origin datatype was a derived
+			   datatype, it will get freed when the
+			   request gets freed. */ 
+			MPID_Request_release(requests[i]);
+			requests[i] = NULL;
+		    }
+		}
+	    }
+	
+	    if (done) 
+	    {
+		break;
+	    }
+	
+	    mpi_errno = MPID_Progress_wait(&progress_state);
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		MPID_Progress_end(&progress_state);
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						 "**fail", "**fail %s", "making progress on the rma messages failed");
+		goto fn_exit;
+	    }
+	    /* --END ERROR HANDLING-- */
+	    done = 1;
+	}
+	MPID_Progress_end(&progress_state);
     } 
     
     MPIU_Free(requests);
@@ -575,26 +581,25 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
     }
 
     if (request != NULL) {
-        while (*(request->cc_ptr) != 0)
+	if (*(request->cc_ptr) != 0)
         {
-            MPID_Progress_start();
-	
-            if (*(request->cc_ptr) != 0)
+	    MPID_Progress_state progress_state;
+	    
+            MPID_Progress_start(&progress_state);
+	    while (*(request->cc_ptr) != 0)
             {
-                mpi_errno = MPID_Progress_wait();
+                mpi_errno = MPID_Progress_wait(&progress_state);
                 /* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno != MPI_SUCCESS)
                 {
-                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "rma message operation failed");
+		    MPID_Progress_end(&progress_state);
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						     "**fail", "**fail %s", "rma message operation failed");
                     goto fn_exit;
                 }
                 /* --END ERROR HANDLING-- */
             }
-            else
-            {
-                MPID_Progress_end();
-                break;
-            }
+	    MPID_Progress_end(&progress_state);
         }
         
         mpi_errno = request->status.MPI_ERROR;
@@ -699,39 +704,39 @@ static int MPIDI_CH3I_Send_lock_get(MPID_Win *win_ptr)
     }
 
     /* now wait for the data to arrive */
-    while (1)
+    if (*(rreq->cc_ptr) != 0)
     {
-        MPID_Progress_start();
+	MPID_Progress_state progress_state;
 	
-        if (*(rreq->cc_ptr) != 0)
+	MPID_Progress_start(&progress_state);
+	while (*(rreq->cc_ptr) != 0)
         {
-            mpi_errno = MPID_Progress_wait();
+            mpi_errno = MPID_Progress_wait(&progress_state);
             /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
             {
-                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "rma message operation failed");
+		MPID_Progress_end(&progress_state);
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+						 "**fail", "**fail %s", "rma message operation failed");
                 goto fn_exit;
             }
             /* --END ERROR HANDLING-- */
         }
-        else
-        {
-            mpi_errno = rreq->status.MPI_ERROR;
-            /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno != MPI_SUCCESS)
-            {
-                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "rma message operation failed");
-                goto fn_exit;
-            }
-            /* --END ERROR HANDLING-- */
-            
-            /* if origin datatype was a derived datatype, it will get 
-               freed when the rreq gets freed. */ 
-            MPID_Request_release(rreq);
-            MPID_Progress_end();
-            break;
-        }
+	MPID_Progress_end(&progress_state);
     }
+    
+    mpi_errno = rreq->status.MPI_ERROR;
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**fail", "**fail %s", "rma message operation failed");
+	goto fn_exit;
+    }
+    /* --END ERROR HANDLING-- */
+            
+    /* if origin datatype was a derived datatype, it will get freed when the rreq gets freed. */ 
+    MPID_Request_release(rreq);
 
     /* free MPIDI_RMA_ops_list */
     MPIU_Free(win_ptr->rma_ops_list->next);

@@ -265,47 +265,53 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     MPIU_Free(nops_to_proc);
     MPIU_Free(curr_ops_cnt);
 
-    done = 1;
-    while (new_total_op_count)
+    if (new_total_op_count)
     {
-        MPID_Progress_start();
-        for (i=0; i<new_total_op_count; i++)
+	MPID_Progress_state progress_state;
+	
+	done = 1;
+        MPID_Progress_start(&progress_state);
+	while (new_total_op_count)
 	{
-            if (requests[i] != NULL)
+	    for (i=0; i<new_total_op_count; i++)
 	    {
-                if (*(requests[i]->cc_ptr) != 0)
+		if (requests[i] != NULL)
 		{
-                    done = 0;
-                    break;
-		}
-                else
-		{
-		    mpi_errno = requests[i]->status.MPI_ERROR;
-		    /* --BEGIN ERROR HANDLING-- */
-		    if (mpi_errno != MPI_SUCCESS)
+		    if (*(requests[i]->cc_ptr) != 0)
 		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
-			return mpi_errno;
+			done = 0;
+			break;
 		    }
-		    /* --END ERROR HANDLING-- */
-		    MPID_Request_release(requests[i]);
-		    requests[i] = NULL;
-                }
-            }
-        }
-        if (!done)
-	{
-            mpi_errno = MPID_Progress_wait();
-            done = 1;
-        }
-        else
-	{
-            MPID_Progress_end();
-            break;
-        }
-    } 
-
+		    else
+		    {
+			mpi_errno = requests[i]->status.MPI_ERROR;
+			/* --BEGIN ERROR HANDLING-- */
+			if (mpi_errno != MPI_SUCCESS)
+			{
+			    MPID_Progress_end(&progress_state);
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+							     "**fail", 0);
+			    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+			    return mpi_errno;
+			}
+			/* --END ERROR HANDLING-- */
+			MPID_Request_release(requests[i]);
+			requests[i] = NULL;
+		    }
+		}
+	    }
+	
+	    if (done)
+	    {
+		break;
+	    }
+	
+	    mpi_errno = MPID_Progress_wait(&progress_state);
+	    done = 1;
+	} 
+	MPID_Progress_end(&progress_state);
+    }
+    
     MPIU_Free(requests);
     if (total_op_count != 0)
     {

@@ -62,6 +62,22 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     _CrtSetReportHook2(_CRT_RPTHOOK_INSTALL, assert_hook);
 #endif
 
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+    {
+	/*
+	 * FIXME: this is for temporary testing purposes only and will be replaced with a suitable abstraction once initial
+	 * testing is complete.
+	 */
+	#if (USE_THREAD_PKG == MPICH_THREAD_PKG_POSIX)
+	{
+	    pthread_mutex_init(&MPIR_Process.global_mutex, NULL);
+	}
+#	else
+#	    error specified thread package is not supported
+#	endif
+    }
+#   endif
+    
 #   if !defined(MPICH_SINGLE_THREADED)
     {
 	MPID_Thread_key_create(&MPIR_Process.thread_key) ;
@@ -227,15 +243,16 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INIT_THREAD);
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INIT_THREAD);
+    MPID_MPI_INIT_FUNC_ENTER(MPID_STATE_MPI_INIT_THREAD);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
             if (MPIR_Process.initialized != MPICH_PRE_INIT) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPI_Init_thread", __LINE__, MPI_ERR_OTHER, "**inittwice", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPI_Init_thread", __LINE__, MPI_ERR_OTHER,
+						  "**inittwice", 0 );
 	    }
-            if (mpi_errno) goto fn_fail;
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -248,8 +265,9 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
 	return MPI_SUCCESS;
     }
-    /* --BEGIN ERROR HANDLING-- */
+    
 fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_init_thread", "**mpi_init_thread %p %p %d %p", argc, argv, required, provided);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);

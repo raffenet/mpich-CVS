@@ -73,8 +73,22 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	    
     MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPI_RSEND);
     
-    /* ... body of routine ...  */
-    
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(
+		    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_rsend",
+		    "**mpi_rsend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
+		return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+	    }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
     /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
 
@@ -103,59 +117,56 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Rsend(buf, count, datatype, dest, tag, comm_ptr,
-			   MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
-    if (mpi_errno == MPI_SUCCESS)
+    mpi_errno = MPID_Rsend(buf, count, datatype, dest, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
+    if (mpi_errno != MPI_SUCCESS)
     {
-	if (request_ptr == NULL)
-	{
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND);
-	    return MPI_SUCCESS;
-	}
-	else
-	{
-	    /* If a request was returned, then we need to block until the
-	       request is complete */
-	    while((*(request_ptr)->cc_ptr) != 0)
-	    {
-		MPID_Progress_start();
-		
-		if ((*(request_ptr)->cc_ptr) != 0)
-		{
-		    mpi_errno = MPID_Progress_wait();
-		    /* --BEGIN ERROR HANDLING-- */
-		    if (mpi_errno != MPI_SUCCESS)
-		    {
-			goto fn_fail;
-		    }
-		    /* --END ERROR HANDLING-- */
-		}
-		else
-		{
-		    /* This code only executes if the MPID_Rsend returns an unfinished request and then finishes
-		       it before this thread checks the completion flag.  It is almost impossible to happen, even
-		       if the progress engine were in another thread. */
-		    MPID_Progress_end();
-		    break;
-		}
-	    }
-	
-	    mpi_errno = request_ptr->status.MPI_ERROR;
-	    MPID_Request_release(request_ptr);
-		
-	    if (mpi_errno == MPI_SUCCESS)
-	    {
-		MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND);
-		return MPI_SUCCESS;
-	    }
-	}
+	goto fn_fail;
+    }
+    
+    if (request_ptr == NULL)
+    {
+	goto fn_exit;
     }
 
+    /* If a request was returned, then we need to block until the request is complete */
+    if ((*(request_ptr)->cc_ptr) != 0)
+    {
+	MPID_Progress_state progress_state;
+	    
+	MPID_Progress_start(&progress_state);
+	while((*(request_ptr)->cc_ptr) != 0)
+	{
+	    mpi_errno = MPID_Progress_wait(&progress_state);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		/* --BEGIN ERROR HANDLING-- */
+		MPID_Progress_end(&progress_state);
+		goto fn_fail;
+		/* --END ERROR HANDLING-- */
+	    }
+	}
+	MPID_Progress_end(&progress_state);
+    }
+
+    mpi_errno = request_ptr->status.MPI_ERROR;
+    MPID_Request_release(request_ptr);
+		
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
+    }
+
+  fn_exit:
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND);
+    return mpi_errno;
+    
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_rsend", "**mpi_rsend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    mpi_errno =  MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
