@@ -62,6 +62,11 @@
 			helpstring = "Generate mixed case Fortran interface"
 			required = "false"
 		/>
+		<unnamed
+			name = "--f77_name_mixed_uscore"
+			helpstring = "Generate mixed case Fortran interface with one underscore"
+			required = "false"
+		/>
         <example>Example: winconfigure.wsf --force</example>
     </runtime>
 <script language="VBScript">
@@ -75,6 +80,7 @@ bf77_name_lower_uscore = False
 bf77_name_lower_2uscore = False
 bf77_name_upper = True
 bf77_name_mixed = False
+b77_name_mixed_uscore = False
 
 ' Process arguments
 argCount = WScript.Arguments.Count
@@ -112,6 +118,8 @@ For arg = 0 To argCount - 1
 	bf77_name_upper = True
   ElseIf argValue = "--f77_name_mixed" Then
 	bf77_name_mixed = True
+  ElseIf argValue = "--f77_name_mixed_uscore" Then
+	b77_name_mixed_uscore = True
   ElseIf argValue = "--help" Then
     WScript.Arguments.ShowUsage
     WScript.Quit
@@ -688,7 +696,7 @@ Sub AddDefinitions( fout, filename )
 		Dim regEx, Match, Matches
 		Set regEx = New RegExp
 		contents = f2.ReadAll()
-		regEx.Pattern = "/\*.*\*/\n#undef.*\n"
+		regEx.Pattern = "/\*.*\*/[\r\n]*#undef.*[\r\n]*"
 		regEx.IgnoreCase = True
 		regEx.Global = True
 		Set Matches = regEx.Execute(contents)
@@ -1069,6 +1077,8 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("/* #undef USE_POINTER_FOR_BOTTOM */")
 				Case "_TWO_WORD_FCD"
 					fout.WriteLine("/* #undef _TWO_WORD_FCD */")
+				Case "FORTRAN_SPECIAL_FUNCTION_PTR"
+					fout.WriteLine("/* #undef FORTRAN_SPECIAL_FUNCTION_PTR */")
 				Case "F77_NAME_LOWER"
 					If bf77_name_lower Then
 						fout.WriteLine("#define F77_NAME_LOWER")
@@ -1099,6 +1109,18 @@ Sub AddDefinitions( fout, filename )
 					Else
 						fout.WriteLine("/* #undef F77_NAME_MIXED */")
 					End If
+				Case "F77_NAME_MIXED_USCORE"
+					if b77_name_mixed_uscore Then
+						fout.WriteLine("#define F77_NAME_MIXED_USCORE 1")
+					Else
+						fout.WriteLine("/* #undef F77_NAME_MIXED_USCORE */")
+					End If
+				Case "HAVE_NSLINKMODULE"
+					fout.WriteLine("/* #undef HAVE_NSLINKMODULE */")
+				Case "HAVE_DLOPEN"
+					fout.WriteLine("/* #undef HAVE_DLOPEN */")
+				Case "HAVE_MACH_O_DYLD_H"
+					fout.WriteLine("/* #undef HAVE_MACH_O_DYLD_H */")
 				Case Else
 					MsgBox("Unhandled definition <" & define & ">")
 			End Select
