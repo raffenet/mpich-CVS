@@ -30,6 +30,7 @@ typedef struct TCP_PerProcess {
 		  char err_msg[TCP_ERROR_MSG_LENGTH];
 		   int num_readers;
 		   int num_writers;
+		   int nTCP_EAGER_LIMIT;
 } TCP_PerProcess;
 
 extern TCP_PerProcess TCP_Process;

@@ -30,6 +30,7 @@ MPIDI_VC_functions g_tcp_vc_functions =
 int tcp_init(void)
 {
     int error;
+    char *env;
     MPIDI_STATE_DECL(MPID_STATE_TCP_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_TCP_INIT);
@@ -64,6 +65,15 @@ int tcp_init(void)
     TCP_Process.max_bfd = TCP_Process.listener;
     TCP_Process.num_readers = 0;
     TCP_Process.num_writers = 0;
+
+    TCP_Process.nTCP_EAGER_LIMIT = TCP_EAGER_LIMIT;
+    env = getenv("MPICH_TCP_EAGER_LIMIT");
+    if (env)
+    {
+	TCP_Process.nTCP_EAGER_LIMIT = atoi(env);
+	if (TCP_Process.nTCP_EAGER_LIMIT < 1)
+	    TCP_Process.nTCP_EAGER_LIMIT = TCP_EAGER_LIMIT;
+    }
 
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_INIT);
     return MPI_SUCCESS;
