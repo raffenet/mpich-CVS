@@ -29,7 +29,7 @@
 #endif
 #endif
 
-smpd_process_t smpd_process = { -1, -1, -1, NULL, NULL, NULL, 0, SOCK_INVALID_SET, "", "", 0, 0, "", "", "" };
+smpd_process_t smpd_process = { -1, -1, -1, NULL, NULL, NULL, SMPD_FALSE, SMPD_FALSE, SOCK_INVALID_SET, "", "", SMPD_FALSE, SMPD_FALSE, "", "", "" };
 
 #ifdef HAVE_SIGACTION
 void child_handler(int code)
@@ -75,6 +75,7 @@ int smpd_init_process(void)
     smpd_process.UserAccount[0] = '\0';
     smpd_process.UserPassword[0] = '\0';
     smpd_process.closing = SMPD_FALSE;
+    smpd_process.root_smpd = SMPD_FALSE;
 
     srand(smpd_getpid());
 

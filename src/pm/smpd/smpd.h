@@ -115,12 +115,15 @@ typedef struct smpd_context_t
     struct smpd_context_t *next;
 } smpd_context_t;
 
+/* If you add elements to the process structure you must add the appropriate
+   initializer in smpd_connect.c where the global variable, smpd_process, lives */
 typedef struct smpd_process_t
 {
     int id, parent_id;
     int level;
     smpd_context_t *left_context, *right_context, *parent_context;
     int closing;
+    int root_smpd;
     sock_set_t set;
     char host[SMPD_MAX_HOST_LENGTH];
     char pszExe[SMPD_MAX_EXE_LENGTH];

@@ -215,44 +215,14 @@ int handle_command(smpd_context_t *context)
     {
 	smpd_dbg_printf("launch command, whahoo!\n");
     }
-    else if (strcmp(cmd->cmd_str, "stat") == 0)
-    {
-	result = smpd_create_command("all ok", smpd_process.id, cmd->src, &temp_cmd);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to create an 'all ok' command for the context.\n");
-	    smpd_exit_fn("handle_command");
-	    return SMPD_FAIL;
-	}
-	smpd_dbg_printf("replying to stat command: \"%s\"\n", temp_cmd->cmd);
-	result = smpd_post_write_command(context, temp_cmd);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to post a write of the 'all ok' command to the context.\n");
-	    smpd_exit_fn("handle_command");
-	    return SMPD_FAIL;
-	}
-    }
-    else if (strcmp(cmd->cmd_str, "shutdown") == 0)
-    {
-	result = smpd_create_command("down", smpd_process.id, context->id, &temp_cmd);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to create a closed command for the context.\n");
-	    smpd_exit_fn("handle_command");
-	    return SMPD_FAIL;
-	}
-	smpd_dbg_printf("shutdown received, replying with down command: \"%s\"\n", temp_cmd->cmd);
-	result = smpd_post_write_command(context, temp_cmd);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to post a write of the closed command to the context.\n");
-	    smpd_exit_fn("handle_command");
-	    return SMPD_FAIL;
-	}
-    }
     else if (strcmp(cmd->cmd_str, "connect") == 0)
     {
+	if (smpd_process.root_smpd)
+	{
+	    smpd_err_printf("the root smpd is not allowed to connect to other smpds, ignoring command.\n");
+	    /* send connect failed return command */
+	    return SMPD_SUCCESS;
+	}
 	if (smpd_process.closing)
 	{
 	    smpd_err_printf("connect command received while session is closing, ignoring connect.\n");
@@ -384,7 +354,56 @@ int handle_command(smpd_context_t *context)
     }
     else
     {
-	smpd_err_printf("ignoring unknown session command: \"%s\"\n", cmd->cmd);
+	/* handle root commands */
+	if (smpd_process.root_smpd)
+	{
+	    if (strcmp(cmd->cmd_str, "shutdown") == 0)
+	    {
+		result = smpd_create_command("down", smpd_process.id, context->id, &temp_cmd);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to create a closed command for the context.\n");
+		    smpd_exit_fn("handle_command");
+		    return SMPD_FAIL;
+		}
+		smpd_dbg_printf("shutdown received, replying with down command: \"%s\"\n", temp_cmd->cmd);
+		result = smpd_post_write_command(context, temp_cmd);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to post a write of the closed command to the context.\n");
+		    smpd_exit_fn("handle_command");
+		    return SMPD_FAIL;
+		}
+		smpd_exit_fn("handle_command");
+		return SMPD_CLOSE; /* return close to prevent posting another read on this context */
+	    }
+	    else if (strcmp(cmd->cmd_str, "stat") == 0)
+	    {
+		result = smpd_create_command("all ok", smpd_process.id, cmd->src, &temp_cmd);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to create an 'all ok' command for the context.\n");
+		    smpd_exit_fn("handle_command");
+		    return SMPD_FAIL;
+		}
+		smpd_dbg_printf("replying to stat command: \"%s\"\n", temp_cmd->cmd);
+		result = smpd_post_write_command(context, temp_cmd);
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to post a write of the 'all ok' command to the context.\n");
+		    smpd_exit_fn("handle_command");
+		    return SMPD_FAIL;
+		}
+	    }
+	    else
+	    {
+		smpd_err_printf("ignoring unknown session command: \"%s\"\n", cmd->cmd);
+	    }
+	}
+	else
+	{
+	    smpd_err_printf("ignoring unknown session command: \"%s\"\n", cmd->cmd);
+	}
     }
     smpd_exit_fn("handle_command");
     return SMPD_SUCCESS;

@@ -46,7 +46,9 @@ int main(int argc, char* argv[])
 	return result;
     }
 
+    /* This process is the root_smpd.  All sessions are child processes of this process. */
     smpd_process.id = 0;
+    smpd_process.root_smpd = SMPD_TRUE;
 
     /*smpd_set_smpd_data("path", smpd_process.pszExe);*/
 
