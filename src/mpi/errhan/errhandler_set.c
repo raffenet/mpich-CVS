@@ -57,6 +57,9 @@ int MPI_Errhandler_set(MPI_Comm comm, MPI_Errhandler errhandler)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
+    MPID_CS_ENTER();
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERRHANDLER_SET);
+
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -69,9 +72,6 @@ int MPI_Errhandler_set(MPI_Comm comm, MPI_Errhandler errhandler)
     }
 #   endif
     
-    MPID_CS_ENTER();
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERRHANDLER_SET);
-
     /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
     
