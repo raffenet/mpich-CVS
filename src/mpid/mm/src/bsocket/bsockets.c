@@ -438,7 +438,32 @@ int bselect(int maxfds, bfd_set *readbfds, bfd_set *writebfds,
     DBG_MSG("Enter bselect\n");
     
     if (readbfds)
+    {
+	nbfds = 0;
 	rcopy = *readbfds;
+	/* check to see if there are any bfds with buffered data */
+	for (i=0; i<readbfds->n; i++)
+	{
+	    p = readbfds->p[i];
+	    if (p->num_avail > 0 && (FD_ISSET(p->real_fd, &rcopy.set)))
+	    {
+		FD_SET((unsigned int)p->real_fd, &readbfds->set);
+		nbfds++;
+	    }
+	}
+	if (nbfds)
+	{
+	    /* buffered data is available, return it plus any writeable bfds */
+	    if (writebfds)
+	    {
+		maxfds = ((BFD_Buffer*)maxfds)->real_fd + 1;
+		i = select(maxfds, NULL, &writebfds->set, NULL, tv);
+		if (i != SOCKET_ERROR)
+		    nbfds += i;
+	    }
+	    return nbfds;
+	}
+    }
 
     maxfds = ((BFD_Buffer*)maxfds)->real_fd + 1;
     nbfds = select(maxfds, 
