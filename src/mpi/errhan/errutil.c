@@ -232,6 +232,8 @@ int MPIR_Err_create_code( int class, const char def_string[], ... )
 
     err_code = class;
 
+/*    printf( "Err create code class = %d, def message = %s\n", 
+      class, def_string ); fflush(stdout);*/
     /* Handle the generic message.  This selects a subclass, based on a 
        text string */
 #if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS

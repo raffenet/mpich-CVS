@@ -2,6 +2,7 @@ TAGS
 Makefile
 config.status
 config.log
+config.cache
 lib
 bin
 misc
