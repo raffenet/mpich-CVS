@@ -69,11 +69,13 @@ struct ADIOI_Hints_struct {
     int *ranklist;
 };
 
-/* Values for use with cb_read, cb_write, ds_read, and ds_write */
+/* Values for use with cb_read, cb_write, ds_read, and ds_write 
+   (IBM xlc, Compaq Tru64 compilers object to a comma after the last item)
+ */
 enum {
     ADIOI_HINT_UNSPEC  = 0,
     ADIOI_HINT_ENABLE  = 1,
-    ADIOI_HINT_DISABLE = 2,
+    ADIOI_HINT_DISABLE = 2
 };
 
 /* flattened datatypes. Each datatype is stored as a node of a
