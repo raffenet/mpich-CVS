@@ -63,7 +63,9 @@ int MPI_Win_set_errhandler(MPI_Win win, MPI_Errhandler errhandler)
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
 	    /* If win_ptr is not value, it will be reset to null */
 
-	    MPID_Errhandler_valid_ptr( errhan_ptr,mpi_errno );
+	    if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
+		MPID_Errhandler_valid_ptr( errhan_ptr,mpi_errno );
+	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ERRHANDLER);
                 return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
@@ -74,9 +76,13 @@ int MPI_Win_set_errhandler(MPI_Win win, MPI_Errhandler errhandler)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    MPIU_Object_release_ref(win_ptr->errhandler,&in_use);
-    if (!in_use) {
-	MPID_Errhandler_free( win_ptr->errhandler );
+    if (win_ptr->errhandler != NULL) {
+	if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
+	    MPIU_Object_release_ref(win_ptr->errhandler,&in_use);
+	    if (!in_use) {
+		MPID_Errhandler_free( win_ptr->errhandler );
+	    }
+	}
     }
     MPIU_Object_add_ref(errhan_ptr);
     win_ptr->errhandler = errhan_ptr;

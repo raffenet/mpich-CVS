@@ -76,11 +76,12 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    if (comm_ptr->errhandler != NULL)
-    {
-	MPIU_Object_release_ref(comm_ptr->errhandler,&in_use);
-	if (!in_use) {
-	    MPID_Errhandler_free( comm_ptr->errhandler );
+    if (comm_ptr->errhandler != NULL) {
+	if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
+	    MPIU_Object_release_ref(comm_ptr->errhandler,&in_use);
+	    if (!in_use) {
+		MPID_Errhandler_free( comm_ptr->errhandler );
+	    }
 	}
     }
     

@@ -73,6 +73,7 @@ int MPI_Comm_create_errhandler(MPI_Comm_errhandler_fn *function, MPI_Errhandler 
     *errhandler		 = errhan_ptr->handle;
     errhan_ptr->language = MPID_LANG_C;
     errhan_ptr->kind	 = MPID_COMM;
+    MPIU_Object_set_ref(errhan_ptr,1);
     errhan_ptr->errfn.C_Comm_Handler_function = function;
     /* ... end of body of routine ... */
 
