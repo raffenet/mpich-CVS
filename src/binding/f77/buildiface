@@ -27,11 +27,12 @@ $do_logical = 1;
 $do_fint    = 1;
 $do_weak    = 1;
 $do_subdecls = 1;
+$do_bufptr = 1;
 
 # Process arguments
 #
 # Args
-# -feature={logical,fint,subdecls,weak}, separated by :, value given 
+# -feature={logical,fint,subdecls,weak,bufptr}, separated by :, value given 
 # by =on or =off, eg
 # -feature=logical=on:fint=off
 # The feature names mean:
@@ -39,10 +40,13 @@ $do_subdecls = 1;
 #    fint    - Fortran integers and C ints are different size (not implemented)
 #    subdecls - Declarations for PC-Fortran compilers added
 #    weak    - Use weak symbols 
+#    bufptr  - Check for MPI_BOTTOM as a special address.  This is
+#              not needed if a POINTER declaration is available.
 foreach $_ (@ARGV) {
     if (/-noprototypes/) { $build_prototypes = 0; }
     elsif (/-feature=(.*)/) {
 	foreach $feature (split(/:/,$1)) {
+	    print STDERR "Processing feature $feature\n" if $debug;
 	    # Feature values are foo=on,off
 	    ($name,$value) = split(/=/,$feature);
 	    if ($value eq "on") { $value = 1; } 
@@ -66,6 +70,7 @@ foreach $_ (@ARGV) {
 	   'MPI_Op' => 'MPI_Fint *',
 	   'MPI_Info' => 'MPI_Fint *',
 	   'MPI_Errhandler' => 'MPI_Fint *',
+	   'MPI_Aint' => 'MPI_Fint *',   # Should be MPIR_FAint
 	   'int' => 'MPI_Fint *',
 	   'int [][3]' => 'MPI_Fint *',
 	   'MPI_Datatype *' => 'MPI_Fint *',
@@ -74,6 +79,7 @@ foreach $_ (@ARGV) {
 	   'MPI_Win *', 'MPI_Fint *', 
 	   'MPI_Group *', 'MPI_Fint *',
 	   'MPI_Request *' => 'MPI_Fint *',
+	   'MPI_Aint *' => 'MPI_Fint *',   # Should be MPIR_FAint
 	   'int *' => 'MPI_Fint *',
 	   'MPI_Op *' => 'MPI_Fint *',
 	   'MPI_Status *' => 'MPI_Fint *',
@@ -180,28 +186,42 @@ foreach $_ (@ARGV) {
 #    index:   convert to/from Fortran (1-based) and C (0-based) origins
 #    array:   handle arrays of items that may have different lengths
 #             in C and Fortran because the integer types have 
-#             different sizes
+#             different sizes.  The term has an additional :expression,
+#             the third term give the array size.
 #    addnull: Add a null character to a *copy* of the input string,
 #             after trimming any blanks.
 #    blankpad: Add blanks and remove nulls.  Use a copy of the string
 #             for the call to the C routine.
 #
 %special_args = ( 
-    'Cart_create' => '4:5', 'Cart_create-4' => 'in:logical_array', 
+    'Allreduce' => '1:2', 'Allreduce-1' => 'in:bufptr',	
+		 'Allreduce-2' => 'in:bufptr', 
+    'Bcast' => '1', 'Bcast-1' => 'in:bufptr',		 
+    'Cart_create' => '4:5', 'Cart_create-4' => 'in:logical_array:*v2', 
     'Cart_create-5' => 'in:logical', 
-    'Cart_get' => '4', 'Cart_get-4' => 'out:logical_array',
+    'Cart_get' => '4', 'Cart_get-4' => 'out:logical_array:*v2',
     'Comm_test_inter' => '2', 'Comm_test_inter-2' => 'out:logical',
     'Get_processor_name' => '1', 'Get_processor_name-1' => 'out:blankpad',
     'Initialized' => '1', 'Initialized-1' => 'out:logical',
     'Iprobe' => '4', 'Iprobe-4' => 'out:logical',
+    'Send' => '1', 'Send-1' => 'in:bufptr',
+    'Ssend' => '1', 'Ssend-1' => 'in:bufptr',
+    'Rsend' => '1', 'Rsend-1' => 'in:bufptr',
+    'Bsend' => '1', 'Bsend-1' => 'in:bufptr',
+    'Isend' => '1', 'Isend-1' => 'in:bufptr',
+    'Issend' => '1', 'Issend-1' => 'in:bufptr',
+    'Irsend' => '1', 'Irsend-1' => 'in:bufptr',
+    'Ibsend' => '1', 'Ibsend-1' => 'in:bufptr',
+    'Sendrecv' => '1:6', 'Sendrecv-1' => 'in:bufptr', 'Sendrecv-6' => 'in:bufptr',
+    'Sendrecv_replace' => '1', 'Sendrecv_replace-1' => 'in:bufptr',
     'Test_cancelled' => '2', 'Test_cancelled-2' => 'out:logical',
     'Test' => '2', 'Test-2' => 'out:logical',
     'Testall' => '3', 'Testall-3' => 'out:logical',
     'Testany' => '3:4', 'Testany-4' => 'out:logical',
     'Testany-3' => 'out:index',
-    'Testsome' => '4', 'Testsome-4' => 'out:index_array',
+    'Testsome' => '4', 'Testsome-4' => 'out:index_array:*v3',
     'Waitany' => '3', 'Waitany-3' => 'out:index',
-    'Waitsome' => '4', 'Waitsome-4' => 'out:index_array'
+    'Waitsome' => '4', 'Waitsome-4' => 'out:index_array:*v3'
     );
 
 if ($build_prototypes) {
@@ -260,7 +280,7 @@ while (<FD>) {
 	    }
 	    &print_header( $routine_name, $lcname );
 	    if ($do_subdecls) {
-		print $OUTFD "FORTRAN_API void FORT_CALL";
+		print $OUTFD "FORTRAN_API void FORT_CALL ";
 	    }
 	    else {
 		print $OUTFD "void ";
@@ -370,7 +390,8 @@ sub print_profiling_block {
     my $lcname = $_[1];
     my $ucname = uc($lcname);
 
-    print $OUTFD "\
+    if ($do_weak) {
+	print $OUTFD "\
 /* Begin MPI profiling block */\
 #if defined(HAVE_WEAK_SYMBOLS)\
 #if defined(HAVE_PRAGMA_WEAK)\
@@ -409,6 +430,7 @@ sub print_profiling_block {
 #endif /* HAVE_PRAGMA_WEAK */\
 #endif /* HAVE_WEAK_SYMBOLS */\
 /* End MPI profiling block */\n\n";
+    }
 }
 
 # Print the arguments for the routine DEFINITION.
@@ -483,11 +505,34 @@ sub print_call_args {
 # Print the option function attribute; this supports GCC, particularly 
 # the __atribute__ weak option.
 sub print_attr {
-    print $OUTFD "FUNC_ATTRIBUTES\n";
+    if ($do_weak) {
+	print $OUTFD "FUNC_ATTRIBUTES\n";
+    }
 }
 
 #
 # Special processing
+# Buffer pointers
+sub bufptr_ftoc {
+}
+sub bufptr_in_decl {
+    my $count = $_[0];
+}
+sub bufptr_in_arg {
+    my $count = $_[0];
+    if ($do_bufptr) {
+	print $OUTFD "MPIR_F_PTR(v$count)";
+    }
+    else {
+	print $OUTFD "v$count";
+    }
+}
+# bufptr_ctof( cvar, fvar )
+sub bufptr_ctof {
+    my $coutvar = $_[0];
+    my $outvar  = $_[1];
+}
+
 # Logical variables
 sub logical_ftoc {
 }
@@ -535,13 +580,13 @@ sub logical_out_arg {
 sub logical_array_ftoc {
     print $OUTFD "\
     for (li=0; li<$Array_size; li++) {
-        l$count[li] = MPIR_FROM_FLOG(v$count[li]);
+        l$count\[li\] = MPIR_FROM_FLOG(v$count\[li\]);
     }
 ";
 }
 sub logical_array_in_decl {
     my $count = $_[0];
-    print $OUTFD "int *v$count = (int *)malloc($Array_size * sizeof(int));\n";
+    print $OUTFD "    int *l$count = (int *)malloc($Array_size * sizeof(int));\n";
 }
 sub logical_array_in_arg {
     my $count = $_[0];
@@ -553,13 +598,16 @@ sub logical_array_ctof {
     my $outvar  = $_[1];
     print $OUTFD "\
     for (li=0; li<$Array_size; li++) {
-        $outvar[li] = MPIR_TO_FLOG($outval[li]);
+        $outvar\[li\] = MPIR_TO_FLOG($outvar\[li\]);
     }
 ";
 }
 sub logical_array_out_decl {
+    print $OUTFD "    int li;\n";
 }
 sub logical_array_out_arg {
+    my $count = $_[0];
+    print $OUTFD "v$count";
 }
 # 
 # Index variables.
@@ -591,13 +639,16 @@ sub index_array_ctof {
     my $outvar  = $_[1];
     print $OUTFD "\
     for (li=0; li<$Array_size; li++) {
-        if ($outvar[li] >= 0) $outval[li] += 1;
+        if ($outvar\[li\] >= 0) $outvar\[li\] += 1;
     }
 "
 }
 sub index_array_out_decl {
+    print $OUTFD "    int li;\n";
 }
 sub index_array_out_arg {
+    my $count = $_[0];
+    print $OUTFD "v$count";
 }
 
 # This is the routine that handles the post-call processing
@@ -608,7 +659,7 @@ sub print_post_call {
     # Erg.  Special processing
     foreach $count (split(/:/,$special_args{$routine_name})) {
 	$rule = $special_args{"${routine_name}-$count"};
-	($direction,$method) = split(/:/,$rule);
+	($direction,$method,$Array_size) = split(/:/,$rule);
 	print STDERR "$routine_name: dir = $direction, method = $method\n" if $debug;
 	if ($direction eq "out") {
 	    $processing_routine = "${method}_ctof";
@@ -647,7 +698,7 @@ sub print_special_call_arg {
     my $count = $_[1];
 
     $rule = $special_args{"${routine_name}-$count"};
-    ($direction,$method) = split(/:/,$rule);
+    ($direction,$method,$Array_size) = split(/:/,$rule);
 
     $processing_routine = "${method}_${direction}_arg";
     &$processing_routine( $count );
@@ -660,9 +711,112 @@ sub print_special_decls {
     if (defined($special_args{$routine_name})) {
 	foreach $count (split(/:/,$special_args{$routine_name})) {
 	    $rule = $special_args{"${routine_name}-$count"};
-	    ($direction,$method) = split(/:/,$rule);
+	    ($direction,$method,$Array_size) = split(/:/,$rule);
 	    $processing_routine = "${method}_${direction}_decl";
 	    &$processing_routine( $count );
 	}
     }
 }
+
+#
+# --------------------------------------------------------------------------
+# Create mpif.h.in from mpi.h
+#
+
+open ( MPIFD, "<../../include/mpi.h.in" ) || die "Could not open mpi.h.in\n";
+#
+# First, find the values that we need
+while (<MPIFD>) {
+    if (/#define\s*(MPI_[A-Z_0-9]*)\s*([^\s]*)/) {
+	$mpidef{$1} = $2;
+    }
+}
+close (MPIFD);
+#
+$cchar = "C";
+open ( MPIFFD, ">mpif.h.in" ) || die "Could not open mpif.h.in\n";
+
+sub print_mpif_int {
+    my $key = $_[0];
+    my $value = $mpidef{$key};
+    # Remove any casts
+    print "Input value = $value\n" if $debug;
+    if ($value =~ /\(MPI/) {
+	$value =~ s/\(MPI_[A-Za-z0-9]*\s*\)//;
+	print "cast removal: $value\n" if $debug;
+    }
+    # Remove any surrounding ()
+    if ($value =~ /\(\s*[-a-fx0-9]*\)/) {
+	$value =~ s/\(\s*([-a-fx0-9]*)\s*\)/\1/;
+	print "paren removal: $value\n" if $debug;
+    }
+    # Convert hex to decimal
+    if ($value =~ /^0x[a-f\d]*/) {
+	$value = hex $value;
+	print "hex conversion: $value\n" if $debug;
+    }
+    print MPIFFD "       INTEGER $key\n";
+    print MPIFFD "       PARAMETER ($key=$value)\n";
+}
+
+# Now, write out the file
+print MPIFFD "$cchar      DO NOT EDIT
+$cchar       This file created by buildiface\n";
+# Error Classes
+print MPIFFD "       INTEGER MPI_SUCCESS\n";
+print MPIFFD "       PARAMETER (MPI_SUCCESS=0)\n";
+foreach $key (keys(%mpidef)) {
+    if ($key =~ /MPI_ERR_/) {
+	&print_mpif_int( $key );
+    }
+}
+# Compare operations
+foreach $key (IDENT,CONGRUENT,SIMILAR,UNEQUAL) {
+    &print_mpif_int( "MPI_$key" );
+}
+# Collective operations
+foreach $key (MAX, MIN, SUM, PROD, LAND, BAND, LOR, BOR, LXOR, BXOR, MINLOC, MAXLOC, REPLACE ) {
+    &print_mpif_int( "MPI_$key" );
+}
+# Objects
+foreach $key ('COMM_WORLD', 'COMM_SELF', 'GROUP_EMPTY', 'COMM_NULL', 'WIN_NULL', 'FILE_NULL', 'GROUP_NULL', 'OP_NULL', 'DATATYPE_NULL', 'REQUEST_NULL', 'ERRHANDLER_NULL') {
+    &print_mpif_int( "MPI_$key" );
+}
+# Attributes
+foreach $key (TAG_UB, HOST, IO, WTIME_IS_GLOBAL, UNIVERSE, LASTUSEDCODE, APPNUM) {
+    &print_mpif_int( "MPI_$key" );
+} 
+# String sizes
+# Missing - max processor name!
+foreach $key (MAX_ERROR_STRING, MAX_NAME_STRING, MAX_PORT_NAME, MAX_OBJECT_NAME) {
+    &print_mpif_int( "MPI_$key" );
+}
+# predefined constants
+print MPIFFD "       INTEGER MPI_UNDEFINED, MPI_UNDEFINED_RANK\n";
+print MPIFFD "       PARAMETER (MPI_UNDEFINED=$mpidef{'MPI_UNDEFINED'})\n";
+# mpi_undefined_rank is defined as mpi-undefined
+print MPIFFD "       PARAMETER (MPI_UNDEFINED_RANK=$mpidef{'MPI_UNDEFINED'})\n";
+&print_mpif_int( "MPI_KEYVAL_INVALID" );
+foreach $key ('BSEND_OVERHEAD', 'PROC_NULL', 'ANY_SOURCE', 'ANY_TAG', 'ROOT') {
+    &print_mpif_int( "MPI_$key" );
+}
+#
+# version
+&print_mpif_int( "MPI_VERSION" );
+&print_mpif_int( "MPI_SUBVERSION" );
+#
+# Datatypes
+# These are determined and set at configure time
+foreach $key (COMPLEX, DOUBLE_COMPLEX, LOGICAL, REAL, DOUBLE_PRECISION, INTEGER, '2INTEGER', '2COMPLEX', '2DOUBLE_PRECISION', '2REAL', '2DOULBLE_COMPLEX', CHARACTER) {
+    print MPIFFD "       INTEGER MPI_$key\n";
+    print MPIFFD "       PARAMETER (MPI_$key=\@MPI_$key\@)\n";
+}
+&print_mpif_int( "MPI_BYTE" );
+&print_mpif_int( "MPI_UB" );
+&print_mpif_int( "MPI_LB" );
+&print_mpif_int( "MPI_PACKED" );
+
+#
+# 
+
+close( MPIFFD );

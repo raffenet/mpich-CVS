@@ -1,8 +1,13 @@
 Makefile.sm
 Makefile.in
 Makefile
+mpi_fortconf.h.in
+mpi_fortconf.h
 *.o
 *.lo
+configure
+config.log
+config.status
 abortf.c
 accumulatef.c
 adderrclassf.c
@@ -130,6 +135,8 @@ keyval_createf.c
 keyval_freef.c
 lookup_namef.c
 mpi_fortimpl.h
+mpif.h.in
+mpif.h
 op_createf.c
 op_freef.c
 open_portf.c
