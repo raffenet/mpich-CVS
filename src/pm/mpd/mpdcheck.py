@@ -21,12 +21,18 @@ Any output with *** at the beginning indicates a potential problem
 that you may have to resolve before being able to run parallel jobs
 via mpd.
 
-There are really three modes of operation for this program:
+For help:
+    mpdcheck -h (or --help)
+        prints this message
 
-    mpdcheck
+In the following modes, the -v option provides long messages.
+
+The three major modes of operation for this program are:
+
+    mpdcheck [-v]
         prints info about 'this' host
 
-    mpdcheck some_remote_hostname
+    mpdcheck [-v] some_remote_hostname
         prints info about 'this' host and locatability info about the
         remote one as well
 
