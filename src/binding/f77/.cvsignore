@@ -10,6 +10,7 @@ mpif77
 *.bb
 *.bbg
 *.da
+*.pf
 *.gcov
 configure
 config.log
