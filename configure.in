@@ -818,15 +818,23 @@ PAC_PROG_MKDIR_P
 
 # Don't setup the shared libraries until we know which compiler we will be
 # using
-dnl We do not support shared libraries.  
-dnl PAC_ARG_SHAREDLIBS
-AC_ARG_ENABLE(sharedlibs,
-[--enable-sharedlibs - This switch is obsolete and is not supported],
-AC_MSG_ERROR([--enable-sharedlibs is not available]),,)
-dnl ENABLE_SHLIB=$enable_sharedlibs
+dnl We do not support shared libraries in general, but they are working on at least some versions of Linux, if C++ is disabled. 
+PAC_ARG_SHAREDLIBS
+dnl AC_ARG_ENABLE(sharedlibs,
+dnl [--enable-sharedlibs - This switch is obsolete and is not supported],
+dnl AC_MSG_ERROR([--enable-sharedlibs is not available]),,)
+ENABLE_SHLIB=$enable_sharedlibs
 if test -z "$ENABLE_SHLIB" -o "$ENABLE_SHLIB" = "no" ; then
     ENABLE_SHLIB=none
 fi
+if test "$ENABLE_SHLIB" != "none" -a "$enable_cxx" = "yes" ; then
+    AC_MSG_ERROR([Building shared libraries requires disabling C++ (--disable-cxx)])
+fi
+os_type=`uname -s | tr 'LINUX' 'linux'`
+if test "$ENABLE_SHLIB" != "none" -a "$os_type" != "linux" ; then
+    AC_MSG_ERROR([Building shared libraries is only supported on Linux])
+fi
+
 AC_SUBST(ENABLE_SHLIB)
 AC_SUBST(C_LINKPATH_SHL)
 
