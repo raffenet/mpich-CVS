@@ -1,0 +1,13 @@
+mpif90.conf
+mpif90
+Makefile
+Makefile.in
+Makefile.sm
+configure
+config.*
+autom4te.cache
+mpi.f90
+.deps
+*.mod
+*.MOD
+.libs

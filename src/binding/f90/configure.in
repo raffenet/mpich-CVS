@@ -1,0 +1,194 @@
+AC_INIT(Makefile.in)
+dnl
+dnl Do not use a PREREQ macro because cygwin uses that to select the
+dnl MAXIMUM, not MINIMUM version (!)
+dnl We need install.sh, config.guess, etc. for the code that
+dnl finds the Fortran libraries
+AC_CONFIG_AUX_DIR(../../../confdb)
+dnl
+PAC_ARG_CACHING
+
+AC_ARG_ENABLE(strict,
+[--enable-strict  - Turn on strict compilation testing when using gcc],,
+enable_strict=no)
+
+AC_ARG_ENABLE(echo,
+[--enable-echo    - Turn on echoing from within the configure script],
+set -x)
+
+AC_ARG_WITH(cross,
+[--with-cross=file - Specify the values of variables that configure cannot
+determine in a cross-compilation environment],,with_cross=no)
+
+dnl
+dnl First check that we have a clean build if we are doing a VPATH build
+if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
+    AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
+    configured.  Run "make distclean" in $srcdir first.])
+fi
+
+dnl
+dnl Get the "master" top srcdir if we are a subdir configure
+if test -z "$top_srcdir" ; then
+   use_top_srcdir=$srcdir   
+else
+   use_top_srcdir=$top_srcdir
+fi
+if test -z "$master_top_srcdir" ; then 
+    master_top_srcdir=$use_top_srcdir
+fi
+AC_SUBST(master_top_srcdir)
+export master_top_srcdir
+#
+# Get the master builddir (which may be imported from above)
+if test -z "$master_top_builddir" ; then
+    master_top_builddir=`pwd`
+fi
+export master_top_builddir
+AC_SUBST(master_top_builddir)
+# Get the current build directory
+builddir=`pwd`
+AC_SUBST(builddir)
+
+PAC_PROG_MAKE
+AC_PATH_PROG(AR,ar)
+# Note that we set RANLIB to true if we don't find it (some systems neither
+# need it nor provide it)
+AC_CHECK_PROGS(RANLIB,ranlib,true)
+AC_PROG_INSTALL
+PAC_PROG_MKDIR_P
+
+# These values are exported from the upper-layer configure.
+AC_SUBST(PROFILE_DEF_MPI)
+AC_SUBST(NO_WEAK_SYM)
+AC_SUBST(NO_WEAK_SYM_TARGET)
+AC_SUBST(NEEDSPLIB)
+#
+
+# Find a Fortran 90 compiler.  Sets F90
+PAC_PROG_F90
+
+if test -z "$F90" ; then
+   AC_MSG_ERROR([Could not find a usable F90 compiler])
+fi
+
+# Find the extension that this compiler uses for modules.
+# Sets F90MODEXT (and adds it to the list substed)
+# Sets F90MODINCFLAG (and adds it to the list substed)
+PAC_F90_MODULE
+#
+# For now, assume that all f90 compilers accept -I for include directories
+F90INC=-I
+
+#
+# Determine the extension for f90 files (it isn't always .f90)
+PAC_F90_EXT
+F90EXT=$pac_cv_f90_ext
+AC_SUBST(F90EXT)
+#
+# Most systems allow the Fortran compiler to process .F and .F90 files
+# using the C preprocessor.  However, some systems either do not
+# allow this or have serious bugs (OSF Fortran compilers have a bug
+# that generates an error message from cpp).  The following test
+# checks to see if .F works, and if not, whether "cpp -P -C" can be used
+rm -f conftest*
+AC_MSG_CHECKING([whether Fortran 90 compiler processes .F90 files with C preprocessor])
+cat >conftest.F90 <<EOF
+        program main
+#define ASIZE 10
+        integer a(ASIZE)
+        end
+EOF
+pac_cv_f90_accepts_F90=no
+pac_F90compile='${F90} -c $F90FLAGS $CPPFLAGS conftest.F90 1>&AC_FD_CC'
+
+if AC_TRY_EVAL(pac_F90compile) && test -s conftest.o ; then
+   pac_cv_f90_accepts_F90=yes
+else
+    # Can we use cpp?
+    pac_F90cpp='${CPP} -C -P $CPPFLAGS conftest.F90 >conftest.$pac_cv_f90_ext 2>&AC_FD_CC'
+    if AC_TRY_EVAL(pac_F90cpp) && test -s conftest.$pac_cv_f90_ext ; then
+        pac_fF90compile='${F90} -c $F90FLAGS $CPPFLAGS conftest.$pac_cv_f90_ext 1>&AC_FD_CC'
+	if AC_TRY_EVAL(pac_fF90compile) && test -s conftest.o ; then
+	    pac_cv_f90_accepts_F90="no, use cpp"
+	fi
+    fi
+fi
+rm -f conftest.*
+AC_MSG_RESULT($pac_cv_f90_accepts_F90)
+case "$pac_cv_f90_accepts_F90" in 
+    yes)
+    F90CPP=""
+    ;;
+    "no, use cpp")
+    F90CPP="$CPP -C -P"
+    ;;
+    no) 
+    F90CPP="false"
+    ;;
+esac
+AC_SUBST(F90CPP)
+
+
+dnl Check for other Fortran 90 features, such as different include/use
+dnl module directory and special flags.  Build modules if requested
+
+AC_SUBST(F90_SUFFIX)
+f90includedir='${includedir}'
+f90libdir='${libdir}'
+AC_SUBST(f90includedir)
+AC_SUBST(f90libdir)
+AC_SUBST(F90_LDFLAGS)
+AC_SUBST(F90INC)
+AC_SUBST(F90_MODINCFLAG)
+AC_SUBST(F90MODINCSPEC)
+F90INCFLAG=-I
+AC_SUBST(F90INCFLAG)
+AC_SUBST(F90FLAGS)
+AC_SUBST(F90LINKER)
+AC_SUBST(F90LIB_PATH)
+if test -z "$F90_LIBDIR_LEADER" ; then 
+    F90_LIBDIR_LEADER="-L"
+fi
+AC_SUBST(F90_LIBDIR_LEADER)
+AC_SUBST(MPIVERSION)
+
+# Use the value for enable_shlib; set to none if not available (required
+# for simplemake shlib handling)
+if test -z "$ENABLE_SHLIB" ; then ENABLE_SHLIB=none ; fi
+AC_SUBST(ENABLE_SHLIB)
+AC_SUBST(LIBTOOL)
+#
+# The following variables are used in mpif90.in and reflect the MPI
+# implementation that is in use.
+# NEEDSPLIB is imported from the upper-level configure
+AC_SUBST(NEEDSPLIB)
+# 
+AC_SUBST(MPILIBNAME)
+
+# These last 2 sets of flags are used to pass flags needed only to compile
+# and use MPI programs, not to build the MPI library itself.
+AC_SUBST(MPI_F90FLAGS)
+AC_SUBST(MPI_LDFLAGS)
+if test -z "$top_build_dir" ; then
+    top_build_dir=`cd ../../.. ; pwd`
+fi
+if test -z "$includebuild_dir" ; then
+    includebuild_dir=$top_build_dir/src/include
+fi
+if test -z "$libbuild_dir" ; then
+    libbuild_dir=$top_build_dir/lib
+fi
+
+AC_OUTPUT_COMMANDS([if test "$enable_echo" ; then set -x ; fi ;
+   chmod a+x mpif90 ;
+   if test ! -d ../../../bin  ; then mkdir ../../../bin ; fi 
+   sed -e 's%includedir=.*%includedir='$includebuild_dir% \
+       -e 's%libdir=.*%libdir='$libbuild_dir% mpif90 > ../../../bin/mpif90 ;
+   chmod a+x ../../../bin/mpif90 ],
+includebuild_dir=$includebuild_dir
+libbuild_dir=$libbuild_dir
+enable_echo=$enable_echo
+)
+
+AC_OUTPUT(Makefile mpif90.conf mpif90)
