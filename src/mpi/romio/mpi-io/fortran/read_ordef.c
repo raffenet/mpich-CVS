@@ -84,6 +84,10 @@
 #endif
 #endif
 
+/* Prototype to keep compiler happy */
+void mpi_file_read_ordered_end_(MPI_Fint *fh,void *buf,MPI_Status *status, 
+				int *ierr );
+
 void mpi_file_read_ordered_end_(MPI_Fint *fh,void *buf,MPI_Status *status, int *ierr )
 {
     MPI_File fh_c;

@@ -84,6 +84,9 @@
 #endif
 #endif
 
+/* Prototype to keep compiler happy */
+void mpi_file_set_errhandler_(MPI_Fint *fh, MPI_Fint *err_handler, int *ierr);
+
 void mpi_file_set_errhandler_(MPI_Fint *fh, MPI_Fint *err_handler, int *ierr)
 {
     MPI_File fh_c;

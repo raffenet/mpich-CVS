@@ -84,6 +84,10 @@
 #endif
 #endif
 
+/* Prototype to keep compiler happy */
+void mpi_file_seek_shared_(MPI_Fint *fh,MPI_Offset *offset,int *whence, 
+			   int *ierr );
+
 void mpi_file_seek_shared_(MPI_Fint *fh,MPI_Offset *offset,int *whence, int *ierr )
 {
     MPI_File fh_c;
