@@ -1248,7 +1248,9 @@ AC_SUBST(OFFSET_KIND)
 # offsets and for addresses, so that we can pass that information back 
 # up to allow other tools (such as user programs and test suites)
 # to properly declare the variables
-
+dnl 
+dnl Other autoconf variables that may be imported from the calling environment
+AC_SUBST(DOCTEXT)
 dnl
 dnl If both C and Fortran are gnu, define the following to simplify 
 dnl shared library support.  
