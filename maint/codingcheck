@@ -280,3 +280,7 @@ sub ReportOnPreamble {
 	print "Copyright statement missing from $filename\n";
     }
 }
+#
+# ToDo
+# Look for overly general .cvsignore patterns.
+# E.g., reject Makefile\* 
