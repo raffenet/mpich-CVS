@@ -20,7 +20,7 @@ codecheck_args=""
 do_geterrmsgs=yes
 do_bindings=yes
 do_f77=yes
-use_patched_autoonf=yes
+use_patched_autoonf=no
 #
 # Extract the arguments intended for updatefiles.  Any others are
 # given to simplemake.  
@@ -120,6 +120,7 @@ fi
 # previous versions of autoconf (!!), even 2.52 (!!!).  
 acIncDirFlag=-l
 acVersion=ok
+if test -s .tmp ; then rm -f .tmp ; fi
 if test ! -d .tmp ; then
     mkdir .tmp 2>&1 >/dev/null
 fi
@@ -378,9 +379,10 @@ if [ "$has_unix_find" = "yes" ] ; then
 	    #
 	    # Check for known problems
 	    fixEndEOFBug=no
-	    if [ $dir = "./src/binding/f77" -a \( \
-		! -x "/home/gropp/bin/linux/autoconf" \
-		-o $use_patched_autoonf = no \) ] ; then
+#\( 
+#		! -x "/home/gropp/bin/linux/autoconf" -o ... \)
+	    if [ $dir = "./src/binding/f77" -a \
+		$use_patched_autoonf = no ] ; then
 		# We need a *patched*, version 2.13 form of autoconf
 		# Version 2.62 breaks the Fortran 90 extensions
 		# to TRY_COMPILE, and stock 2.13 generates bogus 
@@ -396,8 +398,9 @@ AC_LANG_FORTRAN77
 AC_TRY_COMPILE(,[integer a],a=1,a=0)
 EOF
 		autoconf
+  	        cd ..
 		# The bug is that the EOF doesn't go onto the next line
-		if grep endEOF configure 2>&1 >/dev/null ; then
+		if grep endEOF .ctmp/configure >/dev/null 2>&1 ; then
 		    echo " "
    echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 		    echo "The available version of configure has a bug"
@@ -413,13 +416,9 @@ EOF
 		    error_summary="$error_summary\
 Your version of autoconf cannot properly handle Fortran.  See the diff \
 in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround"
-		    cd ..
-		    rm -rf .ctmp
 		    fixEndEOFBug=yes
-		else
-		    rm -rf .ctmp
-		    cd ..
 		fi
+                rm -rf .ctmp
 	    fi
 #	    if [ -s "$dir/configure2.in" ] ; then
 	        # There is a version 1 and version 2 configure in this
@@ -476,11 +475,13 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround"
 	    make -f mf.tmp configure ; fi ; rm -f mf.tmp  \
 	    )
 	    if [ $fixEndEOFBug = yes ] ; then
-		if grep endEOF configure >/dev/null 2>&1 ; then
+		if grep endEOF $dir/configure >/dev/null 2>&1 ; then
+		    echo "Fixing endEOF error in generated configure"
+		    rm -f c.tmp
  		    sed 's/endEOF/end\
-EOF/g' configure > c.tmp
-		    mv -f c.tmp configure
-		    chmod a+x configure
+EOF/g' $dir/configure > c.tmp
+		    mv -f c.tmp $dir/configure
+		    chmod a+x $dir/configure
 		fi
 	    fi
 	    #
