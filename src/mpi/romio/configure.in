@@ -97,7 +97,13 @@ fi
 MPI=$with_mpi
 FILE_SYSTEM=$with_file_system
 #
-AC_CONFIG_AUX_DIR(../../../confdb)
+dnl AC_CONFIG_AUX_DIR(../../../confdb)
+dnl Set the directory that contains the required install-sh, config.sub,
+dnl and config.guess .  Make sure that these are updated (in MPICH2, use
+dnl the top-level confdb files).  This separate directory is used for
+dnl the moment to allow ROMIO to be separatedly distributed.
+dnl scripts.
+AC_CONFIG_AUX_DIR(confdb)
 
 rm -f config.log
 #
