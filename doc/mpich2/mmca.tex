@@ -272,26 +272,9 @@ track communication with a particular remote process.  The function
 \code{MPID_Comm_get_VC} performs the mapping.  Virtual connections will be
 discussed in detail shortly.
 
-\begin{cmt}[BRT]
-  This seems like a weak introduction to communicators, but I couldn't think of
-  anything else to say.
-\end{cmt}
-
 \begin{verbatim}
 int MPID_Comm_get_VC([IN] MPID_Comm * comm, [IN] int rank, [OUT] MPID_VC * vc)
 \end{verbatim}
-
-\begin{cmt}[BRT]
-  Does returning a VC automatically bump its reference count?  It seems
-  unnecessary for a correctly written MPI program, but I'm not certain of this.
-  Do we even need a reference count on the VC before we introduce dynamic
-  process creation and connect/accept?
-\end{cmt}
-
-\begin{cmt}[ROB]
-  We decided that the VC refct can be bumped when the VC is first associated
-  with a new communicator.  Decremented when a communicator is destroyed.
-\end{cmt}
 
 %----------
 
@@ -317,7 +300,7 @@ request is considered complete.  The value of this count is controlled
 entirely by the device.  The only meaning the MPICH layer assigns to this
 counter is that a non-zero value indicates the request is still pending while
 a value of zero shows the request is complete.  The methods have a consistent
-means of using this value across implementations so that completion of
+means of using these counters across implementations so that completion of
 requests that span methods can be correctly detected as completed at the MPICH
 layer.
 
@@ -344,13 +327,9 @@ of \code{MPID_Segment}.
 
 In MPI a \term{status} object is used to return information about the
 completion of operations, including the source, tag, and count of received
-messages.  In MPICH a status handle has the type \code{MPI_Status} while a
-status object has the type \code{MPID_Status}.  A status handle may be
-converted to a status object using \code{MPID_Status_get_ptr} (?).
-
-\begin{comment}[ROB]
-What else do we want to say about MPI Status?
-\end{comment}
+messages.  In MPICH a status object has the type \code{MPI_Status}.  Unlike
+most of the other MPI objects, \code{MPI_Status} is not a handle, and elements
+with the status object are publicly accessible.
 
 %----------
 
@@ -395,15 +374,11 @@ networking model, device or interface such as TCP, VIA or shared memory.
   One might be tempted to think of a method as an object; however, we impose
   the limitation that only one instance of a particular method may exist in any
   given process.  This implies that all data associated with the method can be
-  internally associated with that method and no pointer to the method is
-  required by the method functions in order to access the data.
+  internally associated with that method and no pointer to a specific method
+  instance is required by the method functions in order to access the data.
 \end{discussion}
 
 \begin{verbatim}
-MPID_Method * MPID_Method_%M_init()
-
-int method::finalize()
-
 void method::get_description([OUT] char description[])
 
 void method::match_description([IN] char description[], [INOUT] MPID_VC * vc,
@@ -412,12 +387,12 @@ void method::match_description([IN] char description[], [INOUT] MPID_VC * vc,
 void method::post_send(
         [IN] MPID_Segment * segment, [IN] MPID_VC * vc, [IN] MPID_Comm * comm,
         [IN] int dest, [IN] int tag, [INOUT] int * completion_cntr,
-        [INOUT] MPID_Status * status)
+        [INOUT] MPI_Status * status)
 
 void method::post_recv(
         [IN] MPID_Segment * segment, [IN] MPID_VC * vc, [IN] MPID_Comm * comm,
         [IN] int source, [IN] int tag, [INOUT] int * completion_cntr,
-        [INOUT] MPID_Status * status)
+        [INOUT] MPI_Status * status)
 
 bool method::poll([IN] int quanta)
 \end{verbatim}
@@ -445,8 +420,8 @@ remote process.
 
 Rather than attempt to create a capability description language that can be
 understood by a method independent routine, we chose to push all understanding
-of the description into the method.  We prove two functions to satisfy the
-above state requirements.  The first function, \code{method::get_description},
+of the description into the method.  We provide two functions to satisfy the
+above stated requirements.  The first function, \code{method::get_description},
 returns a string encoding of both the capability description and any associated
 contact information.  By looping across the methods, a collection of these
 description strings can be constructed, the result of which describes the set
@@ -464,7 +439,7 @@ process using the method in question.  If the processes are capable of
 communicating using that method, \code{match_description} extracts the contact
 information from the description string and stores it for later use.
 
-The method selection policy is implemented by code{MPID_VC_get_method}.  This
+The method selection policy is implemented by \code{MPID_VC_get_method}.  This
 function determines the order in which the \code{method::match_description}
 functions are called and thus ultimately the priority of the methods.  We will
 discuss the \code{MPID_VC_get_method} function more when we talk about virtual
@@ -482,13 +457,13 @@ recording the requested operation, although they are permitted to initiate the
 operation if the state of the method and connection permit doing so
 immediately.
 
-Once requests have been posted, we need a mechanism to make progress on them.
-One option is to have one or more threads responsible for sending and receiving
-data.  Hoever, the overhead of context switching between those threads is
-fairly high, especially when compared to the latencies typically of high
-performance networking resources.  Therefore, while the use of threads may be
-acceptible for some methods, we need to provide a low overhead means of polling
-in order to make progress on outstanding requests.
+Once requests have been posted, we need a mechanism for making progress on
+them.  One option is to have one or more threads responsible for sending and
+receiving data.  However, the overhead of context switching between those
+threads is fairly high, especially when compared to the latencies typically of
+high performance networking resources.  Therefore, while the use of threads may
+be acceptible for some methods, we need to provide a low overhead means of
+polling in order to make progress on outstanding requests.
 
 The \code{method::poll} function is the mechanism for providing the method will
 an opportunity to make progress.  We envision this method being called by the
@@ -604,6 +579,15 @@ part of the \mpidfunc{MPID_VC_get_method} function, which selects an
 appropriate method for the VC when it detects that the VC is in the unbound
 state.  Once a VC is bound to a method, that binding persists for the remainder
 of the programs exectution.
+
+\begin{cmt}[ROB]
+  We decided that the VC refct can be bumped when the VC is first associated
+  with a new communicator.  Decremented when a communicator is destroyed.
+\end{cmt}
+
+\todo Discuss: How VCs get allocated. refcnt with respect to communicators
+(above comment).  Are VCs in tables?  Groups and communicators.  Groups as
+second class citizens.  Do VCs need to be exposed at MPID layer?
 
 \begin{implnote}
   For performance reasons, it may make sense to cache the method function table
@@ -866,6 +850,10 @@ loading of methods is allowed.
 
 \begin{verbatim}
 MPID_Method * MPID_Method_init()
+\end{verbatim}
+
+\begin{verbatim}
+int method::finalize()
 \end{verbatim}
 
 %==============================================================================
