@@ -38,7 +38,7 @@ if test "$ac_cv_func_dlopen" = yes ; then
     AC_DEFINE(HAVE_DLOPEN,1,[Define if you have the dlopen function.])
 fi
 
-AC_DEFINE(USE_HUMAN_READABLE_TOKENS,1,[Define to use ='s and spaces in the string utilities.])
+dnl AC_DEFINE(USE_HUMAN_READABLE_TOKENS,1,[Define to use ='s and spaces in the string utilities.])
 
 SMPD_PMI_LIBS=$LIBS
 LIBS=$save_libs
