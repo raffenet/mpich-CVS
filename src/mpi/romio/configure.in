@@ -285,7 +285,7 @@ fi
 #
 C_DEBUG_FLAG="-g"
 F77_DEBUG_FLAG="-g"
-C_OPT_FLAG="-O"
+C_OPT_FLAG=${CFLAGS:-"-O"}
 case $ARCH in 
      sun4)
      CC=${CC:-gcc}
