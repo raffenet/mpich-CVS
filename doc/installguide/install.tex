@@ -173,7 +173,7 @@ the \texttt{configure} script in the source directory:
     /home/you/libraries/mpich2-0.971/configure \
             -prefix=/home/you/mpich2-install |& tee configure.log
 \end{verbatim}
-where the \texttt{\\} means that this is really one line.  (On
+where the \texttt{$\backslash$} means that this is really one line.  (On
 \texttt{sh} and its derivatives, use \verb+2>&1 | tee configure.log+
 instead of \verb+|& tee configure.log+).  Other configure options are
 described below.  Check the \texttt{configure.log} file to make sure
@@ -281,13 +281,20 @@ or else use the workaround for \texttt{mpdboot} in the next step.
 \item
 Start the daemons on (some of) the hosts in the file mpd.hosts
 \begin{verbatim}
-  mpdboot -n <number to start>  
+  mpdboot -n <number to start> -f mpd.hosts
 \end{verbatim}
 The number to start can be less than 1 + number of hosts in the
 file, but cannot be greater than 1 + the number of hosts in the
 file.  One mpd is always started on the machine where \texttt{mpdboot} is
 run, and is counted in the number to start, whether or not it occurs
 in the file.
+
+Check to see if all the hosts you listed in mpd.hosts are in the output
+of 
+\begin{verbatim}
+mpdtrace
+\end{verbatim}
+if so move on to step 12.
 
 There is a workaround if you cannot get \texttt{mpdboot} to work because of
 difficulties with \texttt{ssh} or \texttt{rsh} setup.  You can start the daemons "by
