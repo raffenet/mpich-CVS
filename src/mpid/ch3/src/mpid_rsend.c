@@ -71,8 +71,8 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	{
 	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 	    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_RSEND);
-	    sreq->comm = comm;
-	    MPIR_Comm_add_ref(comm);
+	    /* sreq->comm = comm;
+	       MPIR_Comm_add_ref(comm); -- not needed for blocking operations */
 	}
 
 	goto fn_exit;
@@ -97,8 +97,8 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	{
 	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 	    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_RSEND);
-	    sreq->comm = comm;
-	    MPIR_Comm_add_ref(comm);
+	    /* sreq->comm = comm;
+	       MPIR_Comm_add_ref(comm); -- not needed for blocking operations */
 	}
     }
     else
@@ -126,8 +126,8 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    
 	    if (sreq->ch3.ca != MPIDI_CH3_CA_COMPLETE)
 	    {
-		sreq->ch3.datatype_ptr = dt_ptr;
-		MPID_Datatype_add_ref(dt_ptr);
+		/* sreq->ch3.datatype_ptr = dt_ptr;
+		   MPID_Datatype_add_ref(dt_ptr); -- not needed for blocking operations */
 	    }
 	    
 	    MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);

@@ -344,6 +344,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	{
 	    MPIDI_CH3_Pkt_rndv_clr_to_send_t * cts_pkt = &pkt->rndv_clr_to_send;
 	    MPID_Request * sreq;
+	    MPID_Request * rts_sreq;
 	    MPIDI_CH3_Pkt_t upkt;
 	    MPIDI_CH3_Pkt_rndv_send_t * rs_pkt = &upkt.rndv_send;
 	    int dt_contig;
@@ -358,12 +359,13 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPID_Request_get_ptr(cts_pkt->sender_req_id, sreq);
 	    MPIU_DBG_PRINTF(("received cts, count=%d\n", sreq->ch3.user_count));
 
-	    /* release the RTS request if one exists */
-	    /* FIXME - MT: this needs to be atomic to prevent cancel send from cancelling the wrong request */
-	    if (sreq->partner_request)
+	    /* Release the RTS request if one exists.  MPID_Request_fetch_rts_and_clear() needs to be atomic to prevent cancel
+               send from cancelling the wrong request.  If MPID_Request_fetch_rts_and_clear() returns a NULL rts_sreq, then
+	       MPID_Cancel_send() is responsible for releasing the RTS request object. */
+	    MPIDI_Request_fetch_rts_sreq_and_clear(sreq, &rts_sreq);
+	    if (rts_sreq != NULL)
 	    {
-		MPID_Request_release(sreq->partner_request);
-		sreq->partner_request = NULL;
+		MPID_Request_release(rts_sreq);
 	    }
 	    
 	    rs_pkt->type = MPIDI_CH3_PKT_RNDV_SEND;

@@ -251,7 +251,7 @@ extern MPIDI_Process_t MPIDI_Process;
     (_req)->ch3.cancel_pending = TRUE;			\
 }
 #else
-/* MT: to make this code lock free, an atomic exchange can be used here. */ 
+/* MT: to make this code lock free, an atomic exchange can be used. */ 
 #define MPIDI_Request_cancel_pending(_req, _flag)	\
 {							\
     MPID_Request_thread_lock(_req);			\
@@ -269,7 +269,7 @@ extern MPIDI_Process_t MPIDI_Process;
     *(recv_pending_) = --(req_)->ch3.recv_pending_count;	\
 }
 #else
-/* MT: to make this code lock free, an atomic decrement that sets a zero flag can be used here. */ 
+/* MT: to make this code lock free, an atomic decrement that sets a zero flag can be used. */ 
 #define MPIDI_Request_recv_pending(req_, recv_pending_)		\
 {								\
     MPID_Request_thread_lock(req_);				\
@@ -279,6 +279,27 @@ extern MPIDI_Process_t MPIDI_Process;
     MPID_Request_thread_unlock(req_);				\
 }
 #endif
+
+/* MPIDI_Request_fetch_rts_sreq_and_clear() - atomically fetch current partner RTS sreq and nullify partner request */
+#if defined(MPICH_SINGLE_THREADED)
+#define MPIDI_Request_fetch_rts_sreq_and_clear(sreq_, rts_sreq_)	\
+{									\
+    *(rts_sreq_) = (sreq_)->partner_request;				\
+    (sreq_)->partner_request = NULL;					\
+}
+#else
+/* MT: to make this code lock free, an atomic exchange can be used. */
+#define MPIDI_Request_fetch_rts_sreq_and_clear(sreq_, rts_sreq_)	\
+{									\
+    MPID_Request_thread_lock(sreq_);					\
+    {									\
+	*(rts_sreq_) = (sreq_)->partner_request;			\
+	(sreq_)->partner_request = NULL;				\
+    }									\
+    MPID_Request_unlock(sreq_);						\
+}
+#endif
+
 
 /*
  * Send/Receive buffer macros

@@ -79,8 +79,8 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	{
 	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 	    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
-	    sreq->comm = comm;
-	    MPIR_Comm_add_ref(comm);
+	    /* sreq->comm = comm;
+	      MPIR_Comm_add_ref(comm); -- not necessary for blocking functions */
 	}
 	
 	goto fn_exit;
@@ -119,8 +119,9 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	    {
 		MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 		MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
-		sreq->comm = comm;
-		MPIR_Comm_add_ref(comm);
+		/* sreq->comm = comm;
+		   MPIR_Comm_add_ref(comm); -- not necessary for blocking functions */
+
 	    }
 	}
 	else
@@ -148,8 +149,8 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 		
 		if (sreq->ch3.ca != MPIDI_CH3_CA_COMPLETE)
 		{
-		    sreq->ch3.datatype_ptr = dt_ptr;
-		    MPID_Datatype_add_ref(dt_ptr);
+		    /* sreq->ch3.datatype_ptr = dt_ptr;
+		       MPID_Datatype_add_ref(dt_ptr); -- no necessary for blocking functions */
 		}
 		
 		MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
@@ -172,6 +173,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	    
 	MPIDI_CH3M_create_sreq(sreq, mpi_errno, goto fn_exit);
 	MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
+	sreq->partner_request = NULL;
 	
 	/* FIXME - Since the request is never returned to the user and they can't do things like cancel it or wait on it, we may
            not need to fill in all of the fields.  For example, it may be completely unnecessary to supply the matching
@@ -190,8 +192,10 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 
 	rts_sreq = MPIDI_CH3_iStartMsg(vc, rts_pkt, sizeof(*rts_pkt));
-	/* MT: RACE CONDITION with handling recv of CTS!!! */
-	sreq->partner_request = rts_sreq;
+	if (rts_sreq != NULL)
+	{
+	    MPID_Request_release(rts_sreq);
+	}
 
 	/* FIXME: fill temporary IOV or pack temporary buffer after send to hide some latency.  This requires synchronization
            because the CTS packet could arrive and be processed before the above iStartmsg completes (depending on the progress
@@ -199,9 +203,10 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	
 	if (dt_ptr != NULL)
 	{
-	    sreq->ch3.datatype_ptr = dt_ptr;
-	    MPID_Datatype_add_ref(dt_ptr);
+	    /* sreq->ch3.datatype_ptr = dt_ptr;
+	       MPID_Datatype_add_ref(dt_ptr);  -- no necessary for blocking send */
 	}
+
     }
 
   fn_exit:

@@ -158,6 +158,9 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending rndv RTS, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
 	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_RNDV_MSG);
+	/* FIXME: The partner request should be set to the rts_sreq so that local cancellation can occur; however, this requires
+	   allocating the RTS request early to avoid a race condition. */
+	sreq->partner_request = NULL;
 	
 	rts_pkt->type = MPIDI_CH3_PKT_RNDV_REQ_TO_SEND;
 	rts_pkt->match.rank = comm->rank;
@@ -169,9 +172,12 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
 	MPIDI_CH3U_Pkt_set_seqnum(rts_pkt, seqnum);
 	MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
-	
+
 	rts_sreq = MPIDI_CH3_iStartMsg(vc, rts_pkt, sizeof(*rts_pkt));
-	sreq->partner_request = rts_sreq;
+	if (rts_sreq != NULL)
+	{
+	    MPID_Request_release(rts_sreq);
+	}
 	
 	/* FIXME: fill temporary IOV or pack temporary buffer after send to hide some latency.  This requires synchronization
            because the CTS packet could arrive and be processed before the above iStartmsg completes (depending on the progress

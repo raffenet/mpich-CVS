@@ -148,8 +148,8 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 		
 		if (sreq->ch3.ca != MPIDI_CH3_CA_COMPLETE)
 		{
-		    sreq->ch3.datatype_ptr = dt_ptr;
-		    MPID_Datatype_add_ref(dt_ptr);
+		    /* sreq->ch3.datatype_ptr = dt_ptr;
+		       MPID_Datatype_add_ref(dt_ptr); -- not needed for blocking operations */
 		}
 
 		MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
@@ -170,6 +170,8 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending rndv RTS, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
+	sreq->partner_request = NULL;
+	
 	rts_pkt->type = MPIDI_CH3_PKT_RNDV_REQ_TO_SEND;
 	rts_pkt->match.rank = comm->rank;
 	rts_pkt->match.tag = tag;
@@ -182,7 +184,10 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 	
 	rts_sreq = MPIDI_CH3_iStartMsg(vc, rts_pkt, sizeof(*rts_pkt));
-	sreq->partner_request = rts_sreq;
+	if (rts_sreq != NULL)
+	{
+	    MPID_Request_release(rts_sreq);
+	}
 
 	/* FIXME: fill temporary IOV or pack temporary buffer after send to hide some latency.  This requires synchronization
            because the CTS packet could arrive and be processed before the above iStartmsg completes (depending on the progress
@@ -190,8 +195,8 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	
 	if (dt_ptr != NULL)
 	{
-	    sreq->ch3.datatype_ptr = dt_ptr;
-	    MPID_Datatype_add_ref(dt_ptr);
+	    /* sreq->ch3.datatype_ptr = dt_ptr;
+	       MPID_Datatype_add_ref(dt_ptr); -- not needed for blocking operations */
 	}
     }
 
