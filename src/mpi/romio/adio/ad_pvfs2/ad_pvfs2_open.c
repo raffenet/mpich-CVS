@@ -35,7 +35,7 @@ void fake_an_open(ADIO_File fd, PVFS_fs_id fs_id, ADIOI_PVFS2_fs *pvfs2_fs,
     PVFS_sysresp_lookup resp_lookup;
     PVFS_sysresp_getparent resp_getparent;
     PVFS_sysresp_create resp_create;
-    PVFS_object_attr attribs;
+    PVFS_sys_attr attribs;
 
     ADIOI_PVFS2_makeattribs(&attribs);
 

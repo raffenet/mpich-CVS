@@ -7,6 +7,7 @@
  */
 
 #include "ad_pvfs2.h"
+#include "ad_pvfs2_common.h"
 #include <unistd.h>
 #include <sys/types.h>
 
@@ -45,14 +46,14 @@ void ADIOI_PVFS2_Init(int *error_code )
 		return;
 	}
 
-	ret = parse_pvfstab(NULL, &mnt);
+	ret = PVFS_util_parse_pvfstab(NULL, &mnt);
 	if (ret < 0) {
 	    /* XXX: better error handling */
 	    fprintf(stderr, "error parsing pvfstab\n");
 	    *error_code = MPI_UNDEFINED;
 	    return;
 	}
-	ret = PVFS_sys_initialize(mnt, &resp_init);
+	ret = PVFS_sys_initialize(mnt, ADIOI_PVFS2_DEBUG_MASK, &resp_init);
 	if (ret < 0 ) {
 	    /* XXX: better error handling */
 	    fprintf(stderr, "error initializing pvfs\n");
@@ -67,15 +68,14 @@ void ADIOI_PVFS2_Init(int *error_code )
 	MPI_Attr_put(MPI_COMM_WORLD, ADIOI_PVFS2_Initialized, (void *)0);
 }
 
-void ADIOI_PVFS2_makeattribs(PVFS_object_attr * attribs)
+void ADIOI_PVFS2_makeattribs(PVFS_sys_attr * attribs)
 {
-    memset(attribs, 0, sizeof(PVFS_object_attr));
+    memset(attribs, 0, sizeof(PVFS_sys_attr));
 
     attribs->owner = geteuid();
     attribs->group = getegid();
     attribs->perms = 1877;
-    attribs->mask =  (PVFS_ATTR_SYS_UID | PVFS_ATTR_SYS_GID | 
-	    PVFS_ATTR_SYS_PERM);
+    attribs->mask =  PVFS_ATTR_SYS_ALL_SETABLE;
 }
 
 
@@ -85,8 +85,6 @@ void ADIOI_PVFS2_makecredentials(PVFS_credentials * credentials)
 
     credentials->uid = geteuid();
     credentials->gid = getegid();
-    /* XXX: are there any good default credentials? */
-    credentials->perms = PVFS_U_WRITE|PVFS_U_READ;
 }
 
 /* pvfs_error_convert: given a pvfs error code, make it into the appropriate

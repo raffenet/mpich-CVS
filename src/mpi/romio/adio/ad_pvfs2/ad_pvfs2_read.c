@@ -17,7 +17,7 @@ void ADIOI_PVFS2_ReadContig(ADIO_File fd, void *buf, int count,
 		     ADIO_Offset offset, ADIO_Status *status, int *error_code)
 {
     int ret, datatype_size, len;
-    PVFS_Request io_req;
+    PVFS_Request file_req, mem_req;
     PVFS_sysresp_io resp_io;
     ADIOI_PVFS2_fs *pvfs_fs;
 
@@ -26,13 +26,19 @@ void ADIOI_PVFS2_ReadContig(ADIO_File fd, void *buf, int count,
     MPI_Type_size(datatype, &datatype_size);
     len = datatype_size * count;
 
+    ret = PVFS_Request_contiguous(len, PVFS_BYTE, &mem_req);
+    if (ret < 0) {
+	fprintf(stderr, "pvfs_request_contig returns with %d\n", ret);
+	goto error_request;
+    }
+
     if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
-	ret = PVFS_Request_hindexed(1, &len, &offset, PVFS_BYTE, &io_req);
+	ret = PVFS_Request_hindexed(1, &len, &offset, PVFS_BYTE, &file_req);
 	if (ret < 0 ) {
 	    fprintf(stderr, "pvfs_request_hindexed returns with %d\n", ret);
 	    goto error_request;
 	}
-	ret = PVFS_sys_read( pvfs_fs->pinode_refn, io_req, 0, buf, len, 
+	ret = PVFS_sys_read(pvfs_fs->pinode_refn, file_req, 0, buf, mem_req,
 	    pvfs_fs->credentials, &resp_io);
 	if (ret < 0 ) {
 	    fprintf(stderr, "pvfs_sys_read returns with %d\n", ret);
@@ -40,12 +46,12 @@ void ADIOI_PVFS2_ReadContig(ADIO_File fd, void *buf, int count,
 	}
 	fd->fp_sys_posn = offset + (int)resp_io.total_completed;
     } else { 
-	ret = PVFS_Request_hindexed(1, &len, &(fd->fp_ind), PVFS_BYTE, &io_req);
+	ret = PVFS_Request_hindexed(1, &len, &(fd->fp_ind), PVFS_BYTE, &file_req);
 	if (ret < 0 ) {
 	    fprintf(stderr, "pvfs_request_hindexed returns with %d\n", ret);
 	    goto error_request;
 	}
-	ret = PVFS_sys_read( pvfs_fs->pinode_refn, io_req, 0, buf, len, 
+	ret = PVFS_sys_read(pvfs_fs->pinode_refn, file_req, 0, buf, mem_req, 
 	    pvfs_fs->credentials, &resp_io);
 	if (ret < 0) {
 	    fprintf(stderr, "pvfs_sys_read returns with %d\n", ret);

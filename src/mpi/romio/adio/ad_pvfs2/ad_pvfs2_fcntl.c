@@ -21,8 +21,6 @@ void ADIOI_PVFS2_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *
     switch(flag) {
 
     case ADIO_FCNTL_GET_FSIZE:
-	/* PVFS_sys_getattr is all busted w.r.t. size */
-#if 0
 	ret = PVFS_sys_getattr(pvfs_fs->pinode_refn, PVFS_ATTR_SYS_SIZE, 
 		pvfs_fs->credentials, &resp_getattr);
 	if (ret < 0 ) {
@@ -30,12 +28,8 @@ void ADIOI_PVFS2_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *
 	} else {
 	    *error_code = MPI_SUCCESS;
 	}
-	fcntl_struct->fsize = resp_getattr.attr.
+	fcntl_struct->fsize = resp_getattr.attr.size;
 	return;
-#endif
-	fcntl_struct->fsize = 0;
-	*error_code = MPI_ERR_UNKNOWN;
-	break;
 
     case ADIO_FCNTL_SET_DISKSPACE:
 	*error_code = MPI_ERR_UNKNOWN;
