@@ -246,9 +246,10 @@ sub AddTestCall {
     my $last_errcode = $_[0];
     my $fatal_flag = $_[1];
     my $fcname = $_[2];
-    my $errclass = $_[3];
-    my $generic_msg = $_[4];
-    my $specific_msg = $_[5];
+    my $linenum = $_[3];
+    my $errclass = $_[4];
+    my $generic_msg = $_[5];
+    my $specific_msg = $_[6];
 
     # Ensure that the last_errcode, class and fatal flag are specified.  There are a few places where these are variables.
     if (!($last_errcode =~ /MPI_ERR_/) )
@@ -270,7 +271,7 @@ sub AddTestCall {
 	$test_generic_msg{$generic_msg} = $filename;
 
 	print TESTFD "    /* $filename */\n";
-	print TESTFD "    err = MPIR_Err_create_code($last_errcode, $fatal_flag, \"errcode::main\", $errclass, ". 
+	print TESTFD "    err = MPIR_Err_create_code($last_errcode, $fatal_flag, \"errcode::main\", __LINE__, $errclass, ". 
 	    "$generic_msg, 0);\n";
 	print TESTFD "    ChkMsg( err, $errclass, $generic_msg );\n";
     }
@@ -309,7 +310,7 @@ sub AddTestCall {
 		print STDERR "Unrecognized format type $type for $fullformat in $filename\n";
 	    }
 	}   
-	$actargs = $#_ - 5;
+	$actargs = $#_ - 6;
 	if ($actargs != $narg)
 	{
 	    print STDERR "Error: Format $fullformat provides $narg arguments but call has $actargs in $filename\n";
@@ -358,7 +359,7 @@ sub ProcessFile
 	    }
 	    
 	    # if signature does not match new function prototype, then skip it
-	    if ($#args < 5 || (!($args[1] =~ /MPIR_ERR_FATAL/) && !($args[1] =~ /MPIR_ERR_RECOVERABLE/)))
+	    if ($#args < 6 || $args[3] ne "__LINE__")
 	    {
 		if (!defined($bad_syntax_in_file{$filename}))
 		{
@@ -371,9 +372,10 @@ sub ProcessFile
 	    my $last_errcode = $args[0];
 	    my $fatal_flag = $args[1];
 	    my $fcname = $args[2];
-	    my $errclass = $args[3];
-	    my $generic_msg = $args[4];
-	    my $specific_msg = $args[5];
+	    my $linenum = $args[3];
+	    my $errclass = $args[4];
+	    my $generic_msg = $args[5];
+	    my $specific_msg = $args[6];
 
 	    # Check the generic and specific message arguments
 	    if ($generic_msg =~ /\s$/)
