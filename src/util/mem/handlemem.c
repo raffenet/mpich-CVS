@@ -14,7 +14,16 @@
    To use these routines, allocate the following in a utility file 
    used by each object (e.g., info, datatype, comm, group, ... ).  
    (The comment format // is used in this example but the usual 
-   C comment convention should be used of course):
+   C comment convention should be used of course.)  The usage is described
+   below.
+
+    // Declarations begin here
+   // Static declaration of the information about the block
+   // Define the number of preallocated entries # omitted)
+   define MPID_<OBJ>_PREALLOC 256
+   MPIU_Object_alloc_t MPID_<obj>_mem = { 0, 0, 0, 0, MPID_<obj>, 
+				      sizeof(MPID_<obj>), MPID_<obj>_direct,
+                                      MPID_<OBJ>_PREALLOC, };
 
    // Preallocated objects
    MPID_<obj> MPID_<obj>_direct[MPID_<OBJ>_PREALLOC];
@@ -26,7 +35,15 @@
    // Extension (indirect) objects
    static MPID_<obj> *(*MPID_<obj>_indirect)[] = 0;
    static int MPID_<obj>_indirect_size = 0;
+    // Declarations end here
 
+   These provide for lazy initialization; applications that do not need a 
+   particular object will not include any of the code or even reference
+   the space.   
+
+   Note that these routines are designed for the MPI objects, and include the
+   creation of a "handle id" that is appropriate for the MPI object value.
+   
    The following routines are provided:
    void *MPIU_Handle_direct_init( void *direct, int direct_size, int obj_size,
                                   int handle_type )
