@@ -165,6 +165,7 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 is %d
 **dtype:Invalid datatype
 **dtypenull:Null datatype
+**dtypenull %s:Datatype for argument %s is a null datatype
 **dtypenullarray:Null datatype in array of datatypes
 **dtypenullarray %s %d:Null datatype in array of datatypes %s[%d]
 **dtypecommit:Datatype has not been committed 

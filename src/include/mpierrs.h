@@ -82,7 +82,7 @@
                                    "**argnonpos %s %d", arg_name, arg ); }
 #define MPIR_ERRTEST_DATATYPE_NULL(arg,arg_name,err) \
    if ((arg) == MPI_DATATYPE_NULL) {\
-       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtypenull", 0); }
+       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtypenull", "**dtypenull %s", arg_name ); }
 /* An intracommunicator must have a root between 0 and local_size-1. */
 /* intercomm can be between MPI_PROC_NULL (or MPI_ROOT) and local_size-1 */
 #define MPIR_ERRTEST_INTRA_ROOT(comm_ptr,root,err) \
