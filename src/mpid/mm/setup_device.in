@@ -1,4 +1,6 @@
 #! /bin/sh
+if test "@IB_METHOD_YES_NO@" = "yes" ; then
 CPPFLAGS="$CPPFLAGS -I/usr/local/PSC1200/include -DLINUX -DNORCSID"
 LDFLAGS="$LDFLAGS -L/usr/local/PSC1200/lib -Xlinker -t"
 LIBS="$LIBS /usr/local/PSC1200/lib/libibos.so -ldl -lpthread"
+fi
