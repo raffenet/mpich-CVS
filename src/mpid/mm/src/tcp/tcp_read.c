@@ -10,6 +10,33 @@ int tcp_read(MPIDI_VC *vc_ptr)
     int num_read;
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
+    char ack;
+
+    if (vc_ptr->data.tcp.connecting)
+    {
+	if (beasy_receive(vc_ptr->data.tcp.bfd, &ack, 1) == SOCKET_ERROR)
+	{
+	    TCP_Process.error = beasy_getlasterror();
+	    beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+	    err_printf("tcp_read: beasy_receive(ack) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	    return -1;
+	}
+	if (ack == TCP_ACCEPT_CONNECTION)
+	{
+	    vc_ptr->data.tcp.connected = TRUE;
+	    vc_ptr->data.tcp.connecting = FALSE;
+	}
+	else
+	{
+	    if (BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.readset))
+		BFD_CLR(vc_ptr->data.tcp.bfd, &TCP_Process.readset);
+	    if (BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset))
+		BFD_CLR(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
+	    beasy_closesocket(vc_ptr->data.tcp.bfd);
+	    vc_ptr->data.tcp.bfd = BFD_INVALID_SOCKET;
+	}
+	return MPI_SUCCESS;
+    }
 
     car_ptr = vc_ptr->readq_head;
     buf_ptr = car_ptr->buf_ptr;

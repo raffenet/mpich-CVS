@@ -5,6 +5,83 @@
  */
 #include "tcpimpl.h"
 
+int tcp_accept_connection()
+{
+    int bfd;
+    int remote_rank;
+    MPIDI_VC *vc_ptr;
+    char ack;
+
+    /* accept new connection */
+    bfd = beasy_accept(TCP_Process.listener);
+    if (bfd == BFD_INVALID_SOCKET)
+    {
+	TCP_Process.error = beasy_getlasterror();
+	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+	err_printf("tcp_cq_test: beasy_accpet failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	return -1;
+    }
+    if (beasy_receive(bfd, (void*)&remote_rank, sizeof(int)) == SOCKET_ERROR)
+    {
+	TCP_Process.error = beasy_getlasterror();
+	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+	err_printf("tcp_cq_test: beasy_receive(rank) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	return -1;
+    }
+    vc_ptr = mm_vc_get(remote_rank);
+    MPID_Thread_lock(vc_ptr->lock);
+    if (vc_ptr->method == MM_UNBOUND_METHOD)
+    {
+	vc_ptr->method = MM_TCP_METHOD;
+	vc_ptr->data.tcp.bfd = BFD_INVALID_SOCKET;
+	vc_ptr->data.tcp.connected = FALSE;
+	vc_ptr->data.tcp.connecting = TRUE;
+	vc_ptr->post_read = tcp_post_read;
+	vc_ptr->merge_post_read = tcp_merge_post_read;
+	vc_ptr->post_write = tcp_post_write;
+    }
+    else
+    {
+	if (vc_ptr->method != MM_TCP_METHOD)
+	{
+	    err_printf("Error:tcp_accept_connection: vc is already connected with method %d\n", vc_ptr->method);
+	    return -1;
+	}
+	if ((vc_ptr->data.tcp.connected) ||
+	    (vc_ptr->data.tcp.connecting && (remote_rank > MPIR_Process.comm_world->rank)))
+	{
+	    /* send a reject acknowledgement */
+	    ack = TCP_REJECT_CONNECTION;
+	    beasy_send(bfd, &ack, 1);
+	    if (vc_ptr->data.tcp.connecting)
+	    {
+		beasy_receive(vc_ptr->data.tcp.bfd, &ack, 1);
+		if (ack != TCP_ACCEPT_CONNECTION)
+		{
+		    err_printf("Error:tcp_accept_connection: both head to head connections rejected.\n");
+		    return -1;
+		}
+	    }
+	}
+	else
+	{
+	    /* send a keep acknowledgement */
+	    ack = TCP_ACCEPT_CONNECTION;
+	    beasy_send(bfd, &ack, 1);
+	    /* change the state of the vc to connected */
+	    vc_ptr->data.tcp.connected = TRUE;
+	    vc_ptr->data.tcp.connecting = FALSE;
+	    /* add the new connection to the read set */
+	    TCP_Process.max_bfd = BFD_MAX(bfd, TCP_Process.max_bfd);
+	    BFD_SET(bfd, &TCP_Process.readset);
+	    vc_ptr->read_next_ptr = TCP_Process.read_list;
+	    TCP_Process.read_list = vc_ptr;
+	}
+    }
+
+    return MPI_SUCCESS;
+}
+
 int tcp_cq_test()
 {
     int nready = 0;
@@ -57,20 +134,15 @@ int tcp_cq_test()
     if (BFD_ISSET(TCP_Process.listener, &readset))
     {
 	nready--;
-	/* accept new connection */
-	/* add the new connection to the read set
-	TCP_Process.max_bfd = BFD_MAX(bfd, TCP_Process.max_bfd);
-	BFD_SET(bfd, &TCP_Process.readset);
-	When the vc is established, add it to the active read list.
-	vc_ptr->read_next_ptr = TCP_Process.read_list;
-	TCP_Process.read_list = vc_ptr;
-	*/
+	if (tcp_accept_connection() != MPI_SUCCESS)
+	    return -1;
     }
 
     if (nready)
     {
 	err_printf("Error: %d sockets still signalled after traversing read_list, write_list and listener.");
 	/* return some error */
+	return -1;
     }
 
     return MPI_SUCCESS;

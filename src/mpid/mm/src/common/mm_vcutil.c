@@ -127,6 +127,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
     vc_ptr = (MPIDI_VC*)BlockAlloc(MPID_Process.VC_allocator);
     vc_ptr->method = method;
     vc_ptr->ref_count = 1;
+    MPID_Thread_lock_init(&vc_ptr->lock);
     vc_ptr->readq_head = NULL;
     vc_ptr->readq_tail = NULL;
     vc_ptr->writeq_head = NULL;
@@ -151,6 +152,9 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 #endif
 #ifdef WITH_METHOD_TCP
     case MM_TCP_METHOD:
+	vc_ptr->data.tcp.bfd = BFD_INVALID_SOCKET;
+	vc_ptr->data.tcp.connected = FALSE;
+	vc_ptr->data.tcp.connecting = FALSE;
 	vc_ptr->post_read = tcp_post_read;
 	vc_ptr->merge_post_read = tcp_merge_post_read;
 	vc_ptr->post_write = tcp_post_write;

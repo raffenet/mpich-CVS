@@ -9,6 +9,11 @@
 #include "mm_tcp.h"
 #include "bsocket.h"
 
+#define TCP_ACCEPT_CONNECTION 0
+#define TCP_REJECT_CONNECTION 1
+
+#define TCP_ERROR_MSG_LENGTH 256
+
 typedef struct TCP_PerProcess {
     MPID_Thread_lock_t lock;
                    int listener;
@@ -19,6 +24,8 @@ typedef struct TCP_PerProcess {
 	    MPIDI_VC * read_list;
 	    MPIDI_VC * write_list;
 	           int max_bfd;
+		   int error;
+		  char err_msg[TCP_ERROR_MSG_LENGTH];
 } TCP_PerProcess;
 
 extern TCP_PerProcess TCP_Process;

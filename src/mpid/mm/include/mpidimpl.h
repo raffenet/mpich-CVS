@@ -70,6 +70,8 @@ typedef union VC_Method_data
 #ifdef WITH_METHOD_TCP
     struct vc_tcp
     {
+	int connected;
+	int connecting;
 	int bfd;
     } tcp;
 #endif
@@ -101,20 +103,21 @@ typedef union VC_Method_data
 
 typedef struct MPIDI_VC
 {
-        MM_METHOD method;
-     volatile int ref_count;
-  struct MM_Car * writeq_head;
-  struct MM_Car * writeq_tail;
-  struct MM_Car * readq_head;
-  struct MM_Car * readq_tail;
-           char * pmi_kvsname; /* name of the key_value database where the remote process put its business card */
-              int rank; /* the rank of the remote process relative to MPI_COMM_WORLD in the key_value database described by pmi_kvsname */
-	    int (*post_read)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-            int (*merge_post_read)(MM_Car *car_ptr, MM_Car *unex_car_ptr);
-	    int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-struct MPIDI_VC * read_next_ptr;
-struct MPIDI_VC * write_next_ptr;
-   VC_Method_data data;
+ MPID_Thread_lock_t lock;
+          MM_METHOD method;
+       volatile int ref_count;
+    struct MM_Car * writeq_head;
+    struct MM_Car * writeq_tail;
+    struct MM_Car * readq_head;
+    struct MM_Car * readq_tail;
+             char * pmi_kvsname; /* name of the key_value database where the remote process put its business card */
+                int rank; /* the rank of the remote process relative to MPI_COMM_WORLD in the key_value database described by pmi_kvsname */
+              int (*post_read)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+              int (*merge_post_read)(MM_Car *car_ptr, MM_Car *unex_car_ptr);
+	      int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+  struct MPIDI_VC * read_next_ptr;
+  struct MPIDI_VC * write_next_ptr;
+     VC_Method_data data;
 } MPIDI_VC;
 
 typedef struct MPIDI_VCRT
@@ -162,6 +165,7 @@ MPID_Request * mm_request_alloc();
           void mm_vcutil_init();
           void mm_vcutil_finalize();
     MPIDI_VC * mm_get_vc(MPID_Comm *comm_ptr, int rank);
+    MPIDI_VC * mm_vc_get(int rank);
     MPIDI_VC * mm_vc_alloc(MM_METHOD method);
     MPIDI_VC * mm_vc_connect_alloc(char *kvs_name, int rank);
            int mm_vc_free(MPIDI_VC *ptr);

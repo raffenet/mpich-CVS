@@ -14,35 +14,29 @@ TCP_PerProcess TCP_Process;
 @*/
 int tcp_init()
 {
-    int err;
-    char str[256];
-
-    err = beasy_create(&TCP_Process.listener, ADDR_ANY, INADDR_ANY);
-    if (err == SOCKET_ERROR)
+    if (beasy_create(&TCP_Process.listener, ADDR_ANY, INADDR_ANY) == SOCKET_ERROR)
     {
-	err = beasy_getlasterror();
-	beasy_error_to_string(err, str, 256);
-	err_printf("tcp_init: unable to create the listener socket\nError: %s\n", str);
+	TCP_Process.error = beasy_getlasterror();
+	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+	err_printf("tcp_init: unable to create the listener socket\nError: %s\n", TCP_Process.err_msg);
     }
-    err = blisten(TCP_Process.listener, 10);
-    if (err == SOCKET_ERROR)
+    if (blisten(TCP_Process.listener, 10) == SOCKET_ERROR)
     {
-	err = beasy_getlasterror();
-	beasy_error_to_string(err, str, 256);
-	err_printf("tcp_init: unable to listen on the listener socket\nError: %s\n", str);
+	TCP_Process.error = beasy_getlasterror();
+	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+	err_printf("tcp_init: unable to listen on the listener socket\nError: %s\n", TCP_Process.err_msg);
     }
-    err = beasy_get_sock_info(TCP_Process.listener, TCP_Process.host, &TCP_Process.port);
-    if (err == SOCKET_ERROR)
+    if (beasy_get_sock_info(TCP_Process.listener, TCP_Process.host, &TCP_Process.port) == SOCKET_ERROR)
     {
-	err = beasy_getlasterror();
-	beasy_error_to_string(err, str, 256);
-	err_printf("tcp_init: unable to get the hostname and port of the listener socket\nError: %s\n", str);
+	TCP_Process.error = beasy_getlasterror();
+	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+	err_printf("tcp_init: unable to get the hostname and port of the listener socket\nError: %s\n", TCP_Process.err_msg);
     }
 
     BFD_ZERO(&TCP_Process.writeset);
     BFD_ZERO(&TCP_Process.readset);
     BFD_SET(TCP_Process.listener, &TCP_Process.readset);
-    TCP_Process.max_bfd = 0;
+    TCP_Process.max_bfd = TCP_Process.listener;
 
     return MPI_SUCCESS;
 }
