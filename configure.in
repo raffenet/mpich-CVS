@@ -1127,6 +1127,7 @@ AC_OUTPUT_COMMANDS([chmod a+x test/runtests])
 AC_OUTPUT(Makefile src/Makefile \
           src/binding/Makefile \
           src/env/mpicc \
+	  src/env/Makefile\
           src/mpi/Makefile \
           src/mpi/attr/Makefile \
 	  src/mpi/coll/Makefile \

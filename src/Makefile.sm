@@ -1,1 +1,1 @@
-SUBDIRS = mpid mpi util pmi pm binding .
+SUBDIRS = mpid mpi util pmi pm binding env .
