@@ -54,13 +54,16 @@ C
       endif
  120  continue
 C
-      i = 1
-      do while( i.le. 4 .and. MTestGetIntracomm( comm(i), 1, .true. ) ) 
-         ncomm = i
-         write( inname(i), '(a,i1)') 'myname',i
-         call mpi_comm_set_name( comm(i), inname(i), ierr )
-         i = i + 1
+      do i = 1, 4
+         if (MTestGetIntracomm( comm(i), 1, .true. )) then
+            ncomm = i
+            write( inname(i), '(a,i1)') 'myname',i
+            call mpi_comm_set_name( comm(i), inname(i), ierr )
+         else
+            goto 130
+         endif
       enddo
+ 130   continue
 C
 C     Now test them all
       do i=1, ncomm
