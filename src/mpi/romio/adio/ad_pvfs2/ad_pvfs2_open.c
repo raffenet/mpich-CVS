@@ -95,7 +95,8 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
  */
 void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 {
-    int rank, ret, i, mnt_index=-1;
+    int rank, ret;
+    PVFS_fs_id cur_fs;
     char pvfs_path[PVFS_NAME_MAX] = {0};
 
     ADIOI_PVFS2_fs *pvfs2_fs;
@@ -128,7 +129,7 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
     ADIOI_PVFS2_Init(error_code);
     if (*error_code != MPI_SUCCESS)
     {
-	/* XXX: handle errors */
+	ADIOI_PVFS2_pvfs_error_convert(0, error_code);
 	return;
     }
 
@@ -139,22 +140,16 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 
     if (rank == fd->hints->ranklist[0]) {
 	/* given the filename, figure out which pvfs filesystem it is on */
-	for(i=0; i<ADIOI_PVFS2_mntlist.ptab_count; i++) {
-	    ret = PVFS_util_remove_dir_prefix(fd->filename, 
-		    ADIOI_PVFS2_mntlist.ptab_array[i].mnt_dir, 
-		    pvfs_path, PVFS_NAME_MAX);
-	    if (ret == 0) {
-		mnt_index = i;
-		break;
-	    }
-	}
-	if (mnt_index == -1) {
-	    fprintf(stderr, "Error: could not find filesystem for %s in pvfstab", fd->filename);
+	ret = PVFS_util_resolve(fd->filename, &cur_fs, 
+		pvfs_path, PVFS_NAME_MAX);
+	if (ret < 0 ) {
+	    PVFS_perror("PVFS_util_resolve", ret);
 	    /* TODO: pick a good error for this */
 	    o_status.error = -1;
-	} else 
-	    fake_an_open(ADIOI_PVFS2_fs_id_list[mnt_index], pvfs_path,
+	} else  {
+	    fake_an_open(cur_fs, pvfs_path,
 		    fd->access_mode, pvfs2_fs, &o_status);
+	}
     }
 
     /* NOTE: if MPI_MODE_EXCL was set, ADIO_Open will call

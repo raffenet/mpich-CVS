@@ -24,8 +24,6 @@ struct ADIOI_PVFS2_fs_s {
 
 typedef struct ADIOI_PVFS2_fs_s ADIOI_PVFS2_fs;
 
-extern PVFS_fs_id * ADIOI_PVFS2_fs_id_list;
-extern pvfs_mntlist ADIOI_PVFS2_mntlist;
 
 void ADIOI_PVFS2_Init(int *error_code );
 void ADIOI_PVFS2_makeattribs(PVFS_sys_attr * attribs);

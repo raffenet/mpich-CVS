@@ -16,15 +16,12 @@
  * close it down when mpi exits */
 int ADIOI_PVFS2_Initialized = MPI_KEYVAL_INVALID;
 
-PVFS_fs_id * ADIOI_PVFS2_fs_id_list;
-pvfs_mntlist ADIOI_PVFS2_mntlist;
-
 void ADIOI_PVFS2_End(int *error_code)
 {
     int ret;
     ret = PVFS_sys_finalize();
     if (ret < 0 ) {
-	*error_code = MPI_UNDEFINED;
+	ADIOI_PVFS2_pvfs_error_convert(ret, error_code);
     } else {
 	*error_code = MPI_SUCCESS;
     }
@@ -40,7 +37,6 @@ int ADIOI_PVFS2_End_call(MPI_Comm comm, int keyval,
 
 void ADIOI_PVFS2_Init(int *error_code )
 {
-	PVFS_sysresp_init resp_init;
 	int ret;
 
 	/* do nothing if we've already fired up the pvfs2 interface */
@@ -49,22 +45,14 @@ void ADIOI_PVFS2_Init(int *error_code )
 		return;
 	}
 
-	ret = PVFS_util_parse_pvfstab(&ADIOI_PVFS2_mntlist);
-	if (ret < 0) {
-	    /* XXX: better error handling */
-	    fprintf(stderr, "error parsing pvfstab\n");
-	    *error_code = MPI_UNDEFINED;
-	    return;
-	}
-	ret = PVFS_sys_initialize(ADIOI_PVFS2_mntlist, ADIOI_PVFS2_DEBUG_MASK, 
-		&resp_init);
+	ret = PVFS_util_init_defaults();
 	if (ret < 0 ) {
 	    /* XXX: better error handling */
-	    fprintf(stderr, "error initializing pvfs\n");
-	    *error_code = MPI_UNDEFINED;
+	    PVFS_perror("PVFS_util_init_defaults", ret);
+	    ADIOI_PVFS2_pvfs_error_convert(ret, error_code);
 	    return;
 	}
-	ADIOI_PVFS2_fs_id_list = resp_init.fsid_list;
+
 	MPI_Keyval_create(MPI_NULL_COPY_FN, ADIOI_PVFS2_End_call,
 		&ADIOI_PVFS2_Initialized, (void *)0); 
 	/* just like romio does, we make a dummy attribute so we 

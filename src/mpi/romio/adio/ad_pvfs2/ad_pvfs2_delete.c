@@ -15,7 +15,8 @@ void ADIOI_PVFS2_Delete(char *filename, int *error_code)
 {
     PVFS_credentials credentials;
     PVFS_sysresp_getparent resp_getparent;
-    int ret, i, mnt_index;
+    int ret;
+    PVFS_fs_id cur_fs;
     char pvfs_path[PVFS_NAME_MAX] = {0};
 
     ADIOI_PVFS2_Init(error_code);
@@ -30,25 +31,14 @@ void ADIOI_PVFS2_Delete(char *filename, int *error_code)
     ADIOI_PVFS2_makecredentials(&credentials);
 
     /* given the filename, figure out which pvfs filesystem it is on */
-    for (i=0; i<ADIOI_PVFS2_mntlist.ptab_count; i++) {
-	ret = PVFS_util_remove_dir_prefix(filename, 
-		ADIOI_PVFS2_mntlist.ptab_array[i].mnt_dir, 
-		pvfs_path, PVFS_NAME_MAX);
-	if (ret == 0) {
-	    mnt_index = i;
-	    break;
-	}
-    }
-    if (mnt_index == -1) {
-	fprintf(stderr, "Error: could not find filesystem for %s in pvfstab",
-		filename);
+    ret = PVFS_util_resolve(filename, &cur_fs, pvfs_path, PVFS_NAME_MAX);
+    if (ret < 0) {
+	PVFS_perror("PVFS_util_resolve", ret);
 	/* TODO: pick a good error for this */
 	ret = -1;
 	goto resolve_error;
     }
-
-    ret = PVFS_sys_getparent(ADIOI_PVFS2_fs_id_list[mnt_index], pvfs_path,
-	    credentials, &resp_getparent);
+    ret = PVFS_sys_getparent(cur_fs, pvfs_path, credentials, &resp_getparent);
 
     ret = PVFS_sys_remove(resp_getparent.basename, 
 	    resp_getparent.parent_refn, credentials);
