@@ -21,7 +21,7 @@ with_device=default)
 dnl Extract the device and channel name from the --with-device argument
 DEVICE=`echo $with_device | sed -e 's/:.*//'`
 changequote(<<,>>)
-CHANNEL=`echo $with_device | sed -e 's/^[^:]*//'`
+CHANNEL=`echo $with_device | sed -e 's/^[^:]*:*//'`
 changequote([,])
 if test -z "$CHANNEL" ; then
     DEVICE=ch3
