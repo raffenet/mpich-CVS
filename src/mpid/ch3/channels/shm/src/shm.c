@@ -424,6 +424,7 @@ int shmi_readv_unex(MPIDI_VC *vc_ptr)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, shm_wait_t *shm_out)
 {
+    int mpi_errno;
     void *mem_ptr;
     char *iter_ptr;
     int num_bytes;
@@ -502,8 +503,9 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		}
 		else
 		{
-		    MPIDI_err_printf("MPIDI_CH3I_SHM_wait", "unhandled packet type: %d\n", ((MPIDI_CH3_Pkt_t*)mem_ptr)->type);
-		    recv_vc_ptr->ch.shm_reading_pkt = TRUE;
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_type", "**pkt_type %d", ((MPIDI_CH3_Pkt_t*)mem_ptr)->type);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
+		    return mpi_errno;
 		}
 		if (bSetPacket)
 		{
