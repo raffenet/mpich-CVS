@@ -43,7 +43,7 @@ Output Parameters:
 int MPI_File_open(MPI_Comm comm, char *filename, int amode, 
                   MPI_Info info, MPI_File *fh)
 {
-    int error_code, file_system, flag, /* tmp_amode, */rank, orig_amode;
+    int error_code, file_system, flag, /* tmp_amode, */rank;
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_OPEN";
 #endif
