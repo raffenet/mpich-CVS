@@ -16,8 +16,8 @@ void ADIOI_PVFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	/* This must be part of the open call. can set striping parameters 
            if necessary. */ 
 	MPI_Info_create(&(fd->info));
-	MPI_Info_set(fd->info, "romoi_fs_hints.pvfs.listio_read", "disable");
-	MPI_Info_set(fd->info, "romoi_fs_hints.pvfs.listio_write", "disable");
+	MPI_Info_set(fd->info, "romio_pvfs_listio_read", "disable");
+	MPI_Info_set(fd->info, "romio_pvfs_listio_write", "disable");
 	fd->hints->fs_hints.pvfs.listio_read = ADIOI_HINT_DISABLE;
 	fd->hints->fs_hints.pvfs.listio_write = ADIOI_HINT_DISABLE;
 	
