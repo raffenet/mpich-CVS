@@ -481,7 +481,10 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     {
 	nError = GetLastError();
 	smpd_err_printf("CreateProcess('%s') failed, error %d\n", process->exe, nError);
-	snprintf(process->err_msg, SMPD_MAX_ERROR_LEN, "CreateProcess failed, error %d.", nError);
+	/*snprintf(process->err_msg, SMPD_MAX_ERROR_LEN, "CreateProcess failed, error %d", nError);*/
+	/*smpd_translate_win_error(nError, process->err_msg, SMPD_MAX_ERROR_LEN, "CreateProcess failed, error %d - ", nError);*/
+	smpd_translate_win_error(nError, process->err_msg, SMPD_MAX_ERROR_LEN, "CreateProcess(%s) on '%s' failed, error %d - ",
+	    process->exe, smpd_process.host, nError);
 	psInfo.hProcess = INVALID_HANDLE_VALUE;
 	bSuccess = FALSE;
     }
