@@ -164,7 +164,7 @@ struct pollinfo
 struct MPIDU_Socki_eventq_elem
 {
     struct MPIDU_Sock_event event;
-    struct pollinfo * pollinfo;
+    int set_elem;
     struct MPIDU_Socki_eventq_elem * next;
 };
 

@@ -27,10 +27,6 @@ static int MPIDU_Socki_handle_connect(struct pollfd * const pollfd, struct polli
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, struct MPIDU_Sock_event * eventp)
 {
-    struct pollinfo * pollinfo;
-    int elem;
-    int nfds;
-    int found_active_elem = FALSE;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_WAIT);
     MPIDI_STATE_DECL(MPID_STATE_POLL);
@@ -39,14 +35,21 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 
     for (;;)
     { 
-	if (MPIDU_Socki_event_dequeue(sock_set, &pollinfo, eventp) == MPI_SUCCESS)
+	int elem;
+	int nfds;
+	int found_active_elem = FALSE;
+	
+	if (MPIDU_Socki_event_dequeue(sock_set, &elem, eventp) == MPI_SUCCESS)
 	{
+	    struct pollinfo * pollinfo;
 	    int flags;
 	    
-	    if (eventp->op_type != MPIDU_SOCK_OP_CLOSE || pollinfo->fd < 0)
+	    if (eventp->op_type != MPIDU_SOCK_OP_CLOSE)
 	    {
 		break;
 	    }
+
+	    pollinfo = &sock_set->pollinfos[elem];
 
 	    /*
 	     * Attempt to set socket back to blocking.  This *should* prevent any data in the socket send buffer from being

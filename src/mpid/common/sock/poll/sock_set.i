@@ -159,6 +159,7 @@ int MPIDU_Sock_destroy_set(struct MPIDU_Sock_set * sock_set)
     struct pollfd * pollfd;
     struct pollinfo * pollinfo;
     struct MPIDU_Sock_event event;
+    int elem;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_DESTROY_SET);
 
@@ -186,7 +187,7 @@ int MPIDU_Sock_destroy_set(struct MPIDU_Sock_set * sock_set)
     /*
      * Clear the event queue
      */
-    while (MPIDU_Socki_event_dequeue(sock_set, &pollinfo, &event) == MPI_SUCCESS);
+    while (MPIDU_Socki_event_dequeue(sock_set, &elem, &event) == MPI_SUCCESS);
 
     /*
      * Free structures used by the sock set

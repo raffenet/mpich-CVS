@@ -15,9 +15,7 @@ static void MPIDU_Socki_sock_free(struct MPIDU_Sock * sock);
 
 static int MPIDU_Socki_event_enqueue(struct pollinfo * pollinfo, enum MPIDU_Sock_op op, MPIU_Size_t num_bytes,
 				     void * user_ptr, int error);
-static int inline MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set,
-					    struct pollinfo ** pollinfop, struct MPIDU_Sock_event * eventp);
-
+static int inline MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, int * set_elem, struct MPIDU_Sock_event * eventp);
 
 
 #define MPIDU_Socki_sock_get_pollfd(sock_)          (&(sock_)->sock_set->pollfds[(sock_)->elem])
@@ -604,7 +602,7 @@ static int MPIDU_Socki_event_enqueue(struct pollinfo * pollinfo, MPIDU_Sock_op_t
     eventq_elem->event.num_bytes = num_bytes;
     eventq_elem->event.user_ptr = user_ptr;
     eventq_elem->event.error = error;
-    eventq_elem->pollinfo = pollinfo;
+    eventq_elem->set_elem = pollinfo->elem;
     eventq_elem->next = NULL;
 
     if (sock_set->eventq_head == NULL)
@@ -627,8 +625,7 @@ fn_exit:
 #define FUNCNAME MPIDU_Socki_event_dequeue
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-static inline int MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set,
-					    struct pollinfo ** pollinfop, struct MPIDU_Sock_event * eventp)
+static inline int MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, int * set_elem, struct MPIDU_Sock_event * eventp)
 {
     struct MPIDU_Socki_eventq_elem * eventq_elem;
     int mpi_errno = MPI_SUCCESS;
@@ -647,7 +644,7 @@ static inline int MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set,
 	}
 	
 	*eventp = eventq_elem->event;
-	*pollinfop = eventq_elem->pollinfo;
+	*set_elem = eventq_elem->set_elem;
 	
 	eventq_elem->next = MPIDU_Socki_eventq_pool;
 	MPIDU_Socki_eventq_pool = eventq_elem;
