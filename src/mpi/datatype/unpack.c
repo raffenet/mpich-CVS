@@ -112,7 +112,7 @@ int MPI_Unpack(void *inbuf,
 					 "**nomem",
 					 "**nomem %s",
 					 "MPID_Segment_alloc");
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK_EXTERNAL);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK);
 	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 	/* --END ERROR HANDLING-- */
     }
