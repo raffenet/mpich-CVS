@@ -218,6 +218,8 @@ int MPIDI_CH3I_Get_business_card(char *value, int length, MPIDI_CH3I_Process_gro
     char *value_orig;
     struct hostent *h;
     int port;
+    int ips_added = 0;
+    char hostname[100];
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
@@ -241,6 +243,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length, MPIDI_CH3I_Process_gro
 
 	if (a != 127)
 	{
+	    ips_added = 1;
 	    h = gethostbyaddr((const char *)&local_ip[i], sizeof(int), AF_INET);
 	    if (h && h->h_name != NULL)
 		value += sprintf(value, "%s:%u.%u.%u.%u:%d:", 
@@ -256,7 +259,11 @@ int MPIDI_CH3I_Get_business_card(char *value, int length, MPIDI_CH3I_Process_gro
     }
 
     /* FIXME: If numnics == 0, we don't get a useful error message */
-
+    if (ips_added == 0)
+    {
+	gethostname(hostname, 100);
+	sprintf(value, "%s:127.0.0.1:%d", hostname, port);
+    }
 /*    printf("Business card:\n<%s>\n", value_orig); */
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
