@@ -50,7 +50,20 @@ AC_CHECK_HEADERS(				\
     sys/uio.h					\
     unistd.h)
 
+# The RMA routines currently use a separate pthread
+AC_CHECK_HEADERS( pthread.h )
+saveLIBS="$LIBS"
+LIBS=""
+# OSF1 has __pthread_create but not pthread_create (because of 
+# inconsistencies in the pthread spec).  Thus, we look for pthread_key_create
+AC_SEARCH_LIBS(pthread_key_create,pthread,
+	    AC_DEFINE(HAVE_PTHREAD_CREATE,,[Define for pthreads]))
+EXTRA_LIBS="$LIBS"
+AC_SUBST(EXTRA_LIBS)
+LIBS="$saveLIBS"
+
 AC_CHECK_FUNCS(gethostname)
+
 
 AC_TRY_COMPILE([
 #include <stdio.h>

@@ -5,6 +5,9 @@
  */
 
 #include "mpidimpl.h"
+#ifdef HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
 
 int MPID_Win_wait(MPID_Win *win_ptr)
 {

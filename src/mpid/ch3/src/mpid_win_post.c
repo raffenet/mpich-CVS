@@ -5,6 +5,9 @@
  */
 
 #include "mpidimpl.h"
+#ifdef HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
 
 void *MPIDI_Win_wait_thread(void *arg);
 
