@@ -71,6 +71,11 @@ typedef int MPI_Datatype;
 #define MPI_2DOUBLE_PRECISION ((MPI_Datatype)@MPI_2DOUBLE_PRECISION@)
 #define MPI_CHARACTER         ((MPI_Datatype)@MPI_CHARACTER@)
 
+/* typeclasses */
+#define MPI_TYPECLASS_REAL 1
+#define MPI_TYPECLASS_INTEGER 2
+#define MPI_TYPECLASS_COMPLEX 3
+
 /* Communicators */
 typedef int MPI_Comm;
 #define MPI_COMM_WORLD ((MPI_Comm)0x44000000)
@@ -502,8 +507,8 @@ int MPI_Address(void*, MPI_Aint *);
 /* We could add __attribute__((deprecated)) to routines like MPI_Type_extent */
 int MPI_Type_extent(MPI_Datatype, MPI_Aint *);
 /* See the 1.1 version of the Standard; I think that the standard is in 
-   error; however, it is the standard */
-/* int MPI_Type_size(MPI_Datatype, MPI_Aint *size); */
+   error; however, it is the standard.  The size returned by MPI_Type_size
+   is specified as an int, not an MPI_Aint */
 int MPI_Type_size(MPI_Datatype, int *);
 /* MPI_Type_count was withdrawn in MPI 1.1 */
 int MPI_Type_lb(MPI_Datatype, MPI_Aint *);
@@ -679,7 +684,8 @@ int MPI_Type_get_contents(MPI_Datatype, int, int, int, int [], MPI_Aint [],
 int MPI_Type_get_envelope(MPI_Datatype, int *, int *, int *, int *);
 int MPI_Type_get_name(MPI_Datatype, char *, int *);
 int MPI_Type_set_attr(MPI_Datatype, int, void *);
-int MPI_Type_set_name(MPI_Datatype, char *type_name);
+int MPI_Type_set_name(MPI_Datatype, char *);
+int MPI_Type_match_size( int, int, MPI_Datatype *);
 int MPI_Win_call_errhandler(MPI_Win, int);
 int MPI_Win_create_keyval(MPI_Win_copy_attr_function *, 
                          MPI_Win_delete_attr_function *, int *, void *);
@@ -996,7 +1002,8 @@ int PMPI_Type_get_contents(MPI_Datatype, int, int, int, int [], MPI_Aint [],
 int PMPI_Type_get_envelope(MPI_Datatype, int *, int *, int *, int *);
 int PMPI_Type_get_name(MPI_Datatype, char *, int *);
 int PMPI_Type_set_attr(MPI_Datatype, int, void *);
-int PMPI_Type_set_name(MPI_Datatype, char *type_name);
+int PMPI_Type_set_name(MPI_Datatype, char *);
+int PMPI_Type_match_size( int, int, MPI_Datatype *);
 int PMPI_Win_call_errhandler(MPI_Win, int);
 int PMPI_Win_create_keyval(MPI_Win_copy_attr_function *, 
                          MPI_Win_delete_attr_function *, int *, void *);
