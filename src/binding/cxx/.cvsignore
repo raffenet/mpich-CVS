@@ -11,6 +11,7 @@ mpicxxconf.h
 mpicxxconf.h.in
 *.o
 initcxx.cpp
+initcxx.cxx
 configure
 config.log
 config.status

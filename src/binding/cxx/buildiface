@@ -1759,8 +1759,8 @@ extern Datatype TWOINTEGER;
 # Build the special routines
 sub build_specials {
     # The init routine contains some configure-time values.
-    open( $OUTFD, ">initcxx.cpp" ) || die "Cannot open initcxx.cpp\n";
-    @files[$#files+1] = "initcxx.cpp";
+    open( $OUTFD, ">initcxx.cxx" ) || die "Cannot open initcxx.cxx\n";
+    @files[$#files+1] = "initcxx.cxx";
     &print_header;
     print $OUTFD "#include \"mpi.h\"\n";
     print $OUTFD "#include \"mpicxx.h\"\n";
@@ -2299,12 +2299,63 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
                     "fd,&vv", "(v = (Intercomm)vv,v)" );
 
     print $OUTFD "
-    Grequest Grequest::Start( Query_function query_fn,
-                              Free_function free_fn,
-                              Cancel_function cancel_fn,
-                              void *extra_state ) {
-	return 0;
-    }
+//
+// Rather than use a registered interposer, instead we interpose taking 
+// advantage of the extra_data field
+typedef struct { 
+    MPI::Grequest::Query_function  *query_fn;
+    MPI::Grequest::Free_function   *free_fn;
+    MPI::Grequest::Cancel_function *cancel_fn;
+    void *orig_extra_data; } MPIR_Grequest_data;
+extern \"C\" int MPIR_Grequest_call_query_fn( void *extra_data, 
+					    MPI_Status *status )
+{
+    int err;
+    MPI::Status s;
+    MPIR_Grequest_data *d = (MPIR_Grequest_data *)extra_data;
+    
+    err = (d->query_fn)( d->orig_extra_data, s );
+    *status = s;
+
+    return err;
+}
+extern \"C\" int MPIR_Grequest_call_free_fn( void *extra_data )
+{
+    int err;
+    MPIR_Grequest_data *d = (MPIR_Grequest_data *)extra_data;
+    
+    err = (d->free_fn)( d->orig_extra_data );
+
+    // Recover the storage that we used for the extra_data item.
+    delete d;
+    return err;
+}
+extern \"C\" int MPIR_Grequest_call_cancel_fn( void *extra_data, int done )
+{
+    int err;
+    MPI::Status s;
+    MPIR_Grequest_data *d = (MPIR_Grequest_data *)extra_data;
+    
+    err = (d->cancel_fn)( d->orig_extra_data, done );
+    return err;
+}
+Grequest Grequest::Start( Grequest::Query_function query_fn,
+                          Grequest::Free_function free_fn,
+                          Grequest::Cancel_function cancel_fn,
+                          void *extra_state ) 
+{
+    MPI::Grequest req;
+    MPIR_Grequest_data *d = new MPIR_Grequest_data;
+    d->query_fn        = query_fn;
+    d->free_fn         = free_fn;
+    d->cancel_fn       = cancel_fn;
+    d->orig_extra_data = extra_state;
+    MPI_Grequest_start( MPIR_Grequest_call_query_fn,
+			MPIR_Grequest_call_free_fn,
+			MPIR_Grequest_call_cancel_fn,
+			(void *)d, &req.the_real_request );
+    return req;
+}
 ";
 
     print $OUTFD "} // namespace MPI\n";
