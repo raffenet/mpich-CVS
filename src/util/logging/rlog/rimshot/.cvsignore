@@ -3,3 +3,5 @@ Release*
 *.aps
 *.clw
 *.plg
+*.ncb
+*.suo
