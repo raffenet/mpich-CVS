@@ -269,6 +269,7 @@ static VAPI_ret_t modifyQP( ibu_t ibu, VAPI_qp_state_t qp_state )
 	qp_attr.av.src_path_bits = 0;
 	qp_attr.av.dlid = ibu->dlid;
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_AV);
+	MPIU_DBG_PRINTF(("moving to RTR qp(%d:%d => %d:%d)\n", IBU_Process.lid, ibu->qp_num, ibu->dlid, ibu->dest_qp_num));
     }
     else if (qp_state == VAPI_RTS)
     {
@@ -342,7 +343,6 @@ static VAPI_ret_t createQP(ibu_t ibu, ibu_set_t set)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATEQP);
 	return status;
     }
-    /*ibu->dest_qp_num = qp_prop.qp_num;*/
     ibu->qp_num = qp_prop.qp_num;
     MPIU_DBG_PRINTF(("exiting createQP\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATEQP);
@@ -435,7 +435,6 @@ ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
 
     memset(p, 0, sizeof(ibu_state_t));
     p->state = 0;
-    p->dlid = dlid;
     /* In ibuBlockAllocInit, ib_malloc_register is called which sets the global variable s_mr_handle */
     p->allocator = ibuBlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT, IBU_PACKET_COUNT, ib_malloc_register, ib_free_deregister);
     p->mr_handle = s_mr_handle; /* Not thread safe. This handle is reset every time ib_malloc_register is called. */
