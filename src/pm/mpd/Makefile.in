@@ -114,6 +114,7 @@ install: all
 	-@install -m 755 ${srcdir}/mpigdb.sh ${bindir}/mpigdb
 	-@install -m 755 ${srcdir}/mpdman.py ${bindir}/mpdman.py
 	-@install -m 755 ${srcdir}/mpdlib.py ${bindir}/mpdlib.py
+	-@install -m 755 ${srcdir}/mpdrun.py ${bindir}/mpdrun.py
 	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
 	-@cd ${bindir} && @LN_S@ -f mpdrun mpirun
 	-@cd ${bindir} && @LN_S@ -f mpdrun.py mpirun.py
