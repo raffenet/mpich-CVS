@@ -51,7 +51,7 @@
  * be used for error checking in prototype code, although it should be converted real error checking and reporting once the
  * prototype becomes part of the official and supported code base.
  */
-#define MPIU_Assert(a_)													\
+#define MPIU_Assertp(a_)													\
 {															\
     if (!(a_))														\
     {															\
