@@ -1436,6 +1436,8 @@ int MPIR_Err_create_code( int, const char [], ... );
 void MPIR_Err_preinit( void );
 const char *MPIR_Err_get_generic_string( int );
 
+void MPIR_Datatype_iscontig( MPI_Datatype, int * );
+
 /* For no error checking, we could define MPIR_Nest_incr/decr as empty */
 #ifdef MPICH_SINGLE_THREADED
 #define MPIR_Nest_incr() MPIR_Thread.nest_count++

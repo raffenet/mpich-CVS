@@ -8,8 +8,9 @@
 #include "mpiimpl.h"
 #include "datatype.h"
 
-/* This is the utility file for datatypes that contains the basic datatype items
-   and storage management */
+/* This is the utility file for datatypes that contains the basic datatype 
+   items and storage management.  It also contains a temporary routine
+   that is used by ROMIO to test to see if datatypes are contiguous */
 #ifndef MPID_DATATYPE_PREALLOC 
 #define MPID_DATATYPE_PREALLOC 8
 #endif
@@ -95,4 +96,16 @@ void MPIR_Datatype_init( void )
 	}
 	MPID_Common_thread_unlock();
     }
+}
+
+/* This will eventually be removed ones ROMIO knows more about 
+   MPICH2 */
+void MPIR_Datatype_iscontig( MPI_Datatype datatype, int *flag )
+{
+    MPID_Datatype *datatype_ptr;
+    MPID_Datatype_get_ptr( datatype, datatype_ptr );
+    if (datatype_ptr) 
+	*flag = datatype_ptr->is_contig;
+    else 
+	*flag = 0;
 }
