@@ -1,6 +1,8 @@
 Open Items:
 
-* unique job identifier [Brian/David/Rusty/Rajeev]
+* MPICH2 req buzz [all] (Friday, 08/15/2003, 13:00)
+
+* add PMI_Get_id() to obtain unique job identifier [Brian/David/Rusty/Rajeev]
 
 * (ssm) topology/protocol specification [Bill/Rusty/David/Brian] (Thursday,
   08/07/2003, 13:00)
@@ -8,12 +10,11 @@ Open Items:
 * number of parameters for MPID_Abort(), fix MPI_Abort() [Brian]
   (Thursday, 08/07/2003, 13:00)
 
-* MPICH2 req buzz [all] (Friday, 08/15/2003, 13:00)
-
 * (shm/ssm) investigate (and fix?) few remaining test failures
   [Brian/David]
 
-* POSIX shared memory and message queues [David/Brian]
+* POSIX shared memory and message queues [David/Brian] (use new job id to
+  allocate per job message queue in ssm)
 
 * (req #23) modify configure to ensure --with-pm and --with-pmi consistency
   [Brian] (could be deferred)
@@ -23,8 +24,6 @@ Open Items:
 
 * MPE/slog2sdk integration (configure) and testing [Bill/Anthony/David/Brian]
   (the code is now being checked out into src/util/slog2sdk)
-
-* solve ROMIO test failures [Brian]
 
 * (req #91,84,76,71,70,62,61,53,52,48,47,39,46,33,27) MPD problems
   [Rusty/Ralph] (fixed?)
@@ -41,6 +40,8 @@ Open Items:
 
 Finished Items:
 
+* temporary fix for ROMIO test failures [Brian]
+
 * configure option to specify level/depth of logging [Brian/David]
 
 * datatype test suite failures [Rob R.]
@@ -55,6 +56,9 @@ Finished Items:
 -----
 
 Deferred Items:
+
+* add MPI_Type_create_{darray,subarray} to MPICH2 and update ROMIO to properly
+  handle these new types [Rob R.]
 
 * (req #23) remove uni implementation of PMI [Bill/Brian]
 
