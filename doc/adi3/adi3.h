@@ -293,7 +293,7 @@ typedef struct {
  across the universe of connected MPI processes.  This is ok, as long as
  pids are interpreted `only` on the process that owns them.
 
- Only for MPI-1 are the lpid's equal to the `global` pids.  The local pids
+ Only for MPI-1 are the lpid''s equal to the `global` pids.  The local pids
  can be thought of as a reference not to the remote process itself, but
  how the remote process can be reached from this process.  We may want to 
  have a structure MPID_Lpid_t that contains information on the remote
@@ -301,7 +301,7 @@ typedef struct {
  multiple interfaces are supported; we may even want plural ip addresses for
  stripping communication), and port (or ports).  For shared memory connected
  processes, it might have the address of a remote queue.  The lpid number 
- is an index into a table of MPID_Lpid_t's that contain this (device- and
+ is an index into a table of MPID_Lpid_t''s that contain this (device- and
  method-specific) information.
 
  Questions:
@@ -413,7 +413,7 @@ typedef struct {
 	cur_sp--;
      else if stackelm[cur_sp].cur_count == stackelm[cur_sp].loopinfo.cm_t.count
          then {
-	 // We're done with the datatype.
+	 // We are done with the datatype.
 	 cur_sp--;
          }
      else {

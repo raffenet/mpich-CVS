@@ -1203,7 +1203,7 @@ int MPID_Isend( void *buf, int count, MPID_Datatype *datatype,
 
   Notes:
   This has the semantics of 'MPI_Bsend', except that it returns the internal
-  error code 'MPID_WOULD_BLOCK' if the message can't be sent immediately.
+  error code 'MPID_WOULD_BLOCK' if the message can''t be sent immediately.
   (t is for "try").  
  
   The reason that this interface is chosen over a query to check whether
