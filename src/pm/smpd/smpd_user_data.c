@@ -295,6 +295,9 @@ int smpd_set_smpd_data(const char *key, const char *value)
 
     list = smpd_parse_smpd_file();
     fout = smpd_open_smpd_file(SMPD_TRUE);
+    if (fout)
+	/*fseek(fout, 0, SEEK_SET);*/
+	rewind(fout);
     while (list)
     {
 	node = list;
