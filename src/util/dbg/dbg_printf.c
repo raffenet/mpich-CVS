@@ -123,6 +123,7 @@ int MPIU_dbg_printf(char *str, ...)
 
     if (MPIUI_dbg_state & MPIU_DBG_STATE_STDOUT)
     {
+	printf("[%d]", MPIR_Process.comm_world->rank);
 	va_start(list, str);
 	n = vprintf(str, list);
 	va_end(list);
@@ -144,6 +145,7 @@ int err_printf(char *str, ...)
     int n;
     va_list list;
 
+    printf("[%d]", MPIR_Process.comm_world->rank);
     va_start(list, str);
     n = vprintf(str, list);
     va_end(list);
@@ -167,6 +169,7 @@ int msg_printf(char *str, ...)
     int n;
     va_list list;
 
+    printf("[%d]", MPIR_Process.comm_world->rank);
     va_start(list, str);
     n = vprintf(str, list);
     va_end(list);
