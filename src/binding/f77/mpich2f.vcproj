@@ -303,6 +303,107 @@
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
+		<Configuration
+			Name="fort64Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\include"
+				PreprocessorDefinitions="WIN64;_DEBUG;_LIB;USE_WINCONF_H;USE_FORT_CDECL;HAVE_FORTRAN_API;FORTRAN_EXPORTS;F77_NAME_UPPER"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="5"
+				BufferSecurityCheck="FALSE"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:IA64"
+				AdditionalDependencies="mpich2d.lib"
+				OutputFile="../../../lib/fmpich2d.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="../../../lib"
+				ModuleDefinitionFile="mpich2f.def"
+				GenerateDebugInformation="TRUE"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="fort64Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/Gt0"
+				AdditionalIncludeDirectories="..\..\include"
+				PreprocessorDefinitions="WIN64;NDEBUG;_LIB;USE_WINCONF_H;USE_FORT_CDECL;HAVE_FORTRAN_API;FORTRAN_EXPORTS;F77_NAME_UPPER"
+				RuntimeLibrary="4"
+				BufferSecurityCheck="FALSE"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:IA64"
+				AdditionalDependencies="mpich2.lib"
+				OutputFile="../../../lib/fmpich2.dll"
+				AdditionalLibraryDirectories="../../../lib"
+				ModuleDefinitionFile="mpich2f.def"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying fmpich2.dll to the system32 directory"
+				CommandLine="copy ..\..\..\lib\fmpich2.dll %SystemRoot%\system32\fmpich2.dll"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -898,9 +999,27 @@
 					<Tool
 						Name="VCCustomBuildTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fort64Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fort64Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\mpich2fs.def">
+				<FileConfiguration
+					Name="fort64Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\null_comm_copy_fnf.c">
@@ -1267,6 +1386,18 @@
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fort64Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fort64Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\wtimef.c">
@@ -1302,6 +1433,18 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fort64Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fort64Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"/>
