@@ -8,7 +8,10 @@
 int count, errcnt = 0, gerr = 0, size, rank;
 MPI_Comm comm;
 
-void a1()
+void a1(void),  b1(void),  c1(void),  d1(void),  e1(void),  f1(void),  g1(void),  h1(void),  a2(void),  b2(void),  c2(void),  d2(void),  e2(void),  f2(void),  g2(void),  h2(void),  a3(void),  b3(void),  c3(void),  d3(void),  e3(void),  f3(void),  g3(void),  h3(void),  a4(void),  b4(void),  c4(void),  d4(void),  e4(void),  f4(void),  g4(void),  h4(void),  a5(void),  b5(void),  c5(void),  d5(void),  e5(void),  f5(void),  a6(void),  b6(void),  c6(void),  d6(void),  e6(void),  f6(void),  a7(void),  b7(void),  c7(void),  d7(void),  e7(void),  f7(void),  a8(void),  b8(void),  c8(void),  d8(void),  e8(void),  f8(void),  a9(void),  b9(void),  c9(void),  d9(void),  e9(void),  f9(void),  a10(void),  b10(void),  c10(void),  d10(void),  e10(void),  f10(void),  a11(void),  b11(void),  c11(void),  d11(void),  e11(void),  f11(void),  a12(void),  b12(void),  c12(void),  d12(void),  e12(void),  f12(void),  g12(void),  a13(void),  b13(void),  c13(void),  d13(void),  e13(void),  f13(void),  g13(void),  a14(void),  b14(void),  c14(void),  d14(void),  e14(void),  f14(void),  a15(void),  b15(void),  c15(void),  d15(void),  e15(void),  f15(void),  a16(void),  b16(void),  c16(void),  d16(void),  e16(void),  f16(void),  a17(void),  b17(void),  c17(void),  d17(void),  e17(void),  f17(void),  a18(void),  b18(void),  c18(void),  d18(void),  e18(void),  a19(void),  b19(void),  c19(void),  d19(void),  e19(void);
+
+
+void a1(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -27,7 +30,7 @@ void a1()
 }
 
 
-void b1()
+void b1(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -46,7 +49,7 @@ void b1()
 }
 
 
-void c1()
+void c1(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -65,7 +68,7 @@ void c1()
 }
 
 
-void d1()
+void d1(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -84,7 +87,7 @@ void d1()
 }
 
 
-void e1()
+void e1(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -103,7 +106,7 @@ void e1()
 }
 
 
-void f1()
+void f1(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -122,7 +125,7 @@ void f1()
 }
 
 
-void g1()
+void g1(void)
 {
     float *in, *out, *sol;
     int  i, fnderr=0;
@@ -141,7 +144,7 @@ void g1()
 }
 
 
-void h1()
+void h1(void)
 {
     double *in, *out, *sol;
     int  i, fnderr=0;
@@ -160,7 +163,7 @@ void h1()
 }
 
 
-void a2()
+void a2(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -179,7 +182,7 @@ void a2()
 }
 
 
-void b2()
+void b2(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -198,7 +201,7 @@ void b2()
 }
 
 
-void c2()
+void c2(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -217,7 +220,7 @@ void c2()
 }
 
 
-void d2()
+void d2(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -236,7 +239,7 @@ void d2()
 }
 
 
-void e2()
+void e2(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -255,7 +258,7 @@ void e2()
 }
 
 
-void f2()
+void f2(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -274,7 +277,7 @@ void f2()
 }
 
 
-void g2()
+void g2(void)
 {
     float *in, *out, *sol;
     int  i, fnderr=0;
@@ -293,7 +296,7 @@ void g2()
 }
 
 
-void h2()
+void h2(void)
 {
     double *in, *out, *sol;
     int  i, fnderr=0;
@@ -313,7 +316,7 @@ void h2()
 
 
 
-void a3()
+void a3(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -332,7 +335,7 @@ void a3()
 }
 
 
-void b3()
+void b3(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -351,7 +354,7 @@ void b3()
 }
 
 
-void c3()
+void c3(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -370,7 +373,7 @@ void c3()
 }
 
 
-void d3()
+void d3(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -389,7 +392,7 @@ void d3()
 }
 
 
-void e3()
+void e3(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -408,7 +411,7 @@ void e3()
 }
 
 
-void f3()
+void f3(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -427,7 +430,7 @@ void f3()
 }
 
 
-void g3()
+void g3(void)
 {
     float *in, *out, *sol;
     int  i, fnderr=0;
@@ -446,7 +449,7 @@ void g3()
 }
 
 
-void h3()
+void h3(void)
 {
     double *in, *out, *sol;
     int  i, fnderr=0;
@@ -466,7 +469,7 @@ void h3()
 
 
 
-void a4()
+void a4(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -485,7 +488,7 @@ void a4()
 }
 
 
-void b4()
+void b4(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -504,7 +507,7 @@ void b4()
 }
 
 
-void c4()
+void c4(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -523,7 +526,7 @@ void c4()
 }
 
 
-void d4()
+void d4(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -542,7 +545,7 @@ void d4()
 }
 
 
-void e4()
+void e4(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -561,7 +564,7 @@ void e4()
 }
 
 
-void f4()
+void f4(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -580,7 +583,7 @@ void f4()
 }
 
 
-void g4()
+void g4(void)
 {
     float *in, *out, *sol;
     int  i, fnderr=0;
@@ -599,7 +602,7 @@ void g4()
 }
 
 
-void h4()
+void h4(void)
 {
     double *in, *out, *sol;
     int  i, fnderr=0;
@@ -619,7 +622,7 @@ void h4()
 
 
 
-void a5()
+void a5(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -638,7 +641,7 @@ void a5()
 }
 
 
-void b5()
+void b5(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -657,7 +660,7 @@ void b5()
 }
 
 
-void c5()
+void c5(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -676,7 +679,7 @@ void c5()
 }
 
 
-void d5()
+void d5(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -695,7 +698,7 @@ void d5()
 }
 
 
-void e5()
+void e5(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -714,7 +717,7 @@ void e5()
 }
 
 
-void f5()
+void f5(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -734,7 +737,7 @@ void f5()
 
 
 
-void a6()
+void a6(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -753,7 +756,7 @@ void a6()
 }
 
 
-void b6()
+void b6(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -772,7 +775,7 @@ void b6()
 }
 
 
-void c6()
+void c6(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -791,7 +794,7 @@ void c6()
 }
 
 
-void d6()
+void d6(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -810,7 +813,7 @@ void d6()
 }
 
 
-void e6()
+void e6(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -829,7 +832,7 @@ void e6()
 }
 
 
-void f6()
+void f6(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -849,7 +852,7 @@ void f6()
 
 
 
-void a7()
+void a7(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -868,7 +871,7 @@ void a7()
 }
 
 
-void b7()
+void b7(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -887,7 +890,7 @@ void b7()
 }
 
 
-void c7()
+void c7(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -906,7 +909,7 @@ void c7()
 }
 
 
-void d7()
+void d7(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -925,7 +928,7 @@ void d7()
 }
 
 
-void e7()
+void e7(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -944,7 +947,7 @@ void e7()
 }
 
 
-void f7()
+void f7(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -964,7 +967,7 @@ void f7()
 
 
 
-void a8()
+void a8(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -983,7 +986,7 @@ void a8()
 }
 
 
-void b8()
+void b8(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1002,7 +1005,7 @@ void b8()
 }
 
 
-void c8()
+void c8(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1021,7 +1024,7 @@ void c8()
 }
 
 
-void d8()
+void d8(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1040,7 +1043,7 @@ void d8()
 }
 
 
-void e8()
+void e8(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -1059,7 +1062,7 @@ void e8()
 }
 
 
-void f8()
+void f8(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1079,7 +1082,7 @@ void f8()
 
 
 
-void a9()
+void a9(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -1097,7 +1100,7 @@ void a9()
     free( sol );
 }
 
-void b9()
+void b9(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1116,7 +1119,7 @@ void b9()
 }
 
 
-void c9()
+void c9(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1135,7 +1138,7 @@ void c9()
 }
 
 
-void d9()
+void d9(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1154,7 +1157,7 @@ void d9()
 }
 
 
-void e9()
+void e9(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -1173,7 +1176,7 @@ void e9()
 }
 
 
-void f9()
+void f9(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1193,7 +1196,7 @@ void f9()
 
 
 
-void a10()
+void a10(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -1212,7 +1215,7 @@ void a10()
 }
 
 
-void b10()
+void b10(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1231,7 +1234,7 @@ void b10()
 }
 
 
-void c10()
+void c10(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1250,7 +1253,7 @@ void c10()
 }
 
 
-void d10()
+void d10(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1269,7 +1272,7 @@ void d10()
 }
 
 
-void e10()
+void e10(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -1288,7 +1291,7 @@ void e10()
 }
 
 
-void f10()
+void f10(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1308,7 +1311,7 @@ void f10()
 
 
 
-void a11()
+void a11(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -1327,7 +1330,7 @@ void a11()
 }
 
 
-void b11()
+void b11(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1346,7 +1349,7 @@ void b11()
 }
 
 
-void c11()
+void c11(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1365,7 +1368,7 @@ void c11()
 }
 
 
-void d11()
+void d11(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1384,7 +1387,7 @@ void d11()
 }
 
 
-void e11()
+void e11(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -1403,7 +1406,7 @@ void e11()
 }
 
 
-void f11()
+void f11(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1422,7 +1425,7 @@ void f11()
 }
 
 
-void a12()
+void a12(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -1441,7 +1444,7 @@ void a12()
 }
 
 
-void b12()
+void b12(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1460,7 +1463,7 @@ void b12()
 }
 
 
-void c12()
+void c12(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1479,7 +1482,7 @@ void c12()
 }
 
 
-void d12()
+void d12(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1498,7 +1501,7 @@ void d12()
 }
 
 
-void e12()
+void e12(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -1517,7 +1520,7 @@ void e12()
 }
 
 
-void f12()
+void f12(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1536,7 +1539,7 @@ void f12()
 }
 
 
-void g12()
+void g12(void)
 {
     unsigned char *in, *out, *sol;
     int  i, fnderr=0;
@@ -1555,7 +1558,7 @@ void g12()
 }
 
 
-void a13()
+void a13(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -1574,7 +1577,7 @@ void a13()
 }
 
 
-void b13()
+void b13(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1593,7 +1596,7 @@ void b13()
 }
 
 
-void c13()
+void c13(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1612,7 +1615,7 @@ void c13()
 }
 
 
-void d13()
+void d13(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1631,7 +1634,7 @@ void d13()
 }
 
 
-void e13()
+void e13(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -1650,7 +1653,7 @@ void e13()
 }
 
 
-void f13()
+void f13(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1669,7 +1672,7 @@ void f13()
 }
 
 
-void g13()
+void g13(void)
 {
     unsigned char *in, *out, *sol;
     int  i, fnderr=0;
@@ -1688,7 +1691,7 @@ void g13()
 }
 
 
-void a14()
+void a14(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -1707,7 +1710,7 @@ void a14()
 }
 
 
-void b14()
+void b14(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1726,7 +1729,7 @@ void b14()
 }
 
 
-void c14()
+void c14(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1745,7 +1748,7 @@ void c14()
 }
 
 
-void d14()
+void d14(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1764,7 +1767,7 @@ void d14()
 }
 
 
-void e14()
+void e14(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -1783,7 +1786,7 @@ void e14()
 }
 
 
-void f14()
+void f14(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1803,7 +1806,7 @@ void f14()
 
 
 
-void a15()
+void a15(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -1822,7 +1825,7 @@ void a15()
 }
 
 
-void b15()
+void b15(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1841,7 +1844,7 @@ void b15()
 }
 
 
-void c15()
+void c15(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1860,7 +1863,7 @@ void c15()
 }
 
 
-void d15()
+void d15(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1879,7 +1882,7 @@ void d15()
 }
 
 
-void e15()
+void e15(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -1898,7 +1901,7 @@ void e15()
 }
 
 
-void f15()
+void f15(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1918,7 +1921,7 @@ void f15()
 
 
 
-void a16()
+void a16(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -1937,7 +1940,7 @@ void a16()
 }
 
 
-void b16()
+void b16(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -1956,7 +1959,7 @@ void b16()
 }
 
 
-void c16()
+void c16(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1975,7 +1978,7 @@ void c16()
 }
 
 
-void d16()
+void d16(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -1994,7 +1997,7 @@ void d16()
 }
 
 
-void e16()
+void e16(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -2013,7 +2016,7 @@ void e16()
 }
 
 
-void f16()
+void f16(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -2032,7 +2035,7 @@ void f16()
 }
 
 
-void a17()
+void a17(void)
 {
     int *in, *out, *sol;
     int  i, fnderr=0;
@@ -2051,7 +2054,7 @@ void a17()
 }
 
 
-void b17()
+void b17(void)
 {
     long *in, *out, *sol;
     int  i, fnderr=0;
@@ -2070,7 +2073,7 @@ void b17()
 }
 
 
-void c17()
+void c17(void)
 {
     short *in, *out, *sol;
     int  i, fnderr=0;
@@ -2089,7 +2092,7 @@ void c17()
 }
 
 
-void d17()
+void d17(void)
 {
     unsigned short *in, *out, *sol;
     int  i, fnderr=0;
@@ -2108,7 +2111,7 @@ void d17()
 }
 
 
-void e17()
+void e17(void)
 {
     unsigned *in, *out, *sol;
     int  i, fnderr=0;
@@ -2127,7 +2130,7 @@ void e17()
 }
 
 
-void f17()
+void f17(void)
 {
     unsigned long *in, *out, *sol;
     int  i, fnderr=0;
@@ -2147,7 +2150,7 @@ void f17()
 
 
 
-void a18()
+void a18(void)
 {
     struct int_test { int a; int b; } *in, *out, *sol;
     int  i,fnderr=0;
@@ -2174,7 +2177,7 @@ void a18()
 }
 
 
-void b18()
+void b18(void)
 {
     struct long_test { long a; int b; } *in, *out, *sol;
     int  i,fnderr=0;
@@ -2201,7 +2204,7 @@ void b18()
 }
 
 
-void c18()
+void c18(void)
 {
     struct short_test { short a; int b; } *in, *out, *sol;
     int  i,fnderr=0;
@@ -2228,7 +2231,7 @@ void c18()
 }
 
 
-void d18()
+void d18(void)
 {
     struct float_test { float a; int b; } *in, *out, *sol;
     int  i,fnderr=0;
@@ -2255,7 +2258,7 @@ void d18()
 }
 
 
-void e18()
+void e18(void)
 {
     struct double_test { double a; int b; } *in, *out, *sol;
     int  i,fnderr=0;
@@ -2283,7 +2286,7 @@ void e18()
 
 
 
-void a19()
+void a19(void)
 {
     struct int_test { int a; int b; } *in, *out, *sol;
     int  i,fnderr=0;
@@ -2310,7 +2313,7 @@ void a19()
 }
 
 
-void b19()
+void b19(void)
 {
     struct long_test { long a; int b; } *in, *out, *sol;
     int  i,fnderr=0;
@@ -2337,7 +2340,7 @@ void b19()
 }
 
 
-void c19()
+void c19(void)
 {
     struct short_test { short a; int b; } *in, *out, *sol;
     int  i,fnderr=0;
@@ -2364,7 +2367,7 @@ void c19()
 }
 
 
-void d19()
+void d19(void)
 {
     struct float_test { float a; int b; } *in, *out, *sol;
     int  i,fnderr=0;
@@ -2391,7 +2394,7 @@ void d19()
 }
 
 
-void e19()
+void e19(void)
 {
     struct double_test { double a; int b; } *in, *out, *sol;
     int  i,fnderr=0;
