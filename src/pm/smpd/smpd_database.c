@@ -64,8 +64,25 @@ int smpd_dbs_finalize()
     return SMPD_DBS_SUCCESS;
 }
 
+static void get_uuid(char *str)
+{
+#ifdef HAVE_WINDOWS_H
+    UUID guid;
+    UuidCreate(&guid);
+    sprintf(str, "%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
+	guid.Data1, guid.Data2, guid.Data3,
+	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+#else
+    uuid_t guid;
+    uuid_generate(guid);
+    uuid_unparse(guid, str);
+#endif
+}
+
 int smpd_dbs_create(char *name)
 {
+    char guid_str[100];
     smpd_database_node_t *pNode, *pNodeTest;
 
     smpd_enter_fn("smpd_dbs_create");
@@ -106,12 +123,17 @@ int smpd_dbs_create(char *name)
     ReleaseMutex(smpd_process.hDBSMutex);
 #endif
 
+    /* put a unique id in the kvs database */
+    get_uuid(guid_str);
+    smpd_dbs_put(name, PMI_KVS_ID_KEY, guid_str);
+
     smpd_exit_fn("smpd_dbs_create");
     return SMPD_DBS_SUCCESS;
 }
 
 int smpd_dbs_create_name_in(char *name)
 {
+    char guid_str[100];
     smpd_database_node_t *pNode;
 
     smpd_enter_fn("smpd_dbs_create_name_in");
@@ -167,6 +189,10 @@ int smpd_dbs_create_name_in(char *name)
     /* Unlock */
     ReleaseMutex(smpd_process.hDBSMutex);
 #endif
+
+    /* put a unique id in the kvs database */
+    get_uuid(guid_str);
+    smpd_dbs_put(name, PMI_KVS_ID_KEY, guid_str);
 
     smpd_exit_fn("smpd_dbs_create_name_in");
     return SMPD_DBS_SUCCESS;

@@ -118,6 +118,8 @@ typedef int SMPD_BOOL;
 #define DBS_FAIL_STR	                  "DBS_FAIL"
 #define DBS_END_STR	                  "DBS_END"
 
+#define PMI_KVS_ID_KEY                    "PMI_KVS_ID"
+
 #define SMPD_CONSOLE_STR_LENGTH         10*SMPD_MAX_CMD_LENGTH
 
 #define SMPD_DEFAULT_TIMEOUT              120

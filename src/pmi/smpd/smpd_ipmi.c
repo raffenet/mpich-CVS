@@ -366,16 +366,14 @@ int iPMI_Get_clique_ranks( int *ranks )
 
 int iPMI_Get_id( char *id_str )
 {
-#ifdef HAVE_WINDOWS_H
-    UUID guid;
-    UuidCreate(&guid);
-    sprintf(id_str, "%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
-	guid.Data1, guid.Data2, guid.Data3,
-	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
-	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
-#else
-    sprintf(id_str, "%d", getpid());
-#endif
+    char kvs_name[PMI_MAX_KVS_NAME_LENGTH];
+    char key[PMI_MAX_KEY_LEN] = PMI_KVS_ID_KEY;
+    char value[PMI_MAX_VALUE_LEN] = "";
+
+    strcpy(kvs_name, pmi_process.kvs_name);
+    iPMI_KVS_Get(kvs_name, key, value);
+    strcpy(id_str, value);
+
     return PMI_SUCCESS;
 }
 

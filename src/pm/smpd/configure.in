@@ -94,7 +94,7 @@ MPILIBNAME=${MPILIBNAME:-"mpich"}
 AC_SUBST(MPILIBNAME)
 
 AC_CHECK_HEADERS( sys/types.h sys/wait.h signal.h unistd.h stdlib.h errno.h stdarg.h )
-AC_CHECK_HEADERS( math.h stdio.h termios.h string.h sys/stat.h malloc.h )
+AC_CHECK_HEADERS( math.h stdio.h termios.h string.h sys/stat.h malloc.h uuid/uuid.h )
 AC_CHECK_FUNCS( sigaction usleep )
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
