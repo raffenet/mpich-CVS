@@ -83,8 +83,8 @@ lib<name>_a_DIR     = directory in which lib<name> will exist
 		      are also needed (e.g., -lm), mark these with
 		      the EXTERNAL_LIBS variable
 LDADD               = names of LD options to add to all programs
-<name>_DEP          = Additional dependencies for a program (e.g., libraries)
-DEPALL              = Additional dependencies for *all* programs
+<name>_DEPADD       = Additional dependencies for a program (e.g., libraries)
+DEPADD              = Additional dependencies for *all* programs
 
 SUBDIRS             = names of subsidiary directories
 EXTRA_PROGRAMS      = names of programs that should *not* be built by default
