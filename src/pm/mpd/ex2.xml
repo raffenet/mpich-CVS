@@ -1,25 +1,14 @@
-<PMRequests>
-    <create-process-group
-            totalprocs='3'
-            exec='printenv'
-            path='/home/rbutler/bin:/usr/bin:/usr/local/bin'
-            user='rbutler' 
-            cwd='/home/rbutler'
-            args = ''
-            line_labels='1'
-	    >
-        <host name='bio' range='0-1'/>
-        <!-- host name='bio' range='2'/ -->
-
-	<envvars range='0'>
-	    <envvar key='RMB1' value='e1'/>
-	    <envvar key='RMB2' value='e2'/>
-        </envvars>
-
-	<envvars range='1-2'>
-	    <envvar key='RMB3' value='e3'/>
-	    <envvar key='RMB4' value='e4'/>
-        </envvars>
-
-    </create-process-group>
-</PMRequests>
+<create-process-group
+	   totalprocs='7'
+	   stdin_goes_to_who='0,2-4,6'
+	   output='label'
+	   >
+      <process-spec
+	   range='0-6'
+	   cwd='/home/rbutler/mpd2'
+	   exec='temp1'>
+      </process-spec>
+      <host-spec>
+	   magpie
+      </host-spec>
+</create-process-group>
