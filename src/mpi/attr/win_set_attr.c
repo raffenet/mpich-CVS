@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "attr.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Win_set_attr */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -47,55 +48,55 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
     static const char FCNAME[] = "MPI_Win_set_attr";
     int mpi_errno = MPI_SUCCESS;
 
-    MPID_Comm *comm_ptr = NULL;
+    MPID_Win *win_ptr = NULL;
     MPID_Keyval *keyval_ptr = NULL;
     MPID_Attribute *p, **old_p;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SET_ATTR);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_SET_ATTR);
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SET_ATTR);
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_SET_ATTR);
     /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+    MPID_Win_get_ptr( win, win_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
 
-            /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not valid, it will be reset to null */
+            /* Validate win_ptr */
+            MPID_Win_valid_ptr( win_ptr, mpi_errno );
+	    /* If win_ptr is not valid, it will be reset to null */
 	    /* Validate keyval */
-	    if (comm_keyval == MPI_KEYVAL_INVALID) {
+	    if (win_keyval == MPI_KEYVAL_INVALID) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
 						  MPI_ERR_KEYVAL, "**keyvalinvalid", 0 );
 	    }
-	    else if (HANDLE_GET_MPI_KIND(comm_keyval) != MPID_KEYVAL) {
+	    else if (HANDLE_GET_MPI_KIND(win_keyval) != MPID_KEYVAL) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_KEYVAL, "**keyval", 0 );
 	    } 
-	    else if (((comm_keyval&0x03c00000) >> 22) != MPID_COMM) {
+	    else if (((win_keyval&0x03c00000) >> 22) != MPID_WIN) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
-						  MPI_ERR_KEYVAL, "**keyvalnotcomm", 0 );
+						  MPI_ERR_KEYVAL, "**keyvalnotwin", 0 );
 	    }
-	    else if (HANDLE_GET_KIND(comm_keyval) == HANDLE_KIND_BUILTIN) {
+	    else if (HANDLE_GET_KIND(win_keyval) == HANDLE_KIND_BUILTIN) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**permattr", 0 );
 	    }
 	    else {
-		MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
+		MPID_Keyval_get_ptr( win_keyval, keyval_ptr );
 		MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
 		}
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
 	}
 	MPID_ELSE_ERROR_CHECKS;
 	{
-	    MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
+	    MPID_Keyval_get_ptr( win_keyval, keyval_ptr );
 	}
         MPID_END_ERROR_CHECKS;
     }
 #   else    
-    MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
+    MPID_Keyval_get_ptr( win_keyval, keyval_ptr );
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
@@ -103,20 +104,21 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
        a simple linear list algorithm because few applications use more than a 
        handful of attributes */
     
-    /* The thread lock prevents a valid attr delete on the same communicator
+    /* The thread lock prevents a valid attr delete on the same window
        but in a different thread from causing problems */
-    MPID_Comm_thread_lock( comm_ptr );
-    old_p = &comm_ptr->attributes;
-    p = comm_ptr->attributes;
+    MPID_Common_thread_lock( );
+    old_p = &win_ptr->attributes;
+    p = win_ptr->attributes;
     while (p) {
 	if (p->keyval->handle == keyval_ptr->handle) {
 	    /* If found, call the delete function before replacing the 
 	       attribute */
-	    mpi_errno = MPIR_Call_attr_delete( comm, p );
+	    mpi_errno = MPIR_Call_attr_delete( win, p );
 	    if (mpi_errno) {
-		MPID_Comm_thread_unlock( comm_ptr );
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
-		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+		MPID_Common_thread_unlock( );
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
+		/* FIXME: communicator of window? */
+		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	    }
 	    p->value = attribute_val;
 	    /* Does not change the reference count on the keyval */
@@ -126,8 +128,8 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 	    MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
 	    if (!new_p) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
-		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
+		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	    }
 	    new_p->keyval	 = keyval_ptr;
 	    new_p->pre_sentinal	 = 0;
@@ -145,8 +147,8 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 	MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
 	if (!new_p) {
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
-	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
+	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}
 	/* Did not find in list.  Add at end */
 	new_p->keyval	     = keyval_ptr;
@@ -160,11 +162,11 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
     
     /* Here is where we could add a hook for the device to detect attribute
        value changes, using something like
-       MPID_Dev_comm_attr_hook( comm_ptr, keyval, attribute_val );
+       MPID_Dev_win_attr_hook( win_ptr, keyval, attribute_val );
     */
-    MPID_Comm_thread_unlock( comm_ptr );
+    MPID_Common_thread_unlock(  );
     /* ... end of body of routine ... */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
     return MPI_SUCCESS;
 }
