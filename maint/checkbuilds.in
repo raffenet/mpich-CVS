@@ -731,6 +731,27 @@ sub RunIntelTestSuite {
 	if ($built_for_mpd) {
 	    &StopMPD;
 	}
+	if ($test_status != 0) {
+	    # Try to figure out what went wrong.  
+	    if (-s "Test/test.results") { 
+		my $linecount = 256;
+		if (open( TESTFD, "Test/test.results" )) {
+		    print $OUTFD "First $linecount lines of test.results\n";
+		    while (<TESTFD> && $linecount-- > 0) {
+			if ($is_xml) {
+			    # xml-ify the line by 
+			    # escaping the special characters
+			    s/</\*AMP\*lt;/g;
+			    s/>/\*AMP\*gt;/g;
+			    s/&/\*AMP\*amp;/g;
+			    s/\*AMP\*/&/g;
+			}
+			print $OUTFD $_;
+		    }
+		    close (TESTFD);
+		}
+	    }
+	}
     }
     else {
 	$run_status = $rc;
