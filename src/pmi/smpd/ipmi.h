@@ -95,6 +95,12 @@ int iPMI_Args_to_keyval(int *argcp, char *((*argvp)[]), PMI_keyval_t **keyvalp, 
 /* free the data returned by iPMI_Parse_option or iPMI_Args_to_keyval */
 int iPMI_Free_keyvals(PMI_keyval_t keyvalp[], int size);
 
+/* External Interface Functions */
+
+int iPMI_Publish_name( const char service_name[], const char port[] );
+int iPMI_Unpublish_name( const char service_name[] );
+int iPMI_Lookup_name( const char service_name[], char port[] );
+
 typedef struct ipmi_functions_t
 {
     int (*PMI_Init)( int * );
@@ -126,6 +132,9 @@ typedef struct ipmi_functions_t
     int (*PMI_Parse_option)( int, char *[], int *, PMI_keyval_t **, int * );
     int (*PMI_Args_to_keyval)( int *, char *((*)[]), PMI_keyval_t **, int * );
     int (*PMI_Free_keyvals)( PMI_keyval_t [], int );
+    int (*PMI_Publish_name)( const char [], const char [] );
+    int (*PMI_Unpublish_name)( const char [] );
+    int (*PMI_Lookup_name)( const char [], char [] );
 } ipmi_functions_t;
 
 #if defined(__cplusplus)

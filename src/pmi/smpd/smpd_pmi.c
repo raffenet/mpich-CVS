@@ -47,7 +47,7 @@
 /* global variables */
 static ipmi_functions_t fn =
 {
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 int PMI_Init(int *spawned)
@@ -100,6 +100,9 @@ int PMI_Init(int *spawned)
 	    fn.PMI_Parse_option = (int (*)(int, char *[], int *, PMI_keyval_t **, int *))PMIGetProcAddress(hModule, "PMI_Parse_option");
 	    fn.PMI_Args_to_keyval = (int (*)(int *, char *((*)[]), PMI_keyval_t **, int *))PMIGetProcAddress(hModule, "PMI_Args_to_keyval");
 	    fn.PMI_Free_keyvals = (int (*)(PMI_keyval_t [], int))PMIGetProcAddress(hModule, "PMI_Free_keyvals");
+	    fn.PMI_Publish_name = (int (*)(const char [], const char [] ))PMIGetProcAddress(hModule, "PMI_Publish_name");
+	    fn.PMI_Unpublish_name = (int (*)( const char [] ))PMIGetProcAddress(hModule, "PMI_Unpublish_name");
+	    fn.PMI_Lookup_name = (int (*)( const char [], char [] ))PMIGetProcAddress(hModule, "PMI_Lookup_name");
 	    return fn.PMI_Init(spawned);
 	}
     }
@@ -133,6 +136,9 @@ int PMI_Init(int *spawned)
     fn.PMI_Parse_option = iPMI_Parse_option;
     fn.PMI_Args_to_keyval = iPMI_Args_to_keyval;
     fn.PMI_Free_keyvals = iPMI_Free_keyvals;
+    fn.PMI_Publish_name = iPMI_Publish_name;
+    fn.PMI_Unpublish_name = iPMI_Unpublish_name;
+    fn.PMI_Lookup_name = iPMI_Lookup_name;
 
     return fn.PMI_Init(spawned);
 }
@@ -335,4 +341,25 @@ int PMI_Free_keyvals(PMI_keyval_t keyvalp[], int size)
     if (fn.PMI_Free_keyvals == NULL)
 	return PMI_FAIL;
     return fn.PMI_Free_keyvals(keyvalp, size);
+}
+
+int PMI_Publish_name( const char service_name[], const char port[] )
+{
+    if (fn.PMI_Publish_name == NULL)
+	return PMI_FAIL;
+    return fn.PMI_Publish_name(service_name, port);
+}
+
+int PMI_Unpublish_name( const char service_name[] )
+{
+    if (fn.PMI_Unpublish_name == NULL)
+	return PMI_FAIL;
+    return fn.PMI_Unpublish_name(service_name);
+}
+
+int PMI_Lookup_name( const char service_name[], char port[] )
+{
+    if (fn.PMI_Lookup_name == NULL)
+	return PMI_FAIL;
+    return fn.PMI_Lookup_name(service_name, port);
 }

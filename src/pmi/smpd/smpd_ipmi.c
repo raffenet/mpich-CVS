@@ -2093,6 +2093,27 @@ int iPMI_Free_keyvals(PMI_keyval_t keyvalp[], int size)
     return PMI_SUCCESS;
 }
 
+int iPMI_Publish_name( const char service_name[], const char port[] )
+{
+    if (service_name == NULL || port == NULL)
+	return PMI_ERR_INVALID_ARG;
+    return PMI_FAIL;
+}
+
+int iPMI_Unpublish_name( const char service_name[] )
+{
+    if (service_name == NULL)
+	return PMI_ERR_INVALID_ARG;
+    return PMI_FAIL;
+}
+
+int iPMI_Lookup_name( const char service_name[], char port[] )
+{
+    if (service_name == NULL || port == NULL)
+	return PMI_ERR_INVALID_ARG;
+    return PMI_FAIL;
+}
+
 #ifndef HAVE_WINDOWS_H
 static int writebuf(int fd, void *buffer, int length)
 {
