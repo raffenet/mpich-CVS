@@ -910,21 +910,24 @@ int iPMI_Spawn_multiple(int count,
 	    pmi_err_printf("unable to add %s(%s) to the spawn command.\n", key, cmds[i]);
 	    return PMI_FAIL;
 	}
-	buffer[0] = '\0';
-	iter = buffer;
-	maxlen = SMPD_MAX_CMD_LENGTH;
-	for (j=0; argvs[i][j] != NULL; j++)
+	if (argvs)
 	{
-	    num_chars = smpd_add_string(iter, maxlen, argvs[i][j]);
-	    maxlen -= num_chars;
-	    iter += num_chars;
-	}
-	sprintf(key, "argv%d", i);
-	result = smpd_add_command_arg(cmd_ptr, key, buffer);
-	if (result != SMPD_SUCCESS)
-	{
-	    pmi_err_printf("unable to add %s(%s) to the spawn command.\n", key, buffer);
-	    return PMI_FAIL;
+	    buffer[0] = '\0';
+	    iter = buffer;
+	    maxlen = SMPD_MAX_CMD_LENGTH;
+	    for (j=0; argvs[i][j] != NULL; j++)
+	    {
+		num_chars = smpd_add_string(iter, maxlen, argvs[i][j]);
+		maxlen -= num_chars;
+		iter += num_chars;
+	    }
+	    sprintf(key, "argv%d", i);
+	    result = smpd_add_command_arg(cmd_ptr, key, buffer);
+	    if (result != SMPD_SUCCESS)
+	    {
+		pmi_err_printf("unable to add %s(%s) to the spawn command.\n", key, buffer);
+		return PMI_FAIL;
+	    }
 	}
     }
     /* add the maxprocs array */
@@ -944,44 +947,50 @@ int iPMI_Spawn_multiple(int count,
 	return PMI_FAIL;
     }
     /* add the keyval sizes array */
-    buffer[0] = '\0';
-    for (i=0; i<count; i++)
-    {
-	if (i < count-1)
-	    sprintf(key, "%d ", info_keyval_sizes[i]);
-	else
-	    sprintf(key, "%d", info_keyval_sizes[i]);
-	strcat(buffer, key);
-    }
-    result = smpd_add_command_arg(cmd_ptr, "nkeyvals", buffer);
-    if (result != SMPD_SUCCESS)
-    {
-	pmi_err_printf("unable to add nkeyvals(%s) to the spawn command.\n", buffer);
-	return PMI_FAIL;
-    }
-    /* add the keyvals */
-    for (i=0; i<count; i++)
+    if (info_keyval_sizes)
     {
 	buffer[0] = '\0';
-	iter = buffer;
-	maxlen = SMPD_MAX_CMD_LENGTH;
-	for (j=0; j<info_keyval_sizes[i]; j++)
+	for (i=0; i<count; i++)
 	{
-	    keyval_buf[0] = '\0';
-	    iter2 = keyval_buf;
-	    maxlen2 = SMPD_MAX_CMD_LENGTH;
-	    smpd_add_string_arg(&iter2, &maxlen2, info_keyval_vectors[i][j].key, info_keyval_vectors[i][j].val);
-	    iter2--;
-	    *iter2 = '\0'; /* remove the trailing space */
-	    sprintf(key, "%d", j);
-	    smpd_add_string_arg(&iter, &maxlen, key, keyval_buf);
+	    if (i < count-1)
+		sprintf(key, "%d ", info_keyval_sizes[i]);
+	    else
+		sprintf(key, "%d", info_keyval_sizes[i]);
+	    strcat(buffer, key);
 	}
-	sprintf(key, "keyvals%d", i);
-	result = smpd_add_command_arg(cmd_ptr, key, buffer);
+	result = smpd_add_command_arg(cmd_ptr, "nkeyvals", buffer);
 	if (result != SMPD_SUCCESS)
 	{
-	    pmi_err_printf("unable to add %s(%s) to the spawn command.\n", key, buffer);
+	    pmi_err_printf("unable to add nkeyvals(%s) to the spawn command.\n", buffer);
 	    return PMI_FAIL;
+	}
+    }
+    /* add the keyvals */
+    if (info_keyval_sizes && info_keyval_vectors)
+    {
+	for (i=0; i<count; i++)
+	{
+	    buffer[0] = '\0';
+	    iter = buffer;
+	    maxlen = SMPD_MAX_CMD_LENGTH;
+	    for (j=0; j<info_keyval_sizes[i]; j++)
+	    {
+		keyval_buf[0] = '\0';
+		iter2 = keyval_buf;
+		maxlen2 = SMPD_MAX_CMD_LENGTH;
+		smpd_add_string_arg(&iter2, &maxlen2, info_keyval_vectors[i][j].key, info_keyval_vectors[i][j].val);
+		iter2--;
+		*iter2 = '\0'; /* remove the trailing space */
+		sprintf(key, "%d", j);
+		smpd_add_string_arg(&iter, &maxlen, key, keyval_buf);
+	    }
+	    sprintf(key, "keyvals%d", i);
+	    result = smpd_add_command_arg(cmd_ptr, key, buffer);
+	    if (result != SMPD_SUCCESS)
+	    {
+		pmi_err_printf("unable to add %s(%s) to the spawn command.\n", key, buffer);
+		return PMI_FAIL;
+	    }
 	}
     }
     /* add the pre-put keyvals */
@@ -991,33 +1000,35 @@ int iPMI_Spawn_multiple(int count,
 	pmi_err_printf("unable to add npreput=%d to the spawn command.\n", preput_keyval_size);
 	return PMI_FAIL;
     }
-    buffer[0] = '\0';
-    iter = buffer;
-    maxlen = SMPD_MAX_CMD_LENGTH;
-    for (i=0; i<preput_keyval_size; i++)
+    if (preput_keyval_size > 0 && preput_keyval_vector)
     {
-	keyval_buf[0] = '\0';
-	iter2 = keyval_buf;
-	maxlen2 = SMPD_MAX_CMD_LENGTH;
-	smpd_add_string_arg(&iter2, &maxlen2, preput_keyval_vector[i].key, preput_keyval_vector[i].val);
-	iter2--;
-	*iter2 = '\0'; /* remove the trailing space */
-	sprintf(key, "%d", i);
-	smpd_add_string_arg(&iter, &maxlen, key, keyval_buf);
-    }
-    result = smpd_add_command_arg(cmd_ptr, "preput", buffer);
-    if (result != SMPD_SUCCESS)
-    {
-	pmi_err_printf("unable to add preput(%s) to the spawn command.\n", buffer);
-	return PMI_FAIL;
-    }
-	
+	buffer[0] = '\0';
+	iter = buffer;
+	maxlen = SMPD_MAX_CMD_LENGTH;
+	for (i=0; i<preput_keyval_size; i++)
+	{
+	    keyval_buf[0] = '\0';
+	    iter2 = keyval_buf;
+	    maxlen2 = SMPD_MAX_CMD_LENGTH;
+	    smpd_add_string_arg(&iter2, &maxlen2, preput_keyval_vector[i].key, preput_keyval_vector[i].val);
+	    iter2--;
+	    *iter2 = '\0'; /* remove the trailing space */
+	    sprintf(key, "%d", i);
+	    smpd_add_string_arg(&iter, &maxlen, key, keyval_buf);
+	}
+	result = smpd_add_command_arg(cmd_ptr, "preput", buffer);
+	if (result != SMPD_SUCCESS)
+	{
+	    pmi_err_printf("unable to add preput(%s) to the spawn command.\n", buffer);
+	    return PMI_FAIL;
+	}
+    }	
 
 
     /* post the write of the command */
     /*
-    printf("posting write of dbs command to %s context, sock %d: '%s'\n",
-	smpd_get_context_str(pmi_process.context), sock_getid(pmi_process.context->sock), cmd_ptr->cmd);
+    printf("posting write of spawn command to %s context, sock %d: '%s'\n",
+	smpd_get_context_str(pmi_process.context), MPIDU_Sock_getid(pmi_process.context->sock), cmd_ptr->cmd);
     fflush(stdout);
     */
     result = smpd_post_write_command(pmi_process.context, cmd_ptr);
