@@ -54,7 +54,7 @@ int MPI_Register_datarep(char *datarep, MPI_Datarep_conversion_function *read_co
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIAZED(mpi_errno);
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REGISTER_DATAREP);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
