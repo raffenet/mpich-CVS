@@ -480,6 +480,8 @@ if test "$enable_romio" = "yes" ; then
    export use_top_srcdir
    top_build_dir=`pwd`
    export top_build_dir
+   # if there is no $top_build_dir/lib, romio puts lib in wrong place
+   if test ! -e lib ; then mkdir lib ; fi
 fi
 dnl
 #
