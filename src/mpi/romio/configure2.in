@@ -374,7 +374,7 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
         CFLAGS="$CFLAGS -O"
     fi
     if test "$enable_aio" = "no" ; then
-        AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+        AC_DEFINE(NO_AIO)
     else
         AC_DEFINE(AIO_SUN,,[Define for SUN0S 4])
     fi
@@ -439,7 +439,7 @@ int main( int argc, char **argv )
         enable_aio=no
     fi
     if test "$enable_aio" = "no" ; then
-        AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+        AC_DEFINE(NO_AIO)
     else
         AC_DEFINE(NO_FD_IN_AIOCB,,[Define for no fd in the aiocb])
         AC_DEFINE(AIO_HANDLE_IN_AIOCB,,[Define for aio handle in aiocb])
@@ -493,7 +493,7 @@ if test -n "$arch_paragon"; then
         echo "configuring for file systems pfs, ufs, and nfs"
     fi
     AC_DEFINE(PARAGON,,[Define for Intel Paragon])
-    AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+    AC_DEFINE(NO_AIO)
 # NO_AIO is if configuring for NFS/UFS. It doesn't affect PFS asynch. I/O.
 # long long does not exist
     longlongsize=${longlongsize:-0} 
@@ -503,7 +503,7 @@ if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     CC=${CC:-pgcc}
     F77=${FC:-pgf77}
     TFLOP_FLAGS="-cougar -D__PUMA"
-    AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+    AC_DEFINE(NO_AIO)
     if test $DEBUG = "yes"; then
         CFLAGS="$CFLAGS -g $TFLOP_FLAGS"
     else
@@ -549,7 +549,7 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
         CFLAGS="$CFLAGS -O"
     fi
     if test "$enable_aio" != "yes" ; then
-        AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+        AC_DEFINE(NO_AIO)
     else
         # Try to find the aio routines
 	use_aio=no
@@ -576,7 +576,7 @@ has_pthread=yes],[has_pthread=no])
 	    MPI_LIB="$MPI_LIB $add_lib"
 	    ROMIO_LIBLIST="$ROMIO_LIBLIST $add_lib"
 	else
-            AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+	    AC_DEFINE(NO_AIO)
 	fi
     fi
     if test -z "$MPI" ; then
@@ -602,7 +602,7 @@ if test -n "$arch_SX4" ; then
         CFLAGS="$CFLAGS -O"
         FFLAGS="$FFLAGS -Chopt"
     fi
-    AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+    AC_DEFINE(NO_AIO)
     AC_DEFINE(SX4,,[Define for NEC SX4])
     if test -z "$MPI" ; then
         MPI=mpich
@@ -624,7 +624,7 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     else 
         CFLAGS="$CFLAGS -O"
     fi
-    AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+    AC_DEFINE(NO_AIO)
     RANLIB=":"
     if test -z "$MPI"; then
         if test -f "/opt/mpi/include/mpi.h" ; then
@@ -727,7 +727,7 @@ if test -n "$arch_CRAY" ; then
     else 
         CFLAGS="$CFLAGS -O"
     fi
-    AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+    AC_DEFINE(NO_AIO)
     RANLIB=":"
     CFLAGS="$CFLAGS -D_UNICOS"
     AC_DEFINE(CRAY,,[Define if Cray])
@@ -848,7 +848,7 @@ if test -n "$arch_IRIX"; then
        fi
        echo "configuring for file systems $FILE_SYSTEM"
    fi
-   AC_DEFINE(IRIX,,[Define if IRIX])
+   AC_DEFINE(IRIX)
    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
    MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
 fi
@@ -1002,7 +1002,7 @@ int Foo(a) { return a; }
     if test "$has_pragma_hp_secondary" = 1 ; then 
         AC_MSG_RESULT([pragma _HP_SECONDARY_DEF])
         HAVE_WEAK_SYMBOLS=1
-        AC_DEFINE(HAVE_WEAK_SYMBOLS,,[Define if weak symbols available])
+        AC_DEFINE(HAVE_WEAK_SYMBOLS)
         AC_DEFINE(HAVE_PRAGMA_HP_SEC_DEF,,[Define for HP weak pragma])
     else
         AC_TRY_LINK([
@@ -1012,7 +1012,7 @@ int Foo(a) { return a; }
         if test "$has_pragma_cri_duplicate" = 1 ; then
 	    AC_MSG_RESULT([pragma _CRI duplicate x as y])
 	    HAVE_WEAK_SYMBOLS=1
-	    AC_DEFINE(HAVE_WEAK_SYMBOLS,,[Define if weak symbols available])
+	    AC_DEFINE(HAVE_WEAK_SYMBOLS)
 	    AC_DEFINE(HAVE_PRAGMA_CRI_DUP,,[Define for CRAY weak dup])
         else    
             AC_MSG_RESULT(no)
@@ -1103,7 +1103,7 @@ if test -n "$mpi_mpich"; then
    fi
 fi
 if test -n "$mpi_sgi"; then
-   AC_DEFINE(MPISGI,,[Define if SGI MPI])
+   AC_DEFINE(MPISGI)
 fi
 if test -n "$mpi_lam"; then
    AC_DEFINE(MPILAM,,[Define if using LAM/MPI])
