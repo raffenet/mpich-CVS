@@ -74,6 +74,9 @@ BOOL WINAPI mpiexec_ctrl_handler(DWORD dwCtrlType)
     char ch = -1;
     MPIU_Size_t num_written;
 
+    /* This handler could be modified to send the event to the remote processes instead of killing the job. */
+    /* Doing so would require new command types for smpd */
+
     switch (dwCtrlType)
     {
     case CTRL_C_EVENT:
@@ -85,11 +88,13 @@ BOOL WINAPI mpiexec_ctrl_handler(DWORD dwCtrlType)
 	{
 	    if (first == 1)
 	    {
+		/* The first break signal tries to abort the job with an abort message */
 		first = 0;
 		printf("mpiexec aborting job...\n");fflush(stdout);
 		MPIDU_Sock_write(smpd_process.mpiexec_abort_sock, &ch, 1, &num_written);
 		return TRUE;
 	    }
+	    /* The second break signal unconditionally exits mpiexec */
 	}
 	if (smpd_process.hCloseStdinThreadEvent)
 	{
