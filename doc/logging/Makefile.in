@@ -16,3 +16,9 @@ srcdir = @srcdir@
 	dvipdfm $*
 
 all-redirect: logging.pdf
+
+mandoc:
+
+htmldoc:
+
+latexdoc: ALL

@@ -97,6 +97,10 @@ dist-with-version:
 	    fi ; \
 	    cp -r tmpdir2/man tmpdir/${PACKAGE}-${version}/man ; \
 	    cp -r tmpdir2/www tmpdir/${PACKAGE}-${version}/www ; \
+	    cp tmpdir2/doc/userguide/user.pdf tmpdir/${PACKAGE}-${version}/doc/userguide/user.pdf ; \
+	    cp tmpdir2/doc/installguide/install.pdf tmpdir/${PACKAGE}-${version}/doc/installguide/install.pdf ; \
+	    cp tmpdir2/doc/smpd/smpd_pmi.pdf tmpdir/${PACKAGE}-${version}/doc/smpd/smpd_pmi.pdf ; \
+	    cp tmpdir2/doc/logging/logging.pdf tmpdir/${PACKAGE}-${version}/logging/logging.pdf ; \
 	    rm -rf tmpdir2 ; \
 	fi
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib --without-codecheck )
@@ -118,6 +122,9 @@ dist-check:
 	done
 
 # Set the document sources and types (empty lists still cause recursion)
+# These should be empty; any source files should be described in the
+# directory that contains those source files.  The presence of these
+# items simply indicates that there are such documents
 doc_HTML_SOURCES  =
 doc_MAN_SOURCES   = 
 doc_LATEX_SOURCES = 
@@ -147,7 +154,12 @@ install-local:
 	    $(INSTALL_DATA) src/mpi/debugger/libtvmpich.so \
 			${libdir}/libtvmpich.so ; fi
 
-#install_DOC = 
+install_DOC = 
+optinstall_DOC = \
+    doc/userguide/user.pdf \
+    doc/installguide/install.pdf \
+    doc/smpd/smpd_pmi.pdf \
+    doc/logging/logging.pdf
 installdir_HTML = www
 installdir_MAN  = man
 #install_BIN = 

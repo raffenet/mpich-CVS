@@ -17,3 +17,9 @@ srcdir = @srcdir@
 	dvipdfm $*
 
 all-redirect: install.pdf
+
+mandoc:
+
+htmldoc:
+
+latexdoc: ALL
