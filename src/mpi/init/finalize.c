@@ -28,17 +28,21 @@
    some code called on exit.  This method allows us to avoid forcing 
    MPI_Finalize to know the routine names a priori.  Any module that wants to 
    have a callback calls MPIR_Add_finalize( routine, extra ).
+   
  */
 PMPI_LOCAL void MPIR_Call_finalize_callbacks( void );
 typedef struct {
-    int (*f)( void * );
-    void *extra_data;
+    int (*f)( void * );      /* The function to call */
+    void *extra_data;        /* Data for the function */
+    int  priority;           /* priority is used to control the order
+				in which the callbacks are invoked */
 } Finalize_func_t;
 #define MAX_FINALIZE_FUNC 16
 static Finalize_func_t fstack[MAX_FINALIZE_FUNC];
 static int fstack_sp = 0;
+static int fstack_max_priority = 0;
 
-void MPIR_Add_finalize( int (*f)( void * ), void *extra_data )
+void MPIR_Add_finalize( int (*f)( void * ), void *extra_data, int priority )
 {
     if (fstack_sp >= MAX_FINALIZE_FUNC) {
 	/* This is a little tricky.  We may want to check the state of
@@ -52,14 +56,21 @@ void MPIR_Add_finalize( int (*f)( void * ), void *extra_data )
 	}
     }
     fstack[fstack_sp].f            = f;
+    fstack[fstack_sp].priority     = priority;
     fstack[fstack_sp++].extra_data = extra_data;
+
+    if (priority > fstack_max_priority) 
+	fstack_max_priority = priority;
 }
 
 PMPI_LOCAL void MPIR_Call_finalize_callbacks( void )
 {
-    int i;
-    for (i=fstack_sp-1; i>=0; i--) {
-	if (fstack[i].f) fstack[i].f( fstack[i].extra_data );
+    int i, j;
+    for (j=fstack_max_priority; j>=0; j--) {
+	for (i=fstack_sp-1; i>=0; i--) {
+	    if (fstack[i].f && fstack[i].priority == j) 
+		fstack[i].f( fstack[i].extra_data );
+	}
     }
     fstack_sp = 0;
 }

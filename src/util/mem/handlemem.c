@@ -256,7 +256,9 @@ void *MPIU_Handle_obj_alloc( MPIU_Object_alloc_t *objmem )
 	   jobs do not need to include any of the Info code if no
 	   Info-using routines are used */
 	/* Tell finalize to free up any memory that we allocate */
-	MPIR_Add_finalize( MPIU_Handle_finalize, objmem );
+	/* The 0 makes this the lowest priority callback, so 
+	   that other callbacks will finish before this one is invoked */
+	MPIR_Add_finalize( MPIU_Handle_finalize, objmem, 0 );
 
 	objmem->initialized = 1;
 	ptr   = MPIU_Handle_direct_init( objmem->direct, objmem->direct_size,

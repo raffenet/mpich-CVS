@@ -132,7 +132,7 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
 
     if (!initialized) {
 	initialized = 1;
-	MPIR_Add_finalize( MPIR_Bsend_finalize, (void *)0 );
+	MPIR_Add_finalize( MPIR_Bsend_finalize, (void *)0, 10 );
     }
 
     BsendBuffer.buffer	    = buffer;

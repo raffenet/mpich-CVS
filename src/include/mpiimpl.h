@@ -1413,7 +1413,7 @@ void MPIR_Wait(MPID_Request *);
 }
 
 /* Bindings for internal routines */
-void MPIR_Add_finalize( int (*)( void * ), void * );
+void MPIR_Add_finalize( int (*)( void * ), void *, int );
 int MPIR_Err_return_comm( MPID_Comm *, const char [], int );
 int MPIR_Err_return_win( MPID_Win *, const char [], int );
 int MPIR_Err_return_file( MPID_File *, const char [], int );
