@@ -5,7 +5,7 @@
 #
 
 from os      import environ, getpid, pipe, fork, fdopen, read, write, close, dup2, \
-                    chdir, execvpe, kill, waitpid, _exit, strerror
+                    chdir, execvpe, kill, waitpid, strerror
 from errno   import EINTR
 from sys     import exit
 from socket  import gethostname, fromfd, AF_INET, SOCK_STREAM
@@ -183,8 +183,8 @@ def mpdman():
             # print '%s: could not run %s; probably executable file not found' % (myId,clientPgm)
 	    pmiMsgToSend = 'cmd=invalid_executable\n'
 	    mpd_send_one_line(pmiSocketClientEnd,pmiMsgToSend)
-            _exit(0)
-        _exit(0)  # just in case (does no cleanup)
+            exit(0)
+        exit(0)
     msgToSend = { 'cmd' : 'client_pid', 'jobid' : jobid,
                   'manpid' : getpid(), 'clipid' : clientPid }
     mpd_send_one_msg(mpdSocket,msgToSend)
@@ -248,7 +248,7 @@ def mpdman():
                 dup2(parentStdoutSocket.fileno(),1)  # closes fd 1 (stdout) if open
                 dup2(parentStderrSocket.fileno(),2)  # closes fd 2 (stderr) if open
                 mpd_raise('execvpe failed for copgm %s; errmsg=:%s:' % (rship,errmsg) )
-            _exit(0);  # do NOT do cleanup
+            exit(0)
         # rshipSocket.close()
         waitPids.append(rshipPid)
 
@@ -841,7 +841,7 @@ def mpdman():
                         conSocket.close()
                         conSocket = 0
                     kill(0,SIGKILL)  # pid 0 -> all in my process group
-                    _exit(0)
+                    exit(0)
                 if msg.has_key('sigtype'):
                     if msg['sigtype'].isdigit():
                         signum = int(msg['sigtype'])

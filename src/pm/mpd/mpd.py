@@ -8,7 +8,7 @@ from sys       import stdout, argv, settrace, exit
 from os        import environ, getpid, fork, setpgrp, waitpid, kill, chdir, \
                       setsid, getuid, setuid, setreuid, setregid, setgroups, \
                       umask, close, access, path, stat, unlink, strerror, \
-                      R_OK, X_OK, WNOHANG, _exit
+                      R_OK, X_OK, WNOHANG
 from pwd       import getpwnam
 from socket    import socket, AF_UNIX, SOCK_STREAM, gethostname
 from errno     import EINTR
@@ -510,11 +510,13 @@ def _do_mpdrun(msg):
                 setgroups(mpd_get_groups_for_username(username))
                 setregid(gid,gid)
                 setreuid(uid,uid)
+	    import atexit    # need to use full name of _exithandlers
+	    atexit._exithandlers = []    # un-register handlers in atexit module
             # import profile
             # print 'profiling the manager'
             # profile.run('mpdman()')
             mpdman()
-            _exit(0)  # do NOT do cleanup
+            exit(0)  # do NOT do cleanup    ## RMB TEMP DEBUG
         else:
             tempSocket.close()
             toMpdSocket.close()
