@@ -202,6 +202,81 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 {
     RLOG_ARROW arrow, *pArray;
     int i, index, bModified;
+    long arrow_pos;
+    int error;
+    double temp_time;
+
+    arrow_pos = ftell(f);
+    pArray = (RLOG_ARROW*)malloc(nNumArrows * sizeof(RLOG_ARROW));
+    if (pArray)
+    {
+	printf("Modifying %d arrows\n", nNumArrows);
+	/* read the arrows */
+	/*fseek(f, arrow_pos, SEEK_SET);*/
+	error = ReadFileData((char*)pArray, nNumArrows * sizeof(RLOG_ARROW), f);
+	if (error)
+	{
+	    free(pArray);
+	    return error;
+	}
+
+	/* modify the arrows */
+	for (i=0; i<nNumArrows; i++)
+	{
+	    arrow = pArray[i];
+
+	    bModified = FALSE;
+	    index = (arrow.leftright == RLOG_ARROW_RIGHT) ? arrow.src - nMin : arrow.dest - nMin;
+	    if (index >= 0 && index < n && pOffsets[index] != 0)
+	    {
+		arrow.start_time += pOffsets[index];
+		bModified = TRUE;
+	    }
+	    index = (arrow.leftright == RLOG_ARROW_RIGHT) ? arrow.dest - nMin : arrow.src - nMin;
+	    if (index >= 0 && index < n && pOffsets[index] != 0)
+	    {
+		arrow.end_time += pOffsets[index];
+		bModified = TRUE;
+	    }
+	    if (bModified)
+	    {
+		if (arrow.start_time > arrow.end_time)
+		{
+		    temp_time = arrow.start_time;
+		    arrow.start_time = arrow.end_time;
+		    arrow.end_time = temp_time;
+		    arrow.leftright = (arrow.leftright = RLOG_ARROW_LEFT) ? RLOG_ARROW_RIGHT : RLOG_ARROW_LEFT;
+		}
+	    }
+	}
+
+	/* sort the arrows */
+	qsort(pArray, (size_t)nNumArrows, sizeof(RLOG_ARROW), compareArrows);
+
+	/* write the arrows back */
+	fseek(f, arrow_pos, SEEK_SET);
+	error = WriteFileData((char*)pArray, nNumArrows * sizeof(RLOG_ARROW), f);
+	if (error)
+	{
+	    free(pArray);
+	    return error;
+	}
+	fseek(f, 0, SEEK_CUR);
+	free(pArray);
+    }
+    else
+    {
+	printf("Error: unable to allocate an array big enough to hold %d arrows\n", nNumArrows);
+	return -1;
+    }
+    return 0;
+}
+
+#if 0
+static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int n)
+{
+    RLOG_ARROW arrow, *pArray;
+    int i, index, bModified;
     int num_bytes;
     long arrow_pos;
     int error;
@@ -256,15 +331,22 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 	fseek(f, arrow_pos, SEEK_SET);
 	error = ReadFileData((char*)pArray, nNumArrows * sizeof(RLOG_ARROW), f);
 	if (error)
+	{
+	    free(pArray);
 	    return error;
+	}
 	/* sort the arrows */
 	qsort(pArray, (size_t)nNumArrows, sizeof(RLOG_ARROW), compareArrows);
 	/* write the arrows back */
 	fseek(f, arrow_pos, SEEK_SET);
 	error = WriteFileData((char*)pArray, nNumArrows * sizeof(RLOG_ARROW), f);
 	if (error)
+	{
+	    free(pArray);
 	    return error;
+	}
 	fseek(f, 0, SEEK_CUR);
+	free(pArray);
     }
     else
     {
@@ -273,12 +355,12 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
     }
     return 0;
 }
+#endif
 
 int ModifyEvents(FILE *f, int nNumEvents, int nMin, double *pOffsets, int n)
 {
     RLOG_EVENT event;
     int i, index;
-    int num_bytes;
     int error;
 
     printf("Modifying %d events\n", nNumEvents);
@@ -291,14 +373,6 @@ int ModifyEvents(FILE *f, int nNumEvents, int nMin, double *pOffsets, int n)
 	    printf("reading event failed.\n");
 	    return -1;
 	}
-	/*
-	num_bytes = fread(&event, 1, sizeof(RLOG_EVENT), f);
-	if (num_bytes != sizeof(RLOG_EVENT))
-	{
-	    printf("reading event failed - num_bytes %d != %d, error %d\n", num_bytes, sizeof(RLOG_EVENT), ferror(f));
-	    return -1;
-	}
-	*/
 	index = event.rank - nMin;
 	if (index >= 0 && index < n && pOffsets[index] != 0)
 	{
@@ -311,13 +385,6 @@ int ModifyEvents(FILE *f, int nNumEvents, int nMin, double *pOffsets, int n)
 		printf("writing modified event failed.\n");
 		return -1;
 	    }
-	    /*
-	    if (fwrite(&event, 1, sizeof(RLOG_EVENT), f) != sizeof(RLOG_EVENT))
-	    {
-		printf("writing modified event failed - error %d\n", ferror(f));
-		return -1;
-	    }
-	    */
 	    fseek(f, 0, SEEK_CUR);
 	}
     }
