@@ -135,15 +135,19 @@ Global
 		DebugStatic|Win64 (AMD64) = DebugStatic|Win64 (AMD64)
 		fortDebug|Any CPU = fortDebug|Any CPU
 		fortDebug|Mixed Platforms = fortDebug|Mixed Platforms
+		fortDebug|Win32 = fortDebug|Win32
 		fortDebug|Win64 (AMD64) = fortDebug|Win64 (AMD64)
 		fortRelease|Any CPU = fortRelease|Any CPU
 		fortRelease|Mixed Platforms = fortRelease|Mixed Platforms
+		fortRelease|Win32 = fortRelease|Win32
 		fortRelease|Win64 (AMD64) = fortRelease|Win64 (AMD64)
 		gfortDebug|Any CPU = gfortDebug|Any CPU
 		gfortDebug|Mixed Platforms = gfortDebug|Mixed Platforms
+		gfortDebug|Win32 = gfortDebug|Win32
 		gfortDebug|Win64 (AMD64) = gfortDebug|Win64 (AMD64)
 		gfortRelease|Any CPU = gfortRelease|Any CPU
 		gfortRelease|Mixed Platforms = gfortRelease|Mixed Platforms
+		gfortRelease|Win32 = gfortRelease|Win32
 		gfortRelease|Win64 (AMD64) = gfortRelease|Win64 (AMD64)
 		Installer|Any CPU = Installer|Any CPU
 		Installer|Mixed Platforms = Installer|Mixed Platforms
@@ -155,9 +159,11 @@ Global
 		Release|Win64 (AMD64) = Release|Win64 (AMD64)
 		sfortDebug|Any CPU = sfortDebug|Any CPU
 		sfortDebug|Mixed Platforms = sfortDebug|Mixed Platforms
+		sfortDebug|Win32 = sfortDebug|Win32
 		sfortDebug|Win64 (AMD64) = sfortDebug|Win64 (AMD64)
 		sfortRelease|Any CPU = sfortRelease|Any CPU
 		sfortRelease|Mixed Platforms = sfortRelease|Mixed Platforms
+		sfortRelease|Win32 = sfortRelease|Win32
 		sfortRelease|Win64 (AMD64) = sfortRelease|Win64 (AMD64)
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
@@ -309,7 +315,7 @@ Global
 		{0FACD81A-FE33-4845-ACF6-A1D50BD35991}.Debug|Mixed Platforms.ActiveCfg = ch3ibPRelease|Win32
 		{0FACD81A-FE33-4845-ACF6-A1D50BD35991}.Debug|Mixed Platforms.Build.0 = ch3ibPRelease|Win32
 		{0FACD81A-FE33-4845-ACF6-A1D50BD35991}.Debug|Win32.ActiveCfg = ch3shmDebug|Win32
-		{0FACD81A-FE33-4845-ACF6-A1D50BD35991}.Debug|Win64 (AMD64).ActiveCfg = ch3ibDebug|Win64 (AMD64)
+		{0FACD81A-FE33-4845-ACF6-A1D50BD35991}.Debug|Win64 (AMD64).ActiveCfg = ch3sockDebug|Win64 (AMD64)
 		{0FACD81A-FE33-4845-ACF6-A1D50BD35991}.DebugStatic|Any CPU.ActiveCfg = ch3ibRelease|Win32
 		{0FACD81A-FE33-4845-ACF6-A1D50BD35991}.DebugStatic|Any CPU.Build.0 = ch3ibRelease|Win32
 		{0FACD81A-FE33-4845-ACF6-A1D50BD35991}.DebugStatic|Mixed Platforms.ActiveCfg = ch3ibPRelease|Win32
@@ -451,7 +457,7 @@ Global
 		{7FBADF88-70AB-4415-B7DA-248EFA299A86}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{7FBADF88-70AB-4415-B7DA-248EFA299A86}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{7FBADF88-70AB-4415-B7DA-248EFA299A86}.Debug|Win32.ActiveCfg = Debug|Win32
-		{7FBADF88-70AB-4415-B7DA-248EFA299A86}.Debug|Win64 (AMD64).ActiveCfg = Debug|Win64 (AMD64)
+		{7FBADF88-70AB-4415-B7DA-248EFA299A86}.Debug|Win64 (AMD64).ActiveCfg = ch3sockDebug|Win64 (AMD64)
 		{7FBADF88-70AB-4415-B7DA-248EFA299A86}.DebugStatic|Any CPU.ActiveCfg = Debug|Win32
 		{7FBADF88-70AB-4415-B7DA-248EFA299A86}.DebugStatic|Mixed Platforms.ActiveCfg = Debug|Win32
 		{7FBADF88-70AB-4415-B7DA-248EFA299A86}.DebugStatic|Mixed Platforms.Build.0 = Debug|Win32
