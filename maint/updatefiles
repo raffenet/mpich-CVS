@@ -164,7 +164,9 @@ if [ "$has_unix_find" = "yes" ] ; then
         dir=`dirname $dir`
 	if [ -s $dir/Makefile.in ] ; then 
             echo "Found $dir/configure.in"
-            (cd $dir ; make -f Makefile.in configure)
+            (cd $dir ; rm -f mf.tmp ; \
+	    sed -e 's%^SHELL *=.*%SHELL = /bin/sh%' Makefile.in > mf.tmp ;\
+	    make -f mf.tmp configure ; rm -f mf.tmp )
         fi
     done
 else

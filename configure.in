@@ -200,8 +200,9 @@ case "$enable_sharedlibs" in
     AC_MSG_RESULT([Creating shared libraries using GNU])
     # Not quite right yet.  See mpich/util/makesharedlib
     # Use syntax that works in both Make and the shell
-    C_LINK_SHL='${CC} -shared -Wl,-r'
-    CC_SHL='${CC} -fpic'
+    #C_LINK_SHL='${CC} -shared -Wl,-r'
+    C_LINK_SHL='${CC} -shared -fpic'
+    CC_SHL='${CC} -shared -fpic'
     ;;
     libtool)
     AC_MSG_RESULT([Creating shared libraries using libtool (not yet supported)])
