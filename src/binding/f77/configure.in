@@ -872,6 +872,7 @@ fi
 AC_SUBST(PROFILE_DEF_MPI)
 AC_SUBST(NO_WEAK_SYM)
 AC_SUBST(NO_WEAK_SYM_TARGET)
+AC_SUBST(NEEDSPLIB)
 #
 # If weak symbols are *not* supported, we may want to be careful
 # about including 

@@ -74,6 +74,9 @@ dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
 dnl
+dnl Weak-symbol handling (imported from upper-level configure)
+AC_SUBST(NEEDSPLIB)
+dnl
 AC_OUTPUT_COMMANDS([chmod a+x mpicxx ;
    if test ! -d ../../../bin  ; then mkdir ../../../bin ; fi 
    sed -e 's%includedir=.*%includedir='$includebuild_dir% \

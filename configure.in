@@ -823,6 +823,8 @@ dnl
 dnl     check for compiler characteristics
 dnl Check for support for weak symbols.  If not found, set NO_WEAK_SYM
 dnl to the Make target name understood by simplemake.
+# Set NEEDSPLIB to yes if link commands need both -l$MPILIBNAME
+# and -lp$MPILIBNAME.
 NO_WEAK_SYM_TARGET=build_proflib
 if test $enable_weak_symbols = yes ; then
     # Turn off weak symbols if they aren't available
@@ -830,13 +832,17 @@ if test $enable_weak_symbols = yes ; then
 fi
 if test $enable_weak_symbols = "yes" ; then
     AC_DEFINE(USE_WEAK_SYMBOLS,1,[Define if weak symbols should be used])
+    NEEDSPLIB=no
 else
     NO_WEAK_SYM=build_proflib
     PROFILE_DEF_MPI="-DMPICH_PROFILE_MPI -DMPICH_MPI_FROM_PMPI"
+    NEEDSPLIB=yes
 fi
+export NEEDSPLIB
 export NO_WEAK_SYM
 export NO_WEAK_SYM_TARGET
 export PROFILE_DEF_MPI
+AC_SUBST(NEEDSPLIB)
 AC_SUBST(NO_WEAK_SYM)
 AC_SUBST(NO_WEAK_SYM_TARGET)
 AC_SUBST(PROFILE_DEF_MPI)
@@ -1651,14 +1657,14 @@ AC_SUBST(MPI_MAX_PROCESSOR_NAME)
 dnl
 dnl
 dnl Set the libraries to use in building programs
-if test "$enable_weak_symbols" != "yes" ; then
-    # Ugh.  We don't have the dependencies between the libraries right 
+if test "$NEEDSPLIB" = "yes" ; then
+   # Ugh.  We don't have the dependencies between the libraries right 
     # yet.  We *should* only need -lmpich -lpmpich .  
-    LIBS="-l$MPILIBNAME -lp$MPILIBNAME -l$MPILIBNAME -lp$MPILIBNAME $LIBS"
+    EXAMPLE_LIBS="-l$MPILIBNAME -lp$MPILIBNAME -l$MPILIBNAME -lp$MPILIBNAME $LIBS"
 else
-    LIBS="-l$MPILIBNAME $LIBS"
+    EXAMPLE_LIBS="-l$MPILIBNAME $LIBS"
 fi
-
+AC_SUBST(EXAMPLE_LIBS)
 dnl default settings for compiler and linker flags 
 MPI_CFLAGS="$MPI_CFLAGS $CFLAGS"
 MPI_LDFLAGS="$MPI_LDFLAGS $LDFLAGS"
