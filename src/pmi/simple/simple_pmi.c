@@ -58,7 +58,7 @@ int PMI_debug = 0;
 int PMI_spawned = 0;
 
 static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max );
-static int PMII_iter( const char *kvsname, const int idx, int *nextidx, char *key, char *val );
+static int PMII_iter( const char *kvsname, const int idx, int *nextidx, char *key, int key_len, char *val, int val_len );
 
 /******************************** Group functions *************************/
 
@@ -164,13 +164,14 @@ int PMI_Init( int *spawned )
     return( 0 );
 }
 
-int PMI_Initialized( void )
+int PMI_Initialized( PMI_BOOL *initialized )
 {
     /* Turn this into a logical value (1 or 0) .  This allows us
        to use PMI_initialized to distinguish between initialized with
        an PMI service (e.g., via mpiexec) and the singleton init, 
        which has no PMI service */
-    return( PMI_initialized != 0 );
+    *initialized = PMI_initialized != 0 ? PMI_TRUE : PMI_FALSE;
+    return PMI_SUCCESS;
 }
 
 int PMI_Get_size( int *size )
@@ -223,7 +224,7 @@ int PMI_Finalize( )
 
 /**************************************** Keymap functions *************************/
 
-int PMI_KVS_Get_my_name( char *kvsname )
+int PMI_KVS_Get_my_name( char kvsname[], int length )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
@@ -246,22 +247,31 @@ int PMI_KVS_Get_my_name( char *kvsname )
     }
 }
 
-int PMI_KVS_Get_name_length_max( )
+int PMI_KVS_Get_name_length_max( int *maxlen )
 {
-    return( PMI_kvsname_max );
+    if (maxlen == NULL)
+	return PMI_ERR_INVALID_ARG;
+    *maxlen = PMI_kvsname_max;
+    return PMI_SUCCESS;
 }
 
-int PMI_KVS_Get_key_length_max( )
+int PMI_KVS_Get_key_length_max( int *maxlen )
 {
-    return( PMI_keylen_max );
+    if (maxlen == NULL)
+	return PMI_ERR_INVALID_ARG;
+    *maxlen = PMI_keylen_max;
+    return PMI_SUCCESS;
 }
 
-int PMI_KVS_Get_value_length_max( )
+int PMI_KVS_Get_value_length_max( int *maxlen )
 {
-    return( PMI_vallen_max );
+    if (maxlen == NULL)
+	return PMI_ERR_INVALID_ARG;
+    *maxlen = PMI_vallen_max;
+    return PMI_SUCCESS;
 }
 
-int PMI_KVS_Create( char *kvsname )
+int PMI_KVS_Create( char kvsname[], int length )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     
@@ -284,7 +294,7 @@ int PMI_KVS_Create( char *kvsname )
     }
 }
 
-int PMI_KVS_Destroy( const char *kvsname )
+int PMI_KVS_Destroy( const char kvsname[] )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int rc;
@@ -316,7 +326,7 @@ int PMI_KVS_Destroy( const char *kvsname )
     }
 }
 
-int PMI_KVS_Put( const char *kvsname, const char *key, const char *value )
+int PMI_KVS_Put( const char kvsname[], const char key[], const char value[] )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE], message[PMIU_MAXLINE];
     int  rc;
@@ -347,13 +357,13 @@ int PMI_KVS_Put( const char *kvsname, const char *key, const char *value )
     return( 0 );
 }
 
-int PMI_KVS_Commit( const char *kvsname )
+int PMI_KVS_Commit( const char kvsname[] )
 {
     /* no-op in this implementation */
     return( 0 );
 }
 
-int PMI_KVS_Get( const char *kvsname, const char *key, char *value)
+int PMI_KVS_Get( const char kvsname[], const char key[], char value[], int length)
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int  rc;
@@ -380,19 +390,19 @@ int PMI_KVS_Get( const char *kvsname, const char *key, char *value)
     }
 }
 
-int PMI_KVS_Iter_first(const char *kvsname, char *key, char *val)
+int PMI_KVS_Iter_first(const char kvsname[], char key[], int key_len, char val[], int val_len)
 {
     int rc;
 
-    rc = PMII_iter( kvsname, 0, &PMI_iter_next_idx, key, val );
+    rc = PMII_iter( kvsname, 0, &PMI_iter_next_idx, key, key_len, val, val_len );
     return( rc );
 }
 
-int PMI_KVS_Iter_next(const char *kvsname, char *key, char *val)
+int PMI_KVS_Iter_next(const char kvsname[], char key[], int key_len, char val[], int val_len)
 {
     int rc;
 
-    rc = PMII_iter( kvsname, PMI_iter_next_idx, &PMI_iter_next_idx, key, val );
+    rc = PMII_iter( kvsname, PMI_iter_next_idx, &PMI_iter_next_idx, key, key_len, val, val_len );
     if ( rc == -2 )
 	PMI_iter_next_idx = 0;
     return( rc );
@@ -442,14 +452,14 @@ int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[],
 *****/
 
 int PMI_Spawn_multiple(int count,
-                       const char ** cmds,
-                       const char *** argvs,
-                       const int * maxprocs,
-                       const int * info_keyval_sizes,
-                       const PMI_keyval_t ** info_keyval_vectors,
+                       const char * cmds[],
+                       const char ** argvs[],
+                       const int maxprocs[],
+                       const int info_keyval_sizes[],
+                       const PMI_keyval_t * info_keyval_vectors[],
                        int preput_keyval_size,
-                       const PMI_keyval_t * preput_keyval_vector,
-                       int * errors)
+                       const PMI_keyval_t preput_keyval_vector[],
+                       int errors[])
 {
     int  i,rc,argcnt,spawncnt;
     char buf[PMIU_MAXLINE], tempbuf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
@@ -516,7 +526,7 @@ int PMI_Spawn_multiple(int count,
 
 
 
-int PMI_Args_to_info(int *argcp, char ***argvp, void *infop)
+int PMI_Args_to_info(int *argcp, char **argvp[], PMI_keyval_t *keyvalp[], int *size)
 {
     return ( 0 );
 }
@@ -525,7 +535,7 @@ int PMI_Args_to_info(int *argcp, char ***argvp, void *infop)
 
 /* get a keyval pair by specific index */
 
-static int PMII_iter( const char *kvsname, const int idx, int *next_idx, char *key, char *val )
+static int PMII_iter( const char *kvsname, const int idx, int *next_idx, char *key, int key_len, char *val, int val_len)
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int  rc;

@@ -134,6 +134,15 @@ int PMI_Init(int *spawned)
     return PMI_SUCCESS;
 }
 
+int PMI_Initialized(PMI_BOOL *initialized)
+{
+    if (g_bInitFinalized == PMI_INITIALIZED)
+	*initialized = PMI_TRUE;
+    else
+	*initialized = PMI_FALSE;
+    return PMI_SUCCESS;
+}
+
 int PMI_Finalize()
 {
     if (g_bInitFinalized == PMI_FINALIZED)
@@ -194,7 +203,7 @@ int PMI_Get_clique_size( int *size )
     return PMI_SUCCESS;
 }
 
-int PMI_Get_clique_ranks( int *ranks )
+int PMI_Get_clique_ranks( int ranks[], int length )
 {
     if (g_bInitFinalized == PMI_FINALIZED || ranks == NULL)
 	return PMI_FAIL;
@@ -204,7 +213,7 @@ int PMI_Get_clique_ranks( int *ranks )
     return PMI_SUCCESS;
 }
 
-int PMI_Get_id( char *id_str )
+int PMI_Get_id( char id_str[], int length )
 {
     UUID guid;
     UuidCreate(&guid);
@@ -215,9 +224,12 @@ int PMI_Get_id( char *id_str )
     return PMI_SUCCESS;
 }
 
-int PMI_Get_id_length_max()
+int PMI_Get_id_length_max(int *maxlen)
 {
-    return 40;
+    if (maxlen == NULL)
+	return PMI_ERR_INVALID_ARG;
+    *maxlen = 40;
+    return PMI_SUCCESS;
 }
 
 int PMI_Barrier()
@@ -245,7 +257,7 @@ int PMI_Barrier()
     return PMI_FAIL;
 }
 
-int PMI_KVS_Get_my_name(char *kvsname)
+int PMI_KVS_Get_my_name(char kvsname[], int length)
 {
     if (g_bInitFinalized == PMI_FINALIZED || kvsname == NULL)
 	return PMI_FAIL;
@@ -255,22 +267,31 @@ int PMI_KVS_Get_my_name(char *kvsname)
     return PMI_SUCCESS;
 }
 
-int PMI_KVS_Get_name_length_max()
+int PMI_KVS_Get_name_length_max(int *maxlen)
 {
-    return PMI_MAX_KVS_NAME_LENGTH;
+    if (maxlen == NULL)
+	return PMI_ERR_INVALID_ARG;
+    *maxlen = PMI_MAX_KVS_NAME_LENGTH;
+    return PMI_SUCCESS;
 }
 
-int PMI_KVS_Get_key_length_max()
+int PMI_KVS_Get_key_length_max(int *maxlen)
 {
-    return PMI_MAX_KEY_LEN;
+    if (maxlen == NULL)
+	return PMI_ERR_INVALID_ARG;
+    *maxlen = PMI_MAX_KEY_LEN;
+    return PMI_SUCCESS;
 }
 
-int PMI_KVS_Get_value_length_max()
+int PMI_KVS_Get_value_length_max(int *maxlen)
 {
-    return PMI_MAX_VALUE_LEN;
+    if (maxlen == NULL)
+	return PMI_ERR_INVALID_ARG;
+    *maxlen = PMI_MAX_VALUE_LEN;
+    return PMI_SUCCESS;
 }
 
-int PMI_KVS_Create(char * kvsname)
+int PMI_KVS_Create(char kvsname[], int length)
 {
     if (g_bInitFinalized == PMI_FINALIZED || g_bfdMPD == BFD_INVALID_SOCKET || kvsname == NULL)
 	return PMI_FAIL;
@@ -290,7 +311,7 @@ int PMI_KVS_Create(char * kvsname)
     return PMI_SUCCESS;
 }
 
-int PMI_KVS_Destroy(const char * kvsname)
+int PMI_KVS_Destroy(const char kvsname[])
 {
     char str[PMI_MAX_KVS_NAME_LENGTH+20];
 
@@ -315,7 +336,7 @@ int PMI_KVS_Destroy(const char * kvsname)
     return PMI_FAIL;
 }
 
-int PMI_KVS_Put(const char *kvsname, const char *key, const char *value)
+int PMI_KVS_Put(const char kvsname[], const char key[], const char value[])
 {
     char str[MAX_CMD_LENGTH];
     if (g_bInitFinalized == PMI_FINALIZED || g_bfdMPD == BFD_INVALID_SOCKET || kvsname == NULL || key == NULL || value == NULL)
@@ -339,7 +360,7 @@ int PMI_KVS_Put(const char *kvsname, const char *key, const char *value)
     return PMI_SUCCESS;
 }
 
-int PMI_KVS_Commit(const char *kvsname)
+int PMI_KVS_Commit(const char kvsname[])
 {
     if (g_bInitFinalized == PMI_FINALIZED || g_bfdMPD == BFD_INVALID_SOCKET || kvsname == NULL)
 	return PMI_FAIL;
@@ -347,7 +368,7 @@ int PMI_KVS_Commit(const char *kvsname)
     return PMI_SUCCESS;
 }
 
-int PMI_KVS_Get(const char *kvsname, const char *key, char *value)
+int PMI_KVS_Get(const char kvsname[], const char key[], char value[], int length)
 {
     char str[MAX_CMD_LENGTH];
     if (g_bInitFinalized == PMI_FINALIZED || g_bfdMPD == BFD_INVALID_SOCKET || kvsname == NULL || key == NULL || value == NULL)
@@ -371,7 +392,7 @@ int PMI_KVS_Get(const char *kvsname, const char *key, char *value)
     return PMI_SUCCESS;
 }
 
-int PMI_KVS_Iter_first(const char *kvsname, char *key, char *value)
+int PMI_KVS_Iter_first(const char kvsname[], char key[], int key_len, char value[], int val_len)
 {
     char str[MAX_CMD_LENGTH];
     char *token;
@@ -408,7 +429,7 @@ int PMI_KVS_Iter_first(const char *kvsname, char *key, char *value)
     return PMI_SUCCESS;
 }
 
-int PMI_KVS_Iter_next(const char *kvsname, char *key, char *value)
+int PMI_KVS_Iter_next(const char kvsname[], char key[], int key_len, char value[], int val_len)
 {
     char str[MAX_CMD_LENGTH];
     char *token;

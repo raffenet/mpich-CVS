@@ -72,29 +72,29 @@ int PMI_Init(int *spawned)
 	    {
 		return PMI_FAIL;
 	    }
-	    fn.PMI_Initialized = (int (*)(void))PMIGetProcAddress(hModule, "PMI_Initialized");
+	    fn.PMI_Initialized = (int (*)(PMI_BOOL *))PMIGetProcAddress(hModule, "PMI_Initialized");
 	    fn.PMI_Finalize = (int (*)(void))PMIGetProcAddress(hModule, "PMI_Finalize");
 	    fn.PMI_Get_size = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Get_size");
 	    fn.PMI_Get_rank = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Get_rank");
-	    fn.PMI_Get_id = (int (*)(char *))PMIGetProcAddress(hModule, "PMI_Get_id");
-	    fn.PMI_Get_kvs_domain_id = (int (*)(char *))PMIGetProcAddress(hModule, "PMI_Get_kvs_domain_id");
-	    fn.PMI_Get_id_length_max = (int (*)(void))PMIGetProcAddress(hModule, "PMI_Get_id_length_max");
+	    fn.PMI_Get_id = (int (*)(char [], int))PMIGetProcAddress(hModule, "PMI_Get_id");
+	    fn.PMI_Get_kvs_domain_id = (int (*)(char [], int))PMIGetProcAddress(hModule, "PMI_Get_kvs_domain_id");
+	    fn.PMI_Get_id_length_max = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Get_id_length_max");
 	    fn.PMI_Barrier = (int (*)(void))PMIGetProcAddress(hModule, "PMI_Barrier");
 	    fn.PMI_Get_clique_size = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Get_clique_size");
-	    fn.PMI_Get_clique_ranks = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Get_clique_ranks");
-	    fn.PMI_KVS_Get_my_name = (int (*)(char *))PMIGetProcAddress(hModule, "PMI_KVS_Get_my_name");
-	    fn.PMI_KVS_Get_name_length_max = (int (*)(void))PMIGetProcAddress(hModule, "PMI_KVS_Get_name_length_max");
-	    fn.PMI_KVS_Get_key_length_max = (int (*)(void))PMIGetProcAddress(hModule, "PMI_KVS_Get_key_length_max");
-	    fn.PMI_KVS_Get_value_length_max = (int (*)(void))PMIGetProcAddress(hModule, "PMI_KVS_Get_value_length_max");
-	    fn.PMI_KVS_Create = (int (*)(char *))PMIGetProcAddress(hModule, "PMI_KVS_Create");
-	    fn.PMI_KVS_Destroy = (int (*)(const char *))PMIGetProcAddress(hModule, "PMI_KVS_Destroy");
-	    fn.PMI_KVS_Put = (int (*)(const char *, const char *, const char *))PMIGetProcAddress(hModule, "PMI_KVS_Put");
-	    fn.PMI_KVS_Commit = (int (*)(const char *))PMIGetProcAddress(hModule, "PMI_KVS_Commit");
-	    fn.PMI_KVS_Get = (int (*)(const char *, const char *, char *))PMIGetProcAddress(hModule, "PMI_KVS_Get");
-	    fn.PMI_KVS_Iter_first = (int (*)(const char *, char *, char *))PMIGetProcAddress(hModule, "PMI_KVS_Iter_first");
-	    fn.PMI_KVS_Iter_next = (int (*)(const char *, char *, char *))PMIGetProcAddress(hModule, "PMI_KVS_Iter_next");
-	    fn.PMI_Spawn_multiple = (int (*)(int, const char **, const char ***, const int *, const int *, const PMI_keyval_t **, int, const PMI_keyval_t *, int *))PMIGetProcAddress(hModule, "PMI_Spawn_multiple");
-	    fn.PMI_Args_to_keyval = (int (*)(int *, char ***, PMI_keyval_t *, int *))PMIGetProcAddress(hModule, "PMI_Args_to_keyval");
+	    fn.PMI_Get_clique_ranks = (int (*)(int [], int))PMIGetProcAddress(hModule, "PMI_Get_clique_ranks");
+	    fn.PMI_KVS_Get_my_name = (int (*)(char [], int))PMIGetProcAddress(hModule, "PMI_KVS_Get_my_name");
+	    fn.PMI_KVS_Get_name_length_max = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_KVS_Get_name_length_max");
+	    fn.PMI_KVS_Get_key_length_max = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_KVS_Get_key_length_max");
+	    fn.PMI_KVS_Get_value_length_max = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_KVS_Get_value_length_max");
+	    fn.PMI_KVS_Create = (int (*)(char [], int))PMIGetProcAddress(hModule, "PMI_KVS_Create");
+	    fn.PMI_KVS_Destroy = (int (*)(const char []))PMIGetProcAddress(hModule, "PMI_KVS_Destroy");
+	    fn.PMI_KVS_Put = (int (*)(const char [], const char [], const char []))PMIGetProcAddress(hModule, "PMI_KVS_Put");
+	    fn.PMI_KVS_Commit = (int (*)(const char []))PMIGetProcAddress(hModule, "PMI_KVS_Commit");
+	    fn.PMI_KVS_Get = (int (*)(const char [], const char [], char [], int))PMIGetProcAddress(hModule, "PMI_KVS_Get");
+	    fn.PMI_KVS_Iter_first = (int (*)(const char [], char [], int, char [], int))PMIGetProcAddress(hModule, "PMI_KVS_Iter_first");
+	    fn.PMI_KVS_Iter_next = (int (*)(const char [], char [], int, char [], int))PMIGetProcAddress(hModule, "PMI_KVS_Iter_next");
+	    fn.PMI_Spawn_multiple = (int (*)(int, const char *[], const char **[], const int [], const int [], const PMI_keyval_t *[], int, const PMI_keyval_t [], int []))PMIGetProcAddress(hModule, "PMI_Spawn_multiple");
+	    fn.PMI_Args_to_keyval = (int (*)(int *, char **[], PMI_keyval_t *[], int *))PMIGetProcAddress(hModule, "PMI_Args_to_keyval");
 	    return fn.PMI_Init(spawned);
 	}
     }
@@ -155,32 +155,32 @@ int PMI_Get_clique_size( int *size )
     return fn.PMI_Get_clique_size(size);
 }
 
-int PMI_Get_clique_ranks( int *ranks )
+int PMI_Get_clique_ranks( int ranks[], int length )
 {
     if (fn.PMI_Get_clique_ranks == NULL)
 	return PMI_FAIL;
-    return fn.PMI_Get_clique_ranks(ranks);
+    return fn.PMI_Get_clique_ranks(ranks, length);
 }
 
-int PMI_Get_id( char *id_str )
+int PMI_Get_id( char id_str[], int length )
 {
     if (fn.PMI_Get_id == NULL)
 	return PMI_FAIL;
-    return fn.PMI_Get_id(id_str);
+    return fn.PMI_Get_id(id_str, length);
 }
 
-int PMI_Get_kvs_domain_id( char *id_str )
+int PMI_Get_kvs_domain_id( char id_str[], int length )
 {
     if (fn.PMI_Get_kvs_domain_id == NULL)
 	return PMI_FAIL;
-    return fn.PMI_Get_kvs_domain_id(id_str);
+    return fn.PMI_Get_kvs_domain_id(id_str, length);
 }
 
-int PMI_Get_id_length_max()
+int PMI_Get_id_length_max(int *maxlen)
 {
     if (fn.PMI_Get_id_length_max == NULL)
 	return PMI_FAIL;
-    return fn.PMI_Get_id_length_max();
+    return fn.PMI_Get_id_length_max(maxlen);
 }
 
 int PMI_Barrier()
@@ -190,92 +190,92 @@ int PMI_Barrier()
     return fn.PMI_Barrier();
 }
 
-int PMI_KVS_Get_my_name(char *kvsname)
+int PMI_KVS_Get_my_name(char kvsname[], int length)
 {
     if (fn.PMI_KVS_Get_my_name == NULL)
 	return PMI_FAIL;
-    return fn.PMI_KVS_Get_my_name(kvsname);
+    return fn.PMI_KVS_Get_my_name(kvsname, length);
 }
 
-int PMI_KVS_Get_name_length_max()
+int PMI_KVS_Get_name_length_max(int *maxlen)
 {
     if (fn.PMI_KVS_Get_name_length_max == NULL)
 	return PMI_FAIL;
-    return fn.PMI_KVS_Get_name_length_max();
+    return fn.PMI_KVS_Get_name_length_max(maxlen);
 }
 
-int PMI_KVS_Get_key_length_max()
+int PMI_KVS_Get_key_length_max(int *maxlen)
 {
     if (fn.PMI_KVS_Get_key_length_max == NULL)
 	return PMI_FAIL;
-    return fn.PMI_KVS_Get_key_length_max();
+    return fn.PMI_KVS_Get_key_length_max(maxlen);
 }
 
-int PMI_KVS_Get_value_length_max()
+int PMI_KVS_Get_value_length_max(int *maxlen)
 {
     if (fn.PMI_KVS_Get_value_length_max == NULL)
 	return PMI_FAIL;
-    return fn.PMI_KVS_Get_value_length_max();
+    return fn.PMI_KVS_Get_value_length_max(maxlen);
 }
 
-int PMI_KVS_Create(char * kvsname)
+int PMI_KVS_Create(char kvsname[], int length)
 {
     if (fn.PMI_KVS_Create == NULL)
 	return PMI_FAIL;
-    return fn.PMI_KVS_Create(kvsname);
+    return fn.PMI_KVS_Create(kvsname, length);
 }
 
-int PMI_KVS_Destroy(const char * kvsname)
+int PMI_KVS_Destroy(const char kvsname[])
 {
     if (fn.PMI_KVS_Destroy == NULL)
 	return PMI_FAIL;
     return fn.PMI_KVS_Destroy(kvsname);
 }
 
-int PMI_KVS_Put(const char *kvsname, const char *key, const char *value)
+int PMI_KVS_Put(const char kvsname[], const char key[], const char value[])
 {
     if (fn.PMI_KVS_Put == NULL)
 	return PMI_FAIL;
     return fn.PMI_KVS_Put(kvsname, key, value);
 }
 
-int PMI_KVS_Commit(const char *kvsname)
+int PMI_KVS_Commit(const char kvsname[])
 {
     if (fn.PMI_KVS_Commit == NULL)
 	return PMI_FAIL;
     return fn.PMI_KVS_Commit(kvsname);
 }
 
-int PMI_KVS_Get(const char *kvsname, const char *key, char *value)
+int PMI_KVS_Get(const char kvsname[], const char key[], char value[], int length)
 {
     if (fn.PMI_KVS_Get == NULL)
 	return PMI_FAIL;
-    return fn.PMI_KVS_Get(kvsname, key, value);
+    return fn.PMI_KVS_Get(kvsname, key, value, length);
 }
 
-int PMI_KVS_Iter_first(const char *kvsname, char *key, char *value)
+int PMI_KVS_Iter_first(const char kvsname[], char key[], int key_len, char value[], int val_len)
 {
     if (fn.PMI_KVS_Iter_first == NULL)
 	return PMI_FAIL;
-    return fn.PMI_KVS_Iter_first(kvsname, key, value);
+    return fn.PMI_KVS_Iter_first(kvsname, key, key_len, value, val_len);
 }
 
-int PMI_KVS_Iter_next(const char *kvsname, char *key, char *value)
+int PMI_KVS_Iter_next(const char kvsname[], char key[], int key_len, char value[], int val_len)
 {
     if (fn.PMI_KVS_Iter_next == NULL)
 	return PMI_FAIL;
-    return fn.PMI_KVS_Iter_next(kvsname, key, value);
+    return fn.PMI_KVS_Iter_next(kvsname, key, key_len, value, val_len);
 }
 
 int PMI_Spawn_multiple(int count,
-                       const char ** cmds,
-                       const char *** argvs,
-                       const int * maxprocs,
-                       const int * info_keyval_sizes,
-                       const PMI_keyval_t ** info_keyval_vectors,
+                       const char * cmds[],
+                       const char ** argvs[],
+                       const int maxprocs[],
+                       const int info_keyval_sizes[],
+                       const PMI_keyval_t * info_keyval_vectors[],
                        int preput_keyval_size,
-                       const PMI_keyval_t * preput_keyval_vector,
-                       int * errors)
+                       const PMI_keyval_t preput_keyval_vector[],
+                       int errors[])
 {
     if (fn.PMI_Spawn_multiple == NULL)
 	return PMI_FAIL;
@@ -285,7 +285,7 @@ int PMI_Spawn_multiple(int count,
 	errors);
 }
 
-int PMI_Args_to_keyval(int *argcp, char ***argvp, PMI_keyval_t *keyvalp, int *size)
+int PMI_Args_to_keyval(int *argcp, char **argvp[], PMI_keyval_t *keyvalp[], int *size)
 {
     if (fn.PMI_Args_to_keyval == NULL)
 	return PMI_FAIL;

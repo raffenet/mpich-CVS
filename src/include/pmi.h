@@ -18,8 +18,11 @@ PMI_ - return code definitions
 Module:
 PMI
 D*/
-#define PMI_SUCCESS  0
-#define PMI_FAIL    -1
+#define PMI_SUCCESS           0
+#define PMI_FAIL             -1
+#define PMI_ERR_INVALID_ARG   1
+
+typedef int PMI_BOOL;
 #define PMI_TRUE     1
 #define PMI_FALSE    0
 
@@ -52,7 +55,7 @@ Return value: success or failure
 Module:
 PMI
 @*/
-int PMI_Initialized( void );
+int PMI_Initialized( PMI_BOOL *initialized );
 
 /*@
 PMI_Finalize - finalize the Process Manager Interface
@@ -114,6 +117,7 @@ Output Parameters:
 
 Return value: a PMI error code
 + PMI_SUCCESS - id successfully obtained
+. PMI_ERR_INVALID_ARG - invalid rank argument
 - PMI_FAIL - unable to return the id
 
 Notes:
@@ -124,16 +128,20 @@ as long as the number returned by PMI_Get_id_length_max().
 Module:
 PMI
 @*/
-int PMI_Get_id( char *id_str );
+int PMI_Get_id( char id_str[], int length );
 
 /*@
 PMI_Get_kvs_domain_id - obtain the id of the PMI domain
+
+Input Parameters:
+. length - length of id_str
 
 Output Parameters:
 . id_str - character array that receives the id of the PMI domain
 
 Return value: a PMI error code
 + PMI_SUCCESS - id successfully obtained
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to return the id
 
 Notes:
@@ -144,22 +152,26 @@ as long as the number returned by PMI_Get_id_length_max().
 Module:
 PMI
 @*/
-int PMI_Get_kvs_domain_id( char *id_str );
+int PMI_Get_kvs_domain_id( char *id_str, int length );
 
 /*@
 PMI_Get_id_length_max - obtain the maximum length of an id string
 
-Return value: the maximum length of an id string
+Output Parameters:
+. length - the maximum length of an id string
+
+Return value: a PMI error code
++ PMI_SUCCESS - length successfully set
+. PMI_ERR_INVALID_ARG - invalid argument
+- PMI_FAIL - unable to return the maximum length
 
 Notes:
 This function returns the maximum length of a process group id string.
-Note to implementors: It must return at least 40 so that ids can be
-implemented with uuids.
 
 Module:
 PMI
 @*/
-int PMI_Get_id_length_max( void );
+int PMI_Get_id_length_max( int *length );
 
 /*@
 PMI_Barrier - barrier across the process group
@@ -203,11 +215,15 @@ int PMI_Get_clique_size( int *size );
 /*@
 PMI_Get_clique_ranks - get the ranks of the local processes in the process group
 
+Input Parameters:
+. length - length of the ranks array
+
 Output Parameters:
 . ranks - pointer to an array of integers that receive the local ranks
 
 Return value: a PMI error code
 + PMI_SUCCESS - ranks successfully obtained
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to return the ranks
 
 Notes:
@@ -220,17 +236,21 @@ mechanisms.
 Module:
 PMI
 @*/
-int PMI_Get_clique_ranks( int *ranks );
+int PMI_Get_clique_ranks( int ranks[], int length );
 
 /* PMI Keymap functions */
 /*@
 PMI_KVS_Get_my_name - obtain the name of the keyval space the local process group has access to
+
+Input Parameters:
+. length - length of the kvsname string
 
 Output Parameters:
 . kvsname - a string that receives the keyval space name
 
 Return value: a PMI error code
 + PMI_SUCCESS - kvsname successfully obtained
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to return the kvsname
 
 Notes:
@@ -242,12 +262,18 @@ PMI_KVS_Get_name_length_max().
 Module:
 PMI
 @*/
-int PMI_KVS_Get_my_name( char *kvsname );
+int PMI_KVS_Get_my_name( char kvsname[], int length );
 
 /*@
 PMI_KVS_Get_name_length_max - obtain the length necessary to store a kvsname
 
-Return value: maximum length required to hold a keyval space name
+Output Parameter:
+. length - maximum length required to hold a keyval space name
+
+Return value: a PMI error code
++ PMI_SUCCESS - length successfully set
+. PMI_ERR_INVALID_ARG - invalid argument
+- PMI_FAIL - unable to set the length
 
 Notes:
 This function returns the string length required to store a keyval space name.
@@ -255,12 +281,18 @@ This function returns the string length required to store a keyval space name.
 Module:
 PMI
 @*/
-int PMI_KVS_Get_name_length_max( void );
+int PMI_KVS_Get_name_length_max( int *length );
 
 /*@
 PMI_KVS_Get_key_length_max - obtain the length necessary to store a key
 
-Return value: maximum length required to hold a key string.
+Output Parameter:
+. length - maximum length required to hold a key string.
+
+Return value: a PMI error code
++ PMI_SUCCESS - length successfully set
+. PMI_ERR_INVALID_ARG - invalid argument
+- PMI_FAIL - unable to set the length
 
 Notes:
 This function returns the string length required to store a key.
@@ -268,12 +300,18 @@ This function returns the string length required to store a key.
 Module:
 PMI
 @*/
-int PMI_KVS_Get_key_length_max( void );
+int PMI_KVS_Get_key_length_max( int *length );
 
 /*@
 PMI_KVS_Get_value_length_max - obtain the length necessary to store a value
 
-Return value: maximum length required to hold a keyval space value
+Output Parameter:
+. length - maximum length required to hold a keyval space value
+
+Return value: a PMI error code
++ PMI_SUCCESS - length successfully set
+. PMI_ERR_INVALID_ARG - invalid argument
+- PMI_FAIL - unable to set the length
 
 Notes:
 This function returns the string length required to store a value from a
@@ -282,16 +320,20 @@ keyval space.
 Module:
 PMI
 @*/
-int PMI_KVS_Get_value_length_max( void );
+int PMI_KVS_Get_value_length_max( int *length );
 
 /*@
 PMI_KVS_Create - create a new keyval space
+
+Input Parameter:
+. length - length of the kvsname character array
 
 Output Parameters:
 . kvsname - a string that receives the keyval space name
 
 Return value: a PMI error code
 + PMI_SUCCESS - keyval space successfully created
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to create a new keyval space
 
 Notes:
@@ -304,7 +346,7 @@ PMI_KVS_Get_name_length_max().
 Module:
 PMI
 @*/
-int PMI_KVS_Create( char *kvsname );
+int PMI_KVS_Create( char kvsname[], int length );
 
 /*@
 PMI_KVS_Destroy - destroy keyval space
@@ -314,6 +356,7 @@ Input Parameters:
 
 Return value: a PMI error code
 + PMI_SUCCESS - keyval space successfully destroyed
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to destroy the keyval space
 
 Notes:
@@ -322,7 +365,7 @@ This function destroys a keyval space created by PMI_KVS_Create().
 Module:
 PMI
 @*/
-int PMI_KVS_Destroy( const char *kvsname );
+int PMI_KVS_Destroy( const char kvsname[] );
 
 /*@
 PMI_KVS_Put - put a key/value pair in a keyval space
@@ -334,6 +377,7 @@ Input Parameters:
 
 Return value: a PMI error code
 + PMI_SUCCESS - keyval pair successfully put in keyval space
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - put failed
 
 Notes:
@@ -347,7 +391,7 @@ with the same key.
 Module:
 PMI
 @*/
-int PMI_KVS_Put( const char *kvsname, const char *key, const char *value);
+int PMI_KVS_Put( const char kvsname[], const char key[], const char value[]);
 
 /*@
 PMI_KVS_Commit - commit all previous puts to the keyval space
@@ -357,6 +401,7 @@ Input Parameters:
 
 Return value: a PMI error code
 + PMI_SUCCESS - commit succeeded
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - commit failed
 
 Notes:
@@ -366,20 +411,22 @@ the specified keyval space. It is a process local operation.
 Module:
 PMI
 @*/
-int PMI_KVS_Commit( const char *kvsname );
+int PMI_KVS_Commit( const char kvsname[] );
 
 /*@
 PMI_KVS_Get - get a key/value pair from a keyval space
 
 Input Parameters:
 + kvsname - keyval space name
-- key - key
+. key - key
+- length - length of value character array
 
 Output Parameters:
 . value - value
 
 Return value: a PMI error code
 + PMI_SUCCESS - get succeeded
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - get failed
 
 Notes:
@@ -388,13 +435,15 @@ This function gets the value of the specified key in the keyval space.
 Module:
 PMI
 @*/
-int PMI_KVS_Get( const char *kvsname, const char *key, char *value);
+int PMI_KVS_Get( const char kvsname[], const char key[], char value[], int length);
 
 /*@
 PMI_KVS_Iter_first - initialize the iterator and get the first value
 
 Input Parameters:
-. kvsname - keyval space name
++ kvsname - keyval space name
+. key_len - length of key character array
+- val_len - length of val character array
 
 Output Parameters:
 + key - key
@@ -402,6 +451,7 @@ Output Parameters:
 
 Return value: a PMI error code
 + PMI_SUCCESS - keyval pair successfully retrieved from the keyval space
+. PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - failed to initialize the iterator and get the first keyval pair
 
 Notes:
@@ -414,13 +464,15 @@ PMI_KVS_Get_value_length_max().
 Module:
 PMI
 @*/
-int PMI_KVS_Iter_first(const char *kvsname, char *key, char *val);
+int PMI_KVS_Iter_first(const char kvsname[], char key[], int key_len, char val[], int val_len);
 
 /*@
 PMI_KVS_Iter_next - get the next keyval pair from the keyval space
 
 Input Parameters:
-. kvsname - keyval space name
++ kvsname - keyval space name
+. key_len - length of key character array
+- val_len - length of val character array
 
 Output Parameters:
 + key - key
@@ -440,7 +492,7 @@ PMI_KVS_Get_key_length_max() and PMI_KVS_Get_value_length_max().
 Module:
 PMI
 @*/
-int PMI_KVS_Iter_next(const char *kvsname, char *key, char *val);
+int PMI_KVS_Iter_next(const char kvsname[], char key[], int key_len, char val[], int val_len);
 
 /* PMI Process Creation functions */
 
@@ -493,19 +545,19 @@ maxprocs.  The acceptable number of processes spawned may be controlled by
 ``soft'' keyvals in the info arrays.  The ``soft'' option is specified by
 mpiexec in the MPI-2 standard.  Environment variables may be passed to the
 spawned processes through PMI implementation specific info_keyval parameters.
-
+0
 Module:
 PMI
 @*/
 int PMI_Spawn_multiple(int count,
-                       const char ** cmds,
-                       const char *** argvs,
-                       const int * maxprocs,
-                       const int * info_keyval_sizes,
-                       const PMI_keyval_t ** info_keyval_vectors,
+                       const char * cmds[],
+                       const char ** argvs[],
+                       const int maxprocs[],
+                       const int info_keyval_sizesp[],
+                       const PMI_keyval_t * info_keyval_vectors[],
                        int preput_keyval_size,
-                       const PMI_keyval_t * preput_keyval_vector,
-                       int * errors);
+                       const PMI_keyval_t preput_keyval_vector[],
+                       int errors[]);
 
 /*@
 PMI_Args_to_keyval - create keyval structures from command line arguments
@@ -531,7 +583,7 @@ The array can be freed by free().
 Module:
 PMI
 @*/
-int PMI_Args_to_keyval(int *argcp, char ***argvp, PMI_keyval_t *keyvalp, int *size);
+int PMI_Args_to_keyval(int *argcp, char **argvp[], PMI_keyval_t **keyvalp, int *size);
 
 #if defined(__cplusplus)
 }

@@ -205,11 +205,19 @@ static int pmi_create_post_command(const char *command, const char *name, const 
     return PMI_SUCCESS;
 }
 
-int iPMI_Initialized()
+int iPMI_Initialized(PMI_BOOL *initialized)
 {
+    if (initialized == NULL)
+	return PMI_ERR_INVALID_ARG;
     if (pmi_process.init_finalized == PMI_INITIALIZED)
-	return 1;
-    return 0;
+    {
+	*initialized = PMI_TRUE;
+    }
+    else
+    {
+	*initialized = PMI_FALSE;
+    }
+    return PMI_SUCCESS;
 }
 
 static int parse_clique(const char *str_orig)
@@ -793,11 +801,11 @@ int iPMI_Get_clique_size( int *size )
     return PMI_SUCCESS;
 }
 
-int iPMI_Get_clique_ranks( int *ranks )
+int iPMI_Get_clique_ranks( int ranks[], int length )
 {
     int i;
 
-    if (pmi_process.init_finalized == PMI_FINALIZED || ranks == NULL)
+    if (pmi_process.init_finalized == PMI_FINALIZED || ranks == NULL || length < pmi_process.clique_size)
 	return PMI_FAIL;
 
     if (pmi_process.clique_size == 0)
@@ -814,7 +822,7 @@ int iPMI_Get_clique_ranks( int *ranks )
     return PMI_SUCCESS;
 }
 
-int iPMI_Get_id( char *id_str )
+int iPMI_Get_id( char id_str[], int length )
 {
     /*
     char kvs_name[PMI_MAX_KVS_NAME_LENGTH];
@@ -827,16 +835,16 @@ int iPMI_Get_id( char *id_str )
 
     return PMI_SUCCESS;
     */
-    return iPMI_KVS_Get_my_name(id_str);
+    return iPMI_KVS_Get_my_name(id_str, length);
 }
 
-int iPMI_Get_id_length_max()
+int iPMI_Get_id_length_max(int *maxlen)
 {
     /*return 40;*/
-    return iPMI_KVS_Get_name_length_max();
+    return iPMI_KVS_Get_name_length_max(maxlen);
 }
 
-int iPMI_Get_kvs_domain_id(char *id_str)
+int iPMI_Get_kvs_domain_id(char id_str[], int length)
 {
     if (pmi_process.init_finalized == PMI_FINALIZED)
 	return PMI_FAIL;
@@ -884,12 +892,12 @@ int iPMI_Barrier()
     return PMI_SUCCESS;
 }
 
-int iPMI_KVS_Get_my_name(char *kvsname)
+int iPMI_KVS_Get_my_name(char kvsname[], int length)
 {
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL)
 	return PMI_FAIL;
 
-    strcpy(kvsname, pmi_process.kvs_name);
+    strncpy(kvsname, pmi_process.kvs_name, length);
 
     /*
     printf("my kvs name is %s\n", kvsname);fflush(stdout);
@@ -898,22 +906,31 @@ int iPMI_KVS_Get_my_name(char *kvsname)
     return PMI_SUCCESS;
 }
 
-int iPMI_KVS_Get_name_length_max()
+int iPMI_KVS_Get_name_length_max(int *maxlen)
 {
-    return PMI_MAX_KVS_NAME_LENGTH;
+    if (maxlen == NULL)
+	return PMI_ERR_INVALID_ARG;
+    *maxlen = PMI_MAX_KVS_NAME_LENGTH;
+    return PMI_SUCCESS;
 }
 
-int iPMI_KVS_Get_key_length_max()
+int iPMI_KVS_Get_key_length_max(int *maxlen)
 {
-    return PMI_MAX_KEY_LEN;
+    if (maxlen == NULL)
+	return PMI_ERR_INVALID_ARG;
+    *maxlen = PMI_MAX_KEY_LEN;
+    return PMI_SUCCESS;
 }
 
-int iPMI_KVS_Get_value_length_max()
+int iPMI_KVS_Get_value_length_max(int *maxlen)
 {
-    return PMI_MAX_VALUE_LEN;
+    if (maxlen == NULL)
+	return PMI_ERR_INVALID_ARG;
+    *maxlen = PMI_MAX_VALUE_LEN;
+    return PMI_SUCCESS;
 }
 
-int iPMI_KVS_Create(char * kvsname)
+int iPMI_KVS_Create(char kvsname[], int length)
 {
     int result;
     char str[1024];
@@ -955,7 +972,7 @@ int iPMI_KVS_Create(char * kvsname)
     return PMI_SUCCESS;
 }
 
-int iPMI_KVS_Destroy(const char * kvsname)
+int iPMI_KVS_Destroy(const char kvsname[])
 {
     int result;
     char str[1024];
@@ -991,7 +1008,7 @@ int iPMI_KVS_Destroy(const char * kvsname)
     return PMI_FAIL;
 }
 
-int iPMI_KVS_Put(const char *kvsname, const char *key, const char *value)
+int iPMI_KVS_Put(const char kvsname[], const char key[], const char value[])
 {
     int result;
     char str[1024];
@@ -1032,7 +1049,7 @@ int iPMI_KVS_Put(const char *kvsname, const char *key, const char *value)
     return PMI_SUCCESS;
 }
 
-int iPMI_KVS_Commit(const char *kvsname)
+int iPMI_KVS_Commit(const char kvsname[])
 {
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL)
 	return PMI_FAIL;
@@ -1049,7 +1066,7 @@ int iPMI_KVS_Commit(const char *kvsname)
     return PMI_SUCCESS;
 }
 
-int iPMI_KVS_Get(const char *kvsname, const char *key, char *value)
+int iPMI_KVS_Get(const char kvsname[], const char key[], char value[], int length)
 {
     int result;
     char str[1024];
@@ -1090,7 +1107,7 @@ int iPMI_KVS_Get(const char *kvsname, const char *key, char *value)
     return PMI_SUCCESS;
 }
 
-int iPMI_KVS_Iter_first(const char *kvsname, char *key, char *value)
+int iPMI_KVS_Iter_first(const char kvsname[], char key[], int key_len, char value[], int val_len)
 {
     int result;
     char str[1024];
@@ -1143,7 +1160,7 @@ int iPMI_KVS_Iter_first(const char *kvsname, char *key, char *value)
     return PMI_SUCCESS;
 }
 
-int iPMI_KVS_Iter_next(const char *kvsname, char *key, char *value)
+int iPMI_KVS_Iter_next(const char kvsname[], char key[], int key_len, char value[], int val_len)
 {
     int result;
     char str[1024];
@@ -1197,14 +1214,14 @@ int iPMI_KVS_Iter_next(const char *kvsname, char *key, char *value)
 }
 
 int iPMI_Spawn_multiple(int count,
-                       const char ** cmds,
-                       const char *** argvs,
-                       const int * maxprocs,
-                       const int * info_keyval_sizes,
-                       const PMI_keyval_t ** info_keyval_vectors,
+                       const char * cmds[],
+                       const char ** argvs[],
+                       const int maxprocs[],
+                       const int info_keyval_sizes[],
+                       const PMI_keyval_t * info_keyval_vectors[],
                        int preput_keyval_size,
-                       const PMI_keyval_t * preput_keyval_vector,
-                       int * errors)
+                       const PMI_keyval_t preput_keyval_vector[],
+                       int errors[])
 {
     int result;
     smpd_command_t *cmd_ptr;
@@ -1421,7 +1438,7 @@ int iPMI_Spawn_multiple(int count,
     return PMI_FAIL;
 }
 
-int iPMI_Args_to_keyval(int *argcp, char ***argvp, PMI_keyval_t *keyvalp, int *size)
+int iPMI_Args_to_keyval(int *argcp, char **argvp[], PMI_keyval_t *keyvalp[], int *size)
 {
     return PMI_SUCCESS;
 }
