@@ -96,6 +96,8 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 	    if (delfn.F77_DeleteFunction) {
 		fhandle = (MPI_Fint) (handle);
 		fkeyval = (MPI_Fint) (attr_p->keyval->handle);
+		/* The following cast can lose data on systems whose
+		   pointers are longer than integers */
 		fvalue  = (MPI_Fint) (attr_p->value);
 		fextra  = (MPI_Fint*) (attr_p->keyval->extra_state);
 		delfn.F77_DeleteFunction( &fhandle, &fkeyval, &fvalue, 
@@ -168,6 +170,8 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 		    MPI_Fint fhandle, fkeyval, fvalue, *fextra, fflag, fnew, ierr;
 		    fhandle = (MPI_Fint) (handle);
 		    fkeyval = (MPI_Fint) (p->keyval->handle);
+		    /* The following cast can lose data on systems whose
+		       pointers are longer than integers */
 		    fvalue  = (MPI_Fint) (p->value);
 		    fextra  = (MPI_Fint*) (p->keyval->extra_state );
 		    copyfn.F77_CopyFunction( &fhandle, &fkeyval, fextra,
