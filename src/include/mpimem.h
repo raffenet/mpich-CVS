@@ -17,6 +17,7 @@
 /* style: define:__strdup:1 sig:0 */
 /* style: define:strdup:1 sig:0 */
 /* style: allow:fprintf:5 sig:0 */   /* For handle debugging ONLY */
+/* style: allow:snprintf:1 sig:0 */
 
 /*D
   Memory - Memory Management Routines
