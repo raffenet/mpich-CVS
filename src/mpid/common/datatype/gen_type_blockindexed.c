@@ -56,8 +56,8 @@ int MPID_Dataloop_create_blockindexed(int count,
 
     DLOOP_Dataloop *new_dlp;
 
-    /* if count is zero, handle with contig code, call it a int */
-    if (count == 0)
+    /* if count or blklen are zero, handle with contig code, call it a int */
+    if (count == 0 || blklen == 0)
     {
 	mpi_errno = MPID_Dataloop_create_contiguous(0,
 						    MPI_INT,

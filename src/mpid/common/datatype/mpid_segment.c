@@ -818,8 +818,8 @@ static int MPID_Segment_vector_unpack_to_buf(DLOOP_Offset *blocks_p,
 
     basic_size = MPID_Datatype_get_basic_size(el_type);
 
-    whole_count = *blocks_p / blksz;
-    blocks_left = *blocks_p % blksz;
+    whole_count = (blksz > 0) ? (*blocks_p / blksz) : 0;
+    blocks_left = (blksz > 0) ? (*blocks_p % blksz) : 0;
 
 #ifdef MPID_SU_VERBOSE
     dbg_printf("\t[vector unpack: do=%d, dp=%x, bp=%x, sz=%d, blksz=%d, str=%d, blks=%d]\n",
@@ -1037,8 +1037,8 @@ static int MPID_Segment_vector_pack_to_buf(DLOOP_Offset *blocks_p,
 
     basic_size = MPID_Datatype_get_basic_size(el_type);
 
-    whole_count = *blocks_p / blksz;
-    blocks_left = *blocks_p % blksz;
+    whole_count = (blksz > 0) ? (*blocks_p / blksz) : 0;
+    blocks_left = (blksz > 0) ? (*blocks_p % blksz) : 0;
 
 #ifdef MPID_SP_VERBOSE
     dbg_printf("\t[vector pack: do=%d, dp=%x, bp=%x, sz=%d, blksz=%d, str=%d, blks=%d]\n",

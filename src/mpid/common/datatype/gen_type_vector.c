@@ -38,8 +38,10 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
 
     DLOOP_Dataloop *new_dlp;
 
-    /* if count is zero, handle with contig code, call it a int */
-    if (count == 0)
+    /* if count or blocklength are zero, handle with contig code,
+     * call it a int
+     */
+    if (count == 0 || blocklength == 0)
     {
 
 	mpi_errno = PREPEND_PREFIX(Dataloop_create_contiguous)(0,
