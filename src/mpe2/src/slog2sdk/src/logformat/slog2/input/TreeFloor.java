@@ -55,8 +55,8 @@ public class TreeFloor extends TreeMap
         timebounds.setEarliestTime( firstTimeBounds().getEarliestTime() );
         timebounds.setLatestTime( lastTimeBounds().getLatestTime() );
         if ( ! timebounds.isTimeOrdered() ) {
-            System.out.println( "slog2.input.getTimeBounds() returns wrong"
-                              + timebounds );
+            System.out.println( "slog2.input.TreeFloor.getTimeBounds() "
+                              + "returns wrong " + timebounds );
         }
         return timebounds;
     }

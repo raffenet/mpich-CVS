@@ -13,22 +13,29 @@ import base.drawable.*;
 import logformat.slog2.*;
 import logformat.slog2.input.InputLog;
 
-public class Print
+import java.util.Iterator;
+
+
+/*
+   itrTopoLevel defines what topology should be printed.
+   The possible values are defined in logformat.slog2.input.InputLog
+*/
+public class PrintSerially
 {
-    private static boolean  printNode         = true;
-    private static String   in_filename;
-    private static double   time_init_ftr     = 0.0;
-    private static double   time_final_ftr    = 1.0;
-    private static short    lowest_depth      = 0;
+    private static       boolean  isForeItr         = true;
+    private static       int      itrTopoLevel      = InputLog.ITERATE_ALL;
+    private static       String   in_filename;
+    private static       double   time_init_ftr     = 0.0;
+    private static       double   time_final_ftr    = 1.0;
+
 
     public static final void main( String[] args )
     {
         InputLog         slog_ins;
         CategoryMap      objdefs;
-        TreeTrunk        treetrunk;
-        TreeNode         treeroot;
-        TimeBoundingBox  timebounds;
-        String            err_msg;
+        TreeDir          treedir;
+        TimeBoundingBox  timeframe;
+        String           err_msg;
 
         parseCmdLineArgs( args );
 
@@ -40,22 +47,49 @@ public class Print
         slog_ins.initialize();
         System.out.println( slog_ins );
 
-        treetrunk  = new TreeTrunk( slog_ins );
-        treetrunk.initFromTreeTop();
-        treeroot   = treetrunk.getTreeRoot();
-        timebounds = new TimeBoundingBox( treeroot );
-        resetTimeBounds( timebounds );
-        System.err.println( "Time Window is " + timebounds );
-        treetrunk.growInTreeWindow( treeroot, lowest_depth, timebounds );
-        if ( printNode )
-            System.out.println( treetrunk.toString() );
+        treedir = slog_ins.getTreeDir();
+        // System.out.println( treedir );
+
+        TreeDirValue  root_dir;
+        root_dir  = (TreeDirValue) treedir.get( treedir.firstKey() );
+        timeframe = new TimeBoundingBox( root_dir.getTimeBoundingBox() );
+        scaleTimeBounds( timeframe );
+
+        double    prev_starttime;
+
+        Iterator  dobj_itr;
+        Drawable  dobj;
+        int       dobj_count;
+
+        if ( isForeItr )
+            prev_starttime = Double.NEGATIVE_INFINITY;
         else
-            System.out.println( treetrunk.toString( timebounds ) );
+            prev_starttime = Double.POSITIVE_INFINITY;
+        dobj_count = 0;
+
+        dobj_itr = slog_ins.iteratorOfRealDrawables( timeframe, isForeItr,
+                                                     itrTopoLevel );
+        while ( dobj_itr.hasNext() ) {
+            dobj = (Drawable) dobj_itr.next();
+            if ( isForeItr ) {
+                if ( prev_starttime > dobj.getEarliestTime() )
+                    System.out.print( "  *****  " );
+            }
+            else {
+                if ( prev_starttime < dobj.getEarliestTime() )
+                    System.out.print( "  *****  " );
+            }
+
+            System.out.println( (++dobj_count) + ": " + dobj );
+            // System.out.println( dobj + " <=> " + (++dobj_count) );
+            // System.out.println( dobj  );
+            prev_starttime  = dobj.getEarliestTime();
+        }
 
         slog_ins.close();
     }
 
-    private static void resetTimeBounds( TimeBoundingBox endtimes )
+    private static void scaleTimeBounds( TimeBoundingBox endtimes )
     {
         double time_init  = endtimes.getEarliestTime();
         double time_final = endtimes.getLatestTime();
@@ -64,21 +98,23 @@ public class Print
         endtimes.setLatestTime( time_init + time_final_ftr * time_range );
     }
 
-    private static String help_msg = "Usage: java slog2.input.Print "
+    private static String help_msg = "Usage: java slog2.input.PrintSerially "
                                    + "[options] slog2_filename.\n"
                                    + "Options: \n"
                                    + "\t [-h|-help|--help]             "
                                    + "\t Display this message.\n"
-                                   + "\t [-n|-node] (default)          "
-                                   + "\t Print drawables in TreeNodes.\n"
-                                   + "\t [-t|-time]                    "
-                                   + "\t Print drawables within endtimes.\n"
+                                   + "\t [-s|-state] (default all)     "
+                                   + "\t Print states only.\n"
+                                   + "\t [-a|-arrow]                   "
+                                   + "\t Print arrows only.\n"
+                                   + "\t [-f|-forward] (default)       "
+                                   + "\t Print in increasing starttime order.\n"
+                                   + "\t [-b|-backward]                "
+                                   + "\t Print in decreasing starttime order.\n"
                                    + "\t [-ts time_start_factor]       "
                                    + "\t Default value is 0.0 (min).\n"
                                    + "\t [-tf time_final_factor]       "
-                                   + "\t Default value is 1.0 (max).\n"
-                                   + "\t [-d lowest_depth]             "
-                                   + "\t Default value is 0 (leaf level).\n";
+                                   + "\t Default value is 1.0 (max).\n";
 
     private static void parseCmdLineArgs( String argv[] )
     {
@@ -95,14 +131,24 @@ public class Print
                         System.out.flush();
                         System.exit( 0 );
                     }
-                    else if (  argv[ idx ].equals( "-n" )
-                            || argv[ idx ].equals( "-node" ) ) {
-                         printNode = true;
+                    else if (  argv[ idx ].equals( "-f" )
+                            || argv[ idx ].equals( "-forward" ) ) {
+                         isForeItr = true;
                          idx++;
                     }
-                    else if (  argv[ idx ].equals( "-t" )
-                            || argv[ idx ].equals( "-time" ) ) {
-                         printNode = false;
+                    else if (  argv[ idx ].equals( "-b" )
+                            || argv[ idx ].equals( "-backward" ) ) {
+                         isForeItr = false;
+                         idx++;
+                    }
+                    else if (  argv[ idx ].equals( "-s" )
+                            || argv[ idx ].equals( "-state" ) ) {
+                         itrTopoLevel = InputLog.ITERATE_STATES;
+                         idx++;
+                    }
+                    else if (  argv[ idx ].equals( "-a" )
+                            || argv[ idx ].equals( "-arrow" ) ) {
+                         itrTopoLevel = InputLog.ITERATE_ARROWS;
                          idx++;
                     }
                     else if ( argv[ idx ].equals( "-ts" ) ) {
@@ -115,12 +161,6 @@ public class Print
                         arg_str = argv[ ++idx ];
                         time_final_ftr = Double.parseDouble( arg_str );
                         err_msg.append( "\n time_final_factor = " + arg_str );
-                        idx++;
-                    }
-                    else if ( argv[ idx ].equals( "-d" ) ) {
-                        arg_str = argv[ ++idx ];
-                        lowest_depth   = Short.parseShort( arg_str );
-                        err_msg.append( "\n lowest_depth = " + arg_str );
                         idx++;
                     }
                     else {
