@@ -15,8 +15,13 @@ import java.util.Map;
 
 public abstract class Drawable extends InfoBox
 {
+    /*
+       Both nesting_ftr and row_ID are for State Drawable, i.e. nestable.
+    */
     public  static final float   NON_NESTABLE      = 1.0f; 
+    public  static final int     INVALID_ROW       = Integer.MIN_VALUE; 
     private              float   nesting_ftr;   // For SLOG-2 Input API
+    private              int     row_ID;        // For SLOG-2 Input API
 
     public Drawable()
     {
@@ -70,6 +75,21 @@ public abstract class Drawable extends InfoBox
         return nesting_ftr;
     }
 
+    //  For SLOG-2 Input API
+    public boolean isRowIDUninitialized()
+    {
+        return row_ID == INVALID_ROW;
+    }
+
+    public void setRowID( int new_rowID )
+    {
+        row_ID = new_rowID;
+    }
+
+    public int getRowID()
+    {
+        return row_ID;
+    }
 
     /*  getByteSize() cannot be declared ABSTRACT, 
         it would jeopardize the use of super.getByteSize( of InfoBox ) in
@@ -83,12 +103,16 @@ public abstract class Drawable extends InfoBox
 
     public abstract Integer[] getArrayOfLineIDs();
 
+    /* Caller needs to be sure that the Drawable is a State */
+    public abstract void      setStateNesting( CoordPixelXform coord_xform,
+                                               Map             map_line2row,
+                                               NestingStacks   nesting_stacks );
+
     /* return number of primitives drawn */
     public abstract int       drawOnCanvas( Graphics2D      g,
                                             CoordPixelXform coord_xform,
                                             Map             map_line2row,
-                                            DrawnBoxSet     drawn_boxes,
-                                            NestingStacks   nesting_stacks );
+                                            DrawnBoxSet     drawn_boxes );
 
     public abstract Drawable  getDrawableWithPixel( CoordPixelXform coord_xform,
                                                     Map    map_line2row,

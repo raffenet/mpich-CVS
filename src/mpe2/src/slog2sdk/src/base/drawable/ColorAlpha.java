@@ -19,11 +19,13 @@ import java.io.FileOutputStream;
 
 public class ColorAlpha extends Color
 {
-    public static final int  BYTESIZE        = 5;
-    public static final int  TRANSPARENT     = 0;
-    public static final int  OPAQUE          = 255;
-    public static final int  HALF_OPAQUE     = 127;
-    public static final int  QUARTER_OPAQUE  = 63;
+    public static final int  BYTESIZE         = 5;
+
+    public static final int  OPAQUE           = 255;
+    public static final int  NEAR_OPAQUE      = 191;
+    public static final int  HALF_OPAQUE      = 127;
+    public static final int  NEAR_TRANSPARENT = 63;
+    public static final int  TRANSPARENT      = 0;
 
     private boolean  isModifiable;
 

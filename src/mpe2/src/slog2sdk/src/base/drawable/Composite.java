@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Iterator;
+import java.util.Arrays;
 import java.io.ByteArrayInputStream;
 
 import base.io.MixedDataInputStream;
@@ -27,7 +28,10 @@ import base.io.MixedDataOutput;
 public class Composite extends Drawable
 //                       implements Cloneable
 {
-    private static final int INIT_BYTESIZE = 2  /* primes.length */ ; 
+    private static final int INIT_BYTESIZE   = 2  /* primes.length */ ; 
+
+    private static final DrawOrderComparator DRAWING_ORDER
+                                             = new DrawOrderComparator();
 
     private   Primitive[]      primes;
     private   int              last_prime_idx;
@@ -153,6 +157,9 @@ public class Composite extends Drawable
     throws java.io.IOException
     {
         int primes_length, idx;
+
+        // Save the Lists in Increasing Starttime order
+        Arrays.sort( primes, DRAWING_ORDER );
 
         super.writeObject( outs );
 
@@ -400,22 +407,39 @@ public class Composite extends Drawable
         return true;
     }
 
+     /* Caller needs to be sure that the Drawable is a State */
+    public void setStateNesting( CoordPixelXform  coord_xform,
+                                 Map              map_line2row,
+                                 NestingStacks    nesting_stacks )
+    {
+        Primitive  prime;
+        int        primes_length, idx;
+        primes_length = (short) primes.length;
+        // primes[] needs to be iterated in increaing starttime order
+        for ( idx = 0; idx < primes_length; idx++ ) {
+            prime = primes[ idx ];
+            // assume all primitives are all States
+            if ( coord_xform.overlaps( prime ) )
+                prime.setStateNesting( coord_xform, map_line2row,
+                                       nesting_stacks );
+        }
+    }
+
     public int  drawOnCanvas( Graphics2D g, CoordPixelXform coord_xform,
-                              Map map_line2row, DrawnBoxSet drawn_boxes,
-                              NestingStacks nesting_stacks )
+                              Map map_line2row, DrawnBoxSet drawn_boxes )
     {
         Primitive  prime;
         int        primes_length, num_primes_drawn, idx;
 
         num_primes_drawn = 0;
         primes_length = (short) primes.length;
-        // primes[] needs to be iterated in decreasing endtime order
-        for ( idx = primes_length-1; idx >= 0; idx-- ) {
+        // primes[] needs to be iterated in increaing starttime order
+        for ( idx = 0; idx < primes_length; idx++ ) {
             prime = primes[ idx ];
             if ( coord_xform.overlaps( prime ) )
-                num_primes_drawn
-                += prime.drawOnCanvas( g, coord_xform, map_line2row,
-                                       drawn_boxes, nesting_stacks );
+                num_primes_drawn += prime.drawOnCanvas( g, coord_xform,
+                                                        map_line2row,
+                                                        drawn_boxes );
         }
         return num_primes_drawn;
     }
@@ -428,7 +452,7 @@ public class Composite extends Drawable
         int        primes_length, idx;
 
         primes_length = (short) primes.length;
-        for ( idx = 0; idx < primes_length; idx++ ) {
+        for ( idx = primes_length-1; idx >= 0; idx-- ) {
             prime = primes[ idx ];
             if ( coord_xform.overlaps( prime ) ) {
                 if ( prime.getDrawableWithPixel( coord_xform,

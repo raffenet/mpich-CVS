@@ -333,9 +333,27 @@ public class Primitive extends Drawable
         return true;
     }
 
+    /* Caller needs to be sure that the Drawable is a State */
+    public void setStateNesting( CoordPixelXform  coord_xform,
+                                 Map              map_line2row,
+                                 NestingStacks    nesting_stacks )
+    {
+        Coord  start_vtx, final_vtx;
+        start_vtx = this.getStartVertex();
+        // final_vtx = this.getFinalVertex();
+
+        int    rowID;
+        float  nesting_ftr;
+        rowID  = ( (Integer) 
+                   map_line2row.get( new Integer(start_vtx.lineID) )
+                 ).intValue();
+        super.setRowID( rowID );
+        nesting_ftr = nesting_stacks.getNestingFactorFor( this );
+        super.setNestingFactor( nesting_ftr );
+    }
+
     public int  drawOnCanvas( Graphics2D g, CoordPixelXform coord_xform,
-                              Map map_line2row, DrawnBoxSet drawn_boxes,
-                              NestingStacks nesting_stacks )
+                              Map map_line2row, DrawnBoxSet drawn_boxes )
     {
         Category type = super.getCategory();
         Topology topo = type.getTopology();
@@ -343,8 +361,7 @@ public class Primitive extends Drawable
             System.err.println( "Not yet supported Event Primitive type." );
         else if ( topo.isState() )
             return this.drawState( g, coord_xform, map_line2row,
-                                   drawn_boxes, type.getColor(),
-                                   nesting_stacks );
+                                   drawn_boxes, type.getColor() );
         else if ( topo.isArrow() )
             return this.drawArrow( g, coord_xform, map_line2row,
                                    drawn_boxes, type.getColor() );
@@ -353,9 +370,9 @@ public class Primitive extends Drawable
         return 0;
     }
 
-    public Drawable getDrawableWithPixel( CoordPixelXform coord_xform,
-                                          Map map_line2row,
-                                          Point pix_pt )
+    public Drawable getDrawableWithPixel( CoordPixelXform  coord_xform,
+                                          Map              map_line2row,
+                                          Point            pix_pt )
     {
         Category type = super.getCategory();
         Topology topo = type.getTopology();
@@ -379,7 +396,7 @@ public class Primitive extends Drawable
     */
     private int  drawState( Graphics2D g, CoordPixelXform coord_xform,
                             Map map_line2row, DrawnBoxSet drawn_boxes,
-                            ColorAlpha color, NestingStacks nesting_stacks )
+                            ColorAlpha color )
     {
         Coord  start_vtx, final_vtx;
         start_vtx = this.getStartVertex();
@@ -391,10 +408,8 @@ public class Primitive extends Drawable
 
         int    rowID;
         float  nesting_ftr;
-        rowID  = ( (Integer) 
-                   map_line2row.get( new Integer(start_vtx.lineID) )
-                 ).intValue();
-        nesting_ftr = nesting_stacks.getNestingFactorAtRow( rowID, this );
+        rowID       = super.getRowID();
+        nesting_ftr = super.getNestingFactor();
 
         // System.out.println( "\t" + this + " nestftr=" + nesting_ftr );
         

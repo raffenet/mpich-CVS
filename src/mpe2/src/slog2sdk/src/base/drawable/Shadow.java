@@ -158,9 +158,31 @@ public class Shadow extends Primitive
         return rep.toString();
     }
 
+    /* Caller needs to be sure that the Drawable is a State */
+    public void setStateNesting( CoordPixelXform  coord_xform,
+                                 Map              map_line2row,
+                                 NestingStacks    nesting_stacks )
+    {
+        Coord  start_vtx, final_vtx;
+        start_vtx = this.getStartVertex();
+        // final_vtx = this.getFinalVertex();
+
+        int    rowID;
+        float  nesting_ftr;
+        rowID  = ( (Integer)
+                   map_line2row.get( new Integer(start_vtx.lineID) )
+                 ).intValue();
+        super.setRowID( rowID );
+        // nesting_ftr = NestingStacks.getShadowNestingHeight();
+        // if ( nesting_stacks.isReadyToGetNestingFactorFor( this ) ) {
+        if ( super.isNestingFactorUninitialized() ) {
+            nesting_ftr = nesting_stacks.getNestingFactorFor( this );
+            super.setNestingFactor( nesting_ftr );
+        }
+    }
+
     public int  drawOnCanvas( Graphics2D g, CoordPixelXform coord_xform,
-                              Map map_line2row, DrawnBoxSet drawn_boxes,
-                              NestingStacks nesting_stacks )
+                              Map map_line2row, DrawnBoxSet drawn_boxes )
     {
         Category type = super.getCategory();
         Topology topo = type.getTopology();
@@ -205,9 +227,9 @@ public class Shadow extends Primitive
                             Map map_line2row, DrawnBoxSet drawn_boxes,
                             ColorAlpha color )
     {
-        Coord  start_vtx, final_vtx;
-        start_vtx = this.getStartVertex();
-        final_vtx = this.getFinalVertex();
+        // Coord  start_vtx, final_vtx;
+        // start_vtx = this.getStartVertex();
+        // final_vtx = this.getFinalVertex();
 
         double tStart, tFinal;
         tStart = super.getEarliestTime();    /* different from Primitive */
@@ -215,10 +237,10 @@ public class Shadow extends Primitive
 
         int    rowID;
         float  nesting_ftr;
-        rowID  = ( (Integer)
-                   map_line2row.get( new Integer(start_vtx.lineID) )
-                 ).intValue();
-        nesting_ftr = NestingStacks.getShadowNestingHeight();
+        rowID       = super.getRowID();
+        nesting_ftr = super.getNestingFactor();
+
+        // System.out.println( "\t" + this + " nestftr=" + nesting_ftr );
 
         float  rStart, rFinal;
         rStart = (float) rowID - nesting_ftr / 2.0f;
@@ -273,8 +295,9 @@ public class Shadow extends Primitive
         rowID  = ( (Integer)
                    map_line2row.get( new Integer(start_vtx.lineID) )
                  ).intValue();
-        // nesting_ftr = Primitive.REDUCED_HEIGHT_FACTOR;
-        nesting_ftr = 0.9f;
+        // nesting_ftr = NestingStacks.getShadowNestingHeight();
+        /* assume NestingFactor has been calculated */
+        nesting_ftr = super.getNestingFactor();
 
         // System.out.println( "\t" + this + " nestftr=" + nesting_ftr );
 

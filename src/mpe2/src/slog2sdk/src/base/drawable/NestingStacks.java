@@ -17,11 +17,12 @@ public class NestingStacks
     //  0.0 < Nesting_Height_Reduction < 1.0
     private static  float  Nesting_Height_Reduction = 0.8f;
     private static  float  Initial_Nesting_Height   = 0.8f;
-    private static  float  Shadow_Nesting_Height    = 0.85f;
+    private static  float  Shadow_Nesting_Height    = 0.4f;
 
     private JTree          tree_view;
     private Stack[]        nesting_stacks;
     private boolean        hasNestingStacksBeenUsed;
+    private boolean        isTimeBoxScrolling;
 
     private int            num_rows;
 
@@ -41,8 +42,7 @@ public class NestingStacks
     {
         if ( new_reduction > 0.0f && new_reduction < 1.0f ) {
             Initial_Nesting_Height   = Nesting_Height_Reduction;   
-            Shadow_Nesting_Height    = ( 1.0f + Initial_Nesting_Height )
-                                     / 2.0f;
+            Shadow_Nesting_Height    = Initial_Nesting_Height / 2.0f;
         }
     }
 
@@ -51,12 +51,13 @@ public class NestingStacks
         return Shadow_Nesting_Height;
     }
 
-    public void initialize()
+    public void initialize( boolean isScrolling )
     {
         //  Need to check to see if tree_view has been updated,
         //  If not, no need to construct all these Stack[].
-        num_rows         = tree_view.getRowCount();
-        nesting_stacks   = new Stack[ num_rows ];
+        isTimeBoxScrolling = isScrolling;
+        num_rows           = tree_view.getRowCount();
+        nesting_stacks     = new Stack[ num_rows ];
         for ( int irow = 0 ; irow < num_rows ; irow++ ) {
             //  Select only non-expanded row
             if ( ! tree_view.isExpanded( irow ) )
@@ -89,6 +90,14 @@ public class NestingStacks
         }
     }
 
+    public boolean isReadyToGetNestingFactorFor( Primitive cur_prime )
+    {
+        if ( this.isTimeBoxScrolling )
+            return cur_prime.isNestingFactorUninitialized();
+        else
+            return true;
+    }
+
     /*
        Given the NestingStack of the timeline that the Drawable is on,
        Compute the NestingFactor, nesting_ftr.
@@ -97,20 +106,33 @@ public class NestingStacks
        bring in the real Drawables that are represented by the Shadows.
        These Drawables needs all the other real Drawables to be presented
        on the NestingStack to have their NestingFactor computed correctly.
+
+       If the input Primitive is Shadow, nesting_stack ignores its presence.
+       i.e. Shadow won't be pushed onto the stack.
      */
-    public float getNestingFactorAtRow( int rowID, Drawable cur_dobj )
+    public float getNestingFactorFor( final Primitive cur_prime )
     {
-        float     nesting_ftr = Drawable.NON_NESTABLE;
-        Stack     nesting_stack = nesting_stacks[ rowID ];
-        Drawable  dobj;
+        boolean   isRealDrawable  = ! ( cur_prime instanceof Shadow );
+        int       rowID           = cur_prime.getRowID();
+        Stack     nesting_stack   = nesting_stacks[ rowID ];
+        float     nesting_ftr     = Drawable.NON_NESTABLE;
+        Primitive prime;
+        /*
+           Assume all drawables are arranged in increasing starttime order
+           nesting_stack still needs to pop() even if the input Primitive,
+           shadow, is excluded from being push() to the stack, because 
+           when shadow overlaps with one of real drawables on the stack.
+           Drawables before the shadow are completely disjointed from
+           the shadow, so they should be pop() off the stack.
+        */
         while ( ! nesting_stack.empty() ) {
-            dobj = (Drawable) nesting_stack.peek();
-            // this drawable is nested inside dobj
-            if ( dobj.getEarliestTime() < cur_dobj.getLatestTime() ) {
-                nesting_ftr = dobj.getNestingFactor()
+            prime = (Primitive) nesting_stack.peek();
+            // cur_prime is nested inside or is overlap with prime
+            if ( cur_prime.getEarliestTime() < prime.getLatestTime() ) {
+                nesting_ftr = prime.getNestingFactor()
                             * Nesting_Height_Reduction;
-                cur_dobj.setNestingFactor( nesting_ftr );
-                nesting_stack.push( cur_dobj );
+                if ( isRealDrawable )
+                    nesting_stack.push( cur_prime );
                 return nesting_ftr;
             }
             else
@@ -118,8 +140,8 @@ public class NestingStacks
         }
         // i.e.  nesting_stack.empty() == true
         nesting_ftr = Initial_Nesting_Height;
-        cur_dobj.setNestingFactor( nesting_ftr );
-        nesting_stack.push( cur_dobj );
+        if ( isRealDrawable )
+            nesting_stack.push( cur_prime );
         return nesting_ftr;
     } 
 }
