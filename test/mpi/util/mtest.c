@@ -13,6 +13,9 @@
 #include <stdarg.h>
 #endif
 
+/* Here is where we could put the includes and definitions to enable
+   memory testing */
+
 static int dbgflag = 0;         /* Flag used for debugging */
 static int wrank = -1;          /* World rank */
 static int verbose = 0;         /* Message level (0 is none) */
@@ -20,10 +23,14 @@ static int verbose = 0;         /* Message level (0 is none) */
  * Initialize and Finalize MTest
  */
 
-/* 
-   Initialize MTest, initializing MPI if necessary.  Also sets debug
-   and verbose output flags from the environment variables MPITEST_DEBUG
-   and MPITEST_VERBOSE .
+/*
+   Initialize MTest, initializing MPI if necessary.  
+
+ Environment Variables:
++ MPITEST_DEBUG - If set (to any value), turns on debugging output
+- MPITEST_VERBOSE - If set to a numeric value, turns on that level of
+  verbose output.  This is used by the routine 'MTestPrintfMsg'
+
 */
 void MTest_Init( int *argc, char ***argv )
 {
@@ -74,7 +81,7 @@ void MTest_Finalize( int errs )
 
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
-    MPI_Allreduce( &errs, &toterrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
+    MPI_Reduce( &errs, &toterrs, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD );
     if (rank == 0) {
 	if (toterrs) {
 	    printf( " Found %d errors\n", toterrs );
@@ -95,6 +102,9 @@ void MTest_Finalize( int errs )
  */
 static int datatype_index = 0;
 
+/* ------------------------------------------------------------------------ */
+/* Datatype routines for contiguous datatypes                               */
+/* ------------------------------------------------------------------------ */
 /* 
  * Setup contiguous buffers of n copies of a datatype.
  */
@@ -112,8 +122,7 @@ static void *MTestTypeContigInit( MTestDatatype *mtype )
 	p = (signed char *)(mtype->buf);
 	if (!p) {
 	    /* Error - out of memory */
-	    fprintf( stderr, "Out of memory in type buffer init\n" );
-	    MPI_Abort( MPI_COMM_WORLD, 1 );
+	    MTestError( "Out of memory in type buffer init" );
 	}
 	for (i=0; i<totsize; i++) {
 	    p[i] = 0xff ^ (i & 0xff);
@@ -146,8 +155,7 @@ static void *MTestTypeContigInitRecv( MTestDatatype *mtype )
 	p = (signed char *)(mtype->buf);
 	if (!p) {
 	    /* Error - out of memory */
-	    fprintf( stderr, "Out of memory in type buffer init\n" );
-	    MPI_Abort( MPI_COMM_WORLD, 1 );
+	    MTestError( "Out of memory in type buffer init" );
 	}
 	for (i=0; i<totsize; i++) {
 	    p[i] = 0xff;
@@ -194,9 +202,9 @@ static int MTestTypeContigCheckbuf( MTestDatatype *mtype )
     return err;
 }
 
-/*
- * 
- */
+/* ------------------------------------------------------------------------ */
+/* Datatype routines for vector datatypes
+/* ------------------------------------------------------------------------ */
 
 static void *MTestTypeVectorInit( MTestDatatype *mtype )
 {
@@ -214,8 +222,7 @@ static void *MTestTypeVectorInit( MTestDatatype *mtype )
 	p	   = (unsigned char *)(mtype->buf);
 	if (!p) {
 	    /* Error - out of memory */
-	    fprintf( stderr, "Out of memory in type buffer init\n" );
-	    MPI_Abort( MPI_COMM_WORLD, 1 );
+	    MTestError( "Out of memory in type buffer init" );
 	}
 
 	/* First, set to -1 */
@@ -251,6 +258,206 @@ static void *MTestTypeVectorFree( MTestDatatype *mtype )
     }
     return 0;
 }
+
+# if 0
+/* The following is the contig init code */
+static void *MTestTypeVectorInitRecv( MTestDatatype *mtype )
+{
+    MPI_Aint size;
+    if (mtype->count > 0) {
+	signed char *p;
+	int  i, totsize;
+	MPI_Type_extent( mtype->datatype, &size );
+	totsize = size * mtype->count;
+	if (!mtype->buf) {
+	    mtype->buf = (void *) malloc( totsize );
+	}
+	p = (signed char *)(mtype->buf);
+	if (!p) {
+	    /* Error - out of memory */
+	    MTestError( "Out of memory in type buffer init" );
+	}
+	for (i=0; i<totsize; i++) {
+	    p[i] = 0xff;
+	}
+    }
+    else {
+	if (mtype->buf) {
+	    free( mtype->buf );
+	}
+	mtype->buf = 0;
+    }
+    return mtype->buf;
+}
+
+static int MTestTypeVectorCheckbuf( MTestDatatype *mtype )
+{
+    unsigned char *p;
+    unsigned char expected;
+    int  i, totsize, err = 0;
+    MPI_Aint size;
+
+    p = (unsigned char *)mtype->buf;
+    if (p) {
+	MPI_Type_extent( mtype->datatype, &size );
+	totsize = size * mtype->count;
+
+	/* count is usually one for a vector type */
+	nc = 0;
+	for (k=0; k<mtype->count; k++) {
+	    /* For each element (block) */
+	    for (i=0; i<mtype->nelm; i++) {
+		expected = (0xff ^ (nc & 0xff));
+		/* For each value */
+		for (j=0; j<mtype->blksize; j++) {
+		    if (p[j] != expected) {
+			err++;
+			if (mtype->printErrors && err < 10) {
+			    printf( "Data expected = %x but got %x for %dth entry\n",
+				    expected, p[j], j );
+			}
+		    nc++;
+		}
+		p += mtype->stride;
+	    }
+	}
+    }
+    return err;
+}
+#endif
+/* ------------------------------------------------------------------------ */
+/* Datatype routines for indexed block datatypes
+/* ------------------------------------------------------------------------ */
+/* 
+ * Setup a buffer for one copy of an indexed datatype. 
+ */
+static void *MTestTypeIndexedInit( MTestDatatype *mtype )
+{
+    MPI_Aint totsize;
+    
+    if (mtype->count > 1) {
+	MTestError( "This datatype is supported only for a single count" );
+    }
+    if (mtype->count == 1) {
+	signed char *p;
+	int  i, k, offset, j;
+
+	/* Allocate the send/recv buffer */
+	MPI_Type_extent( mtype->datatype, &totsize );
+	if (!mtype->buf) {
+	    mtype->buf = (void *) malloc( totsize );
+	}
+	p = (signed char *)(mtype->buf);
+	if (!p) {
+	    MTestError( "Out of memory in type buffer init\n" );
+	}
+	/* Initialize the elements */
+	/* First, set to -1 */
+	for (i=0; i<totsize; i++) p[i] = 0xff;
+
+	/* Now, set the actual elements to the successive values.
+	   We require that the base type is a contiguous type */
+	k = 0;
+	for (i=0; i<mtype->nelm; i++) {
+	    /* Compute the offset: */
+	    offset = mtype->displs[i] * mtype->basesize;
+	    for (j=0; j<mtype->basesize; j++) {
+		p[offset+j] = 0xff ^ (k++ & 0xff);
+	    }
+	}
+    }
+    else {
+	/* count == 0 */
+	if (mtype->buf) {
+	    free( mtype->buf );
+	}
+	mtype->buf = 0;
+    }
+    return mtype->buf;
+}
+
+/* 
+ * Setup indexed buffers for 1 copy of a datatype.  Initialize for
+ * reception (e.g., set initial data to detect failure)
+ */
+static void *MTestTypeIndexInitRecv( MTestDatatype *mtype )
+{
+    MPI_Aint totsize;
+    if (mtype->count > 1) {
+	MTestError( "This datatype is supported only for a single count" );
+    }
+    if (mtype->count == 1) {
+	signed char *p;
+	int  i;
+	MPI_Type_extent( mtype->datatype, &totsize );
+	if (!mtype->buf) {
+	    mtype->buf = (void *) malloc( totsize );
+	}
+	p = (signed char *)(mtype->buf);
+	if (!p) {
+	    /* Error - out of memory */
+	    MTestError( "Out of memory in type buffer init\n" );
+	}
+	for (i=0; i<totsize; i++) {
+	    p[i] = 0xff;
+	}
+    }
+    else {
+	/* count == 0 */
+	if (mtype->buf) {
+	    free( mtype->buf );
+	}
+	mtype->buf = 0;
+    }
+    return mtype->buf;
+}
+
+static void *MTestTypeIndexFree( MTestDatatype *mtype )
+{
+    if (mtype->buf) {
+	free( mtype->buf );
+	free( mtype->displs );
+	mtype->buf    = 0;
+	mtype->displs = 0;
+    }
+    return 0;
+}
+static int MTestTypeIndexCheckbuf( MTestDatatype *mtype )
+{
+    unsigned char *p;
+    unsigned char expected;
+    int  i, err = 0;
+    MPI_Aint totsize;
+
+    p = (unsigned char *)mtype->buf;
+    if (p) {
+	int j, k, offset;
+	MPI_Type_extent( mtype->datatype, &totsize );
+	
+	k = 0;
+	for (i=0; i<mtype->nelm; i++) {
+	    /* Compute the offset: */
+	    offset = mtype->displs[i] * mtype->basesize;
+	    for (j=0; j<mtype->basesize; j++) {
+		expected = (0xff ^ (k & 0xff));
+		if (p[offset+j] != expected) {
+		    err++;
+		    if (mtype->printErrors && err < 10) {
+			printf( "Data expected = %x but got %x for %dth entry\n",
+				expected, p[offset+j], k );
+		    }
+		}
+		k++;
+	    }
+	}
+    }
+    return err;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Routines to select a datatype and associated buffer create/fill/check    */
+/* routines                                                                 */
+/* ------------------------------------------------------------------------ */
 
 /* 
    Create a range of datatypes with a given count elements.
@@ -338,6 +545,62 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	sendtype->CheckBuf = 0;
 	recvtype->CheckBuf = MTestTypeContigCheckbuf;
 	break;
+#if 0
+    case 6:
+	/* vector recv type and contiguous send type */
+	/* These sizes are in bytes (see the VectorInit code) */
+	recvtype->stride   = 4 * sizeof(int);
+	recvtype->blksize  = sizeof(int);
+	recvtype->nelm     = recvtype->count;
+
+	MPI_Type_vector( sendtype->count, 1, 4, MPI_INT, 
+			 &recvtype->datatype );
+        MPI_Type_commit( &recvtype->datatype );
+	MPI_Type_set_name( recvtype->datatype, "int-vector" );
+	recvtype->count    = 1;
+	sendtype->datatype = MPI_INT;
+	sendtype->isBasic  = 1;
+	recvtype->InitBuf  = MTestTypeVectorInit;
+	sendtype->InitBuf  = MTestTypeContigInitRecv;
+	recvtype->FreeBuf  = MTestTypeVectorFree;
+	sendtype->FreeBuf  = MTestTypeContigFree;
+	recvtype->CheckBuf = MTestTypeVectorCheckbuf;
+	sendtype->CheckBuf = 0;
+	break;
+    case 7:
+	/* contig send and block indexed recv */
+	/* Make indexes 5*((count-1) - i), for i=0, ..., count-1, i.e., 
+	   every 5th element, but starting from the end. */
+	recvtype->blksize  = sizeof(int);
+	recvtype->nelm     = recvtype->count;
+
+	sendtype->displs = (int *) malloc( sendtype->count );
+	if (!sendtype->displs) {
+	    MTestError( "Out of memory in indexed block" );
+	}
+	for (i=0; i<sendtype->count; i++) {
+	    sendtype->displs[i] = 5 * ( (count-1) - i );
+	}
+	sendtype->basesize = sizeof(int);
+	sendtype->nelm     = sendtype->count;
+	MPI_Type_create_index_block( sendtype->count, 1, sendtype->displs, 
+				     MPI_INT, &recvtype->datatype );
+        MPI_Type_commit( &recvtype->datatype );
+	MPI_Type_set_name( recvtype->datatype, "int-decreasing-indexed" );
+	recvtype->count    = 1;
+	sendtype->datatype = MPI_INT;
+	sendtype->isBasic  = 1;
+	recvtype->InitBuf  = MTestTypeIndexedInit;
+	sendtype->InitBuf  = MTestTypeContigInitRecv;
+	recvtype->FreeBuf  = MTestTypeIndexedFree;
+	sendtype->FreeBuf  = MTestTypeContigFree;
+	recvtype->CheckBuf = MTestTypeIndexedCheckBuf;
+	sendtype->CheckBuf = 0;
+	break;
+    case 8: 
+	/* index send and vector recv (using shorts) */
+	break;
+#endif
     default:
 	datatype_index = -1;
     }
@@ -486,6 +749,8 @@ int MTestGetIntracommGeneral( MPI_Comm *comm, int min_size, int allowSmaller )
 	    intraCommName = "MPI_COMM_SELF";
 	    break;
 
+	    /* These next cases are communicators that include some
+	       but not all of the processes */
 	case 5:
 	case 6:
 	case 7:
@@ -745,7 +1010,12 @@ void MTestPrintfMsg( int level, const char format[], ... )
 	va_end(list);
     }
 }
-
+/* Fatal error.  Report and exit */
+void MTestError( const char *msg )
+{
+    fprintf( stderr, "%s\n", msg );
+    MPI_Abort( MPI_COMM_WORLD, 1 );
+}
 /* ------------------------------------------------------------------------ */
 #ifdef HAVE_MPI_WIN_CREATE
 /*
@@ -753,12 +1023,22 @@ void MTestPrintfMsg( int level, const char format[], ... )
  */
 static int win_index = 0;
 static const char *winName;
+/* Use an attribute to remember the type of memory allocation (static,
+   malloc, or MPI_Alloc_mem) */
+static int mem_keyval = MPI_KEYVAL_INVALID;
 int MTestGetWin( MPI_Win *win, int mustBePassive )
 {
     static char actbuf[1024];
     static char *pasbuf;
-    char *buf;
-    int n, rank;
+    char        *buf;
+    int         n, rank;
+    MPI_Info    info;
+
+    if (mem_keyval == MPI_KEYVAL_INVALID) {
+	/* Create the keyval */
+	MPI_Win_create_keyval( MPI_WIN_NULL_COPY_FN, MPI_WIN_NULL_DELETE_FN, 
+			       &mem_keyval, 0 );
+    }
 
     switch (win_index) {
     case 0:
@@ -766,20 +1046,20 @@ int MTestGetWin( MPI_Win *win, int mustBePassive )
 	MPI_Win_create( actbuf, 1024, 1, MPI_INFO_NULL, MPI_COMM_WORLD, 
 			win );
 	winName = "active-window";
+	MPI_Win_set_attr( *win, mem_keyval, (void *)0 );
 	break;
     case 1:
 	/* Passive target window */
 	MPI_Alloc_mem( 1024, MPI_INFO_NULL, &pasbuf );
-	/* FIXME: storage leak */
 	MPI_Win_create( pasbuf, 1024, 1, MPI_INFO_NULL, MPI_COMM_WORLD, 
 			win );
 	winName = "passive-window";
+	MPI_Win_set_attr( *win, mem_keyval, (void *)2 );
 	break;
     case 2:
 	/* Active target; all windows different sizes */
 	MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 	n = rank * 64;
-	/* FIXME: storage leak */
 	if (n) 
 	    buf = (char *)malloc( n );
 	else
@@ -787,6 +1067,23 @@ int MTestGetWin( MPI_Win *win, int mustBePassive )
 	MPI_Win_create( buf, n, 1, MPI_INFO_NULL, MPI_COMM_WORLD, 
 			win );
 	winName = "active-all-different-win";
+	MPI_Win_set_attr( *win, mem_keyval, (void *)1 );
+	break;
+    case 3:
+	/* Active target, no locks set */
+	MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+	n = rank * 64;
+	if (n) 
+	    buf = (char *)malloc( n );
+	else
+	    buf = 0;
+	MPI_Info_create( &info );
+	MPI_Info_set( info, "nolocks", "true" );
+	MPI_Win_create( buf, n, 1, MPI_INFO_NULL, MPI_COMM_WORLD, 
+			win );
+	MPI_Info_free( &info );
+	winName = "active-nolocks-all-different-win";
+	MPI_Win_set_attr( *win, mem_keyval, (void *)1 );
 	break;
     default:
 	win_index = -1;
@@ -797,8 +1094,32 @@ int MTestGetWin( MPI_Win *win, int mustBePassive )
 /* Return a pointer to the name associated with a window object */
 const char *MTestGetWinName( void )
 {
-    
     return winName;
 }
-/* To fix the storage leaks noted above, we need to have an MTestFreeWin */
+/* Free the storage associated with a window object */
+void MTestFreeWin( MPI_Win *win )
+{
+    void *addr;
+    int  flag;
+
+    MPI_Win_get_attr( *win, MPI_WIN_BASE, &addr, &flag );
+    if (!flag) {
+	MTestError( "Could not get WIN_BASE from window" );
+    }
+    if (addr) {
+	void *val;
+	MPI_Win_get_attr( *win, mem_keyval, &val, &flag );
+	if (flag) {
+	    if (val == (void *)1) {
+		free( addr );
+	    }
+	    else if (val == (void *)2) {
+		MPI_Free_mem( addr );
+	    }
+	    /* if val == (void *)0, then static data that must not be freed */
+	}
+    }
+    
+    
+}
 #endif

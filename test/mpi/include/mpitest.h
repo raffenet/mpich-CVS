@@ -17,6 +17,7 @@ void MTest_Finalize( int );
 void MTestPrintError( int );
 void MTestPrintErrorMsg( const char [], int );
 void MTestPrintfMsg( int, const char [], ... );
+void MTestError( const char [] );
 
 /*
  * This structure contains the information used to test datatypes
@@ -37,6 +38,9 @@ typedef struct _MTestDatatype {
        the derived datatypes */
     int  stride, nelm, blksize, *index;
     /* stride, nelm, and blksize are in bytes */
+    int *displs, basesize;
+    /* displacements are in multiples of base type; basesize is the
+       size of that type*/
     void *(*InitBuf)( struct _MTestDatatype * );
     void *(*FreeBuf)( struct _MTestDatatype * );
     int   (*CheckBuf)( struct _MTestDatatype * );
@@ -60,6 +64,7 @@ void MTestFreeComm( MPI_Comm * );
 #ifdef HAVE_MPI_WIN_CREATE
 int MTestGetWin( MPI_Win *, int );
 const char *MTestGetWinName( void );
+void MTestFreeWin( MPI_Win * );
 #endif
 
 #endif
