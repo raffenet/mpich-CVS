@@ -83,7 +83,7 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
         MPID_END_ERROR_CHECKS;
     }
 #   else    
-    MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
+    MPID_Keyval_get_ptr( type_keyval, keyval_ptr );
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
