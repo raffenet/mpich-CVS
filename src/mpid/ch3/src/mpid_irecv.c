@@ -145,9 +145,6 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 	{
 	    MPID_Request * const sreq = rreq->partner_request;
 
-	    rreq->status.MPI_SOURCE = rreq->ch3.match.rank;
-	    rreq->status.MPI_TAG = rreq->ch3.match.tag;
-	    
 	    if (MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_RSEND)
 	    {
 		MPIDI_msg_sz_t data_sz;

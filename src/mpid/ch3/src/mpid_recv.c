@@ -128,9 +128,6 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 	{
 	    MPID_Request * const sreq = rreq->partner_request;
 
-	    rreq->status.MPI_SOURCE = rank;
-	    rreq->status.MPI_TAG = tag;
-	    
 	    if (MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_RSEND)
 	    {
 		MPIDI_msg_sz_t data_sz;
@@ -145,7 +142,12 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 		rreq->status.count = 0;
 		rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN; /* FIXME */
 	    }
-	    
+
+	    if (status != MPI_STATUS_IGNORE)
+	    {
+		*status = rreq->status;
+	    }
+
 	    MPID_Request_release(sreq);
 	    MPID_Request_set_complete(rreq);
 	    MPID_Request_release(rreq);

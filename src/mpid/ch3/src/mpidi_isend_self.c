@@ -47,6 +47,9 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
     MPIDI_CH3U_Request_set_seqnum(rreq, seqnum);
     
+    rreq->status.MPI_SOURCE = rank;
+    rreq->status.MPI_TAG = tag;
+    
     if (found)
     {
 	int data_sz;
@@ -55,8 +58,6 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	    
 	MPIDI_CH3U_Buffer_copy(buf, count, datatype, &sreq->status.MPI_ERROR,
 			       rreq->ch3.user_buf, rreq->ch3.user_count, rreq->ch3.datatype, &data_sz, &rreq->status.MPI_ERROR);
-	rreq->status.MPI_SOURCE = rank;
-	rreq->status.MPI_TAG = tag;
 	rreq->status.count = data_sz;
 	MPID_Request_set_complete(rreq);
 	MPID_Request_release(rreq);
