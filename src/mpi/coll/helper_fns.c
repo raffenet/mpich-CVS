@@ -18,15 +18,23 @@ int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     int mpi_errno;
     MPID_Request *request_ptr=NULL;
     MPID_Comm *comm_ptr=NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPIC_SEND);
+
+    MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPIC_SEND);
 
     MPID_Comm_get_ptr( comm, comm_ptr );
     mpi_errno = MPID_Send(buf, count, datatype, dest, tag, comm_ptr,
                           MPID_CONTEXT_INTRA_COLL, &request_ptr); 
-    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SEND);
+	return mpi_errno;
+    }
     if (request_ptr) {
         MPIR_Wait(request_ptr);
         MPID_Request_release(request_ptr);
     }
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SEND);
     return mpi_errno;
 }
 
@@ -36,11 +44,18 @@ int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     int mpi_errno;
     MPID_Request *request_ptr=NULL;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPIC_RECV);
+
+    MPID_MPI_PT2PT_FUNC_ENTER_BACK(MPID_STATE_MPIC_RECV);
 
     MPID_Comm_get_ptr( comm, comm_ptr );
     mpi_errno = MPID_Recv(buf, count, datatype, source, tag, comm_ptr,
                           MPID_CONTEXT_INTRA_COLL, status, &request_ptr); 
-    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_RECV);
+	return mpi_errno;
+    }
     if (request_ptr) {
         MPIR_Wait(request_ptr);
         if (status != NULL)
@@ -48,6 +63,7 @@ int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
         mpi_errno = request_ptr->status.MPI_ERROR;
         MPID_Request_release(request_ptr);
     }
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_RECV);
     return mpi_errno;
 }
 
@@ -59,15 +75,26 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     MPID_Request *recv_req_ptr=NULL, *send_req_ptr=NULL;
     int mpi_errno;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPIC_SENDRECV);
+
+    MPID_MPI_PT2PT_FUNC_ENTER_BOTH(MPID_STATE_MPIC_SENDRECV);
 
     MPID_Comm_get_ptr( comm, comm_ptr );
 
     mpi_errno = MPID_Irecv(recvbuf, recvcount, recvtype, source, recvtag,
                            comm_ptr, MPID_CONTEXT_INTRA_COLL, &recv_req_ptr);
-    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SENDRECV);
+	return mpi_errno;
+    }
     mpi_errno = MPID_Isend(sendbuf, sendcount, sendtype, dest, sendtag, 
                            comm_ptr, MPID_CONTEXT_INTRA_COLL, &send_req_ptr); 
-    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SENDRECV);
+	return mpi_errno;
+    }
 
     MPIR_Wait(send_req_ptr); 
     MPID_Request_release(send_req_ptr);
@@ -78,6 +105,7 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     mpi_errno = recv_req_ptr->status.MPI_ERROR;
     MPID_Request_release(recv_req_ptr);
 
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SENDRECV);
     return mpi_errno;
 }
 

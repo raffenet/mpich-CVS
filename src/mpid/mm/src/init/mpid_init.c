@@ -58,7 +58,7 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     PMI_Barrier();
     /*dbg_printf("-\n");*/
 
-    MPID_Timer_init(MPIR_Process.comm_world->rank, MPIR_Process.comm_world->local_size); /* Should this be called in MPIR_Init_thread */
+    MPIU_Timer_init(MPIR_Process.comm_world->rank, MPIR_Process.comm_world->local_size); /* Should this be called in MPIR_Init_thread */
 
     if (spawned)
     {

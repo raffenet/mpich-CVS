@@ -127,7 +127,9 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     pRequest->mm.dtype = dtype;
     pRequest->mm.first = first;
     MPID_Datatype_get_size_macro(dtype, dtype_sz);
+    /*if (dtype_sz == 0) err_printf("Help the russians are coming!!! dtype_sz == 0.\n");*/
     pRequest->mm.size = count * dtype_sz;
+    /*printf("send(%d): count(%d) * size(%d) = %d\n", pRequest->mm.tag, count, dtype_sz, pRequest->mm.size);fflush(stdout);*/
     pRequest->mm.last = (last == MPID_DTYPE_END) ? pRequest->mm.size : last;
 
     MPID_Segment_init((void*)buf, count, dtype, &pRequest->mm.segment);

@@ -119,7 +119,7 @@ BOOL CRimshotDoc::OnOpenDocument(LPCTSTR lpszPathName)
     if (m_pInput != NULL)
 	RLOG_CloseInputStruct(&m_pInput);
     
-    if (m_pStateList)
+    while (m_pStateList)
     {
 	StateNode *pNode = m_pStateList;
 	m_pStateList = m_pStateList->pNext;
@@ -192,7 +192,8 @@ CBrush* CRimshotDoc::GetEventBrush(int event)
 	    return &pIter->brush;
 	pIter = pIter->pNext;
     }
-    return (CBrush*)GetStockObject(BLACK_BRUSH);
+    //return (CBrush*)GetStockObject(BLACK_BRUSH);
+    return NULL;
 }
 
 void CRimshotDoc::OnFileOpen() 

@@ -423,6 +423,10 @@ SOURCE=.\src\mpi\datatype\dataloop.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\mpi\init\describe_mpi_states.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\mpi\topo\dims_create.c
 # PROP Exclude_From_Build 1
 # End Source File

@@ -101,7 +101,7 @@ int MPI_Finalize( void )
     MPID_MPI_FINALIZE_FUNC_ENTER(MPID_STATE_MPI_FINALIZE);
     
     /* ... body of routine ...  */
-    MPID_Timer_finalize();
+    MPIU_Timer_finalize();
     
     MPID_Finalize();
 

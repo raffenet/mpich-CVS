@@ -318,7 +318,7 @@ int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_BWRITE);
     if (num_written == SOCKET_ERROR)
     {
-	err_printf("tcp_write_tmp:bread failed, error %d\n", beasy_getlasterror());
+	err_printf("tcp_write_tmp:bwrite failed, error %d\n", beasy_getlasterror());
     }
     /* update the amount written */
     car_ptr->data.tcp.buf.tmp.num_written += num_written;
@@ -365,7 +365,7 @@ int tcp_write_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_p
     MPIDI_FUNC_EXIT(MPID_STATE_BWRITE);
     if (num_written == SOCKET_ERROR)
     {
-	err_printf("tcp_write_tmp:bread failed, error %d\n", beasy_getlasterror());
+	err_printf("tcp_write_tmp:bwrite failed, error %d\n", beasy_getlasterror());
     }
     /* update the amount written */
     car_ptr->data.tcp.buf.simple.num_written += num_written;

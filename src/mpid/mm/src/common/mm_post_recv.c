@@ -25,7 +25,9 @@ int mm_post_recv(MM_Car *car_ptr)
 	{
 	    if (iter_ptr->msg_header.pkt.u.hdr.size > car_ptr->msg_header.pkt.u.hdr.size)
 	    {
-		err_printf("Error: unex msg size %d > posted msg size %d\n", iter_ptr->msg_header.pkt.u.hdr.size, car_ptr->msg_header.pkt.u.hdr.size);
+		err_printf("Error: unex msg size %d > posted msg size %d\n", 
+		    iter_ptr->msg_header.pkt.u.hdr.size, 
+		    car_ptr->msg_header.pkt.u.hdr.size);
 		MPIDI_FUNC_EXIT(MPID_STATE_MM_POST_RECV);
 		return -1;
 	    }

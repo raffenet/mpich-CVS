@@ -44,10 +44,15 @@ int tcp_read_header(MPIDI_VC *vc_ptr)
     if (num_read == SOCKET_ERROR)
     {
 	TCP_Process.error = beasy_getlasterror();
-	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-	err_printf("tcp_read_connecting: bread failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-	MPIDI_FUNC_EXIT(MPID_STATE_TCP_READ_HEADER);
-	return -1;
+	if (TCP_Process.error == WSAEWOULDBLOCK)
+	    num_read = 0;
+	else
+	{
+	    beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+	    err_printf("tcp_read_header: bread failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	    MPIDI_FUNC_EXIT(MPID_STATE_TCP_READ_HEADER);
+	    return -1;
+	}
     }
 
     vc_ptr->data.tcp.bytes_of_header_read += num_read;
@@ -224,10 +229,15 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	    if (num_read == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();
-		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-		err_printf("tcp_read_vec: bread failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-		MPIDI_FUNC_EXIT(MPID_STATE_TCP_READ_VEC);
-		return -1;
+		if (TCP_Process.error == WSAEWOULDBLOCK)
+		    num_read = 0;
+		else
+		{
+		    beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+		    err_printf("tcp_read_vec: bread failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+		    MPIDI_FUNC_EXIT(MPID_STATE_TCP_READ_VEC);
+		    return -1;
+		}
 	    }
 	}
 	else
@@ -316,7 +326,13 @@ int tcp_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_BREAD);
     if (num_read == SOCKET_ERROR)
     {
-	err_printf("tcp_read_tmp:bread failed, error %d\n", beasy_getlasterror());
+	TCP_Process.error = beasy_getlasterror();
+	if (TCP_Process.error == WSAEWOULDBLOCK)
+	    num_read = 0;
+	else
+	{
+	    err_printf("tcp_read_tmp:bread failed, error %d\n", beasy_getlasterror());
+	}
     }
 
     /*msg_printf("num_read tmp: %d\n", num_read);*/
@@ -361,7 +377,13 @@ int tcp_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_pt
     MPIDI_FUNC_EXIT(MPID_STATE_BREAD);
     if (num_read == SOCKET_ERROR)
     {
-	err_printf("tcp_read_tmp:bread failed, error %d\n", beasy_getlasterror());
+	TCP_Process.error = beasy_getlasterror();
+	if (TCP_Process.error == WSAEWOULDBLOCK)
+	    num_read = 0;
+	else
+	{
+	    err_printf("tcp_read_tmp:bread failed, error %d\n", beasy_getlasterror());
+	}
     }
 
     /*msg_printf("num_read simple: %d\n", num_read);*/

@@ -54,8 +54,8 @@ extern DLOG_Struct *g_pDLOG;
 #define MPID_MPI_FINALIZE_FUNC_ENTER(a)
 #define MPID_MPI_FINALIZE_FUNC_EXIT(a) 
 
-int MPID_Timer_init(int rank, int size);
-int MPID_Timer_finalize();
+int MPIU_Timer_init(int rank, int size);
+int MPIU_Timer_finalize();
 #endif
 
 
@@ -65,8 +65,8 @@ int MPID_Timer_finalize();
 #define MPID_FUNC_ENTER(a) DLOG_LogOpenEvent( g_pDLOG, g_timer_state[ a ].in_id, g_timer_state[ a ].num_calls++ )
 #define MPID_FUNC_EXIT(a) DLOG_LogOpenEvent( g_pDLOG, g_timer_state[ a ].out_id, g_timer_state[ a ].num_calls++ )
 
-int MPID_Timer_init(int rank, int size);
-int MPID_Timer_finalize();
+int MPIU_Timer_init(int rank, int size);
+int MPIU_Timer_finalize();
 
 #define MPID_MPI_STATE_DECLS
 #define MPID_MPI_FINALIZE_STATE_DECLS

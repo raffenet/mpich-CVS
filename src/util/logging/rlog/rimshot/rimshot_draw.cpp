@@ -16,7 +16,8 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
     double dwPixel, *pdNextPixel;
     int nMaxRecursions = 0;
     CBrush white_brush;
-    CPen line_pen, cursor_pen;
+    //CPen line_pen, cursor_pen;
+    HPEN line_pen, cursor_pen, hOldPen;
     CString str;
     CSize size;
     double duration;
@@ -38,8 +39,10 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 	    
 	    big_rect.DeflateRect(25, 25);
 	    
-	    line_pen.CreatePen(PS_SOLID, 1, RGB(100,100,100));
-	    cursor_pen.CreatePen(PS_SOLID, 1, RGB(255,255,255));
+	    //line_pen.CreatePen(PS_SOLID, 1, RGB(100,100,100));
+	    //cursor_pen.CreatePen(PS_SOLID, 1, RGB(255,255,255));
+	    line_pen = CreatePen(PS_SOLID, 1, RGB(100,100,100));
+	    cursor_pen = CreatePen(PS_SOLID, 1, RGB(255,255,255));
 	    
 	    //pArg->pCanvas->FillSolidRect(client_rect, RGB(255,255,255));
 	    pArg->pCanvas->FillSolidRect(0,0,client_rect.Width(), big_rect.top, RGB(255,255,255));
@@ -71,7 +74,8 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 		pdNextPixel = new double[pArg->pDoc->m_pInput->nNumRanks];
 		
 		// draw the horizontal rank lines
-		pArg->pCanvas->SelectObject(&line_pen);
+		//pArg->pCanvas->SelectObject(&line_pen);
+		hOldPen = (HPEN) pArg->pCanvas->SelectObject(line_pen);
 		for (i=0; i<pArg->pDoc->m_pInput->nNumRanks; i++)
 		{
 		    y = big_rect.top + (height * i) + (height / 2);
@@ -140,21 +144,23 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 			{
 			    x = big_rect.left + (long)(dx * (arrow.start_time - pArg->pDoc->m_dLeft));
 			    y = big_rect.top + (height * arrow.dest) + (height / 2);
+			    //pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
 			    pArg->pCanvas->MoveTo(x, y);
-			    pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
 			    x = x + (long)(dx * (arrow.end_time - arrow.start_time));
 			    y = big_rect.top + (height * arrow.src) + (height / 2);
 			    pArg->pCanvas->LineTo(x, y);
+			    pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
 			}
 			else
 			{
 			    x = big_rect.left + (long)(dx * (arrow.start_time - pArg->pDoc->m_dLeft));
 			    y = big_rect.top + (height * arrow.src) + (height / 2);
+			    pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
 			    pArg->pCanvas->MoveTo(x, y);
 			    x = x + (long)(dx * (arrow.end_time - arrow.start_time));
 			    y = big_rect.top + (height * arrow.dest) + (height / 2);
 			    pArg->pCanvas->LineTo(x, y);
-			    pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
+			    //pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
 			}
 			if (RLOG_GetNextArrow(pArg->pDoc->m_pInput, &arrow) != 0)
 			    //arrow.start_time = pArg->pDoc->m_dRight + 1;
@@ -163,10 +169,15 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 		}
 		
 		// draw the vertical cursor line
-		pArg->pCanvas->SelectObject(&cursor_pen);
+		//pArg->pCanvas->SelectObject(&cursor_pen);
+		pArg->pCanvas->SelectObject(cursor_pen);
 		pArg->pCanvas->MoveTo((big_rect.right + big_rect.left) / 2, big_rect.top);
 		pArg->pCanvas->LineTo((big_rect.right + big_rect.left) / 2, big_rect.bottom);
-		
+
+		pArg->pCanvas->SelectObject(hOldPen);
+		DeleteObject(cursor_pen);
+		DeleteObject(line_pen);
+
 		pArg->pCanvas->SetBkMode(OPAQUE);
 		pArg->pCanvas->SetBkColor(RGB(255,255,255));
 		pArg->pCanvas->SetTextColor(RGB(0,0,0));
@@ -188,7 +199,15 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 		    rect.right = rect.left + 13;
 		    rect.top = 7;
 		    rect.bottom = 20;
-		    pArg->pCanvas->FillRect(&rect, pBrush);
+		    if (pBrush != NULL)
+			pArg->pCanvas->FillRect(&rect, pBrush);
+		    else
+		    {
+			CBrush brush;
+			brush.CreateSolidBrush(RGB(0,0,0));
+			pArg->pCanvas->FillRect(&rect, &brush);
+		    }
+		    //pArg->pCanvas->FillSolidRect(&rect, pArg->pDoc->GetEventColor(event.event));
 		    
 		    //str.Format("%3d: %s    duration: %.6f", event.rank, pDoc->GetEventDescription(event.event), event.end_time - event.start_time);
 		    //pCanvas->TextOut(rect.left + 20, 7, str);
@@ -213,16 +232,22 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 		    // write the microseconds
 		    str.Format("%.6f", duration);
 		    size = pArg->pCanvas->GetTextExtent(str);
-		    rgn.CreateRectRgnIndirect(&client_rect);
-		    pArg->pCanvas->SelectClipRgn(&rgn, RGN_XOR);
-		    rgn.CreateRectRgn(x, 7, x + size.cx, 7 + size.cy);
+		    rgn.DeleteObject();
+		    CRgn rgn2;
+		    rgn2.CreateRectRgnIndirect(&client_rect);
+		    pArg->pCanvas->SelectClipRgn(&rgn2, RGN_XOR);
+		    rgn2.DeleteObject();
+		    CRgn rgn3;
+		    rgn3.CreateRectRgn(x, 7, x + size.cx, 7 + size.cy);
 		    str.Format("%.9f", duration);
 		    pArg->pCanvas->SetTextColor(RGB(255,0,0));
 		    pArg->pCanvas->TextOut(x, 7, str);
 		    // write the nanoseconds
-		    pArg->pCanvas->SelectClipRgn(&rgn, RGN_COPY);
-		    rgn.CreateRectRgnIndirect(&client_rect);
-		    pArg->pCanvas->SelectClipRgn(&rgn, RGN_XOR);
+		    pArg->pCanvas->SelectClipRgn(&rgn3, RGN_COPY);
+		    rgn3.DeleteObject();
+		    CRgn rgn4;
+		    rgn4.CreateRectRgnIndirect(&client_rect);
+		    pArg->pCanvas->SelectClipRgn(&rgn4, RGN_XOR);
 		    str.Format("%.9f", duration);
 		    pArg->pCanvas->SetTextColor(RGB(0,0,255));
 		    pArg->pCanvas->TextOut(x, 7, str);
@@ -245,16 +270,21 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 		    y = big_rect.bottom + 7;
 		    str.Format("%.3f", event.start_time);
 		    size = pArg->pCanvas->GetTextExtent(str);
-		    rgn.CreateRectRgn(x, y, x + size.cx, y + size.cy);
-		    pArg->pCanvas->SelectClipRgn(&rgn, RGN_COPY);
+		    rgn4.DeleteObject();
+		    CRgn rgn5;
+		    rgn5.CreateRectRgn(x, y, x + size.cx, y + size.cy);
+		    pArg->pCanvas->SelectClipRgn(&rgn5, RGN_COPY);
 		    str.Format("%.6f", event.start_time);
 		    pArg->pCanvas->SetTextColor(RGB(0,0,0));
 		    pArg->pCanvas->TextOut(x, y, str);
-		    rgn.CreateRectRgnIndirect(&client_rect);
-		    pArg->pCanvas->SelectClipRgn(&rgn, RGN_XOR);
+		    rgn5.DeleteObject();
+		    CRgn rgn6;
+		    rgn6.CreateRectRgnIndirect(&client_rect);
+		    pArg->pCanvas->SelectClipRgn(&rgn6, RGN_XOR);
 		    pArg->pCanvas->SetTextColor(RGB(255,0,0));
 		    pArg->pCanvas->TextOut(x, y, str);
 		    pArg->pCanvas->SetTextColor(RGB(0,0,0));
+		    rgn6.DeleteObject();
 		}
 		else
 		{

@@ -60,12 +60,18 @@ int xfer_start(MPID_Request *request_ptr)
 	    /* add up the size of the message and put it in the packet */
 	    pRequest->mm.rcar[0].msg_header.pkt.u.hdr.size = 0;
 	    pCarIter = pRequest->mm.rcar->next_ptr;
+#ifdef MPICH_DEV_BUILD
+	    if (pCarIter == NULL) err_printf("Error: empty receive posted.\n");
+#endif
 	    while (pCarIter)
 	    {
 		pRequest->mm.rcar[0].msg_header.pkt.u.hdr.size += pCarIter->request_ptr->mm.size;
 		pCarIter = pCarIter->next_ptr;
 	    }
 	    /* post the recv */
+#ifdef MPICH_DEV_BUILD
+	    if (pRequest->mm.rcar[0].msg_header.pkt.u.hdr.size == 0) err_printf("Error: posting empty receive.\n");
+#endif
 	    mm_post_recv(pRequest->mm.rcar);
 	}
 	/* check if this is a packer car */

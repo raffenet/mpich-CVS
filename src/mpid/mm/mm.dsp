@@ -150,6 +150,10 @@ SOURCE=.\src\common\mm_create_post_unex.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\util\mm_describe_states.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\common\mm_enqueue_request_to_send.c
 # End Source File
 # Begin Source File
@@ -398,7 +402,7 @@ SOURCE=.\src\tcp\tcp_write_aggressive.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\common\logging\timer.c
+SOURCE=..\..\util\timing\timer.c
 # End Source File
 # Begin Source File
 

@@ -83,8 +83,10 @@
 #endif
 
 /* prototype the initialization/finalization functions */
-int MPID_Timer_init(int rank, int size);
-int MPID_Timer_finalize();
+int MPIU_Timer_init(int rank, int size);
+int MPIU_Timer_finalize();
+int MPIR_Describe_mpi_timer_states();
+int MPIDU_Describe_timer_states();
 
 /* Statistics macros aren't defined yet */
 /* All uses of these are protected by the symbol COLLECT_STATS, so they
@@ -99,9 +101,9 @@ int MPID_Timer_finalize();
 #else /* HAVE_TIMING */
 
 /* evaporate all the timing macros if timing is not selected */
+#define MPIU_Timer_init(rank, size)
+#define MPIU_Timer_finalize()
 /* MPI layer */
-#define MPID_Timer_init(rank, size)
-#define MPID_Timer_finalize()
 #define MPID_MPI_STATE_DECL(a)
 #define MPID_MPI_INIT_STATE_DECL(a)
 #define MPID_MPI_FINALIZE_STATE_DECL(a)

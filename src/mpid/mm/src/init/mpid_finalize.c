@@ -21,7 +21,7 @@
 @*/
 int MPID_Finalize( void )
 {
-    /*MPID_Timer_finalize();*/ /* called in MPI_Finalize */
+    /*MPIU_Timer_finalize();*/ /* called in MPI_Finalize */
 
     mm_car_finalize();
     mm_vc_finalize();
