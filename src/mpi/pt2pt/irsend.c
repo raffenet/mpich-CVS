@@ -122,13 +122,14 @@ int MPI_Irsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	{
 	    request_ptr->kind = MPID_REQUEST_SEND;
 	    request_ptr->cc = 0;
+	    request_ptr->cc_ptr = &request_ptr->cc;
 	    *request = request_ptr->handle;
 	
 	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IRSEND);
 	    return MPI_SUCCESS;
 	}
 	
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IRSEND);
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IRSEND);
 	return MPI_ERR_NOMEM;
     }
 
@@ -137,13 +138,6 @@ int MPI_Irsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 
     if (mpi_errno == MPI_SUCCESS)
     {
-	if (request_ptr == NULL)
-	{
-	    /* *request = MPID_STATIC_FINISHED_REQUEST; */
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IRSEND);
-	    return MPI_SUCCESS;
-	}
-
 	/* return the handle of the request to the user */
 	*request = request_ptr->handle;
 	
