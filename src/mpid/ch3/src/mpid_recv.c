@@ -85,8 +85,8 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 			     "sending rndv CTS");
 	    
 	    cts_pkt->type = MPIDI_CH3_PKT_RNDV_CLR_TO_SEND;
-	    cts_pkt->req_id_sender = rreq->ch3.rndv_req_id;
-	    cts_pkt->req_id_receiver = rreq->handle;
+	    cts_pkt->sender_req_id = rreq->ch3.sender_req_id;
+	    cts_pkt->receiver_req_id = rreq->handle;
 	    cts_req = MPIDI_CH3_iStartMsg(rreq->ch3.vc,
 					  cts_pkt, sizeof(*cts_pkt));
 	    if (cts_req != NULL)

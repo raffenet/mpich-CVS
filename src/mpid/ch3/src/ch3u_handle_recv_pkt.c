@@ -44,6 +44,7 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    rreq->status.MPI_SOURCE = eager_pkt->match.rank;
 	    rreq->status.MPI_TAG = eager_pkt->match.tag;
 	    rreq->ch3.vc = vc;
+	    rreq->ch3.sender_req_id = eager_pkt->sender_req_id;
 	    rreq->ch3.recv_data_sz = eager_pkt->data_sz;
 	    MPIDI_Request_set_msg_type(rreq, MPIDI_REQUEST_EAGER_MSG);
 
@@ -149,8 +150,8 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    rreq->status.MPI_SOURCE = rts_pkt->match.rank;
 	    rreq->status.MPI_TAG = rts_pkt->match.tag;
 	    rreq->ch3.vc = vc;
+	    rreq->ch3.sender_req_id = rts_pkt->sender_req_id;
 	    rreq->ch3.recv_data_sz = rts_pkt->data_sz;
-	    rreq->ch3.rndv_req_id = rts_pkt->req_id_sender;
 	    MPIDI_Request_set_msg_type(rreq, MPIDI_REQUEST_RNDV_MSG);
 	    
 	    if (found)
@@ -167,8 +168,8 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		
 		MPIDI_dbg_printf(30, FCNAME, "sending rendezvous CTS packet");
 		cts_pkt->type = MPIDI_CH3_PKT_RNDV_CLR_TO_SEND;
-		cts_pkt->req_id_sender = rts_pkt->req_id_sender;
-		cts_pkt->req_id_receiver = rreq->handle;
+		cts_pkt->sender_req_id = rts_pkt->sender_req_id;
+		cts_pkt->receiver_req_id = rreq->handle;
 		cts_req = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt));
 		if (cts_req != NULL)
 		{
@@ -196,10 +197,10 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    
 	    MPIDI_dbg_printf(30, FCNAME, "received rendezvous CTS packet");
 
-	    MPID_Request_get_ptr(cts_pkt->req_id_sender, sreq);
+	    MPID_Request_get_ptr(cts_pkt->sender_req_id, sreq);
 
 	    rs_pkt->type = MPIDI_CH3_PKT_RNDV_SEND;
-	    rs_pkt->req_id_receiver = cts_pkt->req_id_receiver;
+	    rs_pkt->receiver_req_id = cts_pkt->receiver_req_id;
 
 	    if (HANDLE_GET_KIND(sreq->ch3.datatype) == HANDLE_KIND_BUILTIN)
 	    {
@@ -242,7 +243,7 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    long dt_sz;
 	    int dt_contig;
 		    
-	    MPID_Request_get_ptr(rs_pkt->req_id_receiver, rreq);
+	    MPID_Request_get_ptr(rs_pkt->receiver_req_id, rreq);
 	    
 	    MPIDI_dbg_printf(30, FCNAME, "received rendezvous send packet");
 

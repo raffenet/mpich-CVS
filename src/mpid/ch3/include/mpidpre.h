@@ -73,8 +73,9 @@ MPIDI_CH3_Pkt_type_t;
 
 typedef struct
 {
-    MPIDI_CH3_Pkt_type_t type;
+    MPIDI_CH3_Pkt_type_t type;  /* XXX - uint8_t to conserve space ??? */
     MPIDI_Message_match match;
+    MPI_Request sender_req_id;
     long data_sz;
 }
 MPIDI_CH3_Pkt_eager_send_t;
@@ -83,23 +84,23 @@ typedef struct
 {
     MPIDI_CH3_Pkt_type_t type;
     MPIDI_Message_match match;
+    MPI_Request sender_req_id;
     long data_sz;
-    MPI_Request req_id_sender;
 }
 MPIDI_CH3_Pkt_rndv_req_to_send_t;
 
 typedef struct
 {
     MPIDI_CH3_Pkt_type_t type;
-    MPI_Request req_id_sender;
-    MPI_Request req_id_receiver;
+    MPI_Request sender_req_id;
+    MPI_Request receiver_req_id;
 }
 MPIDI_CH3_Pkt_rndv_clr_to_send_t;
 
 typedef struct
 {
     MPIDI_CH3_Pkt_type_t type;
-    MPI_Request req_id_receiver;
+    MPI_Request receiver_req_id;
 }
 MPIDI_CH3_Pkt_rndv_send_t;
 
@@ -190,7 +191,7 @@ struct MPIDI_Request							\
     long tmp_sz;							\
 									\
     long recv_data_sz;							\
-    MPI_Request rndv_req_id;						\
+    MPI_Request sender_req_id;						\
 									\
     unsigned state;							\
     									\
