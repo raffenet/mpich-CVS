@@ -1,12 +1,49 @@
-Changes in 0.94
----------------
+===============================================================================
+				Changes in 0.94
+===============================================================================
+Active target one-sided communication is now available for the ch3:sock channel.
+This new functionality has undergone some correctness testing but has not been
+optimized in terms of performance.  Future release will include performance
+enhancements, passive target communication, and availability in channels other
+than just ch3:sock.
+
+The shared memory channel (ch3:shm), which performs communication using shared
+memory on a single machine, is now complete and has been extensively tested.
+At present, this channel only supports IA32 based machines (excluding the
+Pentium Pro which has a memory ordering bug).  In addition, this channel must
+be compiled with gcc.  Future releases with support additional architectures
+and compilers.
+
+A new channel has been added that performs inter-node communication using
+sockets (TCP/IP) and intra-node communication using shared memory.  This
+channel, ch3:ssm, is ideal for clusters of SMPs.  Like the shared memory
+channel (ch3:shm), this channel only supports IA32 based machines and must be
+compiled with gcc.  In future releases, the ch3:ssm channel will support
+additional architectures and compilers.
+
+The two channels that perform communcation using shared memory, ch3:shm and
+ch3:ssm, now support the allocation of shared memory using both the POSIX and
+System V interfaces.  The POSIX interface will be used if available; otherwise,
+the System V interface is used.
+
+In the interest of increasing portability, many enhancements have been made to
+both the code and the configure scripts.
+
+And, as always, many bugs have been fixed :-).
 
 
+***** INTEFACE CHANGEES ****
 
-================================================================================
+The parameters to MPID_Abort() have changed.  MPID_Abort() now takes a pointer
+to communicator object, an MPI error code, and an exit code.
 
-Changes in 0.93
----------------
+MPIDI_CH3_Progress() has been split into two functions: MPIDI_CH3_Progress_wait()
+and MPIDI_CH3_Progress_test().
+
+
+===============================================================================
+				Changes in 0.93
+===============================================================================
 Version 0.93 has undergone extensive changes to provide better error reporting.
 Part of these changes involved modifications to the ADI3 and CH3 interfaces.
 The following routines now return MPI error codes:
@@ -48,5 +85,3 @@ application.
 A RDMA channel has been added and includes communication methods for shared
 memory and shmem.  This is recent development and the RDMA interface is still
 in flux.
-
-
