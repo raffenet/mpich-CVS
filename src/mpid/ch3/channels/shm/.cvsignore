@@ -10,5 +10,5 @@ config.log
 *.ncb
 *.opt
 *.plg
-*Debug*
-*Release*
+*ebug*
+*elease*
