@@ -1033,6 +1033,7 @@ int iPMI_Abort(int exit_code, const char error_msg[])
     smpd_command_t *cmd_ptr;
 
     /* flush any output before aborting */
+    /* This doesn't work because it flushes output from the mpich dll but does not flush the main module's output */
     fflush(stdout);
     fflush(stderr);
 
