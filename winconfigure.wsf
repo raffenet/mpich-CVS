@@ -37,6 +37,31 @@
 			helpstring = "Generate the managed C++ interface"
 			required = "false"
 		/>
+		<unnamed
+			name = "--f77_name_lower"
+			helpstring = "Generate lowercase Fortran interface"
+			required = "false"
+		/>
+		<unnamed
+			name = "--f77_name_lower_uscore"
+			helpstring = "Generate lowercase Fortran interface with one underscore"
+			required = "false"
+		/>
+		<unnamed
+			name = "--f77_name_lower_2uscore"
+			helpstring = "Generate lowercase Fortran interface with two underscores"
+			required = "false"
+		/>
+		<unnamed
+			name = "--f77_name_upper"
+			helpstring = "Generate uppercase Fortran interface"
+			required = "false"
+		/>
+		<unnamed
+			name = "--f77_name_mixed"
+			helpstring = "Generate mixed case Fortran interface"
+			required = "false"
+		/>
         <example>Example: winconfigure.wsf --force</example>
     </runtime>
 <script language="VBScript">
@@ -45,6 +70,11 @@ bWin64 = False
 bUseCycleCounter = True
 bForce = True
 bMcxx = False
+bf77_name_lower = False
+bf77_name_lower_uscore = False
+bf77_name_lower_2uscore = False
+bf77_name_upper = True
+bf77_name_mixed = False
 
 ' Process arguments
 argCount = WScript.Arguments.Count
@@ -72,6 +102,16 @@ For arg = 0 To argCount - 1
     bForce = False
   ElseIf argValue = "--with-mcxx" Then
 	bMcxx = True
+  ElseIf argValue = "--f77_name_lower" Then
+	bf77_name_lower = True
+  ElseIf argValue = "--f77_name_lower_uscore" Then
+	bf77_name_lower_uscore = True
+  ElseIf argValue = "--f77_name_lower_2uscore" Then
+	bf77_name_loser_2uscore = True
+  ElseIf argValue = "--f77_name_upper" Then
+	bf77_name_upper = True
+  ElseIf argValue = "--f77_name_mixed" Then
+	bf77_name_mixed = True
   ElseIf argValue = "--help" Then
     WScript.Arguments.ShowUsage
     WScript.Quit
@@ -510,101 +550,101 @@ Else
 
 End IF
 
-If bForce Or Not f.FileExists("src\binding\f77\mpi_fortconf.h") Then
-
-set fout = f.CreateTextFile("src\binding\f77\mpi_fortconf.h")
-fout.WriteLine("/* -*- Mode: C; c-basic-offset:4 ; -*- */")
-fout.WriteLine("/*")
-fout.WriteLine(" *  (C) 2001 by Argonne National Laboratory.")
-fout.WriteLine(" *      See COPYRIGHT in top-level directory.")
-fout.WriteLine(" */")
-fout.WriteLine("#ifndef MPI_FORTCONF_H")
-fout.WriteLine("#define MPI_FORTCONF_H")
-fout.WriteLine("")
-fout.WriteLine("/* mpi_fortconf.h.  Generated automatically by winconfigure.  */")
-fout.WriteLine("/* Define to empty if keyword does not work. */")
-fout.WriteLine("/* #undef const */")
-fout.WriteLine("/* Define if you have the ANSI C header files.  */")
-fout.WriteLine("#define STDC_HEADERS 1")
-fout.WriteLine("/* The number of bytes in a char.  */")
-fout.WriteLine("#define SIZEOF_CHAR 1")
-fout.WriteLine("/* The number of bytes in a double.  */")
-fout.WriteLine("#define SIZEOF_DOUBLE 8")
-fout.WriteLine("/* The number of bytes in a float.  */")
-fout.WriteLine("#define SIZEOF_FLOAT 4")
-fout.WriteLine("/* The number of bytes in a int.  */")
-fout.WriteLine("#define SIZEOF_INT 4")
-fout.WriteLine("/* The number of bytes in a long.  */")
-fout.WriteLine("#define SIZEOF_LONG 4")
-fout.WriteLine("/* The number of bytes in a long double.  */")
-fout.WriteLine("#define SIZEOF_LONG_DOUBLE 12")
-fout.WriteLine("/* The number of bytes in a long long.  */")
-fout.WriteLine("#define SIZEOF_LONG_LONG 8")
-fout.WriteLine("/* The number of bytes in a short.  */")
-fout.WriteLine("#define SIZEOF_SHORT 2")
-fout.WriteLine("/* The number of bytes in a void*.  */")
-fout.WriteLine("#define SIZEOF_VOIDP 4")
-fout.WriteLine("/* Define if you have the <stdlib.h> header file.  */")
-fout.WriteLine("#define HAVE_STDLIB_H 1")
-fout.WriteLine("/* Define if you have the <string.h> header file.  */")
-fout.WriteLine("#define HAVE_STRING_H 1")
-fout.WriteLine("/* Define if Fortran environment should be determined at runtime */")
-fout.WriteLine("/* #undef F77_RUNTIME_VALUES */")
-fout.WriteLine("/* Define if long double is supported */")
-fout.WriteLine("#define HAVE_LONG_DOUBLE 1")
-fout.WriteLine("/* Define if long long is supported */")
-fout.WriteLine("/*#undef HAVE_LONG_LONG_INT */")
-fout.WriteLine("/* Define if long long allowed */")
-fout.WriteLine("/*#undef HAVE_LONG_LONG ")
-fout.WriteLine("/* Define if Fortran names are lowercase */")
-fout.WriteLine("/* #undef F77_NAME_LOWER */")
-fout.WriteLine("/* Define if Fortran names are lowercase with a trailing underscore */")
-fout.WriteLine("/* #undef F77_NAME_LOWER_USCORE */")
-fout.WriteLine("/* Define if Fortran names containing an underscore have two trailing underscores */")
-fout.WriteLine("#define F77_NAME_LOWER_2USCORE 1")
-fout.WriteLine("/* Define if Fortran names are uppercase */")
-fout.WriteLine("/* #undef F77_NAME_UPPER */")
-fout.WriteLine("/* Define if Fortran names preserve the original case */")
-fout.WriteLine("/* #undef F77_NAME_MIXED */")
-fout.WriteLine("/* Define if Fortran names preserve the original case and add a trailing underscore */")
-fout.WriteLine("/* #undef F77_NAME_MIXED_USCORE */")
-fout.WriteLine("/* Define if we want to use nonstandard Fortran Pointer feature */")
-fout.WriteLine("/* #undef USE_POINTER_FOR_BOTTOM */")
-fout.WriteLine("/* Define size of SIZEOF_F77_INTEGER */")
-fout.WriteLine("#define SIZEOF_F77_INTEGER 4")
-fout.WriteLine("/* Define size of SIZEOF_F77_REAL */")
-fout.WriteLine("#define SIZEOF_F77_REAL 4")
-fout.WriteLine("/* Define size of SIZEOF_F77_DOUBLE_PRECISION */")
-fout.WriteLine("#define SIZEOF_F77_DOUBLE_PRECISION 8")
-fout.WriteLine("/* Define if addresses are larger than Fortran integers */")
-fout.WriteLine("/* #undef HAVE_AINT_LARGER_THAN_FINT */")
-fout.WriteLine("/* Define if Fortran integer are the same size as C ints */")
-fout.WriteLine("#define HAVE_FINT_IS_INT 1")
-fout.WriteLine("/* Supports weak pragma */")
-fout.WriteLine("/* #undef HAVE_PRAGMA_WEAK */")
-fout.WriteLine("/* HP style weak pragma */")
-fout.WriteLine("/* #undef HAVE_PRAGMA_HP_SEC_DEF */")
-fout.WriteLine("/* Cray style weak pragma */")
-fout.WriteLine("/* #undef HAVE_PRAGMA_CRI_DUP */")
-fout.WriteLine("/* Define if weak symbols supported */")
-fout.WriteLine("/* #undef HAVE_WEAK_SYMBOLS */")
-fout.WriteLine("/* Define if we know the value of Fortran true and false */")
-fout.WriteLine("#define F77_TRUE_VALUE_SET 1")
-fout.WriteLine("/* The value of true in Fortran */")
-fout.WriteLine("#define F77_TRUE_VALUE 1")
-fout.WriteLine("/* The value of false in Fortran */")
-fout.WriteLine("#define F77_FALSE_VALUE 0")
-fout.WriteLine("/* Define if characters use two-word descriptors */")
-fout.WriteLine("/* #undef _TWO_WORD_FCD */")
-fout.WriteLine("/* Define if Fortran functions are passed by passing the address of the pointer to the function */")
-fout.WriteLine("/* #undef FORTRAN_SPECIAL_FUNCTION_PTR */")
-fout.WriteLine("/* Define if using gcc and g77 together */")
-fout.WriteLine("/* #undef USE_GCC_G77_DECLS */")
-fout.WriteLine("")
-fout.WriteLine("#endif")
-fout.Close()
-
-End IF
+'If bForce Or Not f.FileExists("src\binding\f77\mpi_fortconf.h") Then
+'
+'set fout = f.CreateTextFile("src\binding\f77\mpi_fortconf.h")
+'fout.WriteLine("/* -*- Mode: C; c-basic-offset:4 ; -*- */")
+'fout.WriteLine("/*")
+'fout.WriteLine(" *  (C) 2001 by Argonne National Laboratory.")
+'fout.WriteLine(" *      See COPYRIGHT in top-level directory.")
+'fout.WriteLine(" */")
+'fout.WriteLine("#ifndef MPI_FORTCONF_H")
+'fout.WriteLine("#define MPI_FORTCONF_H")
+'fout.WriteLine("")
+'fout.WriteLine("/* mpi_fortconf.h.  Generated automatically by winconfigure.  */")
+'fout.WriteLine("/* Define to empty if keyword does not work. */")
+'fout.WriteLine("/* #undef const */")
+'fout.WriteLine("/* Define if you have the ANSI C header files.  */")
+'fout.WriteLine("#define STDC_HEADERS 1")
+'fout.WriteLine("/* The number of bytes in a char.  */")
+'fout.WriteLine("#define SIZEOF_CHAR 1")
+'fout.WriteLine("/* The number of bytes in a double.  */")
+'fout.WriteLine("#define SIZEOF_DOUBLE 8")
+'fout.WriteLine("/* The number of bytes in a float.  */")
+'fout.WriteLine("#define SIZEOF_FLOAT 4")
+'fout.WriteLine("/* The number of bytes in a int.  */")
+'fout.WriteLine("#define SIZEOF_INT 4")
+'fout.WriteLine("/* The number of bytes in a long.  */")
+'fout.WriteLine("#define SIZEOF_LONG 4")
+'fout.WriteLine("/* The number of bytes in a long double.  */")
+'fout.WriteLine("#define SIZEOF_LONG_DOUBLE 12")
+'fout.WriteLine("/* The number of bytes in a long long.  */")
+'fout.WriteLine("#define SIZEOF_LONG_LONG 8")
+'fout.WriteLine("/* The number of bytes in a short.  */")
+'fout.WriteLine("#define SIZEOF_SHORT 2")
+'fout.WriteLine("/* The number of bytes in a void*.  */")
+'fout.WriteLine("#define SIZEOF_VOIDP 4")
+'fout.WriteLine("/* Define if you have the <stdlib.h> header file.  */")
+'fout.WriteLine("#define HAVE_STDLIB_H 1")
+'fout.WriteLine("/* Define if you have the <string.h> header file.  */")
+'fout.WriteLine("#define HAVE_STRING_H 1")
+'fout.WriteLine("/* Define if Fortran environment should be determined at runtime */")
+'fout.WriteLine("/* #undef F77_RUNTIME_VALUES */")
+'fout.WriteLine("/* Define if long double is supported */")
+'fout.WriteLine("#define HAVE_LONG_DOUBLE 1")
+'fout.WriteLine("/* Define if long long is supported */")
+'fout.WriteLine("/*#undef HAVE_LONG_LONG_INT */")
+'fout.WriteLine("/* Define if long long allowed */")
+'fout.WriteLine("/*#undef HAVE_LONG_LONG ")
+'fout.WriteLine("/* Define if Fortran names are lowercase */")
+'fout.WriteLine("/* #undef F77_NAME_LOWER */")
+'fout.WriteLine("/* Define if Fortran names are lowercase with a trailing underscore */")
+'fout.WriteLine("/* #undef F77_NAME_LOWER_USCORE */")
+'fout.WriteLine("/* Define if Fortran names containing an underscore have two trailing underscores */")
+'fout.WriteLine("#define F77_NAME_LOWER_2USCORE 1")
+'fout.WriteLine("/* Define if Fortran names are uppercase */")
+'fout.WriteLine("/* #undef F77_NAME_UPPER */")
+'fout.WriteLine("/* Define if Fortran names preserve the original case */")
+'fout.WriteLine("/* #undef F77_NAME_MIXED */")
+'fout.WriteLine("/* Define if Fortran names preserve the original case and add a trailing underscore */")
+'fout.WriteLine("/* #undef F77_NAME_MIXED_USCORE */")
+'fout.WriteLine("/* Define if we want to use nonstandard Fortran Pointer feature */")
+'fout.WriteLine("/* #undef USE_POINTER_FOR_BOTTOM */")
+'fout.WriteLine("/* Define size of SIZEOF_F77_INTEGER */")
+'fout.WriteLine("#define SIZEOF_F77_INTEGER 4")
+'fout.WriteLine("/* Define size of SIZEOF_F77_REAL */")
+'fout.WriteLine("#define SIZEOF_F77_REAL 4")
+'fout.WriteLine("/* Define size of SIZEOF_F77_DOUBLE_PRECISION */")
+'fout.WriteLine("#define SIZEOF_F77_DOUBLE_PRECISION 8")
+'fout.WriteLine("/* Define if addresses are larger than Fortran integers */")
+'fout.WriteLine("/* #undef HAVE_AINT_LARGER_THAN_FINT */")
+'fout.WriteLine("/* Define if Fortran integer are the same size as C ints */")
+'fout.WriteLine("#define HAVE_FINT_IS_INT 1")
+'fout.WriteLine("/* Supports weak pragma */")
+'fout.WriteLine("/* #undef HAVE_PRAGMA_WEAK */")
+'fout.WriteLine("/* HP style weak pragma */")
+'fout.WriteLine("/* #undef HAVE_PRAGMA_HP_SEC_DEF */")
+'fout.WriteLine("/* Cray style weak pragma */")
+'fout.WriteLine("/* #undef HAVE_PRAGMA_CRI_DUP */")
+'fout.WriteLine("/* Define if weak symbols supported */")
+'fout.WriteLine("/* #undef HAVE_WEAK_SYMBOLS */")
+'fout.WriteLine("/* Define if we know the value of Fortran true and false */")
+'fout.WriteLine("#define F77_TRUE_VALUE_SET 1")
+'fout.WriteLine("/* The value of true in Fortran */")
+'fout.WriteLine("#define F77_TRUE_VALUE 1")
+'fout.WriteLine("/* The value of false in Fortran */")
+'fout.WriteLine("#define F77_FALSE_VALUE 0")
+'fout.WriteLine("/* Define if characters use two-word descriptors */")
+'fout.WriteLine("/* #undef _TWO_WORD_FCD */")
+'fout.WriteLine("/* Define if Fortran functions are passed by passing the address of the pointer to the function */")
+'fout.WriteLine("/* #undef FORTRAN_SPECIAL_FUNCTION_PTR */")
+'fout.WriteLine("/* Define if using gcc and g77 together */")
+'fout.WriteLine("/* #undef USE_GCC_G77_DECLS */")
+'fout.WriteLine("")
+'fout.WriteLine("#endif")
+'fout.Close()
+'
+'End IF
 
 '
 ' Generate F90 module files
@@ -835,12 +875,6 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("#define HAVE_LIMITS_H")
 				Case "COLLECT_STATS"
 					fout.WriteLine("/* #undef COLLECT_STATS */")
-				Case "F77_NAME_LOWER"
-					fout.WriteLine("/* #undef F77_NAME_LOWER */")
-				Case "F77_NAME_LOWER_USCORE"
-					fout.WriteLine("/* #undef F77_NAME_LOWER_USCORE */")
-				Case "F77_NAME_UPPER"
-					fout.WriteLine("/* #undef F77_NAME_UPPER */")
 				Case "FILE_NAMEPUB_BASEDIR"
 					fout.WriteLine("/* #undef FILE_NAMEPUB_BASEDIR */")
 				Case "HAVE_CXX_BINDING"
@@ -999,8 +1033,72 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("/* #undef USE_MQSHM */")
 				Case "USE_ATOMIC_UPDATES"
 					fout.WriteLine("/* #undef USE_ATOMIC_UPDATES */")
+				Case "F77_FALSE_VALUE"
+					fout.WriteLine("#define F77_FALSE_VALUE 0")
+				Case "F77_TRUE_VALUE"
+					fout.WriteLine("#define F77_TRUE_VALUE 1")
+				Case "F77_TRUE_VALUE_SET"
+					fout.WriteLine("#define F77_TRUE_VALUE_SET 1")
+				Case "F77_RUNTIME_VALUES"
+					fout.WriteLine("/* #undef F77_RUNTIME_VALUES */")
+				Case "HAVE_AINT_LARGER_THAN_FINT"
+					fout.WriteLine("/* #undef HAVE_AINT_LARGER_THAN_FINT */")
+				Case "HAVE_FINT_IS_INT"
+					fout.WriteLine("/* #undef HAVE_FINT_IS_INT */")
+				Case "HAVE_LONG_LONG"
+					fout.WriteLine("/* #undef HAVE_LONG_LONG */")
+				Case "HAVE_WEAK_SYMBOLS"
+					fout.WriteLine("/* #undef HAVE_WEAK_SYMBOLS */")
+				Case "SIZEOF_CHAR"
+					fout.WriteLine("#define SIZEOF_CHAR 1")
+				Case "SIZEOF_F77_DOUBLE_PRECISION"
+					fout.WriteLine("#define SIZEOF_F77_DOUBLE_PRECISION 8")
+				Case "SIZEOF_F77_INTEGER"
+					fout.WriteLine("#define SIZEOF_F77_INTEGER 4")
+				Case "SIZEOF_F77_REAL"
+					fout.WriteLine("#define SIZEOF_F77_REAL 4")
+				Case "SIZEOF_VOIDP"
+					If bWin64 Then
+						fout.WriteLine("#define SIZEOF_VOIDP 8")
+					Else
+						fout.WriteLine("#define SIZEOF_VOIDP 4")
+					End If
+				Case "USE_GCC_G77_DECLS"
+					fout.WriteLine("/* #undef USE_GCC_G77_DECLS */")
+				Case "USE_POINTER_FOR_BOTTOM"
+					fout.WriteLine("/* #undef USE_POINTER_FOR_BOTTOM */")
+				Case "_TWO_WORD_FCD"
+					fout.WriteLine("/* #undef _TWO_WORD_FCD */")
+				Case "F77_NAME_LOWER"
+					If bf77_name_lower Then
+						fout.WriteLine("#define F77_NAME_LOWER")
+					Else
+						fout.WriteLine("/* #undef F77_NAME_LOWER */")
+					End If
+				Case "F77_NAME_LOWER_USCORE"
+					If b77_name_lower_uscore Then
+						fout.WriteLine("#define F77_NAME_LOWER_USCORE")
+					Else
+						fout.WriteLine("/* #undef F77_NAME_LOWER_USCORE */")
+					End If
 				Case "F77_NAME_LOWER_2USCORE"
-					fout.WriteLine("#define F77_NAME_LOWER_2USCORE 1")
+					If bf77_name_lower_2uscore Then
+						fout.WriteLine("#define F77_NAME_LOWER_2USCORE 1")
+					Else
+						fout.WriteLine("/* #undef F77_NAME_LOWER_2USCORE */")
+					End If
+				Case "F77_NAME_UPPER"
+					if b77_name_upper Then
+						fout.WriteLine("#define F77_NAME_UPPER")
+					Else
+						fout.WriteLine("/* #undef F77_NAME_UPPER */")
+					End If
+				Case "F77_NAME_MIXED"
+					if b77_name_mixed Then
+						fout.WriteLine("#define F77_NAME_MIXED 1")
+					Else
+						fout.WriteLine("/* #undef F77_NAME_MIXED */")
+					End If
 				Case Else
 					MsgBox("Unhandled definition <" & define & ">")
 			End Select
@@ -1029,6 +1127,15 @@ Sub WriteFooter( fout )
 	fout.WriteLine("")
 	fout.WriteLine("#endif")
 End Sub
+
+'
+' mpi_fortconf.h
+'
+Set fout = f.CreateTextFile("src\binding\f77\mpi_fortconf.h")
+Call WriteHeader(fout, "mpi_fort")
+Call AddDefinitions(fout, "src\binding\f77\mpi_fortconf.h.in")
+Call WriteFooter(fout)
+fout.Close()
 
 '
 ' mpichconf.h
