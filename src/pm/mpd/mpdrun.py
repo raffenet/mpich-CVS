@@ -347,8 +347,9 @@ def mpdrun():
                         readySocket.close()
                         done += 1
                     else:
-                        print msg,
+                        # print msg,
                         # print 'MS: %s' % (msg.strip())
+                        stdout.write(msg)
                         stdout.flush()
                 elif readySocket == manCliStderrSocket:
                     msg = manCliStderrSocket.recv(1024)
