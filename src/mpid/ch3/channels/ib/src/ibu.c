@@ -761,9 +761,9 @@ int ibu_init()
     ib_uint32_t status;
     ib_uint32_t max_cq_entries = IBU_MAX_CQ_ENTRIES+1;
     ib_uint32_t attr_size;
-    MPIDI_STATE_DECL(MPID_STATE_IBU_INIT);
+    /*MPIDI_STATE_DECL(MPID_STATE_IBU_INIT);*/
 
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_INIT);
+    /*MPIDI_FUNC_ENTER(MPID_STATE_IBU_INIT);*/
 
     /*ib_init_us();*/
 
@@ -773,7 +773,7 @@ int ibu_init()
     if (status != IBU_SUCCESS)
     {
 	printf("ibu_init: ib_hca_open_us failed, status %d\n", status);
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
+	/*MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);*/
 	return status;
     }
     /* get a protection domain handle */
@@ -781,7 +781,7 @@ int ibu_init()
     if (status != IBU_SUCCESS)
     {
 	printf("ibu_init: ib_pd_allocate_us failed, status %d\n", status);
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
+	/*MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);*/
 	return status;
     }
     /* get a completion queue domain handle */
@@ -790,7 +790,7 @@ int ibu_init()
     if (status != IBU_SUCCESS)
     {
 	printf("ib_init: ib_cqd_create_us failed, status %d\n", status);
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
+	/*MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);*/
 	return status;
     }
 #endif
@@ -805,7 +805,7 @@ int ibu_init()
     if (status != IBU_SUCCESS)
     {
 	printf("ibu_init: ib_hca_query_us(HCA_QUERY_HCA_STATIC) failed, status %d\n", status);
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
+	/*MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);*/
 	return status;
     }
     IBU_Process.lid = IBU_Process.attr_p->port_dynamic_info_p->lid;
@@ -814,18 +814,18 @@ int ibu_init()
     g_StateAllocator = BlockAllocInit(sizeof(ibu_state_t), 1000, 500, malloc, free);
     IBU_Process.unex_finished_list = NULL;
 
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
+    /*MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);*/
     return IBU_SUCCESS;
 }
 
 int ibu_finalize()
 {
-    MPIDI_STATE_DECL(MPID_STATE_IBU_FINALIZE);
+    /*MPIDI_STATE_DECL(MPID_STATE_IBU_FINALIZE);*/
 
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINALIZE);
+    /*MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINALIZE);*/
     /*ib_release_us();*/
     BlockAllocFinalize(&g_StateAllocator);
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);
+    /*MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);*/
     return IBU_SUCCESS;
 }
 
