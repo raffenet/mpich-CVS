@@ -51,7 +51,7 @@ int MPIR_Group_create( int nproc, MPID_Group **new_group_ptr )
  */
 static int MPIR_Mergesort_lpidarray( MPID_Group_pmap_t maparray[], int n )
 {
-    int idx1, idx2, first_idx, cur_idx, next_lpid;
+    int idx1, idx2, first_idx, cur_idx, next_lpid, idx2_offset;
 
     if (n == 2) {
 	if (maparray[0].lpid > maparray[1].lpid) {
@@ -64,37 +64,74 @@ static int MPIR_Mergesort_lpidarray( MPID_Group_pmap_t maparray[], int n )
 	    maparray[0].next_lpid = 1;
 	    maparray[1].next_lpid = -1;
 	}
-	printf( "n==2 return %d\n", first_idx );
 	return first_idx;
     }
     if (n == 1) {
 	maparray[0].next_lpid = -1;
-	printf( "n==1 return 0\n" );
 	return 0;
     }
 
     /* Sort each half */
+    idx2_offset = n/2;
     idx1 = MPIR_Mergesort_lpidarray( maparray, n/2 );
-    idx2 = MPIR_Mergesort_lpidarray( maparray + n/2, n - n/2 ) + n/2;
-    printf( "idx1 = %d idx2 = %d\n", idx1, idx2 );
-    printf( "n = %d, n/2 + 1 = %d\n", n, n/2 + 1 );
+    idx2 = MPIR_Mergesort_lpidarray( maparray + idx2_offset, n - n/2 ) + idx2_offset;
     /* merge the results */
-    first_idx = idx1;
-    if (maparray[idx1].lpid > maparray[idx2].lpid) first_idx = idx2;
+    /* There are three lists:
+       first_idx - points to the HEAD of the sorted, merged list
+       cur_idx - points to the LAST element of the sorted, merged list
+       idx1    - points to the HEAD of one sorted list
+       idx2    - points to the HEAD of the other sorted list
+       
+       We first identify the head element of the sorted list.  We then 
+       take elements from the remaining lists.  When one list is empty,
+       we add the other list to the end of sorted list. 
+
+       The last wrinkle is that the next_lpid fields in maparray[idx2]
+       are relative to n/2, not 0 (that is, a next_lpid of 1 is
+       really 1 + n/2, relative to the beginning of maparray).
+    */
+    /* Find the head element */
+    if (maparray[idx1].lpid > maparray[idx2].lpid) {
+	first_idx = idx2;
+	idx2      = maparray[idx2].next_lpid + idx2_offset;
+    }
+    else {
+	first_idx = idx1;
+	idx1      = maparray[idx1].next_lpid;
+    }
     
+    /* Merge the lists until one is empty */
     cur_idx = first_idx;
     while ( idx1 >= 0 && idx2 >= 0) {
 	if (maparray[idx1].lpid > maparray[idx2].lpid) {
-	    next_lpid = maparray[idx2].next_lpid;
-	    maparray[cur_idx].next_lpid = idx2;
-	    cur_idx = idx2;
-	    idx2    = next_lpid;
+	    next_lpid			= maparray[idx2].next_lpid;
+	    if (next_lpid >= 0) next_lpid += idx2_offset;
+	    maparray[cur_idx].next_lpid	= idx2;
+	    cur_idx			= idx2;
+	    idx2			= next_lpid;
 	}
 	else {
-	    next_lpid = maparray[idx1].next_lpid;
-	    maparray[cur_idx].next_lpid = idx1;
-	    cur_idx = idx1;
-	    idx1    = next_lpid;
+	    next_lpid			= maparray[idx1].next_lpid;
+	    maparray[cur_idx].next_lpid	= idx1;
+	    cur_idx			= idx1;
+	    idx1			= next_lpid;
+	}
+    }
+    /* Add whichever list remains */
+    if (idx1 >= 0) {
+	maparray[cur_idx].next_lpid = idx1;
+    }
+    else {
+	maparray[cur_idx].next_lpid = idx2;
+	/* Convert the rest of these next_lpid values to be 
+	   relative to the beginning of maparray */
+	while (idx2 >= 0) {
+	    next_lpid = maparray[idx2].next_lpid;
+	    if (next_lpid >= 0) {
+		next_lpid += idx2_offset;
+		maparray[idx2].next_lpid = next_lpid;
+	    }
+	    idx2 = next_lpid;
 	}
     }
 
