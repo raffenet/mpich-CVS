@@ -135,7 +135,18 @@ if test "X$srcdir" != "X." -a -s $srcdir/mpi-io/Makefile.in ; then
     ROMIO_HOME_TRIAL=$srcdir
 else
     # Take advantage of autoconf2 features
-    ROMIO_HOME_TRIAL=$ac_confdir
+    if test -n "$ac_confdir" ; then
+        ROMIO_HOME_TRIAL=$ac_confdir
+    else
+        if test -s configure ; then
+	    ROMIO_HOME_TRIAL=`pwd`
+	else
+	    ac_confdir=`dirname "$0" 2>/dev/null`
+	    if test -n "$ac_confdir" ; then
+	        ROMIO_HOME_TRIAL=$ac_confdir
+	    fi
+	fi
+    fi
 fi
 AC_MSG_RESULT([ROMIO home directory is $ROMIO_HOME_TRIAL])
 ROMIO_HOME=$ROMIO_HOME_TRIAL
