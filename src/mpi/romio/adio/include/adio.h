@@ -311,8 +311,8 @@ void ADIO_Delete(char *filename, int *error_code);
 void ADIO_Flush(ADIO_File fd, int *error_code);
 void ADIO_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
 void ADIO_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
-void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code);
-void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code);
+void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype, 
+          ADIOI_Fns **ops, int *error_code);
 void ADIO_Get_shared_fp(ADIO_File fd, int size, ADIO_Offset *shared_fp, 
 			 int *error_code);
 void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
