@@ -92,7 +92,14 @@ AC_ARG_WITH(device,
 [--with-device=name - Specify the communication device for MPICH.],,
 with_device=default)
 dnl
-AC_ARG_WITH(pmi, [--with-pmi=name - Specify the pmi interface for MPICH.],, with_pmi=default)
+AC_ARG_WITH(pmi, [--with-pmi=name - Specify the pmi interface for MPICH.],,
+with_pmi=default)
+dnl
+AC_ARG_WITH(weak-symbols,
+[--with-weak-symbols - Use weak symbols to implement PMPI routines (default)],,
+with_weak_symbols=yes)
+dnl
+dnl
 dnl Process any enable or with values
 dnl error-checking
 case "$enable_error_checking" in 
@@ -293,7 +300,11 @@ dnl     check for compiler characteristics
 dnl Check for support for weak symbols.  If not found, set NO_WEAK_SYM
 dnl to the Make target name understood by simplemake.
 NO_WEAK_SYM_TARGET=build_proflib
-PAC_PROG_C_WEAK_SYMBOLS(,NO_WEAK_SYM=build_proflib)
+if test $with_weak_symbols = yes ; then
+    PAC_PROG_C_WEAK_SYMBOLS(,NO_WEAK_SYM=build_proflib)
+else
+    NO_WEAK_SYM=build_proflib
+fi
 AC_SUBST(NO_WEAK_SYM)
 AC_SUBST(NO_WEAK_SYM_TARGET)
 AC_C_CONST
