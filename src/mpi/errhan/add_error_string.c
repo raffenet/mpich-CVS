@@ -40,6 +40,11 @@ The string must be no more than 'MPI_MAX_ERROR_STRING' characters long.
 The length of the string is as defined in the calling language. 
 The length of the string does not include the null terminator in C or C++.  
 
+According to the MPI-2 standard, it is erroneous to call 'MPI_Add_error_string'
+for an error code or class with a value less than or equal 
+to 'MPI_ERR_LASTCODE'.  Thus, you cannot replace the predefined error messages
+with this routine.
+
 .N Fortran
 
 .N Errors
