@@ -728,7 +728,7 @@ pac_cv_prog_c_weak_symbols,[
 AC_TRY_LINK([
 extern int PFoo(int);
 #pragma weak PFoo = Foo
-int Foo(a) { return a; }
+int Foo(int a) { return a; }
 ],[return PFoo(1);],has_pragma_weak=yes)
 #
 # Some systems (Linux ia64 and ecc, for example), support weak symbols
@@ -742,11 +742,11 @@ if test "$has_pragma_weak" = yes ; then
 extern int PFoo(int);
 #pragma weak PFoo = Foo
 int Foo(int);
-int Foo(a) { return a; }
+int Foo(int a) { return a; }
 EOF
     cat >>conftest2.c <<EOF
 extern int PFoo(int);
-int main() {
+int main(int argc, char **argv) {
 return PFoo(0);}
 EOF
     ac_link2='${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest1.c conftest2.c $LIBS >conftest.out 2>&1'
@@ -768,7 +768,7 @@ if test -z "$pac_cv_prog_c_weak_symbols" ; then
     AC_TRY_LINK([
 extern int PFoo(int);
 #pragma _HP_SECONDARY_DEF Foo  PFoo
-int Foo(a) { return a; }
+int Foo(int a) { return a; }
 ],[return PFoo(1);],pac_cv_prog_c_weak_symbols="pragma _HP_SECONDARY_DEF")
 fi
 dnl
@@ -776,7 +776,7 @@ if test -z "$pac_cv_prog_c_weak_symbols" ; then
     AC_TRY_LINK([
 extern int PFoo(int);
 #pragma _CRI duplicate PFoo as Foo
-int Foo(a) { return a; }
+int Foo(int a) { return a; }
 ],[return PFoo(1);],pac_cv_prog_c_weak_symbols="pragma _CRI duplicate x as y")
 fi
 dnl
