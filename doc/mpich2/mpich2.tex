@@ -5919,7 +5919,7 @@ run time how to communicate with other processes.  We allow other
 processes to deposit their ``business cards'' into a keymap accessible
 to other processes in the same job, with information on how they may
 be contacted (shmem keys, IP host/ports, switch ports, etc.)  Thus
-precommunication takes place through this keymap.  Keymap are
+precommunication takes place through this keymap.  Keymaps are
 identified by name, names are assigned by the process manger; no
 process is allowed access to the keymap of another job (maybe ``job''
 needs a definition).  Each process group does automatically have
@@ -6250,6 +6250,7 @@ int MPI_Comm_accept(port_name, info, root, comm, intercomm)
         /* Bcast resulting intercommunicator stuff */
     }
 
+\end{verbatim}
 %    if (root)
 %    {
 %        conn = MM_accept(port_name);
@@ -6291,6 +6292,7 @@ int MPI_Comm_accept(port_name, info, root, comm, intercomm)
 %        
 %        MPI_Bcast(intercomm->remote_VCTable, root, comm)
 %    }
+\begin{verbatim}
 }
 
 int MPI_Comm_connect(port_name, info, root, comm, intercomm)
@@ -6309,6 +6311,7 @@ int MPI_Comm_connect(port_name, info, root, comm, intercomm)
     {
         /* Bcast resulting intercommunicator stuff */
     }
+\end{verbatim}
 %    if (root)
 %    {
 %        conn = MM_connect(port_name);
@@ -6348,6 +6351,7 @@ int MPI_Comm_connect(port_name, info, root, comm, intercomm)
 %        
 %        MPI_Bcast(intercomm->remote_VCTable, root, comm)
 %    }
+\begin{verbatim}
 }
 \end{verbatim}
 \end{small}
