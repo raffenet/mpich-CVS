@@ -24,7 +24,8 @@ Error Codes:
 . PMI_ERR_INVALID_KEY_LENGTH - invalid key length argument
 . PMI_ERR_INVALID_VAL - invalid val argument
 . PMI_ERR_INVALID_VAL_LENGTH - invalid val length argument
-- PMI_ERR_INVALID_LENGTH - invalid length argument
+. PMI_ERR_INVALID_LENGTH - invalid length argument
+- PMI_ERR_INIT - PMI not initialized
 
 Booleans:
 + PMI_TRUE - true
@@ -39,6 +40,7 @@ D*/
 #define PMI_ERR_INVALID_VAL         4
 #define PMI_ERR_INVALID_VAL_LENGTH  5
 #define PMI_ERR_INVALID_LENGTH      6
+#define PMI_ERR_INIT                7
 
 typedef int PMI_BOOL;
 #define PMI_TRUE     1
