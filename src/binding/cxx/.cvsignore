@@ -1,0 +1,6 @@
+Makefile
+Makefile.in
+Makefile.sm
+mpicxx.h
+*.o
+initcxx.cpp
