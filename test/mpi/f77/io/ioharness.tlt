@@ -1,23 +1,23 @@
 <fheader/>
         program main
-	implicit none
+        implicit none
         include 'mpif.h'
-	integer maxfparm
+        integer maxfparm
         parameter (maxfparm=5)
-	integer max_buffer
-	parameter (max_buffer=65536)
+        integer max_buffer
+        parameter (max_buffer=65536)
         integer maxftype
         parameter (maxftype=3)
 C
-	integer comm, fh, ftype, itmp, fparm, n, b, i, k, r, s
-	integer intsize
+        integer comm, fh, ftype, itmp, fparm, n, b, i, k, r, s
+        integer intsize
         integer errs, toterrs, err, ierr
         integer wrank, wsize
         integer fparms(2,maxfparm)
         character *(100) filename
         <writefiledecl/>
-	<readfiledecl/>
-	data fparms/1,4000,  4000,8,  4096,8,  64000,8,  65536,8 /
+        <readfiledecl/>
+        data fparms/1,4000,  4000,8,  4096,8,  64000,8,  65536,8 /
 
         errs = 0
 
@@ -25,9 +25,9 @@ C
         call mpi_comm_rank( MPI_COMM_WORLD, wrank, ierr )
         call mpi_comm_size( MPI_COMM_WORLD, wsize, ierr )
 
-	call mpi_type_size( MPI_INTEGER, intsize, ierr )
-	do ftype = 1, maxftype
-	    filename = "iotest.txt"
+        call mpi_type_size( MPI_INTEGER, intsize, ierr )
+        do ftype = 1, maxftype
+            filename = "iotest.txt"
             if (ftype .eq. 1) then
                 comm = MPI_COMM_WORLD
             elseif (ftype .eq. 2) then
@@ -44,7 +44,7 @@ C
             endif
             call mpi_comm_size( comm, s, ierr )
             call mpi_comm_rank( comm, r, ierr )
-	    do fparm=1, maxfparm
+            do fparm=1, maxfparm
                 n = fparms(1,fparm)
                 b = fparms(2,fparm)
 C Try writing the file, then check it
