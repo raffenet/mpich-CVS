@@ -35,12 +35,12 @@ In order to better understand the design of the ADI, we first review
 MPI communication.  MPI-1 defined both point-to-point and collective
 message-passing.  In both of these, the sender and the receiver
 actively participates in the communication in the sense that
-communication does not being until an MPI call is made to initiate it
+communication does not occur until an MPI call is made to initiate it
 and the data is not guaranteed to be delivered until an MPI call is
-made by the destination process.  In fact, because the destination of
+made by the destination process.  In fact, because the destination in memory of
 the data is described by an MPI call made by the destination process, the
 data cannot be delivered to its final (user-specified) destination
-until the matching MPI call is made at the destination.  This feature
+until the matching MPI call is made by the destination process.  This feature
 has led many (but not all) MPI implementations to adopt a
 \emph{polling} mode of communication where communication for MPI
 happens only within MPI calls, not asynchronously.  An alternative
@@ -67,7 +67,7 @@ are called by a group of processes.  In both of these cases, an MPI
 implementation may rely on the target processes calling an MPI
 routine, and thus these may (but are not required to) use a polling
 implementation.   Unlike some other RMA APIs, MPI active target
-RMA operations may be applied to any memory of the process.
+RMA operations may be applied to any memory belonging to the process.
 
 The other form of RMA completion is handled by calls made only by the
 originating process.  This is called passive target RMA.  Because the
@@ -80,7 +80,7 @@ efficiently, MPI allows an MPI implementation to require that passive
 target RMA operations be allowed only on memory allocated by
 \code{MPI_Mem_alloc}.  
 
-MPI-2 dynamic process management allows an MPI application both the
+MPI-2 dynamic process management allows an MPI application both to
 create new processes and communicate with them and to connect two
 already running MPI programs together.  The number of processes in an
 MPI program can thus change over the lifetime of the program, though
@@ -153,7 +153,7 @@ these, the MPICH ADI implementation provides some implementations of
 these higher-performance interfaces in terms of a smaller set of
 operations.  (In ADI-2 used in MPICH-1, this smaller set was called
 the ``channel interface''.)  A more complete discussion of this is
-presented in Section~\ref{sec:layer}.
+presented in Section~\ref{sec:layers}.
 
 \section{Basic Design Rationale}
 \label{sec:basic-design}
@@ -184,7 +184,7 @@ easily accomplished if the low-level communications is also
 nonblocking.
 
 \item Communication that has the property of local-completion. That
-is, a communication operation that completes independent of any
+is, a communication operation that must complete independently of any
 explicit action by the target (destination) process.  This is required
 in MPI-1 for the implementation of \code{MPI_Cancel} (in the send
 case in most implementations) and is useful for \code{MPI_Abort}.
@@ -240,7 +240,7 @@ The emergence of remote access-style operations in networks
 particularly the need to manage the flow of point-to-point
 communications and scalable collective communications on top of more
 conventional two-sided communications such as TCP suggests
-communication type 1.  Finally, the need to handle a some MPI-1
+communication type 1.  Finally, the need to handle some MPI-1
 operations that are infrequent and not performance sensitive, but must
 be handled reliably, suggests communication type 2.  The top level ADI
 interface provides direct access to these four types of communication.  Of
@@ -278,7 +278,7 @@ structure to hold the state of the incomplete communication.
 \subsection{Other Relevant MPI Issues}
 MPI defines a number of objects such as requests, windows, and
 communicators.  In many cases, these objects are natural choices for
-use within the ADI.  Using these objects, rather than defining
+use within the ADI.  Using these objects directly, rather than defining
 different objects for use by the ADI and translating between the MPI and ADI
 versions, avoids unnecessary 
 overhead within the device.  Let us look at several of these objects.
