@@ -232,7 +232,7 @@ static int MPIDU_Socki_read(struct pollfd * const pollfd, struct pollinfo * cons
     {
 	if (errno != EAGAIN && errno != EWOULDBLOCK)
 	{
-#warning handle read errors
+/*#warning handle read errors*/ /* Solaris cannot handle #warnings */
 	    pollfd->events &= ~POLLIN;
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_FAILED, "**sock|connfailed", "**sock|poll|connfailed %d", errno);
 #if 0
@@ -303,7 +303,7 @@ static int MPIDU_Socki_write(struct pollfd * const pollfd, struct pollinfo * con
     {
 	if (errno != EAGAIN && errno != EWOULDBLOCK)
 	{
-#warning handle write errors
+/*#warning handle write errors*/ /* Solaris complains about #warnings */
 	    pollfd->events &= ~POLLOUT;
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_FAILED, "**sock|connfailed", "**sock|poll|connfailed %d", errno);
 #if 0	    
@@ -327,7 +327,7 @@ int MPIDU_Socki_finalize_outstanding_ops(struct pollfd * pollfd, struct pollinfo
 {
     int mpi_errno =  MPI_SUCCESS;
     
-#warning fix this error handling
+/*#warning fix this error handling*/ /* Solaris complains about #warnings */
     if (pollfd->events & POLLIN)
     {
 	/* FIXME: this should read any data remaining in the receive buffer */
@@ -426,7 +426,7 @@ int MPIDU_Socki_handle_immediate_os_errors(struct pollfd * pollfd, struct pollin
     else if (unix_errno == ECONNRESET || unix_errno == EPIPE)
     {
 	/* MT: this probably needs to be atomic with respect to other operations on the same fd */
-#warning fix this error handling
+/*#warning fix this error handling*/ /* Solaris complains about #warnings */
 	pollfd->fd = -1;
 	pollinfo->state = MPIDU_SOCKI_STATE_CONN_FAILED;
 	close(pollinfo->fd);
@@ -451,7 +451,7 @@ int MPIDU_Socki_handle_immediate_os_errors(struct pollfd * pollfd, struct pollin
     else
     {
 	/* MT: this probably needs to be atomic with respect to other operations on the same fd */
-#warning fix this error handling
+/*#warning fix this error handling*/ /* Solaris complains about #warnings */
 	pollfd->fd = -1;
 	pollinfo->state = MPIDU_SOCKI_STATE_CONN_FAILED;
 	close(pollinfo->fd);
@@ -606,7 +606,8 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
 	sock->sock_set = sock_set;
 	sock->elem = elem;
 
-      lock_exit:
+lock_exit:
+	; /* you cannot have a label with no statement after it */
     }
     /* MT: release sock_set lock */
 
@@ -732,8 +733,7 @@ static int MPIDU_Socki_event_enqueue(struct MPIDU_Sock_set * sock_set, MPIDU_Soc
 	sock_set->eventq_tail->next = eventq_elem;
     }
     sock_set->eventq_tail = eventq_elem;
-
-  fn_exit:
+fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKI_EVENT_ENQUEUE);
     return mpi_errno;
 }
