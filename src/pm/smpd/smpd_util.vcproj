@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.10"
 	Name="smpd_util"
 	ProjectGUID="{0703FA94-8B8C-49AC-BFCE-91F67B599E51}"
 	Keyword="Win32Proj">
@@ -45,6 +45,12 @@
 				Name="VCResourceCompilerTool"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -83,8 +89,16 @@
 				Name="VCResourceCompilerTool"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
 			Name="Source Files"
@@ -100,6 +114,9 @@
 			</File>
 			<File
 				RelativePath="smpd_connect.c">
+			</File>
+			<File
+				RelativePath=".\smpd_database.c">
 			</File>
 			<File
 				RelativePath="smpd_get_opt.c">

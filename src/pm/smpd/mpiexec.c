@@ -10,20 +10,24 @@
 
 mp_process_t mp_process =
 {
-    SMPD_FALSE,  /* do_console            */
-    "",          /* console_host          */
-    NULL,        /* host_list             */
-    NULL,        /* launch_list           */
-    SMPD_TRUE,   /* credentials_prompt    */
-    SMPD_TRUE,   /* do_multi_color_output */
-    SMPD_FALSE,  /* no_mpi                */
-    SMPD_FALSE,  /* output_exit_codes     */
-    SMPD_FALSE,  /* local_root            */
-    SMPD_FALSE,  /* use_iproot            */
-    SMPD_FALSE,  /* use_process_session   */
-    SMPD_FALSE,  /* shutdown_console      */
-    0,           /* nproc                 */
-    SMPD_FALSE   /* verbose               */
+#ifdef HAVE_WINDOWS_H
+    NULL,        /* hCloseStdinThreadEvent */
+    NULL,        /* hStdinThread           */
+#endif
+    SMPD_FALSE,  /* do_console             */
+    "",          /* console_host           */
+    NULL,        /* host_list              */
+    NULL,        /* launch_list            */
+    SMPD_TRUE,   /* credentials_prompt     */
+    SMPD_TRUE,   /* do_multi_color_output  */
+    SMPD_FALSE,  /* no_mpi                 */
+    SMPD_FALSE,  /* output_exit_codes      */
+    SMPD_FALSE,  /* local_root             */
+    SMPD_FALSE,  /* use_iproot             */
+    SMPD_FALSE,  /* use_process_session    */
+    SMPD_FALSE,  /* shutdown_console       */
+    0,           /* nproc                  */
+    SMPD_FALSE   /* verbose                */
 };
 
 int main(int argc, char* argv[])
@@ -115,6 +119,19 @@ int main(int argc, char* argv[])
 	if (!mp_process.no_mpi)
 	{
 	    /* initialize the pmi database engine on the root node */
+	    result = smpd_create_command("start_dbs", 0, 1, SMPD_FALSE, &cmd_ptr);
+	    if (result != SMPD_SUCCESS)
+	    {
+		mp_err_printf("unable to create a start_dbs command.\n");
+		goto quit_job;
+	    }
+	    /* send the launch command */
+	    result = smpd_post_write_command(smpd_process.left_context, cmd_ptr);
+	    if (result != SMPD_SUCCESS)
+	    {
+		mp_err_printf("unable to post a write for the start_dbs command.\n");
+		goto quit_job;
+	    }
 	}
 
 	/* launch the processes */
@@ -325,15 +342,15 @@ quit_job: /* use a goto label to avoid deep indenting in the above code */
     }
 
 #ifdef HAVE_WINDOWS_H
-    if (g_hCloseStdinThreadEvent)
-	SetEvent(g_hCloseStdinThreadEvent);
-    if (g_hStdinThread != NULL)
+    if (mp_process.hCloseStdinThreadEvent)
+	SetEvent(mp_process.hCloseStdinThreadEvent);
+    if (mp_process.hStdinThread != NULL)
     {
-	WaitForSingleObject(g_hStdinThread, 3000);
-	CloseHandle(g_hStdinThread);
+	WaitForSingleObject(mp_process.hStdinThread, 3000);
+	CloseHandle(mp_process.hStdinThread);
     }
-    if (g_hCloseStdinThreadEvent)
-	CloseHandle(g_hCloseStdinThreadEvent);
+    if (mp_process.hCloseStdinThreadEvent)
+	CloseHandle(mp_process.hCloseStdinThreadEvent);
 #endif
     mp_exit_fn("main");
     smpd_exit(0);

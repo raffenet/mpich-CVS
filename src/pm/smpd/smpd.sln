@@ -1,18 +1,22 @@
-Microsoft Visual Studio Solution File, Format Version 7.00
+Microsoft Visual Studio Solution File, Format Version 8.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "smpd", "smpd.vcproj", "{73DC517A-212E-4C8C-8B13-D5CA120C7B5C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0703FA94-8B8C-49AC-BFCE-91F67B599E51} = {0703FA94-8B8C-49AC-BFCE-91F67B599E51}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpiexec", "mpiexec.vcproj", "{EFAF72A2-7154-410B-9235-460444894A38}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0703FA94-8B8C-49AC-BFCE-91F67B599E51} = {0703FA94-8B8C-49AC-BFCE-91F67B599E51}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "smpd_util", "smpd_util.vcproj", "{0703FA94-8B8C-49AC-BFCE-91F67B599E51}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
-		ConfigName.0 = Debug
-		ConfigName.1 = Release
-	EndGlobalSection
-	GlobalSection(ProjectDependencies) = postSolution
-		{73DC517A-212E-4C8C-8B13-D5CA120C7B5C}.0 = {0703FA94-8B8C-49AC-BFCE-91F67B599E51}
-		{EFAF72A2-7154-410B-9235-460444894A38}.0 = {0703FA94-8B8C-49AC-BFCE-91F67B599E51}
+		Debug = Debug
+		Release = Release
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
 		{73DC517A-212E-4C8C-8B13-D5CA120C7B5C}.Debug.ActiveCfg = Debug|Win32

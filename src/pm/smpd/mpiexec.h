@@ -52,6 +52,10 @@ typedef struct mp_map_drive_node
 
 typedef struct mp_process_t
 {
+#ifdef HAVE_WINDOWS_H
+    HANDLE hCloseStdinThreadEvent;
+    HANDLE hStdinThread;
+#endif
     int do_console;
     char console_host[SMPD_MAX_HOST_LENGTH];
     mp_host_node_t *host_list;
@@ -68,12 +72,6 @@ typedef struct mp_process_t
     int verbose;
 } mp_process_t;
 
-#ifdef HAVE_WINDOWS_H
-extern HANDLE g_hCloseStdinThreadEvent;
-extern HANDLE g_hStdinThread;
-#endif
-
-extern int g_bUseProcessSession;
 extern mp_process_t mp_process;
 
 #if 0

@@ -42,7 +42,9 @@ smpd_global_t smpd_process =
       SMPD_FALSE, SMPD_FALSE,
       "", "", "",
       0,
-      SMPD_DBG_STATE_ERROUT, NULL };
+      SMPD_DBG_STATE_ERROUT, NULL,
+      SMPD_FALSE
+    };
 
 #ifdef HAVE_SIGACTION
 void smpd_child_handler(int code)
@@ -392,7 +394,7 @@ int smpd_close_connection(sock_set_t set, sock_t sock)
 	result = sock_wait(set, SOCK_INFINITE_TIME, &event);
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("error waiting for socket to close: %s\n", get_sock_error_string(result));
+	    smpd_err_printf("unable to wait for the socket to close: %s\n", get_sock_error_string(result));
 	    smpd_exit_fn("smpd_close_connection");
 	    return SMPD_FAIL;
 	}

@@ -17,8 +17,6 @@
 #include <termios.h>
 #endif
 
-int g_bUseProcessSession = 0;
-
 int mp_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr)
 {
     int result;
@@ -626,8 +624,6 @@ int handle_written(smpd_context_t *context, int num_written, int error)
 }
 
 #ifdef HAVE_WINDOWS_H
-HANDLE g_hCloseStdinThreadEvent = NULL;
-HANDLE g_hStdinThread = NULL;
 void StdinThread(SOCKET hWrite)
 {
     DWORD len;
@@ -641,7 +637,7 @@ void StdinThread(SOCKET hWrite)
 	mp_err_printf("Unable to get the stdin handle.\n");
 	return;
     }
-    h[1] = g_hCloseStdinThreadEvent;
+    h[1] = mp_process.hCloseStdinThreadEvent;
     while (1)
     {
 	/*mp_dbg_printf("waiting for input from stdin\n");*/
@@ -661,7 +657,7 @@ void StdinThread(SOCKET hWrite)
 	{
 	    shutdown(hWrite, SD_BOTH);
 	    closesocket(hWrite);
-	    mp_dbg_printf("g_hCloseStdinThreadEvent signalled, closing stdin reader thread.\n");
+	    mp_dbg_printf("hCloseStdinThreadEvent signalled, closing stdin reader thread.\n");
 	    return;
 	}
 	else
@@ -850,7 +846,7 @@ int mp_console(char *host)
 
     /* get a handle to stdin */
 #ifdef HAVE_WINDOWS_H
-    result = smpd_make_socket_loop(&stdin_fd, &hWrite);
+    result = smpd_make_socket_loop((SOCKET*)&stdin_fd, &hWrite);
     if (result)
     {
 	mp_err_printf("Unable to make a local socket loop to forward stdin.\n");
@@ -882,15 +878,15 @@ int mp_console(char *host)
 #ifdef HAVE_WINDOWS_H
     /* unfortunately, we cannot use stdin directly as a sock.  So, use a thread to read and forward
        stdin to a sock */
-    g_hCloseStdinThreadEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    if (g_hCloseStdinThreadEvent == NULL)
+    mp_process.hCloseStdinThreadEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (mp_process.hCloseStdinThreadEvent == NULL)
     {
 	mp_err_printf("Unable to create the stdin thread close event, error %d\n", GetLastError());
 	mp_exit_fn("mp_console");
 	return SMPD_FAIL;
     }
-    g_hStdinThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StdinThread, (void*)hWrite, 0, &dwThreadID);
-    if (g_hStdinThread == NULL)
+    mp_process.hStdinThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StdinThread, (void*)hWrite, 0, &dwThreadID);
+    if (mp_process.hStdinThread == NULL)
     {
 	mp_err_printf("Unable to create a thread to read stdin, error %d\n", GetLastError());
 	mp_exit_fn("mp_console");

@@ -18,6 +18,8 @@
 #include <sys/wait.h>
 #endif
 
+#include "smpd_database.h"
+
 #define SMPD_LISTENER_PORT               8676
 
 #define SMPD_SUCCESS                        0
@@ -185,6 +187,7 @@ typedef struct smpd_global_t
     int cur_tag;
     int dbg_state;
     FILE *dbg_fout;
+    int have_dbs;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;

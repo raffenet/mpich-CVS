@@ -96,6 +96,48 @@ int smpd_free_process_struct(smpd_process_t *process)
     return SMPD_SUCCESS;
 }
 
+int handle_dbs_command(smpd_context_t *context)
+{
+    int result;
+    smpd_command_t *cmd, *temp_cmd;
+
+    cmd = &context->read_cmd;
+
+    /* create a reply */
+    smpd_dbg_printf("sending reply to dbs command '%s'.\n", cmd->cmd);
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for the dbs command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("handle_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for dbs command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("handle_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result string to the result command for dbs command '%s'.\n", cmd->cmd);
+	smpd_exit_fn("handle_command");
+	return SMPD_FAIL;
+    }
+    smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', dbs cmd '%s'", temp_cmd->cmd, cmd->cmd);
+	smpd_exit_fn("handle_command");
+	return SMPD_FAIL;
+    }
+    smpd_exit_fn("handle_command");
+    return SMPD_SUCCESS;
+}
+
 int handle_launch_command(smpd_context_t *context)
 {
     int result;
@@ -690,6 +732,58 @@ int handle_command(smpd_context_t *context)
 		return SMPD_FAIL;
 	    }
 	}
+    }
+    else if (strcmp(cmd->cmd_str, "start_dbs") == 0)
+    {
+	if (smpd_process.have_dbs == SMPD_FALSE)
+	{
+	    smpd_dbs_init();
+	    smpd_process.have_dbs = SMPD_TRUE;
+	}
+    }
+    else if (strncmp(cmd->cmd_str, "dbs", 3) == 0)
+    {
+	/* handle database command */
+	if (smpd_process.have_dbs)
+	{
+	    result = handle_dbs_command(context);
+	    smpd_exit_fn("handle_command");
+	    return result;
+	}
+
+	/* create a failure reply because this node does not have an initialized database */
+	smpd_dbg_printf("sending a failure reply because this node does not have an initialized database.\n");
+	result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to create a result command for the dbs command '%s'.\n", cmd->cmd);
+	    smpd_exit_fn("handle_command");
+	    return SMPD_FAIL;
+	}
+	result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the tag to the result command for dbs command '%s'.\n", cmd->cmd);
+	    smpd_exit_fn("handle_command");
+	    return SMPD_FAIL;
+	}
+	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - smpd does not have an initialized database.");
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result string to the result command for dbs command '%s'.\n", cmd->cmd);
+	    smpd_exit_fn("handle_command");
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
+	result = smpd_post_write_command(context, temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', dbs cmd '%s'", temp_cmd->cmd, cmd->cmd);
+	    smpd_exit_fn("handle_command");
+	    return SMPD_FAIL;
+	}
+	smpd_exit_fn("handle_command");
+	return SMPD_SUCCESS;
     }
     else
     {
