@@ -56,10 +56,19 @@ State [reading smpd password],[label="reading smpd password"]
 			Change_State([writing session reject],[label="reject"])
 State [reading password],[label="reading password"]
 	Event [data read]
+		if logon success
+			Change_State([writing password accept],[label="logon success"])
+		else logon fail
+			Change_State([writing password reject],[label="logon fail"])
+State [writing password accept],[label="writing password accept"]
+	Event [data written]
 		if win
 			Change_State([writing reconnect request],[label="win"])
 		else
 			Change_State([writing noreconnect request],[label="unix"])
+State [writing password reject],[label="writing password reject"]
+	Event [data written]
+		Change_State([closing])
 State [writing session accept],[label="writing session accept"]
 	Event [data written]
 		Change_State([reading session header])

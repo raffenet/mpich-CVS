@@ -33,7 +33,13 @@ State [writing account],[label="writing account"]
 		Change_State([writing password])
 State [writing password],[label="writing password"]
 	Event [data written]
-		Change_State([reading reconnect request])
+		Change_State([reading password result])
+State [reading password result],[label="reading password result"]
+	Event [data read]
+		if accept
+			Change_State([reading reconnect request],[label="accept"])
+		else reject
+			Change_State([closing],[label="reject"])
 State [reading reconnect request],[label="reading reconnect request"]
 	Event [data read]
 		if yes
