@@ -33,7 +33,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     int key_max_sz;
     int val_max_sz;
     int name_sz, id_sz;
-    
+
     MPIDI_CH3I_Process.acceptq_head = NULL;
     MPIDI_CH3I_Process.acceptq_tail = NULL;
     MPID_Thread_lock_init(&MPIDI_CH3I_Process.acceptq_mutex);
