@@ -1052,7 +1052,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	((ibu_work_id_handle_t*)&work_req.work_req_id)->data.ptr = (ib_uint32_t)ibu;
 	((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)mem_ptr;
 	
-	MPIU_dbg_printf("ibui_post_write(%d bytes)\n", msg_size);
+	MPIU_dbg_printf("ib_post_send_req_us(%d bytes)\n", msg_size);
 	status = ib_post_send_req_us( IBU_Process.hca_handle,
 	    ibu->qp_handle, 
 	    &work_req);
