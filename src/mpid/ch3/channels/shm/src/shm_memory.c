@@ -11,6 +11,10 @@
 #undef SYNCHRONIZE_SHMAPPING
 
 #ifdef HAVE_SHARED_PROCESS_READ
+#undef FUNCNAME
+#define FUNCNAME InitSharedProcesses
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static void InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
 {
     int mpi_errno;
@@ -123,6 +127,10 @@ static void InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
    Notes:
     Set the global variables pg->addr, pg->size, pg->id
 @*/
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Get_mem
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 void *MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc, BOOL bUseShm)
 {
     int mpi_errno;
@@ -255,6 +263,10 @@ static BOOL g_bGetMemSyncCalled = FALSE;
     Set the global variables pg->addr, pg->size, pg->id
     Ensure that pg->addr is the same across all processes that share memory.
 @*/
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Get_mem_sync
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc, BOOL bUseShm)
 {
     int mpi_errno;
