@@ -57,7 +57,7 @@ D*/
 #define MPIDU_SOCK_ERR_INPROGRESS	MPICH_ERR_LAST_CLASS + 13
 #define MPIDU_SOCK_ERR_TIMEOUT		MPICH_ERR_LAST_CLASS + 14
 #define MPIDU_SOCK_ERR_INTR		MPICH_ERR_LAST_CLASS + 15
-#define MPIDU_SOCK_ERR_NOP_ACCEPT       MPICH_ERR_LAST_CLASS + 16
+#define MPIDU_SOCK_ERR_NO_NEW_SOCK	MPICH_ERR_LAST_CLASS + 16
 
 
 /*E
@@ -307,7 +307,7 @@ Output Parameter:
 Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - new connection successfully established and associated with new sock objecta
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
-. MPIDU_SOCK_ERR_NOP_ACCEPT - accept called without previous OP_ACCEPT returned by sock_wait
+. MPIDU_SOCK_ERR_NO_NEW_SOCK - no new connection was available
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid listener sock or bad pointer to new sock object
 . MPIDU_SOCK_ERR_BAD_SET - invalid sock set
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
@@ -323,7 +323,7 @@ The addition of the new sock object to the sock set may occur while other thread
 Thread safety of simultaneously operations on the same sock set must be guaranteed by the Sock implementation.
 
 MPIDU_Sock_accept() may fail to return a new sock if multiple threads call MPIDU_Sock_accept() and queue of new connections is
-depleted.
+depleted.  In this case, MPIDU_SOCK_ERR_NO_SOCK is returned.
 
 Module:
 Utility-Sock
@@ -480,7 +480,6 @@ Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - request close the connection successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
-. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by buf and maxlen resulted in a memory fault
 . MPIDU_SOCK_ERR_BAD_LEN - length parameters must be greater than zero and maxlen must be greater than minlen
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
 . MPIDU_SOCK_ERR_INPROGRESS - this operation overlapped with another like operation already in progress
@@ -491,6 +490,7 @@ Events generated:
 
 Event errors: a MPI error code with a Sock extended error class
 + MPI_SUCCESS -  successfully established
+. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by buf and maxlen resulted in a memory fault
 . MPIDU_SOCK_ERR_SOCK_CLOSED - the sock object was closed locally
 . MPIDU_SOCK_ERR_CONN_CLOSED - the connection was closed by the peer
 . MPIDU_SOCK_ERR_CONN_FAILED - the connection failed
@@ -539,7 +539,6 @@ Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - request close the connection successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
-. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by iov and iov_n resulted in a memory fault
 . MPIDU_SOCK_ERR_BAD_LEN - iov_n is out of range
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
 . MPIDU_SOCK_ERR_INPROGRESS - this operation overlapped with another like operation already in progress
@@ -550,6 +549,7 @@ Events generated:
 
 Event errors: a MPI error code with a Sock extended error class
 + MPI_SUCCESS -  successfully established
+. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by iov and iov_n resulted in a memory fault
 . MPIDU_SOCK_ERR_SOCK_CLOSED - the sock object was closed locally
 . MPIDU_SOCK_ERR_CONN_CLOSED - the connection was closed by the peer
 . MPIDU_SOCK_ERR_CONN_FAILED - the connection failed
@@ -598,7 +598,6 @@ Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - request close the connection successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
-. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by buf and maxlen resulted in a memory fault
 . MPIDU_SOCK_ERR_BAD_LEN - length parameters must be greater than zero and maxlen must be greater than minlen
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
 . MPIDU_SOCK_ERR_INPROGRESS - this operation overlapped with another like operation already in progress
@@ -609,6 +608,7 @@ Events generated:
 
 Event errors: a MPI error code with a Sock extended error class
 + MPI_SUCCESS -  successfully established
+. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by buf and maxlen resulted in a memory fault
 . MPIDU_SOCK_ERR_SOCK_CLOSED - the sock object was closed locally
 . MPIDU_SOCK_ERR_CONN_CLOSED - the connection was closed by the peer
 . MPIDU_SOCK_ERR_CONN_FAILED - the connection failed
@@ -658,7 +658,6 @@ Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - request close the connection successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
-. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by iov and iov_n resulted in a memory fault
 . MPIDU_SOCK_ERR_BAD_LEN - iov_n is out of range
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
 . MPIDU_SOCK_ERR_INPROGRESS - this operation overlapped with another like operation already in progress
@@ -669,6 +668,7 @@ Events generated:
 
 Event errors: a MPI error code with a Sock extended error class
 + MPI_SUCCESS -  successfully established
+. MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by iov and iov_n resulted in a memory fault
 . MPIDU_SOCK_ERR_SOCK_CLOSED - the sock object was closed locally
 . MPIDU_SOCK_ERR_CONN_CLOSED - the connection was closed by the peer
 . MPIDU_SOCK_ERR_CONN_FAILED - the connection failed
