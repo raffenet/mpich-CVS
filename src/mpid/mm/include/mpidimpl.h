@@ -116,6 +116,7 @@ typedef union VC_Method_data
 #ifdef WITH_METHOD_IB
     struct vc_ib
     {
+	int reading_header;
 	IB_Info info;
     } ib;
 #endif

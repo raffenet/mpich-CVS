@@ -47,6 +47,60 @@ int ib_enqueue_read_at_head(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 }
 
 /*@
+   ib_car_enqueue_read - enqueue a read car in a vc
+
+   Parameters:
++  MPIDI_VC *vc_ptr - vc
+-  MM_Car *car_ptr - car
+
+   Notes:
+@*/
+int ib_car_enqueue_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
+{
+    MM_Car *iter_ptr;
+    MPIDI_STATE_DECL(MPID_STATE_IB_CAR_ENQUEUE_READ);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IB_CAR_ENQUEUE_READ);
+
+    assert(car_ptr->type & MM_READ_CAR);
+
+    /* enqueue the read car in the vc_ptr read queue */
+    if (vc_ptr->readq_tail != NULL)
+    {
+	/* set all the vcqnext_ptrs in the tail chain to this newly enqueued car */
+	iter_ptr = vc_ptr->readq_tail;
+	do
+	{
+	    iter_ptr->vcqnext_ptr = car_ptr;
+	    iter_ptr = iter_ptr->next_ptr;
+	} while (iter_ptr);
+	/* OR enqueue only the head car */
+	/*vc_ptr->readq_tail->vcqnext_ptr = car_ptr;*/
+    }
+    else
+    {
+	vc_ptr->readq_head = car_ptr;
+	iter_ptr = car_ptr;
+	do
+	{
+	    iter_ptr->vcqnext_ptr = NULL;
+	    iter_ptr = iter_ptr->next_ptr;
+	} while (iter_ptr);
+    }
+    vc_ptr->readq_tail = car_ptr;
+
+    iter_ptr = car_ptr;
+    do
+    {
+	iter_ptr->vcqnext_ptr = NULL;
+	iter_ptr = iter_ptr->next_ptr;
+    } while (iter_ptr);
+
+    MPIDI_FUNC_EXIT(MPID_STATE_IB_CAR_ENQUEUE_READ);
+    return MPI_SUCCESS;
+}
+
+/*@
    ib_enqueue_write_at_head - enqueue a car in a vc at the head
 
    Parameters:
@@ -79,6 +133,66 @@ int ib_enqueue_write_at_head(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	vc_ptr->writeq_tail = car_ptr;
 
     MPIDI_FUNC_EXIT(MPID_STATE_IB_CAR_HEAD_ENQUEUE);
+    return MPI_SUCCESS;
+}
+
+/*@
+   ib_car_enqueue_write - enqueue a write car in the vc
+
+   Parameters:
++  MPIDI_VC *vc_ptr - vc
+-  MM_Car *car_ptr - car
+
+   Notes:
+@*/
+int ib_car_enqueue_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
+{
+    MM_Car *iter_ptr;
+    MPIDI_STATE_DECL(MPID_STATE_IB_CAR_ENQUEUE_WRITE);
+    
+    MPIDI_FUNC_ENTER(MPID_STATE_IB_CAR_ENQUEUE_WRITE);
+    
+    assert(car_ptr->type & MM_WRITE_CAR);
+    
+    /* enqueue the write car in the vc_ptr write queue */
+    if (vc_ptr->writeq_tail != NULL)
+    {
+	/* set all the vcqnext_ptrs in the tail chain to this newly enqueued car */
+	iter_ptr = vc_ptr->writeq_tail;
+	do
+	{
+	    iter_ptr->vcqnext_ptr = car_ptr;
+	    iter_ptr = iter_ptr->next_ptr;
+	} while (iter_ptr);
+	/* OR enqueue only the head car */
+	/*vc_ptr->writeq_tail->vcqnext_ptr = car_ptr;*/
+    }
+    else
+    {
+	vc_ptr->writeq_head = car_ptr;
+	iter_ptr = car_ptr;
+	do
+	{
+	    iter_ptr->vcqnext_ptr = NULL;
+	    iter_ptr = iter_ptr->next_ptr;
+	} while (iter_ptr);
+	vc_ptr->writeq_tail = car_ptr;
+
+	ib_write_aggressive(vc_ptr);
+	
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_CAR_ENQUEUE_WRITE);
+	return MPI_SUCCESS;
+    }
+    vc_ptr->writeq_tail = car_ptr;
+
+    iter_ptr = car_ptr;
+    do
+    {
+	iter_ptr->vcqnext_ptr = NULL;
+	iter_ptr = iter_ptr->next_ptr;
+    } while (iter_ptr);
+
+    MPIDI_FUNC_EXIT(MPID_STATE_IB_CAR_ENQUEUE_WRITE);
     return MPI_SUCCESS;
 }
 

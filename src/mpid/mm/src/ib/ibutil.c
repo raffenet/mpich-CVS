@@ -32,6 +32,7 @@ int ibu_post_receive(MPIDI_VC *vc_ptr)
     if (status != IB_SUCCESS)
     {
 	err_printf("Error: failed to post ib receive, status = %d\n", status);
+	return status;
     }
 
     return MPI_SUCCESS;
@@ -39,10 +40,58 @@ int ibu_post_receive(MPIDI_VC *vc_ptr)
 
 int ibu_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_update)(int, void*))
 {
+    ib_uint32_t status;
+    ib_scatter_gather_list_t sg_list;
+    ib_data_segment_t data;
+    ib_work_req_send_t work_req;
+    void *mem_ptr;
+
+    mem_ptr = BlockAlloc(vc_ptr->data.ib.info.m_allocator);
+    memcpy(mem_ptr, buf, len);
+
+    sg_list.data_seg_p = &data;
+    sg_list.data_seg_num = 1;
+    data.length = len;
+    data.va = (ib_uint64_t)mem_ptr;
+    data.l_key = vc_ptr->data.ib.info.m_lkey;
+
+    work_req.dest_address      = 0;
+    work_req.dest_q_key        = 0;
+    work_req.dest_qpn          = 0; /*var.m_dest_qp_num;  // not needed */
+    work_req.eecn              = 0;
+    work_req.ethertype         = 0;
+    work_req.fence_f           = 0;
+    work_req.immediate_data    = 0;
+    work_req.immediate_data_f  = 0;
+    work_req.op_type           = OP_SEND;
+    work_req.remote_addr.va    = 0;
+    work_req.remote_addr.key   = 0;
+    work_req.se_f              = 0;
+    work_req.sg_list           = sg_list;
+    work_req.signaled_f        = 0;
+    
+    /* store the VC ptr and the mem ptr in the work id */
+    ((ib_work_id_handle_t*)&work_req.work_req_id)->data.vc = (ib_uint32_t)vc_ptr;
+    ((ib_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)mem_ptr;
+
+    status = ib_post_send_req_us( IB_Process.hca_handle,
+	vc_ptr->data.ib.info.m_qp_handle, 
+	&work_req);
+    if( status != IB_SUCCESS )
+    {
+	err_printf("Error: failed to post ib send, status = %d\n", status);
+	return status;
+    }
+
     return MPI_SUCCESS;
 }
 
 int ibu_post_writev(MPIDI_VC *vc_ptr, MPID_IOV *iov, int n, int (*write_progress_update)(int, void*))
 {
+    int i;
+    for (i=0; i<n; i++)
+    {
+	ibu_post_write(vc_ptr, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN, NULL);
+    }
     return MPI_SUCCESS;
 }

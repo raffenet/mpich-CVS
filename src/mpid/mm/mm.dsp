@@ -154,6 +154,10 @@ SOURCE=.\src\ib\ib_queue.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\ib\ib_read.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\ib\ib_reset_car.c
 # End Source File
 # Begin Source File

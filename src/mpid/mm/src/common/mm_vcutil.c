@@ -238,6 +238,10 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	/* mm required functions */
 	vc_ptr->fn = g_ib_vc_functions;
 	/* ib specific */
+	vc_ptr->data.ib.reading_header = TRUE;
+#ifdef MPICH_DEV_BUILD
+	memset(&vc_ptr->data.ib.info, 0, sizeof(vc_ptr->data.ib.info));
+#endif
 	vc_ptr->pkt_car.type = MM_HEAD_CAR | MM_READ_CAR; /* static car used to read headers */
 	vc_ptr->pkt_car.vc_ptr = vc_ptr;
 	vc_ptr->pkt_car.next_ptr = NULL;
