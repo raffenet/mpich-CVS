@@ -527,6 +527,12 @@ MPI_Fint MPI_Request_c2f( MPI_Request );
 EXPORT_MPI_API int MPI_Status_set_cancelled( MPI_Status *, int );
 EXPORT_MPI_API int MPI_Status_set_elements( MPI_Status *, MPI_Datatype, int );
 
+/* mpi-2 functions */
+EXPORT_MPI_API int MPI_Comm_spawn(char *, char *[], int, MPI_Info, int, MPI_Comm, MPI_Comm *, int []);
+EXPORT_MPI_API int MPI_Comm_spawn_multiple(int, char *[], char **[], int [], MPI_Info [], int, MPI_Comm, MPI_Comm *, int []);
+EXPORT_MPI_API int MPI_Comm_connect(char *, MPI_Info, int, MPI_Comm, MPI_Comm *);
+EXPORT_MPI_API int MPI_Open_port(MPI_Info, char *);
+
 #endif /* MPICH_SUPPRESS_PROTOTYPES */
 
 
@@ -703,6 +709,12 @@ EXPORT_MPI_API int PMPI_Info_free(MPI_Info *info);
 /* external */
 EXPORT_MPI_API int PMPI_Status_set_cancelled( MPI_Status *, int );
 EXPORT_MPI_API int PMPI_Status_set_elements( MPI_Status *, MPI_Datatype, int );
+
+/* mpi-2 functions */
+EXPORT_MPI_API int PMPI_Comm_spawn(char *, char *[], int, MPI_Info, int, MPI_Comm, MPI_Comm *, int []);
+EXPORT_MPI_API int PMPI_Comm_spawn_multiple(int, char *[], char **[], int [], MPI_Info [], int, MPI_Comm, MPI_Comm *, int []);
+EXPORT_MPI_API int PMPI_Comm_connect(char *, MPI_Info, int, MPI_Comm, MPI_Comm *);
+EXPORT_MPI_API int PMPI_Open_port(MPI_Info, char *);
 
 #endif  /* MPI_BUILD_PROFILING */
 /* End of MPI bindings */
