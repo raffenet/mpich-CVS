@@ -1269,7 +1269,8 @@ dnl     if test -n "$binbuild_dir" ; then cp mpif77 $binbuild_dir/mpif77 ; fi],
 dnl         [binbuild_dir=$binbuild_dir] )
 dnl
 dnl First, ensure that echo works within the config.status 
-AC_OUTPUT_COMMANDS([if test "$enable_echo" ; then set -x ; fi ])
+AC_OUTPUT_COMMANDS([if test "$enable_echo" ; then set -x ; fi ],[
+enable_echo=$enable_echo])
 dnl This must be run before converting C to !
 dnl Also note that this must only be done once.  Because of the way configure
 dnl works, this step can sometimes be repeated, creating an invalid file.
@@ -1306,7 +1307,7 @@ if test -z "$MPI_LDFLAGS" ; then
 fi
 AC_SUBST(MPI_LDFLAGS)
 if test -z "$top_build_dir" ; then
-    top_build_dir=`cd ../../.. ; pwd`
+    top_build_dir=`cd ../../.. && pwd`
 fi
 if test -z "$includebuild_dir" ; then
     includebuild_dir=$top_build_dir/src/include
