@@ -9,8 +9,8 @@ extern RLOG_Struct *g_pRLOG;
 #define MPIDU_INIT_STATE_DECL(a)
 #define MPIDU_FINALIZE_STATE_DECL(a)
 
-#define MPIDU_FUNC_ENTER(a) g_pRLOG->nRecursion++; time_stamp_##a = RLOG_timestamp()
-#define MPIDU_FUNC_EXIT(a)  RLOG_LogEvent( g_pRLOG, a, time_stamp_##a, RLOG_timestamp(), --g_pRLOG->nRecursion )
+#define MPIDU_FUNC_ENTER(a) if (g_pRLOG) { g_pRLOG->nRecursion++; time_stamp_##a = RLOG_timestamp(); }
+#define MPIDU_FUNC_EXIT(a)  if (g_pRLOG) { RLOG_LogEvent( g_pRLOG, a, time_stamp_##a, RLOG_timestamp(), --g_pRLOG->nRecursion ); }
 
 #define MPIDU_PT2PT_FUNC_ENTER(a)     MPIDU_FUNC_ENTER(a)
 #define MPIDU_PT2PT_FUNC_EXIT(a)      MPIDU_FUNC_EXIT(a)
@@ -21,19 +21,19 @@ extern RLOG_Struct *g_pRLOG;
 #define MPIDU_FINALIZE_FUNC_ENTER(a)
 #define MPIDU_FINALIZE_FUNC_EXIT(a)
 
-#define MPIDU_PT2PT_FUNC_ENTER_FRONT(a) \
+#define MPIDU_PT2PT_FUNC_ENTER_FRONT(a) if (g_pRLOG) \
 { \
     g_pRLOG->nRecursion++; \
     time_stamp_##a = RLOG_timestamp(); \
     RLOG_LogSend( g_pRLOG, dest, tag, count ); \
 }
-#define MPIDU_PT2PT_FUNC_ENTER_BACK(a) \
+#define MPIDU_PT2PT_FUNC_ENTER_BACK(a) if (g_pRLOG) \
 { \
     g_pRLOG->nRecursion++; \
     time_stamp_##a = RLOG_timestamp(); \
     RLOG_LogRecv( g_pRLOG, source, tag, count ); \
 }
-#define MPIDU_PT2PT_FUNC_ENTER_BOTH(a) \
+#define MPIDU_PT2PT_FUNC_ENTER_BOTH(a) if (g_pRLOG) \
 { \
     g_pRLOG->nRecursion++; \
     time_stamp_##a = RLOG_timestamp(); \
