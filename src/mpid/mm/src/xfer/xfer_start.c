@@ -29,10 +29,11 @@ int xfer_start(MPID_Request *request_ptr)
 	{
 	    return mpi_errno;
 	}
+	mm_reset_cars(pRequest);
 	pRequest = pRequest->mm.next_ptr;
     }
 
-    /* enqueue the cars */
+    /* enqueue the head cars */
     pRequest = request_ptr;
     while (pRequest)
     {
@@ -57,7 +58,7 @@ int xfer_start(MPID_Request *request_ptr)
 		/* add up the size of the message and put it in the packet */
 		pCar->data.pkt.size = 0;
 		/* figure out the total size by adding up the size fields of the data cars */
-		pCarIter = pCar->next_ptr; /* skip the header car */
+		pCarIter = pCar->next_ptr; /* skip the header car when calculating the size */
 		while (pCarIter)
 		{
 		    pCar->data.pkt.size += pCarIter->request_ptr->mm.size;

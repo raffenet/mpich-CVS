@@ -29,14 +29,14 @@ typedef struct MPID_PerProcess {
       MPID_Thread_lock_t lock;
       MPID_Thread_lock_t qlock;
          struct MM_Car * posted_q_head;    /* unmatched posted read operations */
-	 struct MM_Car * posted_q_tail;
+         struct MM_Car * posted_q_tail;
          struct MM_Car * unex_q_head;      /* active un-matched read operations */
-	 struct MM_Car * unex_q_tail;
+         struct MM_Car * unex_q_tail;
       MPID_Thread_lock_t cqlock;
          struct MM_Car * cq_head;          /* completion queue head */
-	 struct MM_Car * cq_tail;          /* completion queue tail */
+         struct MM_Car * cq_tail;          /* completion queue tail */
          struct MM_Car * pkr_read_list;    /* active pack read operations */
-	 struct MM_Car * pkr_write_list;   /* active pack write operations */
+         struct MM_Car * pkr_write_list;   /* active pack write operations */
          struct MM_Car * unpkr_write_list; /* active unpack write operations */
                     char pmi_kvsname[100];
              MPID_Comm * comm_parent;
@@ -73,34 +73,34 @@ typedef union VC_Method_data
 #ifdef WITH_METHOD_TCP
     struct vc_tcp
     {
-	int connected;
-	int connecting;
-	int reject_received;
-	int bfd;
+        int connected;
+        int connecting;
+        int reject_received;
+        int bfd;
     } tcp;
 #endif
 #ifdef WITH_METHOD_SHM
     struct vc_shm
     {
-	void *shm_ptr;
+        void *shm_ptr;
     } shm;
 #endif
 #ifdef WITH_METHOD_VIA
     struct vc_via
     {
-	VI_Info info;
+        VI_Info info;
     } via;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
     struct vc_via_rdma
     {
-	VI_Info info;
+        VI_Info info;
     } via_rdma;
 #endif
 #ifdef WITH_METHOD_NEW
     struct vc_new
     {
-	int data;
+        int data;
     }
 #endif
 } VC_Method_data;
@@ -124,7 +124,8 @@ typedef struct MPIDI_VC
                 int rank; /* the rank of the remote process relative to MPI_COMM_WORLD in the key_value database described by pmi_kvsname */
               int (*post_read)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
               int (*merge_with_unexpected)(MM_Car *car_ptr, MM_Car *unex_car_ptr);
-	      int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+              int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+              int (*reset_car)(struct MM_Car *car_ptr);
   struct MPIDI_VC * read_next_ptr;
   struct MPIDI_VC * write_next_ptr;
    MPID_Next_packet pkt;
@@ -184,25 +185,26 @@ MPID_Request * mm_request_alloc();
 
 /* buffer */
            int mm_choose_buffer(MPID_Request *request_ptr);
+           int mm_reset_cars(MPID_Request *request_ptr);
            int mm_get_buffers_tmp(MPID_Request *request_ptr);
            int mm_get_buffers_vec(MPID_Request *request_ptr);
 
-	   int mm_packer_read();
-	   int mm_packer_write();
-	   int mm_unpacker_write();
+           int mm_packer_read();
+           int mm_packer_write();
+           int mm_unpacker_write();
 
 /* queues */
            int mm_post_recv(MM_Car *car_ptr);
-	   int mm_post_read_pkt(MPIDI_VC *vc_ptr);
-	   int mm_post_send(MM_Car *car_ptr);
-	   int mm_cq_test();
-	   int mm_cq_wait();
-	   int mm_cq_enqueue(MM_Car *car_ptr);
+           int mm_post_read_pkt(MPIDI_VC *vc_ptr);
+           int mm_post_send(MM_Car *car_ptr);
+           int mm_cq_test();
+           int mm_cq_wait();
+           int mm_cq_enqueue(MM_Car *car_ptr);
 
 /* requests */
 /*
           void mm_inc_cc(MPID_Request *request_ptr);
-	  void mm_dec_cc(MPID_Request *request_ptr);
+          void mm_dec_cc(MPID_Request *request_ptr);
 */
 #define mm_inc_cc(request_ptr) (*(request_ptr->cc_ptr))++;
 #define mm_dec_cc(request_ptr) (*(request_ptr->cc_ptr))--;
@@ -242,15 +244,15 @@ send_mop could cause remote operations to occur.  We will not use send_mop
 currently.
 */
 
-int xfer_init(int tag, MPID_Comm *comm_ptr, MPID_Request **request_pptr);
-int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src);
-int xfer_recv_mop_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src);
-int xfer_recv_forward_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src, int dest);
+int xfer_init               (int tag, MPID_Comm *comm_ptr, MPID_Request **request_pptr);
+int xfer_recv_op            (MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src);
+int xfer_recv_mop_op        (MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src);
+int xfer_recv_forward_op    (MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src, int dest);
 int xfer_recv_mop_forward_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src, int dest);
-int xfer_forward_op(MPID_Request *request_ptr, int size, int src, int dest);
-int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Datatype dtype, int first, int last, int dest);
-int xfer_replicate_op(MPID_Request *request_ptr, int dest);
-int xfer_start(MPID_Request *request_ptr);
+int xfer_forward_op         (MPID_Request *request_ptr, int size, int src, int dest);
+int xfer_send_op            (MPID_Request *request_ptr, const void *buf, int count, MPI_Datatype dtype, int first, int last, int dest);
+int xfer_replicate_op       (MPID_Request *request_ptr, int dest);
+int xfer_start              (MPID_Request *request_ptr);
 
 /* Here are the xfer functions broken into scatter and gather routines.
 int xfer_gather_init(int dest, int tag, MPID_Comm *comm_ptr, MPID_Request **request_pptr);

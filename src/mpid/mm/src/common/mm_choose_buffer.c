@@ -16,6 +16,12 @@
 @*/
 int mm_choose_buffer(MPID_Request *request_ptr)
 {
+    /* look at the read car and all of the write cars */
+    /* pick the best buffer type that everyone can handle */
+    /* if there are incompatible cars, allocate other requests and 
+       connect them together with copier methods */
+
+    /* but for now always choose the vector buffer type */
     if (request_ptr->mm.rcar[0].type != MM_NULL_CAR)
     {
 	request_ptr->mm.buf.type = MM_VEC_BUFFER;

@@ -160,6 +160,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	vc_ptr->post_read = tcp_post_read;
 	vc_ptr->merge_with_unexpected = tcp_merge_with_unexpected;
 	vc_ptr->post_write = tcp_post_write;
+	vc_ptr->reset_car = tcp_reset_car;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA
