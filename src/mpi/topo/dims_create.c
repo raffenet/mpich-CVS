@@ -25,7 +25,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines.  You can use USE_WEAK_SYMBOLS to see if MPICH is
    using weak symbols to implement the MPI routines. */
-typedef struct { int val, cnt; } Factors;
+typedef struct Factors { int val, cnt; } Factors;
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Dims_create PMPI_Dims_create
 

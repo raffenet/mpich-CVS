@@ -29,7 +29,7 @@
    datatypes */
 #ifndef MPICH_MPI_FROM_PMPI
 /* Include these definitions only with the PMPI version */
-typedef struct { MPI_Datatype dtype; const char *name; } mpi_names_t;
+typedef struct mpi_names_t { MPI_Datatype dtype; const char *name; } mpi_names_t;
 static mpi_names_t mpi_names[] = {
     { MPI_CHAR, "char" },
     { MPI_UNSIGNED_CHAR, "unsigned char" },

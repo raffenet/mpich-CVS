@@ -8,33 +8,33 @@
 #include "mpiimpl.h"
 
 /* MINLOC and MAXLOC structures */
-typedef struct {
+typedef struct MPIR_2int_loctype {
   int  value;
   int  loc;
 } MPIR_2int_loctype;
 
-typedef struct {
+typedef struct MPIR_floatint_loctype {
   float  value;
   int    loc;
 } MPIR_floatint_loctype;
 
-typedef struct {
+typedef struct MPIR_longint_loctype {
   long  value;
   int    loc;
 } MPIR_longint_loctype;
 
-typedef struct {
+typedef struct MPIR_shortint_loctype {
   short  value;
   int    loc;
 } MPIR_shortint_loctype;
 
-typedef struct {
+typedef struct MPIR_doubleint_loctype {
   double  value;
   int     loc;
 } MPIR_doubleint_loctype;
 
 #if defined(HAVE_LONG_DOUBLE)
-typedef struct {
+typedef struct MPIR_longdoubleint_loctype {
   long double   value;
   int           loc;
 } MPIR_longdoubleint_loctype;

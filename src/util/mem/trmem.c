@@ -97,7 +97,7 @@ typedef struct _trSPACE {
     } TRSPACE;
 /* This union is used to insure that the block passed to the user is
    aligned on a double boundary */
-typedef union {
+typedef union TrSPACE {
     TRSPACE sp;
     double  v[HEADER_DOUBLES];
     } TrSPACE;
@@ -430,7 +430,7 @@ void MPIU_trdump( FILE *fp )
    memory heap by id */
 
 #include <search.h>
-typedef struct { int id, size, lineno; char *fname; } TRINFO;
+typedef struct TRINFO { int id, size, lineno; char *fname; } TRINFO;
 
 static int IntCompare( TRINFO *a, TRINFO *b )
 {

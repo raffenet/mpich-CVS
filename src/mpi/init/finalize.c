@@ -31,7 +31,7 @@
    
  */
 PMPI_LOCAL void MPIR_Call_finalize_callbacks( void );
-typedef struct {
+typedef struct Finalize_func_t {
     int (*f)( void * );      /* The function to call */
     void *extra_data;        /* Data for the function */
     int  priority;           /* priority is used to control the order

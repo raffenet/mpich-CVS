@@ -29,7 +29,7 @@
 #define FUNCNAME MPI_Comm_split
 
 
-typedef struct {
+typedef struct splittype {
     int color, key;
 } splittype;
 
