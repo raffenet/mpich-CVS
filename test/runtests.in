@@ -247,10 +247,10 @@ sub RunMPIProgram {
 	    # Skip FORTRAN STOP
 	    if (/FORTRAN STOP/) { next; }
 	    $inline .= $_;
-	    if (/^\s*No Errors\s*$/ && $found_noerror == 0) {
+	    if (/^\s*No [Ee]rrors\s*$/ && $found_noerror == 0) {
 		$found_noerror = 1;
 	    }
-	    if (! /^\s*No Errors\s*$/ && !/^\s*Test Passed\s*$/) {
+	    if (! /^\s*No [Ee]rrors\s*$/ && !/^\s*Test Passed\s*$/) {
 		print STDERR "Unexpected output in $programname: $_";
 		if (!$found_error) {
 		    $found_error = 1;
