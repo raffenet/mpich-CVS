@@ -181,11 +181,11 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     /* mpi_errno = MPID_Comm_create(); */
     if (mpi_errno == MPI_SUCCESS)
     {
+	MPIU_CHKLMEM_FREEALL;
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE);
 	return MPI_SUCCESS;
     }
 
-    MPIU_CHKLMEM_FREEALL;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
     MPIU_CHKLMEM_FREEALL;
