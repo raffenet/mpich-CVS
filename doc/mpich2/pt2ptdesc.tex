@@ -608,3 +608,216 @@ transferred.  This ensures that the sender has received the
 knows (or has been told in the \mpidconst{MPID_Hid_ok_to_send} message) that
 the receiver is blocking, it can switch to this alternate method for
 indicating that data has been transferred.
+
+\clearpage
+
+\subsubsection{Implementation of Point-to-Point}
+This section is a placeholder for pseudocode for the various routines.  They
+are organized by method.
+
+\paragraph{\tcpname}
+\mpifunc{MPI_Irecv}:
+\begin{verbatim}
+err = MPI_SUCCESS;
+/* Error checking */
+...
+request_ptr = MPID_Request_recv_FOA( tag, rank, comm_ptr, &found );
+/* FOA ensures that the request is not busy when it is returned if found, and
+   is busy if not found */
+if (found) {
+    if (request_ptr->data_avail) {
+        /* This is the eager case; all data is available */
+        /* Check for Truncation */
+        if (count * datatype->size < request_ptr->data_size ) {
+            err = MPI_ERR_TRUNCATE;
+            request_ptr->data_size = count * datatype->size;
+        }
+        if (datatype->is_contig) 
+            memcpy( buffer, request->data_avail, request->data_size );
+        else {
+            /* Do we need a special unpack for this */
+            MPID_Segment_unpack( request_ptr->data_avail, 
+                                 request_ptr->data_size, 
+                                 buffer, count, datatype );
+        }
+        /* release data_avail (includes flow control) */
+        MPID_EagerFree( rank, comm_ptr, request_ptr->data_avail );
+        MPID_Write_ordered( request_ptr->complete = 1 );
+    }
+    else {
+         MPID_Hid_ok_to_send_t *packet;
+         /* Must redirect to method-specific routine */
+         packet = &request_ptr.packet;
+         vector[0].iov_base = &packet;
+         vector[0].iov_len  = sizeof(MPID_Hid_ok_to_send_t);
+         packet->request_id = request_ptr->self;
+         ... other packet fields ...
+         MPID_Rhcv( request_ptr->sender_rank, comm_ptr, MPID_Hid_ok_to_send,
+                    vector, 1, NULL );
+    }
+}
+else {
+    /* Unmatched.  Attach datatype/buffer and wait for communication agent */
+    request_ptr->segment = MPID_Segment_init_unpack( buffer, count, datatype );
+    MPID_Write_ordered(request_ptr->busy = 0);
+}
+*request = request_ptr->self;
+return err;
+\end{verbatim}
+
+\mpifunc{MPI_Isend}:
+\begin{verbatim}
+/* Error checking */
+...
+request_ptr = MPID_Request_send_FOA( tag, rank, comm_ptr, &found );
+/* found always false for now */
+/* not found */
+if (count * datatype->size > eager_limit ||
+    !MPID_Flow_limit( count * datatype->size , rank, comm_ptr )) {
+    MPID_Hid_request_to_send_t *packet;
+    /* rendezvous */
+    /* save request fields */
+    ...
+    request_ptr->segment = MPID_Segment_pack_init(buffer,count,datatype);
+    packet = &request_ptr->packet;
+    packet->request_id = request_ptr->self;
+    .. other fields ..
+    vector[0].iov_base = packet;
+    vector[0].iov_len  = sizeof(MPID_Hid_request_to_send_t);
+    MPID_Rhcv( rank, comm_ptr, MPID_Hid_request_to_send, vector, 1, 
+               NULL );  /* No completion flag needed here */
+}
+else {
+    /* Note that the flow limit test takes length, rank, and communicator.
+       This ensure that the test is thread-safe 
+       (it is really test and reserve on success) */
+    MPID_Hid_eager_t *packet;
+    packet = &request_ptr->packet; 
+    vector[0].iov_base = packet;
+    vector[0].iov_len  = sizeof(MPID_Hid_eager_t);
+    if (datatype->is_contig) {
+        vector[1].iov_base = buffer;
+        }
+    else {
+        vector[1].iov_base = ???
+        memcpy( vector[1].iov_base, buffer, count*datatype->size );
+        ?? How do we free this buffer ??
+    }
+    vector[1].iov_len  = count * datatype->size;
+    MPID_Rhcv( rank, comm_ptr, MPID_Hid_eager, vector, 2, 
+               &request_ptr->complete );
+    /* MPID_Rhcv sets complete when the message is sent. */
+}
+\end{verbatim}
+
+\texttt{Communication Agent}
+\begin{verbatim}
+/* Waiting on incoming messages */
+#if !SINGLE_THREADED
+/* If the communication agent runs in a separate thread, run it
+   forever */
+while (1) 
+#endif
+{
+    /* returns the next successfully read complete packet */
+    /* This isn't quite correct - we don't want to require reading all
+       of a MPID_Hid_data packet, and maybe not all of an MPID_Hid_eager
+       packet */
+    packet = GetNextPacket( blocking );
+    if (!packet) break;
+    switch (packet->type) {
+        case MPID_Hid_eager:
+        comm_ptr = &global_comm[packet->comm_id];
+        request_ptr = MPID_Request_recv_FOA( packet->tag, packet->sender_rank, 
+                                             comm_ptr, &found );
+        if (found) {
+            /* Matching receive exists */
+            /* Check for truncation */
+            MPID_Segment_unpack( packet->data, packet->msg_bytes, 
+                                 request_ptr ... );
+        }
+        else {
+            /* Copy byte data */
+            void *ptr = MPID_EagerAlloc( packet->sender_rank, comm, 
+                                         packet->msg_bytes );
+                                      /* EagerAlloc updates flow */
+            request_ptr->data_size  = packet->msg_bytes;
+            memcpy( ptr, packet->data, packet->msg_bytes );
+            MPID_Write_ordered( request_ptr->data_avail = ptr);
+        }
+        break;
+
+        case MPID_Hid_request_to_send:
+        request_ptr = MPID_Request_recv_FOA( ... same as MPID_Hid_eager )
+        if (found) {
+             /* Same as Irecv case */
+        }
+        else {
+             request_ptr->request_id = packet->request_id;
+             request_ptr->msg_bytes  = packet->msg_bytes;
+             MPID_Write_ordered( request_ptr->busy = 0 );
+        }
+        break;
+
+        case MPID_Hid_ok_to_send:
+        request_ptr = &global_request[packet->request_id];
+        vector[0].iov_base = &request_ptr->packet; /* Use the packet in the 
+                                                      request */
+        vector[0].iov_len  = sizeof(MPID_Hid_data_t);
+        MPID_Segment_pack( &request_ptr->segment, ??? );/* updates position */
+        vector[1].iov_base = request_ptr->segment.data;
+        vector[1].iov_len  = request_ptr->segment.len;
+        MPID_Rhcv( request_ptr->recv_rank, request_ptr->comm_ptr, 
+                   MPID_Hid_data, vector, 2, 
+                   all_sent ? &request_ptr->completed : NULL );
+        break;
+
+        case MPID_Hid_data:
+        /* Expected data */
+        request_ptr = &global_request[packet->request_id];
+
+        /* If the destination is contiguous, we can read directly into it.
+           Otherwise, we need an intermediate buffer to unpack from */
+        MPID_Segment_unpack( &packet->data, packet->msg_bytes, ... );
+        ... update position in request; if all bytes received, set complete.
+        break;
+    ...
+    }
+    FreePacket( packet );  /* must remember what buffer this was
+                              read into.  Is it easier to make a 
+                              local copy? */
+}
+\end{verbatim}
+
+\mpifunc{MPI_Wait}
+\begin{verbatim}
+while (1) {
+#ifdef SINGLE_THREADED_DEVICE
+    if (request_ptr->complete) {
+         if (status) *status = *request_ptr->status;
+         MPID_Request_free( request_ptr );
+         *request = MPI_REQUEST_NULL;
+    }
+    else {
+        MPID_Device_wait( BLOCKING );
+        }
+#else
+    pthread_lock( &request_ptr->mutex );
+    if (request_ptr->complete) {
+         pthread_unlock( &request_ptr->mutex );
+         /* as above */
+    }
+    else {
+        request_ptr->thread_id = global_my_thread_id;
+        pthread_cond_wait( &request_ptr->mutex, &global->cond );
+        /* Saving the thread_id of the waiting thread allows the 
+           communication agent to use pthread_cond_signal instead
+           of pthread_cond_broadcast */
+    }
+#endif
+} 
+\end{verbatim}
+
+\paragraph{\shmemname}
+
+\paragraph{\vianame}
