@@ -144,5 +144,7 @@ install_mtv:	mtv.so
 
 # EXPERIMENTAL MAN STUFF
 man:
-	pydoc mpdtrace | txt2man -t mpdtrace -s 1 -v "mpd cmds" | awk ' NR != 1 { print } ' > mpdtrace.1
-	# nroff -man mpdtrace.1 | less
+	-@for cmd in ${PYTHON_SOURCE} ; do \
+	    currdir=`pwd` ; cd ${srcdir} &&  pydoc $$cmd | txt2man -t $$cmd -s 1 -v "mpd cmds" | awk ' !/Help on module/ { print } ' > $$currdir/$$cmd.1 ; \
+	done
+	# example:  nroff -man mpd.1 | less
