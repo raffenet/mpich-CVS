@@ -501,6 +501,7 @@ with MPI_Alloc_mem.
 **init_strtok_host:failed to copy the hostname from the business card
 **init_strtok_host %s:failed to copy the hostname from this business card: %s
 **boot_tostring:unable to get a string representation of the boostrap queue
+**boot_create:unable to create a bootstrap message queue
 **ch3ireadaggressive:aggressive reading failed
 **msgctl:msgctl failed
 **msgctl %d:msgctl returned %d

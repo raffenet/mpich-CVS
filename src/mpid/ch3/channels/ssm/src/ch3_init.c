@@ -270,7 +270,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     mpi_errno = MPIDI_CH3I_BootstrapQ_create(&pg->bootstrapQ);
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
 	return mpi_errno;
     }
     queue_name[0] = '\0';
