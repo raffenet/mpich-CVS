@@ -1,24 +1,44 @@
-Microsoft Visual Studio Solution File, Format Version 7.00
+Microsoft Visual Studio Solution File, Format Version 8.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bcasttest", "MPI\COLL\bcasttest.vcproj", "{F7292F4D-75BB-4C21-A62A-AFE679B8F84F}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "netpipe", "mpi\basic\netpipe.vcproj", "{8B466291-6AF7-4A43-8D9F-F8056438F40B}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "patterns", "mpi\basic\patterns.vcproj", "{46B646E0-2A2A-407F-8719-EE00841C95C2}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sendrecv", "MPI\BASIC\sendrecv.vcproj", "{E7914EE1-F667-476E-978E-FC403E2DA4BB}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "simple", "MPI\BASIC\simple.vcproj", "{551E21C5-7085-466E-9A7E-8EC3117168B2}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "adapt", "mpi\basic\adapt.vcproj", "{007A861C-6EA1-4FF5-BD37-93C21EDE532D}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "contents", "mpi\datatype\contents\contents.vcproj", "{DD6091F4-B4C1-4DB1-8C8E-0847F7E3936B}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "allmpi", "mpi\basic\allmpi.vcproj", "{D9F19E35-7870-4549-A69D-AD810E8BC167}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpi", "..\examples\cpi.vcproj", "{8A4EF666-0FA4-4472-842B-C1C10C941439}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
-		ConfigName.0 = Debug
-		ConfigName.1 = Release
-	EndGlobalSection
-	GlobalSection(ProjectDependencies) = postSolution
+		Debug = Debug
+		Release = Release
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
 		{F7292F4D-75BB-4C21-A62A-AFE679B8F84F}.Debug.ActiveCfg = Debug|Win32
@@ -49,6 +69,14 @@ Global
 		{DD6091F4-B4C1-4DB1-8C8E-0847F7E3936B}.Debug.Build.0 = Debug|Win32
 		{DD6091F4-B4C1-4DB1-8C8E-0847F7E3936B}.Release.ActiveCfg = Release|Win32
 		{DD6091F4-B4C1-4DB1-8C8E-0847F7E3936B}.Release.Build.0 = Release|Win32
+		{D9F19E35-7870-4549-A69D-AD810E8BC167}.Debug.ActiveCfg = Debug|Win32
+		{D9F19E35-7870-4549-A69D-AD810E8BC167}.Debug.Build.0 = Debug|Win32
+		{D9F19E35-7870-4549-A69D-AD810E8BC167}.Release.ActiveCfg = Release|Win32
+		{D9F19E35-7870-4549-A69D-AD810E8BC167}.Release.Build.0 = Release|Win32
+		{8A4EF666-0FA4-4472-842B-C1C10C941439}.Debug.ActiveCfg = Debug|Win32
+		{8A4EF666-0FA4-4472-842B-C1C10C941439}.Debug.Build.0 = Debug|Win32
+		{8A4EF666-0FA4-4472-842B-C1C10C941439}.Release.ActiveCfg = Release|Win32
+		{8A4EF666-0FA4-4472-842B-C1C10C941439}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
