@@ -82,21 +82,14 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 	{
 	    int rc;
 	    
-	    if (request_ptr->status.MPI_ERROR != MPI_SUCCESS)
+	    mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
+	    if (mpi_errno == MPI_SUCCESS)
 	    {
 		mpi_errno = request_ptr->status.MPI_ERROR;
-	    }
-			    
-	    rc = (request_ptr->query_fn)(request_ptr->grequest_extra_state,
-					 &request_ptr->status);
-	    if (request_ptr->status.MPI_ERROR == MPI_SUCCESS)
-	    {
-		request_ptr->status.MPI_ERROR = rc;
-		mpi_errno = rc;
 	    }
 	    else
 	    {
-		mpi_errno = request_ptr->status.MPI_ERROR;
+		request_ptr->status.MPI_ERROR = mpi_errno;
 	    }
 	    
 	    rc = (request_ptr->free_fn)(request_ptr->grequest_extra_state);

@@ -52,26 +52,133 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Request_get_status";
     int mpi_errno = MPI_SUCCESS;
+    MPID_Request *request_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_REQUEST_GET_STATUS);
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REQUEST_GET_STATUS);
+    /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_GET_STATUS);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+            }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+	    
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REQUEST_GET_STATUS);
+
+    /* Check the arguments */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_REQUEST(request, mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
+	    /* NOTE: MPI_STATUS_IGNORE != NULL */
+	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
+	    if (mpi_errno) {
+		goto fn_exit;
+            }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Request_get_ptr( request, request_ptr );
+
+    /* Validate parameters if error checking is enabled */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    /* Validate request_ptr */
+            MPID_Request_valid_ptr( request_ptr, mpi_errno );
+            if (mpi_errno) {
+		goto fn_exit;
             }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    if (*request_ptr->cc_ptr == 0)
+    {
+	switch(request_ptr->kind)
+	{
+	    case MPID_REQUEST_SEND:
+	    case MPID_REQUEST_RECV:
+	    {
+		mpi_errno = request_ptr->status.MPI_ERROR;
+		if (status != MPI_STATUS_IGNORE)
+		{
+		    *status = request_ptr->status;
+		}
+		break;
+	    }
+			
+	    case MPID_PREQUEST_SEND:
+	    case MPID_PREQUEST_RECV:
+	    {
+		if (request_ptr->partner_request != NULL)
+		{
+		    mpi_errno = request_ptr->partner_request->status.MPI_ERROR;
+		    if (status != MPI_STATUS_IGNORE)
+		    {
+			*status = request_ptr->partner_request->status;
+		    }
+		}
+		else
+		{
+		    if (request_ptr->status.MPI_ERROR != MPI_SUCCESS)
+		    {
+			/* if the persistent request failed to start then make the error code available */
+			mpi_errno = request_ptr->status.MPI_ERROR;
+			if (status != MPI_STATUS_IGNORE)
+			{
+			    *status = request_ptr->status;
+			}
+		    }
+		    else
+		    {
+			MPIR_Status_set_empty(status);
+		    }
+		}
+	    
+		break;
+	    }
+
+	    case MPID_UREQUEST:
+	    {
+		mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
+		if (mpi_errno == MPI_SUCCESS)
+		{
+		    mpi_errno = request_ptr->status.MPI_ERROR;
+		}
+	    
+		if (status != MPI_STATUS_IGNORE)
+		{
+		    *status = request_ptr->status;
+		}
+		
+		break;
+	    }
+	}
+
+	
+	*flag = TRUE;
+    }
+    else
+    {
+	*flag = FALSE;
+    }
+    
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_GET_STATUS);
-    return MPI_SUCCESS;
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 }
 
