@@ -1827,7 +1827,12 @@ sub LibraryBuild {
 	# .h files are derived, and hence have special rules for creating
 	# them
 	if ( (!defined($extrules{"$ext:o"}) && ($ext ne "h"))) { 
-	    print STDERR "Unknown extension $ext for $sourcefile for library $libname\n";
+	    # Sometimes we use our own rules for building objects.
+	    # We allow the user to specify the object files rather than
+	    # the source files
+	    if ($ext ne "o") {
+		print STDERR "Unknown extension $ext for $sourcefile for library $libname\n";
+	    }
 	}
 	
 	if ($dolib_member) {
@@ -3006,10 +3011,15 @@ sub FindWorkingAutoconf {
 # did not work, and chosen by configure in that case.
 # This is partially done (MKDIR_P and that is set to mkdir -p)
 # ----------------------------------------------------------------------------
-# Add the clean target for the coverage analyzer
+# Add the clean target for the coverage analyzer.
+# We inculde the local directory because, particularly for the test programs,
+# these files may be left in the current directory rather than the source
+# directory.
+#
 sub GcovClean {
     if ($maint_targets) {
 	print FD "\t-${quietLine}rm -f \${srcdir}/*.bb \${srcdir}/*.bbg \${srcdir}/*.da$newline";
+	print FD "\t-${quietLine}rm -f *.bb *.bbg *.da$newline";
     }
 }
 
