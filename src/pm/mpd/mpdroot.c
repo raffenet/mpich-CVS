@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     setregid(getgid(),getgid());
 
     strncpy(cmd,argv[0],NAME_LEN);
-    strncat(cmd,".py",NAME_LEN);
+    strncat(cmd,"_for_mpdroot.py",NAME_LEN);
     argv[0] = cmd;
     execvp(cmd,&argv[0]);
     printf("mpdroot failed to exec :%s:\n",cmd);

@@ -42,6 +42,22 @@ example_OBJECTS	= ${example_SOURCES:.c=.o}
 
 
 all: Makefile ${PROGRAMS}
+	chmod 755 mpdroot
+	for cmd in ${CMDS_NO_ROOT} ; do \
+	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > $$cmd ; \
+	    chmod 755 $$cmd ;\
+	done
+	for cmd in ${CMDS_ROOT}; do \
+	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > $$cmd\_for_mpdroot.py ; \
+	    chmod 755 $$cmd\_for_mpdroot.py ;\
+	    @LN_S@ -f mpdroot $$cmd ;\
+	done
+	cp mpigdb.sh mpigdb
+	chmod 755 mpigdb
+	chmod 755 mpdgdbdrv.py
+	chmod 755 mpdrun.py
+	@LN_S@ -f mpdrun mpirun
+	@LN_S@ -f mpdrun.py mpirun.py
 
 
 .SUFFIXES:
@@ -54,7 +70,7 @@ mpdroot: ${mpdroot_OBJECTS}
 	$(C_LINK) -o mpdroot ${mpdroot_OBJECTS} $(LIBS)
 
 mpdroot.o: ${srcdir}/mpdroot.c ${srcdir}/mpdroot.h mpdconf.h
-	${C_COMPILE} -c  $< 
+	${C_COMPILE} -c $< 
 
 # The following lines provide the right libraries for all example programs
 .c:
@@ -68,8 +84,12 @@ clean:
 # echo "some of the following might be executables you want to remove"
 # ls -l | grep rwx
 distclean: clean
-	/bin/rm -f Makefile mpdconf.h ${PROGRAMS} ${CMDS_ROOT} ${CMDS_NO_ROOT} \
-                   config.status config.cache config.log
+	/bin/rm -f Makefile mpdconf.h ${PROGRAMS} ${CMDS_NO_ROOT}
+	/bin/rm -f mpirun.py mpirun mpigdb config.status config.cache config.log
+	for cmd in ${CMDS_ROOT}; do \
+	    /bin/rm -f $$cmd\_for_mpdroot.py ; \
+	    /bin/rm -f $$cmd ; \
+	done
 
 
 maintainer-clean: distclean
@@ -86,41 +106,35 @@ Makefile: ${srcdir}/Makefile.in config.status
 	${C_COMPILE} -c $<
 
 install: all
-	@if [ ! -d ${bindir} ] ; then \
+	if [ ! -d ${bindir} ] ; then \
 	    echo "mkdir -p ${bindir} " ;\
 	    mkdir -p ${bindir} ;\
 	fi   
-	@if [ "`whoami`" = "root" ] ; then \
+	if [ "`whoami`" = "root" ] ; then \
 	    ${INSTALL} -m 4755 mpdroot ${bindir}/mpdroot ;\
         else \
 	    ${INSTALL} -m  755 mpdroot ${bindir}/mpdroot ;\
 	fi
-	@echo "copying python files/links into " ${bindir}
-	-@for cmd in ${CMDS_NO_ROOT} ; do \
-	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
-	    ${INSTALL} -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd ; \
-	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
+	for cmd in ${CMDS_NO_ROOT} ; do \
+	    ${INSTALL} -m 755 $$cmd.py ${bindir}/$$cmd.py ; \
+	    ${INSTALL} -m 755 $$cmd.py ${bindir}/$$cmd ; \
 	done
-	-@for cmd in mpdman mpdlib mpiexec mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob; do \
-	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
-	    ${INSTALL} -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd.py; \
-	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
-	done
-	-@for cmd in ${CMDS_ROOT} ; do \
+	for cmd in ${CMDS_ROOT}; do \
+	    ${INSTALL} -m 755 $$cmd.py ${bindir}/$$cmd.py; \
+	    ${INSTALL} -m 755 $$cmd\_for_mpdroot.py ${bindir}/$$cmd\_for_mpdroot.py; \
 	    ( cd ${bindir} && @LN_S@ -f mpdroot $$cmd ; ) \
 	done
-	-@${INSTALL} -m 755 ${srcdir}/mpigdb.sh ${bindir}/mpigdb
-	-@${INSTALL} -m 755 ${srcdir}/mpdgdbdrv.py ${bindir}/mpdgdbdrv.py
-	-@${INSTALL} -m 755 ${srcdir}/mpdman.py ${bindir}/mpdman.py
-	-@${INSTALL} -m 755 ${srcdir}/mpdlib.py ${bindir}/mpdlib.py
-	-@${INSTALL} -m 755 ${srcdir}/mpdrun.py ${bindir}/mpdrun.py
-	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
-	-@cd ${bindir} && @LN_S@ -f mpdrun mpirun
-	-@cd ${bindir} && @LN_S@ -f mpdrun.py mpirun.py
+	${INSTALL} -m 755 ${srcdir}/mpigdb.sh ${bindir}/mpigdb
+	${INSTALL} -m 755 ${srcdir}/mpdgdbdrv.py ${bindir}/mpdgdbdrv.py
+	${INSTALL} -m 755 ${srcdir}/mpdman.py ${bindir}/mpdman.py
+	${INSTALL} -m 755 ${srcdir}/mpdlib.py ${bindir}/mpdlib.py
+	( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
+	cd ${bindir} && @LN_S@ -f mpdrun mpirun
+	cd ${bindir} && @LN_S@ -f mpdrun.py mpirun.py
 
 
 mpich2-build-install: mpich2-mpdroot install
-	@if [ "`whoami`" = "root" ] ; then \
+	if [ "`whoami`" = "root" ] ; then \
             ${INSTALL} -m 4755 mpich2-mpdroot ${bindir}/mpdroot ;\
 	else \
             ${INSTALL} -m  755 mpich2-mpdroot ${bindir}/mpdroot ;\
