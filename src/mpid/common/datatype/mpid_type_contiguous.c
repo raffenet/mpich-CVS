@@ -20,28 +20,28 @@
 - oldtype - type (using handle) of datatype on which vector is based
 
   Output Parameters:
-. newtype - handle of new vector datatype
+. newtype - handle of new contiguous datatype
 
   Return Value:
-  MPI_SUCCESS on success, -1 on failure.
-
-  This routine calls MPID_Dataloop_create_struct() to create the loops for this
-  new datatype.  It calls MPID_Datatype_new() to allocate space for the new
-  datatype.
+  MPI_SUCCESS on success, MPI error code on failure.
 @*/
 int MPID_Type_contiguous(int count,
 			 MPI_Datatype oldtype,
 			 MPI_Datatype *newtype)
 {
     int mpi_errno = MPI_SUCCESS;
-
+    int is_builtin;
+    int el_sz;
+    MPI_Datatype el_type;
     MPID_Datatype *new_dtp;
-    struct MPID_Dataloop *dlp;
 
     /* allocate new datatype object and handle */
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
     if (!new_dtp) {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPID_Type_contiguous", __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					 "MPID_Type_contiguous",
+					 __LINE__, MPI_ERR_OTHER,
+					 "**nomem", 0);
 	return mpi_errno;
     }
 
@@ -49,96 +49,78 @@ int MPID_Type_contiguous(int count,
     MPIU_Object_set_ref(new_dtp, 1);
     new_dtp->is_permanent = 0;
     new_dtp->is_committed = 0;
-    new_dtp->attributes   = 0;
+    new_dtp->attributes   = NULL;
     new_dtp->cache_id     = 0;
     new_dtp->name[0]      = 0;
-    new_dtp->contents     = 0;
+    new_dtp->contents     = NULL;
 
-    /* NOTE: see mpid_type_vector.c for a more thoroughly commented MPID type fn. */
-    if (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN) {
-	int oldsize = MPID_Datatype_get_basic_size(oldtype);
+    new_dtp->loopsize       = -1;
+    new_dtp->loopinfo       = NULL;
+    new_dtp->loopinfo_depth = -1;
+    
+    is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
 
-	new_dtp->size           = count * oldsize;
+    if (is_builtin) {
+	el_sz   = MPID_Datatype_get_basic_size(oldtype);
+	el_type = oldtype;
+
+	new_dtp->size           = count * el_sz;
 	new_dtp->has_sticky_ub  = 0;
 	new_dtp->has_sticky_lb  = 0;
-	new_dtp->loopinfo_depth = 1;
 	new_dtp->true_lb        = 0;
 	new_dtp->lb             = 0;
-	new_dtp->true_ub        = count * oldsize;
+	new_dtp->true_ub        = count * el_sz;
 	new_dtp->ub             = new_dtp->true_ub;
 	new_dtp->extent         = new_dtp->ub - new_dtp->lb;
-	new_dtp->alignsize      = oldsize; /* ??? */
+
+	new_dtp->alignsize      = el_sz;
 	new_dtp->n_elements     = count;
-	new_dtp->element_size   = oldsize;
+	new_dtp->element_size   = el_sz;
+        new_dtp->eltype         = el_type;
+
 	new_dtp->is_contig      = 1;
-        new_dtp->eltype         = oldtype;
 
-	/* allocate dataloop */
-	new_dtp->loopsize       = sizeof(struct MPID_Dataloop);
-	dlp                     = (struct MPID_Dataloop *)MPIU_Malloc(sizeof(struct MPID_Dataloop));
-	if (dlp == NULL) assert(0);
-	new_dtp->loopinfo       = dlp;
-
-	/* fill in dataloop */
-	dlp->kind                       = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
-	dlp->handle                     = new_dtp->handle;
-	dlp->loop_params.c_t.count      = count;
-	dlp->el_size                    = oldsize;
-	dlp->el_extent                  = oldsize;
-	dlp->el_type                    = oldtype;
     }
-    else /* user-defined base type */ {
-	int new_loopsize;
+    else /* user-defined base type (oldtype) */ {
 	MPID_Datatype *old_dtp;
-	char *curpos;
 
-	/* get pointer to old datatype from handle */
-	MPID_Datatype_get_ptr(oldtype, old_dtp); /* fills in old_dtp */
+	MPID_Datatype_get_ptr(oldtype, old_dtp);
+	el_sz   = old_dtp->element_size;
+	el_type = old_dtp->eltype;
 
-	/* fill in datatype */
 	new_dtp->size           = count * old_dtp->size;
 	new_dtp->has_sticky_ub  = old_dtp->has_sticky_ub;
 	new_dtp->has_sticky_lb  = old_dtp->has_sticky_lb;
-	new_dtp->loopinfo_depth = old_dtp->loopinfo_depth + 1;
-        new_dtp->eltype         = old_dtp->eltype;
 
-	/* calculate lb, ub, true_lb, true_ub */
-	/* MPID_DATATYPE_CONTIG_LB_UB() defined in mpid_datatype.h */
-	MPID_DATATYPE_CONTIG_LB_UB(count, old_dtp->lb, old_dtp->ub, old_dtp->extent, new_dtp->lb, new_dtp->ub);
+	MPID_DATATYPE_CONTIG_LB_UB(count,
+				   old_dtp->lb,
+				   old_dtp->ub,
+				   old_dtp->extent,
+				   new_dtp->lb,
+				   new_dtp->ub);
 
-	new_dtp->true_lb    = new_dtp->lb + (old_dtp->true_lb - old_dtp->lb);
-	new_dtp->true_ub    = new_dtp->ub + (old_dtp->true_ub - old_dtp->ub);
-	new_dtp->extent     = new_dtp->ub - new_dtp->lb;
+	/* easiest to calc true lb/ub relative to lb/ub; doesn't matter
+	 * if there are sticky lb/ubs or not when doing this.
+	 */
+	new_dtp->true_lb = new_dtp->lb + (old_dtp->true_lb - old_dtp->lb);
+	new_dtp->true_ub = new_dtp->ub + (old_dtp->true_ub - old_dtp->ub);
+	new_dtp->extent  = new_dtp->ub - new_dtp->lb;
 
 	new_dtp->alignsize    = old_dtp->alignsize;
 	new_dtp->n_elements   = count * old_dtp->n_elements;
 	new_dtp->element_size = old_dtp->element_size;
-	new_dtp->is_contig    = old_dtp->is_contig; /* ??? */
+        new_dtp->eltype       = el_type;
 
-	/* allocate space for dataloop */
-	new_loopsize = old_dtp->loopsize + sizeof(struct MPID_Dataloop);
-	dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loopsize);
-	if (dlp == NULL) assert(0);
-
-	new_dtp->loopinfo       = dlp;
-	new_dtp->loopsize       = new_loopsize;
-
-	/* fill in top part of dataloop */
-	dlp->kind                  = DLOOP_KIND_CONTIG;
-	/* NOTE: new_dtp->handle is filled in by MPIU_Handle_obj_alloc() */
-	dlp->handle                = new_dtp->handle;
-	dlp->loop_params.c_t.count = count;
-	dlp->el_extent             = old_dtp->extent;
-	dlp->el_size               = old_dtp->size;
-	dlp->el_type               = old_dtp->eltype;
-
-	/* copy in old dataloop */
-	curpos = (char *) dlp; /* NEED TO PAD? */
-	curpos += sizeof(struct MPID_Dataloop);
-
-	MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
-	dlp->loop_params.c_t.dataloop = (struct MPID_Dataloop *) curpos;
+	new_dtp->is_contig    = old_dtp->is_contig;
     }
+
+    /* fill in dataloop */
+    MPID_Dataloop_create_contiguous(count,
+				    oldtype,
+				    &(new_dtp->loopinfo),
+				    &(new_dtp->loopsize),
+				    &(new_dtp->loopinfo_depth),
+				    0);
 
     *newtype = new_dtp->handle;
 
@@ -147,6 +129,81 @@ int MPID_Type_contiguous(int count,
 #endif
 
     return MPI_SUCCESS;
+}
+
+/*@
+  MPID_Dataloop_contiguous - create the dataloop representation for a
+  contiguous datatype
+
+@*/
+void MPID_Dataloop_create_contiguous(int count,
+				     MPI_Datatype oldtype,
+				     MPID_Dataloop **dlp_p,
+				     int *dlsz_p,
+				     int *dldepth_p,
+				     int flags)
+{
+    int is_builtin;
+    int new_loop_sz, new_loop_depth;
+
+    MPID_Datatype *old_dtp = NULL;
+    struct MPID_Dataloop *new_dlp;
+
+    is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
+
+    if (is_builtin) {
+	new_loop_sz = sizeof(struct MPID_Dataloop);
+	new_loop_depth = 1;
+    }
+    else {
+	MPID_Datatype_get_ptr(oldtype, old_dtp); /* fills in old_dtp */
+	new_loop_sz = sizeof(struct MPID_Dataloop) + old_dtp->loopsize;
+	/* TODO: ACCOUNT FOR PADDING IN LOOP_SZ HERE */
+
+	new_loop_depth = old_dtp->loopinfo_depth + 1;
+    }
+
+    new_dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loop_sz);
+    assert(new_dlp != NULL);
+
+    if (is_builtin) {
+	new_dlp->kind      = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
+#if 0
+	new_dlp->handle    = new_dtp->handle;
+#endif
+	new_dlp->el_size   = MPID_Datatype_get_basic_size(oldtype);
+	new_dlp->el_extent = new_dlp->el_size;
+	new_dlp->el_type   = oldtype;
+
+	new_dlp->loop_params.c_t.dataloop = NULL;
+    }
+    else /* user-defined base type (oldtype) */ {
+	char *curpos;
+
+	new_dlp->kind      = DLOOP_KIND_CONTIG;
+#if 0
+	new_dlp->handle    = new_dtp->handle;
+#endif
+	new_dlp->el_size   = old_dtp->size;
+	new_dlp->el_extent = old_dtp->extent;
+	new_dlp->el_type   = old_dtp->eltype;
+
+	/* copy in old dataloop */
+	curpos = (char *) new_dlp;
+	curpos += sizeof(struct MPID_Dataloop);
+	/* TODO: ACCOUNT FOR PADDING HERE */
+
+	MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
+	new_dlp->loop_params.c_t.dataloop = (struct MPID_Dataloop *) curpos;
+    }
+
+    /* contig-specific members */
+    new_dlp->loop_params.c_t.count = count;
+
+    *dlp_p  = new_dlp;
+    *dlsz_p = new_loop_sz;
+    *dldepth_p = new_loop_depth;
+    return;
 }
 
 

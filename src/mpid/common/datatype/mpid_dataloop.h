@@ -80,4 +80,29 @@
 
 /* NOTE: WE MAY WANT TO UNDEF EVERYTHING HERE FOR NON-INTERNAL COMPILATIONS */
 
+/* dataloop construction functions */
+void MPID_Dataloop_create_contiguous(int count,
+				     MPI_Datatype oldtype,
+				     MPID_Dataloop **dlp_p,
+				     int *dlsz_p,
+				     int *dldepth_p,
+				     int flags);
+void MPID_Dataloop_create_vector(int count,
+				 int blocklength,
+				 MPI_Aint stride,
+				 int strideinbytes,
+				 MPI_Datatype oldtype,
+				 MPID_Dataloop **dlp_p,
+				 int *dlsz_p,
+				 int *dldepth_p,
+				 int flags);
+void MPID_Dataloop_create_indexed(int count,
+				  int *blocklength_array,
+				  void *displacement_array,
+				  int dispinbytes,
+				  MPI_Datatype oldtype,
+				  MPID_Dataloop **dlp_p,
+				  int *dlsz_p,
+				  int *dldepth_p,
+				  int flags);
 #endif
