@@ -169,23 +169,121 @@ case "$enable_error_messages" in
     ;;
 esac
 AC_DEFINE_UNQUOTED(MPICH_ERROR_MSG_LEVEL,$error_message_kind,[define to enable error messages])
-dnl timing
+dnl
+dnl enable-timing and with-logging
+dnl
 dnl Still to do: add subsets: e.g., class=pt2pt,class=coll.  See mpich2 doc
+dnl
+collect_stats=false
+logging_required=false
+timing_name=$enable_timing
 case "$enable_timing" in
-    no|none)
+    no)
+    timing_name=none
     ;;
-    all|log|yes|time|runtime)
-    changequote(<<,>>)
-    timing_kind=`echo $enable_timing | tr '[a-z]' '[A-Z]'`
-    changequote([,])
-    timing_kind=MPID_TIMING_KIND_$timing_kind
-    AC_DEFINE_UNQUOTED(HAVE_TIMING,$timing_kind,[define to enable timing collection])
-    AC_DEFINE(COLLECT_STATS,,[define to enable collection of statistics])
+    time)
+    collect_stats=true
+    ;;
+    log)
+    logging_required=true
+    ;;
+    yes)
+    timing_name=all
+    collect_stats=true
+    logging_required=true
+    ;;
+    all|runtime)
+    collect_stats=true
+    logging_required=true
+    ;;
+    none)
     ;;
     *)
     AC_MSG_WARN([Unknown value $enable_timing for enable-timing])
+    enable_timing=no
+    timing_name=none
     ;; 
 esac
+case $with_logging in 
+    yes)
+    logging_name=rlog
+    ;;
+    no)
+    logging_name=none
+    ;;
+    default)
+    if test "$logging_required" = "true" ; then
+        logging_name=rlog
+    else
+        logging_name=none
+    fi
+    ;;
+    *)
+    logging_name=$with_logging
+    ;;
+esac
+logging_subsystems=
+if test "$logging_name" != "none" ; then
+    logdir=$srcdir/src/util/logging
+    logging_subsystems="$logging_subsystems src/util/logging/$logging_name"
+    if test "$logging_name" = "dlog" ; then
+    	logging_subdirs="slog_api dlog dlog2slog"
+    	logging_subsystems="$logging_subsystems src/util/logging/slog_api"
+    else
+    	logging_subdirs=$logging_name
+    fi
+    for dir in $logging_subdirs ; do
+        if test ! -d $logdir/$dir ; then
+	    AC_MSG_WARN([$logdir/$dir does not exist.  Logging library $logging_name has been diabled.])
+	    logging_name=none
+        fi
+    done
+    for dir in $logging_subsystems ; do
+        if test ! -x $srcdir/$dir/configure ; then
+	    AC_MSG_WARN([$logdir/$dir does has no configure.  Logging library $logging_name has been disabled.])
+	    logging_name=none
+        fi
+    done
+fi
+if test "$logging_name" != "none" ; then
+    if test "$enable_timing" != "no" ; then
+	if test "$enable_timing" = "none" ; then
+	    enable_timing=log
+	    timing_name=log
+    	fi
+	logging_dir=logging
+	subsystems="$subsystems $logging_subsystems"
+    else
+	AC_MSG_WARN([Timing was disabled.  Logging has been disabled as well.])
+	with_logging=no
+	logging_name=none
+        logging_dir=
+        logging_subdirs=
+    fi
+else
+    if test "$logging_required" = "true" ; then
+	AC_MSG_WARN([Timing was enabled with log option but no logging library is available.  Timing has been disabled.])
+	enable_timing=no
+	timing_name=none
+    fi
+    logging_dir=
+    logging_subdirs=
+fi
+if test "$timing_name" != "none" ; then
+    changequote(<<,>>)
+    timing_kind=`echo $timing_name | tr '[a-z]' '[A-Z]'`
+    changequote([,])
+    timing_kind=MPID_TIMING_KIND_$timing_kind
+    AC_DEFINE_UNQUOTED(HAVE_TIMING,$timing_kind,[define to enable timing collection])
+    if test "$collect_stats" = "true" ; then
+        AC_DEFINE(COLLECT_STATS,,[define to enable collection of statistics])
+    fi
+fi
+AC_SUBST(logging_dir)
+AC_SUBST(logging_name)
+AC_SUBST(logging_subdirs)
+use_logging_variable="MPID_LOGGING_`echo $logging_name | tr a-z A-Z`"
+AC_DEFINE_UNQUOTED(USE_LOGGING,$use_logging_variable,[define to choose logging library])
 dnl
 dnl threads
 case "$enable_threads" in
@@ -344,39 +442,7 @@ else
     subsystems="$subsystems src/pmi/impls/$pmi_name"
 fi
 AC_SUBST(pmi_name)
-dnl with-logging
-if test "$with_logging" = "yes" ; then
-    with_logging=rlog
-fi
-logging_name=$with_logging
-if test "$with_logging" != "no" ; then
-    logging_dir=logging
-fi
-AC_SUBST(logging_dir)
 dnl
-if test "$with_logging" = "default" -o "$with_logging" = "no" ; then
-    logging_name=""
-elif test ! -d $use_top_srcdir/src/util/logging/$logging_name ; then
-    AC_MSG_WARN([$use_top_srcdir/src/util/logging/$logging_name does not exist.  Logging library is unknown])
-elif test ! -x $use_top_srcdir/src/util/logging/$logging_name/configure ; then
-    AC_MSG_WARN([logging library $logging_name has no configure])
-    logging_name=""
-else
-    subsystems="$subsystems src/util/logging/$logging_name"
-fi
-logging_subdirs=""
-if test "$logging_name" = "dlog" ; then
-    logging_subdirs="slog_api dlog dlog2slog"
-    subsystems="$subsystems src/util/logging/slog_api"
-fi
-if test "$logging_name" = "rlog" ; then
-    logging_subdirs="rlog"
-fi
-use_logging_variable="MPID_LOGGING_`echo $logging_name | tr a-z A-Z`"
-AC_DEFINE_UNQUOTED(USE_LOGGING,$use_logging_variable,[define to choose logging library])
-dnl
-AC_SUBST(logging_name)
-AC_SUBST(logging_subdirs)
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
 dnl     check for libraries

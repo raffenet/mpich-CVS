@@ -5,7 +5,7 @@
 #ifdef HAVE_TIMING
 
 /* Possible values for timing */
-#define MPID_TIMING_KIND_OFF 0
+#define MPID_TIMING_KIND_NONE 0
 #define MPID_TIMING_KIND_TIME 1
 #define MPID_TIMING_KIND_LOG 2
 #define MPID_TIMING_KIND_ALL 3
