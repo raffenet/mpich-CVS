@@ -16,13 +16,12 @@
 
 int main( int argc, char **argv )
 {
-    double *vecout, ivalue;
+    double *vecout;
     MPI_Comm comm;
     int    count, minsize = 2;
     int    root, i, n, errs = 0;
     int    rank, size;
     int    *displs, *recvcounts;
-    MPI_Aint vecextent;
 
     MTest_Init( &argc, &argv );
 
@@ -44,8 +43,8 @@ int main( int argc, char **argv )
 		    vecout[rank*n+i] = rank*n+i;
 		}
 		for (i=0; i<size; i++) {
-		    recvcount[i] = n;
-		    displs[i]    = i * n * sizeof(double)
+		    recvcounts[i] = n;
+		    displs[i]    = i * n;
 		}
 		MPI_Allgatherv( MPI_IN_PLACE, -1, MPI_DATATYPE_NULL, 
 			       vecout, recvcounts, displs, MPI_DOUBLE, comm );
@@ -62,7 +61,7 @@ int main( int argc, char **argv )
 	    }
 	}
 	free( displs );
-	free( recvcount );
+	free( recvcounts );
 	MTestFreeComm( &comm );
     }
     
