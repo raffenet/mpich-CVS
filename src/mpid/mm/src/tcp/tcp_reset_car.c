@@ -49,7 +49,6 @@ int tcp_reset_car(MM_Car *car_ptr)
 	    car_ptr->data.tcp.buf.vec_read.cur_index = 0;
 	    car_ptr->data.tcp.buf.vec_read.cur_num_read = 0;
 	    car_ptr->data.tcp.buf.vec_read.total_num_read = 0;
-	    car_ptr->data.tcp.buf.vec_read.num_read_at_cur_index = 0;
 	    car_ptr->data.tcp.buf.vec_read.vec_size = 0;
 	}
 	break;
@@ -112,7 +111,6 @@ int tcp_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest,
 	car_ptr->src = src_dest;
 	car_ptr->data.tcp.buf.vec_read.cur_index = 0;
 	car_ptr->data.tcp.buf.vec_read.cur_num_read = 0;
-	car_ptr->data.tcp.buf.vec_read.num_read_at_cur_index = 0;
 	car_ptr->data.tcp.buf.vec_read.total_num_read = 0;
 	car_ptr->data.tcp.buf.vec_read.vec[0].MPID_VECTOR_BUF = (void*)&car_ptr->msg_header.pkt;
 	car_ptr->data.tcp.buf.vec_read.vec[0].MPID_VECTOR_LEN = sizeof(MPID_Packet);

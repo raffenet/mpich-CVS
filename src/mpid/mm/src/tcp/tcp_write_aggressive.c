@@ -116,39 +116,12 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
 
     while ((cur_pos < MPID_VECTOR_LIMIT) && num_avail)
     {
-	if (num_avail < 0)
-	    err_printf("Error: tcp_stuff_vector_vec - num_avail is negative: %d\n", num_avail);
 	vec[cur_pos].MPID_VECTOR_BUF = car_vec[cur_index].MPID_VECTOR_BUF;
 	num_avail -= (vec[cur_pos].MPID_VECTOR_LEN = car_vec[cur_index].MPID_VECTOR_LEN);
 	cur_index++;
 	cur_pos++;
     }
     *cur_pos_ptr = cur_pos;
-#ifdef FOO
-    /* set the first vector to be the buf_ptr vector offset by the amount previously written */
-    vec[cur_pos].MPID_VECTOR_BUF = 
-	(char*)buf_ptr->vec.vec[cur_index].MPID_VECTOR_BUF + 
-	car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
-    vec[cur_pos].MPID_VECTOR_LEN = 
-	buf_ptr->vec.vec[cur_index].MPID_VECTOR_LEN - 
-	car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
-    num_avail -= vec[cur_pos].MPID_VECTOR_LEN;
-    cur_pos++;
-    cur_index++;
-
-    /* copy the rest of the vectors until the segment is completely copied or cur_pos runs off the end of the array */
-    while ((cur_pos < MPID_VECTOR_LIMIT) && num_avail)
-    {
-	if (num_avail < 0)
-	    err_printf("Error: tcp_stuff_vector_vec - num_avail is negative: %d\n", num_avail);
-	vec[cur_pos].MPID_VECTOR_BUF = buf_ptr->vec.vec[cur_index].MPID_VECTOR_BUF;
-	vec[cur_pos].MPID_VECTOR_LEN = buf_ptr->vec.vec[cur_index].MPID_VECTOR_LEN;
-	num_avail -= buf_ptr->vec.vec[cur_index].MPID_VECTOR_LEN;
-	cur_index++;
-	cur_pos++;
-    }
-    *cur_pos_ptr = cur_pos;
-#endif
 
     /* return TRUE if this segment is completely copied into the vec array */
     if (num_avail == 0 && final_segment)

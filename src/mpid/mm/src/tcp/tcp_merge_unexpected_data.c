@@ -161,7 +161,6 @@ int tcp_merge_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
 	    /* reset the car */
 	    car_ptr->data.tcp.buf.vec_read.cur_index = 0;
 	    car_ptr->data.tcp.buf.vec_read.cur_num_read = 0;
-	    car_ptr->data.tcp.buf.vec_read.num_read_at_cur_index = 0;
 	    car_ptr->data.tcp.buf.vec_read.vec_size = 0;
 	}
 	else
@@ -181,8 +180,6 @@ int tcp_merge_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
 			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_BUF +
 			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_LEN +
 			num_left;
-		    car_ptr->data.tcp.buf.vec_read.num_read_at_cur_index = 
-			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_LEN + num_left;
 		    car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_LEN -= num_left;
 		}
 	    }
