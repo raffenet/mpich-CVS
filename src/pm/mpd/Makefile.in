@@ -14,6 +14,7 @@ COPTIONS  = @COPTIONS@
 LDFLAGS	  = @LDFLAGS@
 LIBS	  = @LIBS@ 
 PYTHON    = @PYTHON@
+INSTALL   = @INSTALL@
 
 C_COMPILE = ${CC} ${INCLUDES} ${CFLAGS} ${COPTIONS}
 C_LINK	  = ${CLINKER} ${CFLAGS} ${COPTIONS} ${LDFLAGS}
@@ -90,9 +91,9 @@ install: all
 	    mkdir -p ${bindir} ;\
 	fi   
 	@if [ "`whoami`" = "root" ] ; then \
-	    install -m 4755 mpdroot ${bindir}/mpdroot ;\
+	    ${INSTALL} -m 4755 mpdroot ${bindir}/mpdroot ;\
         else \
-	    install -m  755 mpdroot ${bindir}/mpdroot ;\
+	    ${INSTALL} -m  755 mpdroot ${bindir}/mpdroot ;\
 	fi
 	@echo "copying python files/links into " ${bindir}
 	-@for cmd in ${CMDS_ROOT} ; do \
@@ -103,19 +104,19 @@ install: all
 	done
 	-@for cmd in ${CMDS_NO_ROOT} ; do \
 	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
-	    install -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd ; \
+	    ${INSTALL} -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd ; \
 	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
 	done
 	-@for cmd in mpdman mpdlib mpiexec mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob; do \
 	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
-	    install -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd.py; \
+	    ${INSTALL} -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd.py; \
 	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
 	done
-	-@install -m 755 ${srcdir}/mpigdb.sh ${bindir}/mpigdb
-	-@install -m 755 ${srcdir}/mpdgdbdrv.py ${bindir}/mpdgdbdrv.py
-	-@install -m 755 ${srcdir}/mpdman.py ${bindir}/mpdman.py
-	-@install -m 755 ${srcdir}/mpdlib.py ${bindir}/mpdlib.py
-	-@install -m 755 ${srcdir}/mpdrun.py ${bindir}/mpdrun.py
+	-@${INSTALL} -m 755 ${srcdir}/mpigdb.sh ${bindir}/mpigdb
+	-@${INSTALL} -m 755 ${srcdir}/mpdgdbdrv.py ${bindir}/mpdgdbdrv.py
+	-@${INSTALL} -m 755 ${srcdir}/mpdman.py ${bindir}/mpdman.py
+	-@${INSTALL} -m 755 ${srcdir}/mpdlib.py ${bindir}/mpdlib.py
+	-@${INSTALL} -m 755 ${srcdir}/mpdrun.py ${bindir}/mpdrun.py
 	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
 	-@cd ${bindir} && @LN_S@ -f mpdrun mpirun
 	-@cd ${bindir} && @LN_S@ -f mpdrun.py mpirun.py
@@ -123,9 +124,9 @@ install: all
 
 mpich2-build-install: mpich2-mpdroot install
 	@if [ "`whoami`" = "root" ] ; then \
-            install -m 4755 mpich2-mpdroot ${bindir}/mpdroot ;\
+            ${INSTALL} -m 4755 mpich2-mpdroot ${bindir}/mpdroot ;\
 	else \
-            install -m  755 mpich2-mpdroot ${bindir}/mpdroot ;\
+            ${INSTALL} -m  755 mpich2-mpdroot ${bindir}/mpdroot ;\
 	fi
 	/bin/rm -f mpich2-mpdroot
 
@@ -137,7 +138,7 @@ mpich2-mpdroot: mpich2-mpdroot.o
 	/bin/rm -f mpich2-mpdroot.o
 
 mpich2-mpdroot.o: ${srcdir}/mpdroot.c ${srcdir}/mpdroot.h mpdconf.h
-	install ${srcdir}/mpdroot.c mpich2-mpdroot.c
+	${INSTALL} -m 644 ${srcdir}/mpdroot.c mpich2-mpdroot.c
 	${C_COMPILE} -c mpich2-mpdroot.c
 	/bin/rm -f mpich2-mpdroot.c
 
