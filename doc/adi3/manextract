@@ -7,12 +7,32 @@
 # manual can contain the comments from the example source files adi3.c and
 # adi3.h.  
 #
+$debug = 0;
 while (<>) {
-    if (/\/\*T/) {
-	# Process until we find the matching T*/
-	while (<>) {
-	    print $_;
-	    if (/T\*\//) { break; }
+    if (/\/\*T([^ ]*)[ ]*\n/) {
+	$filename = $1;
+	print "Filename = |$filename|\n" if $debug; 
+	if ($filename ne "") {
+	    open( OUTFILE, ">$filename" ) || die "Could not open $filename\n";
+	    $OUTFILE = OUTFILE;
 	}
+	else {
+	    $OUTFILE = STDOUT;
+	}
+	# Process until we find the matching T*/
+        $_=<>;
+	if (/Section[ ]*[0-9:]*[ ]*(.*)/) {
+	    print $OUTFILE "\\section{$1}\n";
+	}
+	else {
+	    s/^ \*//;
+	    print $OUTFILE $_;
+	}
+	while (<>) {
+	    if (/T\*\//) { last ; }
+	    s/^ \*//;
+	    print $OUTFILE $_;
+	}
+	if ($filename ne "") { close(OUTFILE); }
     }
 }
