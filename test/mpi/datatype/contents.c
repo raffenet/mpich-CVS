@@ -1,4 +1,5 @@
 #include "mpi.h"
+#include "mpitestconf.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif

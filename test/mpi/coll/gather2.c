@@ -16,6 +16,8 @@ int main( int argc, char **argv )
 {
     MPI_Datatype vec;
     double *vecin, *vecout, ivalue;
+    MPI_Comm comm;
+    int    count, minsize = 2;
     int    root, i, n, stride, errs = 0;
     int    rank, size;
 
@@ -44,11 +46,11 @@ int main( int argc, char **argv )
 		    for (i=0; i<n; i++) {
 			vecout[rank*n+i] = rank*n+i;
 		    }
-		    MPI_Gather( MPI_IN_PLACE, -1, MPI_TYPE_NULL, 
+		    MPI_Gather( MPI_IN_PLACE, -1, MPI_DATATYPE_NULL, 
 				vecout, n, MPI_DOUBLE, root, comm );
 		}
 		else {
-		    MPI_Gather( vecin, 1, vec, NULL, -1, MPI_TYPE_NULL, 
+		    MPI_Gather( vecin, 1, vec, NULL, -1, MPI_DATATYPE_NULL, 
 				root, comm );
 		}
 		if (rank == root) {
@@ -57,7 +59,8 @@ int main( int argc, char **argv )
 			    errs++;
 			    if (errs < 10) {
 				fprintf( stderr, "vecout[%d]=%d\n",
-					 i, vecout[i] )
+					 i, (int)vecout[i] );
+			    }
 			}
 		    }
 		}

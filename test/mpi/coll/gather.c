@@ -50,7 +50,7 @@ int main( int argc, char **argv )
 			    errs++;
 			    if (errs < 10) {
 				fprintf( stderr, "vecout[%d]=%d\n",
-					 i, vecout[i] );
+					 i, (int)vecout[i] );
 			    }
 			}
 		    }

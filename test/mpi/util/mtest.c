@@ -5,6 +5,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpi.h"
+#include "mpitestconf.h"
 #include "mpitest.h"
 #include <stdio.h>
 #include <stdlib.h>

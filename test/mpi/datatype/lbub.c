@@ -1,4 +1,5 @@
 #include "mpi.h"
+#include "mpitestconf.h"
 #include <unistd.h>
 #include <stdio.h>
 #include <malloc.h>
