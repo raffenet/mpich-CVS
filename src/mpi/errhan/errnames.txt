@@ -475,7 +475,7 @@ with MPI_Alloc_mem.
 **pmi_commit %d:PMI_KVS_Commit returned %d
 **pmi_barrier:PMI_Barrier failed
 **pmi_barrier %d:PMI_Barrier returned %d
-**ch3ireadagressive:aggressive reading failed
+**ch3ireadaggressive:aggressive reading failed
 **msgctl:msgctl failed
 **msgctl %d:msgctl returned %d
 **msgget:msgget failed
