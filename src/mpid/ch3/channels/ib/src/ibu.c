@@ -1459,16 +1459,15 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    {
 		i = num_bytes;
 		num_bytes = 0;
-		g_cur_write_stack_index--;
 		for (; i<0; i++)
 		{
+		    g_cur_write_stack_index--;
 		    msg_printf("num_bytes += %d\n", g_num_bytes_written_stack[g_cur_write_stack_index].length);
 		    num_bytes += g_num_bytes_written_stack[g_cur_write_stack_index].length;
 		    if (g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr == NULL)
 			err_printf("ibu_wait: write stack has NULL mem_ptr at location %d\n", g_cur_write_stack_index);
 		    assert(g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr != NULL);
 		    ibuBlockFree(ibu->allocator, g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr);
-		    g_cur_write_stack_index--;
 		}
 	    }
 	    else
