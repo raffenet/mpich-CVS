@@ -346,7 +346,7 @@ int MPI_Type_create_darray(int size,
 	    /* Check parameters */
 	    MPIR_ERRTEST_ARGNEG(rank, "rank", mpi_errno);
 	    MPIR_ERRTEST_ARGNONPOS(size, "size", mpi_errno);
-	    MPIR_ERRTEST_COUNT(ndims, mpi_errno);
+	    MPIR_ERRTEST_ARGNONPOS(ndims, "ndims", mpi_errno);
 
 	    MPIR_ERRTEST_ARGNULL(array_of_gsizes, "array_of_gsizes", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(array_of_distribs, "array_of_distribs", mpi_errno);
