@@ -83,6 +83,8 @@ typedef int MPI_Fint;
 /* The compiler must support ANSI C style prototypes, otherwise 
    long long constants (e.g. 0) may get passed as ints. */
 
+#ifndef HAVE_PRAGMA_HP_SEC_DEF
+
 /* Section 9.2 */
 int MPI_File_open(MPI_Comm comm, char *filename, int amode, 
                           MPI_Info info, MPI_File *fh);
@@ -248,6 +250,7 @@ MPI_Fint MPI_Info_c2f(MPI_Info info);
 MPI_Info MPI_Info_f2c(MPI_Fint info);
 #endif
 
+#endif   /* HAVE_PRAGMA_HP_SEC_DEF */
 
 
 /**************** BINDINGS FOR THE PROFILING INTERFACE ***************/
