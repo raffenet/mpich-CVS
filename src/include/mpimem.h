@@ -117,6 +117,15 @@ int MPIU_Strnapp( char *, const char *, size_t );
   @*/
 char *MPIU_Strdup( const char * );
 
+
+
+#define MPIU_STR_SUCCESS    0
+#define MPIU_STR_FAIL       1
+#define MPIU_STR_NOMEM     -1
+
+#define MPIU_TRUE  1
+#define MPIU_FALSE 0
+
 /*@ MPIU_Str_get_string_arg - Extract an option from a string with a maximum length
   
     Input Parameters:
@@ -126,6 +135,9 @@ char *MPIU_Strdup( const char * );
 
     Output Parameter:
 .   val - output string
+
+    Return value:
+    MPIU_STR_SUCCESS, MPIU_STR_NOMEM, MPIU_STR_FAIL
 
     Notes:
     This routine searches for a "key = value" entry in a string
@@ -145,6 +157,9 @@ int MPIU_Str_get_string_arg(const char *str, const char *key, char *val, int max
     Output Parameter:
 .   buffer - output buffer
 
+    Return value:
+    MPIU_STR_SUCCESS, MPIU_STR_NOMEM, MPIU_STR_FAIL
+
     Notes:
     This routine searches for a "key = value" entry in a string and decodes the value
     back to binary data.  The data must have been encoded with MPIU_Str_add_binary_arg.
@@ -162,6 +177,9 @@ int MPIU_Str_get_binary_arg(const char *str, const char *key, char *buffer, int 
 
     Output Parameter:
 .   val_ptr - pointer to the output integer
+
+    Return value:
+    MPIU_STR_SUCCESS, MPIU_STR_NOMEM, MPIU_STR_FAIL
 
     Notes:
     This routine searches for a "key = value" entry in a string and decodes the value
@@ -184,6 +202,9 @@ int MPIU_Str_get_int_arg(const char *str, const char *key, int *val_ptr);
 +   str_ptr - The string pointer is updated to the next available location in the string
 -   maxlen_ptr - maxlen is reduced by the number of characters written
 
+    Return value:
+    MPIU_STR_SUCCESS, MPIU_STR_NOMEM, MPIU_STR_FAIL
+
     Notes:
     This routine adds a string option to a string in the form "key = value".
 
@@ -205,6 +226,9 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *key, co
 +   str_ptr - The string pointer is updated to the next available location in the string
 -   maxlen_ptr - maxlen is reduced by the number of characters written
 
+    Return value:
+    MPIU_STR_SUCCESS, MPIU_STR_NOMEM, MPIU_STR_FAIL
+
     Notes:
     This routine encodes binary data into a string option in the form "key = encoded_value".
 
@@ -225,6 +249,9 @@ int MPIU_Str_add_binary_arg(char **str_ptr, int *maxlen_ptr, const char *key, co
 +   str_ptr - The string pointer is updated to the next available location in the string
 -   maxlen_ptr - maxlen is reduced by the number of characters written
 
+    Return value:
+    MPIU_STR_SUCCESS, MPIU_STR_NOMEM, MPIU_STR_FAIL
+
     Notes:
     This routine adds an integer option to a string in the form "key = value".
 
@@ -242,6 +269,9 @@ int MPIU_Str_add_int_arg(char **str_ptr, int *maxlen_ptr, const char *key, int v
     Output Parameter:
 .   str - The string data is modified if the key is found in the string
 
+    Return value:
+    MPIU_STR_SUCCESS, MPIU_STR_FAIL
+
     Notes:
     This routine covers an option in a string converting "key = value" to "key = *****"
 
@@ -253,45 +283,53 @@ int MPIU_Str_hide_string_arg(char *str, const char *key);
 /*@ MPIU_Str_add_string - Add a string to a string
   
     Input Parameters:
-+   str - input string
-.   maxlen - maximum total length of 'str'
++   str_ptr - pointer to the destination string
+.   maxlen_ptr - pointer to the maximum length of '*str_ptr'
 -   val - string to add
 
     Output Parameter:
-.   str - The string pointer is updated to the next available location in the string
++   str_ptr - The string pointer is updated to the next available location in the string
+-   maxlen_ptr - maxlen is decremented by the amount str_ptr is incremented
+
+    Return value:
+    MPIU_STR_SUCCESS, MPIU_STR_NOMEM, MPIU_STR_FAIL
 
     Notes:
     This routine adds a string to a string in such a way that MPIU_Str_get_string can
     retreive the same string back.  It takes into account spaces and quote characters.
+    The string pointer is updated to the start of the next string in the string and maxlen
+    is updated accordingly.
 
   Module:
   Utility
   @*/
-int MPIU_Str_add_string(char *str, int maxlen, const char *val);
+int MPIU_Str_add_string(char **str_ptr, int *maxlen_ptr, const char *val);
 
 /*@ MPIU_Str_get_string - Get the next string from a string
   
     Input Parameters:
-+   str - input string
--   maxlen - maximum total length of 'val'
++   str_ptr - pointer to the destination string
+-   maxlen_ptr - pointer to the maximum length of '*str_ptr'
 
     Output Parameter:
-+   val - location to store the string
--   num_chars - the number of characters copied to val.  This value is -1 if the string
-                was truncated.  The value is -2 if there was an error.
++   str_ptr - location of the next string
+-   val - location to store the string
+
+    Return value:
+    MPIU_STR_SUCCESS, MPIU_STR_NOMEM, MPIU_STR_FAIL
 
     Return Value:
-    The return value is the location in str where the next MPIU_Str_get_string can be
-    called from.
+    The return value is 0 for success, -1 for insufficient buffer space, and 1 for failure.
 
     Notes:
-    This routine adds a string to a string in such a way that MPIU_Str_get_string can
-    retreive the same string back.  It takes into account spaces and quote characters.
+    This routine gets a string that was previously added by MPIU_Str_add_string.
+    It takes into account spaces and quote characters. The string pointer is updated to the
+    start of the next string in the string.
 
   Module:
   Utility
   @*/
-const char * MPIU_Str_get_string(const char *str, char *val, int maxlen, int *num_chars);
+int MPIU_Str_get_string(char **str_ptr, char *val, int maxlen);
 
 #ifdef USE_MEMORY_TRACING
 /*M

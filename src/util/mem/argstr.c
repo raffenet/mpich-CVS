@@ -26,12 +26,7 @@
 #define MPIU_STR_SEPAR_CHAR     ' '
 #define MPIU_STR_SEPAR_STR      " "
 
-#define MPIU_STR_SUCCESS    0
-#define MPIU_STR_FAIL       1
-#define MPIU_STR_TRUNCATED -1
-
-#define MPIU_TRUE  1
-#define MPIU_FALSE 0
+#define MPIU_STR_TRUNCATED MPIU_STR_NOMEM
 
 static int encode_buffer(char *dest, int dest_length, const char *src, int src_length, int *num_encoded)
 {
@@ -509,6 +504,89 @@ static int quoted_printf(char *str, int maxlen, const char *val)
     return count;
 }
 
+int MPIU_Str_add_string(char **str_ptr, int *maxlen_ptr, const char *val)
+{
+    int num_chars;
+    char *str;
+    int maxlen;
+
+    str = *str_ptr;
+    maxlen = *maxlen_ptr;
+
+    if (strchr(val, ' ') || strchr(val, MPIU_STR_QUOTE_CHAR) || strchr(val, MPIU_STR_DELIM_CHAR))
+    {
+	num_chars = quoted_printf(str, maxlen, val);
+	if (num_chars == maxlen)
+	{
+	    /* truncation, cleanup string */
+	    *str = '\0';
+	    return -1;
+	}
+	if (num_chars < maxlen - 1)
+	{
+	    str[num_chars] = ' ';
+	    str[num_chars+1] = '\0';
+	    num_chars++;
+	}
+	else
+	{
+	    str[num_chars] = '\0';
+	}
+    }
+    else
+    {
+	num_chars = snprintf(str, maxlen, "%s ", val);
+	if (num_chars == maxlen)
+	{
+	    *str = '\0';
+	    return -1;
+	}
+    }
+    *str_ptr += num_chars;
+    *maxlen_ptr -= num_chars;
+    return 0;
+}
+
+int MPIU_Str_get_string(char **str_ptr, char *val, int maxlen)
+{
+    int result;
+    char *str;
+
+    if (str_ptr == NULL)
+	return -2;
+
+    str = *str_ptr;
+    
+    if (maxlen < 1)
+    {
+	return 0;
+    }
+
+    /* line up with the first token */
+    str = (char*)first_token(str);
+    if (str == NULL)
+    {
+	return 0;
+    }
+
+    /* copy the token */
+    result = token_copy(str, val, maxlen);
+    if (result == MPIU_STR_SUCCESS)
+    {
+	str = (char*)next_token(str);
+	*str_ptr = str;
+	return 0;
+    }
+    else if (result == MPIU_STR_TRUNCATED)
+    {
+	return -1;
+    }
+
+    /* failure */
+    return -2;
+}
+
+#if 0
 int MPIU_Str_add_string(char *str, int maxlen, const char *val)
 {
     int num_chars;
@@ -574,10 +652,19 @@ const char * MPIU_Str_get_string(const char *str, char *val, int maxlen, int *nu
 
     return str;
 }
+#endif
 
 int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, const char *val)
 {
     int num_chars;
+    char **orig_str_ptr;
+    int orig_maxlen;
+
+    if (maxlen_ptr == NULL)
+	return MPIU_STR_FAIL;
+
+    orig_maxlen = *maxlen_ptr;
+    orig_str_ptr = str_ptr;
 
     if (*maxlen_ptr < 1)
 	return MPIU_STR_FAIL;
@@ -594,9 +681,10 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     *maxlen_ptr = *maxlen_ptr - num_chars;
     if (*maxlen_ptr < 1)
     {
-	(*str_ptr)[num_chars-1] = '\0';
 	MPIU_DBG_PRINTF(("partial argument added to string: '%s'\n", *str_ptr));
-	return MPIU_STR_FAIL;
+	**str_ptr = '\0';
+	/*(*str_ptr)[num_chars-1] = '\0';*/
+	return MPIU_STR_NOMEM;
     }
     *str_ptr = *str_ptr + num_chars;
 
@@ -618,10 +706,13 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     *maxlen_ptr = *maxlen_ptr - num_chars;
     if (*maxlen_ptr < 2)
     {
+	MPIU_DBG_PRINTF(("partial argument added to string: '%s'\n", *str_ptr));
+	**orig_str_ptr = '\0';
+	/*
 	*str_ptr = *str_ptr - 1;
 	**str_ptr = '\0';
-	MPIU_DBG_PRINTF(("partial argument added to string: '%s'\n", *str_ptr));
-	return MPIU_STR_FAIL;
+	*/
+	return MPIU_STR_NOMEM;
     }
     
     /* add the trailing space */
@@ -644,6 +735,14 @@ int MPIU_Str_add_binary_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
 {
     int result;
     int num_chars;
+    char **orig_str_ptr;
+    int orig_maxlen;
+
+    if (maxlen_ptr == NULL)
+	return MPIU_STR_FAIL;
+
+    orig_maxlen = *maxlen_ptr;
+    orig_str_ptr = str_ptr;
 
     if (*maxlen_ptr < 1)
 	return MPIU_STR_FAIL;
@@ -660,9 +759,10 @@ int MPIU_Str_add_binary_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     *maxlen_ptr = *maxlen_ptr - num_chars;
     if (*maxlen_ptr < 1)
     {
-	(*str_ptr)[num_chars-1] = '\0';
 	MPIU_DBG_PRINTF(("partial argument added to string: '%s'\n", *str_ptr));
-	return MPIU_STR_FAIL;
+	**str_ptr = '\0';
+	/*(*str_ptr)[num_chars-1] = '\0';*/
+	return MPIU_STR_NOMEM;
     }
     *str_ptr = *str_ptr + num_chars;
 
@@ -675,6 +775,7 @@ int MPIU_Str_add_binary_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     result = encode_buffer(*str_ptr, *maxlen_ptr, buffer, length, &num_chars);
     if (result != MPIU_STR_SUCCESS)
     {
+	**orig_str_ptr = '\0';
 	return result;
     }
     num_chars = num_chars * 2; /* the encoding function turns one source character into two destination characters */
@@ -682,10 +783,13 @@ int MPIU_Str_add_binary_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     *maxlen_ptr = *maxlen_ptr - num_chars;
     if (*maxlen_ptr < 2)
     {
+	MPIU_DBG_PRINTF(("partial argument added to string: '%s'\n", *str_ptr));
+	/*
 	*str_ptr = *str_ptr - 1;
 	**str_ptr = '\0';
-	MPIU_DBG_PRINTF(("partial argument added to string: '%s'\n", *str_ptr));
-	return MPIU_STR_FAIL;
+	*/
+	**orig_str_ptr = '\0';
+	return MPIU_STR_NOMEM;
     }
     
     /* add the trailing space */
