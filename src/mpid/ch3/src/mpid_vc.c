@@ -109,6 +109,24 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		    close_pkt->type = MPIDI_CH3_PKT_CLOSE;
 		    close_pkt->ack = (vc->state == MPIDI_VC_STATE_ACTIVE) ? FALSE : TRUE;
 		    
+		    /* MT: this is not thread safe */
+		    MPIDI_Outstanding_close_ops += 1;
+		    MPIDI_DBG_PRINTF((30, FCNAME, "sending close(%s) to %d, ops = %d", close_pkt->ack ? "TRUE" : "FALSE",
+				      i, MPIDI_Outstanding_close_ops));
+
+		    /*
+		     * A close packet acknowledging this close request could be received during iStartMsg, therefore the state
+		     * must be changed before the close packet is sent.
+		     */
+		    if (vc->state == MPIDI_VC_STATE_ACTIVE)
+		    { 
+			vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
+		    }
+		    else /* if (vc->state == MPIDI_VC_STATE_REMOTE_CLOSE) */
+		    {
+			vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
+		    }
+		    
 		    mpi_errno = MPIDI_CH3_iStartMsg(vc, close_pkt, sizeof(*close_pkt), &sreq);
 		    /* --BEGIN ERROR HANDLING-- */
 		    if (mpi_errno != MPI_SUCCESS)
@@ -122,20 +140,6 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		    if (sreq != NULL)
 		    {
 			MPID_Request_release(sreq);
-		    }
-
-		    /* MT: this is not thread safe */
-		    MPIDI_Outstanding_close_ops += 1;
-		    MPIDI_DBG_PRINTF((30, FCNAME, "sending close(%s) to %d, ops = %d", close_pkt->ack ? "TRUE" : "FALSE",
-				      i, MPIDI_Outstanding_close_ops));
-
-		    if (vc->state == MPIDI_VC_STATE_ACTIVE)
-		    { 
-			vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
-		    }
-		    else /* if (vc->state == MPIDI_VC_STATE_REMOTE_CLOSE) */
-		    {
-			vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		    }
 		}
 		else
