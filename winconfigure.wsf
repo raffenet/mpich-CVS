@@ -2045,8 +2045,8 @@ Sub AddDefinitions( fout, filename )
 					'	fout.WriteLine("#define HAVE_MAX_STRUCT_ALIGNMENT 8")
 					'Else
 					'	fout.WriteLine("#define HAVE_MAX_STRUCT_ALIGNMENT 4")
+					'End If
 					fout.WriteLine("#define HAVE_MAX_STRUCT_ALIGNMENT 8")
-					End If
 				Case "HAVE_NAMEPUB_SERVICE"
 					fout.WriteLine("#define HAVE_NAMEPUB_SERVICE 1")
 				Case "HAVE_NO_FORTRAN_MPI_TYPES_IN_C"
