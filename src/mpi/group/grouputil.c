@@ -265,22 +265,28 @@ int MPIR_Group_check_valid_ranges( MPID_Group *group_ptr,
 	    for (j=first; j<=last; j+=stride) {
 		if (group_ptr->lrank_to_lpid[j].flag) {
 		    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
-						      "**rangedup", 0 );
+						      "**rangedup", 
+				    "**rangedup %d %d %d",
+				    j, i, group_ptr->lrank_to_lpid[j].flag - 1);
 		    break;
 		}
 		else
-		    group_ptr->lrank_to_lpid[i].flag = 1;
+		    group_ptr->lrank_to_lpid[j].flag = 1;
 	    }
 	}
 	else {
 	    for (j=first; j>=last; j+=stride) {
 		if (group_ptr->lrank_to_lpid[j].flag) {
 		    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
-						      "**rangedup", 0 );
+						      "**rangedup", 
+				    "**rangedup %d %d %d",
+				    j, i, group_ptr->lrank_to_lpid[j].flag - 1);
 		    break;
 		}
 		else
-		    group_ptr->lrank_to_lpid[i].flag = 1;
+		    /* Set to i + 1 so that we can remember where it was 
+		       first set */
+		    group_ptr->lrank_to_lpid[j].flag = i + 1;
 	    }
 	}
 	if (mpi_errno) break;
