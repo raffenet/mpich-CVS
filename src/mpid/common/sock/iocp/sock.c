@@ -2664,7 +2664,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 	    if (mpi_errno = ERROR_OPERATION_ABORTED)
 	    {
 		/* A thread exited causing GetQueuedCompletionStatus to return prematurely. */
-		if (sock != NULL)
+		if (sock != NULL && !sock->closing)
 		{
 		    /* re-post the aborted operation */
 		    if (sock->type == SOCKI_SOCKET)
@@ -2678,7 +2678,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 				if (mpi_errno != MPI_SUCCESS)
 				{
 				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted readv operation");
+				    return MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted readv operation");
 				}
 			    }
 			    else
@@ -2688,7 +2688,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 				if (mpi_errno != MPI_SUCCESS)
 				{
 				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted read operation");
+				    return MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted read operation");
 				}
 			    }
 			}
@@ -2701,7 +2701,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 				if (mpi_errno != MPI_SUCCESS)
 				{
 				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted writev operation");
+				    return MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted writev operation");
 				}
 			    }
 			    else
@@ -2711,7 +2711,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 				if (mpi_errno != MPI_SUCCESS)
 				{
 				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted write operation");
+				    return MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted write operation");
 				}
 			    }
 			}
@@ -2744,8 +2744,8 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
 			return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Aborted unknown socket operation");
 		    }
+		    continue;
 		}
-		continue;
 	    }
 	    MPIU_DBG_PRINTF(("GetQueuedCompletionStatus failed, GetLastError: %d\n", mpi_errno));
 	    if (sock != NULL)
