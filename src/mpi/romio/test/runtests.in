@@ -130,6 +130,20 @@ CheckOutput() {
     fi
   fi
 }
+
+# nothing uses this function yet... just toying with the concept
+RunTest() {
+      OutTime
+      testfiles="$testfiles ${1}.out"
+      rm -rf ${1}.out
+      MakeExe simple
+      rm -rf $FILENAME*
+      echo "**** Testing ${1}.c ****"
+      mpirun -np 4 ./${1} -fname $FILENAME "$@" >>${1}.out 2>1
+      CheckOutput ${1} 
+      CleanExe ${1}
+}
+
 # If the programs are not available, run make.
 if [ ! -x simple -a $makeeach = 0 ] ; then
     $MAKE default
