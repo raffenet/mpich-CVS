@@ -427,6 +427,7 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround"
 	        if [ $dir = "./src/mpi/romio" ] ; then
 		    echo $dir
 		    if [ $acVersion = "2-57" ] ; then
+			echo "Working around hideous bug in autoheader 2.57..."
 	            # Note that the 2.57 autoheader *ignores* the command-line
 	            # argument (!)  Yes, this is very badly broken.
 		    # Also note that aclocal tends to read *everything* in the 
