@@ -168,6 +168,10 @@ static inline int handle_written(MPIDI_VC * vc)
 		{
 		    MPIDI_CH3I_SendQ_dequeue(vc);
 		}
+		else
+		{
+		    req->ch.iov_offset = 0;
+		}
 		vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
 	    }
 	}
