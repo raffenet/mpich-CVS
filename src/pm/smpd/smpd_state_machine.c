@@ -1710,7 +1710,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    }
 
 		    /* check to see if this is a shutdown session */
-		    if (smpd_process.shutdown_console)
+		    if (smpd_process.shutdown)
 		    {
 			result = smpd_create_command("shutdown", 0, 1, SMPD_FALSE, &cmd_ptr);
 			if (result != SMPD_SUCCESS)
@@ -1723,6 +1723,27 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 			if (result != SMPD_SUCCESS)
 			{
 			    smpd_err_printf("unable to post a write of the shutdown command on the %s context.\n",
+				smpd_get_context_str(context));
+			    smpd_exit_fn("smpd_enter_at_state");
+			    return SMPD_FAIL;
+			}
+			break;
+		    }
+
+		    /* check to see if this is a restart session */
+		    if (smpd_process.restart)
+		    {
+			result = smpd_create_command("restart", 0, 1, SMPD_FALSE, &cmd_ptr);
+			if (result != SMPD_SUCCESS)
+			{
+			    smpd_err_printf("unable to create a restart command.\n");
+			    smpd_exit_fn("smpd_enter_at_state");
+			    return SMPD_FAIL;
+			}
+			result = smpd_post_write_command(context, cmd_ptr);
+			if (result != SMPD_SUCCESS)
+			{
+			    smpd_err_printf("unable to post a write of the restart command on the %s context.\n",
 				smpd_get_context_str(context));
 			    smpd_exit_fn("smpd_enter_at_state");
 			    return SMPD_FAIL;

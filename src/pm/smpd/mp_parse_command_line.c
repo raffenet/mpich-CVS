@@ -349,7 +349,32 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 	}
 	smpd_process.do_console = 1;
-	smpd_process.shutdown_console = 1;
+	smpd_process.shutdown = 1;
+	smpd_process.host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+	if (smpd_process.host_list == NULL)
+	{
+	    smpd_err_printf("unable to allocate a host node.\n");
+	    smpd_exit_fn("mp_parse_command_args");
+	    return SMPD_FAIL;
+	}
+	strcpy(smpd_process.host_list->host, smpd_process.console_host);
+	smpd_process.host_list->id = 1;
+	smpd_process.host_list->nproc = 0;
+	smpd_process.host_list->parent = 0;
+	smpd_process.host_list->next = NULL;
+	smpd_exit_fn("mp_parse_command_args");
+	return SMPD_SUCCESS;
+    }
+
+    if (strcmp((*argvp)[1], "-restart") == 0)
+    {
+	smpd_get_opt_string(argcp, argvp, "-restart", smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	if (smpd_get_opt(argcp, argvp, "-restart"))
+	{
+	    gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	}
+	smpd_process.do_console = 1;
+	smpd_process.restart = 1;
 	smpd_process.host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
 	if (smpd_process.host_list == NULL)
 	{
