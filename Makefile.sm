@@ -54,6 +54,9 @@ dist:
 	else \
 	    ( cd tmpdir && cvs -d $(MPICVSHOME) export -D 'now' mpich2all ) ;\
 	fi ; \
+	(cd tmpdir/mpich2/src && cvs -d $(MPICVSHOME) export -D 'now' mpe && \
+	rm -rf mpe/slog_api mpe/viewers mpe/profiling ) ; \
+	(cd tmpdir/mpich2/src/mpe && cvs -d $(MPICVSHOME) export -D 'now' slog2sdk ) ; \
 	cp -rp confdb tmpdir/mpich2 ; \
 	( cd tmpdir/mpich2 && sed -e "s/VERSION =.*/VERSION = $${version}/" Makefile.sm >.tmp && mv .tmp Makefile.sm ) ; \
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-$${version} ; \

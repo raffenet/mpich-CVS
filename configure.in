@@ -132,6 +132,9 @@ dnl
 AC_ARG_WITH(logging,
 [--with-logging=name - Specify the logging library for MPICH.],,
 with_logging=default)
+AC_ARG_WITH(mpe,
+[--with-mpe - Build the MPE (MPI Parallel Environment) routines],,
+with_mpe=default)
 dnl
 AC_ARG_ENABLE(weak-symbols,
 [--enable-weak-symbols - Use weak symbols to implement PMPI routines (default)],,
@@ -465,7 +468,7 @@ if test "$enable_romio" = "yes" ; then
    # Set environment variables that the romio configure expects
    romio_dir=romio
    AC_SUBST(romio_dir)
-   FROM_MPICH2=1
+   FROM_MPICH2=yes
    export FROM_MPICH2
    export use_top_srcdir
    top_build_dir=`pwd`
@@ -550,6 +553,16 @@ dnl pm_name is the *primary* pm
 pm_name=$first_pm_name
 AC_SUBST(pm_name)
 AC_SUBST(other_pm_names)
+
+if test $with_mpe != no ; then
+    if test ! -d $use_top_srcdir/src/mpe ; then
+        if test $with_mpe = yes ; then
+            AC_MSG_WARN([No MPE directory available])
+        fi
+    else
+        subsystems="$subsystems src/mpe"
+    fi
+fi
 #
 # The bindings must be the *last* subsystems configured, since they may
 # need to inherit libraries and/or options required by the other subsystems
