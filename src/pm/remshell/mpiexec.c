@@ -69,6 +69,10 @@ typedef enum { NORMAL,     /* Normal exit (possibly with nonzero status) */
 	       KILLED      /* Process was killed by mpiexec */ 
              } exit_state_t;
 
+/* Record each process, including the fd's used to handle standard input
+   and output, and any process-specific details about each process, 
+   such as the working directory and specific requirements about the 
+   host */
 typedef struct { 
     int            fdStdin, fdStdout, fdStderr, /* fds for std io */
 	fdPMI;                       /* fds for process management */
@@ -183,8 +187,9 @@ int main( int argc, char *argv[] )
 
     /* Create the PMI INET socket */
     rc = mpiexecGetPort( &fdPMI, &portnum );
-    if (debug) 
-	printf( "rc = %d, Using port %d and fd %d\n", rc, portnum, fdPMI );
+    if (debug) {
+	DBG_PRINTF( "rc = %d, Using port %d and fd %d\n", rc, portnum, fdPMI );
+    }
     if (rc) return rc;
 
     /* Optionally stage the executables */
@@ -255,12 +260,13 @@ int mpiexecArgs( int argc, char *argv[], ProcessTable_t *ptable,
 	else if ( strncmp( argv[i], "-soft", 6 ) == 0 )
 	    if ( i+1 < argc )
 		soft = argv[++i];
-	    else
+	    else {
 		mpiexec_usage( "Missing argument to -soft\n" );
+	    }
 	else if ( strncmp( argv[i], "-host", 6 ) == 0 )
 	    if ( i+1 < argc )
 		host = argv[++i];
-	    else
+	    else 
 		mpiexec_usage( "Missing argument to -host\n" );		    
 	else if ( strncmp( argv[i], "-arch", 6 ) == 0 )
 	    if ( i+1 < argc )
@@ -339,7 +345,7 @@ int mpiexecArgs( int argc, char *argv[], ProcessTable_t *ptable,
 		i += (incr-1);
 	    }
 	    else {
-		fprintf( stderr, "invalid mpiexec argument %s\n", argv[i] );
+		MPIU_Error_printf( "invalid mpiexec argument %s\n", argv[i] );
 		mpiexec_usage( NULL );
 	    }
 	}
@@ -358,18 +364,16 @@ static int getInt( int argnum, int argc, char *argv[] )
 	p = argv[argnum];
 	i = strtol( argv[argnum], &p, 0 );
 	if (p == argv[argnum]) {
-	    char msg[1024];
-	    sprintf( "Invalid parameter value %s to argument %s\n",
+	    MPIU_Error_printf( "Invalid parameter value %s to argument %s\n",
 		     argv[argnum], argv[argnum-1] );
-	    mpiexec_usage( msg );
+	    mpiexec_usage( NULL );
 	    /* Does not return */
 	}
 	return (int)i;
     }
     else {
-	char msg[1024];
-	sprintf( msg, "Missing argument to %s\n", argv[argnum-1] );
-	mpiexec_usage( msg );
+	MPIU_Error_printf( "Missing argument to %s\n", argv[argnum-1] );
+	mpiexec_usage( NULL );
 	/* Does not return */
     }
 }
@@ -477,7 +481,7 @@ MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 	    len = strlen(path);
 	
 	/* Copy path into the file name */
-	strncpy( dirname, path, len );
+	MPIU_Strncpy( dirname, path, len );
 
 	dirname[len] = 0;
 
@@ -486,11 +490,12 @@ MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 	    sprintf( machinesfile, "%s/machines.%s", dirname, arch );
 	}
 	else {
-	    strcpy( machinesfile, dirname );
-	    strcat( machinesfile, "/machines" );
+	    MPIU_Strncpy( machinesfile, dirname, PATH_MAX );
+	    MPIU_Strncat( machinesfile, "/machines", PATH_MAX );
 	}
-	if (debug) 
-	    printf( "Attempting to open %s\n", machinesfile );
+	if (debug) {
+	    DBG_PRINTF( "Attempting to open %s\n", machinesfile );
+	}
 	fp = fopen( machinesfile, "r" );
 	if (fp) break;  /* Found one */
 
@@ -501,12 +506,12 @@ MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
     }
 	
     if (!fp) {
-	fprintf( stderr, "Could not open machines file %s\n", machinesfile );
+	MPIU_Error_printf( "Could not open machines file %s\n", machinesfile );
 	return 0;
     }
     mt = (MachineTable *)malloc( sizeof(MachineTable) );
     if (!mt) {
-	fprintf( stderr, "Internal error: could not allocate machine table\n" );
+	MPIU_Error_printf( "Internal error: could not allocate machine table\n" );
 	return 0;
 	}
     
@@ -516,7 +521,9 @@ MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
     }
     while (nNeeded) {
 	if (!fgets( buf, MAXLINE, fp )) break;
-	if (debug) printf( "line: %s", buf );
+	if (debug) {
+	    DBG_PRINTF( "line: %s", buf );
+	}
 	/* Skip comment lines */
 	p = buf;
 	while (isascii(*p) && isspace(*p)) p++;
@@ -527,7 +534,7 @@ MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 	if (p[len-1] == '\r') p[--len] = 0;   /* Handle DOS files */
 	mt->hname[nFound] = (char *)malloc( len + 1 );
 	if (!mt->hname[nFound]) return 0;
-	strncpy( mt->hname[nFound], p, len+1 );
+	MPIU_Strncpy( mt->hname[nFound], p, len+1 );
 	nFound++;
 	nNeeded--;
     }
@@ -564,7 +571,7 @@ int mpiexecGetPort( int *fdout, int *portout )
 	high_port = 0;
     }
     else {
-	fprintf( stderr, "ranges not supported for ports\n" );
+	MPIU_Error_printf( "ranges not supported for ports\n" );
 	return 1;
     }
 
@@ -638,9 +645,9 @@ int mpiexecGetMyHostName( char myname[MAX_HOST_NAME+1] )
 /* ----------------------------------------------------------------------- */
 void mpiexec_usage( const char *msg )
 {
-    if (msg)
-	fputs( msg, stderr );
-    fprintf( stderr, "\
+    if (msg) 
+	MPIU_Error_printf( msg );
+    MPIU_Usage_printf( "\
 Usage: mpiexec -n <numprocs> -soft <softness> -host <hostname> \n\
                -wdir <working directory> -path <search path> \n\
                program args [ : -n <numprocs> ... program args ]\n" );
@@ -669,8 +676,9 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	if (pipe(write_in_pipe)) return -1;
 	if (pipe(read_err_pipe)) return -1;
 
-	if (debug)
-	    printf( "About to fork process %d\n", i );
+	if (debug) {
+	    DBG_PRINTF( "About to fork process %d\n", i );
+	}
 
 	pid = fork();
 	if (pid > 0) {
@@ -735,20 +743,20 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 #ifdef DEBUG
 	    { int k;
 	    for (k=0; myargv[k]; k++) {
-		printf( "%s ", myargv[k] );
+		DBG_PRINTF( "%s ", myargv[k] );
 	    }
-	    printf( "\n" );
+	    DBG_PRINTF( "\n" );
 	    }
 #endif
 	    rc = execvp( myargv[0], myargv );
 	    if (rc) 
-		printf( "Error from execvp: %d\n", errno );
-	    /* should never returns */
+		MPIU_Error_printf( "Error from execvp: %d\n", errno );
+	    /* should never return */
 	}
 	else {
 	    /* Error on fork */
 	    /* FIXME */
-	    fprintf( stderr, "Failure to create process number %d\n", i );
+	    MPIU_Error_printf( "Failure to create process number %d\n", i );
 	    return -1;
 	}
     }
@@ -787,7 +795,7 @@ int mpiexecGetRemshellArgv( char *argv[], int nargv )
 		len = strlen(rem);
 
 	    remshell[remargs] = (char *)malloc( len + 1 ); /* Add the null */
-	    strncpy( remshell[remargs], rem, len );
+	    MPIU_Strncpy( remshell[remargs], rem, len );
 	    remshell[remargs][len] = 0;
 	    remargs++;
 	    if (next_parm) {
@@ -795,7 +803,7 @@ int mpiexecGetRemshellArgv( char *argv[], int nargv )
 		while (*rem == ' ') rem++;
 		if (remargs == 10) {
 		    /* FIXME */
-		    fprintf( stderr, "Remote shell command is too complex\n" );
+		    MPIU_Error_printf( "Remote shell command is too complex\n" );
 		    exit(1);
 		}
 	    }
@@ -821,11 +829,84 @@ int mpiexecPrintTable( ProcessTable_t *ptable )
 
     for (i=0; i<ptable->nProcesses; i++) {
 	ProcessState *ps = &ptable->table[i];
-	printf( "On %s run %s", ps->hostname, ps->exename );
+	DBG_PRINTF( "On %s run %s", ps->hostname, ps->exename );
 	for (j=0; j<ps->nArgs; j++) {
-	    printf( " %s", ps->args[j] );
+	    DBG_PRINTF( " %s", ps->args[j] );
 	}
-	printf( "\n" );
+	DBG_PRINTF( "\n" );
     }
 }
 
+/* ----------------------------------------------------------------------- */
+/* Process any pending input from either the user or from the processes.   
+   This simple mpiexec does not use any kind of aggregation tree, either 
+   for creating processes or for handling output.  (In such cases,
+   a different mpiexec and process manager should be used, such as mpd.
+
+   Outline:
+   for all fds, wait for poll (or select) to indicate that data is 
+   available.  As a special case, don't accept data with the sink for the
+   data is not available.  I.e., if stderr is not available for writing, 
+   do not accept data from the fdStderr fd of any created process.
+/* ----------------------------------------------------------------------- */
+#include <sys/poll.h>
+
+int mpiexecPollFDs( ProcessTable_t *ptable )
+{
+    struct pollfd *pollarray;
+    int i, j, nfds, nprocess;
+
+    /* Compute the array size needed for the poll operation */
+    nprocess = ptable->nProcesses;
+    nfds = 4 * nprocess + 3;
+    pollarray = (struct pollfd *)MPIU_Malloc( nfds * sizeof(struct pollfd) );
+    if (!pollarray) {
+	MPIU_Internal_error_printf( "Unable to allocate poll array of size %d",
+				    ptable->nProcesses );
+	return 1;
+    }
+
+    /* Fill to poll array.  We'll exploit the fact that there are four
+       fd's per process 
+       Questoin: should we arrange these differently? */
+    */
+    j = 0;
+    for (i=0; i<nprocess; i++) {
+	pollarray[j].fd = ptable->table[i].fdStdin;
+	pollarray[j].events = POLLOUT;
+	j++;
+	pollarray[j].fd = ptable->table[i].fdStdout;
+	pollarray[j].events = POLLIN;
+	j++;
+	pollarray[j].fd = ptable->table[i].fdStderr;
+	pollarray[j].events = POLLIN;
+	j++;
+	pollarray[j].fd = ptable->table[i].fdPMI;
+	pollarray[j].events = POLLIN;
+	j++;
+    }
+    /* Add the last three */
+    pollarray[j].fd = stdin;
+    pollarray[j].events = POLLIN;
+    j++;
+    pollarray[j].fd = stdout;
+    pollarray[j].events = POLLOUT;
+    j++;
+    pollarray[j].fd = stderr;
+    pollarray[j].events = POLLOUT;
+
+    while (1) {
+	/* what is the INFTIM for the timeout field */
+	rc = poll( pollarray, nfds, 0 );
+
+	/* loop through the entries, looking at the processes first */
+	j = 0;
+	for (i=0; i<nprocess; i++) {
+	    if (pollarray[j].revent == POLLOUT) {
+		;
+	    }
+	    
+	}
+	
+    }
+}
