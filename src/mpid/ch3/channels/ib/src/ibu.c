@@ -629,12 +629,10 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-/*
 static int s_cur_receive = 0;
 static int s_cur_send = 0;
 int g_num_receive_posted = 0;
 int g_num_send_posted = 0;
-*/
 
 static int ibui_post_receive(ibu_t ibu)
 {
@@ -660,10 +658,9 @@ static int ibui_post_receive(ibu_t ibu)
     ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.ptr = (ib_uint32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)mem_ptr;
 
-    /*
-    printf("ib_post_rcv_req_us %d\n", s_cur_receive++);
+    printf("ibui_post_receive %d\n", s_cur_receive++);
     g_num_receive_posted++;
-    */
+
     status = ib_post_rcv_req_us(IBU_Process.hca_handle, 
 				ibu->qp_handle,
 				&work_req);
@@ -1101,6 +1098,7 @@ static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int offset, 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_BUFFER_UNEX_READ);
 
     MPIU_dbg_printf("ibui_buffer_unex_read, %d bytes\n", num_bytes);
+    printf("ibui_buffer_unex_read, %d bytes\n", num_bytes);fflush(stdout);
 
     p = (ibu_unex_read_t *)malloc(sizeof(ibu_unex_read_t));
     p->mem_ptr = mem_ptr;
