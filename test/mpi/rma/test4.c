@@ -1,10 +1,11 @@
 #include "mpi.h" 
 #include "stdio.h"
 
-/* tests passive target RMA on 2 processes. */
+/* tests passive target RMA on 2 processes. tests the lock-single_op-unlock 
+   optimization. */
 
-#define SIZE1 100
-#define SIZE2 200
+#define SIZE1 20
+#define SIZE2 40
 
 int main(int argc, char *argv[]) 
 { 
@@ -23,12 +24,18 @@ int main(int argc, char *argv[])
     if (rank == 0) {
         for (i=0; i<SIZE2; i++) A[i] = B[i] = i;
         MPI_Win_create(NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win); 
-        MPI_Win_lock(MPI_LOCK_SHARED, 1, 0, win);
-        for (i=0; i<SIZE1; i++)
-          MPI_Put(A+i, 1, MPI_INT, 1, i, 1, MPI_INT, win);
-        for (i=0; i<SIZE1; i++)
-          MPI_Get(B+i, 1, MPI_INT, 1, SIZE1+i, 1, MPI_INT, win);
-        MPI_Win_unlock(1, win);
+
+        for (i=0; i<SIZE1; i++) {
+            MPI_Win_lock(MPI_LOCK_SHARED, 1, 0, win);
+            MPI_Put(A+i, 1, MPI_INT, 1, i, 1, MPI_INT, win);
+            MPI_Win_unlock(1, win);
+        }
+
+        for (i=0; i<SIZE1; i++) {
+            MPI_Win_lock(MPI_LOCK_SHARED, 1, 0, win);
+            MPI_Get(B+i, 1, MPI_INT, 1, SIZE1+i, 1, MPI_INT, win);
+            MPI_Win_unlock(1, win);
+        }
 
         MPI_Win_free(&win);
 
