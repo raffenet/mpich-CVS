@@ -112,7 +112,7 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	/* prealloc64 works only if file is of zero length */
 	if (err && (errno != ENOTEMPTY)) {
 #ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_ERR_IO< "**io", 
+	    *error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io", 
 						"**io %s", strerror(errno));
 		MPIR_Err_return_file(fd, myname, *error_code); 
 #elif defined(PRINT_ERR_MSG)
@@ -175,7 +175,7 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 		if (*error_code != MPI_SUCCESS) {
 #ifdef MPICH2
 			*error_code = MPIR_Err_create_code(MPI_ERR_IO, 
-							"**iopreallocrdwr", "**iopreallocrdwr");
+							"**iopreallocrdwr", 0);
 			MPIR_Err_return_file(fd, myname, *error_code);
 #elif defined(PRINT_ERR_MSG)
 		    FPRINTF(stderr, "ADIOI_HFS_Fcntl: To preallocate disk space, ROMIO needs to read the file and write it back, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
