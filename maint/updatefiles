@@ -511,6 +511,7 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 		        sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
 		        rm -f $dir/configure
 		        mv c.tmp $dir/configure
+			chmod a+x $dir/configure
 	            fi
 	            continue
 	        elif [ $dir = "./src/mpe" ] ; then
