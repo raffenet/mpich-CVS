@@ -1684,7 +1684,7 @@ int MPID_Rhcv( int rank, MPID_Comm *comm, MPID_Handler_id id,
   Communication
 
   @*/
-int MPID_Send( const void *buf, int count, MPID_Datatype *datatype,
+int MPID_Send( const void *buf, int count, MPI_Datatype datatype,
 		int dest, int tag, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
@@ -1711,7 +1711,7 @@ int MPID_Send( const void *buf, int count, MPID_Datatype *datatype,
   Communication
 
   @*/
-int MPID_Ssend( const void *buf, int count, MPID_Datatype *datatype,
+int MPID_Ssend( const void *buf, int count, MPI_Datatype datatype,
 		int dest, int tag, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
@@ -1738,7 +1738,7 @@ int MPID_Ssend( const void *buf, int count, MPID_Datatype *datatype,
   Communication
 
   @*/
-int MPID_Rsend( const void *buf, int count, MPID_Datatype *datatype,
+int MPID_Rsend( const void *buf, int count, MPI_Datatype datatype,
 		int dest, int tag, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
@@ -1759,7 +1759,7 @@ int MPID_Rsend( const void *buf, int count, MPID_Datatype *datatype,
   Communication
 
   @*/
-int MPID_Isend( const void *buf, int count, MPID_Datatype *datatype,
+int MPID_Isend( const void *buf, int count, MPI_Datatype datatype,
 		int dest, int tag, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
@@ -1780,7 +1780,7 @@ int MPID_Isend( const void *buf, int count, MPID_Datatype *datatype,
   Communication
 
   @*/
-int MPID_Issend( const void *buf, int count, MPID_Datatype *datatype,
+int MPID_Issend( const void *buf, int count, MPI_Datatype datatype,
 		int dest, int tag, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
@@ -1801,7 +1801,7 @@ int MPID_Issend( const void *buf, int count, MPID_Datatype *datatype,
   Communication
 
   @*/
-int MPID_Irsend( const void *buf, int count, MPID_Datatype *datatype,
+int MPID_Irsend( const void *buf, int count, MPI_Datatype datatype,
 		int dest, int tag, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
@@ -1825,7 +1825,7 @@ int MPID_Irsend( const void *buf, int count, MPID_Datatype *datatype,
   Communication
 
   @*/
-int MPID_Recv( void *buf, int count, MPID_Datatype *datatype,
+int MPID_Recv( void *buf, int count, MPI_Datatype datatype,
 	       int source, int tag, MPID_Comm *comm, int context_offset,
 	       MPI_Status *status, MPID_Request **request )
 {
@@ -1846,7 +1846,7 @@ int MPID_Recv( void *buf, int count, MPID_Datatype *datatype,
   Communication
 
   @*/
-int MPID_Irecv( void *buf, int count, MPID_Datatype *datatype,
+int MPID_Irecv( void *buf, int count, MPI_Datatype datatype,
 		int source, int tag, MPID_Comm *comm, int context_offset,
 		MPID_Request **request )
 {
@@ -1867,7 +1867,7 @@ int MPID_Irecv( void *buf, int count, MPID_Datatype *datatype,
   Communication
 
   @*/
-int MPID_Send_init( const void *buf, int count, MPID_Datatype *datatype,
+int MPID_Send_init( const void *buf, int count, MPI_Datatype datatype,
 		    int dest, int tag, MPID_Comm *comm, int context_offset,
 		    MPID_Request **request )
 {
@@ -1888,7 +1888,7 @@ int MPID_Send_init( const void *buf, int count, MPID_Datatype *datatype,
   Communication
 
   @*/
-int MPID_Ssend_init( const void *buf, int count, MPID_Datatype *datatype,
+int MPID_Ssend_init( const void *buf, int count, MPI_Datatype datatype,
 		     int dest, int tag, MPID_Comm *comm, int context_offset,
 		     MPID_Request **request )
 {
@@ -1909,7 +1909,7 @@ int MPID_Ssend_init( const void *buf, int count, MPID_Datatype *datatype,
   Communication
 
   @*/
-int MPID_Rsend_init( const void *buf, int count, MPID_Datatype *datatype,
+int MPID_Rsend_init( const void *buf, int count, MPI_Datatype datatype,
 		     int dest, int tag, MPID_Comm *comm, int context_offset,
 		     MPID_Request **request )
 {
@@ -1930,7 +1930,7 @@ int MPID_Rsend_init( const void *buf, int count, MPID_Datatype *datatype,
   Communication
 
   @*/
-int MPID_Recv_init( void *buf, int count, MPID_Datatype *datatype,
+int MPID_Recv_init( void *buf, int count, MPI_Datatype datatype,
 		    int source, int tag, MPID_Comm *comm, int context_offset,
 		    MPID_Request **request )
 {
