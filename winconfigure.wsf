@@ -1084,6 +1084,10 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("/* #undef HAVE_DLOPEN */")
 				Case "HAVE_MACH_O_DYLD_H"
 					fout.WriteLine("/* #undef HAVE_MACH_O_DYLD_H */")
+				Case "USE_HUMAN_READABLE_TOKENS"
+					fout.WriteLine("#define USE_HUMAN_READABLE_TOKENS 1")
+				Case "HAVE_STRERROR"
+					fout.WriteLine("#define HAVE_STRERROR 1")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
