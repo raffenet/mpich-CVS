@@ -2141,6 +2141,14 @@ void MPIi_Gprocmap_get( int *n, int (*gpid_array)[] )
 \end{verbatim}
 \index{MPIi_Gprocmap_get}
 
+Still to do: make this consistent with the discussion of intercommunicator
+creation in \mpifunc{MPI_Comm_spawn}.  An alternative to the
+\mpidfunc{MPIi_Gprocmap_xxx} routines is a local process id and a table that
+maps this to a global identifier made up of a BNR group id and a rank in that
+group.  For a job with a single \code{MPI_COMM_WORLD}, this would map to a BNR
+group id of zero and the rank in \code{MPI_COMM_WORLD}.  More complex jobs
+(such as that in Figure~\ref{fig:spawn-ic}) would have multiple BNR groups.
+
 \begin{figure}
 \begin{verbatim}
 (place holder for nice figure containing the following
@@ -2161,7 +2169,7 @@ void MPIi_Gprocmap_get( int *n, int (*gpid_array)[] )
 
 The intercommunicator routines should have robust error checking because they
 require care and understanding in use and errors are hard to diagnose.  
-Errors to check for are inconsistent leaders (all members of the local
+Errors to check for include inconsistent leaders (all members of the local
 group should agree) and overlapping groups (remote and local groups
 must not overlap).
 
@@ -4110,6 +4118,33 @@ subsets?
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_INIT_THREAD}}
+
+One complication to the \mpifunc{MPI_Init} and \mpifunc{MPI_Init_thread} is
+handling the case where this process is created by \mpifunc{MPI_Comm_spawn} or
+\mpifunc{MPI_Comm_spawn_multiple}.  This part of the code is shown below:
+\begin{verbatim}
+   BNR_Port_t port;
+
+   BNR_Init( &port );
+   if (BNR_Is_spawned( &port )) {
+       <Wait until all processes are ready>
+       if (my rank == 0) {
+           BNR_Connect( port );
+       }
+   <construct intercommunicator for parent>
+   MPID_COMM_PARENT = <that intercommunicator>
+   }
+   else {
+       MPID_COMM_PARENT = MPI_COMM_NULL;
+   }
+\end{verbatim}
+An alternative to the \mpidfunc{BNR_Is_spawned} is to have \mpidfunc{BNR_Init}
+return a pointer to a \mpidfunc{BNR_Port_t}; if the pointer is null, then the
+process was not spawned.
+
+The initialization of the processes in (the local) \mpiconst{MPI_COMM_WORLD}
+are carried out with \mpidfunc{MPID_Init}.
+
 \begin{adi3}
 \mpidfunc{MPID_Init}
 Each device and method in a device will also require initialization.  
@@ -4225,7 +4260,7 @@ void MPIR_Add_finalize( static int (*f)( void * ), void *extra_data )
 {
     if (fstack_sp >= MAX_FINALIZE_FUNC) {
         /* panic ! */
-	}
+        }
     fstack[fstack_sp].f = f;
     fstack[fstack_sp++].extra_data = extra_data;
 }
@@ -4290,13 +4325,87 @@ used, and BNR is just one of the ways in which to implement that abstraction.
 \subsubsection{\mpifunc{MPI_COMM_DISCONNECT}}
 
 \subsubsection{\mpifunc{MPI_COMM_GET_PARENT}}
+Return \mpidconst{MPID_COMM_PARENT}.
 
 \subsubsection{\mpifunc{MPI_COMM_JOIN}}
 
 \subsubsection{\mpifunc{MPI_COMM_SPAWN}}
+
+Notes:
+\begin{itemize}
+\item \code{BNR_Port_t} is a BNR-defined data structure that is set by
+  \mpidfunc{BNR_Spawn} and used by \mpidfunc{BNR_Accept}.   In a TCP-based
+  implementation, \code{BNR_Spawn} would get a port, communicate that port
+  (probably through an environment variable but possibly through an LDAP
+  service) to the new processes, which would use that name to as an argument
+  to \mpidfunc{BNR_Connect}.  A shared-memory-only implementation could use a
+  SYSV segment id.
+
+\item \mpidfunc{BNR_Accept} does not return until all of the requested
+  processes have started and completed their initialization (see
+  \code{MPI_Init_thread}).
+
+\item \mpidfunc{MPID_New_connections} informs the device that there are
+  \code{count} new processes with BNR group id \code{gid}.  This routine
+  returns the local process ids (\code{lpid}s).
+
+\item As used here, \mpidfunc{BNR_Spawn} could return immediately; only after
+  the \mpidfunc{BNR_Accept} call returns does this code need to know if 
+  \mpidfunc{BNR_Spawn} has succeeded, or, in the case of a ``soft'' spawn, how
+  many processes were successfully created.  This allows \mpidfunc{BNR_Spawn}
+  to be ``nonblocking'' in the MPI sense, with completion handled by
+  \mpidfunc{BNR_Accept} on the ``port'' returned by \mpidfunc{BNR_Spawn}.
+
+\end{itemize}
+
+\begin{verbatim}
+    BNR_Port_t port;
+    int        err_stat[count];
+    int        lpid[count];
+    if (rank == root) {
+        BNR_Spawn( count, command, args, envp, info, &port, err_stat );
+        BNR_Accept( &port, &gid );
+    }
+    PMPI_Bcast( &gid, 1, MPI_INT, root, comm->private_comm );
+    MPID_New_connections( gid, count, lpid );
+
+    /* Now we need to create the intercommuicator for the new processes */
+    <Use the intercomm create code, but with lpid as the local process ids
+     of the remote group rather than using an existing MPI group>
+\end{verbatim}
+
 Question:  Should this be a special case of spawn multiple?
 
 \subsubsection{\mpifunc{MPI_COMM_SPAWN_MULTIPLE}}
+
+This is very similar to \mpifunc{MPI_COMM_SPAWN}, with the change that
+multiple calls to \mpidfunc{BNR_Spawn} and \mpidfunc{BNR_Accept} are made.
+All of the calls to \mpidfunc{BNR_Spawn} are made before any call to
+\mpidfunc{BNR_Accept} in order to start any time-consuming process scheduling
+and creation operations before waiting for any to complete (see the discussion
+on \mpidfunc{BNR_Spawn} in \mpifunc{MPI_Comm_spawn}.
+\begin{verbatim}
+    BNR_Port_t port[count];
+    int        err_stat[max_procs][count];
+    int        lpid[max_procs][count];
+    if (rank == root) {
+        for (i=0; i<count; i++) {
+            BNR_Spawn( array_of_maxprocs[i], array_of_commands[i], 
+                       array_of_argv[i], envp, array_of_info[i], &port[i], 
+                       err_stat[i] );
+        }
+        for (i=0; i<count; i++) {
+            BNR_Accept( &port[i], &gids[i] );
+        }
+    }
+    PMPI_Bcast( gids, count, MPI_INT, root, comm->private_comm );
+    for (i=0; i<count; i++) {
+        MPID_New_connections( gids[i], array_of_maxprocs[i], lpid[i] );
+    }
+
+    /* Now we need to create the intercommuicator for the new processes */
+    ... not done ...
+\end{verbatim}
 
 \subsubsection{\mpifunc{MPI_LOOKUP_NAME}}
 Question:  Do we want to define an API or a wire protocol for the name
@@ -4691,6 +4800,31 @@ packages.  If we use a level of indirection between the ADI configure
 (e.g., a setup script), the top-level configure won't know about
 this.  Do we care?  If we don't care, how do we ensure that
 re-executing \file{config.status} executes the correct routines?
+
+Standard \code{configure} and \code{Makefile} variables
+\begin{description}
+\item[\texttt{COPTIONS}]Use this to pass options for the C compiler that are
+  used by the package.  For example, the standard configure option
+  \cfgoption{--enable-strict} sets this to strict compilation (e.g.,
+  \code{-Wall -Wstrict-prototypes} etc.) when using the \code{gcc} compiler.
+
+\item[\texttt{CFLAGS}]Do not set this value.  Allow the user to use this to
+  change, for example, the optimization level or the debugging level.  For
+  example, the user should be able to do
+  \begin{verbatim}
+  setenv CFLAGS -g
+  make clean
+  make
+  \end{verbatim}
+  to rebuild the package with \code{-g} added to all compile lines.
+\end{description}
+
+If \code{automake} is used, add
+\begin{verbatim}
+# Use AM_xFLAGS to modify compiler behavior
+AM_CFLAGS=${COPTIONS}
+\end{verbatim}
+to the \file{Makefile.am}. 
 
 \subsection{Supporting Cross-compilation}
 \label{sec:cross-compile}

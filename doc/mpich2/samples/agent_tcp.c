@@ -178,7 +178,7 @@ static void MPID_Eager_complete_func( void *ptr )
     if (request_ptr->thread_id) {
 	/* Signal a thread that is waiting for this request to 
 	   complete */ 
-	pthread_cont_signal( request_ptr->thread_id, 
+	pthread_cond_signal( request_ptr->thread_id, 
 			     request_ptr->cond ); 
     }
 }
