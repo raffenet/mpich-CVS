@@ -19,6 +19,7 @@
 $buildfiles = 1;
 $build_prototypes = 1;
 $print_line_len = 0;
+$write_mpif = 1;
 $debug = 0;
 @arg_addresses = ();
 
@@ -28,7 +29,7 @@ $do_fint    = 1;
 $do_weak    = 1;
 $do_subdecls = 1;
 $do_bufptr = 1;
-
+$prototype_file = "../../include/mpi.h.in";
 # Process arguments
 #
 # Args
@@ -44,6 +45,16 @@ $do_bufptr = 1;
 #              not needed if a POINTER declaration is available.
 foreach $_ (@ARGV) {
     if (/-noprototypes/) { $build_prototypes = 0; }
+    elsif (/-infile=(.*)/) {
+	# Special arg to help with debugging
+	$prototype_file = $1;
+	$write_mpif = 0;
+	$build_prototypes = 0;
+	$do_weak    = 0;
+    }
+    elsif (/-debug/) {
+	$debug = 1;
+    }
     elsif (/-feature=(.*)/) {
 	foreach $feature (split(/:/,$1)) {
 	    print STDERR "Processing feature $feature\n" if $debug;
@@ -301,7 +312,7 @@ if ($build_prototypes) {
 /* Prototypes for Fortran Interface Functions */\n";
 }
 
-open( FD, "<../../include/mpi.h.in" ) || die "Cannot open mpi.h.in\n";
+open( FD, "<$prototype_file" ) || die "Cannot open $prototype_file\n";
 
 # Skip to prototypes
 while (<FD>) {
@@ -366,12 +377,14 @@ while (<FD>) {
 	    # all Fortran parameters are passed either by value-result or
 	    # by reference, many value parameters in the C calls are 
 	    # replaced by reference parameters in the Fortran interface.
+	    print "Printing arguments for mpi_${lcname}_\n" if $debug;
 	    &print_args( $OUTFD, $args );
 
 	    &print_attr;
 	    print $OUTFD "{\n";
 	    &print_special_decls( $routine_name );
 	    print $OUTFD "    *ierr = MPI_$routine_name";
+	    print "Printing call arguments for mpi_${lcname}_\n" if $debug;
 	    &print_call_args( $args );
 	    # Print any post call processing
 	    &print_post_call( $routine_name, $args );
@@ -609,10 +622,19 @@ sub print_args {
 	    # Split into raw type and []
 	    $parm =~ /\s*([^\s]*)\s*(\[\s*\])/;
 	    $basetype = $1;
+	    print "\tparm is array of $basetype\n" if $debug;
 	    #$foundbrack = $2;
-	    if (defined($tof77{$basetype})) {
+	    if ($basetype eq "int") {
+		# Do nothing because the [] added to the arg below
+		# is all that is necessary.
+		$star_count = 0;
+		$arg_addresses[$count] = $star_count;
+	    }
+	    elsif (defined($tof77{$basetype})) {
+		# Is this code correct?  It isn't for ints
 		$nstar_before = ($basetype =~ /\*/);
 		$basetype = $tof77{$basetype};
+		print "\tparm has defined type of $basetype\n" if $debug;
 		$nstar_after = ($basetype =~ /\*/);
 		if ($nstar_before != $nstar_after) {
 		    $star_count++;
@@ -961,7 +983,7 @@ sub print_special_decls {
 # Create mpif.h.in from mpi.h
 #
 
-open ( MPIFD, "<../../include/mpi.h.in" ) || die "Could not open mpi.h.in\n";
+open ( MPIFD, "<$prototype_file" ) || die "Could not open $prototype_file\n";
 #
 # First, find the values that we need
 while (<MPIFD>) {
@@ -985,132 +1007,112 @@ while (<MPIFD>) {
 }
 close (MPIFD);
 #
-$cchar = "C";
-open ( MPIFFD, ">mpif.h.in" ) || die "Could not open mpif.h.in\n";
+if ($write_mpif) {
 
-sub print_mpif_int {
-    my $key = $_[0];
-    my $value = $mpidef{$key};
-    # Remove any casts
-    print "Input value = $value\n" if $debug;
-    if ($value =~ /\(MPI/) {
-	$value =~ s/\(MPI_[A-Za-z0-9]*\s*\)//;
-	print "cast removal: $value\n" if $debug;
-    }
-    # Remove any surrounding ()
-    if ($value =~ /\(\s*[-a-fx0-9]*\)/) {
-	$value =~ s/\(\s*([-a-fx0-9]*)\s*\)/$1/;
-	print "paren removal: $value\n" if $debug;
-    }
-    # Convert hex to decimal
-    if ($value =~ /^0x[a-f\d]*/) {
-	$value = hex $value;
-	print "hex conversion: $value\n" if $debug;
-    }
-    print MPIFFD "       INTEGER $key\n";
-    print MPIFFD "       PARAMETER ($key=$value)\n";
-}
+    $cchar = "C";
+    open ( MPIFFD, ">mpif.h.in" ) || die "Could not open mpif.h.in\n";
 
-# Now, write out the file
-print MPIFFD "$cchar      DO NOT EDIT
+    
+    # Now, write out the file
+    print MPIFFD "$cchar      DO NOT EDIT
 $cchar       This file created by buildiface $arg_string\n";
-#
-# Status elements
-# FIXME: The offsets for the status elements are hardwired.  If they
-# change in mpi.h.in, they need to change here as well.
-print MPIFFD "       INTEGER MPI_SOURCE, MPI_TAG, MPI_ERROR\n";
-print MPIFFD "       PARAMETER (MPI_SOURCE=3,MPI_TAG=4,MPI_ERROR=5)\n";
-print MPIFFD "       INTEGER MPI_STATUS_SIZE\n";
-print MPIFFD "       PARAMETER (MPI_STATUS_SIZE=\@MPI_STATUS_SIZE\@)\n";
-# Temporary until configure handles these.  Define as arrays to keep
-# Fortran compilers from complaining excessively.
-print MPIFFD "       INTEGER MPI_STATUS_IGNORE(MPI_STATUS_SIZE)\n";
-print MPIFFD "       INTEGER MPI_STATUSES_IGNORE(MPI_STATUS_SIZE,1)\n";
+    #
+    # Status elements
+    # FIXME: The offsets for the status elements are hardwired.  If they
+    # change in mpi.h.in, they need to change here as well.
+    print MPIFFD "       INTEGER MPI_SOURCE, MPI_TAG, MPI_ERROR\n";
+    print MPIFFD "       PARAMETER (MPI_SOURCE=3,MPI_TAG=4,MPI_ERROR=5)\n";
+    print MPIFFD "       INTEGER MPI_STATUS_SIZE\n";
+    print MPIFFD "       PARAMETER (MPI_STATUS_SIZE=\@MPI_STATUS_SIZE\@)\n";
+    # Temporary until configure handles these.  Define as arrays to keep
+    # Fortran compilers from complaining excessively.
+    print MPIFFD "       INTEGER MPI_STATUS_IGNORE(MPI_STATUS_SIZE)\n";
+    print MPIFFD "       INTEGER MPI_STATUSES_IGNORE(MPI_STATUS_SIZE,1)\n";
 
-#
-# Error Classes
-print MPIFFD "       INTEGER MPI_SUCCESS\n";
-print MPIFFD "       PARAMETER (MPI_SUCCESS=0)\n";
-foreach $key (keys(%mpidef)) {
-    if ($key =~ /MPI_ERR_/) {
-	&print_mpif_int( $key );
+    #
+    # Error Classes
+    print MPIFFD "       INTEGER MPI_SUCCESS\n";
+    print MPIFFD "       PARAMETER (MPI_SUCCESS=0)\n";
+    foreach $key (keys(%mpidef)) {
+	if ($key =~ /MPI_ERR_/) {
+	    &print_mpif_int( $key );
+	}
     }
-}
-# Predefined error handlers
-foreach $key (ERRORS_ARE_FATAL, ERRORS_RETURN) {
-    &print_mpif_int( "MPI_$key" );
-}
-# Compare operations
-foreach $key (IDENT,CONGRUENT,SIMILAR,UNEQUAL) {
-    &print_mpif_int( "MPI_$key" );
-}
-# Collective operations
-foreach $key (MAX, MIN, SUM, PROD, LAND, BAND, LOR, BOR, LXOR, BXOR, MINLOC, MAXLOC, REPLACE ) {
-    &print_mpif_int( "MPI_$key" );
-}
-# Objects
-foreach $key ('COMM_WORLD', 'COMM_SELF', 'GROUP_EMPTY', 'COMM_NULL', 'WIN_NULL', 'FILE_NULL', 'GROUP_NULL', 'OP_NULL', 'DATATYPE_NULL', 'REQUEST_NULL', 'ERRHANDLER_NULL') {
-    &print_mpif_int( "MPI_$key" );
-}
-# Attributes
-foreach $key (TAG_UB, HOST, IO, WTIME_IS_GLOBAL, UNIVERSE, LASTUSEDCODE, APPNUM) {
-    &print_mpif_int( "MPI_$key" );
-} 
-# String sizes
-# Missing - max processor name!
-foreach $key (MAX_ERROR_STRING, MAX_NAME_STRING, MAX_PORT_NAME, MAX_OBJECT_NAME, MAX_INFO_KEY, MAX_INFO_VAL) {
-    &print_mpif_int( "MPI_$key" );
-}
-# predefined constants
-print MPIFFD "       INTEGER MPI_UNDEFINED, MPI_UNDEFINED_RANK\n";
-print MPIFFD "       PARAMETER (MPI_UNDEFINED=$mpidef{'MPI_UNDEFINED'})\n";
-# mpi_undefined_rank is defined as mpi-undefined
-print MPIFFD "       PARAMETER (MPI_UNDEFINED_RANK=$mpidef{'MPI_UNDEFINED'})\n";
-&print_mpif_int( "MPI_KEYVAL_INVALID" );
-foreach $key ('BSEND_OVERHEAD', 'PROC_NULL', 'ANY_SOURCE', 'ANY_TAG', 'ROOT') {
-    &print_mpif_int( "MPI_$key" );
-}
-#
-# Topology types
-foreach $key (GRAPH, CART) {
-    &print_mpif_int( "MPI_$key" );
-}
-#
-# version
-&print_mpif_int( "MPI_VERSION" );
-&print_mpif_int( "MPI_SUBVERSION" );
-#
-# Datatypes
-# These are determined and set at configure time
-foreach $key (COMPLEX, DOUBLE_COMPLEX, LOGICAL, REAL, DOUBLE_PRECISION, INTEGER, '2INTEGER', '2COMPLEX', '2DOUBLE_PRECISION', '2REAL', '2DOUBLE_COMPLEX', CHARACTER) {
-    print MPIFFD "       INTEGER MPI_$key\n";
-    print MPIFFD "       PARAMETER (MPI_$key=\@MPI_$key\@)\n";
-}
-# HACK!
-# Value of MPI_BYTE from top level configure!
-$mpidef{"MPI_BYTE"} = hex "0x4c000111";
-&print_mpif_int( "MPI_BYTE" );
-&print_mpif_int( "MPI_UB" );
-&print_mpif_int( "MPI_LB" );
-&print_mpif_int( "MPI_PACKED" );
+    # Predefined error handlers
+    foreach $key (ERRORS_ARE_FATAL, ERRORS_RETURN) {
+	&print_mpif_int( "MPI_$key" );
+    }
+    # Compare operations
+    foreach $key (IDENT,CONGRUENT,SIMILAR,UNEQUAL) {
+	&print_mpif_int( "MPI_$key" );
+    }
+    # Collective operations
+    foreach $key (MAX, MIN, SUM, PROD, LAND, BAND, LOR, BOR, LXOR, BXOR, MINLOC, MAXLOC, REPLACE ) {
+	&print_mpif_int( "MPI_$key" );
+    }
+    # Objects
+    foreach $key ('COMM_WORLD', 'COMM_SELF', 'GROUP_EMPTY', 'COMM_NULL', 'WIN_NULL', 'FILE_NULL', 'GROUP_NULL', 'OP_NULL', 'DATATYPE_NULL', 'REQUEST_NULL', 'ERRHANDLER_NULL') {
+	&print_mpif_int( "MPI_$key" );
+    }
+    # Attributes
+    foreach $key (TAG_UB, HOST, IO, WTIME_IS_GLOBAL, UNIVERSE, LASTUSEDCODE, APPNUM) {
+	&print_mpif_int( "MPI_$key" );
+    } 
+    # String sizes
+    # Missing - max processor name!
+    foreach $key (MAX_ERROR_STRING, MAX_NAME_STRING, MAX_PORT_NAME, MAX_OBJECT_NAME, MAX_INFO_KEY, MAX_INFO_VAL) {
+	&print_mpif_int( "MPI_$key" );
+    }
+    # predefined constants
+    print MPIFFD "       INTEGER MPI_UNDEFINED, MPI_UNDEFINED_RANK\n";
+    print MPIFFD "       PARAMETER (MPI_UNDEFINED=$mpidef{'MPI_UNDEFINED'})\n";
+    # mpi_undefined_rank is defined as mpi-undefined
+    print MPIFFD "       PARAMETER (MPI_UNDEFINED_RANK=$mpidef{'MPI_UNDEFINED'})\n";
+    &print_mpif_int( "MPI_KEYVAL_INVALID" );
+    foreach $key ('BSEND_OVERHEAD', 'PROC_NULL', 'ANY_SOURCE', 'ANY_TAG', 'ROOT') {
+	&print_mpif_int( "MPI_$key" );
+    }
+    #
+    # Topology types
+    foreach $key (GRAPH, CART) {
+	&print_mpif_int( "MPI_$key" );
+    }
+    #
+    # version
+    &print_mpif_int( "MPI_VERSION" );
+    &print_mpif_int( "MPI_SUBVERSION" );
+    #
+    # Datatypes
+    # These are determined and set at configure time
+    foreach $key (COMPLEX, DOUBLE_COMPLEX, LOGICAL, REAL, DOUBLE_PRECISION, INTEGER, '2INTEGER', '2COMPLEX', '2DOUBLE_PRECISION', '2REAL', '2DOUBLE_COMPLEX', CHARACTER) {
+	print MPIFFD "       INTEGER MPI_$key\n";
+	print MPIFFD "       PARAMETER (MPI_$key=\@MPI_$key\@)\n";
+    }
+    # HACK!
+    # Value of MPI_BYTE from top level configure!
+    $mpidef{"MPI_BYTE"} = hex "0x4c000111";
+    &print_mpif_int( "MPI_BYTE" );
+    &print_mpif_int( "MPI_UB" );
+    &print_mpif_int( "MPI_LB" );
+    &print_mpif_int( "MPI_PACKED" );
 
-# Optional types
-foreach $key (INTEGER1, INTEGER2, INTEGER4, INTEGER8, INTEGER16,
-              REAL4, REAL8, REAL16, COMPLEX8, COMPLEX16, COMPLEX32) {
-    print MPIFFD "       INTEGER MPI_$key\n";
-    print MPIFFD "       PARAMETER (MPI_$key=\@F77_$key\@)\n";
-}
-#
-# Fortran 90 types
-print MPIFFD "       INTEGER MPI_ADDRESS_KIND, MPI_OFFSET_KIND\n";
-print MPIFFD "       PARAMETER (MPI_ADDRESS_KIND=\@ADDRESS_KIND\@)\n";
-print MPIFFD "       PARAMETER (MPI_OFFSET_KIND=\@OFFSET_KIND\@)\n";
-# 
-# Finally, the special symbols
-print MPIFFD "       INTEGER MPI_BOTTOM\n";
+    # Optional types
+    foreach $key (INTEGER1, INTEGER2, INTEGER4, INTEGER8, INTEGER16,
+		  REAL4, REAL8, REAL16, COMPLEX8, COMPLEX16, COMPLEX32) {
+	print MPIFFD "       INTEGER MPI_$key\n";
+	print MPIFFD "       PARAMETER (MPI_$key=\@F77_$key\@)\n";
+    }
+    #
+    # Fortran 90 types
+    print MPIFFD "       INTEGER MPI_ADDRESS_KIND, MPI_OFFSET_KIND\n";
+    print MPIFFD "       PARAMETER (MPI_ADDRESS_KIND=\@ADDRESS_KIND\@)\n";
+    print MPIFFD "       PARAMETER (MPI_OFFSET_KIND=\@OFFSET_KIND\@)\n";
+    # 
+    # Finally, the special symbols
+    print MPIFFD "       INTEGER MPI_BOTTOM\n";
 
-close( MPIFFD );
-
+    close( MPIFFD );
+} # if write_mpif
 
 #
 # Look through $args for parameter names (foo\s\s*name)
@@ -1291,6 +1293,30 @@ void *MPIR_F_MPI_BOTTOM = 0;
 
 
 }
+
+sub print_mpif_int {
+    my $key = $_[0];
+    my $value = $mpidef{$key};
+    # Remove any casts
+    print "Input value for $key = $value\n" if $debug;
+    if ($value =~ /\(MPI/) {
+	$value =~ s/\(MPI_[A-Za-z0-9]*\s*\)//;
+	print "cast removal: $value\n" if $debug;
+    }
+    # Remove any surrounding ()
+    if ($value =~ /\(\s*[-a-fx0-9]*\)/) {
+	$value =~ s/\(\s*([-a-fx0-9]*)\s*\)/$1/;
+	print "paren removal: $value\n" if $debug;
+    }
+    # Convert hex to decimal
+    if ($value =~ /^0x[a-f\d]*/) {
+	$value = hex $value;
+	print "hex conversion: $value\n" if $debug;
+    }
+    print MPIFFD "       INTEGER $key\n";
+    print MPIFFD "       PARAMETER ($key=$value)\n";
+}
+
 # ----------------------------------------------------------------------------
 # Check for a working autoconf
 #

@@ -743,6 +743,7 @@ AC_SUBST(MPI_LONG_DOUBLE_INT)
 # Export the basic C types so that the Fortran system can use them
 export MPI_CHAR
 export MPI_SHORT
+export MPI_INT
 export MPI_LONG
 export MPI_LONG_LONG
 export MPI_FLOAT

@@ -507,8 +507,8 @@ elif test $len_double -le 15 ; then
          esac
     len_double="0$char"
 elif test $len_double -le 31 ; then
-         len_double=`expr $len_double - 16`
-         len_double="1$len_double"
+    len_double=`expr $len_double - 16`
+    len_double="1$len_double"
 else
     AC_MSG_ERROR([Double Precision type sizes greater than 31 are not supported])
 fi
@@ -539,8 +539,12 @@ elif test $len_doublecplx -le 15 ; then
          esac
     len_doublecplx="0$char"
 elif test $len_doublecplx -le 31 ; then
-         len_doublecplx=`expr $len_doublecplx - 16`
-         len_doublecplx="1$len_double"
+    len_doublecplx=`expr $len_doublecplx - 16`
+    if test "$len_doubldcplx" = 0 ; then
+        len_doublecplx="10";
+    else
+        len_doublecplx="1$len_doublecplx";
+    fi        
 else
     AC_MSG_ERROR([Double Complex type sizes greater than 31 are not supported])
 fi
@@ -556,7 +560,7 @@ AC_SUBST(MPI_2COMPLEX)
 # Temporary for the vast majority of systems that use 4 byte reals and
 # 8 byte doubles
 # Lengths at this point are in hex, hench "10" = 10 base 16 = 16 base 10.
-if test "$len_cplx" = "08" ; then
+if test "$len_double" = "08" ; then
     F77_COMPLEX8=$MPI_COMPLEX
 fi
 if test "$len_doublecplx" = "10" ; then
@@ -708,13 +712,16 @@ for len in 4 8 16 ; do
         AC_MSG_RESULT([unavailable])
     fi
 done
-
 # We must convert all hex values to decimal (!)
 for var in INTEGER1 INTEGER2 INTEGER4 INTEGER8 INTEGER16 \
     REAL4 REAL8 REAL16 COMPLEX8 COMPLEX16 COMPLEX32 ; do  
     fullvar="F77_$var"
     eval fullvarvalue=\$$fullvar
-    #echo "$fullvar = $fullvarvalue"
+    if test "$fullvarvalue" = 0 -o -z "$fullvarvalue" ; then 
+        eval $fullvar=MPI_DATATYPE_NULL
+        continue
+    fi
+    echo "$fullvar = $fullvarvalue"
     value=0
     for pos in 3 4 5 6 7 8 9 10 ; do
         char=`expr substr $fullvarvalue $pos 1`
