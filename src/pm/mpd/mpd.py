@@ -244,8 +244,9 @@ def _handle_console_input():
     if msg['cmd'] == 'mpdrun':
         # permit anyone to run but use THEIR own username
         #   thus, override any username specified by the user
-        msg['username'] = g.activeSockets[g.conSocket].realUsername
-        msg['users'] = { (0,msg['nprocs']-1) : g.activeSockets[g.conSocket].realUsername }
+	if g.activeSockets[g.conSocket].realUsername != 'root':
+            msg['username'] = g.activeSockets[g.conSocket].realUsername
+            msg['users'] = { (0,msg['nprocs']-1) : g.activeSockets[g.conSocket].realUsername }
         #
         msg['mpdid_mpdrun_start'] = g.myId
         msg['nstarted_on_this_loop'] = 0
@@ -316,7 +317,8 @@ def _handle_console_input():
     elif msg['cmd'] == 'mpdkilljob':
         # permit anyone to kill but use THEIR own username
         #   thus, override any username specified by the user
-        msg['username'] = g.activeSockets[g.conSocket].realUsername
+	if g.activeSockets[g.conSocket].realUsername != 'root':
+            msg['username'] = g.activeSockets[g.conSocket].realUsername
         msg['src'] = g.myId
         msg['handled'] = 0
         if msg['mpdid'] == '':
@@ -326,7 +328,8 @@ def _handle_console_input():
     elif msg['cmd'] == 'mpdsigjob':
         # permit anyone to sig but use THEIR own username
         #   thus, override any username specified by the user
-        msg['username'] = g.activeSockets[g.conSocket].realUsername
+	if g.activeSockets[g.conSocket].realUsername != 'root':
+            msg['username'] = g.activeSockets[g.conSocket].realUsername
         msg['src'] = g.myId
         msg['handled'] = 0
         if msg['mpdid'] == '':
