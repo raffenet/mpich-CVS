@@ -249,15 +249,20 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	strcpy(fd->hints->cb_config_list, ADIOI_CB_CONFIG_LIST_DFLT);
     }
 
-    ADIOI_Free(value);
-
     if ((fd->file_system == ADIO_PIOFS) || (fd->file_system == ADIO_PVFS)) {
     /* no data sieving for writes in PIOFS and PVFS, because they do not
        support file locking */
-	MPI_Info_delete(info, "ind_wr_buffer_size");
+       	MPI_Info_get(info, "ind_wr_buffer_size", MPI_MAX_INFO_VAL,
+		     value, &flag);
+	if (flag) {
+	    /* get rid of this value if it is set */
+	    MPI_Info_delete(info, "ind_wr_buffer_size");
+	}
 	fd->hints->ind_wr_buffer_size = -1;
 	fd->hints->ds_write = ADIOI_HINT_DISABLE;
     }
+
+    ADIOI_Free(value);
 
     *error_code = MPI_SUCCESS;
 }
