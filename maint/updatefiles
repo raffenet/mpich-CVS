@@ -476,7 +476,7 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 		     chmod a+x $dir/configure
 	        fi
 	        continue
-	    elif [ $dir = "./src/mpe" ] ; then
+	    elif [ $dir = "./src/mpe2" ] ; then
 		# Use acIncDirFlag to ensure that a consistent
 		# choice of autoconf is made by systems that 
 		# support 2.1x and 2.57+

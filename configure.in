@@ -575,15 +575,15 @@ AC_SUBST(pm_name)
 AC_SUBST(other_pm_names)
 
 if test $with_mpe != no ; then
-    if test ! -d $use_top_srcdir/src/mpe ; then
+    if test ! -d $use_top_srcdir/src/mpe2 ; then
         if test $with_mpe = yes ; then
 	    # No warning message on the default
             AC_MSG_WARN([No MPE directory available])
         fi
     else
-        subsystems="$subsystems src/mpe"
-	other_install_dirs="$other_install_dirs src/mpe"
-	mpe_dir=mpe
+        subsystems="$subsystems src/mpe2"
+	other_install_dirs="$other_install_dirs src/mpe2"
+	mpe_dir=mpe2
 	# Make sure that MPE knows that we're building from MPICH
         # (similar to ROMIO)
         FROM_MPICH2=yes
