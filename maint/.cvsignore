@@ -2,6 +2,7 @@ genstates
 configure
 simplemake
 checkbuilds
+findfixme
 getstates
 getcoverage
 showsizes
