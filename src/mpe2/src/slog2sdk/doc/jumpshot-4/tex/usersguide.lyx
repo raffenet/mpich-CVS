@@ -1,0 +1,5004 @@
+#LyX 1.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 221
+\textclass book
+\begin_preamble
+\usepackage[bookmarksopen=true]{hyperref}
+\end_preamble
+\language english
+\inputencoding auto
+\fontscheme default
+\graphics default
+\paperfontsize 12
+\spacing single 
+\papersize Default
+\paperpackage a4
+\use_geometry 1
+\use_amsmath 0
+\use_natbib 0
+\use_numerical_citations 0
+\paperorientation portrait
+\leftmargin 0.5in
+\topmargin 0.5in
+\rightmargin 0.5in
+\bottommargin 0.5in
+\secnumdepth 4
+\tocdepth 4
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\quotes_times 2
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+
+\layout Title
+
+Jumpshot-4's User's Guide
+\layout Author
+
+Anthony Chan
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+chan@mcs.anl.gov
+\end_inset 
+
+, David Ashton
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+ashton@mcs.anl.gov
+\end_inset 
+
+, Rusty Lusk
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+lusk@mcs.anl.gov
+\end_inset 
+
+, William Gropp
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+gropp@mcs.anl.gov
+\end_inset 
+
+
+\newline 
+Mathematics and Computer Science Divsion, Argonne National Laboratory
+\layout Standard
+
+
+\begin_inset LatexCommand \tableofcontents{}
+
+\end_inset 
+
+
+\layout Chapter
+
+Abstract
+\layout Standard
+
+Jumpshot-4 is the visualization program for the improved scalable logfile
+ format, SLOG-2, which provides a hierarchical structure to store a large
+ number of drawable objects in a very scalable and efficient way for visualizati
+on.
+ The new scalable logfile format allows the display program to provide functiona
+lities never made possible before.
+ Level-of-detail support through preview drawables which provides high-level
+ abstraction of the details without reading in hugh amount of data into
+ the graphical display engine.
+ New Jumpshot allows seamless scrolling from the begining till the end of
+ logfile at any zoom-level.
+ In addition, new functionlities like dragged-zoom, grasp and scroll, instant
+ zoom in/out, easy vertical expansion of timeline, cut and paste of timelines
+ are available as well.
+ A new search and scan facility is provided to locate the hard-to-find objects
+ in very large logfile.
+ The new legend table makes manipulation of the different category of objects
+ easy.
+ The new viewer also attempts to conform to the standard Look and Feel that
+ is expected by most users.
+\layout Chapter
+
+Introduction to SLOG-2 and Jumpshot-4
+\layout Section
+
+Relationship between SLOG-2 and Jumpshot-4
+\layout Standard
+
+The main visual component in the SLOG-2 visualization program, Jumpshot-4,
+ is the 
+\emph on 
+timeline canvas
+\emph default 
+ which is zoomable and scrollable in both horizontal and vertical axes.
+ The timeline canvas can be thought of as a 
+\noun on 
+timeline
+\noun default 
+ vs 
+\noun on 
+time
+\noun default 
+ coordinate system.
+ Each point on the canvas is identified by two numbers, a timestamp and
+ a timeline ID.
+ The canvas is where the graphical objects contained in SLOG-2 file are
+ being drawn on.
+ These objects are called 
+\emph on 
+Drawables.
+ 
+\emph default 
+There are 2 kinds of drawable objects.
+ They are 
+\emph on 
+Primitive
+\emph default 
+ and 
+\emph on 
+Composite
+\emph default 
+ drawables.
+ The primitive drawables are the simplest drawables and are considered to
+ be basic elements of slog2 file.
+ They are categoried based on their topological structures.
+ Currently, there are 3 topologies supported in SLOG-2.
+ They are 
+\emph on 
+State
+\emph default 
+, 
+\emph on 
+Arrow
+\emph default 
+ and 
+\emph on 
+Event
+\emph default 
+.
+ Both state and arrow are drawables identified by 2 points in the timeline
+ canvas, i.e.
+ a pair of (timestamp, timelineID) coordinates.
+ State's start timeline ID is the same as its final timeline ID, but arrow
+ is different from state in the way that arrow's start and final timeline
+ IDs may be different.
+ Event consists of only 1 point in the timeline canvas, i.e.
+ it has only 1 timestamp and 1 timeline ID.
+ Composite drawable is more complicated and is constructed by a collection
+ of primitive drawables
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+In general, composite drawable can be seen as composed of other simpler
+ composite drawables.
+\end_inset 
+
+.
+ In order to centralize the properties of drawables, all the displayable
+ attributes of a drawable is stored in its corresponding 
+\emph on 
+Category 
+\emph default 
+object, e.g.
+ color, legend name, topology and other shared description of a drawable.
+ Both the category and drawable definitions are stored in the SLOG-2 file.
+ These definition are interpreted and displayed by the display program,
+ Jumpshot-4.
+\layout Standard
+
+
+\begin_inset Float figure
+placement h
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/legend_popup.png
+	lyxscale 70
+	clip
+	special scale=0.7
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:legend_popup}
+
+\end_inset 
+
+ A typical Legend window when slog2 file is first loaded into Jumpshot-4.
+\end_inset 
+
+
+\layout Section
+
+Understanding the Preview Drawable
+\layout Standard
+
+Preview drawable is created as a result of the renormalization process of
+ the SLOG-2 format.
+ The renormalized object provides a high-level description of what is going
+ on within the (timeline vs time) region where the prevew object spans.
+ Preview drawable is designed to amalgamate real drawables of same topological
+ type, e.g.
+ preview state amalgamates only states.
+ So preview drawable is always a primitive drawable in the renormalization
+ scheme.
+ There are currently 3 different types of preview drawables: 
+\emph on 
+Preview_State, Preview_Arrow, and Preview_Event.
+
+\emph default 
+ Therefore one preview drawable is for each supported topology of primitive
+ drawable.
+ The three preview categories will always show up in the Legend window of
+ the display program as shown in Figure 
+\begin_inset LatexCommand \ref{fig:legend_popup}
+
+\end_inset 
+
+ disregarding of the presence of preview drawables in the slog2 file.
+ The Legend window contains a table of legends.
+ Each legend provides an interface to the user modifiable part of the correspond
+ing category that is relevant to the display program.
+ 
+\layout Standard
+
+Figures 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_0}
+
+\end_inset 
+
+ to 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_4}
+
+\end_inset 
+
+ illustrate the visual transition from preview drawable to its detailed
+ content of the first 5 processes of a 16 processes MPI slog2 file when
+ the timeline canvas is being zooming-in.
+ The sequence of figures is generated by zooming in a marked region in each
+ figure in the sequence.
+ The marked region is shaded and is bounded by a pair of white lines.
+ A magnifying glass with plus sign in the center is the cursor that marks
+ the end of the zoom region.
+ Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_0}
+
+\end_inset 
+
+ is a typical timeline canvas where most of real drawables are still buried
+ by their preview drawables.
+ In the figure, there are preview arrows, preview states and some long running
+ real states.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/timeline_preview_detail_0.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:timeline_preview_detail_0}
+
+\end_inset 
+
+ A typical zoom-out view of preview states and arrows.
+\end_inset 
+
+
+\layout Standard
+\noindent 
+Each thick yellow line is a 
+\emph on 
+preview arrow
+\emph default 
+ which represents a collection of arrows between its 2 ending timelines.
+ The start and final timestamps of preview arrow are the extremes of all
+ real arrows amalgamated inside the preview object.
+ Notice that the beginning or ending timestamp of a preview arrow does not
+ necessarily mean that there is an arrow starting or ending at that time,
+ it just indicates that there are arrows starting and ending within these
+ 2 times and between the 2 marked timelines.
+\layout Standard
+
+The rectangle that has horizontal strips of colors is 
+\emph on 
+preview state
+\emph default 
+.
+ The different colors inside a preview state represent the various categories
+ of real states that are amalgamated within the time range of the preview
+ state.
+ Depending on the PREVIEW_STATE_DISPLAY option selected in Preference window
+ as shown in Figure 
+\begin_inset LatexCommand \ref{fig:preference_pview_state}
+
+\end_inset 
+
+ and in Table 
+\begin_inset LatexCommand \ref{table:preference_data2}
+
+\end_inset 
+
+, the distribution and the heights of the strips can be changed as well.
+ The default display option for preview state is DECRE_WEIGHT_ORDER.
+ In this option, the strips are arranged in decreasing height order.
+ The tallest strip at the bottom of the preview state corresponds to the
+ category of states that contribute cumulatively the longest duration in
+ specified time range.
+ This visual representation aims to tell what state categories could be
+ within the span of the preview state and which state category contributes
+ the most statistically to the specified time range, so user can decide
+ where to zoom in to find out more details.
+ In a sense, the preview states provide a global coarse-grain summary of
+ what is going on without losing as much details as the preview found in
+ older Jumpshot, i.e.
+ Jumpshot-3.
+ Compared with Jumpshot-3's preview which has averaged out the timeline
+ ID information, the new preview states retain the timeline ID information
+ and that may lead to early detection of load balancing problem before zooming
+ into seeing all the real states.
+ 
+\layout Standard
+\noindent 
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/timeline_preview_detail_1.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:timeline_preview_detail_1}
+
+\end_inset 
+
+ The next zoom-in view of Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_0}
+
+\end_inset 
+
+.
+\end_inset 
+
+
+\layout Standard
+
+Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_1}
+
+\end_inset 
+
+ shows a more zoom-in view of the region marked by the pair of white lines
+ in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_0}
+
+\end_inset 
+
+.
+ As shown in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_1}
+
+\end_inset 
+
+, some of the preview arrows have disappeared and are replaced by real arrows,
+ the white arrow.
+ Also, some of the stripped preview states have split into several preview
+ states of one single color, i.e.
+ the white and grey states, to show more detailed distribution.
+ Another important feature of preview state becomes apparent in the figures:
+ Preview states are properly nested within real states.
+ In the most expanded Y-axis label view, preview state is always on top
+ of other nested states
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+Only in slog2 file that has multiple ViewMaps and where timelines can be
+ collapsed, i.e.
+ AIX's UTE generated slog2 file, preview state can be nested with other
+ preview state in collapsed Y-axis label view.
+\end_inset 
+
+, i.e.
+ states that enclose the preview state are alway real states.
+ A good visual example is shown in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_1}
+
+\end_inset 
+
+ where all the white, turquoise and grey preview states
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+when a preview state contains only real states of one single category, it
+ will appear like a real state in the timeline canvas.
+ The only way to tell the difference is to bring up the Drawable Info Box
+ by right clicking on the state.
+\end_inset 
+
+ are sitting on top of the long orange and dark royal blue states.
+ This indicates that the white, turquoise and grey real states will be all
+ nested inside the long running orange and dark royal blue states.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/timeline_preview_detail_2.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:timeline_preview_detail_2}
+
+\end_inset 
+
+ The next zoom-in view of Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_1}
+
+\end_inset 
+
+.
+\end_inset 
+
+
+\layout Standard
+
+Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_2}
+
+\end_inset 
+
+ is the zoom-in view of the region marked by the pair of white lines in
+ Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_1}
+
+\end_inset 
+
+.
+ Comparing these 2 figures, all the preview drawables have disappeared and
+ are replaced by real drawables.
+ Each white preview state are repleaced by hundreds of white real states,
+ the same is also true for the grey preview states that sit to the right
+ of the turquoise states
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+In order to speed up grahics performance of the display program, an aggressive
+ algorithm has been employed to eliminate drawing states that are closely
+ packed together within the nearest neighboring pixels.
+ Together with the fact that the number of pixels available is less than
+ the number of non-overlap states in the region, the number of the real
+ states may sometimes not appear as numerous as the Drawable Info Box of
+ preview state indicates.
+ In that case, a further zoom in will be needed to confirm the case as shown
+ in Fig.
+ 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_3}
+
+\end_inset 
+
+.
+\end_inset 
+
+.
+ The preview arrows are all replaced by the real arrows.
+ It becomes apparent that the white lines marked region in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_1}
+
+\end_inset 
+
+ provides a good description of what is going on in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_2}
+
+\end_inset 
+
+ but at the same time it reduces the number of drawables drawn on the canvas
+ by a factor of 100.
+ Another way of seeing this benefit is to find out the exact number of real
+ drawables amalgamated by the preview objects within the zoomed region.
+ This can be achieved by right clicking on the preview drawable and the
+ result is shown in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_infobox_preview_state}
+
+\end_inset 
+
+.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/timeline_preview_detail_3.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:timeline_preview_detail_3}
+
+\end_inset 
+
+ The next zoom-in view of Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_2}
+
+\end_inset 
+
+.
+\end_inset 
+
+
+\layout Standard
+
+Further zooming into the white lines marked region in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_2}
+
+\end_inset 
+
+ enlarges the real drawables that are displayed in the figure.
+ The enlarged view is shown in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_3}
+
+\end_inset 
+
+.
+ The densely packed states and arrows become more distinguishable.
+ Another zooming in the whit lines marked region in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_3}
+
+\end_inset 
+
+ enlarges the real drawables into easily separable objects as shown in Figure
+ 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_4}
+
+\end_inset 
+
+.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/timeline_preview_detail_4.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:timeline_preview_detail_4}
+
+\end_inset 
+
+ The next zoom-in view of Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_3}
+
+\end_inset 
+
+.
+\end_inset 
+
+
+\layout Chapter
+
+Graphical User Interface
+\layout Section
+
+Main Window
+\layout Standard
+
+
+\begin_inset Float figure
+placement h
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/main.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:main}
+
+\end_inset 
+
+ The main control window of Jumpshot-4.
+\end_inset 
+
+
+\layout Standard
+
+The first window that pops up when inovking Jumpshot-4 is called Main window
+ as shown in Figure
+\begin_inset LatexCommand \ref{fig:main}
+
+\end_inset 
+
+.
+ The buttons shown in toolbar are shortcuts to the sub menu items in the
+ top menubar.
+ The function of each of these buttons is listed in the Table 
+\begin_inset LatexCommand \ref{table:main_toolbar}
+
+\end_inset 
+
+.
+ There are 2 textfields that display crucial information about the logfile
+ being processed.
+ The textfield which is titled 
+\emph on 
+LogName
+\emph default 
+ displays the pathname of the SLOG-2 file being processed.
+ The combobox which is titled 
+\emph on 
+ViewMap
+\emph default 
+ lists all the available ViewMaps in the logfile.
+ Currently, both CLOG
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+a low-overhead native trace format from MPE.
+\end_inset 
+
+ and RLOG
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+an internal MPICH2 profiling format
+\end_inset 
+
+ converted SLOG-2 file contains one ViewMaps, it is called the Identity
+ Map.
+ Only IBM's UTE trace converted SLOG-2 file contains multiple ViewMaps.
+\layout Standard
+
+
+\begin_inset Float table
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset  Tabular
+<lyxtabular version="3" rows="7" columns="3">
+<features islongtable="true">
+<column alignment="center" valignment="top" leftline="true" width="0(null)">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="0(null)">
+<column alignment="center" valignment="top" rightline="true" width="0(null)">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Icon
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Description
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Function
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Open24.gif
+	clip
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+File Selection 
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+display a File Chooser dialog to select logfile to be processed
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Properties24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Show Legend Window
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+display the Legend window of the selected logfile if it is hidden
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/New24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Show Timeline Window
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+display the Timeline window of the selected logfile if it is hidden
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Preferences24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Edit Preferences
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+display the Preference window that adjusts Jumpshot's properties
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Help24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Show User's Manual
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+show the User's Manual of this program
+\end_inset 
+</cell>
+</row>
+<row bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Information24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Show FAQs
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+show the FAQs of this program
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{table:main_toolbar}
+
+\end_inset 
+
+ Functions of the toolbar buttons
+\end_inset 
+
+
+\layout Section
+
+Legend Window
+\layout Standard
+
+
+\begin_inset Float table
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset  Tabular
+<lyxtabular version="3" rows="5" columns="4">
+<features islongtable="true">
+<column alignment="center" valignment="top" leftline="true" width="0(null)">
+<column alignment="center" valignment="top" leftline="true" width="0(null)">
+<column alignment="center" valignment="top" leftline="true" width="2in">
+<column alignment="center" valignment="center" leftline="true" rightline="true" width="2in">
+<row topline="true" bottomline="true">
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Icon
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Description
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Left Mouse Click on Column Cell
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Right Mouse Click on Column Cell or Left Mouse Click on Column Title
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/legend_topo.png
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Topology
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Pick new Color (Figure 
+\begin_inset LatexCommand \ref{fig:legend_color_chooser}
+
+\end_inset 
+
+)
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+None
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/legend_name.png
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Name
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Edit Name
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Sort Order menu (Figure 
+\begin_inset LatexCommand \ref{fig:legend_sort_order}
+
+\end_inset 
+
+)
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/legend_v.png
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Visibility
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Check or Uncheck
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Checkbox Operations Menu (Figure 
+\begin_inset LatexCommand \ref{fig:legend_checkbox_ops}
+
+\end_inset 
+
+)
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/legend_s.png
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Searchability
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Check or Uncheck
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Checkbox Operations Menu (Figure 
+\begin_inset LatexCommand \ref{fig:legend_checkbox_ops}
+
+\end_inset 
+
+)
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{table:legend_column_ops}
+
+\end_inset 
+
+ Operations on the Legend window's columns.
+\end_inset 
+
+
+\layout Standard
+
+As soon as a SLOG-2 file is selected in Main window, the Legend window like
+ the one shown in Figure 
+\begin_inset LatexCommand \ref{fig:legend_popup}
+
+\end_inset 
+
+ will be displayed.
+ The Legend window contains mainly the 4 columns legend table.
+ The 4 columns are labeled as 
+\emph on 
+Topo, Name, V 
+\emph default 
+and 
+\emph on 
+S
+\emph default 
+ as in Table 
+\begin_inset LatexCommand \ref{table:legend_column_ops}
+
+\end_inset 
+
+.
+ Table 
+\begin_inset LatexCommand \ref{table:legend_column_ops}
+
+\end_inset 
+
+ also lists out all defined mouse operations that are provided in each column.
+ The operations are left mouse clicking on the column title icon and on
+ the column cell as well as right mouse clicking in any column cell.
+ 
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/legend_color_chooser.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:legend_color_chooser}
+
+\end_inset 
+
+ Color Chooser Dialog for column Category Topology
+\end_inset 
+
+
+\layout Standard
+
+Figure 
+\begin_inset LatexCommand \ref{fig:legend_color_chooser}
+
+\end_inset 
+
+ is the Color Chooser dialog that will pop up when one of the icon buttons
+ in column Topo is pressed.
+ The color editor provides 3 different ways of choosing a new color.
+ After selecting a new color from the dialog, the new color will be used
+ to update the icon button.
+ The update won't be carried out in the timeline canvas automatically, explicit
+ screen redraw is needed.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/legend_sort_menu.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:legend_sort_order}
+
+\end_inset 
+
+ Sort Order operation menu for the column Category Name in the Legend window.
+\end_inset 
+
+
+\layout Standard
+
+Figure 
+\begin_inset LatexCommand \ref{fig:legend_sort_order}
+
+\end_inset 
+
+ shows the popup dialog box either when the title icon of column Name is
+ pressed or when right mouse button is clicked somewhere in the column.
+ There are altogether 6 different sort orders.
+ The first order in the list is called 
+\emph on 
+Creation Order
+\emph default 
+ which refers to the category order is stored in slog2 file when it is being
+ created.
+ The 4 alphabetical ordering has a hidden sort order that is not mentioned
+ in their names.
+ This hidden order is called 
+\emph on 
+Preview Order
+\emph default 
+ which puts the preview drawable category before all the real drawable categorie
+s of the same topology.
+ The word 
+\emph on 
+Topo Order
+\emph default 
+ refers to topologyical order.
+ Taking altogether, 
+\begin_inset Quotes eld
+\end_inset 
+
+Case Sensitive Topo Order
+\begin_inset Quotes erd
+\end_inset 
+
+ means first topological order, preview order, then case sensitive alphabetical
+ order.
+ The various orderings serve to facilitate the continuous selection of the
+ category rows in the legend table.
+ 
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/legend_checkbox_menu.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:legend_checkbox_ops}
+
+\end_inset 
+
+ Checkbox Operation menu for column Category Visibility and Searchability
+ 
+\end_inset 
+
+
+\layout Standard
+
+Figure 
+\begin_inset LatexCommand \ref{fig:legend_checkbox_ops}
+
+\end_inset 
+
+ shows a popup dialog box when the title icon of column V (Visibililty)
+ or S (Searchability) is pressed or when right mouse button is clicked somewhere
+ in either columns.
+ The rule of selection in the legend table follows the standard practice
+ of other graphical user interfaces as in the Table 
+\begin_inset LatexCommand \ref{table:selection_rules}
+
+\end_inset 
+
+.
+ Together with this standard selection rules, the operations provided in
+ checkbox operation menu allow easy enabling and disabling of visibility
+ as well as searchability checkboxes.
+\layout Standard
+
+
+\begin_inset Float table
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset  Tabular
+<lyxtabular version="3" rows="5" columns="2">
+<features islongtable="true">
+<column alignment="center" valignment="top" leftline="true" width="0(null)">
+<column alignment="center" valignment="center" leftline="true" rightline="true" width="4in">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Left Mouse Operation
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Action
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\noun on 
+Click
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\emph on 
+Click
+\emph default 
+ on an object deselects any existing selection and selects the object.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\noun on 
+Control-Click
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\emph on 
+Control-click
+\emph default 
+ on an object toggles its selection without affecting the selection of any
+ other objects
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\noun on 
+Shift-Click
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\emph on 
+Shift-click
+\emph default 
+ on an object extends the selection from the most recently selected object
+ to the current object.
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\noun on 
+Dragging 
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\emph on 
+Dragging
+\emph default 
+ (that is, moving the mouse while holding down left mouse button) through
+ a range of 
+\noun on 
+text
+\noun default 
+ deselects any existing selection and selects the range of text.
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{table:selection_rules}
+
+\end_inset 
+
+ Standard Selection Rules.
+\end_inset 
+
+
+\layout Standard
+
+
+\noun on 
+NOTE: 
+\noun default 
+Any changes done in the Legend window that alters the appearance of drawables
+ won't be automatically updated in the timeline canvas until the CanvasReDraw
+ button in the Timeline window is pressed.
+\layout Section
+
+Timeline Window
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/timeline_popup.png
+	lyxscale 70
+	special angle=90,scale=0.75
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:timeline_popup}
+
+\end_inset 
+
+ The initial display of the Timeline window of a 506 MB 16 processes slog2
+ file with default preview resolution.
+\end_inset 
+
+
+\layout Standard
+
+Figure 
+\begin_inset LatexCommand \ref{fig:timeline_popup}
+
+\end_inset 
+
+ is the initial display of the Timeline window of a big 16 timelines slog2
+ file.
+ Several concealable and removable components are used to create the Timeline
+ window.
+ In the center of the window, there is the 
+\emph on 
+timeline canvas
+\emph default 
+.
+ Directly on top of the timeline canvas is the 
+\emph on 
+time display panel
+\emph default 
+.
+ On top of the display panel, there is the removable
+\emph on 
+ toolbar
+\emph default 
+.
+ To the left of the canvas is the concealable
+\emph on 
+ Y-axis label panel
+\emph default 
+.
+ To the right of the canvas is the concealable
+\emph on 
+ row adjustment panel
+\emph default 
+.
+ At the bottom of the canvas is the 
+\emph on 
+time ruler canvas
+\emph default 
+.
+ Both Y-axis label and the row adjustment panels can be put out of sight
+ by clicking the tabs in the dividers or dragging the dividers.
+ The top toolbar can be dragged out of the window or be repositioned in
+ the other 3 sides of the window.
+ After removal of the toolbar and hidding of the left and right panels,
+ the bare minimal Timeline window looks like the one shown in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_0}
+
+\end_inset 
+
+.
+ 
+\layout Subsection
+
+Zoomable and Scrollable Canvas
+\begin_inset LatexCommand \label{sub:Zoomable-and-Scrollable}
+
+\end_inset 
+
+
+\layout Standard
+
+When viewing a big slog2 file like the one shown in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_popup}
+
+\end_inset 
+
+, the whole timeline canvas is filled up with preview drawables.
+ Though it provides a reasonable description at high level, i.e.
+ one still gets a vague sense where the long and/or frequent drawables are.
+ Nevertheless, it is pretty obscure to know the details.
+ Hence, a well-designed zoomable and scrollable user interface (ZSUI) of
+ the timeline canvas becomes an absolute necessity to facilitate the location
+ of events of interest.
+ The ZSUI of the timeline canvas includes many parts and operations.
+ But the most handy ones are 
+\emph on 
+dragged zoom
+\emph default 
+, 
+\emph on 
+grasp and scroll
+\emph default 
+ and 
+\emph on 
+instant zoom in and out.
+\emph default 
+All these features are supported by the Zoomable and Scrollable canvas.
+ There are 2 such canvases in the Timeline window.
+ They are 
+\emph on 
+Timeline Canvas
+\emph default 
+ and 
+\emph on 
+Time Ruler Canvas
+\emph default 
+.
+ In these canvases, left mouse clicking can be alternated in 2 different
+ modes by a pair of toggled buttons as shown in Figures 
+\begin_inset LatexCommand \ref{fig:mouse_zoom_mode}
+
+\end_inset 
+
+ and 
+\begin_inset LatexCommand \ref{fig:mouse_hand_mode}
+
+\end_inset 
+
+.
+ They are called 
+\emph on 
+Zoom
+\emph default 
+ and 
+\emph on 
+Hand 
+\emph default 
+modes.
+ Each canvas in the Timeline window has its own set of toggled buttons that
+ determine its left mouse click behavior.
+ The timeline canvas's toggled buttons are located above the canvas and
+ sit at the end of the time display panel.
+ The time ruler's toggled buttons are located at the bottom of row adjustment
+ panel, i.e.
+ sit right next to the end of the ruler.
+ By default, the timeline canvas is in zoom mode and the time ruler canvas
+ is in hand mode, so user can do zooming when the cursor is in the timeline
+ canvas and can scroll easily by simply moving the cursor over the ruler
+ canvas.
+ Also, the scrolling can be done by simply dragging on scrollbar's knob,
+ clicking the end buttons and in the space between the knob and scrollbar's
+ end buttons.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/mouse_zoom_mode.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:mouse_zoom_mode}
+
+\end_inset 
+
+ Canvas's left mouse click is in zoom mode.
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/mouse_hand_mode.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:mouse_hand_mode}
+
+\end_inset 
+
+ Canvas's left mouse click is in hand mode.
+\end_inset 
+
+
+\layout Subsubsection
+
+Dragged Zoom
+\layout Standard
+
+
+\begin_inset Float figure
+placement h
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/ZoomPlusUpLeft25.gif
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:zoom_plus_cursor}
+
+\end_inset 
+
+ Zoom-plus cursor that indicates the left mouse clicking is ready for zooming
+ in.
+\end_inset 
+
+
+\layout Standard
+
+
+\emph on 
+Dragged zoom
+\emph default 
+ is active only when the left mouse click is in zoom mode, i.e.
+ when the the magnifying glass button is pressed in the toggled buttons
+ as in Figure 
+\begin_inset LatexCommand \ref{fig:mouse_zoom_mode}
+
+\end_inset 
+
+.
+ In zoom mode, the cursor within the canvas will appear like a magnifying
+ glass with plus sign in the center as in Figure 
+\begin_inset LatexCommand \ref{fig:zoom_plus_cursor}
+
+\end_inset 
+
+.
+ It is called zoom-plus cursor.
+ The dragged zoom operation is initialized by pressing the left mouse button
+ at the beginning of the zoom-in region, a white line will then appear.
+ As soon as dragging is detected, another white line will appear to mark
+ the current ending of the zoom-in region.
+ The region that is marked by pair of white lines is lightly shaded as shown
+ in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_3}
+
+\end_inset 
+
+.
+ The process can be cancelled anytime by hitting the ESC key during dragging.
+ Once the left mouse button is released, zooming will be carried out and
+ the Timeline window will then be updated as in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_4}
+
+\end_inset 
+
+.
+ The time display panel is updated with the latest time related information
+ of the zoom-in region.
+ Notice that the zooming as well as scrolling can be achieved by explicitly
+ editing the text fields in the time display panel.
+\layout Subsubsection
+
+Instant Zoom
+\layout Standard
+
+
+\begin_inset Float figure
+placement h
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/ZoomMinusUpLeft25.gif
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:zoom_minus_cursor}
+
+\end_inset 
+
+ Zoom-minus cursor that indicates the left mouse clicking is ready for zooming
+ out.
+\end_inset 
+
+
+\layout Standard
+
+While the canvas is still in zoom mode, 
+\emph on 
+instant zoom
+\emph default 
+ is enabled by default.
+ Instant zoom allows zooming in at the point of left mouse clicking by a
+ factor of 1/2, i.e.
+ the region centered at the point of left clicking will be magnified by
+ a factor or 2.
+ Also, the 
+\emph on 
+Zoom Focus Time
+\emph default 
+ in the time display panel will be updated with the time where left clicking
+ on the canvas is detected.
+ In the process, the cursor remain
+\emph on 
+s 
+\emph default 
+zoom-plus cursor.
+ 
+\emph on 
+Shift-click
+\emph default 
+, on the other hand, will do the opposite.
+ While holding down Shift key, the cursor will be changed to a zoom-minus
+ cursor as in Figure 
+\begin_inset LatexCommand \ref{fig:zoom_minus_cursor}
+
+\end_inset 
+
+ to indicate zooming out is the action associated with left clicking.
+ The zoom factor is 2 in this case.
+\layout Subsubsection
+
+Grasp and Scroll
+\layout Standard
+
+
+\begin_inset Float figure
+placement h
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/HandOpenUpLeft25.gif
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:hand_open_cursor}
+
+\end_inset 
+
+ Open hand cursor indicates that left mouse clicking is ready to grasp and
+ scroll.
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Float figure
+placement h
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/HandCloseUpLeft25.gif
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:hand_close_cursor}
+
+\end_inset 
+
+ Close hand cursor indicates that left mouse clicking is scrolling.
+\end_inset 
+
+
+\layout Standard
+
+
+\emph on 
+Grasp and Scroll
+\emph default 
+ is active only when the left mouse click is in hand mode, i.e.
+ when the open hand button is pressed as in Figure 
+\begin_inset LatexCommand \ref{fig:mouse_hand_mode}
+
+\end_inset 
+
+.
+ The cursor in hand mode is an open hand as in Figure 
+\begin_inset LatexCommand \ref{fig:hand_open_cursor}
+
+\end_inset 
+
+.
+ As soon as left mouse button is pressed down, the cursor turns to a close
+ hand as in Figure 
+\begin_inset LatexCommand \ref{fig:hand_close_cursor}
+
+\end_inset 
+
+.
+ It indicates the canvas will move in the same direction that the cursor
+ moves as long as the left mouse button remain pressed.
+ The grasp and scroll mode in time ruler canvas can only move horizontally,
+ but the grasp and scroll mode in timeline canvas allows movement in both
+ vertical and horizontal axes.
+ 
+\layout Subsubsection
+
+Information Dialog Box
+\layout Standard
+
+Jumpshot-4 wouldn't be complete if it cannot provide a way to tell user
+ what exactly are being displayed.
+ It is particularly important when there are many preview drawables.
+ Following standard user interface practice, Jumpshot-4 uses 
+\emph on 
+right mouse clicking
+\emph default 
+ as an interface for user to tell Jumpshot-4 what object that more information
+ is needed.
+ In general, anywhere on the canvas, both timeline and time ruler canvases,
+ can be inquired with right mouse clicks.
+ Information dialog box will pop up accordingly to tell user more about
+ object that is being clicked.
+ There are 3 different types of information dialogs: Drawable Info Box,
+ Duration Info Box and Time Info Box.
+ All these info boxes remain in memory as long as they are not closed even
+ if the canvas has been scrolled or zoomed.
+ One of the usages of the info boxes is to serve as time markers in between
+ zooming and scrolling.
+\layout Paragraph
+
+Drawable Info Box
+\layout Standard
+
+Drawable Info Box is a popup dialog box that provides detailed information
+ about the drawable object that is being clicked.
+ There are 2 different kind of Drawable Info Box, one for preview drawable,
+ one for real drawable.
+ 
+\layout Subparagraph
+
+Drawable Info Box for Preview Drawable
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/timeline_infobox_preview_state.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:timeline_infobox_preview_state}
+
+\end_inset 
+
+ Drawable Info Box for Preview State
+\end_inset 
+
+
+\layout Standard
+
+Right mouse clicking on 2 of the preview states in the timeline canvas shown
+ in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_preview_detail_1}
+
+\end_inset 
+
+ will pop up 2 Drawable Info Boxes for the preview states.
+ They are displayed as in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_infobox_preview_state}
+
+\end_inset 
+
+.
+ The popup Info Box's upper left hand corner will be positioned at exactly
+ where right mouse click is detected and a green line marker is drawn on
+ the canvas to indicate what time has been clicked in case the dialog box
+ is moved from its original popup location.
+ In order to best illustrate what information is presented by the Drawable
+ Info Box, let's take the highlighted Drawable Info Box in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_infobox_preview_state}
+
+\end_inset 
+
+ as an example.
+ The dialog box which contains a pink label 
+\begin_inset Quotes eld
+\end_inset 
+
+Preview State
+\begin_inset Quotes erd
+\end_inset 
+
+ is the Drawable Info Box for preview state, and the icon inside the dialog
+ box shows the color and shape that are used to draw the drawable.
+ Below the icon, there is a big text area that prints all the detailed statistic
+al information about this preview state.
+ There are 6 timestamps in the text area: maximum duration, average duration,
+ minimum starttime, average starttime, maximum endtime and average endtime.
+ Here 
+\begin_inset Quotes eld
+\end_inset 
+
+[0]
+\begin_inset Quotes erd
+\end_inset 
+
+ refers to starting point, and 
+\begin_inset Quotes eld
+\end_inset 
+
+[1]
+\begin_inset Quotes erd
+\end_inset 
+
+ refers to the ending point.
+ The 3 
+\begin_inset Quotes eld
+\end_inset 
+
+average
+\begin_inset Quotes erd
+\end_inset 
+
+ timestamps are averaged over all the real drawables represented by this
+ preview drawable.
+ Besides timestamps, the info box also tells 
+\begin_inset Quotes eld
+\end_inset 
+
+Number of Real Drawables
+\begin_inset Quotes erd
+\end_inset 
+
+ represented by the preview object.
+ In this case, 136 real states are amalgamated by the pure white preview
+ state.
+ Also, the text area lists all the different categories of drawables amalgamated
+ and their ratios of the cumulative duration of all real drawables amalgamated
+ to the duration the preview states.
+ In this case, there is only 1 category of real states in this preview state,
+ so all 136 states are all PACKs.
+ The sum of the durations of all PACKs is about half of the duration of
+ the preview state as it is indicated by 
+\begin_inset Quotes eld
+\end_inset 
+
+fraction=0.50158036
+\begin_inset Quotes erd
+\end_inset 
+
+ which is called category weight.
+ 
+\layout Standard
+
+Another Drawable Info Box is shown at the lower portion of Figure 
+\begin_inset LatexCommand \ref{fig:timeline_infobox_preview_state}
+
+\end_inset 
+
+.
+ Here the preview state that is pointed by the upper left-hand corner of
+ the Info Box has 3 different strips of colors: yellow, royal blue and white.
+ Right mouse clicking at the yellow strip pops up a Drawable Info Box with
+ a yellow state icon with label BARRIER.
+ As shown in the figure, this preview state amalgmated 4 different categories
+ of real states: ALLREDUCE, PACK, SSEND, and BARRIER.
+ The statistically most significant one is BARRIER which proportionally
+ occupies 0.55339056 of the length of the preview state.
+ Hence BARRIER strip has the tallest height among all the color strips shown
+ in the preview state.
+ Clicking on the different color strip in the same preview state will pop
+ up a Drawable Info Box that has a different icon label of with corresponding
+ color, but the content of the text area should remain the same.
+ Out of the 4 categories mentioned in the text area, only 3 are graphically
+ displayed in the figure given the limited pixel height availabel to the
+ preview state.
+ The least significant category ALLREDUCE is missing visually.
+ But the limitation can be improved by selecting another display option
+ for preview state in Preference window that does not rely on the category
+ weight
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+i.e.
+ by setting the PREVIEW_STATE_DISPLAY in Preference window to MOST_LEGENDS_ORDER
+ as listed in Table 
+\begin_inset LatexCommand \ref{table:preference_data2}
+
+\end_inset 
+
+ 
+\end_inset 
+
+.
+ As indicated, there are 58 real drawables in the preview state, but no
+ information is provided about how many real drawables are in each real
+ categories.
+\layout Subparagraph
+
+Drawable Info Box for Real Drawable
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/timeline_infobox_real_primitive.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:timeline_infobox_real_primitive}
+
+\end_inset 
+
+ Drawable Info Box for real state and arrow.
+ The Drawable Info Box for the arrow shows the messsage size, 1600 byte,
+ and tag ID, 454.
+\end_inset 
+
+
+\layout Standard
+
+Similarly for real drawables, Drawable Info Box can be brought up by right
+ mouse clicking on the real drawables.
+ In Figure 
+\begin_inset LatexCommand \ref{fig:timeline_infobox_real_primitive}
+
+\end_inset 
+
+, Drawable Info Boxes for a real arrow and a real state are shown.
+ The Drawable Info Box for the arrow is invoked by clicking anywhere within
+ the vicinity of the arrow body
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+The vincinity width can be adjusted by modifying the parameter CLICK_RADIUS_TO_L
+INE in Preference window as listed in Table 
+\begin_inset LatexCommand \ref{table:preference_data1}
+
+\end_inset 
+
+.
+ The default is 3 pixels.
+\end_inset 
+
+, and the info box shows the starttime, start timeline ID, endtime, and
+ ending timeline ID and some extra information implemented by the native
+ format .
+ In this example, the message size carried by the specific arrow is 1600
+ byte.
+\layout Paragraph
+
+Duration Info Box
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/timeline_infobox_duration.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:timeline_infobox_duration}
+
+\end_inset 
+
+ Duration Info Box shows the duration, starttime, and endtime of a time
+ region marked by a pair of green lines.
+\end_inset 
+
+
+\layout Standard
+
+Duration Info Box is created by right dragging a region of empty space in
+ the timeline canvas or the time ruler canvas.
+ The dragged region will be marked by a pair of green lines and is lightly
+ shaded as well.
+ One of the usages of Duration Info Box is to compare different durations
+ to see if they are the same.
+ For instance in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_infobox_duration}
+
+\end_inset 
+
+, the 2 Duration Info Boxes mark 2 non-overlap regions on the 3rd timeline
+ to check if the total duration taken up by the all consecutive small states
+ within the 2 regions are the same.
+ As shown in the Duration Info Box, it appears the total durations are the
+ same.
+ 
+\layout Paragraph
+
+Time Info Box
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/timeline_infobox_time.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:timeline_infobox_time}
+
+\end_inset 
+
+ Time Info Box displays the time of where it pops up.
+\end_inset 
+
+
+\layout Standard
+
+Time Info Box is created by right clicking in the empty space in either
+ timeline or tthe time ruler canvas as in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_infobox_time}
+
+\end_inset 
+
+.
+ This Info Box is usually used as a marker for a single event in time.
+\layout Subsection
+
+Toolbar
+\layout Standard
+
+The buttons in the toolbar of Timeline window provides various basic services
+ to the Timeline window.
+ Table 
+\begin_inset LatexCommand \ref{table:timeline_toolbar}
+
+\end_inset 
+
+ contains the list of functionalities of the buttons found in the toolbar.
+\layout Standard
+
+
+\begin_inset Float table
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset  Tabular
+<lyxtabular version="3" rows="21" columns="4">
+<features islongtable="true">
+<column alignment="center" valignment="top" leftline="true" width="0(null)">
+<column alignment="center" valignment="top" leftline="true" width="0(null)">
+<column alignment="center" valignment="top" leftline="true" width="0(null)">
+<column alignment="center" valignment="center" leftline="true" rightline="true" width="3.5in">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Icon
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Description
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Shortcut
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Function
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Up24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Up
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-UP
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Scroll upward by half a screen
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Down24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Down
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-DOWN
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Scroll downward by half of a screen
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Edit24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+LabelMark
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+none
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Mark the timeline(s)
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Paste24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+LabelMove
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+none
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Move the marked timeline(s)
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Delete24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+LabelDelete
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+none
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Delete the marked timeline(s)
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/TreeExpand24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+LabelExpand
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-E
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Expand the Y-axis tree label by 1 level
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/TreeCollapse24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+LabelCollapse
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-C
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+Collapse the Y-axis tree label by 1 level
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Backward24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Backward
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-LEFT
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Scroll Backward by half a screen
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Forward24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Forward
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-RIGHT
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Scroll Forward by half a screen
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/WinUndo.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+ZoomUndo
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-U
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+Undo the previous zoom operation
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/ZoomOut24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+ZoomOut
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-O
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+Zoom Out by 1 level in time
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Home24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+ZoomHome
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-H
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+Reset zoom to the initial resolution in time
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/ZoomIn24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+ZoomIn
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-I
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Zoom In by 1 level in time
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/WinRedo.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+ZoomRedo
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-R
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+Redo the previous zoom operation
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/FindBack24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+SearchBackward
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-B
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+Search backward in time
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Find24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+SeachInitialize
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-S
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Search Initialization from last popup InfoBox's time
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/FindFore24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+SearchForward
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-F
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+Search forward in time
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Refresh24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+CanvasReDraw
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alt-D
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+R
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+e
+\family default 
+\series default 
+\shape default 
+\size default 
+\emph default 
+\bar default 
+\noun default 
+\color default
+draw
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+ 
+\family default 
+\series default 
+\shape default 
+\size default 
+\emph default 
+\bar default 
+\noun default 
+\color default
+canvas 
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+to synchronize 
+\family default 
+\series default 
+\shape default 
+\size default 
+\emph default 
+\bar default 
+\noun default 
+\color default
+changes from 
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+Preference/Legend window
+\family default 
+\series default 
+\shape default 
+\size default 
+\emph default 
+\bar default 
+\noun default 
+\color default
+ or Yaxis label panel.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Print24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Print
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+none
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Print the Timeline window
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/chan/slog2/slog2sdk_1r/src/images/Stop24.gif
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Exit
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+none
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Exit the Timeline window
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{table:timeline_toolbar}
+
+\end_inset 
+
+ Table of toolbar's functionalities.
+\end_inset 
+
+
+\layout Subsection
+
+Y-axis Label Panel
+\layout Standard
+
+The concealable left panel in Timeline window is called Y-axis label panel
+ which contains a tree-like representation for Y-axis label for the timelines.
+ For a single viewmaps slog2 file from CLOG or RLOG, the typical Y axis
+ label panel looks like that is shown in Figure 
+\begin_inset LatexCommand \ref{fig:yaxis_label_panel_simple}
+
+\end_inset 
+
+.
+ Together with toolbar's label buttons, e.g.
+ LabelMark and LabelMove, and standard selection methods by mouse click
+ listed in Table 
+\begin_inset LatexCommand \ref{table:selection_rules}
+
+\end_inset 
+
+, labels can be rearranged easily to create a more easily understood timeline
+ canvas.
+ For multiple viewmaps slog2 from IBM's UTE trace enviroment, LabelExpand
+ and LabelCollapse buttons will come in handy to expand and collapse the
+ label tree by one whole level.
+ In order to minimize unnecessary redraw of the timeline canvas, the sychronizat
+ion between the label panel and the timeline canvas is carried out passively,
+ i.e.
+ user needs to press the CanvasReDraw button in the toolbar to update the
+ Timeline window with the changes from the label panel.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/yaxis_label_panel_simple.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:yaxis_label_panel_simple}
+
+\end_inset 
+
+ A simple 1 level Yaxis label tree.
+ The highlighted labels are those that have been selected.
+\end_inset 
+
+
+\layout Subsection
+
+Row Adjustment Panel
+\layout Standard
+
+The concealable right panel in Timeline window contains the row adjustment
+ panel which is used to determine the row adjustment scheme.
+ There are 2 different modes in row adjustment panel: row count mode and
+ row height mode.
+ These 2 modes can be selected by the combox at the top of the panel.
+ The row count mode attemps to keep the number of timelines constant as
+ indicated in the Row Count text field when the Timeline window resizes.
+ On the other hand, the row height mode fixes the height of each timeline
+ as indicated by the Row Height text field.
+ Currently, the height of the timeline can be adjusted up to the height
+ of the timeline canvas, in that case the Row Count text field shows a number
+ 1
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+If the slog2 file contains numerous timelines, increasing the Row Height
+ will increase the size of the images managed by Jumpshot-4.
+ This may cause the Java Virtual Machine to exhaust all its memory if the
+ virtual machine is not set to have enough memory when Jumpshot-4 is started
+ or there isn't enough physical memory in machine that Jumpshot-4 runs on.
+ 
+\end_inset 
+
+.
+ The maximum number of timelines that can be displayed is set to the total
+ number of rows represented by the whole Y-axis label tree
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+Hence the row height cannot be adjusted all the way to zero.
+\end_inset 
+
+.
+ For multiple viewmaps slog2 file, the Y-axis label tree can be expanded
+ or collapsed.
+ This could change the maximum number of rows in the row count slider after
+ user hits the CanvasReDraw button.
+ Coupling with window resize, the row adjustment panel allows user to magnify
+ or shrink the height of the timeline as one desires.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/adj_row_count.png
+	subcaption
+	subcaptionText "Row Count mode"
+
+\end_inset 
+
+ 
+\hfill 
+
+\begin_inset Graphics
+	filename pic/adj_row_height.png
+	subcaption
+	subcaptionText "Row Height mode"
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:row_adjustment_panel}
+
+\end_inset 
+
+ Row Adjustmemt Panel determines the Timeline window's resize scheme.
+ When one of the mode sliders or textfields is adjusted, the other 3 components
+ will be adjusted simultaneously.
+\end_inset 
+
+
+\layout Section
+
+Preference Window
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/preference_pview_state.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:preference_pview_state}
+
+\end_inset 
+
+ The Preference window that shows PREVIEW_STATE_DISPLAY
+\end_inset 
+
+
+\layout Standard
+
+As shown in Figure 
+\begin_inset LatexCommand \ref{fig:preference_pview_state}
+
+\end_inset 
+
+ is the Preference window that adjusts the various display properties of
+ the visualization program.
+ A list of the parameters and their definitions are listed in Tables 
+\begin_inset LatexCommand \ref{table:preference_data1}
+
+\end_inset 
+
+ and 
+\begin_inset LatexCommand \ref{table:preference_data2}
+
+\end_inset 
+
+.
+\layout Standard
+
+
+\begin_inset Float table
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset  Tabular
+<lyxtabular version="3" rows="16" columns="3">
+<features islongtable="true">
+<column alignment="center" valignment="top" leftline="true" width="0(null)">
+<column alignment="block" valignment="top" leftline="true" width="1.1in">
+<column alignment="block" valignment="top" leftline="true" rightline="true" width="3.5in">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Parameter
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Values
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Description
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+Y_AXIS_ROOT_LABEL
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+any text
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Label for the root node of the Y-axis tree label in the left panel.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+INIT_SLOG2_LEVEL_READ
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
++ve integer
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+The number of 
+\family default 
+\series default 
+\shape default 
+\size default 
+\emph default 
+\bar default 
+\noun default 
+\color default
+slog2
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+ level
+\family default 
+\series default 
+\shape default 
+\size default 
+\emph default 
+\bar default 
+\noun default 
+\color default
+s
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+ 
+\family default 
+\series default 
+\shape default 
+\size default 
+\emph default 
+\bar default 
+\noun default 
+\color default
+being 
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+read into memory when 
+\family default 
+\series default 
+\shape default 
+\size default 
+\emph default 
+\bar default 
+\noun default 
+\color default
+the Timeline window is initialized, the integer affects the zooming and
+ scrolling performance exponentially (in a asymptotical sense).
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+AUTO_WINDOWS_LOCATION
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+true, false
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Whelther to let Jumpshot-4 automatically set windows placement
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+SCREEN_HEIGHT_RATIO
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0.0 ...
+ 1.0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Ratio of the initial timeline canvas height to the screen height
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+TIME_SCROLL_UNIT_RATIO
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0.0 ...
+ 1.0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Unit increment of the horizontal scrollbar in the fraction of timeline canvas's
+ wdith.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+Y_AXIS_ROOT_VISIBLE
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+true, false
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Whelther to show the top of the Y-axis tree-styled directory label.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+BACKGROUND_COLOR
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Black, DarkGray, Gray, LightGray, White
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Background color of the timeline canvas
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+ACTIVE_REFRESH
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+false
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Whelther to let Jumpshot-4 actively update the timeline canvas.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+STATE_BORDER
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+ColorRaised, ColorLowered, WhiteRaised, WhiteLowered, WhitePlain, Empty
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Border style of real states.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+STATE_HEIGHT_FACTOR
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0.0 ...
+ 1.0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Ratio of the outermost rectangle height to row height.
+ The larger the factor is, the larger the outermost rectangle will be with
+ respect to the row height.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+NESTING_HEIGHT_FACTOR
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0.0 ...
+ 1.0 
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+The gap ratio between successive nesting rectangles.
+ The larger the factor is, the smaller the gap will be.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+ARROW_ANTIALIASING
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+default, on, off
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Whelther to draw arrow with anti-aliasing lines.
+ Turning this on will slow down the canvas drawing by a factor of 3.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+ARROW_HEAD_LENGTH
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
++ve integer
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Length of arrow head in pixel.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+ARROW_HEAD_HALF_WIDTH
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
++ve integer
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Half width of arrow head's base in pixel.
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+CLICK_RADIUS_TO_LINE
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
++ve integer
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Radius in pixel for a click to be considered on the arrow.
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{table:preference_data1}
+
+\end_inset 
+
+ Modifiable parameters in Preference window.
+ 
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Float table
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset  Tabular
+<lyxtabular version="3" rows="12" columns="3">
+<features islongtable="true">
+<column alignment="center" valignment="top" leftline="true" width="0(null)">
+<column alignment="block" valignment="top" leftline="true" width="1.1in">
+<column alignment="block" valignment="top" leftline="true" rightline="true" width="3.5in">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Parameter
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Values
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Description
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+PREVIEW_STATE_DISPLAY
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+DecreLegendOrder, DecreWeightOrder, MostLegndsOrder
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Display option of Preview state.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+PREVIEW_STATE_BORDER
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+ColorRaised, ColorLowered, WhiteRaised, WhiteLowered, WhitePlain, Empty
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Border style of Preview state.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+PREVIEW_STATE_LEGEND_H
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+integer
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Minimum height of the legend divison in pixel for the Preview state
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+PREVIEW_STATE_BORDER_W
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+integer
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+The empty border insets' width in pixel for the Preview state.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+PREVIEW_STATE_BORDER_H
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+integer
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+The empty border insets' height in pixel for the Preview state.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+PREVIEW_ARROW_LINE_W
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+float
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+The line thickness in pixel for the Preview arrow.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+MIN_WIDTH_TO_DRAG
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+integer
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Minimum width in pixel to be considered a dragged operation.
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+SEARCH_ARROW_LENGTH
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+integer
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Length of the search marker's arrow in pixel
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+SEARCH_FRAME_THICKNES
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+integer
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Thickness in pixel of the popup frame that hightlights the searched drawable
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+SEARCHED_OBJECT_ON_TOP
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+true, false
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Whelther to display the searched object on top of the search frame.
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+LEFTCLICK_INSTANT_ZOOM
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+true, false
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Whelther to zoom in immediately after left mouse click on canvas.
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{table:preference_data2}
+
+\end_inset 
+
+Modifiable parameters in Preference window
+\end_inset 
+
+
+\layout Chapter
+
+Special Features
+\layout Section
+
+Search and Scan Facility
+\layout Standard
+
+The Level-of-detail support provided in SLOG-2 and Jumpshot-4 tends to help
+ locate states which are either longer in time or occur very frequently.
+ States that are short and occur rarely in a big logfile are very difficult
+ to locate without any special tool.
+ In Jumpshot-4, a search and scan facility is provided to facilitate this
+ goal.
+ There are 3 search criteria: search time, searchable timeline IDs and searchabl
+e categories.
+ 
+\layout Enumerate
+
+
+\emph on 
+Search Time
+\emph default 
+ is the time that search starts.
+ It is marked by a yellow line calld search cursor.
+ There are 2 differnt ways of setting the search cursor.
+ When the timeline canvas is in Hand mode as described in Figure 
+\begin_inset LatexCommand \ref{fig:mouse_hand_mode}
+
+\end_inset 
+
+ of section 
+\begin_inset LatexCommand \ref{sub:Zoomable-and-Scrollable}
+
+\end_inset 
+
+, left mouse clicking will set the search cursor.
+ The other way can be done in either Hand or Zoom mode.
+ First popup an information dialog box of any kind using right mouse clicking,
+ then press the SearchInitialize button in the toolbar to replace the green
+ line by the yellow search cursor.
+ When there are more than one information dialog box, the information dialog
+ box that is shown up last will have its green line used to initialize the
+ search cursor.
+ When Timeline window first starts up, the search cursor is set at the starttime
+ of the logfile.
+\layout Enumerate
+
+
+\emph on 
+Searchable Timeline IDs 
+\emph default 
+are the timlines that search will operate on, i.e only states on the marked
+ timelines will be returned by the search facility.
+ These marked timelines can be selected by clicking on their timeline IDs
+ on Yaxis label panel with rules described in Table 
+\begin_inset LatexCommand \ref{table:selection_rules}
+
+\end_inset 
+
+.
+ When nothing is selected, all timelines are searchable.
+\layout Enumerate
+
+
+\emph on 
+Searchable Categories 
+\emph default 
+are categories that have their searchable checkboxes enabled as in Figure
+ 
+\begin_inset LatexCommand \ref{fig:legend_checkbox_ops}
+
+\end_inset 
+
+.
+ Only drawable with searchable category can be returned by the search facility.
+ By default, all categories in Legend window are searchable.
+ 
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/timeline_search_preview.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:timeline_search_preview}
+
+\end_inset 
+
+ Search of state 
+\emph on 
+eos
+\emph default 
+ in preview stage.
+ The returned state is a preview state containing state 
+\emph on 
+eos
+\emph default 
+ as shown in Search Box and Drawable Info Box.
+\end_inset 
+
+
+\layout Standard
+
+After setting any needed search criteria, the search operation can be carried
+ out by pressing either the SearchForeward or SearchBackward buttons shown
+ in the Table 
+\begin_inset LatexCommand \ref{table:timeline_toolbar}
+
+\end_inset 
+
+.
+ As shown in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_search_preview}
+
+\end_inset 
+
+, the search facility returns a searched state which is bounded by a 3D
+ raised bordered and transparent 
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+the transparency of the 3D raised box can be made opaque by selecting the
+ SEARCHED_OBJECT_ON_TOP true.
+\end_inset 
+
+box whose starttime is marked by a yellow search cursor and 2 3D arrowheads.
+ The upper 3D arrow's color matches that of the returned state.
+ In the figure, since the returned state is a preview state, so the upper
+ 3D arrow is grey in color as it is shown in Legend window.
+ Accompanied with the 3D raised bordered box is a popup Search Box that
+ shows the detailed of the preview state like the Drawable Info Box in Figure
+ 
+\begin_inset LatexCommand \ref{fig:timeline_infobox_preview_state}
+
+\end_inset 
+
+.
+ Since the search in the figure is looking for state 
+\emph on 
+eos
+\emph default 
+, a Drawable Info Box is shown to indicate the returned 3D bordered box
+ does contain category 
+\emph on 
+eos 
+\emph default 
+graphically.
+ In order to locate the real state 
+\emph on 
+eos
+\emph default 
+, a dragged zoom is performed around the 3D raised bordered box and the
+ result is shown in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_search_preview_zoomed}
+
+\end_inset 
+
+.
+ In the figure, the real 
+\emph on 
+eos 
+\emph default 
+is located at the end of the original 3D bordered box and it is marked by
+ the Drawable Info Box.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed true
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/timeline_search_preview_zoomed.png
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:timeline_search_preview_zoomed}
+
+\end_inset 
+
+ Dragged zoom the region around the 3D raised bordered box in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_search_preview}
+
+\end_inset 
+
+ shows the real state 
+\emph on 
+eos.
+\end_inset 
+
+
+\layout Standard
+
+In general, when searching on big slog2 file, all preview categories should
+ be set searchable, otherwise searching for real drawables may not return
+ anything.
+ Because at lower zoom level, there may not be any real drawable belong
+ to the categories of interest, only preview drawable contains the categories
+ of interest.
+ Also, the search facility is carried out for the drawables that are in
+ the physical memory.
+ In some rare occasions, drawables in the memory may have been exhausted
+ for searching but end of the logfile have not been reached, user may need
+ to advance the search by scroll forward or backward to read in more drawables
+ and to restart the search again.
+ For a very big logfile, the search process of a real state may require
+ repeated operations of search and dragged zoom before the real state can
+ be found.
+ This process will be automated in the later version of Jumpshot-4.
+\layout Section
+
+Tuning of the Timeline Window
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename pic/timeline_popup_more.png
+	lyxscale 70
+	special angle=90, scale=0.75
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:timeline_popup_finer}
+
+\end_inset 
+
+ The initial Timeline window with finer preview resolution.
+\end_inset 
+
+
+\layout Standard
+
+One of the major improvements in the new Jumpshot and SLOG-2 is the scalability
+ in terms of visualization performance.
+ As shown in Figure 
+\begin_inset LatexCommand \ref{fig:timeline_popup}
+
+\end_inset 
+
+, there are 7 bands of preview states covering the whole canvas in the initial
+ Timeline window.
+ By incrementing the parameter, INIT_SLOG2_LEVEL_READ, by 1 in Preference
+ window as in Table 
+\begin_inset LatexCommand \ref{table:preference_data1}
+
+\end_inset 
+
+, the initial Timeline window can be redisplayed and is shown in Figure
+ 
+\begin_inset LatexCommand \ref{fig:timeline_popup_finer}
+
+\end_inset 
+
+.
+ The new Timeline window has 14 bands of preview states instead of 7.
+ The increase preview resolution does offer a more detailed description
+ of logfile but at the expense of graphical performance.
+ Because every increment of INIT_SLOG2_LEVEL_READ will roughly double the
+ number of drawables to be iterated during every zooming or scrolling
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+it is true for a binary tree
+\end_inset 
+
+.
+ The biggest demand of graphical performance occurs when the zooming to
+ the level of only pure real drawables from the lower zoom level.
+ The value of INIT_SLOG2_LEVEL_READ should be chosen so that Jumpshot does
+ not appear to be too slow during the zooming to the pure real drawable
+ level.
+ For a fast graphics system, INIT_SLOG2_LEVEL_READ should be set higher
+ than the default value 3, like 4 or 5, so that more information is present
+ during each view.
+\layout Standard
+
+Another parameter also signifcantly affects the graphical performance is
+ ARROW_ANTIALIASING in Preference window.
+ Setting the paramters to ON will force Jumpshot to draw all arrows including
+ preview arrows with anti-aliasing lines.
+ This proves to be an expensive graphical operation
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+A typical timeline canvas with arrows will draw roughly a factor 3 slower
+ with anti-aliasing on.
+ 
+\end_inset 
+
+.
+ Except when high quality picture is needed like during screen capture for
+ picture or when antialiasing lines are drawn with graphics hardware support,
+ it is not recommended to turn on ARROW_ANTIALIASING.
+ 
+\the_end
