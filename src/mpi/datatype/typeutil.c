@@ -89,7 +89,7 @@ static MPI_Datatype mpi_dtypes[] = {
     (MPI_Datatype)-1,
 };
 
-int MPIR_Datatype_init( void )
+int MPIR_Datatype_builtin_fillin( void )
 {
     static const char FCNAME[] = "MPIR_Datatype_init";
     int mpi_errno = MPI_SUCCESS;

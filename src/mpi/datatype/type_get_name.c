@@ -109,8 +109,11 @@ int MPIR_Datatype_init_names( void )
     {
 	if (!setup) {
 
-	    /* Make sure that the datatypes are initialized */
-	    mpi_errno = MPIR_Datatype_init();
+	    /* Make sure that the basics have datatype structures allocated
+	     * and filled in for them.  They are just integers prior to this
+	     * call.
+             */
+	    mpi_errno = MPIR_Datatype_builtin_fillin();
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
