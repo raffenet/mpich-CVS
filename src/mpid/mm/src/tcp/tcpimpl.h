@@ -7,6 +7,7 @@
 #define TCPIMPL_H
 
 #include "mm_tcp.h"
+#include "bsocket.h"
 
 typedef struct TCP_PerProcess {
     MPID_Thread_lock_t lock;
@@ -15,6 +16,8 @@ typedef struct TCP_PerProcess {
 		  char host[100];
                bfd_set readset;
                bfd_set writeset;
+	    MPIDI_VC * read_list;
+	    MPIDI_VC * write_list;
 } TCP_PerProcess;
 
 extern TCP_PerProcess TCP_Process;

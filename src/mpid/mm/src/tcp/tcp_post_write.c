@@ -7,5 +7,7 @@
 
 int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
+    BFD_SET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
+    tcp_car_enqueue(vc_ptr, car_ptr);
     return MPI_SUCCESS;
 }

@@ -10,6 +10,10 @@
 #include "bsocket.h"
 #include "blockallocator.h"
 
+#ifdef WITH_METHOD_VIA
+#include "mm_via_pre.h"
+#endif
+
 /* key used by spawners and spawnees to get the port by which they can connect to each other */
 #define MPICH_PARENT_PORT_KEY     "MPI_Parent_port"
 /* key used to tell comm_accept that it doesn't need to transfer pmi databases */
@@ -65,6 +69,40 @@ typedef enum MM_METHOD {
     MM_END_MARKER_METHOD
 } MM_METHOD;
 
+typedef union VC_Method_data
+{
+#ifdef WITH_METHOD_TCP
+    struct vc_tcp
+    {
+	int bfd;
+    } tcp;
+#endif
+#ifdef WITH_METHOD_SHM
+    struct vc_shm
+    {
+	void *shm_ptr;
+    } shm;
+#endif
+#ifdef WITH_METHOD_VIA
+    struct vc_via
+    {
+	VI_Info info;
+    } via;
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+    struct vc_via_rdma
+    {
+	VI_Info info;
+    } via_rdma;
+#endif
+#ifdef WITH_METHOD_NEW
+    struct vc_new
+    {
+	int data;
+    }
+#endif
+} VC_Method_data;
+
 typedef struct MPIDI_VC
 {
         MM_METHOD method;
@@ -80,6 +118,7 @@ typedef struct MPIDI_VC
 	    int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 struct MPIDI_VC * read_next_ptr;
 struct MPIDI_VC * write_next_ptr;
+   VC_Method_data data;
 } MPIDI_VC;
 
 typedef struct MPIDI_VCRT
@@ -122,8 +161,6 @@ MPID_Request * mm_request_alloc();
           void mm_car_finalize();
       MM_Car * mm_car_alloc();
           void mm_car_free(MM_Car *car_ptr);
-           int mm_car_enqueue(MM_Car *car_ptr);
-           int mm_car_dequeue(MM_Car *car_ptr);
 
 /* virtual connections */
           void mm_vcutil_init();

@@ -132,7 +132,7 @@ typedef struct MM_Car
 #endif
 #endif
     } data;
-    struct MM_Car *next_ptr, *opnext_ptr, *qnext_ptr;
+    struct MM_Car *next_ptr, *opnext_ptr, *qnext_ptr, *mnext_ptr;
 } MM_Car;
 
 typedef union MM_Segment_buffer

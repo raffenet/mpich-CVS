@@ -4,73 +4,64 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpidimpl.h"
+#include "tcpimpl.h"
 
 /*@
-   mm_car_enqueue - enqueue a car into the vc in the car
+   tcp_car_enqueue - enqueue a car in a vc
 
    Parameters:
-+  MM_Car *car_ptr - car
++  MPIDI_VC *vc_ptr - vc
+-  MM_Car *car_ptr - car
 
    Notes:
 @*/
-int mm_car_enqueue(MM_Car *car_ptr)
+int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
-#ifdef foo
-    MPIDI_VC *vc_ptr;
-
-    vc_ptr = car_ptr->vc_ptr;
-
-    switch (car_ptr->type)
+    if (car_ptr->type & MM_WRITE_CAR)
     {
-    case MM_WRITE_CAR:
 	/* If the write queue for this vc is empty then enqueue this vc in the process active write list */
 	if (vc_ptr->writeq_head == NULL)
 	{
-	    vc_ptr->write_next_ptr = MPID_Process.write_list;
-	    MPID_Process.write_list = vc_ptr;
+	    vc_ptr->write_next_ptr = TCP_Process.write_list;
+	    TCP_Process.write_list = vc_ptr;
 	}
 	/* enqueue the write car in the vc_ptr write queue */
 	if (vc_ptr->writeq_tail != NULL)
-	    vc_ptr->writeq_tail->qnext_ptr = car_ptr;
+	    vc_ptr->writeq_tail->mnext_ptr = car_ptr;
 	else
 	    vc_ptr->writeq_head = car_ptr;
 	vc_ptr->writeq_tail = car_ptr;
-	break;
-    case MM_READ_CAR:
+    }
+    if (car_ptr->type & MM_READ_CAR)
+    {
 	/* If the read queue for this vc is empty then enqueue this vc in the process active read list */
 	if (vc_ptr->readq_head == NULL)
 	{
-	    vc_ptr->read_next_ptr = MPID_Process.read_list;
-	    MPID_Process.read_list = vc_ptr;
+	    vc_ptr->read_next_ptr = TCP_Process.read_list;
+	    TCP_Process.read_list = vc_ptr;
 	}
 	/* enqueue the read car in the vc_ptr read queue */
 	if (vc_ptr->readq_tail != NULL)
-	    vc_ptr->readq_tail->qnext_ptr = car_ptr;
+	    vc_ptr->readq_tail->mnext_ptr = car_ptr;
 	else
 	    vc_ptr->readq_head = car_ptr;
 	vc_ptr->readq_tail = car_ptr;
-	break;
-    default:
-	err_printf("illegal car type: %d\n", car_ptr->type);
-	break;
     }
 
-    car_ptr->qnext_ptr = NULL;
-#endif
+    car_ptr->mnext_ptr = NULL;
+
     return MPI_SUCCESS;
 }
 
-static int mm_vc_dequeue_write(MPIDI_VC *vc_ptr)
+static int tcp_vc_dequeue_write(MPIDI_VC *vc_ptr)
 {
-#ifdef foo
     MPIDI_VC *iter_ptr;
-    if (vc_ptr == MPID_Process.write_list)
+    if (vc_ptr == TCP_Process.write_list)
     {
-	MPID_Process.write_list = vc_ptr->write_next_ptr;
+	TCP_Process.write_list = vc_ptr->write_next_ptr;
 	return MPI_SUCCESS;
     }
-    iter_ptr = MPID_Process.write_list;
+    iter_ptr = TCP_Process.write_list;
     while (iter_ptr->write_next_ptr)
     {
 	if (iter_ptr->write_next_ptr == vc_ptr)
@@ -80,20 +71,18 @@ static int mm_vc_dequeue_write(MPIDI_VC *vc_ptr)
 	}
 	iter_ptr = iter_ptr->write_next_ptr;
     }
-#endif
     return MPI_ERR_ARG;
 }
 
-static int mm_vc_dequeue_read(MPIDI_VC *vc_ptr)
+static int tcp_vc_dequeue_read(MPIDI_VC *vc_ptr)
 {
-#ifdef foo
     MPIDI_VC *iter_ptr;
-    if (vc_ptr == MPID_Process.read_list)
+    if (vc_ptr == TCP_Process.read_list)
     {
-	MPID_Process.read_list = vc_ptr->read_next_ptr;
+	TCP_Process.read_list = vc_ptr->read_next_ptr;
 	return MPI_SUCCESS;
     }
-    iter_ptr = MPID_Process.read_list;
+    iter_ptr = TCP_Process.read_list;
     while (iter_ptr->read_next_ptr)
     {
 	if (iter_ptr->read_next_ptr == vc_ptr)
@@ -103,86 +92,78 @@ static int mm_vc_dequeue_read(MPIDI_VC *vc_ptr)
 	}
 	iter_ptr = iter_ptr->read_next_ptr;
     }
-#endif
     return MPI_ERR_ARG;
 }
 
 /*@
-   mm_car_dequeue - dequeue the car from the vc in the car
+   tcp_car_dequeue - dequeue a car from a vc
 
    Parameters:
-+  MM_Car *car_ptr = car
++  MPIDI_VC *vc_ptr - vc
+-  MM_Car *car_ptr - car
 
    Notes:
 @*/
-int mm_car_dequeue(MM_Car *car_ptr)
+int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
-#ifdef foo
-    MPIDI_VC *vc_ptr;
     MM_Car *iter_ptr;
 
-    vc_ptr = car_ptr->vc_ptr;
-
-    switch (car_ptr->type)
+    if (car_ptr->type & MM_WRITE_CAR)
     {
-    case MM_WRITE_CAR:
 	/* dequeue the car from the vc_ptr write queue */
 	if (vc_ptr->writeq_head == NULL)
 	    return MPI_SUCCESS;
 	if (vc_ptr->writeq_head == car_ptr)
 	{
-	    vc_ptr->writeq_head = vc_ptr->writeq_head->qnext_ptr;
+	    vc_ptr->writeq_head = vc_ptr->writeq_head->mnext_ptr;
 	    if (vc_ptr->writeq_head == NULL)
 		vc_ptr->writeq_tail = NULL;
 	}
 	iter_ptr = vc_ptr->writeq_head;
-	while (iter_ptr->qnext_ptr)
+	while (iter_ptr->mnext_ptr)
 	{
-	    if (iter_ptr->qnext_ptr == car_ptr)
+	    if (iter_ptr->mnext_ptr == car_ptr)
 	    {
-		if (iter_ptr->qnext_ptr == vc_ptr->writeq_tail)
+		if (iter_ptr->mnext_ptr == vc_ptr->writeq_tail)
 		    vc_ptr->writeq_tail = iter_ptr;
-		iter_ptr->qnext_ptr = iter_ptr->qnext_ptr->qnext_ptr;
+		iter_ptr->mnext_ptr = iter_ptr->mnext_ptr->mnext_ptr;
 		break;
 	    }
-	    iter_ptr = iter_ptr->qnext_ptr;
+	    iter_ptr = iter_ptr->mnext_ptr;
 	}
 	/* If the write queue becomes empty, remove the vc from the process active vc write list */
 	if (vc_ptr->writeq_head == NULL)
-	    mm_vc_dequeue_write(car_ptr->vc_ptr);
-	break;
-    case MM_READ_CAR:
+	    tcp_vc_dequeue_write(car_ptr->vc_ptr);
+    }
+    if (car_ptr->type & MM_READ_CAR)
+    {
 	/* dequeue the car from the vc_ptr read queue */
 	if (vc_ptr->readq_head == NULL)
 	    return MPI_SUCCESS;
 	if (vc_ptr->readq_head == car_ptr)
 	{
-	    vc_ptr->readq_head = vc_ptr->readq_head->qnext_ptr;
+	    vc_ptr->readq_head = vc_ptr->readq_head->mnext_ptr;
 	    if (vc_ptr->readq_head == NULL)
 		vc_ptr->readq_tail = NULL;
 	}
 	iter_ptr = vc_ptr->readq_head;
-	while (iter_ptr->qnext_ptr)
+	while (iter_ptr->mnext_ptr)
 	{
-	    if (iter_ptr->qnext_ptr == car_ptr)
+	    if (iter_ptr->mnext_ptr == car_ptr)
 	    {
-		if (iter_ptr->qnext_ptr == vc_ptr->readq_tail)
+		if (iter_ptr->mnext_ptr == vc_ptr->readq_tail)
 		    vc_ptr->readq_tail = iter_ptr;
-		iter_ptr->qnext_ptr = iter_ptr->qnext_ptr->qnext_ptr;
+		iter_ptr->mnext_ptr = iter_ptr->mnext_ptr->mnext_ptr;
 		break;
 	    }
-	    iter_ptr = iter_ptr->qnext_ptr;
+	    iter_ptr = iter_ptr->mnext_ptr;
 	}
 	/* If the read queue becomes empty, remove the vc from the process active vc read list */
 	if (vc_ptr->readq_head == NULL)
-	    mm_vc_dequeue_read(car_ptr->vc_ptr);
-	break;
-    default:
-	err_printf("illegal car type: %d\n", car_ptr->type);
-	break;
+	    tcp_vc_dequeue_read(car_ptr->vc_ptr);
     }
 
-    car_ptr->qnext_ptr = NULL;
-#endif
+    car_ptr->mnext_ptr = NULL;
+
     return MPI_SUCCESS;
 }

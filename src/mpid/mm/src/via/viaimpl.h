@@ -6,6 +6,7 @@
 #ifndef VIAIMPL_H
 #define VIAIMPL_H
 
+#include "mm_via_pre.h"
 #include "mm_via.h"
 #include "vipl.h"
 
@@ -44,34 +45,6 @@
 #define VI_BANDWIDTH    800.0*1048576.0
 #define VI_LATENCY      0.000002
 #define VI_MULTIPLIER   2.75
-
-typedef struct VI_Info
-{
-    LONG valid;
-    MPID_Thread_lock_t lock;
-    VIP_NIC_HANDLE      hNic;
-    VIP_VI_HANDLE       hVi;
-    VIP_VI_ATTRIBUTES   Vi_RemoteAttribs;
-    VIP_DESCRIPTOR      *pRecvDesc, **pSendDesc, *pDesc;
-    VIP_MEM_HANDLE      mhSend, mhReceive;
-    void *pSendDescriptorBuffer, *pReceiveDescriptorBuffer;
-    
-    char remotebuf[40];
-    VIP_NET_ADDRESS *pLocalAddress;
-    VIP_NET_ADDRESS *pRemoteAddress;
-    unsigned char *descriminator;
-    int descriminator_len;
-
-    VIP_DESCRIPTOR *pRecvList, *pRecvListTail;
-    int nCurSendIndex;
-    int nNumSendsAvailable;
-    int nNumSendDescriptors;
-    int nNumRecvDescriptors;
-    int nReceivesPerAck;
-    int nSendsPerAck;
-    long nSendAcked;
-    unsigned int nNumSent, nNumReceived, nSequenceNumberSend, nSequenceNumberReceive;
-} VI_Info;
 
 typedef struct VIA_PerProcess {
     MPID_Thread_lock_t lock;
