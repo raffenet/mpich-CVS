@@ -1,6 +1,10 @@
 AC_INIT(Makefile.in)
 dnl
-AC_PREREQ(2.13) dnl needed for SHELL, added in 2.13
+dnl A C_PRE REQ(2.13) dnl needed for SHELL, added in 2.13
+dnl If you include the PREREQ 2.13, the cygwin configure chooses EXACTLY
+dnl the 2.13 autoconf.  We're comfortable with later versions as well as
+dnl 2.13, and since the *command line arguments to autoconf changed*,
+dnl we need to use a consistent choice of version.
 dnl We need install.sh, config.guess, etc. for the code that
 dnl finds the Fortran libraries
 AC_CONFIG_AUX_DIR(../../../confdb)
