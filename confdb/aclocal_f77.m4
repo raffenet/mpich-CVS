@@ -175,20 +175,28 @@ if AC_TRY_EVAL(ac_fcompile) && test -s conftest.o ; then
 #define cisize_ cisize
 #define isize_ isize
 #endif
-static int isize_val;
+static int isize_val=0;
+void cisize_(char *,char*);
+void isize_(void);
 void cisize_(char *i1p, char *i2p)
 { 
    isize_val = (int)(i2p - i1p);
 }
-main()
+int main(int argc, char **argv)
 {
     FILE *f = fopen("conftestval", "w");
-    if (!f) exit(1);
+    if (!f) return 1;
     isize_();
     fprintf(f,"%d\n", isize_val );
-    exit(0);
+    return 0;
 }], eval PAC_CV_NAME=`cat conftestval`,eval PAC_CV_NAME=0,
 ifelse([$2],,,eval PAC_CV_NAME=$2))
+    # Problem.  If the process fails to run, then there won't be
+    # a good error message.  For example, with one Portland Group
+    # installation, we had problems with finding the libpgc.so shared library
+    # The autoconf code for TRY_RUN doesn't capture the output from
+    # the test program (!)
+    
     LIBS="$save_LIBS"
     AC_LANG_RESTORE
 else 
@@ -922,6 +930,13 @@ dnl create a program that includes a trival Fortran code.
 dnl
 dnl For example, all pgf90 compiled objects include a reference to the
 dnl symbol pgf90_compiled, found in libpgf90 .
+dnl
+dnl There is an additional problem.  To *run* programs, we may need 
+dnl additional arguments; e.g., if shared libraries are used.  Even
+dnl with autoconf 2.52, the autoconf macro to find the library arguments
+dnl doesn't handle this, either by detecting the use of -rpath or
+dnl by trying to *run* a trivial program.  It only checks for *linking*.
+dnl 
 dnl
 AC_DEFUN(PAC_PROG_F77_IN_C_LIBS,[
 AC_MSG_CHECKING([what Fortran libraries are needed to link C with Fortran])
