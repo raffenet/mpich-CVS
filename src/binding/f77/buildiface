@@ -515,7 +515,8 @@ if ($build_prototypes) {
 # if doing MPI2, we also need to read the MPI-2 protottypes
 if ( -s "../../mpi/romio/include/mpio.h.in" && $build_io) { 
     %skipBlocks = ( 'HAVE_MPI_DARRAY_SUBARRAY' => 1, 
-		   'HAVE_MPI_INFO' => 1 );
+ 	 	    'HAVE_MPI_INFO' => 1,
+		    'MPICH2' => 1 );
     &ReadAndProcessInterface( "../../mpi/romio/include/mpio.h.in" );
     %skipBlocks = ();
 }
@@ -1850,7 +1851,8 @@ sub print_special_decls {
 &ReadInterfaceForDefinitions( $prototype_file );
 if ( -s "../../mpi/romio/include/mpio.h.in" && $build_io) { 
     %skipBlocks = ( 'HAVE_MPI_DARRAY_SUBARRAY' => 1, 
-		   'HAVE_MPI_INFO' => 1 );
+		   'HAVE_MPI_INFO' => 1,
+		    'MPICH2' => 1 );
     &ReadInterfaceForDefinitions( "../../mpi/romio/include/mpio.h.in" );
     %skipBlocks = ();
 }
