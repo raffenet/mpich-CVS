@@ -46,6 +46,8 @@ int MPI_Type_set_name(MPI_Datatype type, char *type_name)
     static const char FCNAME[] = "MPI_Type_set_name";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    static int setup = 0;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_SET_NAME);
     /* Get handles to MPI objects. */
@@ -54,13 +56,18 @@ int MPI_Type_set_name(MPI_Datatype type, char *type_name)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If datatype_ptr is not value, it will be reset to null */
+	    MPIR_ERRTEST_ARGNULL(type_name,"type_name", mpi_errno);
+	    if (!mpi_errno) {
+		int slen = strlen( type_name );
+		if (slen >= MPI_MAX_OBJECT_NAME) {
+		    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
+		      "**typenamelen", "**typenamelen %d", slen );
+		}
+	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_NAME);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -69,6 +76,18 @@ int MPI_Type_set_name(MPI_Datatype type, char *type_name)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+    /* If this is the first call, initialize all of the predefined names.
+       Note that type_get_name must also make the same call */
+    if (!setup) { 
+	MPIR_Datatype_init_names();
+	setup = 1;
+    }
+
+    /* Include the null in MPI_MAX_OBJECT_NAME */
+    strncpy( datatype_ptr->name, type_name, MPI_MAX_OBJECT_NAME );
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_NAME);
     return MPI_SUCCESS;
