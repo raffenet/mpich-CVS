@@ -1,14 +1,15 @@
 CC = @TEST_CC@
 F77 = @TEST_F77@
-MPI_LIB = @MPI_LIB@
-INCLUDE_DIR = -I@ROMIO_HOME@/include -I@MPI_INCLUDE_DIR@
-LIBS = @LIBNAME@ $(MPI_LIB)
+INCLUDE_DIR = @ROMIO_INCLUDE@
+LIBS = @TEST_LIBNAME@ @MPI_LIB@
 USER_CFLAGS = @USER_CFLAGS@ $(INCLUDE_DIR)
 USER_FFLAGS = @USER_FFLAGS@ $(INCLUDE_DIR)
 
 all: simple perf async coll_test coll_perf misc file_info excl large_array \
      atomicity noncontig i_noncontig noncontig_coll large_file fperf \
      fcoll_test fmisc
+
+default: all
 
 .c.o:
 	$(CC) $(USER_CFLAGS) -c $*.c
@@ -17,7 +18,7 @@ all: simple perf async coll_test coll_perf misc file_info excl large_array \
 	$(F77) $(USER_FFLAGS) -c $*.f
 
 clean: 
-	\rm -f .P* PI* *.o simple async coll_test coll_perf misc perf fcoll_test fperf fmisc test* job* file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity
+	\rm -f .P* PI* *.o simple async coll_test coll_perf misc perf fcoll_test fperf fmisc test* job* file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity *.out
 
 simple: simple.o
 	$(CC) $(USER_CFLAGS) -o simple simple.o $(LIBS)
@@ -75,3 +76,6 @@ large_file: large_file.o
 
 large_array: large_array.o
 	$(CC) $(USER_CFLAGS) -o large_array large_array.o $(LIBS)
+
+testing: 
+	-./runtests $(TESTARGS)
