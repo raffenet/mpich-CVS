@@ -66,7 +66,11 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
 	if (!strncmp(vfsbuf.f_basetype, "nfs", 3)) *fstype = ADIO_NFS;
 	else {
 # if (defined(__HPUX) || defined(__SPPUX))
+#    ifdef __HFS
 	    *fstype = ADIO_HFS;
+#    else
+            *fstype = ADIO_UFS;
+#    endif
 # else
 	    if (!strncmp(vfsbuf.f_basetype, "xfs", 3)) *fstype = ADIO_XFS;
 	    else if (!strncmp(vfsbuf.f_basetype, "piofs", 4)) *fstype = ADIO_PIOFS;

@@ -1,4 +1,7 @@
-#! /bin/sh
+
+
+
+#!/bin/sh
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf.
 # Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
@@ -610,7 +613,11 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     CC=${CC:-cc}
     F77=${FC:-f77}
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -v -D__AIO_SUN"
+        if test $CC = "gcc" ; then
+            CFLAGS="$CFLAGS -g -Wall -D__AIO_SUN"
+        else 
+            CFLAGS="$CFLAGS -g -v -D__AIO_SUN"
+        fi
     else 
         CFLAGS="$CFLAGS -O -D__AIO_SUN"
     fi
@@ -942,7 +949,7 @@ cat > conftest.c <<EOF
 #include <fcntl.h>
 int main() { exit(0); }
 int t() { 
-struct flock64 fl; }
+struct flock64 fl; int i=F_SETLKW64; }
 EOF
 if eval $compile; then
   rm -rf conftest*
@@ -971,8 +978,12 @@ rm -f conftest*
     fi
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
-    ROMIO_TCFLAGS="-Ae"
-    ROMIO_TFFLAGS="+U77"
+    if test $CC != "gcc" ; then
+        ROMIO_TCFLAGS="-Ae"
+    fi
+    if test $F77 != "g77" ; then
+        ROMIO_TFFLAGS="+U77"
+    fi
 fi
 #
 if test -n "$arch_alpha" ; then
@@ -2097,7 +2108,71 @@ if $F90 -o kind kind.f >/dev/null 2>&1 ; then
     KINDVAL=`cat k.out`
 fi
 rm -f kind k.out kind.f kind.o
-if test -n "$KINDVAL" -a "$KINDVAL" != "-1" -a "$KINDVAL" != " -1" ; then
+if test -n "$KINDVAL" -a "$KINDVAL" != "-1" ; then
+   if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""$KINDVAL"
+else
+echo "$ac_t""$KINDVAL" 1>&1
+fi
+   MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
+   MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=$KINDVAL)"
+else
+    if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""unavailable"
+else
+echo "$ac_t""unavailable" 1>&1
+fi
+fi
+
+fi
+#
+if test "$FORTRAN_MPI_OFFSET" = "integer" && test "A$MPI_OFFSET_KIND2" = "A!" && test $NOF77 = 0 ; then
+   if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking for Fortran 90 KIND parameter for 4-byte integers""... $ac_c"
+else
+echo $ac_n "checking for Fortran 90 KIND parameter for 4-byte integers""... $ac_c" 1>&1
+fi
+rm -f kind.f kind.o kind
+cat <<EOF > kind.f
+      program main
+      integer i
+      i = selected_int_kind(8)
+      open(8, file="k.out", form="formatted")
+      write (8,*) i
+      close(8)
+      stop
+      end
+EOF
+if test -z "$F90" ; then
+   F90=f90
+fi
+KINDVAL=""
+if $F90 -o kind kind.f >/dev/null 2>&1 ; then
+    ./kind >/dev/null 2>&1
+    KINDVAL=`cat k.out`
+fi
+rm -f kind k.out kind.f kind.o
+if test -n "$KINDVAL" -a "$KINDVAL" != "-1" ; then
    if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""$KINDVAL"
 else
@@ -3114,7 +3189,7 @@ MPIRUN=mpirun
 #
 if test $FROM_MPICH = 1 ; then
    MPICH_HOME=`dirname $ROMIO_HOME`
-   if test -z "$MPI_BIN_DIR" ; then MPI_BIN_DIR=$MPICH_HOME/bin/mpicc ; fi
+   if test -z "$MPI_BIN_DIR" ; then MPI_BIN_DIR=$MPICH_HOME/bin ; fi
    TEST_CC=$MPI_BIN_DIR/mpicc
    MPI_LIB=""
    ROMIO_INCLUDE=""
@@ -3330,7 +3405,7 @@ for file in .. ${CONFIG_FILES}; do if test "x$file" != x..; then
   echo creating $file
   rm -f $file
   echo "# Generated automatically from `echo $file|sed 's|.*/||'`.in by configure." > $file
-cat $top_srcdir/${file}.in | sed -e "
+  sed -e "
 $prsub
 $extrasub
 s%@VPATH@%$VPATH%g
@@ -3372,7 +3447,7 @@ s%@BUILD_MPI_ARRAY@%$BUILD_MPI_ARRAY%g
 s%@DEFINE_MPI_OFFSET@%$DEFINE_MPI_OFFSET%g
 s%@MPI_FINFO1@%$MPI_FINFO1%g
 s%@MPI_FINFO2@%$MPI_FINFO2%g
-s%@MPI_FINFO3@%$MPI_FINFO3%g" | sed -e "
+s%@MPI_FINFO3@%$MPI_FINFO3%g
 s%@MPI_FINFO4@%$MPI_FINFO4%g
 s%@MPI_FARRAY1@%$MPI_FARRAY1%g
 s%@MPI_FARRAY2@%$MPI_FARRAY2%g
@@ -3395,14 +3470,14 @@ s%@MPIRUN@%$MPIRUN%g
 s%@FORTRAN_TEST@%$FORTRAN_TEST%g
 s%@LIBS@%$LIBS%g
 s%@DEFS@%$DEFS%
-" >> $file
+" $top_srcdir/${file}.in >> $file
 fi; done
 
 
 exit 0
 EOF
 chmod +x config.status
-${CONFIG_SHELL-/bin/sh} ./config.status
+${CONFIG_SHELL-/bin/sh} config.status
 
 if test "$NOF77" = 0; then
     CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/pfcoll_test.f test/fperf.f"

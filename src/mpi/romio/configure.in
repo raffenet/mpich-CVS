@@ -417,7 +417,11 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     CC=${CC:-cc}
     F77=${FC:-f77}
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -v -D__AIO_SUN"
+        if test $CC = "gcc" ; then
+            CFLAGS="$CFLAGS -g -Wall -D__AIO_SUN"
+        else 
+            CFLAGS="$CFLAGS -g -v -D__AIO_SUN"
+        fi
     else 
         CFLAGS="$CFLAGS -O -D__AIO_SUN"
     fi
@@ -641,7 +645,7 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     if test -z "$FILE_SYSTEM" ; then
         if test -n "$arch_hpux" ; then
            AC_COMPILE_CHECK(struct flock64,[#include <fcntl.h>],[
-struct flock64 fl;],flock64_ok="yes",flock64_ok="no")
+struct flock64 fl; int i=F_SETLKW64;],flock64_ok="yes",flock64_ok="no")
         else
             flock64_ok="yes"
         fi
@@ -659,8 +663,12 @@ struct flock64 fl;],flock64_ok="yes",flock64_ok="no")
     fi
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
-    ROMIO_TCFLAGS="-Ae"
-    ROMIO_TFFLAGS="+U77"
+    if test $CC != "gcc" ; then
+        ROMIO_TCFLAGS="-Ae"
+    fi
+    if test $F77 != "g77" ; then
+        ROMIO_TFFLAGS="+U77"
+    fi
 fi
 #
 if test -n "$arch_alpha" ; then
@@ -854,6 +862,10 @@ if test "$FORTRAN_MPI_OFFSET" = "integer*8" && test "A$MPI_OFFSET_KIND2" = "A!" 
    PAC_MPI_OFFSET_KIND()
 fi
 #
+if test "$FORTRAN_MPI_OFFSET" = "integer" && test "A$MPI_OFFSET_KIND2" = "A!" && test $NOF77 = 0 ; then
+   PAC_MPI_OFFSET_KIND_4BYTE()
+fi
+#
 # check if MPI_Info functions are defined in the MPI implementation
 if test $FROM_MPICH = 0 ; then
    PAC_MPI_INFO()
@@ -1038,7 +1050,7 @@ MPIRUN=mpirun
 #
 if test $FROM_MPICH = 1 ; then
    MPICH_HOME=`dirname $ROMIO_HOME`
-   if test -z "$MPI_BIN_DIR" ; then MPI_BIN_DIR=$MPICH_HOME/bin/mpicc ; fi
+   if test -z "$MPI_BIN_DIR" ; then MPI_BIN_DIR=$MPICH_HOME/bin ; fi
    TEST_CC=$MPI_BIN_DIR/mpicc
    MPI_LIB=""
    ROMIO_INCLUDE=""
