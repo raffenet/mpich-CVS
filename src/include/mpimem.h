@@ -18,6 +18,36 @@
 /* style: define:strdup:1 sig:0 */
 /* style: allow:fprintf:5 sig:0 */   /* For handle debugging ONLY */
 
+/*D
+  Memory - Memory Management Routines
+
+  Rules for memory management:
+
+  MPICH explicity prohibits the appearence of 'malloc', 'free', 
+  'calloc', 'realloc', or 'strdup' in any code implementing a device or 
+  MPI call (of course, users may use any of these calls in their code).  
+  Instead, you must use 'MPIU_Malloc' etc.; if these are defined
+  as 'malloc', that is allowed, but an explicit use of 'malloc' instead of
+  'MPIU_Malloc' in the source code is not allowed.  This restriction is
+  made to simplify the use of portable tools to test for memory leaks, 
+  overwrites, and other consistency checks.
+
+  Most memory should be allocated at the time that 'MPID_Init' is 
+  called and released with 'MPID_Finalize' is called.  If at all possible,
+  no other MPID routine should fail because memory could not be allocated
+  (for example, because the user has allocated large arrays after 'MPI_Init').
+  
+  The implementation of the MPI routines will strive to avoid memory allocation
+  as well; however, operations such as 'MPI_Type_index' that create a new
+  data type that reflects data that must be copied from an array of arbitrary
+  size will have to allocate memory (and can fail; note that there is an
+  MPI error class for out-of-memory).
+
+  Question:
+  Do we want to have an aligned allocation routine?  E.g., one that
+  aligns memory on a cache-line.
+  D*/
+
 /* Define the string copy and duplication functions */
 /* Safer string routines */
 /*@ MPIU_Strncpy - Copy a string with a maximum length

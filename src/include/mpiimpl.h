@@ -256,6 +256,93 @@ int MPIU_Internal_error_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)))
 /* end of mpimsg.h */
 /* ------------------------------------------------------------------------- */
 
+/*TDSOverview.tex
+  
+  MPI has a number of data structures, most of which are represented by 
+  an opaque handle in an MPI program.  In the MPICH implementation of MPI, 
+  these handles are represented
+  as integers; this makes implementation of the C/Fortran handle transfer 
+  calls (part of MPI-2) easy.  
+ 
+  MPID objects (again with the possible exception of 'MPI_Request's) 
+  are allocated by a common set of object allocation functions.
+  These are 
+.vb
+    void *MPIU_Handle_obj_create( MPIU_Object_alloc_t *objmem )
+    void MPIU_Handle_obj_destroy( MPIU_Object_alloc_t *objmem, void *object )
+.ve
+  where 'objmem' is a pointer to a memory allocation object that knows 
+  enough to allocate objects, including the
+  size of the object and the location of preallocated memory, as well 
+  as the type of memory allocator.  By providing the routines to allocate and
+  free the memory, we make it easy to use the same interface to allocate both
+  local and shared memory for objects (always using the same kind for each 
+  type of object).
+
+  The names create/destroy were chosen because they are different from 
+  new/delete (C++ operations) and malloc/free.  
+  Any name choice will have some conflicts with other uses, of course.
+
+  Reference Counts:
+  Many MPI objects have reference count semantics.  
+  The semantics of MPI require that many objects that have been freed by the 
+  user 
+  (e.g., with 'MPI_Type_free' or 'MPI_Comm_free') remain valid until all 
+  pending
+  references to that object (e.g., by an 'MPI_Irecv') are complete.  There
+  are several ways to implement this; MPICH uses `reference counts` in the
+  objects.  To support the 'MPI_THREAD_MULTIPLE' level of thread-safety, these
+  reference counts must be accessed and updated atomically.  
+  A reference count for
+  `any` object can be incremented (atomically) 
+  with 'MPID_Object_add_ref(objptr)'
+  and decremented with 'MPID_Object_release_ref(objptr,newval_ptr)'.  
+  These have been designed so that then can be implemented as inlined 
+  macros rather than function calls, even in the multithreaded case, and
+  can use special processor instructions that guarantee atomicity to 
+  avoid thread locks.
+  The decrement routine sets the value pointed at by 'inuse_ptr' to 0 if 
+  the postdecrement value of the reference counter is zero, and to a non-zero
+  value otherwise.  If this value is zero, then the routine that decremented 
+  the
+  reference count should free the object.  This may be as simple as 
+  calling 'MPIU_Handle_obj_destroy' (for simple objects with no other allocated
+  storage) or may require calling a separate routine to destroy the object.
+  Because MPI uses 'MPI_xxx_free' to both decrement the reference count and 
+  free the object if the reference count is zero, we avoid the use of 'free'
+  in the MPID routines.
+
+  The 'inuse_ptr' approach is used rather than requiring the post-decrement
+  value because, for reference-count semantics, all that is necessary is
+  to know when the reference count reaches zero, and this can sometimes
+  be implemented more cheaply that requiring the post-decrement value (e.g.,
+  on IA32, there is an instruction for this operation).
+
+  Question:
+  Should we state that this is a macro so that we can use a register for
+  the output value?  That avoids a store.  Alternately, have the macro 
+  return the value as if it was a function?
+
+  Structure Definitions:
+  The structure definitions in this document define `only` that part of
+  a structure that may be used by code that is making use of the ADI.
+  Thus, some structures, such as 'MPID_Comm', have many defined fields;
+  these are used to support MPI routines such as 'MPI_Comm_size' and
+  'MPI_Comm_remote_group'.  Other structures may have few or no defined
+  members; these structures have no fields used outside of the ADI.  
+  In C++ terms,  all members of these structures are 'private'.  
+
+  For the initial implementation, we expect that the structure definitions 
+  will be designed for the multimethod device.  However, all items that are
+  specific to a particular device (including the multi-method device) 
+  will be placed at the end of the structure;
+  the document will clearly identify the members that all implementations
+  will provide.  This simplifies much of the code in both the ADI and the 
+  implementation of the MPI routines because structure member can be directly
+  accessed rather than using some macro or C++ style method interface.
+  
+ T*/
+
 /* Known language bindings */
 /*E
   MPID_Lang_t - Known language bindings for MPI
@@ -794,6 +881,50 @@ extern MPID_Errhandler MPID_Errhandler_direct[];
   it may be what the user intended, and in any case, it is a valid operation.
 
   T*/
+/*TAttrOverview.tex
+ *
+ * The MPI standard allows `attributes`, essentially an '(integer,pointer)'
+ * pair, to be attached to communicators, windows, and datatypes.  
+ * The integer is a `keyval`, which is allocated by a call (at the MPI level)
+ * to 'MPI_Comm/Type/Win_create_keyval'.  The pointer is the value of 
+ * the attribute.
+ * Attributes are primarily intended for use by the user, for example, to save
+ * information on a communicator, but can also be used to pass data to the
+ * MPI implementation.  For example, an attribute may be used to pass 
+ * Quality of Service information to an implementation to be used with 
+ * communication on a particular communicator.  
+ * To provide the most general access by the ADI to all attributes, the
+ * ADI defines a collection of routines that are used by the implementation
+ * of the MPI attribute routines (such as 'MPI_Comm_get_attr').
+ * In addition, the MPI routines involving attributes will invoke the 
+ * corresponding 'hook' functions (e.g., 'MPID_Dev_comm_attr_set_hook') 
+ * should the device define them.
+ *
+ * Attributes on windows and datatypes are defined by MPI but not of 
+ * interest (as yet) to the device.
+ *
+ * In addition, there are seven predefined attributes that the device must
+ * supply to the implementation.  This is accomplished through 
+ * data values that are part of the 'MPIR_Process' data block.
+ *  The predefined keyvals on 'MPI_COMM_WORLD' are\:
+ *.vb
+ * Keyval                     Related Module
+ * MPI_APPNUM                 Dynamic
+ * MPI_HOST                   Core
+ * MPI_IO                     Core
+ * MPI_LASTUSEDCODE           Error
+ * MPI_TAG_UB                 Communication
+ * MPI_UNIVERSE_SIZE          Dynamic
+ * MPI_WTIME_IS_GLOBAL        Timer
+ *.ve
+ * The values stored in the 'MPIR_Process' block are the actual values.  For 
+ * example, the value of 'MPI_TAG_UB' is the integer value of the largest tag.
+ * The
+ * value of 'MPI_WTIME_IS_GLOBAL' is a '1' for true and '0' for false.  Likely
+ * values for 'MPI_IO' and 'MPI_HOST' are 'MPI_ANY_SOURCE' and 'MPI_PROC_NULL'
+ * respectively.
+ *
+ T*/
 
 /* Because Comm, Datatype, and File handles are all ints, and because
    attributes are otherwise identical between the three types, we

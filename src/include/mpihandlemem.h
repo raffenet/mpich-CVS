@@ -7,6 +7,28 @@
 #ifndef MPIHANDLE_H
 #define MPIHANDLE_H
 
+/*TOpaqOverview.tex
+  MPI Opaque Objects:
+
+  MPI Opaque objects such as 'MPI_Comm' or 'MPI_Datatype' are specified by 
+  integers (in the MPICH2 implementation); the MPI standard calls these
+  handles.  
+  Out of range values are invalid; the value 0 is reserved.
+  For most (with the possible exception of 
+  'MPI_Request' for performance reasons) MPI Opaque objects, the integer
+  encodes both the kind of object (allowing runtime tests to detect a datatype
+  passed where a communicator is expected) and important properties of the 
+  object.  Even the 'MPI_xxx_NULL' values should be encoded so that 
+  different null handles can be distinguished.  The details of the encoding
+  of the handles is covered in more detail in the MPICH2 Design Document.
+  For the most part, the ADI uses pointers to the underlying structures
+  rather than the handles themselves.  However, each structure contains an 
+  'handle' field that is the corresponding integer handle for the MPI object.
+
+  MPID objects (objects used within the implementation of MPI) are not opaque.
+
+  T*/
+
 /* Known MPI object types.  These are used for both the error handlers 
    and for the handles.  This is a 4 bit value.  0 is reserved for so 
    that all-zero handles can be flagged as an error. */
