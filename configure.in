@@ -564,6 +564,17 @@ dnl
 dnl Temporary value for extra status information, from device subsystem
 AC_SUBST(EXTRA_STATUS_DECL)
 dnl
+dnl Get the value of MPI_MAX_PROCESSOR_NAME
+if test -s src/mpid/$device_name/Makefile ; then
+    maxproc="`${MAKE} -f src/mpid/$device_name/Makefile echomaxprocname`"
+fi
+if test -z "$maxproc" ; then
+    maxproc=128
+fi
+# We should check that the maxproc value is a valid integer
+MPI_MAX_PROCESSOR_NAME="$maxproc"
+AC_SUBST(MPI_MAX_PROCESSOR_NAME)
+dnl
 dnl
 dnl Set the libraries to use in building programs
 if test "$enable_weak_symbols" != "yes" ; then
