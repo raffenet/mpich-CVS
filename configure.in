@@ -201,7 +201,8 @@ case "$enable_sharedlibs" in
     # Not quite right yet.  See mpich/util/makesharedlib
     # Use syntax that works in both Make and the shell
     #C_LINK_SHL='${CC} -shared -Wl,-r'
-    C_LINK_SHL='${CC} -shared -fpic'
+    C_LINK_SHL='${CC} -shared'
+    #C_LINK_SHL='${CC} -shared -Wl,-h,<finallibname>'
     CC_SHL='${CC} -shared -fpic'
     ;;
     libtool)

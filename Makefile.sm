@@ -5,8 +5,9 @@ distclean-local:
 	-@rm -f lib/libmpich.a
 	-@rm -f src/include/mpichconf.h
 
-# Need a way to specify optional install targets like libpmpich.a and *.so
 install_LIB = lib/libmpich.a
+optinstall_LIB = lib/libpmpich.a
+optinstall_SHLIB = lib/libmpich.so
 #install_DOC = 
 #install_HTML = 
 #install_MAN = 

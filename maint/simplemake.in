@@ -173,6 +173,7 @@ $docdir_name =               'docdir      = @' . "docdir"      . '@';
 
 #install_dir maps XXX from install_XXX into the GNU name
 %install_dir = ( 'LIB' => 'libdir', 
+		 'SHLIB' => 'libdir',     # SHLIB also signals library to build
 		 'BIN' => 'bindir',
 		 'INCLUDE' => 'includedir', 
 		 'MAN' => 'mandir',
@@ -385,6 +386,10 @@ sub ReadMfile {
 	elsif (/^install_(\w*)\s*=\s*(.*)\s*$/) {
 	    $install_files{$1} = $2;
 	}
+	elsif (/^optinstall_(\w*)\s*=\s*(.*)\s*$/) {
+	    # This is for files that will be installed only if present
+	    $optinstall_files{$1} = $2;
+	}
         elsif (/^SUBDIRS\s*=\s*(.*)\s*\r?$/) {
 	    # The \r is used to remove any \r in DOS-style files
             @subdirs = split(/ /,$1);
@@ -482,6 +487,16 @@ sub WriteMfile {
     &TargetLibraries;
     if ($do_sharedlibs) {
 	&TargetSharedLibraries;
+	if (defined($optinstall_files{'SHLIB'})) {
+	    foreach $libspec (split(/\s\s*/,$optinstall_files{'SHLIB'})) {
+		$libspec =~ /(.*)\/([^\/]*)/;
+		$libdir = $1;
+		$libname = $2;
+		$libsrc = $libname;
+		$libsrc =~ s/\.so/\.la/;
+		&TargetSharedLibraryFinal( $libsrc, $libname, $libdir );
+	    }
+	}
     }
     if ($do_profilelibs && $found_profilelib) {
 	&print_make_line( FD, "@" . "NO_WEAK_SYM_TARGET\@:" );
@@ -547,6 +562,12 @@ sub DefaultRules {
 # 	    }
 # 	}
     }
+    if ($do_sharedlibs) {
+	if (defined($optinstall_files{'SHLIB'})) {
+	    print FD "$shlibdefs{'c'}$newline";
+	}
+    }
+
     if (scalar(%install_files)) { 
 	print FD "INSTALL     = \@INSTALL\@$newline";
     }
@@ -806,6 +827,7 @@ sub ClearVars {
     %libraries = ();
     %profile_libraries = ();
     %install_files = ();
+    %optinstall_files = ();
     $found_profilelib = 0;
     %programs = ();
     %pgm_ldadd = ();
@@ -1217,13 +1239,17 @@ sub TargetSharedLibraries {
 # 
 # If we can't use .lo as an object extension, then after extracting,
 # rename everything as .o and then build.
-# TargetSharedLibraryFinal( "libmpich.a", "libmpich.so.1" )
+# TargetSharedLibraryFinal( "libmpich.la", "libmpich.so.1", dir )
 sub TargetSharedLibraryFinal {
-    $libname = $_[0];
-    $newlibname = $_[1];
-    print FD "if [ -d .tmp ] ; then rm -rf .tmp ; fi\n";
-    print FD "(cd .tmp && ar x ../$libname && \\\n";
-    print FD "${C_SHL_LNK} -o ../$newlibname *.lo)\n";
+    my $libname = $_[0];
+    my $newlibname = $_[1];
+    my $libdir = $_[2];
+    print FD "# Build the shared library from the shared object files\n";
+    print FD "$libdir/$newlibname: $libdir/$libname\n";
+    print FD "\tif [ -d $libdir/.tmp ] ; then rm -rf $libdir/.tmp ; fi\n";
+    print FD "\t(cd $libdir/.tmp && ar x ../$libname && \\\n";
+    print FD "\t\${C_LINK_SHL} -o ../$newlibname *.lo)\n";
+    print FD "\trm -rf $libdir/.tmp\n";
 }
 #
 # ===========================================================================
@@ -1332,16 +1358,32 @@ sub TargetDocs {
 }
 
 sub TargetInstall {
+    %dirschecked = ();
     if (!scalar(%install_files)) { return ; }
     print FD "# Install target$newline";
     print FD "install:$newline";
     foreach $kind (keys(%install_files)) {
 	$dir = $install_dir{$kind};
-	print FD "\tif [ ! -d \${$dir} ] ; then mkdir \${$dir} ; fi$newline";
+	if (!defined($dirschecked{$dir})) {
+	    print FD "\tif [ ! -d \${$dir} ] ; then mkdir \${$dir} ; fi$newline";
+	    $dirschecked{$dir} = 1;
+	}
 	foreach $file ($install_files{$kind}) {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
 	    print FD "\t\@INSTALL_PROGRAM\@ $file \${$dir}/$destfile$newline";
+	}
+    }
+    foreach $kind (keys(%optinstall_files)) {
+	$dir = $install_dir{$kind};
+	if (!defined($dirschecked{$dir})) {
+	    print FD "\tif [ ! -d \${$dir} ] ; then mkdir \${$dir} ; fi$newline";
+	    $dirschecked{$dir} = 1;
+	}
+	foreach $file ($optinstall_files{$kind}) {
+	    $destfile = $file;
+	    $destfile =~ s/.*\///;
+	    print FD "\tif [ -s $file ] ; then \@INSTALL_PROGRAM\@ $file \${$dir}/$destfile ; fi$newline";
 	}
     }
     print FD "$newline";
