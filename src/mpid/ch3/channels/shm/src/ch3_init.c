@@ -55,6 +55,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     char shmemkey[MPIDI_MAX_SHM_NAME_LENGTH];
     int i, j, k;
     int shm_block;
+    char local_host[100];
+#ifdef HAVE_WINDOWS_H
+    DWORD host_len;
+#endif
 
     /*
      * Extract process group related information from PMI and initialize
@@ -261,6 +265,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     {
 	if (pg_rank == 0)
 	{
+	    /* Put the shared memory key */
 	    generate_shm_string(shmemkey);
 	    if (MPIU_Strncpy(key, "SHMEMKEY", key_max_sz))
 	    {
@@ -278,6 +283,26 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
 		return mpi_errno;
 	    }
+
+	    /* Put the hostname to make sure everyone is on the same host */
+	    if (MPIU_Strncpy(key, "SHMHOST", key_max_sz))
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
+		return mpi_errno;
+	    }
+#ifdef HAVE_WINDOWS_H
+	    host_len = val_max_sz;
+	    GetComputerName(val, &host_len);
+#else
+	    gethostname(val, val_max_sz); /* Don't call this under Windows because it requires the socket library */
+#endif
+	    mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
+	    if (mpi_errno != 0)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
+		return mpi_errno;
+	    }
+
 	    mpi_errno = PMI_KVS_Commit(pg->kvs_name);
 	    if (mpi_errno != 0)
 	    {
@@ -293,6 +318,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	}
 	else
 	{
+	    /* Get the shared memory key */
 	    if (MPIU_Strncpy(key, "SHMEMKEY", key_max_sz))
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
@@ -313,6 +339,29 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	    if (MPIU_Strncpy(shmemkey, val, val_max_sz))
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
+		return mpi_errno;
+	    }
+	    /* Get the root host and make sure local process is on the same node */
+	    if (MPIU_Strncpy(key, "SHMHOST", key_max_sz))
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
+		return mpi_errno;
+	    }
+	    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val, val_max_sz);
+	    if (mpi_errno != 0)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
+		return mpi_errno;
+	    }
+#ifdef HAVE_WINDOWS_H
+	    host_len = 100;
+	    GetComputerName(local_host, &host_len);
+#else
+	    gethostname(local_host, 100); /* Don't call this under Windows because it requires the socket library */
+#endif
+	    if (strcmp(val, local_host))
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmhost", "**shmhost %s %s", local_host, val);
 		return mpi_errno;
 	    }
 	}
