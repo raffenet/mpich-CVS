@@ -359,9 +359,6 @@ void MPID_Dataloop_create_indexed(int count,
     if (is_builtin) {
 	new_dlp->kind = DLOOP_KIND_INDEXED | DLOOP_FINAL_MASK;
 
-#if 0
-	new_dlp->handle = new_dtp->handle;
-#endif
 	if (flags & MPID_DATALOOP_ALL_BYTES) {
 	    /* blocklengths are modified below */
 	    new_dlp->el_size   = 1;
@@ -377,10 +374,7 @@ void MPID_Dataloop_create_indexed(int count,
 	new_dlp->loop_params.i_t.dataloop = NULL;
     }
     else {
-	new_dlp->kind = DLOOP_KIND_INDEXED;
-#if 0
-	new_dlp->handle = new_dtp->handle;
-#endif
+	new_dlp->kind      = DLOOP_KIND_INDEXED;
 	new_dlp->el_size   = old_dtp->size;
 	new_dlp->el_extent = old_dtp->extent;
 	new_dlp->el_type   = old_dtp->eltype;
@@ -544,5 +538,3 @@ static void MPIDI_Type_indexed_array_copy(int count,
     }
     return;
 }
-
-

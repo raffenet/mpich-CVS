@@ -63,7 +63,6 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 
 	/* fill in dataloop */
 	dlp->kind                       = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
-	dlp->handle                     = new_dtp->handle;
 	dlp->loop_params.c_t.count      = 1;
 	dlp->el_size                    = oldsize;
 	dlp->el_extent                  = extent;
@@ -102,16 +101,9 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 	/* make a copy of the dataloop from the old type (no changes) */
 	curpos = (char *) dlp;
 	MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
-	dlp->handle = new_dtp->handle;
     }
 
     *newtype_p = new_dtp->handle;
 
     return MPI_SUCCESS;
 }
-
-
-
-
-
-

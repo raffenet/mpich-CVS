@@ -213,9 +213,9 @@ typedef struct DLOOP_Dataloop {
 	DLOOP_Dataloop_struct       s_t;
 	DLOOP_Dataloop_common       cm_t;
     } loop_params;
-    DLOOP_Handle handle; /* needed to get back to original datatype for
-			  * get_contents and other operations
-			  */
+#if 0
+    DLOOP_Handle handle;
+#endif
     DLOOP_Offset el_size; /* I don't feel like dealing with the bit manip. 
 			   * needed to get the packed size right at the moment.
 			   */

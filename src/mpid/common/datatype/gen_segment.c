@@ -63,7 +63,6 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	DLOOP_Handle_get_size_macro(handle, elmsize);
 
 	sblp->kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
-	sblp->handle = handle;
 	sblp->loop_params.c_t.count = count;
 	sblp->loop_params.c_t.dataloop = 0;
 	sblp->el_size = elmsize;
@@ -74,9 +73,8 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	depth = 1;
     }
     else if (count == 0) {
-	/* only use the builtin, call it 0 ints */
+	/* only use the builtin */
 	sblp->kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
-	sblp->handle = MPI_INT;
 	sblp->loop_params.c_t.count = 0;
 	sblp->loop_params.c_t.dataloop = 0;
 	sblp->el_size = 0;

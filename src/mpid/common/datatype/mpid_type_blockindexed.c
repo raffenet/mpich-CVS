@@ -348,9 +348,6 @@ void MPID_Dataloop_create_blockindexed(int count,
     if (is_builtin) {
 	new_dlp->kind = DLOOP_KIND_BLOCKINDEXED | DLOOP_FINAL_MASK;
 
-#if 0
-	new_dlp->handle = new_dtp->handle;
-#endif
 	if (flags & MPID_DATALOOP_ALL_BYTES) {
 	    blklen            *= old_extent;
 	    new_dlp->el_size   = 1;
@@ -369,9 +366,6 @@ void MPID_Dataloop_create_blockindexed(int count,
     }
     else {
 	new_dlp->kind = DLOOP_KIND_BLOCKINDEXED;
-#if 0
-	new_dlp->handle = new_dtp->handle;
-#endif
 	new_dlp->el_size   = old_dtp->size;
 	new_dlp->el_extent = old_dtp->extent;
 	new_dlp->el_type   = old_dtp->eltype;
@@ -466,9 +460,3 @@ static int MPIDI_Type_blockindexed_count_contig(int count,
     }
     return contig_count;
 }
-
-
-
-
-
-

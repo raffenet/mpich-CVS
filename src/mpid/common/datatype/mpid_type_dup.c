@@ -85,7 +85,6 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 	new_dtp->loopsize       = old_dtp->loopsize;
 	
 	MPID_Dataloop_copy(dlp, old_dtp->loopinfo, old_dtp->loopsize);
-	dlp->handle = new_dtp->handle;
 
 	*newtype = new_dtp->handle;
     }
@@ -95,4 +94,3 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 #endif
     return mpi_errno;
 }
-

@@ -16,6 +16,10 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p, int depth, int header);
 void MPIDI_Datatype_contents_printf(MPI_Datatype type, int depth, int acount);
 static char *MPIDI_Datatype_depth_spacing(int depth);
 
+/* note: this isn't really "error handling" per se, but leave these comments
+ * because Bill uses them for coverage analysis.
+ */
+
 /* --BEGIN ERROR HANDLING-- */
 void MPIDI_Datatype_dot_printf(MPI_Datatype type,
 			       int depth,
@@ -141,7 +145,7 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
 		break;
 	    case DLOOP_KIND_STRUCT:
 	    default:
-		assert(0);
+		MPIU_dbg_printf("      < unsupported type >\n");
 	}
     }
 
@@ -183,13 +187,6 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
     true_ub = extent + true_lb;
     PMPI_Type_get_extent(type, &lb, &extent);
     ub = extent + lb;
-
-#if 0
-    lb      += displacement;
-    true_lb += displacement;
-    ub      += displacement;
-    true_ub += displacement;
-#endif
 
     if (header == 1) {
 	/*               012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 */
@@ -306,7 +303,6 @@ char *MPIDU_Datatype_builtin_to_string(MPI_Datatype type)
  *
  * longest string is 16 characters.
  */
-#define HAVE_MPI2_COMBINERS
 char *MPIDU_Datatype_combiner_to_string(int combiner)
 {
     static char c_named[]    = "named";
@@ -316,7 +312,6 @@ char *MPIDU_Datatype_combiner_to_string(int combiner)
     static char c_indexed[]  = "indexed";
     static char c_hindexed[] = "hindexed";
     static char c_struct[]   = "struct";
-#ifdef HAVE_MPI2_COMBINERS
     static char c_dup[]              = "dup";
     static char c_hvector_integer[]  = "hvector_integer";
     static char c_hindexed_integer[] = "hindexed_integer";
@@ -328,7 +323,6 @@ char *MPIDU_Datatype_combiner_to_string(int combiner)
     static char c_f90_complex[]      = "f90_complex";
     static char c_f90_integer[]      = "f90_integer";
     static char c_resized[]          = "resized";
-#endif
 
     if (combiner == MPI_COMBINER_NAMED)      return c_named;
     if (combiner == MPI_COMBINER_CONTIGUOUS) return c_contig;
@@ -337,7 +331,6 @@ char *MPIDU_Datatype_combiner_to_string(int combiner)
     if (combiner == MPI_COMBINER_INDEXED)    return c_indexed;
     if (combiner == MPI_COMBINER_HINDEXED)   return c_hindexed;
     if (combiner == MPI_COMBINER_STRUCT)     return c_struct;
-#ifdef HAVE_MPI2_COMBINERS
     if (combiner == MPI_COMBINER_DUP)              return c_dup;
     if (combiner == MPI_COMBINER_HVECTOR_INTEGER)  return c_hvector_integer;
     if (combiner == MPI_COMBINER_HINDEXED_INTEGER) return c_hindexed_integer;
@@ -349,7 +342,6 @@ char *MPIDU_Datatype_combiner_to_string(int combiner)
     if (combiner == MPI_COMBINER_F90_COMPLEX)      return c_f90_complex;
     if (combiner == MPI_COMBINER_F90_INTEGER)      return c_f90_integer;
     if (combiner == MPI_COMBINER_RESIZED)          return c_resized;
-#endif
     
     return NULL;
 }
@@ -527,5 +519,3 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
     }
 }
 /* --END ERROR HANDLING-- */
-
-
