@@ -225,7 +225,7 @@ void MPID_Datatype_free( MPID_Datatype *datatype )
    as 'volatile' only when needed?  For now, the answer is no; there isn''t
    enough to be gained in that case.
 @*/
-void MPID_Object_add_ref( MPIU_Object_head *ptr )
+void MPIU_Object_add_ref( MPIU_Object_head *ptr )
 {}
 
 /*@
@@ -283,7 +283,7 @@ void MPID_Object_add_ref( MPIU_Object_head *ptr )
    Module: 
    MPID_CORE
   @*/
-int MPID_Object_release_ref( MPIU_Object_head *ptr )
+int MPIU_Object_release_ref( MPIU_Object_head *ptr, int *newval_ptr )
 {}
 
 
