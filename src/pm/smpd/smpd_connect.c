@@ -466,7 +466,11 @@ int smpd_init_process(void)
 #ifdef HAVE_SIGACTION
     memset(&act, 0, sizeof(act));
     act.sa_handler = smpd_child_handler;
+#ifdef SA_NODEFER
     act.sa_flags = SA_NOCLDSTOP | SA_NODEFER;
+#else
+    act.sa_flags = SA_NOCLDSTOP;
+#endif
     sigaction(SIGCHLD, &act, NULL);
 #endif
 
