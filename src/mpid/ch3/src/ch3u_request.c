@@ -341,7 +341,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 	unpack_sz = userbuf_sz;
 	rreq->status.count = userbuf_sz;
 	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,
-						      "**truncate", 0);
+						      "**truncate", "**truncate %d %d", rreq->ch3.recv_data_sz, userbuf_sz);
     }
 
     if (unpack_sz > 0)

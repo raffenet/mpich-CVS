@@ -862,7 +862,7 @@ static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 	    MPIDI_DBG_PRINTF((35, FCNAME, "receive buffer too small; message truncated, msg_sz=" MPIDI_MSG_SZ_FMT ", userbuf_sz="
 			      MPIDI_MSG_SZ_FMT, rreq->ch3.recv_data_sz, userbuf_sz));
 	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,
-							  "**truncate", 0);
+							  "**truncate", "**truncate %d %d %d %d", rreq->status.MPI_SOURCE, rreq->status.MPI_TAG, rreq->ch3.recv_data_sz, userbuf_sz );
 	    rreq->status.count = userbuf_sz;
 	    data_sz = userbuf_sz;
 	}

@@ -227,6 +227,8 @@ Fortran integer (value is %ld)
 **unknown:Unknown error.  Please file a bug report.
 **truncate:Message truncated
 **truncate %d %d:Message truncated; %d bytes received but buffer size is %d
+**truncate %d %d %d %d:Message from rank %d and tag %d truncated \
+ %d bytes received but buffer size is %d
 **other:Other MPI error
 **othersys:System resource limit exceeded 
 **othersys %s:System resource (%s) limit exceeded 
