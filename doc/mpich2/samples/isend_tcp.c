@@ -56,12 +56,16 @@ else {
        use a stream (to long to pack into a single temp buffer or socket)
      */
     if (datatype->is_contig) {
+	/* We can send the data directly from the user's buffer.  This
+	   could be generalized to also allow short iovecs */
         vector[1].iov_base = buffer;
 	vector[1].iov_len  = count * datatype->size;
 	MPID_Rhcv_tcp( rank, comm_ptr, MPID_Hid_eager, vector, 2, 
 		       &request_ptr->xfer_completed );
         }
     else if (count * datatype->size <= short_limit) {
+	/* The user's data is not contiguous (or a short iovec) but is
+	   small enough to just pack and send. */
 	vector[1].iov_base = MPID_SendAlloc( count * datatype->size );
 	vector[1].iov_len  = count * datatype->size;
 	request_ptr->buf.ptr = vector[1].iov_base;
@@ -72,7 +76,8 @@ else {
         request_ptr->xfer_completed = 1;
     } else {
 	/* This is the complicated case.  We want to send a stream of 
-	   data */
+	   data (that is, the data (probably) can't be sent in once 
+	   data transfer) */
 	MPID_Stream_send_init( buffer, count, datatype, &request_ptr->stream );
 	MPID_Stream_isend_tcp( rank, comm_ptr, MPID_Hid_eager, vector, 
 			       &request_ptr->stream, 

@@ -1,5 +1,6 @@
 \newif\ifcodefirst
-\codefirsttrue
+%\codefirsttrue
+\codefirstfalse
 
 \section{Scenarios}
 \label{sec:pt-2-pt-scenarios}
@@ -105,8 +106,9 @@ The basic communication is provided by
     memory may be special, such as memory shared between processes or
     registered to a network driver.)  
 
-    A stream is sent by specifying a destination process.  All streams
-    start with a \mpidconst{MPID_Hid_data} packet that contains a
+    A stream is sent by specifying a destination process.  All data, including
+    streams and data sent as a single contiguous buffer, 
+    starts with a \mpidconst{MPID_Hid_data} packet that contains a
     matching request number.
 
     A stream used for reading data is similar, with data read into a
@@ -149,6 +151,34 @@ The basic communication is provided by
     this optimization can be implemented within the stream operations that are
     discussed below without changing any of the sample code here.
 
+  The stream routines look roughly like:
+\begin{description}
+\item[\mpidfunc{MPID_Stream_send_init}]Initialize the
+  \mpids{MPID_Request}{stream} structure (usually within a
+  \mpidconst{MPID_Request} for sending.
+\item[\mpidfunc{MPID_Stream_recv_init}]Likewise, for receiving.
+\item[\mpidfunc{MPID_Stream_isend_tcp}]Send a stream without waiting for
+  (local) completion.  The arguments for this function are a \code{rank} and
+  \code{communicator}, indicating the destination process, a packet type and 
+  \code{iovec} (similar to \mpidfunc{MPID_Rhcv}), a previously initialized
+  \code{stream}, and two arguments that describe what to do when the operation
+  completes (locally).
+  When all of the data has been sent, invoke the
+  specified completion routine for the stream.  The \code{NULL} function has a
+  special meaning and is used as a short-hand for ``set a location (flag) to
+  one''.  The \code{_tcp} suffix indicates that this is the TCP-specific
+  routine.  
+\item[\mpidfunc{MPID_Stream_irecv_tcp}]Likewise, for receiving a stream.
+\item[\mpidfunc{MPID_Stream_discard_tcp}]Like
+  \mpidfunc{MPID_Stream_irecv_tcp}, but the data is discarded.  This is used,
+  for example, for unexpected \mpifunc{MPI_Rsend}s.
+\end{description}
+  Note that there is no separate ``wait'' or ``test'' routine for a stream.
+  This is different from what is currently in the ADI3 document, and reflects
+  the need for this interface to support nonblocking operations (the stream
+  discussion in the ADI3 document has been optimized for implementation of
+  collective operations, all of which (in MPI-1) are blocking).
+    
 \item Direct read and write.  These are roughly like the Unix
   \code{read} and \code{write}.  They are not used directly, but are a special
   case of the stream read and write.
@@ -242,6 +272,21 @@ typedef union {
   ... many other types ...
 } MPID_Packet;
 
+typedef struct _MPID_Stream {
+  /* Remember the source (send) or destination (recv) buffer */
+  void             *user_buffer;
+  /* Describe the (count,datatype) */
+  MPID_Dataloop    dataloop[MAX_DATALOOP];
+  int              count, cur_sp;
+  /* Used to hold contig form of data */
+  void             *tmp_buf;  
+  /* Completion routine */
+  void (*completion_fn)( struct _MPID_Stream *, void * );
+  /* and argument */
+  void *completion_arg;
+  ... other stuff ...
+} MPID_Stream;
+
 typedef struct {
      MPID_Request_kind kind;
      volatile int      busy;
@@ -253,6 +298,8 @@ typedef struct {
      MPID_Eager_info   eager;
      MPID_Rndv_info    rndv;
      MPID_Buf_info     buf;
+     ...
+     MPID_Stream       stream;
      ...
      MPID_Packet       packet;
      } MPID_Request;
@@ -560,7 +607,8 @@ Notes:
 
 \item In the case where the data is longer and noncontiguous, we must send it
   using incremental packing.  This uses a special data transfer routine,
-  \mpidfunc{MPID_Stream_isend}.
+  \mpidfunc{MPID_Stream_isend}.  The stream description is saved in
+  the \mpids{MPID_Request}{stream} field in the \mpidconst{MPID_Request}.
 
 \item We need some way to indicate that the \code{MPID_Request} itself can be
   reused.  Setting the \code{xfer_completed} flag indicates that the user's buffer
@@ -598,13 +646,36 @@ Notes:
   packet header, along with the \code{source} of the message.  This routine
   guarantees 
   that the entire packet header (the first \code{vector} element sent with
-  \mpidfunc{MPID_Rhcv_tcp}) has been delivered.  It does this by reading the
+  \mpidfunc{MPID_Rhcv_tcp}) has been delivered.  
+  One possible implementation (for variable-length packet headers) is for
+  \code{GetNextPacketHeader} to look at the 
   first two shorts; the second of these is the length of the packet header.
   If less than a full packet has been delivered, \code{GetNextPacketHeader}
   does not 
   return a packet.  This simplifies the handling in the rest of the
   communication agent without requiring that \code{GetNextPacketHeader}
   understand the different packet types.
+
+  The code for \code{GetNextPacketHeader} might look roughly like
+\begin{verbatim}
+while (1) {
+    if (any buffer has at least 4 bytes &&
+        buffer state is ``waiting for packet header'') {
+        short *p = <head of buffer>
+        if (p[1] >= <data in buffer>) {
+            <data in buffer> -= p[1];
+            <head of buffer> += p[1];
+            (handle circular buffer)
+            if (packet has payload)
+                set buffer state to ``waiting for payload''
+            return (MPID_Packet_t *)p;
+        }
+    }
+    if (blocking == MPID_NONBLOCKING) return 0;
+    <wait for data for either 0 seconds (MPID_NONBLOCKING) or 2*round-trip>
+    if (still no data and blocking == MPID_EXPECTING) return 0;
+}
+\end{verbatim}
 
   Question: what is the source value?  Is it the local process id (e.g., the
   connection number)?
@@ -646,8 +717,8 @@ Notes:
   not 
   interpret data as a packet header.  This is covered in more detail under
   \mpidconst{MPID_Hid_data}.  A consequence of this is that
-  \code{GetNextPacketHeader} might process additional data before returning a new
-  packet.
+  \code{GetNextPacketHeader} might process additional data before returning a
+  new packet.
 
   Note: an alternative is for \code{GetNextPacketHeader} to return a special
   kind of packet for streaming data, allowing the communication agent to
@@ -657,10 +728,41 @@ Notes:
   Question: Do we want to change the name to something that indicates that it
   does more than just read a packet?
 
+  Note also that the processing implicit in \mpidfunc{MPID_Stream_isend} or
+  \mpidfunc{MPID_Stream_irecv} may happen inside of
+  \code{GetNextPacketHeader}.  Continuing the code fragment describing
+  \code{GetNextPacketHeader} from above, at the top we might have
+\begin{verbatim}
+   foreach (socket with an active send stream) {
+       if (stream buffer empty) {
+           pack data into stream buffer
+       }
+       <try to write current stream buffer>
+       if (success and at end of stream) {
+           mark stream as complete
+           invoke completion routine
+       }
+   }
+   foreach (socket with an active recv stream) {
+       <try to receive data to fill stream buffer>
+       if (stream buffer full) {
+           unpack data from stream buffer
+           if (success and at end of stream) {
+               mark stream as complete
+               invoke completion routine
+           }
+       }
+   }
+\end{verbatim}
+
+
 \item Question: Is \code{GetNextPacketHeader} fair?  How do we ensure that
   \mpifunc{MPI_Testsome} is efficiently implemented?
 
-\item Under Linux, very short messages are often delayed; it is advantageous
+\item Under Linux, very short messages are often delayed, even when
+  \code{TCP_NODELAY} is set (see
+  \url{http://www.icase.edu/coral/LinuxTCP.html}).  Loncaric found that it is 
+  advantageous 
   to always send at least 100 bytes.  We could accomodate this by either
   padding all of the packet types out to 100 bytes or always sending at least
   100 bytes with \code{MPID_Rhcv_tcp}.  In that case, we must ensure that
@@ -678,7 +780,9 @@ Notes:
   need to lock the agent, we also need to use that same mutex in any routine
   that we might provide to change the thread level.  If we only permit the
   choice of thread level within \mpifunc{MPI_Thread_init}, then we don't need
-  to worry about this.
+  to worry about this.  Of course, we'll have a configure option
+  \cfgoption{--enable-single_threaded} that eliminates all thread locks needed
+  to support multiple user threads at compile time.
 
 \item The sample code shows inlined code for each packet type.  An
   implementation is more likely to use functions to handle each packet type,
