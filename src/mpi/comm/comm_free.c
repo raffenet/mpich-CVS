@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpicomm.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Comm_free */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -82,12 +83,12 @@ int MPI_Comm_free(MPI_Comm *comm)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    /*mpi_errno = MPID_Comm_free(); */
-
-    /* Remove the attributes, executing the attribute delete routine */
-    /* FIXME: This needs to access the routine in the perprocess structure,
-       to prevent comm_free from forcing linking all of the attribute code */
-    mpi_errno = MPIR_Comm_attr_delete( comm_ptr, comm_ptr->attributes );
+    /* Remove the attributes, executing the attribute delete routine.
+       Do this only if the attribute functions are defined. */
+    if (MPIR_Process.comm_attr_free) {
+	mpi_errno = MPIR_Process.comm_attr_free( comm_ptr, 
+						 comm_ptr->attributes );
+    }
 
     /* Free the VCRT */
     MPID_VCRT_Release(comm_ptr->vcrt);
