@@ -235,11 +235,13 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
 	sticky_ub = type_ptr->has_sticky_ub;
     }
 
-    PMPI_Type_size(type, &size);
-    PMPI_Type_get_true_extent(type, &true_lb, &extent);
+    MPIR_Nest_incr();
+    NMPI_Type_size(type, &size);
+    NMPI_Type_get_true_extent(type, &true_lb, &extent);
     true_ub = extent + true_lb;
-    PMPI_Type_get_extent(type, &lb, &extent);
+    NMPI_Type_get_extent(type, &lb, &extent);
     ub = extent + lb;
+    MPIR_Nest_decr();
 
     if (header == 1) {
 	/*               012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 */
