@@ -119,8 +119,8 @@ SMPs and similar systems.
 \item[Stream.] Communication routines designed to support
 important algorithms for collective communication.
 \item[Collective.] Alternate support for collective
-routines. \textbf{Note that this may end up being an MPI module, not
-an MPID module.}
+routines. Note that this may end up being an MPI module, not
+an MPID module, exploiting the routines in the \textbf{Stream} module.
 \item[Utility.] Routines to simplify correctness and performance
 debugging, and to provide a common interface to OS services that have
 different interfaces on different platforms.
@@ -462,182 +462,198 @@ Still to do.  This section needs to cover:
 
 \section{Summary of MPID Routines by Module}
 
-%
-% I find this section very dangerous until and unless it is updated
-% automatically.  For example, MPID_Irecv was added some time ago, but
-% since it wasn't in the list, we talked about why it might be needed.
-%
-\textbf{THE FOLLOWING LIST IS CURRENTLY UPDATED BY HAND AND IS THUS OUT OF
-  DATE.  CHECK THE CONTENTS PAGE FOR A LIST OF ROUTINES}
+See the table of contents for an up-to-date-list.
+% %
+% % I find this section very dangerous until and unless it is updated
+% % automatically.  For example, MPID_Irecv was added some time ago, but
+% % since it wasn't in the list, we talked about why it might be needed.
+% %
+% \textbf{THE FOLLOWING LIST IS CURRENTLY UPDATED BY HAND AND IS THUS OUT OF
+%   DATE.  CHECK THE CONTENTS PAGE FOR A LIST OF ROUTINES}
 
-\subsection{MPID Core}
-\begin{verbatim}
-    MPID_Abort
-    MPID_Finalize
-    MPID_Flags_testsome
-    MPID_Flags_waitsome
-    MPID_Put_contig
-    MPID_Rhcv
-    MPID_Thread_init
-\end{verbatim}
-%    MPID_Hid_Cancel (handler)
-%    MPID_Hid_Request_to_send (handler)
+% \subsection{MPID Core}
+% \begin{verbatim}
+%     MPID_Abort
+%     MPID_Finalize
+%     MPID_Flags_testsome
+%     MPID_Flags_waitsome
+%     MPID_Put_contig
+%     MPID_Rhcv
+%     MPID_Thread_init
+% \end{verbatim}
+% %    MPID_Hid_Cancel (handler)
+% %    MPID_Hid_Request_to_send (handler)
 
-\subsection{Dynamic}
-\begin{verbatim}
-    MPID_Comm_accept
-    MPID_Comm_connect
-    MPID_Comm_disconnect
-    MPID_Comm_spawn_multiple
-    MPID_Port_close
-    MPID_Port_open
-\end{verbatim}
+% \subsection{Dynamic}
+% \begin{verbatim}
+%     MPID_Comm_accept
+%     MPID_Comm_connect
+%     MPID_Comm_disconnect
+%     MPID_Comm_spawn_multiple
+%     MPID_Port_close
+%     MPID_Port_open
+% \end{verbatim}
 
-\subsection{Handlers}
-%\begin{verbatim}
-    Need enumeration of non-core handlers for \code{MPID_Rhcv}.  Perhaps these 
-    belong in various modules.
-%\end{verbatim}
+% \subsection{Handlers}
+% %\begin{verbatim}
+%     Need enumeration of non-core handlers for \code{MPID_Rhcv}.  Perhaps these 
+%     belong in various modules.
+% %\end{verbatim}
 
-\subsection{Attributes}
-\begin{verbatim}
-    MPID_Attr_delete
-    MPID_Attr_find
-    MPID_Attr_list_walk
-    MPID_Attr_predefined
-    MPID_Comm_attr_notify
-\end{verbatim}
-%   MPID_Lang_t
+% \subsection{Attributes}
+% \begin{verbatim}
+%     MPID_Attr_delete
+%     MPID_Attr_find
+%     MPID_Attr_list_walk
+%     MPID_Attr_predefined
+%     MPID_Comm_attr_notify
+% \end{verbatim}
+% %   MPID_Lang_t
 
 
-\subsection{Datatypes}
-\begin{verbatim}
-    MPID_Datatype_free
-    MPID_Datatype_incr
-    MPID_Datatype_new
-    MPID_Pack_size
-    MPID_Pack
-    MPID_Unpack
-    MPID_Segment_free
-    MPID_Segment_init_pack
-    MPID_Segment_init_unpack
-    MPID_Segment_pack
-    MPID_Segment_unpack
-\end{verbatim}
-%    MPID_Datatype
-%    MPID_Segment
+% \subsection{Datatypes}
+% \begin{verbatim}
+%     MPID_Datatype_free
+%     MPID_Datatype_incr
+%     MPID_Datatype_new
+%     MPID_Pack_size
+%     MPID_Pack
+%     MPID_Unpack
+%     MPID_Segment_free
+%     MPID_Segment_init_pack
+%     MPID_Segment_init_unpack
+%     MPID_Segment_pack
+%     MPID_Segment_unpack
+% \end{verbatim}
+% %    MPID_Datatype
+% %    MPID_Segment
 
-\subsection{Groups}
-\begin{verbatim}
-    MPID_Group_free
-    MPID_Group_incr
-    MPID_Group_new
-\end{verbatim}
-%    MPID_Group
-%    MPID_Lpidmask
+% \subsection{Groups}
+% \begin{verbatim}
+%     MPID_Group_free
+%     MPID_Group_incr
+%     MPID_Group_new
+% \end{verbatim}
+% %    MPID_Group
+% %    MPID_Lpidmask
 
-\subsection{Communicators}
-\begin{verbatim}
-    MPID_Comm_create
-    MPID_Comm_free
-    MPID_Comm_incr
-    MPID_Comm_thread_lock
-    MPID_Comm_thread_unlock
-\end{verbatim}
-%    MPID_Comm
+% \subsection{Communicators}
+% \begin{verbatim}
+%     MPID_Comm_create
+%     MPID_Comm_free
+%     MPID_Comm_incr
+%     MPID_Comm_thread_lock
+%     MPID_Comm_thread_unlock
+% \end{verbatim}
+% %    MPID_Comm
 
-\subsection{Requests}
-\begin{verbatim}
-    MPID_Request_cancel
-    MPID_Request_send_FOA
-    MPID_Request_recv_FOA
-    MPID_Request_free
-    MPID_Request_iprobe
-    MPID_Request_new
-    MPID_Request_ready
-\end{verbatim}
-% MPID_Request
+% \subsection{Requests}
+% \begin{verbatim}
+%     MPID_Request_cancel
+%     MPID_Request_send_FOA
+%     MPID_Request_recv_FOA
+%     MPID_Request_free
+%     MPID_Request_iprobe
+%     MPID_Request_new
+%     MPID_Request_ready
+% \end{verbatim}
+% % MPID_Request
 
-\subsection{Communication}
-\begin{verbatim}
-    MPID_Flags_testall
-    MPID_Flags_waitall
-    MPID_Get_contig
-    MPID_Isend
-    MPID_Irecv
-    MPID_Irsend
-    MPID_Issend
-    MPID_Testsome
-    MPID_Waitsome
-    MPID_Memory_register
-    MPID_Memory_unregister
-    MPID_tBsend
-\end{verbatim}
+% \subsection{Communication}
+% \begin{verbatim}
+%     MPID_Flags_testall
+%     MPID_Flags_waitall
+%     MPID_Get_contig
+%     MPID_Isend
+%     MPID_Irecv
+%     MPID_Irsend
+%     MPID_Issend
+%     MPID_Testsome
+%     MPID_Waitsome
+%     MPID_Memory_register
+%     MPID_Memory_unregister
+%     MPID_tBsend
+% \end{verbatim}
 
-\subsection{Streams}
-\begin{verbatim}
-    MPID_Stream_iforward
-    MPID_Stream_irecv
-    MPID_Stream_isend
-    MPID_Stream_wait
-\end{verbatim}
-%MPID_Stream
+% \subsection{Streams}
+% \begin{verbatim}
+%     MPID_Stream_iforward
+%     MPID_Stream_irecv
+%     MPID_Stream_isend
+%     MPID_Stream_wait
+% \end{verbatim}
+% %MPID_Stream
 
-\subsection{Window Objects}
-\begin{verbatim}
-    MPID_Mem_alloc
-    MPID_Mem_free
-\end{verbatim}
-%    MPID_Win
+% \subsection{Window Objects}
+% \begin{verbatim}
+%     MPID_Mem_alloc
+%     MPID_Mem_free
+% \end{verbatim}
+% %    MPID_Win
 
-\subsection{Timers}
-\begin{verbatim}
-    MPID_Gwtick
-    MPID_Gwtime_init
-    MPID_Gwtime_diff
-    MPID_Wtime_init
-    MPID_Wtick
-    MPID_Wtime_diff
-    MPID_Wtime
-\end{verbatim}
+% \subsection{Timers}
+% \begin{verbatim}
+%     MPID_Gwtick
+%     MPID_Gwtime_init
+%     MPID_Gwtime_diff
+%     MPID_Wtime_init
+%     MPID_Wtick
+%     MPID_Wtime_diff
+%     MPID_Wtime
+% \end{verbatim}
 
-\subsection{Topology}
-\begin{verbatim}
-    MPID_Topo_cluster_info
-\end{verbatim}
+% \subsection{Topology}
+% \begin{verbatim}
+%     MPID_Topo_cluster_info
+% \end{verbatim}
 
-\subsection{Utility}
-\begin{verbatim}
-    MPID_Calloc
-    MPID_Free
-    MPID_Malloc
-    MPID_Memcpy
-    MPID_Strdup
-\end{verbatim}
+% \subsection{Utility}
+% \begin{verbatim}
+%     MPID_Calloc
+%     MPID_Free
+%     MPID_Malloc
+%     MPID_Memcpy
+%     MPID_Strdup
+% \end{verbatim}
 
-\subsection{Environment}
-\begin{verbatim}
-    MPID_MAX_THREAD_LEVEL
-    MPID_THREAD_LEVEL
-\end{verbatim}
+% \subsection{Environment}
+% \begin{verbatim}
+%     MPID_MAX_THREAD_LEVEL
+%     MPID_THREAD_LEVEL
+% \end{verbatim}
 
-\subsection{Error Reporting}
-\begin{verbatim}
-    MPID_Err_create_code
-    MPID_Err_get_string
-    MPID_Err_set_msg
-    MPID_Err_add_class
-    MPID_Err_add_code
-    MPID_Err_delete_code
-    MPID_Err_delete_class
-\end{verbatim}
+% \subsection{Error Reporting}
+% \begin{verbatim}
+%     MPID_Err_create_code
+%     MPID_Err_get_string
+%     MPID_Err_set_msg
+%     MPID_Err_add_class
+%     MPID_Err_add_code
+%     MPID_Err_delete_code
+%     MPID_Err_delete_class
+% \end{verbatim}
 
 \section{MPID Core}
 \input MPID_CORE-list.tex
-\input Handlers.tex
+%\input Handlers.tex
 
 \section{mpiexec}
-\textbf{Need some discussion of mpiexec}
+%\textbf{Need some discussion of mpiexec}
+This section has not been written yet.  It will cover
+\begin{enumerate}
+\item How each device's \code{mpiexec} is built (since it may be a shell
+  script or program)
+\item How \code{mpiexec} is installed, and how any data files (e.g., lists of
+  hosts) are created
+\item Any commands or programs that must be run before \code{mpiexec} may be
+  used, along with programs to undo that (e.g., \code{lamboot} and
+  \code{lamkill}). 
+\item How special information is passed between \code{mpiexec} and the MPI
+  program, including how to set the attributes like \code{MPI_APPNUM} and
+  whether processes have command-line arguments and environment variables
+  provided by \code{mpiexec} (if not, \code{MPI_Init} may want to provide
+  them). 
+\end{enumerate}
 
 \section{Attributes}
 \input AttrOverview.tex

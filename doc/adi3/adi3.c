@@ -2121,6 +2121,17 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
 
   How does this interface to BNR?  Do we need to know anything?  Should
   this call have an info argument to support BNR?
+
+  How does information on command-line arguments and environment variables
+  recognized by the device get added to the documentation?
+
+  What about control for other impact on the environment?  For example,
+  what signals should the device catch (e.g., 'SIGFPE'? 'SIGTRAP'?)?  
+  Which of these should be optional (e.g., ignore or leave signal alone) 
+  or selectable (e.g., port to listen on)?  For example, catching 'SIGTRAP'
+  causes problems for 'gdb', so we''d like to be able to leave 'SIGTRAP' 
+  unchanged in some cases.
+
   @*/
 int MPID_Thread_init( int *argc_p, char *(*argv_p)[], 
 		      int requested, int *provided,
@@ -3058,7 +3069,9 @@ int MPID_Err_get_string( int code, char *msg, int msg_len )
   %lx  16
 .ve
   These values must also be enforced by the implementation of 
-  'MPID_Err_get_string'.
+  'MPID_Err_get_string'.  For example, the standard '%.32s' can be used to 
+  control the length of '%s' formatting.  For the other controls, we may
+  need to introduce a non-standard syntax.
 
   Module:
   Error
