@@ -14,7 +14,7 @@ void MPIR_Wait(MPID_Request * request)
     {
 	MPID_Progress_start();
 	
-	if (request->busy)
+	if ((*request->cc_ptr) != 0)
 	{
 	    MPID_Progress_wait();
 	}

@@ -13,18 +13,8 @@ int MPIR_Test(MPID_Request * request)
     int ret_val;
     
     MPID_Progress_start();
-
-    ret_val = request->busy ? 0 : request->status.count ? 1 : 0;
-    /*
-    if (request->busy)
-    {
-	ret_val = 0;
-    }
-    else
-    {
-	ret_val = request->status ? 1 : 0;
-    }
-    */
+    /*ret_val = (*request->cc_ptr == 0) ? TRUE : FALSE;*/
+    ret_val = (*request->cc_ptr == 0);
     MPID_Progress_end();
     return ret_val;
 }
