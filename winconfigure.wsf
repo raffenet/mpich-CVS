@@ -281,6 +281,10 @@ Else
 End If
 MPI_FINT               = "int"
 MPI_OFFSET             = "__int64"
+'MPI_OFFSET_TYPEDEF     = "typedef __int64 MPI_Offset;"
+MPI_OFFSET_TYPEDEF     = "#ifdef USE_GCC" + vbCrLf + "typedef long long MPI_Offset;" + vbCrLf + "#else" + vbCrLf + "typedef __int64 MPI_Offset;" + vbCrLf + "#endif"
+'MPI_OFFSET             = "long long"
+'MPI_OFFSET_TYPEDEF     = "typedef long long MPI_Offset;"
 EXTRA_STATUS_DECL      = ""
 HAVE_ROMIO             = "#include ""mpio.h"""
 'HAVE_ROMIO             = ""
@@ -331,6 +335,7 @@ contents = Replace(contents, "@BSEND_OVERHEAD@", BSEND_OVERHEAD)
 contents = Replace(contents, "@MPI_AINT@", MPI_AINT)
 contents = Replace(contents, "@MPI_FINT@", MPI_FINT)
 contents = Replace(contents, "@MPI_OFFSET@", MPI_OFFSET)
+contents = Replace(contents, "@MPI_OFFSET_TYPEDEF@", MPI_OFFSET_TYPEDEF)
 contents = Replace(contents, "@EXTRA_STATUS_DECL@", EXTRA_STATUS_DECL)
 contents = Replace(contents, "@HAVE_ROMIO@", HAVE_ROMIO)
 contents = Replace(contents, "@MPI_REAL4@", MPI_REAL4)
@@ -378,7 +383,10 @@ set fout = f.CreateTextFile("src\include\mpio.h")
 set fin = f.OpenTextFile("src\mpi\romio\include\mpio.h.in")
 
 contents = fin.ReadAll()
-contents = Replace(contents, "@DEFINE_MPI_OFFSET@", "typedef __int64 MPI_Offset;")
+'contents = Replace(contents, "@DEFINE_MPI_OFFSET@", "typedef __int64 MPI_Offset;")
+'contents = Replace(contents, "@DEFINE_MPI_OFFSET@", "#ifdef USE_GCC" + vbCrLf + "typedef long long MPI_Offset;" + vbCrLf + "#else" + vbCrLf + "typedef __int64 MPI_Offset;" + vbCrLf + "#endif")
+'contents = Replace(contents, "@DEFINE_MPI_OFFSET@", "typedef long long MPI_Offset;")
+contents = Replace(contents, "@DEFINE_MPI_OFFSET@", MPI_OFFSET_TYPEDEF)
 contents = Replace(contents, "@NEEDS_MPI_FINT@", "")
 contents = Replace(contents, "@HAVE_MPI_INFO@", "#define HAVE_MPI_INFO")
 contents = Replace(contents, "@HAVE_MPI_DARRAY_SUBARRAY@", "")
@@ -901,7 +909,7 @@ Sub AddDefinitions( fout, filename )
 				Case "HAVE_MAX_STRUCT_ALIGNMENT"
 					fout.WriteLine("/* #undef HAVE_MAX_STRUCT_ALIGNMENT */")
 				Case "HAVE_NAMEPUB_SERVICE"
-					fout.WriteLine("/* #undef HAVE_NAMEPUB_SERVICE */")
+					fout.WriteLine("#define HAVE_NAMEPUB_SERVICE 1")
 				Case "HAVE_NO_FORTRAN_MPI_TYPES_IN_C"
 					fout.WriteLine("/* #undef HAVE_NO_FORTRAN_MPI_TYPES_IN_C */")
 				Case "HAVE_ROMIO"
@@ -1152,6 +1160,24 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("/* #undef USE_MACROS_FOR_WTIME */")
 				Case "HAVE_CSHARP_BINDING"
 					fout.WriteLine("/* #undef HAVE_CSHARP_BINDING */")
+				Case "MPIR_REAL4_CTYPE"
+					fout.WriteLine("/* #undef MPIR_REAL4_CTYPE */")
+				Case "MPIR_REAL8_CTYPE"
+					fout.WriteLine("/* #undef MPIR_REAL8_CTYPE */")
+				Case "MPIR_REAL16_CTYPE"
+					fout.WriteLine("/* #undef MPIR_REAL16_CTYPE */")
+				Case "MPIR_INTEGER1_CTYPE"
+					fout.WriteLine("/* #undef MPIR_INTEGER1_CTYPE */")
+				Case "MPIR_INTEGER2_CTYPE"
+					fout.WriteLine("/* #undef MPIR_INTEGER2_CTYPE */")
+				Case "MPIR_INTEGER4_CTYPE"
+					fout.WriteLine("/* #undef MPIR_INTEGER4_CTYPE */")
+				Case "MPIR_INTEGER8_CTYPE"
+					fout.WriteLine("/* #undef MPIR_INTEGER8_CTYPE */")
+				Case "MPIR_INTEGER16_CTYPE"
+					fout.WriteLine("/* #undef MPIR_INTEGER16_CTYPE */")
+				Case "HAVE___VA_COPY"
+					fout.WriteLine("/* #undef HAVE___VA_COPY */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
@@ -1224,6 +1250,7 @@ fout.WriteLine("/*#define MPICH_DBG_OUTPUT*/")
 fout.WriteLine("")
 fout.WriteLine("/*#define MPICH_MPI_FROM_PMPI*/")
 fout.WriteLine("#define USE_PROCESS_LOCKS 1")
+fout.WriteLine("#define USE_THREAD_PACKAGE")
 fout.WriteLine("#define USE_WINTHREADS")
 fout.WriteLine("#ifndef HAVE_INT64")
 fout.WriteLine("#define HAVE_INT64 1")
