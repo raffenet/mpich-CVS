@@ -318,7 +318,7 @@ void ADIOI_NFS_WriteStrided(ADIO_File fd, void *buf, int count,
 	lseek(fd->fd_sys, writebuf_off, SEEK_SET); 
 	err = read(fd->fd_sys, writebuf, writebuf_len); 
         if (err == -1) {
-	    *error_code = MPIO_Err_code_create(MPI_SUCCESS,
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
 					       MPIR_ERR_RECOVERABLE,
 					       myname, __LINE__,
 					       MPI_ERR_IO,

@@ -111,9 +111,9 @@ int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		  int wr, void *handle)
 {
     int err=-1, fd_sys;
+    int error_code, this_errno;
 
 #ifndef NO_AIO
-int error_code, this_errno;
 #ifdef AIO_SUN 
     aio_result_t *result;
 #else

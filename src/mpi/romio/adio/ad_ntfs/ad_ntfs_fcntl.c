@@ -108,7 +108,7 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 
     default:
 	/* --BEGIN ERROR HANDLING-- */
-	*error_code = MPIO_Err_code_create(MPI_SUCCESS,
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
 					   MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__,
 					   MPI_ERR_IO,
