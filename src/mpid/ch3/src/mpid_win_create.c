@@ -101,6 +101,9 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
         return mpi_errno;
     }
 
+    /* FIXME: This cannot be right?  It assumes that ints can be stored in void*s.
+       Then it assumes that void*s can be passed to MPI_Allgather as MPI_LONGs.
+    */
     tmp_buf[3*rank] = base;
     tmp_buf[3*rank+1] = (void *) disp_unit;
     tmp_buf[3*rank+2] = (void *) &((*win_ptr)->my_counter);
