@@ -176,7 +176,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr
     }
 #endif
 
-    dest_pos = vc->ch.write_shmq->packet[index].data;
+    dest_pos = (unsigned char *)(vc->ch.write_shmq->packet[index].data);
     dest_avail = MPIDI_CH3I_PACKET_SIZE;
     vc->ch.write_shmq->packet[index].num_bytes = 0;
     for (i=0; i<n; i++)
@@ -227,7 +227,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr
 		    vc->ch.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_USED;
 		}
 	    }
-	    dest_pos = vc->ch.write_shmq->packet[index].data + num_bytes;
+	    dest_pos = (unsigned char *)(vc->ch.write_shmq->packet[index].data + num_bytes);
 	    dest_avail = MPIDI_CH3I_PACKET_SIZE - num_bytes;
 	}
 	if (dest_avail == 0)
@@ -243,7 +243,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
 		return MPI_SUCCESS;
 	    }
-	    dest_pos = vc->ch.write_shmq->packet[index].data;
+	    dest_pos = (unsigned char *)(vc->ch.write_shmq->packet[index].data);
 	    dest_avail = MPIDI_CH3I_PACKET_SIZE;
 	    vc->ch.write_shmq->packet[index].num_bytes = 0;
 	}
