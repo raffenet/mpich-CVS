@@ -47,7 +47,8 @@ int main(int argc, char* argv[])
 
 #ifdef HAVE_WINDOWS_H
     /* prevent the os from bringing up debug message boxes if this process crashes */
-    /*SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);*/
+    if (smpd_process.bService)
+	SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 #endif
 
     /* This process is the root_smpd.  All sessions are child processes of this process. */
