@@ -9,7 +9,7 @@ SHLIBNAME   = @SHLIBNAME@
 INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir} -I../include -I${srcdir}/../adio/include -I../adio/include -I${srcdir}/../../../include  -I../../../include 
 CFLAGS      = @CPPFLAGS@ @CFLAGS@ $(MPIOPROFILE) $(INCLUDE_DIR)
 
-C_COMPILE_SHL = $(CC_SHL) @CFLAGS@ $(INCLUDE_DIR)
+C_COMPILE_SHL = $(CC_SHL) @CPPFLAGS@ @CFLAGS@ $(INCLUDE_DIR)
 
 @VPATH@
 
