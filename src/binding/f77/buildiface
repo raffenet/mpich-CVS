@@ -436,6 +436,7 @@ foreach $_ (@ARGV) {
 # File routines are separate
     'File_open' => '2:5', 'File_open-2' => 'in:addnull',
 		 'File_open-5' => 'out:FileToFint',
+    'File_close' => '1', 'File_close-1', 'inout:FileToFint',
     'File_delete' => '1', 'File_delete-1' => 'in:addnull',
     'File_set_view' => '5', 'File_set_view-5' => 'in:addnull',
     'File_get_view' => '5', 'File_get_view-5' => 'out:blankpad',
@@ -1304,7 +1305,7 @@ sub print_post_call {
 	($direction,$method,$Array_size) = split(/:/,$rule);
 	print STDERR "$routine_name: dir = $direction, method = $method\n" if $debug;
         $processing_in_routine = "${method}_in_ctof";
-	if ($direction eq "out") {
+	if ($direction eq "out" || $direction eq "inout") {
             $processing_routine = "${method}_ctof";
 	    &$processing_routine( "l$count", "v$count" );
 	}
@@ -1541,7 +1542,18 @@ sub intToAint_in_arg {
 
 # ---------------------------------------------------------------------------
 # Convert from an FILE to a fortran int
-# input
+# (output).  
+# -- temp
+sub FileToFint_inout_decl {
+    my $count = $_[0];
+    print $OUTFD "    MPI_File l$count = MPI_File_f2c(*v$count);\n";
+}
+sub FileToFint_inout_arg {
+    my $count = $_[0];
+    print $OUTFD "&l$count";
+}
+# -- end temp
+
 sub FileToFint_out_decl {
     my $count = $_[0];
     print $OUTFD "    MPI_File l$count;\n";
