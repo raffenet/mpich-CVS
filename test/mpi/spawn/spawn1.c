@@ -69,10 +69,19 @@ int main( int argc, char *argv[] )
 		    np, size );
 	}
 	/* Check the name of the parent */
+	cname[0] = 0;
 	MPI_Comm_get_name( intercomm, cname, &rlen );
+	/* MPI-2 section 8.4 requires that the parent have this
+	   default name */
 	if (strcmp( cname, "MPI_COMM_PARENT" ) != 0) {
 	    errs++;
 	    printf( "Name of parent is not correct\n" );
+	    if (rlen > 0 && cname[0]) {
+		printf( " Got %s but expected MPI_COMM_PARENT\n", cname );
+	    }
+	    else {
+		printf( " Expected MPI_COMM_PARENT but no name set\n" );
+	    }
 	}
 	MPI_Recv( &i, 1, MPI_INT, 0, 0, intercomm, &status );
 	if (i != rank) {
