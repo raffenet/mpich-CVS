@@ -143,6 +143,7 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
     }
     else
     {
+	MPIDI_DBG_PRINTF((55, FCNAME, "connection failed"));
 	/* Connection failed.  Mark the request complete and return an error. */
 	/* TODO: Create an appropriate error message */
 	sreq->status.MPI_ERROR = MPI_ERR_INTERN;
