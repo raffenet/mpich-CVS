@@ -228,6 +228,7 @@ foreach $_ (@ARGV) {
     'Cart_get' => '4', 'Cart_get-4' => 'out:logical_array:*v2',
     'Comm_test_inter' => '2', 'Comm_test_inter-2' => 'out:logical',
     'Get_processor_name' => '1', 'Get_processor_name-1' => 'out:blankpad',
+    'Error_string' => '2', 'Error_string-2' => 'out:blankpad',
     'Initialized' => '1', 'Initialized-1' => 'out:logical',
     'Iprobe' => '4', 'Iprobe-4' => 'out:logical',
 #    'Send' => '1', 'Send-1' => 'in:bufptr',
@@ -982,8 +983,10 @@ print MPIFFD "$cchar      DO NOT EDIT
 $cchar       This file created by buildiface $arg_string\n";
 #
 # Status elements
+# FIXME: The offsets for the status elements are hardwired.  If they
+# change in mpi.h.in, they need to change here as well.
 print MPIFFD "       INTEGER MPI_SOURCE, MPI_TAG, MPI_ERROR\n";
-print MPIFFD "       PARAMETER (MPI_SOURCE=2,MPI_TAG=3,MPI_ERROR=4)\n";
+print MPIFFD "       PARAMETER (MPI_SOURCE=3,MPI_TAG=4,MPI_ERROR=5)\n";
 print MPIFFD "       INTEGER MPI_STATUS_SIZE\n";
 print MPIFFD "       PARAMETER (MPI_STATUS_SIZE=\@MPI_STATUS_SIZE\@)\n";
 # Temporary until configure handles these.  Define as arrays to keep
