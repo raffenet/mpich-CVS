@@ -547,6 +547,10 @@ with MPI_Alloc_mem.
 **finalize_progress_finalize:Progress finalize failed
 **finalize_release_mem:Release shared memory failed
 **shmgetmem:Unable to allocate shared memory
+**mmap:unable to map memory, mmap failed
+**mmap %d: unable to map memory, mmap failed (errno %d)
+**shm_open:unable to open a shared memory object
+**shm_open %s %d:unable to open shared memory object %s (errno %d)
 
 #
 # Sock:poll
