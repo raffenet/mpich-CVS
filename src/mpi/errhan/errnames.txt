@@ -31,8 +31,26 @@ also the value at index %d
 **topotoolarge %d %d:Topology size %d is larger than communicator size (%d)
 **notcarttopo:No Cartesian topology associated with this communicator
 **notgraphtopo:No Graph topology associated with this communicator
+**dimsmany:Number of dimensions is too large 
+**dimsmany %d %d:Number of dimensions %d is too large (maximum is %d)
+**cartcoordinvalid:Cartesian coordinate is invalid (not in range)
+**cartcoordinvalid %d %d %d: Cartesian coordinate for the %d coordinate \
+ is %d but must be between 0 and %d
+**rangedup:The range array specifies duplicate entries
+**rank:Invalid rank
+**rank %d %d:Invalid rank has value %d but must be nonnegative and less than %d
+**stride:Range does not terminate (optional 
+**stride %d %d %d:Range (start = %d, end = %d, stride = %d) does not terminate
+**stridezero:Zero stride is invalid
+**rangeinvalid:Invalid range
+**rangestartinvalid %d %d %d:The %dth element of a range array starts at %d \
+ but must be nonnegative and less than %d
+**rangeendinvalid %d %d %d:The %dth element of a range array ends at %d \
+ but must be nonnegative and less than %d
+**argrange:Argument is not within valid range
+**argrange %s %d %d:Argument %s has value %d but must be within [0,%d]
+#----
 
-----
 **buffer:Invalid buffer pointer
 **bufnull:Null buffer pointer
 **bufbsend:Insufficient space in Bsend buffer
@@ -72,8 +90,6 @@ is %d
 **commname:Cannot set name in communicator 
 **commpeer:Peer communicator is not valid 
 **commlocalnull:Local communicator must not be MPI_COMM_NULL
-**rank:Invalid rank
-**rank %d:Invalid rank (value is %d)
 **rankarray:Invalid rank in rank array
 **rankarray %d %d %d:Invalid rank in rank array at index %d, has value %d but must\
 be in the range 0 to %d
@@ -101,15 +117,12 @@ be in the range 0 to %d
 **dims %d:Invalid dimension argument (value is %d)
 **dimsarray:Invalid dimension argument in array 
       (optional arguments: index, value (int))
-**dimsmany:Number of dimensions is too large 
-      (optional arguments: value, maxvalue (int))
 **dimstensor:Tensor product size does not 
       match nnodes (optional arguments: tensor product size and nnodes (int))
 **dimspartition:Can not partition nodes as requested 
 **arg:Invalid argument
 **arg %s:Invalid argument %s
 **argerrcode:Invalid error code (optional arg:  value (int))
-**argnull:Invalid null parameter (optional arg: name of argument (string))
 **argaddress:Address of location given to MPI_ADDRESS does not fix in a \
 Fortran integer (optional       argument: address (long int))
 **errhandler:Invalid errhandler
@@ -117,9 +130,6 @@ Fortran integer (optional       argument: address (long int))
 **errhandlerperm:Cannot free permanent error handler
 **errhandlerperm %s:Cannot free permanent error handler %s
 **statusignore:Invalid use of MPI_STATUS_IGNORE} or MPI_STATUSES_IGNORE
-**stride:Range does not terminate (optional 
-      arguments: start, end, stride (int))
-**stridezero:Zero stride is incorrect 
 **argarray:Invalid value in array (optional arguments: name of variable (string), index (int), value (int))
 **argnamed:Invalid argument (optional arguments: name (string), value (int))
 **argarrayneg:Negative value in array (optional arguments: name of variable\
@@ -275,3 +285,5 @@ with MPI_Alloc_mem.
 
 
 
+# Duplicates?
+#**argnull:Invalid null parameter (optional arg: name of argument (string))
