@@ -41,7 +41,6 @@ void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&eager_pkt->match, &found);
 	    assert(rreq != NULL);
 
-	    rreq->tcp.pkt = *pkt; /* DEBUG ONLY */
 	    rreq->status.MPI_SOURCE = eager_pkt->match.rank;
 	    rreq->status.MPI_TAG = eager_pkt->match.tag;
 	    rreq->status.count = eager_pkt->data_sz;
@@ -248,7 +247,6 @@ void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&rts_pkt->match, &found);
 	    assert(rreq != NULL);
 	    
-	    rreq->tcp.pkt = *pkt; /* DEBUG ONLY */
 	    rreq->status.MPI_SOURCE = rts_pkt->match.rank;
 	    rreq->status.MPI_TAG = rts_pkt->match.tag;
 	    rreq->status.count = rts_pkt->data_sz;
