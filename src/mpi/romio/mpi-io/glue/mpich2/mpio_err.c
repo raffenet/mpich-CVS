@@ -26,7 +26,6 @@ int MPIO_Err_create_code(int lastcode, int fatal, const char fcname[],
 
     va_start(Argp, specific_msg);
 
-    /* TODO: THIS IS BROKEN. */
     error_code = MPIR_Err_create_code_valist(lastcode, fatal, fcname, line,
 					     error_class, generic_msg,
 					     specific_msg, Argp);
