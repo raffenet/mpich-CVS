@@ -92,7 +92,7 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 	new_dtp->n_elements     = old_dtp->n_elements;
 	new_dtp->element_size   = old_dtp->element_size;
 
-	/* COULD BE MORE AGGRESSIVE ON IS_CONTIG */
+	/* TODO: COULD BE MORE AGGRESSIVE ON IS_CONTIG */
 	new_dtp->is_contig      =
 	    (extent == old_dtp->size) ? old_dtp->is_contig : 0;
         new_dtp->eltype         = old_dtp->eltype;

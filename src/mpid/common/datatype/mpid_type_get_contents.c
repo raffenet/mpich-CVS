@@ -65,6 +65,8 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 
     /* recall that contents data is stored contiguously after the
      * contents structure, in types, ints, aints order
+     *
+     * TODO: PADDING!!!
      */
     ptr = ((char *) cp) + sizeof(MPID_Datatype_contents);
     memcpy(array_of_datatypes, ptr, cp->nr_types * sizeof(MPI_Datatype));

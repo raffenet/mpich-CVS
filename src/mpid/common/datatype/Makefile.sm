@@ -9,11 +9,16 @@ lib${MPILIBNAME}_a_SOURCES = gen_segment.c \
 	mpir_type_flatten.c \
 	mpid_type_commit.c \
 	mpid_type_vector.c \
+	gen_type_vector.c \
 	mpid_type_contiguous.c \
+	gen_type_contiguous.c \
 	mpid_type_create_resized.c \
 	mpid_type_blockindexed.c \
+	gen_type_blockindexed.c \
 	mpid_type_indexed.c \
+	gen_type_indexed.c \
 	mpid_type_struct.c \
+	gen_type_struct.c \
 	mpid_type_get_envelope.c \
 	mpid_datatype_free.c \
 	mpid_datatype_contents.c \
