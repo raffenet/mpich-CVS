@@ -51,7 +51,7 @@ int MPI_File_write_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
     HPMP_IO_START(fl_xmpi, BLKMPIFILEWRITEAT, TRDTBLOCK, fh, datatype, count);
 #endif /* MPI_hpux */
 
-    /* ADIOI_File_write() defined in mpi-io/write.c */
+    /* MPIOI_File_write() defined in mpi-io/write.c */
     error_code = MPIOI_File_write(mpi_fh, offset, ADIO_EXPLICIT_OFFSET, buf,
 				  count, datatype, myname, status);
 

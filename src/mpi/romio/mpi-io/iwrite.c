@@ -42,26 +42,22 @@ Output Parameters:
 #include "mpiu_greq.h"
 
 int MPI_File_iwrite(MPI_File mpi_fh, void *buf, int count, 
-		MPI_Datatype datatype, MPIO_Request *request)
+		    MPI_Datatype datatype, MPIO_Request *request)
 {
 	int error_code;
 	MPI_Status *status;
-	ADIO_File fh;
-
-	fh = MPIO_File_resolve(mpi_fh);
-	/* TODO: CHECK THIS FH */
 
 	status = (MPI_Status *) ADIOI_Malloc(sizeof(MPI_Status));
 
 	/* for now, no threads or anything fancy. 
 	 * just call the blocking version */
-	error_code = MPI_File_write(fh, buf, count, datatype, status); 
+	error_code = MPI_File_write(mpi_fh, buf, count, datatype, status); 
 	/* ROMIO-1 doesn't do anything with status.MPI_ERROR */
 	status->MPI_ERROR = error_code;
 
 	/* kick off the request */
 	MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn, 
-			MPIU_Greq_cancel_fn, status, request);
+			   MPIU_Greq_cancel_fn, status, request);
 	/* but we did all the work already */
 	MPI_Grequest_complete(*request);
 
@@ -69,22 +65,24 @@ int MPI_File_iwrite(MPI_File mpi_fh, void *buf, int count,
 	return MPI_SUCCESS;
 }
 #else
-int MPI_File_iwrite(MPI_File fh, void *buf, int count, 
+int MPI_File_iwrite(MPI_File mpi_fh, void *buf, int count, 
                     MPI_Datatype datatype, MPIO_Request *request)
 {
     int error_code;
     static char myname[] = "MPI_FILE_IWRITE";
+
 #ifdef MPI_hpux
     int fl_xmpi;
 
-    HPMP_IO_START(fl_xmpi, BLKMPIFILEIWRITE, TRDTSYSTEM, fh, datatype, count);
+    HPMP_IO_START(fl_xmpi, BLKMPIFILEIWRITE, TRDTSYSTEM, mpi_fh, datatype,
+		  count);
 #endif /* MPI_hpux */
 
-    error_code = ADIOI_File_iwrite(fh, (MPI_Offset) 0, ADIO_INDIVIDUAL, buf,
-				   count, datatype, myname, request);
+    error_code = MPIOI_File_iwrite(mpi_fh, (MPI_Offset) 0, ADIO_INDIVIDUAL,
+				   buf, count, datatype, myname, request);
 
 #ifdef MPI_hpux
-    HPMP_IO_END(fl_xmpi, fh, datatype, count);
+    HPMP_IO_END(fl_xmpi, mpi_fh, datatype, count);
 #endif /* MPI_hpux */
     return error_code;
 }
@@ -92,7 +90,7 @@ int MPI_File_iwrite(MPI_File fh, void *buf, int count,
 
 
 #ifndef HAVE_MPI_GREQUEST
-int ADIOI_File_iwrite(MPI_File mpi_fh,
+int MPIOI_File_iwrite(MPI_File mpi_fh,
 		      MPI_Offset offset,
 		      int file_ptr_type,
 		      void *buf,
@@ -109,99 +107,25 @@ int ADIOI_File_iwrite(MPI_File mpi_fh,
 
     fh = MPIO_File_resolve(mpi_fh);
 
-#ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	FPRINTF(stderr, "%s: Invalid file handle\n", myname);
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-#else
-    ADIOI_TEST_FILE_HANDLE(fh, myname);
-#endif
-
     /* --BEGIN ERROR HANDLING-- */
+    MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
+    MPIO_CHECK_COUNT(fh, count, myname, error_code);
+    MPIO_CHECK_DATATYPE(fh, datatype, myname, error_code);
+
     if (file_ptr_type == ADIO_EXPLICIT_OFFSET && offset < 0) {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_ARG,
 					  "**iobadoffset", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "%s: Invalid offset argument\n", myname);
-	MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_OFFSET_ARG,
-				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);	    
-#endif
-    }
-
-    if (count < 0) {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					  myname, __LINE__, MPI_ERR_ARG, 
-					  "**iobadcount", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "%s: Invalid count argument\n", myname);
-	MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_COUNT_ARG,
-				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);
-#endif
-    }
-
-    if (datatype == MPI_DATATYPE_NULL) {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					  myname, __LINE__, MPI_ERR_TYPE, 
-					  "**dtypenull", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-        FPRINTF(stderr, "%s: Invalid datatype\n", myname);
-        MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_TYPE, MPIR_ERR_TYPE_NULL,
-				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);	    
-#endif
+	return MPIO_Err_return_file(fh, error_code);
     }
     /* --END ERROR HANDLING-- */
 
     MPI_Type_size(datatype, &datatype_size);
 
     /* --BEGIN ERROR HANDLING-- */
-    if ((count*datatype_size) % fh->etype_size != 0) {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					  myname, __LINE__, MPI_ERR_IO, 
-					  "**ioetype", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-        FPRINTF(stderr, "%s: Only an integral number of etypes can be accessed\n", myname);
-        MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_ETYPE_FRACTIONAL,
-				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);	    
-#endif
-    }
-
-    if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					  myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION,
-					  "**ioamodeseq", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "%s: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n", myname);
-	MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_UNSUPPORTED_OPERATION, 
-                        MPIR_ERR_AMODE_SEQ, myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);
-#endif
-    }
+    MPIO_CHECK_INTEGRAL_ETYPE(fh, count, datatype_size, myname, error_code);
+    MPIO_CHECK_WRITABLE(fh, myname, error_code);
+    MPIO_CHECK_NOT_SEQUENTIAL_MODE(fh, myname, error_code);
     /* --END ERROR HANDLING-- */
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);

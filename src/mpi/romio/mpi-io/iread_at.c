@@ -47,23 +47,19 @@ int MPI_File_iread_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 {
 	int error_code;
 	MPI_Status *status;
-	ADIO_File fh;
-
-	fh = MPIO_File_resolve(mpi_fh);
-	/* TODO: CHECK THIS FH!!! */
 
 	status = (MPI_Status *) ADIOI_Malloc(sizeof(MPI_Status));
 
 	/* for now, no threads or anything fancy. 
 	 * just call the blocking version */
-	error_code = MPI_File_read_at(fh, offset, buf, count, datatype,
+	error_code = MPI_File_read_at(mpi_fh, offset, buf, count, datatype,
 				      status); 
 	/* ROMIO-1 doesn't do anything with status.MPI_ERROR */
 	status->MPI_ERROR = error_code;
 
 	/* kick off the request */
 	MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn, 
-			MPIU_Greq_cancel_fn, status, request);
+			   MPIU_Greq_cancel_fn, status, request);
 	/* but we did all the work already */
 	MPI_Grequest_complete(*request);
 
@@ -76,21 +72,20 @@ int MPI_File_iread_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
                       MPIO_Request *request)
 {
     int error_code;
-    ADIO_File fh;
     static char myname[] = "MPI_FILE_IREAD_AT";
+
 #ifdef MPI_hpux
     int fl_xmpi;
 
-    HPMP_IO_START(fl_xmpi, BLKMPIFILEIREADAT, TRDTSYSTEM, fh, datatype, count);
+    HPMP_IO_START(fl_xmpi, BLKMPIFILEIREADAT, TRDTSYSTEM, mpi_fh, datatype,
+		  count);
 #endif /* MPI_hpux */
 
-    fh = MPIO_File_resolve(mpi_fh);
-    /* TODO: CHECK THIS FH!! */
-    error_code = ADIOI_File_iread(fh, offset, ADIOI_EXPLICIT_OFFSET, buf,
+    error_code = MPIOI_File_iread(mpi_fh, offset, ADIOI_EXPLICIT_OFFSET, buf,
 				  count, datatype, myname, request);
 
 #ifdef MPI_hpux
-    HPMP_IO_END(fl_xmpi, fh, datatype, count);
+    HPMP_IO_END(fl_xmpi, mpi_fh, datatype, count);
 #endif /* MPI_hpux */
     return error_code;
 }

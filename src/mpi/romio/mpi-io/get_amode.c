@@ -38,21 +38,14 @@ Output Parameters:
 int MPI_File_get_amode(MPI_File mpi_fh, int *amode)
 {
     int error_code;
-#ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_GET_AMODE";
-#endif
     ADIO_File fh;
 
     fh = MPIO_File_resolve(mpi_fh);
 
-#ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	FPRINTF(stderr, "MPI_File_get_amode: Invalid file handle\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-#else
-    ADIOI_TEST_FILE_HANDLE(fh, myname);
-#endif
+    /* --BEGIN ERROR HANDLING-- */
+    MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
+    /* -- END ERROR HANDLING-- */
 
     *amode = fh->access_mode;
     return MPI_SUCCESS;

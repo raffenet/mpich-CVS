@@ -36,9 +36,7 @@ int MPI_File_close(MPI_File *mpi_fh)
 {
     int error_code;
     ADIO_File fh;
-#ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_CLOSE";
-#endif
 #ifdef MPI_hpux
     int fl_xmpi;
 
@@ -47,16 +45,14 @@ int MPI_File_close(MPI_File *mpi_fh)
 
     fh = MPIO_File_resolve(*mpi_fh);
 
-#ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || ((fh)->cookie != ADIOI_FILE_COOKIE)) {
-	FPRINTF(stderr, "MPI_File_close: Invalid file handle\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-#else
-    ADIOI_TEST_FILE_HANDLE(fh, myname);
-#endif
+    /* --BEGIN ERROR HANDLING-- */
+    MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
+    /* --END ERROR HANDLING-- */
 
-    if (((fh)->file_system != ADIO_PIOFS) && ((fh)->file_system != ADIO_PVFS) && ((fh)->file_system != ADIO_PVFS2)) {
+    if (((fh)->file_system != ADIO_PIOFS) &&
+	((fh)->file_system != ADIO_PVFS) &&
+	((fh)->file_system != ADIO_PVFS2))
+    {
 	ADIOI_Free((fh)->shared_fp_fname);
         /* need a barrier because the file containing the shared file
         pointer is opened with COMM_SELF. We don't want it to be

@@ -90,7 +90,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     if ((amode & MPI_MODE_RDONLY) && 
             ((amode & MPI_MODE_CREATE) || (amode & MPI_MODE_EXCL)))
     {
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_AMODE, 
 					  "**fileamoderead",
 					  "It is erroneous to specify MPI_MODE_CREATE or MPI_MODE_EXCL with MPI_MODE_RDONLY");
@@ -99,7 +99,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 
     if ((amode & MPI_MODE_RDWR) && (amode & MPI_MODE_SEQUENTIAL))
     {
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, MPI_ERR_AMODE, 
 					  "**fileamodeseq",
 					  "It is erroneous to specify MPI_MODE_SEQUENTIAL with MPI_MODE_RDWR");
@@ -121,12 +121,9 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 */
 
 /* check if ADIO has been initialized. If not, initialize it */
-    if (ADIO_Init_keyval == MPI_KEYVAL_INVALID)
-    {
-
-/* check if MPI itself has been initialized. If not, flag an error.
-   Can't initialize it here, because don't know argc, argv */
+    if (ADIO_Init_keyval == MPI_KEYVAL_INVALID) {
 	MPI_Initialized(&flag);
+
 	/* --BEGIN ERROR HANDLING-- */
 	if (!flag) {
 	    error_code = MPIO_Err_create_code(MPI_SUCCESS,
@@ -161,7 +158,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     if (error_code != MPI_SUCCESS)
     {
 	/* ADIO_ResolveFileType() will print as informative a message as it
-	 * possibly can or call MPIR_Err_setmsg.  We just need to propagate 
+	 * possibly can or call MPIO_Err_setmsg.  We just need to propagate 
 	 * the error up.
 	 */
 	return MPIO_Err_return_comm(comm, error_code);
@@ -178,7 +175,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	 (file_system == ADIO_PVFS2)) && 
         (amode & MPI_MODE_SEQUENTIAL))
     {
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__,
 					  MPI_ERR_UNSUPPORTED_OPERATION, 
 					  "**iosequnsupported",

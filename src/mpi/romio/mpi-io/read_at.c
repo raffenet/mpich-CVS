@@ -47,7 +47,8 @@ int MPI_File_read_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 #ifdef MPI_hpux
     int fl_xmpi;
 
-    HPMP_IO_START(fl_xmpi, BLKMPIFILEREADAT, TRDTBLOCK, fh, datatype, count);
+    HPMP_IO_START(fl_xmpi, BLKMPIFILEREADAT, TRDTBLOCK, mpi_fh, datatype,
+		  count);
 #endif /* MPI_hpux */
 
     /* ADIOI_File_read() defined in mpi-io/read.c */
@@ -55,7 +56,7 @@ int MPI_File_read_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 				 count, datatype, myname, status);
 
 #ifdef MPI_hpux
-    HPMP_IO_END(fl_xmpi, fh, datatype, count);
+    HPMP_IO_END(fl_xmpi, mpi_fh, datatype, count);
 #endif /* MPI_hpux */
     return error_code;
 }

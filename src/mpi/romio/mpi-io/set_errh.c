@@ -37,33 +37,33 @@ Input Parameters:
 int MPI_File_set_errhandler(MPI_File mpi_fh, MPI_Errhandler errhandler)
 {
     int error_code = MPI_SUCCESS;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_SET_ERRHANDLER";
-#endif
     ADIO_File fh;
 
-    fh = MPIO_File_resolve(mpi_fh);
-
-    if ((errhandler != MPI_ERRORS_RETURN) && (errhandler != MPI_ERRORS_ARE_FATAL)) {
-	FPRINTF(stderr, "Only MPI_ERRORS_RETURN and MPI_ERRORS_ARE_FATAL are currently supported for MPI_File_set_errhandler\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+    if (mpi_fh == MPI_FILE_NULL) {
+	ADIOI_DFLT_ERR_HANDLER = errhandler;
     }
+    else {
+	fh = MPIO_File_resolve(mpi_fh);
 
-    if (fh == MPI_FILE_NULL) ADIOI_DFLT_ERR_HANDLER = errhandler;
-    else if (fh->cookie != ADIOI_FILE_COOKIE) {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_FILE, "**iobadfh", 0);
-	return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "MPI_File_close: Invalid file handle\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_FILE, MPIR_ERR_FILE_CORRUPT, 
-              myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
-#endif
+	/* --BEGIN ERROR HANDLING-- */
+	MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
+	/* --END ERROR HANDLING-- */
+
+	if ((errhandler != MPI_ERRORS_RETURN) &&
+	    (errhandler != MPI_ERRORS_ARE_FATAL))
+	{
+	    error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					      MPIR_ERR_RECOVERABLE,
+					      myname, __LINE__,
+					      MPI_ERR_UNSUPPORTED_OPERATION,
+					      "**fileopunsupported",
+					      "Only MPI_ERRORS_RETURN and MPI_ERRORS_ARE_FATAL are currently supported for MPI_File_set_errhandler");
+	    return MPIO_Err_return_file(fh, error_code);
+	}
+
+	fh->err_handler = errhandler;
     }
-    else fh->err_handler = errhandler;
 
     return error_code;
 }

@@ -36,24 +36,18 @@ Input Parameters:
 int MPI_File_set_info(MPI_File mpi_fh, MPI_Info info)
 {
     int error_code;
-#ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_SET_INFO";
-#endif
     ADIO_File fh;
 
     fh = MPIO_File_resolve(mpi_fh);
 
-#ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	FPRINTF(stderr, "MPI_File_set_info: Invalid file handle\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-#else
-    ADIOI_TEST_FILE_HANDLE(fh, myname);
-#endif
+    /* --BEGIN ERROR HANDLING-- */
+    MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
+    /* --END ERROR HANDLING-- */
 
     /* set new info */
     ADIO_SetInfo(fh, info, &error_code);
+    /* TODO: what to do with error code? */
 
     return error_code;
 }

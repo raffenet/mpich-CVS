@@ -33,30 +33,47 @@ int MPI_Register_datarep(char *name,
 {
     int error_code;
     ADIOI_Datarep *datarep;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_REGISTER_DATAREP";
-#endif
 
+    /* --BEGIN ERROR HANDLING-- */
     /* check datarep name */
     if (name == NULL ||
 	strnlen(name, 2) < 1 || 
 	strnlen(name, MPI_MAX_DATAREP_STRING+1) > MPI_MAX_DATAREP_STRING)
     {
+	error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					  MPIR_ERR_RECOVERABLE,
+					  myname, __LINE__,
+					  MPI_ERR_ARG,
+					  "**datarepname", 0);
+	return MPIO_Err_return_file(MPI_FILE_NULL, error_code);
     }
 
     /* check datarep isn't already registered */
     for (datarep = ADIOI_Datarep_head; datarep; datarep = datarep->next) {
 	if (!strncmp(name, datarep->name, MPI_MAX_DATAREP_STRING)) {
-	    /* error; already registered */
+	    error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					      MPIR_ERR_RECOVERABLE,
+					      myname, __LINE__,
+					      MPI_ERR_DUP_DATAREP,
+					      "**datarepused",
+					      "**datarepused %s",
+					      name);
+	    return MPIO_Err_return_file(MPI_FILE_NULL, error_code);
 	}
     }
 
-    /* check function pointers */
-    if (read_conv_fn == NULL ||
-	write_conv_fn == NULL ||
-	extent_fn == NULL)
+    /* check extent function pointer */
+    if (extent_fn == NULL)
     {
+	error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					  MPIR_ERR_RECOVERABLE,
+					  myname, __LINE__,
+					  MPI_ERR_ARG,
+					  "**datarepextent", 0);
+	return MPIO_Err_return_file(MPI_FILE_NULL, error_code);
     }
+    /* --END ERROR HANDLING-- */
 
     datarep = ADIOI_Malloc(sizeof(ADIOI_Datarep));
     /* until we get this ansi thing figured out, prototypes are missing */
