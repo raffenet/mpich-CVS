@@ -13,7 +13,7 @@ from mpdlib import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
 
 def mpdsigjob():
     mpd_set_my_id('mpdsigjob_')
-    if len(argv) < 2  or  argv[1] == '-h'  or  argv[1] == '--help':
+    if len(argv) < 3  or  argv[1] == '-h'  or  argv[1] == '--help':
         print 'usage: mpdsigjob  sigtype  jobnum  [mpdid]  # as obtained from mpdlistjobs'
         print '   or: mpdsigjob  sigtype  -a jobalias      # as obtained from mpdlistjobs'
         print '    mpdid is mpd contacted by mpdrun to start the job (defaults to here)'
@@ -33,12 +33,18 @@ def mpdsigjob():
             mpd_raise('cannot connect to local mpd')
             # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
     sigtype = argv[1]
+    if sigtype.startswith('-'):
+        sigtype = sigtype[1:]
     if sigtype.startswith('SIG'):
         sigtype = sigtype[3:]
-    if not sigtype.isdigit():
-	import signal as tmpimp  # just to get valid SIG's
-	if not tmpimp.__dict__.has_key('SIG' + sigtype):
-	    print 'unrecognized signal: %s' % (sigtype)
+    import signal as tmpsig  # just to get valid SIG's
+    if sigtype.isdigit():
+        if int(sigtype) > tmpsig.NSIG:
+            print 'invalid signum: %s' % (sigtype)
+            exit(-1)
+    else:
+	if not tmpsig.__dict__.has_key('SIG' + sigtype):
+	    print 'invalid sig type: %s' % (sigtype)
 	    exit(-1)
     mpdid = ''
     if argv[2] == '-a':
