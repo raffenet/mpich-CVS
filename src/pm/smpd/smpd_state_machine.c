@@ -396,6 +396,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		if (strcmp(context->pwd_request, SMPD_AUTHENTICATION_ACCEPTED_STR))
 		{
 		    char *host_ptr;
+		    smpd_delete_cached_password();
 		    if (smpd_process.do_console && smpd_process.console_host[0] != '\0')
 			host_ptr = smpd_process.console_host;
 		    else if (context->connect_to && context->connect_to->host[0] != '\0')
@@ -423,7 +424,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    if (smpd_process.left_context == smpd_process.left_context)
 			smpd_process.left_context = NULL;
 		    if (host_ptr)
-			result = smpd_post_abort_command("4 unable to connect to %s", host_ptr);
+			result = smpd_post_abort_command("Unable to connect to %s", host_ptr);
 		    else
 			result = smpd_post_abort_command("connection failed");
 		    if (result != SMPD_SUCCESS)
@@ -1017,34 +1018,6 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 			return SMPD_FAIL;
 		    }
 		}
-#if 0
-		if (result != SMPD_SUCCESS)
-		{
-		    context->state = SMPD_CLOSING;
-		    context->read_state = SMPD_IDLE;
-		    context->write_state = SMPD_IDLE;
-		    result = sock_post_close(context->sock);
-		    if (result != SOCK_SUCCESS)
-		    {
-			smpd_err_printf("unable to post a close for the sock(%d) from a failed win_mgr, error:\n%s\n",
-			    sock_getid(context->sock), get_sock_error_string(result));
-			smpd_exit_fn("smpd_enter_at_state");
-			return SMPD_FAIL;
-		    }
-		    break;
-		}
-		/* post a write of the reconnect request */
-		smpd_dbg_printf("smpd writing reconnect request: port %s\n", context->port_str);
-		context->write_state = SMPD_WRITING_RECONNECT_REQUEST;
-		result = sock_post_write(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, NULL);
-		if (result != SOCK_SUCCESS)
-		{
-		    smpd_err_printf("Unable to post a write of the re-connect port number(%s) back to mpiexec,\nsock error: %s\n",
-			context->port_str, get_sock_error_string(result));
-		    smpd_exit_fn("smpd_enter_at_state");
-		    return SMPD_FAIL;
-		}
-#endif
 #else
 		/* post a write of the noreconnect request */
 		smpd_dbg_printf("smpd writing noreconnect request\n");
@@ -1090,7 +1063,9 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 #ifdef HAVE_WINDOWS_H
 		    if (smpd_process.UserAccount[0] == '\0')
 		    {
-			if (smpd_process.logon || (!smpd_get_cached_password(context->account, context->password) && !smpd_read_password_from_registry(context->account, context->password)))
+			if (smpd_process.logon || 
+			    (!smpd_get_cached_password(context->account, context->password) &&
+			     !smpd_read_password_from_registry(context->account, context->password)))
 			{
 			    if (smpd_process.credentials_prompt)
 			    {
@@ -1112,6 +1087,11 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 			    smpd_cache_password(context->account, context->password);
 			}
 		    }
+		    else
+		    {
+			strcpy(context->account, smpd_process.UserAccount);
+			strcpy(context->password, smpd_process.UserPassword);
+		    }
 #else
 		    if (smpd_process.UserAccount[0] == '\0')
 		    {
@@ -1125,6 +1105,11 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 			    /*smpd_post_abort_command("User credentials needed to launch processes.\n");*/
 			    strcpy(context->account, "invalid account");
 			}
+		    }
+		    else
+		    {
+			strcpy(context->account, smpd_process.UserAccount);
+			strcpy(context->password, smpd_process.UserPassword);
 		    }
 #endif
 #endif
