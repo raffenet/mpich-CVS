@@ -241,9 +241,9 @@ void *MPIU_trstrdup( const char *, int, const char * );
 void *MPIU_trcalloc ( unsigned, unsigned, int, const char * );
 void *MPIU_trrealloc ( void *, int, int, const char * );
 void MPIU_TrSetMaxMem ( int );
-void MPIU_trdump ( FILE * );
-void MPIU_trSummary ( FILE * );
-void MPIU_trdumpGrouped ( FILE * );
+void MPIU_trdump ( FILE *, int );
+void MPIU_trSummary ( FILE *, int );
+void MPIU_trdumpGrouped ( FILE *, int );
 
 #else
 /* No memory tracing; just use native functions */
