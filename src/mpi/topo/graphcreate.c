@@ -101,13 +101,15 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    /* Check that index is monotone nondecreasing */
+	    /* Use ERR_ARG instead of ERR_TOPOLOGY because there is not
+	       topology yet */
 	    for (i=0; i<nnodes; i++) {
 		if (index[i] < 0) {
-		    mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY,
+		    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
 			      "**indexneg", "**indexneg %d %d", i, index[i] );
 		}
 		if (i+1<nnodes && index[i] > index[i+1]) {
-		    mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY,
+		    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
 			   "**indexnonmonotone", "**indexnonmonotone %d %d %d",
 					      i, index[i], index[i+1] );
 		}
@@ -116,14 +118,14 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 	    /* Check that edge number is in range */
 	    for (i=0; i<index[nnodes-1]; i++) {
 		if (edges[i] > nnodes || edges[i] < 0) {
-		    mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY,
+		    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
 			      "**edgeoutrange", "**edgeoutrange %d %d %d", 
 						      i, edges[i], nnodes );
 		}
 	    }
 	    /* Check that the communicator is large enough */
 	    if (nnodes > comm_ptr->remote_size) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY,
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
 				  "**topotoolarge", "**topotoolarge %d %d",
 					  nnodes, comm_ptr->remote_size );
 	    }

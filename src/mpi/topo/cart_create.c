@@ -100,7 +100,9 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if (newsize > comm_ptr->remote_size) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY, 
+		/* Use ERR_ARG instead of ERR_TOPOLOGY because there 
+		   is no topology yet */
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
 					  "**cartdim", "**cartdim %d %d", 
 					  comm_ptr->remote_size, newsize );
 	    }
