@@ -21,6 +21,25 @@ MPIU_Object_alloc_t MPID_Comm_mem = { 0, 0, 0, 0, MPID_COMM,
 				      sizeof(MPID_Comm), MPID_Comm_direct,
                                       MPID_COMM_PREALLOC};
 
+/* FIXME:
+   Reusing context ids can lead to a race condition if (as is desirable)
+   MPI_Comm_free does not include a barrier.  Consider the following:
+   Process A frees the communicator.
+   Process A creates a new communicator, reusing the just released id
+   Process B sends a message to A on the old communicator.
+   Process A receives the message, and believes that it belongs to the
+   new communicator.
+   Process B then cancels the message, and frees the communicator.
+
+   The likelyhood of this happening can be reduced by introducing a gap
+   between when a context id is released and when it is reused.  An alternative
+   is to use an explicit message (in the implementation of MPI_Comm_free)
+   to indicate that a communicator is being freed; this will often require
+   less communication than a barrier in MPI_Comm_free, and will ensure that 
+   no messages are later sent to the same communicator (we may also want to
+   have a similar check when building fault-tolerant versions of MPI).
+ */
+
 /* Create a new communicator with a context.  
    Do *not* initialize the other fields except for the reference count.
    See MPIR_Comm_copy for a function to produce a copy of part of a
