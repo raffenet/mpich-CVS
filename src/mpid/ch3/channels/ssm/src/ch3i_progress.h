@@ -3,6 +3,8 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+#ifndef CH3I_PROGRESS_H
+#define CH3I_PROGRESS_H
 
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
@@ -85,3 +87,5 @@ int handle_sock_op(MPIDU_Sock_event_t *event_ptr);
 
 int handle_shm_read(MPIDI_VC *vc, int nb);
 int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc);
+
+#endif

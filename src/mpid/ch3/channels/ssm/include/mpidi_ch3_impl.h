@@ -11,6 +11,7 @@
 #include "mpidi_ch3_conf.h"
 #include "mpidimpl.h"
 #include "mpidu_process_locks.h"
+#include "ch3i_progress.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
