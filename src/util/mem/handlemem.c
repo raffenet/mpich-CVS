@@ -81,32 +81,6 @@ static int MPID_##Name *avail=0;\
 static MPID_##Name *(*MPID_##Name##_indirect)[] = 0;\
 static int MPID_##Name##_indirect_size = 0;
 
-#ifdef FOO
-/* 
- * Get an pointer to dynamically allocated storage for Info objects.
- * This has an MPID prefix to simplify the "get object" routines
- */
-MPID_Info *MPID_Info_Get_ptr_indirect( int handle )
-{
-    int block_num, index_num;
-
-    /* Check for a valid handle type */
-    if (HANDLE_GET_KIND(handle) != MPID_INFO) {
-	return 0;
-    }
-
-    /* Find the block */
-    block_num = HANDLE_BLOCK(handle);
-    if (block_num >= MPID_Info_indirect_size) {
-	return 0;
-    }
-    
-    /* Find the entry */
-    index_num = HANDLE_BLOCK_INDEX(handle);
-    return &(*MPID_Info_indirect)[block_num][index_num];
-}
-#endif
-
 /* This routine is called by finalize when MPI exits */
 static int MPIU_Handle_free( void *((*indirect)[]), int indirect_size )
 {
