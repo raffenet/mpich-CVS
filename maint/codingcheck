@@ -57,6 +57,24 @@ $checkDefines   = 1;
 $checkStyle     = 1;
 
 $missingCopyright = 0;
+@NoCopyright = ();
+
+# List the known C preprocessor directives
+# Note particularly the "warning" is not in this list; warning is not
+# standard.  Ditto for abort.  This list contains *ALL* of the valid
+# and portable directive names.  DO NOT ADD TO IT.
+%allowedDirectives = ( 'if' => 1,
+		       'ifdef' => 1,
+		       'ifndef' => 1,
+		       'else' => 1,
+		       'elif' => 1,
+		       'endif' => 1,
+		      'pragma' => 1,
+		      'define' => 1,
+		      'undef' => 1, 
+		      'error' => 1,
+		      'include' => 1,
+		      );
 
 foreach $arg (@ARGV) {
     if ($arg =~ /^-showfiles/) { $showfiles = 1; }
@@ -191,6 +209,7 @@ sub ProcessFile {
 	    }
 	}
 
+	&CheckForBadDirectives( FD, $_, $filename );
 	if ($checkDefines) {
 	    &CheckForGuardedDefines( FD, $_, $filename );
 	    &CheckForBadDefines( FD, $_, $filename );
@@ -436,6 +455,19 @@ sub CheckForBadDefinitions {
     return 0;
 }
 
+sub CheckForBadDirectives{
+    my $FD = $_[0];
+    my $curline = $_[1];
+    my $filename = $_[2];
+    if ($curline =~ /^#\s*(\w+)/) {
+	$directiveName = $1;
+	if (!defined($allowedDirectives{$directiveName})) {
+	    print "Warning: directive $directiveName is unknown in $filename\n"
+	}
+    }
+    return 0;
+}
+
 #
 # This checks for
 # # ifdef NEEDS_foo_DEFINED
@@ -478,13 +510,14 @@ foreach $file (@files) {
     }
 }
 
-if ($missingCopyright && $removeFileMissingCopyright == 0) {
+if ($missingCopyright) {
     print STDERR "Some files are missing the copyright statement\n";
-    exit 1;
-}
-
-if ($missingCopyright && $removeFileMissingCopyright != 0) {
-    print STDERR "\n\nSOME FILES ARE MISSING THE COPYRIGHT STATEMENT.\nABORTING BUILD OF DISTRIBUTION\n\n";
+    foreach $file (@NoCopyright) {
+	print STDERR "$file\n";
+    }
+    if ($removeFileMissingCopyright == 1) {
+	print STDERR "Files have been removed and an error status returned\n";
+    }
     exit 1;
 }
 
@@ -681,6 +714,7 @@ sub ReportOnPreamble {
 	&PrintCurrentDirectory;
 	print "Copyright statement missing from $filename\n";
 	$missingCopyright ++;
+	$NoCopyright[$#NoCopyright+1] = $filename;
 	if ($removeFileMissingCopyright) {
 	    print "Removing $filename\n";
 	    unlink $filename;
