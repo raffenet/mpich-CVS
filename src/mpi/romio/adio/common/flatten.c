@@ -22,7 +22,6 @@ void ADIOI_Optimize_flattened(ADIOI_Flatlist_node *flat_type);
 /* flatten datatype and add it to Flatlist */
 void ADIOI_Flatten_datatype(MPI_Datatype datatype)
 {
-    int i;
 #ifdef HAVE_MPIR_TYPE_FLATTEN
     MPI_Aint flatten_idx;
 #endif
@@ -78,14 +77,17 @@ void ADIOI_Flatten_datatype(MPI_Datatype datatype)
 #endif
 /* debug */
 #if 0
-    FPRINTF(stderr, "blens: ");
-    for (i=0; i<flat->count; i++) 
-	FPRINTF(stderr, "%d ", flat->blocklens[i]);
-    FPRINTF(stderr, "\n\n");
-    FPRINTF(stderr, "indices: ");
-    for (i=0; i<flat->count; i++) 
-	FPRINTF(stderr, "%ld ", flat->indices[i]);
-    FPRINTF(stderr, "\n\n");
+    {
+	int i;
+	FPRINTF(stderr, "blens: ");
+	for (i=0; i<flat->count; i++) 
+	    FPRINTF(stderr, "%d ", flat->blocklens[i]);
+	FPRINTF(stderr, "\n\n");
+	FPRINTF(stderr, "indices: ");
+	for (i=0; i<flat->count; i++) 
+	    FPRINTF(stderr, "%ld ", flat->indices[i]);
+	FPRINTF(stderr, "\n\n");
+    }
 #endif
 
 }
