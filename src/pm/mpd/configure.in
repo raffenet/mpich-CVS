@@ -34,7 +34,7 @@ AC_PROG_LN_S
 
 
 dnl Find Python
-for pypgm in python2.3 python2 python2.2 python ; do \
+for pypgm in python python2.3 python2 python2.2 ; do \
     AC_CHECK_PROGS(PYTHON, $pypgm)
     dnl check python version
     AC_CACHE_CHECK([python version],
@@ -73,6 +73,22 @@ else
     AC_MSG_RESULT(no)
     AC_MSG_ERROR([The xml.dom.minidom module is required for the mpd process manager])
 fi
+
+# Test for cPickle
+AC_MSG_CHECKING([that the cPickle module is available for Python])
+rm -f conftest*
+cat > conftest.py <<EOF
+from cPickle import dumps
+EOF
+if $PYTHON conftest.py >/dev/null 2>&1 ; then
+    rm -f conftest*
+    AC_MSG_RESULT(yes)
+else
+    rm -f conftest*
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR([The cPickle module is required for the mpd process manager])
+fi
+
 # In case clinker is not defined
 if test -z "$CLINKER" ; then 
     CLINKER="$CC"

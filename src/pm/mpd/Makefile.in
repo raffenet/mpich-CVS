@@ -113,6 +113,7 @@ install: all
 	done
 	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
 	-@cd ${bindir} && @LN_S@ -f mpdrun mpirun
+	-@cd ${bindir} && @LN_S@ -f mpdrun.py mpirun.py
 
 
 mpich2-build-install: mpich2-mpdroot install
