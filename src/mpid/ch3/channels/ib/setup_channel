@@ -17,6 +17,14 @@ echo "RUNNING SETUP_CHANNEL FOR THE INFINIBAND CHANNEL"
 # $ac_configure_args - all arguments passed to configure
 #
 
+file=${master_top_srcdir}/src/mpid/${device_name}/channels/ib/setup_channel.args
+if test -f ${file} ; then
+    . ${file}
+else
+    echo "Error: ${file} not found"
+    exit 1
+fi
+
 pathlist=""
 pathlist="$pathlist src/mpid/${device_name}/channels/${channel_name}/include"
 for path in $pathlist ; do
@@ -24,20 +32,15 @@ for path in $pathlist ; do
     CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/${path}"
 done
 
-CPPFLAGS="$CPPFLAGS -I/usr/mellanox/include -I/usr/mellanox/wrap"
-CPPFLAGS="$CPPFLAGS -I/usr/sf-iba/iba/linux/include/iba"
+if test "$ibu_name" = ibal ; then
+    CPPFLAGS="$CPPFLAGS -I$ibu_path/iba/linux/include/iba"
+fi
+if test "$ibu_name" = vapi ; then
+    CPPFLAGS="$CPPFLAGS -I/usr/mellanox/include -I/usr/mellanox/wrap"
+fi
+
+#
+# These are defined by configure.in and localdefs.in
+#
 #LDFLAGS="$LDFLAGS -L/usr/mellanox/lib"
 #LIBS="$LIBS -lvapi"
-
-for arg in $ibu_name ; do
-  case $arg in 
-    ibal)
-    CPPFLAGS="$CPPFLAGS -I/usr/sf-iba/iba/linux/include/iba"
-    ;;
-  esac
-  case $arg in
-    vapi)
-    CPPFLAGS="$CPPFLAGS -I/usr/mellanox/include -I/usr/mellanox/wrap"
-    ;;
-  esac
-done
