@@ -252,6 +252,22 @@ else
     # The next two files may be needed to build the dependency lists
     touch src/include/mpidpre.h src/include/mpidpost.h
 fi
+# 
+# autoconf 2.57 drastically changed the command line arguments.
+# Up through 2.52, -l dir was the "localdir for searching"
+# By 2.57, -l was no longer accepted, and -B dir or --prepend-include=DIR
+# was used.  
+# To make things more exciting, the format of autoconf --version has
+# changed, making it very hard to automatically extract the version number
+# so that programs like this can work around poor software engineering, 
+# such as incompatible changes in a minor-numbered release.
+#
+# Just to make this even more interesting, the cygwin version of 
+# autoconf selects a version.  But the code to so this causes --version 
+# (and --help!) to fail unless there is a configure.in file in the current
+# directory.  
+#acversion=`autoconf --version | grep '[Aa]utoconf.*[0-9]' | \
+#    sed -e 's/.*(0-9\.[0-9]*).*/\1/'`
 if maint/simplemake -common=maint/makedefs \
     -docnamedefs='${master_top_srcdir}/maint/docnotes' \
     -autoconf="-l ROOTDIR/confdb" \
@@ -302,6 +318,8 @@ EOF
 		    echo "in handling Fortran programs and cannot be used"
 		    echo "This bug is an improper placement of the EOF"
 		    echo "token used to implement AC_TRY_COMPILE for Fortran."
+		    echo "A patch for this version is available in "
+		    echo "maint/ac2.13.diff ."
 		    cd ..
 		    rm -rf .ctmp
 		    continue
