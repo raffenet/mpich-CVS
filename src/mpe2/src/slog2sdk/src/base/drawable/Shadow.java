@@ -15,37 +15,80 @@ import java.awt.BasicStroke;
 import java.awt.Insets;
 import java.awt.Color;
 import java.awt.Point;
+import java.util.Collections;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
 import base.topology.Line;
 import base.topology.Arrow;
 import base.topology.State;
+import base.topology.PreviewState;
 
 public class Shadow extends Primitive
 {
     private static final int     BYTESIZE = TimeBoundingBox.BYTESIZE /*super*/
-                                          + 8  /* num_real_objs */ ;
+                                          + 8  /* num_real_objs */
+                                          + 4  /* type_twgt_map's size() */;
 
-    private        long      num_real_objs;
+    private              long              num_real_objs;
+    private              List              twgt_list;        // For Input
+    private              Map               type_dobjs_map;   // For Output
+    private              Map               type_twgt_map;    // For Output
 
+    private              Category          selected_subtype; // For Jumpshot
+
+    // For SLOG-2 Input
     public Shadow()
     {
         super();
-        num_real_objs  = 0;
+        num_real_objs    = 0;
+        twgt_list        = null;
+        type_dobjs_map   = null;
+        type_twgt_map    = null;
+        selected_subtype = null;
     }
 
+    // For SLOG-2 Output
     public Shadow( final Shadow shade )
     {
         super( shade );
-        num_real_objs  = shade.num_real_objs;
+        num_real_objs    = shade.num_real_objs;
+
+        twgt_list        = null;
+        type_twgt_map    = new HashMap();
+        type_dobjs_map   = null;
+
+        //  Make a depp copy of shade's type_twgt_map
+        CategoryWeight  shade_twgt;
+        Iterator        shade_twgts_itr;
+        shade_twgts_itr = shade.type_twgt_map.values().iterator();
+        while ( shade_twgts_itr.hasNext() ) {
+            shade_twgt  = (CategoryWeight) shade_twgts_itr.next();
+            type_twgt_map.put( shade_twgt.getCategory(),
+                               new CategoryWeight( shade_twgt ) );
+        }
+        selected_subtype = null;
     }
 
+    // For SLOG-2 Output
     public Shadow( Category shadow_type, final Primitive prime )
     {
         super( shadow_type, prime );
-        num_real_objs  = 1;
+        num_real_objs   = 1;
+
+        twgt_list       = null;
+        type_twgt_map   = new HashMap();
+        type_dobjs_map  = new HashMap();
+
+        List  dobj_list;
+        dobj_list       = new ArrayList();
+        dobj_list.add( prime );
+        type_dobjs_map.put( prime.getCategory(), dobj_list );
     }
 
     public void mergeWithPrimitive( final Primitive prime )
@@ -63,17 +106,24 @@ public class Shadow extends Primitive
         // do a Time Average over the total number of real drawables
         for ( int idx = 0; idx < shade_vtxs.length; idx++ )
             shade_vtxs[ idx ].time = aveOverAllObjs( shade_vtxs[ idx ].time,
-                                                    this.num_real_objs,
-                                                    prime_vtxs[ idx ].time,
-                                                    1 );
-
+                                                     this.num_real_objs,
+                                                     prime_vtxs[ idx ].time,
+                                                     1 );
         super.affectTimeBounds( prime );
 
         // Need to figure out how to do error estimation.
         // Maybe <X^2> is needed to compute the standard dev..
         // time_err = ( super.getLatestTime() - super.getEarliestTime() ) / 2.0;
-
         num_real_objs++;
+
+        List dobj_list = (List) type_dobjs_map.get( prime.getCategory() );
+        if ( dobj_list == null ) {
+            dobj_list = new ArrayList();
+            dobj_list.add( prime );
+            type_dobjs_map.put( prime.getCategory(), dobj_list );
+        }
+        else
+            dobj_list.add( prime );
     }
 
     public void mergeWithShadow( final Shadow sobj )
@@ -91,22 +141,89 @@ public class Shadow extends Primitive
             System.exit( 1 );
         }
 
+        double old_duration, new_duration;
+        old_duration = super.getDuration();
         // do a Time Average over the total number of real drawables
         for ( int idx = 0; idx < shade_vtxs.length; idx++ )
             shade_vtxs[ idx ].time = aveOverAllObjs( shade_vtxs[ idx ].time,
                                                      this.num_real_objs,
                                                      sobj_vtxs[ idx ].time,
                                                      sobj.num_real_objs );
-
         super.affectTimeBounds( sobj );
+        new_duration = super.getDuration();
 
         // Need to figure out how to do error estimation.
         // Maybe <X^2> is needed to compute the standard dev..
         // time_err = ( super.getLatestTime() - super.getEarliestTime() ) / 2.0;
-
         num_real_objs += sobj.num_real_objs;
 
+        // Since this class's TimeBoundingBox has been affected by sobj,
+        // all type_twgt_map must adjust their weight accordingly. 
+        CategoryWeight this_twgt, sobj_twgt;
+        Iterator       this_twgts_itr, sobj_twgts_itr;
+        float          duration_ratio;
+        if ( old_duration != new_duration ) {
+            duration_ratio = (float) ( old_duration / new_duration );
+            this_twgts_itr = this.type_twgt_map.values().iterator();
+            while ( this_twgts_itr.hasNext() ) {
+                this_twgt = (CategoryWeight) this_twgts_itr.next(); 
+                this_twgt.rescaleWeight( duration_ratio ); 
+            }
+        }
+
+        // Merge with sobj's type_wgt[] with adjustment w.r.t this duration
+        Category  sobj_type;
+        double sobj_duration  = sobj.getDuration();
+        duration_ratio = (float) ( sobj_duration / new_duration );
+        sobj_twgts_itr = sobj.type_twgt_map.values().iterator();
+        while ( sobj_twgts_itr.hasNext() ) {
+            sobj_twgt = (CategoryWeight) sobj_twgts_itr.next();
+            sobj_type = sobj_twgt.getCategory();
+            this_twgt = (CategoryWeight) this.type_twgt_map.get( sobj_type ); 
+            if ( this_twgt == null ) {
+                this_twgt = new CategoryWeight( sobj_twgt );// sobj_twgt's clone
+                this_twgt.rescaleWeight( duration_ratio ); 
+                type_twgt_map.put( sobj_type, this_twgt );
+            }
+            else
+                this_twgt.addWeight( sobj_twgt, duration_ratio );
+        }
+
         // System.err.println( "Shadow.mergeWithShadow(): END" );
+    }
+
+    // For SLOG-2 Output API
+    public void setMapOfCategoryWeights()
+    {
+        Iterator   type_dobjs_itr, dobjs_itr;
+        Map.Entry  type_dobj;
+        List       dobj_list;
+        Category   type;
+        double     shadow_duration;
+        double     ratio;
+        float      weight;
+        int        size;
+        size             = type_dobjs_map.size();
+        shadow_duration  = super.getDuration();
+        type_dobjs_itr   = type_dobjs_map.entrySet().iterator();
+        while ( type_dobjs_itr.hasNext() ) {
+            type_dobj  = (Map.Entry) type_dobjs_itr.next();
+            type       = (Category) type_dobj.getKey();
+            dobj_list  = (List) type_dobj.getValue();
+
+            // Compute the total weight of each Category of dobj in this sobj
+            weight     = 0.0f;
+            dobjs_itr  = dobj_list.iterator();
+            while ( dobjs_itr.hasNext() ) {
+                ratio  = ((TimeBoundingBox) dobjs_itr.next()).getDuration()
+                       / shadow_duration;
+                weight += (float) ratio;
+            }
+            type_twgt_map.put( type, new CategoryWeight( type, weight ) );
+            dobj_list  = null;
+        }
+        type_dobjs_map.clear();
+        type_dobjs_map = null;  // set to null so toString() works
     }
 
     private static double aveOverAllObjs( double sobj_time, long sobj_Nobjs,
@@ -118,7 +235,47 @@ public class Shadow extends Primitive
 
     public int getByteSize()
     {
-        return super.getByteSize() + BYTESIZE;
+        if ( twgt_list != null )  // For SLOG-2 Input
+            return super.getByteSize() + BYTESIZE
+                 + CategoryWeight.BYTESIZE * twgt_list.size();
+        else if ( type_dobjs_map != null )  // For SLOG-2 Output
+            return super.getByteSize() + BYTESIZE
+                 + CategoryWeight.BYTESIZE * type_dobjs_map.size();
+        else                                // For SLOG-2 Output
+            return super.getByteSize() + BYTESIZE
+                 + CategoryWeight.BYTESIZE * type_twgt_map.size();
+    }
+
+    // For SLOG-2 Input API
+    public boolean resolveCategory( Map categorymap )
+    {
+        CategoryWeight  twgt;
+        Iterator        twgts_itr;
+        boolean         allOK = super.resolveCategory( categorymap );
+        twgts_itr = twgt_list.iterator();
+        while ( twgts_itr.hasNext() ) {
+            twgt = (CategoryWeight) twgts_itr.next();
+            allOK = allOK && twgt.resolveCategory( categorymap );
+        }
+        return allOK;
+    }
+
+    // For SLOG-2 Input API i.e. Jumpshot
+    public Iterator iteratorOfCategoryWeights()
+    {
+        return twgt_list.iterator();
+    }
+
+    // For SLOG-2 Input API i.e. Jumpshot
+    public Category getSelectedSubCategory()
+    {
+        return selected_subtype;
+    }
+
+    // For SLOG-2 Input API i.e. Jumpshot
+    public void clearSelectedSubCategory()
+    {
+        selected_subtype = null;
     }
 
     public long getNumOfRealObjects()
@@ -133,6 +290,16 @@ public class Shadow extends Primitive
         TimeBoundingBox.writeObject( this, outs );
         outs.writeLong( num_real_objs );
      // System.err.println( "\touts.size=" + ((DataOutputStream)outs).size() );
+        List  tmp_twgt_list;
+        int   Nentries = type_twgt_map.size();
+        outs.writeInt( Nentries );
+        if ( Nentries > 0 ) {
+            tmp_twgt_list = new ArrayList( this.type_twgt_map.values() );
+            Collections.sort( tmp_twgt_list, CategoryWeight.INDEX_ORDER );
+            Iterator twgts_itr = tmp_twgt_list.iterator();
+            while ( twgts_itr.hasNext() )
+                ( (CategoryWeight) twgts_itr.next() ).writeObject( outs );
+        }
     }
 
     public Shadow( MixedDataInput ins )
@@ -148,12 +315,39 @@ public class Shadow extends Primitive
         super.readObject( ins );
         TimeBoundingBox.readObject( this, ins );
         num_real_objs = ins.readLong();
+
+        CategoryWeight  twgt;
+        int             Nentries, ientry;
+
+        Nentries   = ins.readInt();
+        if ( Nentries > 0 ) {
+            twgt_list  = new ArrayList( Nentries );
+            for ( ientry = 0; ientry < Nentries; ientry++ ) {
+                twgt = new CategoryWeight( ins );
+                twgt_list.add( twgt );
+            }
+        }
     }
 
     public String toString()
     {
         StringBuffer rep = new StringBuffer( super.toString() );
         rep.append( " Nrobjs=" + num_real_objs );
+
+        Iterator        twgts_itr = null;
+        if ( twgt_list != null )
+            twgts_itr = twgt_list.iterator();
+        else
+            if ( type_twgt_map != null )
+                twgts_itr = type_twgt_map.values().iterator();
+
+        CategoryWeight  twgt;
+        if ( twgts_itr != null ) {
+            while ( twgts_itr.hasNext() ) {
+                twgt = (CategoryWeight) twgts_itr.next();
+                rep.append( "\n" + twgt + " " );
+            }
+        }
         return rep.toString();
     }
 
@@ -210,7 +404,9 @@ public class Shadow extends Primitive
         if ( topo.isEvent() )
             System.err.println( "Non-supported yet Event Shadow type." );
         else if ( topo.isState() ) {
-            if ( this.isPixelInState( coord_xform, map_line2row, pix_pt ) )
+            selected_subtype = this.isPixelInState( coord_xform,
+                                                    map_line2row, pix_pt );
+            if ( this.selected_subtype != null )
                 return this;
         }
         else if ( topo.isArrow() ) {
@@ -263,9 +459,12 @@ public class Shadow extends Primitive
         rStart = (float) rowID - nesting_ftr / 2.0f;
         rFinal = rStart + nesting_ftr;
 
-        return State.draw( g, color, Empty_Border, coord_xform,
-                           drawn_boxes.getLastStatePos( rowID ),
-                           tStart, rStart, tFinal, rFinal );
+        return PreviewState.draw( g, twgt_list, Empty_Border, coord_xform,
+                                  drawn_boxes.getLastStatePos( rowID ),
+                                  tStart, rStart, tFinal, rFinal );
+        // return State.draw( g, color, Empty_Border, coord_xform,
+        //                    drawn_boxes.getLastStatePos( rowID ),
+        //                    tStart, rStart, tFinal, rFinal );
     }
 
     private int  drawArrow( Graphics2D g, CoordPixelXform coord_xform,
@@ -296,8 +495,8 @@ public class Shadow extends Primitive
     /* 
         0.0f < nesting_ftr <= 1.0f
     */
-    private boolean isPixelInState( CoordPixelXform coord_xform,
-                                    Map map_line2row, Point pix_pt )
+    private Category isPixelInState( CoordPixelXform coord_xform,
+                                     Map map_line2row, Point pix_pt )
     {
         Coord  start_vtx, final_vtx;
         start_vtx = this.getStartVertex();
@@ -324,8 +523,9 @@ public class Shadow extends Primitive
         rStart = (float) rowID - nesting_ftr / 2.0f;
         rFinal = rStart + nesting_ftr;
 
-        return State.containsPixel( coord_xform, pix_pt,
-                                    tStart, rStart, tFinal, rFinal );
+        return PreviewState.containsPixel( twgt_list, Empty_Border,
+                                           coord_xform, pix_pt,
+                                           tStart, rStart, tFinal, rFinal );
     }
 
     //  assume this Shadow overlaps with coord_xform.TimeBoundingBox

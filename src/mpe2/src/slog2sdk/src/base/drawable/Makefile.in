@@ -22,7 +22,8 @@ TARGET  = $(libbuild_dir)/drawable.jar
 PACKAGE = base.drawable
 SRC     = ColorAlpha.java Coord.java CoordPixelXform.java \
           Topology.java Method.java \
-          TimeBoundingBox.java InfoType.java InfoValue.java Category.java \
+          TimeBoundingBox.java InfoType.java InfoValue.java \
+          Category.java CategoryWeight.java \
           DrawnBox.java DrawnBoxSet.java \
           InfoBox.java NestingStacks.java Drawable.java \
           Primitive.java Primitive_TwoVtx.java Shadow.java \

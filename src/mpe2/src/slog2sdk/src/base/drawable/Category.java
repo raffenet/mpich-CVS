@@ -13,6 +13,7 @@ import java.util.StringTokenizer;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Comparator;
 
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
@@ -20,6 +21,8 @@ import base.io.MixedDataOutput;
 
 public class Category
 {
+    public static final Comparator INDEX_ORDER  = new IndexOrder();
+
     private int          index;
     private String       name;
     private Topology     topo;          // private Shape    shape;
@@ -299,5 +302,17 @@ public class Category
         }
         rep.append( " ]" );
         return rep.toString();
+    }
+
+
+
+    public static class IndexOrder implements Comparator
+    {
+        public int compare( Object o1, Object o2 )
+        {
+            Category type1 = (Category) o1;
+            Category type2 = (Category) o2;
+            return type1.index - type2.index;
+        }
     }
 }
