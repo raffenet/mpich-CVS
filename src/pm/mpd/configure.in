@@ -68,12 +68,19 @@ for pypgm in $PY23 $PY2 $PY22 $PY ; do \
 	continue
     fi
     PYTHON="$pypgm"
-    echo END LOOP
     break
 done
 #
 if test -z "$PYTHON" ; then
     AC_MSG_ERROR([Python required (version 2.2 or greater, with necessary modules)]) 
+fi
+
+if test "`uname -o`" = "Cygwin" ; then
+    AC_MSG_CHECKING([that rebaseall is ok on this cygwin system])
+    echo
+    if ! $PYTHON -c 'from socket import socket ; from os import fork ; x = fork()'  >/dev/null 2>&1 ; then
+        AC_MSG_ERROR([*** fork may fail on this cygwin system; you may need to run rebaseall]) 
+    fi
 fi
 
 # echo "RMB PYTHON=" $PYTHON
