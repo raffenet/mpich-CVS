@@ -3,6 +3,8 @@ smvar_do_sharedlibs = 0
 LDADD = -L../../../../lib ../util/mtestf.o 
 DEPADD = ../../../../lib/lib${MPILIBNAME}.a ../util/mtestf.o
 
+F77HEADERS = attraints.h
+
 baseattrf_SOURCES    = baseattrf.f
 baseattrwinf_SOURCES = baseattrwinf.f
 commattrf_SOURCES    = commattrf.f

@@ -3,6 +3,8 @@ LDADD = -L../../../../lib ../util/mtestf.o
 DEPADD = ../../../../lib/lib${MPILIBNAME}.a ../util/mtestf.o
 smvar_do_sharedlibs = 0
 
+F77HEADERS = addsize.h
+
 # allocmem_SOURCES = allocmem.f
 winscale1f_SOURCES = winscale1f.f
 winscale2f_SOURCES = winscale2f.f

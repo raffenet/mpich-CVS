@@ -2,6 +2,7 @@ F77INCLUDES = -I.
 LDADD = -L../../../../lib ../util/mtestf.o 
 DEPADD = ../../../../lib/lib${MPILIBNAME}.a ../util/mtestf.o
 smvar_do_sharedlibs = 0
+F77HEADERS = iodisp.h iooffset.h
 
 iwriteatf_SOURCES     = iwriteatf.f
 iwritef_SOURCES       = iwritef.f
