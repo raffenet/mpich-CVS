@@ -122,7 +122,7 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 	
 	comm_ptr->local_group = group_ptr;
     }
-    /* FIXME: Add a sanity check that the size of the group is the same as
+    /* FIXME (gropp): Add a sanity check that the size of the group is the same as
        the size of the communicator.  This helps catch corrupted 
        communicators */
 
