@@ -266,7 +266,6 @@ typedef struct {
 #define ADIO_SEEK_CUR            SEEK_CUR
 #define ADIO_SEEK_END            SEEK_END
 
-#define ADIO_FCNTL_SET_VIEW      176
 #define ADIO_FCNTL_SET_ATOMICITY 180
 #define ADIO_FCNTL_SET_IOMODE    184
 #define ADIO_FCNTL_SET_DISKSPACE 188

@@ -40,7 +40,6 @@ Input Parameters:
 int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
 		 MPI_Datatype filetype, char *datarep, MPI_Info info)
 {
-    ADIO_Fcntl_t *fcntl_struct;
     int filetype_size, etype_size, error_code;
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_SET_VIEW";
@@ -161,12 +160,6 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
 #endif
     }
 
-    fcntl_struct = (ADIO_Fcntl_t *) ADIOI_Malloc(sizeof(ADIO_Fcntl_t));
-    fcntl_struct->disp = disp;
-    fcntl_struct->etype = etype;
-    fcntl_struct->filetype = filetype;
-    fcntl_struct->info = info;
-    fcntl_struct->iomode = fh->iomode;
 
     if (disp == MPI_DISPLACEMENT_CURRENT) {
 	MPI_Barrier(fh->comm);
@@ -174,10 +167,10 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
 	/* MPI_Barrier(fh->comm); 
            deleting this because there is a barrier below */
 	ADIOI_Get_byte_offset(fh, shared_fp, &byte_off);
-	fcntl_struct->disp = byte_off;
+	disp = byte_off;
     }
 
-    ADIO_Fcntl(fh, ADIO_FCNTL_SET_VIEW, fcntl_struct, &error_code);
+    ADIO_Set_view(fh, disp, etype, filetype, info, &error_code);
 
     /* reset shared file pointer to zero */
 
@@ -196,6 +189,5 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     if ((fh->file_system != ADIO_PIOFS) && (fh->file_system != ADIO_PVFS))
 	MPI_Barrier(fh->comm); /* for above to work correctly */
 
-    ADIOI_Free(fcntl_struct);
     return error_code;
 }
