@@ -925,4 +925,8 @@ fi # Has Fortran 90
 AC_LANG_POP
 fi # is not cross compiling
 ])dnl
-
+dnl
+dnl Backwards compatibility features
+dnl
+AC_DEFUN([PAC_PROG_F90],[AC_PROG_F90])
+AC_DEFUN([PAC_LANG_FORTRAN90],[AC_PUSH_LANG(Fortran 90)])
