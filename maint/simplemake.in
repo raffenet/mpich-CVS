@@ -44,6 +44,7 @@ $fixup_autoconf_cd = 0; # set to 1 to (partially) fixup configure for
                         # pathnames that contain blanks
 $autoconf = "autoconf"; # Name of autoconf program to use
 $autoconf_version = ""; # Require a specific version
+$configure_has_config_headers = "no";
 #
 $quietmake = "@";       # set to "" for echo commands, @ to suppress them
 #
@@ -946,7 +947,14 @@ sub DefaultRules {
 	&print_make_longline( FD,  "\${srcdir}/configure: \${srcdir}/configure.in $autoconf_deps" );
 	&print_make_setpos( 8 );
 	&FindWorkingAutoconf ;
-	&print_make_longline( FD,  "\t(cd \${srcdir} && autoheader $aargs ; \\$newline\t$autoconf $aargs )" );
+	# Use autoheader only if AC_CONFIG_HEADERS is in the configure file
+	# 
+	if ($configure_has_config_headers ne "no") {
+	    &print_make_longline( FD,  "\t(cd \${srcdir} && autoheader $aargs ; \\$newline\t$autoconf $aargs )" );
+	}
+	else {
+	    &print_make_longline( FD,  "\t(cd \${srcdir} && $autoconf $aargs )" );
+	}
 	if ($fixup_autoconf_cd) {
 	    # This is needed for DOS in case the pwd contains blanks
 	    print FD "\t( cd \${srcdir} && sed -e 's/cd *\$\$ac_popdir/cd \"\$\$ac_popdir\"/g' configure > c.tmp ; mv -f c.tmp configure ; chmod a+x configure)$newline";
@@ -2147,10 +2155,16 @@ sub TargetDependencies {
 
 
 # Extract derived files from autoconf
+# Also record whether there is an AC_CONFIG_HEADER
 sub ReadAutoconf {
+    $configure_has_config_headers = "no";
     open FDCONF, "configure.in" || die "Could not open configure.in file";
     while (<FDCONF>) {
 	#if (/^\s*#/) { next; }
+	if (/^\s*AC_CONFIG_HEADER\((.*)\)/) {
+	    # Record file name of header in result variable
+	    $configure_has_config_headers = $1;
+	}
 	if (/^\s*AC_OUTPUT\(/) {
 	    # First, read past all continued lines
 	    $line = "";
@@ -2319,8 +2333,15 @@ sub FindWorkingAutoconf {
 	foreach $file (split(/:/,$autoconf)) {
 	    $lastfile = $file;
 	    # Grumble.  I need to redirect stderr to stdout before this
-	    # open
-	    if (open( ACFD, "$file --version 2>&1 |" ) ) {
+	    # open.  We use open with a pipe and then exec so that we
+	    # can get stderr redirection to work correctly.
+	    $pid = open( ACFD, "-|");
+	    if ($pid == 0) {
+		open STDIN, "/dev/null";
+		open STDERR, ">>&STDOUT";
+		exec split(/\s+/,"$file --version");
+	    }
+	    else {
 		$found_version = "";
 		while (<ACFD>) {
 		    print STDERR "$_";
