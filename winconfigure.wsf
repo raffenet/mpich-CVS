@@ -896,6 +896,8 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("/* #undef HAVE_CLOCK_GETTIME */")
 				Case "HAVE_GETHRTIME"
 					fout.WriteLine("/* #undef HAVE_GETHRTIME */")
+				Case "HAVE_MPI_WIN_CREATE"
+					fout.WriteLine("#define HAVE_MPI_WIN_CREATE 1")
 				Case "HAVE_COMPARE_AND_SWAP"
 					fout.WriteLine("/* #undef HAVE_COMPARE_AND_SWAP */")
 				Case "HAVE_DLFCN_H"
@@ -1029,6 +1031,7 @@ Sub AddDefinitions( fout, filename )
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
+					fout.WriteLine("/* unknown definition: " & define & " */")
 			End Select
 			fout.WriteLine("")
 		Next
@@ -1204,12 +1207,21 @@ Call WriteFooter(fout)
 fout.Close()
 
 '
+' mpitestconf.h
+'
+Set fout = f.CreateTextFile("test\mpi\include\mpitestconf.h")
+Call WriteHeader(fout, "mpitest")
+Call AddDefinitions(fout, "test\mpi\include\mpitestconf.h.in")
+Call WriteFooter(fout)
+fout.Close()
+
+'
 ' fooconf.h
 '
 'Set fout = f.CreateTextFile("src\include\fooconf.h")
 'Call WriteHeader(fout, "foo")
 'Call AddDefinitions(fout, "src\include\fooconf.h.in")
-'fout.WriteLine("")
+'fout.WriteLine("foo specific stuff")
 'Call WriteFooter(fout)
 'fout.Close()
 
