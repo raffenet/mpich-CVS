@@ -222,15 +222,17 @@ public class InfoPanelForDrawable extends SearchPanel // SearchPanel is JPanel
             int            coords_length;
             int            idx, ii;
     
-            coords_length = coords.length;
-            duration = coords[ coords_length-1 ].time - coords[ 0 ].time;
             linebuf = new StringBuffer();
-            linebuf.append( "duration" + description
-                          + " = " + tfmt.format( duration ) );
-            if ( num_cols < linebuf.length() )
-                num_cols = linebuf.length();
-            num_rows++;
-            strbuf.append( linebuf.toString() );
+            coords_length = coords.length;
+            if ( coords_length > 1 ) {
+                duration = coords[ coords_length-1 ].time - coords[ 0 ].time;
+                linebuf.append( "duration" + description
+                              + " = " + tfmt.format( duration ) );
+                if ( num_cols < linebuf.length() )
+                    num_cols = linebuf.length();
+                num_rows++;
+                strbuf.append( linebuf.toString() + "\n" );
+            }
             for ( idx = 0; idx < coords_length; idx++ ) {
                 linebuf = new StringBuffer( "[" + idx + "]: " );
                 vertex  = coords[ idx ];
@@ -245,7 +247,9 @@ public class InfoPanelForDrawable extends SearchPanel // SearchPanel is JPanel
                 if ( num_cols < linebuf.length() )
                     num_cols = linebuf.length();
                 num_rows++;
-                strbuf.append( "\n" + linebuf.toString() );
+                strbuf.append( linebuf.toString() );
+                if ( idx < coords_length-1 )
+                    strbuf.append( "\n" );
             }
         }
     

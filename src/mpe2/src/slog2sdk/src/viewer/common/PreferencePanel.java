@@ -44,7 +44,8 @@ public class PreferencePanel extends JPanel
     // Options: Timeline zoomable window
     private        LabeledComboBox        lst_STATE_BORDER;
     private        LabeledTextField       fld_ARROW_HEAD_LENGTH;
-    private        LabeledTextField       fld_ARROW_HEAD_HALF_WIDTH;
+    private        LabeledTextField       fld_ARROW_HEAD_WIDTH;
+    private        LabeledTextField       fld_EVENT_BASE_WIDTH;
 
     private        LabeledComboBox        lst_PREVIEW_STATE_DISPLAY;
     private        LabeledComboBox        lst_PREVIEW_STATE_BORDER;
@@ -281,21 +282,31 @@ public class PreferencePanel extends JPanel
                                     "ARROW_HEAD_LENGTH",
                                     Const.INTEGER_FORMAT );
         fld_ARROW_HEAD_LENGTH.setToolTipText(
-        "Length of arrow head in pixel." );
+        "Length of the arrow head in pixel." );
         fld_ARROW_HEAD_LENGTH.setHorizontalAlignment( JTextField.CENTER );
         fld_ARROW_HEAD_LENGTH.addSelfDocumentListener();
         fld_ARROW_HEAD_LENGTH.setEditable( true );
         super.add( fld_ARROW_HEAD_LENGTH );
 
-        fld_ARROW_HEAD_HALF_WIDTH = new LabeledTextField( true,
-                                        "ARROW_HEAD_HALF_WIDTH",
-                                        Const.INTEGER_FORMAT );
-        fld_ARROW_HEAD_HALF_WIDTH.setToolTipText(
-        "Half width of arrow head's base in pixel." );
-        fld_ARROW_HEAD_HALF_WIDTH.setHorizontalAlignment( JTextField.CENTER );
-        fld_ARROW_HEAD_HALF_WIDTH.addSelfDocumentListener();
-        fld_ARROW_HEAD_HALF_WIDTH.setEditable( true );
-        super.add( fld_ARROW_HEAD_HALF_WIDTH );
+        fld_ARROW_HEAD_WIDTH = new LabeledTextField( true,
+                                   "ARROW_HEAD_WIDTH",
+                                   Const.INTEGER_FORMAT );
+        fld_ARROW_HEAD_WIDTH.setToolTipText(
+        "Width of the arrow head's base in pixel(Even number)." );
+        fld_ARROW_HEAD_WIDTH.setHorizontalAlignment( JTextField.CENTER );
+        fld_ARROW_HEAD_WIDTH.addSelfDocumentListener();
+        fld_ARROW_HEAD_WIDTH.setEditable( true );
+        super.add( fld_ARROW_HEAD_WIDTH );
+
+        fld_EVENT_BASE_WIDTH = new LabeledTextField( true,
+                                   "EVENT_BASE_WIDTH",
+                                   Const.INTEGER_FORMAT );
+        fld_EVENT_BASE_WIDTH.setToolTipText(
+        "Width of the event triangle's base in pixel(Even number)." );
+        fld_EVENT_BASE_WIDTH.setHorizontalAlignment( JTextField.CENTER );
+        fld_EVENT_BASE_WIDTH.addSelfDocumentListener();
+        fld_EVENT_BASE_WIDTH.setEditable( true );
+        super.add( fld_EVENT_BASE_WIDTH );
 
         super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
 
@@ -509,8 +520,8 @@ public class PreferencePanel extends JPanel
         // Options: Timeline zoomable window
         lst_STATE_BORDER.setSelectedItem( Parameters.STATE_BORDER );
         fld_ARROW_HEAD_LENGTH.setInteger( Parameters.ARROW_HEAD_LENGTH );
-        fld_ARROW_HEAD_HALF_WIDTH.setInteger(
-                                  Parameters.ARROW_HEAD_HALF_WIDTH );
+        fld_ARROW_HEAD_WIDTH.setInteger( Parameters.ARROW_HEAD_WIDTH );
+        fld_EVENT_BASE_WIDTH.setInteger( Parameters.EVENT_BASE_WIDTH );
 
         lst_PREVIEW_STATE_DISPLAY.setSelectedItem(
                                   Parameters.PREVIEW_STATE_DISPLAY );
@@ -588,8 +599,10 @@ public class PreferencePanel extends JPanel
                   = (StateBorder) lst_STATE_BORDER.getSelectedItem();
         Parameters.ARROW_HEAD_LENGTH
                   = fld_ARROW_HEAD_LENGTH.getInteger();
-        Parameters.ARROW_HEAD_HALF_WIDTH
-                  = fld_ARROW_HEAD_HALF_WIDTH.getInteger();
+        Parameters.ARROW_HEAD_WIDTH
+                  = fld_ARROW_HEAD_WIDTH.getInteger();
+        Parameters.EVENT_BASE_WIDTH
+                  = fld_EVENT_BASE_WIDTH.getInteger();
 
         Parameters.PREVIEW_STATE_DISPLAY
                   = (String) lst_PREVIEW_STATE_DISPLAY.getSelectedItem();
