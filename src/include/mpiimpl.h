@@ -184,8 +184,16 @@ extern MPIU_dbg_state_t MPIUI_dbg_state;
 	MPIU_dbg_printf e;			\
     }						\
 }
+#define MPIU_dbglog_flush()				\
+{							\
+    if (MPIUI_dbg_state & MPIU_DBG_STATE_STDOUT)	\
+    {							\
+	fflush(stdout);					\
+    }							\
+}
 #else
 #define MPIU_DBG_PRINTF(e)
+#define MPIU_dbglog_flush()
 #endif
 void MPIU_dump_dbg_memlog_to_stdout(void);
 void MPIU_dump_dbg_memlog_to_file(char *filename);

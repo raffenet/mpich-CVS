@@ -196,17 +196,18 @@ int MPIU_dbglog_vprintf(char *str, va_list ap)
 int MPIU_dbg_printf(char * str, ...)
 {
     int n;
-    va_list list;
-
-    MPIU_dbglog_printf("[%d]", MPIR_Process.comm_world->rank);
-    va_start(list, str);
-    n = MPIU_dbglog_vprintf(str, list);
-    va_end(list);
-
-    if (MPIUI_dbg_state & MPIU_DBG_STATE_STDOUT)
+    
+    MPID_Common_thread_lock();
     {
-	fflush(stdout);
+	va_list list;
+
+	MPIU_dbglog_printf("[%d]", MPIR_Process.comm_world->rank);
+	va_start(list, str);
+	n = MPIU_dbglog_vprintf(str, list);
+	va_end(list);
+	MPIU_dbglog_flush();
     }
+    MPID_Common_thread_unlock();
     
     return n;
 }
