@@ -345,7 +345,7 @@ typedef enum MPID_Lang_t { MPID_LANG_C
    __asm__ __volatile__ ( "lock; decl %0 ; setnz %1" \
                          : "=m" (*count_ptr) , "=q" (flag) :: "memory", "cc" )
 #else
-#abort "Atomic updates specified but no code for this platform"
+#error "Atomic updates specified but no code for this platform"
 #endif
 #define MPIU_Object_set_ref(objptr,val) \
     ((MPIU_Handle_head*)(objptr))->ref_count = val
