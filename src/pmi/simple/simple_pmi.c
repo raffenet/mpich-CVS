@@ -55,6 +55,7 @@ int PMI_vallen_max;
 
 int PMI_iter_next_idx;
 int PMI_debug = 0;
+int PMI_spawned = 0;
 
 static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max );
 static int PMII_iter( const char *kvsname, const int idx, int *nextidx, char *key, char *val );
@@ -147,8 +148,14 @@ int PMI_Init( int *spawned )
 	
     PMII_getmaxes( &PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max );
 
-    /* for now */
-    *spawned = 0;
+    if ( ( p = getenv( "PMI_SPAWNED" ) ) )
+	PMI_spawned = atoi( p );
+    else
+	PMI_spawned = 0;
+    if (PMI_spawned)
+	*spawned = 1;
+    else
+	*spawned = 0;
 
     PMI_initialized = 1;
 
