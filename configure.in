@@ -525,11 +525,13 @@ else
     AC_CHECK_FUNCS(tsearch)
     dnl Check that we can compile tsearch without error.  Try to compile
     dnl it with the header and the char * args
-    if test "ac_cv_func_tsearch" = "yes" ; then
+    if test "$ac_cv_func_tsearch" = "yes" ; then
+        AC_CACHE_CHECK([whether tsearch requires char* args],
+	               pac_cv_tsearch_charp,[
         AC_TRY_COMPILE([#include <search.h>
     char *tsearch( char *k, char **r, (int (*)())compare ) { return k; }],
-    [int f=0;],needs_char=yes,needs_char=no)
-        if test "$needs_char" = "yes" ; then
+    [int f=0;],pac_cv_tsearch_charp=yes,pac_cv_tsearch_charp=no)])
+        if test "$pac_cv_tsearch_charp" = "yes" ; then
 	    AC_DEFINE(USE_TSEARCH_WITH_CHARP,,[Define if tsearch requires char pointers])
 	fi
     fi
