@@ -287,7 +287,7 @@ static void * ibuBlockAlloc(ibuBlockAllocator p)
     return pVoid;
 }
 
-static void * ibuBlockAllocIB(ibuBlockAllocator p)
+static void * ibuBlockAllocIB(ibuQueue_t * p)
 {
     void *pVoid;
 
@@ -312,7 +312,7 @@ static int ibuBlockFree(ibuBlockAllocator p, void *pBlock)
     return 0;
 }
 
-static int ibuBlockFreeIB(ibuBlockAllocator p, void *pBlock)
+static int ibuBlockFreeIB(ibuQueue_t * p, void *pBlock)
 {
     ibuBlock_t *b;
 
