@@ -933,14 +933,14 @@ dnl is a partial reworking using the autoconf2 sizeof macros, and allowing
 dnl for the standardized CROSS_xxx varaibles for cross-compilation environments
 CROSS_SIZEOF_LONG_LONG=${CROSS_SIZEOF_LONG_LONG:-0}
 AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
-if test "$ac_sizeof_long_long" != 0 ; then
-    if test "$ac_sizeof_long_long" = "8" ; then
+if test "$ac_cv_sizeof_long_long" != 0 ; then
+    if test "$ac_cv_sizeof_long_long" = "8" ; then
        AC_DEFINE(HAVE_LONG_LONG_64,1,[Define if long long is 64 bits])
        MPI_OFFSET_TYPE="long long"
        DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer*8"
        LL="\%lld"
-    elif test "$ac_sizeof_long_long" = "$ac_sizeof_int" ; then
+    elif test "$ac_cv_sizeof_long_long" = "$ac_cv_sizeof_int" ; then
        MPI_OFFSET_TYPE="int"
        DEFINE_MPI_OFFSET="typedef int MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer"
