@@ -13,10 +13,28 @@ PAC_PROG_MAKE
 if test -z "$top_build_dir" ; then 
     top_build_dir=`cd ../.. ; pwd`
 fi
-CC=$top_build_dir/bin/mpicc
-FC=$top_build_dir/bin/mpif77
-CXX=$top_build_dir/bin/mpicxx
+# The following choices can cause problems if we configure as part of a 
+# MPICH2 configure, because the libraries may not yet exist.  In 
+# that case, we wait to make these definitions until after the
+# tests, since the environment variables for the compilers is set 
+# as part of the initial build
+if test "$FROM_MPICH2" != yes ; then
+    CC=$top_build_dir/bin/mpicc
+    FC=$top_build_dir/bin/mpif77
+    CXX=$top_build_dir/bin/mpicxx
+else
+    # Remove the libraries, since they will not be needed for the
+    # few tests that we do
+    saveLIBS=$LIBS
+    LIBS=
+fi
+# Clear the CPPFLAGS, since the MPI configure will have added many items
+# that are not required for user MPI programs.
+CPPFLAGS=
 #
+# Note that some versions of autoconf will insist that the compiler 
+# produce executables at this point, which is why we must do something
+# special for building within MPICH2
 AC_C_LONG_DOUBLE
 AC_MSG_CHECKING([whether long long available])
 AC_TRY_COMPILE(,[long long a;],pac_cv_have_long_long=yes,pac_cv_have_long_long=no)
@@ -27,9 +45,14 @@ fi
 #
 # Define functionality that we support
 AC_DEFINE(HAVE_MPI_WIN_CREATE,1,[Define if MPI_Win_create is available])
-# Clear the CPPFLAGS, since the MPI configure will have added many items
-# that are not required for user MPI programs.
-CPPFLAGS=
+
+# Now, select the proper compilers for the tests
+if test "$FROM_MPICH2" = yes ; then
+    LIBS=$saveLIBS
+    CC=$top_build_dir/bin/mpicc
+    FC=$top_build_dir/bin/mpif77
+    CXX=$top_build_dir/bin/mpicxx
+fi
 AC_SUBST(CC)
 AC_SUBST(FC)
 AC_SUBST(CXX)
