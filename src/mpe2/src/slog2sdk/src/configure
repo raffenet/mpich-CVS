@@ -1317,6 +1317,8 @@ for dir in \
     /usr/jdk* \
     /usr/j2sdk* \
     /usr/java* \
+    /usr/java/jdk* \
+    /usr/java/j2sdk* \
     /usr/local \
     /usr/local/java* \
     /usr/local/jdk* \
@@ -1381,7 +1383,7 @@ for dir in $reverse_dirs ; do
             echo "$ac_t""found $JC" 1>&6
             
                 echo $ac_n "checking if $JC works""... $ac_c" 1>&6
-echo "configure:1385: checking if $JC works" >&5
+echo "configure:1387: checking if $JC works" >&5
                 
         
 jac_JC="$JC"
@@ -1401,7 +1403,7 @@ class conftest {
 EOF
 
     jac_compile='${jac_JC} ${jac_JFLAGS} conftest.java 1>&5'
-    if { (eval echo configure:1405: \"$jac_compile\") 1>&5; (eval $jac_compile) 2>&5; } && test -s conftest.class ; then
+    if { (eval echo configure:1407: \"$jac_compile\") 1>&5; (eval $jac_compile) 2>&5; } && test -s conftest.class ; then
         rm -rf conftest* ;  jac_javac_working=yes 
     else
         rm -rf conftest* ;  jac_javac_working=no  
@@ -1410,7 +1412,7 @@ EOF
         if test "$jac_javac_working" = "yes" ; then
             echo "$ac_t""yes" 1>&6
             echo $ac_n "checking if $JC accepts -classpath, -d & -sourcepath""... $ac_c" 1>&6
-echo "configure:1414: checking if $JC accepts -classpath, -d & -sourcepath" >&5
+echo "configure:1416: checking if $JC accepts -classpath, -d & -sourcepath" >&5
             
 jac_JC="$JC"
 jac_JFLAGS="-classpath . -d . -sourcepath ."
@@ -1429,7 +1431,7 @@ class conftest {
 EOF
 
     jac_compile='${jac_JC} ${jac_JFLAGS} conftest.java 1>&5'
-    if { (eval echo configure:1433: \"$jac_compile\") 1>&5; (eval $jac_compile) 2>&5; } && test -s conftest.class ; then
+    if { (eval echo configure:1435: \"$jac_compile\") 1>&5; (eval $jac_compile) 2>&5; } && test -s conftest.class ; then
         rm -rf conftest* ;  jac_javac_working=yes 
     else
         rm -rf conftest* ;  jac_javac_working=no  
@@ -1439,7 +1441,7 @@ EOF
         if test "$jac_javac_working" = "yes" ; then
             echo "$ac_t""yes" 1>&6
             echo $ac_n "checking if $JC understands List & Map""... $ac_c" 1>&6
-echo "configure:1443: checking if $JC understands List & Map" >&5
+echo "configure:1445: checking if $JC understands List & Map" >&5
             
 jac_JC="$JC"
 jac_JFLAGS="-classpath . -d . -sourcepath ."
@@ -1462,7 +1464,7 @@ class conftest {
 EOF
 
     jac_compile='${jac_JC} ${jac_JFLAGS} conftest.java 1>&5'
-    if { (eval echo configure:1466: \"$jac_compile\") 1>&5; (eval $jac_compile) 2>&5; } && test -s conftest.class ; then
+    if { (eval echo configure:1468: \"$jac_compile\") 1>&5; (eval $jac_compile) 2>&5; } && test -s conftest.class ; then
         rm -rf conftest* ;  jac_javac_working=yes 
     else
         rm -rf conftest* ;  jac_javac_working=no  
@@ -1472,7 +1474,7 @@ EOF
         if test "$jac_javac_working" = "yes" ; then
             echo "$ac_t""yes" 1>&6
             echo $ac_n "checking if $JC handles static-inner-class reference""... $ac_c" 1>&6
-echo "configure:1476: checking if $JC handles static-inner-class reference" >&5
+echo "configure:1478: checking if $JC handles static-inner-class reference" >&5
             
 jac_JC="$JC"
 jac_JFLAGS="-classpath . -d . -sourcepath ."
@@ -1496,7 +1498,7 @@ class conftest {
 EOF
 
     jac_compile='${jac_JC} ${jac_JFLAGS} conftest.java 1>&5'
-    if { (eval echo configure:1500: \"$jac_compile\") 1>&5; (eval $jac_compile) 2>&5; } && test -s conftest.class ; then
+    if { (eval echo configure:1502: \"$jac_compile\") 1>&5; (eval $jac_compile) 2>&5; } && test -s conftest.class ; then
         rm -rf conftest* ;  jac_javac_working=yes 
     else
         rm -rf conftest* ;  jac_javac_working=no  
@@ -1506,7 +1508,7 @@ EOF
         if test "$jac_javac_working" = "yes" ; then
             echo "$ac_t""yes" 1>&6
             echo $ac_n "checking if $JC compiles Swing-1.1.1 code""... $ac_c" 1>&6
-echo "configure:1510: checking if $JC compiles Swing-1.1.1 code" >&5
+echo "configure:1512: checking if $JC compiles Swing-1.1.1 code" >&5
             
 jac_JC="$JC"
 jac_JFLAGS=""
@@ -1528,7 +1530,7 @@ class conftest {
 EOF
 
     jac_compile='${jac_JC} ${jac_JFLAGS} conftest.java 1>&5'
-    if { (eval echo configure:1532: \"$jac_compile\") 1>&5; (eval $jac_compile) 2>&5; } && test -s conftest.class ; then
+    if { (eval echo configure:1534: \"$jac_compile\") 1>&5; (eval $jac_compile) 2>&5; } && test -s conftest.class ; then
         rm -rf conftest* ;  jac_javac_working=yes 
     else
         rm -rf conftest* ;  jac_javac_working=no  
@@ -1547,7 +1549,7 @@ EOF
                 else
                     echo "$ac_t""no" 1>&6
                     echo $ac_n "checking for working javac in known locations""... $ac_c" 1>&6
-echo "configure:1551: checking for working javac in known locations" >&5
+echo "configure:1553: checking for working javac in known locations" >&5
                     JC=""
                 fi
             
@@ -1581,7 +1583,7 @@ fi
 # Warn the version of JDK that causes problem
 if test "$enable_checkversion" = "yes" ; then
     echo $ac_n "checking for Java version""... $ac_c" 1>&6
-echo "configure:1585: checking for Java version" >&5
+echo "configure:1587: checking for Java version" >&5
     VERSION=`$JDK_TOPDIR/bin/java -fullversion 2>&1`
     case "$VERSION" in
 	*1.0.*)
@@ -1617,7 +1619,7 @@ RMIC="$JDK_TOPDIR/bin/rmic"
 JAR="$JDK_TOPDIR/bin/jar"
 for exe in "$JH" "$RMIC" "$JAR" ; do
     echo $ac_n "checking if $exe exists""... $ac_c" 1>&6
-echo "configure:1621: checking if $exe exists" >&5
+echo "configure:1623: checking if $exe exists" >&5
     if test -x "$exe" ; then
         echo "$ac_t""yes" 1>&6
     else
@@ -1646,7 +1648,7 @@ MKDIR=mkdir
 
 
 echo $ac_n "checking for cygpath""... $ac_c" 1>&6
-echo "configure:1650: checking for cygpath" >&5
+echo "configure:1652: checking for cygpath" >&5
 jac_hasProg=no
 IFS="${IFS=   }"; pac_saved_ifs="$IFS"; IFS=":"
 for path_elem in $PATH ; do
@@ -1695,6 +1697,9 @@ if test ! -d $srcbuild_dir/images ; then
     $CPRP -pr $srcdir/images $srcbuild_dir
     $CPRP $srcdir/jumpshot.colors $srcbuild_dir
     $CPRP $srcdir/applet.html $srcbuild_dir
+fi
+if test ! -d $srcbuild_dir/html ; then
+    $CPRP -pr $srcdir/../doc/jumpshot-4/html $srcbuild_dir
 fi
 
 

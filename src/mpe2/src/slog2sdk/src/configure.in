@@ -377,6 +377,9 @@ if test ! -d $srcbuild_dir/images ; then
     $CPRP $srcdir/jumpshot.colors $srcbuild_dir
     $CPRP $srcdir/applet.html $srcbuild_dir
 fi
+if test ! -d $srcbuild_dir/html ; then
+    $CPRP -pr $srcdir/../doc/jumpshot-4/html $srcbuild_dir
+fi
 AC_SUBST(srcbuild_dir)
 
 # VPATH build: Set the libbuild_dir
