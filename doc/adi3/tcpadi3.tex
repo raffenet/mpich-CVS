@@ -120,16 +120,46 @@ CH3 routine brief summary:
 (I don't think that these are right yet, but we need to start somewhere.)
 Details in Appendix~\ref{app:ch3}.
 
+\begin{description}
+\item[CH3\_new\_request]Create a new request. This is used with
+  \code{CH3_iSend}, and for cases where a completed request is required (see
+  the discussion of \code{MPID_Isend}).
+\item[CH3\_iStartMsg]Begin a message.  Return a request if the message has not
+  been completely sent.
+\item[CH3\_iStartMsgv]Like \code{CH3_iStartmsg}, but with an \code{struct
+    iovec}.
+\item[CH3\_iSend]Send data using an existing request
+\item[CH3\_iContWrite]Like \code{CH3_iSend}, but the data sent is within the
+  request (the \mpids{MPID_Request}{active\_buf} member).
+\item[CH3\_iRead]Read data to a location specified by a request
+\item[CH3\_Progress\_xxx]Progress functions.  \code{CH3_Progress} is
+  responsible for dispatching incoming messages.
+\item[CH3\_Init]Initialize the device and setup the initial communicators
+\item[CH3\_Finalize]Finalize the device
+\item[CH3\_InitParent]Initialize the parent communicator (if one exists).
+\item[CH3\_iPut]Nonblocking, contiguous put into remote memory (optional,
+  provided as a hook for non-TCP methods and as a placeholder for the
+  routines necessary for implementing MPI-2 RMA).
+\end{description}
+
+The bindings for these routines are:
 \begin{verbatim}
-void CH3_iContWrite( MPID_VC *, MPID_Request * )
+MPID_Request *CH3_new_request( void );
 MPID_Request *CH3_iStartMsg( MPID_VC *, void *header, int header_count )
 MPID_Request *CH3_iStartMsgv( MPID_VC *, struct iovec *iov, int count )
+
+void CH3_iSend( MPID_Request *, void *header, int header_count )
+void CH3_iContWrite( MPID_VC *, MPID_Request * )
 void CH3_iRead( MPID_VC *, MPID_Request * )
+
 void CH3_Progress_start( void )
 void CH3_Progress_end( void )
 int CH3_Progress( int is_blocking )
-void CH3_Init( )
-void CH3_Finalize( )
+
+int CH3_Init( int *has_args, int *has_env )
+void CH3_Finalize( void )
+void CH3_InitParent( MPID_Request *parent )
+
 void CH3_iPut( MPID_VC *, void *buf, int count, MPID_RAint offset, 
                MPID_RAint cmpl_flag )
 \end{verbatim}
@@ -691,8 +721,12 @@ the device as a whole.
 typedef struct {
     int           nfds;
     struct pollfd *activefds;
+    MPID_Request  *unexpected_recv;    /* List of receives */
+    MPID_Request  *posted_recv;        /* List of posted receives */
     } MPID_Device;
 \end{verbatim}
+The receive lists are held on the device to simplify handling of wildcard
+receives.  
 
 \paragraph{Connections.}
 
@@ -701,12 +735,15 @@ typedef struct {
     int ref_count; /* Lets us know how many communicators are using
                       this connection */
     int fd;        /* fd for the socket */
-    MPID_Request *sending;   /* List of pending sends */
+    MPID_Request *sending_head,   /* Queue of pending sends */
+                 *sending_tail;
     MPID_Request *active_receive; /* Active receive, if any */
     int lpid;      /* Local process id for the partner of this connection
                       (used to implement group routines) */
     } MPID_VC;
 \end{verbatim}
+The pending sends have a head and a tail pointer because it is a queue and we
+want the operations of insert and delete on this queue to be fast.
 
 \subsection{iWrite}
 iWrite is called to continue a data transfer.  This is used by the
@@ -774,6 +811,7 @@ CH3_Init( )
 \end{verbatim}
 This routine must
 \begin{itemize}
+\item Make any calls to BNR
 \item Set the size, rank, and \code{MPID_VC} fields in
   \mpids{MPIR\_Process}{comm\_world}, \mpids{MPIR\_Process}{comm\_self}, and
   \mpids{MPIR\_Process}{comm\_parent}. 
