@@ -209,7 +209,7 @@ def mpdboot():
         if totalNum > 1:
             try:
                 f = open(hostsFilename,'r')
-                for i in range(totalNum-1):
+                for i in range(totalNum):
                     line = f.readline()
                     lines.append(line)
             except:
