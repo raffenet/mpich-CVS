@@ -59,6 +59,8 @@
 #define DBG_MSG(paramlist) 
 #endif
 
+#if !defined(NO_BSOCKETS)
+
 typedef enum { 
     BFD_FD_NOT_IN_USE, 
     BFD_ALLOCATING, 
@@ -89,11 +91,11 @@ struct BFD_Buffer_struct {
 
 BlockAllocator Bsocket_mem;
 
+#endif /* !defined(NO_BSOCKETS) */
+
 #define BSOCKET_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define BSOCKET_MAX(a, b) ((a) > (b) ? (a) : (b))
 
-static int g_bbuflen = 1024;
-static int g_buf_pool_size = FD_SETSIZE;
 static int g_beasy_connection_attempts = 5;
 
 #ifdef HAVE_WINSOCK2_H
@@ -133,6 +135,143 @@ static void log_warning(char *str, ...)
 #else
 #define log_warning()
 #endif
+
+#ifdef NO_BSOCKETS
+
+static int g_nInitRefCount = 0;
+int bsocket_init(void)
+{
+    char *szNum;
+#ifdef HAVE_WINSOCK2_H
+    WSADATA wsaData;
+    int err;
+    
+    if (g_nInitRefCount)
+    {
+	g_nInitRefCount++;
+	return 0;
+    }
+
+    /* Start the Winsock dll */
+    if ((err = WSAStartup(MAKEWORD(2, 0), &wsaData)) != 0)
+    {
+	printf("Winsock2 dll not initialized, error %d\n", err);
+	return err;
+    }
+#else
+    if (g_bInitFinalize == 1)
+	return 0;
+#endif
+
+    szNum = getenv("BSOCKET_CONN_TRIES");
+    if (szNum != NULL)
+	g_beasy_connection_attempts = atoi(szNum);
+
+    g_nInitRefCount++;
+
+    return 0;
+}
+
+int bsocket_finalize(void)
+{
+    g_nInitRefCount--;
+    if (g_nInitRefCount < 1)
+	g_nInitRefCount = 0;
+    else
+	return 0;
+
+#ifdef HAVE_WINSOCK2_H
+    WSACleanup();
+#endif
+
+    return 0;
+}
+
+int bwritev(int bfd, B_VECTOR *pIOVec, int n)
+{
+#ifdef HAVE_WINSOCK2_H
+    DWORD dwNumSent = 0;
+    if (n == 0)
+	return 0;
+    if (WSASend(bfd, pIOVec, n, &dwNumSent, 0, NULL/*overlapped*/, NULL/*completion routine*/) == SOCKET_ERROR)
+    {
+	if (WSAGetLastError() != WSAEWOULDBLOCK)
+	{
+	    return SOCKET_ERROR;
+	}
+    }
+    return dwNumSent;
+#else
+    return writev(bfd, pIOVec, n);
+#endif
+}
+
+int breadv(int bfd, B_VECTOR *vec, int veclen)
+{
+    int k;
+#ifdef HAVE_WINSOCK2_H
+    DWORD    n = 0;
+    DWORD    nFlags = 0;
+#else
+    int      n = 0;
+#endif
+
+    DBG_MSG("Enter breadv\n");
+    
+#ifdef HAVE_WINSOCK2_H
+    if (WSARecv(bfd, vec, veclen, &n, &nFlags, NULL/*overlapped*/, NULL/*completion routine*/) == SOCKET_ERROR)
+    {
+	if (WSAGetLastError() != WSAEWOULDBLOCK)
+	{
+	    for (k=0; k<veclen; k++)
+		printf("vec[%d] len: %d\nvec[%d] buf: 0x%x\n", k, vec[k].B_VECTOR_LEN, k, vec[k].B_VECTOR_BUF);
+	    n = 0; /* Set this to zero so it can be added to num_read */
+	}
+    }
+#else
+    n = readv(bfd, vec, veclen);
+#endif
+    
+    return n;
+}
+
+int bmake_nonblocking(int bfd)
+{
+    
+    int      flag = 1;
+    int      rc;
+    
+    DBG_MSG("Enter make_nonblocking\n");
+    
+#ifdef HAVE_WINDOWS_SOCKET
+    rc = ioctlsocket(bfd, FIONBIO, &flag);
+#else
+    rc = ioctl(bfd, FIONBIO, &flag);
+#endif
+    
+    return rc;
+}
+
+int bmake_blocking(int bfd)
+{
+    int      flag = 0;
+    int      rc;
+    
+    DBG_MSG("Enter make_blocking\n");
+    
+#ifdef HAVE_WINDOWS_SOCKET
+    rc = ioctlsocket(bfd, FIONBIO, &flag);
+#else
+    rc = ioctl(bfd, FIONBIO, &flag);
+#endif
+    
+    return rc;
+}
+
+#else /* #ifdef NO_BSOCKETS */
+
+static int g_bbuflen = 1024;
+static int g_buf_pool_size = FD_SETSIZE;
 
 /*@
    bget_fd - get fd
@@ -515,7 +654,7 @@ bwrite - write
 int bwrite(int bfd, char *ubuf, int len)
 {
     /*dbg_printf("bwrite\n");*/
-    return write(((BFD_Buffer*)bfd)->real_fd, ubuf, len);
+    return bfd_write(((BFD_Buffer*)bfd)->real_fd, ubuf, len);
 }
 
 /*
@@ -620,7 +759,7 @@ int bread(int bfd, char *ubuf, int len)
     
     if (len > g_bbuflen) 
     {
-	n = read(fd, ubuf, len);
+	n = bfd_read(fd, ubuf, len);
 	if (n == 0) 
 	{
 	    pbfd->state = BFD_ERROR;
@@ -644,7 +783,7 @@ int bread(int bfd, char *ubuf, int len)
     }
     
     num_copied = pbfd->num_avail;
-    n = read(fd, bbuf, g_bbuflen);
+    n = bfd_read(fd, bbuf, g_bbuflen);
     pbfd->curpos = 0;
     if (n == 0) 
     {
@@ -929,6 +1068,9 @@ int bmake_blocking(int bfd)
     
     return rc;
 }
+
+#endif /* NO_BSOCKETS #else */
+
 /*@
    beasy_create - create a bsocket
 
@@ -1473,7 +1615,8 @@ int beasy_send(int bfd, char *buffer, int length)
     int error;
     int num_sent;
 
-    while ((num_sent = write(((BFD_Buffer*)bfd)->real_fd, buffer, length)) == SOCKET_ERROR)
+    //while ((num_sent = bfd_write(((BFD_Buffer*)bfd)->real_fd, buffer, length)) == SOCKET_ERROR)
+    while ((num_sent = bwrite(bfd, buffer, length)) == SOCKET_ERROR)
     {
 	error = WSAGetLastError();
 	if (error == WSAEWOULDBLOCK)
@@ -1503,7 +1646,8 @@ int beasy_send(int bfd, char *buffer, int length)
 
     /*dbg_printf("beasy_send\n");*/
     
-    num_written = write(((BFD_Buffer*)bfd)->real_fd, buffer, length);
+    //num_written = bfd_write(((BFD_Buffer*)bfd)->real_fd, buffer, length);
+    num_written = bwrite(bfd, buffer, length);
     if (num_written == SOCKET_ERROR)
     {
 	if ((errno != EINTR) || (errno != EAGAIN))
@@ -1523,7 +1667,8 @@ int beasy_send(int bfd, char *buffer, int length)
 	ret_val = bselect(1, NULL, &writefds, NULL, NULL);
 	if (ret_val == 1)
 	{
-	    num_written = write(((BFD_Buffer*)bfd)->real_fd, buffer, length);
+	    //num_written = bfd_write(((BFD_Buffer*)bfd)->real_fd, buffer, length);
+	    num_written = bwrite(bfd, buffer, length);
 	    if (num_written == SOCKET_ERROR)
 	    {
 		if ((errno != EINTR) || (errno != EAGAIN))

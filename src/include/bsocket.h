@@ -39,6 +39,16 @@ extern "C" {
 #define INADDR_ANY 0
 #endif
 
+#ifdef HAVE_WINDOWS_SOCKET
+#define bfd_close closesocket
+#define bfd_read(a,b,c) recv(a,b,c,0)
+#define bfd_write(a,b,c) send(a,b,c,0)
+#else
+#define bfd_close close
+#define bfd_read(a,b,c) read(a,b,c)
+#define bfd_write(a,b,c) write(a,b,c)
+#endif
+
 #ifdef HAVE_WINSOCK2_H
 #ifndef socklen_t
 typedef int socklen_t;
@@ -64,6 +74,37 @@ typedef int socklen_t;
 #define B_VECTOR_LIMIT   16
 
 #define BFD_INVALID_SOCKET -1
+
+#ifdef NO_BSOCKETS
+
+typedef struct fd_set bfd_set;
+#define BFD_CLR(bfd, s)       FD_CLR((unsigned int)bfd,s)
+#define BFD_ZERO(s)           FD_ZERO(s)
+#define BFD_SET(bfd, s)       FD_SET((unsigned int)bfd,s)
+#define BFD_ISSET(bfd, s)     FD_ISSET((unsigned int)bfd,s)
+
+#ifndef MAX
+#define MAX(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+#define BFD_MAX(a,b) MAX(a,b)
+
+#define bget_fd(bfd) bfd
+#define bclr(bfd, s) FD_CLR( (unsigned int)bfd, s )
+#define bset(bfd, s) FD_SET( (unsigned int)bfd, s )
+#define bsocket(family, type, protocol) socket(family, type, protocol)
+#define bbind(bfd, servaddr, servaddr_len) bind(bfd, servaddr, servaddr_len)
+#define blisten(bfd, backlog) listen(bfd, backlog)
+#define bsetsockopt(bfd, level, optname, optval, optlen) setsockopt(bfd, level, optname, optval, optlen)
+#define baccept(bfd, cliaddr, clilen) accept(bfd, cliaddr, clilen)
+#define bconnect(bfd, servaddr, servaddr_len) connect(bfd, servaddr, servaddr_len)
+#define bselect(maxfds, readbfds, writebfds, execbfds, tv) select(maxfds, readbfds, writebfds, execbfds, tv)
+#define bwrite(bfd, ubuf, len) bfd_write(bfd, ubuf, len)
+#define bread(bfd, ubuf, len) bfd_read(bfd, ubuf, len)
+#define bclose(bfd) bfd_close(bfd)
+#define bgetsockname(bfd, name, namelen) getsockname(bfd, name, namelen)
+
+#else /* #ifdef NO_BSOCKETS */
+
 typedef struct BFD_Buffer_struct BFD_Buffer;
 typedef struct
 {
@@ -99,16 +140,22 @@ int bsetsockopt( int, int, int, const void *, socklen_t );
 int baccept( int, struct sockaddr *, socklen_t * );
 int bconnect( int, const struct sockaddr *, socklen_t );
 int bread( int, char *, int );
-int breadv( int, B_VECTOR *, int );
 int breadwrite( int, int, char *, int, int *, int * );
 int breadvwrite( int, int, B_VECTOR *, int, int *, int * );
 int bwrite( int, char *, int );
-int bwritev( int, B_VECTOR *, int );
 int bclose( int );
 int bclose_all( void );
 int bgetsockname(int bfd, struct sockaddr *name, int *namelen );
 int bselect( int maxfds, bfd_set *readbfds, bfd_set *writebfds, bfd_set *execbfds, struct timeval *tv );
+
+#endif /* #else #ifdef NO_BSOCKETS */
+
+int bsocket_init( void );
+int bsocket_finalize( void );
+int breadv( int, B_VECTOR *, int );
+int bwritev( int, B_VECTOR *, int );
 int bmake_nonblocking( int );
+int bmake_blocking( int );
 
 int beasy_create(int *bfd, int port, unsigned long addr);
 int beasy_connect(int bfd, char *host, int port);
