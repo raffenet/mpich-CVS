@@ -20,6 +20,7 @@ typedef struct mqshm_t
     int first;
     int last;
     int next_free;
+    int cur_num_messages;
     mqshm_msg_t msg[BOOTSTRAP_MAX_NUM_MSGS];
 } mqshm_t;
 
@@ -111,6 +112,7 @@ int MPIDI_CH3I_mqshm_create(const char *name, const int initialize, int *id)
 	node->q_ptr->first = MQSHM_END;
 	node->q_ptr->last = MQSHM_END;
 	node->q_ptr->next_free = 0;
+	node->q_ptr->cur_num_messages = 0;
 	/*node->q_ptr->inuse = 0;*/
 	MPIDU_Process_lock_init(&node->q_ptr->lock);
     }
@@ -261,6 +263,7 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 	    }
 	    /*print_msgq(q_ptr);*/
 	    *num_sent = length;
+	    q_ptr->cur_num_messages++;
 	    /*q_ptr->inuse = 0;*/
 	    MPIDU_Process_unlock(&q_ptr->lock);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
@@ -313,6 +316,15 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 	      MPIR_Process.comm_world->rank, index, q_ptr->msg[index].tag, tag);fflush(stdout);*/
 	    if (q_ptr->msg[index].tag == tag)
 	    {
+		/* validate the message */
+		if (maxlen < q_ptr->msg[index].length)
+		{
+		    /*q_ptr->inuse = 0;*/
+		    MPIDU_Process_unlock(&q_ptr->lock);
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE);
+		    return mpi_errno;
+		}
 		/* remove the node from the queue */
 		if (last_index == MQSHM_END)
 		{
@@ -324,14 +336,10 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 		    /*printf("[%d] recv(%d): removing index %d\n", MPIR_Process.comm_world->rank, tag. index);fflush(stdout);*/
 		    q_ptr->msg[last_index].next = q_ptr->msg[index].next;
 		}
-		/* validate the message */
-		if (maxlen < q_ptr->msg[index].length)
+		if (q_ptr->first == MQSHM_END)
 		{
-		    /*q_ptr->inuse = 0;*/
-		    MPIDU_Process_unlock(&q_ptr->lock);
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
-		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE);
-		    return mpi_errno;
+		    /* If the queue becomes empty, reset the last index. */
+		    q_ptr->last = MQSHM_END;
 		}
 		/* copy the message */
 		memcpy(buffer, q_ptr->msg[index].data, q_ptr->msg[index].length);
@@ -339,6 +347,7 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 		/* add the node to the free list */
 		q_ptr->msg[index].next = q_ptr->next_free;
 		q_ptr->next_free = index;
+		q_ptr->cur_num_messages--;
 		/*q_ptr->inuse = 0;*/
 		/*print_msgq(q_ptr);*/
 		MPIDU_Process_unlock(&q_ptr->lock);
