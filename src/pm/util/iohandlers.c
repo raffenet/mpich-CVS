@@ -364,7 +364,9 @@ typedef struct {
     int  bufSize;              /* Number of characters in the buffer */
 } CircularBuffer;
 
-/* An annotated buffer */
+/* Get readv/writev/iovec */
+#include <sys/uio.h>
+
 #ifndef HAVE_IOVEC_DEFINITION
 struct iovec {
     void  *iov_base;
@@ -373,6 +375,7 @@ struct iovec {
 #endif
 
 #define MAX_IOVS 32
+/* An annotated buffer */
 typedef struct {
     CircularBuffer cbuf;
     char   *lastSeen;                /* Last location seen 
@@ -409,10 +412,9 @@ typedef struct {
        <0) Error on processing.  Return error to caller
        >0) Some data processed
 */
-int IOManyToOneReader( int fd, void *extra )
+static int IOManyToOneReader( int fd, void *extra )
 {
     IOOutManyToOne *iodata = (IOOutManyToOne *)extra;
-    char      *p,*p1;
     int       n;
     int       err;
 
@@ -475,7 +477,16 @@ int IOManyToOneReader( int fd, void *extra )
 typedef struct {
     int outfd;
 } IONotifyData;
-int IOManyToOneNotify( AnnotatedBuffer *abuf, void *extra )
+
+/* These are static because they are local to this file (the routines
+   are set in the setup routine xxx) */
+static int IOManyToOneNotify( AnnotatedBuffer *, void * );
+static int IOManyToOneConsume( AnnotatedBuffer *, void * );
+static int IOManyToOneReader( int, void * );
+static int IOManyToOneWriter( int, void * );
+static int IOManyToOneAnnotate( AnnotatedBuffer *, void * );
+
+static int IOManyToOneNotify( AnnotatedBuffer *abuf, void *extra )
 {
     /* FIXME: First check to see if the queue of pending writes
        is empty.  If it isn't, we must not write, instead queuing 
@@ -484,7 +495,7 @@ int IOManyToOneNotify( AnnotatedBuffer *abuf, void *extra )
     return IOManyToOneConsume( abuf, extra );
 }
 
-int IOManyToOneConsume( AnnotatedBuffer *abuf, void *extra )
+static int IOManyToOneConsume( AnnotatedBuffer *abuf, void *extra )
 {
     int i, j, n, ntot;
     IONotifyData *iodata = (IONotifyData *)extra;
@@ -523,7 +534,7 @@ int IOManyToOneConsume( AnnotatedBuffer *abuf, void *extra )
 	abuf->nIOV -= i;
 
 	/* Update the 0th entry for any bytes consumed from it */
-	abuf->iovs[0].iov_base += (n-ntot);
+	abuf->iovs[0].iov_base = (char*)(abuf->iovs[0].iov_base) + (n-ntot);
 	abuf->iovs[0].iov_len -= (n-ntot);
 	if (abuf->cbufIncr[0]) {
 	    abuf->cbuf.first += n-ntot;
@@ -550,7 +561,7 @@ typedef struct {
     int  newlineFlag;
 } IOAnnotateData;
 
-int IOManyToOneAnnotate( AnnotatedBuffer *abuf, void *extra )
+static int IOManyToOneAnnotate( AnnotatedBuffer *abuf, void *extra )
 {
     char *p, *lastP;
     IOAnnotateData *iodata = (IOAnnotateData *)extra;
@@ -621,12 +632,12 @@ typedef struct {
     int        first, firstFree;
     IOQueueOut pending[MAX_PENDING_OUT];
 } IOManyToOneOut;
-int IOManyToOneWriter( int fd, void *extra )
+static int IOManyToOneWriter( int fd, void *extra )
 {
     IOManyToOneOut *iodata = (IOManyToOneOut *)extra;
 
     /* FIXME: Nothing to write, so we should not select on this fd */
-    if (first == firstFree && first == 0) return 0;
+    if (iodata->first == iodata->firstFree && iodata->first == 0) return 0;
 
     /* While there are queue entries,
        try to consume all of the data.  If all data read, remove that
