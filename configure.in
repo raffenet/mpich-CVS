@@ -142,6 +142,8 @@ if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
     configured.  Run "make distclean" in $srcdir first.])
 fi
 dnl
+# Set default variable values
+MPILIBNAME=${MPILIBNAME:-"mpich"}
 dnl Process any enable or with values
 dnl We must do enable-fast first, because it changes the other enable values
 if test "$enable_fast" = "yes" ; then
@@ -585,6 +587,12 @@ AC_CHECK_SIZEOF(double,$CROSS_SIZEOF_DOUBLE)
 AC_CHECK_SIZEOF(long double,$CROSS_SIZEOF_LONG_DOUBLE)
 AC_CHECK_SIZEOF(wchar_t,$CROSS_SIZEOF_WCHAR_T)
 AC_CHECK_SIZEOF(void *,$CROSS_SIZEOF_VOID_P)
+PAC_CHECK_SIZEOF_DERIVED(float int,[struct { float a; int b; }],$CROSS_SIZEOF_FLOAT_INT)
+PAC_CHECK_SIZEOF_DERIVED(double int,[struct { double a; int b; }],$CROSS_SIZEOF_DOUBLE_INT)
+PAC_CHECK_SIZEOF_DERIVED(long int,[struct { long a; int b; }],$CROSS_SIZEOF_LONG_INT)
+PAC_CHECK_SIZEOF_DERIVED(short int,[struct { short a; int b; }],$CROSS_SIZEOF_SHORT_INT)
+PAC_CHECK_SIZEOF_DERIVED(2 int,[struct { int a; int b; }],$CROSS_SIZEOF_2_INT)
+PAC_CHECK_SIZEOF_DERIVED(long double int,[struct { long double a; int b; }],$CROSS_SIZEOF_FLOAT_INT)
 dnl
 AC_CACHE_CHECK([for int16_t],pac_cv_int16_t,[
 AC_TRY_COMPILE([#include <sys/types.h>],[int16_t a=0;],
@@ -623,7 +631,8 @@ else
 fi
 dnl
 dnl Generate a hex version of the size of each type
-for type in short int long long_long float double long_double wchar_t ; do
+for type in short int long long_long float double long_double wchar_t \
+    float_int double_int long_int short_int 2_int long_double_int ; do
     eval len=\$ac_cv_sizeof_$type
     if test -z "$len" ; then len=0 ; fi
     if test $len -le 0 ; then
@@ -665,6 +674,16 @@ MPI_WCHAR_T="0x4c00${len_wchar_t}13"
 MPI_PACKED="0x4c000114"
 MPI_LB="0x4c000015"
 MPI_UB="0x4c000016"
+#
+# These should define the mixed types *only* for contiguous data.
+# For example, MPI_SHORT_INT may have a gap; it will need to be defined
+# as a derived type instead.  For IA32, this only affects short_int.
+MPI_FLOAT_INT="0x4c00${len_float_int}17"
+MPI_DOUBLE_INT="0x4c00${len_double_int}18"
+MPI_LONG_INT="0x4c00${len_long_int}19"
+MPI_SHORT_INT="0x4c00${len_short_int}1a"
+MPI_2INT="0x4c00${len_2_int}1b"
+MPI_LONG_DOUBLE_INT="0x4c00${len_long_double_int}1c"
 AC_SUBST(MPI_CHAR)
 AC_SUBST(MPI_UNSIGNED_CHAR)
 AC_SUBST(MPI_SHORT)
@@ -682,6 +701,12 @@ AC_SUBST(MPI_WCHAR_T)
 AC_SUBST(MPI_PACKED)
 AC_SUBST(MPI_LB)
 AC_SUBST(MPI_UB)
+AC_SUBST(MPI_FLOAT_INT)
+AC_SUBST(MPI_DOUBLE_INT)
+AC_SUBST(MPI_LONG_INT)
+AC_SUBST(MPI_SHORT_INT)
+AC_SUBST(MPI_2INT)
+AC_SUBST(MPI_LONG_DOUBLE_INT)
 dnl
 dnl Is char * the byte address?
 AC_CACHE_CHECK([if char * pointers use give byte addresses],
@@ -827,7 +852,6 @@ dnl AC_SYS_LONG_FILE_NAMES
 dnl
 dnl
 dnl Setup other replaceable values
-MPILIBNAME=${MPILIBNAME:-"mpich"}
 AC_SUBST(MPILIBNAME)
 MPI_AINT=int
 for type in int long long_long short ; do

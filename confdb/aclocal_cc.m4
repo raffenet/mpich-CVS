@@ -1191,3 +1191,30 @@ changequote([, ])dnl
     AC_DEFINE_UNQUOTED($ac_tr_func,,[Define if $2 needs a declaration])
 fi
 ])dnl
+dnl
+dnl /*D
+dnl PAC_CHECK_SIZEOF_DERIVED - Get the size of a user-defined type,
+dnl such as a struct
+dnl
+dnl PAC_CHECK_SIZEOF_DERIVED(shortname,definition,defaultsize)
+dnl D*/
+AC_DEFUN(PAC_CHECK_SIZEOF_DERIVED,[
+changequote(<<,>>)dnl
+define(<<AC_TYPE_NAME>>,translit(sizeof_$1,[a-z *], [A-Z_P]))dnl
+define(<<AC_CV_NAME>>,translit(pac_cv_sizeof_$1,[ *], [_p]))dnl
+changequote([,])dnl
+AC_MSG_CHECKING(size of $1)
+AC_CACHE_VAL(AC_CV_NAME,
+[AC_TRY_RUN([#include <stdio.h>
+main()
+{
+  $2 a;
+  FILE *f=fopen("conftestval", "w");
+  if (!f) exit(1);
+  fprintf(f, "%d\n", sizeof(a));
+  exit(0);
+}],AC_CV_NAME=`cat conftestval`,AC_CV_NAME=0,ifelse([$3],,,AC_CV_NAME=$3))])
+AC_MSG_RESULT($AC_CV_NAME)
+AC_DEFINE_UNQUOTED(AC_TYPE_NAME,$AC_CV_NAME)
+undefine([AC_TYPE_NAME])undefine([AC_CV_NAME])
+])
