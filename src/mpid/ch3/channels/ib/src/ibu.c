@@ -298,7 +298,7 @@ static void * ibuBlockAlloc(ibuBlockAllocator p)
     /*** don't allocate more memory ***/
     if (p->pNextFree == NULL)
     {
-	msg_printf("ibuBlockAlloc returning NULL\n");
+	MPIU_DBG_PRINTF(("ibuBlockAlloc returning NULL\n"));
 	return NULL;
     }
     /******/
@@ -668,7 +668,7 @@ static int ibui_post_receive(ibu_t ibu)
     printf("ibui_post_receive %d\n", s_cur_receive++);
     g_num_receive_posted++;
     */
-    msg_printf(".");
+    MPIU_DBG_PRINTF(("."));
 
     status = ib_post_rcv_req_us(IBU_Process.hca_handle, 
 				ibu->qp_handle,
@@ -782,7 +782,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	memcpy(mem_ptr, buf, length);
 	total += length;
 	
-	msg_printf("write[%d].length = %d\n", g_cur_write_stack_index, length);
+	MPIU_DBG_PRINTF(("write[%d].length = %d\n", g_cur_write_stack_index, length));
 	g_num_bytes_written_stack[g_cur_write_stack_index].length = length;
 	g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
 	g_cur_write_stack_index++;
@@ -883,7 +883,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	    data[index].va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
 	    data[index].l_key = ibu->lkey;
 
-	    msg_printf("write[%d].length = %d\n", g_cur_write_stack_index, len);
+	    MPIU_DBG_PRINTF(("write[%d].length = %d\n", g_cur_write_stack_index, len));
 	    g_num_bytes_written_stack[g_cur_write_stack_index].length = len;
 	    g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
 	    g_cur_write_stack_index++;
@@ -910,7 +910,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 		data[index].va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
 		data[index].l_key = ibu->lkey;
 
-		msg_printf("write[%d].length = %d\n", g_cur_write_stack_index, length);
+		MPIU_DBG_PRINTF(("write[%d].length = %d\n", g_cur_write_stack_index, length));
 		g_num_bytes_written_stack[g_cur_write_stack_index].length = length;
 		g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
 		g_cur_write_stack_index++;
@@ -929,10 +929,10 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     }
 
     // tell the stack how many elements were pushed on it
-    msg_printf("write[%d].length = %d\n", g_cur_write_stack_index, -index);
+    MPIU_DBG_PRINTF(("write[%d].length = %d\n", g_cur_write_stack_index, -index));
     g_num_bytes_written_stack[g_cur_write_stack_index].length = -index;
     g_cur_write_stack_index++;
-    msg_printf("ibui_post_writev: posting send with %d ib buffers\n", index);
+    MPIU_DBG_PRINTF(("ibui_post_writev: posting send with %d ib buffers\n", index));
 
     sg_list.data_seg_p = data;
     sg_list.data_seg_num = index;
@@ -1325,7 +1325,7 @@ int ibui_readv_unex(ibu_t ibu)
 	while (ibu->unex_list->length && ibu->read.iovlen)
 	{
 	    num_bytes = min(ibu->unex_list->length, ibu->read.iov[ibu->read.index].IBU_IOV_LEN);
-	    msg_printf("ibui_readv_unex: copying %d bytes\n", num_bytes);
+	    MPIU_DBG_PRINTF(("ibui_readv_unex: copying %d bytes\n", num_bytes));
 	    /* copy the received data */
 	    memcpy(ibu->read.iov[ibu->read.index].IBU_IOV_BUF, ibu->unex_list->buf, num_bytes);
 	    ibu->read.total += num_bytes;
@@ -1350,7 +1350,7 @@ int ibui_readv_unex(ibu_t ibu)
 		err_printf("ibui_read_unex: mem_ptr == NULL\n");
 	    }
 	    assert(ibu->unex_list->mem_ptr != NULL);
-	    msg_printf("ibui_readv_unex: ibuBlockFree(mem_ptr)\n");
+	    MPIU_DBG_PRINTF(("ibui_readv_unex: ibuBlockFree(mem_ptr)\n"));
 	    ibuBlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
 	    /* free the unexpected data node */
 	    temp = ibu->unex_list;
@@ -1365,7 +1365,7 @@ int ibui_readv_unex(ibu_t ibu)
 	    ibu->state &= ~IBU_READING;
 	    ibu->unex_finished_queue = IBU_Process.unex_finished_list;
 	    IBU_Process.unex_finished_list = ibu;
-	    msg_printf("ibui_readv_unex: finished read saved in IBU_Process.unex_finished_list\n");
+	    MPIU_DBG_PRINTF(("ibui_readv_unex: finished read saved in IBU_Process.unex_finished_list\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READV_UNEX);
 	    return IBU_SUCCESS;
 	}
@@ -1457,7 +1457,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    //num_bytes = ibui_next_num_written(ibu);
 	    g_cur_write_stack_index--;
 	    num_bytes = g_num_bytes_written_stack[g_cur_write_stack_index].length;
-	    msg_printf("ibu_wait: send num_bytes = %d\n", num_bytes);
+	    MPIU_DBG_PRINTF(("ibu_wait: send num_bytes = %d\n", num_bytes));
 	    if (num_bytes < 0)
 	    {
 		i = num_bytes;
@@ -1465,7 +1465,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		for (; i<0; i++)
 		{
 		    g_cur_write_stack_index--;
-		    msg_printf("num_bytes += %d\n", g_num_bytes_written_stack[g_cur_write_stack_index].length);
+		    MPIU_DBG_PRINTF(("num_bytes += %d\n", g_num_bytes_written_stack[g_cur_write_stack_index].length));
 		    num_bytes += g_num_bytes_written_stack[g_cur_write_stack_index].length;
 		    if (g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr == NULL)
 			err_printf("ibu_wait: write stack has NULL mem_ptr at location %d\n", g_cur_write_stack_index);
@@ -1480,7 +1480,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		assert(mem_ptr != NULL);
 		ibuBlockFree(ibu->allocator, mem_ptr);
 	    }
-	    msg_printf("ibu_wait: num_bytes sent = %d\n", num_bytes);
+	    MPIU_DBG_PRINTF(("ibu_wait: num_bytes sent = %d\n", num_bytes));
 	    MPIU_dbg_printf("ibu_wait: write update, total = %d + %d = %d\n", ibu->write.total, num_bytes, ibu->write.total + num_bytes);
 	    /*MPIU_dbg_printf("ibu_wait(send finished %d bytes)\n", num_bytes);*/
 	    ibu->write.total += num_bytes;
@@ -1556,7 +1556,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    break;
 	case OP_RECEIVE:
 	    num_bytes = completion_data.bytes_num;
-	    msg_printf("ibu_wait: read %d bytes\n", num_bytes);
+	    MPIU_DBG_PRINTF(("ibu_wait: read %d bytes\n", num_bytes));
 	    /*MPIU_dbg_printf("ibu_wait(recv finished %d bytes)\n", num_bytes);*/
 	    if (!(ibu->state & IBU_READING))
 	    {
