@@ -104,7 +104,9 @@ int MPI_Finalize( void )
 {
     static const char FCNAME[] = "MPI_Finalize";
     int mpi_errno = MPI_SUCCESS;
+#if defined(HAVE_USLEEP) && defined(USE_COVERAGE)
     int rank=0;
+#endif
     MPID_MPI_FINALIZE_STATE_DECL(MPID_STATE_MPI_FINALIZE);
 
 
