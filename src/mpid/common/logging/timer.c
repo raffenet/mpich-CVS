@@ -11,11 +11,11 @@
 
 
 /* global variables */
-#ifdef USE_LOGGING_RLOG
+#if (USE_LOGGING == MPID_LOGGING_RLOG)
 RLOG_Struct *g_pRLOG = NULL;
 #endif
 
-#ifdef USE_LOGGING_DLOG
+#if (USE_LOGGING == MPID_LOGGING_DLOG)
 MPID_Timer_state g_timer_state[MPID_NUM_TIMER_STATES];
 DLOG_Struct *g_pDLOG = NULL;
 #endif
@@ -123,7 +123,7 @@ static unsigned long random_color(unsigned char *r, unsigned char *g, unsigned c
 
 
 /* This section of code is for the DLOG logging library */
-#ifdef USE_LOGGING_DLOG
+#if (USE_LOGGING == MPID_LOGGING_DLOG)
 
 #define NUM_X_COLORS 744
 static char * g_XColors[] = {
@@ -514,7 +514,7 @@ int MPID_Timer_finalize()
 
     return MPI_SUCCESS;
 }
-#endif /* USE_LOGGING_DLOG */
+#endif /* MPID_LOGGING_DLOG */
 
 
 
@@ -522,7 +522,7 @@ int MPID_Timer_finalize()
 
 
 /* This section of code is for the RLOG logging library */
-#ifdef USE_LOGGING_RLOG
+#if (USE_LOGGING == MPID_LOGGING_RLOG)
 
 static char random_color_str[40];
 static char *get_random_color_str()
@@ -817,6 +817,6 @@ int MPID_Timer_finalize()
 
     return MPI_SUCCESS;
 }
-#endif /* USE_LOGGING_RLOG */
+#endif /* MPID_LOGGING_RLOG */
 
 #endif /* HAVE_TIMING */
