@@ -127,7 +127,7 @@ typedef struct ibu_state_t
 {
     IBU_STATE state;
     ib_qp_handle_t qp_handle;
-    ibuBlockAllocator allocator;
+    ibuQueue_t * allocator;
 
     ib_net16_t dlid;
     uint32_t qp_num, dest_qp_num;
