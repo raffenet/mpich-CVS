@@ -10,6 +10,10 @@ typedef struct MM_Car_data_tcp
 {
     union mm_car_data_tcp_buf
     {
+	struct car_tcp_simple
+	{
+	    int num_written;
+	} simple;
 	struct car_tcp_tmp
 	{
 	    int num_written;
@@ -35,19 +39,19 @@ typedef struct MM_Car_data_tcp
 #ifdef WITH_METHOD_SHM
 	struct car_tcp_shm
 	{
-	    int num_read;
+	    int num_written;
 	} shm;
 #endif
 #ifdef WITH_METHOD_VIA
 	struct car_tcp_via
 	{
-	    int num_read;
+	    int num_written;
 	} via;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
 	struct car_tcp_via_rdma
 	{
-	    int num_read;
+	    int num_written;
 	} via_rdma;
 #endif
     } buf;

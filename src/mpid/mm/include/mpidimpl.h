@@ -131,7 +131,8 @@ typedef struct MPIDI_VC
                 int rank; /* the rank of the remote process relative to MPI_COMM_WORLD in the key_value database described by pmi_kvsname */
               int (*post_read)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 	      int (*enqueue_read_at_head)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-              int (*merge_with_unexpected)(MM_Car *car_ptr, MM_Car *unex_car_ptr);
+              int (*merge_with_unexpected)(MM_Car *posted_car_ptr, MM_Car *unex_car_ptr);
+	      int (*merge_with_posted)(MM_Car *pkt_car_ptr, MM_Car *posted_car_ptr);
 	      int (*merge_unexpected_data)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, int length);
               int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 	      int (*enqueue_write_at_head)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
@@ -205,6 +206,7 @@ MPID_Request * mm_request_alloc(void);
            int mm_get_buffers_vec(MPID_Request *request_ptr);
 	   int vec_buffer_init(MPID_Request *request_ptr);
 	   int tmp_buffer_init(MPID_Request *request_ptr);
+	   int simple_buffer_init(MPID_Request *request_ptr);
 
 /* queues */
            int mm_post_recv(MM_Car *car_ptr);

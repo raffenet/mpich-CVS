@@ -10,9 +10,13 @@ typedef struct MM_Car_data_shm
 {
     union mm_car_data_shm_buf
     {
+	struct car_shm_simple
+	{
+	    int num_written;
+	} simple;
 	struct car_shm_tmp
 	{
-	    int num_read;
+	    int num_written;
 	} tmp;
 	struct car_shm_vec
 	{
@@ -22,19 +26,19 @@ typedef struct MM_Car_data_shm
 #ifdef WITH_METHOD_SHM
 	struct car_shm_shm
 	{
-	    int num_read;
+	    int num_written;
 	} shm;
 #endif
 #ifdef WITH_METHOD_VIA
 	struct car_shm_via
 	{
-	    int num_read;
+	    int num_written;
 	} via;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
 	struct car_shm_via_rdma
 	{
-	    int num_read;
+	    int num_written;
 	} via_rdma;
 #endif
     } buf;

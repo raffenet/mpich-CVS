@@ -16,6 +16,7 @@ int unpacker_write_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer
 #endif
 int unpacker_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 int unpacker_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+int unpacker_write_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 
 /*@
    unpacker_make_progress - make progress
@@ -43,7 +44,7 @@ int unpacker_make_progress()
     do
     {
 	/* save the next car pointer because writing the current car_ptr may
-	 * modify it next pointer */
+	 * modify its next pointer */
 	car_next_ptr = car_ptr->vcqnext_ptr;
 	buf_ptr = car_ptr->buf_ptr;
 	switch (buf_ptr->type)
@@ -66,6 +67,9 @@ int unpacker_make_progress()
 	case MM_VEC_BUFFER:
 	    if (buf_ptr->vec.num_cars_outstanding > 0)
 		unpacker_write_vec(vc_ptr, car_ptr, buf_ptr);
+	    break;
+	case MM_SIMPLE_BUFFER:
+	    unpacker_write_simple(vc_ptr, car_ptr, buf_ptr);
 	    break;
 	case MM_TMP_BUFFER:
 	    unpacker_write_tmp(vc_ptr, car_ptr, buf_ptr);
@@ -201,5 +205,43 @@ int unpacker_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
     car_ptr->data.unpacker.buf.tmp.first = car_ptr->data.unpacker.buf.tmp.last;
 
     MM_EXIT_FUNC(UNPACKER_WRITE_TMP);
+    return MPI_SUCCESS;
+}
+
+int unpacker_write_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    MM_ENTER_FUNC(UNPACKER_WRITE_SIMPLE);
+
+    if ((car_ptr->data.unpacker.buf.simple.last == buf_ptr->simple.num_read) || (buf_ptr->simple.buf == NULL))
+    {
+	/* no new data available or
+	 * no buffer provided by the reader */
+	MM_EXIT_FUNC(UNPACKER_WRITE_SIMPLE);
+	return MPI_SUCCESS;
+    }
+    /* set the last variable to the number of bytes read */
+    car_ptr->data.unpacker.buf.simple.last = buf_ptr->simple.num_read;
+    /* unpack the buffer */
+    MPID_Segment_unpack(
+	&car_ptr->request_ptr->mm.segment,
+	car_ptr->data.unpacker.buf.simple.first,
+	&car_ptr->data.unpacker.buf.simple.last,
+	buf_ptr->simple.buf
+	);
+    
+    if (car_ptr->data.packer.last == car_ptr->request_ptr->mm.last)
+    {
+	/* the entire buffer is unpacked */
+	unpacker_car_dequeue(car_ptr->vc_ptr, car_ptr);
+	mm_cq_enqueue(car_ptr);
+	MM_EXIT_FUNC(UNPACKER_WRITE_SIMPLE);
+	return MPI_SUCCESS;
+    }
+
+    /* There is more unpacking needed so update the first variable */
+    /* The last variable will be updated the next time through this function */
+    car_ptr->data.unpacker.buf.simple.first = car_ptr->data.unpacker.buf.simple.last;
+
+    MM_EXIT_FUNC(UNPACKER_WRITE_SIMPLE);
     return MPI_SUCCESS;
 }

@@ -46,6 +46,7 @@
 /* Buffer type */
 typedef enum MM_BUFFER_TYPE {
     MM_NULL_BUFFER,
+    MM_SIMPLE_BUFFER,
     MM_TMP_BUFFER,
     MM_VEC_BUFFER,
 #ifdef WITH_METHOD_SHM
@@ -197,6 +198,13 @@ typedef union MM_Segment_buffer
 	int min_num_written;
     } tmp;
     */
+    struct mm_segment_simple
+    {
+	MM_BUFFER_TYPE type;
+	void *buf;
+	int len;
+	int num_read;
+    } simple;
     struct mm_segment_tmp
     {
 	MM_BUFFER_TYPE type;
@@ -256,6 +264,11 @@ typedef struct MM_Car_data_unpacker
 {
     union mm_car_data_unpacker_buf
     {
+	struct car_unpacker_simple
+	{
+	    int first;
+	    int last;
+	} simple;
 	struct car_unpacker_tmp
 	{
 	    int first;

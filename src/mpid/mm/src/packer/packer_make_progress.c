@@ -54,6 +54,45 @@ int packer_make_progress()
 	    case MM_NULL_BUFFER:
 		err_printf("error, cannot pack from a null buffer\n");
 		break;
+	    case MM_SIMPLE_BUFFER:
+
+	        /* This code is copied from the MM_TMP_BUFFER case.
+		 * Maybe there is no packing for the simple buffer case.
+		 * Maybe a simple buffer is already packed in which case
+		 * this code is unnecessary?
+		 */
+
+		if (buf_ptr->simple.buf == NULL)
+		{
+		    /* Is this allowed? Can simple.buf be NULL? */
+		    car_ptr->request_ptr->mm.get_buffers(car_ptr->request_ptr);
+		    /* set the first variable to zero */
+		    /* This variable will be updated each time MPID_Segment_pack is called. */
+		    car_ptr->data.packer.first = 0;
+		}
+		/* set the last variable to the end of the segment */
+		car_ptr->data.packer.last = buf_ptr->simple.len;
+		/* pack the buffer */
+		MPID_Segment_pack(
+		    &car_ptr->request_ptr->mm.segment,
+		    car_ptr->data.packer.first,
+		    &car_ptr->data.packer.last,
+		    car_ptr->request_ptr->mm.buf.simple.buf
+		    );
+		/* update the number of bytes read */
+		buf_ptr->simple.num_read += (car_ptr->data.packer.last - car_ptr->data.packer.first);
+
+		/* if the entire buffer is packed then break */
+		/*if (car_ptr->data.packer.last == buf_ptr->simple.len)*/ /* the length and the segment last are equal, right? */
+		if (car_ptr->data.packer.last == car_ptr->request_ptr->mm.last)
+		{
+		    finished = TRUE;
+		    break;
+		}
+		/* otherwise there is more packing needed so update the first variable */
+		/* The last variable will be updated the next time through this function */
+		car_ptr->data.packer.first = car_ptr->data.packer.last;
+		break;
 	    case MM_TMP_BUFFER:
 		if (buf_ptr->tmp.buf == NULL)
 		{
@@ -62,6 +101,7 @@ int packer_make_progress()
 		    /* set the first variable to zero */
 		    /* This variable will be updated each time MPID_Segment_pack is called. */
 		    car_ptr->data.packer.first = 0;
+		    /* ERROR: If the buffer is allocated elsewhere, who will set data.packer.first to zero? */
 		}
 		/* set the last variable to the end of the segment */
 		car_ptr->data.packer.last = buf_ptr->tmp.len;

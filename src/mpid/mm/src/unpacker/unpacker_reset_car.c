@@ -23,6 +23,10 @@ int unpacker_reset_car(MM_Car *car_ptr)
     {
     case MM_NULL_BUFFER:
 	break;
+    case MM_SIMPLE_BUFFER:
+	car_ptr->data.unpacker.buf.simple.first = 0;
+	car_ptr->data.unpacker.buf.simple.last = 0;
+	break;
     case MM_TMP_BUFFER:
 	car_ptr->data.unpacker.buf.tmp.first = 0;
 	car_ptr->data.unpacker.buf.tmp.last = 0;
