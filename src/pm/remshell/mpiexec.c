@@ -680,6 +680,14 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 	    resetPollarray = 0;
 	    /* If only the mpiexec fds are set, exit */
 	    printf( "activeNfds = %d\n", activeNfds ) ; fflush(stdout);
+	    if (activeNfds == 1) {
+		printf( "fd left = %d\n", pollarray[0].fd );
+	    }
+	    /* FIXME: if all processes have exited, then we can close the
+	       PMIServer socket.  Need to think about the state machine
+	       for processes.  Should a PMI_FINALIZED return be handled?
+	       In general, should process returns from the handlers
+	       including PMI_UPDATETABLE */
 	    if (activeNfds <= 0) break;
 	}
 
@@ -709,6 +717,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 		    handlearray[j].state = rc;
 		    resetPollarray = 1;
 		}
+		/* FIXME use rc to update the state */
 	    }
 	    else if (pollarray[j].revents & (POLLERR | POLLHUP | POLLNVAL) ) {
 		/* Error condition.  Likely that the socket 
@@ -963,14 +972,22 @@ int mpiexecHandleStdin( int fd, int pidx, void *extra )
  */
 int mpiexecGetPMIsock( int fd, int pidx, void *extra )
 {
-    int newfd;
+    int    newfd;
     struct sockaddr sock;
     int    addrlen;
+    int    id;
+    ProcessTable_t *ptable = (ProcessTable_t *)extra;
 
+    /*  */
+    printf( "Beginning accept on %d\n", fd ); fflush(stdout);
+ 
     /* Get the new socket */
     newfd = accept( fd, &sock, &addrlen );
     if (newfd < 0) return newfd;
-    
+
+    /* */
+    printf( "accept succeeded with fd %d\n", newfd ); fflush(stdout);
+
 #ifdef FOO
     /* Mark this fd as non-blocking */
     flags = fcntl( newfd, F_GETFL, 0 );
@@ -982,8 +999,25 @@ int mpiexecGetPMIsock( int fd, int pidx, void *extra )
 
     /* Find the matching process.  Do this by reading from the socket and 
        getting the id value that the process was created with. */
-    
-    return 0;
+    id = PMI_Init_port_connection( newfd );
+    if (id >= 0) {
+	/* find the matching entry */
+	ProcessState *ps = &ptable->table[id];
+	
+	ps->fdPMI = newfd;
+
+	/* Now, initialize the connection */
+	PMIServAddtoGroup( 0, id, ps->pid, ps->fdPMI );
+	PMIServSetupEntry( newfd, 0, ptable->nProcesses, id, 
+				   &ps->pmientry );
+	PMI_Init_remote_proc( newfd, &ps->pmientry,
+			      id, ptable->nProcesses, debug );
+
+    }
+
+    /* Return 1 to indicate that we need to recompute the 
+       poll array of active fd's */
+    return 1;
 }
 
 /* An error or hangup occured for this process.  Close the fd

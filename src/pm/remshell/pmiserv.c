@@ -125,6 +125,10 @@ int PMIServHandleInputFd ( int fd, int pidx, void *extra )
 
     printf( "Handling PMI input\n" ); fflush(stdout);
     if ( ( rc = PMIU_readline( pentry->fd, inbuf, PMIU_MAXLINE ) ) > 0 ) {
+	if (pmidebug) {
+	    DBG_PRINTF( "Entering PMIServHandleInputFd %s\n", inbuf );
+	}
+
 	PMIU_parse_keyvals( inbuf );
 	PMIU_getval( "cmd", cmd, MAXPMICMD );
 	printf( "cmd = %s\n", cmd ); fflush(stdout);
@@ -520,4 +524,42 @@ static void fPMI_Handle_init_port( PMI_Process *pentry )
     PMIU_writeline( pentry->fd, outbuf );
     snprintf( outbuf, PMIU_MAXLINE, "cmd=set debug=%d\n", 1 );
     PMIU_writeline( pentry->fd, outbuf );
+}
+
+void PMI_Init_remote_proc( int fd, PMI_Process *pentry,
+			   int rank, int np, int debug )
+{
+    pentry->fd	       = fd;
+    pentry->nProcesses = np;
+    pentry->rank       = rank;
+    pentry->group      = 0;
+    PMIU_writeline( fd, "cmd=initack\n" );
+    fPMI_Handle_init_port( pentry );
+}
+/* 
+ * This is a special routine.  It accepts the first input from the
+ * remote process, and returns the PMI_ID value.  -1 is returned on error 
+ */
+int PMI_Init_port_connection( int fd )
+{
+    char message[PMIU_MAXLINE], cmd[MAXPMICMD];
+    int pmiid = -1;
+
+    if (pmidebug) {
+	printf( "Beginning initial handshake read\n" ); fflush(stdout);
+    }
+    PMIU_readline( fd, message, PMIU_MAXLINE );
+    if (pmidebug) {
+	printf( "received message %s\n", message );fflush(stdout);
+    }
+    PMIU_parse_keyvals( message );
+    PMIU_getval( "cmd", cmd, MAXPMICMD );
+    if (strcmp(cmd,"initack")) {
+	PMIU_printf( 1, "Unexpected cmd %s\n", cmd );
+	return -1;
+    }
+    PMIU_getval( "pmiid", cmd, MAXPMICMD );
+    pmiid = atoi(cmd);
+
+    return pmiid;
 }

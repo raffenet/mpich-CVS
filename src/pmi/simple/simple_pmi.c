@@ -641,7 +641,7 @@ int PMI_Set_from_port( int fd, int id )
     }
     /* Handshake and initialize from a port */
 
-    sprintf( buf, "cmd=initack id=%d\n", id );
+    sprintf( buf, "cmd=initack pmiid=%d\n", id );
     err = PMIU_writeline( fd, buf );
     if (err) {
 	PMIU_printf( 1, "Error in writeline initack\n" );
@@ -650,8 +650,9 @@ int PMI_Set_from_port( int fd, int id )
 
     /* cmd=initack */
     err = PMIU_readline( fd, buf, PMIU_MAXLINE );
-    if (err) {
+    if (err < 0) {
 	PMIU_printf( 1, "Error reading initack on %d\n", fd );
+	perror( "Error on readline:" );
 	return -1;
     }
     PMIU_parse_keyvals( buf );
@@ -666,8 +667,9 @@ int PMI_Set_from_port( int fd, int id )
 
     /* size */
     err = PMIU_readline( fd, buf, PMIU_MAXLINE );
-    if (err) {
+    if (err < 0) {
 	PMIU_printf( 1, "Error reading size on %d\n", fd );
+	perror( "Error on readline:" );
 	return -1;
     }
     PMIU_parse_keyvals( buf );
@@ -682,8 +684,9 @@ int PMI_Set_from_port( int fd, int id )
 
     /* rank */
     err = PMIU_readline( fd, buf, PMIU_MAXLINE );
-    if (err) {
+    if (err < 0) {
 	PMIU_printf( 1, "Error reading rank on %d\n", fd );
+	perror( "Error on readline:" );
 	return -1;
     }
     PMIU_parse_keyvals( buf );
@@ -698,7 +701,7 @@ int PMI_Set_from_port( int fd, int id )
 
     /* debug flag */
     err = PMIU_readline( fd, buf, PMIU_MAXLINE );
-    if (err) {
+    if (err < 0) {
 	PMIU_printf( 1, "Error reading debug on %d\n", fd );
 	return -1;
     }
@@ -711,6 +714,11 @@ int PMI_Set_from_port( int fd, int id )
     /* cmd=set debug=n */
     PMIU_getval( "debug", cmd, PMIU_MAXLINE );
     PMI_debug = atoi(cmd);
+
+    if (PMI_debug) {
+	printf( "end of handshake, rank = %d, size = %d\n", 
+		PMI_rank, PMI_size ); fflush(stdout);
+    }
 
     return 0;
 }
