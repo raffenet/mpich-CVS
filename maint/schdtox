@@ -12,6 +12,7 @@ $do_html = 0;
 $mpi1_only = 0;
 $table_cols = 4;
 $firstdate = "3/2/02";
+$warnings = 1;    # Set warnings to 1 to flag suspicious input lines.
 
 while ($_ = shift(@ARGV)) {
     if (/-html/) { 
@@ -21,6 +22,8 @@ while ($_ = shift(@ARGV)) {
 	}
     }
     elsif (/-mpi1/) { $mpi1_only = 1; }
+    elsif (/-warnings/) { $warnings = 1; }
+    elsif (/-nowarnings/) { $warnings = 0; }
     elsif (/^-/) {
 	print STDERR "Unexpected option $_\n";
 	exit 1;
@@ -72,6 +75,14 @@ while (<>) {
     }
     elsif (/^.*,.*,.*,.*,.*,.*/) { 
 	($routine,$min,$max,$avg,$priority,$name,$depend,$actual,$finished,$limits) = split(/,/);
+	if ($warnings) {
+	    if ($actual ne "" && $finished eq "" && 0) {
+		print STDERR "Routine $routine has completion effort $actual but no completion date\n";
+	    }
+	    if ($actual eq "" && $finished ne "") {
+		print STDERR "Routine $routine has no completion effort but completion date $finished\n";
+	    }
+	}
 	if ($mpi1_only) {
 	    # Skip if not an MPI function
 	    $ucroutine = $routine;
