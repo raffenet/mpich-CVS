@@ -24,6 +24,8 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     int cur_iproc;
     smpd_host_node_t *host_iter, *host_list;
     int nproc;
+    char *cur_env_loc;
+    int env_maxlen;
 
     smpd_enter_fn(FCNAME);
 
@@ -169,6 +171,8 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	node.prev = NULL;
 	node.priority_class = -1;
 	node.priority_thread = -1;
+	cur_env_loc = node.env_data;
+	env_maxlen = SMPD_MAX_ENV_LENGTH;
 
 	if (info != NULL)
 	{
@@ -293,12 +297,22 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    /* path */
 	    if (strcmp(info[j].key, "path") == 0)
 	    {
+		if (node.path[0] != '\0')
+		{
+		    /* multiple path keys */
+		    /* replace old, append, error out? */
+		}
 		strcpy(node.path, info[j].val);
 		smpd_dbg_printf("path = %s\n", info[j].val);
 	    }
 	    /* host */
 	    if (strcmp(info[j].key, "host") == 0)
 	    {
+		if (node.hostname[0] != '\0')
+		{
+		    /* multiple host keys */
+		    /* replace old, error out? */
+		}
 		smpd_dbg_printf("host key sent with spawn command: <%s>\n", info[j].val);
 		if (smpd_get_host_id(info[j].val, &node.host_id) == SMPD_SUCCESS)
 		{
@@ -311,6 +325,37 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		}
 	    }
 	    /* env */
+	    if (strcmp(info[j].key, "env") == 0)
+	    {
+		char *token;
+		char *env_str = strdup(info[j].val);
+		if (env_str == NULL)
+		{
+		    goto spawn_failed;
+		}
+		token = strtok(env_str, " ");
+		while (token)
+		{
+		    char *env_key, *env_val;
+		    env_key = strdup(token);
+		    if (env_key == NULL)
+		    {
+			goto spawn_failed;
+		    }
+		    env_val = env_key;
+		    while (*env_val != '\0' && *env_val != '=')
+			env_val++;
+		    if (*env_val == '=')
+		    {
+			*env_val = '\0';
+			env_val++;
+			MPIU_Str_add_string_arg(&cur_env_loc, &env_maxlen, env_key, env_val);
+		    }
+		    free(env_key);
+		    token = strtok(NULL, " ");
+		}
+		free(env_str);
+	    }
 	    /* wdir */
 	    /* map */
 	    /* etc */
@@ -355,7 +400,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    launch_iter->args[0] = '\0';
 	    launch_iter->clique[0] = '\0';
 	    launch_iter->dir[0] = '\0';
-	    launch_iter->env_data[0] = '\0';
+	    strcpy(launch_iter->env_data, node.env_data);
 	    launch_iter->env = launch_iter->env_data;
 	    launch_iter->exe[0] = '\0';
 	    if (node.host_id != -1)
