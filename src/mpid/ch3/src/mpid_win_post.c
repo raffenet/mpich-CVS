@@ -17,13 +17,15 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_POST);
 
-#   if defined(MPIDI_CH3_IMPLEMENTS_START_EPOCH)
-    {
-	mpi_errno = MPIDI_CH3_Win_start_epoch(group_ptr, MPIDI_CH3I_EXPOSURE_EPOCH, 
-                                              assert, win_ptr);
+    if (MPIDI_Use_optimized_rma) {
+#       ifdef MPIDI_CH3_IMPLEMENTS_START_EPOCH
+        {
+            mpi_errno = MPIDI_CH3_Win_start_epoch(group_ptr, MPIDI_CH3I_EXPOSURE_EPOCH, 
+                                                  assert, win_ptr);
+        }
+#       endif
     }
-#   else
-    {
+    else {
         MPI_Group win_grp, post_grp;
         int i, post_grp_size, *ranks_in_post_grp, *ranks_in_win_grp, dst;
 
@@ -125,9 +127,7 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
             MPIU_Free(ranks_in_win_grp);
             MPIU_Free(ranks_in_post_grp);
         }    
-
     }
-#   endif
 
  fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_POST);

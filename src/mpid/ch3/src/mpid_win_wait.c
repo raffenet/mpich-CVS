@@ -18,12 +18,14 @@ int MPID_Win_wait(MPID_Win *win_ptr)
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_WAIT);
 
-#   if defined(MPIDI_CH3_IMPLEMENTS_END_EPOCH)
-    {
-	mpi_errno = MPIDI_CH3_Win_end_epoch(MPIDI_CH3I_ACCESS_EPOCH, win_ptr);
+    if (MPIDI_Use_optimized_rma) {
+#       ifdef MPIDI_CH3_IMPLEMENTS_END_EPOCH
+        {
+            mpi_errno = MPIDI_CH3_Win_end_epoch(MPIDI_CH3I_ACCESS_EPOCH, win_ptr);
+        }
+#       endif
     }
-#   else
-    {
+    else {
         /* wait for all operations from other processes to finish */
         if (win_ptr->my_counter)
         {
@@ -46,7 +48,6 @@ int MPID_Win_wait(MPID_Win *win_ptr)
         } 
         
     }
-#   endif
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);
     return mpi_errno;

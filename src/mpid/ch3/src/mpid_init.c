@@ -18,6 +18,7 @@
 #   define MPIDI_PROCESSOR_NAME_SIZE 128
 #endif
 
+int MPIDI_Use_optimized_rma=0;
 
 MPIDI_Process_t MPIDI_Process;
 

@@ -368,6 +368,8 @@ int MPIDI_CH3_End_epoch(int access_or_exposure, MPID_Win *win_ptr);
 
 int MPIDI_CH3I_SHM_Unlink_and_detach_mem(MPIDI_CH3I_Shmem_block_request_result *p);
 
+int MPIDI_CH3I_SHM_Attach_notunlink_mem(MPIDI_CH3I_Shmem_block_request_result *pInput);
+
 #define MPIDI_CH3I_ACCESS_EPOCH 1
 #define MPIDI_CH3I_EXPOSURE_EPOCH 2
 #define MPIDI_CH3I_ACCESS_AND_EXPOSURE_EPOCH 3

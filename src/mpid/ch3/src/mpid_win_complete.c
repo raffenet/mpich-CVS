@@ -17,12 +17,14 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_COMPLETE);
 
-#   if defined(MPIDI_CH3_IMPLEMENTS_END_EPOCH)
-    {
-	mpi_errno = MPIDI_CH3_Win_end_epoch(MPIDI_CH3I_EXPOSURE_EPOCH, win_ptr);
+    if (MPIDI_Use_optimized_rma) {
+#       ifdef MPIDI_CH3_IMPLEMENTS_END_EPOCH
+        {
+            mpi_errno = MPIDI_CH3_Win_end_epoch(MPIDI_CH3I_EXPOSURE_EPOCH, win_ptr);
+        }
+#       endif
     }
-#   else
-    {
+    else {
         int comm_size, *nops_to_proc, src, new_total_op_count;
         int i, j, dst, done, total_op_count, *curr_ops_cnt;
         MPIDI_RMA_ops *curr_ptr, *next_ptr;
@@ -344,7 +346,6 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         win_ptr->rma_ops_list = NULL;
     
     }
-#   endif
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
     return mpi_errno;

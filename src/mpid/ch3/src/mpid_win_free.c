@@ -17,12 +17,14 @@ int MPID_Win_free(MPID_Win **win_ptr)
         
    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_FREE);
         
-#   if defined(MPIDI_CH3_IMPLEMENTS_WIN_FREE)
-    {
-	mpi_errno = MPIDI_CH3_Win_free(win_ptr);
+    if (MPIDI_Use_optimized_rma) {
+#       ifdef MPIDI_CH3_IMPLEMENTS_WIN_FREE
+        {
+            mpi_errno = MPIDI_CH3_Win_free(win_ptr);
+        }
+#       endif
     }
-#   else
-    {
+    else {
         int total_pt_rma_puts_accs, i, *recvcnts, comm_size;
         MPID_Comm *comm_ptr;
 #ifndef MPICH_SINGLE_THREADED
@@ -56,7 +58,7 @@ int MPID_Win_free(MPID_Win **win_ptr)
         /* --BEGIN ERROR HANDLING-- */
         if (mpi_errno != MPI_SUCCESS)
         {
-            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "The reduce_scatter to send out the data to all the nodes in the fence failed");
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
             goto fn_exit;
         }
         /* --END ERROR HANDLING-- */
@@ -119,8 +121,6 @@ int MPID_Win_free(MPID_Win **win_ptr)
         MPIU_Handle_obj_free( &MPID_Win_mem, *win_ptr );
         
     }
-#   endif
-
  
  fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FREE);

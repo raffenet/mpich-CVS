@@ -19,14 +19,16 @@ int MPID_Put(void *origin_addr, int origin_count, MPI_Datatype
         
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_PUT);
 
-#   if defined(MPIDI_CH3_IMPLEMENTS_PUT)
-    {
-	mpi_errno = MPIDI_CH3_Put(origin_addr, origin_count, origin_datatype, 
-                                  target_rank, target_disp, target_count, target_datatype,
-                                  win_ptr);
+    if (MPIDI_Use_optimized_rma) {
+#       ifdef MPIDI_CH3_IMPLEMENTS_PUT
+        {
+            mpi_errno = MPIDI_CH3_Put(origin_addr, origin_count, origin_datatype, 
+                                      target_rank, target_disp, target_count, target_datatype,
+                                      win_ptr);
+        }
+#       endif
     }
-#   else
-    {
+    else {
         int dt_contig, rank;
         MPIDI_RMA_ops *curr_ptr, *prev_ptr, *new_ptr;
         MPID_Datatype *dtp;
@@ -106,9 +108,7 @@ int MPID_Put(void *origin_addr, int origin_count, MPI_Datatype
                 MPID_Datatype_add_ref(dtp);
             }
         }
-
     }
-#   endif
         
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_PUT);    
     return mpi_errno;

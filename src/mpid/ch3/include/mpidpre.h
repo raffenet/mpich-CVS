@@ -562,5 +562,8 @@ typedef struct MPIDI_Win_lock_queue {
     struct MPIDI_PT_single_op *pt_single_op;  /* to store info for lock-put-unlock optimization */
 } MPIDI_Win_lock_queue;
 
+#ifdef MPIDI_CH3_WIN_DECL
+#define MPID_DEV_WIN_DECL MPIDI_CH3_WIN_DECL
+#endif
 
 #endif /* !defined(MPICH_MPIDPRE_H_INCLUDED) */

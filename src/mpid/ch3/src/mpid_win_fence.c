@@ -17,13 +17,15 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_FENCE);
 
-#   if defined(MPIDI_CH3_IMPLEMENTS_START_EPOCH)
-    {
-	mpi_errno = MPIDI_CH3_Win_start_epoch(NULL, MPIDI_CH3I_ACCESS_AND_EXPOSURE_EPOCH, 
-                                              assert, win_ptr);
+    if (MPIDI_Use_optimized_rma) {
+#       ifdef MPIDI_CH3_IMPLEMENTS_START_EPOCH
+        {
+            mpi_errno = MPIDI_CH3_Win_start_epoch(NULL, MPIDI_CH3I_ACCESS_AND_EXPOSURE_EPOCH, 
+                                                  assert, win_ptr);
+        }
+#       endif
     }
-#   else
-    {
+    else {
 
         int comm_size, done, *recvcnts;
         int *rma_target_proc, *nops_to_proc, i, total_op_count, *curr_ops_cnt;
@@ -376,7 +378,6 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         }
 
     }
-#   endif
 
  fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);

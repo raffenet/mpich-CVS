@@ -20,12 +20,14 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_UNLOCK);
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_UNLOCK);
 
-#   if defined(MPIDI_CH3_IMPLEMENTS_START_PT_EPOCH)
-    {
-	mpi_errno = MPIDI_CH3_Win_End_PT_epoch(dest, win_ptr);
+    if (MPIDI_Use_optimized_rma) {
+#       ifdef MPIDI_CH3_IMPLEMENTS_END_PT_EPOCH
+        {
+            mpi_errno = MPIDI_CH3_Win_End_PT_epoch(dest, win_ptr);
+        }
+#       endif
     }
-#   else
-    {
+    else {
         int single_op_opt, type_size;
         MPIDI_RMA_ops *rma_op, *curr_op;
         MPID_Comm *comm_ptr;
@@ -193,7 +195,6 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
             win_ptr->lock_granted = 0; 
 
     }
-#   endif
 
  fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);

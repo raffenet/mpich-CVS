@@ -20,14 +20,16 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
     
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_ACCUMULATE);
         
-#   if defined(MPIDI_CH3_IMPLEMENTS_ACCUMULATE)
-    {
-	mpi_errno = MPIDI_CH3_Accumulate(origin_addr, origin_count, origin_datatype, 
-                                  target_rank, target_disp, target_count, target_datatype,
-                                  op, win_ptr);
+    if (MPIDI_Use_optimized_rma) {
+#       ifdef MPIDI_CH3_IMPLEMENTS_ACCUMULATE
+        {
+            mpi_errno = MPIDI_CH3_Accumulate(origin_addr, origin_count, origin_datatype, 
+                                             target_rank, target_disp, target_count, target_datatype,
+                                             op, win_ptr);
+        }
+#       endif
     }
-#   else
-    {
+    else {
         MPIDI_msg_sz_t data_sz;
         int dt_contig, rank;
         MPI_Aint dt_true_lb;
@@ -231,9 +233,7 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                 MPID_Datatype_add_ref(dtp);
             }
         }
-
     }
-#   endif
 
  fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_ACCUMULATE);

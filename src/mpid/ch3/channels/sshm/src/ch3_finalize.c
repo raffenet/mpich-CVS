@@ -15,6 +15,7 @@ int MPIDI_CH3_Finalize()
 {
     int mpi_errno = MPI_SUCCESS;
     int rc;
+    MPIDI_CH3I_Alloc_mem_list_t *next_ptr, *curr_ptr;
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
 
@@ -41,6 +42,24 @@ int MPIDI_CH3_Finalize()
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**finalize_boot", 0);
     }
+
+    /* if the user had called MPI_Alloc_mem but forgot to call MPI_Free_mem, deallocate any shared
+       memory that was allocated */
+    curr_ptr = MPIDI_CH3I_Alloc_mem_list_head;
+    while (curr_ptr != NULL) {
+        /* deallocate shared memory */
+        MPIDI_CH3I_SHM_Unlink_and_detach_mem(curr_ptr->shm_struct);
+            
+        next_ptr = curr_ptr->next;
+
+        MPIU_Free(curr_ptr->shm_struct);
+        MPIU_Free(curr_ptr);
+
+        curr_ptr = next_ptr;
+    }
+    MPIDI_CH3I_Alloc_mem_list_head = NULL;
+
+
 
     /* Let PMI know the process is about to exit */
     rc = PMI_Finalize();

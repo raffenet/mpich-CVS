@@ -17,13 +17,15 @@ int MPID_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_START);
 
-#   if defined(MPIDI_CH3_IMPLEMENTS_START_EPOCH)
-    {
-	mpi_errno = MPIDI_CH3_Win_start_epoch(group_ptr, MPIDI_CH3I_ACCESS_EPOCH, 
-                                              assert, win_ptr);
+    if (MPIDI_Use_optimized_rma) {
+#       ifdef MPIDI_CH3_IMPLEMENTS_START_EPOCH
+        {
+            mpi_errno = MPIDI_CH3_Win_start_epoch(group_ptr, MPIDI_CH3I_ACCESS_EPOCH, 
+                                                  assert, win_ptr);
+        }
+#       endif
     }
-#   else
-    {
+    else {
         /* Reset the fence counter so that in case the user has switched from fence to 
            start-complete synchronization, he cannot use the previous fence to mark the 
            beginning of a fence epoch.  */
@@ -62,7 +64,6 @@ int MPID_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
         MPIU_Object_add_ref( group_ptr );
         win_ptr->start_assert = assert;
     }
-#   endif
 
  fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_START);
