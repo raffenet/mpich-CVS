@@ -18,6 +18,8 @@ int main(int argc, char* argv[])
     sock_event_t event;
     int port = SMPD_LISTENER_PORT;
 
+    smpd_dbg_printf("smpd.exe entering main()\n");
+
     /* initialization */
     result = sock_init();
     if (result != SOCK_SUCCESS)
@@ -40,6 +42,8 @@ int main(int argc, char* argv[])
 	smpd_err_printf("Unable to parse the command arguments.\n");
 	return result;
     }
+
+    smpd_process.id = 0;
 
     /*smpd_set_smpd_data("path", smpd_process.pszExe);*/
 

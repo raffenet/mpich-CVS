@@ -93,7 +93,7 @@ dnl Setup other replaceable values
 MPILIBNAME=${MPILIBNAME:-"mpich"}
 AC_SUBST(MPILIBNAME)
 
-AC_CHECK_HEADERS( unistd.h stdlib.h errno.h stdarg.h stdio.h termios.h )
+AC_CHECK_HEADERS( unistd.h stdlib.h errno.h stdarg.h stdio.h termios.h string.h )
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
 AC_SUBST(MPILIBNAME)

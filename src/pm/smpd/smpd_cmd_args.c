@@ -50,6 +50,8 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	hRead = smpd_decode_handle(read_handle_str);
 	hWrite = smpd_decode_handle(write_handle_str);
 
+	smpd_dbg_printf("manager creating listener and session sets.\n");
+
 	result = sock_create_set(&set);
 	if (result != SOCK_SUCCESS)
 	{
@@ -62,6 +64,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    smpd_err_printf("sock_create_set(session) failed, sock error:\n%s\n", get_sock_error_string(result));
 	    return SMPD_FAIL;
 	}
+	port = 0;
 	result = sock_listen(set, NULL, &port, &listener); 
 	if (result != SOCK_SUCCESS)
 	{
@@ -123,6 +126,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    smpd_err_printf("sock_accept failed, sock error:\n%s\n", get_sock_error_string(result));
 	    return SMPD_FAIL;
 	}
+	smpd_dbg_printf("accepted sock %d\n", sock_getid(session_sock));
 	smpd_dbg_printf("closing the manager's listener set.\n");
 	/* Are we allowed to post a close on the listener?
 	result = sock_post_close(listener);

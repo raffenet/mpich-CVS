@@ -22,6 +22,7 @@
 #define SMPD_MAX_SESSION_HEADER_LENGTH   1024
 #define SMPD_CMD_HDR_LENGTH                13
 #define SMPD_MAX_CMD_LENGTH	         8192
+#define SMPD_MAX_CMD_STR_LENGTH           100
 #define SMPD_MAX_HOST_LENGTH	           64
 #define SMPD_MAX_EXE_LENGTH              1024
 #define SMPD_PASSPHRASE_MAX_LENGTH        256
@@ -51,6 +52,14 @@
 
 #ifdef HAVE_WINDOWS_H
 #define snprintf _snprintf
+#endif
+
+#ifdef HAVE_WINDOWS_H
+/* This is necessary because exit() can deadlock flushing file buffers while the stdin thread is running */
+/* The correct solution is to signal the thread to exit */
+#define smpd_exit ExitProcess
+#else
+#define smpd_exit exit
 #endif
 
 typedef enum smpd_context_type_t
@@ -83,6 +92,8 @@ typedef struct smpd_process_t
     int id, parent_id;
     int level;
     smpd_context_t *left_context, *right_context, *parent_context;
+    int closing;
+    sock_set_t set;
     char host[SMPD_MAX_HOST_LENGTH];
     char pszExe[SMPD_MAX_EXE_LENGTH];
     int  bService;
@@ -105,7 +116,7 @@ HANDLE smpd_decode_handle(char *str);
 
 /* smpd_util */
 int smpd_init_process(void);
-int smpd_init_context(smpd_context_t *context, sock_set_t set, sock_t sock);
+int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_set_t set, sock_t sock, int id);
 int smpd_post_read_command(smpd_context_t *context);
 int smpd_read_command(smpd_context_t *context);
 int smpd_package_command(smpd_context_t *context);

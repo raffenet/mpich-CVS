@@ -32,10 +32,12 @@ int smpd_command_destination(smpd_context_t *cmd_context, smpd_context_t **dest_
 	return SMPD_FAIL;
     }
 
+    smpd_dbg_printf("determining destination context for %d -> %d\n", src, dest);
     /* determine the route and return the context */
     if (src == dest)
     {
 	*dest_context = NULL;
+	smpd_dbg_printf("%d -> %d : returning NULL context\n", src, dest);
 	return SMPD_SUCCESS;
     }
 
@@ -45,6 +47,7 @@ int smpd_command_destination(smpd_context_t *cmd_context, smpd_context_t **dest_
 	if (smpd_process.left_context == NULL)
 	    return SMPD_FAIL;
 	*dest_context = smpd_process.left_context;
+	smpd_dbg_printf("%d -> %d : returning left_context\n", src, dest);
 	return SMPD_SUCCESS;
     }
 
@@ -53,6 +56,7 @@ int smpd_command_destination(smpd_context_t *cmd_context, smpd_context_t **dest_
 	if (smpd_process.parent_context == NULL)
 	    return SMPD_FAIL;
 	*dest_context = smpd_process.parent_context;
+	smpd_dbg_printf("%d -> %d : returning parent_context: %d < %d\n", src, dest, dest, src);
 	return SMPD_SUCCESS;
     }
 
@@ -62,6 +66,7 @@ int smpd_command_destination(smpd_context_t *cmd_context, smpd_context_t **dest_
 	if (smpd_process.left_context == NULL)
 	    return SMPD_FAIL;
 	*dest_context = smpd_process.left_context;
+	smpd_dbg_printf("returning left_context\n", src, dest);
 	return SMPD_SUCCESS;
     }
 
@@ -70,12 +75,14 @@ int smpd_command_destination(smpd_context_t *cmd_context, smpd_context_t **dest_
 	if (smpd_process.right_context == NULL)
 	    return SMPD_FAIL;
 	*dest_context = smpd_process.right_context;
+	smpd_dbg_printf("%d -> %d : returning right_context\n", src, dest);
 	return SMPD_SUCCESS;
     }
 
     if (smpd_process.parent_context == NULL)
 	return SMPD_FAIL;
     *dest_context = smpd_process.parent_context;
+    smpd_dbg_printf("%d -> %d : returning parent_context: fall through\n", src, dest);
     return SMPD_SUCCESS;
 }
 
@@ -148,6 +155,8 @@ int smpd_read_command(smpd_context_t *context)
 	str += num_read;
     }
 
+    smpd_dbg_printf("read command on sock %d: '%s'\n", sock_getid(context->sock), context->input_str);
+
     return SMPD_SUCCESS;
 }
 
@@ -181,6 +190,8 @@ int smpd_write_command(smpd_context_t *context)
 	smpd_err_printf("unable to write command, invalid length: %d\n", length);
 	return SMPD_FAIL;
     }
+
+    smpd_dbg_printf("writing command from %d to %d on sock %d: <%s>\n", smpd_process.id, context->id, sock_getid(context->sock), context->output_str);
 
     /* write the header */
     length = SMPD_CMD_HDR_LENGTH;

@@ -168,12 +168,18 @@ int main(int argc, char* argv[])
 	mp_err_printf("sock_finalize failed, sock error:\n%s\n", get_sock_error_string(result));
     }
     mp_dbg_printf("exiting\n");
+
 #ifdef HAVE_WINDOWS_H
-    /* This is necessary because exit() can deadlock flushing file buffers while the stdin thread is running */
-    /* The correct solution is to signal the thread to exit */
-    ExitProcess(0);
-#else
-    exit(0);
+    if (g_hCloseStdinThreadEvent)
+	SetEvent(g_hCloseStdinThreadEvent);
+    if (g_hStdinThread != NULL)
+    {
+	WaitForSingleObject(g_hStdinThread, 3000);
+	CloseHandle(g_hStdinThread);
+    }
+    if (g_hCloseStdinThreadEvent)
+	CloseHandle(g_hCloseStdinThreadEvent);
 #endif
+    smpd_exit(0);
 }
 

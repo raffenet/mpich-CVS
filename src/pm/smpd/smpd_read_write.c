@@ -12,6 +12,8 @@ int smpd_write_string(sock_set_t set, sock_t sock, char *str)
     sock_event_t event;
     sock_size_t len, num_written;
 
+    smpd_dbg_printf("writing string on sock %d: '%s'\n", sock_getid(sock), str);
+
     len = (sock_size_t)strlen(str)+1;
 
     /* aggressively write string */
@@ -127,7 +129,10 @@ int smpd_read_string(sock_set_t set, sock_t sock, char *str, int maxlen)
     sock_event_t event;
 
     if (maxlen == 0)
+    {
+	smpd_dbg_printf("zero length read string request on sock %d\n", sock_getid(sock));
 	return SMPD_SUCCESS;
+    }
 
     while (1)
     {
@@ -135,12 +140,16 @@ int smpd_read_string(sock_set_t set, sock_t sock, char *str, int maxlen)
 	if (num_bytes == -1)
 	    return SMPD_FAIL;
 	if (num_bytes > 0 && str[num_bytes-1] == '\0')
+	{
+	    smpd_dbg_printf("received string on sock %d: '%s'\n", sock_getid(sock), str);
 	    return SMPD_SUCCESS;
+	}
 	if (num_bytes == maxlen)
 	{
 	    /* received truncated string */
 	    str[num_bytes-1] = '\0';
 	    chew_up_string(set, sock);
+	    smpd_dbg_printf("received string on sock %d: '%s'\n", sock_getid(sock), str);
 	    return SMPD_SUCCESS;
 	}
 	str += num_bytes;
@@ -194,7 +203,10 @@ int smpd_read_string(sock_set_t set, sock_t sock, char *str, int maxlen)
 	    break;
 	}
 	if (*str == '\0')
+	{
+	    smpd_dbg_printf("received string on sock %d: '%s'\n", sock_getid(sock), str);
 	    return SMPD_SUCCESS;
+	}
 	str++;
 	maxlen--;
     }

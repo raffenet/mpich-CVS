@@ -1,5 +1,8 @@
 #include "smpd.h"
 #include <stdio.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 int smpd_get_string_arg(char *str, char *flag, char *val, int maxlen)
 {

@@ -27,11 +27,12 @@ int smpd_init_process(void)
 
     /* tree data */
     smpd_process.parent_id = -1;
-    smpd_process.id = 0;
-    smpd_process.level = 0;
+    smpd_process.id = -1;
+    smpd_process.level = -1;
     smpd_process.left_context = NULL;
     smpd_process.right_context = NULL;
     smpd_process.parent_context = NULL;
+    smpd_process.set = SOCK_INVALID_SET;
 
     /* local data */
 #ifdef HAVE_WINDOWS_H
@@ -47,17 +48,18 @@ int smpd_init_process(void)
     gethostname(smpd_process.host, SMPD_MAX_HOST_LENGTH);
     smpd_process.UserAccount[0] = '\0';
     smpd_process.UserPassword[0] = '\0';
+    smpd_process.closing = SMPD_FALSE;
 
     srand(smpd_getpid());
 
     return SMPD_SUCCESS;
 }
 
-int smpd_init_context(smpd_context_t *context, sock_set_t set, sock_t sock)
+int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_set_t set, sock_t sock, int id)
 {
-    context->type = SMPD_CONTEXT_INVALID;
+    context->type = type;
     context->host[0] = '\0';
-    context->id = -1;
+    context->id = id;
     context->input_cmd_hdr_str[0] = '\0';
     context->input_str[0] = '\0';
     context->next = NULL;
@@ -257,13 +259,22 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
     char response[100];
     char session_header[SMPD_MAX_SESSION_HEADER_LENGTH];
 
-    result = sock_create_set(&set);
-    if (result != SOCK_SUCCESS)
+    if (*set_ptr != SOCK_INVALID_SET)
     {
-	smpd_err_printf("sock_create_set failed, sock error:\n%s\n", get_sock_error_string(result));
-	return result;
+	set = *set_ptr;
+    }
+    else
+    {
+	result = sock_create_set(&set);
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("sock_create_set failed, sock error:\n%s\n", get_sock_error_string(result));
+	    return result;
+	}
     }
 
+    /* This is going to be a problem because sock_wait can return events from other connections */
+    /* It would be nice to have a blocking sock_connect call */
     result = sock_post_connect(set, NULL, host, port, &sock);
     if (result != SOCK_SUCCESS)
     {

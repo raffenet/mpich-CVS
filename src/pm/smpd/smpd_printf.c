@@ -56,6 +56,10 @@ int smpd_err_printf(char *str, ...)
     va_list list;
     char *format_str;
 
+    /* prepend output with the process tree node id */
+    fprintf(stderr, "[%d]", smpd_process.id);
+
+    /* print the formatted string */
     va_start(list, str);
     format_str = str;
     n = vfprintf(stderr, format_str, list);
@@ -72,6 +76,10 @@ int smpd_dbg_printf(char *str, ...)
     va_list list;
     char *format_str;
 
+    /* prepend output with the tree node id */
+    printf("[%d]", smpd_process.id);
+
+    /* print the formatted string */
     va_start(list, str);
     format_str = str;
     n = vfprintf(stdout, format_str, list);

@@ -51,6 +51,9 @@ int mp_err_printf(char *str, ...)
 int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t *session_context)
 {
     int result;
+    smpd_context_t *dest;
+    char cmd[SMPD_MAX_CMD_LENGTH];
+
     if (error != SOCK_SUCCESS)
     {
 	if (context != NULL)
@@ -105,15 +108,38 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
     else
     {
 	/* hande command read from the session host */
-	smpd_read_command(context);
-	mp_dbg_printf("read command from '%s': '%s'\n", context->host, context->input_str);
-	if (strncmp(context->input_str, "close", 5) == 0)
+	result = smpd_read_command(context);
+	if (result != SMPD_SUCCESS)
 	{
-	    return SMPD_CLOSE;
+	    mp_err_printf("unable to read command.\n");
+	    return SMPD_FAIL;
+	}
+	mp_dbg_printf("read command from '%s': '%s'\n", context->host, context->input_str);
+	result = smpd_command_destination(context, &dest);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("invalid command received, unable to determine the destination.\n");
+	    return SMPD_FAIL;
+	}
+	if (dest)
+	{
+	    smpd_forward_command(context, dest);
 	}
 	else
 	{
-	    mp_err_printf("ignoring unknown command from the session: '%s'\n", context->input_str);
+	    if (!smpd_get_string_arg(context->input_str, "cmd", cmd, SMPD_MAX_CMD_LENGTH))
+	    {
+		smpd_err_printf("no command specified in the command string: <%s>\n", context->input_str);
+		return SMPD_FAIL;
+	    }
+	    if (strncmp(cmd, "close", 5) == 0)
+	    {
+		return SMPD_CLOSE;
+	    }
+	    else
+	    {
+		mp_err_printf("ignoring unknown command from the session: '%s'\n", context->input_str);
+	    }
 	}
 	smpd_post_read_command(context);
     }
@@ -140,6 +166,7 @@ int handle_written(smpd_context_t *context, int num_written, int error)
 
 #ifdef HAVE_WINDOWS_H
 HANDLE g_hCloseStdinThreadEvent = NULL;
+HANDLE g_hStdinThread = NULL;
 void StdinThread(SOCKET hWrite)
 {
     DWORD len;
@@ -166,7 +193,6 @@ void StdinThread(SOCKET hWrite)
 	    if (send(hWrite, str, len, 0) == SOCKET_ERROR)
 	    {
 		mp_err_printf("unable to forward stdin, WriteFile failed, error %d\n", GetLastError());
-		CloseHandle(g_hCloseStdinThreadEvent);
 		return;
 	    }
 	    if (strncmp(str, "close", 5) == 0)
@@ -174,7 +200,6 @@ void StdinThread(SOCKET hWrite)
 		shutdown(hWrite, SD_BOTH);
 		closesocket(hWrite);
 		mp_dbg_printf("closing stdin reader thread.\n");
-		CloseHandle(g_hCloseStdinThreadEvent);
 		return;
 	    }
 	}
@@ -183,17 +208,14 @@ void StdinThread(SOCKET hWrite)
 	    shutdown(hWrite, SD_BOTH);
 	    closesocket(hWrite);
 	    mp_dbg_printf("g_hCloseStdinThreadEvent signalled, closing stdin reader thread.\n");
-	    CloseHandle(g_hCloseStdinThreadEvent);
 	    return;
 	}
 	else
 	{
 	    mp_err_printf("stdin wait failed, error %d\n", GetLastError());
-	    CloseHandle(g_hCloseStdinThreadEvent);
 	    return;
 	}
     }
-    CloseHandle(g_hCloseStdinThreadEvent);
 }
 
 int MakeSockLoop(SOCKET *pRead, SOCKET *pWrite)
@@ -201,18 +223,15 @@ int MakeSockLoop(SOCKET *pRead, SOCKET *pWrite)
     SOCKET sock;
     char host[100];
     int port;
-    struct sockaddr addr;
     int len;
-    struct linger linger;
+    LINGER linger;
     BOOL b;
     SOCKADDR_IN sockAddr;
-    struct sockaddr_in addr_in;
-    int name_len;
     int error;
 
-    // Create a listener
+    /* Create a listener */
 
-    // create the socket
+    /* create the socket */
     sock = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
     if (sock == INVALID_SOCKET)
     {
@@ -220,7 +239,7 @@ int MakeSockLoop(SOCKET *pRead, SOCKET *pWrite)
 	*pWrite = INVALID_SOCKET;
 	return WSAGetLastError();
     }
-    
+
     memset(&sockAddr,0,sizeof(sockAddr));
     
     sockAddr.sin_family = AF_INET;
@@ -229,47 +248,37 @@ int MakeSockLoop(SOCKET *pRead, SOCKET *pWrite)
     
     if (bind(sock, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
     {
+	error = WSAGetLastError();
+	mp_err_printf("bind failed: error %d\n", error);
 	*pRead = INVALID_SOCKET;
 	*pWrite = INVALID_SOCKET;
-	return WSAGetLastError();
+	return error;
     }
     
-    // listen
-    listen(sock, 5);
+    /* listen */
+    listen(sock, 2);
 
-    name_len = sizeof(addr_in);
-    getsockname(sock, (struct sockaddr*)&addr_in, &name_len);
-    port = ntohs(addr_in.sin_port);
+    /* get the host and port where we're listening */
+    len = sizeof(sockAddr);
+    getsockname(sock, (struct sockaddr*)&sockAddr, &len);
+    port = ntohs(sockAddr.sin_port);
     gethostname(host, 100);
 
-    // Connect to myself
+    /* Connect to myself */
 
-    // create the socket
+    /* create the socket */
     *pWrite = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
     if (*pWrite == INVALID_SOCKET)
     {
 	error = WSAGetLastError();
+	mp_err_printf("WSASocket failed, error %d\n", error);
 	closesocket(sock);
 	*pRead = INVALID_SOCKET;
 	*pWrite = INVALID_SOCKET;
 	return error;
     }
-    
-    memset(&sockAddr,0,sizeof(sockAddr));
-    
-    sockAddr.sin_family = AF_INET;
-    sockAddr.sin_addr.s_addr = INADDR_ANY;
-    sockAddr.sin_port = htons((unsigned short)ADDR_ANY);
-    
-    if (bind(*pWrite, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
-    {
-	error = WSAGetLastError();
-	closesocket(sock);
-	*pRead = INVALID_SOCKET;
-	*pWrite = INVALID_SOCKET;
-	return error;
-    }
-    
+
+    /* set the nodelay option */
     b = TRUE;
     setsockopt(*pWrite, IPPROTO_TCP, TCP_NODELAY, (char*)&b, sizeof(BOOL));
 
@@ -278,32 +287,9 @@ int MakeSockLoop(SOCKET *pRead, SOCKET *pWrite)
     linger.l_linger = 60;
     setsockopt(*pWrite, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof(linger));
 
+    sockAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-
-    memset(&sockAddr,0,sizeof(sockAddr));
-    
-    sockAddr.sin_family = AF_INET;
-    sockAddr.sin_addr.s_addr = inet_addr(host);
-    
-    if (sockAddr.sin_addr.s_addr == INADDR_NONE)
-    {
-	LPHOSTENT lphost;
-	lphost = gethostbyname(host);
-	if (lphost != NULL)
-	    sockAddr.sin_addr.s_addr = ((LPIN_ADDR)lphost->h_addr)->s_addr;
-	else
-	{
-	    closesocket(*pWrite);
-	    closesocket(sock);
-	    *pRead = INVALID_SOCKET;
-	    *pWrite = INVALID_SOCKET;
-	    WSASetLastError(WSAEINVAL);
-	    return SOCKET_ERROR;
-	}
-    }
-    
-    sockAddr.sin_port = htons((u_short)port);
-    
+    /* connect to myself */
     if (connect(*pWrite, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
     {
 	error = WSAGetLastError();
@@ -314,9 +300,9 @@ int MakeSockLoop(SOCKET *pRead, SOCKET *pWrite)
 	return error;
     }
 
-    // Accept the connection from myself
-    len = sizeof(addr);
-    *pRead = accept(sock, &addr, &len);
+    /* Accept the connection from myself */
+    len = sizeof(sockAddr);
+    *pRead = accept(sock, (SOCKADDR*)&sockAddr, &len);
 
     closesocket(sock);
     return 0;
@@ -334,12 +320,16 @@ int mp_console(char *host)
     smpd_context_t *session_context;
 #ifdef HAVE_WINDOWS_H
     DWORD dwThreadID;
-    HANDLE hThread;
     SOCKET hWrite;
 #endif
 
+    /* set the id of the mpiexec node to zero */
+    smpd_process.id = 0;
+
     /* create a session with the host */
-    result = smpd_connect_to_smpd(SOCK_INVALID_SET, SOCK_INVALID_SOCK, host, SMPD_SMPD_SESSION_STR, 1, &set, &sock);
+    set = SOCK_INVALID_SET;
+    /*result = smpd_connect_to_smpd(SOCK_INVALID_SET, SOCK_INVALID_SOCK, host, SMPD_SMPD_SESSION_STR, 1, &set, &sock);*/
+    result = smpd_connect_to_smpd(SOCK_INVALID_SET, SOCK_INVALID_SOCK, host, SMPD_PROCESS_SESSION_STR, 1, &set, &sock);
     if (result != SMPD_SUCCESS)
     {
 	mp_err_printf("Unable to connect to smpd on %s\n", host);
@@ -353,9 +343,8 @@ int mp_console(char *host)
 	mp_err_printf("malloc failed to allocate an smpd_context_t, size %d\n", sizeof(smpd_context_t));
 	return SMPD_FAIL;
     }
-    smpd_init_context(context, set, sock);
+    smpd_init_context(context, SMPD_CONTEXT_CHILD, set, sock, 1);
     strcpy(context->host, host);
-    context->type = SMPD_CONTEXT_CHILD;
     list = context;
     sock_set_user_ptr(sock, context);
     session_context = context;
@@ -396,8 +385,7 @@ int mp_console(char *host)
 	mp_err_printf("unable to create a sock from stdin, sock error:\n%s\n", get_sock_error_string(result));
 	return SMPD_FAIL;
     }
-    smpd_init_context(context, set, insock);
-    context->type = SMPD_CONTEXT_STDIN;
+    smpd_init_context(context, SMPD_CONTEXT_STDIN, set, insock, -1);
     context->next = list;
     list = context;
 
@@ -410,14 +398,12 @@ int mp_console(char *host)
 	mp_err_printf("Unable to create the stdin thread close event, error %d\n", GetLastError());
 	return SMPD_FAIL;
     }
-    hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StdinThread, (void*)hWrite, 0, &dwThreadID);
-    if (hThread == NULL)
+    g_hStdinThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StdinThread, (void*)hWrite, 0, &dwThreadID);
+    if (g_hStdinThread == NULL)
     {
-	CloseHandle(g_hCloseStdinThreadEvent);
 	mp_err_printf("Unable to create a thread to read stdin, error %d\n", GetLastError());
 	return SMPD_FAIL;
     }
-    CloseHandle(hThread);
 #endif
 
     /* post a read for a user command from stdin */

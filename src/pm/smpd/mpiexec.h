@@ -25,6 +25,7 @@ typedef struct mp_launch_node_t
 
 #ifdef HAVE_WINDOWS_H
 extern HANDLE g_hCloseStdinThreadEvent;
+extern HANDLE g_hStdinThread;
 #endif
 
 int mp_dbg_printf(char *str, ...);
