@@ -78,14 +78,18 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	    return;
 	}
     }
-    pkt_ptr->cur_pos += (pkt_ptr->num_bytes - num_bytes);
-    pkt_ptr->num_bytes = num_bytes;
-    if (pkt_ptr->num_bytes == 0)
+    if (num_bytes == 0)
     {
+	pkt_ptr->num_bytes = 0;
 	pkt_ptr->cur_pos = pkt_ptr->data;
 	MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 	pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
 	vc->shm.read_shmq->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
+    }
+    else
+    {
+	pkt_ptr->cur_pos += (pkt_ptr->num_bytes - num_bytes);
+	pkt_ptr->num_bytes = num_bytes;
     }
 
     if (rreq->ch3.ca == MPIDI_CH3_CA_COMPLETE)
