@@ -1,3 +1,4 @@
+EXTRA_DIRS = ../../mpid/common/sock
 lib${MPILIBNAME}_a_SOURCES = crypt.c smpd_authenticate.c smpd_printf.c smpd_read_write.c smpd_user_data.c
 mpiexec_SOURCES = mpiexec.c 
 smpd_SOURCES = smpd.c smpd_cmd_args.c smpd_session.c smpd_start_mgr.c
