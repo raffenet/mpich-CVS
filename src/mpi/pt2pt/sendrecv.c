@@ -95,7 +95,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 	    
             /* Validate datatypes */
 	    MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
-	    MPID_Datatype_get_ptr(recvtype, sendtype_ptr);
+	    MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
             MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
             MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
             if (mpi_errno) {
@@ -114,6 +114,9 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
+
+    /* XXX: Performance for small messages might be better if MPID_Send() were
+       used here instead of MPID_Isend() */
     mpi_errno = MPID_Isend(sendbuf, sendcount, sendtype, dest, sendtag,
 			   comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &reqs[1]);
     if (mpi_errno)
