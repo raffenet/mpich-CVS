@@ -3,11 +3,27 @@
 EXPORTS
 ; Fortran values
 	MPIR_Keyval_set_fortran
-	MPIR_F_TRUE
-	MPIR_F_FALSE
+	MPIR_Keyval_set_fortran90
+	MPIR_Grequest_set_lang_f77
+;	MPIR_F_TRUE
+;	MPIR_F_FALSE
 	MPIR_F_MPI_BOTTOM
 	MPI_F_STATUS_IGNORE
 	MPI_F_STATUSES_IGNORE
+	MPI_F_ERRCODES_IGNORE
+	MPI_F_ARGVS_NULL
+; C++ values
+        MPIR_Keyval_set_cxx
+        MPIR_Errhandler_set_cxx
+	MPIR_Op_set_cxx
+; misc
+        MPID_Wtick
+;        MPID_Wtime
+        MPID_Wtime_todouble
+	MPIR_Dup_fn
+	MPID_Parse_option
+	PMPIO_Wait
+	MPIO_Wait=PMPIO_Wait
 ; MPI
 	PMPI_Abort
 	MPI_Abort=PMPI_Abort
@@ -148,12 +164,12 @@ EXPORTS
 	PMPI_Exscan
 	MPI_Exscan=PMPI_Exscan
 ; PMPI first versions
-;	PMPI_File_call_errhandler
-;	MPI_File_call_errhandler=PMPI_File_call_errhandler
+	PMPI_File_call_errhandler
+	MPI_File_call_errhandler=PMPI_File_call_errhandler
 	PMPI_File_close
 	MPI_File_close=PMPI_File_close
-;	PMPI_File_create_errhandler
-;	MPI_File_create_errhandler=PMPI_File_create_errhandler
+	PMPI_File_create_errhandler
+	MPI_File_create_errhandler=PMPI_File_create_errhandler
 	PMPI_File_delete
 	MPI_File_delete=PMPI_File_delete
 	PMPI_File_get_amode
@@ -552,10 +568,10 @@ EXPORTS
 	MPI_Start=PMPI_Start
 	PMPI_Startall
 	MPI_Startall=PMPI_Startall
-;	PMPI_Status_c2f
-;	MPI_Status_c2f=PMPI_Status_c2f
-;	PMPI_Status_f2c
-;	MPI_Status_f2c=PMPI_Status_f2c
+	PMPI_Status_c2f
+	MPI_Status_c2f=PMPI_Status_c2f
+	PMPI_Status_f2c
+	MPI_Status_f2c=PMPI_Status_f2c
 	PMPI_Status_set_cancelled
 	MPI_Status_set_cancelled=PMPI_Status_set_cancelled
 	PMPI_Status_set_elements
@@ -708,9 +724,3 @@ EXPORTS
 	MPI_Wtick=PMPI_Wtick
 	PMPI_Wtime
 	MPI_Wtime=PMPI_Wtime
-	MPIR_Dup_fn
-
-;	MPIR_Op_set_cxx
-;	MPIR_Keyval_set_cxx
-	MPID_Parse_option
-	
