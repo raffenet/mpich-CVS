@@ -157,7 +157,7 @@ int bsocket_init(void)
     /* Start the Winsock dll */
     if ((err = WSAStartup(MAKEWORD(2, 0), &wsaData)) != 0)
     {
-	printf("Winsock2 dll not initialized, error %d\n", err);
+	err_printf("Winsock2 dll not initialized, error %d\n", err);
 	return err;
     }
 #endif
@@ -223,7 +223,7 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 	if (WSAGetLastError() != WSAEWOULDBLOCK)
 	{
 	    for (k=0; k<veclen; k++)
-		printf("vec[%d] len: %d\nvec[%d] buf: 0x%x\n", k, vec[k].B_VECTOR_LEN, k, vec[k].B_VECTOR_BUF);
+		msg_printf("vec[%d] len: %d\nvec[%d] buf: 0x%x\n", k, vec[k].B_VECTOR_LEN, k, vec[k].B_VECTOR_BUF);
 	    n = 0; /* Set this to zero so it can be added to num_read */
 	}
     }
