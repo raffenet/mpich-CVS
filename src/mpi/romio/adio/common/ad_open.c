@@ -184,7 +184,7 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
        else MPI_Bcast(error_code, 1, MPI_INT, 0, fd->comm);
 
        if (*error_code != MPI_SUCCESS) {
-	       /* coppied from below */
+	       /* copied from below */
 	       ADIOI_Free(fd->fns);
 	       MPI_Comm_free(&(fd->comm));
 	       free(fd->filename);

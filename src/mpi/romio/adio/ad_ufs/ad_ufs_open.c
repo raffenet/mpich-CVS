@@ -41,8 +41,22 @@ void ADIOI_UFS_Open(ADIO_File fd, int *error_code)
 
     if (fd->fd_sys == -1) {
 #ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
+	if (errno == ENAMETOOLONG)
+	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_BAD_FILE, "**filenamelong", "**filenamelong %s %d", fd->filename, strlen(fd->filename) );
+	else if (errno == ENOENT || errno == ENOTDIR || errno == ELOOP)
+	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_BAD_FILE, "**filenamedir", "**filenamedir %s", fd->filename );
+	else if (errno == EACCES) {
+	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ACCESS, "**fileaccess", "**fileaccess %s", 
+					       fd->filename );
+	}
+	else if (errno == EROFS) {
+	    /* Read only file or file system and write access requested */
+	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_READ_ONLY, "**ioneedrd", 0 );
+	}
+	else {
+	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
 	    "**io %s", strerror(errno));
+	}
 #elif defined(PRINT_ERR_MSG)
 			*error_code = MPI_ERR_UNKNOWN;
 #else /* MPICH-1 */
