@@ -28,19 +28,27 @@
 #define FUNCNAME MPI_Type_match_size
 
 /*@
-   MPI_Type_match_size - type_match_size
+   MPI_Type_match_size - Find an MPI datatype matching a specified size
 
-   Arguments:
-+  int typeclass - typeclass
-.  int size - size
--  MPI_Datatype *datatype - datatype
+   Input Parameters:
++ typeclass - generic type specifier (integer) 
+- size - size, in bytes, of representation (integer) 
 
-   Notes:
+   Output Parameter:
+. type - datatype with correct type, size (handle) 
+
+Notes:
+'typeclass' is one of 'MPI_TYPECLASS_REAL', 'MPI_TYPECLASS_INTEGER' and 
+'MPI_TYPECLASS_COMPLEX', corresponding to the desired typeclass. 
+The function returns an MPI datatype matching a local variable of type 
+'( typeclass, size )'. 
+
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
 @*/
 int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 {
@@ -56,13 +64,10 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If datatype_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_MATCH_SIZE);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -72,6 +77,7 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* FIXME UNIMPLEMENTED */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_MATCH_SIZE);
     return MPI_SUCCESS;
 }

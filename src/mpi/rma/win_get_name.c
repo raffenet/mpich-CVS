@@ -30,17 +30,21 @@
 /*@
    MPI_Win_get_name - get window name
 
-   Arguments:
-+  MPI_Win win - window
-.  char *win_name - window name
--  int *resultlen - result length
+   Input Parameter:
+. win - window whose name is to be returned (handle) 
 
-   Notes:
+   Output Parameters:
++ win_name - the name previously stored on the window, or a empty string if 
+  no such name exists (string) 
+- resultlen - length of returned name (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
+.N MPI_ERR_OTHER
+.N MPI_ERR_ARG
 @*/
 int MPI_Win_get_name(MPI_Win win, char *win_name, int *resultlen)
 {

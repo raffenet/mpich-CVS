@@ -30,9 +30,11 @@
 /*@
    MPI_Type_dup - duplicate a datatype
 
-   Arguments:
-+  MPI_Datatype datatype - datatype
--  MPI_Datatype *newtype - new datatype
+   Input Parameter:
+. type - datatype (handle) 
+
+   Output Parameter:
+. newtype - copy of type (handle) 
 
    Notes:
    This is an MPI-2 function.
@@ -41,6 +43,7 @@
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
 @*/
 int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
 {

@@ -30,17 +30,18 @@
 /*@
    MPI_Type_get_true_extent - get true type extent
 
-   Arguments:
-+  MPI_Datatype datatype - datatype
-.  MPI_Aint *true_lb - true lb
--  MPI_Aint *true_extent - true extent
+   Input Parameter:
+. datatype - datatype to get information on (handle) 
 
-   Notes:
+   Output Parameters:
++ true_lb - true lower bound of datatype (integer) 
+- true_extent - true size of datatype (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
 @*/
 int MPI_Type_get_true_extent(MPI_Datatype datatype, MPI_Aint *true_lb, MPI_Aint *true_extent)
 {

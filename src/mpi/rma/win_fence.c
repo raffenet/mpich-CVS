@@ -28,18 +28,35 @@
 #define FUNCNAME MPI_Win_fence
 
 /*@
-   MPI_Win_fence - fence
+   MPI_Win_fence - Perform an MPI fence synchronization on a MPI window
 
-   Arguments:
-+  int assert - assert
--  MPI_Win win - window
+   Input Parameters:
++ assert - program assertion (integer) 
+- win - window object (handle) 
 
    Notes:
+   The 'assert' argument is used to indicate special conditions for the
+   fence that an implementation may use to optimize the 'MPI_Win_fence' 
+   operation.  The value zero is always correct.  Other assertion values
+   may be or''ed together.  Assertions that are valid for 'MPI_Win_fence' are\:
+
++ MPI_MODE_NOSTORE - the local window was not updated by local stores 
+  (or local get or receive calls) since last synchronization. 
+. MPI_MODE_NOPUT - the local window will not be updated by put or accumulate 
+  calls after the fence call, until the ensuing (fence) synchronization. 
+. MPI_MODE_NOPRECEDE - the fence does not complete any sequence of locally 
+  issued RMA calls. If this assertion is given by any process in the window 
+  group, then it must be given by all processes in the group. 
+- MPI_MODE_NOSUCCEED - the fence does not start any sequence of locally 
+  issued RMA calls. If the assertion is given by any process in the window 
+  group, then it must be given by all processes in the group. 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_OTHER
+.N MPI_ERR_WIN
 @*/
 int MPI_Win_fence(int assert, MPI_Win win)
 {

@@ -30,21 +30,26 @@
 /*@
    MPI_Type_create_subarray - create datatype subarray
 
-   Arguments:
-+  int ndims - ndims
-.  int array_of_sizes[] - sizes
-.  int array_of_subsizes[] - subsizes
-.  int array_of_starts[] - starts
-.  int order - order
-.  MPI_Datatype oldtype - old datatype
--  MPI_Datatype *newtype - new datatype
+   Input Parameters:
++ ndims - number of array dimensions (positive integer) 
+. array_of_sizes - number of elements of type oldtype in each dimension of the
+  full array (array of positive integers) 
+. array_of_subsizes - number of elements of type oldtype in each dimension of
+  the subarray (array of positive integers) 
+. array_of_starts - starting coordinates of the subarray in each dimension
+  (array of nonnegative integers) 
+. order - array storage order flag (state) 
+- oldtype - array element datatype (handle) 
 
-   Notes:
+   Output Parameter:
+. newtype new datatype (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
+.N MPI_ERR_ARG
 @*/
 int MPI_Type_create_subarray(int ndims, int array_of_sizes[], int array_of_subsizes[], int array_of_starts[], int order, MPI_Datatype oldtype, MPI_Datatype *newtype)
 {
@@ -60,13 +65,10 @@ int MPI_Type_create_subarray(int ndims, int array_of_sizes[], int array_of_subsi
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If datatype_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -75,6 +77,8 @@ int MPI_Type_create_subarray(int ndims, int array_of_sizes[], int array_of_subsi
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* FIXME UNIMPLEMENTED */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
     return MPI_SUCCESS;

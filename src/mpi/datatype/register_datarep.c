@@ -30,19 +30,18 @@
 /*@
    MPI_Register_datarep - register datarep
 
-   Arguments:
-+  char *datarep - datarep
-.  MPI_Datarep_conversion_function *read_conversion_fn - read conversion function
-.  MPI_Datarep_conversion_function *write_conversion_fn - write conversion function
-.  MPI_Datarep_extent_function *dtype_file_extent_fn - extent function
--  void *extra_state - extra state
-
-   Notes:
+   Input Parameters:
++ datarep - data representation identifier (string) 
+. read_conversion_fn - function invoked to convert from file representation to native representation (function) 
+. write_conversion_fn - function invoked to convert from native representation to file representation (function) 
+. dtype_file_extent_fn - function invoked to get the extent of a datatype as represented in the file (function) 
+- extra_state - extra state 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
 @*/
 int MPI_Register_datarep(char *datarep, MPI_Datarep_conversion_function *read_conversion_fn, MPI_Datarep_conversion_function *write_conversion_fn, MPI_Datarep_extent_function *dtype_file_extent_fn, void *extra_state)
 {
@@ -55,10 +54,7 @@ int MPI_Register_datarep(char *datarep, MPI_Datarep_conversion_function *read_co
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIAZED(mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REGISTER_DATAREP);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -68,6 +64,7 @@ int MPI_Register_datarep(char *datarep, MPI_Datarep_conversion_function *read_co
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* FIXME UNIMPLEMENTED */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REGISTER_DATAREP);
     return MPI_SUCCESS;
 }

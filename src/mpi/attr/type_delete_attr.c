@@ -31,16 +31,16 @@
 /*@
    MPI_Type_delete_attr - delete type attribute
 
-   Arguments:
+   Input Parameters:
 +  comm - MPI datatype to which attribute is attached (handle)
 -  type_keyval - The key value of the deleted attribute (integer) 
-
-   Notes:
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_OTHER
+.N MPI_ERR_KEYVAL
 @*/
 int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
 {

@@ -28,18 +28,24 @@
 #define FUNCNAME MPI_Win_test
 
 /*@
-   MPI_Win_test - window test
+   MPI_Win_test - Test whether an RMA exposure epoch has completed
 
-   Arguments:
-+  MPI_Win win - window
--  int *flag - flag
+   Input Parameter:
+. win - window object (handle) 
+
+   Output Parameter:
+. flag - success flag (logical) 
 
    Notes:
+   This is the nonblocking version of 'MPI_Win_wait'.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
+.N MPI_ERR_OTHER
+.N MPI_ERR_ARG
 @*/
 int MPI_Win_test(MPI_Win win, int *flag)
 {
@@ -55,13 +61,10 @@ int MPI_Win_test(MPI_Win win, int *flag)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
-	    /* If win_ptr is not value, it will be reset to null */
+	    /* If win_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_TEST);
                 return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
@@ -71,6 +74,7 @@ int MPI_Win_test(MPI_Win win, int *flag)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* FIXME: UNIMPLEMENTED */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_TEST);
     return MPI_SUCCESS;
 }

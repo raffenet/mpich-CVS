@@ -30,18 +30,19 @@
 /*@
    MPI_Type_create_resized - create resized datatype
 
-   Arguments:
-+  MPI_Datatype oldtype - old datatype
-.  MPI_Aint lb - lb
-.  MPI_Aint extent - extent
--  MPI_Datatype *newtype - new datatype
+   Input Parameters:
++ oldtype - input datatype (handle) 
+. lb - new lower bound of datatype (integer) 
+- extent - new extent of datatype (integer) 
 
-   Notes:
+   Output Parameter:
+. newtype - output datatype (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
 @*/
 int MPI_Type_create_resized(MPI_Datatype oldtype, MPI_Aint lb, MPI_Aint extent, MPI_Datatype *newtype)
 {
@@ -57,13 +58,10 @@ int MPI_Type_create_resized(MPI_Datatype oldtype, MPI_Aint lb, MPI_Aint extent, 
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If datatype_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_RESIZED);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -72,6 +70,8 @@ int MPI_Type_create_resized(MPI_Datatype oldtype, MPI_Aint lb, MPI_Aint extent, 
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* FIXME UNIMPLEMENTED */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_RESIZED);
     return MPI_SUCCESS;

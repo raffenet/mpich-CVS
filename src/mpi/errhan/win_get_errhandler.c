@@ -28,18 +28,20 @@
 #define FUNCNAME MPI_Win_get_errhandler
 
 /*@
-   MPI_Win_get_errhandler - get window error handler
+   MPI_Win_get_errhandler - Get the window error handler
 
-   Arguments:
-+  MPI_Win win - window
--  MPI_Errhandler *errhandler - error handler
+   Input Parameter:
+. win - window (handle) 
 
-   Notes:
+   Output Parameter:
+. errhandler - error handler currently associated with window (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
+.N MPI_ERR_OTHER
 @*/
 int MPI_Win_get_errhandler(MPI_Win win, MPI_Errhandler *errhandler)
 {
@@ -59,7 +61,7 @@ int MPI_Win_get_errhandler(MPI_Win win, MPI_Errhandler *errhandler)
 	    MPIR_ERRTEST_ARGNULL(errhandler,"errhandler",mpi_errno);
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
-	    /* If win_ptr is not value, it will be reset to null */
+	    /* If win_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_ERRHANDLER);
                 return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );

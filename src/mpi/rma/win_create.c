@@ -27,22 +27,25 @@
 #define FUNCNAME MPI_Win_create
 
 /*@
-   MPI_Win_create - create a window
+   MPI_Win_create - Create an MPI Window object for one-sided communication
 
-   Arguments:
-+  void *base - base
-.  MPI_Aint size - size
-.  int disp_unit - disp unit
-.  MPI_Info info - info
-.  MPI_Comm comm - communicator
--  MPI_Win *win - window
+   Input Parameters:
++ base - initial address of window (choice) 
+. size - size of window in bytes (nonnegative integer) 
+. disp_unit - local unit size for displacements, in bytes (positive integer) 
+. info - info argument (handle) 
+- comm - communicator (handle) 
 
-   Notes:
+  Output Parameter:
+. win - window object returned by the call (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_INFO
+.N MPI_ERR_OTHER
 @*/
 int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info, 
 		   MPI_Comm comm, MPI_Win *win)

@@ -28,20 +28,30 @@
 #define FUNCNAME MPI_Win_get_attr
 
 /*@
-   MPI_Win_get_attr - get window attribute
+   MPI_Win_get_attr - Get attribute cached on an MPI window object
 
-   Arguments:
-+  MPI_Win win - window
-.  int win_keyval - keyval
-.  void *attribute_val - value
--  int *flag - flag
+   Input Parameters:
++ win - window to which the attribute is attached (handle) 
+- win_keyval - key value (integer) 
+
+   Output Parameters:
++ attribute_val - attribute value, unless flag = false 
+- flag - false if no attribute is associated with the key (logical) 
 
    Notes:
+   The following attributes are predefined for all MPI Window objects\:
+
++ MPI_WIN_BASE - window base address. 
+. MPI_WIN_SIZE - window size, in bytes. 
+- MPI_WIN_DISP_UNIT - displacement unit associated with the window. 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
+.N MPI_ERR_KEYVAL
+.N MPI_ERR_OTHER
 @*/
 int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, int *flag)
 {

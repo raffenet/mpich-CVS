@@ -28,17 +28,19 @@
 #define FUNCNAME MPI_Win_free
 
 /*@
-   MPI_Win_free - free window
+   MPI_Win_free - Free an MPI RMA window
 
-   Arguments:
-.  MPI_Win *win - window
+   Input Parameter:
+. win window object (handle) 
 
    Notes:
+   If successfully freed, 'win' is set to 'MPI_WIN_NULL'.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
 @*/
 int MPI_Win_free(MPI_Win *win)
 {
@@ -71,7 +73,7 @@ int MPI_Win_free(MPI_Win *win)
         {
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
-	    /* If win_ptr is not value, it will be reset to null */
+	    /* If win_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_FREE);
                 return MPIR_Err_return_win( NULL, FCNAME, mpi_errno );

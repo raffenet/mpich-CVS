@@ -31,15 +31,16 @@
 /*@
    MPI_Win_free_keyval - free window keyval
 
-   Arguments:
-.  int *win_keyval - value
-
-   Notes:
+   Input Parameter:
+. win_keyval - key value (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
+.N MPI_ERR_OTHER
+.N MPI_ERR_KEYVAL
 @*/
 int MPI_Win_free_keyval(int *win_keyval)
 {

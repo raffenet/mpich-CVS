@@ -28,19 +28,33 @@
 #define FUNCNAME MPI_Win_start
 
 /*@
-   MPI_Win_start - start
+   MPI_Win_start - Start an RMA access epoch for MPI
 
-   Arguments:
-+  MPI_Group group - group
-.  int assert - assert
--  MPI_Win win - window
+  Input Parameters:
++ group - group of target processes (handle) 
+. assert - program assertion (integer) 
+- win - window object (handle) 
 
    Notes:
+   The 'assert' argument is used to indicate special conditions for the
+   fence that an implementation may use to optimize the 'MPI_Win_start' 
+   operation.  The value zero is always correct.  Other assertion values
+   may be or''ed together.  Assertions tha are valid for 'MPI_Win_start' are\:
+
+. MPI_MODE_NOCHECK - the matching calls to 'MPI_WIN_POST' have already 
+  completed on all target processes when the call to 'MPI_WIN_START' is made. 
+  The nocheck option can be specified in a start call if and only if it is 
+  specified in each matching post call. This is similar to the optimization 
+  of ready-send that may save a handshake when the handshake is implicit in 
+  the code. (However, ready-send is matched by a regular receive, whereas 
+  both start and post must specify the nocheck option.) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
+.N MPI_ERR_OTHER
 @*/
 int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
 {

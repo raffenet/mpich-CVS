@@ -30,16 +30,17 @@
 /*@
    MPI_Win_set_name - set the window name
 
-   Arguments:
-+  MPI_Win win - window
--  char *win_name - window name
-
-   Notes:
+   Input Parameters:
++ win - window whose identifier is to be set (handle) 
+- win_name - the character string which is remembered as the name (string) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
+.N MPI_ERR_OTHER
+.N MPI_ERR_ARG
 @*/
 int MPI_Win_set_name(MPI_Win win, char *win_name)
 {

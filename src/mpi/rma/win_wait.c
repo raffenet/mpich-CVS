@@ -28,17 +28,17 @@
 #define FUNCNAME MPI_Win_wait
 
 /*@
-   MPI_Win_wait - wait
+   MPI_Win_wait - Completes an RMA exposure epoch
 
-   Arguments:
-.  MPI_Win win - window
-
-   Notes:
+   Input Parameter:
+. win - window object (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
+.N MPI_ERR_OTHER
 @*/
 int MPI_Win_wait(MPI_Win win)
 {

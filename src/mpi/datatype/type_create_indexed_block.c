@@ -30,19 +30,20 @@
 /*@
    MPI_Type_create_indexed_block - create indexed block datatype
 
-   Arguments:
-+  int count - count
-.  int blocklength - block length
-.  int *array_of_displacements - displacements
-.  MPI_Datatype oldtype - old datatype
--  MPI_Datatype *newtype - new datatype
+   Input Parameters:
++ count - length of array of displacements (integer) 
+. blocklength - size of block (integer) 
+. array_of_displacements - array of displacements (array of integer) 
+- oldtype - old datatype (handle) 
 
-   Notes:
-
+    Output Parameter:
+. newtype - new datatype (handle) 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
+.N MPI_ERR_ARG
 @*/
 int MPI_Type_create_indexed_block(int count, int blocklength, int *array_of_displacements, MPI_Datatype oldtype, MPI_Datatype *newtype)
 {
@@ -58,13 +59,10 @@ int MPI_Type_create_indexed_block(int count, int blocklength, int *array_of_disp
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If datatype_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_INDEXED_BLOCK);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -74,6 +72,7 @@ int MPI_Type_create_indexed_block(int count, int blocklength, int *array_of_disp
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* FIXME UNIMPLEMENTED */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_INDEXED_BLOCK);
     return MPI_SUCCESS;
 }

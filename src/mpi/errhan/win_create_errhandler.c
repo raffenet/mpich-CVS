@@ -28,18 +28,19 @@
 #define FUNCNAME MPI_Win_create_errhandler
 
 /*@
-   MPI_Win_create_errhandler - create a window error handler
+   MPI_Win_create_errhandler - Create a window error handler
 
-   Arguments:
-+  MPI_Win_errhandler_fn *function - function
--  MPI_Errhandler *errhandler - error handler
+   Input Parameter:
+. function - user defined error handling procedure (function) 
 
-   Notes:
+   Output Parameter:
+. errhandler - MPI error handler (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_OTHER
 @*/
 int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *function, MPI_Errhandler *errhandler)
 {

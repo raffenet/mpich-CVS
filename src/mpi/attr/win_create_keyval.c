@@ -31,18 +31,20 @@
 /*@
    MPI_Win_create_keyval - create window keyval
 
-   Arguments:
-+  MPI_Win_copy_attr_function *win_copy_attr_fn - copy function
-.  MPI_Win_delete_attr_function *win_delete_attr_fn - delete function
-.  int *win_keyval - keyval
--  void *extra_state - extra state
+   Input Parameters:
++ win_copy_attr_fn - copy callback function for win_keyval (function) 
+. win_delete_attr_fn - delete callback function for win_keyval (function) 
+- extra_state - extra state for callback functions 
 
-   Notes:
+   Output Parameter:
+. win_keyval - key value for future access (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
+.N MPI_ERR_OTHER
 @*/
 int MPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn, MPI_Win_delete_attr_function *win_delete_attr_fn, int *win_keyval, void *extra_state)
 {

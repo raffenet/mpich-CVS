@@ -28,18 +28,26 @@
 #define FUNCNAME MPI_Win_get_group
 
 /*@
-   MPI_Win_get_group - get group
+   MPI_Win_get_group - Get the MPI Group of the window object
 
-   Arguments:
-+  MPI_Win win - window
--  MPI_Group *group - group
+   Input Parameter:
+. win - window object (handle) 
+
+   Output Parameter:
+. group - group of processes which share access to the window (handle) 
 
    Notes:
+   The group is a duplicate of the group from the communicator used to 
+   create the MPI window, and should be freed with 'MPI_Group_free' when
+   it is no longer needed.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
+.N MPI_ERR_ARG
+.N MPI_ERR_OTHER
 @*/
 int MPI_Win_get_group(MPI_Win win, MPI_Group *group)
 {

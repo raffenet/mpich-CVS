@@ -30,19 +30,22 @@
 /*@
    MPI_Type_create_hindexed - create hindexed datatype
 
-   Arguments:
-+  int count - count
-.  int array_of_blocklengths[] - block lengths
-.  MPI_Aint array_of_displacements[] - displacements
-.  MPI_Datatype oldtype - old datatype
--  MPI_Datatype *newtype - new datatype
+   Input Parameters:
++ count - number of blocks --- also number of entries in 
+  array_of_displacements and array_of_blocklengths (integer) 
+. array_of_blocklengths - number of elements in each block (array of nonnegative integers) 
+. array_of_displacements - byte displacement of each block (array of integer) 
+- oldtype - old datatype (handle) 
 
-   Notes:
+   Output Parameter:
+. newtype - new datatype (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
+.N MPI_ERR_ARG
 @*/
 int MPI_Type_create_hindexed(int count,
 			     int array_of_blocklengths[],

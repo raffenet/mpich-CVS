@@ -30,17 +30,22 @@
 /*@
    MPI_Status_set_elements - status set elements
 
+   Input Parameters:
++ status - status to associate count with (Status) 
+. datatype - datatype associated with count (handle) 
+- count - number of elements to associate with status (integer) 
+
    Arguments:
 +  MPI_Status *status - status
 .  MPI_Datatype datatype - datatype
 -  int count - count
 
-   Notes:
-
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
+.N MPI_ERR_TYPE
 @*/
 int MPI_Status_set_elements(MPI_Status *status, MPI_Datatype datatype, 
 			    int count)

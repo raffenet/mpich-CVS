@@ -28,11 +28,11 @@
 #define FUNCNAME MPI_Win_unlock
 
 /*@
-   MPI_Win_unlock - unlock window
+   MPI_Win_unlock - Completes an RMA access epoch at the target process
 
-   Arguments:
-+  int rank - rank
--  MPI_Win win - window
+   Input Parameters:
++ rank - rank of window (nonnegative integer) 
+- win - window object (handle) 
 
    Notes:
 
@@ -40,6 +40,8 @@
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
+.N MPI_ERR_OTHER
 @*/
 int MPI_Win_unlock(int rank, MPI_Win win)
 {
@@ -55,13 +57,10 @@ int MPI_Win_unlock(int rank, MPI_Win win)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
-	    /* If win_ptr is not value, it will be reset to null */
+	    /* If win_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_UNLOCK);
                 return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );

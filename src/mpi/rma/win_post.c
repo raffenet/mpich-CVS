@@ -28,14 +28,29 @@
 #define FUNCNAME MPI_Win_post
 
 /*@
-   MPI_Win_post - post
+   MPI_Win_post - Start an RMA exposure epoch
 
-   Arguments:
-+  MPI_Group group - group
-.  int assert - assert
--  MPI_Win win - window
+   Input parameters:
++ group - group of origin processes (handle) 
+. assert - program assertion (integer) 
+- win - window object (handle) 
 
    Notes:
+   The 'assert' argument is used to indicate special conditions for the
+   fence that an implementation may use to optimize the 'MPI_Win_post' 
+   operation.  The value zero is always correct.  Other assertion values
+   may be or''ed together.  Assertions that are valid for 'MPI_Win_post' are\:
+
++ MPI_MODE_NOCHECK - the matching calls to 'MPI_WIN_START' have not yet 
+  occurred on any origin processes when the call to 'MPI_WIN_POST' is made. 
+  The nocheck option can be specified by a post call if and only if it is 
+  specified by each matching start call. 
+. MPI_MODE_NOSTORE - the local window was not updated by local stores (or 
+  local get or receive calls) since last synchronization. This may avoid 
+  the need for cache synchronization at the post call. 
+- MPI_MODE_NOPUT - the local window will not be updated by put or accumulate 
+  calls after the post call, until the ensuing (wait) synchronization. This 
+  may avoid the need for cache synchronization at the wait call. 
 
 .N Fortran
 

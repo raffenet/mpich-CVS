@@ -30,19 +30,21 @@
 /*@
    MPI_Type_create_hvector - create hvector datatype
 
-   Arguments:
-+  int count - count
-.  int blocklength - block length
-.  MPI_Aint stride - stride (in bytes)
-.  MPI_Datatype oldtype - old datatype
--  MPI_Datatype *newtype - new datatype
+   Input Parameters:
++ count - number of blocks (nonnegative integer) 
+. blocklength - number of elements in each block (nonnegative integer) 
+. stride - number of bytes between start of each block (integer) 
+- oldtype - old datatype (handle) 
 
-   Notes:
+   Output Parameter:
+. newtype - new datatype (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
+.N MPI_ERR_ARG
 @*/
 int MPI_Type_create_hvector(int count,
 			    int blocklength,

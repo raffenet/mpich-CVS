@@ -30,19 +30,23 @@
 /*@
    MPI_Type_create_struct - create struct datatype
 
-   Arguments:
-+  int count - count
-.  int array_of_blocklengths[] - block lengths
-.  MPI_Aint array_of_displacements[] - displacements
-.  MPI_Datatype array_of_types[] - datatypes
--  MPI_Datatype *newtype - new datatype
+   Input Parameters:
++ count - number of blocks (integer) --- also number of entries in arrays 
+  array_of_types, array_of_displacements and array_of_blocklengths 
+. array_of_blocklength - number of elements in each block (array of integer) 
+. array_of_displacements - byte displacement of each block (array of integer) 
+- array_of_types - type of elements in each block (array of handles to 
+  datatype objects) 
 
-   Notes:
+   Output Parameter:
+. newtype - new datatype (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
+.N MPI_ERR_TYPE
 @*/
 int MPI_Type_create_struct(int count,
 			   int array_of_blocklengths[],

@@ -31,16 +31,17 @@
 /*@
    MPI_Type_set_name - set datatype name
 
-   Arguments:
-+  MPI_Datatype type - datatype
--  char *type_name - type name
-
-   Notes:
+   Input Parameters:
++ type - datatype whose identifier is to be set (handle) 
+- type_name - the character string which is remembered as the name (string) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
+.N MPI_ERR_TYPE
+.N MPI_ERR_OTHER
 @*/
 int MPI_Type_set_name(MPI_Datatype type, char *type_name)
 {
@@ -60,7 +61,7 @@ int MPI_Type_set_name(MPI_Datatype type, char *type_name)
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If datatype_ptr is not value, it will be reset to null */
+	    /* If datatype_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(type_name,"type_name", mpi_errno);
 	    if (!mpi_errno) {
 		int slen = (int)strlen( type_name );

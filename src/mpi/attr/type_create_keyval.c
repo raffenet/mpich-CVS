@@ -29,20 +29,20 @@
 #define FUNCNAME MPI_Type_create_keyval
 
 /*@
-   MPI_Type_create_keyval - create keyval
+   MPI_Type_create_keyval - Create a attribute keyval for MPI datatypes
 
-   Arguments:
-+  MPI_Type_copy_attr_function *type_copy_attr_fn - copy function
-.  MPI_Type_delete_attr_function *type_delete_attr_fn - delete function
-.  int *type_keyval - keyval
--  void *extra_state - extra state
+   Input Parameters:
++ type_copy_attr_fn - copy callback function for type_keyval (function) 
+. type_delete_attr_fn - delete callback function for type_keyval (function) 
+- extra_state - extra state for callback functions 
 
-   Notes:
-
+   Output Parameter:
+. type_keyval - key value for future access (integer) 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_OTHER
 @*/
 int MPI_Type_create_keyval(MPI_Type_copy_attr_function *type_copy_attr_fn, MPI_Type_delete_attr_function *type_delete_attr_fn, int *type_keyval, void *extra_state)
 {

@@ -28,15 +28,35 @@
 #define FUNCNAME MPI_Win_lock
 
 /*@
-   MPI_Win_lock - lock window
+   MPI_Win_lock - Begin an RMA access epoch at the target process.
 
-   Arguments:
-+  int lock_type - lock type
-.  int rank - rank
-.  int assert - assert
--  MPI_Win win - window
+   Input Parameters:
++ lock_type - either 'MPI_LOCK_EXCLUSIVE' or 'MPI_LOCK_SHARED' (state) 
+. rank - rank of locked window (nonnegative integer) 
+. assert - program assertion (integer) 
+- win - window object (handle) 
 
    Notes:
+
+   The name of this routine is misleading.  In particular, this
+   routine need not block, except when the target process is the calling 
+   process.  
+
+   Implementations may restrict the use of RMA communication that is 
+   synchronized
+   by lock calls to windows in memory allocated by 'MPI_Alloc_mem'. Locks can 
+   be used portably only in such memory. 
+
+   The 'assert' argument is used to indicate special conditions for the
+   fence that an implementation may use to optimize the 'MPI_Win_fence' 
+   operation.  The value zero is always correct.  Other assertion values
+   may be or''ed together.  Assertions that are valid for 'MPI_Win_fence' are\:
+
+   . MPI_MODE_NOCHECK - no other process holds, or will attempt to acquire a 
+   conflicting lock, while the caller holds the window lock. This is useful 
+   when mutual exclusion is achieved by other means, but the coherence 
+   operations that may be attached to the lock and unlock calls are still 
+   required. 
 
 .N Fortran
 

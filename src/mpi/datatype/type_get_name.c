@@ -116,17 +116,20 @@ void MPIR_Datatype_init_names( void )
 /*@
    MPI_Type_get_name - get type name
 
-   Arguments:
-+  MPI_Datatype datatype - datatype
-.  char *type_name - datatype name
--  int *resultlen - length of the result
+   Input Parameter:
+. type - datatype whose name is to be returned (handle) 
 
-   Notes:
+   Output Parameters:
++ type_name - the name previously stored on the datatype, or a empty string 
+  if no such name exists (string) 
+- resultlen - length of returned name (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
+.N MPI_ERR_ARG
 @*/
 int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
 {
@@ -146,7 +149,7 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If datatype_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(type_name,"type_name", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(resultlen,"resultlen", mpi_errno);
             if (mpi_errno) {

@@ -28,17 +28,17 @@
 #define FUNCNAME MPI_Win_complete
 
 /*@
-   MPI_Win_complete - complete
+   MPI_Win_complete - Completes an RMA access epoch
 
-   Arguments:
-.  MPI_Win win - window
-
-   Notes:
+   Input parameter:
+. win - window object (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
+.N MPI_ERR_OTHER
 @*/
 int MPI_Win_complete(MPI_Win win)
 {

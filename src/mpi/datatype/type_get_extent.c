@@ -30,17 +30,18 @@
 /*@
    MPI_Type_get_extent - get type extent
 
-   Arguments:
-+  MPI_Datatype datatype - datatype
-.  MPI_Aint *lb - lb
--  MPI_Aint *extent - extent
+   Input Parameter:
+. datatype - datatype to get information on (handle) 
 
-   Notes:
-
+   Output Parameters:
++ lb - lower bound of datatype (integer) 
+- extent - extent of datatype (integer) 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
+.N MPI_ERR_TYPE
 @*/
 int MPI_Type_get_extent(MPI_Datatype datatype, MPI_Aint *lb, MPI_Aint *extent)
 {

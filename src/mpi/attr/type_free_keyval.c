@@ -29,17 +29,17 @@
 #define FUNCNAME MPI_Type_free_keyval
 
 /*@
-   MPI_Type_free_keyval - free type keyval
+   MPI_Type_free_keyval - Free a datatype keyval
 
-   Arguments:
-.  int *type_keyval - keyval
-
-   Notes:
+   Input Parameter:
+. type_keyval - key value (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_OTHER
+.N MPI_ERR_KEYVAL
 @*/
 int MPI_Type_free_keyval(int *type_keyval)
 {

@@ -28,18 +28,16 @@
 #define FUNCNAME MPI_Win_set_errhandler
 
 /*@
-   MPI_Win_set_errhandler - set window error handler
+   MPI_Win_set_errhandler - Set window error handler
 
-   Arguments:
-+  MPI_Win win - window
--  MPI_Errhandler errhandler - error handler
-
-   Notes:
-
+   Input Parameters:
++ win - window (handle) 
+- errhandler - new error handler for window (handle) 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_WIN
 @*/
 int MPI_Win_set_errhandler(MPI_Win win, MPI_Errhandler errhandler)
 {

@@ -31,18 +31,19 @@
 /*@
    MPI_Type_get_attr - get type attribute
 
-   Arguments:
-+  MPI_Datatype type - type
-.  int type_keyval - keyval
-.  void *attribute_val - value
--  int *flag - flag
+   Input Parameters:
++ type - datatype to which the attribute is attached (handle) 
+- type_keyval - key value (integer) 
 
-   Notes:
-
+   Output Parameters:
++ attribute_val - attribute value, unless flag = false 
+- flag - false if no attribute is associated with the key (logical) 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_KEYVAL
+.N MPI_ERR_ARG
 @*/
 int MPI_Type_get_attr(MPI_Datatype type, int type_keyval, void *attribute_val, int *flag)
 {
