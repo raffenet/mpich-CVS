@@ -345,15 +345,10 @@ Global
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3mmRelease.ActiveCfg = ch3ssmPDebug|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3mmRelease.Build.0 = ch3ssmPDebug|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3rdmaDebug.ActiveCfg = ch3ssmPDebug|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3rdmaDebug.Build.0 = ch3ssmPDebug|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3rdmaRelease.ActiveCfg = ch3ssmPDebug|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3rdmaRelease.Build.0 = ch3ssmPDebug|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3sockDebug.ActiveCfg = ch3ssmPDebug|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3sockDebug.Build.0 = ch3ssmPDebug|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3sockPRelease.ActiveCfg = ch3ssmPDebug|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3sockPRelease.Build.0 = ch3ssmPDebug|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3sockRelease.ActiveCfg = ch3ssmPDebug|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3sockRelease.Build.0 = ch3ssmPDebug|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3ssmDebug.ActiveCfg = ch3ssmDebug|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3ssmDebug.Build.0 = ch3ssmDebug|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.ch3ssmPDebug.ActiveCfg = ch3ssmPDebug|Win32
@@ -363,15 +358,11 @@ Global
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.Debug.ActiveCfg = ch3ssmPDebug|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.Debug.Build.0 = ch3ssmPDebug|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.mmDebug.ActiveCfg = ch3ssmPDebug|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF80}.mmDebug.Build.0 = ch3ssmPDebug|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.mmRelease.ActiveCfg = ch3ssmPDebug|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF80}.mmRelease.Build.0 = ch3ssmPDebug|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.Release.ActiveCfg = ch3ssmRelease|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.Release.Build.0 = ch3ssmRelease|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.shmDebug.ActiveCfg = ch3ssmPDebug|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF80}.shmDebug.Build.0 = ch3ssmPDebug|Win32
 		{2B25AF63-3E57-455C-85BB-591426ACEF80}.shmRelease.ActiveCfg = ch3ssmPDebug|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF80}.shmRelease.Build.0 = ch3ssmPDebug|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
