@@ -37,7 +37,7 @@ int MPIDI_CH3_Comm_spawn(const char *command, const char *argv[],
     /* gasnet can't spawn --Darius */
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
 				     __LINE__, MPI_ERR_OTHER,
-				     "Comm_spawn unsupported", 0);
+				     "**notimpl", 0);
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     return mpi_errno;
 

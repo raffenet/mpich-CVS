@@ -218,7 +218,7 @@ int MPIDI_CH3_Init(int * argc, char *** argv, int * has_args, int * has_env,
 	/* gasnet can't spawn --Darius */
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
 					 __LINE__, MPI_ERR_OTHER,
-					 "gasnet can't spawn", 0);
+					 "**notimpl", 0);
 	return mpi_errno;
     }
 
