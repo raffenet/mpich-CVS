@@ -434,8 +434,12 @@ sub ReadMfile {
 	    # Add to targets
 	    $libloc = &GetLibLoc( $libname );
 	    $alltargets[$#alltargets+1] = "${libloc}lib$libname.a";
+	    # Shared libraries should not be built unconditionally.  
+	    # Instead of adding them to the alltargets, add them
+	    # to a allshlibtargets
 	    if ($do_sharedlibs) {
-		$alltargets[$#alltargets+1] = "${libloc}lib$libname.la";
+	    	$allshlibtargets[$#allshlibtargets+1] = 
+		    "${libloc}lib$libname.la";
 	    }
 	    # Keep track of source types
 	    &FindSrcTypes( $libsource );
@@ -456,7 +460,7 @@ sub ReadMfile {
             $shared_libraries{ $libname } = $libsource;
 	    # Add to targets
 	    $libloc = &GetLibLoc( $libname );
-	    $alltargets[$#alltargets+1] = "${libloc}lib$libname.so";
+	    $allshlibtargets[$#allshlibtargets+1] = "${libloc}lib$libname.so";
 	    # Keep track of source types
 	    &FindSrcTypes( $libsource );
 	    # Keep track of source files
@@ -1067,6 +1071,7 @@ sub ClearVars {
     %sources = ();
     # Targets
     @alltargets = ();   # implicit targets 
+    @allshlibtargets = () # implicit shared library targets
     %usertargets = ();  # explicit, user-defined targets
     %extra_programs = ();
     %libraries = ();
