@@ -353,7 +353,7 @@ if test "$ac_cv_func_semctl" = "yes" ; then
 #include <sys/sem.h>],[union semun arg;arg.val=0;],
     pac_cv_type_union_semun="yes",pac_cv_type_union_semun="no")])
     if test "$pac_cv_type_union_semun" = "yes" ; then
-        AC_DEFINE(HAVE_UNION_SEMUN)
+        AC_DEFINE(HAVE_UNION_SEMUN,,[Has union semun])
         #
         # See if we can use an int in semctl or if we need the union
         AC_CACHE_CHECK([whether semctl needs union semun],
@@ -366,7 +366,7 @@ int arg = 0; semctl( 1, 1, SETVAL, arg );],
         pac_cv_func_semctl_needs_semun="no")
         ])
         if test "$pac_cv_func_semctl_needs_semun" = "yes" ; then
-            AC_DEFINE(SEMCTL_NEEDS_SEMUN)
+            AC_DEFINE(SEMCTL_NEEDS_SEMUN,[Needs an explicit definition of semun])
         fi
     fi
 fi
@@ -388,7 +388,7 @@ pac_cv_c_volatile,[
 AC_TRY_COMPILE(,[volatile int a;],pac_cv_c_volatile="yes",
 pac_cv_c_volatile="no")])
 if test "$pac_cv_c_volatile" = "no" ; then
-    AC_DEFINE(volatile,)
+    AC_DEFINE(volatile,,[if C does not support volatile])
 fi
 ])dnl
 dnl
@@ -408,7 +408,7 @@ pac_cv_c_inline,[
 AC_TRY_COMPILE([inline int a( int b ){return b+1;}],[int a;],
 pac_cv_c_inline="yes",pac_cv_c_inline="no")])
 if test "$pac_cv_c_inline" = "no" ; then
-    AC_DEFINE(inline,)
+    AC_DEFINE(inline,,[if C does not support inline])
 fi
 ])dnl
 dnl
@@ -489,7 +489,7 @@ if test "$pac_cv_c_restrict" = "no" ; then
 fi
 ])
 if test "$pac_cv_c_restrict" = "no" ; then
-  AC_DEFINE(restrict, )
+  AC_DEFINE(restrict,,[if C does not support restrict])
 elif test "$pac_cv_c_restrict" != "restrict" ; then
   AC_DEFINE_UNQUOTED(restrict,$pac_cv_c_restrict)
 fi
@@ -738,11 +738,11 @@ if test "$pac_cv_prog_c_weak_symbols" = "no" ; then
     ifelse([$2],,:,[$2])
 else
     case "$pac_cv_prog_c_weak_symbols" in
-	"pragma weak") AC_DEFINE(HAVE_PRAGMA_WEAK) 
+	"pragma weak") AC_DEFINE(HAVE_PRAGMA_WEAK,,[Supports weak pragma]) 
 	;;
-	"pragma _HP")  AC_DEFINE(HAVE_PRAGMA_HP_SEC_DEF)
+	"pragma _HP")  AC_DEFINE(HAVE_PRAGMA_HP_SEC_DEF,,[HP style weak pragma])
 	;;
-	"pragma _CRI") AC_DEFINE(HAVE_PRAGMA_CRI_DUP)
+	"pragma _CRI") AC_DEFINE(HAVE_PRAGMA_CRI_DUP,,[Cray style weak pragma])
 	;;
     esac
     ifelse([$1],,:,[$1])
@@ -798,9 +798,9 @@ double crypt(double a){return a;}],[return 0];,
 pac_cv_func_crypt_xopen="no",pac_cv_func_crypt_xopen="yes")])
 fi
 if test "$pac_cv_func_crypt_xopen" = "yes" ; then
-    AC_DEFINE(_XOPEN_SOURCE)
+    AC_DEFINE(_XOPEN_SOURCE,,[if xopen needed for crypt])
 elif test "$pac_cv_func_crypt_defined" = "no" ; then
-    AC_DEFINE(NEED_CRYPT_PROTOTYPE)
+    AC_DEFINE(NEED_CRYPT_PROTOTYPE,,[if a prototype for crypt is needed])
 fi
 ])dnl
 dnl/*D
