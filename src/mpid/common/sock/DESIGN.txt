@@ -43,3 +43,10 @@ Issues
   errors.  the top-level routine (or maybe ADI3 routine) would be responsible
   for returning a proper error class.
 
+* MPIR_Err_init/finalize needed so the error handling code can be initialized 
+  without calling MPI_Init.  Error handling code cannot depend on any MPI 
+  structures like comm_world.
+
+* We could change the error code stuff to use constants instead of strings.
+  For now we can add a lookup function like MPIR_Err_check_code(mpi_errno, "**err class string")
+  that returns true if the error code matches the error class string.
