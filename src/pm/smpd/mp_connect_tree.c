@@ -8,6 +8,7 @@
 #include "mpiexec.h"
 #include "smpd.h"
 
+#if 0
 int mp_connect_next(int *parent_ptr, int *id_ptr)
 {
     /* start assuming mpiexec is node 0 and we have connected to the first host, node 1 */
@@ -32,6 +33,7 @@ int mp_connect_next(int *parent_ptr, int *id_ptr)
 
     return SMPD_SUCCESS;
 }
+#endif
 
 int mp_connect_tree(mp_host_node_t *node)
 {
@@ -90,6 +92,7 @@ int mp_connect_tree(mp_host_node_t *node)
     while (iter)
     {
 	/* get the next parent and child ids */
+	/*
 	result = mp_connect_next(&parent, &id);
 	if (result != SMPD_SUCCESS)
 	{
@@ -97,6 +100,9 @@ int mp_connect_tree(mp_host_node_t *node)
 	    mp_exit_fn("mp_connect_tree");
 	    return result;
 	}
+	*/
+	parent = iter->parent;
+	id = iter->id;
 
 	/* create a connect command to be sent to the parent */
 	result = smpd_create_command("connect", 0, parent, SMPD_TRUE, &cmd_ptr);

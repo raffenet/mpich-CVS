@@ -19,6 +19,7 @@
 
 typedef struct mp_host_node_t
 {
+    int id, parent;
     char host[MP_MAX_HOST_LENGTH];
     /*char ip_str[MP_MAX_HOST_LENGTH];*/
     int nproc;

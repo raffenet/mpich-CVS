@@ -29,6 +29,10 @@ int main(int argc, char* argv[])
     int port = SMPD_LISTENER_PORT;
     smpd_command_t *cmd_ptr;
     sock_event_t event;
+    /*
+    mp_host_node_t *host_node_ptr;
+    mp_launch_node_t *launch_node_ptr;
+    */
 
     mp_enter_fn("main");
 
@@ -75,6 +79,27 @@ int main(int argc, char* argv[])
     else
     {
 	/* do an mpi job */
+
+#if 0
+	/* print and see what we've got */
+	printf("host tree:\n");
+	host_node_ptr = mp_process.host_list;
+	while (host_node_ptr)
+	{
+	    printf(" host: %s, parent: %d, id: %d\n", host_node_ptr->host, host_node_ptr->parent, host_node_ptr->id);
+	    host_node_ptr = host_node_ptr->next;
+	}
+	printf("launch nodes:\n");
+	launch_node_ptr = mp_process.launch_list;
+	while (launch_node_ptr)
+	{
+	    printf(" iproc: %d, id: %d, exe: %s\n",
+		launch_node_ptr->iproc, launch_node_ptr->host_id, launch_node_ptr->exe);
+	    launch_node_ptr = launch_node_ptr->next;
+	}
+	fflush(stdout);
+	goto quit_job;
+#endif
 
 	/* connect to all the hosts in the job */
 	result = mp_connect_tree(mp_process.host_list);

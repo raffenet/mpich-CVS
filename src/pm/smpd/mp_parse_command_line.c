@@ -152,13 +152,129 @@ static int isnumber(char *str)
     return SMPD_TRUE;
 }
 
+int mp_get_next_hostname(char *host)
+{
+    if (gethostname(host, MP_MAX_HOST_LENGTH) == 0)
+	return SMPD_SUCCESS;
+    return SMPD_FAIL;
+}
+
+int mp_get_host_id(char *host, int *id_ptr)
+{
+    mp_host_node_t *node;
+    static int parent = 0;
+    static int id = 1;
+    int bit, mask, temp;
+
+    /* look for the host in the list */
+    node = mp_process.host_list;
+    while (node)
+    {
+	if (strcmp(node->host, host) == 0)
+	{
+	    /* return the id */
+	    *id_ptr = node->id;
+	    return SMPD_SUCCESS;
+	}
+	if (node->next == NULL)
+	    break;
+	node = node->next;
+    }
+
+    /* allocate a new node */
+    if (node != NULL)
+    {
+	node->next = (mp_host_node_t *)malloc(sizeof(mp_host_node_t));
+	node = node->next;
+    }
+    else
+    {
+	node = (mp_host_node_t *)malloc(sizeof(mp_host_node_t));
+	mp_process.host_list = node;
+    }
+    if (node == NULL)
+    {
+	mp_err_printf("malloc failed to allocate a host node structure\n");
+	return SMPD_FAIL;
+    }
+    strcpy(node->host, host);
+    node->parent = parent;
+    node->id = id;
+    node->next = NULL;
+
+    /* move to the next id and parent */
+    id++;
+
+    temp = id >> 2;
+    bit = 1;
+    while (temp)
+    {
+	bit <<= 1;
+	temp >>= 1;
+    }
+    mask = bit - 1;
+    parent = bit | (id & mask);
+
+    /* return the id */
+    *id_ptr = node->id;
+
+    return SMPD_SUCCESS;
+}
+
+int mp_get_next_host(mp_host_node_t **host_node_pptr, mp_launch_node_t *launch_node)
+{
+    int result;
+    char host[MP_MAX_HOST_LENGTH];
+    mp_host_node_t *host_node_ptr;
+
+    if (*host_node_pptr == NULL)
+    {
+	result = mp_get_next_hostname(host);
+	if (result != SMPD_SUCCESS)
+	{
+	    mp_err_printf("unable to get the next available host name\n");
+	    return SMPD_FAIL;
+	}
+	result = mp_get_host_id(host, &launch_node->host_id);
+	if (result != SMPD_SUCCESS)
+	{
+	    mp_err_printf("unable to get a id for host %s\n", host);
+	    return SMPD_FAIL;
+	}
+	return SMPD_SUCCESS;
+    }
+
+    host_node_ptr = *host_node_pptr;
+    if (host_node_ptr->nproc == 0)
+    {
+	(*host_node_pptr) = (*host_node_pptr)->next;
+	free(host_node_ptr);
+	host_node_ptr = *host_node_pptr;
+	if (host_node_ptr == NULL)
+	{
+	    mp_err_printf("no more hosts in the list.\n");
+	    return SMPD_FAIL;
+	}
+    }
+    result = mp_get_host_id(host_node_ptr->host, &launch_node->host_id);
+    if (result != SMPD_SUCCESS)
+    {
+	mp_err_printf("unable to get a id for host %s\n", host_node_ptr->host);
+	return SMPD_FAIL;
+    }
+    host_node_ptr->nproc--;
+    if (host_node_ptr->nproc == 0)
+    {
+	(*host_node_pptr) = (*host_node_pptr)->next;
+	free(host_node_ptr);
+    }
+
+    return SMPD_SUCCESS;
+}
+
 int mp_parse_command_args(int *argcp, char **argvp[])
 {
-    /*mp_host_node_t *node;*/
-    /*char host[MP_MAX_HOST_LENGTH];*/
-    /*int found;*/
     int cur_rank;
-    /*int n, parent, id;*/
     int argc, next_argc;
     char **next_argv;
     char *exe_ptr;
@@ -185,6 +301,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 #ifdef HAVE_WINDOWS_H
     char temp_exe[MP_MAX_EXE_LENGTH], *namepart;
 #endif
+    mp_launch_node_t *launch_node, *launch_node_iter;
 
     mp_enter_fn("mp_parse_command_args");
 
@@ -692,48 +809,31 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	for (i=0; i<nproc; i++)
 	{
 	    /* create a launch_node */
-	}
-
-	/*
-	while (smpd_get_opt_string(argcp, argvp, "-host", host, MP_MAX_HOST_LENGTH))
-	{
-	    node = g_host_list;
-	    found = 0;
-	    while (node)
+	    launch_node = (mp_launch_node_t*)malloc(sizeof(mp_launch_node_t));
+	    if (launch_node == NULL)
 	    {
-		if (strcmp(node->host, host) == 0)
-		{
-		    found = 1;
-		    break;
-		}
-		if (node->next == NULL)
-		    break;
-		node = node->next;
+		mp_err_printf("unable to allocate a launch node structure.\n");
+		return SMPD_FAIL;
 	    }
-	    if (!found)
+	    mp_get_next_host(&host_list, launch_node);
+	    launch_node->iproc = cur_rank++;
+	    launch_node->env = launch_node->env_data;
+	    launch_node->env_data[0] = '\0';
+	    if (args[0] != '\0')
+		sprintf(launch_node->exe, "%s %s", exe, args);
+	    else
+		strcpy(launch_node->exe, exe);
+	    launch_node->next = NULL;
+	    if (mp_process.launch_list == NULL)
+		mp_process.launch_list = launch_node;
+	    else
 	    {
-		if (node != NULL)
-		{
-		    node->next = (mp_host_node_t *)malloc(sizeof(mp_host_node_t));
-		    node = node->next;
-		}
-		else
-		{
-		    node = (mp_host_node_t *)malloc(sizeof(mp_host_node_t));
-		    g_host_list = node;
-		}
-		if (node == NULL)
-		{
-		    mp_err_printf("malloc failed to allocate a host node structure of size %d\n", sizeof(mp_host_node_t));
-		    mp_exit_fn("mp_parse_command_args");
-		    return SMPD_FAIL;
-		}
-		strcpy(node->host, host);
-		node->ip_str[0] = '\0';
-		node->next = NULL;
+		launch_node_iter = mp_process.launch_list;
+		while (launch_node_iter->next)
+		    launch_node_iter = launch_node_iter->next;
+		launch_node_iter->next = launch_node;
 	    }
 	}
-	*/
 
 	/* move to the next block */
 	*argvp = next_argv - 1;
