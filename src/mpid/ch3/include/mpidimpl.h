@@ -362,7 +362,7 @@ extern MPIDI_Process_t MPIDI_Process;
 #if !defined(MPIDI_CH3U_SRBuf_free)
 #define MPIDI_CH3U_SRBuf_free(_req)			\
 {							\
-    assert(MPIDI_Request_get_srbuf_flag(_req));		\
+    MPIU_Assert(MPIDI_Request_get_srbuf_flag(_req));	\
     MPIDI_Request_set_srbuf_flag((_req), FALSE);	\
     MPIU_Free((_req)->dev.tmpbuf);			\
 }

@@ -26,13 +26,13 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
     last = sreq->dev.segment_size;
     MPIDI_DBG_PRINTF((40, FCNAME, "pre-pv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 		      sreq->dev.segment_first, last, *iov_n));
-    assert(sreq->dev.segment_first < last);
-    assert(last > 0);
-    assert(*iov_n > 0 && *iov_n <= MPID_IOV_LIMIT);
+    MPIU_Assert(sreq->dev.segment_first < last);
+    MPIU_Assert(last > 0);
+    MPIU_Assert(*iov_n > 0 && *iov_n <= MPID_IOV_LIMIT);
     MPID_Segment_pack_vector(&sreq->dev.segment, sreq->dev.segment_first, &last, iov, iov_n);
     MPIDI_DBG_PRINTF((40, FCNAME, "post-pv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 		      sreq->dev.segment_first, last, *iov_n));
-    assert(*iov_n > 0 && *iov_n <= MPID_IOV_LIMIT);
+    MPIU_Assert(*iov_n > 0 && *iov_n <= MPID_IOV_LIMIT);
     
     if (last == sreq->dev.segment_size)
     {
@@ -125,7 +125,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	       could force the use of the SRBuf only when (rreq->dev.tmpbuf_off > 0)... */
 	    
 	    data_sz = rreq->dev.segment_size - rreq->dev.segment_first - rreq->dev.tmpbuf_off;
-	    assert(data_sz > 0);
+	    MPIU_Assert(data_sz > 0);
 	    tmpbuf_sz = rreq->dev.tmpbuf_sz - rreq->dev.tmpbuf_off;
 	    if (data_sz > tmpbuf_sz)
 	    {
@@ -134,7 +134,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    rreq->dev.iov[0].MPID_IOV_BUF = (char *) rreq->dev.tmpbuf + rreq->dev.tmpbuf_off;
 	    rreq->dev.iov[0].MPID_IOV_LEN = data_sz;
 	    rreq->dev.iov_count = 1;
-	    assert(rreq->dev.segment_first + data_sz + rreq->dev.tmpbuf_off <= rreq->dev.recv_data_sz);
+	    MPIU_Assert(rreq->dev.segment_first + data_sz + rreq->dev.tmpbuf_off <= rreq->dev.recv_data_sz);
 	    if (rreq->dev.segment_first + data_sz + rreq->dev.tmpbuf_off == rreq->dev.recv_data_sz)
 	    {
 		MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read the remaining data into the SRBuf"));
@@ -152,12 +152,12 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	rreq->dev.iov_count = MPID_IOV_LIMIT;
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 			  rreq->dev.segment_first, last, rreq->dev.iov_count));
-	assert(rreq->dev.segment_first < last);
-	assert(last > 0);
+	MPIU_Assert(rreq->dev.segment_first < last);
+	MPIU_Assert(last > 0);
 	MPID_Segment_unpack_vector(&rreq->dev.segment, rreq->dev.segment_first, &last, rreq->dev.iov, &rreq->dev.iov_count);
 	MPIDI_DBG_PRINTF((40, FCNAME, "post-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 			  rreq->dev.segment_first, last, rreq->dev.iov_count));
-	assert(rreq->dev.iov_count > 0 && rreq->dev.iov_count <= MPID_IOV_LIMIT);
+	MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov_count <= MPID_IOV_LIMIT);
 
 	/* --BEGIN ERROR HANDLING-- */
 	if (rreq->dev.iov_count == 0)
@@ -188,7 +188,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	{
 	    /* Too little data would have been received using an IOV.  We will start receiving data into a SRBuf and unpacking it
 	       later. */
-	    assert(MPIDI_Request_get_srbuf_flag(rreq) == FALSE);
+	    MPIU_Assert(MPIDI_Request_get_srbuf_flag(rreq) == FALSE);
 	    
 	    MPIDI_CH3U_SRBuf_alloc(rreq, rreq->dev.segment_size - rreq->dev.segment_first);
 	    rreq->dev.tmpbuf_off = 0;

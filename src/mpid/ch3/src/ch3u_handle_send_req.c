@@ -18,10 +18,8 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq, int *complete
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ);
 
-    assert(in_routine == FALSE);
+    MPIU_Assert(in_routine == FALSE);
     in_routine = TRUE;
-    
-    assert(sreq->dev.ca < MPIDI_CH3_CA_END_CH3);
     
     switch(sreq->dev.ca)
     {

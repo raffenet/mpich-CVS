@@ -21,10 +21,8 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ);
 
-    assert(in_routine == FALSE);
+    MPIU_Assert(in_routine == FALSE);
     in_routine = TRUE;
-    
-    assert(rreq->dev.ca < MPIDI_CH3_CA_END_CH3);
     
     switch(rreq->dev.ca)
     {
@@ -242,7 +240,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 	    else
 	    {
 		/* We shouldn't reach this code because the only other request types are sends */
-		assert(MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_RECV);
+		MPIU_Assert(MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_RECV);
 		MPIDI_CH3U_Request_complete(rreq);
 		*complete = TRUE;
 	    }

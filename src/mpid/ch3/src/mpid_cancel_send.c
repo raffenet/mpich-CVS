@@ -21,7 +21,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CANCEL_SEND);
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     
-    assert(sreq->kind == MPID_REQUEST_SEND);
+    MPIU_Assert(sreq->kind == MPID_REQUEST_SEND);
 
     MPIDI_Request_cancel_pending(sreq, &flag);
     if (flag)
@@ -42,7 +42,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	rreq = MPIDI_CH3U_Recvq_FDU(sreq->handle, &sreq->dev.match);
 	if (rreq)
 	{
-	    assert(rreq->partner_request == sreq);
+	    MPIU_Assert(rreq->partner_request == sreq);
 	    
 	    MPIDI_DBG_PRINTF((15, FCNAME, "send-to-self cancellation successful, sreq=0x%08x, rreq=0x%08x",
 			      sreq->handle, rreq->handle));

@@ -140,7 +140,7 @@ void MPIDI_CH3U_Buffer_copy(
 	    MPID_Segment_pack(&sseg, sfirst, &last, buf + buf_off);
 	    MPIDI_DBG_PRINTF((40, FCNAME, "post-pack first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT, sfirst, last ));
 	    /* --BEGIN ERROR HANDLING-- */
-	    assert(last > sfirst);
+	    MPIU_Assert(last > sfirst);
 	    /* --END ERROR HANDLING-- */
 	    
 	    buf_end = buf + buf_off + (last - sfirst);
@@ -150,7 +150,7 @@ void MPIDI_CH3U_Buffer_copy(
 	    MPID_Segment_unpack(&rseg, rfirst, &last, buf);
 	    MPIDI_DBG_PRINTF((40, FCNAME, "post-unpack first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT, rfirst, last ));
 	    /* --BEGIN ERROR HANDLING-- */
-	    assert(last > rfirst);
+	    MPIU_Assert(last > rfirst);
 	    /* --END ERROR HANDLING-- */
 
 	    rfirst = last;

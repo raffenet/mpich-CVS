@@ -45,7 +45,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	MPID_Collops * collops;
 	
 	collops = MPIU_Calloc(1, sizeof(MPID_Collops));
-	assert(collops != NULL);
+	MPIU_Assert(collops != NULL);
 
 	collops->ref_count = 2;
 	collops->Barrier = MPIDI_Barrier;

@@ -17,7 +17,7 @@ int MPID_Cancel_recv(MPID_Request * rreq)
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CANCEL_RECV);
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     
-    assert(rreq->kind == MPID_REQUEST_RECV);
+    MPIU_Assert(rreq->kind == MPID_REQUEST_RECV);
     
     if (MPIDI_CH3U_Recvq_DP(rreq))
     {
