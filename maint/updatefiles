@@ -134,8 +134,12 @@ fi
 #
 if [ -x maint/codingcheck ] ; then
     echo "Running coding check"
+    echo "checking mpi code"
     maint/codingcheck src/mpi/*/*.c src/include/*.h src/util/*/*.c
-    maint/codingcheck src/mpid/mm/src/*/*.c src/mpid/mm/include/*.h 
-    maint/codingcheck src/mpid/ch3/src/*.c
+    echo "checking mm device code"
+    maint/codingcheck src/mpid/mm/src/*/*.c src/mpid/mm/include/*.h
+    echo "checking ch3 device code"
+    maint/codingcheck src/mpid/ch3/channels/*/src/*.c src/mpid/ch3/src/*.c
+    echo "checking pmi code"
     maint/codingcheck src/pmi/impls/*/*.c
 fi

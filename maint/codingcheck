@@ -69,7 +69,7 @@ sub CheckForBadSubs {
     my $filename = $_[1];
     foreach $subname (@avoidsubs) {
 	if (/(?<!\w)$subname\s*\(/) {
-	    $msg = "Warning: found reference to routine $subname in $filename";
+	    $msg = "Warning: found $subname in $filename";
 	    if (defined($warningmsgs{$msg})) { 
 		$warningmsgs{$msg} = $warningmsgs{$msg} + 1;
 	    }
@@ -78,16 +78,38 @@ sub CheckForBadSubs {
 	    }
 	}
     }
-    foreach $subname (@guardedsubs) {
-	if (/$subname\s*\(/) {
-	    print "Caution: found reference to routine $subname in $filename\n";
-	}
+#    foreach $subname (@guardedsubs) {
+#	if (/$subname\s*\(/) {
+#	    print "Caution: found reference to routine $subname in $filename\n";
+#	}
+#    }
+    foreach $subname (@guardsubs) {
+        if (/(?<!\w)$subname\s*\(/) {
+            $msg = "Caution: found $subname in $filename";
+            if (defined($warningmsgs{$msg})) {
+                $warningmsgs{$msg} = $warningmsgs{$msg} + 1;
+            }
+            else {
+                $warningmsgs{$msg} = 1;
+            }
+        }
     }
+#    foreach $subname (keys %bettersubs) {
+#	if (/$subname\s*\(/) {
+#	    print "Caution: found reference to routine $subname in $filename\n";
+#	    print "Consider using $bettersubs{$subname} instead\n";
+#	}
+#    }
     foreach $subname (keys %bettersubs) {
-	if (/$subname\s*\(/) {
-	    print "Caution: found reference to routine $subname in $filename\n";
-	    print "Consider using $bettersubs{$subname} instead\n";
-	}
+        if (/(?<!\w)$subname\s*\(/) {
+            $msg = "Caution: found $subname in $filename, consider $bettersubs{$subname}";
+            if (defined($warningmsgs{$msg})) {
+                $warningmsgs{$msg} = $warningmsgs{$msg} + 1;
+            }
+            else {
+                $warningmsgs{$msg} = 1;
+            }
+        }
     }
 }
 
