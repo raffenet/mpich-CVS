@@ -595,7 +595,9 @@ int MPIU_Str_get_string(char **str_ptr, char *val, int maxlen)
     char *str;
 
     if (str_ptr == NULL)
+    {
 	return -2;
+    }
 
     str = *str_ptr;
     
