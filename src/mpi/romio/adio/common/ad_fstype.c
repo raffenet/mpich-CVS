@@ -45,7 +45,9 @@
 #include <unistd.h>
 #endif
 
+#ifndef ROMIO_NTFS
 static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep);
+#endif
 static void ADIO_FileSysType_prefix(char *filename, int *fstype, 
 				    int *error_code);
 static void ADIO_FileSysType_fncall(char *filename, int *fstype, 
@@ -64,6 +66,7 @@ Output Parameters:
  Note that the caller should free the memory located at the pointer returned
  after the string is no longer needed.
 */
+#ifndef ROMIO_NTFS
 #ifndef PATH_MAX
 #define PATH_MAX 65535
 #endif
@@ -115,7 +118,7 @@ static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep)
     *dirnamep = dir;
     return;
 }
-
+#endif /* ROMIO_NTFS */
 
 /*
  ADIO_FileSysType_fncall - determines the file system type for a given file 
@@ -136,8 +139,8 @@ Output Parameters:
  */
 static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code)
 {
-    char *dir;
 #ifndef ROMIO_NTFS
+    char *dir;
     int err;
 #endif
 #if (defined(HPUX) || defined(SPPUX) || defined(IRIX) || defined(SOLARIS) || defined(AIX) || defined(DEC) || defined(CRAY))
