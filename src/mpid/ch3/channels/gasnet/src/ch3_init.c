@@ -97,8 +97,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         return mpi_errno;
     }
 
-    MPIDI_CH3_packet_len = gasnet_AMMaxMedium ();
-#warning DARIUS
+    /*MPIDI_CH3_packet_len = gasnet_AMMaxMedium ();*/
+    /* 16K gives better performance than 64K */
+    /* FIXME:  This should probably be a #DEFINE or something */
     MPIDI_CH3_packet_len = 16384;
 
     pg_rank = gasnet_mynode ();
