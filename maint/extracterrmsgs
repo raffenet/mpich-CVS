@@ -231,7 +231,11 @@ sub CreateErrMsgMapping {
 	if (!defined($longnames{$key}))
 	{
 	    $seenfile = $generic_loc{$key};
-	    print STDERR "Shortname $key for generic messages has no expansion (first seen in file $seenfile)\n";
+	    if ($key =~ /^\*\*/) {
+		# If the message begins with text, assume that it is a 
+		# litteral message
+		print STDERR "Shortname $key for generic messages has no expansion (first seen in file $seenfile)\n";
+	    }
 	    next;
 	}
 	else {
@@ -502,30 +506,30 @@ sub ProcessFile
 	# Next, remove any comments
 	$_ = StripComments( FD, $_ );
 	# Skip the definition of the function
-	if (/int\s+MPIR_Err_create_code/) { $remainder = ""; next; }
+	if (/int\s+MPI[OUR]_Err_create_code/) { $remainder = ""; next; }
 	# Match the known routines and macros.
 	# Then check that the arguments match if there is a 
 	# specific string (number of args matches the number present)
-	# (MPIU_CHKERRANDJUMP[0-4]?(cond,code,class,gmsg[,smsg,args])
-	# (MPIU_SETERRANDJUMP[0-4]?(cond,code,class,gmsg[,smsg,args])
-	# (MPIU_CHKERRANDSTMT[0-4]?(cond,code,class,gmsg[,smsg,args],stmt)
-	# (MPIU_SETERRANDSTMT[0-4]?(cond,code,class,gmsg[,smsg,args],stmt)
+	# (MPIU_ERR_CHKANDJUMP[0-4]?(cond,code,class,gmsg[,smsg,args])
+	# (MPIU_ERR_SETANDJUMP[0-4]?(cond,code,class,gmsg[,smsg,args])
+	# (MPIU_ERR_CHKANDSTMT[0-4]?(cond,code,class,gmsg[,smsg,args],stmt)
+	# (MPIU_ERR_SETANDSTMT[0-4]?(cond,code,class,gmsg[,smsg,args],stmt)
 	# Value is a tuple of:
 	#  the count of args where the generic msg begins (starting from 0)
 	#  location of __LINE__ (-1 for none)
 	#  specific msg arg required (0 for no, > 0 for yes)
-	%KnownErrRoutines = ( 'MPIR_Err_create_code'      => '5:3:1', 
-			      'MPIO_Err_create_code'      => '5:3:1', 
-			      'MPIU_ERR_SETANDSTMT'       => '3:-1:0',
-			      'MPIU_ERR_SETFATALANDSTMT'  => '3:-1:0',
-			      'MPIU_ERR_SETANDSTMT1'      => '3:-1:1', 
-			      'MPIU_ERR_SETFATALANDSTMT1' => '3:-1:1', 
-			      'MPIU_ERR_SETANDJUMP'       => '2:-1:0',
-			      'MPIU_ERR_SETANDJUMP1'      => '2:-1:1', 
-			      'MPIU_ERR_CHKANDSTMT'       => '3:-1:0', 
-			      'MPIU_ERR_CHKANDSTMT1'      => '3:-1:1', 
-			      'MPIU_ERR_CHKANDJUMP'       => '3:-1:0',
-			      'MPIU_ERR_CHKANDJUMP1'      => '3:-1:1',
+	%KnownErrRoutines = ( 'MPIR_Err_create_code'      => '5:3:1:1', 
+			      'MPIO_Err_create_code'      => '5:3:1:0', 
+			      'MPIU_ERR_SETANDSTMT'       => '3:-1:0:1',
+			      'MPIU_ERR_SETFATALANDSTMT'  => '3:-1:0:1',
+			      'MPIU_ERR_SETANDSTMT1'      => '3:-1:1:1', 
+			      'MPIU_ERR_SETFATALANDSTMT1' => '3:-1:1:1', 
+			      'MPIU_ERR_SETANDJUMP'       => '2:-1:0:1',
+			      'MPIU_ERR_SETANDJUMP1'      => '2:-1:1:1', 
+			      'MPIU_ERR_CHKANDSTMT'       => '3:-1:0:1', 
+			      'MPIU_ERR_CHKANDSTMT1'      => '3:-1:1:1', 
+			      'MPIU_ERR_CHKANDJUMP'       => '3:-1:0:1',
+			      'MPIU_ERR_CHKANDJUMP1'      => '3:-1:1:1',
 			      );
 	while (/(MPI[OUR]_[A-Za-z0-9_]+)\s*(\(.*)$/) {
 	    my $routineName = $1;
@@ -535,7 +539,7 @@ sub ProcessFile
 		last;
 	    }
 	    print "Found $routineName\n" if $debug;
-	    my ($genericArgLoc,$hasLine,$hasSpecific) = 
+	    my ($genericArgLoc,$hasLine,$hasSpecific,$onlyIndirect) = 
 		split(/:/,$KnownErrRoutines{$routineName});
 
 	    ($leader, $remainder, @args ) = &GetSubArgs( FD, $arglist );
@@ -582,7 +586,7 @@ sub ProcessFile
 	    {
 		print STDERR "Warning: trailing blank on arg $generic_msg in $filename!\n"; 
 	    }
-	    if (!($generic_msg =~ /^\"\*\*\S+\"$/)) {
+	    if ($onlyIndirect && !($generic_msg =~ /^\"\*\*\S+\"$/)) {
 
 		print STDERR "Error: generic message $generic_msg has incorrect format in $filename\n";
 		next;
