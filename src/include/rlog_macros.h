@@ -9,7 +9,11 @@
 #define RLOG_MACROS_H
 
 #include "rlog.h"
+#ifdef USE_WINCONF_H
+#include "winmpichtimer.h"
+#else
 #include "mpichtimer.h"
+#endif
 
 /* structures, global variables */
 extern RLOG_Struct *g_pRLOG;
