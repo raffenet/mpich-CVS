@@ -1,4 +1,5 @@
 lib${MPILIBNAME}_a_SOURCES = simple_pmiutil.c simple_pmi.c
+HEADERS = simple_pmiutil.h
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 
 distclean-local:
