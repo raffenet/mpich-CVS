@@ -582,7 +582,7 @@ int MPIDU_Sock_init()
     }
 
     /* get the socket buffer size */
-    szNum = getenv("SOCK_TCP_BUFFER_SIZE");
+    szNum = getenv("MPICH_SOCKET_BUFFER_SIZE");
     if (szNum != NULL)
     {
 	g_socket_buffer_size = atoi(szNum);
@@ -592,7 +592,7 @@ int MPIDU_Sock_init()
 
     /* get the stream packet size */
     /* messages larger than this size will be broken into pieces of this size when sending */
-    szNum = getenv("SOCK_STREAM_PACKET_SIZE");
+    szNum = getenv("MPICH_SOCKET_STREAM_PACKET_SIZE");
     if (szNum != NULL)
     {
 	g_stream_packet_length = atoi(szNum);
@@ -601,7 +601,7 @@ int MPIDU_Sock_init()
     }
 
     /* get the number of accepts to pre-post */
-    szNum = getenv("SOCK_NUM_PREPOSTED_ACCEPTS");
+    szNum = getenv("MPICH_SOCKET_NUM_PREPOSTED_ACCEPTS");
     if (szNum != NULL)
     {
 	g_num_posted_accepts = atoi(szNum);
@@ -610,7 +610,7 @@ int MPIDU_Sock_init()
     }
 
     /* check to see if a port range was specified */
-    szRange = getenv("MPICH_PORTRANGE");
+    szRange = getenv("MPICH_PORT_RANGE");
     if (szRange != NULL)
     {
 	szNum = strtok(szRange, ",."); /* tokenize both min,max and min..max */
