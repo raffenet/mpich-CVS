@@ -12,7 +12,11 @@
 
 /* defmsg is generated automatically from the source files and contains
    all of the error messages */
+#ifdef USE_WINCONF_H
+#include "windefmsg.h"
+#else
 #include "defmsg.h" 
+#endif
 
 /* stdarg is required to handle the variable argument lists for 
    MPIR_Err_create_code */

@@ -7,10 +7,11 @@
 
 #ifdef USE_WINCONF_H
 #include "wintimerconf.h"
+#include "winmpichtimer.h"
 #else
 #include "timerconf.h"
-#endif
 #include "mpichtimer.h"
+#endif
 #include "mpiimpl.h"
 
 
