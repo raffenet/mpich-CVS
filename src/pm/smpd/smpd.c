@@ -90,6 +90,9 @@ int main(int argc, char* argv[])
 #endif
     
     result = smpd_entry_point(argc, argv);
+
+    smpd_finalize_printf();
+
     smpd_exit_fn("main");
     return result;
 }
@@ -154,7 +157,7 @@ int smpd_entry_point()
     smpd_process.id = 0;
     smpd_process.root_smpd = SMPD_TRUE;
 
-    /*smpd_set_smpd_data("path", smpd_process.pszExe);*/
+    smpd_set_smpd_data("binary", smpd_process.pszExe);
 
     result = sock_create_set(&set);
     if (result != SOCK_SUCCESS)

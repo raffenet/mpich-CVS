@@ -31,6 +31,8 @@ int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *ha
 
     smpd_enter_fn("smpd_get_user_handle");
 
+    smpd_dbg_printf("LogonUser(%s\\%s:%d)\n", domain, account, strlen(password));
+
     /* logon the user */
     while (!LogonUser(
 	account,
@@ -1188,6 +1190,7 @@ int smpd_exit(int exitcode)
 {
     smpd_enter_fn("smpd_exit");
     smpd_kill_all_processes();
+    smpd_finalize_printf();
 #ifdef HAVE_WINDOWS_H
     /* This is necessary because exit() can deadlock flushing file buffers while the stdin thread is running */
     ExitProcess(exitcode);

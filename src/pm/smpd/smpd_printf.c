@@ -129,29 +129,73 @@ char * smpd_get_context_str(smpd_context_t *context)
 int smpd_init_printf(void)
 {
     char * envstr;
+    char filename[SMPD_MAX_FILENAME];
 
     smpd_process.dbg_state = SMPD_DBG_STATE_ERROUT;
 
     envstr = getenv("SMPD_DBG_OUTPUT");
-    if (envstr == NULL)
+    if (envstr != NULL)
     {
-	return SMPD_SUCCESS;
+	if (strstr(envstr, "stdout"))
+	    smpd_process.dbg_state |= SMPD_DBG_STATE_STDOUT;
+	if (strstr(envstr, "log"))
+	    smpd_process.dbg_state |= SMPD_DBG_STATE_LOGFILE;
+	if (strstr(envstr, "rank"))
+	    smpd_process.dbg_state |= SMPD_DBG_STATE_PREPEND_RANK;
+	if (strstr(envstr, "trace"))
+	    smpd_process.dbg_state |= SMPD_DBG_STATE_TRACE;
     }
 
-    if (strstr(envstr, "stdout"))
-	smpd_process.dbg_state |= SMPD_DBG_STATE_STDOUT;
-    if (strstr(envstr, "log"))
+    if (smpd_option_on("log"))
 	smpd_process.dbg_state |= SMPD_DBG_STATE_LOGFILE;
-    if (strstr(envstr, "rank"))
+    if (smpd_option_on("prepend_rank"))
 	smpd_process.dbg_state |= SMPD_DBG_STATE_PREPEND_RANK;
+    if (smpd_option_on("trace"))
+	smpd_process.dbg_state |= SMPD_DBG_STATE_TRACE;
+
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE)
+    {
+	envstr = getenv("SMPD_DBG_LOG_FILENAME");
+	if (envstr)
+	{
+	    smpd_process.dbg_fout = fopen(envstr, "a+");
+	    if (smpd_process.dbg_fout == NULL)
+	    {
+		/*smpd_err_printf("unable to open log file '%s', error %d\n", envstr, GetLastError());*/
+	    }
+	}
+	if (smpd_process.dbg_fout == NULL)
+	{
+	    if (smpd_get_smpd_data("logfile", filename, SMPD_MAX_FILENAME) == SMPD_SUCCESS)
+	    {
+		smpd_process.dbg_fout = fopen(filename, "a+");
+		if (smpd_process.dbg_fout == NULL)
+		{
+		    /*smpd_err_printf("unable to open log file '%s', error %d\n", filename, GetLastError());*/
+		}
+	    }
+	}
+	if (smpd_process.dbg_fout == NULL)
+	{
+	    smpd_process.dbg_state ^= SMPD_DBG_STATE_LOGFILE;
+	}
+    }
 
 #ifdef HAVE_WINDOWS_H
     if (!smpd_process.bOutputInitialized)
     {
-	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
+	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, SMPD_OUTPUT_MUTEXNAME);
 	smpd_process.bOutputInitialized = TRUE;
     }
 #endif
+    return SMPD_SUCCESS;
+}
+
+int smpd_finalize_printf(void)
+{
+    if (smpd_process.dbg_fout)
+	fclose(smpd_process.dbg_fout);
+    smpd_process.dbg_fout = NULL;
     return SMPD_SUCCESS;
 }
 
@@ -173,7 +217,7 @@ int smpd_err_printf(char *str, ...)
 #ifdef HAVE_WINDOWS_H
     if (!smpd_process.bOutputInitialized)
     {
-	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
+	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, SMPD_OUTPUT_MUTEXNAME);
 	smpd_process.bOutputInitialized = TRUE;
     }
     WaitForSingleObject(smpd_process.hOutputMutex, INFINITE);
@@ -201,7 +245,7 @@ int smpd_err_printf(char *str, ...)
 
 	fflush(stdout);
     }
-    if (smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE)
+    if ((smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE) && smpd_process.dbg_fout)
     {
 	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
 	{
@@ -246,7 +290,7 @@ int smpd_dbg_printf(char *str, ...)
 #ifdef HAVE_WINDOWS_H
     if (!smpd_process.bOutputInitialized)
     {
-	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, "SMPD_OUTPUT_MUTEX");
+	smpd_process.hOutputMutex = CreateMutex(NULL, FALSE, SMPD_OUTPUT_MUTEXNAME);
 	smpd_process.bOutputInitialized = TRUE;
     }
     WaitForSingleObject(smpd_process.hOutputMutex, INFINITE);
@@ -272,7 +316,7 @@ int smpd_dbg_printf(char *str, ...)
 
 	fflush(stdout);
     }
-    if (smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE)
+    if ((smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE) && smpd_process.dbg_fout)
     {
 	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
 	{

@@ -1096,6 +1096,12 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 	    }
 	    if (event.error != SOCK_SUCCESS)
 	    {
+		if (context->type == SMPD_CONTEXT_PARENT)
+		{
+		    smpd_err_printf("connection to my parent broken, aborting.\n");
+		    smpd_exit_fn("smpd_enter_at_state");
+		    return SMPD_FAIL;
+		}
 		smpd_dbg_printf("SOCK_OP_READ failed, closing %s context.\n", smpd_get_context_str(context));
 		context->state = SMPD_CLOSING;
 		result = sock_post_close(context->sock);

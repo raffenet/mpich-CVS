@@ -104,6 +104,8 @@ int smpd_start_win_mgr(smpd_context_t *context)
     GetStartupInfo(&sInfo);
     if (smpd_process.bService)
     {
+	strcpy(domainaccount, context->account);
+	strcpy(password, context->password);
 	smpd_parse_account_domain(domainaccount, account, domain);
 	if (strlen(domain) < 1)
 	    pszDomain = NULL;

@@ -6,28 +6,106 @@
 
 #include "smpd.h"
 
-int smpd_set_user_data(char *key, char *value)
+SMPD_BOOL smpd_option_on(const char *option)
 {
+    char val[SMPD_MAX_VALUE_LENGTH];
+
+    if (smpd_get_smpd_data(option, val, SMPD_MAX_VALUE_LENGTH) == SMPD_SUCCESS)
+    {
+	if (strcmp(val, "yes") == 0 || strcmp(val, "1") == 0)
+	    return SMPD_TRUE;
+    }
+    return SMPD_FALSE;
+}
+
+int smpd_set_user_data(const char *key, const char *value)
+{
+#ifdef HAVE_WINDOWS_H
+    HKEY tkey;
+    DWORD len, result;
+
+    smpd_enter_fn("smpd_set_user_data");
+
+    if (key == NULL || value == NULL)
+	return SMPD_FAIL;
+
+    result = RegCreateKeyEx(HKEY_CURRENT_USER, SMPD_REGISTRY_KEY,
+	0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &tkey, NULL);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_err_printf("Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
+	smpd_exit_fn("smpd_set_user_data");
+	return SMPD_FAIL;
+    }
+
+    len = (DWORD)(strlen(value)+1);
+    result = RegSetValueEx(tkey, key, 0, REG_SZ, value, len);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_err_printf("Unable to write the user smpd registry value '%s:%s', error %d\n", key, value, result);
+	RegCloseKey(tkey);
+	smpd_exit_fn("smpd_set_user_data");
+	return SMPD_FAIL;
+    }
+
+    RegCloseKey(tkey);
+    smpd_exit_fn("smpd_set_user_data");
+    return SMPD_SUCCESS;
+#else
     smpd_enter_fn("smpd_set_user_data");
     smpd_exit_fn("smpd_set_user_data");
     return SMPD_FAIL;
+#endif
 }
 
-int smpd_set_smpd_data(char *key, char *value)
+int smpd_set_smpd_data(const char *key, const char *value)
 {
+#ifdef HAVE_WINDOWS_H
+    HKEY tkey;
+    DWORD len, result;
+
+    smpd_enter_fn("smpd_set_user_data");
+
+    if (key == NULL || value == NULL)
+	return SMPD_FAIL;
+
+    result = RegCreateKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY,
+	0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &tkey, NULL);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_err_printf("Unable to open the HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
+	smpd_exit_fn("smpd_set_user_data");
+	return SMPD_FAIL;
+    }
+
+    len = (DWORD)(strlen(value)+1);
+    result = RegSetValueEx(tkey, key, 0, REG_SZ, value, len);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_err_printf("Unable to write the smpd registry value '%s:%s', error %d\n", key, value, result);
+	RegCloseKey(tkey);
+	smpd_exit_fn("smpd_set_user_data");
+	return SMPD_FAIL;
+    }
+
+    RegCloseKey(tkey);
+    smpd_exit_fn("smpd_set_user_data");
+    return SMPD_SUCCESS;
+#else
     smpd_enter_fn("smpd_set_smpd_data");
     smpd_exit_fn("smpd_set_smpd_data");
     return SMPD_FAIL;
+#endif
 }
 
-int smpd_get_user_data_default(char *key, char *value, int value_len)
+int smpd_get_user_data_default(const char *key, char *value, int value_len)
 {
     smpd_enter_fn("smpd_get_user_data_default");
     smpd_exit_fn("smpd_get_user_data_default");
     return SMPD_FAIL;
 }
 
-int smpd_get_user_data(char *key, char *value, int value_len)
+int smpd_get_user_data(const char *key, char *value, int value_len)
 {
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;
@@ -68,7 +146,7 @@ int smpd_get_user_data(char *key, char *value, int value_len)
 #endif
 }
 
-int smpd_get_smpd_data_default(char *key, char *value, int value_len)
+int smpd_get_smpd_data_default(const char *key, char *value, int value_len)
 {
     smpd_enter_fn("smpd_get_smpd_data_default");
     if (strcmp(key, "phrase") == 0)
@@ -91,7 +169,7 @@ int smpd_get_smpd_data_default(char *key, char *value, int value_len)
     return SMPD_SUCCESS;
 }
 
-int smpd_get_smpd_data(char *key, char *value, int value_len)
+int smpd_get_smpd_data(const char *key, char *value, int value_len)
 {
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;

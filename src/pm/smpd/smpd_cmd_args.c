@@ -49,7 +49,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     }
     if (smpd_get_opt(argcp, argvp, "-install") || smpd_get_opt(argcp, argvp, "-regserver"))
     {
-	char phrase[SMPD_PASSPHRASE_MAX_LENGTH]="", port[10]="";
+	char phrase[SMPD_PASSPHRASE_MAX_LENGTH]="", port_str[12]="";
 	char version[100]="";
 
 	if (smpd_remove_service(SMPD_FALSE) == SMPD_FALSE)
@@ -58,21 +58,19 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    ExitProcess(0);
 	}
 	
-	/*CreateMPDRegistry();*/
 	if (smpd_get_opt_string(argcp, argvp, "-phrase", phrase, SMPD_PASSPHRASE_MAX_LENGTH))
 	{
-	    /*WriteMPDRegistry("phrase", phrase);*/
+	    smpd_set_smpd_data("phrase", phrase);
 	}
 	if (smpd_get_opt(argcp, argvp, "-getphrase"))
 	{
-	    /*
-	    GetPassword("passphrase for mpd: ", NULL, phrase);
-	    WriteMPDRegistry("phrase", phrase);
-	    */
+	    printf("passphrase for smpd: ");fflush(stdout);
+	    smpd_get_password(phrase);
+	    smpd_set_smpd_data("phrase", phrase);
 	}
-	if (smpd_get_opt_string(argcp, argvp, "-port", port, 10))
+	if (smpd_get_opt_string(argcp, argvp, "-port", port_str, 10))
 	{
-	    /*WriteMPDRegistry("port", port);*/
+	    smpd_set_smpd_data("port", port_str);
 	}
 	/*ParseRegistry(true);*/
 	smpd_install_service(SMPD_FALSE, SMPD_TRUE);
@@ -201,6 +199,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	{
 	    smpd_err_printf("sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
 	}
+	smpd_exit(0);
 	smpd_exit_fn("smpd_parse_command_args (ExitProcess)");
 	ExitProcess(0);
     }

@@ -78,14 +78,14 @@ typedef int SMPD_BOOL;
 #define SMPD_NO_RECONNECT_PORT_STR        "-1"
 #define SMPD_SUCCESS_STR                  "SUCCESS"
 #define SMPD_FAIL_STR                     "FAIL"
-
+#define SMPD_OUTPUT_MUTEXNAME             "SMPD_OUTPUT_MUTEX"
 #define SMPD_FREE_COOKIE           0xDDBEEFDD
 
-#define SMPD_DBG_STATE_STDOUT             0x01
-#define SMPD_DBG_STATE_ERROUT             0x02
-#define SMPD_DBG_STATE_LOGFILE            0x04
-#define SMPD_DBG_STATE_PREPEND_RANK       0x08
-#define SMPD_DBG_STATE_TRACE              0x10
+#define SMPD_DBG_STATE_STDOUT            0x01
+#define SMPD_DBG_STATE_ERROUT            0x02
+#define SMPD_DBG_STATE_LOGFILE           0x04
+#define SMPD_DBG_STATE_PREPEND_RANK      0x08
+#define SMPD_DBG_STATE_TRACE             0x10
 
 #define SMPD_QUOTE_CHAR                   '\"'
 #define SMPD_DELIM_CHAR                   '='
@@ -103,9 +103,6 @@ typedef int SMPD_BOOL;
 
 #ifdef HAVE_WINDOWS_H
 #define snprintf _snprintf
-#endif
-
-#ifdef HAVE_WINDOWS_H
 #define vsnprintf _vsnprintf
 #endif
 
@@ -402,6 +399,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state);
 int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr);
 int smpd_init_process(void);
 int smpd_init_printf(void);
+int smpd_finalize_printf(void);
 int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_set_t set, sock_t sock, int id);
 int smpd_init_command(smpd_command_t *cmd);
 int smpd_create_context(smpd_context_type_t type, sock_set_t set, sock_t sock, int id, smpd_context_t **context_pptr);
@@ -423,12 +421,13 @@ int smpd_dbg_printf(char *str, ...);
 int smpd_err_printf(char *str, ...);
 int smpd_enter_fn(char *fcname);
 int smpd_exit_fn(char *fcname);
-int smpd_get_user_data(char *key, char *value, int value_len);
-int smpd_get_smpd_data(char *key, char *value, int value_len);
-int smpd_get_user_data_default(char *key, char *value, int value_len);
-int smpd_get_smpd_data_default(char *key, char *value, int value_len);
-int smpd_set_user_data(char *key, char *value);
-int smpd_set_smpd_data(char *key, char *value);
+SMPD_BOOL smpd_option_on(const char *option);
+int smpd_get_user_data(const char *key, char *value, int value_len);
+int smpd_get_smpd_data(const char *key, char *value, int value_len);
+int smpd_get_user_data_default(const char *key, char *value, int value_len);
+int smpd_get_smpd_data_default(const char *key, char *value, int value_len);
+int smpd_set_user_data(const char *key, const char *value);
+int smpd_set_smpd_data(const char *key, const char *value);
 int smpd_getpid(void);
 char * get_sock_error_string(int error);
 void smpd_get_password(char *password);
