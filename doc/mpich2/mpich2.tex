@@ -792,10 +792,16 @@ Parameters that are semantically arrays should be declared as arrays
 (using \code{[]}).  
 
 \item[Indentation style.]
-We will specify an indentation style.  If so, we need to
-specify it at the top of each file (as an emacs command) so that emacs
-will use the correct style for users with other styles or projects.
-For example, \code{/* -*- Mode: C; c-set-style: mpich -*- */}.
+A common indentation style, \code{mpich}, is specified for all files.
+%specify it at the top of each file (as an emacs command) so that emacs
+%will use the correct style for users with other styles or projects.
+All C source files (including header files) begin with 
+\begin{verbatim}
+/* -*- Mode: C; eval: (c-set-style "mpich"); -*- */
+\end{verbatim}
+This is interrepted by Emacs and allows us to set a style for MPICH
+that can be different from each developer's personnal style.
+The style \code{mpich} is defined in \file{maint/mpich.el}.
 
 % Comment [BRT]: Yes.  Having a style standard makes it much easier to
 % read and modify code written by others.
