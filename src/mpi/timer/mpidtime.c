@@ -27,7 +27,12 @@ void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 {
     *t3 += (*t2 - *t1);
 }
-
+double MPID_Wtick( void )
+{
+    /* According to the documentation, ticks should be in nanoseconds.  This 
+       is untested */ 
+    return 1.0e-9;
+}
 
 
 #elif MPICH_TIMER_KIND == USE_CLOCK_GETTIME
@@ -58,8 +63,23 @@ void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
     t3->sec = sec;
     t3->nsec = nsec;
 }
+double MPID_Wtick( void )
+{
+    struct timespec res;
+    int rc;
 
+    rc = clock_getres( CLOCK_REALTIME, &res );
+    if (!rc) 
+	/* May return -1 for unimplemented ! */
+	return res.tv_sec + 1.0e-9 * res.tv_nsec;
 
+    /* Sigh.  If not POSIX not implemented, then we need to use the generic 
+       tick routine */
+    return MPID_Generic_wtick();
+}
+#define MPICH_NEEDS_GENERIC_WTICK
+/* Rename the function so that we can access it */
+#define MPID_Wtick MPID_Generic_wtick
 
 #elif MPICH_TIMER_KIND == USE_GETTIMEOFDAY
 #ifdef HAVE_SYS_TIME_H
@@ -94,7 +114,7 @@ void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 	t3->tv_sec++;
     }
 }
-
+#define MPICH_NEEDS_GENERIC_WTICK
 
 
 #elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
@@ -153,7 +173,10 @@ void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 {
 }
-
+double MPID_Wtick( void ) 
+{
+    return 1.0;
+}
 
 
 #elif MPICH_TIMER_KIND == USE_WIN86_CYCLE
@@ -242,7 +265,7 @@ void TIMER_INIT()
 
 
 #elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCECOUNTER
-double g_timer_frequency=0.0;  /* High performance counter frequency */
+static double g_timer_frequency=0.0;  /* High performance counter frequency */
 void MPID_Wtime_init(void)
 {
     LARGE_INTEGER n;
@@ -272,4 +295,34 @@ void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 
 #endif
 
+#ifdef MPICH_NEEDS_GENERIC_WTICK
+/*
+ * For timers that do not have defined resolutions, compute the resolution
+ * by sampling the clock itself.
+ */
+double MPID_Wtick( void )
+{
+    static double tickval = -1.0;
+    double timediff;
+    MPID_Time_t t1, t2;
+    int    cnt;
+    int    icnt;
 
+    if (tickval < 0.0) {
+	tickval = 1.0e6;
+	for (icnt=0; icnt<10; icnt++) {
+	    cnt = 1000;
+	    MPID_Wtime( &t1 );
+	    while (cnt--) {
+		MPID_Wtime( &t2 );
+		MPID_Wtime_diff( &t1, &t2, &timediff );
+		if (timediff > 0) break;
+		}
+	    if (cnt && timediff > 0.0 && timediff < tickval) {
+		MPID_Wtime_diff( &t1, &t2, &tickval );
+	    }
+	}
+    }
+    return tickval;
+}
+#endif
