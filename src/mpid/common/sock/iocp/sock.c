@@ -810,7 +810,7 @@ int MPIDU_Sock_accept(MPIDU_Sock_t listener_sock, MPIDU_Sock_set_t set, void * u
     if (!(listener_sock->state & SOCKI_ACCEPTED))
     {
 	*sock = NULL;
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOP_ACCEPT, "**sock_nop_accept", 0);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NO_NEW_SOCK, "**sock_nop_accept", 0);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_ACCEPT);
 	return mpi_errno;
     }
@@ -2173,14 +2173,14 @@ int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t 
 int MPIDU_Sock_get_sock_id(MPIDU_Sock_t sock)
 {
     int ret_val;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GETID);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GET_SOCK_ID);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_GETID);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_GET_SOCK_ID);
     if (sock == MPIDU_SOCK_INVALID_SOCK)
 	ret_val = -1;
     else
 	ret_val = (int)sock->sock;
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GETID);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_SOCK_ID);
     return ret_val;
 }
 
@@ -2191,11 +2191,11 @@ int MPIDU_Sock_get_sock_id(MPIDU_Sock_t sock)
 int MPIDU_Sock_get_sock_set_id(MPIDU_Sock_set_t set)
 {
     int ret_val;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GETSETID);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GET_SOCK_SET_ID);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_GETSETID);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_GET_SOCK_SET_ID);
     ret_val = (int)set;
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GETSETID);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_SOCK_SET_ID);
     return ret_val;
 }
 
