@@ -1073,275 +1073,6 @@ Note that the choice of alignment rule is made at runtime, using the
 routines in Section~\ref{sec:runtime-params}.  The default alignment
 rule is determined by configure using \code{PAC_C_STRUCT_ALIGNMENT}.
 
-\subsubsection{\mpifunc{MPI_ADDRESS}}
-Deprecated.  Use \mpifunc{MPI_GET_ADDRESS}.
-
-\subsubsection{\mpifunc{MPI_GET_COUNT}}
-Uses the \mpids{MPI_Datatype}{size} field of the datatype.  Note the
-special case of a 
-datatype of size zero and a message of size zero; this should return a count
-of zero (see the MPI errata discussion) and the
-\mpids{MPI_Status}{count} field of \mpiconst{MPI_Status}.  
-
-Question: should this call an MPID function for this for systems that want to
-manage the count field differently, that is, not use it to store the number of
-bytes in the message?  
-
-\subsubsection{\mpifunc{MPI_GET_ELEMENTS}}
-This requires some care.  This should return the number of basic datatypes in
-a message.  So, to start with, each datatype should keep track of the number
-of basic datatypes.  Then a quick version of this is:
-\begin{algorithm}
-\code{sizeof_datatype} = \mpids{MPI_datatype}{size}) field of \mpiconst{MPI_Datatype}
-\code{n_bytes}         = \mpids{MPI_Status}{count} field of \mpiconst{MPI_Status}
-If \code{sizeof_datatype} is zero, then
-    If \code{n_bytes} is zero, return zero
-    else return \mpiconst{MPI_UNDEFINED}
-\code{m_count} = \code{n_bytes} / \code{sizeof_datatype}.  
-\code{m_rem}   = \code{n_bytes} % \code{sizeof_datatype}.
-If \code{m_rem} is zero, then 
-    the number of elements is this \code{m_count *}
-    \mpids{MPI_Datatype}{elements_per_datatype}. 
-Else if all elements in the datatype are the same size then
-    (e.g., an indexed case)
-    the number of elements is \code{n_bytes} /
-    \mpids{MPI_Datatype}{sizeof_each_element}
-    Use \mpids{MPI_Datatype}{_flags} with
-    \mpids{MPI_Datatype}{MPID_ELEMENTS_SAME_SIZE} for this test, along
-    with \mpids{MPI_Datatype}{element_size}.
-Else 
-    /* This is the difficult case */
-    \code{element_count} = \code{m_count * elements_per_datatype}
-    Process \code{m_rem} recursively as follows:
-    Two cases:
-    If the datatype has a single old type (e.g., everything except 
-    a structure type), recursively apply the algorithm with \code{m_rem} 
-    instead of \code{n_bytes} to the old type.
-    Else 
-       (the struct case).
-       Apply the above algorithm to each datatype component of the
-       struct
-\end{algorithm}
-
-\subsubsection{\mpifunc{MPI_STATUS_SET_ELEMENTS}}
-Where are the values defined for the count field(s) in the status?
-
-\subsubsection{\mpifunc{MPI_TYPE_HINDEXED}}
-Deprecated.  However, we can't easily use \mpifunc{MPI_TYPE_CREATE_HINDEXED}
-because that could (if \code{MPI_Aint} is longer than \code{int}) require
-making a copy of an array argument.  Thus, this code should copy most
-of \mpifunc{MPI_TYPE_CREATE_HINDEXED}.
-
-\subsubsection{\mpifunc{MPI_TYPE_HVECTOR}}
-Deprecated.  Use \mpifunc{MPI_TYPE_CREATE_HVECTOR}.
-
-\subsubsection{\mpifunc{MPI_TYPE_STRUCT}}
-Deprecated.  For reasons similar to \mpifunc{MPI_TYPE_HINDEXED}, we do
-not want to call the new function.
-
-\subsubsection{\mpifunc{MPI_GET_ADDRESS}}
-See the MPICH-1 \mpifunc{MPI_ADDRESS} in \file{mpich/src/pt2pt/address.c}.
-We may want a configure test that the integer value of a \code{char *} pointer
-is the address in bytes.
-
-\subsubsection{\mpifunc{MPI_TYPE_CONTIGUOUS}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
-with type \mpidconst{MPID_Contig}.  
-
-\subsubsection{\mpifunc{MPI_TYPE_INDEXED}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
-with type \mpidconst{MPID_Indexed}.
-
-\subsubsection{\mpifunc{MPI_TYPE_VECTOR}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
-with type \mpidconst{MPID_Vector}.
-
-\subsubsection{\mpifunc{MPI_TYPE_CREATE_DARRAY}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the
-dataloops (the number depends on the dimension of the darray) 
-with type \mpidconst{MPID_Vector}.
-
-\subsubsection{\mpifunc{MPI_TYPE_CREATE_HINDEXED}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
-with type \mpidconst{MPID_Indexed}.
-
-\subsubsection{\mpifunc{MPI_TYPE_CREATE_HVECTOR}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
-with type \mpidconst{MPID_Vector}.
-
-\subsubsection{\mpifunc{MPI_TYPE_CREATE_INDEXED_BLOCK}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
-with type \mpidconst{MPID_BlockIndexed}.
-
-\subsubsection{\mpifunc{MPI_TYPE_CREATE_STRUCT}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
-with type \mpidconst{MPID_Struct}.
-
-\subsubsection{\mpifunc{MPI_TYPE_CREATE_SUBARRAY}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the
-dataloops (the number depends on the dimension of the subarray) 
-with type \mpidconst{MPID_Vector}.
-
-\subsubsection{\mpifunc{MPI_TYPE_CREATE_RESIZED}}
-Create a new datatype with \mpidfunc{MPID_Type_create} and copy in the
-dataloop from the old type.  Then change the
-\mpids{MPI_Datatype}{extent} of the type as specified by the
-\code{extent} argument and the lowerbound by the \code{lb} argument. 
-
-\subsubsection{\mpifunc{MPI_TYPE_COMMIT}}
-Optimize the datatype for communication.  
-
-Question:  How do we want to organize the optimization code for datatypes?  We
-shouldn't embed it within the \code{MPI_TYPE_COMMIT} function.  Should each of
-the dataloop types (e.g., \code{MPID_Vector}) have a corresponding routine
-that is called with the entire datatype (not just the specific dataloop)?
-
-One special case is to identify datatypes that are contiguous.  
-Question: should this set a field in the datatype, a bit in
-\mpids{MPI_Datatype}{_flags}, or a bit in the id for the
-\mpiconst{MPI_Datatype}? 
-
-\subsubsection{\mpifunc{MPI_TYPE_DUP}}
-Duplicate a datatype.  Invoke the attribute copy code for the attribute list
-(\mpids{MPI_Datatype}{attributes}) on this datatype.
-
-\subsubsection{\mpifunc{MPI_TYPE_FREE}}
-This first calls \mpidfunc{MPID_Datatype_incr} with an increment of $-1$.  If
-the returned value is zero, it should free the contents of \code{dataloop} and
-then call \mpidfunc{MPID_Datatype_free}.
-
-\subsubsection{\mpifunc{MPI_TYPE_EXTENT}}
-Simply uses the \mpids{MPI_Datatype}{extent} field in the structure.
-
-\subsubsection{\mpifunc{MPI_TYPE_LB}}
-Simply uses the \mpids{MPI_Datatype}{lb} field in the structure.
-
-\subsubsection{\mpifunc{MPI_TYPE_SIZE}}
-Simply uses the \mpids{MPI_Datatype}{size} field in the structure.
-
-\subsubsection{\mpifunc{MPI_TYPE_UB}}
-Simply uses the \mpids{MPI_Datatype}{ub} field in the structure.
-
-\subsubsection{\mpifunc{MPI_TYPE_GET_TRUE_EXTENT}}
-Simply uses the \mpids{MPI_Datatype}{true_extent} field in the structure.
-
-\subsubsection{\mpifunc{MPI_TYPE_GET_CONTENTS}}
-Uses the \code{dataloop} field to access the data uses to create the datatype.
-Actually, must use a separate dataloop field so that the arguments that the
-user provided are returned, rather than an optimized form).
-
-\subsubsection{\mpifunc{MPI_TYPE_GET_ENVELOPE}}
-Uses \code{dataloop} field to identify how the datatype was constructed.
-The \code{combiner} type must be one of 
-
-\noindent\mpiconst{MPI_COMBINER_NAMED}\\
-\mpiconst{MPI_COMBINER_DUP}\\
-\mpiconst{MPI_COMBINER_CONTIGUOUS}\\
-\mpiconst{MPI_COMBINER_VECTOR}\\
-\mpiconst{MPI_COMBINER_HVECTOR_INTEGER}\\
-\mpiconst{MPI_COMBINER_HVECTOR}\\
-\mpiconst{MPI_COMBINER_INDEXED}\\
-\mpiconst{MPI_COMBINER_HINDEXED_INTEGER}\\
-\mpiconst{MPI_COMBINER_HINDEXED}\\
-\mpiconst{MPI_COMBINER_INDEXED_BLOCK}\\
-\mpiconst{MPI_COMBINER_STRUCT_INTEGER}\\
-\mpiconst{MPI_COMBINER_STRUCT}\\
-\mpiconst{MPI_COMBINER_SUBARRAY}\\
-\mpiconst{MPI_COMBINER_DARRAY}\\
-\mpiconst{MPI_COMBINER_F90_REAL}\\
-\mpiconst{MPI_COMBINER_F90_COMPLEX}\\
-\mpiconst{MPI_COMBINER_F90_INTEGER}\\
-\mpiconst{MPI_COMBINER_RESIZED}\\
-
-\subsubsection{\mpifunc{MPI_TYPE_GET_EXTENT}}
-Simply uses \mpids{MPI_Datatype}{extent} field.
-
-\subsubsection{\mpifunc{MPI_TYPE_MATCH_SIZE}}
-This function returns the MPI Datatype corresponding to a specified type class
-(one of \mpiconst{MPI_TYPECLASS_INTEGER}, \mpiconst{MPI_TYPECLASS_REAL}, or
-\mpiconst{MPI_TYPECLASS_COMPLEX}) and size.  This will need to be implemented
-by using the datatype sizes determined by configure, and then mapped into 
-the actual types.  For example
-\begin{verbatim}
-switch (typeclass) {
-    case MPI_TYPECLASS_REAL:
-        switch (size) {
-        case 4:  *rtype = MPI_REAL;
-        case 8:  *rtype = MPI_DOUBLE_PRECISION;
-        case 16: *rtype = MPI_REAL16
-        default: (invoke error handler from MPI_COMM_WORLD)
-        }
-    case MPI_TYPECLASS_INTEGER:
-        ...
-\end{verbatim}
-
-
-\subsubsection{\mpifunc{MPI_TYPE_GET_NAME}}
-Uses the \mpids{MPI_Datatype}{name} field.  Note that the Fortran
-versions must be careful to 
-blank-pad the value rather than null-terminating it.
-
-Question: We should have a common routine to handle the Fortran version of all
-of the get/set name routines.  I propose \mpidfunc{MPIi_F77_get_name} and
-\mpidfunc{MPIi_F77_set_name}; these can be used for any character string and
-are not limited to the datatype, communicator, or window name.
-
-\subsubsection{\mpifunc{MPI_TYPE_SET_NAME}}
-Sets the \mpids{MPI_Datatype}{name} field.  Returns error if supplied
-name is too long. 
-Note that the name may be set for all datatypes, including the predefined
-names.
-
-\subsubsection{\mpifunc{MPI_PACK}}
-Call \mpidfunc{MPID_Pack} with a \code{rank} of \code{MPI_ANY_SOURCE}.
-
-\subsubsection{\mpifunc{MPI_PACK_SIZE}}
-Call \mpidfunc{MPID_Pack_size} with a \code{rank} of \code{MPI_ANY_SOURCE}.
-
-Question: One issue is with IMPI \cite{impi}, which requires that there be no
-header on any pack buffers.  Do we want to say something about a header on a
-pack buffer?  Note that implementing the datatype signature
-\cite{gro:mpi-datatypes:pvmmpi00} requires a header. 
-
-\subsubsection{\mpifunc{MPI_UNPACK}}
-Call \mpidfunc{MPID_Unpack} with a \code{rank} of \code{MPI_ANY_SOURCE}.
-
-\subsubsection{\mpifunc{MPI_PACK_EXTERNAL}}
-This is like \mpifunc{MPI_PACK}, but in the ``\mpiconst{external32}'' format
-defined by MPI-2.  There is no header; I believe that this exactly matches the
-IMPI format.
-
-\subsubsection{\mpifunc{MPI_PACK_EXTERNAL_SIZE}}
-Like \mpifunc{MPI_PACK_SIZE}, but for ``external32''.
-
-\subsubsection{\mpifunc{MPI_UNPACK_EXTERNAL}}
-Like \mpifunc{MPI_UNPACK}, but for ``external32''.
-
-\subsubsection{\mpifunc{MPI_REGISTER_DATAREP}}
-Specify a set of user data conversion functions.  The data representation
-defined by this routine may be used by \mpifunc{MPI_FILE_SET_VIEW}.  The error
-handler used is that defined on \mpiconst{MPI_FILE_NULL}.  Note that
-\mpifunc{MPI_PACK_EXTERNAL} and \mpifunc{MPI_UNPACK_EXTERNAL} take a
-\code{datarep} as an argument; if possible, the implementation of those
-routines should accept a general data representation defined by this routine
-so that they may be used in an MPI I/O implementation.
-
-\subsubsection{Heterogeneity}
-\label{sec:hetero}
-Optimizing for the common case of machines or clusters with a common
-data representation is important.  
-
-In MPICH, macros were used to include code that handled heterogeneous
-systems.  For MPICH2, I'd prefer to use clearer blocks of code rather
-than special macros.  For example,
-\begin{verbatim}
-#define MPICH_IS_HETERO
-...
-#else
-...
-#endif
-\end{verbatim}
-
 Questions about the implementation of datatypes:
 
 \begin{enumerate}
@@ -1420,11 +1151,384 @@ Questions about the implementation of datatypes:
 
 \end{enumerate}
 
+\subsubsection{\mpifunc{MPI_ADDRESS}}
+Deprecated.  Use \mpifunc{MPI_GET_ADDRESS}.
+
+\subsubsection{\mpifunc{MPI_GET_COUNT}}
+Uses the \mpids{MPI_Datatype}{size} field of the datatype.  Note the
+special case of a 
+datatype of size zero and a message of size zero; this should return a count
+of zero (see the MPI errata discussion) and the
+\mpids{MPI_Status}{count} field of \mpiconst{MPI_Status}.  
+
+Question: should this call an MPID function for this for systems that want to
+manage the count field differently, that is, not use it to store the number of
+bytes in the message?  
+
+\subsubsection{\mpifunc{MPI_GET_ELEMENTS}}
+This requires some care.  This should return the number of basic datatypes in
+a message.  So, to start with, each datatype should keep track of the number
+of basic datatypes.  Then a quick version of this is:
+\begin{algorithm}
+\code{sizeof_datatype} = \mpids{MPI_datatype}{size}) field of \mpiconst{MPI_Datatype}
+\code{n_bytes}         = \mpids{MPI_Status}{count} field of \mpiconst{MPI_Status}
+If \code{sizeof_datatype} is zero, then
+    If \code{n_bytes} is zero, return zero
+    else return \mpiconst{MPI_UNDEFINED}
+\code{m_count} = \code{n_bytes} / \code{sizeof_datatype}.  
+\code{m_rem}   = \code{n_bytes} % \code{sizeof_datatype}.
+If \code{m_rem} is zero, then 
+    the number of elements is this \code{m_count *}
+    \mpids{MPI_Datatype}{elements_per_datatype}. 
+Else if all elements in the datatype are the same size then
+    (e.g., an indexed case)
+    the number of elements is \code{n_bytes} /
+    \mpids{MPI_Datatype}{sizeof_each_element}
+    Use \mpids{MPI_Datatype}{_flags} with
+    \mpids{MPI_Datatype}{MPID_ELEMENTS_SAME_SIZE} for this test, along
+    with \mpids{MPI_Datatype}{element_size}.
+Else 
+    /* This is the difficult case */
+    \code{element_count} = \code{m_count * elements_per_datatype}
+    Process \code{m_rem} recursively as follows:
+    Two cases:
+    If the datatype has a single old type (e.g., everything except 
+    a structure type), recursively apply the algorithm with \code{m_rem} 
+    instead of \code{n_bytes} to the old type.
+    Else 
+       (the struct case).
+       Apply the above algorithm to each datatype component of the
+       struct
+\end{algorithm}
+
+\subsubsection{\mpifunc{MPI_STATUS_SET_ELEMENTS}}
+Questions: Where are the values defined for the count field(s) in the status?
+Is this just the \mpids{MPI_Status}{count} field?  Is there an
+\mpidfunc{MPID_Status_set_elements} routine?
+
+\subsubsection{\mpifunc{MPI_TYPE_HINDEXED}}
+Deprecated.  However, we can't easily use \mpifunc{MPI_TYPE_CREATE_HINDEXED}
+because that could (if \code{MPI_Aint} is longer than \code{int}) require
+making a copy of an array argument.  Thus, this code should copy most
+of \mpifunc{MPI_TYPE_CREATE_HINDEXED}.  Note that the combiner name for this
+is \mpiconst{MPI_COMBINER_HINDEXED_INTEGER}.
+
+\subsubsection{\mpifunc{MPI_TYPE_HVECTOR}}
+Deprecated.  Use \mpifunc{MPI_TYPE_CREATE_HVECTOR}.  Note that the combiner
+name is \mpiconst{MPI_COMBINER_HVECTOR_INTEGER}.
+
+\subsubsection{\mpifunc{MPI_TYPE_STRUCT}}
+Deprecated.  For reasons similar to \mpifunc{MPI_TYPE_HINDEXED}, we do
+not want to call the new function.  Note that the combiner name is
+\mpiconst{MPI_COMBINER_STRUCT_INTEGER}. 
+
+\subsubsection{\mpifunc{MPI_GET_ADDRESS}}
+See the MPICH-1 \mpifunc{MPI_ADDRESS} in \file{mpich/src/pt2pt/address.c}.
+We may want a configure test that the integer value of a \code{char *} pointer
+is the address in bytes.
+
+\subsubsection{\mpifunc{MPI_TYPE_CONTIGUOUS}}
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
+with type \mpidconst{MPID_Contig}.  
+
+\subsubsection{\mpifunc{MPI_TYPE_INDEXED}}
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
+with type \mpidconst{MPID_Indexed}.
+
+\subsubsection{\mpifunc{MPI_TYPE_VECTOR}}
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
+with type \mpidconst{MPID_Vector}.
+
+\subsubsection{\mpifunc{MPI_TYPE_CREATE_DARRAY}}
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the
+dataloops (the number depends on the dimension of the darray) 
+with type \mpidconst{MPID_Vector}.
+
+\subsubsection{\mpifunc{MPI_TYPE_CREATE_HINDEXED}}
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
+with type \mpidconst{MPID_Indexed}.
+
+\subsubsection{\mpifunc{MPI_TYPE_CREATE_HVECTOR}}
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
+with type \mpidconst{MPID_Vector}.
+
+\subsubsection{\mpifunc{MPI_TYPE_CREATE_INDEXED_BLOCK}}
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
+with type \mpidconst{MPID_BlockIndexed}.
+
+\subsubsection{\mpifunc{MPI_TYPE_CREATE_STRUCT}}
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop
+with type \mpidconst{MPID_Struct}.
+
+\subsubsection{\mpifunc{MPI_TYPE_CREATE_SUBARRAY}}
+Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the
+dataloops (the number depends on the dimension of the subarray) 
+with type \mpidconst{MPID_Vector}.
+
+\subsubsection{\mpifunc{MPI_TYPE_CREATE_RESIZED}}
+Create a new datatype with \mpidfunc{MPID_Type_create} and copy in the
+dataloop from the old type.  Then change the
+\mpids{MPI_Datatype}{extent} of the type as specified by the
+\code{extent} argument and the lowerbound by the \code{lb} argument. 
+
+\subsubsection{\mpifunc{MPI_TYPE_COMMIT}}
+Optimize the datatype for communication.  
+
+Question:  How do we want to organize the optimization code for datatypes?  We
+shouldn't embed it within the \code{MPI_TYPE_COMMIT} function.  Should each of
+the dataloop types (e.g., \code{MPID_Vector}) have a corresponding routine
+that is called with the entire datatype (not just the specific dataloop)?
+
+One special case is to identify datatypes that are contiguous.  
+Question: should this set a field in the datatype, a bit in
+\mpids{MPI_Datatype}{_flags}, or a bit in the id for the
+\mpiconst{MPI_Datatype}? 
+
+\subsubsection{\mpifunc{MPI_TYPE_DUP}}
+Duplicate a datatype.  Invoke the common attribute copy code (e.g., the same
+that is used for \mpifunc{MPI_COMM_DUP}) for the attribute
+list (\mpids{MPI_Datatype}{attributes}) on this datatype.
+
+\subsubsection{\mpifunc{MPI_TYPE_FREE}}
+This first calls \mpidfunc{MPID_Datatype_incr} with an increment of $-1$.  If
+the returned value is zero, it should free the contents of \code{dataloop} and
+then call \mpidfunc{MPID_Datatype_free}.  Invoke the common attribute list
+delete code.
+
+\subsubsection{\mpifunc{MPI_TYPE_EXTENT}}
+Simply uses the \mpids{MPI_Datatype}{extent} field in the structure.
+
+\subsubsection{\mpifunc{MPI_TYPE_LB}}
+Simply uses the \mpids{MPI_Datatype}{lb} field in the structure.
+
+\subsubsection{\mpifunc{MPI_TYPE_SIZE}}
+Simply uses the \mpids{MPI_Datatype}{size} field in the structure.
+
+\subsubsection{\mpifunc{MPI_TYPE_UB}}
+Simply uses the \mpids{MPI_Datatype}{ub} field in the structure.
+
+\subsubsection{\mpifunc{MPI_TYPE_GET_TRUE_EXTENT}}
+Simply uses the \mpids{MPI_Datatype}{true_extent} field in the structure.
+
+\subsubsection{\mpifunc{MPI_TYPE_GET_CONTENTS}}
+Uses the \code{dataloop} field to access the data uses to create the datatype.
+Actually, must use a separate dataloop field so that the arguments that the
+user provided are returned, rather than an optimized form).
+
+\subsubsection{\mpifunc{MPI_TYPE_GET_ENVELOPE}}
+Uses \code{dataloop} field to identify how the datatype was constructed.
+The \code{combiner} type must be one of 
+
+\noindent\mpiconst{MPI_COMBINER_NAMED}\\
+\mpiconst{MPI_COMBINER_DUP}\\
+\mpiconst{MPI_COMBINER_CONTIGUOUS}\\
+\mpiconst{MPI_COMBINER_VECTOR}\\
+\mpiconst{MPI_COMBINER_HVECTOR_INTEGER}\\
+\mpiconst{MPI_COMBINER_HVECTOR}\\
+\mpiconst{MPI_COMBINER_INDEXED}\\
+\mpiconst{MPI_COMBINER_HINDEXED_INTEGER}\\
+\mpiconst{MPI_COMBINER_HINDEXED}\\
+\mpiconst{MPI_COMBINER_INDEXED_BLOCK}\\
+\mpiconst{MPI_COMBINER_STRUCT_INTEGER}\\
+\mpiconst{MPI_COMBINER_STRUCT}\\
+\mpiconst{MPI_COMBINER_SUBARRAY}\\
+\mpiconst{MPI_COMBINER_DARRAY}\\
+\mpiconst{MPI_COMBINER_F90_REAL}\\
+\mpiconst{MPI_COMBINER_F90_COMPLEX}\\
+\mpiconst{MPI_COMBINER_F90_INTEGER}\\
+\mpiconst{MPI_COMBINER_RESIZED}\\
+
+\subsubsection{\mpifunc{MPI_TYPE_GET_EXTENT}}
+Simply uses \mpids{MPI_Datatype}{extent} field.
+
+\subsubsection{\mpifunc{MPI_TYPE_MATCH_SIZE}}
+This function returns the MPI Datatype corresponding to a specified type class
+(one of \mpiconst{MPI_TYPECLASS_INTEGER}, \mpiconst{MPI_TYPECLASS_REAL}, or
+\mpiconst{MPI_TYPECLASS_COMPLEX}) and size.  This will need to be implemented
+by using the datatype sizes determined by configure, and then mapped into 
+the actual types.  For example
+\begin{verbatim}
+switch (typeclass) {
+    case MPI_TYPECLASS_REAL:
+        switch (size) {
+        case 4:  *rtype = MPI_REAL;
+        case 8:  *rtype = MPI_DOUBLE_PRECISION;
+        case 16: *rtype = MPI_REAL16
+        default: (invoke error handler from MPI_COMM_WORLD)
+        }
+    case MPI_TYPECLASS_INTEGER:
+        ...
+\end{verbatim}
+
+
+\subsubsection{\mpifunc{MPI_TYPE_GET_NAME}}
+Uses the \mpids{MPI_Datatype}{name} field.  Note that the Fortran
+versions must be careful to 
+blank-pad the value rather than null-terminating it.
+
+Question: We should have a common routine to handle the Fortran version of all
+of the get/set name routines.  I propose \mpidfunc{MPIi_C2F_get_name} and
+\mpidfunc{MPIi_F2C_set_name}; these can be used for any character string and
+are not limited to the datatype, communicator, or window name.  Names are
+stored in C style (null terminated) in all MPI datastructures.
+
+\subsubsection{\mpifunc{MPI_TYPE_SET_NAME}}
+Sets the \mpids{MPI_Datatype}{name} field.  Returns error if supplied
+name is too long. 
+Note that the name may be set for all datatypes, including the predefined
+names.
+
+\subsubsection{\mpifunc{MPI_PACK}}
+Call \mpidfunc{MPID_Pack} with a \code{rank} of \code{MPI_ANY_SOURCE}.
+\begin{adi3}
+Native/Homogeneous case: Simply execute the dataloop
+
+Heterogeneous case: If reader-makes-right (RMR) is used, then this is the same
+as the native case.  If XDR or external32 is used, then each basic type must
+be identified and 
+\end{adi3}
+
+\subsubsection{\mpifunc{MPI_PACK_SIZE}}
+Call \mpidfunc{MPID_Pack_size} with a \code{rank} of \code{MPI_ANY_SOURCE}.
+
+Question: One issue is with IMPI \cite{impi}, which requires that there be no
+header on any pack buffers.  Do we want to say something about a header on a
+pack buffer?  Note that implementing the datatype signature
+\cite{gro:mpi-datatypes:pvmmpi00} requires a header. 
+
+\begin{adi3}
+Native/Homogenous case: \mpids{MPI_Datatype}{size} field of
+\mpiconst{MPI_Datatype}. 
+
+Heterogeneous case: Except for the RMR case, this is more awkward.  On
+possibility is to compute a 
+\mpids{MPI_Datatype}{pack_size} and \mpids{MPI_Datatype}{pack_alignment} for
+each datatype and use that to compute the final size, at least for choices
+that are not dependent on the rank in the communicator.
+\end{adi3}
+
+\subsubsection{\mpifunc{MPI_UNPACK}}
+Call \mpidfunc{MPID_Unpack} with a \code{rank} of \code{MPI_ANY_SOURCE}.
+
+\begin{adi3}
+Native/Homogeneous case: Simple use the dataloop to unpack the data.
+Special case: As described below, packed buffers may have a header; if the
+implementation requires them, even the native case must first check and skip
+over the header.
+
+Heterogeneous case:  In all cases (RMR and XDR/external32/etc.), each basic
+datatype must be identified and processed.  Further, for RMR, we need to know
+the origin of the data so the the receiver can figure out what to do.
+
+Question: some communicators may require a symmetric format, such as XDR or
+external32.  An example is any communicator that involves a process connected
+through IMPI \cite{impi}.  Do communicators need a structure that contains
+information on heterogeneity (e.g., a \mpids{MPI_Comm}{data_rep})?
+
+Question:  The MPI-FT project (no papers available) has proposed reordering
+the data so that data of each time is placed together.  For example, instead
+of sending char-int-char-int, it might send int-int-char-char, and rely on the
+datatype at the destination to receive it correctly.  Do we want to make this
+an option?  How do we handle the case that less than one complete instance of
+a datatype is sent (e.g., in the above case, only char-int-char is sent as
+int-char-char)? 
+\end{adi3}
+
+\paragraph{Using \mpifunc{MPI_PACK}, \mpifunc{MPI_UNPACK},
+  \mpidfunc{MPID_Pack} and \mpidfunc{MPID_Unpack} in the ADI.}
+Data this is sent with \mpiconst{MPI_PACKED} as the datatype may either be
+received as \mpiconst{MPI_PACKED} \emph{or} with any datatype that matches the
+type signature of the types used to pack the data on the sending end.  In
+homongeneous systems, this doesn't matter, but in systems where different data
+formats may be used depending on the source and destination of a message,
+along with the communicator connecting them, there are many issues.
+Consider the following cases of sending between two processes:
+\begin{enumerate}
+\item Source process uses MPI datatypes (not including) \mpiconst{MPI_PACKED}
+  to send the data.  In this case, a particular destination is known, and the
+  sending process can check to see if the destination process uses the same
+  data representation as the source process.  If so, it can send the data as
+  native.  However, it needs to indicate that the data is in native format to
+  the destination.
+
+  Question: do we want datatypes to contain information on what basic types
+  they contain?  How about the optimization for the case of a single basic
+  type? 
+\item Source process uses \mpifunc{MPI_Pack} and sends using type
+  \mpiconst{MPI_PACKED}.  Since \mpifunc{MPI_Pack} does not specify a
+  destination rank, the representation format must be chosen based on the
+  communicator, not the destination rank.  At the destination, one of two
+  things happens:
+  \begin{enumerate}
+  \item The receive type is not \mpiconst{MPI_PACKED}.  The data is converted
+    from the packed format into the user's buffer.  There must be some
+    indication that the message is in a particular format, whether it is
+    RMR, native, XDR, external32, etc.
+  \item The receive type is \mpiconst{MPI_PACKED}.  The data must be copied
+    almost as is, except that enough information must be saved so that
+    \mpifunc{MPI_UNPACK} can unpack it later.  This may include the message
+    format \emph{and source}, stored in the header.
+
+    For IMPI communicators, the format is fixed for all communication within
+    the communicator \emph{and} no header is permitted on packed data (at
+    least in the parts of the code visible to IMPI).
+  \end{enumerate}
+\item Source process use \mpifunc{MPI_Pack} and sends using type
+  \mpiconst{MPI_PACKED}.  Receiving process receives as \mpiconst{MPI_PACKED}
+  and then resends the message to another process in the same communicator.
+  The recipient of that message then unpacks it.
+
+  This last case makes it clear that the rank in the communicator of the
+  process that packed the message must be retained; the rank of the sender is
+  not sufficient.
+\end{enumerate}
+
+
+\subsubsection{\mpifunc{MPI_PACK_EXTERNAL}}
+This is like \mpifunc{MPI_PACK}, but in the ``\mpiconst{external32}'' format
+defined by MPI-2.  There is no header; I believe that this exactly matches the
+IMPI format.
+
+\subsubsection{\mpifunc{MPI_PACK_EXTERNAL_SIZE}}
+Like \mpifunc{MPI_PACK_SIZE}, but for ``external32''.
+
+\subsubsection{\mpifunc{MPI_UNPACK_EXTERNAL}}
+Like \mpifunc{MPI_UNPACK}, but for ``external32''.
+
+\subsubsection{\mpifunc{MPI_REGISTER_DATAREP}}
+Specify a set of user data conversion functions.  The data representation
+defined by this routine may be used by \mpifunc{MPI_FILE_SET_VIEW}.  The error
+handler used is that defined on \mpiconst{MPI_FILE_NULL}.  Note that
+\mpifunc{MPI_PACK_EXTERNAL} and \mpifunc{MPI_UNPACK_EXTERNAL} take a
+\code{datarep} as an argument; if possible, the implementation of those
+routines should accept a general data representation defined by this routine
+so that they may be used in an MPI I/O implementation.
+
+\subsubsection{Heterogeneity}
+\label{sec:hetero}
+Optimizing for the common case of machines or clusters with a common
+data representation is important.  
+
+In MPICH, macros were used to include code that handled heterogeneous
+systems.  For MPICH2, I'd prefer to use clearer blocks of code rather
+than special macros.  For example,
+\begin{verbatim}
+#define MPICH_IS_HETERO
+...
+#else
+...
+#endif
+\end{verbatim}
+even is some code is duplicated as a result.
+
 \subsection{Groups}
 \label{sec:groups}
 
+Error classes include \mpiconst{MPI_ERR_GROUP}, \mpiconst{MPI_ERR_RANK}, and
+\mpiconst{MPI_ERR_ARG}. 
+
 Groups are simple.  The key point here is to make sure that the use of
-groups to map from ranks in a communicator to particular destination
+groups to map from ranks in a communicator to a particular destination
 process is fast.
 To provide a fast implementation of \mpifunc{MPI_COMM_GROUP}, groups must
 have reference counts.  
@@ -1436,11 +1540,15 @@ common case.  Should there be an \code{MPID_GROUP_WORLD}?
 Question: What data structure should be used to represent groups?
 MPICH-1 used a simple array that mapped rank in a group to rank in the
 group of \code{MPI_COMM_WORLD}.  In MPI-2, we can't use
-\code{MPI_COMM_WORLD}.  ADI-3 defines ``local process ids'', which
+\code{MPI_COMM_WORLD}.  ADI-3 defines ``local process ids,'' which
 refers simply to the processes known to the current process.  The code below
-suggests the use of an array of ranks to the ADI-3 local process ids.
-
-%Question: How do we implement \mpifunc{MPI_Group_translate_ranks}?
+suggests the use of an array of ranks to the ADI-3 local process ids.  Local
+process ids are not related to Unix process ids (perhaps we need a new name);
+rather, they are local \emph{MPI} process ids.  The MPI processes in
+\mpiconst{MPI_COMM_WORLD} have local process ids that range from zero to
+\code{size} of \mpiconst{MPI_COMM_WORLD} $-1$.  Processes that are added to a
+running MPI process (e.g., by \mpifunc{MPI_COMM_SPAWN}) have local process ids
+of at least \code{size}.
 
 Actually, groups are simple as long as we don't require a scalable
 representation of group membership.  An interesting question is what
@@ -1449,6 +1557,10 @@ systems such as Blue Gene.
 
 Plan: At least initially, the group implementation in ADI-3 will \emph{not} be
 scalable.  Each group will have an array that maps ranks to local process ids.
+
+Note: the MPICH-1 implementation of \mpifunc{MPI_Group_difference},
+\mpifunc{MPI_Group_union}, and \mpifunc{MPI_Group_intersection} has complexity
+that is the product of the sizes of the groups (!).
 
 \subsubsection{\mpifunc{MPI_GROUP_RANK}}
 Simply return \mpids{MPI_Group}{rank} field.
@@ -1459,18 +1571,23 @@ Simply return \mpids{MPI_Group}{size} field.
 \subsubsection{\mpifunc{MPI_GROUP_TRANSLATE_RANKS}}
 We may want to detect the special case of a group that is a subset of
 \code{MPI_COMM_WORLD} (does this imply a flag in the \mpidfunc{MPID_Group}
-structure?).  
+structure?).  Such a flag might be
+\mpids{MPI_Group}{MPID_GROUP_SUBSET_WORLD}. 
 
 \begin{algorithm}
 If either group is not a subset of \code{MPI_COMM_WORLD}, then 
 \begin{enumerate}
-\item For group2, if necessary, create a new array containing the pairs
-  \code{local process id}, \code{local rank}, sorted by \code{local process
-    id}. Call this array \mpids{MPI_Group}{lpid_to_lrank}.
+\item For \code{group2}, if necessary, create a new array containing the pairs
+  \code{local process id} (\mpids{lpid_to_lrank}{lpid}), \code{local rank}
+  (\mpids{lpid_to_lrank}{lrank}), sorted by \code{local process 
+    id}. Call this array \mpids{MPI_Group}{lpid_to_lrank}; the elements are
+  structures of type \mpidconst{MPID_Group_pmap_t}.  
   (Note that \mpifunc{MPI_GROUP_FREE} needs to free this array.)
-\item For each rank in ranks1, find the corresponding \code{local process id}
-  using \mpids{MPI_Group}{lrank_to_lpid} and then search for that in
-  the sorted array in group2.   
+\item For each rank in \code{ranks1}, find the corresponding \code{local
+    process id} 
+  using \mpids{MPI_Group}{lrank_to_lpid} and then search for that \code{lpid}
+  in 
+  the sorted array \code{lpid_to_lrank} in \code{group2}.
 \end{enumerate}
 \end{algorithm}
 
@@ -1479,10 +1596,11 @@ memory is left allocated to speed subsequent operations?  In this case, we
 leave the memory allocated so as to speed subsequent translations.  Normally,
 this routine is only used in tracing libraries to convert relative ranks into
 absolute ranks; in that case, it is likely to be called frequently.
-Note that this should also be a runtime parameter.
+This should also be a runtime parameter.
 
 \subsubsection{\mpifunc{MPI_GROUP_FREE}}
-Free all internal fields and then call MPID routine to return objects.
+Free all internal fields (e.g., \mpids{MPI_Group}{lpid_to_lrank}) and then
+call \mpidfunc{MPID_Group_free}. 
 
 \subsubsection{\mpifunc{MPI_GROUP_COMPARE}}
 \begin{enumerate}
@@ -1494,7 +1612,8 @@ set \code{result} to \mpiconst{MPI_IDENT} and return.
   contain the same values, but 
   in a different order.  We could use the same array needed by
   \code{MPI_GROUP_TRANSLATE_RANKS} here.  If those two arrays have the same
-  local process ids, return \mpiconst{MPI_SIMILAR}, otherwise return
+  local process ids (they'll be in the same order), return
+  \mpiconst{MPI_SIMILAR}, otherwise return 
   \mpiconst{MPI_UNEQUAL}.  
   Question: should we free the new arrays if we allocate them?  See
   the discussion in \mpifunc{MPI_GROUP_TRANSLATE_RANKS}.
@@ -1507,6 +1626,21 @@ set \code{result} to \mpiconst{MPI_IDENT} and return.
 
   To conform to Intel test suite error test for duplicate ranks, check for 
   duplicate ranks in the exclusion list.
+
+  We can arrange to perform both the group creation and the test for
+  duplicates through the use of a marker array; this can be used for many of
+  the group creation routines.
+
+  The \mpidconst{marker_array} is an integer array whose size is the size of
+  the group.  For \mpifunc{MPI_GROUP_EXCL}, initialize all entries to one.
+  For each rank in the exclusion list, decrement the corresponding entry in
+  the marker array.  Any entry that is less than zero indicates an error
+  (duplicate in the exclusion list).  Any entry that is still one indicates
+  that the corresponding process in the original group is to be retained in
+  the new group.
+
+  We may want an \mpidfunc{MPIi_Group_create_from_marker} for this and many of
+  the other group creation routines.
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_GROUP_INCL}}
@@ -1514,24 +1648,28 @@ set \code{result} to \mpiconst{MPI_IDENT} and return.
   Construct new group from subset of \mpids{MPI_Group}{lrank_to_lpid} field of
   input group.
 
-  Make sure to check for duplicate input ranges (invalid input).
+  Make sure to check for duplicate input ranges (invalid input).  Use the
+  \mpidconst{marker_array} approach from \mpifunc{MPI_GROUP_EXCL}, but start
+  with zero in each element; any element over one indicates an error.
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_GROUP_RANGE_EXCL}}
+  Check that the ranges terminate.  
 \begin{adi3}
   Construct new group from subset of \mpids{MPI_Group}{lrank_to_lpid} field of
   input group.  This is a little tricky because multiple ranges can be
-  specified and they can exclude overlapping ranges of ranks.  One easy way is
-  to simply create a new array of markers set to zero, use the ranges to set
-  the values to \code{1} for each element specified by the range, and
-  then assemble 
-  a group from what's left (calling \mpifunc{MPI_GROUP_INCL}, of course).
+  specified and they can exclude overlapping ranges of ranks.  
+  Use the \mpidconst{marker_array} with each element initialized to one; zero
+  out each rank specified by each range.  Create the new group from the
+  corresponding processes that have a positive entry.
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_GROUP_RANGE_INCL}}
+  Check that the ranges terminate.
 \begin{adi3}
   Construct new group from subset of \mpids{MPI_Group}{lrank_to_lpid} field of
-  input group.
+  input group.  Like \mpifunc{MPI_GROUP_RANGE_EXCL}, but start with zero in
+  each element of the \mpidconst{marker_array}.
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_GROUP_DIFFERENCE}}
@@ -1545,22 +1683,19 @@ indices in then sorted by the rank-in-group field, and the new group can be
 created by calling \mpifunc{MPI_GROUP_INCL} (or an internal version that works
 directly with the non-opaque data structures and assumes valid inputs).
 
-Note: the MPICH-1 implementation has complexity that is the product of the
-sizes of the groups (!).
+A better solution might be to use the \code{marker_array} of size of
+\code{group1}, where \code{group2} is used to zero elements of the
+\code{marker_array}.  
 
 \subsubsection{\mpifunc{MPI_GROUP_INTERSECTION}}
 
 This is implemented similarly to \mpifunc{MPI_GROUP_DIFFERENCE}.
 
-Note: the MPICH-1 implementation has complexity that is the product of the
-sizes of the groups (!).
-
 \subsubsection{\mpifunc{MPI_GROUP_UNION}}
 
-This is implemented similarly to \mpifunc{MPI_GROUP_DIFFERENCE}.
-
-Note: the MPICH-1 implementation has complexity that is the product of the
-sizes of the groups (!).
+Start with all of \code{group1}.  For each process in \code{group2} that is
+not in \code{group1} (check the \mpids{MPI_Group}{lpid_to_rank} array for
+\code{group1}), add that local process id to the union.
 
 \subsection{Communicators}
 \label{sec:communicators}
@@ -1574,7 +1709,10 @@ collective routines?  Just a hidden context?  One concern when there
 are two communicators: which do you lock (e.g., with
 \mpidfunc{MPID_Comm_thread_lock})?  How do you avoid deadly embraces?  How do
 you 
-ensure that the expected communicator is acted on?
+ensure that the expected communicator is acted on?  An alternative to two full
+communicators is to have two context values.  If there is a hidden
+communicator, should there be a flag that can be used to indicate that the
+communicator is, in fact, a hidden one?
 
 If a hidden communicator is used, it should have its error handler permanently
 set to \mpifunc{MPI_ERRORS_RETURN} so that an error action that is
@@ -1603,6 +1741,36 @@ a group and then use that to specify the communicator.  We may want a
 varient that takes a group and does not make a duplicate or copy; this
 would allow us to create the group and then provide it to the
 communicator creation routine.
+
+\paragraph{Allocating Context Ids.}
+\index{thread overhead!context ids}
+The single threaded case is relatively easy: a global variable can be used
+that contains a list of available context ids; there can also be a way to
+generate new context ids if a large number of communicators are in use.  The
+``list'' could, in fact, be a bit vector, with the bits indicating whether or
+not the context id was in use.  Communicator creation routines could find a
+context id by performing an \mpifunc{MPI_Allreduce} with the appropriate bit
+operator (\mpiconst{MPI_BAND}).  The position of the lowest set bit can be
+used.  
+
+The multithreaded case is more difficult.  You cannot do
+\begin{algorithm}
+  lock
+  MPI_Allreduce
+  unlock
+\end{algorithm}
+because different threads in the same process might lock the data structure,
+causing a deadly embrace.
+One possible solution is to use a lock/read/unlock on the bit vector, followed
+by an \mpifunc{MPI_Allreduce}, followed by an \mpifunc{MPI_Allreduce} on
+whether the bit vector has been changed by another thread.  If not, then the
+value for the context id can be accepted; otherwise, start over.  (need to
+make this more precise)
+
+\paragraph{Caching context ids.} 
+The performance of operations such as \mpifunc{MPI_Comm_split} and
+\mpifunc{MPI_Comm_dup} can be improved if there is a preallocated cache of
+context ids, at least in the single-threaded case.
 
 \subsubsection{\mpifunc{MPI_COMM_DUP}}
 One approach is to extract the group from the incoming communicator,
@@ -1652,12 +1820,15 @@ Return the \mpids{MPI_Comm}{size} field.  This is really the size of the local
 group, which for an intercommunicator may be different from the remote
 size.  Note that for point-to-point communication, error checking for
 destination or source ranks must look at the remote size.  Should
-there be a \mpids{MPI_Comm}{local_size} field in the communicator?
+there be \mpids{MPI_Comm}{local_size} and \mpids{MPI_Comm}{remote_size} fields
+in the communicator? 
 
 \subsubsection{\mpifunc{MPI_COMM_SPLIT}}
-Perform an Allgather on the color and key.  Create the subgroups,
-ordered according to the color.  Use \mpifunc{MPI_Comm_create} to
-build the new communicator.
+Perform an Allgather on the color and key.  Processes with the same color are
+in the same new communicator.  Create the subgroups,
+ordered according to the key (using an array containing (key,ownerrank), sort
+by key, then extract the \code{lpid} from \mpids{MPI_Group}{lrank_to_lpid}.
+Use \mpifunc{MPI_Comm_create} to build the new communicator.
 
 \subsubsection{\mpifunc{MPI_COMM_TEST_INTER}}
 Should this simply test to see if the remote group and the local groups are
@@ -1701,7 +1872,7 @@ case for groups created by \mpifunc{MPI_COMM_SPAWN} or
 In the first case, we only need to establish the correspondence
 between the local process ids.  
 We can convert the second case into the first case by forming a
-correspondence when processes are joined to an MPI process with the
+correspondence when processes are joined to an MPI process with 
 \mpifunc{MPI_COMM_SPAWN}, \mpifunc{MPI_COMM_CONNECT} and related
 routines.  This means that that must be a function that converts local
 process numbers into the ``global'' numbering and back.  The global
@@ -1717,7 +1888,9 @@ int MPIi_Gprocmap_lock( int flag ) /* lock/unlock */
 void MPIi_Gprocmap_ltog( int n, const int lpid_array[], int gpid_array[] )
 void MPIi_Gprocmap_gtol( int n, const int gpid_array[], int lpid_array[] )
 void MPIi_Gprocmap_update( int n, const int gpid_array[] )
+void MPIi_Gprocmap_get( int *n, int (*gpid_array)[] )
 \end{verbatim}
+\index{MPIi_Gprocmap_get}
 
 The intercommunicator routines should have robust error checking because they
 require care and understanding in use and errors are hard to diagnose.  
@@ -1735,7 +1908,7 @@ local process (see \mpiconst{MPI_INTERCOMM_CREATE}).
 This is a special C++ function; it behaves similarly to
 \mpifunc{MPI_COMM_DUP}, but returns a reference (pointer) to the created
 communicator, rather than the communicator itself.  This is necessary because
-the C++ binding makes a Comm an abstract base class, so you can't dup a
+the C++ binding makes a \code{Comm} an abstract base class, so you can't dup a
 general communicator, just one of the four derived classes.
 Question: should we design an internal dup function so that both
 \mpifunc{MPI_COMM_DUP} and the C++ \code{MPI::Comm::Clone} function can use it?
