@@ -4,6 +4,7 @@ smvar_do_sharedlibs   = 0
 MOD              = @F90MODEXT@
 MPIMOD           = @MPIMODNAME@
 F90INCFLAG       = @F90INCFLAG@
+F90EXT           = @F90EXT@
 F90_COMPILE_MODS = $(F90_COMPILE) $(F90INCFLAG)../f77
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 
@@ -24,7 +25,13 @@ $(MPIMOD).$(MOD): $(srcdir)/mpi.f90
 	    cp mpimod.pc ../../../src/include/mpimod.pc ; \
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	else \
+	    if [ "$(F90EXT)" != "f90" ] ; then \
+	        ln -sf mpi.f90 mpi.$(F90EXT) ; \
+	    fi ; \
 	    $(F90_COMPILE_MODS) -c $(srcdir)/mpi.f90 ; \
+	    if [ "$(F90EXT)" != "f90" ] ; then \
+	        rm -f mpi.$(F90EXT) ; \
+	    fi ; \
 	fi
 
 # To ensure that f90 can be used before a make-install step, we copy
