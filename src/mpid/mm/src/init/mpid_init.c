@@ -51,5 +51,21 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     mm_car_init();
     mm_vctable_init();
 
+#ifdef WITH_METHOD_SHM
+    shm_init();
+#endif
+#ifdef WITH_METHOD_TCP
+    tcp_init();
+#endif
+#ifdef WITH_METHOD_VIA
+    via_init();
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+    via_rdma_init();
+#endif
+#ifdef WITH_METHOD_NEW
+    new_method_init();
+#endif
+
     return MPI_SUCCESS;
 }

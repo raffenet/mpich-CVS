@@ -2,7 +2,6 @@
 #define MPIDIMPL_H
 
 #include "mpiimpl.h"
-
 #include "bsocket.h"
 
 /* key used by spawners and spawnees to get the port by which they can connect to each other */
@@ -26,19 +25,42 @@ typedef struct {
 } MPID_PerProcess_t;
 extern MPID_PerProcess_t MPID_Process;
 
+typedef enum MPIDI_VC_TYPE
+{
+    MM_VC_INVALID,
+    MM_VC_TMP,
+#ifdef WITH_METHOD_SHM
+    MM_VC_SHM,
+#endif
+#ifdef WITH_METHOD_TCP
+    MM_VC_TCP,
+#endif
+#ifdef WITH_METHOD_VIA
+    MM_VC_VIA,
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+    MM_VC_VIA_RDMA,
+#endif
+#ifdef WITH_METHOD_NEW
+    MM_VC_NEW_METHOD,
+#endif
+    MM_VC_END_MARKER
+} MPIDI_VC_TYPE;
+
 typedef struct MPIDI_VC
 {
+    MPIDI_VC_TYPE type;
     volatile int ref_count;
     struct MM_Car * writeq_head;
     struct MM_Car * writeq_tail;
     struct MM_Car * recvq;
 } MPIDI_VC;
 
-typedef struct MM_VCTABLE
+typedef struct MPIDI_VCRT
 {
     volatile int ref_count;
-    MPIDI_VC *table_ptr;
-} MM_VCTABLE;
+    MPIDI_VC **table_ptr;
+} MPIDI_VCRT;
 
 int mm_open_port(MPID_Info *, char *);
 int mm_close_port(char *);
@@ -54,11 +76,9 @@ void mm_car_finalize();
 MM_Car* mm_car_alloc();
 void mm_car_free(MM_Car *car_ptr);
 int mm_choose_buffer(MPID_Request *request_ptr);
-MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int dest);
+MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int rank);
 void mm_vctable_init();
 void mm_vctable_finalize();
-int mm_alloc_vc_table(MPID_Comm *comm_ptr);
-int mm_release_vc_table(MM_VCTABLE *p);
 
 /*
 What is an xfer block? - A block is defined by an init call, followed by one or more
@@ -95,6 +115,7 @@ recv_mop can be used for accumulate
 send_mop could cause remote operations to occur.  We will not use send_mop 
 currently.
 */
+/*
 int xfer_gather_init(int dest, int tag, MPID_Comm *comm_ptr, MPID_Request **request_pptr);
 int xfer_gather_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src);
 int xfer_gather_recv_mop_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src);
@@ -113,5 +134,16 @@ int xfer_scatter_forward_op(MPID_Request *request_ptr, int size, int dest);
 int xfer_scatter_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Datatype dtype, int first, int last, int dest);
 int xfer_scatter_replicate_op(MPID_Request *request_ptr, int dest);
 int xfer_scatter_start(MPID_Request *request_ptr);
+*/
+
+int xfer_init(int tag, MPID_Comm *comm_ptr, MPID_Request **request_pptr);
+int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src);
+int xfer_recv_mop_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src);
+int xfer_recv_forward_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src, int dest);
+int xfer_recv_mop_forward_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src, int dest);
+int xfer_forward_op(MPID_Request *request_ptr, int size, int src, int dest);
+int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Datatype dtype, int first, int last, int dest);
+int xfer_replicate_op(MPID_Request *request_ptr, int dest);
+int xfer_start(MPID_Request *request_ptr);
 
 #endif

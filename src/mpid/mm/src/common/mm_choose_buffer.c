@@ -16,5 +16,17 @@
 @*/
 int mm_choose_buffer(MPID_Request *request_ptr)
 {
+    if (request_ptr->mm.rcar.type != MM_NULL_CAR)
+    {
+	request_ptr->mm.read_buf_type = MM_MPI_BUFFER;
+	request_ptr->mm.read_buf.mpi.size = MM_VECTOR_LIMIT;
+	request_ptr->mm.read_buf.mpi.num_read = 0;
+	request_ptr->mm.read_buf.mpi.min_num_written = 0;
+    }
+    else
+    {
+	request_ptr->mm.read_buf_type = MM_NULL_BUFFER;
+    }
+
     return MPI_SUCCESS;
 }

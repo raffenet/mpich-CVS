@@ -7,68 +7,63 @@
 #include "mpidimpl.h"
 #include "blockallocator.h"
 
-BlockAllocator MM_VCTABLE_allocator;
+static BlockAllocator MM_VCTable_allocator;
 
 void mm_vctable_init()
 {
-    MM_VCTABLE_allocator = BlockAllocInit(sizeof(MM_VCTABLE), 100, 100, malloc, free);
+    MM_VCTable_allocator = BlockAllocInit(sizeof(MPIDI_VCRT), 100, 100, malloc, free);
 }
 
 void mm_vctable_finalize()
 {
-    BlockAllocFinalize(&MM_VCTABLE_allocator);
+    BlockAllocFinalize(&MM_VCTable_allocator);
 }
 
-MM_VCTABLE* mm_vctable_alloc()
+int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
 {
-    MM_VCTABLE *p;
-    p = BlockAlloc(MM_VCTABLE_allocator);
-    return p;
-}
+    MPID_VCRT p;
 
-void mm_vctable_free(MM_VCTABLE *ptr)
-{
-    BlockFree(MM_VCTABLE_allocator, ptr);
-}
-
-/*@
-   mm_alloc_vc_table - allocate a virtual connection table for this communicator
-
-   Parameters:
-+  MPID_Comm *comm_ptr - communicator
-
-   Notes:
-@*/
-int mm_alloc_vc_table(MPID_Comm *comm_ptr)
-{
-    MM_VCTABLE *p;
-
-    p = mm_vctable_alloc();
-
+    p = BlockAlloc(MM_VCTable_allocator);
     p->ref_count = 1;
-    p->table_ptr = (MPIDI_VC*)malloc(sizeof(MPIDI_VC) * comm_ptr->size);
-    comm_ptr->vcrt = &p->table_ptr;
-    comm_ptr->vcrt_ref_count = &p->ref_count;
+    p->table_ptr = (MPIDI_VC**)malloc(sizeof(MPIDI_VC*) * size);
+
+    *vcrt_ptr = p;
 
     return MPI_SUCCESS;
 }
 
-/*@
-   mm_release_vc_table - release virtual connection table
-
-   Parameters:
-+  MM_VCTABLE *p - vc table pointer
-
-   Notes:
-@*/
-int mm_release_vc_table(MM_VCTABLE *p)
+int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
 {
-    p->ref_count--;
-    if (p->ref_count < 1)
+    if (vcrt == NULL)
+	return MPI_ERR_ARG;
+
+    vcrt->ref_count++;
+
+    return MPI_SUCCESS;
+}
+
+int MPID_VCRT_Release(MPID_VCRT vcrt)
+{
+    if (vcrt == NULL)
+	return MPI_ERR_ARG;
+
+    vcrt->ref_count--;
+    if (vcrt->ref_count == 0)
     {
-	if (p->table_ptr != NULL)
-	    free(p->table_ptr);
-	mm_vctable_free(p);
+	if (vcrt->table_ptr != NULL)
+	    free(vcrt->table_ptr);
+	BlockFree(MM_VCTable_allocator, vcrt);
     }
+
+    return MPI_SUCCESS;
+}
+
+int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
+{
+    if (vcrt == NULL)
+	return MPI_ERR_ARG;
+
+    *vc_pptr = vcrt->table_ptr;
+
     return MPI_SUCCESS;
 }

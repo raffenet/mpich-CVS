@@ -29,9 +29,9 @@
 @*/
 int MPID_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPID_Comm *comm_ptr, int mode, MPID_Request **request_pptr)
 {
-    xfer_scatter_init(comm_ptr->rank, tag, comm_ptr, request_pptr);
-    xfer_scatter_send_op(*request_pptr, buf, count, datatype, 0, -1, dest);
-    xfer_scatter_start(*request_pptr);
+    xfer_init(tag, comm_ptr, request_pptr);
+    xfer_send_op(*request_pptr, buf, count, datatype, 0, -1, dest);
+    xfer_start(*request_pptr);
 
     return MPI_SUCCESS;
 }
