@@ -4,6 +4,9 @@
 */
 #include "mpe_logging_conf.h"
 
+#if defined( HAVE_SYS_TYPES_H)
+#include <sys/types.h>
+#endif
 #if defined( STDC_HEADERS ) || defined( HAVE_STDIO_H )
 #include <stdio.h>
 #endif
