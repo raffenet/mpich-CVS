@@ -763,6 +763,8 @@ sub bufptr_ctof {
 }
 # Logical variables
 sub logical_ftoc {
+    my $count = $_[0];
+    print $OUTFD "    l$count = MPIR_FROM_FLOG(*v$count);\n";
 }
 sub logical_in_decl {
     my $count = $_[0];
@@ -1206,6 +1208,11 @@ $cchar       This file created by buildiface $arg_string\n";
     # Finally, the special symbols
     print MPIFFD "       INTEGER MPI_BOTTOM\n";
 
+    # And the external names
+    print MPIFFD "       EXTERNAL MPI_DUP_FN, MPI_NULL_DELETE_FN, MPI_NULL_COPY_FN\n";
+    # the time/tick functions
+    print MPIFFD "       DOUBLE PRECISION MPI_WTIME, MPI_WTICK\n";
+
     close( MPIFFD );
 } # if write_mpif
 
@@ -1418,7 +1425,7 @@ void *MPIR_F_MPI_BOTTOM = 0;
     &print_args( $OUTFD, $args );
     &print_attr;
     print $OUTFD "{
-        *v4 = *v5;
+        *v5 = *v4;
         *v6 = MPIR_TO_FLOG(1);
         *ierr = MPI_SUCCESS;
 }\n";
