@@ -24,7 +24,7 @@ PAC_ARG_CACHING
 
 PAC_PROG_MAKE
 
-AC_CHECK_HEADERS(stdarg.h unistd.h string.h stdlib.h)
+AC_CHECK_HEADERS(stdarg.h unistd.h string.h stdlib.h dlfcn.h)
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
 AC_SUBST(MPILIBNAME)
