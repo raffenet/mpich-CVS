@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 
     range = pInput->header.nMaxRank - pInput->header.nMinRank + 1;
 
-    //if (bValidateArrows)
+    /*if (bValidateArrows)*/
     {
 	num_arrows = RLOG_GetNumArrows(pInput);
 	if (num_arrows)
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
     num_arrows = RLOG_GetNumArrows(pInput);
     if (num_arrows)
     {
-	//printf("num arrows: %d\n", num_arrows);
+	/*printf("num arrows: %d\n", num_arrows);*/
 	while (RLOG_GetNextArrow(pInput, &arrow) == 0)
 	{
 	    if (arrow.leftright == RLOG_ARROW_LEFT)
@@ -177,35 +177,6 @@ int main(int argc, char *argv[])
     {
 	RLOG_CloseInputStruct(&pInput);
     }
-
-#if 0
-    pInput = RLOG_CreateInputStruct(argv[1]);
-    for (k=pInput->header.nMinRank; k<=pInput->header.nMaxRank; k++)
-    {
-	total_num_events = 0;
-	num_levels = RLOG_GetNumEventRecursions(pInput, k);
-	if (num_levels > 0)
-	{
-	    printf("rank %d\n", k);
-	    printf("num event recursions: %d\n", num_levels);
-	    for (i=0; i<num_levels; i++)
-	    {
-		num_events = RLOG_GetNumEvents(pInput, k, i);
-		total_num_events += num_events;
-		printf(" level %d, num events: %d\n", i, num_events);
-		/*
-		for (j=0; j<num_events; j++)
-		{
-		    RLOG_GetNextEvent(pInput, k, i, &event);
-		    PrintEvent(&event);
-		}
-		*/
-	    }
-	    printf("num events total: %d\n", total_num_events);
-	}
-    }
-    RLOG_CloseInputStruct(&pInput);
-#endif
 
     return 0;
 }

@@ -205,6 +205,7 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
     int num_bytes;
     long arrow_pos;
     int error;
+    double temp_time;
 
     printf("Modifying %d arrows\n", nNumArrows);
     arrow_pos = ftell(f);
@@ -231,6 +232,13 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 	}
 	if (bModified)
 	{
+	    if (arrow.start_time > arrow.end_time)
+	    {
+		temp_time = arrow.start_time;
+		arrow.start_time = arrow.end_time;
+		arrow.end_time = temp_time;
+		arrow.leftright = (arrow.leftright = RLOG_ARROW_LEFT) ? RLOG_ARROW_RIGHT : RLOG_ARROW_LEFT;
+	    }
 	    fseek(f, -(int)sizeof(RLOG_ARROW), SEEK_CUR);
 	    if (fwrite(&arrow, 1, sizeof(RLOG_ARROW), f) != sizeof(RLOG_ARROW))
 	    {
@@ -256,6 +264,12 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 	error = WriteFileData((char*)pArray, nNumArrows * sizeof(RLOG_ARROW), f);
 	if (error)
 	    return error;
+	fseek(f, 0, SEEK_CUR);
+    }
+    else
+    {
+	printf("Error: unable to allocate an array big enough to hold %d arrows\n", nNumArrows);
+	return -1;
     }
     return 0;
 }
@@ -265,27 +279,45 @@ int ModifyEvents(FILE *f, int nNumEvents, int nMin, double *pOffsets, int n)
     RLOG_EVENT event;
     int i, index;
     int num_bytes;
+    int error;
 
     printf("Modifying %d events\n", nNumEvents);
+    fseek(f, 0, SEEK_CUR);
     for (i=0; i<nNumEvents; i++)
     {
+	error = ReadFileData((char*)&event, sizeof(RLOG_EVENT), f);
+	if (error)
+	{
+	    printf("reading event failed.\n");
+	    return -1;
+	}
+	/*
 	num_bytes = fread(&event, 1, sizeof(RLOG_EVENT), f);
 	if (num_bytes != sizeof(RLOG_EVENT))
 	{
 	    printf("reading event failed - num_bytes %d != %d, error %d\n", num_bytes, sizeof(RLOG_EVENT), ferror(f));
 	    return -1;
 	}
+	*/
 	index = event.rank - nMin;
 	if (index >= 0 && index < n && pOffsets[index] != 0)
 	{
 	    event.start_time += pOffsets[index];
 	    event.end_time += pOffsets[index];
 	    fseek(f, -(int)sizeof(RLOG_EVENT), SEEK_CUR);
+	    error = WriteFileData((const char *)&event, sizeof(RLOG_EVENT), f);
+	    if (error)
+	    {
+		printf("writing modified event failed.\n");
+		return -1;
+	    }
+	    /*
 	    if (fwrite(&event, 1, sizeof(RLOG_EVENT), f) != sizeof(RLOG_EVENT))
 	    {
 		printf("writing modified event failed - error %d\n", ferror(f));
 		return -1;
 	    }
+	    */
 	    fseek(f, 0, SEEK_CUR);
 	}
     }
