@@ -63,6 +63,9 @@ Deferred Items:
 
 * add PMI_Get_id() to obtain unique job identifier [Brian/David/Rusty/Rajeev]
 
+* move f77 wrappers into a separate library to support MPE logging of
+  f77 codes [Bill/Brian]
+
 * MPE full integration and testing (slog2sdk is now being checked out into
   src/util/slog2sdk to support rlog) [Bill/Anthony/David/Brian]
   -- partially done (Bill and Anthony); mpe directory under src/mpe (not 
