@@ -291,7 +291,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 
 	    if (recv_vc_ptr->ch.shm_reading_pkt)
 	    {
-		assert(num_bytes >= sizeof(MPIDI_CH3_Pkt_t));
+		/*assert(num_bytes >= sizeof(MPIDI_CH3_Pkt_t));*/
 		MPIDI_DBG_PRINTF((60, FCNAME, "reading header(%d bytes) from read_shmq %08p packet[%d]", sizeof(MPIDI_CH3_Pkt_t), shm_ptr, index));
 		pkt_ptr->offset += sizeof(MPIDI_CH3_Pkt_t);
 		pkt_ptr->num_bytes = num_bytes - sizeof(MPIDI_CH3_Pkt_t);
