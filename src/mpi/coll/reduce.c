@@ -57,7 +57,7 @@ PMPI_LOCAL int MPIR_Reduce (
     
     if (comm_ptr->comm_kind == MPID_INTERCOMM) {
         printf("ERROR: MPI_Reduce for intercommunicators not yet implemented.\n");
-        PMPI_Abort(MPI_COMM_WORLD, 1);
+        NMPI_Abort(MPI_COMM_WORLD, 1);
     }
     
     if (count == 0) return MPI_SUCCESS;

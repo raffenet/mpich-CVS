@@ -13,5 +13,6 @@
 #define NMPI_Reduce PMPI_Reduce
 #define NMPI_Bcast PMPI_Bcast
 #define NMPI_Unpack PMPI_Unpack
+#define NMPI_Abort PMPI_Abort
 
 #endif /* MPICH_NMPI_H_INCLUDED */

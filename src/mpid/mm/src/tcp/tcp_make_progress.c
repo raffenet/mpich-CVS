@@ -187,6 +187,7 @@ int tcp_make_progress()
     MPIDI_VC *vc_iter;
     bfd_set readset, writeset;
     MPID_STATE_DECL(MPID_STATE_TCP_MAKE_PROGRESS);
+    MPID_STATE_DECL(MPID_STATE_BSELECT);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_MAKE_PROGRESS);
 

@@ -43,10 +43,20 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 	    
 	    //pArg->pCanvas->FillSolidRect(client_rect, RGB(255,255,255));
 	    pArg->pCanvas->FillSolidRect(0,0,client_rect.Width(), big_rect.top, RGB(255,255,255));
+	    if (pArg->bStop)
+		break;
 	    pArg->pCanvas->FillSolidRect(0,big_rect.bottom, client_rect.Width(), big_rect.top, RGB(255,255,255));
+	    if (pArg->bStop)
+		break;
 	    pArg->pCanvas->FillSolidRect(0,0,big_rect.left, client_rect.Height(), RGB(255,255,255));
+	    if (pArg->bStop)
+		break;
 	    pArg->pCanvas->FillSolidRect(big_rect.right, 0, big_rect.left, client_rect.Height(), RGB(255,255,255));
+	    if (pArg->bStop)
+		break;
 	    pArg->pCanvas->FillSolidRect(big_rect, RGB(0,0,0));
+	    if (pArg->bStop)
+		break;
 	    
 	    if (pArg->pDoc->m_pInput)
 	    {

@@ -82,6 +82,8 @@ int main(int argc, char *argv[])
     int bValidate = 0;
     int bValidateArrows = 0;
     int bOrder = 0;
+    int bJumpCheck = 0;
+    double dJump = 0.0;
 
     if (argc < 2)
     {
@@ -132,6 +134,12 @@ int main(int argc, char *argv[])
 	    if (strcmp(argv[i], "arroworder") == 0)
 	    {
 		bValidateArrows = 1;
+	    }
+	    if (strcmp(argv[i], "jump") == 0)
+	    {
+		bJumpCheck = 1;
+		if (argv[i+1])
+		    dJump = atof(argv[i+1]);
 	    }
 	}
     }
@@ -280,6 +288,30 @@ int main(int argc, char *argv[])
 	    }
 	}
 	RLOG_CloseInputStruct(&pInput);
+	return 0;
+    }
+
+    if (bJumpCheck)
+    {
+	printf("Start:\n");
+	RLOG_FindGlobalEventBeforeTimestamp(pInput, dJump, &event);
+	PrintEvent(&event);
+	/*RLOG_PrintGlobalState(pInput);*/
+	printf("Previous 10:\n");
+	for (i=0; i<10; i++)
+	{
+	    RLOG_GetPreviousGlobalEvent(pInput, &event);
+	    PrintEvent(&event);
+	}
+	printf("Start:\n");
+	RLOG_FindGlobalEventBeforeTimestamp(pInput, dJump, &event);
+	PrintEvent(&event);
+	printf("Next 10:\n");
+	for (i=0; i<10; i++)
+	{
+	    RLOG_GetNextGlobalEvent(pInput, &event);
+	    PrintEvent(&event);
+	}
 	return 0;
     }
 

@@ -639,10 +639,85 @@ int RLOG_GetCurrentGlobalEvent(RLOG_IOStruct *pInput, RLOG_EVENT *pEvent)
     return 0;
 }
 
+int RLOG_PrintGlobalState(RLOG_IOStruct *pInput)
+{
+    int i,j;
+
+    for (i=0; i<pInput->nNumRanks; i++)
+    {
+	for (j=0; j<pInput->pNumEventRecursions[i]; j++)
+	{
+	    printf("[%d][%d] prev: (%g - %g) ", i, j, pInput->gppPrevEvent[i][j].start_time, pInput->gppPrevEvent[i][j].end_time);
+	    printf("next: (%g - %g)\n", pInput->gppCurEvent[i][j].start_time, pInput->gppCurEvent[i][j].end_time);
+	}
+    }
+    return 0;
+}
+
 int RLOG_FindGlobalEventBeforeTimestamp(RLOG_IOStruct *pInput, double timestamp, RLOG_EVENT *pEvent)
 {
+    int i,j, n;
+
     if (pInput == NULL || pEvent == NULL)
 	return -1;
+
+    pInput->gnCurRank = 0;
+    pInput->gnCurLevel = 0;
+    pInput->gnCurEvent = 0;
+
+    /* set all the current and previous events for each rank */
+    for (i=0; i<pInput->nNumRanks; i++)
+    {
+	for (j=0; j<pInput->pNumEventRecursions[i]; j++)
+	{
+	    n = pInput->ppCurEvent[i][j]; /* save iterator */
+
+	    RLOG_FindEventBeforeTimestamp(pInput, 
+		pInput->header.nMinRank + i, j, 
+		timestamp, 
+		&pInput->gppPrevEvent[i][j], 
+		&pInput->ppCurGlobalEvent[i][j]);
+	    if (pInput->gppPrevEvent[i][j].start_time > timestamp)
+	    {
+		/* the start time can only be after the timestamp if this event is the very first event at this level */
+		/*
+		if (pInput->ppCurGlobalEvent[i][j] != 0);
+		{
+		    printf("RLOG_FindGlobalEventBeforeTimestamp: Error, start_time > timestamp, %g > %g", pInput->gppPrevEvent[i][j].start_time, timestamp);
+		    return -1;
+		}
+		*/
+		pInput->gppCurEvent[i][j] = pInput->gppPrevEvent[i][j];
+	    }
+	    else
+	    {
+		pInput->ppCurGlobalEvent[i][j]++;
+		RLOG_GetEvent(pInput, pInput->header.nMinRank + i, j,
+		    pInput->ppCurGlobalEvent[i][j],
+		    &pInput->gppCurEvent[i][j]);
+	    }
+
+	    pInput->ppCurEvent[i][j] = n; /* restore iterator */
+	}
+    }
+
+    /* find the maximum of the previous events */
+    FindMaxGlobalEvent(pInput, &pInput->gnCurRank, &pInput->gnCurLevel, &pInput->gnCurEvent);
+
+    /* save this event as the global current event */
+    pInput->gCurEvent = pInput->gppPrevEvent[pInput->gnCurRank][pInput->gnCurLevel];
+
+    /* save the current position */
+    n = pInput->ppCurEvent[pInput->gnCurRank][pInput->gnCurLevel];
+    /* get the previous event */
+    RLOG_GetEvent(pInput, pInput->gnCurRank, pInput->gnCurLevel, pInput->gnCurEvent-1, 
+	&pInput->gppPrevEvent[pInput->gnCurRank][pInput->gnCurLevel]);
+    /* reset the current position */
+    pInput->ppCurEvent[pInput->gnCurRank][pInput->gnCurLevel] = n;
+
+    /* return the new current event */
+    *pEvent = pInput->gCurEvent;
+
     return 0;
 }
 

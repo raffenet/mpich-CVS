@@ -101,7 +101,7 @@ void MPIR_BXOR (
     default:
         /* TEMPORARY ERROR MESSAGE. NEED TO RETURN PROPER ERROR CODE */
         printf("MPI_BXOR operation not supported for this datatype\n");
-        MPI_Abort(MPI_COMM_WORLD, 1);
+        NMPI_Abort(MPI_COMM_WORLD, 1);
         break;
     }
 }

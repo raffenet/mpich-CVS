@@ -765,16 +765,54 @@ SOURCE=.\src\mpi\pt2pt\mpir_wait.c
 # Begin Source File
 
 SOURCE=.\src\mpi\coll\op_create.c
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
 SOURCE=.\src\mpi\coll\op_free.c
-# PROP Exclude_From_Build 1
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpi\coll\opband.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpi\coll\opbor.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpi\coll\opbxor.c
 # End Source File
 # Begin Source File
 
 SOURCE=.\src\mpi\spawn\open_port.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpi\coll\opland.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpi\coll\oplor.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpi\coll\oplxor.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpi\coll\opmax.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpi\coll\opmin.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpi\coll\opprod.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpi\coll\opsum.c
 # End Source File
 # Begin Source File
 

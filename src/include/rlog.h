@@ -214,6 +214,9 @@ int RLOG_FindGlobalEventBeforeTimestamp(RLOG_IOStruct *pInput, double timestamp,
 int RLOG_FindArrowBeforeTimestamp(RLOG_IOStruct *pInput, double timestamp, RLOG_ARROW *pArrow, int *pIndex);
 int RLOG_HitTest(RLOG_IOStruct *pInput, int rank, int level, double timestamp, RLOG_EVENT *pEvent);
 
+/* debugging functions */
+int RLOG_PrintGlobalState(RLOG_IOStruct *pInput);
+
 #if defined(__cplusplus)
 }
 #endif

@@ -23,6 +23,7 @@ int tcp_read_header(MPIDI_VC *vc_ptr)
 {
     int num_read;
     MPID_STATE_DECL(MPID_STATE_TCP_READ_HEADER);
+    MPID_STATE_DECL(MPID_STATE_BREAD);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_READ_HEADER);
 #ifdef MPICH_DEV_BUILD
@@ -185,6 +186,8 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     int num_read;
     int num_left, i;
     MPID_STATE_DECL(MPID_STATE_TCP_READ_VEC);
+    MPID_STATE_DECL(MPID_STATE_BREAD);
+    MPID_STATE_DECL(MPID_STATE_BREADV);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_READ_VEC);
 
@@ -295,6 +298,7 @@ int tcp_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_read;
     MPID_STATE_DECL(MPID_STATE_TCP_READ_TMP);
+    MPID_STATE_DECL(MPID_STATE_BREAD);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_READ_TMP);
 
@@ -337,6 +341,7 @@ int tcp_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_pt
 {
     int num_read;
     MPID_STATE_DECL(MPID_STATE_TCP_READ_SIMPLE);
+    MPID_STATE_DECL(MPID_STATE_BREAD);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_READ_SIMPLE);
 
@@ -373,7 +378,7 @@ int tcp_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_pt
 	mm_cq_enqueue(car_ptr);
     }
 
-    MPID_FUNC_EXIT(MPID_STATE_TCP_READ_TMP);
+    MPID_FUNC_EXIT(MPID_STATE_TCP_READ_SIMPLE);
     return MPI_SUCCESS;
 }
 

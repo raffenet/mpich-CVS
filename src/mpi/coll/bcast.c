@@ -78,7 +78,7 @@ PMPI_LOCAL int MPIR_Bcast (
 
   if (comm_ptr->comm_kind == MPID_INTERCOMM) {
       printf("ERROR: MPI_Bcast for intercommunicators not yet implemented.\n");
-      PMPI_Abort(MPI_COMM_WORLD, 1);
+      NMPI_Abort(MPI_COMM_WORLD, 1);
   }
 
   comm = comm_ptr->handle;

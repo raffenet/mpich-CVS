@@ -373,24 +373,31 @@ CRimshotDoc* CRimshotView::GetDocument() // non-debug version is inline
 void CRimshotView::OnNext() 
 {
     double d;
+    RLOG_EVENT event1, event2;
     CRimshotDoc* pDoc = GetDocument();
 
     StopDrawing();
     d = (pDoc->m_dRight - pDoc->m_dLeft) / 6.0;
-    pDoc->m_dLeft += d;
-    pDoc->m_dRight += d;
+    RLOG_GetCurrentGlobalEvent(pDoc->m_pInput, &event1);
+    RLOG_FindGlobalEventBeforeTimestamp(pDoc->m_pInput, (pDoc->m_dLeft + pDoc->m_dRight) / 2.0 + d, &event2);
+    if (event1.start_time == event2.start_time)
+	RLOG_GetNextGlobalEvent(pDoc->m_pInput, &event2);
+    pDoc->m_dLeft = event2.start_time - (3.0 * d);
+    pDoc->m_dRight = event2.start_time + (3.0 * d);
     StartDrawing();
 }
 
 void CRimshotView::OnPrevious() 
 {
     double d;
+    RLOG_EVENT event;
     CRimshotDoc* pDoc = GetDocument();
 
     StopDrawing();
     d = (pDoc->m_dRight - pDoc->m_dLeft) / 6.0;
-    pDoc->m_dLeft -= d;
-    pDoc->m_dRight -= d;
+    RLOG_FindGlobalEventBeforeTimestamp(pDoc->m_pInput, (pDoc->m_dLeft + pDoc->m_dRight) / 2.0 - d, &event);
+    pDoc->m_dLeft = event.start_time - (3.0 * d);
+    pDoc->m_dRight = event.start_time + (3.0 * d);
     StartDrawing();
 }
 

@@ -186,7 +186,7 @@ int tcp_stuff_vector_simple(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Seg
 	/* cur_pos has run off the end of the vector OR
 	   If num_written is equal to num_read then there is no data available to write. OR
 	   No data has been read */
-	MPID_FUNC_EXIT(MPID_STATE_TCP_STUFF_VECTOR_TMP);
+	MPID_FUNC_EXIT(MPID_STATE_TCP_STUFF_VECTOR_SIMPLE);
 	return FALSE;
     }
 
@@ -415,6 +415,8 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
     BOOL stop = FALSE;
     int num_written;
     MPID_STATE_DECL(MPID_STATE_TCP_WRITE_AGGRESSIVE);
+    MPID_STATE_DECL(MPID_STATE_BWRITE);
+    MPID_STATE_DECL(MPID_STATE_BWRITEV);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE_AGGRESSIVE);
 
