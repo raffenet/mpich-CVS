@@ -1,0 +1,8 @@
+SUBDIRS = src .
+
+distclean-local:
+	-rm -f include/mpidi_ch3i_shm_conf.h
+
+maintainerclean-local:
+	-rm -f include/mpidi_ch3i_shm_conf.h.in
+
