@@ -158,6 +158,7 @@ cleanall:
          echo " " ;\
          echo "cleaning directory util" ;\
          (cd util; rm -f romioinstall *~)
+	-rm -f lib
 
 install:
 	$(MAKE) clean
@@ -181,3 +182,6 @@ romio_tcppflags:
 
 romio_tfflags:
 	@echo '@ROMIO_TFFLAGS@'
+
+# distclean the standard form for cleanall
+distclean: cleanall
