@@ -1033,10 +1033,18 @@ Function BuildIFaces()
 	  contents = fin.ReadAll()
 	  contents = ReplaceAts(contents, false)
 	  if bCleanCode then
-		' This only works if there is only one NULL_COPY_FN in the file.
-		contents = ReplaceBetweenTags(contents, "int", "NULL_COPY_FN", "}", "int NULL_COPY_FN( const Comm &oldcomm, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldcomm; keyval; ex; attr_in; attr_out; flag = 1; return 0; }")
-		contents = ReplaceBetweenTags(contents, "int", "NULL_DELETE_FN", "}", "int NULL_DELETE_FN( Comm &comm, int keyval, void * attr, void *ex ) { comm; keyval; attr; ex; return 0; }")
-		contents = ReplaceBetweenTags(contents, "int", "DUP_FN", "}", "int DUP_FN( const Comm &oldcomm, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldcomm; keyval; ex; flag = 1; *(void **)attr_out = attr_in; return 0; }")
+		' Comm class
+		contents = ReplaceBetweenTags(contents, "int", "NULL_COPY_FN( const Comm &oldcomm", "}", "int NULL_COPY_FN( const Comm &oldcomm, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldcomm; keyval; ex; attr_in; attr_out; flag = 1; return 0; }")
+		contents = ReplaceBetweenTags(contents, "int", "NULL_DELETE_FN( Comm &comm", "}", "int NULL_DELETE_FN( Comm &comm, int keyval, void * attr, void *ex ) { comm; keyval; attr; ex; return 0; }")
+		contents = ReplaceBetweenTags(contents, "int", "DUP_FN( const Comm &oldcomm", "}", "int DUP_FN( const Comm &oldcomm, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldcomm; keyval; ex; flag = 1; *(void **)attr_out = attr_in; return 0; }")
+		' Win class
+		contents = ReplaceBetweenTags(contents, "int", "NULL_COPY_FN( const Win &oldwin", "}", "int NULL_COPY_FN( const Win &oldwin, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldwin; keyval; ex; attr_in; attr_out; flag = 1; return 0; }")
+		contents = ReplaceBetweenTags(contents, "int", "NULL_DELETE_FN( Win &win", "}", "int NULL_DELETE_FN( Win &win, int keyval, void * attr, void *ex ) { win; keyval; attr; ex; return 0; }")
+		contents = ReplaceBetweenTags(contents, "int", "DUP_FN( const Win &oldwin", "}", "int DUP_FN( const Win &oldwin, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldwin; keyval; ex; flag = 1; *(void **)attr_out = attr_in; return 0; }")
+		' Datatype class
+		contents = ReplaceBetweenTags(contents, "int", "NULL_COPY_FN( const Datatype &oldtype", "}", "int NULL_COPY_FN( const Datatype &oldtype, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldtype; keyval; ex; attr_in; attr_out; flag = 1; return 0; }")
+		contents = ReplaceBetweenTags(contents, "int", "NULL_DELETE_FN( Datatype &type", "}", "int NULL_DELETE_FN( Datatype &type, int keyval, void * attr, void *ex ) { type; keyval; attr; ex; return 0; }")
+		contents = ReplaceBetweenTags(contents, "int", "DUP_FN( const Datatype &oldtype", "}", "int DUP_FN( const Datatype &oldtype, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldtype; keyval; ex; flag = 1; *(void **)attr_out = attr_in; return 0; }")
 	  end if	
 	  fout.Write(contents)
 	  fin.Close()
