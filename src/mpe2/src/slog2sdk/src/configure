@@ -578,7 +578,7 @@ if test "${enable_softerror+set}" = set; then
   enableval="$enable_softerror"
   :
 else
-  enable_softerror=no
+  enable_softerror=${slog2_enable_softerror:-no}
 fi
 
 

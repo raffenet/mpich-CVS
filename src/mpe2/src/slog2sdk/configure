@@ -603,7 +603,7 @@ if test "${enable_softerror+set}" = set; then
   enableval="$enable_softerror"
   :
 else
-  enable_softerror=no
+  enable_softerror=${slog2_enable_softerror:-no}
 fi
 
 
@@ -1605,7 +1605,7 @@ if test "${enable_build+set}" = set; then
   enableval="$enable_build"
   :
 else
-  enable_build=yes 
+  enable_build=${slog2_enable_build:-yes} 
 fi
 
 
@@ -1614,7 +1614,7 @@ if test "${enable_source+set}" = set; then
   enableval="$enable_source"
   :
 else
-  enable_source=yes 
+  enable_source=${slog2_enable_source:-yes} 
 fi
 
 
@@ -1623,7 +1623,7 @@ if test "${enable_sample+set}" = set; then
   enableval="$enable_sample"
   :
 else
-  enable_sample=yes 
+  enable_sample=${slog2_enable_sample:-yes} 
 fi
 
 
@@ -1632,7 +1632,7 @@ if test "${enable_rlog+set}" = set; then
   enableval="$enable_rlog"
   :
 else
-  enable_rlog=yes 
+  enable_rlog=${slog2_enable_rlog:-yes} 
 fi
 
 
@@ -1649,7 +1649,10 @@ rlog_dirname="trace_rlog"
 
 trial_pkgs="source sample rlog"
 
-ac_configure_args="$ac_configure_args --enable-softerror"
+# Enable softerror for all subpackages,
+# i.e. use AC_MSG_WARN instead of AC_MSG_ERROR
+slog2_enable_softerror=yes
+export slog2_enable_softerror
 PKGS=""
 selected_pkgs=""
 for pkg in $trial_pkgs ; do
@@ -1673,7 +1676,7 @@ TRACE_PGMS="traceprint traceTOslog2"
 
 if test "x$TRACE_LIBDIR" != "x" ; then
     echo $ac_n "checking for libTraceInput.so and TraceInput.dll""... $ac_c" 1>&6
-echo "configure:1677: checking for libTraceInput.so and TraceInput.dll" >&5
+echo "configure:1680: checking for libTraceInput.so and TraceInput.dll" >&5
     if test -f "$TRACE_LIBDIR/libTraceInput.so" \
          -o -f "$TRACE_LIBDIR/TraceInput.dll" ; then
         echo "$ac_t""yes" 1>&6

@@ -19,7 +19,7 @@ AC_ARG_ENABLE(softerror,
 [--enable-softerror                 - Turn on soft error, i.e. instead of 
                                      issuing MSG_ERROR, MSG_WARN + exit 0 
                                      are used.  The default is enable=no.],
-, enable_softerror=no)
+, enable_softerror=${slog2_enable_softerror:-no})
 
 AC_ARG_ENABLE(g, 
 [--enable-g                         - Turn on the debugging flags, -g, and 

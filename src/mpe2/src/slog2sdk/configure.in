@@ -19,7 +19,7 @@ AC_ARG_ENABLE(softerror,
 [--enable-softerror                 - Turn on soft error, i.e. instead of 
                                      issuing MSG_ERROR, MSG_WARN + exit 0 
                                      are used.  The default is enable=no.],
-, enable_softerror=no)
+, enable_softerror=${slog2_enable_softerror:-no})
 
 AC_ARG_ENABLE(swingcheck, 
 [--enable-swingcheck                - Turn on the Swing checking code. 
@@ -340,25 +340,25 @@ AC_ARG_ENABLE( build,
                                      and the sample TRACE-API implementation.
                                      Java Standard Development Kit, SDK,
                                      is needed.  The default is enable=yes.],
-,enable_build=yes )
+,enable_build=${slog2_enable_build:-yes} )
 
 AC_ARG_ENABLE( source,
 [--enable-source                    - Build the jar files from the java source.
                                      Java Standard Development Kit, SDK,
                                      is needed.  The default is enable=yes.],
-,enable_source=yes )
+,enable_source=${slog2_enable_source:-yes} )
 
 AC_ARG_ENABLE( sample,
 [--enable-sample                    - Build sample TRACE-API implementation.
                                      Java Standard Development Kit, SDK,
                                      is needed.  The default is enable=yes.],
-,enable_sample=yes )
+,enable_sample=${slog2_enable_sample:-yes} )
 
 AC_ARG_ENABLE( rlog,
 [--enable-rlog                      - Build RLOG TRACE-API implementation.
                                      Java Standard Development Kit, SDK,
                                      is needed.  The default is enable=yes.],
-,enable_rlog=yes )
+,enable_rlog=${slog2_enable_rlog:-yes} )
 
 if test "$enable_build" = "no" ; then
     enable_source=no;
@@ -373,7 +373,10 @@ rlog_dirname="trace_rlog"
 
 trial_pkgs="source sample rlog"
 
-ac_configure_args="$ac_configure_args --enable-softerror"
+# Enable softerror for all subpackages,
+# i.e. use AC_MSG_WARN instead of AC_MSG_ERROR
+slog2_enable_softerror=yes
+export slog2_enable_softerror
 PKGS=""
 selected_pkgs=""
 for pkg in $trial_pkgs ; do
