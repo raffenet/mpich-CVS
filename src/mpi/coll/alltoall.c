@@ -36,8 +36,8 @@
    where n is the total amount of data a process needs to send to all
    other processes.
 
-   For medium size messages (typically 256 bytes -- 256 Kbytes), we
-   use an algorithm that posts all irecvs and isends and then does a
+   For medium size messages (typically 1 KB--256 KB), we use an
+   algorithm that posts all irecvs and isends and then does a
    waitall. We scatter the order of sources and destinations among the
    processes, so that all processes don't try to send/recv to/from the
    same process at the same time.
@@ -141,7 +141,7 @@ PMPI_LOCAL int MPIR_Alltoall(
         /* allocate displacements array for indexed datatype used in
            communication */
 
-        displs = MPIU_Malloc(comm_size * 2* sizeof(int));
+        displs = MPIU_Malloc(comm_size * sizeof(int));
 	/* --BEGIN ERROR HANDLING-- */
         if (!displs) {
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
