@@ -16,6 +16,8 @@
 #ifdef HAVE_TERMIOS_H
 #include <termios.h>
 #endif
+
+#ifdef HAVE_SIGACTION
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
@@ -25,10 +27,11 @@
 #ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
 #endif
+#endif
 
 smpd_process_t smpd_process = { -1, -1, -1, NULL, NULL, NULL, 0, SOCK_INVALID_SET, "", "", 0, 0, "", "", "" };
 
-#ifndef HAVE_WINDOWS_H
+#ifdef HAVE_SIGACTION
 void child_handler(int code)
 {
     int status;
@@ -41,7 +44,8 @@ int smpd_init_process(void)
 {
 #ifdef HAVE_WINDOWS_H
     HMODULE hModule;
-#else
+#endif
+#ifdef HAVE_SIGACTION
     struct sigaction act;
 #endif
 
@@ -74,7 +78,7 @@ int smpd_init_process(void)
 
     srand(smpd_getpid());
 
-#ifndef HAVE_WINDOWS_H
+#ifdef HAVE_SIGACTION
     act.sa_handler = child_handler;
     act.sa_flags = SA_NOCLDSTOP | SA_NOMASK;
     sigaction(SIGCHLD, &act, NULL);
