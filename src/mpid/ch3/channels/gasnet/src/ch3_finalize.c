@@ -17,10 +17,6 @@ int MPIDI_CH3_Finalize()
     int node;
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-
-    /* Free resources allocated in CH3_Init() */
-    MPID_VCRT_Release (MPIR_Process.comm_self->vcrt);
-    MPID_VCRT_Release (MPIR_Process.comm_world->vcrt);
     
     /* This is a hack to try to get around the fact that gasnet
      * doesn't have a finalize call, and so can't call gm_finalize().
