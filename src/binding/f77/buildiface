@@ -283,7 +283,8 @@ foreach $_ (@ARGV) {
     'Comm_connect' => '1', 'Comm_connect-1' => 'in:addnull',
     'Comm_get_name' => '2', 'Comm_get_name-2' => 'out:blankpad',
     'Comm_set_name' => '2', 'Comm_set_name-2' => 'in:addnull',
-    'Comm_spawn' => '1', 'Comm_spawn-1' => 'in:addnull', # really needs 2 args
+    'Comm_spawn' => '1:2', 'Comm_spawn-1' => 'in:addnull', 
+		 'Comm_spawn-2' => 'in:chararray',
     'Comm_test_inter' => '2', 'Comm_test_inter-2' => 'out:logical',
     'Get_processor_name' => '1', 'Get_processor_name-1' => 'out:blankpad',
     'Error_string' => '2', 'Error_string-2' => 'out:blankpad',
@@ -303,7 +304,10 @@ foreach $_ (@ARGV) {
     'Pack_external_size' => '1', 'Pack_external_size-1' => 'in:addnull',
     'Publish_name' => '1:3', 'Publish_name-1' => 'in:addnull',
 		  'Publish_name-3' => 'in:addnull',
-#    'Comm_spawn_multiple => '2:3' are arrays and arrays of arrays
+# comm spawn multiple needs slightly different routines
+    'Comm_spawn_multiple' => '2:3',
+		 'Comm_spawn_multiple-2' => 'in:chararray:*v1',
+		 'Comm_spawn_multiple-3' => 'in:chararray2:*v1',
     'Initialized' => '1', 'Initialized-1' => 'out:logical',
     'Iprobe' => '4:5', 'Iprobe-4' => 'out:logical',
 		 'Iprobe-5' => 'in:status',
@@ -624,6 +628,9 @@ sub print_args {
 	if ($parm =~ /char\s*\*/) {
 	    # char's go out at char *v FORT_MIXED_LEN(d) 
 	    # and FORT_END_LEN(d) at the end
+	    # (even if an array, because at the Fortran level, it
+	    # is still a pointer to a character variable; the length
+	    # of each entry in the array is the "d" value).
 	    # FORT_END_LEN and FORT_MIXED_LEN contain the necessary comman
 	    # if they are prsent at all.
 	    if ($prototype_only) {
@@ -1079,20 +1086,133 @@ sub addnull_ftoc {
     
     # Working backwards from the length argument, find the first 
     # nonblank character
-    # end of the string.  The declared lenght is given by a variable
+    # end of the string.  The declared length is given by a variable
     # whose name is derived from outvar
     $strlen = "v$count";
     $strlen =~ s/^v/d/;
     print $OUTFD "\
     {char *p = v$count + $strlen - 1;
      int  li;
-        while (*p == ' ') p--;
+        while (*p == ' ' && p > v$count) p--;
         p$count = (char *)$malloc( p-v$count + 1 );
         for (li=0; li<(p-v$count); li++) { p$count\[li\] = v$count\[li\]; }
         p$count\[li\] = 0; 
     }
 ";
     $clean_up .= "    $free( p$count );\n";
+}
+
+# Add null to arrays of input strings
+# We must make a copy 
+sub chararray_in_decl {
+    my $count = $_[0];
+    print $OUTFD "    char **p$count, *pcpy$count;\n";
+    print $OUTFD "    int  asize$count=0;\n";
+}
+sub chararray_in_arg {
+    my $count = $_[0];
+    print $OUTFD "p$count";
+}
+sub chararray_ftoc {
+    my $count = $_[0];
+    
+    # First, compute the number of elements.  In Fortran, a null
+    # string terminates the array.  The array is stored as 
+    # a two-dimensional field of fixed-length characters.
+    # Then copy the strings into the new storage, appending the
+    # null at the end
+    print $OUTFD "\
+    { int i;
+      char *ptmp;\n";
+    if ($ArraySize ne "") {
+	print $OUTFD "\
+      asize$count = $ArraySize + 1;\n";
+    }
+    else {
+	print $OUTFD "\
+      pcpy$count = v$count;
+      for (asize$count=1; 1; asize$count++) {
+          if (*pcpy$count == ' ') break;
+          pcpy$count += d$count;
+      }\n";
+    }
+    print $OUTFD "\
+      p$count = (char **)$malloc( asize$count * sizeof(char *) );
+      ptmp    = (char *)$malloc( asize$count * (d$count + 1) );
+      for (i=0; i<asize$count-1; i++) {
+          char *p = v$count + i * d$count, *pin, *pdest;
+          int j;
+
+          pdest = ptmp + i * (d$count + 1);
+          p$count\[i\] = pdest;
+          /* Move to the end and work back */
+          pin = p + d$count - 1;
+          while (*p == ' ' && pin > p) pin--;
+          /* Copy and then null terminate */
+          for (j=0; j<(pin-p); j++) { pdest\[j\] = p\[j\]; }
+          pdest\[j\] = 0;
+          }
+    /* Null terminate the array */
+    p$count\[asize$count-1\] = 0;
+    }\n";
+    $clean_up .= "    $free( p$count\[0\] ); $free( p$count );\n";
+}
+
+# Add null to 2-dimensional arrays of input strings.  Used only 
+# by comm_spawn_multiple
+# FIXME : THIS CODE IS NOT CORRECT YET
+sub chararray2_in_decl {
+    my $count = $_[0];
+    print $OUTFD "    char ***p$count=0;\n";
+    print $OUTFD "    char *pcpy$count=0;\n";
+    print $OUTFD "    int  asize$count=0;\n";
+}
+sub chararray2_in_arg {
+    my $count = $_[0];
+    print $OUTFD "p$count";
+}
+sub chararray2_ftoc {
+    my $count = $_[0];
+    
+    # First, compute the number of elements.  In Fortran, a null
+    # string terminates the array.  The array is stored as 
+    # a two-dimensional field of fixed-length characters.
+    # Then copy the strings into the new storage, appending the
+    # null at the end
+    # Since this is a 2-d array, we always know the first dimension,
+    # the second dimension must be computed, this is azie$count
+    print $OUTFD "\
+    { int i, k;
+      char *ptmp;
+      pcpy$count = v$count;
+      for (asize$count=1; 1; asize$count++) {
+          if (*pcpy$count == ' ') break;
+          pcpy$count += d$count;
+      }\n";
+
+    print $OUTFD "\
+      p$count = (char ***)$malloc( $Array_size * asize$count * sizeof(char **) );
+      ptmp    = (char *)$malloc( $Array_size * asize$count * (d$count + 1) );
+      for (k=0; k<$Array_size; k++) {
+        for (i=0; i<asize$count-1; i++) {
+          char *p = v$count + i * d$count, *pin, *pdest;
+          int j;
+
+          pdest = ptmp + i * (d$count + 1);
+          p$count\[i\]\[k\] = pdest;
+          /* Move to the end and work back */
+          pin = p + d$count - 1;
+          while (*p == ' ' && pin > p) pin--;
+          /* Copy and then null terminate */
+          for (j=0; j<(pin-p); j++) { pdest\[j\] = p\[j\]; }
+          pdest\[j\] = 0;
+          }
+       }
+    /* Null terminate the array */
+    p$count\[asize$count-1\]\[$Array_size-1\] = 0;
+    }\n";
+
+    $clean_up .= "    $free( p$count\[0\] ); $free( p$count );\n";
 }
 
 # This routine handles the special arguments in the *call*
