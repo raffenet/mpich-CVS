@@ -67,7 +67,7 @@ typedef enum IBU_OP
 #error Error: MPID_IBU_TYPE not defined
 #endif
 
-typedef ib_cq_handle_t ibu_set_t;
+typedef VAPI_cq_hndl_t ibu_set_t;
 typedef struct ibu_state_t * ibu_t;
 
 
