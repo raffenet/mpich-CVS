@@ -20,22 +20,26 @@ import logformat.slog2.input.TreeTrunk;
 public class SearchTreeTrunk
 {
     private static final boolean              INCRE_STARTTIME_ORDER = true;
+    private static final boolean              IS_NESTABLE           = true;
     private static final DrawOrderComparator  DRAWING_ORDER
                                               = new DrawOrderComparator();
 
     private static       TimeBoundingBox      Infinite_TimeBox;
 
     private              TreeTrunk            treetrunk;
+    private              boolean              isConnectedComposite;
     private              SearchCriteria       criteria;
     private              Drawable             last_found_dobj;
 
-    public SearchTreeTrunk( TreeTrunk  treebody, final YaxisTree y_tree )
+    public SearchTreeTrunk( TreeTrunk  treebody, final YaxisTree y_tree,
+                            boolean    isComposite )
     {
-        treetrunk        = treebody;
-        criteria         = new SearchCriteria( y_tree );
-        last_found_dobj  = null;
+        treetrunk             = treebody;
+        criteria              = new SearchCriteria( y_tree );
+        isConnectedComposite  = isComposite;
+        last_found_dobj       = null;
 
-        Infinite_TimeBox = new TimeBoundingBox();
+        Infinite_TimeBox      = new TimeBoundingBox();
         Infinite_TimeBox.setEarliestTime( Double.NEGATIVE_INFINITY );
         Infinite_TimeBox.setLatestTime( Double.POSITIVE_INFINITY );
     }
@@ -46,12 +50,13 @@ public class SearchTreeTrunk
         Iterator  dobjs;
         Drawable  dobj;
         /*
-           Use a infinite TimeBoundingBox so iteratorOfAllDrawables() returns
+           Use an infinite TimeBoundingBox so iteratorOfAllDrawables() returns
            all drawables in the memory disregarding the treefloor's timebounds
         */
         dobjs = treetrunk.iteratorOfAllDrawables( Infinite_TimeBox,
+                                                  isConnectedComposite,
                                                   !INCRE_STARTTIME_ORDER,
-                                                  true );
+                                                  IS_NESTABLE );
         criteria.initMatch();
         while ( dobjs.hasNext() ) {
             dobj    = (Drawable) dobjs.next();
@@ -79,12 +84,13 @@ public class SearchTreeTrunk
             return null;
         }
         /*
-           Use a infinite TimeBoundingBox so iteratorOfAllDrawables() returns
+           Use an infinite TimeBoundingBox so iteratorOfAllDrawables() returns
            all drawables in the memory disregarding the treefloor's timebounds
         */
         dobjs = treetrunk.iteratorOfAllDrawables( Infinite_TimeBox,
+                                                  isConnectedComposite,
                                                   !INCRE_STARTTIME_ORDER,
-                                                  true );
+                                                  IS_NESTABLE );
         criteria.initMatch();
         while ( dobjs.hasNext() ) {
             dobj    = (Drawable) dobjs.next();
@@ -106,12 +112,13 @@ public class SearchTreeTrunk
         Iterator  dobjs;
         Drawable  dobj;
         /*
-           Use a infinite TimeBoundingBox so iteratorOfAllDrawables() returns
+           Use an infinite TimeBoundingBox so iteratorOfAllDrawables() returns
            all drawables in the memory disregarding the treefloor's timebounds
         */
         dobjs = treetrunk.iteratorOfAllDrawables( Infinite_TimeBox,
+                                                  isConnectedComposite,
                                                   INCRE_STARTTIME_ORDER,
-                                                  true );
+                                                  IS_NESTABLE );
         criteria.initMatch();
         while ( dobjs.hasNext() ) {
             dobj    = (Drawable) dobjs.next();
@@ -139,12 +146,13 @@ public class SearchTreeTrunk
             return null;
         }
         /*
-           Use a infinite TimeBoundingBox so iteratorOfAllDrawables() returns
+           Use an infinite TimeBoundingBox so iteratorOfAllDrawables() returns
            all drawables in the memory disregarding the treefloor's timebounds
         */
         dobjs = treetrunk.iteratorOfAllDrawables( Infinite_TimeBox,
+                                                  isConnectedComposite,
                                                   INCRE_STARTTIME_ORDER,
-                                                  true );
+                                                  IS_NESTABLE );
         criteria.initMatch();
         while ( dobjs.hasNext() ) {
             dobj    = (Drawable) dobjs.next();

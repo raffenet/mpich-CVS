@@ -22,6 +22,7 @@ import base.drawable.Drawable;
 import base.drawable.Shadow;
 import base.drawable.NestingStacks;
 import base.drawable.DrawnBoxSet;
+import base.drawable.Method;
 import logformat.slog2.input.TreeNode;
 import logformat.slog2.input.TreeTrunk;
 import viewer.common.Dialogs;
@@ -40,6 +41,7 @@ public class CanvasTime extends ScrollableObject
     private YaxisMaps          y_maps;
     private YaxisTree          tree_view;
     private BoundedRangeModel  y_model;
+    private Method[]           methods;
     private String[]           y_colnames;
 
     private Frame              root_window;
@@ -54,6 +56,7 @@ public class CanvasTime extends ScrollableObject
     private Map                map_line2row;
     private DrawnBoxSet        drawn_boxes;
 
+    private boolean            isConnectedComposite;
     private SearchTreeTrunk    tree_search;
 
     private Date               zero_time, init_time, final_time;
@@ -61,7 +64,7 @@ public class CanvasTime extends ScrollableObject
 
     public CanvasTime( ModelTime time_model, TreeTrunk treebody,
                        BoundedRangeModel yaxis_model, YaxisMaps yaxis_maps,
-                       String[] yaxis_colnames )
+                       Method[] dobj_methods, String[] yaxis_colnames )
     {
         super( time_model );
 
@@ -72,6 +75,7 @@ public class CanvasTime extends ScrollableObject
         y_maps          = yaxis_maps;
         tree_view       = y_maps.getTreeView();
         y_model         = yaxis_model;
+        methods         = dobj_methods;
         y_colnames      = yaxis_colnames;
         treeroot        = treetrunk.getTreeRoot();
         depth_max       = treeroot.getTreeNodeID().depth;
@@ -89,7 +93,12 @@ public class CanvasTime extends ScrollableObject
                                     new TimeBoundingBox( treeroot ) );
         treetrunk.setNumOfViewsPerUpdate( ScrollableObject.NumViewsTotal );
 
-        tree_search     = new SearchTreeTrunk( treetrunk, tree_view );
+        isConnectedComposite = false;
+        if ( methods != null && methods.length > 0 )
+            isConnectedComposite = methods[ 0 ].isConnectCompositeState();
+
+        tree_search     = new SearchTreeTrunk( treetrunk, tree_view,
+                                               isConnectedComposite );
 
         root_window     = null;
         change_event    = null;
@@ -258,6 +267,7 @@ public class CanvasTime extends ScrollableObject
 
             // set NestingFactor/RowID of Nestable Real Drawables and Shadows
             dobjs = treetrunk.iteratorOfAllDrawables( timebounds,
+                                                      isConnectedComposite,
                                                       INCRE_STARTTIME_ORDER,
                                                       true );
             while ( dobjs.hasNext() ) {
@@ -273,6 +283,7 @@ public class CanvasTime extends ScrollableObject
             
             // Draw Nestable Real Drawables
             dobjs = treetrunk.iteratorOfRealDrawables( timebounds,
+                                                       isConnectedComposite,
                                                        INCRE_STARTTIME_ORDER,
                                                        true );
             while ( dobjs.hasNext() ) {
@@ -321,6 +332,7 @@ public class CanvasTime extends ScrollableObject
 
             // Draw all Nestless Real Drawables and Shadows
             dobjs = treetrunk.iteratorOfAllDrawables( timebounds,
+                                                      isConnectedComposite,
                                                       INCRE_STARTTIME_ORDER,
                                                       false );
             while ( dobjs.hasNext() ) {
@@ -376,6 +388,7 @@ public class CanvasTime extends ScrollableObject
 
         // Search Nestless Drawables in reverse drawing order
         dobjs = treetrunk.iteratorOfAllDrawables( vport_timeframe,
+                                                  isConnectedComposite,
                                                   !INCRE_STARTTIME_ORDER,
                                                   false );
         while ( dobjs.hasNext() ) {
@@ -441,6 +454,7 @@ public class CanvasTime extends ScrollableObject
 
         // Search Nestable Drawables in reverse drawing order
         dobjs = treetrunk.iteratorOfRealDrawables( vport_timeframe,
+                                                   isConnectedComposite,
                                                    !INCRE_STARTTIME_ORDER,
                                                    true );
         while ( dobjs.hasNext() ) {

@@ -15,6 +15,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.*;
 
+import base.drawable.Method;
 import logformat.slog2.LineIDMapList;
 import logformat.slog2.LineIDMap;
 import logformat.slog2.input.InputLog;
@@ -35,6 +36,7 @@ public class TimelinePanel extends JPanel
     private BoundedRangeModel       y_model;
     private YaxisMaps               y_maps;
     private YaxisTree               y_tree;
+    private Method[]                methods;
     private JScrollPane             y_scroller;
     private JScrollBar              y_scrollbar;
 
@@ -79,6 +81,7 @@ public class TimelinePanel extends JPanel
         y_tree      = new YaxisTree( y_maps.getTreeRoot() );
         y_maps.setTreeView( y_tree );   
                     /* done YaxisMaps initialization */
+        methods     = lineIDmap.getMethods();
         /*
            y_scroller for y_tree needs to be created before time_canvas, so
            y_model can be extracted to be used for the creation of time_canvas
@@ -145,7 +148,7 @@ public class TimelinePanel extends JPanel
                 /* The TimeLine Canvas */
                 time_canvas       = new CanvasTime( time_model, treetrunk,
                                                     y_model, y_maps,
-                                                    y_colnames );
+                                                    methods, y_colnames );
                 time_canvas_vport = new ViewportTimeYaxis( time_model,
                                                            y_model, y_tree );
                 time_canvas_vport.setView( time_canvas );

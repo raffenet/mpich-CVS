@@ -21,7 +21,7 @@ public class InfoDialogForDrawable extends InfoDialog
                                   final double    clicked_time,
                                   final Map       map_line2treenodes,
                                   final String[]  y_colnames,
-                                  final Drawable  dobj )
+                                  final Drawable  clicked_dobj )
     {
         super( frame, "Drawable Info Box", clicked_time );
 
@@ -29,7 +29,7 @@ public class InfoDialogForDrawable extends InfoDialog
         root_panel.setLayout( new BoxLayout( root_panel, BoxLayout.Y_AXIS ) );
 
         root_panel.add( new InfoPanelForDrawable( map_line2treenodes,
-                                                  y_colnames, dobj ) );
+                                                  y_colnames, clicked_dobj ) );
 
         root_panel.add( super.getCloseButtonPanel() );
     }
