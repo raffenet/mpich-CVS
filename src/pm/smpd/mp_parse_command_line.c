@@ -336,7 +336,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    for (;;)
 	    {
 		smpd_get_account_and_password(smpd_process.UserAccount, smpd_process.UserPassword);
-		printf("confirm password: ");fflush(stdout);
+		fprintf(stderr, "confirm password: ");fflush(stderr);
 		smpd_get_password(temp_password);
 		if (strcmp(smpd_process.UserPassword, temp_password) == 0)
 		    break;
@@ -351,6 +351,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    {
 		printf("Error: Unable to save encrypted password.\n");
 	    }
+	    fflush(stdout);
 	    smpd_exit(0);
 	}
 	if ( (strcmp((*argvp)[1], "-remove") == 0) || (strcmp((*argvp)[1], "-unregister") == 0) )
@@ -364,6 +365,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    {
 		printf("ERROR: Unable to remove the encrypted password.\n");
 	    }
+	    fflush(stdout);
 	    smpd_exit(0);
 	}
 	if (strcmp((*argvp)[1], "-validate") == 0)
@@ -383,6 +385,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    {
 		printf("FAIL: Unable to read the credentials from the registry.\n");fflush(stdout);
 	    }
+	    fflush(stdout);
 	    smpd_exit(0);
 	}
     }
