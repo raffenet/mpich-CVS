@@ -75,8 +75,11 @@ int MPI_Attr_delete(MPI_Comm comm, int keyval)
     MPIR_Nest_decr();
     if (mpi_errno)
     {
+	    /* IT IS VERY, VERY WRONG TO REPLACE THE ERROR CODE HERE */
+#if 0
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_attr_delete", "**mpi_attr_delete %C %d", comm, keyval);
+#endif
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_DELETE);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }

@@ -93,8 +93,11 @@ int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
     MPIR_Nest_decr();
     if (mpi_errno)
     {
+	    /* IT IS VERY, VERY WRONG TO REPLACE THE ERROR CODE HERE */
+#if 0
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_attr_put", "**mpi_attr_put %C %d %p", comm, keyval, attr_value);
+#endif
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_PUT);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
