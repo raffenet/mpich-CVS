@@ -263,7 +263,19 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
 	if (fd->info != MPI_INFO_NULL) MPI_Info_free(&(fd->info));
 	ADIOI_Free(fd);
         fd = ADIO_FILE_NULL;
-        *error_code = max_error_code;
+	if (*error_code == MPI_SUCCESS)
+	{
+#ifdef MPICH2
+	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**oremote_fail", 0);
+#elif defined(PRINT_ERR_MSG)
+	    *error_code = MPI_ERR_UNKNOWN;
+#else
+	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR, myname,
+		"Open Error", "%s", 
+		"Open failed on a remote node");
+	    ADIOI_Error(MPI_FILE_NULL, *error_code, myname);
+#endif
+	}
     }
 
     return fd;
