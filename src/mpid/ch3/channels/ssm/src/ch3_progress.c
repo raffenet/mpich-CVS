@@ -337,7 +337,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	    }
 	}
 
-	if ((msg_queue_count++ % MPIDI_CH3I_MSGQ_ITERATIONS) == 0)
+	if (((msg_queue_count++ % MPIDI_CH3I_MSGQ_ITERATIONS) == 0) || !is_blocking)
 	{
 	    /* check for new shmem queue connection requests */
 	    rc = MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_Process.my_pg->ch.bootstrapQ, &info, sizeof(info), &num_bytes, FALSE);
