@@ -2722,6 +2722,8 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("/* #undef STDCALL */")
 				Case "MPICH_DEBUG_FINE_GRAIN_NESTING"
 					fout.WriteLine("/* #undef MPICH_DEBUG_FINE_GRAIN_NESTING */")
+				Case "HAVE_SPARC_INLINE_PROCESS_LOCKS"
+					fout.WriteLine("/* #undef HAVE_SPARC_INLINE_PROCESS_LOCKS */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
