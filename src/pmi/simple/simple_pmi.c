@@ -35,8 +35,11 @@
 #include "pmi.h"
 #include "simple_pmiutil.h"
 
-/* Shouldn't most of these globals be static (local to this file?) 
-   Shouldn't they all be initialized to avoid problems with common symbols? */
+/* 
+   Shouldn't most of these globals be static (local to this file?) 
+   Shouldn't they all be initialized to avoid problems with common symbols? 
+   YES TO BOTH!!!!! 
+ */
 
 
 int PMI_fd = -1;
@@ -48,11 +51,13 @@ int PMI_rank = 0;
 #define SINGLETON_INIT 2
 int PMI_initialized = 0;
 
-int PMI_kvsname_max;
-int PMI_keylen_max;
-int PMI_vallen_max;
+/* ALL GLOBAL VARIABLES MUST BE INITIALIZED TO AVOID POLLUTING THE 
+   LIBRARY WITH COMMON SYMBOLS */
+int PMI_kvsname_max = 0;
+int PMI_keylen_max = 0;
+int PMI_vallen_max = 0;
 
-int PMI_iter_next_idx;
+int PMI_iter_next_idx = 0;
 int PMI_debug = 0;
 int PMI_spawned = 0;
 
