@@ -102,3 +102,5 @@ but should be pointer to long)?
 Miscellaneous Build Issues
 Restore -ansi to --enable-strict .   This is essential to ensure that MPICH2
 can build in non-GNU environments.
+
+Add support for uninstall targets to simplemake.
