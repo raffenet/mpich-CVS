@@ -13,6 +13,7 @@ CLINKER	  = @CLINKER@
 COPTIONS  = @COPTIONS@
 LDFLAGS	  = @LDFLAGS@
 LIBS	  = @LIBS@ 
+PYTHON    = @PYTHON@
 
 C_COMPILE = ${CC} ${INCLUDES} ${CFLAGS} ${COPTIONS}
 C_LINK	  = ${CLINKER} ${CFLAGS} ${COPTIONS} ${LDFLAGS}
@@ -39,7 +40,7 @@ mpdroot_OBJECTS	= ${mpdroot_SOURCES:.c=.o}
 example_OBJECTS	= ${example_SOURCES:.c=.o}
 
 
-all: Makefile ${PROGRAMS}
+all: Makefile ${PROGRAMS} fix_python_shebangs
 
 
 .SUFFIXES:
@@ -48,11 +49,16 @@ all: Makefile ${PROGRAMS}
 etags:  ${HEADERS} ${SOURCES}
 	etags ${HEADERS} ${SOURCES}
 
+fix_python_shebangs:
+	-@for pypgm in *.py ; do \
+	    sed -i -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' $$pypgm ; \
+	done
+
 mpdroot: ${mpdroot_OBJECTS}
 	$(C_LINK) -o mpdroot ${mpdroot_OBJECTS} $(LIBS)
 
 mpdroot.o: ${srcdir}/mpdroot.c ${srcdir}/mpdroot.h mpdconf.h
-	${C_COMPILE} -c -DBINDIR=\"${bindir}/\" $< 
+	${C_COMPILE} -c  $< 
 
 # The following lines provide the right libraries for all example programs
 .c:
