@@ -2846,7 +2846,7 @@ sub FindWorkingAutoconf {
 # Add the clean target for the coverage analyzer
 sub GcovClean {
     if ($maint_targets) {
-	print FD "\t-rm -f \${srcdir}/*.bb \${srcdir}/*.bbg \${srcdir}/*.da$newline";
+	print FD "\t-${quietLine}rm -f \${srcdir}/*.bb \${srcdir}/*.bbg \${srcdir}/*.da$newline";
     }
 }
 
