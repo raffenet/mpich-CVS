@@ -333,7 +333,6 @@ int MPIR_Err_append_code( int oldcode, int severity,
     else {
 	MPIU_Strncpy( str, inst_string, MPI_MAX_ERROR_STRING );
     }
-#endif
     va_end( Argp );
 
     /* Now, find the end of the current code and append this entry */
@@ -346,6 +345,9 @@ int MPIR_Err_append_code( int oldcode, int severity,
 	/* Only insert the message if there aren't too many */
 	ErrorRing[old_ring_idx].next_idx = ring_idx;
     }
+#else
+    va_end( Argp );
+#endif
 
     return err_code;
 }
