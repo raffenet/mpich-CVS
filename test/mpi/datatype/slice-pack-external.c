@@ -53,6 +53,10 @@ int main(int argc, char *argv[])
     position = 0;
 /*     MPI_Pack_size(1, threeslice, MPI_COMM_WORLD, &bufsize); */
     MPI_Pack_external_size("external32", 1, threeslice, &bufsize);
+    if (bufsize != 2916)
+    {
+        fprintf(stderr," Error on pack size! Got %d; expecting %d\n");
+    }
     buffer = (void *) malloc((unsigned) bufsize);
 
     /* -1 to indices on sheet to compensate for Fortran --> C */
