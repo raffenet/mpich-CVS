@@ -4,6 +4,7 @@
 /* Element of the list of environment variables */
 typedef struct EnvData {
     const char *name, *value;
+    const char *envvalue;     /* name=value form, for putenv */
     struct EnvData *nextData;
 } EnvData;
 

@@ -415,7 +415,7 @@ static void handle_sigchild( int sig )
 #ifndef SA_RESETHAND
 	/* If we can't clear the "reset handler bit", we must 
 	   re-install the handler here */
-	MPIE_SetupSigChld();
+	MPIE_InstallSigHandler( SIGCHLD, handle_sigchild );
 #endif
 	return;
     }
@@ -451,7 +451,7 @@ static void handle_sigchild( int sig )
 	    if (pState->exitStatus.exitReason != EXIT_NORMAL) {
 		/* Not a normal exit.  We may want to abort all 
 		   remaining processes */
-		;/*MPIE_KillUniverse( &pUniv ); */
+		MPIE_OnAbend( &pUniv );
 	    }
 	}
 	else {
@@ -463,7 +463,7 @@ static void handle_sigchild( int sig )
 #ifndef SA_RESETHAND
     /* If we can't clear the "reset handler bit", we must 
        re-install the handler here */
-    MPIE_SetupSigChld();
+    MPIE_InstallSigHandler( SIGCHLD, handle_sigchild );
 #endif
     inHandler = 0;
 }
@@ -782,6 +782,17 @@ static void handle_forwardsig( int sig )
 int MPIE_ForwardSignal( int sig )
 {
     MPIE_InstallSigHandler( sig, handle_forwardsig );
+    return 0;
+}
+
+/*
+ * This routine contains the action to take on an abnormal exit from
+ * a managed procese.  The normal action is to kill all of the other processes 
+ */
+int MPIE_OnAbend( ProcessUniverse *p )
+{
+    if (!p) p = &pUniv;
+    MPIE_KillUniverse( p );
     return 0;
 }
 

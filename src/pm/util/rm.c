@@ -209,6 +209,12 @@ static const char defaultMachinesPath[] = DEFAULT_MACHINES_PATH;
    See the MPIE_RMProcessArg routine for a place to put the tests for the
    arguments.
 */
+
+/* These allow a command-line option to override the path and filename
+   for the machines file */
+static char *machinefilePath = 0;
+static char *machinefile = 0;
+
 MachineTable *MPIE_ReadMachines( const char *arch, int nNeeded, 
 				 void *data )
 {
@@ -373,5 +379,21 @@ MachineTable *MPIE_ReadMachines( const char *arch, int nNeeded,
 
 int MPIE_RMProcessArg( int argc, char *argv[], void *extra )
 {
-  return 0;
+    char *cmd;
+    int   incr = 0;
+    if (strncmp( argv[0], "-machinefile", 12 ) == 0) {
+	/* Check for machinefile and machinefilepath */
+	cmd = argv[0] + 12;
+
+	if (cmd[0] == 0) {
+	    machinefile = MPIU_Strdup( argv[1] );
+	    incr = 2;
+	}
+	else if (strcmp( cmd, "path" ) == 0) {
+	    machinefilePath = MPIU_Strdup( argv[1] );
+	    incr = 2;
+	}
+	/* else not an argument for this routine */
+    }
+    return incr;
 }

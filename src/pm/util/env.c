@@ -107,3 +107,102 @@ int MPIE_ArgsCheckForEnv( int argc, char *argv[], ProcessWorld *pWorld )
     return incr;
 }
 
+/*
+  Setup the environment of a process for a given process state.  
+  This handles the options for the process world and app 
+ */
+int MPIE_EnvSetup( ProcessState *pState, char *envp[] )
+{
+    ProcessWorld *pWorld;
+    ProcessApp   *app;
+    EnvInfo      *env;
+    EnvData      *wPairs,*wNames, *aPairs, *aNames;
+    int          includeAll, j;
+    int          irc = 0;
+
+    app    = pState->app;
+    pWorld = app->pWorld;
+
+    /* Get the world defaults */
+    env        = pWorld->genv;
+    includeAll = env->includeAll;
+    wPairs     = env->envPairs;
+    wNames     = env->envNames;
+    
+    /* Get the app values (overrides includeAll) */
+    env        = app->env;
+    includeAll = env->includeAll;
+    aPairs     = env->envPairs;
+    aNames     = env->envNames;
+
+    if (includeAll) {
+	for (j=0; envp[j]; j++) {
+	    putenv( envp[j] );
+	}
+    }
+
+    while (wPairs) {
+	if (putenv( (char *)(wPairs->envvalue) )) {
+	    irc = 1;
+	}
+	wPairs = wPairs->nextData;
+    }
+
+    while (wNames) {
+	if (putenv( (char *)(wNames->envvalue) )) {
+	    irc = 1;
+	}
+	wNames = wNames->nextData;
+    }
+
+    while (aPairs) {
+	if (putenv( (char *)(aPairs->envvalue) )) {
+	    irc = 1;
+	}
+	aPairs = aPairs->nextData;
+    }
+
+    while (aNames) {
+	if (putenv( (char *)(aNames->envvalue) )) {
+	    irc = 1;
+	}
+	aNames = aNames->nextData;
+    }
+
+    return irc;
+}
+
+/*
+  Initialize the environment data
+  
+  Builds the envvalue version of the data, using the given data.
+  if getValue is true, get the value for the name with getenv .
+ */
+int MPIE_EnvInitData( EnvData *elist, int getValue )
+{
+    const char *value;
+    char       *str;
+    int        slen;
+
+    while (elist) {
+	if (getValue) {
+	    value = (const char *)getenv( elist->name );
+	}
+	else {
+	    value = elist->value;
+	}
+	slen = strlen( elist->name ) + strlen(value) + 2;
+	str  = (char *)MPIU_Malloc( slen );
+	if (!str) {
+	    break;
+	}
+	MPIU_Strncpy( str, elist->name, slen );
+	if (value && *value) {
+	    MPIU_Strnapp( str, "=", slen );
+	    MPIU_Strnapp( str, value, slen );
+	}
+	elist->envvalue = (const char *)str;
+
+	elist = elist->nextData;
+    }
+}
