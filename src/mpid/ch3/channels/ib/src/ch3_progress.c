@@ -149,23 +149,6 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
     return TRUE;
 }
 
-#undef FUNCNAME
-#undef FCNAME
-static inline void post_pkt_send(MPIDI_VC *vc)
-{
-    MPIDI_STATE_DECL(MPID_STATE_POST_PKT_SEND);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_POST_PKT_SEND);
-    vc->ib.req->ch3.iov[0].MPID_IOV_BUF = (void *)&vc->ib.req->ib.pkt;
-    vc->ib.req->ch3.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
-    vc->ib.req->ch3.iov_count = 1;
-    vc->ib.req->ib.iov_offset = 0;
-    vc->ib.req->ch3.ca = MPIDI_CH3I_CA_HANDLE_PKT;
-    vc->ib.send_active = vc->ib.req;
-    /* ibu_post_write */
-    MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_SEND);
-}
-
 static inline void post_pkt_recv(MPIDI_VC *vc)
 {
     MPIDI_STATE_DECL(MPID_STATE_POST_PKT_RECV);
@@ -196,6 +179,8 @@ static inline void post_queued_send(MPIDI_VC * vc)
     {
 	MPIDI_DBG_PRINTF((75, FCNAME, "queued message, send active"));
 	/* do ibu_post_write here */
+	assert(vc->ib.send_active->ib.iov_offset < vc->ib.send_active->ch3.iov_count);
+	ibu_post_writev(vc->ib.ibu, vc->ib.send_active->ch3.iov + vc->ib.send_active->ib.iov_offset, vc->ib.send_active->ch3.iov_count - vc->ib.send_active->ib.iov_offset, NULL);
     }
     else
     {
@@ -221,8 +206,8 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
 	MPID_Request * req = vc->ib.recv_active;
 
 	/*
-	assert(req->tcp.iov_offset < req->ch3.iov_count);
-	nb = readv(poll_fds[elem].fd, req->ch3.iov + req->tcp.iov_offset, req->ch3.iov_count - req->tcp.iov_offset);
+	assert(req->ib.iov_offset < req->ch3.iov_count);
+	nb = readv(poll_fds[elem].fd, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset);
 	*/
 
 	MPIDI_DBG_PRINTF((65, FCNAME, "read returned %d", nb));
@@ -332,8 +317,8 @@ static inline void handle_written(MPIDI_VC * vc, int nb)
 	MPID_Request * req = vc->ib.send_active;
 
 	/*
-	assert(req->tcp.iov_offset < req->ch3.iov_count);
-	nb = writev(poll_fds[elem].fd, req->ch3.iov + req->tcp.iov_offset, req->ch3.iov_count - req->tcp.iov_offset);
+	assert(req->ib.iov_offset < req->ch3.iov_count);
+	nb = writev(poll_fds[elem].fd, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset);
 	*/
 
 	if (nb > 0)
