@@ -264,6 +264,7 @@ void MPE_Thread_cond_destroy(MPE_Thread_cond_t * cond, int * err)
 void MPE_Thread_cond_wait(MPE_Thread_cond_t * cond, MPE_Thread_mutex_t * mutex, int * err)
 {
     HANDLE event;
+    DWORD result;
     MPE_Thread_tls_get(&cond->tls, &event, err);
     if (err != NULL && *err != MPE_THREAD_SUCCESS)
     {
@@ -272,6 +273,14 @@ void MPE_Thread_cond_wait(MPE_Thread_cond_t * cond, MPE_Thread_mutex_t * mutex, 
     if (event == NULL)
     {
 	event = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (event == NULL)
+	{
+	    if (err != NULL)
+	    {
+		*err = GetLastError();
+	    }
+	    return;
+	}
 	MPE_Thread_tls_set(&cond->tls, event, err);
 	if (err != NULL && *err != MPE_THREAD_SUCCESS)
 	{
@@ -293,6 +302,14 @@ void MPE_Thread_cond_wait(MPE_Thread_cond_t * cond, MPE_Thread_mutex_t * mutex, 
 	cond->fifo_tail->next = (MPE_Thread_cond_fifo_t*)malloc(sizeof(MPE_Thread_cond_fifo_t));
 	cond->fifo_tail = cond->fifo_tail->next;
     }
+    if (cond->fifo_tail == NULL)
+    {
+	if (err != NULL)
+	{
+	    *err = -1;
+	}
+	return;
+    }
     cond->fifo_tail->event = event;
     cond->fifo_tail->next = NULL;
     MPE_Thread_mutex_unlock(&cond->fifo_mutex, err);
@@ -305,7 +322,22 @@ void MPE_Thread_cond_wait(MPE_Thread_cond_t * cond, MPE_Thread_mutex_t * mutex, 
     {
 	return;
     }
-    WaitForSingleObject(event, INFINITE);
+    result = WaitForSingleObject(event, INFINITE);
+    if (err != NULL)
+    {
+        if (result != WAIT_OBJECT_0)
+        {
+            if (result == WAIT_FAILED)
+	    {
+	        *err = GetLastError();
+	    }
+	    else
+	    {
+	        *err = result;
+	    }
+	    return;
+	}
+    }
     MPE_Thread_mutex_lock(mutex, err);
     /*
     if (err != NULL)
@@ -323,6 +355,7 @@ void MPE_Thread_cond_broadcast(MPE_Thread_cond_t * cond, int * err)
     {
 	return;
     }
+    /* remove the fifo queue from the cond variable */
     fifo = cond->fifo_head;
     cond->fifo_head = cond->fifo_tail = NULL;
     MPE_Thread_mutex_unlock(&cond->fifo_mutex, err);
@@ -330,6 +363,7 @@ void MPE_Thread_cond_broadcast(MPE_Thread_cond_t * cond, int * err)
     {
 	return;
     }
+    /* signal each event in the fifo queue */
     while (fifo)
     {
 	SetEvent(fifo->event);
@@ -352,9 +386,12 @@ void MPE_Thread_cond_signal(MPE_Thread_cond_t * cond, int * err)
 	return;
     }
     fifo = cond->fifo_head;
-    cond->fifo_head = cond->fifo_head->next;
-    if (cond->fifo_head == NULL)
-	cond->fifo_tail = NULL;
+    if (fifo)
+    {
+	cond->fifo_head = cond->fifo_head->next;
+	if (cond->fifo_head == NULL)
+	    cond->fifo_tail = NULL;
+    }
     MPE_Thread_mutex_unlock(&cond->fifo_mutex, err);
     if (err != NULL && *err != MPE_THREAD_SUCCESS)
     {
@@ -362,7 +399,12 @@ void MPE_Thread_cond_signal(MPE_Thread_cond_t * cond, int * err)
     }
     if (fifo)
     {
-	SetEvent(fifo->event);
+	if (!SetEvent(fifo->event) && err != NULL)
+	{
+	    *err = GetLastError();
+	    free(fifo);
+	    return;
+	}
 	free(fifo);
     }
     if (err != NULL)
