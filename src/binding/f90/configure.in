@@ -177,6 +177,36 @@ fi
 PAC_PROG_F90_INT_KIND(mpi_offset_kind,$sizeof_mpi_offset,$CROSS_SIZEOF_MPI_OFFSET)
 
 #
+# Get the sizes of the standard types.  These are used 
+# to implement MPI_SIZEOF, among other things.
+#
+# Set likely defaults
+CROSS_F90_SIZEOF_INTEGER=${CROSS_F90_SIZEOF_INTEGER:-4}
+CROSS_F90_SIZEOF_REAL=${CROSS_F90_SIZEOF_REAL:-4}
+CROSS_F90_SIZEOF_CHARACTER=${CROSS_F90_SIZEOF_CHARACTER:-1}
+CROSS_F90_SIZEOF_DOUBLE_PRECISION=${CROSS_F90_SIZEOF_DOUBLE_PRECISION:-4}
+
+PAC_PROG_F90_CHECK_SIZEOF(INTEGER,$CROSS_F90_SIZEOF_INTEGER)
+PAC_PROG_F90_CHECK_SIZEOF(REAL,$CROSS_F90_SIZEOF_REAL)
+PAC_PROG_F90_CHECK_SIZEOF(CHARACTER,$CROSS_F90_SIZEOF_CHARACTER)
+#
+# We check the size of double precision even though it should be
+# twice the size of a real because some environments allow the user
+# to set real and double precision to the same size.  This is no longer
+# Fortran, but this check helps make us more robust
+PAC_PROG_F90_CHECK_SIZEOF(DOUBLE PRECISION,$CROSS_F90_SIZEOF_DOUBLE_PRECISION)
+
+# We also want to substitute for these values, not just define them
+SIZEOF_F90_INTEGER=$pac_cv_f90_sizeof_INTEGER
+SIZEOF_F90_REAL=$pac_cv_f90_sizeof_REAL
+SIZEOF_F90_CHARACTER=$pac_cv_f90_sizeof_CHARACTER
+SIZEOF_F90_DOUBLE_PRECISION=$pac_cv_f90_sizeof_DOUBLE_PRECISION
+AC_SUBST(SIZEOF_F90_INTEGER)
+AC_SUBST(SIZEOF_F90_REAL)
+AC_SUBST(SIZEOF_F90_CHARACTER)
+AC_SUBST(SIZEOF_F90_DOUBLE_PRECISION)
+
+#
 # Determine the precision and range of the standard Fortran types.  This
 # isn't quite enough for a full implementation of the Type_create_f90_xxx
 # routines, but will handle most programs.  We can extend this by trying to
@@ -368,4 +398,4 @@ includebuild_dir=$includebuild_dir
 libbuild_dir=$libbuild_dir
 )
 
-AC_OUTPUT(Makefile mpif90.conf mpif90 mpif90conf.h)
+AC_OUTPUT(Makefile mpif90.conf mpif90 mpif90conf.h mpi_sizeofs.f90)

@@ -172,6 +172,7 @@ open (MPIFD, ">mpi.f90" ) || die "Could not open mpi.f90\n";
 print MPIFD "       MODULE MPI
 !      This module was created by the script buildiface
        USE MPI_CONSTANTS
+       USE MPI_SIZEOFS
        USE MPI_BASE
        END MODULE MPI\n";
   
@@ -335,13 +336,13 @@ foreach $routine (keys(%mpi_choice_routines)) {
     print MPIFD "        END INTERFACE MPI_$ucname\n\n";
 }
 
-# Add sizeof
-print MPIFD "        PUBLIC :: MPI_SIZEOF\n";
-print MPIFD "        INTERFACE MPI_SIZEOF\n";
-print MPIFD "          MODULE PROCEDURE MPI_SIZEOF_T\n";
-print MPIFD "        END INTERFACE ! MPI_SIZEOF\n\n";
+# # Add sizeof
+# print MPIFD "        PUBLIC :: MPI_SIZEOF\n";
+# print MPIFD "        INTERFACE MPI_SIZEOF\n";
+# print MPIFD "          MODULE PROCEDURE MPI_SIZEOF_T\n";
+# print MPIFD "        END INTERFACE ! MPI_SIZEOF\n\n";
 
-print MPIFD "        CONTAINS\n\n";
+# print MPIFD "        CONTAINS\n\n";
 
 # For each choice routine, add the modules
 foreach $routine (keys(%mpi_choice_routines)) {
@@ -415,16 +416,17 @@ foreach $routine (keys(%mpi_choice_routines)) {
     print MPIFD "        END SUBROUTINE MPI_${ucname}_T\n\n";
 }
 
-# Add sizeof
-print MPIFD "\
-        SUBROUTINE MPI_SIZEOF_T( X, SIZE, IERROR )\
-        <type> X\
-        INTEGER SIZE, IERROR\
-        IERROR = 0\
-        SIZE = <typesize>\
-        END SUBROUTINE MPI_SIZEOF_T\
-";
-print MPIFD "\n";
+# The base sizeof's are handled separately now.
+# # Add sizeof
+# print MPIFD "\
+#         SUBROUTINE MPI_SIZEOF_T( X, SIZE, IERROR )\
+#         <type> X\
+#         INTEGER SIZE, IERROR\
+#         IERROR = 0\
+#         SIZE = <typesize>\
+#         END SUBROUTINE MPI_SIZEOF_T\
+# ";
+# print MPIFD "\n";
 
 print MPIFD "        END MODULE MPI_t1_s\n";
 close MPIFD;
@@ -448,19 +450,26 @@ print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources} \
 profilelib_\${MPILIBNAME} = p\${MPILIBNAME}\
 INCLUDES = -I../../include -I\${master_top_srcdir}/src/include\n";
 
+# Add the MPI module objects to the f90 library
+print MAKEFD "\
+lib\${MPILIBNAME}f90_a_SOURCES = mpi.o mpi_base.o mpi_sizeofs.o mpi_constants.o\n";
+
 print MAKEFD "all-preamble: mpi.\$(MOD)\n";
 
 print MAKEFD "mpi_constants.\$(MOD): \$(srcdir)/mpi_constants.f90\
 \t\$(F90_COMPILE_MODS) -c \$(srcdir)/mpi_constants.f90\n";
+
+print MAKEFD "mpi_sizeofs.\$(MOD): mpi_sizeofs.f90\
+\t\$(F90_COMPILE_MODS) -c mpi_sizeofs.f90\n";
 
 print MAKEFD "mpi_base.\$(MOD): \$(srcdir)/mpi_base.f90\
 \t\$(F90_COMPILE_MODS)  -c \$(srcdir)/mpi_base.f90\n";
 
 print MAKEFD "# Thes copy line in this step makes the F90 modules available to \n";
 print MAKEFD "# the mpif90 script before an install takes place\n";
-print MAKEFD "mpi.\$(MOD): \$(srcdir)/mpi.f90 mpi_constants.\$(MOD) mpi_base.\$(MOD)\
+print MAKEFD "mpi.\$(MOD): \$(srcdir)/mpi.f90 mpi_constants.\$(MOD) mpi_base.\$(MOD) mpi_sizeofs.\$(MOD) \
 \t\$(F90_COMPILE_MODS) -c \$(srcdir)/mpi.f90\n";
-print MAKEFD "\tcp mpi.\$(MOD) mpi_constants.\$(MOD) mpi_base.\$(MOD) ../../../src/include\n";
+print MAKEFD "\tcp mpi.\$(MOD) mpi_constants.\$(MOD) mpi_base.\$(MOD) mpi_sizeofs.\$(MOD) ../../../src/include\n";
 #
 # Some versions of the Intel f90 compiler require special files that 
 # describe which modules to load.
@@ -479,12 +488,16 @@ print MAKEFD "maint-clean:\
 
 print MAKEFD "install_BIN     = mpif90\n";
 print MAKEFD "install_ETC     = mpif90.conf\n";
-print MAKEFD "install_INCLUDE = mpi.\$(MOD) mpi_constants.\$(MOD) mpi_base.\$(MOD)\n";
+print MAKEFD "install_INCLUDE = mpi.\$(MOD) mpi_constants.\$(MOD) mpi_base.\$(MOD) mpi_sizeofs.\$(MOD)\n";
+# These next two are special files needed by some versions of the Intel 
+# compilers
 print MAKEFD "optinstall_INCLUDE = mpimod.pcl mpimod.pc\n";
+print MAKEFD "install_LIB     = lib\${MPILIBNAME}f90.a\n";
+print MAKEFD "optinstall_SHLIB= lib\${MPILIBNAME}f90.so\n";
 
     # Add the documentation
     print MAKEFD "# Documentation sources
-doc_sources = mpif90.txt
+doc_sources = mpif90.txt manf90.txt
 DOCDESTDIRS = html:www/www1,man:man/man1,latex:doc/refman
 doc_HTML_SOURCES  = \${doc_sources}
 doc_MAN_SOURCES   = \${doc_sources}
@@ -506,6 +519,7 @@ print MAKEFD "\trm -f ../../../bin/mpif90\n";
 print MAKEFD "\trm -f ../../../src/include/mpi.\$(MOD)\n";
 print MAKEFD "\trm -f ../../../src/include/mpi_base.\$(MOD)\n";
 print MAKEFD "\trm -f ../../../src/include/mpi_constants.\$(MOD)\n";
+print MAKEFD "\trm -f ../../../src/include/mpi_sizeofs.\$(MOD)\n";
 
 
 close( MAKEFD );

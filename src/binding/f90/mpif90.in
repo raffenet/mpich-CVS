@@ -221,7 +221,11 @@ done
 # default, environment, configuration file (if any) and command-line
 # options (if any)
 
-mpilibs=-l$MPILIBNAME
+#
+# The library lib${MPILIBNAME}f90 contains the f90-specific features,
+# such as the module objects and the routines defined by them
+# (MPI_SIZEOF is handled in lib${MPILIBNAME)f90, for example).
+mpilibs="-l${MPILIBNAME}f90 -l$MPILIBNAME"
 if [ "$NEEDSPLIB" = yes ] ; then
      mpilibs="$mpilibs -lp$MPILIBNAME -l$MPILIBNAME -lp$MPILIBNAME"
 fi
