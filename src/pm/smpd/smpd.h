@@ -65,6 +65,7 @@
 typedef int SMPD_BOOL;
 #define SMPD_TRUE                           1
 #define SMPD_FALSE                          0
+#define SMPD_INVALID_SETTING               -1
 
 #define SMPD_SERVER_AUTHENTICATION          0
 #define SMPD_CLIENT_AUTHENTICATION          1
