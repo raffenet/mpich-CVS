@@ -152,20 +152,24 @@ $prototype_file = "../../include/mpi.h.in";
 # First pass.  Ignore the issue of choice routines
 # Print header
 open (MPIFD, ">mpi.f90" ) || die "Could not open mpi.f90\n";
+
+# Was 
+#       USE MPI_CONSTANTS,                                               &
+#     &      BASE_MPI_WTIME => MPI_WTIME, BASE_MPI_WTICK => MPI_WTICK
+# but this caused problems with the pg compiler.  Need to understand and fix
 print MPIFD "       MODULE MPI
        IMPLICIT NONE
        INTERFACE
 !      This module was created by the script buildiface
-       USE MPI_CONSTANTS,                                               &
-     &      BASE_MPI_WTIME => MPI_WTIME, BASE_MPI_WTICK => MPI_WTICK
-       USE MPIBASE
+       USE MPI_CONSTANTS
+       USE MPI_BASE
        END INTERFACE
        END MODULE MPI\n";
   
 close (MPIFD);
 # ----------------------------------------------------------------------------
-open ( MPIBASEFD, ">mpibase.f90" ) || die "Could not open mpibase.f90\n";
-print MPIBASEFD "       MODULE MPIBASE
+open ( MPIBASEFD, ">mpi_base.f90" ) || die "Could not open mpi_base.f90\n";
+print MPIBASEFD "       MODULE MPI_BASE
        IMPLICIT NONE
 !      This module was created by the script buildiface
        INTERFACE\n";
@@ -249,7 +253,28 @@ foreach $routine (keys(%mpi_routines)) {
     print MPIBASEFD "       INTEGER ierror\n";
     print MPIBASEFD "       END SUBROUTINE MPI_$ucname\n\n";
 }
-print MPIBASEFD "       END INTERFACE\n       END MODULE MPIBASE\n";
+
+# Add specials
+
+print MPIBASEFD "
+        SUBROUTINE MPI_INIT(ierror)
+        INTEGER ierror
+        END SUBROUTINE MPI_INIT
+
+        SUBROUTINE MPI_INIT_THREAD(v0,v1,ierror)
+        INTEGER v0, v1, ierror
+        END SUBROUTINE MPI_INIT_THREAD
+
+        FUNCTION MPI_WTIME()
+            DOUBLE PRECISION MPI_WTIME
+        END FUNCTION MPI_WTIME
+!
+        FUNCTION MPI_WTICK()
+            DOUBLE PRECISION MPI_WTICK
+        END FUNCTION MPI_WTICK
+";
+
+print MPIBASEFD "       END INTERFACE\n       END MODULE MPI_BASE\n";
 close MPIBASEFD;
 
 open ( MPIFD, ">mpi_constants.f90" ) || die "Cannot open mpi_constants.f90\n";
@@ -359,21 +384,26 @@ print MAKEFD "# DO NOT EDIT\n# This file created by buildiface $arg_string\n";
 print MAKEFD "smvar_do_dependencies = 0\n";
 print MAKEFD "MOD = \@F90MODEXT\@\n";
 
+print MAKEFD "all-preamble: mpi.\$(MOD)\n";
+
 print MAKEFD "mpi_constants.\$(MOD): \$(srcdir)/mpi_constants.f90\
 \t\$(F90) -c \$(F90FLAGS) \$(srcdir)/mpi_constants.f90\n";
 
-print MAKEFD "mpibase.\$(MOD): \$(srcdir)/mpibase.f90\
-\t\$(F90) -c \$(F90FLAGS) \$(srcdir)/mpibase.f90\n";
+print MAKEFD "mpi_base.\$(MOD): \$(srcdir)/mpi_base.f90\
+\t\$(F90) -c \$(F90FLAGS) \$(srcdir)/mpi_base.f90\n";
 
-print MAKEFD "mpi.\$(MOD): \$(srcdir)/mpi.f90 mpi_constants.\$(MOD) mpibase.\$(MOD)\
+print MAKEFD "mpi.\$(MOD): \$(srcdir)/mpi.f90 mpi_constants.\$(MOD) mpi_base.\$(MOD)\
 \t\$(F90) -c \$(F90FLAGS) \$(srcdir)/mpi.f90\n";
+
+print MAKEFD "clean-local:\n";
+print MAKEFD "\trm -f *.\$(MOD)\n";
 
 print MAKEFD "maint-clean:\
 \trm -f \${mpi_sources} fproto.h\n";
 
 print MAKEFD "install_BIN     = mpif90\n";
 print MAKEFD "install_ETC     = mpif90.conf\n";
-print MAKEFD "install_INCLUDE = mpi.\$(MOD) mpi_constants.\$(MOD) mpibase.\$(MOD)\n";
+print MAKEFD "install_INCLUDE = mpi.\$(MOD) mpi_constants.\$(MOD) mpi_base.\$(MOD)\n";
 
 # Since configure copies mpif90 to the bin dir, we need to remove it
 # in a distclean step.
