@@ -1,4 +1,5 @@
-Makefile*
+Makefile.in
+Makefile
 simple
 sendrecv
 wtime
