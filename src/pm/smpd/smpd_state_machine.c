@@ -135,10 +135,16 @@ char * smpd_get_state_string(smpd_state_t state)
 	return "SMPD_WRITING_SESSION_HEADER";
     case SMPD_READING_SMPD_RESULT:
 	return "SMPD_READING_SMPD_RESULT";
+    case SMPD_READING_PROCESS_RESULT:
+	return "SMPD_READING_PROCESS_RESULT";
     case SMPD_WRITING_SESSION_ACCEPT:
 	return "SMPD_WRITING_SESSION_ACCEPT";
     case SMPD_WRITING_SESSION_REJECT:
 	return "SMPD_WRITING_SESSION_REJECT";
+    case SMPD_WRITING_PROCESS_SESSION_ACCEPT:
+	return "SMPD_WRITING_PROCESS_SESSION_REJECT";
+    case SMPD_WRITING_PROCESS_SESSION_REJECT:
+	return "SMPD_WRITING_PROCESS_SESSION_REJECT";
     case SMPD_RECONNECTING:
 	return "SMPD_RECONNECTING";
     case SMPD_EXITING:
@@ -349,6 +355,37 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		if (result != SOCK_SUCCESS)
 		{
 		    smpd_err_printf("unable to post a send of the session header,\nsock error: %s\n",
+			get_sock_error_string(result));
+		    smpd_exit_fn("smpd_enter_at_state");
+		    return SMPD_FAIL;
+		}
+		break;
+	    case SMPD_READING_PROCESS_RESULT:
+		if (event.error != SOCK_SUCCESS)
+		{
+		    smpd_err_printf("unable to read the process session result.\n");
+		    break;
+		}
+		smpd_dbg_printf("read process session result: '%s'\n", context->pwd_request);
+		if (strcmp(context->pwd_request, SMPD_AUTHENTICATION_ACCEPTED_STR))
+		{
+		    smpd_dbg_printf("process session rejected\n");
+		    context->read_state = SMPD_IDLE;
+		    context->state = SMPD_CLOSING;
+		    result = sock_post_close(context->sock);
+		    if (result != SOCK_SUCCESS)
+		    {
+			smpd_err_printf("unable to close sock,\nsock error: %s\n", get_sock_error_string(result));
+			smpd_exit_fn("smpd_enter_at_state");
+			return SMPD_FAIL;
+		    }
+		    break;
+		}
+		context->read_state = SMPD_READING_RECONNECT_REQUEST;
+		result = sock_post_read(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, NULL);
+		if (result != SOCK_SUCCESS)
+		{
+		    smpd_err_printf("unable to post a read of the re-connect request,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -881,6 +918,33 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 #ifdef HAVE_WINDOWS_H
 		/* launch the manager process */
 		result = smpd_start_win_mgr(context);
+		if (result == SMPD_SUCCESS)
+		{
+		    strcpy(context->pwd_request, SMPD_AUTHENTICATION_ACCEPTED_STR);
+		    context->write_state = SMPD_WRITING_PROCESS_SESSION_ACCEPT;
+		    result = sock_post_write(context->sock, context->pwd_request, SMPD_AUTHENTICATION_REPLY_LENGTH, NULL);
+		    if (result != SOCK_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a write of the process session accepted message,\nsock error: %s\n",
+			    get_sock_error_string(result));
+			smpd_exit_fn("smpd_enter_at_state");
+			return SMPD_FAIL;
+		    }
+		}
+		else
+		{
+		    strcpy(context->pwd_request, SMPD_AUTHENTICATION_REJECTED_STR);
+		    context->write_state = SMPD_WRITING_PROCESS_SESSION_REJECT;
+		    result = sock_post_write(context->sock, context->pwd_request, SMPD_AUTHENTICATION_REPLY_LENGTH, NULL);
+		    if (result != SOCK_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a write of the session rejected message,\nsock error: %s\n",
+			    get_sock_error_string(result));
+			smpd_exit_fn("smpd_enter_at_state");
+			return SMPD_FAIL;
+		    }
+		}
+#if 0
 		if (result != SMPD_SUCCESS)
 		{
 		    context->state = SMPD_CLOSING;
@@ -907,6 +971,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
 		}
+#endif
 #else
 		/* post a write of the noreconnect request */
 		smpd_dbg_printf("smpd writing noreconnect request\n");
@@ -1578,11 +1643,11 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    break;
 		}
 		smpd_dbg_printf("wrote password\n");
-		context->read_state = SMPD_READING_RECONNECT_REQUEST;
-		result = sock_post_read(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, NULL);
+		context->read_state = SMPD_READING_PROCESS_RESULT;
+		result = sock_post_read(context->sock, context->pwd_request, SMPD_AUTHENTICATION_REPLY_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read of the re-connect request,\nsock error: %s\n",
+		    smpd_err_printf("unable to post a read of the process session result,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1854,6 +1919,44 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		if (result != SOCK_SUCCESS)
 		{
 		    smpd_err_printf("unable to post a close of the sock after writing a reject message,\nsock error: %s\n",
+			get_sock_error_string(result));
+		    smpd_exit_fn("smpd_enter_at_state");
+		    return SMPD_FAIL;
+		}
+		break;
+	    case SMPD_WRITING_PROCESS_SESSION_ACCEPT:
+		if (event.error != SOCK_SUCCESS)
+		{
+		    smpd_err_printf("unable to write the process session accept string.\n");
+		    break;
+		}
+		smpd_dbg_printf("wrote process session accept: '%s'\n", context->pwd_request);
+		/* post a write of the reconnect request */
+		smpd_dbg_printf("smpd writing reconnect request: port %s\n", context->port_str);
+		context->write_state = SMPD_WRITING_RECONNECT_REQUEST;
+		result = sock_post_write(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, NULL);
+		if (result != SOCK_SUCCESS)
+		{
+		    smpd_err_printf("Unable to post a write of the re-connect port number(%s) back to mpiexec,\nsock error: %s\n",
+			context->port_str, get_sock_error_string(result));
+		    smpd_exit_fn("smpd_enter_at_state");
+		    return SMPD_FAIL;
+		}
+		break;
+	    case SMPD_WRITING_PROCESS_SESSION_REJECT:
+		if (event.error != SOCK_SUCCESS)
+		{
+		    smpd_err_printf("unable to write the process session reject string.\n");
+		    break;
+		}
+		smpd_dbg_printf("wrote process session reject: '%s'\n", context->pwd_request);
+		context->state = SMPD_CLOSING;
+		context->read_state = SMPD_IDLE;
+		context->write_state = SMPD_IDLE;
+		result = sock_post_close(context->sock);
+		if (result != SOCK_SUCCESS)
+		{
+		    smpd_err_printf("unable to post a close of the sock after writing a process session reject message,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;

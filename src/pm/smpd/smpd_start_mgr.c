@@ -27,7 +27,7 @@ HANDLE smpd_decode_handle(char *str)
 int smpd_start_win_mgr(smpd_context_t *context)
 {
     int result;
-    char *dbg_str;
+    char dbg_str[20];
     char read_handle_str[20], write_handle_str[20];
     char domainaccount[SMPD_MAX_ACCOUNT_LENGTH], account[SMPD_MAX_ACCOUNT_LENGTH], domain[SMPD_MAX_ACCOUNT_LENGTH];
     char *pszDomain;
@@ -84,10 +84,12 @@ int smpd_start_win_mgr(smpd_context_t *context)
 	return SMPD_FAIL;
     }
     /* encode the command line */
-    if (smpd_process.dbg_state == (SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_PREPEND_RANK | SMPD_DBG_STATE_TRACE))
-	dbg_str = "-d";
+    if (smpd_process.dbg_state == SMPD_DBG_STATE_ALL)
+	strcpy(dbg_str, "-d");
+    else if (smpd_process.dbg_state)
+	snprintf(dbg_str, 20, "-d %d", smpd_process.dbg_state);
     else
-	dbg_str = "";
+	dbg_str[0] = '\0';
     if (smpd_process.port != SMPD_LISTENER_PORT)
     {
 	snprintf(cmd, 8192, "\"%s\" -p %d %s -mgr -read %s -write %s", smpd_process.pszExe, smpd_process.port, dbg_str,
@@ -121,7 +123,7 @@ int smpd_start_win_mgr(smpd_context_t *context)
 	    CloseHandle(hReadRemote);
 	    CloseHandle(hWriteRemote);
 	    smpd_exit_fn("smpd_start_win_mgr");
-	    return SMPD_FAIL;
+	    return SMPD_ERR_INVALID_USER;
 	}
 
 	result = SMPD_SUCCESS;
@@ -134,7 +136,7 @@ int smpd_start_win_mgr(smpd_context_t *context)
 	    CloseHandle(hReadRemote);
 	    CloseHandle(hWriteRemote);
 	    smpd_exit_fn("smpd_start_win_mgr");
-	    return SMPD_FAIL;
+	    return SMPD_ERR_INVALID_USER;
 	}
     }
 
@@ -169,7 +171,7 @@ int smpd_start_win_mgr(smpd_context_t *context)
 		num_tries--;
 		if (num_tries == 0)
 		{
-		    smpd_err_printf("%s failed, error %d\n", smpd_process.bService ? "CreateProcessAsUser" : "CreateProcess", result);
+		    smpd_err_printf("%s failed, error %d - ERROR_REQ_NOT_ACCEP\n", smpd_process.bService ? "CreateProcessAsUser" : "CreateProcess", result);
 		}
 	    }
 	    else

@@ -20,6 +20,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     HANDLE hWrite, hRead;
     DWORD num_written, num_read;
 #endif
+    int dbg_flag;
 
     smpd_enter_fn("smpd_parse_command_args");
 
@@ -28,6 +29,12 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 #endif
 
     /* check for debug option */
+    if (smpd_get_opt_int(argcp, argvp, "-d", &dbg_flag))
+    {
+	smpd_process.dbg_state = dbg_flag;
+	smpd_process.bNoTTY = SMPD_FALSE;
+	smpd_process.bService = SMPD_FALSE;
+    }
     if (smpd_get_opt(argcp, argvp, "-d"))
     {
 	smpd_process.dbg_state = SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_PREPEND_RANK | SMPD_DBG_STATE_TRACE;

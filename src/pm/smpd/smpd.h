@@ -30,6 +30,7 @@
 
 #define SMPD_SUCCESS                        0
 #define SMPD_FAIL                          -1
+#define SMPD_ERR_INVALID_USER              -2
 #define SMPD_CLOSE                          2
 #define SMPD_CONNECTED                      3
 #define SMPD_EXIT                           4
@@ -89,6 +90,7 @@ typedef int SMPD_BOOL;
 #define SMPD_DBG_STATE_LOGFILE           0x04
 #define SMPD_DBG_STATE_PREPEND_RANK      0x08
 #define SMPD_DBG_STATE_TRACE             0x10
+#define SMPD_DBG_STATE_ALL               (SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_LOGFILE | SMPD_DBG_STATE_PREPEND_RANK | SMPD_DBG_STATE_TRACE)
 
 #define SMPD_QUOTE_CHAR                   '\"'
 #define SMPD_DELIM_CHAR                   '='
@@ -159,6 +161,9 @@ typedef enum smpd_state_t
     SMPD_READING_SMPD_RESULT,
     SMPD_WRITING_SESSION_ACCEPT,
     SMPD_WRITING_SESSION_REJECT,
+    SMPD_READING_PROCESS_RESULT,
+    SMPD_WRITING_PROCESS_SESSION_ACCEPT,
+    SMPD_WRITING_PROCESS_SESSION_REJECT,
     SMPD_END_MARKER_NUM_STATES
 } smpd_state_t;
 
