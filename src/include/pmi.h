@@ -588,9 +588,25 @@ Notes:
 This function removes PMI specific arguments from the command line and
 creates the corresponding PMI_keyval_t structures for them.  It returns
 an array and size to the caller that can then be passed to PMI_Spawn_multiple.
-The array can be freed by free().
 @*/
 int PMI_Args_to_keyval(int *argcp, char **argvp[], PMI_keyval_t **keyvalp, int *size);
+
+/*@
+PMI_Free_keyvals - free the keyval structures created by PMI_Args_to_keyval
+
+Input Parameters:
++ keyvalp - array of keyvals
+- size - size of the array
+
+Return values:
++ PMI_SUCCESS - success
+. PMI_INVALID_ARG - invalid argument
+- PMI_FAIL - fail
+
+Notes:
+This function frees the data returned by PMI_Args_to_keyval.
+@*/
+int PMI_Free_keyvals(PMI_keyval_t keyvalp[], int size);
 
 #if defined(__cplusplus)
 }
