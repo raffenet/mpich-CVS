@@ -10,11 +10,19 @@
  */
 
 /* XXX - move these to mpiimpl.h??? */
+/* 
+ * Note: Never define the feature set in a header file, since this changes
+ * the language accepted by the C compiler and the contents of the headers
+ * seen by the C preprocessor.  Defining any of these renders the work of
+ * configure irrelevant.
+ */
+#if 0
 #if !defined(_XOPEN_SOURCE)
 #define _XOPEN_SOURCE
 #endif
 #if !defined(_BSD_SOURCE)
 #define _BSD_SOURCE
+#endif
 #endif
 
 #if !defined(MPICH_MPIDIMPL_H_INCLUDED)
