@@ -7,6 +7,8 @@
 
 #include "mpiimpl.h"
 
+/* style: allow:sprintf:1 sig:0 */
+
 /* 
  * This file contains "safe" versions of the various string and printf
  * operations.  So far, only strncpy is included.
@@ -127,18 +129,37 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
 	    }
 	}
 	else {
-	    int nc = nf[1];
-	    
+	    int nc;
+	    int width = -1;
+
 	    /* Copy until nf */
 	    while (p < nf && size-- > 0) {
 		*out_str++ = *p++;
 	    }
+	    /* p now points at nf */
 	    /* Handle the format character */
+	    nc = nf[1];
+	    if (isdigit(nc)) {
+		/* Get the field width */
+		/* FIXME: Assumes ASCII */
+		width = nc - '0';
+		p = nf + 2;
+		while (*p && isdigit(*p)) {
+		    width = 10 * width + (*p++ - '0');
+		}
+		/* When there is no longer a digit, get the format 
+		   character */
+		nc = *p++;
+	    }
+	    else {
+		/* Skip over the format string */
+		p += 2;
+	    }
+
 	    switch (nc) {
 	    case '%':
 		*out_str++ = '%';
 		size--;
-		p += 2;
 		break;
 
 	    case 'd':
@@ -146,10 +167,16 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
 		int val;
 		char tmp[20];
 		char *t = tmp;
-		p += 2;
 		/* Get the argument, of integer type */
 		val = va_arg( list, int );
 		sprintf( tmp, "%d", val );
+		if (width > 0) {
+		    int tmplen = strlen(tmp);
+		    /* If a width was specified, pad with spaces on the
+		       left (on the right if %-3d given; not implemented yet */
+		    while (size-- > 0 && width-- > tmplen) 
+			*out_str++ = ' ';
+		}
 		while (size-- > 0 && *t) {
 		    *out_str++ = *t++;
 		}
@@ -159,7 +186,6 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
 	    case 's':
 	    {
 		char *s_arg;
-		p += 2;
 		/* Get the argument, of pointer to char type */
 		s_arg = va_arg( list, char * );
 		while (size-- > 0 && s_arg && *s_arg) {
@@ -167,6 +193,7 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
 		}
 	    }
 	    break;
+
 	    default:
 		/* Error, unknown case */
 		return -1;
