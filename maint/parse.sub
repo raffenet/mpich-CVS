@@ -120,23 +120,28 @@ sub GetSubArgs {
 
     $FD = $_[0];
     $curline = $_[1];
+    # Remove any embedded newlines
+    $curline =~ s/[\r\n]//g;
 
     $curline =~ /^\(/ || die "No initial paren";
     ($leader, $outer, $remainder ) = &GetBalancedParen( $FD, $curline );
-    
+
+
     # Strip off the first and last parens
     # Because of the greedy algorithm, the \s before the closing paren
     # won't be used.  To avoid problems with empty arguments, we remove
-    # those blanks separate
+    # those blanks separately
     $outer =~ /^\s*\(\s*(.*)\s*\)\s*$/;
     $outer = $1;
-    if ($outer =~ /(.*)\s\s*/) { $outer = $1; }
+    if ($outer =~ /(.*)\s+$/) { $outer = $1; }
+    print "Line to tokenize is $outer\n" if $debug;
     $arg   = "";
     while ($outer ne "") {
 	if ($outer =~ /^([^,\(\"]*)\s*,\s*(.*$)/) {
 	    # simple arg
 	    $arg .= $1;
 	    $args[$#args+1] = $arg;
+	    print "Found simple arg $arg (remainder $2)\n" if $debug;
 	    $outer = $2;
 	    $arg   = "";
 	}
