@@ -955,3 +955,52 @@ else
     AC_MSG_RESULT($F77_IN_C_LIBS)
 fi
 ])
+dnl
+dnl Test to see if we should use C or Fortran to link programs whose
+dnl main program is in Fortran.  We may find that neither work because 
+dnl we need special libraries in each case.
+dnl
+AC_DEFUN([PAC_PROG_F77_LINKER_WITH_C],[
+AC_TRY_COMPILE(,
+long long a;,AC_DEFINE(HAVE_LONG_LONG,1,[Define if long long allowed]))
+AC_MSG_CHECKING([for linker for Fortran main programs])
+dnl
+dnl Create a program that uses multiplication and division in case
+dnl that requires special libraries
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#ifdef HAVE_LONG_LONG
+int f(int a, long long b) { int c; c = a * ( b / 3 ) / (b-1); return c ; }
+#else
+int f(int a, long b) { int c; c = a * b / (b-1); return c ; }
+#endif
+EOF
+AC_LANG_SAVE
+AC_LANG_C
+if AC_TRY_EVAL(ac_compile); then
+    mv conftest.o conftest1.o
+else
+    AC_MSG_ERROR([Could not compile C test program])
+fi
+AC_LANG_FORTRAN77
+cat > conftest.f <<EOF
+        program main
+        double precision d
+        print *, "hi"
+        end
+EOF
+if AC_TRY_EVAL(ac_compile); then
+    if ${F77} -o conftest conftest.o conftest1.o 2>&AC_FD_CC ; then
+	AC_MSG_RESULT([Use Fortran to link programs])
+    elif ${CC} -o conftest conftest.o conftest1.o $FLIBS 2>&AC_FD_CC ; then
+	AC_MSG_RESULT([Use C with FLIBS to link programs])
+	F77LINKER="$CC"
+        F77_LDFLAGS="$F77_LDFLAGS $FLIBS"
+    else
+	AC_MSG_RESULT([Unable to determine how to link Fortran programs with C])
+    fi
+else
+    AC_MSG_ERROR([Could not compile Fortran test program])
+fi
+AC_LANG_RESTORE
+])
