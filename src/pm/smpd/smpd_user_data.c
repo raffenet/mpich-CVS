@@ -281,7 +281,7 @@ int smpd_delete_smpd_data(const char *key)
 	free(node);
     }
     smpd_exit_fn("smpd_delete_smpd_data");
-    return SMPD_FAIL;
+    return SMPD_SUCCESS;
 #endif
 }
 
@@ -375,11 +375,6 @@ int smpd_set_smpd_data(const char *key, const char *value)
 
     list = smpd_parse_smpd_file();
     fout = smpd_open_smpd_file(SMPD_TRUE);
-#if 0
-    if (fout)
-	/*fseek(fout, 0, SEEK_SET);*/
-	rewind(fout);
-#endif
     while (list)
     {
 	node = list;
@@ -446,9 +441,10 @@ int smpd_get_user_data(const char *key, char *value, int value_len)
 	&tkey);
     if (result != ERROR_SUCCESS)
     {
-	smpd_err_printf("Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
+	smpd_dbg_printf("Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
+	result = smpd_get_user_data_default(key, value, value_len);
 	smpd_exit_fn("smpd_get_user_data");
-	return SMPD_FAIL;
+	return result;
     }
 
     len = value_len;
@@ -457,8 +453,9 @@ int smpd_get_user_data(const char *key, char *value, int value_len)
     {
 	smpd_dbg_printf("Unable to read the smpd registry key '%s', error %d\n", key, result);
 	RegCloseKey(tkey);
+	result = smpd_get_user_data_default(key, value, value_len);
 	smpd_exit_fn("smpd_get_user_data");
-	return SMPD_FAIL;
+	return result;
     }
 
     RegCloseKey(tkey);
@@ -533,7 +530,7 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
     {
 	if (smpd_get_smpd_data_default(key, value, value_len) != SMPD_SUCCESS)
 	{
-	    smpd_err_printf("Unable to get the data for the key '%s'\n", key);
+	    smpd_dbg_printf("Unable to get the data for the key '%s'\n", key);
 	    smpd_exit_fn("smpd_get_smpd_data");
 	    return SMPD_FAIL;
 	}

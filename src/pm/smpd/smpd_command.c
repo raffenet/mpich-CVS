@@ -552,10 +552,6 @@ int smpd_post_read_command(smpd_context_t *context)
     smpd_enter_fn("smpd_post_read_command");
 
     /* post a read for the next command header */
-    /*
-    printf("posting a read for a command header on the %s context, sock %d\n", smpd_get_context_str(context), sock_getid(context->sock));
-    fflush(stdout);
-    */
     smpd_dbg_printf("posting a read for a command header on the %s context, sock %d\n", smpd_get_context_str(context), sock_getid(context->sock));
     context->read_state = SMPD_READING_CMD_HEADER;
     context->read_cmd.state = SMPD_CMD_READING_HDR;

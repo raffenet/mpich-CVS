@@ -15,6 +15,7 @@ void StdinThread(SOCKET hWrite)
     HANDLE h[2];
     int result;
 
+    smpd_dbg_printf("StdinThread started.\n");
     h[0] = GetStdHandle(STD_INPUT_HANDLE);
     if (h[0] == NULL)
     {
@@ -178,7 +179,7 @@ int smpd_state_reading_challenge_string(smpd_context_t *context, sock_event_t *e
 
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the challenge string.\n");
+	smpd_err_printf("unable to read the challenge string, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_reading_challenge_string");
 	return SMPD_FAIL;
     }
@@ -220,7 +221,7 @@ int smpd_state_writing_challenge_response(smpd_context_t *context, sock_event_t 
     smpd_enter_fn("smpd_state_writing_challenge_response");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the challenge response.\n");
+	smpd_err_printf("unable to write the challenge response, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_writing_challenge_response");
 	return SMPD_FAIL;
     }
@@ -246,7 +247,7 @@ int smpd_state_reading_connect_result(smpd_context_t *context, sock_event_t *eve
     smpd_enter_fn("smpd_state_reading_connect_result");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the connect result.\n");
+	smpd_err_printf("unable to read the connect result, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_reading_connect_result");
 	return SMPD_FAIL;
     }
@@ -334,7 +335,7 @@ int smpd_state_writing_challenge_string(smpd_context_t *context, sock_event_t *e
     smpd_enter_fn("smpd_state_writing_challenge_string");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the challenge string.\n");
+	smpd_err_printf("unable to write the challenge string, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	result = result == SOCK_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
@@ -366,7 +367,7 @@ int smpd_state_reading_challenge_response(smpd_context_t *context, sock_event_t 
     smpd_enter_fn("smpd_state_reading_challenge_response");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the challenge response.\n");
+	smpd_err_printf("unable to read the challenge response, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_reading_challenge_response");
@@ -400,7 +401,7 @@ int smpd_state_writing_connect_result(smpd_context_t *context, sock_event_t *eve
     smpd_enter_fn("smpd_state_writing_connect_result");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the connect result.\n");
+	smpd_err_printf("unable to write the connect result, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_writing_connect_result");
@@ -447,7 +448,7 @@ int smpd_state_reading_stdin(smpd_context_t *context, sock_event_t *event_ptr)
     smpd_enter_fn("smpd_state_reading_stdin");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read from stdin.\n");
+	smpd_err_printf("unable to read from stdin, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_reading_stdin");
 	return SMPD_FAIL;
     }
@@ -602,8 +603,8 @@ int smpd_state_reading_stdouterr(smpd_context_t *context, sock_event_t *event_pt
     {
 	if (event_ptr->error != SOCK_EOF)
 	{
-	    smpd_dbg_printf("sock_post_read failed, assuming %s is closed, calling sock_post_close(%d).\n",
-		smpd_get_context_str(context), sock_getid(context->sock));
+	    smpd_dbg_printf("reading failed(%s), assuming %s is closed.\n",
+		get_sock_error_string(event_ptr->error), smpd_get_context_str(context));
 	}
 	/*
 	context->state = SMPD_CLOSING;
@@ -697,7 +698,8 @@ int smpd_state_reading_cmd_header(smpd_context_t *context, sock_event_t *event_p
     smpd_enter_fn("smpd_state_reading_cmd_header");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the cmd header on the %s context.\n", smpd_get_context_str(context));
+	smpd_err_printf("unable to read the cmd header on the %s context, %s.\n",
+	    smpd_get_context_str(context), get_sock_error_string(event_ptr->error));
 	if (smpd_process.root_smpd)
 	{
 	    context->state = SMPD_CLOSING;
@@ -752,7 +754,7 @@ int smpd_state_reading_cmd(smpd_context_t *context, sock_event_t *event_ptr)
     smpd_enter_fn("smpd_state_reading_cmd");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the command.\n");
+	smpd_err_printf("unable to read the command, %s.\n", get_sock_error_string(event_ptr->error));
 	if (smpd_process.root_smpd)
 	{
 	    context->state = SMPD_CLOSING;
@@ -906,7 +908,7 @@ int smpd_state_reading_cmd(smpd_context_t *context, sock_event_t *event_ptr)
 	fflush(stdout);
 	*/
 	smpd_exit_fn("smpd_state_reading_cmd");
-	return SMPD_EXIT;
+	return SMPD_DBS_RETURN;
     }
     else if (result == SMPD_ABORT)
     {
@@ -950,7 +952,7 @@ int smpd_state_writing_cmd(smpd_context_t *context, sock_event_t *event_ptr)
     smpd_enter_fn("smpd_state_writing_cmd");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the command.\n");
+	smpd_err_printf("unable to write the command, %s.\n", get_sock_error_string(event_ptr->error));
 	if (smpd_process.root_smpd)
 	{
 	    context->state = SMPD_CLOSING;
@@ -1245,7 +1247,7 @@ int smpd_state_reading_session_request(smpd_context_t *context, sock_event_t *ev
     smpd_enter_fn("smpd_state_reading_session_request");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the session request.\n");
+	smpd_err_printf("unable to read the session request, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_reading_session_request");
@@ -1322,7 +1324,7 @@ int smpd_state_writing_smpd_session_request(smpd_context_t *context, sock_event_
     smpd_enter_fn("smpd_state_writing_smpd_session_request");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the session request.\n");
+	smpd_err_printf("unable to write the session request, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_writing_smpd_session_request");
 	return SMPD_FAIL;
     }
@@ -1348,7 +1350,7 @@ int smpd_state_writing_process_session_request(smpd_context_t *context, sock_eve
     smpd_enter_fn("smpd_state_writing_process_session_request");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the process session request.\n");
+	smpd_err_printf("unable to write the process session request, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_writing_process_session_request");
 	return SMPD_FAIL;
     }
@@ -1374,7 +1376,7 @@ int smpd_state_writing_pwd_request(smpd_context_t *context, sock_event_t *event_
     smpd_enter_fn("smpd_state_writing_pwd_request");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the pwd request.\n");
+	smpd_err_printf("unable to write the pwd request, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_writing_pwd_request");
@@ -1404,7 +1406,7 @@ int smpd_state_writing_no_pwd_request(smpd_context_t *context, sock_event_t *eve
     smpd_enter_fn("smpd_state_writing_no_pwd_request");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the no pwd request.\n");
+	smpd_err_printf("unable to write the no pwd request, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_writing_no_pwd_request");
@@ -1434,7 +1436,7 @@ int smpd_state_reading_pwd_request(smpd_context_t *context, sock_event_t *event_
     smpd_enter_fn("smpd_state_reading_pwd_request");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the pwd request.\n");
+	smpd_err_printf("unable to read the pwd request, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_reading_pwd_request");
 	return SMPD_FAIL;
     }
@@ -1481,7 +1483,7 @@ int smpd_state_reading_smpd_password(smpd_context_t *context, sock_event_t *even
     smpd_enter_fn("smpd_state_reading_smpd_password");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the smpd password.\n");
+	smpd_err_printf("unable to read the smpd password, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_reading_smpd_password");
@@ -1530,7 +1532,7 @@ int smpd_state_writing_cred_request(smpd_context_t *context, sock_event_t *event
     smpd_enter_fn("smpd_state_writing_cred_request");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the cred request.\n");
+	smpd_err_printf("unable to write the cred request, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_writing_cred_request");
@@ -1560,7 +1562,7 @@ int smpd_state_reading_account(smpd_context_t *context, sock_event_t *event_ptr)
     smpd_enter_fn("smpd_state_reading_account");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the account.\n");
+	smpd_err_printf("unable to read the account, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_reading_account");
@@ -1589,7 +1591,7 @@ int smpd_state_reading_password(smpd_context_t *context, sock_event_t *event_ptr
     smpd_enter_fn("smpd_state_reading_password");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the password.\n");
+	smpd_err_printf("unable to read the password, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_reading_password");
@@ -1656,7 +1658,7 @@ int smpd_state_writing_account(smpd_context_t *context, sock_event_t *event_ptr)
     smpd_enter_fn("smpd_state_writing_account");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the account.\n");
+	smpd_err_printf("unable to write the account, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_writing_account");
 	return SMPD_FAIL;
     }
@@ -1681,7 +1683,7 @@ int smpd_state_writing_password(smpd_context_t *context, sock_event_t *event_ptr
     smpd_enter_fn("smpd_state_writing_password");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the password.\n");
+	smpd_err_printf("unable to write the password, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_writing_password");
 	return SMPD_FAIL;
     }
@@ -1706,7 +1708,7 @@ int smpd_state_writing_no_cred_request(smpd_context_t *context, sock_event_t *ev
     smpd_enter_fn("smpd_state_writing_no_cred_request");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the no cred request.\n");
+	smpd_err_printf("unable to write the no cred request, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_writing_no_cred_request");
@@ -1772,7 +1774,7 @@ int smpd_state_reading_cred_request(smpd_context_t *context, sock_event_t *event
     smpd_enter_fn("smpd_state_reading_cred_request");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the cred request.\n");
+	smpd_err_printf("unable to read the cred request, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_reading_cred_request");
 	return SMPD_FAIL;
     }
@@ -1891,7 +1893,7 @@ int smpd_state_writing_reconnect_request(smpd_context_t *context, sock_event_t *
     smpd_enter_fn("smpd_state_writing_reconnect_request");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the re-connect request.\n");
+	smpd_err_printf("unable to write the re-connect request, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_writing_reconnect_request");
@@ -1922,7 +1924,7 @@ int smpd_state_writing_no_reconnect_request(smpd_context_t *context, sock_event_
     smpd_enter_fn("smpd_state_writing_no_reconnect_request");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the no re-connect request.\n");
+	smpd_err_printf("unable to write the no re-connect request, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_writing_no_reconnect_request");
@@ -2013,7 +2015,7 @@ int smpd_state_reading_reconnect_request(smpd_context_t *context, sock_event_t *
     smpd_enter_fn("smpd_state_reading_reconnect_request");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the re-connect request.\n");
+	smpd_err_printf("unable to read the re-connect request, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_reading_reconnect_request");
 	return SMPD_FAIL;
     }
@@ -2106,7 +2108,7 @@ int smpd_state_reading_session_header(smpd_context_t *context, sock_event_t *eve
     smpd_enter_fn("smpd_state_reading_session_header");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the session header.\n");
+	smpd_err_printf("unable to read the session header, %s.\n", get_sock_error_string(event_ptr->error));
 	if (smpd_process.root_smpd)
 	{
 	    context->state = SMPD_CLOSING;
@@ -2170,7 +2172,7 @@ int smpd_state_writing_session_header(smpd_context_t *context, sock_event_t *eve
     smpd_enter_fn("smpd_state_writing_session_header");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the session header.\n");
+	smpd_err_printf("unable to write the session header, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_writing_session_header");
 	return SMPD_FAIL;
     }
@@ -2448,7 +2450,7 @@ int smpd_state_reading_smpd_result(smpd_context_t *context, sock_event_t *event_
     smpd_enter_fn("smpd_state_reading_smpd_result");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the smpd result.\n");
+	smpd_err_printf("unable to read the smpd result, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_reading_smpd_result");
 	return SMPD_FAIL;
     }
@@ -2497,7 +2499,7 @@ int smpd_state_reading_process_result(smpd_context_t *context, sock_event_t *eve
     smpd_enter_fn("smpd_state_reading_process_result");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read the process session result.\n");
+	smpd_err_printf("unable to read the process session result, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_reading_process_result");
 	return SMPD_FAIL;
     }
@@ -2567,7 +2569,7 @@ int smpd_state_writing_session_accept(smpd_context_t *context, sock_event_t *eve
     smpd_enter_fn("smpd_state_writing_session_accept");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the session accept string.\n");
+	smpd_err_printf("unable to write the session accept string, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_writing_session_accept");
@@ -2596,7 +2598,7 @@ int smpd_state_writing_session_reject(smpd_context_t *context, sock_event_t *eve
     smpd_enter_fn("smpd_state_writing_session_reject");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the session reject string.\n");
+	smpd_err_printf("unable to write the session reject string, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_writing_session_reject");
@@ -2627,7 +2629,7 @@ int smpd_state_writing_process_session_accept(smpd_context_t *context, sock_even
     smpd_enter_fn("smpd_state_writing_process_session_accept");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the process session accept string.\n");
+	smpd_err_printf("unable to write the process session accept string, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_writing_process_session_accept");
@@ -2658,7 +2660,7 @@ int smpd_state_writing_process_session_reject(smpd_context_t *context, sock_even
     smpd_enter_fn("smpd_state_writing_process_session_reject");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the process session reject string.\n");
+	smpd_err_printf("unable to write the process session reject string, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
 	smpd_exit_fn("smpd_state_writing_process_session_reject");
@@ -2689,7 +2691,7 @@ int smpd_state_writing_smpd_password(smpd_context_t *context, sock_event_t *even
     smpd_enter_fn("smpd_state_writing_smpd_password");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to write the smpd password.\n");
+	smpd_err_printf("unable to write the smpd password, %s.\n", get_sock_error_string(event_ptr->error));
 	smpd_exit_fn("smpd_state_writing_smpd_password");
 	return SMPD_FAIL;
     }
@@ -2848,13 +2850,13 @@ int smpd_handle_op_write(smpd_context_t *context, sock_event_t *event_ptr, sock_
     default:
 	if (event_ptr->error != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("sock_op_write failed while context is in state: %s\n",
-		smpd_get_state_string(context->write_state));
+	    smpd_err_printf("sock_op_write failed while context is in state %s, %s\n",
+		smpd_get_state_string(context->write_state), get_sock_error_string(event_ptr->error));
 	}
 	else
 	{
-	    smpd_err_printf("sock_op_write returned while context is in state: %s\n",
-		smpd_get_state_string(context->write_state));
+	    smpd_err_printf("sock_op_write returned while context is in state %s, %s\n",
+		smpd_get_state_string(context->write_state), get_sock_error_string(event_ptr->error));
 	}
 	result = SMPD_FAIL;
 	break;
@@ -2896,14 +2898,14 @@ int smpd_handle_op_connect(smpd_context_t *context, sock_event_t *event_ptr)
     case SMPD_MPIEXEC_CONNECTING_TREE:
 	if (event_ptr->error != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("unable to connect mpiexec tree.\n");
+	    smpd_err_printf("unable to connect mpiexec tree, %s.\n", get_sock_error_string(event_ptr->error));
 	    result = SMPD_FAIL;
 	    break;
 	}
     case SMPD_CONNECTING:
 	if (event_ptr->error != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("unable to connect an internal tree node.\n");
+	    smpd_err_printf("unable to connect an internal tree node, %s.\n", get_sock_error_string(event_ptr->error));
 	    result = SMPD_FAIL;
 	    break;
 	}
@@ -2932,7 +2934,7 @@ int smpd_handle_op_connect(smpd_context_t *context, sock_event_t *event_ptr)
     case SMPD_MPIEXEC_CONNECTING_SMPD:
 	if (event_ptr->error != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("unable to connect to the smpd.\n");
+	    smpd_err_printf("unable to connect to the smpd, %s.\n", get_sock_error_string(event_ptr->error));
 	    result = SMPD_FAIL;
 	    break;
 	}
@@ -2951,13 +2953,15 @@ int smpd_handle_op_connect(smpd_context_t *context, sock_event_t *event_ptr)
     default:
 	if (event_ptr->error != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("sock_op_connect failed while %s context is in state: %s\n",
-		smpd_get_context_str(context), smpd_get_state_string(context->state));
+	    smpd_err_printf("sock_op_connect failed while %s context is in state %s, %s\n",
+		smpd_get_context_str(context), smpd_get_state_string(context->state),
+		get_sock_error_string(event_ptr->error));
 	}
 	else
 	{
-	    smpd_err_printf("sock_op_connect returned while %s context is in state: %s\n",
-		smpd_get_context_str(context), smpd_get_state_string(context->state));
+	    smpd_err_printf("sock_op_connect returned while %s context is in state %s, %s\n",
+		smpd_get_context_str(context), smpd_get_state_string(context->state),
+		get_sock_error_string(event_ptr->error));
 	}
 	result = SMPD_FAIL;
 	break;
@@ -3241,6 +3245,11 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		}
 	    }
 	    result = smpd_handle_op_read(context, &event);
+	    if (result == SMPD_DBS_RETURN)
+	    {
+		smpd_exit_fn("smpd_enter_at_state");
+		return SMPD_SUCCESS;
+	    }
 	    if (result != SMPD_SUCCESS || event.error != SOCK_SUCCESS)
 	    {
 		if (context->type == SMPD_CONTEXT_PARENT)
@@ -3249,7 +3258,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
 		}
-		smpd_dbg_printf("SOCK_OP_READ failed, closing %s context.\n", smpd_get_context_str(context));
+		smpd_dbg_printf("SOCK_OP_READ failed - result = %d, closing %s context.\n", result, smpd_get_context_str(context));
 		context->state = SMPD_CLOSING;
 		result = sock_post_close(context->sock);
 		if (result != SOCK_SUCCESS)

@@ -62,9 +62,11 @@ int smpd_handle_barrier_command(smpd_context_t *context)
 	    iter->in_array[iter->in].cmd_tag = cmd->tag;
 	    strcpy(iter->in_array[iter->in].ctx_key, ctx_key);
 
+	    smpd_dbg_printf("incrementing barrier(%s) incount from %d to %d out of %d\n", iter->name, iter->in, iter->in+1, iter->count);
 	    iter->in++;
 	    if (iter->in >= iter->count)
 	    {
+		smpd_dbg_printf("all in barrier, sending result back to all participators.\n");
 		/* send all the results */
 		for (i=0; i<iter->count; i++)
 		{

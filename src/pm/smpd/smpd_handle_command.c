@@ -429,10 +429,12 @@ int smpd_handle_result(smpd_context_t *context)
 		}
 		else if (iter->cmd_str[0] == 'd' && iter->cmd_str[1] == 'b')
 		{
+		    smpd_dbg_printf("%s command result = %s\n", iter->cmd_str, str);
 		    ret_val = SMPD_DBS_RETURN;
 		}
 		else if (strcmp(iter->cmd_str, "barrier") == 0)
 		{
+		    smpd_dbg_printf("%s command result = %s\n", iter->cmd_str, str);
 		    ret_val = SMPD_DBS_RETURN;
 		}
 		else if (strcmp(iter->cmd_str, "validate") == 0)

@@ -266,8 +266,11 @@ static void SetEnvironmentVariables(char *bEnv)
 	bEnv++;
     }
     *pChar = '\0';
-    smpd_dbg_printf("env: %s=%s\n", name, value);
-    SetEnvironmentVariable(name, value);
+    if (name[0] != '\0')
+    {
+	smpd_dbg_printf("env: %s=%s\n", name, value);
+	SetEnvironmentVariable(name, value);
+    }
 }
 
 static void RemoveEnvironmentVariables(char *bEnv)
@@ -300,7 +303,8 @@ static void RemoveEnvironmentVariables(char *bEnv)
 	bEnv++;
     }
     *pChar = '\0';
-    SetEnvironmentVariable(name, NULL);
+    if (name[0] != '\0')
+	SetEnvironmentVariable(name, NULL);
 }
 
 int smpd_priority_class_to_win_class(int *priorityClass)
