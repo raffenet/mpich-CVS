@@ -11,6 +11,7 @@
 #include "mpisgi2.h"
 #endif
 
+void ADIOI_Optimize_flattened(ADIOI_Flatlist_node *flat_type);
 
 /* flatten datatype and add it to Flatlist */
 void ADIOI_Flatten_datatype(MPI_Datatype datatype)
@@ -57,6 +58,7 @@ void ADIOI_Flatten_datatype(MPI_Datatype datatype)
 
     ADIOI_Flatten(datatype, flat, 0, &curr_index);
 
+    ADIOI_Optimize_flattened(flat);
 /* debug */
     /*FPRINTF(stderr, "blens: ");
     for (i=0; i<flat->count; i++) 
@@ -568,6 +570,57 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
     return count;
 }
 
+
+/****************************************************************/
+
+/* ADIOI_Optimize_flattened()
+ *
+ * Scans the blocks of a flattened type and merges adjacent blocks 
+ * together, resulting in a shorter blocklist (and thus fewer
+ * contiguous operations).
+ */
+void ADIOI_Optimize_flattened(ADIOI_Flatlist_node *flat_type)
+{
+    int i, j, opt_blocks;
+    int *opt_blocklens;
+    ADIO_Offset *opt_indices;
+    
+    opt_blocks = 1;
+    
+    /* save number of noncontiguous blocks in opt_blocks */
+    for (i=0; i < (flat_type->count - 1); i++) {
+        if ((flat_type->indices[i] + flat_type->blocklens[i] !=
+	     flat_type->indices[i + 1]))
+	    opt_blocks++;
+    }
+
+    /* if we can't reduce the number of blocks, quit now */
+    if (opt_blocks == flat_type->count) return;
+
+    opt_blocklens = (int *) ADIOI_Malloc(opt_blocks * sizeof(int));
+    opt_indices = (ADIO_Offset *)ADIOI_Malloc(opt_blocks*sizeof(ADIO_Offset));
+
+    /* fill in new blocklists */
+    opt_blocklens[0] = flat_type->blocklens[0];
+    opt_indices[0] = flat_type->indices[0];
+    j = 0;
+    for (i=0; i < (flat_type->count - 1); i++) {
+	if ((flat_type->indices[i] + flat_type->blocklens[i] ==
+	     flat_type->indices[i + 1]))
+	    opt_blocklens[j] += flat_type->blocklens[i + 1];
+	else {
+	    j++;
+	    opt_indices[j] = flat_type->indices[i + 1];
+	    opt_blocklens[j] = flat_type->blocklens[i + 1];
+	} 
+    }
+    flat_type->count = opt_blocks;
+    ADIOI_Free(flat_type->blocklens);
+    ADIOI_Free(flat_type->indices);
+    flat_type->blocklens = opt_blocklens;
+    flat_type->indices = opt_indices;
+    return;
+}
 
 /****************************************************************/
 
