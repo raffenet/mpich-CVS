@@ -891,11 +891,11 @@ AC_HAVE_FUNCS(memalign)
 
 if test $NOF77 = 0 ; then
     echo "checking Fortran external names"
-    dnl PAC_GET_FORTNAMES
-    dnl if test -n "$WDEF" ; then
-    dnl     CFLAGS="$CFLAGS $WDEF"
-    dnl fi
-    PAC_PROG_F77_NAME_MANGLE
+    PAC_GET_FORTNAMES
+    if test -n "$WDEF" ; then
+        CFLAGS="$CFLAGS $WDEF"
+    fi
+    dnl PAC_PROG_F77_NAME_MANGLE
     dnl (need to set the new name format)
     rm -f test/mpif.h
     if test "$MPI_INCLUDE_DIR" != "." && test $FROM_MPICH = 0 && \
