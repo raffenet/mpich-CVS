@@ -36,7 +36,6 @@ AC_CHECK_HEADERS(                               \
     stdlib.h                                    \
     sys/param.h                                 \
     sys/poll.h                                  \
-    /sw/include/sys/poll.h                      \
     sys/types.h                                 \
     sys/uio.h					\
     limits.h                                    \
@@ -45,9 +44,11 @@ AC_CHECK_HEADERS(                               \
 AC_CHECK_FUNC(poll,pac_cv_have_func_poll=yes,pac_cv_have_func_poll=no)
 if test "$pac_cv_have_func_poll" != yes ; then
 dnl    AC_MSG_ERROR([This device requires the poll function])
-  if test "$ac_cv_header__sw_include_sys_poll_h" = yes ; then
-    LIBS="$LIBS -lpoll"
-    LDFLAGS="$LDFLAGS -L/sw/lib"
+  dnl This is for Mac OSX (Darwin) which doesn't have a poll function is the standard libraries.  Instead we use a contributed
+  dnl library found off in la la land (/sw).
+  AC_CHECK_HEADER(/sw/include/sys/poll.h,lac_cv_have_header_poll=yes,lac_cv_have_header_poll=no)
+  if test "$lac_cv_have_header_poll" = yes ; then
+    TCP_LIBS="$TCP_LIBS -L/sw/lib -lpoll"
   else
     AC_DEFINE(USE_SELECT_FOR_POLL, 1, [Define to use select implementation of poll])
   fi
@@ -56,7 +57,6 @@ saveLIBS="$LIBS"
 LIBS=""
 AC_SEARCH_LIBS(socket,socket,,,$saveLIBS)
 AC_SEARCH_LIBS(gethostbyname,nsl,,,$saveLIBS)
-AC_SEARCH_LIBS(poll,poll,,,$saveLIBS)
 TCP_LIBS="$TCP_LIBS $LIBS"
 LIBS="$saveLIBS $LIBS"
 #
