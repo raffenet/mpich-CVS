@@ -85,10 +85,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                also try to write */
-	    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_WRITEV);
 	    rc = sock_writev(vc->sc.sock, iov, n_iov, &nb);
-	    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WRITEV);
-	    
 	    if (rc == SOCK_SUCCESS)
 	    {
 		int offset = 0;

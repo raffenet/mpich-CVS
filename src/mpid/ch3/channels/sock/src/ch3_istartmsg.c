@@ -63,10 +63,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                not also try to write */
-	    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_WRITE);
 	    rc = sock_write(vc->sc.sock, hdr, hdr_sz, &nb);
-	    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WRITE);
-	    
 	    if (rc == SOCK_SUCCESS)
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));

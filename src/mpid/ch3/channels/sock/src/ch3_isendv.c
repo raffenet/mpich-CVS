@@ -65,11 +65,7 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 
 	    /* FIXME: the current code only agressively writes the first IOV.  Eventually it should be changed to agressively write
                as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
-	    
-	    MPIDI_FUNC_ENTER(MPID_STATE_WRITEV);
 	    rc = sock_writev(vc->sc.sock, iov, n_iov, &nb);
-	    MPIDI_FUNC_EXIT(MPID_STATE_WRITEV);
-
 	    if (rc == SOCK_SUCCESS)
 	    {
 		int offset = 0;
