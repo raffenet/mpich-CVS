@@ -4904,16 +4904,16 @@ Note that in the case of a rendezvous exchange where the data is sent
 in a number of blocks, an exchange can be handled more efficiently
 that two independent isend/irecv pairs, as shown in Figure~\ref{fig:sendrecv}.
 \begin{figure}
-\begin{verbatim}
-(temporary figure)
-    (a) isend/irecv                           (b) combined
-  p0                  p1                p0                   p1
-  data ------->                        data -------------->
-       <-----------   ack                   <-------------- data+ack
-       <-----------  data              data+ack ------------>
-  data ------------>
-  ack  ------------>
-\end{verbatim}
+\centerline{\psfig{file=sendrecv.eps,width=4in}}
+% (temporary figure)
+%     (a) isend/irecv                           (b) combined
+%   p0                  p1                p0                   p1
+%   data ------->                        data -------------->
+%        <-----------   ack                   <-------------- data+ack
+%        <-----------  data              data+ack ------------>
+%   data ------------>
+%   ack  ------------>
+% \end{verbatim}
 \caption{Two sendrecv scenarios}\label{fig:sendrecv}
 \end{figure}
 Question: do we want to allow ok-to-send acks to be piggy-backed onto
