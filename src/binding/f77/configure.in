@@ -1335,8 +1335,8 @@ AC_SUBST(MPIVERSION)
 # will read directives for other compilers and then flag as fatal
 # errors directives that it does not support but does recognize.
 
-DLLEXPORT=""
-AC_SUBST(DLLEXPORT)
+DLLIMPORT=""
+AC_SUBST(DLLIMPORT)
 
 AC_OUTPUT_COMMANDS([chmod a+x mpif77 ;
    if test ! -d ../../../bin  ; then mkdir ../../../bin ; fi 
