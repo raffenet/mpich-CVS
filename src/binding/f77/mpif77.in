@@ -69,6 +69,7 @@ done
 # This is needed only for very broken systems
 #     
 rmfiles=""
+cppflags=""
 if [ -n "$F77CPP" ] ; then
     count=1
     allargs=""
@@ -76,6 +77,14 @@ if [ -n "$F77CPP" ] ; then
     # FIXME: does not handle spaces or misbalanced quotes
     for arg in "$@" ; do
         case $arg in
+	    -I*)
+	    cppflags="$cppflags $arg"
+	    allargs="$allargs $arg"
+	    ;;
+	    -D*)
+	    cppflags="$cppflags $arg"
+	    allargs="$allargs $arg"
+	    ;;
 	    -*)
 	    allargs="$allargs $arg"
 	    ;;
@@ -86,7 +95,7 @@ if [ -n "$F77CPP" ] ; then
 	    fi
 	    bfile=`basename $arg .F`
 	    tmpfile=$TMPDIR/f$$-$bfile.f
-	    if $F77CPP $arg > $tmpfile ; then
+	    if $F77CPP $cppflags $arg > $tmpfile ; then
 	        # Add this file to the commandline list
 		count=`expr $count + 1`
 		allargs="$allargs $tmpfile"
