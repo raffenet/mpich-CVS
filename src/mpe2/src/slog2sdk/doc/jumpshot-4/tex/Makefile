@@ -20,7 +20,7 @@ RM         = /bin/rm
 
 #  Generate PDF file from TEX file. Parse it twice to make figure number correct
 .tex.pdf:
-	$(PDFLATEX) $< ; $(PDFLATEX) $<
+	$(PDFLATEX) $< ; $(PDFLATEX) $< ; $(PDFLATEX) $<
 
 #  Clean up, Update txt file, Generate PDF file, then html files.
 all:	clean html
@@ -37,7 +37,7 @@ html:	$(TARGET).pdf
 	              $(TARGET).tex
 
 clean:
-	for ext in out toc aux dvi log; do \
+	for ext in out toc aux dvi log ; do \
 	    $(RM) -f $(TARGET).$$ext ; \
 	done
 	$(RM) -f $(TARGET).pdf
