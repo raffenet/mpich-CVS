@@ -22,28 +22,130 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Get_elements PMPI_Get_elements
 
-/* Return the number of elements */
-static int MPIR_Type_get_elements( int m_rem, MPID_Datatype *datatype_ptr )
-{
-#if 0
-    int mpi_errno;
+/* NOTE: I think that this is in here so that we don't get two copies of it
+ * in the case where we don't have weak symbols.
+ */
 
-	/* MPI calls shouldn't be looking at loops for now? */
-    if ( (datatype_ptr->loopinfo->kind & DATALOOP_KIND_MASK) == MPID_DTYPE_STRUCT) {
-	/* This is the hard case; we must loop through the components of the 
-	   datatype */
-	/* NOT DONE */
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**notimpl", 0 );
-	MPIR_Err_return_comm( 0, "Get_elements", mpi_errno );
+/* MPIR_Type_get_elements
+ *
+ * This is called only when we encounter a type with a -1 as its element size,
+ * indicating that there is more than one element type in the type.
+ *
+ * Returns the number of elements in bytes of one of these types.
+ *
+ * TODO: MOVE THIS INTO THE MPID TREE?
+ */
+static int MPIR_Type_get_elements(int *bytes_p, int count, MPI_Datatype datatype)
+{
+    int m_rem, m_count, type_size, type_elements, type_element_size;
+    MPID_Datatype *datatype_ptr = NULL;
+    
+    /* figure out the type size, count of types, and remainder */
+
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
+	type_size = MPID_Datatype_get_basic_size(datatype);
+	type_elements = 1;
+	type_element_size = type_size;
     }
     else {
-	/* Recusively apply the algorithm */
-	/* NOT DONE */
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**notimpl", 0 );
-	MPIR_Err_return_comm( 0, "Get_elements", mpi_errno );
+	MPID_Datatype_get_ptr(datatype, datatype_ptr);
+
+	type_size = datatype_ptr->size;
+	type_elements = datatype_ptr->n_elements;
+	type_element_size = datatype_ptr->element_size;
     }
-#endif
-    return 0;
+	
+    m_rem   = *bytes_p % type_size;
+    m_count = *bytes_p / type_size;
+
+    if (count != -1 && m_count > count) {
+	/* no more than count of this type; add back to remainder */
+	m_rem  += (m_count - count) * type_size;
+	m_count = count;
+    }
+
+    /* -1 count is used on loop start to indicate that we want any number of types.
+     * at this point we've stripped off all the "whole" types and should be down to
+     * just a single partial of this type, so we reset the count so that we can't
+     * end up with more than one type's worth of resulting elements.
+     *
+     * Q: IS THIS NECESSARY?  I THINK SO FOR THE STRUCT CASE...
+     */
+    if (count == -1) count = 1; /* reset count; we are on the last of this type now */
+
+    /* based on calculated values either return or recurse */
+
+    if (m_rem == 0 || type_element_size != -1) {
+	/* if we have run out of bytes, or we know the element size, we can stop */
+	*bytes_p = m_rem;
+	return m_count * type_elements;
+    }
+    else {
+	/* we have bytes left and still don't have a single element size; must recurse */
+	int i, j, typecount = 0, *ints, nr_elements = 0, last_nr_elements;
+	MPI_Aint *aints;
+	MPI_Datatype *types;
+
+	/* Establish locations of arrays; perhaps this should be a fn. call or this fn. should be an MPID one? */
+	types = (MPI_Datatype *) (((char *) datatype_ptr->contents) + sizeof(MPID_Datatype_contents));
+	ints  = (int *) (((char *) types) + datatype_ptr->contents->nr_types * sizeof(MPI_Datatype));
+	aints = (MPI_Aint *) (((char *) ints) + datatype_ptr->contents->nr_ints * sizeof(int));
+
+	switch (datatype_ptr->contents->combiner) {
+	    case MPI_COMBINER_NAMED:
+	    case MPI_COMBINER_DUP:
+	    case MPI_COMBINER_RESIZED:
+		return MPIR_Type_get_elements(bytes_p, count, *types);
+		break;
+	    case MPI_COMBINER_CONTIGUOUS:
+	    case MPI_COMBINER_VECTOR:
+	    case MPI_COMBINER_HVECTOR_INTEGER:
+	    case MPI_COMBINER_HVECTOR:
+		/* count is first in ints array */
+		return MPIR_Type_get_elements(bytes_p, count * (*ints), *types);
+		break;
+	    case MPI_COMBINER_INDEXED_BLOCK:
+		/* count is first in ints array, blocklength is second */
+		return MPIR_Type_get_elements(bytes_p, count * ints[0] * ints[1], *types);
+		break;
+	    case MPI_COMBINER_INDEXED:
+	    case MPI_COMBINER_HINDEXED_INTEGER:
+	    case MPI_COMBINER_HINDEXED:
+		for (i=0; i < (*ints); i++) {
+		    typecount += ints[i+1]; /* add up all the blocklengths to get a max. # of the next type */
+		}
+		return MPIR_Type_get_elements(bytes_p, count * typecount, *types);
+		break;
+	    case MPI_COMBINER_STRUCT_INTEGER:
+	    case MPI_COMBINER_STRUCT:
+		/* In this case we can't simply multiply the count of the next type by the
+		 * count of the current type, because we need to cycle through the types
+		 * just as the struct would.  thus the nested loops.
+		 *
+		 * We need to keep going until we see a "0" elements returned or we run
+		 * out of bytes.
+		 */
+		last_nr_elements = 1; /* dummy value */
+		for (j=0; j < count && *bytes_p > 0 && last_nr_elements > 0; j++) {
+		    /* recurse on each type */
+		    for (i=0; i < (*ints); i++) {
+			last_nr_elements = MPIR_Type_get_elements(bytes_p, ints[i+1], types[i]);
+			nr_elements += last_nr_elements;
+		    }
+		}
+		return nr_elements;
+		break;
+	    case MPI_COMBINER_SUBARRAY:
+	    case MPI_COMBINER_DARRAY:
+	    case MPI_COMBINER_F90_REAL:
+	    case MPI_COMBINER_F90_COMPLEX:
+	    case MPI_COMBINER_F90_INTEGER:
+	    default:
+		assert(0);
+		return -1;
+		break;
+	}
+    }
 }
 #endif
 
@@ -68,8 +170,8 @@ static int MPIR_Type_get_elements( int m_rem, MPID_Datatype *datatype_ptr )
 int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 {
     static const char FCNAME[] = "MPI_Get_elements";
-    int mpi_errno = MPI_SUCCESS;
-    MPI_Aint m_count, m_rem, type_size, type_elements, type_element_size;
+    int mpi_errno = MPI_SUCCESS, byte_count;
+    MPI_Aint type_size, type_elements, type_element_size;
     MPID_Datatype *datatype_ptr = NULL;
 
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_ELEMENTS);
@@ -126,30 +228,20 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 	}
     }
     else {
-	m_count = status->count / type_size;
-	m_rem   = status->count % type_size;
-	if (m_rem == 0) {
-	    (*elements) = m_count * type_elements;
-	}
-	else if (type_element_size > 0) {
-	    (*elements) = status->count / type_element_size;
-	}
-	else {
-	    /* element_size < 0 indicates that there was more than one basic type used */
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**notimpl", 0 );
-	    MPIR_Err_return_comm( 0, "Get_elements", mpi_errno );
-#if 0
-	    /* This is the hard case */
-	    (*elements) = m_count * datatype_ptr->n_elements;
-	    /* Recusively handle the remaining (m_rem) bytes. */
-	    *elements += MPIR_Type_get_elements( m_rem, datatype_ptr );
-#endif
-	}
+	byte_count = status->count;
+	*elements = MPIR_Type_get_elements(&byte_count, -1, datatype);
     }
+
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_ELEMENTS);
     return MPI_SUCCESS;
 }
+
+
+
+
+
+
 
 

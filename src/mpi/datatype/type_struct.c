@@ -109,7 +109,7 @@ int MPI_Type_struct(int count,
 
 	MPID_Datatype_get_ptr(*newtype, new_dtp);
 	mpi_errno = MPID_Datatype_set_contents(new_dtp,
-					       MPI_COMBINER_DUP,
+					       MPI_COMBINER_STRUCT,
 					       count+1, /* ints (count, blocklengths) */
 					       count, /* aints (displacements) */
 					       count, /* types */
@@ -124,9 +124,3 @@ int MPI_Type_struct(int count,
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }
-
-
-
-
-
-

@@ -42,7 +42,7 @@ int MPID_Datatype_set_contents(MPID_Datatype *new_dtp,
     
     if (nr_ints > 0) {
 	memcpy(ptr, array_of_ints, nr_ints * sizeof(int));
-	ptr += nr_ints + sizeof(int);
+	ptr += nr_ints * sizeof(int);
     }
 
     if (nr_aints > 0) {
