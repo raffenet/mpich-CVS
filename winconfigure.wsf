@@ -1232,31 +1232,11 @@ Call WriteFooter(fout)
 fout.Close()
 
 '
-' mpidi_ch3i_shm_conf.h
-'
-Set fout = f.CreateTextFile("src\mpid\ch3\channels\shm\include\mpidi_ch3i_shm_conf.h")
-Call WriteHeader(fout, "mpidi_ch3i_shm_")
-Call AddDefinitions(fout, "src\mpid\ch3\channels\shm\include\mpidi_ch3i_shm_conf.h.in")
-fout.WriteLine("#define USE_BUSY_LOCKS")
-fout.WriteLine("#define HAVE_SHARED_PROCESS_READ")
-Call WriteFooter(fout)
-fout.Close()
-
-'
 ' mpidi_ch3i_sock_conf.h
 '
 Set fout = f.CreateTextFile("src\mpid\ch3\channels\sock\include\mpidi_ch3i_sock_conf.h")
 Call WriteHeader(fout, "mpidi_ch3i_sock_")
 Call AddDefinitions(fout, "src\mpid\ch3\channels\sock\include\mpidi_ch3i_sock_conf.h.in")
-Call WriteFooter(fout)
-fout.Close()
-
-'
-' mpidi_ch3i_ssm_conf.h
-'
-Set fout = f.CreateTextFile("src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h")
-Call WriteHeader(fout, "mpidi_ch3i_ssm_")
-Call AddDefinitions(fout, "src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h.in")
 Call WriteFooter(fout)
 fout.Close()
 
