@@ -9,6 +9,7 @@
 
 #include "mpidi_ch3i_ib_conf.h"
 #include "mpidimpl.h"
+#include "mpidu_process_locks.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
