@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 #include "adio_extern.h"
@@ -36,7 +36,7 @@ Return Value:
 MPI_Info MPI_Info_f2c(MPI_Fint info)
 {
 
-#ifndef __INT_LT_POINTER
+#ifndef INT_LT_POINTER
     return (MPI_Info) info;
 #else
     if (!info) return MPI_INFO_NULL;

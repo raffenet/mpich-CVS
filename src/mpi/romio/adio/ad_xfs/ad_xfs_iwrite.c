@@ -7,30 +7,31 @@
 
 #include "ad_xfs.h"
 
-void ADIOI_XFS_IwriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+void ADIOI_XFS_IwriteContig(ADIO_File fd, void *buf, int count, 
+                MPI_Datatype datatype, int file_ptr_type,
                 ADIO_Offset offset, ADIO_Request *request, int *error_code)  
 {
-    int err=-1;
-#ifndef __PRINT_ERR_MSG
+    int len, typesize, err=-1;
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_XFS_IWRITECONTIG";
 #endif
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_WRITE;
     (*request)->fd = fd;
-    (*request)->next = ADIO_REQUEST_NULL;
+    (*request)->datatype = datatype;
+
+    MPI_Type_size(datatype, &typesize);
+    len = count * typesize;
 
     if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
-    
-    err = ADIOI_XFS_aio(fd, buf, len, offset, 1, 
-                           &((*request)->handle));
-
+    err = ADIOI_XFS_aio(fd, buf, len, offset, 1, &((*request)->handle));
     if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len;
 
     (*request)->queued = 1;
     ADIOI_Add_req_to_list(request);
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (err == -1) {
@@ -42,11 +43,7 @@ void ADIOI_XFS_IwriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 #endif
 
     fd->fp_sys_posn = -1;   /* set it to null. */
-
     fd->async_count++;
-
-/* status info. must be linked to the request structure, so that it
-   can be accessed later from a wait */
 }
 
 
@@ -57,11 +54,14 @@ void ADIOI_XFS_IwriteStrided(ADIO_File fd, void *buf, int count,
                        *error_code)
 {
     ADIO_Status status;
+#ifdef HAVE_STATUS_SET_BYTES
+    int typesize;
+#endif
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_WRITE;
     (*request)->fd = fd;
-    (*request)->next = ADIO_REQUEST_NULL;
+    (*request)->datatype = datatype;
     (*request)->queued = 0;
     (*request)->handle = 0;
 
@@ -71,9 +71,12 @@ void ADIOI_XFS_IwriteStrided(ADIO_File fd, void *buf, int count,
 
     fd->async_count++;
 
-/* status info. must be linked to the request structure, so that it
-   can be accessed later from a wait */
-
+#ifdef HAVE_STATUS_SET_BYTES
+    if (*error_code == MPI_SUCCESS) {
+	MPI_Type_size(datatype, &typesize);
+	(*request)->nbytes = count * typesize;
+    }
+#endif
 }
 
 
@@ -101,7 +104,7 @@ int ADIOI_XFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
     aiocbp->aio_nbytes = len;
     aiocbp->aio_reqprio = 0;
 
-#ifdef __AIO_SIGNOTIFY_NONE
+#ifdef AIO_SIGNOTIFY_NONE
 /* SGI IRIX 6 */
     aiocbp->aio_sigevent.sigev_notify = SIGEV_NONE;
 #else

@@ -6,25 +6,25 @@
  */
 
 #include "ad_piofs.h"
-#ifdef __PROFILE
+#ifdef PROFILE
 #include "mpe.h"
 #endif
 
 void ADIOI_PIOFS_Close(ADIO_File fd, int *error_code)
 {
     int err;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PIOFS_CLOSE";
 #endif
 
-#ifdef __PROFILE
+#ifdef PROFILE
     MPE_Log_event(9, 0, "start close");
 #endif
     err = close(fd->fd_sys);
-#ifdef __PROFILE
+#ifdef PROFILE
     MPE_Log_event(10, 0, "end close");
 #endif
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (err == 0) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
 #else
     if (err == -1) {

@@ -31,8 +31,8 @@ void *ADIOI_Malloc(size_t size, int lineno, char *fname)
 {
     void *new;
 
-#ifdef __XFS
-    new = (void *) memalign(__XFS_MEMALIGN, size);
+#ifdef XFS
+    new = (void *) memalign(XFS_MEMALIGN, size);
 #else
     new = (void *) malloc(size);
 #endif

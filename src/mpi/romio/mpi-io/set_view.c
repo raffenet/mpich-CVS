@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 
@@ -41,12 +41,12 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
 {
     ADIO_Fcntl_t *fcntl_struct;
     int filetype_size, etype_size, error_code;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_SET_VIEW";
 #endif
     ADIO_Offset shared_fp, byte_off;
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
 	FPRINTF(stderr, "MPI_File_set_view: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -56,7 +56,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
 #endif
 
     if ((disp < 0) && (disp != MPI_DISPLACEMENT_CURRENT)) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_set_view: Invalid disp argument\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -68,7 +68,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
 
     /* rudimentary checks for incorrect etype/filetype.*/
     if (etype == MPI_DATATYPE_NULL) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_set_view: Invalid etype\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -79,7 +79,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     }
 
     if (filetype == MPI_DATATYPE_NULL) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_set_view: Invalid filetype\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -90,7 +90,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     }
 
     if ((fh->access_mode & MPI_MODE_SEQUENTIAL) && (disp != MPI_DISPLACEMENT_CURRENT)) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_set_view: disp must be set to MPI_DISPLACEMENT_CURRENT since file was opened with MPI_MODE_SEQUENTIAL\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -101,7 +101,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     }
 
     if ((disp == MPI_DISPLACEMENT_CURRENT) && !(fh->access_mode & MPI_MODE_SEQUENTIAL)) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_set_view: disp can be set to MPI_DISPLACEMENT_CURRENT only if file was opened with MPI_MODE_SEQUENTIAL\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -114,7 +114,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     MPI_Type_size(filetype, &filetype_size);
     MPI_Type_size(etype, &etype_size);
     if (filetype_size % etype_size != 0) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_set_view: Filetype must be constructed out of one or more etypes\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -125,7 +125,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     }
 
     if (strcmp(datarep, "native") && strcmp(datarep, "NATIVE")) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_set_view: Only \"native\" data representation currently supported\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else

@@ -9,18 +9,18 @@
 #include "adio.h"
 
 
-#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
+#if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_get_atomicity_ PMPI_FILE_GET_ATOMICITY
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_file_get_atomicity_ pmpi_file_get_atomicity__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_file_get_atomicity pmpi_file_get_atomicity_
 #endif
 #define mpi_file_get_atomicity_ pmpi_file_get_atomicity
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_file_get_atomicity_ pmpi_file_get_atomicity
 #endif
 #define mpi_file_get_atomicity_ pmpi_file_get_atomicity_
@@ -73,22 +73,22 @@
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_file_get_atomicity_ mpi_file_get_atomicity__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_file_get_atomicity mpi_file_get_atomicity_
 #endif
 #define mpi_file_get_atomicity_ mpi_file_get_atomicity
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_file_get_atomicity_ mpi_file_get_atomicity
 #endif
 #endif
 #endif
 
-void mpi_file_get_atomicity_(MPI_Fint *fh,int *flag, int *__ierr )
+void mpi_file_get_atomicity_(MPI_Fint *fh,int *flag, int *ierr )
 {
     MPI_File fh_c;
     
     fh_c = MPI_File_f2c(*fh);
-    *__ierr = MPI_File_get_atomicity(fh_c, flag);
+    *ierr = MPI_File_get_atomicity(fh_c, flag);
 }
 

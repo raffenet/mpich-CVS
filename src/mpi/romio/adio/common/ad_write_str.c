@@ -12,16 +12,16 @@
 { \
     if (req_off >= writebuf_off + writebuf_len) { \
         if (writebuf_len) { \
-           ADIO_WriteContig(fd, writebuf, writebuf_len, ADIO_EXPLICIT_OFFSET, \
-			writebuf_off, &status1, error_code); \
+           ADIO_WriteContig(fd, writebuf, writebuf_len, MPI_BYTE, \
+                  ADIO_EXPLICIT_OFFSET, writebuf_off, &status1, error_code); \
            if (!(fd->atomicity)) ADIOI_UNLOCK(fd, writebuf_off, SEEK_SET, writebuf_len); \
            if (*error_code != MPI_SUCCESS) return; \
         } \
 	writebuf_off = req_off; \
         writebuf_len = (int) (ADIOI_MIN(max_bufsize,end_offset-writebuf_off+1));\
 	if (!(fd->atomicity)) ADIOI_WRITE_LOCK(fd, writebuf_off, SEEK_SET, writebuf_len); \
-	ADIO_ReadContig(fd, writebuf, writebuf_len, ADIO_EXPLICIT_OFFSET, \
-			writebuf_off, &status1, error_code); \
+	ADIO_ReadContig(fd, writebuf, writebuf_len, MPI_BYTE, \
+                 ADIO_EXPLICIT_OFFSET, writebuf_off, &status1, error_code); \
 	if (*error_code != MPI_SUCCESS) { \
 	    FPRINTF(stderr, "ADIOI_GEN_WriteStrided: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n"); \
 	    MPI_Abort(MPI_COMM_WORLD, 1); \
@@ -30,8 +30,8 @@
     write_sz = (int) (ADIOI_MIN(req_len, writebuf_off + writebuf_len - req_off)); \
     memcpy(writebuf+req_off-writebuf_off, (char *)buf +userbuf_off, write_sz);\
     while (write_sz != req_len) { \
-        ADIO_WriteContig(fd, writebuf, writebuf_len, ADIO_EXPLICIT_OFFSET, \
-			writebuf_off, &status1, error_code); \
+        ADIO_WriteContig(fd, writebuf, writebuf_len, MPI_BYTE, \
+                  ADIO_EXPLICIT_OFFSET, writebuf_off, &status1, error_code); \
         if (!(fd->atomicity)) ADIOI_UNLOCK(fd, writebuf_off, SEEK_SET, writebuf_len); \
         if (*error_code != MPI_SUCCESS) return; \
         req_len -= write_sz; \
@@ -39,8 +39,8 @@
         writebuf_off += writebuf_len; \
         writebuf_len = (int) (ADIOI_MIN(max_bufsize,end_offset-writebuf_off+1));\
 	if (!(fd->atomicity)) ADIOI_WRITE_LOCK(fd, writebuf_off, SEEK_SET, writebuf_len); \
-        ADIO_ReadContig(fd, writebuf, writebuf_len, ADIO_EXPLICIT_OFFSET, \
-			writebuf_off, &status1, error_code); \
+        ADIO_ReadContig(fd, writebuf, writebuf_len, MPI_BYTE, \
+                  ADIO_EXPLICIT_OFFSET, writebuf_off, &status1, error_code); \
 	if (*error_code != MPI_SUCCESS) { \
 	    FPRINTF(stderr, "ADIOI_GEN_WriteStrided: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n"); \
 	    MPI_Abort(MPI_COMM_WORLD, 1); \
@@ -56,8 +56,8 @@
 #define ADIOI_BUFFERED_WRITE_WITHOUT_READ \
 { \
     if (req_off >= writebuf_off + writebuf_len) { \
-        ADIO_WriteContig(fd, writebuf, writebuf_len, ADIO_EXPLICIT_OFFSET, \
-			writebuf_off, &status1, error_code); \
+        ADIO_WriteContig(fd, writebuf, writebuf_len, MPI_BYTE, \
+                 ADIO_EXPLICIT_OFFSET, writebuf_off, &status1, error_code); \
         if (*error_code != MPI_SUCCESS) return; \
 	writebuf_off = req_off; \
         writebuf_len = (int) (ADIOI_MIN(max_bufsize,end_offset-writebuf_off+1));\
@@ -65,8 +65,8 @@
     write_sz = (int) (ADIOI_MIN(req_len, writebuf_off + writebuf_len - req_off)); \
     memcpy(writebuf+req_off-writebuf_off, (char *)buf +userbuf_off, write_sz);\
     while (write_sz != req_len) { \
-        ADIO_WriteContig(fd, writebuf, writebuf_len, ADIO_EXPLICIT_OFFSET, \
-			writebuf_off, &status1, error_code); \
+        ADIO_WriteContig(fd, writebuf, writebuf_len, MPI_BYTE, \
+                ADIO_EXPLICIT_OFFSET, writebuf_off, &status1, error_code); \
         if (*error_code != MPI_SUCCESS) return; \
         req_len -= write_sz; \
         userbuf_off += write_sz; \
@@ -152,7 +152,7 @@ void ADIOI_GEN_WriteStrided(ADIO_File fd, void *buf, int count,
             }
 
         /* write the buffer out finally */
-        ADIO_WriteContig(fd, writebuf, writebuf_len, ADIO_EXPLICIT_OFFSET,
+        ADIO_WriteContig(fd, writebuf, writebuf_len, MPI_BYTE, ADIO_EXPLICIT_OFFSET,
 			writebuf_off, &status1, error_code);
 
 	if (fd->atomicity) 
@@ -357,7 +357,7 @@ void ADIOI_GEN_WriteStrided(ADIO_File fd, void *buf, int count,
 
         /* write the buffer out finally */	
 	if (writebuf_len) {
-	    ADIO_WriteContig(fd, writebuf, writebuf_len, ADIO_EXPLICIT_OFFSET,
+	    ADIO_WriteContig(fd, writebuf, writebuf_len, MPI_BYTE, ADIO_EXPLICIT_OFFSET,
 			writebuf_off, &status1, error_code);
 	    if (!(fd->atomicity)) 
 		ADIOI_UNLOCK(fd, writebuf_off, SEEK_SET, writebuf_len);
@@ -372,6 +372,12 @@ void ADIOI_GEN_WriteStrided(ADIO_File fd, void *buf, int count,
     }
 
     fd->fp_sys_posn = -1;   /* set it to null. */
+
+#ifdef HAVE_STATUS_SET_BYTES
+    MPIR_Status_set_bytes(status, datatype, bufsize);
+/* This is a temporary way of filling in status. The right way is to 
+   keep track of how much data was actually written by ADIOI_BUFFERED_WRITE. */
+#endif
 
     if (!buftype_is_contig) ADIOI_Delete_flattened(datatype);
 }

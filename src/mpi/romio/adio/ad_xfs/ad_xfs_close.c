@@ -10,14 +10,14 @@
 void ADIOI_XFS_Close(ADIO_File fd, int *error_code)
 {
     int err, err1;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_XFS_CLOSE";
 #endif
 
     err = close(fd->fd_sys);
     err1 = close(fd->fd_direct);
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = ((err == 0) && (err1 == 0)) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
 #else
     if ((err == -1) || (err1 == -1)) {

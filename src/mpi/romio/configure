@@ -1,4 +1,7 @@
-#! /bin/sh
+
+
+
+#!/bin/sh
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf.
 # Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
@@ -589,12 +592,12 @@ if test -n "$arch_sun4" ; then
     F77=${FC:-f77}
     if test $DEBUG = 1; then
 	if test "$CC" = "gcc"; then
-           CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -D__AIO_SUN"
+           CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DAIO_SUN"
 	else
-           CFLAGS="$CFLAGS -g -D__AIO_SUN"
+           CFLAGS="$CFLAGS -g -DAIO_SUN"
         fi
     else 
-        CFLAGS="$CFLAGS -O -D__AIO_SUN"
+        CFLAGS="$CFLAGS -O -DAIO_SUN"
     fi
     if test -z "$MPI" ; then
         MPI=mpich
@@ -613,12 +616,12 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     F77=${FC:-f77}
     if test $DEBUG = 1; then
         if test "$CC" = "gcc" ; then
-            CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -D__AIO_SUN"
+            CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DAIO_SUN"
         else 
-            CFLAGS="$CFLAGS -g -v -D__AIO_SUN"
+            CFLAGS="$CFLAGS -g -v -DAIO_SUN"
         fi
     else 
-        CFLAGS="$CFLAGS -O -D__AIO_SUN"
+        CFLAGS="$CFLAGS -O -DAIO_SUN"
     fi
     if test -z "$MPI" ; then
         MPI=mpich
@@ -630,7 +633,7 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
         FILE_SYSTEM="ufs nfs"
         echo "configuring for file systems ufs and nfs"
     fi
-    CFLAGS="$CFLAGS -D__SOLARIS"
+    CFLAGS="$CFLAGS -DSOLARIS"
     if test $MPI = "mpich" ; then
         TEST_CC=mpicc
         TEST_F77=mpif77
@@ -701,9 +704,9 @@ test -n "$F77" || F77="f77"
        echo "Using $F77"
     fi
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -D__NO_FD_IN_AIOCB -D__AIO_HANDLE_IN_AIOCB"
+        CFLAGS="$CFLAGS -g -DNO_FD_IN_AIOCB -DAIO_HANDLE_IN_AIOCB"
     else 
-        CFLAGS="$CFLAGS -O -D__NO_FD_IN_AIOCB -D__AIO_HANDLE_IN_AIOCB"
+        CFLAGS="$CFLAGS -O -DNO_FD_IN_AIOCB -DAIO_HANDLE_IN_AIOCB"
     fi
     if test -z "$MPI" ; then
         MPI=mpich
@@ -721,7 +724,7 @@ test -n "$F77" || F77="f77"
         file_system_nfs=1
         FILE_SYSTEM="$FILE_SYSTEM ufs nfs"
     fi
-    CFLAGS="$CFLAGS -D__AIX"
+    CFLAGS="$CFLAGS -DAIX"
 # assume long long exists.
     longlongsize=${longlongsize:-8} 
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
@@ -753,7 +756,7 @@ if test -n "$arch_paragon"; then
         FILE_SYSTEM="pfs ufs nfs"
         echo "configuring for file systems pfs, ufs, and nfs"
     fi
-    CFLAGS="$CFLAGS -D__PARAGON -D__NO_AIO"
+    CFLAGS="$CFLAGS -DPARAGON -DNO_AIO"
 # NO_AIO is if configuring for NFS/UFS. It doesn't affect PFS asynch. I/O.
 # long long does not exist
     longlongsize=${longlongsize:-0} 
@@ -762,7 +765,7 @@ fi
 if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     CC=${CC:-pgcc}
     F77=${FC:-pgf77}
-    TFLOP_FLAGS="-cougar -D__PUMA -D__NO_AIO"
+    TFLOP_FLAGS="-cougar -D__PUMA -DNO_AIO"
     if test $DEBUG = 1; then
         CFLAGS="$CFLAGS -g $TFLOP_FLAGS"
     else
@@ -790,7 +793,7 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
     CC=${CC:-gcc}
     if test -n "$arch_freebsd" || test -n "$arch_netbsd" ; then
        F77=${FC:-f77}
-       CFLAGS="$CFLAGS -D__FREEBSD"
+       CFLAGS="$CFLAGS -DFREEBSD"
        
   if test -z "$ac_echo_n" ; then
 ac_echo_n=yes
@@ -837,9 +840,9 @@ fi
      
 {
 test -n "$verbose" && \
-echo "	defining __HAVE_MOUNT_NFS"
-echo "#define" __HAVE_MOUNT_NFS 1 >> confdefs.h
-DEFS="$DEFS -D__HAVE_MOUNT_NFS=1"
+echo "	defining HAVE_MOUNT_NFS"
+echo "#define" HAVE_MOUNT_NFS 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_MOUNT_NFS=1"
 }
 
   else
@@ -855,12 +858,12 @@ fi
 # printf doesn't work properly and no integer*8 as far as I can tell
     else 
        F77=${FC:-g77}
-       CFLAGS="$CFLAGS -D__LINUX"
+       CFLAGS="$CFLAGS -DLINUX"
     fi
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -D__NO_AIO"
+        CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DNO_AIO"
     else 
-        CFLAGS="$CFLAGS -O -D__NO_AIO"
+        CFLAGS="$CFLAGS -O -DNO_AIO"
     fi
     if test -z "$MPI" ; then
         MPI=mpich
@@ -878,11 +881,11 @@ if test -n "$arch_SX4" ; then
     CC=${CC:-mpicc}
     F77=${FC:-mpif90}
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -D__NO_AIO -D__SX4"
+        CFLAGS="$CFLAGS -g -DNO_AIO -DSX4"
         FFLAGS="$FFLAGS -g"
     else
         USER_FFLAGS="$FFLAGS -Chopt"
-        CFLAGS="$CFLAGS -O -D__NO_AIO -D__SX4"
+        CFLAGS="$CFLAGS -O -DNO_AIO -DSX4"
         FFLAGS="$FFLAGS -Chopt"
     fi
     if test -z "$MPI" ; then
@@ -901,9 +904,9 @@ fi
 #
 if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g +w1 -D__NO_AIO"
+        CFLAGS="$CFLAGS -g +w1 -DNO_AIO"
     else 
-        CFLAGS="$CFLAGS -O -D__NO_AIO"
+        CFLAGS="$CFLAGS -O -DNO_AIO"
     fi
     RANLIB=":"
     if test -z "$MPI"; then
@@ -931,14 +934,14 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     fi
     FTESTDEFINE="external iargc, getarg"
     if test -n "$arch_hpux" ; then
-        CFLAGS="$CFLAGS -D__HPUX -D_LARGEFILE64_SOURCE"
+        CFLAGS="$CFLAGS -DHPUX -D_LARGEFILE64_SOURCE"
         if test $MPI = "hp" ; then
            F77=${FC:-mpif90 +U77}
         else
            F77=${FC:-f90 +U77}
         fi
     else
-        CFLAGS="$CFLAGS -D__SPPUX"
+        CFLAGS="$CFLAGS -DSPPUX"
     fi
     if test -z "$FILE_SYSTEM" ; then
         if test -n "$arch_hpux" ; then
@@ -989,9 +992,9 @@ if test -n "$arch_alpha" ; then
     CC=${CC:-cc}
     F77=${FC:-f77}
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose -D__AIO_PRIORITY_DEFAULT"
+        CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose -DAIO_PRIORITY_DEFAULT"
     else 
-        CFLAGS="$CFLAGS -O -D__AIO_PRIORITY_DEFAULT"
+        CFLAGS="$CFLAGS -O -DAIO_PRIORITY_DEFAULT"
     fi
     MPI_LIB="$MPI_LIB -laio"
     if test -z "$MPI" ; then
@@ -1004,7 +1007,7 @@ if test -n "$arch_alpha" ; then
         FILE_SYSTEM="ufs nfs"
         echo "configuring for file systems ufs and nfs"
     fi
-    CFLAGS="$CFLAGS -D__DEC"
+    CFLAGS="$CFLAGS -DDEC"
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
     ROMIO_LIBLIST="-laio"
@@ -1017,22 +1020,22 @@ if test -n "$arch_CRAY" ; then
     FTESTDEFINE="integer ilen"
     F77GETARG="call pxfgetarg(i, str, ilen, ierr)"
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -D__NO_AIO"
+        CFLAGS="$CFLAGS -g -DNO_AIO"
     else 
-        CFLAGS="$CFLAGS -O -D__NO_AIO"
+        CFLAGS="$CFLAGS -O -DNO_AIO"
     fi
     RANLIB=":"
-    CFLAGS="$CFLAGS -D__CRAY -D_UNICOS"
+    CFLAGS="$CFLAGS -DCRAY -D_UNICOS"
     if test -z "$MPI" || test -n "$mpi_sgi" ; then
         MPI=cray
         mpi_cray=1
         mpi_sgi=""
 # above is to disable configure tests specific to SGI MPI
-        CFLAGS="$CFLAGS -D__MPISGI -D__HAS_MPI_COMBINERS -D__NO_MPI_SGI_type_is_contig"
+        CFLAGS="$CFLAGS -DMPISGI -DHAS_MPI_COMBINERS -DNO_MPI_SGI_type_is_contig"
     fi
-#       __MPISGI needed because of error in Cray's and SGI's 
+#       MPISGI needed because of error in Cray's and SGI's 
 #       MPI_Type_get_contents (does not increment reference count).
-#       Others needed because __MPISGI needed.
+#       Others needed because MPISGI needed.
     if test -z "$FILE_SYSTEM" ; then
         file_system_ufs=1
         file_system_nfs=1
@@ -1268,7 +1271,7 @@ if test -n "$arch_sgi5"; then
 # now set arch_IRIX to 1
    arch_IRIX=1
    echo "IRIX-specific architecture is $IRIXARCH"
-   CFLAGS="$CFLAGS -D__IRIX"
+   CFLAGS="$CFLAGS -DIRIX"
 fi
 #
 if test -n "$arch_IRIX"; then
@@ -1303,7 +1306,7 @@ if test -n "$arch_IRIX"; then
             fi            
 	fi
         RANLIB=":"
-        CFLAGS="$CFLAGS -D__AIO_SIGNOTIFY_NONE"
+        CFLAGS="$CFLAGS -DAIO_SIGNOTIFY_NONE"
 	if test $cputype -ge 5000 ; then
             MIPS=4
         else 
@@ -1361,9 +1364,9 @@ fi
       
 {
 test -n "$verbose" && \
-echo "	defining __HAS_PREAD64"
-echo "#define" __HAS_PREAD64 1 >> confdefs.h
-DEFS="$DEFS -D__HAS_PREAD64=1"
+echo "	defining HAS_PREAD64"
+echo "#define" HAS_PREAD64 1 >> confdefs.h
+DEFS="$DEFS -DHAS_PREAD64=1"
 }
 
   else
@@ -1435,7 +1438,7 @@ fi
        fi
        echo "configuring for file systems $FILE_SYSTEM"
    fi
-   CFLAGS="$CFLAGS -D__IRIX"
+   CFLAGS="$CFLAGS -DIRIX"
    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
    MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
 fi
@@ -1666,9 +1669,9 @@ fi
        
 {
 test -n "$verbose" && \
-echo "	defining __INT_LT_POINTER"
-echo "#define" __INT_LT_POINTER 1 >> confdefs.h
-DEFS="$DEFS -D__INT_LT_POINTER=1"
+echo "	defining INT_LT_POINTER"
+echo "#define" INT_LT_POINTER 1 >> confdefs.h
+DEFS="$DEFS -DINT_LT_POINTER=1"
 }
 
        if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -1694,9 +1697,9 @@ if test -n "$longlongsize" ; then
        
 {
 test -n "$verbose" && \
-echo "	defining __HAVE_LONG_LONG_64"
-echo "#define" __HAVE_LONG_LONG_64 1 >> confdefs.h
-DEFS="$DEFS -D__HAVE_LONG_LONG_64=1"
+echo "	defining HAVE_LONG_LONG_64"
+echo "#define" HAVE_LONG_LONG_64 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_LONG_LONG_64=1"
 }
 
        DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
@@ -1709,9 +1712,9 @@ DEFS="$DEFS -D__HAVE_LONG_LONG_64=1"
        
 {
 test -n "$verbose" && \
-echo "	defining __MPI_OFFSET_IS_INT"
-echo "#define" __MPI_OFFSET_IS_INT 1 >> confdefs.h
-DEFS="$DEFS -D__MPI_OFFSET_IS_INT=1"
+echo "	defining MPI_OFFSET_IS_INT"
+echo "#define" MPI_OFFSET_IS_INT 1 >> confdefs.h
+DEFS="$DEFS -DMPI_OFFSET_IS_INT=1"
 }
 
        LL="\%d"
@@ -1843,9 +1846,9 @@ fi
     
 {
 test -n "$verbose" && \
-echo "	defining __HAVE_LONG_LONG_64"
-echo "#define" __HAVE_LONG_LONG_64 1 >> confdefs.h
-DEFS="$DEFS -D__HAVE_LONG_LONG_64=1"
+echo "	defining HAVE_LONG_LONG_64"
+echo "#define" HAVE_LONG_LONG_64 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_LONG_LONG_64=1"
 }
 
     DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
@@ -1912,9 +1915,9 @@ fi
        
 {
 test -n "$verbose" && \
-echo "	defining __HAVE_LONG_LONG_64"
-echo "#define" __HAVE_LONG_LONG_64 1 >> confdefs.h
-DEFS="$DEFS -D__HAVE_LONG_LONG_64=1"
+echo "	defining HAVE_LONG_LONG_64"
+echo "#define" HAVE_LONG_LONG_64 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_LONG_LONG_64=1"
 }
 
        DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
@@ -1963,9 +1966,9 @@ EOF
          
 {
 test -n "$verbose" && \
-echo "	defining __HAVE_LONG_LONG_64"
-echo "#define" __HAVE_LONG_LONG_64 1 >> confdefs.h
-DEFS="$DEFS -D__HAVE_LONG_LONG_64=1"
+echo "	defining HAVE_LONG_LONG_64"
+echo "#define" HAVE_LONG_LONG_64 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_LONG_LONG_64=1"
 }
 
          DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
@@ -2035,9 +2038,9 @@ fi
       
 {
 test -n "$verbose" && \
-echo "	defining __HAVE_MPI_LONG_LONG_INT"
-echo "#define" __HAVE_MPI_LONG_LONG_INT 1 >> confdefs.h
-DEFS="$DEFS -D__HAVE_MPI_LONG_LONG_INT=1"
+echo "	defining HAVE_MPI_LONG_LONG_INT"
+echo "#define" HAVE_MPI_LONG_LONG_INT 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_MPI_LONG_LONG_INT=1"
 }
 
   else
@@ -2053,9 +2056,9 @@ fi
        
 {
 test -n "$verbose" && \
-echo "	defining __HAVE_MPI_LONG_LONG_INT"
-echo "#define" __HAVE_MPI_LONG_LONG_INT 1 >> confdefs.h
-DEFS="$DEFS -D__HAVE_MPI_LONG_LONG_INT=1"
+echo "	defining HAVE_MPI_LONG_LONG_INT"
+echo "#define" HAVE_MPI_LONG_LONG_INT 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_MPI_LONG_LONG_INT=1"
 }
 
    fi
@@ -2239,12 +2242,12 @@ fi
       
 {
 test -n "$verbose" && \
-echo "	defining __HAS_MPI_INFO"
-echo "#define" __HAS_MPI_INFO 1 >> confdefs.h
-DEFS="$DEFS -D__HAS_MPI_INFO=1"
+echo "	defining HAS_MPI_INFO"
+echo "#define" HAS_MPI_INFO 1 >> confdefs.h
+DEFS="$DEFS -DHAS_MPI_INFO=1"
 }
 
-      HAS_MPI_INFO="#define __HAS_MPI_INFO"
+      HAS_MPI_INFO="#define HAS_MPI_INFO"
       MPI_FINFO1="!"
       MPI_FINFO2="!"
       MPI_FINFO3="!"
@@ -2267,12 +2270,12 @@ else
    
 {
 test -n "$verbose" && \
-echo "	defining __HAS_MPI_INFO"
-echo "#define" __HAS_MPI_INFO 1 >> confdefs.h
-DEFS="$DEFS -D__HAS_MPI_INFO=1"
+echo "	defining HAS_MPI_INFO"
+echo "#define" HAS_MPI_INFO 1 >> confdefs.h
+DEFS="$DEFS -DHAS_MPI_INFO=1"
 }
 
-   HAS_MPI_INFO="#define __HAS_MPI_INFO"
+   HAS_MPI_INFO="#define HAS_MPI_INFO"
    MPI_FINFO1="!"
    MPI_FINFO2="!"
    MPI_FINFO3="!"
@@ -2391,9 +2394,9 @@ fi
      
 {
 test -n "$verbose" && \
-echo "	defining __NO_MPI_SGI_type_is_contig"
-echo "#define" __NO_MPI_SGI_type_is_contig 1 >> confdefs.h
-DEFS="$DEFS -D__NO_MPI_SGI_type_is_contig=1"
+echo "	defining NO_MPI_SGI_type_is_contig"
+echo "#define" NO_MPI_SGI_type_is_contig 1 >> confdefs.h
+DEFS="$DEFS -DNO_MPI_SGI_type_is_contig=1"
 }
 
   fi
@@ -2448,9 +2451,9 @@ fi
      
 {
 test -n "$verbose" && \
-echo "	defining __HAS_MPI_COMBINERS"
-echo "#define" __HAS_MPI_COMBINERS 1 >> confdefs.h
-DEFS="$DEFS -D__HAS_MPI_COMBINERS=1"
+echo "	defining HAS_MPI_COMBINERS"
+echo "#define" HAS_MPI_COMBINERS 1 >> confdefs.h
+DEFS="$DEFS -DHAS_MPI_COMBINERS=1"
 }
 
   else
@@ -2571,12 +2574,12 @@ fi
       
 {
 test -n "$verbose" && \
-echo "	defining __HAS_MPI_DARRAY_SUBARRAY"
-echo "#define" __HAS_MPI_DARRAY_SUBARRAY 1 >> confdefs.h
-DEFS="$DEFS -D__HAS_MPI_DARRAY_SUBARRAY=1"
+echo "	defining HAS_MPI_DARRAY_SUBARRAY"
+echo "#define" HAS_MPI_DARRAY_SUBARRAY 1 >> confdefs.h
+DEFS="$DEFS -DHAS_MPI_DARRAY_SUBARRAY=1"
 }
 
-      HAS_MPI_DARRAY_SUBARRAY="#define __HAS_MPI_DARRAY_SUBARRAY"
+      HAS_MPI_DARRAY_SUBARRAY="#define HAS_MPI_DARRAY_SUBARRAY"
       MPI_FARRAY1="!"
       MPI_FARRAY2="!"
       MPI_FARRAY3="!"
@@ -2605,12 +2608,12 @@ else
    
 {
 test -n "$verbose" && \
-echo "	defining __HAS_MPI_DARRAY_SUBARRAY"
-echo "#define" __HAS_MPI_DARRAY_SUBARRAY 1 >> confdefs.h
-DEFS="$DEFS -D__HAS_MPI_DARRAY_SUBARRAY=1"
+echo "	defining HAS_MPI_DARRAY_SUBARRAY"
+echo "#define" HAS_MPI_DARRAY_SUBARRAY 1 >> confdefs.h
+DEFS="$DEFS -DHAS_MPI_DARRAY_SUBARRAY=1"
 }
 
-   HAS_MPI_DARRAY_SUBARRAY="#define __HAS_MPI_DARRAY_SUBARRAY"
+   HAS_MPI_DARRAY_SUBARRAY="#define HAS_MPI_DARRAY_SUBARRAY"
    MPI_FARRAY1="!"
    MPI_FARRAY2="!"
    MPI_FARRAY3="!"
@@ -2831,19 +2834,19 @@ if test -z "$FILE_SYSTEM" ; then
 fi
 #
 if test -n "$file_system_nfs"; then
-    CFLAGS="$CFLAGS -D__NFS"
+    CFLAGS="$CFLAGS -DNFS"
 fi
 if test -n "$file_system_ufs"; then
-    CFLAGS="$CFLAGS -D__UFS"
+    CFLAGS="$CFLAGS -DUFS"
 fi
 if test -n "$file_system_hfs"; then
-    CFLAGS="$CFLAGS -D__HFS"
+    CFLAGS="$CFLAGS -DHFS"
 fi
 if test -n "$file_system_sfs"; then
-    CFLAGS="$CFLAGS -D__SFS"
+    CFLAGS="$CFLAGS -DSFS"
 fi
 if test -n "$file_system_xfs"; then
-    CFLAGS="$CFLAGS -D__XFS"
+    CFLAGS="$CFLAGS -DXFS"
     if test -z "$ac_echo_n" ; then
 ac_echo_n=yes
 if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
@@ -2904,43 +2907,43 @@ echo "$ac_t""$Pac_CV_NAME"
 else
 echo "$ac_t""$Pac_CV_NAME" 1>&1
 fi
-    CFLAGS="$CFLAGS -D__XFS_MEMALIGN=$Pac_CV_NAME"
+    CFLAGS="$CFLAGS -DXFS_MEMALIGN=$Pac_CV_NAME"
 else
     if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""unavailable"
 else
 echo "$ac_t""unavailable" 1>&1
 fi
-    CFLAGS="$CFLAGS -D__XFS_MEMALIGN=128"
+    CFLAGS="$CFLAGS -DXFS_MEMALIGN=128"
 fi
 
 fi
 if test -n "$file_system_pvfs"; then
-    CFLAGS="$CFLAGS -D__PVFS"
+    CFLAGS="$CFLAGS -DPVFS"
 fi
 if test -n "$file_system_pfs"; then
-    CFLAGS="$CFLAGS -D__PFS"
+    CFLAGS="$CFLAGS -DPFS"
 fi
 if test -n "$file_system_piofs"; then
-    CFLAGS="$CFLAGS -D__PIOFS"
+    CFLAGS="$CFLAGS -DPIOFS"
     USER_CFLAGS="$USER_CFLAGS -bI:/usr/include/piofs/piofs.exp"
     ROMIO_LFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
     USER_FFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
 fi
 if test -n "$mpi_mpich"; then
-   CFLAGS="$CFLAGS -D__NEEDS_MPI_TEST -D__MPICH"
+   CFLAGS="$CFLAGS -DNEEDS_MPI_TEST -DMPICH"
    if test -z "$arch_SX4" ; then
       MPIOF_H_INCLUDED=1
    fi
 fi
 if test -n "$mpi_sgi"; then
-   CFLAGS="$CFLAGS -D__MPISGI"
+   CFLAGS="$CFLAGS -DMPISGI"
 fi
 if test -n "$mpi_lam"; then
-   CFLAGS="$CFLAGS -D__MPILAM"
+   CFLAGS="$CFLAGS -DMPILAM"
 fi
 if test -n "$mpi_hp"; then
-   CFLAGS="$CFLAGS -D__MPIHP"
+   CFLAGS="$CFLAGS -DMPIHP"
    if test "$NOF77" = 0; then
       
   if test -z "$ac_echo_n" ; then
@@ -3044,9 +3047,9 @@ fi
      
 {
 test -n "$verbose" && \
-echo "	defining __HAVE_STRERROR"
-echo "#define" __HAVE_STRERROR 1 >> confdefs.h
-DEFS="$DEFS -D__HAVE_STRERROR=1"
+echo "	defining HAVE_STRERROR"
+echo "#define" HAVE_STRERROR 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_STRERROR=1"
 }
 
   else
@@ -3102,9 +3105,9 @@ fi
         
 {
 test -n "$verbose" && \
-echo "	defining __HAVE_SYSERRLIST"
-echo "#define" __HAVE_SYSERRLIST 1 >> confdefs.h
-DEFS="$DEFS -D__HAVE_SYSERRLIST=1"
+echo "	defining HAVE_SYSERRLIST"
+echo "#define" HAVE_SYSERRLIST 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_SYSERRLIST=1"
 }
 
      else
@@ -3281,8 +3284,8 @@ EOF
   rm -f mpitest1.o
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -c mpitest1.c > /dev/null 2>&1
   if test ! -s mpitest1.o ; then
-      NEEDS_MPI_FINT="#define __NEEDS_MPI_FINT"
-      CFLAGS="$CFLAGS -D__NEEDS_MPI_FINT"
+      NEEDS_MPI_FINT="#define NEEDS_MPI_FINT"
+      CFLAGS="$CFLAGS -DNEEDS_MPI_FINT"
       if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""no"
 else
@@ -3330,10 +3333,11 @@ if test $FROM_MPICH = 1 ; then
       TEST_F77=$MPI_BIN_DIR/mpif77
    fi
    CC=$MPI_BIN_DIR/mpicc
+   CFLAGS="$CFLAGS -DHAVE_STATUS_SET_BYTES"
 fi
 #
 if test $MPI != "mpich" ; then
-   CFLAGS="$CFLAGS -D__PRINT_ERR_MSG"
+   CFLAGS="$CFLAGS -DPRINT_ERR_MSG"
 fi
 #
 if test -z "$TEST_CC" ; then
@@ -3536,7 +3540,7 @@ for file in .. ${CONFIG_FILES}; do if test "x$file" != x..; then
   echo creating $file
   rm -f $file
   echo "# Generated automatically from `echo $file|sed 's|.*/||'`.in by configure." > $file
-cat $top_srcdir/${file}.in | sed -e "
+  sed -e "
 $prsub
 $extrasub
 s%@VPATH@%$VPATH%g
@@ -3578,7 +3582,7 @@ s%@BUILD_MPI_ARRAY@%$BUILD_MPI_ARRAY%g
 s%@DEFINE_MPI_OFFSET@%$DEFINE_MPI_OFFSET%g
 s%@MPI_FINFO1@%$MPI_FINFO1%g
 s%@MPI_FINFO2@%$MPI_FINFO2%g
-s%@MPI_FINFO3@%$MPI_FINFO3%g" | sed -e "
+s%@MPI_FINFO3@%$MPI_FINFO3%g
 s%@MPI_FINFO4@%$MPI_FINFO4%g
 s%@MPI_FARRAY1@%$MPI_FARRAY1%g
 s%@MPI_FARRAY2@%$MPI_FARRAY2%g
@@ -3601,14 +3605,14 @@ s%@MPIRUN@%$MPIRUN%g
 s%@FORTRAN_TEST@%$FORTRAN_TEST%g
 s%@LIBS@%$LIBS%g
 s%@DEFS@%$DEFS%
-" >> $file
+" $top_srcdir/${file}.in >> $file
 fi; done
 
 
 exit 0
 EOF
 chmod +x config.status
-${CONFIG_SHELL-/bin/sh} ./config.status
+${CONFIG_SHELL-/bin/sh} config.status
 
 if test "$NOF77" = 0; then
     CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/pfcoll_test.f test/fperf.f"

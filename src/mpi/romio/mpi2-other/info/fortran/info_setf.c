@@ -9,18 +9,18 @@
 #include "adio.h"
 
 
-#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
+#if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_set_ PMPI_INFO_SET
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_set_ pmpi_info_set__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_info_set pmpi_info_set_
 #endif
 #define mpi_info_set_ pmpi_info_set
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_info_set_ pmpi_info_set
 #endif
 #define mpi_info_set_ pmpi_info_set_
@@ -73,19 +73,19 @@
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_set_ mpi_info_set__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_info_set mpi_info_set_
 #endif
 #define mpi_info_set_ mpi_info_set
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_info_set_ mpi_info_set
 #endif
 #endif
 #endif
 
 
-void mpi_info_set_(MPI_Fint *info, char *key, char *value, int *__ierr, 
+void mpi_info_set_(MPI_Fint *info, char *key, char *value, int *ierr, 
                    int keylen, int vallen)
 {
     MPI_Info info_c;
@@ -140,7 +140,7 @@ void mpi_info_set_(MPI_Fint *info, char *key, char *value, int *__ierr,
 
  
     info_c = MPI_Info_f2c(*info);
-    *__ierr = MPI_Info_set(info_c, newkey, newvalue);
+    *ierr = MPI_Info_set(info_c, newkey, newvalue);
     ADIOI_Free(newkey);
     ADIOI_Free(newvalue);
 }

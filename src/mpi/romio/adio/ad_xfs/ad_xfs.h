@@ -5,8 +5,8 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
-#ifndef __AD_XFS_INCLUDE
-#define __AD_XFS_INCLUDE
+#ifndef AD_XFS_INCLUDE
+#define AD_XFS_INCLUDE
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -17,7 +17,7 @@
 int ADIOI_XFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		  int wr, void *handle);
 
-#if (defined(__HAS_PREAD64) && (_ABIO32 == 1))
+#if (defined(HAS_PREAD64) && (_ABIO32 == 1))
 #  define pread pread64
 #  define pwrite pwrite64
 #endif

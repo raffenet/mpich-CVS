@@ -5,8 +5,8 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
-#ifndef __AD_PVFS_INCLUDE
-#define __AD_PVFS_INCLUDE
+#ifndef AD_PVFS_INCLUDE
+#define AD_PVFS_INCLUDE
 
 #include <unistd.h>
 #include <sys/types.h>

@@ -8,13 +8,17 @@
 #include "ad_pvfs.h"
 #include "adio_extern.h"
 
-void ADIOI_PVFS_WriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+void ADIOI_PVFS_WriteContig(ADIO_File fd, void *buf, int count, 
+                     MPI_Datatype datatype, int file_ptr_type,
 		     ADIO_Offset offset, ADIO_Status *status, int *error_code)
 {
-    int err=-1;
-#ifndef __PRINT_ERR_MSG
+    int err=-1, datatype_size, len;
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PVFS_WRITECONTIG";
 #endif
+
+    MPI_Type_size(datatype, &datatype_size);
+    len = datatype_size * count;
 
     if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
 	if (fd->fp_sys_posn != offset)
@@ -31,7 +35,11 @@ void ADIOI_PVFS_WriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 	fd->fp_sys_posn = fd->fp_ind;
     }
 
-#ifdef __PRINT_ERR_MSG
+#ifdef HAVE_STATUS_SET_BYTES
+    if (err != -1) MPIR_Status_set_bytes(status, datatype, err);
+#endif
+
+#ifdef PRINT_ERR_MSG
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (err == -1) {
@@ -66,7 +74,7 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
     int buf_count, buftype_is_contig, filetype_is_contig;
     ADIO_Offset off, disp;
     int flag, new_bwr_size, new_fwr_size, err_flag=0;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PVFS_WRITESTRIDED";
 #endif
 
@@ -137,7 +145,7 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
 	if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
 
 	ADIOI_Free(iov);
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	*error_code = (err_flag) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
 	if (err_flag) {
@@ -215,16 +223,16 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
                 if (fwr_size) { 
                     /* TYPE_UB and TYPE_LB can result in 
                        fwr_size = 0. save system call in such cases */ 
-#ifdef __PROFILE
+#ifdef PROFILE
 		    MPE_Log_event(11, 0, "start seek");
 #endif
 		    pvfs_lseek(fd->fd_sys, off, SEEK_SET);
-#ifdef __PROFILE
+#ifdef PROFILE
 		    MPE_Log_event(12, 0, "end seek");
 		    MPE_Log_event(5, 0, "start write");
 #endif
 		    err = pvfs_write(fd->fd_sys, ((char *) buf) + i, fwr_size);
-#ifdef __PROFILE
+#ifdef PROFILE
 		    MPE_Log_event(6, 0, "end write");
 #endif
 		    if (err == -1) err_flag = 1;
@@ -264,16 +272,16 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
 	    while (num < bufsize) {
 		size = ADIOI_MIN(fwr_size, bwr_size);
 		if (size) {
-#ifdef __PROFILE
+#ifdef PROFILE
 		    MPE_Log_event(11, 0, "start seek");
 #endif
 		    pvfs_lseek(fd->fd_sys, off, SEEK_SET);
-#ifdef __PROFILE
+#ifdef PROFILE
 		    MPE_Log_event(12, 0, "end seek");
 		    MPE_Log_event(5, 0, "start write");
 #endif
 		    err = pvfs_write(fd->fd_sys, ((char *) buf) + indx, size);
-#ifdef __PROFILE
+#ifdef PROFILE
 		    MPE_Log_event(6, 0, "end write");
 #endif
 		    if (err == -1) err_flag = 1;
@@ -320,7 +328,7 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
 	}
 
         if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	*error_code = (err_flag) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
 	if (err_flag) {
@@ -333,6 +341,12 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
     }
 
     fd->fp_sys_posn = -1;   /* set it to null. */
+
+#ifdef HAVE_STATUS_SET_BYTES
+    MPIR_Status_set_bytes(status, datatype, bufsize);
+/* This is a temporary way of filling in status. The right way is to 
+   keep track of how much data was actually written by ADIOI_BUFFERED_WRITE. */
+#endif
 
     if (!buftype_is_contig) ADIOI_Delete_flattened(datatype);
 }

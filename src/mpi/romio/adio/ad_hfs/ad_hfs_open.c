@@ -10,7 +10,7 @@
 void ADIOI_HFS_Open(ADIO_File fd, int *error_code)
 {
     int perm, old_mask, amode;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_HFS_OPEN";
 #endif
 
@@ -37,16 +37,16 @@ void ADIOI_HFS_Open(ADIO_File fd, int *error_code)
 
     if ((fd->fd_sys != -1) && (fd->access_mode & ADIO_APPEND)) {
 	fd->fp_ind = lseek64(fd->fd_sys, 0, SEEK_END);
-#ifdef __HPUX
+#ifdef HPUX
 	fd->fp_sys_posn = fd->fp_ind;
 #endif
     }
 
-#ifdef __SPPUX
+#ifdef SPPUX
 	fd->fp_sys_posn = -1;  /* set it to null bec. we use pread, pwrite*/
 #endif
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (fd->fd_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (fd->fd_sys == -1) {

@@ -10,7 +10,7 @@
 void ADIOI_NFS_Open(ADIO_File fd, int *error_code)
 {
     int perm, old_mask, amode;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_NFS_OPEN";
 #endif
 
@@ -38,7 +38,7 @@ void ADIOI_NFS_Open(ADIO_File fd, int *error_code)
     if ((fd->fd_sys != -1) && (fd->access_mode & ADIO_APPEND))
         fd->fp_ind = fd->fp_sys_posn = lseek(fd->fd_sys, 0, SEEK_END);
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (fd->fd_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (fd->fd_sys == -1) {

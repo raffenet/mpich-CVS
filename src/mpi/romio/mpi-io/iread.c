@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 
@@ -41,7 +41,7 @@ int MPI_File_iread(MPI_File fh, void *buf, int count,
                    MPI_Datatype datatype, MPIO_Request *request)
 {
     int error_code, bufsize, buftype_is_contig, filetype_is_contig;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_IREAD";
 #endif
     int datatype_size;
@@ -53,7 +53,7 @@ int MPI_File_iread(MPI_File fh, void *buf, int count,
     HPMP_IO_START(fl_xmpi, BLKMPIFILEIREAD, TRDTSYSTEM, fh, datatype, count);
 #endif /* MPI_hpux */
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
 	FPRINTF(stderr, "MPI_File_iread: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -63,7 +63,7 @@ int MPI_File_iread(MPI_File fh, void *buf, int count,
 #endif
 
     if (count < 0) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_iread: Invalid count argument\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -74,7 +74,7 @@ int MPI_File_iread(MPI_File fh, void *buf, int count,
     }
 
     if (datatype == MPI_DATATYPE_NULL) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_iread: Invalid datatype\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -87,7 +87,7 @@ int MPI_File_iread(MPI_File fh, void *buf, int count,
     MPI_Type_size(datatype, &datatype_size);
 
     if ((count*datatype_size) % fh->etype_size != 0) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_iread: Only an integral number of etypes can be accessed\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -98,7 +98,7 @@ int MPI_File_iread(MPI_File fh, void *buf, int count,
     }
 
     if (fh->access_mode & MPI_MODE_WRONLY) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_iread: Can't read from a file opened with MPI_MODE_WRONLY\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -109,7 +109,7 @@ int MPI_File_iread(MPI_File fh, void *buf, int count,
     }
 
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_iread: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -128,7 +128,7 @@ int MPI_File_iread(MPI_File fh, void *buf, int count,
     /* convert count and offset to bytes */
 	bufsize = datatype_size * count;
 	if (!(fh->atomicity))
-	    ADIO_IreadContig(fh, buf, bufsize, ADIO_INDIVIDUAL, 0,
+	    ADIO_IreadContig(fh, buf, count, datatype, ADIO_INDIVIDUAL, 0,
 			request, &error_code);
 	else {
 	    /* to maintain strict atomicity semantics with other concurrent
@@ -137,7 +137,7 @@ int MPI_File_iread(MPI_File fh, void *buf, int count,
 	    *request = ADIOI_Malloc_request();
 	    (*request)->optype = ADIOI_READ;
 	    (*request)->fd = fh;
-	    (*request)->next = ADIO_REQUEST_NULL;
+            (*request)->datatype = datatype;
 	    (*request)->queued = 0;
 	    (*request)->handle = 0;
 	    
@@ -146,8 +146,8 @@ int MPI_File_iread(MPI_File fh, void *buf, int count,
 	       (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS))
 		ADIOI_WRITE_LOCK(fh, off, SEEK_SET, bufsize);
 		
-	    ADIO_ReadContig(fh, buf, bufsize, ADIO_INDIVIDUAL, 0, &status,
-                    &error_code);  
+	    ADIO_ReadContig(fh, buf, count, datatype, ADIO_INDIVIDUAL, 0, 
+                    &status, &error_code);  
 
 	    if ((fh->file_system != ADIO_PIOFS) && 
 	       (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS))

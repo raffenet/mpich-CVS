@@ -14,7 +14,7 @@ void ADIOI_PFS_Flush(ADIO_File fd, int *error_code)
 /* fsync is not actually needed in PFS, because it uses something
    called fast-path I/O. However, it doesn't do any harm either. */
     err = fsync(fd->fd_sys);
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (err == 0) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
 #else
     if (err == -1) {

@@ -6,7 +6,7 @@
  */
 
 #include "ad_nfs.h"
-#ifdef __PROFILE
+#ifdef PROFILE
 #include "mpe.h"
 #endif
 

@@ -12,18 +12,18 @@
 #include "adio.h"
 
 
-#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
+#if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_set_view_ PMPI_FILE_SET_VIEW
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_file_set_view_ pmpi_file_set_view__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_file_set_view pmpi_file_set_view_
 #endif
 #define mpi_file_set_view_ pmpi_file_set_view
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_file_set_view_ pmpi_file_set_view
 #endif
 #define mpi_file_set_view_ pmpi_file_set_view_
@@ -76,20 +76,20 @@
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_file_set_view_ mpi_file_set_view__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_file_set_view mpi_file_set_view_
 #endif
 #define mpi_file_set_view_ mpi_file_set_view
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_file_set_view_ mpi_file_set_view
 #endif
 #endif
 #endif
 
-#if defined(__MPIHP) || defined(__MPILAM)
+#if defined(MPIHP) || defined(MPILAM)
 void mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Fint *etype,
-   MPI_Fint *filetype,char *datarep,MPI_Fint *info, int *__ierr,
+   MPI_Fint *filetype,char *datarep,MPI_Fint *info, int *ierr,
    int str_len )
 {
     char *newstr;
@@ -120,7 +120,7 @@ void mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Fint *etype,
     
     fh_c = MPI_File_f2c(*fh);
  
-    *__ierr = MPI_File_set_view(fh_c,*disp,etype_c,filetype_c,newstr,info_c);
+    *ierr = MPI_File_set_view(fh_c,*disp,etype_c,filetype_c,newstr,info_c);
 
     ADIOI_Free(newstr);
 }
@@ -129,13 +129,13 @@ void mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Fint *etype,
 
 #if _UNICOS
 void mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Datatype *etype,
-   MPI_Datatype *filetype,_fcd datarep_fcd,MPI_Fint *info, int *__ierr)
+   MPI_Datatype *filetype,_fcd datarep_fcd,MPI_Fint *info, int *ierr)
 {
    char *datarep = _fcdtocp(datarep_fcd);
    int str_len = _fcdlen(datarep_fcd);
 #else
 void mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Datatype *etype,
-   MPI_Datatype *filetype,char *datarep,MPI_Fint *info, int *__ierr,
+   MPI_Datatype *filetype,char *datarep,MPI_Fint *info, int *ierr,
    int str_len )
 {
 #endif
@@ -164,7 +164,7 @@ void mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Datatype *etype,
     
     fh_c = MPI_File_f2c(*fh);
  
-    *__ierr = MPI_File_set_view(fh_c,*disp,*etype,*filetype,newstr,info_c);
+    *ierr = MPI_File_set_view(fh_c,*disp,*etype,*filetype,newstr,info_c);
 
     ADIOI_Free(newstr);
 }

@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 
@@ -35,7 +35,7 @@ Input Parameters:
 int MPI_File_sync(MPI_File fh)
 {
     int error_code;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_SYNC";
 #endif
 #ifdef MPI_hpux
@@ -44,7 +44,7 @@ int MPI_File_sync(MPI_File fh)
     HPMP_IO_START(fl_xmpi, BLKMPIFILESYNC, TRDTBLOCK, fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
 	FPRINTF(stderr, "MPI_File_sync: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);

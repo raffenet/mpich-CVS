@@ -7,13 +7,17 @@
 
 #include "ad_sfs.h"
 
-void ADIOI_SFS_ReadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+void ADIOI_SFS_ReadContig(ADIO_File fd, void *buf, int count, 
+                     MPI_Datatype datatype, int file_ptr_type,
 		     ADIO_Offset offset, ADIO_Status *status, int *error_code)
 {
-    int err=-1;
-#ifndef __PRINT_ERR_MSG
+    int err=-1, datatype_size, len;
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_SFS_READCONTIG";
 #endif
+
+    MPI_Type_size(datatype, &datatype_size);
+    len = datatype_size * count;
 
     if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
 	if (fd->fp_sys_posn != offset)
@@ -30,7 +34,11 @@ void ADIOI_SFS_ReadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 	fd->fp_sys_posn = fd->fp_ind;
     }         
 
-#ifdef __PRINT_ERR_MSG
+#ifdef HAVE_STATUS_SET_BYTES
+    if (err != -1) MPIR_Status_set_bytes(status, datatype, err);
+#endif
+
+#ifdef PRINT_ERR_MSG
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (err == -1) {

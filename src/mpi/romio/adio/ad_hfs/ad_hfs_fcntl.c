@@ -16,7 +16,7 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
     ADIO_Offset curr_fsize, alloc_size, size, len, done;
     ADIO_Status status;
     char *buf;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_HFS_FCNTL";
 #endif
 
@@ -82,12 +82,12 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 
     case ADIO_FCNTL_GET_FSIZE:
 	fcntl_struct->fsize = lseek64(fd->fd_sys, 0, SEEK_END);
-#ifdef __HPUX
+#ifdef HPUX
 	if (fd->fp_sys_posn != -1) 
 	     lseek64(fd->fd_sys, fd->fp_sys_posn, SEEK_SET);
 /* not required in SPPUX since there we use pread/pwrite */
 #endif
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	*error_code = (fcntl_struct->fsize == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (fcntl_struct->fsize == -1) {
@@ -102,11 +102,11 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
     case ADIO_FCNTL_SET_DISKSPACE:
 	/* will be called by one process only */
 
-#ifdef __HPUX
+#ifdef HPUX
 	err = prealloc64(fd->fd_sys, fcntl_struct->diskspace);
 	/* prealloc64 works only if file is of zero length */
 	if (err && (errno != ENOTEMPTY)) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	    *error_code = MPI_ERR_UNKNOWN;
 #else
 	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
@@ -118,13 +118,13 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	if (err && (errno == ENOTEMPTY)) {
 #endif
 
-#ifdef __SPPUX
+#ifdef SPPUX
 	/* SPPUX has no prealloc64. therefore, use prealloc
            if size < (2GB - 1), otherwise use long method. */
         if (fcntl_struct->diskspace <= 2147483647) {
 	    err = prealloc(fd->fd_sys, (off_t) fcntl_struct->diskspace);
 	    if (err && (errno != ENOTEMPTY)) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     	        *error_code = MPI_ERR_UNKNOWN;
 #else
 		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
@@ -157,10 +157,10 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 
 	    for (i=0; i<ntimes; i++) {
 		len = ADIOI_MIN(size-done, ADIOI_PREALLOC_BUFSZ);
-		ADIO_ReadContig(fd, buf, len, ADIO_EXPLICIT_OFFSET, done,
-			    &status, error_code);
+		ADIO_ReadContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
+                      done, &status, error_code);
 		if (*error_code != MPI_SUCCESS) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 		    FPRINTF(stderr, "ADIOI_HFS_Fcntl: To preallocate disk space, ROMIO needs to read the file and write it back, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
 		    MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -170,8 +170,8 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 		    return;  
 #endif
 		}
-		ADIO_WriteContig(fd, buf, len, ADIO_EXPLICIT_OFFSET, done,
-			     &status, error_code);
+		ADIO_WriteContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET,
+                         done,  &status, error_code);
 		if (*error_code != MPI_SUCCESS) return;
 		done += len;
 	    }
@@ -182,14 +182,14 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 		ntimes = (size + ADIOI_PREALLOC_BUFSZ - 1)/ADIOI_PREALLOC_BUFSZ;
 		for (i=0; i<ntimes; i++) {
 		    len = ADIOI_MIN(alloc_size-done, ADIOI_PREALLOC_BUFSZ);
-		    ADIO_WriteContig(fd, buf, len, ADIO_EXPLICIT_OFFSET, 
+		    ADIO_WriteContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
 				     done, &status, error_code);
 		    if (*error_code != MPI_SUCCESS) return;
 		    done += len;  
 		}
 	    }
 	    ADIOI_Free(buf);
-#ifdef __HPUX
+#ifdef HPUX
 	    if (fd->fp_sys_posn != -1) 
 		lseek64(fd->fd_sys, fd->fp_sys_posn, SEEK_SET);
 	    /* not required in SPPUX since there we use pread/pwrite */

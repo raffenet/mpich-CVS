@@ -7,7 +7,7 @@
 
 #include "adio.h"
 #include "adio_extern.h"
-#ifdef __MPISGI
+#ifdef MPISGI
 #include "mpisgi2.h"
 #endif
 
@@ -394,7 +394,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-#ifndef __MPISGI
+#ifndef MPISGI
 /* There is a bug in SGI's impl. of MPI_Type_get_contents. It doesn't
    return new datatypes. Therefore no need to free. */
     for (i=0; i<ntypes; i++) {
@@ -552,7 +552,7 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-#ifndef __MPISGI
+#ifndef MPISGI
 /* There is a bug in SGI's impl. of MPI_Type_get_contents. It doesn't
    return new datatypes. Therefore no need to free. */
     for (i=0; i<ntypes; i++) {

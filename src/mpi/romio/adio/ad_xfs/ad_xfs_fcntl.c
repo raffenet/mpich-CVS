@@ -7,7 +7,7 @@
 
 #include "ad_xfs.h"
 #include "adio_extern.h"
-#ifdef __MPISGI
+#ifdef MPISGI
 #include "mpisgi2.h"
 #endif
 
@@ -17,7 +17,7 @@ void ADIOI_XFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
     int combiner, i, j, k, filetype_is_contig, err;
     ADIOI_Flatlist_node *flat_file;
     struct flock64 fl;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_XFS_FCNTL";
 #endif
 
@@ -83,7 +83,7 @@ void ADIOI_XFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 
     case ADIO_FCNTL_GET_FSIZE:
 	fcntl_struct->fsize = lseek64(fd->fd_sys, 0, SEEK_END);
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	*error_code = (fcntl_struct->fsize == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
 	if (fcntl_struct->fsize == -1) {
@@ -107,7 +107,7 @@ void ADIOI_XFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	    err = ftruncate64(fd->fd_sys, fcntl_struct->diskspace);
 	    if (err) i = 1;
 	}
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	*error_code = (i == 0) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
 #else
 	if (i == 1) {

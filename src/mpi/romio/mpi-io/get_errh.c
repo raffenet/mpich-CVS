@@ -20,7 +20,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 
@@ -38,13 +38,13 @@ Output Parameters:
 int MPI_File_get_errhandler(MPI_File fh, MPI_Errhandler *errhandler)
 {
     int error_code = MPI_SUCCESS;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_GET_ERRHANDLER";
 #endif
 
     if (fh == MPI_FILE_NULL) *errhandler = ADIOI_DFLT_ERR_HANDLER;
     else if (fh->cookie != ADIOI_FILE_COOKIE) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_close: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else

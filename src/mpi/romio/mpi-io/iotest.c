@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 
@@ -40,7 +40,7 @@ Output Parameters:
 int MPIO_Test(MPIO_Request *request, int *flag, MPI_Status *status)
 {
     int error_code;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "MPIO_TEST";
 #endif
 #ifdef MPI_hpux
@@ -55,7 +55,7 @@ int MPIO_Test(MPIO_Request *request, int *flag, MPI_Status *status)
 
     if ((*request < (MPIO_Request) 0) || 
 	     ((*request)->cookie != ADIOI_REQ_COOKIE)) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPIO_Test: Invalid request object\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else

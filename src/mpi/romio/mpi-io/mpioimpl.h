@@ -9,8 +9,8 @@
 /* header file for MPI-IO implementation. not intended to be
    user-visible */ 
 
-#ifndef __MPIOIMPL_INCLUDE
-#define __MPIOIMPL_INCLUDE
+#ifndef MPIOIMPL_INCLUDE
+#define MPIOIMPL_INCLUDE
 
 #include "mpio.h"
 #include "adio.h"

@@ -13,6 +13,10 @@ simple.c: Each process creates its own file, writes to it, reads it
 
 psimple.c: Same as simple.c but uses the PMPI versions of all MPI routines
 
+error.c: Tests if error messages are printed correctly
+
+status.c: Tests if the status object is filled correctly by I/O functions
+
 perf.c: A simple read and write performance test. Each process writes
         4Mbytes to a file at a location determined by its rank and
         reads it back. For a different access size, change the value

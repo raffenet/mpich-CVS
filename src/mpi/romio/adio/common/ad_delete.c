@@ -10,12 +10,12 @@
 void ADIO_Delete(char *filename, int *error_code)
 {
     int err;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIO_DELETE";
 #endif
 
     err = unlink(filename);
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (err == 0) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
 #else
     if (err == -1) {

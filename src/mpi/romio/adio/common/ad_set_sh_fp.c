@@ -15,7 +15,7 @@ void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code)
     ADIO_Status status;
     MPI_Comm dupcommself;
 
-#ifdef __NFS
+#ifdef NFS
     if (fd->file_system == ADIO_NFS) {
 	ADIOI_NFS_Set_shared_fp(fd, offset, error_code);
 	return;
@@ -34,7 +34,7 @@ void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code)
 
     ADIOI_WRITE_LOCK(fd->shared_fp_fd, 0, SEEK_SET, sizeof(ADIO_Offset));
     ADIO_WriteContig(fd->shared_fp_fd, &offset, sizeof(ADIO_Offset), 
-		     ADIO_EXPLICIT_OFFSET, 0, &status, error_code);
+		     MPI_BYTE, ADIO_EXPLICIT_OFFSET, 0, &status, error_code);
     ADIOI_UNLOCK(fd->shared_fp_fd, 0, SEEK_SET, sizeof(ADIO_Offset));
 }
 

@@ -10,7 +10,7 @@
    building the profiling interface
  */
 
-#ifdef __MPIO_BUILD_PROFILING
+#ifdef MPIO_BUILD_PROFILING
 
 #define MPI_File_open PMPI_File_open
 #define MPI_File_close PMPI_File_close
@@ -86,7 +86,7 @@
 #define MPIO_Request_f2c PMPIO_Request_f2c
 #define MPIO_Request_c2f PMPIO_Request_c2f
 
-#ifdef __MPI_INFO_SRC  /* only in info source directory */
+#ifdef MPI_INFO_SRC  /* only in info source directory */
 
 #define MPI_Info_create PMPI_Info_create
 #define MPI_Info_set PMPI_Info_set

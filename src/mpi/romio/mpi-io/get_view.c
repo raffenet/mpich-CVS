@@ -19,10 +19,10 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
-#ifdef __MPISGI
+#ifdef MPISGI
 #include "mpisgi2.h"
 #endif
 
@@ -43,14 +43,14 @@ Output Parameters:
 int MPI_File_get_view(MPI_File fh, MPI_Offset *disp, MPI_Datatype *etype,
 		 MPI_Datatype *filetype, char *datarep)
 {
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     int error_code;
     static char myname[] = "MPI_FILE_GET_VIEW";
 #endif
     int i, j, k, combiner;
     MPI_Datatype copy_etype, copy_filetype;
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
 	FPRINTF(stderr, "MPI_File_get_view: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -60,7 +60,7 @@ int MPI_File_get_view(MPI_File fh, MPI_Offset *disp, MPI_Datatype *etype,
 #endif
 
     if (datarep <= (char *) 0) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_get_view: The user must allocate memory for datarep\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else

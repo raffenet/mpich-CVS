@@ -10,13 +10,13 @@
 void ADIOI_GEN_Flush(ADIO_File fd, int *error_code)
 {
     int err;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_GEN_FLUSH";
 #endif
 
     err = fsync(fd->fd_sys);
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (err == 0) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
 #else
     if (err == -1) {

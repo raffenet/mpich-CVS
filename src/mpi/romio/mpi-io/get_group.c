@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 
@@ -37,12 +37,12 @@ Output Parameters:
 @*/
 int MPI_File_get_group(MPI_File fh, MPI_Group *group)
 {
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     int error_code;
     static char myname[] = "MPI_FILE_GET_GROUP";
 #endif
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
 	FPRINTF(stderr, "MPI_File_get_group: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);

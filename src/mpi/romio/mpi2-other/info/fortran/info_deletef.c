@@ -9,18 +9,18 @@
 #include "adio.h"
 
 
-#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
+#if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_delete_ PMPI_INFO_DELETE
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_delete_ pmpi_info_delete__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_info_delete pmpi_info_delete_
 #endif
 #define mpi_info_delete_ pmpi_info_delete
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_info_delete_ pmpi_info_delete
 #endif
 #define mpi_info_delete_ pmpi_info_delete_
@@ -73,18 +73,18 @@
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_delete_ mpi_info_delete__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_info_delete mpi_info_delete_
 #endif
 #define mpi_info_delete_ mpi_info_delete
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_info_delete_ mpi_info_delete
 #endif
 #endif
 #endif
 
-void mpi_info_delete_(MPI_Fint *info, char *key, int *__ierr, int keylen)
+void mpi_info_delete_(MPI_Fint *info, char *key, int *ierr, int keylen)
 {
     MPI_Info info_c;
     char *newkey;
@@ -114,7 +114,7 @@ void mpi_info_delete_(MPI_Fint *info, char *key, int *__ierr, int keylen)
     newkey[new_keylen] = '\0';
 
     info_c = MPI_Info_f2c(*info);
-    *__ierr = MPI_Info_delete(info_c, newkey);
+    *ierr = MPI_Info_delete(info_c, newkey);
     ADIOI_Free(newkey);
 }
 

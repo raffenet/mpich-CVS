@@ -12,7 +12,7 @@ void ADIOI_SetFunctions(ADIO_File fd)
     fd->fns = (ADIOI_Fns *) ADIOI_Malloc(sizeof(ADIOI_Fns));
     switch(fd->file_system) {
     case ADIO_PFS:
-#ifdef __PFS	
+#ifdef PFS	
 	fd->fns->ADIOI_xxx_Open = ADIOI_PFS_Open;
 	fd->fns->ADIOI_xxx_ReadContig = ADIOI_PFS_ReadContig;
 	fd->fns->ADIOI_xxx_WriteContig = ADIOI_PFS_WriteContig;
@@ -41,7 +41,7 @@ void ADIOI_SetFunctions(ADIO_File fd)
 	break;
 
     case ADIO_PIOFS:
-#ifdef __PIOFS	
+#ifdef PIOFS	
 	fd->fns->ADIOI_xxx_Open = ADIOI_PIOFS_Open;
 	fd->fns->ADIOI_xxx_ReadContig = ADIOI_PIOFS_ReadContig;
 	fd->fns->ADIOI_xxx_WriteContig = ADIOI_PIOFS_WriteContig;
@@ -70,7 +70,7 @@ void ADIOI_SetFunctions(ADIO_File fd)
 	break;
 
     case ADIO_UFS:
-#ifdef __UFS	
+#ifdef UFS	
 	fd->fns->ADIOI_xxx_Open = ADIOI_UFS_Open;
 	fd->fns->ADIOI_xxx_ReadContig = ADIOI_UFS_ReadContig;
 	fd->fns->ADIOI_xxx_WriteContig = ADIOI_UFS_WriteContig;
@@ -99,7 +99,7 @@ void ADIOI_SetFunctions(ADIO_File fd)
 	break;
 
     case ADIO_NFS:
-#ifdef __NFS	
+#ifdef NFS	
 	fd->fns->ADIOI_xxx_Open = ADIOI_NFS_Open;
 	fd->fns->ADIOI_xxx_ReadContig = ADIOI_NFS_ReadContig;
 	fd->fns->ADIOI_xxx_WriteContig = ADIOI_NFS_WriteContig;
@@ -128,7 +128,7 @@ void ADIOI_SetFunctions(ADIO_File fd)
 	break;
 
     case ADIO_HFS:
-#ifdef __HFS	
+#ifdef HFS	
 	fd->fns->ADIOI_xxx_Open = ADIOI_HFS_Open;
 	fd->fns->ADIOI_xxx_ReadContig = ADIOI_HFS_ReadContig;
 	fd->fns->ADIOI_xxx_WriteContig = ADIOI_HFS_WriteContig;
@@ -157,7 +157,7 @@ void ADIOI_SetFunctions(ADIO_File fd)
 	break;
 
     case ADIO_XFS:
-#ifdef __XFS	
+#ifdef XFS	
 	fd->fns->ADIOI_xxx_Open = ADIOI_XFS_Open;
 	fd->fns->ADIOI_xxx_ReadContig = ADIOI_XFS_ReadContig;
 	fd->fns->ADIOI_xxx_WriteContig = ADIOI_XFS_WriteContig;
@@ -186,7 +186,7 @@ void ADIOI_SetFunctions(ADIO_File fd)
 	break;
 
     case ADIO_SFS:
-#ifdef __SFS	
+#ifdef SFS	
 	fd->fns->ADIOI_xxx_Open = ADIOI_SFS_Open;
 	fd->fns->ADIOI_xxx_ReadContig = ADIOI_SFS_ReadContig;
 	fd->fns->ADIOI_xxx_WriteContig = ADIOI_SFS_WriteContig;
@@ -215,7 +215,7 @@ void ADIOI_SetFunctions(ADIO_File fd)
 	break;
 
     case ADIO_PVFS:
-#ifdef __PVFS	
+#ifdef PVFS	
 	fd->fns->ADIOI_xxx_Open = ADIOI_PVFS_Open;
 	fd->fns->ADIOI_xxx_ReadContig = ADIOI_PVFS_ReadContig;
 	fd->fns->ADIOI_xxx_WriteContig = ADIOI_PVFS_WriteContig;

@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 
@@ -36,7 +36,7 @@ int MPI_File_preallocate(MPI_File fh, MPI_Offset size)
 {
     ADIO_Fcntl_t *fcntl_struct;
     int error_code, mynod;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_PREALLOCATE";
 #endif
     MPI_Offset tmp_sz;
@@ -47,7 +47,7 @@ int MPI_File_preallocate(MPI_File fh, MPI_Offset size)
 		  fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
 	FPRINTF(stderr, "MPI_File_preallocate: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -57,7 +57,7 @@ int MPI_File_preallocate(MPI_File fh, MPI_Offset size)
 #endif
 
     if (size < 0) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_preallocate: Invalid size argument\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -71,7 +71,7 @@ int MPI_File_preallocate(MPI_File fh, MPI_Offset size)
     MPI_Bcast(&tmp_sz, 1, ADIO_OFFSET, 0, fh->comm);
 
     if (tmp_sz != size) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_preallocate: size argument must be the same on all processes\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else

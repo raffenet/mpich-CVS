@@ -132,7 +132,7 @@ profile:
                echo " " ;\
                echo building profiling interface in directory $$dir ;\
                (cd $$dir; \
-                $(MAKE) profile MPIOPROFILE="-D__MPIO_BUILD_PROFILING";) ;\
+                $(MAKE) profile MPIOPROFILE="-DMPIO_BUILD_PROFILING";) ;\
                 if [ $$? != 0 ] ; then \
                     echo "Make failed in directory $$dir" ; exit 1 ;\
                 fi ;\

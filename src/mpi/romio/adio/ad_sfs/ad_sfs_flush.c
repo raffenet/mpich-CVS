@@ -9,12 +9,12 @@
 
 void ADIOI_SFS_Flush(ADIO_File fd, int *error_code)
 {
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_SFS_FLUSH";
 #endif
 
      /* there is no fsync on SX-4 */
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
      *error_code = MPI_ERR_UNKNOWN; 
 #else
      *error_code = MPIR_Err_setmsg(MPI_ERR_UNSUPPORTED_OPERATION, 1,

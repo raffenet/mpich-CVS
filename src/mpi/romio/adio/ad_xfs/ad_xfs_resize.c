@@ -10,12 +10,12 @@
 void ADIOI_XFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 {
     int err;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_XFS_RESIZE";
 #endif
     
     err = ftruncate64(fd->fd_sys, size);
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (err == 0) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
 #else
     if (err == -1) {

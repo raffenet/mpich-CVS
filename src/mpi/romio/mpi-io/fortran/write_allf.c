@@ -9,18 +9,18 @@
 #include "adio.h"
 
 
-#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
+#if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_write_all_ PMPI_FILE_WRITE_ALL
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_file_write_all_ pmpi_file_write_all__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_file_write_all pmpi_file_write_all_
 #endif
 #define mpi_file_write_all_ pmpi_file_write_all
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_file_write_all_ pmpi_file_write_all
 #endif
 #define mpi_file_write_all_ pmpi_file_write_all_
@@ -73,34 +73,34 @@
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_file_write_all_ mpi_file_write_all__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_file_write_all mpi_file_write_all_
 #endif
 #define mpi_file_write_all_ mpi_file_write_all
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_file_write_all_ mpi_file_write_all
 #endif
 #endif
 #endif
 
-#if defined(__MPIHP) || defined(__MPILAM)
+#if defined(MPIHP) || defined(MPILAM)
 void mpi_file_write_all_(MPI_Fint *fh,void *buf,int *count,
-                       MPI_Fint *datatype,MPI_Status *status, int *__ierr ){
+                       MPI_Fint *datatype,MPI_Status *status, int *ierr ){
     MPI_File fh_c;
     MPI_Datatype datatype_c;
     
     fh_c = MPI_File_f2c(*fh);
     datatype_c = MPI_Type_f2c(*datatype);
 
-    *__ierr = MPI_File_write_all(fh_c,buf,*count,datatype_c,status);
+    *ierr = MPI_File_write_all(fh_c,buf,*count,datatype_c,status);
 }
 #else
 void mpi_file_write_all_(MPI_Fint *fh,void *buf,int *count,
-                       MPI_Datatype *datatype,MPI_Status *status, int *__ierr ){
+                       MPI_Datatype *datatype,MPI_Status *status, int *ierr ){
     MPI_File fh_c;
     
     fh_c = MPI_File_f2c(*fh);
-    *__ierr = MPI_File_write_all(fh_c,buf,*count,*datatype,status);
+    *ierr = MPI_File_write_all(fh_c,buf,*count,*datatype,status);
 }
 #endif

@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 
@@ -41,14 +41,14 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
                           MPI_Datatype datatype, MPIO_Request *request)
 {
     int error_code, bufsize, buftype_is_contig, filetype_is_contig;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_IREAD_SHARED";
 #endif
     int datatype_size, incr;
     ADIO_Status status;
     ADIO_Offset off, shared_fp;
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
 	FPRINTF(stderr, "MPI_File_iread_shared: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -58,7 +58,7 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
 #endif
 
     if (count < 0) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_iread_shared: Invalid count argument\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -69,7 +69,7 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
     }
 
     if (datatype == MPI_DATATYPE_NULL) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_iread_shared: Invalid datatype\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -82,7 +82,7 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
     MPI_Type_size(datatype, &datatype_size);
 
     if ((count*datatype_size) % fh->etype_size != 0) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_iread_shared: Only an integral number of etypes can be accessed\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -93,7 +93,7 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
     }
 
     if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS)) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_iread_shared: Shared file pointer not supported on PIOFS and PVFS\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -119,7 +119,7 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
 	bufsize = datatype_size * count;
 	off = fh->disp + fh->etype_size * shared_fp;
         if (!(fh->atomicity))
-	    ADIO_IreadContig(fh, buf, bufsize, ADIO_EXPLICIT_OFFSET,
+	    ADIO_IreadContig(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
 			off, request, &error_code); 
         else {
             /* to maintain strict atomicity semantics with other concurrent
@@ -128,14 +128,14 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
             *request = ADIOI_Malloc_request();
             (*request)->optype = ADIOI_READ;
             (*request)->fd = fh;
-            (*request)->next = ADIO_REQUEST_NULL;
+            (*request)->datatype = datatype;
             (*request)->queued = 0;
 	    (*request)->handle = 0;
 
             if (fh->file_system != ADIO_NFS)
                 ADIOI_WRITE_LOCK(fh, off, SEEK_SET, bufsize);
 
-            ADIO_ReadContig(fh, buf, bufsize, ADIO_EXPLICIT_OFFSET, off, 
+            ADIO_ReadContig(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET, off, 
                     &status, &error_code);  
 
             if (fh->file_system != ADIO_NFS)

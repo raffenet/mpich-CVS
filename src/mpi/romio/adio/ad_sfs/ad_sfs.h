@@ -5,8 +5,8 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
-#ifndef __AD_SFS_INCLUDE
-#define __AD_SFS_INCLUDE
+#ifndef AD_SFS_INCLUDE
+#define AD_SFS_INCLUDE
 
 #include <unistd.h>
 #include <sys/types.h>

@@ -19,7 +19,7 @@ void ADIO_Get_shared_fp(ADIO_File fd, int incr, ADIO_Offset *shared_fp,
     ADIO_Offset new_fp;
     MPI_Comm dupcommself;
 
-#ifdef __NFS
+#ifdef NFS
     if (fd->file_system == ADIO_NFS) {
 	ADIOI_NFS_Get_shared_fp(fd, incr, shared_fp, error_code);
 	return;
@@ -36,7 +36,7 @@ void ADIO_Get_shared_fp(ADIO_File fd, int incr, ADIO_Offset *shared_fp,
 	*shared_fp = 0;
 	ADIOI_WRITE_LOCK(fd->shared_fp_fd, 0, SEEK_SET, sizeof(ADIO_Offset));
 	ADIO_ReadContig(fd->shared_fp_fd, shared_fp, sizeof(ADIO_Offset), 
-			ADIO_EXPLICIT_OFFSET, 0, &status, error_code);
+		       MPI_BYTE, ADIO_EXPLICIT_OFFSET, 0, &status, error_code);
         /* if the file is empty, the above function may return error
            (reading beyond end of file). In that case, shared_fp = 0, 
            set above, is the correct value. */
@@ -44,7 +44,7 @@ void ADIO_Get_shared_fp(ADIO_File fd, int incr, ADIO_Offset *shared_fp,
     else {
 	ADIOI_WRITE_LOCK(fd->shared_fp_fd, 0, SEEK_SET, sizeof(ADIO_Offset));
 	ADIO_ReadContig(fd->shared_fp_fd, shared_fp, sizeof(ADIO_Offset), 
-			ADIO_EXPLICIT_OFFSET, 0, &status, error_code);
+		       MPI_BYTE, ADIO_EXPLICIT_OFFSET, 0, &status, error_code);
 	if (*error_code != MPI_SUCCESS) {
 	    ADIOI_UNLOCK(fd->shared_fp_fd, 0, SEEK_SET, sizeof(ADIO_Offset));
 	    return;
@@ -54,6 +54,6 @@ void ADIO_Get_shared_fp(ADIO_File fd, int incr, ADIO_Offset *shared_fp,
     new_fp = *shared_fp + incr;
 
     ADIO_WriteContig(fd->shared_fp_fd, &new_fp, sizeof(ADIO_Offset), 
-		    ADIO_EXPLICIT_OFFSET, 0, &status, error_code);
+		    MPI_BYTE, ADIO_EXPLICIT_OFFSET, 0, &status, error_code);
     ADIOI_UNLOCK(fd->shared_fp_fd, 0, SEEK_SET, sizeof(ADIO_Offset));
 }

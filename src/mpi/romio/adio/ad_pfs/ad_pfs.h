@@ -8,8 +8,8 @@
 /* contains definitions, declarations, and macros specific to the
    implementation of ADIO on PFS */
 
-#ifndef __AD_PFS_INCLUDE
-#define __AD_PFS_INCLUDE
+#ifndef AD_PFS_INCLUDE
+#define AD_PFS_INCLUDE
 
 #include <unistd.h>
 #include <sys/types.h>

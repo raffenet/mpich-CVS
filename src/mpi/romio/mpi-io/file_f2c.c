@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 #include "adio_extern.h"
@@ -35,7 +35,7 @@ Return Value:
 @*/
 MPI_File MPI_File_f2c(MPI_Fint fh)
 {
-#ifndef __INT_LT_POINTER
+#ifndef INT_LT_POINTER
     return (MPI_File) ((void *) fh);  
     /* the extra cast is to get rid of a compiler warning on Exemplar.
        The warning is because MPI_File points to a structure containing

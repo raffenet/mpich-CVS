@@ -6,33 +6,37 @@
  */
 
 #include "ad_pfs.h"
-#ifdef __PROFILE
+#ifdef PROFILE
 #include "mpe.h"
 #endif
 
-void ADIOI_PFS_WriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+void ADIOI_PFS_WriteContig(ADIO_File fd, void *buf, int count, 
+                     MPI_Datatype datatype, int file_ptr_type,
                      ADIO_Offset offset, ADIO_Status *status, int *error_code)
 {
-    int err=-1;
-#ifndef __PRINT_ERR_MSG
+    int err=-1, datatype_size, len;
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PFS_WRITECONTIG";
 #endif
 
+    MPI_Type_size(datatype, &datatype_size);
+    len = datatype_size * count;
+
     if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
         if (fd->fp_sys_posn != offset) {
-#ifdef __PROFILE
+#ifdef PROFILE
 	    MPE_Log_event(11, 0, "start seek");
 #endif
             lseek(fd->fd_sys, offset, SEEK_SET);
-#ifdef __PROFILE
+#ifdef PROFILE
 	    MPE_Log_event(12, 0, "end seek");
 #endif
 	}
-#ifdef __PROFILE
+#ifdef PROFILE
 	MPE_Log_event(5, 0, "start write");
 #endif
         err = _cwrite(fd->fd_sys, buf, len);
-#ifdef __PROFILE
+#ifdef PROFILE
 	MPE_Log_event(6, 0, "end write");
 #endif
         fd->fp_sys_posn = offset + err;
@@ -40,26 +44,30 @@ void ADIOI_PFS_WriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
     }
     else { /* write from curr. location of ind. file pointer */
         if (fd->fp_sys_posn != fd->fp_ind) {
-#ifdef __PROFILE
+#ifdef PROFILE
 	    MPE_Log_event(11, 0, "start seek");
 #endif
             lseek(fd->fd_sys, fd->fp_ind, SEEK_SET);
-#ifdef __PROFILE
+#ifdef PROFILE
 	    MPE_Log_event(12, 0, "end seek");
 #endif
 	}
-#ifdef __PROFILE
+#ifdef PROFILE
 	MPE_Log_event(5, 0, "start write");
 #endif
         err = _cwrite(fd->fd_sys, buf, len);
-#ifdef __PROFILE
+#ifdef PROFILE
 	MPE_Log_event(6, 0, "end write");
 #endif
         fd->fp_ind += err;
         fd->fp_sys_posn = fd->fp_ind;
     }
 
-#ifdef __PRINT_ERR_MSG
+#ifdef HAVE_STATUS_SET_BYTES
+    if (err != -1) MPIR_Status_set_bytes(status, datatype, err);
+#endif
+
+#ifdef PRINT_ERR_MSG
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (err == -1) {

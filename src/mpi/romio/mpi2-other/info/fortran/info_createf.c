@@ -9,18 +9,18 @@
 #include "adio.h"
 
 
-#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
+#if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_create_ PMPI_INFO_CREATE
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_create_ pmpi_info_create__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_info_create pmpi_info_create_
 #endif
 #define mpi_info_create_ pmpi_info_create
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_info_create_ pmpi_info_create
 #endif
 #define mpi_info_create_ pmpi_info_create_
@@ -73,21 +73,21 @@
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_create_ mpi_info_create__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_info_create mpi_info_create_
 #endif
 #define mpi_info_create_ mpi_info_create
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_info_create_ mpi_info_create
 #endif
 #endif
 #endif
 
-void mpi_info_create_(MPI_Fint *info, int *__ierr )
+void mpi_info_create_(MPI_Fint *info, int *ierr )
 {
     MPI_Info info_c;
 
-    *__ierr = MPI_Info_create(&info_c);
+    *ierr = MPI_Info_create(&info_c);
     *info = MPI_Info_c2f(info_c);
 }

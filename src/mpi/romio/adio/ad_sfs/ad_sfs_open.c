@@ -10,7 +10,7 @@
 void ADIOI_SFS_Open(ADIO_File fd, int *error_code)
 {
     int perm, old_mask, amode;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_SFS_OPEN";
 #endif
 
@@ -40,7 +40,7 @@ void ADIOI_SFS_Open(ADIO_File fd, int *error_code)
 	fd->fp_sys_posn = fd->fp_ind;
     }
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (fd->fd_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (fd->fd_sys == -1) {

@@ -3,7 +3,7 @@
    application code without interference from MPI functions used by 
    MPI-IO. */
 
-#ifndef __USE_MPI_VERSIONS
+#ifndef USE_MPI_VERSIONS
 
 #define MPI_Abort PMPI_Abort
 #define MPI_Address PMPI_Address
@@ -171,7 +171,7 @@
 #define MPI_Status_f2c PMPI_Status_f2c
 */
 
-#ifndef __MPI_INFO_SRC  /* everywhere except in info source directory */
+#ifndef MPI_INFO_SRC  /* everywhere except in info source directory */
 #define MPI_Info_create PMPI_Info_create
 #define MPI_Info_set PMPI_Info_set
 #define MPI_Info_delete PMPI_Info_delete
@@ -185,7 +185,7 @@
 #define MPI_Info_f2c PMPI_Info_f2c
 #endif
 
-#ifdef __MPIO_FORTRAN_SRC   /* only in MPI-IO Fortran source directory */
+#ifdef MPIO_FORTRAN_SRC   /* only in MPI-IO Fortran source directory */
 #define MPI_File_c2f PMPI_File_c2f
 #define MPI_File_f2c PMPI_File_f2c
 #endif

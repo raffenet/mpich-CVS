@@ -19,10 +19,10 @@
    an existing ADIO implementation, would need to use the ADIOI_
    functions/datatypes. */
 
-#ifndef __ADIO_INCLUDE
-#define __ADIO_INCLUDE
+#ifndef ADIO_INCLUDE
+#define ADIO_INCLUDE
 
-#ifdef __SPPUX
+#ifdef SPPUX
 #define _POSIX_SOURCE
 #endif
 
@@ -35,16 +35,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#ifdef __SPPUX
+#ifdef SPPUX
 #include <sys/cnx_fcntl.h>
 #endif
 
-#ifdef __MPI_OFFSET_IS_INT
+#ifdef MPI_OFFSET_IS_INT
    typedef int ADIO_Offset;
 #  define ADIO_OFFSET MPI_INT
-#elif defined(__HAVE_LONG_LONG_64)
+#elif defined(HAVE_LONG_LONG_64)
    typedef long long ADIO_Offset;
-#  ifdef __HAVE_MPI_LONG_LONG_INT
+#  ifdef HAVE_MPI_LONG_LONG_INT
 #     define ADIO_OFFSET MPI_LONG_LONG_INT
 #  else
 #     define ADIO_OFFSET MPI_DOUBLE
@@ -54,7 +54,7 @@
 #  define ADIO_OFFSET MPI_LONG
 #endif
 
-#ifndef __SX4
+#ifndef SX4
 #   define MPI_AINT MPI_LONG    /* may need to change this later */
 #else
 #   if (defined(_SX) && !defined(_LONG64))
@@ -66,13 +66,13 @@
 
 #define ADIO_Status MPI_Status   
 
-#ifndef __MPIO_INCLUDE
-#  ifdef __NEEDS_MPI_FINT
+#ifndef MPIO_INCLUDE
+#  ifdef NEEDS_MPI_FINT
       typedef int MPI_Fint; 
 #  endif
 #endif
 
-#if (!defined(__HAS_MPI_INFO) && !defined(__MPIO_INCLUDE))
+#if (!defined(HAS_MPI_INFO) && !defined(MPIO_INCLUDE))
    typedef struct MPIR_Info *MPI_Info;
 #  define MPI_INFO_NULL 0
 #  define MPI_MAX_INFO_VAL      1024
@@ -119,7 +119,7 @@ typedef struct ADIOI_Fns_struct ADIOI_Fns;
 struct ADIOI_FileD {
     int cookie;              /* for error checking */
     int fd_sys;              /* system file descriptor */
-#ifdef __XFS
+#ifdef XFS
     int fd_direct;           /* On XFS, this is used for direct I/O; 
                                 fd_sys is used for buffered I/O */
     int direct_read;         /* flag; 1 means use direct read */
@@ -161,12 +161,12 @@ struct ADIOI_RequestD {
     void *handle;        /* return handle */
     int optype;          /* ADIOI_READ or ADIOI_WRITE */
     ADIO_File fd;        /* associated file descriptor */
+    MPI_Datatype datatype;  /* datatype for read/write operation */
     int queued;          /* 1 = request still queued in the system, 
                             0 = request already dequeued */
+    int nbytes;          /* no. of bytes read/written in async I/O operation */
     struct ADIOI_Async *ptr_in_async_list;  /* pointer to location in list of 
 					   asynchronous requests */
-    struct ADIOI_RequestD *next;    /* for strided accesses, pointer to next 
-                                 request structure.*/ 
 };
 
 typedef struct ADIOI_RequestD *ADIO_Request;
@@ -252,16 +252,19 @@ ADIO_File ADIO_Open(MPI_Comm comm, char *filename, int file_system,
                     MPI_Datatype filetype, int iomode, 
                     MPI_Info info, int perm, int *error_code);
 void ADIO_Close(ADIO_File fd, int *error_code);
-void ADIO_ReadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
-                     ADIO_Offset offset, ADIO_Status *status, int
-		     *error_code);
-void ADIO_WriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
-                      ADIO_Offset offset, ADIO_Status *status, int
-		      *error_code);   
-void ADIO_IwriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+void ADIO_ReadContig(ADIO_File fd, void *buf, int count, MPI_Datatype datatype,
+                    int file_ptr_type,  ADIO_Offset offset, 
+                    ADIO_Status *status, int *error_code);
+void ADIO_WriteContig(ADIO_File fd, void *buf, int count, 
+                     MPI_Datatype datatype, int file_ptr_type,
+                      ADIO_Offset offset, int *bytes_written, int
+		      *error_code);
+void ADIO_IwriteContig(ADIO_File fd, void *buf, int count, 
+                      MPI_Datatype datatype, int file_ptr_type,
                       ADIO_Offset offset, ADIO_Request *request, int
 		      *error_code);   
-void ADIO_IreadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+void ADIO_IreadContig(ADIO_File fd, void *buf, int count, 
+                      MPI_Datatype datatype, int file_ptr_type,
                       ADIO_Offset offset, ADIO_Request *request, int
 		      *error_code);   
 int ADIO_ReadDone(ADIO_Request *request, ADIO_Status *status, 

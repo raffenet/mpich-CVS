@@ -11,7 +11,7 @@ void ADIOI_XFS_Open(ADIO_File fd, int *error_code)
 {
     int perm, old_mask, amode, amode_direct;
     struct dioattr st;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_XFS_OPEN";
 #endif
 
@@ -52,7 +52,7 @@ void ADIOI_XFS_Open(ADIO_File fd, int *error_code)
 
     fd->fp_sys_posn = -1; /* set it to null because we use pread/pwrite */
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = ((fd->fd_sys == -1) || (fd->fd_direct == -1)) ? 
 	             MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else

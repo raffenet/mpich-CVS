@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 
@@ -39,12 +39,12 @@ Output Parameters:
 @*/
 int MPI_File_get_byte_offset(MPI_File fh, MPI_Offset offset, MPI_Offset *disp)
 {
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     int error_code;
     static char myname[] = "MPI_FILE_GET_BYTE_OFFSET";
 #endif
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
 	FPRINTF(stderr, "MPI_File_get_byte_offset: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -54,7 +54,7 @@ int MPI_File_get_byte_offset(MPI_File fh, MPI_Offset offset, MPI_Offset *disp)
 #endif
 
     if (offset < 0) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_get_byte_offset: Invalid offset argument\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -65,7 +65,7 @@ int MPI_File_get_byte_offset(MPI_File fh, MPI_Offset offset, MPI_Offset *disp)
     }
 
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_get_byte_offset: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else

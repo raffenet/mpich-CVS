@@ -9,8 +9,8 @@
 
 int ADIOI_XFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_code)  
 {
-    int err, nbytes, done=0;
-#ifndef __PRINT_ERR_MSG
+    int err, done=0;
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_XFS_READDONE";
 #endif
 
@@ -19,28 +19,19 @@ int ADIOI_XFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 	return 1;
     }
 
-    if ((*request)->next != ADIO_REQUEST_NULL) {
-	done = ADIOI_XFS_ReadDone(&((*request)->next), status, error_code);
-    /* currently passing status and error_code here, but something else
-       needs to be done to get the status and error info correctly */
-	if (!done) {
-	   *error_code = MPI_SUCCESS;
-	   return done;
-	}
-    }
-
     if ((*request)->queued) {
-	err = aio_error64((const aiocb64_t *) (*request)->handle);
-	if (err == EINPROGRESS) {
+	errno = aio_error64((const aiocb64_t *) (*request)->handle);
+	if (errno == EINPROGRESS) {
 	    done = 0;
 	    *error_code = MPI_SUCCESS;
 	}
 	else {
-	    nbytes = aio_return64((aiocb64_t *) (*request)->handle); 
-	    /* also dequeues the request*/ 
-	    /*  if (err) FPRINTF(stderr, "error in testing completion of nonblocking I/O\n");*/
+	    err = aio_return64((aiocb64_t *) (*request)->handle); 
+	    (*request)->nbytes = err;
+	    errno = aio_error64((const aiocb64_t *) (*request)->handle);
+
 	    done = 1;
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	    *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
 	    if (err == -1) {
@@ -50,13 +41,16 @@ int ADIOI_XFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 	    }
 	    else *error_code = MPI_SUCCESS;
 #endif
-	    /* status to be filled */
 	}
     }
     else {
 	done = 1;
 	*error_code = MPI_SUCCESS;
     }
+#ifdef HAVE_STATUS_SET_BYTES
+    if (done && ((*request)->nbytes != -1))
+	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
+#endif
 
     if (done) {
 	/* if request is still queued in the system, it is also there

@@ -13,8 +13,8 @@
     if (req_off >= readbuf_off + readbuf_len) { \
 	readbuf_off = req_off; \
 	readbuf_len = (int) (ADIOI_MIN(max_bufsize, end_offset-readbuf_off+1));\
-	ADIO_ReadContig(fd, readbuf, readbuf_len, ADIO_EXPLICIT_OFFSET, \
-			readbuf_off, &status1, error_code); \
+	ADIO_ReadContig(fd, readbuf, readbuf_len, MPI_BYTE, \
+              ADIO_EXPLICIT_OFFSET, readbuf_off, &status1, error_code); \
         if (*error_code != MPI_SUCCESS) return; \
     } \
     while (req_len > readbuf_off + readbuf_len - req_off) { \
@@ -29,7 +29,8 @@
 	readbuf_len = (int) (partial_read + ADIOI_MIN(max_bufsize, \
 				       end_offset-readbuf_off+1)); \
 	ADIO_ReadContig(fd, readbuf+partial_read, readbuf_len-partial_read, \
-             ADIO_EXPLICIT_OFFSET, readbuf_off+partial_read, &status1, error_code); \
+             MPI_BYTE, ADIO_EXPLICIT_OFFSET, readbuf_off+partial_read, \
+             &status1, error_code); \
         if (*error_code != MPI_SUCCESS) return; \
     } \
     memcpy((char *)buf + userbuf_off, readbuf+req_off-readbuf_off, req_len); \
@@ -101,8 +102,8 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
         if ((fd->atomicity) && (fd->file_system != ADIO_PIOFS) && (fd->file_system != ADIO_PVFS))
             ADIOI_WRITE_LOCK(fd, start_off, SEEK_SET, end_offset-start_off+1);
 
-        ADIO_ReadContig(fd, readbuf, readbuf_len, ADIO_EXPLICIT_OFFSET,
-                        readbuf_off, &status1, error_code);
+        ADIO_ReadContig(fd, readbuf, readbuf_len, MPI_BYTE, 
+            ADIO_EXPLICIT_OFFSET, readbuf_off, &status1, error_code);
 	if (*error_code != MPI_SUCCESS) return;
 
         for (j=0; j<count; j++) 
@@ -322,7 +323,12 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
 
     fd->fp_sys_posn = -1;   /* set it to null. */
 
+#ifdef HAVE_STATUS_SET_BYTES
+    MPIR_Status_set_bytes(status, datatype, bufsize);
+/* This is a temporary way of filling in status. The right way is to 
+   keep track of how much data was actually read and placed in buf 
+   by ADIOI_BUFFERED_READ. */
+#endif
+
     if (!buftype_is_contig) ADIOI_Delete_flattened(datatype);
 }
-
-

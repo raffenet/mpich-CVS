@@ -9,18 +9,18 @@
 #include "adio.h"
 
 
-#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
+#if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_set_errhandler_ PMPI_FILE_SET_ERRHANDLER
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_file_set_errhandler_ pmpi_file_set_errhandler__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_file_set_errhandler pmpi_file_set_errhandler_
 #endif
 #define mpi_file_set_errhandler_ pmpi_file_set_errhandler
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_file_set_errhandler_ pmpi_file_set_errhandler
 #endif
 #define mpi_file_set_errhandler_ pmpi_file_set_errhandler_
@@ -73,18 +73,18 @@
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_file_set_errhandler_ mpi_file_set_errhandler__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_file_set_errhandler mpi_file_set_errhandler_
 #endif
 #define mpi_file_set_errhandler_ mpi_file_set_errhandler
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_file_set_errhandler_ mpi_file_set_errhandler
 #endif
 #endif
 #endif
 
-void mpi_file_set_errhandler_(MPI_Fint *fh, MPI_Fint *err_handler, int *__ierr)
+void mpi_file_set_errhandler_(MPI_Fint *fh, MPI_Fint *err_handler, int *ierr)
 {
     MPI_File fh_c;
     MPI_Errhandler err_handler_c;
@@ -92,6 +92,6 @@ void mpi_file_set_errhandler_(MPI_Fint *fh, MPI_Fint *err_handler, int *__ierr)
     fh_c = MPI_File_f2c(*fh);
     err_handler_c = MPI_Errhandler_f2c(*err_handler);
 
-    *__ierr = MPI_File_set_errhandler(fh_c,err_handler_c);
+    *ierr = MPI_File_set_errhandler(fh_c,err_handler_c);
 }
 

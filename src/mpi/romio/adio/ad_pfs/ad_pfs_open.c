@@ -6,7 +6,7 @@
  */
 
 #include "ad_pfs.h"
-#ifdef __PROFILE
+#ifdef PROFILE
 #include "mpe.h"
 #endif
 
@@ -15,7 +15,7 @@ void ADIOI_PFS_Open(ADIO_File fd, int *error_code)
     int perm, amode, old_mask, np_comm, np_total, err, flag;
     char *value;
     struct sattr attr;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PFS_OPEN";
 #endif
 
@@ -41,13 +41,13 @@ void ADIOI_PFS_Open(ADIO_File fd, int *error_code)
     MPI_Comm_size(MPI_COMM_WORLD, &np_total);
     MPI_Comm_size(fd->comm, &np_comm);
 
-#ifdef __PROFILE
+#ifdef PROFILE
     MPE_Log_event(1, 0, "start open");
 #endif
     if (np_total == np_comm) 
 	fd->fd_sys = _gopen(fd->filename,amode,fd->iomode,perm);
     else fd->fd_sys = open(fd->filename, amode, perm);
-#ifdef __PROFILE
+#ifdef PROFILE
     MPE_Log_event(2, 0, "end open");
 #endif
 
@@ -85,7 +85,7 @@ void ADIOI_PFS_Open(ADIO_File fd, int *error_code)
 	    fd->fp_ind = fd->fp_sys_posn = lseek(fd->fd_sys, 0, SEEK_END);
     }
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (fd->fd_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (fd->fd_sys == -1) {

@@ -12,7 +12,7 @@ all: c-test @FORTRAN_TEST@
 
 c-test: simple perf async coll_test coll_perf misc file_info excl large_array \
      atomicity noncontig i_noncontig noncontig_coll split_coll shared_fp \
-     large_file psimple
+     large_file psimple error status
 
 default: all
 
@@ -36,6 +36,9 @@ perf: perf.o
 
 excl: excl.o
 	$(CC) $(USER_CFLAGS) -o excl excl.o $(LIBS)
+
+status: status.o
+	$(CC) $(USER_CFLAGS) -o status status.o $(LIBS)
 
 async: async.o
 	$(CC) $(USER_CFLAGS) -o async async.o $(LIBS)

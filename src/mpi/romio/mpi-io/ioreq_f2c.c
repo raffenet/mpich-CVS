@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 #include "adio_extern.h"
@@ -37,7 +37,7 @@ Return Value:
 MPIO_Request MPIO_Request_f2c(MPI_Fint request)
 {
 
-#ifndef __INT_LT_POINTER
+#ifndef INT_LT_POINTER
     return (MPIO_Request) request;
 #else
     if (!request) return MPIO_REQUEST_NULL;

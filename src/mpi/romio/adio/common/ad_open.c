@@ -7,7 +7,7 @@
 
 #include "adio.h"
 #include "adio_extern.h"
-#ifdef __MPISGI
+#ifdef MPISGI
 #include "mpisgi2.h"
 #endif
 

@@ -6,7 +6,7 @@
  */
 
 #include "ad_piofs.h"
-#ifdef __PROFILE
+#ifdef PROFILE
 #include "mpe.h"
 #endif
 
@@ -15,7 +15,7 @@ void ADIOI_PIOFS_Open(ADIO_File fd, int *error_code)
     int amode, perm, old_mask, err;
     piofs_fstat_t piofs_fstat;
     char *value;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PIOFS_OPEN";
 #endif
 
@@ -38,11 +38,11 @@ void ADIOI_PIOFS_Open(ADIO_File fd, int *error_code)
     if (fd->access_mode & ADIO_EXCL)
 	amode = amode | O_EXCL;
 
-#ifdef __PROFILE
+#ifdef PROFILE
     MPE_Log_event(1, 0, "start open");
 #endif
     fd->fd_sys = open(fd->filename, amode, perm);
-#ifdef __PROFILE
+#ifdef PROFILE
     MPE_Log_event(2, 0, "end open");
 #endif
 
@@ -71,7 +71,7 @@ void ADIOI_PIOFS_Open(ADIO_File fd, int *error_code)
 	    fd->fp_ind = fd->fp_sys_posn = llseek(fd->fd_sys, 0, SEEK_END);
     }
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (fd->fd_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (fd->fd_sys == -1) {

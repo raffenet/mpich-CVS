@@ -14,7 +14,7 @@ void ADIOI_PFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
     int combiner, i, j, k, filetype_is_contig, err;
     ADIOI_Flatlist_node *flat_file;
     int iomod, np_total, np_comm;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PFS_FCNTL";
 #endif
 
@@ -100,7 +100,7 @@ void ADIOI_PFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 
     case ADIO_FCNTL_SET_DISKSPACE:
 	err = _lsize(fd->fd_sys, fcntl_struct->diskspace, SEEK_SET);
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	*error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS ;
 #else
 	if (err == -1) {
@@ -135,7 +135,7 @@ void ADIOI_PFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
            gopen is also global. */
 
 	fd->atomicity = (fcntl_struct->atomicity == 0) ? 0 : 1;
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	*error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS ;
 #else
 	if (err == -1) {

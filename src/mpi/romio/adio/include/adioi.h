@@ -21,8 +21,8 @@
    functions/datatypes. */
 
 
-#ifndef __ADIOI_INCLUDE
-#define __ADIOI_INCLUDE
+#ifndef ADIOI_INCLUDE
+#define ADIOI_INCLUDE
 
 /* each pending nonblocking request is stored on a linked list */
 typedef struct ADIOI_Async {
@@ -66,12 +66,12 @@ typedef struct ADIOI_Fl_node {
 
 struct ADIOI_Fns_struct {
     void (*ADIOI_xxx_Open) (ADIO_File fd, int *error_code);
-    void (*ADIOI_xxx_ReadContig) (ADIO_File fd, void *buf, int len, int
-               file_ptr_type, ADIO_Offset offset, ADIO_Status *status,
-	       int *error_code);
-    void (*ADIOI_xxx_WriteContig) (ADIO_File fd, void *buf, int len, int
-	       file_ptr_type, ADIO_Offset offset, ADIO_Status *status,
-               int *error_code);   
+    void (*ADIOI_xxx_ReadContig) (ADIO_File fd, void *buf, int count, 
+                   MPI_Datatype datatype, int file_ptr_type, 
+                   ADIO_Offset offset, ADIO_Status *status, int *error_code);
+    void (*ADIOI_xxx_WriteContig) (ADIO_File fd, void *buf, int count, 
+                   MPI_Datatype datatype, int file_ptr_type, 
+                   ADIO_Offset offset, ADIO_Status *status, int *error_code);  
     void (*ADIOI_xxx_ReadStridedColl) (ADIO_File fd, void *buf, int count,
 	       MPI_Datatype datatype, int file_ptr_type,
 	       ADIO_Offset offset, ADIO_Status *status, int *error_code);
@@ -91,12 +91,12 @@ struct ADIOI_Fns_struct {
 	       MPI_Datatype datatype, int file_ptr_type,
 	       ADIO_Offset offset, ADIO_Status *status, int *error_code);
     void (*ADIOI_xxx_Close) (ADIO_File fd, int *error_code);
-    void (*ADIOI_xxx_IreadContig) (ADIO_File fd, void *buf, int len, 
-               int file_ptr_type, ADIO_Offset offset, ADIO_Request *request, 
-               int *error_code);   
-    void (*ADIOI_xxx_IwriteContig) (ADIO_File fd, void *buf, int len, int
-	       file_ptr_type, ADIO_Offset offset, ADIO_Request *request, 
-               int *error_code);   
+    void (*ADIOI_xxx_IreadContig) (ADIO_File fd, void *buf, int count, 
+                   MPI_Datatype datatype, int file_ptr_type, 
+                   ADIO_Offset offset, ADIO_Request *request, int *error_code);
+    void (*ADIOI_xxx_IwriteContig) (ADIO_File fd, void *buf, int count, 
+                   MPI_Datatype datatype, int file_ptr_type, 
+	           ADIO_Offset offset, ADIO_Request *request, int *error_code);
     int (*ADIOI_xxx_ReadDone) (ADIO_Request *request, ADIO_Status *status, 
                int *error_code); 
     int (*ADIOI_xxx_WriteDone) (ADIO_Request *request, ADIO_Status *status, 
@@ -140,11 +140,11 @@ struct ADIOI_Fns_struct {
 
 /* some of the ADIO functions are macro-replaced */
 
-#define ADIO_ReadContig(fd,buf,len,file_ptr_type,offset,status,error_code) \
-        (*(fd->fns->ADIOI_xxx_ReadContig))(fd,buf,len,file_ptr_type,offset,status,error_code)
+#define ADIO_ReadContig(fd,buf,count,datatype,file_ptr_type,offset,status,error_code) \
+        (*(fd->fns->ADIOI_xxx_ReadContig))(fd,buf,count,datatype,file_ptr_type,offset,status,error_code)
 
-#define ADIO_WriteContig(fd,buf,len,file_ptr_type,offset,status,error_code) \
-        (*(fd->fns->ADIOI_xxx_WriteContig))(fd,buf,len,file_ptr_type,offset,status,error_code)
+#define ADIO_WriteContig(fd,buf,count,datatype,file_ptr_type,offset,status,error_code) \
+        (*(fd->fns->ADIOI_xxx_WriteContig))(fd,buf,count,datatype,file_ptr_type,offset,status,error_code)
 
 #define ADIO_SeekIndividual(fd,offset,whence,error_code) \
         (*(fd->fns->ADIOI_xxx_SeekIndividual))(fd,offset,whence,error_code)
@@ -152,11 +152,11 @@ struct ADIOI_Fns_struct {
 #define ADIO_Fcntl(fd,flag,fcntl_struct,error_code) \
         (*(fd->fns->ADIOI_xxx_Fcntl))(fd,flag,fcntl_struct,error_code)
 
-#define ADIO_IreadContig(fd,buf,len,file_ptr_type,offset,request,error_code) \
-        (*(fd->fns->ADIOI_xxx_IreadContig))(fd,buf,len,file_ptr_type,offset,request,error_code)
+#define ADIO_IreadContig(fd,buf,count,datatype,file_ptr_type,offset,request,error_code) \
+        (*(fd->fns->ADIOI_xxx_IreadContig))(fd,buf,count,datatype,file_ptr_type,offset,request,error_code)
 
-#define ADIO_IwriteContig(fd,buf,len,file_ptr_type,offset,request,error_code) \
-        (*(fd->fns->ADIOI_xxx_IwriteContig))(fd,buf,len,file_ptr_type,offset,request,error_code)
+#define ADIO_IwriteContig(fd,buf,count,datatype,file_ptr_type,offset,request,error_code) \
+        (*(fd->fns->ADIOI_xxx_IwriteContig))(fd,buf,count,datatype,file_ptr_type,offset,request,error_code)
 
 /* in these routines a pointer to request is passed */
 #define ADIO_ReadDone(request,status,error_code) \
@@ -292,11 +292,12 @@ void ADIOI_Shfp_fname(ADIO_File fd, int rank);
 int ADIOI_Error(ADIO_File fd, int error_code, char *string);
 int MPIR_Err_setmsg( int, int, const char *, const char *, const char *, ... );
 int ADIOI_End_call(MPI_Comm comm, int keyval, void *attribute_val, void *extra_state);
+int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, int nbytes);
 
 
 /* Unix-style file locking */
 
-#if (defined(__HFS) || defined(__XFS))
+#if (defined(HFS) || defined(XFS))
 
 # define ADIOI_WRITE_LOCK(fd, offset, whence, len) \
    if (((fd)->file_system == ADIO_XFS) || ((fd)->file_system == ADIO_HFS)) \
@@ -334,12 +335,12 @@ int ADIOI_Set_lock64(int fd_sys, int cmd, int type, ADIO_Offset offset, int when
 
 #define FPRINTF fprintf
 
-#ifndef __HAVE_STRERROR
-#  ifdef __HAVE_SYSERRLIST
+#ifndef HAVE_STRERROR
+#  ifdef HAVE_SYSERRLIST
       extern char *sys_errlist[];
 #     define strerror(n) sys_errlist[n]
 #  else 
-#     define __PRINT_ERR_MSG
+#     define PRINT_ERR_MSG
 #  endif
 #endif
 

@@ -7,26 +7,34 @@
 
 #include "ad_piofs.h"
 
-void ADIOI_PIOFS_IreadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+void ADIOI_PIOFS_IreadContig(ADIO_File fd, void *buf, int count, 
+                MPI_Datatype datatype, int file_ptr_type,
                 ADIO_Offset offset, ADIO_Request *request, int *error_code)  
 {
     ADIO_Status status;
+    int len, typesize;
 
 /* PIOFS does not support nonblocking I/O. Therefore, use blocking I/O */
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_READ;
     (*request)->fd = fd;
-    (*request)->next = ADIO_REQUEST_NULL;
     (*request)->queued = 0;
+    (*request)->datatype = datatype;
 
-    ADIOI_PIOFS_ReadContig(fd, buf, len, file_ptr_type, offset, &status,
-		    error_code);  
+    MPI_Type_size(datatype, &typesize);
+    len = count * typesize;
+    ADIOI_PIOFS_ReadContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, 
+                           &status, error_code);  
+
+#ifdef HAVE_STATUS_SET_BYTES
+    if (*error_code == MPI_SUCCESS) {
+	MPI_Get_elements(&status, MPI_BYTE, &len);
+	(*request)->nbytes = len;
+    }
+#endif
 
     fd->async_count++;
-
-/* status info. must be linked to the request structure, so that it
-   can be accessed later from a wait */
 }
 
 
@@ -37,21 +45,27 @@ void ADIOI_PIOFS_IreadStrided(ADIO_File fd, void *buf, int count,
                        *error_code)
 {
     ADIO_Status status;
+#ifdef HAVE_STATUS_SET_BYTES
+    int typesize;
+#endif
 
 /* PIOFS does not support nonblocking I/O. Therefore, use blocking I/O */
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_READ;
     (*request)->fd = fd;
-    (*request)->next = ADIO_REQUEST_NULL;
     (*request)->queued = 0;
+    (*request)->datatype = datatype;
 
     ADIOI_PIOFS_ReadStrided(fd, buf, count, datatype, file_ptr_type, 
                             offset, &status, error_code);  
 
     fd->async_count++;
 
-/* status info. must be linked to the request structure, so that it
-   can be accessed later from a wait */
-
+#ifdef HAVE_STATUS_SET_BYTES
+    if (*error_code == MPI_SUCCESS) {
+	MPI_Type_size(datatype, &typesize);
+	(*request)->nbytes = count * typesize;
+    }
+#endif
 }

@@ -19,9 +19,9 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
-#undef __MPIO_BUILD_PROFILING
+#undef MPIO_BUILD_PROFILING
 #endif
 
 void MPIOI_Type_block(int *array_of_gsizes, int dim, int ndims, int nprocs,
@@ -255,7 +255,7 @@ int MPI_Type_create_darray(int size, int rank, int ndims,
 }
 
 
-#ifndef __MPIO_BUILD_PROFILING
+#ifndef MPIO_BUILD_PROFILING
 void MPIOI_Type_block(int *array_of_gsizes, int dim, int ndims, int nprocs,
 		      int rank, int darg, int order, MPI_Aint orig_extent,
 		      MPI_Datatype type_old, MPI_Datatype *type_new,

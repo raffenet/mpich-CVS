@@ -9,18 +9,18 @@
 #include "adio.h"
 
 
-#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
+#if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_get_nthkey_ PMPI_INFO_GET_NTHKEY
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_get_nthkey_ pmpi_info_get_nthkey__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_info_get_nthkey pmpi_info_get_nthkey_
 #endif
 #define mpi_info_get_nthkey_ pmpi_info_get_nthkey
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_info_get_nthkey_ pmpi_info_get_nthkey
 #endif
 #define mpi_info_get_nthkey_ pmpi_info_get_nthkey_
@@ -73,18 +73,18 @@
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_get_nthkey_ mpi_info_get_nthkey__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_info_get_nthkey mpi_info_get_nthkey_
 #endif
 #define mpi_info_get_nthkey_ mpi_info_get_nthkey
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_info_get_nthkey_ mpi_info_get_nthkey
 #endif
 #endif
 #endif
 
-void mpi_info_get_nthkey_(MPI_Fint *info, int *n, char *key, int *__ierr,
+void mpi_info_get_nthkey_(MPI_Fint *info, int *n, char *key, int *ierr,
                           int keylen)
 {
     MPI_Info info_c;
@@ -98,7 +98,7 @@ void mpi_info_get_nthkey_(MPI_Fint *info, int *n, char *key, int *__ierr,
 
     tmpkey = (char *) ADIOI_Malloc((MPI_MAX_INFO_KEY+1) * sizeof(char));
     info_c = MPI_Info_f2c(*info);
-    *__ierr = MPI_Info_get_nthkey(info_c, *n, tmpkey);
+    *ierr = MPI_Info_get_nthkey(info_c, *n, tmpkey);
 
     tmpkeylen = strlen(tmpkey);
 
@@ -112,7 +112,7 @@ void mpi_info_get_nthkey_(MPI_Fint *info, int *n, char *key, int *__ierr,
 	/* not enough space */
 	strncpy(key, tmpkey, keylen);
 	/* this should be flagged as an error. */
-	*__ierr = MPI_ERR_UNKNOWN;
+	*ierr = MPI_ERR_UNKNOWN;
     }
 
     ADIOI_Free(tmpkey);

@@ -7,7 +7,7 @@
 
 #include "ad_pvfs.h"
 #include "adio_extern.h"
-#ifdef __PROFILE
+#ifdef PROFILE
 #include "mpe.h"
 #endif
 
@@ -19,7 +19,7 @@ ADIO_Offset ADIOI_PVFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
    routine. */
 /* offset is in units of etype relative to the filetype */
 
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PVFS_SEEKINDIVIDUAL";
 #endif
     ADIO_Offset off, err;
@@ -62,17 +62,17 @@ ADIO_Offset ADIOI_PVFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
                 abs_off_in_filetype;
     }
 
-#ifdef __PROFILE
+#ifdef PROFILE
     MPE_Log_event(11, 0, "start seek");
 #endif
     err = pvfs_lseek(fd->fd_sys, off, SEEK_SET);
-#ifdef __PROFILE
+#ifdef PROFILE
     MPE_Log_event(12, 0, "end seek");
 #endif
     fd->fp_ind = off;
     fd->fp_sys_posn = off;
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (err == -1) {

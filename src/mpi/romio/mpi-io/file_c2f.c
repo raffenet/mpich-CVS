@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 #include "adio_extern.h"
@@ -35,7 +35,7 @@ Return Value:
 @*/
 MPI_Fint MPI_File_c2f(MPI_File fh)
 {
-#ifndef __INT_LT_POINTER
+#ifndef INT_LT_POINTER
     return (MPI_Fint) fh;
 #else
     int i;

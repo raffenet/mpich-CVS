@@ -6,11 +6,11 @@
  */
 
 #include "adio.h"
-#ifdef __MPISGI
+#ifdef MPISGI
 #include "mpisgi2.h"
 #endif
 
-#ifdef __MPICH
+#ifdef MPICH
 void MPIR_Datatype_iscontig(MPI_Datatype datatype, int *flag);
 
 void ADIOI_Datatype_iscontig(MPI_Datatype datatype, int *flag)
@@ -18,7 +18,7 @@ void ADIOI_Datatype_iscontig(MPI_Datatype datatype, int *flag)
     MPIR_Datatype_iscontig(datatype, flag);
 }
 
-#elif (defined(__MPIHP) && defined(__HAS_MPI_INFO))
+#elif (defined(MPIHP) && defined(HAS_MPI_INFO))
 /* i.e. HPMPI 1.4 only */
 
 int hpmp_dtiscontig(MPI_Datatype datatype);
@@ -28,7 +28,7 @@ void ADIOI_Datatype_iscontig(MPI_Datatype datatype, int *flag)
     *flag = hpmp_dtiscontig(datatype);
 }
 
-#elif (defined(__MPISGI) && !defined(__NO_MPI_SGI_type_is_contig))
+#elif (defined(MPISGI) && !defined(NO_MPI_SGI_type_is_contig))
 
 int MPI_SGI_type_is_contig(MPI_Datatype datatype);
 
@@ -60,7 +60,7 @@ void ADIOI_Datatype_iscontig(MPI_Datatype datatype, int *flag)
 			      adds, types); 
 	ADIOI_Datatype_iscontig(types[0], flag);
 
-#ifndef __MPISGI
+#ifndef MPISGI
 /* There is a bug in SGI's impl. of MPI_Type_get_contents. It doesn't
    return new datatypes. Therefore no need to free. */
 	MPI_Type_get_envelope(types[0], &ni, &na, &nt, &cb);

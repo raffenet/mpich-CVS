@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 
@@ -36,7 +36,7 @@ Input Parameters:
 int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 {
     int error_code;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_SEEK";
 #endif
     MPI_Offset curr_offset, eof_offset;
@@ -46,7 +46,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
     HPMP_IO_START(fl_xmpi, BLKMPIFILESEEK, TRDTBLOCK, fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
 	FPRINTF(stderr, "MPI_File_seek: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -56,7 +56,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 #endif
 
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_seek: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -69,7 +69,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
     switch(whence) {
     case MPI_SEEK_SET:
 	if (offset < 0) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	    FPRINTF(stderr, "MPI_File_seek: Invalid offset argument\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -84,7 +84,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 	ADIOI_Get_position(fh, &curr_offset);
 	offset += curr_offset;
 	if (offset < 0) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	    FPRINTF(stderr, "MPI_File_seek: offset points to a negative location in the file\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -99,7 +99,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 	ADIOI_Get_eof_offset(fh, &eof_offset);
 	offset += eof_offset;
 	if (offset < 0) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	    FPRINTF(stderr, "MPI_File_seek: offset points to a negative location in the file\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -110,7 +110,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 	}
 	break;
     default:
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_seek: Invalid whence argument\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else

@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 
@@ -37,12 +37,12 @@ Output Parameters:
 @*/
 int MPI_File_write_at_all_end(MPI_File fh, void *buf, MPI_Status *status)
 {
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     int error_code;
     static char myname[] = "MPI_FILE_WRITE_AT_ALL_END";
 #endif
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
 	FPRINTF(stderr, "MPI_File_write_at_all_end: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -52,7 +52,7 @@ int MPI_File_write_at_all_end(MPI_File fh, void *buf, MPI_Status *status)
 #endif
 
     if (!(fh->split_coll_count)) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_write_at_all_end: Does not match a previous MPI_File_write_at_all_begin\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else

@@ -32,7 +32,7 @@ int ADIOI_Set_lock(int fd, int cmd, int type, ADIO_Offset offset, int whence,
 }
 
 
-#if (defined(__HFS) || defined(__XFS))
+#if (defined(HFS) || defined(XFS))
 int ADIOI_Set_lock64(int fd, int cmd, int type, ADIO_Offset offset, int whence,
 	     ADIO_Offset len) 
 {

@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 
@@ -35,7 +35,7 @@ Input Parameters:
 int MPI_File_set_size(MPI_File fh, MPI_Offset size)
 {
     int error_code;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_SET_SIZE";
 #endif
     MPI_Offset tmp_sz;
@@ -46,7 +46,7 @@ int MPI_File_set_size(MPI_File fh, MPI_Offset size)
 		  MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
 	FPRINTF(stderr, "MPI_File_set_size: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -56,7 +56,7 @@ int MPI_File_set_size(MPI_File fh, MPI_Offset size)
 #endif
 
     if (size < 0) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_set_size: Invalid size argument\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -70,7 +70,7 @@ int MPI_File_set_size(MPI_File fh, MPI_Offset size)
     MPI_Bcast(&tmp_sz, 1, ADIO_OFFSET, 0, fh->comm);
 
     if (tmp_sz != size) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_set_size: size argument must be the same on all processes\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else

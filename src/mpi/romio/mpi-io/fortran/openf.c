@@ -12,18 +12,18 @@
 #include "adio.h"
 
 
-#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
+#if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_open_ PMPI_FILE_OPEN
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_file_open_ pmpi_file_open__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_file_open pmpi_file_open_
 #endif
 #define mpi_file_open_ pmpi_file_open
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_file_open_ pmpi_file_open
 #endif
 #define mpi_file_open_ pmpi_file_open_
@@ -76,20 +76,20 @@
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_file_open_ mpi_file_open__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_file_open mpi_file_open_
 #endif
 #define mpi_file_open_ mpi_file_open
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_file_open_ mpi_file_open
 #endif
 #endif
 #endif
 
-#if defined(__MPIHP) || defined(__MPILAM)
+#if defined(MPIHP) || defined(MPILAM)
 void mpi_file_open_(MPI_Fint *comm,char *filename,int *amode,
-                  MPI_Fint *info, MPI_Fint *fh, int *__ierr, int str_len )
+                  MPI_Fint *info, MPI_Fint *fh, int *ierr, int str_len )
 {
     char *newfname;
     MPI_File fh_c;
@@ -116,7 +116,7 @@ void mpi_file_open_(MPI_Fint *comm,char *filename,int *amode,
     strncpy(newfname, filename, real_len);
     newfname[real_len] = '\0';
 
-    *__ierr = MPI_File_open(comm_c, newfname, *amode, info_c, &fh_c);
+    *ierr = MPI_File_open(comm_c, newfname, *amode, info_c, &fh_c);
 
     *fh = MPI_File_c2f(fh_c);
     ADIOI_Free(newfname);
@@ -126,13 +126,13 @@ void mpi_file_open_(MPI_Fint *comm,char *filename,int *amode,
 
 #if _UNICOS
 void mpi_file_open_(MPI_Comm *comm,_fcd filename_fcd,int *amode,
-                  MPI_Fint *info, MPI_Fint *fh, int *__ierr)
+                  MPI_Fint *info, MPI_Fint *fh, int *ierr)
 {
     char *filename = _fcdtocp(filename_fcd);
     int str_len = _fcdlen(filename_fcd);
 #else
 void mpi_file_open_(MPI_Comm *comm,char *filename,int *amode,
-                  MPI_Fint *info, MPI_Fint *fh, int *__ierr, int str_len )
+                  MPI_Fint *info, MPI_Fint *fh, int *ierr, int str_len )
 {
 #endif
     char *newfname;
@@ -158,7 +158,7 @@ void mpi_file_open_(MPI_Comm *comm,char *filename,int *amode,
     strncpy(newfname, filename, real_len);
     newfname[real_len] = '\0';
 
-    *__ierr = MPI_File_open(*comm, newfname, *amode, info_c, &fh_c);
+    *ierr = MPI_File_open(*comm, newfname, *amode, info_c, &fh_c);
 
     *fh = MPI_File_c2f(fh_c);
     ADIOI_Free(newfname);

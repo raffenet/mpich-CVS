@@ -9,8 +9,10 @@
 
 int ADIOI_PIOFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_code)  
 {
-
     if (*request != ADIO_REQUEST_NULL) {
+#ifdef HAVE_STATUS_SET_BYTES
+	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
+#endif
 	(*request)->fd->async_count--;
 	ADIOI_Free_request((ADIOI_Req_node *) (*request));
 	*request = ADIO_REQUEST_NULL;
@@ -18,9 +20,6 @@ int ADIOI_PIOFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_
 
     *error_code = MPI_SUCCESS;
     return 1;
-
-/* status to be filled */
-
 }
 
 

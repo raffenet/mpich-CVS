@@ -6,19 +6,19 @@
  */
 
 #include "adio.h"
-#ifdef __MPISGI
+#ifdef MPISGI
 #include "mpisgi2.h"
 #endif
 
 void ADIO_Close(ADIO_File fd, int *error_code)
 {
     int i, j, k, combiner, myrank, err, is_contig;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIO_CLOSE";
 #endif
 
     if (fd->async_count) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "ADIO_Close: Error! There are outstanding nonblocking I/O operations on this file.\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else

@@ -7,14 +7,16 @@
 
 #include "ad_ufs.h"
 
-void ADIOI_UFS_IreadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+void ADIOI_UFS_IreadContig(ADIO_File fd, void *buf, int count, 
+                MPI_Datatype datatype, int file_ptr_type,
                 ADIO_Offset offset, ADIO_Request *request, int *error_code)  
 {
-#ifdef __NO_AIO
+    int len, typesize;
+#ifdef NO_AIO
     ADIO_Status status;
 #else
     int err=-1;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_UFS_IREADCONTIG";
 #endif
 #endif
@@ -22,30 +24,34 @@ void ADIOI_UFS_IreadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
     (*request) = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_READ;
     (*request)->fd = fd;
-    (*request)->next = ADIO_REQUEST_NULL;
+    (*request)->datatype = datatype;
 
-#ifdef __NO_AIO
+    MPI_Type_size(datatype, &typesize);
+    len = count * typesize;
+
+#ifdef NO_AIO
     /* HP, FreeBSD, Linux */
     /* no support for nonblocking I/O. Use blocking I/O. */
 
-    ADIOI_UFS_ReadContig(fd, buf, len, file_ptr_type, offset, &status,
-                    error_code);  
+    ADIOI_UFS_ReadContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, 
+			 &status, error_code);  
     (*request)->queued = 0;
+#ifdef HAVE_STATUS_SET_BYTES
+    if (*error_code == MPI_SUCCESS) {
+	MPI_Get_elements(&status, MPI_BYTE, &len);
+	(*request)->nbytes = len;
+    }
+#endif
 
 #else
-    if ((fd->iomode == M_ASYNC) || (fd->iomode == M_UNIX)) {
-        if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
-
-        err = ADIOI_UFS_aio(fd, buf, len, offset, 0, 
-                           &((*request)->handle));
-
-        if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len;
-    }
+    if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
+    err = ADIOI_UFS_aio(fd, buf, len, offset, 0, &((*request)->handle));
+    if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len;
 
     (*request)->queued = 1;
     ADIOI_Add_req_to_list(request);
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (err == -1) {
@@ -58,11 +64,7 @@ void ADIOI_UFS_IreadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 #endif
 
     fd->fp_sys_posn = -1;   /* set it to null. */
-
     fd->async_count++;
-
-/* status info. must be linked to the request structure, so that it
-   can be accessed later from a wait */
 }
 
 
@@ -73,11 +75,14 @@ void ADIOI_UFS_IreadStrided(ADIO_File fd, void *buf, int count,
                        *error_code)
 {
     ADIO_Status status;
+#ifdef HAVE_STATUS_SET_BYTES
+    int typesize;
+#endif
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_READ;
     (*request)->fd = fd;
-    (*request)->next = ADIO_REQUEST_NULL;
+    (*request)->datatype = datatype;
     (*request)->queued = 0;
     (*request)->handle = 0;
 
@@ -87,7 +92,10 @@ void ADIOI_UFS_IreadStrided(ADIO_File fd, void *buf, int count,
 
     fd->async_count++;
 
-/* status info. must be linked to the request structure, so that it
-   can be accessed later from a wait */
-
+#ifdef HAVE_STATUS_SET_BYTES
+    if (*error_code == MPI_SUCCESS) {
+	MPI_Type_size(datatype, &typesize);
+	(*request)->nbytes = count * typesize;
+    }
+#endif
 }

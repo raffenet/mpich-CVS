@@ -10,7 +10,7 @@
 void ADIOI_PFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
 {
     int err=0;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PFS_READCOMPLETE";
 #endif
 
@@ -19,19 +19,9 @@ void ADIOI_PFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
         return;
     }
 
-    if (((*request)->next != ADIO_REQUEST_NULL) && ((*request)->queued != -1))
-        /* the second condition is to take care of the ugly hack in
-            ADIOI_Complete_async */
-
-        ADIOI_PFS_ReadComplete(&((*request)->next), status, error_code);
-
-    /* currently passing status and error_code here, but something else
-       needs to be done to get the status and error info correctly */
-
-
     if ((*request)->queued) {
 	err = _iowait(*((long *) (*request)->handle));
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	*error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
 	if (err == -1) {
@@ -43,6 +33,10 @@ void ADIOI_PFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 #endif
     }
     else *error_code = MPI_SUCCESS;
+#ifdef HAVE_STATUS_SET_BYTES
+    if ((*request)->nbytes != -1)
+	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
+#endif
 
     if ((*request)->queued != -1) {
 
@@ -63,9 +57,8 @@ void ADIOI_PFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
         ADIOI_Free_request((ADIOI_Req_node *) (*request));
         *request = ADIO_REQUEST_NULL;
     }
-
-/* status to be filled */
 }
+
 
 void ADIOI_PFS_WriteComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
 {

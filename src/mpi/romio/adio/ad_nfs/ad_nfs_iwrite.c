@@ -7,14 +7,16 @@
 
 #include "ad_nfs.h"
 
-void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count, 
+                MPI_Datatype datatype, int file_ptr_type,
                 ADIO_Offset offset, ADIO_Request *request, int *error_code)  
 {
-#ifdef __NO_AIO
+    int len, typesize;
+#ifdef NO_AIO
     ADIO_Status status;
 #else
     int err=-1;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_NFS_IWRITECONTIG";
 #endif
 #endif
@@ -22,30 +24,34 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_WRITE;
     (*request)->fd = fd;
-    (*request)->next = ADIO_REQUEST_NULL;
+    (*request)->datatype = datatype;
 
-#ifdef __NO_AIO
+    MPI_Type_size(datatype, &typesize);
+    len = count * typesize;
+
+#ifdef NO_AIO
     /* HP, FreeBSD, Linux */
     /* no support for nonblocking I/O. Use blocking I/O. */
 
-    ADIOI_NFS_WriteContig(fd, buf, len, file_ptr_type, offset, &status,
+    ADIOI_NFS_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, &status,
                     error_code);  
     (*request)->queued = 0;
+#ifdef HAVE_STATUS_SET_BYTES
+    if (*error_code == MPI_SUCCESS) {
+	MPI_Get_elements(&status, MPI_BYTE, &len);
+	(*request)->nbytes = len;
+    }
+#endif
 
 #else
-    if ((fd->iomode == M_ASYNC) || (fd->iomode == M_UNIX)) {
-	if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
-
-	err = ADIOI_NFS_aio(fd, buf, len, offset, 1, 
-                           &((*request)->handle));
-
-	if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len;
-    }
+    if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
+    err = ADIOI_NFS_aio(fd, buf, len, offset, 1, &((*request)->handle));
+    if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len;
 
     (*request)->queued = 1;
     ADIOI_Add_req_to_list(request);
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (err == -1) {
@@ -58,11 +64,7 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 #endif
 
     fd->fp_sys_posn = -1;   /* set it to null. */
-
     fd->async_count++;
-
-/* status info. must be linked to the request structure, so that it
-   can be accessed later from a wait */
 }
 
 
@@ -73,11 +75,14 @@ void ADIOI_NFS_IwriteStrided(ADIO_File fd, void *buf, int count,
                        *error_code)
 {
     ADIO_Status status;
+#ifdef HAVE_STATUS_SET_BYTES
+    int typesize;
+#endif
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_WRITE;
     (*request)->fd = fd;
-    (*request)->next = ADIO_REQUEST_NULL;
+    (*request)->datatype = datatype;
     (*request)->queued = 0;
     (*request)->handle = 0;
 
@@ -87,9 +92,12 @@ void ADIOI_NFS_IwriteStrided(ADIO_File fd, void *buf, int count,
 
     fd->async_count++;
 
-/* status info. must be linked to the request structure, so that it
-   can be accessed later from a wait */
-
+#ifdef HAVE_STATUS_SET_BYTES
+    if (*error_code == MPI_SUCCESS) {
+	MPI_Type_size(datatype, &typesize);
+	(*request)->nbytes = count * typesize;
+    }
+#endif
 }
 
 
@@ -102,9 +110,9 @@ int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 {
     int err=-1, fd_sys;
 
-#ifndef __NO_AIO
+#ifndef NO_AIO
 int error_code, this_errno;
-#ifdef __AIO_SUN 
+#ifdef AIO_SUN 
     aio_result_t *result;
 #else
     struct aiocb *aiocbp;
@@ -113,7 +121,7 @@ int error_code, this_errno;
     
     fd_sys = fd->fd_sys;
 
-#ifdef __AIO_SUN
+#ifdef AIO_SUN
     result = (aio_result_t *) ADIOI_Malloc(sizeof(aio_result_t));
     result->aio_return = AIO_INPROGRESS;
     if (wr) {
@@ -182,7 +190,7 @@ int error_code, this_errno;
     *((aio_result_t **) handle) = result;
 #endif
 
-#ifdef __NO_FD_IN_AIOCB
+#ifdef NO_FD_IN_AIOCB
 /* IBM */
     aiocbp = (struct aiocb *) ADIOI_Malloc(sizeof(struct aiocb));
     aiocbp->aio_whence = SEEK_SET;
@@ -252,7 +260,7 @@ int error_code, this_errno;
 
     *((struct aiocb **) handle) = aiocbp;
 
-#elif (!defined(__NO_AIO) && !defined(__AIO_SUN))
+#elif (!defined(NO_AIO) && !defined(AIO_SUN))
 /* DEC, SGI IRIX 5 and 6 */
 
     aiocbp = (struct aiocb *) ADIOI_Calloc(sizeof(struct aiocb), 1);
@@ -261,7 +269,7 @@ int error_code, this_errno;
     aiocbp->aio_buf = buf;
     aiocbp->aio_nbytes = len;
 
-#ifdef __AIO_PRIORITY_DEFAULT
+#ifdef AIO_PRIORITY_DEFAULT
 /* DEC */
     aiocbp->aio_reqprio = AIO_PRIO_DFL;   /* not needed DEC Unix 4.0 */
     aiocbp->aio_sigevent.sigev_signo = 0;
@@ -269,7 +277,7 @@ int error_code, this_errno;
     aiocbp->aio_reqprio = 0;
 #endif
 
-#ifdef __AIO_SIGNOTIFY_NONE
+#ifdef AIO_SIGNOTIFY_NONE
 /* SGI IRIX 6 */
     aiocbp->aio_sigevent.sigev_notify = SIGEV_NONE;
 #else

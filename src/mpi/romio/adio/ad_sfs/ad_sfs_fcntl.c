@@ -16,7 +16,7 @@ void ADIOI_SFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
     ADIO_Offset curr_fsize, alloc_size, size, done;
     ADIO_Status status;
     char *buf;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_SFS_FCNTL";
 #endif
 
@@ -94,7 +94,7 @@ void ADIOI_SFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	fcntl_struct->fsize = llseek(fd->fd_sys, 0, SEEK_END);
 	if (fd->fp_sys_posn != -1) 
 	     llseek(fd->fd_sys, fd->fp_sys_posn, SEEK_SET);
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 	*error_code = (fcntl_struct->fsize == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
 	if (fcntl_struct->fsize == -1) {
@@ -126,10 +126,10 @@ void ADIOI_SFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 
 	for (i=0; i<ntimes; i++) {
 	    len = (int) (ADIOI_MIN(size-done, ADIOI_PREALLOC_BUFSZ));
-	    ADIO_ReadContig(fd, buf, len, ADIO_EXPLICIT_OFFSET, done,
+	    ADIO_ReadContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, done,
 			    &status, error_code);
 	    if (*error_code != MPI_SUCCESS) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
 		FPRINTF(stderr, "ADIOI_SFS_Fcntl: To preallocate disk space, ROMIO needs to read the file and write it back, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
 #else
@@ -139,7 +139,7 @@ void ADIOI_SFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
                 return;  
 #endif
 	    }
-	    ADIO_WriteContig(fd, buf, len, ADIO_EXPLICIT_OFFSET, done,
+	    ADIO_WriteContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, done,
 			     &status, error_code);
 	    if (*error_code != MPI_SUCCESS) return;
 	    done += len;
@@ -151,7 +151,7 @@ void ADIOI_SFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	    ntimes = (int)((size + ADIOI_PREALLOC_BUFSZ - 1)/ADIOI_PREALLOC_BUFSZ);
 	    for (i=0; i<ntimes; i++) {
 		len = (int) (ADIOI_MIN(alloc_size-done, ADIOI_PREALLOC_BUFSZ));
-		ADIO_WriteContig(fd, buf, len, ADIO_EXPLICIT_OFFSET, 
+		ADIO_WriteContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
 				 done, &status, error_code);
 		if (*error_code != MPI_SUCCESS) return;
 		done += len;  

@@ -7,15 +7,19 @@
 
 #include "ad_hfs.h"
 
-void ADIOI_HFS_WriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
+void ADIOI_HFS_WriteContig(ADIO_File fd, void *buf, int count, 
+                     MPI_Datatype datatype, int file_ptr_type,
 		     ADIO_Offset offset, ADIO_Status *status, int *error_code)
 {
-    int err=-1;
-#ifndef __PRINT_ERR_MSG
+    int err=-1, datatype_size, len;
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_HFS_WRITECONTIG";
 #endif
 
-#ifdef __SPPUX
+    MPI_Type_size(datatype, &datatype_size);
+    len = datatype_size * count;
+
+#ifdef SPPUX
     fd->fp_sys_posn = -1; /* set it to null, since we are using pwrite */
     if (file_ptr_type == ADIO_EXPLICIT_OFFSET) 
 	err = pwrite64(fd->fd_sys, buf, len, offset);
@@ -25,7 +29,7 @@ void ADIOI_HFS_WriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
     }
 #endif
 
-#ifdef __HPUX
+#ifdef HPUX
     if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
 	if (fd->fp_sys_posn != offset)
 	    lseek64(fd->fd_sys, offset, SEEK_SET);
@@ -42,7 +46,11 @@ void ADIOI_HFS_WriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
     }
 #endif
 
-#ifdef __PRINT_ERR_MSG
+#ifdef HAVE_STATUS_SET_BYTES
+    if (err != -1) MPIR_Status_set_bytes(status, datatype, err);
+#endif
+
+#ifdef PRINT_ERR_MSG
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (err == -1) {

@@ -10,7 +10,7 @@
 int ADIOI_PFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_code)  
 {
     int done=0;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PFS_READDONE";
 #endif
 
@@ -19,20 +19,15 @@ int ADIOI_PFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
         return 1;
     }
 
-    if ((*request)->next != ADIO_REQUEST_NULL) {
-        done = ADIOI_PFS_ReadDone(&((*request)->next), status, error_code);
-    /* currently passing status and error_code here, but something else
-       needs to be done to get the status and error info correctly */
-        if (!done) {
-           *error_code = MPI_SUCCESS;
-           return done;
-        }
-    }
-    
     if ((*request)->queued)
 	done = _iodone(*((long *) (*request)->handle));
     else done = 1; /* ADIOI_Complete_Async completed this request, 
                       but request object was not freed. */
+
+#ifdef HAVE_STATUS_SET_BYTES
+    if ((done == 1) && ((*request)->nbytes != -1))
+	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
+#endif
 
     if (done == 1) {
         /* if request is still queued in the system, it is also there
@@ -43,10 +38,9 @@ int ADIOI_PFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
         if ((*request)->handle) ADIOI_Free((*request)->handle);
         ADIOI_Free_request((ADIOI_Req_node *) (*request));
         *request = ADIO_REQUEST_NULL;
-        /* status to be filled */
     }
     
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     *error_code = (done == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 #else
     if (err == -1) {

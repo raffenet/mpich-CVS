@@ -9,18 +9,18 @@
 #include "adio.h"
 
 
-#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
+#if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_get_nkeys_ PMPI_INFO_GET_NKEYS
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_get_nkeys_ pmpi_info_get_nkeys__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_info_get_nkeys pmpi_info_get_nkeys_
 #endif
 #define mpi_info_get_nkeys_ pmpi_info_get_nkeys
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_info_get_nkeys_ pmpi_info_get_nkeys
 #endif
 #define mpi_info_get_nkeys_ pmpi_info_get_nkeys_
@@ -73,21 +73,21 @@
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_get_nkeys_ mpi_info_get_nkeys__
 #elif !defined(FORTRANUNDERSCORE)
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_info_get_nkeys mpi_info_get_nkeys_
 #endif
 #define mpi_info_get_nkeys_ mpi_info_get_nkeys
 #else
-#if defined(__HPUX) || defined(__SPPUX)
+#if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF mpi_info_get_nkeys_ mpi_info_get_nkeys
 #endif
 #endif
 #endif
 
-void mpi_info_get_nkeys_(MPI_Fint *info, int *nkeys, int *__ierr )
+void mpi_info_get_nkeys_(MPI_Fint *info, int *nkeys, int *ierr )
 {
     MPI_Info info_c;
     
     info_c = MPI_Info_f2c(*info);
-    *__ierr = MPI_Info_get_nkeys(info_c, nkeys);
+    *ierr = MPI_Info_get_nkeys(info_c, nkeys);
 }

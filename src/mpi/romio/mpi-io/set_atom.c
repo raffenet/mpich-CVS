@@ -19,7 +19,7 @@
 #endif
 
 /* Include mapping from MPI->PMPI */
-#define __MPIO_BUILD_PROFILING
+#define MPIO_BUILD_PROFILING
 #include "mpioprof.h"
 #endif
 
@@ -35,12 +35,12 @@ Input Parameters:
 int MPI_File_set_atomicity(MPI_File fh, int flag)
 {
     int error_code, tmp_flag;
-#ifndef __PRINT_ERR_MSG
+#ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_SET_ATOMICITY";
 #endif
     ADIO_Fcntl_t *fcntl_struct;
 
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
 	FPRINTF(stderr, "MPI_File_set_atomicity: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
@@ -55,7 +55,7 @@ int MPI_File_set_atomicity(MPI_File fh, int flag)
     tmp_flag = flag;
     MPI_Bcast(&tmp_flag, 1, MPI_INT, 0, fh->comm);
     if (tmp_flag != flag) {
-#ifdef __PRINT_ERR_MSG
+#ifdef PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_set_atomicity: flag must be the same on all processes\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else
