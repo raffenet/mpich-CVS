@@ -93,7 +93,8 @@ Add this option to enable timing.  The two options for timing\_type are \texttt{
 and \texttt{log\_detailed}.  The \texttt{log} option will log only the MPI functions just
 like the MPE logging interface does.  The \texttt{log\_detailed} will log every
 function in mpich2.  This option gives fine grained logging information and
-also creates large log files.
+also creates large log files.  It must be used in conjunction with a timer-type that
+can log very short intervals on the order of 100's of nanoseconds.
 
 \item[\texttt{--with-logging=<logger>}]\mbox{}\\
 Specify the logging library to use.  Currently the only logger option is \texttt{rlog}.
@@ -108,6 +109,7 @@ mpich2/configure
     --enable-timing=log
     --with-logging=rlog
     --enable-timer-type=linux86_cycle
+    ...
 \end{verbatim}
 
 \section{Generating log files}
@@ -117,7 +119,9 @@ Run your mpi application to create intermediate .irlog files.
 \begin{verbatim}
 mpicc myapp.c -o myapp
 mpiexec -n 3 myapp
+\end{verbatim}
 There will be .irlog files created for each process:
+\begin{verbatim}
 log0.irlog
 log1.irlog
 log2.irlog
@@ -125,13 +129,17 @@ log2.irlog
 
 \section{RLOG tools}
 \label{sec:tools}
-Use the rlog tools to merge the .irlog files into an .rlog file.
+For performance reasons each process produces a local intermediate log file that
+needs to be merged into a single rlog file.  Use the rlog tools to merge the .irlog files
+ into an .rlog file.  The rlog tools are found in mpich2\_build/src/util/logging/rlog.
+Currently they are not copied to the install directory.
 
 \begin{description}
 \item[\texttt{irlog2rlog}]\mbox{}\\
 This tool combines the intermediate .irlog files to a single .rlog file.
 The usage is: irlog2rlog outname.rlog input0.irlog input1.irlog ...
-A shortcut is provided: irlog2rlog outname.rlog num\_files.
+A shortcut is provided: irlog2rlog outname.rlog num\_files.  Execute irlog2rlog
+without any parameters to see the usage options.
 
 \item[\texttt{printrlog}]\mbox{}\\
 This tool prints the contents of an .rlog file.
@@ -149,7 +157,7 @@ This section describes how to view a log file
 .rlog files can be printed from a command shell using the printrlog tool but
 the more interesting way to view the log files is from jumpshot.  jumpshot
 displays slog2 files and has a built in convertor to convert .rlog files to
-.slog2 files.
+.slog2 files.  Simply open jumpshot and point it at your .rlog file.
 
 \bibliographystyle{plain}
 \bibliography{logging}
