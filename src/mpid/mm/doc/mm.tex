@@ -120,6 +120,7 @@ MPID_Request * mm_request_alloc(void);
            int tmp_buffer_init(MPID_Request *request_ptr);
            int simple_buffer_init(MPID_Request *request_ptr);
 
+/* progress */
            int mm_make_progress();
 
 /* queues */
@@ -187,7 +188,10 @@ recv\_mop can be used for accumulate
 send\_mop could cause remote operations to occur.  We will not use send\_mop 
 currently.
 
-\section{MPI\_Send}
+\section{TCP}
+This section deals with the design of the TCP method.
+
+\subsection{MPI\_Send}
 This is what happens when MPI\_Send is called.
 \begin{verbatim}
 MPI_Send
@@ -204,7 +208,7 @@ vc_ptr-> socket_post_write
 socket_car_enqueue
 \end{verbatim}
 
-\section{MPID\_Progress\_wait - MPI\_Send}
+\subsection{MPID\_Progress\_wait - MPI\_Send}
 This is what happens when the progress engine completes the send operation.
 \begin{verbatim}
 MPID_Progress_wait
@@ -218,7 +222,7 @@ socket_car_dequeue_write
 mm_cq_enqueue
 \end{verbatim}
 
-\section{Completion queue - MPI\_Send}
+\subsection{Completion queue - MPI\_Send}
 This is what the completion queue does when the send completes.
 \begin{verbatim}
 cq_handle_write_car
@@ -226,7 +230,7 @@ mm_dec_cc
 mm_car_free
 \end{verbatim}
 
-\section{MPI\_Recv}
+\subsection{MPI\_Recv}
 This is what happens when MPI\_Recv is called.
 \begin{verbatim}
 MPI_Recv
@@ -246,7 +250,7 @@ mm_post_recv
 unpacker_vc_ptr->post_write
 \end{verbatim}
 
-\section{MPID\_Progress\_wait - MPI\_Recv}
+\subsection{MPID\_Progress\_wait - MPI\_Recv}
 This is what happens when the progress engine completes the recv operation.
 \begin{verbatim}
 MPID_Progress_wait
@@ -264,7 +268,7 @@ socket_handle_read
    mm_cq_enqueue(DATA_CAR)
 \end{verbatim}
 
-\section{Completion queue - MPI\_Recv}
+\subsection{Completion queue - MPI\_Recv}
 This is what the completion queue does when the recv completes
 \begin{verbatim}
 cq_handle_read_car
@@ -283,5 +287,17 @@ cq_handle_read_car
    2) last data car
       vc_ptr->post_read_pkt
 \end{verbatim}
+
+\section{Shared Memory}
+This section covers the shared memory method.
+
+\section{VIA}
+This section covers the VIA method.
+
+\section{VIA RDMA}
+This section covers the VIA method that uses RDMA.
+
+\section{Infiniband}
+This section covers the Infiniband method.
 
 \end{document}
