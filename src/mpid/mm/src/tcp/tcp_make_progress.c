@@ -180,7 +180,7 @@ int tcp_make_progress()
     if ((TCP_Process.num_readers == 0) &&
 	(TCP_Process.num_writers == 0))
     {
-	MM_EXIT_FUNC(TCP_MAKE_PROCESS);
+	MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
 	return MPI_SUCCESS;
     }
 
