@@ -156,7 +156,7 @@ int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t 
     /*
     if (signalled)
     {
-	printf("signalled rdma read rreq: sreq=0x%x, rreq=0x%x\n", rreq->handle, rreq->dev.rdma_request);
+	printf("signalled rdma read rreq: rreq=0x%x, sreq=0x%x\n", rreq->handle, rreq->dev.rdma_request);
 	fflush(stdout);
     }
     */
@@ -212,8 +212,6 @@ int MPIDI_CH3I_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
     /*
     printf("ibu_rdma: sreq = 0x%x, rreq = 0x%x.\n", reload_pkt->sreq, reload_pkt->sreq);
     printf("ibu_rdma: writing %d send buffers into %d recv buffers.\n", send_count, recv_count);fflush(stdout);
-    */
-    /*
     for (i=0; i<send_count; i++)
     {
 	printf("ibu_rdma: send buf[%d] = %p, len = %d\n",
@@ -438,6 +436,7 @@ int MPIDI_CH3I_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 		if ( (i != (recv_count - 1)) || (rbuf_len != 0) )
 		{
 		    /* partial read, the send iov needs to be reloaded */
+		    /*printf("partial read, the send iov needs to be reloaded.\n");fflush(stdout);*/
 
 		    if (rbuf_len != 0)
 		    {
@@ -464,10 +463,12 @@ int MPIDI_CH3I_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
     }
     if (siov_offset == send_count && sbuf_len == 0)
     {
-	rreq->ch.reload_state != MPIDI_CH3I_RELOAD_SENDER;
+	/*printf("reload sender state set.\n");fflush(stdout);*/
+	rreq->ch.reload_state |= MPIDI_CH3I_RELOAD_SENDER;
     }
     rreq->ch.siov_offset = siov_offset;
-    rreq->ch.reload_state != MPIDI_CH3I_RELOAD_RECEIVER;
+    /*printf("reload receiver state set.\n");fflush(stdout);*/
+    rreq->ch.reload_state |= MPIDI_CH3I_RELOAD_RECEIVER;
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
     return mpi_errno;

@@ -37,8 +37,8 @@ int MPIDI_CH3_do_cts(MPIDI_VC_t * vc, MPID_Request * rreq)
 	       i, rreq->dev.rdma_iov[i].MPID_IOV_BUF, rreq->dev.rdma_iov[i].MPID_IOV_LEN);
     }
     fflush(stdout);
+    printf("registering the receiver's iov.\n");fflush(stdout);
     */
-    /*printf("registering the receiver's iov.\n");fflush(stdout);*/
     for (i=0; i<rreq->dev.iov_count; i++)
     {
 	ibu_register_memory(rreq->dev.iov[i].MPID_IOV_BUF,

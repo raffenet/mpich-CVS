@@ -300,7 +300,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		int complete = 0;
 		ibu->state &= ~IBU_RDMA_READING;
 		rreq = (MPID_Request*)mem_ptr;
-		/*printf("rreq after rdma write: sreq=0x%x, rreq=0x%x\n", rreq->handle, rreq->dev.rdma_request);fflush(stdout);*/
+		/*printf("rreq after rdma read: rreq=0x%x, sreq=0x%x\n", rreq->handle, rreq->dev.rdma_request);fflush(stdout);*/
 		sreq_cached = rreq->dev.rdma_request;
 		if (rreq->ch.reload_state & MPIDI_CH3I_RELOAD_RECEIVER)
 		{
@@ -526,7 +526,6 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			rreq->dev.iov_count = 2;
 			rreq->ch.req = sreq;
 			recv_vc_ptr->ch.recv_active = rreq;
-			/*MPIDI_CH3I_post_read(recv_vc_ptr, &sreq->ch.rdma_iov, sreq->ch.rdma_iov_count * sizeof(MPID_IOV), NULL);*/
 		    }
 		    else if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3_PKT_IOV)
 		    {
@@ -625,7 +624,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 				sreq->dev.rdma_iov[2].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)&sreq->ch.local_iov_mem[0];
 				sreq->dev.rdma_iov[2].MPID_IOV_LEN = sreq->dev.iov_count * sizeof(ibu_mem_t);
 
-				mpi_errno = MPIDI_CH3_iStartMsgv(recv_vc_ptr, sreq->dev.rdma_iov, 2, &rts_sreq);
+				mpi_errno = MPIDI_CH3_iStartMsgv(recv_vc_ptr, sreq->dev.rdma_iov, 3, &rts_sreq);
 				/* --BEGIN ERROR HANDLING-- */
 				if (mpi_errno != MPI_SUCCESS)
 				{
@@ -758,6 +757,16 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		}
 		else
 		{
+		    /*
+		    int z;
+		    printf("posting a read of %d buffers\n",
+			   recv_vc_ptr->ch.recv_active->dev.iov_count);
+		    for (z=0; z<recv_vc_ptr->ch.recv_active->dev.iov_count; z++)
+		    {
+			printf(" [%d].len = %d\n", z, recv_vc_ptr->ch.recv_active->dev.iov[z].MPID_IOV_LEN);
+		    }
+		    fflush(stdout);
+		    */
 		    /*mpi_errno =*/ ibu_post_readv(ibu, recv_vc_ptr->ch.recv_active->dev.iov, recv_vc_ptr->ch.recv_active->dev.iov_count);
 		}
 		mem_ptr = (unsigned char *)mem_ptr + sizeof(MPIDI_CH3_Pkt_t);
@@ -846,7 +855,10 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		}
 		if (ibu->read.iovlen == 0)
 		{
+/* FIXME: This ifdef was added so the new code would compile with the old headers. It should be removed */
+#ifdef MPIDI_CH3_CHANNEL_RNDV
 		    if (recv_vc_ptr->ch.recv_active->kind < MPID_LAST_REQUEST_KIND)
+#endif
 		    {
 			ibu->state &= ~IBU_READING;
 			*num_bytes_ptr = ibu->read.total;
@@ -887,6 +899,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			    rreq->ch.remote_iov_mem[i] = recv_vc_ptr->ch.recv_active->ch.remote_iov_mem[i];
 			}
 			rreq->dev.rdma_iov_count = recv_vc_ptr->ch.recv_active->dev.rdma_iov_count;
+			rreq->dev.rdma_request = recv_vc_ptr->ch.recv_active->dev.rdma_request;
 
 			mpi_errno = MPIDI_CH3U_Handle_recv_pkt_rtsB(recv_vc_ptr,
 								    &recv_vc_ptr->ch.recv_active->ch.pkt,
@@ -962,13 +975,15 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			return IBU_SUCCESS;
 			break;
 		    }
-#endif /* MPIDI_CH3_CHANNEL_RNDV */
+/*#endif*/ /* MPIDI_CH3_CHANNEL_RNDV */
 		    else
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "invalid request type", recv_vc_ptr->ch.recv_active->kind);
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			return mpi_errno;
 		    }
+/* FIXME this line should be removed and the above line uncommented out */
+#endif /* MPIDI_CH3_CHANNEL_RNDV */
 		}
 	    }
 	    else

@@ -64,7 +64,7 @@ void *ib_malloc_register(size_t size, VAPI_mr_hndl_t *mhp, VAPI_lkey_t *lp, VAPI
     mem.start = (VAPI_virt_addr_t)ptr;
     mem.size = size;
     mem.pd_hndl = IBU_Process.pd_handle;
-    mem.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE;
+    mem.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE | VAPI_EN_REMOTE_READ;
     mem.l_key = 0;
     mem.r_key = 0;
     status = VAPI_register_mr(
@@ -372,7 +372,7 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
     mem.start = (VAPI_virt_addr_t)buf;
     mem.size = len;
     mem.pd_hndl = IBU_Process.pd_handle;
-    mem.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE;
+    mem.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE | VAPI_EN_REMOTE_READ;
     mem.l_key = 0;
     mem.r_key = 0;
     status = VAPI_register_mr(
