@@ -524,6 +524,9 @@ sub WriteAnnoteFileMap {
 	print IFD "Of $GrandTotal lines in code, $GrandTotalMissed lines were not covered\n";
 	my $percent = (100 * $GrandTotalMissed) / $GrandTotal;
 	my $covered = 100 - $percent;
+	# convert to strings
+        $percent = sprintf( "%.2f", $percent );
+	$covered = sprintf( "%.2f", $covered );
 	print IFD "or $percent% missed ($covered% covered)\n";
 	print IFD "<p>\n";
 	print IFD "The following files contained some code that was not executed.  Files in which all non-error-handling, non-debug code was executed are not shown\n"
