@@ -123,7 +123,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	    }
 	    
 	    mpi_errno = request_ptr->status.MPI_ERROR;
-	    MPID_Request_free(request_ptr);
+	    MPID_Request_release(request_ptr);
 
 	    if (mpi_errno == MPI_SUCCESS)
 	    {

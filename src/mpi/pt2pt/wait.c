@@ -91,7 +91,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	*status = request_ptr->status;
     }
     *request = MPI_REQUEST_NULL;
-    MPID_Request_free(request_ptr);
+    MPID_Request_release(request_ptr);
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WAIT);
     return MPI_SUCCESS;
