@@ -1026,7 +1026,7 @@ extern Datatype TWOINTEGER;
 		  MAX_PROCESSOR_NAME, MAX_ERROR_STRING,
 		  MAX_NAME_STRING, MAX_PORT_NAME, MAX_OBJECT_NAME,
                   MAX_INFO_VAL, MAX_INFO_KEY, 
-		  UNDEFINED, @errclasses ) {
+		  UNDEFINED, @errclasses, SEEK_SET, SEEK_END, SEEK_CUR) {
 	print $OUTFD "extern const int $int;\n";
     }
 
@@ -2034,6 +2034,22 @@ sub BeginClass {
 	open ( $OUTFD, ">$filename" ) || die "Could not open $filename\n";
 	$files[$#files+1] = $filename;
 	&print_header;
+	# Add a test for definitions that will cause problems
+        print $OUTFD "#ifdef MPI
+#error \"You cannot define MPI; that name is reserved for the MPI namespace\"
+#endif\n";
+        print $OUTFD "#ifdef SEEK_SET
+#warning \"SEEK_SET is defined by MPI\"
+#undef SEEK_SET
+#endif
+#ifdef SEEK_CUR
+#warning \"SEEK_CUR is defined by MPI\"
+#undef SEEK_CUR
+#endif
+#ifdef SEEK_END
+#under SEEK_END
+#warning\"SEEK_END is defined by MPI\"
+#endif\n\n";
 	print $OUTFD "namespace MPI {\n";
     }
     else {
