@@ -5,3 +5,6 @@ Debug
 Release
 *.dsp
 *.plg
+configure
+config.log
+config.status
