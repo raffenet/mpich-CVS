@@ -15,7 +15,9 @@ Open Items:
 * (req #87) fix hello world hang on Alpha (Redhat 7.2, gcc 2.96) [Brian]
 
 * (req #77) test that logging compiles (all states are defined) before
-  releasing tarball [Bill/David/Brian]
+  releasing tarball [Bill/David/Brian] -- done - a new test script
+  ensures that these are tested.  Note that the nightlies will do this
+  as part of the random tests.
 
 * measure and compare performance of sock and ssm (using sock) [David]
 
