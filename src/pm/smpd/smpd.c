@@ -114,14 +114,14 @@ int main(int argc, char* argv[])
 	    strcat(smpd_filename, "/.smpd");
 	else
 	    strcat(smpd_filename, ".smpd");
-	printf("Would you like to save this passphrase in '%s'? ");
+	printf("Would you like to save this passphrase in '%s'? ", smpd_filename);
 	fflush(stdout);
 	fgets(response, 100, stdin);
 	if (strcmp(response, "yes") == 0 || strcmp(response, "Yes") == 0 || strcmp(response, "YES") == 0 ||
 	    strcmp(response, "Y") == 0 || strcmp(response, "y") == 0)
 	{
 	    FILE *fout;
-	    umask(0);
+	    umask(700);
 	    fout = fopen(smpd_filename, "w");
 	    if (fout == NULL)
 	    {
