@@ -146,19 +146,20 @@ public class Arrow
             orig_stroke = g.getStroke();
             g.setStroke( stroke );
         }
-        g.setColor( color );
 
-        // Draw the main line
+        g.setColor( color );
+        // Draw the main line with possible characteristic from stroke
         g.drawLine( iHead, jHead, iTail, jTail );
-        // Draw the arrow head
+
+        if ( stroke != null )
+            g.setStroke( orig_stroke );
+
+        // Draw the arrow head without stroke's effect
         if ( isFinalVtxInImg ) {
             g.drawLine( iTail,  jTail,   iLeft,  jLeft );
             g.drawLine( iLeft,  jLeft,   iRight, jRight );
             g.drawLine( iRight, jRight,  iTail,  jTail );
         }
-
-        if ( stroke != null )
-            g.setStroke( orig_stroke );
 
         return 1;
     }

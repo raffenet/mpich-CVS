@@ -18,6 +18,13 @@ import base.drawable.DrawnBox;
 
 public class State
 {
+    private static StateBorder BorderStyle  = StateBorder.WHITE_RAISED_BORDER;
+
+    public static void setBorderStyle( final StateBorder state_border )
+    {
+        BorderStyle = state_border;
+    }
+
     /*
         Draw a Rectangle between left-upper vertex (start_time, start_ypos) 
         and right-lower vertex (final_time, final_ypos)
@@ -43,8 +50,8 @@ public class State
         jFinal   = coord_xform.convertRowToPixel( final_ypos );
 
         boolean  isStartVtxInImg, isFinalVtxInImg;
-        isStartVtxInImg = iStart >= 0 ;
-        isFinalVtxInImg = iFinal <  coord_xform.getImageWidth();
+        isStartVtxInImg = ( iStart >= 0 ) ;
+        isFinalVtxInImg = ( iFinal <  coord_xform.getImageWidth() );
 
         int iHead, iTail, jHead, jTail;
         // jHead = slope * ( iHead - iStart ) + jStart
@@ -52,6 +59,7 @@ public class State
             iHead = iStart;
         else
             iHead = 0;
+            // iHead = -1;
         jHead    = jStart;
 
         // jTail = slope * ( iTail - iFinal ) + jFinal
@@ -59,33 +67,15 @@ public class State
             iTail = iFinal;
         else
             iTail = coord_xform.getImageWidth() - 1;
+            // iTail = coord_xform.getImageWidth();
         jTail    = jFinal;
             
         // Fill the color of the rectangle
-        if ( iTail > iHead && jTail > jHead ) {
-            g.setColor( color );
-            g.fillRect( iHead, jHead, iTail-iHead, jTail-jHead );
-        }
+        g.setColor( color );
+        g.fillRect( iHead, jHead, iTail-iHead+1, jTail-jHead+1 );
 
-        Stroke orig_stroke = null;
-        if ( stroke != null ) {
-            orig_stroke = g.getStroke();
-            g.setStroke( stroke );
-        }
-
-        // Draw the outline of the rectangle
-        g.setColor( Color.white );
-        g.drawLine( iHead, jHead, iTail, jHead );
-        g.drawLine( iHead, jTail, iTail, jTail );
-
-        if ( isStartVtxInImg )
-            g.drawLine( iHead, jHead, iHead, jTail );
-        if ( isFinalVtxInImg )
-            g.drawLine( iTail, jHead, iTail, jTail );
-
-        if ( stroke != null )
-            g.setStroke( orig_stroke );
-
+        BorderStyle.paintStateBorder( g, iHead, jHead, isStartVtxInImg,
+                                         iTail, jTail, isFinalVtxInImg );
         return 1;
     }
 
