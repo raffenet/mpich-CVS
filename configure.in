@@ -1841,7 +1841,9 @@ else
         MPI_OFFSET=long
     fi
 fi
+MPI_OFFSET_TYPEDEF="typedef $MPI_OFFSET MPI_Offset;"
 AC_SUBST(MPI_OFFSET)
+AC_SUBST(MPI_OFFSET_TYPEDEF)
 dnl
 dnl Temporary value for extra status information, from device subsystem
 AC_SUBST(EXTRA_STATUS_DECL)

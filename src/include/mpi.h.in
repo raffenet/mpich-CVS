@@ -304,7 +304,7 @@ typedef @MPI_FINT@ MPI_Fint;
 /* This define is temporary; it lets ROMIO know that MPI_Offset is already
    defined */
 #define HAVE_MPI_OFFSET
-typedef @MPI_OFFSET@ MPI_Offset;
+@MPI_OFFSET_TYPEDEF@
 
 /* The order of these elements must match that in mpif.h */
 typedef struct MPI_Status {
