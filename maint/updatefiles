@@ -8,6 +8,7 @@
 # Eventually, we want to allow this script to be executed anywhere in the
 # mpich tree.  This is not yet implemented.
 error_summary=""
+acVersion=unknown
 at_top=no
 if [ -d maint -a -s maint/simplemake.in ] ; then
     at_top=yes
@@ -118,6 +119,7 @@ fi
 # Check that you have a working autoconf.  Autoconf 2.57 is not compatible with
 # previous versions of autoconf (!!), even 2.52 (!!!).  
 acIncDirFlag=-l
+acVersion=ok
 if test ! -d .tmp ; then
     mkdir .tmp 2>&1 >/dev/null
 fi
@@ -136,13 +138,17 @@ to see the version of autoconf (unfortunately, there is no standard
 format for the version output and it changes between autoconf versions).
 
 This version of updatefiles attempts to workaround the incompatibilities
-in autoconf 2.57, but problems remain.
+in autoconf 2.57, but problems remain.  In particular, you may run
+into trouble if you need to execute 
+    make configure
+on a platform different that the one you ran $0 on.
 
 EOF
     error_summary="$error_summary\
 Your do not have a usable version of autoconf (either no version found\
 or version 2.57 or later"
     acIncDirFlag=-B
+    acVersion=2-57
 fi
 rm -rf .tmp
 
@@ -420,9 +426,28 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround"
 	        # directory.  
 	        if [ $dir = "./src/mpi/romio" ] ; then
 		    echo $dir
-		    (cd $dir && \
-		     autoheader $acIncDirFlag ../../../confdb configure2.in > adio/include/romioconf.h.in ; \
-		     autoconf $acIncDirFlag ../../../confdb configure2.in > configure )
+		    if [ $acVersion = "2-57" ] ; then
+	            # Note that the 2.57 autoheader *ignores* the command-line
+	            # argument (!)  Yes, this is very badly broken.
+		    # Also note that aclocal tends to read *everything* in the 
+		    # include directory, rather than processing the files. 
+		    # This breaks the handling of the different autoconf
+		    # versions by the macros in that directory
+		        if [ -s $dir/configure.in ] ; then
+			    mv -f $dir/configure.in $dir/configure.in.orig
+			fi
+			cp -f $dir/configure2.in $dir/configure.in
+ 		        (cd $dir && \
+		        autoheader $acIncDirFlag ../../../confdb ; \
+		        autoconf $acIncDirFlag ../../../confdb )
+			if [ -s $dir/configure.in.orig ] ; then
+			    mv -f $dir/configure.in.orig $dir/configure.in
+			fi
+		    else
+		        (cd $dir && \
+		         autoheader $acIncDirFlag ../../../confdb configure2.in > adio/include/romioconf.h.in ; \
+		         autoconf $acIncDirFlag ../../../confdb configure2.in > configure )
+		     fi
 		fi
 	        continue
 	    fi
@@ -462,6 +487,8 @@ EOF/g' configure > c.tmp
 	    elif grep 'src/Makefile \\ src' $dir/configure 2>&1 >/dev/null ; then 
 		fixBackWhackCtrlMBug=yes
 	    elif grep 'attr/Makefile \\ util' $dir/configure 2>&1 >/dev/null ; then 
+		fixBackWhackCtrlMBug=yes
+	    elif grep 'attr/Makefile \\' $dir/configure 2>&1 >/dev/null ; then 
 		fixBackWhackCtrlMBug=yes
             fi
 	    # Add other tests here (sigh) as necessary
