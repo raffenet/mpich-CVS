@@ -109,6 +109,7 @@ int bmake_nonblocking( int );
 
 int beasy_create(int *bfd, int port, unsigned long addr);
 int beasy_connect(int bfd, char *host, int port);
+int beasy_connect_timeout(int bfd, char *host, int port, int seconds);
 int beasy_accept(int bfd);
 int beasy_closesocket(int bfd);
 int beasy_get_sock_info(int bfd, char *name, int *port);
