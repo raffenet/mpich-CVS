@@ -55,6 +55,8 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len)
     return total;
 }
 
+#ifdef USE_SHM_WRITE_FOR_SHM_WRITEV
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_SHM_writev
 #undef FCNAME
@@ -86,6 +88,114 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
     return total;
 }
 
+#else
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_writev
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
+{
+    int i;
+    unsigned int total = 0;
+    unsigned int num_bytes;
+    unsigned int cur_avail, dest_avail;
+    unsigned char *cur_pos, *dest_pos;
+    int index;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
+
+    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
+    index = vc->shm.shm->tail_index;
+    if (vc->shm.shm->packet[index].avail == MPIDI_CH3I_PKT_USED)
+    {
+	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
+	return 0;
+    }
+    dest_pos = vc->shm.shm->packet[index].data;
+    dest_avail = MPIDI_CH3I_PACKET_SIZE;
+    vc->shm.shm->packet[index].num_bytes = 0;
+    for (i=0; i<n; i++)
+    {
+	if (iov[i].MPID_IOV_LEN <= dest_avail)
+	{
+	    total += iov[i].MPID_IOV_LEN;
+	    vc->shm.shm->packet[index].num_bytes += iov[i].MPID_IOV_LEN;
+	    dest_avail -= iov[i].MPID_IOV_LEN;
+	    memcpy(dest_pos, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN);
+	    dest_pos += iov[i].MPID_IOV_LEN;
+	    if (dest_avail == 0)
+	    {
+		vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
+		index = vc->shm.shm->tail_index = (vc->shm.shm->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
+		if (vc->shm.shm->packet[index].avail == MPIDI_CH3I_PKT_USED)
+		{
+		    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
+		    return total;
+		}
+		dest_pos = vc->shm.shm->packet[index].data;
+		dest_avail = MPIDI_CH3I_PACKET_SIZE;
+	    }
+	}
+	else
+	{
+	    total += dest_avail;
+	    vc->shm.shm->packet[index].num_bytes = MPIDI_CH3I_PACKET_SIZE;
+	    memcpy(dest_pos, iov[i].MPID_IOV_BUF, dest_avail);
+	    vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
+	    cur_pos = iov[i].MPID_IOV_BUF + dest_avail;
+	    cur_avail = iov[i].MPID_IOV_LEN - dest_avail;
+	    num_bytes = 0;
+	    while (cur_avail)
+	    {
+		index = vc->shm.shm->tail_index = (vc->shm.shm->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
+		if (vc->shm.shm->packet[index].avail == MPIDI_CH3I_PKT_USED)
+		{
+		    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
+		    return total;
+		}
+		num_bytes = min(cur_avail, MPIDI_CH3I_PACKET_SIZE);
+		vc->shm.shm->packet[index].num_bytes = num_bytes;
+		memcpy(vc->shm.shm->packet[index].data, cur_pos, num_bytes);
+		total += num_bytes;
+		cur_pos += num_bytes;
+		cur_avail -= num_bytes;
+		if (cur_avail)
+		    vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
+	    }
+	    dest_pos = vc->shm.shm->packet[index].data + num_bytes;
+	    dest_avail = MPIDI_CH3I_PACKET_SIZE - num_bytes;
+	    if (dest_avail == 0)
+	    {
+		index = vc->shm.shm->tail_index = (vc->shm.shm->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
+		if (vc->shm.shm->packet[index].avail == MPIDI_CH3I_PKT_USED)
+		{
+		    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
+		    return total;
+		}
+		dest_pos = vc->shm.shm->packet[index].data;
+		dest_avail = MPIDI_CH3I_PACKET_SIZE;
+	    }
+	}
+    }
+    if (vc->shm.shm->packet[index].avail == MPIDI_CH3I_PKT_AVAILABLE && vc->shm.shm->packet[index].num_bytes > 0)
+    {
+	vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
+	vc->shm.shm->tail_index = (vc->shm.shm->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
+    }
+    
+    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
+    return total;
+}
+
+#endif /* USE_SHM_WRITE_FOR_SHM_WRITEV */
+
 #undef FUNCNAME
 #define FUNCNAME shmi_buffer_unex_read
 #undef FCNAME
@@ -101,7 +211,6 @@ static int shmi_buffer_unex_read(MPIDI_VC *vc_ptr, MPIDI_CH3I_SHM_Packet_t *pkt_
 
     p = (MPIDI_CH3I_SHM_Unex_read_t *)malloc(sizeof(MPIDI_CH3I_SHM_Unex_read_t));
     p->pkt_ptr = pkt_ptr;
-    /*p->mem_ptr = mem_ptr;*/
     p->buf = (unsigned char *)mem_ptr + offset;
     p->length = num_bytes;
     p->next = vc_ptr->shm.unex_list;
@@ -144,6 +253,7 @@ static int shmi_read_unex(MPIDI_VC *vc_ptr)
 	{
 	    /* put the receive packet back in the pool */
 	    assert(vc_ptr->shm.unex_list->pkt_ptr != NULL);
+	    vc_ptr->shm.unex_list->pkt_ptr->cur_pos = vc_ptr->shm.unex_list->pkt_ptr->data;
 	    vc_ptr->shm.unex_list->pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
 	    /* free the unexpected data node */
 	    temp = vc_ptr->shm.unex_list;
@@ -205,6 +315,7 @@ int shmi_readv_unex(MPIDI_VC *vc_ptr)
 	{
 	    /* put the receive packet back in the pool */
 	    assert(vc_ptr->shm.unex_list->pkt_ptr != NULL);
+	    vc_ptr->shm.unex_list->pkt_ptr->cur_pos = vc_ptr->shm.unex_list->pkt_ptr->data;
 	    vc_ptr->shm.unex_list->pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
 	    /* free the unexpected data node */
 	    temp = vc_ptr->shm.unex_list;
@@ -275,7 +386,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 	    if (vc->shm.shm[i].packet[index].avail == MPIDI_CH3I_PKT_AVAILABLE)
 		continue;
 
-	    mem_ptr = (void*)vc->shm.shm[i].packet[index].data;
+	    mem_ptr = (void*)vc->shm.shm[i].packet[index].cur_pos; /*(void*)vc->shm.shm[i].packet[index].data;*/
 	    pkt_ptr = &vc->shm.shm[i].packet[index];
 	    num_bytes = vc->shm.shm[i].packet[index].num_bytes;
 	    recv_vc_ptr = &vc->shm.pg->vc_table[i]; /* This should be some GetVC function with a complete context */
@@ -284,7 +395,8 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 	    /*MPIDI_DBG_PRINTF((60, FCNAME, "shm_wait(recv finished %d bytes)", num_bytes));*/
 	    if (!(recv_vc_ptr->shm.state & SHM_READING))
 	    {
-		shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, 0, num_bytes);
+		/* Should we buffer unexpected messages or leave them in the shmem queue? */
+		/*shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, 0, num_bytes);*/
 		continue;
 	    }
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read update, total = %d + %d = %d\n", recv_vc_ptr->shm.read.total, num_bytes, recv_vc_ptr->shm.read.total + num_bytes));
@@ -321,13 +433,18 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		if (num_bytes == 0)
 		{
 		    /* put the shm buffer back in the queue */
+		    vc->shm.shm[i].packet[index].cur_pos = vc->shm.shm[i].packet[index].data;
 		    vc->shm.shm[i].packet[index].avail = MPIDI_CH3I_PKT_AVAILABLE;
 		    vc->shm.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		}
 		else
 		{
 		    /* save the unused but received data */
-		    shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, offset, num_bytes);
+		    /*shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, offset, num_bytes);*/
+		    /* OR */
+		    /* update the head of the shmem queue */
+		    pkt_ptr->cur_pos += (pkt_ptr->num_bytes - num_bytes);
+		    pkt_ptr->num_bytes = num_bytes;
 		}
 		if (recv_vc_ptr->shm.read.iovlen == 0)
 		{
@@ -346,7 +463,9 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		    /* copy the received data */
 		    memcpy(recv_vc_ptr->shm.read.buffer, mem_ptr, recv_vc_ptr->shm.read.bufflen);
 		    recv_vc_ptr->shm.read.total = recv_vc_ptr->shm.read.bufflen;
-		    shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, recv_vc_ptr->shm.read.bufflen, num_bytes - recv_vc_ptr->shm.read.bufflen);
+		    /*shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, recv_vc_ptr->shm.read.bufflen, num_bytes - recv_vc_ptr->shm.read.bufflen);*/
+		    pkt_ptr->cur_pos += recv_vc_ptr->shm.read.bufflen;
+		    pkt_ptr->num_bytes = num_bytes - recv_vc_ptr->shm.read.bufflen;
 		    recv_vc_ptr->shm.read.bufflen = 0;
 		}
 		else
@@ -358,6 +477,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		    recv_vc_ptr->shm.read.buffer = (char*)(recv_vc_ptr->shm.read.buffer) + num_bytes;
 		    recv_vc_ptr->shm.read.bufflen -= num_bytes;
 		    /* put the shm buffer back in the queue */
+		    vc->shm.shm[i].packet[index].cur_pos = vc->shm.shm[i].packet[index].data;
 		    vc->shm.shm[i].packet[index].avail = MPIDI_CH3I_PKT_AVAILABLE;
 		    vc->shm.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		}

@@ -30,6 +30,7 @@ int MPIDI_CH3_Progress(int is_blocking)
     int spin_count = 0;
     unsigned completions = MPIDI_CH3I_progress_completions;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDU_YIELD);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS);
 
@@ -40,10 +41,12 @@ int MPIDI_CH3_Progress(int is_blocking)
 	switch (wait_result)
 	{
 	case SHM_WAIT_TIMEOUT:
-	    if (spin_count++ > MPIDI_CH3I_Process.pg->nShmWaitSpinCount)
+	    if (++spin_count >= MPIDI_CH3I_Process.pg->nShmWaitSpinCount)
 	    {
 		spin_count = 0;
+		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 		MPIDU_Yield();
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
 	    }
 	    break;
 	case SHM_WAIT_READ:

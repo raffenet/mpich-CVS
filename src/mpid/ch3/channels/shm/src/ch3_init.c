@@ -196,6 +196,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 		vc_table[i].shm.shm[j].tail_index = 0;
 		for (k=0; k<MPIDI_CH3I_NUM_PACKETS; k++)
 		{
+		    vc_table[i].shm.shm[j].packet[k].cur_pos = vc_table[i].shm.shm[j].packet[k].data;
 		    vc_table[i].shm.shm[j].packet[k].avail = MPIDI_CH3I_PKT_AVAILABLE;
 		}
 	    }

@@ -78,17 +78,27 @@ __attribute__ ((unused))
 #define MPIDI_CH3I_PKT_AVAILABLE  0
 #define MPIDI_CH3I_PKT_USED       1
 
+/* This structure uses the avail field to signal that the data is available for reading.
+   The code fills the data and then sets the avail field.
+   This assumes that declaring avail to be volatile causes the compiler to insert a
+   write barrier when the avail location is written to.
+   */
 typedef struct MPIDI_CH3I_SHM_Packet_t
 {
-    int avail;
+    volatile int avail;
     int num_bytes;
+    char *cur_pos;
+    /* insert stuff here to align data? */
+    int pad;
     char data[MPIDI_CH3I_PACKET_SIZE];
+    /* insert stuff here to pad the packet up to an aligned boundary? */
 } MPIDI_CH3I_SHM_Packet_t;
 
 typedef struct MPIDI_CH3I_SHM_Queue_t
 {
     int head_index;
     int tail_index;
+    /* insert stuff here to align the packets? */
     MPIDI_CH3I_SHM_Packet_t packet[MPIDI_CH3I_NUM_PACKETS];
 } MPIDI_CH3I_SHM_Queue_t;
 
