@@ -530,7 +530,7 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 		    -e '/@SET_MAKE@/d' Makefile.in > mf.tmp ;\
 		    if make -q -f mf.tmp configure >/dev/null 2>&1 ; then \
                 : ; else \
-	        echo "Found $dir/configure.in" ; \
+	        echo "Found $dir/configure.in; executing make configure target" ; \
 	        make -f mf.tmp configure ; fi ; rm -f mf.tmp  \
 	        )
 		if [ ! -x $dir/configure ] ; then
