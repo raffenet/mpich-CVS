@@ -44,15 +44,32 @@ Argonne National Laboratory}{00}{\today}
 \section{Introduction}
 This document contains detailed documentation on the routines that are part of
 the MPICH model MPI implementation.
+As an alternative to this manual, the reader should consider using either the
+man pages (often installed in \file{/usr/local/mpi/man}) or the web pages
+(often installed in \file{/usr/local/mpi/www}).
 
-As an alternate to this manual, the reader should consider using the
-script \code{mpiman}; this is a script that uses \code{xman} to provide
-a X11 Window System interface to the data in this manual.
+%As an alternate to this manual, the reader should consider using the
+%script \code{mpiman}; this is a script that uses \code{xman} to provide
+%a X11 Window System interface to the data in this manual.
 
 \section{MPI Commands}
 \input refcmd.tex
 
 \section{MPI routines}
+This section contains descriptions of each of the routines in the MPI
+standard, including both MPI-1 and MPI-2.
+
+In the description of the routine parameters, the following terms are
+used:
+\begin{description}
+\item[handle]An MPI object handle.  This is simply an object of the
+  specified type.
+\item[choice]Any type.  For example, this may be an 'int', 'double',
+  or structure type.  These are always passed with a pointer and in
+  the C and C++ bindings, a \code{void*} pointer is used.
+\end{description}
+Other terms, such as ``nonnegative integer,'' are self explanatory.
+
 \input refmpi.tex
 
 %\section{MPE routines}
