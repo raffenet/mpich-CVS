@@ -83,7 +83,7 @@ static int compare_token(const char *token, const char *str)
 	/* compare quoted strings */
 	token++; /* move over the first quote */
 	/* compare characters until reaching the end of the string or the end quote character */
-	do
+	for (;;)
 	{
 	    if (*token == SMPD_ESCAPE_CHAR)
 	    {
@@ -104,7 +104,7 @@ static int compare_token(const char *token, const char *str)
 		break;
 	    token++;
 	    str++;
-	} while (1);
+	}
 	if (*str == '\0' && *token == SMPD_QUOTE_CHAR)
 	    return 0;
 	if (*token == SMPD_QUOTE_CHAR)

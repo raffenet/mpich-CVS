@@ -631,8 +631,6 @@ int smpd_generate_session_header(char *str, int session_id)
 
 void smpd_get_password(char *password)
 {
-    char ch = 0;
-    int index = 0;
 #ifdef HAVE_WINDOWS_H
     HANDLE hStdin;
     DWORD dwMode;
@@ -724,6 +722,8 @@ void smpd_get_account_and_password(char *account, char *password)
 int smpd_get_credentials_from_parent(MPIDU_Sock_set_t set, MPIDU_Sock_t sock)
 {
     smpd_enter_fn("smpd_get_credentials_from_parent");
+    SMPD_UNREFERENCED_ARG(set);
+    SMPD_UNREFERENCED_ARG(sock);
     smpd_exit_fn("smpd_get_credentials_from_parent");
     return SMPD_FAIL;
 }
@@ -731,6 +731,8 @@ int smpd_get_credentials_from_parent(MPIDU_Sock_set_t set, MPIDU_Sock_t sock)
 int smpd_get_smpd_password_from_parent(MPIDU_Sock_set_t set, MPIDU_Sock_t sock)
 {
     smpd_enter_fn("smpd_get_smpd_password_from_parent");
+    SMPD_UNREFERENCED_ARG(set);
+    SMPD_UNREFERENCED_ARG(sock);
     smpd_exit_fn("smpd_get_smpd_password_from_parent");
     return SMPD_FAIL;
 }

@@ -27,7 +27,7 @@ int smpd_hash(char *input, int input_length, char *output, int output_length)
 	return SMPD_FAIL;
     }
 
-    hash_buffer[0] = input;
+    hash_buffer[0] = (const BYTE *)input;
     hash_buffer_len[0] = input_length;
 
     /* Initialize the CRYPT_ALGORITHM_IDENTIFIER data structure. */

@@ -336,7 +336,7 @@ int smpd_set_user_data(const char *key, const char *value)
     }
 
     len = (DWORD)(strlen(value)+1);
-    result = RegSetValueEx(tkey, key, 0, REG_SZ, value, len);
+    result = RegSetValueEx(tkey, key, 0, REG_SZ, (const BYTE *)value, len);
     if (result != ERROR_SUCCESS)
     {
 	smpd_err_printf("Unable to write the user smpd registry value '%s:%s', error %d\n", key, value, result);
@@ -378,7 +378,7 @@ int smpd_set_smpd_data(const char *key, const char *value)
     }
 
     len = (DWORD)(strlen(value)+1);
-    result = RegSetValueEx(tkey, key, 0, REG_SZ, value, len);
+    result = RegSetValueEx(tkey, key, 0, REG_SZ, (const BYTE *)value, len);
     if (result != ERROR_SUCCESS)
     {
 	smpd_err_printf("Unable to write the smpd registry value '%s:%s', error %d\n", key, value, result);
@@ -457,6 +457,10 @@ int smpd_set_smpd_data(const char *key, const char *value)
 int smpd_get_user_data_default(const char *key, char *value, int value_len)
 {
     smpd_enter_fn("smpd_get_user_data_default");
+    /* FIXME: function not implemented */
+    key;
+    value;
+    value_len;
     smpd_exit_fn("smpd_get_user_data_default");
     return SMPD_FAIL;
 }

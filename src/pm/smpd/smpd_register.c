@@ -156,7 +156,6 @@ SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPa
     HKEY hRegKey = NULL;
     HCRYPTPROV hProv = (HCRYPTPROV)NULL;
     HCRYPTKEY hKey = (HCRYPTKEY)NULL;
-    HCRYPTKEY hXchgKey = (HCRYPTKEY)NULL;
     HCRYPTHASH hHash = (HCRYPTHASH)NULL;
     DWORD dwLength;
     BYTE *pbBuffer;
@@ -241,7 +240,6 @@ SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPa
 			if (CryptEncrypt(hKey, 0, TRUE, 0, pbBuffer, &dwLength, dwLength)) 
 			{
 			    /* Write data to registry.*/
-			    DWORD dwType = REG_BINARY;
 			    /* Add the password.*/
 			    if (RegSetValueEx(hRegKey, _T("smpdPassword"), 0, REG_BINARY, pbBuffer, dwLength)!=ERROR_SUCCESS)
 			    {
@@ -313,7 +311,6 @@ SMPD_BOOL smpd_read_password_from_registry(char *szAccount, char *szPassword)
     HKEY hRegKey = NULL;
     HCRYPTPROV hProv = (HCRYPTPROV)NULL;
     HCRYPTKEY hKey = (HCRYPTKEY)NULL;
-    HCRYPTKEY hXchgKey = (HCRYPTKEY)NULL;
     HCRYPTHASH hHash = (HCRYPTHASH)NULL;
     DWORD dwType;
     /* has to be the same used to encrypt!*/

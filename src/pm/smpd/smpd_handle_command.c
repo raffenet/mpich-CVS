@@ -182,7 +182,7 @@ int smpd_handle_stdin_command(smpd_context_t *context)
     smpd_process_t *piter;
     smpd_stdin_write_node_t *node, *iter;
     int result;
-    MPIDU_Sock_size_t num_written, num_decoded;
+    MPIU_Size_t num_written, num_decoded;
     int nd;
 
     smpd_enter_fn("handle_stdin_command");
@@ -287,6 +287,7 @@ int smpd_handle_close_stdin_command(smpd_context_t *context)
     int result;
 
     smpd_enter_fn("handle_close_stdin_command");
+    SMPD_UNREFERENCED_ARG(context);
 
     piter = smpd_process.process_list;
     while (piter)
@@ -2477,8 +2478,8 @@ int smpd_handle_init_command(smpd_context_t *context)
     char value[SMPD_MAX_DBS_VALUE_LEN+1] = "";
     char fail_str[SMPD_MAX_DBS_VALUE_LEN+1] = "";
     char ctx_key[100];
-    char *result_str;
-    int rank, size, node_id;
+    char *result_str = NULL;
+    int rank, size, node_id=0;
     smpd_process_group_t *pg;
 
     smpd_enter_fn("smpd_handle_init_command");
@@ -2629,7 +2630,7 @@ int smpd_handle_finalize_command(smpd_context_t *context)
     char key[SMPD_MAX_DBS_KEY_LEN+1] = "";
     char value[SMPD_MAX_DBS_VALUE_LEN+1] = "";
     char ctx_key[100];
-    char *result_str;
+    char *result_str = NULL;
     int rank;
     smpd_process_group_t *pg;
 

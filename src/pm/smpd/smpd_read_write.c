@@ -37,8 +37,13 @@ int smpd_decode_buffer(const char *str, char *dest, int length, int *num_decoded
     int value;
     int n = 0;
 
+    if (length < 1)
+    {
+	return SMPD_FAIL;
+    }
+
     hex[2] = '\0';
-    while (*str != '\0')
+    while (*str != '\0' && length)
     {
 	hex[0] = *str;
 	str++;
@@ -48,6 +53,7 @@ int smpd_decode_buffer(const char *str, char *dest, int length, int *num_decoded
 	*dest = (char)value;
 	/*smpd_dbg_printf(" %s = %c\n", hex, *dest);*/
 	dest++;
+	length--;
 	n++;
     }
     *num_decoded = n;
@@ -57,7 +63,7 @@ int smpd_decode_buffer(const char *str, char *dest, int length, int *num_decoded
 int smpd_read(MPIDU_Sock_t sock, void *buf, MPIDU_Sock_size_t len)
 {
     int result;
-    MPIDU_Sock_size_t num_read;
+    MPIU_Size_t num_read;
 
     smpd_enter_fn("smpd_read");
 
@@ -101,7 +107,7 @@ int smpd_read(MPIDU_Sock_t sock, void *buf, MPIDU_Sock_size_t len)
 int smpd_write(MPIDU_Sock_t sock, void *buf, MPIDU_Sock_size_t len)
 {
     int result;
-    MPIDU_Sock_size_t num_written;
+    MPIU_Size_t num_written;
 
     smpd_enter_fn("smpd_write");
 
@@ -148,13 +154,13 @@ int smpd_write(MPIDU_Sock_t sock, void *buf, MPIDU_Sock_size_t len)
 int smpd_write_string(MPIDU_Sock_t sock, char *str)
 {
     int result;
-    MPIDU_Sock_size_t len, num_written;
+    MPIU_Size_t len, num_written;
 
     smpd_enter_fn("smpd_write_string");
 
     smpd_dbg_printf("writing string on sock %d: \"%s\"\n", MPIDU_Sock_get_sock_id(sock), str);
 
-    len = (MPIDU_Sock_size_t)strlen(str)+1;
+    len = (MPIU_Size_t)strlen(str)+1;
 
     while (len)
     {
@@ -185,7 +191,7 @@ static int read_string(MPIDU_Sock_t sock, char *str, int maxlen)
 {
     char ch;
     int result;
-    MPIDU_Sock_size_t num_bytes;
+    MPIU_Size_t num_bytes;
     int total = 0;
 
     if (maxlen < 1)
@@ -238,7 +244,7 @@ int smpd_read_string(MPIDU_Sock_t sock, char *str, int maxlen)
 	return SMPD_SUCCESS;
     }
 
-    while (1)
+    for (;;)
     {
 	num_bytes = read_string(sock, str, maxlen);
 	if (num_bytes == -1)
@@ -264,6 +270,8 @@ int smpd_read_string(MPIDU_Sock_t sock, char *str, int maxlen)
 	str += num_bytes;
 	maxlen -= num_bytes;
     }
+    /*
     smpd_exit_fn("smpd_read_string");
     return SMPD_FAIL;
+    */
 }

@@ -32,7 +32,7 @@ int smpd_start_win_mgr(smpd_context_t *context)
     char domainaccount[SMPD_MAX_ACCOUNT_LENGTH], account[SMPD_MAX_ACCOUNT_LENGTH], domain[SMPD_MAX_ACCOUNT_LENGTH];
     char *pszDomain;
     char password[SMPD_MAX_PASSWORD_LENGTH];
-    HANDLE user_handle;
+    HANDLE user_handle = INVALID_HANDLE_VALUE;
     int num_tries;
     char cmd[8192];
     PROCESS_INFORMATION pInfo;

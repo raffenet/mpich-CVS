@@ -208,7 +208,7 @@ int smpd_process_to_registry(smpd_process_t *process, char *actual_exe)
     }
 
     len = (DWORD)(strlen(actual_exe)+1);
-    result = RegSetValueEx(tkey, "exe", 0, REG_SZ, actual_exe, len);
+    result = RegSetValueEx(tkey, "exe", 0, REG_SZ, (const BYTE *)actual_exe, len);
     if (result != ERROR_SUCCESS)
     {
 	smpd_err_printf("Unable to write the process registry value 'exe:%s', error %d\n", process->exe, result);
@@ -374,7 +374,7 @@ static void SetEnvironmentVariables(char *bEnv)
 {
     char name[MAX_PATH], equals[3], value[MAX_PATH];
 
-    while (1)
+    for (;;)
     {
 	name[0] = '\0';
 	equals[0] = '\0';
@@ -398,7 +398,7 @@ static void RemoveEnvironmentVariables(char *bEnv)
 {
     char name[MAX_PATH], equals[3], value[MAX_PATH];
 
-    while (1)
+    for (;;)
     {
 	name[0] = '\0';
 	equals[0] = '\0';
@@ -476,7 +476,7 @@ static int smpd_easy_send(SOCKET sock, char *buffer, int length)
 int smpd_piothread(smpd_piothread_arg_t *p)
 {
     char buffer[8192];
-    int num_read;
+    DWORD num_read;
     HANDLE hIn;
     SOCKET hOut;
 
@@ -486,7 +486,7 @@ int smpd_piothread(smpd_piothread_arg_t *p)
     p = NULL;
 
     smpd_dbg_printf("*** entering smpd_piothread ***\n");
-    while (1)
+    for (;;)
     {
 	if (!ReadFile(hIn, buffer, 8192, &num_read, NULL))
 	{
@@ -528,7 +528,7 @@ int smpd_pinthread(smpd_pinthread_arg_t *p)
     p = NULL;
 
     smpd_dbg_printf("*** entering smpd_pinthread ***\n");
-    while (1)
+    for (;;)
     {
 	if (recv(hIn, &ch, 1, 0) == SOCKET_ERROR)
 	{
@@ -551,7 +551,7 @@ int smpd_pinthread(smpd_pinthread_arg_t *p)
 
 int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, MPIDU_Sock_set_t set)
 {
-    HANDLE hStdin, hStdout, hStderr;
+    HANDLE hStdin = INVALID_HANDLE_VALUE, hStdout = INVALID_HANDLE_VALUE, hStderr = INVALID_HANDLE_VALUE;
     SOCKET hSockStdinR = INVALID_SOCKET, hSockStdinW = INVALID_SOCKET;
     SOCKET hSockStdoutR = INVALID_SOCKET, hSockStdoutW = INVALID_SOCKET;
     SOCKET hSockStderrR = INVALID_SOCKET, hSockStderrW = INVALID_SOCKET;
@@ -559,15 +559,15 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     /*HANDLE hPipeStdinR = NULL, hPipeStdinW = NULL;*/
     HANDLE hPipeStdoutR = NULL, hPipeStdoutW = NULL;
     HANDLE hPipeStderrR = NULL, hPipeStderrW = NULL;
-    HANDLE hIn, hOut, hErr;
+    HANDLE hIn = INVALID_HANDLE_VALUE, hOut = INVALID_HANDLE_VALUE, hErr = INVALID_HANDLE_VALUE;
     STARTUPINFO saInfo;
-    PROCESS_INFORMATION psInfo;
+    PROCESS_INFORMATION psInfo = { 0 };
     void *pEnv=NULL;
     char tSavedPath[MAX_PATH] = ".";
-    DWORD launch_flag;
-    int nError, result;
-    unsigned long blocking_flag;
-    MPIDU_Sock_t sock_in, sock_out, sock_err, sock_pmi;
+    DWORD launch_flag = 0;
+    int nError = 0, result = 0;
+    unsigned long blocking_flag = 0;
+    MPIDU_Sock_t sock_in = MPIDU_SOCK_INVALID_SOCK, sock_out = MPIDU_SOCK_INVALID_SOCK, sock_err = MPIDU_SOCK_INVALID_SOCK, sock_pmi = MPIDU_SOCK_INVALID_SOCK;
     SECURITY_ATTRIBUTES saAttr;
     char str[8192], sock_str[20];
     BOOL bSuccess = TRUE;
@@ -576,7 +576,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     char temp_exe[SMPD_MAX_EXE_LENGTH];
     MPIDU_Sock_t sock_pmi_listener;
     smpd_context_t *listener_context;
-    int listener_port;
+    int listener_port = 0;
     char host_description[256];
 
     smpd_enter_fn("smpd_launch_process");
@@ -629,17 +629,20 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     }
 
     /* Create sockets for stdin, stdout, and stderr */
-    if (nError = smpd_make_socket_loop_choose(&hSockStdinR, SMPD_FALSE, &hSockStdinW, SMPD_TRUE))
+    nError = smpd_make_socket_loop_choose(&hSockStdinR, SMPD_FALSE, &hSockStdinW, SMPD_TRUE);
+    if (nError)
     {
 	smpd_err_printf("smpd_make_socket_loop failed, error %d\n", nError);
 	goto CLEANUP;
     }
-    if (nError = smpd_make_socket_loop_choose(&hSockStdoutR, SMPD_TRUE, &hSockStdoutW, SMPD_FALSE))
+    nError = smpd_make_socket_loop_choose(&hSockStdoutR, SMPD_TRUE, &hSockStdoutW, SMPD_FALSE);
+    if (nError)
     {
 	smpd_err_printf("smpd_make_socket_loop failed, error %d\n", nError);
 	goto CLEANUP;
     }
-    if (nError = smpd_make_socket_loop_choose(&hSockStderrR, SMPD_TRUE, &hSockStderrW, SMPD_FALSE))
+    nError = smpd_make_socket_loop_choose(&hSockStderrR, SMPD_TRUE, &hSockStderrW, SMPD_FALSE);
+    if (nError)
     {
 	smpd_err_printf("smpd_make_socket_loop failed, error %d\n", nError);
 	goto CLEANUP;
@@ -648,7 +651,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     {
 	if (smpd_process.use_inherited_handles)
 	{
-	    if (nError = smpd_make_socket_loop(&hSockPmiR, &hSockPmiW))
+	    nError = smpd_make_socket_loop(&hSockPmiR, &hSockPmiW);
+	    if (nError)
 	    {
 		smpd_err_printf("smpd_make_socket_loop failed, error %d\n", nError);
 		goto CLEANUP;
@@ -656,7 +660,6 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	}
 	else
 	{
-	    listener_port = 0;
 	    nError = MPIDU_Sock_listen(set, NULL, &listener_port, &sock_pmi_listener); 
 	    if (nError != MPI_SUCCESS)
 	    {
@@ -1764,7 +1767,7 @@ int smpd_exit(int exitcode)
     ExitProcess(exitcode);
 #else
     exit(exitcode);
-#endif
     smpd_exit_fn("smpd_exit");
     return SMPD_FAIL;
+#endif
 }

@@ -22,7 +22,7 @@ void smpd_stdin_thread(SOCKET hWrite)
 	return;
     }
     h[1] = smpd_process.hCloseStdinThreadEvent;
-    while (1)
+    for (;;)
     {
 	/*smpd_dbg_printf("waiting for input from stdin\n");*/
 	result = WaitForMultipleObjects(2, h, FALSE, INFINITE);
@@ -456,7 +456,7 @@ int smpd_state_reading_stdin(smpd_context_t *context, MPIDU_Sock_event_t *event_
 {
     int result;
     smpd_command_t *cmd_ptr;
-    MPIDU_Sock_size_t num_read;
+    MPIU_Size_t num_read;
     char buffer[SMPD_MAX_CMD_LENGTH];
     int num_encoded;
 
@@ -654,6 +654,8 @@ int smpd_state_smpd_writing_data_to_stdin(smpd_context_t *context, MPIDU_Sock_ev
 
     smpd_enter_fn("smpd_state_smpd_writing_data_to_stdin");
 
+    SMPD_UNREFERENCED_ARG(event_ptr);
+
     node = context->process->stdin_write_list;
     if (node == NULL)
     {
@@ -692,7 +694,7 @@ int smpd_state_reading_stdouterr(smpd_context_t *context, MPIDU_Sock_event_t *ev
 {
     int result;
     smpd_command_t *cmd_ptr;
-    MPIDU_Sock_size_t num_read;
+    MPIU_Size_t num_read;
     char buffer[SMPD_MAX_CMD_LENGTH];
     int num_encoded;
 
@@ -1268,6 +1270,8 @@ int smpd_state_smpd_listening(smpd_context_t *context, MPIDU_Sock_event_t *event
     char phrase[SMPD_PASSPHRASE_MAX_LENGTH];
 
     smpd_enter_fn("smpd_state_smpd_listening");
+    SMPD_UNREFERENCED_ARG(event_ptr);
+
     result = MPIDU_Sock_accept(context->sock, set, NULL, &new_sock);
     if (result != MPI_SUCCESS)
     {
@@ -1355,6 +1359,8 @@ int smpd_state_pmi_listening(smpd_context_t *context, MPIDU_Sock_event_t *event_
     smpd_process_t *iter;
 
     smpd_enter_fn("smpd_state_pmi_listening");
+    SMPD_UNREFERENCED_ARG(event_ptr);
+
     result = MPIDU_Sock_accept(context->sock, set, NULL, &new_sock);
     if (result != MPI_SUCCESS)
     {
@@ -1402,6 +1408,8 @@ int smpd_state_pmi_server_listening(smpd_context_t *context, MPIDU_Sock_event_t 
     smpd_process_t *process;
 
     smpd_enter_fn("smpd_state_pmi_server_listening");
+    SMPD_UNREFERENCED_ARG(event_ptr);
+
     result = MPIDU_Sock_accept(context->sock, set, NULL, &new_sock);
     if (result != MPI_SUCCESS)
     {
@@ -1441,6 +1449,8 @@ int smpd_state_mgr_listening(smpd_context_t *context, MPIDU_Sock_event_t *event_
     smpd_context_t *new_context;
 
     smpd_enter_fn("smpd_state_mgr_listening");
+    SMPD_UNREFERENCED_ARG(event_ptr);
+
     result = MPIDU_Sock_accept(context->sock, set, NULL, &new_sock);
     if (result != MPI_SUCCESS)
     {
@@ -3268,6 +3278,8 @@ int smpd_state_reading_timeout(smpd_context_t *context, MPIDU_Sock_event_t *even
     int result;
 
     smpd_enter_fn("smpd_state_reading_timeout");
+    SMPD_UNREFERENCED_ARG(context);
+
     if (event_ptr->error != MPI_SUCCESS)
     {
 	smpd_err_printf("unable to read the timeout byte, %s.\n", get_sock_error_string(event_ptr->error));
@@ -3619,6 +3631,8 @@ int smpd_handle_op_close(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
     smpd_command_t *cmd_ptr;
 
     smpd_enter_fn("smpd_handle_op_close");
+    SMPD_UNREFERENCED_ARG(event_ptr);
+
     smpd_dbg_printf("op_close received - %s state.\n", smpd_get_state_string(context->state));
     switch (context->state)
     {
@@ -3959,8 +3973,9 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
     int len;
 
     smpd_enter_fn("smpd_enter_at_state");
+    SMPD_UNREFERENCED_ARG(state);
 
-    while (1)
+    for (;;)
     {
 	event.error = MPI_SUCCESS;
 	smpd_dbg_printf("sock_waiting for the next event.\n");
@@ -4223,6 +4238,8 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 	    break;
 	}
     }
+    /*
     smpd_exit_fn("smpd_enter_at_state");
     return SMPD_SUCCESS;
+    */
 }
