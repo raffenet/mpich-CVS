@@ -66,7 +66,7 @@ public class LegendTableModel extends AbstractTableModel
         super();
 
         objdef_list  = new ArrayList( map.values() );
-        this.sort( Category.INDEX_ORDER );
+        this.sort( LegendComparators.INDEX_ORDER );
     }
 
 

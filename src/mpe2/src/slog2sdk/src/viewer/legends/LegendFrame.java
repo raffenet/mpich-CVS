@@ -35,11 +35,17 @@ public class LegendFrame extends JFrame
 
         addWindowListener( new WindowAdapter() {
             public void windowClosing( WindowEvent e ) {
-                setVisible( false );
+                LegendFrame.this.setVisible( false );
             }
         } );
 
         /* setVisible( true ); */
+    }
+
+    public void setVisible( boolean val )
+    {
+        super.setVisible( val );
+        TopWindow.Control.setShowLegendButtonEnabled( !val );
     }
 
     public static void main( String[] args )

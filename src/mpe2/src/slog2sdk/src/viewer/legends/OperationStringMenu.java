@@ -20,7 +20,6 @@ import javax.swing.JTable;
 import javax.swing.table.TableModel;
 
 import viewer.common.Const;
-import base.drawable.Category;
 /*
    Class to simulate a JMenuBar header editor for a JTable with String value
 */
@@ -77,7 +76,7 @@ public class OperationStringMenu extends JPopupMenu
             menu_item.addActionListener(
             new ActionListener() {
                 public void actionPerformed( ActionEvent evt )
-                { table_model.refreshOrder( Category.INDEX_ORDER ); }
+                { table_model.refreshOrder( LegendComparators.INDEX_ORDER ); }
             } );
         super.add( menu_item );
 
@@ -91,7 +90,7 @@ public class OperationStringMenu extends JPopupMenu
             menu_item.addActionListener( new ActionListener() {
                 public void actionPerformed( ActionEvent evt )
                 { table_model.refreshOrder(
-                              Category.CASE_SENSITIVE_TOPO_ORDER ); }
+                              LegendComparators.CASE_SENSITIVE_TOPO_ORDER ); }
             } );
         super.add( menu_item );
 
@@ -105,7 +104,7 @@ public class OperationStringMenu extends JPopupMenu
             menu_item.addActionListener( new ActionListener() {
                 public void actionPerformed( ActionEvent evt )
                 { table_model.refreshOrder(
-                              Category.CASE_INSENSITIVE_TOPO_ORDER ); }
+                              LegendComparators.CASE_INSENSITIVE_TOPO_ORDER ); }
             } );
         super.add( menu_item );
 
@@ -118,7 +117,8 @@ public class OperationStringMenu extends JPopupMenu
             menu_item = new JMenuItem( "Case Sensitive Order", icon );
             menu_item.addActionListener( new ActionListener() {
                 public void actionPerformed( ActionEvent evt )
-                { table_model.refreshOrder( Category.CASE_SENSITIVE_ORDER ); }
+                { table_model.refreshOrder(
+                              LegendComparators.CASE_SENSITIVE_ORDER ); }
             } );
         super.add( menu_item );
 
@@ -131,7 +131,8 @@ public class OperationStringMenu extends JPopupMenu
             menu_item = new JMenuItem( "Case Insensitive Order", icon );
             menu_item.addActionListener( new ActionListener() {
                 public void actionPerformed( ActionEvent evt )
-                { table_model.refreshOrder( Category.CASE_INSENSITIVE_ORDER ); }
+                { table_model.refreshOrder(
+                              LegendComparators.CASE_INSENSITIVE_ORDER ); }
             } );
         super.add( menu_item );
 
