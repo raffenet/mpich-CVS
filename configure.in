@@ -930,6 +930,7 @@ fi
 dnl
 dnl Get the size of the C types for encoding in the basic datatypes and for
 dnl the specific-sized integers
+AC_CHECK_SIZEOF(char,$CROSS_SIZEOF_CHAR)
 AC_CHECK_SIZEOF(short,$CROSS_SIZEOF_SHORT)
 AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_INT)
 AC_CHECK_SIZEOF(long,$CROSS_SIZEOF_LONG)
@@ -1129,6 +1130,89 @@ export MPI_FLOAT
 export MPI_DOUBLE
 export MPI_LONG_DOUBLE
 dnl
+#
+# Size-specific types.  Initialize as NULL
+MPI_REAL4=MPI_DATATYPE_NULL
+MPI_REAL8=MPI_DATATYPE_NULL
+MPI_REAL16=MPI_DATATYPE_NULL
+MPI_COMPLEX8=MPI_DATATYPE_NULL
+MPI_COMPLEX16=MPI_DATATYPE_NULL
+MPI_COMPLEX32=MPI_DATATYPE_NULL
+MPI_INTEGER1=MPI_DATATYPE_NULL
+MPI_INTEGER2=MPI_DATATYPE_NULL
+MPI_INTEGER4=MPI_DATATYPE_NULL
+MPI_INTEGER8=MPI_DATATYPE_NULL
+MPI_INTEGER16=MPI_DATATYPE_NULL
+AC_SUBST(MPI_REAL4)
+AC_SUBST(MPI_REAL8)
+AC_SUBST(MPI_REAL16)
+AC_SUBST(MPI_COMPLEX8)
+AC_SUBST(MPI_COMPLEX16)
+AC_SUBST(MPI_COMPLEX32)
+AC_SUBST(MPI_INTEGER1)
+AC_SUBST(MPI_INTEGER2)
+AC_SUBST(MPI_INTEGER4)
+AC_SUBST(MPI_INTEGER8)
+AC_SUBST(MPI_INTEGER16)
+export MPI_REAL4
+export MPI_REAL8
+export MPI_REAL16
+export MPI_COMPLEX8
+export MPI_COMPLEX16
+export MPI_COMPLEX32
+export MPI_INTEGER1
+export MPI_INTEGER2
+export MPI_INTEGER4
+export MPI_INTEGER8
+export MPI_INTEGER16
+#
+# Try to find corresponding types for the size-specific types.
+#
+# Assume that the float/double/long double are simply spaced
+# Datatypes used up through 24 in Fortran
+# 25,26,27,28,29,2a
+if test "$ac_cv_sizeof_float" = "4" ; then
+    MPI_REAL4="0x4c000425"
+    MPI_COMPLEX8="0x4c000426"
+fi
+if test "$ac_cv_sizeof_double" = "8" ; then
+    MPI_REAL8="0x4c000427"
+    MPI_COMPLEX16="0x4c000428"
+fi
+if test "$ac_cv_sizeof_long_double" = "16" ; then
+    MPI_REAL16="0x4c000429"
+    MPI_COMPLEX32="0x4c00042a"
+fi
+# Search for the integer types
+for type in char short int long long_long ; do
+    eval len=\$ac_cv_sizeof_$type
+    if test -n "$len" ; then 
+    case $len in 
+    1) if test "$MPI_INTEGER1" = "MPI_DATATYPE_NULL" ; then
+           MPI_INTEGER1="0x4c00012b"
+       fi
+       ;;
+    2) if test "$MPI_INTEGER2" = "MPI_DATATYPE_NULL" ; then
+           MPI_INTEGER2="0x4c00022c"
+       fi
+       ;;
+    4) if test "$MPI_INTEGER4" = "MPI_DATATYPE_NULL" ; then
+           MPI_INTEGER4="0x4c00042d"
+       fi
+       ;;
+    8) if test "$MPI_INTEGER8" = "MPI_DATATYPE_NULL" ; then
+           MPI_INTEGER8="0x4c00082e"
+       fi
+       ;;
+    16) if test "$MPI_INTEGER16" = "MPI_DATATYPE_NULL" ; then
+           MPI_INTEGER16="0x4c00102f"
+       fi
+       ;;
+    *)
+    ;;
+    esac
+    fi
+done
 dnl Is char * the byte address?
 AC_CACHE_CHECK([if char * pointers use give byte addresses],
 pac_cv_c_char_p_is_byte,[

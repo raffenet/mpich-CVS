@@ -46,7 +46,9 @@ static mpi_names_t mpi_names[] = {
     { MPI_FLOAT, "MPI_FLOAT" },
     { MPI_DOUBLE, "MPI_DOUBLE" },
     { MPI_LONG_DOUBLE, "MPI_LONG_DOUBLE" },
-    { MPI_LONG_LONG_INT, "MPI_LONG_LONG_INT" },
+    /* LONG_LONG_INT is allowed as an alias; we don't make it a separate
+       type */
+/*    { MPI_LONG_LONG_INT, "MPI_LONG_LONG_INT" }, */
     { MPI_LONG_LONG, "MPI_LONG_LONG" },
     { MPI_PACKED, "MPI_PACKED" },
     { MPI_LB, "MPI_LB" },
@@ -70,6 +72,18 @@ static mpi_names_t mpi_names[] = {
     { MPI_2REAL, "MPI_2REAL" },
     { MPI_2DOUBLE_PRECISION, "MPI_2DOUBLE_PRECISION" },
     { MPI_CHARACTER, "MPI_CHARACTER" },
+    /* Size-specific types */
+    { MPI_REAL4, "MPI_REAL4" },
+    { MPI_REAL8, "MPI_REAL8" },
+    { MPI_REAL16, "MPI_REAL16" },
+    { MPI_COMPLEX8, "MPI_COMPLEX8" },
+    { MPI_COMPLEX16, "MPI_COMPLEX16" },
+    { MPI_COMPLEX32, "MPI_COMPLEX32" },
+    { MPI_INTEGER1, "MPI_INTEGER1" },
+    { MPI_INTEGER2, "MPI_INTEGER2" },
+    { MPI_INTEGER4, "MPI_INTEGER4" },
+    { MPI_INTEGER8, "MPI_INTEGER8" },
+    { MPI_INTEGER16, "MPI_INTEGER16" },
     { 0, (char *)0 },  /* Sentinal used to indicate the last element */
 };
 
@@ -93,6 +107,9 @@ void MPIR_Datatype_init_names( void )
 	    /* For each predefined type, ensure that there is a corresponding
 	       object and that the object's name is set */
 	    for (i=0; mpi_names[i].name != 0; i++) {
+		/* The size-specific types may be DATATYPE_NULL */
+		if (mpi_names[i].dtype == MPI_DATATYPE_NULL) continue;
+
 		MPID_Datatype_get_ptr( mpi_names[i].dtype, datatype_ptr );
 		if (!datatype_ptr) {
 		    MPIU_dbg_printf("IMPLEMENTATION ERROR for datatype %d\n", 

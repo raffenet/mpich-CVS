@@ -67,6 +67,18 @@ static MPI_Datatype mpi_dtypes[] = {
     MPI_2REAL,
     MPI_2DOUBLE_PRECISION,
     MPI_CHARACTER,
+/* Size-specific types */
+    MPI_REAL4,
+    MPI_REAL8,
+    MPI_REAL16,
+    MPI_COMPLEX8,
+    MPI_COMPLEX16,
+    MPI_COMPLEX32,
+    MPI_INTEGER1,
+    MPI_INTEGER2,
+    MPI_INTEGER4,
+    MPI_INTEGER8,
+    MPI_INTEGER16,
 };
 
 void MPIR_Datatype_init( void )
@@ -83,6 +95,10 @@ void MPIR_Datatype_init( void )
 	    for (i=0; i<MPID_DATATYPE_N_BUILTIN; i++) {
 		/* Compute the index from the value of the handle */
 		d                  = mpi_dtypes[i];
+		/* Some of the size-specific types may be null,
+		   so skip that case */
+		if (d == MPI_DATATYPE_NULL) continue;
+
 		MPID_Datatype_get_ptr(d,dptr);
 		/* dptr will point into MPID_Datatype_builtin */
 		dptr->handle	   = d;
