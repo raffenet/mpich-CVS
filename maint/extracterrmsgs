@@ -348,6 +348,11 @@ sub AddTestCall {
 		print TESTFD "    int i$narg = MPI_WIN_NULL;\n";
 		$args[$#args+1] = "i$narg";
 	    }
+	    elsif ($type eq "A")
+	    {
+		print TESTFD "    int i$narg = $narg;\n";
+		$args[$#args+1] = "i$narg";
+	    }
 	    elsif ($type eq "G")
 	    {
 		print TESTFD "    int i$narg = MPI_GROUP_NULL;\n";

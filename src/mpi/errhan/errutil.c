@@ -530,6 +530,72 @@ char * simplify_fmt_string(const char *str)
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
+#define ASSERT_STR_MAXLEN 256
+
+static const char * GetAssertString(int d)
+{
+    static char str[ASSERT_STR_MAXLEN] = "";
+    char *cur;
+    int len = ASSERT_STR_MAXLEN;
+    size_t n;
+
+    if (d == 0)
+    {
+	MPIU_Strncpy(str, "assert=0", ASSERT_STR_MAXLEN);
+	return str;
+    }
+    cur = str;
+    if (d & MPI_MODE_NOSTORE)
+    {
+	MPIU_Strncpy(cur, "MPI_MODE_NOSTORE", len);
+	n = strlen(cur);
+	cur += n;
+	len -= n;
+	d ^= MPI_MODE_NOSTORE;
+    }
+    if (d & MPI_MODE_NOPUT)
+    {
+	if (len < ASSERT_STR_MAXLEN)
+	    MPIU_Strncpy(cur, " | MPI_MODE_NOPUT", len);
+	else
+	    MPIU_Strncpy(cur, "MPI_MODE_NOPUT", len);
+	n = strlen(cur);
+	cur += n;
+	len -= n;
+	d ^= MPI_MODE_NOPUT;
+    }
+    if (d & MPI_MODE_NOPRECEDE)
+    {
+	if (len < ASSERT_STR_MAXLEN)
+	    MPIU_Strncpy(cur, " | MPI_MODE_NOPRECEDE", len);
+	else
+	    MPIU_Strncpy(cur, "MPI_MODE_NOPRECEDE", len);
+	n = strlen(cur);
+	cur += n;
+	len -= n;
+	d ^= MPI_MODE_NOPRECEDE;
+    }
+    if (d & MPI_MODE_NOSUCCEED)
+    {
+	if (len < ASSERT_STR_MAXLEN)
+	    MPIU_Strncpy(cur, " | MPI_MODE_NOSUCCEED", len);
+	else
+	    MPIU_Strncpy(cur, "MPI_MODE_NOSUCCEED", len);
+	n = strlen(cur);
+	cur += n;
+	len -= n;
+	d ^= MPI_MODE_NOSUCCEED;
+    }
+    if (d)
+    {
+	if (len < ASSERT_STR_MAXLEN)
+	    MPIU_Snprintf(cur, len, " | 0x%x", d);
+	else
+	    MPIU_Snprintf(cur, len, "assert=0x%x", d);
+    }
+    return str;
+}
+
 static const char * GetDTypeString(MPI_Datatype d)
 {
     static char default_str[64];
@@ -695,6 +761,10 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
 	    {
 		MPIU_Snprintf(str, maxlen, "win=0x%x", W);
 	    }
+	    break;
+	case (int)'A':
+	    d = va_arg(list, int);
+	    MPIU_Snprintf(str, maxlen, "%s", GetAssertString(d));
 	    break;
 	case (int)'G':
 	    G = va_arg(list, MPI_Group);
