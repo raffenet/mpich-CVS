@@ -77,11 +77,11 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	}
 	else
 	{
-	    /* If a failure occurs atttempt to start the request, then we
-	       assume that partner request was not created, and stuff the
-	       error code in the persistent request.  The wait and test
-	       routines will look at the error code in the persistent request
-	       if a partner request is not found. */
+	    /* If a failure occurs attempting to start the request, then we
+	       assume that partner request was not created, and stuff the error
+	       code in the persistent request.  The wait and test routines will
+	       look at the error code in the persistent request if a partner
+	       request is present. */
 	    preq->partner_request = NULL;
 	    preq->status.MPI_ERROR = rc;
 	    preq->cc_ptr = &preq->cc;
