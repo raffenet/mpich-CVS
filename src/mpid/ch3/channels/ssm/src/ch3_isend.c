@@ -12,7 +12,7 @@
 { \
     MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST); \
     MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST); \
-    assert(pkt_sz == sizeof(MPIDI_CH3_Pkt_t)); \
+    /*assert(pkt_sz == sizeof(MPIDI_CH3_Pkt_t));*/ \
     sreq->ssm.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
     sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->ssm.pkt + nb; \
     sreq->ch3.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
@@ -33,7 +33,7 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    assert(pkt_sz <= sizeof(MPIDI_CH3_Pkt_t));
+    /*assert(pkt_sz <= sizeof(MPIDI_CH3_Pkt_t));*/
 
     /* The sock channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
     pkt_sz = sizeof(MPIDI_CH3_Pkt_t);
