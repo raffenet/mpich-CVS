@@ -105,31 +105,34 @@ Function TestsToProjects(filename, dotdot)
 				last_project = project_name
 				project_filename = Replace( filename, "testlist", project_name + ".vcproj" )
 				project_relative_filename = Replace( project_filename, path_to_remove, "" )
-'				If bForce Or Not f.FileExists( project_filename ) Then
-					cEcho project_filename + vbCrLf
-					project_uuid = gen_uuid()
-					'uuid2 = gen_uuid()
-					'uuid3 = gen_uuid()
-					'uuid4 = gen_uuid()
-					new_project = Replace(project_template, "PROJECTNAME", project_name)
-					new_project = Replace(new_project, "UUID1", project_uuid)
-					new_project = Replace(new_project, "DOTDOTS", dotdot)
-					'new_project = Replace(new_project, "UUID2", uuid2)
-					'new_project = Replace(new_project, "UUID3", uuid3)
-					'new_project = Replace(new_project, "UUID4", uuid4)
-					set fout = f.CreateTextFile(project_filename, True)
-					fout.Write( new_project )
-					fout.Close()
-'				Else
-'					' Get the project uuid from the project file
-'					set ftemp = f.OpenTextFile(project_filename)
-'					contents = ftemp.ReadAll()
-'					ftemp.Close()
-'					' find the uuid in the contents
-'				End If
-				' Add the project to the lists used to create the test solution file
-				project_list = project_list + "Project(""{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"") = """ + project_name + """, """ + project_relative_filename + """, ""{" + project_uuid + "}""" + vbCrLf + "	ProjectSection(ProjectDependencies) = postProject" + vbCrLf + "	EndProjectSection" + vbCrLf + "EndProject" + vbCrLf
-				config_list = config_list + "		{" + project_uuid + "}.Debug.ActiveCfg = Debug|Win32" + vbCrLf + "		{" + project_uuid + "}.Debug.Build.0 = Debug|Win32" + vbCrLf + "		{" + project_uuid + "}.Release.ActiveCfg = Release|Win32" + vbCrLf + "		{" + project_uuid + "}.Release.Build.0 = Release|Win32" + vbCrLf
+				c_filename = Replace( filename, "testlist", project_name + ".c" )
+				If f.FileExists( c_filename ) Then
+'					If bForce Or Not f.FileExists( project_filename ) Then
+						cEcho project_filename + vbCrLf
+						project_uuid = gen_uuid()
+						'uuid2 = gen_uuid()
+						'uuid3 = gen_uuid()
+						'uuid4 = gen_uuid()
+						new_project = Replace(project_template, "PROJECTNAME", project_name)
+						new_project = Replace(new_project, "UUID1", project_uuid)
+						new_project = Replace(new_project, "DOTDOTS", dotdot)
+						'new_project = Replace(new_project, "UUID2", uuid2)
+						'new_project = Replace(new_project, "UUID3", uuid3)
+						'new_project = Replace(new_project, "UUID4", uuid4)
+						set fout = f.CreateTextFile(project_filename, True)
+						fout.Write( new_project )
+						fout.Close()
+'					Else
+'						' Get the project uuid from the project file
+'						set ftemp = f.OpenTextFile(project_filename)
+'						contents = ftemp.ReadAll()
+'						ftemp.Close()
+'						' find the uuid in the contents
+'					End If
+					' Add the project to the lists used to create the test solution file
+					project_list = project_list + "Project(""{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"") = """ + project_name + """, """ + project_relative_filename + """, ""{" + project_uuid + "}""" + vbCrLf + "	ProjectSection(ProjectDependencies) = postProject" + vbCrLf + "	EndProjectSection" + vbCrLf + "EndProject" + vbCrLf
+					config_list = config_list + "		{" + project_uuid + "}.Debug.ActiveCfg = Debug|Win32" + vbCrLf + "		{" + project_uuid + "}.Debug.Build.0 = Debug|Win32" + vbCrLf + "		{" + project_uuid + "}.Release.ActiveCfg = Release|Win32" + vbCrLf + "		{" + project_uuid + "}.Release.Build.0 = Release|Win32" + vbCrLf
+				End If
 			end if
 		end if
 	wend
