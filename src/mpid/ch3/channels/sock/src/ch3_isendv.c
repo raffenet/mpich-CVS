@@ -130,9 +130,9 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
     {
 	/* Form a new connection, queuing the data so it can be sent later. */
 	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  enqueuing request"));
-	MPIDI_CH3I_VC_post_connect(vc);
 	update_request(sreq, iov, n_iov, 0, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
+	MPIDI_CH3I_VC_post_connect(vc);
     }
     else if (vc->sc.state != MPIDI_CH3I_VC_STATE_FAILED)
     {

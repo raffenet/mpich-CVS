@@ -36,7 +36,8 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_s
 
     /* The sock channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
     hdr_sz = sizeof(MPIDI_CH3_Pkt_t);
-    
+    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)hdr);
+
     if (vc->sc.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
 	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
@@ -56,8 +57,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_s
 		
 		if (nb == hdr_sz)
 		{
-		    MPIDI_DBG_PRINTF((55, FCNAME, "iSend sent all %d bytes\n", nb));
-		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
+		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete %d bytes, calling MPIDI_CH3U_Handle_send_req()", nb));
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    MPIDI_CH3U_Handle_send_req(vc, sreq);
 		    if (sreq->ch3.iov_count == 0)
@@ -69,7 +69,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_s
 		}
 		else
 		{
-		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write, request enqueued at head"));
+		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write of %d bytes, request enqueued at head", nb));
 		    update_request(sreq, hdr, hdr_sz, nb);
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    MPIDI_CH3I_VC_post_write(vc, sreq);
@@ -102,9 +102,9 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_s
     {
 	/* Form a new connection, queuing the data so it can be sent later. */
 	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  enqueuing request"));
-	MPIDI_CH3I_VC_post_connect(vc);
 	update_request(sreq, hdr, hdr_sz, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
+	MPIDI_CH3I_VC_post_connect(vc);
     }
     else if (vc->sc.state != MPIDI_CH3I_VC_STATE_FAILED)
     {

@@ -140,13 +140,13 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
     {
 	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  posting connect and enqueuing request"));
 	
-	/* Form a new connection */
-	MPIDI_CH3I_VC_post_connect(vc);
-	
 	/* queue the data so it can be sent after the connection is formed */
 	sreq = create_request(iov, n_iov, 0, 0);
 	assert(sreq != NULL);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
+	
+	/* Form a new connection */
+	MPIDI_CH3I_VC_post_connect(vc);
     }
     else if (vc->sc.state != MPIDI_CH3I_VC_STATE_FAILED)
     {

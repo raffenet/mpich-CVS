@@ -72,13 +72,12 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr
 		
 		if (nb == hdr_sz)
 		{ 
-		    MPIDI_DBG_PRINTF((55, FCNAME, "iStartMsg wrote all %d bytes\n", nb));
-		    MPIDI_DBG_PRINTF((55, FCNAME, "entire write complete"));
+		    MPIDI_DBG_PRINTF((55, FCNAME, "entire write complete, %d bytes", nb));
 		    /* done.  get us out of here as quickly as possible. */
 		}
 		else
 		{
-		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write, request enqueued at head"));
+		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write of %d bytes, request enqueued at head", nb));
 		    sreq = create_request(hdr, hdr_sz, nb);
 		    assert(sreq != NULL);
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
@@ -108,13 +107,13 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr
     {
 	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  posting connect and enqueuing request"));
 	
-	/* Form a new connection */
-	MPIDI_CH3I_VC_post_connect(vc);
-
 	/* queue the data so it can be sent after the connection is formed */
 	sreq = create_request(hdr, hdr_sz, 0);
 	assert(sreq != NULL);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
+
+	/* Form a new connection */
+	MPIDI_CH3I_VC_post_connect(vc);
     }
     else if (vc->sc.state != MPIDI_CH3I_VC_STATE_FAILED)
     {
