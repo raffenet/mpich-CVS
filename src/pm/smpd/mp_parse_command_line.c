@@ -270,6 +270,7 @@ int mp_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *laun
 
 #ifndef HAVE_WINDOWS_H
 
+#if 0
 int exists(char *filename)
 {
     struct stat file_stat;
@@ -280,6 +281,7 @@ int exists(char *filename)
     }
     return 1;
 }
+#endif
 
 int GetFullPathName(const char *filename, int maxlen, char *buf, char **file_part)
 {
