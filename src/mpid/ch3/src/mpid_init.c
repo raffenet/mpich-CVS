@@ -5,7 +5,12 @@
  */
 
 #include "mpidimpl.h"
+#if defined(HAVE_LIMITS_H)
 #include <limits.h>
+#endif
+#if defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
 
 MPIDI_Process_t MPIDI_Process;
 
@@ -66,10 +71,11 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided,
      * necessary.
      */
     MPIR_Process.attrs.tag_ub          = INT_MAX;
+    
 #   if defined(HAVE_GETHOSTNAME)
     {
 	MPIDI_Process.processor_name = MPIU_Malloc(128);
-	if gethostname(MPIDI_Process.processor_name, 128) != 0)
+	if(gethostname(MPIDI_Process.processor_name, 128) != 0)
 	{
 	    MPIU_Free(MPIDI_Process.processor_name);
 	    MPIDI_Process.processor_name = NULL;
