@@ -138,7 +138,8 @@ the ADI and MPI layers.
 \begin{figure}
 \centerline{\psfig{file=adi-ov.eps,width=4in}}
 \caption{Simplified block diagram of the communication paths on a connection
-  between two processes} 
+  between two processes.  The dotted lines separate the four communication
+  types described below.} 
 \label{fig:adi-overview}
 \end{figure}
 
@@ -301,7 +302,7 @@ list, and this list, because of the wildcard source receive
 communication paths.  Similarly, requests for unexpected messages
 (messages sent but for which no matching receive has yet been issued)
 are kept in an ordered list.
-Requests are also the logical place to handle packing and
+Requests are also the logical place for the data structures relevant to packing and
 unpacking from complex datatypes to simpler layouts such as contiguous
 data buffers.  This is discussed in more detail under MPI datatypes.
 
@@ -343,7 +344,7 @@ specifically, the internally-defined structure to which an MPI
 request refers, which is \code{MPID_Request}) is the key object.  The
 \code{MPID_Request} is used to store the progress of communication and
 order communication between processes.  The ADI will use the request
-as the basic object.
+as its basic object.
 
 The
 consequence of this is that the ADI point-to-point communication routines
@@ -369,7 +370,8 @@ The exact form of the arguments that specify the communicator
 information will be discussed later.
 This allows a ``blocking'' send to return a request if the operation
 has not completed, giving the calling routine more control over
-what steps to take to complete the request.
+what steps to take to complete the request.  It sets the request
+pointer to NULL if it was able to complete without creating a request.
 
 An alternative design would have fewer routines but with additional
 arguments.  This design was chosen because it both provides a shorter
@@ -449,7 +451,7 @@ implementation to exploit special hardware capabilities.
 %
 % The following paragraph is intended for readers that are not familar
 % with the details of MPI RMA.
-The MPI specification is very careful in describing when a processes
+The MPI specification is very careful in describing when a process's
 memory window is accessible to other processes (the \emph{exposure
 epoch}) and when a process may be performing RMA operations (the
 \emph{access epoch}).  Understanding these is necessary in developing
@@ -496,7 +498,7 @@ calls
 can be converted into a single, atomic update operation on some
 systems (particularly on those that have no remote shared memory).
 
-To allow low-latency implementation of single element remote updates
+To allow low-latency implementation of single-element remote updates
 (e.g., put or accumulate), the ADI design allows the MPI
 implementation to perform aggregation of RMA operations without
 calling the ADI.  This eliminates a layer of function calls in these
@@ -523,7 +525,7 @@ at the cost of additional function calls.
 % specific choices of remote flags and counters can create
 % performance issues that are not present in MPI.
 The MPI RMA operations are nonblocking.  Thus, there must be some way
-to indicate both local and remote completion.  MPI provides the user
+to indicate both local and remote completion.  MPI provides users
 with three different mechanisms for marking completion in their code:
 \begin{description}
 \item[Fence.]This is essentially a barrier synchronization, similar to
@@ -645,7 +647,7 @@ operations are implemented above the ADI, we do not discuss them here.)
 
 (This section describes 3 layered implementations.  First, just
 implement the TCP part.  Build the rest in terms of special messages.
-@ sub cases: pure polling (doesn't implement cancel-send; passive-RMA)
+Sub cases: pure polling (doesn't implement cancel-send; passive-RMA)
 and mixed (separate receive-agent thread for those messages).  
 
 Second, include VIA-style remote put, only for contiguous put.  Show
