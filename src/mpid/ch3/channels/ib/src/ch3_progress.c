@@ -362,7 +362,7 @@ static inline int handle_read(MPIDI_VC *vc, int nb)
 #define FUNCNAME handle_written
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline void handle_written(MPIDI_VC * vc)
+static inline int handle_written(MPIDI_VC * vc)
 {
     int nb, mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_WRITTEN);
