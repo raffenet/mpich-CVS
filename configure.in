@@ -506,7 +506,13 @@ AC_CHECK_FUNCS(snprintf)
 dnl
 dnl If internationalization selected, try to find the needed functions
 if test "$enable_internat" = "yes" ; then
-    AC_CHECK_FUNCS(gettext)
+    AC_CHECK_HEADERS(libintl.h)
+    AC_CHECK_FUNCS(gettext dgettext)
+    if test "$ac_cv_header_libintl" = "yes" -a \
+	    "$ac_cv_func_gettext" = "yes" -a \
+	    "$ac_cv_func_dgettext" = "yes" ; then
+	AC_DEFINE(USE_GETTEXT,,[Define if messages should use gettext])
+    fi
 fi
 dnl
 if test "$enable_g_mem" != "yes" ; then
@@ -515,11 +521,20 @@ if test "$enable_g_mem" != "yes" ; then
 else
     dnl search.h is used for fancier output from trmem.  Disabled for now,
     dnl since the tsearch routines have problematic prototypes.
-    dnl AC_CHECK_HEADERS(search)
-    dnl AC_CHECK_FUNCS(tsearch)
-    dnl Check that we can compile tsearch without error
-    dnl (not done yet)
-    :
+    AC_CHECK_HEADERS(search)
+    AC_CHECK_FUNCS(tsearch)
+    dnl Check that we can compile tsearch without error.  Try to compile
+    dnl it with the header and the char * args
+    if test "ac_cv_func_tsearch" = "yes" ; then
+        AC_TRY_COMPILE([#include <search.h>
+    char *tsearch( char *k, char **r, (int (*)())compare ) { return k; }],
+    [int f=0;],needs_char=yes,needs_char=no)
+        if test "$needs_char" = "yes" ; then
+	    AC_DEFINE(USE_TSEARCH_WITH_CHARP,,[Define if tsearch requires char pointers])
+	fi
+    fi
+    dnl Note that HPUX and AIX may require _INCLUDE_XOPEN_SOURCE or
+    dnl _XOPEN_SOURCE be defined respectively.
 fi
 dnl
 dnl Specific checks that a function works correctly
@@ -614,6 +629,7 @@ AC_OUTPUT(Makefile src/Makefile \
 	  src/util/info/Makefile \
 	  src/util/instrm/Makefile \
 	  src/util/mem/Makefile \
+	  src/util/msgs/Makefile \
 	  src/util/param/Makefile \
 	  src/util/thread/Makefile \
           src/util/dbg/Makefile \
