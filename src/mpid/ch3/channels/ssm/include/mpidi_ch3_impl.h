@@ -66,16 +66,6 @@
 #include <sys/mman.h>
 #endif
 
-#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
-#define USE_POSIX_SHM
-#elif defined (HAVE_SHMGET) && defined (HAVE_SHMAT) && defined (HAVE_SHMCTL) && defined (HAVE_SHMDT)
-#define USE_SYSV_SHM
-#elif defined (HAVE_WINDOWS_H)
-#define USE_WINDOWS_SHM
-#else
-#error No shared memory subsystem defined
-#endif
-
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
 #define HAVE_COMPARE_AND_SWAP
 static inline char
