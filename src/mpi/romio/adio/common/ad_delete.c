@@ -7,6 +7,10 @@
 
 #include "adio.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 void ADIOI_GEN_Delete(char *filename, int *error_code)
 {
     int err;
