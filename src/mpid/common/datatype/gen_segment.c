@@ -267,11 +267,11 @@ void PREPEND_PREFIX(Segment_pack_vector)(struct DLOOP_Segment *segp,
 void PREPEND_PREFIX(Segment_unpack)(struct DLOOP_Segment *segp,
 				    DLOOP_Offset first,
 				    DLOOP_Offset *lastp,
-				    DLOOP_Buffer unpack_buffer)
+				    const DLOOP_Buffer unpack_buffer)
 {
     struct DLOOP_Segment_piece_params unpack_params;
     
-    unpack_params.u.unpack.unpack_buffer = unpack_buffer;
+    unpack_params.u.unpack.unpack_buffer = (DLOOP_Buffer) unpack_buffer;
     DLOOP_Segment_manipulate(segp, first, lastp, 
 			    DLOOP_Segment_piece_unpack, 
 			    &unpack_params);

@@ -29,7 +29,7 @@ int MPID_Type_vector(int count,
 		     MPI_Datatype *newtype)
 {
     MPID_Datatype *new_dtp;
-    MPID_Dataloop_ptr dlp;
+    struct MPID_Dataloop *dlp;
 
     /* allocate new datatype object and handle */
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
@@ -63,12 +63,12 @@ int MPID_Type_vector(int count,
 	new_dtp->n_elements     = count * blocklength;
 
 	/* allocate dataloop */
-	new_dtp->loopsize       = sizeof(MPID_Dataloop);
+	new_dtp->loopsize       = sizeof(struct MPID_Dataloop);
 
 	/* TODO: maybe create a dataloop allocation function that understands 
 	 * the types???
 	 */
-	dlp                     = (MPID_Dataloop *)MPIU_Malloc(sizeof(MPID_Dataloop));
+	dlp                     = (struct MPID_Dataloop *)MPIU_Malloc(sizeof(struct MPID_Dataloop));
 	new_dtp->opt_loopinfo   = dlp;
 	new_dtp->loopinfo       = dlp;
 

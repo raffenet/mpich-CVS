@@ -18,10 +18,13 @@
 /* These following dataloop-specific types will be used throughout the DLOOP
  * instance:
  */
-#define DLOOP_Offset MPI_Aint
-#define DLOOP_Count  int
-#define DLOOP_Handle MPI_Datatype
-#define DLOOP_Buffer void *
+#define DLOOP_Offset     MPI_Aint
+#define DLOOP_Count      int
+#define DLOOP_Handle     MPI_Datatype
+#define DLOOP_Buffer     void *
+#define DLOOP_VECTOR     MPID_VECTOR
+#define DLOOP_VECTOR_LEN MPID_VECTOR_LEN
+#define DLOOP_VECTOR_BUF MPID_VECTOR_BUF
 
 /* The following accessor functions must also be defined:
  *

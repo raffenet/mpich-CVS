@@ -283,6 +283,8 @@ struct DLOOP_Segment {
     /* other, device-specific information */
 };
 
+#if 0
+
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
 #define DLOOP_VECTOR         WSABUF
@@ -297,6 +299,9 @@ struct DLOOP_Segment {
 #define DLOOP_VECTOR_BUF     iov_base
 #endif
 #define DLOOP_VECTOR_LIMIT   16
+
+
+/* MOVING PROTOTYPES OUT OF HERE */
 
 /* Dataloop functions */
 void PREPEND_PREFIX(Dataloop_copy)(void *dest,
@@ -342,5 +347,6 @@ void PREPEND_PREFIX(Segment_unpack_vector)(struct DLOOP_Segment *segp,
 					   DLOOP_Offset *lastp,
 					   DLOOP_VECTOR *vector,
 					   DLOOP_Offset *lengthp);
+#endif
 
 #endif
