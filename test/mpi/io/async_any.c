@@ -38,13 +38,21 @@ int main(int argc, char **argv)
 	    argv++;
 	}
 	if (i >= argc) {
-	    fprintf(stderr, "\n*#  Usage: async -fname filename\n\n");
+	    /* Use a default filename of testfile */
+	    len      = 8;
+	    filename = (char *)malloc(len + 10);
+	    strcpy( filename, "testfile" );
+	    /* 
+	    fprintf(stderr, "\n*#  Usage: async_any -fname filename\n\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
+	    */
 	}
-	argv++;
-	len = strlen(*argv);
-	filename = (char *) malloc(len+10);
-	strcpy(filename, *argv);
+	else {
+	    argv++;
+	    len = strlen(*argv);
+	    filename = (char *) malloc(len+10);
+	    strcpy(filename, *argv);
+	}
 	MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(filename, len+10, MPI_CHAR, 0, MPI_COMM_WORLD);
     }
