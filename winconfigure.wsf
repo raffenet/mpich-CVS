@@ -2378,56 +2378,6 @@ End If
 'Call WriteFooter(fout)
 'fout.Close()
 
-Function ReplaceDoWhiles(str)
-	' This should be changed to find the do, match the { }, find the while (0) and then remove the do and the while (0)
-	str = Replace(str, "do {", "{")
-	str = Replace(str, "} while (0)", "}")
-	ReplaceDoWhiles = str
-End Function
-
-if bCleanCode then
-
-	'
-	' gen_segment.c
-	'
-	If f.FileExists("src\mpid\common\datatype\gen_segment.c") Then
-		Set fin = f.OpenTextFile("src\mpid\common\datatype\gen_segment.c")
-		contents = fin.ReadAll()
-		fin.Close()
-		Set fout = f.CreateTextFile("src\mpid\common\datatype\gen_segment.c")
-		contents = ReplaceDoWhiles(contents)
-		fout.Write(contents)
-		fout.Close()
-	End If
-
-	'
-	' mpid_segment.c
-	'
-	If f.FileExists("src\mpid\common\datatype\mpid_segment.c") Then
-		Set fin = f.OpenTextFile("src\mpid\common\datatype\mpid_segment.c")
-		contents = fin.ReadAll()
-		fin.Close()
-		Set fout = f.CreateTextFile("src\mpid\common\datatype\mpid_segment.c")
-		contents = ReplaceDoWhiles(contents)
-		fout.Write(contents)
-		fout.Close()
-	End If
-
-	'
-	' mpid_datatype.h
-	'
-	If f.FileExists("src\mpid\common\datatype\mpid_datatype.h") Then
-		Set fin = f.OpenTextFile("src\mpid\common\datatype\mpid_datatype.h")
-		contents = fin.ReadAll()
-		fin.Close()
-		Set fout = f.CreateTextFile("src\mpid\common\datatype\mpid_datatype.h")
-		contents = ReplaceDoWhiles(contents)
-		fout.Write(contents)
-		fout.Close()
-	End If
-
-end if
-
 '
 ' Generate mpicc
 '
