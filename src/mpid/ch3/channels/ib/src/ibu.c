@@ -1939,7 +1939,8 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
 	printf("%s", str);
     }
     */
-    num_bytes = ibui_post_writev(ibu, ibu->write.iov, n, wfn);
+    //num_bytes = ibui_post_writev(ibu, ibu->write.iov, n, wfn);
+    num_bytes = ibui_post_writev(ibu, iov, n, wfn);
     //ibu->write.bufflen = num_bytes;
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITEV);
     //return IBU_SUCCESS;
