@@ -19,9 +19,21 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef USE_PMI_PORT
+#ifndef MAXHOSTNAME
+#define MAXHOSTNAME 256
+#endif
+#endif
+
 #include "pmi.h"
 #include "simple_pmiutil.h"
 
+/* Shouldn't most of these globals be static (local to this file?) 
+   Shouldn't they all be initialized to avoid problems with common symbols? */
+
+/* This one is shared with simple_pmiutil.c.  In fact, it is 
+ *only* used there, and should probably be local to the file and 
+ initialized there */
 char PMIU_print_id[PMIU_IDSIZE];
 
 int PMI_fd = -1;
@@ -38,7 +50,7 @@ int PMI_keylen_max;
 int PMI_vallen_max;
 
 int PMI_iter_next_idx;
-int PMI_debug;
+int PMI_debug = 0;
 
 static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max );
 static int PMII_iter( const char *kvsname, const int idx, int *nextidx, char *key, char *val );
@@ -57,11 +69,18 @@ int PMI_Init( int *spawned )
 	int portnum;
 	char hostname[MAXHOSTNAME];
 	char *pn;
+	int id = 0;
 	/* Not yet implemented.  Connect to the indicated port (in
 	   format hostname:portnumber) and get the fd for the socket */
+
+	PMI_debug = 1;
 	
 	/* Split p into host and port */
-	pn = strchr( ":", p );
+	pn = strchr( p, ':' );
+
+	if (PMI_debug) {
+	    printf( "Connecting to %s\n", p );
+	}
 	if (pn) {
 	    strncpy( hostname, p, (pn - p) );
 	    hostname[(pn-p)] = 0;
@@ -74,7 +93,11 @@ int PMI_Init( int *spawned )
 	if (PMI_fd < 0) return -1;
 
 	/* We should first handshake to get size, rank, debug. */
-	PMI_Set_from_port( PMI_fd );
+	p = getenv( "PMI_ID" );
+	if (p) {
+	    id = atoi( p );
+	}
+	PMI_Set_from_port( PMI_fd, id );
 	notset = 0;
     }
 #endif
@@ -503,7 +526,7 @@ static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
 #ifdef USE_PMI_PORT
 /*
  * This code allows a program to contact a host/port for the PMI socket.
- */
+a */
 #include <errno.h>
 #include <sys/param.h>
 #include <sys/socket.h>
@@ -546,7 +569,7 @@ int PMI_Connect_to_pm( char *hostname, int portnum )
     bzero( &sa, sizeof(sa) );
     bcopy( hp->h_addr, &sa.sin_addr, hp->h_length);
     sa.sin_family = hp->h_addrtype;
-    sa.sin_port   = htons( (u_short) portnum );
+    sa.sin_port   = htons( (unsigned short) portnum );
     
     fd = socket( AF_INET, SOCK_STREAM, TCP );
     if (fd < 0) {
@@ -559,10 +582,10 @@ int PMI_Connect_to_pm( char *hostname, int portnum )
     }
 
     /* If a non-blocking socket, then can use select on write to test for
-	connect would succeed.  Thus, we mark the socket as non-blocking now */
+       connect would succeed.  Thus, we mark the socket as non-blocking now */
 #ifdef FOO
     /* Mark this fd as non-blocking */
-		    /* Do we want to do this? */
+    /* Do we want to do this? */
     if (!q_wait) {
 	flags = fcntl( fd, F_GETFL, 0 );
 	if (flags >= 0) {
@@ -580,7 +603,6 @@ int PMI_Connect_to_pm( char *hostname, int portnum )
 	    return -1;
 	    
 	case EINPROGRESS: /*  (nonblocking) - select for writing. */
-	    if (is_ready) *is_ready = 0;
 	    break;
 	    
 	case EISCONN: /*  (already connected) */
@@ -607,17 +629,31 @@ int PMI_Connect_to_pm( char *hostname, int portnum )
     return fd;
 }
 
-int PMI_Set_from_port( int fd )
+int PMI_Set_from_port( int fd, int id )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
+    int err;
 
     /* We start by sending a startup message to the server */
 
+    if (PMI_debug) {
+	PMIU_printf( 1, "Writing initack to destination fd %d\n", fd );
+    }
     /* Handshake and initialize from a port */
-    PMIU_writeline( fd, "cmd=initack\n" );
+
+    sprintf( buf, "cmd=initack id=%d\n", id );
+    err = PMIU_writeline( fd, buf );
+    if (err) {
+	PMIU_printf( 1, "Error in writeline initack\n" );
+	return -1;
+    }
 
     /* cmd=initack */
-    PMIU_readline( fd, buf, PMIU_MAXLINE );
+    err = PMIU_readline( fd, buf, PMIU_MAXLINE );
+    if (err) {
+	PMIU_printf( 1, "Error reading initack on %d\n", fd );
+	return -1;
+    }
     PMIU_parse_keyvals( buf );
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
     if ( strcmp( cmd, "initack" ) ) {
@@ -629,11 +665,15 @@ int PMI_Set_from_port( int fd )
        the handshake to include a version number */
 
     /* size */
-    PMIU_readline( fd, buf, PMIU_MAXLINE );
+    err = PMIU_readline( fd, buf, PMIU_MAXLINE );
+    if (err) {
+	PMIU_printf( 1, "Error reading size on %d\n", fd );
+	return -1;
+    }
     PMIU_parse_keyvals( buf );
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
     if ( strcmp(cmd,"set")) {
-	PMIU_printf( 1, "got unexpeced command %s in %s\n", cmd, buf );
+	PMIU_printf( 1, "got unexpected command %s in %s\n", cmd, buf );
 	return -1;
     }
     /* cmd=set size=n */
@@ -641,11 +681,15 @@ int PMI_Set_from_port( int fd )
     PMI_size = atoi(cmd);
 
     /* rank */
-    PMIU_readline( fd, buf, PMIU_MAXLINE );
+    err = PMIU_readline( fd, buf, PMIU_MAXLINE );
+    if (err) {
+	PMIU_printf( 1, "Error reading rank on %d\n", fd );
+	return -1;
+    }
     PMIU_parse_keyvals( buf );
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
     if ( strcmp(cmd,"set")) {
-	PMIU_printf( 1, "got unexpeced command %s in %s\n", cmd, buf );
+	PMIU_printf( 1, "got unexpected command %s in %s\n", cmd, buf );
 	return -1;
     }
     /* cmd=set rank=n */
@@ -653,11 +697,15 @@ int PMI_Set_from_port( int fd )
     PMI_rank = atoi(cmd);
 
     /* debug flag */
-    PMIU_readline( fd, buf, PMIU_MAXLINE );
+    err = PMIU_readline( fd, buf, PMIU_MAXLINE );
+    if (err) {
+	PMIU_printf( 1, "Error reading debug on %d\n", fd );
+	return -1;
+    }
     PMIU_parse_keyvals( buf );
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
     if ( strcmp(cmd,"set")) {
-	PMIU_printf( 1, "got unexpeced command %s in %s\n", cmd, buf );
+	PMIU_printf( 1, "got unexpected command %s in %s\n", cmd, buf );
 	return -1;
     }
     /* cmd=set debug=n */

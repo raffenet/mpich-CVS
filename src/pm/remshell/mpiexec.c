@@ -287,6 +287,7 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
     int i;
     int pid;
     char port_as_string[1024];
+    char id_as_string[10];
 
     /* All processes use the same connection port back to the master 
        process */
@@ -339,6 +340,11 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	    myargv[rshNargs++] = "setenv";
 	    myargv[rshNargs++] = "PMI_PORT";
 	    myargv[rshNargs++] = port_as_string;
+	    myargv[rshNargs++] = ";";
+	    myargv[rshNargs++] = "setenv";
+	    myargv[rshNargs++] = "PMI_ID";
+	    sprintf( id_as_string, "%d", i );
+	    myargv[rshNargs++] = id_as_string;
 	    myargv[rshNargs++] = ";";
 	}
 	else {
@@ -398,7 +404,7 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 		/* register this process in the PMI group */
 		/* FIXME: Adds to group 0 only */
 		PMIServAddtoGroup( 0, i, pid, ps->fdPMI );
-		PMIServSetupEntry( ps->fdPMI, 0, ps->nProcesses, i, 
+		PMIServSetupEntry( ps->fdPMI, 0, ptable->nProcesses, i, 
 				   &ps->pmientry );
 		close( pmi_pipe[1] );
 	    }
@@ -642,7 +648,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 
     /* Compute the array size needed for the poll operation */
     nprocess = ptable->nProcesses;
-    nfds = 4 * nprocess + 4;
+    nfds     = 4 * nprocess + 4;
     pollarray = (struct pollfd *)MPIU_Malloc( nfds * sizeof(struct pollfd) );
     if (!pollarray) {
 	MPIU_Internal_error_printf( "Unable to allocate poll array of size %d",
@@ -670,7 +676,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 	 */
 	if (resetPollarray) {
 	    activeNfds = mpiexecSetupPollArray( ptable, 
-						pollarray, handlearray );
+						pollarray, handlearray, fdPMI );
 	    resetPollarray = 0;
 	    /* If only the mpiexec fds are set, exit */
 	    printf( "activeNfds = %d\n", activeNfds ) ; fflush(stdout);
@@ -729,7 +735,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 
 /* This routine sets up the pollarray, given the process table. */
 int mpiexecSetupPollArray( ProcessTable_t *ptable, struct pollfd pollarray[], 
-			   fdHandle_t handlearray[] )
+			   fdHandle_t handlearray[], int fdPMI )
 {
     int j, i;
     int nprocess = ptable->nProcesses;
@@ -770,17 +776,17 @@ int mpiexecSetupPollArray( ProcessTable_t *ptable, struct pollfd pollarray[],
     handlearray[j].extraData  = ptable;
     handlearray[j].state      = 0;
     j++;
+#endif
     /* socket used to create PMI sockets (not the pmi socket for each 
        process; those are in the process table below) */
     pollarray[j].fd	      = fdPMI;
-    pollarray[j].events	      = POLLOUT | POLLIN;
+    pollarray[j].events	      = POLLIN;
     handlearray[j].fd	      = fdPMI;
     handlearray[j].processIdx = -1;
     handlearray[j].handleIO   = mpiexecGetPMIsock;
     handlearray[j].extraData  = ptable;
     handlearray[j].state      = 0;
     j++;
-#endif
 
     /* Only include fd's that are positive; fds for closed pipes/sockets
        are set to -1 */
@@ -949,8 +955,34 @@ int mpiexecHandleStdin( int fd, int pidx, void *extra )
     return 0;
 }
 
+/* Respond to a connection request by 
+   creating a new socket.
+   Finding the corresponding process in the process table
+   Initializing the table entry and sending the 
+   startup handshake
+ */
 int mpiexecGetPMIsock( int fd, int pidx, void *extra )
 {
+    int newfd;
+    struct sockaddr sock;
+    int    addrlen;
+
+    /* Get the new socket */
+    newfd = accept( fd, &sock, &addrlen );
+    if (newfd < 0) return newfd;
+    
+#ifdef FOO
+    /* Mark this fd as non-blocking */
+    flags = fcntl( newfd, F_GETFL, 0 );
+    if (flags >= 0) {
+	flags |= O_NDELAY;
+	fcntl( newfd, F_SETFL, flags );
+    }
+#endif
+
+    /* Find the matching process.  Do this by reading from the socket and 
+       getting the id value that the process was created with. */
+    
     return 0;
 }
 
