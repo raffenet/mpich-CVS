@@ -161,6 +161,8 @@ void mp_print_extra_options(void)
     printf("  validate the encrypted credentials for the current or specified host.\n");
     printf("-timeout seconds\n");
     printf("  timeout for the job.\n");
+    printf("-plaintext\n");
+    printf("  don't encrypt the data on the wire.\n");
 }
 
 #ifdef HAVE_WINDOWS_H
@@ -1336,6 +1338,10 @@ configfile_loop:
 	    else if ((strcmp(&(*argvp)[1][1], "nosmpd") == 0) || (strcmp(&(*argvp)[1][1], "no_smpd") == 0) || (strcmp(&(*argvp)[1][1], "nopm") == 0))
 	    {
 		smpd_process.use_pmi_server = SMPD_FALSE;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "plaintext") == 0)
+	    {
+		smpd_process.plaintext = SMPD_TRUE;
 	    }
 	    else
 	    {
