@@ -159,7 +159,8 @@ smpd_global_t smpd_process =
       -1,               /* timeout                 */
       MPIDU_SOCK_INVALID_SOCK, /* timeout_sock     */
       SMPD_TRUE,        /* use_pmi_server          */
-      NULL              /* mpiexec_argv0           */
+      NULL,             /* mpiexec_argv0           */
+      "dummy"           /* encrypt_prefix          */
     };
 
 int smpd_post_abort_command(char *fmt, ...)
@@ -556,6 +557,7 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_S
     context->spawn_context = NULL;
     context->cred_request[0] = '\0';
     context->password[0] = '\0';
+    context->encrypted_password[0] = '\0';
     context->port_str[0] = '\0';
     context->pszChallengeResponse[0] = '\0';
     context->pszCrypt[0] = '\0';

@@ -338,21 +338,14 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    break;
 		printf("passwords don't match, please try again.\n");
 	    }
-	    if (smpd_setup_crypto_client())
+	    if (smpd_save_password_to_registry(smpd_process.UserAccount, smpd_process.UserPassword, SMPD_TRUE)) 
 	    {
-		if (smpd_save_password_to_registry(smpd_process.UserAccount, smpd_process.UserPassword, SMPD_TRUE)) 
-		{
-		    printf("Password encrypted into the Registry.\n");
-		    smpd_delete_cached_password();
-		}
-		else
-		{
-		    printf("Error: Unable to save encrypted password.\n");
-		}
+		printf("Password encrypted into the Registry.\n");
+		smpd_delete_cached_password();
 	    }
 	    else
 	    {
-		printf("Error: Unable to setup the encryption service.\n");
+		printf("Error: Unable to save encrypted password.\n");
 	    }
 	    smpd_exit(0);
 	}
@@ -371,27 +364,20 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	}
 	if (strcmp((*argvp)[1], "-validate") == 0)
 	{
-	    if (smpd_setup_crypto_client())
+	    if (smpd_read_password_from_registry(smpd_process.UserAccount, smpd_process.UserPassword))
 	    {
-		if (smpd_read_password_from_registry(smpd_process.UserAccount, smpd_process.UserPassword))
+		if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
 		{
-		    if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
-		    {
-			smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
-		    }
-		    smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
-		    smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
-		    smpd_process.validate = SMPD_TRUE;
-		    smpd_do_console();
+		    smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 		}
-		else
-		{
-		    printf("FAIL: Unable to read the credentials from the registry.\n");fflush(stdout);
-		}
+		smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
+		smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+		smpd_process.validate = SMPD_TRUE;
+		smpd_do_console();
 	    }
 	    else
 	    {
-		printf("FAIL: Unable to setup the encryption service.\n");fflush(stdout);
+		printf("FAIL: Unable to read the credentials from the registry.\n");fflush(stdout);
 	    }
 	    smpd_exit(0);
 	}
@@ -831,6 +817,22 @@ configfile_loop:
 		strncpy(env_node->value, (*argvp)[3], SMPD_MAX_VALUE_LENGTH);
 		env_node->next = env_list;
 		env_list = env_node;
+#ifdef HAVE_WINDOWS_H
+		if ((strcmp(env_node->name, "MPICH_CHOP_ERROR_STACK") == 0) && ((env_node->value[0] == '\0') || (env_node->value[0] == '-')))
+		{
+		    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+		    if (hConsole != INVALID_HANDLE_VALUE)
+		    {
+			CONSOLE_SCREEN_BUFFER_INFO info;
+			if (GetConsoleScreenBufferInfo(hConsole, &info))
+			{
+			    /* The user chose default so set the value to the width of the current output console window */
+			    snprintf(env_node->value, SMPD_MAX_VALUE_LENGTH, "%d", info.dwMaximumWindowSize.X);
+			    /*printf("width = %d\n", info.dwMaximumWindowSize.X);*/
+			}
+		    }
+		}
+#endif
 		num_args_to_strip = 3;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "genv") == 0)
@@ -852,6 +854,22 @@ configfile_loop:
 		strncpy(env_node->value, (*argvp)[3], SMPD_MAX_VALUE_LENGTH);
 		env_node->next = genv_list;
 		genv_list = env_node;
+#ifdef HAVE_WINDOWS_H
+		if ((strcmp(env_node->name, "MPICH_CHOP_ERROR_STACK") == 0) && ((env_node->value[0] == '\0') || (env_node->value[0] == '-')))
+		{
+		    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+		    if (hConsole != INVALID_HANDLE_VALUE)
+		    {
+			CONSOLE_SCREEN_BUFFER_INFO info;
+			if (GetConsoleScreenBufferInfo(hConsole, &info))
+			{
+			    /* The user chose default so set the value to the width of the current output console window */
+			    snprintf(env_node->value, SMPD_MAX_VALUE_LENGTH, "%d", info.dwMaximumWindowSize.X);
+			    /*printf("width = %d\n", info.dwMaximumWindowSize.X);*/
+			}
+		    }
+		}
+#endif
 		num_args_to_strip = 3;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "genvall") == 0)

@@ -209,6 +209,8 @@ int smpd_state_reading_challenge_string(smpd_context_t *context, MPIDU_Sock_even
 
     /*smpd_dbg_printf("crypting: %s\n", phrase);*/
     smpd_hash(phrase, (int)strlen(phrase), context->pszChallengeResponse, SMPD_AUTHENTICATION_STR_LEN);
+    /* save the response to be used as a prefix to the password when encrypting the password */
+    MPIU_Strncpy(smpd_process.encrypt_prefix, context->pszChallengeResponse, SMPD_MAX_PASSWORD_LENGTH);
 
     /* write the response */
     /*smpd_dbg_printf("writing response: %s\n", pszStr);*/
@@ -1993,7 +1995,7 @@ int smpd_state_reading_account(smpd_context_t *context, MPIDU_Sock_event_t *even
     }
     smpd_dbg_printf("read account: '%s'\n", context->account);
     context->read_state = SMPD_READING_PASSWORD;
-    result = MPIDU_Sock_post_read(context->sock, context->password, SMPD_MAX_PASSWORD_LENGTH, SMPD_MAX_PASSWORD_LENGTH, NULL);
+    result = MPIDU_Sock_post_read(context->sock, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH, SMPD_MAX_PASSWORD_LENGTH, NULL);
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("unable to post a read of the password credential,\nsock error: %s\n",
@@ -2010,6 +2012,9 @@ int smpd_state_reading_account(smpd_context_t *context, MPIDU_Sock_event_t *even
 int smpd_state_reading_password(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 {
     int result;
+    char *iter;
+    char decrypted[SMPD_MAX_PASSWORD_LENGTH];
+    int length;
 
     smpd_enter_fn("smpd_state_reading_password");
     if (event_ptr->error != MPI_SUCCESS)
@@ -2020,6 +2025,32 @@ int smpd_state_reading_password(smpd_context_t *context, MPIDU_Sock_event_t *eve
 	smpd_exit_fn("smpd_state_reading_password");
 	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
     }
+    /* decrypt the password */
+    length = SMPD_MAX_PASSWORD_LENGTH;
+    result = smpd_decrypt_data(context->encrypted_password, (int)strlen(context->encrypted_password), decrypted, &length);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to decrypt the password\n");
+	smpd_exit_fn("smpd_state_reading_password");
+	return SMPD_FAIL;
+    }
+    if (length >= 0 && length < SMPD_MAX_PASSWORD_LENGTH)
+    {
+	decrypted[length] = '\0';
+    }
+    else
+    {
+	smpd_err_printf("unable to decrypt the password, invalid length of %d bytes decrypted returned.\n", length);
+	smpd_exit_fn("smpd_state_reading_password");
+	return SMPD_FAIL;
+    }
+    /* skip over the prefix */
+    iter = decrypted;
+    while (*iter != ' ' && *iter != '\0')
+	iter++;
+    if (*iter == ' ')
+	iter++;
+    MPIU_Strncpy(context->password, iter, SMPD_MAX_PASSWORD_LENGTH);
     smpd_dbg_printf("read password, %d bytes\n", strlen(context->password));
 #ifdef HAVE_WINDOWS_H
     /* launch the manager process */
@@ -2077,6 +2108,7 @@ int smpd_state_reading_password(smpd_context_t *context, MPIDU_Sock_event_t *eve
 int smpd_state_writing_account(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 {
     int result;
+    char buffer[SMPD_MAX_PASSWORD_LENGTH];
 
     smpd_enter_fn("smpd_state_writing_account");
     if (event_ptr->error != MPI_SUCCESS)
@@ -2086,8 +2118,21 @@ int smpd_state_writing_account(smpd_context_t *context, MPIDU_Sock_event_t *even
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("wrote account: '%s'\n", context->account);
+    /* encrypt the password and a prefix to introduce variability to the encrypted blob */
+    /* The prefix used is the challenge response string */
+    if (context->encrypted_password[0] == '\0')
+    {
+	MPIU_Snprintf(buffer, SMPD_MAX_PASSWORD_LENGTH, "%s %s", smpd_process.encrypt_prefix, context->password);
+	result = smpd_encrypt_data(buffer, (int)strlen(buffer), context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to encrypt the user password.\n");
+	    smpd_exit_fn("smpd_state_writing_account");
+	    return SMPD_FAIL;
+	}
+    }
     context->write_state = SMPD_WRITING_PASSWORD;
-    result = MPIDU_Sock_post_write(context->sock, context->password, SMPD_MAX_PASSWORD_LENGTH, SMPD_MAX_PASSWORD_LENGTH, NULL);
+    result = MPIDU_Sock_post_write(context->sock, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH, SMPD_MAX_PASSWORD_LENGTH, NULL);
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the password,\nsock error: %s\n",

@@ -87,7 +87,7 @@ typedef int SMPD_BOOL;
 #define SMPD_MAX_DIR_LENGTH              1024
 #define SMPD_MAX_PATH_LENGTH             1024
 #define SMPD_MAX_ACCOUNT_LENGTH           100
-#define SMPD_MAX_PASSWORD_LENGTH          100
+#define SMPD_MAX_PASSWORD_LENGTH          200
 #define SMPD_MAX_CRED_REQUEST_LENGTH      100
 #define SMPD_MAX_PWD_REQUEST_LENGTH       100
 #define SMPD_MAX_PORT_STR_LENGTH           20
@@ -103,7 +103,7 @@ typedef int SMPD_BOOL;
 #define SMPD_SMPD_SESSION_STR             "smpd"
 #define SMPD_PROCESS_SESSION_STR          "process"
 #define SMPD_PMI_SESSION_STR              "pmi"
-#define SMPD_DEFAULT_PASSPHRASE           "behappy" /* must be less than 13 characers */
+#define SMPD_DEFAULT_PASSPHRASE           "behappy"
 #define SMPD_DEFAULT_PASSWORD             "gastroduodenostomy"
 #define SMPD_REGISTRY_KEY                 "SOFTWARE\\MPICH\\SMPD"
 #define SMPD_REGISTRY_CACHE_KEY           "SOFTWARE\\MPICH\\SMPD\\CACHE"
@@ -317,6 +317,7 @@ typedef struct smpd_context_t
     char cred_request[SMPD_MAX_CRED_REQUEST_LENGTH];
     char account[SMPD_MAX_ACCOUNT_LENGTH];
     char password[SMPD_MAX_PASSWORD_LENGTH];
+    char encrypted_password[SMPD_MAX_PASSWORD_LENGTH];
     char smpd_pwd[SMPD_MAX_PASSWORD_LENGTH];
     char session_header[SMPD_MAX_SESSION_HEADER_LENGTH];
     int connect_return_id, connect_return_tag;
@@ -561,6 +562,7 @@ typedef struct smpd_global_t
     MPIDU_Sock_t timeout_sock;
     SMPD_BOOL use_pmi_server;
     char *mpiexec_argv0;
+    char encrypt_prefix[SMPD_MAX_PASSWORD_LENGTH];
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
@@ -674,7 +676,6 @@ int smpd_process_from_registry(smpd_process_t *process);
 int smpd_process_to_registry(smpd_process_t *process, char *actual_exe);
 int smpd_clear_process_registry();
 int smpd_validate_process_registry();
-SMPD_BOOL smpd_setup_crypto_client();
 SMPD_BOOL smpd_read_password_from_registry(char *szAccount, char *szPassword);
 SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPassword, SMPD_BOOL persistent);
 SMPD_BOOL smpd_delete_current_password_registry_entry();
@@ -714,5 +715,7 @@ int smpd_get_hostname(char *host, int length);
 int PMIX_Start_root_smpd(int nproc, char *host, int len, int *port);
 int PMIX_Stop_root_smpd(void);
 int smpd_hash(char *input, int input_length, char *output, int output_length);
+int smpd_encrypt_data(char *input, int input_length, char *output, int output_length);
+int smpd_decrypt_data(char *input, int input_length, char *output, int *output_length);
 
 #endif
