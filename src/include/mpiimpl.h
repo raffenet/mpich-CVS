@@ -1219,6 +1219,11 @@ typedef enum MPID_Request_kind_t {
     MPID_REQUEST_SEND, MPID_REQUEST_RECV, MPID_PREQUEST_SEND,
     MPID_PREQUEST_RECV, MPID_UREQUEST } MPID_Request_kind_t;
 
+/* Typedefs for Fortran generalized requests */
+typedef void (MPIR_Grequest_f77_cancel_function)(void *, int*, int *); 
+typedef void (MPIR_Grequest_f77_free_function)(void *, int *); 
+typedef void (MPIR_Grequest_f77_query_function)(void *, MPI_Status *, int *); 
+
 /*S
   MPID_Request - Description of the Request data structure
 
@@ -1261,9 +1266,11 @@ typedef struct MPID_Request {
     struct MPID_Request *partner_request;
     /* User-defined request support */
     MPI_Grequest_cancel_function *cancel_fn;
-    MPI_Grequest_free_function *free_fn;
-    MPI_Grequest_query_function *query_fn;
+    MPI_Grequest_free_function   *free_fn;
+    MPI_Grequest_query_function  *query_fn;
     void *grequest_extra_state;
+    MPID_Lang_t                  greq_lang;         /* langage that defined
+						       the generalize req */
     
     /* Other, device-specific information */
 #ifdef MPID_DEV_REQUEST_DECL

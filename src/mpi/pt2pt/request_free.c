@@ -138,7 +138,26 @@ int MPI_Request_free(MPI_Request *request)
 	
 	case MPID_UREQUEST:
 	{
+	    switch (request_ptr->greq_lang) {
+	    case MPID_LANG_C:
+#ifdef HAVE_CXX_BINDING:
+	    case MPID_LANG_CXX:
+#endif
 	    mpi_errno = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
+	    break;
+#ifdef HAVE_FORTRAN_BINDING:
+	    case MPID_LANG_FORTRAN:
+	    case MPID_LANG_FORTRAN90:
+	    {
+		MPI_Fint ierr;
+		( (MPIR_Grequest_f77_free_function*)(request_ptr->free_fn))(
+		    request_ptr->grequest_extra_state, 
+		    &ierr );
+		mpi_errno = (int) ierr;
+	    }
+	    break;
+#endif	    
+	    }
 	    break;
 	}
     }

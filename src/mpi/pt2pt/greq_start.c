@@ -102,6 +102,7 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
     lrequest_ptr->free_fn              = free_fn;
     lrequest_ptr->query_fn             = query_fn;
     lrequest_ptr->grequest_extra_state = extra_state;
+    lrequest_ptr->greq_lang            = MPID_LANG_C;
 
     /* NOTE: the request is given a ref_count of 2 so that the object is not
        destroyed until both MPI_Grequest_complete() and a communication

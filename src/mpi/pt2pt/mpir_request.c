@@ -113,11 +113,55 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 	case MPID_UREQUEST:
 	{
 	    int rc;
-	    
+
+	    switch (request_ptr->greq_lang) {
+	    case MPID_LANG_C:
+#ifdef HAVE_CXX_BINDING
+	    case MPID_LANG_CXX:
+#endif
 	    mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
+	    break;
+#ifdef HAVE_FORTRAN_BINDING
+	    case MPID_LANG_FORTRAN:
+	    case MPID_LANG_FORTRAN90:
+	    { MPI_Fint ierr;
+	    ((MPIR_Grequest_f77_query_function *)(request_ptr->query_fn))( 
+		request_ptr->grequest_extra_state, 
+				     &request_ptr->status, &ierr );
+	    mpi_errno = (int)ierr;
+	    }
+	    break;
+#endif	    
+	    /* --BEGIN ERROR HANDLING-- */
+	    default:
+		/* This should not happen */
+		rc = 0;
+		break;
+	    /* --END ERROR HANDLING-- */
+	    }
+
 	    MPIR_Request_extract_status(request_ptr, status);
-	    
+
+	    switch (request_ptr->greq_lang) {
+	    case MPID_LANG_C:
+#ifdef HAVE_CXX_BINDING
+	    case MPID_LANG_CXX:
+#endif
 	    rc = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
+	    break;
+#ifdef HAVE_FORTRAN_BINDING
+	    case MPID_LANG_FORTRAN:
+	    case MPID_LANG_FORTRAN90:
+	    {
+		MPI_Fint ierr;
+		( (MPIR_Grequest_f77_free_function *)(request_ptr->free_fn))( 
+		    request_ptr->grequest_extra_state,
+		    &ierr );
+		rc = (int) ierr;
+	    }
+	    break;
+#endif	    
+	    }
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (rc != MPI_SUCCESS)
 	    {
@@ -165,10 +209,42 @@ int MPIR_Request_get_error(MPID_Request * request_ptr)
 
 	case MPID_UREQUEST:
 	{
+	    switch (request_ptr->greq_lang) {
+	    case MPID_LANG_C:
+#ifdef HAVE_CXX_BINDING
+	    case MPID_LANG_CXX:
+#endif
 	    mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
+	    break;
+#ifdef HAVE_FORTRAN_BINDING
+	    case MPID_LANG_FORTRAN:
+	    case MPID_LANG_FORTRAN90:
+	    {
+		MPI_Fint ierr;
+		((MPIR_Grequest_f77_query_function*)(request_ptr->query_fn))( 
+		    request_ptr->grequest_extra_state,
+		    &request_ptr->status,
+		    &ierr );
+		mpi_errno = (int)ierr;
+	    }
+	    break;
+#endif
+	    }
 	    break;
 	}
     }
 
     return mpi_errno;
 }
+
+#ifdef HAVE_FORTRAN_BINDING
+/* Set the language type to Fortran for this request */
+void MPIR_Grequest_set_lang_f77( MPI_Request greq )
+{
+    MPID_Request *greq_ptr;
+
+    MPID_Request_get_ptr( greq, greq_ptr );
+
+    greq_ptr->greq_lang = MPID_LANG_FORTRAN;
+}
+#endif
