@@ -266,6 +266,7 @@ sub RunMPIProgram {
 		# passed the test.
 		if (!$found_error) {
 		    $run_status = $?;
+		    if ($run_status > 255) { $run_status >>= 8; }
 		    print STDERR "Program $programname exited with non-zero status $run_status\n";
 		    $found_error = 1;
 		    $err_count ++;
@@ -326,6 +327,7 @@ sub TestStatus {
     $rc = close ( MPIOUT );
     if ($rc == 0) {
 	$run_status = $?;
+	if ($run_status > 255) { $run_status >>= 8; }
     }
     else {
 	# This test *requires* non-zero return codes
