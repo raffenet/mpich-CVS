@@ -72,6 +72,8 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+	    /* NOTE: MPI_STATUS_IGNORE != NULL */
+	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
             if (mpi_errno) 
 	    {
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -134,8 +136,8 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	    /* If a request was returned, then we need to block until the
 	       request is complete */
 	    MPIR_Wait(request_ptr);
-
-	    if (status != NULL)
+	    
+	    if (status != MPI_STATUS_IGNORE)
 	    {
 		*status = request_ptr->status;
 	    }
