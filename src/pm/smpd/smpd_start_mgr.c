@@ -121,6 +121,16 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
     {
 	if (use_context_user_handle)
 	{
+	    if (context->sspi_context == NULL)
+	    {
+		smpd_err_printf("use_context_user_handle set to TRUE but sspi_context == NULL\n");
+		CloseHandle(hRead);
+		CloseHandle(hWrite);
+		CloseHandle(hReadRemote);
+		CloseHandle(hWriteRemote);
+		smpd_exit_fn("smpd_start_win_mgr");
+		return SMPD_ERR_INVALID_USER;
+	    }
 	    user_handle = context->sspi_context->user_handle;
 	}
 	else
@@ -206,7 +216,13 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
     {
 	RevertToSelf();
 	CloseHandle(user_handle);
-	context->sspi_context->user_handle = INVALID_HANDLE_VALUE;
+	if (use_context_user_handle)
+	{
+	    if (context->sspi_context)
+	    {
+		context->sspi_context->user_handle = INVALID_HANDLE_VALUE;
+	    }
+	}
     }
     if (result != SMPD_SUCCESS)
     {
@@ -242,7 +258,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 	return SMPD_FAIL;
     }
     /* send the account and password to the manager */
-    smpd_dbg_printf("smpd sending the account and password to the manager\n");
+    smpd_dbg_printf("smpd sending the account to the manager\n");
     if (!WriteFile(hWrite, domainaccount, SMPD_MAX_ACCOUNT_LENGTH, &num_written, NULL))
     {
 	smpd_err_printf("WriteFile('%s') failed to write the account, error %d\n", domainaccount, GetLastError());
@@ -257,6 +273,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 	smpd_exit_fn("smpd_start_win_mgr");
 	return SMPD_FAIL;
     }
+    smpd_dbg_printf("smpd sending the password to the manager\n");
     if (!WriteFile(hWrite, password, SMPD_MAX_PASSWORD_LENGTH, &num_written, NULL))
     {
 	smpd_err_printf("WriteFile() failed to write the password, error %d\n", GetLastError());
@@ -271,6 +288,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 	smpd_exit_fn("smpd_start_win_mgr");
 	return SMPD_FAIL;
     }
+    smpd_dbg_printf("smpd sending the smpd passphrase to the manager\n");
     if (!WriteFile(hWrite, smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH, &num_written, NULL))
     {
 	smpd_err_printf("WriteFile() failed to write the passphrase, error %d\n", GetLastError());
@@ -285,6 +303,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 	smpd_exit_fn("smpd_start_win_mgr");
 	return SMPD_FAIL;
     }
+    smpd_dbg_printf("closing the pipe to the manager\n");
     CloseHandle(hWrite);
 
     return SMPD_SUCCESS;
