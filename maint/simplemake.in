@@ -68,8 +68,13 @@ $quiet = 0;
 		 );
 # Similarly, but for profiling library versions.
 # This has an MPICH-specific definition that we should eventually generalize
-%extrules_pf = ( 'c' => '${C_COMPILE} -c -DMPICH_MPI_FROM_PMPI $< 
+%extrules_pf = ( 'c' => '${C_COMPILE} -c -DMPICH_PROFILE_PMPI $< 
 	@mv -f $*.o $*.pf' );
+# When we are building profiled versions, we use a separate ext rule
+%extrules_with_profile = %extrules;
+# PROFILE_DEF_MPI is set when needed to create the profiling libraries.
+$extrules_with_profile{'c'} =~ s/-c/-c \@PROFILE_DEF_MPI\@/;
+print "rule = $extrules_with_profile{'c'}\n" if $debug;
 
 # Definitions for each extension (these are the defs needed for each ext->o
 # extension)
@@ -563,7 +568,13 @@ sub DefaultRules {
 
     foreach $ext (keys(%ext_seen)) {
 	print FD ".$ext.o:$newline";
-	print FD "\t$extrules{$ext}$newline";
+	if ($found_profilelib) {
+	    # Use a special rule when building the non-profile-lib version
+	    print FD "\t$extrules_with_profile{$ext}$newline";
+	}
+	else {
+	    print FD "\t$extrules{$ext}$newline";
+	}
 	if ($do_sharedlibs) {
 	    print FD ".$ext.lo:$newline";
 	    print FD "\t$extrules_sh{$ext}$newline";
