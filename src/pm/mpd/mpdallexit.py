@@ -20,8 +20,8 @@ def mpdallexit():
     try:
         conSocket.connect(consoleName)
     except Exception, errmsg:
-        mpd_raise('cannot connect to local mpd: %s' % consoleName)
-        # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
+        print 'cannot connect to local mpd at %s' % consoleName
+        exit(-1)
     mpd_send_one_msg(conSocket, {'cmd':'mpdallexit'})
     msg = mpd_recv_one_msg(conSocket)
     if not msg or msg['cmd'] != 'mpdallexit_ack':
