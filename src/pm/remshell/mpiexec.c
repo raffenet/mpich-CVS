@@ -41,8 +41,8 @@
  */
 
 #define MAXNAMELEN  256		/* max length of vairous names */
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 2048		/* max length of PATH */
+#ifndef PATH_MAX
+#define PATH_MAX 2048		/* max length of PATH */
 #endif
 #define MAXPROCESSES     64	/* max number of processes to manage */
 
@@ -423,8 +423,8 @@ MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 {
     FILE *fp;
     char buf[MAXLINE+1];
-    char machinesfile[MAXPATHLEN];
-    char dirname[MAXPATHLEN];
+    char machinesfile[PATH_MAX];
+    char dirname[PATH_MAX];
     char *p;
     char *path=getenv("MPIEXEC_MACHINES_PATH");
     MachineTable *mt;

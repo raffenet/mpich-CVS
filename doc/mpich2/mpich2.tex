@@ -8462,6 +8462,13 @@ Question:  Where are additional keyvals documented?  Do we want a
 string-to-keyval translator?  E.g., a routine that, given a string
 description, returns the corresponding keyval, if any?
 
+\subsection{Other parts of the environment}
+There are many parts to the state of a user's environment that we may want to 
+ensure are propagated to all MPI processes.  One request from a user was for
+the \code{umask}\index{umask} to be maintained.  We should list all components
+of a process's state and make an explicit decision about what is and is not
+carried over to new processes.
+
 \subsection{Documentation and Man Pages}
 The MPI standard requires that the MPI implementation document certain
 features and capabilities.  For example, any signal used by the MPI
