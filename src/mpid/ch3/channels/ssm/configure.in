@@ -205,6 +205,23 @@ if test "$lac_cv_have___asm_and_x86_lfence" = "yes" ; then
     AC_DEFINE(HAVE___ASM_AND_X86_LFENCE, 1, [Define if using __asm on a x86 system with the lfence instruction])
 fi
 
+AC_MSG_CHECKING([for _InterlockedExchange intrinsic])
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+    unsigned long lock, *lock_ptr;
+    lock_ptr = &lock;
+    _InterlockedExchange(lock_ptr, 1);
+    exit(0);
+}
+],
+AC_MSG_RESULT(yes); lac_cv_have__InterlockedExchange=yes,
+AC_MSG_RESULT(no); lac_cv_have__InterlockedExchange=no,
+AC_MSG_RESULT(not checking when cross compiling), lac_cv_have__InterlockedExchange=no)
+if test "$lac_cv_have__InterlockedExchange" = "yes" ; then
+    AC_DEFINE(HAVE__INTERLOCKEDEXCHANGE, 1, [Define if _InterlockedExchange intrinsic is available])
+fi
+
 SSM_LIBS=$LIBS
 LIBS=$save_libs
 
