@@ -890,6 +890,9 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	sprintf(str, "%d", process->spawned);
 	smpd_dbg_printf("env: PMI_SPAWN=%s\n", str);
 	SetEnvironmentVariable("PMI_SPAWN", str);
+	sprintf(str, "%d", process->appnum);
+	smpd_dbg_printf("env: PMI_APPNUM=%s\n", str);
+	SetEnvironmentVariable("PMI_APPNUM", str);
     }
     pEnv = GetEnvironmentStrings();
 

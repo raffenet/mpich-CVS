@@ -320,6 +320,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		return SMPD_FAIL;
 		*/
 	    }
+	    launch_iter->appnum = i;
 	    launch_iter->iproc = cur_iproc++;
 	    launch_iter->args[0] = '\0';
 	    launch_iter->clique[0] = '\0';

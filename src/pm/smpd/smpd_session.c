@@ -371,6 +371,7 @@ int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
     p->spawned = 0;
     p->local_process = SMPD_TRUE;
     p->map_list = NULL;
+    p->appnum = 0;
 
     *process_ptr = p;
 

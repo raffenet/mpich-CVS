@@ -365,6 +365,7 @@ typedef struct smpd_process_t
     int spawned;
     SMPD_BOOL local_process;
     smpd_map_drive_node_t *map_list;
+    int appnum;
     struct smpd_process_t *next;
 } smpd_process_t;
 
@@ -381,6 +382,7 @@ typedef struct smpd_launch_node_t
     char hostname[SMPD_MAX_HOST_LENGTH];
     int iproc;
     int nproc;
+    int appnum;
     struct smpd_launch_node_t *next, *prev;
 } smpd_launch_node_t;
 

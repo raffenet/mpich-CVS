@@ -317,6 +317,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     FILE *fin_config;
     int result;
     int maxlen;
+    int appnum = 0;
 
     smpd_enter_fn("mp_parse_command_args");
 
@@ -1626,6 +1627,7 @@ configfile_loop:
 	    launch_node->clique[0] = '\0';
 	    smpd_get_next_host(&host_list, launch_node);
 	    launch_node->iproc = cur_rank++;
+	    launch_node->appnum = appnum;
 	    launch_node->env = launch_node->env_data;
 	    strcpy(launch_node->env_data, env_data);
 	    if (wdir[0] != '\0')
@@ -1696,6 +1698,9 @@ configfile_loop:
 		launch_node->prev = NULL;
 	    }
 	}
+
+	/* advance the application number for each : separated command line block or line in a configuration file */
+	appnum++;
 
 	if (smpd_process.s_host_list)
 	{

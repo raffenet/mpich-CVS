@@ -53,6 +53,7 @@ typedef struct pmi_process_t
     int *clique_ranks;
     char host[100];
     int port;
+    int appnum;
 } pmi_process_t;
 
 /* global variables */
@@ -82,7 +83,8 @@ static pmi_process_t pmi_process =
     0,                   /* clique_size    */
     NULL,                /* clique_ranks   */
     "",                  /* host           */
-    -1                   /* port           */
+    -1,                  /* port           */
+    0                    /* appnum         */
 };
 
 static int silence = 0;
@@ -743,6 +745,16 @@ int iPMI_Init(int *spawned)
 	*spawned = 0;
     }
 
+    p = getenv("PMI_APPNUM");
+    if (p)
+    {
+	pmi_process.appnum = atoi(p);
+    }
+    else
+    {
+	pmi_process.appnum = 0;
+    }
+
     p = getenv("PMI_KVS");
     if (p != NULL)
     {
@@ -1162,8 +1174,7 @@ int iPMI_Get_appnum(int *appnum)
     if (appnum == NULL)
 	return PMI_ERR_INVALID_ARG;
 
-    /* FIXME: insert implementation here */
-    *appnum = -1;
+    *appnum = pmi_process.appnum;
 
     return PMI_SUCCESS;
 }
@@ -1670,6 +1681,7 @@ int iPMI_Spawn_multiple(int count,
     char path[SMPD_MAX_PATH_LENGTH] = "";
     int *info_keyval_sizes;
     int total_num_processes;
+    int appnum = 0;
 
     if (pmi_process.init_finalized == PMI_FINALIZED)
 	return PMI_ERR_INIT;

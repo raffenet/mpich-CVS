@@ -484,6 +484,12 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, char 
 	    smpd_err_printf("unable to add the spawn flag to the launch command: '%s'\n", launch_node_ptr->exe);
 	    goto launch_failure;
 	}
+	result = smpd_add_command_int_arg(cmd_ptr, "a", launch_node_ptr->appnum);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the application number to the launch command: '%s'\n", launch_node_ptr->exe);
+	    goto launch_failure;
+	}
 	if (launch_node_ptr->env[0] != '\0')
 	{
 	    result = smpd_add_command_arg(cmd_ptr, "e", launch_node_ptr->env);
@@ -1520,6 +1526,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
     MPIU_Str_get_string_arg(cmd->cmd, "q", process->clique, SMPD_MAX_CLIQUE_LENGTH);
     MPIU_Str_get_int_arg(cmd->cmd, "n", &process->nproc);
     MPIU_Str_get_int_arg(cmd->cmd, "s", &process->spawned);
+    MPIU_Str_get_int_arg(cmd->cmd, "a", &process->appnum);
     /* parse the -m drive mapping options */
     nmaps = 0;
     MPIU_Str_get_int_arg(cmd->cmd, "mn", &nmaps);

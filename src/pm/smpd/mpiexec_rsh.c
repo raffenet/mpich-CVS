@@ -410,14 +410,15 @@ int mpiexec_rsh()
 	    MPIU_Str_add_string_arg(&env_str, &maxlen, "PMI_ROOT_HOST", root_host);
 	    MPIU_Str_add_int_arg(&env_str, &maxlen, "PMI_ROOT_PORT", root_port);
 	    MPIU_Str_add_string_arg(&env_str, &maxlen, "PMI_ROOT_LOCAL", "0");
+	    MPIU_Str_add_int_arg(&env_str, &maxlen, "PMI_APPNUM", launch_node_ptr->appnum);
 
 	    MPIU_Strncpy(process->exe, exe, SMPD_MAX_EXE_LENGTH);
 	}
 	else
 	{
 	    /* ssh and dynamic rPMI initialization */
-	    MPIU_Snprintf(process->exe, SMPD_MAX_EXE_LENGTH, "%s %s env \"PMI_RANK=%d\" \"PMI_SIZE=%d\" \"PMI_KVS=%s\" \"PMI_ROOT_HOST=%s\" \"PMI_ROOT_PORT=%d\" \"PMI_ROOT_LOCAL=0\" \"%s\"",
-		ssh_cmd, launch_node_ptr->hostname, launch_node_ptr->iproc, launch_node_ptr->nproc, smpd_process.kvs_name, root_host, root_port, exe);
+	    MPIU_Snprintf(process->exe, SMPD_MAX_EXE_LENGTH, "%s %s env \"PMI_RANK=%d\" \"PMI_SIZE=%d\" \"PMI_KVS=%s\" \"PMI_ROOT_HOST=%s\" \"PMI_ROOT_PORT=%d\" \"PMI_ROOT_LOCAL=0\" \"PMI_APPNUM=%d\" \"%s\"",
+		ssh_cmd, launch_node_ptr->hostname, launch_node_ptr->iproc, launch_node_ptr->nproc, smpd_process.kvs_name, root_host, root_port, launch_node_ptr->appnum, exe);
 	}
 
 	MPIU_Strncpy(process->kvs_name, smpd_process.kvs_name, SMPD_MAX_DBS_NAME_LEN);
