@@ -25,6 +25,7 @@ for path in $pathlist ; do
 done
 
 devsubsystems="$devsubsystems src/mpid/common/locks"
+CPPFLAGS="$CPPFLAGS -DUSE_PROCESS_LOCKS"
 
 #
 # Use the sock implementation found in the common directory
