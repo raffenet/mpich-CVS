@@ -97,7 +97,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV);
+                MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
 	    
@@ -106,7 +106,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	    MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
 	    MPIR_ERRTEST_RECV_TAG(tag, mpi_errno);
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV);
+                MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
 	    
@@ -114,7 +114,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    MPIR_ERRTEST_USERBUFFER(buf,count,datatype,mpi_errno);
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV);
+                MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
@@ -127,7 +127,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     {
 	if (request_ptr == NULL)
 	{
-		MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV);
+		MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
 		return MPI_SUCCESS;
 	}
 	else
@@ -140,13 +140,13 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 
 	    if (mpi_errno == MPI_SUCCESS)
 	    {
-		MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV);
+		MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
 		return MPI_SUCCESS;
 	    }
 	}
     }
 
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV);
+    MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }
 

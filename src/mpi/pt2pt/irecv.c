@@ -83,7 +83,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IRECV);
+                MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_IRECV);
                 return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
 	    
@@ -97,7 +97,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
 		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
 	    }
 	    if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IRECV);
+                MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_IRECV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
 
@@ -105,7 +105,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    MPIR_ERRTEST_USERBUFFER(buf,count,datatype,mpi_errno);
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IRECV);
+                MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_IRECV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
@@ -120,12 +120,12 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
 	/* return the handle of the request to the user */
 	*request = request_ptr->handle;
 	
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IRECV);
+	MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_IRECV);
 	return MPI_SUCCESS;
     }
     
     /* ... end of body of routine ... */
     
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IRECV);
+    MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_IRECV);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }
