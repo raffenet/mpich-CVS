@@ -11,9 +11,11 @@
  */
 
 #include "adio.h"
+
 #if (defined(HPUX) || defined(SPPUX) || defined(IRIX) || defined(SOLARIS) || defined(AIX) || defined(DEC) || defined(CRAY))
 #include <sys/statvfs.h>
 #endif
+
 #ifdef LINUX
 #include <sys/vfs.h>
 /* #include <linux/nfs_fs.h> this file is broken in newer versions of linux */
@@ -21,22 +23,27 @@
 /* XXX: any way to do this so we don't need the magic number here? */
 #define PVFS2_SUPER_MAGIC 0x20030528
 #endif
+
 #ifdef FREEBSD
 #include <sys/param.h>
 #include <sys/mount.h>
 #endif
+
 #ifdef PARAGON
 #include <nx.h>
 #include <pfs/pfs.h>
 #include <sys/mount.h>
 #endif
+
 #ifdef SX4
 #include <sys/stat.h>
 #endif
+
 #ifdef HAVE_PVFS_H
 #include "pvfs.h"
 #include <sys/param.h>
 #endif
+
 #ifdef tflops
 #include <sys/mount.h>
 #endif
@@ -203,6 +210,7 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 # endif
 	}
     }
+
 #elif defined(LINUX)
     do {
 	err = statfs(filename, &fsbuf);
@@ -224,6 +232,7 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 # if defined(ROMIO_PVFS2)
 	else if (fsbuf.f_type == PVFS2_SUPER_MAGIC) fprintf(stderr, "specify 'pvfs2': for now!!!\n");
 #endif
+
 	else *fstype = ADIO_UFS;
     }
 #elif (defined(FREEBSD) && defined(HAVE_MOUNT_NFS))

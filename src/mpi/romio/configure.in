@@ -303,11 +303,6 @@ if test -n "$OPTFLAGSC" ; then
     C_OPT_FLAG="$C_OPT_FLAG $OPTFLAGSC"
 fi
 case $ARCH in 
-     sun4)
-     CC=${CC:-gcc}
-     F77=${FC:-f77}
-     ;;
-
      solaris|solaris86)
      CC=${CC:-cc}
      F77=${FC:-f77}
@@ -409,34 +404,6 @@ fi
 # ---------------------------------------------------------------------------
 # Here go the rest of the tests
 # ---------------------------------------------------------------------------
-if test -n "$arch_sun4" ; then 
-    if test "$enable_aio" != "no" ; then
-        # Check for aio
-	save_libs=$LIBS
-	LIBS=
-	AC_SEARCH_LIBS(aiowrite,aio rt,,[enable_aio=no])
-	ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
-	LIBS=$save_libs
-    fi
-    if test "$enable_aio" = "no" ; then
-        have_aio=no
-    else 
-        AC_DEFINE(AIO_SUN,1,[Define for SUN0S 4])
-	have_aio=yes
-    fi
-
-    if test -z "$MPI" ; then
-        MPI=mpich
-        mpi_mpich=1
-    fi
-    if test -z "$FILE_SYSTEM" ; then
-        file_system_ufs=1
-        file_system_nfs=1
-        FILE_SYSTEM="ufs nfs"
-        AC_MSG_RESULT([configuring for file systems ufs and nfs])
-    fi
-fi
-#
 if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     if test "$enable_aio" != "no" ; then
         # Check for aio
