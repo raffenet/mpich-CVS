@@ -303,7 +303,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         mpi_errno = MPIDI_CH3_Comm_connect(val, 0, commworld, &intercomm);
         if (mpi_errno != MPI_SUCCESS)
 	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**conparent", "**conparent %s", val);
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|conparent", "**ch3|sock|conparent %s", val);
 	    return mpi_errno;
 	}
 
