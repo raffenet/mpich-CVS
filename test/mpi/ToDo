@@ -110,11 +110,22 @@ items listed here that are already sufficiently tested.
     These include the routines in the files (entire file if no notes on that
     file):
     open.c (a few lines, including if(!rank)ADIO_Set_shared_fp
+       filenames with filesystem, e.g., nfs:name
+       Open in APPEND mode
+    delete.c
+       filenames with filesystem
     get_view.c (roughly lines 99ff, at Type_contiguous)
     set_view.c (for MPI_DISPLACEMENT_CURRENT)
     set_info.c
     seek_sh.c (for MPI_SEEK_CUR)
-    
+    read_sh/write_sh
+        atomicity && file system NOT NFS
+41. Delete/free attributes on datatypes, windows; Fortran versions (to 
+    get int instead of pointer-to-int)
+42. Keyval free (F90 and C++)
+43. Type create indexed block
+44. Type create resized
+
 Also, 
 Replace the calls to MPIR_Group_release in Finalize with
 MPIR_Process.group_release, and set the pointer to this routine when
