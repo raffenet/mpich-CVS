@@ -142,7 +142,7 @@ void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
 	    dataloop->loop_params.cm_t.dataloop = (struct DLOOP_Dataloop *) 
 		((char *) dataloop->loop_params.cm_t.dataloop + ptrdiff);
 
-	    if (!(dataloop->kind | DLOOP_FINAL_MASK))
+	    if (!(dataloop->kind & DLOOP_FINAL_MASK))
 		PREPEND_PREFIX(Dataloop_update)(dataloop->loop_params.cm_t.dataloop, ptrdiff);
 	    break;
 
@@ -152,7 +152,7 @@ void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
 	    dataloop->loop_params.bi_t.dataloop = (struct DLOOP_Dataloop *)
 		((char *) dataloop->loop_params.bi_t.dataloop + ptrdiff);
 
-	    if (!(dataloop->kind | DLOOP_FINAL_MASK))
+	    if (!(dataloop->kind & DLOOP_FINAL_MASK))
 		PREPEND_PREFIX(Dataloop_update)(dataloop->loop_params.bi_t.dataloop, ptrdiff);
 	    break;
 
@@ -164,7 +164,7 @@ void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
 	    dataloop->loop_params.i_t.dataloop = (struct DLOOP_Dataloop *)
 		((char *) dataloop->loop_params.i_t.dataloop + ptrdiff);
 
-	    if (!(dataloop->kind | DLOOP_FINAL_MASK))
+	    if (!(dataloop->kind & DLOOP_FINAL_MASK))
 		PREPEND_PREFIX(Dataloop_update)(dataloop->loop_params.i_t.dataloop, ptrdiff);
 	    break;
 
@@ -183,7 +183,7 @@ void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
 		    ((char *) looparray[i] + ptrdiff);
 	    }
 
-	    if (dataloop->kind | DLOOP_FINAL_MASK) break;
+	    if (dataloop->kind & DLOOP_FINAL_MASK) break;
 
 	    for (i=0; i < dataloop->loop_params.s_t.count; i++) {
 		PREPEND_PREFIX(Dataloop_update)(looparray[i], ptrdiff);
