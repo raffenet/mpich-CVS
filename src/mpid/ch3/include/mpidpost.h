@@ -32,8 +32,8 @@ int MPIDI_CH3_Progress(int);
 void MPIDI_CH3_Progress_poke(void);
 void MPIDI_CH3_Progress_signal_completion(void);
 
-int MPIDI_CH3_Comm_spawn(char *f, char *[], int , MPI_Info, int, MPID_Comm *,
-			 MPID_Comm *, int []);
+int MPIDI_CH3_Comm_spawn(const char *, const char *[], const int , MPI_Info,
+			 const int, MPID_Comm *, MPID_Comm *, int []);
 
 
 /*
