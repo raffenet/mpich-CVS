@@ -2,17 +2,28 @@ A brief summary of the checks performed by "codingcheck" and the
 reasons for them.  
 
 1. #ifdef and #define names:  We want to use a prefix on these in
-    order to avoid clashes with other systems that aren't careful
-    about names.  One vendor defined CACHE_ALIGN, which broke code
-    used in MPICH1 to cache align data structures.  Prefixes should be
-    USE_, HAVE_, MPIR_, MPID_ . 
+   order to avoid clashes with other systems that aren't careful
+   about names.  One vendor defined CACHE_ALIGN, which broke code
+   used in MPICH1 to cache align data structures.  Prefixes should be
+   USE_, NEEDS_, HAVE_, WITH_, MPIR_, MPID_ . 
+
+   In some cases, a nonconforming name may be needed. For example, 
+   a system may require that you define INET6 to get the desired 
+   behavior.  In these cases, add the appropriate tests to 
+   configure to determine if the definition is in fact needed, and define
+   NEEDS_name_DEFINED in that case.  In the narrowest scope possible, add
+   # ifdef NEEDS_name_DEFINED
+   # define name
+   # endif
 
 2. malloc/free/calloc/realloc/strdup: By using the MPIU_xxx routines,
    it is easier to check for storage overwrites and leaks, even on
    systems (or at scales) where we don't have more sophisticated tools
    for trapping memory problems.  Since these can be replaced by
    macros that directly call malloc etc., there is no performance
-   overhead. 
+   overhead.  The header file src/include/mpimem.h contains definitions for 
+   the MPIU_xxx routines for memory management, including definitions
+   that replace these with malloc etc.
 
 3. printf/fprintf: To allow for internationalization, all messages
    that users may see should go through MPIU_Usage_printf,
@@ -50,6 +61,13 @@ reasons for them.
    a nested call.  Also, if the call is very simple and cannot have an
    error, consider inlining the effect (e.g., use comm_ptr->local_size 
    instead of NMPI_Comm_size).
+
+   For internal routines which you are certain will *always* be called 
+   from another routine that will ensure the MPIR_Nest_incr/decr calls, you
+   can use 
+     /* begin:nested */
+     code that would need MPIR_Nest_incr/decr
+     /* end:nested */
 
 7. There are always exceptions.  These can be handled either by
    telling the code checker to skip a file (appropriate only for

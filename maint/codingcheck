@@ -180,6 +180,7 @@ sub ProcessFile {
 	}
 
 	if ($checkDefines) {
+	    &CheckForGuardedDefines( FD, $_, $filename );
 	    &CheckForBadDefines( FD, $_, $filename );
 	    &CheckForMismatchedStates ( FD, $_, $filename );
 	}
@@ -275,6 +276,7 @@ sub CheckForBadSubs {
     }
 }
 
+
 @GoodNames = ( 'HAVE_[A-Za-z0-9_]*',  'USE_[A-Za-z0-9_]*',
 	       'NEEDS_[A-Za-z0-9_]*', 'WITH_[A-Z0-9_]*',
 	       'MPICH_SINGLE_THREADED', 'CHAR_PTR_IS_ADDRESS', 'FOO',
@@ -358,6 +360,34 @@ sub CheckForBadDefines {
 		   $curline =~ s/defined\($defname\)//g;
 	       }
 	}
+    }
+}
+
+#
+# This checks for
+# # ifdef NEEDS_foo_DEFINED
+# # define foo
+# # endif
+# Basically, it allows you to skip over a define that would otherwise
+# cause an error report in CheckForBadDefines
+sub CheckForGuardedDefines {
+    my $FD = $_[0];
+    my $curline = $_[1];
+    my $filename = $_[2];
+    my $allowed_name = "";
+    if ($curline =~ /^#\s*ifdef\s+NEEDS_(.*)_DEFINED/ ||
+	$curline =~ /^#\s*if\s+defined\(NEEDS_(.*)_DEFINED\)/) {
+        $allowed_name = $1;
+	# Read *only* the next line
+	$curline = <$FD>;
+	# Allow some extra underscores before and after 
+	if ($curline =~ /^#\s*define\s+_*${allowed_name}_*/) {
+	    ;
+	}
+	else {
+	    &PrintCurrentDirectory;
+	    print "Warning: unexpected line after NEEDS_${allowed_name}_DEFINED in $filename\n";
+        }
     }
 }
 
