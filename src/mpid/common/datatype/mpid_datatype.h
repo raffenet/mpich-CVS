@@ -142,7 +142,7 @@ do {										\
 #define MPID_Datatype_committed_ptr(ptr,err)				\
 do {									\
     if ((err == MPI_SUCCESS) && !((ptr)->is_committed))			\
-        err = MPIR_Err_create_code(MPI_ERR_TYPE, "**dtypecommit", 0);	\
+        err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE, "**dtypecommit", 0);	\
 } while (0)
 
 typedef struct MPID_Datatype_contents {

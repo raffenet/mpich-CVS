@@ -41,7 +41,7 @@ int MPID_Type_contiguous(int count,
     /* allocate new datatype object and handle */
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
     if (!new_dtp) {
-	mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**nomem", 0);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPID_Type_contiguous", MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
     }
 
