@@ -21,6 +21,7 @@ from random    import seed, randrange
 from syslog    import syslog
 from md5       import new
 from cPickle   import dumps, loads
+# from marshal    import dumps, loads
 from mpdlib    import mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
                       mpd_send_one_msg, mpd_recv_one_msg, \
                       mpd_get_inet_listen_socket, mpd_get_inet_socket_and_connect, \
