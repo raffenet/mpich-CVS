@@ -1470,86 +1470,72 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			<File
 				RelativePath=".\src\mpi\errhan\file_get_errhandler.c">
 				<FileConfiguration
-					Name="mmRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="mmRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="shmDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="shmDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="mmDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="mmDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="shmRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="shmRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ssmDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3ssmDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ssmRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3ssmRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3sockDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3sockRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3sockPRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ssmPDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3ssmPDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3rdmaDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3rdmaDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3rdmaRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3rdmaRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3rdmatpDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3rdmatpDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3rdmatpRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3rdmatpRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
@@ -1557,86 +1543,72 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			<File
 				RelativePath=".\src\mpi\errhan\file_set_errhandler.c">
 				<FileConfiguration
-					Name="mmRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="mmRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="shmDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="shmDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="mmDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="mmDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="shmRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="shmRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ssmDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3ssmDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ssmRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3ssmRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3sockDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3sockRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3sockPRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3ssmPDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3ssmPDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3rdmaDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3rdmaDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3rdmaRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3rdmaRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3rdmatpDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3rdmatpDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3rdmatpRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3rdmatpRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
@@ -1697,6 +1669,90 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\mpi-io\get_errh.c">
+				<FileConfiguration
+					Name="mmRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="shmDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="mmDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="shmRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ssmDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ssmRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sockDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sockRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ssmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmatpDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmatpRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\mpi-io\get_extent.c">
@@ -2147,6 +2203,90 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\mpi-io\set_errh.c">
+				<FileConfiguration
+					Name="mmRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="shmDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="mmDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="shmRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ssmDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ssmRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sockDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sockRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3sockPRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3ssmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmatpDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmatpRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\mpi-io\set_info.c">
