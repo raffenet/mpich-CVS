@@ -39,7 +39,8 @@ for dir in $1 ; do
     done
     IFS="$saveIFS"
 done
-AC_OUTPUT_SUBDIRS($1)
+dnl autoconf 2.52 uses _ before *some* internal commands (!)
+ifdef([AC_OUTPUT_SUBDIRS],[AC_OUTPUT_SUBDIRS($1)],[_AC_OUTPUT_SUBDIRS($1)])
 subdirs="$SAVE_subdirs"
 ])
 
