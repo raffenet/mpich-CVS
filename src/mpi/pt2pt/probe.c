@@ -55,7 +55,7 @@ int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PROBE);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_PROBE);

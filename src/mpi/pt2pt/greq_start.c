@@ -62,7 +62,7 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
     MPID_Request *lrequest_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GREQUEST_START);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GREQUEST_START);

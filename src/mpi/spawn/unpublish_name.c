@@ -54,7 +54,7 @@ int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
     MPID_Info *info_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_UNPUBLISH_NAME);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_UNPUBLISH_NAME);

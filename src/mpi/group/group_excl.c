@@ -68,7 +68,7 @@ int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
     int size, i;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_EXCL);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_EXCL);

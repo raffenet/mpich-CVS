@@ -63,7 +63,7 @@ int MPI_Put(void *origin_addr, int origin_count, MPI_Datatype
     MPID_Win *win_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PUT);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_PUT);

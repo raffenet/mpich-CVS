@@ -58,7 +58,7 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GRAPH_MAP);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPH_MAP);

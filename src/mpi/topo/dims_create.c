@@ -148,7 +148,7 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
     int dims_needed, dims_product, nfactors, ndivisors;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_DIMS_CREATE);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_DIMS_CREATE);

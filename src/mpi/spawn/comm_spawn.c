@@ -65,7 +65,7 @@ int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info,
     MPID_Info *info_ptr=NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SPAWN);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SPAWN);

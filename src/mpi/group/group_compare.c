@@ -59,7 +59,7 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
     int g1_idx, g2_idx, size, i;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_COMPARE);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_COMPARE);

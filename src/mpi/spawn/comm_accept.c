@@ -58,7 +58,7 @@ int MPI_Comm_accept(char *port_name, MPI_Info info, int root, MPI_Comm comm,
     MPID_Info *info_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_ACCEPT);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_ACCEPT);

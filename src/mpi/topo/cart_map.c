@@ -62,7 +62,7 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     int i, nranks, rank, size;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_MAP);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_MAP);

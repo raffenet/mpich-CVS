@@ -52,7 +52,7 @@ int MPI_Add_error_code(int errorclass, int *errorcode)
     int new_code;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ADD_ERROR_CODE);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ADD_ERROR_CODE);

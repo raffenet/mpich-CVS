@@ -58,7 +58,7 @@ int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
     MPIR_Topology *topo_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GRAPHDIMS_GET);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPHDIMS_GET);

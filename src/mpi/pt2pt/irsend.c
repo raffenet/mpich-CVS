@@ -64,7 +64,7 @@ int MPI_Irsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     MPID_Request *request_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_IRSEND);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPI_IRSEND);

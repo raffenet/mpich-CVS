@@ -62,7 +62,7 @@ int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges,
     int i, n, *vals;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GRAPH_GET);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPH_GET);

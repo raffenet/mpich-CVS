@@ -306,7 +306,7 @@ int MPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls,
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ALLTOALLW);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_ALLTOALLW);

@@ -71,7 +71,7 @@ int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3],
     int size, i, j, k, nnew, first, last, stride;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_RANGE_EXCL);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_RANGE_EXCL);

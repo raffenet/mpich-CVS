@@ -72,7 +72,7 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
     int i, tsize;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_MATCH_SIZE);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_MATCH_SIZE);

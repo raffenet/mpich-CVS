@@ -128,10 +128,10 @@ void MPIR_Err_init( void )
 }
 
 /* Special error handler to call if we are not yet initialized */
-/* FIXME : NOT YET CALLED ANYWHERE */
 void MPIR_Err_preinit( void )
 {
-    fprintf( stderr, "Error encountered before initializing MPICH\n" );
+    MPIU_Error_printf("Error encountered before initializing MPICH\n");
+    exit(1);
 }
 
 /*

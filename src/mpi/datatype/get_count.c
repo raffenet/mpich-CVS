@@ -54,7 +54,7 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
     int size;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_COUNT);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_COUNT);

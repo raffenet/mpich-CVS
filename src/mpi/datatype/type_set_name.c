@@ -51,7 +51,7 @@ int MPI_Type_set_name(MPI_Datatype type, char *type_name)
     static int setup = 0;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_SET_NAME);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_SET_NAME);

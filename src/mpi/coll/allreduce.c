@@ -962,7 +962,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ALLREDUCE);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_ALLREDUCE);

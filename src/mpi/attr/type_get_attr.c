@@ -66,7 +66,7 @@ int MPI_Type_get_attr(MPI_Datatype type, int type_keyval, void *attribute_val, i
     MPID_Attribute *p;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_GET_ATTR);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_GET_ATTR);

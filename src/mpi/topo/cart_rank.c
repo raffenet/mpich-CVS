@@ -65,7 +65,7 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
     int i, ndims, coord, multiplier;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_RANK);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_RANK);

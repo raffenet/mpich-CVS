@@ -63,7 +63,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
     MPID_Request *request_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_IRECV);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_PT2PT_FUNC_ENTER_BACK(MPID_STATE_MPI_IRECV);

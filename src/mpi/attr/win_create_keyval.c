@@ -63,7 +63,7 @@ int MPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn,
     MPID_Keyval *keyval_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_CREATE_KEYVAL);
 
-    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_CREATE_KEYVAL);
