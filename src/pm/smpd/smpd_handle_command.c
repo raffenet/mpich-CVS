@@ -3778,7 +3778,7 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const
     }
     else
     {
-	result = smpd_lookup_spn(target, SMPD_MAX_ACCOUNT_LENGTH, host, port);
+	result = smpd_lookup_spn(target, SMPD_MAX_NAME_LENGTH, host, port);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to lookup the smpd SPN.\n");
