@@ -1,8 +1,17 @@
 #ifndef __MPIDEXT32SEGMENT_H
 #define __MPIDEXT32SEGMENT_H
 
+#ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
+#endif
+#ifdef HAVE_LIMITS_H
 #include <limits.h>
+#endif
+
+#ifdef HAVE_INT64
+#define uint64_t __int64
+#define uint32_t __int32
+#endif
 
 #if ((defined(_BIG_ENDIAN) && !defined(ntohl)) || (__BYTE_ORDER == __BIG_ENDIAN))
 #define BLENDIAN 0 /* detected host arch byte order is big endian */
@@ -331,7 +340,9 @@ do {                                          \
 #ifdef HAVE_INT64_T
 #define EIGHT_BYTE_BASIC_TYPE int64_t
 #else
-#if (SIZEOF_LONG_LONG == 8)
+#ifdef HAVE_INT64
+#define EIGHT_BYTE_BASIC_TYPE __int64
+#elif (SIZEOF_LONG_LONG == 8)
 #define EIGHT_BYTE_BASIC_TYPE long long
 #else
 #error "Cannot detect a basic type that is 8 bytes long"

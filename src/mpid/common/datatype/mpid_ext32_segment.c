@@ -161,6 +161,7 @@ static int external32_float_convert(char *dest_buf,
     }
     else if ((src_el_size == dest_el_size) && (src_el_size == 12))
     {
+#ifdef TWELVE_BYTE_FLOAT_TYPE
         while(src_ptr != src_end)
         {
             FLOAT_convert((*(TWELVE_BYTE_FLOAT_TYPE *)src_ptr),
@@ -169,6 +170,9 @@ static int external32_float_convert(char *dest_buf,
             src_ptr += src_el_size;
             dest_ptr += dest_el_size;
         }
+#else
+	/* produce some kind of truncation error */
+#endif
     }
     else
     {
