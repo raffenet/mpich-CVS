@@ -343,6 +343,9 @@
 				RelativePath=".\src\ch3_get_parent_port.c">
 			</File>
 			<File
+				RelativePath=".\src\ch3_get_universe_size.c">
+			</File>
+			<File
 				RelativePath="src\ch3_init.c">
 			</File>
 			<File
@@ -461,6 +464,9 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_get.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_get_universe_size.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_getpname.c">
