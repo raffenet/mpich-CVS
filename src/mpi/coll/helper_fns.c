@@ -183,6 +183,7 @@ int MPIR_Localcopy(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 {
     int sendtype_iscontig, recvtype_iscontig, sendsize;
     int rank, mpi_errno = MPI_SUCCESS;
+    MPI_Aint true_extent, sendtype_true_lb, recvtype_true_lb;
 
     MPIR_Datatype_iscontig(sendtype, &sendtype_iscontig);
     MPIR_Datatype_iscontig(recvtype, &recvtype_iscontig);
@@ -190,7 +191,29 @@ int MPIR_Localcopy(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     if (sendtype_iscontig && recvtype_iscontig)
     {
         MPID_Datatype_get_size_macro(sendtype, sendsize);
-        memcpy(recvbuf, sendbuf, sendcount*sendsize);
+        mpi_errno = NMPI_Type_get_true_extent(sendtype, &sendtype_true_lb,
+                                              &true_extent);
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+        {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+            return mpi_errno;
+        }
+        /* --END ERROR HANDLING-- */
+        
+        mpi_errno = NMPI_Type_get_true_extent(recvtype, &recvtype_true_lb,
+                                              &true_extent);
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+        {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+            return mpi_errno;
+        }
+        /* --END ERROR HANDLING-- */
+
+        memcpy(((char *) recvbuf + recvtype_true_lb), 
+               ((char *) sendbuf + sendtype_true_lb), 
+               sendcount*sendsize);
     }
     else {
 	MPIR_Nest_incr();
