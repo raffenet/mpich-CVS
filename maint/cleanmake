@@ -17,7 +17,7 @@ while (<>) {
 	}
 	if (/\sdone\s*$/) { next; }
     }
-    # skip lines that start with if and ar continued
+    # skip lines that start with if and are continued
     if (/^\s*if \[ ! -d lib.*\\$/) {
 	while (<>) {
 	    if (! /\\$/) { last; }
@@ -32,6 +32,14 @@ while (<>) {
     }
     # skip lines that make the shared libraries
     if (/^\s*if \[ \"none\".* mpich.la/) {
+	next;
+    }
+    # skip lines that mkdir .tmp and are continued
+    if (/^\s*mkdir\s+\.tmp/ || /^\s*\(cd\s+\.tmp/) {
+	$last_line = "";
+	while (/\\$/) {
+	    $_ = <>;
+	}
 	next;
     }
 
@@ -61,13 +69,25 @@ while (<>) {
 	s/-ansi\s*//g;
     }
     
-    if (/^\s*make /) { next; }
-    if (/^\s*gnumake /) { next; }
+    if (/^\s*make /) { 
+	$last_line = "";
+	next; 
+    }
+    if (/^\s*gnumake /) { 
+	$last_line = "";
+	next; 
+    }
 
     if (/Nothing to be done for /) {
+	$last_line = "";
 	next;
     }
     if (/cleaning directory/) {
+	$last_line = "";
+	next;
+    }
+    if (/compiling ROMIO in directory/ || /building profiling interface/) {
+	$last_line = "";
 	next;
     }
     if (/^\s*rm /) { next; }
@@ -101,7 +121,7 @@ while (<>) {
 	    if (/^\s*\Q$srcname\E\s*[:]*\s*$/) { next; }
 
 	    if (! (/^[aig]?cc\s/) && ! (/^mpicc\s/) && ! (/^\.\.\.ar/) 
-		&& !( /\s*if\s*\[.*then/)) { 
+		&& !( /\s*if\s*\[.*then/) && ! (/^\s*mkdir \.tmp/)) { 
 		# Add a new line to help the compile line stand out.
 		print "\n";
 		print $last_line; 
