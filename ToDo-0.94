@@ -1,21 +1,38 @@
 Open Items:
 
-* POSIX shared memory and message queues [David/Brian]
+* (ssm) topology/protocol specification [Rusty/David/Brian] (Thursday,
+  08/07/2003, 13:00)
 
 * number of parameters for MPID_Abort(), fix MPI_Abort() [Brian]
+  (Thursday, 08/07/2003, 13:00)
 
-* sock and ssm connection formation code should not fail after the
+* MPICH2 req buzz [all] (Friday, 08/08/2003, 10:30)
+
+* (shm/ssm) investigate (and fix?) few remaining test failures
+  [Brian/David]
+
+* POSIX shared memory and message queues [David/Brian]
+
+* (sock/ssm) connection formation code should not fail after the
   first attempt since the listener has a limited queue of pending
   connections [Brian/David]
 
-* protocol specification for multi-method implementations for ssm
-  [Rusty/David/Brian] (important for release???)
+* modify configure to ensure --with-pm and --with-pmi consistency
+  [Brian]
 
 * documentation: installation and usage document(s) [Rusty]
   (see below)
 
-* slog2sdk integration (configure) and testing [David/Brian]
+* slog2sdk integration (configure) and testing [David/Brian/Anthony]
   (the code is now being checked out into src/util/slog2sdk)
+
+* configure option to specify level/depth of logging [Brian/David]
+
+* check out ROMIO test failures [Rob R.]
+
+* measure and compare performance of sock and ssm (using sock) [David]
+
+* measure and compare performance of shm and ssm (using shm) [David]
 
 ----
 
@@ -23,7 +40,7 @@ Finished Items:
 
 * datatype test suite failures [Rob R.]
 
-* majority of the tests passing for the shm and ssm channels
+* (shm/ssm) bug fixes so that a majority of the tests are passing
   [Brian/David]
 
 * split CH3_Progress() into CH3_Progress_wait() and
@@ -45,14 +62,30 @@ Deferred Items:
 * SysV IPC resource recovery for all systems (not just Linux)
   [David/Brian]
 
-* replace abort(), assert() and MPID_Abort() calls in sock channel
-  with proper error handling (require reworking progress engine which
-  has to be done anyway for MPI-2 support) [Brian]
-
 * performance tuning of ssm and shm progress engines [David/Brian]
 
 * more complete test suite for ROMIO [???]
 
+* heterogeneous communication in the CH3 device [Brian/David?]
+
+* work with Phil on writing directly to user space of other processes
+  [David/Brian]
+
+* have configure print out available channels, process managers,
+  etc. for current machine [Brian]
+
+* fix design and implementations of sock [Brian/David]
+
+* deprecate sock channel in favor of ssm? this depends on performance
+  and CPU load issues. [Brian/David]
+
+* (ssm/sock) replace abort(), assert() and MPID_Abort() calls with
+  proper error handling (require reworking progress engine which has
+  to be done anyway for MPI-2 support) [Brian/David]
+
+* (ssm/sock) if the business card of a remote process contains
+  multiple socket listeners, try each until a connection is formed
+  [Brian/David]
 
 ================================================================================
 
@@ -69,3 +102,5 @@ Documentation - Rusty
   - process managers
 
 - using process managers
+
+- how to enable logging, combine log files, view log files, etc.
