@@ -955,6 +955,10 @@ with MPI_Alloc_mem.
 **pmi_initialized %d:PMI_Initialized returned %d
 **pmi_get_size:PMI_Get_size failed
 **pmi_get_size %d:PMI_Get_size returned %d
+**pmi_get_universe_size:PMI_Get_universe_size failed
+**pmi_get_universe_size %d:PMI_Get_universe_size returned %d
+**pmi_get_appnum:PMI_Get_appnum failed
+**pmi_get_appnum %d:PMI_Get_appnum returned %d
 **pmi_get_rank:PMI_Get_rank failed
 **pmi_get_rank %d:PMI_Get_rank returned %d
 **pmi_get_id_length_max:PMI_Get_id_length_max failed
