@@ -53,7 +53,6 @@ int MPI_Cancel(MPI_Request *request)
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
