@@ -58,7 +58,7 @@ public class TraceToSlog2
         slog_filename = null;
         parseCmdLineArgs( args );
         if ( slog_filename == null )
-            slog_filename  = tracenameTOslogname( trace_filespec );
+            slog_filename  = TraceName.getDefaultSLOG2Name( trace_filespec );
 
         objdefs       = new CategoryMap();
         shadefs       = new HashMap();
@@ -193,41 +193,6 @@ public class TraceToSlog2
                           + ( time2.getTime() - time1.getTime() ) + " msec" );
         System.err.println( "timeElapsed between 2 & 3 = "
                           + ( time3.getTime() - time2.getTime() ) + " msec" );
-    }
-
-    public static String stripInvalidChar( String tracename )
-    {
-        StringTokenizer  tokens = new StringTokenizer( tracename,
-                         "[]{}()~!@#$%^&*\\;`/? \t\n\r\f" );
-        StringBuffer     strbuf = new StringBuffer();
-        if ( tokens.hasMoreTokens() ) {
-            strbuf.append( tokens.nextToken() );
-            while ( tokens.hasMoreTokens() ) {
-                strbuf.append( '_' );
-                strbuf.append( tokens.nextToken() );
-            }
-        }
-        if ( strbuf.charAt( 0 ) == '-' )
-            return "TRACE_" + strbuf.toString();
-        else
-            return strbuf.toString();
-    }
-
-    public static String tracenameTOslogname( String tracename )
-    {
-        if ( tracename.endsWith( "txt" ) )
-            return tracename.substring( 0, tracename.lastIndexOf( ".txt" ) )
-                 + ".slog2" ;
-        else {
-            String prefix_name = stripInvalidChar( tracename );
-            if ( prefix_name.length() > 0 )
-                if ( prefix_name.endsWith( "." ) )
-                    return prefix_name + "slog2";
-                else
-                    return prefix_name + ".slog2";
-            else
-                return "trace.slog2";
-        }
     }
 
     private static int parseByteSize( String size_str )

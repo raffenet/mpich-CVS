@@ -48,7 +48,7 @@ public class ClogToSlog2
         out_filename = null;
         parseCmdLineArgs( args );
         if ( out_filename == null )
-            out_filename  = clognameTOslogname( in_filename );
+            out_filename  = TraceName.getDefaultSLOG2Name( in_filename );
 
         objdefs       = new CategoryMap();
         shadefs       = new HashMap();
@@ -146,20 +146,6 @@ public class ClogToSlog2
                           + ( time2.getTime() - time1.getTime() ) + " msec" );
         System.err.println( "timeElapsed between 2 & 3 = "
                           + ( time3.getTime() - time2.getTime() ) + " msec" );
-    }
-
-    public static String clognameTOslogname( String clogname )
-    {
-        StringBuffer str = new StringBuffer() ;
-        if ( clogname.endsWith( "clog" ) ) {
-            str.append( clogname.substring( 0, clogname.lastIndexOf("clog") ) );
-            str.append( "slog2" );
-        }
-        else {
-            str.append( clogname );
-            str.append( ".slog2" );
-        }
-        return str.toString();
     }
 
     private static int parseByteSize( String size_str )
