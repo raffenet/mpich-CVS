@@ -638,7 +638,7 @@ static inline void connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn)
     {
 	int rc;
 	
-	rc = sock_post_write(conn->sock, conn->send_active->ch3.iov, conn->send_active->ch3.iov_count, NULL);
+	rc = sock_post_writev(conn->sock, conn->send_active->ch3.iov, conn->send_active->ch3.iov_count, NULL);
 	if (rc != SOCK_SUCCESS)
 	{
 	    connection_send_fail(conn, rc);
