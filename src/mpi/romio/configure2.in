@@ -825,7 +825,11 @@ if test -n "$arch_IRIX"; then
         fi
    elif test $osversion = 6 ; then
 	if test -z "$MPI"; then
-            if test -f "/usr/include/mpi.h" ; then
+	    if test "$FROM_MPICH2" = "1" ; then
+	        # Building with MPICH2.  Distinguish from MPICH-1
+		MPI=mpich2
+		mpi_mpich2=1
+            elif test -f "/usr/include/mpi.h" ; then
                 AC_MSG_WARN([assuming that you want to use ROMIO with SGI\'s MPI])
                 MPI=sgi
                 mpi_sgi=1
