@@ -8,6 +8,8 @@
 
 #include "mpioimpl.h"
 
+#include "adio_extern.h"
+
 /* Hooks for allocation of MPI_File handles.
  *
  * Three functions are used in ROMIO for allocation/deallocation
