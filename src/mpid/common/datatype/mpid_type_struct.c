@@ -296,13 +296,15 @@ int MPID_Type_struct(int count,
 
 	MPID_Datatype_get_ptr(*newtype, new_dtp);
 	MPID_Datatype_get_ptr(oldtype_array[real_type_idx], old_dtp);
-	/* TODO: NEED TO LOOK AT THE OLD TYPE TO SEE IF IT HAD AN LB AND/OR UB!!! */
+
 	if (has_lb) {
 	    new_dtp->has_sticky_lb = 1;
+	    if (old_dtp->has_sticky_lb && old_dtp->lb < lb_disp) lb_disp = old_dtp->lb;
 	    new_dtp->lb            = lb_disp;
 	}
 	if (has_ub) {
 	    new_dtp->has_sticky_ub = 1;
+	    if (old_dtp->has_sticky_ub && old_dtp->ub > ub_disp) ub_disp = old_dtp->ub;
 	    new_dtp->ub            = ub_disp;
 	}
 	new_dtp->extent = new_dtp->ub - new_dtp->lb;
