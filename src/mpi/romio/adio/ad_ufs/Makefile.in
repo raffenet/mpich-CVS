@@ -12,10 +12,7 @@ C_COMPILE_SHL = $(CC_SHL) @CFLAGS@ $(INCLUDE_DIR)
 
 @VPATH@
 
-AD_UFS_OBJECTS = \
-      ad_ufs_open.o ad_ufs_done.o \
-      ad_ufs_fcntl.o ad_ufs_iread.o ad_ufs_iwrite.o ad_ufs_wait.o \
-      ad_ufs.o
+AD_UFS_OBJECTS = ad_ufs_open.o ad_ufs.o
 
 
 default: $(LIBNAME)

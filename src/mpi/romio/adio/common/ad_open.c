@@ -10,6 +10,8 @@
 #include "adio_extern.h"
 #include "adio_cb_config_list.h"
 
+#include "mpio.h"
+
 static int is_aggregator(int rank, ADIO_File fd);
 
 MPI_File ADIO_Open(MPI_Comm orig_comm,

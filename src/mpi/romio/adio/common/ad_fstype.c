@@ -54,6 +54,10 @@
 # if defined(ROMIO_NFS) && !defined(NFS_SUPER_MAGIC)
 # define NFS_SUPER_MAGIC 0x6969
 # endif
+
+# if defined(ROMIO_PANFS) && !defined(PAN_KERNEL_FS_CLIENT_SUPER_MAGIC)
+# define PAN_KERNEL_FS_CLIENT_SUPER_MAGIC 0xAAD7AAEA
+# endif
 #endif
 
 #ifdef ROMIO_HAVE_STRUCT_STATVFS_WITH_F_BASETYPE
@@ -279,6 +283,13 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
     }
 # endif
 
+# ifdef PAN_KERNEL_FS_CLIENT_SUPER_MAGIC
+    if (fsbuf.f_type == PAN_KERNEL_FS_CLIENT_SUPER_MAGIC) {
+	*fstype = ADIO_PANFS;
+	return;
+    }
+# endif
+
 # ifdef MOUNT_NFS
     if (fsbuf.f_type == MOUNT_NFS) {
 	*fstype = ADIO_NFS;
@@ -385,6 +396,9 @@ static void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code
     }
     else if (!strncmp(filename, "nfs:", 4) || !strncmp(filename, "NFS:", 4)) {
 	*fstype = ADIO_NFS;
+    }
+    else if (!strncmp(filename, "panfs:", 6) || !strncmp(filename, "PANFS:", 6)) {
+	*fstype = ADIO_PANFS;
     }
     else if (!strncmp(filename, "hfs:", 4) || !strncmp(filename, "HFS:", 4)) {
 	*fstype = ADIO_HFS;
@@ -514,6 +528,16 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 	return;
 #else
 	*ops = &ADIO_NFS_operations;
+#endif
+    }
+    if (file_system == ADIO_PANFS) {
+#ifndef ROMIO_PANFS
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**iofstypeunsupported", 0);
+	return;
+#else
+	*ops = &ADIO_PANFS_operations;
 #endif
     }
     if (file_system == ADIO_HFS) {
