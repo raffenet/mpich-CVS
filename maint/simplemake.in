@@ -201,7 +201,7 @@ $docdir_name =               'docdir      = @' . "docdir"      . '@';
 		'DOC' => 'docdir',
 		);
 %install_methods = ( 'LIB'     => '$(INSTALL_DATA)',
-		     'BIN'     => '$(INSTALL_PROGRAM)',
+		     'BIN'     => '$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)',
 		     'SHLIB'   => '$(INSTALL_PROGRAM)',
 		     'INCLUDE' => '$(INSTALL_DATA)',
 		     'MAN'     => '$(INSTALL_DATA)',
@@ -1248,6 +1248,8 @@ sub TargetClean {
     if ($distcleanfiles ne "") {
 	print FD "\t-rm -f $distcleanfiles$newline";
     }
+    print FD "\t-rm -f TAGS$newline";
+
     if ($maint_targets) {
 	# Should maintainerclean also perform a distclean?
 	print FD "maintainerclean:";
@@ -1484,6 +1486,8 @@ sub TargetTags {
 	&print_make_longline( FD, "HEADERS = $regular_headers" );
 	$has_headers = 1;
     }
+    # Add a synonym for tags.
+    print FD "tags: TAGS$newline"; 
     print FD "TAGS:";
     # Only generate a local etags call if there are local sources
     # This target is designed for VPATH builds to build a TAGS file in
@@ -1578,9 +1582,36 @@ sub TargetInstall {
 	}
     }
     foreach $extradir (@install_subdirs) {
-	print FD "\t(cd $extradir && \$(MAKE) install)$newline";
+	print FD "\t(cd $extradir && \$(MAKE) INSTALL_STRIP_FLAG=\$(INSTALL_STRIP_FLAG) install)$newline";
     }
     print FD "$newline";
+    #
+    print FD "install-strip:$newline";
+    print FD "\t\$(MAKE) INSTALL_STRIP_FLAG=-s install$newline";
+    
+    #
+    # We should also create an uninstall target.  Rather than 
+    # unilaterally uninstalling files, we may want an option to create
+    # a file that will uninstall only the installed files (as MPICH-1
+    # does).
+    print FD "uninstall:$newline";
+    foreach $kind (keys(%install_files) {
+	$dir = $install_dir{$kind};
+	foreach $file ($install_files($kind)) {
+	    $destfile = $file;
+	    $destfile =~ s/.*\///;
+	    print FD "\t-rm -f $dir/$destfile$newline";
+	}
+    }
+    foreach $kind (keys(%optinstall_files) {
+	$dir = $install_dir{$kind};
+	foreach $file ($optinstall_files($kind)) {
+	    $destfile = $file;
+	    $destfile =~ s/.*\///;
+	    print FD "\t-rm -f $dir/$destfile$newline";
+	}
+    }
+    # Still doesn't handle install files added by subdir installs
 }
 #
 # ===========================================================================
