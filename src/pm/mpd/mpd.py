@@ -981,6 +981,10 @@ def _process_configfile_params():
     if not mode:
         # mpd_raise('%s: config file not found' % (configFilename) )
         print 'configuration file %s not found' % (configFilename)
+	print 'A file named .mpd.conf file must be present in the users home'
+	print 'directory (/etc/mpd.conf if root) with read and write access'
+        print 'only for the user, and must contain at least a line with:'
+        print 'secretword=<secretword>'
         exit(0)
     if  (mode & 0x3f):
         # mpd_raise('%s: config file accessible by others' % (configFilename) )
