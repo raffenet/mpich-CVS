@@ -148,8 +148,8 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd);
 /*int smpd_read_command(smpd_context_t *context);*/
 /*int smpd_write_command(smpd_context_t *context);*/
 int smpd_package_command(smpd_command_t *cmd);
-int smpd_write_string(sock_set_t set, sock_t sock, char *str);
-int smpd_read_string(sock_set_t set, sock_t sock, char *str, int maxlen);
+int smpd_write_string(sock_t sock, char *str);
+int smpd_read_string(sock_t sock, char *str, int maxlen);
 int smpd_authenticate(sock_set_t set, sock_t sock, int type);
 int smpd_dbg_printf(char *str, ...);
 int smpd_err_printf(char *str, ...);

@@ -307,7 +307,7 @@ int smpd_forward_command(smpd_context_t *src, smpd_context_t *dest)
 	return SMPD_FAIL;
     }
 
-    smpd_dbg_printf("posting write of forwarded command: (%s)\n", cmd->cmd);
+    smpd_dbg_printf("posting write of forwarded command: \"%s\"\n", cmd->cmd);
     result = smpd_post_write_command(dest, cmd);
     if (result != SMPD_SUCCESS)
     {
@@ -326,7 +326,7 @@ int smpd_post_read_command(smpd_context_t *context)
     smpd_dbg_printf("entering smpd_post_read_command.\n");
 
     /* post a read for the next command header */
-    smpd_dbg_printf("posting read for a command header: %d bytes\n", SMPD_CMD_HDR_LENGTH);
+    smpd_dbg_printf("posting read for a command header on sock %d: %d bytes\n", sock_getid(context->sock), SMPD_CMD_HDR_LENGTH);
     context->read_cmd.state = SMPD_CMD_READING_HDR;
     result = sock_post_read(context->sock, context->read_cmd.cmd_hdr_str, SMPD_CMD_HDR_LENGTH, NULL);
     if (result != SOCK_SUCCESS)
@@ -356,7 +356,8 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
 	context->write_list = cmd;
     }
     else
-    {	
+    {
+	smpd_dbg_printf("enqueueing write at the end of the list.\n");
 	iter = context->write_list;
 	while (iter->next)
 	    iter = iter->next;
@@ -369,8 +370,8 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
     cmd->iov[0].SOCK_IOV_LEN = SMPD_CMD_HDR_LENGTH;
     cmd->iov[1].SOCK_IOV_BUF = cmd->cmd;
     cmd->iov[1].SOCK_IOV_LEN = cmd->length;
-    smpd_dbg_printf("smpd_post_write_command: %d bytes for command: (%s)\n",
-	cmd->iov[0].SOCK_IOV_LEN + cmd->iov[1].SOCK_IOV_LEN, cmd->cmd);
+    smpd_dbg_printf("smpd_post_write_command on sock %d: %d bytes for command: \"%s\"\n",
+	sock_getid(context->sock), cmd->iov[0].SOCK_IOV_LEN + cmd->iov[1].SOCK_IOV_LEN, cmd->cmd);
     result = sock_post_writev(context->sock, cmd->iov, 2, NULL);
     if (result != SOCK_SUCCESS)
     {
@@ -461,7 +462,7 @@ int smpd_write_command(smpd_context_t *context)
 	return SMPD_FAIL;
     }
 
-    smpd_dbg_printf("writing command from %d to %d on sock %d: (%s)\n", smpd_process.id, context->id, sock_getid(context->sock), context->output_str);
+    smpd_dbg_printf("writing command from %d to %d on sock %d: \"%s\"\n", smpd_process.id, context->id, sock_getid(context->sock), context->output_str);
 
     /* write the header */
     length = SMPD_CMD_HDR_LENGTH;

@@ -154,26 +154,26 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
 	    result = smpd_parse_command(&context->read_cmd);
 	    if (result != SMPD_SUCCESS)
 	    {
-		mp_err_printf("invalid command read from stdin, ignoring: (%s)\n", context->read_cmd.cmd);
+		mp_err_printf("invalid command read from stdin, ignoring: \"%s\"\n", context->read_cmd.cmd);
 		mp_dbg_printf("exiting handle_read.\n");
 		return SMPD_FAIL;
 	    }
 	    result = smpd_create_command_copy(&context->read_cmd, &cmd_ptr);
 	    if (result != SMPD_SUCCESS)
 	    {
-		mp_err_printf("unable to create a copy of the command read from stdin: (%s)\n", context->read_cmd.cmd);
+		mp_err_printf("unable to create a copy of the command read from stdin: \"%s\"\n", context->read_cmd.cmd);
 		mp_dbg_printf("exiting handle_read.\n");
 		return SMPD_FAIL;
 	    }
 	    result = smpd_post_write_command(session_context, cmd_ptr);
 	    if (result != SMPD_SUCCESS)
 	    {
-		mp_err_printf("unable to post a write of the command read from stdin: (%s)\n", cmd_ptr->cmd);
+		mp_err_printf("unable to post a write of the command read from stdin: \"%s\"\n", cmd_ptr->cmd);
 		smpd_free_command(cmd_ptr);
 		mp_dbg_printf("exiting handle_read.\n");
 		return SMPD_FAIL;
 	    }
-	    mp_dbg_printf("posted write of command: (%s)\n", cmd_ptr->cmd);
+	    mp_dbg_printf("posted write of command: \"%s\"\n", cmd_ptr->cmd);
 	    read_offset = 0;
 	}
 	else
@@ -219,14 +219,14 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
 	    ret_val = smpd_parse_command(&context->read_cmd);
 	    if (ret_val != SMPD_SUCCESS)
 	    {
-		mp_err_printf("unable to parse the read command: (%s)\n", context->read_cmd.cmd);
+		mp_err_printf("unable to parse the read command: \"%s\"\n", context->read_cmd.cmd);
 		break;
 	    }
-	    mp_dbg_printf("read command: (%s)\n", context->read_cmd.cmd);
+	    mp_dbg_printf("read command: \"%s\"\n", context->read_cmd.cmd);
 	    ret_val = handle_command(context);
 	    if (ret_val != SMPD_SUCCESS && ret_val != SMPD_CLOSE)
 	    {
-		mp_err_printf("unable to handle the command: (%s)\n", context->read_cmd.cmd);
+		mp_err_printf("unable to handle the command: \"%s\"\n", context->read_cmd.cmd);
 	    }
 	    else
 	    {

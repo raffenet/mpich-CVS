@@ -30,20 +30,20 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 
     smpd_dbg_printf("entering smpd_start_mgr.\n");
 
-    smpd_read_string(set, sock, session, 100);
+    smpd_read_string(sock, session, 100);
     if (strcmp(session, SMPD_SMPD_SESSION_STR) == 0)
     {
 	/* send password request or not */
 	if (smpd_process.bPasswordProtect)
 	{
-	    result = smpd_write_string(set, sock, SMPD_PWD_REQUEST);
+	    result = smpd_write_string(sock, SMPD_PWD_REQUEST);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
 		smpd_dbg_printf("exiting smpd_start_mgr.\n");
 		return SMPD_FAIL;
 	    }
-	    result = smpd_read_string(set, sock, password, 100);
+	    result = smpd_read_string(sock, password, 100);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
@@ -51,10 +51,10 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 		return SMPD_FAIL;
 	    }
 	    if (strcmp(password, smpd_process.SMPDPassword) == 0)
-		result = smpd_write_string(set, sock, SMPD_AUTHENTICATION_ACCEPTED_STR);
+		result = smpd_write_string(sock, SMPD_AUTHENTICATION_ACCEPTED_STR);
 	    else
 	    {
-		result = smpd_write_string(set, sock, SMPD_AUTHENTICATION_REJECTED_STR);
+		result = smpd_write_string(sock, SMPD_AUTHENTICATION_REJECTED_STR);
 		smpd_close_connection(set, sock);
 		smpd_dbg_printf("exiting smpd_start_mgr.\n");
 		return SMPD_SUCCESS;
@@ -68,7 +68,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	}
 	else
 	{
-	    result = smpd_write_string(set, sock, SMPD_NO_PWD_REQUEST);
+	    result = smpd_write_string(sock, SMPD_NO_PWD_REQUEST);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
@@ -88,21 +88,21 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	password[0] = '\0';
 	if (smpd_process.bService)
 	{
-	    result = smpd_write_string(set, sock, SMPD_CRED_REQUEST);
+	    result = smpd_write_string(sock, SMPD_CRED_REQUEST);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
 		smpd_dbg_printf("exiting smpd_start_mgr.\n");
 		return SMPD_FAIL;
 	    }
-	    result = smpd_read_string(set, sock, domainaccount, 100);
+	    result = smpd_read_string(sock, domainaccount, 100);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
 		smpd_dbg_printf("exiting smpd_start_mgr.\n");
 		return SMPD_FAIL;
 	    }
-	    result = smpd_read_string(set, sock, password, 100);
+	    result = smpd_read_string(sock, password, 100);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
@@ -112,7 +112,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	}
 	else
 	{
-	    result = smpd_write_string(set, sock, SMPD_NO_CRED_REQUEST);
+	    result = smpd_write_string(sock, SMPD_NO_CRED_REQUEST);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_close_connection(set, sock);
@@ -323,7 +323,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 
 	/* write the port to reconnect to back to mpiexec */
 	smpd_dbg_printf("smpd writing reconnect request: port %s\n", port_str);
-	result = smpd_write_string(set, sock, port_str);
+	result = smpd_write_string(sock, port_str);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("Unable to write the re-connect port number back to mpiexec.\n");
@@ -339,7 +339,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	/************ Unix code to spawn the manager ************/
 
 	/* don't request user credentials */
-	result = smpd_write_string(set, sock, SMPD_NO_CRED_REQUEST);
+	result = smpd_write_string(sock, SMPD_NO_CRED_REQUEST);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_close_connection(set, sock);
@@ -348,7 +348,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	}
 
 	/* don't reconnect to a new sock */
-	result = smpd_write_string(set, sock, SMPD_NO_RECONNECT_PORT_STR);
+	result = smpd_write_string(sock, SMPD_NO_RECONNECT_PORT_STR);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_close_connection(set, sock);

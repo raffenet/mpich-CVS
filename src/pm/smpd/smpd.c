@@ -57,6 +57,7 @@ int main(int argc, char* argv[])
 	smpd_dbg_printf("exiting main.\n");
 	return result;
     }
+    smpd_dbg_printf("created a set for the listener: %d\n", sock_getsetid(set));
     result = sock_listen(set, NULL, &port, &listener); 
     if (result != SOCK_SUCCESS)
     {
@@ -103,13 +104,13 @@ int main(int argc, char* argv[])
 		smpd_err_printf("error listening and accepting socket: %s\n", get_sock_error_string(event.error));
 		break;
 	    }
-	    smpd_dbg_printf("accepting new socket\n");
 	    result = sock_create_set(&new_set);
 	    if (result != SOCK_SUCCESS)
 	    {
 		smpd_err_printf("error creating a new set for the newly accepted socket:\n%s\n", get_sock_error_string(result));
 		break;
 	    }
+	    smpd_dbg_printf("accepting new socket into new set: %d\n", sock_getsetid(new_set));
 	    result = sock_accept(listener, new_set, NULL, &new_sock);
 	    if (result != SOCK_SUCCESS)
 	    {

@@ -96,7 +96,7 @@ int smpd_server_authenticate(sock_set_t set, sock_t sock, char *passphrase)
 
     /* write the challenge string*/
     /*smpd_dbg_printf("writing challenge string: %s\n", pszStr);*/
-    if (smpd_write_string(set, sock, pszStr) != SMPD_SUCCESS)
+    if (smpd_write_string(sock, pszStr) != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_server_authenticate: Writing challenge string failed\n");
 	smpd_dbg_printf("exiting smpd_server_authenticate.\n");
@@ -104,7 +104,7 @@ int smpd_server_authenticate(sock_set_t set, sock_t sock, char *passphrase)
     }
 
     /* read the response*/
-    if (smpd_read_string(set, sock, pszStr, SMPD_AUTHENTICATION_STR_LEN) != SMPD_SUCCESS)
+    if (smpd_read_string(sock, pszStr, SMPD_AUTHENTICATION_STR_LEN) != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_server_authenticate: Reading challenge response failed\n");
 	smpd_dbg_printf("exiting smpd_server_authenticate.\n");
@@ -114,9 +114,9 @@ int smpd_server_authenticate(sock_set_t set, sock_t sock, char *passphrase)
     /*smpd_dbg_printf("read response, comparing with crypted string:\n%s\n%s\n", pszStr, pszCrypt);*/
     /* compare the response with the encrypted result and write success or failure*/
     if (strcmp(pszStr, pszCrypt) == 0)
-	ret_val = smpd_write_string(set, sock, SMPD_AUTHENTICATION_ACCEPTED_STR);
+	ret_val = smpd_write_string(sock, SMPD_AUTHENTICATION_ACCEPTED_STR);
     else
-	ret_val = smpd_write_string(set, sock, SMPD_AUTHENTICATION_REJECTED_STR);
+	ret_val = smpd_write_string(sock, SMPD_AUTHENTICATION_REJECTED_STR);
     if (ret_val != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_server_authenticate: Writing authentication result failed\n");
@@ -140,7 +140,7 @@ int smpd_client_authenticate(sock_set_t set, sock_t sock, char *passphrase)
     strcpy(phrase, passphrase);
 
     /* read the challenge string*/
-    if (smpd_read_string(set, sock, pszStr, SMPD_AUTHENTICATION_STR_LEN) != SMPD_SUCCESS)
+    if (smpd_read_string(sock, pszStr, SMPD_AUTHENTICATION_STR_LEN) != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_client_authenticate: Reading challenge string failed\n");
 	smpd_dbg_printf("exiting smpd_client_authenticate.\n");
@@ -163,7 +163,7 @@ int smpd_client_authenticate(sock_set_t set, sock_t sock, char *passphrase)
 
     /*smpd_dbg_printf("writing response: %s\n", pszStr);*/
     /* write the response*/
-    if (smpd_write_string(set, sock, pszStr) != SMPD_SUCCESS)
+    if (smpd_write_string(sock, pszStr) != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_client_authenticate: WriteString of the encrypted response string failed\n");
 	smpd_dbg_printf("exiting smpd_client_authenticate.\n");
@@ -171,7 +171,7 @@ int smpd_client_authenticate(sock_set_t set, sock_t sock, char *passphrase)
     }
 
     /* read the result*/
-    if (smpd_read_string(set, sock, pszStr, SMPD_AUTHENTICATION_STR_LEN) != SMPD_SUCCESS)
+    if (smpd_read_string(sock, pszStr, SMPD_AUTHENTICATION_STR_LEN) != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_client_authenticate: reading authentication result failed\n");
 	smpd_dbg_printf("exiting smpd_client_authenticate.\n");
