@@ -426,6 +426,17 @@ static int do_accumulate_op(MPID_Request *rreq)
     MPI_Aint true_lb, true_extent;
     MPI_User_function *uop;
 
+    if (rreq->dev.op == MPI_REPLACE) {
+        /* simply copy the data */
+        mpi_errno = MPIR_Localcopy(rreq->dev.user_buf, rreq->dev.user_count,
+                                   rreq->dev.datatype,
+                                   rreq->dev.real_user_buf,
+                                   rreq->dev.user_count,
+                                   rreq->dev.datatype);  
+        if (mpi_errno) return mpi_errno;
+        goto fn_exit;
+    }
+
     if (HANDLE_GET_KIND(rreq->dev.op) == HANDLE_KIND_BUILTIN) {
         /* get the function by indexing into the op table */
         uop = MPIR_Op_table[(rreq->dev.op)%16 - 1];
@@ -480,6 +491,8 @@ static int do_accumulate_op(MPID_Request *rreq)
         MPID_Segment_free(segp);
         MPIU_Free(dloop_vec);
     }
+
+ fn_exit:
     /* free the temporary buffer */
     mpi_errno = NMPI_Type_get_true_extent(rreq->dev.datatype, 
                                           &true_lb, &true_extent); 

@@ -41,6 +41,13 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
     if (target_rank == rank) {
         MPI_User_function *uop;
 
+        if (op == MPI_REPLACE) {
+            mpi_errno = MPIR_Localcopy(origin_addr, origin_count, origin_datatype,
+                       (char *) win_ptr->base + win_ptr->disp_unit *
+                       target_disp, target_count, target_datatype); 
+            goto fn_exit;
+        }
+
         if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
             /* get the function by indexing into the op table */
             uop = MPIR_Op_table[(op)%16 - 1];
