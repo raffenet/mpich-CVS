@@ -2228,6 +2228,13 @@ sub ReadInterfaceForDefinitions {
 	    # need to skip it (e.g., for a define MPI_Comm_c2f...)
 	    if ($name =~ /[a-z]/) { next; }
 	    if (defined($mpidef{$name})) {
+		# We want to catch the case ((cast) value).  In
+		# The above definition, the space will break the
+		# value into the cast (actually, "((cast)").
+		$fullval = "$val $remainder";
+		if ($fullval =~ /\(\(([^\(\)]*)\)\s*([^\(\)]*)\s*\)/) {
+		    $val = "(($1)$2)";
+		}
 		if ($mpidef{$name} ne $val) {
 		    print STDERR "Attempting to redefine $name with a new value $val,\nusing original value of $mpidef{$name}\n";
 		}
