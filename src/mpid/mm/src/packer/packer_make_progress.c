@@ -12,7 +12,7 @@
 @*/
 int packer_make_progress()
 {
-    MM_Car *car_ptr, *car_tmp_ptr;
+    MM_Car *car_ptr, *car_next_ptr;
     MM_Segment_buffer *buf_ptr;
     BOOL finished;
     MM_Car *next_qhead;
@@ -43,8 +43,10 @@ int packer_make_progress()
     /* Process either or both qheads */
     do
     {
-	while (car_ptr)
+	/* Process all the cars in the current queue */
+	do
 	{
+	    car_next_ptr = car_ptr->vcqnext_ptr;
 	    finished = FALSE;
 	    buf_ptr = car_ptr->buf_ptr;
 	    switch (buf_ptr->type)
@@ -58,6 +60,7 @@ int packer_make_progress()
 		    /* the buffer is empty so get a tmp buffer */
 		    car_ptr->request_ptr->mm.get_buffers(car_ptr->request_ptr);
 		    /* set the first variable to zero */
+		    /* This variable will be updated each time MPID_Segment_pack is called. */
 		    car_ptr->data.packer.first = 0;
 		}
 		/* set the last variable to the end of the segment */
@@ -73,6 +76,7 @@ int packer_make_progress()
 		buf_ptr->tmp.num_read += (car_ptr->data.packer.last - car_ptr->data.packer.first);
 
 		/* if the entire buffer is packed then break */
+		/*if (car_ptr->data.packer.last == buf_ptr->tmp.len)*/ /* the length and the segment last are equal, right? */
 		if (car_ptr->data.packer.last == car_ptr->request_ptr->mm.last)
 		{
 		    finished = TRUE;
@@ -83,12 +87,15 @@ int packer_make_progress()
 		car_ptr->data.packer.first = car_ptr->data.packer.last;
 		break;
 	    case MM_VEC_BUFFER:
+		/* If there are no write cars outstanding for the current vec data */
 		if (buf_ptr->vec.num_cars_outstanding == 0)
 		{
+		    /* then update vec to point to the next pieces of data */
 		    car_ptr->request_ptr->mm.get_buffers(car_ptr->request_ptr);
 		    buf_ptr->vec.num_read = buf_ptr->vec.last - buf_ptr->vec.first;
 		    buf_ptr->vec.num_cars_outstanding = buf_ptr->vec.num_cars;
 		}
+		/* vec packing is finished when the current vec describes the last piece of the segment */
 		if (buf_ptr->vec.last == car_ptr->request_ptr->mm.last)
 		    finished = TRUE;
 		break;
@@ -114,18 +121,18 @@ int packer_make_progress()
 	    }
 	    if (finished)
 	    {
-		car_tmp_ptr = car_ptr;
-		car_ptr = car_ptr->qnext_ptr;
-		packer_car_dequeue(MPID_Process.packer_vc_ptr, car_tmp_ptr);
-		mm_cq_enqueue(car_tmp_ptr);
+		/* the car has finished packing so put it in the completion queue */
+		packer_car_dequeue(MPID_Process.packer_vc_ptr, car_ptr);
+		mm_cq_enqueue(car_ptr);
 	    }
-	    else
-	    {
-		car_ptr = car_ptr->qnext_ptr;
-	    }
-	}
+	    /* continue on to the next car whether or not the current car has been completely packed.
+	     * packing can occur out of order */
+	    car_ptr = car_next_ptr;
+	} while (car_ptr);
 
+	/* continue to the next queue */
 	car_ptr = next_qhead;
+	/* set the next q pointer to NULL, guaranteeing we break out of the loop on the second pass */
 	next_qhead = NULL;
     } while (car_ptr);
 

@@ -42,7 +42,9 @@ int unpacker_make_progress()
     
     do
     {
-	car_next_ptr = car_ptr->qnext_ptr;
+	/* save the next car pointer because writing the current car_ptr may
+	 * modify it next pointer */
+	car_next_ptr = car_ptr->vcqnext_ptr;
 	buf_ptr = car_ptr->buf_ptr;
 	switch (buf_ptr->type)
 	{
@@ -62,7 +64,8 @@ int unpacker_make_progress()
 	    break;
 #endif
 	case MM_VEC_BUFFER:
-	    unpacker_write_vec(vc_ptr, car_ptr, buf_ptr);
+	    if (buf_ptr->vec.num_cars_outstanding > 0)
+		unpacker_write_vec(vc_ptr, car_ptr, buf_ptr);
 	    break;
 	case MM_TMP_BUFFER:
 	    unpacker_write_tmp(vc_ptr, car_ptr, buf_ptr);
@@ -113,14 +116,26 @@ int unpacker_write_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer
 }
 #endif
 
+/*
+ * unpacking a vector doesn't do much because the data has already been copied to its
+ * final destination by the reader.  this function merely keeps track of when the read
+ * has finished and claims to be finished also 
+ */
 int unpacker_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_written;
 
     MM_ENTER_FUNC(UNPACKER_WRITE_VEC);
 
+#ifdef MPICH_DEV_BUILD
     /* this function assumes that buf_ptr->vec.num_cars_outstanding > 0 */
+    if (buf_ptr->vec.num_cars_outstanding == 0)
+    {
+	err_printf("Error: unpacker_write_vec called while num_cars_outstanding == 0.\n");
+    }
+#endif
 
+    /* if num_read_copy != num_read then some new data has been read */
     if (car_ptr->data.unpacker.buf.vec_write.num_read_copy != buf_ptr->vec.num_read)
     {
 	/* update num_read_copy and num_written */

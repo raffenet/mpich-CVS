@@ -21,7 +21,6 @@ int xfer_start(MPID_Request *request_ptr)
     MM_Car *pCar, *pCarIter;
 
     MM_ENTER_FUNC(XFER_START);
-    dbg_printf("xfer_start\n");
 
 #ifdef MPICH_DEV_BUILD
     if (request_ptr == NULL)
