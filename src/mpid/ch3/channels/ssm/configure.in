@@ -27,7 +27,13 @@ PAC_PROG_MAKE
 
 AC_DEFINE(USE_PROCESS_LOCKS,,[Define to use process locks])
 AC_DEFINE(USE_BUSY_LOCKS,,[Define to use busy locks])
-AC_DEFINE(USE_MQSHM,,[Define to use shared memory message queues])
+AC_ARG_ENABLE(mqshm,
+[--enable-mqshm - Disable this to use SysV message queues],,
+enable_mqshm=yes)
+if test $enable_mqshm = yes ; then
+    AC_DEFINE(USE_MQSHM,,[Define to use shared memory message queues])   
+fi
+dnl AC_DEFINE(USE_MQSHM,,[Define to use shared memory message queues])
 
 AC_CHECK_HEADERS(assert.h)
 
