@@ -15,6 +15,9 @@ extern "C" {
 #include <winsock2.h>
 #include <windows.h>
 #endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
 
 #ifndef SOCKET_ERROR
 #define SOCKET_ERROR -1
@@ -30,6 +33,10 @@ extern "C" {
 #ifdef HAVE_WINSOCK2_H
 #ifndef socklen_t
 typedef int socklen_t;
+#endif
+#else
+#ifndef socklen_t
+#define socklen_t int
 #endif
 #endif
 
