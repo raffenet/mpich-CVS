@@ -32,12 +32,15 @@
 #define MPID_LOGGING_NONE 0
 #define MPID_LOGGING_RLOG 1
 #define MPID_LOGGING_DLOG 2
+#define MPID_LOGGING_LWLOG 3
 
 /* Include the macros specific to the selected logging library */
 #if (USE_LOGGING == MPID_LOGGING_RLOG)
 #include "rlog_macros.h"
 #elif (USE_LOGGING == MPID_LOGGING_DLOG)
 #include "dlog_macros.h"
+#elif (USE_LOGGING == MPID_LOGGING_LWLOG)
+#include "lwlog.h"
 #else
 #error You must select a logging library if timing is enabled
 #endif
