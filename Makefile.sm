@@ -9,6 +9,23 @@ distclean-local:
 	-@rm -f lib/libmpich.a
 	-@rm -f src/include/mpichconf.h
 
+# Build a distribution tarfile
+#  Extract into a temporary directory
+#  Rename the directory
+#  Run updatefiles with distribution options
+#  Tar it up
+PACKAGE = mpich2
+VERSION = 0.1
+dist:
+	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi
+#	if [ ! -d tmpdir/${PACKAGE}-${VERSION} ] ; then mkdir tmpdir/${PACKAGE}-${VERSION} ; fi
+	(cd tmpdir && cvs -d /home/MPI/cvsMaster export -D now mpich2full )
+	mv tmpdir/mpich2 tmpdir/${PACKAGE}-${VERSION}
+	(cd tmpdir/${PACKAGE}-${VERSION} && maint/updatefiles -distrib )
+	(cd tmpdir && tar cf ${PACKAGE}-${VERSION}.tar ${PACKAGE}-${VERSION} )
+	mv tmpdir/${PACKAGE}-${VERSION}.tar .
+	-rm -rf tmpdir
+		
 install_LIB = lib/libmpich.a
 install_INCLUDE = src/include/mpi.h
 optinstall_LIB = lib/libpmpich.a
