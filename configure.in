@@ -582,6 +582,11 @@ if test $with_mpe != no ; then
 	    # No warning message on the default
             AC_MSG_WARN([No MPE directory available])
         fi
+    elif test ! -x $use_top_srcdir/src/mpe2/configure ; then
+        if test $with_mpe = yes ; then
+	    # No warning message on the default
+            AC_MSG_WARN([No configure available for MPE])
+        fi
     else
         subsystems="$subsystems src/mpe2"
 	other_install_dirs="$other_install_dirs src/mpe2"
