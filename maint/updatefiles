@@ -27,6 +27,9 @@ for arg in "$@" ; do
     -without-codecheck|--without-codecheck)
     do_codingcheck=no
     ;;
+    -without-errmsgs|--without-errmsgs)
+    do_geterrmsgs=no
+    ;;
     -help|--help|-usage|--usage)
     cat <<EOF
     updatefiles [ --with-codecheck | --without-codecheck ] 
@@ -146,10 +149,15 @@ else
     # The next two files may be needed to build the dependency lists
     touch src/include/mpidpre.h src/include/mpidpost.h
 fi
-maint/simplemake -common=maint/makedefs \
+if maint/simplemake -common=maint/makedefs \
     -autoconf="-l ROOTDIR/confdb" \
     -libdir='${MPILIBNAME}'=ROOTDIR/lib $otherargs \
-    Makefile.sm
+    Makefile.sm ; then
+    :
+else
+    echo "Simplemake step failed!"
+    exit 1
+fi
 #
 # Create the configure files and run autoheader
 # Eventually, make this a test for find available.  Perhaps
@@ -167,6 +175,12 @@ if [ "$has_unix_find" = "yes" ] ; then
             (cd $dir ; rm -f mf.tmp ; \
 	    sed -e 's%^SHELL *=.*%SHELL = /bin/sh%' Makefile.in > mf.tmp ;\
 	    make -f mf.tmp configure ; rm -f mf.tmp )
+	    #
+            # Under cygwin, sometimes (?) configure ends up containing \^M
+	    # (that <ctrl>-M).  We may need to add this sed step
+	    # sed -e '/"\"/d' -e 's/\//g'
+	    # (the first removes case statements on \^M, the second
+	    # removes the \^M from the ac_config_files statement
         fi
     done
 else
