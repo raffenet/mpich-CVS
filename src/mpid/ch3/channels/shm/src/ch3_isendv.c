@@ -30,7 +30,7 @@
 	sreq->shm.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
 	sreq->ch3.iov[0].MPID_IOV_BUF = (void*)&sreq->shm.pkt; \
     } \
-    (char *) sreq->ch3.iov[offset].MPID_IOV_BUF += nb; \
+    sreq->ch3.iov[offset].MPID_IOV_BUF = (char *) sreq->ch3.iov[offset].MPID_IOV_BUF + nb; \
     sreq->ch3.iov[offset].MPID_IOV_LEN -= nb; \
     sreq->shm.iov_offset = offset; \
     sreq->ch3.iov_count = count; \
