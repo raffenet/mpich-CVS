@@ -313,6 +313,10 @@ static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, in
     int i;
 
     p = alloc_fn( sizeof(struct ibuBlockAllocator_struct) + ((blocksize + sizeof(void**)) * count) );
+    if (p == NULL)
+    {
+	return NULL;
+    }
 
     p->alloc_fn = alloc_fn;
     p->free_fn = free_fn;
@@ -385,8 +389,35 @@ static void * ibuBlockAlloc(ibuBlockAllocator p)
     
     if (p->pNextFree == NULL)
     {
-	MPIU_DBG_PRINTF(("ibuBlockAlloc returning NULL\n"));
-	return NULL;
+	ibuBlockAllocator q;
+	void **ppVoid;
+	int i;
+
+	q = alloc_fn( sizeof(struct ibuBlockAllocator_struct) + ((blocksize + sizeof(void**)) * count) );
+	if (q == NULL)
+	{
+	    MPIU_DBG_PRINTF(("ibuBlockAlloc returning NULL\n"));
+	    return NULL;
+	}
+
+	q->alloc_fn = alloc_fn;
+	q->free_fn = free_fn;
+	q->nIncrementSize = incrementsize;
+	q->pNextAllocation = NULL;
+	q->nCount = count;
+	q->nBlockSize = blocksize;
+	q->pNextFree = (void**)(q + 1);
+
+	ppVoid = (void**)(q + 1);
+	for (i=0; i<count-1; i++)
+	{
+	    *ppVoid = (void*)((char*)ppVoid + sizeof(void**) + blocksize);
+	    ppVoid = *ppVoid;
+	}
+	*ppVoid = NULL;
+
+	p->pNextAllocation = q;
+	p->pNextFree = q->pNextFree;
     }
 
     pVoid = p->pNextFree + 1;
