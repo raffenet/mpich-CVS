@@ -27,7 +27,10 @@ dnl in a config.system file; if the current system matches the value stored
 dnl in that file (or there is neither a config.cache nor config.system file),
 dnl configure will enable caching.  In order to ensure that the configure
 dnl tests make sense, the values of CC, F77, F90, and CXX are also included 
-dnl in the config.system file.
+dnl in the config.system file.  In addition, the value of PATH is included
+dnl to ensure that changes in the PATH that might select a different version
+dnl of a program with the same name (such as a native make versus gnumake)
+dnl are detected.
 dnl
 dnl Bugs:
 dnl This does not work with the Cygnus configure because the enable arguments
@@ -37,7 +40,7 @@ dnl the "notgiven" value.
 dnl
 dnl The environment variable CONFIGURE_DEBUG_CACHE, if set to yes,
 dnl will cause additional data to be written out during the configure process.
-dnl This can be helpful in debugging the cache file process.dnl
+dnl This can be helpful in debugging the cache file process.
 dnl
 dnl See Also:
 dnl PAC_ARG_CACHING
@@ -72,6 +75,23 @@ dnl The "action-if-not-given" part of AC_ARG_ENABLE is not executed until
 dnl after the AC_CACHE_LOAD is executed (!).  Thus, the value of 
 dnl enable_cache if neither --enable-cache or --disable-cache is selected
 dnl is null.  Just in case autoconf ever fixes this, we test both cases.
+dnl
+dnl Include PATH in the cache.system file since changing the path can
+dnl change which versions of programs are found (such as vendor make
+dnl or GNU make).
+dnl
+#
+# Get a test value and flag whether we should remove/replace the 
+# cache_system file (do so unless cache_system_ok is yes)
+cleanargs=`echo "$CC $F77 $CXX $F90 $PATH" | tr '"' ' '`
+# We might want to add CFLAGS and some of the configure parms ($*)
+if uname -srm >/dev/null 2>&1 ; then
+    cache_system_text="`uname -srm` $cleanargs"
+else
+    cache_system_text="-no-uname- $cleanargs"
+fi
+cache_system_ok=no
+#
 if test -z "$real_enable_cache" ; then
     real_enable_cache=$enable_cache
     if test -z "$real_enable_cache" ; then real_enable_cache="notgiven" ; fi
@@ -80,15 +100,12 @@ if test "X$real_enable_cache" = "Xnotgiven" ; then
     # check for valid cache file
     if test -z "$cache_system" ; then cache_system="config.system" ; fi
     if uname -srm >/dev/null 2>&1 ; then
-	dnl cleanargs=`echo "$*" | tr '"' ' '`
-	cleanargs=`echo "$CC $F77 $CXX $F90" | tr '"' ' '`
-        testval="`uname -srm` $cleanargs"
-        if test -f "$cache_system" -a -n "$testval" ; then
-	    if test "$testval" = "`cat $cache_system`" ; then
+        if test -f "$cache_system" -a -n "$cache_system_text" ; then
+	    if test "$cache_system_text" = "`cat $cache_system`" ; then
 	        real_enable_cache="yes"
+                cache_system_ok=yes
 	    fi
-        elif test ! -f "$cache_system" -a -n "$testval" ; then
-	    echo "$testval" > $cache_system
+        elif test ! -f "$cache_system" -a -n "$cache_system_text" ; then
 	    # remove the cache file because it may not correspond to our
 	    # system
 	    if test "$cache_file" != "/dev/null" ; then 
@@ -113,12 +130,17 @@ if test "X$real_enable_cache" = "Xyes" ; then
     echo "Configure in `pwd` creating cache $cache_file"
     > $cache_file
     rm -f $cache_system
-    cleanargs=`echo "$CC $F77 $CXX $F90" | tr '"' ' '`
-    testval="`uname -srm` $cleanargs"
-    echo "$testval" > $cache_system
   fi
 else
   cache_file="/dev/null"
+fi
+#
+# Update the cache_system file if necessary
+if test "$cache_system_ok" != yes ; then
+    if test -n "$cache_system" ; then
+        rm -f $cache_system
+        echo $cache_system_text > $cache_system
+    fi
 fi
 if test "$clearMinusX" = yes ; then
     set +x
@@ -193,7 +215,8 @@ if test "$cache_file" = "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" ; the
     touch $cache_file
     dnl 
     dnl For Autoconf 2.52+, we should ensure that the environment is set
-    dnl for the cache.
+    dnl for the cache.  Make sure that we get the values and set the 
+    dnl xxx_set variables properly
     ac_cv_env_CC_set=set
     ac_cv_env_CC_value=$CC
     ac_cv_env_CFLAGS_set=${CFLAGS+set}
@@ -215,32 +238,6 @@ if test "$cache_file" = "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" ; the
     ac_cv_env_CXX_set=${CXX+set}
     ac_cv_env_CXX_value=$CXX
 
-#     dnl For Autoconf 2.57+, we also need to look at these.  This does 
-#     dnl disable a sometimes useful check in autoconf, but I don't see
-#     dnl a way arount it
-#     ac_env_CC_set=set
-#     ac_env_CC_value=$CC
-#     ac_env_CFLAGS_set=set
-#     ac_env_CFLAGS_value=$CFLAGS
-#     ac_env_CPP_set=set
-#     ac_env_CPP_value=$CPP
-#     ac_env_CPPFLAGS_set=set
-#     ac_env_CPPFLAGS_value=$CPPFLAGS
-#     ac_env_LDFLAGS_set=set
-#     ac_env_LDFLAGS_value=$LDFLAGS
-#     ac_env_LIBS_set=set
-#     ac_env_LIBS_value=$LIBS
-#     ac_env_FC_set=set
-#     ac_env_FC_value=$FC
-#     ac_env_F77_set=set
-#     ac_env_F77_value=$F77
-#     ac_env_FFLAGS_set=set
-#     ac_env_FFLAGS_value=$FFLAGS
-#     ac_env_CXX_set=set
-#     ac_env_CXX_value=$CXX
-
-#	export ac_env_LDFLAGS_set
-#	export ac_env_LDFLAGS_value   
     dnl other parameters are
     dnl build_alias, host_alias, target_alias
 
