@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include "mpi.h"
-/* unistd is needed for sleep */
-#include <unistd.h>
 
 int main( int argc, char *argv[] )
 {
@@ -34,12 +32,8 @@ int main( int argc, char *argv[] )
         fflush(stdout);
         
         err = MPI_Send("bye", 4, MPI_CHAR, 3, 0, intercomm); 
-
-        printf("Parent sleeping for 5 sec; ignore errors after this\n");
-        fflush(stdout);
     }
 
-    sleep(5);
     MPI_Finalize();
 
     return 0;
