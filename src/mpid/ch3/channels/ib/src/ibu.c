@@ -43,6 +43,7 @@ typedef struct ibu_buffer
 typedef struct ibu_unex_read_t
 {
     void *mem_ptr;
+    unsigned char *buf;
     unsigned int length;
     struct ibu_unex_read_t *next;
 } ibu_unex_read_t;
@@ -1092,7 +1093,7 @@ int ibu_destroy_set(ibu_set_t set)
     return status;
 }
 
-static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int num_bytes)
+static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int offset, unsigned int num_bytes)
 {
     ibu_unex_read_t *p;
     MPIDI_STATE_DECL(MPID_STATE_IBUI_BUFFER_UNEX_READ);
@@ -1103,6 +1104,7 @@ static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int num_byte
 
     p = (ibu_unex_read_t *)malloc(sizeof(ibu_unex_read_t));
     p->mem_ptr = mem_ptr;
+    p->buf = (unsigned char *)mem_ptr + offset;
     p->length = num_bytes;
     p->next = ibu->unex_list;
     ibu->unex_list = p;
@@ -1111,6 +1113,7 @@ static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int num_byte
     return IBU_SUCCESS;
 }
 
+#if 0
 static int ibui_read_unex(ibu_t ibu)
 {
     ibu_unex_read_t *temp;
@@ -1156,7 +1159,67 @@ static int ibui_read_unex(ibu_t ibu)
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READ_UNEX);
     return IBU_SUCCESS;
 }
+#endif
 
+static int ibui_read_unex(ibu_t ibu)
+{
+    unsigned int len;
+    ibu_unex_read_t *temp;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_READ_UNEX);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_READ_UNEX);
+
+    MPIU_dbg_printf("ibui_read_unex\n");
+    assert(ibu->unex_list);
+
+    /* copy the received data */
+    while (ibu->unex_list)
+    {
+	len = min(ibu->unex_list->length, ibu->read.bufflen);
+	memcpy(ibu->read.buffer, ibu->unex_list->buf, len);
+	/* advance the user pointer */
+	ibu->read.buffer = (char*)(ibu->read.buffer) + len;
+	ibu->read.bufflen -= len;
+	ibu->read.total += len;
+	if (len != ibu->unex_list->length)
+	{
+	    ibu->unex_list->length -= len;
+	    ibu->unex_list->buf += len;
+	}
+	else
+	{
+	    /* put the receive packet back in the pool */
+	    BlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
+	    /* free the unexpected data node */
+	    temp = ibu->unex_list;
+	    ibu->unex_list = ibu->unex_list->next;
+	    free(temp);
+	    /* post another receive to replace the consumed one */
+	    ibui_post_receive(ibu);
+	}
+	/* check to see if the entire message was received */
+	if (ibu->read.bufflen == 0)
+	{
+	    /* place this ibu in the finished list so it will be completed by ibu_wait */
+	    ibu->state &= ~IBU_READING;
+	    ibu->unex_finished_queue = IBU_Process.unex_finished_list;
+	    IBU_Process.unex_finished_list = ibu;
+	    /* post another receive to replace the consumed one */
+	    ibui_post_receive(ibu);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READ_UNEX);
+	    return IBU_SUCCESS;
+	}
+	/* make the user upcall */
+	/*
+	if (ibu->read.progress_update != NULL)
+	ibu->read.progress_update(num_bytes, ibu->user_ptr);
+	*/
+    }
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READ_UNEX);
+    return IBU_SUCCESS;
+}
+
+#if 0
 int ibui_readv_unex(ibu_t ibu)
 {
     unsigned int num_bytes;
@@ -1226,6 +1289,67 @@ int ibui_readv_unex(ibu_t ibu)
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READV_UNEX);
     return IBU_SUCCESS;
 }
+#endif
+
+int ibui_readv_unex(ibu_t ibu)
+{
+    unsigned int num_bytes;
+    ibu_unex_read_t *temp;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_READV_UNEX);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_READV_UNEX);
+
+    MPIU_dbg_printf("ibui_readv_unex\n");
+
+    while (ibu->unex_list)
+    {
+	while (ibu->unex_list->length && ibu->read.iovlen)
+	{
+	    num_bytes = min(ibu->unex_list->length, ibu->read.iov[ibu->read.index].IBU_IOV_LEN);
+	    /* copy the received data */
+	    memcpy(ibu->read.iov[ibu->read.index].IBU_IOV_BUF, ibu->unex_list->buf, num_bytes);
+	    ibu->unex_list->buf += num_bytes;
+	    ibu->unex_list->length -= num_bytes;
+	    /* update the iov */
+	    ibu->read.iov[ibu->read.index].IBU_IOV_LEN -= num_bytes;
+	    ibu->read.iov[ibu->read.index].IBU_IOV_BUF = 
+		(char*)(ibu->read.iov[ibu->read.index].IBU_IOV_BUF) + num_bytes;
+	    if (ibu->read.iov[ibu->read.index].IBU_IOV_LEN == 0)
+	    {
+		ibu->read.index++;
+		ibu->read.iovlen--;
+	    }
+	}
+
+	if (ibu->unex_list->length == 0)
+	{
+	    /* put the receive packet back in the pool */
+	    BlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
+	    /* free the unexpected data node */
+	    temp = ibu->unex_list;
+	    ibu->unex_list = ibu->unex_list->next;
+	    free(temp);
+	    /* replace the consumed read descriptor */
+	    ibui_post_receive(ibu);
+	}
+	
+	if (ibu->read.iovlen == 0)
+	{
+	    ibu->state &= ~IBU_READING;
+	    ibu->unex_finished_queue = IBU_Process.unex_finished_list;
+	    IBU_Process.unex_finished_list = ibu;
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READV_UNEX);
+	    return IBU_SUCCESS;
+	}
+	/* make the user upcall */
+	/*
+	if (ibu->read.progress_update != NULL)
+	ibu->read.progress_update(num_bytes, ibu->user_ptr);
+	*/
+    }
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READV_UNEX);
+    return IBU_SUCCESS;
+}
 
 int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 {
@@ -1236,6 +1360,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
     char *iter_ptr;
     ibu_t ibu;
     unsigned int num_bytes;
+    unsigned int offset;
     MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WAIT);
@@ -1397,15 +1522,15 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    /*MPIU_dbg_printf("ibu_wait(recv finished %d bytes)\n", num_bytes);*/
 	    if (!(ibu->state & IBU_READING))
 	    {
-		ibui_buffer_unex_read(ibu, mem_ptr, num_bytes);
+		ibui_buffer_unex_read(ibu, mem_ptr, 0, num_bytes);
 		break;
 	    }
 	    MPIU_dbg_printf("ibu_wait: read update, total = %d + %d = %d\n", ibu->read.total, num_bytes, ibu->read.total + num_bytes);
-	    ibu->read.total += num_bytes;
+	    //ibu->read.total += num_bytes;
 	    if (ibu->read.use_iov)
 	    {
 		iter_ptr = mem_ptr;
-		while (num_bytes)
+		while (num_bytes && ibu->read.iovlen > 0)
 		{
 		    if (ibu->read.iov[ibu->read.index].IBU_IOV_LEN <= num_bytes)
 		    {
@@ -1430,8 +1555,19 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 			num_bytes = 0;
 		    }
 		}
-		/* put the receive packet back in the pool */
-		BlockFree(ibu->allocator, mem_ptr);
+		offset = (unsigned char*)iter_ptr - (unsigned char*)mem_ptr;
+		ibu->read.total += offset;
+		if (num_bytes == 0)
+		{
+		    /* put the receive packet back in the pool */
+		    BlockFree(ibu->allocator, mem_ptr);
+		    ibui_post_receive(ibu);
+		}
+		else
+		{
+		    /* save the unused but received data */
+		    ibui_buffer_unex_read(ibu, mem_ptr, offset, num_bytes);
+		}
 		if (ibu->read.iovlen == 0)
 		{
 		    ibu->state &= ~IBU_READING;
@@ -1447,7 +1583,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    else
 		    {
 			/* post another receive to replace the consumed one */
-			ibui_post_receive(ibu);
+			//ibui_post_receive(ibu);
 		    }
 		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 		    return IBU_SUCCESS;
@@ -1458,7 +1594,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		/* post a read of the remaining data */
 		/*WSARecv(ibu->ibu, ibu->read.iov, ibu->read.iovlen, &ibu->read.num_bytes, &dwFlags, &ibu->read.ovl, NULL);*/
 		/* replace the consumed read descriptor */
-		ibui_post_receive(ibu);
+		//ibui_post_receive(ibu);
 	    }
 	    else
 	    {
