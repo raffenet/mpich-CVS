@@ -626,7 +626,6 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
     ROMIO_TCFLAGS="-Ae"
-    ROMIO_TCPPFLAGS="-ext"
     ROMIO_TFFLAGS="+U77"
 fi
 #
