@@ -26,6 +26,8 @@ const char * PMI_Err_str(int error)
 	return "PMI_ERR_INVALID_LENGTH";
     case PMI_ERR_INIT:
 	return "PMI_ERR_INIT";
+    case PMI_ERR_NOMEM:
+	return "PMI_ERR_NOMEM";
     }
     sprintf(str, "PMI_ERR_UNKNOWN: %d", error);
     return str;
