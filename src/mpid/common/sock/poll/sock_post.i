@@ -22,9 +22,9 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
     int nodelay;
     int rc;
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_CONNECT);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_POST_CONNECT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_POST_CONNECT);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_POST_CONNECT);
 
     MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
 
@@ -212,7 +212,7 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
     *sockp = sock;
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CONNECT);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_CONNECT);
     return mpi_errno;
 
   fn_fail:
