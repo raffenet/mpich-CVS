@@ -126,6 +126,7 @@ AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/../common/datatype/mpid_datatype.h ../..
 AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/../common/datatype/mpid_dataloop.h ../../include)
 AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/../common/datatype/gen_dataloop.h ../../include)
 AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/include/*_pre.h ../../include)
+AC_OUTPUT_COMMANDS(cp $(use_top_srcdir)/include/blockallocator.h ../../include)
 
 dnl Generate the Makefiles from Makefile.in
 
