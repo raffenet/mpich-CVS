@@ -672,8 +672,15 @@ dnl    AC_DEFINE(USE_PMIEXT_FOR_NAMEPUB,1,[Define if pmiext should be used for n
     # this name publisher is really too simple to require a 
     # separate configure, and we might as well include a basic
     # name publisher with any MPICH2 distribution
-    AC_MSG_WARN([No file name publisher supported])
+    # We DO need to extract the directory name that is used for writing 
+    # the files, with the User's home directory as the default
     nameserv_name="file"
+    basedir=`echo $with_namepublisher | sed -e 's/file://'`
+    if test "$basedir" = "$with_namepublisher" ; then
+        # Reset since no directory was set.
+	basedir='"."';
+    fi
+    AC_DEFINE_UNQUOTED(FILE_NAMEPUB_BASEDIR,$basedir)
     AC_DEFINE(USE_FILE_FOR_NAMEPUB,1,[Define if file should be used for name publisher])
     ;;
 
