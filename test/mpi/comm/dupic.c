@@ -28,20 +28,46 @@ int main( int argc, char *argv[] )
 	/* Check that there are separate contexts.  We do this by setting
 	   up nonblocking received on both communicators, and then
 	   sending to them.  If the contexts are different, tests on the
-	   unstaisfied communicator should indicate no available message */
+	   unsatisfied communicator should indicate no available message */
 	MPI_Comm_rank( comm, &rank );
 	if (rank == 0) {
 	    s1buf = 456;
 	    s2buf = 17;
 	    r1buf = r2buf = -1;
+	    /* These are send/receives to the process with rank zero 
+	       in the other group (these are intercommunicators) */
 	    MPI_Irecv( &r1buf, 1, MPI_INT, 0, 0, dupcomm, &rreq[0] );
 	    MPI_Irecv( &r2buf, 1, MPI_INT, 0, 0, comm, &rreq[1] );
 	    MPI_Send( &s2buf, 1, MPI_INT, 0, 0, comm );
 	    MPI_Waitsome(2, rreq, &count, indicies, MPI_STATUSES_IGNORE);
-	    if (count == 1 && indicies[0] != 1) {
+	    if (count != 1 || indicies[0] != 1) {
+		/* The only valid return is that exactly one message
+		   has been received */
 		errs++;
-		printf( "Error in context values for intercomm\n" );
+		if (count == 1 && indicies[0] != 1) {
+		    printf( "Error in context values for intercomm\n" );
+		}
+		else if (count == 2) {
+		    printf( "Error: two messages received!\n" );
+		}
+		else {
+		    int i;
+		    printf( "Error: count = %d", count );
+		    for (i=0; i<count; i++) {
+			printf( " indicies[%d] = %d", i, indicies[i] );
+		    }
+		    printf( "\n" );
+		}
 	    }
+		
+	    /* Make sure that we do not send the next message until 
+	       the other process (rank zero in the other group) 
+	       has also completed the first step */
+	    MPI_Sendrecv( MPI_BOTTOM, 0, MPI_BYTE, 0, 37,
+			  MPI_BOTTOM, 0, MPI_BYTE, 0, 37, comm, 
+			  MPI_STATUS_IGNORE );
+
+	    /* Complete the receive on dupcomm */
 	    MPI_Send( &s1buf, 1, MPI_INT, 0, 0, dupcomm );
 	    MPI_Wait( &rreq[0], MPI_STATUS_IGNORE );
 	    if (r1buf != s1buf) {
