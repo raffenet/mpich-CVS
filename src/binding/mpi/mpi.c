@@ -18,39 +18,49 @@
  * This file implements an mpi binding that calls another dynamically loaded mpi binding.
  * The environment variables MPI_DLL_NAME and MPICH2_CHANNEL control which library should be loaded.
  * The default library is mpich2.dll or mpich2d.dll.
+ * A wrapper dll can also be name to replace only the MPI functions using the MPI_WRAP_DLL_NAME
+ * environment variable.
  *
  * The motivation for this binding is to allow compiled mpi applications to be able
  * to use different implementations of mpich2 at run-time without re-linking the application.
  * This way mpiexec or the user can choose the best channel to use at run-time.
  *
- * For example, mpiexec may choose the shm channel for less than 8 processes on a single node
+ * For example, mpiexec may choose the shm channel for up to 8 processes on a single node
  * and sshm for more than 8 processes on a single node and the sock channel for multi-node
  * jobs.
  * Example 2: A user has an infiniband cluster and wants the ib channel to be the default.
  * So the user sets the mpiexec option to use the ib channel as the default and then all
  * jobs run on the cluster use the ib channel without modification or re-linking.
  *
- * A side benefit to this binding is the ability to switch to a profiled or logged mpi
- * implementation at run-time.  The user can run a job and then decide he wants to run
- * the job again and produce a log file.  All he has to do is specify the logged version
- * of the mpich2 channel and a log file will be produced.
+ * A profiled or logged mpi implementation may be selected at run-time.  If the mpi dll is itself
+ * profiled then the dll can be specified just as any other dll would be named.  Or a wrapper
+ * dll can be named to work in conjunction with the mpi dll using the MPI_WRAP_DLL_NAME environment
+ * variable.  The wrapper dll will implement the MPI interface and the mpi dll will implement the 
+ * PMPI interface.
+ *
+ * The user can run a job and then decide to run the job again and produce a log file.  All that
+ * needs to be done is specify the logged version of the mpich2 channel or a wrapper dll like mpe
+ * and a log file will be produced.
  * Examples:
  * mpiexec -n 4 cpi
- * mpiexec -env MPI_DLL_NAME mpich2p.dll -n 4 cpi
  * mpiexec -env MPICH2_CHANNEL ib -n 4 cpi
+ * mpiexec -env MPI_DLL_NAME mpich2p.dll -n 4 cpi
+ * mpiexec -env MPI_WRAP_DLL_NAME mpich2mped.dll -n 4 cpi
+ * mpiexec -env MPICH2_CHANNEL ib -env MPI_WRAP_DLL_NAME mpich2mped.dll -n 4 cpi
  *
  */
 
-#define MPI_ENV_DLL_NAME      "MPI_DLL_NAME"
-#define MPI_ENV_CHANNEL_NAME  "MPICH2_CHANNEL"
+#define MPI_ENV_DLL_NAME          "MPI_DLL_NAME"
+#define MPI_ENV_CHANNEL_NAME      "MPICH2_CHANNEL"
+#define MPI_ENV_MPIWRAP_DLL_NAME  "MPI_WRAP_DLL_NAME"
 #ifdef _DEBUG
-#define MPI_DEFAULT_DLL_NAME  "mpich2d.dll"
-#define DEBUG_POSTFIX         "d"
+#define MPI_DEFAULT_DLL_NAME      "mpich2d.dll"
+#define DLL_FORMAT_STRING         "mpich2%sd.dll"
 #else
-#define MPI_DEFAULT_DLL_NAME  "mpich2.dll"
-#define DEBUG_POSTFIX         ""
+#define MPI_DEFAULT_DLL_NAME      "mpich2.dll"
+#define DLL_FORMAT_STRING         "mpich2%s.dll"
 #endif
-#define MAX_DLL_NAME          100
+#define MAX_DLL_NAME              100
 
 static struct fn_table
 {
@@ -683,634 +693,653 @@ void *MPI_F_STATUSES_IGNORE;
 int  *MPI_F_ERRCODES_IGNORE;
 void *MPI_F_ARGVS_NULL;
 
-static HMODULE hModule = NULL;
-static BOOL LoadFunctions(const char *dll_name)
+static HMODULE hMPIModule = NULL;
+static HMODULE hPMPIModule = NULL;
+static BOOL LoadFunctions(const char *dll_name, const char *wrapper_dll_name)
 {
-    hModule = LoadLibrary(dll_name);
-    if (hModule == NULL)
+    /* Load the PMPI module */
+    hPMPIModule = LoadLibrary(dll_name);
+    if (hPMPIModule == NULL)
     {
 	return FALSE;
     }
+
+    /* Load the MPI wrapper module or set the MPI module equal to the PMPI module */
+    if (wrapper_dll_name != NULL)
+    {
+	hMPIModule = LoadLibrary(wrapper_dll_name);
+	if (hMPIModule == NULL)
+	{
+	    return FALSE;
+	}
+    }
+    else
+    {
+	hMPIModule = hPMPIModule;
+    }
     
     /* MPI */
-    fn.MPI_Comm_f2c = (MPI_Comm (*)(MPI_Fint))GetProcAddress(hModule, "MPI_Comm_f2c");
-    fn.MPI_Type_f2c = (MPI_Datatype (*)(MPI_Fint))GetProcAddress(hModule, "MPI_Type_f2c");
-    fn.MPI_File_f2c = (MPI_File (*)(MPI_Fint))GetProcAddress(hModule, "MPI_File_f2c");
-    fn.MPI_Comm_c2f = (MPI_Fint (*)(MPI_Comm))GetProcAddress(hModule, "MPI_Comm_c2f");
-    fn.MPI_File_c2f = (MPI_Fint (*)(MPI_File))GetProcAddress(hModule, "MPI_File_c2f");
-    fn.MPI_Group_c2f = (MPI_Fint (*)(MPI_Group))GetProcAddress(hModule, "MPI_Group_c2f");
-    fn.MPI_Info_c2f = (MPI_Fint (*)(MPI_Info))GetProcAddress(hModule, "MPI_Info_c2f");
-    fn.MPI_Op_c2f = (MPI_Fint (*)(MPI_Op))GetProcAddress(hModule, "MPI_Op_c2f");
-    fn.MPI_Request_c2f = (MPI_Fint (*)(MPI_Request))GetProcAddress(hModule, "MPI_Request_c2f");
-    fn.MPI_Type_c2f = (MPI_Fint (*)(MPI_Datatype))GetProcAddress(hModule, "MPI_Type_c2f");
-    fn.MPI_Win_c2f = (MPI_Fint (*)(MPI_Win))GetProcAddress(hModule, "MPI_Win_c2f");
-    fn.MPI_Group_f2c = (MPI_Group (*)(MPI_Fint))GetProcAddress(hModule, "MPI_Group_f2c");
-    fn.MPI_Info_f2c = (MPI_Info (*)(MPI_Fint))GetProcAddress(hModule, "MPI_Info_f2c");
-    fn.MPI_Op_f2c = (MPI_Op (*)(MPI_Fint))GetProcAddress(hModule, "MPI_Op_f2c");
-    fn.MPI_Request_f2c = (MPI_Request (*)(MPI_Fint))GetProcAddress(hModule, "MPI_Request_f2c");
-    fn.MPI_Win_f2c = (MPI_Win (*)(MPI_Fint))GetProcAddress(hModule, "MPI_Win_f2c");
-    fn.MPI_File_open = (int (*)(MPI_Comm, char *, int, MPI_Info, MPI_File *))GetProcAddress(hModule, "MPI_File_open");
-    fn.MPI_File_close = (int (*)(MPI_File *))GetProcAddress(hModule, "MPI_File_close");
-    fn.MPI_File_delete = (int (*)(char *, MPI_Info))GetProcAddress(hModule, "MPI_File_delete");
-    fn.MPI_File_set_size = (int (*)(MPI_File, MPI_Offset))GetProcAddress(hModule, "MPI_File_set_size");
-    fn.MPI_File_preallocate = (int (*)(MPI_File, MPI_Offset))GetProcAddress(hModule, "MPI_File_preallocate");
-    fn.MPI_File_get_size = (int (*)(MPI_File, MPI_Offset *))GetProcAddress(hModule, "MPI_File_get_size");
-    fn.MPI_File_get_group = (int (*)(MPI_File, MPI_Group *))GetProcAddress(hModule, "MPI_File_get_group");
-    fn.MPI_File_get_amode = (int (*)(MPI_File, int *))GetProcAddress(hModule, "MPI_File_get_amode");
-    fn.MPI_File_set_info = (int (*)(MPI_File, MPI_Info))GetProcAddress(hModule, "MPI_File_set_info");
-    fn.MPI_File_get_info = (int (*)(MPI_File, MPI_Info *))GetProcAddress(hModule, "MPI_File_get_info");
-    fn.MPI_File_set_view = (int (*)(MPI_File, MPI_Offset, MPI_Datatype, MPI_Datatype, char *, MPI_Info))GetProcAddress(hModule, "MPI_File_set_view");
-    fn.MPI_File_get_view = (int (*)(MPI_File, MPI_Offset *, MPI_Datatype *, MPI_Datatype *, char *))GetProcAddress(hModule, "MPI_File_get_view");
-    fn.MPI_File_read_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "MPI_File_read_at");
-    fn.MPI_File_read_at_all = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "MPI_File_read_at_all");
-    fn.MPI_File_write_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "MPI_File_write_at");
-    fn.MPI_File_write_at_all = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "MPI_File_write_at_all");
-    fn.MPI_File_iread_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hModule, "MPI_File_iread_at");
-    fn.MPI_File_iwrite_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hModule, "MPI_File_iwrite_at");
-    fn.MPI_File_read = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "MPI_File_read"); 
-    fn.MPI_File_read_all = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "MPI_File_read_all"); 
-    fn.MPI_File_write = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "MPI_File_write");
-    fn.MPI_File_write_all = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "MPI_File_write_all");
-    fn.MPI_File_iread = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hModule, "MPI_File_iread"); 
-    fn.MPI_File_iwrite = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hModule, "MPI_File_iwrite");
-    fn.MPI_File_seek = (int (*)(MPI_File, MPI_Offset, int))GetProcAddress(hModule, "MPI_File_seek");
-    fn.MPI_File_get_position = (int (*)(MPI_File, MPI_Offset *))GetProcAddress(hModule, "MPI_File_get_position");
-    fn.MPI_File_get_byte_offset = (int (*)(MPI_File, MPI_Offset, MPI_Offset *))GetProcAddress(hModule, "MPI_File_get_byte_offset");
-    fn.MPI_File_read_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "MPI_File_read_shared");
-    fn.MPI_File_write_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "MPI_File_write_shared");
-    fn.MPI_File_iread_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hModule, "MPI_File_iread_shared");
-    fn.MPI_File_iwrite_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hModule, "MPI_File_iwrite_shared");
-    fn.MPI_File_read_ordered = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "MPI_File_read_ordered");
-    fn.MPI_File_write_ordered = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "MPI_File_write_ordered");
-    fn.MPI_File_seek_shared = (int (*)(MPI_File, MPI_Offset, int))GetProcAddress(hModule, "MPI_File_seek_shared");
-    fn.MPI_File_get_position_shared = (int (*)(MPI_File, MPI_Offset *))GetProcAddress(hModule, "MPI_File_get_position_shared");
-    fn.MPI_File_read_at_all_begin = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype))GetProcAddress(hModule, "MPI_File_read_at_all_begin");
-    fn.MPI_File_read_at_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hModule, "MPI_File_read_at_all_end");
-    fn.MPI_File_write_at_all_begin = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype))GetProcAddress(hModule, "MPI_File_write_at_all_begin");
-    fn.MPI_File_write_at_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hModule, "MPI_File_write_at_all_end");
-    fn.MPI_File_read_all_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hModule, "MPI_File_read_all_begin");
-    fn.MPI_File_read_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hModule, "MPI_File_read_all_end");
-    fn.MPI_File_write_all_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hModule, "MPI_File_write_all_begin");
-    fn.MPI_File_write_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hModule, "MPI_File_write_all_end");
-    fn.MPI_File_read_ordered_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hModule, "MPI_File_read_ordered_begin");
-    fn.MPI_File_read_ordered_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hModule, "MPI_File_read_ordered_end");
-    fn.MPI_File_write_ordered_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hModule, "MPI_File_write_ordered_begin");
-    fn.MPI_File_write_ordered_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hModule, "MPI_File_write_ordered_end");
-    fn.MPI_File_get_type_extent = (int (*)(MPI_File, MPI_Datatype, MPI_Aint *))GetProcAddress(hModule, "MPI_File_get_type_extent");
-    fn.MPI_Register_datarep = (int (*)(char *, MPI_Datarep_conversion_function *, MPI_Datarep_conversion_function *, MPI_Datarep_extent_function *, void *))GetProcAddress(hModule, "MPI_Register_datarep");
-    fn.MPI_File_set_atomicity = (int (*)(MPI_File, int))GetProcAddress(hModule, "MPI_File_set_atomicity");
-    fn.MPI_File_get_atomicity = (int (*)(MPI_File, int *))GetProcAddress(hModule, "MPI_File_get_atomicity");
-    fn.MPI_File_sync = (int (*)(MPI_File))GetProcAddress(hModule, "MPI_File_sync");
-    fn.MPI_Send = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hModule, "MPI_Send");
-    fn.MPI_Recv = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *))GetProcAddress(hModule, "MPI_Recv");
-    fn.MPI_Get_count = (int (*)(MPI_Status *, MPI_Datatype, int *))GetProcAddress(hModule, "MPI_Get_count");
-    fn.MPI_Bsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hModule, "MPI_Bsend");
-    fn.MPI_Ssend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hModule, "MPI_Ssend");
-    fn.MPI_Rsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hModule, "MPI_Rsend");
-    fn.MPI_Buffer_attach = (int (*)( void*, int))GetProcAddress(hModule, "MPI_Buffer_attach");
-    fn.MPI_Buffer_detach = (int (*)( void*, int *))GetProcAddress(hModule, "MPI_Buffer_detach");
-    fn.MPI_Isend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "MPI_Isend");
-    fn.MPI_Ibsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "MPI_Ibsend");
-    fn.MPI_Issend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "MPI_Issend");
-    fn.MPI_Irsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "MPI_Irsend");
-    fn.MPI_Irecv = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "MPI_Irecv");
-    fn.MPI_Wait = (int (*)(MPI_Request *, MPI_Status *))GetProcAddress(hModule, "MPI_Wait");
-    fn.MPI_Test = (int (*)(MPI_Request *, int *, MPI_Status *))GetProcAddress(hModule, "MPI_Test");
-    fn.MPI_Request_free = (int (*)(MPI_Request *))GetProcAddress(hModule, "MPI_Request_free");
-    fn.MPI_Waitany = (int (*)(int, MPI_Request *, int *, MPI_Status *))GetProcAddress(hModule, "MPI_Waitany");
-    fn.MPI_Testany = (int (*)(int, MPI_Request *, int *, int *, MPI_Status *))GetProcAddress(hModule, "MPI_Testany");
-    fn.MPI_Waitall = (int (*)(int, MPI_Request *, MPI_Status *))GetProcAddress(hModule, "MPI_Waitall");
-    fn.MPI_Testall = (int (*)(int, MPI_Request *, int *, MPI_Status *))GetProcAddress(hModule, "MPI_Testall");
-    fn.MPI_Waitsome = (int (*)(int, MPI_Request *, int *, int *, MPI_Status *))GetProcAddress(hModule, "MPI_Waitsome");
-    fn.MPI_Testsome = (int (*)(int, MPI_Request *, int *, int *, MPI_Status *))GetProcAddress(hModule, "MPI_Testsome");
-    fn.MPI_Iprobe = (int (*)(int, int, MPI_Comm, int *, MPI_Status *))GetProcAddress(hModule, "MPI_Iprobe");
-    fn.MPI_Probe = (int (*)(int, int, MPI_Comm, MPI_Status *))GetProcAddress(hModule, "MPI_Probe");
-    fn.MPI_Cancel = (int (*)(MPI_Request *))GetProcAddress(hModule, "MPI_Cancel");
-    fn.MPI_Test_cancelled = (int (*)(MPI_Status *, int *))GetProcAddress(hModule, "MPI_Test_cancelled");
-    fn.MPI_Send_init = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "MPI_Send_init");
-    fn.MPI_Bsend_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "MPI_Bsend_init");
-    fn.MPI_Ssend_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "MPI_Ssend_init");
-    fn.MPI_Rsend_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "MPI_Rsend_init");
-    fn.MPI_Recv_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "MPI_Recv_init");
-    fn.MPI_Start = (int (*)(MPI_Request *))GetProcAddress(hModule, "MPI_Start");
-    fn.MPI_Startall = (int (*)(int, MPI_Request *))GetProcAddress(hModule, "MPI_Startall");
-    fn.MPI_Sendrecv = (int (*)(void *, int, MPI_Datatype,int, int, void *, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *))GetProcAddress(hModule, "MPI_Sendrecv");
-    fn.MPI_Sendrecv_replace = (int (*)(void*, int, MPI_Datatype, int, int, int, int, MPI_Comm, MPI_Status *))GetProcAddress(hModule, "MPI_Sendrecv_replace");
-    fn.MPI_Type_contiguous = (int (*)(int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_contiguous");
-    fn.MPI_Type_vector = (int (*)(int, int, int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_vector");
-    fn.MPI_Type_hvector = (int (*)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_hvector");
-    fn.MPI_Type_indexed = (int (*)(int, int *, int *, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_indexed");
-    fn.MPI_Type_hindexed = (int (*)(int, int *, MPI_Aint *, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_hindexed");
-    fn.MPI_Type_struct = (int (*)(int, int *, MPI_Aint *, MPI_Datatype *, MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_struct");
-    fn.MPI_Address = (int (*)(void*, MPI_Aint *))GetProcAddress(hModule, "MPI_Address");
-    fn.MPI_Type_extent = (int (*)(MPI_Datatype, MPI_Aint *))GetProcAddress(hModule, "MPI_Type_extent");
-    fn.MPI_Type_size = (int (*)(MPI_Datatype, int *))GetProcAddress(hModule, "MPI_Type_size");
-    fn.MPI_Type_lb = (int (*)(MPI_Datatype, MPI_Aint *))GetProcAddress(hModule, "MPI_Type_lb");
-    fn.MPI_Type_ub = (int (*)(MPI_Datatype, MPI_Aint *))GetProcAddress(hModule, "MPI_Type_ub");
-    fn.MPI_Type_commit = (int (*)(MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_commit");
-    fn.MPI_Type_free = (int (*)(MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_free");
-    fn.MPI_Get_elements = (int (*)(MPI_Status *, MPI_Datatype, int *))GetProcAddress(hModule, "MPI_Get_elements");
-    fn.MPI_Pack = (int (*)(void*, int, MPI_Datatype, void *, int, int *,  MPI_Comm))GetProcAddress(hModule, "MPI_Pack");
-    fn.MPI_Unpack = (int (*)(void*, int, int *, void *, int, MPI_Datatype, MPI_Comm))GetProcAddress(hModule, "MPI_Unpack");
-    fn.MPI_Pack_size = (int (*)(int, MPI_Datatype, MPI_Comm, int *))GetProcAddress(hModule, "MPI_Pack_size");
-    fn.MPI_Barrier = (int (*)(MPI_Comm ))GetProcAddress(hModule, "MPI_Barrier");
-    fn.MPI_Bcast = (int (*)(void*, int, MPI_Datatype, int, MPI_Comm ))GetProcAddress(hModule, "MPI_Bcast");
-    fn.MPI_Gather = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm))GetProcAddress(hModule, "MPI_Gather"); 
-    fn.MPI_Gatherv = (int (*)(void* , int, MPI_Datatype, void*, int *, int *, MPI_Datatype, int, MPI_Comm))GetProcAddress(hModule, "MPI_Gatherv"); 
-    fn.MPI_Scatter = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm))GetProcAddress(hModule, "MPI_Scatter");
-    fn.MPI_Scatterv = (int (*)(void* , int *, int *,  MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm))GetProcAddress(hModule, "MPI_Scatterv");
-    fn.MPI_Allgather = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, MPI_Comm))GetProcAddress(hModule, "MPI_Allgather");
-    fn.MPI_Allgatherv = (int (*)(void* , int, MPI_Datatype, void*, int *, int *, MPI_Datatype, MPI_Comm))GetProcAddress(hModule, "MPI_Allgatherv");
-    fn.MPI_Alltoall = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, MPI_Comm))GetProcAddress(hModule, "MPI_Alltoall");
-    fn.MPI_Alltoallv = (int (*)(void* , int *, int *, MPI_Datatype, void*, int *, int *, MPI_Datatype, MPI_Comm))GetProcAddress(hModule, "MPI_Alltoallv");
-    fn.MPI_Reduce = (int (*)(void* , void*, int, MPI_Datatype, MPI_Op, int, MPI_Comm))GetProcAddress(hModule, "MPI_Reduce");
-    fn.MPI_Op_create = (int (*)(MPI_User_function *, int, MPI_Op *))GetProcAddress(hModule, "MPI_Op_create");
-    fn.MPI_Op_free = (int (*)( MPI_Op *))GetProcAddress(hModule, "MPI_Op_free");
-    fn.MPI_Allreduce = (int (*)(void* , void*, int, MPI_Datatype, MPI_Op, MPI_Comm))GetProcAddress(hModule, "MPI_Allreduce");
-    fn.MPI_Reduce_scatter = (int (*)(void* , void*, int *, MPI_Datatype, MPI_Op, MPI_Comm))GetProcAddress(hModule, "MPI_Reduce_scatter");
-    fn.MPI_Scan = (int (*)(void* , void*, int, MPI_Datatype, MPI_Op, MPI_Comm ))GetProcAddress(hModule, "MPI_Scan");
-    fn.MPI_Group_size = (int (*)(MPI_Group, int *))GetProcAddress(hModule, "MPI_Group_size");
-    fn.MPI_Group_rank = (int (*)(MPI_Group, int *))GetProcAddress(hModule, "MPI_Group_rank");
-    fn.MPI_Group_translate_ranks = (int (* )(MPI_Group, int, int *, MPI_Group, int *))GetProcAddress(hModule, "MPI_Group_translate_ranks");
-    fn.MPI_Group_compare = (int (*)(MPI_Group, MPI_Group, int *))GetProcAddress(hModule, "MPI_Group_compare");
-    fn.MPI_Comm_group = (int (*)(MPI_Comm, MPI_Group *))GetProcAddress(hModule, "MPI_Comm_group");
-    fn.MPI_Group_union = (int (*)(MPI_Group, MPI_Group, MPI_Group *))GetProcAddress(hModule, "MPI_Group_union");
-    fn.MPI_Group_intersection = (int (*)(MPI_Group, MPI_Group, MPI_Group *))GetProcAddress(hModule, "MPI_Group_intersection");
-    fn.MPI_Group_difference = (int (*)(MPI_Group, MPI_Group, MPI_Group *))GetProcAddress(hModule, "MPI_Group_difference");
-    fn.MPI_Group_incl = (int (*)(MPI_Group, int, int *, MPI_Group *))GetProcAddress(hModule, "MPI_Group_incl");
-    fn.MPI_Group_excl = (int (*)(MPI_Group, int, int *, MPI_Group *))GetProcAddress(hModule, "MPI_Group_excl");
-    fn.MPI_Group_range_incl = (int (*)(MPI_Group, int, int [][3], MPI_Group *))GetProcAddress(hModule, "MPI_Group_range_incl");
-    fn.MPI_Group_range_excl = (int (*)(MPI_Group, int, int [][3], MPI_Group *))GetProcAddress(hModule, "MPI_Group_range_excl");
-    fn.MPI_Group_free = (int (*)(MPI_Group *))GetProcAddress(hModule, "MPI_Group_free");
-    fn.MPI_Comm_size = (int (*)(MPI_Comm, int *))GetProcAddress(hModule, "MPI_Comm_size");
-    fn.MPI_Comm_rank = (int (*)(MPI_Comm, int *))GetProcAddress(hModule, "MPI_Comm_rank");
-    fn.MPI_Comm_compare = (int (*)(MPI_Comm, MPI_Comm, int *))GetProcAddress(hModule, "MPI_Comm_compare");
-    fn.MPI_Comm_dup = (int (*)(MPI_Comm, MPI_Comm *))GetProcAddress(hModule, "MPI_Comm_dup");
-    fn.MPI_Comm_create = (int (*)(MPI_Comm, MPI_Group, MPI_Comm *))GetProcAddress(hModule, "MPI_Comm_create");
-    fn.MPI_Comm_split = (int (*)(MPI_Comm, int, int, MPI_Comm *))GetProcAddress(hModule, "MPI_Comm_split");
-    fn.MPI_Comm_free = (int (*)(MPI_Comm *))GetProcAddress(hModule, "MPI_Comm_free");
-    fn.MPI_Comm_test_inter = (int (*)(MPI_Comm, int *))GetProcAddress(hModule, "MPI_Comm_test_inter");
-    fn.MPI_Comm_remote_size = (int (*)(MPI_Comm, int *))GetProcAddress(hModule, "MPI_Comm_remote_size");
-    fn.MPI_Comm_remote_group = (int (*)(MPI_Comm, MPI_Group *))GetProcAddress(hModule, "MPI_Comm_remote_group");
-    fn.MPI_Intercomm_create = (int (*)(MPI_Comm, int, MPI_Comm, int, int, MPI_Comm * ))GetProcAddress(hModule, "MPI_Intercomm_create");
-    fn.MPI_Intercomm_merge = (int (*)(MPI_Comm, int, MPI_Comm *))GetProcAddress(hModule, "MPI_Intercomm_merge");
-    fn.MPI_Keyval_create = (int (*)(MPI_Copy_function *, MPI_Delete_function *, int *, void*))GetProcAddress(hModule, "MPI_Keyval_create");
-    fn.MPI_Keyval_free = (int (*)(int *))GetProcAddress(hModule, "MPI_Keyval_free");
-    fn.MPI_Attr_put = (int (*)(MPI_Comm, int, void*))GetProcAddress(hModule, "MPI_Attr_put");
-    fn.MPI_Attr_get = (int (*)(MPI_Comm, int, void *, int *))GetProcAddress(hModule, "MPI_Attr_get");
-    fn.MPI_Attr_delete = (int (*)(MPI_Comm, int))GetProcAddress(hModule, "MPI_Attr_delete");
-    fn.MPI_Topo_test = (int (*)(MPI_Comm, int *))GetProcAddress(hModule, "MPI_Topo_test");
-    fn.MPI_Cart_create = (int (*)(MPI_Comm, int, int *, int *, int, MPI_Comm *))GetProcAddress(hModule, "MPI_Cart_create");
-    fn.MPI_Dims_create = (int (*)(int, int, int *))GetProcAddress(hModule, "MPI_Dims_create");
-    fn.MPI_Graph_create = (int (*)(MPI_Comm, int, int *, int *, int, MPI_Comm *))GetProcAddress(hModule, "MPI_Graph_create");
-    fn.MPI_Graphdims_get = (int (*)(MPI_Comm, int *, int *))GetProcAddress(hModule, "MPI_Graphdims_get");
-    fn.MPI_Graph_get = (int (*)(MPI_Comm, int, int, int *, int *))GetProcAddress(hModule, "MPI_Graph_get");
-    fn.MPI_Cartdim_get = (int (*)(MPI_Comm, int *))GetProcAddress(hModule, "MPI_Cartdim_get");
-    fn.MPI_Cart_get = (int (*)(MPI_Comm, int, int *, int *, int *))GetProcAddress(hModule, "MPI_Cart_get");
-    fn.MPI_Cart_rank = (int (*)(MPI_Comm, int *, int *))GetProcAddress(hModule, "MPI_Cart_rank");
-    fn.MPI_Cart_coords = (int (*)(MPI_Comm, int, int, int *))GetProcAddress(hModule, "MPI_Cart_coords");
-    fn.MPI_Graph_neighbors_count = (int (*)(MPI_Comm, int, int *))GetProcAddress(hModule, "MPI_Graph_neighbors_count");
-    fn.MPI_Graph_neighbors = (int (*)(MPI_Comm, int, int, int *))GetProcAddress(hModule, "MPI_Graph_neighbors");
-    fn.MPI_Cart_shift = (int (*)(MPI_Comm, int, int, int *, int *))GetProcAddress(hModule, "MPI_Cart_shift");
-    fn.MPI_Cart_sub = (int (*)(MPI_Comm, int *, MPI_Comm *))GetProcAddress(hModule, "MPI_Cart_sub");
-    fn.MPI_Cart_map = (int (*)(MPI_Comm, int, int *, int *, int *))GetProcAddress(hModule, "MPI_Cart_map");
-    fn.MPI_Graph_map = (int (*)(MPI_Comm, int, int *, int *, int *))GetProcAddress(hModule, "MPI_Graph_map");
-    fn.MPI_Get_processor_name = (int (*)(char *, int *))GetProcAddress(hModule, "MPI_Get_processor_name");
-    fn.MPI_Get_version = (int (*)(int *, int *))GetProcAddress(hModule, "MPI_Get_version");
-    fn.MPI_Errhandler_create = (int (*)(MPI_Handler_function *, MPI_Errhandler *))GetProcAddress(hModule, "MPI_Errhandler_create");
-    fn.MPI_Errhandler_set = (int (*)(MPI_Comm, MPI_Errhandler))GetProcAddress(hModule, "MPI_Errhandler_set");
-    fn.MPI_Errhandler_get = (int (*)(MPI_Comm, MPI_Errhandler *))GetProcAddress(hModule, "MPI_Errhandler_get");
-    fn.MPI_Errhandler_free = (int (*)(MPI_Errhandler *))GetProcAddress(hModule, "MPI_Errhandler_free");
-    fn.MPI_Error_string = (int (*)(int, char *, int *))GetProcAddress(hModule, "MPI_Error_string");
-    fn.MPI_Error_class = (int (*)(int, int *))GetProcAddress(hModule, "MPI_Error_class");
-    fn.MPI_Wtime = (double (*)(void))GetProcAddress(hModule, "MPI_Wtime");
-    fn.MPI_Wtick = (double (*)(void))GetProcAddress(hModule, "MPI_Wtick");
-    fn.MPI_Init = (int (*)(int *, char ***))GetProcAddress(hModule, "MPI_Init");
-    fn.MPI_Finalize = (int (*)(void))GetProcAddress(hModule, "MPI_Finalize");
-    fn.MPI_Initialized = (int (*)(int *))GetProcAddress(hModule, "MPI_Initialized");
-    fn.MPI_Abort = (int (*)(MPI_Comm, int))GetProcAddress(hModule, "MPI_Abort");
-    fn.MPI_Pcontrol = (int (*)(const int, ...))GetProcAddress(hModule, "MPI_Pcontrol");
-    fn.MPI_DUP_FN = (int (* )( MPI_Comm, int, void *, void *, void *, int * ))GetProcAddress(hModule, "MPI_DUP_FN");
-    fn.MPI_Close_port = (int (*)(char *))GetProcAddress(hModule, "MPI_Close_port");
-    fn.MPI_Comm_accept = (int (*)(char *, MPI_Info, int, MPI_Comm, MPI_Comm *))GetProcAddress(hModule, "MPI_Comm_accept");
-    fn.MPI_Comm_connect = (int (*)(char *, MPI_Info, int, MPI_Comm, MPI_Comm *))GetProcAddress(hModule, "MPI_Comm_connect");
-    fn.MPI_Comm_disconnect = (int (*)(MPI_Comm *))GetProcAddress(hModule, "MPI_Comm_disconnect");
-    fn.MPI_Comm_get_parent = (int (*)(MPI_Comm *))GetProcAddress(hModule, "MPI_Comm_get_parent");
-    fn.MPI_Comm_join = (int (*)(int, MPI_Comm *))GetProcAddress(hModule, "MPI_Comm_join");
-    fn.MPI_Comm_spawn = (int (*)(char *, char *[], int, MPI_Info, int, MPI_Comm, MPI_Comm *, int []))GetProcAddress(hModule, "MPI_Comm_spawn");
-    fn.MPI_Comm_spawn_multiple = (int (*)(int, char *[], char **[], int [], MPI_Info [], int, MPI_Comm, MPI_Comm *, int []))GetProcAddress(hModule, "MPI_Comm_spawn_multiple"); 
-    fn.MPI_Lookup_name = (int (*)(char *, MPI_Info, char *))GetProcAddress(hModule, "MPI_Lookup_name");
-    fn.MPI_Open_port = (int (*)(MPI_Info, char *))GetProcAddress(hModule, "MPI_Open_port");
-    fn.MPI_Publish_name = (int (*)(char *, MPI_Info, char *))GetProcAddress(hModule, "MPI_Publish_name");
-    fn.MPI_Unpublish_name = (int (*)(char *, MPI_Info, char *))GetProcAddress(hModule, "MPI_Unpublish_name");
-    fn.MPI_Accumulate = (int (*)(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype,  MPI_Op, MPI_Win))GetProcAddress(hModule, "MPI_Accumulate");
-    fn.MPI_Get = (int (*)(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype, MPI_Win))GetProcAddress(hModule, "MPI_Get");
-    fn.MPI_Put = (int (*)(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype, MPI_Win))GetProcAddress(hModule, "MPI_Put");
-    fn.MPI_Win_complete = (int (*)(MPI_Win))GetProcAddress(hModule, "MPI_Win_complete");
-    fn.MPI_Win_create = (int (*)(void *, MPI_Aint, int, MPI_Info, MPI_Comm, MPI_Win *))GetProcAddress(hModule, "MPI_Win_create");
-    fn.MPI_Win_fence = (int (*)(int, MPI_Win))GetProcAddress(hModule, "MPI_Win_fence");
-    fn.MPI_Win_free = (int (*)(MPI_Win *))GetProcAddress(hModule, "MPI_Win_free");
-    fn.MPI_Win_get_group = (int (*)(MPI_Win, MPI_Group *))GetProcAddress(hModule, "MPI_Win_get_group");
-    fn.MPI_Win_lock = (int (*)(int, int, int, MPI_Win))GetProcAddress(hModule, "MPI_Win_lock");
-    fn.MPI_Win_post = (int (*)(MPI_Group, int, MPI_Win))GetProcAddress(hModule, "MPI_Win_post");
-    fn.MPI_Win_start = (int (*)(MPI_Group, int, MPI_Win))GetProcAddress(hModule, "MPI_Win_start");
-    fn.MPI_Win_test = (int (*)(MPI_Win, int *))GetProcAddress(hModule, "MPI_Win_test");
-    fn.MPI_Win_unlock = (int (*)(int, MPI_Win))GetProcAddress(hModule, "MPI_Win_unlock");
-    fn.MPI_Win_wait = (int (*)(MPI_Win))GetProcAddress(hModule, "MPI_Win_wait");
-    fn.MPI_Alltoallw = (int (*)(void *, int [], int [], MPI_Datatype [], void *, int [], int [], MPI_Datatype [], MPI_Comm))GetProcAddress(hModule, "MPI_Alltoallw");
-    fn.MPI_Exscan = (int (*)(void *, void *, int, MPI_Datatype, MPI_Op, MPI_Comm))GetProcAddress(hModule, "MPI_Exscan");
-    fn.MPI_Add_error_class = (int (*)(int *))GetProcAddress(hModule, "MPI_Add_error_class");
-    fn.MPI_Add_error_code = (int (*)(int, int *))GetProcAddress(hModule, "MPI_Add_error_code");
-    fn.MPI_Add_error_string = (int (*)(int, char *))GetProcAddress(hModule, "MPI_Add_error_string");
-    fn.MPI_Comm_call_errhandler = (int (*)(MPI_Comm, int))GetProcAddress(hModule, "MPI_Comm_call_errhandler");
-    fn.MPI_Comm_create_keyval = (int (*)(MPI_Comm_copy_attr_function *, MPI_Comm_delete_attr_function *, int *, void *))GetProcAddress(hModule, "MPI_Comm_create_keyval");
-    fn.MPI_Comm_delete_attr = (int (*)(MPI_Comm, int))GetProcAddress(hModule, "MPI_Comm_delete_attr");
-    fn.MPI_Comm_free_keyval = (int (*)(int *))GetProcAddress(hModule, "MPI_Comm_free_keyval");
-    fn.MPI_Comm_get_attr = (int (*)(MPI_Comm, int, void *, int *))GetProcAddress(hModule, "MPI_Comm_get_attr");
-    fn.MPI_Comm_get_name = (int (*)(MPI_Comm, char *, int *))GetProcAddress(hModule, "MPI_Comm_get_name");
-    fn.MPI_Comm_set_attr = (int (*)(MPI_Comm, int, void *))GetProcAddress(hModule, "MPI_Comm_set_attr");
-    fn.MPI_Comm_set_name = (int (*)(MPI_Comm, char *))GetProcAddress(hModule, "MPI_Comm_set_name");
-    fn.MPI_File_call_errhandler = (int (*)(MPI_File, int))GetProcAddress(hModule, "MPI_File_call_errhandler");
-    fn.MPI_Grequest_complete = (int (*)(MPI_Request))GetProcAddress(hModule, "MPI_Grequest_complete");
-    fn.MPI_Grequest_start = (int (*)(MPI_Grequest_query_function *, MPI_Grequest_free_function *, MPI_Grequest_cancel_function *, void *, MPI_Request *))GetProcAddress(hModule, "MPI_Grequest_start");
-    fn.MPI_Init_thread = (int (*)(int *, char ***, int, int *))GetProcAddress(hModule, "MPI_Init_thread");
-    fn.MPI_Is_thread_main = (int (*)(int *))GetProcAddress(hModule, "MPI_Is_thread_main");
-    fn.MPI_Query_thread = (int (*)(int *))GetProcAddress(hModule, "MPI_Query_thread");
-    fn.MPI_Status_set_cancelled = (int (*)(MPI_Status *, int))GetProcAddress(hModule, "MPI_Status_set_cancelled");
-    fn.MPI_Status_set_elements = (int (*)(MPI_Status *, MPI_Datatype, int))GetProcAddress(hModule, "MPI_Status_set_elements");
-    fn.MPI_Type_create_keyval = (int (*)(MPI_Type_copy_attr_function *, MPI_Type_delete_attr_function *, int *, void *))GetProcAddress(hModule, "MPI_Type_create_keyval");
-    fn.MPI_Type_delete_attr = (int (*)(MPI_Datatype, int))GetProcAddress(hModule, "MPI_Type_delete_attr");
-    fn.MPI_Type_dup = (int (*)(MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_dup");
-    fn.MPI_Type_free_keyval = (int (*)(int *))GetProcAddress(hModule, "MPI_Type_free_keyval");
-    fn.MPI_Type_get_attr = (int (*)(MPI_Datatype, int, void *, int *))GetProcAddress(hModule, "MPI_Type_get_attr");
-    fn.MPI_Type_get_contents = (int (*)(MPI_Datatype, int, int, int, int [], MPI_Aint [], MPI_Datatype []))GetProcAddress(hModule, "MPI_Type_get_contents");
-    fn.MPI_Type_get_envelope = (int (*)(MPI_Datatype, int *, int *, int *, int *))GetProcAddress(hModule, "MPI_Type_get_envelope");
-    fn.MPI_Type_get_name = (int (*)(MPI_Datatype, char *, int *))GetProcAddress(hModule, "MPI_Type_get_name");
-    fn.MPI_Type_set_attr = (int (*)(MPI_Datatype, int, void *))GetProcAddress(hModule, "MPI_Type_set_attr");
-    fn.MPI_Type_set_name = (int (*)(MPI_Datatype, char *))GetProcAddress(hModule, "MPI_Type_set_name");
-    fn.MPI_Type_match_size = (int (*)( int, int, MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_match_size");
-    fn.MPI_Win_call_errhandler = (int (*)(MPI_Win, int))GetProcAddress(hModule, "MPI_Win_call_errhandler");
-    fn.MPI_Win_create_keyval = (int (*)(MPI_Win_copy_attr_function *, MPI_Win_delete_attr_function *, int *, void *))GetProcAddress(hModule, "MPI_Win_create_keyval");
-    fn.MPI_Win_delete_attr = (int (*)(MPI_Win, int))GetProcAddress(hModule, "MPI_Win_delete_attr");
-    fn.MPI_Win_free_keyval = (int (*)(int *))GetProcAddress(hModule, "MPI_Win_free_keyval");
-    fn.MPI_Win_get_attr = (int (*)(MPI_Win, int, void *, int *))GetProcAddress(hModule, "MPI_Win_get_attr");
-    fn.MPI_Win_get_name = (int (*)(MPI_Win, char *, int *))GetProcAddress(hModule, "MPI_Win_get_name");
-    fn.MPI_Win_set_attr = (int (*)(MPI_Win, int, void *))GetProcAddress(hModule, "MPI_Win_set_attr");
-    fn.MPI_Win_set_name = (int (*)(MPI_Win, char *))GetProcAddress(hModule, "MPI_Win_set_name");
-    fn.MPI_Alloc_mem = (int (*)(MPI_Aint, MPI_Info info, void *baseptr))GetProcAddress(hModule, "MPI_Alloc_mem");
-    fn.MPI_Comm_create_errhandler = (int (*)(MPI_Comm_errhandler_fn *, MPI_Errhandler *))GetProcAddress(hModule, "MPI_Comm_create_errhandler");
-    fn.MPI_Comm_get_errhandler = (int (*)(MPI_Comm, MPI_Errhandler *))GetProcAddress(hModule, "MPI_Comm_get_errhandler");
-    fn.MPI_Comm_set_errhandler = (int (*)(MPI_Comm, MPI_Errhandler))GetProcAddress(hModule, "MPI_Comm_set_errhandler");
-    fn.MPI_File_create_errhandler = (int (*)(MPI_File_errhandler_fn *, MPI_Errhandler *))GetProcAddress(hModule, "MPI_File_create_errhandler");
-    fn.MPI_File_get_errhandler = (int (*)(MPI_File, MPI_Errhandler *))GetProcAddress(hModule, "MPI_File_get_errhandler");
-    fn.MPI_File_set_errhandler = (int (*)(MPI_File, MPI_Errhandler))GetProcAddress(hModule, "MPI_File_set_errhandler");
-    fn.MPI_Finalized = (int (*)(int *))GetProcAddress(hModule, "MPI_Finalized");
-    fn.MPI_Free_mem = (int (*)(void *))GetProcAddress(hModule, "MPI_Free_mem");
-    fn.MPI_Get_address = (int (*)(void *, MPI_Aint *))GetProcAddress(hModule, "MPI_Get_address");
-    fn.MPI_Info_create = (int (*)(MPI_Info *))GetProcAddress(hModule, "MPI_Info_create");
-    fn.MPI_Info_delete = (int (*)(MPI_Info, char *))GetProcAddress(hModule, "MPI_Info_delete");
-    fn.MPI_Info_dup = (int (*)(MPI_Info, MPI_Info *))GetProcAddress(hModule, "MPI_Info_dup");
-    fn.MPI_Info_free = (int (*)(MPI_Info *info))GetProcAddress(hModule, "MPI_Info_free");
-    fn.MPI_Info_get = (int (*)(MPI_Info, char *, int, char *, int *))GetProcAddress(hModule, "MPI_Info_get");
-    fn.MPI_Info_get_nkeys = (int (*)(MPI_Info, int *))GetProcAddress(hModule, "MPI_Info_get_nkeys");
-    fn.MPI_Info_get_nthkey = (int (*)(MPI_Info, int, char *))GetProcAddress(hModule, "MPI_Info_get_nthkey");
-    fn.MPI_Info_get_valuelen = (int (*)(MPI_Info, char *, int *, int *))GetProcAddress(hModule, "MPI_Info_get_valuelen");
-    fn.MPI_Info_set = (int (*)(MPI_Info, char *, char *))GetProcAddress(hModule, "MPI_Info_set");
-    fn.MPI_Pack_external = (int (*)(char *, void *, int, MPI_Datatype, void *, MPI_Aint, MPI_Aint *))GetProcAddress(hModule, "MPI_Pack_external"); 
-    fn.MPI_Pack_external_size = (int (*)(char *, int, MPI_Datatype, MPI_Aint *))GetProcAddress(hModule, "MPI_Pack_external_size"); 
-    fn.MPI_Request_get_status = (int (*)(MPI_Request, int *, MPI_Status *))GetProcAddress(hModule, "MPI_Request_get_status");
-    fn.MPI_Status_c2f = (int (*)(MPI_Status *, MPI_Fint *))GetProcAddress(hModule, "MPI_Status_c2f");
-    fn.MPI_Status_f2c = (int (*)(MPI_Fint *, MPI_Status *))GetProcAddress(hModule, "MPI_Status_f2c");
-    fn.MPI_Type_create_darray = (int (*)(int, int, int, int [], int [], int [], int [], int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_create_darray");
-    fn.MPI_Type_create_hindexed = (int (*)(int, int [], MPI_Aint [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_create_hindexed");
-    fn.MPI_Type_create_hvector = (int (*)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_create_hvector");
-    fn.MPI_Type_create_indexed_block = (int (*)(int, int, int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_create_indexed_block");
-    fn.MPI_Type_create_resized = (int (*)(MPI_Datatype, MPI_Aint, MPI_Aint, MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_create_resized");
-    fn.MPI_Type_create_struct = (int (*)(int, int [], MPI_Aint [], MPI_Datatype [], MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_create_struct");
-    fn.MPI_Type_create_subarray = (int (*)(int, int [], int [], int [], int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "MPI_Type_create_subarray");
-    fn.MPI_Type_get_extent = (int (*)(MPI_Datatype, MPI_Aint *, MPI_Aint *))GetProcAddress(hModule, "MPI_Type_get_extent");
-    fn.MPI_Type_get_true_extent = (int (*)(MPI_Datatype, MPI_Aint *, MPI_Aint *))GetProcAddress(hModule, "MPI_Type_get_true_extent");
-    fn.MPI_Unpack_external = (int (*)(char *, void *, MPI_Aint, MPI_Aint *, void *, int, MPI_Datatype))GetProcAddress(hModule, "MPI_Unpack_external"); 
-    fn.MPI_Win_create_errhandler = (int (*)(MPI_Win_errhandler_fn *, MPI_Errhandler *))GetProcAddress(hModule, "MPI_Win_create_errhandler");
-    fn.MPI_Win_get_errhandler = (int (*)(MPI_Win, MPI_Errhandler *))GetProcAddress(hModule, "MPI_Win_get_errhandler");
-    fn.MPI_Win_set_errhandler = (int (*)(MPI_Win, MPI_Errhandler))GetProcAddress(hModule, "MPI_Win_set_errhandler");
-    fn.MPI_Type_create_f90_integer = (int (*)( int, MPI_Datatype * ))GetProcAddress(hModule, "MPI_Type_create_f90_integer");
-    fn.MPI_Type_create_f90_real = (int (*)( int, int, MPI_Datatype * ))GetProcAddress(hModule, "MPI_Type_create_f90_real");
-    fn.MPI_Type_create_f90_complex = (int (*)( int, int, MPI_Datatype * ))GetProcAddress(hModule, "MPI_Type_create_f90_complex");
+    /* FIXME: For each MPI function that returns NULL the PMPI version should be loaded */
+    fn.MPI_Comm_f2c = (MPI_Comm (*)(MPI_Fint))GetProcAddress(hMPIModule, "MPI_Comm_f2c");
+    fn.MPI_Type_f2c = (MPI_Datatype (*)(MPI_Fint))GetProcAddress(hMPIModule, "MPI_Type_f2c");
+    fn.MPI_File_f2c = (MPI_File (*)(MPI_Fint))GetProcAddress(hMPIModule, "MPI_File_f2c");
+    fn.MPI_Comm_c2f = (MPI_Fint (*)(MPI_Comm))GetProcAddress(hMPIModule, "MPI_Comm_c2f");
+    fn.MPI_File_c2f = (MPI_Fint (*)(MPI_File))GetProcAddress(hMPIModule, "MPI_File_c2f");
+    fn.MPI_Group_c2f = (MPI_Fint (*)(MPI_Group))GetProcAddress(hMPIModule, "MPI_Group_c2f");
+    fn.MPI_Info_c2f = (MPI_Fint (*)(MPI_Info))GetProcAddress(hMPIModule, "MPI_Info_c2f");
+    fn.MPI_Op_c2f = (MPI_Fint (*)(MPI_Op))GetProcAddress(hMPIModule, "MPI_Op_c2f");
+    fn.MPI_Request_c2f = (MPI_Fint (*)(MPI_Request))GetProcAddress(hMPIModule, "MPI_Request_c2f");
+    fn.MPI_Type_c2f = (MPI_Fint (*)(MPI_Datatype))GetProcAddress(hMPIModule, "MPI_Type_c2f");
+    fn.MPI_Win_c2f = (MPI_Fint (*)(MPI_Win))GetProcAddress(hMPIModule, "MPI_Win_c2f");
+    fn.MPI_Group_f2c = (MPI_Group (*)(MPI_Fint))GetProcAddress(hMPIModule, "MPI_Group_f2c");
+    fn.MPI_Info_f2c = (MPI_Info (*)(MPI_Fint))GetProcAddress(hMPIModule, "MPI_Info_f2c");
+    fn.MPI_Op_f2c = (MPI_Op (*)(MPI_Fint))GetProcAddress(hMPIModule, "MPI_Op_f2c");
+    fn.MPI_Request_f2c = (MPI_Request (*)(MPI_Fint))GetProcAddress(hMPIModule, "MPI_Request_f2c");
+    fn.MPI_Win_f2c = (MPI_Win (*)(MPI_Fint))GetProcAddress(hMPIModule, "MPI_Win_f2c");
+    fn.MPI_File_open = (int (*)(MPI_Comm, char *, int, MPI_Info, MPI_File *))GetProcAddress(hMPIModule, "MPI_File_open");
+    fn.MPI_File_close = (int (*)(MPI_File *))GetProcAddress(hMPIModule, "MPI_File_close");
+    fn.MPI_File_delete = (int (*)(char *, MPI_Info))GetProcAddress(hMPIModule, "MPI_File_delete");
+    fn.MPI_File_set_size = (int (*)(MPI_File, MPI_Offset))GetProcAddress(hMPIModule, "MPI_File_set_size");
+    fn.MPI_File_preallocate = (int (*)(MPI_File, MPI_Offset))GetProcAddress(hMPIModule, "MPI_File_preallocate");
+    fn.MPI_File_get_size = (int (*)(MPI_File, MPI_Offset *))GetProcAddress(hMPIModule, "MPI_File_get_size");
+    fn.MPI_File_get_group = (int (*)(MPI_File, MPI_Group *))GetProcAddress(hMPIModule, "MPI_File_get_group");
+    fn.MPI_File_get_amode = (int (*)(MPI_File, int *))GetProcAddress(hMPIModule, "MPI_File_get_amode");
+    fn.MPI_File_set_info = (int (*)(MPI_File, MPI_Info))GetProcAddress(hMPIModule, "MPI_File_set_info");
+    fn.MPI_File_get_info = (int (*)(MPI_File, MPI_Info *))GetProcAddress(hMPIModule, "MPI_File_get_info");
+    fn.MPI_File_set_view = (int (*)(MPI_File, MPI_Offset, MPI_Datatype, MPI_Datatype, char *, MPI_Info))GetProcAddress(hMPIModule, "MPI_File_set_view");
+    fn.MPI_File_get_view = (int (*)(MPI_File, MPI_Offset *, MPI_Datatype *, MPI_Datatype *, char *))GetProcAddress(hMPIModule, "MPI_File_get_view");
+    fn.MPI_File_read_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_read_at");
+    fn.MPI_File_read_at_all = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_read_at_all");
+    fn.MPI_File_write_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_write_at");
+    fn.MPI_File_write_at_all = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_write_at_all");
+    fn.MPI_File_iread_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hMPIModule, "MPI_File_iread_at");
+    fn.MPI_File_iwrite_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hMPIModule, "MPI_File_iwrite_at");
+    fn.MPI_File_read = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_read"); 
+    fn.MPI_File_read_all = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_read_all"); 
+    fn.MPI_File_write = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_write");
+    fn.MPI_File_write_all = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_write_all");
+    fn.MPI_File_iread = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hMPIModule, "MPI_File_iread"); 
+    fn.MPI_File_iwrite = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hMPIModule, "MPI_File_iwrite");
+    fn.MPI_File_seek = (int (*)(MPI_File, MPI_Offset, int))GetProcAddress(hMPIModule, "MPI_File_seek");
+    fn.MPI_File_get_position = (int (*)(MPI_File, MPI_Offset *))GetProcAddress(hMPIModule, "MPI_File_get_position");
+    fn.MPI_File_get_byte_offset = (int (*)(MPI_File, MPI_Offset, MPI_Offset *))GetProcAddress(hMPIModule, "MPI_File_get_byte_offset");
+    fn.MPI_File_read_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_read_shared");
+    fn.MPI_File_write_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_write_shared");
+    fn.MPI_File_iread_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hMPIModule, "MPI_File_iread_shared");
+    fn.MPI_File_iwrite_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hMPIModule, "MPI_File_iwrite_shared");
+    fn.MPI_File_read_ordered = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_read_ordered");
+    fn.MPI_File_write_ordered = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_write_ordered");
+    fn.MPI_File_seek_shared = (int (*)(MPI_File, MPI_Offset, int))GetProcAddress(hMPIModule, "MPI_File_seek_shared");
+    fn.MPI_File_get_position_shared = (int (*)(MPI_File, MPI_Offset *))GetProcAddress(hMPIModule, "MPI_File_get_position_shared");
+    fn.MPI_File_read_at_all_begin = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype))GetProcAddress(hMPIModule, "MPI_File_read_at_all_begin");
+    fn.MPI_File_read_at_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_read_at_all_end");
+    fn.MPI_File_write_at_all_begin = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype))GetProcAddress(hMPIModule, "MPI_File_write_at_all_begin");
+    fn.MPI_File_write_at_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_write_at_all_end");
+    fn.MPI_File_read_all_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hMPIModule, "MPI_File_read_all_begin");
+    fn.MPI_File_read_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_read_all_end");
+    fn.MPI_File_write_all_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hMPIModule, "MPI_File_write_all_begin");
+    fn.MPI_File_write_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_write_all_end");
+    fn.MPI_File_read_ordered_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hMPIModule, "MPI_File_read_ordered_begin");
+    fn.MPI_File_read_ordered_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_read_ordered_end");
+    fn.MPI_File_write_ordered_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hMPIModule, "MPI_File_write_ordered_begin");
+    fn.MPI_File_write_ordered_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_File_write_ordered_end");
+    fn.MPI_File_get_type_extent = (int (*)(MPI_File, MPI_Datatype, MPI_Aint *))GetProcAddress(hMPIModule, "MPI_File_get_type_extent");
+    fn.MPI_Register_datarep = (int (*)(char *, MPI_Datarep_conversion_function *, MPI_Datarep_conversion_function *, MPI_Datarep_extent_function *, void *))GetProcAddress(hMPIModule, "MPI_Register_datarep");
+    fn.MPI_File_set_atomicity = (int (*)(MPI_File, int))GetProcAddress(hMPIModule, "MPI_File_set_atomicity");
+    fn.MPI_File_get_atomicity = (int (*)(MPI_File, int *))GetProcAddress(hMPIModule, "MPI_File_get_atomicity");
+    fn.MPI_File_sync = (int (*)(MPI_File))GetProcAddress(hMPIModule, "MPI_File_sync");
+    fn.MPI_Send = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Send");
+    fn.MPI_Recv = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Recv");
+    fn.MPI_Get_count = (int (*)(MPI_Status *, MPI_Datatype, int *))GetProcAddress(hMPIModule, "MPI_Get_count");
+    fn.MPI_Bsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Bsend");
+    fn.MPI_Ssend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Ssend");
+    fn.MPI_Rsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Rsend");
+    fn.MPI_Buffer_attach = (int (*)( void*, int))GetProcAddress(hMPIModule, "MPI_Buffer_attach");
+    fn.MPI_Buffer_detach = (int (*)( void*, int *))GetProcAddress(hMPIModule, "MPI_Buffer_detach");
+    fn.MPI_Isend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hMPIModule, "MPI_Isend");
+    fn.MPI_Ibsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hMPIModule, "MPI_Ibsend");
+    fn.MPI_Issend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hMPIModule, "MPI_Issend");
+    fn.MPI_Irsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hMPIModule, "MPI_Irsend");
+    fn.MPI_Irecv = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hMPIModule, "MPI_Irecv");
+    fn.MPI_Wait = (int (*)(MPI_Request *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Wait");
+    fn.MPI_Test = (int (*)(MPI_Request *, int *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Test");
+    fn.MPI_Request_free = (int (*)(MPI_Request *))GetProcAddress(hMPIModule, "MPI_Request_free");
+    fn.MPI_Waitany = (int (*)(int, MPI_Request *, int *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Waitany");
+    fn.MPI_Testany = (int (*)(int, MPI_Request *, int *, int *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Testany");
+    fn.MPI_Waitall = (int (*)(int, MPI_Request *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Waitall");
+    fn.MPI_Testall = (int (*)(int, MPI_Request *, int *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Testall");
+    fn.MPI_Waitsome = (int (*)(int, MPI_Request *, int *, int *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Waitsome");
+    fn.MPI_Testsome = (int (*)(int, MPI_Request *, int *, int *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Testsome");
+    fn.MPI_Iprobe = (int (*)(int, int, MPI_Comm, int *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Iprobe");
+    fn.MPI_Probe = (int (*)(int, int, MPI_Comm, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Probe");
+    fn.MPI_Cancel = (int (*)(MPI_Request *))GetProcAddress(hMPIModule, "MPI_Cancel");
+    fn.MPI_Test_cancelled = (int (*)(MPI_Status *, int *))GetProcAddress(hMPIModule, "MPI_Test_cancelled");
+    fn.MPI_Send_init = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hMPIModule, "MPI_Send_init");
+    fn.MPI_Bsend_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hMPIModule, "MPI_Bsend_init");
+    fn.MPI_Ssend_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hMPIModule, "MPI_Ssend_init");
+    fn.MPI_Rsend_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hMPIModule, "MPI_Rsend_init");
+    fn.MPI_Recv_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hMPIModule, "MPI_Recv_init");
+    fn.MPI_Start = (int (*)(MPI_Request *))GetProcAddress(hMPIModule, "MPI_Start");
+    fn.MPI_Startall = (int (*)(int, MPI_Request *))GetProcAddress(hMPIModule, "MPI_Startall");
+    fn.MPI_Sendrecv = (int (*)(void *, int, MPI_Datatype,int, int, void *, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Sendrecv");
+    fn.MPI_Sendrecv_replace = (int (*)(void*, int, MPI_Datatype, int, int, int, int, MPI_Comm, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Sendrecv_replace");
+    fn.MPI_Type_contiguous = (int (*)(int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_contiguous");
+    fn.MPI_Type_vector = (int (*)(int, int, int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_vector");
+    fn.MPI_Type_hvector = (int (*)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_hvector");
+    fn.MPI_Type_indexed = (int (*)(int, int *, int *, MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_indexed");
+    fn.MPI_Type_hindexed = (int (*)(int, int *, MPI_Aint *, MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_hindexed");
+    fn.MPI_Type_struct = (int (*)(int, int *, MPI_Aint *, MPI_Datatype *, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_struct");
+    fn.MPI_Address = (int (*)(void*, MPI_Aint *))GetProcAddress(hMPIModule, "MPI_Address");
+    fn.MPI_Type_extent = (int (*)(MPI_Datatype, MPI_Aint *))GetProcAddress(hMPIModule, "MPI_Type_extent");
+    fn.MPI_Type_size = (int (*)(MPI_Datatype, int *))GetProcAddress(hMPIModule, "MPI_Type_size");
+    fn.MPI_Type_lb = (int (*)(MPI_Datatype, MPI_Aint *))GetProcAddress(hMPIModule, "MPI_Type_lb");
+    fn.MPI_Type_ub = (int (*)(MPI_Datatype, MPI_Aint *))GetProcAddress(hMPIModule, "MPI_Type_ub");
+    fn.MPI_Type_commit = (int (*)(MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_commit");
+    fn.MPI_Type_free = (int (*)(MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_free");
+    fn.MPI_Get_elements = (int (*)(MPI_Status *, MPI_Datatype, int *))GetProcAddress(hMPIModule, "MPI_Get_elements");
+    fn.MPI_Pack = (int (*)(void*, int, MPI_Datatype, void *, int, int *,  MPI_Comm))GetProcAddress(hMPIModule, "MPI_Pack");
+    fn.MPI_Unpack = (int (*)(void*, int, int *, void *, int, MPI_Datatype, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Unpack");
+    fn.MPI_Pack_size = (int (*)(int, MPI_Datatype, MPI_Comm, int *))GetProcAddress(hMPIModule, "MPI_Pack_size");
+    fn.MPI_Barrier = (int (*)(MPI_Comm ))GetProcAddress(hMPIModule, "MPI_Barrier");
+    fn.MPI_Bcast = (int (*)(void*, int, MPI_Datatype, int, MPI_Comm ))GetProcAddress(hMPIModule, "MPI_Bcast");
+    fn.MPI_Gather = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Gather"); 
+    fn.MPI_Gatherv = (int (*)(void* , int, MPI_Datatype, void*, int *, int *, MPI_Datatype, int, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Gatherv"); 
+    fn.MPI_Scatter = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Scatter");
+    fn.MPI_Scatterv = (int (*)(void* , int *, int *,  MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Scatterv");
+    fn.MPI_Allgather = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Allgather");
+    fn.MPI_Allgatherv = (int (*)(void* , int, MPI_Datatype, void*, int *, int *, MPI_Datatype, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Allgatherv");
+    fn.MPI_Alltoall = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Alltoall");
+    fn.MPI_Alltoallv = (int (*)(void* , int *, int *, MPI_Datatype, void*, int *, int *, MPI_Datatype, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Alltoallv");
+    fn.MPI_Reduce = (int (*)(void* , void*, int, MPI_Datatype, MPI_Op, int, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Reduce");
+    fn.MPI_Op_create = (int (*)(MPI_User_function *, int, MPI_Op *))GetProcAddress(hMPIModule, "MPI_Op_create");
+    fn.MPI_Op_free = (int (*)( MPI_Op *))GetProcAddress(hMPIModule, "MPI_Op_free");
+    fn.MPI_Allreduce = (int (*)(void* , void*, int, MPI_Datatype, MPI_Op, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Allreduce");
+    fn.MPI_Reduce_scatter = (int (*)(void* , void*, int *, MPI_Datatype, MPI_Op, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Reduce_scatter");
+    fn.MPI_Scan = (int (*)(void* , void*, int, MPI_Datatype, MPI_Op, MPI_Comm ))GetProcAddress(hMPIModule, "MPI_Scan");
+    fn.MPI_Group_size = (int (*)(MPI_Group, int *))GetProcAddress(hMPIModule, "MPI_Group_size");
+    fn.MPI_Group_rank = (int (*)(MPI_Group, int *))GetProcAddress(hMPIModule, "MPI_Group_rank");
+    fn.MPI_Group_translate_ranks = (int (* )(MPI_Group, int, int *, MPI_Group, int *))GetProcAddress(hMPIModule, "MPI_Group_translate_ranks");
+    fn.MPI_Group_compare = (int (*)(MPI_Group, MPI_Group, int *))GetProcAddress(hMPIModule, "MPI_Group_compare");
+    fn.MPI_Comm_group = (int (*)(MPI_Comm, MPI_Group *))GetProcAddress(hMPIModule, "MPI_Comm_group");
+    fn.MPI_Group_union = (int (*)(MPI_Group, MPI_Group, MPI_Group *))GetProcAddress(hMPIModule, "MPI_Group_union");
+    fn.MPI_Group_intersection = (int (*)(MPI_Group, MPI_Group, MPI_Group *))GetProcAddress(hMPIModule, "MPI_Group_intersection");
+    fn.MPI_Group_difference = (int (*)(MPI_Group, MPI_Group, MPI_Group *))GetProcAddress(hMPIModule, "MPI_Group_difference");
+    fn.MPI_Group_incl = (int (*)(MPI_Group, int, int *, MPI_Group *))GetProcAddress(hMPIModule, "MPI_Group_incl");
+    fn.MPI_Group_excl = (int (*)(MPI_Group, int, int *, MPI_Group *))GetProcAddress(hMPIModule, "MPI_Group_excl");
+    fn.MPI_Group_range_incl = (int (*)(MPI_Group, int, int [][3], MPI_Group *))GetProcAddress(hMPIModule, "MPI_Group_range_incl");
+    fn.MPI_Group_range_excl = (int (*)(MPI_Group, int, int [][3], MPI_Group *))GetProcAddress(hMPIModule, "MPI_Group_range_excl");
+    fn.MPI_Group_free = (int (*)(MPI_Group *))GetProcAddress(hMPIModule, "MPI_Group_free");
+    fn.MPI_Comm_size = (int (*)(MPI_Comm, int *))GetProcAddress(hMPIModule, "MPI_Comm_size");
+    fn.MPI_Comm_rank = (int (*)(MPI_Comm, int *))GetProcAddress(hMPIModule, "MPI_Comm_rank");
+    fn.MPI_Comm_compare = (int (*)(MPI_Comm, MPI_Comm, int *))GetProcAddress(hMPIModule, "MPI_Comm_compare");
+    fn.MPI_Comm_dup = (int (*)(MPI_Comm, MPI_Comm *))GetProcAddress(hMPIModule, "MPI_Comm_dup");
+    fn.MPI_Comm_create = (int (*)(MPI_Comm, MPI_Group, MPI_Comm *))GetProcAddress(hMPIModule, "MPI_Comm_create");
+    fn.MPI_Comm_split = (int (*)(MPI_Comm, int, int, MPI_Comm *))GetProcAddress(hMPIModule, "MPI_Comm_split");
+    fn.MPI_Comm_free = (int (*)(MPI_Comm *))GetProcAddress(hMPIModule, "MPI_Comm_free");
+    fn.MPI_Comm_test_inter = (int (*)(MPI_Comm, int *))GetProcAddress(hMPIModule, "MPI_Comm_test_inter");
+    fn.MPI_Comm_remote_size = (int (*)(MPI_Comm, int *))GetProcAddress(hMPIModule, "MPI_Comm_remote_size");
+    fn.MPI_Comm_remote_group = (int (*)(MPI_Comm, MPI_Group *))GetProcAddress(hMPIModule, "MPI_Comm_remote_group");
+    fn.MPI_Intercomm_create = (int (*)(MPI_Comm, int, MPI_Comm, int, int, MPI_Comm * ))GetProcAddress(hMPIModule, "MPI_Intercomm_create");
+    fn.MPI_Intercomm_merge = (int (*)(MPI_Comm, int, MPI_Comm *))GetProcAddress(hMPIModule, "MPI_Intercomm_merge");
+    fn.MPI_Keyval_create = (int (*)(MPI_Copy_function *, MPI_Delete_function *, int *, void*))GetProcAddress(hMPIModule, "MPI_Keyval_create");
+    fn.MPI_Keyval_free = (int (*)(int *))GetProcAddress(hMPIModule, "MPI_Keyval_free");
+    fn.MPI_Attr_put = (int (*)(MPI_Comm, int, void*))GetProcAddress(hMPIModule, "MPI_Attr_put");
+    fn.MPI_Attr_get = (int (*)(MPI_Comm, int, void *, int *))GetProcAddress(hMPIModule, "MPI_Attr_get");
+    fn.MPI_Attr_delete = (int (*)(MPI_Comm, int))GetProcAddress(hMPIModule, "MPI_Attr_delete");
+    fn.MPI_Topo_test = (int (*)(MPI_Comm, int *))GetProcAddress(hMPIModule, "MPI_Topo_test");
+    fn.MPI_Cart_create = (int (*)(MPI_Comm, int, int *, int *, int, MPI_Comm *))GetProcAddress(hMPIModule, "MPI_Cart_create");
+    fn.MPI_Dims_create = (int (*)(int, int, int *))GetProcAddress(hMPIModule, "MPI_Dims_create");
+    fn.MPI_Graph_create = (int (*)(MPI_Comm, int, int *, int *, int, MPI_Comm *))GetProcAddress(hMPIModule, "MPI_Graph_create");
+    fn.MPI_Graphdims_get = (int (*)(MPI_Comm, int *, int *))GetProcAddress(hMPIModule, "MPI_Graphdims_get");
+    fn.MPI_Graph_get = (int (*)(MPI_Comm, int, int, int *, int *))GetProcAddress(hMPIModule, "MPI_Graph_get");
+    fn.MPI_Cartdim_get = (int (*)(MPI_Comm, int *))GetProcAddress(hMPIModule, "MPI_Cartdim_get");
+    fn.MPI_Cart_get = (int (*)(MPI_Comm, int, int *, int *, int *))GetProcAddress(hMPIModule, "MPI_Cart_get");
+    fn.MPI_Cart_rank = (int (*)(MPI_Comm, int *, int *))GetProcAddress(hMPIModule, "MPI_Cart_rank");
+    fn.MPI_Cart_coords = (int (*)(MPI_Comm, int, int, int *))GetProcAddress(hMPIModule, "MPI_Cart_coords");
+    fn.MPI_Graph_neighbors_count = (int (*)(MPI_Comm, int, int *))GetProcAddress(hMPIModule, "MPI_Graph_neighbors_count");
+    fn.MPI_Graph_neighbors = (int (*)(MPI_Comm, int, int, int *))GetProcAddress(hMPIModule, "MPI_Graph_neighbors");
+    fn.MPI_Cart_shift = (int (*)(MPI_Comm, int, int, int *, int *))GetProcAddress(hMPIModule, "MPI_Cart_shift");
+    fn.MPI_Cart_sub = (int (*)(MPI_Comm, int *, MPI_Comm *))GetProcAddress(hMPIModule, "MPI_Cart_sub");
+    fn.MPI_Cart_map = (int (*)(MPI_Comm, int, int *, int *, int *))GetProcAddress(hMPIModule, "MPI_Cart_map");
+    fn.MPI_Graph_map = (int (*)(MPI_Comm, int, int *, int *, int *))GetProcAddress(hMPIModule, "MPI_Graph_map");
+    fn.MPI_Get_processor_name = (int (*)(char *, int *))GetProcAddress(hMPIModule, "MPI_Get_processor_name");
+    fn.MPI_Get_version = (int (*)(int *, int *))GetProcAddress(hMPIModule, "MPI_Get_version");
+    fn.MPI_Errhandler_create = (int (*)(MPI_Handler_function *, MPI_Errhandler *))GetProcAddress(hMPIModule, "MPI_Errhandler_create");
+    fn.MPI_Errhandler_set = (int (*)(MPI_Comm, MPI_Errhandler))GetProcAddress(hMPIModule, "MPI_Errhandler_set");
+    fn.MPI_Errhandler_get = (int (*)(MPI_Comm, MPI_Errhandler *))GetProcAddress(hMPIModule, "MPI_Errhandler_get");
+    fn.MPI_Errhandler_free = (int (*)(MPI_Errhandler *))GetProcAddress(hMPIModule, "MPI_Errhandler_free");
+    fn.MPI_Error_string = (int (*)(int, char *, int *))GetProcAddress(hMPIModule, "MPI_Error_string");
+    fn.MPI_Error_class = (int (*)(int, int *))GetProcAddress(hMPIModule, "MPI_Error_class");
+    fn.MPI_Wtime = (double (*)(void))GetProcAddress(hMPIModule, "MPI_Wtime");
+    if (fn.MPI_Wtime == NULL) fn.MPI_Wtime = (double (*)(void))GetProcAddress(hPMPIModule, "MPI_Wtime");
+    fn.MPI_Wtick = (double (*)(void))GetProcAddress(hMPIModule, "MPI_Wtick");
+    if (fn.MPI_Wtick == NULL) fn.MPI_Wtick = (double (*)(void))GetProcAddress(hPMPIModule, "MPI_Wtick");
+    fn.MPI_Init = (int (*)(int *, char ***))GetProcAddress(hMPIModule, "MPI_Init");
+    fn.MPI_Finalize = (int (*)(void))GetProcAddress(hMPIModule, "MPI_Finalize");
+    fn.MPI_Initialized = (int (*)(int *))GetProcAddress(hMPIModule, "MPI_Initialized");
+    fn.MPI_Abort = (int (*)(MPI_Comm, int))GetProcAddress(hMPIModule, "MPI_Abort");
+    fn.MPI_Pcontrol = (int (*)(const int, ...))GetProcAddress(hMPIModule, "MPI_Pcontrol");
+    fn.MPI_DUP_FN = (int (* )( MPI_Comm, int, void *, void *, void *, int * ))GetProcAddress(hMPIModule, "MPI_DUP_FN");
+    fn.MPI_Close_port = (int (*)(char *))GetProcAddress(hMPIModule, "MPI_Close_port");
+    fn.MPI_Comm_accept = (int (*)(char *, MPI_Info, int, MPI_Comm, MPI_Comm *))GetProcAddress(hMPIModule, "MPI_Comm_accept");
+    fn.MPI_Comm_connect = (int (*)(char *, MPI_Info, int, MPI_Comm, MPI_Comm *))GetProcAddress(hMPIModule, "MPI_Comm_connect");
+    fn.MPI_Comm_disconnect = (int (*)(MPI_Comm *))GetProcAddress(hMPIModule, "MPI_Comm_disconnect");
+    fn.MPI_Comm_get_parent = (int (*)(MPI_Comm *))GetProcAddress(hMPIModule, "MPI_Comm_get_parent");
+    fn.MPI_Comm_join = (int (*)(int, MPI_Comm *))GetProcAddress(hMPIModule, "MPI_Comm_join");
+    fn.MPI_Comm_spawn = (int (*)(char *, char *[], int, MPI_Info, int, MPI_Comm, MPI_Comm *, int []))GetProcAddress(hMPIModule, "MPI_Comm_spawn");
+    fn.MPI_Comm_spawn_multiple = (int (*)(int, char *[], char **[], int [], MPI_Info [], int, MPI_Comm, MPI_Comm *, int []))GetProcAddress(hMPIModule, "MPI_Comm_spawn_multiple"); 
+    fn.MPI_Lookup_name = (int (*)(char *, MPI_Info, char *))GetProcAddress(hMPIModule, "MPI_Lookup_name");
+    fn.MPI_Open_port = (int (*)(MPI_Info, char *))GetProcAddress(hMPIModule, "MPI_Open_port");
+    fn.MPI_Publish_name = (int (*)(char *, MPI_Info, char *))GetProcAddress(hMPIModule, "MPI_Publish_name");
+    fn.MPI_Unpublish_name = (int (*)(char *, MPI_Info, char *))GetProcAddress(hMPIModule, "MPI_Unpublish_name");
+    fn.MPI_Accumulate = (int (*)(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype,  MPI_Op, MPI_Win))GetProcAddress(hMPIModule, "MPI_Accumulate");
+    fn.MPI_Get = (int (*)(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype, MPI_Win))GetProcAddress(hMPIModule, "MPI_Get");
+    fn.MPI_Put = (int (*)(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype, MPI_Win))GetProcAddress(hMPIModule, "MPI_Put");
+    fn.MPI_Win_complete = (int (*)(MPI_Win))GetProcAddress(hMPIModule, "MPI_Win_complete");
+    fn.MPI_Win_create = (int (*)(void *, MPI_Aint, int, MPI_Info, MPI_Comm, MPI_Win *))GetProcAddress(hMPIModule, "MPI_Win_create");
+    fn.MPI_Win_fence = (int (*)(int, MPI_Win))GetProcAddress(hMPIModule, "MPI_Win_fence");
+    fn.MPI_Win_free = (int (*)(MPI_Win *))GetProcAddress(hMPIModule, "MPI_Win_free");
+    fn.MPI_Win_get_group = (int (*)(MPI_Win, MPI_Group *))GetProcAddress(hMPIModule, "MPI_Win_get_group");
+    fn.MPI_Win_lock = (int (*)(int, int, int, MPI_Win))GetProcAddress(hMPIModule, "MPI_Win_lock");
+    fn.MPI_Win_post = (int (*)(MPI_Group, int, MPI_Win))GetProcAddress(hMPIModule, "MPI_Win_post");
+    fn.MPI_Win_start = (int (*)(MPI_Group, int, MPI_Win))GetProcAddress(hMPIModule, "MPI_Win_start");
+    fn.MPI_Win_test = (int (*)(MPI_Win, int *))GetProcAddress(hMPIModule, "MPI_Win_test");
+    fn.MPI_Win_unlock = (int (*)(int, MPI_Win))GetProcAddress(hMPIModule, "MPI_Win_unlock");
+    fn.MPI_Win_wait = (int (*)(MPI_Win))GetProcAddress(hMPIModule, "MPI_Win_wait");
+    fn.MPI_Alltoallw = (int (*)(void *, int [], int [], MPI_Datatype [], void *, int [], int [], MPI_Datatype [], MPI_Comm))GetProcAddress(hMPIModule, "MPI_Alltoallw");
+    fn.MPI_Exscan = (int (*)(void *, void *, int, MPI_Datatype, MPI_Op, MPI_Comm))GetProcAddress(hMPIModule, "MPI_Exscan");
+    fn.MPI_Add_error_class = (int (*)(int *))GetProcAddress(hMPIModule, "MPI_Add_error_class");
+    fn.MPI_Add_error_code = (int (*)(int, int *))GetProcAddress(hMPIModule, "MPI_Add_error_code");
+    fn.MPI_Add_error_string = (int (*)(int, char *))GetProcAddress(hMPIModule, "MPI_Add_error_string");
+    fn.MPI_Comm_call_errhandler = (int (*)(MPI_Comm, int))GetProcAddress(hMPIModule, "MPI_Comm_call_errhandler");
+    fn.MPI_Comm_create_keyval = (int (*)(MPI_Comm_copy_attr_function *, MPI_Comm_delete_attr_function *, int *, void *))GetProcAddress(hMPIModule, "MPI_Comm_create_keyval");
+    fn.MPI_Comm_delete_attr = (int (*)(MPI_Comm, int))GetProcAddress(hMPIModule, "MPI_Comm_delete_attr");
+    fn.MPI_Comm_free_keyval = (int (*)(int *))GetProcAddress(hMPIModule, "MPI_Comm_free_keyval");
+    fn.MPI_Comm_get_attr = (int (*)(MPI_Comm, int, void *, int *))GetProcAddress(hMPIModule, "MPI_Comm_get_attr");
+    fn.MPI_Comm_get_name = (int (*)(MPI_Comm, char *, int *))GetProcAddress(hMPIModule, "MPI_Comm_get_name");
+    fn.MPI_Comm_set_attr = (int (*)(MPI_Comm, int, void *))GetProcAddress(hMPIModule, "MPI_Comm_set_attr");
+    fn.MPI_Comm_set_name = (int (*)(MPI_Comm, char *))GetProcAddress(hMPIModule, "MPI_Comm_set_name");
+    fn.MPI_File_call_errhandler = (int (*)(MPI_File, int))GetProcAddress(hMPIModule, "MPI_File_call_errhandler");
+    fn.MPI_Grequest_complete = (int (*)(MPI_Request))GetProcAddress(hMPIModule, "MPI_Grequest_complete");
+    fn.MPI_Grequest_start = (int (*)(MPI_Grequest_query_function *, MPI_Grequest_free_function *, MPI_Grequest_cancel_function *, void *, MPI_Request *))GetProcAddress(hMPIModule, "MPI_Grequest_start");
+    fn.MPI_Init_thread = (int (*)(int *, char ***, int, int *))GetProcAddress(hMPIModule, "MPI_Init_thread");
+    fn.MPI_Is_thread_main = (int (*)(int *))GetProcAddress(hMPIModule, "MPI_Is_thread_main");
+    fn.MPI_Query_thread = (int (*)(int *))GetProcAddress(hMPIModule, "MPI_Query_thread");
+    fn.MPI_Status_set_cancelled = (int (*)(MPI_Status *, int))GetProcAddress(hMPIModule, "MPI_Status_set_cancelled");
+    fn.MPI_Status_set_elements = (int (*)(MPI_Status *, MPI_Datatype, int))GetProcAddress(hMPIModule, "MPI_Status_set_elements");
+    fn.MPI_Type_create_keyval = (int (*)(MPI_Type_copy_attr_function *, MPI_Type_delete_attr_function *, int *, void *))GetProcAddress(hMPIModule, "MPI_Type_create_keyval");
+    fn.MPI_Type_delete_attr = (int (*)(MPI_Datatype, int))GetProcAddress(hMPIModule, "MPI_Type_delete_attr");
+    fn.MPI_Type_dup = (int (*)(MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_dup");
+    fn.MPI_Type_free_keyval = (int (*)(int *))GetProcAddress(hMPIModule, "MPI_Type_free_keyval");
+    fn.MPI_Type_get_attr = (int (*)(MPI_Datatype, int, void *, int *))GetProcAddress(hMPIModule, "MPI_Type_get_attr");
+    fn.MPI_Type_get_contents = (int (*)(MPI_Datatype, int, int, int, int [], MPI_Aint [], MPI_Datatype []))GetProcAddress(hMPIModule, "MPI_Type_get_contents");
+    fn.MPI_Type_get_envelope = (int (*)(MPI_Datatype, int *, int *, int *, int *))GetProcAddress(hMPIModule, "MPI_Type_get_envelope");
+    fn.MPI_Type_get_name = (int (*)(MPI_Datatype, char *, int *))GetProcAddress(hMPIModule, "MPI_Type_get_name");
+    fn.MPI_Type_set_attr = (int (*)(MPI_Datatype, int, void *))GetProcAddress(hMPIModule, "MPI_Type_set_attr");
+    fn.MPI_Type_set_name = (int (*)(MPI_Datatype, char *))GetProcAddress(hMPIModule, "MPI_Type_set_name");
+    fn.MPI_Type_match_size = (int (*)( int, int, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_match_size");
+    fn.MPI_Win_call_errhandler = (int (*)(MPI_Win, int))GetProcAddress(hMPIModule, "MPI_Win_call_errhandler");
+    fn.MPI_Win_create_keyval = (int (*)(MPI_Win_copy_attr_function *, MPI_Win_delete_attr_function *, int *, void *))GetProcAddress(hMPIModule, "MPI_Win_create_keyval");
+    fn.MPI_Win_delete_attr = (int (*)(MPI_Win, int))GetProcAddress(hMPIModule, "MPI_Win_delete_attr");
+    fn.MPI_Win_free_keyval = (int (*)(int *))GetProcAddress(hMPIModule, "MPI_Win_free_keyval");
+    fn.MPI_Win_get_attr = (int (*)(MPI_Win, int, void *, int *))GetProcAddress(hMPIModule, "MPI_Win_get_attr");
+    fn.MPI_Win_get_name = (int (*)(MPI_Win, char *, int *))GetProcAddress(hMPIModule, "MPI_Win_get_name");
+    fn.MPI_Win_set_attr = (int (*)(MPI_Win, int, void *))GetProcAddress(hMPIModule, "MPI_Win_set_attr");
+    fn.MPI_Win_set_name = (int (*)(MPI_Win, char *))GetProcAddress(hMPIModule, "MPI_Win_set_name");
+    fn.MPI_Alloc_mem = (int (*)(MPI_Aint, MPI_Info info, void *baseptr))GetProcAddress(hMPIModule, "MPI_Alloc_mem");
+    fn.MPI_Comm_create_errhandler = (int (*)(MPI_Comm_errhandler_fn *, MPI_Errhandler *))GetProcAddress(hMPIModule, "MPI_Comm_create_errhandler");
+    fn.MPI_Comm_get_errhandler = (int (*)(MPI_Comm, MPI_Errhandler *))GetProcAddress(hMPIModule, "MPI_Comm_get_errhandler");
+    fn.MPI_Comm_set_errhandler = (int (*)(MPI_Comm, MPI_Errhandler))GetProcAddress(hMPIModule, "MPI_Comm_set_errhandler");
+    fn.MPI_File_create_errhandler = (int (*)(MPI_File_errhandler_fn *, MPI_Errhandler *))GetProcAddress(hMPIModule, "MPI_File_create_errhandler");
+    fn.MPI_File_get_errhandler = (int (*)(MPI_File, MPI_Errhandler *))GetProcAddress(hMPIModule, "MPI_File_get_errhandler");
+    fn.MPI_File_set_errhandler = (int (*)(MPI_File, MPI_Errhandler))GetProcAddress(hMPIModule, "MPI_File_set_errhandler");
+    fn.MPI_Finalized = (int (*)(int *))GetProcAddress(hMPIModule, "MPI_Finalized");
+    fn.MPI_Free_mem = (int (*)(void *))GetProcAddress(hMPIModule, "MPI_Free_mem");
+    fn.MPI_Get_address = (int (*)(void *, MPI_Aint *))GetProcAddress(hMPIModule, "MPI_Get_address");
+    fn.MPI_Info_create = (int (*)(MPI_Info *))GetProcAddress(hMPIModule, "MPI_Info_create");
+    fn.MPI_Info_delete = (int (*)(MPI_Info, char *))GetProcAddress(hMPIModule, "MPI_Info_delete");
+    fn.MPI_Info_dup = (int (*)(MPI_Info, MPI_Info *))GetProcAddress(hMPIModule, "MPI_Info_dup");
+    fn.MPI_Info_free = (int (*)(MPI_Info *info))GetProcAddress(hMPIModule, "MPI_Info_free");
+    fn.MPI_Info_get = (int (*)(MPI_Info, char *, int, char *, int *))GetProcAddress(hMPIModule, "MPI_Info_get");
+    fn.MPI_Info_get_nkeys = (int (*)(MPI_Info, int *))GetProcAddress(hMPIModule, "MPI_Info_get_nkeys");
+    fn.MPI_Info_get_nthkey = (int (*)(MPI_Info, int, char *))GetProcAddress(hMPIModule, "MPI_Info_get_nthkey");
+    fn.MPI_Info_get_valuelen = (int (*)(MPI_Info, char *, int *, int *))GetProcAddress(hMPIModule, "MPI_Info_get_valuelen");
+    fn.MPI_Info_set = (int (*)(MPI_Info, char *, char *))GetProcAddress(hMPIModule, "MPI_Info_set");
+    fn.MPI_Pack_external = (int (*)(char *, void *, int, MPI_Datatype, void *, MPI_Aint, MPI_Aint *))GetProcAddress(hMPIModule, "MPI_Pack_external"); 
+    fn.MPI_Pack_external_size = (int (*)(char *, int, MPI_Datatype, MPI_Aint *))GetProcAddress(hMPIModule, "MPI_Pack_external_size"); 
+    fn.MPI_Request_get_status = (int (*)(MPI_Request, int *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Request_get_status");
+    fn.MPI_Status_c2f = (int (*)(MPI_Status *, MPI_Fint *))GetProcAddress(hMPIModule, "MPI_Status_c2f");
+    fn.MPI_Status_f2c = (int (*)(MPI_Fint *, MPI_Status *))GetProcAddress(hMPIModule, "MPI_Status_f2c");
+    fn.MPI_Type_create_darray = (int (*)(int, int, int, int [], int [], int [], int [], int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_create_darray");
+    fn.MPI_Type_create_hindexed = (int (*)(int, int [], MPI_Aint [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_create_hindexed");
+    fn.MPI_Type_create_hvector = (int (*)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_create_hvector");
+    fn.MPI_Type_create_indexed_block = (int (*)(int, int, int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_create_indexed_block");
+    fn.MPI_Type_create_resized = (int (*)(MPI_Datatype, MPI_Aint, MPI_Aint, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_create_resized");
+    fn.MPI_Type_create_struct = (int (*)(int, int [], MPI_Aint [], MPI_Datatype [], MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_create_struct");
+    fn.MPI_Type_create_subarray = (int (*)(int, int [], int [], int [], int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_create_subarray");
+    fn.MPI_Type_get_extent = (int (*)(MPI_Datatype, MPI_Aint *, MPI_Aint *))GetProcAddress(hMPIModule, "MPI_Type_get_extent");
+    fn.MPI_Type_get_true_extent = (int (*)(MPI_Datatype, MPI_Aint *, MPI_Aint *))GetProcAddress(hMPIModule, "MPI_Type_get_true_extent");
+    fn.MPI_Unpack_external = (int (*)(char *, void *, MPI_Aint, MPI_Aint *, void *, int, MPI_Datatype))GetProcAddress(hMPIModule, "MPI_Unpack_external"); 
+    fn.MPI_Win_create_errhandler = (int (*)(MPI_Win_errhandler_fn *, MPI_Errhandler *))GetProcAddress(hMPIModule, "MPI_Win_create_errhandler");
+    fn.MPI_Win_get_errhandler = (int (*)(MPI_Win, MPI_Errhandler *))GetProcAddress(hMPIModule, "MPI_Win_get_errhandler");
+    fn.MPI_Win_set_errhandler = (int (*)(MPI_Win, MPI_Errhandler))GetProcAddress(hMPIModule, "MPI_Win_set_errhandler");
+    fn.MPI_Type_create_f90_integer = (int (*)( int, MPI_Datatype * ))GetProcAddress(hMPIModule, "MPI_Type_create_f90_integer");
+    fn.MPI_Type_create_f90_real = (int (*)( int, int, MPI_Datatype * ))GetProcAddress(hMPIModule, "MPI_Type_create_f90_real");
+    fn.MPI_Type_create_f90_complex = (int (*)( int, int, MPI_Datatype * ))GetProcAddress(hMPIModule, "MPI_Type_create_f90_complex");
     /* PMPI */
-    fn.PMPI_Comm_f2c = (MPI_Comm (*)(MPI_Fint))GetProcAddress(hModule, "PMPI_Comm_f2c");
-    fn.PMPI_Type_f2c = (MPI_Datatype (*)(MPI_Fint))GetProcAddress(hModule, "PMPI_Type_f2c");
-    fn.PMPI_File_f2c = (MPI_File (*)(MPI_Fint))GetProcAddress(hModule, "PMPI_File_f2c");
-    fn.PMPI_Comm_c2f = (MPI_Fint (*)(MPI_Comm))GetProcAddress(hModule, "PMPI_Comm_c2f");
-    fn.PMPI_File_c2f = (MPI_Fint (*)(MPI_File))GetProcAddress(hModule, "PMPI_File_c2f");
-    fn.PMPI_Group_c2f = (MPI_Fint (*)(MPI_Group))GetProcAddress(hModule, "PMPI_Group_c2f");
-    fn.PMPI_Info_c2f = (MPI_Fint (*)(MPI_Info))GetProcAddress(hModule, "PMPI_Info_c2f");
-    fn.PMPI_Op_c2f = (MPI_Fint (*)(MPI_Op))GetProcAddress(hModule, "PMPI_Op_c2f");
-    fn.PMPI_Request_c2f = (MPI_Fint (*)(MPI_Request))GetProcAddress(hModule, "PMPI_Request_c2f");
-    fn.PMPI_Type_c2f = (MPI_Fint (*)(MPI_Datatype))GetProcAddress(hModule, "PMPI_Type_c2f");
-    fn.PMPI_Win_c2f = (MPI_Fint (*)(MPI_Win))GetProcAddress(hModule, "PMPI_Win_c2f");
-    fn.PMPI_Group_f2c = (MPI_Group (*)(MPI_Fint))GetProcAddress(hModule, "PMPI_Group_f2c");
-    fn.PMPI_Info_f2c = (MPI_Info (*)(MPI_Fint))GetProcAddress(hModule, "PMPI_Info_f2c");
-    fn.PMPI_Op_f2c = (MPI_Op (*)(MPI_Fint))GetProcAddress(hModule, "PMPI_Op_f2c");
-    fn.PMPI_Request_f2c = (MPI_Request (*)(MPI_Fint))GetProcAddress(hModule, "PMPI_Request_f2c");
-    fn.PMPI_Win_f2c = (MPI_Win (*)(MPI_Fint))GetProcAddress(hModule, "PMPI_Win_f2c");
-    fn.PMPI_File_open = (int (*)(MPI_Comm, char *, int, MPI_Info, MPI_File *))GetProcAddress(hModule, "PMPI_File_open");
-    fn.PMPI_File_close = (int (*)(MPI_File *))GetProcAddress(hModule, "PMPI_File_close");
-    fn.PMPI_File_delete = (int (*)(char *, MPI_Info))GetProcAddress(hModule, "PMPI_File_delete");
-    fn.PMPI_File_set_size = (int (*)(MPI_File, MPI_Offset))GetProcAddress(hModule, "PMPI_File_set_size");
-    fn.PMPI_File_preallocate = (int (*)(MPI_File, MPI_Offset))GetProcAddress(hModule, "PMPI_File_preallocate");
-    fn.PMPI_File_get_size = (int (*)(MPI_File, MPI_Offset *))GetProcAddress(hModule, "PMPI_File_get_size");
-    fn.PMPI_File_get_group = (int (*)(MPI_File, MPI_Group *))GetProcAddress(hModule, "PMPI_File_get_group");
-    fn.PMPI_File_get_amode = (int (*)(MPI_File, int *))GetProcAddress(hModule, "PMPI_File_get_amode");
-    fn.PMPI_File_set_info = (int (*)(MPI_File, MPI_Info))GetProcAddress(hModule, "PMPI_File_set_info");
-    fn.PMPI_File_get_info = (int (*)(MPI_File, MPI_Info *))GetProcAddress(hModule, "PMPI_File_get_info");
-    fn.PMPI_File_set_view = (int (*)(MPI_File, MPI_Offset, MPI_Datatype, MPI_Datatype, char *, MPI_Info))GetProcAddress(hModule, "PMPI_File_set_view");
-    fn.PMPI_File_get_view = (int (*)(MPI_File, MPI_Offset *, MPI_Datatype *, MPI_Datatype *, char *))GetProcAddress(hModule, "PMPI_File_get_view");
-    fn.PMPI_File_read_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "PMPI_File_read_at");
-    fn.PMPI_File_read_at_all = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "PMPI_File_read_at_all");
-    fn.PMPI_File_write_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "PMPI_File_write_at");
-    fn.PMPI_File_write_at_all = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "PMPI_File_write_at_all");
-    fn.PMPI_File_iread_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hModule, "PMPI_File_iread_at");
-    fn.PMPI_File_iwrite_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hModule, "PMPI_File_iwrite_at");
-    fn.PMPI_File_read = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "PMPI_File_read"); 
-    fn.PMPI_File_read_all = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "PMPI_File_read_all"); 
-    fn.PMPI_File_write = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "PMPI_File_write");
-    fn.PMPI_File_write_all = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "PMPI_File_write_all");
-    fn.PMPI_File_iread = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hModule, "PMPI_File_iread"); 
-    fn.PMPI_File_iwrite = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hModule, "PMPI_File_iwrite");
-    fn.PMPI_File_seek = (int (*)(MPI_File, MPI_Offset, int))GetProcAddress(hModule, "PMPI_File_seek");
-    fn.PMPI_File_get_position = (int (*)(MPI_File, MPI_Offset *))GetProcAddress(hModule, "PMPI_File_get_position");
-    fn.PMPI_File_get_byte_offset = (int (*)(MPI_File, MPI_Offset, MPI_Offset *))GetProcAddress(hModule, "PMPI_File_get_byte_offset");
-    fn.PMPI_File_read_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "PMPI_File_read_shared");
-    fn.PMPI_File_write_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "PMPI_File_write_shared");
-    fn.PMPI_File_iread_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hModule, "PMPI_File_iread_shared");
-    fn.PMPI_File_iwrite_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hModule, "PMPI_File_iwrite_shared");
-    fn.PMPI_File_read_ordered = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "PMPI_File_read_ordered");
-    fn.PMPI_File_write_ordered = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hModule, "PMPI_File_write_ordered");
-    fn.PMPI_File_seek_shared = (int (*)(MPI_File, MPI_Offset, int))GetProcAddress(hModule, "PMPI_File_seek_shared");
-    fn.PMPI_File_get_position_shared = (int (*)(MPI_File, MPI_Offset *))GetProcAddress(hModule, "PMPI_File_get_position_shared");
-    fn.PMPI_File_read_at_all_begin = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype))GetProcAddress(hModule, "PMPI_File_read_at_all_begin");
-    fn.PMPI_File_read_at_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hModule, "PMPI_File_read_at_all_end");
-    fn.PMPI_File_write_at_all_begin = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype))GetProcAddress(hModule, "PMPI_File_write_at_all_begin");
-    fn.PMPI_File_write_at_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hModule, "PMPI_File_write_at_all_end");
-    fn.PMPI_File_read_all_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hModule, "PMPI_File_read_all_begin");
-    fn.PMPI_File_read_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hModule, "PMPI_File_read_all_end");
-    fn.PMPI_File_write_all_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hModule, "PMPI_File_write_all_begin");
-    fn.PMPI_File_write_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hModule, "PMPI_File_write_all_end");
-    fn.PMPI_File_read_ordered_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hModule, "PMPI_File_read_ordered_begin");
-    fn.PMPI_File_read_ordered_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hModule, "PMPI_File_read_ordered_end");
-    fn.PMPI_File_write_ordered_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hModule, "PMPI_File_write_ordered_begin");
-    fn.PMPI_File_write_ordered_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hModule, "PMPI_File_write_ordered_end");
-    fn.PMPI_File_get_type_extent = (int (*)(MPI_File, MPI_Datatype, MPI_Aint *))GetProcAddress(hModule, "PMPI_File_get_type_extent");
-    fn.PMPI_Register_datarep = (int (*)(char *, MPI_Datarep_conversion_function *, MPI_Datarep_conversion_function *, MPI_Datarep_extent_function *, void *))GetProcAddress(hModule, "PMPI_Register_datarep");
-    fn.PMPI_File_set_atomicity = (int (*)(MPI_File, int))GetProcAddress(hModule, "PMPI_File_set_atomicity");
-    fn.PMPI_File_get_atomicity = (int (*)(MPI_File, int *))GetProcAddress(hModule, "PMPI_File_get_atomicity");
-    fn.PMPI_File_sync = (int (*)(MPI_File))GetProcAddress(hModule, "PMPI_File_sync");
-    fn.PMPI_Send = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hModule, "PMPI_Send");
-    fn.PMPI_Recv = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *))GetProcAddress(hModule, "PMPI_Recv");
-    fn.PMPI_Get_count = (int (*)(MPI_Status *, MPI_Datatype, int *))GetProcAddress(hModule, "PMPI_Get_count");
-    fn.PMPI_Bsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hModule, "PMPI_Bsend");
-    fn.PMPI_Ssend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hModule, "PMPI_Ssend");
-    fn.PMPI_Rsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hModule, "PMPI_Rsend");
-    fn.PMPI_Buffer_attach = (int (*)( void*, int))GetProcAddress(hModule, "PMPI_Buffer_attach");
-    fn.PMPI_Buffer_detach = (int (*)( void*, int *))GetProcAddress(hModule, "PMPI_Buffer_detach");
-    fn.PMPI_Isend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "PMPI_Isend");
-    fn.PMPI_Ibsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "PMPI_Ibsend");
-    fn.PMPI_Issend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "PMPI_Issend");
-    fn.PMPI_Irsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "PMPI_Irsend");
-    fn.PMPI_Irecv = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "PMPI_Irecv");
-    fn.PMPI_Wait = (int (*)(MPI_Request *, MPI_Status *))GetProcAddress(hModule, "PMPI_Wait");
-    fn.PMPI_Test = (int (*)(MPI_Request *, int *, MPI_Status *))GetProcAddress(hModule, "PMPI_Test");
-    fn.PMPI_Request_free = (int (*)(MPI_Request *))GetProcAddress(hModule, "PMPI_Request_free");
-    fn.PMPI_Waitany = (int (*)(int, MPI_Request *, int *, MPI_Status *))GetProcAddress(hModule, "PMPI_Waitany");
-    fn.PMPI_Testany = (int (*)(int, MPI_Request *, int *, int *, MPI_Status *))GetProcAddress(hModule, "PMPI_Testany");
-    fn.PMPI_Waitall = (int (*)(int, MPI_Request *, MPI_Status *))GetProcAddress(hModule, "PMPI_Waitall");
-    fn.PMPI_Testall = (int (*)(int, MPI_Request *, int *, MPI_Status *))GetProcAddress(hModule, "PMPI_Testall");
-    fn.PMPI_Waitsome = (int (*)(int, MPI_Request *, int *, int *, MPI_Status *))GetProcAddress(hModule, "PMPI_Waitsome");
-    fn.PMPI_Testsome = (int (*)(int, MPI_Request *, int *, int *, MPI_Status *))GetProcAddress(hModule, "PMPI_Testsome");
-    fn.PMPI_Iprobe = (int (*)(int, int, MPI_Comm, int *, MPI_Status *))GetProcAddress(hModule, "PMPI_Iprobe");
-    fn.PMPI_Probe = (int (*)(int, int, MPI_Comm, MPI_Status *))GetProcAddress(hModule, "PMPI_Probe");
-    fn.PMPI_Cancel = (int (*)(MPI_Request *))GetProcAddress(hModule, "PMPI_Cancel");
-    fn.PMPI_Test_cancelled = (int (*)(MPI_Status *, int *))GetProcAddress(hModule, "PMPI_Test_cancelled");
-    fn.PMPI_Send_init = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "PMPI_Send_init");
-    fn.PMPI_Bsend_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "PMPI_Bsend_init");
-    fn.PMPI_Ssend_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "PMPI_Ssend_init");
-    fn.PMPI_Rsend_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "PMPI_Rsend_init");
-    fn.PMPI_Recv_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hModule, "PMPI_Recv_init");
-    fn.PMPI_Start = (int (*)(MPI_Request *))GetProcAddress(hModule, "PMPI_Start");
-    fn.PMPI_Startall = (int (*)(int, MPI_Request *))GetProcAddress(hModule, "PMPI_Startall");
-    fn.PMPI_Sendrecv = (int (*)(void *, int, MPI_Datatype,int, int, void *, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *))GetProcAddress(hModule, "PMPI_Sendrecv");
-    fn.PMPI_Sendrecv_replace = (int (*)(void*, int, MPI_Datatype, int, int, int, int, MPI_Comm, MPI_Status *))GetProcAddress(hModule, "PMPI_Sendrecv_replace");
-    fn.PMPI_Type_contiguous = (int (*)(int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_contiguous");
-    fn.PMPI_Type_vector = (int (*)(int, int, int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_vector");
-    fn.PMPI_Type_hvector = (int (*)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_hvector");
-    fn.PMPI_Type_indexed = (int (*)(int, int *, int *, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_indexed");
-    fn.PMPI_Type_hindexed = (int (*)(int, int *, MPI_Aint *, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_hindexed");
-    fn.PMPI_Type_struct = (int (*)(int, int *, MPI_Aint *, MPI_Datatype *, MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_struct");
-    fn.PMPI_Address = (int (*)(void*, MPI_Aint *))GetProcAddress(hModule, "PMPI_Address");
-    fn.PMPI_Type_extent = (int (*)(MPI_Datatype, MPI_Aint *))GetProcAddress(hModule, "PMPI_Type_extent");
-    fn.PMPI_Type_size = (int (*)(MPI_Datatype, int *))GetProcAddress(hModule, "PMPI_Type_size");
-    fn.PMPI_Type_lb = (int (*)(MPI_Datatype, MPI_Aint *))GetProcAddress(hModule, "PMPI_Type_lb");
-    fn.PMPI_Type_ub = (int (*)(MPI_Datatype, MPI_Aint *))GetProcAddress(hModule, "PMPI_Type_ub");
-    fn.PMPI_Type_commit = (int (*)(MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_commit");
-    fn.PMPI_Type_free = (int (*)(MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_free");
-    fn.PMPI_Get_elements = (int (*)(MPI_Status *, MPI_Datatype, int *))GetProcAddress(hModule, "PMPI_Get_elements");
-    fn.PMPI_Pack = (int (*)(void*, int, MPI_Datatype, void *, int, int *,  MPI_Comm))GetProcAddress(hModule, "PMPI_Pack");
-    fn.PMPI_Unpack = (int (*)(void*, int, int *, void *, int, MPI_Datatype, MPI_Comm))GetProcAddress(hModule, "PMPI_Unpack");
-    fn.PMPI_Pack_size = (int (*)(int, MPI_Datatype, MPI_Comm, int *))GetProcAddress(hModule, "PMPI_Pack_size");
-    fn.PMPI_Barrier = (int (*)(MPI_Comm ))GetProcAddress(hModule, "PMPI_Barrier");
-    fn.PMPI_Bcast = (int (*)(void*, int, MPI_Datatype, int, MPI_Comm ))GetProcAddress(hModule, "PMPI_Bcast");
-    fn.PMPI_Gather = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm))GetProcAddress(hModule, "PMPI_Gather"); 
-    fn.PMPI_Gatherv = (int (*)(void* , int, MPI_Datatype, void*, int *, int *, MPI_Datatype, int, MPI_Comm))GetProcAddress(hModule, "PMPI_Gatherv"); 
-    fn.PMPI_Scatter = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm))GetProcAddress(hModule, "PMPI_Scatter");
-    fn.PMPI_Scatterv = (int (*)(void* , int *, int *,  MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm))GetProcAddress(hModule, "PMPI_Scatterv");
-    fn.PMPI_Allgather = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, MPI_Comm))GetProcAddress(hModule, "PMPI_Allgather");
-    fn.PMPI_Allgatherv = (int (*)(void* , int, MPI_Datatype, void*, int *, int *, MPI_Datatype, MPI_Comm))GetProcAddress(hModule, "PMPI_Allgatherv");
-    fn.PMPI_Alltoall = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, MPI_Comm))GetProcAddress(hModule, "PMPI_Alltoall");
-    fn.PMPI_Alltoallv = (int (*)(void* , int *, int *, MPI_Datatype, void*, int *, int *, MPI_Datatype, MPI_Comm))GetProcAddress(hModule, "PMPI_Alltoallv");
-    fn.PMPI_Reduce = (int (*)(void* , void*, int, MPI_Datatype, MPI_Op, int, MPI_Comm))GetProcAddress(hModule, "PMPI_Reduce");
-    fn.PMPI_Op_create = (int (*)(MPI_User_function *, int, MPI_Op *))GetProcAddress(hModule, "PMPI_Op_create");
-    fn.PMPI_Op_free = (int (*)( MPI_Op *))GetProcAddress(hModule, "PMPI_Op_free");
-    fn.PMPI_Allreduce = (int (*)(void* , void*, int, MPI_Datatype, MPI_Op, MPI_Comm))GetProcAddress(hModule, "PMPI_Allreduce");
-    fn.PMPI_Reduce_scatter = (int (*)(void* , void*, int *, MPI_Datatype, MPI_Op, MPI_Comm))GetProcAddress(hModule, "PMPI_Reduce_scatter");
-    fn.PMPI_Scan = (int (*)(void* , void*, int, MPI_Datatype, MPI_Op, MPI_Comm ))GetProcAddress(hModule, "PMPI_Scan");
-    fn.PMPI_Group_size = (int (*)(MPI_Group, int *))GetProcAddress(hModule, "PMPI_Group_size");
-    fn.PMPI_Group_rank = (int (*)(MPI_Group, int *))GetProcAddress(hModule, "PMPI_Group_rank");
-    fn.PMPI_Group_translate_ranks = (int (* )(MPI_Group, int, int *, MPI_Group, int *))GetProcAddress(hModule, "PMPI_Group_translate_ranks");
-    fn.PMPI_Group_compare = (int (*)(MPI_Group, MPI_Group, int *))GetProcAddress(hModule, "PMPI_Group_compare");
-    fn.PMPI_Comm_group = (int (*)(MPI_Comm, MPI_Group *))GetProcAddress(hModule, "PMPI_Comm_group");
-    fn.PMPI_Group_union = (int (*)(MPI_Group, MPI_Group, MPI_Group *))GetProcAddress(hModule, "PMPI_Group_union");
-    fn.PMPI_Group_intersection = (int (*)(MPI_Group, MPI_Group, MPI_Group *))GetProcAddress(hModule, "PMPI_Group_intersection");
-    fn.PMPI_Group_difference = (int (*)(MPI_Group, MPI_Group, MPI_Group *))GetProcAddress(hModule, "PMPI_Group_difference");
-    fn.PMPI_Group_incl = (int (*)(MPI_Group, int, int *, MPI_Group *))GetProcAddress(hModule, "PMPI_Group_incl");
-    fn.PMPI_Group_excl = (int (*)(MPI_Group, int, int *, MPI_Group *))GetProcAddress(hModule, "PMPI_Group_excl");
-    fn.PMPI_Group_range_incl = (int (*)(MPI_Group, int, int [][3], MPI_Group *))GetProcAddress(hModule, "PMPI_Group_range_incl");
-    fn.PMPI_Group_range_excl = (int (*)(MPI_Group, int, int [][3], MPI_Group *))GetProcAddress(hModule, "PMPI_Group_range_excl");
-    fn.PMPI_Group_free = (int (*)(MPI_Group *))GetProcAddress(hModule, "PMPI_Group_free");
-    fn.PMPI_Comm_size = (int (*)(MPI_Comm, int *))GetProcAddress(hModule, "PMPI_Comm_size");
-    fn.PMPI_Comm_rank = (int (*)(MPI_Comm, int *))GetProcAddress(hModule, "PMPI_Comm_rank");
-    fn.PMPI_Comm_compare = (int (*)(MPI_Comm, MPI_Comm, int *))GetProcAddress(hModule, "PMPI_Comm_compare");
-    fn.PMPI_Comm_dup = (int (*)(MPI_Comm, MPI_Comm *))GetProcAddress(hModule, "PMPI_Comm_dup");
-    fn.PMPI_Comm_create = (int (*)(MPI_Comm, MPI_Group, MPI_Comm *))GetProcAddress(hModule, "PMPI_Comm_create");
-    fn.PMPI_Comm_split = (int (*)(MPI_Comm, int, int, MPI_Comm *))GetProcAddress(hModule, "PMPI_Comm_split");
-    fn.PMPI_Comm_free = (int (*)(MPI_Comm *))GetProcAddress(hModule, "PMPI_Comm_free");
-    fn.PMPI_Comm_test_inter = (int (*)(MPI_Comm, int *))GetProcAddress(hModule, "PMPI_Comm_test_inter");
-    fn.PMPI_Comm_remote_size = (int (*)(MPI_Comm, int *))GetProcAddress(hModule, "PMPI_Comm_remote_size");
-    fn.PMPI_Comm_remote_group = (int (*)(MPI_Comm, MPI_Group *))GetProcAddress(hModule, "PMPI_Comm_remote_group");
-    fn.PMPI_Intercomm_create = (int (*)(MPI_Comm, int, MPI_Comm, int, int, MPI_Comm * ))GetProcAddress(hModule, "PMPI_Intercomm_create");
-    fn.PMPI_Intercomm_merge = (int (*)(MPI_Comm, int, MPI_Comm *))GetProcAddress(hModule, "PMPI_Intercomm_merge");
-    fn.PMPI_Keyval_create = (int (*)(MPI_Copy_function *, MPI_Delete_function *, int *, void*))GetProcAddress(hModule, "PMPI_Keyval_create");
-    fn.PMPI_Keyval_free = (int (*)(int *))GetProcAddress(hModule, "PMPI_Keyval_free");
-    fn.PMPI_Attr_put = (int (*)(MPI_Comm, int, void*))GetProcAddress(hModule, "PMPI_Attr_put");
-    fn.PMPI_Attr_get = (int (*)(MPI_Comm, int, void *, int *))GetProcAddress(hModule, "PMPI_Attr_get");
-    fn.PMPI_Attr_delete = (int (*)(MPI_Comm, int))GetProcAddress(hModule, "PMPI_Attr_delete");
-    fn.PMPI_Topo_test = (int (*)(MPI_Comm, int *))GetProcAddress(hModule, "PMPI_Topo_test");
-    fn.PMPI_Cart_create = (int (*)(MPI_Comm, int, int *, int *, int, MPI_Comm *))GetProcAddress(hModule, "PMPI_Cart_create");
-    fn.PMPI_Dims_create = (int (*)(int, int, int *))GetProcAddress(hModule, "PMPI_Dims_create");
-    fn.PMPI_Graph_create = (int (*)(MPI_Comm, int, int *, int *, int, MPI_Comm *))GetProcAddress(hModule, "PMPI_Graph_create");
-    fn.PMPI_Graphdims_get = (int (*)(MPI_Comm, int *, int *))GetProcAddress(hModule, "PMPI_Graphdims_get");
-    fn.PMPI_Graph_get = (int (*)(MPI_Comm, int, int, int *, int *))GetProcAddress(hModule, "PMPI_Graph_get");
-    fn.PMPI_Cartdim_get = (int (*)(MPI_Comm, int *))GetProcAddress(hModule, "PMPI_Cartdim_get");
-    fn.PMPI_Cart_get = (int (*)(MPI_Comm, int, int *, int *, int *))GetProcAddress(hModule, "PMPI_Cart_get");
-    fn.PMPI_Cart_rank = (int (*)(MPI_Comm, int *, int *))GetProcAddress(hModule, "PMPI_Cart_rank");
-    fn.PMPI_Cart_coords = (int (*)(MPI_Comm, int, int, int *))GetProcAddress(hModule, "PMPI_Cart_coords");
-    fn.PMPI_Graph_neighbors_count = (int (*)(MPI_Comm, int, int *))GetProcAddress(hModule, "PMPI_Graph_neighbors_count");
-    fn.PMPI_Graph_neighbors = (int (*)(MPI_Comm, int, int, int *))GetProcAddress(hModule, "PMPI_Graph_neighbors");
-    fn.PMPI_Cart_shift = (int (*)(MPI_Comm, int, int, int *, int *))GetProcAddress(hModule, "PMPI_Cart_shift");
-    fn.PMPI_Cart_sub = (int (*)(MPI_Comm, int *, MPI_Comm *))GetProcAddress(hModule, "PMPI_Cart_sub");
-    fn.PMPI_Cart_map = (int (*)(MPI_Comm, int, int *, int *, int *))GetProcAddress(hModule, "PMPI_Cart_map");
-    fn.PMPI_Graph_map = (int (*)(MPI_Comm, int, int *, int *, int *))GetProcAddress(hModule, "PMPI_Graph_map");
-    fn.PMPI_Get_processor_name = (int (*)(char *, int *))GetProcAddress(hModule, "PMPI_Get_processor_name");
-    fn.PMPI_Get_version = (int (*)(int *, int *))GetProcAddress(hModule, "PMPI_Get_version");
-    fn.PMPI_Errhandler_create = (int (*)(MPI_Handler_function *, MPI_Errhandler *))GetProcAddress(hModule, "PMPI_Errhandler_create");
-    fn.PMPI_Errhandler_set = (int (*)(MPI_Comm, MPI_Errhandler))GetProcAddress(hModule, "PMPI_Errhandler_set");
-    fn.PMPI_Errhandler_get = (int (*)(MPI_Comm, MPI_Errhandler *))GetProcAddress(hModule, "PMPI_Errhandler_get");
-    fn.PMPI_Errhandler_free = (int (*)(MPI_Errhandler *))GetProcAddress(hModule, "PMPI_Errhandler_free");
-    fn.PMPI_Error_string = (int (*)(int, char *, int *))GetProcAddress(hModule, "PMPI_Error_string");
-    fn.PMPI_Error_class = (int (*)(int, int *))GetProcAddress(hModule, "PMPI_Error_class");
-    fn.PMPI_Wtime = (double (*)(void))GetProcAddress(hModule, "PMPI_Wtime");
-    fn.PMPI_Wtick = (double (*)(void))GetProcAddress(hModule, "PMPI_Wtick");
-    fn.PMPI_Init = (int (*)(int *, char ***))GetProcAddress(hModule, "PMPI_Init");
-    fn.PMPI_Finalize = (int (*)(void))GetProcAddress(hModule, "PMPI_Finalize");
-    fn.PMPI_Initialized = (int (*)(int *))GetProcAddress(hModule, "PMPI_Initialized");
-    fn.PMPI_Abort = (int (*)(MPI_Comm, int))GetProcAddress(hModule, "PMPI_Abort");
-    fn.PMPI_Pcontrol = (int (*)(const int, ...))GetProcAddress(hModule, "PMPI_Pcontrol");
-    fn.PMPI_Close_port = (int (*)(char *))GetProcAddress(hModule, "PMPI_Close_port");
-    fn.PMPI_Comm_accept = (int (*)(char *, MPI_Info, int, MPI_Comm, MPI_Comm *))GetProcAddress(hModule, "PMPI_Comm_accept");
-    fn.PMPI_Comm_connect = (int (*)(char *, MPI_Info, int, MPI_Comm, MPI_Comm *))GetProcAddress(hModule, "PMPI_Comm_connect");
-    fn.PMPI_Comm_disconnect = (int (*)(MPI_Comm *))GetProcAddress(hModule, "PMPI_Comm_disconnect");
-    fn.PMPI_Comm_get_parent = (int (*)(MPI_Comm *))GetProcAddress(hModule, "PMPI_Comm_get_parent");
-    fn.PMPI_Comm_join = (int (*)(int, MPI_Comm *))GetProcAddress(hModule, "PMPI_Comm_join");
-    fn.PMPI_Comm_spawn = (int (*)(char *, char *[], int, MPI_Info, int, MPI_Comm, MPI_Comm *, int []))GetProcAddress(hModule, "PMPI_Comm_spawn");
-    fn.PMPI_Comm_spawn_multiple = (int (*)(int, char *[], char **[], int [], MPI_Info [], int, MPI_Comm, MPI_Comm *, int []))GetProcAddress(hModule, "PMPI_Comm_spawn_multiple"); 
-    fn.PMPI_Lookup_name = (int (*)(char *, MPI_Info, char *))GetProcAddress(hModule, "PMPI_Lookup_name");
-    fn.PMPI_Open_port = (int (*)(MPI_Info, char *))GetProcAddress(hModule, "PMPI_Open_port");
-    fn.PMPI_Publish_name = (int (*)(char *, MPI_Info, char *))GetProcAddress(hModule, "PMPI_Publish_name");
-    fn.PMPI_Unpublish_name = (int (*)(char *, MPI_Info, char *))GetProcAddress(hModule, "PMPI_Unpublish_name");
-    fn.PMPI_Accumulate = (int (*)(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype,  MPI_Op, MPI_Win))GetProcAddress(hModule, "PMPI_Accumulate");
-    fn.PMPI_Get = (int (*)(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype, MPI_Win))GetProcAddress(hModule, "PMPI_Get");
-    fn.PMPI_Put = (int (*)(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype, MPI_Win))GetProcAddress(hModule, "PMPI_Put");
-    fn.PMPI_Win_complete = (int (*)(MPI_Win))GetProcAddress(hModule, "PMPI_Win_complete");
-    fn.PMPI_Win_create = (int (*)(void *, MPI_Aint, int, MPI_Info, MPI_Comm, MPI_Win *))GetProcAddress(hModule, "PMPI_Win_create");
-    fn.PMPI_Win_fence = (int (*)(int, MPI_Win))GetProcAddress(hModule, "PMPI_Win_fence");
-    fn.PMPI_Win_free = (int (*)(MPI_Win *))GetProcAddress(hModule, "PMPI_Win_free");
-    fn.PMPI_Win_get_group = (int (*)(MPI_Win, MPI_Group *))GetProcAddress(hModule, "PMPI_Win_get_group");
-    fn.PMPI_Win_lock = (int (*)(int, int, int, MPI_Win))GetProcAddress(hModule, "PMPI_Win_lock");
-    fn.PMPI_Win_post = (int (*)(MPI_Group, int, MPI_Win))GetProcAddress(hModule, "PMPI_Win_post");
-    fn.PMPI_Win_start = (int (*)(MPI_Group, int, MPI_Win))GetProcAddress(hModule, "PMPI_Win_start");
-    fn.PMPI_Win_test = (int (*)(MPI_Win, int *))GetProcAddress(hModule, "PMPI_Win_test");
-    fn.PMPI_Win_unlock = (int (*)(int, MPI_Win))GetProcAddress(hModule, "PMPI_Win_unlock");
-    fn.PMPI_Win_wait = (int (*)(MPI_Win))GetProcAddress(hModule, "PMPI_Win_wait");
-    fn.PMPI_Alltoallw = (int (*)(void *, int [], int [], MPI_Datatype [], void *, int [], int [], MPI_Datatype [], MPI_Comm))GetProcAddress(hModule, "PMPI_Alltoallw");
-    fn.PMPI_Exscan = (int (*)(void *, void *, int, MPI_Datatype, MPI_Op, MPI_Comm))GetProcAddress(hModule, "PMPI_Exscan");
-    fn.PMPI_Add_error_class = (int (*)(int *))GetProcAddress(hModule, "PMPI_Add_error_class");
-    fn.PMPI_Add_error_code = (int (*)(int, int *))GetProcAddress(hModule, "PMPI_Add_error_code");
-    fn.PMPI_Add_error_string = (int (*)(int, char *))GetProcAddress(hModule, "PMPI_Add_error_string");
-    fn.PMPI_Comm_call_errhandler = (int (*)(MPI_Comm, int))GetProcAddress(hModule, "PMPI_Comm_call_errhandler");
-    fn.PMPI_Comm_create_keyval = (int (*)(MPI_Comm_copy_attr_function *, MPI_Comm_delete_attr_function *, int *, void *))GetProcAddress(hModule, "PMPI_Comm_create_keyval");
-    fn.PMPI_Comm_delete_attr = (int (*)(MPI_Comm, int))GetProcAddress(hModule, "PMPI_Comm_delete_attr");
-    fn.PMPI_Comm_free_keyval = (int (*)(int *))GetProcAddress(hModule, "PMPI_Comm_free_keyval");
-    fn.PMPI_Comm_get_attr = (int (*)(MPI_Comm, int, void *, int *))GetProcAddress(hModule, "PMPI_Comm_get_attr");
-    fn.PMPI_Comm_get_name = (int (*)(MPI_Comm, char *, int *))GetProcAddress(hModule, "PMPI_Comm_get_name");
-    fn.PMPI_Comm_set_attr = (int (*)(MPI_Comm, int, void *))GetProcAddress(hModule, "PMPI_Comm_set_attr");
-    fn.PMPI_Comm_set_name = (int (*)(MPI_Comm, char *))GetProcAddress(hModule, "PMPI_Comm_set_name");
-    fn.PMPI_File_call_errhandler = (int (*)(MPI_File, int))GetProcAddress(hModule, "PMPI_File_call_errhandler");
-    fn.PMPI_Grequest_complete = (int (*)(MPI_Request))GetProcAddress(hModule, "PMPI_Grequest_complete");
-    fn.PMPI_Grequest_start = (int (*)(MPI_Grequest_query_function *, MPI_Grequest_free_function *, MPI_Grequest_cancel_function *, void *, MPI_Request *))GetProcAddress(hModule, "PMPI_Grequest_start");
-    fn.PMPI_Init_thread = (int (*)(int *, char ***, int, int *))GetProcAddress(hModule, "PMPI_Init_thread");
-    fn.PMPI_Is_thread_main = (int (*)(int *))GetProcAddress(hModule, "PMPI_Is_thread_main");
-    fn.PMPI_Query_thread = (int (*)(int *))GetProcAddress(hModule, "PMPI_Query_thread");
-    fn.PMPI_Status_set_cancelled = (int (*)(MPI_Status *, int))GetProcAddress(hModule, "PMPI_Status_set_cancelled");
-    fn.PMPI_Status_set_elements = (int (*)(MPI_Status *, MPI_Datatype, int))GetProcAddress(hModule, "PMPI_Status_set_elements");
-    fn.PMPI_Type_create_keyval = (int (*)(MPI_Type_copy_attr_function *, MPI_Type_delete_attr_function *, int *, void *))GetProcAddress(hModule, "PMPI_Type_create_keyval");
-    fn.PMPI_Type_delete_attr = (int (*)(MPI_Datatype, int))GetProcAddress(hModule, "PMPI_Type_delete_attr");
-    fn.PMPI_Type_dup = (int (*)(MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_dup");
-    fn.PMPI_Type_free_keyval = (int (*)(int *))GetProcAddress(hModule, "PMPI_Type_free_keyval");
-    fn.PMPI_Type_get_attr = (int (*)(MPI_Datatype, int, void *, int *))GetProcAddress(hModule, "PMPI_Type_get_attr");
-    fn.PMPI_Type_get_contents = (int (*)(MPI_Datatype, int, int, int, int [], MPI_Aint [], MPI_Datatype []))GetProcAddress(hModule, "PMPI_Type_get_contents");
-    fn.PMPI_Type_get_envelope = (int (*)(MPI_Datatype, int *, int *, int *, int *))GetProcAddress(hModule, "PMPI_Type_get_envelope");
-    fn.PMPI_Type_get_name = (int (*)(MPI_Datatype, char *, int *))GetProcAddress(hModule, "PMPI_Type_get_name");
-    fn.PMPI_Type_set_attr = (int (*)(MPI_Datatype, int, void *))GetProcAddress(hModule, "PMPI_Type_set_attr");
-    fn.PMPI_Type_set_name = (int (*)(MPI_Datatype, char *))GetProcAddress(hModule, "PMPI_Type_set_name");
-    fn.PMPI_Type_match_size = (int (*)( int, int, MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_match_size");
-    fn.PMPI_Win_call_errhandler = (int (*)(MPI_Win, int))GetProcAddress(hModule, "PMPI_Win_call_errhandler");
-    fn.PMPI_Win_create_keyval = (int (*)(MPI_Win_copy_attr_function *, MPI_Win_delete_attr_function *, int *, void *))GetProcAddress(hModule, "PMPI_Win_create_keyval");
-    fn.PMPI_Win_delete_attr = (int (*)(MPI_Win, int))GetProcAddress(hModule, "PMPI_Win_delete_attr");
-    fn.PMPI_Win_free_keyval = (int (*)(int *))GetProcAddress(hModule, "PMPI_Win_free_keyval");
-    fn.PMPI_Win_get_attr = (int (*)(MPI_Win, int, void *, int *))GetProcAddress(hModule, "PMPI_Win_get_attr");
-    fn.PMPI_Win_get_name = (int (*)(MPI_Win, char *, int *))GetProcAddress(hModule, "PMPI_Win_get_name");
-    fn.PMPI_Win_set_attr = (int (*)(MPI_Win, int, void *))GetProcAddress(hModule, "PMPI_Win_set_attr");
-    fn.PMPI_Win_set_name = (int (*)(MPI_Win, char *))GetProcAddress(hModule, "PMPI_Win_set_name");
-    fn.PMPI_Alloc_mem = (int (*)(MPI_Aint, MPI_Info info, void *baseptr))GetProcAddress(hModule, "PMPI_Alloc_mem");
-    fn.PMPI_Comm_create_errhandler = (int (*)(MPI_Comm_errhandler_fn *, MPI_Errhandler *))GetProcAddress(hModule, "PMPI_Comm_create_errhandler");
-    fn.PMPI_Comm_get_errhandler = (int (*)(MPI_Comm, MPI_Errhandler *))GetProcAddress(hModule, "PMPI_Comm_get_errhandler");
-    fn.PMPI_Comm_set_errhandler = (int (*)(MPI_Comm, MPI_Errhandler))GetProcAddress(hModule, "PMPI_Comm_set_errhandler");
-    fn.PMPI_File_create_errhandler = (int (*)(MPI_File_errhandler_fn *, MPI_Errhandler *))GetProcAddress(hModule, "PMPI_File_create_errhandler");
-    fn.PMPI_File_get_errhandler = (int (*)(MPI_File, MPI_Errhandler *))GetProcAddress(hModule, "PMPI_File_get_errhandler");
-    fn.PMPI_File_set_errhandler = (int (*)(MPI_File, MPI_Errhandler))GetProcAddress(hModule, "PMPI_File_set_errhandler");
-    fn.PMPI_Finalized = (int (*)(int *))GetProcAddress(hModule, "PMPI_Finalized");
-    fn.PMPI_Free_mem = (int (*)(void *))GetProcAddress(hModule, "PMPI_Free_mem");
-    fn.PMPI_Get_address = (int (*)(void *, MPI_Aint *))GetProcAddress(hModule, "PMPI_Get_address");
-    fn.PMPI_Info_create = (int (*)(MPI_Info *))GetProcAddress(hModule, "PMPI_Info_create");
-    fn.PMPI_Info_delete = (int (*)(MPI_Info, char *))GetProcAddress(hModule, "PMPI_Info_delete");
-    fn.PMPI_Info_dup = (int (*)(MPI_Info, MPI_Info *))GetProcAddress(hModule, "PMPI_Info_dup");
-    fn.PMPI_Info_free = (int (*)(MPI_Info *info))GetProcAddress(hModule, "PMPI_Info_free");
-    fn.PMPI_Info_get = (int (*)(MPI_Info, char *, int, char *, int *))GetProcAddress(hModule, "PMPI_Info_get");
-    fn.PMPI_Info_get_nkeys = (int (*)(MPI_Info, int *))GetProcAddress(hModule, "PMPI_Info_get_nkeys");
-    fn.PMPI_Info_get_nthkey = (int (*)(MPI_Info, int, char *))GetProcAddress(hModule, "PMPI_Info_get_nthkey");
-    fn.PMPI_Info_get_valuelen = (int (*)(MPI_Info, char *, int *, int *))GetProcAddress(hModule, "PMPI_Info_get_valuelen");
-    fn.PMPI_Info_set = (int (*)(MPI_Info, char *, char *))GetProcAddress(hModule, "PMPI_Info_set");
-    fn.PMPI_Pack_external = (int (*)(char *, void *, int, MPI_Datatype, void *, MPI_Aint, MPI_Aint *))GetProcAddress(hModule, "PMPI_Pack_external"); 
-    fn.PMPI_Pack_external_size = (int (*)(char *, int, MPI_Datatype, MPI_Aint *))GetProcAddress(hModule, "PMPI_Pack_external_size"); 
-    fn.PMPI_Request_get_status = (int (*)(MPI_Request, int *, MPI_Status *))GetProcAddress(hModule, "PMPI_Request_get_status");
-    fn.PMPI_Status_c2f = (int (*)(MPI_Status *, MPI_Fint *))GetProcAddress(hModule, "PMPI_Status_c2f");
-    fn.PMPI_Status_f2c = (int (*)(MPI_Fint *, MPI_Status *))GetProcAddress(hModule, "PMPI_Status_f2c");
-    fn.PMPI_Type_create_darray = (int (*)(int, int, int, int [], int [], int [], int [], int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_create_darray");
-    fn.PMPI_Type_create_hindexed = (int (*)(int, int [], MPI_Aint [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_create_hindexed");
-    fn.PMPI_Type_create_hvector = (int (*)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_create_hvector");
-    fn.PMPI_Type_create_indexed_block = (int (*)(int, int, int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_create_indexed_block");
-    fn.PMPI_Type_create_resized = (int (*)(MPI_Datatype, MPI_Aint, MPI_Aint, MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_create_resized");
-    fn.PMPI_Type_create_struct = (int (*)(int, int [], MPI_Aint [], MPI_Datatype [], MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_create_struct");
-    fn.PMPI_Type_create_subarray = (int (*)(int, int [], int [], int [], int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hModule, "PMPI_Type_create_subarray");
-    fn.PMPI_Type_get_extent = (int (*)(MPI_Datatype, MPI_Aint *, MPI_Aint *))GetProcAddress(hModule, "PMPI_Type_get_extent");
-    fn.PMPI_Type_get_true_extent = (int (*)(MPI_Datatype, MPI_Aint *, MPI_Aint *))GetProcAddress(hModule, "PMPI_Type_get_true_extent");
-    fn.PMPI_Unpack_external = (int (*)(char *, void *, MPI_Aint, MPI_Aint *, void *, int, MPI_Datatype))GetProcAddress(hModule, "PMPI_Unpack_external"); 
-    fn.PMPI_Win_create_errhandler = (int (*)(MPI_Win_errhandler_fn *, MPI_Errhandler *))GetProcAddress(hModule, "PMPI_Win_create_errhandler");
-    fn.PMPI_Win_get_errhandler = (int (*)(MPI_Win, MPI_Errhandler *))GetProcAddress(hModule, "PMPI_Win_get_errhandler");
-    fn.PMPI_Win_set_errhandler = (int (*)(MPI_Win, MPI_Errhandler))GetProcAddress(hModule, "PMPI_Win_set_errhandler");
-    fn.PMPI_Type_create_f90_integer = (int (*)( int, MPI_Datatype * ))GetProcAddress(hModule, "PMPI_Type_create_f90_integer");
-    fn.PMPI_Type_create_f90_real = (int (*)( int, int, MPI_Datatype * ))GetProcAddress(hModule, "PMPI_Type_create_f90_real");
-    fn.PMPI_Type_create_f90_complex = (int (*)( int, int, MPI_Datatype * ))GetProcAddress(hModule, "PMPI_Type_create_f90_complex");
+    fn.PMPI_Comm_f2c = (MPI_Comm (*)(MPI_Fint))GetProcAddress(hPMPIModule, "PMPI_Comm_f2c");
+    fn.PMPI_Type_f2c = (MPI_Datatype (*)(MPI_Fint))GetProcAddress(hPMPIModule, "PMPI_Type_f2c");
+    fn.PMPI_File_f2c = (MPI_File (*)(MPI_Fint))GetProcAddress(hPMPIModule, "PMPI_File_f2c");
+    fn.PMPI_Comm_c2f = (MPI_Fint (*)(MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Comm_c2f");
+    fn.PMPI_File_c2f = (MPI_Fint (*)(MPI_File))GetProcAddress(hPMPIModule, "PMPI_File_c2f");
+    fn.PMPI_Group_c2f = (MPI_Fint (*)(MPI_Group))GetProcAddress(hPMPIModule, "PMPI_Group_c2f");
+    fn.PMPI_Info_c2f = (MPI_Fint (*)(MPI_Info))GetProcAddress(hPMPIModule, "PMPI_Info_c2f");
+    fn.PMPI_Op_c2f = (MPI_Fint (*)(MPI_Op))GetProcAddress(hPMPIModule, "PMPI_Op_c2f");
+    fn.PMPI_Request_c2f = (MPI_Fint (*)(MPI_Request))GetProcAddress(hPMPIModule, "PMPI_Request_c2f");
+    fn.PMPI_Type_c2f = (MPI_Fint (*)(MPI_Datatype))GetProcAddress(hPMPIModule, "PMPI_Type_c2f");
+    fn.PMPI_Win_c2f = (MPI_Fint (*)(MPI_Win))GetProcAddress(hPMPIModule, "PMPI_Win_c2f");
+    fn.PMPI_Group_f2c = (MPI_Group (*)(MPI_Fint))GetProcAddress(hPMPIModule, "PMPI_Group_f2c");
+    fn.PMPI_Info_f2c = (MPI_Info (*)(MPI_Fint))GetProcAddress(hPMPIModule, "PMPI_Info_f2c");
+    fn.PMPI_Op_f2c = (MPI_Op (*)(MPI_Fint))GetProcAddress(hPMPIModule, "PMPI_Op_f2c");
+    fn.PMPI_Request_f2c = (MPI_Request (*)(MPI_Fint))GetProcAddress(hPMPIModule, "PMPI_Request_f2c");
+    fn.PMPI_Win_f2c = (MPI_Win (*)(MPI_Fint))GetProcAddress(hPMPIModule, "PMPI_Win_f2c");
+    fn.PMPI_File_open = (int (*)(MPI_Comm, char *, int, MPI_Info, MPI_File *))GetProcAddress(hPMPIModule, "PMPI_File_open");
+    fn.PMPI_File_close = (int (*)(MPI_File *))GetProcAddress(hPMPIModule, "PMPI_File_close");
+    fn.PMPI_File_delete = (int (*)(char *, MPI_Info))GetProcAddress(hPMPIModule, "PMPI_File_delete");
+    fn.PMPI_File_set_size = (int (*)(MPI_File, MPI_Offset))GetProcAddress(hPMPIModule, "PMPI_File_set_size");
+    fn.PMPI_File_preallocate = (int (*)(MPI_File, MPI_Offset))GetProcAddress(hPMPIModule, "PMPI_File_preallocate");
+    fn.PMPI_File_get_size = (int (*)(MPI_File, MPI_Offset *))GetProcAddress(hPMPIModule, "PMPI_File_get_size");
+    fn.PMPI_File_get_group = (int (*)(MPI_File, MPI_Group *))GetProcAddress(hPMPIModule, "PMPI_File_get_group");
+    fn.PMPI_File_get_amode = (int (*)(MPI_File, int *))GetProcAddress(hPMPIModule, "PMPI_File_get_amode");
+    fn.PMPI_File_set_info = (int (*)(MPI_File, MPI_Info))GetProcAddress(hPMPIModule, "PMPI_File_set_info");
+    fn.PMPI_File_get_info = (int (*)(MPI_File, MPI_Info *))GetProcAddress(hPMPIModule, "PMPI_File_get_info");
+    fn.PMPI_File_set_view = (int (*)(MPI_File, MPI_Offset, MPI_Datatype, MPI_Datatype, char *, MPI_Info))GetProcAddress(hPMPIModule, "PMPI_File_set_view");
+    fn.PMPI_File_get_view = (int (*)(MPI_File, MPI_Offset *, MPI_Datatype *, MPI_Datatype *, char *))GetProcAddress(hPMPIModule, "PMPI_File_get_view");
+    fn.PMPI_File_read_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_read_at");
+    fn.PMPI_File_read_at_all = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_read_at_all");
+    fn.PMPI_File_write_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_write_at");
+    fn.PMPI_File_write_at_all = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_write_at_all");
+    fn.PMPI_File_iread_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hPMPIModule, "PMPI_File_iread_at");
+    fn.PMPI_File_iwrite_at = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hPMPIModule, "PMPI_File_iwrite_at");
+    fn.PMPI_File_read = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_read"); 
+    fn.PMPI_File_read_all = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_read_all"); 
+    fn.PMPI_File_write = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_write");
+    fn.PMPI_File_write_all = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_write_all");
+    fn.PMPI_File_iread = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hPMPIModule, "PMPI_File_iread"); 
+    fn.PMPI_File_iwrite = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hPMPIModule, "PMPI_File_iwrite");
+    fn.PMPI_File_seek = (int (*)(MPI_File, MPI_Offset, int))GetProcAddress(hPMPIModule, "PMPI_File_seek");
+    fn.PMPI_File_get_position = (int (*)(MPI_File, MPI_Offset *))GetProcAddress(hPMPIModule, "PMPI_File_get_position");
+    fn.PMPI_File_get_byte_offset = (int (*)(MPI_File, MPI_Offset, MPI_Offset *))GetProcAddress(hPMPIModule, "PMPI_File_get_byte_offset");
+    fn.PMPI_File_read_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_read_shared");
+    fn.PMPI_File_write_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_write_shared");
+    fn.PMPI_File_iread_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hPMPIModule, "PMPI_File_iread_shared");
+    fn.PMPI_File_iwrite_shared = (int (*)(MPI_File, void *, int, MPI_Datatype, MPIO_Request *))GetProcAddress(hPMPIModule, "PMPI_File_iwrite_shared");
+    fn.PMPI_File_read_ordered = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_read_ordered");
+    fn.PMPI_File_write_ordered = (int (*)(MPI_File, void *, int, MPI_Datatype, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_write_ordered");
+    fn.PMPI_File_seek_shared = (int (*)(MPI_File, MPI_Offset, int))GetProcAddress(hPMPIModule, "PMPI_File_seek_shared");
+    fn.PMPI_File_get_position_shared = (int (*)(MPI_File, MPI_Offset *))GetProcAddress(hPMPIModule, "PMPI_File_get_position_shared");
+    fn.PMPI_File_read_at_all_begin = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype))GetProcAddress(hPMPIModule, "PMPI_File_read_at_all_begin");
+    fn.PMPI_File_read_at_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_read_at_all_end");
+    fn.PMPI_File_write_at_all_begin = (int (*)(MPI_File, MPI_Offset, void *, int, MPI_Datatype))GetProcAddress(hPMPIModule, "PMPI_File_write_at_all_begin");
+    fn.PMPI_File_write_at_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_write_at_all_end");
+    fn.PMPI_File_read_all_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hPMPIModule, "PMPI_File_read_all_begin");
+    fn.PMPI_File_read_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_read_all_end");
+    fn.PMPI_File_write_all_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hPMPIModule, "PMPI_File_write_all_begin");
+    fn.PMPI_File_write_all_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_write_all_end");
+    fn.PMPI_File_read_ordered_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hPMPIModule, "PMPI_File_read_ordered_begin");
+    fn.PMPI_File_read_ordered_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_read_ordered_end");
+    fn.PMPI_File_write_ordered_begin = (int (*)(MPI_File, void *, int, MPI_Datatype))GetProcAddress(hPMPIModule, "PMPI_File_write_ordered_begin");
+    fn.PMPI_File_write_ordered_end = (int (*)(MPI_File, void *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_File_write_ordered_end");
+    fn.PMPI_File_get_type_extent = (int (*)(MPI_File, MPI_Datatype, MPI_Aint *))GetProcAddress(hPMPIModule, "PMPI_File_get_type_extent");
+    fn.PMPI_Register_datarep = (int (*)(char *, MPI_Datarep_conversion_function *, MPI_Datarep_conversion_function *, MPI_Datarep_extent_function *, void *))GetProcAddress(hPMPIModule, "PMPI_Register_datarep");
+    fn.PMPI_File_set_atomicity = (int (*)(MPI_File, int))GetProcAddress(hPMPIModule, "PMPI_File_set_atomicity");
+    fn.PMPI_File_get_atomicity = (int (*)(MPI_File, int *))GetProcAddress(hPMPIModule, "PMPI_File_get_atomicity");
+    fn.PMPI_File_sync = (int (*)(MPI_File))GetProcAddress(hPMPIModule, "PMPI_File_sync");
+    fn.PMPI_Send = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Send");
+    fn.PMPI_Recv = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Recv");
+    fn.PMPI_Get_count = (int (*)(MPI_Status *, MPI_Datatype, int *))GetProcAddress(hPMPIModule, "PMPI_Get_count");
+    fn.PMPI_Bsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Bsend");
+    fn.PMPI_Ssend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Ssend");
+    fn.PMPI_Rsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Rsend");
+    fn.PMPI_Buffer_attach = (int (*)( void*, int))GetProcAddress(hPMPIModule, "PMPI_Buffer_attach");
+    fn.PMPI_Buffer_detach = (int (*)( void*, int *))GetProcAddress(hPMPIModule, "PMPI_Buffer_detach");
+    fn.PMPI_Isend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Isend");
+    fn.PMPI_Ibsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Ibsend");
+    fn.PMPI_Issend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Issend");
+    fn.PMPI_Irsend = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Irsend");
+    fn.PMPI_Irecv = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Irecv");
+    fn.PMPI_Wait = (int (*)(MPI_Request *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Wait");
+    fn.PMPI_Test = (int (*)(MPI_Request *, int *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Test");
+    fn.PMPI_Request_free = (int (*)(MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Request_free");
+    fn.PMPI_Waitany = (int (*)(int, MPI_Request *, int *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Waitany");
+    fn.PMPI_Testany = (int (*)(int, MPI_Request *, int *, int *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Testany");
+    fn.PMPI_Waitall = (int (*)(int, MPI_Request *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Waitall");
+    fn.PMPI_Testall = (int (*)(int, MPI_Request *, int *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Testall");
+    fn.PMPI_Waitsome = (int (*)(int, MPI_Request *, int *, int *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Waitsome");
+    fn.PMPI_Testsome = (int (*)(int, MPI_Request *, int *, int *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Testsome");
+    fn.PMPI_Iprobe = (int (*)(int, int, MPI_Comm, int *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Iprobe");
+    fn.PMPI_Probe = (int (*)(int, int, MPI_Comm, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Probe");
+    fn.PMPI_Cancel = (int (*)(MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Cancel");
+    fn.PMPI_Test_cancelled = (int (*)(MPI_Status *, int *))GetProcAddress(hPMPIModule, "PMPI_Test_cancelled");
+    fn.PMPI_Send_init = (int (*)(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Send_init");
+    fn.PMPI_Bsend_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Bsend_init");
+    fn.PMPI_Ssend_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Ssend_init");
+    fn.PMPI_Rsend_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Rsend_init");
+    fn.PMPI_Recv_init = (int (*)(void*, int, MPI_Datatype, int,int, MPI_Comm, MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Recv_init");
+    fn.PMPI_Start = (int (*)(MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Start");
+    fn.PMPI_Startall = (int (*)(int, MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Startall");
+    fn.PMPI_Sendrecv = (int (*)(void *, int, MPI_Datatype,int, int, void *, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Sendrecv");
+    fn.PMPI_Sendrecv_replace = (int (*)(void*, int, MPI_Datatype, int, int, int, int, MPI_Comm, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Sendrecv_replace");
+    fn.PMPI_Type_contiguous = (int (*)(int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_contiguous");
+    fn.PMPI_Type_vector = (int (*)(int, int, int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_vector");
+    fn.PMPI_Type_hvector = (int (*)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_hvector");
+    fn.PMPI_Type_indexed = (int (*)(int, int *, int *, MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_indexed");
+    fn.PMPI_Type_hindexed = (int (*)(int, int *, MPI_Aint *, MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_hindexed");
+    fn.PMPI_Type_struct = (int (*)(int, int *, MPI_Aint *, MPI_Datatype *, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_struct");
+    fn.PMPI_Address = (int (*)(void*, MPI_Aint *))GetProcAddress(hPMPIModule, "PMPI_Address");
+    fn.PMPI_Type_extent = (int (*)(MPI_Datatype, MPI_Aint *))GetProcAddress(hPMPIModule, "PMPI_Type_extent");
+    fn.PMPI_Type_size = (int (*)(MPI_Datatype, int *))GetProcAddress(hPMPIModule, "PMPI_Type_size");
+    fn.PMPI_Type_lb = (int (*)(MPI_Datatype, MPI_Aint *))GetProcAddress(hPMPIModule, "PMPI_Type_lb");
+    fn.PMPI_Type_ub = (int (*)(MPI_Datatype, MPI_Aint *))GetProcAddress(hPMPIModule, "PMPI_Type_ub");
+    fn.PMPI_Type_commit = (int (*)(MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_commit");
+    fn.PMPI_Type_free = (int (*)(MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_free");
+    fn.PMPI_Get_elements = (int (*)(MPI_Status *, MPI_Datatype, int *))GetProcAddress(hPMPIModule, "PMPI_Get_elements");
+    fn.PMPI_Pack = (int (*)(void*, int, MPI_Datatype, void *, int, int *,  MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Pack");
+    fn.PMPI_Unpack = (int (*)(void*, int, int *, void *, int, MPI_Datatype, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Unpack");
+    fn.PMPI_Pack_size = (int (*)(int, MPI_Datatype, MPI_Comm, int *))GetProcAddress(hPMPIModule, "PMPI_Pack_size");
+    fn.PMPI_Barrier = (int (*)(MPI_Comm ))GetProcAddress(hPMPIModule, "PMPI_Barrier");
+    fn.PMPI_Bcast = (int (*)(void*, int, MPI_Datatype, int, MPI_Comm ))GetProcAddress(hPMPIModule, "PMPI_Bcast");
+    fn.PMPI_Gather = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Gather"); 
+    fn.PMPI_Gatherv = (int (*)(void* , int, MPI_Datatype, void*, int *, int *, MPI_Datatype, int, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Gatherv"); 
+    fn.PMPI_Scatter = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Scatter");
+    fn.PMPI_Scatterv = (int (*)(void* , int *, int *,  MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Scatterv");
+    fn.PMPI_Allgather = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Allgather");
+    fn.PMPI_Allgatherv = (int (*)(void* , int, MPI_Datatype, void*, int *, int *, MPI_Datatype, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Allgatherv");
+    fn.PMPI_Alltoall = (int (*)(void* , int, MPI_Datatype, void*, int, MPI_Datatype, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Alltoall");
+    fn.PMPI_Alltoallv = (int (*)(void* , int *, int *, MPI_Datatype, void*, int *, int *, MPI_Datatype, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Alltoallv");
+    fn.PMPI_Reduce = (int (*)(void* , void*, int, MPI_Datatype, MPI_Op, int, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Reduce");
+    fn.PMPI_Op_create = (int (*)(MPI_User_function *, int, MPI_Op *))GetProcAddress(hPMPIModule, "PMPI_Op_create");
+    fn.PMPI_Op_free = (int (*)( MPI_Op *))GetProcAddress(hPMPIModule, "PMPI_Op_free");
+    fn.PMPI_Allreduce = (int (*)(void* , void*, int, MPI_Datatype, MPI_Op, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Allreduce");
+    fn.PMPI_Reduce_scatter = (int (*)(void* , void*, int *, MPI_Datatype, MPI_Op, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Reduce_scatter");
+    fn.PMPI_Scan = (int (*)(void* , void*, int, MPI_Datatype, MPI_Op, MPI_Comm ))GetProcAddress(hPMPIModule, "PMPI_Scan");
+    fn.PMPI_Group_size = (int (*)(MPI_Group, int *))GetProcAddress(hPMPIModule, "PMPI_Group_size");
+    fn.PMPI_Group_rank = (int (*)(MPI_Group, int *))GetProcAddress(hPMPIModule, "PMPI_Group_rank");
+    fn.PMPI_Group_translate_ranks = (int (* )(MPI_Group, int, int *, MPI_Group, int *))GetProcAddress(hPMPIModule, "PMPI_Group_translate_ranks");
+    fn.PMPI_Group_compare = (int (*)(MPI_Group, MPI_Group, int *))GetProcAddress(hPMPIModule, "PMPI_Group_compare");
+    fn.PMPI_Comm_group = (int (*)(MPI_Comm, MPI_Group *))GetProcAddress(hPMPIModule, "PMPI_Comm_group");
+    fn.PMPI_Group_union = (int (*)(MPI_Group, MPI_Group, MPI_Group *))GetProcAddress(hPMPIModule, "PMPI_Group_union");
+    fn.PMPI_Group_intersection = (int (*)(MPI_Group, MPI_Group, MPI_Group *))GetProcAddress(hPMPIModule, "PMPI_Group_intersection");
+    fn.PMPI_Group_difference = (int (*)(MPI_Group, MPI_Group, MPI_Group *))GetProcAddress(hPMPIModule, "PMPI_Group_difference");
+    fn.PMPI_Group_incl = (int (*)(MPI_Group, int, int *, MPI_Group *))GetProcAddress(hPMPIModule, "PMPI_Group_incl");
+    fn.PMPI_Group_excl = (int (*)(MPI_Group, int, int *, MPI_Group *))GetProcAddress(hPMPIModule, "PMPI_Group_excl");
+    fn.PMPI_Group_range_incl = (int (*)(MPI_Group, int, int [][3], MPI_Group *))GetProcAddress(hPMPIModule, "PMPI_Group_range_incl");
+    fn.PMPI_Group_range_excl = (int (*)(MPI_Group, int, int [][3], MPI_Group *))GetProcAddress(hPMPIModule, "PMPI_Group_range_excl");
+    fn.PMPI_Group_free = (int (*)(MPI_Group *))GetProcAddress(hPMPIModule, "PMPI_Group_free");
+    fn.PMPI_Comm_size = (int (*)(MPI_Comm, int *))GetProcAddress(hPMPIModule, "PMPI_Comm_size");
+    fn.PMPI_Comm_rank = (int (*)(MPI_Comm, int *))GetProcAddress(hPMPIModule, "PMPI_Comm_rank");
+    fn.PMPI_Comm_compare = (int (*)(MPI_Comm, MPI_Comm, int *))GetProcAddress(hPMPIModule, "PMPI_Comm_compare");
+    fn.PMPI_Comm_dup = (int (*)(MPI_Comm, MPI_Comm *))GetProcAddress(hPMPIModule, "PMPI_Comm_dup");
+    fn.PMPI_Comm_create = (int (*)(MPI_Comm, MPI_Group, MPI_Comm *))GetProcAddress(hPMPIModule, "PMPI_Comm_create");
+    fn.PMPI_Comm_split = (int (*)(MPI_Comm, int, int, MPI_Comm *))GetProcAddress(hPMPIModule, "PMPI_Comm_split");
+    fn.PMPI_Comm_free = (int (*)(MPI_Comm *))GetProcAddress(hPMPIModule, "PMPI_Comm_free");
+    fn.PMPI_Comm_test_inter = (int (*)(MPI_Comm, int *))GetProcAddress(hPMPIModule, "PMPI_Comm_test_inter");
+    fn.PMPI_Comm_remote_size = (int (*)(MPI_Comm, int *))GetProcAddress(hPMPIModule, "PMPI_Comm_remote_size");
+    fn.PMPI_Comm_remote_group = (int (*)(MPI_Comm, MPI_Group *))GetProcAddress(hPMPIModule, "PMPI_Comm_remote_group");
+    fn.PMPI_Intercomm_create = (int (*)(MPI_Comm, int, MPI_Comm, int, int, MPI_Comm * ))GetProcAddress(hPMPIModule, "PMPI_Intercomm_create");
+    fn.PMPI_Intercomm_merge = (int (*)(MPI_Comm, int, MPI_Comm *))GetProcAddress(hPMPIModule, "PMPI_Intercomm_merge");
+    fn.PMPI_Keyval_create = (int (*)(MPI_Copy_function *, MPI_Delete_function *, int *, void*))GetProcAddress(hPMPIModule, "PMPI_Keyval_create");
+    fn.PMPI_Keyval_free = (int (*)(int *))GetProcAddress(hPMPIModule, "PMPI_Keyval_free");
+    fn.PMPI_Attr_put = (int (*)(MPI_Comm, int, void*))GetProcAddress(hPMPIModule, "PMPI_Attr_put");
+    fn.PMPI_Attr_get = (int (*)(MPI_Comm, int, void *, int *))GetProcAddress(hPMPIModule, "PMPI_Attr_get");
+    fn.PMPI_Attr_delete = (int (*)(MPI_Comm, int))GetProcAddress(hPMPIModule, "PMPI_Attr_delete");
+    fn.PMPI_Topo_test = (int (*)(MPI_Comm, int *))GetProcAddress(hPMPIModule, "PMPI_Topo_test");
+    fn.PMPI_Cart_create = (int (*)(MPI_Comm, int, int *, int *, int, MPI_Comm *))GetProcAddress(hPMPIModule, "PMPI_Cart_create");
+    fn.PMPI_Dims_create = (int (*)(int, int, int *))GetProcAddress(hPMPIModule, "PMPI_Dims_create");
+    fn.PMPI_Graph_create = (int (*)(MPI_Comm, int, int *, int *, int, MPI_Comm *))GetProcAddress(hPMPIModule, "PMPI_Graph_create");
+    fn.PMPI_Graphdims_get = (int (*)(MPI_Comm, int *, int *))GetProcAddress(hPMPIModule, "PMPI_Graphdims_get");
+    fn.PMPI_Graph_get = (int (*)(MPI_Comm, int, int, int *, int *))GetProcAddress(hPMPIModule, "PMPI_Graph_get");
+    fn.PMPI_Cartdim_get = (int (*)(MPI_Comm, int *))GetProcAddress(hPMPIModule, "PMPI_Cartdim_get");
+    fn.PMPI_Cart_get = (int (*)(MPI_Comm, int, int *, int *, int *))GetProcAddress(hPMPIModule, "PMPI_Cart_get");
+    fn.PMPI_Cart_rank = (int (*)(MPI_Comm, int *, int *))GetProcAddress(hPMPIModule, "PMPI_Cart_rank");
+    fn.PMPI_Cart_coords = (int (*)(MPI_Comm, int, int, int *))GetProcAddress(hPMPIModule, "PMPI_Cart_coords");
+    fn.PMPI_Graph_neighbors_count = (int (*)(MPI_Comm, int, int *))GetProcAddress(hPMPIModule, "PMPI_Graph_neighbors_count");
+    fn.PMPI_Graph_neighbors = (int (*)(MPI_Comm, int, int, int *))GetProcAddress(hPMPIModule, "PMPI_Graph_neighbors");
+    fn.PMPI_Cart_shift = (int (*)(MPI_Comm, int, int, int *, int *))GetProcAddress(hPMPIModule, "PMPI_Cart_shift");
+    fn.PMPI_Cart_sub = (int (*)(MPI_Comm, int *, MPI_Comm *))GetProcAddress(hPMPIModule, "PMPI_Cart_sub");
+    fn.PMPI_Cart_map = (int (*)(MPI_Comm, int, int *, int *, int *))GetProcAddress(hPMPIModule, "PMPI_Cart_map");
+    fn.PMPI_Graph_map = (int (*)(MPI_Comm, int, int *, int *, int *))GetProcAddress(hPMPIModule, "PMPI_Graph_map");
+    fn.PMPI_Get_processor_name = (int (*)(char *, int *))GetProcAddress(hPMPIModule, "PMPI_Get_processor_name");
+    fn.PMPI_Get_version = (int (*)(int *, int *))GetProcAddress(hPMPIModule, "PMPI_Get_version");
+    fn.PMPI_Errhandler_create = (int (*)(MPI_Handler_function *, MPI_Errhandler *))GetProcAddress(hPMPIModule, "PMPI_Errhandler_create");
+    fn.PMPI_Errhandler_set = (int (*)(MPI_Comm, MPI_Errhandler))GetProcAddress(hPMPIModule, "PMPI_Errhandler_set");
+    fn.PMPI_Errhandler_get = (int (*)(MPI_Comm, MPI_Errhandler *))GetProcAddress(hPMPIModule, "PMPI_Errhandler_get");
+    fn.PMPI_Errhandler_free = (int (*)(MPI_Errhandler *))GetProcAddress(hPMPIModule, "PMPI_Errhandler_free");
+    fn.PMPI_Error_string = (int (*)(int, char *, int *))GetProcAddress(hPMPIModule, "PMPI_Error_string");
+    fn.PMPI_Error_class = (int (*)(int, int *))GetProcAddress(hPMPIModule, "PMPI_Error_class");
+    fn.PMPI_Wtime = (double (*)(void))GetProcAddress(hPMPIModule, "PMPI_Wtime");
+    fn.PMPI_Wtick = (double (*)(void))GetProcAddress(hPMPIModule, "PMPI_Wtick");
+    fn.PMPI_Init = (int (*)(int *, char ***))GetProcAddress(hPMPIModule, "PMPI_Init");
+    fn.PMPI_Finalize = (int (*)(void))GetProcAddress(hPMPIModule, "PMPI_Finalize");
+    fn.PMPI_Initialized = (int (*)(int *))GetProcAddress(hPMPIModule, "PMPI_Initialized");
+    fn.PMPI_Abort = (int (*)(MPI_Comm, int))GetProcAddress(hPMPIModule, "PMPI_Abort");
+    fn.PMPI_Pcontrol = (int (*)(const int, ...))GetProcAddress(hPMPIModule, "PMPI_Pcontrol");
+    fn.PMPI_Close_port = (int (*)(char *))GetProcAddress(hPMPIModule, "PMPI_Close_port");
+    fn.PMPI_Comm_accept = (int (*)(char *, MPI_Info, int, MPI_Comm, MPI_Comm *))GetProcAddress(hPMPIModule, "PMPI_Comm_accept");
+    fn.PMPI_Comm_connect = (int (*)(char *, MPI_Info, int, MPI_Comm, MPI_Comm *))GetProcAddress(hPMPIModule, "PMPI_Comm_connect");
+    fn.PMPI_Comm_disconnect = (int (*)(MPI_Comm *))GetProcAddress(hPMPIModule, "PMPI_Comm_disconnect");
+    fn.PMPI_Comm_get_parent = (int (*)(MPI_Comm *))GetProcAddress(hPMPIModule, "PMPI_Comm_get_parent");
+    fn.PMPI_Comm_join = (int (*)(int, MPI_Comm *))GetProcAddress(hPMPIModule, "PMPI_Comm_join");
+    fn.PMPI_Comm_spawn = (int (*)(char *, char *[], int, MPI_Info, int, MPI_Comm, MPI_Comm *, int []))GetProcAddress(hPMPIModule, "PMPI_Comm_spawn");
+    fn.PMPI_Comm_spawn_multiple = (int (*)(int, char *[], char **[], int [], MPI_Info [], int, MPI_Comm, MPI_Comm *, int []))GetProcAddress(hPMPIModule, "PMPI_Comm_spawn_multiple"); 
+    fn.PMPI_Lookup_name = (int (*)(char *, MPI_Info, char *))GetProcAddress(hPMPIModule, "PMPI_Lookup_name");
+    fn.PMPI_Open_port = (int (*)(MPI_Info, char *))GetProcAddress(hPMPIModule, "PMPI_Open_port");
+    fn.PMPI_Publish_name = (int (*)(char *, MPI_Info, char *))GetProcAddress(hPMPIModule, "PMPI_Publish_name");
+    fn.PMPI_Unpublish_name = (int (*)(char *, MPI_Info, char *))GetProcAddress(hPMPIModule, "PMPI_Unpublish_name");
+    fn.PMPI_Accumulate = (int (*)(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype,  MPI_Op, MPI_Win))GetProcAddress(hPMPIModule, "PMPI_Accumulate");
+    fn.PMPI_Get = (int (*)(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype, MPI_Win))GetProcAddress(hPMPIModule, "PMPI_Get");
+    fn.PMPI_Put = (int (*)(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype, MPI_Win))GetProcAddress(hPMPIModule, "PMPI_Put");
+    fn.PMPI_Win_complete = (int (*)(MPI_Win))GetProcAddress(hPMPIModule, "PMPI_Win_complete");
+    fn.PMPI_Win_create = (int (*)(void *, MPI_Aint, int, MPI_Info, MPI_Comm, MPI_Win *))GetProcAddress(hPMPIModule, "PMPI_Win_create");
+    fn.PMPI_Win_fence = (int (*)(int, MPI_Win))GetProcAddress(hPMPIModule, "PMPI_Win_fence");
+    fn.PMPI_Win_free = (int (*)(MPI_Win *))GetProcAddress(hPMPIModule, "PMPI_Win_free");
+    fn.PMPI_Win_get_group = (int (*)(MPI_Win, MPI_Group *))GetProcAddress(hPMPIModule, "PMPI_Win_get_group");
+    fn.PMPI_Win_lock = (int (*)(int, int, int, MPI_Win))GetProcAddress(hPMPIModule, "PMPI_Win_lock");
+    fn.PMPI_Win_post = (int (*)(MPI_Group, int, MPI_Win))GetProcAddress(hPMPIModule, "PMPI_Win_post");
+    fn.PMPI_Win_start = (int (*)(MPI_Group, int, MPI_Win))GetProcAddress(hPMPIModule, "PMPI_Win_start");
+    fn.PMPI_Win_test = (int (*)(MPI_Win, int *))GetProcAddress(hPMPIModule, "PMPI_Win_test");
+    fn.PMPI_Win_unlock = (int (*)(int, MPI_Win))GetProcAddress(hPMPIModule, "PMPI_Win_unlock");
+    fn.PMPI_Win_wait = (int (*)(MPI_Win))GetProcAddress(hPMPIModule, "PMPI_Win_wait");
+    fn.PMPI_Alltoallw = (int (*)(void *, int [], int [], MPI_Datatype [], void *, int [], int [], MPI_Datatype [], MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Alltoallw");
+    fn.PMPI_Exscan = (int (*)(void *, void *, int, MPI_Datatype, MPI_Op, MPI_Comm))GetProcAddress(hPMPIModule, "PMPI_Exscan");
+    fn.PMPI_Add_error_class = (int (*)(int *))GetProcAddress(hPMPIModule, "PMPI_Add_error_class");
+    fn.PMPI_Add_error_code = (int (*)(int, int *))GetProcAddress(hPMPIModule, "PMPI_Add_error_code");
+    fn.PMPI_Add_error_string = (int (*)(int, char *))GetProcAddress(hPMPIModule, "PMPI_Add_error_string");
+    fn.PMPI_Comm_call_errhandler = (int (*)(MPI_Comm, int))GetProcAddress(hPMPIModule, "PMPI_Comm_call_errhandler");
+    fn.PMPI_Comm_create_keyval = (int (*)(MPI_Comm_copy_attr_function *, MPI_Comm_delete_attr_function *, int *, void *))GetProcAddress(hPMPIModule, "PMPI_Comm_create_keyval");
+    fn.PMPI_Comm_delete_attr = (int (*)(MPI_Comm, int))GetProcAddress(hPMPIModule, "PMPI_Comm_delete_attr");
+    fn.PMPI_Comm_free_keyval = (int (*)(int *))GetProcAddress(hPMPIModule, "PMPI_Comm_free_keyval");
+    fn.PMPI_Comm_get_attr = (int (*)(MPI_Comm, int, void *, int *))GetProcAddress(hPMPIModule, "PMPI_Comm_get_attr");
+    fn.PMPI_Comm_get_name = (int (*)(MPI_Comm, char *, int *))GetProcAddress(hPMPIModule, "PMPI_Comm_get_name");
+    fn.PMPI_Comm_set_attr = (int (*)(MPI_Comm, int, void *))GetProcAddress(hPMPIModule, "PMPI_Comm_set_attr");
+    fn.PMPI_Comm_set_name = (int (*)(MPI_Comm, char *))GetProcAddress(hPMPIModule, "PMPI_Comm_set_name");
+    fn.PMPI_File_call_errhandler = (int (*)(MPI_File, int))GetProcAddress(hPMPIModule, "PMPI_File_call_errhandler");
+    fn.PMPI_Grequest_complete = (int (*)(MPI_Request))GetProcAddress(hPMPIModule, "PMPI_Grequest_complete");
+    fn.PMPI_Grequest_start = (int (*)(MPI_Grequest_query_function *, MPI_Grequest_free_function *, MPI_Grequest_cancel_function *, void *, MPI_Request *))GetProcAddress(hPMPIModule, "PMPI_Grequest_start");
+    fn.PMPI_Init_thread = (int (*)(int *, char ***, int, int *))GetProcAddress(hPMPIModule, "PMPI_Init_thread");
+    fn.PMPI_Is_thread_main = (int (*)(int *))GetProcAddress(hPMPIModule, "PMPI_Is_thread_main");
+    fn.PMPI_Query_thread = (int (*)(int *))GetProcAddress(hPMPIModule, "PMPI_Query_thread");
+    fn.PMPI_Status_set_cancelled = (int (*)(MPI_Status *, int))GetProcAddress(hPMPIModule, "PMPI_Status_set_cancelled");
+    fn.PMPI_Status_set_elements = (int (*)(MPI_Status *, MPI_Datatype, int))GetProcAddress(hPMPIModule, "PMPI_Status_set_elements");
+    fn.PMPI_Type_create_keyval = (int (*)(MPI_Type_copy_attr_function *, MPI_Type_delete_attr_function *, int *, void *))GetProcAddress(hPMPIModule, "PMPI_Type_create_keyval");
+    fn.PMPI_Type_delete_attr = (int (*)(MPI_Datatype, int))GetProcAddress(hPMPIModule, "PMPI_Type_delete_attr");
+    fn.PMPI_Type_dup = (int (*)(MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_dup");
+    fn.PMPI_Type_free_keyval = (int (*)(int *))GetProcAddress(hPMPIModule, "PMPI_Type_free_keyval");
+    fn.PMPI_Type_get_attr = (int (*)(MPI_Datatype, int, void *, int *))GetProcAddress(hPMPIModule, "PMPI_Type_get_attr");
+    fn.PMPI_Type_get_contents = (int (*)(MPI_Datatype, int, int, int, int [], MPI_Aint [], MPI_Datatype []))GetProcAddress(hPMPIModule, "PMPI_Type_get_contents");
+    fn.PMPI_Type_get_envelope = (int (*)(MPI_Datatype, int *, int *, int *, int *))GetProcAddress(hPMPIModule, "PMPI_Type_get_envelope");
+    fn.PMPI_Type_get_name = (int (*)(MPI_Datatype, char *, int *))GetProcAddress(hPMPIModule, "PMPI_Type_get_name");
+    fn.PMPI_Type_set_attr = (int (*)(MPI_Datatype, int, void *))GetProcAddress(hPMPIModule, "PMPI_Type_set_attr");
+    fn.PMPI_Type_set_name = (int (*)(MPI_Datatype, char *))GetProcAddress(hPMPIModule, "PMPI_Type_set_name");
+    fn.PMPI_Type_match_size = (int (*)( int, int, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_match_size");
+    fn.PMPI_Win_call_errhandler = (int (*)(MPI_Win, int))GetProcAddress(hPMPIModule, "PMPI_Win_call_errhandler");
+    fn.PMPI_Win_create_keyval = (int (*)(MPI_Win_copy_attr_function *, MPI_Win_delete_attr_function *, int *, void *))GetProcAddress(hPMPIModule, "PMPI_Win_create_keyval");
+    fn.PMPI_Win_delete_attr = (int (*)(MPI_Win, int))GetProcAddress(hPMPIModule, "PMPI_Win_delete_attr");
+    fn.PMPI_Win_free_keyval = (int (*)(int *))GetProcAddress(hPMPIModule, "PMPI_Win_free_keyval");
+    fn.PMPI_Win_get_attr = (int (*)(MPI_Win, int, void *, int *))GetProcAddress(hPMPIModule, "PMPI_Win_get_attr");
+    fn.PMPI_Win_get_name = (int (*)(MPI_Win, char *, int *))GetProcAddress(hPMPIModule, "PMPI_Win_get_name");
+    fn.PMPI_Win_set_attr = (int (*)(MPI_Win, int, void *))GetProcAddress(hPMPIModule, "PMPI_Win_set_attr");
+    fn.PMPI_Win_set_name = (int (*)(MPI_Win, char *))GetProcAddress(hPMPIModule, "PMPI_Win_set_name");
+    fn.PMPI_Alloc_mem = (int (*)(MPI_Aint, MPI_Info info, void *baseptr))GetProcAddress(hPMPIModule, "PMPI_Alloc_mem");
+    fn.PMPI_Comm_create_errhandler = (int (*)(MPI_Comm_errhandler_fn *, MPI_Errhandler *))GetProcAddress(hPMPIModule, "PMPI_Comm_create_errhandler");
+    fn.PMPI_Comm_get_errhandler = (int (*)(MPI_Comm, MPI_Errhandler *))GetProcAddress(hPMPIModule, "PMPI_Comm_get_errhandler");
+    fn.PMPI_Comm_set_errhandler = (int (*)(MPI_Comm, MPI_Errhandler))GetProcAddress(hPMPIModule, "PMPI_Comm_set_errhandler");
+    fn.PMPI_File_create_errhandler = (int (*)(MPI_File_errhandler_fn *, MPI_Errhandler *))GetProcAddress(hPMPIModule, "PMPI_File_create_errhandler");
+    fn.PMPI_File_get_errhandler = (int (*)(MPI_File, MPI_Errhandler *))GetProcAddress(hPMPIModule, "PMPI_File_get_errhandler");
+    fn.PMPI_File_set_errhandler = (int (*)(MPI_File, MPI_Errhandler))GetProcAddress(hPMPIModule, "PMPI_File_set_errhandler");
+    fn.PMPI_Finalized = (int (*)(int *))GetProcAddress(hPMPIModule, "PMPI_Finalized");
+    fn.PMPI_Free_mem = (int (*)(void *))GetProcAddress(hPMPIModule, "PMPI_Free_mem");
+    fn.PMPI_Get_address = (int (*)(void *, MPI_Aint *))GetProcAddress(hPMPIModule, "PMPI_Get_address");
+    fn.PMPI_Info_create = (int (*)(MPI_Info *))GetProcAddress(hPMPIModule, "PMPI_Info_create");
+    fn.PMPI_Info_delete = (int (*)(MPI_Info, char *))GetProcAddress(hPMPIModule, "PMPI_Info_delete");
+    fn.PMPI_Info_dup = (int (*)(MPI_Info, MPI_Info *))GetProcAddress(hPMPIModule, "PMPI_Info_dup");
+    fn.PMPI_Info_free = (int (*)(MPI_Info *info))GetProcAddress(hPMPIModule, "PMPI_Info_free");
+    fn.PMPI_Info_get = (int (*)(MPI_Info, char *, int, char *, int *))GetProcAddress(hPMPIModule, "PMPI_Info_get");
+    fn.PMPI_Info_get_nkeys = (int (*)(MPI_Info, int *))GetProcAddress(hPMPIModule, "PMPI_Info_get_nkeys");
+    fn.PMPI_Info_get_nthkey = (int (*)(MPI_Info, int, char *))GetProcAddress(hPMPIModule, "PMPI_Info_get_nthkey");
+    fn.PMPI_Info_get_valuelen = (int (*)(MPI_Info, char *, int *, int *))GetProcAddress(hPMPIModule, "PMPI_Info_get_valuelen");
+    fn.PMPI_Info_set = (int (*)(MPI_Info, char *, char *))GetProcAddress(hPMPIModule, "PMPI_Info_set");
+    fn.PMPI_Pack_external = (int (*)(char *, void *, int, MPI_Datatype, void *, MPI_Aint, MPI_Aint *))GetProcAddress(hPMPIModule, "PMPI_Pack_external"); 
+    fn.PMPI_Pack_external_size = (int (*)(char *, int, MPI_Datatype, MPI_Aint *))GetProcAddress(hPMPIModule, "PMPI_Pack_external_size"); 
+    fn.PMPI_Request_get_status = (int (*)(MPI_Request, int *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Request_get_status");
+    fn.PMPI_Status_c2f = (int (*)(MPI_Status *, MPI_Fint *))GetProcAddress(hPMPIModule, "PMPI_Status_c2f");
+    fn.PMPI_Status_f2c = (int (*)(MPI_Fint *, MPI_Status *))GetProcAddress(hPMPIModule, "PMPI_Status_f2c");
+    fn.PMPI_Type_create_darray = (int (*)(int, int, int, int [], int [], int [], int [], int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_darray");
+    fn.PMPI_Type_create_hindexed = (int (*)(int, int [], MPI_Aint [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_hindexed");
+    fn.PMPI_Type_create_hvector = (int (*)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_hvector");
+    fn.PMPI_Type_create_indexed_block = (int (*)(int, int, int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_indexed_block");
+    fn.PMPI_Type_create_resized = (int (*)(MPI_Datatype, MPI_Aint, MPI_Aint, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_resized");
+    fn.PMPI_Type_create_struct = (int (*)(int, int [], MPI_Aint [], MPI_Datatype [], MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_struct");
+    fn.PMPI_Type_create_subarray = (int (*)(int, int [], int [], int [], int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_subarray");
+    fn.PMPI_Type_get_extent = (int (*)(MPI_Datatype, MPI_Aint *, MPI_Aint *))GetProcAddress(hPMPIModule, "PMPI_Type_get_extent");
+    fn.PMPI_Type_get_true_extent = (int (*)(MPI_Datatype, MPI_Aint *, MPI_Aint *))GetProcAddress(hPMPIModule, "PMPI_Type_get_true_extent");
+    fn.PMPI_Unpack_external = (int (*)(char *, void *, MPI_Aint, MPI_Aint *, void *, int, MPI_Datatype))GetProcAddress(hPMPIModule, "PMPI_Unpack_external"); 
+    fn.PMPI_Win_create_errhandler = (int (*)(MPI_Win_errhandler_fn *, MPI_Errhandler *))GetProcAddress(hPMPIModule, "PMPI_Win_create_errhandler");
+    fn.PMPI_Win_get_errhandler = (int (*)(MPI_Win, MPI_Errhandler *))GetProcAddress(hPMPIModule, "PMPI_Win_get_errhandler");
+    fn.PMPI_Win_set_errhandler = (int (*)(MPI_Win, MPI_Errhandler))GetProcAddress(hPMPIModule, "PMPI_Win_set_errhandler");
+    fn.PMPI_Type_create_f90_integer = (int (*)( int, MPI_Datatype * ))GetProcAddress(hPMPIModule, "PMPI_Type_create_f90_integer");
+    fn.PMPI_Type_create_f90_real = (int (*)( int, int, MPI_Datatype * ))GetProcAddress(hPMPIModule, "PMPI_Type_create_f90_real");
+    fn.PMPI_Type_create_f90_complex = (int (*)( int, int, MPI_Datatype * ))GetProcAddress(hPMPIModule, "PMPI_Type_create_f90_complex");
 
     /* Extra exported internal symbols */
-    fn.MPIR_Keyval_set_fortran = (void (*)(int))GetProcAddress(hModule, "MPIR_Keyval_set_fortran");
-    fn.MPIR_Keyval_set_fortran90 = (void (*)(int))GetProcAddress(hModule, "MPIR_Keyval_set_fortran90");
-    fn.MPIR_Grequest_set_lang_f77 = (void (*)(MPI_Request))GetProcAddress(hModule, "MPIR_Grequest_set_lang_f77");
-    fn.MPIR_Keyval_set_cxx = (void (*)(int, void (*)(void), void (*)(void)))GetProcAddress(hModule, "MPIR_Keyval_set_cxx");
-    fn.MPIR_Errhandler_set_cxx = (void (*)(MPI_Errhandler, void (*)(void)))GetProcAddress(hModule, "MPIR_Errhandler_set_cxx");
-    fn.MPIR_Op_set_cxx = (void (*)(MPI_Op, void (*)(void)))GetProcAddress(hModule, "MPIR_Op_set_cxx");
-    fn.MPID_Wtick = (double (*)(void))GetProcAddress(hModule, "MPID_Wtick");
-    fn.MPID_Wtime_todouble = (void (*)(MPID_Time_t *, double *))GetProcAddress(hModule, "MPID_Wtime_todouble");
+    fn.MPIR_Keyval_set_fortran = (void (*)(int))GetProcAddress(hPMPIModule, "MPIR_Keyval_set_fortran");
+    fn.MPIR_Keyval_set_fortran90 = (void (*)(int))GetProcAddress(hPMPIModule, "MPIR_Keyval_set_fortran90");
+    fn.MPIR_Grequest_set_lang_f77 = (void (*)(MPI_Request))GetProcAddress(hPMPIModule, "MPIR_Grequest_set_lang_f77");
+    fn.MPIR_Keyval_set_cxx = (void (*)(int, void (*)(void), void (*)(void)))GetProcAddress(hPMPIModule, "MPIR_Keyval_set_cxx");
+    fn.MPIR_Errhandler_set_cxx = (void (*)(MPI_Errhandler, void (*)(void)))GetProcAddress(hPMPIModule, "MPIR_Errhandler_set_cxx");
+    fn.MPIR_Op_set_cxx = (void (*)(MPI_Op, void (*)(void)))GetProcAddress(hPMPIModule, "MPIR_Op_set_cxx");
+    fn.MPID_Wtick = (double (*)(void))GetProcAddress(hPMPIModule, "MPID_Wtick");
+    fn.MPID_Wtime_todouble = (void (*)(MPID_Time_t *, double *))GetProcAddress(hPMPIModule, "MPID_Wtime_todouble");
 
     return TRUE;
 }
@@ -1318,12 +1347,14 @@ static BOOL LoadFunctions(const char *dll_name)
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
     char *dll_name, *channel;
+    char *wrapper_dll_name = NULL;
     char name[MAX_DLL_NAME];
     BOOL result = TRUE;
 
     switch (fdwReason)
     {
         case DLL_PROCESS_ATTACH:
+	    /* Get the mpi dll name */
 	    /* precedence goes to the dll name so check for it first */
 	    dll_name = getenv(MPI_ENV_DLL_NAME);
 	    if (!dll_name)
@@ -1335,7 +1366,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 		    /* ignore the sock channel since it is the default and is not named mpich2sock.dll */
 		    if (strncmp(channel, "sock", 5))
 		    {
-			snprintf(name, MAX_DLL_NAME, "mpich2%s%s.dll", channel, DEBUG_POSTFIX);
+			snprintf(name, MAX_DLL_NAME, DLL_FORMAT_STRING, channel);
 			dll_name = name;
 		    }
 		}
@@ -1345,7 +1376,16 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 		    dll_name = MPI_DEFAULT_DLL_NAME;
 		}
 	    }
-	    result = LoadFunctions(dll_name);
+
+	    /* Get the mpi wrapper dll name */
+	    wrapper_dll_name = getenv(MPI_ENV_MPIWRAP_DLL_NAME);
+	    if (wrapper_dll_name)
+	    {
+		/* FIXME: Should we allow for short wrapper names like 'mpe'? */
+	    }
+
+	    /* Load the functions */
+	    result = LoadFunctions(dll_name, wrapper_dll_name);
             break;
 
         case DLL_THREAD_ATTACH:
@@ -1407,20 +1447,39 @@ int MPI_Init( int *argc, char ***argv )
     int result;
     void **p;
     int **i;
+
     result = fn.MPI_Init(argc, argv);
     /* These variables need to be initialized after MPI_Init is called */
-    p = (void**)GetProcAddress(hModule, "MPIR_F_MPI_BOTTOM");
-    MPIR_F_MPI_BOTTOM = (p) ? *p : NULL;
-    p = (void**)GetProcAddress(hModule, "MPIR_F_MPI_IN_PLACE");
-    MPIR_F_MPI_IN_PLACE = (p) ? *p : NULL;
-    p = (void**)GetProcAddress(hModule, "MPI_F_STATUS_IGNORE");
-    MPI_F_STATUS_IGNORE = (p) ? *p : NULL;
-    p = (void**)GetProcAddress(hModule, "MPI_F_STATUSES_IGNORE");
-    MPI_F_STATUSES_IGNORE = (p) ? *p : NULL;
-    i = (int**)GetProcAddress(hModule, "MPI_F_ERRCODES_IGNORE");
-    MPI_F_ERRCODES_IGNORE = (i) ? *i : NULL;
-    p = (void**)GetProcAddress(hModule, "MPI_F_ARGVS_NULL");
-    MPI_F_ARGVS_NULL = (p) ? *p : NULL;
+    p = (void**)GetProcAddress(hMPIModule, "MPIR_F_MPI_BOTTOM");
+    if (p)
+    {
+	MPIR_F_MPI_BOTTOM = *p;
+    }
+    p = (void**)GetProcAddress(hMPIModule, "MPIR_F_MPI_IN_PLACE");
+    if (p)
+    {
+	MPIR_F_MPI_IN_PLACE = *p;
+    }
+    p = (void**)GetProcAddress(hMPIModule, "MPI_F_STATUS_IGNORE");
+    if (p)
+    {
+	MPI_F_STATUS_IGNORE = *p;
+    }
+    p = (void**)GetProcAddress(hMPIModule, "MPI_F_STATUSES_IGNORE");
+    if (p)
+    {
+	MPI_F_STATUSES_IGNORE = *p;
+    }
+    i = (int**)GetProcAddress(hMPIModule, "MPI_F_ERRCODES_IGNORE");
+    if (i)
+    {
+	MPI_F_ERRCODES_IGNORE = *i;
+    }
+    p = (void**)GetProcAddress(hMPIModule, "MPI_F_ARGVS_NULL");
+    if (p)
+    {
+	MPI_F_ARGVS_NULL = *p;
+    }
     return result;
 }
 
@@ -1431,18 +1490,36 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     int **i;
     result = fn.MPI_Init_thread(argc, argv, required, provided);
     /* These variables need to be initialized after MPI_Init is called */
-    p = (void**)GetProcAddress(hModule, "MPIR_F_MPI_BOTTOM");
-    MPIR_F_MPI_BOTTOM = (p) ? *p : NULL;
-    p = (void**)GetProcAddress(hModule, "MPIR_F_MPI_IN_PLACE");
-    MPIR_F_MPI_IN_PLACE = (p) ? *p : NULL;
-    p = (void**)GetProcAddress(hModule, "MPI_F_STATUS_IGNORE");
-    MPI_F_STATUS_IGNORE = (p) ? *p : NULL;
-    p = (void**)GetProcAddress(hModule, "MPI_F_STATUSES_IGNORE");
-    MPI_F_STATUSES_IGNORE = (p) ? *p : NULL;
-    i = (int**)GetProcAddress(hModule, "MPI_F_ERRCODES_IGNORE");
-    MPI_F_ERRCODES_IGNORE = (i) ? *i : NULL;
-    p = (void**)GetProcAddress(hModule, "MPI_F_ARGVS_NULL");
-    MPI_F_ARGVS_NULL = (p) ? *p : NULL;
+    p = (void**)GetProcAddress(hMPIModule, "MPIR_F_MPI_BOTTOM");
+    if (p)
+    {
+	MPIR_F_MPI_BOTTOM = *p;
+    }
+    p = (void**)GetProcAddress(hMPIModule, "MPIR_F_MPI_IN_PLACE");
+    if (p)
+    {
+	MPIR_F_MPI_IN_PLACE = *p;
+    }
+    p = (void**)GetProcAddress(hMPIModule, "MPI_F_STATUS_IGNORE");
+    if (p)
+    {
+	MPI_F_STATUS_IGNORE = *p;
+    }
+    p = (void**)GetProcAddress(hMPIModule, "MPI_F_STATUSES_IGNORE");
+    if (p)
+    {
+	MPI_F_STATUSES_IGNORE = *p;
+    }
+    i = (int**)GetProcAddress(hMPIModule, "MPI_F_ERRCODES_IGNORE");
+    if (i)
+    {
+	MPI_F_ERRCODES_IGNORE = *i;
+    }
+    p = (void**)GetProcAddress(hMPIModule, "MPI_F_ARGVS_NULL");
+    if (p)
+    {
+	MPI_F_ARGVS_NULL = *p;
+    }
     return result;
 }
 
@@ -3108,20 +3185,39 @@ int PMPI_Init( int *argc, char ***argv )
     int result;
     void **p;
     int **i;
+
     result = fn.PMPI_Init(argc, argv);
     /* These variables need to be initialized after MPI_Init is called */
-    p = (void**)GetProcAddress(hModule, "MPIR_F_MPI_BOTTOM");
-    MPIR_F_MPI_BOTTOM = (p) ? *p : NULL;
-    p = (void**)GetProcAddress(hModule, "MPIR_F_MPI_IN_PLACE");
-    MPIR_F_MPI_IN_PLACE = (p) ? *p : NULL;
-    p = (void**)GetProcAddress(hModule, "MPI_F_STATUS_IGNORE");
-    MPI_F_STATUS_IGNORE = (p) ? *p : NULL;
-    p = (void**)GetProcAddress(hModule, "MPI_F_STATUSES_IGNORE");
-    MPI_F_STATUSES_IGNORE = (p) ? *p : NULL;
-    i = (int**)GetProcAddress(hModule, "MPI_F_ERRCODES_IGNORE");
-    MPI_F_ERRCODES_IGNORE = (i) ? *i : NULL;
-    p = (void**)GetProcAddress(hModule, "MPI_F_ARGVS_NULL");
-    MPI_F_ARGVS_NULL = (p) ? *p : NULL;
+    p = (void**)GetProcAddress(hPMPIModule, "MPIR_F_MPI_BOTTOM");
+    if (p)
+    {
+	MPIR_F_MPI_BOTTOM = *p;
+    }
+    p = (void**)GetProcAddress(hPMPIModule, "MPIR_F_MPI_IN_PLACE");
+    if (p)
+    {
+	MPIR_F_MPI_IN_PLACE = *p;
+    }
+    p = (void**)GetProcAddress(hPMPIModule, "MPI_F_STATUS_IGNORE");
+    if (p)
+    {
+	MPI_F_STATUS_IGNORE = *p;
+    }
+    p = (void**)GetProcAddress(hPMPIModule, "MPI_F_STATUSES_IGNORE");
+    if (p)
+    {
+	MPI_F_STATUSES_IGNORE = *p;
+    }
+    i = (int**)GetProcAddress(hPMPIModule, "MPI_F_ERRCODES_IGNORE");
+    if (i)
+    {
+	MPI_F_ERRCODES_IGNORE = *i;
+    }
+    p = (void**)GetProcAddress(hPMPIModule, "MPI_F_ARGVS_NULL");
+    if (p)
+    {
+	MPI_F_ARGVS_NULL = *p;
+    }
     return result;
 }
 
@@ -3132,18 +3228,36 @@ int PMPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     int **i;
     result = fn.PMPI_Init_thread(argc, argv, required, provided);
     /* These variables need to be initialized after MPI_Init is called */
-    p = (void**)GetProcAddress(hModule, "MPIR_F_MPI_BOTTOM");
-    MPIR_F_MPI_BOTTOM = (p) ? *p : NULL;
-    p = (void**)GetProcAddress(hModule, "MPIR_F_MPI_IN_PLACE");
-    MPIR_F_MPI_IN_PLACE = (p) ? *p : NULL;
-    p = (void**)GetProcAddress(hModule, "MPI_F_STATUS_IGNORE");
-    MPI_F_STATUS_IGNORE = (p) ? *p : NULL;
-    p = (void**)GetProcAddress(hModule, "MPI_F_STATUSES_IGNORE");
-    MPI_F_STATUSES_IGNORE = (p) ? *p : NULL;
-    i = (int**)GetProcAddress(hModule, "MPI_F_ERRCODES_IGNORE");
-    MPI_F_ERRCODES_IGNORE = (i) ? *i : NULL;
-    p = (void**)GetProcAddress(hModule, "MPI_F_ARGVS_NULL");
-    MPI_F_ARGVS_NULL = (p) ? *p : NULL;
+    p = (void**)GetProcAddress(hPMPIModule, "MPIR_F_MPI_BOTTOM");
+    if (p)
+    {
+	MPIR_F_MPI_BOTTOM = *p;
+    }
+    p = (void**)GetProcAddress(hPMPIModule, "MPIR_F_MPI_IN_PLACE");
+    if (p)
+    {
+	MPIR_F_MPI_IN_PLACE = *p;
+    }
+    p = (void**)GetProcAddress(hPMPIModule, "MPI_F_STATUS_IGNORE");
+    if (p)
+    {
+	MPI_F_STATUS_IGNORE = *p;
+    }
+    p = (void**)GetProcAddress(hPMPIModule, "MPI_F_STATUSES_IGNORE");
+    if (p)
+    {
+	MPI_F_STATUSES_IGNORE = *p;
+    }
+    i = (int**)GetProcAddress(hPMPIModule, "MPI_F_ERRCODES_IGNORE");
+    if (i)
+    {
+	MPI_F_ERRCODES_IGNORE = *i;
+    }
+    p = (void**)GetProcAddress(hPMPIModule, "MPI_F_ARGVS_NULL");
+    if (p)
+    {
+	MPI_F_ARGVS_NULL = *p;
+    }
     return result;
 }
 
