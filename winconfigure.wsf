@@ -104,7 +104,7 @@
 bUseIbRDMA = False
 bRemoveFortran = False
 bWin64 = False
-bUseCycleCounter = True
+bUseCycleCounter = False
 bForce = True
 bMcxx = False
 bf77_name_lower = False
