@@ -386,7 +386,7 @@ def mpdman():
                 elif msg['cmd'] == 'pmi_get':
                     if msg['from_rank'] == myRank:
 			if pmiSocket:  # may have disappeared in early shutdown
-                            pmiMsgToSend = 'cmd=get_result rc=-1 msg="%s"\n' % msg['key']
+                            pmiMsgToSend = 'cmd=get_result rc=-1 key="%s"\n' % msg['key']
                             mpd_send_one_line(pmiSocket,pmiMsgToSend)
                     else:
                         key = msg['key']
@@ -673,172 +673,179 @@ def mpdman():
                             kill(pgrp,SIGKILL)   # may be reaped by sighandler
                         except:
                             pass
-                else:
-                    parsedMsg = parse_pmi_msg(line)
-		    if not parsedMsg.has_key('cmd'):
-                        mpd_print(1, "unrecognized pmi msg (no cmd) :%s:" % line )
-                        continue
-		    # invalid_executable is sent BEFORE client actually starts
-                    if parsedMsg['cmd'] == 'invalid_executable':
-                        msgToSend = { 'cmd' : 'invalid_executable', 'src' : myId, 'jobid' : jobid,
-                                      'rank' : myRank, 'exec' : clientPgm,
-                                      'reason' : parsedMsg['reason']  }
+                    continue
+                if line.startswith('mcmd='):
+                    line = line[1:-1]  # strip off the leading m and trailing \n
+                    templine = ''
+                    while not templine.startswith('endcmd'):
+                        templine = mpd_recv_one_line(pmiSocket)
+                        if not templine.startswith('endcmd'):
+                            line += templine[:-1]  # strip off the trailing \n
+                parsedMsg = parse_pmi_msg(line)
+                if not parsedMsg.has_key('cmd'):
+                    mpd_print(1, "unrecognized pmi msg (no cmd) :%s:" % line )
+                    continue
+                # invalid_executable is sent BEFORE client actually starts
+                if parsedMsg['cmd'] == 'invalid_executable':
+                    msgToSend = { 'cmd' : 'invalid_executable', 'src' : myId, 'jobid' : jobid,
+                                  'rank' : myRank, 'exec' : clientPgm,
+                                  'reason' : parsedMsg['reason']  }
+                    mpd_send_one_msg(rhsSocket,msgToSend)
+                    if conSocket:
+                        mpd_send_one_msg_noprint(conSocket,msgToSend)
+                elif parsedMsg['cmd'] == 'init':
+                    pmiCollectiveJob = 1
+                elif parsedMsg['cmd'] == 'get_my_kvsname':
+                    pmiMsgToSend = 'cmd=my_kvsname kvsname=%s\n' % (default_kvsname)
+                    mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                elif parsedMsg['cmd'] == 'get_maxes':
+                    pmiMsgToSend = 'cmd=maxes kvsname_max=4096 ' + \
+                                   'keylen_max=4096 vallen_max=4096\n'
+                    mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                elif parsedMsg['cmd'] == 'create_kvs':
+                    new_kvsname = kvsname_template + str(kvs_next_id)
+                    KVSs[new_kvsname] = {}
+                    kvs_next_id += 1
+                    pmiMsgToSend = 'cmd=newkvs kvsname=%s\n' % (new_kvsname)
+                    mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                elif parsedMsg['cmd'] == 'destroy_kvs':
+                    kvsname = parsedMsg['kvsname']
+                    try:
+                        del KVSs[kvsname]
+                        pmiMsgToSend = 'cmd=kvs_destroyed rc=0\n'
+                    except:
+                        pmiMsgToSend = 'cmd=kvs_destroyed rc=-1\n'
+                    mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                elif parsedMsg['cmd'] == 'put':
+                    kvsname = parsedMsg['kvsname']
+                    key = parsedMsg['key']
+                    value = parsedMsg['value']
+                    try:
+                        KVSs[kvsname][key] = value
+                        pmiMsgToSend = 'cmd=put_result rc=0\n'
+                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                    except Exception, errmsg:
+                        pmiMsgToSend = 'cmd=put_result rc=-1 msg="%s"\n' % errmsg
+                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                elif parsedMsg['cmd'] == 'barrier_in':
+                    pmiBarrierInRecvd = 1
+                    if myRank == 0  or  holdingPMIBarrierLoop1:
+                        msgToSend = { 'cmd' : 'pmi_barrier_loop_1' }
                         mpd_send_one_msg(rhsSocket,msgToSend)
-                        if conSocket:
-                            mpd_send_one_msg_noprint(conSocket,msgToSend)
-                    elif parsedMsg['cmd'] == 'init':
-                        pmiCollectiveJob = 1
-                    elif parsedMsg['cmd'] == 'get_my_kvsname':
-                        pmiMsgToSend = 'cmd=my_kvsname kvsname=%s\n' % (default_kvsname)
+                elif parsedMsg['cmd'] == 'get':
+                    key = parsedMsg['key']
+                    kvsname = parsedMsg['kvsname']
+                    if KVSs.has_key(kvsname)  and  KVSs[kvsname].has_key(key):
+                        value = KVSs[kvsname][key]
+                        pmiMsgToSend = 'cmd=get_result rc=0 value=%s\n' % (value)
                         mpd_send_one_line(pmiSocket,pmiMsgToSend)
-                    elif parsedMsg['cmd'] == 'get_maxes':
-                        pmiMsgToSend = 'cmd=maxes kvsname_max=4096 ' + \
-                                       'keylen_max=4096 vallen_max=4096\n'
-                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
-                    elif parsedMsg['cmd'] == 'create_kvs':
-                        new_kvsname = kvsname_template + str(kvs_next_id)
-                        KVSs[new_kvsname] = {}
-                        kvs_next_id += 1
-                        pmiMsgToSend = 'cmd=newkvs kvsname=%s\n' % (new_kvsname)
-                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
-                    elif parsedMsg['cmd'] == 'destroy_kvs':
-                        kvsname = parsedMsg['kvsname']
-                        try:
-                            del KVSs[kvsname]
-                            pmiMsgToSend = 'cmd=kvs_destroyed rc=0\n'
-                        except:
-                            pmiMsgToSend = 'cmd=kvs_destroyed rc=-1\n'
-                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
-                    elif parsedMsg['cmd'] == 'put':
-                        kvsname = parsedMsg['kvsname']
-                        key = parsedMsg['key']
-                        value = parsedMsg['value']
-                        try:
-                            KVSs[kvsname][key] = value
-                            pmiMsgToSend = 'cmd=put_result rc=0\n'
-                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
-                        except Exception, errmsg:
-                            pmiMsgToSend = 'cmd=put_result rc=-1 msg="%s"\n' % errmsg
-                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
-                    elif parsedMsg['cmd'] == 'barrier_in':
-                        pmiBarrierInRecvd = 1
-                        if myRank == 0  or  holdingPMIBarrierLoop1:
-                            msgToSend = { 'cmd' : 'pmi_barrier_loop_1' }
-                            mpd_send_one_msg(rhsSocket,msgToSend)
-                    elif parsedMsg['cmd'] == 'get':
-                        key = parsedMsg['key']
-                        kvsname = parsedMsg['kvsname']
-                        if KVSs.has_key(kvsname)  and  KVSs[kvsname].has_key(key):
-                            value = KVSs[kvsname][key]
-                            pmiMsgToSend = 'cmd=get_result rc=0 value=%s\n' % (value)
-                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
-                        else:
-                            msgToSend = { 'cmd' : 'pmi_get', 'key' : key,
-                                          'kvsname' : kvsname, 'from_rank' : myRank }
-                            mpd_send_one_msg(rhsSocket,msgToSend)
-                    elif parsedMsg['cmd'] == 'getbyidx':
-                        kvsname = parsedMsg['kvsname']
-                        idx = int(parsedMsg['idx'])
-                        if idx == 0:
-                            msgToSend = { 'cmd' : 'pmi_getbyidx', 'kvsname' : kvsname,
-                                          'from_rank' : myRank, 'kvs' : KVSs[default_kvsname] }
-                            mpd_send_one_msg(rhsSocket,msgToSend)
-                        else:
-                            if len(KVSs[default_kvsname].keys()) > idx:
-                                key = KVSs[default_kvsname].keys()[idx]
-                                val = KVSs[default_kvsname][key]
-                                nextidx = idx + 1
-                                pmiMsgToSend = 'cmd=getbyidx_results rc=0 nextidx=%d key=%s val=%s\n' % \
-                                               (nextidx,key,val)
-                            else:
-                                pmiMsgToSend = 'cmd=getbyidx_results rc=-2 reason=no_more_keyvals\n'
-                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
-                    elif parsedMsg['cmd'] == 'spawn':
-                        ## This proc may produce stdout and stderr; do this early so I
-                        ## won't exit before child sets up its conns with me.
-                        ## NOTE: if you spawn a non-MPI job, it may not send these msgs
-                        ## in which case adding 2 to numWithIO will cause the pgm to hang.
-                        numWithIO += 2
-                        nprocs  = int(parsedMsg['nprocs'])
-                        hosts   = { (0,nprocs-1) : '_any_' }
-                        execs   = { (0,nprocs-1) : parsedMsg['execname'] }
-                        users   = { (0,nprocs-1) : mpd_get_my_username() }
-                        cwds    = { (0,nprocs-1) : environ['MPDMAN_CWD'] }
-                        paths   = { (0,nprocs-1) : '' }
-                        envvars = { (0,nprocs-1) : { 'MPI_UNIVERSE_SIZE' : '1000',
-                                                     'MPI_APPNUM' : '736' } }
-                        ##### args    = { (0,nprocs-1) : [ parsedMsg['args'] ] }
-                        ##### args    = { (0,nprocs-1) : [ 'AA', 'BB', 'CC' ] }
-                        cliArgs = []
-                        cliArgcnt = int(parsedMsg['argcnt'])
-                        for i in range(1,cliArgcnt+1):    # start at 1
-                            cliArgs.append(parsedMsg['arg%d' % i])
-                        args = { (0,nprocs-1) : cliArgs }
-                        spawnedCnt += 1    # non-zero to use in msg below
-                        msgToSend = { 'cmd' : 'spawn',
-                                      'conhost'  : gethostname(),
-                                      'conport'  : myPort,
-                                      'spawned'  : spawnedCnt,
-                                      'nstarted' : 0,
-                                      'nprocs'   : nprocs,
-                                      'hosts'    : hosts,
-                                      'execs'    : execs,
-                                      'users'    : users,
-                                      'cwds'     : cwds,
-                                      'paths'    : paths,
-                                      'args'     : args,
-                                      'envvars'  : envvars
-                                    }
-                        mpd_send_one_msg(mpdSocket,msgToSend)
-                        # I could send the preput_info along but will keep it here
-                        # and let the spawnee call me up and ask for it; he will
-                        # call me anyway since I am his parent in the tree.  So, I
-                        # will create a KVS to hold the info until he calls
-                        spawnedKVSname = 'mpdman_kvs_for_spawned_' + str(spawnedCnt)
-                        KVSs[spawnedKVSname] = {}
-                        preput_num = int(parsedMsg['preput_num'])
-                        for i in range(0,preput_num):
-                            preput_key = parsedMsg['preput_key_%d' % i]
-                            preput_val = parsedMsg['preput_val_%d' % i]
-                            KVSs[spawnedKVSname][preput_key] = preput_val
-                    elif parsedMsg['cmd'] == 'finalize':
-                        pmiCollectiveJob = 0
-                    elif parsedMsg['cmd'] == 'client_bnr_fence_in':    ## BNR
-                        pmiBarrierInRecvd = 1
-                        if myRank == 0  or  holdingPMIBarrierLoop1:
-                            msgToSend = { 'cmd' : 'pmi_barrier_loop_1' }
-                            mpd_send_one_msg(rhsSocket,msgToSend)
-                    elif parsedMsg['cmd'] == 'client_bnr_put':         ## BNR
-                        key = parsedMsg['attr']
-                        value = parsedMsg['val']
-                        try:
-                            KVSs[default_kvsname][key] = value
-                            pmiMsgToSend = 'cmd=put_result rc=0\n'
-                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
-                        except Exception, errmsg:
-                            pmiMsgToSend = 'cmd=put_result rc=-1 msg="%s"\n' % errmsg
-                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
-                    elif parsedMsg['cmd'] == 'client_bnr_get':          ## BNR
-                        key = parsedMsg['attr']
-                        if KVSs[default_kvsname].has_key(key):
-                            value = KVSs[default_kvsname][key]
-                            pmiMsgToSend = 'cmd=client_bnr_get_output rc=0 val=%s\n' % (value)
-                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
-                        else:
-                            msgToSend = { 'cmd' : 'bnr_get', 'key' : key,
-                                          'kvsname' : kvsname, 'from_rank' : myRank }
-                            mpd_send_one_msg(rhsSocket,msgToSend)
-                    elif parsedMsg['cmd'] == 'client_ready':               ## BNR
-                        ## continue to wait for accepting_signals
-                        pass
-                    elif parsedMsg['cmd'] == 'accepting_signals':          ## BNR
-                        ## handle it like a barrier_in ??
-                        pmiBarrierInRecvd = 1
-                        doingBNR = 1    ## BNR
-                    elif parsedMsg['cmd'] == 'interrupt_peer_with_msg':    ## BNR
-                        mpd_send_one_msg(rhsSocket,parsedMsg)
                     else:
-                        mpd_print(1, "unrecognized pmi msg :%s:" % line )
+                        msgToSend = { 'cmd' : 'pmi_get', 'key' : key,
+                                      'kvsname' : kvsname, 'from_rank' : myRank }
+                        mpd_send_one_msg(rhsSocket,msgToSend)
+                elif parsedMsg['cmd'] == 'getbyidx':
+                    kvsname = parsedMsg['kvsname']
+                    idx = int(parsedMsg['idx'])
+                    if idx == 0:
+                        msgToSend = { 'cmd' : 'pmi_getbyidx', 'kvsname' : kvsname,
+                                      'from_rank' : myRank, 'kvs' : KVSs[default_kvsname] }
+                        mpd_send_one_msg(rhsSocket,msgToSend)
+                    else:
+                        if len(KVSs[default_kvsname].keys()) > idx:
+                            key = KVSs[default_kvsname].keys()[idx]
+                            val = KVSs[default_kvsname][key]
+                            nextidx = idx + 1
+                            pmiMsgToSend = 'cmd=getbyidx_results rc=0 nextidx=%d key=%s val=%s\n' % \
+                                           (nextidx,key,val)
+                        else:
+                            pmiMsgToSend = 'cmd=getbyidx_results rc=-2 reason=no_more_keyvals\n'
+                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                elif parsedMsg['cmd'] == 'spawn':
+                    ## This proc may produce stdout and stderr; do this early so I
+                    ## won't exit before child sets up its conns with me.
+                    ## NOTE: if you spawn a non-MPI job, it may not send these msgs
+                    ## in which case adding 2 to numWithIO will cause the pgm to hang.
+                    numWithIO += 2
+                    nprocs  = int(parsedMsg['nprocs'])
+                    hosts   = { (0,nprocs-1) : '_any_' }
+                    execs   = { (0,nprocs-1) : parsedMsg['execname'] }
+                    users   = { (0,nprocs-1) : mpd_get_my_username() }
+                    cwds    = { (0,nprocs-1) : environ['MPDMAN_CWD'] }
+                    paths   = { (0,nprocs-1) : '' }
+                    envvars = { (0,nprocs-1) : { 'MPI_UNIVERSE_SIZE' : '1000',
+                                                 'MPI_APPNUM' : '736' } }
+                    ##### args    = { (0,nprocs-1) : [ parsedMsg['args'] ] }
+                    ##### args    = { (0,nprocs-1) : [ 'AA', 'BB', 'CC' ] }
+                    cliArgs = []
+                    cliArgcnt = int(parsedMsg['argcnt'])
+                    for i in range(1,cliArgcnt+1):    # start at 1
+                        cliArgs.append(parsedMsg['arg%d' % i])
+                    args = { (0,nprocs-1) : cliArgs }
+                    spawnedCnt += 1    # non-zero to use in msg below
+                    msgToSend = { 'cmd' : 'spawn',
+                                  'conhost'  : gethostname(),
+                                  'conport'  : myPort,
+                                  'spawned'  : spawnedCnt,
+                                  'nstarted' : 0,
+                                  'nprocs'   : nprocs,
+                                  'hosts'    : hosts,
+                                  'execs'    : execs,
+                                  'users'    : users,
+                                  'cwds'     : cwds,
+                                  'paths'    : paths,
+                                  'args'     : args,
+                                  'envvars'  : envvars
+                                }
+                    mpd_send_one_msg(mpdSocket,msgToSend)
+                    # I could send the preput_info along but will keep it here
+                    # and let the spawnee call me up and ask for it; he will
+                    # call me anyway since I am his parent in the tree.  So, I
+                    # will create a KVS to hold the info until he calls
+                    spawnedKVSname = 'mpdman_kvs_for_spawned_' + str(spawnedCnt)
+                    KVSs[spawnedKVSname] = {}
+                    preput_num = int(parsedMsg['preput_num'])
+                    for i in range(0,preput_num):
+                        preput_key = parsedMsg['preput_key_%d' % i]
+                        preput_val = parsedMsg['preput_val_%d' % i]
+                        KVSs[spawnedKVSname][preput_key] = preput_val
+                elif parsedMsg['cmd'] == 'finalize':
+                    pmiCollectiveJob = 0
+                elif parsedMsg['cmd'] == 'client_bnr_fence_in':    ## BNR
+                    pmiBarrierInRecvd = 1
+                    if myRank == 0  or  holdingPMIBarrierLoop1:
+                        msgToSend = { 'cmd' : 'pmi_barrier_loop_1' }
+                        mpd_send_one_msg(rhsSocket,msgToSend)
+                elif parsedMsg['cmd'] == 'client_bnr_put':         ## BNR
+                    key = parsedMsg['attr']
+                    value = parsedMsg['val']
+                    try:
+                        KVSs[default_kvsname][key] = value
+                        pmiMsgToSend = 'cmd=put_result rc=0\n'
+                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                    except Exception, errmsg:
+                        pmiMsgToSend = 'cmd=put_result rc=-1 msg="%s"\n' % errmsg
+                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                elif parsedMsg['cmd'] == 'client_bnr_get':          ## BNR
+                    key = parsedMsg['attr']
+                    if KVSs[default_kvsname].has_key(key):
+                        value = KVSs[default_kvsname][key]
+                        pmiMsgToSend = 'cmd=client_bnr_get_output rc=0 val=%s\n' % (value)
+                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                    else:
+                        msgToSend = { 'cmd' : 'bnr_get', 'key' : key,
+                                      'kvsname' : kvsname, 'from_rank' : myRank }
+                        mpd_send_one_msg(rhsSocket,msgToSend)
+                elif parsedMsg['cmd'] == 'client_ready':               ## BNR
+                    ## continue to wait for accepting_signals
+                    pass
+                elif parsedMsg['cmd'] == 'accepting_signals':          ## BNR
+                    ## handle it like a barrier_in ??
+                    pmiBarrierInRecvd = 1
+                    doingBNR = 1    ## BNR
+                elif parsedMsg['cmd'] == 'interrupt_peer_with_msg':    ## BNR
+                    mpd_send_one_msg(rhsSocket,parsedMsg)
+                else:
+                    mpd_print(1, "unrecognized pmi msg :%s:" % line )
             elif readySocket == conSocket:
                 msg = mpd_recv_one_msg(conSocket)
                 if not msg:
