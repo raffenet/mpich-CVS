@@ -43,7 +43,7 @@
 \def\makeustext{\catcode`\_=11}
 %\tpageoneskip
 \ANLTMTitle{MPICH Abstract Device Interface\\
-Version 3.1\\
+Version 3.2\\
 Reference Manual\\\ \\Draft of \today}{\em 
 William Gropp\\
 Ewing Lusk\\
@@ -482,7 +482,7 @@ the next step.  This feature influenced the design of the
 \end{enumerate}
 
 \subsubsection{Multi-method Communication}
-An important implementation of the this ADI is the model multi-method
+An important implementation of this ADI is the model multi-method
 implementation, based on separate message queues for each method.
 This device illustrates a more complex use of the ADI interface.  It
 implements not only the MPID CORE but most of the point-to-point
@@ -712,64 +712,7 @@ MPICH implementation, depending on their objectives.
   interface and library routines, and not implement any of the ADI-3 functions.
 \end{enumerate}
 
-\subsection{Steps Needed in Implementing a Device}
-\begin{enumerate}
-\item \code{mpiexec}.  Define how \mpich\ creates the correct
-\code{mpiexec}.  There must be an \code{mpiexec} target in the
-device's \file{Makefile}.
-
-\item Installation.  Define how \mpich\ gets the proper device-specific files
-  installed; e.g., if the device uses the multi-purpose demon
-  (\code{mpd}), ensure that the \code{mpd} is installed.  Provide an
-  \code{install} target in the device's \file{Makefile}.
-
-\item Device-specific documentation, such as environment variables and
-  command-line arguments used only by a particular device.  Place this
-  information into the file \file{devdoc.txt}.  The \mpich\
-  documentation generators will look for this file.
-
-\item Testing codes for device-specific functions.  Place these
-in a \file{test} subdirectory of the device. These tests 
-should be performed through a \code{test} target in the device's
-\file{Makefile}. 
-
-\item Include files.  Any include files that are needed by
-\file{mpiimpl.h} (used to build the implementation of the MPI
-routines) should be \emph{copied} into \file{mpich/src/include} as
-part of the device's configure step.  Provide the files
-\file{mpiddevpre.h} and \file{mpiddevpost.h}.  The implementation of all MPI
-routines include files in this order:
-\begin{description}
-\item[mpi.h]The standard \file{mpi.h} that all MPI users include
-\item[mpiddevpre.h]Any definitions needed \emph{before} the provided
-definitions of the contents of the internal structures.  This can
-included definitions that override parts of \file{mpiimpl.h}
-\item[contents of mpiimpl.h]The bulk of the internal definitions.
-This also includes information on the timers.
-\item[mpiddevpost.h]Any definitions needed by the device after the rest
-of the definitions in \file{mpiimpl.h}.  In many cases, this file may
-be empty.
-\end{description}
-\end{enumerate}
-
-\subsection{Directory Structure}
-\label{sec:adi3-dirs}
-A device should be placed in a subdirectory of \file{mpich/src/mpid/};
-for example, \file{mpich/src/mpid/mm} is the multi-method ADI
-delivered with \mpich.  The directory name is the same as the device
-name specified to the \mpich\ \code{configure} with the
-\code{--with-device} option.
-
-\subsection{Device Configuration and Setup}
-\label{sec:adi3-setup}
-Each device must have a \code{configure} script.  This will be run by
-the \mpich\ \code{configure} as part of the top-level configuration.
-Any other commands that a device needs for setup should be run using
-the \code{AC_OUTPUT_COMMANDS} \code{autoconf} macro.  Autoconf version
-2.13 or later should be used; we recommend using the macros defined in
-\file{mpich/confdb/aclocal.m4}.  
-Do not modify the \mpich\ \code{configure} to support a device.
-
+\input ../adi3implrules.tex
 
 \section{Motivation}
 \label{sec:motivation}

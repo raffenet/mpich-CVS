@@ -3,7 +3,15 @@
 % implementation of ADI3  
 
 \documentclass{article}
+\usepackage{/home/gropp/data/share/refman}
+\usepackage{/home/gropp/sowing-proj/sowing/docs/doctext/tpage}
+\usepackage{url} 
+\usepackage{epsf}
 \usepackage{psfig}
+\textheight=9in
+\textwidth=6.1in
+\oddsidemargin=.2in
+\topmargin=-.50in
 
 \def\nopound{\catcode`\#=13}
 {\nopound\gdef#{{\tt \char`\#}}}
@@ -11,6 +19,7 @@
 \def_{{\tt \char`\_}}
 \catcode`\_=11
 \def\code#1{\texttt{#1}}
+\let\file=\code
 
 \begin{document}
 
@@ -25,10 +34,120 @@
 \section{Introduction}
 This document outlines an implementation of the ADI on TCP.  It defines a
 specific interface to the low level OS TCP operations, and outlines a way
-for at least the basic MPID_ routines to be implemented in terms of these
+for at least the basic \code{MPID_} routines to be implemented in terms of
+these 
 abstract operations.  This document is preliminary.
 
+Some goals:
+
+``straight through'', common cases involve as little overhead as possible.
+For example, a send/receive of a single word should generate as few ``extra''
+allocations of internal objects as possible.  For example, on a send, this
+design allows the data to be sent directly without creating a
+\code{MPID_Request}. We haven't quite managed that on the receive side.
+
+Provide a relatively small interface that can be used to port MPICH to new
+platforms.  This replaces the ADI-2 ``channel'' interface.
+
+Provide an example that can use remote write (put) operations for data
+transfers.  
+
+It is \emph{not} a goal to provide an optimally fast implementation. This is
+intended to be a relatively simple but reasonably efficient implementation.
+
 \section{Outline of the Implementation Structure}
+
+Layers: 
+
+The MPID routines are implemented in terms of a smaller set of routines that
+perform relatively simple data communication operations.  These are designed
+so that they can easily be implemented with, for example, TCP, but are not
+restricted to TCP.  For those familar with the ``channel device'' in ADI-2,
+these routines represent the ADI-3 version of the channel device interface.
+These routines are prefixed with \code{CH3_} (really \code{MPID_CH3_}) to
+indicate that they belong to 
+this interface; a complete description of the CH3 routines is presented in
+Appendix~\ref{app:ch3}. 
+
+Communication:
+
+The MPID layer communicates by sending messages consisting of a message header
+(called a packet header to distinguish it from an MPI message), possibly
+followed by data.  The MPID layer defines:
+\begin{description}
+\item[Packet Types]An \code{enum} of types, this is roughly a dozen kinds of
+  message that are needed to implement MPI message-passing semantics
+\item[Packet Format]The actual layout of a packet; for each packet type, there
+  is a corresponding packet format defined by a structure.  For version zero,
+  all packet layouts will have the same size in bytes; this simplifies
+  the implementation.
+\item[Packet Handlers]The code to be invoked when a packet arives at its
+  destination. 
+\end{description}
+
+Queues and Connections:
+
+(Need some discussion of these, since the requests move between queues and the 
+read/write operations are ordered on a connection.)
+
+CH3 routine brief summary:
+
+(I don't think that these are right yet, but we need to start somewhere.)
+Details in Appendix~\ref{app:ch3}.
+
+\begin{verbatim}
+CH3_iWrite( MPID_VC *, MPID_Request * )
+CH3_iStartMsg( MPID_VC *, void *header, int header_count )
+CH3_iStartMsgv( MPID_VC *, struct iovec *iov, int count )
+CH3_iRead( MPID_VC *, MPID_Request * )
+CH3_Progress( int is_blocking )
+CH3_Init( )
+CH3_Finalize( )
+\end{verbatim}
+
+This use of the letter \code{i} in the names is meant to emphasize that these
+are non-blocking in the MPI sense: data is not necessarily transfered before
+the routine returns and the transfer may continue afterwards (this is what is
+different between, for example, \code{CH3_iWrite} and a \code{write} to a
+nonblocking socket).
+
+CH3 routines do not handle datatypes; only handle (buf,count) or iovec (viewed
+as bytes).  Communication routines are nonblocking, so they must have (a) a
+connection to which they are attached (so that data is correctly ordered and
+sent/received as possible) and (b) a request that allows incremental
+pack/unpack.  Each CH3 communication routine, in effect, makes a callback when
+the communication completes.  The action may be as simple as ``decrement busy
+flag and dequeue communication'' or as complex as ``pack next buffer for
+sending and send it''.  However, we do not require the full generality of
+arbitrary callback routines, so the action to take on completion will be
+specified by an integer.  The value will either indicate ``decrement busy
+counter and dequeue'' (the common case; it applies to all contiguous data
+transfers) or ``call MPIDi_Advance_communication'' with the connection and
+request as arguments (an alternative is to store the function in the request,
+and use the null function as the decrement-busy-and-dequeue case).
+
+These routines must be prepared to create actual connections (e.g., establish
+a socket) if there is connection already present.  It is up to the
+implementation of the CH3 routines to decide how this is accomplished.
+
+\code{CH3_Put}:
+
+By having a CH3 routine that can perform a contiguous put to remote memory, we
+make it easy to experiment with RMA-capable networking (such as VIA) without
+requiring a completely new device implementation.  However, this is an
+optional routine (at least while we target only MPI-1) and need not be
+implemented.  However, the packet handler descriptions given show how a put
+operation can be implemented, even in a TCP/sockets environment.
+
+Unresolved questions on CH3:
+
+Who provides the queue manipulation routines (e.g., FOA)?  Is this part of the
+base set of CH3 routines, or is it an MPID routine?  
+
+Thread-safety of FOA (currently, inserted request must be marked as unready
+unless the other receive parameters are passed to FOA so that the request can
+be atomically created).
+
 
 \begin{verbatim}
 Notes from the board:
@@ -68,7 +187,7 @@ ____goals.tex____ MPID_Isend, MPID_Irecv, Progress routines ______
      flow_cntl_update
 
 
-____tcpaci3.tex____TCP_Writev, TCP_startmsgv ____________________
+____tcpaci3.tex____CH3_Writev, CH3_startmsgv ____________________
 
 
      select                              owns/allocates
@@ -87,7 +206,7 @@ MPID_Isend( )
     if (eager) {
         create packet on stack
         fill in as eager send packet
-        TCP_Start_msg (might copy packet, remember user buf ptr)
+        CH3_Start_msg (might copy packet, remember user buf ptr)
         if OK
             return competed request
         else        
@@ -96,7 +215,7 @@ MPID_Isend( )
     else (rendezvous) {
         create packet on stack
         fill as rndv_req to send
-        TCP_sTart mest (copies packet if can't send)
+        CH3_sTart mest (copies packet if can't send)
     } 
 
 }
@@ -112,7 +231,7 @@ MPID_Irecv( )
             copy data
             mark request completed
         else
-            TCP_repost
+            CH3_repost
     {
     else {
         fill in request
@@ -124,7 +243,7 @@ MPID_Irecv( )
 \begin{verbatim}
 MPID_Wait( )
 {
-    TCP_Progress  /*select on all fd's */
+    CH3_Progress  /*select on all fd's */
     if (write)
         send data  /* later -> use segment processing */  OR
         complete connection
@@ -136,7 +255,7 @@ MPID_Wait( )
         switch on packet headr
             call fcn associated with pkt type
                 (These are MPID functions, not TCP functions, since pkts are
-                in MPID layer.  Call them MPID_TCP_) 
+                in MPID layer.  Call them MPID_CH3_) 
 }
 \end{verbatim}
 
@@ -194,7 +313,6 @@ read but that any following data may not yet have been read.
     Find matching request (from id)
     Find memory location
     TransferDatatoDest
-    When done, if more data needed, send RndvOkToSend to source
 \end{verbatim}
 
 \subsection{CancelSend}
@@ -232,9 +350,9 @@ should implement the quickest-to-implement first.
 
 \begin{description}
 \item[As MPD console program] This is ready-to-go as a minor change to
-  \code{mpdcon.c}, except that the BNR interface might need to be updated to match
-  the current specification.  A version of MPI_Info is needed for the new
-  BNR_Spawn, but not for anything else, so MPI-1 routines should be OK.  I.e,
+  \file{mpdcon.c}, except that the BNR interface might need to be updated to match
+  the current specification.  A version of \code{MPI_Info} is needed for the new
+  \code{BNR_Spawn}, but not for anything else, so MPI-1 routines should be OK.  I.e,
   the database part of BNR is already running.  All handling of \code{stdio}
   is done.
 \item[As a BNR program] This requires the above plus implementation of
@@ -247,7 +365,7 @@ should implement the quickest-to-implement first.
   of the BNR interface, to set up the connections.  This approach as the
   advantage of providinga ``universal'' \code{mpiexec}. 
 \item[As an ``immediate scheduler''] This makes \code{mpiexec} into a stand-in
-  for the sheduler component of the Scalable System Software Project.  It is
+  for the scheduler component of the Scalable System Software Project.  It is
   much like the ``MPD console'' option, but instead of using the existing
   console code to contact a local MPD, it sends the standard XML defined by
   the SSS project to the MPD, which is standing in for an arbitrary process
@@ -267,7 +385,7 @@ standard arguments to \code{mpiexec}.  These are defined in Volume 1 of {\em
   MPI -- The Complete Reference}, starting on page 353.  There are multiple
 approaches to dealing with arguments.
 \begin{description}
-\item[Plain] Use straightforward code as in \code{p4_args.c}.
+\item[Plain] Use straightforward code as in \file{p4_args.c}.
 \item[Fancy] Use an ``options database'' approach, as in PETSc.
 \end{description}
 
@@ -294,6 +412,10 @@ advantages.  The quickest option is the first.
 
 \section{Summary}
 \label{sec:tcpadi-summary}
-(This section should summarize the TCP\_ routines, giving just their prototypes)
+(This section should summarize the \code{TCP_} routines, giving just their prototypes)
+
+\appendix
+\section{CH3 Routines}
+\label{app:ch3}
 
 \end{document}

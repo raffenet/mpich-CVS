@@ -113,21 +113,22 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
   as bits to allow future expansion to the case where an object is value for
   multiple types (for example, we may want a universal error handler for 
   errors return).  This is also used to indicate the type of MPI object a 
-  MPI handle represents.
+  MPI handle represents.  It is an enum because only this applies only the
+  the MPI objects.
 
   Module:
   Attribute-DS
   E*/
 typedef enum { 
-  MPID_COMM       = 0x0, 
-  MPID_GROUP      = 0x1,
-  MPID_DATATYPE   = 0x2,
-  MPID_FILE       = 0x3,
-  MPID_ERRHANDLER = 0x4,
-  MPID_OP         = 0x5,
-  MPID_INFO       = 0x6,
-  MPID_WIN        = 0x7,
-  MPID_KEYVAL     = 0x8 
+  MPID_COMM       = 0x1, 
+  MPID_GROUP      = 0x2,
+  MPID_DATATYPE   = 0x3,
+  MPID_FILE       = 0x4,
+  MPID_ERRHANDLER = 0x5,
+  MPID_OP         = 0x6,
+  MPID_INFO       = 0x7,
+  MPID_WIN        = 0x8,
+  MPID_KEYVAL     = 0x9 
 } MPID_Object_kind;
 
 /*E
@@ -350,6 +351,7 @@ typedef struct MPID_Info_s {
   S*/
 typedef struct {
     /* other, device-specific information */
+    /* Typically int pidbits[MPID_MAX_PROCS_BY_INT] */
 } MPID_Lpidmask;
 
 
@@ -640,8 +642,8 @@ typedef struct {
     volatile int ref_count;
     int          size;           /* Size of a group */
     int          rank;           /* Rank of this process in this group */
-    int          *lrank_to_lpid; /* Array mapping a local rank to local 
-				    process number */
+    int          *lrank_to_lpid; /* Array mapping a local rank in this
+                                    group to local process number */
   /* other, device-specific information */
 } MPID_Group;
 
@@ -944,6 +946,10 @@ typedef { MPID_REQ_SEND, MPID_REQ_RECV, MPID_REQ_PERSISTENT_SEND,
   If it is necessary to remember the MPI datatype, this information is 
   saved within the 'segment', not as part of a separate 'MPID_Datatype' 
   entry.
+
+  Requests come in many flavors, as stored in the 'kind' field.  It is 
+  expected that each kind of request will have its own structure type 
+  (e.g., 'MPID_Request_send_t') that extends the 'MPID_Request'.
   
   S*/
 typedef struct {

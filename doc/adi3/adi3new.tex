@@ -44,7 +44,7 @@
 \def\makeustext{\catcode`\_=11}
 %\tpageoneskip
 \ANLTMTitle{MPICH Abstract Device Interface\\
-Version 3.1\\
+Version 3.3\\
 Reference Manual\\\ \\Draft of \today}{\em 
 William Gropp\\
 Ewing Lusk\\
@@ -63,6 +63,14 @@ Argonne National Laboratory}{00}{\today}
 %
 % The first section is the design
 \input design.tex
+
+\section{Integrating a New Device into the MPICH Build Tree}
+This section describes how to add a device or method into the MPICH
+build tree.  This section is intended both to describe the process of
+adding a device and the rationale for the design of the
+device-dependent modules.
+
+\input adiimplrules.tex
 
 \appendix
 
@@ -127,6 +135,13 @@ Argonne National Laboratory}{00}{\today}
 \section{Device Hooks}
 \input adi3man/MPID_Dev_xxx_create_hook.tex
 \input adi3man/MPID_Dev_xxx_destroy_hook.tex
+
+% More on data structures and constants, including MPIU_Handle_obj_create
+% etc.?  Or does this go into the MPICH2 document?
+%
+%\section{Available Utility Functions}
+%\input adi3man/MPIU_Object_add_ref.tex
+%\input adi3man/MPIU_Object_release_ref.tex
 
 \let\SaveBibliography=\thebibliography
 \def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}
