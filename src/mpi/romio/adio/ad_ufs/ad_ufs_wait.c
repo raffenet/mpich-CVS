@@ -129,7 +129,7 @@ void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 #ifdef MPICH2
 			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
 							"**io %s", strerror(errno));
-			MPIR_Err_return_file(fd, myname, *error_code);
+			MPIR_Err_return_file((*request)->fd, myname, *error_code);
 #elif defined(PRINT_ERR_MSG)
 			*error_code = MPI_ERR_UNKNOWN;
 #else /* MPICH-1 */
