@@ -22,7 +22,10 @@
 @*/
 int MPID_Open_port(MPID_Info *info_ptr, char *port_name)
 {
+    MM_ENTER_FUNC(MPID_OPEN_PORT);
+
     mm_open_port(info_ptr, port_name);
 
+    MM_EXIT_FUNC(MPID_OPEN_PORT);
     return MPI_SUCCESS;
 }

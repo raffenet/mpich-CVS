@@ -74,61 +74,6 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
 
     MM_EXIT_FUNC(TCP_STUFF_VECTOR_VEC);
     return (num_avail == 0 && final_segment);
-    /*
-    if (buf_ptr->vec.vec_size == 1)
-    {
-	car_ptr->data.tcp.buf.vec_write.num_read_copy = buf_ptr->vec.num_read;
-	vec[*cur_pos].MPID_VECTOR_BUF = buf_ptr->vec.vec[0].MPID_VECTOR_BUF;
-	vec[*cur_pos].MPID_VECTOR_LEN = buf_ptr->vec.vec[0].MPID_VECTOR_LEN;
-	(*cur_pos)++;
-	MM_EXIT_FUNC(TCP_STUFF_VECTOR_TMP);
-	return TRUE;
-    }
-    */
-#ifdef FOO
-    if (car_ptr->data.tcp.buf.vec_write.num_read_copy != buf_ptr->vec.num_read)
-    {
-	/* update vector */
-	cur_index = car_ptr->data.tcp.buf.vec_write.cur_index;
-	car_vec = car_ptr->data.tcp.buf.vec_write.vec;
-	buf_vec = buf_ptr->vec.vec;
-	
-	/* update num_read_copy */
-	car_ptr->data.tcp.buf.vec_write.num_read_copy = buf_ptr->vec.num_read;
-	
-	/* copy the buf vector into the car vector from the current index to the end */
-	memcpy(&car_vec[cur_index], &buf_vec[cur_index], 
-	    (buf_ptr->vec.vec_size - cur_index) * sizeof(MPID_VECTOR));
-	car_vec[cur_index].MPID_VECTOR_BUF = 
-	    (char*)car_vec[cur_index].MPID_VECTOR_BUF + car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
-	car_vec[cur_index].MPID_VECTOR_LEN = car_vec[cur_index].MPID_VECTOR_LEN - car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
-	
-	/* set the size of the car vector to zero */
-	car_ptr->data.tcp.buf.vec_write.vec_size = 0;
-	
-	/* add vector elements to the size until all the read data is accounted for */
-	num_left = car_ptr->data.tcp.buf.vec_write.num_read_copy - car_ptr->data.tcp.buf.vec_write.cur_num_written;
-	i = cur_index;
-	while (num_left > 0)
-	{
-	    car_ptr->data.tcp.buf.vec_write.vec_size++;
-	    num_left -= car_vec[i].MPID_VECTOR_LEN;
-	    i++;
-	}
-	/* if the last vector buffer is larger than the amount of data read into that buffer,
-	update the length field in the car's copy of the vector */
-	if (num_left < 0)
-	{
-	    car_vec[i].MPID_VECTOR_LEN += num_left;
-	}
-	
-	/* at this point the vec in the car describes all the currently read data */
-    }
-#endif
-    /*
-    MM_EXIT_FUNC(TCP_STUFF_VECTOR_VEC);
-    return FALSE;
-    */
 }
 
 int tcp_stuff_vector_tmp(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)

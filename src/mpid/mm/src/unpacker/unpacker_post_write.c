@@ -7,6 +7,11 @@
 
 int unpacker_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
+    MM_ENTER_FUNC(UNPACKER_POST_WRITE);
+
     unpacker_car_enqueue(vc_ptr, car_ptr);
+
+    MM_EXIT_FUNC(UNPACKER_POST_WRITE);
     return MPI_SUCCESS;
 }
+

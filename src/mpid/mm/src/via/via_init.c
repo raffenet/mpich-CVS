@@ -14,6 +14,8 @@ VIA_PerProcess VIA_Process;
 @*/
 int via_init( void )
 {
+    MM_ENTER_FUNC(VIA_INIT);
+    MM_EXIT_FUNC(VIA_INIT);
     return MPI_SUCCESS;
 }
 
@@ -24,5 +26,7 @@ int via_init( void )
 @*/
 int via_finalize( void )
 {
+    MM_ENTER_FUNC(VIA_FINALIZE);
+    MM_EXIT_FUNC(VIA_FINALIZE);
     return MPI_SUCCESS;
 }

@@ -7,5 +7,7 @@
 
 int via_rdma_make_progress()
 {
+    MM_ENTER_FUNC(VIA_RDMA_MAKE_PROGRESS);
+    MM_EXIT_FUNC(VIA_RDMA_MAKE_PROGRESS);
     return MPI_SUCCESS;
 }

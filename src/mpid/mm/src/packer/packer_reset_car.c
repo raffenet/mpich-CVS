@@ -10,9 +10,14 @@ int packer_reset_car(MM_Car *car_ptr)
 {
     MM_Segment_buffer *buf_ptr;
 
+    MM_ENTER_FUNC(PACKER_RESET_CAR);
+
     buf_ptr = car_ptr->buf_ptr;
     if (buf_ptr == NULL)
+    {
+	MM_EXIT_FUNC(PACKER_RESET_CAR);
 	return -1;
+    }
 
     switch (buf_ptr->type)
     {
@@ -44,5 +49,6 @@ int packer_reset_car(MM_Car *car_ptr)
 	break;
     }
 
+    MM_EXIT_FUNC(PACKER_RESET_CAR);
     return MPI_SUCCESS;
 }

@@ -7,5 +7,7 @@
 
 int shm_make_progress()
 {
+    MM_ENTER_FUNC(SHM_MAKE_PROGRESS);
+    MM_EXIT_FUNC(SHM_MAKE_PROGRESS);
     return MPI_SUCCESS;
 }

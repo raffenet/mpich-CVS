@@ -15,8 +15,10 @@
 void mm_vc_init()
 {
     MM_ENTER_FUNC(MM_VC_INIT);
+
     MPID_Process.VCTable_allocator = BlockAllocInit(sizeof(MPIDI_VCRT), 100, 100, malloc, free);
     MPID_Process.VC_allocator = BlockAllocInit(sizeof(MPIDI_VC), 100, 100, malloc, free);
+    
     MM_EXIT_FUNC(MM_VC_INIT);
 }
 
@@ -28,8 +30,10 @@ void mm_vc_init()
 void mm_vc_finalize()
 {
     MM_ENTER_FUNC(MM_VC_FINALIZE);
+    
     BlockAllocFinalize(&MPID_Process.VCTable_allocator);
     BlockAllocFinalize(&MPID_Process.VC_allocator);
+    
     MM_EXIT_FUNC(MM_VC_FINALIZE);
 }
 

@@ -12,6 +12,8 @@
 @*/
 int via_rdma_init( void )
 {
+    MM_ENTER_FUNC(VIA_RDMA_INIT);
+    MM_EXIT_FUNC(VIA_RDMA_INIT);
     return MPI_SUCCESS;
 }
 
@@ -22,5 +24,7 @@ int via_rdma_init( void )
 @*/
 int via_rdma_finalize( void )
 {
+    MM_ENTER_FUNC(VIA_RDMA_FINALIZE);
+    MM_EXIT_FUNC(VIA_RDMA_FINALIZE);
     return MPI_SUCCESS;
 }

@@ -28,9 +28,12 @@ int unpacker_make_progress()
     MM_Segment_buffer *buf_ptr;
     MPIDI_VC *vc_ptr;
 
+    MM_ENTER_FUNC(UNPACKER_MAKE_PROGRESS);
+
     if (MPID_Process.unpacker_vc_ptr->writeq_head == NULL)
     {
 	/* shortcut out if the queue is empty */
+	MM_EXIT_FUNC(UNPACKER_MAKE_PROGRESS);
 	return MPI_SUCCESS;
     }
 
@@ -79,12 +82,15 @@ int unpacker_make_progress()
 	car_ptr = car_next_ptr;
     } while (car_ptr);
     
+    MM_EXIT_FUNC(UNPACKER_MAKE_PROGRESS);
     return MPI_SUCCESS;
 }
 
 #ifdef WITH_METHOD_SHM
 int unpacker_write_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
+    MM_ENTER_FUNC(UNPACKER_WRITE_SHM);
+    MM_EXIT_FUNC(UNPACKER_WRITE_SHM);
     return MPI_SUCCESS;
 }
 #endif
@@ -92,6 +98,8 @@ int unpacker_write_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 #ifdef WITH_METHOD_VIA
 int unpacker_write_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
+    MM_ENTER_FUNC(UNPACKER_WRITE_VIA);
+    MM_EXIT_FUNC(UNPACKER_WRITE_VIA);
     return MPI_SUCCESS;
 }
 #endif
@@ -99,6 +107,8 @@ int unpacker_write_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 #ifdef WITH_METHOD_VIA_RDMA
 int unpacker_write_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
+    MM_ENTER_FUNC(UNPACKER_WRITE_VIA_RDMA);
+    MM_EXIT_FUNC(UNPACKER_WRITE_VIA_RDMA);
     return MPI_SUCCESS;
 }
 #endif
@@ -106,7 +116,9 @@ int unpacker_write_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer
 int unpacker_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_written;
-    
+
+    MM_ENTER_FUNC(UNPACKER_WRITE_VEC);
+
     /* this function assumes that buf_ptr->vec.num_cars_outstanding > 0 */
 
     if (car_ptr->data.unpacker.buf.vec_write.num_read_copy != buf_ptr->vec.num_read)
@@ -135,15 +147,19 @@ int unpacker_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 	mm_cq_enqueue(car_ptr);
     }
 
+    MM_EXIT_FUNC(UNPACKER_WRITE_VEC);
     return MPI_SUCCESS;
 }
 
 int unpacker_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
+    MM_ENTER_FUNC(UNPACKER_WRITE_TMP);
+
     if ((car_ptr->data.unpacker.buf.tmp.last == buf_ptr->tmp.num_read) || (buf_ptr->tmp.buf == NULL))
     {
 	/* no new data available or
 	 * no buffer provided by the reader */
+	MM_EXIT_FUNC(UNPACKER_WRITE_TMP);
 	return MPI_SUCCESS;
     }
     /* set the last variable to the number of bytes read */
@@ -161,6 +177,7 @@ int unpacker_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 	/* the entire buffer is unpacked */
 	unpacker_car_dequeue(car_ptr->vc_ptr, car_ptr);
 	mm_cq_enqueue(car_ptr);
+	MM_EXIT_FUNC(UNPACKER_WRITE_TMP);
 	return MPI_SUCCESS;
     }
 
@@ -168,5 +185,6 @@ int unpacker_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
     /* The last variable will be updated the next time through this function */
     car_ptr->data.unpacker.buf.tmp.first = car_ptr->data.unpacker.buf.tmp.last;
 
+    MM_EXIT_FUNC(UNPACKER_WRITE_TMP);
     return MPI_SUCCESS;
 }

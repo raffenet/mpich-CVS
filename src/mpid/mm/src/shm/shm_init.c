@@ -16,10 +16,18 @@ int shm_init( void )
 {
 #ifdef HAVE_WINDOWS_H
     DWORD n = 100;
+
+    MM_ENTER_FUNC(SHM_INIT);
+
     GetComputerName(SHM_Process.host, &n);
 #else
+
+    MM_ENTER_FUNC(SHM_INIT);
+
     gethostname(SHM_Process.host, 100);
 #endif
+
+    MM_EXIT_FUNC(SHM_INIT);
     return MPI_SUCCESS;
 }
 
@@ -31,5 +39,7 @@ int shm_init( void )
 @*/
 int shm_finalize( void )
 {
+    MM_ENTER_FUNC(SHM_FINALIZE);
+    MM_EXIT_FUNC(SHM_FINALIZE);
     return MPI_SUCCESS;
 }

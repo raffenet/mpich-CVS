@@ -36,6 +36,8 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_
     MPI_Info info, prepost_info;
     int same_domain;
 
+    MM_ENTER_FUNC(MPID_COMM_SPAWN_MULTIPLE);
+
     MPID_Comm_thread_lock( comm_ptr );
 
     PMPI_Info_create(&info);
@@ -63,5 +65,6 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_
 
     MPID_Comm_thread_unlock( comm_ptr );
 
+    MM_EXIT_FUNC(MPID_COMM_SPAWN_MULTIPLE);
     return MPI_SUCCESS;
 }

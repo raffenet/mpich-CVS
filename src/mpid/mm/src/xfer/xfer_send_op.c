@@ -6,7 +6,7 @@
 
 #include "mpidimpl.h"
 
-void get_xfer_send_request(MPID_Request *request_ptr, int dest, MPID_Request **ppRequest, BOOL *pbNeedHeader)
+static void get_xfer_send_request(MPID_Request *request_ptr, int dest, MPID_Request **ppRequest, BOOL *pbNeedHeader)
 {
     MM_Car *pCarIter;
     MPID_Request *pRequestIter;

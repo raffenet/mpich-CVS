@@ -12,7 +12,11 @@
 @*/
 int unpacker_init()
 {
+    MM_ENTER_FUNC(UNPACKER_INIT);
+
     MPID_Process.unpacker_vc_ptr = mm_vc_alloc(MM_UNPACKER_METHOD);
+
+    MM_EXIT_FUNC(UNPACKER_INIT);
     return MPI_SUCCESS;
 }
 
@@ -23,6 +27,10 @@ int unpacker_init()
 @*/
 int unpacker_finalize()
 {
+    MM_ENTER_FUNC(UNPACKER_FINALIZE);
+
     mm_vc_free(MPID_Process.unpacker_vc_ptr);
+
+    MM_EXIT_FUNC(UNPACKER_FINALIZE);
     return MPI_SUCCESS;
 }

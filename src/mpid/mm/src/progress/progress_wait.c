@@ -16,5 +16,9 @@
 @*/
 void MPID_Progress_wait( void )
 {
+    MM_ENTER_FUNC(MPID_PROGRESS_WAIT);
+
     MPID_Progress_test();
+
+    MM_EXIT_FUNC(MPID_PROGRESS_WAIT);
 }

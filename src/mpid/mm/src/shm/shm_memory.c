@@ -15,6 +15,8 @@
 @*/
 void *shm_alloc(unsigned int size)
 {
+    MM_ENTER_FUNC(SHM_ALLOC);
+    MM_EXIT_FUNC(SHM_ALLOC);
     return NULL;
 }
 
@@ -28,6 +30,8 @@ void *shm_alloc(unsigned int size)
 @*/
 void shm_free(void *address)
 {
+    MM_ENTER_FUNC(SHM_FREE);
+    MM_EXIT_FUNC(SHM_FREE);
 }
 
 /*@
@@ -44,6 +48,8 @@ void shm_free(void *address)
 @*/
 void *shm_get_mem_sync(int nTotalSize, int nRank, int nNproc)
 {
+    MM_ENTER_FUNC(SHM_GET_MEM_SYNC);
+    MM_EXIT_FUNC(SHM_GET_MEM_SYNC);
     return NULL;
 }
 
@@ -54,4 +60,6 @@ void *shm_get_mem_sync(int nTotalSize, int nRank, int nNproc)
 @*/
 void shm_release_mem()
 {
+    MM_ENTER_FUNC(SHM_RELEASE_MEM);
+    MM_EXIT_FUNC(SHM_RELEASE_MEM);
 }

@@ -10,6 +10,8 @@ MM_Car *find_in_queue(MM_Car **find_q_head_ptr, MM_Car **find_q_tail_ptr, MM_Car
 {
     MM_Car *iter_ptr, *trailer_ptr;
 
+    MM_ENTER_FUNC(FIND_IN_QUEUE);
+
     trailer_ptr = iter_ptr = *find_q_head_ptr;
     while (iter_ptr)
     {
@@ -34,19 +36,23 @@ MM_Car *find_in_queue(MM_Car **find_q_head_ptr, MM_Car **find_q_tail_ptr, MM_Car
 		if (*find_q_tail_ptr == iter_ptr)
 		    *find_q_tail_ptr = trailer_ptr;
 	    }
+	    MM_EXIT_FUNC(FIND_IN_QUEUE);
 	    return iter_ptr;
 	}
 	if (trailer_ptr != iter_ptr)
 	    trailer_ptr = trailer_ptr->qnext_ptr;
 	iter_ptr = iter_ptr->qnext_ptr;
     }
-    
+
+    MM_EXIT_FUNC(FIND_IN_QUEUE);
     return NULL;
 }
 
 int cq_handle_read_head_car(MM_Car *car_ptr)
 {
     MM_Car *qcar_ptr;
+
+    MM_ENTER_FUNC(CQ_HANDLE_READ_HEAD_CAR);
 
     switch (car_ptr->msg_header.pkt.u.type)
     {
@@ -113,11 +119,14 @@ int cq_handle_read_head_car(MM_Car *car_ptr)
 	break;
     }
 
+    MM_EXIT_FUNC(CQ_HANDLE_READ_HEAD_CAR);
     return MPI_SUCCESS;
 }
 
 int cq_handle_read_data_car(MM_Car *car_ptr)
 {
+    MM_ENTER_FUNC(CQ_HANDLE_READ_DATA_CAR);
+
     if (car_ptr->next_ptr)
     {
 	/* enqueue next car to be read before any other pending cars */
@@ -131,24 +140,38 @@ int cq_handle_read_data_car(MM_Car *car_ptr)
     /*printf("dec cc: read data car\n");fflush(stdout);*/
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
+
+    MM_EXIT_FUNC(CQ_HANDLE_READ_DATA_CAR);
     return MPI_SUCCESS;
 }
 
 int cq_handle_read_car(MM_Car *car_ptr)
 {
+    int ret_val;
+    MM_ENTER_FUNC(CQ_HANDLE_READ_CAR);
+
     if (car_ptr->type & MM_HEAD_CAR)
     {
-	return cq_handle_read_head_car(car_ptr);
+	ret_val = cq_handle_read_head_car(car_ptr);
+	MM_EXIT_FUNC(CQ_HANDLE_READ_CAR);
+	return ret_val;
     }
 
-    return cq_handle_read_data_car(car_ptr);
+    ret_val = cq_handle_read_data_car(car_ptr);
+    MM_EXIT_FUNC(CQ_HANDLE_READ_CAR);
+    return ret_val;
 }
 
 int cq_handle_write_head_car(MM_Car *car_ptr)
 {
+    MM_ENTER_FUNC(CQ_HANDLE_WRITE_HEAD_CAR);
+
     /* rndv */
     if (car_ptr->msg_header.pkt.u.hdr.type == MPID_RNDV_REQUEST_TO_SEND_PKT)
+    {
+	MM_EXIT_FUNC(CQ_HANDLE_WRITE_HEAD_CAR);
 	return MPI_SUCCESS;
+    }
 
     /* eager */
     if (car_ptr->next_ptr)
@@ -158,11 +181,15 @@ int cq_handle_write_head_car(MM_Car *car_ptr)
     /*printf("dec cc: written head car\n");fflush(stdout);*/
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
+
+    MM_EXIT_FUNC(CQ_HANDLE_WRITE_HEAD_CAR);
     return MPI_SUCCESS;
 }
 
 int cq_handle_write_data_car(MM_Car *car_ptr)
 {
+    MM_ENTER_FUNC(CQ_HANDLE_WRITE_DATA_CAR);
+
     if (car_ptr->next_ptr)
     {
 	/* enqueue next car to be written before any other pending cars */
@@ -171,17 +198,27 @@ int cq_handle_write_data_car(MM_Car *car_ptr)
     /*printf("dec cc: written data car\n");fflush(stdout);*/
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
+
+    MM_EXIT_FUNC(CQ_HANDLE_WRITE_DATA_CAR);
     return MPI_SUCCESS;
 }
 
 int cq_handle_write_car(MM_Car *car_ptr)
 {
+    int ret_val;
+
+    MM_ENTER_FUNC(CQ_HANDLE_WRITE_CAR);
+
     if (car_ptr->type & MM_HEAD_CAR)
     {
-	return cq_handle_write_head_car(car_ptr);
+	ret_val = cq_handle_write_head_car(car_ptr);
+	MM_EXIT_FUNC(CQ_HANDLE_WRITE_CAR);
+	return ret_val;
     }
 
-    return cq_handle_write_data_car(car_ptr);
+    ret_val = cq_handle_write_data_car(car_ptr);
+    MM_EXIT_FUNC(CQ_HANDLE_WRITE_CAR);
+    return ret_val;
 }
 
 int mm_cq_test()

@@ -7,5 +7,7 @@
 
 int via_make_progress()
 {
+    MM_ENTER_FUNC(VIA_MAKE_PROGRESS);
+    MM_EXIT_FUNC(VIA_MAKE_PROGRESS);
     return MPI_SUCCESS;
 }

@@ -7,5 +7,7 @@
 
 int via_rdma_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
+    MM_ENTER_FUNC(VIA_RDMA_POST_WRITE);
+    MM_EXIT_FUNC(VIA_RDMA_POST_WRITE);
     return MPI_SUCCESS;
 }

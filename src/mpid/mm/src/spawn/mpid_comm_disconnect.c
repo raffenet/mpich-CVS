@@ -22,5 +22,8 @@
 @*/
 int MPID_Comm_disconnect(MPID_Comm *comm_ptr)
 {
+    MM_ENTER_FUNC(MPID_COMM_DISCONNECT);
+
+    MM_EXIT_FUNC(MPID_COMM_DISCONNECT);
     return MPI_SUCCESS;
 }
