@@ -16,7 +16,6 @@ from time      import sleep
 from random    import seed, randrange
 from syslog    import syslog
 from md5       import new
-from threading import Thread
 from cPickle   import dumps, loads
 from mpdlib    import mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
                       mpd_send_one_msg, mpd_recv_one_msg, \
@@ -25,6 +24,7 @@ from mpdlib    import mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
                       mpd_get_my_username, mpd_get_groups_for_username, \
                       mpd_set_my_id, mpd_check_python_version, mpd_version, \
                       mpd_socketpair
+
 
 class _ActiveSockInfo:
     pass
@@ -892,6 +892,12 @@ if __name__ == '__main__':
         _mpd_init()
 
         if g.bulletproof:
+            try:
+                from threading import Thread
+            except:
+                print '*** mpd terminating'
+                print '    bulletproof option must be able to import threading-Thread'
+                exit(-1)
             # may use SIG_IGN on all but SIGCHLD and SIGHUP (handled above)
             while 1:
                 mpdtid = Thread(target=_mpd)
