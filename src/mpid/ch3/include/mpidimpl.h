@@ -52,12 +52,16 @@ extern MPIDI_Process_t MPIDI_Process;
 void MPIDI_dbg_printf(int, char *, char *, ...);
 void MPIDI_err_printf(char *, char *, ...);
 
+#if defined(MPIDI_DBG_PRINTF)
 #define MPIDI_dbg_printf(level, func, fmt, args...)			\
 {									\
     printf("%d (%d) %s(): " ## fmt ## "\n",				\
 	   MPIR_Process.comm_world->rank, level, func, ## args);	\
     fflush(stdout);							\
 }
+#else
+#define MPIDI_dbg_printf(level, func, fmt, args...)
+#endif
 
 #define MPIDI_err_printf(func, fmt, args...)			\
 {								\
