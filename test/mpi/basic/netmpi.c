@@ -190,9 +190,9 @@ int main(int argc, char *argv[])
     }
     if (args.tr && printopt)
     {
-	printf("Latency: %f\n", latency);
+	printf("Latency: %0.9f\n", latency);
 	fflush(stdout);
-	printf("Sync Time: %f\n", synctime);
+	printf("Sync Time: %0.9f\n", synctime);
 	fflush(stdout);
 	printf("Now starting main loop\n");
 	fflush(stdout);
