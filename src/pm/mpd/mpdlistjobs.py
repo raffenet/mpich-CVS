@@ -4,6 +4,19 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+"""
+usage: mpdlistjobs [-u | --user=username] [-a | --alias=jobalias] [-j | --jobid=jobid]
+    (only use one of jobalias or jobid)'
+lists jobs being run by an mpd ring, all by default, or filtered'
+    by user, mpd job id, or alias assigned when the job was submitted'
+"""
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
+
+
 from sys    import argv, exit
 from os     import environ, getuid, close
 from socket import socket, fromfd, AF_UNIX, SOCK_STREAM
@@ -131,11 +144,7 @@ def mpdlistjobs():
 
 
 def usage():
-    print 'usage: mpdlistjobs [-u | --user=username] [-a | --alias=jobalias] ',
-    print '[-j | --jobid=jobid]'
-    print '  (only use one of jobalias or jobid)'
-    print 'lists jobs being run by an mpd ring, all by default, or filtered'
-    print 'by user, mpd job id, or alias assigned when the job was submitted'
+    print __doc__
     exit(-1)
 
 def signal_handler(signum,frame):

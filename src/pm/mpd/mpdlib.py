@@ -4,6 +4,17 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+"""
+mpdlib does NOT run as a standalone console program;
+    it is a module (library) imported by other python programs
+"""
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
+
+
 from sys        import version_info, stdout, exc_info, exit
 from socket     import socket, AF_INET, SOCK_STREAM, gethostbyname_ex, \
                        SOL_SOCKET,SO_REUSEADDR, error
@@ -430,6 +441,5 @@ def mpd_which(execName):
 
 if __name__ == '__main__':
     print 'mpdlib for mpd version: %s' % str(mpd_version)
-    print 'mpdlib does NOT run as a standalone console program;'
-    print '    it is a module (library) imported by other python programs'
+    print __doc__
     exit(-1)

@@ -4,6 +4,17 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+"""
+mpdman does NOT run as a standalone console program;
+    it is only exec'd (or imported) by mpd
+"""
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
+
+
 from os       import environ, getpid, pipe, fork, fdopen, read, write, close, dup2, \
                      chdir, execvpe, kill, waitpid, strerror, setpgrp, WNOHANG, X_OK, \
                      path, access
@@ -1290,7 +1301,7 @@ def sigchld_handler(signum,frame):
 if __name__ == '__main__':
     if not environ.has_key('MPDMAN_CLI_PGM'):    # assume invoked from keyboard
         print 'mpdman for mpd version: %s' % str(mpd_version)
-        print 'mpdman does NOT run as a console program; should be execd by mpd'
+        print __doc__
         exit(-1)
     try:
         mpdman()

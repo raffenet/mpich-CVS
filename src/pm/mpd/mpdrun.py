@@ -4,11 +4,36 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+"""
+usage: mpdrun [args] pgm_to_execute [pgm_args]
+   where args may be: -a alias -np nprocs -hf hostsfile -cpm master_copgm -cpr remote_copgm -l -m -1 -s
+       (nprocs must be a positive integer)
+       (-hf is a hostsfile containing names of nodes on which to run)
+       (-l means attach line labels identifying which client prints each line)
+       (-m means merge identical outputs into a single line;
+           implies that program produces whole lines;
+           implies -l)
+       (-1 means do NOT start the first process locally)
+       (-a means assign this alias to the job)
+       (-s means send stdin to all processes; not just first)
+       (-g means assume user will be running gdb and send some initial setup;
+           implies -m and -l and initially -s );
+or:    mpdrun -f input_xml_filename [-r output_xml_exit_codes_filename]
+   where filename contains all the arguments in xml format
+"""
+
 try:
     from signal          import signal, alarm, SIG_DFL, SIG_IGN, SIGINT, SIGTSTP, \
                                 SIGCONT, SIGALRM, SIGKILL
 except KeyboardInterrupt:
     exit(0)
+
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
+
 
 signal(SIGINT,SIG_IGN)
 signal(SIGTSTP,SIG_IGN)
@@ -926,21 +951,7 @@ def get_vals_for_attach():
 def usage():
     global myExitStatus
     print 'mpdrun for mpd version: %s' % str(mpd_version)
-    print 'usage: mpdrun [args] pgm_to_execute [pgm_args]'
-    print '   where args may be: -a alias -np nprocs -hf hostsfile -cpm master_copgm -cpr remote_copgm -l -m -1 -s'
-    print '       (nprocs must be a positive integer)'
-    print '       (-hf is a hostsfile containing names of nodes on which to run)'
-    print '       (-l means attach line labels identifying which client prints each line)'
-    print '       (-m means merge identical outputs into a single line;'
-    print '           implies that program produces whole lines;'
-    print '           implies -l)'
-    print '       (-1 means do NOT start the first process locally)'
-    print '       (-a means assign this alias to the job)'
-    print '       (-s means send stdin to all processes; not just first)'
-    print '       (-g means assume user will be running gdb and send some initial setup;'
-    print '           implies -m and -l and initially -s );'
-    print 'or:    mpdrun -f input_xml_filename [-r output_xml_exit_codes_filename]'
-    print '   where filename contains all the arguments in xml format'
+    print __doc__
     myExitStatus = -1  # used in main
     exit(myExitStatus) # really forces jump back into main
 

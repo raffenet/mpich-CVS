@@ -4,6 +4,17 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+"""
+usage: mpdringtest [number of loops]
+Times a single message going around the ring of mpds [num] times (default once)
+"""
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
+
+
 from socket import socket, fromfd, AF_UNIX, SOCK_STREAM
 from os     import environ, getuid, close
 from sys    import argv, exit
@@ -15,8 +26,7 @@ from mpdlib import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
 def mpdringtest():
     mpd_set_my_id('mpdringtest')
     if len(argv) > 1  and  ( argv[1] == '-h'  or  argv[1] == '--help' ) :
-        print 'usage: mpdringtest [number of loops]'
-        print 'Times a single message going around the ring of mpds [num] times (default once)' 
+        print __doc__
         exit(-1)
     if len(argv) < 2: 
 	numLoops = 1
