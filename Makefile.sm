@@ -39,22 +39,22 @@ dist:
 	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi
 #	if [ ! -d tmpdir/${PACKAGE}-${VERSION} ] ; then mkdir tmpdir/${PACKAGE}-${VERSION} ; fi
 	if [ -n "${TAG}" ] ; then \
-	(cd tmpdir && cvs -d /home/MPI/cvsMaster export -r ${TAG} mpich2all ) ;\
+	(cd tmpdir && cvs -d /home/MPI/cvsMaster export -r ${TAG} mpich2allromio ) ;\
 	else \
-	(cd tmpdir && cvs -d /home/MPI/cvsMaster export -D 'now' mpich2all ) ;\
+	(cd tmpdir && cvs -d /home/MPI/cvsMaster export -D 'now' mpich2allromio ) ;\
 	fi	
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-${VERSION}
 	(cd tmpdir/${PACKAGE}-${VERSION} && maint/updatefiles --without-codecheck )
 	(cp -r tmpdir/${PACKAGE}-${VERSION} tmpdir2)
-	(cd tmpdir2 && ./configure && make mandoc && make htmldoc && make latexdoc )
+	(cd tmpdir2 && ./configure && ${MAKE} mandoc && ${MAKE} htmldoc && ${MAKE} latexdoc )
 	cp -r tmpdir2/man tmpdir/${PACKAGE}-${VERSION}/man
 	cp -r tmpdir2/www tmpdir/${PACKAGE}-${VERSION}/www
 	cp -r tmpdir2/doc/refman tmpdir/${PACKAGE}-${VERSION}/doc
-	-rf -rf tmpdir2
+	-rm -rf tmpdir2
 	(cd tmpdir/${PACKAGE}-${VERSION} && maint/updatefiles -distrib --without-codecheck )
 	(cd tmpdir/${PACKAGE}-${VERSION}/doc && /bin/rm -rf notes )
-	(cd tmpdir/${PACKAGE}-${VERSION}/doc/adi3 && make )
-	(cd tmpdir/${PACKAGE}-${VERSION}/doc/mpich2 && make )
+	(cd tmpdir/${PACKAGE}-${VERSION}/doc/adi3 && ${MAKE} && ${MAKE} clean )
+	(cd tmpdir/${PACKAGE}-${VERSION}/doc/mpich2 && ${MAKE} && ${MAKE} clean)
 	(cd tmpdir && tar cf ${PACKAGE}-${VERSION}.tar ${PACKAGE}-${VERSION} )
 	mv tmpdir/${PACKAGE}-${VERSION}.tar .
 	-rm -rf tmpdir
