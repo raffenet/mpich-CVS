@@ -34,6 +34,9 @@ static int create_error_to_return(void);
  *   they are in fact common.
  * - Combine for loops in cases where appropriate, or use block memory copies,
  *   if we think that would make things faster.
+ * - Fix stride and related values on all but vector type; leaving these alone
+ *   until we figure out exactly what we want to do with the loopinfo vs.
+ *   opt_loopinfo.
  */
 int MPID_Type_get_contents(MPI_Datatype datatype, 
 			   int max_integers, 
@@ -45,7 +48,7 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 {
     MPID_Datatype *dtp;
     struct MPID_Dataloop *dlp;
-    int dtype_combiner, count, i;
+    int dtype_combiner, count, size, i;
 
     if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
 	/* this is erroneous according to the standard */
@@ -65,13 +68,17 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
     }
     else if (dtype_combiner == MPI_COMBINER_VECTOR) {
 	if (max_integers >= 3 && max_datatypes >= 1) {
+	    if (dlp->kind & DLOOP_FINAL_MASK) {
+		array_of_datatypes[0] = dlp->loop_params.v_t.u.handle;
+		size = MPID_Datatype_get_basic_size(dlp->loop_params.v_t.u.handle);
+	    }
+	    else {
+		array_of_datatypes[0] = dlp->loop_params.v_t.u.dataloop->handle;
+		size = dlp->el_size;
+	    }
 	    array_of_integers[0]  = dlp->loop_params.v_t.count;
 	    array_of_integers[1]  = dlp->loop_params.v_t.blocksize;
-	    array_of_integers[2]  = dlp->loop_params.v_t.stride;
-	    if (dlp->kind & DLOOP_FINAL_MASK)
-		array_of_datatypes[0] = dlp->loop_params.v_t.u.handle;
-	    else
-		array_of_datatypes[0] = dlp->loop_params.v_t.u.dataloop->handle;
+	    array_of_integers[2]  = dlp->loop_params.v_t.stride / size;
 	}
 	else return create_error_to_return();
     }
