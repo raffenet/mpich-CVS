@@ -1075,7 +1075,8 @@ static int ibui_read_unex(ibu_t ibu)
 	    ibu->unex_finished_queue = IBU_Process.unex_finished_list;
 	    IBU_Process.unex_finished_list = ibu;
 	    /* post another receive to replace the consumed one */
-	    ibui_post_receive(ibu);
+	    /*ibui_post_receive(ibu);*/
+	    MPIDI_DBG_PRINTF((60, FCNAME, "finished read saved in IBU_Process.unex_finished_list\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READ_UNEX);
 	    return IBU_SUCCESS;
 	}
@@ -1130,7 +1131,7 @@ int ibui_readv_unex(ibu_t ibu)
 	    /* put the receive packet back in the pool */
 	    if (ibu->unex_list->mem_ptr == NULL)
 	    {
-		err_printf("ibui_read_unex: mem_ptr == NULL\n");
+		err_printf("ibui_readv_unex: mem_ptr == NULL\n");
 	    }
 	    assert(ibu->unex_list->mem_ptr != NULL);
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockFree(mem_ptr)"));
