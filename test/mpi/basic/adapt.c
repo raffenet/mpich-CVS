@@ -120,14 +120,15 @@ int main(int argc, char *argv[])
 	start = 0,		/* Starting value for signature curve 		*/
 	end = MAXINT,		/* Ending value for signature curve		*/
 	printopt = 1,		/* Debug print statements flag			*/
-	middle_rank = 0;        /* rank 0, 1 or 2 where 2-0-1 or 0-1-2 or 1-2-0 */
+	middle_rank = 0,        /* rank 0, 1 or 2 where 2-0-1 or 0-1-2 or 1-2-0 */
+	tint;
     
     ArgStruct	args01, args12, args012;/* Argumentsfor all the calls		*/
     
-    double t, t0, t1,	/* Time variables				*/
+    double t, t0, t1,           /* Time variables				*/
 	tlast01, tlast12, tlast012,/* Time for the last transmission		*/
 	latency01, latency12,	/* Network message latency			*/
-	latency012;             /* Network message latency to go from 0 -> 1 -> 2 */
+	latency012, tdouble;    /* Network message latency to go from 0 -> 1 -> 2 */
 
     Data *bwdata01, *bwdata12, *bwdata012;/* Bandwidth curve data 		*/
     
@@ -406,11 +407,20 @@ int main(int argc, char *argv[])
 	    {
 		if (bSavePert)
 		{
-		    if (bUseMegaBytes)
-			fprintf(out,"%d\t%f\t%0.9f\n", bwdata01[n].bits / 8, bwdata01[n].bps / 8, bwdata01[n].t);
+		    if (args01.iproc == 0)
+		    {
+			if (bUseMegaBytes)
+			    fprintf(out, "%d\t%f\t%0.9f\t", bwdata01[n].bits / 8, bwdata01[n].bps / 8, bwdata01[n].t);
+			else
+			    fprintf(out, "%d\t%f\t%0.9f\t", bwdata01[n].bits / 8, bwdata01[n].bps, bwdata01[n].t);
+			fflush(out);
+		    }
 		    else
-			fprintf(out,"%d\t%f\t%0.9f\n", bwdata01[n].bits / 8, bwdata01[n].bps, bwdata01[n].t);
-		    fflush(out);
+		    {
+			MPI_Send(&bwdata01[n].bits, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
+			MPI_Send(&bwdata01[n].bps, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
+			MPI_Send(&bwdata01[n].t, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
+		    }
 		}
 	    }
 	    
@@ -427,6 +437,18 @@ int main(int argc, char *argv[])
 	    }
 
 skip_01_trial:
+	    if (g_proc_loc == RIGHT_PROCESS && g_nIproc == 0 && bSavePert)
+	    {
+		MPI_Recv(&tint, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+		fprintf(out, "%d\t", tint/8);
+		MPI_Recv(&tdouble, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+		if (bUseMegaBytes)
+		    tdouble = tdouble / 8.0;
+		fprintf(out, "%f\t", tdouble);
+		MPI_Recv(&tdouble, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+		fprintf(out, "%0.9f\t", tdouble);
+		fflush(out);
+	    }
 
 
 	    /*****************************************************/
@@ -585,19 +607,25 @@ skip_01_trial:
 	    bwdata12[n].bps = bwdata12[n].bits / (bwdata12[n].t * 1024 * 1024);
 	    bwdata12[n].repeat = nrepeat;
 
-	    /*
 	    if (args12.tr)
 	    {
 		if (bSavePert)
 		{
-		    if (bUseMegaBytes)
-			fprintf(out,"%d\t%f\t%0.9f\n", bwdata12[n].bits / 8, bwdata12[n].bps / 8, bwdata12[n].t);
+		    if (g_nIproc == 0)
+		    {
+			if (bUseMegaBytes)
+			    fprintf(out,"%f\t%0.9f\t", bwdata12[n].bps / 8, bwdata12[n].t);
+			else
+			    fprintf(out,"%f\t%0.9f\t", bwdata12[n].bps, bwdata12[n].t);
+			fflush(out);
+		    }
 		    else
-			fprintf(out,"%d\t%f\t%0.9f\n", bwdata12[n].bits / 8, bwdata12[n].bps, bwdata12[n].t);
-		    fflush(out);
+		    {
+			MPI_Send(&bwdata12[n].bps, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
+			MPI_Send(&bwdata12[n].t, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
+		    }
 		}
 	    }
-	    */
 	    
 	    free(memtmp);
 	    free(memtmp1);
@@ -612,6 +640,16 @@ skip_01_trial:
 	    }
 
 skip_12_trial:
+	    if (g_proc_loc == LEFT_PROCESS && g_nIproc == 0 && bSavePert)
+	    {
+		MPI_Recv(&tdouble, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+		if (bUseMegaBytes)
+		    tdouble = tdouble / 8.0;
+		fprintf(out, "%f\t", tdouble);
+		MPI_Recv(&tdouble, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+		fprintf(out, "%0.9f\t", tdouble);
+		fflush(out);
+	    }
 
 
 	    /*****************************************************/
@@ -805,19 +843,17 @@ skip_12_trial:
 	    bwdata012[n].bps = bwdata012[n].bits / (bwdata012[n].t * 1024 * 1024);
 	    bwdata012[n].repeat = nrepeat;
 
-	    /*
 	    if (g_nIproc == 0)
 	    {
 		if (bSavePert)
 		{
 		    if (bUseMegaBytes)
-			fprintf(out,"%d\t%f\t%0.9f\n", bwdata012[n].bits / 8, bwdata012[n].bps / 8, bwdata012[n].t);
+			fprintf(out, "%f\t%0.9f\n", bwdata012[n].bps / 8, bwdata012[n].t);
 		    else
-			fprintf(out,"%d\t%f\t%0.9f\n", bwdata012[n].bits / 8, bwdata012[n].bps, bwdata012[n].t);
+			fprintf(out, "%f\t%0.9f\n", bwdata012[n].bps, bwdata012[n].t);
 		    fflush(out);
 		}
 	    }
-	    */
 	    
 	    free(memtmp);
 	    free(memtmp1);
@@ -832,46 +868,75 @@ skip_12_trial:
 	    }
 	} /* End of perturbation loop */
 
-	if (!bSavePert && g_nIproc == 0)
+	if (!bSavePert)/* && g_nIproc == 0)*/
 	{
 	    /* if we didn't save all of the perturbation loops, find the max and save it */
-	    int index = 1;
-	    double dmax = bwdata01[n-1].bps;
+	    int index01 = 1, index12 = 1, index012 = 1;
+	    double dmax01 = bwdata01[n-1].bps;
+	    double dmax12 = bwdata12[n-1].bps;
+	    double dmax012 = bwdata012[n-1].bps;
 	    for (; ipert > 1; ipert--)
 	    {
-		if (bwdata01[n-ipert].bps > dmax)
+		if (bwdata01[n-ipert].bps > dmax01)
 		{
-		    index = ipert;
-		    dmax = bwdata01[n-ipert].bps;
+		    index01 = ipert;
+		    dmax01 = bwdata01[n-ipert].bps;
+		}
+		if (bwdata12[n-ipert].bps > dmax12)
+		{
+		    index12 = ipert;
+		    dmax12 = bwdata12[n-ipert].bps;
+		}
+		if (bwdata012[n-ipert].bps > dmax012)
+		{
+		    index012 = ipert;
+		    dmax012 = bwdata012[n-ipert].bps;
 		}
 	    }
-	    if (bUseMegaBytes)
-		fprintf(out, "%d\t%f\t%0.9f\n", bwdata01[n-index].bits / 8, bwdata01[n-index].bps / 8, bwdata01[n-index].t);
-	    else
-		fprintf(out, "%d\t%f\t%0.9f\n", bwdata01[n-index].bits / 8, bwdata01[n-index].bps, bwdata01[n-index].t);
-	    fflush(out);
-	}
-#if 0
-	if (!bSavePert && args12.tr)
-	{
-	    /* if we didn't save all of the perturbation loops, find the max and save it */
-	    int index = 1;
-	    double dmax = bwdata12[n-1].bps;
-	    for (; ipert > 1; ipert--)
+	    if (g_proc_loc == LEFT_PROCESS && g_nIproc != 0)
 	    {
-		if (bwdata12[n-ipert].bps > dmax)
-		{
-		    index = ipert;
-		    dmax = bwdata12[n-ipert].bps;
-		}
+		MPI_Send(&index01, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
+		MPI_Send(&bwdata01[n-index01].bits, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
+		MPI_Send(&bwdata01[n-index01].bps, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
+		MPI_Send(&bwdata01[n-index01].t, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
 	    }
-	    if (bUseMegaBytes)
-		fprintf(out,"%d\t%f\t%0.9f\n", bwdata12[n-index].bits / 8, bwdata12[n-index].bps / 8, bwdata12[n-index].t);
-	    else
-		fprintf(out,"%d\t%f\t%0.9f\n", bwdata12[n-index].bits / 8, bwdata12[n-index].bps, bwdata12[n-index].t);
-	    fflush(out);
+	    if (g_proc_loc != LEFT_PROCESS && g_nIproc == 0)
+	    {
+		MPI_Recv(&index01, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(&bwdata01[n-index01].bits, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(&bwdata01[n-index01].bps, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(&bwdata01[n-index01].t, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+	    }
+	    MPI_Barrier(MPI_COMM_WORLD); /* prevent the any source recvs from overlapping */
+	    if (g_proc_loc == MIDDLE_PROCESS && g_nIproc != 0)
+	    {
+		MPI_Send(&index12, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
+		MPI_Send(&bwdata12[n-index12].bps, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
+		MPI_Send(&bwdata12[n-index12].t, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
+	    }
+	    if (g_proc_loc != MIDDLE_PROCESS && g_nIproc == 0)
+	    {
+		MPI_Recv(&index12, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(&bwdata12[n-index12].bps, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(&bwdata12[n-index12].t, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &status);
+	    }
+	    if (g_nIproc == 0)
+	    {
+		if (bUseMegaBytes)
+		{
+		    fprintf(out, "%d\t%f\t%0.9f\t", bwdata01[n-index01].bits / 8, bwdata01[n-index01].bps / 8, bwdata01[n-index01].t);
+		    fprintf(out, "%f\t%0.9f\t", bwdata12[n-index12].bps / 8, bwdata12[n-index12].t);
+		    fprintf(out, "%f\t%0.9f\n", bwdata012[n-index012].bps / 8, bwdata012[n-index012].t);
+		}
+		else
+		{
+		    fprintf(out, "%d\t%f\t%0.9f\t", bwdata01[n-index01].bits / 8, bwdata01[n-index01].bps, bwdata01[n-index01].t);
+		    fprintf(out, "%f\t%0.9f\t", bwdata12[n-index12].bps, bwdata12[n-index12].t);
+		    fprintf(out, "%f\t%0.9f\n", bwdata012[n-index012].bps, bwdata012[n-index012].t);
+		}
+		fflush(out);
+	    }
 	}
-#endif
     } /* End of main loop  */
 	
     if (g_nIproc == 0)
@@ -880,6 +945,7 @@ skip_12_trial:
     MPI_Finalize();
     free(bwdata01);
     free(bwdata12);
+    free(bwdata012);
     return 0;
 }
 
