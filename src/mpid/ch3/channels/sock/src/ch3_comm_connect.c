@@ -16,15 +16,29 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm **newcomm)
 {
-    int p, key_max_sz, val_max_sz, mpi_errno=MPI_SUCCESS;
+
+#define NUMPGS 50       /* initial value for max. no. of process
+                           groups (for allocating some data structures) */
+
+    int p, j, key_max_sz, val_max_sz, mpi_errno=MPI_SUCCESS;
     int i, bizcards_len, rank, kvs_namelen, recv_ints[3],
-        send_ints[2], comm_size, context_id;
-    int remote_comm_size=0, id_sz;
-    MPID_Comm *tmp_comm, *intercomm, *commself_ptr;
-    char *local_root_pgid, *key, *val, *bizcards, *bizcard_ptr;
-    MPIDI_CH3I_Process_group_t *remote_root_pg, *pg;
+        send_ints[2], context_id;
+    int remote_comm_size=0, pgid_len, tmp_n_local_pgs;
+    MPID_Comm *tmp_comm, *intercomm, *commself_ptr, *kvscomm_ptr;
+    MPI_Comm kvscomm;
+    char *key, *val, *bizcards=NULL, *bizcard_ptr;
+    MPIDI_CH3I_Process_group_t **remote_pgs_array, *pg, *new_pg;
     MPIDI_VC *vc_table, *vc;
-    int *local_pg_ranks, *remote_pg_ranks;
+    int n_local_pgs, *local_pg_sizes, n_remote_pgs, *remote_pg_sizes;
+    int sendtag=0, recvtag=0, local_comm_size, kvscomm_rank, pg_no;
+    char **local_pg_ids, **remote_pg_ids;
+    MPI_Status status;
+    typedef struct pg_info {
+        int pg_no;
+        int rank_in_pg;
+    } pg_info;  /* used to communicate pg info of each process in the
+                   communictor */
+    pg_info *local_procs_pg_info, *remote_procs_pg_info;
 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_COMM_CONNECT);
 
@@ -35,50 +49,37 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
    intercomm between the two roots. Use MPI functions to communicate
    the other information needed to create the real intercommunicator
    between the processes on the two sides. Then free the
-   intercommunicator between the roots. */
+   intercommunicator between the roots. Most of the complexity is
+   because there can be multiple process groups on each side. */ 
 
-    /* Allocate new pg structure and initialize it. */
-    remote_root_pg = MPIU_Malloc(sizeof(MPIDI_CH3I_Process_group_t));
-    if (remote_root_pg == NULL)
-    {
-        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-        goto fn_exit;
-    }
-    /* FIXME - Where does this new pg get freed? */
 
-    mpi_errno = PMI_KVS_Get_name_length_max(&kvs_namelen);
-    if (mpi_errno != PMI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_name_length_max", "**pmi_kvs_get_name_length_max %d", mpi_errno);
-	goto fn_exit;
-    }
-
-    remote_root_pg->kvs_name = MPIU_Malloc(kvs_namelen + 1);
-    if (remote_root_pg->kvs_name == NULL)
-    {
-        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-        goto fn_exit;
-    }
-    
-    mpi_errno = PMI_Get_id_length_max(&id_sz);
+    mpi_errno = PMI_Get_id_length_max(&pgid_len);
     if (mpi_errno != PMI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id_length_max", "**pmi_get_id_length_max %d", mpi_errno);
 	goto fn_exit;
     }
-    
-    remote_root_pg->pg_id = MPIU_Malloc(id_sz + 1);
-    if (remote_root_pg->pg_id == NULL)
+
+    mpi_errno = PMI_KVS_Get_name_length_max(&kvs_namelen);
+    if (mpi_errno != PMI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_name_length_max", "**pmi_kvs_get_name_length_max %d", mpi_errno);
+	return mpi_errno;
+    }
+
+    mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
+    if (mpi_errno != PMI_SUCCESS)
+    {
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_key_length_max", "**pmi_kvs_get_key_length_max %d", mpi_errno);
+        goto fn_exit;
+    }
+    key = (char *) MPIU_Malloc(key_max_sz);
+    if (key == NULL)
     {
         mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
         goto fn_exit;
     }
     
-    remote_root_pg->ref_count = 1;
-    remote_root_pg->next = NULL;
-
-    rank = comm_ptr->rank;
-
     mpi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
     if (mpi_errno != PMI_SUCCESS)
     {
@@ -92,10 +93,88 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
         goto fn_exit;
     }
 
+    /* Allocate memory to store process-group info of local processes */
+
+    local_pg_ids = (char **) MPIU_Malloc(NUMPGS * sizeof(char *));
+    if (local_pg_ids == NULL)
+    {
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+        goto fn_exit;
+    }
+        
+    for (i=0; i<NUMPGS; i++) {
+        local_pg_ids[i] = (char *) MPIU_Malloc(pgid_len);
+        if (local_pg_ids[i] == NULL)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+            goto fn_exit;
+        }
+    }
+
+    local_pg_sizes = (int *) MPIU_Malloc(NUMPGS * sizeof(int));
+    if (local_pg_sizes == NULL)
+    {
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+        goto fn_exit;
+    }
+    
+    local_comm_size = comm_ptr->local_size;
+    
+    local_procs_pg_info = (pg_info *) MPIU_Malloc(local_comm_size * sizeof(pg_info));
+    if (local_procs_pg_info == NULL)
+    {
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+        goto fn_exit;
+    }
+    
+    /* Go through each rank in comm_ptr and find out how many
+       distinct process groups are there. For each processs group,
+       we need to know the size of the group, the pg_id, and the
+       ranks in the pg that are part of this communicator. Store
+       all this info in a way that can be communicated to the
+       remote root. All processes (not just the root) calculate this
+       info because they need it later. */
+    
+    n_local_pgs = 1;
+    MPIU_Strncpy(local_pg_ids[0], comm_ptr->vcr[0]->ch.pg->pg_id, pgid_len);
+    local_pg_sizes[0] = comm_ptr->vcr[0]->ch.pg->size;
+    local_procs_pg_info[0].pg_no = 0;
+    local_procs_pg_info[0].rank_in_pg = comm_ptr->vcr[0]->ch.pg_rank;
+    
+    for (i=1; i<local_comm_size; i++) {
+        for (j=0; j<n_local_pgs; j++) {
+            if (strcmp(comm_ptr->vcr[i]->ch.pg->pg_id,
+                       local_pg_ids[j]) == 0)
+                break;
+        }
+        if (j == n_local_pgs) {
+            /* found new pg */
+            MPIU_Strncpy(local_pg_ids[j],
+                         comm_ptr->vcr[i]->ch.pg->pg_id, pgid_len);  
+            local_pg_sizes[j] = comm_ptr->vcr[i]->ch.pg->size;
+            n_local_pgs++;
+            if (n_local_pgs == NUMPGS) {
+                /* FIXME - Reached the limit. Either return error
+                   code or realloc memory for data structures that
+                   are of size NUMPGS. Abort for now. */
+                MPID_Abort(NULL, mpi_errno, 13);
+            }
+            
+        }
+        local_procs_pg_info[i].pg_no = j;
+        local_procs_pg_info[i].rank_in_pg = comm_ptr->vcr[i]->ch.pg_rank;
+    }
+    
+    rank = comm_ptr->rank;
+    
     if (rank == root) {
-        /* connect to the root on the other side and return a new
-           vc. Function implemented in ch3_progress.c */
+
+        /* Connect to the root on the other side. Create a
+           temporary intercommunicator between the two roots so that
+           we can use MPI functions to communicate data between them. */
+
         MPIDI_CH3I_Connect_to_root(port_name, &vc);
+        /* Function implemented in ch3_progress.c */
 
         /* Use this vc to create a temporary intercommunicator
            between the two roots*/ 
@@ -147,45 +226,231 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
         /* tmp_comm is now established; can communicate with the root on
            the other side. */
 
-        /* First send the comm_size and pg_size to the root on the
-           other side and receive the remote_comm_size,
-           remote_pg_size, and context_id of the new communicator from
-           that root. */ 
+        /* Send the remote root: n_local_pgs, local_comm_size,
+           Recv from the remote root: n_remote_pgs, remote_comm_size,
+           context_id for newcomm */
 
-        comm_size = comm_ptr->local_size;
-        send_ints[0] = comm_size;
-        send_ints[1] = MPIDI_CH3I_Process.pg->size;
+        send_ints[0] = n_local_pgs;
+        send_ints[1] = local_comm_size;
 
-        mpi_errno = MPIC_Send(send_ints, 2, MPI_INT, 0, 100,
-                              tmp_comm->handle);
+        mpi_errno = MPIC_Sendrecv(send_ints, 2, MPI_INT, 0,
+                                  sendtag, recv_ints, 3, MPI_INT,
+                                  0, recvtag, tmp_comm->handle,
+                                  MPI_STATUS_IGNORE);
         if (mpi_errno != MPI_SUCCESS) goto fn_exit;
-        
-        mpi_errno = MPIC_Recv(recv_ints, 3, MPI_INT, 0, 101,
-                              tmp_comm->handle, MPI_STATUS_IGNORE);
-        if (mpi_errno != MPI_SUCCESS) goto fn_exit;
-        
-        remote_comm_size = recv_ints[0];
-        remote_root_pg->size = recv_ints[1];
-        context_id = recv_ints[2];
+        sendtag++;
+        recvtag++;
+    }
 
-        /* exchange pg_ids with the remote root */
-        local_root_pgid = comm_ptr->vcr[rank]->ch.pg->pg_id;
-        mpi_errno = MPIC_Sendrecv(local_root_pgid,
-                                  (int)strlen(local_root_pgid)+1,
-                                  MPI_CHAR, 0, 102, 
-                                  remote_root_pg->pg_id, id_sz,
-                                  MPI_CHAR, 0, 102, tmp_comm->handle,
+    /* broadcast the received info to local processes */
+    mpi_errno = MPIR_Bcast(recv_ints, 3, MPI_INT, root, comm_ptr);
+    if (mpi_errno) goto fn_exit;
+
+    n_remote_pgs = recv_ints[0];
+    remote_comm_size = recv_ints[1];
+    context_id = recv_ints[2];
+
+    /* All processes allocate memory to store remote process group info */
+
+    remote_pg_ids = (char **) MPIU_Malloc(n_remote_pgs * sizeof(char *));
+    if (remote_pg_ids == NULL)
+    {
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+        goto fn_exit;
+    }
+    
+    for (i=0; i<n_remote_pgs; i++) {
+        remote_pg_ids[i] = (char *) MPIU_Malloc(pgid_len);
+        if (remote_pg_ids[i] == NULL)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+            goto fn_exit;
+        }
+    }
+    
+    remote_pg_sizes = (int *) MPIU_Malloc(n_remote_pgs * sizeof(int));
+    if (remote_pg_sizes == NULL)
+    {
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+        goto fn_exit;
+    }
+    
+    remote_procs_pg_info = (pg_info *)
+        MPIU_Malloc(remote_comm_size * sizeof(pg_info)); 
+    if (remote_procs_pg_info == NULL)
+    {
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+        goto fn_exit;
+    }
+    
+    if (rank == root) {
+        /* Exchange with the remote root the following:
+           local_pg_sizes, local_procs_pg_info, local_pgs_ids. */
+
+        mpi_errno = MPIC_Sendrecv(local_pg_sizes, n_local_pgs, MPI_INT, 0,
+                                  sendtag, remote_pg_sizes,
+                                  n_remote_pgs, MPI_INT, 
+                                  0, recvtag, tmp_comm->handle,
+                                  MPI_STATUS_IGNORE);
+        if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+        sendtag++;
+        recvtag++;
+
+        mpi_errno = MPIC_Sendrecv(local_procs_pg_info,
+                                  2*local_comm_size, MPI_INT, 0, 
+                                  sendtag, remote_procs_pg_info,
+                                  2*remote_comm_size, MPI_INT, 
+                                  0, recvtag, tmp_comm->handle,
+                                  MPI_STATUS_IGNORE);
+        if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+        sendtag++;
+        recvtag++;
+
+        for (i=0; i<n_local_pgs; i++) {
+            mpi_errno = MPIC_Send(local_pg_ids[i],
+                                  strlen(local_pg_ids[i])+1, MPI_CHAR,
+                                  0, sendtag, tmp_comm->handle);
+            if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+            sendtag++;
+        }
+        
+        for (i=0; i<n_remote_pgs; i++) {
+            mpi_errno = MPIC_Recv(remote_pg_ids[i], pgid_len, MPI_CHAR,
+                                  0, recvtag, tmp_comm->handle,
                                   MPI_STATUS_IGNORE); 
+            if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+            recvtag++;
+        }
+    }
+
+    /* broadcast the received info to local processes */
+
+    mpi_errno = MPIR_Bcast(remote_pg_sizes, n_remote_pgs, MPI_INT,
+                           root, comm_ptr); 
+    if (mpi_errno) goto fn_exit;
+
+    mpi_errno = MPIR_Bcast(remote_procs_pg_info, 2*remote_comm_size,
+                           MPI_INT, root, comm_ptr); 
+    if (mpi_errno) goto fn_exit;
+
+    for (i=0; i<n_remote_pgs; i++) {
+        mpi_errno = MPIR_Bcast(remote_pg_ids[i], pgid_len, MPI_CHAR,
+                               root, comm_ptr);
         if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+    }
+
+    /* Allocate process groups corresponding to the remote_pgs and
+       link them in to the list of pgs. */
+
+    /* For all newly created remote_pgs, we need to create a new
+       KVS. Since processes in the same process group can share a KVS, 
+       we make one process (the lowest ranked process) in each
+       "local" process group create new KVSes and bcast the names to
+       other processes in that group. MPI_Comm_split is amazingly well
+       suited to create the communicators needed for this. */
+
+    /* We call NMPI_Comm_split only if n_local_pgs != 1. That is
+       because if the connect is happening during MPI_Init because it
+       is a newly spawned set of processes, NMPI_Comm_split complains
+       about MPI being uninitialized. We avoid that by not calling
+       comm_split at all in this case as it is not needed. */
+
+    if (n_local_pgs != 1) {
+        mpi_errno = NMPI_Comm_split(comm_ptr->handle,
+                                    local_procs_pg_info[rank].pg_no, 0,
+                                    &kvscomm);
+        if (mpi_errno) goto fn_exit;
+        MPID_Comm_get_ptr( kvscomm, kvscomm_ptr );
+    }
+    else {
+        kvscomm_ptr = comm_ptr;
+        kvscomm = comm_ptr->handle;
+    }
+
+    kvscomm_rank = kvscomm_ptr->rank;
+
+
+    /* Allocate remote_pgs and keep track of them in a
+       remote_pgs_array */
+    remote_pgs_array = MPIU_Malloc(n_remote_pgs *
+                                   sizeof(MPIDI_CH3I_Process_group_t *)); 
+    if (remote_pgs_array == NULL)
+    {
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+        goto fn_exit;
+    }
+
+    for (i=0; i<n_remote_pgs; i++) {
+
+        /* Allocate process group data structure and populate */
+        new_pg = MPIU_Malloc(sizeof(MPIDI_CH3I_Process_group_t));
+        if (new_pg == NULL)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+            goto fn_exit;
+        }
+
+        remote_pgs_array[i] = new_pg;
+
+        new_pg->size = remote_pg_sizes[i];
+
+        new_pg->kvs_name = MPIU_Malloc(kvs_namelen + 1);
+        if (new_pg->kvs_name == NULL)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+            goto fn_exit;
+        }
+
+        if (kvscomm_rank == 0) {
+            mpi_errno = PMI_KVS_Create(new_pg->kvs_name, kvs_namelen);
+            if (mpi_errno != 0)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_create", "**pmi_kvs_create %d", mpi_errno);
+                goto fn_exit;
+            }
+        }
+
+        mpi_errno = MPIR_Bcast(new_pg->kvs_name, kvs_namelen, MPI_CHAR,
+                               0, kvscomm_ptr);
+        if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+
+        new_pg->pg_id = MPIU_Malloc(pgid_len + 1);
+        if (new_pg->pg_id == NULL)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+            goto fn_exit;
+        }
+
+        MPIU_Strncpy(new_pg->pg_id, remote_pg_ids[i], pgid_len);
+
+        new_pg->ref_count = 1;
+        new_pg->next = NULL;
+
+        /* Link this pg in to the list of pgs. The new pg (represented
+           by the new pg_id) should not already exist. If it does,
+           flag an error. */
+
+        pg = MPIDI_CH3I_Process.pg;
+        while (pg != NULL) {
+            if (strcmp(pg->pg_id, new_pg->pg_id) == 0) {
+                /* pg already exists! Need to return error code
+                   here. Abort for now. */
+                MPID_Abort(NULL, mpi_errno, 13);
+            }
+            if (pg->next == NULL) {
+                pg->next = new_pg;
+                break;
+            }
+            pg = pg->next;
+        }
+    }
+
+
+    if (rank == root) {
 
         /* Send the business cards of the processes on this side to
-           the remote root. Each process creates its own bizcard and
-           sends it to the root, which forwards them to the root on
-           the other side. If we knew the sizes of all the business
-           cards, we could have used MPI_Gather instead of a loop of
-           MPI_Recvs. */
-
-        bizcards = (char *) MPIU_Malloc(comm_size * val_max_sz);
+           the remote root. */
+        bizcards = (char *) MPIU_Malloc(local_comm_size * val_max_sz);
         if (bizcards == NULL)
         {
             mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
@@ -196,21 +461,24 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
            bizcards for communication */
         bizcards_len = 0;
         bizcard_ptr = bizcards;
-        for (i=0; i<comm_size; i++) {
-            if (i == root) {
-                mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz);
-                if (mpi_errno != MPI_SUCCESS)
-                {
-                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_buscard", 0);
-                    goto fn_exit;
-                }
+        for (i=0; i<local_comm_size; i++) {
+
+            mpi_errno = MPIU_Snprintf(key, key_max_sz,
+                                      "P%d-businesscard",
+                                      comm_ptr->vcr[i]->ch.pg_rank); 
+            if (mpi_errno < 0 || mpi_errno > key_max_sz)
+            {
+                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
+                return mpi_errno;
             }
-            else {
-                mpi_errno = MPIC_Recv(val, val_max_sz, MPI_CHAR, i, 52,
-                                      comm_ptr->handle, MPI_STATUS_IGNORE); 
-                if (mpi_errno) goto fn_exit;
+            mpi_errno = PMI_KVS_Get(comm_ptr->vcr[i]->ch.pg->kvs_name,
+                                    key, val, val_max_sz); 
+            if (mpi_errno != 0)
+            {
+                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
+                return mpi_errno;
             }
-            
+
             MPIU_Strncpy(bizcard_ptr, val, val_max_sz);
             
 /*            printf("Child %d biz card %s\n", i, bizcard_ptr);
@@ -222,34 +490,15 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
 
         /* send the business cards to the remote root */
         mpi_errno = MPIC_Send(bizcards, bizcards_len, MPI_CHAR,
-                              0, 103, tmp_comm->handle); 
+                              0, sendtag, tmp_comm->handle); 
         if (mpi_errno != MPI_SUCCESS) goto fn_exit;
-        
-        /* now send the rank_in_pg of each of the processes in
-           comm_ptr. This is necessary because comm_ptr may be a
-           subset or a permutation of processes in local process group */
-
-        local_pg_ranks = (int *) MPIU_Malloc(comm_size*sizeof(int));
-        if (local_pg_ranks == NULL)
-        {
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-            goto fn_exit;
-        }
-
-        for (i=0; i<comm_size; i++) 
-            local_pg_ranks[i] = comm_ptr->vcr[i]->ch.pg_rank;
-
-        mpi_errno = MPIC_Send(local_pg_ranks, comm_size, MPI_INT,
-                              0, 104, tmp_comm->handle); 
-        if (mpi_errno != MPI_SUCCESS) goto fn_exit;
-        
-        MPIU_Free(local_pg_ranks);
+        sendtag++;
 
 
         /* now receive the business cards of the processes on the
            other side. Allocate a larger bizcards buffer if
            necessary. */
-        if (remote_comm_size > comm_size) {
+        if (remote_comm_size > local_comm_size) {
             MPIU_Free(bizcards);
             bizcards = (char *) MPIU_Malloc(remote_comm_size * val_max_sz);
             if (bizcards == NULL)
@@ -261,50 +510,61 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
         
         /* recv the business cards */
         mpi_errno = MPIC_Recv(bizcards, remote_comm_size*val_max_sz, MPI_CHAR,
-                              0, 105, tmp_comm->handle, MPI_STATUS_IGNORE); 
+                              0, recvtag, tmp_comm->handle, &status);
         if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+        recvtag++;
 
-        /* recv the rank in process group for each process on the
-           remote side */
-        remote_pg_ranks = (int *) MPIU_Malloc(remote_comm_size*sizeof(int));
-        if (remote_pg_ranks == NULL)
+        bizcards_len = status.count;
+
+
+        /* send the business cards to the root (lowest ranked) process
+           of each local pg */
+
+        tmp_n_local_pgs = 0;
+        for (i=0; i<local_comm_size; i++) {
+            for (j=0; j<tmp_n_local_pgs; j++) {
+                if (strcmp(comm_ptr->vcr[i]->ch.pg->pg_id,
+                           local_pg_ids[j]) == 0)
+                    break;
+            }
+            if (j == tmp_n_local_pgs) {
+                /* found root of new pg */
+                if (i != rank) { /* don't need to send to myself */
+                    mpi_errno = MPIC_Send(bizcards, bizcards_len, MPI_CHAR,
+                                          i, 127, comm_ptr->handle);
+                    if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+                }
+                tmp_n_local_pgs++;
+            }
+        }
+    }
+
+    else if (kvscomm_rank == 0) { /* roots of local pgs other than
+                                     root of comm_ptr */
+        
+        bizcards = (char *) MPIU_Malloc(remote_comm_size * val_max_sz);
+        if (bizcards == NULL)
         {
             mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
             goto fn_exit;
         }
 
-        mpi_errno = MPIC_Recv(remote_pg_ranks, remote_comm_size, MPI_INT,
-                              0, 106, tmp_comm->handle, MPI_STATUS_IGNORE); 
+        mpi_errno = MPIC_Recv(bizcards, remote_comm_size * val_max_sz,
+                              MPI_CHAR, root, 127, comm_ptr->handle,
+                              MPI_STATUS_IGNORE); 
         if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+    }
 
-        /* Extract the business cards and store them in a new
-           kvs. First create a new kvs for the purpose. */
-        mpi_errno = PMI_KVS_Create(remote_root_pg->kvs_name, kvs_namelen);
-        if (mpi_errno != 0)
-        {
-            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_create", "**pmi_kvs_create %d", mpi_errno);
-            goto fn_exit;
-        }
-        /* FIXME - Where does this new kvs get freed? */
+    if (kvscomm_rank == 0) {
+
+        /* Extract the business cards and store them in the kvs */
 
         /* put the business cards into the kvs for the remote
            processes */
-        mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
-	if (mpi_errno != PMI_SUCCESS)
-	{
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_key_length_max", "**pmi_kvs_get_key_length_max %d", mpi_errno);
-            goto fn_exit;
-	}
-        key = (char *) MPIU_Malloc(key_max_sz);
-        if (key == NULL)
-        {
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-            goto fn_exit;
-        }
 
         bizcard_ptr = bizcards;
         for (i=0; i<remote_comm_size; i++) {
-            mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d-businesscard", remote_pg_ranks[i]);
+            mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d-businesscard", remote_procs_pg_info[i].rank_in_pg);
             if (mpi_errno < 0 || mpi_errno > key_max_sz)
             {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
@@ -314,128 +574,69 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
 /*            printf("Child: Put %d's biz card %s\n", i, bizcard_ptr);
             fflush(stdout);
 */
-            mpi_errno = PMI_KVS_Put(remote_root_pg->kvs_name, key, bizcard_ptr);
+
+            pg_no = remote_procs_pg_info[i].pg_no;
+            mpi_errno = PMI_KVS_Put(remote_pgs_array[pg_no]->kvs_name, key, bizcard_ptr);
             if (mpi_errno != 0)
             {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
                 goto fn_exit;
             }
-            
             bizcard_ptr += strlen(bizcard_ptr) + 1;
         }
-        
-        mpi_errno = PMI_KVS_Commit(remote_root_pg->kvs_name);
-        if (mpi_errno != 0)
-        {
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", mpi_errno);
-            goto fn_exit;
-        }
 
+        for (j=0; j<n_remote_pgs; j++) {
+            mpi_errno = PMI_KVS_Commit(remote_pgs_array[j]->kvs_name);
+            if (mpi_errno != 0)
+            {
+                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", mpi_errno);
+                goto fn_exit;
+            }
+        }
+    }
+
+    mpi_errno = PMI_Barrier();
+    if (mpi_errno != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
+	return mpi_errno;
+    }
+
+    if (rank == root) {
         /* All communication with remote root done. Release the
            communicator. */
 
-        /* FIXME - Try to reusethe established vc for the real communicator. */
-
         MPIR_Comm_release(tmp_comm);
-        MPIU_Free(bizcards);
-        MPIU_Free(key);
-
-        /* broadcast the remote_root_pgid to other processes in
-           comm_ptr */
-        mpi_errno = MPIR_Bcast(remote_root_pg->pg_id, id_sz, MPI_CHAR,
-                               root, comm_ptr);
-        if (mpi_errno) goto fn_exit;
-
-        /* broadcast the remote_root_pg->kvs_name, remote_comm_size,
-           remote_pg_size, context_id of the intercommunicator, and
-           remote_pg_ranks to other processes. */
-
-        /* Calling MPIR_Bcast instead of MPI_Bcast because when
-           comm_connect is called in CH3_Init by a newly spawned child
-           process, MPI_Init has not yet completed and MPI_Bcast gives
-           an error saying MPI not initialized. */
-        mpi_errno = MPIR_Bcast(remote_root_pg->kvs_name, kvs_namelen, MPI_CHAR,
-                               root, comm_ptr);
-        if (mpi_errno) goto fn_exit;
-
-        mpi_errno = MPIR_Bcast(recv_ints, 3, MPI_INT, root, comm_ptr);
-        if (mpi_errno) goto fn_exit;
-
-        mpi_errno = MPIR_Bcast(remote_pg_ranks, remote_comm_size, MPI_INT, root, comm_ptr);
-        if (mpi_errno) goto fn_exit;
     }
 
-    else {
-        /* non-root nodes */
+    /* release the kvscomm if it ws created */
+    if (n_local_pgs != 1)
+        MPIR_Comm_release(kvscomm_ptr);
 
-        /* Send the business card of this process to the local
-           root who will then forward all the business cards to the
-           remote root. If we knew the sizes of all the business
-           cards, we could have used MPI_Gather instead of MPI_Send. */
 
-        mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz);
-        if (mpi_errno != MPI_SUCCESS)
-        {
-            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_buscard", 0);
-            goto fn_exit;
-        }
+    /* Allocate and initialize the VC table associated with the remote
+       groups */ 
 
-        mpi_errno = MPIC_Send(val, (int)strlen(val)+1, MPI_CHAR, root, 52,
-                              comm_ptr->handle); 
-        if (mpi_errno) goto fn_exit;
-
-        /* recv the remote_root_pgid from the root */
-        mpi_errno = MPIR_Bcast(remote_root_pg->pg_id, id_sz, MPI_CHAR,
-                               root, comm_ptr);
-        if (mpi_errno) goto fn_exit;
-
-        /* recv the remote_kvsname, remote_comm_size, and intercomm
-           context_id from the root. */
-
-        /* Calling MPIR_Bcast instead of MPI_Bcast because when
-           comm_connect is called in CH3_Init by a newly spawned child
-           process, MPI_Init has not yet completed and MPI_Bcast gives
-           an error saying MPI not initialized. */
-
-        mpi_errno = MPIR_Bcast(remote_root_pg->kvs_name, kvs_namelen, MPI_CHAR,
-                               root, comm_ptr);
-        if (mpi_errno) goto fn_exit;
-
-        mpi_errno = MPIR_Bcast(recv_ints, 3, MPI_INT, root, comm_ptr);
-        if (mpi_errno) goto fn_exit;
-        remote_comm_size = recv_ints[0];
-        remote_root_pg->size = recv_ints[1];
-        context_id = recv_ints[2];
-
-        remote_pg_ranks = (int *) MPIU_Malloc(remote_comm_size*sizeof(int));
-        if (remote_pg_ranks == NULL)
+    for (i=0; i<n_remote_pgs; i++) {
+        vc_table = MPIU_Malloc(sizeof(MPIDI_VC) * remote_pgs_array[i]->size);
+        if (vc_table == NULL)
         {
             mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
             goto fn_exit;
         }
-        mpi_errno = MPIR_Bcast(remote_pg_ranks, remote_comm_size, MPI_INT, root, comm_ptr);
-        if (mpi_errno) goto fn_exit;
-    }
-
-    MPIU_Free(val);
-
-    /* Link the new pg in to the list of pgs. The pg represented by
-       remote_root_pgid should not already exist. If it does, flag an
-       error. */
-
-    pg = MPIDI_CH3I_Process.pg;
-    while (pg != NULL) {
-        if (strcmp(pg->pg_id, remote_root_pg->pg_id) == 0) {
-            /* Abort for now. Need to return error code here. */
-            /* printf("CONNECT ERROR: attempting to do a comm_connect to a process in MPI_COMM_WORLD\n");
-               fflush(stdout); */
-            MPID_Abort(NULL, mpi_errno, 13);
+        remote_pgs_array[i]->ref_count += remote_pgs_array[i]->size;
+        for (p = 0; p < remote_pgs_array[i]->size; p++)
+        {
+            MPIDI_CH3U_VC_init(&vc_table[p], p);
+            vc_table[p].ch.pg = remote_pgs_array[i];
+            vc_table[p].ch.pg_rank = p;
+            vc_table[p].ch.sendq_head = NULL;
+            vc_table[p].ch.sendq_tail = NULL;
+            vc_table[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+            vc_table[p].ch.sock = MPIDU_SOCK_INVALID_SOCK;
+            vc_table[p].ch.conn = NULL;
         }
-        if (pg->next == NULL) {
-            pg->next = remote_root_pg;
-            break;
-        }
-        pg = pg->next;
+        remote_pgs_array[i]->vc_table = vc_table;
     }
 
     /* create and fill in the new intercommunicator */
@@ -461,27 +662,6 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
     MPID_VCRT_Add_ref(comm_ptr->vcrt);
     intercomm->local_vcr  = comm_ptr->vcr;
 
-    /* Allocate and initialize the VC table associated with the remote group */
-    vc_table = MPIU_Malloc(sizeof(MPIDI_VC) * remote_root_pg->size);
-    if (vc_table == NULL)
-    {
-        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-        goto fn_exit;
-    }
-    remote_root_pg->ref_count += remote_root_pg->size;
-    for (p = 0; p < remote_root_pg->size; p++)
-    {
-        MPIDI_CH3U_VC_init(&vc_table[p], p);
-        vc_table[p].ch.pg = remote_root_pg;
-        vc_table[p].ch.pg_rank = p;
-        vc_table[p].ch.sendq_head = NULL;
-        vc_table[p].ch.sendq_tail = NULL;
-        vc_table[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-        vc_table[p].ch.sock = MPIDU_SOCK_INVALID_SOCK;
-        vc_table[p].ch.conn = NULL;
-    }
-    remote_root_pg->vc_table = vc_table;
-    
     /* Set up VC reference table */
     mpi_errno = MPID_VCRT_Create(intercomm->remote_size, &intercomm->vcrt);
     if (mpi_errno != MPI_SUCCESS)
@@ -496,10 +676,30 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
         goto fn_exit;
     }
     for (i=0; i < intercomm->remote_size; i++) {
-        MPID_VCR_Dup(&vc_table[remote_pg_ranks[i]], &intercomm->vcr[i]);
+        pg_no = remote_procs_pg_info[i].pg_no;
+        vc_table = remote_pgs_array[pg_no]->vc_table;
+        MPID_VCR_Dup(&vc_table[remote_procs_pg_info[i].rank_in_pg], &intercomm->vcr[i]);
     }
 
-    MPIU_Free(remote_pg_ranks);
+    MPIU_Free(key);
+    MPIU_Free(val);
+
+    for (i=0; i<NUMPGS; i++)
+        MPIU_Free(local_pg_ids[i]);
+    MPIU_Free(local_pg_ids);
+    MPIU_Free(local_pg_sizes);
+    MPIU_Free(local_procs_pg_info);
+
+    for (i=0; i<n_remote_pgs; i++)
+        MPIU_Free(remote_pg_ids[i]);
+    MPIU_Free(remote_pg_ids);
+    MPIU_Free(remote_pg_sizes);
+    MPIU_Free(remote_procs_pg_info);
+
+    MPIU_Free(remote_pgs_array);
+
+    if (bizcards) MPIU_Free(bizcards);
+
 
  fn_exit: 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_CONNECT);
