@@ -5,6 +5,8 @@ mpi_sources = attr_delete.c attr_get.c attr_put.c \
  type_get_attr.c type_set_attr.c win_create_keyval.c \
  win_delete_attr.c win_free_keyval.c win_get_attr.c win_set_attr.c
 
+HEADERS = attr.h
+
 lib${MPILIBNAME}_a_SOURCES = ${mpi_sources} attrutil.c dup_fn.c 
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
