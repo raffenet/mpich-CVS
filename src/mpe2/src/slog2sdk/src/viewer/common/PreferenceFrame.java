@@ -31,6 +31,7 @@ public class PreferenceFrame extends JFrame
     public PreferenceFrame()
     {
         super( "Preferences" );
+        super.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
         TopWindow.Preference.disposeAll();
         TopWindow.Preference.setWindow( this );
 

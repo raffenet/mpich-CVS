@@ -27,6 +27,7 @@ public class FirstFrame extends JFrame
     public FirstFrame()
     {
         super( "Jumpshot-4" );
+        super.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
         TopWindow.First.setWindow( this );
 
         top_panel    = new FirstPanel( filename, view_ID );
