@@ -29,6 +29,20 @@ subname=$withval,subname="")
 # Test for derived files as well and config.status to detect "dirty" 
 # source directory in a VPATH build
 PAC_VPATH_CHECK(mpicxx mpicxx.h mpicxx.conf cov2html)
+# 
+# Get the directories
+if test -z "$master_top_srcdir" ; then 
+    master_top_srcdir=$use_top_srcdir
+fi
+AC_SUBST(master_top_srcdir)
+export master_top_srcdir
+#
+# Get the master builddir (which may be imported from above)
+if test -z "$master_top_builddir" ; then
+    master_top_builddir=`pwd`
+fi
+export master_top_builddir
+AC_SUBST(master_top_builddir)
 
 if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
 
@@ -147,6 +161,10 @@ fi
 AC_SUBST(LIBTOOL)
 dnl     checks for library functions
 dnl     checks for system services
+
+dnl 
+dnl Other autoconf variables that may be imported from the calling environment
+AC_SUBST(DOCTEXT)
 
 AC_SUBST(MPI_CXXFLAGS)
 if test -z "$MPI_LDFLAGS" ; then
