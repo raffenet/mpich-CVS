@@ -92,9 +92,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     /* If this is a null request handle, then return an empty status */
     if (*request == MPI_REQUEST_NULL)
     {
-	if (status) {
-	    MPIR_Status_set_empty(status);
-	}
+	MPIR_Status_set_empty(status);
 	goto fn_exit;
     }
     

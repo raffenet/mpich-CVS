@@ -207,13 +207,18 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
 	else if (mpi_errno == MPI_ERR_IN_STATUS)
 	{
 	    MPID_Progress_end();
-	    for (i = 0; i < count; i++)
+	    
+	    if (array_of_statuses != MPI_STATUSES_IGNORE)
 	    {
-		if (request_ptrs[i] != NULL)
+		for (i = 0; i < count; i++)
 		{
-		    request_ptrs[i]->status.MPI_ERROR = MPI_ERR_PENDING;
+		    if (request_ptrs[i] != NULL)
+		    {
+			array_of_statuses[i].MPI_ERROR = MPI_ERR_PENDING;
+		    }
 		}
 	    }
+	    
 	    break;
 	}
 
