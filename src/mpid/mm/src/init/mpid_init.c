@@ -27,10 +27,13 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
 {
     char pszPortName[MPI_MAX_PORT_NAME];
     int spawned;
-    char *value;
+    char *value = NULL;
     int value_len;
+    char *key = NULL;
+    int key_len;
     char sCapabilities[256] = "";
-    char key[100];
+
+    bsocket_init();
 
     /* Initialize per process structure */
     memset(&MPID_Process, 0, sizeof(MPID_PerProcess));
@@ -85,50 +88,71 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
 
     value_len = PMI_KVS_Get_value_length_max();
     if (value_len < 1)
+    {
+	err_printf("PMI_KVS_Get_value_length_max returned %d\n", value_len);
 	return -1;
+    }
     value = (char*)MPIU_Malloc(value_len);
+    if (value == NULL)
+    {
+	err_printf("MPIU_Malloc(%d) failed\n", value_len);
+	return -1;
+    }
+    key_len = PMI_KVS_Get_key_length_max();
+    if (key_len < 1)
+    {
+	err_printf("PMI_KVS_Get_key_length_max returned %d\n", key_len);
+	return -1;
+    }
+    key = MPIU_Malloc(key_len);
+    if (key == NULL)
+    {
+	err_printf("MPIU_Malloc(%d) failed\n", key_len);
+	return -1;
+    }
 
 #ifdef WITH_METHOD_SHM
     strncat(sCapabilities, "shm,", 5);
     shm_get_business_card(value, value_len);
-    snprintf(key, 100, "business_card_shm:%d", MPIR_Process.comm_world->rank);
+    snprintf(key, key_len, "business_card_shm:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
 #ifdef WITH_METHOD_TCP
     strncat(sCapabilities, "tcp,", 5);
     tcp_get_business_card(value, value_len);
-    snprintf(key, 100, "business_card_tcp:%d", MPIR_Process.comm_world->rank);
+    snprintf(key, key_len, "business_card_tcp:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
 #ifdef WITH_METHOD_VIA
     strncat(sCapabilities, "via,", 5);
     via_get_business_card(value, value_len);
-    snprintf(key, 100, "business_card_via:%d", MPIR_Process.comm_world->rank);
+    snprintf(key, key_len, "business_card_via:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
     strncat(sCapabilities, "via_rdma,", 9);
     via_rdma_get_business_card(value, value_len);
-    snprintf(key, 100, "business_card_via_rdma:%d", MPIR_Process.comm_world->rank);
+    snprintf(key, key_len, "business_card_via_rdma:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
 #ifdef WITH_METHOD_NEW
     strncat(sCapabilities, "new,", 5);
     new_get_business_card(value, value_len);
-    snprintf(key, 100, "business_card_new:%d", MPIR_Process.comm_world->rank);
+    snprintf(key, key_len, "business_card_new:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
 
     if (sCapabilities[strlen(sCapabilities)-1] == ',')
 	sCapabilities[strlen(sCapabilities)-1] = '\0';
 
-    MPIU_Free(value);
-
-    sprintf(key, "businesscard:%d", MPIR_Process.comm_world->rank);
+    snprintf(key, key_len, "businesscard:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, sCapabilities);
 
     PMI_KVS_Commit(MPID_Process.pmi_kvsname);
     PMI_Barrier();
+
+    MPIU_Free(value);
+    MPIU_Free(key);
 
     return MPI_SUCCESS;
 }

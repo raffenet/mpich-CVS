@@ -206,7 +206,7 @@ bsocket_init - init
   
     Notes:
 @*/
-static int g_bInitFinalize = 0;
+static int g_nInitRefCount = 0;
 int bsocket_init(void)
 {
     char *pszEnvVar;
@@ -215,8 +215,11 @@ int bsocket_init(void)
     WSADATA wsaData;
     int err;
     
-    if (g_bInitFinalize == 1)
+    if (g_nInitRefCount)
+    {
+	g_nInitRefCount++;
 	return 0;
+    }
 
     /* Start the Winsock dll */
     if ((err = WSAStartup(MAKEWORD(2, 0), &wsaData)) != 0)
@@ -225,8 +228,11 @@ int bsocket_init(void)
 	return err;
     }
 #else
-    if (g_bInitFinalize == 1)
+    if (g_nInitRefCount)
+    {
+	g_nInitRefCount++;
 	return 0;
+    }
 #endif
 
     szNum = getenv("BSOCKET_CONN_TRIES");
@@ -239,7 +245,7 @@ int bsocket_init(void)
 
     Bsocket_mem = BlockAllocInit(sizeof(BFD_Buffer) + g_bbuflen, 64, 64, malloc, free);
 
-    g_bInitFinalize = 1;
+    g_nInitRefCount++;
 
     return 0;
 }
@@ -252,7 +258,10 @@ bsocket_finalize - finalize
 @*/
 int bsocket_finalize(void)
 {
-    if (g_bInitFinalize == 0)
+    g_nInitRefCount--;
+    if (g_nInitRefCount < 1)
+	g_nInitRefCount = 0;
+    else
 	return 0;
 
     /* Free up the memory used by Bsocket_mem */
@@ -262,7 +271,6 @@ int bsocket_finalize(void)
     WSACleanup();
 #endif
 
-    g_bInitFinalize = 0;
     return 0;
 }
 

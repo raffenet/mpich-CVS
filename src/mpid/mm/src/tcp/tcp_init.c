@@ -57,5 +57,7 @@ int tcp_finalize()
     beasy_closesocket(TCP_Process.listener);
     TCP_Process.listener = BFD_INVALID_SOCKET;
 
+    bsocket_finalize();
+
     return MPI_SUCCESS;
 }
