@@ -61,16 +61,16 @@ CFLAGS="$1 $CFLAGS"
 rm -f conftest.out
 echo 'int try(void);int try(void){return 0;}' > conftest2.c
 echo 'int main(void);int main(void){return 0;}' > conftest.c
-if ${CC-cc} $save_CFLAGS $CPPFLAGS -o conftest conftest.c >conftest.bas 2>&1 ; then
-   if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest.c >conftest.out 2>&1 ; then
+if ${CC-cc} $save_CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.bas 2>&1 ; then
+   if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.out 2>&1 ; then
       if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
          AC_MSG_RESULT(yes)
          AC_MSG_CHECKING([that routines compiled with $1 can be linked with ones compiled  without $1])       
          /bin/rm -f conftest.out
          /bin/rm -f conftest.bas
          if ${CC-cc} -c $save_CFLAGS $CPPFLAGS conftest2.c >conftest2.out 2>&1 ; then
-            if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest2.o conftest.c >conftest.bas 2>&1 ; then
-               if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest2.o conftest.c >conftest.out 2>&1 ; then
+            if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest2.o conftest.c $LDFLAGS >conftest.bas 2>&1 ; then
+               if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest2.o conftest.c $LDFLAGS >conftest.out 2>&1 ; then
                   if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
 	             AC_MSG_RESULT(yes)	  
 		     CFLAGS="$save_CFLAGS"
@@ -961,7 +961,7 @@ echo 'extern int a; int main( ){ return a; }' > conftest2.c
 if ${CC-cc} $CFLAGS -c conftest1.c >conftest.out 2>&1 ; then
     if ${AR-ar} cr libconftest.a conftest1.o ; then
         if ${RANLIB-:} libconftest.a ; then
-            if ${CC-cc} $CFLAGS -o conftest conftest2.c libconftest.a ; then
+            if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a ; then
 		# Success!  C works
 		ac_cv_prog_cc_globals_work=yes
 	    else
@@ -970,7 +970,7 @@ if ${CC-cc} $CFLAGS -c conftest1.c >conftest.out 2>&1 ; then
 		rm -f libconftest.a
 		${AR-ar} cr libconftest.a conftest1.o
 	        ${RANLIB-:} libconftest.a
-	        if ${CC-cc} $CFLAGS -o conftest conftest2.c libconftest.a ; then
+	        if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a ; then
 		    ac_cv_prob_cc_globals_work="needs -fno-common"
 		    CFLAGS="$CFLAGS -fno-common"
 		fi

@@ -258,8 +258,8 @@ EOF
 dnl It is important to use the AC_TRY_EVAL in case F77 is not a single word
 dnl but is something like "f77 -64" (where the switch has changed the
 dnl compiler)
-ac_fscompilelink='${F77-f77} $save_FFLAGS -o conftest conftest.f >conftest.bas 2>&1'
-ac_fscompilelink2='${F77-f77} $FFLAGS -o conftest conftest.f >conftest.out 2>&1'
+ac_fscompilelink='${F77-f77} $save_FFLAGS -o conftest conftest.f $LDFLAGS >conftest.bas 2>&1'
+ac_fscompilelink2='${F77-f77} $FFLAGS -o conftest conftest.f $LDFLAGS >conftest.out 2>&1'
 if AC_TRY_EVAL(ac_fscompilelink) && test -x conftest ; then
    if AC_TRY_EVAL(ac_fscompilelink2) && test -x conftest ; then
       if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
@@ -268,7 +268,7 @@ if AC_TRY_EVAL(ac_fscompilelink) && test -x conftest ; then
          /bin/rm -f conftest2.out
          /bin/rm -f conftest.bas
 	 ac_fscompile3='${F77-f77} -c $save_FFLAGS conftest2.f >conftest2.out 2>&1'
-	 ac_fscompilelink4='${F77-f77} $FFLAGS -o conftest conftest2.o conftest.f >conftest.bas 2>&1'
+	 ac_fscompilelink4='${F77-f77} $FFLAGS -o conftest conftest2.o conftest.f $LDFLAGS >conftest.bas 2>&1'
          if AC_TRY_EVAL(ac_fscompile3) && test -s conftest2.o ; then
             if AC_TRY_EVAL(ac_fscompilelink4) && test -x conftest ; then
                if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
@@ -394,7 +394,7 @@ $fxx_module
 EOF
     found_answer="no"
     if test -z "$ac_fcompilelink" ; then
-        ac_fcompilelink="${F77-f77} -o conftest $FFLAGS $flags conftest.f $LIBS 1>&AC_FD_CC"
+        ac_fcompilelink="${F77-f77} -o conftest $FFLAGS $flags conftest.f $LDFLAGS $LIBS 1>&AC_FD_CC"
     fi
     AC_MSG_CHECKING([if ${F77-f77} $flags $libs works with GETARG and IARGC])
     if AC_TRY_EVAL(ac_fcompilelink) && test -x conftest ; then
@@ -434,7 +434,7 @@ EOF
         program main
         end
 EOF
-    ac_fcompilelink_test='${F77-f77} -o conftest $FFLAGS conftest.f $libs $LIBS 1>&AC_FD_CC'
+    ac_fcompilelink_test='${F77-f77} -o conftest $FFLAGS conftest.f $LDFLAGS $libs $LIBS 1>&AC_FD_CC'
     for libs in $save_trial_LIBS ; do
 	if test "$libs" = "0" ; then
 	    lib_ok="yes"
@@ -507,8 +507,7 @@ EOF
 	    AC_MSG_CHECKING([that Fortran 77 routine names are case-insensitive $flagval])
 	    dnl we can use double quotes here because all is already
             dnl evaluated
-            ac_fcompilelink_test="${F77-f77} -o conftest $fflag $FFLAGS
-conftest.f $LIBS 1>&AC_FD_CC"
+            ac_fcompilelink_test="${F77-f77} -o conftest $fflag $FFLAGS conftest.f $LDFLAGS $LIBS 1>&AC_FD_CC"
 	    if AC_TRY_EVAL(ac_fcompilelink_test) && test -x conftest ; then
 	        AC_MSG_RESULT(yes)
 	    else
@@ -621,7 +620,7 @@ EOF
                 AC_MSG_CHECKING([if ${F77-f77} $flags $libs works with $MSG])
 		IFS="$save_IFS"
 		dnl We need this here because we've fiddled with IFS
-	        ac_fcompilelink_test="${F77-f77} -o conftest $FFLAGS $flags conftest.f $libs $LIBS 1>&AC_FD_CC"
+	        ac_fcompilelink_test="${F77-f77} -o conftest $FFLAGS $flags conftest.f $LDFLAGS $libs $LIBS 1>&AC_FD_CC"
 		found_answer="no"
                 if AC_TRY_EVAL(ac_fcompilelink_test) && test -x conftest ; then
 		    if test "$ac_cv_prog_f77_cross" = "no" ; then
@@ -698,7 +697,7 @@ pac_cv_prog_f77_library_dir_flag,
         program main
         end
 EOF
-    ac_fcompileldtest='${F77-f77} -o conftest $FFLAGS ${ldir}. conftest.f 1>&AC_FD_CC'
+    ac_fcompileldtest='${F77-f77} -o conftest $FFLAGS ${ldir}. conftest.f $LDFLAGS 1>&AC_FD_CC'
     for ldir in "-L" "-Wl,-L," ; do
         if AC_TRY_EVAL(ac_fcompileldtest) && test -s conftest ; then
 	    pac_cv_prog_f77_library_dir_flag="$ldir"
@@ -990,9 +989,9 @@ cat > conftest.f <<EOF
         end
 EOF
 if AC_TRY_EVAL(ac_compile); then
-    if ${F77} -o conftest conftest.o conftest1.o 2>&AC_FD_CC ; then
+    if ${F77} -o conftest conftest.o conftest1.o $LDFLAGS 2>&AC_FD_CC ; then
 	AC_MSG_RESULT([Use Fortran to link programs])
-    elif ${CC} -o conftest conftest.o conftest1.o $FLIBS 2>&AC_FD_CC ; then
+    elif ${CC} -o conftest conftest.o conftest1.o $LDFLAGS $FLIBS 2>&AC_FD_CC ; then
 	AC_MSG_RESULT([Use C with FLIBS to link programs])
 	F77LINKER="$CC"
         F77_LDFLAGS="$F77_LDFLAGS $FLIBS"
