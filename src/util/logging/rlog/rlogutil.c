@@ -251,7 +251,8 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 	}
 
 	/* sort the arrows */
-	qsort(pArray, (size_t)nNumArrows, sizeof(RLOG_ARROW), compareArrows);
+	qsort(pArray, (size_t)nNumArrows, sizeof(RLOG_ARROW), 
+	      (int (*)(const void *,const void*))compareArrows);
 
 	/* write the arrows back */
 	fseek(f, arrow_pos, SEEK_SET);
@@ -336,7 +337,8 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 	    return error;
 	}
 	/* sort the arrows */
-	qsort(pArray, (size_t)nNumArrows, sizeof(RLOG_ARROW), compareArrows);
+	qsort(pArray, (size_t)nNumArrows, sizeof(RLOG_ARROW), 
+	      (int (*)(const void *,const void*))compareArrows);
 	/* write the arrows back */
 	fseek(f, arrow_pos, SEEK_SET);
 	error = WriteFileData((char*)pArray, nNumArrows * sizeof(RLOG_ARROW), f);
@@ -468,7 +470,7 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
 	    pInput->nNumArrows = length / sizeof(RLOG_ARROW);
 	    pInput->nArrowOffset = ftell(pInput->f);
 	    ModifyArrows(pInput->f, pInput->nNumArrows, pInput->header.nMinRank, pOffsets, n);
-	    //fseek(pInput->f, length, SEEK_CUR);
+	    /* fseek(pInput->f, length, SEEK_CUR); */
 	    break;
 	case RLOG_EVENT_SECTION:
 	    /*printf("type: RLOG_EVENT_SECTION, length: %d, ", length);*/
@@ -506,7 +508,7 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
 	    }
 	    length -= ((pInput->pNumEventRecursions[rank_index] + 2) * sizeof(int));
 	    ModifyEvents(pInput->f, length / sizeof(RLOG_EVENT), pInput->header.nMinRank, pOffsets, n);
-	    //fseek(pInput->f, length, SEEK_CUR);
+	    /* fseek(pInput->f, length, SEEK_CUR); */
 	    break;
 	default:
 	    /*printf("unknown section: type %d, length %d\n", type, length);*/

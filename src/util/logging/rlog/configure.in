@@ -98,14 +98,24 @@ AC_SUBST(MPILIBNAME)
 
 dnl
 dnl How do I get configure to find these values for me?
+dnl use AC_PATH_PROG to find a likely location, then search likely 
+dnl directory paths for the files that you need.  Allow an environment
+dnl variable to provide the values, so that if they are in a strange
+dnl place, the user can set the environment variable and configure will
+dnl use that value (it should still check that the value is valid, i.e.,
+dnl the necessary files are in the specified directory)
 dnl
 java_home=/soft/com/packages/j2sdk1.4.0
 java_arch=linux
 AC_SUBST(java_home)
 AC_SUBST(java_arch)
 
-dnl CC_SHL=${CC} -shared
-dnl AC_SUBST(CC_SHL)
+if test -z "$ENABLE_SHLIB" ; then
+    CC_SHL="$CC"
+    ENABLE_SHLIB=none
+fi
+AC_SUBST(CC_SHL)
+AC_SUBST(ENABLE_SHLIB)
 
 dnl AC_SEARCH_LIBS(socket, socket)
 dnl AC_CHECK_LIB(thread, mutex_init)

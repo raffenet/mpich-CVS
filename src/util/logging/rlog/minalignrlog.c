@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 		}
 		if (arrow.end_time < lastarrow.end_time)
 		{
-		    printf("arrows out of order: %d < %d\n", arrow.end_time, lastarrow.end_time);
+		    printf("arrows out of order: %g < %g\n", arrow.end_time, lastarrow.end_time);
 		    bInvalidArrowFound = 1;
 		}
 		lastarrow = arrow;
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
 
 	RLOG_CloseInputStruct(&pInput);
 
-	// modify all the events
+	/* modify all the events */
 	RLOG_ModifyEvents(argv[1], pOffset, range);
     }
     else

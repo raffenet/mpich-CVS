@@ -235,7 +235,7 @@ void SaveArrow(RLOG_IARROW *pArrow)
 	arrow.end_time = pArrow->timestamp;
 	arrow.tag = pArrow->tag;
 	arrow.leftright = RLOG_ARROW_LEFT;
-	//fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow);
+	/* fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow); */
 	WriteFileData(&arrow, sizeof(RLOG_ARROW), g_fArrow);
 	free(pEnd);
     }
@@ -255,7 +255,7 @@ void SaveArrow(RLOG_IARROW *pArrow)
 	    arrow.length = pStart->length; /* the sender length is more accurate than the receiver length */
 	    arrow.leftright = RLOG_ARROW_RIGHT;
 	    free(pStart);
-	    //fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow);
+	    /* fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow); */
 	    WriteFileData(&arrow, sizeof(RLOG_ARROW), g_fArrow);
 	}
 	else
@@ -313,7 +313,7 @@ void SaveEvent(RLOG_EVENT *pEvent)
 
     pLevel = GetLevel(pEvent->rank, pEvent->recursion);
     pLevel->num_events++;
-    //fwrite(pEvent, sizeof(RLOG_EVENT), 1, pLevel->fout);
+    /* fwrite(pEvent, sizeof(RLOG_EVENT), 1, pLevel->fout); */
     WriteFileData(pEvent, sizeof(RLOG_EVENT), pLevel->fout);
 }
 
@@ -728,11 +728,11 @@ int main(int argc, char *argv[])
     printf("writing header.\n");fflush(stdout);
     type = RLOG_HEADER_SECTION;
     length = sizeof(RLOG_FILE_HEADER);
-    //fwrite(&type, sizeof(int), 1, fout);
+    /* fwrite(&type, sizeof(int), 1, fout); */
     WriteFileData(&type, sizeof(int), fout);
-    //fwrite(&length, sizeof(int), 1, fout);
+    /* fwrite(&length, sizeof(int), 1, fout);*/
     WriteFileData(&length, sizeof(int), fout);
-    //fwrite(&header, sizeof(RLOG_FILE_HEADER), 1, fout);
+    /* fwrite(&header, sizeof(RLOG_FILE_HEADER), 1, fout); */
     WriteFileData(&header, sizeof(RLOG_FILE_HEADER), fout);
 
     /* write states */
@@ -748,14 +748,14 @@ int main(int argc, char *argv[])
     }
     type = RLOG_STATE_SECTION;
     length = nNumStates * sizeof(RLOG_STATE);
-    //fwrite(&type, sizeof(int), 1, fout);
+    /* fwrite(&type, sizeof(int), 1, fout); */
     WriteFileData(&type, sizeof(int), fout);
-    //fwrite(&length, sizeof(int), 1, fout);
+    /* fwrite(&length, sizeof(int), 1, fout); */
     WriteFileData(&length, sizeof(int), fout);
     pState = g_pList;
     while (pState)
     {
-	//fwrite(pState, sizeof(RLOG_STATE), 1, fout);
+	/* fwrite(pState, sizeof(RLOG_STATE), 1, fout); */
 	WriteFileData(pState, sizeof(RLOG_STATE), fout);
 	pState = pState->next;
     }
@@ -766,9 +766,9 @@ int main(int argc, char *argv[])
 	printf("writing arrows.\n");fflush(stdout);
 	type = RLOG_ARROW_SECTION;
 	length = ftell(g_fArrow);
-	//fwrite(&type, sizeof(int), 1, fout);
+	/* fwrite(&type, sizeof(int), 1, fout); */
 	WriteFileData(&type, sizeof(int), fout);
-	//fwrite(&length, sizeof(int), 1, fout);
+	/* fwrite(&length, sizeof(int), 1, fout); */
 	WriteFileData(&length, sizeof(int), fout);
 	AppendFile(fout, g_fArrow);
     }
@@ -790,18 +790,18 @@ int main(int argc, char *argv[])
 	/* write an event section for this rank */
 	type = RLOG_EVENT_SECTION;
 	length = sizeof(int) + sizeof(int) + (nNumLevels * sizeof(int)) + (nNumEvents * sizeof(RLOG_EVENT));
-	//fwrite(&type, sizeof(int), 1, fout);
+	/* fwrite(&type, sizeof(int), 1, fout); */
 	WriteFileData(&type, sizeof(int), fout);
-	//fwrite(&length, sizeof(int), 1, fout);
+	/* fwrite(&length, sizeof(int), 1, fout); */
 	WriteFileData(&length, sizeof(int), fout);
-	//fwrite(&nRank, sizeof(int), 1, fout);
+        /* fwrite(&nRank, sizeof(int), 1, fout); */
 	WriteFileData(&nRank, sizeof(int), fout);
-	//fwrite(&nNumLevels, sizeof(int), 1, fout);
+	/* fwrite(&nNumLevels, sizeof(int), 1, fout); */
 	WriteFileData(&nNumLevels, sizeof(int), fout);
 	for (i=0; i<nNumLevels; i++)
 	{
 	    pLevel = GetLevel(nRank, i);
-	    //fwrite(&pLevel->num_events, sizeof(int), 1, fout);
+	    /* fwrite(&pLevel->num_events, sizeof(int), 1, fout); */
 	    WriteFileData(&pLevel->num_events, sizeof(int), fout);
 	}
 	for (i=0; i<nNumLevels; i++)
