@@ -145,8 +145,6 @@ if test "$use_runtimevalues" = "yes" ; then
     AC_DEFINE(F77_RUNTIME_VALUES,,[Define if Fortran environment should be determined at runtime])
 fi
 
-dnl PAC_ARG_MPICH_BUILDING
-
 if test -n "$subname" -a -z "$mpichconfig_file" ; then
     AC_MSG_ERROR([Must specify --with-mpichconfig with --with-subname])
 fi
@@ -187,17 +185,8 @@ AC_SUBST(f77includedir)
 AC_SUBST(f77libdir)
 AC_SUBST(f77bindir)
 AC_SUBST(subname)
-# To make this compatible with the MPICH configure, the library
-# directory can be set with libbuild_dir; if not set, it is built in the
-# src directory
-if test -z "$libbuild_dir" ; then
-    libbuild_dir=`pwd`/src
-fi
-AC_SUBST(libbuild_dir)
 
-AC_SUBST(FORTRAN_INITOBJ)
 AC_SUBST(INCLUDES)
-    FORTRAN_INITOBJ="initfutil.o"
     # We should replace mpicc with the values used in the MPICH build.
     # This is best done with an environment variable (? what about 
     # config.status re-execution?)
@@ -206,12 +195,6 @@ AC_SUBST(INCLUDES)
 	hasMPE="yes"
     fi
     AC_SUBST(MPIVERSION)
-# Directory for building the library in (in src if not specified)
-if test -z "$libbuild_dir" ; then
-    libbuild_dir=`pwd`/src
-    if test ! -d $libbuild_dir ; then mkdir $libbuild_dir ; fi
-fi
-AC_SUBST(libbuild_dir)
 
 PAC_PROG_CC
 AC_C_CONST
@@ -1086,9 +1069,23 @@ AC_SUBST(CFLAGS) # some autoconf versions need this explicitly
 # and use MPI programs, not to build the MPI library itself.
 AC_SUBST(MPI_FFLAGS)
 AC_SUBST(MPI_LDFLAGS)
-AC_OUTPUT_COMMANDS([chmod a+x mpif77])
+if test -z "$top_build_dir" ; then
+    top_build_dir=`cd ../../.. ; pwd`
+fi
+if test -z "$includebuild_dir" ; then
+    includebuild_dir=$top_build_dir/src/include
+fi
+if test -z "$libbuild_dir" ; then
+    libbuild_dir=$top_build_dir/lib
+fi
+export includebuild_dir
+export libbuild_dir
+AC_OUTPUT_COMMANDS([chmod a+x mpif77 ;
+   if test ! -d ../../../bin  ; then mkdir ../../../bin ; fi 
+   sed -e 's%includedir=.*%includedir='$includebuild_dir% \
+       -e 's%libdir=.*%libdir='$libbuild_dir% mpif77 > ../../../bin/mpif77 ;
+   chmod a+x ../../../bin/mpif77 ])
 dnl AC_OUTPUT_COMMANDS([chmod a+x mpif90])
-AC_OUTPUT_COMMANDS([cp -p mpif77 ../../../bin])
 AC_OUTPUT_COMMANDS([cp mpif.h ../../../src/include])
 AC_OUTPUT(Makefile mpif.h mpif77.conf mpif77 setbotf.f)
 exit 0

@@ -1443,7 +1443,8 @@ extern \"C\" void MPIR_Call_delfn( MPI_Comm comm, int keyval,
 				   MPI::Comm::Delete_attr_function *f )
 {
     MPI::Comm cxxcomm = comm;
-    (*f)( cxxcomm, keyval, value, extra_state );
+    int err;
+    err = (*f)( cxxcomm, keyval, value, extra_state );
 }
 extern \"C\" void MPIR_Call_copyfn( MPI_Comm comm, int keyval,
 				   void *extra_state, void *value,
@@ -1451,8 +1452,9 @@ extern \"C\" void MPIR_Call_copyfn( MPI_Comm comm, int keyval,
 				   MPI::Comm::Copy_attr_function *f )
 {
     MPI::Comm cxxcomm = comm;
+    int err;
     bool flag;
-    (*f)( cxxcomm, keyval, extra_state, value, new_value, &flag );
+    err=(*f)( cxxcomm, keyval, extra_state, value, new_value, flag );
     *cflag = flag;
 }
 extern \"C\" void MPIR_Keyval_set_cxx( int, void (*)(void), void (*)(void) );

@@ -1,6 +1,6 @@
 # LIBS includes -lmpich and other libraries (e.g., -lpmpich if
 # weak symbols are not supported)
-INCLUDES = -I../../../src/include -I${top_srcdir}/src/include
+INCLUDES = -I../include -I${top_srcdir}/include
 EXTERNAL_LIBS = m
 LDADD = -L../../../lib
 DEPADD = ../../../lib/lib${MPILIBNAME}.a

@@ -1,8 +1,9 @@
-INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include \
-	   -I${srcdir}/../include
+INCLUDES = -I../include -I${top_srcdir}/include
 LDADD = -L../../../lib
 DEPADD = ../../../lib/lib${MPILIBNAME}.a
 
+EXTRA_PROGRAMS = glpid
+# glpid requires mpiimpl.h and hence special compile options.
 glpid_SOURCES = glpid.c
 grouptest_SOURCES = grouptest.c
 grouptest2_SOURCES = grouptest2.c

@@ -1589,7 +1589,7 @@ int MPI_Status_c2f( MPI_Status *c_status, MPI_Fint *f_status )
 	return MPIR_Err_return_comm( 0, \"MPI_Status_c2f\",  mpi_errno );
     }
     *(MPI_Status *)f_status = *c_status;
-    return MPI_SUCCESS
+    return MPI_SUCCESS;
 }\n";
     close ($OUTFD);
 
@@ -1649,6 +1649,8 @@ sub ReadAndProcessInterface {
 	    $args =~ s/[\r\n]*//g;
 	    # remove qualifiers from args
 	    $args =~ s/\s*const\s+//g;
+	    # Convert MPIO_Request to MPI_Request (temporary)
+	    $args =~ s/MPIO_Request/MPI_Request/g;
 	    $lcname = lc($routine_name);
 	    # Eventually, we'll create a new file here.  
 	    # For C++, we may create similar files by looking up 

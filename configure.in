@@ -1181,8 +1181,20 @@ dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
 dnl from the file.
 
 AC_OUTPUT_COMMANDS([chmod a+x test/runtests])
-AC_OUTPUT_COMMANDS([chmod a+x src/env/mpicc])
-AC_OUTPUT_COMMANDS([cp -p src/env/mpicc bin/mpicc])
+if test -z "$includebuild_dir" ; then
+    includebuild_dir=`pwd`/src/include
+fi
+if test -z "$libbuild_dir" ; then
+    libbuild_dir=`pwd`/lib
+fi
+export includebuild_dir
+export libbuild_dir
+AC_OUTPUT_COMMANDS([chmod a+x src/env/mpicc ;
+   if test ! -d bin  ; then mkdir bin ; fi 
+   sed -e 's%includedir=.*%includedir='$includebuild_dir% \
+       -e 's%libdir=.*%libdir='$libbuild_dir% src/env/mpicc > bin/mpicc ;
+   chmod a+x bin/mpicc ])
+
 AC_OUTPUT(Makefile src/Makefile \
           src/binding/Makefile \
           src/env/mpicc \
