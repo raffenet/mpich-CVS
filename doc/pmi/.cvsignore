@@ -14,3 +14,5 @@ paper.pdf
 pmi.pdf
 pmi.ps
 pmiman
+pmipdf.tex
+*.out
