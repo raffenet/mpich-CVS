@@ -91,6 +91,85 @@ PMPI_LOCAL int MPIR_Alltoallw (
     return (mpi_errno);
 }
 
+
+PMPI_LOCAL int MPIR_Alltoallw_inter ( 
+	void *sendbuf, 
+	int *sendcnts, 
+	int *sdispls, 
+	MPI_Datatype *sendtypes, 
+	void *recvbuf, 
+	int *recvcnts, 
+	int *rdispls, 
+	MPI_Datatype *recvtypes, 
+	MPID_Comm *comm_ptr )
+{
+/* Intercommunicator alltoallw. We use a pairwise exchange algorithm
+   similar to the one used in intracommunicator alltoallw. Since the
+   local and remote groups can be of different 
+   sizes, we first compute the max of local_group_size,
+   remote_group_size. At step i, 0 <= i < max_size, each process
+   receives from src = (rank - i + max_size) % max_size if src <
+   remote_size, and sends to dst = (rank + i) % max_size if dst <
+   remote_size. 
+*/
+
+    int local_size, remote_size, max_size, i;
+    int mpi_errno = MPI_SUCCESS;
+    MPI_Status status;
+    int src, dst, rank, sendcount, recvcount;
+    char *sendaddr, *recvaddr;
+    MPI_Datatype sendtype, recvtype;
+    MPI_Comm comm;
+    
+    local_size = comm_ptr->local_size; 
+    remote_size = comm_ptr->remote_size;
+    comm = comm_ptr->handle;
+    rank = comm_ptr->rank;
+
+    /* Lock for collective operation */
+    MPID_Comm_thread_lock( comm_ptr );
+
+    /* Use pairwise exchange algorithm. */
+    max_size = MPIR_MAX(local_size, remote_size);
+    for (i=0; i<max_size; i++) {
+        src = (rank - i + max_size) % max_size;
+        dst = (rank + i) % max_size;
+        if (src >= remote_size) {
+            src = MPI_PROC_NULL;
+            recvaddr = NULL;
+            recvcount = 0;
+            recvtype = MPI_DATATYPE_NULL;
+        }
+        else {
+            recvaddr = (char *)recvbuf + rdispls[src];
+            recvcount = recvcnts[src];
+            recvtype = recvtypes[src];
+        }
+        if (dst >= remote_size) {
+            dst = MPI_PROC_NULL;
+            sendaddr = NULL;
+            sendcount = 0;
+            sendtype = MPI_DATATYPE_NULL;
+        }
+        else {
+            sendaddr = (char *)sendbuf+sdispls[dst];
+            sendcount = sendcnts[dst];
+            sendtype = sendtypes[dst];
+        }
+
+        mpi_errno = MPIC_Sendrecv(sendaddr, sendcount, sendtype, 
+                                  dst, MPIR_ALLTOALLW_TAG, recvaddr, 
+                                  recvcount, recvtype, src,
+                                  MPIR_ALLTOALLW_TAG, comm, &status);
+        if (mpi_errno) return mpi_errno;
+    }
+    
+    /* Unlock for collective operation */
+    MPID_Comm_thread_unlock( comm_ptr );
+    
+    return (mpi_errno);
+}
+
 #endif
 
 #undef FUNCNAME
@@ -102,11 +181,11 @@ PMPI_LOCAL int MPIR_Alltoallw (
    Arguments:
 +  void *sendbuf - send buffer
 .  int *sendcnts - send counts
-.  int *sdispls - whatever
+.  int *sdispls - send displacements
 .  MPI_Datatype *sendtypes - send datatypes
 .  void *recvbuf - receive buffer
 .  int *recvcnts - receive counts
-.  int *rdispls - whatever
+.  int *rdispls - receive displacements
 .  MPI_Datatype *recvtypes - receive datatypes
 -  MPI_Comm comm - communicator
 
@@ -195,9 +274,20 @@ int MPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype *send
     }
     else
     {
-	mpi_errno = MPIR_Alltoallw(sendbuf, sendcnts, sdispls,
-                                   sendtypes, recvbuf, recvcnts,
-                                   rdispls, recvtypes, comm_ptr);
+        if (comm_ptr->comm_kind == MPID_INTRACOMM) 
+            /* intracommunicator */
+            mpi_errno = MPIR_Alltoallw(sendbuf, sendcnts, sdispls,
+                                       sendtypes, recvbuf, recvcnts,
+                                       rdispls, recvtypes, comm_ptr);
+        else {
+            /* intercommunicator */
+            printf("ERROR: MPI_Alltoallw for intercommunicators not yet implemented.\n"); 
+            NMPI_Abort(MPI_COMM_WORLD, 1);
+
+            mpi_errno = MPIR_Alltoallw_inter(sendbuf, sendcnts, sdispls,
+                                       sendtypes, recvbuf, recvcnts,
+                                       rdispls, recvtypes, comm_ptr);
+        }
     }
     if (mpi_errno == MPI_SUCCESS)
     {

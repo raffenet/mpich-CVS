@@ -40,7 +40,8 @@
    End Algorithm: MPI_Gather
 */
 
-PMPI_LOCAL int MPIR_Gather ( 
+/* not declared static because it is called in intercomm. allgather */
+int MPIR_Gather ( 
 	void *sendbuf, 
 	int sendcnt, 
 	MPI_Datatype sendtype, 
@@ -59,11 +60,6 @@ PMPI_LOCAL int MPIR_Gather (
     MPI_Aint   extent;            /* Datatype extent */
     MPI_Comm comm;
     
-    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-        printf("ERROR: MPI_Gather for intercommunicators not yet implemented.\n"); 
-        NMPI_Abort(MPI_COMM_WORLD, 1);
-    }
-
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
@@ -101,19 +97,23 @@ PMPI_LOCAL int MPIR_Gather (
                     return mpi_errno;
                 }
 
-                /* copy root's sendbuf into tmpbuf just so that it is
-                   easier to unpack everything later into the recv_buf */
-                mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
-                                           tmp_buf, nbytes, MPI_BYTE);
-                if (mpi_errno) return mpi_errno;
+                if (sendbuf != MPI_IN_PLACE) {
+                    /* copy root's sendbuf into tmpbuf just so that it is
+                       easier to unpack everything later into the recv_buf */
+                    mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
+                                               tmp_buf, nbytes, MPI_BYTE);
+                    if (mpi_errno) return mpi_errno;
+                }
                 curr_cnt = nbytes;
             }
             else {
                 /* root is 0. no tmp_buf needed at root. */
                 /* copy root's sendbuf into recvbuf */
-                mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
-                                           recvbuf, recvcnt, recvtype);
-                if (mpi_errno) return mpi_errno;
+                if (sendbuf != MPI_IN_PLACE) {
+                    mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
+                                               recvbuf, recvcnt, recvtype);
+                    if (mpi_errno) return mpi_errno;
+                }
                 curr_cnt = recvcnt;
             }          
         }
@@ -121,6 +121,10 @@ PMPI_LOCAL int MPIR_Gather (
             /* allocate temporary buffer for nodes other than leaf
                nodes. max size needed is (nbytes*comm_size)/2. */
             tmp_buf = MPIU_Malloc((nbytes*comm_size)/2);
+            if (!tmp_buf) {
+                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                return mpi_errno;
+            }
             /* copy from sendbuf into tmp_buf */
             mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
                                        tmp_buf, nbytes, MPI_BYTE);
@@ -181,20 +185,21 @@ PMPI_LOCAL int MPIR_Gather (
             /* reorder and copy from tmp_buf into recvbuf */
             position = 0;
 
-            MPIR_Localcopy(tmp_buf, nbytes*(comm_size-rank), MPI_BYTE, 
-                           ((char *) recvbuf + extent*recvcnt*rank),
-                           recvcnt*(comm_size-rank), recvtype);
+            if (sendbuf != MPI_IN_PLACE) {
+                MPIR_Localcopy(tmp_buf, nbytes*(comm_size-rank), MPI_BYTE, 
+                               ((char *) recvbuf + extent*recvcnt*rank),
+                               recvcnt*(comm_size-rank), recvtype);
+            }
+            else {
+                MPIR_Localcopy((char *) tmp_buf + nbytes,
+                               nbytes*(comm_size-rank-1), MPI_BYTE,  
+                               ((char *) recvbuf + extent*recvcnt*(rank+1)),
+                               recvcnt*(comm_size-rank-1), recvtype);
+            }
             MPIR_Localcopy((char *) tmp_buf + nbytes*(comm_size-rank),
                            nbytes*rank, MPI_BYTE, recvbuf, 
                            recvcnt*rank, recvtype); 
 
-            /*
-            MPI_Unpack(tmp_buf, nbytes*comm_size, &position,
-                       ((char *) recvbuf + extent*recvcnt*rank),
-                       recvcnt*(comm_size-rank), recvtype, comm); 
-            MPI_Unpack(tmp_buf, nbytes*comm_size, &position, recvbuf,
-                       recvcnt*rank, recvtype, comm); 
-            */
             MPIU_Free(tmp_buf);
         }
         else if (relative_rank && !(relative_rank % 2))
@@ -209,7 +214,7 @@ PMPI_LOCAL int MPIR_Gather (
         if (rank == root) {
 #ifdef UNIMPLEMENTED
             NMPI_Pack_size(recvcnt*comm_size, recvtype, comm,
-                          &pack_size); 
+                           &pack_size); 
 #endif
             tmp_buf = MPIU_Malloc(pack_size);
             if (!tmp_buf) { 
@@ -219,8 +224,9 @@ PMPI_LOCAL int MPIR_Gather (
 
             position = 0;
 #ifdef UNIMPLEMENTED
-            NMPI_Pack(sendbuf, sendcnt, sendtype, tmp_buf,
-                     pack_size, &position, comm);
+            if (sendbuf != MPI_IN_PLACE)
+                NMPI_Pack(sendbuf, sendcnt, sendtype, tmp_buf,
+                          pack_size, &position, comm);
 #endif
             nbytes = pack_size/comm_size;
         }
@@ -271,14 +277,23 @@ PMPI_LOCAL int MPIR_Gather (
         
         if (rank == root) {
             /* reorder and copy from tmp_buf into recvbuf */
-            position = 0;
 #ifdef UNIMPLEMENTED
-            NMPI_Unpack(tmp_buf, nbytes*comm_size, &position,
-                       ((char *) recvbuf + extent*recvcnt*rank),
-                       recvcnt*(comm_size-rank), recvtype, comm); 
+            if (sendbuf != MPI_IN_PLACE) {
+                position = 0;
+                NMPI_Unpack(tmp_buf, nbytes*comm_size, &position,
+                            ((char *) recvbuf + extent*recvcnt*rank),
+                            recvcnt*(comm_size-rank), recvtype, comm); 
+            }
+            else {
+                position = nbytes;
+                NMPI_Unpack(tmp_buf, nbytes*comm_size, &position,
+                            ((char *) recvbuf + extent*recvcnt*(rank+1)),
+                            recvcnt*(comm_size-rank-1), recvtype,
+                            comm);
+            }
             if (root != 0)
                 NMPI_Unpack(tmp_buf, nbytes*comm_size, &position, recvbuf,
-                           recvcnt*rank, recvtype, comm); 
+                            recvcnt*rank, recvtype, comm); 
 #endif
         }
         
@@ -289,6 +304,135 @@ PMPI_LOCAL int MPIR_Gather (
     MPID_Comm_thread_unlock( comm_ptr );
     
     return (mpi_errno);
+}
+
+
+PMPI_LOCAL int MPIR_Gather_inter ( 
+	void *sendbuf, 
+	int sendcnt, 
+	MPI_Datatype sendtype, 
+	void *recvbuf, 
+	int recvcnt, 
+	MPI_Datatype recvtype, 
+	int root, 
+	MPID_Comm *comm_ptr )
+{
+/*  Intercommunicator gather.
+    For short messages, remote group does a local intracommunicator
+    gather to rank 0. Rank 0 then sends data to root.
+
+    Cost: (lgp+1).alpha + n.((p-1)/p).beta + n.beta
+   
+    For long messages, we use linear gather to avoid the extra n.beta.
+
+    Cost: p.alpha + n.beta
+*/
+
+    int rank, local_size, remote_size, mpi_errno=MPI_SUCCESS;
+    int i, nbytes, sendtype_size, recvtype_size;
+    MPI_Comm newcomm;
+    MPI_Group group;
+    MPI_Status status;
+    MPI_Aint extent, lb=0;
+    void *tmp_buf=NULL;
+    MPID_Comm *newcomm_ptr = NULL;
+    MPI_Comm comm;
+
+    if (root == MPI_PROC_NULL) {
+        /* local processes other than root do nothing */
+        return MPI_SUCCESS;
+    }
+    
+    comm = comm_ptr->handle;
+    remote_size = comm_ptr->remote_size; 
+    local_size = comm_ptr->local_size; 
+
+    if (root == MPI_ROOT) {
+        MPID_Datatype_get_size_macro(recvtype, recvtype_size);
+        nbytes = recvtype_size * recvcnt * remote_size;
+    }
+    else {
+        /* remote side */
+        MPID_Datatype_get_size_macro(sendtype, sendtype_size);
+        nbytes = sendtype_size * sendcnt * local_size;
+    }
+
+    if (nbytes < MPIR_GATHER_SHORT_MSG) {
+        if (root == MPI_ROOT) {
+            /* root receives data from rank 0 on remote group */
+            MPID_Comm_thread_lock( comm_ptr );
+            mpi_errno = MPIC_Recv(recvbuf, recvcnt*remote_size,
+                                  recvtype, 0, MPIR_GATHER_TAG, comm,
+                                  &status);
+            MPID_Comm_thread_unlock( comm_ptr ); 
+ 
+            return mpi_errno;
+        }
+        else {
+            /* remote group. Rank 0 allocates temporary buffer, does
+               local intracommunicator gather, and then sends the data
+               to root. */
+            
+            rank = comm_ptr->rank;
+            
+            if (rank == 0) {
+                MPID_Datatype_get_extent_macro(sendtype, extent);
+                tmp_buf = MPIU_Malloc(extent*sendcnt*local_size);
+                if (!tmp_buf) {
+                    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                    return mpi_errno;
+                }
+                /* adjust for potential negative lower bound in datatype */
+                /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
+                   INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
+                   SO IT'S OK */
+#ifdef UNIMPLEMENTED
+                MPI_Type_lb( sendtype, &lb );
+#endif
+                tmp_buf = (void *)((char*)tmp_buf - lb);
+            }
+            
+            /* all processes in remote group form new intracommunicator */
+#ifdef UNIMPLEMENTED
+            NMPI_Comm_group(comm, &group);
+            MPID_Comm_return_intra(group, &newcomm);
+#endif
+            MPID_Comm_get_ptr( newcomm, newcomm_ptr );
+            /* now do the a local gather on this intracommunicator */
+            mpi_errno = MPIR_Gather(sendbuf, sendcnt, sendtype,
+                                    tmp_buf, sendcnt, sendtype, 0,
+                                    newcomm_ptr); 
+            if (rank == 0) {
+                MPID_Comm_thread_lock( comm_ptr );
+                mpi_errno = MPIC_Send(tmp_buf, sendcnt*local_size,
+                                      sendtype, root,
+                                      MPIR_GATHER_TAG, comm); 
+                MPID_Comm_thread_unlock( comm_ptr ); 
+                if (mpi_errno) return mpi_errno;
+                MPIU_Free(tmp_buf+lb);
+            }
+        }
+    }
+    else {
+        /* long message. use linear algorithm. */
+        MPID_Comm_thread_lock( comm_ptr );
+        if (root == MPI_ROOT) {
+            MPID_Datatype_get_extent_macro(recvtype, extent);
+            for (i=0; i<remote_size; i++) {
+                mpi_errno = MPIC_Recv(((char *)recvbuf+recvcnt*i*extent), 
+                                      recvcnt, recvtype, i,
+                                      MPIR_GATHER_TAG, comm, &status);
+                if (mpi_errno) return mpi_errno;                
+            }
+        }
+        else {
+            mpi_errno = MPIC_Send(sendbuf,sendcnt,sendtype,root,
+                                  MPIR_GATHER_TAG,comm);
+        }
+        MPID_Comm_thread_unlock( comm_ptr ); 
+    }
+
+    return mpi_errno;
 }
 
 #endif
@@ -396,8 +540,20 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf,
     }
     else
     {
-	mpi_errno = MPIR_Gather(sendbuf, sendcnt, sendtype, recvbuf, recvcnt,
-                                recvtype, root, comm_ptr); 
+        if (comm_ptr->comm_kind == MPID_INTRACOMM) 
+            /* intracommunicator */
+            mpi_errno = MPIR_Gather(sendbuf, sendcnt, sendtype,
+                                    recvbuf, recvcnt, recvtype, root,
+                                    comm_ptr);  
+        else {
+            /* intercommunicator */ 
+            printf("ERROR: MPI_Gather for intercommunicators not yet implemented.\n"); 
+            NMPI_Abort(MPI_COMM_WORLD, 1);
+            
+            mpi_errno = MPIR_Gather_inter(sendbuf, sendcnt, sendtype,
+                                          recvbuf, recvcnt, recvtype, root,
+                                          comm_ptr);
+        }
     }
     if (mpi_errno == MPI_SUCCESS)
     {

@@ -47,13 +47,13 @@
 
 
 PMPI_LOCAL int MPIR_Alltoall( 
-	void *sendbuf, 
-	int sendcount, 
-	MPI_Datatype sendtype, 
-	void *recvbuf, 
-	int recvcount, 
-	MPI_Datatype recvtype, 
-	MPID_Comm *comm_ptr )
+    void *sendbuf, 
+    int sendcount, 
+    MPI_Datatype sendtype, 
+    void *recvbuf, 
+    int recvcount, 
+    MPI_Datatype recvtype, 
+    MPID_Comm *comm_ptr )
 {
     int          comm_size, i, j, k, p;
     MPI_Aint     sendtype_extent, recvtype_extent, sendbuf_extent, lb=0;
@@ -64,11 +64,6 @@ PMPI_LOCAL int MPIR_Alltoall(
     int sendtype_size;
     void *tmp_buf;
     MPI_Comm comm;
-    
-    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-        printf("ERROR: MPI_Alltoall for intercommunicators not yet implemented.\n"); 
-        NMPI_Abort(MPI_COMM_WORLD, 1);
-    }
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
@@ -257,6 +252,79 @@ PMPI_LOCAL int MPIR_Alltoall(
     return (mpi_errno);
 }
 
+
+PMPI_LOCAL int MPIR_Alltoall_inter( 
+    void *sendbuf, 
+    int sendcount, 
+    MPI_Datatype sendtype, 
+    void *recvbuf, 
+    int recvcount, 
+    MPI_Datatype recvtype, 
+    MPID_Comm *comm_ptr )
+{
+/* Intercommunicator alltoall. We use a pairwise exchange algorithm
+   similar to the one used in intracommunicator alltoall for long
+   messages. Since the local and remote groups can be of different
+   sizes, we first compute the max of local_group_size,
+   remote_group_size. At step i, 0 <= i < max_size, each process
+   receives from src = (rank - i + max_size) % max_size if src <
+   remote_size, and sends to dst = (rank + i) % max_size if dst <
+   remote_size. 
+*/
+
+    int          local_size, remote_size, max_size, i;
+    MPI_Aint     sendtype_extent, recvtype_extent;
+    int          mpi_errno = MPI_SUCCESS;
+    MPI_Status status;
+    int src, dst, rank;
+    char *sendaddr, *recvaddr;
+    MPI_Comm comm;
+    
+    local_size = comm_ptr->local_size; 
+    remote_size = comm_ptr->remote_size;
+    rank = comm_ptr->rank;
+    comm = comm_ptr->handle;
+
+    /* Get extent of send and recv types */
+    MPID_Datatype_get_extent_macro(sendtype, sendtype_extent);
+    MPID_Datatype_get_extent_macro(recvtype, recvtype_extent);
+    
+    /* Lock for collective operation */
+    MPID_Comm_thread_lock( comm_ptr );
+    
+    /* Do the pairwise exchanges */
+    max_size = MPIR_MAX(local_size, remote_size);
+    for (i=0; i<max_size; i++) {
+        src = (rank - i + max_size) % max_size;
+        dst = (rank + i) % max_size;
+        if (src >= remote_size) {
+            src = MPI_PROC_NULL;
+            recvaddr = NULL;
+        }
+        else {
+            recvaddr = (char *)recvbuf + src*recvcount*recvtype_extent;
+        }
+        if (dst >= remote_size) {
+            dst = MPI_PROC_NULL;
+            sendaddr = NULL;
+        }
+        else {
+            sendaddr = (char *)sendbuf + dst*sendcount*sendtype_extent;
+        }
+
+        mpi_errno = MPIC_Sendrecv(sendaddr, sendcount, sendtype, dst, 
+                                  MPIR_ALLTOALL_TAG, recvaddr,
+                                  recvcount, recvtype, src,
+                                  MPIR_ALLTOALL_TAG, comm, &status);
+        if (mpi_errno) return mpi_errno;
+    }
+
+    /* Unlock for collective operation */
+    MPID_Comm_thread_unlock( comm_ptr );
+    
+    return (mpi_errno);
+}
+
 #endif
 
 #undef FUNCNAME
@@ -355,8 +423,20 @@ int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recv
     }
     else
     {
-	mpi_errno = MPIR_Alltoall(sendbuf, sendcount, sendtype,
-                                  recvbuf, recvcount, recvtype, comm_ptr); 
+        if (comm_ptr->comm_kind == MPID_INTRACOMM) 
+            /* intracommunicator */
+            mpi_errno = MPIR_Alltoall(sendbuf, sendcount, sendtype,
+                                      recvbuf, recvcount, recvtype, comm_ptr); 
+        else {
+            /* intercommunicator */
+            printf("ERROR: MPI_Alltoall for intercommunicators not yet implemented.\n"); 
+            NMPI_Abort(MPI_COMM_WORLD, 1);
+            
+            mpi_errno = MPIR_Alltoall_inter(sendbuf, sendcount,
+                                            sendtype, recvbuf,
+                                            recvcount, recvtype,
+                                            comm_ptr); 
+        }
     }
     if (mpi_errno == MPI_SUCCESS)
     {

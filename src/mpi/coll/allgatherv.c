@@ -60,11 +60,6 @@ PMPI_LOCAL int MPIR_Allgatherv (
     void *tmp_buf;
     MPI_Comm comm;
     
-    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-        printf("ERROR: MPI_Allgatherv for intercommunicators not yet implemented.\n"); 
-        NMPI_Abort(MPI_COMM_WORLD, 1);
-    }
-    
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
@@ -90,11 +85,13 @@ PMPI_LOCAL int MPIR_Allgatherv (
         /* homogeneous. no need to pack into tmp_buf on each node. */
         
         /* copy local data into recvbuf */ 
-        mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype,
-                                   ((char *)recvbuf + displs[rank]*
-                                    recv_extent), 
-                                   recvcounts[rank], recvtype);
-        if (mpi_errno) return mpi_errno;
+        if (sendbuf != MPI_IN_PLACE) {
+            mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype,
+                                       ((char *)recvbuf + displs[rank]*
+                                        recv_extent), 
+                                       recvcounts[rank], recvtype);
+            if (mpi_errno) return mpi_errno;
+        }
         curr_cnt = recvcounts[rank];
         
         mask = 0x1;
@@ -224,10 +221,22 @@ PMPI_LOCAL int MPIR_Allgatherv (
         for (i=0; i<rank; i++)
             position += recvcounts[i];
         position *= nbytes;
+
+        if (sendbuf != MPI_IN_PLACE) {
 #ifdef UNIMPLEMENTED
-        NMPI_Pack(sendbuf, sendcount, sendtype, tmp_buf, nbytes*total_count,
-                 &position, comm);
+            NMPI_Pack(sendbuf, sendcount, sendtype, tmp_buf,
+                      nbytes*total_count, &position, comm);
 #endif
+        }
+        else {
+            /* if in_place specified, local data is found in recvbuf */ 
+#ifdef UNIMPLEMENTED
+            NMPI_Pack(((char *)recvbuf + displs[rank]*recv_extent, 
+                      recvcounts[rank], recvtype, tmp_buf,
+                      nbytes*total_count, &position, comm);
+#endif
+        }
+
         curr_cnt = recvcounts[rank]*nbytes;
         
         mask = 0x1;
@@ -349,21 +358,112 @@ PMPI_LOCAL int MPIR_Allgatherv (
         
         position = 0;
 #ifdef UNIMPLEMENTED
-        for (j=0; j<comm_size; j++)
-            NMPI_Unpack(tmp_buf, nbytes*total_count, &position, 
-                        ((char *)recvbuf + displs[j]*recv_extent),
-                        recvcounts[j], recvtype, comm);
+        for (j=0; j<comm_size; j++) {
+            if ((sendbuf != MPI_IN_PLACE) || (j != rank)) {
+                /* not necessary to unpack if in_place and
+                   j==rank. otherwise unpack. */
+                NMPI_Unpack(tmp_buf, nbytes*total_count, &position, 
+                            ((char *)recvbuf + displs[j]*recv_extent),
+                            recvcounts[j], recvtype, comm);
+            }
 #endif
         
         MPIU_Free(tmp_buf);
   }
-
 
   /* Unlock for collective operation */
     MPID_Comm_thread_unlock( comm_ptr );
 
   return (mpi_errno);
 }
+
+
+PMPI_LOCAL int MPIR_Allgatherv_inter ( 
+    void *sendbuf, 
+    int sendcount,  
+    MPI_Datatype sendtype, 
+    void *recvbuf, 
+    int *recvcounts, 
+    int *displs,   
+    MPI_Datatype recvtype, 
+    MPID_Comm *comm_ptr )
+{
+/* Intercommunicator Allgatherv.
+   This is done differently from the intercommunicator allgather
+   because we don't have all the information to do a local
+   intracommunictor gather (sendcount can be different on each
+   process). Therefore, we do the following:
+   Each group first does an intercommunicator gather to rank 0
+   and then does an intracommunicator broadcast. 
+*/
+
+    int remote_size, mpi_errno, inleftgroup, root, rank;
+    MPI_Comm comm, newcomm;
+    MPI_Group group;
+    MPID_Comm *newcomm_ptr = NULL;
+    MPI_Datatype newtype;
+
+    remote_size = comm_ptr->remote_size;
+    rank = comm_ptr->rank;
+    comm = comm_ptr->handle;
+
+    /* first do an intercommunicator gatherv from left to right group,
+       then from right to left group */
+#ifdef UNIMPLEMENTED
+    inleftgroup = yes_or_no;  /* not done */
+#endif
+    if (inleftgroup) {
+        /* gatherv from right group */
+        root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
+        mpi_errno = MPIR_Gatherv(sendbuf, sendcount, sendtype, recvbuf,
+                                 recvcounts, displs, recvtype, root,
+                                 comm_ptr);  
+        if (mpi_errno) return mpi_errno;
+        /* gatherv to right group */
+        root = 0;
+        mpi_errno = MPIR_Gatherv(sendbuf, sendcount, sendtype, recvbuf,
+                                 recvcounts, displs, recvtype, root,
+                                 comm_ptr);  
+        if (mpi_errno) return mpi_errno;
+    }
+    else {
+        /* gatherv to left group  */
+        root = 0;
+        mpi_errno = MPIR_Gatherv(sendbuf, sendcount, sendtype, recvbuf,
+                                 recvcounts, displs, recvtype, root,
+                                 comm_ptr);  
+        if (mpi_errno) return mpi_errno;
+        /* gatherv from left group */
+        root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
+        mpi_errno = MPIR_Gatherv(sendbuf, sendcount, sendtype, recvbuf,
+                                 recvcounts, displs, recvtype, root,
+                                 comm_ptr);  
+        if (mpi_errno) return mpi_errno;
+    }
+
+    /* now do an intracommunicator broadcast within each group. we use
+       a derived datatype to handle the displacements */
+
+#ifdef UNIMPLEMENTED
+    NMPI_Comm_group(comm, &group);
+    MPID_Comm_return_intra(group, &newcomm);
+#endif
+    MPID_Comm_get_ptr( newcomm, newcomm_ptr );
+
+#ifdef UNIMPLEMENTED
+    NMPI_Type_indexed(remote_size, recvcounts, displs, recvtype,
+                      &newtype);
+    NMPI_Type_commit(&newtype);
+#endif
+
+    mpi_errno = MPIR_Bcast(recvbuf, 1, newtype, 0, newcomm_ptr);
+
+#ifdef UNIMPLEMENTED
+    NMPI_Type_free(&newtype);
+#endif
+    return mpi_errno;
+}
+
 #endif
 
 #undef FUNCNAME
@@ -378,7 +478,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
 .  MPI_Datatype sendtype - send datatype
 .  void *recvbuf - receive buffer
 .  int *recvcounts - receive counts
-.  int *displs - whatever
+.  int *displs - receive displacements
 .  MPI_Datatype recvtype - receive datatype
 -  MPI_Comm comm - communicator
 
@@ -471,10 +571,22 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
     }
     else
     {
-	mpi_errno = MPIR_Allgatherv(sendbuf, sendcount, 
-                                    sendtype, recvbuf,
-                                    recvcounts, displs,
-                                    recvtype, comm_ptr); 
+        if (comm_ptr->comm_kind == MPID_INTRACOMM) 
+            /* intracommunicator */
+            mpi_errno = MPIR_Allgatherv(sendbuf, sendcount, 
+                                        sendtype, recvbuf,
+                                        recvcounts, displs,
+                                        recvtype, comm_ptr); 
+        else {
+            /* intracommunicator */
+            printf("ERROR: MPI_Allgatherv for intercommunicators not yet implemented.\n"); 
+            NMPI_Abort(MPI_COMM_WORLD, 1);
+
+            mpi_errno = MPIR_Allgatherv_inter(sendbuf, sendcount, 
+                                        sendtype, recvbuf,
+                                        recvcounts, displs,
+                                        recvtype, comm_ptr); 
+        }
     }
     if (mpi_errno == MPI_SUCCESS)
     {

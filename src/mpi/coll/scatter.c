@@ -55,18 +55,14 @@ PMPI_LOCAL int MPIR_Scatter (
 {
     MPI_Status status;
     MPI_Aint   extent;
-    int        rank, comm_size, is_homogeneous;
+    int        rank, comm_size, is_homogeneous, sendtype_size;
     int curr_cnt, relative_rank, nbytes, send_subtree_cnt;
     int mask, recvtype_size, src, dst, position, pack_size;
     void *tmp_buf=NULL;
     int        mpi_errno = MPI_SUCCESS;
-    MPI_Comm comm;
+    MPI_Comm comm, newcomm;
+    MPI_Group group;
     
-    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-        printf("ERROR: MPI_Scatter for intercommunicators not yet implemented.\n"); 
-        NMPI_Abort(MPI_COMM_WORLD, 1);
-    }
-
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
@@ -89,9 +85,17 @@ PMPI_LOCAL int MPIR_Scatter (
     
     if (is_homogeneous) {
         /* communicator is homogeneous */
-        
-        MPID_Datatype_get_size_macro(recvtype, recvtype_size);
-        nbytes = recvtype_size * recvcnt;
+        if (rank == root) {
+            /* We separate the two cases (root and non-root) because
+               in the event of recvbuf=MPI_IN_PLACE on the root,
+               recvcnt and recvtype are not valid */
+            MPID_Datatype_get_size_macro(sendtype, sendtype_size);
+            nbytes = sendtype_size * sendcnt;
+        }
+        else {
+            MPID_Datatype_get_size_macro(recvtype, recvtype_size);
+            nbytes = recvtype_size * recvcnt;
+        }
         
         curr_cnt = 0;
         
@@ -109,7 +113,6 @@ PMPI_LOCAL int MPIR_Scatter (
            relative ranks and copy it into a temporary buffer, so that
            all the sends from the root are contiguous and in the right
            order. */
-        
         if (rank == root) {
             if (root != 0) {
                 tmp_buf = MPIU_Malloc(nbytes*comm_size);
@@ -120,20 +123,20 @@ PMPI_LOCAL int MPIR_Scatter (
 
                 position = 0;
 
-                MPIR_Localcopy(((char *) sendbuf + extent*sendcnt*rank),
-                               sendcnt*(comm_size-rank), sendtype, tmp_buf,
-                               nbytes*(comm_size-rank), MPI_BYTE);
+                if (recvbuf != MPI_IN_PLACE)
+                    MPIR_Localcopy(((char *) sendbuf + extent*sendcnt*rank),
+                                   sendcnt*(comm_size-rank), sendtype, tmp_buf,
+                                   nbytes*(comm_size-rank), MPI_BYTE);
+                else
+                    MPIR_Localcopy(((char *) sendbuf + extent*sendcnt*(rank+1)),
+                                   sendcnt*(comm_size-rank-1),
+                                   sendtype, tmp_buf, 
+                                   nbytes*(comm_size-rank-1), MPI_BYTE);
+
                 MPIR_Localcopy(sendbuf, sendcnt*rank, sendtype, 
                                ((char *) tmp_buf + nbytes*(comm_size-rank)),
                                nbytes*rank, MPI_BYTE);
 
-                /*
-                NMPI_Pack(((char *) sendbuf + extent*sendcnt*rank),
-                          sendcnt*(comm_size-rank), sendtype, tmp_buf,
-                          nbytes*comm_size, &position, comm); 
-                NMPI_Pack(sendbuf, sendcnt*rank, sendtype, tmp_buf,
-                          nbytes*comm_size, &position, comm); 
-                */
                 curr_cnt = nbytes*comm_size;
             } 
             else 
@@ -208,13 +211,13 @@ PMPI_LOCAL int MPIR_Scatter (
             mask >>= 1;
         }
         
-        if ((rank == root) && (root == 0)) {
-            /* put root's data in the right place */
+        if ((rank == root) && (root == 0) && (recvbuf != MPI_IN_PLACE)) {
+            /* for root=0, put root's data in recvbuf if not MPI_IN_PLACE */
             mpi_errno = MPIR_Localcopy ( sendbuf, sendcnt, sendtype, 
                                          recvbuf, recvcnt, recvtype );
             if (mpi_errno) return mpi_errno;
         }
-        else if (!(relative_rank % 2)) {
+        else if (!(relative_rank % 2) && (recvbuf != MPI_IN_PLACE)) {
             /* for non-zero root and non-leaf nodes, copy from tmp_buf
                into recvbuf */ 
             mpi_errno = MPIR_Localcopy ( tmp_buf, nbytes, MPI_BYTE, 
@@ -243,17 +246,35 @@ PMPI_LOCAL int MPIR_Scatter (
             nbytes = pack_size/comm_size;
             curr_cnt = pack_size;
             
-            position = 0;
 #ifdef UNIMPLEMENTED
-            if (root == 0)
-                NMPI_Pack(sendbuf, sendcnt*comm_size, sendtype, tmp_buf,
-                         pack_size, &position, comm);
+            if (root == 0) {
+                if (recvbuf != MPI_IN_PLACE) {
+                    position = 0;
+                    NMPI_Pack(sendbuf, sendcnt*comm_size, sendtype, tmp_buf,
+                              pack_size, &position, comm);
+                }
+                else {
+                    position = nbytes;
+                    NMPI_Pack(((char *) sendbuf + extent*sendcnt), 
+                              sendcnt*(comm_size-1), sendtype, tmp_buf,
+                              pack_size, &position, comm);
+                }
+            }
             else {
-                NMPI_Pack(((char *) sendbuf + extent*sendcnt*rank),
-                         sendcnt*(comm_size-rank), sendtype, tmp_buf,
-                         pack_size, &position, comm); 
+                if (recvbuf != MPI_IN_PLACE) {
+                    position = 0;
+                    NMPI_Pack(((char *) sendbuf + extent*sendcnt*rank),
+                              sendcnt*(comm_size-rank), sendtype, tmp_buf,
+                              pack_size, &position, comm); 
+                }
+                else {
+                    position = nbytes;
+                    NMPI_Pack(((char *) sendbuf + extent*sendcnt*(rank+1)),
+                              sendcnt*(comm_size-rank-1), sendtype, tmp_buf,
+                              pack_size, &position, comm); 
+                }
                 NMPI_Pack(sendbuf, sendcnt*rank, sendtype, tmp_buf,
-                         pack_size, &position, comm); 
+                          pack_size, &position, comm); 
             }
 #endif
         }
@@ -311,8 +332,9 @@ PMPI_LOCAL int MPIR_Scatter (
         /* copy local data into recvbuf */
         position = 0;
 #ifdef UNIMPLEMENTED
-        NMPI_Unpack(tmp_buf, nbytes, &position, recvbuf, recvcnt,
-                   recvtype, comm);
+        if (recvbuf != MPI_IN_PLACE)
+            NMPI_Unpack(tmp_buf, nbytes, &position, recvbuf, recvcnt,
+                        recvtype, comm);
 #endif
         MPIU_Free(tmp_buf);
     }
@@ -322,6 +344,131 @@ PMPI_LOCAL int MPIR_Scatter (
     
     return (mpi_errno);
 }
+
+
+PMPI_LOCAL int MPIR_Scatter_inter ( 
+	void *sendbuf, 
+	int sendcnt, 
+	MPI_Datatype sendtype, 
+	void *recvbuf, 
+	int recvcnt, 
+	MPI_Datatype recvtype, 
+	int root, 
+	MPID_Comm *comm_ptr )
+{
+/*  Intercommunicator scatter.
+    For short messages, root sends to rank 0 in remote group. rank 0
+    does local intracommunicator scatter (MST). 
+    Cost: (lgp+1).alpha + n.((p-1)/p).beta + n.beta
+   
+    For long messages, we use linear scatter to avoid the extra n.beta.
+    Cost: p.alpha + n.beta
+*/
+
+    int rank, local_size, remote_size, mpi_errno=MPI_SUCCESS;
+    int i, nbytes, sendtype_size, recvtype_size;
+    MPI_Comm newcomm;
+    MPI_Group group;
+    MPI_Status status;
+    MPI_Aint extent, lb=0;
+    void *tmp_buf=NULL;
+    MPID_Comm *newcomm_ptr = NULL;
+    MPI_Comm comm;
+
+    if (root == MPI_PROC_NULL) {
+        /* local processes other than root do nothing */
+        return MPI_SUCCESS;
+    }
+    
+    comm = comm_ptr->handle;
+    remote_size = comm_ptr->remote_size; 
+    local_size = comm_ptr->local_size; 
+
+    if (root == MPI_ROOT) {
+        MPID_Datatype_get_size_macro(sendtype, sendtype_size);
+        nbytes = sendtype_size * sendcnt * remote_size;
+    }
+    else {
+        /* remote side */
+        MPID_Datatype_get_size_macro(recvtype, recvtype_size);
+        nbytes = recvtype_size * recvcnt * local_size;
+    }
+
+    if (nbytes < MPIR_SCATTER_SHORT_MSG) {
+        if (root == MPI_ROOT) {
+            /* root sends all data to rank 0 on remote group and returns */
+            MPID_Comm_thread_lock( comm_ptr );
+            mpi_errno = MPIC_Send(sendbuf, sendcnt*remote_size,
+                                  sendtype, 0, MPIR_SCATTER_TAG, comm); 
+            MPID_Comm_thread_unlock( comm_ptr );
+            return mpi_errno;
+        }
+        else {
+            /* remote group. rank 0 receives data from root. need to
+               allocate temporary buffer to store this data. */
+            
+            rank = comm_ptr->rank;
+            
+            if (rank == 0) {
+                MPID_Datatype_get_extent_macro(recvtype, extent);
+                tmp_buf = MPIU_Malloc(extent*recvcnt*local_size);
+                if (!tmp_buf) {
+                    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                    return mpi_errno;
+                }
+                /* adjust for potential negative lower bound in datatype */
+                /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
+                   INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
+                   SO IT'S OK */
+#ifdef UNIMPLEMENTED
+                MPI_Type_lb( recvtype, &lb );
+#endif
+                tmp_buf = (void *)((char*)tmp_buf - lb);
+
+                MPID_Comm_thread_lock( comm_ptr );
+                mpi_errno = MPIC_Recv(tmp_buf, recvcnt*local_size,
+                                      recvtype, root,
+                                      MPIR_SCATTER_TAG, comm, &status); 
+                MPID_Comm_thread_unlock( comm_ptr );
+                if (mpi_errno) return mpi_errno;
+            }
+            
+            /* all processes in remote group form new intracommunicator */
+#ifdef UNIMPLEMENTED
+            NMPI_Comm_group(comm, &group);
+            MPID_Comm_return_intra(group, &newcomm);
+#endif
+            MPID_Comm_get_ptr( newcomm, newcomm_ptr );
+            /* now do the usual scatter on this intracommunicator */
+            mpi_errno = MPIR_Scatter(tmp_buf, recvcnt, recvtype,
+                                     recvbuf, recvcnt, recvtype, 0,
+                                     newcomm_ptr); 
+            if (rank == 0) 
+                MPIU_Free(tmp_buf+lb);
+        }
+    }
+    else {
+        /* long message. use linear algorithm. */
+        MPID_Comm_thread_lock( comm_ptr );
+        if (root == MPI_ROOT) {
+            MPID_Datatype_get_extent_macro(sendtype, extent);
+            for (i=0; i<remote_size; i++) {
+                mpi_errno = MPIC_Send(((char *)sendbuf+sendcnt*i*extent), 
+                                      sendcnt, sendtype, i,
+                                      MPIR_SCATTER_TAG, comm);
+                if (mpi_errno) return mpi_errno;                
+            }
+        }
+        else {
+            mpi_errno = MPIC_Recv(recvbuf,recvcnt,recvtype,root,
+                                  MPIR_SCATTER_TAG,comm,&status);
+        }
+        MPID_Comm_thread_unlock( comm_ptr );
+    }
+
+    return mpi_errno;
+}
+
 #endif
 
 #undef FUNCNAME
@@ -428,8 +575,20 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
     }
     else
     {
-	mpi_errno = MPIR_Scatter(sendbuf, sendcnt, sendtype, recvbuf, recvcnt,
-                                 recvtype, root, comm_ptr); 
+        if (comm_ptr->comm_kind == MPID_INTRACOMM) 
+            /* intracommunicator */
+            mpi_errno = MPIR_Scatter(sendbuf, sendcnt, sendtype,
+                                     recvbuf, recvcnt, recvtype, root,
+                                     comm_ptr); 
+        else {
+            /* intercommunicator */ 
+            printf("ERROR: MPI_Scatter for intercommunicators not yet implemented.\n"); 
+            NMPI_Abort(MPI_COMM_WORLD, 1);
+            
+            mpi_errno = MPIR_Scatter_inter(sendbuf, sendcnt, sendtype,
+                                           recvbuf, recvcnt, recvtype, root,
+                                           comm_ptr); 
+        }
     }
     if (mpi_errno == MPI_SUCCESS)
     {

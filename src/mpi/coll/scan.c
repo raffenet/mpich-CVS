@@ -137,12 +137,19 @@ PMPI_LOCAL int MPIR_Scan (
     
     /* Since this is an inclusive scan, copy local contribution into
        recvbuf. */
-    mpi_errno = MPIR_Localcopy(sendbuf, count, datatype,
-                               recvbuf, count, datatype);
-    if (mpi_errno) return mpi_errno;
+    if (sendbuf != MPI_IN_PLACE) {
+        mpi_errno = MPIR_Localcopy(sendbuf, count, datatype,
+                                   recvbuf, count, datatype);
+        if (mpi_errno) return mpi_errno;
+    }
     
-    mpi_errno = MPIR_Localcopy(sendbuf, count, datatype,
-                              partial_scan, count, datatype);
+    if (sendbuf != MPI_IN_PLACE)
+        mpi_errno = MPIR_Localcopy(sendbuf, count, datatype,
+                                   partial_scan, count, datatype);
+    else 
+        mpi_errno = MPIR_Localcopy(recvbuf, count, datatype,
+                                   partial_scan, count, datatype);
+        
     if (mpi_errno) return mpi_errno;
     
     /* Lock for collective operation */

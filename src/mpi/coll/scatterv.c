@@ -39,7 +39,8 @@
    End Algorithm: MPI_Scatterv
 */
 
-PMPI_LOCAL int MPIR_Scatterv ( 
+/* not declared static because it is called in intercomm. reduce_scatter */
+int MPIR_Scatterv ( 
 	void *sendbuf, 
 	int *sendcnts, 
 	int *displs, 
@@ -51,14 +52,9 @@ PMPI_LOCAL int MPIR_Scatterv (
 	MPID_Comm *comm_ptr )
 {
     MPI_Status status;
-    int        rank, comm_size;
+    int        rank, comm_size, remote_comm_size;
     int        mpi_errno = MPI_SUCCESS;
     MPI_Comm comm;
-    
-    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-        printf("ERROR: MPI_Scatterv for intercommunicators not yet implemented.\n"); 
-        NMPI_Abort(MPI_COMM_WORLD, 1);
-    }
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
@@ -73,25 +69,38 @@ PMPI_LOCAL int MPIR_Scatterv (
         int      i;
         
         MPID_Datatype_get_extent_macro(sendtype, extent);
-        /* We could use Isend here, but since the receivers need to execute
-           a simple Recv, it may not make much difference in performance, 
-           and using the blocking version is simpler */
-        for ( i=0; i<root; i++ ) {
-            mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
-                                  sendcnts[i], sendtype, i,
-                                  MPIR_SCATTERV_TAG, comm);
-            if (mpi_errno) return mpi_errno;
+        if (comm_ptr->comm_kind == MPID_INTRACOMM) {
+            /* We could use Isend here, but since the receivers need to execute
+               a simple Recv, it may not make much difference in performance, 
+               and using the blocking version is simpler */
+            for ( i=0; i<root; i++ ) {
+                mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
+                                      sendcnts[i], sendtype, i,
+                                      MPIR_SCATTERV_TAG, comm);
+                if (mpi_errno) return mpi_errno;
+            }
+            if (recvbuf != MPI_IN_PLACE) {
+                mpi_errno = MPIR_Localcopy(((char *)sendbuf+displs[rank]*extent), 
+                                           sendcnts[rank], sendtype, 
+                                           recvbuf, recvcnt, recvtype);
+                if (mpi_errno) return mpi_errno;
+            }        
+            for ( i=root+1; i<comm_size; i++ ) {
+                mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
+                                      sendcnts[i], sendtype, i, 
+                                      MPIR_SCATTERV_TAG, comm);
+                if (mpi_errno) return mpi_errno;
+            }
         }
-        mpi_errno = MPIR_Localcopy(((char *)sendbuf+displs[rank]*extent), 
-                                   sendcnts[rank], sendtype, 
-                                   recvbuf, recvcnt, recvtype);
-        if (mpi_errno) return mpi_errno;
-        
-        for ( i=root+1; i<comm_size; i++ ) {
-            mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
-                                  sendcnts[i], sendtype, i, 
-                                  MPIR_SCATTERV_TAG, comm);
-            if (mpi_errno) return mpi_errno;
+        else {
+            /* intercommunicator */
+            remote_comm_size = comm_ptr->remote_size;
+            for (i=0; i<remote_comm_size; i++) {
+                mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
+                                      sendcnts[i], sendtype, i,
+                                      MPIR_SCATTERV_TAG, comm);
+                if (mpi_errno) return mpi_errno;                
+            }
         }
     }
     else
@@ -115,7 +124,7 @@ PMPI_LOCAL int MPIR_Scatterv (
    Arguments:
 +   void *sendbuf - send buffer
 .  int *sendcnts - send counts
-.  int *displs - whatever
+.  int *displs - send displacements
 .  MPI_Datatype sendtype - send type
 .  void *recvbuf - receive buffer
 .  int recvcnt - receive count

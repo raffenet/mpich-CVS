@@ -65,11 +65,6 @@ PMPI_LOCAL int MPIR_Allreduce (
     MPID_Op *op_ptr;
     MPI_Comm comm;
     
-    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-        printf("ERROR: MPI_Allreduce for intercommunicators not yet implemented.\n");
-        NMPI_Abort(MPI_COMM_WORLD, 1);
-    }
-    
     comm = comm_ptr->handle;
     
     is_homogeneous = 1;
@@ -131,9 +126,11 @@ PMPI_LOCAL int MPIR_Allreduce (
         tmp_buf = (void *)((char*)tmp_buf - lb);
         
         /* copy local data into recvbuf */
-        mpi_errno = MPIR_Localcopy(sendbuf, count, datatype, recvbuf,
-                                   count, datatype);
-        if (mpi_errno) return mpi_errno;
+        if (sendbuf != MPI_IN_PLACE) {
+            mpi_errno = MPIR_Localcopy(sendbuf, count, datatype, recvbuf,
+                                       count, datatype);
+            if (mpi_errno) return mpi_errno;
+        }
         
         /* Lock for collective operation */
         MPID_Comm_thread_lock( comm_ptr );
@@ -242,6 +239,77 @@ PMPI_LOCAL int MPIR_Allreduce (
     }
     
     return (mpi_errno);
+}
+
+
+PMPI_LOCAL int MPIR_Allreduce_inter ( 
+    void *sendbuf, 
+    void *recvbuf, 
+    int count, 
+    MPI_Datatype datatype, 
+    MPI_Op op, 
+    MPID_Comm *comm_ptr )
+{
+/* Intercommunicator Allreduce.
+   We first do an intercommunicator reduce to rank 0 on left group,
+   then an intercommunicator reduce to rank 0 on right group, followed
+   by local intracommunicator broadcasts in each group.
+
+   We don't do local reduces first and then intercommunicator
+   broadcasts because it would require allocation of a temporary buffer. 
+*/
+
+    int rank, mpi_errno, inleftgroup, root;
+    MPI_Comm newcomm;
+    MPI_Group group;
+    MPID_Comm *newcomm_ptr = NULL;
+    MPI_Comm comm;
+
+    rank = comm_ptr->rank;
+    comm = comm_ptr->handle;
+
+    /* first do a reduce from right group to rank 0 in left group,
+       then from left group to rank 0 in right group*/
+#ifdef UNIMPLEMENTED
+    inleftgroup = yes_or_no;  /* not done */
+#endif
+    if (inleftgroup) {
+        /* reduce from right group to rank 0*/
+        root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
+        mpi_errno = MPIR_Reduce(sendbuf, recvbuf, count, datatype, op,
+                                root, comm_ptr);  
+        if (mpi_errno) return mpi_errno;
+
+        /* reduce to rank 0 of right group */
+        root = 0;
+        mpi_errno = MPIR_Reduce(sendbuf, recvbuf, count, datatype, op,
+                                root, comm_ptr);  
+        if (mpi_errno) return mpi_errno;
+    }
+    else {
+        /* reduce to rank 0 of left group */
+        root = 0;
+        mpi_errno = MPIR_Reduce(sendbuf, recvbuf, count, datatype, op,
+                                root, comm_ptr);  
+        if (mpi_errno) return mpi_errno;
+
+        /* reduce from right group to rank 0 */
+        root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
+        mpi_errno = MPIR_Reduce(sendbuf, recvbuf, count, datatype, op,
+                                root, comm_ptr);  
+        if (mpi_errno) return mpi_errno;
+    }
+
+#ifdef UNIMPLEMENTED
+    NMPI_Comm_group(comm, &group);
+    MPID_Comm_return_intra(group, &newcomm);
+#endif
+    MPID_Comm_get_ptr( newcomm, newcomm_ptr );
+
+    mpi_errno = MPIR_Bcast(recvbuf, count, datatype, 0, newcomm_ptr);
+    if (mpi_errno) return mpi_errno;
+
+    return mpi_errno;
 }
 
 #endif
@@ -354,8 +422,18 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
     }
     else
     {
-	mpi_errno = MPIR_Allreduce(sendbuf, recvbuf, count, datatype,
-                                   op, comm_ptr); 
+        if (comm_ptr->comm_kind == MPID_INTRACOMM) 
+            /* intracommunicator */
+            mpi_errno = MPIR_Allreduce(sendbuf, recvbuf, count, datatype,
+                                       op, comm_ptr); 
+        else {
+            /* intercommunicator */
+            printf("ERROR: MPI_Allreduce for intercommunicators not yet implemented.\n"); 
+            NMPI_Abort(MPI_COMM_WORLD, 1);
+
+            mpi_errno = MPIR_Allreduce_inter(sendbuf, recvbuf, count,
+                                             datatype, op, comm_ptr);       
+        }
     }
     if (mpi_errno == MPI_SUCCESS)
     {

@@ -58,7 +58,8 @@
    End Algorithm: MPI_Bcast
 */
 
-PMPI_LOCAL int MPIR_Bcast ( 
+/* not declared static because it is called in intercomm. allgather */
+int MPIR_Bcast ( 
 	void *buffer, 
 	int count, 
 	MPI_Datatype datatype, 
@@ -76,15 +77,9 @@ PMPI_LOCAL int MPIR_Bcast (
   void *tmp_buf;
   MPI_Comm comm;
 
-  if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-      printf("ERROR: MPI_Bcast for intercommunicators not yet implemented.\n");
-      NMPI_Abort(MPI_COMM_WORLD, 1);
-  }
-
-  comm = comm_ptr->handle;
-
   if (count == 0) return MPI_SUCCESS;
 
+  comm = comm_ptr->handle;
   comm_size = comm_ptr->local_size;
   rank = comm_ptr->rank;
   
@@ -417,6 +412,63 @@ PMPI_LOCAL int MPIR_Bcast (
   return mpi_errno;
 }
 
+
+PMPI_LOCAL MPIR_Bcast_inter ( 
+    void *buffer, 
+    int count, 
+    MPI_Datatype datatype, 
+    int root, 
+    MPID_Comm *comm_ptr )
+{
+/*  Intercommunicator broadcast.
+    Root sends to rank 0 in remote group. Remote group does local
+    intracommunicator broadcast.
+*/
+    int rank, mpi_errno;
+    MPI_Comm newcomm;
+    MPI_Group group;
+    MPI_Status status;
+    MPID_Comm *newcomm_ptr = NULL;
+    MPI_Comm comm;
+
+    if (root == MPI_PROC_NULL) {
+        /* local processes other than root do nothing */
+        mpi_errno = MPI_SUCCESS;
+    }
+    else if (root == MPI_ROOT) {
+        /* root sends to rank 0 on remote group and returns */
+        MPID_Comm_thread_lock( comm_ptr );
+        mpi_errno =  MPIC_Send(buffer, count, datatype, 0,
+                               MPIR_BCAST_TAG, comm); 
+        MPID_Comm_thread_unlock( comm_ptr );
+        return mpi_errno;
+    }
+    else {
+        /* remote group. rank 0 on remote group receives from root */
+        
+        rank = comm_ptr->rank;
+        
+        if (rank == 0) {
+            mpi_errno = MPIC_Recv(buffer, count, datatype, root,
+                                  MPIR_BCAST_TAG, comm, &status);
+            if (mpi_errno) return mpi_errno;
+        }
+        
+        /* all processes in remote group form new intracommunicator */
+        comm = comm_ptr->handle;
+#ifdef UNIMPLEMENTED
+        NMPI_Comm_group(comm, &group);
+        MPID_Comm_return_intra(group, &newcomm);
+#endif
+        MPID_Comm_get_ptr( newcomm, newcomm_ptr );
+        /* now do the usual broadcast on this intracommunicator
+           with rank 0 as root. */
+        mpi_errno = MPIR_Bcast(buffer, count, datatype, 0, newcomm_ptr);
+    }
+    
+    return mpi_errno;
+}
+
 #endif
 
 #undef FUNCNAME
@@ -503,7 +555,18 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
     }
     else
     {
-	mpi_errno = MPIR_Bcast( buffer, count, datatype, root, comm_ptr );
+        if (comm_ptr->comm_kind == MPID_INTRACOMM) 
+            /* intracommunicator */
+            mpi_errno = MPIR_Bcast( buffer, count, datatype, root, comm_ptr );
+        else {
+            /* intercommunicator */
+            printf("ERROR: MPI_Bcast for intercommunicators not yet implemented.\n");
+            NMPI_Abort(MPI_COMM_WORLD, 1);
+
+            mpi_errno = MPIR_Bcast_inter( buffer, count, datatype,
+                                          root, comm_ptr );
+
+        }
     }
     if (mpi_errno == MPI_SUCCESS)
     {

@@ -39,7 +39,8 @@
    End Algorithm: MPI_Gatherv
 */
 
-PMPI_LOCAL int MPIR_Gatherv ( 
+/* not declared static because it is called in intercommunicator allgatherv */
+int MPIR_Gatherv ( 
 	void *sendbuf, 
 	int sendcnt,  
 	MPI_Datatype sendtype, 
@@ -50,14 +51,9 @@ PMPI_LOCAL int MPIR_Gatherv (
 	int root, 
 	MPID_Comm *comm_ptr )
 {
-    int        comm_size, rank;
+    int        comm_size, rank, remote_comm_size;
     int        mpi_errno = MPI_SUCCESS;
     MPI_Comm comm;
-    
-    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-        printf("ERROR: MPI_Gatherv for intercommunicators not yet implemented.\n"); 
-        NMPI_Abort(MPI_COMM_WORLD, 1);
-    }
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
@@ -73,21 +69,36 @@ PMPI_LOCAL int MPIR_Gatherv (
 	MPI_Status       status;
         
         MPID_Datatype_get_extent_macro(recvtype, extent);
-        for ( i=0; i<root; i++ ) {
-            mpi_errno = MPIC_Recv(((char *)recvbuf+displs[i]*extent), 
-                                 recvcnts[i], recvtype, i,
-                                 MPIR_GATHERV_TAG, comm, &status);
-            if (mpi_errno) return mpi_errno;
+
+        if (comm_ptr->comm_kind == MPID_INTRACOMM) {
+            for ( i=0; i<root; i++ ) {
+                mpi_errno = MPIC_Recv(((char *)recvbuf+displs[i]*extent), 
+                                      recvcnts[i], recvtype, i,
+                                      MPIR_GATHERV_TAG, comm, &status);
+                if (mpi_errno) return mpi_errno;
+            }
+            if (sendbuf != MPI_IN_PLACE) {
+                mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
+                                        ((char *)recvbuf+displs[rank]*extent), 
+                                           recvcnts[rank], recvtype);
+                if (mpi_errno) return mpi_errno;
+            }
+            for ( i=root+1; i<comm_size; i++ ) {
+                mpi_errno = MPIC_Recv(((char *)recvbuf+displs[i]*extent), 
+                                      recvcnts[i], recvtype, i,
+                                      MPIR_GATHERV_TAG, comm, &status);
+                if (mpi_errno) return mpi_errno;
+            }
         }
-        mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
-                                   ((char *)recvbuf+displs[rank]*extent), 
-                                   recvcnts[rank], recvtype);
-        if (mpi_errno) return mpi_errno;
-        for ( i=root+1; i<comm_size; i++ ) {
-            mpi_errno = MPIC_Recv(((char *)recvbuf+displs[i]*extent), 
-                                 recvcnts[i], recvtype, i,
-                                 MPIR_GATHERV_TAG, comm, &status);
-            if (mpi_errno) return mpi_errno;
+        else {
+            /* intercommunicator */
+            remote_comm_size = comm_ptr->remote_size;
+            for (i=0; i<remote_comm_size; i++) {
+                mpi_errno = MPIC_Recv(((char *)recvbuf+displs[i]*extent), 
+                                      recvcnts[i], recvtype, i,
+                                      MPIR_GATHERV_TAG, comm, &status);
+                if (mpi_errno) return mpi_errno;                
+            }
         }
     }
     else 
@@ -114,7 +125,7 @@ PMPI_LOCAL int MPIR_Gatherv (
 .  MPI_Datatype sendtype - send datatype
 .  void *recvbuf - receive buffer
 .  int *recvcnts - receive counts
-.  int *displs - whatever
+.  int *displs - receive displacements
 .  MPI_Datatype recvtype - receive datatype
 .  int root - root
 -  MPI_Comm comm - communicator

@@ -36,7 +36,8 @@
    End Algorithm: MPI_Reduce
 */
 
-PMPI_LOCAL int MPIR_Reduce ( 
+/* not declared static because it is called in intercomm. allreduce */
+int MPIR_Reduce ( 
     void *sendbuf, 
     void *recvbuf, 
     int count, 
@@ -54,11 +55,6 @@ PMPI_LOCAL int MPIR_Reduce (
     void       *buffer;
     MPID_Op *op_ptr;
     MPI_Comm comm;
-    
-    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-        printf("ERROR: MPI_Reduce for intercommunicators not yet implemented.\n");
-        NMPI_Abort(MPI_COMM_WORLD, 1);
-    }
     
     if (count == 0) return MPI_SUCCESS;
     comm = comm_ptr->handle;
@@ -142,10 +138,12 @@ PMPI_LOCAL int MPIR_Reduce (
         }
         recvbuf = (void *)((char*)recvbuf - lb);
     }
-    
-    mpi_errno = MPIR_Localcopy(sendbuf, count, datatype, recvbuf,
-                               count, datatype);
-    if (mpi_errno) return mpi_errno;
+
+    if ((rank != root) || (sendbuf != MPI_IN_PLACE)) {
+        mpi_errno = MPIR_Localcopy(sendbuf, count, datatype, recvbuf,
+                                   count, datatype);
+        if (mpi_errno) return mpi_errno;
+    }
 
     mask    = 0x1;
     if (is_commutative) 
@@ -214,6 +212,92 @@ PMPI_LOCAL int MPIR_Reduce (
     return (mpi_errno);
 }
 
+PMPI_LOCAL int MPIR_Reduce_inter ( 
+    void *sendbuf, 
+    void *recvbuf, 
+    int count, 
+    MPI_Datatype datatype, 
+    MPI_Op op, 
+    int root, 
+    MPID_Comm *comm_ptr )
+{
+/*  Intercommunicator reduce.
+    Remote group does a local intracommunicator
+    reduce to rank 0. Rank 0 then sends data to root.
+
+    Cost: (lgp+1).alpha + n.(lgp+1).beta
+*/
+
+    int rank, mpi_errno;
+    MPI_Comm newcomm;
+    MPI_Group group;
+    MPI_Status status;
+    MPI_Aint extent, lb=0;
+    void *tmp_buf=NULL;
+    MPID_Comm *newcomm_ptr = NULL;
+    MPI_Comm comm;
+
+    if (root == MPI_PROC_NULL) {
+        /* local processes other than root do nothing */
+        return MPI_SUCCESS;
+    }
+    
+    comm = comm_ptr->handle;
+
+    if (root == MPI_ROOT) {
+            /* root receives data from rank 0 on remote group */
+        MPID_Comm_thread_lock( comm_ptr );
+        mpi_errno = MPIC_Recv(recvbuf, count, datatype, 0,
+                              MPIR_REDUCE_TAG, comm, &status);
+        MPID_Comm_thread_unlock( comm_ptr ); 
+        
+        return mpi_errno;
+    }
+    else {
+        /* remote group. Rank 0 allocates temporary buffer, does
+           local intracommunicator gather, and then sends the data
+           to root. */
+        
+        rank = comm_ptr->rank;
+        
+        if (rank == 0) {
+            MPID_Datatype_get_extent_macro(datatype, extent);
+            tmp_buf = MPIU_Malloc(extent*count);
+            if (!tmp_buf) {
+                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                return mpi_errno;
+            }
+            /* adjust for potential negative lower bound in datatype */
+            /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
+               INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
+               SO IT'S OK */
+#ifdef UNIMPLEMENTED
+            MPI_Type_lb( datatype, &lb );
+#endif
+            tmp_buf = (void *)((char*)tmp_buf - lb);
+        }
+        
+        /* all processes in remote group form new intracommunicator */
+#ifdef UNIMPLEMENTED
+        NMPI_Comm_group(comm, &group);
+        MPID_Comm_return_intra(group, &newcomm);
+#endif
+        MPID_Comm_get_ptr( newcomm, newcomm_ptr );
+        /* now do a local reduce on this intracommunicator */
+        mpi_errno = MPIR_Reduce(sendbuf, tmp_buf, count, datatype,
+                                op, 0, newcomm_ptr);
+        if (rank == 0) {
+            MPID_Comm_thread_lock( comm_ptr );
+            mpi_errno = MPIC_Send(tmp_buf, count, datatype, root,
+                                  MPIR_REDUCE_TAG, comm); 
+            MPID_Comm_thread_unlock( comm_ptr ); 
+            if (mpi_errno) return mpi_errno;
+            MPIU_Free(tmp_buf+lb);
+        }
+    }
+    
+    return mpi_errno;
+}
 #endif
 
 #undef FUNCNAME
@@ -317,8 +401,18 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
     }
     else
     {
-	mpi_errno = MPIR_Reduce(sendbuf, recvbuf, count, datatype,
-                                op, root, comm_ptr); 
+        if (comm_ptr->comm_kind == MPID_INTRACOMM) 
+            /* intracommunicator */
+            mpi_errno = MPIR_Reduce(sendbuf, recvbuf, count, datatype,
+                                    op, root, comm_ptr); 
+        else {
+            /* intercommunicator */
+            printf("ERROR: MPI_Reduce for intercommunicators not yet implemented.\n"); 
+            NMPI_Abort(MPI_COMM_WORLD, 1);
+
+            mpi_errno = MPIR_Reduce_inter(sendbuf, recvbuf, count, datatype,
+                                          op, root, comm_ptr); 
+        }
     }
     if (mpi_errno == MPI_SUCCESS)
     {

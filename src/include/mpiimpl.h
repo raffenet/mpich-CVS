@@ -1268,10 +1268,12 @@ int MPID_Get_processor_name(char *, int *);
 
 /* thresholds to switch between long and short vector algorithms for
    collective operations */ 
-#define MPIR_BCAST_SHORT_MSG 16384
-#define MPIR_BCAST_MIN_PROCS 8
-#define MPIR_ALLTOALL_SHORT_MSG 1024
+#define MPIR_BCAST_SHORT_MSG          16384
+#define MPIR_BCAST_MIN_PROCS          8
+#define MPIR_ALLTOALL_SHORT_MSG       1024
 #define MPIR_REDUCE_SCATTER_SHORT_MSG 0  /* temporarily because the short message algo needs derived datatypes */
+#define MPIR_SCATTER_SHORT_MSG        2048  /* for intercommunicator scatter */
+#define MPIR_GATHER_SHORT_MSG         2048  /* for intercommunicator scatter */
 
 /* Tags for point to point operations which implement collective operations */
 #define MPIR_BARRIER_TAG               1
@@ -1357,5 +1359,21 @@ extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
 #define MPIR_TO_FLOG(a) (_btol(a))
 #define MPIR_FROM_FLOG(a) ( _ltob(&(a)) )    /*(a) must be a pointer */
 #endif
+
+int MPIR_Bcast (void *buffer, int count, MPI_Datatype datatype, int
+                root, MPID_Comm *comm_ptr);
+int MPIR_Gather (void *sendbuf, int sendcnt, MPI_Datatype sendtype,
+                 void *recvbuf, int recvcnt, MPI_Datatype recvtype,
+                 int root, MPID_Comm *comm_ptr);
+int MPIR_Gatherv (void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
+                  void *recvbuf, int *recvcnts, int *displs,
+                  MPI_Datatype recvtype, int root, MPID_Comm
+                  *comm_ptr); 
+int MPIR_Reduce (void *sendbuf, void *recvbuf, int count, MPI_Datatype
+                 datatype, MPI_Op op, int root, MPID_Comm *comm_ptr); 
+int MPIR_Scatterv (void *sendbuf, int *sendcnts, int *displs,
+                   MPI_Datatype sendtype, void *recvbuf, int recvcnt,
+                   MPI_Datatype recvtype, int root, MPID_Comm
+                   *comm_ptr );
 
 #endif /* MPIIMPL_INCLUDED */
