@@ -34,17 +34,17 @@ int main( int argc, char **argv )
     comm = MPI_COMM_WORLD;
 
     MPI_Comm_group( comm, &basegroup );
+    MPI_Comm_rank( comm, &rank );
+    MPI_Comm_size( comm, &size );
 
 /* Get the basic information on this group */
     MPI_Group_rank( basegroup, &grp_rank );
-    MPI_Comm_rank( comm, &rank );
     if (grp_rank != rank) {
 	errs++;
 	fprintf( stdout, "group rank %d != comm rank %d\n", grp_rank, rank );
     }
 
     MPI_Group_size( basegroup, &grp_size );
-    MPI_Comm_size( comm, &size );
     if (grp_size != size) {
 	errs++;
 	fprintf( stdout, "group size %d != comm size %d\n", grp_size, size );
@@ -95,34 +95,71 @@ int main( int argc, char **argv )
    together again */
 
 /* Exclude 0 */
+#ifdef DEBUG
+    if (rank == 0) { 
+	printf( "basegroup:\n" );
+	MPITEST_Group_print( basegroup );
+    }
+#endif
     MPI_Group_excl( basegroup, 1, ranks, &g4 );
+#ifdef DEBUG
+    if (rank == 0) {
+	printf( "g4:\n" ); MPITEST_Group_print( g4 ); }
+#endif
 /* Exclude 1-(size-1) */
     MPI_Group_excl( basegroup, size-1, ranks+1, &g5 );
+#ifdef DEBUG
+    if (rank == 0) { 
+	printf( "g5:\n" ); MPITEST_Group_print( g5 ); }
+#endif
     MPI_Group_union( g5, g4, &g6 );
     MPI_Group_compare( basegroup, g6, &result );
+#ifdef DEBUG
+    if (rank == 0) {
+	printf ("basegroup\n" );
+	MPITEST_Group_print( basegroup );
+	printf( "g6\n" );
+	MPITEST_Group_print( g6 );
+    }
+#endif
     if (result != MPI_IDENT) {
+	int usize;
 	errs++;
 	/* See ordering requirements on union */
 	fprintf( stdout, "Group excl and union did not give ident groups\n" );
+	fprintf( stdout, "[%d] result of compare was %d\n", rank, result );
+	MPI_Group_size( g6, &usize );
+	fprintf( stdout, "Size of union is %d, should be %d\n", usize, size );
     }
     MPI_Group_union( basegroup, g4, &g7 );
     MPI_Group_compare( basegroup, g7, &result );
     if (result != MPI_IDENT) {
+	int usize;
 	errs++;
 	fprintf( stdout, "Group union of overlapping groups failed\n" );
+	fprintf( stdout, "[%d] result of compare was %d\n", rank, result );
+	MPI_Group_size( g7, &usize );
+	fprintf( stdout, "Size of union is %d, should be %d\n", usize, size );
     }
 
 /* Use range_excl instead of ranks */
+    printf ("range excl\n" ); fflush( stdout );
     range[0][0] = 1;
     range[0][1] = size-1;
     range[0][2] = 1;
     MPI_Group_range_excl( basegroup, 1, range, &g8 );
+    if (rank == 0) {
+	MPITEST_Group_print( g8 );
+    }
+    printf( "out  of range excl\n" ); fflush( stdout );
     MPI_Group_compare( g5, g8, &result );
+    printf( "out of compare\n" ); fflush( stdout );
     if (result != MPI_IDENT) {
 	errs++;
 	fprintf( stdout, "Group range excl did not give ident groups\n" );
     }
 
+    printf( "intersection\n" ); fflush( stdout );
     MPI_Group_intersection( basegroup, g4, &g9 );
     MPI_Group_compare( g9, g4, &result );
     if (result != MPI_IDENT) {
@@ -131,6 +168,7 @@ int main( int argc, char **argv )
     }
 
 /* Exclude EVERYTHING and check against MPI_GROUP_EMPTY */
+    printf( "range excl all\n" ); fflush( stdout );
     range[0][0] = 0;
     range[0][1] = size-1;
     range[0][2] = 1;
