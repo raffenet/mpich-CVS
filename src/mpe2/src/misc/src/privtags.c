@@ -1,4 +1,8 @@
 /*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
+/*
    This file provides a simple way to manage tags inside a private 
    communicator.  It uses the attribute to determine if a new communicator
    is needed.

@@ -1,3 +1,7 @@
+/*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
 #include <math.h>
 #include "mpe_graphics_conf.h"
 #include "mpetools.h" 

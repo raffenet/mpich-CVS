@@ -1,3 +1,7 @@
+C
+C  (C) 2001 by Argonne National Laboratory.
+C      See COPYRIGHT in top-level directory.
+C
 c**********************************************************************
 c   pi.f - compute pi by integrating f(x) = 4/(1 + x**2)     
 c     

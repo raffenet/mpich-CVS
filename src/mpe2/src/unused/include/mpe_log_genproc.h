@@ -1,3 +1,7 @@
+/*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
 /**\ --MPE_Log--
 *  * mpe_log_genproc.h - typedefs, structures, #defines, macros, and
 *  *                     your usual assortement of header file type stuff

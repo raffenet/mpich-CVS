@@ -1,3 +1,7 @@
+C
+C  (C) 2001 by Argonne National Laboratory.
+C      See COPYRIGHT in top-level directory.
+C
 c
 c lnblnk = last non-blank of the input string str
 c This should supercede the one in the C library

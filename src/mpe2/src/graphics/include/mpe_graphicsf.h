@@ -1,4 +1,8 @@
 C
+C   (C) 2001 by Argonne National Laboratory.
+C       See COPYRIGHT in top-level directory.
+C
+C
 C  Fortran includes for MPE Graphics Routines
 C
       integer MPE_WHITE, MPE_BLACK, MPE_RED, MPE_YELLOW, MPE_GREEN,

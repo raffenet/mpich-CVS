@@ -1,3 +1,7 @@
+/*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
 /* mpe_log.c - the externally callable functions in MPE_Log
 
    New version to use CLOG - Bill Gropp and Rusty Lusk

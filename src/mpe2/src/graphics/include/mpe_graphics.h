@@ -1,3 +1,7 @@
+/*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
 #ifndef _MPE_GRAPHICS_
 #define _MPE_GRAPHICS_
 

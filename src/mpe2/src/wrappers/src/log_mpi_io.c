@@ -1,4 +1,8 @@
 /*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
+/*
     This file should be INCLUDED into log_wrap.c when adding the IO routines
     to the profiling list
 

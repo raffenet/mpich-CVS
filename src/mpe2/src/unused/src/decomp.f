@@ -1,3 +1,7 @@
+C
+C  (C) 2001 by Argonne National Laboratory.
+C      See COPYRIGHT in top-level directory.
+C
 c
 c  This file contains a routine for producing a decomposition of a 1-d array
 c  when given a number of processors.  It may be used in "direct" product

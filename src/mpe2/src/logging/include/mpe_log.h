@@ -1,3 +1,7 @@
+/*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
 /* --MPE_Log--
   mpe_log.h - prototypes for externally callable routines, and a few
               return values

@@ -1,3 +1,7 @@
+/*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
 /* 
    This header file converts all MPI_ names into PMPI_ names, for use
    in providing a profiling interface 

@@ -1,4 +1,8 @@
 C
+C  (C) 2001 by Argonne National Laboratory.
+C      See COPYRIGHT in top-level directory.
+C
+C
 C
 C  MPE Logging Return Codes
 C

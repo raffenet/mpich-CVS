@@ -1,4 +1,8 @@
 /*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
+/*
  * This file contains a start on routines to provide some simple I/O functions
  * for MPE
  */

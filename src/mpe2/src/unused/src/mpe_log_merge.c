@@ -1,4 +1,8 @@
-[/**\ --MPE_Log--
+/*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
+/**\ --MPE_Log--
 *  * mpe_log_merge.c - routines for performing a parallel merge of
 *  *                   all the data logged by each process
 *  *

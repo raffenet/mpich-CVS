@@ -1,3 +1,7 @@
+/*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
 /* myprof.c */
 /* Custom Fortran interface file */
 /* These have been edited because they require special string processing */

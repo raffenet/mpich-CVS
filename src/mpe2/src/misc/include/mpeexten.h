@@ -1,3 +1,7 @@
+/*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
 /* Prototypes for the mpe extension routines */
 #ifndef MPE_EXTENSION_INC
 #define MPE_EXTENSION_INC
