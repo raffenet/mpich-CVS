@@ -13,8 +13,8 @@
 #include "adio_extern.h"
 
 /* MPICH2 error handling implementation */
-int MPIR_Err_create_code(int, int, const char [], int, int, const char [],
-			 const char [], ... );
+int MPIR_Err_create_code_valist(int, int, const char [], int, int, 
+				const char [], const char [], va_list );
 int MPIR_Err_is_fatal(int);
 
 int MPIO_Err_create_code(int lastcode, int fatal, const char fcname[],
@@ -27,9 +27,9 @@ int MPIO_Err_create_code(int lastcode, int fatal, const char fcname[],
     va_start(Argp, specific_msg);
 
     /* TODO: THIS IS BROKEN. */
-    error_code = MPIR_Err_create_code(lastcode, fatal, fcname, line,
-				      error_class, generic_msg,
-				      specific_msg, Argp);
+    error_code = MPIR_Err_create_code_valist(lastcode, fatal, fcname, line,
+					     error_class, generic_msg,
+					     specific_msg, Argp);
     
     va_end(Argp);
 
