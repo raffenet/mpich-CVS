@@ -43,7 +43,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     int pg_rank;
     int pg_size;
     MPIDI_VC * vc_table;
-    MPID_Comm * comm;
+    MPID_Comm * comm, *intercomm, *commworld;
     int p;
 	
     char * key;
