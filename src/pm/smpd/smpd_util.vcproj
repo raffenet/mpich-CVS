@@ -131,13 +131,13 @@
 				RelativePath=".\smpd_handle_spawn.c">
 			</File>
 			<File
+				RelativePath=".\smpd_hash.c">
+			</File>
+			<File
 				RelativePath=".\smpd_host_util.c">
 			</File>
 			<File
 				RelativePath="smpd_launch_process.c">
-			</File>
-			<File
-				RelativePath=".\smpd_md5.c">
 			</File>
 			<File
 				RelativePath="smpd_printf.c">
