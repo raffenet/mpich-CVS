@@ -185,6 +185,8 @@ def collect_args(args):
         else:
             globalArgs[garg] = 1
             argidx += 1
+    if args[argidx] == ':':
+        argidx += 1
     localArgsKey = 0
     while argidx < len(args):
         if args[argidx] == ':':
