@@ -315,6 +315,14 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 							 DLOOP_Offset rel_off,
 							 void *bufp,
 							 void *v_paramp),
+					int (*blkidxfn) (DLOOP_Offset *blocks_p,
+							 int count,
+							 int blklen,
+							 DLOOP_Offset *offsetarray,
+							 DLOOP_Type el_type,
+							 DLOOP_Offset rel_off,
+							 void *bufp,
+							 void *v_paramp),
 					int (*indexfn) (DLOOP_Offset *blocks_p,
 							int count,
 							int *blockarray,
@@ -359,9 +367,10 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    PREPEND_PREFIX(Segment_manipulate)(segp,
 					       stream_off,
 					       &tmp_last,
-					       NULL,
-					       NULL,
-					       NULL,
+					       NULL, /* contig fn */
+					       NULL, /* vector fn */
+					       NULL, /* blkidx fn */
+					       NULL, /* index fn */
 					       sizefn,
                                                NULL);
 	    

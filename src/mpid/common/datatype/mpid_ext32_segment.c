@@ -296,6 +296,7 @@ void MPID_Segment_pack_external32(struct DLOOP_Segment *segp,
 			    lastp,
 			    MPID_Segment_contig_pack_external32_to_buf,
                             NULL, /* MPID_Segment_vector_pack_external32_to_buf, */
+			    NULL, /* blkidx */
                             NULL, /* MPID_Segment_index_pack_external32_to_buf, */
                             MPIDI_Datatype_get_basic_size_external32,
 			    &pack_params);
@@ -320,6 +321,7 @@ void MPID_Segment_unpack_external32(struct DLOOP_Segment *segp,
 			    lastp,
 			    MPID_Segment_contig_unpack_external32_to_buf,
                             NULL, /* MPID_Segment_vector_unpack_external32_to_buf, */
+			    NULL, /* blkidx */
                             NULL, /* MPID_Segment_index_unpack_external32_to_buf, */
                             MPIDI_Datatype_get_basic_size_external32,
 			    &pack_params);
