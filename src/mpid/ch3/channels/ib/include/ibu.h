@@ -22,6 +22,8 @@ extern "C" {
 
 #ifdef USE_IB_VAPI
 
+#define IBU_MAX_PINNED (32*1024*1024)
+
 #include <vapi.h>
 #include <mpga.h>
 typedef VAPI_cq_hndl_t ibu_set_t;
@@ -33,6 +35,8 @@ typedef struct ibu_mem_t
 } ibu_mem_t;
 
 #elif defined(USE_IB_IBAL)
+
+#define IBU_MAX_PINNED (32*1024*1024)
 
 #include <ib_al.h>
 typedef ib_cq_handle_t ibu_set_t;
