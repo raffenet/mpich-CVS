@@ -139,8 +139,8 @@ EXPORTS
 	MPI_Error_string=PMPI_Error_string
 ;	PMPI_Exscan
 ;	MPI_Exscan=PMPI_Exscan
-	PMPI_File_call_errhandler
-	MPI_File_call_errhandler=PMPI_File_call_errhandler
+;	PMPI_File_call_errhandler
+;	MPI_File_call_errhandler=PMPI_File_call_errhandler
 ;	PMPI_File_close
 ;	MPI_File_close=PMPI_File_close
 ;	PMPI_File_create_errhandler
