@@ -28,6 +28,13 @@ int ib_setup_connections()
     MPIDI_VC *vc_ptr;
     int i, len;
     char *key, *value;
+    IB_Info *ib;
+    ib_uint32_t status;
+    ib_uint32_t lkey, rkey;
+    ib_uint32_t max_cq_entries = IB_MAX_CQ_ENTRIES+1;
+    MPIDI_STATE_DECL(MPID_STATE_IB_SETUP_CONNECTIONS);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IB_SETUP_CONNECTIONS);
 
     len = PMI_KVS_Get_key_length_max();
     key = (char*)malloc(len * sizeof(char));
@@ -44,7 +51,7 @@ int ib_setup_connections()
 	MPIU_dbg_printf("MPID_VCRT_Create failed, error %d\n", mpi_errno);
 	free(key);
 	free(value);
-	MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_FROM_COMMUNICATOR);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
 	return -1;
     }
     /* get an alias to the array of vc pointers */
@@ -54,26 +61,17 @@ int ib_setup_connections()
 	MPIU_dbg_printf("MPID_VCRT_Get_ptr failed, error %d\n", mpi_errno);
 	free(key);
 	free(value);
-	MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_FROM_COMMUNICATOR);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
 	return -1;
     }
 
-    MPIU_dbg_printf("remote_size: %d\n", comm_ptr->remote_size);
     for (i=0; i<comm_ptr->remote_size; i++)
     {
 	if ( i == comm_ptr->rank)
-	    {
-		MPIU_dbg_printf("skipping my own rank %d\n", i);
-		continue;
-	    }
-	else
-	    {
-		MPIU_dbg_printf("setting up rank %d\n", i);
-	    }
+	    continue;
 	vc_ptr = comm_ptr->vcr[i];
 	if (vc_ptr == NULL)
 	{
-	    /* allocate and connect a virtual connection */
 	    comm_ptr->vcr[i] = vc_ptr = mm_vc_alloc(MM_IB_METHOD);
 	    /* copy the kvs name and rank into the vc. 
 	       this may not be necessary */
@@ -81,10 +79,119 @@ int ib_setup_connections()
 	    vc_ptr->rank = i;
 	}
 	sprintf(key, "ib_lid_%d", i);
-	MPIU_dbg_printf("calling PMI_KVS_Get\n");
 	PMI_KVS_Get(vc_ptr->pmi_kvsname, key, value);
 	MPIU_dbg_printf("kvs: %s, key: %s, value: %s\n", 
 			vc_ptr->pmi_kvsname, key, value);
+	ib = &vc_ptr->data.ib.info;
+	ib->m_dlid = atoi(value);
+	ib->m_virtual_address = malloc(IB_PINNED_MEMORY_SIZE);
+	if (ib->m_virtual_address == NULL)
+	    {
+		MPIU_dbg_printf("malloc(%d) failed.\n", IB_PINNED_MEMORY_SIZE);
+		free(key);
+		free(value);
+		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+		return -1;
+	    }
+	status = ib_mr_register_us(IB_Process.hca_handle,
+				   (ib_uint8_t*)ib->m_virtual_address,
+				   IB_PINNED_MEMORY_SIZE,
+				   IB_Process.pd_handle,
+				   IB_ACCESS_LOCAL_WRITE,
+				   &ib->m_mr_handle,
+				   &lkey, &rkey);
+	if (status != IB_SUCCESS)
+	    {
+		MPIU_dbg_printf("ib_mr_register_us failed, error %d\n", status);
+		free(key);
+		free(value);
+		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+		return -1;
+	    }
+	ib->m_polling = TRUE;
+	ib->m_message_size = IB_PINNED_MEMORY_SIZE;
+	ib->m_message_segments = 1;
+	/* ***************************************** */
+	/* These fields were used by the Paceline code.
+	   I suspect I won't need to use them */
+	ib->m_rcv_completion_counter = 0;
+	ib->m_rcv_work_id = 0;
+	ib->m_rcv_posted = 0;
+	ib->m_snd_completion_counter = 0;
+	ib->m_snd_work_id = 0;
+	ib->m_snd_posted = 0;
+	/* ***************************************** */
+	status = ib_cq_create_us(IB_Process.hca_handle, 
+				 IB_Process.cqd_handle,
+				 &max_cq_entries,
+				 &ib->m_send_cq_handle,
+				 NULL);
+	if (status != IB_SUCCESS)
+	    {
+		MPIU_dbg_printf("ib_cq_create_us(send cq) failed, error %d\n", status);
+		free(key);
+		free(value);
+		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+		return -1;
+	    }
+	max_cq_entries = IB_MAX_CQ_ENTRIES + 1;
+	status = ib_cq_create_us(IB_Process.hca_handle, 
+				 IB_Process.cqd_handle,
+				 &max_cq_entries,
+				 &ib->m_recv_cq_handle,
+				 NULL);
+	if (status != IB_SUCCESS)
+	    {
+		MPIU_dbg_printf("ib_cq_create_us(recv cq) failed, error %d\n", status);
+		free(key);
+		free(value);
+		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+		return -1;
+	    }
+
+	/*******************************************
+	  Is this section on setting up receive and 
+	  send segments bogus? Does it assume there
+	  will only be one posted send or recv?
+	********************************************/
+
+	/* allocate and setup the receive segments */
+	ib->m_recv_sglist.data_seg_p = calloc(ib->m_message_segments,
+					      sizeof(ib_data_segment_t));
+	if (ib->m_recv_sglist.data_seg_p == NULL)
+	    {
+		MPIU_dbg_printf("calloc failed\n");
+		free(key);
+		free(value);
+		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+		return -1;
+	    }
+	ib->m_recv_sglist.data_seg_num = ib->m_message_segments;
+	for (i=0; i<ib->m_message_segments; i++)
+	    {
+		ib->m_recv_sglist.data_seg_p[i].length = ib->m_message_size;
+		ib->m_recv_sglist.data_seg_p[i].va = (ib_uint64_t)ib->m_virtual_address;
+		ib->m_recv_sglist.data_seg_p[i].l_key = lkey;
+	    }
+
+	/* allocate and setup the send segments */
+	ib->m_send_sglist.data_seg_p = calloc(ib->m_message_segments,
+					      sizeof(ib_data_segment_t));
+	if (ib->m_send_sglist.data_seg_p == NULL)
+	    {
+		MPIU_dbg_printf("calloc failed\n");
+		free(key);
+		free(value);
+		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+		return -1;
+	    }
+	ib->m_send_sglist.data_seg_num = ib->m_message_segments;
+	for (i=0; i<ib->m_message_segments; i++)
+	    {
+		ib->m_send_sglist.data_seg_p[i].length = ib->m_message_size;
+		ib->m_send_sglist.data_seg_p[i].va = (ib_uint64_t)ib->m_virtual_address;
+		ib->m_send_sglist.data_seg_p[i].l_key = lkey;
+	    }
     }
 
     PMI_Barrier();
@@ -92,6 +199,7 @@ int ib_setup_connections()
     free(key);
     free(value);
 
+    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
     return MPI_SUCCESS;
 }
 
