@@ -80,6 +80,9 @@ $avoidLevel = 3;
 		      'error' => 1,
 		      'include' => 1,
 		      );
+# invalidDirectivesSeen records where such directives were seen
+%invalidDirectivesSeen = ();
+$invalidDirectivesReason = "The C language defines the set of preprocessor directives that may be used.  Some compilers support other directives, but programs that take advantage of those directives are not portable.";
 
 foreach $arg (@ARGV) {
     if ($arg =~ /^-showfiles/) { $showfiles = 1; }
@@ -253,16 +256,18 @@ sub ProcessFile {
 
 # avoidSubsReasons gives the reasons for avoiding each of these 
 $AvoidPrint = "For internationalization, messages must be indirected through a routine such as gettext.  Marking the print routines makes it possible to catch oversights in writing messages for the user.  Alternate routines are provided to providing printed output for debugging or for the developer";
-$AvoidMalloc = ""
+
+$AvoidMalloc = "Dynamic memory allocation often causes problems, though the creation of both storage leaks and memory overwrites.  By using the MPIU_xxx names for memory allocation, it is easy to choose between the standard malloc/free/etc. versions and special versions that provide detailed memory correctness diagnostics, without requiring any special third-party software (which makes these particularly appropriate when the problem occurs only when running on hundreds of nodes)";
+
 %avoidSubsReasons = ( "fprintf" => $AvoidPrint,
 		      "fputs" => $AvoidPrint,
 		      "puts" => $AvoidPrint,
 		      "printf" => $AvoidPrint,
 		      "malloc" => $AvoidMalloc,
 		      "calloc" => $AvoidMalloc,
-		      "free" => $AvoidFree,
-		      "strdup" => $AvoidFree,
-		      "realloc" => $AvoidFree,
+		      "free" => $AvoidMalloc,
+		      "strdup" => $AvoidMalloc,
+		      "realloc" => $AvoidMalloc,
 		      "assert" => "Assert is a handy way to check code while developing, but in released code, these cases should be handled with more attention to the message the the user will receive.",
 		      "perror" => "For internationalization reasons, messages should use the internationalization support instead of perror.", 
 		      "getenv" => "In parallel program environments, there is no guarantee that environment variables will be available to all processes." ); 
@@ -300,9 +305,20 @@ $AvoidMalloc = ""
 #		"strcmp" => "strncmp",
 		"strcat" => "MPIU_Strnapp",
 		"sprintf" => "MPIU_Snprintf", 
+		"snprintf" => "MPIU_Snprintf",
 		"strerror" => "MPIU_Strerror",
 		);
 
+$BetterString = "The standard string routines are risky because they provide no protection for input strings that are too long for the output strings.  Some of the \"n\" versions (e.g., strncat) are also risky because the length parameter is not the length of the buffer, and hence can be computed incorrectly.";
+%betterSubsReasons = (
+		      "strcpy" => $BetterString,
+		      "strncpy" => $BetterString,
+		      "strcmp"  => $BetterString,
+		      "strcat"  => $BetterString,
+		      "sprintf" => "Sprintf, like the standard string routines, is risky because the input parameters can create an output string that is too long for the provided output buffer, with no way to detect this and indicate an error.",
+		      "snprintf" => "This routine is not portable; not all environments provide it.",
+		      "strerror" => "This routine is not portable; not all environments provide it."
+		      );
 sub CheckForBadSubs {
     my $curline = $_[0];
     my $filename = $_[1];
@@ -364,6 +380,7 @@ sub CheckForBadSubs {
             else {
                 $warningmsgs{$msg} = 1;
             }
+	    $betterSubsSeen{$subname} = $betterSubsSeen{$subname} + 1;
         }
     }
 }
@@ -506,7 +523,8 @@ sub CheckForBadDirectives{
     if ($curline =~ /^#\s*(\w+)/) {
 	$directiveName = $1;
 	if (!defined($allowedDirectives{$directiveName})) {
-	    print "Warning: directive $directiveName is unknown in $filename\n"
+	    print "Warning: directive $directiveName is unknown in $filename\n";
+	    $invalidDirectivesSeen{$directiveName} .= "$filename;";
 	}
     }
     return 0;
@@ -554,11 +572,53 @@ foreach $file (@files) {
     }
 }
 
+# Summarize the problems seen.
+$topHeader = 
+"============================================================================
+Summary of problems detected
+Note that while in special cases, some of the following may be correct,
+there is a cost to ensuring that EACH time the code is reviewed, either
+by a person or by a style-checking program.  It is better to avoid
+any construction whose use is not clearly allowed in all circumstances.
+============================================================================\n";
 # Summarize the reason for any avoid subs
+$headerPrinted = 0;
 foreach $key (keys(%avoidSubsSeen)) {
-    my $reason = $avoidSubsReason{$key};
-    print "$key: $reason\n";
+    my $reason = $avoidSubsReasons{$key};
+    if (!$headerPrinted && $reason ne "") {
+	$headerPrinted = 1;
+	print "${topHeader}Explanation for messages about routines to avoid\n";
+	$topHeader = "";
+    }
+    print "\n$key: $reason\n";
 }
+
+# Summarize the reason for any better subs
+$headerPrinted = 0;
+foreach $key (keys(%betterSubsSeen)) {
+    my $reason = $betterSubsReasons{$key};
+    if (!$headerPrinted && $reason ne "") {
+	$headerPrinted = 1;
+	print "${topHeader}Explanation for messages about routines with prefered versions\n";
+	$topHeader = "";
+    }
+    print "\n$key: $reason\n";
+}
+
+#
+# Summarize the reason for any invalid directive
+$headerPrinted = 0;
+foreach $key (keys(%invalidDirectivesSeen)) {
+    if (!$headerPrinted) {
+	$headerPrinted = 1;
+	print "$topHeader\n$invalidDirectivesReason\n";
+	print "The following invalid directives were encountered:\n";
+	$topHeader = "";
+    }
+    print "$key\n";
+}
+
+
 
 if ($missingCopyright) {
     print STDERR "Some files are missing the copyright statement\n";
