@@ -31,6 +31,7 @@ typedef struct ADIOI_RequestD *MPIO_Request;
 #else
 #define MPIO_Request MPI_Request
 #endif
+#define MPIO_REQUEST_DEFINED
 
 #ifndef HAVE_MPI_OFFSET
 @DEFINE_MPI_OFFSET@
