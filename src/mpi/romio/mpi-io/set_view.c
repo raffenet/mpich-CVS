@@ -164,8 +164,7 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     if (disp == MPI_DISPLACEMENT_CURRENT) {
 	MPI_Barrier(fh->comm);
 	ADIO_Get_shared_fp(fh, 0, &shared_fp, &error_code);
-	/* MPI_Barrier(fh->comm); 
-           deleting this because there is a barrier below */
+	MPI_Barrier(fh->comm); 
 	ADIOI_Get_byte_offset(fh, shared_fp, &byte_off);
 	disp = byte_off;
     }

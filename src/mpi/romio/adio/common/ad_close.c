@@ -63,11 +63,12 @@ void ADIO_Close(ADIO_File fd, int *error_code)
 	if (fd->agg_comm != MPI_COMM_NULL ) {
 		MPI_Comm_rank(fd->agg_comm, &myrank);
 		MPI_Barrier(fd->agg_comm);
+                if (!myrank) ADIO_Delete(fd->filename, &err);
 	} else {
 		MPI_Comm_rank(fd->comm, &myrank);
 		MPI_Barrier(fd->comm);
+                if (!myrank) ADIO_Delete(fd->filename, &err);
 	}
-	if (!myrank) ADIO_Delete(fd->filename, &err);
     }
 
     ADIOI_Free(fd->hints);
