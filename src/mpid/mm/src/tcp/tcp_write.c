@@ -23,6 +23,7 @@ int tcp_write(MPIDI_VC *vc_ptr)
     case MM_TMP_BUFFER:
 	break;
     case MM_VEC_BUFFER:
+	/* error - coordinate buf_ptr->vec with car_ptr->data.tcp.buf.vec */
 	/* write as much of the vector as possible */
 	if (car_ptr->data.tcp.buf.vec.len > 1)
 	{

@@ -12,6 +12,7 @@ int tcp_accept_connection()
     int context;
     MPIDI_VC *vc_ptr;
     char ack;
+    BOOL inwriteset;
 
     /* accept new connection */
     bfd = beasy_accept(TCP_Process.listener);
@@ -94,18 +95,34 @@ int tcp_accept_connection()
 	    /* close the old socket and keep the new */
 	    if (BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.readset))
 		BFD_CLR(vc_ptr->data.tcp.bfd, &TCP_Process.readset);
-	    if (BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset))
+	    inwriteset = BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
+	    if (inwriteset)
 		BFD_CLR(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
+
+	    /* if tcp_read hasn't read the reject ack already, do so here and then close the socket. */
+	    if (!vc_ptr->data.tcp.reject_received)
+	    {
+		beasy_receive(vc_ptr->data.tcp.bfd, &ack, 1);
+		if (ack != TCP_REJECT_CONNECTION)
+		{
+		    err_printf("Error:tcp_accept_connection: expecting reject ack, received #%d\n", (int)ack);
+		}
+	    }
+	    /* close the socket */
 	    beasy_closesocket(vc_ptr->data.tcp.bfd);
+	    /* save the new connection */
 	    vc_ptr->data.tcp.bfd = bfd;
-	    /* add the new connection to the read set */
+	    /* add the new connection to the read set and possibly the write set */
 	    TCP_Process.max_bfd = BFD_MAX(bfd, TCP_Process.max_bfd);
 	    BFD_SET(bfd, &TCP_Process.readset);
-	    vc_ptr->read_next_ptr = TCP_Process.read_list;
-	    TCP_Process.read_list = vc_ptr;
+	    if (inwriteset)
+		BFD_SET(bfd, &TCP_Process.writeset);
 	}
 	else
 	{
+	    /* send a reject acknowledgement */
+	    ack = TCP_REJECT_CONNECTION;
+	    beasy_send(bfd, &ack, 1);
 	    /* close the new socket and keep the old */
 	    beasy_closesocket(bfd);
 	}

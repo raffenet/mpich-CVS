@@ -86,6 +86,7 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
     TCP_Process.read_list = vc_ptr;
 
     vc_ptr->data.tcp.connecting = TRUE;
+    vc_ptr->data.tcp.reject_received = FALSE;
     MPID_Thread_unlock(vc_ptr->lock);
 	
     return MPI_SUCCESS;

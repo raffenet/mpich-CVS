@@ -26,9 +26,13 @@ int tcp_read(MPIDI_VC *vc_ptr)
 	    vc_ptr->data.tcp.connected = TRUE;
 	    vc_ptr->data.tcp.connecting = FALSE;
 	}
+	else if (ack == TCP_REJECT_CONNECTION)
+	{
+	    vc_ptr->data.tcp.reject_received = TRUE;
+	}
 	else
 	{
-	    err_printf("tcp_read: TCP_REJECT_CONNECTION ack received in read function.\n");
+	    err_printf("tcp_read: unknown ack char #%d received in read function.\n", (int)ack);
 	}
 	return MPI_SUCCESS;
     }

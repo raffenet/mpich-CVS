@@ -75,6 +75,7 @@ typedef union VC_Method_data
     {
 	int connected;
 	int connecting;
+	int reject_received;
 	int bfd;
     } tcp;
 #endif
