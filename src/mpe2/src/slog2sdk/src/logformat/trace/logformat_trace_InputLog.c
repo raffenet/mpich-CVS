@@ -216,8 +216,8 @@ Java_logformat_trace_InputLog_peekNextKindIndex( JNIEnv *env, jobject this )
         fflush( errfile );
         return TRACE_EOF;
     }
-	
-	return next_kind;
+
+    return next_kind;
 }
 
 JNIEXPORT jobject JNICALL 
@@ -386,7 +386,7 @@ Java_logformat_trace_InputLog_getNextYCoordMap( JNIEnv *env, jobject this )
         fprintf( errfile, "Java_logformat_trace_InputLog_getNextYCoordMap(): "
                           "Inaccessible filehandle in Java side\n" );
         return NULL;
-    }   
+    }
     tracefile  = (TRACE_file) Jlong2Cptr( filehandle );
 
     nrows            = 0;
@@ -414,7 +414,7 @@ Java_logformat_trace_InputLog_getNextYCoordMap( JNIEnv *env, jobject this )
     coordmap_sz   = 0;
     coordmap_pos  = 0;
 
-   	methods_pos  = 0;
+    methods_pos  = 0;
     if ( methods_sz > 0 ) {
         methods_max  = methods_sz;
         methods_base = (int *) malloc( methods_max * sizeof( int ) );
