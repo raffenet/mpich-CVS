@@ -61,11 +61,9 @@ static int GetLocalIPs(int32_t *pIP, int max)
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
-
 #ifdef HAVE_NET_IF_H
 #ifdef __STRICT_ANSI__
 #define __USE_MISC /* This must be defined to get struct ifreq defined */
