@@ -25,66 +25,169 @@ and performance analysis.
 
 \subsection{Simple Messaging}
 
-goal: describe components necessary for unoptimized, multi-method
-point-to-point
+% goal: describe components necessary for unoptimized, multi-method
+% point-to-point
+% 
+% narrow scope for this subsection: no wildcards, persistent sends, etc...(look
+% at lists below :)).  also not dealing with complex datatypes or heterogeneity.
+% 
 
-narrow scope for this subsection: no wildcards, persistent sends, etc...(look
-at lists below :)).  also not dealing with complex datatypes or heterogeneity.
-
+In this section we will describe the components necessary for an unoptimized,
+multi-method, point-to-point (P2P) messaging system.  The scope of this system
+is rather restricted with respect to MPI capabilities; wildcards, persistent
+sends, request cancellation, complex datatypes, heterogeneity, and approaches
+for reducing data copies will all be ignored for now.  We will address these
+issues later in the document.
 
 \subsubsection{Overview}
 
-major steps in point-to-point communication:
-\begin{itemize}
-\item posting
-\item progress
-\item completion
-\end{itemize}
+% major steps in point-to-point communication:
+% \begin{itemize}
+% \item posting
+% \item progress
+% \item completion
+% \end{itemize}
+% 
+% go through one step at a time
+% 
+% for each step:
+% - components used in that step? (also assumed knowledge?)
+% - paragraph summary of what happens in that step
+% 
 
-go through one step at a time
+One can break P2P communication into three major steps: message
+posting, progress of transfer, and message completion.  In this section we
+describe these steps at a high level and introduce some of the components that
+will be involved in each step.
 
-for each step:
-- components used in that step? (also assumed knowledge?)
-- paragraph summary of what happens in that step
+% scenario: send posted, recv posted, data arrives after recv posted.
+% - trivial mpi program example here
+% - note that there is another ordering, and we will discuss that in the
+%   walkthrough
+% 
 
-scenario: send posted, recv posted, data arrives after recv posted.
-- trivial mpi program example here
-- note that there is another ordering, and we will discuss that in the
-  walkthrough
+For our overview we will concentrate our discussion on a simple scenario.  In
+our scenario one process is sending a contiguous data region to another.  Both
+are using nonblocking MPI calls, and execution order occurs such that the data
+arrives after the receive has been posted.  This is of course not the only
+possible ordering, and we will discuss other possibilities in
+Section~\ref{sssec:walkthrough}.
 
-posting (async send case)
-- allocation/initialization of MPI request (must initialize completion counter)
-- determine the vc from the communicator (so we can get to method)
-- calling of method function to post
+% posting (async send case)
+% - allocation/initialization of MPI request (must initialize completion counter)
+% - determine the vc from the communicator (so we can get to method)
+% - calling of method function to post
 
-posting (async recv, posted before data arrives)
-- allocation of MPI req
-- buffers, datatypes
-- vc determination
-- calling method fn to post
-- is there anything really different from above (at this level)?
+An asynchronous send (\texttt{MPI\_Isend()}) first results in the allocation
+and initialization of a MPI request structure (described previously in XXX).
+A \emph{completion counter} is included in this structure, and it is
+initialized at this point (to 1).
+%
 
-progress 
-- what is the issue?  we want data movement.  it's acceptable to make progress
-  only when mpi calls are made.  we might want to use threads (just mention 
-  the opportunity)
-- progress engine - motivate why we need a component to do this
-- method functions called
-- datatypes, segments (packing and unpacking mentioned in passing?)
-- request matching going on too, mention relationship to vc data structures?
-- trust us, the request matching does need to be cross-method
+\emph{do we want to say something about the buffer in here?}
 
-[something here is still bugging brian]
+%
+Next the \emph{virtual connection} (VC) is determined from the communicator
+passed into the send call.  Through the VC the appropriate method functions
+for moving data on this VC are found.
+%
+Finally the method function for posting a send is called.  A reference to this
+function is found in the VC data structure.
 
+% posting (async recv, posted before data arrives)
+% - allocation of MPI req
+% - buffers, datatypes
+% - vc determination
+% - calling method fn to post
+% - is there anything really different from above (at this level)?
 
-completion
-- notification of completion (via decrement of counter - in MPI request)
-- note that a counter becomes important when we get to collectives, kinda
-  overkill for this.
-- deallocation of MPI request?  nope.  deallocated by wait/test instead.  
-  do we want to mention this here?
+An asynchronous receive (\texttt{MPI\_Irecv()} is handled in a similar
+manner.  A MPI request structure is allocated and the completion counter is
+initialized (to 1).
+%
 
+\emph{buffer?}
 
+%
+The appropriate VC is determined by looking at the communicator passed to the
+receive call.  From the VC the appropriate method function for posting a
+receive is found and called.
+ 
+% progress 
+% - what is the issue?  we want data movement.  it's acceptable to make progress
+%   only when mpi calls are made.  we might want to use threads (just mention 
+%   the opportunity)
+% - progress engine - motivate why we need a component to do this
+% - method functions called
+% - datatypes, segments (packing and unpacking mentioned in passing?)
+% - request matching going on too, mention relationship to vc data structures?
+% - trust us, the request matching does need to be cross-method
+% 
+% [something here is still bugging brian]
+
+\emph{is it ok to use the term operation in here?  is there a better one?}
+
+Progress must be made on posted operations in order for them to complete.
+Progress is simply the act of moving control and data packets (should I use
+this word?) on order to accomplish the desired operation.  The MPI semantics
+allow for progress to only occur when MPI calls are made; however, we might
+want to make progress at other times.  This could be accomplished through the
+use of threads or other system capabilities (see Section XXXX).
+
+In our multi-method P2P communication system a \emph{progress engine}
+component is responsible for orchestrating progress on all queued operations.  
+This is necessary in order for the system as a whole to balance service across
+methods.
+
+Method functions are used to make progress on specific requests (operations in
+progress?).  These method functions must utilize \emph{buffer} information
+(user buffer location, datatype, count) in order to determine the appropriate
+data regions to send or receive.
+
+Matching of requests occurs within the context of progress as well.  In our
+example scenario, our receive was posted before any data from the sender
+arrived.  The posted received is associated with the VC on which data will be
+passed.  At some point that data does arrive, and the \emph{envelope} from
+the incoming message must be matched to the envelope from the posted receive.
+
+\emph{define envelope?  point out that it should have been defined?}
+
+This matching process might seem trivial, but in fact the MPI semantics for
+wildcard operations and message ordering combined with the possibility of
+multiple methods make matching somewhat complicated.
+For this reason we will implement a separate \emph{request arbitrator}
+component (do you like that name?) for performing request matching for the
+system as a whole (both intra- and inter-method).
+
+% completion
+% - notification of completion (via decrement of counter - in MPI request)
+% - note that a counter becomes important when we get to collectives, kinda
+%   overkill for this.
+% - deallocation of MPI request?  nope.  deallocated by wait/test instead.  
+%   do we want to mention this here?
+% 
+
+Once all data has been copied out of the sender's buffer (either onto the wire
+or into some other buffer), the send is considered complete from the
+application point of view.  On the receive side things aren't complete until
+all data has been received into the receiver's buffer.  
+%
+At this point the completion counter is decremented, and since it is now zero,
+the request is considered complete.  The P2P communication system, however,
+cannot dallocate the MPI request because this is still in use by the
+application as a reference to the operation.
+%
+A \texttt{MPI\_Test()} would indicate that
+the request completed, and a \texttt{MPI\_Wait()} could return.
+%
+When the \texttt{MPI\_Wait()} is called, the request may be deallocated.
+%
+The use of a counter when the value may only be one or zero might seem
+unnecessary, but we will see in Section~XXXX that having a counter is
+necessary for our implementation of collective operations.
+
+The components that we introduced here are described in greater detail in the
+following section.
 
 \subsubsection{Components}
 
@@ -103,6 +206,7 @@ communicate amount of work between method and progress engine.
 talk about specific functions as they come up
 
 \subsubsection{Walkthrough}
+\label{sssec:walkthrough}
 
 
 \subsubsection{Summary}
