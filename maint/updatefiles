@@ -9,6 +9,10 @@
 # mpich tree.  This is not yet implemented.
 error_summary=""
 acVersion=unknown
+# finalStatus records whether there have been problems in updatefiles
+# 1 = warning, 3 = fatal, 2 = reserved for future use, 
+# 0 = no problems detected.
+finalStatus=0
 at_top=no
 if [ -d maint -a -s maint/simplemake.in ] ; then
     at_top=yes
@@ -125,8 +129,8 @@ if [ -n "$autoconfdir" ] ; then
 	exit 1
     fi
 else
-    autoconf=autoconf
-    autoheader=autoheader
+    autoconf=${AUTOCONF:-autoconf}
+    autoheader=${AUTOHEADER:-autoheader}
 fi
 #
 # Check that you have a working autoconf.  Autoconf 2.57 is not compatible with
@@ -138,25 +142,56 @@ if test -s .tmp ; then rm -f .tmp ; fi
 if test ! -d .tmp ; then
     mkdir .tmp 2>&1 >/dev/null
 fi
-rm -f .tmp/configure.in
-cat >.tmp/configure.in <<EOF
-AC_PREREQ(2.57)
+# Argh.  In autoconf 2.59, -B doesn't work.  You must use -I
+# Find the configure version
+# acSubversion is the version number minus 2.  (we assume autoconf 2.xx)
+# -1 is used for unknown
+acSubversion=-1
+for ver in 60 59 58 57 56 55 54 53 52 51 50 13 11 0 ; do
+    rm -f .tmp/configure.in .tmp/configure
+    cat >.tmp/configure.in <<EOF
+AC_PREREQ(2.$ver)
 EOF
-if (cd .tmp && $autoconf >/dev/null 2>&1 ) ; then 
-    cat <<EOF
-
-You either do not have autoconf in your path or you may have autoconf
-version 2.57 or later.  Autoconf 2.57 is not compatible with previous
-versions of autoconf, including autoconf 2.52 .  You may be able to use
+    if (cd .tmp && $autoconf >/dev/null 2>&1 ) ; then
+	acSubversion=$ver
+	break
+    fi
+done
+rm -f .tmp/configure.in .tmp/configure
+if [ "$acSubversion" -gt 57 -o "$acSubversion" -lt 0 ] ; then 
+    if [ "$acSubversion" -gt 58 ] ; then
+        acIncDirFlag=-I
+    else 
+        acIncDirFlag=-B
+    fi
+    if [ "$acSubversion" -gt 0 ] ; then
+        acVersion="2.$acSubversion"
+	echo "You have autoconf version $acVersion."
+	error_summary="$error_summary \
+Version $acVersion of autoconf may cause problems."
+    else
+	cat <<EOF
+You either do not have autoconf in your path or updatefiles was unable to 
+determine which version of autoconf you have.  You may be able to use
      autoconf --version
 to see the version of autoconf (unfortunately, there is no standard 
 format for the version output and it changes between autoconf versions.
 In addition, some versions of autoconf choose among many versions and
 provide incorrect output).
+EOF
+	error_summary="$error_summary \
+No autoconf in path or unable to determine the version of autoconf."
+        acVersion="Unknown"
+    fi
+    cat <<EOF
+
+You either do not have autoconf in your path or you may have autoconf
+version 2.57 or later.  Autoconf 2.57 is not compatible with previous
+versions of autoconf, including autoconf 2.52 .  
 
 This version of updatefiles attempts to workaround the incompatibilities
 in autoconf 2.57 (and later), but problems remain.  In particular, you may run
-into trouble if you need to execute 
+into trouble if you need to execute
     make configure
 on a platform different that the one you ran $0 on.
 
@@ -164,8 +199,6 @@ EOF
     error_summary="$error_summary \
 Your do not have a usable version of autoconf (either no version found \
 or version 2.57 or later)"
-    acIncDirFlag=-B
-    acVersion=2-57-or-later
 fi
 rm -rf .tmp
 
@@ -229,6 +262,7 @@ if [ -x maint/extracterrmsgs -a $do_geterrmsgs = "yes" ] ; then
 	   error_summary="$error_summary \
 Error message files in src/mpi/errhan were not updated."
            update_errdefs=no
+	   finalStatus=1
 	   rm -f .tmp
        fi
        rm -f .err .err2
@@ -386,6 +420,13 @@ if [ "$has_unix_find" = "yes" -a "$do_build_configure" = "yes" ] ; then
         dir=`dirname $dir`
 	allowFailure=no
 	#echo $dir
+	qmpe2dir=`echo $dir | sed -e 's%.*src/mpe2.*%FOUNDMPE2%'`
+	if [ "$qmpe2dir" = "FOUNDMPE2" ] ; then
+	    echo "Found MPE2 directory; skipping"
+	    # MPE2 has its own updatefiles script, which should 
+	    # be used instead of this one.
+	    continue
+        fi
 	if [ $dir = "./src/binding/f77" -a $do_f77 != yes ] ; then
 	    # Skip building the f77 configure (it requires special 
 	    # support because of bugs in the Fortran support in 
@@ -397,8 +438,6 @@ if [ "$has_unix_find" = "yes" -a "$do_build_configure" = "yes" ] ; then
 	    #
 	    # Check for known problems
 	    fixEndEOFBug=no
-#\( 
-#		! -x "/home/gropp/bin/linux/autoconf" -o ... \)
 	    if [ $dir = "./src/binding/f77" -a \
 		$use_patched_autoonf = no ] ; then
 		# We need a *patched*, version 2.13 form of autoconf
@@ -489,6 +528,12 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 	        )
 		if [ ! -x $dir/configure ] ; then
 		    echo "Error! Could not build configure in $dir with make configure"
+	            finalStatus=3
+	        elif grep PAC_ $dir/configure >/dev/null 2>&1 ; then
+                    echo "Error! autoconf did not find local macro definitions"
+	            echo "The following (at most 40 lines) local macros were not found:"
+		    grep PAC_ $dir/configure | head -40
+		    finalStatus=3
 		fi
             else 
 		if [ -x $dir/makeconfigure ] ; then
@@ -545,6 +590,8 @@ EOF/g' $dir/configure > c.tmp
 		    fixBackWhackCtrlMBug=yes
 	        elif grep 'mpi2-other/info/Makefile \\' $dir/configure 2>&1 >/dev/null ; then 
 		    fixBackWhackCtrlMBug=yes
+	        elif grep 'maint/testmerge \\' $dir/configure 2>&1 >/dev/null ; then 
+		    fixBackWhackCtrlMBug=yes
                 fi
  	        # Add other tests here (sigh) as necessary
 	        if [ $fixBackWhackCtrlMBug = yes ] ; then
@@ -572,6 +619,10 @@ elif [ "$has_unix_find" = no ] ; then
 else 
     echo "Skipping creation of configure files"
 fi
+if [ -x src/mpe2/maint/updatefiles -a "$do_build_configure" = "yes" ] ; then
+    # If we have the mpe2 updatefiles, execute it from the mpe directory
+    (cd src/mpe2 && maint/updatefiles )
+fi
 if [ $rm_prepost = yes ] ; then
     rm -f src/include/mpidpre.h src/include/mpidpost.h
 fi
@@ -583,3 +634,21 @@ if [ -n "$error_summary" ] ; then
     echo "These may cause problems when configuring or building MPICH2."
     echo "$error_summary"
 fi
+case $finalStatus in 
+   0) # all is well
+	;;
+   1) # warnings
+ 	;;
+   2) # reserved for future use
+	;;
+   3) # fatal, cannot continue
+	echo "updatefiles step failed!  Review the output and fix the problem"
+        echo "before continuing"
+        exit 1
+	;;	
+   *) # unknown
+	echo "Internal error in updatefiles; finalStatus=$finalStatus"
+	exit 1
+	;;
+esac
+
