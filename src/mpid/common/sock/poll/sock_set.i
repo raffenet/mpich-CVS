@@ -94,6 +94,14 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
     }
 
     /*
+     * Set the sock set ID before we allocate the first sock.
+     *
+     * MT: MPIDU_Socki_set_next_id must be atomically incremented if multiple sock sets are ever allowed to be created
+     * simultaneously.
+     */
+    sock_set->id = MPIDU_Socki_set_next_id++;
+    
+    /*
      * Allocate and initialize a sock structure for the interrupter pipe
      */
     mpi_errno = MPIDU_Socki_sock_alloc(sock_set, &sock);
@@ -104,6 +112,8 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
 	goto fn_fail;
     }
     
+    sock_set->intr_sock = sock;
+
     pollfd = MPIDU_Socki_sock_get_pollfd(sock);
     pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
     
@@ -114,16 +124,6 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
     pollinfo->type = MPIDU_SOCKI_TYPE_INTERRUPTER;
     pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RO;
 
-    sock_set->intr_sock = sock;
-
-    /*
-     * Finalize initialization of the sock set by assigning it an ID
-     *
-     * MT: MPIDU_Socki_set_next_id must be atomically incremented if multiple sock sets are ever allowed to be created
-     * simultaneously.
-     */
-    sock_set->id = MPIDU_Socki_set_next_id++;
-    
     *sock_setp = sock_set;
 
   fn_exit:
