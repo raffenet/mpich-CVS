@@ -28,6 +28,16 @@ public class ColorAlpha extends Color implements Comparable
     public static final int         NEAR_TRANSPARENT = 63;
     public static final int         TRANSPARENT      = 0;
 
+    public static final ColorAlpha  WHITE_NEAR_OPAQUE
+                                    = new ColorAlpha( ColorAlpha.white,
+                                                      ColorAlpha.NEAR_OPAQUE );
+    public static final ColorAlpha  WHITE_OPAQUE
+                                    = new ColorAlpha( ColorAlpha.white,
+                                                      ColorAlpha.OPAQUE );
+    public static final ColorAlpha  YELLOW_OPAQUE
+                                    = new ColorAlpha( ColorAlpha.yellow,
+                                                      ColorAlpha.OPAQUE );
+
     private boolean  isModifiable;
 
     public ColorAlpha()
