@@ -115,6 +115,8 @@
 
 #undef MPI_File_get_type_extent
 #define MPI_File_get_type_extent PMPI_File_get_type_extent
+#undef MPI_Register_datarep
+#define MPI_Register_datarep PMPI_Register_datarep
 #undef MPI_File_set_atomicity
 #define MPI_File_set_atomicity PMPI_File_set_atomicity
 #undef MPI_File_get_atomicity

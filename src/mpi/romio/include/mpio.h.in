@@ -209,14 +209,12 @@ int MPI_File_write_ordered_end(MPI_File fh, void *buf, MPI_Status *status);
 int MPI_File_get_type_extent(MPI_File fh, MPI_Datatype datatype, 
                                      MPI_Aint *extent);
 
-#if 0
 /* Section 9.5.3 */
 int MPI_Register_datarep(char *,
 			 MPI_Datarep_conversion_function *,
 			 MPI_Datarep_conversion_function *,
 			 MPI_Datarep_extent_function *,
 			 void *);
-#endif
 
 /* Section 9.6.1 */
 int MPI_File_set_atomicity(MPI_File fh, int flag);
@@ -415,6 +413,13 @@ int PMPI_File_write_ordered_end(MPI_File fh, void *buf, MPI_Status *status);
 /* Section 9.5.1 */
 int PMPI_File_get_type_extent(MPI_File fh, MPI_Datatype datatype, 
                                       MPI_Aint *extent);
+
+/* Section 9.5.3 */
+int PMPI_Register_datarep(char *,
+			 MPI_Datarep_conversion_function *,
+			 MPI_Datarep_conversion_function *,
+			 MPI_Datarep_extent_function *,
+			 void *);
 
 /* Section 9.6.1 */
 int PMPI_File_set_atomicity(MPI_File fh, int flag);
