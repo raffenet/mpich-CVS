@@ -1,0 +1,62 @@
+%
+% This file contains a discussion of a possible TCP device implementation of ADI3
+
+\documentclass{article}
+\usepackage{psfig}
+
+\def\nopound{\catcode`\#=13}
+{\nopound\gdef#{{\tt \char`\#}}}
+\catcode`\_=13
+\def_{{\tt \char`\_}}
+\catcode`\_=11
+\def\code#1{\texttt{#1}}
+
+\begin{document}
+
+\title{A TCP Implementation of the ADI-3}
+\author{}
+\maketitle
+
+\begin{abstract}
+
+\end{abstract}
+
+\section{Introduction}
+This document outlines an implementation of the ADI on TCP.  It defines a
+specific interface to the low level OS TCP operations, and outlines a way
+for at least the basic MPID_ routines to be implemented in terms of these
+abstract operations.  This document is preliminary.
+
+\section{Outline of the Implementation Structure}
+
+\begin{verbatim}
+Notes from the board
+
+
+\end{verbatim}
+
+\section{Pseudo-code for some of the \code{MPID_} routines}
+
+\begin{verbatim}
+
+MPID_Isend( )
+{
+
+}
+
+MPID_Irecv( )
+{
+
+}
+
+MPID_Wait( )
+{
+
+}
+\end{verbatim}
+
+\section{Summary}
+\label{sec:tcpadi-summary}
+(This section should summarize the TCP\_ routines, giving just their prototypes)
+
+\end{document}
