@@ -5,3 +5,4 @@
 *.gcov
 Makefile.in
 Makefile
+namepub

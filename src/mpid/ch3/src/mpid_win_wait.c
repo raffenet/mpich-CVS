@@ -109,14 +109,14 @@ int MPID_Win_wait(MPID_Win *win_ptr)
     int mpi_errno = MPI_SUCCESS, comm_size, src;
     int *nops_from_proc, rank, i, j, *tags;
     MPI_Comm comm;
-    typedef struct MPIU_RMA_op_info {
+    typedef struct MPIDI_RMA_op_info {
         int type;
         MPI_Aint disp;
         int count;
         int datatype;
         MPI_Op op;
-    } MPIU_RMA_op_info;
-    MPIU_RMA_op_info rma_op_info;
+    } MPIDI_RMA_op_info;
+    MPIDI_RMA_op_info rma_op_info;
     MPI_Request *reqs;
     MPI_User_function *uop;
     MPI_Op op;
@@ -206,14 +206,14 @@ int MPID_Win_wait(MPID_Win *win_ptr)
         
         for (j=0; j<nops_from_proc[src]; j++) {
             mpi_errno = NMPI_Recv(&rma_op_info,
-                                  sizeof(MPIU_RMA_op_info), MPI_BYTE, 
+                                  sizeof(MPIDI_RMA_op_info), MPI_BYTE, 
                                   src, tags[src], comm,
                                   MPI_STATUS_IGNORE);
             if (mpi_errno) return mpi_errno;
             tags[src]++;
             
             switch (rma_op_info.type) {
-            case MPID_REQUEST_PUT:
+            case MPIDI_RMA_PUT:
                 /* recv the put */
                 mpi_errno = NMPI_Recv((char *) win_ptr->base +
                                       win_ptr->disp_unit *
@@ -224,7 +224,7 @@ int MPID_Win_wait(MPID_Win *win_ptr)
                                       MPI_STATUS_IGNORE);
                 if (mpi_errno) return mpi_errno;
                 break;
-            case MPID_REQUEST_GET:
+            case MPIDI_RMA_GET:
                 /* send the get */
                 mpi_errno = NMPI_Send((char *) win_ptr->base +
                                       win_ptr->disp_unit *
@@ -234,7 +234,7 @@ int MPID_Win_wait(MPID_Win *win_ptr)
                                       src, tags[src], comm);
                 if (mpi_errno) return mpi_errno;
                 break;
-            case MPID_REQUEST_ACCUMULATE:
+            case MPIDI_RMA_ACCUMULATE:
                 /* recv the data into a temp buffer and perform
                    the reduction operation */
                 NMPI_Type_extent(rma_op_info.datatype, 

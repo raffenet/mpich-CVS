@@ -14,9 +14,9 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
 {
     int mpi_errno=MPI_SUCCESS, nops_to_proc;
     int i, tag, req_cnt;
-    MPIU_RMA_ops *curr_ptr, *next_ptr;
+    MPIDI_RMA_ops *curr_ptr, *next_ptr;
     MPI_Comm comm;
-    typedef struct MPIU_RMA_op_info {
+    typedef struct MPIDI_RMA_op_info {
         int type;
         MPI_Aint disp;
         int count;
@@ -24,22 +24,9 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         int datatype_kind;  /* basic or derived */
         MPI_Op op;
         int lock_type;
-    } MPIU_RMA_op_info;
-    MPIU_RMA_op_info *rma_op_infos;
-    typedef struct MPIU_RMA_dtype_info { /* for derived datatypes */
-        int           is_contig; 
-        int           n_contig_blocks; 
-        int           size;     
-        MPI_Aint      extent;   
-        int           loopsize; 
-        void          *loopinfo;  /* pointer needed to update pointers
-                                     within dataloop on remote side */
-        int           loopinfo_depth; 
-        int           eltype;
-        MPI_Aint ub, lb, true_ub, true_lb;
-        int has_sticky_ub, has_sticky_lb;
-    } MPIU_RMA_dtype_info;
-    MPIU_RMA_dtype_info *dtype_infos;
+    } MPIDI_RMA_op_info;
+    MPIDI_RMA_op_info *rma_op_infos;
+    MPIDI_RMA_dtype_info *dtype_infos;
     void **dataloops;    /* to store dataloops for each datatype */
     MPI_Request *reqs;
     MPID_Datatype *dtp;
@@ -61,11 +48,11 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     /* First inform target process how many
        RMA ops from this process is it the target for.
        There could be ops destined for other processes in
-       MPIU_RMA_ops_list because there could be multiple MPI_Win_locks
+       MPIDI_RMA_ops_list because there could be multiple MPI_Win_locks
        outstanding */
 
     nops_to_proc = 0;
-    curr_ptr = MPIU_RMA_ops_list;
+    curr_ptr = MPIDI_RMA_ops_list;
     while (curr_ptr != NULL) {
         if (curr_ptr->target_rank == dest) nops_to_proc++;
         curr_ptr = curr_ptr->next;
@@ -90,8 +77,8 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
        displ, count, datatype. Then issue an isend for a 
        put or irecv for a get. */
     
-    rma_op_infos = (MPIU_RMA_op_info *) 
-        MPIU_Malloc((nops_to_proc+1) * sizeof(MPIU_RMA_op_info));
+    rma_op_infos = (MPIDI_RMA_op_info *) 
+        MPIU_Malloc((nops_to_proc+1) * sizeof(MPIDI_RMA_op_info));
     /* allocate one extra to avoid 0 size malloc */ 
     if (!rma_op_infos) {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
@@ -99,8 +86,8 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         return mpi_errno;
     }
 
-    dtype_infos = (MPIU_RMA_dtype_info *)
-        MPIU_Malloc((nops_to_proc+1)*sizeof(MPIU_RMA_dtype_info));
+    dtype_infos = (MPIDI_RMA_dtype_info *)
+        MPIU_Malloc((nops_to_proc+1)*sizeof(MPIDI_RMA_dtype_info));
     /* allocate one extra to avoid 0 size malloc */ 
     if (!dtype_infos) {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
@@ -121,7 +108,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     i = 0;
     tag = 234;
     req_cnt = 1;
-    curr_ptr = MPIU_RMA_ops_list;
+    curr_ptr = MPIDI_RMA_ops_list;
     while (curr_ptr != NULL) {
         rma_op_infos[i].type = curr_ptr->type;
         rma_op_infos[i].disp = curr_ptr->target_disp;
@@ -130,11 +117,11 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         rma_op_infos[i].op = curr_ptr->op;
         rma_op_infos[i].lock_type = curr_ptr->lock_type;
 
-        if (rma_op_infos[i].type == MPID_REQUEST_LOCK) {
+        if (rma_op_infos[i].type == MPIDI_RMA_LOCK) {
             rma_op_infos[i].datatype_kind = -1; /* undefined */
             /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
             mpi_errno = NMPI_Isend(&rma_op_infos[i],
-                                   sizeof(MPIU_RMA_op_info), MPI_BYTE, 
+                                   sizeof(MPIDI_RMA_op_info), MPI_BYTE, 
                                    dest, tag, comm,
                                    &reqs[req_cnt]); 
             if (mpi_errno) {
@@ -147,10 +134,10 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         else if (HANDLE_GET_KIND(curr_ptr->target_datatype) ==
                  HANDLE_KIND_BUILTIN) {
             /* basic datatype. send only the rma_op_info struct */
-            rma_op_infos[i].datatype_kind = MPID_RMA_DATATYPE_BASIC;
+            rma_op_infos[i].datatype_kind = MPIDI_RMA_DATATYPE_BASIC;
             /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
             mpi_errno = NMPI_Isend(&rma_op_infos[i],
-                                   sizeof(MPIU_RMA_op_info), MPI_BYTE, 
+                                   sizeof(MPIDI_RMA_op_info), MPI_BYTE, 
                                    dest, tag, comm,
                                    &reqs[req_cnt]); 
             if (mpi_errno) {
@@ -164,7 +151,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
             /* derived datatype. send rma_op_info_struct as well
                as derived datatype information */
             
-            rma_op_infos[i].datatype_kind = MPID_RMA_DATATYPE_DERIVED; 
+            rma_op_infos[i].datatype_kind = MPIDI_RMA_DATATYPE_DERIVED; 
             /* fill derived datatype info */
             MPID_Datatype_get_ptr(curr_ptr->target_datatype, dtp);
             dtype_infos[i].is_contig = dtp->is_contig;
@@ -192,7 +179,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
             
             /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
             mpi_errno = NMPI_Isend(&rma_op_infos[i],
-                                   sizeof(MPIU_RMA_op_info), MPI_BYTE, 
+                                   sizeof(MPIDI_RMA_op_info), MPI_BYTE, 
                                    dest, tag, comm,
                                    &reqs[req_cnt]); 
             if (mpi_errno) {
@@ -205,7 +192,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
             /* send the datatype info */
             /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
             mpi_errno = NMPI_Isend(&dtype_infos[i],
-                                   sizeof(MPIU_RMA_dtype_info), MPI_BYTE, 
+                                   sizeof(MPIDI_RMA_dtype_info), MPI_BYTE, 
                                    dest, tag, comm,
                                    &reqs[req_cnt]); 
             if (mpi_errno) {
@@ -231,8 +218,8 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         }
 
         /* now send or recv the data */
-        if ((curr_ptr->type == MPID_REQUEST_PUT) ||
-            (curr_ptr->type == MPID_REQUEST_ACCUMULATE)) {
+        if ((curr_ptr->type == MPIDI_RMA_PUT) ||
+            (curr_ptr->type == MPIDI_RMA_ACCUMULATE)) {
             mpi_errno = NMPI_Isend(curr_ptr->origin_addr,
                                    curr_ptr->origin_count,
                                    curr_ptr->origin_datatype,
@@ -246,7 +233,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
             req_cnt++;
             tag++;
         }
-        else if (curr_ptr->type == MPID_REQUEST_GET) {
+        else if (curr_ptr->type == MPIDI_RMA_GET) {
             mpi_errno = NMPI_Irecv(curr_ptr->origin_addr,
                                    curr_ptr->origin_count,
                                    curr_ptr->origin_datatype,
@@ -295,14 +282,14 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
             MPIU_Free(dataloops[i]);
     MPIU_Free(dataloops);
 
-    /* free MPIU_RMA_ops_list */
-    curr_ptr = MPIU_RMA_ops_list;
+    /* free MPIDI_RMA_ops_list */
+    curr_ptr = MPIDI_RMA_ops_list;
     while (curr_ptr != NULL) {
         next_ptr = curr_ptr->next;
         MPIU_Free(curr_ptr);
         curr_ptr = next_ptr;
     }
-    MPIU_RMA_ops_list = NULL;
+    MPIDI_RMA_ops_list = NULL;
     
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
 

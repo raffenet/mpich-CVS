@@ -39,7 +39,12 @@ void MPID_Datatype_free(MPID_Datatype *ptr)
 #ifdef MPID_TYPE_ALLOC_DEBUG
     MPIU_dbg_printf("type %x freed.\n", ptr->handle);
 #endif
-    MPID_Datatype_free_contents(ptr);
+
+    /* before freeing the contents, check whether the pointer is not
+       null because it is null in the case of a datatype shipped to the target
+       for RMA ops */  
+    if (ptr->contents)
+        MPID_Datatype_free_contents(ptr);
     MPID_Dataloop_free(ptr->loopinfo);
     MPIU_Handle_obj_free(&MPID_Datatype_mem, ptr);
 }

@@ -5,3 +5,8 @@
 *.gcov
 Makefile.in
 Makefile
+exitst1
+exitst2
+initstat
+timeout
+version

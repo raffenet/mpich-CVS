@@ -148,16 +148,16 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
 {
     int comm_size, src, *nops_from_proc, rank, i, j, *tags;
     MPI_Comm comm;
-    typedef struct MPIU_RMA_op_info {
+    typedef struct MPIDI_RMA_op_info {
         int type;
         MPI_Aint disp;
         int count;
         int datatype;
         int datatype_kind;  /* basic or derived */
         MPI_Op op;
-    } MPIU_RMA_op_info;
-    MPIU_RMA_op_info rma_op_info;
-    typedef struct MPIU_RMA_dtype_info { /* for derived datatypes */
+    } MPIDI_RMA_op_info;
+    MPIDI_RMA_op_info rma_op_info;
+    typedef struct MPIDI_RMA_dtype_info { /* for derived datatypes */
         int           is_contig; 
         int           n_contig_blocks; 
         int           size;     
@@ -169,8 +169,8 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
         int           eltype;
         MPI_Aint ub, lb, true_ub, true_lb;
         int has_sticky_ub, has_sticky_lb;
-    } MPIU_RMA_dtype_info;
-    MPIU_RMA_dtype_info dtype_info;
+    } MPIDI_RMA_dtype_info;
+    MPIDI_RMA_dtype_info dtype_info;
     void *dataloop=NULL;    /* to store dataloops for each datatype */
     MPI_Request *reqs;
     MPI_User_function *uop;
@@ -265,17 +265,17 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
         
         for (j=0; j<nops_from_proc[src]; j++) {
             mpi_errno = NMPI_Recv(&rma_op_info,
-                                  sizeof(MPIU_RMA_op_info), MPI_BYTE, 
+                                  sizeof(MPIDI_RMA_op_info), MPI_BYTE, 
                                   src, tags[src], comm,
                                   MPI_STATUS_IGNORE);
             if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
             tags[src]++;
             
-            if (rma_op_info.datatype_kind == MPID_RMA_DATATYPE_DERIVED) {
+            if (rma_op_info.datatype_kind == MPIDI_RMA_DATATYPE_DERIVED) {
                 /* recv the derived datatype info and create
                    derived datatype */
                 mpi_errno = NMPI_Recv(&dtype_info,
-                                      sizeof(MPIU_RMA_dtype_info),
+                                      sizeof(MPIDI_RMA_dtype_info),
                                       MPI_BYTE, src, tags[src], comm,
                                       MPI_STATUS_IGNORE);
                 if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
@@ -338,7 +338,7 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
             }
 
             switch (rma_op_info.type) {
-            case MPID_REQUEST_PUT:
+            case MPIDI_RMA_PUT:
                 /* recv the put */
                 mpi_errno = NMPI_Recv((char *) win_ptr->base +
                                       win_ptr->disp_unit *
@@ -349,7 +349,7 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                                       MPI_STATUS_IGNORE);
                 if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
                 break;
-            case MPID_REQUEST_GET:
+            case MPIDI_RMA_GET:
                 /* send the get */
                 mpi_errno = NMPI_Send((char *) win_ptr->base +
                                       win_ptr->disp_unit *
@@ -359,7 +359,7 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                                       src, tags[src], comm);
                 if (mpi_errno) return (THREAD_RETURN_TYPE)mpi_errno;
                 break;
-            case MPID_REQUEST_ACCUMULATE:
+            case MPIDI_RMA_ACCUMULATE:
                 /* recv the data into a temp buffer and perform
                    the reduction operation */
                 mpi_errno =
@@ -399,7 +399,7 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                 win_buf_addr = (char *) win_ptr->base +
                     win_ptr->disp_unit * rma_op_info.disp;
 
-                if (rma_op_info.datatype_kind == MPID_RMA_DATATYPE_BASIC) {
+                if (rma_op_info.datatype_kind == MPIDI_RMA_DATATYPE_BASIC) {
                     (*uop)(tmp_buf, win_buf_addr,
                            &(rma_op_info.count),
                            &(rma_op_info.datatype));
@@ -456,7 +456,7 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
             }
             tags[src]++;
 
-            if (rma_op_info.datatype_kind == MPID_RMA_DATATYPE_DERIVED) {
+            if (rma_op_info.datatype_kind == MPIDI_RMA_DATATYPE_DERIVED) {
                 MPIU_Handle_obj_free(&MPID_Datatype_mem, new_dtp);
                 MPIU_Free(dataloop);
             }

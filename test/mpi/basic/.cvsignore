@@ -10,3 +10,5 @@ self
 Debug*
 Release*
 *.plg
+adapt
+allmpi

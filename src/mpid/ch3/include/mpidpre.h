@@ -143,6 +143,7 @@ typedef struct MPIDI_CH3_Pkt_put
     void *addr;
     int count;
     MPI_Datatype datatype;
+    int dataloop_size;   /* for derived datatypes */
     int *decr_ctr; /* address of counter to be decremented on remote
                        side. could be NULL */ 
 }
@@ -154,6 +155,7 @@ typedef struct MPIDI_CH3_Pkt_get
     void *addr;
     int count;
     MPI_Datatype datatype;
+    int dataloop_size;   /* for derived datatypes */
     struct MPID_Request *request;
     int *decr_ctr; /* address of counter to be decremented on remote
                        side. could be NULL */ 
@@ -173,6 +175,7 @@ typedef struct MPIDI_CH3_Pkt_accum
     void *addr;
     int count;
     MPI_Datatype datatype;
+    int dataloop_size;   /* for derived datatypes */
     MPI_Op op;
     int *decr_ctr; /* address of counter to be decremented on remote
                        side. could be NULL */ 
@@ -270,6 +273,21 @@ typedef struct MPIDI_VC
 }
 MPIDI_VC;
 
+/* to send derived datatype across in RMA ops */
+typedef struct MPIDI_RMA_dtype_info { /* for derived datatypes */
+    int           is_contig; 
+    int           n_contig_blocks;
+    int           size;     
+    MPI_Aint      extent;   
+    int           loopsize; /* not needed because this info is sent in packet header. remove it after lock/unlock is implemented in the device */
+    void          *loopinfo;  /* pointer needed to update pointers
+                                 within dataloop on remote side */
+    int           loopinfo_depth; 
+    int           eltype;
+    MPI_Aint ub, lb, true_ub, true_lb;
+    int has_sticky_ub, has_sticky_lb;
+} MPIDI_RMA_dtype_info;
+
 
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
 #   define MPIDI_REQUEST_SEQNUM	\
@@ -316,11 +334,16 @@ struct MPIDI_Request														\
     int cancel_pending;													        \
     int recv_pending_count;												        \
 																\
-    /* The next 3 are for RMA */                                                                                                \
+    /* The next 6 are for RMA */                                                                                                \
     MPI_Op op;												                        \
     int *decr_ctr;														\
     /* For accumulate, since data is first read into a tmp_buf */								\
     void *real_user_buf;													\
+    /* For derived datatypes at target */								                        \
+    MPIDI_RMA_dtype_info *dtype_info;												\
+    void *dataloop;													        \
+    /* req. handle needed to implement derived datatype gets  */					                        \
+    struct MPID_Request *request;												        \
 																\
     MPIDI_REQUEST_SEQNUM													\
 																\

@@ -2,3 +2,17 @@ Makefile.in
 Makefile
 attrt
 attrerr
+attrerrcomm
+attrerrtype
+attric
+attrorder
+attrordercomm
+attrordertype
+attrorderwin
+baseattr2
+baseattrcomm
+baseattrwin
+fkeyval
+fkeyvalcomm
+fkeyvaltype
+fkeyvalwin

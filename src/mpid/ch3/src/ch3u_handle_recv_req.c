@@ -6,6 +6,9 @@
 
 #include "mpidimpl.h"
 
+static int create_derived_datatype(MPID_Request *req, MPID_Datatype **dtp);
+static int do_accumulate_op(MPID_Request *rreq);
+
 /*
  * MPIDI_CH3U_Handle_recv_req()
  *
@@ -33,9 +36,10 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	case MPIDI_CH3_CA_COMPLETE:
 	{
 	    /* mark data transfer as complete and decrement CC */
-	    rreq->ch3.iov_count = 0;
+            rreq->ch3.iov_count = 0;
             
-            if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP) { 
+            if (MPIDI_Request_get_type(rreq) ==
+                                 MPIDI_REQUEST_TYPE_PUT_RESP) { 
                 /* atomically decrement RMA completion counter */
                 /* FIXME: MT: this has to be done atomically */
                 if (rreq->ch3.decr_ctr != NULL)
@@ -44,41 +48,202 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 
             if (MPIDI_Request_get_type(rreq) ==
                        MPIDI_REQUEST_TYPE_ACCUM_RESP) { 
-                MPI_Aint true_lb, true_extent;
-                MPI_User_function *uop;
 
-                /* do the accumulate operation */
-                if (HANDLE_GET_KIND(rreq->ch3.op) == HANDLE_KIND_BUILTIN) {
-                    /* get the function by indexing into the op table */
-                    uop = MPIR_Op_table[(rreq->ch3.op)%16 - 1];
-                }
-                else {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP,
-                                                      "**opnotpredefined", "**opnotpredefined %d", rreq->ch3.op );
-                    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ);
-                    return mpi_errno;
-                }
-
-                if (HANDLE_GET_KIND(rreq->ch3.datatype) ==
-                    HANDLE_KIND_BUILTIN) {
-                    (*uop)(rreq->ch3.user_buf, rreq->ch3.real_user_buf,
-                           &(rreq->ch3.user_count), &(rreq->ch3.datatype));
-                }
-                else { /* derived datatype */
-                    printf("derived datatype\n");
-                    exit(1);
-                }
-                /* free the temporary buffer */
-                mpi_errno = NMPI_Type_get_true_extent(rreq->ch3.datatype, 
-                                                      &true_lb, &true_extent); 
-                if (mpi_errno) return mpi_errno;
-                
-                MPIU_Free((char *) rreq->ch3.user_buf + true_lb);
+                /* accumulate data from tmp_buf into user_buf */
+                mpi_errno = do_accumulate_op(rreq);
+                if (mpi_errno) goto fn_exit;
 
                 /* atomically decrement RMA completion counter */
                 /* FIXME: MT: this has to be done atomically */
                 if (rreq->ch3.decr_ctr != NULL)
                     *(rreq->ch3.decr_ctr) -= 1;
+            }
+
+            if (MPIDI_Request_get_type(rreq) ==
+                MPIDI_REQUEST_TYPE_PUT_RESP_DERIVED_DT) {
+                MPID_Request *newreq;
+                MPID_Datatype *new_dtp;
+                
+                /* create derived datatype */
+                create_derived_datatype(rreq, &new_dtp);
+
+                /* create new request to get the data */
+                newreq = MPID_Request_create();
+                MPIU_Object_set_ref(newreq, 1);
+                MPIDI_Request_set_type(newreq, MPIDI_REQUEST_TYPE_PUT_RESP);
+
+                newreq->ch3.user_buf = rreq->ch3.user_buf;
+                newreq->ch3.user_count = rreq->ch3.user_count;
+                newreq->ch3.datatype = new_dtp->handle;
+                newreq->ch3.decr_ctr = rreq->ch3.decr_ctr;
+                newreq->ch3.recv_data_sz = new_dtp->size *
+                                           rreq->ch3.user_count; 
+                
+                newreq->ch3.datatype_ptr = new_dtp;
+                /* this will cause the datatype to be freed when the
+                   request is freed. */  
+
+                MPID_Segment_init(newreq->ch3.user_buf,
+                                  newreq->ch3.user_count,
+                                  newreq->ch3.datatype,
+                                  &newreq->ch3.segment);
+                newreq->ch3.segment_first = 0;
+                newreq->ch3.segment_size = newreq->ch3.recv_data_sz;
+
+                mpi_errno = MPIDI_CH3U_Request_load_recv_iov(newreq);
+                if (mpi_errno != MPI_SUCCESS)
+                {
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadrecviov", 0);
+                    goto fn_exit;
+                }
+
+                mpi_errno = MPIDI_CH3_iRead(vc, newreq);
+                if (mpi_errno != MPI_SUCCESS)
+                {
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|recvdata", 0);
+                    goto fn_exit;
+                }
+
+                /* free dtype_info here. the dataloop gets freed
+                   when the datatype gets freed (ie when the new request
+                   gets freed. */
+                MPIU_Free(rreq->ch3.dtype_info);
+            }
+
+            if (MPIDI_Request_get_type(rreq) ==
+                             MPIDI_REQUEST_TYPE_ACCUM_RESP_DERIVED_DT) { 
+                MPID_Request *newreq;
+                MPID_Datatype *new_dtp;
+                MPI_Aint true_lb, true_extent, extent;
+                void *tmp_buf;
+               
+                /* create derived datatype */
+                create_derived_datatype(rreq, &new_dtp);
+
+                /* create new request to get the data */
+                newreq = MPID_Request_create();
+                MPIU_Object_set_ref(newreq, 1);
+                MPIDI_Request_set_type(newreq, MPIDI_REQUEST_TYPE_ACCUM_RESP);
+
+                mpi_errno = NMPI_Type_get_true_extent(new_dtp->handle, 
+                                                      &true_lb, &true_extent);
+                if (mpi_errno) goto fn_exit;
+
+                MPID_Datatype_get_extent_macro(new_dtp->handle, extent); 
+
+                tmp_buf = MPIU_Malloc(rreq->ch3.user_count * 
+                                      (MPIR_MAX(extent,true_extent)));  
+                if (!tmp_buf) {
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    goto fn_exit;
+                }
+                /* adjust for potential negative lower bound in datatype */
+                tmp_buf = (void *)((char*)tmp_buf - true_lb);
+
+                newreq->ch3.user_buf = tmp_buf;
+                newreq->ch3.user_count = rreq->ch3.user_count;
+                newreq->ch3.datatype = new_dtp->handle;
+                newreq->ch3.op = rreq->ch3.op;
+                newreq->ch3.decr_ctr = rreq->ch3.decr_ctr;
+                newreq->ch3.recv_data_sz = new_dtp->size *
+                                           rreq->ch3.user_count; 
+                newreq->ch3.real_user_buf = rreq->ch3.real_user_buf;
+ 
+                newreq->ch3.datatype_ptr = new_dtp;
+                /* this will cause the datatype to be freed when the
+                   request is freed. */  
+
+                MPID_Segment_init(newreq->ch3.user_buf,
+                                  newreq->ch3.user_count,
+                                  newreq->ch3.datatype,
+                                  &newreq->ch3.segment);
+                newreq->ch3.segment_first = 0;
+                newreq->ch3.segment_size = newreq->ch3.recv_data_sz;
+
+                mpi_errno = MPIDI_CH3U_Request_load_recv_iov(newreq);
+                if (mpi_errno != MPI_SUCCESS)
+                {
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadrecviov", 0);
+                    goto fn_exit;
+                }
+
+                mpi_errno = MPIDI_CH3_iRead(vc, newreq);
+                if (mpi_errno != MPI_SUCCESS)
+                {
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|recvdata", 0);
+                    goto fn_exit;
+                }
+
+                /* free dtype_info here. the dataloop gets freed
+                   when the datatype gets freed (ie when the new request
+                   gets freed. */
+                MPIU_Free(rreq->ch3.dtype_info);
+            }
+
+
+            if (MPIDI_Request_get_type(rreq) ==
+                             MPIDI_REQUEST_TYPE_GET_RESP_DERIVED_DT) { 
+                MPID_Request *newreq;
+                MPID_Datatype *new_dtp;
+                MPIDI_CH3_Pkt_t upkt;
+                MPIDI_CH3_Pkt_get_resp_t * get_resp_pkt = &upkt.get_resp;
+                MPID_IOV iov[MPID_IOV_LIMIT];
+                int iov_n;
+                
+                /* create derived datatype */
+                create_derived_datatype(rreq, &new_dtp);
+
+                /* create new request for sending data */
+                newreq = MPID_Request_create();
+                MPIU_Object_set_ref(newreq, 1);
+                newreq->kind = MPID_REQUEST_SEND;
+                MPIDI_Request_set_type(newreq, MPIDI_REQUEST_TYPE_GET_RESP);
+
+                newreq->ch3.user_buf = rreq->ch3.user_buf;
+                newreq->ch3.user_count = rreq->ch3.user_count;
+                newreq->ch3.datatype = new_dtp->handle;
+                newreq->ch3.decr_ctr = rreq->ch3.decr_ctr;
+                newreq->ch3.recv_data_sz = new_dtp->size *
+                                           rreq->ch3.user_count; 
+                
+                newreq->ch3.datatype_ptr = new_dtp;
+                /* this will cause the datatype to be freed when the
+                   request is freed. */  
+
+                get_resp_pkt->type = MPIDI_CH3_PKT_GET_RESP;
+                get_resp_pkt->request = rreq->ch3.request;
+                
+                iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;
+                iov[0].MPID_IOV_LEN = sizeof(*get_resp_pkt);
+
+                MPID_Segment_init(newreq->ch3.user_buf,
+                                  newreq->ch3.user_count,
+                                  newreq->ch3.datatype,
+                                  &newreq->ch3.segment);
+                newreq->ch3.segment_first = 0;
+                newreq->ch3.segment_size = newreq->ch3.recv_data_sz;
+
+                iov_n = MPID_IOV_LIMIT - 1;
+                mpi_errno = MPIDI_CH3U_Request_load_send_iov(newreq, &iov[1], &iov_n);
+                if (mpi_errno == MPI_SUCCESS)
+                {
+                    iov_n += 1;
+		
+                    mpi_errno = MPIDI_CH3_iSendv(vc, newreq, iov, iov_n);
+                    if (mpi_errno != MPI_SUCCESS)
+                    {
+                        MPIU_Object_set_ref(newreq, 0);
+                        MPIDI_CH3_Request_destroy(newreq);
+                        newreq = NULL;
+                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rmamsg", 0);
+                        goto fn_exit;
+                    }
+                }
+
+                /* free dtype_info here. the dataloop gets freed
+                   when the datatype gets freed (ie when the new request
+                   gets freed. */
+                MPIU_Free(rreq->ch3.dtype_info);
             }
 
 	    MPIDI_CH3U_Request_complete(rreq);
@@ -114,6 +279,25 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	    MPIDI_CH3U_Request_unpack_srbuf(rreq);
 	    /* mark data transfer as complete and decrement CC */
 	    rreq->ch3.iov_count = 0;
+
+            if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP) { 
+                /* atomically decrement RMA completion counter */
+                /* FIXME: MT: this has to be done atomically */
+                if (rreq->ch3.decr_ctr != NULL)
+                    *(rreq->ch3.decr_ctr) -= 1;
+            }
+
+            if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_ACCUM_RESP) { 
+                /* accumulate data from tmp_buf into user_buf */
+                mpi_errno = do_accumulate_op(rreq);
+                if (mpi_errno) goto fn_exit;
+
+                /* atomically decrement RMA completion counter */
+                /* FIXME: MT: this has to be done atomically */
+                if (rreq->ch3.decr_ctr != NULL)
+                    *(rreq->ch3.decr_ctr) -= 1;
+            }
+
 	    MPIDI_CH3U_Request_complete(rreq);
 	    break;
 	}
@@ -170,3 +354,129 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
     return mpi_errno;
 }
 
+
+
+static int create_derived_datatype(MPID_Request *req, MPID_Datatype **dtp)
+{
+    MPIDI_RMA_dtype_info *dtype_info;
+    void *dataloop;
+    MPID_Datatype *new_dtp;
+    int mpi_errno=MPI_SUCCESS;
+    MPI_Aint ptrdiff;
+
+    dtype_info = req->ch3.dtype_info;
+    dataloop = req->ch3.dataloop;
+
+    /* allocate new datatype object and handle */
+    new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
+    if (!new_dtp) {
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+        return mpi_errno;
+    }
+
+    *dtp = new_dtp;
+            
+    /* Note: handle is filled in by MPIU_Handle_obj_alloc() */
+    MPIU_Object_set_ref(new_dtp, 1);
+    new_dtp->is_permanent = 0;
+    new_dtp->is_committed = 1;
+    new_dtp->attributes   = 0;
+    new_dtp->cache_id     = 0;
+    new_dtp->name[0]      = 0;
+    new_dtp->is_contig = dtype_info->is_contig;
+    new_dtp->n_contig_blocks = dtype_info->n_contig_blocks; 
+    new_dtp->size = dtype_info->size;
+    new_dtp->extent = dtype_info->extent;
+    new_dtp->loopsize = dtype_info->loopsize;
+    new_dtp->loopinfo_depth = dtype_info->loopinfo_depth; 
+    new_dtp->eltype = dtype_info->eltype;
+    /* set dataloop pointer */
+    new_dtp->loopinfo = req->ch3.dataloop;
+    
+    new_dtp->ub = dtype_info->ub;
+    new_dtp->lb = dtype_info->lb;
+    new_dtp->true_ub = dtype_info->true_ub;
+    new_dtp->true_lb = dtype_info->true_lb;
+    new_dtp->has_sticky_ub = dtype_info->has_sticky_ub;
+    new_dtp->has_sticky_lb = dtype_info->has_sticky_lb;
+    /* update pointers in dataloop */
+    ptrdiff = (MPI_Aint)((char *) (new_dtp->loopinfo) - (char *)
+                         (dtype_info->loopinfo));
+    
+    MPID_Dataloop_update(new_dtp->loopinfo, ptrdiff);
+
+    new_dtp->contents = NULL;
+
+    return mpi_errno;
+}
+
+
+static int do_accumulate_op(MPID_Request *rreq)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPI_Aint true_lb, true_extent;
+    MPI_User_function *uop;
+
+    if (HANDLE_GET_KIND(rreq->ch3.op) == HANDLE_KIND_BUILTIN) {
+        /* get the function by indexing into the op table */
+        uop = MPIR_Op_table[(rreq->ch3.op)%16 - 1];
+    }
+    else {
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP, "**opnotpredefined", "**opnotpredefined %d", rreq->ch3.op );
+        return mpi_errno;
+    }
+    
+    if (HANDLE_GET_KIND(rreq->ch3.datatype) == HANDLE_KIND_BUILTIN) {
+        (*uop)(rreq->ch3.user_buf, rreq->ch3.real_user_buf,
+               &(rreq->ch3.user_count), &(rreq->ch3.datatype));
+    }
+    else { /* derived datatype */
+        MPID_Segment *segp;
+        DLOOP_VECTOR *dloop_vec;
+        MPI_Aint first, last;
+        int vec_len, i, type_size, count;
+        MPI_Datatype type;
+        MPID_Datatype *dtp;
+        
+        segp = MPID_Segment_alloc();
+        if (!segp) {
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 ); 
+            return mpi_errno;
+        }
+        MPID_Segment_init(NULL, rreq->ch3.user_count, rreq->ch3.datatype, segp);
+        first = 0;
+        last  = SEGMENT_IGNORE_LAST;
+        
+        MPID_Datatype_get_ptr(rreq->ch3.datatype, dtp);
+        vec_len = dtp->n_contig_blocks * rreq->ch3.user_count + 1; 
+        /* +1 needed because Rob says so */
+        dloop_vec = (DLOOP_VECTOR *)
+            MPIU_Malloc(vec_len * sizeof(DLOOP_VECTOR));
+        if (!dloop_vec) {
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 ); 
+            return mpi_errno;
+        }
+        
+        MPID_Segment_pack_vector(segp, first, &last, dloop_vec, &vec_len);
+        
+        type = dtp->eltype;
+        type_size = MPID_Datatype_get_basic_size(type);
+        for (i=0; i<vec_len; i++) {
+            count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
+            (*uop)((char *)rreq->ch3.user_buf + POINTER_TO_AINT( dloop_vec[i].DLOOP_VECTOR_BUF ),
+                   (char *)rreq->ch3.real_user_buf + POINTER_TO_AINT( dloop_vec[i].DLOOP_VECTOR_BUF ),
+                   &count, &type);
+        }
+        
+        MPID_Segment_free(segp);
+        MPIU_Free(dloop_vec);
+    }
+    /* free the temporary buffer */
+    mpi_errno = NMPI_Type_get_true_extent(rreq->ch3.datatype, 
+                                          &true_lb, &true_extent); 
+    if (mpi_errno) return mpi_errno;
+    
+    MPIU_Free((char *) rreq->ch3.user_buf + true_lb);
+
+    return mpi_errno;
+}

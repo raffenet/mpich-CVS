@@ -5,3 +5,10 @@
 *.gcov
 Makefile.in
 Makefile
+cartmap1
+cartshift1
+cartsuball
+dims1
+graphmap1
+topodup
+topotest

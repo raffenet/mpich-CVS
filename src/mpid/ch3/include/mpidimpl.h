@@ -103,6 +103,8 @@ extern MPIDI_Process_t MPIDI_Process;
     MPIDI_Request_state_init((_req));				\
     (_req)->ch3.cancel_pending = FALSE;				\
     (_req)->ch3.decr_ctr = NULL;				\
+    (_req)->ch3.dtype_info = NULL;				\
+    (_req)->ch3.dataloop = NULL;				\
 }
 
 #define MPIDI_CH3U_Request_destroy(_req)			\
@@ -228,7 +230,7 @@ extern MPIDI_Process_t MPIDI_Process;
     (_req)->ch3.state |= ((_flag) << MPIDI_REQUEST_SYNC_SEND_SHIFT) & MPIDI_REQUEST_SYNC_SEND_MASK;	\
 }
 
-#define MPIDI_REQUEST_TYPE_MASK (0x7 << MPIDI_REQUEST_TYPE_SHIFT)
+#define MPIDI_REQUEST_TYPE_MASK (0xF << MPIDI_REQUEST_TYPE_SHIFT)
 #define MPIDI_REQUEST_TYPE_SHIFT 4
 #define MPIDI_REQUEST_TYPE_RECV 0
 #define MPIDI_REQUEST_TYPE_SEND 1
@@ -239,6 +241,9 @@ extern MPIDI_Process_t MPIDI_Process;
 #define MPIDI_REQUEST_TYPE_PUT_RESP 5
 #define MPIDI_REQUEST_TYPE_GET_RESP 6
 #define MPIDI_REQUEST_TYPE_ACCUM_RESP 7
+#define MPIDI_REQUEST_TYPE_PUT_RESP_DERIVED_DT 8
+#define MPIDI_REQUEST_TYPE_GET_RESP_DERIVED_DT 9
+#define MPIDI_REQUEST_TYPE_ACCUM_RESP_DERIVED_DT 10
 
 #define MPIDI_Request_get_type(_req)						\
 (((_req)->ch3.state & MPIDI_REQUEST_TYPE_MASK) >> MPIDI_REQUEST_TYPE_SHIFT)
@@ -438,11 +443,43 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt);
 #define MPIDI_DBG_Print_packet(a)
 #endif
 
-int MPIDI_CH3I_Send_rma_msg(MPIU_RMA_ops *rma_op, MPID_Win *win_ptr,
-                            int *decr_addr, MPID_Request **request);
+/* ------------------------------------------------------------------------- */
+/* mpirma.h (in src/mpi/rma?) */
+/* ------------------------------------------------------------------------- */
+typedef struct MPIDI_RMA_ops { 
+/* for keeping track of puts and gets, which will be executed at fence */
+    struct MPIDI_RMA_ops *next;  /* pointer to next element in list */
+    int type;  /* MPIDI_RMA_PUT, MPID_REQUEST_GET,
+                  MPIDI_RMA_ACCUMULATE */  
+    void *origin_addr;
+    int origin_count;
+    MPI_Datatype origin_datatype;
+    int target_rank;
+    MPI_Aint target_disp;
+    int target_count;
+    MPI_Datatype target_datatype;
+    MPI_Op op;  /* for accumulate */
+    int lock_type;  /* for win_lock */
+} MPIDI_RMA_ops;
 
-int MPIDI_CH3I_Recv_rma_msg(MPIU_RMA_ops *rma_op, MPID_Win *win_ptr,
-                            int *decr_addr, MPID_Request **request);
+#define MPIDI_RMA_PUT 23
+#define MPIDI_RMA_GET 24
+#define MPIDI_RMA_ACCUMULATE 25
+#define MPIDI_RMA_LOCK 26
+#define MPIDI_RMA_DATATYPE_BASIC 50
+#define MPIDI_RMA_DATATYPE_DERIVED 51
+
+extern MPIDI_RMA_ops *MPIDI_RMA_ops_list; /* list of outstanding RMA requests */
+
+int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
+                            int *decr_addr, MPIDI_RMA_dtype_info
+                            *dtype_info, void **dataloop, MPID_Request
+                            **request);
+
+int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
+                            int *decr_addr, MPIDI_RMA_dtype_info
+                            *dtype_info, void **dataloop, MPID_Request
+                            **request); 
 
 /* NOTE: Channel function prototypes are in mpidi_ch3_post.h since some of the macros require their declarations. */
 

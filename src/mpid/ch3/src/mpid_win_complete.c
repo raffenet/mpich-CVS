@@ -14,24 +14,12 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 {
     int mpi_errno = MPI_SUCCESS, comm_size, *nops_to_proc, src;
     int i, j, dst, done, total_op_count, *curr_ops_cnt;
-    MPIU_RMA_ops *curr_ptr, *next_ptr;
+    MPIDI_RMA_ops *curr_ptr, *next_ptr;
     MPID_Comm *comm_ptr;
     MPID_Request **requests; /* array of requests */
-    int *decr_addr;
-
-    typedef struct MPIU_RMA_dtype_info { /* for derived datatypes */
-        int           is_contig; 
-        int           n_contig_blocks;
-        int           size;     
-        MPI_Aint      extent;   
-        int           loopsize; 
-        void          *loopinfo;  /* pointer needed to update pointers
-                                     within dataloop on remote side */
-        int           loopinfo_depth; 
-        int           eltype;
-        MPI_Aint ub, lb, true_ub, true_lb;
-        int has_sticky_ub, has_sticky_lb;
-    } MPIU_RMA_dtype_info;
+    int *decr_addr, new_total_op_count;
+    MPIDI_RMA_dtype_info *dtype_infos=NULL;
+    void **dataloops=NULL;    /* to store dataloops for each datatype */
     MPI_Group win_grp, start_grp;
     int start_grp_size, *ranks_in_start_grp, *ranks_in_win_grp;
 
@@ -102,7 +90,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     }
     
     total_op_count = 0;
-    curr_ptr = MPIU_RMA_ops_list;
+    curr_ptr = MPIDI_RMA_ops_list;
     while (curr_ptr != NULL) {
         nops_to_proc[curr_ptr->target_rank]++;
         total_op_count++;
@@ -128,8 +116,28 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         return mpi_errno;
     }
 
+    if (total_op_count != 0) {
+        dtype_infos = (MPIDI_RMA_dtype_info *)
+            MPIU_Malloc(total_op_count*sizeof(MPIDI_RMA_dtype_info));
+        if (!dtype_infos) {
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+            return mpi_errno;
+        }
+        
+        dataloops = (void **) MPIU_Malloc(total_op_count*sizeof(void*));
+        /* allocate one extra for use when receiving data. see below */
+        if (!dataloops) {
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+            return mpi_errno;
+        }
+        for (i=0; i<total_op_count; i++)
+            dataloops[i] = NULL;
+    }
+
     i = 0;
-    curr_ptr = MPIU_RMA_ops_list;
+    curr_ptr = MPIDI_RMA_ops_list;
     while (curr_ptr != NULL) {
         /* The completion counter at the target is decremented
            only on the last operation on the target. Otherwise, we
@@ -141,15 +149,15 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             decr_addr = NULL;
 
         switch (curr_ptr->type) {
-        case (MPID_REQUEST_PUT):
-        case (MPID_REQUEST_ACCUMULATE):
+        case (MPIDI_RMA_PUT):
+        case (MPIDI_RMA_ACCUMULATE):
             mpi_errno = MPIDI_CH3I_Send_rma_msg(curr_ptr, win_ptr,
-                                                decr_addr, &requests[i]); 
+                     decr_addr, &dtype_infos[i], &dataloops[i], &requests[i]); 
             if (mpi_errno != MPI_SUCCESS) return mpi_errno;
             break;
-        case (MPID_REQUEST_GET):
+        case (MPIDI_RMA_GET):
             mpi_errno = MPIDI_CH3I_Recv_rma_msg(curr_ptr, win_ptr,
-                                                decr_addr, &requests[i]);
+                     decr_addr, &dtype_infos[i], &dataloops[i], &requests[i]);
             if (mpi_errno != MPI_SUCCESS) return mpi_errno;
             break;
         default:
@@ -167,6 +175,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
        the completion counter */
 
     j = i;
+    new_total_op_count = total_op_count;
     for (i=0; i<start_grp_size; i++) {
         dst = ranks_in_win_grp[i];
         if (nops_to_proc[dst] == 0) {
@@ -191,7 +200,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
                 return mpi_errno;
             }
             j++;
-            total_op_count++;
+            new_total_op_count++;
         }
     }
 
@@ -201,9 +210,9 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     MPIU_Free(curr_ops_cnt);
 
     done = 1;
-    while (total_op_count) {
+    while (new_total_op_count) {
         MPID_Progress_start();
-        for (i=0; i<total_op_count; i++) {
+        for (i=0; i<new_total_op_count; i++) {
             if (requests[i] != NULL) {
                 if (*(requests[i]->cc_ptr) != 0)
                     done = 0;
@@ -229,15 +238,22 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     } 
 
     MPIU_Free(requests);
+    if (total_op_count != 0) {
+        MPIU_Free(dtype_infos);
+        for (i=0; i<total_op_count; i++)
+            if (dataloops[i] != NULL) 
+                MPIU_Free(dataloops[i]);
+        MPIU_Free(dataloops);
+    }
 
-    /* free MPIU_RMA_ops_list */
-    curr_ptr = MPIU_RMA_ops_list;
+    /* free MPIDI_RMA_ops_list */
+    curr_ptr = MPIDI_RMA_ops_list;
     while (curr_ptr != NULL) {
         next_ptr = curr_ptr->next;
         MPIU_Free(curr_ptr);
         curr_ptr = next_ptr;
     }
-    MPIU_RMA_ops_list = NULL;
+    MPIDI_RMA_ops_list = NULL;
     
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
     return mpi_errno;
@@ -262,18 +278,18 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 {
     int mpi_errno = MPI_SUCCESS, comm_size, *nops_to_proc, dest;
     int i, *tags, total_op_count, req_cnt;
-    MPIU_RMA_ops *curr_ptr, *next_ptr;
+    MPIDI_RMA_ops *curr_ptr, *next_ptr;
     MPI_Comm comm;
-    typedef struct MPIU_RMA_op_info {
+    typedef struct MPIDI_RMA_op_info {
         int type;
         MPI_Aint disp;
         int count;
         int datatype;
         int datatype_kind;  /* basic or derived */
         MPI_Op op;
-    } MPIU_RMA_op_info;
-    MPIU_RMA_op_info *rma_op_infos;
-    typedef struct MPIU_RMA_dtype_info { /* for derived datatypes */
+    } MPIDI_RMA_op_info;
+    MPIDI_RMA_op_info *rma_op_infos;
+    typedef struct MPIDI_RMA_dtype_info { /* for derived datatypes */
         int           is_contig; 
         int           n_contig_blocks;
         int           size;     
@@ -285,8 +301,8 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         int           eltype;
         MPI_Aint ub, lb, true_ub, true_lb;
         int has_sticky_ub, has_sticky_lb;
-    } MPIU_RMA_dtype_info;
-    MPIU_RMA_dtype_info *dtype_infos;
+    } MPIDI_RMA_dtype_info;
+    MPIDI_RMA_dtype_info *dtype_infos;
     void **dataloops;    /* to store dataloops for each datatype */
     MPI_Request *reqs;
     MPI_Group win_grp, start_grp;
@@ -319,7 +335,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     }
     
     total_op_count = 0;
-    curr_ptr = MPIU_RMA_ops_list;
+    curr_ptr = MPIDI_RMA_ops_list;
     while (curr_ptr != NULL) {
         nops_to_proc[curr_ptr->target_rank]++;
         total_op_count++;
@@ -386,8 +402,8 @@ int MPID_Win_complete(MPID_Win *win_ptr)
        displ, count, datatype. Then issue an isend for a 
        put or irecv for a get. */
     
-    rma_op_infos = (MPIU_RMA_op_info *) 
-        MPIU_Malloc((total_op_count+1) * sizeof(MPIU_RMA_op_info));
+    rma_op_infos = (MPIDI_RMA_op_info *) 
+        MPIU_Malloc((total_op_count+1) * sizeof(MPIDI_RMA_op_info));
     /* allocate one extra to prevent 0 size malloc */
     if (!rma_op_infos) {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
@@ -395,8 +411,8 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         return mpi_errno;
     }
 
-    dtype_infos = (MPIU_RMA_dtype_info *)
-        MPIU_Malloc((total_op_count+1)*sizeof(MPIU_RMA_dtype_info));
+    dtype_infos = (MPIDI_RMA_dtype_info *)
+        MPIU_Malloc((total_op_count+1)*sizeof(MPIDI_RMA_dtype_info));
     /* allocate one extra to prevent 0 size malloc */
     if (!dtype_infos) {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
@@ -416,7 +432,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 
     i = 0;
     req_cnt = start_grp_size;
-    curr_ptr = MPIU_RMA_ops_list;
+    curr_ptr = MPIDI_RMA_ops_list;
     while (curr_ptr != NULL) {
         rma_op_infos[i].type = curr_ptr->type;
         rma_op_infos[i].disp = curr_ptr->target_disp;
@@ -428,10 +444,10 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         if (HANDLE_GET_KIND(curr_ptr->target_datatype) ==
             HANDLE_KIND_BUILTIN) {
             /* basic datatype. send only the rma_op_info struct */
-            rma_op_infos[i].datatype_kind = MPID_RMA_DATATYPE_BASIC;
+            rma_op_infos[i].datatype_kind = MPIDI_RMA_DATATYPE_BASIC;
             /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
             mpi_errno = NMPI_Isend(&rma_op_infos[i],
-                                   sizeof(MPIU_RMA_op_info), MPI_BYTE, 
+                                   sizeof(MPIDI_RMA_op_info), MPI_BYTE, 
                                    dest, tags[dest], comm,
                                    &reqs[req_cnt]); 
             if (mpi_errno) {
@@ -445,7 +461,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             /* derived datatype. send rma_op_info_struct as well
                as derived datatype information */
             
-            rma_op_infos[i].datatype_kind = MPID_RMA_DATATYPE_DERIVED; 
+            rma_op_infos[i].datatype_kind = MPIDI_RMA_DATATYPE_DERIVED; 
             /* fill derived datatype info */
             MPID_Datatype_get_ptr(curr_ptr->target_datatype, dtp);
             dtype_infos[i].is_contig = dtp->is_contig;
@@ -473,7 +489,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 
             /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
             mpi_errno = NMPI_Isend(&rma_op_infos[i],
-                                   sizeof(MPIU_RMA_op_info), MPI_BYTE, 
+                                   sizeof(MPIDI_RMA_op_info), MPI_BYTE, 
                                    dest, tags[dest], comm,
                                    &reqs[req_cnt]); 
             if (mpi_errno) {
@@ -486,7 +502,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             /* send the datatype info */
             /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
             mpi_errno = NMPI_Isend(&dtype_infos[i],
-                                   sizeof(MPIU_RMA_dtype_info), MPI_BYTE, 
+                                   sizeof(MPIDI_RMA_dtype_info), MPI_BYTE, 
                                    dest, tags[dest], comm,
                                    &reqs[req_cnt]); 
             if (mpi_errno) {
@@ -512,8 +528,8 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         }
 
         /* now send or recv the data */
-        if ((curr_ptr->type == MPID_REQUEST_PUT) ||
-            (curr_ptr->type == MPID_REQUEST_ACCUMULATE))
+        if ((curr_ptr->type == MPIDI_RMA_PUT) ||
+            (curr_ptr->type == MPIDI_RMA_ACCUMULATE))
             mpi_errno = NMPI_Isend(curr_ptr->origin_addr,
                                    curr_ptr->origin_count,
                                    curr_ptr->origin_datatype,
@@ -559,14 +575,14 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             MPIU_Free(dataloops[i]);
     MPIU_Free(dataloops);
 
-    /* free MPIU_RMA_ops_list */
-    curr_ptr = MPIU_RMA_ops_list;
+    /* free MPIDI_RMA_ops_list */
+    curr_ptr = MPIDI_RMA_ops_list;
     while (curr_ptr != NULL) {
         next_ptr = curr_ptr->next;
         MPIU_Free(curr_ptr);
         curr_ptr = next_ptr;
     }
-    MPIU_RMA_ops_list = NULL;
+    MPIDI_RMA_ops_list = NULL;
 
     /* free the group stored in window */
     MPIR_Group_release(win_ptr->start_group_ptr);

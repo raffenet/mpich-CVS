@@ -5,3 +5,7 @@
 *.gcov
 Makefile.in
 Makefile
+infodel
+infodup
+infoorder
+infovallen

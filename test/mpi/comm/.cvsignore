@@ -8,3 +8,5 @@ Makefile
 dup
 ic1
 cfree
+commname
+dupic

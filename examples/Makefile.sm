@@ -11,5 +11,7 @@ child_SOURCES = child.c
 parent_SOURCES = parent.c
 cpi_SOURCES = cpi.c
 cpi_LDADD = -lm
+icpi_SOURCES = icpi.c
+icpi_LDADD = -lm
 INCLUDES = -I../src/include -I${top_srcdir}/src/include
 LDADD = -L../lib

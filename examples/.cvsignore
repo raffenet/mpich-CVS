@@ -16,3 +16,6 @@ cpi
 *.bbg
 *.da
 *.gcov
+icpi
+child
+parent

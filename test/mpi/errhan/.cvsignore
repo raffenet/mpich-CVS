@@ -3,3 +3,5 @@ Makefile
 errstring
 errcode.c
 errcode
+adderr
+errring

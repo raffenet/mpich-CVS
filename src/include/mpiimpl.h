@@ -1317,33 +1317,6 @@ extern MPIU_Object_alloc_t MPID_Request_mem;
 extern MPID_Request MPID_Request_direct[];
 /* ------------------------------------------------------------------------- */
 
-/* ------------------------------------------------------------------------- */
-/* mpirma.h (in src/mpi/rma?) */
-/* ------------------------------------------------------------------------- */
-typedef struct MPIU_RMA_ops { 
-/* for keeping track of puts and gets, which will be executed at fence */
-    struct MPIU_RMA_ops *next;  /* pointer to next element in list */
-    int type;  /* MPID_REQUEST_PUT, MPID_REQUEST_GET,
-                  MPID_REQUEST_ACCUMULATE */  
-    void *origin_addr;
-    int origin_count;
-    MPI_Datatype origin_datatype;
-    int target_rank;
-    MPI_Aint target_disp;
-    int target_count;
-    MPI_Datatype target_datatype;
-    MPI_Op op;  /* for accumulate */
-    int lock_type;  /* for win_lock */
-} MPIU_RMA_ops;
-
-#define MPID_REQUEST_PUT 23
-#define MPID_REQUEST_GET 24
-#define MPID_REQUEST_ACCUMULATE 25
-#define MPID_REQUEST_LOCK 26
-#define MPID_RMA_DATATYPE_BASIC 50
-#define MPID_RMA_DATATYPE_DERIVED 51
-
-extern MPIU_RMA_ops *MPIU_RMA_ops_list; /* list of outstanding RMA requests */
 
 /* ------------------------------------------------------------------------- */
 /* end of mpirma.h (in src/mpi/rma?) */
