@@ -1069,7 +1069,7 @@ namespace wmpiexec
 					cmd = cmd + " " + application_comboBox.Text;
 				}
 				*/
-				cmd = cmd + " " + application_comboBox.Text;
+				cmd = cmd + " -noprompt " + application_comboBox.Text; // add -noprompt since we can't send input to stdin
 				mpiexec_command_args = cmd.Replace(mpiexec, ""); // save the command line minus the mpiexec path
 			}
 			else if (configfile_radioButton.Checked)
