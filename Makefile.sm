@@ -127,7 +127,7 @@ snap:
 MODULE_DIRS = doc/adi3 doc/mpich2 doc/notes src/mpi/romio src/pm/winmpd \
     src/pm/mpd src/util/slog2sdk
 dist-check:
-	for dir in $(MODULE_DIRS) ; do \
+	@for dir in $(MODULE_DIRS) ; do \
 	    if [ ! -d $(master_top_srcdir)/$$dir ] ; then \
 		echo "Missing $$dir in $(master_top_srcdir) !" ; \
 		exit 1 ; \
