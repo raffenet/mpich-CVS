@@ -421,35 +421,36 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround"
 		    cd ..
 		fi
 	    fi
-	    if [ -s "$dir/configure2.in" -a 0 ] ; then
+#	    if [ -s "$dir/configure2.in" ] ; then
 	        # There is a version 1 and version 2 configure in this
 	        # directory.  
 	        if [ $dir = "./src/mpi/romio" ] ; then
 		    echo $dir
-		    if [ $acVersion = "2-57" ] ; then
-			echo "Working around hideous bug in autoheader 2.57..."
-	            # Note that the 2.57 autoheader *ignores* the command-line
-	            # argument (!)  Yes, this is very badly broken.
-		    # Also note that aclocal tends to read *everything* in the 
-		    # include directory, rather than processing the files. 
-		    # This breaks the handling of the different autoconf
-		    # versions by the macros in that directory
-		        if [ -s $dir/configure.in ] ; then
-			    mv -f $dir/configure.in $dir/configure.in.orig
-			fi
-			cp -f $dir/configure2.in $dir/configure.in
- 		        (cd $dir && \
-		        autoheader $acIncDirFlag ../../../confdb ; \
-		        autoconf $acIncDirFlag ../../../confdb )
-			if [ -s $dir/configure.in.orig ] ; then
-			    mv -f $dir/configure.in.orig $dir/configure.in
-			fi
-		    else
-		        (cd $dir && \
-		         autoheader $acIncDirFlag ../../../confdb configure2.in > adio/include/romioconf.h.in ; \
-		         autoconf $acIncDirFlag ../../../confdb configure2.in > configure )
-		     fi
-		fi
+#  		    if [ $acVersion = "2-57" ] ; then
+#  			echo "Working around hideous bug in autoheader 2.57..."
+#  	            # Note that the 2.57 autoheader *ignores* the command-line
+#  	            # argument (!)  Yes, this is very badly broken.
+#  		    # Also note that aclocal tends to read *everything* in the 
+#  		    # include directory, rather than processing the files. 
+#  		    # This breaks the handling of the different autoconf
+#  		    # versions by the macros in that directory
+#  		        if [ -s $dir/configure.in ] ; then
+#  			    mv -f $dir/configure.in $dir/configure.in.orig
+#  			fi
+#  			cp -f $dir/configure2.in $dir/configure.in
+#   		        (cd $dir && \
+#  		        autoheader $acIncDirFlag ../../../confdb ; \
+#  		        autoconf $acIncDirFlag ../../../confdb )
+#  			if [ -s $dir/configure.in.orig ] ; then
+#  			    mv -f $dir/configure.in.orig $dir/configure.in
+#  			fi
+#  		    else
+		        (cd $dir && autoheader && autoconf)
+#		        (cd $dir && \
+#		         autoheader $acIncDirFlag ../../../confdb configure2.in > adio/include/romioconf.h.in ; \
+#		         autoconf $acIncDirFlag ../../../confdb configure2.in > configure )
+#		     fi
+#		fi
 	        continue
 	    fi
 	    # The make -q checks whether the target is upto date first;

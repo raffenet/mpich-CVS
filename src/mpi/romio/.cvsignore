@@ -5,6 +5,7 @@ config.log
 config.cache
 autom4te.cache
 configure2
+configure
 lib
 bin
 misc

@@ -465,9 +465,9 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
 			pac_cv_have_statfs_f_fstypename=no)
 		AC_MSG_RESULT($pac_cv_have_statfs_f_fstypename)
 		if test $pac_cv_have_statfs_f_fstypename = yes ; then
-		    AC_DEFINE(ROMIO_HAVE_STATFS_F_FSTYPENAME, 1)
+		    AC_DEFINE(ROMIO_HAVE_STATFS_F_FSTYPENAME, 1,[Define if statfs has f_fstypename])
 		else
-		    AC_DEFINE(ROMIO_HAVE_STATFS_F_FSTYPENAME, 0)
+		    AC_DEFINE(ROMIO_HAVE_STATFS_F_FSTYPENAME, 0,[Define if statfs has f_fstypename])
 		fi
        fi
        longlongsize=${longlongsize:-0}
