@@ -2,18 +2,19 @@
 #include "mpi.h"
 #include "mpitest.h"
 
+#define BUFSIZE 2000
 int main( int argc, char *argv[] )
 {
     MPI_Status status;
     MPI_Request request;
     int a[10], b[10];
-    int buf[1000], *bptr, bl, i, j, rank, size;
+    int buf[BUFSIZE], *bptr, bl, i, j, rank, size;
     int errs = 0;
 
     MTest_Init( 0, 0 );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
     MPI_Comm_size( MPI_COMM_WORLD, &size );
-    MPI_Buffer_attach( buf, 1000 );
+    MPI_Buffer_attach( buf, BUFSIZE );
 
     for (j=0; j<10; j++) {
 	MPI_Bsend_init( a, 10, MPI_INT, 0, 27+j, MPI_COMM_WORLD, &request );

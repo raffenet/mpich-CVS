@@ -968,6 +968,7 @@ typedef struct BsendData {
     int              size;             /* size that is available for data */
     int              total_size;       /* total size of this segment */
     struct BsendData *next, *prev;
+    int          kind;
     void         *request;
     struct {
     void         *msgbuf;

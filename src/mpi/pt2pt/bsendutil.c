@@ -41,12 +41,15 @@
  * do (sizeof(BsendData_t) + size) to get total_size).
  */
 
-/* #define DEBUG(a) a;fflush(stdout)  */
-/* #define DEBUG1(a) a;fflush(stdout)  */
+#if 1
 #define DEBUG(a) 
 #define DEBUG1(a) 
-/* #define DBG_PRINT_AVAIL */
-/* #define DBG_PRINT_ARENA */
+#else
+#define DEBUG(a) a;fflush(stdout) 
+#define DEBUG1(a) a;fflush(stdout)
+#define DBG_PRINT_AVAIL
+#define DBG_PRINT_ARENA
+#endif
 
 /* Private structures for the bsend buffers */
 
@@ -62,6 +65,9 @@ typedef struct BsendMsg_t {
 } BsendMsg_t;
 
 /* BsendData describes a bsend request */
+/* FIXME: ANY CHANGE TO BsendData_t must also be made in mpich2/configure.in,
+   which computes the size of MPI_BSEND_OVERHEAD.  We should put this in 
+   a separate file that both the configure and this file can include */
 typedef struct BsendData {
     int              size;             /* size that is available for data */
     int              total_size;       /* total size of this segment, 
