@@ -225,6 +225,8 @@ int PMI_Init(int *spawned)
 	    pmi_err_printf("unable to create the process group kvs\n");
 	    return PMI_FAIL;
 	}
+	pmi_process.init_finalized = PMI_INITIALIZED;
+	return PMI_SUCCESS;
     }
 
     p = getenv("PMI_RANK");
@@ -315,6 +317,13 @@ int PMI_Finalize()
     printf("PMI_Finalize called.\n");
     fflush(stdout);
     */
+
+    if (pmi_process.local_kvs)
+    {
+	smpd_dbs_finalize();
+	pmi_process.init_finalized = PMI_FINALIZED;
+	return PMI_SUCCESS;
+    }
 
     PMI_Barrier();
 
@@ -435,6 +444,12 @@ int PMI_KVS_Create(char * kvsname)
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL)
 	return PMI_FAIL;
 
+    if (pmi_process.local_kvs)
+    {
+	result = smpd_dbs_create(kvsname);
+	return (result == SMPD_SUCCESS) ? PMI_SUCCESS : PMI_FAIL;
+    }
+
     result = pmi_create_post_command("dbcreate", NULL, NULL, NULL);
     if (result != PMI_SUCCESS)
     {
@@ -471,6 +486,12 @@ int PMI_KVS_Destroy(const char * kvsname)
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL)
 	return PMI_FAIL;
 
+    if (pmi_process.local_kvs)
+    {
+	result = smpd_dbs_destroy(kvsname);
+	return (result == SMPD_SUCCESS) ? PMI_SUCCESS : PMI_FAIL;
+    }
+
     result = pmi_create_post_command("dbdestroy", kvsname, NULL, NULL);
     if (result != PMI_SUCCESS)
     {
@@ -506,6 +527,12 @@ int PMI_KVS_Put(const char *kvsname, const char *key, const char *value)
     fflush(stdout);
     */
 
+    if (pmi_process.local_kvs)
+    {
+	result = smpd_dbs_put(kvsname, key, value);
+	return (result == SMPD_SUCCESS) ? PMI_SUCCESS : PMI_FAIL;
+    }
+
     result = pmi_create_post_command("dbput", kvsname, key, value);
     if (result != PMI_SUCCESS)
     {
@@ -533,6 +560,11 @@ int PMI_KVS_Commit(const char *kvsname)
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL)
 	return PMI_FAIL;
 
+    if (pmi_process.local_kvs)
+    {
+	return PMI_SUCCESS;
+    }
+
     /* Make the puts return when the commands are written but not acknowledged.
        Then have this function wait until all outstanding puts are acknowledged.
        */
@@ -547,6 +579,12 @@ int PMI_KVS_Get(const char *kvsname, const char *key, char *value)
 
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL || key == NULL || value == NULL)
 	return PMI_FAIL;
+
+    if (pmi_process.local_kvs)
+    {
+	result = smpd_dbs_get(kvsname, key, value);
+	return (result == SMPD_SUCCESS) ? PMI_SUCCESS : PMI_FAIL;
+    }
 
     result = pmi_create_post_command("dbget", kvsname, key, NULL);
     if (result != PMI_SUCCESS)
@@ -582,6 +620,12 @@ int PMI_KVS_Iter_first(const char *kvsname, char *key, char *value)
 
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL || key == NULL || value == NULL)
 	return PMI_FAIL;
+
+    if (pmi_process.local_kvs)
+    {
+	result = smpd_dbs_first(kvsname, key, value);
+	return (result == SMPD_SUCCESS) ? PMI_SUCCESS : PMI_FAIL;
+    }
 
     result = pmi_create_post_command("dbfirst", kvsname, NULL, NULL);
     if (result != PMI_SUCCESS)
@@ -629,6 +673,12 @@ int PMI_KVS_Iter_next(const char *kvsname, char *key, char *value)
 
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL || key == NULL || value == NULL)
 	return PMI_FAIL;
+
+    if (pmi_process.local_kvs)
+    {
+	result = smpd_dbs_next(kvsname, key, value);
+	return (result == SMPD_SUCCESS) ? PMI_SUCCESS : PMI_FAIL;
+    }
 
     result = pmi_create_post_command("dbnext", kvsname, NULL, NULL);
     if (result != PMI_SUCCESS)
