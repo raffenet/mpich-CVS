@@ -22,8 +22,12 @@ $debug = 0;
 # The approach is to read a line and then read the next line.
 # While the line is a command and the next line is not, output the
 # line.
+#
+# We use eof() (see man perlfun) so that we can accept filenames on the
+# commandline.
 $cmdline = "";
-while (! eof(STDIN)) {
+while (<>) {
+    if (eof()) { next; }
     if ($cmdline eq "") {
 	# Get the next command line
 	print "Read line cmdline \n" if $debug;
@@ -72,7 +76,7 @@ while (! eof(STDIN)) {
 		print "Read line continuation ... \n" if $debug;
 		$nextline .= <>;
 	    }
-	    if ($nextline eq "" || eof(STDIN)) { 
+	    if ($nextline eq "" || eof()) { 
 		$is_command = 1;
 	    }
 	    foreach $cmdname (@commands) {
