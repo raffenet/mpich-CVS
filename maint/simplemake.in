@@ -742,9 +742,16 @@ sub DefaultRules {
 # 	    }
 # 	}
     }
+    $out_mkdir_p = 0;
     if ($do_sharedlibs) {
 	if (defined($optinstall_files{'SHLIB'})) {
 	    print FD "$shlibdefs{'c'}$newline";
+	}
+	elsif ($found_sharedlib) {
+	    # No install target, but a shared library is begin built
+	    print FD "$shlibdefs{'c'}$newline";
+	    $out_mkdir_p = 1;
+	    print FD "MKDIR_P         = \@MKDIR_P\@$newline";
 	}
     }
 
@@ -752,7 +759,9 @@ sub DefaultRules {
 	print FD "INSTALL         = \@INSTALL\@$newline";
 	print FD "INSTALL_PROGRAM = \@INSTALL_PROGRAM\@$newline";
 	print FD "INSTALL_DATA    = \@INSTALL_DATA\@$newline";
-	print FD "MKDIR_P         = \@MKDIR_P\@$newline";
+	if (! $out_mkdir_p) {
+	    print FD "MKDIR_P         = \@MKDIR_P\@$newline";
+	}
     }
 
     # Directory definitions
@@ -1973,6 +1982,11 @@ sub TargetInstall {
 	    }
 	    print FD "\tif [ ! -d \${$dir} ] ; then \$(MKDIR_P) \${$dir} ; fi$newline";
 	    $dirschecked{$dir} = 1;
+	}
+	#
+	# If there is an install-local target, invoke it here:
+	if (defined($usertargets{"install-local"})) {
+	    print FD "\t\${MAKE} install-local$newline";
 	}
 	foreach $file ($install_files{$kind}) {
 	    $destfile = $file;
