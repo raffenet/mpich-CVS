@@ -15,14 +15,15 @@ def mpdboot():
     hostsFile = 'mpd.hosts'
     totalNum  = 1
     debug     = 0
+    verbosity = 0
     localConsoleVal  = ''
     remoteConsoleVal = ''
     shell = 'csh'
-    oneLocal = 0
+    oneLocal = 1
     try:
-	(opts, args) = getopt(argv[1:], 'hf:r:u:m:n:ds1',
+	(opts, args) = getopt(argv[1:], 'hf:r:u:m:n:dsv1',
 			      ['help', 'file=', 'rsh=', 'user=', 'mpd=', 'totalnum=',
-			       'loccons', 'remcons', 'shell'])
+			       'loccons', 'remcons', 'shell', 'verbose'])
     except:
 	usage()
     else:
@@ -43,8 +44,10 @@ def mpdboot():
                 debug = 1
             elif opt[0] == '-s' or opt[0] == '--shell':
                 shell = 'bourne'
+            elif opt[0] == '-v' or opt[0] == '--verbose':
+                verbosity = 1
 	    elif opt[0] == '-1':
-                oneLocal = 1
+                oneLocal = 0
 	    elif opt[0] == '--loccons':
 		localConsoleVal  = '-n'
 	    elif opt[0] == '--remcons':
@@ -63,6 +66,8 @@ def mpdboot():
     myHost = gethostname()
     if debug:
         print 'cmd=:%s %s -e: (executed on %s)' % (mpdCmd, localConsoleVal, myHost)
+    if verbosity == 1:
+        print 'starting local mpd on %s' % (myHost)
     locMPD = Popen3('%s %s -e' % (mpdCmd, localConsoleVal), 1)
     numStarted = 1
     myPort = locMPD.fromchild.readline().strip()
@@ -99,6 +104,8 @@ def mpdboot():
                    myHost, myPort, shellRedirect)
             if debug:
                 print 'cmd=:%s:' % (cmd)
+            if verbosity == 1:
+                print 'starting remote mpd on %s' % (host)
 	    system(cmd)
 	    numStarted += 1
 
@@ -108,20 +115,24 @@ def mpdboot():
 
 def usage():
     print ''
-    print 'mpdboot [-h] [-f <hostsfile>] [-r <rshcmd>] [-u <user>] [-m <mpdcmd>] [-n n_to_start] -s -1'
+    print 'mpdboot [-h] [-f <hostsfile>] [-r <rshcmd>] [-u <user>] [-m <mpdcmd>] [-n n_to_start] -s -v -1'
     print 'Long options:'
-    print '  --help --file=<hostsfile> --rsh=<rshcmd> --user=<user> --mpd=<mpdcmd> --totalnum=<n_to_start> --loccons --remcons --shell'
+    print '  --help --file=<hostsfile> --rsh=<rshcmd> --user=<user> --mpd=<mpdcmd> --totalnum=<n_to_start> --loccons --remcons --shell --verbose'
     print """
-mpdboot starts one mpd locally and (n_to_start - 1) others as computed from
-the -n (--totalnum) option; at least the one local mpd will be started by
-default;  the machines to use are specified by the --file option (default
-is mpd.hosts).  You may find it useful to specify the full pathname of mpd
-on remote hosts (-r) if it is not in your path on the remote machines.
-The --loccons and --remcons options indicate that you do NOT want a console
-available on local and remote mpds, respectively.
-The -s option allows you to indicate that Bourne shell is your default shell
-for rsh.  The -1 option indicates that you want to start only 1 mpd on the
-local machine even if it appears in the hosts file.
+mpdboot starts one mpd locally and (n_to_start - 1) others as computed
+from the -n (--totalnum) option; at least the one local mpd will be
+started by default; the machines to use are specified by the --file
+option (default is mpd.hosts).  You may find it useful to specify the
+full pathname of mpd on remote hosts (-r) if it is not in your path on
+the remote machines.  The --loccons and --remcons options indicate that
+you do NOT want a console available on local and remote mpds,
+respectively.  The -s option allows you to indicate that Bourne shell is
+your default shell for rsh.  The -1 option indicates that you want to
+start mpd's on all the nodes in the file as well as one on the local
+machine even if the local machine occurs there and thus the result would
+be two mpd's on the local machine.  Verbose mode (-v or --verbose)
+causes the rsh attempts to be printed as they occur.  It does not
+provide confirmation that the rsh's were successful.
 """
     exit(-1)
     
