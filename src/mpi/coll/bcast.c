@@ -85,6 +85,7 @@ int MPIR_Bcast (
   void *tmp_buf;
   MPI_Comm comm;
   MPID_Datatype *dtp;
+  MPI_Aint true_extent, true_lb;
 
   if (count == 0) return MPI_SUCCESS;
 
@@ -240,7 +241,10 @@ int MPIR_Bcast (
 
       if (is_contig && is_homogeneous) {
           /* contiguous and homogeneous. no need to pack. */
-          tmp_buf = buffer;
+          mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb,
+                                                &true_extent);  
+          if (mpi_errno) return mpi_errno;
+          tmp_buf = (char *) buffer + true_lb;
       }
       else {
           /* noncontiguous or heterogeneous. pack into temporary buffer. */
