@@ -113,7 +113,6 @@ while 1:
                 write(gdb_sin_fileno,'info program\n')
                 gdb_line = gdb_sout_serr.readline().lstrip()  # get pid
                 if gdb_line.startswith('Using'):
-                    print "LINE=", gdb_line
                     if gdb_line.find('process') >= 0:
                         appPid = findall(r'Using .* image of child process (\d+)',gdb_line)
                     elif gdb_line.find('Thread') >= 0:
