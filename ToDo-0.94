@@ -1,7 +1,5 @@
 Open Items:
 
-* number of parameters for MPID_Abort(), fix MPI_Abort() [Brian]
-
 * (ch3:shm/ssm) investigate (and fix?) few remaining test failures
   [David/Brian]
 
@@ -26,6 +24,8 @@ Open Items:
 ----
 
 Finished Items:
+
+* change number of parameters to MPID_Abort(), fix MPI_Abort() [Brian]
 
 * (req #65) add configure checks for va_copy(), etc. and update dbg_printf.c
   [Brian] (Bill took while fixing opteron nightlies)
