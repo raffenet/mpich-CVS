@@ -42,7 +42,7 @@ int socket_read_header(MPIDI_VC *vc_ptr)
 #ifdef MPICH_DEV_BUILD
     /* set the function pointer to INVALID_POINTER to catch the potential error
        of calling this function again before the pointer is reset. */
-    //vc_ptr->data.socket.read = INVALID_POINTER;
+    /*vc_ptr->data.socket.read = INVALID_POINTER;*/
 #endif
     mm_cq_enqueue(&vc_ptr->pkt_car);
     
@@ -387,7 +387,7 @@ int socket_handle_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer 
     }
     else
     {
-	// post read of the rest of the data
+	/* post read of the rest of the data*/
 	socket_read_data(vc_ptr);
     }
 
@@ -440,7 +440,7 @@ int socket_handle_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer 
     }
     else
     {
-	// post more read
+	/* post more read*/
 	socket_read_data(vc_ptr);
     }
 
@@ -495,7 +495,7 @@ int socket_handle_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buff
     }
     else
     {
-	// post a read of the rest of the data
+	/* post a read of the rest of the data*/
 	socket_read_data(vc_ptr);
     }
 

@@ -230,12 +230,8 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
     case MM_SOCKET_METHOD:
 	/* data members */
 	vc_ptr->data.socket.sock = SOCK_INVALID_SOCKET;
-	//vc_ptr->data.socket.connected = FALSE;
-	//vc_ptr->data.socket.connecting = FALSE;
-	//vc_ptr->data.socket.ack_received = FALSE;
-	//vc_ptr->data.socket.accept_called = FALSE;
 	vc_ptr->data.socket.connect_state = 0;
-	vc_ptr->data.socket.state = 0; //SOCKET_INVALID_STATE;
+	vc_ptr->data.socket.state = 0; /*SOCKET_INVALID_STATE;*/
 	/* function pointers */
 	/* mm required functions */
 	vc_ptr->post_read = socket_post_read;
@@ -325,17 +321,17 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
     
     kvs_name = comm_ptr->mm.pmi_kvsname;
 
-    //dbg_printf("+PMI_KVS_Get_value_length_max");
+    /*dbg_printf("+PMI_KVS_Get_value_length_max");*/
     value_len = PMI_KVS_Get_value_length_max();
-    //dbg_printf("-\n");
+    /*dbg_printf("-\n");*/
     value = (char*)MPIU_Malloc(value_len);
     methods = (char*)MPIU_Malloc(value_len);
 
-    //dbg_printf("A:remote_rank: %d\n", rank);
+    /*dbg_printf("A:remote_rank: %d\n", rank);*/
     snprintf(key, 100, "businesscard:%d", rank);
-    //dbg_printf("+PMI_KVS_Get(%s):", key);
+    /*dbg_printf("+PMI_KVS_Get(%s):", key);*/
     PMI_KVS_Get(kvs_name, key, methods);
-    //dbg_printf("%s-\n", methods);
+    /*dbg_printf("%s-\n", methods);*/
     
     /* choose method */
     
@@ -464,11 +460,11 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 	    if (strstr(methods, "socket"))
 	    {
 		/* get the tcp method business card */
-		//dbg_printf("B: remote rank: %d\n", rank);
+		/*dbg_printf("B: remote rank: %d\n", rank);*/
 		snprintf(key, 100, "business_card_socket:%d", rank);
-		//dbg_printf("+PMI_KVS_Get(%s):", key);
+		/*dbg_printf("+PMI_KVS_Get(%s):", key);*/
 		PMI_KVS_Get(kvs_name, key, value);
-		//dbg_printf("%s-\n", value);
+		/*dbg_printf("%s-\n", value);*/
 		
 		/* check to see if we can connect with this business card */
 		if (socket_can_connect(value))

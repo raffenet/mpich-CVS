@@ -57,7 +57,7 @@ int socket_car_head_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	    vc_ptr->readq_tail = car_ptr;
 
 	/* change the state from reading_header to reading_data */
-	//vc_ptr->data.socket.read = socket_read_data;
+	/*vc_ptr->data.socket.read = socket_read_data;*/
 	socket_read_data(vc_ptr);
     }
 

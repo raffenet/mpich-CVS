@@ -251,7 +251,7 @@ int mm_cq_test()
 
     MPIDI_FUNC_ENTER(MPID_STATE_MM_CQ_TEST);
 
-    //dbg_printf(".");
+    /*dbg_printf(".");*/
 
     /* Should we call make_progress on all the methods?
      * before checking the cq?

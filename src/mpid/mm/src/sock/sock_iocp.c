@@ -711,7 +711,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
 		    out->error = 0;
 		    out->op_type = SOCK_OP_CLOSE;
 		    out->user_ptr = sock->user_ptr;
-		    //BlockFree(g_sock_allocator, sock);
+		    /*BlockFree(g_sock_allocator, sock);*/
 		    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 		    return SOCK_SUCCESS;
 		}

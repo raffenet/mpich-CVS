@@ -428,7 +428,7 @@ int socket_write_aggressive(MPIDI_VC *vc_ptr)
 
     if (vc_ptr->writeq_head == NULL)
     {
-	//msg_printf("socket_write_aggressive: write signalled with no car's in the write queue.\n");
+	/*msg_printf("socket_write_aggressive: write signalled with no car's in the write queue.\n");*/
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_WRITE_AGGRESSIVE);
 	return MPI_SUCCESS;
     }

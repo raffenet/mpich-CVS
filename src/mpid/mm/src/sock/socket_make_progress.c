@@ -17,7 +17,7 @@ int socket_handle_accept()
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_HANDLE_ACCEPT);
 
-    //MPIU_dbg_printf("socket_handle_accept\n");
+    /*MPIU_dbg_printf("socket_handle_accept\n");*/
 
     /* Create a temporary VC structure for reading the connect packet */
     /* We can't get the real VC because we don't know the remote rank and context yet */

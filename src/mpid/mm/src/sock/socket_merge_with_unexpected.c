@@ -25,7 +25,7 @@ int socket_merge_with_unexpected(MM_Car *posted_car_ptr, MM_Car *unex_car_ptr)
     if (unex_car_ptr->buf_ptr->tmp.num_read != unex_car_ptr->buf_ptr->tmp.len)
     {
 	/* if the message is still being read then change to the reading_data state */
-	//posted_car_ptr->vc_ptr->data.socket.read = socket_read_data;
+	/*posted_car_ptr->vc_ptr->data.socket.read = socket_read_data;*/
     }
 
     /* mark the head car as completed */
