@@ -1,4 +1,5 @@
 mpi.h
+mpif.h
 mpichtimer.h
 mpid*.h
 mpid*.h.in
