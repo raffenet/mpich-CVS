@@ -65,10 +65,12 @@ int MPIR_Topology_put( MPID_Comm *comm_ptr, MPIR_Topology *topo_ptr )
 /* begin:nested */
 static int MPIR_Topology_finalize( void *p )
 {
+    MPIR_Nest_incr();
     if (MPIR_Topology_keyval != MPI_KEYVAL_INVALID) {
 	/* Just in case */
 	NMPI_Comm_free_keyval( &MPIR_Topology_keyval );
     }
+    MPIR_Nest_decr();
     return 0;
 }
 /* end:nested */
