@@ -16,15 +16,22 @@ import java.io.DataOutput;
 
 public class CategoryWeight
 {
-    public static final int         BYTESIZE          = 12;
+    public  static final int         BYTESIZE          = 12;
 
-    public static final Comparator  INDEX_ORDER       = new IndexOrder();
-    public static final Comparator  INCL_RATIO_ORDER  = new InclRatioOrder();
-    public static final Comparator  EXCL_RATIO_ORDER  = new ExclRatioOrder();
+    public  static final Comparator  INDEX_ORDER       = new IndexOrder();
+    public  static final Comparator  INCL_RATIO_ORDER  = new InclRatioOrder();
+    public  static final Comparator  EXCL_RATIO_ORDER  = new ExclRatioOrder();
 
-    public static final int         PRINT_ALL_RATIOS  = 0;
-    public static final int         PRINT_INCL_RATIO  = 1;
-    public static final int         PRINT_EXCL_RATIO  = 2;
+    public  static final int         PRINT_ALL_RATIOS  = 0;
+    public  static final int         PRINT_INCL_RATIO  = 1;
+    public  static final int         PRINT_EXCL_RATIO  = 2;
+
+    private static final String      TITLE_ALL_RATIOS
+                                     = "*** All Duration Ratios:";
+    private static final String      TITLE_INCL_RATIO
+                                     = "*** Inclusive Duration Ratio:";
+    private static final String      TITLE_EXCL_RATIO
+                                     = "*** Exclusive Duration Ratio:";
 
     private static final int INVALID_INDEX = Integer.MIN_VALUE;
 
@@ -155,6 +162,17 @@ public class CategoryWeight
         type_idx   = ins.readInt();
         incl_ratio = ins.readFloat();
         excl_ratio = ins.readFloat();
+    }
+
+    // For InfoPanelForDrawable
+    public static String getPrintTitle( int print_status )
+    {
+        if ( print_status == PRINT_INCL_RATIO )
+            return TITLE_INCL_RATIO;
+        else if ( print_status == PRINT_EXCL_RATIO )
+            return TITLE_EXCL_RATIO;
+        else // if ( print_status == PRINT_ALL_RATIOS )
+            return TITLE_ALL_RATIOS;
     }
 
     // For InfoPanelForDrawable

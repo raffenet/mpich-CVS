@@ -52,6 +52,7 @@ public class Shadow extends Primitive
     private              List                list_childshades;   // For Ouput;
 
     private              Category            selected_subtype;   // For Jumpshot
+    private              int                 total_pixel_height; // For Jumpshot
 
     // For SLOG-2 Input
     public Shadow()
@@ -64,6 +65,7 @@ public class Shadow extends Primitive
         set_nestables       = null;
         list_childshades    = null;
         selected_subtype    = null;
+        total_pixel_height  = 0;
     }
 
     // For SLOG-2 Output : a copy constructor when merging 2 BufForShadows
@@ -90,6 +92,7 @@ public class Shadow extends Primitive
         }
 
         selected_subtype    = null;   // meaningless for SLOG-2 Output
+        total_pixel_height  = 0;      // meaningless for SLOG-2 Output
     }
 
     // For SLOG-2 Output : a real constructor when adding new real Primitive
@@ -120,6 +123,7 @@ public class Shadow extends Primitive
         }
 
         selected_subtype    = null;   // meaningless for SLOG-2 Output
+        total_pixel_height  = 0;      // meaningless for SLOG-2 Output
     }
 
     public void mergeWithPrimitive( final Primitive prime )
@@ -419,6 +423,18 @@ public class Shadow extends Primitive
         selected_subtype = null;
     }
 
+    // For SLOG-2 Input API i.e. Jumpshot
+    public void setTotalPixelHeight( int new_height )
+    {
+        total_pixel_height  = new_height;
+    }
+
+    // For SLOG-2 Input API i.e. Jumpshot
+    public int  getTotalPixelHeight()
+    {
+        return total_pixel_height;
+    }
+
     public long getNumOfRealObjects()
     {
         return num_real_objs;
@@ -494,23 +510,9 @@ public class Shadow extends Primitive
 
 
     private static Insets   Empty_Border   = new Insets( 0, 2, 0, 2 );
-    private static long     Arrow_Log_Base = 10;
-
-    private static Stroke[] Line_Strokes;
-    static {
-         Line_Strokes = new Stroke[ 10 ];
-         for ( int idx = Line_Strokes.length-1; idx >=0 ; idx-- )
-             Line_Strokes[ idx ] = new BasicStroke( (float) (idx+1) );
-    }
-
     public static void setStateInsetsDimension( int width, int height )
     {
         Empty_Border = new Insets( height, width, height, width );
-    }
-
-    public static void setBaseOfLogOfObjectNumToArrowWidth( int new_log_base )
-    {
-        Arrow_Log_Base = (long) new_log_base;
     }
 
 
@@ -543,12 +545,27 @@ public class Shadow extends Primitive
         rFinal = rStart + nesting_ftr;
 
         return PreviewState.draw( g, color,
-                                  twgt_ary, Empty_Border, coord_xform,
+                                  this, Empty_Border, coord_xform,
                                   drawn_boxes.getLastStatePos( rowID ),
                                   tStart, rStart, tFinal, rFinal );
         // return State.draw( g, color, Empty_Border, coord_xform,
         //                    drawn_boxes.getLastStatePos( rowID ),
         //                    tStart, rStart, tFinal, rFinal );
+    }
+
+
+
+    private static long     Arrow_Log_Base = 10;
+    private static Stroke[] Line_Strokes;
+    static {
+         Line_Strokes = new Stroke[ 10 ];
+         for ( int idx = Line_Strokes.length-1; idx >=0 ; idx-- )
+             Line_Strokes[ idx ] = new BasicStroke( (float) (idx+1) );
+    }
+
+    public static void setBaseOfLogOfObjectNumToArrowWidth( int new_log_base )
+    {
+        Arrow_Log_Base = (long) new_log_base;
     }
 
     private static  Stroke  getArrowStroke( long  inum )
@@ -623,7 +640,7 @@ public class Shadow extends Primitive
         rStart = (float) rowID - nesting_ftr / 2.0f;
         rFinal = rStart + nesting_ftr;
 
-        selected_subtype = PreviewState.containsPixel( twgt_ary, Empty_Border,
+        selected_subtype = PreviewState.containsPixel( this, Empty_Border,
                                                        coord_xform, pix_pt,
                                                        tStart, rStart,
                                                        tFinal, rFinal );
