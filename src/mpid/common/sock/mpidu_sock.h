@@ -206,7 +206,7 @@ int MPIDU_Sock_destroy_set(MPIDU_Sock_set_t set);
 
 
 /*@
-MPIDU_Sock_native_to_sock - convert a native file descriptor/handle to a sock objecta
+MPIDU_Sock_native_to_sock - convert a native file descriptor/handle to a sock object
 
 Input Parameters:
 + set - sock set to which the new sock should be added
@@ -217,7 +217,7 @@ Output Parameter:
 . sock - new sock object
 
 Return value: a MPI error code with a Sock extended error class
-+ MPI_SUCCESS - listener sock successfully established
++ MPI_SUCCESS - sock successfully created
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SET - invalid sock set
 . MPIDU_SOCK_ERR_BAD_NATIVE_FD - invalid native file descriptor
