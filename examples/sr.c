@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <mpi.h>
 
 int main(int argc, char **argv)
@@ -10,6 +11,7 @@ int main(int argc, char **argv)
     int msg_sz = 0;
     int niter = 1;
     int iter;
+    int i;
     
     if (MPI_Init(&argc, &argv) != MPI_SUCCESS)
     {
@@ -49,28 +51,32 @@ int main(int argc, char **argv)
 	msg = (int *) malloc(msg_sz * sizeof(int));
     }
 
-    for (iter = 0; iter < niter; iter++)
+    if (rank == 0)
     {
-	int i;
-	
-	if (rank == 0)
+	/* usleep(10000); */
+	    
+	for (iter = 0; iter < niter; iter++)
 	{
 	    for (i = 0; i < msg_sz; i++)
 	    {
 		msg[i] = iter * msg_sz + i;
 	    }
 	    
-	    if (MPI_Send(&msg, msg_sz, MPI_INT, 1, iter, MPI_COMM_WORLD)
+	    if (MPI_Send(msg, msg_sz, MPI_INT, 1, iter, MPI_COMM_WORLD)
 		!= MPI_SUCCESS)
 	    {
 		printf("ERROR: problem with MPI_Send\n"); fflush(stdout);
 	    }
 	}
-	else if (rank == 1)
-	{
-	    MPI_Status status;
+	
+    }
+    else if (rank == 1)
+    {
+	MPI_Status status;
 	    
-	    if (MPI_Recv(&msg, msg_sz, MPI_INT, 0, iter, MPI_COMM_WORLD,
+	for (iter = 0; iter < niter; iter++)
+	{
+	    if (MPI_Recv(msg, msg_sz, MPI_INT, 0, iter, MPI_COMM_WORLD,
 			 &status) != MPI_SUCCESS)
 	    {
 		printf("ERROR: problem with MPI_Recv\n"); fflush(stdout);
@@ -87,6 +93,9 @@ int main(int argc, char **argv)
 		}
 	    }
 	}
+	
+	printf("All messages successfully received!\n");
+	fflush(stdout);
     }
 
     printf("sr: process %d finished\n", rank); fflush(stdout);
@@ -96,5 +105,5 @@ int main(int argc, char **argv)
         printf("ERROR: problem with MPI_Finalize\n"); fflush(stdout);
     }
 
-    exit(0);
+    return 0;
 }
