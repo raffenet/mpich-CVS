@@ -9,11 +9,31 @@
 #include "mpi.h"
 #include "mpe_log.h"
 
+ 	
+
+/* AIX requires this to be the first thing in the file.  */
+#ifndef __GNUC__
+# if HAVE_ALLOCA_H
+#  include <alloca.h>
+# else
+#  ifdef _AIX
+ #pragma alloca
+#  else
+#   ifndef alloca /* predefined by HP cc +Olibcalls */
+char *alloca ();
+#   endif
+#  endif
+# endif
+#endif
+
 #if defined( STDC_HEADERS ) || defined( HAVE_STDLIB_H )
 #include <stdlib.h>
 #endif
 #if defined( STDC_HEADERS ) || defined( HAVE_STDIO_H )
 #include <stdio.h>
+#endif
+#if defined( STDC_HEADERS ) || defined( HAVE_STRING_H )
+#include <string.h>
 #endif
 
 /* Enable memory tracing.  This requires MPICH's mpid/util/tr2.c codes */
@@ -393,7 +413,7 @@ MPE_State   *state;
 
 }
    
-void MPE_ProcessWaitTest ( request, status, note, state )
+void MPE_ProcessWaitTest( request, status, note, state )
 MPI_Request request;
 MPI_Status  *status;
 char        *note;
@@ -401,12 +421,6 @@ MPE_State   *state;
 {
   request_list *rq, *last;
   int flag, size;
-
-#ifdef HAVE_MPI_STATUS_IGNORE
-  MPI_Status    tmp_status;
-  if (status == MPI_STATUS_IGNORE)
-      status = &tmp_status;
-#endif
 
   /* look for request */
   rq = requests_head_0;
@@ -418,10 +432,21 @@ MPE_State   *state;
 
   if (!rq) {
 #ifdef PRINT_PROBLEMS
-    fprintf( stderr, "Request not found in '%s'.\n", note );
+    fprintf( stderr, __FILE__":MPE_ProcessWaitTest(), "
+                     "Request not found in '%s'.\n", note );
+    fflush( stderr );
 #endif
     return;                /* request not found */
   }
+
+#ifdef HAVE_MPI_STATUS_IGNORE
+  if (status == MPI_STATUS_IGNORE) {
+      fprintf( stderr, __FILE__":MPE_ProcessWaitTest() cannot proess "
+                       "incoming MPI_Status, MPI_STATUS_IGNORE" );
+      fflush( stderr );
+      return;
+  }
+#endif
 
   if (status->MPI_TAG != MPI_ANY_TAG || (rq->status & RQ_SEND) ) {
     /* if the request was not invalid */
@@ -3285,25 +3310,31 @@ MPI_Request * request;
 int * flag;
 MPI_Status * status;
 {
-  int   returnVal;
-  MPI_Request lreq = *request;
-  MPE_LOG_STATE_DECL;
+    int   returnVal;
+    MPI_Request lreq = *request;
+    MPE_LOG_STATE_DECL;
 
 /*
     MPI_Test - prototyping replacement for MPI_Test
     Log the beginning and ending of the time spent in MPI_Test calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TEST_ID,MPI_COMM_NULL);
+#if defined( HAVE_MPI_STATUS_IGNORE )
+    MPI_Status   tmp_status;
+    if ( status == MPI_STATUS_IGNORE )
+        status = &tmp_status;
+#endif
+
+    MPE_LOG_STATE_BEGIN(MPE_TEST_ID,MPI_COMM_NULL);
   
-  returnVal = PMPI_Test( request, flag, status );
+    returnVal = PMPI_Test( request, flag, status );
 
-  if (*flag) 
-      MPE_ProcessWaitTest( lreq, status, "MPI_Test", state );
+    if (*flag) 
+        MPE_ProcessWaitTest( lreq, status, "MPI_Test", state );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+    MPE_LOG_STATE_END(MPI_COMM_NULL);
 
-  return returnVal;
+    return returnVal;
 }
 
 int  MPI_Testall( count, array_of_requests, flag, array_of_statuses )
@@ -3312,42 +3343,60 @@ MPI_Request * array_of_requests;
 int * flag;
 MPI_Status * array_of_statuses;
 {
-  int  returnVal;
-  int  i;
-  MPE_LOG_STATE_DECL;
+    int  returnVal;
+    int  i;
+    MPE_LOG_STATE_DECL;
 
 /*
     MPI_Testall - prototyping replacement for MPI_Testall
     Log the beginning and ending of the time spent in MPI_Testall calls.
 */
-
-  MPE_LOG_STATE_BEGIN(MPE_TESTALL_ID,MPI_COMM_NULL);
-  
-  if (count > MPE_MAX_REQUESTS) {
-    fprintf( stderr, __FILE__":MPI_Testall() - "
-                     "Array Index Out of Bound Exception !"
-                     "\t""count(%d) > MPE_MAX_REQUESTS(%d)\n",
-                     count, MPE_MAX_REQUESTS );
-    fflush( stderr );
-  }
-
-  if (count <= MPE_MAX_REQUESTS) {
-      for (i=0; i<count; i++) 
-          req[i] = array_of_requests[i];
-  }
-
-  returnVal = PMPI_Testall( count, array_of_requests, flag, array_of_statuses );
-
-  if (*flag && count <= MPE_MAX_REQUESTS) {
-    for (i=0; i < count; i++) {
-      MPE_ProcessWaitTest( req[i], &array_of_statuses[i], "MPI_Testall",
-                           state );
+#if defined( HAVE_MPI_STATUSES_IGNORE )
+    int  is_malloced = 0;
+    if ( array_of_statuses == MPI_STATUSES_IGNORE ) {
+#if ! defined( HAVE_ALLOCA )
+        array_of_statuses = (MPI_Status *) malloc( count * sizeof(MPI_Status) );
+        is_malloced = 1;
+#else
+        array_of_statuses = (MPI_Status *) alloca( count * sizeof(MPI_Status) );
+        is_malloced = 0;
+#endif
     }
-  }
+#endif
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+    MPE_LOG_STATE_BEGIN(MPE_TESTALL_ID,MPI_COMM_NULL);
 
-  return returnVal;
+    if (count > MPE_MAX_REQUESTS) {
+        fprintf( stderr, __FILE__":MPI_Testall() - "
+                         "Array Index Out of Bound Exception !"
+                         "\t""count(%d) > MPE_MAX_REQUESTS(%d)\n",
+                         count, MPE_MAX_REQUESTS );
+        fflush( stderr );
+    }
+
+    if (count <= MPE_MAX_REQUESTS) {
+        for (i=0; i<count; i++) 
+            req[i] = array_of_requests[i];
+    }
+
+    returnVal = PMPI_Testall( count, array_of_requests, flag,
+                              array_of_statuses );
+
+    if (*flag && count <= MPE_MAX_REQUESTS) {
+        for (i=0; i < count; i++) {
+            MPE_ProcessWaitTest( req[i], &array_of_statuses[i],
+                                 "MPI_Testall", state );
+        }
+    }
+
+    MPE_LOG_STATE_END(MPI_COMM_NULL);
+
+#if defined( HAVE_MPI_STATUSES_IGNORE ) && ! defined( HAVE_ALLOCA )
+    if ( is_malloced == 1 )
+        free( array_statuses );
+#endif
+
+    return returnVal;
 }
 
 int  MPI_Testany( count, array_of_requests, index, flag, status )
@@ -3357,38 +3406,44 @@ int * index;
 int * flag;
 MPI_Status * status;
 {
-  int  returnVal;
-  MPE_LOG_STATE_DECL;
-  int i;
+    int  returnVal;
+    MPE_LOG_STATE_DECL;
+    int i;
 
 /*
     MPI_Testany - prototyping replacement for MPI_Testany
     Log the beginning and ending of the time spent in MPI_Testany calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TESTANY_ID,MPI_COMM_NULL);
+#if defined( HAVE_MPI_STATUS_IGNORE )
+    MPI_Status   tmp_status;
+    if ( status == MPI_STATUS_IGNORE )
+        status = &tmp_status;
+#endif
 
-  if (count > MPE_MAX_REQUESTS) {
-    fprintf( stderr, __FILE__":MPI_Testany() - "
-                     "Array Index Out of Bound Exception !"
-                     "\t""count(%d) > MPE_MAX_REQUESTS(%d)\n",
-                     count, MPE_MAX_REQUESTS );
-    fflush( stderr );
-  }
+    MPE_LOG_STATE_BEGIN(MPE_TESTANY_ID,MPI_COMM_NULL);
+
+    if (count > MPE_MAX_REQUESTS) {
+        fprintf( stderr, __FILE__":MPI_Testany() - "
+                         "Array Index Out of Bound Exception !"
+                         "\t""count(%d) > MPE_MAX_REQUESTS(%d)\n",
+                         count, MPE_MAX_REQUESTS );
+        fflush( stderr );
+    }
   
-  if (count <= MPE_MAX_REQUESTS) {
-      for (i=0; i<count; i++) 
-          req[i] = array_of_requests[i];
-  }
+    if (count <= MPE_MAX_REQUESTS) {
+        for (i=0; i<count; i++) 
+            req[i] = array_of_requests[i];
+    }
 
-  returnVal = PMPI_Testany( count, array_of_requests, index, flag, status );
+    returnVal = PMPI_Testany( count, array_of_requests, index, flag, status );
 
-  if (*flag && count <= MPE_MAX_REQUESTS) 
-      MPE_ProcessWaitTest( req[*index], status, "MPI_Testany", state );
+    if (*flag && count <= MPE_MAX_REQUESTS) 
+        MPE_ProcessWaitTest( req[*index], status, "MPI_Testany", state );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+    MPE_LOG_STATE_END(MPI_COMM_NULL);
 
-  return returnVal;
+    return returnVal;
 }
 
 int  MPI_Test_cancelled( status, flag )
@@ -3420,44 +3475,64 @@ int * outcount;
 int * array_of_indices;
 MPI_Status * array_of_statuses;
 {
-  int  returnVal;
-  int  i;
-  MPE_LOG_STATE_DECL;
+    int  returnVal;
+    int  i;
+    MPE_LOG_STATE_DECL;
 
 /*
     MPI_Testsome - prototyping replacement for MPI_Testsome
     Log the beginning and ending of the time spent in MPI_Testsome calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TESTSOME_ID,MPI_COMM_NULL);
+#if defined( HAVE_MPI_STATUSES_IGNORE )
+    int  is_malloced = 0;
+    if ( array_of_statuses == MPI_STATUSES_IGNORE ) {
+#if ! defined( HAVE_ALLOCA )
+        array_of_statuses = (MPI_Status *) malloc( incount
+                                                 * sizeof(MPI_Status) );
+        is_malloced = 1;
+#else
+        array_of_statuses = (MPI_Status *) alloca( incount
+                                                 * sizeof(MPI_Status) );
+        is_malloced = 0;
+#endif
+    }
+#endif
 
-  if (incount > MPE_MAX_REQUESTS) {
-    fprintf( stderr, __FILE__":MPI_Testsome() - "
-                     "Array Index Out of Bound Exception !"
-                     "\t""incount(%d) > MPE_MAX_REQUESTS(%d)\n",
-                     incount, MPE_MAX_REQUESTS );
-    fflush( stderr );
-  }
-  
-  if (incount <= MPE_MAX_REQUESTS) {
-      for (i=0; i<incount; i++) 
-          req[i] = array_of_requests[i];
-  }
+    MPE_LOG_STATE_BEGIN(MPE_TESTSOME_ID,MPI_COMM_NULL);
 
-  returnVal = PMPI_Testsome( incount, array_of_requests, outcount, 
-                             array_of_indices, array_of_statuses );
+    if (incount > MPE_MAX_REQUESTS) {
+        fprintf( stderr, __FILE__":MPI_Testsome() - "
+                         "Array Index Out of Bound Exception !"
+                         "\t""incount(%d) > MPE_MAX_REQUESTS(%d)\n",
+                         incount, MPE_MAX_REQUESTS );
+        fflush( stderr );
+    }
 
-  if (incount <= MPE_MAX_REQUESTS) {
-      for (i=0; i < *outcount; i++) {
-          MPE_ProcessWaitTest( req[array_of_indices[i]], 
-                               &array_of_statuses[i], 
-                               "MPI_Testsome", state );
-      }
-  }
+    if (incount <= MPE_MAX_REQUESTS) {
+        for (i=0; i<incount; i++) 
+            req[i] = array_of_requests[i];
+    }
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+    returnVal = PMPI_Testsome( incount, array_of_requests, outcount, 
+                               array_of_indices, array_of_statuses );
 
-  return returnVal;
+    if (incount <= MPE_MAX_REQUESTS) {
+        for (i=0; i < *outcount; i++) {
+             MPE_ProcessWaitTest( req[array_of_indices[i]], 
+                                  &array_of_statuses[i], 
+                                  "MPI_Testsome", state );
+        }
+    }
+
+    MPE_LOG_STATE_END(MPI_COMM_NULL);
+
+#if defined( HAVE_MPI_STATUSES_IGNORE ) && ! defined( HAVE_ALLOCA )
+    if ( is_malloced == 1 )
+        free( array_statuses );
+#endif
+
+    return returnVal;
 }
 
 int   MPI_Type_commit( datatype )
@@ -3756,24 +3831,30 @@ int   MPI_Wait( request, status )
 MPI_Request * request;
 MPI_Status * status;
 {
-  int   returnVal;
-  MPE_LOG_STATE_DECL;
-  MPI_Request lreq = *request;
+    int   returnVal;
+    MPE_LOG_STATE_DECL;
+    MPI_Request lreq = *request;
 
 /*
     MPI_Wait - prototyping replacement for MPI_Wait
     Log the beginning and ending of the time spent in MPI_Wait calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_WAIT_ID,MPI_COMM_NULL);
+#if defined( HAVE_MPI_STATUS_IGNORE )
+    MPI_Status   tmp_status;
+    if ( status == MPI_STATUS_IGNORE )
+        status = &tmp_status;
+#endif
+
+    MPE_LOG_STATE_BEGIN(MPE_WAIT_ID,MPI_COMM_NULL);
   
-  returnVal = PMPI_Wait( request, status );
+    returnVal = PMPI_Wait( request, status );
 
-  MPE_ProcessWaitTest( lreq, status, "MPI_Wait", state );
+    MPE_ProcessWaitTest( lreq, status, "MPI_Wait", state );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+    MPE_LOG_STATE_END(MPI_COMM_NULL);
 
-  return returnVal;
+    return returnVal;
 }
 
 int  MPI_Waitall( count, array_of_requests, array_of_statuses )
@@ -3781,42 +3862,60 @@ int count;
 MPI_Request * array_of_requests;
 MPI_Status * array_of_statuses;
 {
-  int  returnVal;
-  int  i;
-  MPE_LOG_STATE_DECL;
+    int  returnVal;
+    int  i;
+    MPE_LOG_STATE_DECL;
 
 /*
     MPI_Waitall - prototyping replacement for MPI_Waitall
     Log the beginning and ending of the time spent in MPI_Waitall calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_WAITALL_ID,MPI_COMM_NULL);
-  
-  if (count > MPE_MAX_REQUESTS) {
-    fprintf( stderr, __FILE__":MPI_Waitall() - "
-                     "Array Index Out of Bound Exception !"
-                     "\t""count(%d) > MPE_MAX_REQUESTS(%d)\n",
-                     count, MPE_MAX_REQUESTS );
-    fflush( stderr );
-  }
+#if defined( HAVE_MPI_STATUSES_IGNORE )
+    int  is_malloced = 0;
+    if ( array_of_statuses == MPI_STATUSES_IGNORE ) {
+#if ! defined( HAVE_ALLOCA )
+        array_of_statuses = (MPI_Status *) malloc( count * sizeof(MPI_Status) );
+        is_malloced = 1;
+#else
+        array_of_statuses = (MPI_Status *) alloca( count * sizeof(MPI_Status) );
+        is_malloced = 0;
+#endif
+    }
+#endif
 
-  if (count <= MPE_MAX_REQUESTS) {
-      for (i=0; i<count; i++) 
-          req[i] = array_of_requests[i];
-  }
+    MPE_LOG_STATE_BEGIN(MPE_WAITALL_ID,MPI_COMM_NULL);
 
-  returnVal = PMPI_Waitall( count, array_of_requests, array_of_statuses );
+    if (count > MPE_MAX_REQUESTS) {
+        fprintf( stderr, __FILE__":MPI_Waitall() - "
+                         "Array Index Out of Bound Exception !"
+                         "\t""count(%d) > MPE_MAX_REQUESTS(%d)\n",
+                         count, MPE_MAX_REQUESTS );
+        fflush( stderr );
+    }
 
-  if (count <= MPE_MAX_REQUESTS) {
-      for (i=0; i < count; i++) {
-          MPE_ProcessWaitTest( req[i], &array_of_statuses[i], "MPI_Waitall",
-                               state );
-      }
-  }
+    if (count <= MPE_MAX_REQUESTS) {
+        for (i=0; i<count; i++) 
+            req[i] = array_of_requests[i];
+    }
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+    returnVal = PMPI_Waitall( count, array_of_requests, array_of_statuses );
 
-  return returnVal;
+    if (count <= MPE_MAX_REQUESTS) {
+        for (i=0; i < count; i++) {
+            MPE_ProcessWaitTest( req[i], &array_of_statuses[i],
+                                 "MPI_Waitall", state );
+        }
+    }
+
+    MPE_LOG_STATE_END(MPI_COMM_NULL);
+
+#if defined( HAVE_MPI_STATUSES_IGNORE ) && ! defined( HAVE_ALLOCA )
+    if ( is_malloced == 1 )
+        free( array_statuses );
+#endif
+
+    return returnVal;
 }
 
 int  MPI_Waitany( count, array_of_requests, index, status )
@@ -3825,92 +3924,120 @@ MPI_Request * array_of_requests;
 int * index;
 MPI_Status * status;
 {
-  int  returnVal;
-  MPE_LOG_STATE_DECL;
-  int i;
+    int  returnVal;
+    MPE_LOG_STATE_DECL;
+    int i;
 
 /*
     MPI_Waitany - prototyping replacement for MPI_Waitany
     Log the beginning and ending of the time spent in MPI_Waitany calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_WAITANY_ID,MPI_COMM_NULL);
+#if defined( HAVE_MPI_STATUS_IGNORE )
+    MPI_Status   tmp_status;
+    if ( status == MPI_STATUS_IGNORE )
+        status = &tmp_status;
+#endif
+
+    MPE_LOG_STATE_BEGIN(MPE_WAITANY_ID,MPI_COMM_NULL);
   
-  if (count > MPE_MAX_REQUESTS) {
-    fprintf( stderr, __FILE__":MPI_Waitany() - "
-                     "Array Index Out of Bound Exception !"
-                     "\t""count(%d) > MPE_MAX_REQUESTS(%d)\n",
-                     count, MPE_MAX_REQUESTS );
-    fflush( stderr );
-  }
+    if (count > MPE_MAX_REQUESTS) {
+        fprintf( stderr, __FILE__":MPI_Waitany() - "
+                         "Array Index Out of Bound Exception !"
+                         "\t""count(%d) > MPE_MAX_REQUESTS(%d)\n",
+                         count, MPE_MAX_REQUESTS );
+        fflush( stderr );
+    }
 
-  if (count <= MPE_MAX_REQUESTS) {
-      for (i=0; i<count; i++) 
-          req[i] = array_of_requests[i];
-  }
+    if (count <= MPE_MAX_REQUESTS) {
+        for (i=0; i<count; i++) 
+            req[i] = array_of_requests[i];
+    }
 
-  returnVal = PMPI_Waitany( count, array_of_requests, index, status );
+    returnVal = PMPI_Waitany( count, array_of_requests, index, status );
 
-  if (*index <= MPE_MAX_REQUESTS) {
-      MPE_ProcessWaitTest( req[*index], status, "MPI_Waitany", state );
-  }
-  else {
-    fprintf( stderr, __FILE__":MPI_Waitany() - "
-                     "Array Index Out of Bound Exception !"
-                     "\t""*index(%d) > MPE_MAX_REQUESTS(%d)\n",
-                     *index, MPE_MAX_REQUESTS );
-    fflush( stderr );
-  }
+    if (*index <= MPE_MAX_REQUESTS) {
+        MPE_ProcessWaitTest( req[*index], status, "MPI_Waitany", state );
+    }
+    else {
+        fprintf( stderr, __FILE__":MPI_Waitany() - "
+                         "Array Index Out of Bound Exception !"
+                         "\t""*index(%d) > MPE_MAX_REQUESTS(%d)\n",
+                         *index, MPE_MAX_REQUESTS );
+        fflush( stderr );
+    }
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+    MPE_LOG_STATE_END(MPI_COMM_NULL);
 
-  return returnVal;
+    return returnVal;
 }
 
-int  MPI_Waitsome( incount, array_of_requests, outcount, array_of_indices, array_of_statuses )
+int  MPI_Waitsome( incount, array_of_requests, outcount,
+                   array_of_indices, array_of_statuses )
 int incount;
 MPI_Request * array_of_requests;
 int * outcount;
 int * array_of_indices;
 MPI_Status * array_of_statuses;
 {
-  int  returnVal;
-  int  i;
-  MPE_LOG_STATE_DECL;
+    int  returnVal;
+    int  i;
+    MPE_LOG_STATE_DECL;
 
 /*
     MPI_Waitsome - prototyping replacement for MPI_Waitsome
     Log the beginning and ending of the time spent in MPI_Waitsome calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_WAITSOME_ID,MPI_COMM_NULL);
-  
-  if (incount > MPE_MAX_REQUESTS) {
-    fprintf( stderr, __FILE__":MPI_Waitsome() - "
-                     "Array Index Out of Bound Exception !"
-                     "\t""incount(%d) > MPE_MAX_REQUESTS(%d)\n",
-                     incount, MPE_MAX_REQUESTS );
-    fflush( stderr );
-  }
+#if defined( HAVE_MPI_STATUSES_IGNORE )
+    int  is_malloced = 0;
+    if ( array_of_statuses == MPI_STATUSES_IGNORE ) {
+#if ! defined( HAVE_ALLOCA )
+        array_of_statuses = (MPI_Status *) malloc( incount
+                                                 * sizeof(MPI_Status) );
+        is_malloced = 1;
+#else
+        array_of_statuses = (MPI_Status *) alloca( incount
+                                                 * sizeof(MPI_Status) );
+        is_malloced = 0;
+#endif
+    }
+#endif
 
-  if (incount <= MPE_MAX_REQUESTS) {
-      for (i=0; i<incount; i++) 
-          req[i] = array_of_requests[i];
-  }
+    MPE_LOG_STATE_BEGIN(MPE_WAITSOME_ID,MPI_COMM_NULL);
 
-  returnVal = PMPI_Waitsome( incount, array_of_requests, outcount, 
-                             array_of_indices, array_of_statuses );
+    if (incount > MPE_MAX_REQUESTS) {
+        fprintf( stderr, __FILE__":MPI_Waitsome() - "
+                         "Array Index Out of Bound Exception !"
+                         "\t""incount(%d) > MPE_MAX_REQUESTS(%d)\n",
+                         incount, MPE_MAX_REQUESTS );
+        fflush( stderr );
+    }
 
-  if (incount <= MPE_MAX_REQUESTS) {
-      for (i=0; i < *outcount; i++)
-          MPE_ProcessWaitTest( req[array_of_indices[i]],
-                               &array_of_statuses[i],
-                               "MPI_Waitsome", state );
-  }
+    if (incount <= MPE_MAX_REQUESTS) {
+        for (i=0; i<incount; i++) 
+            req[i] = array_of_requests[i];
+    }
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+    returnVal = PMPI_Waitsome( incount, array_of_requests, outcount, 
+                               array_of_indices, array_of_statuses );
 
-  return returnVal;
+    if (incount <= MPE_MAX_REQUESTS) {
+        for (i=0; i < *outcount; i++) {
+            MPE_ProcessWaitTest( req[array_of_indices[i]],
+                                 &array_of_statuses[i],
+                                 "MPI_Waitsome", state );
+        }
+    }
+
+    MPE_LOG_STATE_END(MPI_COMM_NULL);
+
+#if defined( HAVE_MPI_STATUSES_IGNORE ) && ! defined( HAVE_ALLOCA )
+    if ( is_malloced == 1 )
+        free( array_statuses );
+#endif
+
+    return returnVal;
 }
 
 int   MPI_Cart_coords( comm, rank, maxdims, coords )

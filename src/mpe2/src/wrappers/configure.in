@@ -214,6 +214,9 @@ AC_CHECK_HEADER( stdarg.h,
                  [AC_DEFINE( HAVE_STDARG_H, 1,
                              [Define if stdarg.h is available] )
                   havestdarg=1], , )
+
+AC_FUNC_ALLOCA
+
 dnl
 dnl  We need to build mpe with the shared library flags
 dnl  This should rely on the same approach used in the mpich configure,
@@ -680,6 +683,26 @@ fi
 if test "$mpe_link_ok" = "yes" ; then
     AC_DEFINE( HAVE_MPI_STATUS_IGNORE, 1,
                [Define if MPI_STATUS_IGNORE available] )
+fi
+
+dnl   Determine if MPI_STATUSES_IGNORE exists
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    AC_MSG_CHECKING( [for MPI_STATUSES_IGNORE] )
+    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, [
+              MPI_Status*     tmp_status;
+              tmp_status = MPI_STATUSES_IGNORE;
+                          ], ,
+              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+    AC_MSG_RESULT($mpe_link_ok)
+else
+    # All known impls, including MPICH, support STATUS_IGNORE
+    # (The MPICH support may have a few bugs, but it is close enough
+    # for our needs)
+    mpe_link_ok=yes
+fi
+if test "$mpe_link_ok" = "yes" ; then
+    AC_DEFINE( HAVE_MPI_STATUSES_IGNORE, 1,
+               [Define if MPI_STATUSES_IGNORE available] )
 fi
 
 AC_SUBST(MPI_IMPL)
