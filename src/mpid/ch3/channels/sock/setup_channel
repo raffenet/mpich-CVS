@@ -27,7 +27,7 @@ done
 #
 # Use the sock implementation found in the common directory
 #
-TOPLEVEL_SUBDIRS=src/mpid/common/sock
+TOPLEVEL_SUBDIRS="$TOPLEVEL_SUBDIRS src/mpid/common/sock"
 
 file=${master_top_srcdir}/src/mpid/common/sock/setup
 if test -f $file ; then
