@@ -19,6 +19,16 @@ http://www.mcs.anl.gov/mpi/mpich2 will also have information on
 bug fixes and new releases.  This README should be enough to get you
 started; more extensive intstallation and user guides are in progress.
 
+New since the last release (0.96, in January, 2004), besides a number of
+bug fixes, are a subset of the dynamic process functions, and improved
+functionality and performance in the one-sided operations.  There is
+also a simple parallel debugger based on gdb, usable for programs
+started by the mpd process manager (the default).  More information can
+be found at the end of this README under "Status of MPI-2 Features in
+MPICH2", in the CHANGES file in this directory, and in the RELEASE_NOTES
+file, where certain restriction are detailed.
+
+Windows users should see the file README.windows in this directory.	 
 
 Getting Started
 ===============
@@ -38,6 +48,8 @@ later, in the section "Alternative configurations".
       Python 2.2 or later (for the default MPD process manager)
       PyXML and an XML parser like expat (in order to use mpiexec with
       the MPD process manager)
+      A Fortran-90 compiler if you configure with --enable-f90 .  Only
+        MPI-2 "basic" support is provided at this time (no F90 module).  
 
     Configure will check for these prerequisites and try to work around
     deficiencies if possible.  (If you don't have Fortran, you will
@@ -310,7 +322,8 @@ shared-memory multiprocessors (SMPs) where you want to create all the
 processes on the same machine, and also for debugging, where it is often
 convenient to run all the processes on a single machine, since parallel
 performance is less important.  The forker version of mpiexec may not
-support all the standard options and arguments.
+support all the standard options and arguments.  It also does not yet
+support the dynamic process management functions.
 
 specify that you want to use forker by doing 
 
@@ -318,21 +331,11 @@ specify that you want to use forker by doing
 
 on the configure command line.
 
-remsh (not yet available)
--------------------------
-
-Remsh is a process manager that starts the processes via remote shell.
-It does not require any pre-existing user daemons, since it uses the
-remote shell daemon.  It does not provide as scalable a startup speed as
-MPD, and its version of mpiexec may not support all of the standard
-options and arguments.  It is useful if you are having difficulties with
-MPD, since it does not require a python installation.  This process 
-manager is still under development.
 
 
 Alternative channels and devices
 --------------------------------
-NOTE: The 0.97 release does not support any alternative channels.
+
 
 The communication mechanisms in MPICH2 are called "devices", paired with
 specific "channels".  The most thoroughly tested device is the "ch3"
@@ -416,7 +419,7 @@ Language bindings:
   --enable-f90 - Build the Fortran 90 bindings.  This is not on by
                  default, since these have not yet been tested. 
   --enable-cxx - Build the C++ bindings.  This has been tested with the
-                 Notre Dame C++ test suite.
+                 Notre Dame C++ test suite and some additional tests.
 
 Cross compilation:
 
@@ -428,7 +431,7 @@ Cross compilation:
                        CROSS_SIZEOF_INT=2
                  for all of the CROSS_xxx variables.  A list will
 		 be provided in later releases; for now, look at the 
-		 configure.in files.
+		 configure.in files.  This has not been completely tested.
 
 Error checking and reporting:
 
@@ -441,7 +444,7 @@ Error checking and reporting:
 		 configured to provide less detailed messages.  This
 		 may be deesirable on small systems, such as clusters
 		 built from game consoles or high-density massively
-		 parallel systems.
+		 parallel systems.  This is still under active development.
 
 Compilation options for development:
 
@@ -454,6 +457,7 @@ Compilation options for development:
                  timings of the internal routines.  We have used this
 		 to understand the performance of the internals of MPICH2.
 		 Wait for the next release for detailed instructions.
+                 This option has been temporarily disabled in 0.97.
 
 Status of MPI-2 Features in MPICH2
 ==================================
@@ -463,7 +467,7 @@ MPI-I/O, except for the external data representations (e.g., MPICH2 includes
     all of ROMIO)
 
 The active target remote memory access (one-sided) routines are working
-(MPI_Put, MPI_Get, and the related rountines.  The passive-target
+(MPI_Put, MPI_Get, and the related routines).  The passive-target
 routines (MPI_Win_Lock, MPI_Win_Unlock) are working according to the MPI
 standard, but may not perform as expected, since they will not complete
 until an MPI call is made at the target.
@@ -476,6 +480,5 @@ implemented.
 Name publishing is supported on shared file systems (other name publishers
 are under development)
 
-Routine not implemented include the dynamic process routines (MPI_Comm_spawn
-and friends); other routines, such as the intercommunicator extensions to the
+Some routines, such as the intercommunicator extensions to the
 collective routines, have not been extensively tested.
