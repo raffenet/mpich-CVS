@@ -16,10 +16,19 @@ $am_a = "";          # set to _a for automake style input
 $do_dependencies = 1;# set to 1 to attempt to generate dependency information
 $autoconf_args = ""; # Extra arguments for autoconf
 $do_sharedlibs  = 0; # set to 1 the generate targets for shared libraries
-$root_tags = 1;
-$local_tags = 0;
-# 
-$fixup_autoconf_cd = 1;
+$root_tags = 1;      # set to 1 to create a tags file in the root dir
+$local_tags = 0;     # set to 1 to create a tags file in the local dir
+$do_libmember = 0;   # set to 1 to generate library member rules in makefiles
+$do_docs = 1;        # set to 1 to generate documentation
+$convert_Ldir_to_relative = 1; # set to 1 to convert -Ldir to ../../lib 
+                     # relative to the rootdir
+$make_depend = "gcc -MM";  # Set to command to create dependency list
+$fixup_autoconf_cd = 0; # set to 1 to (partially) fixup configure for
+                        # pathnames that contain blanks
+#
+# Defaults for building MPICH
+$doc_heading = "MPI";
+%doc_extra   = ();  # for kinds html, man, latex
 #
 $fixup_for_timestamps = 1; # make is broken
 $SleepSlow = "sleep 1";
@@ -47,29 +56,34 @@ $quiet = 0;
 
 %libdir = ();
 #
-# Not yet good enough.  These are ext->o *ONLY*.
 # While simplemake doesn't support ext->other (e.g., .c to .s), 
 # the rules have been added.
-%extrules = ( 'c' => '$(C_COMPILE) -c $<', 
-	      'f' => '$(F77_COMPILE) -c $<',
-	      'cxx' => '$(CXX_COMPILE) -c $<',
-	      's' => '$(AS_COMPILE) $<',
-	      'f90' => '$(F90_COMPILE) -c $<',
+%extrules = ( 'c:o' => '$(C_COMPILE) -c $<', 
+	      'f:o' => '$(F77_COMPILE) -c $<',
+	      'cxx:o' => '$(CXX_COMPILE) -c $<',
+	      's:o' => '$(AS_COMPILE) $<',
+	      'f90:o' => '$(F90_COMPILE) -c $<',
+# Assembler *output* definitions
 	      'c:s' => '$(C_COMPILE) -S $<',
-	      'f:s' => '$(F77_COMPILE) -S $<'
-	     );
-# Similarly, but for shared-library versions
-%extrules_sh = ( 'c' => '$(C_COMPILE_SHL) -c $<
-	mv -f $*.o $*.lo', 
-		 'f' => '$(F77_COMPILE_SHL) -c $<',
-		 'cxx' => '$(CXX_COMPILE_SHL) -c $<',
-		 's' => '$(AS_COMPILE_SHL) $<',
-		 'f90' => '$(F77_COMPILE_SHL) -c $<',
-		 );
-# Similarly, but for profiling library versions.
+	      'f:s' => '$(F77_COMPILE) -S $<',
+# LaTeX definitions
+	      'tex:dvi' => 'latex $<',
+	      'dvi:ps' => 'dvips $<',
+	      'dvi:pdf' => 'dvipdfm $<',
+# Shared object definitions	      
+	      'c:lo' => '$(C_COMPILE_SHL) -c $<
+	@mv -f $*.o $*.lo', 
+	      'f:lo' => '$(F77_COMPILE_SHL) -c $<
+	@mv -f $*.o $*.lo',
+	      'cxx:lo' => '$(CXX_COMPILE_SHL) -c $<
+	@mv -f $*.o $*.lo',
+	      'f90:lo' => '$(F90_COMPILE_SHL) -c $<
+	@mv -f $*.o $*.lo',
 # This has an MPICH-specific definition that we should eventually generalize
-%extrules_pf = ( 'c' => '${C_COMPILE} -c -DMPICH_PROFILE_PMPI $< 
-	@mv -f $*.o $*.pf' );
+              'c:pf' => '${C_COMPILE} -c -DMPICH_PROFILE_PMPI $< 
+	@mv -f $*.o $*.pf'
+	     );
+
 # When we are building profiled versions, we use a separate ext rule
 %extrules_with_profile = %extrules;
 # PROFILE_DEF_MPI is set when needed to create the profiling libraries.
@@ -78,27 +92,26 @@ print "rule = $extrules_with_profile{'c'}\n" if $debug;
 
 # Definitions for each extension (these are the defs needed for each ext->o
 # extension)
-%extdef = ( 'c'   => 'CC          = @CC@
+%extdef = ( 'c:o'   => 'CC          = @CC@
 CFLAGS      = @CFLAGS@
 C_COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS)',
-	    'f'   => 'FC          = @FC@
+	    'f:o'   => 'FC          = @FC@
 FFLAGS      = @FFLAGS@
 F77_COMPILE = $(FC) $(FFLAGS)',
-	    'cxx' => 'CXX         = @CXX@
+	    'cxx:o' => 'CXX         = @CXX@
 CXXFLAGS    = @CXXFLAGS@
 CXX_COMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS)',
-	    's'   => 'AS          = @AS@
+	    's:o'   => 'AS          = @AS@
 AS_COMPILE  = $(AS)',
-	    'f90'   => 'F90          = @F90@
+	    'f90:o'   => 'F90          = @F90@
 F90FLAGS    = @F90FLAGS@
 F90_COMPILE = $(F90) $(F90FLAGS)',
-	   );
 # Similarly, but for shared-library versions
-%extdef_sh = ( 'c'   => 'CC_SHL      = @CC_SHL@
+	    'c:lo'   => 'CC_SHL      = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS)',
-	    'f'   => 'FC_SHL      = @FC_SHL@
+	    'f:lo'   => 'FC_SHL      = @FC_SHL@
 F77_COMPILE_SHL = $(FC_SHL) $(FFLAGS)',
-	    'cxx' => 'CXX_SHL     = @CXX_SHL@
+	    'cxx:lo' => 'CXX_SHL     = @CXX_SHL@
 CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS)'
 	   );
 #
@@ -111,8 +124,10 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS)'
 	      'cxx' => 'CXX_LINK    = $(CXX)',
 	      'f'   => 'F77_LINK    = $(FC)'
 	     );
+
 # Rules to build shared libraries (these are like programs
 # Question: Do we want a common rule or separate rules for each language?
+# These are out-of-date.
 %shlibdefs = ( 'c' =>   'C_LINK_SHL  = @C_LINK_SHL@',
 	       'cxx' => 'CXX_LINK_SHL= @CXX_LINK_SHL@',
 	       'f'   => 'F77_LINK_SHL= @F77_LINK_SHL@'
@@ -215,6 +230,7 @@ foreach $_ (@ARGV) {
     elsif (/-distrib/) {
 	# Turn off the maintenance targets in the distribution version
 	$maint_targets = 0;
+	$do_doc = 0;
 	# Use the robust sleep, not the fast perl version
 	$Sleep = $SleepSlow;
     }
@@ -223,6 +239,15 @@ foreach $_ (@ARGV) {
     }
     elsif (/-shared/) {
 	$do_sharedlibs = 1;
+    }
+    elsif (/-noshared/) {
+	$do_sharedlibs = 0;
+    }
+    elsif (/-docs/) {
+	$do_docs = 1;
+    }
+    elsif (/-nodocs/) {
+	$do_docs = 0;
     }
     elsif (/-vpath=?(.*)/) {
 	$val = $1;
@@ -260,12 +285,15 @@ foreach $_ (@ARGV) {
 
 # Check that gcc is available if we need it
 if ($do_dependencies) {
-    if (open (TFD, "gcc --version | 2>&1" )) {
-	close TFD;
+    if ($make_depend eq "gcc -MM") { 
+	if (open (TFD, "gcc --version | 2>&1" )) {
+	    close TFD;
+	}
+	else {
+	    $do_dependencies = 0;
+	}
     }
-    else {
-	$do_dependencies = 0;
-    }
+    # insert check here.  Perhaps we should try #include <stdio.h>?
 }
 
 # Routines
@@ -328,7 +356,7 @@ sub ReadMfile {
 	    $libloc = &GetLibLoc( $libname );
 	    $alltargets[$#alltargets+1] = "${libloc}lib$libname.a";
 	    if ($do_sharedlibs) {
-		$alltargets[$#alltargets+1] = "${libloc}lib$libname.so";
+		$alltargets[$#alltargets+1] = "${libloc}lib$libname.la";
 	    }
 	    # Keep track of source types
 	    &FindSrcTypes( $libsource );
@@ -500,6 +528,8 @@ sub WriteMfile {
 # routine, or an include of a set of base rules.
 #
 sub DefaultRules {
+    # SHELL must be in uppercase for Make to use it as the shell to
+    # execute commands with.
     print FD "SHELL       = \@SHELL\@$newline";
 
     # Library definitions
@@ -507,13 +537,15 @@ sub DefaultRules {
 	# Add ar, ranlib definitions if there are any library targets.
         print FD "AR          = \@AR\@$newline";
 	print FD "RANLIB      = \@RANLIB\@$newline";
-	if ($do_sharedlibs) {
-	    foreach $ext (keys(%ext_seen)) {
-		if (defined($shlibdefs{$ext})) {
-		    print FD "$shlibdefs{$ext}$newline";
-		}
-	    }
-	}
+# Replace this with a block to create the actual shared library (.so), 
+# not just the archive of sharable objects (.la)	
+# 	if ($do_sharedlibs) {
+# 	    foreach $ext (keys(%ext_seen)) {
+# 		if (defined($shlibdefs{$ext})) {
+# 		    print FD "$shlibdefs{$ext}$newline";
+# 		}
+# 	    }
+# 	}
     }
     if (scalar(%install_files)) { 
 	print FD "INSTALL     = \@INSTALL\@$newline";
@@ -572,12 +604,14 @@ sub DefaultRules {
 
     # Definitions for each possible program type seen
     foreach $ext (keys(%ext_seen)) {
-	print FD "$extdef{$ext}$newline";
+	$extkey = "$ext:o";
+	print FD "$extdef{$extkey}$newline";
 	if (defined($pgmlinktypes{$ext})) {
 	    print FD "$progdefs{$ext}$newline";
 	}
-	if ($do_sharedlibs) { 
-	    print FD "$extdef_sh{$ext}$newline";
+	if ($do_sharedlibs) {
+	    $extkey = "$ext:lo";
+	    print FD "$extdef{$extkey}$newline";
 	}
     }
     print FD "$newline";
@@ -617,15 +651,18 @@ sub DefaultRules {
 	    print FD "\t$extrules_with_profile{$ext}$newline";
 	}
 	else {
-	    print FD "\t$extrules{$ext}$newline";
+	    $extkey = "$ext:o";
+	    print FD "\t$extrules{$extkey}$newline";
 	}
 	if ($do_sharedlibs) {
+	    $extkey = "$ext:lo";
 	    print FD ".$ext.lo:$newline";
-	    print FD "\t$extrules_sh{$ext}$newline";
+	    print FD "\t$extrules{$extkey}$newline";
 	}
 	if ($found_profilelib && $ext eq "c" && $do_profilelibs) {
+	    $extkey = "$ext:pf";
 	    print FD ".c.pf:$newline";
-	    print FD "\t$extrules_pf{$ext}$newline";
+	    print FD "\t$extrules{$extkey}$newline";
 	}
     }
 
@@ -702,7 +739,16 @@ sub DefaultRules {
 # extensions and simpler handling of rules (like adding .F and .f90 )
 sub FindSrcTypes {
     $source = $_[0];
-    foreach $file (split(/\s\s*/,$source)) {
+    $files = "";
+    foreach $sym (split(/\s\s*/,$source)) {
+	if (defined($makevars{$sym})) {
+	    $files .= " $makevars{$sym}";
+	}
+	else {
+	    $files .= " $sym";
+	}
+    }
+    foreach $file (split(/\s\s*/,$files)) {
 	($name,$ext) = split('\.',$file);
 	$ext_seen{$ext} = 1;
     }
@@ -716,7 +762,7 @@ sub SaveSrcNames {
     $source = $_[0];
     foreach $file (split(/\s\s*/,$source)) {
 	($name,$ext) = split( '\.',$file);
-	if (defined($extrules{$ext})) {
+	if (defined($extrules{"$ext:o"})) {
 	    $regular_sources .= " $file";
 	}
 	elsif ($ext eq "h") {
@@ -873,6 +919,8 @@ sub RecursiveOp {
 		$subdirs_has_autoconf = 1;
 	    }	    
         }
+	# We may also want to check if subdirs is *only* autoconf; 
+	# if not, we don't need the -
 	if ($subdirs_has_autoconf) {
 	    # Add a - incase there is a problem
           print FD " - ; do \\$newline";
@@ -926,7 +974,10 @@ sub LookForSuffixes {
     while ($line =~ /^[^\.]*\.(\w*)\s*(.*)$/) {
 	$suffix = $1;
 	$line   = $2;
-	if (defined($extdef{$suffix})) {
+	# For now, only check for suffixes that lead to .o files.
+	# Later we can check the keys of extdef to see if they
+	# match /$ext:.*/
+	if (defined($extdef{"$suffix:o"})) {  
 	    $ext_seen{$suffix} = 1;
 	}
     }
@@ -1016,7 +1067,6 @@ sub TargetClean {
     $rmfile = "";
     $lcurdir = "$curdir";
     $lcurdir =~ s/\/$//;
-    #print "|$lcurdir|\n";
     if (defined($autoconf_files_by_dir{$lcurdir})) {
 	$rmfile = $autoconf_files_by_dir{$lcurdir};
 	print FD "\t-rm -f $rmfile$newline";
@@ -1043,25 +1093,52 @@ sub TargetClean {
 #
 # ===========================================================================
 # Libraries
+#
+# We want to generate either a generic "update library from object files"
+# or "update library member" for makes that support that feature (this 
+# is normally used only for the maintenance target).
+
+#
+# LibraryBuild ( libname, libloc, libfiles, lib extension, member extension )
+# Not quite right.  Need to include the update command as well as ways
+# to handle the "special extensions", both for the library (e.g., .a vs. .la)
+# and members (e.g., .o vs .pf)
+sub LibraryBuild {
+    $libname = $_[0];
+    $libloc  = $_[1];
+    $sourcefiles = $_[2];
+    $libext = $_[3];
+    $memext = $_[4];
+    if (!$dolib_member) {
+	&print_make_line( FD, "${libloc}lib$libname.$libext: " );
+    }
+    foreach $sourcefile (split(/\s\s*/,$sourcefiles)) {
+	$sourcefile =~ /(.*)\.([^\.]*)/;
+	$obj = "$1.$memext";
+	$ext = $2;
+	if (!defined($extrules{"$ext:o"})) { 
+	    print STDERR "Unknown extension $ext for $sourcefile\n";
+	}
+	if ($dolib_member) {
+	    &print_make_line( FD, "${libloc}lib$libname.$libext($obj): $obj" );
+	    &print_make_endline( FD );
+	    print FD "\t\${AR} cr ${libloc}lib$libname.$libext \$?$newline";
+	}
+	else {
+	    &print_make_line( FD, "$obj " );
+	}
+    }
+    if (!$dolib_member) {
+        &print_make_endline( FD );
+        print FD "\t\${AR} cr ${libloc}lib$libname.$libext \$?$newline";
+    }
+}
+
 sub TargetLibraries {
     foreach $lib (keys(%libraries)) {
 	$libloc = &GetLibLoc( $lib );
-	&print_make_line( FD, "${libloc}lib$lib.a: " );
-        foreach $sourcefile (split(/\s\s*/,&ExpandMakeVars($libraries{$lib}))) {
-            $obj = $sourcefile;
-            # Convert to object file
-	    $ext = $sourcefile;
-	    $ext =~ s/^.*\.//g;
-	    if (defined($extrules{$ext})) {
-		$obj =~ s/\.$ext/\.o/g;
-	    }
-	    else {
-		print "Unknown extension $ext for $sourcefile\n";
-	    }
-	    &print_make_line( FD, "$obj " );
-        }
-	&print_make_endline( FD );
-        print FD "\t\${AR} cr ${libloc}lib$lib.a \$?$newline";
+	$sourcefiles = &ExpandMakeVars($libraries{$lib});
+	&LibraryBuild( $lib, $libloc, $sourcefiles, "a", "o" );
         if ($ranliblib) { 
 	    print FD "\t\${RANLIB} ${libloc}lib$lib.a$newline"; 
 	}
@@ -1081,14 +1158,16 @@ sub TargetProfileLibraries {
     foreach $lib (keys(%profile_libraries)) {
 	$proflib_name = $profile_libraries{$lib};
 	$libloc = &GetLibLoc( $lib );
+	$sourcefiles = &ExpandMakeVars($libraries{$lib});
+#	&LibraryBuild( $proflib_name, $libloc, $sourcefiles, "a", "pf" );
 	&print_make_line( FD, "${libloc}lib$proflib_name.a: " );
-        foreach $sourcefile (split(/\s\s*/,&ExpandMakeVars($libraries{$lib}))) {
+        foreach $sourcefile (split(/\s\s*/,$sourcefiles)) {
 	    $found_source_files = 1;
             $obj = $sourcefile;
             # Convert to object file
 	    $ext = $sourcefile;
 	    $ext =~ s/^.*\.//g;
-	    if (defined($extrules{$ext})) {
+	    if (defined($extrules{"$ext:o"})) {
 		$obj =~ s/\.$ext/\.pf/g;
 	    }
 	    else {
@@ -1115,22 +1194,10 @@ sub TargetProfileLibraries {
 sub TargetSharedLibraries {
     foreach $lib (keys(%libraries)) {
 	$libloc = &GetLibLoc( $lib );
-        &print_make_line( FD, "${libloc}lib$lib.so: " );
-        foreach $sourcefile (split(/\s\s*/,&ExpandMakeVars($libraries{$lib}))) {
-            $obj = $sourcefile;
-            # Convert to object file
-	    $ext = $sourcefile;
-	    $ext =~ s/^.*\.//g;
-	    if (defined($extrules{$ext})) {
-		$obj =~ s/\.$ext/\.lo/g;
-	    }
-	    else {
-		print "Unknown extension $ext for $sourcefile\n";
-	    }
-	    &print_make_line( FD, "$obj " );
-        }
-        &print_make_endline( FD );
-        print FD "\t\${C_LINK_SHL} -o ${libloc}lib$lib.so \$?$newline";
+	$sourcefiles = &ExpandMakeVars($libraries{$lib});
+	&LibraryBuild( $lib, $libloc, $sourcefiles, "la", "lo" );
+	# no ranlib step here because we can't "link" the shared library
+	# until all members are added.
     }
 }
 
@@ -1145,7 +1212,7 @@ sub TargetPrograms {
             # Convert to object file
 	    $ext = $sourcefile;
 	    $ext =~ s/^.*\.//g;
-	    if (defined($extrules{$ext})) {
+	    if (defined($extrules{"$ext:o"})) {
 		$obj =~ s/\.$ext/\.o/g;
 	    }
 	    else {
@@ -1155,7 +1222,7 @@ sub TargetPrograms {
 	    $pgmobjs .= "$obj ";
         }
 	# Add dependencies on libraries if requested
-	if (1) {
+	if ($convert_Ldir_to_relative) {
 	    # convert -L dir -lname into dir/libname.a
 	    $libdep=$pgm_ldadd{$pgm};
 	    $libdep =~ s/-L\s*([\w\.\/]*)\s*-l(\w*)//;
@@ -1218,6 +1285,7 @@ sub TargetTags {
 }
 
 sub TargetDocs {
+    if (! $do_docs) { return; }
     foreach $kind (keys(%docsrc)) {
 	print FD "$kind:$newline";
 	if (defined($docdir{$kind})) { 
@@ -1226,13 +1294,14 @@ sub TargetDocs {
 	else {
 	    $loc = "";
 	}
-	print FD "\tdoctext -$kind $loc -heading MPI -quotefmt \\$newline\t";
+	print FD "\tdoctext -$kind $loc -heading $doc_heading -quotefmt $doc_extra{$kind}\\$newline\t";
 	# Eventually need to add default files (e.g., fortnotes, errnotes)
 	# Web version needs indexdir, defn, mapref, ...
 	&print_make_setpos( 8 );
 	foreach $sourcefile (split(/\s\s*/,$docsrc{$kind})) {
 	    &print_make_line( FD, "$sourcefile " );
-	    $pgmobjs .= "$sourcefile ";
+	    # Why add sourcefile to pgmobjs?
+	    #$pgmobjs .= "$sourcefile ";
         }
 	&print_make_endline( FD );
     }
@@ -1332,8 +1401,8 @@ sub AddDependency {
     else {
 	$include = $include_list;
     }
-    print "Trying gcc -MM $include $target\n" if $debug;
-    $cmdline = "gcc -MM $include $target";
+    print "Trying $make_depend $include $target\n" if $debug;
+    $cmdline = "$make_depend $include $target";
     if (! $debug) {
 	$cmdline .= " 2>/dev/null";
     }
@@ -1341,7 +1410,14 @@ sub AddDependency {
     print "Depend commandline = $cmdline\n" if $debug;
     open( DEPFD, $cmdline ) || return;
     while (<DEPFD>) {
-	print FD $_;
+	# For derived object files like lo and pf, add these
+	if ($do_profilelibs && $found_profilelib) {
+	    s/^(.*)\.o:(.*)/\1.o \1.pf:\2/;
+	}
+	if ($do_sharedlibs) {
+	    s/^(.*)\.o(.*)/\1.o \1.lo\2/;
+	}
+	print FD $_ ;
     }
     close( DEPFD );
 }
@@ -1470,6 +1546,7 @@ sub print_make_longline {
 }
 
 # Eventually we will use this to generate the profiling targets.
+#### THIS IS DEAD CODE!! DO NOT USE!!!
 sub ProfileTargets {
     print FD "\
 # Instead, we define the PMPI_OBJECTS as having suffix pf:\
@@ -1494,3 +1571,9 @@ ${libbuild_dir}/lib\@PMPILIBNAME\@.a: \${PMPI_OBJECTS}\
         \@mv -f \$*.o \$*.pf\
 ";
 }
+#
+#
+# ToDo
+# Shoule we add a target to strip debugging information from the object files?
+# For example, strip -S *.o .  Ths usually isn't necessary if -g is not
+# selected when building the object files.
