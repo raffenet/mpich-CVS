@@ -103,8 +103,9 @@ void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		rreq->status.count = 0;
 		if (rreq->ch3.recv_data_sz > 0)
 		{
+		     /* force read of extra data */
 		    rreq->ch3.segment_first = 0;
-		    rreq->ch3.segment_size = 0; /* force read of extra data */
+		    rreq->ch3.segment_size = 0;
 		    rc = MPIDI_CH3U_Request_load_recv_iov(rreq);
 		    if (rc != MPI_SUCCESS)
 		    {
@@ -116,6 +117,8 @@ void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		}
 		else
 		{
+		    /* mark data transfer as complete adn decrment CC */
+		    rreq->ch3.iov_count = 0;
 		    MPIDI_CH3U_Request_complete(rreq);
 		}
 	    }
@@ -177,6 +180,8 @@ void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPID_Request * sreq;
 	    
 	    MPID_Request_get_ptr(esa_pkt->sender_req_id, sreq);
+	    /* decrement CC (but don't mark data transfer as complete since the
+               transfer could still be in progress) */
 	    MPIDI_CH3U_Request_complete(sreq);
 	    break;
 	}
@@ -207,7 +212,7 @@ void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		
 		MPIDI_DBG_PRINTF((30, FCNAME, "posted request found"));
 
-		/* XXX: What if the receive user buffer is not big enough to
+		/* FIXME: What if the receive user buffer is not big enough to
                    hold the data about to be cleared for sending? */
 		
 		MPIDI_DBG_PRINTF((30, FCNAME, "sending rndv CTS packet"));
@@ -418,6 +423,8 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 			  "completion counter",
 			  (found ? "posted request found" :
 			   "unexpected request allocated")));
+	/* mark data transfer as complete adn decrment CC */
+	rreq->ch3.iov_count = 0;
 	MPIDI_CH3U_Request_complete(rreq);
 	goto fn_exit;
     }

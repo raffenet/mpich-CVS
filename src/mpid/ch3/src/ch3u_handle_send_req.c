@@ -31,8 +31,9 @@ void MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
     {
 	case MPIDI_CH3_CA_COMPLETE:
 	{
-	    MPIDI_CH3U_Request_complete(sreq);
+	    /* mark data transfer as complete adn decrment CC */
 	    sreq->ch3.iov_count = 0;
+	    MPIDI_CH3U_Request_complete(sreq);
 	    break;
 	}
 	
