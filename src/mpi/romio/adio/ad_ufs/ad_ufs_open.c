@@ -43,7 +43,9 @@ void ADIOI_UFS_Open(ADIO_File fd, int *error_code)
 #ifdef MPICH2
 	if (errno == ENAMETOOLONG)
 	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_BAD_FILE, "**filenamelong", "**filenamelong %s %d", fd->filename, strlen(fd->filename) );
-	else if (errno == ENOENT || errno == ENOTDIR || errno == ELOOP)
+	else if (errno == ENOENT)
+	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_NO_SUCH_FILE, "**filenoexist", "**filenoexist %s", fd->filename );
+	else if (errno == ENOTDIR || errno == ELOOP)
 	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_BAD_FILE, "**filenamedir", "**filenamedir %s", fd->filename );
 	else if (errno == EACCES) {
 	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ACCESS, "**fileaccess", "**fileaccess %s", 
