@@ -31,7 +31,8 @@ import viewer.common.Parameters;
 
 public class CanvasTime extends ScrollableObject
 {
-    private static final int   MIN_VISIBLE_ROW_COUNT = 2;
+    private static final int     MIN_VISIBLE_ROW_COUNT = 2;
+    private static final boolean INCRE_STARTTIME_ORDER = true;
 
     private TreeTrunk          treetrunk;
     private YaxisMaps          y_maps;
@@ -133,19 +134,22 @@ public class CanvasTime extends ScrollableObject
 
     protected void initializeAllOffImages( final TimeBoundingBox imgs_times )
     {
+        boolean isScrolling;
+
         if ( Profile.isActive() )
             zero_time = new Date();
 
         if ( root_window == null )
             root_window  = (Frame) SwingUtilities.windowForComponent( this );
-        // Read the SLOG-2 TreeNodes within TimeFrame into memory
-        Routines.setAllCursorsToWait( root_window );
         if ( timeframe4imgs == null )
             timeframe4imgs = new TimeBoundingBox( imgs_times );
-        treetrunk.updateTimeWindow( timeframe4imgs, imgs_times );
-        num_rows         = tree_view.getRowCount();
-        row_height       = tree_view.getRowHeight();
-        nesting_stacks.initialize();
+        // Read the SLOG-2 TreeNodes within TimeFrame into memory
+        Routines.setAllCursorsToWait( root_window );
+        num_rows    = tree_view.getRowCount();
+        row_height  = tree_view.getRowHeight();
+        isScrolling = ( treetrunk.updateTimeWindow( timeframe4imgs, imgs_times )
+                      == TreeTrunk.TIMEBOX_SCROLLING );
+        nesting_stacks.initialize( isScrolling );
 
         if ( Profile.isActive() )
             init_time = new Date();
@@ -239,27 +243,40 @@ public class CanvasTime extends ScrollableObject
             Iterator dobjs;
             Drawable dobj;
 
+            // Compute the NestingFactor of Nestable Real Drawables and Shadows
+            dobjs = treetrunk.iteratorOfAllDrawables( timebounds,
+                                                      INCRE_STARTTIME_ORDER,
+                                                      true );
+            while ( dobjs.hasNext() ) {
+                dobj = (Drawable) dobjs.next();
+                dobj.setStateNesting( coord_xform, map_line2row,
+                                      nesting_stacks );
+            }
+
             int N_nestable = 0, N_nestless = 0;
             int N_nestable_drawn = 0, N_nestless_drawn = 0;
             
-            // Draw Nestable Drawables
-            dobjs = treetrunk.iteratorOfDrawables( timebounds, true, true );
+            // Draw Nestable Real Drawables
+            dobjs = treetrunk.iteratorOfRealDrawables( timebounds,
+                                                       INCRE_STARTTIME_ORDER,
+                                                       true );
             while ( dobjs.hasNext() ) {
                 dobj = (Drawable) dobjs.next();
                 N_nestable_drawn +=
-                dobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
-                                   drawn_boxes, nesting_stacks );
+                dobj.drawOnCanvas( offGraphics, coord_xform,
+                                   map_line2row, drawn_boxes );
                 N_nestable += dobj.getNumOfPrimitives();
             }
 
             // Draw Nestable Shadows
             sobjs = treetrunk.iteratorOfLowestFloorShadows( timebounds,
-                                                            true, true );
+                                                         INCRE_STARTTIME_ORDER,
+                                                         true );
             while ( sobjs.hasNext() ) {
                 sobj = (Shadow) sobjs.next();
                 N_nestable_drawn +=
-                sobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
-                                   drawn_boxes, nesting_stacks );
+                sobj.drawOnCanvas( offGraphics, coord_xform,
+                                   map_line2row, drawn_boxes );
                 N_nestable += sobj.getNumOfPrimitives();
             }
 
@@ -268,23 +285,28 @@ public class CanvasTime extends ScrollableObject
                                     Parameters.ARROW_ANTIALIASING.toValue() );
 
             // Draw Nestless Shadows
+            /*
             sobjs = treetrunk.iteratorOfLowestFloorShadows( timebounds,
-                                                            true, false );
+                                                         INCRE_STARTTIME_ORDER,
+                                                         false );
             while ( sobjs.hasNext() ) {
                 sobj = (Shadow) sobjs.next();
                 N_nestless_drawn +=
-                sobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
-                                   drawn_boxes, nesting_stacks );
+                sobj.drawOnCanvas( offGraphics, coord_xform,
+                                   map_line2row, drawn_boxes );
                 N_nestless += sobj.getNumOfPrimitives();
             }
+            */
 
-            // Draw Nestless Drawables
-            dobjs = treetrunk.iteratorOfDrawables( timebounds, true, false );
+            // Draw all Nestless Real Drawables and Shadows
+            dobjs = treetrunk.iteratorOfAllDrawables( timebounds,
+                                                      INCRE_STARTTIME_ORDER,
+                                                      false );
             while ( dobjs.hasNext() ) {
                 dobj = (Drawable) dobjs.next(); 
                 N_nestless_drawn +=
-                dobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
-                                   drawn_boxes, nesting_stacks );
+                dobj.drawOnCanvas( offGraphics, coord_xform,
+                                   map_line2row, drawn_boxes );
                 N_nestless += dobj.getNumOfPrimitives();
             }
 
@@ -329,9 +351,10 @@ public class CanvasTime extends ScrollableObject
         Drawable dobj;
         Drawable clicked_dobj;
 
-        // Search Nestless Drawables
-        dobjs = treetrunk.iteratorOfDrawables( vport_timeframe,
-                                               false, false );
+        // Search Nestless Drawables in reverse drawing order
+        dobjs = treetrunk.iteratorOfAllDrawables( vport_timeframe,
+                                                  !INCRE_STARTTIME_ORDER,
+                                                  false );
         while ( dobjs.hasNext() ) {
             dobj = (Drawable) dobjs.next();
             clicked_dobj = dobj.getDrawableWithPixel( coord_xform,
@@ -346,9 +369,11 @@ public class CanvasTime extends ScrollableObject
             }
         }
 
-        // Search Nestless Shadows
+        // Search Nestless Shadows in reverse drawing order
+        /*
         sobjs = treetrunk.iteratorOfLowestFloorShadows( vport_timeframe,
-                                                        false, false );
+                                                        !INCRE_STARTTIME_ORDER,
+                                                        false );
         while ( sobjs.hasNext() ) {
             sobj = (Shadow) sobjs.next();
             clicked_dobj = sobj.getDrawableWithPixel( coord_xform,
@@ -362,30 +387,33 @@ public class CanvasTime extends ScrollableObject
                                                    clicked_dobj );
             }
         }
-
-        // Search Nestable Drawables
-        dobjs = treetrunk.iteratorOfDrawables( vport_timeframe,
-                                               false, true );
-        while ( dobjs.hasNext() ) {
-            dobj = (Drawable) dobjs.next();
-            clicked_dobj = dobj.getDrawableWithPixel( coord_xform,
-                                                      map_line2row,
-                                                      local_click );
-            if ( clicked_dobj != null ) {
-                return  new InfoDialogForDrawable( root_window,
-                                                   clicked_time,
-                                                   map_line2treeleaf,
-                                                   y_colnames,
-                                                   clicked_dobj );
-            }
-        }
+        */
         
-        // Search Nestable Shadows
+        // Search Nestable Shadows in reverse drawing order
         sobjs = treetrunk.iteratorOfLowestFloorShadows( vport_timeframe,
-                                                        false, true );
+                                                        !INCRE_STARTTIME_ORDER,
+                                                        true );
         while ( sobjs.hasNext() ) {
             sobj = (Shadow) sobjs.next();
             clicked_dobj = sobj.getDrawableWithPixel( coord_xform,
+                                                      map_line2row,
+                                                      local_click );
+            if ( clicked_dobj != null ) {
+                return  new InfoDialogForDrawable( root_window,
+                                                   clicked_time,
+                                                   map_line2treeleaf,
+                                                   y_colnames,
+                                                   clicked_dobj );
+            }
+        }
+
+        // Search Nestable Drawables in reverse drawing order
+        dobjs = treetrunk.iteratorOfRealDrawables( vport_timeframe,
+                                                   !INCRE_STARTTIME_ORDER,
+                                                   true );
+        while ( dobjs.hasNext() ) {
+            dobj = (Drawable) dobjs.next();
+            clicked_dobj = dobj.getDrawableWithPixel( coord_xform,
                                                       map_line2row,
                                                       local_click );
             if ( clicked_dobj != null ) {

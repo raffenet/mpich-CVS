@@ -287,8 +287,8 @@ public abstract class ScrollableObject extends JComponent
             setImagesInitTimeBounds();
 
             initializeAllOffImages( tImages_all );
-            // for ( int img_idx = 0; img_idx < NumImages; img_idx++ )
-            for ( int img_idx = NumImages-1 ; img_idx >= 0 ; img_idx-- )
+            for ( int img_idx = 0; img_idx < NumImages; img_idx++ )
+            // for ( int img_idx = NumImages-1 ; img_idx >= 0 ; img_idx-- )
                 drawOneOffImage( offscreenImages[ img_idx ],
                                  tImages[ img_idx ] );
             finalizeAllOffImages( tImages_all );
@@ -393,8 +393,8 @@ public abstract class ScrollableObject extends JComponent
                 setImagesInitTimeBounds();
 
                 initializeAllOffImages( tImages_all );
-                // for ( img_idx = 0; img_idx < NumImages; img_idx++ )
-                for ( img_idx = NumImages-1; img_idx >=0; img_idx-- )
+                for ( img_idx = 0; img_idx < NumImages; img_idx++ )
+                // for ( img_idx = NumImages-1; img_idx >=0; img_idx-- )
                     drawOneOffImage( offscreenImages[ img_idx ],
                                      tImages[ img_idx ] );
                 finalizeAllOffImages( tImages_all );
@@ -586,7 +586,8 @@ public abstract class ScrollableObject extends JComponent
         for ( int idx = 0; idx < NumImages; idx++ ) {
             drawOneOffImage( offscreenImages[ img_idx ],
                              tImages[ img_idx ] );
-            img_idx = getNearPastImageIndex( img_idx );
+            // img_idx = getNearPastImageIndex( img_idx );
+            img_idx = getNearFutureImageIndex( img_idx );
         }
         finalizeAllOffImages( tImages_all );
  

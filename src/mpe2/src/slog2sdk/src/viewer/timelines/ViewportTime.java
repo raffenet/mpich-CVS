@@ -19,6 +19,7 @@ import javax.swing.*;
 import javax.swing.event.*;
 
 import base.drawable.TimeBoundingBox;
+import viewer.common.Parameters;
 
 public class ViewportTime extends JViewport
                           implements TimeListener,
@@ -438,6 +439,7 @@ public class ViewportTime extends JViewport
             mousePressed(), mouseDragged() & mouseReleased()
         */
         private double                    mouse_pressed_time;
+        private int                       mouse_pressed_Xloc;
 
         public void mousePressed( MouseEvent mouse_evt )
         {
@@ -458,6 +460,7 @@ public class ViewportTime extends JViewport
                 this.repaint();
             }
             mouse_pressed_time = click_time;
+            mouse_pressed_Xloc = vport_click.x;
         }
 
         public void mouseDragged( MouseEvent mouse_evt )
@@ -502,12 +505,14 @@ public class ViewportTime extends JViewport
                              + zoom_timebox.getLatestTime() ) / 2.0d;
                 time_model.setTimeZoomFocus( focus_time );
                 this.repaint();
-                if ( zoom_timebox.getDuration() > 0.0d ) {
+                // if ( zoom_timebox.getDuration() > 0.0d ) {
+                if (    Math.abs(vport_click.x - mouse_pressed_Xloc)
+                     >= Parameters.MIN_WIDTH_TO_DRAG ) {
                     time_model.zoomRapidly( zoom_timebox.getEarliestTime(),
                                             zoom_timebox.getDuration() );
-                    zoom_timebox.setZeroDuration( focus_time );
-                    this.repaint();
                 }
+                zoom_timebox.setZeroDuration( focus_time );
+                this.repaint();
                 if ( toolbar != null )
                     toolbar.resetZoomButtons();
             }
@@ -516,19 +521,21 @@ public class ViewportTime extends JViewport
                     info_timebox.setLatestTime( click_time );
                 else
                     info_timebox.setEarliestTime( click_time );
-                if ( info_timebox.getDuration() == 0.0d ) {
+                // if ( info_timebox.getDuration() > 0.0d ) {
+                if (    Math.abs(vport_click.x - mouse_pressed_Xloc)
+                     >= Parameters.MIN_WIDTH_TO_DRAG ) {
+                    Frame  frame;
+                    frame = (Frame) SwingUtilities.windowForComponent( this );
+                    info_popup = new InfoDialogForDuration( frame,
+                                                            info_timebox );
+                }
+                else {
                     scrollable = (ScrollableObject) view_img;
                     view_click = SwingUtilities.convertPoint( this,
                                                               vport_click,
                                                               scrollable );
                     info_popup = scrollable.getPropertyAt( view_click,
                                                            vport_timebox );
-                }
-                else {
-                    Frame  frame;
-                    frame = (Frame) SwingUtilities.windowForComponent( this );
-                    info_popup = new InfoDialogForDuration( frame,
-                                                            info_timebox );
                 }
                 global_click = new Point( vport_click );
                 SwingUtilities.convertPointToScreen( global_click, this );

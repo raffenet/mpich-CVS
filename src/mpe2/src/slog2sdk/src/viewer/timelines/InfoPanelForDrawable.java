@@ -55,39 +55,64 @@ public class InfoPanelForDrawable extends JPanel
 
             Primitive  prime  = (Primitive) dobj;
 
-            Coord[]      coords = prime.getVertices();
-            int          coords_length = coords.length;
+            Coord[]        coords = prime.getVertices();
+            int            coords_length = coords.length;
 
-            Coord        vertex;
-            Integer      lineID;
-            TreeNode[]   nodes;
-            StringBuffer linebuf;
-            StringBuffer textbuf = new StringBuffer();
-            int          num_cols = 0, num_rows = 3;
-
-            double duration = coords[coords_length-1].time - coords[0].time;
-            linebuf = new StringBuffer();
-            linebuf.append( "duration = " + fmt.format(duration) );
-            num_cols = linebuf.length();
-            textbuf.append( linebuf.toString() );
-            for ( int idx = 0; idx < coords_length; idx++ ) {
-                textbuf.append( "\n" );
-                linebuf = new StringBuffer( "[" + idx + "]: " );
-                vertex  = coords[idx];
-                lineID  = new Integer(vertex.lineID);
-                nodes   = ( (YaxisTreeNode) map_line2treenodes.get( lineID ) )
-                          .getPath();
-                linebuf.append( "time = " + fmt.format(vertex.time) );
-                for ( int ii = 1; ii < nodes.length; ii++ )
-                    linebuf.append( ", " + y_colnames[ii-1]
-                                  + " = " + nodes[ ii ] );
-                if ( num_cols < linebuf.length() )
-                    num_cols = linebuf.length();
-                textbuf.append( linebuf.toString() );
-            }
+            Coord          vertex;
+            Integer        lineID;
+            YaxisTreeNode  node;
+            TreeNode[]     nodes;
+            StringBuffer   linebuf;
+            StringBuffer   textbuf = new StringBuffer();
+            int            num_cols, num_rows;
+            double         duration;
+            int            idx, ii;
 
             if ( prime instanceof Shadow ) {
+                num_cols = 0;
+                num_rows = 3;
                 Shadow shade = (Shadow) prime;
+                duration = shade.getLatestTime() - shade.getEarliestTime();
+                linebuf = new StringBuffer();
+                linebuf.append( "duration = (max)" + fmt.format(duration) );
+                duration = coords[coords_length-1].time - coords[0].time;
+                linebuf.append( ", (ave)" + fmt.format(duration) );
+                num_cols = linebuf.length();
+                textbuf.append( linebuf.toString() );
+                    idx     = 0;
+                    textbuf.append( "\n" );
+                    linebuf = new StringBuffer( "[" + idx + "]: " );
+                    vertex  = coords[idx];
+                    lineID  = new Integer(vertex.lineID);
+                    node    = (YaxisTreeNode) map_line2treenodes.get( lineID );
+                    nodes   = node.getPath();
+                    linebuf.append( "time = (min)"
+                                  + fmt.format(shade.getEarliestTime())
+                                  + ", (ave)" + fmt.format(vertex.time) );
+                    for ( ii = 1; ii < nodes.length; ii++ )
+                        linebuf.append( ", " + y_colnames[ii-1]
+                                      + " = " + nodes[ ii ] );
+                    if ( num_cols < linebuf.length() )
+                        num_cols = linebuf.length();
+                    textbuf.append( linebuf.toString() );
+
+                    idx     = coords_length-1;
+                    textbuf.append( "\n" );
+                    linebuf = new StringBuffer( "[" + idx + "]: " );
+                    vertex  = coords[idx];
+                    lineID  = new Integer(vertex.lineID);
+                    node    = (YaxisTreeNode) map_line2treenodes.get( lineID );
+                    nodes   = node.getPath();
+                    linebuf.append( "time = (max)"
+                                  + fmt.format(shade.getLatestTime())
+                                  + ", (ave)" + fmt.format(vertex.time) );
+                    for ( ii = 1; ii < nodes.length; ii++ )
+                        linebuf.append( ", " + y_colnames[ii-1]
+                                      + " = " + nodes[ ii ] );
+                    if ( num_cols < linebuf.length() )
+                        num_cols = linebuf.length();
+                    textbuf.append( linebuf.toString() );
+
                 linebuf = new StringBuffer( "Number of Real Drawables = " );
                 linebuf.append( shade.getNumOfRealObjects() );
                 if ( num_cols < linebuf.length() )
@@ -96,6 +121,29 @@ public class InfoPanelForDrawable extends JPanel
                 num_rows++;
             }
             else {
+                num_cols = 0;
+                num_rows = 3;
+                duration = coords[coords_length-1].time - coords[0].time;
+                linebuf = new StringBuffer();
+                linebuf.append( "duration = " + fmt.format(duration) );
+                num_cols = linebuf.length();
+                textbuf.append( linebuf.toString() );
+                for ( idx = 0; idx < coords_length; idx++ ) {
+                    textbuf.append( "\n" );
+                    linebuf = new StringBuffer( "[" + idx + "]: " );
+                    vertex  = coords[idx];
+                    lineID  = new Integer(vertex.lineID);
+                    node    = (YaxisTreeNode) map_line2treenodes.get( lineID );
+                    nodes   = node.getPath();
+                    linebuf.append( "time = " + fmt.format(vertex.time) );
+                    for ( ii = 1; ii < nodes.length; ii++ )
+                        linebuf.append( ", " + y_colnames[ii-1]
+                                      + " = " + nodes[ ii ] );
+                    if ( num_cols < linebuf.length() )
+                        num_cols = linebuf.length();
+                    textbuf.append( linebuf.toString() );
+                }
+                
                 String info_str = prime.toInfoBoxString().trim();
                 if ( info_str.length() > 0 ) {
                     textbuf.append( "\n" + info_str );

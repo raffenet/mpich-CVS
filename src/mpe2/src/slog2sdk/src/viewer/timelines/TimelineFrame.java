@@ -14,6 +14,7 @@ import java.awt.event.*;
 import javax.swing.*;
 
 import logformat.slog2.input.InputLog;
+import viewer.common.Dialogs;
 import viewer.common.TopWindow;
 import viewer.common.Parameters;
 
@@ -61,6 +62,7 @@ public class TimelineFrame extends JFrame
     {
         InputLog       in_slog_ins;
         TimelineFrame  frame;
+        String         err_msg;
 
         checkVersion();
         parseCmdLineArgs( args );
@@ -69,6 +71,19 @@ public class TimelineFrame extends JFrame
 
         System.out.print( "Reading the SLOG-2 file ...... " );
         in_slog_ins  = new InputLog( in_filename );
+        if ( in_slog_ins != null ) {
+            if ( (err_msg = in_slog_ins.getCompatibleHeader() ) != null ) {
+                if ( ! Dialogs.confirm( TopWindow.First.getWindow(),
+                                err_msg
+                              + logformat.slog2.Const.VERSION_HISTORY
+                              + "Do you still want to continue reading "
+                              + "the logfile ?" ) ) {
+                     in_slog_ins = null;
+                     System.exit( 0 );
+                }
+            }
+            in_slog_ins.initialize();
+        }
         System.out.println( "Done." );
 
         /*  Initialization  */
