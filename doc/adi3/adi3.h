@@ -599,6 +599,8 @@ typedef struct {
 				     no datatype is constructed that
 				     cannot be processed (see MPID_Segment) */
 
+    MPI_Aint      ub, lb,        /* MPI-1 upper and lower bounds */
+                  true_ub, true_lb; /* MPI-2 true upper and lower bounds */
     MPID_List     attributes;    /* MPI-2 adds datatype attributes */
 
     int32_t       cache_id;      /* These are used to track which processes */
