@@ -148,11 +148,6 @@ AC_ARG_ENABLE( debugcheck,
 [--enable-debugcheck                - Turn on/off the debugging & diagnostic
                                      checking code in MPE code.
                                      The default is enable=no.] )
-DEBUG_LIBS=""
-if test "$enable_debugcheck" = "yes" ; then
-    AC_CHECK_LIB( efence, malloc, DEBUG_LIBS="-lefence" )
-fi
-AC_SUBST(DEBUG_LIBS)
 
 dnl Set the various build directories from their mpe_ prefixed env variables.
 dnl
@@ -188,7 +183,7 @@ AC_SUBST(includebuild_dir)
 AC_SUBST(libbuild_dir)
 AC_SUBST(binbuild_dir)
 
-PAC_PROG_CC
+AC_PROG_CC
 AC_OBJEXT
 AC_EXEEXT
 dnl Check for broken handling of common symbols
@@ -202,24 +197,33 @@ if test "$CPP" = "/lib/cpp" -a ! -x /lib/cpp ; then
    AC_MSG_ERROR( [configure could not find a working C preprocessor] )
 fi
 
+dnl  Invoking AC_CHECK_LIB before AC_PROG_CC makes AC_PROG_CC fail
+dnl  in autoconf 2.59
+DEBUG_LIBS=""
+if test "$enable_debugcheck" = "yes" ; then
+    AC_CHECK_LIB( efence, malloc, DEBUG_LIBS="-lefence" )
+fi
+AC_SUBST(DEBUG_LIBS)
+
 AC_HEADER_STDC
 AC_C_CONST
 
 dnl  Checking Headers
 AC_CHECK_HEADERS( stdlib.h string.h )
 AC_CHECK_HEADER( stdarg.h,
-                 [AC_DEFINE( HAVE_STDARG_H, 1, [Define if stdarg.h available] )
+                 [AC_DEFINE( HAVE_STDARG_H, 1,
+                             [Define if stdarg.h is available] )
                   havestdarg=1], , )
-#
-# We need to build mpe with the shared library flags
-# This should rely on the same approach used in the mpich configure,
-# since just using TRY_LINK or TRY_COMPILE doesn't identify warning messages
-# about "compiler flag unrecognized".
-#
-# It isn't enough to check for stdarg.  Even gcc doesn't get it right;
-# on some systems, the gcc version of stdio.h loads stdarg.h WITH THE WRONG
-# OPTIONS (causing it to choose the OLD STYLE va_start etc).
-#
+dnl
+dnl  We need to build mpe with the shared library flags
+dnl  This should rely on the same approach used in the mpich configure,
+dnl  since just using TRY_LINK or TRY_COMPILE doesn't identify warning messages
+dnl  about "compiler flag unrecognized".
+dnl
+dnl  It isn't enough to check for stdarg.  Even gcc doesn't get it right;
+dnl  on some systems, the gcc version of stdio.h loads stdarg.h WITH THE WRONG
+dnl  OPTIONS (causing it to choose the OLD STYLE va_start etc).
+dnl 
 if test -n "$havestdarg" ; then
     PAC_COMPILE_CHECK_FUNC(stdarg is correct,[
 #include <stdio.h>

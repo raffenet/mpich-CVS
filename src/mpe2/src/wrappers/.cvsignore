@@ -8,3 +8,4 @@ config.h.in
 autom4te.cache
 Makefile
 mpe_wrappers_conf.h
+mpe_wrappers_conf.h.in~
