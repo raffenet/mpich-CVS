@@ -208,7 +208,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
 
         /* send local pgid to the remote root */
         local_root_pgid = comm_ptr->vcr[rank]->ch.pg->pg_id;
-        mpi_errno = MPIC_Send(local_root_pgid, strlen(local_root_pgid)+1, 
+        mpi_errno = MPIC_Send(local_root_pgid, (int)strlen(local_root_pgid)+1, 
                               MPI_CHAR, 0, 102, tmp_comm->handle);
         if (mpi_errno != MPI_SUCCESS) goto fn_exit;
 
