@@ -153,6 +153,21 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
 	return ADIOI_Error(fh, error_code, myname);
 #endif
     }
+    if (fh->access_mode & MPI_MODE_RDONLY) {
+#ifdef MPICH2
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_READ_ONLY,
+	    "**filerdonly", "**filerdonly %s", fh->filename );
+	return MPIR_Err_return_file(fh, myname, error_code);
+#elif defined(PRINT_ERR_MSG)
+	FPRINTF(stderr, "MPI_File_write: Can't use this function because file was opened with MPI_MODE_RDONLY\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+#else /* MPICH-1 */
+	error_code = MPIR_Err_setmsg(MPI_ERR_READ_ONLY, 
+                        0, myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);
+#endif
+    }
+
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fh->filetype, &filetype_is_contig);
