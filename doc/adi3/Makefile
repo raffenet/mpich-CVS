@@ -27,6 +27,8 @@ adi3man.ps: adi3man.tex adi3.c adi3.h
 	latex adi3man ;\
 	latex adi3man ;\
 	dvips adi3man )
+	rm -f adi3man.ps
+	mv adi3man/adi3man.ps .
 
 install-web: adi3man.ps
 	cp adi3.[ch] /mcs/www-unix/mpi/mpich/adi3
