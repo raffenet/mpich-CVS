@@ -224,8 +224,8 @@ if [ "$has_unix_find" = "yes" ] ; then
             echo "Found $dir/configure.in"
 	    #
 	    # Check for known problems
-	    if [ $dir = "src/binding/f77" -a \
-		! -x /home/gropp/bin/linux/autoconf ] ; then
+	    if [ $dir = "./src/binding/f77" -a \
+		! -x "/home/gropp/bin/linux/autoconf" ] ; then
 		# We need a *patched*, version 2.13 form of autoconf
 		# Version 2.62 breaks the Fortran 90 extensions
 		# to TRY_COMPILE, and stock 2.13 generates bogus 
