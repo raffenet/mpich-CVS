@@ -195,6 +195,11 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 	    case MPIDI_CH3_PKT_FLOW_CNTL_UPDATE:
 		MPIU_DBG_PRINTF((" FLOW_CNTRL_UPDATE\n"));
 		break;
+  	    case MPIDI_CH3_PKT_CLOSE:
+		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_CLOSE\n"));
+		MPIU_DBG_PRINTF((" ack ......... %s\n", pkt->close.ack ? "TRUE" : "FALSE"));
+		break;
+	    
 	    default:
 		MPIU_DBG_PRINTF((" INVALID PACKET\n"));
 		MPIU_DBG_PRINTF((" unknown type ... %d\n", pkt->type));
