@@ -556,17 +556,19 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 #define FUNCNAME MPIDI_CH3I_VC_post_read
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3I_VC_post_read(MPIDI_VC * vc, MPID_Request * req)
+void MPIDI_CH3I_VC_post_read(MPIDI_VC * vc, MPID_Request * rreq)
 {
     MPIDI_CH3I_Connection_t * conn = vc->sc.conn;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_VC_POST_READ);
+    MPIDI_DBG_PRINTF((60, FCNAME, "entering, vc=0x%08x, rreq=0x%08x", (unsigned) vc, rreq->handle));
 
     assert (conn->recv_active == NULL);
-    conn->recv_active = req;
-    sock_post_readv(conn->sock, req->ch3.iov, req->ch3.iov_count, NULL);
+    conn->recv_active = rreq;
+    sock_post_readv(conn->sock, rreq->ch3.iov + rreq->sc.iov_offset, rreq->ch3.iov_count - rreq->sc.iov_offset, NULL);
     
+    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_READ);
 }
 
@@ -574,17 +576,19 @@ void MPIDI_CH3I_VC_post_read(MPIDI_VC * vc, MPID_Request * req)
 #define FUNCNAME MPIDI_CH3I_VC_post_write
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3I_VC_post_write(MPIDI_VC * vc, MPID_Request * req)
+void MPIDI_CH3I_VC_post_write(MPIDI_VC * vc, MPID_Request * sreq)
 {
     MPIDI_CH3I_Connection_t * conn = vc->sc.conn;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_VC_POST_WRITE);
+    MPIDI_DBG_PRINTF((60, FCNAME, "entering, vc=0x%08x, sreq=0x%08x", (unsigned) vc, sreq->handle));
     
     assert (conn->send_active == NULL);
-    conn->send_active = req;
-    sock_post_writev(conn->sock, req->ch3.iov, req->ch3.iov_count, NULL);
+    conn->send_active = sreq;
+    sock_post_writev(conn->sock, sreq->ch3.iov + sreq->sc.iov_offset, sreq->ch3.iov_count - sreq->sc.iov_offset, NULL);
 
+    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_WRITE);
 }
 
