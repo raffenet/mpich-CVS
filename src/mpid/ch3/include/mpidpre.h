@@ -136,7 +136,7 @@ MPIDI_CH3_Pkt_t;
  *
  * MPIDI_CH3_CA_COMPLETE - The last operation for this request has completed.
  * The completion counter should be decremented.  If it has reached zero, then
- * the request should be "freed" by calling MPID_Request_free().
+ * the request should be released by calling MPID_Request_release().
  *
  * MPIDI_CH3_CA_COPY_COMPLETE - This is a special case of the
  * MPIDI_CH3_CA_COMPLETE.  The data is stored has been stored into a temporary
