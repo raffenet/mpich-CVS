@@ -28,8 +28,8 @@ typedef struct open_status_s open_status;
      * the good news is that only one processor does this and broadcasts the
      * handle to everyone else in the communicator
      */
-void fake_an_open(ADIO_File fd, PVFS_fs_id fs_id, ADIOI_PVFS2_fs *pvfs2_fs, 
-	open_status *o_status)
+void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
+	ADIOI_PVFS2_fs *pvfs2_fs, open_status *o_status)
 {
     int ret;
     PVFS_sysresp_lookup resp_lookup;
@@ -43,11 +43,11 @@ void fake_an_open(ADIO_File fd, PVFS_fs_id fs_id, ADIOI_PVFS2_fs *pvfs2_fs,
     memset(&resp_getparent, 0, sizeof(resp_getparent));
     memset(&resp_create, 0, sizeof(resp_create));
 
-    ret = PVFS_sys_lookup(fs_id, fd->filename, 
+    ret = PVFS_sys_lookup(fs_id, pvfs_name,
 	    pvfs2_fs->credentials, &resp_lookup);
     if ( (ret < 0) ) { /* XXX: check what the error was */
-	if (fd->access_mode & MPI_MODE_CREATE)  {
-	    ret = PVFS_sys_getparent(fs_id, fd->filename, 
+	if (access_mode & MPI_MODE_CREATE)  {
+	    ret = PVFS_sys_getparent(fs_id, pvfs_name,
 		    pvfs2_fs->credentials, &resp_getparent); 
 	    if (ret < 0) {
 		fprintf(stderr, "pvfs_sys_getparent returns with %d\n", ret);
@@ -59,8 +59,8 @@ void fake_an_open(ADIO_File fd, PVFS_fs_id fs_id, ADIOI_PVFS2_fs *pvfs2_fs,
 		    pvfs2_fs->credentials, &resp_create); 
 
 	    if (ret < 0) { /* XXX: should only do this for EEXISTS */
-		ret = PVFS_sys_lookup(ADIOI_PVFS2_fs_id_list[0], 
-			fd->filename, pvfs2_fs->credentials, &resp_lookup);
+		ret = PVFS_sys_lookup(fs_id, pvfs_name,
+			pvfs2_fs->credentials, &resp_lookup);
 		if ( ret < 0 ) {
 		    o_status->error = ret;
 		    return;
@@ -75,7 +75,7 @@ void fake_an_open(ADIO_File fd, PVFS_fs_id fs_id, ADIOI_PVFS2_fs *pvfs2_fs,
 	    o_status->error = ret;
 	    return;
 	}
-    } else if (fd->access_mode & MPI_MODE_EXCL) {
+    } else if (access_mode & MPI_MODE_EXCL) {
 	/* lookup should not succeed if opened with EXCL */
 	o_status->error = -1; /* XXX: what should it be? */
 	return;
@@ -94,7 +94,9 @@ void fake_an_open(ADIO_File fd, PVFS_fs_id fs_id, ADIOI_PVFS2_fs *pvfs2_fs,
  */
 void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 {
-    int rank;
+    int rank, ret, i, mnt_index=-1;
+    char pvfs_path[PVFS_NAME_MAX] = {0};
+
     ADIOI_PVFS2_fs *pvfs2_fs;
 
     /* since one process is doing the open, that means one process is also
@@ -135,7 +137,23 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
      * everyone else in the communicator */
 
     if (rank == fd->hints->ranklist[0]) {
-	fake_an_open(fd, ADIOI_PVFS2_fs_id_list[0], pvfs2_fs, &o_status);
+	/* given the filename, figure out which pvfs filesystem it is on */
+	for(i=0; i<ADIOI_PVFS2_mntlist.nr_entry; i++) {
+	    ret = PVFS_util_remove_dir_prefix(fd->filename, 
+		    ADIOI_PVFS2_mntlist.ptab_p[i].local_mnt_dir, 
+		    pvfs_path, PVFS_NAME_MAX);
+	    if (ret == 0) {
+		mnt_index = i;
+		break;
+	    }
+	}
+	if (mnt_index == -1) {
+	    fprintf(stderr, "Error: could not find filesystem for %s in pvfstab", fd->filename);
+	    /* TODO: pick a good error for this */
+	    o_status.error = -1;
+	} else 
+	    fake_an_open(ADIOI_PVFS2_fs_id_list[mnt_index], pvfs_path,
+		    fd->access_mode, pvfs2_fs, &o_status);
     }
 
     /* NOTE: if MPI_MODE_EXCL was set, ADIO_Open will call

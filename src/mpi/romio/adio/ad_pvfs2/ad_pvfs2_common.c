@@ -12,8 +12,12 @@
 #include <sys/types.h>
 
 /* maybe give romio access to the globalconfig struct */
+/* keyval hack to both tell us if we've already initialized pvfs2 and also
+ * close it down when mpi exits */
 int ADIOI_PVFS2_Initialized = MPI_KEYVAL_INVALID;
+
 PVFS_fs_id * ADIOI_PVFS2_fs_id_list;
+pvfs_mntlist ADIOI_PVFS2_mntlist;
 
 void ADIOI_PVFS2_End(int *error_code)
 {
@@ -36,7 +40,6 @@ int ADIOI_PVFS2_End_call(MPI_Comm comm, int keyval,
 
 void ADIOI_PVFS2_Init(int *error_code )
 {
-	pvfs_mntlist mnt = {0,NULL};
 	PVFS_sysresp_init resp_init;
 	int ret;
 
@@ -46,14 +49,15 @@ void ADIOI_PVFS2_Init(int *error_code )
 		return;
 	}
 
-	ret = PVFS_util_parse_pvfstab(NULL, &mnt);
+	ret = PVFS_util_parse_pvfstab(NULL, &ADIOI_PVFS2_mntlist);
 	if (ret < 0) {
 	    /* XXX: better error handling */
 	    fprintf(stderr, "error parsing pvfstab\n");
 	    *error_code = MPI_UNDEFINED;
 	    return;
 	}
-	ret = PVFS_sys_initialize(mnt, ADIOI_PVFS2_DEBUG_MASK, &resp_init);
+	ret = PVFS_sys_initialize(ADIOI_PVFS2_mntlist, ADIOI_PVFS2_DEBUG_MASK, 
+		&resp_init);
 	if (ret < 0 ) {
 	    /* XXX: better error handling */
 	    fprintf(stderr, "error initializing pvfs\n");
