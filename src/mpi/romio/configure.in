@@ -840,6 +840,7 @@ if test $NOF77 = 0 ; then
     fi
     rm -f test/mpif.h
     if test "$MPI_INCLUDE_DIR" != "." && test $FROM_MPICH = 0 ; then
+        if test ! -d test ; then mkdir test ; fi
         ln -s $MPI_INCLUDE_DIR/mpif.h test
     fi
 else 

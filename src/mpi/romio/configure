@@ -829,9 +829,9 @@ fi
          int i=MOUNT_NFS;
      }
 EOF
-  rm -f a.out
-  $CC $USER_CFLAGS conftest.c > /dev/null 2>&1
-  if test -x a.out ; then
+  rm -f conftest
+  $CC $USER_CFLAGS -o conftest conftest.c > /dev/null 2>&1
+  if test -x conftest ; then
      if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -852,7 +852,7 @@ else
 echo "$ac_t""no" 1>&1
 fi
   fi
-  rm -f a.out conftest.c
+  rm -f conftest conftest.c
 
        longlongsize=${longlongsize:-0}
 # printf doesn't work properly and no integer*8 as far as I can tell
@@ -1353,9 +1353,9 @@ fi
          pread64(fd, &buf, i, off);
      }
 EOF
-  rm -f a.out
-  $CC $USER_CFLAGS conftest.c > /dev/null 2>&1
-  if test -x a.out ; then
+  rm -f conftest
+  $CC $USER_CFLAGS -o conftest conftest.c > /dev/null 2>&1
+  if test -x conftest ; then
       if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -1376,7 +1376,7 @@ else
 echo "$ac_t""no" 1>&1
 fi
   fi
-rm -f a.out conftest.c
+rm -f conftest conftest.c
 
 #
    if test -z "$FILE_SYSTEM" ; then
@@ -1502,6 +1502,7 @@ EOF
     fi
     rm -f test/mpif.h
     if test "$MPI_INCLUDE_DIR" != "." && test $FROM_MPICH = 0 ; then
+        if test ! -d test ; then mkdir test ; fi
         ln -s $MPI_INCLUDE_DIR/mpif.h test
     fi
 else 
@@ -1957,11 +1958,11 @@ fi
            return 0;
         }
 EOF
-      rm -f a.out
-      $CC $USER_CFLAGS ltest.c > /dev/null 2>&1
-      if test -x a.out ; then
+      rm -f conftest
+      $CC $USER_CFLAGS -o conftest ltest.c > /dev/null 2>&1
+      if test -x conftest ; then
          echo "assuming size of long long is 8bytes; use '-longlongsize' to indicate otherwise"
-         rm -f a.out ltest.c
+         rm -f conftest ltest.c
          echo "defining MPI_Offset as long long in C and integer*8 in Fortran" 
          
 {
@@ -2027,9 +2028,9 @@ fi
          MPI_Finalize(); 
      }
 EOF
-  rm -f a.out
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -x a.out ; then
+  rm -f conftest
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
+  if test -x conftest ; then
       if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -2050,7 +2051,7 @@ else
 echo "$ac_t""no" 1>&1
 fi
   fi
-  rm -f a.out mpitest.c
+  rm -f conftest mpitest.c
 
    else
        
@@ -2231,9 +2232,9 @@ fi
          MPI_Finalize(); 
      }
 EOF
-  rm -f a.out
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -x a.out ; then
+  rm -f conftest
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
+  if test -x conftest ; then
       if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -2264,7 +2265,7 @@ fi
       MPI_FINFO3="      INTEGER MPI_INFO_NULL"
       MPI_FINFO4="      PARAMETER (MPI_INFO_NULL=0)"
   fi
-  rm -f a.out mpitest.c
+  rm -f conftest mpitest.c
 
 else
    
@@ -2319,9 +2320,9 @@ fi
 	i = MPI_INFO_NULL;
      }
 EOF
-  rm -f a.out
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -x a.out ; then
+  rm -f conftest
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
+  if test -x conftest ; then
       if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -2335,7 +2336,7 @@ else
 echo "$ac_t""no" 1>&1
 fi
   fi
-  rm -f a.out mpitest.c
+  rm -f conftest mpitest.c
   # is MPI_INFO_NULL defined in mpi.h?
    fi
    
@@ -2377,9 +2378,9 @@ fi
          MPI_Finalize(); 
      }
 EOF
-  rm -f a.out
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -x a.out ; then
+  rm -f conftest
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
+  if test -x conftest ; then
      if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -2400,7 +2401,7 @@ DEFS="$DEFS -DNO_MPI_SGI_type_is_contig=1"
 }
 
   fi
-  rm -f a.out mpitest.c
+  rm -f conftest mpitest.c
 
    
   if test -z "$ac_echo_n" ; then
@@ -2440,9 +2441,9 @@ fi
          MPI_Finalize(); 
      }
 EOF
-  rm -f a.out
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -x a.out ; then
+  rm -f conftest
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
+  if test -x conftest ; then
      if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -2463,7 +2464,7 @@ else
 echo "$ac_t""no" 1>&1
 fi
   fi
-  rm -f a.out mpitest.c
+  rm -f conftest mpitest.c
 
    
   if test -z "$ac_echo_n" ; then
@@ -2501,9 +2502,9 @@ fi
       stop
       end
 EOF
-  rm -f a.out
-  $F77 $FFLAGS -I$MPI_INCLUDE_DIR mpitest.f $MPI_LIB > /dev/null 2>&1
-  if test -x a.out ; then
+  rm -f conftest
+  $F77 $FFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.f $MPI_LIB > /dev/null 2>&1
+  if test -x conftest ; then
      if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -2518,7 +2519,7 @@ else
 echo "$ac_t""no" 1>&1
 fi
   fi
-  rm -f a.out mpitest.f
+  rm -f conftest mpitest.f
 
 fi
 #
@@ -2563,9 +2564,9 @@ fi
          MPI_Finalize(); 
      }
 EOF
-  rm -f a.out
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -x a.out ; then
+  rm -f conftest
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
+  if test -x conftest ; then
       if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -2602,7 +2603,7 @@ fi
       MPI_FARRAY6="      PARAMETER (MPI_DISTRIBUTE_NONE=123)"
       MPI_FARRAY7="      PARAMETER (MPI_DISTRIBUTE_DFLT_DARG=-49767)"
   fi
-  rm -f a.out mpitest.c
+  rm -f conftest mpitest.c
 
 else
    
@@ -2981,9 +2982,9 @@ fi
       stop
       end
 EOF
-  rm -f a.out
-  $F77 $FFLAGS -I$MPI_INCLUDE_DIR mpitest.f $MPI_LIB > /dev/null 2>&1
-  if test -x a.out ; then
+  rm -f conftest
+  $F77 $FFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.f $MPI_LIB > /dev/null 2>&1
+  if test -x conftest ; then
       if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -2997,7 +2998,7 @@ else
 echo "$ac_t""no" 1>&1
 fi
   fi
-  rm -f a.out mpitest.f
+  rm -f conftest mpitest.f
 
    fi
 fi
@@ -3036,9 +3037,9 @@ fi
         char *s = strerror(5);
      }
 EOF
-  rm -f a.out
-  $CC $USER_CFLAGS conftest.c >> config.log 2>&1
-  if test -x a.out ; then
+  rm -f conftest
+  $CC $USER_CFLAGS -o conftest conftest.c >> config.log 2>&1
+  if test -x conftest ; then
      if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -3094,9 +3095,9 @@ fi
         }
 EOF
 
-     rm -f a.out
-     $CC $USER_CFLAGS conftest.c > config.log 2>&1
-     if test -x a.out ; then
+     rm -f conftest
+     $CC $USER_CFLAGS -o conftest conftest.c > config.log 2>&1
+     if test -x conftest ; then
         if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
@@ -3118,7 +3119,7 @@ echo "$ac_t""no" 1>&1
 fi
      fi
   fi
-  rm -f a.out conftest.c
+  rm -f conftest conftest.c
 
 #
 # Find the home directory if not specified
@@ -3229,17 +3230,17 @@ fi
          MPI_Finalize(); 
      }
 EOF
-  rm -f a.out
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test ! -x a.out ; then
+  rm -f conftest
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
+  if test ! -x conftest ; then
       echo " "
       print_error "Unable to compile a simple MPI program"
       print_error "Use the -mpi, -mpiincdir, and -mpilib options to configure to specify the"
       print_error "MPI implementation, the include path for mpi.h, and the MPI library to link"
-      rm -f a.out mpitest.c
+      rm -f conftest mpitest.c
       exit 1
   else
-      rm -f a.out mpitest.c
+      rm -f conftest mpitest.c
   fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"

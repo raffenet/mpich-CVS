@@ -33,7 +33,7 @@ if test -z "$PREFIX" ; then
 fi
 if [ ! -d $PREFIX ] ; then
     echo "Creating directory $PREFIX"
-    mkdir $PREFIX
+    mkdir -p $PREFIX
     chmod 755 $PREFIX
 fi
 echo copying $ROMIO_HOME/COPYRIGHT to $PREFIX/COPYRIGHT
@@ -63,14 +63,19 @@ cp -r $ROMIO_HOME/man $PREFIX
 chmod 755 $PREFIX/man $PREFIX/man/man3
 chmod 644 $PREFIX/man/man3/*.3
 echo copying directory $ROMIO_HOME/test to $PREFIX/test
-cp -r $ROMIO_HOME/test $PREFIX
+if [ ! -d $PREFIX/test ] ; then
+    echo "Creating directory $PREFIX/test"
+    mkdir $PREFIX/test
+    chmod 755 $PREFIX/test
+fi
+cp -r $ROMIO_HOME/test/std $PREFIX/test
 cp test/Makefile $PREFIX/test
+cp test/README $PREFIX/test
 cp test/*.c $PREFIX/test
 cp test/*.f $PREFIX/test
 cp test/runtests $PREFIX/test
-rm -f $PREFIX/test/*.in
 chmod 755 $PREFIX/test
-chmod 644 $PREFIX/test/*.c $PREFIX/test/*.f
+chmod 644 $PREFIX/test/*.c $PREFIX/test/*.f $PREFIX/test/README
 chmod 755 $PREFIX/test/runtests $PREFIX/test/std
 chmod 644 $PREFIX/test/std/*.std
 $RANLIB $PREFIX/lib/$ARCH/libmpio.a
