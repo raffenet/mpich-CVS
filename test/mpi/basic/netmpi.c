@@ -8,6 +8,16 @@
 #include "GetOpt.h"
 #include <string.h>
 
+#ifndef BOOL
+#define BOOL int
+#endif
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+
 #define  TRIALS 	7
 #define  REPEAT 	1000
 int 	 g_NSAMP =	250;
@@ -123,10 +133,10 @@ int main(int argc, char *argv[])
     
     Data *bwdata;		/* Bandwidth curve data 			*/
     
-    bool bNoCache = false;
-    bool bHeadToHead = false;
-    bool bSavePert = false;
-    bool bUseMegaBytes = false;
+    BOOL bNoCache = FALSE;
+    BOOL bHeadToHead = FALSE;
+    BOOL bSavePert = FALSE;
+    BOOL bUseMegaBytes = FALSE;
 
     MPI_Init(&argc, &argv);
     
