@@ -9,6 +9,7 @@
 
 package viewer.timelines;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.Iterator;
 import java.awt.*;
@@ -20,6 +21,7 @@ import base.drawable.TimeBoundingBox;
 import base.drawable.Drawable;
 import base.drawable.Shadow;
 import base.drawable.NestingStacks;
+import base.drawable.DrawnBoxSet;
 import logformat.slog2.input.TreeNode;
 import logformat.slog2.input.TreeTrunk;
 import viewer.common.Dialogs;
@@ -29,21 +31,25 @@ import viewer.common.Parameters;
 
 public class CanvasTime extends ScrollableObject
 {
-    private static final int  MIN_VISIBLE_ROW_COUNT = 2;
+    private static final int   MIN_VISIBLE_ROW_COUNT = 2;
 
-    private Component         root_window;
-    private TreeTrunk         treetrunk;
-    private YaxisMaps         y_maps;
-    private YaxisTree         tree_view;
-    private BoundedRangeModel y_model;
-    private TimeBoundingBox   timeframe4imgs;   // TimeFrame for images[]
+    private Component          root_window;
+    private TreeTrunk          treetrunk;
+    private YaxisMaps          y_maps;
+    private YaxisTree          tree_view;
+    private BoundedRangeModel  y_model;
+    private TimeBoundingBox    timeframe4imgs;   // TimeFrame for images[]
 
-    private ChangeListener    change_listener;
-    private ChangeEvent       change_event;
+    private ChangeListener     change_listener;
+    private ChangeEvent        change_event;
 
-    private int               num_rows;
-    private int               row_height;
-    private NestingStacks     nesting_stacks;
+    private int                num_rows;
+    private int                row_height;
+    private NestingStacks      nesting_stacks;
+    private Map                map_line2row;
+    private DrawnBoxSet        drawn_boxes;
+
+    private Date               init_time, final_time;
 
 
     public CanvasTime( Component parent,
@@ -63,6 +69,8 @@ public class CanvasTime extends ScrollableObject
         treeroot        = treetrunk.getTreeRoot();
         depth_max       = treeroot.getTreeNodeID().depth;
         nesting_stacks  = new NestingStacks( tree_view );
+        map_line2row    = null;
+        drawn_boxes     = new DrawnBoxSet( tree_view );
         // timeframe4imgs to be initialized later in initializeAllOffImages()
         timeframe4imgs  = null;
 
@@ -124,6 +132,7 @@ public class CanvasTime extends ScrollableObject
 
     protected void initializeAllOffImages( final TimeBoundingBox imgs_times )
     {
+        init_time = new Date();
         // Read the SLOG-2 TreeNodes within TimeFrame into memory
         Routines.setAllCursorsToWait( root_window );
         if ( timeframe4imgs == null )
@@ -132,16 +141,32 @@ public class CanvasTime extends ScrollableObject
         num_rows         = tree_view.getRowCount();
         row_height       = tree_view.getRowHeight();
         nesting_stacks.initialize();
+
+        map_line2row = y_maps.getMapOfLineIDToRowID();
+        if ( map_line2row == null ) {
+            if ( ! y_maps.update() )
+                Dialogs.error( TopWindow.Timeline.getWindow(),
+                               "Error in updating YaxisMaps!" );
+            map_line2row = y_maps.getMapOfLineIDToRowID();
+        }
+        // System.out.println( "map_line2row = " + map_line2row );
+        drawn_boxes.initialize();
     }
 
     protected void finalizeAllOffImages( final TimeBoundingBox imgs_times )
     {
+        drawn_boxes.finalize();
+        map_line2row = null;        
         nesting_stacks.finalize();
         // Update the timeframe of all images
         timeframe4imgs.setEarliestTime( imgs_times.getEarliestTime() );
         timeframe4imgs.setLatestTime( imgs_times.getLatestTime() );
         this.fireChangeEvent();  // to update TreeTrunkPanel.
         Routines.setAllCursorsToNormal( root_window );
+
+        final_time = new Date();
+        System.out.println( "drawOffImages: time = "
+                          + (final_time.getTime()-init_time.getTime()) );
     }
 
     protected void drawOneOffImage(       Image            offImage,
@@ -190,36 +215,36 @@ public class CanvasTime extends ScrollableObject
             }
 
             nesting_stacks.reset();
+            drawn_boxes.reset();
 
-            Map map_line2row = y_maps.getMapOfLineIDToRowID();
-            if ( map_line2row == null ) {
-                if ( ! y_maps.update() )
-                    Dialogs.error( TopWindow.Timeline.getWindow(),
-                                   "Error in updating YaxisMaps!" );
-                map_line2row = y_maps.getMapOfLineIDToRowID();
-            }
-            // System.out.println( "map_line2row = " + map_line2row );
 
             Iterator sobjs;
             Shadow   sobj;
             Iterator dobjs;
             Drawable dobj;
 
+            int N_nestable = 0, N_nestless = 0;
+            int N_nestable_drawn = 0, N_nestless_drawn = 0;
+
             // Draw Nestable Shadows
             sobjs = treetrunk.iteratorOfLowestFloorShadows( timebounds,
                                                             true, true );
             while ( sobjs.hasNext() ) {
                 sobj = (Shadow) sobjs.next();
-                sobj.drawOnCanvas( offGraphics, coord_xform,
-                                   map_line2row, nesting_stacks );
+                N_nestable_drawn +=
+                sobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
+                                   drawn_boxes, nesting_stacks );
+                N_nestable++;
             }
             
             // Draw Nestable Drawables
             dobjs = treetrunk.iteratorOfDrawables( timebounds, true, true );
             while ( dobjs.hasNext() ) {
                 dobj = (Drawable) dobjs.next();
-                dobj.drawOnCanvas( offGraphics, coord_xform,
-                                   map_line2row, nesting_stacks );
+                N_nestable_drawn +=
+                dobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
+                                   drawn_boxes, nesting_stacks );
+                N_nestable++;
             }
 
             // Draw Nestless Shadows
@@ -227,17 +252,26 @@ public class CanvasTime extends ScrollableObject
                                                             true, false );
             while ( sobjs.hasNext() ) {
                 sobj = (Shadow) sobjs.next();
-                sobj.drawOnCanvas( offGraphics, coord_xform,
-                                   map_line2row, nesting_stacks );
+                N_nestless_drawn +=
+                sobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
+                                   drawn_boxes, nesting_stacks );
+                N_nestless++;
             }
 
             // Draw Nestless Drawables
             dobjs = treetrunk.iteratorOfDrawables( timebounds, true, false );
             while ( dobjs.hasNext() ) {
                 dobj = (Drawable) dobjs.next(); 
-                dobj.drawOnCanvas( offGraphics, coord_xform,
-                                   map_line2row, nesting_stacks );
+                N_nestless_drawn +=
+                dobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
+                                   drawn_boxes, nesting_stacks );
+                N_nestless++;
             }
+
+            System.out.println( "CanvasTime.drawOneOffImage(): N_nestable = "
+                              + N_nestable_drawn + "/" + N_nestable
+                              + ",  N_nestless = "
+                              + N_nestless_drawn + "/" + N_nestless );
 
             // System.out.println( treetrunk.toStubString() );
             offGraphics.dispose();

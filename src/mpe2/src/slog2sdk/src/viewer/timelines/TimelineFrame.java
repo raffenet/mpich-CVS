@@ -27,6 +27,7 @@ public class TimelineFrame extends JFrame
     public TimelineFrame( final InputLog slog_ins, final int view_ID )
     {
         super( "TimeLine" );
+        super.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
         TopWindow.Timeline.disposeAll();
         TopWindow.Timeline.setWindow( this );
 
