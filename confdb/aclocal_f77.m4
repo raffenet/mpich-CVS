@@ -1074,3 +1074,20 @@ if test "$runs" = "no" ; then
     FLIBS="$pac_ldirs $pac_other $keep_libs"
 fi
 ])
+AC_DEFUN(PAC_PROG_F77_NEW_CHAR_DECL,[
+AC_CACHE_CHECK([whether Fortran new-style character declarations],
+pac_cv_prog_f77_new_char_decl,[
+AC_LANG_SAVE
+AC_LANG_FORTRAN77
+AC_TRY_COMPILE(,[
+character (len=10) s
+],pac_cv_prog_f77_new_char_decl="yes",
+pac_cv_prog_f77_new_char_decl="no")
+AC_LANG_RESTORE
+])
+if test "$pac_cv_prog_f77_new_char_decl" = "yes" ; then
+    ifelse([$1],,:,$1)
+else
+    ifelse([$2],,:,$2)
+fi
+])dnl
