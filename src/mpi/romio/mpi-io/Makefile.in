@@ -23,7 +23,7 @@ MPIO_OBJECTS = close.o read.o open.o write.o set_view.o \
       wr_atalle.o write_allb.o write_alle.o \
       get_posn_sh.o iread_sh.o read_sh.o write_sh.o \
       iwrite_sh.o seek_sh.o read_ord.o read_orde.o write_ordb.o \
-      read_ordb.o write_ord.o write_orde.o mpiu_greq.o
+      read_ordb.o write_ord.o write_orde.o mpiu_greq.o mpich2_fileutil.o
 
 MPIO_EXTRA_OBJECTS = get_errh.o set_errh.o
 
@@ -39,7 +39,7 @@ MPIO_TMP_POBJECTS = close.p read.p open.p write.p get_extent.p \
       wr_atalle.p write_allb.p write_alle.p \
       get_posn_sh.p iread_sh.p read_sh.p write_sh.p \
       iwrite_sh.p seek_sh.p read_ord.p read_orde.p write_ordb.p \
-      read_ordb.p write_ord.p write_orde.p
+      read_ordb.p write_ord.p write_orde.p mpich2_fileutil.p
 
 MPIO_EXTRA_TMP_POBJECTS = get_errh.p set_errh.p
 
@@ -57,7 +57,7 @@ MPIO_REAL_POBJECTS = _close.o _read.o _open.o _get_extent.o \
       _get_posn_sh.o _iread_sh.o _read_sh.o _write_sh.o \
       _iwrite_sh.o _seek_sh.o _read_ord.o _read_orde.o _write_ordb.o \
       _read_ordb.o _write_ord.o _write_orde.o _get_errh.o \
-      _set_errh.o
+      _set_errh.o _mpich2_fileutil.o
 
 MPIO_EXTRA_REAL_POBJECTS = _get_errh.o _set_errh.o
 
