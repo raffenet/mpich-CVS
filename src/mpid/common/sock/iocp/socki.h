@@ -14,6 +14,9 @@ typedef int sock_size_t;
 
 #define inline __inline
 
+int Sock_describe_timer_states();
+int Socki_describe_timer_states();
+
 #define SOCKI_STATE_LIST \
 MPID_STATE_SOCK_EASY_RECEIVE, \
 MPID_STATE_SOCK_EASY_SEND, \
