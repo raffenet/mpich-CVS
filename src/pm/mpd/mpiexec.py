@@ -60,7 +60,7 @@ def mpiexec():
     global totalProcs, nextRange, argvCopy, configLines, configIdx, appnum
     global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
 
-    validGlobalArgs = { '-l' : 0, '-usize' : 1, '-gdb' : 0, '-bnr' : 0, '-tv' : 0,
+    validGlobalArgs = { '-l' : 0, '-usize' : 1, '-gdb' : 0, '-gdba' : 1, '-bnr' : 0, '-tv' : 0,
                         '-if' : 1, '-machinefile' : 1, '-kx' : 0, '-s' : 1,
                         '-gn' : 1, '-gnp' : 1, '-ghost' : 1, '-gpath' : 1, '-gwdir' : 1,
 			'-gsoft' : 1, '-garch' : 1, '-gexec' : 1,
@@ -83,13 +83,23 @@ def mpiexec():
 
     if len(argv) < 2  or  argv[1] == '-h'  or  argv[1] == '-help'  or  argv[1] == '--help':
 	usage()
+    fullDirName = path.abspath(path.split(argv[0])[0])  # normalize for platform also
+    mpdrun = path.join(fullDirName,'mpdrun.py')
+    if not access(mpdrun,X_OK):
+        print 'mpiexec: cannot execute mpdrun %s' % mpdrun
+        exit(0);
     if argv[1] == '-file':
 	if len(argv) != 3:
 	    usage()
         xmlFilename = argv[2]
         globalArgs['-kx'] = 1
     else:
-        if argv[1] == '-configfile':
+        if argv[1] == '-gdba':
+            if len(argv) != 3:
+                print '-gdba must be used only with a jobid'
+                usage()
+            execvpe(mpdrun,[mpdrun,'-ga',argv[2]],environ)
+        elif argv[1] == '-configfile':
 	    if len(argv) != 3:
 	        usage()
             configFileFD = osopen(argv[2],O_RDONLY)
@@ -111,7 +121,7 @@ def mpiexec():
         xmlCPG = xmlDOC.createElement('create-process-group')
         xmlDOC.appendChild(xmlCPG)
         for k in localArgSets.keys():
-	    handle_argset(localArgSets[k],xmlDOC,xmlCPG,machineFileInfo)
+            handle_argset(localArgSets[k],xmlDOC,xmlCPG,machineFileInfo)
         xmlCPG.setAttribute('totalprocs', str(totalProcs) )  # after handling argsets
         if globalArgs['-l']:
             xmlCPG.setAttribute('output', 'label')
@@ -135,11 +145,6 @@ def mpiexec():
         print >>xmlFile, xmlDOC.toprettyxml(indent='   ')
         # print xmlDOC.toprettyxml(indent='   ')    #### RMB: TEMP DEBUG
         xmlFile.close()
-    fullDirName = path.abspath(path.split(argv[0])[0])  # normalize for platform also
-    mpdrun = path.join(fullDirName,'mpdrun.py')
-    if not access(mpdrun,X_OK):
-        print 'mpiexec: cannot execute mpdrun %s' % mpdrun
-        exit(0);
     if globalArgs['-kx']:
         execvpe(mpdrun,[mpdrun,'-f',xmlFilename],environ)
     else:
@@ -192,7 +197,7 @@ def collect_args(args):
         else:
             globalArgs[garg] = 1
             argidx += 1
-    if args[argidx] == ':':
+    if argidx < len(args)  and  args[argidx] == ':':
         argidx += 1
     localArgsKey = 0
     while argidx < len(args):
