@@ -10,7 +10,7 @@
 
 /* defmsg is generated automatically from the source files and contains
    all of the error messages */
-#include "defmsg.h"
+/* #include "defmsg.h" */
 
 /* stdarg is required to handle the variable argument lists for 
    MPIR_Err_create_code */
