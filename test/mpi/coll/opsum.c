@@ -43,11 +43,11 @@ int main( int argc, char *argv[] )
     coutbuf[2] = 1;
     MPI_Reduce( cinbuf, coutbuf, 3, MPI_CHAR, MPI_SUM, 0, comm );
     if (rank == 0) {
-	if (!coutbuf[0]) {
+	if (size < 128 && coutbuf[0] != size) {
 	    errs++;
 	    fprintf( stderr, "char SUM(1) test failed\n" );
 	}
-	if (size < 128 && coutbuf[1] != size) {
+	if (size < 128 && coutbuf[1] != 0) {
 	    errs++;
 	    fprintf( stderr, "char SUM(0) test failed\n" );
 	}
@@ -67,11 +67,11 @@ int main( int argc, char *argv[] )
     ucoutbuf[2] = 1;
     MPI_Reduce( ucinbuf, ucoutbuf, 3, MPI_UNSIGNED_CHAR, MPI_SUM, 0, comm );
     if (rank == 0) {
-	if (!ucoutbuf[0]) {
+	if (size < 128 && ucoutbuf[0] != size) {
 	    errs++;
 	    fprintf( stderr, "unsigned char SUM(1) test failed\n" );
 	}
-	if (size < 128 && ucoutbuf[1] != size) {
+	if (size < 128 && ucoutbuf[1]) {
 	    errs++;
 	    fprintf( stderr, "unsigned char SUM(0) test failed\n" );
 	}
@@ -97,11 +97,11 @@ int main( int argc, char *argv[] )
     doutbuf[2].i = 1;
     MPI_Reduce( dinbuf, doutbuf, 3, MPI_DOUBLE_COMPLEX, MPI_SUM, 0, comm );
     if (rank == 0) {
-	if (!doutbuf[0].r || !doutbuf[0].i) {
+	if (doutbuf[0].r != size || doutbuf[0].i != -size) {
 	    errs++;
 	    fprintf( stderr, "double complex SUM(1) test failed\n" );
 	}
-	if (doutbuf[1].r != size || doutbuf[1].i != size) {
+	if (doutbuf[1].r != 0 || doutbuf[1].i != 0) {
 	    errs++;
 	    fprintf( stderr, "double complex SUM(0) test failed\n" );
 	}
@@ -123,11 +123,11 @@ int main( int argc, char *argv[] )
     ldoutbuf[2] = 1;
     MPI_Reduce( ldinbuf, ldoutbuf, 3, MPI_LONG_DOUBLE, MPI_SUM, 0, comm );
     if (rank == 0) {
-	if (!ldoutbuf[0]) {
+	if (ldoutbuf[0] != size) {
 	    errs++;
 	    fprintf( stderr, "long double SUM(1) test failed\n" );
 	}
-	if (ldoutbuf[1] != size) {
+	if (ldoutbuf[1] != 0.0) {
 	    errs++;
 	    fprintf( stderr, "long double SUM(0) test failed\n" );
 	}
@@ -152,11 +152,11 @@ int main( int argc, char *argv[] )
     lloutbuf[2] = 1;
     MPI_Reduce( llinbuf, lloutbuf, 3, MPI_LONG_LONG, MPI_SUM, 0, comm );
     if (rank == 0) {
-	if (!lloutbuf[0]) {
+	if (lloutbuf[0] != size) {
 	    errs++;
 	    fprintf( stderr, "long long SUM(1) test failed\n" );
 	}
-	if (lloutbuf[1] != size) {
+	if (lloutbuf[1] != 0) {
 	    errs++;
 	    fprintf( stderr, "long long SUM(0) test failed\n" );
 	}

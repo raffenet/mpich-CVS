@@ -20,7 +20,7 @@ typedef struct { double r, i; } d_complex;
 int main( int argc, char *argv[] )
 {
     int errs = 0;
-    int rank, size, maxsize, result[6] = { 1, 1, 2, 6, 25, 120 };
+    int rank, size, maxsize, result[6] = { 1, 1, 2, 6, 24, 120 };
     MPI_Comm      comm;
     char cinbuf[3], coutbuf[3];
     unsigned char ucinbuf[3], ucoutbuf[3];
@@ -50,9 +50,10 @@ int main( int argc, char *argv[] )
     coutbuf[2] = 1;
     MPI_Reduce( cinbuf, coutbuf, 3, MPI_CHAR, MPI_PROD, 0, comm );
     if (rank == 0) {
-	if (coutbuf[0] != (char)result[maxsize]) {
+	if (coutbuf[0] != (char)result[maxsize-1]) {
 	    errs++;
-	    fprintf( stderr, "char PROD(rank) test failed\n" );
+	    fprintf( stderr, "char PROD(rank) test failed (%d!=%d)\n",
+		     (int)coutbuf[0], (int)result[maxsize]);
 	}
 	if (coutbuf[1]) {
 	    errs++;
@@ -74,7 +75,7 @@ int main( int argc, char *argv[] )
     ucoutbuf[2] = 1;
     MPI_Reduce( ucinbuf, ucoutbuf, 3, MPI_UNSIGNED_CHAR, MPI_PROD, 0, comm );
     if (rank == 0) {
-	if (ucoutbuf[0] != (unsigned char)result[maxsize]) {
+	if (ucoutbuf[0] != (unsigned char)result[maxsize-1]) {
 	    errs++;
 	    fprintf( stderr, "unsigned char PROD(rank) test failed\n" );
 	}
@@ -105,20 +106,22 @@ int main( int argc, char *argv[] )
     MPI_Reduce( dinbuf, doutbuf, 3, MPI_DOUBLE_COMPLEX, MPI_PROD, 0, comm );
     if (rank == 0) {
 	double imag, real;
-	if (doutbuf[0].r != (double)result[maxsize] || doutbuf[0].i != 0) {
+	if (doutbuf[0].r != (double)result[maxsize-1] || doutbuf[0].i != 0) {
 	    errs++;
 	    fprintf( stderr, "double complex PROD(rank) test failed\n" );
 	}
 	/* Multiplying the imaginary part depends on size mod 4 */
+	imag = 1.0; real = 0.0; /* Make compiler happy */
 	switch (size % 4) {
-	case 0: imag = 1.0; real = 0.0; break;
-	case 1: imag = 0.0; real = -1.0; break;
-	case 2: imag =-1.0; real = 0.0; break;
-	case 3: imag = 0.0; real = 1.0; break; 
+	case 1: imag = 1.0; real = 0.0; break;
+	case 2: imag = 0.0; real = -1.0; break;
+	case 3: imag =-1.0; real = 0.0; break;
+	case 0: imag = 0.0; real = 1.0; break; 
 	}
 	if (doutbuf[1].r != real || doutbuf[1].i != imag) {
 	    errs++;
-	    fprintf( stderr, "double complex PROD(i) test failed\n" );
+	    fprintf( stderr, "double complex PROD(i) test failed (%f,%f)!=(%f,%f)\n",
+		     doutbuf[1].r,doutbuf[1].i,real,imag);
 	}
 	if (doutbuf[2].r != 0 || doutbuf[2].i != 0) {
 	    errs++;
@@ -138,7 +141,7 @@ int main( int argc, char *argv[] )
     ldoutbuf[2] = 1;
     MPI_Reduce( ldinbuf, ldoutbuf, 3, MPI_LONG_DOUBLE, MPI_PROD, 0, comm );
     if (rank == 0) {
-	if (ldoutbuf[0] != (long double)result[maxsize]) {
+	if (ldoutbuf[0] != (long double)result[maxsize-1]) {
 	    errs++;
 	    fprintf( stderr, "long double PROD(rank) test failed\n" );
 	}
@@ -167,7 +170,7 @@ int main( int argc, char *argv[] )
     lloutbuf[2] = 1;
     MPI_Reduce( llinbuf, lloutbuf, 3, MPI_LONG_LONG, MPI_PROD, 0, comm );
     if (rank == 0) {
-	if (lloutbuf[0] != (long long)result[maxsize]) {
+	if (lloutbuf[0] != (long long)result[maxsize-1]) {
 	    errs++;
 	    fprintf( stderr, "long long PROD(rank) test failed\n" );
 	}

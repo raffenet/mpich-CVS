@@ -47,7 +47,7 @@ int main( int argc, char *argv[] )
     coutbuf[2] = 1;
     MPI_Reduce( cinbuf, coutbuf, 3, MPI_CHAR, MPI_BXOR, 0, comm );
     if (rank == 0) {
-	if (coutbuf[0] != (size % 2) ? (char)0xff : (char)0 ) {
+	if (coutbuf[0] != ((size % 2) ? (char)0xff : (char)0) ) {
 	    errs++;
 	    fprintf( stderr, "char BXOR(1) test failed\n" );
 	}
@@ -55,7 +55,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "char BXOR(0) test failed\n" );
 	}
-	if (coutbuf[2] != (char)0xff && size > 1) {
+	if (coutbuf[2] != ((size % 2) ? (char)0xc3 : (char)0xff)) {
 	    errs++;
 	    fprintf( stderr, "char BXOR(>) test failed\n" );
 	}
@@ -71,7 +71,7 @@ int main( int argc, char *argv[] )
     ucoutbuf[2] = 1;
     MPI_Reduce( ucinbuf, ucoutbuf, 3, MPI_UNSIGNED_CHAR, MPI_BXOR, 0, comm );
     if (rank == 0) {
-	if (ucoutbuf[0] != (size % 2) ? 0xff : 0) {
+	if (ucoutbuf[0] != ((size % 2) ? 0xff : 0)) {
 	    errs++;
 	    fprintf( stderr, "unsigned char BXOR(1) test failed\n" );
 	}
@@ -79,7 +79,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "unsigned char BXOR(0) test failed\n" );
 	}
-	if (ucoutbuf[2] != 0xff && size > 1) {
+	if (ucoutbuf[2] != ((size % 2) ? (unsigned char)0xc3 : (unsigned char)0xff)) {
 	    errs++;
 	    fprintf( stderr, "unsigned char BXOR(>) test failed\n" );
 	}
@@ -95,7 +95,7 @@ int main( int argc, char *argv[] )
     coutbuf[2] = 1;
     MPI_Reduce( cinbuf, coutbuf, 3, MPI_BYTE, MPI_BXOR, 0, comm );
     if (rank == 0) {
-	if (coutbuf[0] != (size % 2) ? (char)0xff : 0) {
+	if (coutbuf[0] != ((size % 2) ? (char)0xff : 0)) {
 	    errs++;
 	    fprintf( stderr, "byte BXOR(1) test failed\n" );
 	}
@@ -103,7 +103,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "byte BXOR(0) test failed\n" );
 	}
-	if (coutbuf[2] != (char)0xff && size > 1) {
+	if (coutbuf[2] != ((size % 2) ? (char)0xc3 : (char)0xff)) {
 	    errs++;
 	    fprintf( stderr, "byte BXOR(>) test failed\n" );
 	}
@@ -119,7 +119,7 @@ int main( int argc, char *argv[] )
     soutbuf[2] = 1;
     MPI_Reduce( sinbuf, soutbuf, 3, MPI_SHORT, MPI_BXOR, 0, comm );
     if (rank == 0) {
-	if (soutbuf[0] != (size % 2) ? (short)0xffff : 0) {
+	if (soutbuf[0] != ((size % 2) ? (short)0xffff : 0)) {
 	    errs++;
 	    fprintf( stderr, "short BXOR(1) test failed\n" );
 	}
@@ -127,7 +127,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "short BXOR(0) test failed\n" );
 	}
-	if (soutbuf[2] != (short)0xffff && size > 1) {
+	if (soutbuf[2] != ((size % 2) ? (short)0xc3c3 : (short)0xffff)) {
 	    errs++;
 	    fprintf( stderr, "short BXOR(>) test failed\n" );
 	}
@@ -143,7 +143,7 @@ int main( int argc, char *argv[] )
     usoutbuf[2] = 1;
     MPI_Reduce( usinbuf, usoutbuf, 3, MPI_UNSIGNED_SHORT, MPI_BXOR, 0, comm );
     if (rank == 0) {
-	if (usoutbuf[0] != (size % 2) ? 0xffff : 0) {
+	if (usoutbuf[0] != ((size % 2) ? 0xffff : 0)) {
 	    errs++;
 	    fprintf( stderr, "short BXOR(1) test failed\n" );
 	}
@@ -151,7 +151,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "short BXOR(0) test failed\n" );
 	}
-	if (usoutbuf[2] != 0xffff && size > 1) {
+	if (usoutbuf[2] != ((size % 2) ? 0xc3c3 : 0xffff)) {
 	    errs++;
 	    fprintf( stderr, "short BXOR(>) test failed\n" );
 	}
@@ -167,7 +167,7 @@ int main( int argc, char *argv[] )
     uoutbuf[2] = 1;
     MPI_Reduce( uinbuf, uoutbuf, 3, MPI_UNSIGNED, MPI_BXOR, 0, comm );
     if (rank == 0) {
-	if (uoutbuf[0] != (size % 2) ? 0xffffffff : 0) {
+	if (uoutbuf[0] != ((size % 2) ? 0xffffffff : 0)) {
 	    errs++;
 	    fprintf( stderr, "unsigned BXOR(1) test failed\n" );
 	}
@@ -175,7 +175,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "unsigned BXOR(0) test failed\n" );
 	}
-	if (uoutbuf[2] != 0xffffffff && size > 1) {
+	if (uoutbuf[2] != ((size % 2) ? 0xc3c3c3c3 : 0xffffffff)) {
 	    errs++;
 	    fprintf( stderr, "unsigned BXOR(>) test failed\n" );
 	}
@@ -191,7 +191,7 @@ int main( int argc, char *argv[] )
     ioutbuf[2] = 1;
     MPI_Reduce( iinbuf, ioutbuf, 3, MPI_INT, MPI_BXOR, 0, comm );
     if (rank == 0) {
-	if (ioutbuf[0] != (size % 2) ? 0xffffffff : 0) {
+	if (ioutbuf[0] != ((size % 2) ? 0xffffffff : 0)) {
 	    errs++;
 	    fprintf( stderr, "int BXOR(1) test failed\n" );
 	}
@@ -199,7 +199,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "int BXOR(0) test failed\n" );
 	}
-	if (ioutbuf[2] != 0xffffffff && size > 1) {
+	if (ioutbuf[2] != ((size % 2) ? 0xc3c3c3c3 : 0xffffffff)) {
 	    errs++;
 	    fprintf( stderr, "int BXOR(>) test failed\n" );
 	}
@@ -215,7 +215,7 @@ int main( int argc, char *argv[] )
     loutbuf[2] = 1;
     MPI_Reduce( linbuf, loutbuf, 3, MPI_LONG, MPI_BXOR, 0, comm );
     if (rank == 0) {
-	if (loutbuf[0] != (size % 2) ? 0xffffffff : 0) {
+	if (loutbuf[0] != ((size % 2) ? 0xffffffff : 0)) {
 	    errs++;
 	    fprintf( stderr, "long BXOR(1) test failed\n" );
 	}
@@ -223,7 +223,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "long BXOR(0) test failed\n" );
 	}
-	if (loutbuf[2] != 0xffffffff && size > 1) {
+	if (loutbuf[2] != ((size % 2) ? 0xc3c3c3c3 : 0xffffffff)) {
 	    errs++;
 	    fprintf( stderr, "long BXOR(>) test failed\n" );
 	}
@@ -239,7 +239,7 @@ int main( int argc, char *argv[] )
     uloutbuf[2] = 1;
     MPI_Reduce( ulinbuf, uloutbuf, 3, MPI_UNSIGNED_LONG, MPI_BXOR, 0, comm );
     if (rank == 0) {
-	if (uloutbuf[0] != (size % 2) ? 0xffffffff : 0) {
+	if (uloutbuf[0] != ((size % 2) ? 0xffffffff : 0)) {
 	    errs++;
 	    fprintf( stderr, "unsigned long BXOR(1) test failed\n" );
 	}
@@ -247,7 +247,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "unsigned long BXOR(0) test failed\n" );
 	}
-	if (uloutbuf[2] != 0xffffffff && size > 1) {
+	if (uloutbuf[2] != ((size % 2) ? 0xc3c3c3c3 : 0xffffffff)) {
 	    errs++;
 	    fprintf( stderr, "unsigned long BXOR(>) test failed\n" );
 	}
@@ -266,7 +266,7 @@ int main( int argc, char *argv[] )
     lloutbuf[2] = 1;
     MPI_Reduce( llinbuf, lloutbuf, 3, MPI_LONG_LONG, MPI_BXOR, 0, comm );
     if (rank == 0) {
-	if (lloutbuf[0] != (size % 2) ? 0xffffffff : 0) {
+	if (lloutbuf[0] != ((size % 2) ? 0xffffffff : 0)) {
 	    errs++;
 	    fprintf( stderr, "long long BXOR(1) test failed\n" );
 	}
@@ -274,7 +274,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "long long BXOR(0) test failed\n" );
 	}
-	if (lloutbuf[2] != 0xffffffff && size > 1) {
+	if (lloutbuf[2] != ((size % 2) ? 0xc3c3c3c3 : 0xffffffff)) {
 	    errs++;
 	    fprintf( stderr, "long long BXOR(>) test failed\n" );
 	}

@@ -56,7 +56,7 @@ int main( int argc, char **argv)
 		}
 	    }
 
-#	    if DEBUG
+#	    ifdef DEBUG
 	    {
 		printf("rank=%d, n=%d, reps=%d\n", rank, n, reps);
 	    }
@@ -90,7 +90,8 @@ int main( int argc, char **argv)
     }
     
     /* printf("Node %d done\n", rank); */
-    MPI_Reduce( &num_errors, &tot_errors, 1, MPI_INT, 0, MPI_SUM, MPI_COMM_WORLD );
+    MPI_Reduce( &num_errors, &tot_errors, 1, MPI_INT, MPI_SUM, 0, 
+		MPI_COMM_WORLD );
     if (rank == 0 && tot_errors == 0) 
 	printf(" No Errors\n");
 
