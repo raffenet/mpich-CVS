@@ -28,6 +28,7 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 
     MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
     MPIDU_SOCKI_VALIDATE_SOCK(listener, mpi_errno, fn_exit);
+    MPIDU_SOCKI_VALIDATE_SOCK_SET(sock_set, mpi_errno, fn_exit);
 
     pollfd = MPIDU_Socki_sock_get_pollfd(listener);
     pollinfo = MPIDU_Socki_sock_get_pollinfo(listener);
@@ -61,7 +62,6 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 	 * Unless the listener sock is being closed, add it back into the poll list so that new connections will be detected.
 	 */
 	MPIDU_SOCKI_POLLFD_OP_SET(pollfd, pollinfo, POLLIN);
-	/* MT: MPIDU_SOCKI_WAKEUP(sock_set, FALSE); */
     }
     
     if (fd == -1)
@@ -139,9 +139,6 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
     pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RW;
     pollinfo->os_errno = 0;
     
-    pollfd->fd = -1;
-    pollfd->events = 0;
-    pollfd->revents = 0;
     *sockp = sock;
 
   fn_exit:
@@ -518,3 +515,36 @@ int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t 
     return mpi_errno;
 }
 /* end MPIDU_Sock_writev() */
+
+
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Sock_wakeup
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIDU_Sock_wakeup(struct MPIDU_Sock_set * sock_set)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_ACCEPT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_ACCEPT);
+
+    MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
+    MPIDU_SOCKI_VALIDATE_SOCK_SET(sock_set, mpi_errno, fn_exit);
+    
+#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+    {
+	struct pollinfo * pollinfo;
+	
+	pollinfo = MPIDU_Socki_sock_get_pollinfo(sock_set->intr_sock);
+	MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_WAKEUP, 0, NULL, mpi_errno, mpi_errno, fn_exit);
+	MPIDU_Socki_wakeup(sock_set);
+    }
+#   endif
+    
+  fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_ACCEPT);
+    return mpi_errno;
+}
+/* end MPIDU_Sock_wakeup() */
+
+

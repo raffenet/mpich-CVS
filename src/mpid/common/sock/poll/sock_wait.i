@@ -77,9 +77,116 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 
 	for(;;)
 	{
-	    MPIDI_FUNC_ENTER(MPID_STATE_POLL);
-	    nfds = poll(sock_set->pollfds, sock_set->poll_n_elem, millisecond_timeout);
-	    MPIDI_FUNC_EXIT(MPID_STATE_POLL);
+#	    if (MPICH_THREAD_LEVEL != MPI_THREAD_MULTIPLE)
+	    {
+		MPIDI_FUNC_ENTER(MPID_STATE_POLL);
+		nfds = poll(sock_set->pollfds, sock_set->poll_array_elems, millisecond_timeout);
+		MPIDI_FUNC_EXIT(MPID_STATE_POLL);
+	    }
+#	    else
+	    {
+		/*
+		 * First try a non-blocking poll to see if any immediate progress can be made.  This avoids the lock manipulation
+		 * overhead.
+		 */
+		MPIDI_FUNC_ENTER(MPID_STATE_POLL);
+		nfds = poll(sock_set->pollfds, sock_set->poll_array_elems, 0);
+		MPIDI_FUNC_EXIT(MPID_STATE_POLL);
+		
+		if (nfds == 0 && millisecond_timeout != 0)
+		{
+		    int pollfds_active_elems = sock_set->poll_array_elems;
+		
+		    sock_set->pollfds_active = sock_set->pollfds;
+		    
+#                   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+		    {
+#                       if (USE_THREAD_PKG == MPICH_THREAD_PKG_POSIX)
+			{
+			    pthread_mutex_unlock(&MPIR_Process.global_mutex);
+			}
+#			else
+#			    error selected thread package not supported
+#			endif
+		    }
+#                   elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
+		    {
+			if (MPIU_Monitor_closet_get_occupany_count(MPIR_Process.global_closet) == 0)
+			{
+			    MPIU_Monitor_exit(&MPIR_Process.global_monitor);
+			}
+			else
+			{
+			    MPIU_Monitor_continue(&MPIR_Process.global_monitor, &MPIR_Process.global_closet);
+			}
+		    }
+#                   else
+#                       error selected multi-threaded implementation is not supported
+#                   endif
+			    
+		    MPIDI_FUNC_ENTER(MPID_STATE_POLL);
+		    nfds = poll(sock_set->pollfds_active, pollfds_active_elems, millisecond_timeout);
+		    MPIDI_FUNC_EXIT(MPID_STATE_POLL);
+		    
+#                   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+		    {
+#                       if (USE_THREAD_PKG == MPICH_THREAD_PKG_POSIX)
+			{
+			    pthread_mutex_lock(&MPIR_Process.global_mutex);
+			}
+#			else
+#			    error selected thread package not supported
+#			endif
+		    }
+#                   elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
+		    {
+			MPIU_Monitor_enter(&MPIR_Process.global_monitor);
+		    }
+#                   else
+#                       error selected multi-threaded implementation is not supported
+#                   endif
+
+		    /*
+		     * Update pollfds array if changes were posted while we were blocked in poll
+		     */
+		    if (sock_set->pollfds_updated)
+		    { 
+			if (sock_set->pollfds_active == sock_set->pollfds)
+			{
+			    for (elem = 0; elem < pollfds_active_elems; elem++)
+			    {
+				sock_set->pollfds[elem].events = sock_set->pollinfos[elem].pollfd_events;
+				sock_set->pollfds[elem].revents &= ~(POLLIN | POLLOUT) | sock_set->pollfds[elem].events;
+				if ((sock_set->pollfds[elem].events & (POLLIN | POLLOUT)) == 0)
+				{
+				    sock_set->pollfds[elem].fd = -1;
+				}
+			    }
+			}
+			else
+			{
+			    for (elem = 0; elem < pollfds_active_elems; elem++)
+			    {
+				sock_set->pollfds[elem].events = sock_set->pollinfos[elem].pollfd_events;
+				sock_set->pollfds[elem].revents = sock_set->pollfds_active[elem].revents &
+				    (~(POLLIN | POLLOUT) | sock_set->pollfds[elem].events);
+				if ((sock_set->pollfds[elem].events & (POLLIN | POLLOUT)) == 0)
+				{
+				    sock_set->pollfds[elem].fd = -1;
+				}
+			    }
+
+			    MPIU_Free(sock_set->pollfds_active);
+			}
+
+			sock_set->pollfds_updated = FALSE;
+		    }
+
+		    sock_set->pollfds_active = NULL;
+		    sock_set->wakeup_posted = FALSE;
+		}
+	    }
+#	    endif
 
 	    if (nfds > 0)
 	    {
@@ -117,6 +224,12 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 	elem = sock_set->starting_elem;
 	while (nfds > 0)
 	{
+	    /*
+	     * Acquire pointers to the pollfd and pollinfo structures for the next element
+	     *
+	     * NOTE: These pointers could become stale, if a new sock were to be allocated during the processing of the element.
+	     * At present, none of the handler routines allocate a sock, so the issue does not arise.
+	     */
 	    struct pollfd * const pollfd = &sock_set->pollfds[elem];
 	    struct pollinfo * const pollinfo = &sock_set->pollinfos[elem];
 	
@@ -126,14 +239,14 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 	    if (pollfd->fd < 0 || pollfd->revents == 0)
 	    {
 		/* This optimization assumes that most FDs will not have a pending event. */
-		elem = (elem + 1 < sock_set->poll_n_elem) ? elem + 1 : 0;
+		elem = (elem + 1 < sock_set->poll_array_elems) ? elem + 1 : 0;
 		continue;
 	    }
 
 	    if (found_active_elem == FALSE)
 	    {
 		found_active_elem = TRUE;
-		sock_set->starting_elem = (elem + 1 < sock_set->poll_n_elem) ? elem + 1 : 0;
+		sock_set->starting_elem = (elem + 1 < sock_set->poll_array_elems) ? elem + 1 : 0;
 	    }
 
 	    if (pollfd->revents & POLLNVAL)
@@ -190,7 +303,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		    MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_ACCEPT, 0, pollinfo->user_ptr,
 					      MPI_SUCCESS, mpi_errno, fn_exit);
 		}
-		else if (pollinfo->type == MPIDU_SOCKI_TYPE_INTERRUPTER)
+		else if ((MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE) && pollinfo->type == MPIDU_SOCKI_TYPE_INTERRUPTER)
 		{
 		    char c[16];
 		    int nb;
@@ -248,7 +361,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 	    }
 
 	    nfds--;
-	    elem = (elem + 1 < sock_set->poll_n_elem) ? elem + 1 : 0;
+	    elem = (elem + 1 < sock_set->poll_array_elems) ? elem + 1 : 0;
 	}
     }
     
@@ -466,7 +579,7 @@ static int MPIDU_Socki_handle_read(struct pollfd * const pollfd, struct pollinfo
 	{
 	    MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_READ, pollinfo->read_nb, pollinfo->user_ptr,
 				      MPI_SUCCESS, mpi_errno, fn_exit);
-	    MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd, pollfd, POLLIN);
+	    MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd, pollinfo, POLLIN);
 	}
     }
     else if (nb == 0)

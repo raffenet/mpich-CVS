@@ -87,10 +87,6 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
     pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RW;
     pollinfo->os_errno = 0;
 
-    pollfd->fd = -1;
-    pollfd->events = 0;
-    pollfd->revents = 0;
-    
     /*
      * Convert hostname to IP address
      *
@@ -136,7 +132,6 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
 	/* connection pending */
 	pollinfo->state = MPIDU_SOCKI_STATE_CONNECTING;
 	MPIDU_SOCKI_POLLFD_OP_SET(pollfd, pollinfo, POLLOUT);
-	/* MT: MPIDU_SOCKI_WAKEUP(sock_set, FALSE); */
     }
     else
     {
@@ -313,7 +308,6 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
     pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RO;
 
     MPIDU_SOCKI_POLLFD_OP_SET(pollfd, pollinfo, POLLIN);
-    /* MT: MPIDU_SOCKI_WAKEUP(sock_set, FALSE); */
 
     *sockp = sock;
 
@@ -372,7 +366,6 @@ int MPIDU_Sock_post_read(struct MPIDU_Sock * sock, void * buf, MPIU_Size_t minle
     pollinfo->read_progress_update_fn = fn;
     
     MPIDU_SOCKI_POLLFD_OP_SET(pollfd, pollinfo, POLLIN);
-    /* MT: MPIDU_SOCKI_WAKEUP(sock_set, FALSE); */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_READ);
@@ -420,7 +413,6 @@ int MPIDU_Sock_post_readv(struct MPIDU_Sock * sock, MPID_IOV * iov, int iov_n, M
     pollinfo->read_progress_update_fn = fn;
 
     MPIDU_SOCKI_POLLFD_OP_SET(pollfd, pollinfo, POLLIN);
-    /* MT: MPIDU_SOCKI_WAKEUP(sock_set, FALSE); */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_READV);
@@ -469,7 +461,6 @@ int MPIDU_Sock_post_write(struct MPIDU_Sock * sock, void * buf, MPIU_Size_t minl
     pollinfo->write_progress_update_fn = fn;
 
     MPIDU_SOCKI_POLLFD_OP_SET(pollfd, pollinfo, POLLOUT);
-    /* MT: MPIDU_SOCKI_WAKEUP(sock_set, FALSE); */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_WRITE);
@@ -517,7 +508,6 @@ int MPIDU_Sock_post_writev(struct MPIDU_Sock * sock, MPID_IOV * iov, int iov_n, 
     pollinfo->write_progress_update_fn = fn;
 
     MPIDU_SOCKI_POLLFD_OP_SET(pollfd, pollinfo, POLLOUT);
-    /* MT: MPIDU_SOCKI_WAKEUP(sock_set, FALSE); */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_WRITEV);
@@ -579,7 +569,6 @@ int MPIDU_Sock_post_close(struct MPIDU_Sock * sock)
 	    }
 	
 	    MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd, pollinfo, POLLIN | POLLOUT);
-	    /* MT: MPIDU_SOCKI_WAKEUP(sock_set, FALSE); */
 	}
     }
     else /* if (pollinfo->type == MPIDU_SOCKI_TYPE_LISTENER) */
@@ -590,7 +579,6 @@ int MPIDU_Sock_post_close(struct MPIDU_Sock * sock)
 	 * MPIDU_Sock_wait().
 	 */
 	MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd, pollinfo, POLLIN);
-	/* MT: MPIDU_SOCKI_WAKEUP(sock_set, FALSE); */
     }
     
     MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_CLOSE, 0, pollinfo->user_ptr, MPI_SUCCESS, mpi_errno, fn_exit);

@@ -120,6 +120,9 @@ struct pollinfo
     enum MPIDU_Socki_type type;
     enum MPIDU_Socki_state state;
     int os_errno;
+# if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)    
+    int pollfd_events;
+# endif
     union
     {
 	struct
@@ -168,15 +171,36 @@ struct MPIDU_Socki_eventq_elem
 struct MPIDU_Sock_set
 {
     int id;
-    int poll_arr_sz;
-    int poll_n_elem;
+
+    /* when the pollfds array is scanned for activity, start with this element.  this is used to prevent favoring a particular
+       element, such as the first. */
     int starting_elem;
+
+    /* pointers to the pollfd and pollinfo that make up the logical poll array, along with the current size of the array and last
+       allocated element */
+    int poll_array_sz;
+    int poll_array_elems;
     struct pollfd * pollfds;
     struct pollinfo * pollinfos;
-    int intr_fds[2];
-    struct MPIDU_Sock * intr_sock;
+
+    /* head and tail pointers for the event queue */
     struct MPIDU_Socki_eventq_elem * eventq_head;
     struct MPIDU_Socki_eventq_elem * eventq_tail;
+    
+# if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+    /* pointer to the pollfds array being actively used by a blocking poll(); NULL if not blocking in poll() */
+    struct pollfd * pollfds_active;
+    
+    /* flag indicating if updates were made to any pollfd entries while a thread was blocking in poll() */
+    int pollfds_updated;
+    
+    /* flag indicating that a wakeup has already been posted on the interrupter socket */
+    int wakeup_posted;
+    
+    /* sock and fds for the interrpter pipe */
+    struct MPIDU_Sock * intr_sock;
+    int intr_fds[2];
+# endif
 };
 
 struct MPIDU_Sock

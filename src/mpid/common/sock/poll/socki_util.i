@@ -6,6 +6,10 @@
  */
 
 
+#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+static int MPIDU_Socki_wakeup(struct MPIDU_Sock_set * sock_set);
+#endif
+
 static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, int os_errno, char * fcname, int line, int * conn_failed);
 
 static int MPIDU_Socki_adjust_iov(ssize_t nb, MPID_IOV * const iov, const int count, int * const offsetp);
@@ -37,24 +41,58 @@ static int inline MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, in
 }
 
 
-#define MPIDU_SOCKI_POLLFD_OP_SET(pollfd_, pollinfo_, op_)	\
-{								\
-    (pollfd_)->events |= (op_);					\
-    (pollfd_)->fd = (pollinfo_)->fd;				\
-}
+
+#if (MPICH_THREAD_LEVEL != MPI_THREAD_MULTIPLE)
+#   define MPIDU_SOCKI_POLLFD_OP_SET(pollfd_, pollinfo_, op_)	\
+    {								\
+        (pollfd_)->events |= (op_);				\
+        (pollfd_)->fd = (pollinfo_)->fd;			\
+    }
+#   define MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd_, pollinfo_, op_)	\
+    {								\
+        (pollfd_)->events &= ~(op_);				\
+        (pollfd_)->revents &= ~(op_);				\
+        if (((pollfd_)->events & (POLLIN | POLLOUT)) == 0)	\
+        {							\
+            (pollfd_)->fd = -1;					\
+        }							\
+    }
+#else
+#   define MPIDU_SOCKI_POLLFD_OP_SET(pollfd_, pollinfo_, op_)		\
+    {									\
+	(pollinfo_)->pollfd_events |= (op_);				\
+	if ((pollinfo_)->sock_set->pollfds_active == NULL)		\
+	{								\
+	    (pollfd_)->events |= (op_);					\
+	    (pollfd_)->fd = (pollinfo_)->fd;				\
+	}								\
+	else								\
+	{								\
+	    (pollinfo_)->sock_set->pollfds_updated = TRUE;		\
+	    MPIDU_Socki_wakeup((pollinfo_)->sock_set);			\
+	}								\
+    }
+#   define MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd_, pollinfo_, op_)		\
+    {									\
+	(pollinfo_)->pollfd_events &= ~(op_);				\
+	if ((pollinfo_)->sock_set->pollfds_active == NULL)		\
+	{								\
+	    (pollfd_)->events &= ~(op_);				\
+	    (pollfd_)->revents &= ~(op_);				\
+	    if (((pollfd_)->events & (POLLIN | POLLOUT)) == 0)		\
+	    {								\
+		(pollfd_)->fd = -1;					\
+	    }								\
+	}								\
+	else								\
+	{								\
+	    (pollinfo_)->sock_set->pollfds_updated = TRUE;		\
+	    MPIDU_Socki_wakeup((pollinfo_)->sock_set);			\
+	}								\
+    }
+#endif
 
 #define MPIDU_SOCKI_POLLFD_OP_ISSET(pollfd_, pollinfo_, op_) ((pollfd_)->events & (op_))
-
-#define MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd_, pollinfo_, op_)	\
-{								\
-    (pollfd_)->events &= ~(op_);				\
-    (pollfd_)->revents &= ~(op_);				\
-    if (((pollfd_)->events & (POLLIN | POLLOUT)) == 0)		\
-    {								\
-	(pollfd_)->fd = -1;					\
-    }								\
-								\
-}
 
 
 #define MPIDU_SOCKI_GET_SOCKET_ERROR(pollinfo_, os_errno_, mpi_errno_, fail_label_)				\
@@ -99,14 +137,15 @@ static int inline MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, in
 }
 
 
-#define MPIDU_SOCKI_VALIDATE_SOCK_SET(sock_, mpi_errno_, fail_label_)
+#define MPIDU_SOCKI_VALIDATE_SOCK_SET(sock_set_, mpi_errno_, fail_label_)
 
 
 #define MPIDU_SOCKI_VALIDATE_SOCK(sock_, mpi_errno_, fail_label_)								\
 {																\
     struct pollinfo * pollinfo__;												\
 																\
-    if ((sock_) == NULL || (sock_)->sock_set == NULL || (sock_)->elem < 0 || (sock_)->elem >= (sock_)->sock_set->poll_n_elem)	\
+    if ((sock_) == NULL || (sock_)->sock_set == NULL || (sock_)->elem < 0 ||							\
+	(sock_)->elem >= (sock_)->sock_set->poll_array_elems)									\
     {																\
 	(mpi_errno_) = MPIR_Err_create_code((mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK,	\
 					    "**sock|badsock", NULL);								\
@@ -269,6 +308,43 @@ static int inline MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, in
 }
 
 
+#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+
+/*
+ * MPIDU_Socki_wakeup()
+ */
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Socki_wakeup
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+static int MPIDU_Socki_wakeup(struct MPIDU_Sock_set * sock_set)
+{
+    if (sock_set->wakeup_posted == FALSE)
+    {
+	for(;;)
+	{
+	    int nb;
+	    char c = 0;
+	    
+	    nb = write(sock_set->intr_fds[1], &c, 1);
+	    if (nb == 1)
+	    {
+		break;
+	    }
+
+	    MPIU_Assertp(nb == 0 || errno == EINTR);
+	}
+	
+	sock_set->wakeup_posted = TRUE;
+    }
+
+    return MPIDU_SOCK_SUCCESS;
+}
+/* end MPIDU_Socki_wakeup() */
+
+#endif /* (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE) */
+    
+
 /*
  * MPIDU_Socki_os_to_mpi_errno()
  *
@@ -279,7 +355,7 @@ static int inline MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, in
 #define FUNCNAME MPIDU_Socki_os_to_mpi_errno
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, int os_errno, char * fcname, int line, int * disconnected)
+static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, int os_errno, char * fcname, int line, int * disconnected)
 {
     int mpi_errno;
 
@@ -387,9 +463,9 @@ static int MPIDU_Socki_adjust_iov(ssize_t nb, MPID_IOV * const iov, const int co
 static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU_Sock ** sockp)
 {
     struct MPIDU_Sock * sock = NULL;
-    int elem;
-    struct pollfd * fds = NULL;
-    struct pollinfo * infos = NULL;
+    int avail_elem;
+    struct pollfd * pollfds = NULL;
+    struct pollinfo * pollinfos = NULL;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCKI_SOCK_ALLOC);
 
@@ -402,93 +478,145 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
 	goto fn_fail;
     }
 
-    for (elem = 0; elem < sock_set->poll_arr_sz; elem++)
+    /*
+     * Check existing poll structures for a free element.
+     */
+    for (avail_elem = 0; avail_elem < sock_set->poll_array_sz; avail_elem++)
     {
-	if (sock_set->pollinfos[elem].sock_id == -1)
+	if (sock_set->pollinfos[avail_elem].sock_id == -1)
 	{
-	    if (elem >= sock_set->poll_n_elem)
+	    if (avail_elem >= sock_set->poll_array_elems)
 	    {
-		sock_set->poll_n_elem = elem + 1;
+		sock_set->poll_array_elems = avail_elem + 1;
 	    }
-
+	    
 	    break;
 	}
     }
 
-    /* No free pollfd and pollinfo elements.  Resize... */
-    if (elem == sock_set->poll_arr_sz)
+    /*
+     * No free elements were found.  Larger pollfd and pollinfo arrays need to be allocated and the existing data transfered
+     * over.
+     */
+    if (avail_elem == sock_set->poll_array_sz)
     {
-	int elem2;
+	int elem;
+	
+	pollfds = MPIU_Malloc((sock_set->poll_array_sz + MPIDU_SOCK_SET_DEFAULT_SIZE) * sizeof(struct pollfd));
+	if (pollfds == NULL)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
+					     "**nomem", 0);
+	    goto fn_fail;
+	}
+	pollinfos = MPIU_Malloc((sock_set->poll_array_sz + MPIDU_SOCK_SET_DEFAULT_SIZE) * sizeof(struct pollinfo));
+	if (pollinfos == NULL)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
+					     "**nomem", 0);
+	    goto fn_fail;
+	}
+	
+	if (sock_set->poll_array_sz > 0)
+	{
+	    /*
+	     * Copy information from the old arrays and then free them.  
+	     *
+	     * In the multi-threaded case, the pollfd array can only be copied if another thread is not already blocking in poll()
+	     * and thus potentially modifying the array.  Furthermore, the pollfd array must not be freed if it is the one
+	     * actively being used by pol().
+	     */
+#	    if (MPICH_THREAD_LEVEL != MPI_THREAD_MULTIPLE)
+	    {
+		memcpy(pollfds, sock_set->pollfds, sock_set->poll_array_sz * sizeof(struct pollfd));
+		MPIU_Free(sock_set->pollfds);
+	    }
+#	    else
+	    {
+		if (sock_set->pollfds_active == NULL)
+		{ 
+		    memcpy(pollfds, sock_set->pollfds, sock_set->poll_array_sz * sizeof(struct pollfd));
+		
+		    if  (sock_set->pollfds_active != sock_set->pollfds)
+		    {
+			MPIU_Free(sock_set->pollfds);
+		    }
+		}
+	    }
+#           endif
 	    
-	fds = MPIU_Malloc((sock_set->poll_arr_sz + MPIDU_SOCK_SET_DEFAULT_SIZE) * sizeof(struct pollfd));
-	if (fds == NULL)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
-					     "**nomem", 0);
-	    goto fn_fail;
-	}
-	infos = MPIU_Malloc((sock_set->poll_arr_sz + MPIDU_SOCK_SET_DEFAULT_SIZE) * sizeof(struct pollinfo));
-	if (infos == NULL)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
-					     "**nomem", 0);
-	    goto fn_fail;
-	}
-
-	if (sock_set->poll_arr_sz > 0)
-	{
-	    /* Copy information from old arrays */
-	    memcpy(fds, sock_set->pollfds, sock_set->poll_arr_sz * sizeof(struct pollfd));
-	    memcpy(infos, sock_set->pollinfos, sock_set->poll_arr_sz * sizeof(struct pollinfo));
-
-	    /* FIXME: MT: XXX: we must guarantee that the code is not in poll when we do this!!!  Perhaps we can leave them
-               allocated, set a flag in the sock set, and have MPIDU_Sock_wait() deallocate them when it comes out of poll... */
-	    /* Free old arrays... */
-	    MPIU_Free(sock_set->pollfds);
+	    memcpy(pollinfos, sock_set->pollinfos, sock_set->poll_array_sz * sizeof(struct pollinfo));
 	    MPIU_Free(sock_set->pollinfos);
 	}
-    
-	sock_set->poll_n_elem = elem + 1;
-	sock_set->poll_arr_sz += MPIDU_SOCK_SET_DEFAULT_SIZE;
-	sock_set->pollfds = fds;
-	sock_set->pollinfos = infos;
-	    
-	/* Initialize new elements */
-	for (elem2 = elem; elem2 < sock_set->poll_arr_sz; elem2++)
+
+	sock_set->poll_array_elems = avail_elem + 1;
+	sock_set->poll_array_sz += MPIDU_SOCK_SET_DEFAULT_SIZE;
+	sock_set->pollfds = pollfds;
+	sock_set->pollinfos = pollinfos;
+	
+	/*
+	 * Initialize new elements
+	 */
+	for (elem = avail_elem; elem < sock_set->poll_array_sz; elem++)
 	{
-	    fds[elem2].fd = -1;
-	    fds[elem2].events = 0;
-	    fds[elem2].revents = 0;
-	    infos[elem2].fd = -1;
-	    infos[elem2].sock_set = sock_set;
-	    infos[elem2].elem = elem2;
-	    infos[elem2].sock = NULL;
-	    infos[elem2].sock_id = -1;
-	    infos[elem2].type = 0;
-	    infos[elem2].state = 0;
-		
+	    pollfds[elem].fd = -1;
+	    pollfds[elem].events = 0;
+	    pollfds[elem].revents = 0;
+	}
+	for (elem = avail_elem; elem < sock_set->poll_array_sz; elem++)
+	{
+	    pollinfos[elem].fd = -1;
+	    pollinfos[elem].sock_set = sock_set;
+	    pollinfos[elem].elem = elem;
+	    pollinfos[elem].sock = NULL;
+	    pollinfos[elem].sock_id = -1;
+	    pollinfos[elem].type = 0;
+	    pollinfos[elem].state = 0;
+#	    if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+	    {
+		pollinfos[elem].pollfd_events = 0;
+	    }
+#	    endif
 	}
     }
 
-    /* Verify that memory hasn't been messed up */
-    MPIU_Assert(sock_set->pollfds[elem].fd == -1);
-    MPIU_Assert(sock_set->pollfds[elem].events == 0);
-    MPIU_Assert(sock_set->pollfds[elem].revents == 0);
-    MPIU_Assert(sock_set->pollinfos[elem].sock_set == sock_set);
-    MPIU_Assert(sock_set->pollinfos[elem].elem == elem);
-    MPIU_Assert(sock_set->pollinfos[elem].fd == -1);
-    MPIU_Assert(sock_set->pollinfos[elem].sock == NULL);
-    MPIU_Assert(sock_set->pollinfos[elem].sock_id == -1);
-    MPIU_Assert(sock_set->pollinfos[elem].type == 0);
-    MPIU_Assert(sock_set->pollinfos[elem].state == 0);
+    /*
+     * Verify that memory hasn't been messed up.
+     */
+    MPIU_Assert(sock_set->pollinfos[avail_elem].sock_set == sock_set);
+    MPIU_Assert(sock_set->pollinfos[avail_elem].elem == avail_elem);
+    MPIU_Assert(sock_set->pollinfos[avail_elem].fd == -1);
+    MPIU_Assert(sock_set->pollinfos[avail_elem].sock == NULL);
+    MPIU_Assert(sock_set->pollinfos[avail_elem].sock_id == -1);
+    MPIU_Assert(sock_set->pollinfos[avail_elem].type == 0);
+    MPIU_Assert(sock_set->pollinfos[avail_elem].state == 0);
+#   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+    {
+	MPIU_Assert(sock_set->pollinfos[avail_elem].pollfd_events == 0);
+    }
+#   endif
 
-    /* Initialize newly allocated sock structure and associated poll structures */
-    sock_set->pollinfos[elem].sock_id = (sock_set->id << 24) | elem;
-    sock_set->pollinfos[elem].sock = sock;
+    /*
+     * Initialize newly allocated sock structure and associated poll structures
+     */
+    sock_set->pollinfos[avail_elem].sock_id = (sock_set->id << 24) | avail_elem;
+    sock_set->pollinfos[avail_elem].sock = sock;
     sock->sock_set = sock_set;
-    sock->elem = elem;
+    sock->elem = avail_elem;
 
+    sock_set->pollfds[avail_elem].fd = -1;
+    sock_set->pollfds[avail_elem].events = 0;
+    sock_set->pollfds[avail_elem].revents = 0;
 
+#   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+    {
+	if (sock_set->pollfds_active != NULL)
+	{
+	    sock_set->pollfds_updated = TRUE;
+	}
+    }
+#   endif
+    
     *sockp = sock;
     
   fn_exit:
@@ -496,14 +624,14 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
     return mpi_errno;
 
   fn_fail:
-    if (infos != NULL)
+    if (pollinfos != NULL)
     {
-	MPIU_Free(infos);
+	MPIU_Free(pollinfos);
     }
 
-    if (fds != NULL)
+    if (pollfds != NULL)
     {
-	MPIU_Free(fds);
+	MPIU_Free(pollfds);
     }
 	
     if (sock != NULL)
@@ -524,28 +652,51 @@ static void MPIDU_Socki_sock_free(struct MPIDU_Sock * sock)
 {
     struct pollfd * pollfd = MPIDU_Socki_sock_get_pollfd(sock);
     struct pollinfo * pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
+    struct MPIDU_Sock_set * sock_set = sock->sock_set;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCKI_SOCK_FREE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCKI_SOCK_FREE);
 
-    /* compress poll array */
-    if (sock->elem + 1 == sock->sock_set->poll_n_elem)
+#   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+    {
+	/*
+	 * Freeing a sock while Sock_wait() is blocked in poll() is not supported
+	 */
+	MPIU_Assert(sock_set->pollfds_active == NULL);
+    }
+#   endif
+
+    /*
+     * Compress poll array
+     *
+     * TODO: move last element into current position and update sock associated with last element.
+     */
+    if (sock->elem + 1 == sock_set->poll_array_elems)
     { 
-	sock->sock_set->poll_n_elem -= 1;
+	sock_set->poll_array_elems -= 1;
     }
 
-    /* remove entry from the poll list and mark the entry as free */
-    pollfd->fd = -1;
-    pollfd->events = 0;
-    pollfd->revents = 0;
+    /*
+     * Remove entry from the poll list and mark the entry as free
+     */
     pollinfo->fd = -1;
     pollinfo->sock = NULL;
     pollinfo->sock_id = -1;
     pollinfo->type = 0;
     pollinfo->state = 0;
+#   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+    {
+	pollinfo->pollfd_events = 0;
+    }
+#   endif
 		
+    pollfd->fd = -1;
+    pollfd->events = 0;
+    pollfd->revents = 0;
 
-    /* mark the sock as invalid so that any future use might be caught */
+    /*
+     * Mark the sock as invalid so that any future use might be caught
+     */
     sock->sock_set = NULL;
     sock->elem = -1;
     

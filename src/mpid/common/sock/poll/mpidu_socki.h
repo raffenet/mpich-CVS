@@ -34,7 +34,7 @@
 #define MPIDU_SOCK_NATIVE_FD       int
 
 typedef struct MPIDU_Sock_set * MPIDU_Sock_set_t;
-typedef struct MPIDU_Sock * MPIDU_Sock_t;  /* FIXME: this could be just a struct to avoid an extra pointer chase */
+typedef struct MPIDU_Sock * MPIDU_Sock_t;
 typedef size_t MPIDU_Sock_size_t;
 
 #define MPIDU_SOCKI_STATE_LIST \
