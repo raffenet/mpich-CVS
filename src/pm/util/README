@@ -1,0 +1,17 @@
+This directory contains common support routines that may be used to 
+implement mpiexec .  They include
+
+cmnargs.c - Command line processing for mpiexec .  Handles all arguments, 
+  including the ... : ... notation .  Creates a "process table" that 
+  describes the programs to run.  There is one entry per specified program,
+  even if the program will be run on multiple processes.  (This is 
+  necessary in handling the "soft" option.)
+
+pmiserv.[c,h] - Proivdes handling of the 'simple' PMI (process manager) 
+  interface .  
+
+rm.c - A simple "resource manager", this accepts a list of available 
+  machines and a process table structure and returns an expanded process table 
+  with one entry per machine.
+
+timelimit.c - Provides support for setting a maximum time for programs
