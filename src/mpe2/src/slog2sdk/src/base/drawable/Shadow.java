@@ -347,86 +347,6 @@ public class Shadow extends Primitive
         return rep.toString();
     }
 
-    /* Caller needs to be sure that the Drawable is a State */
-    public void setStateRowAndNesting( CoordPixelXform  coord_xform,
-                                       Map              map_line2row,
-                                       NestingStacks    nesting_stacks )
-    {
-        Coord  start_vtx, final_vtx;
-        start_vtx = this.getStartVertex();
-        // final_vtx = this.getFinalVertex();
-
-        int    rowID;
-        float  nesting_ftr;
-        rowID  = ( (Integer)
-                   map_line2row.get( new Integer(start_vtx.lineID) )
-                 ).intValue();
-        super.setRowID( rowID );
-        /*
-        // if ( nesting_stacks.isReadyToGetNestingFactorFor( this ) ) {
-        if ( super.isNestingFactorUninitialized() ) {
-            nesting_ftr = nesting_stacks.getNestingFactorFor( this );
-            super.setNestingFactor( nesting_ftr );
-        }
-        */
-        nesting_ftr = nesting_stacks.getNestingFactorFor( this );
-        super.setNestingFactor( nesting_ftr );
-    }
-
-    public int  drawOnCanvas( Graphics2D g, CoordPixelXform coord_xform,
-                              Map map_line2row, DrawnBoxSet drawn_boxes )
-    {
-        Category type = super.getCategory();
-        Topology topo = type.getTopology();
-        if ( topo.isEvent() )
-            System.err.println( "Non-supported yet Event Shadow type." );
-        else if ( topo.isState() )
-            return this.drawState( g, coord_xform, map_line2row,
-                                   drawn_boxes, type.getColor() );
-        else if ( topo.isArrow() )
-            return this.drawArrow( g, coord_xform, map_line2row,
-                                   drawn_boxes, type.getColor() );
-        else
-            System.err.println( "Non-recognized Shadow type! " + this );
-        return 0;
-    }
-
-    public Drawable getDrawableWithPixel( CoordPixelXform coord_xform,
-                                          Map map_line2row,
-                                          Point pix_pt )
-    {
-        Category type = super.getCategory();
-        Topology topo = type.getTopology();
-        if ( topo.isEvent() )
-            System.err.println( "Non-supported yet Event Shadow type." );
-        else if ( topo.isState() ) {
-            selected_subtype = this.isPixelInState( coord_xform,
-                                                    map_line2row, pix_pt );
-            if ( this.selected_subtype != null )
-                return this;
-        }
-        else if ( topo.isArrow() ) {
-            if ( this.isPixelOnArrow( coord_xform, map_line2row, pix_pt ) )
-                return this;
-        }
-        else
-            System.err.println( "Non-recognized Shadow type! " + this );
-        return null;
-    }
-
-    public boolean containSearchable()
-    {
-        CategoryWeight  twgt;
-        int             idx;
-
-        for ( idx = twgt_ary.length-1; idx >= 0; idx-- ) {
-             twgt = twgt_ary[ idx ];
-             if ( twgt.getCategory().isVisiblySearchable() )
-                 return true;
-        }
-        return false;
-    }
-
 
 
     private static Insets Empty_Border = new Insets( 0, 2, 0, 2 );
@@ -442,10 +362,13 @@ public class Shadow extends Primitive
         Line_Stroke = new BasicStroke( thickness );
     }
 
+
+    // Implementation of abstract methods.
+
     /* 
         0.0f < nesting_ftr <= 1.0f
     */
-    private int  drawState( Graphics2D g, CoordPixelXform coord_xform,
+    public  int  drawState( Graphics2D g, CoordPixelXform coord_xform,
                             Map map_line2row, DrawnBoxSet drawn_boxes,
                             ColorAlpha color )
     {
@@ -476,7 +399,7 @@ public class Shadow extends Primitive
         //                    tStart, rStart, tFinal, rFinal );
     }
 
-    private int  drawArrow( Graphics2D g, CoordPixelXform coord_xform,
+    public  int  drawArrow( Graphics2D g, CoordPixelXform coord_xform,
                             Map map_line2row, DrawnBoxSet drawn_boxes,
                             ColorAlpha color )
     {
@@ -504,8 +427,8 @@ public class Shadow extends Primitive
     /* 
         0.0f < nesting_ftr <= 1.0f
     */
-    private Category isPixelInState( CoordPixelXform coord_xform,
-                                     Map map_line2row, Point pix_pt )
+    public  boolean isPixelInState( CoordPixelXform coord_xform,
+                                    Map map_line2row, Point pix_pt )
     {
         Coord  start_vtx, final_vtx;
         start_vtx = this.getStartVertex();
@@ -532,13 +455,15 @@ public class Shadow extends Primitive
         rStart = (float) rowID - nesting_ftr / 2.0f;
         rFinal = rStart + nesting_ftr;
 
-        return PreviewState.containsPixel( twgt_ary, Empty_Border,
-                                           coord_xform, pix_pt,
-                                           tStart, rStart, tFinal, rFinal );
+        selected_subtype = PreviewState.containsPixel( twgt_ary, Empty_Border,
+                                                       coord_xform, pix_pt,
+                                                       tStart, rStart,
+                                                       tFinal, rFinal );
+        return selected_subtype != null;
     }
 
     //  assume this Shadow overlaps with coord_xform.TimeBoundingBox
-    private boolean isPixelOnArrow( CoordPixelXform coord_xform,
+    public  boolean isPixelOnArrow( CoordPixelXform coord_xform,
                                     Map map_line2row, Point pix_pt )
     {
         Coord  start_vtx, final_vtx;
@@ -559,5 +484,18 @@ public class Shadow extends Primitive
 
         return Line.containsPixel( coord_xform, pix_pt,
                                    tStart, rStart, tFinal, rFinal );
+    }
+
+    public boolean containSearchable()
+    {
+        CategoryWeight  twgt;
+        int             idx;
+
+        for ( idx = twgt_ary.length-1; idx >= 0; idx-- ) {
+             twgt = twgt_ary[ idx ];
+             if ( twgt.getCategory().isVisiblySearchable() )
+                 return true;
+        }
+        return false;
     }
 }

@@ -333,73 +333,14 @@ public class Primitive extends Drawable
         return true;
     }
 
-    /* Caller needs to be sure that the Drawable is a State */
-    public void setStateRowAndNesting( CoordPixelXform  coord_xform,
-                                       Map              map_line2row,
-                                       NestingStacks    nesting_stacks )
-    {
-        Coord  start_vtx, final_vtx;
-        start_vtx = this.getStartVertex();
-        // final_vtx = this.getFinalVertex();
 
-        int    rowID;
-        float  nesting_ftr;
-        rowID  = ( (Integer) 
-                   map_line2row.get( new Integer(start_vtx.lineID) )
-                 ).intValue();
-        super.setRowID( rowID );
-        nesting_ftr = nesting_stacks.getNestingFactorFor( this );
-        super.setNestingFactor( nesting_ftr );
-    }
 
-    public int  drawOnCanvas( Graphics2D g, CoordPixelXform coord_xform,
-                              Map map_line2row, DrawnBoxSet drawn_boxes )
-    {
-        Category type = super.getCategory();
-        Topology topo = type.getTopology();
-        if ( topo.isEvent() )
-            System.err.println( "Not yet supported Event Primitive type." );
-        else if ( topo.isState() )
-            return this.drawState( g, coord_xform, map_line2row,
-                                   drawn_boxes, type.getColor() );
-        else if ( topo.isArrow() )
-            return this.drawArrow( g, coord_xform, map_line2row,
-                                   drawn_boxes, type.getColor() );
-        else
-            System.err.println( "Non-recognized Primitive type! " + this );
-        return 0;
-    }
-
-    public Drawable getDrawableWithPixel( CoordPixelXform  coord_xform,
-                                          Map              map_line2row,
-                                          Point            pix_pt )
-    {
-        Category type = super.getCategory();
-        Topology topo = type.getTopology();
-        if ( topo.isEvent() )
-            System.err.println( "Not yet supported Event Primitive type." );
-        else if ( topo.isState() ) {
-            if ( this.isPixelInState( coord_xform, map_line2row, pix_pt ) )
-                return this;
-        }
-        else if ( topo.isArrow() ) {
-            if ( this.isPixelOnArrow( coord_xform, map_line2row, pix_pt ) )
-                return this;
-        }
-        else
-            System.err.println( "Non-recognized Primitive type! " + this );
-        return null;
-    }
-
-    public boolean containSearchable()
-    {
-        return super.getCategory().isVisiblySearchable();
-    }
+    // Implementation of abstract methods.
 
     /* 
         0.0f < nesting_ftr <= 1.0f
     */
-    private int  drawState( Graphics2D g, CoordPixelXform coord_xform,
+    public  int  drawState( Graphics2D g, CoordPixelXform coord_xform,
                             Map map_line2row, DrawnBoxSet drawn_boxes,
                             ColorAlpha color )
     {
@@ -429,7 +370,7 @@ public class Primitive extends Drawable
     }
 
     //  assume this Primitive overlaps with coord_xform.TimeBoundingBox
-    private int  drawArrow( Graphics2D g, CoordPixelXform coord_xform,
+    public  int  drawArrow( Graphics2D g, CoordPixelXform coord_xform,
                             Map map_line2row, DrawnBoxSet drawn_boxes,
                             ColorAlpha color )
     {
@@ -457,7 +398,7 @@ public class Primitive extends Drawable
     /* 
         0.0f < nesting_ftr <= 1.0f
     */
-    private boolean isPixelInState( CoordPixelXform coord_xform,
+    public  boolean isPixelInState( CoordPixelXform coord_xform,
                                     Map map_line2row, Point pix_pt )
     {
         Coord  start_vtx, final_vtx;
@@ -490,7 +431,7 @@ public class Primitive extends Drawable
     }
 
     //  assume this Primitive overlaps with coord_xform.TimeBoundingBox
-    private boolean isPixelOnArrow( CoordPixelXform coord_xform,
+    public  boolean isPixelOnArrow( CoordPixelXform coord_xform,
                                     Map map_line2row, Point pix_pt )
     {
         Coord  start_vtx, final_vtx;
@@ -511,5 +452,10 @@ public class Primitive extends Drawable
 
         return Line.containsPixel( coord_xform, pix_pt,
                                    tStart, rStart, tFinal, rFinal );
+    }
+
+    public boolean containSearchable()
+    {
+        return super.getCategory().isVisiblySearchable();
     }
 }

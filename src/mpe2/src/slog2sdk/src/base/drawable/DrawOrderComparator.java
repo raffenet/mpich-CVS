@@ -47,47 +47,25 @@ public class DrawOrderComparator implements Comparator
                 if ( dobj1 == dobj2 )
                     return 0;
                 else {
-                    int dobj1_type, dobj2_type;
-                    dobj1_type = dobj1.getCategoryIndex();
-                    dobj2_type = dobj2.getCategoryIndex();
-                    if ( dobj1_type != dobj2_type )
+                    int dobj1_typeidx, dobj2_typeidx;
+                    dobj1_typeidx = dobj1.getCategoryIndex();
+                    dobj2_typeidx = dobj2.getCategoryIndex();
+                    if ( dobj1_typeidx != dobj2_typeidx )
                         // arbitary order
-                        return dobj1_type - dobj2_type;
+                        return dobj1_typeidx - dobj2_typeidx;
                     else {
-                        int        dobj1_vtx, dobj2_vtx;
-                        Primitive  prime;
-
-                        if ( dobj1 instanceof Composite )
-                            prime = ((Composite) dobj1).getStartPrimitive();
-                        else
-                            prime = (Primitive) dobj1;
-                        dobj1_vtx = prime.getStartVertex().lineID;
-
-                        if ( dobj2 instanceof Composite )
-                            prime = ((Composite) dobj2).getStartPrimitive();
-                        else
-                            prime = (Primitive) dobj2;
-                        dobj2_vtx = prime.getStartVertex().lineID;
-
-                        if ( dobj1_vtx != dobj2_vtx )
+                        int        dobj1_lineID, dobj2_lineID;
+                        dobj1_lineID = dobj1.getStartVertex().lineID;
+                        dobj2_lineID = dobj2.getStartVertex().lineID;
+                        if ( dobj1_lineID != dobj2_lineID )
                             // arbitary order
-                            return dobj1_vtx - dobj2_vtx;
+                            return dobj1_lineID - dobj2_lineID;
                         else {
-                            if ( dobj1 instanceof Composite )
-                                prime = ((Composite) dobj1).getFinalPrimitive();
-                            else
-                                prime = (Primitive) dobj1;
-                            dobj1_vtx = prime.getFinalVertex().lineID;
-
-                            if ( dobj2 instanceof Composite )
-                                prime = ((Composite) dobj2).getFinalPrimitive();
-                            else
-                                prime = (Primitive) dobj2;
-                            dobj2_vtx = prime.getFinalVertex().lineID;
-
-                            if ( dobj1_vtx != dobj2_vtx )
+                            dobj1_lineID = dobj1.getFinalVertex().lineID;
+                            dobj2_lineID = dobj2.getFinalVertex().lineID;
+                            if ( dobj1_lineID != dobj2_lineID )
                                 // arbitary order
-                                return dobj1_vtx - dobj2_vtx;
+                                return dobj1_lineID - dobj2_lineID;
                             else {
                                 System.err.println( "DrawOrderComparator: "
                                           + "WARNING! Equal Drawables?\n"

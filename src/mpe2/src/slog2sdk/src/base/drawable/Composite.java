@@ -10,8 +10,10 @@
 package base.drawable;
 
 import java.awt.Graphics2D;
+import java.awt.Color;
 import java.awt.Point;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Iterator;
@@ -21,6 +23,9 @@ import java.io.ByteArrayInputStream;
 import base.io.MixedDataInputStream;
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
+import base.topology.Line;
+import base.topology.Arrow;
+import base.topology.State;
 
 // Composite should be considered as an InfoBox of Primitive[]
 
@@ -188,6 +193,7 @@ public class Composite extends Drawable
         primes   = new Primitive[ Nprimes ];
         for ( idx = 0; idx < primes.length; idx++ ) {
             prime         = new Primitive( ins );
+            prime.setParent( this );
             primes[ idx ] = prime;
             // Determine the SuperClass, TimeBoundingBox.
             super.affectTimeBounds( prime );
@@ -284,6 +290,7 @@ public class Composite extends Drawable
         super.affectTimeBounds( final_prime );
     }
 
+/*
     public Primitive getStartPrimitive()
     {
         return primes[ 0 ];
@@ -292,6 +299,20 @@ public class Composite extends Drawable
     public Primitive getFinalPrimitive()
     {
         return primes[ last_prime_idx ];
+    }
+*/
+
+    /*
+         getStartVertex()/getFinalVertex() defines the DrawOrderComparator.
+    */
+    public Coord getStartVertex()
+    {
+        return primes[ 0 ].getStartVertex();
+    }
+
+    public Coord getFinalVertex()
+    {
+        return primes[ last_prime_idx ].getFinalVertex();
     }
 
     public String toString()
@@ -305,6 +326,8 @@ public class Composite extends Drawable
         rep.append( "]" );
         return rep.toString();
     }
+
+
 
     private class ItrOfPrimes implements Iterator
     {
@@ -342,41 +365,7 @@ public class Composite extends Drawable
         public void remove() {}
     }   // private class ItrOfPrimes 
 
-/*
-    //  Check clone() interface
-    public static final void main( String[] args )
-    {
-        Composite prime, sobj;
 
-        Category ctgy = new Category();  // incomplete category
-        ctgy.setInfoKeys( "msg_tag\nmsg_size\n" );
-        prime = new Composite( ctgy, new Primitive[] { new Primitive( 1.1, 1 ),
-                                                 new Primitive( 2.2, 2 ) } );
-        prime.setInfoValue( 0, 10 );
-        prime.setInfoValue( 1, 1024 );
-        System.out.println( "prime = " + prime );
-
-        sobj = null;
-        try {
-            sobj = (Composite) prime.clone();
-        } catch( CloneNotSupportedException cerr ) {
-            cerr.printStackTrace();
-            System.exit( 1 );
-        }
-
-        System.out.println( "\nAfter cloning" );
-        System.out.println( "prime = " + prime );
-        System.out.println( "sobj = " + sobj );
-
-        sobj.getStartPrimitive().time = 4.4;
-        sobj.getFinalPrimitive().time = 5.5;
-        sobj.setInfoValue( 0, 1000 );
-        System.out.println( "\nAfter modification of the clone" );
-        System.out.println( "prime = " + prime );
-        System.out.println( "sobj = " + sobj );
-        System.out.println( "This proves that clone() is useless for Shadow" );
-    }
-*/
 
     public boolean isTimeOrdered()
     {
@@ -407,72 +396,152 @@ public class Composite extends Drawable
         return true;
     }
 
-     /* Caller needs to be sure that the Drawable is a State */
-    public void setStateRowAndNesting( CoordPixelXform  coord_xform,
-                                       Map              map_line2row,
-                                       NestingStacks    nesting_stacks )
+/*
+    public void addPrimitivesToSet( Set prime_set )
+    {
+        int        primes_length, idx;
+        primes_length = (short) primes.length;
+        // primes[] is iterated in increaing starttime order
+        for ( idx = 0; idx < primes_length; idx++ )
+            prime_set.add( primes[ idx ] );
+    }
+*/
+
+    public void addPrimitivesToSet( Set prime_set, TimeBoundingBox timeframe )
     {
         Primitive  prime;
         int        primes_length, idx;
         primes_length = (short) primes.length;
-        // primes[] needs to be iterated in increaing starttime order
+        // primes[] is iterated in increaing starttime order
         for ( idx = 0; idx < primes_length; idx++ ) {
             prime = primes[ idx ];
-            // assume all primitives are all States
-            if ( coord_xform.overlaps( prime ) )
-                prime.setStateRowAndNesting( coord_xform, map_line2row,
-                                             nesting_stacks );
+            if ( prime.overlaps( timeframe ) )
+                prime_set.add( prime );
         }
     }
 
-    public int  drawOnCanvas( Graphics2D g, CoordPixelXform coord_xform,
-                              Map map_line2row, DrawnBoxSet drawn_boxes )
-    {
-        Primitive  prime;
-        int        primes_length, num_primes_drawn, idx;
 
-        num_primes_drawn = 0;
-        primes_length = (short) primes.length;
-        // primes[] needs to be iterated in increaing starttime order
-        for ( idx = 0; idx < primes_length; idx++ ) {
-            prime = primes[ idx ];
-            if ( coord_xform.overlaps( prime ) )
-                num_primes_drawn += prime.drawOnCanvas( g, coord_xform,
-                                                        map_line2row,
-                                                        drawn_boxes );
-        }
-        return num_primes_drawn;
+    // Implementation of abstract methods.
+
+    /*
+        0.0f < nesting_ftr <= 1.0f
+    */
+    public  int  drawState( Graphics2D g, CoordPixelXform coord_xform,
+                            Map map_line2row, DrawnBoxSet drawn_boxes,
+                            ColorAlpha color )
+    {
+        Coord  start_vtx, final_vtx;
+        start_vtx = this.getStartVertex();
+        final_vtx = this.getFinalVertex();
+
+        double tStart, tFinal;
+        tStart = start_vtx.time;  /* different from Shadow */
+        tFinal = final_vtx.time;  /* different form Shadow */
+
+        int    rowID;
+        float  nesting_ftr;
+        /* assume RowID and NestingFactor have been calculated */
+        rowID       = super.getRowID();
+        nesting_ftr = super.getNestingFactor();
+
+        // System.out.println( "\t" + this + " nestftr=" + nesting_ftr );
+
+        float  rStart, rFinal;
+        rStart = (float) rowID - nesting_ftr / 2.0f;
+        rFinal = rStart + nesting_ftr;
+
+        return State.draw( g, color, null, coord_xform,
+                           drawn_boxes.getLastStatePos( rowID ),
+                           tStart, rStart, tFinal, rFinal );
     }
 
-    public Drawable getDrawableWithPixel( CoordPixelXform coord_xform,
-                                          Map             map_line2row,
-                                          Point           pix_pt )
+    //  assume this Primitive overlaps with coord_xform.TimeBoundingBox
+    public  int  drawArrow( Graphics2D g, CoordPixelXform coord_xform,
+                            Map map_line2row, DrawnBoxSet drawn_boxes,
+                            ColorAlpha color )
     {
-        Primitive  prime;
-        int        primes_length, idx;
+        Coord  start_vtx, final_vtx;
+        start_vtx = this.getStartVertex();
+        final_vtx = this.getFinalVertex();
 
-        primes_length = (short) primes.length;
-        for ( idx = primes_length-1; idx >= 0; idx-- ) {
-            prime = primes[ idx ];
-            if ( coord_xform.overlaps( prime ) ) {
-                if ( prime.getDrawableWithPixel( coord_xform,
-                                                 map_line2row, pix_pt )
-                     != null )
-                    return prime;
-            }
-        }
-        return null;
+        double tStart, tFinal;
+        tStart = start_vtx.time;
+        tFinal = final_vtx.time;
+
+        int    iStart, iFinal;
+        iStart = ( (Integer)
+                   map_line2row.get( new Integer(start_vtx.lineID) )
+                 ).intValue();
+        iFinal = ( (Integer)
+                   map_line2row.get( new Integer(final_vtx.lineID) )
+                 ).intValue();
+
+        return Arrow.draw( g, color, null, coord_xform,
+                           drawn_boxes.getLastArrowPos( iStart, iFinal ),
+                           tStart, (float) iStart, tFinal, (float) iFinal );
+    }
+
+    /*
+        0.0f < nesting_ftr <= 1.0f
+    */
+    public  boolean isPixelInState( CoordPixelXform coord_xform,
+                                    Map map_line2row, Point pix_pt )
+    {
+        Coord  start_vtx, final_vtx;
+        start_vtx = this.getStartVertex();
+        final_vtx = this.getFinalVertex();
+
+        double tStart, tFinal;
+        tStart = start_vtx.time;  /* different from Shadow */
+        tFinal = final_vtx.time;  /* different form Shadow */
+
+        int    rowID;
+        float  nesting_ftr;
+        /*
+        rowID  = ( (Integer)
+                   map_line2row.get( new Integer(start_vtx.lineID) )
+                 ).intValue();
+        */
+        /* assume RowID and NestingFactor have been calculated */
+        rowID       = super.getRowID();
+        nesting_ftr = super.getNestingFactor();
+
+        // System.out.println( "\t" + this + " nestftr=" + nesting_ftr );
+
+        float  rStart, rFinal;
+        rStart = (float) rowID - nesting_ftr / 2.0f;
+        rFinal = rStart + nesting_ftr;
+
+        return State.containsPixel( coord_xform, pix_pt,
+                                    tStart, rStart, tFinal, rFinal );
+    }
+
+    //  assume this Primitive overlaps with coord_xform.TimeBoundingBox
+    public  boolean isPixelOnArrow( CoordPixelXform coord_xform,
+                                    Map map_line2row, Point pix_pt )
+    {
+        Coord  start_vtx, final_vtx;
+        start_vtx = this.getStartVertex();
+        final_vtx = this.getFinalVertex();
+
+        double tStart, tFinal;
+        tStart = start_vtx.time;
+        tFinal = final_vtx.time;
+
+        float  rStart, rFinal;
+        rStart = ( (Integer)
+                   map_line2row.get( new Integer(start_vtx.lineID) )
+                 ).floatValue();
+        rFinal = ( (Integer)
+                   map_line2row.get( new Integer(final_vtx.lineID) )
+                 ).floatValue();
+
+        return Line.containsPixel( coord_xform, pix_pt,
+                                   tStart, rStart, tFinal, rFinal );
     }
 
     public boolean containSearchable()
     {
-        int        primes_length, idx;
-
-        primes_length = (short) primes.length;
-        for ( idx = 0; idx < primes_length; idx++ ) {
-            if ( primes[ idx ].containSearchable() )
-                return true;
-        }
-        return false;
+        return super.getCategory().isVisiblySearchable();
     }
 }

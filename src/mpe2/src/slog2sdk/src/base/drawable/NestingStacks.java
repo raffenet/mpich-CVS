@@ -85,10 +85,10 @@ public class NestingStacks
         }
     }
 
-    public boolean isReadyToGetNestingFactorFor( Primitive cur_prime )
+    public boolean isReadyToGetNestingFactorFor( Drawable cur_dobj )
     {
         if ( this.isTimeBoxScrolling )
-            return cur_prime.isNestingFactorUninitialized();
+            return cur_dobj.isNestingFactorUninitialized();
         else
             return true;
     }
@@ -109,9 +109,9 @@ public class NestingStacks
        scheme is needed to make sure they can be drawn and displayed
        continuously/seamlessly across different images in ScrollableObject.
        Object in the nesting stack will be popped until a totally
-       covering drawable is found, i.e prime.covers( cur_prime ).
+       covering drawable is found, i.e dobj.covers( cur_dobj ).
        The previous criterion,  
-           cur_prime.getEarliestTime() < prime.getLatestTime()
+           cur_dobj.getEarliestTime() < dobj.getLatestTime()
        is not enough to guarantee a continuous and seamless drawables
        across images.  Overlapped drawables cannot be drawn nested, because
        when overlapped drawables spread between 2 neighoring images, they 
@@ -120,21 +120,21 @@ public class NestingStacks
        across different images.  Therefore, extending criteria of popping
        nesting stack to search of perfect nested states seem doing the trick. 
      */
-    public float getNestingFactorFor( final Primitive cur_prime )
+    public float getNestingFactorFor( final Drawable cur_dobj )
     {
-        // boolean   isRealDrawable  = ! ( cur_prime instanceof Shadow );
-        int       rowID           = cur_prime.getRowID();
+        // boolean   isRealDrawable  = ! ( cur_dobj instanceof Shadow );
+        int       rowID           = cur_dobj.getRowID();
         Stack     nesting_stack   = nesting_stacks[ rowID ];
         float     nesting_ftr     = Drawable.NON_NESTABLE;
-        Primitive prime;
+        Drawable  dobj;
 
         while ( ! nesting_stack.empty() ) {
-            prime = (Primitive) nesting_stack.peek();
-            // cur_prime is nested inside. pop Overlaped for image continuity
-            if ( prime.covers( cur_prime ) ) {
-                nesting_ftr = prime.getNestingFactor()
+            dobj = (Drawable) nesting_stack.peek();
+            // cur_dobj is nested inside. pop Overlaped for image continuity
+            if ( dobj.covers( cur_dobj ) ) {
+                nesting_ftr = dobj.getNestingFactor()
                             * Nesting_Height_Reduction;
-                nesting_stack.push( cur_prime );
+                nesting_stack.push( cur_dobj );
                 return nesting_ftr;
             }
             else
@@ -142,7 +142,7 @@ public class NestingStacks
         }
         // i.e.  nesting_stack.empty() == true
         nesting_ftr = Initial_Nesting_Height;
-        nesting_stack.push( cur_prime );
+        nesting_stack.push( cur_dobj );
         return nesting_ftr;
     }   //  Endof public float getNestingFactorFor()
 }
