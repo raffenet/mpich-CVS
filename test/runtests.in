@@ -67,9 +67,11 @@ $clean_pgms      = 1;
 # Get some arguments from the environment
 #   Currently, only the following are understood:
 #   VERBOSE
+#   RUNTESTS_VERBOSE  (an alias for VERBOSE in case you want to 
+#                      reserve VERBOSE)
 #   MPITEST_STOPTEST
 #---------------------------------------------------------------------------
-if (defined($ENV{"VERBOSE"})) {
+if ( defined($ENV{"VERBOSE"}) || defined($ENV{"RUNTESTS_VERBOSE"}) ) {
     $verbose = 1;
 }
 if (defined($ENV{"MPITEST_STOPTEST"})) {
@@ -325,9 +327,7 @@ sub RunMPIProgram {
     my $inline = "";
 
     &RunPreMsg( $programname );
-    if ($verbose) {
-	print STDERR "$mpiexec $np_arg $np ./$programname\n";
-    }
+
     unlink "err";
     # Set a default timeout on tests (3 minutes for now)
     $ENV{"MPIEXEC_TIMEOUT"} = 180;
@@ -337,7 +337,7 @@ sub RunMPIProgram {
     if ($InitForTest ne "") {
 	&$InitForTest();
     }
-    print STDOUT "$mpiexec $np_arg $np ./$programname\n";
+    print STDOUT "$mpiexec $np_arg $np ./$programname\n" if $verbose;
     open ( MPIOUT, "$mpiexec $np_arg $np ./$programname 2>&1 |" ) ||
 	 die "Could not run ./$programname\n";
     if ($ResultTest ne "") {
@@ -345,9 +345,14 @@ sub RunMPIProgram {
 	($found_error, $inline) = &$ResultTest( MPIOUT, $programname );
     }
     else {
-	$inline = "$mpiexec $np_arg $np ./$programname\n";
+	if ($verbose) {
+	    $inline = "$mpiexec $np_arg $np ./$programname\n";
+	}
+	else {
+	    $inline = "";
+	}
 	while (<MPIOUT>) {
-	    print STDOUT $_;
+	    print STDOUT $_ if $verbose;
 	    # Skip FORTRAN STOP
 	    if (/FORTRAN STOP/) { next; }
 	    $inline .= $_;
