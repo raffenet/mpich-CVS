@@ -464,6 +464,7 @@ int ib_init()
     char key[100], value[100];
     ib_uint32_t max_cq_entries = IB_MAX_CQ_ENTRIES+1;
     ib_uint32_t attr_size;
+    void *pMem;
     MPIDI_STATE_DECL(MPID_STATE_IB_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_INIT);
@@ -510,8 +511,11 @@ int ib_init()
 	return -1;
     }
     /* get the lid */
-    attr_size = sizeof(IB_Process.attr);
-    status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, 
+    attr_size = 0;
+    status = ib_hca_query_us(IB_Process.hca_handle, NULL, 
+			     HCA_QUERY_HCA_STATIC, &attr_size);
+    pMem = malloc(attr_size);
+    status = ib_hca_query_us(IB_Process.hca_handle, &pMem, 
 			     HCA_QUERY_HCA_STATIC, &attr_size);
     if (status != IB_SUCCESS)
     {
@@ -519,10 +523,22 @@ int ib_init()
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_INIT);
 	return status;
     }
-    attr_size = sizeof(IB_Process.attr);
+/*
     IB_Process.attr.port_dynamic_info_p = 
 	(port_dynamic_info_t*)malloc(IB_Process.attr.node_info.port_num * 
 				     sizeof(port_dynamic_info_t));
+    status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, 
+			     HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
+*/
+    attr_size = 0;
+    status = ib_hca_query_us(IB_Process.hca_handle, NULL, 
+			     HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
+/*
+    IB_Process.attr.port_dynamic_info_p = 
+	(port_dynamic_info_t*)malloc(((ib_hca_attr_t*)pMem)->node_info.port_num * 
+				     sizeof(port_dynamic_info_t));
+*/
+    IB_Process.attr.port_dynamic_info_p = (port_dynamic_info_t*)malloc(attr_size);
     status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, 
 			     HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
     if (status != IB_SUCCESS)
