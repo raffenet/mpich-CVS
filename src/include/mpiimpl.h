@@ -544,17 +544,19 @@ do {                                                                    \
    and in-range addresses */
 #define MPID_Valid_ptr(kind,ptr,err) \
   {if (!(ptr)) { err = MPIR_Err_create_code( MPI_ERR_OTHER, "**nullptrtype", "**nullptrtype %s", #kind ); } }
+#define MPID_Valid_ptr_class(kind,ptr,errclass,err) \
+  {if (!(ptr)) { err = MPIR_Err_create_code( errclass, "**nullptrtype", "**nullptrtype %s", #kind ); } }
 
-#define MPID_Info_valid_ptr(ptr,err) MPID_Valid_ptr(Info,ptr,err)
-#define MPID_Comm_valid_ptr(ptr,err) MPID_Valid_ptr(Comm,ptr,err)
-#define MPID_Datatype_valid_ptr(ptr,err) MPID_Valid_ptr(Datatype,ptr,err)
-#define MPID_Group_valid_ptr(ptr,err) MPID_Valid_ptr(Group,ptr,err)
-#define MPID_Win_valid_ptr(ptr,err) MPID_Valid_ptr(Win,ptr,err)
-#define MPID_Op_valid_ptr(ptr,err) MPID_Valid_ptr(Op,ptr,err)
+#define MPID_Info_valid_ptr(ptr,err) MPID_Valid_ptr_class(Info,ptr,MPI_ERR_INFO,err)
+#define MPID_Comm_valid_ptr(ptr,err) MPID_Valid_ptr_class(Comm,ptr,MPI_ERR_COMM,err)
+#define MPID_Datatype_valid_ptr(ptr,err) MPID_Valid_ptr_class(Datatype,ptr,MPI_ERR_TYPE,err)
+#define MPID_Group_valid_ptr(ptr,err) MPID_Valid_ptr_class(Group,ptr,MPI_ERR_GROUP,err)
+#define MPID_Win_valid_ptr(ptr,err) MPID_Valid_ptr_class(Win,ptr,MPI_ERR_WIN,err)
+#define MPID_Op_valid_ptr(ptr,err) MPID_Valid_ptr_class(Op,ptr,MPI_ERR_OP,err)
 #define MPID_Errhandler_valid_ptr(ptr,err) MPID_Valid_ptr(Errhandler,ptr,err)
-#define MPID_File_valid_ptr(ptr,err) MPID_Valid_ptr(File,ptr,err)
-#define MPID_Request_valid_ptr(ptr,err) MPID_Valid_ptr(Request,ptr,err)
-#define MPID_Keyval_valid_ptr(ptr,err) MPID_Valid_ptr(Keyval,ptr,err)
+#define MPID_File_valid_ptr(ptr,err) MPID_Valid_ptr_class(File,ptr,MPI_ERR_FILE,err)
+#define MPID_Request_valid_ptr(ptr,err) MPID_Valid_ptr_class(Request,ptr,MPI_ERR_REQUEST,err)
+#define MPID_Keyval_valid_ptr(ptr,err) MPID_Valid_ptr_class(Keyval,ptr,MPI_ERR_KEYVAL,err)
 
 /* Generic pointer test.  This is applied to any address, not just one from
    an MPI object.
