@@ -1807,6 +1807,9 @@ copy ch3mmPDebug\mpich2d.lib lib\mpich2d.lib
 				RelativePath=".\mpich2.def">
 			</File>
 			<File
+				RelativePath="src\mpi\romio\mpi-io\mpich2_fileutil.c">
+			</File>
+			<File
 				RelativePath=".\src\mpid\common\datatype\mpid_datatype_contents.c">
 			</File>
 			<File
