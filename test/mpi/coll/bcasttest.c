@@ -17,7 +17,7 @@ int main( int argc, char **argv)
     
     buf = (int *) malloc(sizes[2]*sizeof(int));
 
-    for (n=0; n<NUM_REPS; n++)
+    for (n=0; n<NUM_SIZES; n++)
     {
 	if (rank == ROOT)
 	{
