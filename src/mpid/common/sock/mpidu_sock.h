@@ -73,7 +73,8 @@ typedef enum MPIDU_Sock_op
     MPIDU_SOCK_OP_WRITE,
     MPIDU_SOCK_OP_ACCEPT,
     MPIDU_SOCK_OP_CONNECT,
-    MPIDU_SOCK_OP_CLOSE
+    MPIDU_SOCK_OP_CLOSE,
+    MPIDU_SOCK_OP_WAKEUP
 } MPIDU_Sock_op_t;
 
 
@@ -305,6 +306,8 @@ be generated from a listener (typically one per incoming connection attempt).
 The implementation may generate an event as soon it is notified that a new connection is forming.  In such an implementation,
 MPIDU_Sock_accept() may be responsible for finalizing the connection.  It is also possible that the connection may fail to
 complete, causing MPIDU_Sock_accept() to be unable to obtain a sock despite the event notification.
+
+The environment variable MPICH_PORTRANGE=min,max may be used to restrict the ports mpich processes listen on.
 
 Thread safety:
 The addition of the listener sock object to the sock set may occur while other threads are performing operations on the same sock
