@@ -198,7 +198,7 @@ $docdir_name =               'docdir      = @' . "docdir"      . '@';
 		 'INCLUDE' => 'includedir', 
 		 'MAN' => 'mandir',
 		 'HTML' => 'htmldir',
-		'DOC' => 'docdir',
+		 'DOC' => 'docdir',
 		);
 %install_methods = ( 'LIB'     => '$(INSTALL_DATA)',
 		     'BIN'     => '$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)',
@@ -217,6 +217,17 @@ $docdir_name =               'docdir      = @' . "docdir"      . '@';
 		   'includedir'  => 'prefix',
  		   'exec_prefix' => 'prefix' );
 # etc.
+#
+# Remember which document types we've seen
+%globaldockind = ( "html" => 0, "man" => 0, "latex" => 0 );
+# Set globaldocdir to the location to use if no specific directory is
+# chosen.  It may contain ROOTDIR.
+$globaldocdir  = 'ROOTDIR/$dockinddirval'; 
+%dockinddir = ( "html" => "www/www3", 
+	        "man" => "man/man3", 
+	        "latex" => "tex/tex3" );
+$docnamedefs   = "";
+$doc_attop = 1;
 #
 # Rules
 # (need a way to quote the rule here and unquote it when used)
@@ -305,6 +316,9 @@ foreach $_ (@ARGV) {
 	$debug = 1;
     }
     elsif (/-quiet/) { $quiet = 1; }
+    elsif (/-docheading=(.$)/) { $doc_heading = $1; }
+    elsif (/-docdestdir=(.*)/) { $globaldocdir = $1; }	   
+    elsif (/-docnamedefs=(.*)/) { $doc_namedefs = $1; }	   
     elsif (/-help/) {
 	&printHelp;
 	exit 0;
@@ -426,10 +440,13 @@ sub ReadMfile {
             $libdir{$1}  = "$2/";
         }
 	elsif (/^doc_(\w*)_SOURCES\s*=\s*(.*)\s*$/) {
-	    $docsrc{$1} = $2;
+	    # Lowercase the type
+	    $docsrc{lc($1)} = $2;
+	    $globaldockind{lc($1)} = 1;
 	}
 	elsif (/^doc_(\w*)_DIR\s*=\s*(.*)\s*$/) {
-	    $docdir{$1} = $2;
+	    # Lowercase the type
+	    $docdir{lc($1)} = $2;
 	}
 	elsif (/^profilelib_([@\${}\(\)\w-]*)\s*=\s*(.*)\s*$/) {
 	    # proflib_<oldname> = <newname>
@@ -547,6 +564,9 @@ sub WriteMfile {
 	# We may want to break DefaultRules into a pre and post version
         &DefaultRules;
     }
+    
+    # Other variables
+    &VariableDocs;
 
     # Print out variables before generated targets
     print FD $other_vars;
@@ -752,6 +772,11 @@ sub DefaultRules {
     foreach $ext (keys(%ext_seen)) {
 	$suffixes .= " .$ext";
     }
+    
+    # Finally, update suffixes from any other source.  Currently, this
+    # handles the suffixes for document generation.
+    &SuffixDocs;
+
     print FD ".SUFFIXES:$newline";
     if ("$suffixes $ExplicitSuffixes" ne " ") {
 	print FD ".SUFFIXES: $suffixes $ExplicitSuffixes$newline";
@@ -788,6 +813,9 @@ sub DefaultRules {
 	    print FD "\t$extrules{$extkey}$newline";
 	}
     }
+    
+    # Other generic rules.  Currently, only for documents
+    &RuleDocs;
 
     # Configure update targets
     if ( -s "configure.in" && $maint_targets ) {
@@ -856,10 +884,14 @@ sub DefaultRules {
 	# We need to use the enclosing configure, not always the top-level
 	# configure.  Thus, we need to keep track of the directory of the
 	# current configure, and the path to get to that configure.
+	# We also allow this step to fail; for example, the 
+	# config.status may already have been removed.
+	$ignore_step = "-";
 	if ($topdir ne ".") {
-	    print FD "\tcd $topdir && \\$newline";
+	    print FD "\t-cd $topdir && \\$newline";
+	    $ignore_step = "";
 	}
-	print FD "\tCONFIG_FILES=${curdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status$newline";
+	print FD "\t${ignore_step}CONFIG_FILES=${curdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status$newline";
     }
     # Clean targets
     &TargetClean;
@@ -1514,29 +1546,143 @@ sub TargetTags {
     }
     &RecursiveOp( "TAGS" );
 }
+#
+# The generation of documentation (e.g., manual pages) is handled 
+# a little differently.  To make it easier to manage a VPATH build of
+# everything, including the documentation, we:
+#    Add the document output types as file extensions to SUFFIX
+#    Add generic build rules (using variables for options) 
+#    Create targets using variable substitution.
+# For example, to add html output (this shows *only* the document rules)
+#
+# .SUFFIXES: .c .html 
+# .c.html:
+# \tdoctext -html $(DOCTEXT_OPTIONS) $<
+# HTML: ${mpi_sources:.c=.html}
+#
+# In addition, we may need to generate a document target even if there are
+# no files in this directory *if* there are subdirectories (the usual
+# recursive target).
+#
+# Temporary repository:
+# the doctext line from MPICH1
+#	$doctext -ext 3 -mpath ../../man/man3 -I pubinc -heading MPI \
+#		 -quotefmt /home/MPI/mansrc/fortnotes \
+#		 -ignore EXPORT_MPI_API \
+#	         /home/MPI/mansrc/errnotes *.c ; \
+#
+# SuffixDocs: Add any suffix rules for this directory
+sub SuffixDocs { 
+    # global: do_docs, suffixes, docsrc
+    if (! $do_docs) { return; }
+    foreach my $kind (keys(%docsrc)) {
+	if ($docsrc{$kind} ne "") {
+	    $suffixes .= " .$kind";
+	}
+    }
+}
+sub VariableDocs {
+    # global: do_docs, suffixes, docsrc
+    if (! $do_docs) { return; }
+    foreach my $kind (keys(%docsrc)) {
+	;
+    }
+}
+
+sub RuleDocs {
+    # global: do_docs, docsrc, FD, newline
+    if (! $do_docs) { return; }
+    foreach my $kind (keys(%docsrc)) {
+	if ($docsrc{$kind} ne "") {
+	    $docdestdir = $globaldocdir;
+	    if ($docdir{$kind} ne "") {
+		$docdestdir = $docdir{$kind};
+	    }
+	    # Replace ROOTDIR, including handling any doubled //
+	    $docdestdir =~ s/ROOTDIR/$rootdir/g;
+	    $docdestdir =~ s/\/\//\//g;
+	    # Replace any occurance of $dockinddirval is docdestdir
+	    $dockinddirval = $dockinddir{$kind};
+	    $docdestdir =~ s/(\$\w+)/$1/eeg;     # see man perlfaq4
+	    #
+	    # Replace ROOTDIR etc in any doc_namedefs
+	    $docargs = $doc_namedefs;
+	    $docargs =~ s/ROOTDIR/$rootdir/g;
+	    $docargs =~ s/\/\//\//g;
+	    print FD ".c.$kind:$newline";
+	    print FD "\tdoctext -$kind -mpath $docdestdir -heading $doc_heading \\$newline";
+	    print FD "\t\t-quotefmt $docargs \$<$newline";
+	}
+    }
+}
 
 sub TargetDocs {
     if (! $do_docs) { return; }
-    foreach $kind (keys(%docsrc)) {
-	print FD "$kind:$newline";
-	if (defined($docdir{$kind})) { 
-	    $loc = "-mpath $docdir{$kind}";
+    my %didkind = ( "html" => 0, "man" => 0, "latex" => 0 );
+    foreach my $kind (keys(%docsrc)) {
+	print FD "$kind: ";
+	my $src = $docsrc{$kind};
+	if ($src ne "") {
+	    if ($src =~ /^\s*\$[\{\(][_\w]*[\}\)]\s*$/) {
+		# a single variable: use make substitution
+		$src =~ s/\}/:.c=.$kind\}/;
+	    }
+	    elsif ($src =~ /\$/) {
+		# Perform variable expansion if possible
+		$src = &ExpandMakeVars( $src );
+		$src =~ s/\.c/.$kind/;
+	    }
+	    else {
+		$src =~ s/\.c/.$kind/;
+	    }
+	    print FD "$src$newline";
 	}
 	else {
-	    $loc = "";
+	    # This is the recursive branch
+	    print FD "$newline";
 	}
-	print FD "\tdoctext -$kind $loc -heading $doc_heading -quotefmt $doc_extra{$kind}\\$newline\t";
-	# Eventually need to add default files (e.g., fortnotes, errnotes)
-	# Web version needs indexdir, defn, mapref, ...
-	&print_make_setpos( 8 );
-	foreach $sourcefile (split(/\s\s*/,$docsrc{$kind})) {
-	    &print_make_line( FD, "$sourcefile " );
-	    # Why add sourcefile to pgmobjs?
-	    #$pgmobjs .= "$sourcefile ";
-        }
-	&print_make_endline( FD );
+	# If we're at the top; create any directories that are needed
+	if ($doc_attop) {
+	    $doc_attop = 0;
+	    print FD "\tif [ ! -d www ] ; then mkdir www ; fi$newline";
+	    print FD "\tif [ ! -d www/www3 ] ; then mkdir www/www3 ; fi$newline";
+	}
+	&RecursiveOp( $kind );
+	$didkind{$kind} = 1;
+    }
+    # 
+    # For any directory that does not have any source files, we must still
+    # generate a target *if* any directory set the source.
+    foreach $kind ("html", "man", "latex") { 
+	if (! $didkind{$kind} && $globaldockind{$kind}) {
+	    print FD "$kind:$newline";
+	    &RecursiveOp( $kind );
+	}
     }
 }
+# old version
+#  sub TargetDocs {
+#      if (! $do_docs) { return; }
+#      foreach $kind (keys(%docsrc)) {
+#  	print FD "$kind:$newline";
+#  	if (defined($docdir{$kind})) { 
+#  	    $loc = "-mpath $docdir{$kind}";
+#  	}
+#  	else {
+#  	    $loc = "";
+#  	}
+#  	print FD "\tdoctext -$kind $loc -heading $doc_heading -quotefmt $doc_extra{$kind}\\$newline\t";
+#  	# Eventually need to add default files (e.g., fortnotes, errnotes)
+#  	# Web version needs indexdir, defn, mapref, ...
+#  	&print_make_setpos( 8 );
+#  	foreach $sourcefile (split(/\s\s*/,$docsrc{$kind})) {
+#  	    &print_make_line( FD, "$sourcefile " );
+#  	    # Why add sourcefile to pgmobjs?
+#  	    #$pgmobjs .= "$sourcefile ";
+#          }
+#  	&print_make_endline( FD );
+#      }
+#  }
 
 #
 # Installation is complicated by VPATH builds; files that are derived and

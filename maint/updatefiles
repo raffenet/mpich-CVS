@@ -193,6 +193,7 @@ else
     touch src/include/mpidpre.h src/include/mpidpost.h
 fi
 if maint/simplemake -common=maint/makedefs \
+    -docnamedefs='${top_srcdir}/maint/docnotes' \
     -autoconf="-l ROOTDIR/confdb" \
     -libdir='${MPILIBNAME}'=ROOTDIR/lib $otherargs \
     Makefile.sm ; then

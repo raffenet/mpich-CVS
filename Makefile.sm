@@ -26,6 +26,9 @@ dist:
 	(cd tmpdir && tar cf ${PACKAGE}-${VERSION}.tar ${PACKAGE}-${VERSION} )
 	mv tmpdir/${PACKAGE}-${VERSION}.tar .
 	-rm -rf tmpdir
+
+# Set the document sources and types (empty lists still cause recursion)
+doc_HTML_SOURCES =
 		
 install_LIB = lib/libmpich.a
 install_INCLUDE = src/include/mpi.h

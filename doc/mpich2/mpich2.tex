@@ -4383,6 +4383,9 @@ relatively simple routines are possible.  In addition, the values to
 be sorted are often (but not always, as in this routine) small
 integers, so special radix-based routines can often be used.
 
+Note that the above algorithm is not scalable, since it must do an 
+allgather.  
+
 \subsubsection{\mpifunc{MPI_COMM_TEST_INTER}}
 
 % Should this simply test to see if pointers to the remote group and the
