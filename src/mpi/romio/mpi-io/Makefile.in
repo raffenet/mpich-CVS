@@ -73,7 +73,7 @@ MPIO_REAL_POBJECTS = _close.o _read.o _open.o _get_extent.o \
       _read_ordb.o _write_ord.o _write_orde.o _mpich2_fileutil.o
 
 # Either _get_errh.o _set_errh.o or empty 
-MPIO_EXTRA_REAL_POBJECTS = @MPIO_EXTRA_REAL_POJBECTS@
+MPIO_EXTRA_REAL_POBJECTS = @MPIO_EXTRA_REAL_POBJECTS@
 
 all: $(LIBNAME)
 
