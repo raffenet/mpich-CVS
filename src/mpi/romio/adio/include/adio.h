@@ -147,6 +147,7 @@ MPI_Info PMPI_Info_f2c(MPI_Fint info);
 #endif
 
 typedef struct ADIOI_Fns_struct ADIOI_Fns;
+typedef struct ADIOI_Hints_struct ADIOI_Hints;
 
 struct ADIOI_FileD {
     int cookie;              /* for error checking */
@@ -174,6 +175,7 @@ struct ADIOI_FileD {
     MPI_Datatype etype;      /* reqd. for MPI-IO */
     MPI_Datatype filetype;   /* reqd. for MPI-IO */
     int etype_size;          /* in bytes */
+    ADIOI_Hints *hints;      /* structure containing fs-indep. info values */
     MPI_Info info;
     int split_coll_count;    /* count of outstanding split coll. ops. */
     char *shared_fp_fname;   /* name of file containing shared file pointer */
@@ -281,7 +283,8 @@ typedef struct {
 
 void ADIO_Init(int *argc, char ***argv, int *error_code);
 void ADIO_End(int *error_code);
-ADIO_File ADIO_Open(MPI_Comm comm, char *filename, int file_system,
+ADIO_File ADIO_Open(MPI_Comm orig_comm, MPI_Comm comm, char *filename, 
+		    int file_system,
                     int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
                     MPI_Datatype filetype, int iomode, 
                     MPI_Info info, int perm, int *error_code);
