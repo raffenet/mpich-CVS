@@ -41,6 +41,7 @@ int ib_enqueue_read_at_head(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     /* change the state from reading_header to reading_data */
     /*vc_ptr->data.ib.read = ib_read_data;*/
     /*ib_read_data(vc_ptr);*/
+    vc_ptr->data.ib.reading_header = FALSE;
 
     MPIDI_FUNC_EXIT(MPID_STATE_IB_CAR_HEAD_ENQUEUE);
     return MPI_SUCCESS;

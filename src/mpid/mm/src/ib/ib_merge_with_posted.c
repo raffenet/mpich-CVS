@@ -30,6 +30,7 @@ int ib_merge_with_posted(MM_Car *pkt_car_ptr, MM_Car *posted_car_ptr)
 	if (posted_car_ptr)
 	{
 	    /* start reading the eager data */
+	    posted_car_ptr->vc_ptr->data.ib.reading_header = FALSE;
 	    ib_enqueue_read_at_head(posted_car_ptr->vc_ptr, posted_car_ptr);
 	}
 	else
