@@ -72,6 +72,8 @@ typedef struct {
     char buf[MAXCHARBUF];  /* buffer for text */
     char *firstchar;       /* pointer to first free character in buffer */
     int  nleft;            /* number of characters left to transfer */
+    int  destfd;           /* dest or src fd (the "other" fd used with
+			      this buffer) */
 } charbuf;
 
 /* Record each process, including the fd's used to handle standard input

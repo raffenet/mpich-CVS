@@ -108,32 +108,34 @@ int mpiexecArgs( int argc, char *argv[], ProcessTable_t *ptable,
 	    /* Now, we are ready to update the process table */
 	    for (j=0; j<np; j++) {
 		ProcessState *ps;
-		ps = &ptable->table[ptable->nProcesses + j];
+		ps	    = &ptable->table[ptable->nProcesses + j];
 		ps->fdStdin = ps->fdStdout = ps->fdStderr = -1;
-		ps->fdPMI = -1;
-		ps->state = UNINITIALIZED;
+		ps->fdPMI   = -1;
+		ps->state   = UNINITIALIZED;
 		ps->exename = exename;
 		if (indexOfFirstArg > 0) {
-		    ps->args = (const char **)(argv + indexOfFirstArg);
+		    ps->args  = (const char **)(argv + indexOfFirstArg);
 		    ps->nArgs = i - indexOfFirstArg;
 		}
 		else {
-		    ps->args = 0;
+		    ps->args  = 0;
 		    ps->nArgs = 0;
 		}
-		ps->hostname = host;
-		ps->arch = arch;
-		ps->path = path;
-		ps->wdir = wdir;
-		ps->rank = ptable->nProcesses + i;
+		ps->hostname   = host;
+		ps->arch       = arch;
+		ps->path       = path;
+		ps->wdir       = wdir;
+		ps->rank       = ptable->nProcesses + i;
 
+		/* Initialize the stdin/out/error handling buffers */
+		
 		/* The PMI implementation must initialize the PMI fields */
 		PMIServInitEntry( &ps->pmientry );
 
 		ps->exitReason = 0;
-		ps->exitSig = 0;
+		ps->exitSig    = 0;
 		ps->exitStatus = 0;
-		ps->exitOrder = -1;
+		ps->exitOrder  = -1;
 	    }
 	    ptable->nProcesses += np;
 

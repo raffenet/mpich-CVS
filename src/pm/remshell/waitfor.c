@@ -109,3 +109,17 @@ int waitOnProcess( ProcessState *ps, int blocking )
 
     return 0;
 }
+
+int mpiexecEndAll( ProcessTable_t *ptable )
+{
+    int i;
+    ProcessState *ps;
+
+    for (i=0; i<ptable->nProcesses; i++) {
+	ps = &ptable->table[i];
+
+	if (ps->state != GONE) {
+	    /* Check on the process.  If not dead, kill it */
+	}
+    }
+}

@@ -91,7 +91,7 @@ int mpiexecChooseHosts( ProcessTable_t *ptable )
 	k = 0;
 	/* Start from the first process that needs this arch */
 	for (; i<ptable->nProcesses; i++) {
-	    if (ptable->table[i].arch == arch &&
+	    if ((!arch || (strcmp( ptable->table[i].arch, arch )== 0)) &&
 		!ptable->table[i].hostname) {
 		ptable->table[i].hostname = mt->hname[k++];
 		if (k >= mt->nHosts) k = 0;

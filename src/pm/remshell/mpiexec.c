@@ -29,6 +29,9 @@
    process table */
 #include "remshell.h"
 
+/* Include mpi error definitions */
+#include "mpierrs.h"
+
 #ifdef HAVE_SNPRINTF
 #define MPIU_Snprintf snprintf
 #endif
@@ -70,8 +73,6 @@ int mpiexecGetMyHostName( char myname[MAX_HOST_NAME+1] );
 int mpiexecGetPort( int *, int * );
 int mpiexecStartProcesses( ProcessTable_t *, char [], int );
 int mpiexecGetRemshellArgv( char *[], int );
-int mpiexecHandleStdin( int, charbuf * );
-int mpiexecHandleStdout( int, charbuf *, int );
 int mpiexecPollFDs( ProcessTable_t *, int );
 int mpiexecPrintTable( ProcessTable_t * );
 
@@ -139,6 +140,8 @@ int main( int argc, char *argv[] )
     rc = mpiexecPollFDs( &processTable, fdPMI );
 
     /* Clean up and determine the return code.  Log any anomolous events */
+    rc = mpiexecEndAll( &processTable );
+
     /* FIXME: NOT DONE */
     return rc;
 }
@@ -324,7 +327,7 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	    myargv[rshNargs++] = "setenv";
 	    myargv[rshNargs++] = "PMI_PORT";
 	    myargv[rshNargs++] = port_as_string;
-	    myargv[rshNargs++] = "\\;";
+	    myargv[rshNargs++] = ";";
 	}
 	else {
 	    rshNargs = 0;
@@ -380,7 +383,7 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 		ps->fdPMI    = pmi_pipe[0];
 		/* register this process in the PMI group */
 		/* FIXME: Adds to group 0 only */
-		PMIServ_addto_group( 0, i, pid, ps->fdPMI );
+		PMIServAddtoGroup( 0, i, pid, ps->fdPMI );
 		close( pmi_pipe[1] );
 	    }
 
@@ -429,8 +432,7 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 		    MPIU_Internal_error_printf( "Could not set environment PMI_FD" );
 		}
 		close( pmi_pipe[0] );
-		/* Must set PMI_RANK, PMI_SIZE, PMI_DEBUG, PMI_FD 
-		   environment variables */
+		/* Could also set PMI_DEBUG */
 	    }
 	    rc = execvp( myargv[0], myargv );
 	    if (rc) {
@@ -523,6 +525,7 @@ int mpiexecPrintTable( ProcessTable_t *ptable )
 	}
 	DBG_PRINTF( "\n" );
     }
+    return 0;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -536,6 +539,35 @@ int mpiexecPrintTable( ProcessTable_t *ptable )
    available.  As a special case, don't accept data with the sink for the
    data is not available.  I.e., if stderr is not available for writing, 
    do not accept data from the fdStderr fd of any created process.
+
+   Design:
+   For each entry in the pollarray (the array passed to the poll system 
+   call), there is a parallel array that describes what to do when there 
+   is activity on that socket.  The entries in this array are structures
+   that contain the fd, a function used to process the fd, a pointer to the
+   controlling process, and the state of the fd.
+
+   A major challenge is what to do when a fd closes.  The algorithm is
+   this
+       If the process has not indicated that it is exiting, mark the
+       process as exiting.  Note unannounced termination
+       
+       Close the fd
+
+   Process all pending fds from the poll request.
+
+   If any fds closed, 
+       Decide if all processes should be signalled and killed
+           (We may want to establish a small timeout window here in
+	   which processes are allowed to exit)
+   
+       Recreate the pollarray from the remaining fds, if desired.
+       
+   Old design:
+   The old design tried to exploit the fact that the fd's came in groups
+   of 4 for most processes.  The key problem was "most"; handling some
+   of the special cases made the code overly complex.  By using an extra
+   level of indirection as above, we avoid these problems.
 
    We use the following mapping from the process table to the array
    of poll fds:
@@ -562,62 +594,137 @@ int mpiexecPrintTable( ProcessTable_t *ptable )
 /* ----------------------------------------------------------------------- */
 #include <sys/poll.h>
 
+typedef struct {
+    int fd;            /* Corresponding fd */
+    int processIdx;    /* Index of process in ptable; -1 for mpiexec */
+    int (*handleIO)( int, int, void * );
+    void *extraData;   /* Passed to the handleIO function */
+    int state; } fdHandle_t;
+
+/* Handler function prototypes */
+int mpiexecStdin( int fd, int idx, void *extra );
+int mpiexecStdout( int fd, int idx, void *extra );
+int mpiexecStderr( int fd, int idx, void *extra );
+int mpiexecGetPMIsock( int, int, void * );
+int mpiexecHandleOutput( int, int, void * );
+int mpiexecHandleStdin( int, int, void * );
+
 int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 {
     struct pollfd *pollarray;
     int i, j, nfds, nprocess;
-    int mpiexecFdIdx;
-    /* pollIdxToPtable[i] gives the index into ptable of the process 
-       that is using poll array elements 4i to 4i+3 (each process uses
-       4 fds) */
-    int pollIdxToPtable[MAXPROCESSES];
+    int activeNfds;
+    fdHandle_t *handlearray;
 
     /* Compute the array size needed for the poll operation */
     nprocess = ptable->nProcesses;
-    nfds = 4 * nprocess + 3;
+    nfds = 4 * nprocess + 4;
     pollarray = (struct pollfd *)MPIU_Malloc( nfds * sizeof(struct pollfd) );
     if (!pollarray) {
 	MPIU_Internal_error_printf( "Unable to allocate poll array of size %d",
 				    ptable->nProcesses );
 	return 1;
     }
+    handlearray = (fdHandle_t *)MPIU_Malloc( nfds * sizeof(fdHandle_t) );
+    if (!handlearray) {
+	MPIU_Internal_error_printf( "Unable to allocate fdhandle array of size %d",
+				    ptable->nProcesses );
+	return 1;
+    }
 
     /* 
-     * Fill to poll array.  Initialize all of the fds.
+     * Fill in poll array.  Initialize all of the fds.
      */
     j = 0;
 
     /* Start with the four fd's used by mpiexec to connect to 
        stdin/out/err and the socket to create connections on */
-    mpiexecFdIdx = j;
-    pollarray[j].fd = 0; 
-    pollarray[j].events = POLLIN;
+#if 0
+/* Debug-ignore for now, just listen to the process */
+    /* stdin FROM the environment (e.g., term, shell) */
+    pollarray[j].fd	      = 0; 
+    pollarray[j].events	      = POLLIN;
+    handlearray[j].fd	      = 0;
+    handlearray[j].processIdx = -1;
+    handlearray[j].handleIO   = mpiexecStdin;
+    handlearray[j].extraData  = ptable;
+    handlearray[j].state      = 0;
     j++;
+    /* stdout TO the environment (e.g., term, shell) */
     pollarray[j].fd = 1; 
     pollarray[j].events = POLLOUT;
+    handlearray[j].fd	      = 1;
+    handlearray[j].processIdx = -1;
+    handlearray[j].handleIO   = mpiexecStdout;
+    handlearray[j].extraData  = ptable;
+    handlearray[j].state      = 0;
     j++;
-    pollarray[j].fd = 2;
+    /* stderr TO the environment (e.g., term, shell) */
+    pollarray[j].fd = 2; 
     pollarray[j].events = POLLOUT;
+    handlearray[j].fd	      = 2;
+    handlearray[j].processIdx = -1;
+    handlearray[j].handleIO   = mpiexecStderr;
+    handlearray[j].extraData  = ptable;
+    handlearray[j].state      = 0;
     j++;
-    pollarray[j].fd = fdPMI;
-    pollarray[j].events = POLLOUT;
+    /* socket used to create PMI sockets (not the pmi socket for each 
+       process; those are in the process table below) */
+    pollarray[j].fd	      = fdPMI;
+    pollarray[j].events	      = POLLOUT | POLLIN;
+    handlearray[j].fd	      = fdPMI;
+    handlearray[j].processIdx = -1;
+    handlearray[j].handleIO   = mpiexecGetPMIsock;
+    handlearray[j].extraData  = ptable;
+    handlearray[j].state      = 0;
+    j++;
+#endif
 
     for (i=0; i<nprocess; i++) {
-	pollIdxToPtable[i+1] = i;
-	pollarray[j].fd = ptable->table[i].fdStdin;
-	pollarray[j].events = POLLOUT;
+#if 0
+	/* Stdin TO the process (if enabled) */
+	pollarray[j].fd		  = ptable->table[i].fdStdin;
+	pollarray[j].events	  = POLLOUT;
+	handlearray[j].fd	  = pollarray[j].fd;
+	handlearray[j].processIdx = i;
+	handlearray[j].handleIO	  = mpiexecHandleStdin;
+	handlearray[j].extraData  = &ptable->table[i].stdinBuf;
+	handlearray[j].state	  = 0;
 	j++;
-	pollarray[j].fd = ptable->table[i].fdStdout;
-	pollarray[j].events = POLLIN;
+#endif
+	/* Stdout FROM the process */
+	pollarray[j].fd		  = ptable->table[i].fdStdout;
+	pollarray[j].events	  = POLLIN;
+	handlearray[j].fd	  = pollarray[j].fd;
+	handlearray[j].processIdx = i;
+	handlearray[j].handleIO	  = mpiexecHandleOutput;
+	handlearray[j].extraData  = &ptable->table[i].stdoutBuf;
+	handlearray[j].state	  = 0;
 	j++;
-	pollarray[j].fd = ptable->table[i].fdStderr;
-	pollarray[j].events = POLLIN;
+	/* Stderr FROM the process */
+	pollarray[j].fd		  = ptable->table[i].fdStderr;
+	pollarray[j].events	  = POLLIN;
+	handlearray[j].fd	  = pollarray[j].fd;
+	handlearray[j].processIdx = i;
+	handlearray[j].handleIO	  = mpiexecHandleOutput;
+	handlearray[j].extraData  = &ptable->table[i].stderrBuf;
+	handlearray[j].state	  = 0;
 	j++;
-	pollarray[j].fd = ptable->table[i].fdPMI;
-	pollarray[j].events = POLLIN;
+#if 0
+	/* PMI requests from process */
+	pollarray[j].fd		  = ptable->table[i].fdPMI;
+	pollarray[j].events	  = POLLIN;
+	handlearray[j].fd	  = pollarray[j].fd;
+	handlearray[j].processIdx = i;
+	handlearray[j].handleIO	  = PMIServHandleInputFd;
+	handlearray[j].extraData  = &ptable->table[i];
+	handlearray[j].state	  = 0;
 	j++;
+#endif
     }
 
+    /* reset nfds */
+    activeNfds = j;
     /* Loop until we exit or timeout */
     while (1) {
 	int timeout, rc;
@@ -625,47 +732,34 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 	/* Compute the timeout until we must abort this run */
 	/* (A negative value is infinite) */
 	timeout = GetRemainingTime();
-	rc = poll( pollarray, nfds, timeout );
+	printf( "Timeout = %d\n", timeout );
+	timeout = -1;
+	rc = poll( pollarray, activeNfds, timeout );
 
 	/* rc = 0 is a timeout, with nothing read */
 	if (rc == 0) {
 	    break;
 	}
 
-	/* loop through the entries, looking at the processes first */
-	j = 0;
-	for (i=0; i<nprocess; i++) {
-	    if (pollarray[j].revents == POLLOUT) {
-		rc = mpiexecHandleStdin( pollarray[j].fd, 
-					 &ptable->table[i].stdinBuf );
+	/* loop through the entries */
+	for (j=0; j<activeNfds; j++) {
+	    if (pollarray[j].revents & (POLLOUT | POLLIN)) {
+		rc = handlearray[j].handleIO( handlearray[j].fd, 
+					      handlearray[j].processIdx,
+					      handlearray[j].extraData );
+		if (rc != 0) {
+		    /* State change */
+		    handlearray[j].state = rc;
+		}
 	    }
-	    j++;
-	    if (pollarray[j].revents == POLLIN) {
-		rc = mpiexecHandleStdout( pollarray[j].fd, 
-					  &ptable->table[i].stdoutBuf, 1 );
+	    else if (pollarray[j].revents & (POLLERR | POLLHUP | POLLNVAL) ) {
+		/* Error condition.  Likely that the socket 
+		   has disconnected.  Look at the client state to 
+		   understand how to handle */
+		rc = mpiexecCloseProcess( handlearray[j].fd, 
+					  handlearray[j].processIdx,
+					  handlearray[j].extraData );
 	    }
-	    j++;
-	    if (pollarray[j].revents == POLLIN) {
-		rc = mpiexecHandleStdout( pollarray[j].fd, 
-					  &ptable->table[i].stderrBuf, 2 );
-	    }
-	    j++;
-	    if (pollarray[j].revents == POLLIN) {
-		rc = PMIServHandleInputFd( &ptable->table[i].pmientry );
-	    }
-	}
-	if (pollarray[mpiexecFdIdx].revents == POLLIN) {
-	    /* We need to read in some data and distribute it to 
-	       the selected processes.  We do this by reading data in
-	       and then copying it to the selected processes.  
-	       To simplify buffering, we 
-	    */
-	}
-	/* Currently, we ignore the stdout/err fd's because we write
-	   directly to them and do not adjust for input */
-	if (pollarray[mpiexecFdIdx+1].revents == POLLOUT) {
-	}
-	if (pollarray[mpiexecFdIdx+2].revents == POLLOUT) {
 	}
 
 	/* If the mpiexec stdout or stdin becomes full, turn off 
@@ -683,6 +777,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
  * in the process GROUP.  This code attempts to fix that.  
  * We DON'T do it if stdin (0) is connected to a terminal, because that
  * disconnects the process from the terminal.
+ */
 /* ------------------------------------------------------------------------ */
 void CreateNewSession( void )
 {
@@ -698,16 +793,74 @@ if (!isatty(0) && getsid(0) != getpid()) {
 }
 
 /* ------------------------------------------------------------------------ */
-
+/* These routines handle the stdin/err/out for the mpiexec process.
+   To start with, these are empty (we'll make the routines that talk to 
+   the processes write directly 
+*/
+int mpiexecStdin( int fd, int idx, void *extra )
+{
+    return 0;
+}
+int mpiexecStdout( int fd, int idx, void *extra )
+{
+    return 0;
+}
+int mpiexecStderr( int fd, int idx, void *extra )
+{
+    return 0;
+}
+/* ------------------------------------------------------------------------ */
 /*
  * Handle the stdin, stdout, stderr.  This is very simple, with 
  * any remaining data moved to the beginning of the buffer.  A 
  * more sophisticated system could use a circular buffer, though that makes
  * the code to read/write more complex.
  */
-int mpiexecHandleStdin( int fd, charbuf *buf )
+
+/* Read from the fd and write to stdout */
+int mpiexecHandleOutput( int fd, int pidx, void *extra )
+{
+    int n, nout;
+    charbuf *buf = (charbuf *)extra;
+
+    printf( "Reading from %d to %d\n", fd, buf->destfd );
+    buf->destfd = 1;
+    buf->firstchar = buf->buf;
+    buf->nleft = MAXCHARBUF;
+    /* Restart any interrupted system call */
+    do {
+	n = read( fd, buf->firstchar, buf->nleft );
+    }
+    while (n < 0 && errno == EINTR);
+    printf ("Read %d chars\n", n );
+    if (n >= 0) {
+	buf->nleft -= n;
+	/* Try to write to outfd */
+	nout = write( buf->destfd, buf->buf, MAXCHARBUF - buf->nleft );
+	
+	if (nout >= 0) {
+	    if (nout == MAXCHARBUF - buf->nleft ) {
+		/* Everything was sent */
+	    }
+	    else {
+		/* Move the data to the front of the buffer */
+		/* FIXME */
+	    }
+	}
+	else {
+	    /* Unless EAGAIN we have a problem */
+	}
+    }
+    else {
+	perror( "Error from read: " );
+    }
+    return 0;
+}
+int mpiexecHandleStdin( int fd, int pidx, void *extra )
 {
     int n;
+    charbuf *buf = (charbuf *)extra;
+
     /* Attempt to write the awaiting data to the fd */
     
     /* Restart any interrupted system call */
@@ -730,32 +883,22 @@ int mpiexecHandleStdin( int fd, charbuf *buf )
     return 0;
 }
 
-int mpiexecHandleStdout( int infd, charbuf *buf, int outfd )
+int mpiexecGetPMIsock( int fd, int pidx, void *extra )
 {
-    int n, nout;
+    return 0;
+}
 
-    /* Restart any interrupted system call */
-    do {
-	n = read( infd, buf->firstchar, buf->nleft );
+/* An error or hangup occured for this process.  Close the fd
+   and mark the process as exiting */
+int mpiexecCloseProcess( int fd, int pidx, void *extra )
+{
+    ProcessTable_t *ptable = extra;
+    if (pidx >= 0) {
+	if (ptable->table[pidx].state < EXITING) 
+	    ptable->table[pidx].state = EXITING;
     }
-    while (n < 0 && errno == EINTR);
-    if (n >= 0) {
-	buf->nleft -= n;
-	/* Try to write to outfd */
-	nout = write( outfd, buf->buf, MAXCHARBUF - buf->nleft );
-	
-	if (nout >= 0) {
-	    if (nout == MAXCHARBUF - buf->nleft ) {
-		/* Everything was sent */
-	    }
-	    else {
-		/* Move the data to the front of the buffer */
-		/* FIXME */
-	    }
-	}
-	else {
-	    /* Unless EAGAIN we have a problem */
-	}
-	
-    }
-}    
+    close (fd);  /* Ignore any errors */
+    /* Should we attempt to close any other fds on this process? */
+
+    return 0;
+}

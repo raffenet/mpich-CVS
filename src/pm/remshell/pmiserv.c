@@ -9,10 +9,6 @@
    Still to do:
    Register group membership so that it is separate from the
    process manager's list of processes
-
-   Needs a clean way to indicate abort and exit.  Perhaps the
-   handler should indicate a new state, as in a state machine for the 
-   process manager.
  */
 /*
  * This is a simple PMI server implementation.  This file implements
@@ -27,6 +23,9 @@
 #endif
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
 #endif
 
 #include "simple_pmiutil.h"
