@@ -368,12 +368,12 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     }
     if (smpd_get_opt(argcp, argvp, "-register_spn"))
     {
-	char domain_controller[100] = "";
-	char domain_name[100] = "";
-	char domain_host[100] = "";
-	smpd_get_opt_string(argcp, argvp, "-domain", domain_name, 100);
-	smpd_get_opt_string(argcp, argvp, "-dc", domain_controller, 100);
-	smpd_get_opt_string(argcp, argvp, "-host", domain_host, 100);
+	char domain_controller[SMPD_MAX_HOST_LENGTH] = "";
+	char domain_name[SMPD_MAX_HOST_LENGTH] = "";
+	char domain_host[SMPD_MAX_HOST_LENGTH] = "";
+	smpd_get_opt_string(argcp, argvp, "-domain", domain_name, SMPD_MAX_HOST_LENGTH);
+	smpd_get_opt_string(argcp, argvp, "-dc", domain_controller, SMPD_MAX_HOST_LENGTH);
+	smpd_get_opt_string(argcp, argvp, "-host", domain_host, SMPD_MAX_HOST_LENGTH);
 	smpd_register_spn(domain_controller, domain_name, domain_host);
 	ExitProcess(result);
     }
