@@ -25,65 +25,21 @@ void MPIDI_CH3U_Buffer_copy(
     *smpi_errno = MPI_SUCCESS;
     *rmpi_errno = MPI_SUCCESS;
 
-    if (HANDLE_GET_KIND(sdt) == HANDLE_KIND_BUILTIN)
-    {
-	sdt_contig = TRUE;
-	sdata_sz = scount * MPID_Datatype_get_basic_size(sdt);
-	MPIDI_DBG_PRINTF((15, FCNAME, "send basic dt: dt_contig=%d, "
-			  "dt_sz=%d, data_sz=" MPIDI_MSG_SZ_FMT, sdt_contig,
-			  MPID_Datatype_get_basic_size(sdt), sdata_sz));
-    }
-    else
-    {
-	MPID_Datatype * sdtp;
-	
-	MPID_Datatype_get_ptr(sdt, sdtp);
-	sdt_contig = sdtp->is_contig;
-	sdata_sz = scount * sdtp->size;
-	MPIDI_DBG_PRINTF((15, FCNAME, "send user dt: dt_contig=%d, "
-			  "dt_sz=%d, data_sz=" MPIDI_MSG_SZ_FMT, sdt_contig,
-			  sdtp->size, sdata_sz));
-    }
+    MPIDI_CH3U_Datatype_get_info(scount, sdt, sdt_contig, sdata_sz);
+    MPIDI_CH3U_Datatype_get_info(rcount, rdt, rdt_contig, rdata_sz);
 
-    if (HANDLE_GET_KIND(rdt) == HANDLE_KIND_BUILTIN)
+    if (sdata_sz > rdata_sz)
     {
-	rdt_contig = TRUE;
-	rdata_sz = rcount * MPID_Datatype_get_basic_size(rdt);
-	MPIDI_DBG_PRINTF((15, FCNAME, "recv basic dt: dt_contig=%d, "
-			  "dt_sz=%d, data_sz=" MPIDI_MSG_SZ_FMT, rdt_contig,
-			  MPID_Datatype_get_basic_size(rdt), rdata_sz));
+	MPIDI_DBG_PRINTF((15, FCNAME, "message truncated, sdata_sz=" MPIDI_MSG_SZ_FMT " rdata_sz=", MPIDI_MSG_SZ_FMT,
+			  sdata_sz, rdata_sz));
+	sdata_sz = rdata_sz;
+	*rmpi_errno = MPI_ERR_TRUNCATE;
     }
-    else
-    {
-	MPID_Datatype * rdtp;
-	
-	MPID_Datatype_get_ptr(rdt, rdtp);
-	rdt_contig = rdtp->is_contig;
-	rdata_sz = rcount * rdtp->size;
-	MPIDI_DBG_PRINTF((15, FCNAME, "recv user dt: dt_contig=%d, "
-			  "dt_sz=%d, data_sz=" MPIDI_MSG_SZ_FMT, rdt_contig,
-			  rdtp->size, rdata_sz));
-    }
-
+    
     if (sdt_contig && rdt_contig)
     {
-	MPIDI_msg_sz_t data_sz;
-	
-	if (sdata_sz <= rdata_sz)
-	{
-	    data_sz = sdata_sz;
-	}
-	else
-	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "message truncated, sdata_sz="
-			      MPIDI_MSG_SZ_FMT " rdata_sz=", MPIDI_MSG_SZ_FMT,
-			      sdata_sz, rdata_sz));
-	    data_sz = rdata_sz;
-	    *rmpi_errno = MPI_ERR_TRUNCATE;
-	}
-
-	memcpy(rbuf, sbuf, data_sz);
-	*rsz = data_sz;
+	memcpy(rbuf, sbuf, sdata_sz);
+	*rsz = sdata_sz;
     }
     else if (sdt_contig)
     {

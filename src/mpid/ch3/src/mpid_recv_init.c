@@ -13,8 +13,7 @@
 #define FUNCNAME MPID_Recv_init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype,
-		   int rank, int tag, MPID_Comm * comm, int context_offset,
+int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int tag, MPID_Comm * comm, int context_offset,
 		   MPID_Request ** request)
 {
     MPID_Request * rreq;
@@ -31,7 +30,7 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype,
 	rreq->ch3.user_buf = (void *) buf;
 	rreq->ch3.user_count = count;
 	rreq->ch3.datatype = datatype;
-	MPIDI_Request_set_persistent_type(rreq, MPIDI_REQUEST_PERSISTENT_RECV);
+	MPIDI_Request_set_type(rreq, MPIDI_REQUEST_TYPE_RECV);
 	
 	*request = rreq;
 	

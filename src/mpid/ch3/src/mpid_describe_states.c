@@ -186,14 +186,6 @@ int MPIDU_Describe_timer_states()
 		       "Create_request",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_HANDLE_POLLIN,
-		       "Handle_pollin",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_HANDLE_POLLOUT,
-		       "Handle_pollout",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPID_ABORT,
 		       "MPID_Abort",
 		       get_random_color_str());
@@ -218,8 +210,12 @@ int MPIDU_Describe_timer_states()
 		       "MPIDI_Barrier",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3U_HANDLE_RECV_PKT,
-		       "MPIDI_CH3U_Handle_recv_pkt",
+		       MPID_STATE_MPIDI_CH3U_HANDLE_UNORDERED_RECV_PKT,
+		       "MPIDI_CH3U_Handle_unordered_recv_pkt",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT,
+		       "MPIDI_CH3U_Handle_ordered_recv_pkt",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ,

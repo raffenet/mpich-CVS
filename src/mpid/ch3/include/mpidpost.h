@@ -72,9 +72,9 @@ void MPIDI_CH3U_Buffer_copy(const void * const, int, MPI_Datatype, int *,
    completion counter.  This insures that other fields in the req structure are
    updated before the completion is signaled.  How should that be incorporated
    into this code at the device level? */
-#define MPIDI_CH3U_Request_decrement_cc(req, flagp)	\
+#define MPIDI_CH3U_Request_decrement_cc(_req, _flagp)	\
 {							\
-    *flagp = --*req->cc_ptr;				\
+    *(_flagp) = --*(_req)->cc_ptr;			\
 }
 #else
 /* MT - A write barrier must be performed before decrementing the completion
@@ -83,27 +83,26 @@ void MPIDI_CH3U_Buffer_copy(const void * const, int, MPI_Datatype, int *,
 #error Multi-threaded MPIDI_CH3U_Request_decrement_cc() not implemented.
 #endif
 
-
 /*
  * Device level request management macros
  */
 #define MPID_Request_create() (MPIDI_CH3_Request_create())
 
-#define MPID_Request_release(req)				\
-{								\
-    int ref_count;						\
-    								\
-    MPIDI_CH3_Request_release_ref(req, &ref_count);		\
-    if (ref_count == 0)						\
-    {								\
-	MPIDI_CH3_Request_destroy(req);				\
-    }								\
+#define MPID_Request_release(_req)			\
+{							\
+    int ref_count;					\
+							\
+    MPIDI_CH3_Request_release_ref((_req), &ref_count);	\
+    if (ref_count == 0)					\
+    {							\
+	MPIDI_CH3_Request_destroy(_req);		\
+    }							\
 }
 
 #if defined(MPICH_SINGLE_THREADED)
-#define MPID_Request_set_complete(req)		\
+#define MPID_Request_set_complete(_req)		\
 {						\
-    *req->cc_ptr = 0;				\
+    *(_req)->cc_ptr = 0;			\
     MPIDI_CH3_Progress_signal_completion();	\
 }
 #else

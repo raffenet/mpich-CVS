@@ -27,13 +27,10 @@ MPID_Request * MPIDI_CH3U_Request_FU(int source, int tag, int context_id)
 	rreq = MPIDI_Process.recv_unexpected_head;
 	while(rreq != NULL)
 	{
-	    if (rreq->ch3.match.context_id == context_id &&
-		rreq->ch3.match.rank == source &&
-		rreq->ch3.match.tag == tag)
+	    if (rreq->ch3.match.context_id == context_id && rreq->ch3.match.rank == source && rreq->ch3.match.tag == tag)
 	    {
 		MPIDI_CH3_Request_add_ref(rreq);
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FU);
-		return rreq;
+		break;
 	    }
 	    
 	    rreq = rreq->ch3.next;
@@ -70,13 +67,11 @@ MPID_Request * MPIDI_CH3U_Request_FU(int source, int tag, int context_id)
 	rreq = MPIDI_Process.recv_unexpected_head;
 	while (rreq != NULL)
 	{
-	    if (rreq->ch3.match.context_id == match.context_id &&
-		(rreq->ch3.match.rank & mask.rank) == match.rank &&
+	    if (rreq->ch3.match.context_id == match.context_id && (rreq->ch3.match.rank & mask.rank) == match.rank &&
 		(rreq->ch3.match.tag & mask.tag) == match.tag)
 	    {
 		MPIDI_CH3_Request_add_ref(rreq);
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FU);
-		return rreq;
+		break;
 	    }
 	    
 	    rreq = rreq->ch3.next;
@@ -84,22 +79,21 @@ MPID_Request * MPIDI_CH3U_Request_FU(int source, int tag, int context_id)
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FU);
-    return NULL;
+    return rreq;
 }
 
 /*
  * MPIDI_CH3U_Request_FDU()
  *
- * Find a request in the unexpected queue and dequeue it; otherwise return
- * NULL.
+ * Find a request in the unexpected queue and dequeue it; otherwise return NULL.
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Request_FDU
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request sreq_id,
-				      MPIDI_Message_match * match)
+MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request sreq_id, MPIDI_Message_match * match)
 {
+    MPID_Request * rreq;
     MPID_Request * prev_rreq;
     MPID_Request * cur_rreq;
     MPID_Request * matching_prev_rreq;
@@ -113,10 +107,8 @@ MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request sreq_id,
     cur_rreq = MPIDI_Process.recv_unexpected_head;
     while(cur_rreq != NULL)
     {
-	if (cur_rreq->ch3.sender_req_id == sreq_id &&
-	    cur_rreq->ch3.match.context_id == match->context_id &&
-	    cur_rreq->ch3.match.rank == match->rank &&
-	    cur_rreq->ch3.match.tag == match->tag)
+	if (cur_rreq->ch3.sender_req_id == sreq_id && cur_rreq->ch3.match.context_id == match->context_id &&
+	    cur_rreq->ch3.match.rank == match->rank && cur_rreq->ch3.match.tag == match->tag)
 	{
 	    matching_prev_rreq = prev_rreq;
 	    matching_cur_rreq = cur_rreq;
@@ -142,30 +134,28 @@ MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request sreq_id,
 	    MPIDI_Process.recv_unexpected_tail = matching_prev_rreq;
 	}
 
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDU);
-	return matching_cur_rreq;
+	rreq = matching_cur_rreq;
     }
     else
     {
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDU);
-	return NULL;
+	rreq = NULL;
     }
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDU);
+    return rreq;
 }
 
 
 /*
  * MPIDI_CH3U_Request_FDU_or_AEP()
  *
- * Atomically find a request in the unexpected queue and dequeue it, or
- * allocate a new request and enqueue it in the posted queue
+ * Atomically find a request in the unexpected queue and dequeue it, or allocate a new request and enqueue it in the posted queue
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Request_FDU_or_AEP
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
-    int source, int tag, int context_id, int * found)
+MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(int source, int tag, int context_id, int * found)
 {
     MPID_Request * rreq;
     MPID_Request * prev_rreq;
@@ -178,9 +168,7 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
 	rreq = MPIDI_Process.recv_unexpected_head;
 	while(rreq != NULL)
 	{
-	    if (rreq->ch3.match.context_id == context_id &&
-		rreq->ch3.match.rank == source &&
-		rreq->ch3.match.tag == tag)
+	    if (rreq->ch3.match.context_id == context_id && rreq->ch3.match.rank == source && rreq->ch3.match.tag == tag)
 	    {
 		if (prev_rreq != NULL)
 		{
@@ -195,8 +183,7 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
 		    MPIDI_Process.recv_unexpected_tail = prev_rreq;
 		}
 		*found = TRUE;
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDU_OR_AEP);
-		return rreq;
+		goto fn_exit;
 	    }
 	    
 	    prev_rreq = rreq;
@@ -235,8 +222,7 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
 	rreq = MPIDI_Process.recv_unexpected_head;
 	while (rreq != NULL)
 	{
-	    if (rreq->ch3.match.context_id == match.context_id &&
-		(rreq->ch3.match.rank & mask.rank) == match.rank &&
+	    if (rreq->ch3.match.context_id == match.context_id && (rreq->ch3.match.rank & mask.rank) == match.rank &&
 		(rreq->ch3.match.tag & mask.tag) == match.tag)
 	    {
 		if (prev_rreq != NULL)
@@ -252,8 +238,7 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
 		    MPIDI_Process.recv_unexpected_tail = prev_rreq;
 		}
 		*found = TRUE;
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDU_OR_AEP);
-		return rreq;
+		goto fn_exit;
 	    }
 	    
 	    prev_rreq = rreq;
@@ -261,8 +246,8 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
 	}
     }
 
-    /* A matching request was not found in the unexpected queue, so we need to
-       allocate a new request and add it to the posted queue */
+    /* A matching request was not found in the unexpected queue, so we need to allocate a new request and add it to the posted
+       queue */
     rreq = MPIDI_CH3_Request_create();
     if (rreq != NULL)
     {
@@ -285,7 +270,8 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
     }
     
     *found = FALSE;
-    
+
+  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDU_OR_AEP);
     return rreq;
 }
@@ -294,8 +280,8 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
 /*
  * MPIDI_CH3U_Request_DP()
  *
- * Given an existing request, dequeue that request from the posted queue, or
- * return NULL if the request was not in the posted queued
+ * Given an existing request, dequeue that request from the posted queue, or return NULL if the request was not in the posted
+ * queued
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Request_DP
@@ -303,6 +289,7 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Request_DP(MPID_Request * rreq)
 {
+    int found;
     MPID_Request * cur_rreq;
     MPID_Request * prev_rreq;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_DP);
@@ -310,6 +297,7 @@ int MPIDI_CH3U_Request_DP(MPID_Request * rreq)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_DP);
     prev_rreq = NULL;
     cur_rreq = MPIDI_Process.recv_posted_head;
+    found = FALSE;
     while (rreq != NULL)
     {
 	if (cur_rreq == rreq)
@@ -326,8 +314,9 @@ int MPIDI_CH3U_Request_DP(MPID_Request * rreq)
 	    {
 		MPIDI_Process.recv_posted_tail = prev_rreq;
 	    }
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_DP);
-	    return TRUE;
+	    
+	    found = TRUE;
+	    break;
 	}
 	    
 	prev_rreq = rreq;
@@ -335,7 +324,7 @@ int MPIDI_CH3U_Request_DP(MPID_Request * rreq)
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_DP);
-    return FALSE;
+    return found;
 }
 
 /*
@@ -347,8 +336,7 @@ int MPIDI_CH3U_Request_DP(MPID_Request * rreq)
 #define FUNCNAME MPIDI_CH3U_Request_FDP
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3U_Request_FDP(
-    MPIDI_Message_match * match)
+MPID_Request * MPIDI_CH3U_Request_FDP(MPIDI_Message_match * match)
 {
     MPID_Request * rreq;
     MPID_Request * prev_rreq;
@@ -360,10 +348,8 @@ MPID_Request * MPIDI_CH3U_Request_FDP(
     while (rreq != NULL)
     {
 	if ((rreq->ch3.match.context_id == match->context_id) &&
-	    (rreq->ch3.match.rank == match->rank ||
-	     rreq->ch3.match.rank == MPI_ANY_SOURCE) &&
-	    (rreq->ch3.match.tag == match->tag ||
-	     rreq->ch3.match.tag == MPI_ANY_TAG))
+	    (rreq->ch3.match.rank == match->rank || rreq->ch3.match.rank == MPI_ANY_SOURCE) &&
+	    (rreq->ch3.match.tag == match->tag || rreq->ch3.match.tag == MPI_ANY_TAG))
 	{
 	    if (prev_rreq != NULL)
 	    {
@@ -377,8 +363,8 @@ MPID_Request * MPIDI_CH3U_Request_FDP(
 	    {
 		MPIDI_Process.recv_posted_tail = prev_rreq;
 	    }
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
-	    return rreq;
+
+	    break;
 	}
 	    
 	prev_rreq = rreq;
@@ -386,22 +372,20 @@ MPID_Request * MPIDI_CH3U_Request_FDP(
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
-    return NULL;
+    return rreq;
 }
 
 
 /*
  * MPIDI_CH3U_Request_FDP_or_AEU()
  *
- * Locate a request in the posted queue and dequeue it, or allocate a new
- * request and enqueue it in the unexpected queue
+ * Locate a request in the posted queue and dequeue it, or allocate a new request and enqueue it in the unexpected queue
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Request_FDP_or_AEU
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(
-    MPIDI_Message_match * match, int * found)
+MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(MPIDI_Message_match * match, int * found)
 {
     MPID_Request * rreq;
     MPID_Request * prev_rreq;
@@ -413,10 +397,8 @@ MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(
     while (rreq != NULL)
     {
 	if ((rreq->ch3.match.context_id == match->context_id) &&
-	    (rreq->ch3.match.rank == match->rank ||
-	     rreq->ch3.match.rank == MPI_ANY_SOURCE) &&
-	    (rreq->ch3.match.tag == match->tag ||
-	     rreq->ch3.match.tag == MPI_ANY_TAG))
+	    (rreq->ch3.match.rank == match->rank || rreq->ch3.match.rank == MPI_ANY_SOURCE) &&
+	    (rreq->ch3.match.tag == match->tag || rreq->ch3.match.tag == MPI_ANY_TAG))
 	{
 	    if (prev_rreq != NULL)
 	    {
@@ -431,16 +413,15 @@ MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(
 		MPIDI_Process.recv_posted_tail = prev_rreq;
 	    }
 	    *found = TRUE;
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
-	    return rreq;
+	    goto fn_exit;
 	}
 	    
 	prev_rreq = rreq;
 	rreq = rreq->ch3.next;
     }
 
-    /* A matching request was not found in the posted queue, so we need to
-       allocate a new request and add it to the unexpected queue */
+    /* A matching request was not found in the posted queue, so we need to allocate a new request and add it to the unexpected
+       queue */
     rreq = MPIDI_CH3_Request_create();
     if (rreq != NULL)
     {
@@ -461,7 +442,8 @@ MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(
     }
     
     *found = FALSE;
-    
+
+  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
     return rreq;
 }
@@ -470,17 +452,14 @@ MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(
 /*
  * MPIDI_CH3U_Request_load_send_iov()
  *
- * Fill the provided IOV with the next (or remaining) portion of data described
- * by the segment contained in the request structure.  If the density of IOV is
- * not sufficient, pack the data into a send/receive buffer and point the IOV
- * at the buffer.
+ * Fill the provided IOV with the next (or remaining) portion of data described by the segment contained in the request structure.
+ * If the density of IOV is not sufficient, pack the data into a send/receive buffer and point the IOV at the buffer.
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Request_load_send_iov
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Request_load_send_iov(
-    MPID_Request * const sreq, MPID_IOV * const iov, int * const iov_n)
+int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const iov, int * const iov_n)
 {
     MPIDI_msg_sz_t last;
     int mpi_errno = MPI_SUCCESS;
@@ -488,27 +467,22 @@ int MPIDI_CH3U_Request_load_send_iov(
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_SEND_IOV);
     last = sreq->ch3.segment_size;
-    MPIDI_DBG_PRINTF((40, FCNAME, "pre-pv: first=" MPIDI_MSG_SZ_FMT
-		      ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
+    MPIDI_DBG_PRINTF((40, FCNAME, "pre-pv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 		      sreq->ch3.segment_first, last, *iov_n));
     assert(sreq->ch3.segment_first < last);
     assert(last > 0);
-    assert(*iov_n <= MPID_IOV_LIMIT);
-    MPID_Segment_pack_vector(&sreq->ch3.segment, sreq->ch3.segment_first,
-			     &last, iov, iov_n);
-    assert(*iov_n > 0);
-    assert(*iov_n <= MPID_IOV_LIMIT);
-    MPIDI_DBG_PRINTF((40, FCNAME, "post-pv: first=" MPIDI_MSG_SZ_FMT
-		      ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
+    assert(*iov_n > 0 && *iov_n <= MPID_IOV_LIMIT);
+    MPID_Segment_pack_vector(&sreq->ch3.segment, sreq->ch3.segment_first, &last, iov, iov_n);
+    MPIDI_DBG_PRINTF((40, FCNAME, "post-pv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 		      sreq->ch3.segment_first, last, *iov_n));
+    assert(*iov_n > 0 && *iov_n <= MPID_IOV_LIMIT);
     
     if (last == sreq->ch3.segment_size)
     {
 	MPIDI_DBG_PRINTF((40, FCNAME, "remaining data loaded into IOV"));
 	sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
     }
-    else if ((last - sreq->ch3.segment_first) / *iov_n
-	     >= MPIDI_IOV_DENSITY_MIN)
+    else if ((last - sreq->ch3.segment_first) / *iov_n >= MPIDI_IOV_DENSITY_MIN)
     {
 	MPIDI_DBG_PRINTF((40, FCNAME, "more data loaded into IOV"));
 	sreq->ch3.segment_first = last;
@@ -535,13 +509,10 @@ int MPIDI_CH3U_Request_load_send_iov(
 		    
 	last = (data_sz <= sreq->ch3.tmpbuf_sz) ? sreq->ch3.segment_size :
 	    sreq->ch3.segment_first + sreq->ch3.tmpbuf_sz;
-	MPIDI_DBG_PRINTF((40, FCNAME, "pre-pack: first=" MPIDI_MSG_SZ_FMT
-			   ", last=" MPIDI_MSG_SZ_FMT,
-			   sreq->ch3.segment_first, last));
-	MPID_Segment_pack(&sreq->ch3.segment, sreq->ch3.segment_first,
-			  &last, sreq->ch3.tmpbuf);
-	MPIDI_DBG_PRINTF((40, FCNAME, "post-pack: first=" MPIDI_MSG_SZ_FMT
-			   ", last=" MPIDI_MSG_SZ_FMT,
+	MPIDI_DBG_PRINTF((40, FCNAME, "pre-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
+			  sreq->ch3.segment_first, last));
+	MPID_Segment_pack(&sreq->ch3.segment, sreq->ch3.segment_first, &last, sreq->ch3.tmpbuf);
+	MPIDI_DBG_PRINTF((40, FCNAME, "post-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
 			   sreq->ch3.segment_first, last));
 	iov[0].MPID_IOV_BUF = sreq->ch3.tmpbuf;
 	iov[0].MPID_IOV_LEN = last - sreq->ch3.segment_first;
@@ -560,7 +531,6 @@ int MPIDI_CH3U_Request_load_send_iov(
     }
     
   fn_exit:
-
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_SEND_IOV);
     return mpi_errno;
 }
@@ -568,17 +538,14 @@ int MPIDI_CH3U_Request_load_send_iov(
 /*
  * MPIDI_CH3U_Request_load_recv_iov()
  *
- * Fill the request's IOV with the next (or remaining) portion of data
- * described by the segment (also contained in the request structure).  If the
- * density of IOV is not sufficient, allocate a send/receive buffer and point
- * the IOV at the buffer.
+ * Fill the request's IOV with the next (or remaining) portion of data described by the segment (also contained in the request
+ * structure).  If the density of IOV is not sufficient, allocate a send/receive buffer and point the IOV at the buffer.
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Request_load_recv_iov
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Request_load_recv_iov(
-    MPID_Request * const rreq)
+int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 {
     MPIDI_msg_sz_t last;
     int mpi_errno = MPI_SUCCESS;
@@ -594,11 +561,9 @@ int MPIDI_CH3U_Request_load_recv_iov(
 	    MPIDI_msg_sz_t data_sz;
 	    MPIDI_msg_sz_t tmpbuf_sz;
 
-	    /* Once a SRBuf is in use, we continue to use it since a small
-	       amount of data may already be present at the beginning of the
-	       buffer.  This data is left over from the previous unpack, most
-	       like a result of alignment issues.  NOTE: we could force the use
-	       of the SRBuf only when (rreq->ch3.tmpbuf_off > 0)... */
+	    /* Once a SRBuf is in use, we continue to use it since a small amount of data may already be present at the beginning
+	       of the buffer.  This data is left over from the previous unpack, most like a result of alignment issues.  NOTE: we
+	       could force the use of the SRBuf only when (rreq->ch3.tmpbuf_off > 0)... */
 	    
 	    data_sz = rreq->ch3.segment_size - rreq->ch3.segment_first;
 	    tmpbuf_sz = rreq->ch3.tmpbuf_sz - rreq->ch3.tmpbuf_off;
@@ -610,42 +575,34 @@ int MPIDI_CH3U_Request_load_recv_iov(
 		rreq->ch3.tmpbuf_off;
 	    rreq->ch3.iov[0].MPID_IOV_LEN = data_sz;
 	    rreq->ch3.iov_count = 1;
-	    if (rreq->ch3.segment_first + data_sz + rreq->ch3.tmpbuf_off ==
-		rreq->ch3.recv_data_sz)
+	    if (rreq->ch3.segment_first + data_sz + rreq->ch3.tmpbuf_off == rreq->ch3.recv_data_sz)
 	    {
-		MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read the "
-				  "remaining data into the SRBuf"));
+		MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read the remaining data into the SRBuf"));
 		rreq->ch3.ca = MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE;
 	    }
 	    else
 	    {
-		MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read more"
-			      "data into the SRBuf"));
+		MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read more data into the SRBuf"));
 		rreq->ch3.ca = MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV;
 	    }
 	    goto fn_exit;
 	}
 	
 	last = rreq->ch3.segment_size;
-	MPIDI_DBG_PRINTF((40, FCNAME, "pre-upv: first=" MPIDI_MSG_SZ_FMT
-			  ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
+	MPIDI_DBG_PRINTF((40, FCNAME, "pre-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 			  rreq->ch3.segment_first, last, rreq->ch3.iov_count));
 	assert(rreq->ch3.segment_first < last);
 	assert(last > 0);
 	rreq->ch3.iov_count = MPID_IOV_LIMIT;
-	MPID_Segment_unpack_vector(&rreq->ch3.segment, rreq->ch3.segment_first,
-				   &last, rreq->ch3.iov, &rreq->ch3.iov_count);
-	MPIDI_DBG_PRINTF((40, FCNAME, "post-upv: first=" MPIDI_MSG_SZ_FMT
-			  ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
+	MPID_Segment_unpack_vector(&rreq->ch3.segment, rreq->ch3.segment_first, &last, rreq->ch3.iov, &rreq->ch3.iov_count);
+	MPIDI_DBG_PRINTF((40, FCNAME, "post-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 			  rreq->ch3.segment_first, last, rreq->ch3.iov_count));
-	assert(rreq->ch3.iov_count <= MPID_IOV_LIMIT);
+	assert(rreq->ch3.iov_count > 0 && rreq->ch3.iov_count <= MPID_IOV_LIMIT);
 	
 	if (rreq->ch3.iov_count == 0)
 	{
-	    /* If the data can't be unpacked, the we have a mis-match between
-	       the datatype and the amount of data received.  Adjust the
-	       segment info so that the remaining data is received and thrown
-	       away. */
+	    /* If the data can't be unpacked, the we have a mis-match between the datatype and the amount of data received.  Adjust
+	       the segment info so that the remaining data is received and thrown away. */
 	    rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN;
 	    rreq->ch3.segment_size = rreq->ch3.segment_first;
 	    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
@@ -654,34 +611,27 @@ int MPIDI_CH3U_Request_load_recv_iov(
 
 	if (last == rreq->ch3.recv_data_sz)
 	{
-	    MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read the remaining"
-			      " data directly into the user buffer"));
+	    MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read the remaining data directly into the user buffer"));
 	    rreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
 	}
-	else if (last == rreq->ch3.segment_size
-		 || (last - rreq->ch3.segment_first) / rreq->ch3.iov_count
-		 >= MPIDI_IOV_DENSITY_MIN)
+	else if (last == rreq->ch3.segment_size || (last - rreq->ch3.segment_first) / rreq->ch3.iov_count >= MPIDI_IOV_DENSITY_MIN)
 	{
-	    MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read more data "
-			      "directly into the user buffer"));
+	    MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read more data directly into the user buffer"));
 	    rreq->ch3.segment_first = last;
 	    rreq->ch3.ca = MPIDI_CH3_CA_RELOAD_IOV;
 	}
 	else
 	{
-	    /* Too little data would have been received using an IOV.  We will
-	       start receiving data into a SRBuf and unpacking it later. */
-	    
+	    /* Too little data would have been received using an IOV.  We will start receiving data into a SRBuf and unpacking it
+	       later. */
 	    assert(MPIDI_Request_get_srbuf_flag(rreq) == FALSE);
 	    
-	    MPIDI_CH3U_SRBuf_alloc(
-		rreq, rreq->ch3.segment_size - rreq->ch3.segment_first);
+	    MPIDI_CH3U_SRBuf_alloc(rreq, rreq->ch3.segment_size - rreq->ch3.segment_first);
 	    rreq->ch3.tmpbuf_off = 0;
 	    if (rreq->ch3.tmpbuf_sz == 0)
 	    {
-		/* XXX - we should drain the data off the pipe here, but we
-		   don't have a buffer to drain it into.  should this be a
-		   fatal error? */
+		/* FIXME - we should drain the data off the pipe here, but we don't have a buffer to drain it into.  should this be
+		   a fatal error? */
 		MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
 		mpi_errno = MPIR_ERR_MEMALLOCFAILED;
 		rreq->status.MPI_ERROR = mpi_errno;
@@ -713,15 +663,13 @@ int MPIDI_CH3U_Request_load_recv_iov(
 
 	if (data_sz <= rreq->ch3.tmpbuf_sz)
 	{
-	    MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read overflow "
-			      "data into the SRBuf and complete"));
+	    MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read overflow data into the SRBuf and complete"));
 	    rreq->ch3.iov[0].MPID_IOV_LEN = data_sz;
 	    rreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
 	}
 	else
 	{
-	    MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read overflow "
-			      "data into the SRBuf and reload IOV"));
+	    MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read overflow data into the SRBuf and reload IOV"));
 	    rreq->ch3.iov[0].MPID_IOV_LEN = rreq->ch3.tmpbuf_sz;
 	    rreq->ch3.segment_first += rreq->ch3.tmpbuf_sz;
 	    rreq->ch3.ca = MPIDI_CH3_CA_RELOAD_IOV;
@@ -732,7 +680,6 @@ int MPIDI_CH3U_Request_load_recv_iov(
     }
     
   fn_exit:
-
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_RECV_IOV);
     return mpi_errno;
 }
@@ -761,13 +708,11 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
 	tmpbuf_last = rreq->ch3.segment_size;
     }
     last = tmpbuf_last;
-    MPID_Segment_unpack(&rreq->ch3.segment, rreq->ch3.segment_first, &last,
-			rreq->ch3.tmpbuf);
+    MPID_Segment_unpack(&rreq->ch3.segment, rreq->ch3.segment_first, &last, rreq->ch3.tmpbuf);
     if (last == 0 || last == rreq->ch3.segment_first)
     {
-	/* If no data can be unpacked, then we have a datatype processing
-	   problem.  Adjust the segment info so that the remaining data is
-	   received and thrown away. */
+	/* If no data can be unpacked, then we have a datatype processing problem.  Adjust the segment info so that the remaining
+	   data is received and thrown away. */
 	rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN;
 	rreq->status.count = rreq->ch3.segment_first;
 	rreq->ch3.segment_size = rreq->ch3.segment_first;
@@ -777,10 +722,9 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
     {
 	if (last != tmpbuf_last)
 	{
-	    /* received data was not entirely consumed by unpack() because too
-	       few bytes remained to fill the next basic datatype.  Note: the
-	       segment_first field is set to segment_last so that if this is a
-	       truncated message, extra data will be read off the pipe. */
+	    /* received data was not entirely consumed by unpack() because too few bytes remained to fill the next basic datatype.
+	       Note: the segment_first field is set to segment_last so that if this is a truncated message, extra data will be read
+	       off the pipe. */
 	    rreq->status.count = last;
 	    rreq->ch3.segment_size = last;
 	    rreq->ch3.segment_first = tmpbuf_last;
@@ -792,14 +736,13 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
 	rreq->ch3.tmpbuf_off = tmpbuf_last - last;
 	if (rreq->ch3.tmpbuf_off > 0)
 	{
-	    /* move any remaining data to the beginning of the buffer.  Note:
-               memmove() is used since the data regions could overlap. */
-	    memmove(rreq->ch3.tmpbuf, (char *) rreq->ch3.tmpbuf +
-		    (last - rreq->ch3.segment_first), rreq->ch3.tmpbuf_off);
+	    /* move any remaining data to the beginning of the buffer.  Note: memmove() is used since the data regions could
+               overlap. */
+	    memmove(rreq->ch3.tmpbuf, (char *) rreq->ch3.tmpbuf + (last - rreq->ch3.segment_first), rreq->ch3.tmpbuf_off);
 	}
 	rreq->ch3.segment_first = last;
     }
-    
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_SRBUF);
     return MPI_SUCCESS;
 }
@@ -826,8 +769,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
     if (HANDLE_GET_KIND(rreq->ch3.datatype) == HANDLE_KIND_BUILTIN)
     {
 	dt_contig = TRUE;
-	userbuf_sz = rreq->ch3.user_count *
-	    MPID_Datatype_get_basic_size(rreq->ch3.datatype);
+	userbuf_sz = rreq->ch3.user_count * MPID_Datatype_get_basic_size(rreq->ch3.datatype);
     }
     else
     {
@@ -844,10 +786,8 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
     }
     else
     {
-	MPIDI_DBG_PRINTF((40, FCNAME, "receive buffer overflow; message "
-			  "truncated, msg_sz=" MPIDI_MSG_SZ_FMT ", buf_sz="
-			  MPIDI_MSG_SZ_FMT, rreq->ch3.recv_data_sz,
-			  userbuf_sz));
+	MPIDI_DBG_PRINTF((40, FCNAME, "receive buffer overflow; message truncated, msg_sz=" MPIDI_MSG_SZ_FMT ", buf_sz="
+			  MPIDI_MSG_SZ_FMT, rreq->ch3.recv_data_sz, userbuf_sz));
 	unpack_sz = userbuf_sz;
 	rreq->status.count = userbuf_sz;
 	rreq->status.MPI_ERROR = MPI_ERR_TRUNCATE;
@@ -856,10 +796,8 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 	
     if (dt_contig)
     {
-	/* TODO - check that amount of data is consistent with datatype.  In
-           other words, if we were to use Segment_unpack() would last = unpack?
-           If not we should return an error (unless configured with
-           --enable-fast) */
+	/* TODO - check that amount of data is consistent with datatype.  In other words, if we were to use Segment_unpack() would
+           last = unpack?  If not we should return an error (unless configured with --enable-fast) */
 	memcpy(rreq->ch3.user_buf, rreq->ch3.tmpbuf, unpack_sz);
     }
     else
@@ -867,20 +805,19 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 	MPID_Segment seg;
 	int last;
 
-	MPID_Segment_init(rreq->ch3.user_buf, rreq->ch3.user_count,
-			  rreq->ch3.datatype, &seg);
+	MPID_Segment_init(rreq->ch3.user_buf, rreq->ch3.user_count, rreq->ch3.datatype, &seg);
 	last = unpack_sz;
 	MPID_Segment_unpack(&seg, 0, &last, rreq->ch3.tmpbuf);
 	if (last != unpack_sz && mpi_errno == MPI_SUCCESS)
 	{
-	    /* received data was not entirely consumed by unpack() because
-	       too few bytes remained to fill the next basic datatype */
+	    /* received data was not entirely consumed by unpack() because too few bytes remained to fill the next basic
+	       datatype */
 	    rreq->status.count = last;
 	    rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN;
 	    mpi_errno = MPI_ERR_UNKNOWN;
 	}
     }
-		
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
     return mpi_errno;
 }

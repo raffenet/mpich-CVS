@@ -27,16 +27,13 @@ typedef int MPIDI_msg_sz_t;
    src/include directory in the build tree. */
 #include "mpidi_ch3_pre.h"
 
-typedef struct MPIDI_VC
-{
-    volatile int ref_count;
-    int lpid;
-    
-# if defined(MPIDI_CH3_VC_DECL)
-    MPIDI_CH3_VC_DECL
-# endif
-}
-MPIDI_VC;
+#if defined (MPIDI_CH3_MSGS_UNORDERED)
+#define MPID_USE_SEQUENCE_NUMBERS
+#endif
+
+#if defined(MPID_USE_SEQUENCE_NUMBERS)
+typedef unsigned long MPID_Seqnum_t;
+#endif
 
 typedef struct MPIDI_Message_match
 {
@@ -82,13 +79,17 @@ typedef struct
     MPIDI_Message_match match;
     MPI_Request sender_req_id;	/* needed for ssend and send cancel */
     MPIDI_msg_sz_t data_sz;
+#if defined(MPID_USE_SEQUENCE_NUMBERS)
+    MPID_Seqnum_t seqnum;
+#endif    
 }
-MPIDI_CH3_Pkt_eager_send_t;
+MPIDI_CH3_Pkt_send_t;
 
 /* NOTE: Normal and synchronous eager sends, as well as all ready-mode sends,
    use the same structure but have a different type value. */
-typedef MPIDI_CH3_Pkt_eager_send_t MPIDI_CH3_Pkt_eager_sync_send_t;
-typedef MPIDI_CH3_Pkt_eager_send_t MPIDI_CH3_Pkt_ready_send_t;
+typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_eager_send_t;
+typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_eager_sync_send_t;
+typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_ready_send_t;
 
 typedef struct
 {
@@ -97,14 +98,7 @@ typedef struct
 }
 MPIDI_CH3_Pkt_eager_sync_ack_t;
 
-typedef struct
-{
-    MPIDI_CH3_Pkt_type_t type;
-    MPIDI_Message_match match;
-    MPI_Request sender_req_id;
-    MPIDI_msg_sz_t data_sz;
-}
-MPIDI_CH3_Pkt_rndv_req_to_send_t;
+typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_rndv_req_to_send_t;
 
 typedef struct
 {
@@ -160,6 +154,15 @@ typedef union
 }
 MPIDI_CH3_Pkt_t;
 
+#if defined(MPID_USE_SEQUENCE_NUMBERS)
+typedef struct MPIDI_CH3_Pkt_send_container_s
+{
+    MPIDI_CH3_Pkt_send_t pkt;
+    struct MPIDI_CH3_Pkt_send_container_s * next;
+}
+MPIDI_CH3_Pkt_send_container_t;
+#endif
+
 /*
  * MPIDI_CH3_CA_t
  *
@@ -208,6 +211,32 @@ typedef enum
 }
 MPIDI_CA_t;
 
+
+typedef struct MPIDI_VC
+{
+    volatile int ref_count;
+    int lpid;
+#if defined(MPID_USE_SEQUENCE_NUMBERS)
+    MPID_Seqnum_t seqnum_send;
+#endif
+#if defined(MPIDI_CH3_MSGS_UNORDERED)
+    MPID_Seqnum_t seqnum_recv;
+    MPIDI_CH3_Pkt_send_container_t * msg_reorder_queue;
+#endif
+# if defined(MPIDI_CH3_VC_DECL)
+    MPIDI_CH3_VC_DECL
+# endif
+}
+MPIDI_VC;
+
+
+#if defined(MPID_USE_SEQUENCE_NUMBERS)
+#   define MPIDI_REQUEST_SEQNUM	\
+        MPID_Seqnum_t seqnum;
+#else
+#   define MPIDI_REQUEST_SEQNUM
+#endif
+
 #define MPID_REQUEST_DECL						\
 struct MPIDI_Request							\
 {									\
@@ -226,8 +255,6 @@ struct MPIDI_Request							\
     MPID_Segment segment;						\
     MPIDI_msg_sz_t segment_first;					\
     MPIDI_msg_sz_t segment_size;					\
-									\
-    MPIDI_VC * vc;							\
 									\
     /* iov and iov_count define the data to be transferred/received */	\
     MPID_IOV iov[MPID_IOV_LIMIT];					\
@@ -248,6 +275,8 @@ struct MPIDI_Request							\
     MPI_Request sender_req_id;						\
 									\
     unsigned state;							\
+									\
+    MPIDI_REQUEST_SEQNUM						\
 									\
     struct MPID_Request * next;						\
 } ch3;
@@ -284,15 +313,14 @@ MPID_STATE_MPID_WIN_CREATE, \
 MPID_STATE_MPID_WIN_FENCE, \
 MPID_STATE_MPID_WIN_FREE, \
 MPID_STATE_CREATE_REQUEST, \
-MPID_STATE_HANDLE_POLLIN, \
-MPID_STATE_HANDLE_POLLOUT, \
 MPID_STATE_MPID_ABORT, \
 MPID_STATE_MPID_CANCEL_RECV, \
 MPID_STATE_MPID_CANCEL_SEND, \
 MPID_STATE_MPID_IPROBE, \
 MPID_STATE_MPID_IRECV, \
 MPID_STATE_MPIDI_BARRIER, \
-MPID_STATE_MPIDI_CH3U_HANDLE_RECV_PKT, \
+MPID_STATE_MPIDI_CH3U_HANDLE_UNORDERED_RECV_PKT, \
+MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT, \
 MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ, \
 MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ, \
 MPID_STATE_MPIDI_CH3U_REQUEST_DP, \

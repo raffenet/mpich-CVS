@@ -23,48 +23,36 @@ int MPID_Startall(int count, MPID_Request * requests[])
     {
 	MPID_Request * const preq = requests[i];
 
-	switch (MPIDI_Request_get_persistent_type(preq))
+	switch (MPIDI_Request_get_type(preq))
 	{
-	    case MPIDI_REQUEST_PERSISTENT_RECV:
+	    case MPIDI_REQUEST_TYPE_RECV:
 	    {
-		rc = MPID_Irecv(
-		    preq->ch3.user_buf, preq->ch3.user_count,
-		    preq->ch3.datatype, preq->ch3.match.rank,
-		    preq->ch3.match.tag, preq->comm,
-		    preq->ch3.match.context_id - preq->comm->context_id,
+		rc = MPID_Irecv(preq->ch3.user_buf, preq->ch3.user_count, preq->ch3.datatype, preq->ch3.match.rank,
+		    preq->ch3.match.tag, preq->comm, preq->ch3.match.context_id - preq->comm->context_id,
 		    &preq->partner_request);
 		break;
 	    }
 	    
-	    case MPIDI_REQUEST_PERSISTENT_SEND:
+	    case MPIDI_REQUEST_TYPE_SEND:
 	    {
-		rc = MPID_Isend(
-		    preq->ch3.user_buf, preq->ch3.user_count,
-		    preq->ch3.datatype, preq->ch3.match.rank,
-		    preq->ch3.match.tag, preq->comm,
-		    preq->ch3.match.context_id - preq->comm->context_id,
+		rc = MPID_Isend(preq->ch3.user_buf, preq->ch3.user_count, preq->ch3.datatype, preq->ch3.match.rank,
+		    preq->ch3.match.tag, preq->comm, preq->ch3.match.context_id - preq->comm->context_id,
 		    &preq->partner_request);
 		break;
 	    }
 		
-	    case MPIDI_REQUEST_PERSISTENT_RSEND:
+	    case MPIDI_REQUEST_TYPE_RSEND:
 	    {
-		rc = MPID_Irsend(
-		    preq->ch3.user_buf, preq->ch3.user_count,
-		    preq->ch3.datatype, preq->ch3.match.rank,
-		    preq->ch3.match.tag, preq->comm,
-		    preq->ch3.match.context_id - preq->comm->context_id,
+		rc = MPID_Irsend(preq->ch3.user_buf, preq->ch3.user_count, preq->ch3.datatype, preq->ch3.match.rank,
+		    preq->ch3.match.tag, preq->comm, preq->ch3.match.context_id - preq->comm->context_id,
 		    &preq->partner_request);
 		break;
 	    }
 		
-	    case MPIDI_REQUEST_PERSISTENT_SSEND:
+	    case MPIDI_REQUEST_TYPE_SSEND:
 	    {
-		rc = MPID_Issend(
-		    preq->ch3.user_buf, preq->ch3.user_count,
-		    preq->ch3.datatype, preq->ch3.match.rank,
-		    preq->ch3.match.tag, preq->comm,
-		    preq->ch3.match.context_id - preq->comm->context_id,
+		rc = MPID_Issend(preq->ch3.user_buf, preq->ch3.user_count, preq->ch3.datatype, preq->ch3.match.rank,
+		    preq->ch3.match.tag, preq->comm, preq->ch3.match.context_id - preq->comm->context_id,
 		    &preq->partner_request);
 		break;
 	    }
@@ -82,11 +70,9 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	}
 	else
 	{
-	    /* If a failure occurs attempting to start the request, then we
-	       assume that partner request was not created, and stuff the error
-	       code in the persistent request.  The wait and test routines will
-	       look at the error code in the persistent request if a partner
-	       request is present. */
+	    /* If a failure occurs attempting to start the request, then we assume that partner request was not created, and stuff
+	       the error code in the persistent request.  The wait and test routines will look at the error code in the persistent
+	       request if a partner request is present. */
 	    preq->partner_request = NULL;
 	    preq->status.MPI_ERROR = rc;
 	    preq->cc_ptr = &preq->cc;

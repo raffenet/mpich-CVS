@@ -46,7 +46,7 @@ void MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 		sreq, sreq->ch3.iov, &sreq->ch3.iov_count);
 	    if (rc == MPI_SUCCESS)
 	    {
-		MPIDI_CH3_iWrite(sreq->ch3.vc, sreq);
+		MPIDI_CH3_iWrite(vc, sreq);
 	    }
 	    else
 	    {
