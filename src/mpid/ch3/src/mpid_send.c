@@ -211,7 +211,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 #ifndef MPIDI_CH3_CHANNEL_RNDV
 	MPID_Request * rts_sreq;
 #endif
-	
+
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending rndv RTS, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
 	MPIDI_Request_create_sreq(sreq, mpi_errno, goto fn_exit);
@@ -268,8 +268,8 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	    }
 	    /* --END ERROR HANDLING-- */
 	}
-	mpi_errno = MPIDI_CH3_do_rts (vc, sreq, &upkt, sreq->dev.iov,
-				      sreq->dev.iov_count);
+
+	mpi_errno = MPIDI_CH3_iStartRndvMsg (vc, sreq, &upkt);
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{

@@ -195,6 +195,31 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 	    case MPIDI_CH3_PKT_FLOW_CNTL_UPDATE:
 		MPIU_DBG_PRINTF((" FLOW_CNTRL_UPDATE\n"));
 		break;
+#ifdef MPIDI_CH3_CHANNEL_RNDV
+	    case MPIDI_CH3_PKT_RTS_IOV:
+		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_RTS_IOV\n"));
+		MPIU_DBG_PRINTF((" sreq ......... 0x%08X\n", pkt->rts_iov.sreq));
+		MPIU_DBG_PRINTF((" iov_len ...... %d\n", pkt->rts_iov.iov_len));
+		break;
+	    case MPIDI_CH3_PKT_CTS_IOV:
+		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_CTS_IOV\n"));
+		MPIU_DBG_PRINTF((" sreq ......... 0x%08X\n", pkt->cts_iov.sreq));
+		MPIU_DBG_PRINTF((" rreq ......... 0x%08X\n", pkt->cts_iov.rreq));
+		MPIU_DBG_PRINTF((" iov_len ...... %d\n", pkt->cts_iov.iov_len));
+		break;
+	    case MPIDI_CH3_PKT_RELOAD:
+		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_RELOAD\n"));
+		MPIU_DBG_PRINTF((" send_recv .... %d\n", pkt->reload.send_recv));
+		MPIU_DBG_PRINTF((" sreq ......... 0x%08X\n", pkt->reload.sreq));
+		MPIU_DBG_PRINTF((" rreq ......... 0x%08X\n", pkt->reload.rreq));
+		break;
+	    case MPIDI_CH3_PKT_IOV:
+		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_IOV\n"));
+		MPIU_DBG_PRINTF((" req .......... 0x%08X\n", pkt->iov.req));
+		MPIU_DBG_PRINTF((" send_recv .... %d\n", pkt->iov.send_recv));
+		MPIU_DBG_PRINTF((" iov_len ...... %d\n", pkt->iov.iov_len));
+		break;
+#endif
   	    case MPIDI_CH3_PKT_CLOSE:
 		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_CLOSE\n"));
 		MPIU_DBG_PRINTF((" ack ......... %s\n", pkt->close.ack ? "TRUE" : "FALSE"));
