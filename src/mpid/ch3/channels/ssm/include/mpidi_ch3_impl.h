@@ -147,7 +147,11 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
 /*#define USE_FIXED_ACTIVE_PROGRESS*/
 /*#define USE_FIXED_SPIN_WAITS*/
+#ifndef MPID_CPU_TICK
+#define USE_FIXED_SPIN_WAITS
+#else
 #define USE_ADAPTIVE_PROGRESS
+#endif
 
 #ifdef USE_FIXED_ACTIVE_PROGRESS
 #define MPIDI_INC_WRITE_ACTIVE() MPIDI_CH3I_shm_write_active++; MPIDI_CH3I_active_flag |= MPID_CH3I_SHM_BIT
