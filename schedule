@@ -79,26 +79,26 @@ MPI_Ibsend,,,,,,MPI_Buffer_attach,
 MPI_Issend,,,,,Brian,,done,not tested
 MPI_Irsend,,,,,Brian,,done,not tested
 MPI_Irecv,,,,,David/Brian,,done
-MPI_Wait,,,,,Brian,,,needs rethinking and probably rewriting
-MPI_Test,,,,,David/Bill/Brian,MPI_Grequest_start,
+MPI_Wait,,,,,Brian,,done
+MPI_Test,,,,,David/Bill/Brian,,
 MPI_Request_free,.1,.15,.2,,Brian,,.1,05/14/02
-MPI_Waitany,,,,,,MPI_Grequest_start,
-MPI_Testany,,,,,,MPI_Grequest_start,
-MPI_Waitall,,,,,,MPI_Grequest_start,
-MPI_Testall,,,,,,MPI_Grequest_start,
-MPI_Waitsome,,,,,,MPI_Grequest_start,
-MPI_Testsome,,,,,,MPI_Grequest_start,
+MPI_Waitany,,,,,Brian,,
+MPI_Testany,,,,,Brian,,
+MPI_Waitall,,,,,Brian,,
+MPI_Testall,,,,,Brian,,
+MPI_Waitsome,,,,,Brian,,
+MPI_Testsome,,,,,Brian,,
 MPI_Iprobe,,,,,Brian,,.1,04/23/2002
 MPI_Probe,,,,,Brian,,.1,04/23/2002
 MPI_Cancel,.25,.5,1,,Brian,,
 MPI_Test_cancelled,.1,.15,.2,,Brian,,.1,04/26/02
-MPI_Send_init,,,,,Brian,,
+MPI_Send_init,,,,,Brian,,done,mpi_proc_null
 MPI_Bsend_init,,,,,Brian,,
-MPI_Ssend_init,,,,,Brian,,
-MPI_Rsend_init,,,,,Brian,,
-MPI_Recv_init,,,,,Brian,,
-MPI_Start,,,,,Brian,,
-MPI_Startall,,,,,Brian,,
+MPI_Ssend_init,,,,,Brian,,done,mpi_proc_null
+MPI_Rsend_init,,,,,Brian,,done,mpi_proc_null
+MPI_Recv_init,,,,,Brian,,done,mpi_proc_null
+MPI_Start,,,,,Brian,,done,mpi_proc_null
+MPI_Startall,,,,,Brian,,done,mpi_proc_null
 MPI_Sendrecv,,,,,Brian,,.1,5/1/02
 MPI_Sendrecv_replace,
 
