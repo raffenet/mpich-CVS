@@ -1,5 +1,7 @@
+# LIBS includes -lmpich and other libraries (e.g., -lpmpich if
+# weak symbols are not supported)
 hellow_SOURCES = hellow.c
-hellow_LDADD = -L ../lib -lmpich
+hellow_LDADD = -L ../lib 
 sr_SOURCES = sr.c
-sr_LDADD = -L ../lib -lmpich
+sr_LDADD = -L ../lib 
 INCLUDES = -I../src/include -I${top_srcdir}/src/include

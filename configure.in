@@ -561,6 +561,14 @@ dnl
 dnl Temporary value for extra status information, from device subsystem
 AC_SUBST(EXTRA_STATUS_DECL)
 dnl
+dnl
+dnl Set the libraries to use in building programs
+if test "$enable_weak_symbols" != "yes" ; then
+    LIBS="-lmpich -lpmpich -lmpich $LIBS"
+else
+    LIBS="-lmpich $LIBS"
+fi
+dnl
 dnl Generate the Makefiles from Makefile.in
 dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
 dnl from the file.
