@@ -1,0 +1,16 @@
+\documentclass[draft,twoside]{article}
+\usepackage{graphics}
+\usepackage{../adi3/refman}
+\usepackage{mpidoc}
+\usepackage{fileinclude}
+\usepackage[dvipdfm]{hyperref}
+
+\setlength\textwidth{6.5in}
+\setlength\oddsidemargin{0in}
+\setlength\evensidemargin{0in}
+\setlength\marginparwidth{0.7in}
+\begin{document}
+
+\input %infile%
+
+\end{document}

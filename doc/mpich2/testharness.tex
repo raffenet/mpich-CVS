@@ -1,0 +1,80 @@
+\subsection{Writing New Tests}
+
+\subsubsection{Test harness}
+There is a common test harness for running tests.  This will
+\begin{enumerate}
+\item Allow selecting the level of testing; e.g., exhaustive (all
+tests for all combinations of datatypes and communicators), factored
+(all tests for some combination of datatypes and communicators), or
+reduced (a sampling of tests), or random (tests chosen using a
+pseudorandom number generator).  
+
+\item The test harness is table driven, allowing a specific set to be
+easily specified.  
+\end{enumerate}
+This test harness replaces the current \file{runtests} scripts.
+
+In addition, each test will use simple set of routine (similar to the
+ones in \file{test.c} used in some of the current tests.  A simple
+communication test might look like
+\begin{verbatim}
+#include "mpi.h"
+#include "mpitest.h"
+
+int main( int argc, char **argv )
+{
+    int errs;
+    int sender, receiver;
+    MTest_Datatypes sendtype, recvtype;
+    ...
+    MTest_Init( &argc, &argv );   /* Testing initialization */
+    while (MPI_Comm = MTest_Get_comm( &sender, &receiver )) {
+         while (MTest_Get_datatypes( &sendtype, &recvtype ) ) {
+             if (sender) {
+                 sendbuf = sendtype.InitBuf( &sendtype );
+                 ... send operation
+                 sendtype.FreeBuf( &sendtype );
+             } 
+             else if (receiver) {
+                 recvbuf = recvtype.InitBuf( &recvtype );
+                 ... recv operation
+                 if (MTest_Check_recv( &status, &recvtype ))) {
+                     errs++;
+                     MTest_Errmsg( msg, ... );  /* Any process can call */
+                     }
+                 else {
+                     MTest_Message( msg, ... );  /* ditto */
+                 }
+                 recvtype.FreeBuf( &recvtype );
+             }
+         }
+         MTest_Reset_datatypes();
+    }
+    MTest_Finalize( errs );
+    return 0;
+}
+\end{verbatim}
+This uses a ``get next'' interface for the communicators and datatypes
+because, even though it isn't thread-safe, it is very convenient to
+use.  A thread-safe form can also be provided if necessary.  All MPI
+initialization and finalization is done within the \code{MTest}
+routines.  This also supports control of debugging output: command
+line and environment variables control how much output the
+\code{MTest_Message} and \code{MTest_Errmsg} generate.  In the
+automated test mode, \code{MTest_Message} produces no output; in the
+full debugging mode, it performs a \code{printf/fflush} with each
+call.  Other versions of \code{MTest_Get_datatypes} and
+\code{MTest_Check_recv} can be used for collective routines.
+
+\paragraph{Routine Summary.}
+This is incomplete.
+\begin{verbatim}
+void MTest_Init( int *argc, char ***argv );
+int MTest_Get_datatypes( ... );
+void MTest_Reset_datatypes(void);
+MPI_Comm MTest_Get_comm( int, int );
+void MTest_Errmsg( msg, ... );
+void MTest_Message( msg, ... );
+void MTest_Finalize( int errcount );
+\end{verbatim}
+

@@ -25,7 +25,7 @@ SHELL = /bin/sh
 	    -e s/@section@/section/g \
 	    -e s/@newsection@/relax/g \
 	template.orig > template.tex
-	-latex template </dev/null 2>&1 >/dev/null
+	-latex template </dev/null >/dev/null 2>&1
 	-bibtex template </dev/null 
 	latex template
 	mv template.dvi $*.dvi
@@ -153,6 +153,15 @@ mpich2.pdf: mpich2pdf.dvi
 mpich2/mpich2.htm: mpich2.tex
 	tohtml -default -dosnl mpich2.tex
 	tohtml -default -dosnl mpich2.tex
+
+testharness.pdf: testharness.tex single.in
+	rm -f single.tex
+	sed 's/%infile%/testharness.tex/' single.in > single.tex
+	-latex single </dev/null >/dev/null 2>&1	
+	-bibtex single </dev/null
+	latex single
+	mv -f single.dvi testharness.dvi
+	dvipdfm testharness
 
 # This uses the full-featured date program in Linux
 WEBDIR = /mcs/www-unix/mpi/mpich2/docs
