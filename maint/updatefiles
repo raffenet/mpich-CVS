@@ -14,6 +14,7 @@ fi
 #
 # Default choices
 do_codingcheck=yes
+codecheck_args=""
 do_geterrmsgs=yes
 do_bindings=yes
 #
@@ -22,6 +23,10 @@ do_bindings=yes
 temp_args=""
 for arg in "$@" ; do
     case $arg in 
+    -with-codecheck=*|--with-codecheck=*)
+    do_codingcheck=yes
+    codecheck_args=`echo "A$arg" | sed -e 's/.*=//'`
+    ;;
     -with-codecheck|--with-codecheck)
     do_codingcheck=yes
     ;;
@@ -369,5 +374,5 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
 		      -skipfile=./src/mpi/romio/adio/sgi/mpi3.1/mpi.h \
 		      -skipfile=./src/mpi/romio/adio/sgi/mpi3.1/mpif.h \
 	 	      -skipfile=./src/mpi/romio/adio/include/mpisgi2.h \
-			src 
+			$codecheck_args src 
 fi

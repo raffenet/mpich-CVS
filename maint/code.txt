@@ -114,4 +114,9 @@ Or things not checked for but desired
 
 4. Enum lists must *not* end with a trailing comma.  Some C compilers
    will not accept this.  When appending a list, use leading, not trailing
-   commas.
+   commas.  Alternately, make all enum lists end with a "last_element", e.g.,
+
+    enum { a, b, c,
+       MACRONAME1
+       MACRONAME2
+       lastvalue };

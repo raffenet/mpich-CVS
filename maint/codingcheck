@@ -37,6 +37,15 @@ $withinRomio = 0;
 $skipTest = 1; 
 # Check for special args
 @files = ();
+#
+# Checks to perform (all by default)
+$checkComments  = 1;
+$checkFunctions = 1;
+$checkDefines   = 1;
+$checkStyle     = 1;
+
+$missingCopyright = 0;
+
 foreach $arg (@ARGV) {
     if ($arg =~ /^-showfiles/) { $showfiles = 1; }
     elsif( $arg =~ /-debug/) { $debug = 1; }
@@ -45,6 +54,13 @@ foreach $arg (@ARGV) {
     elsif ( $arg =~ /-allowromio=no/) { $allowRomioNames = 0; }
     elsif ( $arg =~ /-allowromio/) { $allowRomioNames = 1; }
     elsif ( $arg =~ /-checktest/) { $skipTest = 0; }
+    elsif ( $arg =~ /-distcheck/) {
+	# Perform minimal checks for the distribution
+	$checkComments  = 0;
+	$checkFunctions = 0;
+	$checkDefines   = 0;
+	$checkStyle     = 0;
+    }
     else {
 	print "Adding $arg to files\n" if $debug;
 	$files[$#files+1] = $arg;
@@ -113,7 +129,7 @@ sub ProcessFile {
 	$_ = StripComments( FD, $_ );
 	if ($comment_line ne "") { &CheckForPreamble( $comment_line ); }
 	# Check for C++ style comments
-	if (/\/\//) {
+	if ($checkComments && /\/\//) {
 	    $cxx_comments_found ++;
 	    if ($cxx_comments_found == 1 && ! $cxx_header) {
 		&PrintCurrentDirectory;
@@ -130,31 +146,37 @@ sub ProcessFile {
 	    s/\/\/.*//;
 	}
 	# If there is a DEBUG that isn't closed, read ahead
-	if (/DEBUG\s*\(/) {
-	    ($leading,$result,$remainder) = &GetBalancedParen( FD, $_ );
-	    $_ = $leading . $remainder;
+	if ($checkFunctions) {
+	    if (/DEBUG\s*\(/) {
+		($leading,$result,$remainder) = &GetBalancedParen( FD, $_ );
+		$_ = $leading . $remainder;
+	    }
+	    # Skip any single function calls within DEBUG
+	    if (!/DEBUG\([^\(\)]*\([^\(\)]*\)/ && !$withinRomio) {
+		# FIXME: eventually we need to include ROMIO in these checks
+		&CheckForBadSubs( $_, $filename );
+	    }
+
+	    # We also need to check for the use of MPI routines from within
+	    # the code (only use NMPI), at least for all of the MPI
+	    # implementation code.  Withing src/mpi/*, we could look for
+	    # MPI_([A-Z][a-z0-9_]*)[^;]*; and then complain if $1 is not one
+	    # of Status, Comm, Group, Win, File, Aint, Fint, Offset, Request,
+	    # File, Info, Datatype .
+	    if ($notInNested) {
+		&CheckForNested( FD, $_, $filename );
+	    }			# 
+	    if (! $filename =~ /binding\/f77/ &&
+		! $filename =~ /include \/nmpi.h/) {
+		# Allow PMPI calls within the f77 binding
+		&CheckForPMPI( FD, $_, $filename );
+	    }
 	}
-	# Skip any single function calls within DEBUG
-	if (!/DEBUG\([^\(\)]*\([^\(\)]*\)/ && !$withinRomio) {
-	    # FIXME: eventually we need to include ROMIO in these checks
-	    &CheckForBadSubs( $_, $filename );
+
+	if ($checkDefines) {
+	    &CheckForBadDefines( FD, $_, $filename );
+	    &CheckForMismatchedStates ( FD, $_, $filename );
 	}
-        &CheckForBadDefines( FD, $_, $filename );
-	&CheckForMismatchedStates ( FD, $_, $filename );
-	if ($notInNested) {
-	    &CheckForNested( FD, $_, $filename );
-	}
-	if (! $filename =~ /binding\/f77/ &&
-	    ! $filename =~ /include \/nmpi.h/) {
-	    # Allow PMPI calls within the f77 binding
-	    &CheckForPMPI( FD, $_, $filename );
-	}
-	# We also need to check for the use of MPI routines from within
-	# the code (only use NMPI), at least for all of the MPI
-	# implementation code.  Withing src/mpi/*, we could look for
-	# MPI_([A-Z][a-z0-9_]*)[^;]*; and then complain if $1 is not one
-	# of Status, Comm, Group, Win, File, Aint, Fint, Offset, Request,
-	# File, Info, Datatype .
     }
     # Output summary messages
     foreach $key (keys(%warningmsgs)) {
@@ -347,6 +369,11 @@ foreach $file (@files) {
     }
 }
 
+if ($missingCopyright) {
+    print STDERR "Some files are missing the copyright statement\n";
+    exit 1;
+}
+
 sub ProcessDir {
     my $DIR = "DIR$depth"; $depth++;
     my $dir = $_[0]; $dir =~ s/\/$//;
@@ -502,19 +529,25 @@ sub CheckForPreamble {
     elsif ($curline =~ /See COPYRIGHT/) {
 	$saw_copyright = 1;
     }
+    elsif ($curline =~ /Copyright \(C\)/) {
+	# This is for files with external copyrights, such as the
+	# Etnus/Dolphin files for the Totalview interface
+	$saw_copyright = 1;
+    }
 }
 sub ReportOnPreamble {
     my $filename = $_[0];
 
     # Is this a derived file?
     if (-s "$filename.in") { return 0; }
-    if (! $saw_c_style && !$saw_cxx_style) {
+    if ($checkStyle && ! $saw_c_style && !$saw_cxx_style) {
 	&PrintCurrentDirectory;
 	print "C style header (c-basic-offset:4) missing in $filename\n";
     }
     if (! $saw_copyright) {
 	&PrintCurrentDirectory;
 	print "Copyright statement missing from $filename\n";
+	$missingCopyright ++;
     }
 }
 # --------------------------------------------------------------------------

@@ -259,6 +259,8 @@ sub RunTest {
 	if (/--env-(.*)=(.*)/) {
 	    $name  = $1;
 	    $value = $2;
+	    # Replace <SP> with blanks
+	    $value =~ s/<SP>/ /g;
 	    print "Env $name = $value\n" if $debug;
 	    # Since most of these so far are programs, we should check to 
 	    # see if they're available.  Instead, we'll make the user
@@ -348,8 +350,16 @@ sub RunTest {
 					"../maint/showsizes -mpionly hellow" );
 			print $OUTFD $UsedNameStart;
 			$usedname_status = &RunProgram( @pgm );
+			# Also try the load map (even if showsizes failed)
+			# This assumes that (a) -M to ld generates a load map
+			# and (b) -Wl passes args to ld.
+			@pgm = split( /\s+/,"../bin/mpicc -Wl,-M -o hellow $srcdir/examples/hellow.c" );
+			$usedname_status = &RunProgram( @pgm );
 			print $OUTFD $UsedNameEnd;
+
+			
 		    }
+		    
 		    $rc = chdir $cwd;
 		    if (!$rc) {
 			print STDERR "Could not change to $cwd\n";
