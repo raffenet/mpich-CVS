@@ -431,10 +431,6 @@ dnl
 dnl Temporary value for extra status information, from device subsystem
 AC_SUBST(EXTRA_STATUS_DECL)
 dnl
-dnl TEMPORARY: copy pmi.h to the source include directory
-dnl In the future pmi's configure will do this
-AC_OUTPUT_COMMANDS(cp src/pmi/include/pmi.h src/include)
-dnl
 dnl Generate the Makefiles from Makefile.in
 dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
 dnl from the file.
