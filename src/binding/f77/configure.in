@@ -646,9 +646,18 @@ if test "$noval" = "yes" ; then
 fi
 AC_SUBST(MPI_FINT)
 dnl
+dnl We also need to check the size of MPI_Aint vs MPI_Fint, and
+dnl define AINT_LARGER_THAN_FINT if aint is larger (this 
+dnl affects code in MPI_Address)
+if test "$ac_cv_sizeof_voidp" != "0" -a \
+        "$ac_cv_sizeof_voidp" -gt "$pac_cv_f77_sizeof_integer" ; then
+    AC_DEFINE(HAVE_AINT_LARGER_THAN_FINT,,[Define if addresses are larger than Fortran integers])
+fi
+dnl
+dnl
 dnl Include a defined value for Fint is int
 if test "$MPI_FINT" = "int" ; then
-    AC_DEFINE(FINT_IS_INT,,[Define if Fortran integer are the same size as C ints])
+    AC_DEFINE(HAVE_FINT_IS_INT,,[Define if Fortran integer are the same size as C ints])
 fi
 
 PAC_PROG_C_UNALIGNED_DOUBLES(,

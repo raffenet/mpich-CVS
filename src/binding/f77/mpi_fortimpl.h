@@ -73,6 +73,11 @@ extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
 #define MPIR_FROM_FLOG(a) ( _ltob(&(a)) )    /*(a) must be a pointer */
 #endif
 
+/* If Cray-style pointers are supported, we don't need to check for a 
+   "special" address. */
+#ifdef USE_POINTER_FOR_BOTTOM
+#define MPIR_F_PTR(a) (a)
+#else
 /* MPIR_F_MPI_BOTTOM is the address of the Fortran MPI_BOTTOM value */
 extern void *MPIR_F_MPI_BOTTOM;
 
@@ -82,6 +87,7 @@ extern void *MPIR_F_MPI_BOTTOM;
 */
 /*  #define MPIR_F_PTR(a) (((a)==(MPIR_F_MPI_BOTTOM))?MPI_BOTTOM:a) */
 #define MPIR_F_PTR(a) (a)
+#endif
 
 /*  
  * These are hooks for Fortran characters.
