@@ -5,7 +5,8 @@
 #
 
 from os      import environ, getpid, pipe, fork, fdopen, read, write, close, dup2, \
-                    chdir, execvpe, kill, waitpid, _exit
+                    chdir, execvpe, kill, waitpid, _exit, strerror
+from errno   import EINTR
 from sys     import exit
 from socket  import gethostname, fromfd, AF_INET, SOCK_STREAM
 from select  import select, error
@@ -259,11 +260,13 @@ def mpdman():
     while not endBarrierDone:
         try:
             (inReadySockets,None,None) = select(socketsToSelect.keys(),[],[],30)
-        except error, errmsg:
-            if isinstance(errmsg,Exception)  and  errmsg[0] == 4:  # interrupted system call
+        except error, data:
+            if data[0] == EINTR:        # will come here if receive SIGCHLD, for example
                 continue
             else:
-                mpd_raise('%s: select failed: errmsg=:%s:' % (myId,errmsg) )
+                mpd_raise('select error: %s' % strerror(data[0]))
+        except Exception, data:
+            mpd_raise('other error after select %s :%s:' % ( data.__class__, data) )
         for readySocket in inReadySockets:
             if readySocket not in socketsToSelect.keys():
                 continue

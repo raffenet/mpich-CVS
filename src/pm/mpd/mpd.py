@@ -7,10 +7,11 @@
 from sys       import stdout, argv, settrace, exit
 from os        import environ, getpid, fork, setpgrp, waitpid, kill, chdir, \
                       setsid, getuid, setuid, setreuid, setregid, setgroups, \
-                      umask, close, access, path, stat, unlink, \
+                      umask, close, access, path, stat, unlink, strerror, \
                       R_OK, X_OK, WNOHANG, _exit
 from pwd       import getpwnam
 from socket    import socket, AF_UNIX, SOCK_STREAM, gethostname
+from errno     import EINTR
 from select    import select, error
 from getopt    import getopt
 from types     import FunctionType
@@ -126,11 +127,13 @@ def _mpd():
         socketsToSelect = g.activeSockets.keys()
         try:
             (inReadySockets,None,None) = select(socketsToSelect,[],[],30)
-        except error, errmsg:
-            if isinstance(errmsg,Exception)  and  errmsg[0] == 4:  # interrupted system call
+        except error, data:
+            if data[0] == EINTR:        # will come here if receive SIGCHLD, for example
                 continue
             else:
-                mpd_raise('select failed: errmsg=:%s:' % (errmsg) )
+                mpd_raise('select error: %s' % strerror(data[0]))
+        except Exception, data:
+            mpd_raise('other error after select %s :%s:' % ( data.__class__, data) )
         for readySocket in inReadySockets:
             if readySocket not in g.activeSockets.keys():  # deleted on another iteration ?
                 continue
