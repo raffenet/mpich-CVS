@@ -211,10 +211,10 @@ CopyFileP() {
 
 
 #
-# A version of recursive directory copy that preserves file dates
-# but does NOT copy CVS, old, tex directory.
+# A version of recursive directory copy that copy only missing files
+# and preserves copied file dates but does NOT copy CVS, old, tex directory.
 # $1 is the src directory, $2 is dest directory, $3 is $MODE or $XMODE
-CopyDirRecurP() {
+CopyDirRecurMissingP() {
 if [ -n "$1" -a -n "$2" ] ; then
     if [ -d $1 ] ; then
         MkDir $2
@@ -232,7 +232,7 @@ if [ -n "$1" -a -n "$2" ] ; then
                  -a "$dir" != "CVS" -a "$dir" != "old" \
                  -a "$dir" != "tex" \
                ] ; then
-                CopyDirRecurP $dir $2/$dir $3
+                CopyDirRecurMissingP $dir $2/$dir $3
             fi
         done
         # cd back where it comes from
@@ -242,6 +242,45 @@ if [ -n "$1" -a -n "$2" ] ; then
     fi 
 fi
 }
+
+
+#
+# A version of recursive directory copy that copies and replaces files
+# and reserves copied file dates but does NOT copy CVS, old, tex directory.
+# $1 is the src directory, $2 is dest directory, $3 is $MODE or $XMODE
+CopyDirRecurReplaceP() {
+if [ -n "$1" -a -n "$2" ] ; then
+    if [ -d $1 ] ; then
+        MkDir $2
+        # use $4 as a local variable
+        # & set it as the original PWD before "cd $1"
+        set $1 $2 ${3:-$MODE} `pwd`
+        cd $1
+        for file in * ; do
+            if [ -f $file ] ; then
+                if [ -f $DESTDIR$2/$file ] ; then
+                    $RM -f $DESTDIR$2/$file
+                fi
+                CopyFileP $file $2/$file $3
+            fi
+        done
+        for dir in * ; do
+            if [ -d $dir \
+                 -a "$dir" != "CVS" -a "$dir" != "old" \
+                 -a "$dir" != "tex" \
+               ] ; then
+                CopyDirRecurReplaceP $dir $2/$dir $3
+            fi
+        done
+        # cd back where it comes from
+        # counter the effect of "cd $1" above,
+        # so "for" loop still works
+        cd $4
+    fi
+fi
+}
+
+
 
 #
 # Make the given directory.  This handles building intermediate directories
@@ -405,7 +444,7 @@ fi
 if [ -n "$libbuild_dir" ] ; then
     if [ -d $libbuild_dir ] ; then
         echo "Copying MPE libraries to $libdir"
-        CopyDirRecurP $libbuild_dir $libdir $MODE
+        CopyDirRecurReplaceP $libbuild_dir $libdir $MODE
     fi
 fi
 
@@ -413,7 +452,7 @@ fi
 if [ -n "$binbuild_dir" ] ; then
     if [ -d $binbuild_dir ] ; then
          echo "Copying MPE utility programs to $bindir"
-         CopyDirRecurP $binbuild_dir $bindir $XMODE
+         CopyDirRecurReplaceP $binbuild_dir $bindir $XMODE
     fi
 fi
 
@@ -430,7 +469,7 @@ for pkg in logging graphics ; do
         examplesdir=$datadir/examples_${pkg}
         MkDir $examplesdir
 #       Copy MPE Example C and Fortran programs
-        CopyDirRecurP $top_srcdir/$dirvalue $examplesdir
+        CopyDirRecurReplaceP $top_srcdir/$dirvalue $examplesdir
     
 #       Create MPE examples Makefile
         ( cd $DESTDIR$examplesdir ; \
