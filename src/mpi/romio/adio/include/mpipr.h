@@ -149,6 +149,7 @@
 #define MPI_Group_union PMPI_Group_union
 #undef MPI_Ibsend
 #define MPI_Ibsend PMPI_Ibsend
+#if 0
 #undef MPI_Info_create
 #define MPI_Info_create PMPI_Info_create
 #undef MPI_Info_delete
@@ -167,6 +168,7 @@
 #define MPI_Info_get_valuelen PMPI_Info_get_valuelen
 #undef MPI_Info_set
 #define MPI_Info_set PMPI_Info_set
+#endif /* only conditionally set the info */
 #undef MPI_Init
 #define MPI_Init PMPI_Init
 #undef MPI_Initialized
