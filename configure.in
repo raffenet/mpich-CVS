@@ -10,7 +10,7 @@ AC_INIT(src/include/mpiimpl.h)
 if test -s "$srcdir/maint/Version" ; then
     VERSION="`cat $srcdir/maint/Version`"
 else
-    VERSION="0.97"
+    VERSION="0.98-CVS"
 fi
 AC_SUBST(VERSION)
 CONFIGURE_ARGUMENTS="$*"
