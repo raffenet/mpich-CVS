@@ -665,6 +665,10 @@ with MPI_Alloc_mem.
 **test_sock_wait:sock_wait failed
 **wsasock:WSAStartup failed
 **wsasock %d:WSAStartup failed (errno %d)
+**post_write:Unable to post a write
+**sock_accept:Unable to accept a socket connection
+**sock_writev:Unable to write an iovec to a socket
+**sock_write:Unable to write to a socket
 
 #
 # CH3:shm
@@ -1128,7 +1132,7 @@ with MPI_Alloc_mem.
 **mpi_win_create:MPI_Win_create failed
 **mpi_win_create %p %d %d %I %C %p:MPI_Win_create(%p, %d, %d, %I, %C, %p) failed
 **mpi_win_fence:MPI_Win_fence failed
-**mpi_win_fence %d %W:MPI_Win_fence(%d, %W) failed
+**mpi_win_fence %A %W:MPI_Win_fence(%A, %W) failed
 **mpi_win_free:MPI_Win_free failed
 **mpi_win_free %p:MPI_Win_free(%p) failed
 **mpi_win_get_group:MPI_Win_get_group failed
