@@ -16,7 +16,8 @@ mail to mpich2-maint@mcs.anl.gov.
 
 Currently the only communication layer fully supported in MPICH2 is the
 "TCP channel device", although others are in preparation, as you can see
-from the code here.
+from the code here.  Also, this device currently supports only homogenous
+environments.  
 
 To build MPICH2 with the TCP channel device, do the following:
 
@@ -49,7 +50,10 @@ Example and test programs (both source and executables) can be found
 in ./examples and ./test/mpi/basic, respectively.  To run any of these
 programs, you will need to start the MPD process management daemon.
 More on MPD can be found in mpich2/src/pm/mpd/README.  An important
-prerequisite is that you need to have Python 2.2 installed.
+prerequisite is that you need to have Python 2.2 installed.  (MPICH2 will
+work with multiple process managers; the version of MPD implemented using
+Python is just one such example.  Later versions of MPICH2 will provide
+additional process managers).
 
    touch ~/.mpd.conf
    chmod 600 ~/.mpd.conf
@@ -77,10 +81,9 @@ What compiles but doesn't work
 We don't guarantee that *anything* works yet.  However, we have run MPICH2 
 against both the MPICH-1 test suite and an updated and correct version of the 
 Intel test suite.  MPICH2 passes most of these tests, including most error 
-handling.  Tests that do not yet pass include cancelling sends.
-Among the routines that compile but that are known not to work yet are:
+handling.  Among the routines that compile but that are known not to work yet
+are: 
 
-MPI_Cancel for sends, persistent requests
 MPI_Get_elements for partial types
 
 
@@ -90,10 +93,10 @@ leaks are certain.  However, most MPI programs should not have any problems.
 
 Testing Status
 --------------
-We are beginning to run regular tests of the MPI-1 functions.  We are 
-using both the MPICH-1 test suite and the Intel test suite (with corrections).
+We run regular tests of the MPI-1 functions.  We are using both the MPICH-1
+test suite and the Intel test suite (with corrections). 
 The current status is available at 
-http://www.mcs.anl.gov/mpi/mpich/micronotes/mpich2-tests .
+http://www.mcs.anl.gov/mpi/mpich/micronotes/mpich2-tests .  
 
 VPATH Builds
 ------------
@@ -114,3 +117,73 @@ installed version goes into /usr/local/mpich2-test:
     /usr/me/mpich2-10-25-02/configure --prefix=/usr/local/mpich2-test
     make
     make install
+
+Release Notes
+-------------
+Most of the testing to date has been in a GNU environment under Linux, albeit
+with many of gcc's warning options turned on.  Other environments with 
+stricter compilers may find compilation problems.  Testing has been thorough
+in the GNU/Linux environment, with both the MPICH1 and Intel (corrected)
+test suites showing few problems.  See
+http://www.mcs.anl.gov/mpi/mpich/micronotes/mpich2-tests for the current
+status.
+
+There are many features built into MPICH2.  If you are exploring MPICH2 as
+part of a development project the following configure options are important:
+
+Performance Options:
+ --enable-fast - Turns off error checking and collection of internal 
+                 timing information
+ --enable-timing=no - Turns off just the collection of internal timing
+                 information
+MPI Features:
+  --enable-romio - Build the ROMIO implementation of MPI-IO.  This 
+                 *compiles* but does not *link*.  Wait for the next release.
+
+Language bindings:
+  --enable-f77 - Build the Fortran 77 bindings.  This has been tested with
+                 the Fortran parts of the Intel test suite.  Fortran 90
+		 is not yet available.
+  --enable-cxx - Build the C++ bindings.  This has *not* been tested and
+                 is not quite ready for use.  Wait for the next release.
+
+Cross compilation:
+  --with-cross=filename - Provide values for the tests that required
+                 running a program, such as the tests that configure
+		 uses to determine the sizes of the basic types.
+		 This should be a fine in Bourne shell format containing
+		 varable assignment of the form
+                       CROSS_SIZEOF_INT=2
+                 for all of the CROSS_xxx variables.  A list will
+		 be provided in later releases; for now, look at the 
+		 configure.in files.
+
+Error checking and reporting:
+  --enable-error-checking=level - Control the amount of error checking.
+                 Currently, only "no" and "all" is supported; all is the 
+		 default.
+  --enable-error-messages=level - Control the aount of detail in error
+                 messages.  By default, MPICH2 provides instance-specific
+		 error messages, but with this option, MPICH2 can be
+		 configured to provide less detailed messages.  This
+		 may be deesirable on small systems, such as clusters
+		 built from game consoles or high-density massively
+		 parallel systems.
+
+Compilation options for development:
+  --enable-g=value - Controls the amount of debugging information
+                 collected by the code.  The most useful choice here is
+		 dbg, which compiles with -g.
+  --enable-coverage - An experimental option for enable GNU coverage
+                 analysis.
+  --with-logging=name - Select a logging library for recording the 
+                 timings of the internal routines.  We have used this
+		 to understand the performance of the internals of MPICH2.
+		 Wait for the next release for detailed instructions.
+
+Alternate Process Managers:
+  --with-pm=forker - Forker is a simple process manager that creates all
+                 processes on the same machine.  This is an alternative
+		 to the default (mpd), and illustrates how to interface
+		 MPICH2 to other process managers without changing the
+		 implementation of the communication device.
