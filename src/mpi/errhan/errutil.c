@@ -7,6 +7,13 @@
 
 /* style: allow:fprintf:4 sig:0 */
 
+/* stdarg is required to handle the variable argument lists for 
+   MPIR_Err_create_code */
+#include <stdarg.h>
+/* Define USE_ERR_CODE_VALIST to get the prototype for the valist version
+   of MPIR_Err_create_code */
+#define USE_ERR_CODE_VALIST
+
 #include "mpiimpl.h"
 #include "errcodes.h"
 
@@ -14,9 +21,6 @@
    all of the error messages */
 #include "defmsg.h" 
 
-/* stdarg is required to handle the variable argument lists for 
-   MPIR_Err_create_code */
-#include <stdarg.h>
 
 /* stdio is needed for vsprintf and vsnprintf */
 #include <stdio.h>
@@ -901,10 +905,32 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
     return 0;
 }
 
-int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line, int error_class, const char generic_msg[],
+/* Err_create_code is just a shell that accesses the va_list and then
+   calls the real routine.  */
+int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], 
+			  int line, int error_class, const char generic_msg[],
 			  const char specific_msg[], ... )
 {
+    int rc;
     va_list Argp;
+    va_start(Argp, specific_msg);
+    rc = MPIR_Err_create_code_valist( lastcode, fatal, fcname, line,
+				      error_class, generic_msg, specific_msg,
+				      Argp );
+    va_end(Argp);
+    return rc;
+}
+
+/*
+ * This is the real routine for generating an error code.  It takes
+ * a va_list so that it can be called by any routine that accepts a 
+ * variable number of arguments.
+ */
+int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[], 
+				 int line, int error_class, 
+				 const char generic_msg[],
+				 const char specific_msg[], va_list Argp )
+{
     int err_code;
     int generic_idx;
     int use_user_error_code = 0;
@@ -916,7 +942,7 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 	abort();
     }
 
-    va_start(Argp, specific_msg);
+    /* va_start(Argp, specific_msg); */
 
     if (error_class == MPI_ERR_OTHER)
     {
@@ -931,7 +957,8 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 	}
     }
 
-    /* Handle special case of MPI_ERR_IN_STATUS.  According to the standard, the code must be equal to the class. */
+    /* Handle special case of MPI_ERR_IN_STATUS.  According to the standard, 
+       the code must be equal to the class. */
     if (error_class == MPI_ERR_IN_STATUS)
     {
 	return MPI_ERR_IN_STATUS;
@@ -1095,7 +1122,7 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 	err_code |= ERROR_FATAL_MASK;
     }
     
-    va_end( Argp );
+    /* va_end( Argp ); */
 
     return err_code;
 }
