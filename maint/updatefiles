@@ -5,7 +5,28 @@
 #
 # Get the Autoconf macro files
 if [ ! -d confdb ] ; then
-    cvs -q -d /home/gropp/cvsMaster_z checkout confdb
+    if [ -d /home/gropp/cvsMaster_z ] ; then 
+        cvs -q -d /home/gropp/cvsMaster_z checkout confdb
+    else
+        echo "Checkout confdb from /home/gropp/cvsMaster_z" and rerun
+	exit 1
+    fi
+fi
+#
+# Build simplemake if necessary
+if [ ! -x maint/configure ] ; then
+    (cd maint && autoconf )
+fi
+if [ ! -x maint/simplemake ] ; then
+    (cd maint && ./configure )
+fi
+#
+if [ ! -x maint/simplemake ] ; then
+    echo "Could not create simplemake"
+    echo "You can copy simplemake.in to simplemake, replacing @PERL@ with the"
+    echo "path to Perl (version5).  Make sure the resulting file has"
+    echo "execute permissions set."
+    exit 1
 fi
 #
 # Create the Makefile.in files
@@ -19,8 +40,22 @@ maint/simplemake -common=maint/makedefs \
     Makefile.sm
 #
 # Create the configure files and run autoheader
-for dir in `find . -name 'configure.in' -print` ; do
-    dir=`dirname $dir`
-    echo "Found $dir/configure.in"
-    (cd $dir ; make -f Makefile.in configure)
-done
+# Eventually, make this a test for find available.  Perhaps
+# find . -name configure.in > /dev/null 2>&1
+# The problem is that even though cygnus has find, the DOS find
+# is identified first.  We probably need a test for this case
+find . -name 'configure.in' >/dev/null 2>&1
+if [ $? = 0 ] ; then has_unix_find=yes ; else has_unix_find=no ; fi
+# if [ $? = 0 ] ; then .. code with find
+if [ "$has_unix_find" = "yes" ] ; then
+    for dir in `find . -name 'configure.in' -print` ; do
+        dir=`dirname $dir`
+	if [ -s $dir/Makefile.in ] ; then 
+            echo "Found $dir/configure.in"
+            (cd $dir ; make -f Makefile.in configure)
+        fi
+    done
+else
+    echo "You need to install find (in findutils)"
+    exit 1
+fi

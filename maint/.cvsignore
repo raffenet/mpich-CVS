@@ -1,0 +1,5 @@
+configure
+simplemake
+config.log
+config.cache
+config.status

@@ -1,0 +1,4 @@
+AC_INIT
+AC_PATH_PROG(PERL,perl)
+AC_OUTPUT_COMMANDS([chmod a+x simplemake])
+AC_OUTPUT(simplemake)
