@@ -26,7 +26,8 @@ def mpdtrace():
         try:
             conSocket.connect(consoleName)
         except Exception, errmsg:
-            mpd_raise('cannot connect to local mpd')
+            print 'cannot connect to local mpd at %s' % consoleName
+            exit(-1)
             # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
     msgToSend = { 'cmd' : 'mpdtrace' }
     mpd_send_one_msg(conSocket,msgToSend)
