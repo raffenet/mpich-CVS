@@ -291,7 +291,7 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Comm_get_ptr(a,ptr)       MPID_Getb_ptr(Comm,a,0x03ffffff,ptr)
 #define MPID_Group_get_ptr(a,ptr)      MPID_Getb_ptr(Group,a,0x03ffffff,ptr)
 #define MPID_Datatype_get_ptr(a,ptr)   MPID_Getb_ptr(Datatype,a,0x000000ff,ptr)
-#define MPID_Datatype_get_size(a)      (((a)&0xfc0000ff)>>8)
+#define MPID_Datatype_get_size(a)      (((a)&0x03ffff00)>>8)
 #define MPID_File_get_ptr(a,ptr)       MPID_Get_ptr(File,a,ptr)
 #define MPID_Errhandler_get_ptr(a,ptr) MPID_Get_ptr(Errhandler,a,ptr)
 #define MPID_Op_get_ptr(a,ptr)         MPID_Get_ptr(Op,a,ptr)
