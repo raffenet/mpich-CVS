@@ -246,7 +246,7 @@ because an MPI implementation is not complete without these components.
     implementation, which interfaces with the MPD and forker process managers,
     is built by default.   The configure option \cfgoption{--with-pmi=dir} can
     be used to select an alternative implementation, such as the \code{remsh}
-    implementation (for those who don't want free-running demons) or even a
+    implementation (for those who don't want free-running demons) or even
     an implementation not in the MPICH distribution.
     \begin{description}
           \item[simple]Implementation of \code{pmi} which uses the simple
@@ -266,7 +266,7 @@ because an MPI implementation is not complete without these components.
 % is likely to exist only in or for MPICH.
     \item[pm]Process managers.  The default process manager for UNIX is
       \code{mpd}.  An alternative process manager can be selected using the
-      \cfgoptions{--with-pm=dir} configure option.  No MPICH code includes
+      \cfgoption{--with-pm=dir} configure option.  No MPICH code includes
       any files here.  MPICH code can only include PMI header files.
         \begin{description}
         \item[mpd]Note that MPD is available as a seperate CVS module.
@@ -418,7 +418,7 @@ in \file{mpich/src/mpi} (but not counting \file{src/mpi/timer} because that is
 a separate 
 module), you can use the per thread or per process blocks in
 \file{src/include/mpiimpl.h}.  Other modules, such as the ADI implementations,
-BNR, 
+PMI, 
 or the timer, should use their own structures to hold global variables. 
 
 \item[mpich/configure.in] should have only the tests necessary for the
@@ -428,7 +428,7 @@ device-dependent features
 must be made in a configure within that particular device, using
 \code{AC_CONFIG_SUBDIRS} (the \code{configure} in the device directory
 is automatically invoked).  In particular, no tests for features needed by
-BNR, the 
+PMI, the 
 timer, or the device should be made here.  Note that the configure
 macros defined in \file{confdb} automatically handle communicating the
 results of tests in one \code{configure} to the subsidiary configures
@@ -2195,7 +2195,7 @@ value is needed; i.e., either before or after
 \code{MPIU_Param_bcast}.  All parameters that are needed before
 \code{MPIU_Param_bcast} must be communicated to all processes through
 a mechanism that does \emph{not} rely on MPI communication, such as
-BNR put and get calls.  This would use an ``intent'' variable as a
+PMI put and get calls.  This would use an ``intent'' variable as a
 fourth argument.
 
 % Question: should parameters be registered?  This allows the runtime
