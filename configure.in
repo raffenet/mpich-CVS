@@ -335,26 +335,28 @@ for type in short int long long_long float double long_double wchar_t ; do
 	 15) char=f ;;
          esac
          eval len_$type="0$char"
-    else
+    elif test $len -le 31 ; then
          len=`expr $len - 16`
          eval len_$type="1$len"
+    else
+         AC_MSG_ERROR([Type sizes greater than 31 bytes not supported]) 
     fi
 done
 # By definition, sizeof char is 1
-MPI_CHAR="0x50000101"
-MPI_UNSIGNED_CHAR="0x50000201"
-MPI_SHORT="0x500003$len_short"
-MPI_UNSIGNED_SHORT="0x500004$len_short"
-MPI_INT="0x500005$len_int"
-MPI_UNSIGNED_INT="0x500006$len_int"
-MPI_LONG="0x500007$len_long"
-MPI_UNSIGNED_LONG="0x500008$len_long"
-MPI_LONG_LONG="0x500009$len_long_long"
-MPI_FLOAT="0x50000b$len_float"
-MPI_DOUBLE="0x50000d$len_double"
-MPI_LONG_DOUBLE="0x50000f$len_long_double"
-MPI_BYTE="0x50001101"
-MPI_WCHAR_T="0x500013$len_wchar_t"
+MPI_CHAR="0x4c000101"
+MPI_UNSIGNED_CHAR="0x4c000102"
+MPI_SHORT="0x4c00${len_short}03"
+MPI_UNSIGNED_SHORT="0x4c00${len_short}04"
+MPI_INT="0x4c00${len_int}05"
+MPI_UNSIGNED_INT="0x4c00${len_int}06"
+MPI_LONG="0x4c00${len_long}07"
+MPI_UNSIGNED_LONG="0x4c00${len_long}08"
+MPI_LONG_LONG="0x4c00${len_long_long}09"
+MPI_FLOAT="0x4c00${len_float}0b"
+MPI_DOUBLE="0x4c00${len_double}0d"
+MPI_LONG_DOUBLE="0x4c00${len_long_double}0f"
+MPI_BYTE="0x4c000111"
+MPI_WCHAR_T="0x4c00${len_wchar_t}13"
 AC_SUBST(MPI_CHAR)
 AC_SUBST(MPI_UNSIGNED_CHAR)
 AC_SUBST(MPI_SHORT)
