@@ -1928,6 +1928,12 @@ special-case versions of put.  It would still need to work on \emph{two}
 segments; that is, both the origin and targets.
 
 \subsubsection{\mpifunc{MPI_ACCUMULATE}}
+\begin{tcp}
+\end{tcp}
+\begin{shmem}
+\end{shmem}
+\begin{via}
+\end{via}
 
 \subsubsection{\mpifunc{MPI_PUT}}
 \begin{adi3}\mpidfunc{MPID_Put}
@@ -1935,12 +1941,32 @@ segments; that is, both the origin and targets.
   \mpidfunc{MPID_Put_contig}.  Otherwise, if they are the same (and system is
   homogeneous?), use \mpidfunc{MPID_Put_sametype}.  
   Otherwise, what?
+
+\begin{tcp}
+\end{tcp}
+\begin{shmem}
+\end{shmem}
+\begin{via}
+\end{via}
+
 \end{mmadi}
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_GET}}
+\begin{tcp}
+\end{tcp}
+\begin{shmem}
+\end{shmem}
+\begin{via}
+\end{via}
 
 \subsubsection{\mpifunc{MPI_WIN_FENCE}}
+\begin{tcp}
+\end{tcp}
+\begin{shmem}
+\end{shmem}
+\begin{via}
+\end{via}
 
 \subsubsection{\mpifunc{MPI_ALLOC_MEM}}
 Call \mpidfunc{MPID_Mem_alloc}.
@@ -1984,13 +2010,44 @@ does, but for fence operations (I need the same discussion under fence).
 Question.  For the nonblocking lock case, should we have an info key
 for \mpifunc{MPI_WIN_CREATE} that asks for the blocking lock?  
 
+\begin{tcp}
+\end{tcp}
+\begin{shmem}
+\end{shmem}
+\begin{via}
+\end{via}
+
 \subsubsection{\mpifunc{MPI_WIN_POST}}
+\begin{tcp}
+\end{tcp}
+\begin{shmem}
+\end{shmem}
+\begin{via}
+\end{via}
 
 \subsubsection{\mpifunc{MPI_WIN_START}}
+\begin{tcp}
+\end{tcp}
+\begin{shmem}
+\end{shmem}
+\begin{via}
+\end{via}
 
 \subsubsection{\mpifunc{MPI_WIN_COMPLETE}}
+\begin{tcp}
+\end{tcp}
+\begin{shmem}
+\end{shmem}
+\begin{via}
+\end{via}
 
 \subsubsection{\mpifunc{MPI_WIN_WAIT}}
+\begin{tcp}
+\end{tcp}
+\begin{shmem}
+\end{shmem}
+\begin{via}
+\end{via}
 
 \subsection{Starting and Ending MPI}
 
