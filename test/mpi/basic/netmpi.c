@@ -483,8 +483,8 @@ int Setup(ArgStruct *p)
     MPI_Comm_rank(MPI_COMM_WORLD, &p->prot.iproc);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     
-    /*MPI_Get_processor_name(s, &len);*/
-    gethostname(s, len);
+    MPI_Get_processor_name(s, &len);
+    /*gethostname(s, len);*/
     printf("%d: %s\n", p->prot.iproc, s);
     fflush(stdout);
     
