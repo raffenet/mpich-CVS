@@ -1045,9 +1045,17 @@ dnl
 dnl First, ensure that echo works within the config.status 
 AC_OUTPUT_COMMANDS([if test "$enable_echo" ; then set -x ; fi ])
 dnl This must be run before converting C to !
-AC_OUTPUT_COMMANDS([rm -rf .tmp ; 
-cat mpif.h mpif_bottom.h > .tmp ;
-rm -f mpif.h ; mv .tmp mpif.h
+dnl Also note that this must only be done once.  Because of the way configure
+dnl works, this step can sometimes be repeated, creating an invalid file.
+dnl We do this by looking for MPIPRIV in the mpif.h file
+AC_OUTPUT_COMMANDS([
+if grep MPIPRIV mpif.h 2>&1 1>/dev/null ; then 
+    :
+else 
+    rm -rf .tmp ; 
+    cat mpif.h mpif_bottom.h > .tmp ;
+    rm -f mpif.h ; mv .tmp mpif.h
+fi
 ])
 dnl By modifying mpif.h to use ! for comments, it can work with many f90 
 dnl compilers without creating a separate version.  
