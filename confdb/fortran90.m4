@@ -267,12 +267,14 @@ m4_expand_once([_AC_COMPILER_EXEEXT])[]dnl
 m4_expand_once([_AC_COMPILER_OBJEXT])[]dnl
 # If we don't use `.F' as extension, the preprocessor is not run on the
 # input file.
-ac_save_ext=$ac_ext
-ac_ext=F
-_AC_LANG_COMPILER_GNU
-ac_ext=$ac_save_ext
-G90=`test $ac_compiler_gnu = yes && echo yes`
-_AC_PROG_F90_G
+if test -n "$F90" ; then
+    ac_save_ext=$ac_ext
+    ac_ext=F
+    _AC_LANG_COMPILER_GNU
+    ac_ext=$ac_save_ext
+    G90=`test $ac_compiler_gnu = yes && echo yes`
+    _AC_PROG_F90_G
+fi
 AC_LANG_POP(Fortran 90)dnl
 ])# AC_PROG_F90
 
@@ -897,38 +899,52 @@ dnl
 AC_DEFUN([PAC_F90_MODULE_EXT],
 [AC_CACHE_CHECK([for Fortran 90 module extension],
 pac_cv_f90_module_ext,[
+# fortran90.m4 version
 pac_cv_f90_module_case="unknown"
 AC_LANG_PUSH(Fortran 90)
 cat >conftest.$ac_ext <<EOF
-	module conftest
+        module conftest
         integer n
         parameter (n=1)
         end module conftest
 EOF
 if AC_TRY_EVAL(ac_compile) ; then
    dnl Look for module name
-   pac_MOD=`ls conftest* AS_MESSAGE_LOG_FD>&1 2>&1 | grep -v conftest.$ac_ext | grep -v conftest.o`
-   pac_MOD=`echo $pac_MOD | sed -e 's/conftest\.//g'`
-   pac_cv_f90_module_case="lower"
-   if test "X$pac_MOD" = "X" ; then
-	for file in CONFTEST* ; do
-	    if test "x$file" = "xCONFTEST.$ac_ext" ; then continue ; fi
-	    if test "x$file" = "xCONFTEST.o" ; then continue ; fi
-	    if test -s "$file" ; then 
-	        pac_MOD=$file
-	        break
-	    fi
-	done
-        pac_MOD=`echo $pac_MOD | sed -e 's/CONFTEST\.//g'`
-	if test -n "$pac_MOD" ; then
-	    testname="CONFTEST"
-	    pac_cv_f90_module_case="upper"
-	fi
-    fi
-    if test -z "$pac_MOD" ; then 
-	pac_cv_f90_module_ext="unknown"
-    else
-	pac_cv_f90_module_ext=$pac_MOD
+   dnl First, try to find known names.  This avoids confusion caused by
+   dnl additional files (like <name>.stb created by some versions of pgf90)
+   for name in conftest CONFTEST ; do
+       for ext in mod MOD ; do
+           if test -s $name.$ext ; then
+               if test $name = conftest ; then
+                   pac_cv_f90_module_case=lower
+               else
+                   pac_cv_f90_module_case=upper
+               fi
+               pac_cv_f90_module_ext=$ext
+               pac_MOD=$ext
+               break
+           fi
+       done
+       if test -n "$pac_cv_f90_module_ext" ; then break ; fi
+   done
+   if test -z "$pac_MOD" ; then
+		
+       pac_MOD=`ls conftest.* 2>&1 | grep -v conftest.$ac_f90ext | grep -v conftest.o`
+       pac_MOD=`echo $pac_MOD | sed -e 's/conftest\.//g'`
+       pac_cv_f90_module_case="lower"
+       if test "X$pac_MOD" = "X" ; then
+	   pac_MOD=`ls CONFTEST* 2>&1 | grep -v CONFTEST.f | grep -v CONFTEST.o`
+           pac_MOD=`echo $pac_MOD | sed -e 's/CONFTEST\.//g'`
+	   if test -n "$pac_MOD" ; then
+	       testname="CONFTEST"
+	       pac_cv_f90_module_case="upper"
+	   fi
+       fi
+       if test -z "$pac_MOD" ; then 
+	   pac_cv_f90_module_ext="unknown"
+       else
+	   pac_cv_f90_module_ext=$pac_MOD
+       fi
     fi
 else
     echo "configure: failed program was:" >&AC_FD_CC
@@ -953,7 +969,7 @@ pac_cv_f90_module_incflag,[
 AC_REQUIRE([PAC_F90_MODULE_EXT])
 AC_LANG_PUSH(Fortran 90)
 cat >conftest.$ac_ext <<EOF
-	module conf
+        module conf
         integer n
         parameter (n=1)
         end module conf
@@ -973,9 +989,9 @@ else
 fi
 rm -f conftest.$ac_ext
 cat >conftest.$ac_ext <<EOF
-    program main
-    use conf
-    end
+        program main
+        use conf
+        end
 EOF
 if ${F90-f90} -c $F90FLAGS -Iconf conftest.$ac_ext 1>&AC_FD_CC && \
 	test -s conftest.o ; then
@@ -1096,7 +1112,8 @@ AC_LANG_SAVE
 # Instead, we insert the necessary code from _LANG_FORTRAN90 here
 dnl PAC_LANG_FORTRAN90
 dnl define(ifdef([_AC_LANG],[_AC_LANG],[AC_LANG]), [FORTRAN90])dnl
-define([AC_LANG], [FORTRAN90])dnl
+ifdef([_AC_LANG],[define([_AC_LANG],FORTRAN90)],[define([AC_LANG],FORTRAN90)])
+dnl define([AC_LANG], [FORTRAN90])dnl
 ac_ext=$pac_cv_f90_ext
 ac_compile='${F90-f90} -c $F90FLAGS conftest.$ac_ext 1>&AC_FD_CC'
 ac_link='${F90-f90} -o conftest${ac_exeext} $F90FLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&AC_FD_CC'

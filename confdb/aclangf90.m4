@@ -744,10 +744,11 @@ dnl
 AC_DEFUN([PAC_F90_MODULE_EXT],
 [AC_CACHE_CHECK([for Fortran 90 module extension],
 pac_cv_f90_module_ext,[
+# aclang90.m4 version
 pac_cv_f90_module_case="unknown"
 AC_LANG_PUSH(Fortran 90)
 cat >conftest.$ac_ext <<EOF
-	module conftest
+        module conftest
         integer n
         parameter (n=1)
         end module conftest
@@ -819,7 +820,7 @@ pac_cv_f90_module_incflag,[
 AC_REQUIRE([PAC_F90_MODULE_EXT])
 AC_LANG_PUSH(Fortran 90)
 cat >conftest.$ac_ext <<EOF
-	module conf
+        module conf
         integer n
         parameter (n=1)
         end module conf
@@ -839,9 +840,9 @@ else
 fi
 rm -f conftest.$ac_ext
 cat >conftest.$ac_ext <<EOF
-    program main
-    use conf
-    end
+        program main
+        use conf
+        end
 EOF
 if ${F90-f90} -c $F90FLAGS -Iconf conftest.$ac_ext 1>&AC_FD_CC && \
 	test -s conftest.o ; then
@@ -1030,7 +1031,8 @@ AC_LANG_SAVE
 # Instead, we insert the necessary code from _LANG_FORTRAN90 here
 dnl PAC_LANG_FORTRAN90
 dnl define(ifdef([_AC_LANG],[_AC_LANG],[AC_LANG]), [FORTRAN90])dnl
-define([AC_LANG], [FORTRAN90])dnl
+ifdef([_AC_LANG],[define([_AC_LANG],FORTRAN90)],[define([AC_LANG],FORTRAN90)])
+dnl define([AC_LANG], [FORTRAN90])dnl
 ac_ext=$pac_cv_f90_ext
 ac_compile='${F90-f90} -c $F90FLAGS conftest.$ac_ext 1>&AC_FD_CC'
 ac_link='${F90-f90} -o conftest${ac_exeext} $F90FLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&AC_FD_CC'

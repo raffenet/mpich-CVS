@@ -203,7 +203,13 @@ dnl PAC_SUBDIR_CACHE - Create a cache file before ac_output for subdirectory
 dnl configures.
 dnl 
 dnl Synopsis:
-dnl PAC_SUBDIR_CACHE
+dnl PAC_SUBDIR_CACHE(when)
+dnl
+dnl Input Parameter:
+dnl . when - Indicates when the cache should be created (optional)
+dnl          If 'always', create a new cache file.  This option
+dnl          should be used if any of the cache parameters (such as 
+dnl          CFLAGS or LDFLAGS) may have changed.
 dnl
 dnl Output Effects:
 dnl 	
@@ -214,7 +220,7 @@ dnl commands are executed *before* the subdir configures.
 dnl
 dnl D*/
 AC_DEFUN(PAC_SUBDIR_CACHE,[
-if test "$cache_file" = "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" ; then
+if test "x$1" = "xalways" -o \( "$cache_file" = "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" \) ; then
     cache_file=$$conf.cache
     touch $cache_file
     dnl 

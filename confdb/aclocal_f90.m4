@@ -57,6 +57,7 @@ dnl D*/
 AC_DEFUN(PAC_F90_MODULE_EXT,
 [AC_CACHE_CHECK([for Fortran 90 module extension],
 pac_cv_f90_module_ext,[
+# aclocal_f90.m4 version
 pac_cv_f90_module_case="unknown"
 rm -f conftest*
 # Intel ifc compiler generates files by the name of work.pc and work.pcl (!)

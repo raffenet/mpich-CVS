@@ -2051,10 +2051,14 @@ elif test -f $use_top_srcdir/src/util/thread/localdefs ; then
     . $use_top_srcdir/src/util/thread/localdefs
 fi
 #
+# Update the cache first with the results of the previous configure steps
+PAC_SUBDIR_CACHE(always)
+#
 # Configure the device second.  This way, any libraries or variables that
 # it needs can be extracted before building the other subsystems (this is
 # particularly important for the bindings, which may need to know the
 # libraries in order to create the compilation scripts)
+
 PAC_CONFIG_SUBDIRS_IMMEDIATE(src/mpi/timer $devsubsystems)
 # Check for any localdefs files.  These may be created, so we look in
 # the local directory first.
