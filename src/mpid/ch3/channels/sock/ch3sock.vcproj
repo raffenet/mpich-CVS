@@ -200,7 +200,22 @@
 				RelativePath="..\..\src\mpid_cancel_send.c">
 			</File>
 			<File
+				RelativePath="..\..\src\mpid_close_port.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_comm_accept.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_comm_connect.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_comm_disconnect.c">
+			</File>
+			<File
 				RelativePath="..\..\src\mpid_comm_spawn.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_comm_spawn_multiple.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_describe_states.c">
@@ -231,6 +246,9 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_issend.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_open_port.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_probe.c">
@@ -274,20 +292,17 @@
 			<File
 				RelativePath="..\..\src\mpid_win_create.c">
 				<FileConfiguration
-					Name="ch3sockDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3sockRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3sockPRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
@@ -298,20 +313,17 @@
 			<File
 				RelativePath="..\..\src\mpid_win_free.c">
 				<FileConfiguration
-					Name="ch3sockDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3sockRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3sockPRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
@@ -322,20 +334,17 @@
 			<File
 				RelativePath="..\..\src\mpid_win_post.c">
 				<FileConfiguration
-					Name="ch3sockDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3sockRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3sockPRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
@@ -346,20 +355,17 @@
 			<File
 				RelativePath="..\..\src\mpid_win_wait.c">
 				<FileConfiguration
-					Name="ch3sockDebug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockDebug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3sockRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3sockPRelease|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="ch3sockPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>

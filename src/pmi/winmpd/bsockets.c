@@ -84,7 +84,7 @@
 
 #if !defined(NO_BSOCKETS)
 
-typedef enum { 
+typedef enum BFD_State { 
     BFD_FD_NOT_IN_USE, 
     BFD_ALLOCATING, 
     BFD_NEW_FD, 
