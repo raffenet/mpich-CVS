@@ -7,10 +7,33 @@
  */
 
 #include "ad_pvfs2.h"
+#include "ad_pvfs2_common.h"
 
+/* we want to be a bit clever here:  at scale, every client sending a flush
+ * will stress the server unnecessarily.  One process should wait for everyone
+ * to catch up, do the sync, then broadcast the result.
+ */
 void ADIOI_PVFS2_Flush(ADIO_File fd, int *error_code)
 {
+    int ret, rank, tmprank, dummy1, dummy2;
+    ADIOI_PVFS2_fs *pvfs_fs;
+
     *error_code = MPI_SUCCESS;
+
+    pvfs_fs = (ADIOI_PVFS2_fs*)fd->fs_ptr;
+
+    MPI_Comm_rank(fd->comm, &rank);
+
+    /* the cheapest way we know to let one process know everyone is here */
+    MPI_Gather(&dummy1, 1, MPI_INT, &dummy2, 1, MPI_INT, 0, fd->comm);
+
+    if (rank == 0) {
+	ret = PVFS_sys_flush(pvfs_fs->pinode_refn, pvfs_fs->credentials);
+	MPI_Bcast(&ret, 1, MPI_INT, 0, fd->comm);
+    }
+    MPI_Bcast(&ret, 1, MPI_INT, 0, fd->comm);
+    if (ret < 0)
+	ADIOI_PVFS2_pvfs2_error_convert(ret, error_code);
 }
 
 /* 
