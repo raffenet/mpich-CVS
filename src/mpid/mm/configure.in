@@ -67,10 +67,10 @@ if test "$method_subdirs" = "" ; then method_subdirs="shm tcp" fi
 AC_SUBST(method_subdirs)
 for method in $method_subdirs - ; do \
     if [ "$method" = "-" ] ; then break ; fi ; \
-    if [ "$method" = "tcp" ] ; then AC_DEFINE(WITH_METHOD_TCP, 1, "tcp method enabled") ; fi ; \
-    if [ "$method" = "shm" ] ; then AC_DEFINE(WITH_METHOD_SHM, 1, "shared memory method enabled") ; fi ; \
-    if [ "$method" = "via" ] ; then AC_DEFINE(WITH_METHOD_VIA, 1, "via method enabled") ; fi ; \
-    if [ "$method" = "via_rdma" ] ; then AC_DEFINE(WITH_METHOD_VIA_RDMA, 1, "via rdma method enabled") ; fi \
+    if [ "$method" = "tcp" ] ; then ( AC_DEFINE(WITH_METHOD_TCP, 1, "tcp method enabled") ) ; fi ; \
+    if [ "$method" = "shm" ] ; then ( AC_DEFINE(WITH_METHOD_SHM, 1, "shared memory method enabled") ) ; fi ; \
+    if [ "$method" = "via" ] ; then ( AC_DEFINE(WITH_METHOD_VIA, 1, "via method enabled") ) ; fi ; \
+    if [ "$method" = "via_rdma" ] ; then ( AC_DEFINE(WITH_METHOD_VIA_RDMA, 1, "via rdma method enabled") ) ; fi \
 done
 dnl error-checking
 case "$enable_error_checking" in 
