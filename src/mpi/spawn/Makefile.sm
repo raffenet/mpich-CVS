@@ -1,4 +1,9 @@
-lib${MPILIBNAME}_a_SOURCES = close_port.c comm_connect.c comm_disconnect.c \
- comm_get_parent.c comm_join.c comm_spawn.c comm_spawn_multiple.c lookup_name.c \
- open_port.c publish_name.c unpublish_name.c comm_accept.c
+# As routines are implemented, add there files to the list.
+# (unimplemented routines should cause link-time, not run-time failures)
+lib${MPILIBNAME}_a_SOURCES = close_port.c comm_connect.c \
+     comm_spawn_multiple.c \
+      open_port.c comm_accept.c
+#lib${MPILIBNAME}_a_SOURCES = comm_disconnect.c \
+     comm_get_parent.c comm_join.c comm_spawn.c lookup_name.c \
+     publish_name.c unpublish_name.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include

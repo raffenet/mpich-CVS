@@ -1,13 +1,17 @@
-lib${MPILIBNAME}_a_SOURCES = getcount.c dataloop.c getelements.c pack.c \
+# As routines are implemented, add there files to the list.
+# (unimplemented routines should cause link-time, not run-time failures)
+lib${MPILIBNAME}_a_SOURCES = address.c dataloop.c get_address.c getcount.c \
+			   getelements.c \
+			   pack.c type_vec.c typeutil.c
+#lib${MPILIBNAME}_a_SOURCES = \
     pack_size.c type_commit.c type_contig.c type_extent.c type_free.c \
     type_hind.c type_hvec.c \
-    type_ind.c type_lb.c type_size.c type_struct.c type_ub.c type_vec.c \
+    type_ind.c type_lb.c type_size.c type_struct.c type_ub.c \
     unpack.c get_address.c pack_external.c pack_external_size.c \
     register_datarep.c status_set_elements.c type_create_darray.c \
     type_create_hindexed.c type_create_hvector.c \
     type_create_indexed_block.c type_create_resized.c type_create_struct.c \
     type_create_subarray.c type_dup.c type_get_contents.c type_get_envelope.c \
     type_get_extent.c type_get_name.c type_get_true_extent.c \
-    type_match_size.c type_set_name.c unpack_external.c \
-    typeutil.c
+    type_match_size.c type_set_name.c unpack_external.c 
 INCLUDES = -I../../include -I${top_srcdir}/src/include
