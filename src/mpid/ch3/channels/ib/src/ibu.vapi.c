@@ -94,12 +94,10 @@ typedef struct ibu_num_written_node_t
 typedef struct ibu_state_t
 {
     IBU_STATE state;
-    /*VAPI_lkey_t lkey;*/
     VAPI_qp_hndl_t qp_handle;
     ibuBlockAllocator allocator;
 
     IB_lid_t dlid;
-    /*VAPI_mr_hndl_t mr_handle;*/
     VAPI_qp_num_t qp_num, dest_qp_num;
 
     int closing;
@@ -419,11 +417,7 @@ static VAPI_ret_t createQP(ibu_t ibu, ibu_set_t set)
 #define FUNCNAME ib_malloc_register
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-/*
-static VAPI_mr_hndl_t s_mr_handle;
-static VAPI_lkey_t    s_lkey;
-*/
-static void *ib_malloc_register(size_t size, VAPI_mr_hndl_t *hp, VAPI_lkey_t *lp, VAPI_rkey_t *rp)
+static void *ib_malloc_register(size_t size, VAPI_mr_hndl_t *mhp, VAPI_lkey_t *lp, VAPI_rkey_t *rp)
 {
     VAPI_ret_t status;
     void *ptr;
@@ -443,17 +437,19 @@ static void *ib_malloc_register(size_t size, VAPI_mr_hndl_t *hp, VAPI_lkey_t *lp
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
 	return NULL;
     }
-    memset(&mem, 0, sizeof(mem));
+    memset(&mem, 0, sizeof(VAPI_mrw_t));
+    memset(&mem_out, 0, sizeof(VAPI_mrw_t));
     mem.type = VAPI_MR;
     mem.start = (VAPI_virt_addr_t)ptr;
     mem.size = size;
     mem.pd_hndl = IBU_Process.pd_handle;
     mem.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE;
+    mem.l_key = 0;
+    mem.r_key = 0;
     status = VAPI_register_mr(
 	IBU_Process.hca_handle,
 	&mem,
-	/*&s_mr_handle,*/
-	hp,
+	mhp,
 	&mem_out);
     if (status != IBU_SUCCESS)
     {
@@ -461,7 +457,6 @@ static void *ib_malloc_register(size_t size, VAPI_mr_hndl_t *hp, VAPI_lkey_t *lp
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
 	return NULL;
     }
-    /*s_lkey = mem_out.l_key;*/
     *lp = mem_out.l_key;
     *rp = mem_out.r_key;
 
@@ -506,14 +501,9 @@ ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
 
     memset(p, 0, sizeof(ibu_state_t));
     p->state = 0;
-    /* In ibuBlockAllocInit, ib_malloc_register is called which sets the
-       global variable s_mr_handle */
     p->allocator = ibuBlockAllocInitIB(IBU_PACKET_SIZE, IBU_PACKET_COUNT,
 				     IBU_PACKET_COUNT,
 				     ib_malloc_register, ib_free_deregister);
-    /* p->mr_handle = s_mr_handle;*/ /* Not thread safe. This handle is reset every time ib_malloc_register is called. */
-    /* save the lkey for posting sends and receives */
-    /*p->lkey = s_lkey;*/
 
     /*MPIDI_DBG_PRINTF((60, FCNAME, "creating the queue pair\n"));*/
     /* Create the queue pair */
@@ -562,10 +552,6 @@ int ibu_finish_qp(ibu_t p, int dest_lid, int dest_qp_num)
 	return -1;
     }
 
-    /* The Mellanox code adds a barrier here so that both sides are in the RTR state before moving to RTS */
-    /*sleep(1);*/
-
-    /*MPIDI_DBG_PRINTF((60, FCNAME, "modifyQP(RTS)"));*/
     status = modifyQP(p, VAPI_RTS);
     if (status != IBU_SUCCESS)
     {
@@ -640,7 +626,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     work_req.sg_lst_len = 1;
     data.addr = (VAPI_virt_addr_t)(MT_virt_addr_t)mem_ptr;
     data.len = IBU_PACKET_SIZE;
-    data.lkey = GETLKEY(mem_ptr);/*ibu->lkey;*/
+    data.lkey = GETLKEY(mem_ptr);
 
     MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_rr"));
 
@@ -707,7 +693,7 @@ static int ibui_post_receive(ibu_t ibu)
     work_req.sg_lst_len = 1;
     data.addr = (VAPI_virt_addr_t)mem_ptr;
     data.len = IBU_PACKET_SIZE;
-    data.lkey = GETLKEY(mem_ptr);/*ibu->lkey;*/
+    data.lkey = GETLKEY(mem_ptr);
 
     MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_rr"));
 
@@ -744,7 +730,7 @@ static int ibui_post_ack_write(ibu_t ibu)
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_ACK_WRITE);
 
     MPIU_DBG_PRINTF(("entering ibui_post_ack_write\n"));
-    work_req.opcode = /*VAPI_SEND;*/ VAPI_SEND_WITH_IMM;
+    work_req.opcode = VAPI_SEND_WITH_IMM;
     work_req.comp_type = VAPI_SIGNALED;
     work_req.sg_lst_p = NULL;
     work_req.sg_lst_len = 0;
@@ -844,7 +830,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 
 	data.len = length;
 	data.addr = (VAPI_virt_addr_t)(MT_virt_addr_t)mem_ptr;
-	data.lkey = GETLKEY(mem_ptr);/*ibu->lkey;*/
+	data.lkey = GETLKEY(mem_ptr);
 	
 	work_req.opcode = VAPI_SEND;
 	work_req.comp_type = VAPI_SIGNALED;
@@ -978,7 +964,7 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	
 	data.len = msg_size;
 	data.addr = (VAPI_virt_addr_t)mem_ptr;
-	data.lkey = GETLKEY(mem_ptr);/*ibu->lkey;*/
+	data.lkey = GETLKEY(mem_ptr);
 	
 	work_req.opcode = VAPI_SEND;
 	work_req.comp_type = VAPI_SIGNALED;
@@ -1051,25 +1037,6 @@ int ibu_init()
     MPIU_DBG_PRINTF(("entering ibu_init\n"));
 
     /* Initialize globals */
-    /* get a handle to the host channel adapter */
-#if 0
-    status = VAPI_open_hca(id, &IBU_Process.hca_handle);
-    if (status != VAPI_OK)
-    {
-	MPIU_Internal_error_printf("ibu_init: VAPI_open_hca failed, status %s\n", VAPI_strerror(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
-	return status;
-    }
-#endif
-    /*status = EVAPI_open_hca(id, NULL, &sugg_profile);*/
-#if 0
-    if (status != VAPI_OK)
-    {
-	MPIU_Internal_error_printf("ibu_init: EVAPI_open_hca failed, status %s\n", VAPI_strerror(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
-	return status;
-    }
-#endif
     status = EVAPI_get_hca_hndl(id, &IBU_Process.hca_handle);
     if (status != VAPI_OK)
     {
@@ -1189,6 +1156,7 @@ int ibu_create_set(ibu_set_t *set)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
 	return status;
     }
+#if 0
     status = EVAPI_set_comp_eventh(IBU_Process.hca_handle, *set, FooBar /* EVAPI_POLL_CQ_UNBLOCK_HANDLER */, NULL, &ch);
     if (status != VAPI_OK)
     {
@@ -1212,6 +1180,7 @@ int ibu_create_set(ibu_set_t *set)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
 	return status;
     }
+#endif
 
     MPIU_DBG_PRINTF(("exiting ibu_create_set\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
