@@ -1,3 +1,8 @@
+C -*- Mode: Fortran; -*- 
+C
+C  (C) 2003 by Argonne National Laboratory.
+C      See COPYRIGHT in top-level directory.
+C
       program main
       include 'mpif.h'
       integer value, commsize
@@ -24,13 +29,13 @@
       ! Last used code must be defined and >= MPI_ERR_LASTCODE 
       if (flag) then
          if (value .lt. MPI_ERR_LASTCODE) then
-	    errs = errs + 1
-	    print *, "MPI_LASTUSEDCODE points to an integer
+            errs = errs + 1
+            print *, "MPI_LASTUSEDCODE points to an integer
      $           (", value, ") smaller than MPI_ERR_LASTCODE (",
      $           MPI_ERR_LASTCODE, ")"
          endif
       else 
-	 errs = errs + 1
+         errs = errs + 1
          print *, "MPI_LASTUSECODE is not defined"
       endif
 
@@ -38,8 +43,8 @@
       ! appnum need not be set
       if (flag) then
          if (value .lt. 0) then
-	    errs = errs + 1
-	    print *, "MPI_APPNUM is defined as ", value,
+            errs = errs + 1
+            print *, "MPI_APPNUM is defined as ", value,
      $           "but must be nonnegative"
          endif
       endif

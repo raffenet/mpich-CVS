@@ -4,10 +4,10 @@ C  (C) 2003 by Argonne National Laboratory.
 C      See COPYRIGHT in top-level directory.
 C
         program main
-	implicit none
+        implicit none
         include 'mpif.h'
-	integer comm, fh, r, s, i
-	integer fileintsize
+        integer comm, fh, r, s, i
+        integer fileintsize
         integer errs, err, ierr
         character *(100) filename
         include 'iooffset.h'
@@ -50,7 +50,7 @@ C write
            call mpi_barrier( comm, ierr )
         enddo
         call mpi_file_close( fh, ierr )
-	if (r .eq. 0) then
+        if (r .eq. 0) then
             call mpi_file_delete( filename, MPI_INFO_NULL, ierr )
         endif
         if (ierr .ne. MPI_SUCCESS) then

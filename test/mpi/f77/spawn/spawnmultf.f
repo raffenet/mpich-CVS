@@ -1,3 +1,4 @@
+C -*- Mode: Fortran; -*- 
 C
 C  (C) 2003 by Argonne National Laboratory.
 C      See COPYRIGHT in top-level directory.
@@ -43,7 +44,7 @@ C       since Fortran stores by column
        call MPI_Comm_get_parent( parentcomm, ierr )
 
        if (parentcomm .eq. MPI_COMM_NULL) then
-C	Create 2 more processes 
+C       Create 2 more processes 
            cmds(1) = "./spawnmultf"
            cmds(2) = "./spawnmultf"
            np(1)   = 1
@@ -61,10 +62,10 @@ C       We now have a valid intercomm
 
         call MPI_Comm_remote_size( intercomm, rsize, ierr )
         call MPI_Comm_size( intercomm, size, ierr )
-   	call MPI_Comm_rank( intercomm, rank, ierr )
+        call MPI_Comm_rank( intercomm, rank, ierr )
 
         if (parentcomm .eq. MPI_COMM_NULL) then
-C	    Master 
+C           Master 
             if (rsize .ne. np(1) + np(2)) then
                 errs = errs + 1
                 print *, "Did not create ", np(1)+np(2),                    &
@@ -81,7 +82,7 @@ C       we get valid data
      &                     MPI_STATUS_IGNORE, ierr )
                errs = errs + err
             enddo
-	else 
+        else 
 C       Child 
 C       FIXME: This assumes that stdout is handled for the children
 C       (the error count will still be reported to the parent)
@@ -92,7 +93,7 @@ C       (the error count will still be reported to the parent)
            if (size .ne. 2) then
             errs = errs + 1
             print *, "(Child) Did not create ", 2,                          &
-     &	           " processes (got ",size, ")"
+     &             " processes (got ",size, ")"
             call mpi_comm_size( MPI_COMM_WORLD, wsize, ierr )
             if (wsize .eq. 2) then 
                   errs = errs + 1
@@ -120,7 +121,7 @@ C       Check the command line
      &                  outargv(rank+1,i) 
            endif
         enddo
- 200	continue
+ 200    continue
         if (outargv(rank+1,i) .ne. " ") then
 C       We had too few args in the spawned command 
             errs = errs + 1

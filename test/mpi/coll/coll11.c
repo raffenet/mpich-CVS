@@ -1,12 +1,15 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 #include "mpi.h"
 #include <stdio.h>
 
 void addem ( int *, int *, int *, MPI_Datatype * );
 void assoc ( int *, int *, int *, MPI_Datatype * );
 
-void addem(invec, inoutvec, len, dtype)
-int *invec, *inoutvec, *len;
-MPI_Datatype *dtype;
+void addem(int *invec, int *inoutvec, int *len, MPI_Datatype *dtype)
 {
   int i;
   for ( i=0; i<*len; i++ ) 
@@ -22,9 +25,7 @@ MPI_Datatype *dtype;
     Note that the computation is in process rank (in the communicator)
     order, independant of the root.
  */
-void assoc(invec, inoutvec, len, dtype)
-int *invec, *inoutvec, *len;
-MPI_Datatype *dtype;
+void assoc(int *invec, int *inoutvec, int *len, MPI_Datatype *dtype)
 {
   int i;
   for ( i=0; i<*len; i++ )  {

@@ -1,3 +1,8 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 #include "mpi.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -16,9 +21,8 @@ int CheckData ( double *, int, int, int, int, int );
 
  */
 
-void SetData( sendbuf, recvbuf, nx, ny, myrow, mycol, nrow, ncol )
-double *sendbuf, *recvbuf;
-int    nx, ny, myrow, mycol, nrow, ncol;
+void SetData( double *sendbuf, double *recvbuf, int nx, int ny, 
+	      int myrow, int mycol, int nrow, int ncol )
 {
 int coldim, i, j, m, k;
 double *p;
@@ -40,9 +44,8 @@ for (i=0; i<nx*ny; i++)
     recvbuf[i] = -1.0;
 }
 
-int CheckData( recvbuf, nx, ny, myrow, mycol, nrow )
-double *recvbuf;
-int    nx, ny, myrow, mycol, nrow;
+int CheckData( double *recvbuf, 
+	       int nx, int ny, int myrow, int mycol, int nrow )
 {
 int coldim, m, k;
 double *p, val;

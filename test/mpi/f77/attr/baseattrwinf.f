@@ -1,3 +1,8 @@
+C -*- Mode: Fortran; -*- 
+C
+C  (C) 2003 by Argonne National Laboratory.
+C      See COPYRIGHT in top-level directory.
+C
       program main
       include 'mpif.h'
       integer v, value;
@@ -36,7 +41,7 @@ CC For this Fortran 77 version, we use the older MPI_Address function
 C         call MPI_Address( base, baseadd, ierr )
 C         if (value .ne. baseadd) then
 C           errs = errs + 1
-C	    print *, "Got incorrect value for WIN_BASE (", value, 
+C           print *, "Got incorrect value for WIN_BASE (", value, 
 C     &             ", should be ", baseadd, ")"
 C         endif
       endif
@@ -46,9 +51,9 @@ C         endif
          errs = errs + 1
          print *, "Could not get WIN_SIZE"
       else
-	if (value .ne. n) then
-	    errs = errs + 1
-	    print *, "Got incorrect value for WIN_SIZE (", value, 
+        if (value .ne. n) then
+            errs = errs + 1
+            print *, "Got incorrect value for WIN_SIZE (", value, 
      &        ", should be ", n, ")"
          endif
       endif
@@ -59,8 +64,8 @@ C         endif
          print *, "Could not get WIN_DISP_UNIT"
       else
          if (value .ne. disp) then
-	    errs = errs + 1
-	    print *, "Got wrong value for WIN_DISP_UNIT (", value, 
+            errs = errs + 1
+            print *, "Got wrong value for WIN_DISP_UNIT (", value, 
      &               ", should be ", disp, ")"
          endif
       endif

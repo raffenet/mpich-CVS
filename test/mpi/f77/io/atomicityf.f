@@ -70,7 +70,7 @@ C in between.
          call MPI_File_read(fh, readbuf, BUFSIZE, MPI_INTEGER, status,
      $        ierr ) 
          if (ierr .eq. MPI_SUCCESS) then
-	    if (readbuf(1) .eq. 0) then
+            if (readbuf(1) .eq. 0) then
 C              the rest must also be 0 
                do i=2, BUFSIZE
                   if (readbuf(i) .ne. 0) then
@@ -80,7 +80,7 @@ C              the rest must also be 0
                      call MPI_Abort(MPI_COMM_WORLD, 1, ierr )
                   endif
                enddo
-	    else if (readbuf(1) .eq. 10) then
+            else if (readbuf(1) .eq. 10) then
 C              the rest must also be 10
                do i=2, BUFSIZE
                   if (readbuf(i) .ne. 10) then
@@ -99,7 +99,7 @@ C              the rest must also be 10
       endif
 
       call MPI_File_close( fh, ierr )
-	
+        
       call MPI_Barrier( MPI_COMM_WORLD, ierr )
 
 
@@ -118,14 +118,14 @@ C better to use the default values in practice. */
          call MPI_File_delete(filename, MPI_INFO_NULL, ierr )
          call MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE +
      $        MPI_MODE_RDWR, info, fh, ierr ) 
-	do i=1, BUFSIZE
+        do i=1, BUFSIZE
            writebuf(i) = 0
         enddo
-	call MPI_File_set_view(fh, 0, MPI_INTEGER, newtype, "native",
+        call MPI_File_set_view(fh, 0, MPI_INTEGER, newtype, "native",
      $       info, ierr) 
-	call MPI_File_write(fh, writebuf, BUFSIZE, MPI_INTEGER, status,
+        call MPI_File_write(fh, writebuf, BUFSIZE, MPI_INTEGER, status,
      $       ierr ) 
-	call MPI_File_close( fh, ierr )
+        call MPI_File_close( fh, ierr )
       endif
       call MPI_Barrier( MPI_COMM_WORLD, ierr )
 
@@ -148,7 +148,7 @@ C better to use the default values in practice. */
          call MPI_File_read(fh, readbuf, BUFSIZE, MPI_INTEGER, status,
      $        ierr ) 
          if (ierr .eq. MPI_SUCCESS) then
-	    if (readbuf(1) .eq. 0) then
+            if (readbuf(1) .eq. 0) then
                do i=2, BUFSIZE
                   if (readbuf(i) .ne. 0) then
                      errs = errs + 1
@@ -157,7 +157,7 @@ C better to use the default values in practice. */
                      call MPI_Abort(MPI_COMM_WORLD, 1, ierr )
                   endif
                enddo
-	    else if (readbuf(1) .eq. 10) then
+            else if (readbuf(1) .eq. 10) then
                do i=2, BUFSIZE
                   if (readbuf(i) .ne. 10) then
                      errs = errs + 1
@@ -166,7 +166,7 @@ C better to use the default values in practice. */
                      call MPI_Abort(MPI_COMM_WORLD, 1, ierr )
                   endif
                enddo
-	    else 
+            else 
                errs = errs + 1
                print *, "Process ", mynod, ": readbuf(1) is ",
      $              readbuf(1), ", should be either 0 or 10" 
@@ -175,7 +175,7 @@ C better to use the default values in practice. */
       endif
 
       call MPI_File_close( fh, ierr )
-	
+        
       call MPI_Barrier(MPI_COMM_WORLD, ierr )
 
       call MPI_Allreduce( errs, toterrs, 1, MPI_INTEGER, MPI_SUM,

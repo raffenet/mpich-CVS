@@ -1,3 +1,9 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 /*
  * This file contains the C routines used in testing the c2f and f2c 
  * handle conversion functions/
@@ -17,6 +23,7 @@
  * case, these tests must be modified.
  */
 
+/* style: allow:fprintf:10 sig:0 */
 #include <stdio.h>
 #include "mpi.h"
 #include "../../include/mpitestconf.h"

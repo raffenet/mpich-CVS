@@ -1,3 +1,4 @@
+C -*- Mode: Fortran; -*- 
 C
 C  (C) 2003 by Argonne National Laboratory.
 C      See COPYRIGHT in top-level directory.
@@ -25,7 +26,7 @@ C
        call MPI_Comm_get_parent( parentcomm, ierr )
 
        if (parentcomm .eq. MPI_COMM_NULL) then
-C	Create 2 more processes 
+C       Create 2 more processes 
            cmds(1) = "./spawnmult2f"
            cmds(2) = "./spawnmult2f"
            np(1)   = 1
@@ -43,10 +44,10 @@ C       We now have a valid intercomm
 
         call MPI_Comm_remote_size( intercomm, rsize, ierr )
         call MPI_Comm_size( intercomm, size, ierr )
-   	call MPI_Comm_rank( intercomm, rank, ierr )
+        call MPI_Comm_rank( intercomm, rank, ierr )
 
         if (parentcomm .eq. MPI_COMM_NULL) then
-C	    Master 
+C           Master 
             if (rsize .ne. np(1) + np(2)) then
                 errs = errs + 1
                 print *, "Did not create ", np(1)+np(2),                    &
@@ -74,7 +75,7 @@ C       (the error count will still be reported to the parent)
            if (size .ne. 2) then
               errs = errs + 1
               print *, "(Child) Did not create ", 2,                        &
-     &	           " processes (got ",size, ")"
+     &             " processes (got ",size, ")"
               call mpi_comm_size( MPI_COMM_WORLD, wsize, ierr )
               if (wsize .eq. 2) then 
                  errs = errs + 1
@@ -94,7 +95,7 @@ C       Check for correct APPNUM
          call mpi_comm_get_attr( MPI_COMM_WORLD, MPI_APPNUM, appnum,        &
      &        flag, ierr )
 C        My appnum should be my rank in comm world
-	 if (flag) then
+         if (flag) then
             if (appnum .ne. rank) then
                 errs = errs + 1
                 print *, "appnum is ", appnum, " but should be ", rank

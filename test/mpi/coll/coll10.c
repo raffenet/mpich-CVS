@@ -1,3 +1,8 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 #include "mpi.h"
 #include <stdio.h>
 #define BAD_ANSWER 100000
@@ -11,9 +16,7 @@ int assoc ( int *, int *, int *, MPI_Datatype * );
     Note that the computation is in process rank (in the communicator)
     order, independant of the root.
  */
-int assoc(invec, inoutvec, len, dtype)
-int *invec, *inoutvec, *len;
-MPI_Datatype *dtype;
+int assoc(int *invec, int *inoutvec, int *len, MPI_Datatype *dtype)
 {
   int i;
   for ( i=0; i<*len; i++ )  {

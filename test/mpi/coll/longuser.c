@@ -1,3 +1,8 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,10 +13,7 @@ int add ( double *, double *, int *, MPI_Datatype * );
  * possible pipelining in the implementation of reductions with user-defined
  * operations).
  */
-int add( invec, inoutvec, len, dtype )
-double       *invec, *inoutvec;
-int          *len;
-MPI_Datatype *dtype;
+int add( double *invec, double *inoutvec, int *len, MPI_Datatype *dtype )
 {
     int i, n = *len;
     for (i=0; i<n; i++) {

@@ -1,3 +1,4 @@
+C -*- Mode: Fortran; -*- 
 C
 C (C) 2003 by Argonne National Laboratory.
 C     See COPYRIGHT in top-level directory.
@@ -32,21 +33,21 @@ C       a valid name from Open_port
          call MPI_Publish_name( serv_name, MPI_INFO_NULL, port_name,
      $        merr )
          if (merr .ne. MPI_SUCCESS) then
-	    errs = errs + 1
-	    call MPI_Error_string( merr, errmsg, msglen, ierr )
-	    print *, "Error in Publish_name ", errmsg(1:msglen)
+            errs = errs + 1
+            call MPI_Error_string( merr, errmsg, msglen, ierr )
+            print *, "Error in Publish_name ", errmsg(1:msglen)
          endif
 
          call MPI_Barrier(MPI_COMM_WORLD, ierr )
          call MPI_Barrier(MPI_COMM_WORLD, ierr )
-	
+        
          merr = -1
          call MPI_Unpublish_name( serv_name, MPI_INFO_NULL, port_name,
      $        merr)
          if (merr .ne. MPI_SUCCESS) then
             errs = errs + 1
-	    call MPI_Error_string( merr, errmsg, msglen, ierr )
-	    print *,  "Error in Unpublish name ", errmsg(1:msglen)
+            call MPI_Error_string( merr, errmsg, msglen, ierr )
+            print *,  "Error in Unpublish name ", errmsg(1:msglen)
          endif
       else
          call MPI_Barrier(MPI_COMM_WORLD, ierr )
@@ -54,18 +55,18 @@ C       a valid name from Open_port
          call MPI_Lookup_name( serv_name, MPI_INFO_NULL, port_name_out,
      $        merr)
          if (merr .ne. MPI_SUCCESS) then
-	    errs = errs + 1
-	    call MPI_Error_string( merr, errmsg, msglen, ierr )
-	    print *, "Error in Lookup name", errmsg(1:msglen)
+            errs = errs + 1
+            call MPI_Error_string( merr, errmsg, msglen, ierr )
+            print *, "Error in Lookup name", errmsg(1:msglen)
          else 
-	    if (port_name .ne. port_name_out) then
-		errs = errs + 1
-		print *, "Lookup name returned the wrong value (",
+            if (port_name .ne. port_name_out) then
+                errs = errs + 1
+                print *, "Lookup name returned the wrong value (",
      $               port_name_out, ")" 
              endif
           endif
 
-	call MPI_Barrier(MPI_COMM_WORLD, ierr )
+        call MPI_Barrier(MPI_COMM_WORLD, ierr )
       endif
 
       call MPI_Barrier(MPI_COMM_WORLD, ierr )
@@ -77,12 +78,12 @@ C       a valid name from Open_port
          errs = errs + 1
          print *, "Lookup name returned name after it was unpublished"
       else
-C	Must be class MPI_ERR_NAME 
+C       Must be class MPI_ERR_NAME 
          call MPI_Error_class( merr, mclass, ierr )
-	if (mclass .ne. MPI_ERR_NAME) then
-	    errs = errs + 1
-	    call MPI_Error_string( merr, errmsg, msglen, ierr )
-	    print *,    "Lookup name returned the wrong error class
+        if (mclass .ne. MPI_ERR_NAME) then
+            errs = errs + 1
+            call MPI_Error_string( merr, errmsg, msglen, ierr )
+            print *,    "Lookup name returned the wrong error class
      $           (",mclass,"), msg ", errmsg
 
          endif

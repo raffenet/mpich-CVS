@@ -77,8 +77,9 @@ C 30 elements
       call mpi_type_commit( newtype, ierr )
 C
 C All processes are getting the same view, with a 1000 byte offset
-      call mpi_file_set_view( fh, 1000, MPI_INTEGER, newtype, "native",
-     $     MPI_INFO_NULL, ierr ) 
+      offset = 1000
+      call mpi_file_set_view( fh, offset, MPI_INTEGER, newtype, "native"
+     $     , MPI_INFO_NULL, ierr )  
 
       call mpi_file_get_view( fh, offset, etype, filetype, datarep, ierr
      $     ) 
@@ -87,7 +88,7 @@ C All processes are getting the same view, with a 1000 byte offset
          errs = errs + 1
       endif
       if (datarep .ne. "native") then
-         print *, " data represenction form was ", datarep,
+         print *, " data representation form was ", datarep,
      $        ", expected native" 
          errs = errs + 1
       endif
@@ -101,7 +102,7 @@ C distance away).
       call mpi_type_size( MPI_INTEGER, integer_size, ierr )
       if (disp .ne. 1000 + 30 * integer_size) then
          errs = errs + 1
-         print *, " Byte offset = ", disp, ", should be ", 1000+20
+         print *, " (offset20)Byte offset = ", disp, ", should be ", 1000+20
      $        *integer_size 
       endif
 C
@@ -133,7 +134,7 @@ C Only free derived type
          errs = errs + 1
       endif
 
-      offset = 1000+15*integer_size
+      offset = 1000+25*integer_size
       call mpi_file_set_size(fh, offset, ierr )
       call mpi_barrier(MPI_COMM_WORLD, ierr )
       call mpi_file_sync(fh, ierr )
@@ -145,29 +146,29 @@ C Only free derived type
      $        * integer_size 
       endif
 C
-C File size is 1000+15ints.  Seek to end.  Note that the file size
+C File size is 1000+25ints.  Seek to end.  Note that the file size
 C places the end of the file into the gap in the view, so seeking
 C to the end, which is relative to the view, needs to give the end
 C of the first block of 20 ints)
       offset = 0
       call mpi_file_seek( fh, offset, MPI_SEEK_END, ierr )
-      call mpi_file_get_position( fh, offset, ierr )
-      if (offset .ne. 20) then
+      call mpi_file_get_position( fh, disp, ierr )
+      if (disp .ne. 20) then
          errs = errs + 1
-         print *, "File pointer position = ", offset, ", should be 10"
+         print *, "File pointer position = ", disp, ", should be 20"
       endif
       call mpi_file_get_byte_offset(fh, disp, offset, ierr )
-      if (offset .ne. 1000+20*integer_size) then
+      if (offset .ne. 1000+30*integer_size) then
          errs = errs + 1
-         print *, " Byte offset = ", offset, ", should be ", 1000+20
-     $        *integer_size 
+         print *, " (seek)Byte offset = ", offset, ", should be ", 1000
+     $        +30*integer_size  
       endif
 
       call mpi_barrier(MPI_COMM_WORLD, ierr )
 
       offset = -20
       call mpi_file_seek(fh, offset, MPI_SEEK_CUR, ierr )
-      call mpi_file_get_position(fh, offset, ierr )
+      call mpi_file_get_position(fh, disp, ierr )
       call mpi_file_get_byte_offset(fh, disp, offset, ierr )
       if (offset .ne. 1000) then
          errs = errs + 1

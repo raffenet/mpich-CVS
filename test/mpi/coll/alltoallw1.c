@@ -1,5 +1,11 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
+ *  Changes to this example
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
+/*
  * This example is taken from MPI-The complete reference, Vol 1, 
  * pages 222-224.
  * 
