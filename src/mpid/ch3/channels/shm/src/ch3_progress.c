@@ -22,6 +22,7 @@ void MPIDI_CH3_Progress_start()
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Progress(int is_blocking)
 {
+    int mpi_errno = MPI_SUCCESS;
     int i;
     MPIDI_VC *vc_ptr;
     int num_bytes, error;
@@ -38,8 +39,12 @@ int MPIDI_CH3_Progress(int is_blocking)
     MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
     do
     {
-	error = MPIDI_CH3I_SHM_wait(MPIDI_CH3I_Process.vc, 0, &vc_ptr, &num_bytes, &wait_result, &error);
-	assert(error == MPI_SUCCESS);
+	mpi_errno = MPIDI_CH3I_SHM_wait(MPIDI_CH3I_Process.vc, 0, &vc_ptr, &num_bytes, &wait_result, &error);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_wait", 0);
+	    goto fn_exit;
+	}
 	switch (wait_result)
 	{
 	case SHM_WAIT_TIMEOUT:
@@ -86,7 +91,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 	    MPIDI_err_printf("MPIDI_CH3_Progress", "MPIDI_CH3I_SHM_wait returned error %d\n", error);
 	    break;
 	default:
-	    assert(FALSE);
+	    MPID_Abort(MPIR_Process.comm_world, -1);
 	    break;
 	}
 
@@ -99,10 +104,23 @@ int MPIDI_CH3_Progress(int is_blocking)
     } 
     while (completions == MPIDI_CH3I_progress_completions && is_blocking);
 
+fn_exit:
+#ifdef MPICH_DBG_OUTPUT
     count = MPIDI_CH3I_progress_completions - completions;
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", count));
+    if (is_blocking)
+    {
+	MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", count));
+    }
+    else
+    {
+	if (count > 0)
+	{
+	    MPIDI_DBG_PRINTF((50, FCNAME, "exiting (non-blocking), count=%d", count));
+	}
+    }
+#endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS);
-    return count;
+    return mpi_errno;
 }
 
 #undef FUNCNAME
