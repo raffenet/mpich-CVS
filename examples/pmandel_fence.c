@@ -710,7 +710,8 @@ int main(int argc, char *argv[])
     }
 
     MPI_Finalize();
-    free(colors);
+    if (colors)
+	free(colors);
     return 0;
 } /* end of main */
 
