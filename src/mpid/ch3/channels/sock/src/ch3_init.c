@@ -35,7 +35,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     int kvs_name_sz;
     int key_max_sz;
     int val_max_sz;
-    int universe_size;
     int appnum;
     char * key = NULL;
     char * val = NULL;
