@@ -35,32 +35,24 @@ int packer_make_progress()
 		break;
 	    case MM_TMP_BUFFER:
 		MPID_Segment_pack(
-		    &car_ptr->request_ptr->mm.segment, /* unpack the segment in the request */
-		    car_ptr->request_ptr->mm.buf.tmp.cur_buf, /* unpack from the read buffer */
-		    &car_ptr->data.unpacker.first, /* first and last are kept in the car */
-		    &car_ptr->data.unpacker.last);
-		/* update first and last */
-		/* update min_num_written */
+		    &car_ptr->request_ptr->mm.segment,       /* pack the segment in the request */
+		    car_ptr->data.unpacker.first,            /* first and last are kept in the car */
+		    &car_ptr->data.unpacker.last,
+		    car_ptr->request_ptr->mm.buf.tmp.buf_ptr[car_ptr->request_ptr->mm.buf.tmp.cur_buf] /* pack into the current buffer */
+		    );
 		break;
 	    case MM_VEC_BUFFER:
-		/*
-		MPID_Segment_pack_vector(
-		    &car_ptr->request_ptr->mm.segment,
-		    car_ptr->data.unpacker.first,
-		    &car_ptr->data.unpacker.last,
-		    car_ptr->request_ptr->mm.buf.vec.vec,
-		    &car_ptr->request_ptr->mm.buf.vec.size);
-		*/
-		/* update first and last */
-		/* update min_num_written */
-		buf_ptr->vec.vec[0].MPID_VECTOR_BUF = (void*)car_ptr->request_ptr->mm.user_buf.send;
-		buf_ptr->vec.vec[0].MPID_VECTOR_LEN = car_ptr->request_ptr->mm.size;
-		buf_ptr->vec.vec_size = 1;
-		buf_ptr->vec.num_read = 0;
-		buf_ptr->vec.min_num_written = 0;
-		buf_ptr->vec.last = 0;
-		buf_ptr->vec.msg_size = 0;
-		finished = TRUE;
+		if (car_ptr->buf_ptr->vec.last == car_ptr->request_ptr->mm.last)
+		    finished = TRUE;
+		else
+		{
+		    if (car_ptr->buf_ptr->vec.num_cars_outstanding == 0)
+		    {
+			car_ptr->request_ptr->mm.get_buffers(car_ptr->request_ptr);
+			car_ptr->buf_ptr->vec.num_read = car_ptr->buf_ptr->vec.last - car_ptr->buf_ptr->vec.first;
+			car_ptr->buf_ptr->vec.num_cars_outstanding = car_ptr->buf_ptr->vec.num_cars;
+		    }
+		}
 		break;
 #ifdef WITH_METHOD_SHM
 	    case MM_SHM_BUFFER:

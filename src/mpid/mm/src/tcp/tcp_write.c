@@ -8,7 +8,7 @@
 int tcp_write(MPIDI_VC *vc_ptr)
 {
     MM_Car *car_ptr;
-    int num_read;
+    //int num_read;
 
     if (!vc_ptr->data.tcp.connected)
 	return MPI_SUCCESS;
@@ -23,34 +23,58 @@ int tcp_write(MPIDI_VC *vc_ptr)
     case MM_TMP_BUFFER:
 	break;
     case MM_VEC_BUFFER:
-	/* error - coordinate buf_ptr->vec with car_ptr->data.tcp.buf.vec */
-	/* write as much of the vector as possible */
-	if (car_ptr->data.tcp.buf.vec_write.vec_size == 1)
+	if (car_ptr->buf_ptr->vec.num_cars_outstanding > 0)
 	{
-	    num_read = bwrite(vc_ptr->data.tcp.bfd, 
-		car_ptr->data.tcp.buf.vec_write.vec[0].MPID_VECTOR_BUF,
-		car_ptr->data.tcp.buf.vec_write.vec[0].MPID_VECTOR_LEN);
-	    if (num_read == SOCKET_ERROR)
+	    if (car_ptr->data.tcp.buf.vec_write.num_read_copy != car_ptr->buf_ptr->vec.num_read)
 	    {
-		TCP_Process.error = beasy_getlasterror();
-		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-		err_printf("tcp_write: bwrite failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-		return -1;
+		/* update vector */
 	    }
-	}
-	else
-	{
-	    num_read = bwritev(vc_ptr->data.tcp.bfd, car_ptr->data.tcp.buf.vec_write.vec, car_ptr->data.tcp.buf.vec_write.vec_size);
-	    if (num_read == SOCKET_ERROR)
+
+	    if (car_ptr->data.tcp.buf.vec_write.num_written < car_ptr->data.tcp.buf.vec_write.num_read_copy)
 	    {
-		TCP_Process.error = beasy_getlasterror();
-		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-		err_printf("tcp_write: bwritev failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-		return -1;
+		/* write */
+		/* update vector */
 	    }
+
+	    if (car_ptr->data.tcp.buf.vec_write.num_written == car_ptr->buf_ptr->vec.num_read)
+	    {
+		mm_dec_atomic(&(car_ptr->buf_ptr->vec.num_cars_outstanding));
+	    }
+
+	    /*
+	    if (car_ptr->data.tcp.buf.vec_write.vec_size == 1)
+	    {
+		num_read = bwrite(vc_ptr->data.tcp.bfd, 
+		    car_ptr->data.tcp.buf.vec_write.vec[0].MPID_VECTOR_BUF,
+		    car_ptr->data.tcp.buf.vec_write.vec[0].MPID_VECTOR_LEN);
+		if (num_read == SOCKET_ERROR)
+		{
+		    TCP_Process.error = beasy_getlasterror();
+		    beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+		    err_printf("tcp_write: bwrite failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+		    return -1;
+		}
+		if (num_read == car_ptr->buf_ptr->vec.num_read)
+		{
+		    
+		}
+		else
+		{
+		}
+	    }
+	    else
+	    {
+		num_read = bwritev(vc_ptr->data.tcp.bfd, car_ptr->data.tcp.buf.vec_write.vec, car_ptr->data.tcp.buf.vec_write.vec_size);
+		if (num_read == SOCKET_ERROR)
+		{
+		    TCP_Process.error = beasy_getlasterror();
+		    beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+		    err_printf("tcp_write: bwritev failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+		    return -1;
+		}
+	    }
+	    */
 	}
-	/* update the current position */
-	/* update the min_num_written */
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_BUFFER:

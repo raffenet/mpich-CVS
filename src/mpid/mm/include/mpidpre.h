@@ -145,6 +145,7 @@ typedef union MM_Segment_buffer
 	int num_read;
 	int first, last;
 	int min_num_written;
+	int num_cars, num_cars_outstanding;
     } vec;
 #ifdef WITH_METHOD_SHM
     struct mm_segment_shm

@@ -207,9 +207,13 @@ MPID_Request * mm_request_alloc();
 /*
           void mm_inc_cc(MPID_Request *request_ptr);
           void mm_dec_cc(MPID_Request *request_ptr);
+	  void mm_dec_atomic(int *pcounter);
+	  void mm_inc_atomic(int *pcounter);
 */
-#define mm_inc_cc(request_ptr) (*(request_ptr->cc_ptr))++;
-#define mm_dec_cc(request_ptr) (*(request_ptr->cc_ptr))--;
+#define mm_inc_cc(request_ptr) (*((request_ptr)->cc_ptr))++
+#define mm_dec_cc(request_ptr) (*((request_ptr)->cc_ptr))--
+#define mm_dec_atomic(pcounter) (*(pcounter))++
+#define mm_inc_atomic(pcounter) (*(pcounter))--
 
 /*
 What is an xfer block? - A block is defined by an init call, followed by one or more

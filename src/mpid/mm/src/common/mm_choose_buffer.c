@@ -16,6 +16,7 @@
 @*/
 int mm_choose_buffer(MPID_Request *request_ptr)
 {
+    MM_Car *car_ptr;
     /* look at the read car and all of the write cars */
     /* pick the best buffer type that everyone can handle */
     /* if there are incompatible cars, allocate other requests and 
@@ -34,6 +35,16 @@ int mm_choose_buffer(MPID_Request *request_ptr)
 	request_ptr->mm.buf.vec.min_num_written = 0;
 	request_ptr->mm.buf.vec.first = 0;
 	request_ptr->mm.buf.vec.last = 0;
+	request_ptr->mm.buf.vec.num_cars_outstanding = 0;
+	request_ptr->mm.buf.vec.num_cars = 0;
+	/* count the data cars */
+	car_ptr = request_ptr->mm.wcar;
+	while (car_ptr)
+	{
+	    if (!(car_ptr->type & MM_HEAD_CAR))
+		request_ptr->mm.buf.vec.num_cars++;
+	    car_ptr = car_ptr->opnext_ptr;
+	}
 
 	request_ptr->mm.get_buffers = mm_get_buffers_vec;
     }
