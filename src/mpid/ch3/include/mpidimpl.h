@@ -18,6 +18,7 @@ typedef struct
     MPID_Request * recv_posted_tail;
     MPID_Request * recv_unexpected_head;
     MPID_Request * recv_unexpected_tail;
+    char * processor_name;
 }
 MPIDI_Process_t;
 
@@ -39,6 +40,7 @@ extern MPIDI_Process_t MPIDI_Process;
     req->comm = NULL;						\
 								\
     /* XXX - initialized only for debugging purposes? */	\
+    req->partner_request = NULL;				\
     req->ch3.vc = NULL;						\
     req->ch3.user_buf = NULL;					\
     req->ch3.datatype = MPI_DATATYPE_NULL;			\
@@ -65,6 +67,32 @@ extern MPIDI_Process_t MPIDI_Process;
     }						\
 }
 
+
+#define MPIDI_CH3M_create_send_request(sreq, mpi_errno, FAIL)		  \
+{									  \
+    sreq = MPIDI_CH3_Request_create();					  \
+    if (sreq != NULL)							  \
+    {									  \
+	sreq->ref_count = 2;						  \
+	sreq->kind = MPID_REQUEST_SEND;					  \
+	sreq->comm = comm;						  \
+	sreq->ch3.match.rank = rank;					  \
+	sreq->ch3.match.tag = tag;					  \
+	sreq->ch3.match.context_id = comm->context_id + context_offset;	  \
+	sreq->ch3.user_buf = (void *) buf;				  \
+	sreq->ch3.user_count = count;					  \
+	sreq->ch3.datatype = datatype;					  \
+	sreq->ch3.vc = comm->vcr[rank];					  \
+    }									  \
+    else								  \
+    {									  \
+	MPIDI_DBG_PRINTF((15, FCNAME, "send request allocation failed")); \
+	mpi_errno = MPI_ERR_NOMEM;					  \
+	FAIL;								  \
+    }									  \
+}
+
+
 /* Masks and flags for channel device state in an MPID_Request */
 #define MPIDI_Request_state_init(req)		\
 {						\
@@ -76,6 +104,7 @@ extern MPIDI_Process_t MPIDI_Process;
 #define MPIDI_REQUEST_NO_MSG 0
 #define MPIDI_REQUEST_EAGER_MSG 1
 #define MPIDI_REQUEST_RNDV_MSG 2
+#define MPIDI_REQUEST_SELF_MSG 3
 
 #define MPIDI_Request_get_msg_type(req)					\
 ((req->ch3.state & MPIDI_REQUEST_MSG_MASK) >> MPIDI_REQUEST_MSG_SHIFT)
