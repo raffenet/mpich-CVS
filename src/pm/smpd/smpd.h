@@ -34,6 +34,9 @@
 #ifdef HAVE_UUID_UUID_H
 #include <uuid/uuid.h>
 #endif
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 #include "mpi.h"
 #include "mpidu_sock.h"
 #include "mpimem.h"
