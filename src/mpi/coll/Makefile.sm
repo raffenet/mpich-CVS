@@ -8,7 +8,7 @@ lib${MPILIBNAME}_a_SOURCES = allreduce.c barrier.c op_create.c op_free.c \
  opland.c oplor.c oplxor.c opprod.c alltoall.c alltoallv.c reduce.c scatter.c \
  gather.c scatterv.c gatherv.c scan.c exscan.c allgather.c allgatherv.c \
  red_scat.c alltoallw.c opminloc.c opmaxloc.c
-INCLUDES = -I../../include -I${top_srcdir}/src/include
+INCLUDES = -I../../include -I${top_srcdir}/src/include -I${top_srcdir}/src/mpi/datatype
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 doc_HTML_SOURCES = ${mpi_sources}
 #
