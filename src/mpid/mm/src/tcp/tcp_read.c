@@ -18,7 +18,47 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 int tcp_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 int tcp_read_connecting(MPIDI_VC *vc_ptr);
 
-int tcp_read(MPIDI_VC *vc_ptr)
+int tcp_read_header(MPIDI_VC *vc_ptr)
+{
+    int num_read;
+
+    MM_ENTER_FUNC(TCP_READ_HEADER);
+#ifdef MPICH_DEV_BUILD
+    if (vc_ptr->data.tcp.bytes_of_header_read == sizeof(MPID_Packet))
+    {
+	err_printf("tcp_read_header called but the entire header has already been read.\n");
+    }
+#endif
+    MM_ENTER_FUNC(BREAD);
+    num_read = bread(vc_ptr->data.tcp.bfd, 
+	&((char*)(&vc_ptr->pkt_car.msg_header.pkt))[vc_ptr->data.tcp.bytes_of_header_read],
+	sizeof(MPID_Packet) - vc_ptr->data.tcp.bytes_of_header_read);
+    MM_EXIT_FUNC(BREAD);
+    if (num_read == SOCKET_ERROR)
+    {
+	TCP_Process.error = beasy_getlasterror();
+	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+	err_printf("tcp_read: bread failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	MM_EXIT_FUNC(TCP_READ_HEADER);
+	return -1;
+    }
+
+    vc_ptr->data.tcp.bytes_of_header_read += num_read;
+
+    if (vc_ptr->data.tcp.bytes_of_header_read == sizeof(MPID_Packet))
+    {
+#ifdef MPICH_DEV_BUILD
+	vc_ptr->data.tcp.read = NULL; /* set the function pointer to NULL to catch the potential error
+				         of calling this function again before the pointer is reset. */
+#endif
+	mm_cq_enqueue(&vc_ptr->pkt_car);
+    }
+
+    MM_EXIT_FUNC(TCP_READ_HEADER);
+    return MPI_SUCCESS;
+}
+
+int tcp_read_data(MPIDI_VC *vc_ptr)
 {
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
@@ -26,12 +66,15 @@ int tcp_read(MPIDI_VC *vc_ptr)
 
     MM_ENTER_FUNC(TCP_READ);
 
+#ifdef MPICH_DEV_BUILD
     if (vc_ptr->data.tcp.connecting)
     {
-	ret_val = tcp_read_connecting(vc_ptr);
+	/*ret_val = tcp_read_connecting(vc_ptr);*/
+	err_printf("Error: tcp_read_data called on connecting vc\n");
 	MM_EXIT_FUNC(TCP_READ);
 	return ret_val;
     }
+#endif
 
     if (vc_ptr->readq_head == NULL)
     {
@@ -302,6 +345,9 @@ int tcp_read_connecting(MPIDI_VC *vc_ptr)
     {
 	err_printf("tcp_read: unknown ack char #%d received in read function.\n", (int)ack);
     }
+
+    vc_ptr->data.tcp.read = tcp_read_header;
+    vc_ptr->data.tcp.bytes_of_header_read = 0;
 
     MM_EXIT_FUNC(TCP_READ_CONNECTING);
     return MPI_SUCCESS;

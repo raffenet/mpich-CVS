@@ -59,6 +59,9 @@ int tcp_car_head_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	vc_ptr->readq_head = car_ptr;
 	if (vc_ptr->readq_tail == NULL)
 	    vc_ptr->readq_tail = car_ptr;
+
+	/* change the state from reading_header to reading_data */
+	vc_ptr->data.tcp.read = tcp_read_data;
     }
 
     MM_EXIT_FUNC(TCP_CAR_HEAD_ENQUEUE);

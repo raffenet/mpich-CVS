@@ -156,6 +156,9 @@ int tcp_accept_connection()
 
 	bmake_nonblocking(vc_ptr->data.tcp.bfd);
 	
+	vc_ptr->data.tcp.bytes_of_header_read = 0;
+	vc_ptr->data.tcp.read = tcp_read_header;
+
 	MPID_Thread_unlock(vc_ptr->lock);
     }
 
@@ -210,7 +213,8 @@ int tcp_make_progress()
 	    if (BFD_ISSET(vc_iter->data.tcp.bfd, &readset))
 	    {
 		/* read data */
-		tcp_read(vc_iter);
+		/*tcp_read(vc_iter);*/
+		vc_iter->data.tcp.read(vc_iter);
 		nready--;
 	    }
 	    if (nready == 0)

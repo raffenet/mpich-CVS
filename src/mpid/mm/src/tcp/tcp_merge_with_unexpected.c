@@ -53,6 +53,12 @@ int tcp_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
     num_left = unex_car_ptr->buf_ptr->tmp.num_read;
     orig_unex_data_ptr = unex_data_ptr = unex_car_ptr->buf_ptr->tmp.buf;
 
+    if (unex_car_ptr->buf_ptr->tmp.num_read != unex_car_ptr->buf_ptr->tmp.len)
+    {
+	/* if the message is still being read then change to the reading_data state */
+	car_ptr->vc_ptr->data.tcp.read = tcp_read_data;
+    }
+
     /* mark the head car as completed */
     /*printf("dec cc: read eager head car\n");fflush(stdout);*/
     mm_dec_cc(car_ptr->request_ptr);

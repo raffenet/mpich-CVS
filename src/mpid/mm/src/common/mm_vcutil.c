@@ -187,6 +187,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	vc_ptr->data.tcp.connected = FALSE;
 	vc_ptr->data.tcp.connecting = FALSE;
 	/* function pointers */
+	/* mm required functions */
 	vc_ptr->post_read = tcp_post_read;
 	vc_ptr->merge_with_unexpected = tcp_merge_with_unexpected;
 	vc_ptr->merge_unexpected_data = tcp_merge_unexpected_data;
@@ -196,6 +197,9 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	vc_ptr->enqueue_read_at_head = tcp_car_head_enqueue;
 	vc_ptr->enqueue_write_at_head = tcp_car_head_enqueue;
 	vc_ptr->setup_packet_car = tcp_setup_packet_car;
+	/* tcp specific functions */
+	vc_ptr->data.tcp.read = tcp_read_connecting;
+	vc_ptr->pkt_car.type = MM_HEAD_CAR | MM_READ_CAR; /* static car used to read headers */
 	break;
 #endif
 #ifdef WITH_METHOD_VIA

@@ -84,6 +84,8 @@ typedef union VC_Method_data
         int connecting;
         int reject_received;
         int bfd;
+	int (*read)(struct MPIDI_VC *vc_ptr);
+	int bytes_of_header_read;
     } tcp;
 #endif
 #ifdef WITH_METHOD_SHM
