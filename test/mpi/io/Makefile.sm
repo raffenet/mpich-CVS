@@ -8,3 +8,4 @@ EXTRA_PROGRAMS =
 rdwrord_SOURCES = rdwrord.c
 rdwrzero_SOURCES = rdwrzero.c
 getextent_SOURCES = getextent.c
+setinfo_SOURCES = setinfo.c

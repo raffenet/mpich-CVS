@@ -7,3 +7,5 @@ adderr_SOURCES = adderr.c
 errstring_SOURCES = errstring.c
 errcode_SOURCES = errcode.c errmsg.c
 errring_SOURCES = errring.c
+commcall_SOURCES = commcall.c
+winerr_SOURCES = winerr.c
