@@ -847,6 +847,9 @@ sub RunProgram {
     return $rc;
 }
 # ---------------------------------------------------------------------------
+#
+# We need a variation of this that will start MPDs on mulitple hosts.
+# 
 sub RunMPD {
     # We need to background the mpd.
     # If there is already an mpd running (for us), we want to stop it
