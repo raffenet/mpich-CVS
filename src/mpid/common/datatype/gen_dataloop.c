@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 /* NOTE: This is kind-of a hack; it would be better to somehow get this
  * included on the compile line.
