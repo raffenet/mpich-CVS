@@ -5410,9 +5410,12 @@ Once a section is written, it should be read and by everyone and we should
 ``vote'' on the section.  Once a section is ``passed,'' the section author
 should update the ADI-3 document to match the section.  This may involve
 changing, adding, and/or deleting routines from the ADI-3 document.  Once that
-step is completed, the routines in the section can be written.
+step is completed, the routines in the section can be written.  The section
+author is \emph{not} responsible for implementing the routines in the
+section.  
 
-Many of these sections can be implemented independently.  
+Many of these sections can be implemented independently, once the
+infrastructure list is settled. 
 \begin{enumerate}
 \item Infrastructure
   \begin{enumerate}
@@ -5439,12 +5442,21 @@ Many of these sections can be implemented independently.
     \item Address the issues of the multiple completion routines (e.g.,
       \mpifunc{MPI_Waitsome}). 
     \end{enumerate}
-  \item Communication agent
-  \item Collective.  Most of this can be left until later.  However, it
-    would be good to include details for \mpifunc{MPI_Bcast} and
-    \mpifunc{MPI_Scatter} that show how the routines use the lower-level
-    point-to-point routines (e.g., what is called ``stream'' in this
-    document).  Also:
+  \item Communication agent.
+  \item Collective.  
+% Most of this can be left until later.  However, it
+%     would be good to include details for \mpifunc{MPI_Bcast} and
+%     \mpifunc{MPI_Scatter} that show how the routines use the lower-level
+%     point-to-point routines (e.g., what is called ``stream'' in this
+%     document).  Also:
+    \begin{enumerate}
+    \item \mpifunc{MPI_Bcast} and \mpifunc{MPI_Scatter} with ``stream''
+      operations.
+    \item Plan for developing algorithms for the other collective routines.
+    \item Design to allow implementors to replace any collective routine with
+      a device-specific version
+    \end{enumerate}
+  \item Communicators.
     \begin{enumerate}
     \item Basic routines for communicator construction.  Coordinate intercomm
       creation with the dynamic process routines (\mpifunc{MPI_Comm_spawn},
@@ -5460,26 +5472,32 @@ Many of these sections can be implemented independently.
   \item Starting and Ending MPI.
   \item Dynamic processes.
   \item User-defined requests.
-  \item Error handlers.
+  \item Error handlers. (These are the MPI error handlers, not the error
+    reporting routines.)
   \item Handle Transfers.
   \item Timers.
+  \item I/O.  For the most part, we will take ROMIO without any changes for
+    now.  However, there are a few things to handle:
+    \begin{enumerate}
+    \item Replace ROMIO's \code{MPIO_Request} and \code{MPIO_Wait} etc. with
+      regular \code{MPI_Request}s (possibly using the generalized requests).
+    \item Update error reporting with new routines
+    \item Check on datatype handling
+    \end{enumerate}
   \item Runtime Environment.
   \item Profiling.
+  \item MPI command environment (\code{mpiexec}, \code{mpicc}, etc.)
   \end{enumerate}
 \item Source code, portability, and framework
   \begin{enumerate}
-  \item Error reporting
+  \item Error reporting routines, particularly the handling of
+    instance-specific messages.
   \item Configure.
   \item Cross compilation
   \item Fortran
   \item C++
   \item Testing.  Needs new test harness; intelligent sampling of the possible
     combinations; archiving of results (including performance tests).
-  \end{enumerate}
-\item Minor Items
-  \begin{enumerate}
-  \item Error reporting routines, particularly the handling of
-    instance-specific messages.
   \item Integral profiling and data collection.  Definition of macros for
     collecting timing data and for generating slog records.
   \end{enumerate}
