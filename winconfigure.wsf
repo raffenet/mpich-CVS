@@ -339,6 +339,7 @@ contents = Replace(contents, "@DEFINE_MPI_OFFSET@", "typedef __int64 MPI_Offset;
 contents = Replace(contents, "@NEEDS_MPI_FINT@", "")
 contents = Replace(contents, "@HAVE_MPI_INFO@", "#define HAVE_MPI_INFO")
 contents = Replace(contents, "@HAVE_MPI_DARRAY_SUBARRAY@", "")
+contents = Replace(contents, "@DEFINE_HAVE_MPI_GREQUEST@", "#define DEFINE_HAVE_MPI_GREQUEST")
 
 fout.Write(contents)
 fin.Close()
