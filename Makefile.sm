@@ -50,7 +50,7 @@ dist:
 	(cd tmpdir && cvs -d /home/MPI/cvsMaster export -D 'now' mpich2all ) ;\
 	fi	
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-${VERSION}
-	(cd tmpdir/${PACKAGE}-${VERSION} && maint/updatefiles --without-codecheck )
+	(cd tmpdir/${PACKAGE}-${VERSION} && maint/updatefiles --with-codecheck=-distcheck )
 	(cp -r tmpdir/${PACKAGE}-${VERSION} tmpdir2)
 	(cd tmpdir2 && ./configure && ${MAKE} mandoc && ${MAKE} htmldoc && ${MAKE} latexdoc )
 	cp -r tmpdir2/man tmpdir/${PACKAGE}-${VERSION}/man
