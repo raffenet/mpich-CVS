@@ -20,13 +20,13 @@ class mpdrunInterrupted(Exception):
         self.args = args
 
 global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
-       try0Locally, lineLabels
+       try0Locally, lineLabels, jobAlias, hostsFile
 global manSocket, timeout, sigExitDueToTimeout, stdinGoesToWho
 
 
 def mpdrun():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
-           try0Locally, lineLabels, jobalias
+           try0Locally, lineLabels, jobAlias, hostsFile
     global manSocket, timeout, sigExitDueToTimeout, stdinGoesToWho
 
     mpd_set_my_id('mpdrun_' + `getpid()`)
@@ -34,7 +34,7 @@ def mpdrun():
     mship = ''
     rship = ''
     nprocs = 0
-    jobalias = ''
+    jobAlias = ''
     argsFilename = ''
     delArgsFile = 0
     try0Locally = 1
@@ -92,7 +92,7 @@ def mpdrun():
         if createReq.hasAttribute('line_labels'):
 	    lineLabels = 1
         if createReq.hasAttribute('jobalias'):
-            jobalias = createReq.getAttribute('jobalias')
+            jobAlias = createReq.getAttribute('jobalias')
         if createReq.hasAttribute('stdin_goes_to_all'):
             stdinGoesToWho = int(createReq.getAttribute('stdin_goes_to_all'))
 
@@ -185,13 +185,24 @@ def mpdrun():
         if not nprocs:
 	    print 'you have to indicate how many processes to start'
 	    usage()
-        hosts   = { (0,nprocs-1) : '_any_' }
         execs   = { (0,nprocs-1) : pgm }
         users   = { (0,nprocs-1) : username }
         cwds    = { (0,nprocs-1) : cwd }
         paths   = { (0,nprocs-1) : environ['PATH'] }
         args    = { (0,nprocs-1) : pgmArgs }
         envvars = { (0,nprocs-1) : '' }
+        if hostsFile:
+            hosts = {}
+            hostNames = hostsFile.readlines()
+            hostNames = [ x.strip() for x in hostNames if x[0] != '#' ]
+            hostIdx = 0
+            for i in range(nprocs):
+                hosts[(i,i)] = hostNames[hostIdx]
+                hostIdx += 1
+                if hostIdx >= len(hostNames):
+                    hostIdx = 0
+        else:
+            hosts   = { (0,nprocs-1) : '_any_' }
 
     if mship:
         (mshipSocket,mshipPort) = mpd_get_inet_listen_socket('',0)
@@ -219,7 +230,7 @@ def mpdrun():
                   'nprocs'   : nprocs,
 		  'hosts'    : hosts,
                   'execs'    : execs,
-                  'jobalias' : jobalias,
+                  'jobalias' : jobAlias,
                   'users'    : users,
                   'cwds'     : cwds,
                   'paths'    : paths,
@@ -396,7 +407,7 @@ def sig_handler(signum,frame):
 
 def process_cmdline_args():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
-           try0Locally, lineLabels, jobalias, stdinGoesToWho
+           try0Locally, lineLabels, jobAlias, stdinGoesToWho, hostsFile
 
     if len(argv) < 3:
         usage()
@@ -430,8 +441,15 @@ def process_cmdline_args():
 	            print 'cannot use -f with other args'
 		    usage()
                 elif argv[argidx] == '-a':
-                    jobalias = argv[argidx+1]
+                    jobAlias = argv[argidx+1]
+                elif argv[argidx] == '-hf':
+                    hostsFilename = argv[argidx+1]
                     argidx += 2
+                    try:
+                        hostsFile = open(hostsFilename,'r')
+                    except:
+                        print 'unable to open hosts file: %s' % (hostsFilename)
+                        exit(-1)
                 elif argv[argidx] == '-cpm':
                     mship = argv[argidx+1]
                     argidx += 2
@@ -492,8 +510,9 @@ def extract_from_xml(createReq,attr,name,defaultVal):
 def usage():
     print 'mpdrun for mpd version: %s' % str(mpd_version)
     print 'usage: mpdrun [args] pgm_to_execute [pgm_args]'
-    print '   where args may be: -a alias -np nprocs -cpm master_copgm -cpr remote_copgm -l -1 -s'
+    print '   where args may be: -a alias -np nprocs -hf hostsfile -cpm master_copgm -cpr remote_copgm -l -1 -s'
     print '       (nprocs must be a positive integer)'
+    print '       (-hf is a hostsfile containing names of nodes on which to run)'
     print '       (-l means attach line labels identifying which client prints each line)'
     print '       (-1 means do NOT start the first process locally)'
     print '       (-a means assign this alias to the job)'
