@@ -240,6 +240,8 @@ else
     USER_FFLAGS="$FFLAGS -O"
 fi
 #
+# Here begin the architecture-specific tests.  
+# --------------------------------------------------------------------------
 if test -n "$arch_sun4" ; then 
     CC=${CC:-gcc}
     F77=${FC:-f77}
@@ -1292,6 +1294,31 @@ if test -z "$TEST_F77" ; then
    TEST_F77="$F77"
 fi
 #
+# Create the directory lists for the Makefile
+FILE_SYS_DIRS=""
+for dir in $FILE_SYSTEM ; do
+    FILE_SYS_DIRS="$FILE_SYS_DIRS adio/ad_$dir"
+done
+EXTRA_SRC_DIRS=""
+if test "$BUILD_MPI_INFO" = 1 ; then
+    EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi2-other/info"
+    if test "$NOF77" = 0 ; then
+        EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi2-other/info/fortran"
+    fi
+fi
+if test "$BUILD_MPI_ARRAY" = 1 ; then
+    EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi2-other/array"
+    if test "$NOF77" = 0 ; then
+        EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi2-other/array/fortran"
+    fi
+fi
+if test "$NOF77" = 0 ; then
+   EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/fortran"
+fi
+AC_SUBST(EXTRA_SRC_DIRS)
+AC_SUBST(FILE_SYS_DIRS)
+
+#
 CFLAGS="$CFLAGS -DHAVE_ROMIOCONF_H"
 #
 echo "setting CC to $CC"
@@ -1333,6 +1360,7 @@ AC_SUBST(FORTRAN_MPI_OFFSET)
 AC_SUBST(FROM_MPICH)
 AC_SUBST(FROM_MPICH2)
 AC_SUBST(FROM_LAM)
+AC_SUBST(WITHIN_KNOWN_MPI_IMPL)
 AC_SUBST(NEEDS_MPI_FINT)
 AC_SUBST(HAVE_MPI_INFO)
 AC_SUBST(BUILD_MPI_INFO)
@@ -1392,8 +1420,8 @@ AC_OUTPUT(Makefile localdefs mpi-io/Makefile mpi2-other/info/Makefile \
                    test/fcoll_test.f test/pfcoll_test.f test/fperf.f )
 #
 rm -f *.o
-if test "$ROMIO_NO_BANNER" != "yes" -a "$FROM_MPICH" = 0 -a \
-         $FROM_MPICH2 = 0 ; then
+if test "$ROMIO_NO_BANNER" != "yes" -a "$FROM_MPICH" = no -a \
+         $FROM_MPICH2 = no ; then
 cat <<EOF
 
 Please register your copy of ROMIO with us by sending email
@@ -1404,7 +1432,7 @@ as well as bug fixes.
 
 EOF
 fi
-if test $FROM_MPICH2 = 1 -a "$NOF77" = 0 ; then
+if test $FROM_MPICH2 = yes -a "$NOF77" = 0 ; then
       sed 5d test/fcoll_test.f > test/tmp
       mv test/tmp test/fcoll_test.f
       sed 5d test/pfcoll_test.f > test/tmp
@@ -1414,7 +1442,7 @@ if test $FROM_MPICH2 = 1 -a "$NOF77" = 0 ; then
       sed 5d test/fmisc.f > test/tmp
       mv test/tmp test/fmisc.f
 fi
-if test $FROM_MPICH = 0 -a $FROM_MPICH2 = 0 ; then
+if test $FROM_MPICH = no -a $FROM_MPICH2 = no ; then
    AC_MSG_RESULT([Configure done. Now type make])
 fi
 dnl PAC_SUBDIR_CACHE_CLEANUP
