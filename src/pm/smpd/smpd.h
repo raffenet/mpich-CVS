@@ -122,6 +122,7 @@ typedef int SMPD_BOOL;
 #define SMPD_DELIM_STR                    "="
 #define SMPD_ESCAPE_CHAR                  '\\'
 #define SMPD_HIDE_CHAR                    '*'
+#define SMPD_SEPAR_CHAR                   ' '
 
 #define DBS_SUCCESS_STR	                  "DBS_SUCCESS"
 #define DBS_FAIL_STR	                  "DBS_FAIL"
