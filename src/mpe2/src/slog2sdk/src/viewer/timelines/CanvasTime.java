@@ -24,15 +24,31 @@ import base.drawable.NestingStacks;
 import base.drawable.DrawnBoxSet;
 import base.drawable.Method;
 import base.statistics.BufForTimeAveBoxes;
+import logformat.slog2.LineIDMap;
 import logformat.slog2.input.TreeNode;
 import logformat.slog2.input.TreeTrunk;
 import viewer.common.Dialogs;
 import viewer.common.Routines;
-import viewer.common.TopWindow;
 import viewer.common.Parameters;
+import viewer.common.Dialogs;
+import viewer.common.Routines;
+import viewer.common.Parameters;
+import viewer.zoomable.Debug;
+import viewer.zoomable.Profile;
+import viewer.zoomable.ModelTime;
+import viewer.zoomable.YaxisMaps;
+import viewer.zoomable.YaxisTree;
+import viewer.zoomable.CoordPixelImage;
+import viewer.zoomable.ScrollableObject;
+import viewer.zoomable.SearchableView;
+import viewer.zoomable.SummarizableView;
+import viewer.zoomable.InfoDialog;
+import viewer.zoomable.InfoPanelForDrawable;
+import viewer.zoomable.InitializableDialog;
+import viewer.histogram.StatlineDialog;
 
 public class CanvasTime extends ScrollableObject
-                        implements SearchableView
+                        implements SearchableView, SummarizableView
 {
     private static final int            MIN_VISIBLE_ROW_COUNT = 2;
     private static final boolean        INCRE_STARTTIME_ORDER = true;
@@ -45,7 +61,7 @@ public class CanvasTime extends ScrollableObject
     private Method[]           methods;
     private String[]           y_colnames;
 
-    private Frame              root_window;
+    private Frame              root_frame;
     private TimeBoundingBox    timeframe4imgs;   // TimeFrame for images[]
 
     private ChangeListener     change_listener;
@@ -63,9 +79,12 @@ public class CanvasTime extends ScrollableObject
     private Date               zero_time, init_time, final_time;
 
 
-    public CanvasTime( ModelTime time_model, TreeTrunk treebody,
-                       BoundedRangeModel yaxis_model, YaxisMaps yaxis_maps,
-                       Method[] dobj_methods, String[] yaxis_colnames )
+    public CanvasTime( ModelTime           time_model,
+                       TreeTrunk           treebody,
+                       BoundedRangeModel   yaxis_model,
+                       YaxisMaps           yaxis_maps,
+                       String[]            yaxis_colnames,
+                       Method[]            dobj_methods )
     {
         super( time_model );
 
@@ -76,8 +95,8 @@ public class CanvasTime extends ScrollableObject
         y_maps          = yaxis_maps;
         tree_view       = y_maps.getTreeView();
         y_model         = yaxis_model;
-        methods         = dobj_methods;
         y_colnames      = yaxis_colnames;
+        methods         = dobj_methods;
         treeroot        = treetrunk.getTreeRoot();
         depth_max       = treeroot.getTreeNodeID().depth;
         nesting_stacks  = new NestingStacks( tree_view );
@@ -101,13 +120,13 @@ public class CanvasTime extends ScrollableObject
         tree_search     = new SearchTreeTrunk( treetrunk, tree_view,
                                                isConnectedComposite );
 
-        root_window     = null;
+        root_frame      = null;
         change_event    = null;
         change_listener = null;
 
-        if ( BackgroundPaint == null )
-            BackgroundPaint = new GradientPaint( 0, 0, Color.black,
-                                                 5, 5, Color.gray, true );
+        // if ( BackgroundPaint == null )
+        //     BackgroundPaint = new GradientPaint( 0, 0, Color.black,
+        //                                          5, 5, Color.gray, true );
     }
 
     public void addChangeListener( ChangeListener listener )
@@ -160,12 +179,12 @@ public class CanvasTime extends ScrollableObject
         if ( Profile.isActive() )
             zero_time = new Date();
 
-        if ( root_window == null )
-            root_window  = (Frame) SwingUtilities.windowForComponent( this );
+        if ( root_frame == null )
+            root_frame  = (Frame) SwingUtilities.windowForComponent( this );
         if ( timeframe4imgs == null )
             timeframe4imgs = new TimeBoundingBox( imgs_times );
         // Read the SLOG-2 TreeNodes within TimeFrame into memory
-        Routines.setAllCursorsToWait( root_window );
+        Routines.setAllCursorsToWait( root_frame );
         num_rows    = tree_view.getRowCount();
         row_height  = tree_view.getRowHeight();
         isScrolling = ( treetrunk.updateTimeWindow( timeframe4imgs, imgs_times )
@@ -178,7 +197,7 @@ public class CanvasTime extends ScrollableObject
         map_line2row = y_maps.getMapOfLineIDToRowID();
         if ( map_line2row == null ) {
             if ( ! y_maps.update() )
-                Dialogs.error( TopWindow.Timeline.getWindow(),
+                Dialogs.error( root_frame,
                                "Error in updating YaxisMaps!" );
             map_line2row = y_maps.getMapOfLineIDToRowID();
         }
@@ -195,7 +214,7 @@ public class CanvasTime extends ScrollableObject
         timeframe4imgs.setEarliestTime( imgs_times.getEarliestTime() );
         timeframe4imgs.setLatestTime( imgs_times.getLatestTime() );
         this.fireChangeEvent();  // to update TreeTrunkPanel.
-        Routines.setAllCursorsToNormal( root_window );
+        Routines.setAllCursorsToNormal( root_frame );
 
         if ( Profile.isActive() )
             final_time = new Date();
@@ -376,8 +395,7 @@ public class CanvasTime extends ScrollableObject
         Map map_line2row = y_maps.getMapOfLineIDToRowID();
         if ( map_line2row == null ) {
             if ( ! y_maps.update() )
-                Dialogs.error( TopWindow.Timeline.getWindow(),
-                               "Error in updating YaxisMaps!" );
+                Dialogs.error( root_frame, "Error in updating YaxisMaps!" );
             map_line2row = y_maps.getMapOfLineIDToRowID();
         }
 
@@ -395,12 +413,12 @@ public class CanvasTime extends ScrollableObject
         while ( dobjs.hasNext() ) {
             dobj = (Drawable) dobjs.next();
             if ( dobj.getCategory().isVisible() ) {
-                clicked_dobj = dobj.getDrawableWithPixel( coord_xform,
-                                                          map_line2row,
-                                                          local_click );
+                clicked_dobj = dobj.getDrawableAt( coord_xform,
+                                                   map_line2row,
+                                                   local_click );
                 if (    clicked_dobj != null
                      && clicked_dobj.getCategory().isVisible() ) {
-                    return  new InfoDialogForDrawable( root_window,
+                    return  new InfoDialogForDrawable( root_frame,
                                                        clicked_time,
                                                        map_line2treeleaf,
                                                        y_colnames,
@@ -417,12 +435,12 @@ public class CanvasTime extends ScrollableObject
         while ( sobjs.hasNext() ) {
             sobj = (Shadow) sobjs.next();
             if ( sobj.getCategory().isVisible() ) {
-                clicked_dobj = sobj.getDrawableWithPixel( coord_xform,
-                                                          map_line2row,
-                                                          local_click );
+                clicked_dobj = sobj.getDrawableAt( coord_xform,
+                                                   map_line2row,
+                                                   local_click );
                 if (    clicked_dobj != null
                      && clicked_dobj.getCategory().isVisible() ) {
-                    return  new InfoDialogForDrawable( root_window,
+                    return  new InfoDialogForDrawable( root_frame,
                                                        clicked_time,
                                                        map_line2treeleaf,
                                                        y_colnames,
@@ -439,12 +457,12 @@ public class CanvasTime extends ScrollableObject
         while ( sobjs.hasNext() ) {
             sobj = (Shadow) sobjs.next();
             if ( sobj.getCategory().isVisible() ) {
-                clicked_dobj = sobj.getDrawableWithPixel( coord_xform,
-                                                          map_line2row,
-                                                          local_click );
+                clicked_dobj = sobj.getDrawableAt( coord_xform,
+                                                   map_line2row,
+                                                   local_click );
                 if (    clicked_dobj != null
                      && clicked_dobj.getCategory().isVisible() ) {
-                    return  new InfoDialogForDrawable( root_window,
+                    return  new InfoDialogForDrawable( root_frame,
                                                        clicked_time,
                                                        map_line2treeleaf,
                                                        y_colnames,
@@ -461,12 +479,12 @@ public class CanvasTime extends ScrollableObject
         while ( dobjs.hasNext() ) {
             dobj = (Drawable) dobjs.next();
             if ( dobj.getCategory().isVisible() ) {
-                clicked_dobj = dobj.getDrawableWithPixel( coord_xform,
-                                                          map_line2row,
-                                                          local_click );
+                clicked_dobj = dobj.getDrawableAt( coord_xform,
+                                                   map_line2row,
+                                                   local_click );
                 if (    clicked_dobj != null
                      && clicked_dobj.getCategory().isVisible() ) {
-                    return  new InfoDialogForDrawable( root_window,
+                    return  new InfoDialogForDrawable( root_frame,
                                                        clicked_time,
                                                        map_line2treeleaf,
                                                        y_colnames,
@@ -557,9 +575,15 @@ public class CanvasTime extends ScrollableObject
             return null;
     }
 
-    public BufForTimeAveBoxes
-    createBufForTimeAveBoxes( final TimeBoundingBox timebox )
+    // Interface for SummarizableView
+    public InitializableDialog createSummary( final Dialog          dialog,
+                                              final TimeBoundingBox timebox )
     {
-        return tree_search.createBufForTimeAveBoxes( timebox );
+        BufForTimeAveBoxes  buf4statboxes;
+
+        buf4statboxes  = tree_search.createBufForTimeAveBoxes( timebox );
+        // System.out.println( "Statistics = " + buf4statboxes );
+        return new StatlineDialog( dialog, timebox,
+                                   y_maps.getLineIDMap(), buf4statboxes );
     }
 }

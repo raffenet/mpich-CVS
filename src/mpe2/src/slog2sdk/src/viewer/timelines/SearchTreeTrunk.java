@@ -10,6 +10,7 @@
 package viewer.timelines;
 
 import java.util.Iterator;
+import java.util.Map;
 
 import base.drawable.DrawOrderComparator;
 import base.drawable.TimeBoundingBox;
@@ -18,6 +19,7 @@ import base.drawable.Shadow;
 import base.drawable.Category;
 import base.statistics.BufForTimeAveBoxes;
 import logformat.slog2.input.TreeTrunk;
+import viewer.zoomable.YaxisTree;
 
 public class SearchTreeTrunk
 {
@@ -165,7 +167,7 @@ public class SearchTreeTrunk
     }
 
     public BufForTimeAveBoxes
-    createBufForTimeAveBoxes( final TimeBoundingBox timebox )
+    createBufForTimeAveBoxes( final TimeBoundingBox  timebox )
     {
         BufForTimeAveBoxes  buf2statboxes;
         Iterator            dobjs, sobjs;

@@ -17,10 +17,40 @@ import java.util.*;
 import java.net.URL;
 
 import viewer.common.Const;
+import viewer.zoomable.ToolBarStatus;
+import viewer.zoomable.ModelTime;
+import viewer.zoomable.YaxisMaps;
+import viewer.zoomable.YaxisTree;
+import viewer.zoomable.ScrollbarTime;
+import viewer.zoomable.ViewportTimeYaxis;
+import viewer.zoomable.RowAdjustments;
+import viewer.zoomable.ActionVportUp;
+import viewer.zoomable.ActionVportDown;
+import viewer.zoomable.ActionTimelineMark;
+import viewer.zoomable.ActionTimelineMove;
+import viewer.zoomable.ActionTimelineDelete;
+import viewer.zoomable.ActionYaxisTreeExpand;
+import viewer.zoomable.ActionYaxisTreeCollapse;
+import viewer.zoomable.ActionYaxisTreeCommit;
+import viewer.zoomable.ActionVportBackward;
+import viewer.zoomable.ActionVportForward;
+import viewer.zoomable.ActionZoomUndo;
+import viewer.zoomable.ActionZoomOut;
+import viewer.zoomable.ActionZoomHome;
+import viewer.zoomable.ActionZoomIn;
+import viewer.zoomable.ActionZoomRedo;
+import viewer.zoomable.ActionSearchBackward;
+import viewer.zoomable.ActionSearchInit;
+import viewer.zoomable.ActionSearchForward;
+import viewer.zoomable.ActionPptyRefresh;
+import viewer.zoomable.ActionPptyPrint;
+import viewer.zoomable.ActionPptyStop;
+
 
 public class TimelineToolBar extends JToolBar
                              implements ToolBarStatus
 {
+    private Window                  root_window;
     private ViewportTimeYaxis       canvas_vport;
     private JScrollBar              y_scrollbar;
     private YaxisTree               y_tree;
@@ -29,47 +59,50 @@ public class TimelineToolBar extends JToolBar
     private ModelTime               time_model;
     private RowAdjustments          row_adjs;
 
-    public  JButton                 mark_btn;
-    public  JButton                 move_btn;
+    private JButton                 mark_btn;
+    private JButton                 move_btn;
     public  JButton                 delete_btn;
-    // public  JButton                 redo_btn;
-    // public  JButton                 undo_btn;
-    // public  JButton                 remove_btn;
+    // private JButton                 redo_btn;
+    // private JButton                 undo_btn;
+    // private JButton                 remove_btn;
 
-    public  JButton                 up_btn;
-    public  JButton                 down_btn;
+    private JButton                 up_btn;
+    private JButton                 down_btn;
 
-    public  JButton                 expand_btn;
-    public  JButton                 collapse_btn;
-    public  JButton                 commit_btn;
+    private JButton                 expand_btn;
+    private JButton                 collapse_btn;
+    private JButton                 commit_btn;
 
-    public  JButton                 backward_btn;
-    public  JButton                 forward_btn;
+    private JButton                 backward_btn;
+    private JButton                 forward_btn;
 
-    public  JButton                 zoomUndo_btn;
-    public  JButton                 zoomOut_btn;
-    public  JButton                 zoomHome_btn;
-    public  JButton                 zoomIn_btn;
-    public  JButton                 zoomRedo_btn;
-    // public  JButton                 zoomSet_btn;
+    private JButton                 zoomUndo_btn;
+    private JButton                 zoomOut_btn;
+    private JButton                 zoomHome_btn;
+    private JButton                 zoomIn_btn;
+    private JButton                 zoomRedo_btn;
+    // private JButton                 zoomSet_btn;
 
-    public  JButton                 searchBack_btn;
-    public  JButton                 searchInit_btn;
-    public  JButton                 searchFore_btn;
+    private JButton                 searchBack_btn;
+    private JButton                 searchInit_btn;
+    private JButton                 searchFore_btn;
 
-    public  JButton                 refresh_btn;
-    public  JButton                 print_btn;
-    public  JButton                 stop_btn;
+    private JButton                 refresh_btn;
+    private JButton                 print_btn;
+    private JButton                 stop_btn;
 
 
-    public TimelineToolBar( ViewportTimeYaxis  canvas_viewport,
-                            JScrollBar  yaxis_scrollbar,
-                            YaxisTree  yaxis_tree, YaxisMaps  yaxis_maps,
-                            ScrollbarTime  a_time_scrollbar,
-                            ModelTime  a_time_model,
-                            RowAdjustments  a_row_adjs )
+    public TimelineToolBar( Window             parent_window,
+                            ViewportTimeYaxis  canvas_viewport,
+                            JScrollBar         yaxis_scrollbar,
+                            YaxisTree          yaxis_tree,
+                            YaxisMaps          yaxis_maps,
+                            ScrollbarTime      a_time_scrollbar,
+                            ModelTime          a_time_model,
+                            RowAdjustments     a_row_adjs )
     {
         super();
+        root_window      = parent_window;
         canvas_vport     = canvas_viewport;
         y_scrollbar      = yaxis_scrollbar;
         y_tree           = yaxis_tree;
@@ -137,7 +170,7 @@ public class TimelineToolBar extends JToolBar
         mark_btn.setToolTipText( "Mark the timelines" );
         // mark_btn.setPreferredSize( btn_dim );
         mark_btn.addActionListener(
-                 new ActionTimelineMark( this, y_tree ) );
+                 new ActionTimelineMark( root_window, this, y_tree ) );
         super.add( mark_btn );
 
         icon_URL = getURL( Const.IMG_PATH + "Paste24.gif" );
@@ -149,7 +182,7 @@ public class TimelineToolBar extends JToolBar
         move_btn.setToolTipText( "Move the marked timelines" );
         // move_btn.setPreferredSize( btn_dim );
         move_btn.addActionListener(
-                 new ActionTimelineMove( this, y_tree ) );
+                 new ActionTimelineMove( root_window, this, y_tree ) );
         super.add( move_btn );
 
         icon_URL = getURL( Const.IMG_PATH + "Delete24.gif" );
@@ -161,7 +194,7 @@ public class TimelineToolBar extends JToolBar
         delete_btn.setToolTipText( "Delete the marked timelines" );
         // delete_btn.setPreferredSize( btn_dim );
         delete_btn.addActionListener(
-                   new ActionTimelineDelete( this, y_tree ) );
+                   new ActionTimelineDelete( root_window, this, y_tree ) );
         super.add( delete_btn );
 
         /*
@@ -219,7 +252,8 @@ public class TimelineToolBar extends JToolBar
         commit_btn.setMnemonic( KeyEvent.VK_D );
         // collapse_btn.setPreferredSize( btn_dim );
         commit_btn.addActionListener(
-                   new ActionYaxisTreeCommit( this, canvas_vport, y_maps,
+                   new ActionYaxisTreeCommit( root_window, this,
+                                              canvas_vport, y_maps,
                                               row_adjs ) );
         // Elminate displaying this button, so user uses ScreenRefresh button
         // super.add( commit_btn );
@@ -423,7 +457,7 @@ public class TimelineToolBar extends JToolBar
         stop_btn.setMargin( btn_insets );
         stop_btn.setToolTipText( "Exit the Timeline window" );
         // stop_btn.setPreferredSize( btn_dim );
-        stop_btn.addActionListener( new ActionPptyStop() );
+        stop_btn.addActionListener( new ActionPptyStop( root_window ) );
         super.add( stop_btn );
     }
 
@@ -452,13 +486,7 @@ public class TimelineToolBar extends JToolBar
         stop_btn.setEnabled( true );
     }
 
-    public void resetYaxisTreeButtons()
-    {
-        expand_btn.setEnabled( y_tree.isLevelExpandable() );
-        collapse_btn.setEnabled( y_tree.isLevelCollapsable() );
-        commit_btn.setEnabled( true );
-    }
-
+    //  Interface for ToolBarStatus
     public void resetZoomButtons()
     {
         int zoomlevel = time_model.getZoomLevel();
@@ -469,4 +497,32 @@ public class TimelineToolBar extends JToolBar
         zoomUndo_btn.setEnabled( ! time_model.isZoomUndoStackEmpty() );
         zoomRedo_btn.setEnabled( ! time_model.isZoomRedoStackEmpty() );
     }
+
+    //  Interface for ToolBarStatus
+    public void resetYaxisTreeButtons()
+    {
+        expand_btn.setEnabled( y_tree.isLevelExpandable() );
+        collapse_btn.setEnabled( y_tree.isLevelCollapsable() );
+        commit_btn.setEnabled( true );
+    }
+
+    //  Interface for ToolBarStatus
+    public JButton getYaxisTreeCommitButton()
+    { return commit_btn; }
+
+    //  Interface for ToolBarStatus
+    public JButton getPropertyRefreshButton()
+    { return refresh_btn; }
+
+    //  Interface for ToolBarStatus
+    public JButton getTimelineMarkButton()
+    { return mark_btn; }
+
+    //  Interface for ToolBarStatus
+    public JButton getTimelineMoveButton()
+    { return move_btn; }
+
+    //  Interface for ToolBarStatus
+    public JButton getTimelineDeleteButton()
+    { return delete_btn; }
 }

@@ -14,6 +14,8 @@ import javax.swing.*;
 import java.util.Map;
 
 import base.drawable.Drawable;
+import viewer.zoomable.InfoDialog;
+import viewer.zoomable.InfoPanelForDrawable;
 
 public class InfoDialogForDrawable extends InfoDialog
 {

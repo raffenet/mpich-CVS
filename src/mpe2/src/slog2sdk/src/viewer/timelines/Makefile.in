@@ -20,40 +20,12 @@ RM           = @RM@
 
 TARGET    = $(libbuild_dir)/timeline_view.jar
 PACKAGE   = viewer.timelines
-SRC       = Diagnosis.java Debug.java Profile.java SearchDialog.java \
-            YaxisTreeNode.java IntegerArrayComparator.java YaxisMaps.java \
-            named_vector.java YaxisTree.java \
-            TimeEvent.java TimeListener.java \
-            ModelTime.java ScrollbarTime.java \
-            ModelTimePanel.java TreeTrunkPanel.java \
-            OperationDurationPanel.java TimeFormat.java InfoDialog.java \
-            InfoDialogForTime.java InfoDialogForDuration.java \
-            InfoPanelForDrawable.java InfoDialogForDrawable.java \
-            ScrollableView.java ScrollableObject.java SearchableView.java \
-            ToolBarStatus.java ViewportTime.java ViewportTimeYaxis.java \
-            RulerTime.java ViewportTimePanel.java CoordPixelImage.java \
+SRC       = PreviewStateComboBox.java InfoDialogForDrawable.java \
             SearchCriteria.java SearchTreeTrunk.java CanvasTime.java \
-            ScaledSlider.java RowAdjustments.java \
-            ActionVportUp.java ActionVportDown.java \
-            ActionTimelineMark.java ActionTimelineMove.java \
-            ActionTimelineDelete.java \
-            ActionYaxisTreeExpand.java ActionYaxisTreeCollapse.java \
-            ActionYaxisTreeCommit.java \
-            ActionVportBackward.java ActionVportForward.java \
-            ActionVportUp.java ActionVportDown.java \
-            ActionZoomIn.java ActionZoomHome.java ActionZoomOut.java \
-            ActionZoomUndo.java ActionZoomRedo.java \
-            ActionSearchInit.java \
-            ActionSearchForward.java ActionSearchBackward.java \
-            ActionPptyRefresh.java ActionPptyPrint.java ActionPptyStop.java \
-            TimelineToolBar.java PreviewStateComboBox.java \
+            TreeTrunkPanel.java TimelineToolBar.java \
             TimelinePanel.java TimelineFrame.java
 
 OBJ       = $(SRC:.java=.class)
-
-TS_TARGET = $(libbuild_dir)/ts_time.jar
-TS_SRC    = TestMainToolBar.java TestMainPanel.java TestMainFrame.java
-TS_OBJ    = $(TS_SRC:.java=.class)
 
 .SUFFIXES:	.java .class .jar
 
@@ -86,24 +58,11 @@ $(TARGET): $(OBJ)
 	done ; \
 	$(JAR) uvf $${jarfile} images/*.gif applet.html
 
-# Only need base/drawable/TimeBoundingBox.class from base/drawable
-$(TS_TARGET): $(OBJ) $(TS_OBJ)
-	cd $(CLASSDIR) ; \
-	$(RM) $(PACKAGE).manifest ; \
-	echo "Main-Class: $(PACKAGE).TestMainFrame" > $(PACKAGE).manifest ; \
-	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
-	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
-	for dir in base/drawable/ viewer/common/ $(PKGDIR)/ ; do \
-	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
-	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
-	done ; \
-	$(JAR) uvf $${jarfile} images/*.gif applet.html
-
 clean:
 	cd $(CLASSDIR) ; \
 	$(RM) $(PACKAGE).manifest $(PKGDIR)/*.class
 
 rmlib:
-	$(RM) $(TARGET) $(TS_TARGET)
+	$(RM) $(TARGET)
 
 realclean: clean rmlib

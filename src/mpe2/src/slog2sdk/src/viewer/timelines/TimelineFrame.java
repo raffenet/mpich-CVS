@@ -34,7 +34,7 @@ public class TimelineFrame extends JFrame
         TopWindow.Timeline.disposeAll();
         TopWindow.Timeline.setWindow( this );
 
-        top_panel = new TimelinePanel( slog_ins, view_ID );
+        top_panel = new TimelinePanel( this, slog_ins, view_ID );
         setContentPane( top_panel );
 
         addWindowListener( new WindowAdapter() {

@@ -12,6 +12,7 @@ package viewer.timelines;
 import java.util.Arrays;
 
 import base.drawable.Drawable;
+import viewer.zoomable.YaxisTree;
 
 public class SearchCriteria
 {

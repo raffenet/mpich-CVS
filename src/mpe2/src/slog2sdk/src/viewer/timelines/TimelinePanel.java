@@ -23,10 +23,21 @@ import logformat.slog2.input.TreeTrunk;
 import logformat.slog2.input.TreeNode;
 import viewer.common.Const;
 import viewer.common.Dialogs;
-import viewer.common.TopWindow;
+import viewer.zoomable.Debug;
+import viewer.zoomable.ModelTime;
+import viewer.zoomable.YaxisMaps;
+import viewer.zoomable.YaxisTree;
+import viewer.zoomable.ScrollbarTime;
+import viewer.zoomable.ModelTimePanel;
+import viewer.zoomable.RulerTime;
+import viewer.zoomable.ViewportTime;
+import viewer.zoomable.ViewportTimeYaxis;
+import viewer.zoomable.ViewportTimePanel;
+import viewer.zoomable.RowAdjustments;
 
 public class TimelinePanel extends JPanel
 {
+    private Window                  root_window;
     private InputLog                slog_ins;
     private TreeTrunk               treetrunk;
     private TreeNode                treeroot;
@@ -58,9 +69,12 @@ public class TimelinePanel extends JPanel
     private RowAdjustments          row_adjs;
     private String                  err_msg;
 
-    public TimelinePanel( final InputLog in_slog, int view_ID )
+    public TimelinePanel( final Window    parent_window,
+                          final InputLog  in_slog,
+                                int       view_ID )
     {
         super();
+        root_window  = parent_window;
         slog_ins     = in_slog;
 
         /*
@@ -97,7 +111,8 @@ public class TimelinePanel extends JPanel
         treetrunk     = new TreeTrunk( slog_ins );
         treetrunk.initFromTreeTop();
         treeroot      = treetrunk.getTreeRoot();
-        time_model    = new ModelTime( treeroot.getEarliestTime(), 
+        time_model    = new ModelTime( root_window,
+                                       treeroot.getEarliestTime(), 
                                        treeroot.getLatestTime() );
         time_model.setTimeZoomFactor( treetrunk.getTimeZoomFactor() );
         System.out.println( "slog_ins.tZoomFtr = "
@@ -149,7 +164,7 @@ public class TimelinePanel extends JPanel
                 /* The TimeLine Canvas */
                 time_canvas       = new CanvasTime( time_model, treetrunk,
                                                     y_model, y_maps,
-                                                    methods, y_colnames );
+                                                    y_colnames, methods );
                 time_canvas_vport = new ViewportTimeYaxis( time_model,
                                                            y_model, y_tree );
                 time_canvas_vport.setView( time_canvas );
@@ -350,7 +365,7 @@ public class TimelinePanel extends JPanel
         this.add( right_splitter, BorderLayout.CENTER );
 
             /* The ToolBar for various user controls */
-            toolbar = new TimelineToolBar( time_canvas_vport,
+            toolbar = new TimelineToolBar( root_window, time_canvas_vport,
                                            y_scrollbar, y_tree, y_maps,
                                            time_scrollbar, time_model,
                                            row_adjs );
@@ -363,7 +378,7 @@ public class TimelinePanel extends JPanel
         */ 
             y_tree.init();
             row_adjs.initYLabelTreeSize();
-            preview_state_combobox.init( toolbar.refresh_btn );
+            preview_state_combobox.init( toolbar.getPropertyRefreshButton() );
     }
 
     public void init()
@@ -374,7 +389,7 @@ public class TimelinePanel extends JPanel
         toolbar.init();
         row_adjs.initSlidersAndTextFields();
         if ( err_msg != null )
-            Dialogs.error( TopWindow.Timeline.getWindow(), err_msg );
+            Dialogs.error( root_window, err_msg );
 
         if ( Debug.isActive() ) {
             Debug.println( "TimelinePanel.init(): time_model = "
