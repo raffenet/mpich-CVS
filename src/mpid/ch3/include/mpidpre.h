@@ -43,6 +43,7 @@ typedef struct MPIDI_Message_match
     int16_t context_id;
 }
 MPIDI_Message_match;
+#define MPIDI_TAG_UB (0x7fffffff)
 
 /*
  * MPIDI_CH3_Pkt_type_t
