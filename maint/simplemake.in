@@ -504,7 +504,7 @@ sub ReadMfile {
 	    $found_profilelib = 1;
 	}
 	elsif (/^install_([\w-]*)\s*=\s*(.*)\s*$/) {
-	    $install_files{$1} = $2;
+	    $install_files{$1} .= "$2 ";
 	}
 	elsif (/^optinstall_([\w-]*)\s*=\s*(.*)\s*$/) {
 	    # This is for files that will be installed only if present
@@ -2132,7 +2132,7 @@ sub TargetInstall {
 	if (defined($usertargets{"install-local"})) {
 	    print FD "\t\${MAKE} install-local$newline";
 	}
-	foreach $file ($install_files{$kind}) {
+	foreach $file (split(/\s+/,$install_files{$kind})) {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
 	    $this_install_method = $install_methods{$kind};
@@ -2196,7 +2196,7 @@ sub TargetInstall {
     }
     foreach $kind (keys(%optinstall_files)) {
 	$dir = $install_dir{$kind};
-	foreach $file ($optinstall_files{$kind}) {
+	foreach $file (split(/\s+/,$optinstall_files{$kind})) {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
 	    print FD "\t-rm -f \${$dir}/$destfile$newline";
