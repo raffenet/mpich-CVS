@@ -17,6 +17,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#if defined(HAVE_DIRECT_H) || defined(HAVE_WINDOWS_H)
+#include <direct.h>
+#endif
 
 void mp_print_options(void)
 {
@@ -495,6 +498,147 @@ SMPD_BOOL mp_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp)
 
     smpd_exit_fn("mp_get_argcv_from_file");
     return SMPD_FALSE;
+}
+
+static smpd_launch_node_t *next_launch_node(smpd_launch_node_t *node, int id)
+{
+    while (node)
+    {
+	if (node->host_id == id)
+	    return node;
+	node = node->next;
+    }
+    return NULL;
+}
+
+static smpd_launch_node_t *prev_launch_node(smpd_launch_node_t *node, int id)
+{
+    while (node)
+    {
+	if (node->host_id == id)
+	    return node;
+	node = node->prev;
+    }
+    return NULL;
+}
+
+int mp_create_cliques(smpd_launch_node_t *list)
+{
+    smpd_launch_node_t *iter, *cur_node;
+    int cur_iproc, printed_iproc;
+    char *cur_str;
+
+    if (list == NULL)
+	return SMPD_SUCCESS;
+
+    if (list->iproc == 0)
+    {
+	/* in order */
+	cur_node = list;
+	while (cur_node)
+	{
+	    /* point to the current structures */
+	    printed_iproc = cur_iproc = cur_node->iproc;
+	    cur_str = cur_node->clique;
+	    cur_str += sprintf(cur_str, "%d", cur_iproc);
+	    /* add the ranks of all other nodes with the same id */
+	    iter = next_launch_node(cur_node->next, cur_node->host_id);
+	    while (iter)
+	    {
+		if (iter->iproc == cur_iproc + 1)
+		{
+		    cur_iproc = iter->iproc;
+		    iter = next_launch_node(iter->next, iter->host_id);
+		    if (iter == NULL)
+			cur_str += sprintf(cur_str, "..%d", cur_iproc);
+		}
+		else
+		{
+		    if (printed_iproc == cur_iproc)
+		    {
+			cur_str += sprintf(cur_str, ",%d", iter->iproc);
+		    }
+		    else
+		    {
+			cur_str += sprintf(cur_str, "..%d,%d", cur_iproc, iter->iproc);
+		    }
+		    printed_iproc = cur_iproc = iter->iproc;
+		    iter = next_launch_node(iter->next, iter->host_id);
+		}
+	    }
+	    /* copy the clique string to all the nodes with the same id */
+	    iter = next_launch_node(cur_node->next, cur_node->host_id);
+	    while (iter)
+	    {
+		strcpy(iter->clique, cur_node->clique);
+		iter = next_launch_node(iter->next, iter->host_id);
+	    }
+	    /* move to the next node that doesn't have a clique string yet */
+	    cur_node = cur_node->next;
+	    while (cur_node && cur_node->clique[0] != '\0')
+		cur_node = cur_node->next;
+	}
+    }
+    else
+    {
+	/* reverse order */
+	cur_node = list;
+	/* go to the end of the list */
+	while (cur_node->next)
+	    cur_node = cur_node->next;
+	while (cur_node)
+	{
+	    /* point to the current structures */
+	    printed_iproc = cur_iproc = cur_node->iproc;
+	    cur_str = cur_node->clique;
+	    cur_str += sprintf(cur_str, "%d", cur_iproc);
+	    /* add the ranks of all other nodes with the same id */
+	    iter = prev_launch_node(cur_node->prev, cur_node->host_id);
+	    while (iter)
+	    {
+		if (iter->iproc == cur_iproc + 1)
+		{
+		    cur_iproc = iter->iproc;
+		    iter = prev_launch_node(iter->prev, iter->host_id);
+		    if (iter == NULL)
+			cur_str += sprintf(cur_str, "..%d", cur_iproc);
+		}
+		else
+		{
+		    if (printed_iproc == cur_iproc)
+		    {
+			cur_str += sprintf(cur_str, ",%d", iter->iproc);
+		    }
+		    else
+		    {
+			cur_str += sprintf(cur_str, "..%d,%d", cur_iproc, iter->iproc);
+		    }
+		    printed_iproc = cur_iproc = iter->iproc;
+		    iter = prev_launch_node(iter->prev, iter->host_id);
+		}
+	    }
+	    /* copy the clique string to all the nodes with the same id */
+	    iter = prev_launch_node(cur_node->prev, cur_node->host_id);
+	    while (iter)
+	    {
+		strcpy(iter->clique, cur_node->clique);
+		iter = prev_launch_node(iter->prev, iter->host_id);
+	    }
+	    /* move to the next node that doesn't have a clique string yet */
+	    cur_node = cur_node->prev;
+	    while (cur_node && cur_node->clique[0] != '\0')
+		cur_node = cur_node->prev;
+	}
+    }
+    /*
+    iter = list;
+    while (iter)
+    {
+	printf("clique: <%s>\n", iter->clique);
+	iter = iter->next;
+    }
+    */
+    return SMPD_SUCCESS;
 }
 
 int mp_parse_command_args(int *argcp, char **argvp[])
@@ -1296,6 +1440,7 @@ configfile_loop:
 		smpd_exit_fn("mp_parse_command_args");
 		return SMPD_FAIL;
 	    }
+	    launch_node->clique[0] = '\0';
 	    mp_get_next_host(&host_list, launch_node);
 	    launch_node->iproc = cur_rank++;
 	    launch_node->env = launch_node->env_data;
@@ -1321,18 +1466,26 @@ configfile_loop:
 	    /* insert the node in order
 	    launch_node->next = NULL;
 	    if (smpd_process.launch_list == NULL)
+	    {
 		smpd_process.launch_list = launch_node;
+		launch_node->prev = NULL;
+	    }
 	    else
 	    {
 		launch_node_iter = smpd_process.launch_list;
 		while (launch_node_iter->next)
 		    launch_node_iter = launch_node_iter->next;
 		launch_node_iter->next = launch_node;
+		launch_node->prev = launch_node_iter;
 	    }
 	    */
 	    /* insert the node in reverse order */
 	    launch_node->next = smpd_process.launch_list;
+	    if (smpd_process.launch_list)
+		smpd_process.launch_list->prev = launch_node;
 	    smpd_process.launch_list = launch_node;
+	    launch_node->prev = NULL;
+	    /**/
 	}
 
 	if (s_host_list)
@@ -1366,6 +1519,9 @@ configfile_loop:
 	launch_node_iter->nproc = cur_rank;
 	launch_node_iter = launch_node_iter->next;
     }
+
+    /* create the cliques */
+    mp_create_cliques(smpd_process.launch_list);
 
     smpd_exit_fn("mp_parse_command_args");
     return SMPD_SUCCESS;

@@ -4,10 +4,13 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "ipmi.h"
+#ifdef HAVE_CTYPE_H
+#include <ctype.h>
+#endif
 
 /* pmiimpl.h */
 #define PMI_MAX_KEY_LEN          256
-#define PMI_MAX_VALUE_LEN        1024
+#define PMI_MAX_VALUE_LEN        8192
 #define PMI_MAX_KVS_NAME_LENGTH  100
 
 #define PMI_INITIALIZED 0
@@ -29,6 +32,8 @@ typedef struct pmi_process_t
     SOCK_NATIVE_FD smpd_fd;
     int smpd_key;
     smpd_context_t *context;
+    int clique_size;
+    int *clique_ranks;
 } pmi_process_t;
 
 /* global variables */
@@ -44,7 +49,9 @@ pmi_process_t pmi_process =
     -1,                 /* smpd_id        */
     0,                  /* smpd_fd        */
     0,                  /* smpd_key       */
-    NULL                /* context        */
+    NULL,               /* context        */
+    0,                  /* clique_size    */
+    NULL                /* clique_ranks   */
 };
 
 static int pmi_err_printf(char *str, ...)
@@ -155,6 +162,103 @@ int iPMI_Initialized()
     if (pmi_process.init_finalized == PMI_INITIALIZED)
 	return 1;
     return 0;
+}
+
+static int parse_clique(const char *str_orig)
+{
+    int count, i;
+    char *str, *token;
+    int first, last;
+
+    /* count clique */
+    count = 0;
+    str = strdup(str_orig);
+    if (str == NULL)
+	return PMI_FAIL;
+    token = strtok(str, ",");
+    while (token)
+    {
+	first = atoi(token);
+	while (isdigit(*token))
+	    token++;
+	if (*token == '\0')
+	    count++;
+	else
+	{
+	    if (*token == '.')
+	    {
+		token++;
+		token++;
+		last = atoi(token);
+		count += last - first + 1;
+	    }
+	    else
+	    {
+		pmi_err_printf("unexpected clique token: '%s'\n", token);
+		free(str);
+		return PMI_FAIL;
+	    }
+	}
+	token = strtok(NULL, ",");
+    }
+    free(str);
+
+    /* allocate array */
+    pmi_process.clique_ranks = (int*)malloc(count * sizeof(int));
+    if (pmi_process.clique_ranks == NULL)
+	return PMI_FAIL;
+    pmi_process.clique_size = count;
+    
+    /* populate array */
+    count = 0;
+    str = strdup(str_orig);
+    if (str == NULL)
+	return PMI_FAIL;
+    token = strtok(str, ",");
+    while (token)
+    {
+	first = atoi(token);
+	while (isdigit(*token))
+	    token++;
+	if (*token == '\0')
+	{
+	    pmi_process.clique_ranks[count] = first;
+	    count++;
+	}
+	else
+	{
+	    if (*token == '.')
+	    {
+		token++;
+		token++;
+		last = atoi(token);
+		for (i=first; i<=last; i++)
+		{
+		    pmi_process.clique_ranks[count] = i;
+		    count++;
+		}
+	    }
+	    else
+	    {
+		pmi_err_printf("unexpected clique token: '%s'\n", token);
+		free(str);
+		return PMI_FAIL;
+	    }
+	}
+	token = strtok(NULL, ",");
+    }
+    free(str);
+
+    /*
+    printf("clique: %d [", pmi_process.iproc);
+    for (i=0; i<pmi_process.clique_size; i++)
+    {
+	printf("%d,", pmi_process.clique_ranks[i]);
+    }
+    printf("]\n");
+    fflush(stdout);
+    */
+    return PMI_SUCCESS;
 }
 
 int iPMI_Init(int *spawned)
@@ -277,6 +381,12 @@ int iPMI_Init(int *spawned)
 	}
     }
 
+    p = getenv("PMI_CLIQUE");
+    if (p != NULL)
+    {
+	parse_clique(p);
+    }
+
     /*
     printf("PMI_RANK=%s PMI_SIZE=%s PMI_KVS=%s PMI_SMPD_ID=%s PMI_SMPD_FD=%s PMI_SMPD_KEY=%s\n",
 	getenv("PMI_RANK"), getenv("PMI_SIZE"), getenv("PMI_KVS"), getenv("PMI_SMPD_ID"),
@@ -354,18 +464,33 @@ int iPMI_Get_rank(int *rank)
 
 int iPMI_Get_clique_size( int *size )
 {
-    *size = 1;
+    if (pmi_process.clique_size == 0)
+	*size = 1;
+    else
+	*size = pmi_process.clique_size;
     return PMI_SUCCESS;
 }
 
 int iPMI_Get_clique_ranks( int *ranks )
 {
-    *ranks = pmi_process.iproc;
+    int i;
+    if (pmi_process.clique_size == 0)
+    {
+	*ranks = 0;
+    }
+    else
+    {
+	for (i=0; i<pmi_process.clique_size; i++)
+	{
+	    ranks[i] = pmi_process.clique_ranks[i];
+	}
+    }
     return PMI_SUCCESS;
 }
 
 int iPMI_Get_id( char *id_str )
 {
+    /*
     char kvs_name[PMI_MAX_KVS_NAME_LENGTH];
     char key[PMI_MAX_KEY_LEN] = PMI_KVS_ID_KEY;
     char value[PMI_MAX_VALUE_LEN] = "";
@@ -375,11 +500,14 @@ int iPMI_Get_id( char *id_str )
     strcpy(id_str, value);
 
     return PMI_SUCCESS;
+    */
+    return iPMI_KVS_Get_my_name(id_str);
 }
 
 int iPMI_Get_id_length_max()
 {
-    return 40;
+    /*return 40;*/
+    return iPMI_KVS_Get_name_length_max();
 }
 
 int iPMI_Barrier()

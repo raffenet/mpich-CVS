@@ -422,7 +422,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     unsigned long blocking_flag;
     sock_t sock_in, sock_out, sock_err, sock_pmi;
     SECURITY_ATTRIBUTES saAttr;
-    char str[100], sock_str[20];
+    char str[8192], sock_str[20];
     BOOL bSuccess = TRUE;
     char *actual_exe, exe_data[SMPD_MAX_EXE_LENGTH];
     const char *args;
@@ -661,6 +661,12 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     sprintf(str, "%d", process->id);
     smpd_dbg_printf("env: PMI_SMPD_KEY=%s\n", str);
     SetEnvironmentVariable("PMI_SMPD_KEY", str);
+    if (process->clique[0] != '\0')
+    {
+	sprintf(str, "%s", process->clique);
+	smpd_dbg_printf("env: PMI_CLIQUE=%s\n", str);
+	SetEnvironmentVariable("PMI_CLIQUE", str);
+    }
     pEnv = GetEnvironmentStrings();
 
     GetCurrentDirectory(MAX_PATH, tSavedPath);

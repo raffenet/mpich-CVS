@@ -67,8 +67,9 @@ typedef int SMPD_BOOL;
 #define SMPD_MAX_DBG_PRINTF_LENGTH      (1024 + SMPD_MAX_CMD_LENGTH)
 #define SMPD_MAX_CMD_STR_LENGTH           100
 #define SMPD_MAX_HOST_LENGTH	           64
-#define SMPD_MAX_EXE_LENGTH              1024
-#define SMPD_MAX_ENV_LENGTH              1024
+#define SMPD_MAX_EXE_LENGTH              2048
+#define SMPD_MAX_ENV_LENGTH              4096
+#define SMPD_MAX_CLIQUE_LENGTH           8192
 #define SMPD_MAX_DIR_LENGTH              1024
 #define SMPD_MAX_PATH_LENGTH             1024
 #define SMPD_MAX_ACCOUNT_LENGTH           100
@@ -300,6 +301,7 @@ typedef struct smpd_process_t
     char env[SMPD_MAX_ENV_LENGTH];
     char dir[SMPD_MAX_DIR_LENGTH];
     char path[SMPD_MAX_PATH_LENGTH];
+    char clique[SMPD_MAX_CLIQUE_LENGTH];
     int rank;
     int nproc;
     smpd_pwait_t wait;
@@ -322,13 +324,14 @@ typedef struct smpd_launch_node_t
 {
     char exe[SMPD_MAX_EXE_LENGTH];
     char *env, env_data[SMPD_MAX_ENV_LENGTH];
+    char clique[SMPD_MAX_CLIQUE_LENGTH];
     char dir[SMPD_MAX_DIR_LENGTH];
     char path[SMPD_MAX_PATH_LENGTH];
     smpd_map_drive_node_t *map_list;
     int host_id;
     int iproc;
     int nproc;
-    struct smpd_launch_node_t *next;
+    struct smpd_launch_node_t *next, *prev;
 } smpd_launch_node_t;
 
 typedef struct smpd_env_node_t

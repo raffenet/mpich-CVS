@@ -247,6 +247,15 @@ int smpd_launch_processes()
 		goto launch_failure;
 	    }
 	}
+	if (launch_node_ptr->clique[0] != '\0')
+	{
+	    result = smpd_add_command_arg(cmd_ptr, "q", launch_node_ptr->clique);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the clique string to the launch command: '%s'\n", launch_node_ptr->clique);
+		goto launch_failure;
+	    }
+	}
 	/*printf("creating launch command for rank %d\n", launch_node_ptr->iproc);*/
 	result = smpd_add_command_int_arg(cmd_ptr, "i", launch_node_ptr->iproc);
 	if (result != SMPD_SUCCESS)
@@ -1037,6 +1046,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
     smpd_get_string_arg(cmd->cmd, "d", process->dir, SMPD_MAX_DIR_LENGTH);
     smpd_get_string_arg(cmd->cmd, "p", process->path, SMPD_MAX_PATH_LENGTH);
     smpd_get_string_arg(cmd->cmd, "k", process->kvs_name, SMPD_MAX_DBS_NAME_LEN);
+    smpd_get_string_arg(cmd->cmd, "q", process->clique, SMPD_MAX_CLIQUE_LENGTH);
     smpd_get_int_arg(cmd->cmd, "n", &process->nproc);
     /* parse the -m drive mapping options */
 
