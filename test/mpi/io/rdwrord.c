@@ -48,7 +48,7 @@ int main( int argc, char *argv[] )
     MPI_File_read_ordered( fh, buf, 1, MPI_INT, &status );
     if (buf[0] != rank) {
 	errs++;
-	fprintf( stderr, "%d: buf = %d\n", rank, i, buf[i] );
+	fprintf( stderr, "%d: buf[0] = %d\n", rank, buf[0] );
     }
 
     free( buf );
