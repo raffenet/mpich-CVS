@@ -82,3 +82,54 @@ esac
 AC_SUBST(CC_SHL)
 AC_SUBST(C_LINK_SHL)
 ])
+
+dnl /*D
+dnl PAC_xx_SHAREDLIBS - Get compiler and linker for shared libraries
+dnl These routines may be used to determine the compiler and the
+dnl linker to be used in creating shared libraries
+dnl Rather than set predefined variable names, they set an argument 
+dnl (if provided)
+dnl
+dnl Synopsis
+dnl PAC_CC_SHAREDLIBS(type,CCvar,CLINKvar)
+dnl D*/
+AC_DEFUN(PAC_CC_SHAREDLIBS,
+[
+pac_kinds=$1
+ifelse($1,,[
+    pac_prog=""
+    AC_CHECK_PROG(pac_prog,gcc,yes,no)
+    if test "$pac_prog" = yes ; then pac_kinds=gcc ; fi
+    pac_prog=""
+    AC_CHECK_PROG(pac_prog,libtool,yes,no)
+    if test "$pac_prog" = yes ; then pac_kinds="$pac_kinds libtool" ; fi
+])
+for pac_arg in $pac_kinds ; do
+    case $pac_arg in 
+    gcc)
+    # For example, include the libname as ${LIBNAME_SHL}
+    #C_LINK_SHL='${CC} -shared -Wl,-h,<finallibname>'
+    pac_cc_sharedlibs='gcc -shared -fpic'
+    pac_clink_sharedlibs='gcc -shared'
+    ;;
+    libtool)
+    AC_CHECK_PROGS(LIBTOOL,libtool,false)
+    if test "$LIBTOOL" = "false" ; then
+	AC_MSG_WARN([Could not find libtool])
+    else
+        # Likely to be
+        # either CC or CC_SHL is libtool $cc
+        pac_cc_sharedlibs'libtool ${CC}'
+        pac_clink_sharedlibs='libtool ${CC} -rpath ${libdir}'
+    fi
+    ;;
+    *)
+    ;;
+    esac
+    if test -n "$pac_cc_sharedlibs" ; then break ; fi
+done
+if test -z "$pac_cc_sharedlibs" ; then pac_cc_sharedlibs=true ; fi
+if test -z "$pac_clink_sharedlibs" ; then pac_clink_sharedlibs=true ; fi
+ifelse($2,,CC_SHL=$pac_cc_sharedlibs,$2=$pac_cc_sharedlibs)
+ifelse($3,,C_LINK_SHL=$pac_clink_sharedlibs,$3=$pac_clink_sharedlibs)
+])
