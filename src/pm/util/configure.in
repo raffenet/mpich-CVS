@@ -70,6 +70,7 @@ if test -z "$top_srcdir" ; then
 else
    use_top_srcdir=$top_srcdir
 fi
+AC_DEFINE(PMUTILCONF_H_INCLUDED,1,[Define so that we can ensure that the config file has been included])
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
 dnl     check for libraries

@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id$
- *
+/*  
  *  (C) 2003 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -32,6 +31,7 @@
 #endif
 
 #include "pmutil.h"
+#include "process.h"
 
 #ifndef isascii
 #define isascii(c) (((c)&~0x7f)==0)
@@ -59,24 +59,38 @@ typedef struct {
     MachineDesc *desc;
 } MachineTable;
 
-static MachineTable *mpiexecReadMachines( const char *, int );
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+static MachineTable *MPIE_ReadMachines( const char *, int );
 
 /* Choose the hosts for the processes in the ProcessList.  In
    addition, expand the list into a table with one entry per process.
 */
-int mpiexecChooseHosts( ProcessList *plist, int nplist, 
-			ProcessTable *ptable )
+int mpiexecChooseHosts( ProcessWorld *pWorld )
 {
     int i, k, nNeeded=0, ntest;
     const char *arch;
     MachineTable *mt;
+    ProcessApp   *app;
+    ProcessState *pState;
 
     /* First, determine how many processes require host names */
-    for (i=0; i<ptable->nProcesses; i++) {
-	if (!ptable->table[i].spec.hostname) nNeeded++;
+    app = pWorld->apps;
+    while (app) {
+	pState = app->pState;
+	for (i=0; i<app->nProcess; i++) {
+	    if (!pState[i].hostname) nNeeded++;
+	}
+	app = app->nextApp;
     }
     if (nNeeded == 0) return 0;
 
+    app = pWorld->apps;
+    while (app) {
+	app = app->nextApp;
+    }
+#if 0
     /* Read the appropriate machines file.  There may be multiple files, 
        one for each requested architecture.  We'll read one machine file
        at a time, filling in all of the processes for each particular 
@@ -132,6 +146,7 @@ int mpiexecChooseHosts( ProcessList *plist, int nplist,
 	/* We can't free the machines table because we made references
 	   to storage (hostnames) in the table */
     }
+#endif
     return nNeeded != 0;   /* Return nonzero on failure */
 }
 

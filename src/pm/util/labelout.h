@@ -9,6 +9,7 @@
 
 typedef struct { int readOut[2], readErr[2]; } IOLabelSetup;
 
+void IOLabelSetDefault( int flag );
 int IOLabelSetupFDs( IOLabelSetup * );
 int IOLabelSetupInClient( IOLabelSetup * );
 int IOLabelSetupFinishInServer( IOLabelSetup *, ProcessState * );

@@ -141,7 +141,8 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 		/* Parent */
 		nProcess++;
 
-		pState[i].pid = pid;
+		pState[i].pid    = pid;
+		pState[i].status = PROCESS_ALIVE;
 
 		if (postamble) {
 		    rc = (*postamble)( preambleData, postambleData, 
@@ -304,12 +305,20 @@ ProcessState *MPIE_FindProcessByPid( pid_t pid )
     ProcessApp   *app;
     ProcessState *pState;
     int           i;
+    int           np = 100000; /* FIXME: Should initialize with the
+				  number of created processes */
 
     world = pUniv.worlds;
     while (world) {
 	app = world->apps;
 	while (app) {
 	    pState = app->pState;
+	    np -= app->nProcess;
+	    if (np < 0) {
+		/* This is a panic exit, used becaue we may call this
+		   from within the signal handler */
+		return 0;
+	    }
 	    for (i=0; i<app->nProcess; i++) {
 		if (pState[i].pid == pid) return &pState[i];
 	    }
@@ -325,6 +334,7 @@ ProcessState *MPIE_FindProcessByPid( pid_t pid )
  * returned by a 'wait' call, set the fields in the process state to
  * indicate the reason for the process exit
  */
+static int nExited = 0;
 void MPIE_ProcessSetExitStatus( ProcessState *pState, int prog_stat )
 {
     int rc = 0, sigval = 0;
@@ -336,6 +346,7 @@ void MPIE_ProcessSetExitStatus( ProcessState *pState, int prog_stat )
     }
     pState->exitStatus.exitStatus = rc;
     pState->exitStatus.exitSig    = sigval;
+    pState->exitStatus.exitOrder  = nExited++;
     if (sigval) 
 	pState->exitStatus.exitReason = EXIT_SIGNALLED;
     else {
@@ -436,6 +447,12 @@ static void handle_sigchild( int sig )
 	pState = MPIE_FindProcessByPid( pid );
 	if (pState) {
 	    MPIE_ProcessSetExitStatus( pState, prog_stat );
+	    pState->status = PROCESS_GONE;
+	    if (pState->exitStatus.exitReason != EXIT_NORMAL) {
+		/* Not a normal exit.  We may want to abort all 
+		   remaining processes */
+		;/*MPIE_KillUniverse( &pUniv ); */
+	    }
 	}
 	else {
 	    /* Remember this process id and exit status for later */
@@ -658,7 +675,7 @@ int MPIE_SignalWorld( ProcessWorld *world, int signum )
 	for (i=0; i<np; i++) {
 	    pid_t pid;
 	    pid = pState[i].pid;
-	    if (pid > 0) {
+	    if (pid > 0 && pState[i].status != PROCESS_GONE) {
 		/* Ignore error returns */
 		kill( pid, signum );
 	    }

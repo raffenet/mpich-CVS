@@ -114,7 +114,9 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
     pUniv->worlds->nProcess  = 0;
     pUniv->worlds->nextWorld = 0;
     pUniv->worlds->worldNum  = 0;
+    pUniv->worlds->genv      = 0;
     pUniv->nWorlds           = 1;
+    pUniv->giveExitInfo      = 0;
     nextAppPtr = &(pUniv->worlds->apps); /* Pointer to set with the next app */
 
     for (i=1; i<argc; i++) {
@@ -169,6 +171,34 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
 		mpiexec_usage( "Missing argument to -configfile" );
 	    optionCmdline = 1;
 	} 
+/* Here begin the MPICH2 mpiexec common extensions for 
+    -usize n   - Universe size
+    -l         - label stdout/err
+    -maxtime n - set a timelimit of n seconds
+    -exitinfo  - Provide exit code and signal info if there is an abnormal
+                 exit (either non-zero, a process died on a signal, or
+		 pmi was initialized but not finalized)
+*/
+	else if (strcmp( argv[i], "-usize" ) == 0) {
+	    pUniv->size = getInt( i+1, argc, argv );
+	    optionArgs = 1;
+	    i++;
+	}
+	else if (strcmp( argv[i], "-l" ) == 0) {
+	    IOLabelSetDefault( 1 );
+	    optionArgs = 1;
+	}
+	else if (strcmp( argv[i], "-maxtime" ) == 0) {
+	    pUniv->timeout = getInt( i+1, argc, argv );
+	    optionArgs = 1;
+	    i++;
+	}
+	else if (strcmp( argv[i], "-exitinfo" ) == 0) {
+	    pUniv->giveExitInfo = 1;
+	    optionArgs = 1;
+	}
+/* End of the MPICH2 mpiexec common extentions */
+
 	else if (argv[i][0] != '-') {
 	    exename = argv[i];
 
@@ -196,6 +226,7 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
 	    pApp->nextApp = 0;
 	    pUniv->worlds[0].nApps++;
 	    pApp->pWorld = &pUniv->worlds[0];
+	    pApp->env    = 0;
 
 	    pApp->pState  = 0;
 	    /* Save the properties of this app */
@@ -236,11 +267,16 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
 	    np              = -1;
 	}
 	else {
-	    /* Use the callback routine to handle any unknown arguments
-	       before the program name */
 	    int incr = 0;
-	    if (ProcessArg) {
-		incr = ProcessArg( argc, argv, extraData );
+	    /* Unrecognized argument.  First check for environment variable 
+	       controls */
+	    incr = MPIE_ArgsCheckForEnv( argc, argv, &pUniv->worlds[0] );
+	    if (incr == 0) {
+		/* Use the callback routine to handle any unknown arguments
+		   before the program name */
+		if (ProcessArg) {
+		    incr = ProcessArg( argc, argv, extraData );
+		}
 	    }
 	    if (incr) {
 		/* increment by one less because the for loop will also

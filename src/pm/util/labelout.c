@@ -46,6 +46,13 @@ static int IOLabelSetLabelText( const char [], char [], int, int, int );
 /* labels for stdout and stderr, initialized to the default values */
 static char outLabelPattern[MAX_LABEL] = "%W@[%w]@%d>";
 static char errLabelPattern[MAX_LABEL] = "%W@[%w]@%d(err)>";
+/* By default, labels are turned off */
+static int  useLabels = 0;
+
+void IOLabelSetDefault( int flag )
+{
+    useLabels = 1;
+}
 
 /* Redirect stdout and stderr to a handler */
 int IOLabelSetupFDs( IOLabelSetup *iofds )
@@ -79,13 +86,24 @@ int IOLabelSetupFinishInServer( IOLabelSetup *iofds, ProcessState *pState )
 
     /* We need dedicated storage for the private data */
     leader = (IOLabel *)malloc( sizeof(IOLabel) );
-    IOLabelSetLabelText( outLabelPattern, leader->label, sizeof(leader->label),
-			 pState->wRank, pState->app->pWorld->worldNum );
+    if (useLabels) {
+	IOLabelSetLabelText( outLabelPattern, 
+			     leader->label, sizeof(leader->label),
+			     pState->wRank, pState->app->pWorld->worldNum );
+    } 
+    else {
+	leader->label[0] = 0;
+    }
     leader->lastNL = 1;
     leadererr = (IOLabel *)malloc( sizeof(IOLabel) );
-    IOLabelSetLabelText( errLabelPattern, 
-			 leadererr->label, sizeof(leadererr->label),
-			 pState->wRank, pState->app->pWorld->worldNum );
+    if (useLabels) {
+	IOLabelSetLabelText( errLabelPattern, 
+			     leadererr->label, sizeof(leadererr->label),
+			     pState->wRank, pState->app->pWorld->worldNum );
+    }
+    else {
+	leadererr->label[0] = 0;
+    }
     leadererr->lastNL = 1;
     MPIE_IORegister( iofds->readOut[0], IO_READ, IOLabelWriteLine, leader );
     MPIE_IORegister( iofds->readErr[0], IO_READ, IOLabelWriteLine, leadererr );
@@ -112,7 +130,9 @@ static int IOLabelWriteLine( int fd, int rdwr, void *data )
     while (n > 0) {
 	int c;
 	if (label->lastNL) {
-	    printf( "%s", label->label );
+	    if (label->label[0]) {
+		printf( "%s", label->label );
+	    }
 	    label->lastNL = 0;
 	}
 	c = *p++; n--;
@@ -249,7 +269,9 @@ static int IOLabelSetLabelText( const char pattern[], char label[],
     return 0;
 }
 
-/* Check the environment for label control */
+/* Check the environment for label control
+   If either prefix is set, the labels are enabled.  If only one prefix
+   is set, the default prefix is used for the other label */
 int IOLabelCheckEnv( void )
 {
     char *envval;
@@ -257,6 +279,7 @@ int IOLabelCheckEnv( void )
     if (envval) {
 	if (strlen(envval) < MAX_LABEL) {
 	    MPIU_Strncpy( outLabelPattern, envval, MAX_LABEL );
+	    useLabels = 1;
 	}
 	else {
 	    MPIU_Error_printf( "Pattern for stdout label specified by MPIEXEC_PREFIX_STROUT is too long" );
@@ -266,6 +289,7 @@ int IOLabelCheckEnv( void )
     if (envval) {
 	if (strlen(envval) < MAX_LABEL) {
 	    MPIU_Strncpy( errLabelPattern, envval, MAX_LABEL );
+	    useLabels = 1;
 	}
 	else {
 	    MPIU_Error_printf( "Pattern for stderr label specified by MPIEXEC_PREFIX_STRERR is too long" );

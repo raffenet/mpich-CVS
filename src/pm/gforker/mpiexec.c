@@ -84,6 +84,9 @@ int main( int argc, char *argv[], char *envp[] )
     SetupInfo    s;
 
     MPIE_ProcessInit();
+    /* Set a default for the universe size */
+    pUniv.size = 64;
+
     /* Set defaults for any arguments that are options.  Also check the
        environment for special options, such as debugging.  Set 
        some defaults in pUniv */
@@ -93,10 +96,6 @@ int main( int argc, char *argv[], char *envp[] )
     /* Handle the command line arguments.  Use the routine from util/cmnargs.c
        to fill in the universe */
     MPIE_Args( argc, argv, &pUniv, 0, 0 );
-    /* Set a default for the universe size */
-    if (pUniv.size <= 0) {
-	pUniv.size = 64;
-    }
     /* If there were any soft arguments, we need to handle them now */
     rc = MPIE_InitWorldWithSoft( &pUniv.worlds[0], pUniv.size );
 

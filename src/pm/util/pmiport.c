@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id$
- *
+/*  
  *  (C) 2003 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -17,9 +16,14 @@
 #include <sys/types.h>
 #endif
 
-/* pmutil.h includes pmiserv.h */
 #include "pmutil.h"
-/* #include "simple_pmiutil.h" */
+
+#ifndef MAX_PENDING_CONN
+#define MAX_PENDING_CONN 10
+#endif
+#ifndef MAX_HOST_NAME
+#define MAX_HOST_NAME 1024
+#endif
 
 /* ----------------------------------------------------------------------- */
 /* Get a port for the PMI interface                                        */
@@ -37,7 +41,7 @@
 #ifndef TCP
 #define TCP 0
 #endif
-int mpiexecGetPort( int *fdout, int *portout )
+int MPIE_GetPort( int *fdout, int *portout )
 {
     int                fd;
     struct sockaddr_in sa;
@@ -98,7 +102,6 @@ int mpiexecGetPort( int *fdout, int *portout )
     }
     
     /* Listen is a non-blocking call that enables connections */
-#define MAX_PENDING_CONN 10
     listen( fd, MAX_PENDING_CONN );
     
     *fdout = fd;
@@ -115,7 +118,7 @@ int mpiexecGetPort( int *fdout, int *portout )
 }
 
 #include <netdb.h>
-int mpiexecGetMyHostName( char myname[MAX_HOST_NAME+1] )
+int MPIE_GetMyHostName( char myname[MAX_HOST_NAME+1] )
 {
     struct hostent     *hp;
     char *hostname = 0;
@@ -132,5 +135,3 @@ int mpiexecGetMyHostName( char myname[MAX_HOST_NAME+1] )
     }
     return 0;
 }
-
-

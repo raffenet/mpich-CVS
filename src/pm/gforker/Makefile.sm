@@ -7,6 +7,11 @@ install_BIN = mpiexec
 distclean-local:
 	@-rm -f forkerconf.h
 
+# Use the mpich2-build-install target to include mpiexec in the build bin
+# directory (all pm's require these targets)
+mpich2-build-install: install
+mpich2-build-uninstall: uninstall
+
 doc_sources = mpiexec.txt
 DOCDESTDIRS = html:www/www1,man:man/man1,latex:doc/refman
 docargs_ADD       = ${master_top_srcdir}/doc/mansrc/cmdnotes

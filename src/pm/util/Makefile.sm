@@ -1,9 +1,8 @@
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
     -I../../pmi/simple -I${master_top_srcdir}/src/pmi/simple
 
-#libmpiexec_a_SOURCES = cmnargs.c pmiserv.c timelimit.c sigs.c iohandlers.c \
-#	newsession.c rm.c
-libmpiexec_a_SOURCES = cmnargs.c process.c ioloop.c pmiserv.c labelout.c
+libmpiexec_a_SOURCES = cmnargs.c process.c ioloop.c pmiserv.c labelout.c \
+		     env.c newsession.c rm.c pmiport.o
 
 OTHER_DIRS = test
 

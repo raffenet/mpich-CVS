@@ -59,9 +59,6 @@ typedef enum { EXIT_NOTYET,     /* Not exited */
              } ProcessExitState_t;
 
 typedef enum { PROCESS_UNINITIALIZED=-1, /* Before process created */
-	       /*PROCESS_UNKNOWN,*/      /* Process started but in unkown 
-					    state */
-	       /*PROCESS_STARTING,*/       /* Process is starting */
 	       PROCESS_ALIVE,          /* Process is (expected to be) alive */
 	       PROCESS_COMMUNICATING,  /* Process is alive and using PMI */
 	       PROCESS_FINALIZED,      /* Process is alive but has indicated 
@@ -99,6 +96,9 @@ typedef struct ProcessApp {
     const char    **args;            /* Pointer into the array of args */
     int            nArgs;            /* Number of args (list is *not* null
 					terminated) */
+    struct EnvInfo *env;             /* Pointer to structure providing
+					information on the process
+					environment variables for this app */
     ProcessSoftSpec soft;            /* "soft" spec, if any */
     int            nProcess;         /* Number of processes in this app */
     ProcessState   *pState;          /* Array of process states */
@@ -112,6 +112,9 @@ typedef struct ProcessWorld {
     int        nProcess;             /* Number of processes in this world */
     int        worldNum;             /* Number of this world; initial
 					world is 0 */
+    struct EnvInfo *genv;            /* Pointer to structure providing
+					information on the process
+					environment variables for this world */
     ProcessApp *apps;                /* Array of Apps */
     struct ProcessWorld *nextWorld;
 } ProcessWorld;
@@ -121,6 +124,12 @@ typedef struct ProcessUniverse {
     int          nWorlds;            /* Number of worlds */
     int          size;               /* Universe size */
     int          timeout;            /* Timeout in seconds (-1 for none) */
+    int          giveExitInfo;       /* True if info on error exit 
+					should be printed to stderr */
+    char         *portName;          /* Contact name for a port for PMI,
+				        if used (null otherwise) */
+    char         *portRange;         /* Character string defining a range
+				        of valid ports */
 } ProcessUniverse;
 
 /* There is only one universe */

@@ -55,69 +55,6 @@ static int (*userSpawner)( ProcessWorld *, void *) = 0;
 static void *userSpawnerData = 0;
 static int pmidebug = 0;
 
-#if 0
-/*
- * The following structures and arrays are used to implement the PMI 
- * interface.  The global variables are declared static so that they'll
- * have the correct scope if we remove these routines from the mpiexec.c file.
- */
-
-/* ----------------------------------------------------------------------- */
-/* PMIState                                                                */
-/* Many of the objects here are preallocated rather than being dynamically */
-/* allocated as needed.  This ensures that no program fails because a      */
-/* malloc fails.                                                           */
-/* ----------------------------------------------------------------------- */
-#include <sys/types.h>
-
-#define MAXGROUPS   256		/* max number of groups */
-#define MAXKEYLEN    64		/* max length of key in keyval space */
-#define MAXVALLEN   128		/* max length of value in keyval space */
-#define MAXPAIRS   1024		/* max number of pairs in a keyval space */
-#define MAXKVSS      16		/* max number of keyval spaces */
-
-#define MAXPMICMD   256         /* max length of a PMI command */
-
-#define MAXGROUPSIZE 256        /* max size of a group */
-/* Each group has a size, name, and supports a barrier operation that
-   is implemented by counting the number in the barrier */
-typedef struct {
-    int  groupsize;
-    int  fds[MAXGROUPSIZE];     /* The fds for sending messages to all
-				   members of this group */
-    pid_t pids[MAXGROUPSIZE];   /* The corresponding pids of the group 
-				   members */
-    int  num_in_barrier;
-    char kvsname[MAXKVSNAME];
-} PMIGroup;
-
-/* key-value pairs are used to communicate information between processes. */
-typedef struct {
-    char key[MAXKEYLEN];
-    char val[MAXVALLEN];
-} PMIKeyVal;
-
-/* There can be multiple key-value spaces, each with its own set of 
-   PMIKeyVal pairs */
-typedef struct {
-    int active;
-    char kvsname[MAXKVSNAME];
-    PMIKeyVal pairs[MAXPAIRS];
-} PMIKeyValSpace;
-
-/* This structure contains all of the PMI state, including all
-   of the groups and kvs tables */
-typedef struct {
-    int            nextnewgroup;
-    int            kvsid;
-    PMIGroup       grouptable[MAXGROUPS];
-    PMIKeyValSpace kvstable[MAXKVSS];
-    char           kvsname[MAXKVSNAME];
-} PMIState;
-
-static PMIState pmi = { 0, 0, };   /* Arrays are uninitialized */
-#endif
-
 /* Functions that handle PMI requests */
 static int fPMI_Handle_finalize( PMIProcess * );
 static int fPMI_Handle_abort( PMIProcess * );
@@ -305,36 +242,6 @@ int PMISetupNewGroup( int nProcess, PMIKVSpace *kvs )
     return 0;
 }
 
-
-#if 0
-/*
- * Initialize the information needed to communicate the the PMI client 
- * process (usually an MPI job).
- */
-int IOSetupPMIHandler( IOSpec *ios, int fd, ProcessState *pstate,
-		       int pmigroup, int np, int rank )
-{
-    PMIData *pmidata;
-
-    pmidata = (PMIData *)MPIU_Malloc( sizeof(PMIData) );
-    pmidata->pstate			 = pstate;
-    pmidata->pstate->pmientry.fd	 = fd;
-    pmidata->pstate->pmientry.group	 = pmigroup;
-    pmidata->pstate->pmientry.kvs	 = pmi.kvsid;   /* Use current kvsid */
-    /* These next two values are used to setup the initial MPI_COMM_WORLD
-       on a created group of processes */
-    pmidata->pstate->pmientry.nProcesses = np;
-    pmidata->pstate->pmientry.rank	 = rank;
-    
-    ios->extra_state			 = (void *)pmidata;
-    ios->isWrite			 = 0;
-    ios->handler			 = PMIServHandleInput;
-    ios->fd				 = fd;
-
-    return 0;
-}
-#endif
-
 /* 
  * Process input from the socket connecting the mpiexec process to the
  * child process.
@@ -395,65 +302,6 @@ int PMIServInit( int (*spawner)(ProcessWorld *, void*), void * spawnerData )
 
     return 0;
 }
-#if 0
-int PMIServInit( int nprocs )
-{
-    int i;
-    for ( i = 0; i < MAXKVSS; i++ )
-	pmi.kvstable[i].active = 0;
-
-    /* set up group */
-    pmi.grouptable[pmi.nextnewgroup].groupsize = nprocs;
-    for (i=0; i<nprocs; i++) {
-	pmi.grouptable[pmi.nextnewgroup].fds[i] = -1;
-    }
-
-    /* set up keyval space for this group */
-    fPMI_Allocate_kvs( &pmi.kvsid, pmi.kvsname );
-
-    return pmi.nextnewgroup++;   /* ++ missing in forker ? */
-}
-/* 
- * Initialize an entry as empty
- */
-int PMIServInitEntry( PMIProcess *pmientry )
-{
-    pmientry->fd         = -1;
-    pmientry->group      = -1;
-    pmientry->kvs        = -1;
-    pmientry->nProcesses = 1;
-    pmientry->rank       = 0;
-
-    return 0;
-}
-
-/*
- * Setup an entry for a created process
- */
-int PMIServSetupEntry( int pmifd, int pmigroup, int np, int rank, 
-		       PMIProcess *pmientry )
-{
-    pmientry->fd         = pmifd;
-    pmientry->group      = pmigroup;
-    pmientry->kvs        = pmi.kvsid;   /* Use current kvsid */
-    pmientry->nProcesses = np;
-    pmientry->rank       = rank;
-
-    return 0;
-}
-
-/*
- * Add this process to a pmi group
- */
-int PMIServAddtoGroup( int group, int rank, pid_t pid, int fd )
-{
-    pmi.grouptable[group].fds[rank]  = fd;
-    pmi.grouptable[group].pids[rank] = pid;
-
-    return 0;
-}
-#endif
-
 
 /* ------------------------------------------------------------------------ */
 /* Additional service routines                                              */
@@ -480,38 +328,6 @@ int PMIGetCommand( char *cmd, int cmdlen )
 /* ------------------------------------------------------------------------- */
 /* The rest of these routines are internal                                   */
 /* ------------------------------------------------------------------------ */
-#if 0
-/* kvsname and kvsid is output */
-static int fPMI_Allocate_kvs( int *kvsid, char kvsname[] )
-{
-    int i, j;
-    
-    for ( i = 0; i < MAXKVSS; i++ )
-	if ( !pmi.kvstable[i].active )
-	    break;
-
-    if ( i >= MAXKVSS ) {
-	MPIU_Internal_error_printf( stderr, "too many kvs's\n" );
-	return( -1 );
-    }
-    else {
-	pmi.kvstable[i].active = 1;
-	for ( j = 0; j < MAXPAIRS; j++ ) {
-	    pmi.kvstable[i].pairs[j].key[0] = '\0';
-	    pmi.kvstable[i].pairs[j].val[0] = '\0';
-	}
-	MPIU_Snprintf( pmi.kvstable[i].kvsname, MAXKVSNAME, "kvs_%d", i );
-	MPIU_Strncpy( kvsname, pmi.kvstable[i].kvsname, MAXKVSNAME ); 
-	*kvsid = i;
-	return( 0 );
-    }
-}
-
-static int fPMI_Allocate_kvs_group( void )
-{
-    return pmi.nextnewgroup++;
-}
-#endif
 
 /* ------------------------------------------------------------------------- */
 /* 
@@ -910,6 +726,8 @@ static int fPMI_Handle_init( PMIProcess *pentry )
     else
 	rc = -1;
 
+    pentry->pState->status = PROCESS_COMMUNICATING;
+
     snprintf( outbuf, PMIU_MAXLINE,
 	      "cmd=response_to_init pmi_version=%d pmi_subversion=%d rc=%d\n",
 	      PMI_VERSION, PMI_SUBVERSION, rc);
@@ -1214,6 +1032,12 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 	MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=spawn_result rc=%d\n", rc );
 	PMIU_writeline( pentry->fd, outbuf );
 	DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
+
+	/* Clear for the next spawn */
+	pentry->spawnApp     = 0;
+	pentry->spawnAppTail = 0;
+	pentry->spawnKVS     = 0;
+	pentry->spawnWorld   = 0;
     }
     
     /* If totspawnnum != spawnnum, then we are expecting a 
