@@ -112,10 +112,8 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	    MPIR_ERRTEST_RECV_TAG(recvtag, mpi_errno);
 
 	    /* Validate source and destination */
-	    if (comm_ptr) {
-		MPIR_ERRTEST_SEND_RANK(comm_ptr, dest, mpi_errno);
-		MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
-	    }
+	    MPIR_ERRTEST_SEND_RANK(comm_ptr, dest, mpi_errno);
+	    MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
             if (mpi_errno) {
 		goto fn_exit;
             }
@@ -133,27 +131,29 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	MPID_Request * sreq;
 	MPID_Request * rreq;
 	void * tmpbuf = NULL;
-	int tmpbuf_size;
-	int tmpbuf_count;
+	int tmpbuf_size = 0;
+	int tmpbuf_count = 0;
 
-	mpi_errno = NMPI_Pack_size(count, datatype, comm, &tmpbuf_size);
-	if (mpi_errno != MPI_SUCCESS)
+	if (count > 0 && dest != MPI_PROC_NULL)
 	{
-	    goto blk_exit;
-	}
+	    mpi_errno = NMPI_Pack_size(count, datatype, comm, &tmpbuf_size);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		goto blk_exit;
+	    }
 
-	tmpbuf = MPIU_Malloc(tmpbuf_size);
-	if (tmpbuf == NULL)
-	{
-	    mpi_errno = MPIR_ERR_MEMALLOCFAILED;
-	    goto blk_exit;
-	}
+	    tmpbuf = MPIU_Malloc(tmpbuf_size);
+	    if (tmpbuf == NULL)
+	    {
+		mpi_errno = MPIR_ERR_MEMALLOCFAILED;
+		goto blk_exit;
+	    }
 
-	tmpbuf_count = 0;
-	mpi_errno = NMPI_Pack(buf, count, datatype, tmpbuf, tmpbuf_size, &tmpbuf_count, comm);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    goto blk_exit;
+	    mpi_errno = NMPI_Pack(buf, count, datatype, tmpbuf, tmpbuf_size, &tmpbuf_count, comm);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		goto blk_exit;
+	    }
 	}
 	
 	mpi_errno = MPID_Irecv(buf, count, datatype, source, recvtag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &rreq);
@@ -211,8 +211,8 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
     }
 #   endif
 
-    MPIR_Nest_decr();
   fn_exit:
+    MPIR_Nest_decr();
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV_REPLACE);
     return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }
