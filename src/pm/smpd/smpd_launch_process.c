@@ -495,38 +495,46 @@ typedef struct smpd_piothread_arg_t
 {
     HANDLE hIn;
     SOCKET hOut;
+    int pid;
 } smpd_piothread_arg_t;
 
 typedef struct smpd_pinthread_arg_t
 {
     SOCKET hIn;
     HANDLE hOut;
+    int pid;
 } smpd_pinthread_arg_t;
 
 static int smpd_easy_send(SOCKET sock, char *buffer, int length)
 {
     int error;
-    int num_sent;
+    int num_sent, num_left;
 
-    while ((num_sent = send(sock, buffer, length, 0)) == SOCKET_ERROR)
+    num_left = length;
+    while (num_left)
     {
-	error = WSAGetLastError();
-	if (error == WSAEWOULDBLOCK)
+	while ((num_sent = send(sock, buffer, num_left, 0)) == SOCKET_ERROR)
 	{
-            Sleep(0);
-	    continue;
+	    error = WSAGetLastError();
+	    if (error == WSAEWOULDBLOCK)
+	    {
+		Sleep(0);
+		continue;
+	    }
+	    if (error == WSAENOBUFS)
+	    {
+		/* If there is no buffer space available then split the buffer in half and send each piece separately.*/
+		if (smpd_easy_send(sock, buffer, num_left/2) == SOCKET_ERROR)
+		    return SOCKET_ERROR;
+		if (smpd_easy_send(sock, buffer+(num_left/2), num_left - (num_left/2)) == SOCKET_ERROR)
+		    return SOCKET_ERROR;
+		return length;
+	    }
+	    WSASetLastError(error);
+	    return SOCKET_ERROR;
 	}
-	if (error == WSAENOBUFS)
-	{
-	    /* If there is no buffer space available then split the buffer in half and send each piece separately.*/
-	    if (smpd_easy_send(sock, buffer, length/2) == SOCKET_ERROR)
-		return SOCKET_ERROR;
-	    if (smpd_easy_send(sock, buffer+(length/2), length - (length/2)) == SOCKET_ERROR)
-		return SOCKET_ERROR;
-	    return length;
-	}
-	WSASetLastError(error);
-	return SOCKET_ERROR;
+	num_left = num_left - num_sent;
+	buffer = buffer + num_sent;
     }
     
     return length;
@@ -539,13 +547,17 @@ int smpd_piothread(smpd_piothread_arg_t *p)
     HANDLE hIn;
     SOCKET hOut;
     DWORD error;
+    char bogus_char;
+    int pid;
+    double t1, t2;
 
     hIn = p->hIn;
     hOut = p->hOut;
+    pid = p->pid;
     free(p);
     p = NULL;
 
-    smpd_dbg_printf("*** entering smpd_piothread ***\n");
+    smpd_dbg_printf("*** entering smpd_piothread pid:%d sock:%d ***\n", pid, hOut);
     for (;;)
     {
 	num_read = 0;
@@ -577,10 +589,30 @@ int smpd_piothread(smpd_piothread_arg_t *p)
 	}
 	/*smpd_dbg_printf("*** smpd_piothread wrote %d bytes ***\n", num_read);*/
     }
-    smpd_dbg_printf("*** smpd_piothread finishing ***\n");
+    smpd_dbg_printf("*** smpd_piothread finishing pid:%d ***\n", pid);
+    /*
     FlushFileBuffers((HANDLE)hOut);
-    shutdown(hOut, SD_BOTH);
-    closesocket(hOut);
+    if (shutdown(hOut, SD_BOTH) == SOCKET_ERROR)
+    {
+	smpd_err_printf("shutdown failed, sock %d, error %d\n", hOut, WSAGetLastError());
+    }
+    if (closesocket(hOut) == SOCKET_ERROR)
+    {
+	smpd_err_printf("closesocket failed, sock %d, error %d\n", hOut, WSAGetLastError());
+    }
+    */
+    if (shutdown(hOut, SD_SEND) == SOCKET_ERROR)
+    {
+	smpd_err_printf("shutdown failed, sock %d, error %d\n", hOut, WSAGetLastError());
+    }
+    t1 = PMPI_Wtime();
+    recv(hOut, &bogus_char, 1, 0);
+    if (closesocket(hOut) == SOCKET_ERROR)
+    {
+	smpd_err_printf("closesocket failed, sock %d, error %d\n", hOut, WSAGetLastError());
+    }
+    t2 = PMPI_Wtime();
+    smpd_dbg_printf("closing output socket took %.3f seconds\n", t2-t1);
     CloseHandle(hIn);
     /*smpd_dbg_printf("*** exiting smpd_piothread ***\n");*/
     return 0;
@@ -592,21 +624,35 @@ int smpd_pinthread(smpd_pinthread_arg_t *p)
     char str [SMPD_MAX_CMD_LENGTH];
     int index;
     DWORD num_written;
+    int num_read;
     SOCKET hIn;
     HANDLE hOut;
+    int pid;
     /*int i;*/
+    /*
+    char bogus_char;
+    double t1, t2;
+    */
 
     hIn = p->hIn;
     hOut = p->hOut;
+    pid = p->pid;
     free(p);
     p = NULL;
 
-    smpd_dbg_printf("*** entering smpd_pinthread ***\n");
+    smpd_dbg_printf("*** entering smpd_pinthread pid:%d sock:%d ***\n", pid, hIn);
     index = 0;
     for (;;)
     {
-	if (recv(hIn, &str[index], 1, 0) == SOCKET_ERROR)
+	num_read = recv(hIn, &str[index], 1, 0);
+	if (num_read == SOCKET_ERROR || num_read == 0)
 	{
+	    if (num_read == SOCKET_ERROR && WSAGetLastError() == WSAEWOULDBLOCK)
+	    {
+		int optval = TRUE;
+		ioctlsocket(hIn, FIONBIO, &optval);
+		continue;
+	    }
 	    if (index > 0)
 	    {
 		/* write any buffered data before exiting */
@@ -616,7 +662,8 @@ int smpd_pinthread(smpd_pinthread_arg_t *p)
 		    break;
 		}
 	    }
-	    smpd_dbg_printf("recv from stdin socket failed, error %d.\n", WSAGetLastError());
+	    if (num_read != 0)
+		smpd_dbg_printf("recv from stdin socket failed, error %d.\n", WSAGetLastError());
 	    break;
 	}
 	if (str[index] == '\n' || index == SMPD_MAX_CMD_LENGTH-1)
@@ -643,9 +690,30 @@ int smpd_pinthread(smpd_pinthread_arg_t *p)
 	    index++;
 	}
     }
-    smpd_dbg_printf("*** smpd_pinthread finishing ***\n");
+    smpd_dbg_printf("*** smpd_pinthread finishing pid:%d ***\n", pid);
     FlushFileBuffers(hOut);
-    closesocket(hIn);
+    if (shutdown(hIn, SD_BOTH) == SOCKET_ERROR)
+    {
+	smpd_err_printf("shutdown failed, sock %d, error %d\n", hIn, WSAGetLastError());
+    }
+    if (closesocket(hIn) == SOCKET_ERROR)
+    {
+	smpd_err_printf("closesocket failed, sock %d, error %d\n", hIn, WSAGetLastError());
+    }
+    /*
+    if (shutdown(hIn, SD_SEND) == SOCKET_ERROR)
+    {
+	smpd_err_printf("shutdown failed, sock %d, error %d\n", hIn, WSAGetLastError());
+    }
+    t1 = PMPI_Wtime();
+    recv(hIn, &bogus_char, 1, 0);
+    if (closesocket(hIn) == SOCKET_ERROR)
+    {
+	smpd_err_printf("closesocket failed, sock %d, error %d\n", hIn, WSAGetLastError());
+    }
+    t2 = PMPI_Wtime();
+    smpd_dbg_printf("closing input socket took %.3f seconds\n", t2-t1);
+    */
     CloseHandle(hOut);
     /*smpd_dbg_printf("*** exiting smpd_pinthread ***\n");*/
     return 0;
@@ -658,6 +726,7 @@ int smpd_pinthread(smpd_pinthread_arg_t *p)
     DWORD num_written;
     SOCKET hIn;
     HANDLE hOut;
+    int num_read;
 
     hIn = p->hIn;
     hOut = p->hOut;
@@ -667,9 +736,20 @@ int smpd_pinthread(smpd_pinthread_arg_t *p)
     smpd_dbg_printf("*** entering smpd_pinthread ***\n");
     for (;;)
     {
-	if (recv(hIn, &ch, 1, 0) == SOCKET_ERROR)
+	num_read = recv(hIn, &ch, 1, 0);
+	if (num_read == SOCKET_ERROR)
 	{
+	    if (num_read == SOCKET_ERROR && WSAGetLastError() == WSAEWOULDBLOCK)
+	    {
+		int optval = TRUE;
+		ioctlsocket(hIn, FIONBIO, &optval);
+		continue;
+	    }
 	    smpd_dbg_printf("recv from stdin socket failed, error %d.\n", WSAGetLastError());
+	    break;
+	}
+	if (num_read == 0)
+	{
 	    break;
 	}
 	if (!WriteFile(hOut, &ch, 1, &num_written, NULL))
@@ -680,7 +760,10 @@ int smpd_pinthread(smpd_pinthread_arg_t *p)
     }
     smpd_dbg_printf("*** smpd_pinthread finishing ***\n");
     FlushFileBuffers(hOut);
-    closesocket(hIn);
+    if (closesocket(hIn) == SOCKET_ERROR)
+    {
+	smpd_err_printf("closesocket failed, sock %d, error %d\n", hIn, WSAGetLastError());
+    }
     CloseHandle(hOut);
     /*smpd_dbg_printf("*** exiting smpd_pinthread ***\n");*/
     return 0;
@@ -1216,16 +1299,19 @@ CLEANUP:
 	in_arg_ptr = (smpd_pinthread_arg_t*)malloc(sizeof(smpd_pinthread_arg_t));
 	in_arg_ptr->hIn = hSockStdinR;
 	in_arg_ptr->hOut = hPipeStdinW;
+	in_arg_ptr->pid = psInfo.dwProcessId;
 	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)smpd_pinthread, in_arg_ptr, 0, NULL);
 	CloseHandle(hThread);
 	arg_ptr = (smpd_piothread_arg_t*)malloc(sizeof(smpd_piothread_arg_t));
 	arg_ptr->hIn = hOut;
 	arg_ptr->hOut = hSockStdoutW;
+	arg_ptr->pid = psInfo.dwProcessId;
 	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)smpd_piothread, arg_ptr, 0, NULL);
 	CloseHandle(hThread);
 	arg_ptr = (smpd_piothread_arg_t*)malloc(sizeof(smpd_piothread_arg_t));
 	arg_ptr->hIn = hErr;
 	arg_ptr->hOut = hSockStderrW;
+	arg_ptr->pid = psInfo.dwProcessId;
 	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)smpd_piothread, arg_ptr, 0, NULL);
 	CloseHandle(hThread);
 
