@@ -256,7 +256,6 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 		}
 		/* --END ERROR HANDLING-- */
 	    }
-	    /* --BEGIN ERROR HANDLING-- */
 	    else
 	    {
 		/* FIXME: an error packet should be sent back to the sender indicating that the ready-send failed.  On the send
@@ -290,7 +289,6 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 		    *rreqp = NULL;
 		}
 	    }
-	    /* --END ERROR HANDLING-- */
 	    break;
 	}
 	
