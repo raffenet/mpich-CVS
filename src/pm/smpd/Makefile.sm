@@ -5,7 +5,8 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
     -I../../pmi/smpd -I${master_top_srcdir}/src/pmi/smpd
 mpiexec_LDADD = -L../../../lib -L${master_top_srcdir}/lib -lmpich
 smpd_LDADD = -L../../../lib -L${master_top_srcdir}/lib -lmpich
-install_BIN = mpiexec smpd
+install_BIN = mpiexec
+install_BIN = smpd
 distclean-local:
 	@-rm -f smpdconf.h
 
