@@ -160,8 +160,14 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     mpi_errno = MPIR_Comm_create( comm_ptr, &newcomm_ptr );
     if (mpi_errno)
     {
+	/* FIXME: NEVER REPLACE A SPECIFIC MESSAGE WITH A GENERIC ONE.
+	   THE FOLLOWING CODE TURNS THE INFORMATIVE "Too many communicators"
+	   INTO "failed"
+	*/
+#if 0
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_comm_split", "**mpi_comm_split %C %d %d %p", comm, color, key, newcomm);
+#endif 
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPLIT );
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
