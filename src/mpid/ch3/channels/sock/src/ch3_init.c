@@ -94,7 +94,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	/* --END ERROR HANDLING-- */
     }
     if (universe_size != -1)
+    {
 	MPIR_Process.attrs.universe = universe_size;
+    }
 
     pmi_errno = PMI_Get_appnum(&appnum);
     if (pmi_errno != PMI_SUCCESS)
@@ -106,7 +108,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	/* --END ERROR HANDLING-- */
     }
     if (appnum != -1)
+    {
 	MPIR_Process.attrs.appnum = appnum;
+    }
     
     /*
      * Get the process group id
