@@ -55,6 +55,10 @@ int MPI_File_close(MPI_File *fh)
 
     if (((*fh)->file_system != ADIO_PIOFS) && ((*fh)->file_system != ADIO_PVFS) && ((*fh)->file_system != ADIO_PVFS2)) {
 	ADIOI_Free((*fh)->shared_fp_fname);
+        /* need a barrier because the file containing the shared file
+        pointer is opened with COMM_SELF. We don't want it to be
+	deleted while others are still accessing it. */ 
+        MPI_Barrier((*fh)->comm);
 	if ((*fh)->shared_fp_fd != ADIO_FILE_NULL)
 	    ADIO_Close((*fh)->shared_fp_fd, &error_code);
     }
