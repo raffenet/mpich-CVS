@@ -5,7 +5,18 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpi.h"
-#include "iostream"
+#include "mpitestconf.h"
+#ifdef HAVE_IOSTREAM
+// Not all C++ compilers have iostream instead of iostream.h
+#include <iostream>
+#ifdef HAVE_NAMESPACE_STD
+// Those that do often need the std namespace; otherwise, a bare "cout"
+// is likely to fail to compile
+using namespace std;
+#endif
+#else
+#include <iostream.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include "mpitestcxx.h"
