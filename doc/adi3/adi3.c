@@ -551,7 +551,7 @@ int MPID_Comm_incr( MPID_Comm *comm, int incr )
  * Attributes on other objects are defined by MPI but not of interest (as yet)
  * to the device.
  *
- * In addition, there are 4 predefined attributes that the device must
+ * In addition, there are seven predefined attributes that the device must
  * supply to the implementation.  This is accomplished through 
  * 'MPID_Attr_predefined'.
  T*/
@@ -2158,7 +2158,14 @@ int MPID_Stream_iforward( MPID_Stream *stream, void *header,
  * the needs of the collective operation, such as spanning trees and rings.
  * These may be added to adi3 later.
  *
- * Question: Should we define a cart create function?
+ * Question: Should we define a cart create function?  Dims create?
+ *
+ * Usage:
+ * This routine has nothing to do with the choice of communication method
+ * that a implementation of the ADI may make.  It is intended only to
+ * communication information on the heirarchy of processes, if any, to 
+ * the implementation of the collective communication routines.  This routine
+ * may also be useful for the MPI Graph topology functions.
  *
  T*/
 
@@ -2604,7 +2611,7 @@ void MPID_Trdump( FILE *file )
  */
 
 /*@
-  MPID_Wtime - Return a time value
+  MPID_Wtime - Return a time stamp
   
   Output Parameter:
 . timeval - A pointer to an 'MPID_Wtime_t' variable.
@@ -2615,7 +2622,7 @@ void MPID_Trdump( FILE *file )
   in seconds with the routine 'MPID_Wtime_diff'.
 
   This routine is defined this way to simplify its implementation as a macro.
-  For example, (make the following correct for Linux)
+  For example, (still need to make the following correct for Linux)
 .vb
 #define MPID_Wtime(timeval) { asm(read timer,r1); asm(store r1,timeval); }
 .ve
@@ -2641,10 +2648,10 @@ void MPID_Wtime( MPID_Wtime_t *timeval )
 }
 
 /*@
-  MPID_Wtime_diff - Compute the difference between two time values
+  MPID_Wtime_diff - Compute the difference between two time stamps
 
   Input Parameters:
-. t1,t2 - Two time values set by 'MPID_Wtime'.
+. t1, t2 - Two time values set by 'MPID_Wtime' on this process.
  
 
   Output Parameter:
@@ -2717,12 +2724,13 @@ int MPID_Gwtime_init( MPID_Comm *comm )
 }
 
 /*@
-  MPID_Gwtime_diff - Compute the difference between two time values from
+  MPID_Gwtime_diff - Compute the difference between two time stamps from
   different processes
 
   Input Parameters:
-+ t1,t2 - Two time values set by 'MPID_Wtime'.
-- pid1,pid2 - Process numbers corresponding to 't1' and 't2' respectively.
++ t1 - A time stamp set by 'MPID_Wtime' on this process.
+. t2 - A time `value` set with 'MPID_Gwtime' on process 'pid2'
+- pid2 - Process number corresponding to 't2'.
  
   Output Parameter:
 . diff - The different in time between t2 and t1, measured in seconds.
@@ -2735,18 +2743,33 @@ int MPID_Gwtime_init( MPID_Comm *comm )
   If no global timer is available, it is possible to synthesize one.
   Such an implementation is provided as part of the utilities 
   library with the MPICH MPID implementation.  Note that
-  the resolution of this timer (at least between processes) is significantly
-  lower than for the local timer.
+  the resolution of this timer (at least between processes) may be 
+  significantly lower than for the local timer.
 
   Module:
   Timer
 
+  Rationale:
+  Time stamps are local to the process that generated them.  This routine
+  allows time stamps on different processes to be compared.  
+
+  In a heterogeneous system, the interpretation of the 'MPID_Wtime_t' value 
+  may depend on the process that set the value.  This is why the value from
+  the remote process ('t2') is converted first into a double with 
+  'MPID_Gwtime'.  As a 'double', the value can be sent with the usual MPI
+  communication.
+
+  In a system made up of a cluster of SMPs, the timestamps on a single SMP
+  may in fact be directly comparible without any adjustments, while 
+  timestamps from different nodes may require adjustments.  The design
+  of this routine allows full accuracy.
+
   Question:
-  Should this require that one pid correspond to the calling process?
-  Should 'pid1' always be the calling process?
+  Do we really want this or just a routine to convert to a common time?
+
   @*/
-void MPID_Gwtime_diff( MPID_Wtime_t *t1, int pid1, 
-		       MPID_Wtime_t *t2, int pid2, double *diff )
+void MPID_Gwtime_diff( MPID_Wtime_t *t1, 
+		       double t2, int pid2, double *diff )
 {
 }
 
@@ -2759,7 +2782,7 @@ void MPID_Gwtime_diff( MPID_Wtime_t *t1, int pid1,
   Return value:
   An upper bound on the resolution of the 'MPID_Gwtime_diff' routine for
   process ids 'pid1' and 'pid2'.  If the attribute 'MPI_WTIME_IS_GLOBAL' is
-  true and eith 'pid1' or 'pid2' are negative, then this
+  true and either 'pid1' or 'pid2' are negative, then this
   returns the same value as 'MPID_Wtick'. 
 
   It is permissible for this routine to return a conservative bound; for 

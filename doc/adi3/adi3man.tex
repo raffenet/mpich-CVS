@@ -785,9 +785,23 @@ in that structure appropriately.
 \input Collective-list.tex
 
 \section{Window Objects}
+\label{sec:window-objects}
 \input Win-list.tex
 
 \section{Timers}
+\label{sec:timers}
+The ADI must define a timer because one is needed for \code{MPI_Wtime}.  In
+addition, timers are a valuable feature for use \emph{by} the ADI and/or MPI
+implementation for use in performance instrumentation.  To meet these needs,
+the ADI defines two kinds of timers, each of which generates a
+\emph{timestamp} rather than a time value in seconds.  
+One timer is local to a process. The other is global to all MPI processes, and
+is intended to provide a time value that can be compared between different
+processes.  
+
+Question: Should the basic timer be part of MPID CORE?  In some sense, it
+should.  Yet we could use the OS-supplied timers by default on most platforms.
+
 \input Timer-list.tex
 
 \section{Topology}

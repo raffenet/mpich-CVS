@@ -427,7 +427,8 @@ typedef struct datatloop_ {
 
   We may want to have separate 'dataloop' fields for heterogeneous and
   homogeneous communication, along with a dataloop field used to 
-  implement fast pack and unpack operations.
+  implement fast pack and unpack operations.  These would be 
+  among the device-dependent fields.
 
   We may want to place the booleans like 'has_mpi1_ub' into a bit-vector.
   Question: do we want to define a type like 'boolean' instead of 'int'
