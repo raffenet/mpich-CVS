@@ -923,6 +923,61 @@ tolerant of communication failure can use these to
 
 %\input Error-handling-list.tex
 
+\section{Miscellaneous}
+\label{sec:misc}
+
+\subsection{Flow Control}
+\label{sed:flow-control}
+These routines provide support for flow control on communications.
+They should be used if no other mechanism provides flow control.
+
+Questions:
+
+There are several different approaches for flow control.  All of these
+mechanisms make use of a system that counts the amount of resources.
+These are usually managed one per communication link.  In the typical
+case, two values are maintained for each communication link.  The
+sender keeps a count of the number of messages (or bytes or packets
+etc.) sent ($n_{sent}$), and the receiver maintains the number of
+message buffers 
+in use ($n_{inuse}$).  The value of $n_{inuse}$ increases each time a
+message is received and decreases each time a message is consumed
+(e.g., because it matches a posted receive). 
+The flow control approaches differ in how these values are updated. 
+
+\begin{enumerate}
+\item Occasional acks update the resource count.  One approach is a
+high-watermark system.  Once $n_{inuse}$ falls below $n_{high}$, an
+update is sent onces $n_{inuse}$ rises above $n_{high2}$. 
+
+\item Updates on every packet.  Every packet from the receiver
+contains an increment to be applied to $n_{sent}$.  For symmetric
+communication patterns, no separate ack packet is needed.  Note,
+however, that an ack packet is sometimes needed, following the
+high-watermark approach above.  This can happen if, for example,
+messages are sent in only one direction.  
+
+This method can reduce the number of flow-control packets sent in many
+cases.  It is particularly appropriate for communication systems that
+send fixed (or minimum) sized packets, so that the extra space
+required (only a byte or two in any event) has no impact on the time
+to move the packet from one process to another.  
+
+\item Negative acks.  Messages are sent to indicate that a message was
+\emph{not} accepted. 
+
+\end{enumerate}
+
+Question: which should we implement?  Both of the positive acks
+strategies? 
+
+The likely routines are
+\code{MPID_Flow_init} and \code{MPID_Flow_finalize} to create and
+release the data structures and routines/macros \code{MPID_Flow_check}
+to check that a message can be send, \code{MPID_Flow_ack} to process
+an ack packet, \code{MPID_Flow_recv} to update $n_{inuse}$ and
+\code{MPID_Flow_send} to update $n_{sent}$.
+
 \section{Extensions}
 \input Extension-list.tex
 
