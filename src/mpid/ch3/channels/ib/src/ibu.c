@@ -22,6 +22,8 @@ struct ibuBlockAllocator_struct
 
 typedef struct ibuBlockAllocator_struct * ibuBlockAllocator;
 
+#ifdef HAVE_32BIT_POINTERS
+
 typedef union ibu_work_id_handle_t
 {
     u_int64_t id;
@@ -30,6 +32,17 @@ typedef union ibu_work_id_handle_t
 	u_int32_t ptr, mem;
     } data;
 } ibu_work_id_handle_t;
+
+#else
+
+typedef struct ibu_work_id_handle_t
+{
+    void *ptr, *mem;
+} ibu_work_id_handle_t;
+
+ibuBlockAllocator g_workAllocator = NULL;
+
+#endif
 
 typedef int IBU_STATE;
 #define IBU_ACCEPTING  0x0001
@@ -490,9 +503,20 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     }
     assert(mem_ptr);
 
+#ifdef HAVE_32BIT_POINTERS
     /* This isn't going to work because mem_ptr is 64 bits */
     ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
+#else
+    work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
+    if ((void*)work_req.id == NULL)
+    {
+	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
+	return IBU_FAIL;
+    }
+    ((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
+    ((ibu_work_id_handle_t*)work_req.id)->mem = (void*)mem_ptr;
+#endif
     work_req.opcode = VAPI_RECEIVE;
     work_req.comp_type = VAPI_SIGNALED;
     work_req.sg_lst_p = &data;
@@ -540,9 +564,20 @@ static int ibui_post_receive(ibu_t ibu)
     }
     assert(mem_ptr);
 
+#ifdef HAVE_32BIT_POINTERS
     /* This isn't going to work because mem_ptr is 64 bits */
     ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
+#else
+    work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
+    if ((void*)work_req.id == NULL)
+    {
+	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
+	return IBU_FAIL;
+    }
+    ((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
+    ((ibu_work_id_handle_t*)work_req.id)->mem = (void*)mem_ptr;
+#endif
     work_req.opcode = VAPI_RECEIVE;
     work_req.comp_type = VAPI_SIGNALED;
     work_req.sg_lst_p = &data;
@@ -600,8 +635,19 @@ static int ibui_post_ack_write(ibu_t ibu)
     work_req.r_key = 0;
     work_req.compare_add = 0;
     work_req.swap = 0;
+#ifdef HAVE_32BIT_POINTERS
     ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)-1;
+#else
+    work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
+    if ((void*)work_req.id == NULL)
+    {
+	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
+	return IBU_FAIL;
+    }
+    ((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
+    ((ibu_work_id_handle_t*)work_req.id)->mem = (void*)-1;
+#endif
     
     MPIDI_DBG_PRINTF((60, FCNAME, "VAPI_post_sr(%d byte ack)", ibu->nUnacked));
     status = VAPI_post_sr( IBU_Process.hca_handle,
@@ -685,10 +731,21 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	work_req.r_key = 0;
 	work_req.compare_add = 0;
 	work_req.swap = 0;
-	
+
+#ifdef HAVE_32BIT_POINTERS
 	/* store the ibu ptr and the mem ptr in the work id */
 	((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
 	((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
+#else
+	work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
+	if ((void*)work_req.id == NULL)
+	{
+	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
+	    return IBU_FAIL;
+	}
+	((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
+	((ibu_work_id_handle_t*)work_req.id)->mem = (void*)mem_ptr;
+#endif
 	
 	MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_sr(%d bytes)", length));
 	status = VAPI_post_sr( IBU_Process.hca_handle,
@@ -801,9 +858,20 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	work_req.compare_add = 0;
 	work_req.swap = 0;
 	
+#ifdef HAVE_32BIT_POINTERS
 	/* store the ibu ptr and the mem ptr in the work id */
 	((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
 	((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
+#else
+	work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
+	if ((void*)work_req.id == NULL)
+	{
+	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
+	    return IBU_FAIL;
+	}
+	((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
+	((ibu_work_id_handle_t*)work_req.id)->mem = (void*)mem_ptr;
+#endif
 	
 	MPIDI_DBG_PRINTF((60, FCNAME, "VAPI_post_sr(%d bytes)", msg_size));
 	status = VAPI_post_sr( IBU_Process.hca_handle,
@@ -893,7 +961,9 @@ int ibu_init()
 
     /* non infiniband initialization */
     IBU_Process.unex_finished_list = NULL;
-
+#ifndef HAVE_32BIT_POINTERS
+    g_workAllocator = ibuBlockAllocInit(sizeof(ibu_work_id_handle_t), 256, 256, malloc, free);
+#endif
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
     return IBU_SUCCESS;
 }
@@ -907,6 +977,9 @@ int ibu_finalize()
     MPIDI_STATE_DECL(MPID_STATE_IBU_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINALIZE);
+#ifdef HAVE_32BIT_POINTERS
+    ibuBlockAllocFinalize(&g_workAllocator);
+#endif
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);
     return IBU_SUCCESS;
 }
@@ -1189,9 +1262,15 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    return IBU_FAIL;
 	}
 
+#ifdef HAVE_32BIT_POINTERS
 	/* Once again, this is not going to work because data.mem is 32bits and mem_ptr is 64bits. */
 	ibu = (ibu_t)(((ibu_work_id_handle_t*)&completion_data.id)->data.ptr);
 	mem_ptr = (void*)(((ibu_work_id_handle_t*)&completion_data.id)->data.mem);
+#else
+	ibu = (ibu_t)(((ibu_work_id_handle_t*)completion_data.id)->ptr);
+	mem_ptr = (void*)(((ibu_work_id_handle_t*)completion_data.id)->mem);
+	ibuBlockFree(g_workAllocator, (void*)completion_data.id);
+#endif
 
 	switch (completion_data.opcode)
 	{
