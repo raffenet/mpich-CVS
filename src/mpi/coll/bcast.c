@@ -485,7 +485,8 @@ int MPIR_Bcast (
 /* end:nested */
 
 /* begin:nested */
-PMPI_LOCAL int MPIR_Bcast_inter ( 
+/* Not PMPI_LOCAL because it is called in intercomm allgather */
+int MPIR_Bcast_inter ( 
     void *buffer, 
     int count, 
     MPI_Datatype datatype, 

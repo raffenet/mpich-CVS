@@ -481,24 +481,24 @@ PMPI_LOCAL int MPIR_Allgather_inter (
     if (comm_ptr->is_low_group) {
         /* bcast to right*/
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
-        mpi_errno = MPIR_Bcast(tmp_buf, sendcount*local_size,
+        mpi_errno = MPIR_Bcast_inter(tmp_buf, sendcount*local_size,
                                sendtype, root, comm_ptr); 
         if (mpi_errno) return mpi_errno;
         /* receive bcast from right */
         root = 0;
-        mpi_errno = MPIR_Bcast(recvbuf, recvcount*remote_size,
+        mpi_errno = MPIR_Bcast_inter(recvbuf, recvcount*remote_size,
                                recvtype, root, comm_ptr); 
         if (mpi_errno) return mpi_errno;
     }
     else {
         /* receive bcast from left */
         root = 0;
-        mpi_errno = MPIR_Bcast(recvbuf, recvcount*remote_size,
+        mpi_errno = MPIR_Bcast_inter(recvbuf, recvcount*remote_size,
                                recvtype, root, comm_ptr); 
         if (mpi_errno) return mpi_errno;
         /* bcast to left */
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
-        mpi_errno = MPIR_Bcast(tmp_buf, sendcount*local_size,
+        mpi_errno = MPIR_Bcast_inter(tmp_buf, sendcount*local_size,
                                sendtype, root, comm_ptr);  
         if (mpi_errno) return mpi_errno;
     }
@@ -631,12 +631,12 @@ int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *rec
                                        comm_ptr);
         else {
             /* intercommunicator */
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
+/*	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**intercommcoll",
-					      "**intercommcoll %s", FCNAME );
-            /*mpi_errno = MPIR_Allgather_inter(sendbuf, sendcount, sendtype,
+					      "**intercommcoll %s", FCNAME );*/
+            mpi_errno = MPIR_Allgather_inter(sendbuf, sendcount, sendtype,
                                              recvbuf, recvcount, recvtype,
-                                             comm_ptr);            */
+                                             comm_ptr);            
         }
 	MPIR_Nest_decr();
     }
