@@ -95,7 +95,9 @@ int MPI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 	    MPIR_ERRTEST_DATATYPE(target_count, target_datatype, mpi_errno);
 	    MPIR_ERRTEST_DISP(target_disp, mpi_errno);
 
+            MPIR_Nest_incr();
             NMPI_Comm_size(win_ptr->comm, &comm_size);
+            MPIR_Nest_decr();
             if ((target_rank < MPI_PROC_NULL) || (target_rank >=
                                                   comm_size))
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,

@@ -82,7 +82,9 @@ int MPI_Win_get_group(MPI_Win win, MPI_Group *group)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    MPIR_Nest_incr();
     mpi_errno = NMPI_Comm_group(win_ptr->comm, group);
+    MPIR_Nest_decr();
 
     if (mpi_errno == MPI_SUCCESS)
     {
