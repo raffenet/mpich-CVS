@@ -46,7 +46,7 @@ mpio:
            echo "'-fname filename'." ; \
            echo " " ;\
         fi
-	sleep 1
+	@sleep 1
 
 clean:
 	@-rm -f work.pc work.pcl
