@@ -30,7 +30,7 @@
 
 %\tpageoneskip
 \ANLTMTitle{MPICH2 Design Document\\
-Draft}{\em 
+Draft of \today}{\em 
 William Gropp\\
 Ewing Lusk\\
 Mathematics and Computer Science Division\\
@@ -58,7 +58,7 @@ See also the Coding Standards docment \cite{coding}.
 \subsection{Error reporting}
 
 MPI routines should check all possible error conditions early, before
-calling and ADI routines.  The ADI routines perform little error
+calling any ADI routines.  The ADI routines perform little error
 checking.  To allow error handling to be enabled both at compile time
 and at runtime, the tests should be placed within the following block:
 \begin{verbatim}
@@ -72,7 +72,7 @@ The macros \code{BEGIN_ERROR_CHECKS} and \code{END_ERROR_CHECKS} can
 expand, depending on configuration settings, into either null (i.e.,
 no runtime control) or 
 \begin{verbatim}
-#define BEGIN_ERROR_CHECK if (mpir_perform_error_tests) {
+#define BEGIN_ERROR_CHECK if (MPIR_Perform_Error_Tests) {
 #define END_ERROR_CHECKS }
 \end{verbatim}
 
@@ -85,19 +85,17 @@ gracefully as possible.  If it is possible to remain in a consistent
 state, the process should not abort (unless, of course, the error
 handler requires it, as the default \code{MPI_ERRORS_FATAL} does).  
 If it is not possible to recover from an error, then the process
-should call \code{MPID_Abort_process}, not \code{MPID_Abort}.
+should call \code{MPID_Abort} but specify \code{MPI_COMM_SELF} as the
+communicator.  
 
 \subsection{Memory Allocation}
-Avoid memory allocation wherever pratical.  Use \code{MALLOC}
+Avoid memory allocation wherever pratical.  Use \code{MPID_Malloc}
 etc. instead of \code{malloc}, as described in the ADI-3 manual
 \cite{adi3man}. 
 
 At normal exit from the MPI library in \code{MPI_Finalize}, the
-routine \code{mpir_trdump} must be called if the environment variable
+routine \code{MPID_Trdump} must be called if the environment variable
 \code{MPICH_TRDUMP} is set.  
-
-Question:
-Should we call these \code{MPIR_MALLOC} etc. instead?  
 
 \subsection{MPI Opaque Objects}
 
@@ -521,7 +519,7 @@ for special versions (e.g., IRIX n32)
 \item[searchdir]Options to specify search directories for shared
 libraries
 \item[sharedlib]Options to create a shared library
-\item[cross]Specify values for CROSS_xxx for cross-compiler case
+\item[cross]Specify values for \code{CROSS_xxx} for cross-compiler case
 \item[verbose]Options to generate verbose output, particularly showing
 the command-line options passed to other tools such as ld when a
 compiler command is used to link a program.  This is useful in
@@ -571,10 +569,10 @@ check for conformance to these rules.
 Tools already available:
 \begin{description}
 \item[?]Check for global symbol names
-\item[?]Check for use of banned routines (e.g., \code{printf},
+\item[?tool-to-be-created]Check for use of banned routines (e.g., \code{printf},
 \code{alloca})
 \item[gcc -Wall etc.]Missing prototypes, return values, etc.
-\item[?]Check for OS name or system type in a preprocessor statement
+\item[?tool-to-be-created]Check for OS name or system type in a preprocessor statement
 \end{description}
 
 We also need tools for the following:
@@ -594,7 +592,8 @@ It is better to call a routine that can handle recording the results.
 % See PETSc approach for printing.  
 
 Question: Should we define \code{PRINTF} etc. as we have in MPICH, or
-ban those values entirely?
+ban those values entirely?  Should we define a general output routine
+that can be implemented to output to a file, stdout, or a graphical display?
 
 \subsection{NT Friendly}
 
@@ -714,6 +713,9 @@ platforms with mixed 32 and 64-bit modes.  We don't currently do this
 that may need to know that a system has both options (in the case that
 \code{sizeof(void *)} is 64.  See the ``complex configuration
 options'' above.
+
+Still needed: Information needed for debugger startup and message
+queues.
 
 \subsection{Performance and Tracing Data}
 

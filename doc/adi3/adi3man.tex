@@ -31,7 +31,7 @@
 %\tpageoneskip
 \ANLTMTitle{MPICH Abstract Device Interface\\
 Version 3\\
-Reference Manual\\\ \\Draft}{\em 
+Reference Manual\\\ \\Draft of \today}{\em 
 William Gropp\\
 Ewing Lusk\\
 Mathematics and Computer Science Division\\
@@ -680,6 +680,19 @@ This section has not been written yet.  It will cover
   provided by \code{mpiexec} (if not, \code{MPI_Init} may want to provide
   them). 
 \end{enumerate}
+
+In addition, there are other parts to the behavior of \code{mpiexec}
+that are not covered in the MPI standard.  For example, how are the
+return codes from individual MPI processes handled?  Some
+possibilities are:
+\begin{description}
+\item The maximum value of all return codes.
+\item The sum of all return codes.  Note that there may be
+a limit of 255 imposed by the operating system.
+\item The number of non-zero return codes.
+\item A bit vector that indicats which processes had non-zero return
+codes.
+\end{description}
 
 \section{Attributes}
 \input AttrOverview.tex

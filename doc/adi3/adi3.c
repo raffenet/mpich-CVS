@@ -2263,11 +2263,15 @@ int MPID_Thread_init( int *argc_p, char *(*argv_p)[],
 /*@
   MPID_Abort - Abort the at least the processes in the specified communicator.
 
+  Input Parameters:
++ comm        - Communicator of processes to abort
+- return_code - Return code to return to the calling environment.  See notes.
+
   Return value:
-  'MPI_SUCCESS' or an MPI error code.  Normally, this routine should not return,
-  since the calling process must be a member of the communicator.  However, 
-  under some circumstances, the 'MPID_Abort' might fail; in this case,
-  returning an error indication is appropriate.
+  'MPI_SUCCESS' or an MPI error code.  Normally, this routine should not 
+  return, since the calling process must be a member of the communicator.  
+  However, under some circumstances, the 'MPID_Abort' might fail; in this 
+  case, returning an error indication is appropriate.
 
   Notes:
 
@@ -2276,10 +2280,18 @@ int MPID_Thread_init( int *argc_p, char *(*argv_p)[],
   processes with the aborted communicator becomes invalid.  For more 
   details, see (paper not yet written on fault-tolerant MPI).
 
+  In particular, if the communicator is 'MPI_COMM_SELF', only the calling 
+  process should be aborted.
+
+  The 'return_code' is the return code that this particular process will 
+  attempt to provide to the 'mpiexec' or other program invocation 
+  environment.  See 'mpiexec' for a discussion of how return codes from 
+  many processes may be combined.
+
   Module:
   MPID_CORE
   @*/
-int MPID_Abort( MPID_Comm *comm )
+int MPID_Abort( MPID_Comm *comm, int return_code )
 {
 }
 
@@ -2450,6 +2462,20 @@ void *MPID_Calloc( size_t nelm, size_t elsize)
 char *MPID_Strdup( const char *str )
 {
 }
+
+/*@
+  MPID_Trdump - Provide information on memory that is allocated
+
+  Input Parameters:
+. file - File opened for writing onto which the output should be sent.
+
+  Question:
+  Should this have a different output model to allow for a windows-style
+  interface?  Should it take an output function and void pointer for
+  extra data.
+  @*/
+void MPID_Trdump( FILE *file )
+{}
 
 /*
  * Timers
