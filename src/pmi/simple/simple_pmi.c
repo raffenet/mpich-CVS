@@ -74,7 +74,9 @@ static int PMII_iter( const char *kvsname, const int idx, int *nextidx, char *ke
 static int PMII_Set_from_port( int, int );
 static int PMII_Connect_to_pm( char *, int );
 
+#ifdef USE_PMI_PORT
 static void mpd_singinit();
+#endif
 static int accept_one_connection(int);
 static char cached_singinit_key[PMIU_MAXLINE];
 static char cached_singinit_val[PMIU_MAXLINE];
@@ -646,6 +648,7 @@ int PMI_Spawn_multiple(int count,
     /* printf("CMD0 = :%s:\n",cmds[0]);  fflush(stdout);  */
     /* printf("ARG00=:%s:\n",argvs[0][0]);  fflush(stdout);  */
     /* MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=spawn execname=/bin/hostname nprocs=1\n" ); */
+#ifdef USE_PMI_PORT
     if (PMI_initialized < 2)
     {
 	mpd_singinit();
@@ -657,6 +660,7 @@ int PMI_Spawn_multiple(int count,
 	PMII_getmaxes( &PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max );
 	PMI_KVS_Put( "singinit_kvs_0", cached_singinit_key, cached_singinit_val );
     }
+#endif
 
     for (spawncnt=0; spawncnt < count; spawncnt++)
     {
@@ -1109,7 +1113,6 @@ static int PMII_Set_from_port( int fd, int id )
 
     return 0;
 }
-#endif
 
 
 static void mpd_singinit()
@@ -1189,3 +1192,5 @@ static int accept_one_connection(int list_sock)
     return(new_sock);
 }
 
+#endif
+/* end USE_PMI_PORT */
