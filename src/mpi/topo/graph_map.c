@@ -119,7 +119,7 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 						  newrank );
     }
     else {
-	mpi_errno = MPIR_Cart_map( comm_ptr, nnodes,
+	mpi_errno = MPIR_Graph_map( comm_ptr, nnodes,
 				   (const int*) index,
 				   (const int*) edges, newrank );
     }
@@ -135,8 +135,10 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_graph_map",
-	    "**mpi_graph_map %C %d %p %p %p", comm_old, nnodes, index, edges, newrank);
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_graph_map",
+	    "**mpi_graph_map %C %d %p %p %p", comm_old, nnodes, index, edges, 
+	    newrank);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
