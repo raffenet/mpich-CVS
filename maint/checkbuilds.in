@@ -68,6 +68,8 @@ $n_with    = $#with_array + 1;
 $n_env     = $#env_array + 1;
 $show      = 0;
 $debug     = 0;
+$report_signals = 1;    # Set to one to generate a message about signals
+                        # received by a program
 $max_count = 5;
 $OUTFD     = OUTFD;
 #
@@ -808,6 +810,8 @@ sub RunMPICH2TestSuite {
 # ---------------------------------------------------------------------------
 # RunProgram LIST
 sub RunProgram {
+    my $signal_num = 0;
+
     # perl does not correctly handle "2>&1 >>foo" redirection in system
     # correctly (some stderr escapes to the prior stderr).  This
     # code attempts to do the correct thing.
@@ -852,7 +856,11 @@ sub RunProgram {
 	# Note that this status is usually shifted right by 8, so
 	# we check for that
         $rc = $?;
+	$signal_num = $rc & 127;
 	if ($rc > 255) { $rc = $rc >> 8; }
+	if ($signal_num != 0 && $report_signals) {
+	    print OUTFD "Process exited with signal $signalnum\n";
+	}
     }
     return $rc;
 }
