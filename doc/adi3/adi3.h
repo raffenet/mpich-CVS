@@ -222,16 +222,16 @@ typedef struct {
   an 'MPI_Info' object must make a copy or otherwise act on any info value
   that it needs.
 
+  A linked list is used because the typical 'MPI_Info' list will be short
+  and a simple linked list is easy to implement and to maintain.  Similarly,
+  a single structure rather than separate header and element structures are
+  defined for simplicity.  Note that there is no access lock for thread
+  access control because the user is responsible for this (it is invalid for
+  the user to modify the same info item from concurrently from several 
+  threads).
+  
   Module:
   Attribute
-
-  Question:
-  Do we really want to mandate that this is a linked list, or do we want
-  to make use of the 'MPID_List'?
-
-  Do we want to have a separate info header and info element?  We may want 
-  that inorder to implement the access locks needed by a multithreaded 
-  implementation.
   S*/
 typedef struct MPID_Info_s {
     int                id;
