@@ -2418,6 +2418,18 @@ int MPID_Init( int *argc_p, char *(*argv_p)[],
   notify the process manager?  What about persistent resources (such 
   as SYSV segments or forked processes?
 
+  'MPI_Finalize' requires that attributes on 'MPI_COMM_SELF' be deleted 
+  before anything else happens; this allows libraries to attach end-of-job
+  actions to 'MPI_Finalize'.  It would be valuable to have a similar 
+  capability on 'MPI_Abort', with the caveat that 'MPI_Abort' may not 
+  guarantee that the run-on-abort routines were called.  Should we do
+  this?  Once 'MPI_Abort' is called, further communication may not 
+  be possible.  Can we limit the functions called in that case to ones
+  that do not perform any communication?  Do we need to set up a time
+  limit on actions?  Do we want to do the same thing as 'MPI_Finalize' and
+  delete the attributes on 'MPI_COMM_SELF' or do we want to do something
+  else, such as add an extension that adds actions to be run to 'MPID_Abort'?
+
   Module:
   MPID_CORE
   @*/
@@ -3460,25 +3472,47 @@ int MPID_Err_partner( MPID_Comm *comm, int rank, int is_fatal )
   Input Parameters:
 + comm - Pointer to a communicator
 . checkpointfunction - User function to call.  The parameters are 'comm'
-  and 'extra_data'
+  and 'extra_data'.  
 - extra_data - A pointer that is passed to 'checkpointfunction'.
-  
+
+  Return value:  
+  The function 'checkpointfunction' returns '0' on success and a negative
+  integer on failure.  This value is returned by 'MPICH_Quiet'.  If 
+  'MPICH_Quiet' fails for some other reason, it returns an MPI error code
+  (a positive value).
+
   Notes:
   This routine can be used to provide for checkpointing operations where
   the user and the MPI implementation together guarantee that no communication
   is taking place, even by the low levels of the implementation, on the
-  specified communiacator while 'checkpointfunction' is running.  
+  specified communicator while 'checkpointfunction' is running.  In addition,
+  all communication is completed if possible.  That is, if any 'MPI_Request'
+  (made in the specified communicator) given to 'MPI_Test' would cause 
+  'MPI_Test' to return 'true' for the 'flag' value (i.e., the communication
+  described by the request was completed), the communication must be completed
+  before 'checkpointfunction' is called.   
 
   This is a collective call with semantics similiar to 'MPI_Barrier', with 
   the change that after all processes have entered 'MPICH_Quiet', the 
   user-specified function 'checkpointfunction' is called (collectively), and 
-  once that routine returns, a process can leave 'MPICH_Quiet'.  
+  once that routine returns, a process can leave 'MPICH_Quiet'. 
 
+  Question:
+  An alternative to this is a variation on the two-phase collective routines,
+  using a begin and end pair to bracket the quiet period.  This allows the
+  user to call almost any function between the begin and end.  One advantage
+  to this approach is that it does not require that the user create a
+  structure for the 'extra_data', and it can make it easier to handle 
+  problems encountered during 'checkpointfunction' (e.g., out of disk space
+  while writing the checkpoint).  This could be handled in a way similar to
+  attribute copying in 'MPI_Comm_dup', but this is more convenient than the
+  MPI error handling. 
+  
   Module:
   Extension
   @*/
-void MPICH_Quiet( MPID_Comm *comm, 
-		  int*(checkpointfunction(MPI_Comm *, void *)), 
+int MPICH_Quiet( MPID_Comm *comm, 
+		  int (*checkpointfunction)(MPI_Comm *, void *), 
 		  void *extra_data )
 {}
 /*

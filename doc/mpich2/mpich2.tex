@@ -672,6 +672,15 @@ routines.  The purpose of the implementations provided with MPICH is
 to provide a good performance and a level of performance that will be adequate
 for many users.  
 
+The $\alpha$-tree approach described in
+\cite{bern:mpi-collective:hpcn99} should be considered; this is a
+simple variation on the binomial tree approach used in the MPICH
+implementations of many of the collective routines.  We will consider
+combining this with the pipelining and scatter/gather approaches
+championed by van de Geijn (\cite{vandegeijn} isn't quite the right
+reference but it will do for now).
+
+
 \subsubsection{Redution functions}
 The reduction functions must use the \code{restrict} qualifier.
 
@@ -888,6 +897,41 @@ support for the group-based window completion (\code{MPI_Win_post}
 etc.), nor is there simple support for systems like the Cray T3E that
 have (roughly) hardware support for \mpifunc{MPI_Win_fence}.
 
+Question: The MPI RMA design is actually pretty lean and general, and
+without further constraints or properties, it is hard to create a
+simpler interface.  However, we might be able to simplify by
+considering three important cases:
+\begin{description}
+\item[Shared Memory]This is not fully shared, but shared memory
+segments or shared \code{mmap} regions. There may need to be special
+calls to enforce memory ordering and coherency.
+\item[Distributed Memory with DMA]This is for systems that support
+some one-sided data delivery, such as VIA or LAPI.
+\item[Distributed Memory with no DMA]This is for simple
+network-connected processes, such as Unix processes connected by TCP.
+\end{description}
+Question: are these sufficient?  Should we put these classes into the
+method-based interface instead?
+
+For example, where shared memory is available, the synchronization and
+lock operations can act directly on the shared memory area that is
+allocated as part of the window object.  For example, the
+start/post/complete/wait can use counters and flags in shared memory.
+Locks can be acquired directly and quickly in shared memory, and (for
+the passive target operations), the RMA operations can then be done
+directly in shared memory.
+
+In contrast, in the distributed memory case, particular with high
+latency interconnects, deferred synchronization can be used.  For
+example, a \code{MPI_Win_lock} in that case could return immediately.
+At the first RMA operation, particularly if the amount of data is
+small, the request for a lock can be piggy-backed on the RMA request.
+In fact, following the BSP style, all of the RMA operations could be
+held until the \code{MPI_Win_unlock}.
+
+Clearly, the choice of immediate or deferred locks depends on the kind
+of communication between processes.
+
 
 \subsubsection{\mpifunc{MPI_ACCUMULATE}}
 \subsubsection{\mpifunc{MPI_PUT}}
@@ -952,8 +996,21 @@ for \mpifunc{MPI_WIN_CREATE} that asks for the blocking lock?
 \subsubsection{\mpifunc{MPI_IS_THREAD_MAIN}}
 \subsubsection{\mpifunc{MPI_FINALIZED}}
 \subsubsection{\mpifunc{MPI_INIT}}
+
+As part of the error checking code, each routine should check the
+state of the \code{is_initialized} flag.  Should there be an 
+\begin{verbatim}
+    enum { MPICH_PRE_INIT=0, MPICH_IS_INITIALIZED=1,
+           MPICH_IS_FINALIZED=2 } MPIR_Initialized;
+\end{verbatim}
+
+
 \subsubsection{\mpifunc{MPI_INITIALIZED}}
 \subsubsection{\mpifunc{MPI_FINALIZE}}
+The MPI-2 standard requires that \code{MPI_Finalize} first delete the
+attributes associated with \mpiconst{MPI_COMM_SELF}, even before
+\mpifunc{MPI_FINALIZED} would return true.  This allows any number of
+modules to attach ``end-of-job'' actions to \code{MPI_Finalize}.
 
 
 \subsection{Dynamic Processes}
@@ -969,9 +1026,14 @@ of the MPICH routines.
 \subsubsection{\mpifunc{MPI_COMM_JOIN}}
 \subsubsection{\mpifunc{MPI_COMM_SPAWN}}
 \subsubsection{\mpifunc{MPI_COMM_SPAWN_MULTIPLE}}
+
 \subsubsection{\mpifunc{MPI_LOOKUP_NAME}}
+Question:  Do we want to define an API or a wire protocol for the name
+service.  
+
 \subsubsection{\mpifunc{MPI_PUBLISH_NAME}}
 \subsubsection{\mpifunc{MPI_UNPUBLISH_NAME}}
+
 \subsubsection{\mpifunc{MPI_OPEN_PORT}}
 
 \subsection{User-Defined Requests}
@@ -989,6 +1051,8 @@ the request.
 
 \subsubsection{\mpifunc{MPI_GREQUEST_START}}
 \subsubsection{\mpifunc{MPI_GREQUEST_COMPLETE}}
+
+(Need to describe the user-request handling)
 
 \subsection{Error Handlers}
 
@@ -1107,7 +1171,10 @@ environments.
 Question: What about shared libraries?  Using libtool is awkward for
 development, but not using it is awkward for portability (libtool
 knows a \emph{lot} about making shared libraries).  However, we
-\emph{must} have support for shared libraries.
+\emph{must} have support for shared libraries.  The plan is to develop
+a simple perl program to extract the information stored in the
+\code{libtool} source to take advantage of that source of information
+without requiring the \code{libtool} development environment.
 
 \subsection{Configure}
 We will use autoconf version 2.13 or later.  The top-level configure will only
