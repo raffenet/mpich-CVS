@@ -11,7 +11,7 @@
 #include "mpisgi2.h"
 #endif
 
-#if defined(MPICH)
+#if (defined(MPICH) || defined(MPICH2))
 /* MPICH2 also provides this routine */
 void MPIR_Datatype_iscontig(MPI_Datatype datatype, int *flag);
 
