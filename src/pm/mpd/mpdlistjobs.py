@@ -92,6 +92,7 @@ def mpdlistjobs():
                     print 'username = %s'    % (msg['username'])
                     print 'host     = %s'    % (msg['host'])
                     print 'pid      = %s'    % (msg['clipid'])
+                    print 'sid      = %s'    % (msg['sid'])
                     print 'rank     = %s'    % (msg['rank'])
                     print 'pgm      = %s'    % (msg['pgm'])
                     print

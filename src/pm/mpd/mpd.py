@@ -226,6 +226,7 @@ def _handle_console_input():
                               'username' : g.activeJobs[jobid][manPid]['username'],
                               'host' : g.myHost,
                               'clipid' : str(g.activeJobs[jobid][manPid]['clipid']),
+                              'sid' : str(manPid),  # may chg to actual sid later
                               'pgm'  : g.activeJobs[jobid][manPid]['pgm'],
                               'rank' : g.activeJobs[jobid][manPid]['rank'] }
                 mpd_send_one_msg(g.conSocket, msgToSend)
@@ -310,6 +311,7 @@ def _handle_lhs_input():
                                   'username' : g.activeJobs[jobid][manPid]['username'],
                                   'host' : g.myHost,
                                   'clipid' : str(g.activeJobs[jobid][manPid]['clipid']),
+                                  'sid' : str(manPid),  # may chg to actual sid later
                                   'pgm' : g.activeJobs[jobid][manPid]['pgm'],
                                   'rank' : g.activeJobs[jobid][manPid]['rank'] }
                     mpd_send_one_msg(g.rhsSocket, msgToSend)
