@@ -35,7 +35,9 @@ else {
 if ($build_test_pgm) {
     open( TESTFD, ">test/mpi/errhan/errcode.c" ) || die "Cannot create test program\n";
     print TESTFD "#include <stdio.h>\n#include \"mpi.h\"\n";
-    print TESTFD "int MPIR_Err_create_code( int, const char [], ... );\n";
+    print TESTFD "#define MPIR_ERR_FATAL 1\n";
+    print TESTFD "#define MPIR_ERR_RECOVERABLE 0\n";
+    print TESTFD "int MPIR_Err_create_code( int, int, char *, int, const char [], const char [], ... );\n";
     print TESTFD "void ChkMsg( int, int, const char [] );\n\n";
     print TESTFD "int main(int argc, char **argv)\n";
     print TESTFD "{\n    int err;\n    MPI_Init( 0, 0 );\n";
@@ -50,106 +52,8 @@ foreach $file (@files) {
 &CreateErrMsgMapping( $OUTFD );
 
 if ($build_test_pgm) {
-    print TESTFD "    return 0;\n}\n";
+    print TESTFD "    MPI_Finalize();\n    return 0;\n}\n";
 }    
-
-# ==========================================================================
-# Call this for each file
-# This reads a file and adds does the following:
-#   add the generic message to the hash generic_msgs with value i.
-#   add the specific message to the array specific_msgs in the ith location
-#   adds the location to the hash generic_loc{msg} as the value (: separated)
-#       and the hash specific_loc{msg}.
-#   The last two are used to provide better error reporting.
-#
-$generic_count = 0;
-$filename = "";    # Make global so that other routines can echo filename
-sub ProcessFile { 
-    $filename = $_[0];
-    open (FD, "<$filename" ) || die "Could not open $filename\n";
-
-    while (<FD>) {
-	# First, remove any comments
-	$errsrc = " in $filename";
-	$_ = StripComments( FD, $_ );
-	# Skip the definition of the function
-	if (/int\s*MPIR_Err_create_code/) { next; }
-	while (/MPIR_Err_create_code\s*(\(.*$)/) {
-	    ($leader, $remainder, @args ) = &GetSubArgs( FD, $1 );
-	    if ($debug) {
-		foreach $arg (@args) {
-		    print "|$arg|\n";
-		}
-	    }
-	    if ($build_test_pgm) {
-		&AddTestCall( @args )
-	    }
-
-	    # Check the 2nd and 3rd arguments
-	    $arg2 = $args[1];
-	    if ($arg2 =~ /\s$/) {
-		print STDERR "trailing blank on arg $arg2 in $filename!\n"; 
-	    }
-	    if ($#args >1) {
-		$arg3 = $args[2];
-		if ($arg3 =~ /^[1-9]/) {
-		    print STDERR "Error: third argument to Create_code is an invalid integer $arg3 (must be 0 or a string) in $filename\n";
-		}
-		if ($arg3 eq $arg2) {
-		    print STDERR "Error: generic and instance messages must be different in $filename (message $arg2)\n";
-		}
-#		if ($arg3 =~ /^\s*0\s*$/) { $arg3 = $arg2; }
-	    }
-	    else {
-		print STDERR "Warning: third argument to Create_code missing in $filename\n";
-		$arg3 = "0";
-	    }
-	    if ($arg2 =~ /^\"\*\*/) {
-		$reverse_loc{$arg2} = $filename;
-		if ($arg3 ne "0") {
-		    # Check arg3 matches
-		    $arg2 =~ /^\"\*\*(\S+).*\"/;
-		    $testarg1 = $1;
-		    $arg3 =~ /^\"\*\*(\S+).*\"/;
-		    $testarg2 = $1;
-		    $reverse_loc{$arg3} = $filename;
-		    if ($testarg1 ne $testarg2) {
-			print STDERR
-                       "Possible inconsistent error msg in $filename\r\ngeneric is $arg2 and specific is $arg3\r\n";
-		    }
-		}
-	    }
-	    else {
-		# NonStandard arg
-		print STDERR "Warning: NonStandard arg $arg2 in $filename\n";
-	    }
-	    if (!defined($generic_msgs{$arg2})) {
-		if ($arg3 ne "0" && $arg3 ne $arg2) {
-		    print "Adding specific short msg $arg3\n" if $debug;
-		    # Check that this is really a specific message
-		    # (contains %<format>)
-		    if (! ($arg3 =~ /\%/)) {
-			print STDERR "Warning: specific message $arg3 in $filename contains no format control\n";
-		    }
-		    $specific_msgs[$generic_count] = $arg3;
-		}
-		else {
-		    $specific_msgs[$generic_count] = "";
-		}
-		# Check that the generic message does *not* have a format
-		# control
-		if ($arg2 =~ /%/) {
-		    print STDERR "Warning: generic message $arg2 in $filename contains a format control\n";
-		    }
-		$generic_msgs{$arg2} = $generic_count++;
-	    }
-	    $generic_loc{$arg2} .= ":$filename";
-	    $specific_loc{$arg3} .= ":$filename";
-	    $_ = $remainder;
-	}
-    }		
-    close FD;
-}
 
 # From the data collected above, generate the file containing the error message
 # text.
@@ -206,7 +110,14 @@ sub CreateErrMsgMapping {
 	    if ($namehasformat != $replhasformat) {
 		print STDERR "Warning: format control usage in $name and $repl do not agree in errnames.txt\n";
 	    }
-	    $longnames{"\"$name\""} = $repl;
+	    if (!defined($longnames{"\"$name\""}))
+	    {
+		$longnames{"\"$name\""} = $repl;
+	    }
+	    else
+	    {
+		print STDERR "Warning: attempt to redefine $name.  Duplicate ignored.\n";
+	    }
 	}
     }
     close( FD );
@@ -217,27 +128,24 @@ sub CreateErrMsgMapping {
     # class to the corresponding index.
     # We must do this here because we must ensure that all MPI error
     # classes have been added to the generic messages
-    @mpimsgs = ();
+    @class_msgs = ();
     open (FD, "<src/mpi/errhan/baseerrnames.txt" ) || 
 	die "Could not open src/mpi/errhan/baseerrnames.txt";
-    while (<FD>) {
+    while (<FD>)
+    {
 	s/#.*$//;
 	($mpiname,$num,$shortmsg) = split(/\s\s*/);
-	if ($shortmsg ne "") {
-	    if ($shortmsg =~ /\%/) {
-		print STDERR "Generic message $shortmsg in baseerrnames.txt contains a format control\n";
+	if ($shortmsg ne "")
+	{
+	    if ($shortmsg =~ /\%/)
+	    {
+		print STDERR "Warning: generic message $shortmsg in baseerrnames.txt contains format control\n";
 	    }
-	    if (!defined($generic_msgs{"\"$shortmsg\""})) {
-		$generic_msgs{"\"$shortmsg\""} = $generic_count;
-		$generic_count ++;
-		$generic_loc{"\"$shortmsg\""} = ":baseerrnames.txt";
-	    }
-	    # This isn't correct.  Because we sort the msgs, the
-	    # matching number must be computed *after* the sort.
-	    # Thus, we first store the short message; then update the
-	    # number.
-	    #$mpimsg[$num] = $generic_msgs{"\"$shortmsg\""};
-	    $mpimsg[$num] = "\"$shortmsg\"";
+
+	    $generic_msgs{"\"$shortmsg\""}++;
+	    $generic_loc{"\"$shortmsg\""} = ":baseerrnames.txt";
+
+	    $class_msgs[$num] = "\"$shortmsg\"";
 	}
     }
     close (FD);
@@ -252,88 +160,78 @@ sub CreateErrMsgMapping {
   linear search or bisection algorithm to find the message corresponding to\
   a particular message */\n";
     my $num = 0;
-    foreach my $key (sort keys %generic_msgs) {
+    foreach my $key (sort keys %generic_msgs)
+    {
 	$longvalue = "\"\0\"";
-	if ($key =~ /^\"\*\*/) {
-	    if (!defined($longnames{$key})) {
-		$seenfile = $generic_loc{$key};
-		print STDERR "Shortname $key has no expansion (first seen in file $seenfile)\n";
-	    }
-	    else {
-		# Escape any naked quotes
-		$longvalue = s/(?<!\\)\"/\\\"/;
-		$longvalue = "\"" . $longnames{$key} . "\"";
-	    }
+	if (!defined($longnames{$key}))
+	{
+	    $seenfile = $generic_loc{$key};
+	    print STDERR "Shortname $key has no expansion (first seen in file $seenfile)\n";
+	    next;
 	}
-	print $OUTFD "static const char short$num\[\] = $key;\n";
-	print $OUTFD "static const char long$num\[\]  = $longvalue;\n";
+	
+	# Escape any naked quotes
+	$longvalue = s/(?<!\\)\"/\\\"/;
+	$longvalue = "\"" . $longnames{$key} . "\"";
+
+	print $OUTFD "static const char short_gen$num\[\] = $key;\n";
+	print $OUTFD "static const char long_gen$num\[\]  = $longvalue;\n";
 	# Remember the number assigned to this short string.
 	$short_to_num{$key} = $num;
 	$num ++;
     }
     # Generate the mapping of short to long names
-    print $OUTFD "static const int generic_msgs_len = $num;\n";
+    print $OUTFD "\nstatic const int generic_msgs_len = $num;\n";
     my $i = 0;
     print $OUTFD "static msgpair generic_err_msgs[] = {\n";
     for (my $i = 0; $i < $num; $i ++) {
-	print $OUTFD "{ short$i, long$i }";
+	print $OUTFD "{ short_gen$i, long_gen$i }";
 	print $OUTFD "," if ($i < $num - 1);
 	print $OUTFD "\n";
     }
     print $OUTFD "};\n";
-    print $OUTFD "#endif\n";
+    print $OUTFD "#endif\n\n";
 
     my $num = 0;
-    # Do in exactly the same order as the generic messages
+    # Now output the instance specific messages
     print $OUTFD "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_GENERIC\n";
-    foreach $key (sort keys %generic_msgs) {
+    foreach $key (sort keys %specific_msgs)
+    {
 	$longvalue = "\"\0\"";
-	$specname = $specific_msgs[$generic_msgs{$key}];
-	if ($specname =~ /^\"\*\*/) {
-	    if (!defined($longnames{$specname})) {
-		print STDERR "Shortname $specname has no expansion (first seen in file $reverse_loc{$specname})\n";
-	    }
-	    else {
-		# Escape any naked quotes
-		$longvalue = s/(?<!\\)\"/\\\"/;
-		$longvalue = "\"" . $longnames{$specname} . "\"";
-	    }
+
+	if (!defined($longnames{$key}))
+	{
+	    print STDERR "Shortname $key has no expansion (first seen in file $specific_loc{$key})\n";
+	    next;
 	}
-	if ($specname ne "" && $specname ne "0") {
-	    print $OUTFD "static const char short_spc$num\[\] = $specname;\n";
-	    print $OUTFD "static const char long_spc$num\[\]  = $longvalue;\n";
-	    $has_spec[$num] = 1;
-	}
-	else {
-	    $has_spec[$num] = 0;
-	}
+
+	# Escape any naked quotes
+	$longvalue = s/(?<!\\)\"/\\\"/;
+	$longvalue = "\"" . $longnames{$key} . "\"";
+
+	print $OUTFD "static const char short_spc$num\[\] = $key;\n";
+	print $OUTFD "static const char long_spc$num\[\]  = $longvalue;\n";
 	$num ++;
     }
     # Generate the mapping of short to long names
     my $i = 0;
-    print $OUTFD "/* This array parallels the generic_err_msgs array, with
- null entries where there is no special instance-specific message */\n";
+    print $OUTFD "\nstatic const int specific_msgs_len = $num;\n";
     print $OUTFD "static msgpair specific_err_msgs[] = {\n";
     for ($i = 0; $i < $num ; $i ++) {
-	if ($has_spec[$i]) {
-	    print $OUTFD "{ short_spc$i, long_spc$i }";
-	}
-	else {
-	    print $OUTFD "{ 0, 0 }";
-	}
+	print $OUTFD "{ short_spc$i, long_spc$i }";
 	print $OUTFD "," if ($i < $num - 1);
 	print $OUTFD "\n";
     }
     print $OUTFD "};\n";
-    print $OUTFD "#endif\n";
+    print $OUTFD "#endif\n\n";
 
     print $OUTFD "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE\n";
-    $maxval = $#mpimsg + 1;
+    $maxval = $#class_msgs + 1;
     print $OUTFD "#define MPIR_MAX_ERROR_CLASS_INDEX $maxval\n";
     print $OUTFD "static int class_to_index[] = {\n";
-    for ($i=0; $i<=$#mpimsg; $i++) {
-	print $OUTFD "$short_to_num{$mpimsg[$i]}";
-	print $OUTFD "," if ($i < $#mpimsg);
+    for ($i=0; $i<=$#class_msgs; $i++) {
+	print $OUTFD "$short_to_num{$class_msgs[$i]}";
+	print $OUTFD "," if ($i < $#class_msgs);
 	print $OUTFD "\n" if !(($i + 1) % 10);
     }
     print $OUTFD "};\n";
@@ -345,62 +243,190 @@ sub CreateErrMsgMapping {
 #
 sub AddTestCall {
 
-    # Ensure that the class is specified.  There are a few places
-    # where this is a variable
-    $errclass = $_[0];
-    if (! ($errclass =~ /MPI_ERR/) ) {
+    my $last_errcode = $_[0];
+    my $fatal_flag = $_[1];
+    my $fcname = $_[2];
+    my $errclass = $_[3];
+    my $generic_msg = $_[4];
+    my $specific_msg = $_[5];
+
+    # Ensure that the last_errcode, class and fatal flag are specified.  There are a few places where these are variables.
+    if (!($last_errcode =~ /MPI_ERR_/) )
+    {
+	$last_errcode = "MPI_SUCCESS";
+    }
+    if (!($errclass =~ /MPI_ERR_/) )
+    {
 	$errclass = "MPI_ERR_OTHER";
     }
+    if (!($fatal_flag =~ /MPIR_ERR_FATAL/) && !($fatal_flag =~ /MPIR_ERR_RECOVERABLE/))
+    {
+	$fatal_flag = "MPIR_ERR_FATAL";
+    }
+
     # Generic message (first instance only)
-    if (!defined($testmsg{$_[1]})) {
+    if (!defined($test_generic_msg{$generic_msg}))
+    {
+	$test_generic_msg{$generic_msg} = $filename;
+
 	print TESTFD "    /* $filename */\n";
-	print TESTFD "    err = MPIR_Err_create_code( $errclass, @_[1], 0 );\n";
-	print TESTFD "    ChkMsg( err, $errclass, $_[1] );\n";
-	$testmsg{$_[1]} = $filename;
+	print TESTFD "    err = MPIR_Err_create_code($last_errcode, $fatal_flag, \"errcode::main\", $errclass, ". 
+	    "$generic_msg, 0);\n";
+	print TESTFD "    ChkMsg( err, $errclass, $generic_msg );\n";
     }
 
     # Specific messages
-    if ($_[2] ne "0") {
+    $specific_msg = "0" if ($specific_msg =~ /^\s*NULL\s*$/);
+    if ($specific_msg ne "0" && !defined($test_specific_msg{$specific_msg}))
+    {
+	$test_specific_msg{$specific_msg} = $filename;
+
 	print TESTFD "    {\n";
 	print TESTFD "    /* $filename */\n";
 	# Use types in the string to create the types with default
 	# values
-	my $format = $_[2];
+	my $format = $specific_msg;
 	my $fullformat = $format;
 	my $narg = 0;
 	my @args = ();
-	while ($format =~ /[^%]*%(.)(.*)/) {
+	while ($format =~ /[^%]*%(.)(.*)/)
+	{
 	    my $type = $1; 
 	    $format  = $2;
 	    $narg ++;
-	    if ($type eq "d") {
+	    if ($type eq "d")
+	    {
 		print TESTFD "    int i$narg = $narg;\n";
 		$args[$#args+1] = "i$narg";
 	    }
-	    elsif ($type eq "s") {
+	    elsif ($type eq "s")
+	    {
 		print TESTFD "    char s$narg\[\] = \"string$narg\";\n";
 		$args[$#args+1] = "s$narg";
 	    }
-	    else {
+	    else
+	    {
 		print STDERR "Unrecognized format type $type for $fullformat in $filename\n";
 	    }
 	}   
-	$actargs = $#_ - 2;
-	if ($actargs != $narg) {
+	$actargs = $#_ - 5;
+	if ($actargs != $narg)
+	{
 	    print STDERR "Error: Format $fullformat provides $narg arguments but call has $actargs in $filename\n";
 	}
-	print TESTFD "     err = MPIR_Err_create_code( $errclass, @_[1], @_[2]";
-	foreach my $arg (@args) {
+	print TESTFD "     err = MPIR_Err_create_code($last_errcode, $fatal_flag, \"errcode::main\", $errclass, $generic_msg, " . 
+	    "$specific_msg";
+	foreach my $arg (@args) 
+	{
 	    print TESTFD ", $arg";
 	}
 	print TESTFD " );\n";
-	print TESTFD "    ChkMsg( err, $errclass, $_[2] );\n    }\n";
+	print TESTFD "    ChkMsg( err, $errclass, $specific_msg );\n    }\n";
 	# ToDo: pass another string to ChkMsg that contains the 
 	# names of the variables, as a single string (comma separated).
 	# This allows us to review the source of the values for the args.
     }
 }
 
+
+# ==========================================================================
+# Call this for each file
+# This reads a C source or header file and adds does the following:
+#   adds any generic message short names encountered to the hash generic_msgs.
+#   adds any specific message short names encounter to the hash specific_msgs.
+#   adds the filename to the hash generic_loc{msg} as the value (: separated)
+#       and the same for hash specific_loc{msg}.
+#   The last two are used to provide better error reporting.
+#
+$filename = "";    # Make global so that other routines can echo filename
+sub ProcessFile
+{ 
+    $filename = $_[0];
+    open (FD, "<$filename" ) || die "Could not open $filename\n";
+
+    while (<FD>) {
+	# First, remove any comments
+	$_ = StripComments( FD, $_ );
+	# Skip the definition of the function
+	if (/int\s*MPIR_Err_create_code/) { $remainder = ""; next; }
+	while (/MPIR_Err_create_code\s*(\(.*$)/) {
+	    ($leader, $remainder, @args ) = &GetSubArgs( FD, $1 );
+	    if ($debug) {
+		foreach $arg (@args) {
+		    print "|$arg|\n";
+		}
+	    }
+	    
+	    # if signature does not match new function prototype, then skip it
+	    if ($#args < 5 || (!($args[1] =~ /MPIR_ERR_FATAL/) && !($args[1] =~ /MPIR_ERR_RECOVERABLE/)))
+	    {
+		if (!defined($bad_syntax_in_file{$filename}))
+		{
+		    $bad_syntax_in_file{$filename} = 1;
+		    print STDERR "Error: MPIR_Err_create_code() call with too few arguments in $filename\n";
+		}
+		next;
+	    }
+	    
+	    my $last_errcode = $args[0];
+	    my $fatal_flag = $args[1];
+	    my $fcname = $args[2];
+	    my $errclass = $args[3];
+	    my $generic_msg = $args[4];
+	    my $specific_msg = $args[5];
+
+	    # Check the generic and specific message arguments
+	    if ($generic_msg =~ /\s$/)
+	    {
+		print STDERR "Warning: trailing blank on arg $generic_msg in $filename!\n"; 
+	    }
+	    if (!($generic_msg =~ /^\"\*\*\S+\"$/))
+	    {
+		print STDERR "Error: generic message $generic_msg has incorrect format in $filename\n";
+		next;
+	    }
+	    if ($generic_msg =~ /%/) {
+		print STDERR "Warning: generic message $generic_msg in $filename contains a format control\n";
+	    }
+
+	    $specific_msg = "0" if ($specific_msg =~ /^\s*NULL\s*$/);
+	    if ($specific_msg =~ /^[1-9]/)
+	    {
+		print STDERR "Error: instance specific message $specific_msg in $filename is an invalid integer ". 
+		    "(must be 0 or a string)\n";
+		next;
+	    }
+	    if ($specific_msg eq $generic_msg)
+	    {
+		print STDERR "Warning: generic and instance specific messages must be different " .
+		    "(file $filename, message $generic_msg)\n";
+	    }
+	    if ($specific_msg ne "0" && !($specific_msg =~ /\%/))
+	    {
+		print STDERR "Warning: instance specific message $specific_msg in $filename contains no format control\n";
+	    }
+
+	    if ($build_test_pgm)
+	    {
+		&AddTestCall( @args )
+	    }
+
+	    $generic_msgs{$generic_msg}++;
+	    $generic_loc{$generic_msg} .= ":$filename";
+
+	    if ($specific_msg =~ /^\"\*\*/)
+	    {
+		$specific_msgs{$specific_msg}++;
+		$specific_loc{$specific_msg} .= ":$filename";
+	    }
+	}
+	continue
+        {
+            $_ = $remainder;
+        }
+    }		
+    close FD;
+}
 
 #
 # Other todos:

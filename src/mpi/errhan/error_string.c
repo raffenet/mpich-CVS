@@ -25,9 +25,6 @@
 
 #endif
 
-/* Forward reference for accessing error strings */
-const char *MPIR_Err_get_generic_string( int class );
-
 #undef FUNCNAME
 #define FUNCNAME MPI_Error_string
 
@@ -50,7 +47,6 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
 {
     static const char FCNAME[] = "MPI_Error_string";
     int mpi_errno = MPI_SUCCESS;
-    const char *p;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ERROR_STRING);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERROR_STRING);
@@ -69,14 +65,10 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    /* The assumption here is that the string remains valid until
-       after the strncpy.  We could lock around the error message
-       routines if necessary, but providing a pointer to the string
-       simplifies the creation of error messages for the MPI_ERRORS_FATAL
-       error handler */
-    p = MPIR_Err_get_string( errorcode );
-    *resultlen = strlen( p );
-    MPIU_Strncpy( string, p, MPI_MAX_ERROR_STRING );
+
+    MPIR_Err_get_string( errorcode, string );
+    *resultlen = strlen( string );
+
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_STRING);
