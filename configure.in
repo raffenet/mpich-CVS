@@ -514,7 +514,7 @@ elif test ! -x $use_top_srcdir/src/mpid/$device_name/configure ; then
     device_name=""
 else 
     # Add the device to the configure list
-    subsystems="$subsystems src/mpid/$device_name"
+    devsubsystems="$devsubsystems src/mpid/$device_name"
     dnl Make device_name available to subdirs
 fi
 AC_SUBST(device_name)
@@ -1110,11 +1110,11 @@ export RANLIB
 export MPILIBNAME
 export CC
 PAC_SUBDIR_CACHE
-dnl AC_CONFIG_SUBDIRS(src/mpi/timer $subsystems)
-PAC_CONFIG_SUBDIRS_IMMEDIATE(src/mpi/timer $subsystems $TOPLEVEL_SUBDIRS)
-#
-# Make subsystems available to makefiles.
-AC_SUBST(subsystems)
+# Build the device first.  This way, any libraries or variables that it needs
+# can be extracted before building the other subsystems (this is particularly
+# important for the bindings, which may need to know the libraries in order
+# to create the compilation scripts)
+PAC_CONFIG_SUBDIRS_IMMEDIATE(src/mpi/timer $devsubsystems)
 # Check for any localdefs files.  These may be created, so we look in
 # the local directory first.
 if test -f src/mpid/$device_name/localdefs ; then
@@ -1122,6 +1122,12 @@ if test -f src/mpid/$device_name/localdefs ; then
 elif test -f $use_top_srcdir/src/mpid/$device_name/localdefs ; then
     . $use_top_srcdir/src/mpid/$device_name/localdefs
 fi
+
+PAC_CONFIG_SUBDIRS_IMMEDIATE($subsystems $TOPLEVEL_SUBDIRS)
+#
+# Make subsystems available to makefiles.
+subsystems="$devsubsystems $subsystems"
+AC_SUBST(subsystems)
 #
 dnl
 dnl Once the subsystems are configured, we can inquire about what
