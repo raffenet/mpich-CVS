@@ -57,6 +57,15 @@ int MPID_Startall(int count, MPID_Request * requests[])
 		break;
 	    }
 
+	    case MPIDI_REQUEST_TYPE_BSEND:
+	    {
+		rc = MPIR_Bsend_isend(preq->ch3.user_buf, preq->ch3.user_count,
+				      preq->ch3.datatype, preq->ch3.match.rank,
+				      preq->ch3.match.tag, preq->comm, 2,
+				      &preq->partner_request);
+		break;
+	    }
+
 	    default:
 	    {
 		abort();

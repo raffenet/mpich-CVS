@@ -5,7 +5,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 /* Used to communication the type of bsend */
-typedef enum { BSEND, IBSEND, BSEND_INIT } BsendKind_t;
+typedef enum { BSEND=0, IBSEND=1, BSEND_INIT=2 } BsendKind_t;
 /* Function Prototypes for the bsend utility functions */
 int MPIR_Bsend_attach( void *, int );
 int MPIR_Bsend_detach( void *, int * );

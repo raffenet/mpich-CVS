@@ -192,12 +192,14 @@ extern MPIDI_Process_t MPIDI_Process;
     (_req)->ch3.state |= ((_flag) << MPIDI_REQUEST_SYNC_SEND_SHIFT) & MPIDI_REQUEST_SYNC_SEND_MASK;	\
 }
 
-#define MPIDI_REQUEST_TYPE_MASK (0x3 << MPIDI_REQUEST_TYPE_SHIFT)
+#define MPIDI_REQUEST_TYPE_MASK (0x7 << MPIDI_REQUEST_TYPE_SHIFT)
 #define MPIDI_REQUEST_TYPE_SHIFT 4
 #define MPIDI_REQUEST_TYPE_RECV 0
 #define MPIDI_REQUEST_TYPE_SEND 1
 #define MPIDI_REQUEST_TYPE_RSEND 2
 #define MPIDI_REQUEST_TYPE_SSEND 3
+/* We need a BSEND type for persistent bsends (see mpid_startall.c) */
+#define MPIDI_REQUEST_TYPE_BSEND 4
 #define MPIDI_Request_get_type(_req)						\
 (((_req)->ch3.state & MPIDI_REQUEST_TYPE_MASK) >> MPIDI_REQUEST_TYPE_SHIFT)
 
