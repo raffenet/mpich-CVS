@@ -26,31 +26,32 @@
    
    Algorithm: MPI_Alltoall
 
-   We use four algorithms for alltoall. For short messages, we use
-   the algorithm by Jehoshua Bruck et al, IEEE TPDS, Nov. 1997. It 
-   is a store-and-forward algorithm that takes lgp steps. Because of the 
-   extra communication, the bandwidth requirement is n.lgp.beta.
+   We use four algorithms for alltoall. For short messages and
+   (comm_size >= 8), we use the algorithm by Jehoshua Bruck et al,
+   IEEE TPDS, Nov. 1997. It is a store-and-forward algorithm that
+   takes lgp steps. Because of the extra communication, the bandwidth
+   requirement is n.lgp.beta.
 
    Cost = lgp.alpha + n.lgp.beta
 
    where n is the total amount of data a process needs to send to all
    other processes.
 
-   For medium size messages (typically 1 KB--256 KB), we use an
-   algorithm that posts all irecvs and isends and then does a
+   For medium size messages and (short messages for comm_size < 8), we
+   use an algorithm that posts all irecvs and isends and then does a
    waitall. We scatter the order of sources and destinations among the
    processes, so that all processes don't try to send/recv to/from the
    same process at the same time.
 
-   For long messages, we use a pairwise exchange algorithm, which
-   takes p-1 steps. For a power-of-two number of processes, we
+   For long messages and power-of-two number of processes, we use a
+   pairwise exchange algorithm, which takes p-1 steps. We
    calculate the pairs by using an exclusive-or algorithm:
            for (i=1; i<comm_size; i++)
                dest = rank ^ i;
    This algorithm doesn't work if the number of processes is not a power of
-   two. For a non-power-of-two number of processes, we create pairs by
-   having each process receive from (rank-i) and send to (rank+i) at
-   step i.
+   two. For a non-power-of-two number of processes, we use an
+   algorithm in which, in step i, each process  receives from (rank-i)
+   and sends to (rank+i). 
 
    Cost = (p-1).alpha + n.beta
 
@@ -106,7 +107,7 @@ PMPI_LOCAL int MPIR_Alltoall(
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
     
-    if (nbytes <= MPIR_ALLTOALL_SHORT_MSG) {
+    if ((nbytes <= MPIR_ALLTOALL_SHORT_MSG) && (comm_size >= 8)) {
 
         /* use the indexing algorithm by Jehoshua Bruck et al,
          * IEEE TPDS, Nov. 97 */ 
@@ -392,8 +393,7 @@ PMPI_LOCAL int MPIR_Alltoall(
 
     }
 
-    else if ((nbytes > MPIR_ALLTOALL_SHORT_MSG) && 
-             (nbytes <= MPIR_ALLTOALL_MEDIUM_MSG)) {  
+    else if (nbytes <= MPIR_ALLTOALL_MEDIUM_MSG) {  
         /* Medium-size message. Use isend/irecv with scattered
            destinations */
 
@@ -440,9 +440,9 @@ PMPI_LOCAL int MPIR_Alltoall(
     }
 
     else {
-        /* Long message. Use pairwise exchange. If comm_size is a
-           power-of-two, use exclusive-or to create pairs. Else send
-           to rank+i, receive from rank-i. */
+        /* Long message. If comm_size is a power-of-two, do a pairwise
+           exchange using exclusive-or to create pairs. Else send to
+           rank+i, receive from rank-i. */
         
         /* Make local copy first */
         mpi_errno = MPIR_Localcopy(((char *)sendbuf + 

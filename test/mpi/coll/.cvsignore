@@ -48,4 +48,6 @@ icgatherv
 icreduce
 icscatter
 icscatterv
+allgatherv2
+alltoallv0
 .deps
