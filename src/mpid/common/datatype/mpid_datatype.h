@@ -17,6 +17,23 @@
 #define MPID_Datatype_get_ptr(a,ptr)   MPID_Getb_ptr(Datatype,a,0x000000ff,ptr)
 #define MPID_Datatype_get_basic_size(a) (((a)&0x0000ff00)>>8)
 
+#define MPID_Datatype_add_ref(datatype_ptr) MPIU_Object_add_ref((datatype_ptr))
+
+/* MPID_Datatype_release decrements the reference count on the MPID_Datatype
+ * and, if the refct is then zero, frees the MPID_Datatype and associated
+ * structures.
+ */
+#define MPID_Datatype_release(datatype_ptr)
+do {
+    int inuse;
+
+    MPIU_Object_release_ref((datatype_ptr),&inuse);
+    if (!inuse) {
+	MPID_Datatype_free(datatype_ptr);
+    }
+#endif
+} while (0)
+
 /* Note: Probably there is some clever way to build all of these from a macro.
  */
 #define MPID_Datatype_get_size_macro(a,__size)				\
@@ -142,10 +159,8 @@ typedef struct MPID_Datatype {
     /* The remaining fields are required but less frequently used, and
        are placed after the more commonly used fields */
     int loopsize; /* size of loops for this datatype in bytes; derived value */
-    /* int           combiner; */     /* MPI call that was used to create this
-                                    datatype */
     struct MPID_Dataloop *loopinfo; /* Original loopinfo, used when 
-                                          creating and when getting contents */
+                                     * creating and when getting contents */
     int           has_sticky_ub;   /* The MPI_UB and MPI_LB are sticky */
     int           has_sticky_lb;
     int           is_permanent;  /* True if datatype is a predefined type */
@@ -175,15 +190,13 @@ typedef struct MPID_Datatype {
     MPID_DEV_DATATYPE_DECL
 #endif
 } MPID_Datatype;
+
 extern MPIU_Object_alloc_t MPID_Datatype_mem;
+
 /* Preallocated datatype objects */
 #define MPID_DATATYPE_N_BUILTIN 36
 extern MPID_Datatype MPID_Datatype_builtin[MPID_DATATYPE_N_BUILTIN];
 extern MPID_Datatype MPID_Datatype_direct[];
-
-
-/* **************************************************************** */
-
 
 #define MPID_DTYPE_BEGINNING  0
 #define MPID_DTYPE_END       -1
