@@ -89,7 +89,7 @@ void MPIR_Datatype_init( void )
 		dptr->extent	   = dptr->size;
 		dptr->ub	   = dptr->size;
 		dptr->true_ub	   = dptr->size;
-		dptr->combiner	   = MPI_COMBINER_NAMED;
+		dptr->contents     = NULL; /* should never get referenced? */
 	    }
 	    is_init = 1;
 	}

@@ -106,8 +106,8 @@ int MPI_Type_indexed(int count,
 	for (i=0; i < count; i++) {
 	    ints[i+1] = blocklens[i];
 	}
-	for (i=count; i < 2*count; i++) {
-	    ints[i+1] = indices[i];
+	for (i=0; i < count; i++) {
+	    ints[i + count + 1] = indices[i];
 	}
 	MPID_Datatype_get_ptr(*newtype, new_dtp);
 	mpi_errno = MPID_Datatype_set_contents(new_dtp,

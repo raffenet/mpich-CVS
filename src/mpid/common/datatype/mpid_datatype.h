@@ -204,5 +204,9 @@ int MPID_Datatype_set_contents(struct MPID_Datatype *ptr,
 			       MPI_Datatype *types);
 
 void MPID_Datatype_free_contents(struct MPID_Datatype *ptr);
+
+void MPID_Datatype_free(struct MPID_Datatype *ptr);
+
+
 /* end of file */
 #endif

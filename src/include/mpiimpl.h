@@ -903,7 +903,7 @@ typedef struct MPID_Datatype {
     /* The remaining fields are required but less frequently used, and
        are placed after the more commonly used fields */
     int loopsize; /* size of loops for this datatype in bytes; derived value */
-    int           combiner;      /* MPI call that was used to create this
+    /* int           combiner; */     /* MPI call that was used to create this
                                     datatype */
     struct MPID_Dataloop *loopinfo; /* Original loopinfo, used when 
                                           creating and when getting contents */
@@ -930,7 +930,7 @@ typedef struct MPID_Datatype {
     MPI_Aint      element_size; /* Size of each element or -1 if elements are
                                    not all the same size */
     MPID_Datatype_contents *contents;
-    int (*free_fn)( struct MPID_Datatype * ); /* Function to free this datatype */
+    /* int (*free_fn)( struct MPID_Datatype * ); */ /* Function to free this datatype */
     /* Other, device-specific information */
 #ifdef MPID_DEV_DATATYPE_DECL
     MPID_DEV_DATATYPE_DECL

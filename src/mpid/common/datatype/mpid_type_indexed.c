@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+/* #define MPID_TYPE_ALLOC_DEBUG */
+
 /*@
   MPID_Type_indexed - create an indexed datatype
  
@@ -58,9 +60,6 @@ int MPID_Type_indexed(int count,
     }
 
     /* Note: handle is filled in by MPIU_Handle_obj_alloc() */
-    if (dispinbytes) new_dtp->combiner = MPI_COMBINER_HINDEXED;
-    else new_dtp->combiner             = MPI_COMBINER_INDEXED;
-
     MPIU_Object_set_ref(new_dtp, 1);
     new_dtp->is_permanent = 0;
     new_dtp->is_committed = 0;
@@ -257,9 +256,8 @@ int MPID_Type_indexed(int count,
     /* return handle to new datatype in last parameter */
     *newtype = new_dtp->handle;
 
+#ifdef MPID_TYPE_ALLOC_DEBUG
+    MPIU_dbg_printf("(h)indexed type %x created.\n", new_dtp->handle);
+#endif
     return MPI_SUCCESS;
 }
-
-
-
-

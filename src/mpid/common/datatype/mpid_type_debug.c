@@ -34,7 +34,7 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
 	MPID_Datatype *type_ptr;
 
 	MPID_Datatype_get_ptr(type, type_ptr);
-	string = MPIDI_combiner_to_string(type_ptr->combiner);
+	string = MPIDI_combiner_to_string(type_ptr->contents->combiner);
 	sticky_lb = type_ptr->has_sticky_lb;
 	sticky_ub = type_ptr->has_sticky_ub;
     }

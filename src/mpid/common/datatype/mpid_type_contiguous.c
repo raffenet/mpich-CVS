@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+/* #define MPID_TYPE_ALLOC_DEBUG */
+
 /*@
   MPID_Type_contiguous - create a contiguous datatype
  
@@ -45,7 +47,6 @@ int MPID_Type_contiguous(int count,
 
     /* handle is filled in by MPIU_Handle_obj_alloc() */
     MPIU_Object_set_ref(new_dtp, 1);
-    new_dtp->combiner     = MPI_COMBINER_CONTIGUOUS;
     new_dtp->is_permanent = 0;
     new_dtp->is_committed = 0;
     new_dtp->attributes   = 0;
@@ -138,6 +139,10 @@ int MPID_Type_contiguous(int count,
     }
 
     *newtype = new_dtp->handle;
+
+#ifdef MPID_TYPE_ALLOC_DEBUG
+    MPIU_dbg_printf("contig type %x created.\n", new_dtp->handle);
+#endif
 
     return MPI_SUCCESS;
 }

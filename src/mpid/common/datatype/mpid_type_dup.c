@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+/* #define MPID_TYPE_ALLOC_DEBUG */
+
 /*@
   MPID_Type_dup - create a copy of a datatype
  
@@ -54,7 +56,6 @@ int MPID_Type_dup(MPI_Datatype oldtype,
     new_dtp->true_ub       = old_dtp->true_ub;
     new_dtp->true_lb       = old_dtp->true_lb;
     new_dtp->alignsize     = old_dtp->alignsize;
-    new_dtp->combiner      = old_dtp->combiner;
     new_dtp->has_sticky_ub = old_dtp->has_sticky_ub;
     new_dtp->has_sticky_lb = old_dtp->has_sticky_lb;
     new_dtp->is_permanent  = old_dtp->is_permanent;
@@ -64,8 +65,6 @@ int MPID_Type_dup(MPI_Datatype oldtype,
     /*    new_dtp->name          =  ??? */
     new_dtp->n_elements    = old_dtp->n_elements;
     new_dtp->element_size  = old_dtp->element_size;
-    new_dtp->free_fn       = NULL; /* ??? */
-
 
     /* copy dataloop */
     dlp = (struct MPID_Dataloop *) MPIU_Malloc(old_dtp->loopsize);
@@ -81,5 +80,9 @@ int MPID_Type_dup(MPI_Datatype oldtype,
     dlp->handle                = new_dtp->handle;
 
     *newtype = new_dtp->handle;
+
+#ifdef MPID_TYPE_ALLOC_DEBUG
+    MPIU_dbg_printf("dup type %x created.\n", new_dtp->handle);
+#endif
     return mpi_errno;
 }
