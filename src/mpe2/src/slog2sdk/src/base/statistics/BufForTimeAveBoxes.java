@@ -28,24 +28,32 @@ import base.drawable.Primitive;
 import base.drawable.Shadow;
 import base.drawable.CoordPixelXform;
 import base.topology.SummaryState;
+import base.topology.SummaryArrow;
 
 public class BufForTimeAveBoxes extends TimeBoundingBox
 {
-    private TimeBoundingBox   timebounds;
     private Map               map_lines2nestable;   /* state and composite */
     private Map               map_lines2nestless;   /* arrow/event */
     private Map               map_rows2nestable;    /* state and composite */
     private Map               map_rows2nestless;    /* arrow/event */
+
+    private float             init_state_height_ftr;
+    private float             next_state_height_ftr;
+
+    private boolean           drawStates;
+    private boolean           drawArrows;
     
 
     public BufForTimeAveBoxes( final TimeBoundingBox timebox )
     {
         super( timebox );
-        timebounds          = timebox;
         map_lines2nestable  = new HashMap();
         map_lines2nestless  = new HashMap();
         map_rows2nestable   = null;
         map_rows2nestless   = null;
+
+        drawStates          = true;
+        drawArrows          = true;
     }
 
     //  Assume dobj is Nestable
@@ -67,7 +75,7 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
         avebox = null;
         avebox = (TimeAveBox) map_lines2nestable.get( key );
         if ( avebox == null ) {
-            avebox = new TimeAveBox( timebounds, true );
+            avebox = new TimeAveBox( this, true );
             map_lines2nestable.put( key, avebox );
         }
         if ( dobj instanceof Shadow )
@@ -95,7 +103,7 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
         avebox = null;
         avebox = (TimeAveBox) map_lines2nestless.get( key );
         if ( avebox == null ) {
-            avebox = new TimeAveBox( timebounds, false );
+            avebox = new TimeAveBox( this, false );
             map_lines2nestless.put( key, avebox );
         }
         if ( dobj instanceof Shadow )
@@ -171,13 +179,22 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
         return new_keylist;
     }
 
+    public void setDrawingStates( boolean isDrawing )
+    { drawStates  = isDrawing; }
+
+    public void setDrawingArrows( boolean isDrawing )
+    { drawArrows  = isDrawing; }
+
     public void initializeDrawing( final Map      map_line2row,
-                                         boolean  isZeroTimeOrigin )
+                                   final Color    background_color,
+                                         boolean  isZeroTimeOrigin,
+                                         float    init_state_height,
+                                         float    next_state_height )
     {
-        Map.Entry         entry;
-        Iterator          entry_itr, avebox_itr;
-        List              lined_key, rowed_key;
-        TimeAveBox        lined_avebox, rowed_avebox;
+        Map.Entry          entry;
+        Iterator           entry_itr, avebox_itr;
+        List               lined_key, rowed_key;
+        TimeAveBox         lined_avebox, rowed_avebox;
 
         // For Nestables, i.e. states
         map_rows2nestable  = new HashMap();
@@ -202,7 +219,15 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
         while ( avebox_itr.hasNext() ) {
             rowed_avebox = (TimeAveBox) avebox_itr.next();
             rowed_avebox.setNestingExclusion();
-            rowed_avebox.initializeCategoryTimeBoxes( isZeroTimeOrigin );
+            rowed_avebox.initializeCategoryTimeBoxes();
+            if ( isZeroTimeOrigin )
+                SummaryState.setTimeBoundingBox( rowed_avebox,
+                                                 0.0d,
+                                                 super.getDuration() );
+            else
+                SummaryState.setTimeBoundingBox( rowed_avebox,
+                                                 super.getEarliestTime(),
+                                                 super.getLatestTime() );
         }
 
         // For Nestlesses, i.e. arrows
@@ -227,8 +252,20 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
         avebox_itr = map_rows2nestless.values().iterator();
         while ( avebox_itr.hasNext() ) {
             rowed_avebox = (TimeAveBox) avebox_itr.next();
-            rowed_avebox.initializeCategoryTimeBoxes( isZeroTimeOrigin );
+            rowed_avebox.initializeCategoryTimeBoxes();
+            if ( isZeroTimeOrigin )
+                SummaryArrow.setTimeBoundingBox( rowed_avebox,
+                                                 0.0d,
+                                                 super.getDuration() );
+            else
+                SummaryArrow.setTimeBoundingBox( rowed_avebox,
+                                                 super.getEarliestTime(),
+                                                 super.getLatestTime() );
         }
+
+        SummaryState.setBackgroundColor( background_color );
+        init_state_height_ftr  = init_state_height;
+        next_state_height_ftr  = next_state_height;
     }
 
     public int  drawAllStates( Graphics2D       g,
@@ -239,28 +276,28 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
         Iterator           entries;
         Topology           topo;
         TimeAveBox         avebox;
-        CategoryTimeBox[]  typeboxes;
-        int                rowID;
-        float              rStart, rFinal;
-        int                count;
+        float              rStart, rFinal, avebox_hgt;
+        int                rowID, count;
 
-        count   = 0;
-        entries = map_rows2nestable.entrySet().iterator();
+        if ( !drawStates )
+            return 0;
+
+        count      = 0;
+        avebox_hgt = (init_state_height_ftr - next_state_height_ftr) / 2.0f;
+        entries    = map_rows2nestable.entrySet().iterator();
         while ( entries.hasNext() ) {
             entry     = (Map.Entry) entries.next();
             key       = ( (List) entry.getKey() ).toArray();
             avebox    = (TimeAveBox) entry.getValue();
 
-            typeboxes = avebox.arrayOfCategoryTimeBoxes();
-
             topo      = (Topology) key[0];
             rowID     = ( (Integer) key[1] ).intValue();
 
-            rStart    = rowID - 0.4f;
-            rFinal    = rowID + 0.4f;
+            rStart    = (float) rowID - init_state_height_ftr / 2.0f; 
+            rFinal    = rStart + init_state_height_ftr;
 
-            count    += SummaryState.draw( g, null, typeboxes, coord_xform,
-                                           rStart, rFinal );
+            count    += SummaryState.draw( g, avebox, coord_xform,
+                                           rStart, rFinal, avebox_hgt );
         }
         return count;
     }
@@ -273,10 +310,12 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
         Iterator           entries;
         Topology           topo;
         TimeAveBox         avebox;
-        CategoryTimeBox[]  typeboxes;
         int                rowID1, rowID2;
         float              rStart, rFinal;
         int                count;
+
+        if ( !drawArrows )
+            return 0;
 
         count   = 0;
         entries = map_rows2nestless.entrySet().iterator();
@@ -285,8 +324,6 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
             key       = ( (List) entry.getKey() ).toArray();
             avebox    = (TimeAveBox) entry.getValue();
 
-            typeboxes = avebox.arrayOfCategoryTimeBoxes();
-
             topo      = (Topology) key[0];
             rowID1    = ( (Integer) key[1] ).intValue();
             rowID2    = ( (Integer) key[2] ).intValue();
@@ -294,44 +331,75 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
             rStart    = (float) rowID1;
             rFinal    = (float) rowID2;
 
-            // count    += SummaryLine.draw( g, null, typeboxes, coord_xform,
-            //                               rStart, rFinal );
+            count    += SummaryArrow.draw( g, avebox, coord_xform,
+                                           rStart, rFinal );
         }
         return count;
     }
 
-    public CategoryWeight  getCategoryWeightAt( CoordPixelXform  coord_xform,
-                                                Point            pix_pt )
+    public Summarizable  getSummarizableAt( CoordPixelXform  coord_xform,
+                                            Point            pix_pt )
     {
         Map.Entry          entry;
         Object[]           key;
         Iterator           entries;
         Topology           topo;
         TimeAveBox         avebox;
-        CategoryTimeBox[]  typeboxes;
-        CategoryTimeBox    typebox;
-        float              rStart, rFinal;
-        int                rowID;
+        Object             clicked_obj;
+        float              rStart, rFinal, avebox_hgt;
+        int                rowID1, rowID2;
 
-        typebox = null;
-        entries = map_rows2nestable.entrySet().iterator();
-        while ( entries.hasNext() && typebox == null ) {
-            entry     = (Map.Entry) entries.next();
-            key       = ( (List) entry.getKey() ).toArray();
-            avebox    = (TimeAveBox) entry.getValue();
-            typeboxes = avebox.arrayOfCategoryTimeBoxes();
+        topo         = null;
+        rowID1       = -1;
+        rowID2       = -1;
+        key          = null;
+        clicked_obj  = null;
 
-            topo      = (Topology) key[0];
-            rowID     = ( (Integer) key[1] ).intValue();
+        if ( drawArrows ) {
+            entries = map_rows2nestless.entrySet().iterator();
+            while ( entries.hasNext() && clicked_obj == null ) {
+                entry       = (Map.Entry) entries.next();
+                key         = ( (List) entry.getKey() ).toArray();
+                avebox      = (TimeAveBox) entry.getValue();
 
-            rStart    = rowID - 0.4f;
-            rFinal    = rowID + 0.4f;
+                topo        = (Topology) key[0];
+                rowID1      = ( (Integer) key[1] ).intValue();
+                rowID2      = ( (Integer) key[2] ).intValue();
 
-            typebox   = SummaryState.containsPixel( typeboxes, null,
-                                                  coord_xform, pix_pt,
-                                                  rStart, rFinal );
+                rStart      = (float) rowID1;
+                rFinal      = (float) rowID2;
+
+                clicked_obj = SummaryArrow.containsPixel( avebox,
+                                                          coord_xform, pix_pt,
+                                                          rStart, rFinal );
+            }
+            if ( clicked_obj != null )
+                return new Summarizable( clicked_obj, topo, rowID1, rowID2 );
         }
 
-        return ( typebox != null ? typebox.getCategoryWeight() : null );
+        if ( drawStates ) {
+            avebox_hgt = (init_state_height_ftr - next_state_height_ftr) / 2.0f;
+            entries    = map_rows2nestable.entrySet().iterator();
+            while ( entries.hasNext() && clicked_obj == null ) {
+                entry       = (Map.Entry) entries.next();
+                key         = ( (List) entry.getKey() ).toArray();
+                avebox      = (TimeAveBox) entry.getValue();
+
+                topo        = (Topology) key[0];
+                rowID1      = ( (Integer) key[1] ).intValue();
+
+                rStart      = (float) rowID1 - init_state_height_ftr / 2.0f; 
+                rFinal      = rStart + init_state_height_ftr;
+
+                clicked_obj = SummaryState.containsPixel( avebox,
+                                                          coord_xform, pix_pt,
+                                                          rStart, rFinal,
+                                                          avebox_hgt );
+            }
+            if ( clicked_obj != null )
+                return new Summarizable( clicked_obj, topo, rowID1, rowID1 );
+        }
+
+        return null;
     }
 }

@@ -26,7 +26,6 @@ import base.drawable.Drawable;
 import base.drawable.Composite;
 import base.drawable.Primitive;
 import base.drawable.Shadow;
-import base.topology.SummaryState;
 
 public class TimeAveBox extends TimeBoundingBox
 {
@@ -37,8 +36,10 @@ public class TimeAveBox extends TimeBoundingBox
     private              List                list_nestables;
     private              SortedSet           set_timeblocks;
     private              CategoryTimeBox[]   typebox_ary;
-    private              double              box_duration;
     private              double              num_real_objs;
+    private              double              box_duration;
+
+    private              TimeBoundingBox     curr_timebox;
 
     public TimeAveBox( final TimeBoundingBox  timebox,
                              boolean          isNestable )
@@ -48,6 +49,7 @@ public class TimeAveBox extends TimeBoundingBox
         box_duration    = super.getDuration();
         num_real_objs   = 0.0d;
         typebox_ary     = null;
+        curr_timebox    = null;
 
         if ( isNestable ) {
             list_nestables = new ArrayList();
@@ -249,7 +251,12 @@ public class TimeAveBox extends TimeBoundingBox
         this.adjustMapOfCategoryWeights();
     }
 
-    public void initializeCategoryTimeBoxes( boolean isZeroTimeOrigin )
+    public double getAveNumOfRealObjects()
+    {
+        return num_real_objs;
+    }
+
+    public void initializeCategoryTimeBoxes()
     {
         Iterator        twgts_itr;
         CategoryWeight  twgt;
@@ -267,19 +274,16 @@ public class TimeAveBox extends TimeBoundingBox
                 idx++;
             }
         }
-
-        if ( isZeroTimeOrigin )
-            SummaryState.setTimeBoundingBox( typebox_ary,
-                                             0.0d, super.getDuration() );
-        else
-            SummaryState.setTimeBoundingBox( typebox_ary,
-                                             super.getEarliestTime(),
-                                             super.getLatestTime() );
     }
 
     public CategoryTimeBox[] arrayOfCategoryTimeBoxes()
+    { return typebox_ary; }
+
+    public TimeBoundingBox  getCurrentTimeBoundingBox()
     {
-        return typebox_ary;
+        if ( curr_timebox == null )
+            curr_timebox = new TimeBoundingBox();
+        return curr_timebox;
     }
 
     public String toString()

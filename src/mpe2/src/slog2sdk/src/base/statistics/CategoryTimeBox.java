@@ -45,6 +45,11 @@ public class CategoryTimeBox extends TimeBoundingBox
         return twgt.getCategory().getColor();
     }
 
+    public boolean  isCategoryVisiblySearchable()
+    {
+        return twgt.getCategory().isVisiblySearchable();
+    }
+
     public CategoryWeight  getCategoryWeight()
     {
         return twgt;
