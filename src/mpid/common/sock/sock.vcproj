@@ -362,6 +362,9 @@
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm">
 			<File
+				RelativePath=".\iocp\sock.c">
+			</File>
+			<File
 				RelativePath="sock_describe_states.c">
 			</File>
 			<File
@@ -374,6 +377,9 @@
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc">
+			<File
+				RelativePath=".\mpidu_sock.h">
+			</File>
 			<File
 				RelativePath="sock.h">
 			</File>
