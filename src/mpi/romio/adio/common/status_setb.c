@@ -17,7 +17,8 @@ int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype,
 int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, 
 			  int nbytes)
 {
-    MPID_Status_set_bytes(status, nbytes);
+    if (status != MPI_STATUS_IGNORE)
+        MPID_Status_set_bytes(status, nbytes);
     return MPI_SUCCESS;
 }
 
