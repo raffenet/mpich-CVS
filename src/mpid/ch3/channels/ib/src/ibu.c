@@ -854,6 +854,9 @@ int ibu_destroy_set(ibu_set_t set)
 int ibui_buffer_read(ibu_t ibu, void *mem_ptr, unsigned int num_bytes)
 {
     ibu_unex_read_t *p;
+
+    MPIU_dbg_printf("ibui_buffer_read\n");
+
     p = (ibu_unex_read_t *)malloc(sizeof(ibu_unex_read_t));
     p->mem_ptr = mem_ptr;
     p->length = num_bytes;
@@ -866,6 +869,8 @@ int ibui_buffer_read(ibu_t ibu, void *mem_ptr, unsigned int num_bytes)
 int ibui_read_unex(ibu_t ibu)
 {
     ibu_unex_read_t *temp;
+
+    MPIU_dbg_printf("ibui_read_unex\n");
 
     assert(ibu->unex_list);
     assert(ibu->unex_list->length <= ibu->read.bufflen);
@@ -908,7 +913,9 @@ int ibui_readv_unex(ibu_t ibu)
     unsigned char * mem_ptr;
     unsigned char * iter_ptr;
     ibu_unex_read_t *temp;
-    
+
+    MPIU_dbg_printf("ibui_readv_unex\n");
+
     while (ibu->unex_list)
     {
 	mem_ptr = iter_ptr = ibu->unex_list->mem_ptr;
