@@ -144,6 +144,7 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	tmpbuf = MPIU_Malloc(tmpbuf_size);
 	if (tmpbuf == NULL)
 	{
+	    mpi_errno = MPIR_ERR_MEMALLOCFAILED;
 	    goto blk_exit;
 	}
 
