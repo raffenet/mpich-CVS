@@ -18,6 +18,7 @@
 #define SMPD_FAIL                          -1
 #define SMPD_CLOSE                          2
 #define SMPD_CONNECTED                      3
+#define SMPD_EXIT                           4
 
 #define SMPD_TRUE                           1
 #define SMPD_FALSE                          0

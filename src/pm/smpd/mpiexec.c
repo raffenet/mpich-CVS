@@ -186,6 +186,11 @@ int main(int argc, char* argv[])
 		    mp_dbg_printf("handle_read returned SMPD_CLOSE\n");
 		    break;
 		}
+		if (result == SMPD_EXIT)
+		{
+		    mp_dbg_printf("handle_read returned SMPD_EXIT\n");
+		    break;
+		}
 		if (result != SMPD_SUCCESS)
 		{
 		    mp_err_printf("handle_read() failed.\n");
@@ -255,6 +260,11 @@ int main(int argc, char* argv[])
 		if (result == SMPD_CLOSE)
 		{
 		    mp_dbg_printf("handle_read returned SMPD_CLOSE\n");
+		    break;
+		}
+		if (result == SMPD_EXIT)
+		{
+		    mp_err_printf("handle_read returned SMPD_EXIT\n");
 		    break;
 		}
 		if (result != SMPD_SUCCESS)

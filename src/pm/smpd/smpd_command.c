@@ -466,7 +466,7 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
     smpd_enter_fn("smpd_post_write_command");
 
     smpd_package_command(cmd);
-    smpd_dbg_printf("command after packaging: \"%s\"\n", cmd->cmd);
+    /*smpd_dbg_printf("command after packaging: \"%s\"\n", cmd->cmd);*/
     cmd->next = NULL;
     cmd->state = SMPD_CMD_WRITING_CMD;
 

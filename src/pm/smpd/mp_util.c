@@ -343,7 +343,7 @@ int handle_command(smpd_context_t *context)
 	{
 	    mp_dbg_printf("last process exited, returning SMPD_CLOSE.\n");
 	    mp_exit_fn("handle_command");
-	    return SMPD_CLOSE;
+	    return SMPD_EXIT;
 	}
 	mp_exit_fn("handle_command");
 	return SMPD_SUCCESS;
@@ -460,7 +460,7 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
 	    }
 	    mp_dbg_printf("read command: \"%s\"\n", context->read_cmd.cmd);
 	    ret_val = handle_command(context);
-	    if (ret_val == SMPD_SUCCESS || ret_val == SMPD_CONNECTED)
+	    if (ret_val == SMPD_SUCCESS || ret_val == SMPD_CONNECTED || ret_val == SMPD_EXIT)
 	    {
 		result = smpd_post_read_command(context);
 		if (result != SMPD_SUCCESS)
@@ -1036,6 +1036,12 @@ int mp_console(char *host)
 	    if (result == SMPD_CLOSE)
 	    {
 		mp_dbg_printf("handle_read returned SMPD_CLOSE\n");
+		result = SMPD_SUCCESS;
+		break;
+	    }
+	    if (result == SMPD_EXIT)
+	    {
+		mp_dbg_printf("handle_read returned SMPD_EXIT\n");
 		result = SMPD_SUCCESS;
 		break;
 	    }
