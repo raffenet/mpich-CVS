@@ -140,7 +140,6 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		}
 		break;
 #endif	    
-		/* --BEGIN ERROR HANDLING-- */
 		default:
 		{
 		    /* --BEGIN ERROR HANDLING-- */
