@@ -151,6 +151,9 @@
 				RelativePath="src\ch3_cancel_send.c">
 			</File>
 			<File
+				RelativePath=".\src\ch3_comm_spawn.c">
+			</File>
+			<File
 				RelativePath="src\ch3_describe_states.c">
 			</File>
 			<File

@@ -3,8 +3,8 @@
 EXPORTS
 	PMPI_Abort
 	MPI_Abort=PMPI_Abort
-;	PMPI_Accumulate
-;	MPI_Accumulate=PMPI_Accumulate
+	PMPI_Accumulate
+	MPI_Accumulate=PMPI_Accumulate
 	PMPI_Add_error_class
 	MPI_Add_error_class=PMPI_Add_error_class
 	PMPI_Add_error_code
@@ -17,8 +17,8 @@ EXPORTS
 	MPI_Allgather=PMPI_Allgather
 	PMPI_Allgatherv
 	MPI_Allgatherv=PMPI_Allgatherv
-;	PMPI_Alloc_mem
-;	MPI_Alloc_mem=PMPI_Alloc_mem
+	PMPI_Alloc_mem
+	MPI_Alloc_mem=PMPI_Alloc_mem
 	PMPI_Allreduce
 	MPI_Allreduce=PMPI_Allreduce
 	PMPI_Alltoall
@@ -139,6 +139,7 @@ EXPORTS
 	MPI_Error_string=PMPI_Error_string
 	PMPI_Exscan
 	MPI_Exscan=PMPI_Exscan
+; PMPI first versions
 ;	PMPI_File_call_errhandler
 ;	MPI_File_call_errhandler=PMPI_File_call_errhandler
 ;	PMPI_File_close
@@ -249,6 +250,126 @@ EXPORTS
 ;	MPI_File_write_ordered_end=PMPI_File_write_ordered_end
 ;	PMPI_File_write_shared
 ;	MPI_File_write_shared=PMPI_File_write_shared
+;	PMPI_File_f2c
+;	MPI_File_f2c=PMPI_File_f2c
+;	PMPI_File_c2f
+;	MPI_File_c2f=PMPI_File_c2f
+; MPI first versions
+;	MPI_File_call_errhandler
+;	PMPI_File_call_errhandler=MPI_File_call_errhandler
+	MPI_File_close
+	PMPI_File_close=MPI_File_close
+;	MPI_File_create_errhandler
+;	PMPI_File_create_errhandler=MPI_File_create_errhandler
+	MPI_File_delete
+	PMPI_File_delete=MPI_File_delete
+	MPI_File_get_amode
+	PMPI_File_get_amode=MPI_File_get_amode
+	MPI_File_get_atomicity
+	PMPI_File_get_atomicity=MPI_File_get_atomicity
+	MPI_File_get_byte_offset
+	PMPI_File_get_byte_offset=MPI_File_get_byte_offset
+	MPI_File_get_errhandler
+	PMPI_File_get_errhandler=MPI_File_get_errhandler
+	MPI_File_get_group
+	PMPI_File_get_group=MPI_File_get_group
+	MPI_File_get_info
+	PMPI_File_get_info=MPI_File_get_info
+	MPI_File_get_position
+	PMPI_File_get_position=MPI_File_get_position
+	MPI_File_get_position_shared
+	PMPI_File_get_position_shared=MPI_File_get_position_shared
+	MPI_File_get_size
+	PMPI_File_get_size=MPI_File_get_size
+	MPI_File_get_type_extent
+	PMPI_File_get_type_extent=MPI_File_get_type_extent
+	MPI_File_get_view
+	PMPI_File_get_view=MPI_File_get_view
+	MPI_File_iread
+	PMPI_File_iread=MPI_File_iread
+	MPI_File_iread_at
+	PMPI_File_iread_at=MPI_File_iread_at
+	MPI_File_iread_shared
+	PMPI_File_iread_shared=MPI_File_iread_shared
+	MPI_File_iwrite
+	PMPI_File_iwrite=MPI_File_iwrite
+	MPI_File_iwrite_at
+	PMPI_File_iwrite_at=MPI_File_iwrite_at
+	MPI_File_iwrite_shared
+	PMPI_File_iwrite_shared=MPI_File_iwrite_shared
+	MPI_File_open
+	PMPI_File_open=MPI_File_open
+	MPI_File_preallocate
+	PMPI_File_preallocate=MPI_File_preallocate
+	MPI_File_read
+	PMPI_File_read=MPI_File_read
+	MPI_File_read_all
+	PMPI_File_read_all=MPI_File_read_all
+	MPI_File_read_all_begin
+	PMPI_File_read_all_begin=MPI_File_read_all_begin
+	MPI_File_read_all_end
+	PMPI_File_read_all_end=MPI_File_read_all_end
+	MPI_File_read_at
+	PMPI_File_read_at=MPI_File_read_at
+	MPI_File_read_at_all
+	PMPI_File_read_at_all=MPI_File_read_at_all
+	MPI_File_read_at_all_begin
+	PMPI_File_read_at_all_begin=MPI_File_read_at_all_begin
+	MPI_File_read_at_all_end
+	PMPI_File_read_at_all_end=MPI_File_read_at_all_end
+	MPI_File_read_ordered
+	PMPI_File_read_ordered=MPI_File_read_ordered
+	MPI_File_read_ordered_begin
+	PMPI_File_read_ordered_begin=MPI_File_read_ordered_begin
+	MPI_File_read_ordered_end
+	PMPI_File_read_ordered_end=MPI_File_read_ordered_end
+	MPI_File_read_shared
+	PMPI_File_read_shared=MPI_File_read_shared
+	MPI_File_seek
+	PMPI_File_seek=MPI_File_seek
+	MPI_File_seek_shared
+	PMPI_File_seek_shared=MPI_File_seek_shared
+	MPI_File_set_atomicity
+	PMPI_File_set_atomicity=MPI_File_set_atomicity
+	MPI_File_set_errhandler
+	PMPI_File_set_errhandler=MPI_File_set_errhandler
+	MPI_File_set_info
+	PMPI_File_set_info=MPI_File_set_info
+	MPI_File_set_size
+	PMPI_File_set_size=MPI_File_set_size
+	MPI_File_set_view
+	PMPI_File_set_view=MPI_File_set_view
+	MPI_File_sync
+	PMPI_File_sync=MPI_File_sync
+	MPI_File_write
+	PMPI_File_write=MPI_File_write
+	MPI_File_write_all
+	PMPI_File_write_all=MPI_File_write_all
+	MPI_File_write_all_begin
+	PMPI_File_write_all_begin=MPI_File_write_all_begin
+	MPI_File_write_all_end
+	PMPI_File_write_all_end=MPI_File_write_all_end
+	MPI_File_write_at
+	PMPI_File_write_at=MPI_File_write_at
+	MPI_File_write_at_all
+	PMPI_File_write_at_all=MPI_File_write_at_all
+	MPI_File_write_at_all_begin
+	PMPI_File_write_at_all_begin=MPI_File_write_at_all_begin
+	MPI_File_write_at_all_end
+	PMPI_File_write_at_all_end=MPI_File_write_at_all_end
+	MPI_File_write_ordered
+	PMPI_File_write_ordered=MPI_File_write_ordered
+	MPI_File_write_ordered_begin
+	PMPI_File_write_ordered_begin=MPI_File_write_ordered_begin
+	MPI_File_write_ordered_end
+	PMPI_File_write_ordered_end=MPI_File_write_ordered_end
+	MPI_File_write_shared
+	PMPI_File_write_shared=MPI_File_write_shared
+	MPI_File_f2c
+	PMPI_File_f2c=MPI_File_f2c
+	MPI_File_c2f
+	PMPI_File_c2f=MPI_File_c2f
+; end MPI first versions
 	PMPI_Finalize
 	MPI_Finalize=PMPI_Finalize
 	PMPI_Finalized
@@ -259,8 +380,8 @@ EXPORTS
 	MPI_Gather=PMPI_Gather
 	PMPI_Gatherv
 	MPI_Gatherv=PMPI_Gatherv
-;	PMPI_Get
-;	MPI_Get=PMPI_Get
+	PMPI_Get
+	MPI_Get=PMPI_Get
 	PMPI_Get_address
 	MPI_Get_address=PMPI_Get_address
 	PMPI_Get_count
@@ -269,6 +390,8 @@ EXPORTS
 	MPI_Get_elements=PMPI_Get_elements
 	PMPI_Get_processor_name
 	MPI_Get_processor_name=PMPI_Get_processor_name
+	PMPI_Get_version
+	MPI_Get_version=PMPI_Get_version
 	PMPI_Graph_create
 	MPI_Graph_create=PMPI_Graph_create
 	PMPI_Graph_get
@@ -551,6 +674,8 @@ EXPORTS
 	MPI_Win_get_attr=PMPI_Win_get_attr
 	PMPI_Win_get_errhandler
 	MPI_Win_get_errhandler=PMPI_Win_get_errhandler
+	PMPI_Win_get_group
+	MPI_Win_get_group=PMPI_Win_get_group
 	PMPI_Win_get_name
 	MPI_Win_get_name=PMPI_Win_get_name
 	PMPI_Win_lock
@@ -575,3 +700,4 @@ EXPORTS
 	MPI_Wtick=PMPI_Wtick
 	PMPI_Wtime
 	MPI_Wtime=PMPI_Wtime
+	MPIR_Dup_fn

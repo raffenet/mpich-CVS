@@ -1452,7 +1452,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		else
 		{
 		    context->read_state = SMPD_READING_SESSION_HEADER;
-		    result = sock_post_read(context->sock, context->session_header, SMPD_SESSION_HEADER_LENGTH, NULL);
+		    result = sock_post_read(context->sock, context->session_header, SMPD_MAX_SESSION_HEADER_LENGTH, NULL);
 		    if (result != SOCK_SUCCESS)
 		    {
 			smpd_err_printf("unable to post a read for the session header, sock error:\n%s\n",

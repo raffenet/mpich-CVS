@@ -641,6 +641,9 @@
 				RelativePath="src\mpi\romio\adio\common\ad_set_sh_fp.c">
 			</File>
 			<File
+				RelativePath=".\src\mpi\romio\adio\common\ad_set_view.c">
+			</File>
+			<File
 				RelativePath="src\mpi\romio\adio\common\ad_write_coll.c">
 			</File>
 			<File
@@ -852,6 +855,9 @@
 			</File>
 			<File
 				RelativePath="src\mpi\topo\dims_create.c">
+			</File>
+			<File
+				RelativePath=".\src\mpi\attr\dup_fn.c">
 			</File>
 			<File
 				RelativePath="src\mpi\errhan\dynerrutil.c">
@@ -1221,6 +1227,9 @@
 			</File>
 			<File
 				RelativePath="src\mpid\common\datatype\gen_segment.c">
+			</File>
+			<File
+				RelativePath=".\src\mpi\romio\adio\common\gencheck.c">
 			</File>
 			<File
 				RelativePath="src\mpi\rma\get.c">
