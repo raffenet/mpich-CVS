@@ -171,9 +171,17 @@ void MPID_Dataloop_create_contiguous(int count,
 #if 0
 	new_dlp->handle    = new_dtp->handle;
 #endif
-	new_dlp->el_size   = MPID_Datatype_get_basic_size(oldtype);
-	new_dlp->el_extent = new_dlp->el_size;
-	new_dlp->el_type   = oldtype;
+	if (flags & MPID_DATALOOP_ALL_BYTES) {
+	    count             *= MPID_Datatype_get_basic_size(oldtype);
+	    new_dlp->el_size   = 1;
+	    new_dlp->el_extent = 1;
+	    new_dlp->el_type   = MPI_BYTE;
+	}
+	else {
+	    new_dlp->el_size   = MPID_Datatype_get_basic_size(oldtype);
+	    new_dlp->el_extent = new_dlp->el_size;
+	    new_dlp->el_type   = oldtype;
+	}
 
 	new_dlp->loop_params.c_t.dataloop = NULL;
     }
