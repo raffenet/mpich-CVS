@@ -25,13 +25,13 @@ class mpdrunInterrupted(Exception):
 
 global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
        try0Locally, lineLabels, jobAlias, hostsFile
-global manSocket, timeout, stdinGoesToWho, myExitStatus
+global timeoutVal, timeoutOccurred, stdinGoesToWho, myExitStatus
 
 
 def mpdrun():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
            try0Locally, lineLabels, jobAlias, hostsFile
-    global manSocket, timeout, stdinGoesToWho, myExitStatus
+    global timeoutVal, timeoutOccurred, stdinGoesToWho, myExitStatus
 
     mpd_set_my_id('mpdrun_' + `getpid()`)
     pgm = ''
@@ -49,11 +49,11 @@ def mpdrun():
     cwd = path.abspath(getcwd())
     username = mpd_get_my_username()
     if environ.has_key('MPDRUN_TIMEOUT'):
-        timeout = int(environ['MPDRUN_TIMEOUT'])
+        timeoutVal = int(environ['MPDRUN_TIMEOUT'])
     elif environ.has_key('MPIEXEC_TIMEOUT'):
-        timeout = int(environ['MPIEXEC_TIMEOUT'])
+        timeoutVal = int(environ['MPIEXEC_TIMEOUT'])
     else:
-        timeout = 0
+        timeoutVal = 0
     if environ.has_key('UNIX_SOCKET'):
         conFD = int(environ['UNIX_SOCKET'])
         conSocket = fromfd(conFD,AF_UNIX,SOCK_STREAM)
@@ -268,9 +268,10 @@ def mpdrun():
         else:
             mpd_raise('unexpected message from mpd: %s' % (msg) )
     conSocket.close()
-    if timeout:
+    timeoutOccurred = 0
+    if timeoutVal:
         signal(SIGALRM,sig_handler)
-	alarm(timeout)
+	alarm(timeoutVal)
 
     (manSocket,addr) = listenSocket.accept()
     msg = mpd_recv_one_msg(manSocket)
@@ -290,6 +291,17 @@ def mpdrun():
     while done < 3:    # man, client stdout, and client stderr
         try:
             (readySockets,None,None) = select(socketsToSelect.keys(),[],[],30)
+            if timeoutOccurred:
+                timeoutOccurred = 0
+                if manSocket:
+                    print 'mpdrun telling client to terminate due to timeout %d seconds' % timeoutVal
+                    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
+                    mpd_send_one_msg(manSocket,msgToSend)
+                    del socketsToSelect[manSocket]
+                    manSocket.close()
+                    manSocket = 0
+                    done += 1
+                    continue
             for readySocket in readySockets:
                 if readySocket == manSocket:
                     msg = mpd_recv_one_msg(manSocket)
@@ -406,7 +418,7 @@ def mpdrun():
 
 def sig_handler(signum,frame):
     # for some reason, I (rmb) was unable to handle TSTP and CONT in the same way
-    global manSocket, timeout
+    global timeoutVal, timeoutOccurred
     if signum == SIGINT:
         raise mpdrunInterrupted, 'SIGINT'
     elif signum == SIGTSTP:
@@ -416,11 +428,7 @@ def sig_handler(signum,frame):
 	    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGCONT' }
 	    mpd_send_one_msg(manSocket,msgToSend)
     elif signum == SIGALRM:
-	if manSocket:
-	    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
-	    mpd_send_one_msg(manSocket,msgToSend)
-	    manSocket.close()
-	print 'mpdrun telling client to terminate due to timeout %d seconds' % timeout
+        timeoutOccurred = 1
 
 def process_cmdline_args():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
