@@ -782,18 +782,18 @@ sub DefaultRules {
 	    close (AFD);
 	}
 	print FD "$newline";
-	&print_make_longline( FD,  "configure: configure.in $autoconf_deps" );
+	&print_make_longline( FD,  "\${srcdir}/configure: \${srcdir}/configure.in $autoconf_deps" );
 	&print_make_setpos( 8 );
-	&print_make_longline( FD,  "\tautoheader $aargs$newline\t$autoconf $aargs" );
+	&print_make_longline( FD,  "\t(cd \${srcdir} && autoheader $aargs ; \\$newline\t$autoconf $aargs )" );
 	if ($fixup_autoconf_cd) {
 	    # This is needed for DOS in case the pwd contains blanks
-	    print FD "\tsed -e 's/cd *\$\$ac_popdir/cd \"\$\$ac_popdir\"/g' configure > c.tmp ; mv -f c.tmp configure ; chmod a+x configure$newline";
+	    print FD "\t( cd \${srcdir} && sed -e 's/cd *\$\$ac_popdir/cd \"\$\$ac_popdir\"/g' configure > c.tmp ; mv -f c.tmp configure ; chmod a+x configure)$newline";
 	}
     }
     if ($maint_targets && "$smdir" ne "") {
 	print FD "$newline";
-	print FD "Makefile.in: Makefile.sm$newline";
-	print FD "\t$smdir/simplemake -rootdir=$rootdir \\$newline";
+	print FD "\${srcdir}/Makefile.in: \${srcdir}/Makefile.sm$newline";
+	print FD "\t( cd \${srcdir} && $smdir/simplemake -rootdir=$rootdir \\$newline";
 	foreach $curarg (@keepargs) {
 	    # Must handle $ specially
 	    $tmparg = $curarg;
@@ -808,7 +808,10 @@ sub DefaultRules {
 	if (defined($autoconf_files_by_dir{$lcurdir})) {
 	    print FD "\t-distcleanfiles=\"$autoconf_files_by_dir{$lcurdir}\" \\$newline";
 	}
-	print FD "\t\tMakefile.sm$newline";
+	print FD "\t\tMakefile.sm )$newline";
+	print FD "Makefile: \${srcdir}/Makefile.in$newline";
+	print FD "\tcd ${rootdirpath} && \\$newline";
+	print FD "\tCONFIG_FILES=${curdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status$newline";
     }
     # Clean targets
     &TargetClean;
