@@ -143,7 +143,6 @@ foreach $_ (@ARGV) {
 		  'MPI_Comm *' => '(MPI_Comm *)(ARG)',
                   'MPI_Datatype' => '(MPI_Datatype)(ARG)',
                   'MPI_Datatype *' => '(MPI_Datatype *)(ARG)',
-		  'MPI_Status *' => '(MPI_Status *)(ARG)',
 		  'MPI_Info *' => '(MPI_Info *)(ARG)',
 		  'MPI_Info' => '(MPI_Info)(ARG)',
 		  'int [][3]' => '(int (*)[3])(ARG)'
@@ -1117,8 +1116,10 @@ sub bufaddr_ctof {
 # Handle MPI_STATUS_IGNORE and MPI_STATUSES_IGNORE
 sub status_ftoc {
     my $count = $_[0];
+    # Cast MPI_STATUS_IGNORE back to an MPI_Fint (we'll re-cast it back
+    # to (MPI_Status *) in the call to the C version of the routine)
     print $OUTFD "\
-    if (v$count == MPI_F_STATUS_IGNORE) { v$count = MPI_STATUS_IGNORE; }\n";
+    if (v$count == MPI_F_STATUS_IGNORE) { v$count = (MPI_Fint*)MPI_STATUS_IGNORE; }\n";
 }
 sub status_ctof {
     my $coutvar = $_[0];
@@ -1129,7 +1130,7 @@ sub status_in_decl {
 }
 sub status_in_arg {
     my $count = $_[0];
-    print $OUTFD "v$count";
+    print $OUTFD "(MPI_Status *)v$count";
 }
 #
 # Index variables, but for an array.  
@@ -1137,7 +1138,7 @@ sub status_in_arg {
 sub status_array_ftoc {
     my $count = $_[0];
     print $OUTFD "\
-    if (v$count == MPI_F_STATUSES_IGNORE) { v$count = MPI_STATUS_IGNORE; }\n";
+    if (v$count == MPI_F_STATUSES_IGNORE) { v$count = (MPI_Fint *)MPI_STATUS_IGNORE; }\n";
 }
 sub status_array_ctof {
     my $coutvar = $_[0];
@@ -1147,7 +1148,7 @@ sub status_array_in_decl {
 }
 sub status_array_in_arg {
     my $count = $_[0];
-    print $OUTFD "v$count";
+    print $OUTFD "(MPI_Status *)v$count";
 }
 
 # aintToint
