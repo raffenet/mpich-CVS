@@ -223,7 +223,7 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
     int i;
 #elif defined (USE_SYSV_SHM)
     int i;
-    char tmp_filename[100];
+    FILE *fout;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
 
@@ -256,6 +256,16 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
     }
 #elif defined (USE_SYSV_SHM)
     /* Insert code here to convert the name into a key */
+    fout = fopen(pOutput->name, "w");
+    pOutput->key = ftok(pOutput->name, 12345);
+    fclose(fout);
+    if (pOutput->key == -1)
+    {
+	pOutput->error = errno;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ftok", "**ftok %s %d %d", pOutput->name, 12345, pOutput->error);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
+	return mpi_errno;
+    }
     pOutput->id = shmget(pOutput->key, size, IPC_EXCL | IPC_CREAT | SHM_R | SHM_W);
     if (pOutput->id == -1)
     {

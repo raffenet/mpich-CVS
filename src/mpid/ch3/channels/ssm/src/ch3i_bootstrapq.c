@@ -10,8 +10,6 @@
 #include <windows.h>
 #endif
 
-#define MPIDI_BOOTSTRAP_NAME_LEN 100
-
 #ifdef HAVE_WINDOWS_H
 
 typedef struct bootstrap_msg
@@ -22,10 +20,6 @@ typedef struct bootstrap_msg
 } bootstrap_msg;
 
 #endif /* HAVE_WINDOWS_H */
-
-#define MPICH_MSG_QUEUE_NAME    "/mpich_msg_queue"
-#define MPICH_MSG_QUEUE_PREFIX  "/mpich2q"
-#define MPICH_MSG_QUEUE_ID      12345
 
 typedef struct MPIDI_CH3I_BootstrapQ_struct
 {

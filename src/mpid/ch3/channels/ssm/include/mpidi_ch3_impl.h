@@ -82,9 +82,12 @@
 #define MPID_READ_WRITE_BARRIER()
 #endif
 
+#if 0
 #if defined(HAVE_MSGGET) && !defined(USE_SINGLE_MSG_QUEUE)
 #define USE_SINGLE_MSG_QUEUE
 #endif
+#endif
+#define USE_SINGLE_MSG_QUEUE
 
 #define MPIDI_SHM_EAGER_LIMIT          (128*1024)
 #ifdef HAVE_SHARED_PROCESS_READ
@@ -214,6 +217,7 @@ int MPIDI_CH3I_SSM_VC_post_read(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_SSM_VC_post_write(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_Get_business_card(char *value, int length);
 
+#define MPIDI_BOOTSTRAP_NAME_LEN 100
 #define BOOTSTRAP_MAX_NUM_MSGS 2048
 #define BOOTSTRAP_MAX_MSG_SIZE sizeof(MPIDI_CH3I_Shmem_queue_info)
 
@@ -252,6 +256,10 @@ int MPIDI_CH3I_sock_errno_to_mpi_errno(int sock_errno, const char *fcname);
 extern int MPIDI_CH3I_active_flag;
 extern int MPIDI_CH3I_shm_read_active, MPIDI_CH3I_shm_write_active;
 extern int MPIDI_CH3I_sock_read_active, MPIDI_CH3I_sock_write_active;
+
+#define MPICH_MSG_QUEUE_NAME    "/mpich_msg_queue"
+#define MPICH_MSG_QUEUE_PREFIX  "mpich2q"
+#define MPICH_MSG_QUEUE_ID      12345
 
 #ifdef USE_MQSHM
 int MPIDI_CH3I_mqshm_create(const char *name, int initialize, int *id);
