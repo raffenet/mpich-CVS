@@ -33,11 +33,19 @@ AC_PROG_MAKE_SET
 AC_PROG_LN_S
 AC_PROG_INSTALL
 
+dnl Find a Python
 AC_CHECK_PROG(PY23, python2.3, python2.3)
 AC_CHECK_PROG(PY2,  python2, python2)
 AC_CHECK_PROG(PY22, python2.2, python2.2)
 AC_CHECK_PROG(PY,   python, python)
-dnl Find a usable Python
+if test -z "$PY23"  -a  \
+        -z "$PY2"   -a  \
+        -z "$PY22"  -a  \
+        -z "$PY" ; then
+    AC_MSG_WARN([Could not find a python executable in path: $PATH]) 
+fi
+
+dnl See if one of the pythons has the right modules
 PYTHON=""
 for pypgm in $PY23 $PY2 $PY22 $PY ; do \
     AC_MSG_CHECKING([that $pypgm is a valid python version])
