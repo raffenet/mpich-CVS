@@ -1154,6 +1154,10 @@ AC_SUBST(CFLAGS) # some autoconf versions need this explicitly
 # These last 2 sets of flags are used to pass flags needed only to compile
 # and use MPI programs, not to build the MPI library itself.
 AC_SUBST(MPI_FFLAGS)
+if test -z "$MPI_LDFLAGS" ; then
+    # Pickup any flags from LDFLAGS.
+    MPI_LDFLAGS="$LDFLAGS"
+fi
 AC_SUBST(MPI_LDFLAGS)
 if test -z "$top_build_dir" ; then
     top_build_dir=`cd ../../.. ; pwd`

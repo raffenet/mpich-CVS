@@ -55,6 +55,10 @@ dnl     checks for library functions
 dnl     checks for system services
 
 AC_SUBST(MPI_CXXFLAGS)
+if test -z "$MPI_LDFLAGS" ; then
+    # Pickup any flags from LDFLAGS.
+    MPI_LDFLAGS="$LDFLAGS"
+fi
 AC_SUBST(MPI_LDFLAGS)
 
 if test -z "$top_build_dir" ; then
