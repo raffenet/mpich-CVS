@@ -170,8 +170,6 @@ foreach $_ (@ARGV) {
 %argsneedcast = ( 'MPI_Request *' => '(MPI_Request *)(ARG)',
 		  'MPI_Status *'  => '(MPI_Status *)(ARG)',
 		  'MPI_File' => 'MPI_File_f2c(ARG)',
-#  If the file is an output argument, we need to handle it specially
-#		  'MPI_File *' => '(MPI_File *)(ARG)', 
 		  'MPI_Comm' => '(MPI_Comm)(ARG)',
 		  'MPI_Comm *' => '(MPI_Comm *)(ARG)',
                   'MPI_Datatype' => '(MPI_Datatype)(ARG)',
@@ -277,10 +275,16 @@ foreach $_ (@ARGV) {
 # possibly handling for MPI_BOTTOM
 # Keyval routines require setting the language to Fortran (Attribute
 # routines are handled with the special argument processing)
+#
+# The Type_create_f90_xxx routines are only available as part of the
+# extended Fortran support, and are excluded from the f77 routines.
 %special_routines = ( 'Init' => 1, 'Init_thread' => 1, 'Pcontrol' => '1',
 		      'Address' => 1, 'Get_address' => 1,
 		      'Keyval_create' => 1, 'Status_f2c' => 1,
-		      'Status_c2f' => 1, 
+		      'Status_c2f' => 1,
+		      'Type_create_f90_integer' => 1,
+		      'Type_create_f90_real' => 1,
+		      'Type_create_f90_complex' => 1,
 		      );
 # 
 # Note that wtime and wtick aren't found because they don't match the 
@@ -1052,6 +1056,7 @@ sub bufptr_ctof {
     my $coutvar = $_[0];
     my $outvar  = $_[1];
 }
+# --------------------------------------------------------------------------
 # Logical variables
 sub logical_ftoc {
     my $count = $_[0];
@@ -1095,6 +1100,7 @@ sub logical_out_arg {
 	print $OUTFD "v$count";
     }
 }
+# --------------------------------------------------------------------------
 #
 # Logical variables, but for an array.  
 # Array args can use the global $Array_size and $Array_typedef if necessary
@@ -1134,6 +1140,7 @@ sub logical_array_out_arg {
     my $count = $_[0];
     print $OUTFD "v$count";
 }
+# --------------------------------------------------------------------------
 # 
 # Index variables.
 # Index variables are not optional, since the values of the variable
@@ -1178,7 +1185,7 @@ sub index_array_out_arg {
     my $count = $_[0];
     print $OUTFD "v$count";
 }
-
+# --------------------------------------------------------------------------
 #
 # Address and attribute handling
 #in:addrint
@@ -1215,7 +1222,7 @@ sub attrint_out_arg {
     my $count = $_[0];
     print $OUTFD "&attrv$count";
 }
-
+# --------------------------------------------------------------------------
 #
 # Buffer Address output handling (Buffer_detach)
 #out:bufaddr
@@ -1234,7 +1241,7 @@ sub bufaddr_ctof {
     my $fvar = $_[0];
     my $cvar = $_[1];
 }
-
+# --------------------------------------------------------------------------
 # 
 # Handle MPI_STATUS_IGNORE and MPI_STATUSES_IGNORE
 sub status_ftoc {
@@ -1255,6 +1262,7 @@ sub status_in_arg {
     my $count = $_[0];
     print $OUTFD "(MPI_Status *)v$count";
 }
+# --------------------------------------------------------------------------
 #
 # Index variables, but for an array.  
 # Array args can use the global $Array_size and $Array_typedef if necessary
@@ -1273,7 +1281,7 @@ sub status_array_in_arg {
     my $count = $_[0];
     print $OUTFD "(MPI_Status *)v$count";
 }
-
+# --------------------------------------------------------------------------
 # aintToint
 sub aintToInt_ctof {
     my $coutvar = $_[0];
@@ -1288,7 +1296,7 @@ sub aintToInt_out_arg {
     my $count = $_[0];
     print $OUTFD "\&l$count";
 }
-
+# --------------------------------------------------------------------------
 # aintToVal - Convert address of Aint to value
 sub aintToVal_ftoc {
     my $coutvar = $_[0];
@@ -1301,7 +1309,6 @@ sub aintToVal_in_arg {
     my $count = $_[0];
     print $OUTFD "*v$count";
 }
-
 # ---------------------------------------------------------------------------
 # This is the routine that handles the post-call processing
 sub print_post_call {
@@ -1463,7 +1470,7 @@ sub chararray2_ftoc {
     # Then copy the strings into the new storage, appending the
     # null at the end
     # Since this is a 2-d array, we always know the first dimension,
-    # the second dimension must be computed, this is azie$count
+    # the second dimension must be computed, this is asize$count
     print $OUTFD "\
     { int i, k;
       char *ptmp;
