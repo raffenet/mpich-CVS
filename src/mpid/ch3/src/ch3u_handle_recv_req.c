@@ -6,6 +6,18 @@
 
 #include "mpidimpl.h"
 
+/*
+ * MPIDI_CH3U_Handle_recv_req()
+ *
+ * NOTE: This routine must be reentrant safe.  Routines like MPIDI_CH3_iRead()
+ * are allowed to perform up-calls if they complete the requested work
+ * immediately. *** Care must be take to avoid deep recursion which with some
+ * thread packages can result in overwriting the stack of another thread. ***
+ */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Handle_recv_req
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * req)
 {
     int completion = FALSE;
@@ -16,7 +28,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * req)
     {
 	case MPIDI_CH3_CA_NONE:
 	{
-	    /* as action name says, do nothing... */
+	    /* as the action name says, do nothing... */
 	    break;
 	}
 	
@@ -32,8 +44,8 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * req)
 	
 	default:
 	{
-	    dbg_printf("MPIDI_CH3U_Handle_req(): action %d not implemented.\n",
-		       req->ch3.ca);
+	   MPIDI_dbg_printf(30, FCNAME, "action %d not implemented",
+			     req->ch3.ca);
 	    abort();
 	}
     }
