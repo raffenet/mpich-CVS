@@ -164,6 +164,10 @@ def mpdman():
         environ['PMI_SIZE'] = str(nprocs)
         environ['PMI_RANK'] = str(myRank)
         environ['PMI_DEBUG'] = str(0)
+        if spawned:
+            environ['PMI_SPAWNED'] = str(1)
+        else:
+            environ['PMI_SPAWNED'] = str(0)
         environ['MPD_TVDEBUG'] = str(0)                                    ## BNR
         environ['MPD_JID'] = environ['MPDMAN_JOBID']                       ## BNR
         environ['MPD_JSIZE'] = str(nprocs)                                 ## BNR
