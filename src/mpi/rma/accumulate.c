@@ -129,7 +129,7 @@ int MPI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                                 target_rank, target_disp, target_count,
                                 target_datatype, op, win_ptr);
 
-    if (!mpi_errno)
+    if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_accumulate", "**mpi_accumulate %p %d %D %d %d %d %D %O %W",
