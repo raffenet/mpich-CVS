@@ -116,13 +116,21 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 #ifdef HAVE_WINDOWS_H
 
     /* check for service options */
-    if (smpd_get_opt(argcp, argvp, "-remove") || smpd_get_opt(argcp, argvp, "-unregserver") || smpd_get_opt(argcp, argvp, "-uninstall"))
+    if (smpd_get_opt(argcp, argvp, "-remove") ||
+	smpd_get_opt(argcp, argvp, "-unregserver") ||
+	smpd_get_opt(argcp, argvp, "-uninstall") ||
+	smpd_get_opt(argcp, argvp, "/Remove") ||
+	smpd_get_opt(argcp, argvp, "/Uninstall"))
     {
 	/*RegDeleteKey(HKEY_CURRENT_USER, MPICHKEY);*/
 	smpd_remove_service(SMPD_TRUE);
 	ExitProcess(0);
     }
-    if (smpd_get_opt(argcp, argvp, "-install") || smpd_get_opt(argcp, argvp, "-regserver"))
+    if (smpd_get_opt(argcp, argvp, "-install") ||
+	smpd_get_opt(argcp, argvp, "-regserver") ||
+	smpd_get_opt(argcp, argvp, "/Install") ||
+	smpd_get_opt(argcp, argvp, "/install") ||
+	smpd_get_opt(argcp, argvp, "/RegServer"))
     {
 	char phrase[SMPD_PASSPHRASE_MAX_LENGTH]="", port_str[12]="";
 	char version[100]="";
