@@ -135,24 +135,7 @@ typedef MPIU_INT64_T int64_t;
 #define MPIDU_MAX(a,b)    (((a) > (b)) ? (a) : (b))
 #define MPIDU_MIN(a,b)    (((a) < (b)) ? (a) : (b))
 
-/* IOVs */
-/* The basic channel interface uses IOVs */
-#define MPID_IOV_BUF_CAST void *
-#ifdef HAVE_WINSOCK2_H
-#include <winsock2.h>
-#define MPID_IOV         WSABUF
-#define MPID_IOV_LEN     len
-#define MPID_IOV_BUF     buf
-#else
-#ifdef HAVE_SYS_UIO_H
-#include <sys/uio.h>
-#endif
-#define MPID_IOV         struct iovec
-#define MPID_IOV_LEN     iov_len
-#define MPID_IOV_BUF     iov_base
-#endif
-/* FIXME: How is IOV_LIMIT chosen? */
-#define MPID_IOV_LIMIT   16
+#include "mpiiov.h"
 
 /* FIXME: These need a definition.  What are they for? */
 /* These don't work.
