@@ -13,9 +13,10 @@ struct ADIOI_PVFS2_fs_s {
     PVFS_credentials credentials;
 } ADIOI_PVFS2_fs_s;
 
-typedef struct ADIOI_PVFS2_fs_s *ADIOI_PVFS2_fs;
+typedef struct ADIOI_PVFS2_fs_s ADIOI_PVFS2_fs;
 
 extern PVFS_fs_id * ADIOI_PVFS2_fs_id_list;
 
 void ADIOI_PVFS2_Init(int *error_code );
+void ADIOI_PVFS2_makeattribs(PVFS_object_attr * attribs);
 void ADIOI_PVFS2_makecredentials(PVFS_credentials * credentials);

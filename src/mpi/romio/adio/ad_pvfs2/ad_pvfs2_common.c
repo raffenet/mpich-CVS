@@ -41,17 +41,24 @@ void ADIOI_PVFS2_Init(int *error_code )
 	    return;
 	}
 	ADIOI_PVFS2_fs_id_list = resp_init.fsid_list;
+	MPI_Keyval_create(MPI_NULL_COPY_FN, ADIOI_End_call,
+		&ADIOI_PVFS2_Initialized, (void *)0); 
 }
+
+void ADIOI_PVFS2_makeattribs(PVFS_object_attr * attribs)
+{
+    attribs->owner = geteuid();
+    attribs->group = getegid();
+    attribs->perms = 1877;
+    attribs->mask =  (PVFS_ATTR_SYS_UID | PVFS_ATTR_SYS_GID | 
+	    PVFS_ATTR_SYS_PERM);
+}
+
 
 void ADIOI_PVFS2_makecredentials(PVFS_credentials * credentials)
 {
-    /* bleah...create program using hard-coded permissions */
-    credentials->uid = 100;
-    credentials->gid = 100;
-    /*
     credentials->uid = geteuid();
     credentials->gid = getegid();
-    */
     /* XXX: are there any good default credentials? */
     credentials->perms = PVFS_U_WRITE|PVFS_U_READ;
 }
