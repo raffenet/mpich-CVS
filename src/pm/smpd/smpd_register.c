@@ -17,27 +17,27 @@ SMPD_BOOL smpd_delete_current_password_registry_entry()
 
     smpd_enter_fn("smpd_delete_current_password_registry_entry");
 
-    if (RegOpenKeyEx(HKEY_CURRENT_USER, MPICH_REGISTRY_KEY, 0, KEY_ALL_ACCESS, &hRegKey) != ERROR_SUCCESS)
+    nError = RegOpenKeyEx(HKEY_CURRENT_USER, MPICH_REGISTRY_KEY, 0, KEY_ALL_ACCESS, &hRegKey);
+    if (nError != ERROR_SUCCESS && nError != ERROR_PATH_NOT_FOUND && nError != ERROR_FILE_NOT_FOUND)
     {
-	nError = GetLastError();
 	smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegOpenKeyEx(...) failed, error: %d\n", nError);
 	smpd_exit_fn("smpd_delete_current_password_registry_entry");
 	return SMPD_FALSE;
     }
 
-    if (RegDeleteValue(hRegKey, "smpdPassword") != ERROR_SUCCESS)
+    nError = RegDeleteValue(hRegKey, "smpdPassword");
+    if (nError != ERROR_SUCCESS && nError != ERROR_FILE_NOT_FOUND)
     {
-	nError = GetLastError();
-	smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegDeleteValue(...) failed, error: %d\n", nError);
+	smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegDeleteValue(password) failed, error: %d\n", nError);
 	RegCloseKey(hRegKey);
 	smpd_exit_fn("smpd_delete_current_password_registry_entry");
 	return SMPD_FALSE;
     }
 
-    if (RegDeleteValue(hRegKey, "smpdAccount") != ERROR_SUCCESS)
+    nError = RegDeleteValue(hRegKey, "smpdAccount");
+    if (nError != ERROR_SUCCESS && nError != ERROR_FILE_NOT_FOUND)
     {
-	nError = GetLastError();
-	smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegDeleteValue(...) failed, error: %d\n", nError);
+	smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegDeleteValue(account) failed, error: %d\n", nError);
 	RegCloseKey(hRegKey);
 	smpd_exit_fn("smpd_delete_current_password_registry_entry");
 	return SMPD_FALSE;
