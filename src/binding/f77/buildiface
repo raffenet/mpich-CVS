@@ -106,6 +106,7 @@ foreach $_ (@ARGV) {
 	   'MPI_Info' => 'MPI_Fint *',
 	   'MPI_Errhandler' => 'MPI_Fint *',
 	   'MPI_Aint' => 'MPI_Fint *',   # Should be MPIR_FAint
+	   'MPI_Offset' => 'MPI_Fint *', # Should be MPIR_FOint
 	   'int' => 'MPI_Fint *',
 	   'int [][3]' => 'MPI_Fint *',
 	   'MPI_Datatype *' => 'MPI_Fint *',
@@ -1131,6 +1132,7 @@ sub addnull_ftoc {
     {char *p = v$count + $strlen - 1;
      int  li;
         while (*p == ' ' && p > v$count) p--;
+        p++;
         p$count = (char *)$malloc( p-v$count + 1 );
         for (li=0; li<(p-v$count); li++) { p$count\[li\] = v$count\[li\]; }
         p$count\[li\] = 0; 
