@@ -871,29 +871,15 @@ int smpd_insert_into_dynamic_hosts(void)
     smpd_lock_smpd_data();
     if (smpd_get_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts, 8192) != SMPD_SUCCESS)
     {
-	smpd_unlock_smpd_data();
 	if (gethostname(hosts, 8192) == 0)
 	{
 	    /* add this host to the dynamic_hosts key */
-	    strcpy(myhostname, hosts);
-	    smpd_lock_smpd_data();
-	    hosts[0] = '\0';
-	    smpd_get_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts, 8192);
-	    if (strlen(hosts) > 0)
-	    {
-		/* FIXME this could overflow */
-		strcat(hosts, " ");
-		strcat(hosts, myhostname);
-	    }
-	    else
-	    {
-		strcpy(hosts, myhostname);
-	    }
 	    smpd_set_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts);
 	    smpd_unlock_smpd_data();
 	    smpd_exit_fn("smpd_insert_into_dynamic_hosts");
 	    return SMPD_SUCCESS;
 	}
+	smpd_unlock_smpd_data();
 	smpd_exit_fn("smpd_insert_into_dynamic_hosts");
 	return SMPD_FAIL;
     }
