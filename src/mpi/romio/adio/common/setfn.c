@@ -215,7 +215,7 @@ void ADIOI_SetFunctions(ADIO_File fd)
 	break;
 
     case ADIO_PVFS:
-#ifdef PVFS	
+#ifdef ROMIO_PVFS	
 	fd->fns->ADIOI_xxx_Open = ADIOI_PVFS_Open;
 	fd->fns->ADIOI_xxx_ReadContig = ADIOI_PVFS_ReadContig;
 	fd->fns->ADIOI_xxx_WriteContig = ADIOI_PVFS_WriteContig;

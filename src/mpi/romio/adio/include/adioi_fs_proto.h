@@ -432,7 +432,7 @@ ADIO_Offset ADIOI_SFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 void ADIOI_SFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 #endif
 
-#ifdef PVFS
+#ifdef ROMIO_PVFS
 void ADIOI_PVFS_Open(ADIO_File fd, int *error_code);
 void ADIOI_PVFS_Close(ADIO_File fd, int *error_code);
 void ADIOI_PVFS_ReadContig(ADIO_File fd, void *buf, int count, 

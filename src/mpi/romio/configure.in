@@ -989,7 +989,8 @@ if test -n "$file_system_xfs"; then
     PAC_GET_XFS_MEMALIGN
 fi
 if test -n "$file_system_pvfs"; then
-    CFLAGS="$CFLAGS -DPVFS"
+   # Use ROMIO_PVFS instead of PVFS because FREEBSD defines PVFS.
+    CFLAGS="$CFLAGS -DROMIO_PVFS"
 fi
 if test -n "$file_system_pfs"; then
     CFLAGS="$CFLAGS -DPFS"

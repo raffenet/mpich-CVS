@@ -26,10 +26,8 @@
 #ifdef SX4
 #include <sys/stat.h>
 #endif
-#ifndef FREEBSD
-#ifdef PVFS
+#ifdef ROMIO_PVFS
 #include "pvfs_config.h"
-#endif
 #endif
 #ifdef tflops
 #include <sys/mount.h>
@@ -93,7 +91,7 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
     else {
 	/* FPRINTF(stderr, "%d\n", fsbuf.f_type);*/
 	if (fsbuf.f_type == NFS_SUPER_MAGIC) *fstype = ADIO_NFS;
-#ifdef PVFS
+#ifdef ROMIO_PVFS
 	else if (fsbuf.f_type == PVFS_SUPER_MAGIC) *fstype = ADIO_PVFS;
 #endif
 	else *fstype = ADIO_UFS;

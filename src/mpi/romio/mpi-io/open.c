@@ -256,7 +256,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 #endif
     }
 #endif
-#ifndef PVFS
+#ifndef ROMIO_PVFS
     if (!strncmp(filename, "pvfs:", 5) || !strncmp(filename, "PVFS:", 5) || (file_system == ADIO_PVFS)) {
 #ifdef PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_open: ROMIO has not been configured to use the PVFS file system\n");
