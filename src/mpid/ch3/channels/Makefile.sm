@@ -1,5 +1,5 @@
 # SUBDIRS_channel_name contains the list of all possible channel
 # implementations
-SUBDIRS_channel_name = tcp ib shm sock
+SUBDIRS_channel_name = tcp ib shm sock mm
 SUBDIRS = @channel_name@ .
 
