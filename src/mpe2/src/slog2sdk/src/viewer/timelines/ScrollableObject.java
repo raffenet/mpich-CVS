@@ -436,7 +436,7 @@ public abstract class ScrollableObject extends JComponent
         // requestFocus();
 
         Debug.println( "ScrollableObject : paintComponent()'s START : " );
-        Rectangle clipRect = g.getClipBounds();
+        // Rectangle clipRect = g.getClipBounds();
         Debug.println( "ScrollableObject : paintComponent() "
                      + "g.getClipBounds() = " + g.getClipBounds() );
         Debug.println( "ScrollableObject : paintComponent() "

@@ -166,7 +166,8 @@ public class CanvasTime extends ScrollableObject
 
         final_time = new Date();
         System.out.println( "drawOffImages: time = "
-                          + (final_time.getTime()-init_time.getTime()) );
+                          + (final_time.getTime()-init_time.getTime())
+                          + " msec.");
     }
 
     protected void drawOneOffImage(       Image            offImage,
@@ -180,9 +181,7 @@ public class CanvasTime extends ScrollableObject
             int        offImage_height = offImage.getHeight( this ); 
             Graphics2D offGraphics     = (Graphics2D) offImage.getGraphics();
 
-            // Set AntiAliasing On
-            offGraphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING,
-                                          RenderingHints.VALUE_ANTIALIAS_ON );
+            // Set RenderingHint to have MAX speed.
             offGraphics.setRenderingHint( RenderingHints.KEY_RENDERING,
                                           RenderingHints.VALUE_RENDER_SPEED );
 
@@ -197,6 +196,10 @@ public class CanvasTime extends ScrollableObject
 
             CoordPixelImage coord_xform;
             coord_xform = new CoordPixelImage( this, row_height, timebounds );
+
+            // Set AntiAliasing OFF for all the horizontal and vertical lines
+            offGraphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING,
+                                          RenderingHints.VALUE_ANTIALIAS_OFF );
 
             // Draw the center TimeLines.
             offGraphics.setColor( Color.red );
@@ -246,6 +249,10 @@ public class CanvasTime extends ScrollableObject
                                    drawn_boxes, nesting_stacks );
                 N_nestable++;
             }
+
+            // Set AntiAliasing from Parameters for all slanted lines
+            offGraphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING,
+                                    Parameters.ARROW_ANTIALIASING.toValue() );
 
             // Draw Nestless Shadows
             sobjs = treetrunk.iteratorOfLowestFloorShadows( timebounds,
