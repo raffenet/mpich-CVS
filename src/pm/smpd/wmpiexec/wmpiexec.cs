@@ -60,9 +60,13 @@ namespace wmpiexec
 		/// </summary>
 		private System.ComponentModel.Container components = null;
 
-		delegate void RunCommandDelegate(string command);
+		private Process process;
+		delegate void RunCommandDelegate(string command, string mpiexec_command, string mpiexec_command_args, bool popup);
 		delegate void ReadOutputDelegate(TextReader stream);
 		delegate void WriteInputDelegate(TextWriter stream);
+		delegate void AppendTextDelegate(string str);
+		delegate void SetProcessDelegate(Process p);
+		delegate void ResetButtonsDelegate();
 
 		private string mpiexec_command, mpiexec_command_args;
 
@@ -437,7 +441,6 @@ namespace wmpiexec
 			this.output_richTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
 			this.output_richTextBox.Location = new System.Drawing.Point(8, 104);
 			this.output_richTextBox.Name = "output_richTextBox";
-			this.output_richTextBox.ReadOnly = true;
 			this.output_richTextBox.Size = new System.Drawing.Size(496, 216);
 			this.output_richTextBox.TabIndex = 11;
 			this.output_richTextBox.Text = "";
@@ -536,7 +539,7 @@ namespace wmpiexec
 			this.popup_checkBox.Name = "popup_checkBox";
 			this.popup_checkBox.Size = new System.Drawing.Size(168, 24);
 			this.popup_checkBox.TabIndex = 29;
-			this.popup_checkBox.Text = "run in an interactive window";
+			this.popup_checkBox.Text = "run in an separate window";
 			// 
 			// wmpiexec
 			// 
@@ -545,11 +548,17 @@ namespace wmpiexec
 			this.Controls.Add(this.popup_checkBox);
 			this.Controls.Add(this.extra_options_label);
 			this.Controls.Add(this.extra_options_textBox);
+			this.Controls.Add(this.application_radioButton);
+			this.Controls.Add(this.command_line_textBox);
+			this.Controls.Add(this.drive_map_textBox);
+			this.Controls.Add(this.env_textBox);
+			this.Controls.Add(this.mpich1_textBox);
+			this.Controls.Add(this.configfile_textBox);
+			this.Controls.Add(this.hosts_textBox);
+			this.Controls.Add(this.wdir_textBox);
 			this.Controls.Add(this.show_bottom_checkBox);
 			this.Controls.Add(this.mpich1_radioButton);
 			this.Controls.Add(this.configfile_radioButton);
-			this.Controls.Add(this.application_radioButton);
-			this.Controls.Add(this.command_line_textBox);
 			this.Controls.Add(this.show_command_button);
 			this.Controls.Add(this.application_comboBox);
 			this.Controls.Add(this.output_richTextBox);
@@ -561,21 +570,15 @@ namespace wmpiexec
 			this.Controls.Add(this.log_label);
 			this.Controls.Add(this.channel_comboBox);
 			this.Controls.Add(this.channel_label);
-			this.Controls.Add(this.drive_map_textBox);
 			this.Controls.Add(this.drive_map_label);
-			this.Controls.Add(this.env_textBox);
 			this.Controls.Add(this.env_label);
 			this.Controls.Add(this.mpich1_browse_button);
-			this.Controls.Add(this.mpich1_textBox);
 			this.Controls.Add(this.mpich1_label);
 			this.Controls.Add(this.configfile_browse_button);
-			this.Controls.Add(this.configfile_textBox);
 			this.Controls.Add(this.configfile_label);
 			this.Controls.Add(this.hosts_reset_button);
-			this.Controls.Add(this.hosts_textBox);
 			this.Controls.Add(this.hosts_label);
 			this.Controls.Add(this.wdir_browse_button);
-			this.Controls.Add(this.wdir_textBox);
 			this.Controls.Add(this.wdir_label);
 			this.Controls.Add(this.nproc_numericUpDown);
 			this.Controls.Add(this.nproc_label);
@@ -599,6 +602,19 @@ namespace wmpiexec
 			Application.Run(new wmpiexec());
 		}
 
+		private void AppendText(string str)
+		{
+			output_richTextBox.AppendText(str);
+		}
+		private void SetProcess(Process p)
+		{
+			process = p;
+		}
+		private void ResetButtons()
+		{
+			execute_button.Enabled = true;
+			break_button.Enabled = false;
+		}
 		private void application_browse_button_Click(object sender, System.EventArgs e)
 		{
 			OpenFileDialog dlg = new OpenFileDialog();
@@ -680,7 +696,7 @@ namespace wmpiexec
 					stream.WriteLine("channel {0}", channel_comboBox.Text.Trim());
 					stream.WriteLine("log {0}", log_comboBox.Text.Trim());
 					stream.WriteLine("extra {0}", extra_options_textBox.Text.Trim());
-					stream.WriteLine(popup_checkBox.Checked ? "interactive yes" : "interactive no");
+					stream.WriteLine(popup_checkBox.Checked ? "window yes" : "window no");
 					stream.Close();
 				}
 			}
@@ -756,7 +772,7 @@ namespace wmpiexec
 								case "extra":
 									extra_options_textBox.Text = val;
 									break;
-								case "interactive":
+								case "window":
 									if (val == "yes")
 										popup_checkBox.Checked = true;
 									else
@@ -772,7 +788,7 @@ namespace wmpiexec
 		}
 
 
-		void ReadOutput(TextReader stream)
+		private void ReadOutput(TextReader stream)
 		{
 			int num_read;
 			char [] buffer = new char[4096];
@@ -783,111 +799,92 @@ namespace wmpiexec
 				char [] text = new char[num_read];
 				Array.Copy(buffer, 0, text, 0, num_read);
 				str = new string(text);
-				output_richTextBox.AppendText(str);
+				object[] pList = { str };
+				// put the string in the edit box in a thread safe way
+				AppendTextDelegate ap = new AppendTextDelegate(AppendText);
+				output_richTextBox.Invoke(ap, pList);
 				num_read = stream.Read(buffer, 0, 1024);
 			}
 		}
-		/*
-		void ReadOutput(StreamReader stream)
-		{
-			int num_read;
-			char [] buffer = new char[4096];
-			while (stream.Peek() != -1)
-			{
-				string str;
-				num_read = stream.Read(buffer, 0, 4096);
-				char [] text = new char[num_read];
-				Array.Copy(buffer, 0, text, 0, num_read);
-				str = new string(text);
-				output_richTextBox.AppendText(str);
-			}
-		}
-		*/
 
-		static void ReadComplete( IAsyncResult ar )
+		ManualResetEvent char_available = new ManualResetEvent(false);
+		ManualResetEvent char_written = new ManualResetEvent(true);
+		char ch;
+		private void WriteInput(TextWriter stream)
 		{
-		}
-
-		static public AutoResetEvent char_available = new AutoResetEvent(false);
-		static public AutoResetEvent char_written = new AutoResetEvent(false);
-		static char ch;
-		void WriteInput(TextWriter stream)
-		{
-			//stream.AutoFlush = true;
 			while (char_available.WaitOne())
 			{
 				stream.Write(ch);
 				stream.Flush();
 				char_available.Reset();
 				char_written.Set();
+
+				/*
+				object[] pList = { "ch(" + ch + ")" };
+				// put the string in the edit box in a thread safe way
+				AppendTextDelegate ap = new AppendTextDelegate(AppendText);
+				output_richTextBox.Invoke(ap, pList);
+				*/
 			}
 		}
 
-		static void WriteComplete( IAsyncResult ar )
+		private void RunCommand(string command, string mpiexec_command, string mpiexec_command_args, bool popup)
 		{
-		}
-
-		static public Process stdin_process = null;
-		public void RunCommand(string command)
-		{
-			if (popup_checkBox.Checked)
+			if (popup)
 			{
 				// start a process to run the mpiexec command
-				Process process = new Process();
-				process.StartInfo.UseShellExecute = true;
-				process.StartInfo.CreateNoWindow = false;
-				process.StartInfo.RedirectStandardError = false;
-				process.StartInfo.RedirectStandardInput = false;
-				process.StartInfo.RedirectStandardOutput = false;
-				process.StartInfo.FileName = "cmd.exe";
-				process.StartInfo.Arguments = "/C " + command + " && pause";
-				process.Start();
-				process.WaitForExit();
+				Process p = new Process();
+				p.StartInfo.UseShellExecute = true;
+				p.StartInfo.CreateNoWindow = false;
+				p.StartInfo.RedirectStandardError = false;
+				p.StartInfo.RedirectStandardInput = false;
+				p.StartInfo.RedirectStandardOutput = false;
+				p.StartInfo.FileName = "cmd.exe";
+				p.StartInfo.Arguments = "/C " + command + " && pause";
+				p.Start();
+				p.WaitForExit();
 			}
 			else
 			{
 				// start a process to run the mpiexec command
-				Process process = new Process();
-				process.StartInfo.UseShellExecute = false;
-				process.StartInfo.CreateNoWindow = true;
-				process.StartInfo.RedirectStandardError = true;
-				process.StartInfo.RedirectStandardInput = true;
-				process.StartInfo.RedirectStandardOutput = true;
-				//process.StartInfo.FileName = "cmd.exe";
-				//process.StartInfo.Arguments = "/C " + command;
-				process.StartInfo.FileName = mpiexec_command;
-				process.StartInfo.Arguments = mpiexec_command_args;
-				process.Start();
+				Process p = new Process();
+				p.StartInfo.UseShellExecute = false;
+				p.StartInfo.CreateNoWindow = true;
+				p.StartInfo.RedirectStandardError = true;
+				p.StartInfo.RedirectStandardInput = true;
+				p.StartInfo.RedirectStandardOutput = true;
+				p.StartInfo.FileName = mpiexec_command;
+				p.StartInfo.Arguments = mpiexec_command_args;
+				p.Start();
 				// start a delagate to read stdout
-				ReadOutputDelegate r = new ReadOutputDelegate(ReadOutput);
-				AsyncCallback read_complete = new AsyncCallback(ReadComplete);
-				r.BeginInvoke(TextReader.Synchronized(process.StandardOutput), read_complete, null);
+				ReadOutputDelegate r1 = new ReadOutputDelegate(ReadOutput);
+				IAsyncResult ar1 = r1.BeginInvoke(TextReader.Synchronized(p.StandardOutput), null, null);
 				// start a delagate to read stderr
-				r = new ReadOutputDelegate(ReadOutput);
-				read_complete = new AsyncCallback(ReadComplete);
-				r.BeginInvoke(TextReader.Synchronized(process.StandardError), read_complete, null);
+				ReadOutputDelegate r2 = new ReadOutputDelegate(ReadOutput);
+				IAsyncResult ar2 = r2.BeginInvoke(TextReader.Synchronized(p.StandardError), null, null);
 				// Send stdin to the process
 				WriteInputDelegate w = new WriteInputDelegate(WriteInput);
-				AsyncCallback write_complete = new AsyncCallback(WriteComplete);
-				w.BeginInvoke(TextWriter.Synchronized(process.StandardInput), write_complete, null);
-				stdin_process = process;
-				// wait for the process to exit
-				process.WaitForExit();
-				stdin_process = null;
-			}
-			execute_button.Enabled = true;
-			break_button.Enabled = false;
-		}
+				w.BeginInvoke(TextWriter.Synchronized(p.StandardInput), null, null);
 
-		static void RunComplete( IAsyncResult ar )
-		{
+				//process = p;
+				SetProcessDelegate sp = new SetProcessDelegate(SetProcess);
+				object [] list = { p };
+				Invoke(sp, list);
+				// wait for the process to exit
+				p.WaitForExit();
+				r1.EndInvoke(ar1);
+				r2.EndInvoke(ar2);
+				list[0] = null;
+				Invoke(sp, list);
+			}
+			ResetButtonsDelegate d = new ResetButtonsDelegate(ResetButtons);
+			Invoke(d);
 		}
 
 		private void execute_button_Click(object sender, System.EventArgs e)
 		{
 			execute_button.Enabled = false;
 			break_button.Enabled = true;
-			//break_button.Enabled = false; // Breaking doesn't work because it kills the cmd process and leaves mpiexec running
 			output_richTextBox.Clear();
 			// Create the command line
 			command_line_textBox.Text = get_command_line();
@@ -903,15 +900,16 @@ namespace wmpiexec
 				application_comboBox.Items.Add(application_comboBox.Text);
 			}
 			RunCommandDelegate run_command = new RunCommandDelegate(RunCommand);
-			AsyncCallback run_complete = new AsyncCallback(RunComplete);
-			run_command.BeginInvoke(command_line_textBox.Text, run_complete, null);
+			run_command.BeginInvoke(command_line_textBox.Text, mpiexec_command, mpiexec_command_args, popup_checkBox.Checked, null, null);
+			// after starting a command move to the output box so the user can interact with the running process.
+			output_richTextBox.Focus();
 		}
 
 		private void break_button_Click(object sender, System.EventArgs e)
 		{
-			if (stdin_process != null)
+			if (process != null)
 			{
-				stdin_process.Kill();
+				process.Kill();
 			}
 		}
 
@@ -1110,14 +1108,12 @@ namespace wmpiexec
 
 		private void output_richTextBox_KeyPress(object sender, System.Windows.Forms.KeyPressEventArgs e)
 		{
-			if (stdin_process != null)
+			if (process != null)
 			{
-				//stdin_process.StandardInput.Write(e.KeyChar);
-				//stdin_process.StandardInput.Flush();
-				ch = e.KeyChar;
-				char_available.Set();
 				char_written.WaitOne();
+				ch = e.KeyChar;
 				char_written.Reset();
+				char_available.Set();
 			}
 		}
 
