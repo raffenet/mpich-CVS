@@ -140,7 +140,7 @@ def mpiexec():
 def collect_args(args):
     global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
     globalArgs['-l']        = 0
-    globalArgs['-usize']    = 1
+    globalArgs['-usize']    = 0
     globalArgs['-gdb']      = 0
     globalArgs['-bnr']      = 0
     globalArgs['-tv']       = 0
@@ -162,7 +162,7 @@ def collect_args(args):
                 globalArgs['-genv'][args[argidx+1]] = args[argidx+2]
                 argidx += 3
             else:
-		if garg == 'usize'  or  garg == '-gn':
+		if garg == '-usize'  or  garg == '-gn':
                     globalArgs[garg] = int(args[argidx+1])
 		else:
                     globalArgs[garg] = args[argidx+1]

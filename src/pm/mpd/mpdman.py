@@ -100,6 +100,8 @@ def mpdman():
     doingBNR = int(environ['MPDMAN_DOING_BNR'])
 
     # set up pmi stuff early in case I was spawned
+    universeSize = -1
+    appnum = -1
     pmiVersion = 1
     pmiSubversion = 1
     KVSs = {}
@@ -114,7 +116,8 @@ def mpdman():
     cli_environ = {}
     for k in clientPgmEnv.keys():
         if k.startswith('MPI_APPNUM'):
-            KVSs[default_kvsname][k] = clientPgmEnv[k]
+            # mpd_print (1111, 'MPI_APPNUM=%s' % (clientPgmEnv[k]))
+            appnum = clientPgmEnv[k]    # don't put in application environment
         else:
             cli_environ[k] = clientPgmEnv[k]
     kvs_next_id = 1
@@ -175,8 +178,8 @@ def mpdman():
             msg = mpd_recv_one_msg(conSocket)
             if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ringsize':
                 mpd_raise('invalid msg from con; expecting ringsize got: %s' % (msg) )
-            if environ.has_key('MPI_UNIVERSE_SIZE'):
-                universeSize = int(environ['MPI_UNIVERSE_SIZE'])
+            if clientPgmEnv.has_key('MPI_UNIVERSE_SIZE'):
+                universeSize = int(clientPgmEnv['MPI_UNIVERSE_SIZE'])
             else:
                 universeSize = msg['ringsize']
             mpd_send_one_msg(rhsSocket,msg)
@@ -198,7 +201,9 @@ def mpdman():
         mpd_raise('invalid msg from lhs; expecting ringsize got: %s' % (msg) )
     if myRank != 0:
         mpd_send_one_msg(rhsSocket,msg)
-        if not environ.has_key('MPI_UNIVERSE_SIZE'):
+        if clientPgmEnv.has_key('MPI_UNIVERSE_SIZE'):
+            universeSize = int(clientPgmEnv['MPI_UNIVERSE_SIZE'])
+        else:
             universeSize = msg['ringsize']
 
     if doingBNR:
@@ -890,6 +895,9 @@ def mpdman():
                     mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 elif parsedMsg['cmd'] == 'get_universe_size':
                     pmiMsgToSend = 'cmd=universe_size size=%s\n' % (universeSize)
+                    mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                elif parsedMsg['cmd'] == 'get_appnum':
+                    pmiMsgToSend = 'cmd=appnum appnum=%s\n' % (appnum)
                     mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 elif parsedMsg['cmd'] == 'create_kvs':
                     new_kvsname = kvsname_template + str(kvs_next_id)

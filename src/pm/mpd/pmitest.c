@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 	exit(0);
     }
 
-    strcpy(msg_to_send,"cmd=init pmi_version=1.1\n");  /* PMI_VERSION here */
+    strcpy(msg_to_send,"cmd=init pmi_version=1 pmi_subversion=1\n");  /* PMI_VERSION here */
     write(pmi_sock,msg_to_send,strlen(msg_to_send));
     printf("sent init\n");
     n = read(pmi_sock,msg_recvd,1024);
