@@ -40,6 +40,8 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     MPID_Thread_lock_init(MPID_Process.qlock);
     MPID_Thread_lock_init(MPID_Process.lock);
 
+    MPIR_Process.attrs.tag_ub = 2*1024*1024;
+
     /*dbg_printf("+PMI_Init");*/
     PMI_Init(&spawned);
     /*dbg_printf("-\n+PMI_Get_rank:");*/
