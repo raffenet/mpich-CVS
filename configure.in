@@ -1468,6 +1468,32 @@ elif test -s "$srcdir/CVS/Root" ; then
     MPICVSHOME=`cat $srcdir/CVS/Root`
 fi
 AC_SUBST(MPICVSHOME)
+# In case the documentation targets are used, find doctext and attempt to 
+# find the source for the doctext LaTeX style files
+AC_PATH_PROG(DOCTEXT,doctext)
+if test -n "$DOCTEXT" ; then
+    if test -z "$DOCTEXTSYTLE" ; then
+        AC_MSG_CHECKING([for location of doctext style files])
+        dpath=`doctext -debug_paths 2>&1 | grep 'default path' | \
+	      sed -e 's%.*default path\(.*\),%\1:%g'`
+        saveIFS="$IFS"
+        IFS=": "
+	for dir in $dpath ; do
+	    if test -s $dir/refman.sty ; then
+	       DOCTEXTSTYLE=$dir
+	       break
+	    fi
+	done
+        IFS="$saveIFS"
+	if test -n "$DOCTEXTSTYLE" ; then
+	    AC_MSG_RESULT($DOCTEXTSTYLE)
+        else
+	    AC_MSG_RESULT([unavailable])
+        fi
+    fi
+fi
+AC_SUBST(DOCTEXT)
+AC_SUBST(DOCTEXTSTYLE)
 
 AC_CONFIG_SUBDIRS(test/mpi)
 dnl
@@ -1549,6 +1575,7 @@ AC_OUTPUT(Makefile src/Makefile \
           src/util/logging/Makefile \
           src/util/timing/Makefile \
 	  doc/Makefile doc/mansrc/Makefile \
+	  doc/adi3/Makefile
 )
 
 dnl The following files should be created by the appropriate configure within

@@ -7,10 +7,10 @@ SHELL = /bin/sh
 MPICH2 = ../..
 
 #
-# Use doctext in /home/gropp/bin/$ARCH/doctext 
-DOCTEXT = doctext
+# Use doctext of at least 1.1.6, March 19, 2003
+DOCTEXT = @DOCTEXT@
 # Give the directory with the Latex style files associated with doctext
-DOCTEXTSTYLE = /home/gropp/data/share
+DOCTEXTSTYLE = @DOCTEXTSTYLE@
 
 .SUFFIXES: .ps .pdf .dvi .tex .eps .fig .idx .ind
 
