@@ -1081,6 +1081,7 @@ int beasy_create(int *bfd, int port, unsigned long addr)
     struct sockaddr_in sin;
     int optval = 1;
     struct linger linger;
+    int len;
 
     /*dbg_printf("beasy_create\n");*/
 
@@ -1110,6 +1111,19 @@ int beasy_create(int *bfd, int port, unsigned long addr)
     linger.l_linger = 60;
     bsetsockopt(*bfd, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof(linger));
 
+    /* set the socket buffer size to 64k */
+    len = sizeof(int);
+    if (!getsockopt(bget_fd((*bfd)), SOL_SOCKET, SO_RCVBUF, (char*)&optval, &len))
+    {
+	optval = 64*1024;
+	bsetsockopt(*bfd, SOL_SOCKET, SO_RCVBUF, (char*)&optval, sizeof(int));
+    }
+    len = sizeof(int);
+    if (!getsockopt(bget_fd((*bfd)), SOL_SOCKET, SO_SNDBUF, (char*)&optval, &len))
+    {
+	optval = 64*1024;
+	bsetsockopt(*bfd, SOL_SOCKET, SO_SNDBUF, (char*)&optval, sizeof(int));
+    }
     return 0;
 }
 
