@@ -79,7 +79,6 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	    {
 		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
 	    }
-	    MPIR_ERRTEST_REQUEST(request, mpi_errno);
 	    /* NOTE: MPI_STATUS_IGNORE != NULL */
 	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
 	    if (mpi_errno) {

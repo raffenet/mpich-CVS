@@ -91,7 +91,6 @@ int MPI_Request_free(MPI_Request *request)
 	    {
 		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
 	    }
-	    MPIR_ERRTEST_REQUEST(request, mpi_errno);
 	    if (mpi_errno) {
 		goto fn_exit;
             }
