@@ -1,0 +1,48 @@
+#! /bin/sh
+#
+# mpicc
+# Simple script to compile and/or link MPI programs.
+# This script knows the default flags and libraries, and can handle
+# alternative C compilers and the associated flags and libraries.
+# The important terms are:
+#    includedir, libdir - Directories containing an *installed* mpich2
+#    prefix, execprefix - Often used to define includedir and libdir
+#    CC                 - C compiler
+#    MPI_CFLAGS         - Any special flags needed to compile 
+#    MPI_LDFLAGS        - Any special flags needed to link
+#    MPILIBNAME         - Name of the MPI library
+#    MPI_OTHERLIBS      - Other libraries needed in order to link 
+#    
+# We assume that (a) the C compiler can both compile and link programs
+# We use MPI_xxx so that the user may continue to use CFLAGS, LIBS, etc
+# to modify the behavior of the compiler and linker.
+#
+# Handling of command-line options:
+#   This is a little tricky because some options may contain blanks.
+#
+# Special issues with shared libraries - todo
+#
+#
+# Directory locations: Fixed for any MPI implementation
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+sysconfdir=@sysconfdir@
+includedir=@includedir@
+libdir=@libdir@
+#
+# Default settings for compiler, flags, and libraries
+CC="@CC@"
+MPI_CFLAGS="@MPI_CFLAGS@"
+MPI_LDFLAGS="@MPI_LDFLAGS@"
+MPILIBNAME="@MPILIBNAME@"
+MPI_OTHERLIBS="@LIBS@"
+#
+mpilibs=-=l$MPILIBNAME
+#
+# Concatenate the user flags with the ones needed by MPI
+CFLAGS="$CFLAGS $MPI_CFLAGS"
+LDFLAGS="$LDFLAGS $MPI_LDFLAGS"
+#
+# A temporary statement to invoke the compiler
+$CC $CFLAGS $LDFLAGS -I$includedir "$@" -L$libdir $mpilibs $MPI_OTHERLIBS
+
