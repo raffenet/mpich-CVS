@@ -66,3 +66,9 @@ if test -n "$gm_lib_dir" ; then
   LDFLAGS="$LDFLAGS -L${gm_lib_dir}"
 fi
 LIBS="$LIBS -lgm"
+
+case "$CC" in
+  *pgcc* )
+    CFLAGS="${CFLAGS} -Masmkeyword"
+    ;;
+esac
