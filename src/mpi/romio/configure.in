@@ -1477,6 +1477,15 @@ AC_SUBST(FORTRAN_TEST)
 dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
+dnl
+dnl Support shared libraries
+AC_SUBST(ENABLE_SHLIB)
+AC_SUBST(CC_SHL)
+# Remove the .a from the library file name (so that we can use .so or
+# other appropriate suffix)
+SHLIBNAME=`echo $LIBNAME | sed 's/\.a//'`
+AC_SUBST(SHLIBNAME)
+dnl
 if test ! -d adio ; then mkdir adio ; fi
 if test ! -d adio/include ; then mkdir adio/include ; fi
 if test ! -d mpi2-other ; then mkdir mpi2-other ; fi
