@@ -56,88 +56,102 @@ int IsendIrecvTest(int rank)
     return TRUE;
 }
 
-int IsendIrecvTest2(int rank)
+int IsendIrecvTest2(int rank, int buf_size)
 {
     int tag1 = 1;
     int tag2 = 2;
     MPI_Status status;
     MPI_Request request1, request2;
-    char buffer[100];
+    char *buffer;
 
+    buffer = (char*)malloc(buf_size);
+    if (buffer == NULL)
+	return FALSE;
     if (rank == 0)
     {
 	strcpy(buffer, "Hello process one.");
-	MPI_Isend(buffer, 100, MPI_BYTE, 1, tag1, MPI_COMM_WORLD, &request1);
-	MPI_Isend(buffer, 100, MPI_BYTE, 1, tag2, MPI_COMM_WORLD, &request2);
+	MPI_Isend(buffer, buf_size, MPI_BYTE, 1, tag1, MPI_COMM_WORLD, &request1);
+	MPI_Isend(buffer, buf_size, MPI_BYTE, 1, tag2, MPI_COMM_WORLD, &request2);
 	MPI_Wait(&request1, &status);
 	MPI_Wait(&request2, &status);
     }
     else if (rank == 1)
     {
-	MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag1, MPI_COMM_WORLD, &request1);
-	MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag2, MPI_COMM_WORLD, &request2);
+	MPI_Irecv(buffer, buf_size, MPI_BYTE, 0, tag1, MPI_COMM_WORLD, &request1);
+	MPI_Irecv(buffer, buf_size, MPI_BYTE, 0, tag2, MPI_COMM_WORLD, &request2);
 	MPI_Wait(&request1, &status);
 	MPI_Wait(&request2, &status);
 	/*printf("Rank 1: received message '%s'\n", buffer);fflush(stdout);*/
     }
 
+    free(buffer);
     return TRUE;
 }
 
-int OutOfOrderTest(int rank)
+int OutOfOrderTest(int rank, int buf_size)
 {
     int tag1 = 1;
     int tag2 = 2;
     MPI_Status status;
     MPI_Request request1, request2;
-    char buffer[100];
+    char *buffer;
 
+    buffer = (char*)malloc(buf_size);
+    if (buffer == NULL)
+	return FALSE;
     if (rank == 0)
     {
 	strcpy(buffer, "Hello process one.");
-	MPI_Isend(buffer, 100, MPI_BYTE, 1, tag1, MPI_COMM_WORLD, &request1);
-	MPI_Isend(buffer, 100, MPI_BYTE, 1, tag2, MPI_COMM_WORLD, &request2);
+	MPI_Isend(buffer, buf_size, MPI_BYTE, 1, tag1, MPI_COMM_WORLD, &request1);
+	MPI_Isend(buffer, buf_size, MPI_BYTE, 1, tag2, MPI_COMM_WORLD, &request2);
 	MPI_Wait(&request1, &status);
 	MPI_Wait(&request2, &status);
     }
     else if (rank == 1)
     {
-	MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag2, MPI_COMM_WORLD, &request1);
-	MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag1, MPI_COMM_WORLD, &request2);
+	MPI_Irecv(buffer, buf_size, MPI_BYTE, 0, tag2, MPI_COMM_WORLD, &request1);
+	MPI_Irecv(buffer, buf_size, MPI_BYTE, 0, tag1, MPI_COMM_WORLD, &request2);
 	MPI_Wait(&request2, &status);
 	MPI_Wait(&request1, &status);
 	/*printf("Rank 1: received message '%s'\n", buffer);fflush(stdout);*/
     }
 
+    free(buffer);
     return TRUE;
 }
 
-int ForceUnexpectedTest(int rank)
+int ForceUnexpectedTest(int rank, int buf_size)
 {
     int tag1 = 1;
     int tag2 = 2;
     MPI_Status status;
     MPI_Request request1, request2;
-    char buffer[100];
+    char *buffer;
+
+    buffer = (char*)malloc(buf_size);
+    if (buffer == NULL)
+	return FALSE;
 
     if (rank == 0)
     {
 	strcpy(buffer, "Hello process one.");
-	MPI_Isend(buffer, 100, MPI_BYTE, 1, tag1, MPI_COMM_WORLD, &request1);
-	MPI_Isend(buffer, 100, MPI_BYTE, 1, tag2, MPI_COMM_WORLD, &request2);
+	MPI_Isend(buffer, buf_size, MPI_BYTE, 1, tag1, MPI_COMM_WORLD, &request1);
+	MPI_Isend(buffer, buf_size, MPI_BYTE, 1, tag2, MPI_COMM_WORLD, &request2);
 	MPI_Wait(&request1, &status);
 	MPI_Wait(&request2, &status);
-	MPI_Recv(buffer, 100, MPI_BYTE, 1, tag1, MPI_COMM_WORLD, &status);
+	MPI_Recv(buffer, buf_size, MPI_BYTE, 1, tag1, MPI_COMM_WORLD, &status);
     }
     else if (rank == 1)
     {
-	MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag2, MPI_COMM_WORLD, &request2);
+	MPI_Irecv(buffer, buf_size, MPI_BYTE, 0, tag2, MPI_COMM_WORLD, &request2);
 	MPI_Wait(&request2, &status);
-	MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag1, MPI_COMM_WORLD, &request1);
+	MPI_Irecv(buffer, buf_size, MPI_BYTE, 0, tag1, MPI_COMM_WORLD, &request1);
 	MPI_Wait(&request1, &status);
 	/*printf("Rank 1: received message '%s'\n", buffer);fflush(stdout);*/
-	MPI_Send(buffer, 100, MPI_BYTE, 0, tag1, MPI_COMM_WORLD);
+	MPI_Send(buffer, buf_size, MPI_BYTE, 0, tag1, MPI_COMM_WORLD);
     }
+
+    free(buffer);
 
     return TRUE;
 }
@@ -159,16 +173,46 @@ int RndvTest(int rank, int size, int reps)
     {
 	for (i=0; i<reps; i++)
 	{
+	    if (reps == 1)
+	    {
+		printf("0: sending to process 1\n");
+		fflush(stdout);
+	    }
 	    MPI_Send(buffer, size, MPI_BYTE, 1, tag, MPI_COMM_WORLD);
+	    if (reps == 1)
+	    {
+		printf("0: receiving from process 1\n");
+		fflush(stdout);
+	    }
 	    MPI_Recv(buffer, size, MPI_BYTE, 1, tag, MPI_COMM_WORLD, &status);
+	    if (reps == 1)
+	    {
+		printf("0: done\n");
+		fflush(stdout);
+	    }
 	}
     }
     else if (rank == 1)
     {
 	for (i=0; i<reps; i++)
 	{
+	    if (reps == 1)
+	    {
+		printf("1: receiving from process 0\n");
+		fflush(stdout);
+	    }
 	    MPI_Recv(buffer, size, MPI_BYTE, 0, tag, MPI_COMM_WORLD, &status);
+	    if (reps == 1)
+	    {
+		printf("1: sending to process 0\n");
+		fflush(stdout);
+	    }
 	    MPI_Send(buffer, size, MPI_BYTE, 0, tag, MPI_COMM_WORLD);
+	    if (reps == 1)
+	    {
+		printf("1: done\n");
+		fflush(stdout);
+	    }
 	}
     }
     free(buffer);
@@ -249,7 +293,7 @@ int main(int argc, char *argv[])
 		printf("Isend,isend/irecv,irecv wait wait test\n");
 		fflush(stdout);
 	    }
-	    result = IsendIrecvTest2(rank);
+	    result = IsendIrecvTest2(rank, 100);
 	    if (rank == 0)
 	    {
 		printf(result ? "SUCCESS\n" : "FAILURE\n");
@@ -264,7 +308,7 @@ int main(int argc, char *argv[])
 		printf("Out of order isend/irecv test\n");
 		fflush(stdout);
 	    }
-	    result = OutOfOrderTest(rank);
+	    result = OutOfOrderTest(rank, 100);
 	    if (rank == 0)
 	    {
 		printf(result ? "SUCCESS\n" : "FAILURE\n");
@@ -279,7 +323,7 @@ int main(int argc, char *argv[])
 		printf("Force unexpected message test\n");
 		fflush(stdout);
 	    }
-	    result = ForceUnexpectedTest(rank);
+	    result = ForceUnexpectedTest(rank, 100);
 	    if (rank == 0)
 	    {
 		printf(result ? "SUCCESS\n" : "FAILURE\n");
@@ -302,6 +346,81 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = RndvTest(rank, rndv_size, 1);
+	    if (rank == 0)
+	    {
+		printf(result ? "SUCCESS\n" : "FAILURE\n");
+		fflush(stdout);
+	    }
+	}
+
+	if (bDoAll || (strcmp(argv[1], "rndv_reps") == 0))
+	{
+	    rndv_size = 24*1024;
+	    reps = 100;
+	    if (argc > 2)
+	    {
+		reps = atoi(argv[2]);
+		if (reps < 1)
+		    reps = 1;
+	    }
+	    if (rank == 0)
+	    {
+		printf("Rndv test: %d reps of size %d\n", reps, rndv_size);
+		fflush(stdout);
+	    }
+	    result = RndvTest(rank, rndv_size, reps);
+	    if (rank == 0)
+	    {
+		printf(result ? "SUCCESS\n" : "FAILURE\n");
+		fflush(stdout);
+	    }
+	}
+
+	if (bDoAll || (strcmp(argv[1], "rndv_iisr") == 0))
+	{
+	    if (rank == 0)
+	    {
+		printf("Rndv isend,isend/irecv,irecv wait wait test\n");
+		fflush(stdout);
+	    }
+	    result = IsendIrecvTest2(rank, 24*1024);
+	    if (rank == 0)
+	    {
+		printf(result ? "SUCCESS\n" : "FAILURE\n");
+		fflush(stdout);
+	    }
+	}
+
+	if (bDoAll || (strcmp(argv[1], "rndv_oo") == 0))
+	{
+	    if (rank == 0)
+	    {
+		printf("Rndv out of order isend/irecv test\n");
+		fflush(stdout);
+	    }
+	    result = OutOfOrderTest(rank, 24*1024);
+	    if (rank == 0)
+	    {
+		printf(result ? "SUCCESS\n" : "FAILURE\n");
+		fflush(stdout);
+	    }
+	}
+
+	if (bDoAll || (strcmp(argv[1], "rndv_unex") == 0))
+	{
+	    rndv_size = 24*1024;
+	    if (argc > 2)
+	    {
+		rndv_size = atoi(argv[2]);
+		if (rndv_size < 1024)
+		    rndv_size = 1024;
+	    }
+	    if (rank == 0)
+	    {
+		printf("Force unexpected rndv message test\n");
+		fflush(stdout);
+	    }
+	    result = ForceUnexpectedTest(rank, rndv_size);
 	    if (rank == 0)
 	    {
 		printf(result ? "SUCCESS\n" : "FAILURE\n");
