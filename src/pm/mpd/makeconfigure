@@ -1,0 +1,4 @@
+#! /bin/sh
+# runs autoheader and autoconf with local macros
+autoheader 
+autoconf   

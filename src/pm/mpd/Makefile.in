@@ -1,0 +1,105 @@
+# Makefile.in for mpd2
+
+@SET_MAKE@
+# @VPATH@
+prefix    = @prefix@
+exec_prefix = @exec_prefix@
+bindir    = @bindir@
+srcdir	  = @srcdir@
+SHELL	  = @SHELL@
+CC	  = @CC@
+INCLUDES  = -I. -I${srcdir}
+CPPFLAGS  = @CPPFLAGS@
+CLINKER	  = @CLINKER@
+COPTIONS  = @COPTIONS@
+LDFLAGS	  = @LDFLAGS@
+LIBS	  = @LIBS@ 
+GDB       = @GDB@
+
+C_COMPILE = ${CC} ${INCLUDES} ${CFLAGS} ${COPTIONS}
+C_LINK	  = ${CLINKER} ${CFLAGS} ${COPTIONS} ${LDFLAGS}
+
+PROGRAMS  = mpdroot
+EXAMPLES  = sigcatcher infloop
+
+SOURCES   = ${mpdroot_SOURCES} ${example_SOURCES}
+OBJECTS   = ${mpdroot_OBJECTS} ${example_OBJECTS}
+HEADERS   = mpdconf.h mpdroot.h
+
+CMDS_ROOT     =  mpdrun mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob
+CMDS_NO_ROOT  =  mpdallexit mpdcleanup mpdhelp mpdboot mpd
+PYTHON_SOURCE =  mpdrun.py mpdtrace.py mpdringtest.py mpdlistjobs.py mpdkilljob.py \
+                 mpdsigjob.py mpdallexit.py mpdcleanup.py mpdhelp.py mpdboot.py \
+		 mpd.py mpdman.py mpdlib.py
+
+mpdroot_SOURCES  = mpdroot.c
+example_SOURCES	 = sigcatcher.c infloop.c
+
+mpdroot_OBJECTS	= ${mpdroot_SOURCES:.c=.o}
+example_OBJECTS	= ${example_SOURCES:.c=.o}
+
+
+all: Makefile ${PROGRAMS}
+
+
+.SUFFIXES:
+.SUFFIXES: .o .dep .c 
+
+etags:  ${HEADERS} ${SOURCES}
+	etags ${HEADERS} ${SOURCES}
+
+mpdroot: ${mpdroot_OBJECTS}
+	$(C_LINK) -o mpdroot ${mpdroot_OBJECTS} $(LIBS)
+
+mpdroot.o: ${srcdir}/mpdroot.c ${srcdir}/mpdroot.h mpdconf.h
+	${C_COMPILE} -c -DBINDIR=\"${bindir}/\" $< 
+
+# The following lines provide the right libraries for all example programs
+.c:
+	${C_LINK} -o $* $*.c $(LIBS)
+.o:     
+	$(C_LINK) -o $* $*.o $(LIBS)
+
+clean: 
+	@-/bin/rm -f *.o *.dep *~ ${EXAMPLES} core*
+
+# echo "some of the following might be executables you want to remove"
+# ls -l | grep rwx
+distclean: clean
+	/bin/rm -f Makefile mpdconf.h ${PROGRAMS} ${CMDS_ROOT} ${CMDS_NO_ROOT} \
+                   config.status config.cache config.log
+
+
+maintainer-clean: distclean
+	/bin/rm -f configure
+
+configure: configure.in
+	./makeconfigure
+
+Makefile: ${srcdir}/Makefile.in config.status
+	./config.status
+
+.c.o:	
+	${C_COMPILE} -c $<
+
+install:
+	@if [ ! -d ${bindir} ] ; then \
+	    echo "mkdir -p ${bindir} " ;\
+	    mkdir -p ${bindir} ;\
+	fi   
+	cp -f mpdroot ${bindir}/mpdroot
+	@if [ "`whoami`" = "root" ] ; then \
+	    echo "chmod 4755 ${bindir}/mpdroot" ;\
+	    chmod 4755 ${bindir}/mpdroot ;\
+	fi
+	@echo "copying python files/links into " ${bindir}
+	-@for cmd in ${CMDS_ROOT} ; do \
+	    cp -f $$cmd.py ${bindir}/$$cmd.py ; \
+	    @LN_S@ -f ${bindir}/mpdroot ${bindir}/$$cmd ; \
+	done
+	-@for cmd in ${CMDS_NO_ROOT} ; do \
+	    cp -f $$cmd.py ${bindir}/$$cmd ; \
+	cp -f mpdman.py ${bindir}/mpdman.py ; \
+	cp -f mpdlib.py ${bindir}/mpdlib.py ; \
+	done
+	@@LN_S@ -f ${bindir}/mpdrun.py ${bindir}/mpiexec

@@ -1,0 +1,10 @@
+pmitest0
+*.pyc
+configure
+config.status
+config.log
+config.system
+mpdconf.h.in
+mpdconf.h
+Makefile
+mpdroot

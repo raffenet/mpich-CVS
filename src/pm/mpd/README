@@ -1,0 +1,92 @@
+
+
+			       README for MPD-2
+			(a.k.a. Python version of MPD)
+
+			 Ralph Butler and Rusty Lusk
+
+
+General
+-------
+
+Type 
+
+    mpdhelp.py 
+
+for a list of commands.
+
+To be added:  configure (to find and test version of Python, set install dir)
+              make (with targets for changing first line of scripts, removing
+                  .py, and moving to install directory, clean)
+
+How to use the Python mpd
+-------------------------
+
+Make a file with machine names in it.  It will be handy to use the default,
+which is ./mpd.hosts .
+
+donner% cat ./mpd.hosts
+foo.mcs.anl.gov
+shakey.mcs.anl.gov
+terra.mcs.anl.gov
+donner% 
+
+The mpich2 mpd commands are currently in mpich2/src/pmi/impls/mpd.  Put this
+in your PATH in your .cshrc or .bashrc, so that it will be picked up by the mpd's that
+are started remotely:
+
+Put in .cshrc:  setenv PATH /home/you/mpich2/src/pmi/impls/mpd:$PATH
+
+Put in .bashrc: export PATH=/home/you/mpich2/src/pmi/impls/mpd:$PATH
+
+To start some mpds, use mpdboot.py.  It uses the mpd.hosts file:
+
+donner% mpdboot.py -n 3 -m /home/lusk/mpich2/src/pmi/impls/mpd/mpd.py
+donner%
+
+This command starts a total of 3 daemons, one on the local machine and the
+rest on machines in the mpd.hosts file.  You can specify another file (-f) or
+another mpd command (-m).
+
+You can use mpdtrace.py to see where your mpd's are running:
+
+donner% mpdtrace.py
+donner
+foo
+shakey
+donner% 
+
+You can run something with mpdrun.py:
+
+donner% mpdrun.py -np 2 hostname 
+donner.mcs.anl.gov
+foo.mcs.anl.gov
+donner%
+
+You can run an mpich2 job:
+
+donner% mpdrun.py -np 10 /home/lusk/hellow
+Hello world from process 0 of 10
+Hello world from process 1 of 10
+Hello world from process 2 of 10
+Hello world from process 3 of 10
+Hello world from process 4 of 10
+Hello world from process 5 of 10
+Hello world from process 6 of 10
+Hello world from process 7 of 10
+Hello world from process 9 of 10
+Hello world from process 8 of 10
+donner% 
+
+You can take down the daemons:
+
+donner% mpdallexit.py
+donner%
+
+If things go bad and daemons seem to be in a bad state, you can remove the
+Unix sockets on all the machines in mpd.hosts by doing a cleanup:
+
+donner% mpdcleanup.py
+donner%
+
+

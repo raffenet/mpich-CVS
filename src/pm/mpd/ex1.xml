@@ -1,0 +1,11 @@
+<PMRequests>
+    <create-process-group
+            totalprocs='1'
+            exec='date' 
+            path='/bin:/usr/bin:/usr/local/bin'
+            user='rbutler' 
+            cwd='/home/rbutler'
+            args = ''
+	    >
+    </create-process-group>
+</PMRequests>
