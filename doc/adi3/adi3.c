@@ -99,7 +99,7 @@
 
     Return value: Pointer to the new data structure.  The following
     fields are already set\:
-+   id        - MPI_Datatype handle for this datatype.
++   id        - 'MPI_Datatype' handle for this datatype.
 -   ref_count - set to 1.
 
     Notes:
@@ -119,7 +119,7 @@ MPID_Datatype *MPID_Datatype_new( void )
 .  datatype - Pointer to datatype to free
 
    Notes:
-   Unlike the MPI version, this does not assign NULL to the input parameter.
+   Unlike the MPI version, this does not assign 'NULL' to the input parameter.
    Any special operations that a device may need to take when a datatype
    is freed.
 
@@ -142,7 +142,7 @@ void MPID_Datatype_free( MPID_Datatype *datatype )
 
    Notes:
    In an unthreaded implementation, this function will usually be implemented
-   as a single-statement macro.  In an MPI_THREAD_MULTIPLE implementation,
+   as a single-statement macro.  In an 'MPI_THREAD_MULTIPLE' implementation,
    this routine must implement an atomic increment operation, using, for 
    example, a lock on datatypes or special assembly code (such as 
 .vb
@@ -370,7 +370,7 @@ int MPID_Group_incr( MPID_Group *group, int incr )
 +  old_comm - Call is collective over old_comm.  
 .  new_group - Group of new communicator.  This may be an existing 
    group (with an incremented reference count), a new group created
-   with 'MPID_Group_new', or NULL (see below).
+   with 'MPID_Group_new', or 'NULL' (see below).
 -  context_id - Context id for this communicator.
 
   Return value:
@@ -391,7 +391,7 @@ int MPID_Group_incr( MPID_Group *group, int incr )
   Communicator
 
   Question: 
-  should there be an error return in case something more global
+  Should there be an error return in case something more global
   goes wrong?
   @*/
 MPID_Comm *MPID_Comm_create( MPID_Comm *old_comm, 
@@ -406,7 +406,7 @@ MPID_Comm *MPID_Comm_create( MPID_Comm *old_comm,
 +  old_comm - Call is collective over old_comm.  
 -  new_group - Group of new communicator.  This may be an existing 
    group (with an incremented reference count), a new group created
-   with 'MPID_Group_new', or NULL (see below).
+   with 'MPID_Group_new', or 'NULL' (see below).
 
    Return value:
    A context id that may be used, along with 'old_comm' and 'new_group', 
@@ -522,12 +522,12 @@ int MPID_Comm_incr( MPID_Comm *comm, int incr )
 . keyval - Key value for attribute
 . attr_val - Value of attribute
 . lang - Language that attribute was set from (see notes).
-- wasset - Indicates whether the attribute was set (1) or deleted (0)
+- was_set - Indicates whether the attribute was set (1) or deleted (0)
 
   Notes:
   This routine allows the device to find out when an attribute value changes.
   This can be used by a device that defines its own keyvals (see 
-  MPID_Init_thread) to allow the MPI user to communicate preferences to 
+  'MPID_Init_thread') to allow the MPI user to communicate preferences to 
   the device.  This has already been used in MPICH-G to pass quality-of-service
   information to the device.
 
@@ -552,12 +552,12 @@ int MPID_Comm_incr( MPID_Comm *comm, int incr )
   MPID_Attr_validate_function( int keyval, void *attr_val, 
                                MPID_Lang_t lang )
 .ve
-  This also argues that 'MPID_Comm_attr_notify' routine should
+  ). This also argues that 'MPID_Comm_attr_notify' routine should
   return an MPI error code, allowing the device to cleanly signal an error
   to the user.
   @*/
 void MPID_Comm_attr_notify( MPID_Comm *comm, int keyval, void *attr_val, 
-			 MPID_Lang_t lang, int wasset )
+			    MPID_Lang_t lang, int was_set )
 {
 }
 
@@ -567,6 +567,27 @@ void MPID_Comm_attr_notify( MPID_Comm *comm, int keyval, void *attr_val,
   Input Parameter:
 . keyval - A predefined keyval (the C version).  Note that these are part of 
   'mpi.h', and thus are known to the device.
+
+  Notes:
+  The predefined keyvals on 'MPI_COMM_WORLD' are\:
+.vb
+ Keyval                     Related Module
+ MPI_APPNUM                 Dynamic
+ MPI_HOST                   Core
+ MPI_IO                     Core
+ MPI_LASTUSEDCODE           Error
+ MPI_TAG_UB                 Communication
+ MPI_UNIVERSE_SIZE          Dynamic
+ MPI_WTIME_IS_GLOBAL        Timer
+.ve
+
+In addition, the following 3 keyvals are defined for attributes on MPI Window 
+objects\:
+.vb
+ MPI_WIN_SIZE
+ MPI_WIN_BASE
+ MPI_WIN_DISP_UNIT
+.ve
 
   Return value:
   Value of the attribute (the value itself, not a pointer to it).  For example,
@@ -580,10 +601,11 @@ void MPID_Comm_attr_notify( MPID_Comm *comm, int keyval, void *attr_val,
 
   Question:
   The value of 'MPI_WTIME_IS_GLOBAL' is better known by the timer.  Should
-  we let the timer package provide this value?
-
-  Shouldn''t this be part of MPID_CORE, since it talks about basic
-  device functionality?
+  we let the timer package provide this value?  Similarly, the value
+  of 'MPI_LASTUSECODE' is known by the error reporting module.  One 
+  possibility is to require each of the modules to have an initialization 
+  step, and for each modules' initialization module to set the value for the
+  appropriate attributes.
 
   @*/
 int MPID_Attr_predefined( int keyval )
@@ -797,8 +819,9 @@ MPID_Request *MPID_Request_recv_FOA( int tag, int rank, MPID_Comm *comm,
 
   Note that the values returned in 'status' will be valid for a subsequent
   MPI receive operation only if no other thread attempts to receive the same
-  message.  See the discussion on this in the MPI-2 standard (See the 
-  discussion of probe in Section 8.7.2 Clarifications).
+  message.  
+  (See the 
+  discussion of probe in Section 8.7.2 Clarifications of the MPI-2 standard.)
 
   Module:
   Request
@@ -827,8 +850,9 @@ int MPID_Request_iprobe( int tag, int rank, MPID_Comm *comm,
 
   Note that the values returned in 'status' will be valid for a subsequent
   MPI receive operation only if no other thread attempts to receive the same
-  message.  See the discussion on this in the MPI-2 standard (See the 
-  discussion of probe in Section 8.7.2 Clarifications).
+  message.  
+  (See the 
+  discussion of probe in Section 8.7.2 Clarifications of the MPI-2 standard.)
 
   Module:
   Request
@@ -848,12 +872,14 @@ void MPID_Request_probe( int tag, int rank, MPID_Comm *comm,
   Notes:
   Cancel is a tricky operation, particularly for sends.  Read the
   discussion in the MPI-1 and MPI-2 documents carefully.  This call
-  only requests that the request be canceled; a subsequent wait (?what
-  MPID call) or test (?ditto) must first succeed.
+  only requests that the request be cancelled; a subsequent wait 
+  or test must first succeed.
 
   Module:
   Request
 
+  Question:
+  What MPID calls should be used to perform the wait or test mentioned above?
   @*/
 void MPID_Request_cancel( MPID_Request *request )
 {
@@ -883,7 +909,7 @@ void MPID_Request_cancel( MPID_Request *request )
   In addition, non-cache-coherent systems must flush the request to memory
   to ensure that other threads will read the updated request values.
 
-  This routine is not in MPID_CORE; however, a general solution appropriate
+  This routine is not in 'MPID_CORE'; however, a general solution appropriate
   for multi-threaded systems involves a thread-lock and is thus rather
   expensive.  Devices supporting or using multiple threads should provide
   an efficient implementation of this routine.
@@ -920,7 +946,7 @@ void MPID_Request_free( MPID_Request *request )
  */
 
 /*@
-  MPID_Alloc_mem - Allocate memory suitable for passive target RMA operations
+  MPID_Mem_alloc - Allocate memory suitable for passive target RMA operations
 
   Input Parameter:
 + size - Number of types to allocate.
@@ -943,12 +969,12 @@ void MPID_Request_free( MPID_Request *request )
   Module:
   Win
   @*/
-void *MPID_Alloc_mem( size_t size, MPID_Info *info )
+void *MPID_Mem_alloc( size_t size, MPID_Info *info )
 {
 }
 
 /*@
-  MPID_Free_mem - Frees memory allocated with 'MPID_Alloc_mem'
+  MPID_Mem_free - Frees memory allocated with 'MPID_Alloc_mem'
 
   Input Parameter:
 . ptr - Pointer to memory allocated by 'MPID_Alloc_mem'.
@@ -963,7 +989,7 @@ void *MPID_Alloc_mem( size_t size, MPID_Info *info )
   Module:
   Win
   @*/
-int MPID_Free_mem( void *ptr )
+int MPID_Mem_free( void *ptr )
 {
 }
 
@@ -974,7 +1000,7 @@ int MPID_Free_mem( void *ptr )
 /*TCMOverview.tex
  *
  * General Notes: Communication operations are non-blocking, with a completion
- * flag.  In some cases, the flag may be specified as NULL; where this is
+ * flag.  In some cases, the flag may be specified as 'NULL'; where this is
  * true, completion must be ensured by some other test.
  *
  * Flow control is the responsibility of the device; these routines are
@@ -1025,13 +1051,13 @@ int MPID_Free_mem( void *ptr )
 
   Questions:
   What addresses are valid for local flags?  What offsets are valid for 
-  target flags?  Should the type of a flag be MPID_flag_t?  
+  target flags?  Should the type of a flag be 'MPID_flag_t'?  
   Do we require a test call on the flag, or only that the local flag be 
   declared as volatile (as in the prototype)?
 
-  (My current thinking is to require MPID_Flag_t, and provide a routine
+  (My current thinking is to require 'MPID_Flag_t', and provide a routine
   to allocate and free them.  The device can easily include one within
-  a MPID_Request structure.)
+  an 'MPID_Request' structure.)
 
   Do we want to require that the buffer be setup with the segment routine, 
   or is there a separate routine in 'MPID_CORE' that should be called for
@@ -1055,7 +1081,7 @@ int MPID_Put_contig( const void *origin_buf, int n,
   This routine allows a device to optimize waiting on completion.  For example,
   a TCP device could use select with a null timeout while waiting for an 
   operation, such as a write to a socket, to complete.  A shared-memory
-  device could sleep (e.g., using a sem_op of 0 and a sem_flg of 0).
+  device could sleep (e.g., using a 'sem_op' of 0 and a 'sem_flg' of 0).
   
   This also allows devices that have special addresses for completion to
   transfer those completion values to the specified local flags.
@@ -1151,7 +1177,7 @@ int MPID_Flags_testsome( int count, int *(flags[]) )
  * specialized operation; it is hard to see how a simpler operation
  * could be defined that would still make possible the collective
  * semantics of fence (particularly with the optional assertions)
- * Of course, fence need not be in MPID_CORE, since it can be implemented
+ * Of course, fence need not be in 'MPID_CORE', since it can be implemented
  * by waiting for completion of outstanding put/get operations and
  * executing MPI_Barrier to ensure that all remote operations targeting
  * this process have also completed.
@@ -1225,15 +1251,15 @@ int MPID_Get_contig( void * origin_buf, int n,
 
   The Stream routines define a separate header which is used to support
   the generic implementation of the MPI collective operations.  To support
-  this, a count of at least 2 will be needed, with vector[0] pointing at
-  the packet describing the stream operation and vector[1] pointing at the
+  this, a count of at least 2 will be needed, with 'vector[0]' pointing at
+  the packet describing the stream operation and 'vector[1]' pointing at the
   separate header.
 
-  An MPI_Put with a (noncontiguous) datatype will needs
-  a count of at least 3: vector[0] points to the header that 
-  describes the basic put operation (window and offset), vector[1] points
+  An 'MPI_Put' with a (noncontiguous) datatype will needs
+  a count of at least 3: 'vector[0]' points to the header that 
+  describes the basic put operation (window and offset), 'vector[1]' points
   to a description of the datatype (if not cached at the destination), 
-  and vector[3] points to the actual data.
+  and 'vector[2]' points to the actual data.
 
   In terms of implementation, for a put to a strided datatype using TCP,
   we''d want to send the header describing the destination, the datatype
@@ -1260,7 +1286,7 @@ int MPID_Rhcv( int rank, MPID_Comm *comm, MPID_Handler_id id,
  * MPID_Waitsome
  * MPID_Testsome
  *
- * None of these is in MPID_CORE.
+ * None of these is in 'MPID_CORE'.
  * As for the other routines in MPID, these only check for errors that are 
  * difficult to check for without performing the operation.
  * 
@@ -1413,11 +1439,11 @@ int MPID_tBsend( void *buf, int count, MPID_Datatype *datatype,
  * Section 3: Communication Buffer management
  *
  * The routines in this section fill two roles.  In the implementation of
- * routines such as MPID_Isend where the only device-specific routines are 
- * the few in MPID_CORE, it is necessary to have the ability to pack and unpack
+ * routines such as 'MPID_Isend' where the only device-specific routines are 
+ * the few in 'MPID_CORE', it is necessary to have the ability to pack and unpack
  * partial messages.  Consider the case where the user calls
- * MPI_Isend( buf, 1, my_huge_indexed_type, ... )
- * where the total amount of data being sent is 100 MB.  Since MPID_CORE
+ * 'MPI_Isend( buf, 1, my_huge_indexed_type, ... )'
+ * where the total amount of data being sent is 100 MB.  Since 'MPID_CORE'
  * can only move contiguous data, we need to convert the described data
  * into a sequence of contiguous memory segments of some reasonable size
  * (we don't want to have to allocate a 100 MB temporary buffer).
@@ -1462,10 +1488,10 @@ int MPID_tBsend( void *buf, int count, MPID_Datatype *datatype,
 
   Questions: 
   Add an `intent` so that sending all of the data can use device 
-  knowledge about complex data layouts?  E.g., intent == MPID_BUFFER_ALL
-  or intend == MPID_BUFFER_SEGMENT?
+  knowledge about complex data layouts?  E.g., 'intent == MPID_BUFFER_ALL'
+  or 'intent == MPID_BUFFER_SEGMENT'?
 
-  The original description contained this text
+  The original description contained this text\:
 
   If null, the original buffer is contiguous and can be used as is.
 
@@ -1603,7 +1629,7 @@ void *MPID_Segment_unpack( MPID_Segment *segment, int *first, int *last,
 
   Question:
   Should we pass the address of the segment pointer so that we can set
-  it to NULL, as the MPI routines do?
+  it to 'NULL', as the MPI routines do?
   @*/
 int MPID_Segment_free( MPID_Segment *segment )
 {
@@ -1702,7 +1728,7 @@ int MPID_Memory_unregister( void *buf, int len, MPID_Comm *comm, int rank,
  * store and forward (to one or more processes); collective computation (such 
  * as reduce or scan) adds a processing step before forwarding.
  * This section describes the routines needed for these operations.
- * They rely on the MPID_Segment to provide an interface between the 
+ * They rely on the 'MPID_Segment' to provide an interface between the 
  * general MPI datatypes and the contiguous byte array form in which 
  * most store and forward operations are described.
  *
@@ -1946,7 +1972,7 @@ int MPID_Stream_iforward( MPID_Stream *stream, void *header,
  * that has been used in cluster enviroments is a hierarchical decomposition
  *
  * The other obviously useful topology information would match the needs of 
- * MPI_Cart_create.  However, it may be simpler to for the device to implement
+ * 'MPI_Cart_create'.  However, it may be simpler to for the device to implement
  * this routine directly.
  *
  * Other useful information could be the topology information that matches
@@ -1960,7 +1986,7 @@ int MPID_Stream_iforward( MPID_Stream *stream, void *header,
   interconnections
 
   Input Parameter:
-. comm - Communicator to study.  Maybe NULL, in which case MPI_COMM_WORLD
+. comm - Communicator to study.  May be 'NULL', in which case 'MPI_COMM_WORLD'
   is the effective communicator.
 
   Output Parameters:
@@ -2104,7 +2130,7 @@ int MPID_Thread_init( int *argc_p, char *(*argv_p)[],
   MPID_Abort - Abort the at least the processes in the specified communicator.
 
   Return value:
-  MPI_SUCCESS or an MPI error code.  Normally, this routine should not return,
+  'MPI_SUCCESS' or an MPI error code.  Normally, this routine should not return,
   since the calling process must be a member of the communicator.  However, 
   under some circumstances, the 'MPID_Abort' might fail; in this case,
   returning an error indication is appropriate.
@@ -2127,9 +2153,9 @@ int MPID_Abort( MPID_Comm *comm )
   MPID_Finalize - Perform the device-specific termination of an MPI job
 
   Return Value:
-  MPI_SUCCESS or a valid MPI error code.  Normally, this routine will
+  'MPI_SUCCESS' or a valid MPI error code.  Normally, this routine will
   return 'MPI_SUCCESS'.  Only in extrordinary circumstances can this
-  routine fail; for example, is some process stops responding during the
+  routine fail; for example, if some process stops responding during the
   finalize step.  In this case, 'MPID_Finalize' should return an MPI 
   error code indicating the reason that it failed.
 
@@ -2265,12 +2291,12 @@ void *MPID_Memcpy( void *dest, const void *src, size_t n )
 }
 
 /*@
-  MPID_Calloc - .
+  MPID_Calloc - Allocate memory that is initialized to zero.
 
   Module:
   Utility
   @*/
-void *MPID_Calloc( )
+void *MPID_Calloc( size_t nelm, size_t elsize)
 {
 }
  
@@ -2323,6 +2349,10 @@ char *MPID_Strdup( const char *str )
 
   Module:
   Timer
+
+  Question:
+  MPI-2 allows 'MPI_Wtime' to be a macro.  We should make that easy; this
+  version does not accomplish that.
   @*/
 void MPID_Wtime( MPID_Wtime_t *timeval )
 {
@@ -2364,6 +2394,15 @@ void MPID_Wtime_diff( MPID_Wtime_t *t1, MPID_Wtime_t *t2, double *diff )
 double MPID_Wtick( void )
 {
 }
+
+/*@
+  MPID_Wtime_init - Initialize the timer
+
+  Note:
+  This routine should 
+  @*/
+void MPID_Wtime_init( void )
+{}
 
 /*@
   MPID_Gwtime_init - Initialize a global timer
@@ -2415,6 +2454,10 @@ int MPID_Gwtime_init( MPID_Comm *comm )
 
   Module:
   Timer
+
+  Question:
+  Should this require that one pid correspond to the calling process?
+  Should 'pid1' always be the calling process?
   @*/
 void MPID_Gwtime_diff( MPID_Wtime_t *t1, int pid1, 
 		       MPID_Wtime_t *t2, int pid2, double *diff )
@@ -2467,7 +2510,7 @@ double MPID_Gwtick( int pid1, int pid2 )
  * more sophisticated approaches can be used (in MPICH-1, an HB tree was
  * used).
  *
- * Note that for a multithreaded (MPI_THREAD_MULTIPLE) implementation,
+ * Note that for a multithreaded ('MPI_THREAD_MULTIPLE') implementation,
  * these routines and/or their use require more care because of 
  * possible race conditions.  For example, if one thread is retrieving an 
  * attribute value while another is deleting the attribute, a consistent 
@@ -2565,7 +2608,7 @@ MPID_Attribute *MPID_Attr_list_walk( MPID_List *list, MPID_Attribute *prev )
 - keyval - keyval to look for
  
   Return value:
-  zero if the attribute was found and deleted, an MPI error code otherwise.
+  Zero if the attribute was found and deleted, an MPI error code otherwise.
   
   Module:
   Attribute
@@ -2631,7 +2674,7 @@ MPID_Info *MPID_Info_find( MPID_Info *info, const char key[], int insert )
   Module:
   Attribute
   @*/
-MPID_Info *MPID_Info_list_walk( MPID_Info *info, MPID_Info *info )
+MPID_Info *MPID_Info_list_walk( MPID_Info *info, MPID_Info *prev )
 {
 }
 
@@ -2643,7 +2686,7 @@ MPID_Info *MPID_Info_list_walk( MPID_Info *info, MPID_Info *info )
 - key - key string to look for
  
   Return value:
-  zero if the key was found and deleted, an MPI error code otherwise.
+  Zero if the key was found and deleted, an MPI error code otherwise.
   
   Module:
   Attribute
@@ -2691,8 +2734,8 @@ extern int MPID_THREAD_LEVEL;
  * a list of local process id's.
  *
  * Question:
- * One new datastructure may be exposed here: the MPI Info.  Should we
- * add an MPID_Info * (non-opaque) structure?
+ * One new datastructure may be exposed here: the MPI 'Info'.  Should we
+ * add an 'MPID_Info *' (non-opaque) structure?
  T*/
 /*@
   MPID_Comm_spawn_multiple - Spawm and connect to new processes
@@ -2765,13 +2808,295 @@ int MPID_Comm_disconnect( MPID_Comm *comm )
 }
 
 /*
+ * Error Reporting
+ */
+/*@
+  MPID_Err_create_code - Create an error code and associated message
+  to report an error
+
+  Input Parameters:
++ class - Error class
+. generic_msg - A generic message to be used if not instance-specific
+ message is available
+. instance_msg - A message containing printf-style formatting commands
+  that, when combined with the instance_parameters, specify an error
+  message containing instance-specific data.
+- instance_parameters - The remaining parameters.  These must match
+ the formatting commands in 'instance_msg'.
+
+ Notes:
+ A typical use is\:
+.vb
+   return MPID_Err_create_code( MPI_ERR_RANK, "Invalid Rank",
+                                "Invalid rank %d", rank );
+.ve
+ 
+  Predefined message may also be used.  Any message that uses the
+  prefix '"**"' will be looked up in a table.  This allows standardized 
+  messages to be used for a message that is used in several different locations
+  in the code.  For example, the name '"**rank"' might be used instead of
+  '"Invalid Rank"'; this would also allow the message to be made more
+  specific and useful, such as 
+.vb
+   Invalid rank provided.  The rank must be between 0 and the 1 less than
+   the size of the communicator in this call.
+.ve
+  
+  This interface is compatible with the 'gettext' interface for 
+  internationalization, in the sense that the 'generic_msg' and 'instance_msg' 
+  may be used as arguments to 'gettext' to return a string in the appropriate 
+  language; the implementation of 'MPID_Err_create_code' can then convert
+  this text into the appropriate code value.
+
+  Module:
+  Error
+
+  Question:
+  Do we want to have a procedural interface for defining the full message that
+  corresponds to each predefined message?  
+  @*/
+int MPID_Err_create_code( int class, const char *generic_msg, 
+                          const char instance_msg, ... )
+{
+}
+
+/*@
+  MPID_Err_set_msg - Change the message for an error code or class
+
+  Input Parameter:
++ code - Error code or class
+- msg  - New message to use
+
+  Notes:
+  This routine is needed to implement 'MPI_Add_error_string'
+ 
+  Module:
+ Error
+@*/
+int MPID_Err_set_msg( int code, const char *msg_string )
+
+/*@
+  MPID_Err_add_class - Add an error class with an associated string
+
+  Input Parameters:
++ msg_string - Message text for this class.  A null string may be used, in
+  which case 'MPID_Err_set_msg' should be called later.
+- instance_msg_string - Instance-specific message string.  See the error 
+  reporting overview.  May be the null string.
+
+  Return value:
+  An error class.
+
+  Notes:
+  This is used to implement 'MPI_Add_error_class'; it may also be used by a 
+  device to add device-specific error classes.  Unlike the MPI version, this 
+  combines returning a class with setting the associated message.  
+ 
+  Module:
+  Error
+  @*/
+int MPID_Err_add_class( const char *msg_string, 
+			const char *instance_msg_string )
+{}
+
+/*@
+  MPID_Err_add_code - Add an error code with an associated string
+
+  Input Parameters:
++ class - Class that the code belongs to
+. msg_string - Message text for this code
+- instance_msg_string - Instance-specific message string.  See the error 
+  reporting overview.  May be the null string.
+
+  Return value:
+  An error code.
+
+  Notes:
+  This is used to implement 'MPI_Add_error_code'; it may also be used by a 
+  device to add device-specific error codes.  Unlike the MPI version, this 
+  combines returning a code with setting the associated message.  
+ 
+  Module:
+  Error
+  @*/
+int MPID_Err_add_code( int class, const char *msg_string, 
+		       const char *instance_msg_string )
+{}
+
+/*@
+  MPID_Err_delete_code - Delete an error code and its associated string
+
+  Input Parameter:
+. code - Code to delete.
+ 
+  Module:
+  Error
+  @*/
+void MPID_Err_delete_code( int code )
+{}
+
+/*@
+  MPID_Err_delete_class - Delete an error class and its associated string
+
+  Input Parameter:
+. class - Class to delete.
+ 
+  Module:
+  Error
+  @*/
+void MPID_Err_delete_class( int class )
+{}
+
+/*@
+  MPID_Err_get_string - Get the message string that corresponds to an error
+  class or code
+
+  Input Parameter:
++ code - An error class or code.  If a code, it must have been created by 
+  'MPID_Err_create_code'.
+- msg_len - Length of 'msg'.
+
+  Output Parameter:
+. msg - A null-terminated text string of length (including the null) of no
+  more than 'msg_len'.  
+
+  Return value:
+  Zero on success.  Non-zero returns indicate either (a) 'msg_len' is too
+  small for the message or (b) the value of 'code' is neither a valid 
+  error class or code.
+
+  Notes:
+  This routine is used to implement 'MPI_ERROR_STRING'.
+
+  Module:
+  Error 
+
+  Question:
+  What values should be used for the error returns?  Should they be
+  valid error codes?
+
+  How do we get a good value for 'MPI_MAX_ERROR_STRING' for 'mpi.h'?
+  See 'errgetmsg' for one idea.
+
+  @*/
+int MPID_Err_get_string( int code, char *msg, int msg_len )
+{}
+
+/*D
+  errmsgcat - Generate the message catalog from the source files
+
+  Usage:
+  errmsgcat [ -append ] [ -msgcat filename ] [ -ignore filename ] 
+  [ -basefile filename ] [ -deffile filename ] [ -validate ] 
+  [ -msglenfile filename ] path
+
+  Command line options:
++ -append - Add entries to the message catalog.  Without this option,
+  a new file is created
+. -msgcat filename - Specify the name of the message catalog.  If no name is
+  specified, 'msg.cat' is used.
+. -deffile filename - Specify the name of a file to contain the messages as 
+  a C array.  This file may be included in an application to ensure that
+  error messages can be generated even if the error message catalog cannot be
+  found or read.  By default, the name 'msgcat.h' is used.  If no file is
+  desired, use '/dev/null'.
+. -ignore filename - Specify a file containing a list of files or directories
+  to skip.  The names must not contain a '/' .
+.  -basefile filename - Specifiy a file containing predefined messages.  See 
+  notes.
+.  -validate - If this is specified, the message catalog is validated by 
+  ensuring that all references to a predefined message are matched by 
+  a message definition and that the instance-specific messages are supplied 
+  with the correct number of arguments in the 'MPID_Err_create_code' call.
+. -msglenfile filename - Filename to create containing the maximum length 
+  of any error message.  This file contains a line of the form
+.vb
+  #define MAX_ERROR_MSG 231
+.ve
+  If no filename is provided, 'msgcatlen.h' is used.  If no file is desired,
+  specify '/dev/null'
+- path - File or directory to search for messages.  If 'path' is a directory,
+ all files in the directory and any subdirectories are searched, except for
+ any files specified using the '-ignore' option.
+  
+  Notes:
+  This is program that reads source files and creates a message catalog 
+  from the source file.  It searches for 'MPID_Err_create_code' and extracts 
+  the class value and messages and creates a message catalog file 'msg.cat',
+  along with files used to allow an application to generate error messages
+  even if the message catalog file cannot be found.
+
+  The basefile allows the use of standardized messages.  This should contain
+  lines of the form
+.vb
+  **shortname
+  long version of message \
+  using backslashes at the end of\
+  the line to continue
+.ve
+  The form '**shortname' is used in 'MPID_Err_create_code' calls.
+ 
+  The 'msgcatlen.h' file is provided to allow a tool to define an appropriate
+  maximum message length or to check that a specified maximum message length
+  is in fact sufficient.  The value in this file can be used to 
+  specify 'MPI_MAX_ERROR_STRING'.
+
+  The computation of the maximum message length requires that any formatting
+  command contain a maximum field length.  If no lengths are provided, the
+  following defaults will be used\:
+.vb
+  %d   10
+  %s   32
+  %ld  16
+  %x   8
+  %lx  16
+.ve
+  These values must also be enforced by the implementation of 
+  'MPID_Err_get_string'.
+
+  Module:
+  Error
+  D*/
+
+/*@
+  MPICH_Quiet - Call a user-specified function when a communicator is
+  quiet
+
+  Input Parameters:
++ comm - Pointer to a communicator
+. checkpointfunction - User function to call.  The parameters are 'comm'
+  and 'extra_data'
+- extra_data - A pointer that is passed to 'checkpointfunction'.
+  
+  Notes:
+  This routine can be used to provide for checkpointing operations where
+  the user and the MPI implementation together guarantee that no communication
+  is taking place, even by the low levels of the implementation, on the
+  specified communiacator while 'checkpointfunction' is running.  
+
+  This is a collective call with semantics similiar to 'MPI_Barrier', with 
+  the change that after all processes have entered 'MPICH_Quiet', the 
+  user-specified function 'checkpointfunction' is called (collectively), and 
+  once that routine returns, a process can leave 'MPICH_Quiet'.  
+
+  Module:
+  Extension
+  @*/
+void MPICH_Quiet( MPID_Comm *comm, 
+		  int*(checkpointfunction(MPI_Comm *, void *)), 
+		  void *extra_data )
+
+/*
  * ToDo:
  * Complete list
+ * All handler types description of actions
  * Add MPI routines that may call each MPID routine.
  *
  * I'd still like to have a fast way to perform MPI_Reduce on a single
  * double precision value, perhaps by providing a fast concatenate
  * operation in the device (an Rhcv handler for it?) and then locally
  * applying the operation.
+ *
+ * Is there an easy way to make use of IP multicast?
  */
 

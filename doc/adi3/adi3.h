@@ -23,15 +23,15 @@
 
   Section : MPI Opaque Objects
   MPI Opaque objects are specified by integers in the range [0,...] (in
-  the MPICH2k implementation).
+  the MPICH2 implementation).
   Out of range values are invalid; the value 0 is reserved for use as
-  the MPI_xxx_NULL value.  In the debugging case, we may want to reserve
-  0 for an invalid value and 1 for MPI_xxx_NULL.
+  the 'MPI_xxx_NULL' value.  In the debugging case, we may want to reserve
+  0 for an invalid value and 1 for 'MPI_xxx_NULL'.
 
   MPID objects are not opaque.
 
   Question:
-  Should they be?  For example, should MPID_List * really be MPID_List_t, 
+  Should they be?  For example, should 'MPID_List *' really be 'MPID_List_t', 
   with something like\:
 .vb
  typedef struct MPID_List *MPID_List_t;
@@ -146,11 +146,11 @@ typedef struct {
   MPID_Attribute - Structure of an MPID attribute
 
   Notes:
-  Attributes don't have ref_counts because they don't have reference
+  Attributes don''t have ref_counts because they don''t have reference
   count semantics.  That is, there are no shallow copies or duplicates
   of an attibute.  An attribute is copied when the communicator that
   it is attached to is duplicated.  Subsequent operations, such as
-  MPI_Comm_attr_free, can change the attribute list for one of the
+  'MPI_Comm_attr_free', can change the attribute list for one of the
   communicators but not the other, making it impractical to keep the
   same list.  (We could defer making the copy until the list is changed,
   but even then, there would be no reference count on the individual
@@ -393,17 +393,17 @@ typedef struct datatloop_ {
   For some of the boolean information (e.g., is_contig), should we just use
   a single bit to help reduce the size of the structure.
 
-  For MPI_Type_dup, we may want to do a shallow copy.  For example, 
-  if the original type was created with MPI_Type_indexed with a large, 
+  For 'MPI_Type_dup', we may want to do a shallow copy.  For example, 
+  if the original type was created with 'MPI_Type_indexed' with a large, 
   user-provided array, then we''d like not to copy that large array.
-  That arguments for another pointer: MPID_Datatype *dup_parent; 
-  When MPI_Type_dup is executed, a new datatype is created and setup, but
+  That arguments for another pointer: 'MPID_Datatype *dup_parent;' 
+  When 'MPI_Type_dup' is executed, a new datatype is created and setup, but
   the dup_parent is set to the previous datatype (or its parent if it has 
   one).  The cost is that all (non-basic) datatype operations involve another
   test (do I have a parent?).
 
   For datatypes built from other datatypes, do I want to copy the loop
-  information from the old datatypes?  This is the MPID_Dataloop
+  information from the old datatypes?  This is the 'MPID_Dataloop'
   information (e.g., precopy the entire dataloop stack)?
   S*/
 typedef struct { 
@@ -457,12 +457,12 @@ typedef struct {
  Only for MPI-1 are the lpid''s equal to the `global` pids.  The local pids
  can be thought of as a reference not to the remote process itself, but
  how the remote process can be reached from this process.  We may want to 
- have a structure MPID_Lpid_t that contains information on the remote
+ have a structure 'MPID_Lpid_t' that contains information on the remote
  process, such as (for TCP) the hostname, ip address (it may be different if
  multiple interfaces are supported; we may even want plural ip addresses for
  stripping communication), and port (or ports).  For shared memory connected
  processes, it might have the address of a remote queue.  The lpid number 
- is an index into a table of MPID_Lpid_t''s that contain this (device- and
+ is an index into a table of 'MPID_Lpid_t'''s that contain this (device- and
  method-specific) information.
 
  Module:
@@ -495,7 +495,7 @@ typedef struct {
 
   Question:
   Do we want a communicator type (intra or inter) or do we use
-  comm->local_group == comm->remote_group?
+  'comm->local_group == comm->remote_group'?
 
   Do we want to have the collective operations pointer here?
   Do we want to optimize for the common case of "use the standard
@@ -531,9 +531,9 @@ typedef struct {
   Win
 
   Question:
-  Should a win be defined after MPID_Segment in case the device wants to 
-  store a queue of pending put/get operations, described with MPID_Segment
-  (or MPID_Request)s?
+  Should a win be defined after 'MPID_Segment' in case the device wants to 
+  store a queue of pending put/get operations, described with 'MPID_Segment'
+  (or 'MPID_Request')s?
   S*/
 typedef struct {
     int  id;                     /* value of MPI_Win for this structure */
@@ -607,7 +607,7 @@ typedef struct {
   }
 .ve 
   This may look a little bit messy (and not all of the code is here), but it 
-  shows how valid_sp is used to 
+  shows how 'valid_sp' is used to 
   avoid recopying the information on a datatype in the non-struct case.
   For example, a vector of vector has the datatype description read
   only once, not once for each count of the outer vector.
@@ -641,9 +641,9 @@ typedef struct {
   Request
 
   Question:
-  Do we need an MPID_Datatype * to hold the datatype in the event of a 
+  Do we need an 'MPID_Datatype *' to hold the datatype in the event of a 
   nonblocking (and not yet completed) operation involving a complex datatype,
-  or do we need a pointer to an MPID_Buffer?  Or is it device-specific?
+  or do we need a pointer to an 'MPID_Buffer'?  Or is it device-specific?
   S*/
 typedef struct {
     volatile int ready;   /* Set to true when the request may be used */
@@ -662,7 +662,7 @@ typedef struct {
   Notes:
   This is a typedef enum that lists the possible call types
   for 'MPID_Rhcv'.  The exact list will depend on the generic implementation 
-  of the other (i.e., not-\texttt{MPID_CORE}) modules.
+  of the other (i.e., not 'MPID_CORE') modules.
 
   Module:
   MPID_CORE
@@ -686,8 +686,8 @@ typedef enum { MPID_Hid_Request_to_send = 1,
   The specific type lengths are not required; however, the type lengths
   used by the device must be consistent with the rest of the code.
 
-  For example, if an int16_t is used for tag, then the value of 
-  MPI_TAG_UB must be no larger than 32K-1.
+  For example, if an 'int16_t' is used for tag, then the value of 
+  'MPI_TAG_UB' must be no larger than 32K-1.
 
   Other fields may also be included.  For example, a message-sequence
   number is helpful for message-matching tools when there are multiple
@@ -731,7 +731,7 @@ typedef struct {
 /*D
   Constants - Description of constants defined by the device.
 
-  The thread levels are 'defined' rather than enumerated so that they 
+  The thread levels are 'define'd rather than enumerated so that they 
   can be used in preprocessor tests.
 
   Module:
@@ -747,7 +747,7 @@ typedef struct {
   support provided at compile time.
  
   Values:
-. Any of the 'MPI_THREAD_xxx' values (but as preprocessor-time constants)
+  Any of the 'MPI_THREAD_xxx' values (but as preprocessor-time constants)
 
   Notes:
   The macro 'MPID_MAX_THREAD_LEVEL' defines the maximum level of
@@ -769,4 +769,8 @@ typedef struct {
   Environment
   D*/
 #define MPID_MAX_THREAD_LEVEL 
+
+/*
+ * Function Prototypes go here
+ */
 

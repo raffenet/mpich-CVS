@@ -10,6 +10,7 @@
 \textwidth=6.1in
 \oddsidemargin=.2in
 \topmargin=-.50in
+\newread\testfile
 
 %
 % Modify the way titles are handled for no breaks between pages
@@ -89,41 +90,47 @@ Section~\ref{sec-intermediate}.
 
 The modules are (THIS LIST IS INCOMPLETE):
 \begin{description}
-\item[MPID CORE]Basic functions to start, stop, and communicate
+\item[MPID CORE]. Basic functions to start, stop, and communicate
 between processes.  This also includes the \code{mpiexec} program.
 This is the only module for which there is no generic implementation; as
 described in Section~\ref{sec-minimal}, implementing just this module,
 combined with the generic implementation of the other modules, provides a
 complete ADI-3 implementation.
-\item[Attribute]MPI Keyvals and attributes
-\item[Datatype]MPI Datatypes and pack/unpack operations and a new
+\item[Attribute]. MPI Keyvals and attributes
+\item[Datatype]. MPI Datatypes and pack/unpack operations and a new
 object, \code{MPID_Segment}, used only within the ADI.
-\item[Dynamic]Support for MPI-2 dynamic process operations.  This
+\item[Dynamic]. Support for MPI-2 dynamic process operations.  This
 module must be implemented to support the dynamic process chapter of MPI-2.
-\item[Group]MPI Groups
-\item[Communicator]MPI Communicators
-\item[Request]MPI Requests.  Requests are fundemental to many
+\item[Group]. MPI Groups
+\item[Communicator]. MPI Communicators
+\item[Request]. MPI Requests.  Requests are fundemental to many
 operations; most devices that implement more than MPID CORE will need
 to replace this module.
-\item[Window]MPI Windows.
+\item[Window]. MPI Windows.
 \item[Point to point]Functions directly implementing the MPI
 point-to-point communication functions or some key subsets.
-\item[Topology]Information on the physical interconnect.  Currently
+\item[Topology].Information on the physical interconnect.  Currently
 limited to hierarchical information necessary to support clusters of
 SMPs and similar systems.
-\item[Timer]Support for fast timers, including synchronized timers.
-\item[Stream]Communication routines designed to support
+\item[Timer]. Support for fast timers, including synchronized timers.
+\item[Stream]. Communication routines designed to support
 important algorithms for collective communication.
-\item[Collective]Alternate support for collective
+\item[Collective]. Alternate support for collective
 routines. \textbf{Note that this may end up being an MPI module, not
 an MPID module.}
-\item[Utility]Routines to simplify correctness and performance
+\item[Utility]. Routines to simplify correctness and performance
 debugging, and to provide a common interface to OS services that have
 different interfaces on different platforms.
-\item[Environment]This module contains both compile-time and run-time
+\item[Environment]. This module contains both compile-time and run-time
 constants that describe the environment. 
-\item[Communication] The routines that carry out communication among MPI
+\item[Communication]. The routines that carry out communication among MPI
   processes. 
+\item[Error Reporting]. This provides support for detailed error
+reporting.  Most implementations will use the generic implementation
+of this module.
+\item[Extensions]. This module contains no required routines; instead,
+it documents some of the various extensions that the MPICH group is
+considering, such as checkpointing.
 \end{description}
 
 By dividing the ADI into these modules, it becomes easy to implement
@@ -148,25 +155,25 @@ provides a generic implementation.  Thus, only the routines in
 communication mechanism.  \code{MPID_CORE} consists of the following routines: 
 
 \begin{description}
-\item[\code{MPID_Init_thread}]This is the device's counterpart to
+\item[\code{MPID_Init_thread}]. This is the device's counterpart to
 \code{MPI_Init_thread}. 
-\item[\code{MPID_Finalize}]This is the devices's counterpart to
+\item[\code{MPID_Finalize}]. This is the devices's counterpart to
 \code{MPI_Finalize}
-\item[\code{MPID_Abort}]This is the device's counterpart to \code{MPI_Abort}.
-\item[\code{MPID_Put_contig}]This is used for data movement; it is roughly an
+\item[\code{MPID_Abort}]. This is the device's counterpart to \code{MPI_Abort}.
+\item[\code{MPID_Put_contig}]. This is used for data movement; it is roughly an
 \code{MPI_Put} using only contiguous data.  However, it uses a
 different mechanism for indicating completion of data transfers (see \code{MPID_Flags_waitsome} and \code{MPID_Flags_testsome})
-\item[MPID_Rhcv]This is used for messages; it is roughly an
+\item[\code{MPID_Rhcv}]. This is used for messages; it is roughly an
 active-message call.  However, only predefined actions are allowed,
 and these actions are enumerated.
-\item[\code{MPID_Flags_waitsome}, \code{MPID_Flags_testsome}]These are used to
-  complete \code{MPID_Rhcv} 
+\item[\code{MPID_Flags_waitsome}, \code{MPID_Flags_testsome}]. These
+are used to complete \code{MPID_Rhcv} 
 and \code{MPID_Put_contig} operations
-\item[\code{MPID_Poll}]This routine provides a way for a polling routine to
+\item[\code{MPID_Poll}]. This routine provides a way for a polling routine to
 be called.  A device is permitted to define this as a no-op if polling
 is not needed.  In other words, this routine is provided to
 \emph{allow} polling implementations, not to \emph{require} them.
-\item[\code{mpiexec}]An implementation of \code{mpiexec}, as defined in the
+\item[\code{mpiexec}]. An implementation of \code{mpiexec}, as defined in the
   MPI-2 standard, for starting MPI jobs.  While not a routine, it must be 
   provided by any device.  
 \end{description}
@@ -200,11 +207,12 @@ communication support in \code{MPID_CORE}.  The contents of the
 dynamic module include:
 
 \begin{description}
-\item[\code{MPID_Comm_Spawn_Multiple}]Spawns new processes.  An implementation
+\item[\code{MPID_Comm_Spawn_Multiple}]. Spawns new processes.  An
+implementation 
   that does not plan to support \code{MPI_Comm_spawn} or
   \code{MPI_Comm_spawn_multiple} can implement these as routines that return
   failure.  Such an implementation will not implement all of MPI-2.
-\item[\code{MPID_Open_port}]Open a port for connecting to processes.  The
+\item[\code{MPID_Open_port}]. Open a port for connecting to processes.  The
   routines \code{MPID_Open_port}, \code{MPID_Close_port},
   \code{MPID_Comm_connect}, \code{MPID_Comm_attach}, and
   \code{MPID_Comm_disconnect} can be considered a 
@@ -213,10 +221,10 @@ dynamic module include:
   support only the subset of MPI-2 that does not include the MPI routines for
   connecting two groups of MPI processes may implement these routines by
   simply having them return failure.
-\item[\code{MPID_Close_port}]Close a port opened with \code{MPID_Open_port}.
-\item[\code{MPID_Comm_connect}]Connect to an MPI program.
-\item[\code{MPID_Comm_attach}]Attach to an MPI program.
-\item[\code{MPID_Comm_disconnect}]Detach from an MPI program.
+\item[\code{MPID_Close_port}]. Close a port opened with \code{MPID_Open_port}.
+\item[\code{MPID_Comm_connect}]. Connect to an MPI program.
+\item[\code{MPID_Comm_attach}]. Attach to an MPI program.
+\item[\code{MPID_Comm_disconnect}]. Detach from an MPI program.
 \end{description}
 
 \subsection{Design Rationale}
@@ -341,7 +349,7 @@ and MPID groups?
 utility module.  But what routines from \code{MPID_Core} must it call
 to connect up the processes?
 
-Error reporting.  The ADI needs to know how to create MPI error codes.
+%Error reporting.  The ADI needs to know how to create MPI error codes.
 
 %\section{ADI-3 Routines}
 %\input adi3func.tex
@@ -357,7 +365,7 @@ Still to do.  This section needs to cover:
 \item Local configure/setup script.  How the top-level mpich configure invokes
   the device-specific setup scripts
 \item mpiexec.  How mpich creates the correct mpiexec
-\item installation.  How mpich gets the proper device-specific files
+\item Installation.  How mpich gets the proper device-specific files
   installed; e.g., the mpd for the mpd device.
 \item Device-specific documentation, such as environment variables and
   command-line arguments used only by a particular device.
@@ -402,10 +410,10 @@ Still to do.  This section needs to cover:
 \end{verbatim}
 
 \subsection{Handlers}
-\begin{verbatim}
-    Need enumeration of non-core handlers for MPID_Rhcv.  Perhaps these 
+%\begin{verbatim}
+    Need enumeration of non-core handlers for \code{MPID_Rhcv}.  Perhaps these 
     belong in various modules.
-\end{verbatim}
+%\end{verbatim}
 
 \subsection{Attributes}
 \begin{verbatim}
@@ -413,8 +421,7 @@ Still to do.  This section needs to cover:
     MPID_Attr_find
     MPID_Attr_list_walk
     MPID_Attr_predefined
-    MPID_Comm_attr_delete
-    MPID_Comm_attr_set
+    MPID_Comm_attr_notify
 \end{verbatim}
 %   MPID_Lang_t
 
@@ -481,17 +488,17 @@ Still to do.  This section needs to cover:
 
 \subsection{Streams}
 \begin{verbatim}
-    MPID_Iforward_stream
-    MPID_Irecv_stream
-    MPID_Isend_stream
-    MPID_Wait_stream
+    MPID_Stream_iforward
+    MPID_Stream_irecv
+    MPID_Stream_isend
+    MPID_Stream_wait
 \end{verbatim}
 %MPID_Stream
 
 \subsection{Window Objects}
 \begin{verbatim}
-    MPID_Alloc_mem
-    MPID_Free_mem
+    MPID_Mem_alloc
+    MPID_Mem_free
 \end{verbatim}
 %    MPID_Win
 
@@ -499,6 +506,8 @@ Still to do.  This section needs to cover:
 \begin{verbatim}
     MPID_Gwtick
     MPID_Gwtime_init
+    MPID_Gwtime_diff
+    MPID_Wtime_init
     MPID_Wtick
     MPID_Wtime_diff
     MPID_Wtime
@@ -522,6 +531,17 @@ Still to do.  This section needs to cover:
 \begin{verbatim}
     MPID_MAX_THREAD_LEVEL
     MPID_THREAD_LEVEL
+\end{verbatim}
+
+\subsection{Error Reporting}
+\begin{verbatim}
+    MPID_Err_create_code
+    MPID_Err_get_string
+    MPID_Err_set_msg
+    MPID_Err_add_class
+    MPID_Err_add_code
+    MPID_Err_delete_code
+    MPID_Err_delete_class
 \end{verbatim}
 
 \section{MPID Core}
@@ -580,7 +600,64 @@ Still to do.  This section needs to cover:
 \section{Environment}
 \input Environment-list.tex
 
-\newread\testfile
+\subsection{Error Reporting}
+MPI allows separate error codes and classes.  An error \emph{class} is
+a predefined value that roughly corresponds to a Unix error code
+(e.g., \code{E_NOMEM}).  From a user's perspective, the major problem
+with a simple error code (class in MPI terms) is that it is a
+\emph{generic} message that gives no information about the particular
+cause of the error.  For example, the Unix error code \code{E_NOMEM}
+only tells the user that no memory is available.  The user might
+prefer a message that included the amount of memory requested, such as 
+\begin{verbatim}
+Requested memory unavailable (requested 104732811 bytes 
+in file getmem.c, line 137).
+\end{verbatim}
+The MPI error code provides a way to provide this kind of detailed
+information.  An MPI error code may be though of as an
+augmented error class that allows the MPI library to provide more
+detailed information about an error.  MPICH uses error codes for this
+purpose.  
+
+In MPICH, an error code has three components:
+
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+instance id&base code&base class\\
+\hline
+\end{tabular}
+\end{center}
+where the fields are
+\begin{description}
+\item[\texttt{base class}]The MPI error class, from the defined classes
+\item[\texttt{base code}]Specifies more specific error message than
+the \code{base class} but which contains no instance-specific data
+\item[\texttt{instance id}]Used to indicate an instance-specific message
+\end{description}
+
+Values of zero for the \code{base code} and \code{instance id} are
+always valid; in that case the error code is simply the error class.
+
+The values encoded in \code{instance id} are defined by
+\code{MPID_Err_create_code}; the routine \code{MPID_Err_get_string}
+understands the \code{instance id} field.  One possible implementation
+of this is described in (technical note not yet written, but described
+in ALICE brown bag talk and Coding Standards document), and is
+included with the MPICH implementation.
+
+\paragraph
+Messages are \code{char *} instead of \code{wchar_t *} because (a)
+strings in C are \code{char *} and error strings in MPI are \code{char
+*}.  However, we'd like to support Unicode messages.  We may just
+return \code{char *} always, and allow the user to interpret the
+message as either \code{char} or \code{wchar_t}.
+
+\input Error-list.tex
+
+\subsection{Extensions}
+\input Extension-list.tex
+
 \openin\testfile{None-list.tex}
 \ifeof\testfile\else
 \section{Miscellaneous}
