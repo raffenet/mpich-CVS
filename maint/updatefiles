@@ -195,8 +195,8 @@ into trouble if you need to execute
 on a platform different that the one you ran $0 on.
 
 EOF
-    error_summary="$error_summary\
-Your do not have a usable version of autoconf (either no version found\
+    error_summary="$error_summary \
+Your do not have a usable version of autoconf (either no version found \
 or version 2.57 or later)"
     acIncDirFlag=-B
     acVersion=2-57
@@ -280,7 +280,7 @@ if [ -x maint/extracterrmsgs -a $do_geterrmsgs = "yes" ] ; then
        if [ -s .err2 ] ; then
            echo "Because of errors in extracting error messages, the file"
            echo "src/mpi/errhan/defmsg.h was not updated."
-	   error_summary="$error_summary\
+	   error_summary="$error_summary \
 Error message files in src/mpi/errhan were not updated."
            update_errdefs=no
 	   rm -f .tmp
@@ -370,7 +370,7 @@ if [ -x maint/f77tof90 ] ; then
         if [ ! -d test/mpi/f90/$leafDir ] ; then
             mkdir test/mpi/f90/$leafDir
         fi
-        maint/f77tof90 $dir test/mpi/f90/$leafDir Makefile.sm
+        maint/f77tof90 $dir test/mpi/f90/$leafDir Makefile.sm Makefile.ap
     done
 fi
 #
@@ -501,7 +501,7 @@ EOF
 		    echo "autoconf is a better solution."
    echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 		    echo " "
-		    error_summary="$error_summary\
+		    error_summary="$error_summary \
 Your version of autoconf cannot properly handle Fortran.  See the diff \
 in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 		    fixEndEOFBug=yes
