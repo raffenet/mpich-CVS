@@ -509,6 +509,42 @@ rank 0 on \texttt{hosta} and ranks 1-2 on \texttt{hostb}.  Similarly,
 ranks 3-4 run \texttt{p2} and are executed on \texttt{hostc} and
 \texttt{hostd}, respectively.  Ranks 5-6 run on \texttt{hostd} and
 execute \texttt{p3}.
+\item[\texttt{-s}] can be used to direct the \texttt{stdin} of
+  \texttt{mpiexec} to specific processes in a parallel job.  For
+  example:
+\begin{verbatim}
+    mpiexec -s all -n 5 a.out
+\end{verbatim}
+directs the \texttt{stdin} of \texttt{mpiexec} to all five processes.
+\begin{verbatim}
+    mpiexec -s 4 -n 5 a.out 
+\end{verbatim}
+directs it to just the process with rank 4, and 
+\begin{verbatim}
+    mpiexec -s 1,3 -n 5 a.out 
+\end{verbatim}
+sends it to processes 1 and 3, while
+\begin{verbatim}
+    mpiexec -s 0-3 -n 5 a.out 
+\end{verbatim}
+sends \texttt{stdin} to processes 0,1,2, and 3.
+
+The default, if \texttt{-s} is not specified, is to send
+\texttt{mpiexec}'s \texttt{stdin} to process 0 only.
+
+\item[\texttt{-kx}] is used only for debugging.  The \texttt{mpd}
+  process manager encapsulates the command-line arguments, the contents
+  of the \texttt{-machinefile} argment, \texttt{-configfile}, and in
+  some cases the environment, into an XML file for delivery to the
+  internals of the process manager.  Under ordinary circumstances, this
+  file, created in \texttt{/tmp}, is not seen by the user, and is
+  deleted after use.  In some cases it may be desirable to examine the
+  contents of this file after it is used, in order to debug difficulties
+  with the installation and functioning of \texttt{mpd}.  In this case,
+  the \texttt{-kx} argument causes \texttt{mpiexec} to keep the file,
+  which you will be able to find in \texttt{/tmp} with a name like
+  \texttt{smith\_tempxml\_1234}.
+
 \end{description}
 
 A ``\texttt{:}'' can optionally be used between global args
