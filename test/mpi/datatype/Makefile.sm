@@ -9,6 +9,8 @@ contents_SOURCES = contents.c
 
 struct-pack_SOURCES = struct-pack.c
 
+simple-resized_SOURCES = simple-resized.c
+
 triangular-pack_SOURCES = triangular-pack.c
 
 simple-commit_SOURCES = simple-commit.c
