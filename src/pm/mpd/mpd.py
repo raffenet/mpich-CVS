@@ -246,6 +246,7 @@ def _handle_console_input():
         # send ack to console after I get this msg back and do the kill myself
     elif msg['cmd'] == 'mpdsigjob':
         msg['src'] = g.myId
+        msg['handled'] = 0
         if msg['mpdid'] == '':
             msg['mpdid'] = g.myId
         mpd_send_one_msg(g.rhsSocket, msg)
@@ -339,9 +340,12 @@ def _handle_lhs_input():
                     mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdringtest_done' })
     elif msg['cmd'] == 'mpdsigjob':
         if msg['src'] == g.myId:
-            mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdsigjob_ack' })
+            mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdsigjob_ack',
+                                           'handled' : msg['handled'] } )
         else:
-            mpd_send_one_msg(g.rhsSocket,msg)
+            if msg['handled']:    # already handled on at least one other host
+                mpd_send_one_msg(g.rhsSocket,msg)    # send it on quickly
+        handledHere = 0
         for jobid in g.activeJobs.keys():
             sjobid = jobid.split('  ')  # jobnum and mpdid
             if (sjobid[0] == msg['jobnum']  and  sjobid[1] == msg['mpdid'])  \
@@ -352,6 +356,10 @@ def _handle_lhs_input():
                         manSocket = g.activeJobs[jobid][manPid]['socktoman']
                         mpd_send_one_msg(manSocket, { 'cmd' : 'signal_to_handle',
                                                       'sigtype' : msg['sigtype'] } )
+                        handledHere = 1
+        if not msg['handled']  and  handledHere:
+            msg['handled'] = 1
+            mpd_send_one_msg(g.rhsSocket,msg)
     elif msg['cmd'] == 'mpdkilljob':
         if msg['src'] == g.myId:
             mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdkilljob_ack' })
