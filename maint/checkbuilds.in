@@ -445,7 +445,12 @@ sub RunTestSuites {
 	    %saveENV = %ENV;
 	    $ENV{MPIRUN} = "$instdir/bin/mpiexec";
 	    # This timeout needs to be made uniform for all mpiruns
-	    $ENV{MPIEXEC_TIMEOUT} = "1";
+	    if ($built_for_mpd) {
+		$ENV{MPIEXEC_TIMEOUT} = "60";
+	    }
+	    else {
+		$ENV{MPIEXEC_TIMEOUT} = "1";
+	    }
 	    $rc = &RunProgram( @config );
 	    if ($rc == 0) {
 		# HACK for mpd for now.

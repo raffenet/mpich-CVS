@@ -7,15 +7,15 @@
 $last_line = "";
 while (<>) {
     # skip lines that start with for and are continued.
-    if (/^\s*for dir in .*\/$/) {
+    if (/^\s*for dir in .*\\$/) {
 	while (<>) {
-	    if (! /\/$/) { last; }
+	    if (! /\\$/) { last; }
 	}
     }
     # skip line that start with if and ar continued
-    if (/^\s*if \[ ! -d lib.*\/$/) {
+    if (/^\s*if \[ ! -d lib.*\\$/) {
 	while (<>) {
-	    if (! /\/$/) { last; }
+	    if (! /\\$/) { last; }
 	}
     }
 
