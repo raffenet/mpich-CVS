@@ -41,12 +41,12 @@ int MPIDI_CH3_Finalize(void);
 . comm_parent - new inter-communicator spanning the spawning processes and the spawned processes
 
   Return value:
-  A MPI error class.
+  A MPI error code.
   
   NOTE:
   MPIDI_CH3_InitParent() should only be called if MPIDI_CH3_Init() returns with has_parent set to TRUE.
 E*/
-void MPIDI_CH3_InitParent(MPID_Comm * comm_parent);
+int MPIDI_CH3_InitParent(MPID_Comm * comm_parent);
 
 
 /*E
@@ -58,8 +58,11 @@ void MPIDI_CH3_InitParent(MPID_Comm * comm_parent);
 . pkt - pointer to a MPIDI_CH3_Pkt_t structure containing the substructure to be sent
 - pkt_sz - size of the packet substucture
 
+  Output Parameters:
+. sreq_ptr - send request or NULL if the send completed immediately
+
   Return value:
-  A pointer to a request object or NULL.  If NULL the send completed immediately.
+  An mpi error code.
   
   NOTE:
   The packet structure may be allocated on the stack.
@@ -69,7 +72,7 @@ void MPIDI_CH3_InitParent(MPID_Comm * comm_parent);
   
   If the send completes immediately, the channel implementation shold return NULL and must not call MPIDI_CH3U_Handle_send_req().
 E*/
-MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz);
+int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_Request **sreq_ptr);
 
 
 /*E
@@ -81,8 +84,11 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt
 . iov - a vector of a structure contains a buffer pointer and length
 - iov_n - number of elements in the vector
 
+  Output Parameters:
+. sreq_ptr - send request or NULL if the send completed immediately
+
   Return value:
-  A pointer to a request object or NULL.  If NULL the send completed immediately.
+  An mpi error code.
   
   NOTE:
   The first element in the vector must point to the packet structure.   The packet structure and the vector may be allocated on
@@ -93,11 +99,8 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt
   request is complete.
   
   If the send completes immediately, the channel implementation shold return NULL and must not call MPIDI_CH3U_Handle_send_req().
-
-  DESIGNERS:
-  No mechanism exists for returning an error if the error is that a request could not be allocated.
 E*/
-MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int iov_n);
+int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int iov_n, MPID_Request **sreq_ptr);
 
 
 /*E
@@ -110,6 +113,9 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int iov_n);
 . pkt - pointer to a MPIDI_CH3_Pkt_t structure containing the substructure to be sent
 - pkt_sz - size of the packet substucture
 
+  Return value:
+  An mpi error code.
+  
   NOTE:
   The packet structure may be allocated on the stack.
 
@@ -118,7 +124,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int iov_n);
 
   If the send completes immediately, the channel implementation still must call MPIDI_CH3U_Handle_send_req().
 E*/
-void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz_t pkt_sz);
+int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz_t pkt_sz);
 
 
 /*E
@@ -131,6 +137,9 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_s
 . iov - a vector of a structure contains a buffer pointer and length
 - iov_n - number of elements in the vector
 
+  Return value:
+  An mpi error code.
+  
   NOTE:
   The first element in the vector must point to the packet structure.   The packet structure and the vector may be allocated on
   the stack.
@@ -141,7 +150,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_s
 
   If the send completes immediately, the channel implementation still must call MPIDI_CH3U_Handle_send_req().
 E*/
-void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int iov_n);
+int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int iov_n);
 
 
 /*E
@@ -152,10 +161,13 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int io
 + vc - virtual connection over which to send the data 
 - sreq - pointer to the send request object
 
+  Return value:
+  An mpi error code.
+  
   IMPLEMENTORS:
   If the send completes immediately, the channel implementation still must call MPIDI_CH3U_Handle_send_req().
 E*/
-void MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * sreq);
+int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * sreq);
 
 
 /*E
@@ -167,10 +179,13 @@ void MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * sreq);
 + vc - virtual connection over which to send the data 
 - sreq - pointer to the send request object
 
+  Return value:
+  An mpi error code.
+  
   IMPLEMENTORS:
   If the receive completes immediately, the channel implementation still must call MPIDI_CH3U_Handle_recv_req().
 E*/
-void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq);
+int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq);
 
 
 /*E
@@ -180,13 +195,16 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq);
 + vc - virtual connection over which to send the data 
 - sreq - pointer to the send request object
 
-  Return value:
-  TRUE if the send request was successful.  FALSE otherwise.
+  Output Parameters:
+. cancelled - TRUE if the send request was successful.  FALSE otherwise.
 
+  Return value:
+  An mpi error code.
+  
   IMPLEMENTORS:
   The send request may not be removed from the send queue if one or more bytes of the message have already been sent.
 E*/
-int MPIDI_CH3_Cancel_send(MPIDI_VC * vc, MPID_Request * sreq);
+int MPIDI_CH3_Cancel_send(MPIDI_VC * vc, MPID_Request * sreq, int *cancelled);
 
 
 /*E
@@ -275,8 +293,8 @@ void MPIDI_CH3_Progress_end(void);
 . blocking - TRUE if MPIDI_CH3_Progress() should block until a request has completed; FALSE otherwise.
 
   Return value:
-  TRUE if one or more requests were complete; FALSE otherwise.
-
+  An mpi error code.
+  
   NOTE:
   MPIDI_CH3_Progress_start/end() need only be called when blocking is TRUE.  This function implicitly marks the end of a
   progress epoch.
@@ -294,11 +312,14 @@ int MPIDI_CH3_Progress(int blocking);
 /*E
   MPIDI_CH3_Progress_poke - Give the channel implementation a moment of opportunity to make progress on outstanding communication.
 
+  Return value:
+  An mpi error code.
+  
   IMPLEMENTORS:
   This routine is similar to MPIDI_CH3_Progress(FALSE) but may not be as thorough in its attempt to satisfy all outstanding
   communication.
 E*/
-void MPIDI_CH3_Progress_poke(void);
+int MPIDI_CH3_Progress_poke(void);
 
 
 /*E
@@ -332,7 +353,7 @@ int MPIDI_CH3_Comm_spawn(const char *, const char *[], const int , MPI_Info, con
   routine must serialize the calls (perhaps by locking the VC).  Special consideration may need to be given to packet ordering
   if the channel has made guarantees about ordering.
 E*/
-void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
+int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
 
 
 /*E
@@ -343,7 +364,7 @@ void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt);
 + vc - virtual connection over which the data was received
 - rreq - pointer to the receive request object
 E*/
-void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq);
+int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq);
 
 
 /*E
@@ -355,7 +376,7 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq);
 - sreq - pointer to the send request object
 E*/
 
-void MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq);
+int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq);
 
 
 /*E
