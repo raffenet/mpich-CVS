@@ -172,7 +172,13 @@ int mpiexec_rsh()
     }
 
     /* start the root smpd */
-    PMIX_Start_root_smpd(smpd_process.launch_list->nproc, root_host, 100, &root_port);
+    result = PMIX_Start_root_smpd(smpd_process.launch_list->nproc, root_host, 100, &root_port);
+    if (result != PMI_SUCCESS)
+    {
+	smpd_err_printf("mpiexec_rsh is unable to start the root smpd.\n");
+	smpd_exit_fn("mpiexec_rsh");
+	return SMPD_FAIL;
+    }
     smpd_dbg_printf("the root smpd is listening on %s:%d\n", root_host, root_port);
 
     processes = (smpd_process_t**)malloc(sizeof(smpd_process_t*) * smpd_process.launch_list->nproc);
@@ -301,6 +307,14 @@ int mpiexec_rsh()
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("mpiexec_rsh state machine failed.\n");
+	smpd_exit_fn("mpiexec_rsh");
+	return SMPD_FAIL;
+    }
+
+    result = PMIX_Stop_root_smpd();
+    if (result != PMI_SUCCESS)
+    {
+	smpd_err_printf("mpiexec_rsh unable to stop the root smpd.\n");
 	smpd_exit_fn("mpiexec_rsh");
 	return SMPD_FAIL;
     }
