@@ -283,6 +283,7 @@ void MPIU_TrSetMaxMem ( int );
 void MPIU_trdump ( FILE * );
 void MPIU_trSummary ( FILE * );
 void MPIU_trdumpGrouped ( FILE * );
+int MPIU_trvalid( const char str[] );
 
 #else
 /* No memory tracing; just use native functions */
