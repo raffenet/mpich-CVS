@@ -961,7 +961,10 @@ MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm,
   This routine is intended for use by 'MPI_Grequest_start' only.  Note that 
   once a request is created with this routine, any progress engine must assume 
   that an outside function can complete a request with 
-  'MPID_Request_set_completed'. 
+  'MPID_Request_set_completed'.
+
+  The request object returned by this routine should be initialized such that
+  ref_count is one and handle contains a valid handle referring to the object.
   @*/
 MPID_Request *MPID_Request_create( void )
 {
