@@ -227,7 +227,7 @@ def mpdman():
         (fd_read_cli_stdout,fd_write_cli_stdout) = pipe()
         (fd_read_cli_stderr,fd_write_cli_stderr) = pipe()
         (pipe_cli_end,pipe_man_end) = pipe()
-        (pmiListenSocket,pmiPort) = mpd_get_inet_listen_socket(myHost,0)
+        (pmiListenSocket,pmiPort) = mpd_get_inet_listen_socket('',0)
     if singinitPID:
         clientPid = singinitPID
     else:

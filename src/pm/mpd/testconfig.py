@@ -76,7 +76,7 @@ for hostname in hostnames:
 
 try:
     s = socket()
-    s.bind((gethostname(),0))
+    s.bind(('',0))
     s.listen(5)
     port = s.getsockname()[1]
     t1 = socket()

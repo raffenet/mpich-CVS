@@ -1298,7 +1298,6 @@ def _process_cmdline_args():
     except:
         usage()
 
-    g.myIP = gethostbyname_ex(g.myHost)[2][0]
     for opt in opts:
         if   opt[0] == '-h'  or  opt[0] == '--host':
             g.entryHost = opt[1]
@@ -1324,7 +1323,14 @@ def _process_cmdline_args():
         else:
             pass    ## getopt raises an exception if not recognized
     if (g.entryHost and not g.entryPort) or (not g.entryHost and g.entryPort):
-        mpd_raise('host and port must be specified together')
+        print 'host and port must be specified together'
+        exit(-1)
+    try:
+        hostinfo = gethostbyname_ex(g.myHost)
+    except:
+        print 'mpd failed: gethostbyname_ex failed for %s' % (g.myHost)
+        exit(-1)
+    g.myIP = hostinfo[2][0]
 
 def sigchld_handler(signum,frame):
     done = 0

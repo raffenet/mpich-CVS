@@ -77,9 +77,9 @@ while argidx < len(argv):
         exit(0)
     elif argv[argidx] == '-s':
         lsock = socket()
-        lsock.bind((gethostname(),0)) # anonymous port
+        lsock.bind(('',0)) # anonymous port
         lsock.listen(5)
-        print "server listening on: %s %s" % (gethostname(),lsock.getsockname()[1])
+        print "server listening at INADDR_ANY on: %s %s" % (gethostname(),lsock.getsockname()[1])
         stdout.flush()
         (tsock,taddr) = lsock.accept()
         print "server has conn on %s from %s" % (tsock,taddr)
