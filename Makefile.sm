@@ -58,8 +58,6 @@ MPICVSHOME = @MPICVSHOME@
 #     in the output
 #  Rename the directory
 #  Run updatefiles with distribution options
-#  Extract the mpe files into the directory (this way we avoid the 
-#     updatefile with code check on the older MPE directories)
 #  Tar it up
 dist: dist-check
 	@version=${VERSION} ; \
@@ -81,7 +79,7 @@ dist-with-version:
 	@echo ""; echo "Cutting version ${version} of the MPICH2 distribution from tag ${tag}" ; echo ""
 	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi 
 	rm -f cvsexp.log 
-	( cd tmpdir && cvs -d $(MPICVSHOME) export -r "${tag}" mpich2all >cvsexp.log 2>&1 ) ;\
+	( cd tmpdir && cvs -d $(MPICVSHOME) export -r "${tag}" mpich2allWithMPE >cvsexp.log 2>&1 ) ;\
 	( cd tmpdir/mpich2 && sed -e "s/VERSION = .*/VERSION = ${version}/" Makefile.sm >.tmp && mv .tmp Makefile.sm )
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-${version}
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles )
@@ -93,10 +91,7 @@ dist-with-version:
 	cp -r tmpdir2/man tmpdir/${PACKAGE}-${version}/man
 	cp -r tmpdir2/www tmpdir/${PACKAGE}-${version}/www
 	rm -rf tmpdir2
-	(cd tmpdir/${PACKAGE}-${version}/src && cvs -d $(MPICVSHOME) export -r ${tag} mpe >>cvsexp.log 2>&1 && \
-	rm -rf mpe/slog_api mpe/viewers mpe/profiling )
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib --without-codecheck )
-	(cd tmpdir/${PACKAGE}-${version}/src/mpe && cvs -d $(MPICVSHOME) export -r ${tag} slog2sdk >>cvsexp.log 2>&1 )
 	( cd tmpdir/${PACKAGE}-${version}/doc && /bin/rm -rf notes )
 	( cd tmpdir/${PACKAGE}-${version} && rm -f ToDo* )
 	( cd tmpdir && tar cf ${PACKAGE}-${version}.tar ${PACKAGE}-${version} )
@@ -110,14 +105,11 @@ snap:
 	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi 
 	rm -f cvsexp.log 
 	( cd tmpdir && \
-	    cvs -d $(MPICVSHOME) export -D 'now' mpich2all >cvsexp.log 2>&1 )
+	    cvs -d $(MPICVSHOME) export -D 'now' mpich2allWithMPE >cvsexp.log 2>&1 )
 	( cd tmpdir/mpich2 && sed -e "s/VERSION = .*/VERSION = snap/" Makefile.sm >.tmp && mv .tmp Makefile.sm )
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-snap
 	(cd tmpdir/${PACKAGE}-snap && maint/updatefiles --without-codecheck )
-	(cd tmpdir/${PACKAGE}-snap/src && cvs -d $(MPICVSHOME) export -D 'now' mpe >>cvsexp.log 2>&1 && \
-	rm -rf mpe/slog_api mpe/viewers mpe/profiling )
 	( cd tmpdir/${PACKAGE}-snap && maint/updatefiles -distrib --without-codecheck )
-	(cd tmpdir/${PACKAGE}-snap/src/mpe && cvs -d $(MPICVSHOME) export -D 'now' slog2sdk >>cvsexp.log 2>&1 )
 	( cd tmpdir/${PACKAGE}-snap/doc && /bin/rm -rf notes )
 	( cd tmpdir && tar cf ${PACKAGE}-snap.tar ${PACKAGE}-snap )
 	mv -f tmpdir/${PACKAGE}-snap.tar ${PACKAGE}-snap-`date "+%Y%m%d"`.tar 
