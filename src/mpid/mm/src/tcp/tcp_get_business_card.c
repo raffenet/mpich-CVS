@@ -11,19 +11,16 @@ static int GetLocalIPs(unsigned int *pIP, int max)
 {
     char hostname[100], **hlist;
     struct hostent *h = NULL;
-    int error;
     int n = 0;
     
     if (gethostname(hostname, 100) == SOCKET_ERROR)
     {
-	error = WSAGetLastError();
 	return 0;
     }
     
-    h = gethostbyname(hostname);
+    h = (struct hostent *)gethostbyname(hostname);
     if (h == NULL)
     {
-	error = WSAGetLastError();
 	return 0;
     }
     
