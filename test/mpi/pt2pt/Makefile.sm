@@ -5,17 +5,18 @@ threaded_sr_LDADD = -lpthread
 DEPADD = ../../../lib/lib${MPILIBNAME}.a
 smvar_do_sharedlibs = 0
 
-# isendirecv contains features that not all systems support (e.g., the
-# sincos call, not available on IRIX).
-EXTRA_PROGRAMS       = sendrecv2
+# Use extra programs to list programs that should not be built by default.
+EXTRA_PROGRAMS       = 
 
 bottom_SOURCES       = bottom.c
 bsend1_SOURCES       = bsend1.c
 bsend2_SOURCES       = bsend2.c
 bsend3_SOURCES       = bsend3.c
 bsend4_SOURCES       = bsend4.c
+bsend5_SOURCES       = bsend5.c
 bsendalign_SOURCES   = bsendalign.c
 isendself_SOURCES    = isendself.c
+isendselfprobe_SOURCES    = isendselfprobe.c
 bsendfrag_SOURCES    = bsendfrag.c
 bsendpending_SOURCES = bsendpending.c
 errinstatts_SOURCES  = errinstatts.c
