@@ -45,13 +45,13 @@ AC_REQUIRE([PAC_PROG_MAKE_PROGRAM])
 cat > conftest <<.
 SHELL=/bin/sh
 ALL:
-	@(dir=`pwd` ; cd .. ; \$(MAKE) -f \$\$dir/conftest SUB)
+	@(dir="`pwd`" ; cd .. ; \$(MAKE) -f "\$\$dir/conftest" SUB)
 SUB:
 	@echo "success"
 .
-str=`$MAKE -f conftest 2>&1`
+str="`$MAKE -f conftest 2>&1`"
 if test "$str" != "success" ; then
-    str=`$MAKE --no-print-directory -f conftest 2>&1`
+    str="`$MAKE --no-print-directory -f conftest 2>&1`"
     if test "$str" = "success" ; then
 	pac_cv_prog_make_echos_dir="yes using --no-print-directory"
     else
