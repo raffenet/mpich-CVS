@@ -3,10 +3,10 @@
 # This is a simple script that makes sure that checkbuilds can be 
 # created and then runs it
 # The cb suffix is for "check build"
-srcdir=/home/gropp/projects/mpich2
+srcdir=/home/MPI/testing/mpich2/mpich2
 if [ ! -d $srcdir ] ; then
-    if [ -d /homes/gropp/projects/mpich2 ] ; then
-        srcdir=/homes/gropp/projects/mpich2
+    if [ -d /homes/MPI/testing/mpich2/mpich2 ] ; then
+        srcdir=/homes/MPI/testing/mpich2/mpich2
     else
         # We'll check for it later, after the args
         srcdir=
