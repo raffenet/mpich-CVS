@@ -51,36 +51,36 @@ $(TARGET): $(OBJ)
 	$(RM) $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).Print" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
-	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
+	$(JAR) $(JARFLAGS)cfm $${jarfile} $(PACKAGE).manifest ; \
 	for dir in base/io/ logformat/clog2/ base/drawable/ $(PKGDIR)/ ; do \
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
-	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
+	    $(JAR) $(JARFLAGS)uf $${jarfile} $${classdir_prefix}*.class ; \
 	done ; \
-	$(JAR) uvf $${jarfile} jumpshot.colors
+	$(JAR) $(JARFLAGS)uf $${jarfile} jumpshot.colors
 
 $(TARGET1): $(OBJ)
 	cd $(CLASSDIR) && \
 	$(RM) $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).Print_1pass" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
-	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
+	$(JAR) $(JARFLAGS)cfm $${jarfile} $(PACKAGE).manifest ; \
 	for dir in base/io/ logformat/clog2/ base/drawable/ $(PKGDIR)/ ; do \
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
-	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
+	    $(JAR) $(JARFLAGS)uf $${jarfile} $${classdir_prefix}*.class ; \
 	done ; \
-	$(JAR) uvf $${jarfile} jumpshot.colors
+	$(JAR) $(JARFLAGS)uf $${jarfile} jumpshot.colors
 
 $(TARGET2): $(OBJ)
 	cd $(CLASSDIR) && \
 	$(RM) -f $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).Print_2pass" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
-	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
+	$(JAR) $(JARFLAGS)cfm $${jarfile} $(PACKAGE).manifest ; \
 	for dir in base/io/ logformat/clog2/ base/drawable/ $(PKGDIR)/ ; do \
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
-	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
+	    $(JAR) $(JARFLAGS)uf $${jarfile} $${classdir_prefix}*.class ; \
 	done ; \
-	$(JAR) uvf $${jarfile} jumpshot.colors
+	$(JAR) $(JARFLAGS)uf $${jarfile} jumpshot.colors
 
 clean:
 	cd $(CLASSDIR) && \

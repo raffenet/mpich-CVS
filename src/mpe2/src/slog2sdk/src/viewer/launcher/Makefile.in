@@ -44,12 +44,12 @@ $(TARGET): $(OBJ)
 	$(RM) $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).Launcher" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
-	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
-	$(JAR) uvf $${jarfile} viewer/common/Dialogs.class \
-	                       viewer/common/RuntimeExecCommand.class ; \
+	$(JAR) $(JARFLAGS)cfm $${jarfile} $(PACKAGE).manifest ; \
+	$(JAR) $(JARFLAGS)uf $${jarfile} viewer/common/Dialogs.class \
+	                     viewer/common/RuntimeExecCommand.class ; \
 	for dir in $(PKGDIR)/ ; do \
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
-	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
+	    $(JAR) $(JARFLAGS)uf $${jarfile} $${classdir_prefix}*.class ; \
 	done
 
 clean:

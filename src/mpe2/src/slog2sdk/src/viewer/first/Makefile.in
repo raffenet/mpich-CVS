@@ -47,29 +47,29 @@ $(TARGET): $(OBJ)
 	$(RM) $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).FirstFrame" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
-	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
+	$(JAR) $(JARFLAGS)cfm $${jarfile} $(PACKAGE).manifest ; \
 	for dir in base/io/ base/topology/ base/drawable/ base/statistics/ \
 	           logformat/slog2/ logformat/slog2/input/ \
 	           viewer/common/ viewer/convertor/ viewer/legends/ \
 	           viewer/zoomable/ viewer/histogram/ viewer/timelines/ \
 	           $(PKGDIR)/ ; do \
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
-	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
+	    $(JAR) $(JARFLAGS)uf $${jarfile} $${classdir_prefix}*.class ; \
 	done ; \
-	$(JAR) uvf $${jarfile} images/*.gif images/checkbox/*.gif \
-	           html/* applet.html
+	$(JAR) $(JARFLAGS)uf $${jarfile} images/*.gif images/checkbox/*.gif \
+	                                 html/* applet.html
 
 $(TS_TARGET): $(OBJ)
 	cd $(CLASSDIR) && \
 	$(RM) $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).FirstFrame" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
-	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
+	$(JAR) $(JARFLAGS)cfm $${jarfile} $(PACKAGE).manifest ; \
 	for dir in viewer/common/ $(PKGDIR)/ ; do \
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
-	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
+	    $(JAR) $(JARFLAGS)uf $${jarfile} $${classdir_prefix}*.class ; \
 	done ; \
-	$(JAR) uvf $${jarfile} images/*.gif
+	$(JAR) $(JARFLAGS)uf $${jarfile} images/*.gif
 
 clean:
 	cd $(CLASSDIR) && \

@@ -50,7 +50,8 @@ $(TARGET): $(OBJ)
 	echo "Main-Class: $(PACKAGE).Print" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
 	classdir_prefix=@JPATH_START@$(PKGDIR)/@JPATH_FINAL@ ; \
-	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest $${classdir_prefix}*.class
+	$(JAR) $(JARFLAGS)cfm $${jarfile} $(PACKAGE).manifest ; \
+        $(JAR) $(JARFLAGS)uf $${jarfile} $${classdir_prefix}*.class
 
 clean:
 	cd $(CLASSDIR) && \

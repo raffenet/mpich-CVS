@@ -57,3 +57,21 @@ is configured.  The build process is written based on libtool, so it is
 supported only for the platforms that are sypported by libtool
 (i.e. most Unixes and Cygwin under Windows).  If you are not interested
 in this feature, you could disable it through --disable-sample.
+
+
+
+To enable debugging support, i.e. the java source is needed to be compiled
+with -g.  One should do
+
+<slog2sdk>/configure JFLAGS=-g ....
+make
+make install PREFIX=<slog2sdk_install>
+
+
+
+To enable the verbose duing make.  Instead of simply doing make, 
+one should issue:
+
+<slog2sdk>/configure ....
+make JARFLAGS=v
+make install PREFIX=<slog2sdk_install>

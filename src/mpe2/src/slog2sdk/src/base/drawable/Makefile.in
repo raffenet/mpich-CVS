@@ -45,13 +45,13 @@ JFLAGS = -sourcepath @JPATH_START@$(SRCDIR)@JPATH_FINAL@ -classpath @JPATH_START
 .java.class:
 	$(JC) $(JFLAGS) @JPATH_START@$<@JPATH_FINAL@
 
-ALL: $(TARGET)
+ALL: $(OBJ)
 
 $(TARGET): $(OBJ)
 	cd $(CLASSDIR) && \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ && \
 	classdir_prefix=@JPATH_START@$(PKGDIR)/@JPATH_FINAL@ && \
-	$(JAR) cvf $${jarfile} $${classdir_prefix}*.class
+	$(JAR) $(JARFLAGS)cf $${jarfile} $${classdir_prefix}*.class
 
 clean:
 	cd $(CLASSDIR) && \

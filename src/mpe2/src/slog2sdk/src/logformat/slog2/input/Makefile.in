@@ -49,10 +49,10 @@ $(TARGET0): $(OBJ)
 	$(RM) $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).PrintRecursively" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
-	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
+	$(JAR) $(JARFLAGS)cfm $${jarfile} $(PACKAGE).manifest ; \
 	for dir in base/io/ base/drawable/ logformat/slog2/ $(PKGDIR)/ ; do \
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
-	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
+	    $(JAR) $(JARFLAGS)uf $${jarfile} $${classdir_prefix}*.class ; \
 	done
 
 $(TARGET1): $(OBJ)
@@ -60,10 +60,10 @@ $(TARGET1): $(OBJ)
 	$(RM) $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).PrintSerially" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
-	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
+	$(JAR) $(JARFLAGS)cfm $${jarfile} $(PACKAGE).manifest ; \
 	for dir in base/io/ base/drawable/ logformat/slog2/ $(PKGDIR)/ ; do \
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
-	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
+	    $(JAR) $(JARFLAGS)uf $${jarfile} $${classdir_prefix}*.class ; \
 	done
 
 $(TARGET2): $(OBJ)
@@ -71,10 +71,10 @@ $(TARGET2): $(OBJ)
 	$(RM) $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).Navigator" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
-	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
+	$(JAR) $(JARFLAGS)cfm $${jarfile} $(PACKAGE).manifest ; \
 	for dir in base/io/ base/drawable/ logformat/slog2/ $(PKGDIR)/ ; do \
 	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
-	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
+	    $(JAR) $(JARFLAGS)uf $${jarfile} $${classdir_prefix}*.class ; \
 	done
 
 clean:
