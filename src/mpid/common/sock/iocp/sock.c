@@ -1999,6 +1999,28 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 
     for (;;) 
     {
+#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#       if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+	{
+	    /* Release the lock so that other threads may make progress while this thread waits for something to do */
+	    MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);
+	}
+#       elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
+	{
+	    /* FIXME: this code is an experiment and is not even close to correct. */
+	    if (MPIU_Monitor_closet_get_occupany_count(MPIR_Process.global_closet) == 0)
+	    {
+		MPIU_Monitor_exit(&MPIR_Process.global_monitor);
+	    }
+	    else
+	    {
+		MPIU_Monitor_continue(&MPIR_Process.global_monitor, &MPIR_Process.global_closet);
+	    }
+	}
+#       else
+#           error selected multi-threaded implementation is not supported
+#       endif
+#endif
 	MPIDI_FUNC_ENTER(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
 	/* initialize to NULL so we can compare the output of GetQueuedCompletionStatus */
 	sock = NULL;
@@ -2007,6 +2029,20 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 	if (GetQueuedCompletionStatus(set, &num_bytes, (PULONG_PTR)&sock, &ovl, timeout))
 	{
 	    MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
+#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#           if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+	    {
+		/* Reaquire the lock before processing any of the information returned from GetQueuedCompletionStatus */
+		MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);
+	    }
+#           elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
+	    {
+		MPIU_Monitor_enter(&MPIR_Process.global_monitor);
+	    }
+#           else
+#               error selected multi-threaded implementation is not supported
+#           endif
+#endif
 	    if (sock->type == SOCKI_SOCKET)
 	    {
 		if (sock->closing && sock->pending_operations == 0)
@@ -2543,6 +2579,15 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			MPIU_DBG_PRINTF(("ignoring notification on invalid sock.\n"));
 		    }
 		}
+	    }
+	    else if (sock->type == SOCKI_WAKEUP)
+	    {
+		out->op_type = MPIDU_SOCK_OP_WAKEUP;
+		out->num_bytes = 0;
+		out->error = MPI_SUCCESS;
+		out->user_ptr = NULL;
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+		return MPI_SUCCESS;
 	    }
 	    else if (sock->type == SOCKI_LISTENER)
 	    {
