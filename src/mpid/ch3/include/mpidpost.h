@@ -12,8 +12,8 @@
 #define MPID_Progress_start()
 #define MPID_Progress_end()
 #define MPID_Progress_test() (MPIDI_CH3_Progress(0))
-#define MPID_Progress_wait() {MPIDI_Ch3_Progress(1);}
-#define MPID_Progress_poke() {MPIDI_Ch3_Progress_poke();}
+#define MPID_Progress_wait() {MPIDI_CH3_Progress(1);}
+#define MPID_Progress_poke() {MPIDI_CH3_Progress_poke();}
 
 /* Channel API prototypes */
 int MPIDI_CH3_Init(int *, int *, int *);
@@ -40,6 +40,12 @@ MPID_Request * MPIDI_CH3U_Request_FUOAP(
     int source, int tag, int context_id, int * found);
 MPID_Request * MPIDI_CH3U_Request_FPOAU(
     MPIDI_Message_match * match, int * found);
+
+/* Include definitions from the channel which require items defined by this
+   file (mpidimpl.h) or the file it includes (mpiimpl.h).  NOTE: This include
+   requires the device to copy mpidi_ch3_post.h to the src/include directory in
+   the build tree. */
+#include "mpidi_ch3_post.h"
 
 #endif /* !defined(MPICH_MPIDPOST_H_INCLUDED) */
 
