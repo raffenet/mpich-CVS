@@ -41,23 +41,23 @@ struct MPID_Segment_piece_params {
 
 #if 0
 static int MPID_Segment_piece_print(DLOOP_Handle handle,
-				    int dbufoff, 
+				    DLOOP_Offset dbufoff, 
 				    int size,
 				    void *dbufp,
 				    void *paramp);
 #endif
 static int MPID_Segment_piece_pack(DLOOP_Handle handle,
-				   int dbufoff, 
+				   DLOOP_Offset dbufoff, 
 				   int size,
 				   void *dbufp,
 				   void *paramp);
 static int MPID_Segment_piece_pack_vector(DLOOP_Handle handle,
-					  int dbufoff, 
+					  DLOOP_Offset dbufoff, 
 					  int size,
 					  void *dbufp,
 					  void *paramp);
 static int MPID_Segment_piece_unpack(DLOOP_Handle handle,
-				     int dbufoff, 
+				     DLOOP_Offset dbufoff, 
 				     int size,
 				     void *dbufp,
 				     void *paramp);
@@ -85,8 +85,8 @@ static int MPID_Segment_piece_unpack(DLOOP_Handle handle,
  *
  */
 void MPID_Segment_pack(struct DLOOP_Segment *segp,
-		       int first,
-		       int *lastp, 
+		       DLOOP_Offset first,
+		       DLOOP_Offset *lastp, 
 		       void *pack_buffer)
 {
     struct MPID_Segment_piece_params pack_params;
@@ -145,7 +145,7 @@ void MPID_Segment_unpack(struct DLOOP_Segment *segp,
 /* MPID_Segment_piece_pack_vector
  */
 static int MPID_Segment_piece_pack_vector(DLOOP_Handle handle,
-					  int dbufoff, 
+					  DLOOP_Offset dbufoff, 
 					  int size,
 					  void *dbufp,
 					  void *v_paramp)
@@ -192,7 +192,7 @@ void MPID_Segment_unpack_vector(struct DLOOP_Segment *segp,
 /* MPID_Segment_piece_unpack
  */
 static int MPID_Segment_piece_unpack(DLOOP_Handle handle,
-				     int dbufoff, 
+				     DLOOP_Offset dbufoff, 
 				     int size,
 				     void *dbufp,
 				     void *v_paramp)
@@ -212,7 +212,7 @@ static int MPID_Segment_piece_unpack(DLOOP_Handle handle,
 /* MPID_Segment_piece_pack
  */
 static int MPID_Segment_piece_pack(DLOOP_Handle handle,
-				   int dbufoff,
+				   DLOOP_Offset dbufoff,
 				   int size, 
 				   void *dbufp,
 				   void *v_paramp)
@@ -241,7 +241,7 @@ static int MPID_Segment_piece_pack(DLOOP_Handle handle,
 /* MPID_Segment_piece_print
  */
 static int MPID_Segment_piece_print(DLOOP_Handle handle,
-				    int dbufoff,
+				    DLOOP_Offset dbufoff,
 				    int size,
 				    void *dbufp,
 				    void *v_paramp)
