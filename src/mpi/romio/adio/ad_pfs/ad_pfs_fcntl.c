@@ -9,13 +9,12 @@
 #include "ad_pfs.h"
 #include "adio_extern.h"
 
-void ADIOI_PFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *error_code)
+void ADIOI_PFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
+		     int *error_code)
 {
     int i, err;
     int iomod, np_total, np_comm;
-#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PFS_FCNTL";
-#endif
 
     switch(flag) {
     case ADIO_FCNTL_GET_FSIZE:
@@ -41,16 +40,10 @@ void ADIOI_PFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
     case ADIO_FCNTL_SET_DISKSPACE:
 	err = _lsize(fd->fd_sys, fcntl_struct->diskspace, SEEK_SET);
 	if (err == -1) {
-#ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-		"**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-	    *error_code =  MPI_ERR_UNKNOWN;
-#else
-	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	    ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE, myname,
+					       __LINE__, MPI_ERR_IO, "**io",
+					       "**io %s", strerror(errno));
 	}
 	else *error_code = MPI_SUCCESS;
 	break;
@@ -79,16 +72,10 @@ void ADIOI_PFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 
 	fd->atomicity = (fcntl_struct->atomicity == 0) ? 0 : 1;
 	if (err == -1) {
-#ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-		"**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-	    *error_code =  MPI_ERR_UNKNOWN;
-#else
-	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	    ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE, myname,
+					       __LINE__, MPI_ERR_IO, "**io",
+					       "**io %s", strerror(errno));
 	}
 	else *error_code = MPI_SUCCESS;
 	break;

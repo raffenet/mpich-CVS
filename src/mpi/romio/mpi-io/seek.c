@@ -51,15 +51,7 @@ int MPI_File_seek(MPI_File mpi_fh, MPI_Offset offset, int whence)
 
     /* --BEGIN ERROR HANDLING-- */
     MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
-
-    if (fh->access_mode & MPI_MODE_SEQUENTIAL)
-    {
-	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					  myname, __LINE__,
-					  MPI_ERR_UNSUPPORTED_OPERATION,
-					  "**ioamodeseq", 0);
-	return MPIO_Err_return_file(fh, error_code);
-    }
+    MPIO_CHECK_NOT_SEQUENTIAL_MODE(fh, myname, error_code);
     /* --END ERROR HANDLING-- */
 
     switch(whence) {

@@ -50,16 +50,9 @@ void ADIOI_NFS_ReadContig(ADIO_File fd, void *buf, int count,
 #endif
 
     if (err == -1) {
-#ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-	    "**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-	*error_code =  MPI_ERR_UNKNOWN;
-#else
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**io", "**io %s", strerror(errno));
     }
     else *error_code = MPI_SUCCESS;
 }
@@ -118,9 +111,8 @@ void ADIOI_NFS_ReadStrided(ADIO_File fd, void *buf, int count,
     char *readbuf, *tmp_buf, *value;
     int flag, st_frd_size, st_n_filetypes, readbuf_len;
     int new_brd_size, new_frd_size, err_flag=0, info_flag, max_bufsize;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
+
     static char myname[] = "ADIOI_NFS_READSTRIDED";
-#endif
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
@@ -190,16 +182,10 @@ void ADIOI_NFS_ReadStrided(ADIO_File fd, void *buf, int count,
 	ADIOI_Free(readbuf); /* malloced in the buffered_read macro */
 
 	if (err_flag) {
-#ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-		"**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-	    *error_code = MPI_ERR_UNKNOWN;
-#else
-	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	    ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE, myname,
+					       __LINE__, MPI_ERR_IO, "**io",
+					       "**io %s", strerror(errno));
 	}
 	else *error_code = MPI_SUCCESS;
     }
@@ -410,16 +396,10 @@ void ADIOI_NFS_ReadStrided(ADIO_File fd, void *buf, int count,
 	ADIOI_Free(readbuf); /* malloced in the buffered_read macro */
 
 	if (err_flag) {
-#ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-		"**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-	    *error_code =  MPI_ERR_UNKNOWN;
-#else
-	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	    ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE, myname,
+					       __LINE__, MPI_ERR_IO, "**io",
+					       "**io %s", strerror(errno));
 	}
 	else *error_code = MPI_SUCCESS;
     }

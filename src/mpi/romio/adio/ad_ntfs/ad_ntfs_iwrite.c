@@ -14,14 +14,13 @@
 #include "ad_ntfs.h"
 
 void ADIOI_NTFS_IwriteContig(ADIO_File fd, void *buf, int count, 
-                MPI_Datatype datatype, int file_ptr_type,
-                ADIO_Offset offset, ADIO_Request *request, int *error_code)  
+			     MPI_Datatype datatype, int file_ptr_type,
+			     ADIO_Offset offset, ADIO_Request *request,
+			     int *error_code)  
 {
     int len, typesize;
     int err=FALSE;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NTFS_IWRITECONTIG";
-#endif
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_WRITE;
@@ -39,17 +38,11 @@ void ADIOI_NTFS_IwriteContig(ADIO_File fd, void *buf, int count,
     ADIOI_Add_req_to_list(request);
 
     if (err == FALSE) {
-#ifdef MPICH2
-			*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-							"**io %s", strerror(errno));
-			return;
-#elif defined(PRINT_ERR_MSG)
-    *error_code =  MPI_ERR_UNKNOWN;
-#else
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**io",
+					   "**io %s", strerror(errno));
+	return;
     }
     else *error_code = MPI_SUCCESS;
 

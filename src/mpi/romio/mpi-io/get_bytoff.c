@@ -59,14 +59,7 @@ int MPI_File_get_byte_offset(MPI_File mpi_fh,
 	return MPIO_Err_return_file(fh, error_code);
     }
 
-    if (fh->access_mode & MPI_MODE_SEQUENTIAL)
-    {
-	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					  myname, __LINE__,
-					  MPI_ERR_UNSUPPORTED_OPERATION,
-					  "**ioamodeseq", 0);
-	return MPIO_Err_return_file(fh, error_code);
-    }
+    MPIO_CHECK_NOT_SEQUENTIAL_MODE(fh, myname, error_code);
     /* --END ERROR HANDLING-- */
 
     ADIOI_Get_byte_offset(fh, offset, disp);

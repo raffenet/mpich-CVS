@@ -26,9 +26,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     ADIO_cb_name_array array;
     int orig_amode_excl, orig_amode_wronly, err, rank, procs, agg_rank;
     char *value;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIO_OPEN";
-#endif
 
     int rank_ct, max_error_code;
     int *tmp_ranklist;
@@ -117,16 +115,9 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
  */
     ADIOI_cb_bcast_rank_map(fd);
     if (fd->hints->cb_nodes <= 0) {
-#ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**ioagnomatch", 0);
-#elif defined(PRINT_ERR_MSG)
-	*error_code = MPI_ERR_UNKNOWN;
-#else
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR, myname,
-				      "Open Error", "%s", 
-				      "No aggregators match");
-	ADIOI_Error(MPI_FILE_NULL, *error_code, myname);
-#endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**ioagnomatch", 0);
 	fd = ADIO_FILE_NULL;
         goto fn_exit;
     }
@@ -267,16 +258,10 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
         fd = ADIO_FILE_NULL;
 	if (*error_code == MPI_SUCCESS)
 	{
-#ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**oremote_fail", 0);
-#elif defined(PRINT_ERR_MSG)
-	    *error_code = MPI_ERR_UNKNOWN;
-#else
-	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR, myname,
-		"Open Error", "%s", 
-		"Open failed on a remote node");
-	    ADIOI_Error(MPI_FILE_NULL, *error_code, myname);
-#endif
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE, myname,
+					       __LINE__, MPI_ERR_IO,
+					       "**oremote_fail", 0);
 	}
     }
 

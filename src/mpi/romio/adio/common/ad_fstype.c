@@ -391,11 +391,9 @@ tables in a reasonable way. -- Rob, 06/06/2001
 void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype, 
 			  ADIOI_Fns **ops, int *error_code)
 {
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
-    static char myname[] = "ADIO_RESOLVEFILETYPE";
-#endif
     int myerrcode, file_system, min_code;
     char *tmp;
+    static char myname[] = "ADIO_RESOLVEFILETYPE";
 
     file_system = -1;
     tmp = strchr(filename, ':');
@@ -403,17 +401,10 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 	/* no prefix; use system-dependent function call to determine type */
 	ADIO_FileSysType_fncall(filename, &file_system, &myerrcode);
 	if (myerrcode != MPI_SUCCESS) {
-#ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**iofstype", 0);
-	    return;
-#elif defined(PRINT_ERR_MSG)
-	    FPRINTF(stderr, "ADIO_ResolveFileType: Can't determine the file-system type. Check the filename/path you provided and try again. Otherwise, prefix the filename with a string to indicate the type of file sytem (piofs:, pfs:, nfs:, ufs:, hfs:, xfs:, sfs:, pvfs:).\n");
-	    MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	    myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_FSTYPE,
-					myname, (char *) 0, (char *) 0);
-	    *error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
-#endif
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE, myname,
+					       __LINE__, MPI_ERR_IO,
+					       "**iofstype", 0);
 	    return;
 	}
 
@@ -430,17 +421,9 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 	 */
 	ADIO_FileSysType_prefix(filename, &file_system, &myerrcode);
 	if (myerrcode != MPI_SUCCESS) {
-#ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io", 0);
-	    return;
-#elif defined(PRINT_ERR_MSG)
-	    FPRINTF(stderr, "ADIO_ResolveFileType: Can't determine the file-system type from the specified prefix. Check the filename/path and prefix you provided and try again.\n");
-	    MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	    myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_FSTYPE,
-					myname, (char *) 0, (char *) 0);
-	    *error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
-#endif
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE, myname,
+					       __LINE__, MPI_ERR_IO, "**io", 0);
 	    return;
 	}
     }
@@ -448,17 +431,9 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     /* verify that we support this file system type and set ops pointer */
     if (file_system == ADIO_PFS) {
 #ifndef PFS
-# ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**iofstypeunsupported", 0);
-	return;
-# elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the PFS file system\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-# else /* MPICH-1 */
-	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_PFS,
-				    myname, (char *) 0, (char *) 0);
-	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
-# endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**iofstypeunsupported", 0);
 	return;
 #else
 	*ops = &ADIO_PFS_operations;
@@ -466,17 +441,9 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     }
     if (file_system == ADIO_PIOFS) {
 #ifndef PIOFS
-# ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**iofstypeunsupported", 0);
-	return;
-# elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the PIOFS file system\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-# else /* MPICH-1 */
-	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_PIOFS,
-				     myname, (char *) 0, (char *) 0);
-	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
-# endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**iofstypeunsupported", 0);
 	return;
 #else
 	*ops = &ADIO_PIOFS_operations;
@@ -484,17 +451,9 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     }
     if (file_system == ADIO_UFS) {
 #ifndef UFS
-# ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**iofstypeunsupported", 0);
-	return;
-# elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the UFS file system\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-# else /* MPICH-1 */
-	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_UFS,
-				     myname, (char *) 0, (char *) 0);
-	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
-# endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**iofstypeunsupported", 0);
 	return;
 #else
 	*ops = &ADIO_UFS_operations;
@@ -502,17 +461,9 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     }
     if (file_system == ADIO_NFS) {
 #ifndef NFS
-# ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**iofstypeunsupported", 0);
-	return;
-# elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the NFS file system\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-# else /* MPICH-1 */
-	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_NFS,
-				     myname, (char *) 0, (char *) 0);
-	*error_code =  ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
-# endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**iofstypeunsupported", 0);
 	return;
 #else
 	*ops = &ADIO_NFS_operations;
@@ -520,17 +471,9 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     }
     if (file_system == ADIO_HFS) {
 #ifndef HFS
-# ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**iofstypeunsupported", 0);
-	return;
-# elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the HFS file system\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-# else
-	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_HFS,
-				     myname, (char *) 0, (char *) 0);
-	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
-# endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**iofstypeunsupported", 0);
 	return;
 #else
 	*ops = &ADIO_HFS_operations;
@@ -538,17 +481,9 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     }
     if (file_system == ADIO_XFS) {
 #ifndef XFS
-# ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**iofstypeunsupported", 0);
-	return;
-# elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the XFS file system\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-# else /* MPICH-1 */
-	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_XFS,
-				     myname, (char *) 0, (char *) 0);
-	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
-# endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**iofstypeunsupported", 0);
 	return;
 #else
 	*ops = &ADIO_XFS_operations;
@@ -556,17 +491,9 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     }
     if (file_system == ADIO_SFS) {
 #ifndef SFS
-# ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**iofstypeunsupported", 0);
-	return;
-# elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the SFS file system\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-# else /* MPICH-1 */
-	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_SFS,
-				     myname, (char *) 0, (char *) 0);
-	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
-# endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**iofstypeunsupported", 0);
 	return;
 #else
 	*ops = &ADIO_SFS_operations;
@@ -574,17 +501,9 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     }
     if (file_system == ADIO_PVFS) {
 #ifndef ROMIO_PVFS
-# ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**iofstypeunsupported", 0);
-	return;
-# elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the PVFS file system\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-# else /* MPICH-1 */
-	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_PVFS,
-				     myname, (char *) 0, (char *) 0);
-	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
-# endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**iofstypeunsupported", 0);
 	return;
 #else
 	*ops = &ADIO_PVFS_operations;
@@ -592,17 +511,9 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     }
     if (file_system == ADIO_PVFS2) {
 #ifndef ROMIO_PVFS2
-# ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**iofstypeunsupported", 0);
-	return;
-# elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the PVFS2 file system\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-# else /* MPICH-1 */
-	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_PVFS,
-				     myname, (char *) 0, (char *) 0);
-	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
-# endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**iofstypeunsupported", 0);
 	return;
 #else
 	*ops = &ADIO_PVFS2_operations;
@@ -610,17 +521,9 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     }
     if (file_system == ADIO_NTFS) {
 #ifndef ROMIO_NTFS
-# ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**iofstypeunsupported", 0);
-	return;
-# elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the NTFS file system\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-# else /* MPICH-1 */
-	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_NTFS,
-				     myname, (char *) 0, (char *) 0);
-	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
-# endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**iofstypeunsupported", 0);
 	return;
 #else
 	*ops = &ADIO_NTFS_operations;
@@ -628,17 +531,9 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     }
     if (file_system == ADIO_TESTFS) {
 #ifndef ROMIO_TESTFS
-# ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**iofstypeunsupported", 0);
-	return;
-# elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the TESTFS file system\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-# else /* MPICH-1 */
-	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_TESTFS,
-				     myname, (char *) 0, (char *) 0);
-	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
-# endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**iofstypeunsupported", 0);
 	return;
 #else
 	*ops = &ADIO_TESTFS_operations;

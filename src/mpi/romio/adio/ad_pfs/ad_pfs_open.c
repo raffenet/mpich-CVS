@@ -16,9 +16,7 @@ void ADIOI_PFS_Open(ADIO_File fd, int *error_code)
     int perm, amode, old_mask, np_comm, np_total, err, flag;
     char *value;
     struct sattr attr;
-#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PFS_OPEN";
-#endif
 
     if (fd->perm == ADIO_PERM_NULL) {
 	old_mask = umask(022);
@@ -87,16 +85,10 @@ void ADIOI_PFS_Open(ADIO_File fd, int *error_code)
     }
 
     if (fd->fd_sys == -1) {
-#ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-	    "**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-	*error_code =  MPI_ERR_UNKNOWN;
-#else
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	ADIOI_Error(ADIO_FILE_NULL, *error_code, myname);	    
-#endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**io",
+					   "**io %s", strerror(errno));
     }
     else *error_code = MPI_SUCCESS;
 }

@@ -13,6 +13,9 @@
 #include "adio_extern.h"
 
 /* MPICH2 error handling implementation */
+int MPIR_Err_create_code(int, int, const char [], int, int, const char [],
+			 const char [], ... );
+int MPIR_Err_is_fatal(int);
 
 int MPIO_Err_create_code(int lastcode, int fatal, const char fcname[],
 			 int line, int error_class, const char generic_msg[],

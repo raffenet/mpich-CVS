@@ -522,9 +522,7 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
     MPI_Status *statuses, status;
     int *srt_len, sum;
     ADIO_Offset *srt_off;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_W_EXCHANGE_DATA";
-#endif
 
 /* exchange recv_size info so that each process knows how much to
    send to whom. */
@@ -597,18 +595,11 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
 	    ADIO_ReadContig(fd, write_buf, size, MPI_BYTE, 
                          ADIO_EXPLICIT_OFFSET, off, &status, &err);
 	    if (err != MPI_SUCCESS) {
-#ifdef MPICH2
-		*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**ioRMWrdwr", 0);
+		*error_code = MPIO_Err_create_code(MPI_SUCCESS,
+						   MPIR_ERR_RECOVERABLE, myname,
+						   __LINE__, MPI_ERR_IO,
+						   "**ioRMWrdwr", 0);
 		return;
-#elif defined(PRINT_ERR_MSG)
-		FPRINTF(stderr, "ADIOI_GEN_WriteStridedColl: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
-		MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_READ_PERM,
-			      myname, (char *) 0, (char *) 0);
-		ADIOI_Error(fd, *error_code, myname);
-#endif
-                return;  
 	    } 
 	}
     }

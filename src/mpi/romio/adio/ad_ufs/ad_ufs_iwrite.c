@@ -17,10 +17,8 @@ void ADIOI_UFS_IwriteContig(ADIO_File fd, void *buf, int count,
     ADIO_Status status;
 #else
     int err=-1;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
+#endif
     static char myname[] = "ADIOI_UFS_IWRITECONTIG";
-#endif
-#endif
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_WRITE;
@@ -53,17 +51,11 @@ void ADIOI_UFS_IwriteContig(ADIO_File fd, void *buf, int count,
     ADIOI_Add_req_to_list(request);
 
     if (err == -1) {
-#ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-	    "**io %s", strerror(errno));
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**io",
+					   "**io %s", strerror(errno));
 	return;
-#elif defined(PRINT_ERR_MSG)
-			*error_code = MPI_ERR_UNKNOWN;
-#else /* MPICH-1 */
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	ADIOI_Error(fd, *error_code, myname);	    
-#endif
     }
     else *error_code = MPI_SUCCESS;
 #endif /* NO_AIO */

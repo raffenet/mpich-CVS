@@ -10,27 +10,19 @@
 
 void ADIOI_NTFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 {
-	DWORD dwTemp;
+    DWORD dwTemp;
     int err;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NTFS_RESIZE";
-#endif
 
-	dwTemp = DWORDHIGH(size);
-	err = SetFilePointer(fd->fd_sys, DWORDLOW(size), &dwTemp, FILE_BEGIN);
+    dwTemp = DWORDHIGH(size);
+    err = SetFilePointer(fd->fd_sys, DWORDLOW(size), &dwTemp, FILE_BEGIN);
     err = SetEndOfFile(fd->fd_sys);
     if (err == FALSE) {
-#ifdef MPICH2 
-			*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-							"**io %s", strerror(errno));
-			return;
-#elif defined(PRINT_ERR_MSG)
-			*error_code = MPI_ERR_UNKNOWN;
-#else
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**io",
+					   "**io %s", strerror(errno));
+	return;
     }
     else *error_code = MPI_SUCCESS;
 }

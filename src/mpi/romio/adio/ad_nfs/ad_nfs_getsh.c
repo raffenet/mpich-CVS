@@ -19,9 +19,7 @@ void ADIOI_NFS_Get_shared_fp(ADIO_File fd, int incr, ADIO_Offset *shared_fp,
     ADIO_Offset new_fp;
     int err;
     MPI_Comm dupcommself;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NFS_GET_SHARED_FP";
-#endif
 
     if (fd->shared_fp_fd == ADIO_FILE_NULL) {
 	MPI_Comm_dup(MPI_COMM_SELF, &dupcommself);
@@ -39,40 +37,34 @@ void ADIOI_NFS_Get_shared_fp(ADIO_File fd, int incr, ADIO_Offset *shared_fp,
     }
     else {
 	ADIOI_WRITE_LOCK(fd->shared_fp_fd, 0, SEEK_SET, sizeof(ADIO_Offset));
-	lseek(fd->shared_fp_fd->fd_sys, 0, SEEK_SET);
-	err = read(fd->shared_fp_fd->fd_sys, shared_fp, sizeof(ADIO_Offset));
+
+	err = lseek(fd->shared_fp_fd->fd_sys, 0, SEEK_SET);
+	if (err == 0) {
+	    err = read(fd->shared_fp_fd->fd_sys, shared_fp,
+		       sizeof(ADIO_Offset));
+	}
 	if (err == -1) {
 	    ADIOI_UNLOCK(fd->shared_fp_fd, 0, SEEK_SET, sizeof(ADIO_Offset));
-#ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-		"**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-	    *error_code = MPI_ERR_UNKNOWN;
-#else
-	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	    ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE, myname,
+					       __LINE__, MPI_ERR_IO, "**io",
+					       "**io %s", strerror(errno));
 	    return;
 	}
     }
 
     new_fp = *shared_fp + incr;
 
-    lseek(fd->shared_fp_fd->fd_sys, 0, SEEK_SET);
-    err = write(fd->shared_fp_fd->fd_sys, &new_fp, sizeof(ADIO_Offset));
+    err = lseek(fd->shared_fp_fd->fd_sys, 0, SEEK_SET);
+    if (err == 0) {
+	err = write(fd->shared_fp_fd->fd_sys, &new_fp, sizeof(ADIO_Offset));
+    }
     ADIOI_UNLOCK(fd->shared_fp_fd, 0, SEEK_SET, sizeof(ADIO_Offset));
     if (err == -1) {
-#ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-	    "**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-			*error_code =  MPI_SUCCESS;
-#else
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**io",
+					   "**io %s", strerror(errno));
     }
     else *error_code = MPI_SUCCESS;
 }

@@ -25,7 +25,7 @@
 #endif
 
 ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
-		      int whence, int *error_code)
+				     int whence, int *error_code)
 {
 /* implemented for whence=SEEK_SET only. SEEK_CUR and SEEK_END must
    be converted to the equivalent with SEEK_SET before calling this 
@@ -40,6 +40,7 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
     int size_in_filetype, sum;
     int filetype_size, etype_size, filetype_is_contig;
     MPI_Aint filetype_extent;
+    static char myname[] = "ADIOI_GEN_SEEKINDIVIDUAL";
 
     ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
     etype_size = fd->etype_size;
@@ -97,16 +98,9 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
     fd->fp_sys_posn = off;
 
     if (err == -1) {
-#ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-	    "**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-			*error_code = MPI_ERR_UNKNOWN;
-#else /* MPICH-1 */
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	ADIOI_Error(MPI_FILE_NULL, *error_code, myname);	    
-#endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO, "**io",
+					   "**io %s", strerror(errno));
     }
     else *error_code = MPI_SUCCESS;    
 #endif
