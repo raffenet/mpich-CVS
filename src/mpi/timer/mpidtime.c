@@ -44,7 +44,7 @@ void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
 }
 void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
-    *diff = (double) t->tv_sec + .000001 * (double) t->tv_usec;
+    *val = (double) t->tv_sec + .000001 * (double) t->tv_usec;
 }
 #elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
 /* Time stamps created by a macro */
