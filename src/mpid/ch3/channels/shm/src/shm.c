@@ -487,11 +487,6 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 
 	    if (recv_vc_ptr->ch.shm_reading_pkt)
 	    {
-		/*assert(num_bytes > sizeof(packet));*/
-		pkt_ptr->offset += sizeof(MPIDI_CH3_Pkt_t);
-		pkt_ptr->num_bytes = num_bytes - sizeof(MPIDI_CH3_Pkt_t);
-		bSetPacket = pkt_ptr->num_bytes == 0 ? TRUE : FALSE;
-
 		mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
 		if (mpi_errno != MPI_SUCCESS)
 		{
@@ -499,30 +494,31 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 		    return mpi_errno;
 		}
+
 		if (recv_vc_ptr->ch.recv_active == NULL)
 		{
-		    /*printf("reading next packet\n");fflush(stdout);*/
 		    recv_vc_ptr->ch.shm_reading_pkt = TRUE;
 		}
 		else
 		{
 		    mpi_errno = MPIDI_CH3I_SHM_post_readv(recv_vc_ptr, recv_vc_ptr->ch.recv_active->dev.iov, recv_vc_ptr->ch.recv_active->dev.iov_count, NULL);
 		}
-		if (bSetPacket)
+
+		if (num_bytes > sizeof(MPIDI_CH3_Pkt_t))
+		{
+		    pkt_ptr->offset += sizeof(MPIDI_CH3_Pkt_t);
+		    num_bytes -= sizeof(MPIDI_CH3_Pkt_t);
+		    pkt_ptr->num_bytes = num_bytes;
+		    mem_ptr = (char*)mem_ptr + sizeof(MPIDI_CH3_Pkt_t);
+		}
+		else
 		{
 		    pkt_ptr->offset = 0;
 		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 		    pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
 		    vc->ch.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
+		    continue;
 		}
-		/*
-		if (millisecond_timeout == 0)
-		{
-		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
-		    return SHM_WAIT_TIMEOUT;
-		}
-		*/
-		continue;
 	    }
 
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes\n", num_bytes));
