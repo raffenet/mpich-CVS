@@ -489,9 +489,12 @@ if test "$pac_cv_c_restrict" = "no" ; then
 fi
 ])
 if test "$pac_cv_c_restrict" = "no" ; then
-  AC_DEFINE(restrict,,[if C does not support restrict])
+  restrict_val=""
 elif test "$pac_cv_c_restrict" != "restrict" ; then
-  AC_DEFINE_UNQUOTED(restrict,$pac_cv_c_restrict)
+  restrict_val=$pac_cv_c_restrict
+fi
+if test "$restrict_val" != "restrict" ; then 
+  AC_DEFINE_UNQUOTED(restrict,$restrict_val,[if C does not support restrict])
 fi
 ])dnl
 dnl
