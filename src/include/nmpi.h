@@ -65,6 +65,8 @@
 #define NMPI_Type_size MPI_Type_size
 #define NMPI_Type_get_extent MPI_Type_get_extent
 #define NMPI_Cart_rank MPI_Cart_rank
+#define NMPI_Cart_map  MPI_Cart_map
+#define NMPI_Graph_map  MPI_Graph_map
 #define NMPI_Iprobe MPI_Iprobe
 #define NMPI_Barrier MPI_Barrier
 #define NMPI_Type_get_true_extent MPI_Type_get_true_extent
@@ -127,6 +129,8 @@
 #define NMPI_Type_size PMPI_Type_size
 #define NMPI_Type_get_extent PMPI_Type_get_extent
 #define NMPI_Cart_rank PMPI_Cart_rank
+#define NMPI_Cart_map  PMPI_Cart_map
+#define NMPI_Graph_map  PMPI_Graph_map
 #define NMPI_Iprobe PMPI_Iprobe
 #define NMPI_Barrier PMPI_Barrier
 #define NMPI_Type_get_true_extent PMPI_Type_get_true_extent
