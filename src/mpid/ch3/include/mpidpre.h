@@ -7,23 +7,22 @@
 #if !defined(MPICH_MPIDPRE_H_INCLUDED)
 #define MPICH_MPIDPRE_H_INCLUDED
 
+#include "mpidi_ch3_conf.h"
+
 #include <assert.h>
+
+#if defined(HAVE_SYS_TYPES_H)
+#include <sys/types.h>
+#endif
+
+#include "mpid_datatype.h"
+#include "mpid_dataloop.h"
 
 /* Include definitions from the channel which must exist before items in this
    file (mpidimpl.h) or the file it includes (mpiimple.h) can be defined.
    NOTE: This include requires the channel to copy mpidi_ch3_pre.h to the
    src/include directory in the build tree. */
 #include "mpidi_ch3_pre.h"
-
-#if defined(HAVE_SYS_TYPES_H)
-#include <sys/types.h>
-#endif
-#include <sys/uio.h>	/* needed for struct iovec */
-#if !defined(IOV_MAX)
-#define IOV_MAX 16
-#endif
-
-#include "mpid_datatype.h"
 
 typedef struct MPIDI_VC
 {
@@ -75,7 +74,7 @@ typedef struct
 {
     MPIDI_CH3_Pkt_type_t type;  /* XXX - uint8_t to conserve space ??? */
     MPIDI_Message_match match;
-    MPI_Request sender_req_id;
+    MPI_Request sender_req_id;	/* needed to cancel a send */
     long data_sz;
 }
 MPIDI_CH3_Pkt_eager_send_t;
@@ -191,12 +190,15 @@ struct MPIDI_Request							\
     void * user_buf;							\
     int user_count;							\
     MPI_Datatype datatype;						\
+    MPID_Segment segment;						\
+    int segment_first;							\
+    int segment_last;							\
 									\
     MPIDI_VC * vc;							\
 									\
     /* iov and iov_count define the data to be transferred; iov_offset	\
        indicates the progress made in terms of an offset into iov */	\
-    struct iovec iov[IOV_MAX];						\
+    MPID_IOV iov[MPID_IOV_LIMIT];					\
     int iov_count;							\
     int iov_offset;							\
 									\
@@ -213,7 +215,7 @@ struct MPIDI_Request							\
     MPI_Request sender_req_id;						\
 									\
     unsigned state;							\
-    									\
+									\
     struct MPID_Request * next;						\
 } ch3;
 
@@ -225,5 +227,40 @@ MPIDI_CH3_REQUEST_DECL
 #define MPID_DEV_REQUEST_DECL			\
 MPID_REQUEST_DECL
 #endif
+
+/*
+ * Macros defining device level request management routines
+ */
+#define MPID_Request_create() (MPIDI_CH3_Request_create())
+
+/* XXX - MPID_Request_set_complete() needs to wake up progress engine */
+#define MPID_Request_set_complete(req) {*req->cc_ptr = 0;}
+
+#define MPID_Request_release(req)				\
+{								\
+    int ref_count;						\
+    								\
+    MPIDI_CH3_Request_release_ref(req, &ref_count);		\
+    if (ref_count == 0)						\
+    {								\
+	MPIDI_CH3_Request_destroy(req);				\
+    }								\
+}
+
+/* Other request utilities */				\
+#define MPIDI_CH3U_Request_decrement_cc(req, cc)	\
+{							\
+    *cc = --(*req->cc_ptr);				\
+}
+
+
+/*
+ * Macros defining device level progress engine routines
+ */
+#define MPID_Progress_start()
+#define MPID_Progress_end()
+#define MPID_Progress_test() (MPIDI_CH3_Progress(FALSE))
+#define MPID_Progress_wait() {MPIDI_CH3_Progress(TRUE);}
+#define MPID_Progress_poke() {MPIDI_CH3_Progress_poke();}
 
 #endif /* !defined(MPICH_MPIDPRE_H_INCLUDED) */

@@ -8,14 +8,9 @@
 #define MPICH_MPIDIMPL_H_INCLUDED
 
 #include <assert.h>
-#include <sys/uio.h>	/* needed for struct iovec */
-#if !defined(IOV_MAX)
-#define IOV_MAX 16
-#endif
-
 #include "mpiimpl.h"
 
-#include "mpidi_ch3_conf.h"
+#define MPIDI_IOV_DENSITY_MIN 128
 
 typedef struct
 {
@@ -29,20 +24,38 @@ MPIDI_Process_t;
 extern MPIDI_Process_t MPIDI_Process;
 
 /* Masks and flags for channel device state in an MPID_Request */
-#define MPIDI_REQUEST_STATE_MSG_MASK 1
-#define MPIDI_REQUEST_STATE_MSG_SHIFT 0
-#define MPIDI_REQUEST_EAGER_MSG 0
-#define MPIDI_REQUEST_RNDV_MSG 1
+#define MPIDI_Request_state_reset(req)		\
+{						\
+    req->ch3.state = 0;				\
+}
 
-#define MPIDI_Request_get_msg_type(req)			\
-((req->ch3.state & MPIDI_REQUEST_STATE_MSG_MASK)	\
- >> MPIDI_REQUEST_STATE_MSG_SHIFT)
+#define MPIDI_REQUEST_MSG_MASK 3
+#define MPIDI_REQUEST_MSG_SHIFT 0
+#define MPIDI_REQUEST_NO_MSG 0
+#define MPIDI_REQUEST_EAGER_MSG 1
+#define MPIDI_REQUEST_RNDV_MSG 2
 
-#define MPIDI_Request_set_msg_type(req, msgtype)			\
-{									\
-    req->ch3.state &= ~MPIDI_REQUEST_STATE_MSG_MASK;			\
-    req->ch3.state |= (msgtype << MPIDI_REQUEST_STATE_MSG_SHIFT)	\
-	& MPIDI_REQUEST_STATE_MSG_MASK;					\
+#define MPIDI_Request_get_msg_type(req)					\
+((req->ch3.state & MPIDI_REQUEST_MSG_MASK) >> MPIDI_REQUEST_MSG_SHIFT)
+
+#define MPIDI_Request_set_msg_type(req, msgtype)		\
+{								\
+    req->ch3.state &= ~MPIDI_REQUEST_MSG_MASK;			\
+    req->ch3.state |= (msgtype << MPIDI_REQUEST_MSG_SHIFT)	\
+	& MPIDI_REQUEST_MSG_MASK;				\
+}
+
+#define MPIDI_REQUEST_TMPBUF_MASK 1
+#define MPIDI_REQUEST_TMPBUF_SHIFT 2
+
+#define MPIDI_Request_get_tmpbuf_flag(req)				     \
+((req->ch3.state & MPIDI_REQUEST_TMPBUF_MASK) >> MPIDI_REQUEST_TMPBUF_SHIFT)
+
+#define MPIDI_Request_set_tmpbuf_flag(req, flag)		\
+{								\
+    req->ch3.state &= ~MPIDI_REQUEST_TMPBUF_MASK;		\
+    req->ch3.state |= (flag << MPIDI_REQUEST_TMPBUF_SHIFT)	\
+	& MPIDI_REQUEST_TMPBUF_MASK;				\
 }
 
 
@@ -73,14 +86,6 @@ void MPIDI_err_printf(char *, char *, ...);
 
 #define MPIDI_QUOTE(A) MPIDI_QUOTE2(A)
 #define MPIDI_QUOTE2(A) #A
-
-/*
- * CH3 Utilities
- */
-#define MPIDI_CH3U_Request_decrement_cc(req, cc)	\
-{							\
-    *cc = --(*req->cc_ptr);				\
-}
 
 
 /* Prototypes for collective operations supplied by the device (or channel) */
