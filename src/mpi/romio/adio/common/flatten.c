@@ -876,10 +876,11 @@ void ADIOI_Flatten_subarray(int ndims,
 			    ADIO_Offset start_offset,
 			    int *inout_index_p)
 {
-    int i, j, oldtype_extent, total_types, *dim_sz, flatten_start_offset,
+    int i, j, total_types, *dim_sz, flatten_start_offset,
 	flatten_end_offset;
     int old_nints, old_nadds, old_ntypes, old_combiner;
     ADIO_Offset subarray_start_offset, type_offset, *dim_skipbytes;
+    MPI_Aint oldtype_extent;
 
     MPI_Type_extent(oldtype, &oldtype_extent);
 
