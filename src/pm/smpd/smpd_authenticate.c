@@ -78,6 +78,8 @@ int smpd_server_authenticate(sock_set_t set, sock_t sock, char *passphrase)
 	smpd_err_printf("smpd_server_authenticate: failed to generate the authentication strings\n");
 	return SMPD_FAIL;
     }
+    smpd_dbg_printf("gen_authentication_strings:\n passphrase - %s\n pszStr - %s\n pszCrypt - %s\n",
+	passphrase, pszStr, pszCrypt);
 
     /* write the challenge string*/
     smpd_dbg_printf("writing challenge string: %s\n", pszStr);
@@ -134,6 +136,7 @@ int smpd_client_authenticate(sock_set_t set, sock_t sock, char *passphrase)
     }
     strcat(phrase, pszStr);
 
+    smpd_dbg_printf("crypting: %s\n", phrase);
     result = crypt(phrase, SMPD_SALT_VALUE);
     strcpy(pszStr, result);
 
