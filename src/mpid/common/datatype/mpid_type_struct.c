@@ -72,7 +72,7 @@ int MPID_Type_struct(int count,
 		     MPI_Datatype *newtype)
 {
     int mpi_errno = MPI_SUCCESS;
-    int i;
+    int i, old_are_contig = 1;
     int found_sticky_lb = 0, found_sticky_ub = 0;
     int el_sz = 0, size = 0;
     MPI_Datatype el_type = MPI_DATATYPE_NULL;
@@ -205,6 +205,10 @@ int MPID_Type_struct(int count,
 	{
 	    true_ub_disp = tmp_true_ub;
 	}
+
+	if (!is_builtin && !old_dtp->is_contig) {
+	    old_are_contig = 0;
+	}
     }
 
     new_dtp->n_elements = -1; /* TODO */
@@ -233,6 +237,16 @@ int MPID_Type_struct(int count,
     }
 
     new_dtp->size = size;
+
+    /* new type is contig for N types if its size and extent are the
+     * same, and the old type was also contiguous
+     */
+    if ((new_dtp->size == new_dtp->extent) && old_are_contig) {
+	new_dtp->is_contig = 1;
+    }
+    else {
+	new_dtp->is_contig = 0;
+    }
 
     /* fill in dataloop */
     MPID_Dataloop_create_struct(count,
