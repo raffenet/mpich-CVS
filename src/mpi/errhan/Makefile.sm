@@ -1,7 +1,3 @@
-# Remove file routines until ROMIO integration is complete
-# ROMIO needs the create call, provides the get call.
-# file_call_errhandler.c 
-
 mpi_sources = add_error_code.c add_error_class.c \
  add_error_string.c \
  comm_call_errhandler.c comm_create_errhandler.c \
@@ -11,6 +7,7 @@ mpi_sources = add_error_code.c add_error_class.c \
  error_string.c \
  file_create_errhandler.c \
  file_get_errhandler.c file_set_errhandler.c \
+ file_call_errhandler.c \
  win_create_errhandler.c win_call_errhandler.c \
  win_get_errhandler.c win_set_errhandler.c 
 lib${MPILIBNAME}_a_SOURCES =  ${mpi_sources} errutil.c
