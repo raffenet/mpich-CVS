@@ -493,17 +493,24 @@ public class Shadow extends Primitive
 
 
 
-    private static Insets Empty_Border = new Insets( 0, 2, 0, 2 );
-    private static Stroke Line_Stroke  = new BasicStroke( 3.0f );
+    private static Insets   Empty_Border   = new Insets( 0, 2, 0, 2 );
+    private static long     Arrow_Log_Base = 10;
+
+    private static Stroke[] Line_Strokes;
+    static {
+         Line_Strokes = new Stroke[ 10 ];
+         for ( int idx = Line_Strokes.length-1; idx >=0 ; idx-- )
+             Line_Strokes[ idx ] = new BasicStroke( (float) (idx+1) );
+    }
 
     public static void setStateInsetsDimension( int width, int height )
     {
         Empty_Border = new Insets( height, width, height, width );
     }
 
-    public static void setArrowLineThickness( float thickness )
+    public static void setBaseOfLogOfObjectNumToArrowWidth( int new_log_base )
     {
-        Line_Stroke = new BasicStroke( thickness );
+        Arrow_Log_Base = (long) new_log_base;
     }
 
 
@@ -544,6 +551,20 @@ public class Shadow extends Primitive
         //                    tStart, rStart, tFinal, rFinal );
     }
 
+    private static  Stroke  getArrowStroke( long  inum )
+    {
+        int  idx;
+        for ( idx = 0; idx < Line_Strokes.length; idx++ ) {
+             inum /= Arrow_Log_Base;
+             if ( inum == 0 )
+                 break;
+        }
+        if ( idx < Line_Strokes.length )
+            return Line_Strokes[ idx ];
+        else
+            return Line_Strokes[ Line_Strokes.length-1 ];
+    }
+
     public  int  drawArrow( Graphics2D g, CoordPixelXform coord_xform,
                             Map map_line2row, DrawnBoxSet drawn_boxes,
                             ColorAlpha color )
@@ -564,7 +585,9 @@ public class Shadow extends Primitive
                    map_line2row.get( new Integer(final_vtx.lineID) )
                  ).intValue();
 
-        return Line.draw( g, color, Line_Stroke, coord_xform,
+        Stroke  arrow_stroke = getArrowStroke( num_real_objs );
+
+        return Line.draw( g, color, arrow_stroke, coord_xform,
                           drawn_boxes.getLastArrowPos( iStart, iFinal ),
                           tStart, (float) iStart, tFinal, (float) iFinal );
     }

@@ -188,7 +188,7 @@ public class CategoryWeight
 
 
 
-    public static class IndexOrder implements Comparator
+    private static class IndexOrder implements Comparator
     {
         public int compare( Object o1, Object o2 )
         {
@@ -198,7 +198,7 @@ public class CategoryWeight
         }
     }
 
-    public static class InclRatioOrder implements Comparator
+    private static class InclRatioOrder implements Comparator
     {
         public int compare( Object o1, Object o2 )
         {
@@ -209,7 +209,7 @@ public class CategoryWeight
         }
     }
 
-    public static class ExclRatioOrder implements Comparator
+    private static class ExclRatioOrder implements Comparator
     {
         public int compare( Object o1, Object o2 )
         {

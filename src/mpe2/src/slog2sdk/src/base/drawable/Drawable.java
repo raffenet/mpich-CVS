@@ -216,9 +216,9 @@ public abstract class Drawable extends InfoBox
         return 0;
     }
 
-    public Drawable getDrawableWithPixel( CoordPixelXform  coord_xform,
-                                          Map              map_line2row,
-                                          Point            pix_pt )
+    public Drawable getDrawableAt( CoordPixelXform  coord_xform,
+                                   Map              map_line2row,
+                                   Point            pix_pt )
     {
         Category type = super.getCategory();
         Topology topo = type.getTopology();
