@@ -42,13 +42,20 @@ static int dbg_memlog_line_size = MPICH_DBG_MEMLOG_LINE_SIZE;
 static char **dbg_memlog = NULL;
 static int dbg_memlog_next = 0;
 static int dbg_memlog_count = 0;
+static int dbg_rank = -1;
+
+int MPIU_dbg_init(int rank)
+{
+    dbg_rank = rank;
+    return 0;
+}
 
 static void dbg_init(void)
 {
     char * envstr;
     
     MPIUI_dbg_state = 0;
-    
+
     /* FIXME: This should use MPIU_Param_get_string */
     envstr = getenv("MPICH_DBG_OUTPUT");
     if (envstr == NULL)
@@ -125,7 +132,7 @@ int MPIU_dbglog_printf(char *str, ...)
 	if (n < 0 || n >= dbg_memlog_line_size)
 	{
 	    dbg_memlog[dbg_memlog_next][dbg_memlog_line_size - 1] = '\0';
-	    n = strlen(dbg_memlog[dbg_memlog_next]);
+	    n = (int)strlen(dbg_memlog[dbg_memlog_next]);
 	}
 
 	if (dbg_memlog[dbg_memlog_next][0] != '\0')
@@ -174,7 +181,7 @@ int MPIU_dbglog_vprintf(char *str, va_list ap)
 	if (n < 0 || n >= dbg_memlog_line_size)
 	{
 	    dbg_memlog[dbg_memlog_next][dbg_memlog_line_size - 1] = '\0';
-	    n = strlen(dbg_memlog[dbg_memlog_next]);
+	    n = (int)strlen(dbg_memlog[dbg_memlog_next]);
 	}
 
 	if (dbg_memlog[dbg_memlog_next][0] != '\0')
@@ -201,7 +208,7 @@ int MPIU_dbg_printf(char * str, ...)
     {
 	va_list list;
 
-	MPIU_dbglog_printf("[%d]", MPIR_Process.comm_world->rank);
+	MPIU_dbglog_printf("[%d]", dbg_rank);
 	va_start(list, str);
 	n = MPIU_dbglog_vprintf(str, list);
 	va_end(list);
@@ -211,47 +218,6 @@ int MPIU_dbg_printf(char * str, ...)
     
     return n;
 }
-
-/*
- * err_printf and msg_printf are names that we should not use, since they
- * may conflict with names in other programs.  In addition, this file should
- * be limited to the debug ring routines.
- */
-#if 0
-#undef err_printf
-int err_printf(char *str, ...)
-{
-    int n;
-    va_list list;
-
-    printf("[%d]", MPIR_Process.comm_world->rank);
-    va_start(list, str);
-    n = vprintf(str, list);
-    va_end(list);
-
-    fflush(stdout);
-
-    exit(-1);
-
-    return n;
-}
-
-#undef msg_printf
-int msg_printf(char *str, ...)
-{
-    int n;
-    va_list list;
-
-    printf("[%d]", MPIR_Process.comm_world->rank);
-    va_start(list, str);
-    n = vprintf(str, list);
-    va_end(list);
-
-    fflush(stdout);
-
-    return n;
-}
-#endif
 
 void MPIU_dump_dbg_memlog_to_stdout(void)
 {
