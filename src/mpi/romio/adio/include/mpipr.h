@@ -337,6 +337,8 @@
 #undef MPI_Status_f2c
 #define MPI_Status_f2c PMPI_Status_f2c
 
+#undef MPI_Status_set_elements
+#define MPI_Status_set_elements PMPI_Status_set_elements
 
 #ifndef MPI_INFO_SRC  /* everywhere except in info source directory */
 #undef MPI_Info_create
