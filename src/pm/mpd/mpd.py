@@ -365,7 +365,7 @@ def _handle_lhs_input():
             or (msg['jobalias']  and  sjobid[2] == msg['jobalias']):
                 for manPid in g.activeJobs[jobid].keys():
                     if g.activeJobs[jobid][manPid]['username'] == msg['username']  \
-                    or g.activeJobs[jobid][manPid]['username'] == 'root':
+                    or msg['username'] == 'root':
                         manSocket = g.activeJobs[jobid][manPid]['socktoman']
                         mpd_send_one_msg(manSocket, { 'cmd' : 'signal_to_handle',
                                                       'sigtype' : msg['sigtype'] } )
@@ -387,7 +387,7 @@ def _handle_lhs_input():
             or (msg['jobalias']  and  sjobid[2] == msg['jobalias']):
                 for manPid in g.activeJobs[jobid].keys():
                     if g.activeJobs[jobid][manPid]['username'] == msg['username']  \
-                    or g.activeJobs[jobid][manPid]['username'] == 'root':
+                    or msg['username'] == 'root':
                         try:
                             pgrp = manPid * (-1)  # neg manPid -> group
                             kill(pgrp,SIGKILL)
