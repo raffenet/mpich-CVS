@@ -24,6 +24,7 @@ do_bindings=yes
 do_f77=yes
 use_patched_autoonf=no
 do_build_configure=yes
+autoconfdir=""
 #
 # Extract the arguments intended for updatefiles.  Any others are
 # given to simplemake.  
@@ -72,6 +73,11 @@ for arg in "$@" ; do
     use_patched_autoonf=no
     ;;
 
+    -with-autoconf=*|--with-autoconf=*)
+    # Select a location for a different autoconf
+    autoconfdir=`echo "A$arg" | sed -e 's/.*=//'`
+    ;;
+
     -distrib)
     do_depend=no
     do_build_configure=no
@@ -81,11 +87,15 @@ for arg in "$@" ; do
     -help|--help|-usage|--usage)
     cat <<EOF
     updatefiles [ --with-codecheck | --without-codecheck ] 
+	        [ --with-autoconf=dir ]
                 [ args for simplemake ] 
     Update the files in the MPICH2 build tree.  This file builds the 
     configure files, creates the Makefile.in files (using the simplemake
     program), extracts the error messages, and performs basic coding checks.
     Coding checks may be suppressed with --without-codecheck .
+
+    You can use --with-autoconf=dir to specify a directory that contains
+    an alternate autoconf and autoheader.  
 EOF
     exit
     ;;
@@ -126,6 +136,27 @@ if [ $at_top = "no" ] ; then
     exit 1
 fi
 #
+# Determine the autoconf to use.  If --with-autoconf was set, use 
+# autoconf and autoheader from that directory
+if [ -n "$autoconfdir" ] ; then
+    if [ -x $autoconfdir/autoconf -a -x $autoconfdir/autoheader ] ; then
+        autoconf=$autoconfdir/autoconf
+	autoheader=$autoconfdir/autoheader
+	# Simplemake looks in environment variables for the autoconf
+	# and autoheader to use
+	AUTOCONF=$autoconf
+	AUTOHEADER=$autoheader
+	export AUTOCONF
+	export AUTOHEADER
+    else
+        echo "Could not find executable autoconf and autoheader in $autoconfdir"
+	exit 1
+    fi
+else
+    autoconf=autoconf
+    autoheader=autoheader
+fi
+#
 # Check that you have a working autoconf.  Autoconf 2.57 is not compatible with
 # previous versions of autoconf (!!), even 2.52 (!!!).  
 acIncDirFlag=-l
@@ -139,7 +170,7 @@ rm -f .tmp/configure.in
 cat >.tmp/configure.in <<EOF
 AC_PREREQ(2.57)
 EOF
-if (cd .tmp && autoconf >/dev/null 2>&1 ) ; then 
+if (cd .tmp && $autoconf >/dev/null 2>&1 ) ; then 
     cat <<EOF
 
 You either do not have autoconf in your path or you may have autoconf
@@ -275,10 +306,10 @@ fi
 made_simplemake=no
 run_configure=no
 if [ ! -x maint/configure ] ; then
-    (cd maint && autoconf && rm -rf autom4te.cache )
+    (cd maint && $autoconf && rm -rf autom4te.cache )
 elif find -name 'maint/configure.in' -newer 'maint/configure' ; then
     # The above relies on the Unix find command
-    (cd maint && autoconf && rm -rf autom4te.cache)
+    (cd maint && $autoconf && rm -rf autom4te.cache)
 fi
 if [ ! -x maint/simplemake -o ! -x maint/getstates ] ; then
     run_configure=yes
@@ -444,7 +475,7 @@ AC_INIT(configure.in)
 AC_LANG_FORTRAN77
 AC_TRY_COMPILE(,[integer a],a=1,a=0)
 EOF
-		autoconf
+		$autoconf
   	        cd ..
 		# The bug is that the EOF doesn't go onto the next line
 		if grep endEOF .ctmp/configure >/dev/null 2>&1 ; then
@@ -496,10 +527,10 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 		        # Only use autoheader if AC_CONFIG_HEADER is
 	 		# present
 			if grep AC_CONFIG_HEADER $dir/configure.in >/dev/null 2>&1 ; then
-		        (cd $dir && autoheader $acIncDirFlag . )
+		        (cd $dir && $autoheader $acIncDirFlag . )
 			fi
 			(cd $dir && \
-			autoconf $acIncDirFlag . && rm -rf autom4te.cache )
+			$autoconf $acIncDirFlag . && rm -rf autom4te.cache )
 #		     fi
 #		fi
 	            if grep 'mpi2-other/info/Makefile \\' $dir/configure 2>&1 >/dev/null ; then 
@@ -520,9 +551,9 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 		    # support 2.1x and 2.57+
 		    echo $dir
  		    if grep AC_CONFIG_HEADER $dir/configure.in >/dev/null 2>&1 ; then
-		        (cd $dir && autoheader $acIncDirFlag . )
+		        (cd $dir && $autoheader $acIncDirFlag . )
 		    fi
-		    (cd $dir && autoconf $acIncDirFlag . )
+		    (cd $dir && $autoconf $acIncDirFlag . )
 		    continue
 	    fi
 	    # First, check for a configure target in Makefile.in
@@ -549,9 +580,9 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 		    if egrep 'AC_ARG|AC_CHECK_FUNCS' $dir/configure.in >/dev/null 2>&1 ; then
 		        echo "Trying simple autoheader/autoconf in $dir"
 			if grep AC_CONFIG_HEADER $dir/configure.in >/dev/null 2>&1 ; then
-		            (cd $dir && autoheader $acIncDirFlag . )
+		            (cd $dir && $autoheader $acIncDirFlag . )
 			fi
-			(cd $dir && autoconf $acIncDirFlag . )
+			(cd $dir && $autoconf $acIncDirFlag . )
 		    else
 		        # Try autoconf-1.7; accepts failures gracefully
 		        echo "Trying simple autoconf using 1.7 in $dir"
