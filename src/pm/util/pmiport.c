@@ -15,6 +15,12 @@
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
+/* ctype is needed for isspace and isascii (isspace is only defined for 
+   values on which isascii returns true). */
+#include <ctype.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
 
 #include "pmutil.h"
 
@@ -43,7 +49,7 @@
 #endif
 int MPIE_GetPort( int *fdout, int *portout )
 {
-    int                fd;
+    int                fd = -1;
     struct sockaddr_in sa;
     int                optval = 1;
     int                portnum;
@@ -81,6 +87,7 @@ int MPIE_GetPort( int *fdout, int *portout )
     
 	fd = socket( AF_INET, SOCK_STREAM, TCP );
 	if (fd < 0) {
+	    /* Failure; return immediately */
 	    return fd;
 	}
     
@@ -91,6 +98,7 @@ int MPIE_GetPort( int *fdout, int *portout )
 	
 	if (bind( fd, (struct sockaddr *)&sa, sizeof(sa) ) < 0) {
 	    close( fd );
+	    fd = -1;
 	    if (errno != EADDRINUSE && errno != EADDRNOTAVAIL) {
 		return -1;
 	    }
@@ -101,6 +109,11 @@ int MPIE_GetPort( int *fdout, int *portout )
 	}
     }
     
+    if (fd < 0) {
+	/* We were unable to find a usable port */
+	return -1;
+    }
+
     /* Listen is a non-blocking call that enables connections */
     listen( fd, MAX_PENDING_CONN );
     
