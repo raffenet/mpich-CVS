@@ -11,13 +11,12 @@ Create the directories and files:
 
 Build the libraries:
 4) open the mpich2 solution (mpich2.sln)
-5) build the process manager utility library projects: smpd_util and pmi
-6) build the ch3sock configuration of the mpich2 project (mpich2).
-7) build the ch3sock configuration of the static mpich2 project (mpich2s).
-8) build mpiexec and smpd
+5) do a solution build with the ch3sock configuration (Release or Debug)
+6) build the ch3sock(Release or Debug) configuration of the static mpich2 project (mpich2s).
+7) do a solution build with the Release or Debug configuration to build mpiexec and smpd
 
 Optionally build a different configuration of the mpich2 dlls:
-9) build the channel of your choice:
+8) build the channel of your choice:
 The mpich2 dlls can be built to use shared memory communication, tcp socket communication,
 or both.
 Select the ch3sockDebug or ch3sockRelease configurations to build the sockets only dlls.
@@ -25,10 +24,10 @@ Select the ch3shmDebug or ch3shmRelease configurations to build the shmem only d
 Select the ch3ssmDebug or ch3ssmRelease configurations to build the sockets+shmem dlls.
 
 Compile and run an MPI application:
-6) compile an mpi application.  Use mpi.h from mpich2\src\include and 
+9) compile an mpi application.  Use mpi.h from mpich2\src\include and 
 the mpich2 import libraries in mpich2\lib
-7) Place your executable along with the mpich2 dlls somewhere accessable to
+10) Place your executable along with the mpich2 dlls somewhere accessable to
 all the machines.
-8) Execute a job by running: mpiexec -n 3 myapp.exe
+11) Execute a job by running: mpiexec -n 3 myapp.exe
 
 Email bugs and error reports to mpich2-maint@mcs.anl.gov.
