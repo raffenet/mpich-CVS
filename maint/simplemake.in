@@ -477,6 +477,11 @@ sub ReadMfile {
 	    # Shared libraries should not be built unconditionally.  
 	    # Instead of adding them to the alltargets, add them
 	    # to a allshlibtargets
+	    # FIXME: Sometimes, we want to use a separate library
+	    # for the shared library (e.g., for the C++ bindings)
+	    # while using a single library for the static linking.
+	    # here is where we would do that, using a special
+	    # mapping of library name to shared library name
 	    if ($do_sharedlibs) {
 	    	$allshlibtargets[$#allshlibtargets+1] = 
 		    "${libloc}lib$libname.la";
@@ -2230,7 +2235,14 @@ sub TargetInstall {
 	    foreach $file (split( /\s+/, $filelist)) {
 		$destfile = $file;
 		$destfile =~ s/.*\///;
-		print FD "\tif [ -s $file ] ; then \$(INSTALL_PROGRAM) $file \${$dir}/$destfile ; fi$newline";
+		# Choose the installation method based on the kind value
+		if (!defined($install_methods{$kind})) {
+		    $this_install_choice = '$(INSTALL_PROGRAM)';
+		}
+		else {
+		    $this_install_choice = $install_methods{$kind};
+		}
+		print FD "\tif [ -s $file ] ; then $this_install_choice $file \${$dir}/$destfile ; fi$newline";
 	    }
 	}
     }
