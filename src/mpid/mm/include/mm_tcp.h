@@ -18,6 +18,7 @@
 #endif
 
 int tcp_init(void);
+int tcp_finalize(void);
 int tcp_get_business_card(char *value, int length);
 int tcp_can_connect(char *business_card);
 int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card);

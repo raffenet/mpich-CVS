@@ -9,6 +9,7 @@
 #include "mpidimpl.h"
 
 int unpacker_init(void);
+int unpacker_finalize(void);
 int unpacker_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int unpacker_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr);
 int unpacker_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr);

@@ -6,6 +6,27 @@
 
 #include "socketimpl.h"
 
+/* prototypes */
+#ifdef WITH_METHOD_SHM
+int socket_stuff_vector_shm(MPID_IOV *, int *, MM_Car *, MM_Segment_buffer *);
+#endif
+#ifdef WITH_METHOD_VIA
+int socket_stuff_vector_via(MPID_IOV *, int *, MM_Car *, MM_Segment_buffer *);
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+int socket_stuff_vector_via_rdma(MPID_IOV *, int *, MM_Car *, MM_Segment_buffer *);
+#endif
+#ifdef WITH_METHOD_IB
+int socket_stuff_vector_ib(MPID_IOV *, int *, MM_Car *, MM_Segment_buffer *);
+#endif
+#ifdef WITH_METHOD_NEW
+int socket_stuff_vector_new(MPID_IOV *, int *, MM_Car *, MM_Segment_buffer *);
+#endif
+int socket_stuff_vector_vec(MPID_IOV *, int *, MM_Car *, MM_Segment_buffer *);
+int socket_stuff_vector_tmp(MPID_IOV *, int *, MM_Car *, MM_Segment_buffer *);
+int socket_stuff_vector_simple(MPID_IOV *, int *, MM_Car *, MM_Segment_buffer *);
+int socket_update_car_num_written(MM_Car *, int *);
+
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
@@ -301,7 +322,7 @@ int socket_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 		{
 		    /* this vector was only partially written, so update the buf and len fields */
 		    car_ptr->data.socket.buf.vec_write.vec[i].MPID_IOV_BUF = 
-			car_ptr->data.socket.buf.vec_write.vec[i].MPID_IOV_BUF +
+			(char*)(car_ptr->data.socket.buf.vec_write.vec[i].MPID_IOV_BUF) +
 			car_ptr->data.socket.buf.vec_write.vec[i].MPID_IOV_LEN + 
 			num_left;
 		    car_ptr->data.socket.buf.vec_write.num_written_at_cur_index = 

@@ -7,10 +7,24 @@
 
 #include "mpidimpl.h"
 #include "pmi.h"
+#ifdef HAVE_STDIO_H
+#include <stdio.h> /* snprintf */
+#endif
+#ifdef HAVE_STRING_H
+#include <string.h> /* strdup */
+#endif
+#ifdef HAVE_CTYPE_H
+#include <ctype.h> /* toupper */
+#endif
 
+/* prototypes */
+static void order_methods_from_environment(void);
+static void order_methods(void);
+
+/* global variables */
 MPID_PerProcess MPID_Process;
 
-static void order_methods_from_environment()
+static void order_methods_from_environment(void)
 {
     char *pEnv, *order, *orig;
     unsigned int i;
@@ -92,7 +106,7 @@ static void order_methods_from_environment()
     free(orig);
 }
 
-static void order_methods()
+static void order_methods(void)
 {
     int i, found;
 

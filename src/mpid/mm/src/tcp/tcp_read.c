@@ -319,7 +319,7 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 		else
 		{
 		    car_ptr->data.tcp.buf.vec_read.vec[i].MPID_IOV_BUF = 
-			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_IOV_BUF +
+			(char*)(car_ptr->data.tcp.buf.vec_read.vec[i].MPID_IOV_BUF) +
 			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_IOV_LEN +
 			num_left;
 		    car_ptr->data.tcp.buf.vec_read.vec[i].MPID_IOV_LEN = -num_left;

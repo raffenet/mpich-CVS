@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "shmimpl.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> /* gethostname */
+#endif
 
 SHM_PerProcess SHM_Process;
 

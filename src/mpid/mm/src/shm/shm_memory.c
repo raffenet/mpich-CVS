@@ -5,6 +5,12 @@
  */
 #include "shmimpl.h"
 
+/* prototypes */
+void *shm_alloc(unsigned int);
+void shm_free(void *);
+void *shm_get_mem_sync(int, int, int);
+void shm_release_mem(void);
+
 /*@
    shm_alloc - allocate shared memory
 
@@ -61,7 +67,7 @@ void *shm_get_mem_sync(int nTotalSize, int nRank, int nNproc)
 
    Notes:
 @*/
-void shm_release_mem()
+void shm_release_mem(void)
 {
     MPIDI_STATE_DECL(MPID_STATE_SHM_RELEASE_MEM);
     MPIDI_FUNC_ENTER(MPID_STATE_SHM_RELEASE_MEM);

@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "tcpimpl.h"
+#ifdef HAVE_STRING_H
+#include <string.h> /* strdup */
+#endif
 
 static unsigned int GetIP(char *pszIP)
 {

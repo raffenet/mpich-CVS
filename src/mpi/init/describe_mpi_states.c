@@ -11,7 +11,7 @@
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
 
-#if HAVE_TIMING
+#ifdef HAVE_TIMING
 
 #if (USE_LOGGING == MPID_LOGGING_DLOG)
 

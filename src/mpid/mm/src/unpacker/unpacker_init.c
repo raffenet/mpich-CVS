@@ -10,7 +10,7 @@
 
    Notes:
 @*/
-int unpacker_init()
+int unpacker_init(void)
 {
     MPIDI_STATE_DECL(MPID_STATE_UNPACKER_INIT);
     MPIDI_FUNC_ENTER(MPID_STATE_UNPACKER_INIT);
@@ -26,7 +26,7 @@ int unpacker_init()
 
    Notes:
 @*/
-int unpacker_finalize()
+int unpacker_finalize(void)
 {
     MPIDI_STATE_DECL(MPID_STATE_UNPACKER_FINALIZE);
     MPIDI_FUNC_ENTER(MPID_STATE_UNPACKER_FINALIZE);

@@ -8,7 +8,7 @@
 #include <sys/time.h>
 #endif
 
-int tcp_accept_connection()
+int tcp_accept_connection(void)
 {
     int bfd;
     int remote_rank;
@@ -183,7 +183,7 @@ int tcp_accept_connection()
 
    Notes:
 @*/
-int tcp_make_progress()
+int tcp_make_progress(void)
 {
     int nready = 0;
     struct timeval tv;

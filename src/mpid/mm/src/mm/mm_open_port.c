@@ -6,6 +6,9 @@
 
 #include "mpidimpl.h"
 #include "bsocket.h"
+#ifdef HAVE_STDIO_H
+#include <stdio.h> /* snprintf */
+#endif
 
 int mm_open_port(MPID_Info *info_ptr, char *port_name)
 {

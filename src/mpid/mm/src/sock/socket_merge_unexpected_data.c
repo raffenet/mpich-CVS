@@ -223,7 +223,7 @@ int socket_merge_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_p
 		else
 		{
 		    car_ptr->data.socket.buf.vec_read.vec[i].MPID_IOV_BUF = 
-			car_ptr->data.socket.buf.vec_read.vec[i].MPID_IOV_BUF +
+			(char*)(car_ptr->data.socket.buf.vec_read.vec[i].MPID_IOV_BUF) +
 			car_ptr->data.socket.buf.vec_read.vec[i].MPID_IOV_LEN +
 			num_left;
 		    car_ptr->data.socket.buf.vec_read.vec[i].MPID_IOV_LEN -= num_left;

@@ -8,7 +8,8 @@
 
 #include "mpidimpl.h"
 
-int via_rdma_init();
+int via_rdma_init(void);
+int via_rdma_finalize(void);
 int via_rdma_read(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int via_rdma_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int via_rdma_get_buffers(MPID_Request *request_ptr);

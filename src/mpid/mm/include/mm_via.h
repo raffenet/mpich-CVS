@@ -9,6 +9,7 @@
 #include "mpidimpl.h"
 
 int via_init();
+int via_finalize();
 int via_read(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int via_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int via_get_buffers(MPID_Request *request_ptr);

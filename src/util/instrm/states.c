@@ -14,7 +14,7 @@
 
 void MPID_TimerStateBegin( int id, MPID_Time_t *time_stamp )
 {
-#if HAVE_TIMING 
+#ifdef HAVE_TIMING 
     MPICH_PerThread_t *p;
 
     MPID_Wtime( time_stamp );
@@ -24,7 +24,7 @@ void MPID_TimerStateBegin( int id, MPID_Time_t *time_stamp )
 }
 void MPID_TimerStateEnd( int id, MPID_Time_t *time_stamp )
 {
-#if HAVE_TIMING 
+#ifdef HAVE_TIMING 
     MPICH_PerThread_t *p;
     MPID_Time_t final_time;
 

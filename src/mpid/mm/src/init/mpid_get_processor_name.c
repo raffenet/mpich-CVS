@@ -5,6 +5,9 @@
  */
 
 #include "mpidimpl.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> /* gethostname */
+#endif
 
 /*@
    MPID_Get_processor_name - get processor name

@@ -9,6 +9,7 @@
 #include "mpidimpl.h"
 
 int ib_init(void);
+int ib_finalize(void);
 int ib_get_business_card(char *value, int length);
 int ib_can_connect(char *business_card);
 int ib_post_connect(MPIDI_VC *vc_ptr, char *business_card);

@@ -8,7 +8,7 @@
 #include <sys/time.h>
 #endif
 
-int socket_handle_accept()
+int socket_handle_accept(void)
 {
     int error;
     sock_t sock;
@@ -60,7 +60,7 @@ int socket_handle_accept()
 
    Notes:
 @*/
-int socket_make_progress()
+int socket_make_progress(void)
 {
     int error;
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_MAKE_PROGRESS);

@@ -6,6 +6,19 @@
 
 #include "mpidimpl.h"
 
+/* local prototypes */
+MM_Car *find_in_queue(MM_Car **, MM_Car **, MM_Car *);
+int mm_cq_handle_read_head_car(MM_Car *);
+int mm_cq_handle_read_data_car(MM_Car *);
+int mm_cq_handle_read_car(MM_Car *);
+#if 0
+int mm_cq_handle_write_head_car(MM_Car *);
+int mm_cq_handle_write_data_car(MM_Car *);
+int mm_cq_handle_write_car(MM_Car *);
+#else
+int mm_cq_handle_write_car(MM_Car *);
+#endif
+
 MM_Car *find_in_queue(MM_Car **find_q_head_ptr, MM_Car **find_q_tail_ptr, MM_Car *car_ptr)
 {
     MM_Car *iter_ptr, *trailer_ptr;
@@ -166,7 +179,7 @@ int mm_cq_handle_read_car(MM_Car *car_ptr)
     return ret_val;
 }
 
-#ifdef FOO
+#if 0
 int mm_cq_handle_write_head_car(MM_Car *car_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_MM_CQ_HANDLE_WRITE_HEAD_CAR);

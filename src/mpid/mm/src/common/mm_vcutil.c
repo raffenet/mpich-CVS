@@ -6,6 +6,9 @@
 
 #include "mpidimpl.h"
 #include "pmi.h"
+#ifdef HAVE_STDIO_H
+#include <stdio.h> /* snprintf */
+#endif
 
 /*@
    mm_vc_init - initialize vc stuff

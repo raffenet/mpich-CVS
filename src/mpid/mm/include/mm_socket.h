@@ -9,6 +9,7 @@
 #include "mpidimpl.h"
 
 int socket_init(void);
+int socket_finalize(void);
 int socket_get_business_card(char *value, int length);
 int socket_can_connect(char *business_card);
 int socket_post_connect(MPIDI_VC *vc_ptr, char *business_card);

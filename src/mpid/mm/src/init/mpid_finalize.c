@@ -23,6 +23,31 @@ int MPID_Finalize( void )
 {
     /*MPIU_Timer_finalize();*/ /* called in MPI_Finalize */
 
+    /* finalize the methods */
+    packer_finalize();
+    unpacker_finalize();
+#ifdef WITH_METHOD_SHM
+    shm_finalize();
+#endif
+#ifdef WITH_METHOD_TCP
+    tcp_finalize();
+#endif
+#ifdef WITH_METHOD_SOCKET
+    socket_finalize();
+#endif
+#ifdef WITH_METHOD_VIA
+    via_finalize();
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+    via_rdma_finalize();
+#endif
+#ifdef WITH_METHOD_IB
+    ib_finalize();
+#endif
+#ifdef WITH_METHOD_NEW
+    new_method_finalize();
+#endif
+
     mm_car_finalize();
     mm_vc_finalize();
 

@@ -101,6 +101,7 @@ int socket_handle_read_ack(MPIDI_VC *vc_ptr, int num_read)
     return MPI_SUCCESS;
 }
 
+/*
 void swap_vc_data(MPIDI_VC *v1, MPIDI_VC *v2)
 {
     MPIDI_VC v;
@@ -108,6 +109,7 @@ void swap_vc_data(MPIDI_VC *v1, MPIDI_VC *v2)
     v1->data = v2->data;
     v2->data = v.data;
 }
+*/
 
 int socket_handle_read_connect_pkt(MPIDI_VC *temp_vc_ptr, int num_read)
 {

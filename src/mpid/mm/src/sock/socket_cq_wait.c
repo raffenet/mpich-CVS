@@ -5,7 +5,7 @@
  */
 #include "socketimpl.h"
 
-int socket_cq_wait()
+int socket_cq_wait(void)
 {
     return MPI_SUCCESS;
 }

@@ -12,7 +12,7 @@ TCP_PerProcess TCP_Process;
 
    Notes:
 @*/
-int tcp_init()
+int tcp_init(void)
 {
     int error;
     MPIDI_STATE_DECL(MPID_STATE_TCP_INIT);
@@ -59,7 +59,7 @@ int tcp_init()
 
    Notes:
 @*/
-int tcp_finalize()
+int tcp_finalize(void)
 {
     MPIDI_STATE_DECL(MPID_STATE_TCP_FINALIZE);
     MPIDI_FUNC_ENTER(MPID_STATE_TCP_FINALIZE);

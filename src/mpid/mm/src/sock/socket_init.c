@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "socketimpl.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> /* gethostname */
+#endif
 
 SOCKET_PerProcess SOCKET_Process;
 
@@ -12,7 +15,7 @@ SOCKET_PerProcess SOCKET_Process;
 
    Notes:
 @*/
-int socket_init()
+int socket_init(void)
 {
     int error;
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_INIT);
@@ -50,7 +53,7 @@ int socket_init()
 
    Notes:
 @*/
-int socket_finalize()
+int socket_finalize(void)
 {
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_FINALIZE);
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_FINALIZE);

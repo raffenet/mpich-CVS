@@ -7,7 +7,7 @@
 
 #include "mpidimpl.h"
 
-#if HAVE_TIMING
+#ifdef HAVE_TIMING
 
 /* This section of code is for the DLOG logging library */
 #if (USE_LOGGING == MPID_LOGGING_DLOG)

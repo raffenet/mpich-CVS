@@ -10,7 +10,7 @@
 
    Notes:
 @*/
-int packer_init()
+int packer_init(void)
 {
     MPIDI_STATE_DECL(MPID_STATE_PACKER_INIT);
     MPIDI_FUNC_ENTER(MPID_STATE_PACKER_INIT);
@@ -26,7 +26,7 @@ int packer_init()
 
    Notes:
 @*/
-int packer_finalize()
+int packer_finalize(void)
 {
     MPIDI_STATE_DECL(MPID_STATE_PACKER_FINALIZE);
     MPIDI_FUNC_ENTER(MPID_STATE_PACKER_FINALIZE);

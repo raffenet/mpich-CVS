@@ -5,7 +5,7 @@
  */
 #include "tcpimpl.h"
 
-int tcp_cq_wait()
+int tcp_cq_wait(void)
 {
     return MPI_SUCCESS;
 }
