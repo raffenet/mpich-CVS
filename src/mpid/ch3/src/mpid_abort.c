@@ -36,8 +36,13 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code)
 	MPIU_Error_printf("ABORT - process %d\n", rank);
 	fflush(stderr);
     }
-    
+
+#ifdef HAVE_WINDOWS_H
+    /* exit can hang if libc fflushes output while in/out/err buffers are locked.  ExitProcess does not hang. */
+    ExitProcess(exit_code);
+#else
     exit(exit_code);
+#endif
     
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
 
