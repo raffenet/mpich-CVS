@@ -782,6 +782,10 @@ def _handle_new_connection():
         _add_active_socket(newConnSocket,'lhs_being_challenged',
                            '_handle_lhs_challenge_response',
                            msg['host'],msg['port'])
+    elif msg['cmd'] == 'ping':
+        msgToSend = { 'cmd' : 'ping_ack' }
+        mpd_send_one_msg(newConnSocket,msgToSend)
+        newConnSocket.close()
     else:
         mpd_print(1, 'INVALID msg from new connection :%s:  msg=:%s:' % (newConnAddr,msg) )
         newConnSocket.close()
