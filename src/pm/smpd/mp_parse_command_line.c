@@ -478,6 +478,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    smpd_process.do_console = 1;
 	    gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 	}
+	/* This may need to be changed to avoid conflict */
 	if (smpd_get_opt(argcp, argvp, "-p"))
 	{
 	    smpd_process.use_process_session = 1;
@@ -498,6 +499,8 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	smpd_process.host_list->nproc = 0;
 	smpd_process.host_list->parent = 0;
 	smpd_process.host_list->next = NULL;
+	/* check for port option */
+	smpd_get_opt_int(argcp, argvp, "-p", &smpd_process.port);
 	smpd_exit_fn("mp_parse_command_args");
 	return SMPD_SUCCESS;
     }
@@ -523,6 +526,8 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	smpd_process.host_list->nproc = 0;
 	smpd_process.host_list->parent = 0;
 	smpd_process.host_list->next = NULL;
+	/* check for port option */
+	smpd_get_opt_int(argcp, argvp, "-p", &smpd_process.port);
 	smpd_exit_fn("mp_parse_command_args");
 	return SMPD_SUCCESS;
     }
@@ -548,6 +553,8 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	smpd_process.host_list->nproc = 0;
 	smpd_process.host_list->parent = 0;
 	smpd_process.host_list->next = NULL;
+	/* check for port option */
+	smpd_get_opt_int(argcp, argvp, "-p", &smpd_process.port);
 	smpd_exit_fn("mp_parse_command_args");
 	return SMPD_SUCCESS;
     }
@@ -973,13 +980,28 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "priority") == 0)
 	    {
-		char *str;
-		n_priority_class = atoi((*argvp)[2]);
-		str = strchr((*argvp)[2], ':');
-		if (str)
+		if (argc < 3)
 		{
-		    str++;
-		    n_priority = atoi(str);
+		    printf("Error: you must specify a priority after the -priority option.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		if (isnumber((*argvp)[2]))
+		{
+		    char *str;
+		    n_priority_class = atoi((*argvp)[2]);
+		    str = strchr((*argvp)[2], ':');
+		    if (str)
+		    {
+			str++;
+			n_priority = atoi(str);
+		    }
+		}
+		else
+		{
+		    printf("Error: you must specify a priority after the -priority option.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
 		}
 		smpd_dbg_printf("priorities = %d:%d\n", n_priority_class, n_priority);
 		use_priorities = SMPD_TRUE;
@@ -997,6 +1019,29 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    {
 		smpd_process.verbose = SMPD_TRUE;
 		smpd_process.dbg_state |= SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_TRACE;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "p") == 0)
+	    {
+		if (argc > 2)
+		{
+		    if (isnumber((*argvp)[2]))
+		    {
+			smpd_process.port = atoi((*argvp)[2]);
+		    }
+		    else
+		    {
+			printf("Error: you must specify the port you want to use after the -p option.\n");
+			smpd_exit_fn("mp_parse_command_args");
+			return SMPD_FAIL;
+		    }
+		}
+		else
+		{
+		    printf("Error: you must specify the port you want to use after the -p option.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		num_args_to_strip = 2;
 	    }
 	    else
 	    {

@@ -88,9 +88,18 @@ int smpd_start_win_mgr(smpd_context_t *context)
 	dbg_str = "-d";
     else
 	dbg_str = "";
-    snprintf(cmd, 8192, "\"%s\" %s -mgr -read %s -write %s", smpd_process.pszExe, dbg_str,
-	smpd_encode_handle(read_handle_str, hReadRemote), 
-	smpd_encode_handle(write_handle_str, hWriteRemote));
+    if (smpd_process.port != SMPD_LISTENER_PORT)
+    {
+	snprintf(cmd, 8192, "\"%s\" -p %d %s -mgr -read %s -write %s", smpd_process.pszExe, smpd_process.port, dbg_str,
+	    smpd_encode_handle(read_handle_str, hReadRemote), 
+	    smpd_encode_handle(write_handle_str, hWriteRemote));
+    }
+    else
+    {
+	snprintf(cmd, 8192, "\"%s\" %s -mgr -read %s -write %s", smpd_process.pszExe, dbg_str,
+	    smpd_encode_handle(read_handle_str, hReadRemote), 
+	    smpd_encode_handle(write_handle_str, hWriteRemote));
+    }
     smpd_dbg_printf("starting command: %s\n", cmd);
     GetStartupInfo(&sInfo);
     if (smpd_process.bService)

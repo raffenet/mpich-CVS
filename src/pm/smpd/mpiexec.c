@@ -11,7 +11,6 @@
 int main(int argc, char* argv[])
 {
     int result;
-    int port = SMPD_LISTENER_PORT;
     smpd_host_node_t *host_node_ptr;
     smpd_launch_node_t *launch_node_ptr;
     smpd_context_t *context;

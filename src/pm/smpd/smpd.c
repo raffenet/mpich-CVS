@@ -15,7 +15,6 @@ int main(int argc, char* argv[])
     int result;
     sock_set_t set;
     sock_t listener;
-    int port = SMPD_LISTENER_PORT;
 
     smpd_enter_fn("main");
 
@@ -97,7 +96,7 @@ int main(int argc, char* argv[])
     }
     smpd_process.set = set;
     smpd_dbg_printf("created a set for the listener: %d\n", sock_getsetid(set));
-    result = sock_listen(set, NULL, &port, &listener); 
+    result = sock_listen(set, NULL, &smpd_process.port, &listener); 
     if (result != SOCK_SUCCESS)
     {
 	/* If another smpd is running and listening on this port, tell it to shutdown or restart? */
@@ -105,7 +104,7 @@ int main(int argc, char* argv[])
 	smpd_exit_fn("main");
 	return result;
     }
-    smpd_dbg_printf("smpd listening on port %d\n", port);
+    smpd_dbg_printf("smpd listening on port %d\n", smpd_process.port);
 
     result = smpd_create_context(SMPD_CONTEXT_LISTENER, set, listener, -1, &smpd_process.listener_context);
     if (result != SMPD_SUCCESS)

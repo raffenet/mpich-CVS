@@ -1126,64 +1126,18 @@ int smpd_handle_connect_command(smpd_context_t *context)
     dest_set = context->set; /*smpd_process.set;*/
 
     /* start the connection logic here */
-    result = sock_post_connect(dest_set, dest, host, SMPD_LISTENER_PORT, &dest_sock);
+    result = sock_post_connect(dest_set, dest, host, smpd_process.port, &dest_sock);
     if (result != SOCK_SUCCESS)
     {
 	smpd_err_printf("unable to post a connect to start the connect command,\nsock error: %s\n",
 	    get_sock_error_string(result));
 	result = smpd_post_abort_command("Unable to connect to '%s:%d',\nsock error: %s\n",
-	    host, SMPD_LISTENER_PORT, get_sock_error_string(result));
+	    host, smpd_process.port, get_sock_error_string(result));
 	smpd_exit_fn("handle_connect_command");
 	/*return SMPD_FAIL;*/
 	return result;
     }
 
-#if 0
-    /* This failure block needs to be called everywhere that failures during the connect logic occur */
-    if (result != SMPD_SUCCESS)
-    {
-	smpd_err_printf("unable to connect to %s\n", host);
-	/* send fail connect command back */
-	result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to create a result command for the connect request.\n");
-	    smpd_exit_fn("handle_connect_command");
-	    return SMPD_FAIL;
-	}
-	result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to add the tag to the result command.\n");
-	    smpd_exit_fn("handle_connect_command");
-	    return SMPD_FAIL;
-	}
-	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - unable to connect to smpd.");
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to add the result string to the result command.\n");
-	    smpd_exit_fn("handle_connect_command");
-	    return SMPD_FAIL;
-	}
-	smpd_dbg_printf("sending result command to context: \"%s\"\n", temp_cmd->cmd);
-	result = smpd_post_write_command(context, temp_cmd);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to post a write of the result command to the context.\n");
-	    smpd_exit_fn("handle_connect_command");
-	    return SMPD_FAIL;
-	}
-	smpd_exit_fn("handle_connect_command");
-	return SMPD_SUCCESS;
-    }
-    if (dest_set != smpd_process.set)
-    {
-	smpd_err_printf("connect_to_smpd returned a new set instead of adding the new sock to the provided set.\n");
-	smpd_err_printf("dest_set:%d != process_set:%d\n", sock_getsetid(dest_set), sock_getsetid(smpd_process.set));
-	smpd_exit_fn("handle_connect_command");
-	return SMPD_FAIL;
-    }
-#endif
     if (smpd_process.left_context == NULL)
     {
 	smpd_dbg_printf("adding new left child context\n");
