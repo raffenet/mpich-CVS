@@ -879,6 +879,7 @@ sub print_post_call {
 	}
 	if ($clean_up ne "") {
 	    print $OUTFD $clean_up;
+	    $clean_up = "";
 	}
     }
 }
