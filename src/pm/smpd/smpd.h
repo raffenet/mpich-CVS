@@ -16,6 +16,7 @@
 #endif
 #include "mpidu_sock.h"
 #include "mpimem.h"
+#include "mpierror.h"
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef HAVE_SYS_TYPES_H

@@ -658,23 +658,23 @@ int smpd_state_reading_stdouterr(smpd_context_t *context, MPIDU_Sock_event_t *ev
     smpd_enter_fn("smpd_state_reading_stdouterr");
     if (event_ptr->error != MPI_SUCCESS)
     {
-	/*
-	if (event_ptr->error != SOCK_EOF)
+	if (MPIR_ERR_GET_CLASS(event_ptr->error) != MPIDU_SOCK_ERR_CONN_CLOSED)
 	{
 	    smpd_dbg_printf("reading failed(%s), assuming %s is closed.\n",
 		get_sock_error_string(event_ptr->error), smpd_get_context_str(context));
 	}
-	*/
-	/*
+
+	/* Return an error an then handle_sock_op_read will post a close
 	context->state = SMPD_CLOSING;
 	result = MPIDU_Sock_post_close(context->sock);
 	if (result != MPI_SUCCESS)
 	{
-	smpd_err_printf("unable to post a close on a broken %s context.\n", smpd_get_context_str(context));
-	smpd_exit_fn("smpd_state_reading_stdouterr");
-	return SMPD_FAIL;
+	    smpd_err_printf("unable to post a close on a broken %s context.\n", smpd_get_context_str(context));
+	    smpd_exit_fn("smpd_state_reading_stdouterr");
+	    return SMPD_FAIL;
 	}
 	*/
+
 	smpd_exit_fn("smpd_state_reading_stdouterr");
 	return SMPD_FAIL;
     }

@@ -54,46 +54,12 @@ void smpd_translate_win_error(int error, char *msg, int maxlen, char *prepend, .
 char * get_sock_error_string(int error)
 {
     static char str[256];
-#if 0
-    switch (error)
-    {
-    case SOCK_SUCCESS:
+
+    if (error == MPIDU_SOCK_SUCCESS)
 	return "operation completed successfully";
-    case SOCK_FAIL:
-	return "generic sock failure";
-    case SOCK_EOF:
-	return "end of file found on socket";
-    case SOCK_ERR_NOMEM:
-	return "not enough memory to complete the socket operation";
-    case SOCK_ERR_TIMEOUT:
-	return "socket operation timed out";
-    case SOCK_ERR_HOST_LOOKUP:
-	return "host lookup failed";
-    case SOCK_ERR_CONN_REFUSED:
-	return "socket connection refused";
-    case SOCK_ERR_CONN_FAILED:
-	return "socket connection failed";
-    case SOCK_ERR_BAD_SOCK:
-	return "invalid socket";
-    case SOCK_ERR_BAD_BUFFER:
-	return "invalid buffer";
-    case SOCK_ERR_OP_IN_PROGRESS:
-	return "socket operation in progress";
-    case SOCK_ERR_OP_ABORTED:
-	return "socket operation aborted";
-    case SOCK_ERR_ADDR_INUSE:
-	return "socket address and or port already in use";
-    case SOCK_ERR_OS_SPECIFIC:
-	sprintf(str, "operating system specific socket error %d occurred", sock_get_last_os_error());
-	return str;
-    default:
-#endif
-	sprintf(str, "unknown socket error %d", error);
-	return str;
-#if 0
-    }
-    return NULL;
-#endif
+
+    MPIR_Err_get_string_ext(error, str, 256, MPIDU_Sock_get_error_class_string);
+    return str;
 }
 
 char * smpd_get_context_str(smpd_context_t *context)

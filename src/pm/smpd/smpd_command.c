@@ -382,6 +382,17 @@ int smpd_create_context(smpd_context_type_t type, MPIDU_Sock_set_t set, MPIDU_So
     return result;
 }
 
+/*#define DEBUG_SMPD_FREE_CONTEXT*/
+
+#ifdef DEBUG_SMPD_FREE_CONTEXT
+typedef struct cfree_t
+{
+    smpd_context_t *context;
+    struct cfree_t *next;
+} cfree_t;
+static cfree_t *free_list = NULL;
+#endif
+
 int smpd_free_context(smpd_context_t *context)
 {
     SMPD_BOOL found = SMPD_FALSE;
@@ -390,6 +401,19 @@ int smpd_free_context(smpd_context_t *context)
     smpd_enter_fn("smpd_free_context");
     if (context)
     {
+#ifdef DEBUG_SMPD_FREE_CONTEXT
+	/* check debugging free list */
+	cfree_t *citer = free_list;
+	while (citer)
+	{
+	    if (citer->context == context)
+	    {
+		smpd_err_printf("%s context freed twice.\n", smpd_get_context_str(context));
+	    }
+	    citer = citer->next;
+	}
+#endif
+
 	/* remove the context from the global list */
 	iter = trailer = smpd_process.context_list;
 	while (iter)
@@ -408,6 +432,20 @@ int smpd_free_context(smpd_context_t *context)
 	    iter = iter->next;
 	}
 
+	if (!found)
+	{
+#ifdef DEBUG_SMPD_FREE_CONTEXT
+	    smpd_dbg_printf("freeing a %s context not in the global list - this should be impossible.\n",
+		smpd_get_context_str(context));
+#else
+	    smpd_dbg_printf("freeing a context not in the global list - this should be impossible.\n");
+	    smpd_exit_fn("smpd_free_context");
+	    return SMPD_SUCCESS;
+#endif
+	}
+
+        smpd_dbg_printf("freeing %s context.\n", smpd_get_context_str(context));
+
 	if (context->type == SMPD_CONTEXT_FREED)
 	{
 	    smpd_err_printf("context already freed.\n");
@@ -415,22 +453,47 @@ int smpd_free_context(smpd_context_t *context)
 	    return SMPD_FAIL;
 	}
 
-	if (!found)
-	{
-	    smpd_dbg_printf("freeing a context not in the global list - this should be impossible.  "
-		"No context should be allocated without calling smpd_create_context.\n");
-	}
-
 	/* this check isn't full-proof because random data might match SMPD_CONTEXT_FREED */
 	if (context->type == SMPD_CONTEXT_FREED)
 	{
 	    smpd_err_printf("attempt to free context more than once.\n");
+	    smpd_exit_fn("smpd_free_context");
 	    return SMPD_FAIL;
 	}
+
+	/* remove any references to this context in the process structure */
+	if (context->process)
+	{
+	    switch (context->type)
+	    {
+	    case SMPD_CONTEXT_STDIN:
+		context->process->in = NULL;
+		break;
+	    case SMPD_CONTEXT_STDOUT:
+		context->process->out = NULL;
+		break;
+	    case SMPD_CONTEXT_STDERR:
+		context->process->err = NULL;
+		break;
+	    case SMPD_CONTEXT_PMI:
+		context->process->pmi = NULL;
+		break;
+	    }
+	}
+
 	/* erase the contents to help track down use of freed structures */
 	memset(context, 0, sizeof(smpd_context_t));
 	smpd_init_context(context, SMPD_CONTEXT_FREED, MPIDU_SOCK_INVALID_SET, MPIDU_SOCK_INVALID_SOCK, -1);
+
+#ifdef DEBUG_SMPD_FREE_CONTEXT
+	/* add to debugging free list */
+	citer = (cfree_t*)malloc(sizeof(cfree_t));
+	citer->context = context;
+	citer->next = free_list;
+	free_list = citer;
+#else
 	free(context);
+#endif
     }
     smpd_exit_fn("smpd_free_context");
     return SMPD_SUCCESS;

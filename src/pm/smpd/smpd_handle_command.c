@@ -2483,7 +2483,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_spawn_command");
 	return SMPD_FAIL;
     }
-    printf("ncmds = %d\n", ncmds);fflush(stdout);
+    /*printf("ncmds = %d\n", ncmds);fflush(stdout);*/
     if (MPIU_Str_get_string_arg(cmd->cmd, "maxprocs", maxprocs_str, 1024) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to get the maxrpocs parameter from the spawn command '%s'.\n", cmd->cmd);
@@ -2510,7 +2510,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    return SMPD_FAIL;
 	}
 	maxprocs[i] = atoi(key);
-	printf("maxprocs[%d] = %d\n", i, maxprocs[i]);fflush(stdout);
+	/*printf("maxprocs[%d] = %d\n", i, maxprocs[i]);fflush(stdout);*/
 	result = MPIU_Str_get_string(&iter2, key, 100);
 	if (result != MPIU_STR_SUCCESS)
 	{
@@ -2519,7 +2519,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    return SMPD_FAIL;
 	}
 	nkeyvals[i] = atoi(key);
-	printf("nkeyvals[%d] = %d\n", i, nkeyvals[i]);fflush(stdout);
+	/*printf("nkeyvals[%d] = %d\n", i, nkeyvals[i]);fflush(stdout);*/
     }
     info = NULL;
     launch_list = NULL;
@@ -2556,7 +2556,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	sprintf(key, "keyvals%d", i);
 	if (MPIU_Str_get_string_arg(cmd->cmd, key, keyvals_str, 1024) == MPIU_STR_SUCCESS)
 	{
-	    printf("%s = '%s'\n", key, keyvals_str);fflush(stdout);
+	    /*printf("%s = '%s'\n", key, keyvals_str);fflush(stdout);*/
 	    for (j=0; j<nkeyvals[i]; j++)
 	    {
 		sprintf(key, "%d", j);
@@ -2566,7 +2566,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		    smpd_exit_fn("smpd_handle_spawn_command");
 		    return SMPD_FAIL;
 		}
-		printf("key %d = %s\n", j, val);fflush(stdout);
+		/*printf("key %d = %s\n", j, val);fflush(stdout);*/
 		key_temp[0] = '\0';
 		val_temp[0] = '\0';
 		iter1 = val;
@@ -2603,7 +2603,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    smpd_exit_fn("smpd_handle_spawn_command");
 	    return SMPD_FAIL;
 	}
-	printf("%s = %s\n", key, node.exe);fflush(stdout);
+	/*printf("%s = %s\n", key, node.exe);fflush(stdout);*/
 	sprintf(key, "argv%d", i);
 	if (MPIU_Str_get_string_arg(cmd->cmd, key, node.args, SMPD_MAX_EXE_LENGTH) != MPIU_STR_SUCCESS)
 	{
@@ -2611,7 +2611,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    smpd_exit_fn("smpd_handle_spawn_command");
 	    return SMPD_FAIL;
 	}
-	printf("%s = %s\n", key, node.args);fflush(stdout);
+	/*printf("%s = %s\n", key, node.args);fflush(stdout);*/
 	/* create launch nodes for the current command */
 	for (j=0; j<maxprocs[i]; j++)
 	{
@@ -2669,10 +2669,10 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_spawn_command");
 	return SMPD_FAIL;
     }
-    printf("npreput = %d\n", npreput);fflush(stdout);
+    /*printf("npreput = %d\n", npreput);fflush(stdout);*/
     if (MPIU_Str_get_string_arg(cmd->cmd, "preput", keyvals_str, 1024) == MPIU_STR_SUCCESS)
     {
-	printf("preput = '%s'\n", keyvals_str);fflush(stdout);
+	/*printf("preput = '%s'\n", keyvals_str);fflush(stdout);*/
 	for (j=0; j<npreput; j++)
 	{
 	    sprintf(key, "%d", j);
@@ -2682,7 +2682,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		smpd_exit_fn("smpd_handle_spawn_command");
 		return SMPD_FAIL;
 	    }
-	    printf("key %d = %s\n", j, val);fflush(stdout);
+	    /*printf("key %d = %s\n", j, val);fflush(stdout);*/
 	}
     }
     free(maxprocs);
