@@ -149,6 +149,25 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     cur_iproc = 0;
     for (i=0; i<ncmds; i++)
     {
+	/* reset the node fields */
+	node.appnum = -1;
+	node.args[0] = '\0';
+	node.clique[0] = '\0';
+	node.dir[0] = '\0';
+	node.env = node.env_data;
+	node.env_data[0] = '\0';
+	node.exe[0] = '\0';
+	node.host_id = -1;
+	node.hostname[0] = '\0';
+	node.iproc = -1;
+	node.map_list = NULL;
+	node.next = NULL;
+	node.nproc = -1;
+	node.path[0] = '\0';
+	node.prev = NULL;
+	node.priority_class = -1;
+	node.priority_thread = -1;
+
 	if (info != NULL)
 	{
 	    /* free the last round of infos */
@@ -279,6 +298,15 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    if (strcmp(info[j].key, "host") == 0)
 	    {
 		smpd_dbg_printf("host key sent with spawn command: <%s>\n", info[j].val);fflush(stdout);
+		if (smpd_get_host_id(info[j].val, &node.host_id) == SMPD_SUCCESS)
+		{
+		    strcpy(node.hostname, info[j].val);
+		}
+		else
+		{
+		    /* smpd_get_host_id should not modify host_id if there is a failure but just to be safe ... */
+		    node.host_id = -1;
+		}
 	    }
 	    /* env */
 	    /* wdir */
@@ -328,8 +356,16 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    launch_iter->env_data[0] = '\0';
 	    launch_iter->env = launch_iter->env_data;
 	    launch_iter->exe[0] = '\0';
-	    launch_iter->host_id = -1;
-	    launch_iter->hostname[0] = '\0';
+	    if (node.host_id != -1)
+	    {
+		launch_iter->host_id = node.host_id;
+		strcpy(launch_iter->hostname, node.hostname);
+	    }
+	    else
+	    {
+		launch_iter->host_id = -1;
+		launch_iter->hostname[0] = '\0';
+	    }
 	    launch_iter->map_list = NULL;
 	    launch_iter->path[0] = '\0';
 	    launch_iter->next = NULL;
