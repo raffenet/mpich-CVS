@@ -270,7 +270,7 @@ testfiles="$testfiles error.out"
 MakeExe error
 \rm -f $FILENAME*
 echo '**** Testing error.c ****'
-$mpirun -np 1 error -fname $FILENAME "$@" >> error.out 2>&1
+$mpirun -np 1 ./error -fname $FILENAME "$@" >> error.out 2>&1
 CheckOutput error
 CleanExe error
 #
@@ -280,7 +280,8 @@ testfiles="$testfiles status.out"
 MakeExe status
 \rm -f $FILENAME*
 echo '**** Testing status.c ****'
-$mpirun -np 1 status -fname $FILENAME "$@" >> status.out 2>&1
+# Some systems have a status program.
+$mpirun -np 1 ./status -fname $FILENAME "$@" >> status.out 2>&1
 CheckOutput status
 CleanExe status
 #
