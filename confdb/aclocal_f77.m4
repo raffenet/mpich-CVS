@@ -701,23 +701,45 @@ dnl command attempts to determine what is accepted.  The flag is
 dnl placed into 'F77_LIBDIR_LEADER'.
 dnl
 dnlD*/
+dnl
+dnl An earlier version of this only tried the arguments without using
+dnl a library.  This failed when the HP compiler complained about the
+dnl arguments, but produced an executable anyway.  
 AC_DEFUN(PAC_PROG_F77_LIBRARY_DIR_FLAG,[
 if test "X$F77_LIBDIR_LEADER" = "X" ; then
 AC_CACHE_CHECK([for Fortran 77 flag for library directories],
 pac_cv_prog_f77_library_dir_flag,
 [
-    rm -f conftest.*
+    
+    rm -f conftest.* conftest1.* 
     cat > conftest.f <<EOF
         program main
+        call f1conf
         end
 EOF
-    ac_fcompileldtest='${F77-f77} -o conftest $FFLAGS ${ldir}. conftest.f $LDFLAGS 1>&AC_FD_CC'
-    for ldir in "-L" "-Wl,-L," ; do
-        if AC_TRY_EVAL(ac_fcompileldtest) && test -s conftest ; then
-	    pac_cv_prog_f77_library_dir_flag="$ldir"
-	    break
-       fi
-    done
+    cat > conftest1.f <<EOF
+        subroutine f1conf
+        end
+EOF
+dnl Build library
+    ac_fcompileforlib='${F77-f77} -c $FFLAGS conftest1.f 1>&AC_FD_CC'
+    if AC_TRY_EVAL(ac_fcompileforlib) && test -s conftest1.o ; then
+        if test ! -d conftest ; then mkdir conftest2 ; fi
+	dnl Use arcmd incase AR is defined as "ar cr"
+        AC_TRY_COMMAND(${ARCMD-"ar"} cr conftest2/libconftest.a conftest1.o)
+        AC_TRY_COMMAND(${RANLIB-ranlib} conftest2/libconftest.a)
+        ac_fcompileldtest='${F77-f77} -o conftest $FFLAGS ${ldir}conftest2 conftest.f -lconftest $LDFLAGS 1>&AC_FD_CC'
+        for ldir in "-L" "-Wl,-L," ; do
+            if AC_TRY_EVAL(ac_fcompileldtest) && test -s conftest ; then
+	        pac_cv_prog_f77_library_dir_flag="$ldir"
+	        break
+            fi
+        done
+        rm -rf ./conftest2
+    else
+        echo "configure: failed program was:" >&AC_FD_CC
+        cat conftest1.f >&AC_FD_CC
+    fi
     rm -f conftest*
 ])
     AC_SUBST(F77_LIBDIR_LEADER)
