@@ -1,3 +1,5 @@
+# The next item ensures that the support routines are built first
+!util:all
 attr 
 #basic
 coll

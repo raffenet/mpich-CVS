@@ -31,6 +31,7 @@
 $mpiexec = "mpiexec";    # Name of mpiexec program (including path, if necessary)
 $np_arg  = "-n";         # Name of argument to specify the number of processes
 $err_count = 0;          # Number of programs that failed.
+$total_count = 0;        # Number of programs tested
 $np_default = 2;         # Default number of processes to use
 $np_max     = -1;        # Maximum number of processes to use (overrides any
                          # value in the test list files.  -1 is Infinity
@@ -65,6 +66,12 @@ foreach $_ (@ARGV) {
     elsif (/-debug/) { $debug = 1; }
     elsif (/-xmlfile=(.*)/) {
 	$xmlfile   = $1;
+	if (! ($xmlfile =~ /^\//)) {
+	    $xmlfullfile = `pwd` . "/" . $xmlfile ;
+	}
+	else {
+	    $xmlfullfile = $xmlfile;
+	}
 	$xmloutput = 1;
 	open( XMLOUT, ">$xmlfile" ) || die "Cannot open $xmlfile\n";
 	my $date = `date "+%Y-%m-%d-%H-%M"`;
@@ -98,6 +105,17 @@ else {
 if ($xmloutput) { 
     print XMLOUT "</MPITESTRESULTS>\n";
     close XMLOUT; 
+}
+
+# Output a summary:
+if ($err_count) {
+    print "$err_count tests failed out of $total_count\n";
+    if ($xmloutput) {
+	print "Details in $xmlfullfile\n";
+    }
+}
+else {
+    print " All $total_count tests passed!\n";
 }
 #
 # ---------------------------------------------------------------------------
@@ -149,6 +167,14 @@ sub RunList {
 	s/#.*//g;
 	# Remove any trailing newlines/returns
 	s/\r?\n//;
+	# Some tests require that support routines are built first
+	# This is specified with !<dir>:<target>
+	if (/^\s*\!([^:]*):(.*)/) {
+	    # Hack: just execute in a subshell.  This discards any 
+	    # output.
+	    `cd $1 && make $2`;
+	    next;
+	}
 	# List files are "program <optional-np>"
 	my ($programname,$np,$ResultTest,$InitForRun) = split(/\s+/,$_);
 	if ($np eq "") { $np = $np_default; }
@@ -161,6 +187,7 @@ sub RunList {
 	    &ProcessDir( $programname, $listfile );
 	}
 	else {
+	    $total_count++;
 	    &BuildMPIProgram( $programname );
 	    &RunMPIProgram( $programname, $np, $ResultTest, $InitForRun );
 	    &CleanUpAfterRun( $programname );
@@ -196,6 +223,7 @@ sub ProcessImplicitList {
 	    if (-d $programname) { next; }  # Ignore directories
 	    if ($programname eq "runtests") { next; } # Ignore self
 	    if (-x $programname) {
+		$total_count++;
 		&RunMPIProgram( $programname, $np_default, "", "" );
 	    }
 	}
@@ -210,6 +238,7 @@ sub ProcessImplicitList {
 	    # Skip messages from ls about no files
 	    if (! -s $programname) { next; }
 	    $programname =~ s/\.c//;
+	    $total_count++;
 	    &BuildMPIProgram( $programname );
 	    &RunMPIProgram( $programname, $np_default, "", "" );
 	    &CleanUpAfterRun( $programname );
