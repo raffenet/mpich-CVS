@@ -88,8 +88,8 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	write */
 
 	nb = (n_iov > 1) ?
-	    ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL) :
-	    ibu_post_write(vc->ib.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, NULL);
+	    ibu_writev(vc->ib.ibu, iov, n_iov) :
+	    ibu_write(vc->ib.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN);
 	
 	MPIU_DBG_PRINTF(("ch3_istartmsgv: ibu_post_writev returned %d bytes\n", nb));
 	if (nb > 0)

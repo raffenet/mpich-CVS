@@ -63,7 +63,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 	   channel, thus insuring that the progress engine does also try to
 	   write */
 	
-	nb = ibu_post_write(vc->ib.ibu, hdr, hdr_sz, NULL);
+	nb = ibu_write(vc->ib.ibu, hdr, hdr_sz);
 	
 	if (nb == hdr_sz)
 	{

@@ -816,7 +816,7 @@ static int ibui_post_ack_write(ibu_t ibu)
 #define FUNCNAME ibui_post_write
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_update)(int, void*))
+int ibu_write(ibu_t ibu, void *buf, int len)
 {
     ib_uint32_t status;
     ib_scatter_gather_list_t sg_list;
@@ -825,9 +825,9 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_update)(i
     void *mem_ptr;
     int length;
     int total = 0;
-    MPIDI_STATE_DECL(MPID_STATE_IBU_POST_WRITE);
+    MPIDI_STATE_DECL(MPID_STATE_IBU_WRITE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_WRITE);
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITE);
 
     while (len)
     {
@@ -837,7 +837,7 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_update)(i
 	if (ibu->nAvailRemote < 1)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "no more remote packets available"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITE);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return total;
 	}
 
@@ -845,7 +845,7 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_update)(i
 	if (mem_ptr == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL\n"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITE);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return total;
 	}
 	memcpy(mem_ptr, buf, length);
@@ -889,7 +889,7 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_update)(i
 	{
 	    printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
 	    err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITE);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return -1;
 	}
 	ibu->nAvailRemote--;
@@ -897,7 +897,7 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_update)(i
 	buf = (char*)buf + length;
     }
 
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITE);
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
     return total;
 }
 
@@ -1150,7 +1150,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov_orig, int n, int (*write_pro
 #define FUNCNAME ibui_post_writev
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*))
+int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 {
     ib_uint32_t status;
     ib_scatter_gather_list_t sg_list;
@@ -1164,9 +1164,9 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)
     int cur_index;
     unsigned int cur_len;
     unsigned char *cur_buf;
-    MPIDI_STATE_DECL(MPID_STATE_IBU_POST_WRITEV);
+    MPIDI_STATE_DECL(MPID_STATE_IBU_WRITEV);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_WRITEV);
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITEV);
 
     cur_index = 0;
     cur_len = iov[0].IBU_IOV_LEN;
@@ -1176,14 +1176,14 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)
 	if (ibu->nAvailRemote < 1)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "no more remote packets available."));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITEV);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return total;
 	}
 	mem_ptr = ibuBlockAlloc(ibu->allocator);
 	if (mem_ptr == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL."));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITEV);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return total;
 	}
 	buf = mem_ptr;
@@ -1251,14 +1251,14 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)
 	{
 	    printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
 	    err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITEV);
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return -1;
 	}
 	ibu->nAvailRemote--;
 	
     } while (cur_index < n);
     
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITEV);
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
     return total;
 }
 

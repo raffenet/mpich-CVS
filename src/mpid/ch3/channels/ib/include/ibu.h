@@ -106,8 +106,8 @@ int ibu_set_user_ptr(ibu_t ibu, void *user_ptr);
 ibu_t ibu_create_qp(ibu_set_t set, int dlid);
 int ibu_post_read(ibu_t ibu, void *buf, int len, int (*read_progress_update)(int, void*));
 int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*read_progress_update)(int, void*));
-int ibu_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_update)(int, void*));
-int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*));
+int ibu_write(ibu_t ibu, void *buf, int len);
+int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n);
 
 int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out);
 

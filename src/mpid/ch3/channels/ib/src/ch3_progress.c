@@ -292,7 +292,7 @@ static inline void handle_written(MPIDI_VC * vc)
 	*/
 	assert(req->ib.iov_offset < req->ch3.iov_count);
 	/*MPIDI_DBG_PRINTF((60, FCNAME, "calling ibu_post_writev"));*/
-	nb = ibu_post_writev(vc->ib.ibu, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset, NULL);
+	nb = ibu_writev(vc->ib.ibu, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset);
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibu_post_writev returned %d", nb));
 
 	if (nb > 0)
