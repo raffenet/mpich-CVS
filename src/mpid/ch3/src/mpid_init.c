@@ -97,7 +97,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     /*
      * Set global process attributes.  These can be overridden by the channel if necessary.
      */
-    MPIR_Process.attrs.tag_ub          = INT_MAX;
+    MPIR_Process.attrs.tag_ub          = MPIDI_TAG_UB;
 
     
     /*
