@@ -1,0 +1,28 @@
+The MPE-2 has a top level configure.in and all the C source files are
+splitted into 4 subpackages, each has its own include and source directory
+and configure.  Because of this structure, the install and build include
+directory contains only relevant user .h files, i.e. mpe.h,
+mpe_log.h, mpe_logf.h, mpe_graphics.h, mpe_graphicsf.h and mpe_misc.h.
+(no more basex11.h, basex11.h...).  Some of the include files could be 
+empty if the corresponding subpackage is not built.
+
+- The top level configure checks for F77 characteristics and stores them
+  in mpe2/mpe_conf.h and checks for the usability of MPI_CC and MPI_F77.
+  The 4 subpackages are src/misc, src/logging, src/wrappers and src/graphics.
+  Each subpackage checks for the features that it needs.
+
+  1) src/misc: contains dbxerr.c.in and definition of MPE_Errors_xx,
+               MPE_Seq_xxx(), MPE_xxxTags() and MPE_GetHostName().
+
+  2) src/logging: contains CLOG-2 and MPE_Log_xxx() routines.
+ 
+  3) src/wrappers: contains various MPI wrapper libraries,
+                   MPI logging library, liblmpe.a,
+                   MPI tracing library, libtmpe.a,
+                   MPI Fortran to C library, libmpe_f2cmpi.a.
+
+  4) src/graphics: contains MPE X graphics routines and MPI animation
+                   library, libampe.a.  This subpackage is all X related.
+
+  only package src/wrappers requires package src/logging, the others
+  are pretty much independent from one another.
