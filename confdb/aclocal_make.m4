@@ -34,7 +34,7 @@ dnl  symbol 'MAKE'.  If 'MAKE' is not set, chooses 'make' for 'MAKE'.
 dnl
 dnl See also:
 dnl PAC_PROG_MAKE
-dnlD*/
+dnl D*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE_ECHOS_DIR,[
 AC_CACHE_CHECK([whether make echos directory changes],
@@ -56,6 +56,9 @@ if test "$str" != "success" ; then
 	pac_cv_prog_make_echos_dir="yes using --no-print-directory"
     else
 	pac_cv_prog_make_echos_dir="no"
+	echo "Unexpected output from make with program" >>config.log
+	cat conftest >>config.log
+	echo "str" >> config.log
     fi
 else
     pac_cv_prog_make_echos_dir="no"
@@ -85,7 +88,7 @@ dnl
 dnl See Also:
 dnl  PAC_PROG_MAKE
 dnl
-dnlD*/
+dnl D*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE_INCLUDE,[
 AC_CACHE_CHECK([whether make supports include],pac_cv_prog_make_include,[
@@ -129,7 +132,7 @@ dnl Some versions of OSF V3 make do not all comments in action commands.
 dnl
 dnl See Also:
 dnl  PAC_PROG_MAKE
-dnlD*/
+dnl D*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE_ALLOWS_COMMENTS,[
 AC_CACHE_CHECK([whether make allows comments in actions],
@@ -183,7 +186,7 @@ dnl
 dnl See Also:
 dnl PAC_PROG_MAKE
 dnl
-dnlD*/
+dnl D*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE_VPATH,[
 AC_SUBST(VPATH)AM_IGNORE(VPATH)
@@ -244,7 +247,7 @@ dnl makefile.
 dnl
 dnl See Also:
 dnl PAC_PROG_MAKE
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_PROG_MAKE_SET_CFLAGS,[
 AC_CACHE_CHECK([whether make sets CFLAGS],
 pac_cv_prog_make_set_cflags,[
@@ -269,6 +272,33 @@ else
     ifelse([$1],,:,[$1])
 fi
 ])dnl
+dnl/*D
+dnl
+dnl D*/
+AC_DEFUN(PAC_PROG_MAKE_CLOCK_SKEW,[
+AC_CACHE_CHECK([whether clock skew breaks make],
+pac_cv_prog_make_found_clock_skew,[
+AC_REQUIRE([PAC_PROG_MAKE_PROGRAM])
+rm -f conftest*
+cat > conftest <<EOF
+ALL:
+	@-echo "success"
+EOF
+$MAKE -f conftest > conftest.out 2>&1
+if grep -i skew conftest >/dev/null 2>&1 ; then
+    pac_cv_prog_make_found_clock_skew=yes
+else
+    pac_cv_prog_make_found_clock_skew=no
+fi
+rm -f conftest*
+])
+dnl We should really do something if we detect clock skew.  The question is,
+dnl what?
+if test "$pac_cv_prog_make_found_clock_skew" = "yes" ; then
+    AC_MSG_WARN([Clock skew found by make.  The configure and build may fail.
+Consider building in a local instead of NFS filesystem.])
+fi
+])
 dnl
 dnl/*D
 dnl PAC_PROG_MAKE_HAS_PATTERN_RULES - Determine if the make program supports
@@ -289,7 +319,7 @@ dnl
 dnl See Also:
 dnl PAC_PROG_MAKE
 dnl 
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_PROG_MAKE_HAS_PATTERN_RULES,[
 AC_CACHE_CHECK([whether make has pattern rules],
 pac_cv_prog_make_has_patterns,[
@@ -338,10 +368,11 @@ dnl It may call 'AC_PROG_MAKE_SET', which sets 'SET_MAKE' to 'MAKE = @MAKE@'
 dnl if the make program does not set the value of make, otherwise 'SET_MAKE'
 dnl is set to empty; if the make program echos the directory name, then 
 dnl 'SET_MAKE' is set to 'MAKE = $MAKE'.
-dnlD*/
+dnl D*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE,[
 PAC_PROG_MAKE_PROGRAM
+PAC_PROG_MAKE_CLOCK_SKEW
 PAC_PROG_MAKE_ECHOS_DIR
 PAC_PROG_MAKE_INCLUDE
 PAC_PROG_MAKE_ALLOWS_COMMENTS
