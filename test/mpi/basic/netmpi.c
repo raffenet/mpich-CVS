@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 	detailflag = 0,		/* Set to examine the signature curve detail*/
 	pert,			/* Perturbation value				*/
         ipert,                  /* index of the perturbation loop		*/
-	start = 1,		/* Starting value for signature curve 		*/
+	start = 0,		/* Starting value for signature curve 		*/
 	end = MAXINT,		/* Ending value for signature curve		*/
 	streamopt = 0,		/* Streaming mode flag				*/
 	printopt = 1;		/* Debug print statements flag			*/
@@ -230,8 +230,11 @@ int main(int argc, char *argv[])
 	    /* Calculate howmany times to repeat the experiment. */
 	    if (args.tr)
 	    {
-		nrepeat = (int)(MAX((RUNTM / ((double)args.bufflen /
-		    (args.bufflen - inc + 1.0) * tlast)), TRIALS));
+		if (args.bufflen == 0)
+		    nrepeat = g_LATENCYREPS;
+		else
+		    nrepeat = (int)(MAX((RUNTM / ((double)args.bufflen /
+			           (args.bufflen - inc + 1.0) * tlast)), TRIALS));
 		SendTime(&args, &tzero, &nrepeat);
 	    }
 	    else
@@ -510,15 +513,15 @@ void Sync(ArgStruct *p)
     MPI_Status status;
     if (p->tr)
     {
-	MPI_Send(&ch, 1, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD);
-	MPI_Recv(&ch, 1, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD, &status);
-	MPI_Send(&ch, 1, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD);
+	MPI_Send(&ch, 0, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD);
+	MPI_Recv(&ch, 0, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD, &status);
+	MPI_Send(&ch, 0, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD);
     }
     else
     {
-	MPI_Recv(&ch, 1, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD, &status);
-	MPI_Send(&ch, 1, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD);
-	MPI_Recv(&ch, 1, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD, &status);
+	MPI_Recv(&ch, 0, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD, &status);
+	MPI_Send(&ch, 0, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD);
+	MPI_Recv(&ch, 0, MPI_BYTE, p->prot.nbor, 1, MPI_COMM_WORLD, &status);
     }
 }
 
@@ -574,9 +577,9 @@ double TestLatency(ArgStruct *p)
 	fflush(stdout);
     }
 
-    p->bufflen = 1;
-    p->buff = (char *)malloc(p->bufflen);
-    p->buff1 = (char *)malloc(p->bufflen);
+    p->bufflen = 0;
+    p->buff = NULL; /*(char *)malloc(p->bufflen);*/
+    p->buff1 = NULL; /*(char *)malloc(p->bufflen);*/
     Sync(p);
     t0 = When();
     t0 = When();
@@ -596,8 +599,10 @@ double TestLatency(ArgStruct *p)
 	}
     }
     latency = (When() - t0)/(2 * g_LATENCYREPS);
+    /*
     free(p->buff);
     free(p->buff1);
+    */
 
     return latency;
 }
