@@ -29,3 +29,5 @@ spawn_merge_parent
 .deps
 *.stackdump
 *.exe
+*.ncb
+*.suo
