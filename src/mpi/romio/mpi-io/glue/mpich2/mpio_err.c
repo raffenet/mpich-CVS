@@ -96,6 +96,9 @@ int MPIO_Err_return_file(MPI_File mpi_fh, int error_code)
 
 int MPIO_Err_return_comm(MPI_Comm mpi_comm, int error_code)
 {
-    MPI_Comm_call_errhandler(mpi_comm, error_code);
+    /* note: MPI calls inside the MPICH2 implementation are prefixed
+     * with an "N", indicating something (N-ternal <smile>?).
+     */
+    NMPI_Comm_call_errhandler(mpi_comm, error_code);
     return error_code;
 }
