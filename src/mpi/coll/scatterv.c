@@ -51,69 +51,75 @@ int MPIR_Scatterv (
 	int root, 
 	MPID_Comm *comm_ptr )
 {
-    int        rank, comm_size, remote_comm_size;
-    int        mpi_errno = MPI_SUCCESS;
+    int rank, mpi_errno = MPI_SUCCESS;
     MPI_Comm comm;
-    
+    MPI_Aint extent;
+    int      i;
+
     comm = comm_ptr->handle;
-    comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
     
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
-    
+
     /* If I'm the root, then scatter */
-    if ( rank == root ) {
-        MPI_Aint extent;
-        int      i;
+    if ((comm_ptr->comm_kind == MPID_INTRACOMM) && (rank == root)) {
+        /* intracomm root */
+        int comm_size;
         
+        comm_size = comm_ptr->local_size;
         MPID_Datatype_get_extent_macro(sendtype, extent);
-        if (comm_ptr->comm_kind == MPID_INTRACOMM) {
-            /* We could use Isend here, but since the receivers need to execute
-               a simple Recv, it may not make much difference in performance, 
-               and using the blocking version is simpler */
-            for ( i=0; i<root; i++ ) {
-                if (sendcnts[i]) {
-                    mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
+
+        /* We could use Isend here, but since the receivers need to execute
+           a simple Recv, it may not make much difference in performance, 
+           and using the blocking version is simpler */
+        for ( i=0; i<root; i++ ) {
+            if (sendcnts[i]) {
+                mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
                                       sendcnts[i], sendtype, i,
                                       MPIR_SCATTERV_TAG, comm);
-                    if (mpi_errno) return mpi_errno;
-                }
-            }
-            if (recvbuf != MPI_IN_PLACE) {
-                if (sendcnts[rank]) {
-                    mpi_errno = MPIR_Localcopy(((char *)sendbuf+displs[rank]*extent), 
-                                           sendcnts[rank], sendtype, 
-                                           recvbuf, recvcnt, recvtype);
-                    if (mpi_errno) return mpi_errno;
-                }
-            }        
-            for ( i=root+1; i<comm_size; i++ ) {
-                if (sendcnts[i]) {
-                    mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
-                                      sendcnts[i], sendtype, i, 
-                                      MPIR_SCATTERV_TAG, comm);
-                    if (mpi_errno) return mpi_errno;
-                }
+                if (mpi_errno) return mpi_errno;
             }
         }
-        else {
-            /* intercommunicator */
-            remote_comm_size = comm_ptr->remote_size;
-            for (i=0; i<remote_comm_size; i++) {
-                if (sendcnts[i]) {
-                    mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
-                                      sendcnts[i], sendtype, i,
+        if (recvbuf != MPI_IN_PLACE) {
+            if (sendcnts[rank]) {
+                mpi_errno = MPIR_Localcopy(((char *)sendbuf+displs[rank]*extent), 
+                                           sendcnts[rank], sendtype, 
+                                           recvbuf, recvcnt, recvtype);
+                if (mpi_errno) return mpi_errno;
+            }
+        }        
+        for ( i=root+1; i<comm_size; i++ ) {
+            if (sendcnts[i]) {
+                mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
+                                      sendcnts[i], sendtype, i, 
                                       MPIR_SCATTERV_TAG, comm);
-                    if (mpi_errno) return mpi_errno;      
-                }          
+                if (mpi_errno) return mpi_errno;
             }
         }
     }
-    else {
+
+    if ((comm_ptr->comm_kind == MPID_INTERCOMM) && (root == MPI_ROOT)) {
+        /* intercommunicator root */
+        int remote_comm_size;
+
+        remote_comm_size = comm_ptr->remote_size;
+        MPID_Datatype_get_extent_macro(sendtype, extent);
+        
+        for (i=0; i<remote_comm_size; i++) {
+            if (sendcnts[i]) {
+                mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
+                                      sendcnts[i], sendtype, i,
+                                      MPIR_SCATTERV_TAG, comm);
+                if (mpi_errno) return mpi_errno;
+            }          
+        }
+    }
+
+    else if (root != MPI_PROC_NULL) { /* non-root nodes, and in the intercomm. case, non-root nodes on remote side */
         if (recvcnt)
             mpi_errno = MPIC_Recv(recvbuf,recvcnt,recvtype,root,
-                              MPIR_SCATTERV_TAG,comm,MPI_STATUS_IGNORE);
+                                  MPIR_SCATTERV_TAG,comm,MPI_STATUS_IGNORE);
     }
     
     /* check if multiple threads are calling this collective function */
@@ -196,35 +202,54 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendty
                 return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
 
-            rank = comm_ptr->rank;
-            if (rank == root) {
-                comm_size = comm_ptr->local_size;
-                for (i=0; i<comm_size; i++) {
-                    MPIR_ERRTEST_COUNT(sendcnts[i], mpi_errno);
-                    MPIR_ERRTEST_DATATYPE(sendcnts[i], sendtype, mpi_errno);
-                }
-                if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
-                    MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
-                    MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
-                }
-            }
-
-            if (recvbuf != MPI_IN_PLACE) {
-                MPIR_ERRTEST_COUNT(recvcnt, mpi_errno);
-                MPIR_ERRTEST_DATATYPE(recvcnt, recvtype, mpi_errno);
-                if (HANDLE_GET_KIND(recvtype) != HANDLE_KIND_BUILTIN) {
-                    MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
-                    MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
-                }
-            }
-
-	    if (comm_ptr->comm_kind == MPID_INTRACOMM) {
+            if (comm_ptr->comm_kind == MPID_INTRACOMM) {
 		MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
-	    }
-	    else {
+                rank = comm_ptr->rank;
+                if (rank == root) {
+                    comm_size = comm_ptr->local_size;
+                    for (i=0; i<comm_size; i++) {
+                        MPIR_ERRTEST_COUNT(sendcnts[i], mpi_errno);
+                        MPIR_ERRTEST_DATATYPE(sendcnts[i], sendtype, mpi_errno);
+                    }
+                    if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
+                        MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
+                        MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
+                    }
+                }       
+
+                if (recvbuf != MPI_IN_PLACE) {
+                    MPIR_ERRTEST_COUNT(recvcnt, mpi_errno);
+                    MPIR_ERRTEST_DATATYPE(recvcnt, recvtype, mpi_errno);
+                    if (HANDLE_GET_KIND(recvtype) != HANDLE_KIND_BUILTIN) {
+                        MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
+                        MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
+                    }
+                }
+            }
+
+            if (comm_ptr->comm_kind == MPID_INTERCOMM) {
 		MPIR_ERRTEST_INTER_ROOT(comm_ptr, root, mpi_errno);
-	    }
-    
+                if (root == MPI_ROOT) {
+                    comm_size = comm_ptr->remote_size;
+                    for (i=0; i<comm_size; i++) {
+                        MPIR_ERRTEST_COUNT(sendcnts[i], mpi_errno);
+                        MPIR_ERRTEST_DATATYPE(sendcnts[i], sendtype, mpi_errno);
+                    }
+                    if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
+                        MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
+                        MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
+                    }
+                }       
+                else if (root != MPI_PROC_NULL) {
+                    MPIR_ERRTEST_COUNT(recvcnt, mpi_errno);
+                    MPIR_ERRTEST_DATATYPE(recvcnt, recvtype, mpi_errno);
+                    if (HANDLE_GET_KIND(recvtype) != HANDLE_KIND_BUILTIN) {
+                        MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
+                        MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
+                    }
+                }
+            }
+
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCATTERV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -244,17 +269,20 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendty
     }
     else
     {
-        if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-            /* intercommunicator */ 
+        
+/*        if (comm_ptr->comm_kind == MPID_INTERCOMM) {
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**intercommcoll",
 					      "**intercommcoll %s", FCNAME );
 	}
-	else {
-	    mpi_errno = MPIR_Scatterv(sendbuf, sendcnts, displs, sendtype, 
-				      recvbuf, recvcnt, recvtype, 
-				      root, comm_ptr); 
-	}
+	else 
+*/
+
+        MPIR_Nest_incr();
+        mpi_errno = MPIR_Scatterv(sendbuf, sendcnts, displs, sendtype, 
+                                  recvbuf, recvcnt, recvtype, 
+                                  root, comm_ptr); 
+        MPIR_Nest_decr();
     }
     if (mpi_errno == MPI_SUCCESS)
     {
