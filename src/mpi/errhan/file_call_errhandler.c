@@ -12,8 +12,8 @@
    in a ROMIO File structure.  FIXME: These should be imported from a common
    header file that is also used in mpich2_fileutil.c
  */
-int MPIR_ROMIO_Get_file_errhand( MPI_File, MPID_Errhandler ** );
-int MPIR_ROMIO_Set_file_errhand( MPI_File, MPID_Errhandler * );
+int MPIR_ROMIO_Get_file_errhand( MPI_File, MPI_Errhandler * );
+int MPIR_ROMIO_Set_file_errhand( MPI_File, MPI_Errhandler );
 void MPIR_Get_file_error_routine( MPID_Errhandler *, 
 				  void (**)(MPI_File *, int *, ...), 
 				  int * );
@@ -59,6 +59,7 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
     int mpi_errno = MPI_SUCCESS;
     MPID_File *file_ptr = NULL;
     MPID_Errhandler *e;
+    MPI_Errhandler eh;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_FILE_CALL_ERRHANDLER);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FILE_CALL_ERRHANDLER);
@@ -86,9 +87,12 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
     /* ... body of routine ...  */
 #ifdef USE_ROMIO_FILE
  {
-     MPIR_ROMIO_Get_file_errhand( fh, (MPI_Errhandler *)&e );
-     if (!e) {
+     MPIR_ROMIO_Get_file_errhand( fh, &eh );
+     if (!eh) {
 	 MPID_Errhandler_get_ptr( MPI_ERRORS_RETURN, e );
+     }
+     else {
+	 MPID_Errhandler_get_ptr( eh, e );
      }
  }
 #else

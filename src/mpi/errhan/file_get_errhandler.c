@@ -12,8 +12,8 @@
    in a ROMIO File structure.  FIXME: These should be imported from a common
    header file that is also used in mpich2_fileutil.c
  */
-int MPIR_ROMIO_Get_file_errhand( MPI_File, MPID_Errhandler ** );
-int MPIR_ROMIO_Set_file_errhand( MPI_File, MPID_Errhandler * );
+int MPIR_ROMIO_Get_file_errhand( MPI_File, MPI_Errhandler * );
+int MPIR_ROMIO_Set_file_errhand( MPI_File, MPI_Errhandler );
 void MPIR_Get_file_error_routine( MPID_Errhandler *, 
 				  void (**)(MPI_File *, int *, ...), 
 				  int * );
@@ -88,10 +88,14 @@ int MPI_File_get_errhandler(MPI_File file, MPI_Errhandler *errhandler)
     /* ... body of routine ...  */
 #ifdef USE_ROMIO_FILE
  {
+     MPI_Errhandler eh;
      MPID_Errhandler *e;
-     MPIR_ROMIO_Get_file_errhand( file, (MPI_Errhandler *)&e );
-     if (!e) {
+     MPIR_ROMIO_Get_file_errhand( file, &eh );
+     if (!eh) {
 	 MPID_Errhandler_get_ptr( MPI_ERRORS_RETURN, e );
+     }
+     else {
+	 MPID_Errhandler_get_ptr( eh, e );
      }
      MPIU_Object_add_ref( e );
      *errhandler = e->handle;

@@ -12,8 +12,8 @@
    in a ROMIO File structure.  FIXME: These should be imported from a common
    header file that is also used in mpich2_fileutil.c
  */
-int MPIR_ROMIO_Get_file_errhand( MPI_File, MPID_Errhandler ** );
-int MPIR_ROMIO_Set_file_errhand( MPI_File, MPID_Errhandler * );
+int MPIR_ROMIO_Get_file_errhand( MPI_File, MPI_Errhandler * );
+int MPIR_ROMIO_Set_file_errhand( MPI_File, MPI_Errhandler );
 void MPIR_Get_file_error_routine( MPID_Errhandler *, 
 				  void (**)(MPI_File *, int *, ...), 
 				  int * );
@@ -61,7 +61,8 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
     MPID_File *file_ptr = NULL;
 #endif
     int in_use;
-    MPID_Errhandler *errhan_ptr = NULL, *old_errhandler;
+    MPID_Errhandler *errhan_ptr = NULL, *old_errhandler_ptr;
+    MPI_Errhandler old_errhandler;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
@@ -102,22 +103,25 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 #ifdef USE_ROMIO_FILE
 	MPIR_ROMIO_Get_file_errhand( file, &old_errhandler );
 	if (!old_errhandler) {
-	    MPID_Errhandler_get_ptr( MPI_ERRORS_RETURN, old_errhandler );
+	    MPID_Errhandler_get_ptr( MPI_ERRORS_RETURN, old_errhandler_ptr );
+	}
+	else {
+	    MPID_Errhandler_get_ptr( old_errhandler, old_errhandler_ptr );
 	}
 #else
-	old_errhandler = file_ptr->errhandler;
+	old_errhandler_ptr = file_ptr->errhandler;
 #endif
-	if (old_errhandler) {
-	    MPIU_Object_release_ref(old_errhandler,&in_use);
+	if (old_errhandler_ptr) {
+	    MPIU_Object_release_ref(old_errhandler_ptr,&in_use);
 	    if (!in_use) {
-		MPID_Errhandler_free( old_errhandler );
+		MPID_Errhandler_free( old_errhandler_ptr );
 	    }
 	}
     }
 
     MPIU_Object_add_ref(errhan_ptr);
 #ifdef USE_ROMIO_FILE
-    MPIR_ROMIO_Set_file_errhand( file, errhan_ptr );
+    MPIR_ROMIO_Set_file_errhand( file, errhandler );
 #else
     file_ptr->errhandler = errhan_ptr;
 #endif
