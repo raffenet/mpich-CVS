@@ -1239,7 +1239,7 @@ define(PAC_TEST_MPIR_STATUS_SET_BYTES,[
      }
 EOF
   rm -f conftest
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > c_status.log 2>&1
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
   if test -x conftest ; then
      AC_MSG_RESULT(yes)
      AC_DEFINE(HAVE_STATUS_SET_BYTES)

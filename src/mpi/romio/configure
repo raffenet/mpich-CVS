@@ -2317,7 +2317,7 @@ fi
      }
 EOF
   rm -f conftest
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > c_status.log 2>&1
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
   if test -x conftest ; then
      if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
