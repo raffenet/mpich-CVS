@@ -13,6 +13,8 @@ triangular-pack_SOURCES = triangular-pack.c
 
 slice-pack_SOURCES = slice-pack.c
 
+slice-pack-external_SOURCES = slice-pack-external.c
+
 simple-pack_SOURCES = simple-pack.c
 
 simple-pack-external_SOURCES = simple-pack-external.c
