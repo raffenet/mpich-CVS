@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "dataloop.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Pack */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -83,7 +82,7 @@ int MPI_Pack(void *inbuf, int incount, MPI_Datatype datatype, void *outbuf,
 
     /* ... body of routine ...  */
     /* This is a temporary call */
-    MPID_Segment_pack( datatype_ptr->opt_loopinfo, inbuf, outbuf );
+    /*MPID_Segment_pack( datatype_ptr->opt_loopinfo, inbuf, outbuf );*/
 
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK);

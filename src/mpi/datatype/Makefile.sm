@@ -1,4 +1,5 @@
-lib${MPILIBNAME}_a_SOURCES = address.c dataloop.c get_address.c getcount.c \
+lib${MPILIBNAME}_a_SOURCES = address.c get_address.c getcount.c typeutil.c
+#lib${MPILIBNAME}_a_SOURCES = address.c dataloop.c get_address.c getcount.c \
  getelements.c pack.c type_vec.c typeutil.c
 #lib${MPILIBNAME}_a_SOURCES = pack_size.c type_commit.c type_contig.c \
  type_extent.c type_free.c type_hind.c type_hvec.c type_ind.c type_lb.c \
