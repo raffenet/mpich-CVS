@@ -185,7 +185,6 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
 
  fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
-
     return mpi_errno;
 }
 

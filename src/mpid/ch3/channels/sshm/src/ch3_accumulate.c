@@ -26,8 +26,9 @@ int MPIDI_CH3_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ACCUMULATE);
 
-    target_addr = (char *) win_ptr->base_addrs[target_rank] +
-            win_ptr->disp_units[target_rank] * target_disp;
+    target_addr = (char *) win_ptr->shm_structs[target_rank].addr + 
+                  (long) win_ptr->offsets[target_rank] +
+                  win_ptr->disp_units[target_rank] * target_disp;
 
     if (op == MPI_REPLACE) {
         /* simply do a memcpy */
@@ -67,7 +68,7 @@ int MPIDI_CH3_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
             /* allocate a tmp buffer of extent equal to extent of target buf */
 
             MPIR_Nest_incr();
-            mpi_errno = NMPI_Type_get_true_extent(origin_datatype, 
+            mpi_errno = NMPI_Type_get_true_extent(target_datatype, 
                                                   &true_lb, &true_extent);
             MPIR_Nest_decr();
             /* --BEGIN ERROR HANDLING-- */
@@ -78,9 +79,9 @@ int MPIDI_CH3_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
             }
             /* --END ERROR HANDLING-- */
 
-            MPID_Datatype_get_extent_macro(origin_datatype, extent); 
+            MPID_Datatype_get_extent_macro(target_datatype, extent); 
 
-            tmp_buf = MPIU_Malloc(origin_count * (MPIR_MAX(extent,true_extent)));  
+            tmp_buf = MPIU_Malloc(target_count * (MPIR_MAX(extent,true_extent)));  
             /* --BEGIN ERROR HANDLING-- */
             if (!tmp_buf)
             {
@@ -167,8 +168,6 @@ int MPIDI_CH3_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
             MPIU_Free((char *) tmp_buf + true_lb);
         }
     }
-
-
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ACCUMULATE);

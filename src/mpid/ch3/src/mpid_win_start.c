@@ -20,7 +20,7 @@ int MPID_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
     if (MPIDI_Use_optimized_rma) {
 #       ifdef MPIDI_CH3_IMPLEMENTS_START_EPOCH
         {
-            mpi_errno = MPIDI_CH3_Win_start_epoch(group_ptr, MPIDI_CH3I_ACCESS_EPOCH, 
+            mpi_errno = MPIDI_CH3_Start_epoch(group_ptr, MPIDI_CH3_ACCESS_EPOCH, 
                                                   assert, win_ptr);
         }
 #       endif

@@ -210,8 +210,20 @@ extern MPIDI_CH3I_Alloc_mem_list_t *MPIDI_CH3I_Alloc_mem_list_head;
  */
 #define MPIDI_CH3_WIN_DECL									\
 MPIDI_CH3I_Shmem_block_request_result *shm_structs;						\
+void **offsets;									                \
 MPID_Group *epoch_grp_ptr;									\
 int *epoch_grp_ranks_in_win;
 
+/*
+#define MPIDI_CH3_IMPLEMENTS_START_EPOCH
+#define MPIDI_CH3_IMPLEMENTS_END_EPOCH
+#define MPIDI_CH3_IMPLEMENTS_PUT
+#define MPIDI_CH3_IMPLEMENTS_GET
+#define MPIDI_CH3_IMPLEMENTS_ACCUMULATE
+#define MPIDI_CH3_IMPLEMENTS_WIN_CREATE
+#define MPIDI_CH3_IMPLEMENTS_WIN_FREE
+#define MPIDI_CH3_IMPLEMENTS_ALLOC_MEM
+#define MPIDI_CH3_IMPLEMENTS_FREE_MEM
+*/
 
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */

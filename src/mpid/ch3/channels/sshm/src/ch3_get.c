@@ -23,8 +23,9 @@ int MPIDI_CH3_Get(void *origin_addr, int origin_count, MPI_Datatype
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_GET);
 
-    target_addr = (char *) win_ptr->base_addrs[target_rank] +
-            win_ptr->disp_units[target_rank] * target_disp;
+    target_addr = (char *) win_ptr->shm_structs[target_rank].addr + 
+                  (long) win_ptr->offsets[target_rank] +
+                  win_ptr->disp_units[target_rank] * target_disp;
 
     mpi_errno = MPIR_Localcopy (target_addr, target_count, target_datatype,
                                 origin_addr, origin_count, origin_datatype);

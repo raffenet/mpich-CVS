@@ -26,7 +26,7 @@ int MPIDI_CH3_End_epoch(int access_or_exposure, MPID_Win *win_ptr)
 
     MPIR_Nest_incr();
 
-    if (access_or_exposure == MPIDI_CH3I_ACCESS_EPOCH) {
+    if (access_or_exposure == MPIDI_CH3_ACCESS_EPOCH) {
         /* this is a Win_complete. Send a 0-byte sync message to each target process */
 
         for (i=0; i<grp_size; i++)
@@ -43,7 +43,7 @@ int MPIDI_CH3_End_epoch(int access_or_exposure, MPID_Win *win_ptr)
         }
     }
 
-    else if (access_or_exposure == MPIDI_CH3I_EXPOSURE_EPOCH) { 
+    else if (access_or_exposure == MPIDI_CH3_EXPOSURE_EPOCH) { 
         /* This is a Win_post. */
                         
         /* Recv a 0-byte message from the origin processes */
@@ -60,9 +60,10 @@ int MPIDI_CH3_End_epoch(int access_or_exposure, MPID_Win *win_ptr)
             /* --END ERROR HANDLING-- */
         }
     }
+
     else {
-        /* generate error */
-    } 
+        /* return error */
+    }
 
     MPIR_Nest_decr();
 

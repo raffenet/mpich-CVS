@@ -20,7 +20,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
     if (MPIDI_Use_optimized_rma) {
 #       ifdef MPIDI_CH3_IMPLEMENTS_START_EPOCH
         {
-            mpi_errno = MPIDI_CH3_Win_start_epoch(NULL, MPIDI_CH3I_ACCESS_AND_EXPOSURE_EPOCH, 
+            mpi_errno = MPIDI_CH3_Start_epoch(NULL, MPIDI_CH3_ACCESS_AND_EXPOSURE_EPOCH, 
                                                   assert, win_ptr);
         }
 #       endif

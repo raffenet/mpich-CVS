@@ -22,12 +22,13 @@ int MPIDI_CH3_Win_free(MPID_Win **win_ptr)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_WIN_FREE);
 
-    MPIR_Nest_incr();
-
     MPID_Comm_get_ptr( (*win_ptr)->comm, comm_ptr );
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
 
+    MPIR_Nest_incr();
+
+    /* barrier needed so that all passive target rmas directed toward this process are over */
     mpi_errno = NMPI_Barrier((*win_ptr)->comm);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
@@ -67,6 +68,7 @@ int MPIDI_CH3_Win_free(MPID_Win **win_ptr)
     }
     
     MPIU_Free((*win_ptr)->shm_structs);
+    MPIU_Free((*win_ptr)->offsets);
 
     /* check whether refcount needs to be decremented here as in group_free */
     MPIU_Handle_obj_free( &MPID_Win_mem, *win_ptr );

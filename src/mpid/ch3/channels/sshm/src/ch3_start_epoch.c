@@ -20,7 +20,7 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_START_EPOCH);
 
-    if (access_or_exposure == MPIDI_CH3I_ACCESS_AND_EXPOSURE_EPOCH) {
+    if (access_or_exposure == MPIDI_CH3_ACCESS_AND_EXPOSURE_EPOCH) {
         /* this is a win_fence. just do a barrier. */
 
         MPIR_Nest_incr();
@@ -33,7 +33,6 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
             goto fn_exit;
         }
         /* --END ERROR HANDLING-- */
-            
     }
     else {
         /* this is a win_start or win_post. */
@@ -53,8 +52,7 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
         if (!ranks_in_grp)
         {
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_START_EPOCH);
-            return mpi_errno;
+            goto fn_exit;
         }
         /* --END ERROR HANDLING-- */
         ranks_in_win = (int *) MPIU_Malloc(grp_size * sizeof(int));
@@ -62,8 +60,7 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
         if (!ranks_in_win)
         {
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_START_EPOCH);
-            return mpi_errno;
+            goto fn_exit;
         }
         /* --END ERROR HANDLING-- */
         
@@ -76,9 +73,23 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
         
         MPIR_Nest_incr();
         
-        NMPI_Comm_group(win_ptr->comm, &win_grp);
+        mpi_errno = NMPI_Comm_group(win_ptr->comm, &win_grp);
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+        {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+            goto fn_exit;
+        }
+        /* --END ERROR HANDLING-- */
         
-        NMPI_Group_translate_ranks(grp, grp_size, ranks_in_grp, win_grp, ranks_in_win);
+        mpi_errno = NMPI_Group_translate_ranks(grp, grp_size, ranks_in_grp, win_grp, ranks_in_win);
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+        {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+            goto fn_exit;
+        }
+        /* --END ERROR HANDLING-- */
 
         MPIU_Free(ranks_in_grp);
         
@@ -86,7 +97,7 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
             
             /* MPI_MODE_NOCHECK not specified. Synchronization is necessary. */
 
-            if (access_or_exposure == MPIDI_CH3I_ACCESS_EPOCH) {
+            if (access_or_exposure == MPIDI_CH3_ACCESS_EPOCH) {
                 /* this is a Win_start. Since MPI_MODE_NOCHECK was not specified, 
                    we need to check if Win_post was called on the target processes. 
                    Wait for a 0-byte sync  message from each target process */
@@ -100,14 +111,13 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
                     if (mpi_errno)
                     {
                         mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-                        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_START_EPOCH);
-                        return mpi_errno;
+                        goto fn_exit;
                     }
                     /* --END ERROR HANDLING-- */
                 }
             }
 
-            else {  /* (access_or_exposure == MPIDI_CH3I_EXPOSURE_EPOCH) */
+            else {  /* (access_or_exposure == MPIDI_CH3_EXPOSURE_EPOCH) */
                 /* This is a Win_post. Since NOCHECK was not specified. We need to notify the 
                    source processes that Post has been called. */  
                         

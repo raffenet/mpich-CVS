@@ -20,7 +20,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     if (MPIDI_Use_optimized_rma) {
 #       ifdef MPIDI_CH3_IMPLEMENTS_END_EPOCH
         {
-            mpi_errno = MPIDI_CH3_Win_end_epoch(MPIDI_CH3I_EXPOSURE_EPOCH, win_ptr);
+            mpi_errno = MPIDI_CH3_End_epoch(MPIDI_CH3_EXPOSURE_EPOCH, win_ptr);
         }
 #       endif
     }
@@ -42,10 +42,6 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         /* Translate the ranks of the processes in
            start_group to ranks in win_ptr->comm */
         
-        MPIR_Nest_incr();
-        
-        NMPI_Comm_group(win_ptr->comm, &win_grp);
-        
         start_grp_size = win_ptr->start_group_ptr->size;
         
         ranks_in_start_grp = (int *) MPIU_Malloc(start_grp_size * sizeof(int));
@@ -53,8 +49,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         if (!ranks_in_start_grp)
         {
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
-            return mpi_errno;
+            goto fn_exit;
         }
         /* --END ERROR HANDLING-- */
         ranks_in_win_grp = (int *) MPIU_Malloc(start_grp_size * sizeof(int));
@@ -62,8 +57,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         if (!ranks_in_win_grp)
         {
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
-            return mpi_errno;
+            goto fn_exit;
         }
         /* --END ERROR HANDLING-- */
         
@@ -72,9 +66,28 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             ranks_in_start_grp[i] = i;
         }
         
+        MPIR_Nest_incr();
+        
+        mpi_errno = NMPI_Comm_group(win_ptr->comm, &win_grp);
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+        {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+            goto fn_exit;
+        }
+        /* --END ERROR HANDLING-- */
+        
         start_grp = win_ptr->start_group_ptr->handle;
-        NMPI_Group_translate_ranks(start_grp, start_grp_size,
-                                   ranks_in_start_grp, win_grp, ranks_in_win_grp);
+
+        mpi_errno = NMPI_Group_translate_ranks(start_grp, start_grp_size,
+                                               ranks_in_start_grp, win_grp, ranks_in_win_grp);
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+        {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+            goto fn_exit;
+        }
+        /* --END ERROR HANDLING-- */
         
         
         /* If MPI_MODE_NOCHECK was not specified, we need to check if
@@ -91,8 +104,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
                 if (mpi_errno)
                 {
                     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-                    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
-                    return mpi_errno;
+                    goto fn_exit;
                 }
                 /* --END ERROR HANDLING-- */
             }
@@ -110,8 +122,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         if (!nops_to_proc)
         {
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
-            return mpi_errno;
+            goto fn_exit;
         }
         /* --END ERROR HANDLING-- */
         
@@ -133,8 +144,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         if (!requests)
         {
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
-            return mpi_errno;
+            goto fn_exit;
         }
         /* --END ERROR HANDLING-- */
         
@@ -143,8 +153,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         if (!curr_ops_cnt)
         {
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
-            return mpi_errno;
+            goto fn_exit;
         }
         /* --END ERROR HANDLING-- */
         
@@ -156,8 +165,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             if (!dtype_infos)
             {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
-                return mpi_errno;
+                goto fn_exit;
             }
             /* --END ERROR HANDLING-- */
             
@@ -167,8 +175,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             if (!dataloops)
             {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
-                return mpi_errno;
+                goto fn_exit;
             }
             /* --END ERROR HANDLING-- */
             for (i=0; i<total_op_count; i++)
@@ -204,7 +211,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
                 if (mpi_errno != MPI_SUCCESS)
                 {
                     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-                    return mpi_errno;
+                    goto fn_exit;
                 }
                 /* --END ERROR HANDLING-- */
                 break;
@@ -216,7 +223,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
                 if (mpi_errno != MPI_SUCCESS)
                 {
                     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-                    return mpi_errno;
+                    goto fn_exit;
                 }
                 /* --END ERROR HANDLING-- */
                 break;
@@ -261,7 +268,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
                 if (mpi_errno != MPI_SUCCESS)
                 {
                     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rmamsg", 0);
-                    return mpi_errno;
+                    goto fn_exit;
                 }
                 /* --END ERROR HANDLING-- */
                 j++;
@@ -300,8 +307,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
                                 MPID_Progress_end(&progress_state);
                                 mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
                                                                  "**fail", 0);
-                                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
-                                return mpi_errno;
+                                goto fn_exit;
                             }
                             /* --END ERROR HANDLING-- */
                             MPID_Request_release(requests[i]);
@@ -351,6 +357,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     MPIR_Group_release(win_ptr->start_group_ptr);
     win_ptr->start_group_ptr = NULL; 
 
+ fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
     return mpi_errno;
 }

@@ -346,32 +346,7 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const int maxlen, int *length, const int blocking);
 #endif
 
-void *MPIDI_CH3_Alloc_mem(size_t size, MPID_Info *info_ptr);
-int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info, 
-                    MPID_Comm *comm_ptr, MPID_Win **win_ptr);
-int MPIDI_CH3_Free_mem(void *ptr);
-int MPIDI_CH3_Start_PT_epoch(int lock_type, int dest, int assert, MPID_Win *win_ptr);
-int MPIDI_CH3_End_PT_epoch(int dest, MPID_Win *win_ptr);
-int MPIDI_CH3_Win_free(MPID_Win **win_ptr);
-int MPIDI_CH3_Put(void *origin_addr, int origin_count, MPI_Datatype
-            origin_datatype, int target_rank, MPI_Aint target_disp,
-            int target_count, MPI_Datatype target_datatype, MPID_Win *win_ptr);
-int MPIDI_CH3_Get(void *origin_addr, int origin_count, MPI_Datatype
-            origin_datatype, int target_rank, MPI_Aint target_disp,
-            int target_count, MPI_Datatype target_datatype, MPID_Win *win_ptr);
-int MPIDI_CH3_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
-                    origin_datatype, int target_rank, MPI_Aint target_disp,
-                    int target_count, MPI_Datatype target_datatype, MPI_Op op,
-                    MPID_Win *win_ptr);
-int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int assert, MPID_Win *win_ptr);
-int MPIDI_CH3_End_epoch(int access_or_exposure, MPID_Win *win_ptr);
-
 int MPIDI_CH3I_SHM_Unlink_and_detach_mem(MPIDI_CH3I_Shmem_block_request_result *p);
-
 int MPIDI_CH3I_SHM_Attach_notunlink_mem(MPIDI_CH3I_Shmem_block_request_result *pInput);
-
-#define MPIDI_CH3I_ACCESS_EPOCH 1
-#define MPIDI_CH3I_EXPOSURE_EPOCH 2
-#define MPIDI_CH3I_ACCESS_AND_EXPOSURE_EPOCH 3
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

@@ -20,7 +20,7 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
     if (MPIDI_Use_optimized_rma) {
 #       ifdef MPIDI_CH3_IMPLEMENTS_START_EPOCH
         {
-            mpi_errno = MPIDI_CH3_Win_start_epoch(group_ptr, MPIDI_CH3I_EXPOSURE_EPOCH, 
+            mpi_errno = MPIDI_CH3_Start_epoch(group_ptr, MPIDI_CH3_EXPOSURE_EPOCH, 
                                                   assert, win_ptr);
         }
 #       endif
@@ -77,10 +77,6 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
                post_group to ranks in win_ptr->comm, so that we
                can do communication */
             
-            MPIR_Nest_incr();
-            
-            NMPI_Comm_group(win_ptr->comm, &win_grp);
-            
             ranks_in_post_grp = (int *) MPIU_Malloc(post_grp_size * sizeof(int));
             /* --BEGIN ERROR HANDLING-- */
             if (!ranks_in_post_grp)
@@ -104,9 +100,28 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
                 ranks_in_post_grp[i] = i;
             }
         
+            MPIR_Nest_incr();
+            
+            mpi_errno = NMPI_Comm_group(win_ptr->comm, &win_grp);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
+            
             post_grp = group_ptr->handle;
-            NMPI_Group_translate_ranks(post_grp, post_grp_size,
+
+            mpi_errno = NMPI_Group_translate_ranks(post_grp, post_grp_size,
                                        ranks_in_post_grp, win_grp, ranks_in_win_grp);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
             
             /* Send a 0-byte message to the source processes */
             for (i=0; i<post_grp_size; i++)
