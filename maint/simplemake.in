@@ -1197,7 +1197,7 @@ sub RecursiveOp {
 	if ($subdirs_has_autoconf) {
 	    # Add a - incase there is a problem
           print FD " - ; do \\$newline";
-	  print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ;\\$newline";
+	  print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ; \\$newline";
 	  print FD "\t\t(cd \$\$dir && \${MAKE} $target ; ) ; done$newline";
         }	
 	else {
@@ -1281,9 +1281,9 @@ sub TargetAll {
 	    }
 	    elsif ($dir =~ /@([^@]*)@/) {
 		# May be a replaced variable
-		print FD "\t${quietmake}for dir in $dir - ; do\\$newline";
+		print FD "\t${quietmake}for dir in $dir - ; do \\$newline";
 		print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ; \\$newline";
-		print FD "\t\tif ( cd \$\$dir && \${MAKE} all ) ; then : ; else exit 1; fi\\$newline";
+		print FD "\t\tif ( cd \$\$dir && \${MAKE} all ) ; then : ; else exit 1; fi \\$newline";
 		print FD "\tdone$newline";
 	    }
 	    else {

@@ -13,7 +13,7 @@ all-local:
             else \
 	        rm -f lib/lib${MPILIBNAME}.a lib/libp${MPILIBNAME}.a ; \
 		rm -f lib/pkglist ; \
-	        mv -f lib/pkglist.new lib/pkglist ;\
+	        mv -f lib/pkglist.new lib/pkglist ; \
 		${MAKE} clean ; \
 	    fi ; \
 	fi
