@@ -61,7 +61,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         return MPI_SUCCESS;
     }
 
-    if ((win_ptr->fence_cnt == 0) && (assert & MPI_MODE_NOSUCCEED != 1)) {
+    if ((win_ptr->fence_cnt == 0) && ((assert & MPI_MODE_NOSUCCEED) != 1)) {
         /* win_ptr->fence_cnt == 0 means either this is the very first
            call to fence or the preceding fence had the
            MPI_MODE_NOSUCCEED assert. 
