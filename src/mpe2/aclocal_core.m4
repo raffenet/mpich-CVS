@@ -50,21 +50,20 @@ if test ! -r ${$1}/$2 ; then
     dnl PWD must be messed up
     $1=`pwd`
     if test ! -r ${$1}/$2 ; then
-	print_error "Cannot determine the root directory!" 
-        exit 1
+	AC_MSG_ERROR([Cannot determine the root directory!])
     fi
     $1=`pwd | sed -e 's%/tmp_mnt/%/%g'`
     if test ! -d ${$1} ; then 
-        print_error "Warning: your default path uses the automounter; this may"
-        print_error "cause some problems if you use other NFS-connected systems."
+	AC_MSG_WARN([Warning: your default path uses the automounter; this may
+cause some problems if you use other NFS-connected systems.])
         $1=`pwd`
     fi
 fi)
 if test -z "${$1}" ; then
     $1=`pwd | sed -e 's%/tmp_mnt/%/%g'`
     if test ! -d ${$1} ; then 
-        print_error "Warning: your default path uses the automounter; this may"
-        print_error "cause some problems if you use other NFS-connected systems."
+	AC_MSG_WARN([Warning: your default path uses the automounter; this may
+cause some problems if you use other NFS-connected systems.])
         $1=`pwd`
     fi
 fi
