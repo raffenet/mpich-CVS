@@ -369,7 +369,7 @@ extern MPID_Group MPID_Group_direct[];
 /* Communicators */
 typedef struct { 
     int           id;            /* value of MPI_Comm for this structure */
-    volatile int ref_count;
+    volatile int  ref_count;
     int16_t       context_id;    /* Assigned context id */
     int           size;          /* Value of MPI_Comm_(remote)_size */
     int           rank;          /* Value of MPI_Comm_rank */
@@ -379,26 +379,68 @@ typedef struct {
 				    same for intra communicators */
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
+    struct MPID_Collops_struct  *coll_fns; /* Pointer to a table of functions 
+					      implementing the collective 
+					      routines */
 #ifndef MPICH_SINGLE_THREADED
     MPID_Thread_lock_t access_lock;
 #endif
   /* other, device-specific information */
-    int           is_singlemethod; /* An example, device-specific field,
-				      this is used in a multi-method
-				      device to indicate that all processes
-				      in this communicator belong to the
-				      same method */
+#ifdef MPID_DEV_COMM_DECL
+    MPID_DEV_COMM_DECL
+#endif
 } MPID_Comm;
 extern MPIU_Object_alloc_t MPID_Comm_mem;
 /* Preallocated comm objects */
 extern MPID_Comm MPID_Comm_direct[];
+
+/* Collective operations */
+typedef struct MPID_Collops_struct {
+    int ref_count;   /* Supports lazy copies */
+    /* Contains pointers to the functions for the MPI collectives */
+    int (*Barrier) (MPID_Comm *);
+    int (*Bcast) (void*, int, MPID_Datatype *, int, MPID_Comm * );
+    int (*Gather) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
+		   int, MPID_Comm *); 
+    int (*Gatherv) (void*, int, MPID_Datatype *, void*, int *, int *, 
+		    MPID_Datatype *, int, MPID_Comm *); 
+    int (*Scatter) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
+		    int, MPID_Comm *);
+    int (*Scatterv) (void*, int *, int *, MPID_Datatype *, void*, int, 
+		    MPID_Datatype *, int, MPID_Comm *);
+    int (*Allgather) (void*, int, MPID_Datatype *, void*, int, 
+		      MPID_Datatype *, MPID_Comm *);
+    int (*Allgatherv) (void*, int, MPID_Datatype *, void*, int *, int *, 
+		       MPID_Datatype *, MPID_Comm *);
+    int (*Alltoall) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
+			       MPID_Comm *);
+    int (*Alltoallv) (void*, int *, int *, MPID_Datatype *, void*, int *, 
+		     int *, MPID_Datatype *, MPID_Comm *);
+    int (*Alltoallw) (void*, int *, int *, MPID_Datatype *, void*, int *, 
+		     int *, MPID_Datatype *, MPID_Comm *);
+    int (*Reduce) (void*, void*, int, MPID_Datatype *, MPI_Op, int, 
+		   MPID_Comm *);
+    int (*Allreduce) (void*, void*, int, MPID_Datatype *, MPI_Op, 
+		      MPID_Comm *);
+    int (*Reduce_scatter) (void*, void*, int *, MPID_Datatype *, MPI_Op, 
+			   MPID_Comm *);
+    int (*Scan) (void*, void*, int, MPID_Datatype *, MPI_Op, MPID_Comm * );
+    int (*Exscan) (void*, void*, int, MPID_Datatype *, MPI_Op, MPID_Comm * );
+};
+    
+} MPID_Collops;
+        
 
 /* Windows */
 typedef struct {
     int           id;             /* value of MPI_Win for this structure */
     volatile int  ref_count;
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
-    char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
+    MPID_Aint    length;        
+    int          disp_unit;      /* Displacement unit of *local* window */
+    MPID_List    attributes;
+    MPID_Comm    *comm;         /* communicator of window */
+    char          name[MPI_MAX_OBJECT_NAME];  
 } MPID_Win;
 extern MPIU_Object_alloc_t MPID_Win_mem;
 /* Preallocated win objects */
