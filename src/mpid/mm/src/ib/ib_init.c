@@ -219,6 +219,7 @@ int ib_setup_connections()
     {
 	if ( i == comm_ptr->rank)
 	    continue; /* don't make a connection to myself */
+	MPIU_dbg_printf("setting up VC connection to rank %d\n", i);
 	vc_ptr = comm_ptr->vcr[i];
 	if (vc_ptr == NULL)
 	{
@@ -230,10 +231,11 @@ int ib_setup_connections()
 	}
 	sprintf(key, "ib_lid_%d", i);
 	PMI_KVS_Get(vc_ptr->pmi_kvsname, key, value);
-	MPIU_dbg_printf("kvs: %s, key: %s, value: %s\n", 
+	MPIU_dbg_printf("PMI_KVS_Get %s:<%s, %s>\n", 
 			vc_ptr->pmi_kvsname, key, value);
 	ib = &vc_ptr->data.ib.info;
 	ib->m_dlid = atoi(value);
+	MPIU_dbg_printf("pinning %d bytes of memory\n", IB_PINNED_MEMORY_SIZE);
 	ib->m_virtual_address = malloc(IB_PINNED_MEMORY_SIZE);
 	if (ib->m_virtual_address == NULL)
 	{
@@ -272,6 +274,8 @@ int ib_setup_connections()
 	ib->m_snd_work_id = 0;
 	ib->m_snd_posted = 0;
 	/* ***************************************** */
+	MPIU_dbg_printf("creating the send/recv completion queues\n");
+	max_cq_entries = IB_MAX_CW_ENTRIES + 1;
 	status = ib_cq_create_us(IB_Process.hca_handle, 
 				 IB_Process.cqd_handle,
 				 &max_cq_entries,
@@ -305,6 +309,8 @@ int ib_setup_connections()
 	  send segments bogus? Does it assume there
 	  will only be one posted send or recv?
 	********************************************/
+
+	MPIU_dbg_printf("allocating the descriptor segments\n");
 
 	/* allocate and setup the receive segments */
 	ib->m_recv_sglist.data_seg_p = calloc(ib->m_message_segments,
@@ -344,6 +350,7 @@ int ib_setup_connections()
 	    ib->m_send_sglist.data_seg_p[i].l_key = lkey;
 	}
 
+	MPIU_dbg_printf("creating the queue pair\n");
 	/* Create the queue pair */
 	status = createQP(ib);
 	if (status != IB_SUCCESS)
@@ -355,6 +362,7 @@ int ib_setup_connections()
 	    return -1;
 	}
 
+	MPIU_dbg_printf("modifyQP(INIT)\n");
 	status = modifyQP(ib, IB_QP_STATE_INIT);
 	if (status != IB_SUCCESS)
 	{
@@ -364,6 +372,7 @@ int ib_setup_connections()
 	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
 	    return -1;
 	}
+	MPIU_dbg_printf("modifyQP(RTR)\n");
 	status = modifyQP(ib, IB_QP_STATE_RTR);
 	if (status != IB_SUCCESS)
 	{
@@ -373,6 +382,7 @@ int ib_setup_connections()
 	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
 	    return -1;
 	}
+	MPIU_dbg_printf("modifyQP(RTS)\n");
 	status = modifyQP(ib, IB_QP_STATE_RTS);
 	if (status != IB_SUCCESS)
 	{
@@ -435,15 +445,18 @@ int ib_init()
     }
 #endif
     /* get the lid */
-    status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, HCA_QUERY_HCA_STATIC);
+    status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, 
+			     HCA_QUERY_HCA_STATIC);
     if (status != IB_SUCCESS)
     {
 	err_printf("ib_init: ib_hca_query_us(HCA_QUERY_HCA_STATIC) failed, status %d\n", status);
 	return status;
     }
     IB_Process.attr.port_dynamic_info_p = 
-	(port_dynamic_info_t*)malloc(IB_Process.attr.node_info.port_num * sizeof(port_dynamic_info_t));
-    status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, HCA_QUERY_PORT_INFO_DYNAMIC);
+	(port_dynamic_info_t*)malloc(IB_Process.attr.node_info.port_num * 
+				     sizeof(port_dynamic_info_t));
+    status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, 
+			     HCA_QUERY_PORT_INFO_DYNAMIC);
     if (status != IB_SUCCESS)
     {
 	err_printf("ib_init: ib_hca_query_us(HCA_QUERY_PORT_INFO_DYNAMIC) failed, status %d\n", status);
