@@ -1,4 +1,4 @@
-#!/usr/bin/env  python
+#!/usr/bin/env python
 
 from os     import environ, system
 from getopt import getopt
@@ -17,10 +17,12 @@ def mpdboot():
     debug     = 0
     localConsoleVal  = ''
     remoteConsoleVal = ''
+    shell = 'csh'
+    oneLocal = 0
     try:
-	(opts, args) = getopt(argv[1:], 'hf:r:u:m:n:d',
+	(opts, args) = getopt(argv[1:], 'hf:r:u:m:n:ds1',
 			      ['help', 'file=', 'rsh=', 'user=', 'mpd=', 'totalnum=',
-			       'loccons', 'remcons'])
+			       'loccons', 'remcons', 'shell'])
     except:
 	usage()
     else:
@@ -39,6 +41,10 @@ def mpdboot():
 		totalNum = int(opt[1])
             elif opt[0] == '-d' or opt[0] == '--debug':
                 debug = 1
+            elif opt[0] == '-s' or opt[0] == '--shell':
+                shell = 'bourne'
+	    elif opt[0] == '-1':
+                oneLocal = 1
 	    elif opt[0] == '--loccons':
 		localConsoleVal  = '-n'
 	    elif opt[0] == '--remcons':
@@ -81,9 +87,16 @@ def mpdboot():
 	if numStarted == totalNum:
 	    break
 	host = host.strip()
+	if oneLocal and host == myHost:
+            continue
 	if host[0] != '#':                    # ignore comment lines
-	    cmd = '%s %s %s -n %s %s -h %s -p %s &' % \
-                  (rshCmd, xOpt, host, mpdCmd, remoteConsoleVal, myHost, myPort)
+            shellRedirect = ' >& /dev/null '  # default
+            if shell == 'bourne':
+                shellRedirect = ' > /dev/null 2>&1 '
+            # cmd = "%s %s %s -n '%s    %s -h %s -p %s </dev/null %s &'" % \
+	    cmd = "%s %s %s -n '%s -d %s -h %s -p %s </dev/null %s'" % \
+                  (rshCmd, xOpt, host, mpdCmd, remoteConsoleVal,
+                   myHost, myPort, shellRedirect)
             if debug:
                 print 'cmd=:%s:' % (cmd)
 	    system(cmd)
@@ -95,9 +108,9 @@ def mpdboot():
 
 def usage():
     print ''
-    print 'mpdboot [-h] [-f <hostsfile>] [-r <rshcmd>] [-u <user>] [-m <mpdcmd>] [-n n_to_start] '
+    print 'mpdboot [-h] [-f <hostsfile>] [-r <rshcmd>] [-u <user>] [-m <mpdcmd>] [-n n_to_start] -s -1'
     print 'Long options:'
-    print '  --help --file=<hostsfile> --rsh=<rshcmd> --user=<user> --mpd=<mpdcmd> --totalnum=<n_to_start> --loccons --remcons'
+    print '  --help --file=<hostsfile> --rsh=<rshcmd> --user=<user> --mpd=<mpdcmd> --totalnum=<n_to_start> --loccons --remcons --shell'
     print """
 mpdboot starts one mpd locally and (n_to_start - 1) others as computed from
 the -n (--totalnum) option; at least the one local mpd will be started by default;
@@ -106,6 +119,9 @@ You may find it useful to specify the full pathname of mpd on remote hosts (-r) 
 they are not in your path.
 The --loccons and --remcons options indicate that you do NOT want a console available
 on local and remote mpds, respectively.
+The -s option allows you to indicate that Bourne shell is your default shell for rsh.
+The -1 option indicates that you want to start only 1 mpd on the local machine even
+if it appears multiple times in the hosts file.
 """
     exit(-1)
     
