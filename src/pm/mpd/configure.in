@@ -40,7 +40,7 @@ MPD_AC_PROG_CHECK_INSTALL_WORKS
 
 if test "$installOk" = "no" ; then
     # echo "RMB1: SETTING install"
-    INSTALL="./install.sh"
+    INSTALL="${srcdir}/install.sh"
 fi
 echo Using INSTALL=$INSTALL
 
