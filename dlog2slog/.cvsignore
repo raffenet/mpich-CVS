@@ -10,3 +10,4 @@ config.log
 config.status
 config.cache
 config.system
+dlog2slog

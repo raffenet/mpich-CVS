@@ -17,12 +17,16 @@ a dlog file format:
 
 #ifdef HAVE_SLOG_WINCONFIG_H
 #include "slog_winconfig.h"
+#else
+#include "slog_config.h"
 #endif
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "dlog2slog.h"
-
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #ifdef HAVE_WINDOWS_H
 #include "getopt.h"
 #endif

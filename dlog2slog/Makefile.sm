@@ -1,3 +1,3 @@
 dlog2slog_SOURCES = d2s_util.c dlog2slog.c
-dlog2slog_LDADD = -L ../../../../lib -lmpich
-INCLUDES = -I../../../include -I${master_top_srcdir}/src/include
+dlog2slog_LDADD = -L ../../../../lib -lmpich -L ../slog_api/lib -lslog
+INCLUDES = -I../../../include -I../slog_api/include -I../slog_api -I${master_top_srcdir}/src/util/logging/slog_api/include -I${master_top_srcdir}/src/include -I${master_top_srcdir}/src/util/logging/slog_api
