@@ -22,7 +22,7 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * req)
 
     req->ch.iov_offset = 0;
     vc->ch.recv_active = req;
-    mpi_errno = ibu_post_readv(vc->ch.ibu, req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset, NULL);
+    mpi_errno = ibu_post_readv(vc->ch.ibu, req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset);
     if (mpi_errno != IBU_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);

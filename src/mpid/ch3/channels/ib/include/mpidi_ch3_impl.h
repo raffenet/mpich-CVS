@@ -109,7 +109,7 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
     vc->ch.req->ch.iov_offset = 0; \
     vc->ch.req->dev.ca = MPIDI_CH3I_CA_HANDLE_PKT; \
     vc->ch.recv_active = vc->ch.req; \
-    /*mpi_errno = */ibu_post_read(vc->ch.ibu, &vc->ch.req->ch.pkt, sizeof(MPIDI_CH3_Pkt_t), NULL); \
+    /*mpi_errno = */ibu_post_read(vc->ch.ibu, &vc->ch.req->ch.pkt, sizeof(MPIDI_CH3_Pkt_t)); \
     MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV); \
 }
 #endif
