@@ -223,10 +223,12 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
     
     kvs_name = comm_ptr->mm.pmi_kvsname;
 
+    /****pmi****/ printf("calling PMI_KVS_Get_value_length_max\n");fflush(stdout);
     value_len = PMI_KVS_Get_value_length_max();
     value = (char*)MPIU_Malloc(value_len);
     
     snprintf(key, 100, "businesscard:%d", rank);
+    /****pmi****/ printf("calling PMI_KVS_Get\n");fflush(stdout);
     PMI_KVS_Get(kvs_name, key, methods);
     
     /* choose method */
@@ -237,6 +239,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
     {
 	/* get the tcp method business card */
 	snprintf(key, 100, "business_card_tcp:%d", rank);
+	/****pmi****/ printf("calling PMI_KVS_Get\n");fflush(stdout);
 	PMI_KVS_Get(kvs_name, key, value);
 	
 	/* check to see if we can connect with this business card */

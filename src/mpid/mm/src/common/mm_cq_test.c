@@ -39,6 +39,9 @@ int mm_cq_test()
 	unpacker_make_progress();
     }
 
+    if (MPID_Process.cq_head == NULL)
+	return MPI_SUCCESS;
+
     MPID_Thread_lock(MPID_Process.cqlock);
     car_ptr = MPID_Process.cq_head;
     MPID_Process.cq_head = NULL;
@@ -94,7 +97,10 @@ int mm_cq_test()
 	    /* else allocate a temp buffer, place in the unex_q, and post a read */
 	    if (!found)
 	    {
-		mm_create_post_unex(car_ptr);
+		if (car_ptr->msg_header.pkt.type == MPID_RNDV_REQUEST_TO_SEND_PKT)
+		    mm_post_unex_rndv(car_ptr);
+		else
+		    mm_create_post_unex(car_ptr);
 		complete = FALSE;
 	    }
 	}
@@ -122,6 +128,25 @@ int mm_cq_test()
 	    car_ptr = car_ptr->qnext_ptr;
 	}
     }
+
+    return MPI_SUCCESS;
+}
+
+int mm_post_unex_rndv(MM_Car *unex_head_car_ptr)
+{
+    MM_Car *car_ptr;
+
+    car_ptr = mm_car_alloc();
+
+    car_ptr->msg_header = unex_head_car_ptr->msg_header;
+    car_ptr->qnext_ptr = NULL;
+
+    /* enqueue the car in the unexpected queue */
+    if (MPID_Process.unex_q_tail == NULL)
+	MPID_Process.unex_q_head = car_ptr;
+    else
+	MPID_Process.unex_q_tail->qnext_ptr = car_ptr;
+    MPID_Process.unex_q_tail = car_ptr;
 
     return MPI_SUCCESS;
 }

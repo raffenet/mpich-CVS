@@ -24,7 +24,9 @@ int MPID_Finalize( void )
     mm_car_finalize();
     mm_vc_finalize();
 
+    /****pmi****/ printf("calling PMI_Barrier\n");fflush(stdout);
     PMI_Barrier();
+    /****pmi****/ printf("calling PMI_Finalize\n");fflush(stdout);
     PMI_Finalize();
 
     return MPI_SUCCESS;

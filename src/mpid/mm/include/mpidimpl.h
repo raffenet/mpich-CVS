@@ -35,9 +35,6 @@ typedef struct MPID_PerProcess {
       MPID_Thread_lock_t cqlock;
          struct MM_Car * cq_head;          /* completion queue head */
          struct MM_Car * cq_tail;          /* completion queue tail */
-         struct MM_Car * pkr_read_list;    /* active pack read operations */
-         struct MM_Car * pkr_write_list;   /* active pack write operations */
-         struct MM_Car * unpkr_write_list; /* active unpack write operations */
                     char pmi_kvsname[100];
              MPID_Comm * comm_parent;
           OpenPortNode * port_list;
@@ -169,7 +166,7 @@ typedef struct MPIDI_VCRT
 MPID_Request * mm_request_alloc();
           void mm_request_free(MPID_Request *request_ptr);
 
-/* communication agent requests */
+/* communication agent/action requests */
           void mm_car_init();
           void mm_car_finalize();
       MM_Car * mm_car_alloc();
@@ -199,6 +196,7 @@ MPID_Request * mm_request_alloc();
            int mm_cq_wait();
            int mm_cq_enqueue(MM_Car *car_ptr);
 	   int mm_create_post_unex(MM_Car *unex_head_car_ptr);
+	   int mm_post_unex_rndv(MM_Car *unex_head_car_ptr);
 
 /* requests */
 /*
