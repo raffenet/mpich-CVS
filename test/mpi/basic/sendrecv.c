@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define BIG_SIZE 1024*1024
+#define BIG_SIZE 100*1024
 
 int main(int argc, char *argv[])
 {
