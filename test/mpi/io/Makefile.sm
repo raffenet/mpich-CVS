@@ -10,6 +10,7 @@ rdwrzero_SOURCES = rdwrzero.c
 getextent_SOURCES = getextent.c
 setinfo_SOURCES = setinfo.c
 setviewcur_SOURCES = setviewcur.c
+i_noncontig_SOURCES = i_noncontig.c
 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o)
