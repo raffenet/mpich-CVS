@@ -776,6 +776,14 @@ routines.
 \end{description}
 Many routines will have the \code{MPID} prefix.
 
+\subsection{File Names}
+\label{sec:mpi-src-filenames}
+File names should be chosen so that they are unique throughout the source
+tree.  That is, no file name should appear in more than one directory.  This
+is necessary since object libraries usually store files by name only, ignoring
+the directory.  For include files, using unique names aids in identifying
+exactly which include file was used.
+
 \subsection{MPI Opaque Objects}
 \label{sec:mpi-opaque}
 Most objects in MPI (with the exception of \mpifunc{MPI_Status}) are
@@ -998,7 +1006,7 @@ different header:
 typedef struct {
     int  id;
     void *next;   /* Free handles use this field to point to the next
-		     free object */
+                     free object */
 } MPIU_Handle_common;
 \end{verbatim}
 

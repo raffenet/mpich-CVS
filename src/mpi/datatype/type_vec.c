@@ -99,51 +99,64 @@ int MPI_Type_vector(int count, int blocklength, int stride,
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
 
-    new_ptr->ref_count = 1;
-    new_ptr->is_contig = 0;
-    new_ptr->is_perm   = 0;
-    new_ptr->opt_loopinfo = (struct MPID_Dataloop_st *)MPIU_Calloc( 1, 
+    new_ptr->ref_count	     = 1;
+    new_ptr->is_contig	     = 0;
+    new_ptr->is_perm	     = 0;
+    new_ptr->opt_loopinfo    = (struct MPID_Dataloop_st *)MPIU_Calloc( 1, 
 				       sizeof(struct MPID_Dataloop_st) );
-    new_ptr->loopsize = 1;
-    new_ptr->combiner = MPI_COMBINER_VECTOR;
-    new_ptr->loopinfo = new_ptr->opt_loopinfo;
-    new_ptr->is_permanent = 0;
-    new_ptr->is_committed = 0;
+    new_ptr->loopsize	     = 1;
+    new_ptr->combiner	     = MPI_COMBINER_VECTOR;
+    new_ptr->loopinfo	     = new_ptr->opt_loopinfo;
+    new_ptr->is_permanent    = 0;
+    new_ptr->is_committed    = 0;
     new_ptr->attributes.next = 0;
-    new_ptr->cache_id = 0;
-    new_ptr->name[0] = 0;
+    new_ptr->cache_id	     = 0;
+    new_ptr->name[0]	     = 0;
     if (HANDLE_GET_KIND(old_type) == HANDLE_KIND_BUILTIN) {
 	/* Avoid using an explicit object for the predefined types */
 	int oldsize = (old_type & 0x000000ff);
-	new_ptr->size = oldsize * count * blocklength;
-	new_ptr->extent = ((count - 1) * stride + blocklength) * oldsize;
-	new_ptr->has_mpi1_ub = 0;
-	new_ptr->has_mpi1_lb = 0;
-	new_ptr->loopinfo_depth = 1;
-	new_ptr->true_lb = 0;
-	new_ptr->alignsize = oldsize;
-	new_ptr->n_elements = count * blocklength;
-	new_ptr->element_size = oldsize;
+	new_ptr->size		= oldsize * count * blocklength;
+	new_ptr->extent		= 
+	    ((count - 1) * stride + blocklength) * oldsize;
+	new_ptr->has_mpi1_ub	= 0;
+	new_ptr->has_mpi1_lb	= 0;
+	new_ptr->loopinfo_depth	= 1;
+	new_ptr->true_lb	= 0;
+	new_ptr->alignsize	= oldsize;
+	new_ptr->n_elements	= count * blocklength;
+	new_ptr->element_size	= oldsize;
 	new_ptr->opt_loopinfo->kind = MPID_VECTOR | DATALOOP_FINAL_MASK | 
 	    (oldsize << DATALOOP_ELMSIZE_SHIFT);
-	new_ptr->opt_loopinfo->loop_params.v_t.count = count;
+	new_ptr->opt_loopinfo->loop_params.v_t.count	 = count;
 	new_ptr->opt_loopinfo->loop_params.v_t.blocksize = blocklength;
-	new_ptr->opt_loopinfo->loop_params.v_t.stride = stride;
-	new_ptr->opt_loopinfo->loop_params.v_t.dataloop = 0;
-	new_ptr->opt_loopinfo->extent = new_ptr->extent;
-	new_ptr->opt_loopinfo->id = new_ptr->id;
+	new_ptr->opt_loopinfo->loop_params.v_t.stride	 = stride;
+	new_ptr->opt_loopinfo->loop_params.v_t.dataloop	 = 0;
+	new_ptr->opt_loopinfo->extent			 = new_ptr->extent;
+	new_ptr->opt_loopinfo->id			 = new_ptr->id;
     }
     else {
 	new_ptr->size = old_ptr->size * count * blocklength;
 	/* This computation of extent is not correct */
-	new_ptr->extent = ((count - 1) * stride + blocklength) * old_ptr->extent;
-	new_ptr->has_mpi1_ub = old_ptr->has_mpi1_ub;
-	new_ptr->has_mpi1_lb = old_ptr->has_mpi1_lb;
-	new_ptr->loopinfo_depth = old_ptr->loopinfo_depth + 1;
-	new_ptr->true_lb = old_ptr->true_lb;
-	new_ptr->alignsize = old_ptr->alignsize;
-	new_ptr->n_elements = old_ptr->n_elements * count * blocklength;
-	new_ptr->element_size = old_ptr->element_size;
+	new_ptr->extent		= 
+	    ((count - 1) * stride + blocklength) * old_ptr->extent;
+	new_ptr->has_mpi1_ub	= old_ptr->has_mpi1_ub;
+	new_ptr->has_mpi1_lb	= old_ptr->has_mpi1_lb;
+	new_ptr->loopinfo_depth	= old_ptr->loopinfo_depth + 1;
+	new_ptr->true_lb	= old_ptr->true_lb;
+	new_ptr->alignsize	= old_ptr->alignsize;
+	new_ptr->n_elements	= old_ptr->n_elements * count * blocklength;
+	new_ptr->element_size	= old_ptr->element_size;
+	/* FIX ME: final only if old type is contiguous */
+	if (1) {
+	    new_ptr->opt_loopinfo->kind = MPID_VECTOR | DATALOOP_FINAL_MASK | 
+	    (old_ptr->size << DATALOOP_ELMSIZE_SHIFT);
+	}
+	new_ptr->opt_loopinfo->loop_params.v_t.count	 = count;
+	new_ptr->opt_loopinfo->loop_params.v_t.blocksize = blocklength;
+	new_ptr->opt_loopinfo->loop_params.v_t.stride	 = stride;
+	new_ptr->opt_loopinfo->loop_params.v_t.dataloop	 = 0;
+	new_ptr->opt_loopinfo->extent			 = new_ptr->extent;
+	new_ptr->opt_loopinfo->id			 = new_ptr->id;
     }
 
     *newtype = new_ptr->id;

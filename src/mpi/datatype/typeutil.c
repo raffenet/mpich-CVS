@@ -114,7 +114,7 @@ MPID_Datatype *MPID_Datatype_create( void )
     return ptr;
 }   
 
-/* Free an comm structure */
+/* Free a datatype structure */
 void MPID_Datatype_free( MPID_Datatype *datatype_ptr )
 {
     /* Lock because updating avail list */
