@@ -611,9 +611,9 @@ if test $with_mpe != no ; then
 	eval actuallibdir=$libdir
 	#MPI_LIBS="-L$actuallibdir -lmpich -lpmpich"
 	prefix=$savePrefix
-	$exec_prefix=$saveExecprefix
+	exec_prefix=$saveExecprefix
 	# NOTE: You must append LIBS to MPI_LIBS before invoking the mpe
-	# connfigure
+	# configure
 	export MPI_CC
 	export MPI_F77
 	#export MPI_LIBS
