@@ -748,9 +748,12 @@ possibilities are:
 \item The sum of all return codes.  Note that there may be
 a limit of 255 imposed by the operating system.
 \item The number of non-zero return codes.
-\item A bit vector that indicats which processes had non-zero return
+\item A bit vector that indicates which processes had non-zero return
 codes.
 \end{description}
+
+\code{mpiexec} also needs to provide an API that allows other tools such as
+debuggers to locate all processes in an MPI job.
 
 \section{Attributes}
 \input AttrOverview.tex
