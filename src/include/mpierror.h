@@ -97,9 +97,11 @@ void MPIR_Err_preinit( void );
 void MPIR_Err_get_string(int, char *);
 typedef int (* MPIR_Err_get_class_string_func_t)(int error, char *str, int length);
 void MPIR_Err_get_string_ext(int, char *, int, MPIR_Err_get_class_string_func_t fn);
+
 void MPIR_Err_print_stack(FILE *, int);
-int MPIR_Err_set_msg( int code, const char *msg_string );
 extern int MPIR_Err_print_stack_flag;
+
+int MPIR_Err_set_msg( int code, const char *msg_string );
 
 #define MPIR_ERR_CLASS_MASK 0x0000007f
 #define MPIR_ERR_CLASS_SIZE 128
