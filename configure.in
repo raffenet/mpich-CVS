@@ -214,8 +214,6 @@ AC_ARG_WITH(namepublisher,
                              MPI_PUBLISH_NAME and MPI_LOOKUP_NAME.  Options
                              include
                                no (no service available)
-                               pmiext  (service using a pmi extension,
-                                        usually only within the same MPD ring)
 			       file:directory
 			       mpd
                                ldap:ldapservername
@@ -1064,16 +1062,6 @@ if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
 	nameserv_name="ldap"
     ;;
 
-    pmiext)
-    # This name publisher should simply use the PMI support as
-    # part of the selected PMI interface implmentation.  If that
-    # interface does not support pmiext, then the appropriate
-    # configure should signal an error.
-    AC_MSG_WARN([No pmiext name publisher supported])
-dnl    AC_DEFINE(USE_PMIEXT_FOR_NAMEPUB,1,[Define if pmiext should be used for name publishing])
-    #nameserv_name="pmiext"
-    ;;
-
     file*)
     # Note that we always build the Makefile for the file version because
     # this name publisher is really too simple to require a 
@@ -1098,7 +1086,19 @@ dnl    AC_DEFINE(USE_PMIEXT_FOR_NAMEPUB,1,[Define if pmiext should be used for n
     ;;
 
     *)
-    AC_MSG_WARN([Unknown name publisher $with_namepublisher])
+    # Check for a new namepublisher
+    dir=$with_namepublisher
+    # If we later need args, here is where we can strip them off of the
+    # with argument
+    if test -d "$use_top_srcdir/src/nameserv/$dir" ; then
+        if test -x "$use_top_srcdir/src/nameserv/$dir/configure" ; then
+	    # Run the configure in this directory if necessary
+            subsystems="$subsystems src/nameserv/$dir"
+        fi
+	nameserv_name=$dir
+    else
+        AC_MSG_WARN([Unknown name publisher $with_namepublisher])
+    fi
     ;;
     esac    
 fi
