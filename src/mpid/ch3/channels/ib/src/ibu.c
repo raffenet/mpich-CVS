@@ -12,6 +12,7 @@
 #include "ibu.h"
 #include "iba.h"
 #include "psc_iba.h"
+#include "blockallocator.h"
 #include <stdio.h>
 
 typedef union ibu_work_id_handle_t
@@ -89,7 +90,7 @@ static int g_num_cp_threads = 2;
 
 
 /* utility allocator functions */
-
+#if 0
 typedef struct BlockAllocator_struct * BlockAllocator;
 
 BlockAllocator BlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p));
@@ -300,6 +301,8 @@ static int BlockFree(BlockAllocator p, void *pBlock)
     return 0;
 }
 
+
+#endif
 
 
 
