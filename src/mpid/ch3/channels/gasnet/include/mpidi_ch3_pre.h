@@ -19,7 +19,7 @@
 
 /*#define MPID_USE_SEQUENCE_NUMBERS*/
 
-#define MPIDI_CH3_CHANNEL_RNDV
+/*#define MPIDI_CH3_CHANNEL_RNDV*/
 
 typedef struct MPIDI_CH3I_Process_group_s
 {
