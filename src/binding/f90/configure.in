@@ -1,0 +1,1093 @@
+dnl
+dnl This has been derived from the MPICH-1 configure for the Fortran 77 (!)
+dnl binding.  It still needs major editing.  It does get the important
+dnl directory names, such as master_top_srcdir, set correctly.
+dnl
+AC_INIT(Makefile.in)
+dnl
+AC_PREREQ(2.13) dnl needed for SHELL, added in 2.13
+dnl rm -f ${srcdir}/mpi_fortconf.h mpi_fortconf.h
+dnl AC_CONFIG_HEADER(mpi_fortconf.h)
+dnl We need install.sh, config.guess, etc. for the code that
+dnl finds the Fortran libraries
+AC_CONFIG_AUX_DIR(../../../confdb)
+dnl
+dnl Allow device to supply a mpid_fortdefs.h header file
+dnl
+dnl To enable this feature, the device setup script must set the environment
+dnl variable HAVE_MPID_FORTDEFS_H and copy mpid_fortdefs.h to mpich/include
+dnl and mpich2/src/binding/f77.  The device is also responsible for
+dnl installing the header file.
+dnl
+if test -z "$HAVE_MPID_FORTDEFS_H" ; then
+    HAVE_MPID_FORTDEFS_H=0
+fi
+AC_SUBST(HAVE_MPID_FORTDEFS_H)
+
+PAC_ARG_CACHING
+
+AC_ARG_ENABLE(strict,
+[--enable-strict  - Turn on strict compilation testing when using gcc],
+COPTIONS="${COPTIONS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL")
+
+AC_ARG_ENABLE(echo,
+[--enable-echo    - Turn on echoing from within the configure script],
+set -x)
+
+AC_ARG_ENABLE(weak-symbols,
+[--enable-weak-symbols - Use weak symbols to provide the profiling interface
+    (default)],
+enable_weak=$enableval,enable_weak="yes")
+
+AC_ARG_ENABLE(use-pointer,
+[--enable-use-pointer - Use the common pointer extension for MPI_BOTTOM and
+    related special values],
+    use_pointer_in_f77=$enableval,use_pointer_in_f77="no")
+dnl Change the default to yes soon
+
+dnl The default is the usual MPICH library
+AC_ARG_WITH(flibname,
+[--with-flibname=name  - Specify name of library containing Fortran interface
+routines],[FLIBNAME=$withval;set_FLIBNAME="yes"],FLIBNAME=mpich)
+AC_SUBST(FLIBNAME)
+
+dnl
+dnl The default is a special wrapper library
+AC_ARG_WITH(fwrapname,
+[--with-fwrapname=name  - Specify name of library containing Fortran interface
+routines],[FWRAPNAME=$withval;set_FWRAPNAME="yes"],FWRAPNAME=fmpich)
+AC_SUBST(FWRAPNAME)
+
+AC_ARG_WITH(cross,
+[--with-cross=file - Specify the values of variables that configure cannot
+determine in a cross-compilation environment],,with_cross=no)
+dnl [--with-cross=file - Use the file for cross compilation.  The file should 
+dnl             contain assignments of the form
+dnl             CROSS_SIZEOF_INT=4
+dnl              for each cross compilation variable.  The command
+dnl                 egrep 'CROSS_[A-Z_]*=' configure | sed 's/=.*//g'
+dnl              will list each variable],
+
+AC_ARG_WITH(mpichconfig,
+[--with-mpichconfig=file - Use file for the MPICH configuration.
+              Normally, this file is mpichlib.conf, but other files
+              may be used.],
+[if test -z "$withval" -o "X$withval" = "Xyes" ; then 
+    mpichconfig_file=../../util/mpichlib.conf
+else 
+    mpichconfig_file=$withval
+fi
+],mpichconfig_file="")
+
+AC_ARG_WITH(subname,
+[--with-subname=name - Use this name for forming the names of the 
+              directories to install the mpif.h include file and 
+              libraries, as well as the mpif77-name.conf file.  This
+              should be used to support multiple Fortran compilers with
+              a single MPICH build.  It must be used in conjunction with
+              --with-mpichconfig],
+subname=$withval,subname="")
+
+dnl
+dnl First check that we have a clean build if we are doing a VPATH build
+if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
+    AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
+    configured.  Run "make distclean" in $srcdir first.])
+fi
+
+dnl
+dnl Get the "master" top srcdir if we are a subdir configure
+if test -z "$top_srcdir" ; then
+   use_top_srcdir=$srcdir   
+else
+   use_top_srcdir=$top_srcdir
+fi
+if test -z "$master_top_srcdir" ; then 
+    master_top_srcdir=$use_top_srcdir
+fi
+AC_SUBST(master_top_srcdir)
+export master_top_srcdir
+
+if test "$with_cross" != "no" ; then
+    if test -s "$with_cross" ; then
+        AC_MSG_RESULT([Reading values from cross-compilation file $with_cross])
+        . $with_cross
+    fi
+    # with_cross may have been passed down from above (in a calling configure)
+    # so set the cross-compilation options independent of whether the
+    # file exists.
+    # Autoconf 2.52 no longer sets cross_compiling except with the
+    # awkward "targethost" options.
+    pac_cross_compiling=yes
+    cross_compiling=yes
+    ac_cv_prog_cc_cross=yes
+    ac_cv_prog_f77_cross=yes
+    ac_cv_prog_cxx_cross=yes
+    export cross_compiling
+fi
+
+if test -n "$subname" -a -z "$mpichconfig_file" ; then
+    AC_MSG_ERROR([Must specify --with-mpichconfig with --with-subname])
+fi
+
+# Read any cross-compilation variable values
+if test "$cross_file" != "/dev/null" -a -s "$cross_file" ; then
+    . $cross_file
+fi
+
+if test -n "$mpichconfig_file" -a -s "$mpichconfig_file" ; then
+    . $mpichconfig_file
+    pac_lib_mpi_is_building="yes"
+fi
+
+
+#
+# Define the installation directory names (defaults)
+if test -n "$subname" ; then
+    # add the leading hyphen
+    subname="-$subname"
+    f77includedir='${includedir}'"/${subname}"
+    f77libdir='${libdir}'
+    f77bindir='${bindir}'
+    if test "$set_FLIBNAME" != "yes" ; then
+	FLIBNAME="mpich$subname"
+    fi
+    if test "$set_FWRAPNAME" != "yes" ; then
+	FWRAPNAME="fmpich$subname"
+    fi
+else
+    subname="-`echo $F77 | sed 's/ /-/g'`"
+    # Don't include the (sub)name in the defaults
+    f77includedir='${includedir}'
+    f77libdir='${libdir}'
+    f77bindir='${bindir}'
+fi
+AC_SUBST(f77includedir)
+AC_SUBST(f77libdir)
+AC_SUBST(f77bindir)
+AC_SUBST(subname)
+# To make this compatible with the MPICH configure, the library
+# directory can be set with libbuild_dir; if not set, it is built in the
+# src directory
+if test -z "$libbuild_dir" ; then
+    libbuild_dir=`pwd`/src
+fi
+AC_SUBST(libbuild_dir)
+
+AC_SUBST(FORTRAN_INITOBJ)
+AC_SUBST(INCLUDES)
+    FORTRAN_INITOBJ="initfutil.o"
+    # We should replace mpicc with the values used in the MPICH build.
+    # This is best done with an environment variable (? what about 
+    # config.status re-execution?)
+    INCLUDES="$mpich_includes"
+    if test "$hasMPE" = "unknown" ; then
+	hasMPE="yes"
+    fi
+    AC_SUBST(MPIVERSION)
+# Directory for building the library in (in src if not specified)
+if test -z "$libbuild_dir" ; then
+    libbuild_dir=`pwd`/src
+    if test ! -d $libbuild_dir ; then mkdir $libbuild_dir ; fi
+fi
+AC_SUBST(libbuild_dir)
+
+PAC_PROG_CC
+AC_C_CONST
+# Check on support for long double and long long types.
+AC_CACHE_CHECK([whether long double is supported],
+pac_cv_have_long_double,[
+AC_TRY_COMPILE(,[long double a;],
+pac_cv_have_long_double=yes,pac_cv_have_long_double=no)])
+if test "$pac_cv_have_long_double" = "yes" ; then
+    AC_DEFINE(HAVE_LONG_DOUBLE,,[Define if long double is supported])
+fi
+AC_CACHE_CHECK([whether long long is supported],
+pac_cv_have_long_long,[
+AC_TRY_COMPILE(,[long double a;],
+pac_cv_have_long_long=yes,pac_cv_have_long_long=no)])
+if test "$pac_cv_have_long_long" = "yes" ; then
+    AC_DEFINE(HAVE_LONG_LONG_INT,,[Define if long long is supported])
+fi
+dnl
+dnl Autoconf bug: AC_PROG_F77 sets FFLAGS 
+save_FFLAGS="$FFLAGS"
+AC_PROG_F77
+FFLAGS="$save_FFLAGS"
+# Bug in autoconf.  Restore cross settings
+if test "$pac_cross_compiling" = "yes" -a "$ac_cv_prog_f77_cross" = "no" ; then
+    AC_MSG_RESULT([Resetting cross compilation to yes])
+    cross_compiling=yes
+    ac_cv_prog_cc_cross=yes
+    ac_cv_prog_f77_cross=yes
+    ac_cv_prog_f90_cross=yes
+    ac_cv_prog_cxx_cross=yes
+fi
+
+AC_SUBST(FOPTIONS)
+if test -z "$FLINKER" ; then
+   FLINKER="$F77"
+fi
+AC_SUBST(FLINKER)
+# We need F90 to get the OFFSET_KIND and ADDRESS_KIND values.
+if test "$enable_f90" != "no" ; then
+    PAC_PROG_F90
+    if test -z "$F90" ; then
+        enable_f90=no
+    else
+        if test -z "$F90LINKER" ; then
+            F90LINKER="$F90"
+        fi
+    fi
+    AC_SUBST(F90LINKER)
+fi
+dnl
+dnl Checks for programs
+PAC_PROG_MAKE
+# archive program
+# In some cases, the AR definition in the MPICH configure is exported.
+# Define our own AR here, just in case
+if test -n "$ARCMD" ; then
+    AR="$ARCMD"
+else
+    AR=ar
+fi
+AC_SUBST(AR)
+AC_PROG_INSTALL
+AC_PATH_PROG(RANLIB,ranlib)
+AC_SUBST(RANLIB)
+# allow for a different linker for Fortran programs
+AC_SUBST(F77LINKER)
+if test -z "$F77LINKER" ; then
+    F77LINKER="$F77"
+fi
+
+AC_SUBST(MPILIBNAME)
+#
+# The following variables are used in mpif77.in and reflect the MPI
+# implementation that is in use.
+# 
+if test "$pac_lib_mpi_is_building" = "yes" ; then
+    # These values are EXPORTED by the MPICH configure
+    # Alternately, if we are building a *new* Fortran library for a
+    # pre-existing MPICH build, we need to get these variables from
+    # the MPICH library configuration file.
+    AC_SUBST(LIB_PATH)
+    AC_SUBST(BASE_LIB_LIST)
+    AC_SUBST(HASMPE)
+    F77_LDFLAGS="$ROMIO_LFLAGS"
+    AC_SUBST(F77_LDFLAGS)
+    BASE_FFLAGS="$ROMIO_TFFLAGS"
+    AC_SUBST(BASE_FFLAGS)
+    AC_SUBST(includebuild_dir)
+    AC_SUBST(MPI_WITH_PMPI)
+    # Shared library support (replace with libtool?)
+    AC_SUBST(SHAREDKIND)
+    AC_SUBST(SHARED_LIB_SEARCH_PATH_LEADER)
+    AC_SUBST(SHARED_LIB_LOCALDIR)
+    AC_SUBST(sharedlibbuild_dir)
+    AC_SUBST(sharedlib_dir)
+    MPI2_OBJECTS='${MPI2_OBJECTS}'
+    AC_SUBST(MPI2_OBJECTS)
+fi
+if test "$DEBUG_DUMP" = "yes" ; then
+    rm -f config.env
+    echo "Environment before push" >>config.env
+    set >>config.env
+    echo "End of env" >> config.env
+fi
+PAC_LANG_PUSH_COMPILERS
+if test "$DEBUG_DUMP" = "yes" ; then
+    echo "Environment after push" >>config.env
+    set >>config.env
+    echo "End of env" >> config.env
+fi
+dnl
+dnl Why is this here?  Please explain why -lg2c must be excluded when
+dnl using the NAG compilers.  
+dnl The reason is that when it is included, codes fail in exit.  The
+dnl problem was tracked down to the fact that the nag fortran routines
+dnl do not initialize the argument values in the way that g2c expects.
+dnl So, g2c is discovered, but it will not work.
+dnl 
+if test "$f90nag" = "1" -o "$f95nag" = "1" ; then 
+    NOG2C=yes 
+else 
+    NOG2C=no
+fi
+dnl
+dnl This option requires the config.guess etc.
+#
+# Tru64 Unix (at least V5.0) implements neither the RANDOM variable nor the
+# mktemp function.  This will cause config.guess to fail.  To workaround this,
+# we define RANDOM using date if it is not defined
+# Grr.  This doesn't work because configure execute config.guess in 
+# a separate shell, using sh .  The only fix is to specify a -host 
+# when running configure.  Sigh.
+#if test -z "$RANDOM" ; then
+#    RANDOM=`date '+%H%M%S'`
+#    export RANDOM
+#fi
+FLIBS_save="$FLIBS"
+FLIBS=""
+AC_F77_LIBRARY_LDFLAGS
+PAC_PROG_F77_CHECK_FLIBS
+dnl
+PAC_PROG_F77_LINKER_WITH_C
+dnl For name mangle, we need the library flags
+PAC_PROG_F77_NAME_MANGLE
+
+dnl Once we have name mangle, we can try to limit the number of needed libs
+PAC_PROG_F77_IN_C_LIBS
+AC_SUBST(F77_IN_C_LIBS)
+AC_LANG_FORTRAN77
+PAC_PROG_F77_EXCLAIM_COMMENTS(has_exclaim="yes",has_exclaim="no")
+PAC_PROG_F77_NEW_CHAR_DECL(CHARDECL="(LEN=*)",CHARDECL="*(*)")
+AC_SUBST(CHARDECL)
+dnl PAC_F77_CHECK_COMPILER_OPTION(-g)
+PAC_PROG_F77_HAS_INCDIR(include)
+if test -n "$F77_INCDIR" ; then
+    # For building the Fortran files, add the directory where we are building 
+    # the object to the include list.  This is needed for g77, which makes
+    # includes relative to the source directory of the file, not the 
+    # directory that the command is executed in
+    FINCLUDES="$F77_INCDIR`pwd`/src"
+fi
+AC_SUBST(FINCLUDES)
+#
+PAC_PROG_F77_LIBRARY_DIR_FLAG
+
+AC_SUBST(MPIFPMPI)
+if test "$MPI_WITH_PMPI" = "no" ; then
+    # If the PMPI routines are not in the same library with the MPI
+    # routines, we may need to remove the pmpi declarations
+    PAC_PROG_F77_ALLOWS_UNUSED_EXTERNALS([MPIFPMPI=",PMPI_WTIME,PMPI_WTICK"],[
+    MPIFPMPI=""; 
+    AC_MSG_WARN([Removed PMPI_WTIME and PMPI_WTICK from mpif.h])])
+else
+    MPIFPMPI=",PMPI_WTIME,PMPI_WTICK"
+fi
+dnl If Fortran has a pointer extension, we can create a null pointer 
+dnl instead of using the hack of checking for a specific address.
+PAC_PROG_F77_HAS_POINTER(f77_has_pointer=yes,f77_has_pointer=no)
+rm -f mpif_bottom.h
+if test "$f77_has_pointer" = "yes" -a "$use_pointer_in_f77" = "yes" ; then
+    cat >>mpif_bottom.h <<EOF
+        pointer (MPI_BOTTOM_PTR,MPI_BOTTOM)
+	pointer (MPI_STATUS_IG_PTR,MPI_STATUS_IGNORE)
+	pointer (MPI_STATUSES_IG_PTR,MPI_STATUSES_IGNORE)
+        data MPI_BOTTOM_PTR/0/, MPI_STATUS_IG_PTR/0/
+	data MPI_STATUSES_IG_PTR/0/
+EOF
+    AC_DEFINE(USE_POINTER_FOR_BOTTOM,,[Define if we want to use nonstandard Fortran Pointer feature])
+    dnl Note that with this, we do not need the call to mpir_init_fcm
+    dnl in initfcmn.f .
+else
+    cat >>mpif_bottom.h <<EOF
+      COMMON /MPIPRIV/ MPI_BOTTOM,MPI_STATUS_IGNORE,MPI_STATUSES_IGNORE      
+C
+C     Without this save, some Fortran implementations may make the common
+C     dynamic!
+C    
+C     For a Fortran90 module, we might replace /MPIPRIV/ with a simple
+C     SAVE MPI_BOTTOM
+C
+      SAVE /MPIPRIV/
+EOF
+fi
+
+dnl Up to size checking code in master configure.in (where it tries to 
+dnl find the matching C sizes) as part of defining mpi_integer8 etc.
+dnl The results are available in pac_cv_sizeof_f77_<type>
+dnl Size is 0 if unknown or unavailable (or cross-compiling)
+dnl Due to limitations in autoconf, we cannot put these into a loop.
+dnl We also check integer to find the type of MPI_Fint
+dnl
+dnl Cross-compilation results can be included with the --with-cross=file
+dnl option.
+CROSS_F77_SIZEOF_INTEGER=${CROSS_F77_SIZEOF_INTEGER:-0}
+CROSS_F77_SIZEOF_REAL=${CROSS_F77_SIZEOF_REAL:-0}
+CROSS_F77_SIZEOF_DOUBLE_PRECISION=${CROSS_F77_SIZEOF_DOUBLE_PRECISION:-0}
+PAC_PROG_F77_CHECK_SIZEOF(integer,$CROSS_F77_SIZEOF_INTEGER)
+PAC_PROG_F77_CHECK_SIZEOF(real,$CROSS_F77_SIZEOF_REAL)
+PAC_PROG_F77_CHECK_SIZEOF(double precision,$CROSS_F77_SIZEOF_DOUBLE_PRECISION)
+# If we have sizes for real and double, we do not need to call mpir_get_fsize
+# at run time.
+#
+AC_TRY_COMPILE(,[      integer*1 i],has_integer_1=1,has_integer_1=0)
+AC_TRY_COMPILE(,[      integer*2 i],has_integer_2=2,has_integer_2=0)
+AC_TRY_COMPILE(,[      integer*4 i],has_integer_4=4,has_integer_4=0)
+AC_TRY_COMPILE(,[      integer*8 i],has_integer_8=8,has_integer_8=0)
+AC_TRY_COMPILE(,[      integer*16 i],has_integer_16=16,has_integer_16=0)
+dnl PAC_PROG_F77_CHECK_SIZEOF(integer*1,0)
+dnl PAC_PROG_F77_CHECK_SIZEOF(integer*2,0)
+dnl PAC_PROG_F77_CHECK_SIZEOF(integer*4,0)
+dnl PAC_PROG_F77_CHECK_SIZEOF(integer*8,0)
+dnl PAC_PROG_F77_CHECK_SIZEOF(integer*16,0)
+
+dnl PAC_PROG_F77_CHECK_SIZEOF(real*4,0)
+dnl PAC_PROG_F77_CHECK_SIZEOF(real*8,0)
+dnl PAC_PROG_F77_CHECK_SIZEOF(real*16,0)
+AC_TRY_COMPILE(,[      real*4 a],has_real_4=4,has_real_4=0)
+AC_TRY_COMPILE(,[      real*8 a],has_real_8=8,has_real_8=0)
+AC_TRY_COMPILE(,[      real*16 a],has_real_16=16,has_real_16=0)
+
+# Create the default datatype names for the standard MPI Fortran types
+MPI_CHARACTER=0x4c000120
+AC_SUBST(MPI_CHARACTER)
+
+len_integer=$pac_cv_f77_sizeof_integer
+# Convert to two digit hex
+if test $len_integer -le 0 ; then 
+     len_integer=00
+elif test $len_integer -le 9 ; then
+     len_integer=0$len_integer 
+elif test $len_integer -le 15 ; then
+     case $len_integer in 
+         10) char=a ;;
+	 11) char=b ;;
+	 12) char=c ;;
+	 13) char=d ;;
+	 14) char=e ;;
+	 15) char=f ;;
+         esac
+    len_integer="0$char"
+else
+    AC_MSG_ERROR([Integer type sizes greater than 15 are not supported])
+fi
+
+MPI_INTEGER=0x4c00${len_integer}21
+MPI_REAL=0x4c00${len_integer}22
+MPI_LOGICAL=0x4c00${len_integer}23
+AC_SUBST(MPI_INTEGER)
+AC_SUBST(MPI_REAL)
+AC_SUBST(MPI_LOGICAL)
+
+len_double=$pac_cv_f77_sizeof_double_precision
+# Convert to two digit hex
+if test $len_double -le 0 ; then 
+     len_double=00
+elif test $len_double -le 9 ; then
+     len_double=0$len_double 
+elif test $len_double -le 15 ; then
+     case $len_double in 
+         10) char=a ;;
+	 11) char=b ;;
+	 12) char=c ;;
+	 13) char=d ;;
+	 14) char=e ;;
+	 15) char=f ;;
+         esac
+    len_double="0$char"
+elif test $len_double -le 31 ; then
+    len_double=`expr $len_double - 16`
+    len_double="1$len_double"
+else
+    AC_MSG_ERROR([Double Precision type sizes greater than 31 are not supported])
+fi
+
+MPI_COMPLEX=0x4c00${len_double}24
+MPI_DOUBLE_PRECISION=0x4c00${len_double}25
+MPI_2INTEGER=0x4c00${len_double}26
+MPI_2REAL=0x4c00${len_double}27
+AC_SUBST(MPI_COMPLEX)
+AC_SUBST(MPI_DOUBLE_PRECISION)
+AC_SUBST(MPI_2INTEGER)
+AC_SUBST(MPI_2REAL)
+
+len_doublecplx=`expr $pac_cv_f77_sizeof_double_precision \* 2`
+# Convert to two digit hex
+if test $len_doublecplx -le 0 ; then 
+     len_doublecplx=00
+elif test $len_doublecplx -le 9 ; then
+     len_doublecplx=0$len_doublecplx 
+elif test $len_doublecplx -le 15 ; then
+     case $len_doublecplx in 
+         10) char=a ;;
+	 11) char=b ;;
+	 12) char=c ;;
+	 13) char=d ;;
+	 14) char=e ;;
+	 15) char=f ;;
+         esac
+    len_doublecplx="0$char"
+elif test $len_doublecplx -le 31 ; then
+    len_doublecplx=`expr $len_doublecplx - 16`
+    if test "$len_doubldcplx" = 0 ; then
+        len_doublecplx="10";
+    else
+        len_doublecplx="1$len_doublecplx";
+    fi        
+else
+    AC_MSG_ERROR([Double Complex type sizes greater than 31 are not supported])
+fi
+
+MPI_DOUBLE_COMPLEX=0x4c00${len_doublecplx}28
+MPI_2DOUBLE_PRECISION=0x4c00${len_doublecplx}29
+MPI_2COMPLEX=0x4c00${len_doublecplx}2a
+AC_SUBST(MPI_DOUBLE_COMPLEX)
+AC_SUBST(MPI_2DOUBLE_PRECISION)
+AC_SUBST(MPI_2COMPLEX)
+
+#
+# Temporary for the vast majority of systems that use 4 byte reals and
+# 8 byte doubles
+# Lengths at this point are in hex, hench "10" = 10 base 16 = 16 base 10.
+if test "$len_double" = "08" ; then
+    F77_COMPLEX8=$MPI_COMPLEX
+fi
+if test "$len_doublecplx" = "10" ; then
+    F77_COMPLEX16=$MPI_DOUBLE_COMPLEX
+fi
+if test "$len_long_double" = "10" ; then
+    F77_COMPLEX32="0x4c00202b"
+fi
+
+len_2dc=`expr $pac_cv_f77_sizeof_double_precision \* 4`
+firstdigit=0
+seconddigit=0
+while test $len_2dc -ge 16 ; do
+    firstdigit=`expr $firstdigit + 1`
+    len_2dc=`expr $len_2dc - 16`    
+done
+case $len_2dc in
+    10) seconddigit=a ;;
+    11) seconddigit=b ;;
+    12) seconddigit=c ;;
+    13) seconddigit=d ;;
+    14) seconddigit=e ;;
+    15) seconddigit=f ;;
+     *) seconddigit=$len_2dc ;;
+esac
+len_2dc="$firstdigit$seconddigit"
+#echo "2double complex = $len_2dc"
+MPI_2DOUBLE_COMPLEX=0x4c00${len_2dc}2b
+AC_SUBST(MPI_2DOUBLE_COMPLEX)
+#
+# Predefined values for LB, UB, and PACKED
+MPI_PACKED="0x4c000114"
+MPI_LB="0x4c000015"
+MPI_UB="0x4c000016"
+AC_SUBST(MPI_PACKED)
+AC_SUBST(MPI_LB)
+AC_SUBST(MPI_UB)
+
+# We must convert all hex values to decimal (!)
+# It would be nice to use expr to extract the next character rather than
+# the heavier-weight sed, but expr under Tru64 Unix discards leading zeros,
+# even when used only with the match (:) command.  Rather than have configure
+# figure out if expr works, we just use sed.  Sigh.
+for var in CHARACTER INTEGER REAL LOGICAL DOUBLE_PRECISION COMPLEX \
+    DOUBLE_COMPLEX 2INTEGER 2REAL 2COMPLEX 2DOUBLE_PRECISION 2DOUBLE_COMPLEX \
+    PACKED UB LB ; do  
+    fullvar="MPI_$var"
+    eval fullvarvalue=\$$fullvar
+    #echo "$fullvar = $fullvarvalue"
+    value=0
+    fullvarvalue=`echo $fullvarvalue | sed -e 's/..\(.*\)/\1/'`
+    for pos in 3 4 5 6 7 8 9 10 ; do
+        # This works, even for Tru64, because only a single character
+	# is extracted
+        char=`expr $fullvarvalue : '\(.\)'`
+	# FIXME: Tru64 Unix eliminates leading zeros (!)
+	# How do we fix something that broken?
+	fullvarvalue=`echo $fullvarvalue | sed -e 's/.\(.*\)/\1/'`
+        case $char in 
+            a) char=10 ;;
+	    b) char=11 ;;
+	    c) char=12 ;;
+	    d) char=13 ;;
+	    e) char=14 ;;
+	    f) char=15 ;;
+        esac
+        value=`expr $value \* 16 + $char`
+    done
+    #echo "$fullvar = $value"
+    eval $fullvar=$value
+done
+
+# Compare the sizes of these types to the C types
+
+AC_LANG_C
+
+AC_HEADER_STDC
+AC_CHECK_HEADERS(stdlib.h string.h)
+
+# Get defaults for cross compilation case
+CROSS_SIZEOF_CHAR=${CROSS_SIZEOF_CHAR:-0}
+CROSS_SIZEOF_SHORT=${CROSS_SIZEOF_SHORT:-0}
+CROSS_SIZEOF_INT=${CROSS_SIZEOF_INT:-0}
+CROSS_SIZEOF_LONG=${CROSS_SIZEOF_LONG:-0}
+CROSS_SIZEOF_LONG_LONG=${CROSS_SIZEOF_LONG_LONG:-0}
+CROSS_SIZEOF_FLOAT=${CROSS_SIZEOF_FLOAT:-0}
+CROSS_SIZEOF_DOUBLE=${CROSS_SIZEOF_DOUBLE:-0}
+CROSS_SIZEOF_LONG_DOUBLE=${CROSS_SIZEOF_LONG_DOUBLE:-0}
+CROSS_SIZEOF_VOID_P=${CROSS_SIZEOF_VOID_P:-0}
+CROSS_OFFSET_KIND=${CROSS_OFFSET_KIND:-0}
+CROSS_ADDRESS_KIND=${CROSS_ADDRESS_KIND:-0}
+
+AC_CHECK_SIZEOF(char,$CROSS_SIZEOF_CHAR)
+AC_CHECK_SIZEOF(short,$CROSS_SIZEOF_SHORT)
+AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_INT)
+AC_CHECK_SIZEOF(long,$CROSS_SIZEOF_LONG)
+AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
+AC_CHECK_SIZEOF(float,$CROSS_SIZEOF_FLOAT)
+AC_CHECK_SIZEOF(double,$CROSS_SIZEOF_DOUBLE)
+AC_CHECK_SIZEOF(long double,$CROSS_SIZEOF_LONG_DOUBLE)
+# sizeof(void*) is needed for ADDRESS_KIND below
+AC_CHECK_SIZEOF(void*,$CROSS_SIZEOF_VOID_P)
+
+#
+# Preload the C mpi types
+# THESE MUST MATCH THE DEFINITIONS IN MPI.H and MPIF.H
+# We use these to match the optional Fortran types
+char_mpi=${MPI_CHAR:-0}
+short_mpi=${MPI_SHORT:-0}
+int_mpi=${MPI_INT:-0}
+long_mpi=${MPI_LONG:-0}
+long_long_mpi=${MPI_LONG_LONG:-0}
+float_mpi=${MPI_FLOAT:-0}
+double_mpi=${MPI_DOUBLE:-0}
+long_double_mpi=${MPI_LONG_DOUBLE:-0}
+
+for len in 1 2 4 8 16 ; do
+    eval F77_INTEGER$len=0
+    #eval testval=\$"pac_cv_f77_sizeof_integer_$len"
+    eval testval=\$"has_integer_$len"
+    if test "$testval" = 0 ; then continue ; fi
+    noval="yes"
+    AC_MSG_CHECKING([for C type matching Fortran integer*$len])
+    for c_type in char short int long "long_long" ; do
+	eval ctypelen=\$"ac_cv_sizeof_$c_type"
+	if test "$testval" = "$ctypelen" -a "$ctypelen" -gt 0 ; then
+	    AC_MSG_RESULT($c_type)
+	    eval F77_INTEGER$len=\$"${c_type}_mpi"
+	    noval="no"
+	    break
+        fi
+    done
+    if test "$noval" = "yes" ; then
+        AC_MSG_RESULT([unavailable])
+    fi
+done
+
+# Complex is set separately above
+for len in 4 8 16 ; do
+    len2=`expr $len + $len`
+    eval F77_REAL$len=0
+    #eval F77_COMPLEX$len2=0
+    #eval testval=\$"pac_cv_f77_sizeof_real_$len"
+    eval testval=\$"has_real_$len"
+    if test "$testval" = 0 ; then continue ; fi
+    noval="yes"
+    AC_MSG_CHECKING([for C type matching Fortran real*$len])
+    for c_type in float double "long_double" ; do
+	eval ctypelen=\$"ac_cv_sizeof_$c_type"
+	if test "$testval" = "$ctypelen" -a "$ctypelen" -gt 0 ; then
+	    AC_MSG_RESULT($c_type)
+	    eval F77_REAL$len=\$"${c_type}_mpi"
+	    #eval F77_COMPLEX$len2=\$"${c_type}_cplx_mpi"
+            noval="no"
+	    break
+        fi
+    done
+    if test "$noval" = "yes" ; then
+        AC_MSG_RESULT([unavailable])
+    fi
+done
+# We must convert all hex values to decimal (!)
+for var in INTEGER1 INTEGER2 INTEGER4 INTEGER8 INTEGER16 \
+    REAL4 REAL8 REAL16 COMPLEX8 COMPLEX16 COMPLEX32 ; do  
+    fullvar="F77_$var"
+    eval fullvarvalue=\$$fullvar
+    if test "$fullvarvalue" = 0 -o -z "$fullvarvalue" ; then 
+        eval $fullvar=MPI_DATATYPE_NULL
+        continue
+    fi
+    #echo "$fullvar = $fullvarvalue"
+    value=0
+    # See the comments above on why expr with : cannot be used here
+    fullvarvalue=`echo $fullvarvalue | sed -e 's/..\(.*\)/\1/'`
+    for pos in 3 4 5 6 7 8 9 10 ; do
+        #char=`expr substr $fullvarvalue $pos 1`
+        char=`expr $fullvarvalue : '\(.\)'`
+	fullvarvalue=`echo $fullvarvalue | sed -e 's/.\(.*\)/\1/'`
+        case $char in 
+            a) char=10 ;;
+	    b) char=11 ;;
+	    c) char=12 ;;
+	    d) char=13 ;;
+	    e) char=14 ;;
+	    f) char=15 ;;
+        esac
+        value=`expr $value \* 16 + $char`
+    done
+    #echo "$fullvar = $value"
+    eval $fullvar=$value
+done
+AC_SUBST(F77_INTEGER1)
+AC_SUBST(F77_INTEGER2)
+AC_SUBST(F77_INTEGER4)
+AC_SUBST(F77_INTEGER8)
+AC_SUBST(F77_INTEGER16)
+AC_SUBST(F77_REAL4)
+AC_SUBST(F77_REAL8)
+AC_SUBST(F77_REAL16)
+AC_SUBST(F77_COMPLEX8)
+AC_SUBST(F77_COMPLEX16)
+AC_SUBST(F77_COMPLEX32)
+
+noval="yes"
+AC_MSG_CHECKING([for C type matching Fortran integer])
+for c_type in char short int long "long_long" ; do
+    eval ctypelen=\$"ac_cv_sizeof_$c_type"
+    if test "$pac_cv_f77_sizeof_integer" = "$ctypelen" -a \
+       "$ctypelen" -gt 0 ; then
+	c_type=`echo $c_type | sed -e 's/_/ /g'`
+	AC_MSG_RESULT($c_type)
+	MPI_FINT=$c_type
+	noval="no"
+	break
+    fi
+done
+if test "$noval" = "yes" ; then
+    # Set a default
+    MPI_FINT="int"
+    AC_MSG_RESULT([unavailable])
+fi
+AC_SUBST(MPI_FINT)
+dnl
+dnl We also need to check the size of MPI_Aint vs MPI_Fint, and
+dnl define AINT_LARGER_THAN_FINT if aint is larger (this 
+dnl affects code in MPI_Address)
+if test "$ac_cv_sizeof_voidp" != "0" -a \
+        "$ac_cv_sizeof_voidp" -gt "$pac_cv_f77_sizeof_integer" ; then
+    AC_DEFINE(HAVE_AINT_LARGER_THAN_FINT,,[Define if addresses are larger than Fortran integers])
+fi
+dnl
+dnl
+dnl Include a defined value for Fint is int
+if test "$MPI_FINT" = "int" ; then
+    AC_DEFINE(HAVE_FINT_IS_INT,,[Define if Fortran integer are the same size as C ints])
+fi
+
+#
+# Set size of MPI_Status.  We may need sizeof_int here as well
+#
+if test -z "$MPI_STATUS_SIZE" ; then
+    if test -n "$SIZEOF_MPI_STATUS" ; then
+        # compute from the C sizeof
+	MPI_STATUS_SIZE=`expr $SIZEOF_MPI_STATUS / $ac_cv_sizeof_int`
+	if test "$MPI_STATUS_SIZE" = "0" ; then
+	    AC_MSG_WARN([Could not compute the size of MPI_Status])
+	    MPI_STATUS_SIZE=5
+        fi
+    else
+        AC_MSG_WARN([MPI_STATUS_SIZE was not defined!])
+        # The default size is 5.  See mpi.h.in
+        MPI_STATUS_SIZE=5
+    fi
+fi
+AC_SUBST(MPI_STATUS_SIZE)
+
+PAC_PROG_C_UNALIGNED_DOUBLES(,
+[AC_MSG_WARN(Your C compiler $CC does not support unaligned accesses
+to doubles.  This is required for interoperation with 
+Fortran (the Fortran standard requires it).)])
+
+#
+# Bsend overhead is sent down from the top level configure.
+# Set a conservative default if it isn't provided.
+BSEND_OVERHEAD=${BSEND_OVERHEAD:-128}
+AC_SUBST(BSEND_OVERHEAD)
+
+MPI_MAX_PROCESSOR_NAME="${MPI_MAX_PROCESSOR_NAME:-128}"
+AC_SUBST(MPI_MAX_PROCESSOR_NAME)
+#
+# Try for weak symbols for the profiling interface.
+if test "$enable_weak" = "yes" ; then
+    PAC_PROG_C_WEAK_SYMBOLS(AC_DEFINE(HAVE_WEAK_SYMBOLS,,[Define if weak symbols supported]))
+fi
+# These values are exported from the upper-layer configure.
+AC_SUBST(PROFILE_DEF_MPI)
+AC_SUBST(NO_WEAK_SYM)
+AC_SUBST(NO_WEAK_SYM_TARGET)
+#
+# If weak symbols are *not* supported, we may want to be careful
+# about including 
+# external pmpi_wtime, pmpi_wtick
+# in the mpif.h file .  For now, we'll just declare them as 
+# double precision without including an external declaration for them.
+#
+# Try to get values for Fortran logical variables.
+if test "$cross_compiling" = "no" ; then
+    AC_MSG_CHECKING([for values of Fortran logicals])
+    AC_CACHE_VAL(pac_cv_prog_f77_true_false_value,[
+    PAC_PROG_F77_RUN_PROC_FROM_C([
+#include <stdio.h>
+int main()
+{
+    $MPI_FINT itrue, ifalse;
+    FILE *f = fopen("conftestval", "w" );
+    if (!f) exit(1);
+    ftest_( &itrue, &ifalse );
+    fprintf( f, "%d %d\n", itrue, ifalse );
+    exit(0);
+}
+],[
+        subroutine ftest( itrue, ifalse )
+        logical itrue, ifalse
+        itrue  = .TRUE.
+        ifalse = .FALSE.
+        return
+        end
+],[
+    pac_cv_prog_f77_true_false_value=`cat conftestval`
+],,:)])
+    true_val="`echo $pac_cv_prog_f77_true_false_value | sed -e 's/ .*//g'`"
+    false_val="`echo $pac_cv_prog_f77_true_false_value | sed -e 's/.*  *//g'`"
+    if test -n "$true_val" -a -n "$false_val" ; then
+        AC_DEFINE(F77_TRUE_VALUE_SET,,[Define if we know the value of Fortran true and false])
+        AC_DEFINE_UNQUOTED(F77_TRUE_VALUE,$true_val,[The value of true in Fortran])
+        AC_DEFINE_UNQUOTED(F77_FALSE_VALUE,$false_val,[The value of false in Fortran])
+	AC_MSG_RESULT([True is $true_val and False is $false_val])
+    else
+	AC_MSG_RESULT([could not determine])
+    fi
+fi
+
+PAC_LANG_POP_COMPILERS
+
+# If the system is Cray or Cray-like, then we need to handle character
+# data in a special way.  This code does that.
+if test "$target_os" = "CRAY" ; then
+    # If tested code does NOT compile, then define _TWO_WORD_FCD
+    AC_MSG_CHECKING([whether TWO_WORD_FCDs are used])
+    AC_TRY_COMPILE([#include <fortran.h>],
+[void  *buf;_fcd temp;temp = _fcdtocp(buf);],
+compile_check=yes,compile_check=no)
+    AC_MSG_RESULT($compile_check)
+    if test "$compile_check" = "no" ; then
+        TEMP_CFLAGS=$CFLAGS
+        CFLAGS="-D_TWO_WORD_FCD $CFLAGS"
+        AC_MSG_CHECKING([whether program compiles if _TWO_WORD_FCD is defined ])
+        AC_TRY_COMPILE([#include <fortran.h>],
+[void  *buf;_fcd temp;temp = _fcdtocp(buf);],
+compile_check=yes,compile_check=no)
+        AC_MSG_RESULT($compile_check)
+        if test "$compile_check" = "no" ; then
+	    AC_MSG_WARN([You may have problems compiling the Fortran interface
+specifically calls to  _fcdtocp])
+        elif test "$compile_check" = "yes" ; then
+            AC_DEFINE(_TWO_WORD_FCD,,[Define if characters use two-word descriptors])
+        fi
+        CFLAGS=$TEMP_CFLAGS
+    fi
+fi
+
+if test -n "$arch_UXPM" -o -n "$arch_uxpv" ; then
+    # This asserts that Fortran passes functions by passing the address of the
+    # pointer to the function.
+    # We really need a TEST for this
+    AC_DEFINE(FORTRAN_SPECIAL_FUNCTION_PTR,,[Define if Fortran functions are passed by passing the address of the pointer to the function])
+    # Suggested values for these are
+    dnl CFLAGS=-O
+    dnl    #FFLAGS=-Oe,-U -Aabe ( Parameter e is not supported on  uxp/m )
+    dnl FLINKER=frt
+    dnl FLIBS="$FLIB_PATH $LIB_LIST"
+fi
+
+#
+# For Fortran 90, we'll also need MPI_ADDRESS_KIND and MPI_OFFSET_KIND
+# Since our compiler might BE a Fortran 90 compiler, try and determine the
+# values.  
+F90="${F90-$F77}"
+PAC_LANG_PUSH_COMPILERS
+PAC_LANG_FORTRAN90
+# Offset kind should be for 8 bytes if possible (Romio prefers that)
+# address should be sizeof void *
+testsize=$ac_cv_sizeof_voidp
+if test "$testsize" = 0 ; then
+    # Set a default
+    testsize=4
+fi
+dnl Using the {} around testsize helps the comments work correctly
+PAC_PROG_F90_INT_KIND(ADDRESS_KIND,${testsize},$CROSS_F90_ADDRESS_KIND)
+if test "$ac_cv_sizeof_void_p" = 8 ; then
+    OFFSET_KIND=$ADDRESS_KIND
+else
+    PAC_PROG_F90_INT_KIND(OFFSET_KIND,8,$CROSS_F90_OFFSET_KIND)
+fi
+#
+# Some compilers won't allow a -1 kind (e.g., absoft).  In this case, 
+# use a fallback (sizeof(int) kind)
+if test "$ADDRESS_KIND" = "-1" -o "$OFFSET_KIND" = "-1" ; then
+    PAC_PROG_F90_INT_KIND(simpleintkind,${pac_cv_f77_sizeof_integer})
+    if test "$simpleintkind" = "-1" ; then
+	# Wild guess; probably means that Fortran 90 is not available
+	simpleintkind=4
+    fi
+    if test "$ADDRESS_KIND" = "-1" ; then
+	ADDRESS_KIND=$simpleintkind
+    fi
+    if test "$OFFSET_KIND" = "-1" ; then
+	OFFSET_KIND=$simpleintkind
+    fi
+fi
+PAC_LANG_POP_COMPILERS
+
+AC_SUBST(ADDRESS_KIND)
+AC_SUBST(OFFSET_KIND)
+
+# Find a Fortran 90 compiler.  Sets F90
+PAC_PROG_F90
+
+# Find the extension that this compiler uses for modules.
+# Sets F90MODEXT (and adds it to the list substed)
+# Sets F90MODINCFLAG (and adds it to the list substed)
+PAC_F90_MODULE
+
+#
+# Determine the extension for f90 files (it isn't always .f90)
+PAC_F90_EXT
+#
+# Determine the kind parameters for the MPI integer types
+PAC_PROG_F90_INT_KIND(mpi_offset_kind,$sizeof_mpi_offset,$CROSS_SIZEOF_MPI_OFFSET)
+
+dnl Check for other Fortran 90 features, such as different include/use
+dnl module directory and special flags.  Build modules if requested
+if test -n "$F90" -a "$enable_f90" != "no" ; then
+    F90_SUFFIX="$ac_f90ext"
+    # For now, top_srcdir_val is MPIR_HOME; 
+    # The build dir is relative at ../..
+    top_srcdir_val="$MPIR_HOME"
+    if test "$do_f90_modules" = "yes" -a -n "$top_srcdir_val" ; then
+        echo "Setting up F90 Module support"
+	if test ! -d ../../f90modules ; then mkdir ../../f90modules ; fi
+	# if we're the developers, we may need to create the
+	# initial configure files.
+	if test ! -x $top_srcdir_val/f90modules/configure -a \
+	          -s $top_srcdir_val/f90modules/configure.in -a \
+		  -x $top_srcdir_val/f90modules/makeconfigure ; then
+	    (cd $top_srcdir_val/f90modules ; ./makeconfigure)
+	fi
+	# Should F90LINKER be F90TESTLINKER?
+        (cd ../../f90modules ; \
+	            export F90 ; export MPIR_HOME ; export VPATH ; \
+	   	    export libbuild_dir ; export includebuild_dir ; \
+		    export MAKE ; F90LINKER="$F90LINKER" ; \
+		    export F90LINKER ; export F77 ; \
+ 	   	    $top_srcdir_val/f90modules/configure --with-mpich)
+        if test ! -s ../../f90modules/Makefile ; then 
+	    # turn off f90
+	    F90=""
+	else		    
+ 	    F90_MODINCFLAG="`$MAKE -f ../../f90modules/Makefile f90modflag`"
+  	    F90MODINCSPEC="`$MAKE -f ../../f90modules/Makefile f90modspec`"
+            if test -z "$USER_SET_F90INC" -a -z "$F90INC" ; then 
+	        # This should use a test or try to get it from the f90module.
+	        F90INC=`$MAKE -f ../../f90modules/Makefile f90incflag`
+            fi
+        fi
+    fi
+else 
+     # Remove the f90modules/Makefile since this is the only way
+     # to tell the top-level makefile not to build the f90 modules.
+     # (We need a better way)
+     rm -f ../../f90modules/Makefile
+fi
+AC_SUBST(F90_SUFFIX)
+f90includedir='${includedir}'
+f90libdir='${libdir}'
+AC_SUBST(f90includedir)
+AC_SUBST(f90libdir)
+AC_SUBST(F90_LDFLAGS)
+AC_SUBST(F90INC)
+AC_SUBST(F90_MODINCFLAG)
+AC_SUBST(F90MODINCSPEC)
+AC_SUBST(F90FLAGS)
+AC_SUBST(F90LINKER)
+AC_SUBST(F90LIB_PATH)
+if test -z "$F90_LIBDIR_LEADER" ; then 
+    F90_LIBDIR_LEADER="-L"
+fi
+AC_SUBST(F90_LIBDIR_LEADER)
+
+dnl
+dnl If both C and Fortran are gnu, define the following to simplify 
+dnl shared library support.  
+AC_MSG_CHECKING([whether using gcc and g77 together])
+if test "$ac_cv_prog_gcc" = "yes" -a "$ac_cv_prog_g77" = "yes" ; then
+    AC_DEFINE(USE_GCC_G77_DECLS,1,[Define if using gcc and g77 together])
+    AC_MSG_RESULT(yes)
+else 
+    AC_MSG_RESULT(no)
+fi
+dnl In the MPICH case, make a copy of the definitions file available to the
+dnl mpi.h file.
+dnl Despite the fact that this appears *before* AC_OUTPUT, these actions 
+dnl happen *after* AC_OUTPUT
+dnl AC_OUTPUT_COMMANDS([if test -n "$includebuild_dir" ; then \
+dnl 	cp include/mpi_fortdefs.h $includebuild_dir/mpi_fortdefs.h ; fi],
+dnl 	[includebuild_dir=$includebuild_dir] )
+dnl AC_OUTPUT_COMMANDS([chmod a+x mpif77 ; \
+dnl     if test -n "$binbuild_dir" ; then cp mpif77 $binbuild_dir/mpif77 ; fi], 
+dnl         [binbuild_dir=$binbuild_dir] )
+dnl
+dnl First, ensure that echo works within the config.status 
+AC_OUTPUT_COMMANDS([if test "$enable_echo" ; then set -x ; fi ])
+dnl add ROMIO part of mpif.h if it exists
+AC_OUTPUT_COMMANDS([if test -f ../../romio/include/mpiof.h -a "$ROMIO" = 1 ; then \
+  sed -e '/MPI_OFFSET_KIND/d' ../../romio/include/mpiof.h | \
+  cat mpif.h - > mpif-tmp.h ; \
+  rm -f $includebuild_dir/mpif.h ; \
+  mv mpif-tmp.h mpif.h ; fi])
+
+dnl This must be run before converting C to !
+AC_OUTPUT_COMMANDS([rm -f .tmp ; 
+cat mpif.h mpif_bottom.h > .tmp ;
+rm -f mpif.h ; mv .tmp mpif.h
+])
+dnl By modifying mpif.h to use ! for comments, it can work with many f90 
+dnl compilers without creating a separate version.  
+dnl Note that this is run AFTER the AC_OUTPUT actions
+AC_OUTPUT_COMMANDS([if test "$has_exclaim" = "yes" ; then 
+    rm -f .tmp
+    cp mpif.h .tmp
+    sed -e 's/^C/\!/g' .tmp > mpif.h
+    rm -f .tmp
+fi
+],[has_exclaim=$has_exclaim])
+dnl
+FC="$F77"
+AC_SUBST(FC)
+AC_SUBST(CFLAGS) # some autoconf versions need this explicitly
+dnl AC_OUTPUT_COMMANDS([chmod a+x mpif77])
+dnl AC_OUTPUT_COMMANDS([chmod a+x mpif90])
+dnl AC_OUTPUT(Makefile mpif.h mpi_fortdefs.h mpif77 mpif77.conf mpif90 mpif90.conf initfcmn.f)
+AC_OUTPUT(Makefile mpif.h mpif77.conf setbotf.f)
+exit 0
+dnl
+dnl Add the following to the output step after the AC_OUTPUT
+
+if test -n "$F90" ; then
+    # Remove all comments from mpif.h
+    /bin/rm -f $includebuild_dir/mpif.h.copy
+    cp $includebuild_dir/mpif.h $includebuild_dir/mpif.h.copy
+    if test "$fixupmpif" = "no" ; then
+	# Regular Fortran doesn't have ! for comments, so we just delete them
+        sed -e '/^C/d' -e 's/\!.*$//g' $includebuild_dir/mpif.h.copy > $includebuild_dir/mpif.h
+    else
+        sed -e 's/^C/\!/g' $includebuild_dir/mpif.h.copy > $includebuild_dir/mpif.h
+    fi
+    /bin/rm -f $includebuild_dir/mpif.h.copy
+else
+    # ROMIO might have added ! comments to mpif.h
+    if test -z "$fixupmpif" -o "$fixupmpif" = "no" ; then
+        /bin/rm -f $includebuild_dir/mpif.h.copy
+        cp $includebuild_dir/mpif.h $includebuild_dir/mpif.h.copy
+	# Regular Fortran doesn't have ! for comments, so we just delete them
+        sed -e '/^C/d' -e 's/\!.*$//g' $includebuild_dir/mpif.h.copy > $includebuild_dir/mpif.h
+        /bin/rm -f $includebuild_dir/mpif.h.copy
+    fi
+fi
