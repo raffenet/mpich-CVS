@@ -2494,6 +2494,65 @@ if test $MPI = "mpich" ; then
    else
       TEST_F77=$MPICH_HOME/bin/mpif77
    fi     
+# Check to see if the compiler accepts prototypes
+  
+if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking that the compiler $CC accepts ANSI prototypes""... $ac_c"
+else
+echo $ac_n "checking that the compiler $CC accepts ANSI prototypes""... $ac_c" 1>&1
+fi
+cat > conftest.c <<EOF
+#include "confdefs.h"
+int f(double a){return 0;}
+int main() { exit(0); }
+int t() {  }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  eval "ac_cv_ccworks=yes"
+
+else
+  rm -rf conftest*
+  eval "ac_cv_ccworks=no"
+fi
+rm -f conftest*
+
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""$ac_cv_ccworks"
+else
+echo "$ac_t""$ac_cv_ccworks" 1>&1
+fi
+if test $ac_cv_ccworks = "yes" ; then
+   
+{
+test -n "$verbose" && \
+echo "	defining HAVE_PROTOTYPES"
+echo "#define" HAVE_PROTOTYPES 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_PROTOTYPES=1"
+}
+
+fi
+
 fi
 #
 if test -z "$TEST_CC" ; then
