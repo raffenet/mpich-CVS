@@ -7,6 +7,7 @@
 
 extern int g_nLockSpinCount;
 
+/* Define MPIDU_Yield() */
 #ifdef HAVE_YIELD
 #define MPIDU_Yield() yield()
 #elif defined(HAVE_WIN32_SLEEP)
@@ -21,6 +22,19 @@ extern int g_nLockSpinCount;
 #define MPIDU_Yield() sleep(0)
 #else
 #error *** No yield function specified ***
+#endif
+
+/* Define MPIDU_Sleep_yield() */
+#ifdef HAVE_WIN32_SLEEP
+#define MPIDU_Sleep_yield() Sleep(200)
+#elif defined(HAVE_USLEEP)
+#define MPIDU_Sleep_yield() usleep(200000)
+#elif defined(HAVE_SELECT)
+#define MPIDU_Sleep_yield() { struct timeval t; t.tv_sec = 0; t.tv_usec = 200000; select(0,0,0,0,&t); }
+#elif defined(HAVE_SLEEP)
+#define MPIDU_Sleep_yield() sleep(1)
+#else
+#error *** No function available to implement sleep_yield ***
 #endif
 
 #ifdef HAVE_MUTEX_INIT
