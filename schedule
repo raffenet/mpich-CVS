@@ -263,7 +263,7 @@ MPI_Type_c2f,1,1,1,2,Bill,,.01,3/25/02
 MPI_Type_create_darray,,,,,,MPIR_Type_compute_extent
 MPI_Type_create_hindexed,,,,,Rob,,,10/30/2002
 MPI_Type_create_hvector,,,,,Rob,,,10/30/2002
-MPI_Type_create_indexed_block,,,,,Rob,MPIR_Type_compute_extent
+MPI_Type_create_indexed_block,,,,,Rob,,,done
 MPI_Type_create_resized,,,,,Rob,MPIR_Type_compute_extent
 MPI_Type_create_struct,,,,,Rob,,,10/30/2002
 MPI_Type_create_subarray,,,,,,MPIR_Type_compute_extent
