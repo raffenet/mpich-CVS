@@ -1,5 +1,6 @@
 #! /bin/sh
 # Default compiler configuration
+# WARNING: THIS IS TAKEN FROM MPICH1; MUCH OF IT IS OUT-OF-DATE.
 #
 # Directory locations: Fixed for any MPI implementation
 prefix=@prefix@
