@@ -1,8 +1,14 @@
-- convert usage of MPICH_THREAD_LEVEL to MPICH_MAX_THREAD_LEVEL as
+- Convert usage of MPICH_THREAD_LEVEL to MPICH_MAX_THREAD_LEVEL as
   described in the documentation (BRT: I learned about the MAX version
   after having smattered the other throughout the code.)
 
-- define a set of error codes for the MPE_Thread and MPID_Thread
+- Define a set of error codes for the MPE_Thread and MPID_Thread
   interfaces
 
-- remove MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP
+- Remove MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP
+
+- Add tracking of the thread local storage in MPIR_Process so that the
+  allocated storage can be properly freed either at thread destruction
+  or MPI_Finalize, whichever comes first.  Right now, none of the
+  thread local storage in MPIR_Process is freed.
+  
