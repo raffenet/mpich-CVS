@@ -8,3 +8,4 @@ netpipe_SOURCES = netmpi.c GetOpt.c
 patterns_SOURCES = patterns.c
 
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
+DEPADD = ../../../lib/libmpich.a
