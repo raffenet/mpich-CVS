@@ -4,6 +4,12 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+"""
+usage: mpdtrace [-l]
+Lists the (short) hostname of each of the mpds in the ring
+The -l (ell) option shows full hostnames and listening ports
+"""
+
 from sys    import argv, exit
 from os     import environ, getuid, close
 from socket import socket, fromfd, AF_UNIX, SOCK_STREAM
@@ -12,13 +18,17 @@ from signal import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from mpdlib import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
                    mpd_get_my_username, mpd_raise, mpdError, mpd_send_one_line
 
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = "mom"
+
 def mpdtrace():
     mpd_set_my_id('mpdtrace_')
-    if len(argv) > 1  and  ( argv[1] == '-h'  or  argv[1] == '--help') :
-        print 'usage: mpdtrace [-l]'
-        print 'Lists the (short) hostname of each of the mpds in the ring'
-        print 'The -l (ell) option shows full hostnames and listening ports'
-        exit(-1)
+    if len(argv) > 1:
+        if (argv[1] == '-h' or argv[1] == '--help') or (argv[1] != '-l'):
+            usage()
     username = mpd_get_my_username()
     if environ.has_key('UNIX_SOCKET'):
         conFD = int(environ['UNIX_SOCKET'])
@@ -74,6 +84,10 @@ def recv_one_msg_with_timeout(sock,timeout):
     msg = mpd_recv_one_msg(sock)    # fails WITHOUT a msg if sigalrm occurs
     alarm(oldTimeout)
     return(msg)
+
+def usage():
+    print __doc__
+    exit(-1)
 
 if __name__ == '__main__':
     signal(SIGINT,signal_handler)
