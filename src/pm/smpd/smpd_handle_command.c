@@ -2067,10 +2067,18 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
+    char host[SMPD_MAX_HOST_LENGTH];
 
     smpd_enter_fn("smpd_handle_cred_request_command");
 
     cmd = &context->read_cmd;
+
+    if (!smpd_get_string_arg(cmd->cmd, "host", host, SMPD_MAX_HOST_LENGTH))
+    {
+	smpd_err_printf("no host parameter in the cred_request command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_cred_request_command");
+	return SMPD_FAIL;
+    }
 
     /* prepare the result command */
     result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
@@ -2098,7 +2106,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	{
 	    if (smpd_process.credentials_prompt)
 	    {
-		fprintf(stderr, "User credentials needed to launch processes:\n");
+		fprintf(stderr, "User credentials needed to launch processes on %s:\n", host);
 		smpd_get_account_and_password(smpd_process.UserAccount, smpd_process.UserPassword);
 		smpd_cache_password(smpd_process.UserAccount, smpd_process.UserPassword);
 		result = smpd_add_command_arg(temp_cmd, "account", smpd_process.UserAccount);
@@ -2188,7 +2196,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
     {
 	if (smpd_process.credentials_prompt)
 	{
-	    fprintf(stderr, "User credentials needed to launch processes:\n");
+	    fprintf(stderr, "User credentials needed to launch processes on %s:\n", host);
 	    smpd_get_account_and_password(smpd_process.UserAccount, smpd_process.UserPassword);
 	    result = smpd_add_command_arg(temp_cmd, "account", smpd_process.UserAccount);
 	    if (result != SMPD_SUCCESS)
