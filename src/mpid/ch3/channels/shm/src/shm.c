@@ -1411,13 +1411,14 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc
 			int found;
 			/*printf("received rts iov_read.\n");fflush(stdout);*/
 
-			rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(
-			    &recv_vc_ptr->ch.recv_active->ch.pkt.rndv_req_to_send.match, &found);
+			mpi_errno = MPIDI_CH3U_Handle_recv_rndv_pkt(recv_vc_ptr,
+								    &recv_vc_ptr->ch.recv_active->ch.pkt,
+								    &rreq, &found);
 			/* --BEGIN ERROR HANDLING-- */
-			if (rreq == NULL)
+			if (mpi_errno != MPI_SUCCESS)
 			{
-			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomemreq", 0);
-			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "shared memory read progress unable to handle incoming rts(get) packet");
+			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 			    return mpi_errno;
 			}
 			/* --END ERROR HANDLING-- */
@@ -1429,17 +1430,35 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc
 			}
 			rreq->dev.rdma_iov_count = recv_vc_ptr->ch.recv_active->dev.rdma_iov_count;
 
-			mpi_errno = MPIDI_CH3U_Handle_recv_rndv_pkt(recv_vc_ptr,
-								    &recv_vc_ptr->ch.recv_active->ch.pkt,
-								    rreq, found);
-			/* --BEGIN ERROR HANDLING-- */
-			if (mpi_errno != MPI_SUCCESS)
+			if (found)
 			{
-			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "shared memory read progress unable to handle incoming rts(get) packet");
-			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
-			    return mpi_errno;
+			    mpi_errno = MPIDI_CH3U_Post_data_receive(recv_vc_ptr, found, &rreq);
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno != MPI_SUCCESS)
+			    {
+				mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
+				    FCNAME, __LINE__,
+				    MPI_ERR_OTHER,
+				    "**ch3|postrecv",
+				    "**ch3|postrecv %s",
+				    "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
+				MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
+				return mpi_errno;
+			    }
+			    /* --END ERROR HANDLING-- */
+			    mpi_errno = MPIDI_CH3_iStartRndvTransfer(recv_vc_ptr, rreq);
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno != MPI_SUCCESS)
+			    {
+				mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
+				    FCNAME, __LINE__,
+				    MPI_ERR_OTHER,
+				    "**ch3|ctspkt", 0);
+				MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
+				return mpi_errno;
+			    }
+			    /* --END ERROR HANDLING-- */
 			}
-			/* --END ERROR HANDLING-- */
 
 			rreq = recv_vc_ptr->ch.recv_active;
 			/* free the request used to receive the rts packet and iov data */

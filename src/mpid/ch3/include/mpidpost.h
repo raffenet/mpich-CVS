@@ -472,22 +472,26 @@ void MPIDI_CH3U_Request_destroy(MPID_Request * req);
  */
 
 /*E
-  MPIDI_CH3U_Handle_recv_rndv_pkt - This function is used by RDMA enabled channels to handle an rts packet.
+  MPIDI_CH3U_Handle_recv_rndv_pkt - This function is used by RDMA enabled channels to handle a rts packet.
 
   Input Parameters:
 + vc - virtual connection over which the packet was received
-. pkt - pointer to the CH3 packet
-. rreq - the request returned by FOA
-- found - the found parameter returned by FOA
+- pkt - pointer to the CH3 packet
+
+  Output Parameters:
++ rreqp - request pointer
+- foundp - found
 
   Return value:
   An mpi error code.
 
   Notes:
   This is the handler function to be called when the channel receives a rndv rts packet.
-  This function is called after the channel has called FOA and set any channel specific data in the request.
+  After this function is called the channel is returned a request and a found flag.  The channel may set any channel
+  specific fields in the request at this time.  Then the channel should call MPIDI_CH3U_Post_data_receive() and 
+  MPIDI_CH3_iStartRndvTransfer() if the found flag is set.
 E*/
-int MPIDI_CH3U_Handle_recv_rndv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request * rreq, int found);
+int MPIDI_CH3U_Handle_recv_rndv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp, int *foundp);
 
 /*E
   MPIDI_CH3_iStartRndvMsg - This function is used to initiate a rendezvous

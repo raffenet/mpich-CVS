@@ -870,29 +870,18 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			int found;
 			MPIU_DBG_PRINTF(("received rts iov_read.\n"));
 
-			rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(
-			    &recv_vc_ptr->ch.recv_active->ch.pkt.rndv_req_to_send.match, &found);
-			if (rreq == NULL)
-			{
-			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomemreq", 0);
-			    MPIU_DBG_PRINTFX(("exiting ibu_wait t\n"));
-			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-			    return mpi_errno;
-			}
-#if 0
-			mpi_errno = MPIDI_CH3U_Handle_recv_pkt_rtsA(recv_vc_ptr,
+			mpi_errno = MPIDI_CH3U_Handle_recv_rndv_pkt(recv_vc_ptr,
 								    &recv_vc_ptr->ch.recv_active->ch.pkt,
 								    &rreq, &found);
 			/* --BEGIN ERROR HANDLING-- */
 			if (mpi_errno != MPI_SUCCESS)
 			{
 			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "ibu read progress unable to handle incoming rts(get) packet");
-			    MPIU_DBG_PRINTFX(("exiting ibu_wait u\n"));
+			    MPIU_DBG_PRINTFX(("exiting ibu_wait v\n"));
 			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			    return mpi_errno;
 			}
 			/* --END ERROR HANDLING-- */
-#endif
 
 			for (i=0; i<recv_vc_ptr->ch.recv_active->dev.rdma_iov_count; i++)
 			{
@@ -903,18 +892,35 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			rreq->dev.rdma_iov_count = recv_vc_ptr->ch.recv_active->dev.rdma_iov_count;
 			rreq->dev.rdma_request = recv_vc_ptr->ch.recv_active->dev.rdma_request;
 
-			mpi_errno = MPIDI_CH3U_Handle_recv_rndv_pkt(recv_vc_ptr,
-								    &recv_vc_ptr->ch.recv_active->ch.pkt,
-								    rreq, found);
-			/* --BEGIN ERROR HANDLING-- */
-			if (mpi_errno != MPI_SUCCESS)
+			if (found)
 			{
-			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "ibu read progress unable to handle incoming rts(get) packet");
-			    MPIU_DBG_PRINTFX(("exiting ibu_wait v\n"));
-			    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-			    return mpi_errno;
+			    mpi_errno = MPIDI_CH3U_Post_data_receive(recv_vc_ptr, found, &rreq);
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno != MPI_SUCCESS)
+			    {
+				mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
+				    FCNAME, __LINE__,
+				    MPI_ERR_OTHER,
+				    "**ch3|postrecv",
+				    "**ch3|postrecv %s",
+				    "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
+				MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+				return mpi_errno;
+			    }
+			    /* --END ERROR HANDLING-- */
+			    mpi_errno = MPIDI_CH3_iStartRndvTransfer(recv_vc_ptr, rreq);
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno != MPI_SUCCESS)
+			    {
+				mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
+				    FCNAME, __LINE__,
+				    MPI_ERR_OTHER,
+				    "**ch3|ctspkt", 0);
+				MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+				return mpi_errno;
+			    }
+			    /* --END ERROR HANDLING-- */
 			}
-			/* --END ERROR HANDLING-- */
 
 			rreq = recv_vc_ptr->ch.recv_active;
 
