@@ -1,0 +1,48 @@
+AC_INIT(configure.in)
+
+dnl
+dnl Set the directory that contains support scripts such as install-sh and
+dnl config.guess
+dnl
+AC_CONFIG_AUX_DIR(../../../confdb)
+
+dnl
+dnl Definitions will be placed in this file rather than in the DEFS variable
+dnl
+AC_CONFIG_HEADER(../../include/mpid_ch3_conf.h)
+
+
+echo "RUNNING CONFIGURE FOR DEVICE CH3"
+echo "PASSED: $*"
+
+AC_ARG_WITH(device,
+[--with-device=name - Specify the communication device for MPICH.],,
+with_device=default)
+
+dnl Extract the device and channel name from the --with-device argument
+DEVICE=`echo $with_device | sed -e 's/:.*//g'`
+AC_SUBST(DEVICE)
+changequote(<<,>>)
+CHANNEL=`echo $with_device | sed -e 's/[^:]*://g'`
+changequote([,])
+AC_SUBST(CHANNEL)
+
+if test ! -d $srcdir/channels/$CHANNEL ; then
+    AC_MSG_ERROR([Channel $CHANNEL is unknown])
+elif test ! -x $srcdir/channels/$CHANNEL/configure ; then
+    AC_MSG_ERROR([Channel $CHANNEL has no configure])
+fi
+
+dnl AC_PROG_MAKE_SET
+PAC_PROG_MAKE
+
+AC_SUBST(AR)
+AC_SUBST(RANLIB)
+AC_SUBST(MPILIBNAME)
+AC_SUBST(CC)
+
+AC_CONFIG_SUBDIRS(channels/$CHANNEL)
+
+AC_OUTPUT_COMMANDS(cp $srcdir/include/mpidpre.h ../../include/)
+AC_OUTPUT_COMMANDS(cp $srcdir/include/mpidpost.h ../../include/)
+AC_OUTPUT(Makefile src/Makefile channels/Makefile)

@@ -1,0 +1,16 @@
+SUBDIRS = src channels .
+
+all-local: ../../include/mpidpre.h ../../include/mpidpost.h
+
+../../include/mpidpre.h: include/mpidpre.h
+	@echo "ERROR: src/include/mpidpre.h is out of date." ; \
+	 echo "Run './config.status' followed by 'make clean all'." ; \
+	exit 1
+
+../../include/mpidpost.h: include/mpidpost.h
+	@echo "ERROR: src/include/mpidpost.h is out of date." ; \
+	 echo "Run './config.status' followed by 'make clean all'." ; \
+	 exit 1
+
+distclean-local:
+	-rm -f ../../include/mpidpre.h ../../include/mpidpost.h

@@ -1,0 +1,5 @@
+# SUBDIRS_CHANNEL contains the list of all possible channel
+# implementations
+SUBDIRS_CHANNEL = tcp
+SUBDIRS = @CHANNEL@ .
+
