@@ -63,7 +63,9 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not value, it will be reset to null */
 
-	    MPID_Errhandler_valid_ptr( errhan_ptr,mpi_errno );
+	    if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
+		MPID_Errhandler_valid_ptr( errhan_ptr,mpi_errno );
+	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ERRHANDLER);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

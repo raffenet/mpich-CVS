@@ -51,7 +51,26 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
     if (MPIR_Nest_value()) return errcode;
 
     /* Now, invoke the error handler for the communicator */
-    if (comm_ptr && comm_ptr->errhandler) {
+    if (!comm_ptr || !(comm_ptr->errhandler) || 
+	comm_ptr->errhandler->handle == MPI_ERRORS_ARE_FATAL) {
+	/* Either no communicator, error handler, so errors are fatal,
+	   or an explicit selection of the fatal error handler */
+	/* Try to print the associated message */
+	const char *p = MPIR_Err_get_string( errcode );
+	
+	if (p) {
+	    fprintf( stderr, "Fatal error: %s in %s\n", p, fcname );
+	}
+	else
+	{
+	    fprintf( stderr, "Fatal error (code %d) in %s\n", errcode, fcname );
+	}
+	exit(1); /* Change this to MPID_Abort */
+    }
+    else if (comm_ptr->errhandler->handle == MPI_ERRORS_RETURN) {
+	return errcode;
+    }
+    else {
 	switch (comm_ptr->errhandler->language) {
 	case MPID_LANG_C:
 	case MPID_LANG_CXX:
@@ -64,20 +83,6 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 		(MPI_Fint *)&comm_ptr->handle, &errcode );
 	    break;
 	}
-    }
-    else {
-	/* No communicator, so errors are fatal */
-	/* Try to print the associated message */
-	const char *p = MPIR_Err_get_string( errcode );
-	
-	if (p) {
-	    fprintf( stderr, "Fatal error: %s in %s\n", p, fcname );
-	}
-	else
-	{
-	    fprintf( stderr, "Fatal error (code %d) in %s\n", errcode, fcname );
-	}
-	exit(1); /* Change this to MPID_Abort */
     }
     return errcode;
 }
@@ -324,6 +329,9 @@ int MPIR_Nest_value( void )
 #endif
 
 /* Preallocated errorhandler objects */
+MPID_Errhandler MPID_Errhandler_builtin[2] = 
+          { { MPI_ERRORS_ARE_FATAL, 0},
+	    { MPI_ERRORS_RETURN, 0} }; 
 MPID_Errhandler MPID_Errhandler_direct[MPID_ERRHANDLER_PREALLOC];
 MPIU_Object_alloc_t MPID_Errhandler_mem = { 0, 0, 0, 0, MPID_ERRHANDLER, 
 					    sizeof(MPID_Errhandler), 
