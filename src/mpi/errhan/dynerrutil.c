@@ -141,11 +141,11 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
 
     msg_len = strlen( msg_string );
     str = (char *)MPIU_Malloc( msg_len + 1 );
-    MPIU_Strncpy( str, msg_string, msg_len + 1 );
     if (!str) {
 	/* FIXME: make this instance specific */
 	return MPI_ERR_OTHER;
     }
+    MPIU_Strncpy( str, msg_string, msg_len + 1 );
     if (errcode) {
 	if (errcode < first_free_code) {
 	    if (user_code_msgs[errcode]) {
