@@ -296,14 +296,14 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    /* when does a forming context get assinged it's global place?  At creation?  At connection? */
 		    if (smpd_process.left_context == smpd_process.left_context)
 			smpd_process.left_context = NULL;
-		    if (smpd_process.do_console)
-			result = smpd_post_abort_command("unable to connect to %s", smpd_process.console_host);
+		    if (smpd_process.do_console && smpd_process.console_host[0] != '\0')
+			result = smpd_post_abort_command("1 unable to connect to %s", smpd_process.console_host);
 		    else if (context->connect_to && context->connect_to->host[0] != '\0')
-			result = smpd_post_abort_command("unable to connect to %s", context->connect_to->host);
+			result = smpd_post_abort_command("2 unable to connect to %s", context->connect_to->host);
 		    else
 		    {
 			if (context->host[0] != '\0')
-			    result = smpd_post_abort_command("unable to connect to %s", context->host);
+			    result = smpd_post_abort_command("3 unable to connect to %s", context->host);
 			else
 			    result = smpd_post_abort_command("connection to smpd rejected");
 		    }
@@ -396,7 +396,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		if (strcmp(context->pwd_request, SMPD_AUTHENTICATION_ACCEPTED_STR))
 		{
 		    char *host_ptr;
-		    if (smpd_process.do_console)
+		    if (smpd_process.do_console && smpd_process.console_host[0] != '\0')
 			host_ptr = smpd_process.console_host;
 		    else if (context->connect_to && context->connect_to->host[0] != '\0')
 			host_ptr = context->connect_to->host;
@@ -423,7 +423,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    if (smpd_process.left_context == smpd_process.left_context)
 			smpd_process.left_context = NULL;
 		    if (host_ptr)
-			result = smpd_post_abort_command("unable to connect to %s", host_ptr);
+			result = smpd_post_abort_command("4 unable to connect to %s", host_ptr);
 		    else
 			result = smpd_post_abort_command("connection failed");
 		    if (result != SMPD_SUCCESS)
