@@ -20,7 +20,7 @@ C_COMPILE_SHL = $(CC_SHL) @CFLAGS@ $(INCLUDE_DIR)
 mpi_sources = close.c read.c open.c write.c set_view.c \
       iread.c iwrite.c \
       seek.c get_posn.c \
-      delete.c read_all.c \
+      delete.c read_all.c read_at.c \
       read_atall.c iread_at.c iwrite_at.c write_all.c get_bytoff.c \
       write_at.c write_atall.c get_view.c get_group.c get_amode.c \
       get_extent.c fsync.c get_atom.c set_atom.c \
@@ -36,7 +36,7 @@ mpi_sources = close.c read.c open.c write.c set_view.c \
 MPIO_OBJECTS = close.o read.o open.o write.o set_view.o \
       iread.o iwrite.o \
       seek.o get_posn.o \
-      delete.o read_all.o \
+      delete.o read_all.o read_at.o \
       read_atall.o iread_at.o iwrite_at.o write_all.o get_bytoff.o \
       write_at.o write_atall.o get_view.o get_group.o get_amode.o \
       get_extent.o fsync.o get_atom.o set_atom.o \
@@ -60,7 +60,7 @@ MPIO_EXTRA_OBJECTS = @MPIO_EXTRA_OBJECTS@ @MPIO_REQOBJECTS@
 MPIO_TMP_POBJECTS = close.p read.p open.p write.p get_extent.p \
       iread.p iwrite.p \
       seek.p \
-      delete.p read_all.p \
+      delete.p read_all.p read_at.p \
       read_atall.p iread_at.p iwrite_at.p get_posn.p \
       write_all.p write_at.p write_atall.p get_bytoff.p \
       set_view.p get_view.p get_group.p get_amode.p \
@@ -78,7 +78,7 @@ MPIO_EXTRA_TMP_POBJECTS = @MPIO_EXTRA_TMP_POBJECTS@ @MPIO_REQ_TMP_POBJECTS@
 # _mpich2_fileutil.o is not included because it does not include any 
 # name-shifted functions
 MPIO_REAL_POBJECTS = _close.o _read.o _open.o _get_extent.o \
-      _write.o _set_view.o _seek.o _prealloc.o \
+      _write.o _set_view.o _seek.o _read_at.o _prealloc.o \
       _iread.o _iwrite.o \
       _get_posn.o \
       _delete.o _read_all.o _get_bytoff.o \
