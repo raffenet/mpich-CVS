@@ -20,6 +20,9 @@ int MPIR_Err_return_comm( struct MPID_Comm *, const char [], int );
 int MPIR_Err_return_win( struct MPID_Win *, const char [], int );
 /*int MPIR_Err_return_file( struct MPID_File *, const char [], int );*/
 int MPIR_Err_return_file( MPI_File, const char [], int ); /* Romio version */
+/* FIXME:
+ * The following description is out of date and should not be used
+ */
 /*@
   MPIR_Err_create_code - Create an error code and associated message
   to report an error
@@ -63,6 +66,11 @@ int MPIR_Err_return_file( MPI_File, const char [], int ); /* Romio version */
 
   @*/
 int MPIR_Err_create_code( int, int, const char [], int, int, const char [], const char [], ... );
+
+#ifdef USE_ERR_CODE_VALIST
+int MPIR_Err_create_code_valist( int, int, const char [], int, int, const char [], const char [], va_list );
+#endif
+
 int MPIR_Err_is_fatal(int);
 void MPIR_Err_init(void);
 void MPIR_Err_preinit( void );
