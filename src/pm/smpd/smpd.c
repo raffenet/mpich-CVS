@@ -199,7 +199,7 @@ int smpd_entry_point()
         freopen("/dev/null", "a", stdout);
         freopen("/dev/null", "a", stderr);
 	*/
-	close(0);
+	/*close(0);*/
     }
 #endif
 
