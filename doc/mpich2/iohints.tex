@@ -8,30 +8,31 @@ provide information that an improve performance.  Note that all hints do
 algorithms used by the MPI implementation.  For collective I/O, MPI defines
 two \code{MPI_Info} key values:
 \begin{description}
-\item[\texttt{cb\_buffer\_size}] specifies the size of the buffer used for
+\item[\texttt{cb_buffer_size}] specifies the size of the buffer used for
   aggregation, and might allow a user to do some tuning.
-\item[\texttt{cb\_nodes}]specifies the number of processes that will actually
+\item[\texttt{cb_nodes}]specifies the number of processes that will actually
   do I/O, although it doesn't let you name them.
 \end{description}
+These provide information that can be used by an implementation that uses
+collective buffering and aggregation algorithms to perform collective I/O in
+MPI.  Note that ROMIO implements both of these.
 
-Note that ROMIO implements both of these.
-
-This solves your first problem, which is to constrain the number of processes
-doing I/O and to control the amount of memory dedicated to it, but doesn't
-allow you to specify exactly which processes do it.
+% This solves your first problem, which is to constrain the number of processes
+% doing I/O and to control the amount of memory dedicated to it, but doesn't
+% allow you to specify exactly which processes do it.
 
 However, for some systems configurations, more control is needed to specify
-which processes are prefered for collective I/O.  MPICH (will) provide the
-additional \code{MPI_Info} key name
+which hardware resources (processors or nodes in an SMP) are prefered for
+collective I/O.  MPICH provides the additional \code{MPI_Info} key name
 \begin{description}
-\item[\texttt{io\_config\_list}]specifies a comma-separated list of strings,
+\item[\texttt{io_config_list}]specifies a comma-separated list of strings,
   each string specifying a particular node and an optional limit on the number
   of processes to be used for collective buffering on this node.  
 \end{description}
-This refers to the same processes that \code{cb_nodes} refers to, but gives
+This refers to the same processes that \code{cb_nodes} refers to, but
 specifies the available nodes more precisely.
 
-The format of the value of \code{io_config_list} is given by the following:
+The format of the value of \code{io_config_list} is given by the following BNF:
 \begin{verbatim}
 io_config_list => hostspec [ ',' io_config_list ]
 hostspec       => hostname [ ':' maxprocesses ]
@@ -42,9 +43,11 @@ maxprocesses   => <digits>
 \end{verbatim}
 The value \code{hostname} identifies a processor.  This name must match the
 name returned by \code{MPI_Get_processor_name} for the specified hardware.
-The value \code{*} matches all processors.
+The value \code{*} matches all processors.  The value of \code{maxprocesses}
+may be any nonnegative integer (zero is allowed).
 
-The value \code{maxprocesses} specifies the maximum number of processes.
+The value \code{maxprocesses} specifies the maximum number of processes that
+may be used for collective buffering on the specified host.
 If no value is specified, the value one is assumed.  If \code{*} is specified,
 then as many processes as there are processors are used.
 
@@ -63,7 +66,30 @@ Here are some examples of what this might look like:
 
 When the values specified by \code{io_config_list} conflict with other hints
 (e.g., the number of collective buffering nodes specified by \code{cb_nodes}),
-the implementation is encouraged to give priority to \code{io_config_list}.
+the implementation is encouraged to take the minimum of the two values.  In
+other words, if \code{io_config_list} specifies ten processors on which I/O
+should be performned but \code{cb_nodes} specifies a smaller number, an
+implementation is encouraged to use only \code{cb_nodes}.  If
+\code{io_config_list} specifies fewer processes than \code{cb_nodes}, only the
+number in \code{io_config_list} should be used.
 
-Question: do we want to take the minimum of the two values?  E.g., if
-\code{cb_nodes=3,io_config_list=*:1}, use only three nodes?
+The implementation is also encouraged to assign processes in the order that
+they are listed in \code{io_config_list}.  
+
+% Question: do we want to take the minimum of the two values?  E.g., if
+% \code{cb_nodes=3,io_config_list=*:1}, use only three nodes?
+
+To provide more control over the behavior of MPICH, the default values of
+these hints may be set at runtime using the standard MPICH runtime parameter
+method.  The environment variables and command-line parameters for
+\code{mpiexec} are:
+\begin{center}
+\begin{tabular}{l|l}
+Environment variable&Command Line Parameter\\\hline
+\code{MPICH_IO_CB_BUFFER_SIZE}&\code{--mpich-io-cb-buffer-size=n}\\
+\code{MPICH_IO_CB_NODES}]&\code{--mpich-io-cb-nodes=n}\\
+\code{MPICH_IO_CONFIG_LIST}]&\code{--mpich-io-config-list=list}
+\end{tabular}
+\end{center}
+These provide default values that may be overridden by an explicit use of an
+\code{MPI_Info} parameter in a program.
