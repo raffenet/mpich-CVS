@@ -166,8 +166,8 @@ def mpdman():
         for key in environ.keys():
             if key.startswith('MPDMAN_'):
                 del environ[key]
-        ## mpd_print(0000, 'execing clientPgm=:%s:' % (clientPgm) )
         try:
+            mpd_print(0000, 'execing clientPgm=:%s:' % (clientPgm) )
             execvpe(clientPgm,clientPgmArgs,environ)    # client
         except Exception, errmsg:
             ## mpd_raise('execvpe failed for client %s; errmsg=:%s:' % (clientPgm,errmsg) )
@@ -376,7 +376,8 @@ def mpdman():
                         if myRank != 0:
                             if rhsSocket:  # still alive ?
                                 mpd_send_one_msg(rhsSocket,msg)
-                            kill(clientPid,SIGKILL)
+                            try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                            except: pass
                     elif msg['signo'] == 'SIGTSTP':
                         if msg['dest'] != myId:
                             mpd_send_one_msg(rhsSocket,msg)
@@ -402,10 +403,8 @@ def mpdman():
                                       'rank' : msg['rank'], 
                                       'exit_status' : msg['exit_status'] }
                         mpd_send_one_msg(conSocket,msgToSend)
-                    try:
-                        kill(clientPid,SIGKILL)
-                    except:
-                        pass    # client may already be gone
+                    try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                    except: pass
                 elif msg['cmd'] == 'stdin_from_user':
                     if msg['src'] != myId:
                         mpd_send_one_msg(rhsSocket,msg)
@@ -593,13 +592,8 @@ def mpdman():
                                 msgToSend = { 'cmd' : 'collective_abort', 'src' : myId,
                                               'rank' : myRank, 'exit_status' : status }
                                 mpd_send_one_msg(rhsSocket,msgToSend)
-                                # del socketsToSelect[rhsSocket]
-                                # rhsSocket.close()
-                                # rhsSocket = 0
-                        try:
-                            kill(clientPid,SIGKILL)
-                        except:
-                            pass    # client may already be gone
+                        try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                        except: pass
                 else:
                     parsedMsg = parse_pmi_msg(line)
                     if parsedMsg['cmd'] == 'init':
@@ -778,19 +772,23 @@ def mpdman():
                         parentStderrSocket = 0
 	            msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
                     mpd_send_one_msg(rhsSocket,msgToSend)
-                    kill(clientPid,SIGKILL)
+                    try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                    except: pass
                 elif msg['cmd'] == 'signal':
                     if msg['signo'] == 'SIGINT':
                         mpd_send_one_msg(rhsSocket,msg)
-                        kill(clientPid,SIGKILL)
+                        try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                        except: pass
                     elif msg['signo'] == 'SIGTSTP':
                         msg['dest'] = myId
                         mpd_send_one_msg(rhsSocket,msg)
-                        kill(clientPid,SIGTSTP)
+                        try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                        except: pass
                     elif msg['signo'] == 'SIGCONT':
                         msg['dest'] = myId
                         mpd_send_one_msg(rhsSocket,msg)
-                        kill(clientPid,SIGCONT)
+                        try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                        except: pass
                 elif msg['cmd'] == 'stdin_from_user':
                     if stdinGoesToWho == 1:    # 1 -> all processes
                         msg['src'] = myId
