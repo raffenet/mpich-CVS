@@ -86,7 +86,7 @@ int ib_init()
     status = ib_hca_query_us(IB_Process.hca_handle, NULL, 
         HCA_QUERY_HCA_STATIC | HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
     IB_Process.attr_p = calloc(attr_size, sizeof(ib_uint8_t));
-    /*MPIU_dbg_printf("MALLOC %d bytes\n", attr_size);*/
+    /*MPIU_DBG_PRINTF(("MALLOC %d bytes\n", attr_size));*/
     status = ib_hca_query_us(IB_Process.hca_handle, IB_Process.attr_p, 
 	HCA_QUERY_HCA_STATIC | HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
     if (status != IB_SUCCESS)
@@ -99,12 +99,12 @@ int ib_init()
 
     sprintf(key, "ib_lid_%d", MPIR_Process.comm_world->rank);
     sprintf(value, "%d", IB_Process.lid);
-    MPIU_dbg_printf("ib lid %d\n", IB_Process.lid);
+    MPIU_DBG_PRINTF(("ib lid %d\n", IB_Process.lid));
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
     PMI_Barrier();
 
     ib_setup_connections();
-    MPIU_dbg_printf("ib_setup_connections returned\n");
+    MPIU_DBG_PRINTF(("ib_setup_connections returned\n"));
 
     MPIDI_FUNC_EXIT(MPID_STATE_IB_INIT);
     return MPI_SUCCESS;

@@ -460,7 +460,7 @@ int ib_write_aggressive(MPIDI_VC *vc_ptr)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_WRITE_AGGRESSIVE);
 
-    MPIU_dbg_printf("ib_write_aggressive\n");
+    MPIU_DBG_PRINTF(("ib_write_aggressive\n"));
 
     if (vc_ptr->writeq_head == NULL)
     {
@@ -544,7 +544,7 @@ int ib_write_aggressive(MPIDI_VC *vc_ptr)
 	/* post a write of the data */
 	if (cur_pos == 1)
 	{
-	    MPIU_dbg_printf("ibu_post_write, %d bytes\n", vec[0].MPID_IOV_LEN);
+	    MPIU_DBG_PRINTF(("ibu_post_write, %d bytes\n", vec[0].MPID_IOV_LEN));
 	    if ((error = ibr_post_write(vc_ptr, vec[0].MPID_IOV_BUF, vec[0].MPID_IOV_LEN, NULL)) != IB_SUCCESS)
 	    {
 		err_printf("ib_write_aggressive: ibu_post_write failed, error %d\n", error);
@@ -566,7 +566,7 @@ int ib_write_aggressive(MPIDI_VC *vc_ptr)
 		}
 		s--;
 		sprintf(s, "=%d bytes\n", n);
-		MPIU_dbg_printf("%s", str);
+		MPIU_DBG_PRINTF(("%s", str));
 	    }
 	    /*** end debugging printout */
 
@@ -595,7 +595,7 @@ int ib_handle_written(MPIDI_VC *vc_ptr, void *mem_ptr, int num_written)
 	return MPI_SUCCESS;
     }
 
-    MPIU_dbg_printf("ib_handle_written - %d bytes\n", num_written);
+    MPIU_DBG_PRINTF(("ib_handle_written - %d bytes\n", num_written));
 
     /* update all the cars and buffers affected by the ib_write action */
     while (num_written)

@@ -20,7 +20,7 @@ int socket_handle_accept(void)
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_HANDLE_ACCEPT);
 
-    /*MPIU_dbg_printf("socket_handle_accept\n");*/
+    /*MPIU_DBG_PRINTF(("socket_handle_accept\n"));*/
 
     /* Create a temporary VC structure for reading the connect packet */
     /* We can't get the real VC because we don't know the remote rank and context yet */
@@ -38,12 +38,12 @@ int socket_handle_accept(void)
 	return -1;
     }
 
-    MPIU_dbg_printf("socket_handle_accept(%d)\n", sock_getid(sock));
+    MPIU_DBG_PRINTF(("socket_handle_accept(%d)\n", sock_getid(sock)));
 
     /* save the socket */
     vc_ptr->data.socket.sock = sock;
 
-    MPIU_dbg_printf("sock_post_read(%d:context)\n", sock_getid(sock));
+    MPIU_DBG_PRINTF(("sock_post_read(%d:context)\n", sock_getid(sock)));
 
     if ((error = sock_post_read(sock, &vc_ptr->pkt_car.msg_header.pkt.u.context, sizeof(MPID_Context_pkt), NULL)) != SOCK_SUCCESS)
     {
@@ -100,11 +100,11 @@ int socket_make_progress(void)
     case SOCK_OP_CLOSE:
 	if (SOCKET_Process.out.user_ptr != NULL)
 	{
-	    MPIU_dbg_printf("socket(%d) closed.\n", sock_getid(((MPIDI_VC*)SOCKET_Process.out.user_ptr)->data.socket.sock));
+	    MPIU_DBG_PRINTF(("socket(%d) closed.\n", sock_getid(((MPIDI_VC*)SOCKET_Process.out.user_ptr)->data.socket.sock)));
 	}
 	else
 	{
-	    MPIU_dbg_printf("socket closed.\n");
+	    MPIU_DBG_PRINTF(("socket closed.\n"));
 	}
 	break;
 #endif

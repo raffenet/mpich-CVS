@@ -798,6 +798,10 @@ SOURCE=.\include\mpidpre.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\include\mpihandle.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\include\mpiimpl.h
 # End Source File
 # Begin Source File

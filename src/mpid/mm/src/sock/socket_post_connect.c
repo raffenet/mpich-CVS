@@ -146,13 +146,13 @@ int socket_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_POST_CONNECT);
 
-    /*MPIU_dbg_printf("socket_post_connect\n");*/
+    /*MPIU_DBG_PRINTF(("socket_post_connect\n"));*/
 
     MPID_Thread_lock(vc_ptr->lock);
 
     if (vc_ptr->data.socket.state & (SOCKET_WRITING_ACK | SOCKET_CONNECTED))
     {
-	MPIU_dbg_printf("socket_post_connect: socket connection in progress, no need to post a connect.\n");
+	MPIU_DBG_PRINTF(("socket_post_connect: socket connection in progress, no need to post a connect.\n"));
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_POST_CONNECT);
 	return MPI_SUCCESS;
     }
@@ -185,7 +185,7 @@ int socket_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 	return -1;
     }
 
-    MPIU_dbg_printf("socket_post_connect(%d)\n", sock_getid(vc_ptr->data.socket.sock));
+    MPIU_DBG_PRINTF(("socket_post_connect(%d)\n", sock_getid(vc_ptr->data.socket.sock)));
 
     MPID_Thread_unlock(vc_ptr->lock);
 
@@ -201,14 +201,14 @@ int socket_handle_connect(MPIDI_VC *vc_ptr)
 
     MPID_Thread_lock(vc_ptr->lock);
 
-    MPIU_dbg_printf("socket_handle_connect(%d)\n", sock_getid(vc_ptr->data.socket.sock));
+    MPIU_DBG_PRINTF(("socket_handle_connect(%d)\n", sock_getid(vc_ptr->data.socket.sock)));
 
     /* Change the state */
     SOCKET_CLR_BIT(vc_ptr->data.socket.state, SOCKET_POSTING_CONNECT);
     SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_WRITING_CONTEXT_PKT);
 
     /* post a write of the connection stuff - context, rank */
-    MPIU_dbg_printf("sock_post_write(%d:context,%d)\n", sock_getid(vc_ptr->data.socket.sock), MPIR_Process.comm_world->rank);
+    MPIU_DBG_PRINTF(("sock_post_write(%d:context,%d)\n", sock_getid(vc_ptr->data.socket.sock), MPIR_Process.comm_world->rank));
     vc_ptr->pkt_car.msg_header.pkt.u.context.rank = MPIR_Process.comm_world->rank;
     vc_ptr->pkt_car.msg_header.pkt.u.context.context = MPIR_Process.comm_world->context_id;
     if ((error = sock_post_write(vc_ptr->data.socket.sock, (void*)&vc_ptr->pkt_car.msg_header.pkt.u.context, sizeof(MPID_Context_pkt), NULL)) != SOCK_SUCCESS)
@@ -231,7 +231,7 @@ int socket_handle_written_ack(MPIDI_VC *temp_vc_ptr, int num_written)
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_HANDLE_WRITTEN_ACK);
 
-    MPIU_dbg_printf("socket_handle_written_ack(%d) - %d byte\n", sock_getid(temp_vc_ptr->data.socket.sock), num_written);
+    MPIU_DBG_PRINTF(("socket_handle_written_ack(%d) - %d byte\n", sock_getid(temp_vc_ptr->data.socket.sock), num_written));
 
     /* Change the state */
     SOCKET_CLR_BIT(temp_vc_ptr->data.socket.state, SOCKET_WRITING_ACK);
@@ -241,11 +241,11 @@ int socket_handle_written_ack(MPIDI_VC *temp_vc_ptr, int num_written)
     case SOCKET_ACCEPT_CONNECTION:
 	if (temp_vc_ptr->data.socket.connect_vc_ptr)
 	{
-	    MPIU_dbg_printf("socket_handle_written_ack(%d,headtohead) = accept\n", sock_getid(temp_vc_ptr->data.socket.sock));
+	    MPIU_DBG_PRINTF(("socket_handle_written_ack(%d,headtohead) = accept\n", sock_getid(temp_vc_ptr->data.socket.sock)));
 	    vc_ptr = temp_vc_ptr->data.socket.connect_vc_ptr;
 	    if (vc_ptr->data.socket.state & SOCKET_FREEME_BIT)
 	    {
-		MPIU_dbg_printf("Connection completed in socket_handle_written_ack(%d), starting the regular message logic\n", sock_getid(vc_ptr->data.socket.sock));
+		MPIU_DBG_PRINTF(("Connection completed in socket_handle_written_ack(%d), starting the regular message logic\n", sock_getid(vc_ptr->data.socket.sock)));
 		/* close the current socket */
 		sock_set_user_ptr(vc_ptr->data.socket.sock, NULL);
 		sock_post_close(vc_ptr->data.socket.sock);
@@ -264,7 +264,7 @@ int socket_handle_written_ack(MPIDI_VC *temp_vc_ptr, int num_written)
 	    }
 	    else
 	    {
-		MPIU_dbg_printf("Connection not completed in socket_handle_written_ack(%d), setting the freeme flag\n", sock_getid(vc_ptr->data.socket.sock));
+		MPIU_DBG_PRINTF(("Connection not completed in socket_handle_written_ack(%d), setting the freeme flag\n", sock_getid(vc_ptr->data.socket.sock)));
 		/* the accept path reached the end first so signal the 
 		   connect path to do the freeing and packet posting stuff */
 		SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_FREEME_BIT);
@@ -273,22 +273,22 @@ int socket_handle_written_ack(MPIDI_VC *temp_vc_ptr, int num_written)
 	else
 	{
 	    vc_ptr = temp_vc_ptr;
-	    MPIU_dbg_printf("socket_handle_written_ack(%d) = accept\n", sock_getid(vc_ptr->data.socket.sock));
+	    MPIU_DBG_PRINTF(("socket_handle_written_ack(%d) = accept\n", sock_getid(vc_ptr->data.socket.sock)));
 	    SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_CONNECTED);
 	    socket_post_read_pkt(vc_ptr);
 	    socket_write_aggressive(vc_ptr);
 	}
 	break;
     case SOCKET_REJECT_CONNECTION:
-	MPIU_dbg_printf("socket_handle_written_ack(%d) = reject\n", sock_getid(temp_vc_ptr->data.socket.sock));
+	MPIU_DBG_PRINTF(("socket_handle_written_ack(%d) = reject\n", sock_getid(temp_vc_ptr->data.socket.sock)));
 	sock_set_user_ptr(temp_vc_ptr->data.socket.sock, NULL);
-	MPIU_dbg_printf("sock_post_close(%d)\n", sock_getid(temp_vc_ptr->data.socket.sock));
+	MPIU_DBG_PRINTF(("sock_post_close(%d)\n", sock_getid(temp_vc_ptr->data.socket.sock)));
 	sock_post_close(temp_vc_ptr->data.socket.sock);
 	mm_vc_free(temp_vc_ptr);
 	break;
     default:
-	MPIU_dbg_printf("socket_handle_written_ack(%d) = unknown ack #%d\n", 
-	    sock_getid(temp_vc_ptr->data.socket.sock), (int)temp_vc_ptr->pkt_car.msg_header.pkt.u.context.ack_out);
+	MPIU_DBG_PRINTF(("socket_handle_written_ack(%d) = unknown ack #%d\n", 
+	    sock_getid(temp_vc_ptr->data.socket.sock), (int)temp_vc_ptr->pkt_car.msg_header.pkt.u.context.ack_out));
 	break;
     }
 
@@ -303,14 +303,14 @@ int socket_handle_written_context_pkt(MPIDI_VC *vc_ptr, int num_written)
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_HANDLE_WRITTEN_CONTEXT_PKT);
 
-    MPIU_dbg_printf("socket_handle_written_context_pkt(%d) - %d bytes of %d\n", sock_getid(vc_ptr->data.socket.sock), num_written, sizeof(MPID_Context_pkt));
+    MPIU_DBG_PRINTF(("socket_handle_written_context_pkt(%d) - %d bytes of %d\n", sock_getid(vc_ptr->data.socket.sock), num_written, sizeof(MPID_Context_pkt)));
 
     /* Change the state */
     SOCKET_CLR_BIT(vc_ptr->data.socket.state, SOCKET_WRITING_CONTEXT_PKT);
     SOCKET_SET_BIT(vc_ptr->data.socket.state, SOCKET_READING_ACK);
 
     /* post a read of the ack */
-    MPIU_dbg_printf("sock_post_read(%d:ack)\n", sock_getid(vc_ptr->data.socket.sock));
+    MPIU_DBG_PRINTF(("sock_post_read(%d:ack)\n", sock_getid(vc_ptr->data.socket.sock)));
     if ((error = sock_post_read(vc_ptr->data.socket.sock, (void*)&vc_ptr->pkt_car.msg_header.pkt.u.context.ack_in, 1, NULL)) != SOCK_SUCCESS)
     {
 	socket_print_sock_error(error, "socket_handle_connect: sock_post_read failed.");

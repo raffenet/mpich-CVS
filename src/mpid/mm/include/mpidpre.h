@@ -9,7 +9,7 @@
 #include "mpi.h"
 #include "mpidconf.h"
 #include "mpid_datatype.h"
-#include "mpid_dataloop.h"
+//#include "mpid_dataloop.h"
 #include "mpiimpl.h"
 
 #ifdef WITH_METHOD_TCP

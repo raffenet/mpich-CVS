@@ -30,14 +30,14 @@ int ib_merge_with_posted(MM_Car *pkt_car_ptr, MM_Car *posted_car_ptr)
 	if (posted_car_ptr)
 	{
 	    /* start reading the eager data */
-	    MPIU_dbg_printf("ib_merge_with_posted: reading eager data\n");
+	    MPIU_DBG_PRINTF(("ib_merge_with_posted: reading eager data\n"));
 	    posted_car_ptr->vc_ptr->data.ib.reading_header = FALSE;
 	    ib_enqueue_read_at_head(posted_car_ptr->vc_ptr, posted_car_ptr);
 	}
 	else
 	{
 	    /* post a read for the next header packet */
-	    MPIU_dbg_printf("ib_merge_with_posted: message complete, posting next packet read\n");
+	    MPIU_DBG_PRINTF(("ib_merge_with_posted: message complete, posting next packet read\n"));
 	    ib_post_read_pkt(posted_car_ptr->vc_ptr);
 	}
     } 

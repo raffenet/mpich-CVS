@@ -13,7 +13,7 @@ int ib_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_POST_CONNECT);
 
-    MPIU_dbg_printf("ib_post_connect\n");
+    MPIU_DBG_PRINTF(("ib_post_connect\n"));
 
     MPID_Thread_lock(vc_ptr->lock);
     if ((business_card == NULL) || (strlen(business_card) > 100))

@@ -15,7 +15,7 @@ int ib_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_POST_WRITE);
 
-    MPIU_dbg_printf("ib_post_write\n");
+    MPIU_DBG_PRINTF(("ib_post_write\n"));
 
 #ifdef MPICH_DEV_BUILD
     if (!(car_ptr->type & MM_HEAD_CAR))

@@ -7,6 +7,17 @@
 
 #ifdef WITH_METHOD_IB
 
+/* helper functions */
+char *iba_error(int error, char *file, int line)
+{
+    return NULL;
+}
+
+char *iba_compstatus(int status, char *file, int line)
+{
+    return NULL;
+}
+
 /* minimal set of functions */
 
 ib_int32_t ib_init_us(void)

@@ -460,7 +460,7 @@ int socket_write_aggressive(MPIDI_VC *vc_ptr)
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_WRITE_AGGRESSIVE);
 
-    MPIU_dbg_printf("socket_write_aggressive\n");
+    MPIU_DBG_PRINTF(("socket_write_aggressive\n"));
 
     if (!(vc_ptr->data.socket.state & SOCKET_CONNECTED))
     {
@@ -550,7 +550,7 @@ int socket_write_aggressive(MPIDI_VC *vc_ptr)
 	/* post a write of the data */
 	if (cur_pos == 1)
 	{
-	    MPIU_dbg_printf("sock_post_write(%d), %d bytes\n", sock_getid(vc_ptr->data.socket.sock), vec[0].MPID_IOV_LEN);
+	    MPIU_DBG_PRINTF(("sock_post_write(%d), %d bytes\n", sock_getid(vc_ptr->data.socket.sock), vec[0].MPID_IOV_LEN));
 	    if ((error = sock_post_write(vc_ptr->data.socket.sock, vec[0].MPID_IOV_BUF, vec[0].MPID_IOV_LEN, NULL)) != SOCK_SUCCESS)
 	    {
 		socket_print_sock_error(error, "socket_write_aggressive: sock_post_write failed.");
@@ -572,7 +572,7 @@ int socket_write_aggressive(MPIDI_VC *vc_ptr)
 		}
 		s--;
 		sprintf(s, "=%d bytes\n", n);
-		MPIU_dbg_printf("%s", str);
+		MPIU_DBG_PRINTF(("%s", str));
 	    }
 	    /*** end debugging printout */
 
@@ -601,7 +601,7 @@ int socket_handle_written(MPIDI_VC *vc_ptr, int num_written)
 	return MPI_SUCCESS;
     }
 
-    MPIU_dbg_printf("socket_handle_written(%d) - %d bytes\n", sock_getid(vc_ptr->data.socket.sock), num_written);
+    MPIU_DBG_PRINTF(("socket_handle_written(%d) - %d bytes\n", sock_getid(vc_ptr->data.socket.sock), num_written));
 
     if (!(vc_ptr->data.socket.state & SOCKET_CONNECTED))
     {

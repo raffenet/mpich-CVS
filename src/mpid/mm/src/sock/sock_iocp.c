@@ -747,7 +747,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
 			    sock->pending_operations--;
 			    if (sock->closing && sock->pending_operations == 0)
 			    {
-				MPIU_dbg_printf("sock_wait: closing socket(%d) after iov read completed.\n", sock_getid(sock));
+				MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", sock_getid(sock)));
 				shutdown(sock->sock, SD_BOTH);
 				closesocket(sock->sock);
 				sock->sock = SOCK_INVALID_SOCKET;
@@ -773,7 +773,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
 			    sock->pending_operations--;
 			    if (sock->closing && sock->pending_operations == 0)
 			    {
-				MPIU_dbg_printf("sock_wait: closing socket(%d) after simple read completed.\n", sock_getid(sock));
+				MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after simple read completed.\n", sock_getid(sock)));
 				shutdown(sock->sock, SD_BOTH);
 				closesocket(sock->sock);
 				sock->sock = SOCK_INVALID_SOCKET;
@@ -801,7 +801,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
 			sock->pending_operations--;
 			if (sock->closing && sock->pending_operations == 0)
 			{
-			    MPIU_dbg_printf("sock_wait: closing socket(%d) after connect completed.\n", sock_getid(sock));
+			    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after connect completed.\n", sock_getid(sock)));
 			    shutdown(sock->sock, SD_BOTH);
 			    closesocket(sock->sock);
 			    sock->sock = SOCK_INVALID_SOCKET;
@@ -811,7 +811,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
 		    }
 		    else
 		    {
-			/*MPIU_dbg_printf("sock_wait: write update, total = %d + %d = %d\n", sock->write.total, num_bytes, sock->write.total + num_bytes);*/
+			/*MPIU_DBG_PRINTF(("sock_wait: write update, total = %d + %d = %d\n", sock->write.total, num_bytes, sock->write.total + num_bytes));*/
 			sock->write.total += num_bytes;
 			if (sock->write.use_iov)
 			{
@@ -819,16 +819,16 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
 			    {
 				if (sock->write.iov[sock->write.index].SOCK_IOV_LEN <= num_bytes)
 				{
-				    /*MPIU_dbg_printf("sock_wait: write.index %d, len %d\n", sock->write.index, 
-					sock->write.iov[sock->write.index].SOCK_IOV_LEN);*/
+				    /*MPIU_DBG_PRINTF(("sock_wait: write.index %d, len %d\n", sock->write.index, 
+					sock->write.iov[sock->write.index].SOCK_IOV_LEN));*/
 				    num_bytes -= sock->write.iov[sock->write.index].SOCK_IOV_LEN;
 				    sock->write.index++;
 				    sock->write.iovlen--;
 				}
 				else
 				{
-				    /*MPIU_dbg_printf("sock_wait: partial data written [%d].len = %d, num_bytes = %d\n", sock->write.index,
-					sock->write.iov[sock->write.index].SOCK_IOV_LEN, num_bytes);*/
+				    /*MPIU_DBG_PRINTF(("sock_wait: partial data written [%d].len = %d, num_bytes = %d\n", sock->write.index,
+					sock->write.iov[sock->write.index].SOCK_IOV_LEN, num_bytes));*/
 				    sock->write.iov[sock->write.index].SOCK_IOV_LEN -= num_bytes;
 				    sock->write.iov[sock->write.index].SOCK_IOV_BUF =
 					(char*)(sock->write.iov[sock->write.index].SOCK_IOV_BUF) + num_bytes;
@@ -843,7 +843,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
 				sock->pending_operations--;
 				if (sock->closing && sock->pending_operations == 0)
 				{
-				    MPIU_dbg_printf("sock_wait: closing socket(%d) after iov write completed.\n", sock_getid(sock));
+				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov write completed.\n", sock_getid(sock)));
 				    shutdown(sock->sock, SD_BOTH);
 				    closesocket(sock->sock);
 				    sock->sock = SOCK_INVALID_SOCKET;
@@ -855,7 +855,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
 			    if (sock->write.progress_update != NULL)
 				sock->write.progress_update(num_bytes, sock->user_ptr);
 			    /* post a write of the remaining data */
-			    MPIU_dbg_printf("sock_wait: posting write of the remaining data, vec size %d\n", sock->write.iovlen);
+			    MPIU_DBG_PRINTF(("sock_wait: posting write of the remaining data, vec size %d\n", sock->write.iovlen));
 			    WSASend(sock->sock, sock->write.iov, sock->write.iovlen, &sock->write.num_bytes, 0, &sock->write.ovl, NULL);
 			}
 			else
@@ -870,7 +870,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_wait_t *out)
 				sock->pending_operations--;
 				if (sock->closing && sock->pending_operations == 0)
 				{
-				    MPIU_dbg_printf("sock_wait: closing socket(%d) after simple write completed.\n", sock_getid(sock));
+				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after simple write completed.\n", sock_getid(sock)));
 				    shutdown(sock->sock, SD_BOTH);
 				    closesocket(sock->sock);
 				    sock->sock = SOCK_INVALID_SOCKET;
@@ -990,7 +990,7 @@ int sock_writev(sock_t sock, SOCK_IOV *iov, int n, int *num_written)
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_WRITEV);
     if (n == 0)
     {
-	MPIU_dbg_printf("empty vector passed into sock_writev\n");
+	MPIU_DBG_PRINTF(("empty vector passed into sock_writev\n"));
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WRITEV);
 	return 0;
     }
@@ -1085,7 +1085,7 @@ int sock_post_writev(sock_t sock, SOCK_IOV *iov, int n, int (*wfn)(int, void*))
 	for (i=0; i<n; i++)
 	    s += sprintf(s, "%d,", iov[i].SOCK_IOV_LEN);
 	sprintf(s, ")\n");
-	MPIU_dbg_printf("%s", str);
+	MPIU_DBG_PRINTF(("%s", str));
     }
     */
     WSASend(sock->sock, sock->write.iov, n, &sock->write.num_bytes, 0, &sock->write.ovl, NULL);

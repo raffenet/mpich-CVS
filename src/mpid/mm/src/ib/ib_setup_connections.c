@@ -20,7 +20,7 @@ ib_uint32_t modifyQP( IB_Info *ib, Ib_qp_state qp_state )
 	if ((attr_rec = (attr_rec_t *)
 	     malloc(sizeof (attr_rec_t) * 5)) == NULL )
 	{
-	    MPIU_dbg_printf("Malloc failed %d\n", __LINE__);
+	    MPIU_DBG_PRINTF(("Malloc failed %d\n", __LINE__));
 	    return IB_FAILURE;
 	}
 	    
@@ -41,7 +41,7 @@ ib_uint32_t modifyQP( IB_Info *ib, Ib_qp_state qp_state )
     else if (qp_state == IB_QP_STATE_RTR) 
     {
 	av.sl                         = 0;
-	/*MPIU_dbg_printf("setting dest_lid to ib->m_dlid: %d\n", ib->m_dlid);*/
+	/*MPIU_DBG_PRINTF(("setting dest_lid to ib->m_dlid: %d\n", ib->m_dlid));*/
 	av.dest_lid                   = (ib_uint16_t)ib->m_dlid;
 	av.grh_f                      = 0;
 	av.path_bits                  = 0;
@@ -54,7 +54,7 @@ ib_uint32_t modifyQP( IB_Info *ib, Ib_qp_state qp_state )
 	if ((attr_rec = (attr_rec_t *)
 	     malloc(sizeof (attr_rec_t) * 6)) == NULL )
 	{
-	    MPIU_dbg_printf("Malloc failed %d\n", __LINE__);
+	    MPIU_DBG_PRINTF(("Malloc failed %d\n", __LINE__));
 	    return IB_FAILURE;
 	}
 
@@ -79,7 +79,7 @@ ib_uint32_t modifyQP( IB_Info *ib, Ib_qp_state qp_state )
 	if ((attr_rec = (attr_rec_t *)
 	     malloc(sizeof (attr_rec_t) * 5)) == NULL )
 	{
-	    MPIU_dbg_printf("Malloc failed %d\n", __LINE__);
+	    MPIU_DBG_PRINTF(("Malloc failed %d\n", __LINE__));
 	    return IB_FAILURE;
 	}
 
@@ -169,7 +169,7 @@ void *ib_malloc_register(size_t size)
     ptr = malloc(size);
     if (ptr == NULL)
     {
-	MPIU_dbg_printf("malloc(%d) failed.\n", size);
+	MPIU_DBG_PRINTF(("malloc(%d) failed.\n", size));
 	return NULL;
     }
     status = ib_mr_register_us(
@@ -182,7 +182,7 @@ void *ib_malloc_register(size_t size)
 	&s_lkey, &rkey);
     if (status != IB_SUCCESS)
     {
-	MPIU_dbg_printf("ib_mr_register_us failed, error %d\n", status);
+	MPIU_DBG_PRINTF(("ib_mr_register_us failed, error %d\n", status));
 	return NULL;
     }
 
@@ -219,7 +219,7 @@ int ib_setup_connections()
     mpi_errno = MPID_VCRT_Create(comm_ptr->remote_size, &comm_ptr->vcrt);
     if (mpi_errno != MPI_SUCCESS)
     {
-	MPIU_dbg_printf("MPID_VCRT_Create failed, error %d\n", mpi_errno);
+	MPIU_DBG_PRINTF(("MPID_VCRT_Create failed, error %d\n", mpi_errno));
 	free(key);
 	free(value);
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
@@ -229,7 +229,7 @@ int ib_setup_connections()
     mpi_errno = MPID_VCRT_Get_ptr(comm_ptr->vcrt, &comm_ptr->vcr);
     if (mpi_errno != MPI_SUCCESS)
     {
-	MPIU_dbg_printf("MPID_VCRT_Get_ptr failed, error %d\n", mpi_errno);
+	MPIU_DBG_PRINTF(("MPID_VCRT_Get_ptr failed, error %d\n", mpi_errno));
 	free(key);
 	free(value);
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
@@ -240,7 +240,7 @@ int ib_setup_connections()
     {
 	if ( i == comm_ptr->rank)
 	    continue; /* don't make a connection to myself */
-	/*MPIU_dbg_printf("setting up VC connection to rank %d\n", i);*/
+	/*MPIU_DBG_PRINTF(("setting up VC connection to rank %d\n", i));*/
 	vc_ptr = comm_ptr->vcr[i];
 	if (vc_ptr == NULL)
 	{
@@ -252,8 +252,8 @@ int ib_setup_connections()
 	}
 	sprintf(key, "ib_lid_%d", i);
 	PMI_KVS_Get(vc_ptr->pmi_kvsname, key, value);
-	/*MPIU_dbg_printf("PMI_KVS_Get %s:<%s, %s>\n", 
-			vc_ptr->pmi_kvsname, key, value);*/
+	/*MPIU_DBG_PRINTF(("PMI_KVS_Get %s:<%s, %s>\n", 
+			vc_ptr->pmi_kvsname, key, value));*/
 	ib = &vc_ptr->data.ib.info;
 	ib->m_dlid = atoi(value);
 	ib->m_allocator = BlockAllocInit(IB_PACKET_SIZE, IB_PACKET_COUNT, IB_PACKET_COUNT, ib_malloc_register, ib_free_deregister);
@@ -265,43 +265,43 @@ int ib_setup_connections()
 	/* save the lkey for posting sends and receives */
 	ib->m_lkey = s_lkey;
 
-	/*MPIU_dbg_printf("creating the queue pair\n");*/
+	/*MPIU_DBG_PRINTF(("creating the queue pair\n"));*/
 	/* Create the queue pair */
 	status = createQP(ib);
 	if (status != IB_SUCCESS)
 	{
-	    MPIU_dbg_printf("createQP failed, error %d\n", status);
+	    MPIU_DBG_PRINTF(("createQP failed, error %d\n", status));
 	    free(key);
 	    free(value);
 	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
 	    return -1;
 	}
 
-	/*MPIU_dbg_printf("modifyQP(INIT)\n");*/
+	/*MPIU_DBG_PRINTF(("modifyQP(INIT)\n"));*/
 	status = modifyQP(ib, IB_QP_STATE_INIT);
 	if (status != IB_SUCCESS)
 	{
-	    MPIU_dbg_printf("modifyQP(INIT) failed, error %d\n", status);
+	    MPIU_DBG_PRINTF(("modifyQP(INIT) failed, error %d\n", status));
 	    free(key);
 	    free(value);
 	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
 	    return -1;
 	}
-	/*MPIU_dbg_printf("modifyQP(RTR)\n");*/
+	/*MPIU_DBG_PRINTF(("modifyQP(RTR)\n"));*/
 	status = modifyQP(ib, IB_QP_STATE_RTR);
 	if (status != IB_SUCCESS)
 	{
-	    MPIU_dbg_printf("modifyQP(RTR) failed, error %d\n", status);
+	    MPIU_DBG_PRINTF(("modifyQP(RTR) failed, error %d\n", status));
 	    free(key);
 	    free(value);
 	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
 	    return -1;
 	}
-	/*MPIU_dbg_printf("modifyQP(RTS)\n");*/
+	/*MPIU_DBG_PRINTF(("modifyQP(RTS)\n"));*/
 	status = modifyQP(ib, IB_QP_STATE_RTS);
 	if (status != IB_SUCCESS)
 	{
-	    MPIU_dbg_printf("modifyQP(RTS) failed, error %d\n", status);
+	    MPIU_DBG_PRINTF(("modifyQP(RTS) failed, error %d\n", status));
 	    free(key);
 	    free(value);
 	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
@@ -315,9 +315,9 @@ int ib_setup_connections()
 	}
     }
 
-    /*MPIU_dbg_printf("calling PMI_Barrier\n");*/
+    /*MPIU_DBG_PRINTF(("calling PMI_Barrier\n"));*/
     PMI_Barrier();
-    /*MPIU_dbg_printf("PMI_Barrier returned\n");*/
+    /*MPIU_DBG_PRINTF(("PMI_Barrier returned\n"));*/
 
     free(key);
     free(value);

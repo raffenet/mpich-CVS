@@ -99,7 +99,7 @@ int ib_make_progress()
 	ibr_post_receive(vc_ptr);
 	break;
     default:
-	MPIU_dbg_printf("unknown ib op_type: %d\n", completion_data.op_type);
+	MPIU_DBG_PRINTF(("unknown ib op_type: %d\n", completion_data.op_type));
 	break;
     }
 
