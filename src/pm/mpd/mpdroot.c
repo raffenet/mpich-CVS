@@ -63,8 +63,9 @@ int main(int argc, char *argv[])
         rc = connect(sock,(struct sockaddr *)&sa,sizeof(sa));
         if (rc < 0)
         {
-            printf("cannot connect to mpd at: %s\n", console_name);
-	    printf("probably cause:  no mpd daemon on this machine\n");
+            printf("cannot connect to local mpd at: %s\n", console_name);
+	    printf("probable cause:  no mpd daemon on this machine\n");
+	    printf("possible cause:  unix socket %s has been removed\n", console_name);
             exit(-1);
         }
     }
