@@ -26,9 +26,9 @@ public class DobjDef extends Category
 
         Topology topo = new Topology( shapeID );
         if ( ! topo.isPrimitive() ) {
-            System.err.println( "trace.DobjDef(): unknown shapeID = "
-                              + shapeID );
-            System.exit( 1 );
+            String err_msg = "trace.DobjDef(): unknown shapeID = " + shapeID;
+            throw new IllegalArgumentException( err_msg );
+            // System.exit( 1 );
         }
         super.setTopology( topo );
 

@@ -94,53 +94,16 @@ public class InputLog // implements drawable.InputAPI
         switch ( num_topology_returned ) {
             case 0:
                 num_topology_returned = 1;
-                return new Topology( Topology.EVENT_ID );
+                return Topology.EVENT;
             case 1:
                 num_topology_returned = 2;
-                return new Topology( Topology.STATE_ID );
+                return Topology.STATE;
             case 2:
                 num_topology_returned = 3;
-                return new Topology( Topology.ARROW_ID );
+                return Topology.ARROW;
             default:
                 System.err.println( "All Topology Names have been returned" );
         }
         return null;
     }
-
-    public Category  getShadowCategoryForTopology( final Topology aTopo )
-    {
-        Category   type;
-        ColorAlpha yellow_opaque = new ColorAlpha( ColorAlpha.yellow,
-                                                   ColorAlpha.OPAQUE );
-        ColorAlpha white_opaque  = new ColorAlpha( ColorAlpha.white,
-                                                   ColorAlpha.OPAQUE );
-        ColorAlpha white_near_opaque = new ColorAlpha( ColorAlpha.white,
-                                                       ColorAlpha.NEAR_OPAQUE );
-        if ( aTopo.isEvent() ) {
-            type = new Category( -1, "Preview_" + aTopo.toString(),
-                                 aTopo, white_near_opaque, 5 );
-            /*
-            type.setInfoKeys( "num_real_objs=%d\ntime_error=%E\n" );
-            */
-            return type;
-        }
-        else if ( aTopo.isArrow() ) {
-            type = new Category( -2, "Preview_" + aTopo.toString(),
-                                 aTopo, yellow_opaque, 5 );
-            /*
-            type.setInfoKeys( "num_real_objs=%d\ntime_error=%E\nmsg_size=%d\n" );
-            */
-            return type;
-        }
-        else if ( aTopo.isState() ) {
-            type = new Category( -3, "Preview_" + aTopo.toString(),
-                                 aTopo, white_near_opaque, 5 );
-            /*
-            type.setInfoKeys( "num_real_objs=%d\ntime_error=%E\n" );
-            */
-            return type;
-        }
-        return null;
-    }
-
 }

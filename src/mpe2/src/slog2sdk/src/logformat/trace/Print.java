@@ -61,7 +61,7 @@ public class Print
         while ( ( next_kind = dobj_ins.peekNextKind() ) != Kind.EOF ) {
             if ( next_kind == Kind.TOPOLOGY ) {
                 topo = dobj_ins.getNextTopology();
-                objdef = dobj_ins.getShadowCategoryForTopology( topo );
+                objdef = Category.getShadowCategory( topo );
                 objdefs.put( new Integer( objdef.getIndex() ), objdef );
                 shadefs.put( topo, objdef );
                 System.out.println( "trace.Print: " + topo );
