@@ -32,10 +32,13 @@ adi3man.ps: adi3man.tex adi3.c adi3.h
 
 # This uses the full-featured date program in Linux
 install-web: adi3man.ps
+	-rm -f /mcs/www-unix/mpi/mpich/adi3/adi3.[ch]
 	cp adi3.[ch] /mcs/www-unix/mpi/mpich/adi3
 	cp adi3man.ps /mcs/www-unix/mpi/mpich/adi3
-	sed "s/Last updated .*$$/Last updated on `date '+%B %e, %Y'`/" \
-		/mcs/www-unix/mpi/mpich/adi3/index.html 
+	cp /mcs/www-unix/mpi/mpich/adi3/index.html .foo
+	sed "s/Last updated .*$$/Last updated on `date '+%B %e, %Y'`./" \
+		.foo > /mcs/www-unix/mpi/mpich/adi3/index.html
+	rm -f .foo
 
 clean:
 	rm -f *.log *.aux *.dvi adi3.ps *.bbl paper.ps findmod adi3man.ps
