@@ -56,7 +56,7 @@ int indexed_contig_test(void)
 
     int i, count = 5;
     int blklen[]    = { 1, 2, 1, 1, 1 };
-    MPI_Aint disp[] = { 1, 2, 5, 6, 8 };
+    int disp[] = { 1, 2, 5, 6, 8 };
     MPI_Datatype newtype;
 
     int size, int_size;

@@ -61,7 +61,7 @@ int blockindexed_contig_test(void)
     int err, errs = 0;
 
     int i, count = 1;
-    MPI_Aint disp = 0;
+    int disp = 0;
     MPI_Datatype newtype;
 
     int size, int_size;
@@ -166,7 +166,7 @@ int blockindexed_vector_test(void)
     int err, errs = 0;
 
     int i, count = 3;
-    MPI_Aint disp[] = {1, 4, 5};
+    int disp[] = {1, 4, 5};
     MPI_Datatype vectype, newtype;
 
     int size, int_size;
