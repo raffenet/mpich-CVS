@@ -1715,6 +1715,7 @@ int smpd_state_pmi_listening(smpd_context_t *context, MPIDU_Sock_event_t *event_
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
+    context->state = SMPD_CLOSING;
     result = MPIDU_Sock_post_close(context->sock);
     if (result != MPI_SUCCESS)
     {
