@@ -1,3 +1,5 @@
 *.o
 Makefile
 Makefile.in
+Debug
+Release
