@@ -376,7 +376,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     }
 
     goto fn_exit;
-    /* -- END ERROR HANDLING-- */
+    /* --END ERROR HANDLING-- */
 }
 
 
