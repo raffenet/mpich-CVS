@@ -167,7 +167,7 @@ EOF
     fi
 done
 rm -f .tmp/configure.in .tmp/configure
-if [ "$acSubversion" -gt 57 -o "$acSubversion" -lt 0 ] ; then 
+if [ "$acSubversion" -ge 57 -o "$acSubversion" -lt 0 ] ; then 
     if [ "$acSubversion" -gt 58 ] ; then
         acIncDirFlag=-I
     else 
@@ -250,7 +250,7 @@ if [ $do_bindings = "yes" ] ; then
 
     if [ ! -s src/binding/f90/mpi.f90 ] ; then
 	build_f90=yes
-    elif find -name 'src/binding/f90/buildiface' -newer 'src/binding/f90/mpi.f90' ; then
+    elif find . -name 'src/binding/f90/buildiface' -newer 'src/binding/f90/mpi.f90' ; then
 	build_f90=yes
     else
 	build_f90=no
@@ -467,6 +467,12 @@ find . -name 'configure.in' >/dev/null 2>&1
 if [ $? = 0 ] ; then has_unix_find=yes ; else has_unix_find=no ; fi
 # if [ $? = 0 ] ; then .. code with find
 if [ "$has_unix_find" = "yes" -a "$do_build_configure" = "yes" ] ; then
+    # Before we try to rebuild any configure steps, make sure that 
+    # we have the necessary macro definitions
+    if [ ! -d confdb -o ! -s confdb/aclocal.m4 ] ; then
+	echo "Directory `pwd`/confdb is missing and is required for rebuilding configure"
+	exit 1
+    fi
     for dir in `find . -name 'configure.in' -print` ; do
         dir=`dirname $dir`
 	allowFailure=no
