@@ -831,6 +831,37 @@ fi
 AC_SUBST(mpe_dir)
 AC_SUBST(other_install_dirs)
 #
+dnl
+dnl Find a C compiler (choose gcc first).
+dnl Autoconf 2.13 has the feature that you cannot override the test for
+dnl cross-compilation made in [AC_PROG_CC].  
+dnl We also need to do this before the F77 and F90 test to ensure that we
+dnl find the C preprocessor reliably.
+saveCFLAGS=$CFLAGS
+AC_PROG_CC
+# Bug in autoconf.  Restore cross settings
+if test "$pac_cross_compiling" = "yes" -a "$ac_cv_prog_cc_cross" = "no" ; then
+    AC_MSG_RESULT([Resetting cross compilation to yes])
+    cross_compiling=yes
+    ac_cv_prog_cc_cross=yes
+    ac_cv_prog_f77_cross=yes
+    ac_cv_prog_f90_cross=yes
+    ac_cv_prog_cxx_cross=yes
+fi
+# Misfeature in autoconf.  When using gcc, PROG_CC insists on setting 
+# CFLAGS to -g -O2 if CFLAGS is not set.  This may be appropriate for
+# many tools built with configure and gcc, but not always.  In particular,
+# there seems to be no way to get gcc to use no extra flags if that is desired.
+if test -z "$saveCFLAGS" -a -n "$CFLAGS" ; then
+    # restore CFLAGS
+    # Note: This may not be correct if PROG_CC decided to add other 
+    # flags to CFLAGS to enforce some behavior (such as ANSI/ISO C),
+    # But we haven't seen that in practice.  It would be better
+    # if the CFLAGS were decomposed into flags-that-change-the-language
+    # that the compiler accepts from optimizations
+    CFLAGS=$saveCFLAGS
+fi
+
 # Handle the case that the user set FC but not F77 before we run the
 # PROG_F77 command
 if test -z "$F77" -a -n "$FC" ; then F77="$FC" ; fi
@@ -908,6 +939,13 @@ AC_SUBST(bindings_dirs)
 # tests makes us consistent
 if test -z "$FC" -a -n "$F77" ; then FC="$F77" ; export FC ; fi
 if test -z "$F77" -a -n "$FC" ; then F77="$FC" ; export F77 ; fi
+
+AC_LANG_C
+dnl
+dnl Some bug in autoconf suppresses the initialization of CPP
+dnl when we check for Fortran before we need the preprocessor.
+dnl This step ensures that we have the preprocessor variable CPP
+AC_PROG_CPP
 #
 # ----------------------------------------------------------------------------
 # Done with the basic argument processing and decisions about which 
@@ -924,34 +962,6 @@ dnl     check for compiler characteristics
 dnl     check for library functions
 dnl     check for system services
 dnl Here are some sample tests
-dnl
-dnl Find a C compiler (choose gcc first).
-dnl Autoconf 2.13 has the feature that you cannot override the test for
-dnl cross-compilation made in [AC_PROG_CC].  
-saveCFLAGS=$CFLAGS
-AC_PROG_CC
-# Bug in autoconf.  Restore cross settings
-if test "$pac_cross_compiling" = "yes" -a "$ac_cv_prog_cc_cross" = "no" ; then
-    AC_MSG_RESULT([Resetting cross compilation to yes])
-    cross_compiling=yes
-    ac_cv_prog_cc_cross=yes
-    ac_cv_prog_f77_cross=yes
-    ac_cv_prog_f90_cross=yes
-    ac_cv_prog_cxx_cross=yes
-fi
-# Misfeature in autoconf.  When using gcc, PROG_CC insists on setting 
-# CFLAGS to -g -O2 if CFLAGS is not set.  This may be appropriate for
-# many tools built with configure and gcc, but not always.  In particular,
-# there seems to be no way to get gcc to use no extra flags if that is desired.
-if test -z "$saveCFLAGS" -a -n "$CFLAGS" ; then
-    # restore CFLAGS
-    # Note: This may not be correct if PROG_CC decided to add other 
-    # flags to CFLAGS to enforce some behavior (such as ANSI/ISO C),
-    # But we haven't seen that in practice.  It would be better
-    # if the CFLAGS were decomposed into flags-that-change-the-language
-    # that the compiler accepts from optimizations
-    CFLAGS=$saveCFLAGS
-fi
 # Look for ar.  If we fail, abort
 AC_CHECK_PROGS(AR,ar)
 if test -z "$AR" ; then
@@ -994,8 +1004,10 @@ dnl     AC_MSG_ERROR([Building shared libraries requires disabling C++ (--disabl
 dnl fi
 ### END FOR SHAREDLIB TESTING WITH CXX
 os_type=`uname -s | tr 'LINUX' 'linux'`
-if test "$ENABLE_SHLIB" != "none" -a "$os_type" != "linux" ; then
-    AC_MSG_ERROR([Building shared libraries is only supported on Linux])
+if test "$ENABLE_SHLIB" != "none" ; then
+   if test "$os_type" != "SunOS" -a "$os_type" != "linux" ; then
+       AC_MSG_ERROR([Building shared libraries is only supported on some systems])
+   fi
 fi
 
 # 
@@ -1113,6 +1125,7 @@ dnl eval CC_SHL=$CC_SHL
 dnl Ensure that all subdir configures get this
 export CC_SHL
 export C_LINK_SHL
+export C_LINKPATH_SHL
 export ENABLE_SHLIB
 export LIBTOOL
 dnl
@@ -1905,7 +1918,7 @@ AC_HEADER_STDC
 # Grrr.  OS/X fails the test for sys/uio.h because uio *requires* sys/types.h
 # to compile.  Thus, we'll make that a separate test
 # stddef.h is sometimes needed for types like wchar_t
-AC_CHECK_HEADERS(stdarg.h sys/types.h inttypes.h limits.h stddef.h errno.h sys/socket.h)
+AC_CHECK_HEADERS(stdlib.h stdarg.h sys/types.h inttypes.h limits.h stddef.h errno.h sys/socket.h)
 AC_CACHE_CHECK([for sys/uio.h],ac_cv_header_sys_uio_h,[
 AC_TRY_COMPILE([
 #include <sys/types.h>
@@ -2362,7 +2375,7 @@ CPPFLAGS="$CPPFLAGS"
 CFLAGS="$CFLAGS"
 ENABLE_SHLIB="$ENABLE_SHLIB"
 export LIBDIR ; export MPILIBNAME ; export AR ; export CC ; export CPPFLAGS 
-export CFLAGS ; export CC_SHL ; export ENABLE_SHLIB
+export CFLAGS ; export CC_SHL ; export ENABLE_SHLIB ; export C_LINKPATH_SHL
 ])
 
 AC_OUTPUT_COMMANDS([chmod a+x test/runtests])
