@@ -435,13 +435,46 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
     static int read_offset = 0;
     smpd_command_t *cmd_ptr;
     int ret_val = SMPD_SUCCESS;
+    char *type_str;
 
     mp_enter_fn("handle_read");
 
     if (error != SOCK_SUCCESS)
     {
 	if (context != NULL)
-	    mp_err_printf("sock read error on sock connected to '%s':\n%s\n", context->host, get_sock_error_string(error));
+	{
+	    switch (context->type)
+	    {
+	    case SMPD_CONTEXT_INVALID:
+		type_str = "invalid";
+		break;
+	    case SMPD_CONTEXT_STDIN:
+		type_str = "stdin";
+		break;
+	    case SMPD_CONTEXT_STDOUT:
+		type_str = "stdout";
+		break;
+	    case SMPD_CONTEXT_STDERR:
+		type_str = "stderr";
+		break;
+	    case SMPD_CONTEXT_PARENT:
+		type_str = "parent";
+		break;
+	    case SMPD_CONTEXT_LEFT_CHILD:
+		type_str = "left child";
+		break;
+	    case SMPD_CONTEXT_RIGHT_CHILD:
+		type_str = "right child";
+		break;
+	    case SMPD_CONTEXT_CHILD:
+		type_str = "child";
+		break;
+	    default:
+		type_str = "unknown";
+		break;
+	    }
+	    mp_err_printf("sock read error on %s context connected to '%s': %s\n", type_str, context->host, get_sock_error_string(error));
+	}
 	else
 	    mp_err_printf("sock read error:\n%s\n", get_sock_error_string(error));
 	mp_exit_fn("handle_read");
