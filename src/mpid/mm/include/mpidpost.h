@@ -4,3 +4,4 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "mpid_datatype.h"
