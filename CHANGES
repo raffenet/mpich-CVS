@@ -9,15 +9,6 @@
 
 - The SMPD PMI Wire Protocol Reference Manual has been updated.
 
-- Shared libraries are now supported on Linux systems using the GNU compilers
-  with the caveat that C++ support must be disabled (--disable-cxx).
-
-- The CH3 interface and device now provide a mechanism for using RDMA (remote
-  direct memory access) to transfer data between processes.
-
-- Logging capabilities for MPI and internal routines have been readded.  See
-  the documentation in doc/logging for details.
-
 - To eliminate portability problems, common blocks in mpif.h that spanned
   multiple lines were broken up into multiple common blocks each described on a
   single line.
@@ -27,6 +18,47 @@
   simple shell script.  We anticiapte that the mpich2version command will
   eventually provide additional information such as the patches applied and the
   date of the release.
+
+- The following changes were made to MPD2:
+
+  - Support was addded for MPI's "singleton init", in which a single
+    process started in the normal way (i.e., not by mpiexec or mpirun)
+    becomes an MPI process with an MPI_COMM_WORLD of size one by
+    calling MPI_Init.  After this the process can call other MPI
+    functions, including MPI_Comm_spawn.
+
+  - The format for some of the arguments to mpiexec have changed,
+    especially for passing environment variables to MPI processes.
+
+  - In addition to miscellaneous hardening, better error checking and
+    messages have been added.
+
+  - The install process has been improved.  In particular, configure
+    has been updated to check for a working install program and supply
+    it's own installation script (install.sh) if necessary.
+
+  - A new program, mpdcheck, has been added to help diagnose machine
+    configurations that might be erroneous or at least confusing to
+    mpd.
+
+  - Runtime version checking has been added to insure that the Simple
+    implementation of PMI linked into the application and the MPD
+    process manager being used to run that application are compatible.
+
+  - Minor improvements have been made to mpdboot.
+
+  - Support for the (now depricated) BNR interface has been added to
+    allow MPICH1 programs to also be run via MPD2.
+
+
+- Shared libraries are now supported on Linux systems using the GNU compilers
+  with the caveat that C++ support must be disabled (--disable-cxx).
+
+- The CH3 interface and device now provide a mechanism for using RDMA (remote
+  direct memory access) to transfer data between processes.
+
+- Logging capabilities for MPI and internal routines have been readded.  See
+  the documentation in doc/logging for details.
 
 - A "meminit" option was added to --enable-g to force all bytes associated with
   a structure or union to be iniitialized prior to use.  This prevents programs
