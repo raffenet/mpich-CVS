@@ -406,9 +406,6 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 	    if (err_flag < 0)
 		goto error_state;
 	}
-	/* we have read "mem_lenghts" more bytes from the file.  At this point,
-	 * offset is where we *are*, not from where we started */
-	offset += mem_lengths; 
     }
     else {
 /* noncontiguous in memory as well as in file */
@@ -765,9 +762,7 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
     ADIOI_Free(file_offsets);
     ADIOI_Free(file_lengths);
     
-    /* update fp_ind with how many bytes we have read.  Other routines will
-     * convert absolute bytes into counts of datatypes */
-    if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = offset; 
+    if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
 
 error_state:
     if (err_flag) {
