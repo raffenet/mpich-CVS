@@ -232,6 +232,8 @@ int smpd_get_opt_string(int *argc, char ***argv, char * flag, char *str, int len
 	{
 	    if (i+1 == *argc)
 		return 0;
+	    if ((*argv)[i+1][0] == '-')
+		return 0;
 	    strncpy(str, (*argv)[i+1], len);
 	    str[len-1] = '\0';
 	    for (j=i; j<*argc-1; j++)
