@@ -14,33 +14,31 @@ import java.awt.event.*;
 import java.net.*;
 import javax.swing.*;
 
+import base.drawable.TimeBoundingBox;
 import viewer.common.Const;
 import viewer.common.Dialogs;
 
-public class ActionZoomOut implements ActionListener
+public class ActionZoomRedo implements ActionListener
 {
     private TimelineToolBar    toolbar;
     private ModelTime          model;
-    private int                zoomlevel;
 
-    public ActionZoomOut( TimelineToolBar in_toolbar, ModelTime in_model )
+    public ActionZoomRedo( TimelineToolBar in_toolbar, ModelTime in_model )
     {
         toolbar    = in_toolbar;
         model      = in_model;
-        zoomlevel  = 0;
     }
 
     public void actionPerformed( ActionEvent event )
     {
-        zoomlevel = model.getZoomLevel();
-        if ( zoomlevel < Const.MIN_ZOOM_LEVEL ) {
+        TimeBoundingBox  zoom_timebox = null;
+        if ( model.isZoomRedoStackEmpty() ) {
             Frame frame = (Frame) SwingUtilities.windowForComponent( toolbar );
-            String msg = "The Current ZoomLevel(" + zoomlevel + ") is below "
-                       + "the Minimum ZoomLevel(" + Const.MIN_ZOOM_LEVEL + ")!";
+            String msg = "Zoom Redo Stack is empty";
             Dialogs.warn( frame, msg );
         }
         else
-            model.zoomOut();
+            model.zoomRedo();
 
         /*
         // Set toolbar buttons to reflect status
@@ -53,7 +51,6 @@ public class ActionZoomOut implements ActionListener
         */
 
         if ( Debug.isActive() )
-            Debug.println( "Action for Zoom Out button. ZoomLevel = "
-                         + zoomlevel );
+            Debug.println( "Action for Zoom Redo button." );
     }
 }

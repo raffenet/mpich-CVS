@@ -447,7 +447,7 @@ public abstract class ScrollableObject extends JComponent
 
     public void paintComponent( Graphics g )
     {
-        requestFocus();
+        // requestFocus();
 
         if ( Debug.isActive() ) {
             Debug.println( "ScrollableObject : paintComponent()'s START : " );

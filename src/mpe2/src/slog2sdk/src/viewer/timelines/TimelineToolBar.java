@@ -43,6 +43,8 @@ public class TimelineToolBar extends JToolBar
     public  JButton                 zoomIn_btn;
     public  JButton                 home_btn;
     public  JButton                 zoomOut_btn;
+    public  JButton                 zoomRedo_btn;
+    public  JButton                 zoomUndo_btn;
 
     public  JButton                 jumpBack_btn;
     public  JButton                 jump_btn;
@@ -221,14 +223,28 @@ public class TimelineToolBar extends JToolBar
 
         super.addSeparator( mini_separator_size );
 
+        icon_URL = getURL( img_path + "Redo24.gif" );
+        if ( icon_URL != null )
+            zoomRedo_btn = new JButton( new ImageIcon( icon_URL ) );
+        else
+            zoomRedo_btn = new JButton( "ZoomRedo" );
+        zoomRedo_btn.setToolTipText( "Redo the previous zoom operation" );
+        // zoomRedo_btn.setPreferredSize( btn_dim );
+        zoomRedo_btn.addActionListener(
+                     new ActionZoomRedo( this, time_model ) );
+        super.add( zoomRedo_btn );
+
+        super.addSeparator( mini_separator_size );
+
         icon_URL = getURL( img_path + "ZoomIn24.gif" );
         if ( icon_URL != null )
             zoomIn_btn = new JButton( new ImageIcon( icon_URL ) );
         else
             zoomIn_btn = new JButton( "ZoomIn" );
-        zoomIn_btn.setToolTipText( "Zoom In in time" );
+        zoomIn_btn.setToolTipText( "Zoom In 1 level in time" );
         // zoomIn_btn.setPreferredSize( btn_dim );
-        zoomIn_btn.addActionListener( new ActionZoomIn( this, time_model ) );
+        zoomIn_btn.addActionListener(
+                   new ActionZoomIn( this, time_model ) );
         super.add( zoomIn_btn );
 
         icon_URL = getURL( img_path + "Home24.gif" );
@@ -238,7 +254,8 @@ public class TimelineToolBar extends JToolBar
             home_btn = new JButton( "Home" );
         home_btn.setToolTipText( "Reset to the lowest resolution in time" );
         // home_btn.setPreferredSize( btn_dim );
-        home_btn.addActionListener( new ActionZoomHome( this, time_model ) );
+        home_btn.addActionListener(
+                 new ActionZoomHome( this, time_model ) );
         super.add( home_btn );
 
         icon_URL = getURL( img_path + "ZoomOut24.gif" );
@@ -246,10 +263,24 @@ public class TimelineToolBar extends JToolBar
             zoomOut_btn = new JButton( new ImageIcon( icon_URL ) );
         else
             zoomOut_btn = new JButton( "ZoomOut" );
-        zoomOut_btn.setToolTipText( "Zoom Out in time" );
+        zoomOut_btn.setToolTipText( "Zoom Out 1 level in time" );
         // zoomOut_btn.setPreferredSize( btn_dim );
-        zoomOut_btn.addActionListener( new ActionZoomOut( this, time_model ) );
+        zoomOut_btn.addActionListener(
+                    new ActionZoomOut( this, time_model ) );
         super.add( zoomOut_btn );
+
+        super.addSeparator( mini_separator_size );
+
+        icon_URL = getURL( img_path + "Undo24.gif" );
+        if ( icon_URL != null )
+            zoomUndo_btn = new JButton( new ImageIcon( icon_URL ) );
+        else
+            zoomUndo_btn = new JButton( "ZoomUndo" );
+        zoomUndo_btn.setToolTipText( "Undo the previous zoom operation" );
+        // zoomUndo_btn.setPreferredSize( btn_dim );
+        zoomUndo_btn.addActionListener(
+                     new ActionZoomUndo( this, time_model ) );
+        super.add( zoomUndo_btn );
 
         super.addSeparator();
         super.addSeparator();

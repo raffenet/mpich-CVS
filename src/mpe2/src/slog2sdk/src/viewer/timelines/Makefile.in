@@ -40,6 +40,7 @@ SRC       = Diagnosis.java Debug.java Profile.java \
             ActionVportBackward.java ActionVportForward.java \
             ActionVportUp.java ActionZoomHome.java ActionVportDown.java \
             ActionZoomIn.java ActionZoomOut.java \
+            ActionZoomUndo.java ActionZoomRedo.java \
             ActionPptyRefresh.java ActionPptyPrint.java ActionPptyStop.java \
             TimelineToolBar.java TimelinePanel.java TimelineFrame.java
 

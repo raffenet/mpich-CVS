@@ -33,9 +33,9 @@ public class ActionZoomHome implements ActionListener
     public void actionPerformed( ActionEvent event )
     {
         zoomlevel = model.getZoomLevel();
-        if ( zoomlevel == Const.MIN_ZOOM_LEVEL ) {
+        if ( zoomlevel < Const.MIN_ZOOM_LEVEL ) {
             Frame frame = (Frame) SwingUtilities.windowForComponent( toolbar );
-            String msg = "The Current ZoomLevel(" + zoomlevel + ") equals to "
+            String msg = "The Current ZoomLevel(" + zoomlevel + ") is below "
                        + "the Minimum ZoomLevel(" + Const.MIN_ZOOM_LEVEL + ") "
                        + "already!";
             Dialogs.warn( frame, msg );

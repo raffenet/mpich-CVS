@@ -12,6 +12,7 @@ package viewer.timelines;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Stack;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -318,11 +319,13 @@ public class ViewportTime extends JViewport
 
         /*  Draw zoom boundary  */
         this.drawShadyTimeBoundingBox( g, zoom_timebox,
-                                       ZOOM_LINE_COLOR, ZOOM_AREA_COLOR );
+                                       ZOOM_LINE_COLOR,
+                                       ZOOM_AREA_COLOR );
 
         if ( info_timebox != null )
             this.drawShadyTimeBoundingBox( g, info_timebox,
-                                           INFO_LINE_COLOR, INFO_AREA_COLOR );
+                                           INFO_LINE_COLOR,
+                                           INFO_AREA_COLOR );
 
         /*  Draw the InfoDialog marker  */
         itr = info_dialogs.iterator();
@@ -494,8 +497,8 @@ public class ViewportTime extends JViewport
                 time_model.setTimeZoomFocus( focus_time );
                 this.repaint();
                 if ( zoom_timebox.getDuration() > 0.0d ) {
-                    time_model.zoomInRapidly( zoom_timebox.getEarliestTime(),
-                                              zoom_timebox.getDuration() );
+                    time_model.zoomRapidly( zoom_timebox.getEarliestTime(),
+                                            zoom_timebox.getDuration() );
                     zoom_timebox.setZeroDuration( focus_time );
                     this.repaint();
                 }

@@ -9,10 +9,12 @@
 
 package viewer.timelines;
 
+import java.util.Stack;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
 
+import base.drawable.TimeBoundingBox;
 import viewer.common.Dialogs;
 import viewer.common.TopWindow;
 
@@ -84,11 +86,16 @@ public class ModelTime extends DefaultBoundedRangeModel
 
     private JScrollBar         scrollbar;
 
+    private Stack              zoom_undo_stack;
+    private Stack              zoom_redo_stack;
+
     public ModelTime( double init_global_time, double final_global_time )
     {
         params_display     = null;
         time_chg_evt       = null;
         time_listener_list = new EventListenerList();
+        zoom_undo_stack    = new Stack();
+        zoom_redo_stack    = new Stack();
 
         setTimeGlobalMinimum( init_global_time );
         setTimeGlobalMaximum( final_global_time );
@@ -378,6 +385,35 @@ public class ModelTime extends DefaultBoundedRangeModel
         }
     }
 
+
+
+    /*
+        Zoom Operations
+    */
+    public void zoomHome()
+    {
+        tZoomScale  = 1.0;
+        this.setTimeViewExtent( tGlobal_extent );
+        this.setTimeViewPosition( tGlobal_min );
+
+        iViewPerTime = iView_width / tView_extent;
+        this.updatePixelCoords();
+        this.setScrollBarIncrements();
+
+        // clean up all the zoom stacks.
+        zoom_undo_stack.clear();
+        zoom_redo_stack.clear();
+    }
+
+    private void updateZoomStack( Stack zoom_stack )
+    {
+        TimeBoundingBox vport_timebox;
+        vport_timebox = new TimeBoundingBox();
+        vport_timebox.setEarliestTime( tView_init );
+        vport_timebox.setLatestFromEarliest( tView_extent );
+        zoom_stack.push( vport_timebox );
+    }
+
     /*
         Zoom In/Out operations:
 
@@ -393,6 +429,8 @@ public class ModelTime extends DefaultBoundedRangeModel
     */
     public void zoomIn()
     {
+        this.updateZoomStack( zoom_undo_stack );
+
         double tZoom_center;
 
         tZoomScale  *= tZoomFactor;
@@ -411,6 +449,8 @@ public class ModelTime extends DefaultBoundedRangeModel
 
     public void zoomOut()
     {
+        this.updateZoomStack( zoom_undo_stack );
+
         double tZoom_center;
 
         tZoomScale  /= tZoomFactor;
@@ -427,11 +467,16 @@ public class ModelTime extends DefaultBoundedRangeModel
         this.setScrollBarIncrements();
     }
 
-    public void zoomInRapidly( double new_tView_init, double new_tView_extent )
+    public void zoomRapidly( double new_tView_init, double new_tView_extent )
     {
-        double tZoom_center;
+        double cur_tZoomScale;
+        cur_tZoomScale = tView_extent / new_tView_extent;
 
-        tZoomScale  *= tView_extent / new_tView_extent;
+        // If this is a rapid zoom-in
+        // if ( cur_tZoomScale > 1.0d )
+            this.updateZoomStack( zoom_undo_stack );
+
+        tZoomScale  *= cur_tZoomScale;
         this.setTimeViewExtent( new_tView_extent );
         this.setTimeViewPosition( new_tView_init );
 
@@ -440,15 +485,52 @@ public class ModelTime extends DefaultBoundedRangeModel
         this.setScrollBarIncrements();
     }
 
-    public void zoomHome()
+    private void zoomBack( double new_tView_init, double new_tView_extent )
     {
-        tZoomScale  = 1.0;
-        this.setTimeViewExtent( tGlobal_extent );
-        this.setTimeViewPosition( tGlobal_min );
+        double cur_tZoomScale;
+        cur_tZoomScale = tView_extent / new_tView_extent;
+
+        tZoomScale  *= cur_tZoomScale;
+        this.setTimeViewExtent( new_tView_extent );
+        this.setTimeViewPosition( new_tView_init );
 
         iViewPerTime = iView_width / tView_extent;
         this.updatePixelCoords();
         this.setScrollBarIncrements();
+    }
+
+    public void zoomUndo()
+    {
+        if ( ! zoom_undo_stack.empty() ) {
+            this.updateZoomStack( zoom_redo_stack );
+            TimeBoundingBox vport_timebox;
+            vport_timebox = (TimeBoundingBox) zoom_undo_stack.pop();
+            this.zoomBack( vport_timebox.getEarliestTime(),
+                           vport_timebox.getDuration() );
+            vport_timebox = null;
+        }
+    }
+
+    public void zoomRedo()
+    {
+        if ( ! zoom_redo_stack.empty() ) {
+            this.updateZoomStack( zoom_undo_stack );
+            TimeBoundingBox vport_timebox;
+            vport_timebox = (TimeBoundingBox) zoom_redo_stack.pop();
+            this.zoomBack( vport_timebox.getEarliestTime(),
+                           vport_timebox.getDuration() );
+            vport_timebox = null;
+        }
+    }
+
+    public boolean isZoomUndoStackEmpty()
+    {
+        return zoom_undo_stack.empty();
+    }
+
+    public boolean isZoomRedoStackEmpty()
+    {
+        return zoom_redo_stack.empty();
     }
 
     // fire StateChanged for specific listener class.
