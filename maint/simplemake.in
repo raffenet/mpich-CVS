@@ -25,6 +25,8 @@ $arAllAtOnce = 1;             # Set to 1 to ar all objects in the
                               # failures are encountered due to line-length
                               # limits.  Use the smvar_name option to
                               # control this on a file-by-file basis.
+$gCheckForTargets = 0;        # Set to 1 to look for files not included
+                              # in the Makefile.sm
 
 # Set the names for the autoconf and autoheader program, along with 
 # the optional args and the argument used to specify the include dir for
@@ -41,6 +43,9 @@ if (defined($ENV{"AUTOHEADER"})) {
 }
 else {
     $autoheader_prog = "autoheader";
+}
+if (defined($ENV{"CHECKTARGETS"})) {
+    $gCheckForTargets = 1;
 }
 
 $autoconf_args = ""; # Extra arguments for autoconf
@@ -70,7 +75,10 @@ $convert_Ldir_to_relative = 1; # set to 1 to convert -Ldir to ../../lib
 # <program>_DEPS = other program dependencies
 # DEPSALL = dependencies for *all* programs
 
-$make_depend = "gcc -MM";  # Set to command to create dependency list
+$make_depend = "gcc -MM -MT '$$*.pf $$*.o'";  
+           # Set to command to create dependency list.  Include the
+           # Profiling objects (.pf).  If gcc includes -MF, we can
+           # output directly: -MF '.deps/$*.d'
 $fixup_autoconf_cd = 0; # set to 1 to (partially) fixup configure for
                         # pathnames that contain blanks
 $autoconf = "autoconf"; # Name of autoconf program to use
@@ -153,19 +161,25 @@ $quiet = 0;
 	      'dvi:ps' => 'dvips $<',
 	      'dvi:pdf' => 'dvipdfm $<',
 # Shared object definitions	      
-	      'c:lo' => '$(C_COMPILE_SHL) -c $<
-	@mv -f $*.o $*.lo', 
-	      'f:lo' => '$(F77_COMPILE_SHL) -c $<
-	@mv -f $*.o $*.lo',
-	      'cxx:lo' => '$(CXX_COMPILE_SHL) -c $<
-	@mv -f $*.o $*.lo',
-	      'cpp:lo' => '$(CXX_COMPILE_SHL) -c $<
-	@mv -f $*.o $*.lo',
-	      'f90:lo' => '$(F90_COMPILE_SHL) -c $<
-	@mv -f $*.o $*.lo',
+# To avoid overwritting the .o file, we use a specific output file name
+# Note that many compilers insist that that file have a .o extension,
+# so we change the *name*.  We us _s for the shared lib intermediates
+	      'c:lo' => '$(C_COMPILE_SHL) -c $< -o _s$*.o
+	@mv -f _s$*.o $*.lo', 
+	      'f:lo' => '$(F77_COMPILE_SHL) -c $< -o _s$*.o
+	@mv -f _s$*.o $*.lo',
+	      'cxx:lo' => '$(CXX_COMPILE_SHL) -c $< -o _s$*.o
+	@mv -f _s$*.o $*.lo',
+	      'cpp:lo' => '$(CXX_COMPILE_SHL) -c $< -o _s$*.o
+	@mv -f _s$*.o $*.lo',
+	      'f90:lo' => '$(F90_COMPILE_SHL) -c $< -o _s$*.o
+	@mv -f _s$*.o $*.lo',
 # This has an MPICH-specific definition that we should eventually generalize
-              'c:pf' => '${C_COMPILE} -c -DMPICH_PROFILE_PMPI $< 
-	@mv -f $*.o $*.pf'
+# We use -o on the compile line to keep from overwriting the .o file;
+# this improves the behavior when weak symbols are not supported
+# We use _ for the profiling lib intermediates
+              'c:pf' => '${C_COMPILE} -c -DMPICH_PROFILE_PMPI $< -o _$*.o
+	@mv -f _$*.o $*.pf'
 	     );
 
 # When we are building profiled versions, we use a separate ext rule
@@ -430,6 +444,9 @@ foreach $_ (@ARGV) {
 	if ($distcleanfiles ne "") { $distcleanfiles .= " "; }
 	$distcleanfiles .= $1;
     }
+    elsif (/-checktargets/) {
+	$gCheckForTargets = 1;
+    }
     elsif (/-debugdirs/) {
 	$debug_dirs = 1;
     }
@@ -463,7 +480,8 @@ if ($foundFile ne "yes" && -s "Makefile.sm") {
 
 # Check that gcc is available if we need it
 if ($do_dependencies eq "static") {
-    if ($make_depend eq "gcc -MM") { 
+    if ($make_depend =~ /gcc\s.*-MM/) { 
+	# (we use the pattern match to allow other options)
 	# This was | 2>&1 but the redirect should go before the pipe.
 	if (open (TFD, "gcc --version 2>&1 |" )) {
 	    close TFD;
@@ -666,7 +684,7 @@ sub ReadMfile {
 		$external_libraries{$lib} = 1;
 	    }
 	}
-	elsif (/^(\w*)\s*\+=\s*(.*)\s*$/){
+	elsif (/^(\w+)\s*\+=\s*(.*)\s*$/){
 	    # Use this form to prepend values to some of the 
 	    # autoconf generate names, e.g., to change
 	    # LIBS = \@LIBS\@ 
@@ -735,7 +753,7 @@ sub ReadMfile {
 	elsif (/^DEPADD\s*=\s*(.*)\s*$/) {
 	    $depadd_all = $1;
 	}
-	elsif (/^([\w-]*)\s*=\s*(.*)\s*$/) {
+	elsif (/^([\w-]+)\s*=\s*(.*)\s*$/) {
 	    $other_vars .= "$origline";
 	    # Save all variable names
 	    $makevars{$1} = $2;
@@ -985,29 +1003,35 @@ sub DefaultRules {
     # The definition of DEFS is the same as for Automake
     if (defined($ext_seen{"c"}) || defined($ext_seen{"cxx"}) ||
 	defined($ext_seen{"cpp"})) {
-	$otherdefs = "";
-	if (defined($PrependVar{'DEFS'})) {
-	    $otherdefs = $PrependVar{'DEFS'};
+	if (!defined($makevars{'DEFS'})) {
+	    my $otherdefs = "";
+	    if (defined($PrependVar{'DEFS'})) {
+		$otherdefs = $PrependVar{'DEFS'};
+	    }
+	    print FD "DEFS            = $otherdefs \@DEFS\@ -I. -I\${srcdir}$newline";
 	}
-	print FD "DEFS            = $otherdefs \@DEFS\@ -I. -I\${srcdir}$newline";
 	# What to do about includes?  If they were set explicitly,
 	# don't use the default.
 	if (!defined($makevars{"INCLUDES"})) {
 	    print FD "INCLUDES            = $include_list$newline";
         }
-	$otherflags = "";
-	if (defined($PrependVar{'CPPFLAGS'})) {
-	    $otherflags = $PrependVar{'CPPFLAGS'};
+	if (!defined($makevars{"CPPFLAGS"})) {
+	    my $otherflags = "";
+	    if (defined($PrependVar{'CPPFLAGS'})) {
+		$otherflags = $PrependVar{'CPPFLAGS'};
+	    }
+	    print FD "CPPFLAGS        = $otherflags \@CPPFLAGS\@$newline";
 	}
-	print FD "CPPFLAGS        = $otherflags \@CPPFLAGS\@$newline";
     }
     # Add the LIBS if there are any programs to build
     if (scalar(%pgmlinktypes)) {
-	$otherlibs = "";
-	if (defined($PrependVar{'LIBS'})) {
-	    $otherlibs = $PrependVar{'LIBS'};
+	if (!defined($makevars{"LIBS"})) {
+	    my $otherlibs = "";
+	    if (defined($PrependVar{'LIBS'})) {
+		$otherlibs = $PrependVar{'LIBS'};
+	    }
+	    print FD "LIBS            = $otherlibs \@LIBS\@$newline";
 	}
-	print FD "LIBS            = $otherlibs \@LIBS\@$newline";
     }
 
     # If there are subdirs, we need make
@@ -1029,7 +1053,17 @@ sub DefaultRules {
 	print "ext seen is :$ext:\n" if $debug;
 	$extkey = "$ext:o";
 	if (defined($extdef{$extkey})) {
-	    print FD "$extdef{$extkey}$newline";
+	    foreach $line (split(/\n/,$extdef{$extkey})) {
+		# Check for an override
+		if ($line =~ /^(\w+)\s*=/) {
+		    my $var = $1;
+		    if (defined($makevars{$var})) { 
+			print "Using override definition of $var\n" if $debug;
+			next; 
+		    }
+		}
+		print FD "$line$newline";
+	    }
 	}
 	if (defined($pgmlinktypes{$ext})) {
 	    print FD "$progdefs{$ext}$newline";
@@ -1053,11 +1087,13 @@ sub DefaultRules {
     if ($any_prog_def) {
 	# These are special definitions that are shared by all 
 	# pgmlink types
-	$otherflags = "";
-	if (defined($PrependVar{'LDFLAGS'})) {
-	    $otherflags = $PrependVar{'LDFLAGS'};
+	if (!defined($makevars{"LDFLAGS"})) {
+	    my $otherflags = "";
+	    if (defined($PrependVar{'LDFLAGS'})) {
+		$otherflags = $PrependVar{'LDFLAGS'};
+	    }
+	    print FD "LDFLAGS     = $otherflags \@LDFLAGS\@ $ldadd_all$newline";
 	}
-	print FD "LDFLAGS     = $otherflags \@LDFLAGS\@ $ldadd_all$newline";
     }
     print FD "$newline";
 #    foreach $ext (keys(%pgmlinktypes)) {
@@ -1325,7 +1361,10 @@ sub SaveSrcNames {
 		$sources{$file} = 1;
 	    }
 	    elsif ($ext eq "h") {
+		# FIXME: need to handle other header extensions; 
+		# e.g., MPICH2 uses .i as well
 		$regular_headers .= " $file";
+		$headers{$file} = 1;
 	    }
 	}
     }
@@ -1357,6 +1396,7 @@ sub ClearVars {
     #$header_sources = "";
     $regular_headers = "";
     %sources = ();
+    %headers = ();
     # Targets
     @alltargets = ();   # implicit targets 
     @allshlibtargets = (); # implicit shared library targets
@@ -1414,19 +1454,34 @@ sub ClearVars {
 #
 # Expand all of the make variables in an expression.  This
 # lets users use targets like
-# libmpich_SOURCE = ${MPI_SOURCES}
+# libmpich_SOURCE_a = ${MPI_SOURCES}
 sub ExpandMakeVars {
     # look for ${\w*} and replace with the value of $makevars{$1}
-    $_ = $_[0];
-    my $count = 0;   # Protect against near-infinite loops 
-    print "Looking at $_\n" if $debug;
-    while (/\$[{\(](\w*)[}\)]/ && $count++ < 100) {
-	print "replacing $1\n" if $debug;
-	my $mvar = $1;
-	s/\${$mvar}/$makevars{$mvar}/g;
+    my $line = $_[0];
+    print "Looking at $line\n" if $debug;
+    my $after = "";
+    my $processed = "";
+    while ($line =~ /([^\$]*)\$([{\(])(\w+)([}\)])(.*)/) {
+	my $before = $1;
+	my $lb   = $2;
+	my $mvar = $3;
+	my $rb   = $4;
+	$after   = $5;
+	print "replacing \$$lb$mvar$rb\n" if $debug;
+	# Rescan the replacement in case it contains a variable.
+	# Undefined variables are left in place
+	if (defined($makevars{$mvar})) {
+	    $processed .= $before;
+	    $line = $makevars{$mvar} . $after;
+	}
+	else {
+	    $processed .= $before . "\$$lb$mvar$rb";
+	    $line      = $after;
+	}
     }
-    print "expanded to $_\n" if $debug;
-    $_;
+    $processed .= $line;
+    print "expanded to $processed\n" if $debug;
+    return $processed;
 }
 
 #
@@ -1471,9 +1526,13 @@ sub ProcessFile {
     }
     &WriteMfile( $output_name );
     
-    #&checkForTargets();
+    if ($gCheckForTargets) {
+	&checkForTargets();
+    }
 
-    my @dirs = (@subdirs,@other_dirs,@doc_subdirs);
+    # Process any subdirectories
+
+    my @dirs = (@subdirs,@other_dirs,@doc_subdirs,@tags_dirs);
     # Get a local copy of the "notsimplemake" hash
     my %notSimplemake = %notSimplemakeDirs;
     # First, check for names that are replaced by autoconf (e.g., @name@)
@@ -1581,7 +1640,9 @@ sub ListTargets {
 #     &RecursiveOp( "target" [, optional array of directories ] );
 # If the array of directories is not included, (@extra_dirs,@subdirs) 
 # is used.  These are the arrays maintined by simplemake of the 
-# directories set by EXTRA_DIRS and SUB_DIRS
+# directories set by EXTRA_DIRS and SUB_DIRS.  The "optional array"
+# is passed by name (i.e., the name of the array is passed, not the array
+# itself).
 # Special notes:
 #    For a small number of directories, use a simpler (non loop) approach
 #    
@@ -2038,10 +2099,18 @@ sub LibraryBuild {
     if (!$dolib_member) {
 	&print_make_line( FD, "${libloc}lib$libname.$libext: " );
     }
+    # Handle any variables in the lib line
+    $sourcefiles = &ExpandMakeVars($sourcefiles);
     foreach $sourcefile (split(/\s+/,$sourcefiles)) {
-	$sourcefile =~ /(.*)\.([^\.]*)/;
-	$obj = "$1.$memext";
-	$ext = $2;
+	$ext = "";
+	$obj = "";
+	if ($sourcefile =~ /(.*)\.([^\.]*)/) {
+	    $obj = "$1.$memext";
+	    $ext = $2;
+	}
+	else {
+	    print STDERR "Sourcefile is $sourcefile\n";
+	}
 	# The special case for an extension of h handles the case where the
 	# .h files are derived, and hence have special rules for creating
 	# them
@@ -2335,10 +2404,29 @@ sub TargetTags {
 	&print_make_longline( FD, "SOURCES = $regular_sources" );
 	$has_sources = 1;
     }
+    elsif (defined($makevars{'SOURCES'})) {
+	$has_sources = 1;
+    }
     if ($regular_headers ne "") {
 	&print_make_longline( FD, "HEADERS = $regular_headers" );
 	$has_headers = 1;
     }
+    if (defined($makevars{'HEADERS'})) {
+	$has_headers = 1;
+	# Add these files to the headers variable.
+	# headers is used to check on files that aren't handled by
+	# simplemake
+	foreach my $file (split(/\s+/,$makevars{'HEADERS'})) {
+	    $headers{$file} = 1;
+	}
+    }
+
+    if ($has_headers || $has_sources) {
+	# Make it eaiser to change the tags program options.
+	# For example, this adds .i as a known "C" language file
+	&print_make_longline( FD, "ETAGS = etags --langmap=c:+.i" );
+    }
+
     # Add a synonym for tags.
     print FD "tags: TAGS$newline"; 
     print FD "TAGS:";
@@ -2349,7 +2437,7 @@ sub TargetTags {
         if ($local_tags) {
 	    print FD '${HEADERS} ${SOURCES}
 	here=`pwd`;\
-	(cd ${srcdir} && etags -o $$here/TAGS --append ${HEADERS} ${SOURCES};)
+	(cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERS} ${SOURCES};)
 ';
         }
         elsif ($root_tags) {
@@ -2359,7 +2447,7 @@ sub TargetTags {
 	    # For vpath builds, make the root path point to the
 	    # VPATH root.
 	    
-	    print FD "\there=\`cd $rpath && pwd\` ; cd \${srcdir} && etags -o \$\$here/TAGS --append \${HEADERS} \${SOURCES}$newline";
+	    print FD "\there=\`cd $rpath && pwd\` ; cd \${srcdir} && \$(ETAGS) -o \$\$here/TAGS --append \${HEADERS} \${SOURCES}$newline";
         }
         else {
 	    print FD "$newline";
@@ -2368,7 +2456,11 @@ sub TargetTags {
     else {
 	print FD "$newline";
     }
-    &RecursiveOp( "TAGS" );
+    # Tags on only the subdirs (really the source subdirs) and any
+    # additional tags dirs
+    @tmp_tags_dirs = (@subdirs,@tags_dirs);
+    &RecursiveOp( "TAGS", "tmp_tags_dirs" );
+    $#tmp_tags_dirs = -1;
 }
 #
 # The generation of documentation (e.g., manual pages) is handled 
@@ -2951,7 +3043,7 @@ sub TargetDependenciesStatic {
 # Design:
 # Each source file has an associated file containing dependencies, stored in 
 # a subdirectory .deps
-#    Each source file foo has .deps/foo.Po
+#    Each source file foo has .deps/foo.d
 #    The Makefile includes .deps/alldeps
 #
 # Because we want to support VPATH builds, we can't create these in the
@@ -2975,16 +3067,53 @@ sub TargetDependenciesDynamic {
     print FD "# Dependencies$newline";
     # This definition follows the cone for COMPILE_C
     if ($has_sources) {
+	# By setting DEPS_DIR to just ., you can use -MMD to update the
+	# dependencies with gcc
+	print FD "DEPS_DIR = .deps$newline";
+	# We'd like to use $found_profilelib to decide whether
+	# to include the $*.pf in the target string.  
+	# But make wants to do the $* substitutions before variable
+	# substitutions
 	print FD "MAKE_DEPEND_C = \@MAKE_DEPEND_C\@ \$(DEFS) \$(INCLUDES) \$(CPPFLAGS)$newline";
-	print FD "dependencies: .deps/timestamp$newline";
+	print FD "dependencies: \$(DEPS_DIR)/timestamp$newline";
     }
     else {
 	print FD "dependencies:$newline";
     }
     &RecursiveOp( "dependencies" );
 
+    # First, generate the targets to maintain the individual files.
+    # This makes it easy to update the dependency contents without
+    # regenerating the entire list.
+    # Note that we don't always want to use this target, since
+    # the dependencies may need to be regenerated when other files change.
+    # Even better is to use this to update the dependency files 
+    # when each file is compile (gcc can almost do this, as long as
+    # you don't mind having .d files in the build directory)
     if ($has_sources) {
-	print FD ".deps/timestamp: ";
+	# Use $found_profilelib to decide whether to add .pf to the
+	# target name.  This requires that the MAKE_DEPEND_C compiler
+	# accept the -MT option
+	my $targetOpts = '-MT \'$*.pf $*.o\'';
+	if (!$found_profilelib) {
+	    $targetOpts = "";
+	}
+	foreach $lib (keys(%libraries)) {
+	    foreach $sourcefile (split(/\s+/,&ExpandMakeVars($libraries{$lib}))) {
+		$ext = $sourcefile;
+		$ext =~ s/^.*\.//g;
+		$sourcebasename = $sourcefile;
+		$sourcebasename =~ s/\.\w*$//;
+		if ($ext eq "c") {
+		    print FD "\$(DEPS_DIR)/$sourcebasename.d: \$(srcdir)/$sourcefile$newline";
+		    print FD "\t\$(MAKE_DEPEND_C) $targetOpts \$< >\$(DEPS_DIR)/$sourcebasename.d$newline";
+		}
+	    }
+	}
+    }
+
+    if ($has_sources) {
+	print FD "\$(DEPS_DIR)/timestamp: ";
 	foreach $lib (keys(%libraries)) {
 	    $sourcefiles = $libraries{$lib};
 	    PrintMakeLongline( FD, "$sourcefiles ", "append" );
@@ -2996,7 +3125,7 @@ sub TargetDependenciesDynamic {
 
 	# We always use a "newalldeps" incase there is a failure 
 	# creating the new list of dependency files.
-	print FD "\trm -f .deps/newalldeps$newline";
+	print FD "\trm -f \$(DEPS_DIR)/newalldeps$newline";
 	foreach $lib (keys(%libraries)) {
 	    foreach $sourcefile (split(/\s+/,&ExpandMakeVars($libraries{$lib}))) {
 		$ext = $sourcefile;
@@ -3004,15 +3133,19 @@ sub TargetDependenciesDynamic {
 		$sourcebasename = $sourcefile;
 		$sourcebasename =~ s/\.\w*$//;
 		if ($ext eq "c") {
-		    print FD "\t\$(MAKE_DEPEND_C) \$(srcdir)/$sourcefile >.deps/$sourcebasename.Po$newline";
-		    print FD "\techo \"$makeInclude .deps/$sourcebasename.Po\" >>.deps/newalldeps$newline";
+		    $targetOpts = "-MT \'$sourcebasename.pf $sourcebasename.o\'";
+		    if (!$found_profilelib) {
+			$targetOpts = "";
+		    }
+		    print FD "\t\$(MAKE_DEPEND_C) $targetOpts \$(srcdir)/$sourcefile >\$(DEPS_DIR)/$sourcebasename.d$newline";
+		    print FD "\techo \"$makeInclude \$(DEPS_DIR)/$sourcebasename.d\" >>\$(DEPS_DIR)/newalldeps$newline";
 		}
 	    }
 	}
-	print FD "\tif [ -s .deps/newalldeps ] ; then mv -f .deps/newalldeps .deps/alldeps ; fi$newline";
-	print FD "\tdate >.deps/timestamp$newline";
+	print FD "\tif [ -s \$(DEPS_DIR)/newalldeps ] ; then mv -f \$(DEPS_DIR)/newalldeps \$(DEPS_DIR)/alldeps ; fi$newline";
+	print FD "\tdate >\$(DEPS_DIR)/timestamp$newline";
 
-	print FD "$makeInclude .deps/alldeps$newline";
+	print FD "$makeInclude \$(DEPS_DIR)/alldeps$newline";
     }
     print FD "# End of Dependencies$newline";
     print FD "# --------------------------------------------------------$newline";
@@ -3021,7 +3154,7 @@ sub TargetDependenciesDynamic {
 sub DistCleanDependencies {
     # Eventually, this should output only in Makefiles that have the 
     # dependencies directory
-    print FD "\t-${quietLine}rm -rf .deps$newline";
+    print FD "\t-${quietLine}rm -rf \$(DEPS_DIR)$newline";
 }
 
 
@@ -3432,13 +3565,27 @@ sub TargetGcov {
 # because we want to preserve the use of variables in the Makefile.
 sub checkForTargets {
     opendir DIR, ".";
+    my $filename;
+    my %knownExts = ( "c" => 1, "f" => 1, "f90" => 1, "cxx" => 1 );
+    my %knownHeaders = ( "h" => 1, "i" => 1 );
     while ($filename = readdir DIR) {
-	if ($filename =~ /.*\.[cf]$/) {
+	my $ext = "";
+	if ($filename =~ /\.(\w+)$/) {
+	    $ext = $1;
+	}
+	if (defined($knownExts{$ext})) {
 	    # Found a source file.  Did we see this file in the source lists?
 	    if (! defined($sources{$filename})) {
-		print STDERR "File $filename did not appear in Makefile.sm\n";
+		print STDERR "File $filename did not appear in $curdir/Makefile.sm\n";
+	    }
+	}
+	if (defined($knownHeaders{$ext})) {
+	    # Found a header file
+	    if (! defined($headers{$filename})) {
+		print STDERR "File $filename did not appear in headers in $curdir/Makefile.sm\n";
 	    }
 	}
     }
     closedir DIR;
 }
+
