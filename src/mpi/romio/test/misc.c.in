@@ -5,10 +5,12 @@
 #include <stdio.h>
 
 /* tests various miscellaneous functions. */
+#define VERBOSE 0
 
 int main(int argc, char **argv)
 {
     int buf[1024], amode, flag, mynod, len, i;
+    int errs = 0, toterrs;
     MPI_File fh;
     MPI_Status status;
     MPI_Datatype newtype;
@@ -54,68 +56,125 @@ int main(int argc, char **argv)
     MPI_File_sync(fh);
 
     MPI_File_get_amode(fh, &amode);
+#if VERBOSE
     if (!mynod) fprintf(stderr, "testing MPI_File_get_amode\n");
-    if (amode != (MPI_MODE_CREATE | MPI_MODE_RDWR))
-	fprintf(stderr, "amode is %d, should be %d\n\n", amode, MPI_MODE_CREATE |
-                      MPI_MODE_RDWR);
+#endif
+    if (amode != (MPI_MODE_CREATE | MPI_MODE_RDWR)) {
+	errs++;
+	fprintf(stderr, "amode is %d, should be %d\n\n", 
+		amode, MPI_MODE_CREATE | MPI_MODE_RDWR);
+    }
 
     MPI_File_get_atomicity(fh, &flag);
-    if (flag) fprintf(stderr, "atomicity is %d, should be 0\n", flag);
+    if (flag) {
+	errs++;
+	fprintf(stderr, "atomicity is %d, should be 0\n", flag);
+    }
+#if VERBOSE
     if (!mynod) fprintf(stderr, "setting atomic mode\n");
+#endif
     MPI_File_set_atomicity(fh, 1);
     MPI_File_get_atomicity(fh, &flag);
-    if (!flag) fprintf(stderr, "atomicity is %d, should be 1\n", flag);
+    if (!flag) {
+	errs;
+	fprintf(stderr, "atomicity is %d, should be 1\n", flag);
+    }
     MPI_File_set_atomicity(fh, 0);
+#if VERBOSE
     if (!mynod) fprintf(stderr, "reverting back to nonatomic mode\n");
+#endif
 
     MPI_Type_vector(10, 10, 20, MPI_INT, &newtype);
     MPI_Type_commit(&newtype);
 
     MPI_File_set_view(fh, 1000, MPI_INT, newtype, "native", MPI_INFO_NULL);
+#ifdef VERBOSE
     if (!mynod) fprintf(stderr, "testing MPI_File_get_view\n");
+#endif
     MPI_File_get_view(fh, &disp, &etype, &filetype, datarep);
-    if ((disp != 1000) || strcmp(datarep, "native"))
+    if ((disp != 1000) || strcmp(datarep, "native")) {
+	errs++;
 	fprintf(stderr, "disp = @LL@, datarep = %s, should be 1000, native\n\n", disp, datarep);
-
+    }
+#ifdef VERBOSE
     if (!mynod) fprintf(stderr, "testing MPI_File_get_byte_offset\n");
+#endif
     MPI_File_get_byte_offset(fh, 10, &disp);
-    if (disp != (1000+20*sizeof(int))) fprintf(stderr, "byte offset = @LL@, should be %d\n\n", disp, (int) (1000+20*sizeof(int)));
+    if (disp != (1000+20*sizeof(int))) {
+	errs++;
+	fprintf(stderr, "byte offset = @LL@, should be %d\n\n", 
+		disp, (int) (1000+20*sizeof(int)));
+    }
 
     MPI_File_get_group(fh, &group);
 
+#if VERBOSE
     if (!mynod) fprintf(stderr, "testing MPI_File_set_size\n");
+#endif
     MPI_File_set_size(fh, 1000+15*sizeof(int));
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_File_sync(fh);
     MPI_File_get_size(fh, &disp);
-    if (disp != 1000+15*sizeof(int)) fprintf(stderr, "file size = @LL@, should be %d\n\n", disp, (int) (1000+15*sizeof(int)));
- 
+    if (disp != 1000+15*sizeof(int)) {
+	errs++;
+	fprintf(stderr, "file size = @LL@, should be %d\n\n", 
+		disp, (int) (1000+15*sizeof(int)));
+    }
+
+#if VERBOSE
     if (!mynod) fprintf(stderr, "seeking to eof and testing MPI_File_get_position\n");
+#endif
     MPI_File_seek(fh, 0, MPI_SEEK_END);
     MPI_File_get_position(fh, &disp);
-    if (disp != 10) fprintf(stderr, "file pointer posn = @LL@, should be 10\n\n", disp);
+    if (disp != 10) {
+	errs++;
+	fprintf(stderr, "file pointer posn = @LL@, should be 10\n\n", disp);
+    }
 
+#if VERBOSE
     if (!mynod) fprintf(stderr, "testing MPI_File_get_byte_offset\n");
+#endif
     MPI_File_get_byte_offset(fh, disp, &offset);
-    if (offset != (1000+20*sizeof(int))) fprintf(stderr, "byte offset = @LL@, should be %d\n\n", offset, (int) (1000+20*sizeof(int)));
+    if (offset != (1000+20*sizeof(int))) {
+	errs++;
+	fprintf(stderr, "byte offset = @LL@, should be %d\n\n", 
+		offset, (int) (1000+20*sizeof(int)));
+    }
     MPI_Barrier(MPI_COMM_WORLD);
 
+#if VERBOSE
     if (!mynod) fprintf(stderr, "testing MPI_File_seek with MPI_SEEK_CUR\n");
+#endif
     MPI_File_seek(fh, -10, MPI_SEEK_CUR);
     MPI_File_get_position(fh, &disp);
     MPI_File_get_byte_offset(fh, disp, &offset);
-    if (offset != 1000)
+    if (offset != 1000) {
+	errs++;
 	fprintf(stderr, "file pointer posn in bytes = @LL@, should be 1000\n\n", offset);
+    }
 
+#if VERBOSE
     if (!mynod) fprintf(stderr, "preallocating disk space up to 8192 bytes\n");
+#endif
     MPI_File_preallocate(fh, 8192);
 
+#if VERBOSE
     if (!mynod) fprintf(stderr, "closing the file and deleting it\n");
+#endif
     MPI_File_close(&fh);
     
     MPI_Barrier(MPI_COMM_WORLD);
     if (!mynod) MPI_File_delete(filename, MPI_INFO_NULL);
 
+    MPI_Allreduce( &errs, &toterrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
+    if (mynod == 0) {
+	if( toterrs > 0) {
+	    fprintf( stderr, "Found %d errors\n", toterrs );
+	}
+	else {
+	    fprintf( stdout, " No Errors\n" );
+	}
+    }
     MPI_Type_free(&newtype);
     MPI_Type_free(&filetype);
     MPI_Group_free(&group);
