@@ -23,16 +23,8 @@ int MPID_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info,
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_COMM_SPAWN);
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
 
-#   if defined(MPIDI_CH3_Comm_spawn)
-    {
-	mpi_errno = MPIDI_CH3_Comm_spawn(command, argv, maxprocs, info, root,
-					 comm, intercomm, array_of_errcodes);
-    }
-#   else
-    {
-	mpi_errno = MPI_ERR_INTERN;
-    }
-#   endif    
+    mpi_errno = MPIDI_CH3_Comm_spawn(command, (const char **) argv, maxprocs, info, root,
+                                     comm, intercomm, array_of_errcodes);
 
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_COMM_SPAWN);

@@ -75,6 +75,9 @@ int MPI_Comm_get_parent(MPI_Comm *parent)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    *parent = (MPIR_Process.comm_parent == NULL) ? MPI_COMM_NULL :
+               (MPIR_Process.comm_parent)->handle;  
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_PARENT);
     return MPI_SUCCESS;
 }

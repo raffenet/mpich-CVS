@@ -83,6 +83,7 @@ int MPI_Comm_disconnect(MPI_Comm *comm)
 
     if (mpi_errno == MPI_SUCCESS)
     {
+	*comm = MPI_COMM_NULL;
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DISCONNECT);
 	return MPI_SUCCESS;
     }
