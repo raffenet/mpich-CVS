@@ -242,6 +242,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
     MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV); \
 }
 */
+/* Because packets are interpreted in-place in the shm queue, posting a pkt read only requires setting a flag */
 #define post_pkt_recv(vc) vc->shm.shm_reading_pkt = TRUE
 
 #undef FUNCNAME
