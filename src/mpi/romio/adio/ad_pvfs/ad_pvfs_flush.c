@@ -10,12 +10,24 @@
 
 void ADIOI_PVFS_Flush(ADIO_File fd, int *error_code)
 {
-    int err;
+    int err, rank, dummy=0, dummy_in=0;
 #ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PVFS_FLUSH";
 #endif
 
-    err = pvfs_fsync(fd->fd_sys);
+    /* a collective routine: because we do not cache data in PVFS1, one process
+     * can initiate the fsync operation and broadcast the result to the others.
+     * One catch: MPI_File_sync has special meaning with respect to file system
+     * consistency.  Ensure no clients have outstanding write operations.
+     */
+
+    MPI_Comm_rank(fd->comm, &rank);
+    MPI_Reduce(&dummy_in, &dummy, 1, MPI_INT, MPI_SUM, 
+		    fd->hints->ranklist[0], fd->comm);
+    if (rank == fd->hints->ranklist[0]) {
+	    err = pvfs_fsync(fd->fd_sys);
+    }
+    MPI_Bcast(&err, 1, MPI_INT, 0, fd->comm);
 
     if (err == -1) {
 #ifdef MPICH2
