@@ -8,7 +8,7 @@
 #include "pmi.h"
 
 /*@
-   mm_get_vc - get the virtual connection pointer
+   mm_vc_from_communicator - get the virtual connection from a communicator and rank
 
    Parameters:
 +  MPID_Comm *comm_ptr - communicator
@@ -16,7 +16,7 @@
 
    Notes:
 @*/
-MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int rank)
+MPIDI_VC * mm_vc_from_communicator(MPID_Comm *comm_ptr, int rank)
 {
     int mpi_errno;
     MPIDI_VC *vc_ptr;
@@ -49,7 +49,7 @@ MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int rank)
 }
 
 /*@
-   mm_vc_get - get the virtual connection pointer from a remote context and rank
+   mm_vc_from_context - get the virtual connection pointer from a remote context and rank
 
    Parameters:
 +  int comm_context - context of the communicator
@@ -57,7 +57,7 @@ MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int rank)
 
    Notes:
 @*/
-MPIDI_VC *mm_vc_get(int comm_context, int rank)
+MPIDI_VC * mm_vc_from_context(int comm_context, int rank)
 {
     int mpi_errno;
     MPIDI_VC *vc_ptr;

@@ -8,22 +8,22 @@
 #include "pmi.h"
 
 /*@
-   mm_vcutil_init - initialize vc stuff
+   mm_vc_init - initialize vc stuff
 
    Notes:
 @*/
-void mm_vcutil_init()
+void mm_vc_init()
 {
     MPID_Process.VCTable_allocator = BlockAllocInit(sizeof(MPIDI_VCRT), 100, 100, malloc, free);
     MPID_Process.VC_allocator = BlockAllocInit(sizeof(MPIDI_VC), 100, 100, malloc, free);
 }
 
 /*@
-   mm_vcutil_finalize - finalize vc stuff
+   mm_vc_finalize - finalize vc stuff
 
    Notes:
 @*/
-void mm_vcutil_finalize()
+void mm_vc_finalize()
 {
     BlockAllocFinalize(&MPID_Process.VCTable_allocator);
     BlockAllocFinalize(&MPID_Process.VC_allocator);
@@ -148,7 +148,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_METHOD:
-	vc_ptr->merge_post_read = shm_merge_post_read;
+	vc_ptr->merge_unexpected = shm_merge_unexpected;
 	vc_ptr->post_write = shm_post_write;
 	break;
 #endif
@@ -158,25 +158,25 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	vc_ptr->data.tcp.connected = FALSE;
 	vc_ptr->data.tcp.connecting = FALSE;
 	vc_ptr->post_read = tcp_post_read;
-	vc_ptr->merge_post_read = tcp_merge_post_read;
+	vc_ptr->merge_unexpected = tcp_merge_unexpected;
 	vc_ptr->post_write = tcp_post_write;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA
     case MM_VIA_METHOD:
-	vc_ptr->merge_post_read = via_merge_post_read;
+	vc_ptr->merge_unexpected = via_merge_unexpected;
 	vc_ptr->post_write = via_post_write;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
     case MM_VIA_RDMA_METHOD:
-	vc_ptr->merge_post_read = via_rdma_merge_post_read;
+	vc_ptr->merge_unexpected = via_rdma_merge_unexpected;
 	vc_ptr->post_write = via_rdma_post_write;
 	break;
 #endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD:
-	vc_ptr->merge_post_read = new_merge_post_read;
+	vc_ptr->merge_unexpected = new_merge_unexpected;
 	vc_ptr->post_write = new_post_write;
 	break;
 #endif

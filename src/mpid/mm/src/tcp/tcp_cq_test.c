@@ -37,7 +37,7 @@ int tcp_accept_connection()
 	return -1;
     }
 
-    vc_ptr = mm_vc_get(context, remote_rank);
+    vc_ptr = mm_vc_from_context(context, remote_rank);
     
     MPID_Thread_lock(vc_ptr->lock);
 
@@ -48,7 +48,7 @@ int tcp_accept_connection()
 	vc_ptr->data.tcp.connected = FALSE;
 	vc_ptr->data.tcp.connecting = TRUE;
 	vc_ptr->post_read = tcp_post_read;
-	vc_ptr->merge_post_read = tcp_merge_post_read;
+	vc_ptr->merge_unexpected = tcp_merge_unexpected;
 	vc_ptr->post_write = tcp_post_write;
 
 	/* send a keep acknowledgement */

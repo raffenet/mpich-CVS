@@ -22,7 +22,7 @@
 int MPID_Finalize( void )
 {
     mm_car_finalize();
-    mm_vcutil_finalize();
+    mm_vc_finalize();
 
     PMI_Finalize();
 

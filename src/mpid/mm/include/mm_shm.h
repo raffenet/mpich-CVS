@@ -16,7 +16,7 @@ int shm_get_business_card(char *value);
 int shm_cq_test();
 int shm_can_connect(char *business_card);
 int shm_post_connect(MPIDI_VC *vc_ptr, char *business_card);
-int shm_merge_post_read(MM_Car *car_ptr, MM_Car *unex_car_ptr);
+int shm_merge_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr);
 int shm_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 
 #endif

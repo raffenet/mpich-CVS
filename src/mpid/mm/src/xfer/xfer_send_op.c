@@ -111,7 +111,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
 	pRequest->mm.wcar[0].request_ptr = pRequest;
 	pRequest->mm.wcar[0].buf_ptr = &pRequest->mm.buf;
 	pRequest->mm.wcar[0].type = MM_HEAD_CAR | MM_WRITE_CAR;
-	pRequest->mm.wcar[0].vc_ptr = mm_get_vc(request_ptr->comm, dest);
+	pRequest->mm.wcar[0].vc_ptr = mm_vc_from_communicator(request_ptr->comm, dest);
 	pRequest->mm.wcar[0].dest = dest;
 	pRequest->mm.wcar[0].data.pkt.context = request_ptr->comm->context_id;
 	pRequest->mm.wcar[0].data.pkt.tag = request_ptr->mm.tag;
@@ -127,7 +127,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     else
     {
 	pCar = &pRequest->mm.wcar[0];
-	pCar->vc_ptr = mm_get_vc(request_ptr->comm, dest);
+	pCar->vc_ptr = mm_vc_from_communicator(request_ptr->comm, dest);
     }
 
     pCar->request_ptr = pRequest;

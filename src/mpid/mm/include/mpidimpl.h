@@ -115,7 +115,7 @@ typedef struct MPIDI_VC
              char * pmi_kvsname; /* name of the key_value database where the remote process put its business card */
                 int rank; /* the rank of the remote process relative to MPI_COMM_WORLD in the key_value database described by pmi_kvsname */
               int (*post_read)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-              int (*merge_post_read)(MM_Car *car_ptr, MM_Car *unex_car_ptr);
+              int (*merge_unexpected)(MM_Car *car_ptr, MM_Car *unex_car_ptr);
 	      int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
   struct MPIDI_VC * read_next_ptr;
   struct MPIDI_VC * write_next_ptr;
@@ -165,10 +165,10 @@ MPID_Request * mm_request_alloc();
           void mm_car_free(MM_Car *car_ptr);
 
 /* virtual connections */
-          void mm_vcutil_init();
-          void mm_vcutil_finalize();
-    MPIDI_VC * mm_get_vc(MPID_Comm *comm_ptr, int rank);
-    MPIDI_VC * mm_vc_get(int comm_context, int rank);
+          void mm_vc_init();
+          void mm_vc_finalize();
+    MPIDI_VC * mm_vc_from_communicator(MPID_Comm *comm_ptr, int rank);
+    MPIDI_VC * mm_vc_from_context(int comm_context, int rank);
     MPIDI_VC * mm_vc_alloc(MM_METHOD method);
     MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank);
            int mm_vc_free(MPIDI_VC *ptr);
