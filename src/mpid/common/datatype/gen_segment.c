@@ -96,6 +96,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	 */
 	DLOOP_Dataloop *oldloop; /* loop from original type, before new count */
 	DLOOP_Offset type_size, type_extent;
+	DLOOP_Type el_type;
 	
 	DLOOP_Handle_get_loopdepth_macro(handle, depth);
 	if (depth >= DLOOP_MAX_DATATYPE_DEPTH) return -1;
@@ -103,6 +104,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	DLOOP_Handle_get_loopptr_macro(handle, oldloop);
 	DLOOP_Handle_get_size_macro(handle, type_size);
 	DLOOP_Handle_get_extent_macro(handle, type_extent);
+        DLOOP_Handle_get_basic_type_macro(handle, el_type);
 
 	if (depth == 1 && ((oldloop->kind & DLOOP_KIND_MASK) == DLOOP_KIND_CONTIG))
 	{
@@ -114,6 +116,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 		sblp->loop_params.c_t.dataloop = NULL;
 		sblp->el_size                  = oldloop->el_size;
 		sblp->el_extent                = oldloop->el_extent;
+		sblp->el_type                  = oldloop->el_type;
 	    }
 	    else
 	    {
@@ -125,6 +128,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 		sblp->loop_params.v_t.dataloop  = NULL;
 		sblp->el_size                   = oldloop->el_size;
 		sblp->el_extent                 = oldloop->el_extent;
+		sblp->el_type                   = oldloop->el_type;
 	    }
 	}
 	else
@@ -135,6 +139,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	    sblp->loop_params.c_t.dataloop = oldloop;
 	    sblp->el_size                  = type_size;
 	    sblp->el_extent                = type_extent;
+	    sblp->el_type                  = el_type;
 
 	    depth++; /* we're adding to the depth with the builtin */
 	}
