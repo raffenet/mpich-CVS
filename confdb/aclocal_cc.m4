@@ -379,3 +379,37 @@ else
      ifelse($2,,:,$2)
 fi
 ])
+dnl
+dnl/*D
+dnl PAC_C_RESTRICT - Check if C supports restrict
+dnl
+dnl Synopsis:
+dnl PAC_C_RESTRICT
+dnl
+dnl Output Effect:
+dnl Defines 'restrict' if some version of restrict is supported; otherwise
+dnl defines 'restrict' as empty.  This allows you to include 'restrict' in 
+dnl declarations in the same way that 'AC_C_CONST' allows you to use 'const'
+dnl in declarations even when the C compiler does not support 'const'
+dnl
+dnlD*/
+AC_DEFUN(PAC_C_RESTRICT,[
+AC_CACHE_CHECK([for restrict],
+pac_cv_c_restrict,[
+AC_TRY_COMPILE(,[int * restrict a;],pac_cv_c_restrict="restrict",
+pac_cv_c_restrict="no")
+if test "$pac_cv_c_restrict" = "no" ; then
+   AC_TRY_COMPILE(,[int * _Restrict a;],pac_cv_c_restrict="_Restrict",
+   pac_cv_c_restrict="no")
+fi
+if test "$pac_cv_c_restrict" = "no" ; then
+   AC_TRY_COMPILE(,[int * __restrict a;],pac_cv_c_restrict="__restrict",
+   pac_cv_c_restrict="no")
+fi
+])
+if test "$pac_cv_c_restrict" = "no" ; then
+  AC_DEFINE(restrict, )
+elif test "$pac_cv_c_restrict" != "restrict" ; then
+  AC_DEFINE_UNQUOTED(restrict,$pac_cv_c_restrict)
+fi
+])dnl

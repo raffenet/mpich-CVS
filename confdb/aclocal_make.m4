@@ -97,9 +97,9 @@ else
 fi
 ])
 if test "$pac_cv_prog_make_include" = "no" ; then
-    ifelse([$2],,[$2],:)
+    ifelse([$2],,:,[$2])
 else
-    ifelse([$1],,[$1],:)
+    ifelse([$1],,:,[$1])
 fi
 ])dnl
 dnl
@@ -140,9 +140,9 @@ else
 fi
 ])
 if test "$pac_cv_prog_make_allows_comments" = "no" ; then
-    AC_MSG_WARN([Your make does not allow comments in target code.])
-    AC_MSG_WARN([Using this make may cause problems when building programs.])
-    AC_MSG_WARN([You should consider using gnumake instead.])
+    AC_MSG_WARN([Your make does not allow comments in target code.
+Using this make may cause problems when building programs.
+You should consider using gnumake instead.])
     ifelse([$1],,[$1])
 fi
 ])dnl
@@ -248,9 +248,9 @@ else
 fi
 ])
 if test "$pac_cv_prog_make_set_cflags" = "no" ; then
-    ifelse([$2],,[$2])
+    ifelse([$2],,:,[$2])
 else
-    ifelse([$1],,[$1])
+    ifelse([$1],,:,[$1])
 fi
 ])dnl
 dnl
