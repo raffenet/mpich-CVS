@@ -35,7 +35,6 @@ int ib_init()
     char key[100], value[100];
     ib_uint32_t max_cq_entries = IB_MAX_CQ_ENTRIES+1;
     ib_uint32_t attr_size;
-    void *pMem;
     MPIDI_STATE_DECL(MPID_STATE_IB_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_INIT);

@@ -158,6 +158,14 @@ SOURCE=.\src\ib\ib_reset_car.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\ib\ib_setup_connections.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ib\ibutil.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\mm\mm_accept.c
 # End Source File
 # Begin Source File

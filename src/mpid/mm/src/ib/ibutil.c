@@ -23,9 +23,8 @@ int ibu_post_receive(MPIDI_VC *vc_ptr)
     work_req.op_type = OP_RECEIVE;
     work_req.sg_list = sg_list;
     /* store the VC ptr and the mem ptr in the work id */
-    work_req.work_req_id = (ib_uint64_t)vc_ptr;
-    work_req.work_req_id = work_req.work_req_id << 32;
-    work_req.work_req_id = work_req.work_req_id | (ib_uint64_t)mem_ptr;
+    ((ib_work_id_handle_t*)&work_req.work_req_id)->data.vc = (ib_uint32_t)vc_ptr;
+    ((ib_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)mem_ptr;
 
     status = ib_post_rcv_req_us(IB_Process.hca_handle, 
 				vc_ptr->data.ib.info.m_qp_handle,

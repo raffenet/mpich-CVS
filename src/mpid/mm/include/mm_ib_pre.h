@@ -12,8 +12,6 @@
 
 typedef struct IB_Info
 {
-    //ib_uint32_t   m_message_size;
-    //ib_uint32_t   m_message_segments;
     ib_uint32_t   m_mtu_size;
     ib_uint32_t   m_max_wqes;
     ib_uint32_t   m_dlid;
@@ -21,23 +19,32 @@ typedef struct IB_Info
 
     ib_mr_handle_t   m_mr_handle;
     ib_uint32_t      m_lkey;
-    //ib_cq_handle_t   m_send_cq_handle, m_recv_cq_handle;
     ib_qp_handle_t   m_qp_handle;
-    //void            *m_virtual_address;
     BlockAllocator   m_allocator;
     ib_uint32_t      m_dest_qp_num;
+    /*
     ib_int64_t       m_snd_work_id;
     ib_int64_t       m_rcv_work_id;
+    */
     
     ib_address_handle_t m_address_handle;
     
+    /*
     ib_uint32_t      m_snd_completion_counter;
     ib_uint32_t      m_rcv_completion_counter;
     ib_uint32_t      m_snd_posted;
     ib_uint32_t      m_rcv_posted;
-    
-    //ib_scatter_gather_list_t  m_recv_sglist, m_send_sglist;
+    */
 } IB_Info;
+
+typedef union ib_work_id_handle_t
+{
+    ib_uint64_t id;
+    struct data
+    {
+	ib_uint32_t vc, mem;
+    } data;
+} ib_work_id_handle_t;
 
 typedef struct MM_Car_data_ib
 {
