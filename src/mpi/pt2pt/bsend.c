@@ -129,7 +129,7 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     /* Check for MPID_WOULD_BLOCK? */
 #endif    
     mpi_errno = MPIR_Bsend_isend( buf, count, datatype, dest, tag, comm_ptr, 
-				  &request_ptr );
+				  BSEND, &request_ptr );
     if (mpi_errno) {
 	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

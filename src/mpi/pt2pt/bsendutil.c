@@ -47,6 +47,7 @@
 #define DEBUG1(a) 
 /* #define PRINT_AVAIL */
 /* #define DEBUG1(a) a;fflush(stdout)  */
+
 /* Private structures for the bsend buffers */
 
 /* BsendMsg is used to hold all of the message particulars in case
@@ -66,11 +67,13 @@ typedef struct BsendData {
     int              total_size;       /* total size of this segment, 
 					  including all headers */
     struct BsendData *next, *prev;
+    BsendKind_t      kind;
     MPID_Request     *request;
     BsendMsg_t       msg;
     double           alignpad;         /* make sure that the struct shares
 					  double alignment */
 } BsendData_t;
+#define BSENDDATA_HEADER_TRUE_SIZE (sizeof(BsendData_t) - sizeof(double))
 
 /* BsendBuffer is the structure that describes the overall Bsend buffer */
 static struct {
@@ -143,10 +146,10 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
 
     /* Set the first block */
     p		  = (BsendData_t *)buffer;
-    p->size	  = buffer_size - sizeof(BsendData_t) + sizeof(double);
+    p->size	  = buffer_size - BSENDDATA_HEADER_TRUE_SIZE;
     p->total_size = buffer_size;
     p->next	  = p->prev = 0;
-    p->msg.msgbuf = (char *)p + sizeof(BsendData_t) - sizeof(double);
+    p->msg.msgbuf = (char *)p + BSENDDATA_HEADER_TRUE_SIZE;
 
     return MPI_SUCCESS;
 }
@@ -184,7 +187,7 @@ int MPIR_Bsend_detach( void *bufferp, int *size )
  */
 int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype, 
 		      int dest, int tag, MPID_Comm *comm_ptr, 
-		      MPID_Request **request )
+		      BsendKind_t kind, MPID_Request **request )
 {
     BsendData_t *p;
     int packsize, mpi_errno, pass;
@@ -243,6 +246,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 		
 		/* ibsend has a problem.  
 		   Use a generalized request here? */
+		p->kind = kind;
 	    }
 	    else if (p->request) {
 		DEBUG(printf("saving request %x in %x\n",p->request,p));
@@ -260,6 +264,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 		}
 #endif
 		MPIR_Bsend_take_buffer( p, p->msg.count );
+		p->kind  = kind;
 		*request = p->request;
 	    }
 	    else {
@@ -336,6 +341,7 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 	    /* Add p to avail, set p to this block and continue through
 	       the loop to catch p+size == next avail */
 	    avail->total_size += p->total_size;
+	    avail->size       += p->total_size;
 	    p = avail;
 	    inserted = 1;
 	    /* No break because we may want to merge with the next 
@@ -348,7 +354,8 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 	    p->total_size += avail->total_size;
 	    p->prev	   = avail->prev;
 	    p->next	   = avail->next;
-	    p->size        = p->total_size - sizeof(BsendData_t);
+	    p->size        = p->total_size - BSENDDATA_HEADER_TRUE_SIZE;
+	    /* The above should be the same as p->size + avail->total_size */
 	    if (!p->prev) {
 		BsendBuffer.avail = p;
 	    }
@@ -398,6 +405,9 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
  * The following routine tests for completion of active sends and 
  * frees the related storage
  *
+ * To make it easier to identify the source of the request, we keep
+ * track of the type of MPI routine (ibsend, bsend, or bsend_init/start)
+ * that created the bsend entry.
  */
 static void MPIR_Bsend_check_active( void )
 {
@@ -476,16 +486,18 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
        allocate for this buffer. */
 
     /* Is there enough space left to create a new block? */
-    if (alloc_size + sizeof(BsendData_t) + MIN_BUFFER_BLOCK <= p->size) {
+    if (alloc_size + BSENDDATA_HEADER_TRUE_SIZE + MIN_BUFFER_BLOCK <= p->size) {
 	/* Yes, the available space (p->size) is large enough to 
 	   carve out a new block */
 	BsendData_t *newp;
 	
 	DEBUG(printf("Breaking block into used and allocated at %x\n", p ));
-	newp = (BsendData_t *)( (char *)p + sizeof(BsendData_t) + alloc_size );
-	newp->total_size = p->total_size - alloc_size - sizeof(BsendData_t);
-	newp->size = newp->total_size - sizeof(BsendData_t) + sizeof(double);
-	newp->msg.msgbuf = (char *)newp + sizeof(BsendData_t) - sizeof(double);
+	newp = (BsendData_t *)( (char *)p + BSENDDATA_HEADER_TRUE_SIZE + 
+				alloc_size );
+	newp->total_size = p->total_size - alloc_size - 
+	    BSENDDATA_HEADER_TRUE_SIZE;
+	newp->size = newp->total_size - BSENDDATA_HEADER_TRUE_SIZE;
+	newp->msg.msgbuf = (char *)newp + BSENDDATA_HEADER_TRUE_SIZE;
 
 	/* Insert this new block after p (we'll remove p from the avail list
 	   next) */
@@ -496,6 +508,7 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
 	}
 	p->next       = newp;
 	p->total_size = (char *)newp - (char*)p;
+	p->size       = p->total_size - BSENDDATA_HEADER_TRUE_SIZE;
     }
 
     /* Remove p from the avail list and add it to the active list */
