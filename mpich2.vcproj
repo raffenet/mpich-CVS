@@ -671,6 +671,135 @@ copy ch3mmPDebug\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCWebDeploymentTool"/>
 		</Configuration>
+		<Configuration
+			Name="ch3rdmaDebug|Win32"
+			OutputDirectory="ch3rdmaDebug"
+			IntermediateDirectory="ch3rdmaDebug"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\mm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\ch3mmDebug/mpich2.pch"
+				AssemblerListingLocation=".\ch3mmDebug/"
+				ObjectFile=".\ch3mmDebug/"
+				ProgramDataBaseFileName=".\ch3mmDebug/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="4"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="ch3rdmad.lib pmid.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
+				OutputFile="lib/mpich2d.dll"
+				LinkIncremental="2"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="src\pm\winmpd\bsocket2\debug,src\pm\winmpd\mpdutil\debug,src\pm\winmpd\mpichinfo\debug,src\pm\winmpd\crypt\debug,lib"
+				ModuleDefinitionFile=".\mpich2.def"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\ch3mmDebug/mpich2d.pdb"
+				ImportLibrary=".\ch3mmDebug/mpich2d.lib"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\ch3mmDebug/mpich2.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying mpich2d.dll to system32 directory"
+				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
+copy ch3mmDebug\mpich2d.lib lib\mpich2d.lib
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
+		<Configuration
+			Name="ch3rdmaRelease|Win32"
+			OutputDirectory="ch3rdmaRelease"
+			IntermediateDirectory="ch3rdmaRelease"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\mm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\ch3mmRelease/mpich2.pch"
+				AssemblerListingLocation=".\ch3mmRelease/"
+				ObjectFile=".\ch3mmRelease/"
+				ProgramDataBaseFileName=".\ch3mmRelease/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="ch3rdma.lib pmi.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
+				OutputFile="lib/mpich2.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="src\pm\winmpd\bsocket2\release,src\pm\winmpd\mpdutil\release,src\pm\winmpd\mpichinfo\release,src\pm\winmpd\crypt\release,lib"
+				ModuleDefinitionFile=".\mpich2.def"
+				ProgramDatabaseFile=".\ch3mmRelease/mpich2.pdb"
+				ImportLibrary=".\ch3mmRelease/mpich2.lib"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\ch3mmRelease/mpich2.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying mpich2.dll to system32 directory"
+				CommandLine="copy lib\mpich2.dll %SystemRoot%\system32\mpich2.dll
+copy ch3mmRelease\mpich2.lib lib\mpich2.lib
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
 	</Configurations>
 	<Files>
 		<Filter
@@ -1041,6 +1170,18 @@ copy ch3mmPDebug\mpich2d.lib lib\mpich2d.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\comm\commutil.c">
@@ -1103,6 +1244,18 @@ copy ch3mmPDebug\mpich2d.lib lib\mpich2d.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1170,6 +1323,18 @@ copy ch3mmPDebug\mpich2d.lib lib\mpich2d.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\dataloop.c">
@@ -1229,6 +1394,18 @@ copy ch3mmPDebug\mpich2d.lib lib\mpich2d.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1344,6 +1521,18 @@ copy ch3mmPDebug\mpich2d.lib lib\mpich2d.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\errhan\file_create_errhandler.c">
@@ -1403,6 +1592,18 @@ copy ch3mmPDebug\mpich2d.lib lib\mpich2d.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1475,6 +1676,19 @@ copy ch3mmPDebug\mpich2d.lib lib\mpich2d.lib
 						Name="VCCLCompilerTool"
 						GeneratePreprocessedFile="0"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						GeneratePreprocessedFile="0"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\errhan\file_set_errhandler.c">
@@ -1534,6 +1748,18 @@ copy ch3mmPDebug\mpich2d.lib lib\mpich2d.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3mmPDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3rdmaRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
