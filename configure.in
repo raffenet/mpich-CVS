@@ -613,32 +613,33 @@ if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
     case "$with_namepublisher" in 
     none|no) ;;
     ldap*)
-	# Look for ldap libraries and header files
-	AC_CHECK_HEADERS(lber.h ldap.h)
-	have_ldap_lib=no
-	AC_SEARCH_LIBS(ldap_open,ldap,have_ldap_lib=yes)
-	# If we have the headers and the library, then we can specify
-	# ldap
-	if test "$ac_cv_header_lber_h" = yes -a \
-	        "$ac_cv_header_ldap_h" = yes -a \
-		"$have_ldap_lib" = yes ; then
-	    AC_DEFINE(USE_LDAP_FOR_NAMEPUB,1,[Define if ldap should be used for name publishing])
-	    nameserv_name="ldap"
-	else 
-	    AC_MSG_WARN([Could not find files needed to use LDAP for name publishing])
-	fi
-
+        subsystems="$subsystems src/nameserv/ldap"
+	# The configure in the nameserv/ldap directory will look for 
+	# the ldap files.
+	AC_DEFINE(USE_LDAP_FOR_NAMEPUB,1,[Define if ldap should be used for name publishing])
+	nameserv_name="ldap"
     ;;
+
     pmiext)
+    # This name publisher should simply use the PMI support as
+    # part of the selected PMI interface implmentation.  If that
+    # interface does not support pmiext, then the appropriate
+    # configure should signal an error.
     AC_MSG_WARN([No pmiext name publisher supported])
 dnl    AC_DEFINE(USE_PMIEXT_FOR_NAMEPUB,1,[Define if pmiext should be used for name publishing])
     #nameserv_name="pmiext"
     ;;
+
     file*)
+    # Note that we always build the Makefile for the file version because
+    # this name publisher is really too simple to require a 
+    # separate configure, and we might as well include a basic
+    # name publisher with any MPICH2 distribution
     AC_MSG_WARN([No file name publisher supported])
     nameserv_name="file"
     AC_DEFINE(USE_FILE_FOR_NAMEPUB,1,[Define if file should be used for name publisher])
     ;;
+
     *)
     AC_MSG_WARN([Unknown name publisher $with_namepublisher])
     ;;
@@ -1354,6 +1355,8 @@ AC_OUTPUT(Makefile src/Makefile \
           src/mpid/common/locks/Makefile \
           src/pm/Makefile \
           src/pmi/Makefile \
+	  src/nameserv/Makefile \
+	  src/nameserv/file/Makefile \
 	  src/util/Makefile \
 	  src/util/info/Makefile \
 	  src/util/instrm/Makefile \
@@ -1370,8 +1373,6 @@ AC_OUTPUT(Makefile src/Makefile \
 	  examples/Makefile \
           src/util/logging/Makefile \
           src/util/timing/Makefile \
-          src/nameserv/Makefile \
-          src/nameserv/file/Makefile \
 )
 
 dnl The following files should be created by the appropriate configure within
