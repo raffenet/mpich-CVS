@@ -173,7 +173,7 @@ void Cpman_visView::OnFileConnect()
     len = 100;
     GetComputerName(host, &len);
     dlg.m_pszHost = host;
-    dlg.m_nPort = 0;
+    dlg.m_nPort = 7470;
     if (dlg.DoModal() == IDOK)
     {
 	if (connect_to_pmandel(dlg.m_pszHost, dlg.m_nPort, g_width, g_height) != 0)
