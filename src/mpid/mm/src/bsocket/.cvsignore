@@ -8,3 +8,4 @@ Release
 *.gcov
 Makefile
 Makefile.in
+.deps

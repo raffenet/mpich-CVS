@@ -28,3 +28,4 @@ mpich2pdf*
 *.gcov
 bsend.eps
 *.pdf
+.deps

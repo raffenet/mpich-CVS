@@ -12,3 +12,4 @@ config.log
 *.plg
 Debug
 Release
+.deps

@@ -8,3 +8,4 @@ mpidi_ch3i_sock_conf.h
 *.bbg
 *.da
 *.gcov
+.deps

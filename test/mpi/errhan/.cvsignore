@@ -5,3 +5,4 @@ errcode.c
 errcode
 adderr
 errring
+.deps

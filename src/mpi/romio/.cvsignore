@@ -8,3 +8,4 @@ lib
 bin
 misc
 localdefs
+.deps

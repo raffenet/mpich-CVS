@@ -3,3 +3,4 @@ Makefile
 atomic
 Debug*
 Release*
+.deps

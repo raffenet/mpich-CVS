@@ -11,3 +11,4 @@ localdefs
 *.bbg
 *.da
 *.gcov
+.deps

@@ -13,3 +13,4 @@ configure
 *.cache
 pmiconf.h.in
 pmiconf.h
+.deps

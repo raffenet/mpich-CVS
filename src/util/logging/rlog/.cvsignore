@@ -21,3 +21,4 @@ printirlog
 irlog2rlog
 *.ncb
 *.suo
+.deps

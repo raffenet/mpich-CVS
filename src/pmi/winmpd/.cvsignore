@@ -13,3 +13,4 @@ config.status
 configure
 pmiconf.h
 pmiconf.h.in
+.deps

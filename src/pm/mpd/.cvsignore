@@ -8,3 +8,4 @@ mpdconf.h.in
 mpdconf.h
 Makefile
 mpdroot
+.deps

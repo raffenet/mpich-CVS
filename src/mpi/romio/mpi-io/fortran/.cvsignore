@@ -3,3 +3,4 @@ Debug*
 Release*
 g77
 intel
+.deps

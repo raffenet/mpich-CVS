@@ -5,3 +5,4 @@ Release*
 *.plg
 *.ncb
 *.suo
+.deps

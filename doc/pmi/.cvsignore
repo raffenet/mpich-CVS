@@ -5,3 +5,4 @@ paper.ps
 *.pdf
 *.bbl
 *.blg
+.deps

@@ -12,3 +12,4 @@ config.log
 *.plg
 *ebug*
 *elease*
+.deps

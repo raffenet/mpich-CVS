@@ -13,3 +13,4 @@ localdefs
 *.gcov
 *Debug*
 *Release*
+.deps

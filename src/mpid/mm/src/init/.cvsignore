@@ -5,3 +5,4 @@
 *.gcov
 Makefile
 Makefile.in
+.deps

@@ -4,3 +4,4 @@ timertest
 *.bbg
 *.da
 *.gcov
+.deps

@@ -9,3 +9,4 @@ mpi.f90
 mpibase.f90
 mpi_constants.f90
 mpi_t1.f90
+.deps

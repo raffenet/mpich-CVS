@@ -6,3 +6,4 @@ config.system
 config.log
 localdefs
 *.cache
+.deps

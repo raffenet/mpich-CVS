@@ -8,3 +8,4 @@ getcross
 config.log
 config.cache
 config.status
+.deps

@@ -13,3 +13,4 @@ configure
 mpiexec
 remshellconf.h.in
 remshellconf.h
+.deps

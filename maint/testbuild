@@ -94,7 +94,8 @@ if [ "$ccset" = no ] ; then
     envargs='-envopt="CC;cc;gcc"'
 fi
 if [ "$fcset" = no ] ; then
-    envargs="$envargs '-envopt="'"'"FC;f77;g77"'"'"'"
+#    envargs="$envargs '-envopt="'"'"FC;f77;g77"'"'"'"
+    envargs="$envargs -envopt="'"'"FC;f77;g77"'"'
 fi
 #			  '-envopt="CC;cc;gcc"' '-envopt="FC;f77;g77"' 
 eval $rundir/maint/checkbuilds -rundir=$rundir \

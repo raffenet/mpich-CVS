@@ -4,3 +4,4 @@ reorder
 Debug*
 Release*
 *.plg
+.deps

@@ -8,3 +8,4 @@ fperf.f
 pfcoll_test.f
 *.out
 romiotests
+.deps

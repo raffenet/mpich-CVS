@@ -13,3 +13,4 @@ config.cache
 pac.ps
 pac.pdf
 config.system
+.deps

@@ -8,3 +8,4 @@ mpidi_ch3i_ssm_conf.h
 *.bbg
 *.da
 *.gcov
+.deps

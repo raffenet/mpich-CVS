@@ -35,3 +35,4 @@ adi3new
 *.da
 *.gcov
 *.out
+.deps

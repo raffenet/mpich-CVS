@@ -9,3 +9,4 @@ Makefile
 *.bbg
 *.da
 *.gcov
+.deps

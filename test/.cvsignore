@@ -12,3 +12,4 @@ Release*
 runtests
 *.ncb
 *.suo
+.deps

@@ -20,3 +20,4 @@ lwlog.h
 *Release*
 mpio.h
 mpicxx.h
+.deps

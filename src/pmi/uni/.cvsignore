@@ -13,3 +13,4 @@ pmiconf.h
 pmiconf.h.in
 *.cache
 mpiexec
+.deps

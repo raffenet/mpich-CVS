@@ -5,4 +5,4 @@ twopm.eps
 *.blg
 *.aux
 *.bbl
-*.toc
+*.toc.deps
