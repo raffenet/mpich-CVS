@@ -267,10 +267,6 @@ int CH3U_Describe_timer_states()
 		       MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD,
 		       "MPIDI_CH3I_Get_business_card",
 		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE, "MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE",
-                       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPIDI_CH3I_PROGRESS_INIT, "MPID_STATE_MPIDI_CH3I_PROGRESS_INIT",
-                       get_random_color_str());
 
     return Sock_describe_timer_states();
 }
