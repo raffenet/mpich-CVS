@@ -32,6 +32,7 @@ libdir=@libdir@
 #
 # Default settings for compiler, flags, and libraries
 FC="@FC@"
+F77CPP="@F77CPP@"
 MPI_FFLAGS="@MPI_FFLAGS@"
 MPI_LDFLAGS="@MPI_LDFLAGS@"
 MPILIBNAME="@MPILIBNAME@"
@@ -58,12 +59,73 @@ done
 # Place the -L before any args incase there are any mpi libraries in there.
 # Eventually, we'll want to move this after any non-MPI implementation 
 # libraries
+# If F77CPP is not empty, then we need to do the following:
+#    If any input files have the .F or .F90 extension, then    
+#        If F77CPP = false, then
+#            generate an error message and exit
+#        Use F77CPP to convert the file from .F to .f, using 
+#            $TMPDIR/f$$-$count.f as the output file name
+#            Replace the input file with this name in the args
+# This is needed only for very broken systems
+#     
+rmfiles=""
+if [ -n "$F77CPP" ] ; then
+    count=1
+    allargs=""
+    TMPDIR=${TMPDIR:-/tmp}
+    # FIXME: does not handle spaces or misbalanced quotes
+    for arg in "$@" ; do
+        case $arg in
+	    -*)
+	    allargs="$allargs $arg"
+	    ;;
+	    *.F|*.F90)
+	    if [ "$F77CPP" = "false" ] ; then
+	        echo "This Fortran compiler does not accept .F or .F90 files"
+		exit 1
+	    fi
+	    bfile=`basename $arg .F`
+	    tmpfile=$TMPDIR/f$$-$bfile.f
+	    if $F77CPP $arg > $tmpfile ; then
+	        # Add this file to the commandline list
+		count=`expr $count + 1`
+		allargs="$allargs $tmpfile"
+		rmfiles="$rmfiles $tmpfile"
+	    else
+		echo "Aborting compilation"
+		exit 1
+	    fi
+	    ;;
+	    *)
+	    allargs="$allargs $arg"
+	    ;;
+	esac
+    done      
+    # Reset the parameter list.  The "--" is a fence that allows the
+    # arguments to be reset from allargs, even for those arguments
+    # that start with a dash.
+    set -- $allargs 
+fi
+#
+#
 if [ "$linking" = yes ] ; then
     $FC $FFLAGS $LDFLAGS -I$includedir -L$libdir "$@" $mpilibs $MPI_OTHERLIBS
     rc=$?
 else
     $FC $FFLAGS -I$includedir "$@" 
     rc=$?
+fi
+if [ -n "$rmfiles" ] ; then
+    for file in $rmfiles ; do
+        objfile=`basename $file .f`
+	if [ -s "${objfile}.o" ] ; then
+	    # Rename 
+	    destfile=`echo $objfile | sed -e "s/.*$$-//"`
+	    mv -f ${objfile}.o ${destfile}.o
+	fi
+        rm -f $file
+    done
+    rm -f $rmfiles
 fi
 exit $rc
 
