@@ -172,6 +172,7 @@ int ibui_post_write(ibu_t ibu, void *buf, int len);
 int ibui_post_writev(ibu_t ibu, MPID_IOV *iov, int n);
 #endif
 int ibui_post_ack_write(ibu_t ibu);
+int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int offset, unsigned int num_bytes);
 
 /* utility allocator functions */
 
