@@ -7,12 +7,21 @@ baseattrwin_SOURCES = baseattrwin.f
 commattrf_SOURCES = commattrf.f
 commattrf_LDADD = ../util/mtestf.o
 commattrf_DEPADD = ../util/mtestf.o
+commattr2f_SOURCES = commattr2f.f
+commattr2f_LDADD = ../util/mtestf.o
+commattr2f_DEPADD = ../util/mtestf.o
 winattrf_SOURCES = winattrf.f
 winattrf_LDADD = ../util/mtestf.o
 winattrf_DEPADD = ../util/mtestf.o
+winattr2f_SOURCES = winattr2f.f
+winattr2f_LDADD = ../util/mtestf.o
+winattr2f_DEPADD = ../util/mtestf.o
 typeattrf_SOURCES = typeattrf.f
 typeattrf_LDADD = ../util/mtestf.o
 typeattrf_DEPADD = ../util/mtestf.o
+typeattr2f_SOURCES = typeattr2f.f
+typeattr2f_LDADD = ../util/mtestf.o
+typeattr2f_DEPADD = ../util/mtestf.o
 
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)
