@@ -72,7 +72,7 @@ void MPIR_Err_init( void )
 {
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
-	MPID_Thread_lock_init(error_ring_mutex);
+	MPID_Thread_lock_init(&error_ring_mutex);
 	/* TODO: get environment setting to see if single message or message stack should be printed */
 	MPIR_Err_print_stack_flag = TRUE; /* for the moment... */
     }
@@ -358,7 +358,7 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 	char * ring_msg;
 	int i;
 	
-	MPID_Thread_lock(error_ring_mutex);
+	MPID_Thread_lock(&error_ring_mutex);
 	{
 	    ring_idx = error_ring_loc++;
 	    if (error_ring_loc >= MAX_ERROR_RING) error_ring_loc %= MAX_ERROR_RING;
@@ -430,7 +430,7 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 		ErrorRing[ring_idx].fcname[0] = '\0';
 	    }
 	}
-	MPID_Thread_unlock(error_ring_mutex);
+	MPID_Thread_unlock(&error_ring_mutex);
 	
 	err_code |= (ring_idx << ERROR_SPECIFIC_INDEX_SHIFT);
 	err_code |= (ring_seq << ERROR_SPECIFIC_SEQ_SHIFT);
@@ -526,7 +526,7 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 	    {
 		int flag = FALSE;
 
-		MPID_Thread_lock(error_ring_mutex);
+		MPID_Thread_lock(&error_ring_mutex);
 		{
 		    if (ErrorRing[ring_idx].seq == ring_seq)
 		    {
@@ -539,7 +539,7 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 			flag = TRUE;
 		    }
 		}
-		MPID_Thread_unlock(error_ring_mutex);
+		MPID_Thread_unlock(&error_ring_mutex);
 
 		if (flag)
 		{
@@ -577,7 +577,7 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
 {
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
-	MPID_Thread_lock(error_ring_mutex);
+	MPID_Thread_lock(&error_ring_mutex);
 	{
 	    while (errcode != MPI_SUCCESS)
 	    {
@@ -605,7 +605,7 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
 		}
 	    }
 	}
-	MPID_Thread_unlock(error_ring_mutex);
+	MPID_Thread_unlock(&error_ring_mutex);
 
 	if (errcode == MPI_SUCCESS)
 	{

@@ -69,10 +69,10 @@ static void MPIR_Init_err_dyncodes( void )
     int i;
 #if MPID_MAX_THREAD_LEVEL > MPI_THREAD_FUNNELED
     { 
-	int init_value;
+	int nzflag;
 
-	MPID_Atomic_decr_flag( &not_initialized, &inuse );
-	if (inuse != 0) {
+	MPID_Atomic_decr_flag( &not_initialized, nzflag );
+	if (nzflag) {
 	    /* Some other thread is initializing the data.  Wait
 	       until that thread completes */
 	    while (!ready) {
