@@ -323,7 +323,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 
 #ifdef USE_MQSHM
 
-    MPIU_strncpy(key, "bootstrapQ_name", key_max_sz );
+    MPIU_Strncpy(key, "bootstrapQ_name", key_max_sz );
     if (pg_rank == 0)
     {
 	mpi_errno = MPIDI_CH3I_BootstrapQ_create_unique_name(queue_name, 100);
@@ -373,7 +373,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
 	    return mpi_errno;
 	}
-	MPIU_Strncpy(queue_name, val, max_val_sz);
+	MPIU_Strncpy(queue_name, val, val_max_sz);
 	/*printf("process %d got bootQ name: '%s'\n", pg_rank, queue_name);*/
 	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg->bootstrapQ, queue_name, 1);
 	if (mpi_errno != MPI_SUCCESS)
