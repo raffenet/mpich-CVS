@@ -31,9 +31,10 @@ public class Const
 
     //  MPE_MAX_STATES is the MPE's max. MPI system states.
     //  Let's be generous, instead of defining MPE_MAX_STATES = 128,
-    //  define MPE_MAX_STATES = 180 to include MPI_IO routines
+    //  define MPE_MAX_STATES = 180 to include MPI-IO routines
+    //  define MPE_MAX_STATES = 200 to include MPI-RMA routines
 
-           static final int     MPE_MAX_STATES       = 180;
+           static final int     MPE_MAX_STATES       = 200;
 
     // !arbitary! defined for max. user-defined states. Increase it if necessary
 
