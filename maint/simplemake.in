@@ -217,6 +217,9 @@ $do_profilelibs   = 1; # Set to one if a profiling version of the library
                        # should be created (required for MPI)
 $found_profilelib = 0;
 
+# Default values
+$distcleanfiles = "";
+
 @subdirs = ();
 @keepargs = ();    # Used to recreate simplemake invocation for make target
 foreach $_ (@ARGV) {
@@ -693,7 +696,9 @@ sub DefaultRules {
     foreach $ext (keys(%ext_seen)) {
 	print "ext seen is :$ext:\n" if $debug;
 	$extkey = "$ext:o";
-	print FD "$extdef{$extkey}$newline";
+	if (defined($extdef{$extkey})) {
+	    print FD "$extdef{$extkey}$newline";
+	}
 	if (defined($pgmlinktypes{$ext})) {
 	    print FD "$progdefs{$ext}$newline";
 	}
@@ -810,7 +815,7 @@ sub DefaultRules {
 	foreach $curarg (@keepargs) {
 	    # Must handle $ specially
 	    $tmparg = $curarg;
-	    $tmparg =~ s/\$/\1\\\$\$/;
+	    $tmparg =~ s/\$/\\\$\$/;
 	    if ($tmparg =~ /\s/) {
 		print FD "\t\"$tmparg\" \\$newline";
 	    }
@@ -863,7 +868,7 @@ sub FindSrcTypes {
     }
     foreach $file (split(/\s\s*/,$files)) {
 	($name,$ext) = split('\.',$file);
-	if ($ext ne "") {
+	if (defined($ext) && $ext ne "") {
 	    $ext_seen{$ext} = 1;
 	}
     }
@@ -877,11 +882,13 @@ sub SaveSrcNames {
     $source = $_[0];
     foreach $file (split(/\s\s*/,$source)) {
 	($name,$ext) = split( '\.',$file);
-	if (defined($extrules{"$ext:o"})) {
-	    $regular_sources .= " $file";
-	}
-	elsif ($ext eq "h") {
-	    $regular_headers .= " $file";
+	if (defined($ext)) {
+	    if (defined($extrules{"$ext:o"})) {
+		$regular_sources .= " $file";
+	    }
+	    elsif ($ext eq "h") {
+		$regular_headers .= " $file";
+	    }
 	}
     }
 }
@@ -905,11 +912,12 @@ sub FindPgmSrcType {
 sub ClearVars {
     # Extensions seen is a property of the makefile
     %ext_seen = ();
-    %dirs_seen = ( "srcdir" );
+    %dirs_seen = ( "srcdir" => 1 );
     $other_vars = "";
     $other_text = "";
     $regular_sources = "";
     $header_sources = "";
+    $regular_headers = "";
     # Targets
     @alltargets = ();   # implicit targets 
     %usertargets = ();  # explicit, user-defined targets
@@ -1402,7 +1410,8 @@ sub TargetPrograms {
 	    $libdep =~ s/-L\s*([\w\.\/]*)\s*-l(\w*)//;
 	    $libdir = $1;
 	    $libname = $2;
-	    if ($libdir != "" && $libname != "") { 
+	    if (defined($libdir) && defined($libname) && 
+		$libdir ne "" && $libname ne "") { 
 	        &print_make_line( FD, " $libdir/lib$libname.a" );
             }
 	}
@@ -1410,7 +1419,16 @@ sub TargetPrograms {
 	$pgmtype = $pgmsrctype{$pgm};
 	&print_make_endline( FD );
 	&print_make_setpos( 8 );
-	&print_make_longline( FD, "\t$progrules{$pgmsrctype{$pgm}} -o $pgm $pgmobjs $pgmlibs{$pgm} $pgm_ldadd{$pgm} \${LIBS}" );
+	$ruleline = "\t$progrules{$pgmsrctype{$pgm}} -o $pgm $pgmobjs";
+	if (defined($pgmlibs{$pgm})) {
+	    $ruleline .= " $pgmlibs{$pgm}";
+	}
+	if (defined($pgm_ldadd{$pgm})) {
+	    $ruleline .= " $pgm_ldadd{$pgm}";
+	}
+	$ruleline .= " \${LIBS}";
+	&print_make_longline( FD, $ruleline );
+#	&print_make_longline( FD, "\t$progrules{$pgmsrctype{$pgm}} -o $pgm $pgmobjs $pgmlibs{$pgm} $pgm_ldadd{$pgm} \${LIBS}" );
     }
 
 }

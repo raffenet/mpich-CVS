@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#! /usr/bin/perl
 #
 # This file builds candidate interface files from the descriptions in 
 # mpi.h
@@ -531,7 +531,7 @@ sub print_args {
     my $last_args = "";
 
     # Clear the @arg_addresses array.
-    $#arg_addresses = 0;
+    $#arg_addresses = -1;
 
     # Special case: if the only parm is "void", remove it from the list
     print STDERR "Nparms = $#parms, parms = " . join(',',@parms) . "\n" if $debug;
@@ -544,6 +544,7 @@ sub print_args {
 	print "parm = :$parm:\n" if $debug;
 	# Remove blanks from the parm
 	$parm =~ s/\s//;
+	$arg_addresses[$count] = 0;
 	if ($parm =~ /char\s*\*/) {
 	    # char's go out at char *v FORT_MIXED_LEN(d) 
 	    # and FORT_END_LEN(d) at the end
@@ -561,7 +562,7 @@ sub print_args {
 	    # Split into raw type and []
 	    $parm =~ /\s*([^\s]*)\s*(\[\s*\])/;
 	    $basetype = $1;
-	    $foundbrack = $2;
+	    #$foundbrack = $2;
 	    if (defined($tof77{$basetype})) {
 		$nstar_before = ($basetype =~ /\*/);
 		$basetype = $tof77{$basetype};
@@ -575,7 +576,7 @@ sub print_args {
 	else {
 	    $nstar_before = ($parm =~ /\*/);
 	    $nstar_after = $nstar_before;
-	    print "Nstar = $nstar\n" if $debug;
+	    print "Nstar = $nstar_after\n" if $debug;
 	    if (defined($tof77{$parm})) {
 		$parm = $tof77{$parm};
 		$nstar_after = ($parm =~ /\*/);
