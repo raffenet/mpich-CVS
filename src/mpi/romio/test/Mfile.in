@@ -51,7 +51,7 @@ all: testing
 fortran_tests: $(FTESTS)
 #
 # The Fortran tests must be built with the Fortran linker
-fperf: ${srcdir}/fperf.f
+fperf: fperf.f
 	$(F77) $(USER_FFLAGS) -o  $@ $< $(FLIBS)
 
 # Some of the Fortran tests must be derived, so their code will be in the
