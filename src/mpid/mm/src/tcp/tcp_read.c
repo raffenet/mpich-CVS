@@ -28,6 +28,10 @@ int tcp_read_header(MPIDI_VC *vc_ptr)
     {
 	err_printf("tcp_read_header called but the entire header has already been read.\n");
     }
+    if (!vc_ptr->data.tcp.connected)
+    {
+	err_printf("tcp_read_header called on an unconnected vc\n");
+    }
 #endif
     MM_ENTER_FUNC(BREAD);
     num_read = bread(vc_ptr->data.tcp.bfd, 
@@ -38,7 +42,7 @@ int tcp_read_header(MPIDI_VC *vc_ptr)
     {
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-	err_printf("tcp_read: bread failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	err_printf("tcp_read_connecting: bread failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
 	MM_EXIT_FUNC(TCP_READ_HEADER);
 	return -1;
     }
@@ -64,21 +68,21 @@ int tcp_read_data(MPIDI_VC *vc_ptr)
     MM_Segment_buffer *buf_ptr;
     int ret_val;
 
-    MM_ENTER_FUNC(TCP_READ);
+    MM_ENTER_FUNC(TCP_READ_DATA);
 
 #ifdef MPICH_DEV_BUILD
     if (vc_ptr->data.tcp.connecting)
     {
-	/*ret_val = tcp_read_connecting(vc_ptr);*/
 	err_printf("Error: tcp_read_data called on connecting vc\n");
-	MM_EXIT_FUNC(TCP_READ);
+	ret_val = tcp_read_connecting(vc_ptr);
+	MM_EXIT_FUNC(TCP_READ_DATA);
 	return ret_val;
     }
 #endif
 
     if (vc_ptr->readq_head == NULL)
     {
-	MM_EXIT_FUNC(TCP_READ);
+	MM_EXIT_FUNC(TCP_READ_DATA);
 	return MPI_SUCCESS;
     }
 
@@ -89,51 +93,51 @@ int tcp_read_data(MPIDI_VC *vc_ptr)
     {
     case MM_VEC_BUFFER:
 	ret_val = tcp_read_vec(vc_ptr, car_ptr, buf_ptr);
-	MM_EXIT_FUNC(TCP_READ);
+	MM_EXIT_FUNC(TCP_READ_DATA);
 	return ret_val;
 	break;
     case MM_TMP_BUFFER:
 	ret_val = tcp_read_tmp(vc_ptr, car_ptr, buf_ptr);
-	MM_EXIT_FUNC(TCP_READ);
+	MM_EXIT_FUNC(TCP_READ_DATA);
 	return ret_val;
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_BUFFER:
 	ret_val = tcp_read_shm(vc_ptr, car_ptr, buf_ptr);
-	MM_EXIT_FUNC(TCP_READ);
+	MM_EXIT_FUNC(TCP_READ_DATA);
 	return ret_val;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA
     case MM_VIA_BUFFER:
 	ret_val = tcp_read_via(vc_ptr, car_ptr, buf_ptr);
-	MM_EXIT_FUNC(TCP_READ);
+	MM_EXIT_FUNC(TCP_READ_DATA);
 	return ret_val;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
     case MM_VIA_RDMA_BUFFER:
 	ret_val = tcp_read_via_rdma(vc_ptr, car_ptr, buf_ptr);
-	MM_EXIT_FUNC(TCP_READ);
+	MM_EXIT_FUNC(TCP_READ_DATA);
 	return ret_val;
 	break;
 #endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD_BUFFER:
 	ret_val = tcp_read_new(vc_ptr, car_ptr, buf_ptr);
-	MM_EXIT_FUNC(TCP_READ);
+	MM_EXIT_FUNC(TCP_READ_DATA);
 	return ret_val;
 	break;
 #endif
     case MM_NULL_BUFFER:
-	err_printf("Error: tcp_read called on a null buffer\n");
+	err_printf("Error: tcp_read_data called on a null buffer\n");
 	break;
     default:
-	err_printf("Error: tcp_read: unknown or unsupported buffer type: %d\n", buf_ptr->type);
+	err_printf("Error: tcp_read_data: unknown or unsupported buffer type: %d\n", buf_ptr->type);
 	break;
     }
 
-    MM_EXIT_FUNC(TCP_READ);
+    MM_EXIT_FUNC(TCP_READ_DATA);
     return -1;
 }
 
@@ -205,7 +209,7 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	    {
 		TCP_Process.error = beasy_getlasterror();
 		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-		err_printf("tcp_read: bread failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+		err_printf("tcp_read_vec: bread failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
 		MM_EXIT_FUNC(TCP_READ_VEC);
 		return -1;
 	    }
@@ -221,7 +225,7 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	    {
 		TCP_Process.error = beasy_getlasterror();
 		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-		err_printf("tcp_read: breadv failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+		err_printf("tcp_read_vec: breadv failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
 		MM_EXIT_FUNC(TCP_READ_VEC);
 		return -1;
 	    }
@@ -326,7 +330,7 @@ int tcp_read_connecting(MPIDI_VC *vc_ptr)
     {
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-	err_printf("tcp_read: beasy_receive(ack) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	err_printf("tcp_read_connecting: beasy_receive(ack) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
 	MM_EXIT_FUNC(TCP_READ_CONNECTING);
 	return -1;
     }
@@ -343,7 +347,7 @@ int tcp_read_connecting(MPIDI_VC *vc_ptr)
     }
     else
     {
-	err_printf("tcp_read: unknown ack char #%d received in read function.\n", (int)ack);
+	err_printf("tcp_read_connecting: unknown ack char #%d received in read function.\n", (int)ack);
     }
 
     vc_ptr->data.tcp.read = tcp_read_header;

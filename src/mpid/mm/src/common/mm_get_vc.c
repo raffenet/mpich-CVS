@@ -54,7 +54,7 @@ MPIDI_VC * mm_vc_from_communicator(MPID_Comm *comm_ptr, int rank)
 	/* allocate and connect a virtual connection */
 	comm_ptr->vcr[rank] = vc_ptr = mm_vc_connect_alloc(comm_ptr, rank);
 	/* post a read on the newly connected vc for a packet */
-	vc_ptr->post_read_pkt(vc_ptr);
+	/*vc_ptr->post_read_pkt(vc_ptr);*/ /* this is automatic now */
     }
 
     MM_EXIT_FUNC(MM_VC_FROM_COMMUNICATOR);

@@ -200,6 +200,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	/* tcp specific functions */
 	vc_ptr->data.tcp.read = tcp_read_connecting;
 	vc_ptr->pkt_car.type = MM_HEAD_CAR | MM_READ_CAR; /* static car used to read headers */
+	vc_ptr->pkt_car.vc_ptr = vc_ptr;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA
