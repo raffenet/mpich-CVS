@@ -203,7 +203,7 @@ static void token_copy(const char *token, char *str, int maxlen)
 	*str = '\0';
 }
 
-int smpd_get_string_arg(const char *str, char *flag, char *val, int maxlen)
+int smpd_get_string_arg(const char *str, const char *flag, char *val, int maxlen)
 {
     if (maxlen < 1)
 	return SMPD_FALSE;
@@ -236,7 +236,7 @@ int smpd_get_string_arg(const char *str, char *flag, char *val, int maxlen)
     return SMPD_FALSE;
 }
 
-int smpd_get_int_arg(const char *str, char *flag, int *val_ptr)
+int smpd_get_int_arg(const char *str, const char *flag, int *val_ptr)
 {
     char int_str[12];
 
@@ -336,7 +336,7 @@ const char * smpd_get_string(const char *str, char *val, int maxlen, int *num_ch
     return str;
 }
 
-int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, char *flag, char *val)
+int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, const char *val)
 {
     int num_chars;
 
@@ -394,7 +394,7 @@ int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, char *flag, char *val)
     return SMPD_SUCCESS;
 }
 
-int smpd_add_int_arg(char **str_ptr, int *maxlen_ptr, char *flag, int val)
+int smpd_add_int_arg(char **str_ptr, int *maxlen_ptr, const char *flag, int val)
 {
     char val_str[12];
     sprintf(val_str, "%d", val);
