@@ -3,7 +3,9 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+#include "mpidimpl.h"
 #include "bsocketimpl.h"
+
 #ifdef HAVE_STDIO_H
 #include <stdio.h>
 #endif
@@ -47,8 +49,12 @@
 #ifdef HAVE_WINSOCK2_H
 #include <time.h>
 #endif
-
-#include "mpidimpl.h"
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 
 /*#define DEBUG_BSOCKET*/
 #undef DEBUG_BSOCKET
@@ -301,7 +307,6 @@ int bmake_blocking(int bfd)
 #define BBUF_DEFAULT_LEN 1024
 
 static int g_bbuflen = BBUF_DEFAULT_LEN;
-static int g_buf_pool_size = FD_SETSIZE;
 
 /*@
    bget_fd - get fd
@@ -718,7 +723,7 @@ int bselect(int maxfds, bfd_set *readbfds, bfd_set *writebfds,
 	for (i=0; i<readbfds->n; i++)
 	{
 	    p = readbfds->p[i];
-	    if (p->num_avail > 0 && (FD_ISSET(p->real_fd, &rcopy.set)))
+	    if ((p->num_avail > 0) && (FD_ISSET(p->real_fd, &rcopy.set)))
 	    {
 		FD_SET((unsigned int)p->real_fd, &readbfds->set);
 		nbfds++;
@@ -759,7 +764,7 @@ int bselect(int maxfds, bfd_set *readbfds, bfd_set *writebfds,
 	for (i=0; i<readbfds->n; i++)
 	{
 	    p = readbfds->p[i];
-	    if (p->num_avail > 0 && (FD_ISSET(p->real_fd, &rcopy.set)) && !(FD_ISSET(p->real_fd, &readbfds->set)))
+	    if ((p->num_avail > 0) && (FD_ISSET(p->real_fd, &rcopy.set)) && (!(FD_ISSET(p->real_fd, &readbfds->set))))
 	    {
 		FD_SET((unsigned int)p->real_fd, &readbfds->set);
 		nbfds++;
@@ -1006,7 +1011,9 @@ int bread(int bfd, char *ubuf, int len)
 @*/
 int breadv(int bfd, B_VECTOR *vec, int veclen)
 {
+#ifdef DBG_READV
     int k;
+#endif
     int      fd;
     int      i;
     char     *bbuf;
@@ -1074,7 +1081,7 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 			pVector[iVector].B_VECTOR_BUF = vec[iVector].B_VECTOR_BUF;
 			pVector[iVector].B_VECTOR_LEN = vec[iVector].B_VECTOR_LEN;
 		    }
-		    pVector[i].B_VECTOR_BUF += n;
+		    pVector[i].B_VECTOR_BUF = (char*)(pVector[i].B_VECTOR_BUF) + n;
 		    pVector[i].B_VECTOR_LEN -= n;
 		    vec = pVector;
 		}
@@ -1280,7 +1287,6 @@ int beasy_create(int *bfd, int port, unsigned long addr)
     struct sockaddr_in sin;
     int optval = 1;
     struct linger linger;
-    int len;
     MPIDI_STATE_DECL(MPID_STATE_BEASY_CREATE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_BEASY_CREATE);
@@ -1298,7 +1304,7 @@ int beasy_create(int *bfd, int port, unsigned long addr)
     memset(&sin, 0, sizeof(struct sockaddr_in));
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = addr;
-    sin.sin_port = htons((u_short)port);
+    sin.sin_port = htons((unsigned short)port);
 
     /* bind it to the port provided */
     if (bbind(*bfd, (const struct sockaddr *)&sin, sizeof(struct sockaddr)) == SOCKET_ERROR)
@@ -1346,7 +1352,9 @@ int beasy_create(int *bfd, int port, unsigned long addr)
 @*/
 int beasy_connect(int bfd, char *host, int port)
 {
+#ifdef HAVE_WINSOCK2_H
     int error;
+#endif
     int reps = 0;
     struct hostent *lphost;
     struct sockaddr_in sockAddr;
@@ -1377,7 +1385,7 @@ int beasy_connect(int bfd, char *host, int port)
 	}
     }
     
-    sockAddr.sin_port = htons((u_short)port);
+    sockAddr.sin_port = htons((unsigned short)port);
     
     while (bconnect(bfd, (struct sockaddr*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
     {

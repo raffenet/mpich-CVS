@@ -7,6 +7,12 @@
 #define MM_TCP_H
 
 #include "mpidimpl.h"
+#ifdef HAVE_STDIO_H
+#include <stdio.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 int tcp_init(void);
 int tcp_get_business_card(char *value, int length);

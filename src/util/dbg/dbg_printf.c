@@ -28,6 +28,10 @@ static char **dbg_memlog = NULL;
 static int dbg_memlog_next = 0;
 static int dbg_memlog_count = 0;
 
+/* function prototypes to avoid compiler warnings */
+void log_error(char *str);
+void log_msg(char *str);
+
 static void dbg_init(void)
 {
     char * envstr;

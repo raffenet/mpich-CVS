@@ -24,6 +24,9 @@ extern "C" {
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
 #ifdef HAVE_NETINET_TCP_H
 #include <netinet/tcp.h> 
 #endif
@@ -104,7 +107,7 @@ typedef int socklen_t;
 #else /* #ifdef NO_BSOCKETS */
 
 typedef struct BFD_Buffer_struct BFD_Buffer;
-typedef struct
+typedef struct bfd_set
 {
     fd_set set;
     int n;
