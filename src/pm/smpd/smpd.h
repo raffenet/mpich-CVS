@@ -14,9 +14,6 @@
 #else
 #include "smpdconf.h"
 #endif
-#include "mpidu_sock.h"
-#include "mpimem.h"
-#include "mpierror.h"
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef HAVE_SYS_TYPES_H
@@ -37,6 +34,9 @@
 #ifdef HAVE_UUID_UUID_H
 #include <uuid/uuid.h>
 #endif
+#include "mpidu_sock.h"
+#include "mpimem.h"
+#include "mpierror.h"
 
 #include "mpi.h"
 #include "smpd_database.h"
