@@ -1420,7 +1420,7 @@ static int ibui_read_unex(ibu_t ibu)
 		MPIU_Internal_error_printf("ibui_read_unex: mem_ptr == NULL\n");
 	    }
 	    assert(ibu->unex_list->mem_ptr != NULL);
-	    ibuBlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
+	    ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
 	    /* MPIU_Free the unexpected data node */
 	    temp = ibu->unex_list;
 	    ibu->unex_list = ibu->unex_list->next;
@@ -1490,8 +1490,8 @@ int ibui_readv_unex(ibu_t ibu)
 		MPIU_Internal_error_printf("ibui_readv_unex: mem_ptr == NULL\n");
 	    }
 	    assert(ibu->unex_list->mem_ptr != NULL);
-	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockFree(mem_ptr)"));
-	    ibuBlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
+	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockFreeIB(mem_ptr)"));
+	    ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
 	    /* MPIU_Free the unexpected data node */
 	    temp = ibu->unex_list;
 	    ibu->unex_list = ibu->unex_list->next;
@@ -1710,7 +1710,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    if (g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr == NULL)
 			MPIU_Internal_error_printf("ibu_wait: write stack has NULL mem_ptr at location %d\n", g_cur_write_stack_index);
 		    assert(g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr != NULL);
-		    ibuBlockFree(ibu->allocator, g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr);
+		    ibuBlockFreeIB(ibu->allocator, g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr);
 		}
 	    }
 	    else
@@ -1718,7 +1718,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		if (mem_ptr == NULL)
 		    MPIU_Internal_error_printf("ibu_wait: send mem_ptr == NULL\n");
 		assert(mem_ptr != NULL);
-		ibuBlockFree(ibu->allocator, mem_ptr);
+		ibuBlockFreeIB(ibu->allocator, mem_ptr);
 	    }
 
 	    *num_bytes_ptr = num_bytes;
@@ -1754,7 +1754,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    {
 		ibu->nAvailRemote += completion_data.recv.conn.immediate_data;
 		MPIDI_DBG_PRINTF((60, FCNAME, "%d packets acked, nAvailRemote now = %d", completion_data.recv.conn.immediate_data, ibu->nAvailRemote));
-		ibuBlockFree(ibu->allocator, mem_ptr);
+		ibuBlockFreeIB(ibu->allocator, mem_ptr);
 		ibui_post_receive_unacked(ibu);
 		assert(completion_data.length == 1); /* check this after the printfs to see if the immediate data is correct */
 		break;
@@ -1780,7 +1780,12 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		mem_ptr = (unsigned char *)mem_ptr + sizeof(MPIDI_CH3_Pkt_t);
 		num_bytes -= sizeof(MPIDI_CH3_Pkt_t);
 
-		continue;
+		if (num_bytes == 0)
+		{
+		    ibuBlockFreeIB(ibu->allocator, mem_ptr_orig);
+		    ibui_post_receive(ibu);
+		    continue;
+		}
 	    }
 /*
 	    else
@@ -1838,9 +1843,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			MPIU_Internal_error_printf("ibu_wait: read mem_ptr == NULL\n");
 		    assert(mem_ptr != NULL);
 #ifdef USE_INLINE_PKT_RECEIVE
-		    ibuBlockFree(ibu->allocator, mem_ptr_orig);
+		    ibuBlockFreeIB(ibu->allocator, mem_ptr_orig);
 #else
-		    ibuBlockFree(ibu->allocator, mem_ptr);
+		    ibuBlockFreeIB(ibu->allocator, mem_ptr);
 #endif
 		    ibui_post_receive(ibu);
 		}
@@ -1894,9 +1899,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    ibu->read.bufflen -= num_bytes;
 		    /* put the receive packet back in the pool */
 #ifdef USE_INLINE_PKT_RECEIVE
-		    ibuBlockFree(ibu->allocator, mem_ptr_orig);
+		    ibuBlockFreeIB(ibu->allocator, mem_ptr_orig);
 #else
-		    ibuBlockFree(ibu->allocator, mem_ptr);
+		    ibuBlockFreeIB(ibu->allocator, mem_ptr);
 #endif
 		    ibui_post_receive(ibu);
 		}
