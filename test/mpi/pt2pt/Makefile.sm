@@ -4,3 +4,6 @@ LDADD = -L ../../../lib
 DEPADD = ../../../lib/lib${MPILIBNAME}.a
 
 bsend1_SOURCES = bsend1.c
+bsend2_SOURCES = bsend2.c
+bsend3_SOURCES = bsend3.c
+bsend4_SOURCES = bsend4.c
