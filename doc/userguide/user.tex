@@ -100,9 +100,12 @@ did
 \begin{verbatim}
     setenv PATH /home/you/mpich2-installed/bin:$PATH
 \end{verbatim}
-(or the equivalent for whatever shell you are using; \texttt{setenv} is
-used in \texttt{tcsh} and \texttt{csh}.)  Then to run an MPI program,
-albeit only on one machine, you can do:
+for \texttt{tcsh} and \texttt{csh}, or 
+\begin{verbatim}
+    expoert PATH=/home/you/mpich2-installed/bin:$PATH
+\end{verbatim}
+for \texttt{bash} or \texttt{sh}.
+Then to run an MPI program, albeit only on one machine, you can do:
 \begin{verbatim}
     mpd &
     cd  /home/you/mpich2-installed/examples
@@ -205,7 +208,8 @@ will document these separately.
 \label{sec:extensions-various}
 
 MPICH2 provides a number of process management systems.  The default is
-called MPD.  MPD provides a number of extensions to the Standard.
+called MPD.  MPD provides a number of extensions to the standard form of
+\texttt{mpiexec}.
 
 \subsubsection{\texttt{mpiexec} arguments for MPD}
 \label{sec:extensions-mpd}
@@ -321,7 +325,8 @@ Some extension parameters have only global versions.  They are
   \texttt{stderr}.  These are a bit obscure for processes that have
   been explicitly spawned, but are still useful.
 \item[\texttt{-usize}] sets the ``universe size'' that is retrieved by the MPI
-  attribute \texttt{MPI\_UNIVERSE\_SIZE} on \texttt{MPI\_COMM\_WORLD}. 
+  attribute \\
+\texttt{MPI\_UNIVERSE\_SIZE} on \texttt{MPI\_COMM\_WORLD}. 
 %% \item[\texttt{-gdb}] invokes \texttt{gdb} on the processes as they are
 %%   started.  This is an alternate way of invoking \texttt{mpigdb}.
 \item[\texttt{-bnr}] is used when one wants to run executables that have
