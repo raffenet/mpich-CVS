@@ -1,9 +1,9 @@
-	subroutine mpirinitf( )
-	integer mpi_status_size
-	parameter (mpi_status_size=@MPI_STATUS_SIZE@)
-	integer a, b(mpi_status_size), c(mpi_status_size,1)
-	common /MPIPRIV/ a, b, c
-	save /MPIPRIV/
-	call mpirinitc( a, b, c )
-	return
-	end
+       subroutine mpirinitf( )
+       integer mpi_status_size
+       parameter (mpi_status_size=@MPI_STATUS_SIZE@)
+       integer a, b(mpi_status_size), c(mpi_status_size,1)
+       common /MPIPRIV/ a, b, c
+       save /MPIPRIV/
+       call mpirinitc( a, b, c )
+       return
+       end
