@@ -35,7 +35,7 @@ for dir in $1 ; do
 	set -x 
     for subdir in $dir ; do
 	curdir="${curdir}$subdir"
-	if test ! -d "$curdir" ; then mkdir $curdir ; fi
+	if test ! -d "$curdir" ; then mkdir "$curdir" ; fi
         curdir="${curdir}/"
     done
     set x
