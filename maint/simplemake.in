@@ -1,4 +1,4 @@
-#! @PERL@
+#! @PERL@ -w
 # -*- Mode: perl; -*-
 #
 # Set some defaults
@@ -51,7 +51,7 @@ $found_sharedlib = 0;# set to 1 if a specific shared library target is found
 
 $root_tags = 1;      # set to 1 to create a tags file in the root dir
 $local_tags = 0;     # set to 1 to create a tags file in the local dir
-$do_libmember = 0;   # set to 1 to generate library member rules in makefiles
+#$do_libmember = 0;   # set to 1 to generate library member rules in makefiles
 $do_docs = 1;        # set to 1 to generate documentation
 
 $convert_Ldir_to_relative = 1; # set to 1 to convert -Ldir to ../../lib 
@@ -61,10 +61,10 @@ $convert_Ldir_to_relative = 1; # set to 1 to convert -Ldir to ../../lib
 # the dependency information for programs that are created.  This
 # allows us to ensure that test programs are rebuilt if we rebuild the 
 # libraries
-$project_libs = "";  # name of the libraries that are created by
-                     # this project
-$project_libdir = "";# name of the directory (may contain ROOTDIR) in which
-                     # the libraries are created                    
+#$project_libs = "";  # name of the libraries that are created by
+#                     # this project
+#$project_libdir = "";# name of the directory (may contain ROOTDIR) in which
+#                     # the libraries are created                    
 #
 # Perhaps a better approach is to provide
 # <program>_DEPS = other program dependencies
@@ -82,7 +82,7 @@ $quietLine = "@";       # set to "" to make the clean targets echo commands
 #
 # Defaults for building MPICH
 $doc_heading = "MPI";
-%doc_extra   = ();  # for kinds html, man, latex
+#%doc_extra   = ();  # for kinds html, man, latex
 #
 $fixup_for_timestamps = 1; # make is broken
 # FIXME:
@@ -119,6 +119,9 @@ $debug_confdir = 0;         # Track the directory containing the controlling
 if (defined($ENV{"DEBUG"})) { $debug = 1; }
 if (defined($ENV{"DEBUG_DIRS"})) { $debug_dirs = 1; }
 if (defined($ENV{"DEBUG_CONFDIR"})) { $debug_confdir = 1; }
+
+# Initialize global variables used in informal modules
+&printInit();
 
 $quiet = 0;
 
@@ -228,11 +231,12 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 	       'cpp' => 'CXX_LINK_SHL    = @CXX_LINK_SHL@',
 	       'f'   => 'F77_LINK_SHL    = @F77_LINK_SHL@',
 	     );
-%shlibrules = ( 'c' => '$(C_LINK_SHL) $(LDFLAGS)',
-	       'cxx' => '$(CXX_LINK_SHL) $(LDFLAGS)',
-	       'cpp' => '$(CXX_LINK_SHL) $(LDFLAGS)',
-	       'f'   => '$(F77_LINK_SHL) $(LDFLAGS)',
-	      );
+#%shlibrules = ( 'c' => '$(C_LINK_SHL) $(LDFLAGS)',
+#	       'cxx' => '$(CXX_LINK_SHL) $(LDFLAGS)',
+#	       'cpp' => '$(CXX_LINK_SHL) $(LDFLAGS)',
+#	       'f'   => '$(F77_LINK_SHL) $(LDFLAGS)',
+#	      );
+
 #
 # Directories needed.  These are the prefix etc.  Many are needed only
 # at the top level, particularly for installation.  srcdir is needed only for
@@ -270,8 +274,8 @@ $sysconfdir_name =           'sysconfdir      = @' . "sysconfdir"  . '@';
 	     'sysconfdir' => $sysconfdir_name,
 	    );
 
-#install_dir maps XXX from install_XXX into the GNU name
-%install_dir = ( 'LIB' => 'libdir', 
+#InstallDirFromKind maps XXX from install_XXX into the GNU name
+%InstallDirFromKind = ( 'LIB' => 'libdir', 
 		 'SHLIB' => 'libdir',     # SHLIB also signals library to build
 		 'BIN' => 'bindir',
 		 'INCLUDE' => 'includedir', 
@@ -328,7 +332,7 @@ $globaldocdir  = 'ROOTDIR/$dockinddirval';
 %doctextOptionName = ( "html" => "-html",
 		       "man" => "",
 		      "latex" => "-latex" );
-$docnamedefs   = "";
+$doc_namedefs   = "";
 $doc_attop = 1;
 #
 # Rules
@@ -384,7 +388,7 @@ foreach $_ (@ARGV) {
     elsif (/-distrib/) {
 	# Turn off the maintenance targets in the distribution version
 	$maint_targets = 0;
-	$do_doc = 0;
+	$do_docs = 0;
 	# Use the robust sleep, not the fast perl version
 	$Sleep = $SleepSlow;
     }
@@ -597,9 +601,16 @@ sub ReadMfile {
 	elsif (/^install_([\w-]*)\s*=\s*(.*)\s*$/) {
 	    $install_files{$1} .= "$2 ";
 	}
+	elsif (/^installdir_([\w-]*)\s*=\s*(.*)\s*$/) {
+	    $install_dirs{$1} .= "$2 ";
+	}
 	elsif (/^optinstall_([\w-]*)\s*=\s*(.*)\s*$/) {
 	    # This is for files that will be installed only if present
 	    $optinstall_files{$1} .= "$2 ";
+	}
+	elsif (/^optinstalldirs_([\w-]*)\s*=\s*(.*)\s*$/) {
+	    # This is for files that will be installed only if present
+	    $optinstall_dirs{$1} .= "$2 ";
 	}
         elsif (/^SUBDIRS\s*=\s*(.*)\s*\r?$/) {
 	    # The \r is used to remove any \r in DOS-style files
@@ -930,13 +941,15 @@ sub DefaultRules {
     # Directory definitions
     %dir_added = ();
     foreach $dir (keys(%dirs_seen)) {
-	if (!defined($dir_added{$rdir})) {
+	if (!defined($dir_added{$dir})) {
 	    print FD "$dirdefs{$dir}$newline";
 	    $dir_added{$dir} = 1;
-	    foreach $rdir (split(/\s+/,$required_dirs{$dir})) {
-		if (!defined($dir_added{$rdir})) {
-		    print FD "$dirdefs{$rdir}$newline";
-		    $dir_added{$rdir} = 1;
+	    if (defined($required_dirs{$dir})) {
+		foreach $rdir (split(/\s+/,$required_dirs{$dir})) {
+		    if (!defined($dir_added{$rdir})) {
+			print FD "$dirdefs{$rdir}$newline";
+			$dir_added{$rdir} = 1;
+		    }
 		}
 	    }
 	}
@@ -947,7 +960,7 @@ sub DefaultRules {
     }
     foreach $dir (keys(%install_files)) {
 	# Handle the derived dirs for the install directories
-	$dir = $install_dir{$dir};
+	$dir = $InstallDirFromKind{$dir};
 	foreach $rdir (split(/\s+/,$required_dirs{$dir})) {
 	    if (!defined($dir_added{$rdir})) {
 		print FD "$dirdefs{$rdir}$newline";
@@ -956,8 +969,8 @@ sub DefaultRules {
 	}
     }
     foreach $dir (keys(%install_files)) {
-	$dir = $install_dir{$dir};
-	$resultdir = $dirdefs{$dir};
+	$dir = $InstallDirFromKind{$dir};
+	#$resultdir = $dirdefs{$dir};
 	print FD "$dirdefs{$dir}$newline";
     }
 
@@ -968,19 +981,28 @@ sub DefaultRules {
     # The definition of DEFS is the same as for Automake
     if (defined($ext_seen{"c"}) || defined($ext_seen{"cxx"}) ||
 	defined($ext_seen{"cpp"})) {
-	$otherdefs = $PrependVars{'DEFS'};
+	$otherdefs = "";
+	if (defined($PrependVar{'DEFS'})) {
+	    $otherdefs = $PrependVar{'DEFS'};
+	}
 	print FD "DEFS            = $otherdefs \@DEFS\@ -I. -I\${srcdir}$newline";
 	# What to do about includes?  If they were set explicitly,
 	# don't use the default.
 	if (!defined($makevars{"INCLUDES"})) {
 	    print FD "INCLUDES            = $include_list$newline";
         }
-	$otherflags = $PrependVar{'CPPFLAGS'};
+	$otherflags = "";
+	if (defined($PrependVar{'CPPFLAGS'})) {
+	    $otherflags = $PrependVar{'CPPFLAGS'};
+	}
 	print FD "CPPFLAGS        = $otherflags \@CPPFLAGS\@$newline";
     }
     # Add the LIBS if there are any programs to build
     if (scalar(%pgmlinktypes)) {
-	$otherlibs = $PrependVar{'LIBS'};
+	$otherlibs = "";
+	if (defined($PrependVar{'LIBS'})) {
+	    $otherlibs = $PrependVar{'LIBS'};
+	}
 	print FD "LIBS            = $otherlibs \@LIBS\@$newline";
     }
 
@@ -1015,13 +1037,22 @@ sub DefaultRules {
 		print FD "LIBTOOL  = \@LIBTOOL\@$newline";
 	    }
 	    $extkey = "$ext:lo";
-	    print FD "$extdef{$extkey}$newline";
+	    if (defined($extdef{$extkey})) {
+		print FD "$extdef{$extkey}$newline";
+	    }
+	    else {
+		print FD $newline;
+	    }
+		
 	}
     }
     if ($any_prog_def) {
 	# These are special definitions that are shared by all 
 	# pgmlink types
-	$otherflags = $PrependVar{'LDFLAGS'};
+	$otherflags = "";
+	if (defined($PrependVar{'LDFLAGS'})) {
+	    $otherflags = $PrependVar{'LDFLAGS'};
+	}
 	print FD "LDFLAGS     = $otherflags \@LDFLAGS\@ $ldadd_all$newline";
     }
     print FD "$newline";
@@ -1077,12 +1108,19 @@ sub DefaultRules {
 	}
 	else {
 	    $extkey = "$ext:o";
-	    print FD "\t$extrules{$extkey}$newline";
+	    if (defined($extrules{$extkey})) {
+		print FD "\t$extrules{$extkey}$newline";
+	    }
+	    else {
+		print FD $newline;
+	    }
 	}
 	if ($do_sharedlibs || $found_sharedlib) {
 	    $extkey = "$ext:lo";
 	    print FD ".$ext.lo:$newline";
-	    print FD "\t$extrules{$extkey}$newline";
+	    if (defined($extrules{$extkey})) {
+		print FD "\t$extrules{$extkey}$newline";
+	    }
 	}
 	if ($found_profilelib && $ext eq "c" && $do_profilelibs) {
 	    $extkey = "$ext:pf";
@@ -1105,7 +1143,7 @@ sub DefaultRules {
     if ( -s "configure.in" && $maint_targets ) {
 	# Convert ROOTDIR as necessary
 	$aargs = $autoconf_args;
-	if ($rootdirpath eq "") {
+	if (!$rootdirpath || $rootdirpath eq "") {
 	    $aargs =~ s/ROOTDIR/\./;
 	}
 	else {
@@ -1161,10 +1199,16 @@ sub DefaultRules {
 	    print FD "\t( cd \${srcdir} && sed -e 's/cd *\$\$ac_popdir/cd \"\$\$ac_popdir\"/g' configure > c.tmp ; mv -f c.tmp configure ; chmod a+x configure)$newline";
 	}
     }
-    if ($maint_targets && "$smdir" ne "") {
+    if ($maint_targets && $smdir && $smdir ne "") {
 	print FD "$newline";
 	print FD "\${srcdir}/Makefile.in: \${srcdir}/Makefile.sm$newline";
-	print FD "\t( cd \${srcdir} && $smdir/simplemake -rootdir=$rootdir \\$newline";
+	if ($rootdir) {
+	    print FD "\t( cd \${srcdir} && $smdir/simplemake -rootdir=$rootdir \\$newline";
+	}
+	else {
+	    # This should be the top level directory
+	    print FD "\t( cd \${srcdir} && $smdir/simplemake \\$newline";
+	}
 	foreach $curarg (@keepargs) {
 	    # Must handle $ specially
 	    $tmparg = $curarg;
@@ -1304,7 +1348,7 @@ sub ClearVars {
     $other_vars = "";
     $other_text = "";
     $regular_sources = "";
-    $header_sources = "";
+    #$header_sources = "";
     $regular_headers = "";
     %sources = ();
     # Targets
@@ -1317,6 +1361,7 @@ sub ClearVars {
     %profile_libraries = ();
     %install_files = ();
     @install_subdirs = ();
+    %install_dirs = ();
     %optinstall_files = ();
     %external_libraries = ();
     $found_profilelib = 0;
@@ -1401,6 +1446,8 @@ sub ShowFileName {
 sub ProcessFile {
     $file = $_[0];
 
+    # FIXME: curdir?
+    if (!$curdir) { $curdir = ""; }
     &ResetFileName( "$curdir$file" );
     print "Processing $curdir$file\n" if (!$quiet && $debug_dirs);
     $configure_has_config_headers = "no";
@@ -1533,7 +1580,7 @@ sub RecursiveOp {
     my $forThreashold = 3;
 
     # Get the optional arrays
-    if ($subdirname ne "") {
+    if ($subdirname && $subdirname ne "") {
 	@dirs = @$subdirname;
     }
     else {
@@ -1616,9 +1663,12 @@ sub RecursiveOpForOptionalDirs {
 #
 # Return the directory in which the named library should be in
 sub GetLibLoc {
-    $libname = $_[0];
+    my $libname = $_[0];
     
-    $libloc = $libdir{$libname};
+    my $libloc = "";
+    if (defined($libdir{$libname})) {
+	$libloc = $libdir{$libname};
+    }
     #chomp( $rootdir =  $rootdirpath );
     ( $rootdir =  $rootdirpath ) =~ s/[\r\n]*$//; # David added
 	#strip ( $rootdir =  $rootdirpath );
@@ -1626,7 +1676,7 @@ sub GetLibLoc {
     # Remove duplicated //
     $libloc =~ s/\/\//\//;
 
-    $libloc;
+    return $libloc;
 }
 
 
@@ -1854,7 +1904,8 @@ sub TargetClean {
     &RecursiveOp( "distclean" );
     # Remove any local files last (in case this file is one of them)
     $rmfile = "";
-    $lcurdir = "$curdir";
+    if (!$curdir) { $curdir = ""; }
+    $lcurdir = $curdir;
     $lcurdir =~ s/\/$//;
     if (defined($autoconf_files_by_dir{$lcurdir})) {
 	$rmfile = $autoconf_files_by_dir{$lcurdir};
@@ -1968,11 +2019,11 @@ sub TargetDistclean {
 # to handle the "special extensions", both for the library (e.g., .a vs. .la)
 # and members (e.g., .o vs .pf)
 sub LibraryBuild {
-    $libname = $_[0];
-    $libloc  = $_[1];
-    $sourcefiles = $_[2];
-    $libext = $_[3];
-    $memext = $_[4];
+    my $libname = $_[0];
+    my $libloc  = $_[1];
+    my $sourcefiles = $_[2];
+    my $libext = $_[3];
+    my $memext = $_[4];
     if (!$dolib_member) {
 	&print_make_line( FD, "${libloc}lib$libname.$libext: " );
     }
@@ -2011,8 +2062,8 @@ sub LibraryBuild {
 
 sub TargetLibraries {
     foreach $lib (keys(%libraries)) {
-	$libloc = &GetLibLoc( $lib );
-	$sourcefiles = &ExpandMakeVars($libraries{$lib});
+	my $libloc = &GetLibLoc( $lib );
+	my $sourcefiles = &ExpandMakeVars($libraries{$lib});
 	&LibraryBuild( $lib, $libloc, $sourcefiles, "a", "o" );
         if ($ranliblib) { 
 	    print FD "\t\${RANLIB} ${libloc}lib$lib.a$newline"; 
@@ -2149,7 +2200,7 @@ sub TargetSharedLibraries {
     # This provides a *reference* to the hash that is passed into the routine
     # See the perlsub and perlref manpages for this, and the %$libraries and
     # $$libraries used below.
-    my $libraries = @_[0];
+    my $libraries = $_[0];
 
     foreach $lib (keys(%$libraries)) {
 	$libloc = &GetLibLoc( $lib );
@@ -2217,7 +2268,10 @@ sub TargetPrograms {
 	if ($convert_Ldir_to_relative) {
 	    print STDERR "Checking for relative dirs\n" if $debug_lib_dependencies;
 	    # convert -L dir -lname into dir/libname.a
-	    $libdep=$pgm_ldadd{$pgm};
+	    $libdep = "";
+	    if (defined($pgm_ldadd{$pgm})) { 
+		$libdep = $pgm_ldadd{$pgm};
+	    }
 	    $libdep =~ s/-L\s*([\w\.\/]*)\s*-l([\w-]*)//;
 	    $libdir = $1;
 	    $libname = $2;
@@ -2228,7 +2282,10 @@ sub TargetPrograms {
 	        &print_make_line( FD, " $libdir/lib$libname.a" );
             }
 	}
-	$otherdep = $pgm_depadd{$pgm};
+	$otherdep = "";
+	if (defined($pgm_depadd{$pgm})) {
+	    $otherdep = $pgm_depadd{$pgm};
+	}
 	if (defined($otherdep)) {
 	    &print_make_line( FD, " $otherdep" );
 	}
@@ -2237,7 +2294,7 @@ sub TargetPrograms {
 	}
 
 	# Use the link rule appropriate for this program type
-	$pgmtype = $pgmsrctype{$pgm};
+	#$pgmtype = $pgmsrctype{$pgm};
 	&print_make_endline( FD );
 	&print_make_setpos( 8 );
 	$ruleline = "\t$progrules{$pgmsrctype{$pgm}} -o $pgm $pgmobjs";
@@ -2337,7 +2394,7 @@ sub SuffixDocs {
 	}
     }
     # Add source file suffixes
-    if (! ($suffixes =~ /\.txt/) ) {
+    if (! $suffixes || ! ($suffixes =~ /\.txt/) ) {
 	$suffixes .= " .txt";
     }
 }
@@ -2359,9 +2416,9 @@ sub RuleDocs {
     foreach my $kind (keys(%docsrc)) {
 	# Set the default suffix
 	$docsrcsuffix = ".c";
-	if ($docsrc{$kind} ne "") {
+	if (defined($docsrc{$kind}) && $docsrc{$kind} ne "") {
 	    $docdestdir = $globaldocdir;
-	    if ($docdir{$kind} ne "") {
+	    if (defined($docdir{$kind}) && $docdir{$kind} ne "") {
 		$docdestdir = $docdir{$kind};
 	    }
 	    # Replace ROOTDIR, including handling any doubled //
@@ -2396,7 +2453,7 @@ sub RuleDocs {
 	    }
 	    print FD "$docsrcsuffix.$kind:$newline";
 	    $extarg = "";
-	    if ($kind eq man && ($docdestdir =~ /man(\d)$/)) {
+	    if ($kind eq "man" && ($docdestdir =~ /man(\d)$/)) {
 		$extarg = "-ext $1";
 	    }
 	    print FD "\tdoctext $doctextOptionName{$kind} -mpath $docdestdir $extarg -heading $doc_heading \\$newline";
@@ -2530,24 +2587,26 @@ sub TargetDocs {
 sub InstallDocs {
     # Add target only at the top
     if (!$doc_attop) { return; }
-    
-    print FD "install-docs:$newline";
-    # Each document type is different.  In addition, we want the install
-    # to work even if the documents have not been built.
-    if ((!$didkind{"html"}) && $globaldockind{"html"}) {
-        print FD "\tif [ ! -d \$(htmldir) ] ; then \$(MKDIR_P) \$(htmldir) ; fi\n";
-	print FD "\tif [ -d www/www3 ] ; then \\$newline";
-	print FD "\t\$(INSTALL_DATA) www/www3/* \$(htmldir)/www3/ ; fi$newline";
-	print FD "\tif [ -d www/www1 ] ; then \\$newline";
-	print FD "\t\$(INSTALL_DATA) www/www1/* \$(htmldir)/www1/ ; fi$newline";
-    }
-    if ((!$didkind{"man"}) && $globaldockind{"man"}) {
-        print FD "\tif [ ! -d \$(mandir) ] ; then \$(MKDIR_P) \$(mandir) ; fi\n";
-	print FD "\tif [ -d man/man3 ] ; then \\$newline";
-	print FD "\t\$(INSTALL_DATA) man/man3/* \$(mandir)/man3/ ; fi $newline";
-	print FD "\tif [ -d man/man1 ] ; then \\$newline";
-	print FD "\t\$(INSTALL_DATA) man/man1/* \$(mandir)/man1/ ; fi $newline";
-    }
+
+    # Instead of this approach, we used a more general installdir
+    # that handles these cases.
+#     print FD "install-docs:$newline";
+#     # Each document type is different.  In addition, we want the install
+#     # to work even if the documents have not been built.
+#     if ((!$didkind{"html"}) && $globaldockind{"html"}) {
+#         print FD "\tif [ ! -d \$(htmldir) ] ; then \$(MKDIR_P) \$(htmldir) ; fi\n";
+# 	print FD "\tif [ -d www/www3 ] ; then \\$newline";
+# 	print FD "\t\$(INSTALL_DATA) www/www3/* \$(htmldir)/www3/ ; fi$newline";
+# 	print FD "\tif [ -d www/www1 ] ; then \\$newline";
+# 	print FD "\t\$(INSTALL_DATA) www/www1/* \$(htmldir)/www1/ ; fi$newline";
+#     }
+#     if ((!$didkind{"man"}) && $globaldockind{"man"}) {
+#         print FD "\tif [ ! -d \$(mandir) ] ; then \$(MKDIR_P) \$(mandir) ; fi\n";
+# 	print FD "\tif [ -d man/man3 ] ; then \\$newline";
+# 	print FD "\t\$(INSTALL_DATA) man/man3/* \$(mandir)/man3/ ; fi $newline";
+# 	print FD "\tif [ -d man/man1 ] ; then \\$newline";
+# 	print FD "\t\$(INSTALL_DATA) man/man1/* \$(mandir)/man1/ ; fi $newline";
+#     }
     # LaTeX manual is different and requires a special case
 }
 
@@ -2565,11 +2624,32 @@ sub InstallDocDirs {
 # absolute with respect to the source tree)
 sub TargetInstall {
     %dirschecked = ();
-    if (!scalar(%install_files)) { return ; }
+    if (!scalar(%install_files) && !scalar($install_dirs)) { return ; }
     print FD "# Install target$newline";
     print FD "install: FORCE_TARGET $newline";
+    # Create the directories for the install directories
+    foreach $kind (keys(%install_dirs)) {
+	$dir = $InstallDirFromKind{$kind};
+	if ($dir eq "") {
+	    print STDERR "No known installation dir for install_$kind\n";
+	    next;
+	}
+	if (!defined($dirschecked{$dir})) {
+	    # Check on dependent directories
+	    foreach $checkdir (split(/\s+/,$required_dirs{$dir})) {
+		if ($checkdir ne "" && !defined($dirschecked{$checkdir})) {
+		    $dirschecked{$checkdir} = 1;
+		    print FD "\tif [ ! -d \${$checkdir} ] ; then \$(MKDIR_P) \${$checkdir} ; fi$newline";
+		}
+	    }
+	    print FD "\tif [ ! -d \${$dir} ] ; then \$(MKDIR_P) \${$dir} ; fi$newline";
+	    $dirschecked{$dir} = 1;
+	}
+    }
+
+    # Handle the files
     foreach $kind (keys(%install_files)) {
-	$dir = $install_dir{$kind};
+	$dir = $InstallDirFromKind{$kind};
 	if ($dir eq "") {
 	    print STDERR "No known installation dir for install_$kind\n";
 	    next;
@@ -2600,8 +2680,51 @@ sub TargetInstall {
 	    print FD "\t$this_install_method $file \${$dir}/$destfile$newline";
 	}
     }
+
+    # Install any directories.  This asks for all files in the directory
+    # to be installed.  It is typically used for things like manpages
+    # that may be very numerous
+    foreach $kind (keys(%install_dirs),keys(%optinstall_dirs)) {
+	$dir = $InstallDirFromKind{$kind};
+	foreach $srcdir (split(/\s+/,$install_dirs{$kind})) {
+	    # Choose the installation method based on the kind value
+	    if (!defined($install_methods{$kind})) {
+		$this_install_choice = '$(INSTALL_PROGRAM)';
+	    }
+	    else {
+		$this_install_choice = $install_methods{$kind};
+	    }
+
+	    # This handles 2-level directories, such as man pages and 
+	    # html pages (organized as man/man1-8 or www/www1-8).  A fully
+	    # recursive approach could be used, but it is felt that an 
+	    # install should be constrained.  If there is a reason for an 
+	    # install with three levels of directories, either install the 
+	    # subdirectories separately or modify this code.
+	    print FD "\t\@test -d $srcdir && cd $srcdir && for name in * ; do \\
+\t if [ -f \$\$name ] ; then \\
+\t    echo \"$this_install_choice \$\$name \${$dir}/\$\$name\" ; \\
+\t    $this_install_choice \$\$name \${$dir}/\$\$name ; \\
+\t elif [ -d \$\$name ] ; then \\
+\t    if [ ! -d \${$dir}/\$\$name ] ; then \$(MKDIR_P) \${$dir}/\$\$name ; fi ;\\
+\t    ( cd \$\$name && for name2 in * ; do \\
+\t        if [ -f \$\$name2 ] ; then \\
+\t            echo \"$this_install_choice \$\$name2 \${$dir}/\$\$name/\$\$name2\" ; \\
+\t            $this_install_choice \$\$name2 \${$dir}/\$\$name/\$\$name2 ; \\
+\t        else \\
+\t            echo \"cp -rp \$\$name \${$dir}/\$\$name\" ; \\
+\t            cp -rp \$\$name \${$dir}/\$\$name ; \\
+\t        fi \\
+\t    done ) ; \\
+\t else \\
+\t    echo \"Unknown file type for \$\$name\" ; \\
+\t fi ; \\
+\tdone$newline";
+	}
+    }
+
     foreach $kind (keys(%optinstall_files)) {
-	$dir = $install_dir{$kind};
+	$dir = $InstallDirFromKind{$kind};
 	if (!defined($dirschecked{$dir})) {
 	    print FD "\tif [ ! -d \${$dir} ] ; then \$(MKDIR_P) \${$dir} ; fi$newline";
 	    $dirschecked{$dir} = 1;
@@ -2626,10 +2749,10 @@ sub TargetInstall {
 	# these conditional, so that they can be empty.  Also note that
 	# they could also contain *multiple* directories, so we have
 	# to handle them in a general way
-	$endline = "";
+	#$endline = "";
 	if ($extradir =~ /^@/) {
 	    print FD "\tfor dir in $extradir - ; do \\$newline";
-	    print FD "\t\tif [ \"\$\$\dir\" = \"-\" ] ; then break ; fi ;\\$newline";
+	    print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ;\\$newline";
 	    print FD "\t\t(cd \$\$dir && \$(MAKE) INSTALL_STRIP_FLAG=\$(INSTALL_STRIP_FLAG) install) ;\\$newline";
 	    print FD "\tdone$newline";
 	}
@@ -2652,7 +2775,7 @@ sub TargetInstall {
     # does).
     print FD "uninstall:$newline";
     foreach $kind (keys(%install_files)) {
-	$dir = $install_dir{$kind};
+	$dir = $InstallDirFromKind{$kind};
 	foreach $file (split(/\s+/,$install_files{$kind})) {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
@@ -2660,7 +2783,7 @@ sub TargetInstall {
 	}
     }
     foreach $kind (keys(%optinstall_files)) {
-	$dir = $install_dir{$kind};
+	$dir = $InstallDirFromKind{$kind};
 	foreach $file (split(/\s+/,$optinstall_files{$kind})) {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
@@ -2771,10 +2894,10 @@ sub AddDependency {
 
 	# For derived object files like lo and pf, add these
 	if ($do_profilelibs && $found_profilelib) {
-	    s/^(.*)\.o:(.*)/\1.o \1.pf:\2/;
+	    s/^(.*)\.o:(.*)/$1.o $1.pf:$2/;
 	}
 	if ($do_sharedlibs || $found_sharedlib) {
-	    s/^(.*)\.o(.*)/\1.o \1.lo\2/;
+	    s/^(.*)\.o(.*)/$1.o $1.lo$2/;
 	}
 	print FD $_ ;
     }
@@ -2938,18 +3061,33 @@ sub ReadAutoconf {
 	    $files = $1;
 	    @autoconf_files = split(/\s+/,$files);
 	    # Create a hash by directory
+	    # FIXME: Should curdir be blank by default?
+	    if (!$curdir) { $curdir = ""; }
 	    $lcurdir = $curdir;
 	    $lcurdir =~ s/\/$//;
 	    foreach $file (@autoconf_files) {
 		if ($file =~ /^(.*)\/([^\/]*)$/) {
 		    # File contains a directory path, so update the
 		    # appropriate directory entry
-		    $autoconf_files_by_dir{"$curdir$1"} .= " $2";
-		    #print "{$curdir$1} .= $2\n";
+		    my $ndir     = "$curdir$1";
+		    my $leaffile = $2;
+
+		    if (defined($autoconf_files_by_dir{$ndir})) {
+			$autoconf_files_by_dir{$ndir} .= " $leaffile";
+		    }
+		    else {
+			$autoconf_files_by_dir{$ndir} = "$leaffile";
+		    }
+		    #print "{$ndir} .= $2\n";
 		    # Also add files that are in directories with no simplemake
 		    # input (e.g., in include directories with no makefile)
-		    if (! -s "$curdir$1/Makefile.sm") {
-			$autoconf_files_by_dir{$lcurdir} .= " $file";
+		    if (! -s "$ndir/Makefile.sm") {
+			if (defined($autoconf_files_by_dir{$lcurdir})) {
+			    $autoconf_files_by_dir{$lcurdir} .= " $file";
+			}
+			else {
+			    $autoconf_files_by_dir{$lcurdir} = "$file";
+			}
 		    }
 		    else {
 			# We also need to handle files that do have a 
@@ -2986,7 +3124,13 @@ of known autoconf file files for ";
 		    }
 		}
 		elsif ($file =~ /^.*$/) {
-		    $autoconf_files_by_dir{"$lcurdir"} .= " $file";
+		    if (defined($autoconf_files_by_dir{"$lcurdir"})) {
+			$autoconf_files_by_dir{"$lcurdir"} .= " $file";
+		    }
+		    else {
+			$autoconf_files_by_dir{"$lcurdir"} = "$file";
+		    }
+
 		    #print "{$lcurdir} .= $file\n";
 		}
 	    }
@@ -3043,6 +3187,9 @@ sub CleanCurDir {
 # to keep the generated makefile from being too ugly.  These also use
 # tabs after a continuation line.
 $linelen = 0;
+sub printInit {
+    $linelen = 0;
+}
 sub print_make_line {
     my $FD = $_[0];
     my $line = "$_[1]";
@@ -3121,14 +3268,14 @@ sub ProfileTargets {
 # Instead, we define the PMPI_OBJECTS as having suffix pf:\
 PMPI_OBJECTS = \${OBJECTS:.o=.pf}\
 # Convert foo.pf to _foo.o, then archive all at once\
-${libbuild_dir}/lib\@PMPILIBNAME\@.a: \${PMPI_OBJECTS}\
+\${libbuild_dir}/lib\@PMPILIBNAME\@.a: \${PMPI_OBJECTS}\
         \@echo \"Rename xxx.pf to _xxx.o for profiling interface.\"\
         \@if [ ! -d .tmp ] ; then mkdir .tmp ; else rm -f .tmp/*.o ; fi\
-        \@for file in $? ; do \\\
-            bname=`basename $$file .pf`; \\\
-            cp $$file .tmp/_$${bname}.o ; \\\
+        \@for file in \$? ; do \\\
+            bname=`basename \$\$file .pf`; \\\
+            cp \$\$file .tmp/_\$\${bname}.o ; \\\
         done\
-        \@cd .tmp && ${AR} cr $\@ *.o && rm -f *.o\
+        \@cd .tmp && \${AR} cr \$\@ *.o && rm -f *.o\
         -\@rmdir .tmp\
 # Note that the Solaris SunPro cc (4.0 98/12/15) does not allow the file\
 # named with -o to have any suffix other than .o !\
