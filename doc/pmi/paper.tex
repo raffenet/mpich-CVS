@@ -1,0 +1,395 @@
+\documentclass[11pt]{article}
+\usepackage{times} % Necessary because Acrobat can't handle fonts properly
+\usepackage{/home/gropp/bin/share/tex/fileinclude}
+\usepackage{/home/gropp/data/share/refman}
+%\usepackage{fileinclude}
+\let\file=\texttt
+\let\code=\texttt
+\let\program=\code
+\usepackage{epsf}
+\setlength\textwidth{6.5in}
+\setlength\oddsidemargin{0in}
+\setlength\evensidemargin{0in}
+\setlength\marginparwidth{0.7in}
+\def\bw{\texttt{\char`\\}}
+
+% Add a discussion macro for parts of the paper that need discussion
+\newenvironment{discussion}{\begin{quotation}\centerline{\textbf{Discussion}}}{\ifvmode\else\par\fi\centerline{\textbf{End
+      of Discussion}}\end{quotation}}
+
+
+\newcommand\onehalf{\ifmmode {\scriptstyle {\scriptstyle 1\over
+  \scriptstyle 2}} \else $\onehalf$ \fi}
+\renewcommand{\floatpagefraction}{0.9}
+
+\begin{document}
+\title{{\bf Process Management in MPICH2}\\[.2in] DRAFT}
+\author{The MPICH Team\\Argonne National Laboratory}
+\maketitle
+
+\begin{abstract}
+  In this note we describe a process management interface that can be
+  used by MPI implementations and other parallel processing libraries
+  yet be independent of both.  We define the specific interface we are
+  developing, called PMI (Process Manager Interface) in the context of
+  MPICH2.  We describe the interface itself and a number of
+  implementations.  We show how an MPI implementation built on MPICH2
+  can use PMI to make itself independent of the environment in which it
+  executes, and how a process management environment can support MPI
+  implementations based on MPICH2.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:introduction}
+
+This informal paper is intended to be useful for those using MPICH2 as the
+basis of their own MPI implementations, or providing a process
+management environment which will run MPI jobs that are linked against
+MPICH2 itself or an MPICH2-derived MPI implementation.  At the time of
+writing, this audience potentially includes groups at IBM (for BG/L), Livermore
+(SLURM process management), Cray (MPI implementation for Red Storm, with
+YOD), Myricom (MPICH-GM), Viridian (PBSPro), and Globus/Teragrid
+implementors (MPICH-G2).  Others are welcome to contribute suggestions.
+
+This paper is incomplete in the sense that it describes an interface
+still being defined.  The part that is currently in use in the MPI-1
+part of MPICH2 has proved adequate for our needs and has several
+implementations.  We will refer to it as ``Part 1.''  That part of the
+interface that is required for the dynamic process management part of
+MPI-2 is still under development, and we will refer to it here as ``Part
+2.''  Most of this paper is about Part 1, which is all that is necessary
+to support an MPI implementation that does not include dynamic process
+management.
+
+We describe the problem we are trying to solve in
+Section~\ref{sec:problem}, the approach we have taken so far in MPICH2
+in Section~\ref{sec:approach}, the PMI interface itself in
+Section~\ref{sec:interface} as it has been defined so far, and
+implementations in Section~\ref{sec:implementing}.  In
+Section~\ref{sec:implications} we outline the implications for those who
+are collaborating with us in various ways related to the MPICH project. 
+
+\section{The Problem}
+\label{sec:problem}
+
+The problem this paper addresses is how to provide the processes of a
+parallel job with the information they need in order to interact with
+the process management environment where necessary, in particular to set
+up communication with one another.  In many cases such information is
+partly provided by the systems software that actually starts processes,
+and also partly provided by the processes themselves, in which case th
+process management system must aid in the dissemination of this
+information to other processes.  A classic example occurs when a process
+in a TCP implementation of MPI acquires a port on which it can be
+contacted, and then must notify other processes of this port so that
+they can establish MPI communication with this process by connecting to
+the port.
+
+Traditionally, parallel programming libraries, such as MPI
+implementations, have been integrated with process management mechanisms
+(LAM, MPICH1 with ch\_p4 device, POE) in order to solve this problem.
+After a preliminary exploration of separating the library from the
+process manager in MPICH-1 with the {\tt ch\_p4mpd} device we have decided to
+update the interface and then commit to this approach in MPICH2.  We are
+motivated by the challenges of implementing MPI-2 in a
+system-independent way, but many of the ideas here might prove useful in
+a non-MPI environment as well, either for other parallel libraries (such
+as Global Arrays, GP-SHMEM, or GASNet) or language-based systems (such
+as UPC, Co-Array Fortran, or Titanium).
+
+The problem to be addressed has several components:
+\begin{itemize}
+\item Conveying to processes in a parallel job the information they need
+  to establish communication with one another.  To focus the discussion,
+  we assume that such communication is needed for implementing MPI.
+  Thus this information could include hosts, ports, interfaces,
+  shared-memory keys, and other information.
+\item MPI-2 dynamic process management functions requires extra support
+  for implementing {\tt MPI\_Comm\_Spawn}, {\tt MPI\_Comm\_\{Connect/Accept\}},
+  {\tt MPI\_\{Publish/Lookup\}\_name}, etc.
+\item The interface should be simple and straightforward, particularly
+  in the absence of dynamic process management.  MPICH2 will implement
+  dynamic process management, but some other MPI implementations may
+  not.
+\item The interface must allow a scalable implementation for
+  performance-critical operations.  In environments with even only hundreds
+  of processes, serial algorithms will be inappropriate.
+\end{itemize}
+An earlier, similar version of this approach was described
+in~\cite{butler-lusk-gropp:mpd-parcomp}, where the interface is called
+BNR, incorporated in the {\tt ch\_p4mpd} device in the original MPICH.  PMI
+represents an evolution of that interface and its implementation in MPICH2.
+
+Note that existing process managers often do a scalable job of starting
+processes, and this part of existing systems can be kept.  What is
+sometimes lacking is a way of conveying the communication-establishment
+information.  Although the approach we take in the implementations below
+is to combine the process startup and information exchange functionality
+in a single interface, a different implementation could separate these,
+using an existing process-startup mechanism and adding a new component
+to implement the other parts of the interface.
+
+\section{Our Approach}
+\label{sec:approach}
+
+The approach we have taken to the problem is to define a Process
+Management Interface (PMI).  The MPICH2 implementation of MPI will be
+implemented in terms of PMI rather than in terms of any particular
+process management environment.  Multiple implementations of PMI will
+then be possible, independently of the MPICH2 implementation of MPI.
+The key to a good design for PMI is to specify it in a way that allows for
+scalable implementation without dictating any details of the
+implementations.  This has worked out well so far, and in
+Section~\ref{sec:implementing} we describe a number of quite different
+implementations of the interfaces described in Section~\ref{sec:interface}.
+
+\section{The PMI Interface}
+\label{sec:interface}
+
+We present the interface in two parts.  The first part is sufficient for
+the implementation of MPI-1 and many parts of MPI-2.  The second part is
+required for implementing the dynamic process management part of MPI-2.
+MPICH2 is now using the first part, with multiple PMI implementations,
+so we consider it relatively final at this point.  Since we have not yet
+implemented the dynamic process management functions in MPICH2, some
+evolution of Part 2 of PMI may take place as we do so.
+
+The fundamental idea of Part 1 is the {\em key-value space}, or KVS,
+containing a set of key=value pairs of strings.  Processes acquire 
+access to one or more KVS's through PMI and can perform {\tt put/get}
+operations on them.  Synchronization is defined in a scalable way via
+the barrier operation, so that processes can be assure that the necessary
+puts have been done before attempting the corresponding gets.
+
+Thus the PMI interface (Part 1) consists of {\tt put/get/barrier} operations
+together with housekeeping operations for managing the KVS's.  For
+implementation of MPI-1, a single KVS, the default KVS for processes
+started at the same time, is sufficient, but multiple KVS's will be
+useful when we consider Part 2 and dynamic process management.
+
+
+\subsection{Part 1:  Basic PMI Routines}
+\label{sec:part1}
+
+Part 1 of the interface is invoked in performance-critical parts of the
+MPI implementation, both during initialization and connection setup.
+Thus it is critical that this part of the interface allow scalable
+implementation.  We accomplish this through the semantics of the {\tt
+  put/get/barrier}, since the only synchronizing operation is the
+collective {\tt barrier}, which is can have a scalable implementation.
+The {\tt commit} operation allowsl batching of {\tt put} operations for
+improved performance.
+
+Part 1 has two subparts:  firstly, the functions associated with the process group
+being started, and thus already implemented in some way in any MPI
+implementation, and secondly, the functions associated with managing the
+keyval spaces, used for communicating setup information. 
+
+\begin{small}
+\begin{verbatim}
+/* PMI Group functions */
+int PMI_Init( int *spawned );  /* initialize PMI for this process group
+                                  The value of spawned indicates whether
+                                  this process was created by
+                                  PMI_Spawn_multiple. */
+int PMI_Initialized( void );   /* Return true if PMI has been initialized */
+int PMI_Get_size( int *size ); /* get size of process group */
+int PMI_Get_rank( int *rank ); /* get rank in process group */
+int PMI_Barrier( void );       /* barrier across processes in process group */
+int PMI_Finalize( void );      /* finalize PMI for this process group */
+
+/* PMI Keyval Space functions */
+int PMI_KVS_Get_my_name( char *kvsname );       /* get name of keyval space */
+int PMI_KVS_Get_name_length_max( void );        /* maximum name size */
+int PMI_KVS_Get_key_length_max( void );         /* maximum key size */
+int PMI_KVS_Get_value_length_max( void );       /* maximum value size */
+int PMI_KVS_Create( char *kvsname );            /* make a new one, get name */
+int PMI_KVS_Destroy( const char *kvsname );     /* finish with one */
+int PMI_KVS_Put( const char *kvsname, const char *key,
+                const char *value);             /* put key and data */
+int PMI_KVS_Commit( const char *kvsname );      /* block until all pending put
+                                                   operations from this process
+                                                   are complete.  This is a
+                                                    process local operation. */
+int PMI_KVS_Get( const char *kvsname, const char *key, char *value); 
+                                /* get value associated with key */
+
+int PMI_KVS_iter_first(const char *kvsname, char *key, char *val);
+int PMI_KVS_iter_next(const char *kvsname, char *key, char *val);
+                                /* loop through the pairs in the kvs */
+                             
+\end{verbatim}
+\end{small}
+
+A scalable implementation of Part 1 of PMI could probably use existing software
+for the group functions, and add some new functionality to support the
+KVS-related functions.
+
+\subsection{Part 2:  Advanced PMI Routines}
+\label{sec:part2}
+
+This part of PMI is still under development.  If one assumes that the
+dynamic process management functions in MPI-2 are not performance
+critical, then the requirements for efficiency and scalability of these
+operations are less crucial, although we expect MPI\_Comm\_Spawn to be
+scalably implemented, at least to compete with an original {\tt mpiexec}.
+
+\begin{small}
+\begin{verbatim}
+/* PMI Process Creation functions */
+
+int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
+                       const int *maxprocs, const void *info, int *errors, 
+                       int *same_domain, const void *preput_info);
+
+int PMI_Spawn(const char *cmd, const char *argv[], const int maxprocs,
+              char *spawned_kvsname, const int kvsnamelen );
+
+/* parse PMI implementation specific values into an info object that can
+   then be passed to PMI_Spawn_multiple.  Remove PMI implementation
+   specific arguments from argc and argv
+*/
+
+int PMI_Args_to_info(int *argcp, char ***argvp, void *infop);
+
+/* Other PMI functions to be defined as necessary for other parts of
+   dynamic process management */
+
+\end{verbatim}
+\end{small}
+
+\section{Implementing PMI}
+\label{sec:implementing}
+
+In this section we describe some implementations of PMI that we are
+using.  Although this note is about the interface itself and not any
+specific implementation, it might be useful to understand the
+alternatives that we have explored and are in current use.  Also, the
+very existence of multiple implementations demonstrates that PMI is
+a real interface with a purpose, not just a design for part of MPICH2.
+All implementations are distributed with MPICH2, as described at the end
+of Section~\ref{sec:implications}.
+
+It is useful to think of a PMI implementation as having two parts: a 
+{\em client\/} side and a {\em server\/} side.  The client side is the
+direct implementation of the PMI functions defined above, linked together
+with the MPI library in the application's executable.  In some cases this
+part of the implementation communicates with other processes not part of
+the application;  we call these processes the server side of the PMI
+implementation.  As we shall see, the server side may not exist at all,
+or be part of the client side; multiple architectures for PMI
+implementations already exist.  In the following subsection we describe some
+existing client-side PMI implementations.  In the next section we
+describe some server-side implementations.  Currently most of these are
+part of the MPICH2 distribution~\cite{mpich2-web-page}.
+
+
+\subsection{Client Side}
+\label{sec:client-side}
+
+We currently are using three separate implementations of the client side of PMI.
+\begin{description}
+\item[uni] is a stub used for debugging.  It assumes that there is only one
+  process and so needs to provide no services.
+\item[simple] is our primary implementation for Unix systems.  It
+  assumes that a socket (the PMI socket) has been created that can be
+  used to exchange commands with the server side of the implementation.
+  It is used by multiple server implementations, as described below.
+\item[winmpd] is similar to simple, but used in the Windows environment.
+\end{description}
+
+
+\subsection{Server Side}
+\label{sec:server-side}
+
+One can think of the server side of a PMI implementation as that part of
+a process management system that supports the client.  Currently several
+are in use or under development.
+
+\begin{description}
+\item[forker] implements the server side of the ``simple'' client side
+  described above.  It is used primarily for debugging, although it can
+  also be used in production on SMP's.  It consists of an {\tt mpiexec}
+  script that simply forks the parallel processes after setting up the
+  PMI socket.  Thus all processes must be on the same machine.
+\item[MPD-2] is a process management system that consists of a ring of
+  daemons, one on each node.  It also supports the ``simple'' client
+  side PMI implementation.  It supplies multiple services for the
+  parallel processes, including scalable startup and stdio management.
+  The ring can be either permanent, run by root, or can be deployed
+  separately for each job.  The MPD daemons fork a ring of ``manager''
+  processes for a single job, and these managers set up the PMI socket
+  before forking the application processes.  The managers hold the KVS's
+  in a distributed way, so that {\tt put} operations are local but {\tt get}
+  requests may have to circulate in the manager ring.  The {\tt barrier}
+  operation is implemented by circulating a token around the manager
+  ring.  Other topologies (e.g. ring of rings) for the MPD's and
+  managers are possible, but have not yet been implemented.
+\item[WinMPD] is the Windows version of MPD-2.  It does not employ
+  intermediate manager processes.  The KVS's are held in a single
+  separate server process, which provides less scalability but is
+  simple and is adequate for small clusters.
+\item[Remshell] uses {\tt rsh} or {\tt ssh} to start the processes from
+  the {\tt mpiexec} process, then they connect back to exchange the
+  keyval information.  This illustrates the combination of an old ({\tt
+    rsh}) process startup mechanism with a new data-exchange mechanism.
+\end{description}
+
+\subsection{Combined Client and Server}
+\label{sec:combined}
+
+The MPICH-G2~\cite{karonis02:mpich-g2} implementation of MPI illustrates
+yet another approach.  MPICH-G2 is built on MPICH1 and thus uses the BNR
+interface, but the underlying principles are the same.  In MPICH-G2, the
+{\tt put} operations are local, and the {\tt barrier} operation is a
+global all-to-all-exchange, implemented in a scalable way.  Then the
+{\tt get}s can be done without further communication. 
+
+\section{Implications for Collaborators}
+\label{sec:implications}
+
+We hope that this brief discussion has made it easier to understand what
+options and opportunities exist for implementors of parallel programming
+libraries or process management environments that will interact with
+MPICH or MPICH-derived MPI implementations.
+
+MPI and other library implementors are recommended to use the PMI
+functions to exchange data with other processes related to the setting
+up of the primary communication mechanism.  MPICH2 does this already for
+setting up TCP connections in the CH3 implementation of the Abstract
+Device Interface (ADI-3).  If one links with the ``simple''
+implementation of the client side of the PMI implementation in MPICH2,
+then MPI jobs can be started by any process management environment,
+including MPD2, that implements the server side.
+
+Process management systems, such as PBS, YOD, or SLURM, have two options
+in the short run.  They can deploy the MPD-2 system separately for each
+job, using the {\tt mpdboot} command, before starting a user job with
+{\tt mpirun} or {\tt mpiexec}.  This is similar to the way PBS currently
+starts MPICH and LAM jobs.  A more scalable solution is to directly
+implement the PMI interface itself, by implementing the server side of
+the ``simple'' implementation.  Currently there is little
+documentation on the format of messages that traverse the PMI socket;
+one has to read the code.  We intend to document it in a further short paper
+like this one.
+
+In the long run implementations may prefer to implement both sides
+themselves, meaning that one would link one's application with a PBS- or
+SLURM- or Myricom-specific object file implementing the client side.
+
+The PMI-related code described here is available in the current MPICH2
+distribution~\cite{mpich2-web-page}, in the {\tt
+  src/pmi/\{simple,uni,winmpd\}} (client side) and {\tt
+  src/pm/\{forker,mpd,winmpd\}} (server side) subdirectories.
+Different process managers (the server side) and different PMI
+implementations can be chosen when MPICH2 is configured.  The default is
+as if one had specified
+\begin{verbatim}
+     configure --with-pmi=simple --with-pm=mpd
+\end{verbatim}
+Please send questions and comments to mpich2-maint@mcs.anl.gov.
+
+\bibliography{/home/MPI/allbib,paper}
+\bibliographystyle{plain}
+
+\end{document}
