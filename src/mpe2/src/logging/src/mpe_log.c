@@ -360,7 +360,7 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
             if ( *position + tot_sz <= sizeof( MPE_LOG_BYTES ) ) {
                 *((short *) vptr) = (short) count;
                 CLOG_byteswap( vptr, sizeof( short ) , 1 );
-                vptr += sizeof( short );
+                vptr = (void *)((char *)(vptr) + sizeof( short ));
                 memcpy( vptr, data, count );
                 *position += tot_sz;
                 return MPE_Log_OK;
