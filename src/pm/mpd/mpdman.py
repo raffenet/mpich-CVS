@@ -776,6 +776,9 @@ def mpdman():
                     if parentStderrSocket:
                         parentStderrSocket.close()
                         parentStderrSocket = 0
+	            msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
+                    mpd_send_one_msg(rhsSocket,msgToSend)
+                    kill(clientPid,SIGKILL)
                 elif msg['cmd'] == 'signal':
                     if msg['signo'] == 'SIGINT':
                         mpd_send_one_msg(rhsSocket,msg)
