@@ -127,7 +127,8 @@ typedef int SMPD_BOOL;
 #define SMPD_ENCRYPTED_PREFIX             'x'
 #define SMPD_SSPI_HEADER_LENGTH           SMPD_CMD_HDR_LENGTH
 #define SMPD_SSPI_MAX_BUFFER_SIZE         (64*1024)
-#define SMPD_SECURITY_PACKAGE             "NTLM"
+/*#define SMPD_SECURITY_PACKAGE             "NTLM"*/
+#define SMPD_SECURITY_PACKAGE             "Kerberos"
 #define SMPD_FREE_COOKIE           0xDDBEEFDD
 
 #define SMPD_DBG_STATE_STDOUT            0x01
