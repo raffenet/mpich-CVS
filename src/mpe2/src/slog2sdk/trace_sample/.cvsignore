@@ -2,4 +2,5 @@ configure
 config.log
 autom4te.cache
 trace_impl.h
+trace_impl.h.in
 trace_impl.h.in~

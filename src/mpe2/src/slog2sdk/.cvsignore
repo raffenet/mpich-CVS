@@ -2,3 +2,4 @@ config.h.in
 autom4te.cache
 config.log
 config.cache
+configure
