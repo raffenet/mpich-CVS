@@ -4,13 +4,6 @@
 #       See COPYRIGHT in top-level directory.
 #
 
-try:
-    from signal          import signal, SIG_IGN, SIGINT
-except KeyboardInterrupt:
-    exit(0)
-
-signal(SIGINT,SIG_IGN)
-
 from sys    import argv, exit
 from os     import environ, execvpe, getpid, getuid, getcwd, access, X_OK, path, unlink, \
                    open, fdopen, O_CREAT, O_WRONLY, O_EXCL, O_RDONLY
@@ -19,30 +12,29 @@ from pwd    import getpwuid
 from urllib import quote
 import xml.dom.minidom
 
-global totalProcs, nextRange, argvCopy, configLines, configIdx, setenvall, appnum, usize
-global gEnv, gHost, gWDIR, gPath, gNProcs, doingBNR
+global totalProcs, nextRange, argvCopy, configLines, configIdx, appnum
+global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
 
 def mpiexec():
-    global totalProcs, nextRange, argvCopy, configLines, configIdx, setenvall, \
-           appnum, usize
-    global gEnv, gHost, gWDIR, gPath, gNProcs, doingBNR
+    global totalProcs, nextRange, argvCopy, configLines, configIdx, appnum
+    global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
+
+    validGlobalArgs = { '-l' : 0, '-usize' : 1, '-gdb' : 0, '-bnr' : 0,
+                        '-gn' : 1, '-gnp' : 1, '-ghost' : 1, '-gpath' : 1, '-gwdir' : 1, '-gexec' : 1,
+                        '-genv' : 2, '-genvnone' : 0, '-genvlist' : 1 }
+    validLocalArgs  = { '-n' : 1, '-np' : 1, '-host' : 1, '-path' : 1, '-wdir' : 1, '-soft' : 0,
+                        '-env' : 2, '-envnone' : 0, '-envlist' : 1 }
+
+    globalArgs   = {}
+    localArgSets = {}
+    localArgSets[0] = []
+
     totalProcs    = 0
     nextRange     = 0
     configLines   = []
     configIdx     = 0
     xmlForArgsets = []
-    defaultArgs   = []
-    setenvall     = 1  # default is now to send whole thing
-    linelabels    = 0
-    usize         = 0 # MPI_UNIVERSE_SIZE now defaults to ringsize
-    appnum        = 0                   # appnum counter for MPI
-    gEnv          = {}
-    gHost         = '_any_'                  # default
-    gWDIR         = path.abspath(getcwd())   # default
-    gPath         = environ['PATH'] # default ; avoid name conflict with python path module
-    gNProcs       = 1                   # default
-    gdb           = 0                   # default
-    doingBNR      = 0                   # default
+    appnum        = 0
 
     if len(argv) < 2  or  argv[1] == '-h'  or  argv[1] == '-help'  or  argv[1] == '--help':
 	usage()
@@ -59,102 +51,30 @@ def mpiexec():
             configFileFD = open(argv[2],O_RDONLY)
             configFile = fdopen(configFileFD,'r',0)
             configLines = configFile.readlines()
-            configLines = [ x.strip() for x in configLines if x[0] != '#' ]
-            if configLines[0].startswith('-default'):
-                shOut = Popen3("/bin/sh -c 'for a in $*; do echo _$a; done' -- %s" % \
-                               configLines[0][9:])  # 9: => skip the -default
-                for line in shOut.fromchild:
-                    defaultArgs.append(line[1:].strip())    # 1: strips off the leading _
-                configIdx = 1
+            configLines = [ x.strip() + ' : '  for x in configLines if x[0] != '#' ]
+            tempargv = []
+            for line in configLines:
+                shOut = Popen3("/bin/sh -c 'for a in $*; do echo _$a; done' -- %s" % (line))
+                for shline in shOut.fromchild:
+                    tempargv.append(shline[1:].strip())    # 1: strips off the leading _
+            tempargv = tempargv[0:-1]    # strip off the last : I added
+            collect_args(tempargv)
         else:
-            if argv[1] == '-default':
-                i = 2
-                while argv[i] != ':' and i <= len(argv):
-                    defaultArgs.append(argv[i])
-                    i += 1
-                i += 1  # skip the :
-                argvCopy = argv[i:]
-                argvCopy.append(':')   # stick an extra : on the end
-            else:
-                argvCopy = argv[1:]
-                argvCopy.append(':')   # stick an extra : on the end
-        if defaultArgs:
-            gargIdx = 0
-            while gargIdx < len(defaultArgs):
-                if defaultArgs[gargIdx] == '-setenvall':
-                    setenvall = 1  # may reverse the meaning of this later
-                    gargIdx += 1
-                elif defaultArgs[gargIdx] == '-env':
-                    if len(defaultArgs) < (gargIdx+3):
-                        print '** missing args to env'
-                        usage()
-                    var = defaultArgs[gargIdx+1]
-                    val = defaultArgs[gargIdx+2]
-                    gEnv[var] = val
-                    gargIdx += 3
-                elif defaultArgs[gargIdx] == '-l':
-                    linelabels = 1
-                    gargIdx += 1
-                elif defaultArgs[gargIdx] == '-bnr':
-                    doingBNR = 1
-                    gargIdx += 1
-                elif defaultArgs[gargIdx] == '-usize':
-                    if len(defaultArgs) < (gargIdx+2):
-                        print '** missing arg to usize'
-                        usage()
-                    usize = defaultArgs[gargIdx+1]
-                    if not usize.isdigit():
-                        print 'non-numeric usize: %s' % usize
-                        usage()
-                    gargIdx += 2
-                elif defaultArgs[gargIdx] == '-host':
-                    if len(defaultArgs) < (gargIdx+2):
-                        print '** missing arg to host'
-                        usage()
-                    gHost = defaultArgs[gargIdx+1]
-                    gargIdx += 2
-                elif defaultArgs[gargIdx] == '-wdir':
-                    if len(defaultArgs) < (gargIdx+2):
-                        print '** missing arg to wdir'
-                        usage()
-                    gWDIR = defaultArgs[gargIdx+1]
-                    gargIdx += 2
-                elif defaultArgs[gargIdx] == '-path':
-                    if len(defaultArgs) < (gargIdx+2):
-                        print '** missing arg to path'
-                        usage()
-                    gPath = defaultArgs[gargIdx+1]
-                    gargIdx += 2
-                elif defaultArgs[gargIdx] == '-n'  or  defaultArgs[gargIdx] == '-np':
-                    if len(defaultArgs) < (gargIdx+2):
-                        print '** missing arg to -n (-np)'
-                        usage()
-                    gNProcs = int(defaultArgs[gargIdx+1])
-                    gargIdx += 2
-                elif defaultArgs[gargIdx] == '-g':
-                    gdb = 1
-                    gargIdx += 1
-                else:
-                    print 'unrecognized arg: %s' % (defaultArgs[gargIdx])
-                    usage()
+            collect_args(argv)
+
         xmlDOC = xml.dom.minidom.Document()
         xmlCPG = xmlDOC.createElement('create-process-group')
         xmlDOC.appendChild(xmlCPG)
-        # xmlHOSTSPEC = xmlDOC.createElement('host-spec')    # append to CPG after proc-specs
-        argset = get_next_argset()
-        while argset:
+        for k in localArgSets.keys():
             xmlPROCSPEC = xmlDOC.createElement('process-spec')
             xmlCPG.appendChild(xmlPROCSPEC)
-	    # handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC)
-	    handle_argset(argset,xmlDOC,xmlPROCSPEC)
-            argset = get_next_argset()
-        # xmlCPG.appendChild(xmlHOSTSPEC)
+	    handle_argset(localArgSets[k],xmlDOC,xmlPROCSPEC)
         xmlCPG.setAttribute('totalprocs', str(totalProcs) )  # after handling argsets
-        if linelabels:
+        if globalArgs['-l']:
             xmlCPG.setAttribute('output', 'label')
-        if doingBNR:
+        if globalArgs['-bnr']:
             xmlCPG.setAttribute('doing_bnr', '1')
-        if gdb:
+        if globalArgs['-gdb']:
             xmlCPG.setAttribute('gdb', '1')
         submitter = getpwuid(getuid())[0]
         xmlCPG.setAttribute('submitter', submitter)
@@ -178,44 +98,75 @@ def mpiexec():
     print 'mpiexec: exec failed for %s' % mpdrun
     exit(0);
 
-def get_next_argset():
-    global argvCopy, configLines, configIdx
-    argset = []
-    if len(configLines):
-        if configIdx < len(configLines):
-            line = configLines[configIdx]
-            configIdx += 1
-            if line:
-                # next line: prepend an _ to avoid problems with -n as arg to echo
-                shOut = Popen3("/bin/sh -c 'for a in $*; do echo _$a; done' -- %s" % line)
-                for line in shOut.fromchild:
-                    argset.append(line[1:].strip())    # 1: strips off the leading _
-    else:
-        if argvCopy:
-            colonPos = argvCopy.index(':')
-	    argset = argvCopy[0:colonPos]
-	    argvCopy = argvCopy[ colonPos+1 : ]
-	    try:    colonPos = argvCopy.index(':')
-	    except: colonPos = -1
-    return argset
+def collect_args(args):
+    global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
+    globalArgs['-l']        = 0
+    globalArgs['-usize']    = 1
+    globalArgs['-gdb']      = 0
+    globalArgs['-bnr']      = 0
+    globalArgs['-gn']       = 1
+    globalArgs['-ghost']    = '_any_'
+    globalArgs['-gpath']    = environ['PATH']
+    globalArgs['-gwdir']    = path.abspath(getcwd())
+    globalArgs['-gexec']    = ''
+    globalArgs['-genv']     = {}
+    globalArgs['-genvlist'] = []
+    globalArgs['-genvnone'] = 0
+    argidx = 1
+    while argidx < len(args)  and  args[argidx] in validGlobalArgs.keys():
+        garg = args[argidx]
+	if garg == '-gnp':    # alias for '-gn'
+	    garg = '-gn'
+        if validGlobalArgs[garg] > 0:
+            if garg == '-genv':
+                globalArgs['-genv'][args[argidx+1]] = args[argidx+2]
+                argidx += 3
+            else:
+		if garg == 'usize'  or  garg == '-gn':
+                    globalArgs[garg] = int(args[argidx+1])
+		else:
+                    globalArgs[garg] = args[argidx+1]
+                argidx += 2
+        else:
+            globalArgs[garg] = 1
+            argidx += 1
+    localArgsKey = 0
+    while argidx < len(args):
+        if args[argidx] == ':':
+            localArgsKey += 1
+            localArgSets[localArgsKey] = []
+        else:
+            localArgSets[localArgsKey].append(args[argidx])
+        argidx += 1
 
-# def handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC):
 def handle_argset(argset,xmlDOC,xmlPROCSPEC):
-    global totalProcs, nextRange, setenvall, appnum, usize
-    global gEnv, gHost, gWDIR, gPath, gNProcs, doingBNR
-    host   = gHost
-    wdir   = gWDIR
-    wpath  = gPath
-    nProcs = gNProcs
-    lEnv   = {}
-    cmdAndArgs = []
-    argidx = 0    # can not use range here
+    global totalProcs, nextRange, argvCopy, configLines, configIdx, appnum
+    global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
+    host   = globalArgs['-ghost']
+    wdir   = globalArgs['-gwdir']
+    wpath  = globalArgs['-gpath']
+    nProcs = globalArgs['-gn']
+    usize  = globalArgs['-usize']
+    gexec  = globalArgs['-gexec']
+    if globalArgs['-genvnone']:
+        envall = 0
+    else:
+        envall = 1
+    if globalArgs['-genvlist']:
+        globalArgs['-genvlist'] = globalArgs['-genvlist'].split(',')
+    localEnvlist = []
+    localEnv  = {}
+
+    argidx = 0
     while argidx < len(argset):
-        if argset[argidx][0] != '-':    
+        if argset[argidx] not in validLocalArgs:
+            if argset[argidx][0] == '-':
+                print 'unknown option: %s' % argset[argidx]
+                usage()
             break                       # since now at executable
         if argset[argidx] == '-n' or argset[argidx] == '-np':
             if len(argset) < (argidx+2):
-                print '** missing arg to -n (-np)'
+                print '** missing arg to -n'
                 usage()
             nProcs = argset[argidx+1]
             if not nProcs.isdigit():
@@ -229,17 +180,29 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
                 usage()
             host = argset[argidx+1]
             argidx += 2
+        elif argset[argidx] == '-path':
+            if len(argset) < (argidx+2):
+                print '** missing arg to -path'
+                usage()
+            wpath = argset[argidx+1]
+            argidx += 2
         elif argset[argidx] == '-wdir':
             if len(argset) < (argidx+2):
                 print '** missing arg to -wdir'
                 usage()
             wdir = argset[argidx+1]
             argidx += 2
-        elif argset[argidx] == '-path':
-            if len(argset) < (argidx+2):
-                print '** missing arg to -path'
-                usage()
-            wpath = argset[argidx+1]
+        elif argset[argidx] == '-soft':
+            print '** -soft is accepted but not used'
+            argidx += 1
+        elif argset[argidx] == '-envall':
+            envall = 1
+            argidx += 1
+        elif argset[argidx] == '-envnone':
+            envall = 0
+            argidx += 1
+        elif argset[argidx] == '-envlist':
+            localEnvlist = argset[argidx+1].split(',')
             argidx += 2
         elif argset[argidx] == '-env':
             if len(argset) < (argidx+3):
@@ -247,14 +210,19 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
                 usage()
             var = argset[argidx+1]
             val = argset[argidx+2]
-            lEnv[var] = val
+            localEnv[var] = val
             argidx += 3
         else:
-            print 'unsupported or unrecognized option: %s' % argset[argidx]
+            print 'unknown option: %s' % argset[argidx]
             usage()
-    while argidx < len(argset):
-        cmdAndArgs.append(argset[argidx])
-        argidx += 1
+    cmdAndArgs = []
+    if argidx < len(argset):
+        while argidx < len(argset):
+            cmdAndArgs.append(argset[argidx])
+            argidx += 1
+    else:
+        if gexec:
+            cmdAndArgs = [gexec]
     if not cmdAndArgs:
         print 'no cmd specified'
         usage()
@@ -265,10 +233,6 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
         thisRange = (nextRange,nextRange+nProcs-1)
     nextRange += nProcs
     totalProcs += nProcs
-
-    # if host:
-        # xmlHOSTNAME = xmlDOC.createTextNode(host)
-        # xmlHOSTSPEC.appendChild(xmlHOSTNAME)
 
     xmlPROCSPEC.setAttribute('user',getpwuid(getuid())[0])
     xmlPROCSPEC.setAttribute('exec',cmdAndArgs[0])
@@ -284,22 +248,23 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
         xmlARG.setAttribute('idx', '%d' % (i) )
         xmlARG.setAttribute('value', '%s' % (quote(arg)))
 
-    if setenvall:
+    envToSend = {}
+    if envall:
         for envvar in environ.keys():
-            xmlENVVAR = xmlDOC.createElement('env')
-            xmlPROCSPEC.appendChild(xmlENVVAR)
-            xmlENVVAR.setAttribute('name',  '%s' % (envvar))
-            xmlENVVAR.setAttribute('value', '%s' % (environ[envvar]))
-    for envvar in gEnv.keys():
+            envToSend[envvar] = environ[envvar]
+    for envvar in globalArgs['-genvlist']:
+        envToSend[envvar] = environ[envvar]
+    for envvar in localEnvlist:
+        envToSend[envvar] = environ[envvar]
+    for envvar in globalArgs['-genv'].keys():
+        envToSend[envvar] = globalArgs['-genv'][envvar]
+    for envvar in localEnv.keys():
+        envToSend[envvar] = localEnv[envvar]
+    for envvar in envToSend.keys():
         xmlENVVAR = xmlDOC.createElement('env')
         xmlPROCSPEC.appendChild(xmlENVVAR)
         xmlENVVAR.setAttribute('name',  '%s' % (envvar))
-        xmlENVVAR.setAttribute('value', '%s' % (gEnv[envvar]))
-    for envvar in lEnv.keys():
-        xmlENVVAR = xmlDOC.createElement('env')
-        xmlPROCSPEC.appendChild(xmlENVVAR)
-        xmlENVVAR.setAttribute('name',  '%s' % (envvar))
-        xmlENVVAR.setAttribute('value', '%s' % (lEnv[envvar]))
+        xmlENVVAR.setAttribute('value', '%s' % (envToSend[envvar]))
     if usize:
         xmlENVVAR = xmlDOC.createElement('env')
         xmlPROCSPEC.appendChild(xmlENVVAR)
@@ -318,14 +283,14 @@ def usage():
     print 'mpiexec [ -h   or  -help   or  --help ]'
     print 'mpiexec -file filename  # where filename contains xml for job description'
     print 'mpiexec -configfile filename  # where filename contains cmd-line arg-sets'
-    print 'mpiexec [ -default defaultArgs : ] argset : more_arg_sets : ...'
+    print 'mpiexec [ -default globalArgs : ] argset : more_arg_sets : ...'
     print '    where each argset contains some of:'
     print '        -n <n> -host <h> -wdir <w> -path <p> cmd args '
     print '    note: cmd must be specfied for each argset; it can not be a default arg'
     print '    other default arguments can be -l (line labels on stdout, stderr) and'
     print '    -setenvall (pass entire environment of mpiexec to all processes),'
     print '    -env KEY1 VALUE1 -env KEY2 VALUE2 ...'
-    print '    defaultArgs are passed to all processes unless overridden'
+    print '    globalArgs are passed to all processes unless overridden'
     print 'sample executions:'
     print '    mpiexec -n 1 pwd : -wdir /tmp pwd : printenv'
     print '    mpiexec -default -n 2 -wdir /bin -env RMB3=e3 : pwd : printenv'
@@ -337,3 +302,4 @@ if __name__ == '__main__':
         mpiexec()
     except SystemExit, errmsg:
         pass
+
