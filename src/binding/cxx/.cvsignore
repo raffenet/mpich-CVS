@@ -15,6 +15,7 @@ config.log
 config.status
 config.system
 config.cache
+autom4te.cache
 *.bb
 *.bbg
 *.da

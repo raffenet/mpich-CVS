@@ -5,6 +5,7 @@ config.status
 config.cache
 config.system
 config.log
+autom4te.cache
 *.dsp
 *.dsw
 *.ncb

@@ -13,4 +13,5 @@ config.log
 config.status
 config.cache
 config.system
+autom4te.cache
 .deps

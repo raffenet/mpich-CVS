@@ -1,5 +1,6 @@
 configure
 config.*
+autom4te.cache
 Makefile.in
 Makefile
 sockconf.h.in

@@ -8,4 +8,5 @@ getcross
 config.log
 config.cache
 config.status
+autom4te.cache
 .deps
