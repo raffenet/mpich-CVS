@@ -203,6 +203,61 @@ static void token_copy(const char *token, char *str, int maxlen)
 	*str = '\0';
 }
 
+static void token_hide(char *token)
+{
+    /* check parameters */
+    if (token == NULL)
+	return;
+
+    /* cosy up to the token */
+    token = (char*)first_token(token);
+    if (token == NULL)
+	return;
+
+    if (*token == SMPD_DELIM_CHAR)
+    {
+	*token = SMPD_HIDE_CHAR;
+	return;
+    }
+
+    /* quoted */
+    if (*token == SMPD_QUOTE_CHAR)
+    {
+	*token = SMPD_HIDE_CHAR;
+	token++; /* move over the first quote */
+	while (*token != '\0')
+	{
+	    if (*token == SMPD_ESCAPE_CHAR)
+	    {
+		if (*(token+1) == SMPD_QUOTE_CHAR)
+		{
+		    *token = SMPD_HIDE_CHAR;
+		    token++;
+		}
+		*token = SMPD_HIDE_CHAR;
+	    }
+	    else
+	    {
+		if (*token == SMPD_QUOTE_CHAR)
+		{
+		    *token = SMPD_HIDE_CHAR;
+		    return;
+		}
+		*token = SMPD_HIDE_CHAR;
+	    }
+	    token++;
+	}
+	return;
+    }
+
+    /* literal */
+    while (*token != SMPD_DELIM_CHAR && !isspace(*token) && *token != '\0')
+    {
+	*token = SMPD_HIDE_CHAR;
+	token++;
+    }
+}
+
 int smpd_get_string_arg(const char *str, const char *flag, char *val, int maxlen)
 {
     if (maxlen < 1)
@@ -234,6 +289,35 @@ int smpd_get_string_arg(const char *str, const char *flag, char *val, int maxlen
 	}
     } while (str);
     return SMPD_FALSE;
+}
+
+int smpd_hide_string_arg(char *str, const char *flag)
+{
+    /* line up with the first token */
+    str = (char*)first_token(str);
+    if (str == NULL)
+	return SMPD_SUCCESS;
+
+    do
+    {
+	if (compare_token(str, flag) == 0)
+	{
+	    str = (char*)next_token(str);
+	    if (compare_token(str, SMPD_DELIM_STR) == 0)
+	    {
+		str = (char*)next_token(str);
+		if (str == NULL)
+		    return SMPD_SUCCESS;
+		token_hide(str);
+		return SMPD_SUCCESS;
+	    }
+	}
+	else
+	{
+	    str = (char*)next_token(str);
+	}
+    } while (str);
+    return SMPD_SUCCESS;
 }
 
 int smpd_get_int_arg(const char *str, const char *flag, int *val_ptr)

@@ -54,6 +54,7 @@ typedef int SMPD_BOOL;
 #define SMPD_MAX_ERROR_LEN               1024
 #define SMPD_CMD_HDR_LENGTH                13
 #define SMPD_MAX_CMD_LENGTH	         8192
+#define SMPD_MAX_DBG_PRINTF_LENGTH      (1024 + SMPD_MAX_CMD_LENGTH)
 #define SMPD_MAX_CMD_STR_LENGTH           100
 #define SMPD_MAX_HOST_LENGTH	           64
 #define SMPD_MAX_EXE_LENGTH              1024
@@ -102,6 +103,7 @@ typedef int SMPD_BOOL;
 #define SMPD_DELIM_CHAR                   '='
 #define SMPD_DELIM_STR                    "="
 #define SMPD_ESCAPE_CHAR                  '\\'
+#define SMPD_HIDE_CHAR                    '*'
 
 #define DBS_SUCCESS_STR	                  "DBS_SUCCESS"
 #define DBS_FAIL_STR	                  "DBS_FAIL"
@@ -385,7 +387,7 @@ typedef struct smpd_global_t
     char UserPassword[100];
     int  cur_tag;
     int  dbg_state;
-    FILE *dbg_fout;
+    char dbg_filename[SMPD_MAX_FILENAME];
     int  have_dbs;
     char kvs_name[SMPD_MAX_DBS_NAME_LEN];
 #ifdef HAVE_WINDOWS_H
@@ -554,5 +556,6 @@ char * smpd_get_cmd_state_string(smpd_command_state_t state);
 SMPD_BOOL smpd_command_to_string(char **str_pptr, int *len_ptr, int indent, smpd_command_t *cmd_ptr);
 SMPD_BOOL smpd_process_to_string(char **str_pptr, int *len_ptr, int indent, smpd_process_t *process);
 SMPD_BOOL smpd_is_affirmative(const char *str);
+int smpd_hide_string_arg(char *str, const char *flag);
 
 #endif

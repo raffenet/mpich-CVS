@@ -62,7 +62,8 @@ smpd_global_t smpd_process =
       "",               /* UserPassword           */
       0,                /* cur_tag                */
       SMPD_DBG_STATE_ERROUT, /* dbg_state         */
-      NULL,             /* dbg_fout               */
+      /*NULL,*/             /* dbg_fout               */
+      "",               /* dbg_filename           */
       SMPD_FALSE,       /* have_dbs               */
       "",               /* kvs_name               */
 #ifdef HAVE_WINDOWS_H

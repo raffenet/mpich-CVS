@@ -131,7 +131,6 @@ char * smpd_get_context_str(smpd_context_t *context)
 int smpd_init_printf(void)
 {
     char * envstr;
-    char filename[SMPD_MAX_FILENAME];
 
     smpd_process.dbg_state = SMPD_DBG_STATE_ERROUT;
 
@@ -146,6 +145,8 @@ int smpd_init_printf(void)
 	    smpd_process.dbg_state |= SMPD_DBG_STATE_PREPEND_RANK;
 	if (strstr(envstr, "trace"))
 	    smpd_process.dbg_state |= SMPD_DBG_STATE_TRACE;
+	if (strstr(envstr, "all"))
+	    smpd_process.dbg_state = SMPD_DBG_STATE_ALL;
     }
 
     if (smpd_option_on("log"))
@@ -160,26 +161,14 @@ int smpd_init_printf(void)
 	envstr = getenv("SMPD_DBG_LOG_FILENAME");
 	if (envstr)
 	{
-	    smpd_process.dbg_fout = fopen(envstr, "a+");
-	    if (smpd_process.dbg_fout == NULL)
-	    {
-		smpd_err_printf("unable to open log file '%s', error %d\n", envstr, smpd_get_last_error());
-	    }
+	    strcpy(smpd_process.dbg_filename, envstr);
 	}
-	if (smpd_process.dbg_fout == NULL)
+	else
 	{
-	    if (smpd_get_smpd_data("logfile", filename, SMPD_MAX_FILENAME) == SMPD_SUCCESS)
+	    if (smpd_get_smpd_data("logfile", smpd_process.dbg_filename, SMPD_MAX_FILENAME) != SMPD_SUCCESS)
 	    {
-		smpd_process.dbg_fout = fopen(filename, "a+");
-		if (smpd_process.dbg_fout == NULL)
-		{
-		    smpd_err_printf("unable to open log file '%s', error %d\n", filename, smpd_get_last_error());
-		}
+		smpd_process.dbg_state ^= SMPD_DBG_STATE_LOGFILE;
 	    }
-	}
-	if (smpd_process.dbg_fout == NULL)
-	{
-	    smpd_process.dbg_state ^= SMPD_DBG_STATE_LOGFILE;
 	}
     }
 
@@ -193,28 +182,54 @@ int smpd_init_printf(void)
     return SMPD_SUCCESS;
 }
 
-int smpd_finalize_printf(void)
+int smpd_finalize_printf()
 {
-    if (smpd_process.dbg_fout)
-	fclose(smpd_process.dbg_fout);
-    smpd_process.dbg_fout = NULL;
     return SMPD_SUCCESS;
+}
+
+char s_printf_buffer[SMPD_MAX_DBG_PRINTF_LENGTH];
+
+void smpd_clean_output(char *str)
+{
+    smpd_hide_string_arg(str, "password");
+    smpd_hide_string_arg(str, "pwd");
 }
 
 int smpd_err_printf(char *str, ...)
 {
-    int n = 0;
     va_list list;
-    char *format_str;
     char *indent_str;
+    char *cur_str;
+    int num_bytes;
 
-    if (smpd_process.dbg_state == 0)
+    if (!(smpd_process.dbg_state & (SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_LOGFILE)))
 	return 0;
+
+    /* write the formatted string to a global buffer */
 
     if (smpd_process.dbg_state & SMPD_DBG_STATE_TRACE)
 	indent_str = indent;
     else
 	indent_str = "";
+
+    num_bytes = 0;
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
+    {
+	/* prepend output with the process tree node id */
+	num_bytes = snprintf(s_printf_buffer, SMPD_MAX_DBG_PRINTF_LENGTH, "[%02d]%sERROR:", smpd_process.id, indent_str);
+    }
+    else
+    {
+	num_bytes = snprintf(s_printf_buffer, SMPD_MAX_DBG_PRINTF_LENGTH, "%s", indent_str);
+    }
+    cur_str = &s_printf_buffer[num_bytes];
+
+    va_start(list, str);
+    num_bytes += vsnprintf(cur_str, SMPD_MAX_DBG_PRINTF_LENGTH - num_bytes, str, list);
+    va_end(list);
+
+    /* strip protected fields - passwords, etc */
+    smpd_clean_output(s_printf_buffer);
 
 #ifdef HAVE_WINDOWS_H
     if (!smpd_process.bOutputInitialized)
@@ -225,69 +240,70 @@ int smpd_err_printf(char *str, ...)
     WaitForSingleObject(smpd_process.hOutputMutex, INFINITE);
 #endif
 
-    va_start(list, str);
 
     if (smpd_process.dbg_state & SMPD_DBG_STATE_ERROUT)
     {
 	/* use stdout instead of stderr so that ordering will be consistent with dbg messages */
-
-	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
-	{
-	    /* prepend output with the process tree node id */
-	    fprintf(stdout, "[%02d]%sERROR:", smpd_process.id, indent_str);
-	}
-	else
-	{
-	    fprintf(stdout, "%s", indent_str);
-	}
-
-	/* print the formatted string */
-	format_str = str;
-	n = vfprintf(stdout, format_str, list);
-
+	printf("%s", s_printf_buffer);
 	fflush(stdout);
     }
-    if ((smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE) && smpd_process.dbg_fout)
+    if ((smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE) && (smpd_process.dbg_filename[0] != '\0'))
     {
-	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
+	FILE *fout;
+	fout = fopen(smpd_process.dbg_filename, "a+");
+	if (fout == NULL)
 	{
-	    /* prepend output with the process tree node id */
-	    fprintf(smpd_process.dbg_fout, "[%02d]%sERROR:", smpd_process.id, indent_str);
+	    smpd_process.dbg_state ^= SMPD_DBG_STATE_LOGFILE;
 	}
 	else
 	{
-	    fprintf(smpd_process.dbg_fout, "%sERROR:", indent_str);
+	    fprintf(fout, "%s", s_printf_buffer);
+	    fclose(fout);
 	}
-
-	/* print the formatted string */
-	format_str = str;
-	n = vfprintf(smpd_process.dbg_fout, format_str, list);
-
-	fflush(smpd_process.dbg_fout);
     }
-
-    va_end(list);
+    
 
 #ifdef HAVE_WINDOWS_H
     ReleaseMutex(smpd_process.hOutputMutex);
 #endif
-    return n;
+    return num_bytes;
 }
 
 int smpd_dbg_printf(char *str, ...)
 {
-    int n = 0;
     va_list list;
-    char *format_str;
     char *indent_str;
+    char *cur_str;
+    int num_bytes;
 
-    if (smpd_process.dbg_state == 0)
+    if (!(smpd_process.dbg_state & (SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_LOGFILE)))
 	return 0;
+
+    /* write the formatted string to a global buffer */
 
     if (smpd_process.dbg_state & SMPD_DBG_STATE_TRACE)
 	indent_str = indent;
     else
 	indent_str = "";
+
+    num_bytes = 0;
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
+    {
+	/* prepend output with the process tree node id */
+	num_bytes = snprintf(s_printf_buffer, SMPD_MAX_DBG_PRINTF_LENGTH, "[%02d]%s", smpd_process.id, indent_str);
+    }
+    else
+    {
+	num_bytes = snprintf(s_printf_buffer, SMPD_MAX_DBG_PRINTF_LENGTH, "%s", indent_str);
+    }
+    cur_str = &s_printf_buffer[num_bytes];
+
+    va_start(list, str);
+    num_bytes += vsnprintf(cur_str, SMPD_MAX_DBG_PRINTF_LENGTH - num_bytes, str, list);
+    va_end(list);
+
+    /* strip protected fields - passwords, etc */
+    smpd_clean_output(s_printf_buffer);
 
 #ifdef HAVE_WINDOWS_H
     if (!smpd_process.bOutputInitialized)
@@ -298,52 +314,31 @@ int smpd_dbg_printf(char *str, ...)
     WaitForSingleObject(smpd_process.hOutputMutex, INFINITE);
 #endif
 
-    va_start(list, str);
-
     if (smpd_process.dbg_state & SMPD_DBG_STATE_STDOUT)
     {
-	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
-	{
-	    /* prepend output with the tree node id */
-	    printf("[%02d]%s", smpd_process.id, indent_str);
-	}
-	else
-	{
-	    printf("%s", indent_str);
-	}
-
-	/* print the formatted string */
-	format_str = str;
-	n = vfprintf(stdout, format_str, list);
-
+	printf("%s", s_printf_buffer);
 	fflush(stdout);
     }
-    if ((smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE) && smpd_process.dbg_fout)
+    if ((smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE) && (smpd_process.dbg_filename[0] != '\0'))
     {
-	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
+	FILE *fout;
+	fout = fopen(smpd_process.dbg_filename, "a+");
+	if (fout == NULL)
 	{
-	    /* prepend output with the process tree node id */
-	    fprintf(smpd_process.dbg_fout, "[%02d]%s", smpd_process.id, indent_str);
+	    smpd_process.dbg_state ^= SMPD_DBG_STATE_LOGFILE;
 	}
 	else
 	{
-	    fprintf(smpd_process.dbg_fout, "%s", indent_str);
+	    fprintf(fout, "%s", s_printf_buffer);
+	    fclose(fout);
 	}
-
-	/* print the formatted string */
-	format_str = str;
-	n = vfprintf(smpd_process.dbg_fout, format_str, list);
-
-	fflush(smpd_process.dbg_fout);
     }
-
-    va_end(list);
+    
 
 #ifdef HAVE_WINDOWS_H
     ReleaseMutex(smpd_process.hOutputMutex);
 #endif
-
-    return n;
+    return num_bytes;
 }
 
 int smpd_enter_fn(char *fcname)
