@@ -31,8 +31,50 @@ abstract operations.  This document is preliminary.
 \section{Outline of the Implementation Structure}
 
 \begin{verbatim}
-Notes from the board
+Notes from the board:
 
+  The MPI application layer
+
+                                        owns/allocates MPI_Status
+
+___________ MPI_Isend, MPI_IRecv, MPI_Wait _______________________
+
+  The MPI Layer                         owns/allocates
+  (aka MPIR layer)                          communicators
+  (mpich2.tex)                              datatypes
+                                            attributes
+                                            groups
+
+____goals.tex____ MPID_Isend, MPID_Irecv, Progress routines ______
+
+                                        owns/allocates
+                                            requests
+                                            segments (in requests)
+
+                                            packet-type handlers
+                                            data structures connecting
+                                            fds to handlers, which call
+                                            TCP layer, below 
+  packets
+  (tcpadi3.tex)
+     eager_send(envelope, data follows)
+     rndv_req_to_send(envelope)
+     rndv_OK_to_send
+     put(data,address)
+     rndv_send(part of data...)
+     rndv_send_ack
+     cancel_send
+     cancel_send_ack
+     flow_cntl_update
+
+
+____tcpaci3.tex____TCP_Writev, TCP_startmsgv ____________________
+
+
+     select                              owns/allocates
+     readv                                     MPID_VC connections
+     writev                                    fd readahead buffer
+     non-blocking connect                      connection state
 
 \end{verbatim}
 
@@ -42,6 +84,20 @@ Notes from the board
 
 MPID_Isend( )
 {
+    if (eager) {
+        create packet on stack
+        fill in as eager send packet
+        TCP_Start_msg (might copy packet, remember user buf ptr)
+        if OK
+            return competed request
+        else        
+            return no request 
+         }
+    else (rendezvous) {
+        create packet on stack
+        fill as rndv_req to send
+        TCP_sTart mest (copies packet if can't send)
+    } 
 
 }
 \end{verbatim}
@@ -49,21 +105,49 @@ MPID_Isend( )
 \begin{verbatim}
 MPID_Irecv( )
 {
-
+    Progress_poke
+    FOA
+    if (found)  /*unexpected */ {
+        if (eager)
+            copy data
+            mark request completed
+        else
+            TCP_repost
+    {
+    else {
+        fill in request
+        FOA_release (request)
+    }
 }
 \end{verbatim}
 
 \begin{verbatim}
 MPID_Wait( )
 {
-
+    TCP_Progress  /*select on all fd's */
+    if (write)
+        send data  /* later -> use segment processing */  OR
+        complete connection
+    if (read)
+        switch on state
+            reading pkt hdr
+            reading data to know address (receve side of put)
+            reading data for segment processing
+        switch on packet headr
+            call fcn associated with pkt type
+                (These are MPID functions, not TCP functions, since pkts are
+                in MPID layer.  Call them MPID_TCP_) 
 }
 \end{verbatim}
 
-%\subsection{}
 \begin{verbatim}
 
+Unresolved issue:  request queue changes/transitions in detail
+  create
+  move
+  update
 \end{verbatim}
+
 
 \section{Pseudo-code for Message Handlers}
 These are the routines that are called by the progress engine on receiving a
@@ -134,6 +218,78 @@ read but that any following data may not yet have been read.
 \begin{verbatim}
    (Not yet defined)
 \end{verbatim}
+
+
+\section{Implementing \code{mpiexec}}
+\label{sec:mpiexec}
+
+(This is a temporary spot for these remarks, since they may apply to more than
+just the TCP device.)
+
+There are multiple possible implementations for \code{mpiexec}, and each has
+its own advantages and disadvantages.  We might implement all of them, but we
+should implement the quickest-to-implement first.
+
+\begin{description}
+\item[As MPD console program] This is ready-to-go as a minor change to
+  mpdcon.c, except that the BNR interface might need to be updated to match
+  the current specification.  A version of MPI_Info is needed for the new
+  BNR_Spawn, but not for anything else, so MPI-1 routines should be OK.  I.e,
+  the database part of BNR is already running.  All handling of \code{stdio}
+  is done.
+\item[As a BNR program] This requires the above plus implementation of
+  \code{BNR_Spawn}, at least for use by console.  It could also be built to interact
+  with a scheduler.  This (using \code{BNR_Spawn} to start the initial processes as
+  well as for the implementation of \code{MPI_Spawn}) was the ``original''
+  plan.
+\item[As an MPI program] This is the idea in the current MPICH2 document.  It
+  relies on \code{MPI_Connect}, etc.  It requires the above plus the MM component
+  of the BNR interface, to set up the connections.  
+\item[As an ``immediate scheduler''] This makes \code{mpiexec} into a standing
+  for the sheduler component of the Scalable System Software Project.  It is
+  much like the ``MPD console'' option, but instead of using the existing
+  console code to contact a local MPD, it sends the standard XML defined by
+  the SSS project to the MPD, which is standing in for an arbitrary process
+  startup component.  It requires hooking in an XML parser like \code{xpat}
+  into the MPD and having \code{mpiexec} emit XML code.
+\item[As a ``one-host-only'' process starter] The \code{mpiexec} process could
+  simply fork the applications.  This requires a new but simple implementation
+  of the put/get/fence part of the BNR interface.  The original \code{mpiexec}
+  process could become the database server part after forking.
+\end{description}
+
+The first and last options seem to present the shortest paths to getting
+something running that we can use to debug the coming avalanche of code with.
+
+Any of these needs to contain with the argument-processing code for the defined
+standard arguments to \code{mpiexec}.  These are defined in Volume 1 of {\em
+  MPI -- The Complete Reference}, starting on page 353.  There are multiple
+approaches to dealing with arguments.
+\begin{description}
+\item[Plain] Use straightforward code as in \code{p4_args.c}.
+\item[Fancy] Use an ``options database'' approach, as in PETSc.
+\end{description}
+
+We will want to do both, but the first option can be implemented
+immediately, especially if we postpone some of the more elaborate argument
+lists and require that those be used with a file.  We have to define the
+format of the file for use with the \code{-file} option.  There are three
+possibilities.
+\begin{description}
+\item[Keyword=value pairs] This is easy to read, and we can use the
+  parsing routines from MPD, so we are practically already done.
+\item[XML] We could match the process-startup file to the format of a
+  process-startup request as being defined by the Scalable Systems Software
+  Project.  This would be sort of cool.  Validating XML parsers in C exist.
+\item[Custom Format] We could define our own formats, so that we could express
+  anything whatsoever.  We could use multiple formats to match other software
+  that we might find it useful to be compatible with, such as schedulers and
+  other process managers.
+\end{description}
+
+Again, we might want to implement all three of these, since each has
+advantages.  The quickest option is the first.
+
 
 \section{Summary}
 \label{sec:tcpadi-summary}
