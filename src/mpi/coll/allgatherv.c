@@ -70,8 +70,11 @@ PMPI_LOCAL int MPIR_Allgatherv (
     MPI_Aint   recv_extent, true_extent, true_lb;
     int curr_cnt, mask, dst, dst_tree_root, my_tree_root, is_homogeneous,
         send_offset, recv_offset, last_recv_cnt, nprocs_completed, k,
-        offset, tmp_mask, tree_root, position, nbytes, total_count,
-        tmp_buf_size, type_size; 
+        offset, tmp_mask, tree_root, position, total_count,
+        type_size; 
+#ifdef MPID_HAS_HETERO
+    int tmp_buf_size, nbytes;
+#endif
     void *tmp_buf;
     
     comm = comm_ptr->handle;

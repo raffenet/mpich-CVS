@@ -56,7 +56,10 @@ int MPIR_Gather (
     int        comm_size, rank;
     int        mpi_errno = MPI_SUCCESS;
     int curr_cnt=0, relative_rank, nbytes, recv_size, is_homogeneous;
-    int mask, sendtype_size, src, dst, position, tmp_buf_size;
+    int mask, sendtype_size, src, dst, position;
+#ifdef MPID_HAS_HETERO
+    int tmp_buf_size;
+#endif
     void *tmp_buf=NULL;
     MPI_Status status;
     MPI_Aint   extent=0;            /* Datatype extent */

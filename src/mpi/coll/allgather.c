@@ -71,12 +71,15 @@ PMPI_LOCAL int MPIR_Allgather (
     int        mpi_errno = MPI_SUCCESS;
     MPI_Status status;
     MPI_Aint   recv_extent;
-    int        j, i, is_homogeneous, tmp_buf_size;
+    int        j, i, is_homogeneous;
     int curr_cnt, mask, dst, dst_tree_root, my_tree_root, 
         send_offset, recv_offset, last_recv_cnt, nprocs_completed, k,
-        offset, tmp_mask, tree_root, position, nbytes, type_size,
+        offset, tmp_mask, tree_root, type_size,
         left, right, jnext;
+#ifdef MPID_HAS_HETERO
+    int position, tmp_buf_size, nbytes;
     void *tmp_buf;
+#endif
     MPI_Comm comm;
 
     if (sendcount == 0) return MPI_SUCCESS;

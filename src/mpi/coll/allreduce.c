@@ -96,7 +96,10 @@ PMPI_LOCAL int MPIR_Allreduce (
     MPID_Comm *comm_ptr )
 {
     static const char FCNAME[] = "MPIR_Allreduce";
-    int rc, is_homogeneous;
+    int is_homogeneous;
+#ifdef MPID_HAS_HETERO
+    int rc;
+#endif
     int        comm_size, rank, type_size;
     int        mpi_errno = MPI_SUCCESS;
     int mask, dst, is_commutative, pof2, newrank, rem, newdst, i,
