@@ -408,7 +408,10 @@ if [ -n "$PKGS" ] ; then
 fi
 
 CopyFileP $top_srcdir/COPYRIGHT           $prefix
-CopyFileP $top_srcdir/README              $prefix
+CopyFileP $top_srcdir/CHANGES             $prefix
+CopyFileP $top_srcdir/FAQ                 $prefix
+CopyFileP $top_srcdir/README.sdk          $prefix
+CopyFileP $top_srcdir/README.rte          $prefix
 
 # Remove old uninstall file & Prepare the UNINSTALLFILE for appending
 if [ $appendUninstall = 0 -a -f $UNINSTALLFILE ] ; then
