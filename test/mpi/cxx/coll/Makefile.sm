@@ -5,6 +5,9 @@ DEPADD = ../../../../lib/lib${MPILIBNAME}.a ../util/mtest.o
 smvar_do_sharedlibs = 0
 
 uallreduce_SOURCES = uallreduce.cxx
+ureduce_SOURCES = ureduce.cxx
+uscan_SOURCES = uscan.cxx
+uexscan_SOURCES = uexscan.cxx
 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o)

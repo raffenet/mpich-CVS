@@ -40,15 +40,26 @@ int main( int argc, char **argv )
 	    vin[i]  = i;
 	    vout[i] = -1;
 	}
-	comm.Allreduce( vin, vout, count, MPI::INT, sumop );
-	for (i=0; i<count; i++) {
-	    if (vout[i] != i * size) {
+	comm.Exscan( vin, vout, count, MPI::INT, sumop );
+	if (rank == 0) {
+	    for (i=0; i<count; i++) {
+		if (vout[i] != -1)) {
 		errs++;
 		if (errs < 10) 
-		    std::cerr << "vout[" << i << "] = " << vout[i] << std::endl;
+		    std::cerr << "vout[" << i << "] = " << vout[i] << 
+			std::endl;
 	    }
 	}
-	
+	else {
+	    for (i=0; i<count; i++) {
+		if (vout[i] != i * (rank)) {
+		    errs++;
+		    if (errs < 10) 
+			std::cerr << "vout[" << i << "] = " << vout[i] << 
+			    std::endl;
+		}
+	    }
+	}
 	delete vin;
 	delete vout;
     }

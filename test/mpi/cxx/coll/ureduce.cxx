@@ -36,19 +36,24 @@ int main( int argc, char **argv )
 	vin  = new int[count];
 	vout = new int[count];
 
-	for (i=0; i<count; i++) {
-	    vin[i]  = i;
-	    vout[i] = -1;
-	}
-	comm.Allreduce( vin, vout, count, MPI::INT, sumop );
-	for (i=0; i<count; i++) {
-	    if (vout[i] != i * size) {
-		errs++;
-		if (errs < 10) 
-		    std::cerr << "vout[" << i << "] = " << vout[i] << std::endl;
+	for (root = 0; root < size; root++) {
+
+	    for (i=0; i<count; i++) {
+		vin[i]  = i;
+		vout[i] = -1;
+	    }
+	    comm.Reduce( vin, vout, count, MPI::INT, sumop, root );
+	    if (rank == root) {
+		for (i=0; i<count; i++) {
+		    if (vout[i] != i * size) {
+			errs++;
+			if (errs < 10) 
+			    std::cerr << "vout[" << i << "] = " << vout[i] << 
+				std::endl;
+		    }
+		}
 	    }
 	}
-	
 	delete vin;
 	delete vout;
     }

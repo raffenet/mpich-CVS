@@ -40,9 +40,9 @@ int main( int argc, char **argv )
 	    vin[i]  = i;
 	    vout[i] = -1;
 	}
-	comm.Allreduce( vin, vout, count, MPI::INT, sumop );
+	comm.Scan( vin, vout, count, MPI::INT, sumop );
 	for (i=0; i<count; i++) {
-	    if (vout[i] != i * size) {
+	    if (vout[i] != i * (rank+1)) {
 		errs++;
 		if (errs < 10) 
 		    std::cerr << "vout[" << i << "] = " << vout[i] << std::endl;
