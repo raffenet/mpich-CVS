@@ -524,7 +524,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    break;
 		case DLOOP_KIND_VECTOR:
 		    /* NOTE: stride is in bytes */
-		    next_elmp->orig_offset = cur_elmp->curoffset +
+		    next_elmp->orig_offset = cur_elmp->orig_offset +
 			count_index * cur_elmp->loop_p->loop_params.v_t.stride +
 			block_index * cur_elmp->loop_p->el_extent;
 #ifdef DLOOP_M_VERBOSE
