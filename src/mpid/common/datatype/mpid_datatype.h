@@ -32,11 +32,11 @@ do {										\
 										\
     MPIU_Object_release_ref((datatype_ptr),&inuse);				\
     if (!inuse) {								\
-        int lmpi_errno;\
-	if (MPIR_Process.attr_free && datatype_ptr->attributes) {          \
-	    lmpi_errno = MPIR_Process.attr_free( datatype_ptr->handle,      \
-						datatype_ptr->attributes );\
-	}\
+        int lmpi_errno = MPI_SUCCESS;						\
+	if (MPIR_Process.attr_free && datatype_ptr->attributes) {		\
+	    lmpi_errno = MPIR_Process.attr_free( datatype_ptr->handle,		\
+						datatype_ptr->attributes );	\
+	}									\
  	/* LEAVE THIS COMMENTED OUT UNTIL WE HAVE SOME USE FOR THE FREE_FN	\
 	if (datatype_ptr->free_fn) {						\
 	    mpi_errno = (datatype_ptr->free_fn)( datatype_ptr );		\
@@ -45,9 +45,9 @@ do {										\
 		 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );		\
 	     }									\
 	} */									\
-        if (lmpi_errno == MPI_SUCCESS) {\
+        if (lmpi_errno == MPI_SUCCESS) {					\
 	    MPID_Datatype_free(datatype_ptr);					\
-        }\
+        }									\
     }										\
 } while (0)
 
