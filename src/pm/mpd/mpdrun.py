@@ -421,9 +421,12 @@ def mpdrun():
                         else:
                             if gdb:
                                 line = line.replace('(gdb)\n','(gdb) ')
-                            (rank,rest) = line.split(':',1)
-                            rank = int(rank)
-                            linesPerRank[rank].append(rest)
+                            try:
+                                (rank,rest) = line.split(':',1)
+                                rank = int(rank)
+                                linesPerRank[rank].append(rest)
+                            except:
+                                print line
                             print_ready_merged_lines(nprocs)
                     else:
                         msg = mpd_recv(manCliStdoutSocket,1024)

@@ -766,7 +766,10 @@ def mpdman():
                                 line = line + '\n'
                         mpd_send_one_line_noprint(parentStderrSocket,line)
             elif readySocket in childrenStdoutTreeSockets:
-                line = mpd_recv(readySocket,1024)
+                if lineLabels:
+                    line = mpd_recv_one_line(readySocket)
+                else:
+                    line = mpd_recv(readySocket,1024)
                 if not line:
                     del socketsToSelect[readySocket]
                     readySocket.close()
@@ -783,7 +786,10 @@ def mpdman():
                         mpd_send_one_line_noprint(parentStdoutSocket,line)
                         # parentStdoutSocket.sendall('FWD by %d: |%s|' % (myRank,line) )
             elif readySocket in childrenStderrTreeSockets:
-                line = mpd_recv(readySocket,1024)
+                if lineLabels:
+                    line = mpd_recv_one_line(readySocket)
+                else:
+                    line = mpd_recv(readySocket,1024)
                 if not line:
                     del socketsToSelect[readySocket]
                     readySocket.close()
