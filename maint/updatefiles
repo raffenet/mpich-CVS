@@ -305,12 +305,6 @@ if [ "$run_configure" = "yes" ] ; then
     made_simplemake=yes
 fi
 
-# Run some of the simple codes
-if [ -x maint/getstates ] ; then
-    maint/getstates -outfile=src/util/logging/lwlog/lwstates.c \
-                    -namefile=src/util/logging/lwlog/lwnames.h src
-fi
-
 #
 if [ ! -x maint/simplemake ] ; then
     echo "Could not create simplemake"
@@ -318,6 +312,25 @@ if [ ! -x maint/simplemake ] ; then
     echo "path to Perl (version5).  Make sure the resulting file has"
     echo "execute permissions set."
     exit 1
+fi
+
+# Run some of the simple codes
+if [ -x maint/getstates ] ; then
+    echo "Create the list of routine states"
+    maint/getstates -outfile=src/util/logging/lwlog/lwstates.c \
+                    -namefile=src/util/logging/lwlog/lwnames.h src
+fi
+
+if [ -x maint/f77tof90 ] ; then
+    echo "Create or update the Fortran 90 tests derived from the Fortran 77 tests"
+    for dir in test/mpi/f77/* ; do
+        if [ ! -d $dir ] ; then continue ; fi
+        leafDir=`basename $dir`
+        if [ ! -d test/mpi/f90/$leafDir ] ; then
+            mkdir test/mpi/f90/$leafDir
+        fi
+        maint/f77tof90 $dir test/mpi/f90/$leafDir Makefile.sm
+    done
 fi
 #
 if [ $made_simplemake != "no" ] ; then
