@@ -1623,7 +1623,12 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		mem_ptr = (unsigned char *)mem_ptr + sizeof(MPIDI_CH3_Pkt_t);
 		num_bytes -= sizeof(MPIDI_CH3_Pkt_t);
 
-		continue;
+		if (num_bytes == 0)
+		{
+		    ibuBlockFree(ibu->allocator, mem_ptr_orig);
+		    ibui_post_receive(ibu);
+		    continue;
+		}
 	    }
 /*
 	    else
