@@ -221,5 +221,9 @@ dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
 dnl
+dnl We don't want the library in this directory to be shared, but we
+dnl do want to avoid unsubstituted autoconf variables.
+AC_SUBST(LIBTOOL)
+dnl
 dnl Generate the Makefiles from Makefile.in
 AC_OUTPUT(Makefile test/Makefile)
