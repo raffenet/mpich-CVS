@@ -48,6 +48,7 @@ int MPI_Attr_get(MPI_Comm comm, int keyval, void *attr_value, int *flag)
     static const char FCNAME[] = "MPI_Attr_get";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ATTR_GET);
     /* Get handles to MPI objects. */
@@ -56,13 +57,10 @@ int MPI_Attr_get(MPI_Comm comm, int keyval, void *attr_value, int *flag)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_GET);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -71,6 +69,14 @@ int MPI_Attr_get(MPI_Comm comm, int keyval, void *attr_value, int *flag)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    MPIR_Nest_incr();
+    mpi_errno = PMPI_Comm_get_attr( comm, keyval, attr_value, flag );
+    MPIR_Nest_decr();
+    if (mpi_errno) {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_GET);
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_GET);
     return MPI_SUCCESS;
