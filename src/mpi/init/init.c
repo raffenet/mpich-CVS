@@ -72,7 +72,7 @@ int MPI_Init( int *argc, char ***argv )
         MPID_BEGIN_ERROR_CHECKS;
         {
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
