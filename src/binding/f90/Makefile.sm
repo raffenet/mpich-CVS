@@ -21,6 +21,12 @@ $(MPIMOD).$(MOD): $(srcdir)/mpi.f90
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	fi
 
+# To ensure that f90 can be used before a make-install step, we copy
+# the library to the build directory (just like we do with the module files)
+all-postamble:
+	if [ -s lib${MPILIBNAME}f90.a ] ; then \
+	   cp -p lib${MPILIBNAME}f90.a ../../../lib ; fi
+
 clean-local:
 	rm -f *.$(MOD)
 
@@ -40,3 +46,4 @@ doc_LATEX_SOURCES = ${doc_sources}
 distclean-local:
 	rm -f ../../../bin/mpif90
 	rm -f ../../../src/include/$(MPIMOD).$(MOD)
+	rm -f ../../../lib/lib${MPILIBNAME}f90.a

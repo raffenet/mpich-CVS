@@ -1668,7 +1668,6 @@ sub TargetAll {
 	    print_make_line( FD, " all-local " );
 	}
 	&ListTargets;
-	&TargetPostamble( "all" );
 	if ($do_sharedlibs && $#allshlibtargets >= 0) {
 	    # Add a conditional step
 	    print_make_endline( FD );
@@ -1678,6 +1677,7 @@ sub TargetAll {
 	    }
 	    print FD "\tfi\n";
 	}
+	&TargetPostamble( "all" );
     }
     print_make_endline( FD );
 }
