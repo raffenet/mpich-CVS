@@ -1,0 +1,6 @@
+*.log
+*.aux
+*.blg
+*.bbl
+adi3.ps
+*.dvi
