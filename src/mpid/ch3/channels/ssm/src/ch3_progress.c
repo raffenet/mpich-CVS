@@ -141,6 +141,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_sock_wait", 0);
 		    goto fn_exit;
 		}
+		mpi_errno = MPI_SUCCESS;
 		MPIDU_Yield();
 	    }
 	}
@@ -340,6 +341,7 @@ int MPIDI_CH3_Progress_test()
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**test_sock_wait", 0);
 	    goto fn_exit;
 	}
+	mpi_errno = MPI_SUCCESS;
     }
 
 #if 0
@@ -526,6 +528,7 @@ skip_shm_loop:
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_sock_wait", 0);
 		    goto fn_exit;
 		}
+		mpi_errno = MPI_SUCCESS;
 		MPIDU_Yield();
 	    }
 	    if (completions != MPIDI_CH3I_progress_completions)
@@ -877,6 +880,7 @@ skip_shm_loop:
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**handle_sock_op", 0);
 		    goto fn_exit;
 		}
+		mpi_errno = MPI_SUCCESS;
 		MPIDU_Yield();
 	    }
 	    if (completions != MPIDI_CH3I_progress_completions)
