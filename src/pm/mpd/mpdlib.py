@@ -16,7 +16,7 @@ from grp        import getgrall
 from pwd        import getpwnam, getpwuid
 
 global mpd_version
-mpd_version = (0,2,0,'Aug 2003 release')    # major, minor, micro, special
+mpd_version = (0,3,0,'Jan 22, 2004 release')    # major, minor, micro, special
 
 class mpdError(Exception):
     def __init__(self,args=None):
