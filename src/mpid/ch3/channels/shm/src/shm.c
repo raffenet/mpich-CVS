@@ -436,7 +436,6 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 #ifdef USE_SHM_UNEX
     MPIDI_VC *temp_vc_ptr;
 #endif
-    BOOL bSetPacket;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
@@ -519,6 +518,8 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		    vc->ch.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		    continue;
 		}
+		if (recv_vc_ptr->ch.recv_active == NULL)
+		    continue;
 	    }
 
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes\n", num_bytes));
