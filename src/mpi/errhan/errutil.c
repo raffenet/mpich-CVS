@@ -108,7 +108,7 @@ void MPIR_Err_init( void )
 }
 
 /* Special error handler to call if we are not yet initialized */
-/* FIXME - NOT YET CALLED ANYWHERE */
+/* FIXME (gropp): NOT YET CALLED ANYWHERE */
 void MPIR_Err_preinit( void )
 {
     fprintf( stderr, "Error encountered before initializing MPICH\n" );
@@ -878,7 +878,7 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 	    {
 		if (generic_msg[0] == '*' && generic_msg[1] == '*')
 		{
-		    /* Internal error.  Generate some debugging information; FIXME for the general release */
+		    /* FIXME (gropp): Internal error.  Generate some debugging information; Fix for the general release */
 		    fprintf( stderr, "Could not find %s in list of messages\n", generic_msg );
 		}
 	    }
