@@ -22,6 +22,241 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Alltoall PMPI_Alltoall
 
+/* This is the default implementation of alltoall. The algorithm is:
+   
+   Algorithm: MPI_Alltoall
+
+   For long messages, we use a pairwise exchange algorithm, which
+   takes p-1 steps. At step i, each process receives from (rank-i) and
+   sends to (rank+i).
+   Cost = (p-1).alpha + n.beta
+   where n is the total amount of data a process needs to send to all
+   other processes.
+
+   For short messages, we use a recursive doubling algorithm, which
+   takes lgp steps. At each step pairs of processes exchange all the
+   data they have received so far. A lot more data is communicated
+   than in pairwise exchange, but for short messages it is still
+   better because of the lower latency requirement.
+   Cost = lgp.alpha + n.p.beta
+
+   Possible improvements: 
+
+   End Algorithm: MPI_Alltoall
+*/
+
+
+PMPI_LOCAL int MPIR_Alltoall( 
+	void *sendbuf, 
+	int sendcount, 
+	MPI_Datatype sendtype, 
+	void *recvbuf, 
+	int recvcount, 
+	MPI_Datatype recvtype, 
+	MPID_Comm *comm_ptr )
+{
+    int          comm_size, i, j, k, p;
+    MPI_Aint     sendtype_extent, recvtype_extent, sendbuf_extent, lb=0;
+    int          mpi_errno = MPI_SUCCESS;
+    MPI_Status status;
+    int src, dst, rank, nbytes, curr_cnt, dst_tree_root, my_tree_root;
+    int last_recv_cnt, mask, tmp_mask, tree_root, nprocs_completed;
+    int sendtype_size;
+    void *tmp_buf;
+    MPI_Comm comm;
+    
+    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+        printf("ERROR: MPI_Alltoall for intercommunicators not yet implemented.\n"); 
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    
+    comm = comm_ptr->handle;
+    comm_size = comm_ptr->local_size;
+    rank = comm_ptr->rank;
+    
+    /* Get extent of send and recv types */
+    MPID_Datatype_get_extent_macro(sendtype, sendtype_extent);
+    MPID_Datatype_get_extent_macro(recvtype, recvtype_extent);
+    
+    MPID_Datatype_get_size_macro(sendtype, sendtype_size);
+    nbytes = sendtype_size * sendcount * comm_size;
+    
+    /* Lock for collective operation */
+    MPID_Comm_thread_lock( comm_ptr );
+    
+    if (nbytes > MPIR_ALLTOALL_SHORT_MSG) {
+        /* Long message. Use pairwise exchange algorithm. */
+        
+        /* Make local copy first */
+        mpi_errno = MPIR_Localcopy(((char *)sendbuf + 
+                                    rank*sendcount*sendtype_extent), 
+                                   sendcount, sendtype, 
+                                   ((char *)recvbuf +
+                                    rank*recvcount*recvtype_extent),
+                                   recvcount, recvtype);
+        if (mpi_errno) return mpi_errno;
+        
+        /* Do the pairwise exchanges */
+        for (i=1; i<comm_size; i++) {
+            src = (rank - i + comm_size) % comm_size;
+            dst = (rank + i) % comm_size;
+            mpi_errno = MPIC_Sendrecv(((char *)sendbuf +
+                                       dst*sendcount*sendtype_extent), 
+                                      sendcount, sendtype, dst,
+                                      MPIR_ALLTOALL_TAG, 
+                                      ((char *)recvbuf +
+                                       src*recvcount*recvtype_extent),
+                                      recvcount, recvtype, src,
+                                      MPIR_ALLTOALL_TAG, comm, &status);
+            if (mpi_errno) return mpi_errno;
+        }
+    }
+    else {
+        /* Short message. Use recursive doubling. Each process sends all
+           its data at each step along with all data it received in
+           previous steps. */
+        
+        /* need to allocate temporary buffer of size
+           sendbuf_extent*comm_size */
+        
+        sendbuf_extent = sendcount * comm_size * sendtype_extent; 
+        tmp_buf = MPIU_Malloc(sendbuf_extent*comm_size);
+        if (!tmp_buf) {
+            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            return mpi_errno;
+        }
+        
+        /* adjust for potential negative lower bound in datatype */
+        /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
+           INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
+           SO IT'S OK */
+#ifdef UNIMPLEMENTED
+        MPI_Type_lb( sendtype, &lb );
+#endif
+        tmp_buf = (void *)((char*)tmp_buf - lb);
+        
+        /* copy local sendbuf into tmp_buf at location indexed by rank */
+        curr_cnt = sendcount*comm_size;
+        mpi_errno = MPIR_Localcopy(sendbuf, curr_cnt, sendtype,
+                                   ((char *)tmp_buf + rank*sendbuf_extent),
+                                   curr_cnt, sendtype);
+        if (mpi_errno) return mpi_errno;
+        
+        mask = 0x1;
+        i = 0;
+        while (mask < comm_size) {
+            dst = rank ^ mask;
+            
+            dst_tree_root = dst >> i;
+            dst_tree_root <<= i;
+            
+            my_tree_root = rank >> i;
+            my_tree_root <<= i;
+            
+            if (dst < comm_size) {
+                mpi_errno = MPIC_Sendrecv(((char *)tmp_buf +
+                                           my_tree_root*sendbuf_extent),
+                                          curr_cnt, sendtype,
+                                          dst, MPIR_ALLTOALL_TAG, 
+                                          ((char *)tmp_buf +
+                                           dst_tree_root*sendbuf_extent),
+                                          sendcount*comm_size*mask,
+                                          sendtype, dst, MPIR_ALLTOALL_TAG, 
+                                          comm, &status);
+                if (mpi_errno) return mpi_errno;
+                
+                /* in case of non-power-of-two nodes, less data may be
+                   received than specified */
+                NMPI_Get_count(&status, sendtype, &last_recv_cnt);
+                curr_cnt += last_recv_cnt;
+            }
+            
+            /* if some processes in this process's subtree in this step
+               did not have any destination process to communicate with
+               because of non-power-of-two, we need to send them the
+               result. We use a logarithmic recursive-halfing algorithm
+               for this. */
+            
+            if (dst_tree_root + mask > comm_size) {
+                nprocs_completed = comm_size - my_tree_root - mask;
+                /* nprocs_completed is the number of processes in this
+                   subtree that have all the data. Send data to others
+                   in a tree fashion. First find root of current tree
+                   that is being divided into two. k is the number of
+                   least-significant bits in this process's rank that
+                   must be zeroed out to find the rank of the root */ 
+                j = mask;
+                k = 0;
+                while (j) {
+                    j >>= 1;
+                    k++;
+                }
+                k--;
+                
+                tmp_mask = mask >> 1;
+                while (tmp_mask) {
+                    dst = rank ^ tmp_mask;
+                    
+                    tree_root = rank >> k;
+                    tree_root <<= k;
+                    
+                    /* send only if this proc has data and destination
+                       doesn't have data. at any step, multiple processes
+                       can send if they have the data */
+                    if ((dst > rank) && 
+                        (rank < tree_root + nprocs_completed)
+                        && (dst >= tree_root + nprocs_completed)) {
+                        /* send the data received in this step above */
+                        mpi_errno = MPIC_Send(((char *)tmp_buf +
+                                               dst_tree_root*sendbuf_extent),
+                                              last_recv_cnt, sendtype,
+                                              dst, MPIR_ALLTOALL_TAG,
+                                              comm);  
+                        if (mpi_errno) return mpi_errno;
+                    }
+                    /* recv only if this proc. doesn't have data and sender
+                       has data */
+                    else if ((dst < rank) && 
+                             (dst < tree_root + nprocs_completed) &&
+                             (rank >= tree_root + nprocs_completed)) {
+                        mpi_errno = MPIC_Recv(((char *)tmp_buf +
+                                               dst_tree_root*sendbuf_extent),
+                                              last_recv_cnt, sendtype,
+                                              dst, MPIR_ALLTOALL_TAG,
+                                              comm, &status); 
+                        if (mpi_errno) return mpi_errno;
+                        NMPI_Get_count(&status, sendtype, &last_recv_cnt);
+                        curr_cnt += last_recv_cnt;
+                    }
+                    tmp_mask >>= 1;
+                    k--;
+                }
+            }
+            
+            mask <<= 1;
+            i++;
+        }
+        
+        /* now copy everyone's contribution from tmp_buf to recvbuf */
+        for (p=0; p<comm_size; p++) {
+            mpi_errno = MPIR_Localcopy(((char *)tmp_buf +
+                                        (p*comm_size+rank)*sendcount*sendtype_extent),
+                                       sendcount, sendtype, 
+                                       ((char*)recvbuf +
+                                        p*recvcount*recvtype_extent), 
+                                       recvcount, recvtype);
+            if (mpi_errno) return mpi_errno;
+        }
+        
+        MPIU_Free((char *)tmp_buf+lb); 
+    }
+    
+    /* Unlock for collective operation */
+    MPID_Comm_thread_unlock( comm_ptr );
+    
+    return (mpi_errno);
+}
+
 #endif
 
 #undef FUNCNAME
@@ -35,7 +270,7 @@
 .  int sendcount - send count
 .  MPI_Datatype sendtype - send datatype
 .  void *recvbuf - receive buffer
-.  int recvcnt - receive count
+.  int recvcount - receive count
 .  MPI_Datatype recvtype - receive datatype
 -  MPI_Comm comm - communicator
 
@@ -46,27 +281,58 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, MPI_Comm comm)
+int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Alltoall";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_ALLTOALL);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+
+    /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) {
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
-            /* Validate comm_ptr */
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
+    /* Get handles to MPI objects. */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPID_Datatype *sendtype_ptr=NULL, *recvtype_ptr=NULL;
+	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
-            if (mpi_errno) {
+            if (mpi_errno != MPI_SUCCESS) {
+                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALL);
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+            }
+	    MPIR_ERRTEST_COUNT(sendcount, mpi_errno);
+	    MPIR_ERRTEST_COUNT(recvcount, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(sendcount, sendtype, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(recvcount, recvtype, mpi_errno);
+	    
+	    MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
+            MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
+            if (mpi_errno != MPI_SUCCESS) {
+                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALL);
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+            }
+	    MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
+            MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
+            if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALL);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
@@ -74,6 +340,32 @@ int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recv
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+
+    if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Alltoall != NULL)
+    {
+	mpi_errno = comm_ptr->coll_fns->Alltoall(sendbuf, sendcount,
+                                                 sendtype, recvbuf, recvcount,
+                                                 recvtype, comm_ptr);
+    }
+    else
+    {
+	mpi_errno = MPIR_Alltoall(sendbuf, sendcount, sendtype,
+                                  recvbuf, recvcount, recvtype, comm_ptr); 
+    }
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALL);
+	return MPI_SUCCESS;
+    }
+    else
+    {
+	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALL);
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
+
+    /* ... end of body of routine ... */
 
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALL);
     return MPI_SUCCESS;

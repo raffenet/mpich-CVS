@@ -69,7 +69,7 @@ PMPI_LOCAL int MPIR_Bcast (
   int        rank, comm_size, src, dst;
   int        relative_rank, mask;
   int        mpi_errno = MPI_SUCCESS;
-  int scatter_size, nbytes, curr_size, recv_size, send_size;
+  int scatter_size, nbytes=0, curr_size, recv_size, send_size;
   int type_size, j, k, i, tmp_mask, is_contig, is_homogeneous;
   int relative_dst, dst_tree_root, my_tree_root, send_offset;
   int recv_offset, tree_root, nprocs_completed, offset, position;
