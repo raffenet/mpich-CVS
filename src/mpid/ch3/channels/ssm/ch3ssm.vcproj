@@ -146,6 +146,9 @@
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm">
 			<File
+				RelativePath=".\src\ch3_abort.c">
+			</File>
+			<File
 				RelativePath="src\ch3_cancel_send.c">
 			</File>
 			<File
