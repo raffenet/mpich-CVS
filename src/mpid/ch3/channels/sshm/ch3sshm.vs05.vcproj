@@ -818,6 +818,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\mpid_win_start.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\mpid_win_test.c"
 				>
 			</File>
