@@ -216,6 +216,10 @@ fi
 dnl
 dnl Autoconf bug: AC_PROG_F77 sets FFLAGS 
 dnl Autoconf "feature" AC_PROG_F77 prefers g77 to f77.
+# Allow FC as a synonym for F77, but only if F77 is not set.
+if test -n "$FC" -a -z "$F77" ; then 
+    F77="$FC"
+fi
 save_FFLAGS="$FFLAGS"
 AC_PROG_F77
 FFLAGS="$save_FFLAGS"
