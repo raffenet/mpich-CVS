@@ -291,9 +291,10 @@ sub RunTest {
 		# Only perform these steps if the make succeeded
 
 		# Check the libraries for nonconforming global symbols.
-		$globnametest = "/home/gropp/sowing-proj/sowing/bin/checkforglobs"
+		$globnametest = "/home/gropp/sowing-proj/sowing/bin/checkforglobs";
 		if ( -x $globnametest ) { 
-		    my @pgm = split( /\s+/, "$globnametest -mpich2 -c++ -exclude=initcxx.o lib/libmpich.a" );
+		    my @pgm = split( /\s+/, 
+              "$globnametest -mpich2 -c++ -exclude=initcxx.o lib/libmpich.a" );
 		    print $OUTFD $GlobNameStart;
 		    $rc = &RunProgram( @pgm );
 		    print $OUTFD $GlobNameEnd;
