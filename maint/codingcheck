@@ -279,6 +279,11 @@ $AvoidPrint = "For internationalization, messages must be indirected through a r
 
 $AvoidMalloc = "Dynamic memory allocation often causes problems, though the creation of both storage leaks and memory overwrites.  By using the MPIU_xxx names for memory allocation, it is easy to choose between the standard malloc/free/etc. versions and special versions that provide detailed memory correctness diagnostics, without requiring any special third-party software (which makes these particularly appropriate when the problem occurs only when running on hundreds of nodes)";
 
+$IntPointerMalloc = "Routines that return pointers must be declared as such to vavoid failures on platforms where pointers and integers have different sizes, such as Alphas and IA64s.";
+
+#
+# Added extra information to strdup because of failures in ROMIO code that
+# uses strdup without declaring it (failed on IA64)
 %avoidSubsReasons = ( "fprintf" => $AvoidPrint,
 		      "fputs" => $AvoidPrint,
 		      "puts" => $AvoidPrint,
@@ -286,7 +291,7 @@ $AvoidMalloc = "Dynamic memory allocation often causes problems, though the crea
 		      "malloc" => $AvoidMalloc,
 		      "calloc" => $AvoidMalloc,
 		      "free" => $AvoidMalloc,
-		      "strdup" => $AvoidMalloc,
+		      "strdup" => $AvoidMalloc . "\n" . $IntPointerMalloc,
 		      "realloc" => $AvoidMalloc,
 		      "assert" => "Assert is a handy way to check code while developing, but in released code, these cases should be handled with more attention to the message the the user will receive.",
 		      "perror" => "For internationalization reasons, messages should use the internationalization support instead of perror.", 
