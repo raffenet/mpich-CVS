@@ -3,8 +3,13 @@
 # mpiexec that we want users to use)
 OTHER_DIRS = mpiexec
 #OTHER_DIRS = f77 f90 cxx
-
+# We want to replace the compilation and linking rule used by simplement
+MPICHDIR=..
+CC       = $(MPICHDIR)/bin/mpicc
+CPPFLAGS = 
+DEFS     = 
 INCLUDES = -I../src/include -I${top_srcdir}/src/include
+
 LDADD = -L../lib
 DEPADD = ../lib/lib${MPILIBNAME}.a
 LIBS += @EXAMPLE_LIBS@
