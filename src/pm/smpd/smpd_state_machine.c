@@ -2904,7 +2904,7 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 		return SMPD_FAIL;
 	    }
 	    /* FIXME: encrypt the password */
-	    result = smpd_encrypt_data(smpd_process.UserPassword, strlen(smpd_process.UserPassword)+1, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
+	    result = smpd_encrypt_data(smpd_process.UserPassword, (int)strlen(smpd_process.UserPassword)+1, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to encrypt the password for the validate command.\n");
