@@ -23,9 +23,16 @@ int xfer_start(MPID_Request *request_ptr)
     MM_ENTER_FUNC(XFER_START);
     dbg_printf("xfer_start\n");
 
+#ifdef MPICH_DEV_BUILD
+    if (request_ptr == NULL)
+    {
+	err_printf("Error: xfer_start called with NULL request pointer.\n");
+    }
+#endif
+
     /* choose the buffers scheme to satisfy each segment */
     pRequest = request_ptr;
-    while (pRequest)
+    do
     {
 	/* choose the buffer */
 	mpi_errno = mm_choose_buffer(pRequest);
@@ -42,11 +49,11 @@ int xfer_start(MPID_Request *request_ptr)
 	    return mpi_errno;
 	}
 	pRequest = pRequest->mm.next_ptr;
-    }
+    } while (pRequest);
 
     /* enqueue the head cars */
     pRequest = request_ptr;
-    while (pRequest)
+    do
     {
 	if (pRequest->mm.rcar[0].type & MM_HEAD_CAR)
 	{
@@ -91,7 +98,7 @@ int xfer_start(MPID_Request *request_ptr)
 	    pCar = pCar->opnext_ptr;
 	}
 	pRequest = pRequest->mm.next_ptr;
-    }
+    } while (pRequest);
 
     MM_EXIT_FUNC(XFER_START);
     return MPI_SUCCESS;

@@ -122,7 +122,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     pRequest->mm.rcar[0].next_ptr = NULL;
     pRequest->mm.rcar[0].opnext_ptr = NULL;
     pRequest->mm.rcar[0].qnext_ptr = NULL;
-    printf("inc cc: send packer car\n");fflush(stdout);
+    /*printf("inc cc: send packer car\n");fflush(stdout);*/
     mm_inc_cc(pRequest);
 
     /* setup the write car, adding a header car if this is the first send op to this destination */
@@ -142,7 +142,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
 	pRequest->mm.wcar[0].opnext_ptr = &pRequest->mm.wcar[1];
 	pRequest->mm.wcar[0].next_ptr = &pRequest->mm.wcar[1];
 	pRequest->mm.wcar[0].qnext_ptr = NULL;
-	printf("inc cc: write head car\n");fflush(stdout);
+	/*printf("inc cc: write head car\n");fflush(stdout);*/
 	mm_inc_cc(pRequest);
 
 	pCar = &pRequest->mm.wcar[1];
@@ -161,7 +161,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     pCar->next_ptr = NULL;
     pCar->opnext_ptr = NULL;
     pCar->qnext_ptr = NULL;
-    printf("inc cc: write data car\n");fflush(stdout);
+    /*printf("inc cc: write data car\n");fflush(stdout);*/
     mm_inc_cc(pRequest);
 
     MM_EXIT_FUNC(XFER_SEND_OP);

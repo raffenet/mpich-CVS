@@ -220,6 +220,10 @@ MPID_Request * mm_request_alloc();
 */
 #define mm_inc_cc(request_ptr) (*((request_ptr)->cc_ptr))++
 #define mm_dec_cc(request_ptr) (*((request_ptr)->cc_ptr))--
+/*
+#define mm_inc_cc(request_ptr) { printf("mm_inc_cc(%d,", (*((request_ptr)->cc_ptr))++); printf("%d)\n", *((request_ptr)->cc_ptr)); fflush(stdout); }
+#define mm_dec_cc(request_ptr) { printf("mm_dec_cc(%d,", (*((request_ptr)->cc_ptr))--); printf("%d)\n", *((request_ptr)->cc_ptr)); fflush(stdout); }
+*/
 #define mm_dec_atomic(pcounter) (*(pcounter))++
 #define mm_inc_atomic(pcounter) (*(pcounter))--
 

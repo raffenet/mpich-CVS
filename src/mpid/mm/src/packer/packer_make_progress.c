@@ -12,25 +12,34 @@
 @*/
 int packer_make_progress()
 {
-    int i;
     MM_Car *car_ptr, *car_tmp_ptr;
     MM_Segment_buffer *buf_ptr;
     BOOL finished;
+    MM_Car *next_qhead;
 
-    if (MPID_Process.packer_vc_ptr->readq_head == NULL &&
-	MPID_Process.packer_vc_ptr->writeq_head == NULL)
+    /* assign car_ptr to the first non-empty qhead, either
+     * readq_head or writeq_head.  Then set next_qhead to
+     * the other available qhead or NULL if empty
+     */
+    car_ptr = MPID_Process.packer_vc_ptr->readq_head;
+    if (car_ptr == NULL)
     {
-	/* shortcut out if the queues are empty */
-	return MPI_SUCCESS;
+	if (MPID_Process.packer_vc_ptr->writeq_head == NULL)
+	{
+	    /* shortcut out if the queues are empty */
+	    return MPI_SUCCESS;
+	}
+	car_ptr = MPID_Process.packer_vc_ptr->writeq_head;
+	next_qhead = NULL;
+    }
+    else
+    {
+	next_qhead = MPID_Process.packer_vc_ptr->writeq_head;
     }
 
-    for (i=0; i<2; i++)
+    /* Process either or both qheads */
+    do
     {
-	if (i==0)
-	    car_ptr = MPID_Process.packer_vc_ptr->readq_head;
-	else
-	    car_ptr = MPID_Process.packer_vc_ptr->writeq_head;
-	
 	while (car_ptr)
 	{
 	    finished = FALSE;
@@ -112,7 +121,10 @@ int packer_make_progress()
 		car_ptr = car_ptr->qnext_ptr;
 	    }
 	}
-    }
+
+	car_ptr = next_qhead;
+	next_qhead = NULL;
+    } while (car_ptr);
 
     return MPI_SUCCESS;
 }

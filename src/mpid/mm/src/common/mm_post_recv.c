@@ -20,7 +20,8 @@ int mm_post_recv(MM_Car *car_ptr)
     {
 	if ((iter_ptr->msg_header.pkt.u.hdr.context == car_ptr->msg_header.pkt.u.hdr.context) &&
 	    (iter_ptr->msg_header.pkt.u.hdr.tag == car_ptr->msg_header.pkt.u.hdr.tag) &&
-	    (iter_ptr->src == car_ptr->src))
+	    //(iter_ptr->src == car_ptr->src))
+	    (iter_ptr->msg_header.pkt.u.hdr.src == car_ptr->msg_header.pkt.u.hdr.src))
 	{
 	    if (iter_ptr->msg_header.pkt.u.hdr.size > car_ptr->msg_header.pkt.u.hdr.size)
 	    {

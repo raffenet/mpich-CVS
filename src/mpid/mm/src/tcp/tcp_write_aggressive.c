@@ -228,8 +228,11 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 		}
 		else
 		{
-		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_BUF = car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_BUF - num_left;
-		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN += num_left;
+		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_BUF = 
+			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_BUF +
+			car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN + 
+			num_left;
+		    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN = -num_left;
 		}
 	    }
 	    car_ptr->data.tcp.buf.vec_write.cur_index = i;
@@ -246,7 +249,7 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 		 * enqueue the next car for writing */
 		car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
 	    }
-	    printf("dec cc: written vec: %d\n", num_written);fflush(stdout);
+	    /*printf("dec cc: written vec: %d\n", num_written);fflush(stdout);*/
 	    mm_dec_cc(car_ptr->request_ptr);
 	    mm_car_free(car_ptr);
 	}
@@ -274,7 +277,7 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 		 * enqueue the next car for writing */
 		car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
 	    }
-	    printf("dec cc: written tmp buffer: %d\n", num_written);fflush(stdout);
+	    /*printf("dec cc: written tmp buffer: %d\n", num_written);fflush(stdout);*/
 	    mm_dec_cc(car_ptr->request_ptr);
 	    mm_car_free(car_ptr);
 	}
@@ -324,7 +327,7 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
     car_ptr = vc_ptr->writeq_head;
 
     /* pack as many cars into a vector as possible */
-    while (car_ptr)
+    do
     {
 	buf_ptr = car_ptr->buf_ptr;
 	switch (buf_ptr->type)
@@ -370,7 +373,7 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 	if (stop)
 	    break;
 	car_ptr = car_ptr->next_ptr;
-    }
+    } while (car_ptr);
 
     if (cur_pos > 0)
     {

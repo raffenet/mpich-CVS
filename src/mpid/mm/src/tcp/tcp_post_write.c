@@ -22,7 +22,9 @@ int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     }
 #endif
 
-    if ((car_ptr->msg_header.pkt.u.hdr.size < TCP_EAGER_LIMIT) || (car_ptr->msg_header.pkt.u.type == MPID_RNDV_DATA_PKT))
+    //if ((car_ptr->msg_header.pkt.u.hdr.size < TCP_EAGER_LIMIT) || (car_ptr->msg_header.pkt.u.type == MPID_RNDV_DATA_PKT))
+    if ((car_ptr->msg_header.pkt.u.type != MPID_EAGER_PKT) ||
+	(car_ptr->msg_header.pkt.u.hdr.size < TCP_EAGER_LIMIT))
     {
 	/* enqueue the head packet car */
 	tcp_car_enqueue(vc_ptr, car_ptr);
@@ -36,7 +38,7 @@ int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	tcp_setup_packet_car(vc_ptr, MM_WRITE_CAR, car_ptr->dest, rndv_car_ptr);
 	rndv_car_ptr->request_ptr = car_ptr->request_ptr;
 	/* increment the completion counter for this rts packet */
-	printf("inc cc: rts\n");fflush(stdout);
+	/*printf("inc cc: rts\n");fflush(stdout);*/
 	mm_inc_cc(car_ptr->request_ptr);
 
 	/* set up the rts header packet, pointing it to the original car */
@@ -48,7 +50,7 @@ int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	rndv_rts_ptr->type = MPID_RNDV_REQUEST_TO_SEND_PKT;
 	rndv_rts_ptr->sender_car_ptr = car_ptr;
 
-	printf("enqueueing rts packet.\n");fflush(stdout);
+	/*printf("enqueueing rts packet.\n");fflush(stdout);*/
 	/* enqueue the request to send car */
 	tcp_car_enqueue(vc_ptr, rndv_car_ptr);
     }

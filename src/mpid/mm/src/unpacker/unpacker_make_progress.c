@@ -37,7 +37,7 @@ int unpacker_make_progress()
     vc_ptr = MPID_Process.unpacker_vc_ptr;
     car_ptr = MPID_Process.unpacker_vc_ptr->writeq_head;
     
-    while (car_ptr)
+    do
     {
 	car_next_ptr = car_ptr->qnext_ptr;
 	buf_ptr = car_ptr->buf_ptr;
@@ -77,7 +77,7 @@ int unpacker_make_progress()
 	    break;
 	}
 	car_ptr = car_next_ptr;
-    }
+    } while (car_ptr);
     
     return MPI_SUCCESS;
 }

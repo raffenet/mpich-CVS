@@ -22,7 +22,7 @@ int mm_post_rndv_clear_to_send(MM_Car *posted_car_ptr, MM_Car *rndv_rts_car_ptr)
 	rndv_car_ptr);
     rndv_car_ptr->request_ptr = posted_car_ptr->request_ptr;
     /* increment the completion counter once for the cts packet */
-    printf("inc cc: cts\n");fflush(stdout);
+    /*printf("inc cc: cts\n");fflush(stdout);*/
     mm_inc_cc(posted_car_ptr->request_ptr);
 
     /* set up the cts header packet */

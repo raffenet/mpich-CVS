@@ -123,7 +123,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
 	pRequest->mm.rcar[0].opnext_ptr = &pRequest->mm.rcar[1];
 	pRequest->mm.rcar[0].next_ptr = &pRequest->mm.rcar[1];
 	pRequest->mm.rcar[0].qnext_ptr = NULL;
-	printf("inc cc: read head car\n");fflush(stdout);
+	/*printf("inc cc: read head car\n");fflush(stdout);*/
 	mm_inc_cc(pRequest);
 
 	pCar = &pRequest->mm.rcar[1];
@@ -142,7 +142,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     pCar->next_ptr = NULL;
     pCar->opnext_ptr = NULL;
     pCar->qnext_ptr = NULL;
-    printf("inc cc: read data car\n");fflush(stdout);
+    /*printf("inc cc: read data car\n");fflush(stdout);*/
     mm_inc_cc(pRequest);
 
     /* setup a write car for unpacking */
@@ -155,7 +155,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     pCar->next_ptr = NULL;
     pCar->opnext_ptr = NULL;
     pCar->qnext_ptr = NULL;
-    printf("inc cc: recv unpack car\n");fflush(stdout);
+    /*printf("inc cc: recv unpack car\n");fflush(stdout);*/
     mm_inc_cc(pRequest);
 
     MM_EXIT_FUNC(XFER_RECV_OP);

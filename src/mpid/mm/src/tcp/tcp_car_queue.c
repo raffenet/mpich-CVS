@@ -65,6 +65,7 @@ int tcp_car_queue_replace_head(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 @*/
 int tcp_car_head_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
+    MM_Car *iter_ptr;
     MM_ENTER_FUNC(TCP_CAR_HEAD_ENQUEUE);
 
     if (car_ptr->type & MM_WRITE_CAR)
@@ -83,7 +84,12 @@ int tcp_car_head_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	}
 
 	/* enqueue at the head */
-	car_ptr->vcqnext_ptr = vc_ptr->writeq_head;
+	iter_ptr = car_ptr;
+	do
+	{
+	    iter_ptr->vcqnext_ptr = vc_ptr->writeq_head;
+	    iter_ptr = iter_ptr->next_ptr;
+	} while (iter_ptr);
 	vc_ptr->writeq_head = car_ptr;
 	if (vc_ptr->writeq_tail == NULL)
 	    vc_ptr->writeq_tail = car_ptr;
@@ -91,7 +97,12 @@ int tcp_car_head_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     if (car_ptr->type & MM_READ_CAR)
     {
 	/* enqueue at the head */
-	car_ptr->vcqnext_ptr = vc_ptr->readq_head;
+	iter_ptr = car_ptr;
+	do
+	{
+	    iter_ptr->vcqnext_ptr = vc_ptr->readq_head;
+	    iter_ptr = iter_ptr->next_ptr;
+	} while (iter_ptr);
 	vc_ptr->readq_head = car_ptr;
 	if (vc_ptr->readq_tail == NULL)
 	    vc_ptr->readq_tail = car_ptr;
@@ -136,11 +147,11 @@ int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	     * by setting their vcqnext_ptrs to the same next car
 	     */
 	    iter_ptr = vc_ptr->writeq_tail;
-	    while (iter_ptr)
+	    do
 	    {
 		iter_ptr->vcqnext_ptr = car_ptr;
 		iter_ptr = iter_ptr->next_ptr;
-	    }
+	    } while (iter_ptr);
 	    /* enqueue only the head car */
 	    /*vc_ptr->writeq_tail->vcqnext_ptr = car_ptr;*/
 	}
@@ -157,11 +168,11 @@ int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	     * by setting their vcqnext_ptrs to the same next car
 	     */
 	    iter_ptr = vc_ptr->readq_tail;
-	    while (iter_ptr)
+	    do
 	    {
 		iter_ptr->vcqnext_ptr = car_ptr;
 		iter_ptr = iter_ptr->next_ptr;
-	    }
+	    } while (iter_ptr);
 	    /* enqueue only the head car */
 	    /*vc_ptr->readq_tail->vcqnext_ptr = car_ptr;*/
 	}
@@ -239,11 +250,11 @@ int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 			vc_ptr->writeq_tail = iter_ptr;
 		    /* make the entire list of cars point to the new vcqnext car */
 		    next_ptr = iter_ptr->vcqnext_ptr->vcqnext_ptr;
-		    while (iter_ptr)
+		    do
 		    {
 			iter_ptr->vcqnext_ptr = next_ptr;
 			iter_ptr = iter_ptr->next_ptr;
-		    }
+		    } while (iter_ptr);
 		    /* make only the head car point to the new vcqnext car */
 		    /*iter_ptr->vcqnext_ptr = iter_ptr->vcqnext_ptr->vcqnext_ptr;*/
 		    break;
@@ -280,11 +291,11 @@ int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 			vc_ptr->readq_tail = iter_ptr;
 		    /* make the entire list of cars point to the new vcqnext car */
 		    next_ptr = iter_ptr->vcqnext_ptr->vcqnext_ptr;
-		    while (iter_ptr)
+		    do
 		    {
 			iter_ptr->vcqnext_ptr = next_ptr;
 			iter_ptr = iter_ptr->next_ptr;
-		    }
+		    } while (iter_ptr);
 		    /* make only the head car point to the new vcqnext car */
 		    /*iter_ptr->vcqnext_ptr = iter_ptr->vcqnext_ptr->vcqnext_ptr;*/
 		    break;

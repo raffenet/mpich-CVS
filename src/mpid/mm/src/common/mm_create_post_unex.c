@@ -70,7 +70,7 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     car_ptr->next_ptr = NULL;
     car_ptr->opnext_ptr = NULL;
     car_ptr->qnext_ptr = NULL;
-    printf("inc cc: read unex data\n");fflush(stdout);
+    /*printf("inc cc: read unex data\n");fflush(stdout);*/
     mm_inc_cc(request_ptr);
 
     buf_ptr = car_ptr->buf_ptr = &request_ptr->mm.buf;

@@ -15,7 +15,8 @@ MM_Car *find_in_queue(MM_Car **find_q_head_ptr, MM_Car **find_q_tail_ptr, MM_Car
     {
 	if ((iter_ptr->msg_header.pkt.u.hdr.context == car_ptr->msg_header.pkt.u.hdr.context) &&
 	    (iter_ptr->msg_header.pkt.u.hdr.tag == car_ptr->msg_header.pkt.u.hdr.tag) &&
-	    (iter_ptr->src == car_ptr->src))
+	    //(iter_ptr->src == car_ptr->src))
+	    (iter_ptr->msg_header.pkt.u.hdr.src == car_ptr->msg_header.pkt.u.hdr.src))
 	{
 	    if (iter_ptr->msg_header.pkt.u.hdr.size > car_ptr->msg_header.pkt.u.hdr.size)
 	    {
@@ -80,15 +81,24 @@ int cq_handle_read_head_car(MM_Car *car_ptr)
 	    mm_enqueue_request_to_send(car_ptr);
 	}
 	MPID_Thread_unlock(MPID_Process.qlock);
+	/* no data to follow this packet so post a receive for another packet */
+	if (car_ptr->vc_ptr->post_read_pkt)
+	    car_ptr->vc_ptr->post_read_pkt(car_ptr->vc_ptr);
 	break;
     case MPID_RNDV_CLEAR_TO_SEND_PKT:
 	/* post the rndv_data head packet for writing */
 	mm_post_rndv_data_send(car_ptr);
 	/*mm_dec_cc(car_ptr->request_ptr);*/ /* decrement once for the header packet? */
 	/*mm_car_free(car_ptr);*/ /* This car doesn't need to be freed because it is static in the vc */
+	/* no data to follow this packet so post a receive for another packet */
+	if (car_ptr->vc_ptr->post_read_pkt)
+	    car_ptr->vc_ptr->post_read_pkt(car_ptr->vc_ptr);
 	break;
     case MPID_RNDV_DATA_PKT:
-	err_printf("Help me, I'm melting.\n");
+	/* decrement the completion counter for the head receive car */
+	mm_dec_cc(car_ptr->msg_header.pkt.u.rdata.receiver_car_ptr->request_ptr);
+	/* enqueue a read for the rndv data */
+	car_ptr->vc_ptr->enqueue_read_at_head(car_ptr->vc_ptr, car_ptr->msg_header.pkt.u.rdata.receiver_car_ptr->next_ptr);
 	break;
     case MPID_RDMA_ACK_PKT:
 	err_printf("Error: RDMA_ACK_PKT not handled yet.\n");
@@ -119,7 +129,7 @@ int cq_handle_read_data_car(MM_Car *car_ptr)
 	if (car_ptr->vc_ptr->post_read_pkt)
 	    car_ptr->vc_ptr->post_read_pkt(car_ptr->vc_ptr);
     }
-    printf("dec cc: read data car\n");fflush(stdout);
+    /*printf("dec cc: read data car\n");fflush(stdout);*/
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
     return MPI_SUCCESS;
@@ -146,7 +156,7 @@ int cq_handle_write_head_car(MM_Car *car_ptr)
     {
 	car_ptr->vc_ptr->enqueue_write_at_head(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
-    printf("dec cc: written head car\n");fflush(stdout);
+    /*printf("dec cc: written head car\n");fflush(stdout);*/
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
     return MPI_SUCCESS;
@@ -159,7 +169,7 @@ int cq_handle_write_data_car(MM_Car *car_ptr)
 	/* enqueue next car to be written before any other pending cars */
 	car_ptr->vc_ptr->enqueue_write_at_head(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
-    printf("dec cc: written data car\n");fflush(stdout);
+    /*printf("dec cc: written data car\n");fflush(stdout);*/
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
     return MPI_SUCCESS;
