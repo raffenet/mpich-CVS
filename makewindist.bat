@@ -63,10 +63,10 @@ echo cd /sandbox/%USERNAME% > sshcmds.txt
 echo mkdir dotintmp >> sshcmds.txt
 echo cd dotintmp >> sshcmds.txt
 if "%2" == "" GOTO EXPORT_HEAD
-echo cvs -d /home/MPI/cvsMaster export -r %2 mpich2all >> sshcmds.txt
+echo cvs -d /home/MPI/cvsMaster export -r %2 mpich2allWithMPE >> sshcmds.txt
 GOTO AFTER_EXPORT_HEAD
 :EXPORT_HEAD
-echo cvs -d /home/MPI/cvsMaster export -r HEAD mpich2all >> sshcmds.txt
+echo cvs -d /home/MPI/cvsMaster export -r HEAD mpich2allWithMPE >> sshcmds.txt
 :AFTER_EXPORT_HEAD
 echo cd mpich2 >> sshcmds.txt
 echo maint/updatefiles >> sshcmds.txt
