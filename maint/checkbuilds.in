@@ -5,9 +5,9 @@
 # Configure and build mpich2 with some of the options
 #
 # Set default values
-$projects_dir = "/home/gropp/projects";
-if (! -d $projects_dir && -d "/homes/gropp/projects" ) {
-    $projects_dir = "/homes/gropp/projects";
+$projects_dir = "/home/gropp/projects/software";
+if (! -d $projects_dir && -d "/homes/gropp/projects/software" ) {
+    $projects_dir = "/homes/gropp/projects/software";
 }
 $srcdir  = "/home/MPI/testing/mpich2/mpich2";
 $logname = $ENV{"LOGNAME"};
