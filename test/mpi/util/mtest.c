@@ -325,6 +325,7 @@ static int MTestTypeVectorCheckbuf( MTestDatatype *mtype )
     return err;
 }
 #endif
+#if 0
 /* ------------------------------------------------------------------------ */
 /* Datatype routines for indexed block datatypes                            */
 /* ------------------------------------------------------------------------ */
@@ -453,7 +454,7 @@ static int MTestTypeIndexCheckbuf( MTestDatatype *mtype )
     }
     return err;
 }
-
+#endif /* 0 */
 /* ------------------------------------------------------------------------ */
 /* Routines to select a datatype and associated buffer create/fill/check    */
 /* routines                                                                 */
