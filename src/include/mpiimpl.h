@@ -189,8 +189,8 @@ typedef MPIU_INT64_T int64_t;
 /* Use these *only* for debugging output intended for the implementors
    and maintainers of MPICH.  Do *not* use these for any output that
    general users may normally see.  Use either the error code creation
-   routines for error messages or msg_printf etc. for general messages 
-   (msg_printf will go through gettext).  
+   routines for error messages or MPIU_msg_printf etc. for general messages 
+   (MPIU_msg_printf will go through gettext).  
 
    FIXME: Document all of these macros
 */
@@ -2108,6 +2108,10 @@ void MPIR_Err_get_string(int, char *);
 void MPIR_Err_print_stack(FILE *, int);
 int MPIR_Err_set_msg( int code, const char *msg_string );
 extern int MPIR_Err_print_stack_flag;
+
+#define MPIR_ERR_CLASS_MASK 0x0000007f
+#define MPIR_ERR_CLASS_SIZE 128
+#define MPIR_ERR_GET_CLASS(mpi_errno_) (mpi_errno_ & MPIR_ERR_CLASS_MASK)
 
 /* For no error checking, we could define MPIR_Nest_incr/decr as empty */
 #ifdef MPICH_SINGLE_THREADED
