@@ -106,7 +106,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	
 	/* XXX - what other information needs to go into the request? */
 	
-	pkt->type = MPIDI_CH3_PKT_EAGER_SEND;
+	pkt->type = MPIDI_CH3_PKT_RNDV_REQ_TO_SEND;
 	pkt->match.tag = tag;
 	pkt->match.rank = rank;
 	pkt->match.context_id = comm->context_id + context_offset;
