@@ -28,7 +28,7 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	rreq->sc.iov_offset = 0;
 	while (rreq->sc.iov_offset < rreq->ch3.iov_count)
 	{
-	    if (rreq->ch3.iov[rreq->sc.iov_offset].MPID_IOV_LEN <= nb)
+	    if ((sock_size_t)rreq->ch3.iov[rreq->sc.iov_offset].MPID_IOV_LEN <= nb)
 	    {
 		nb -= rreq->ch3.iov[rreq->sc.iov_offset].MPID_IOV_LEN;
 		rreq->sc.iov_offset += 1;
