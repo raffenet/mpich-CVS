@@ -15,7 +15,7 @@
 
 #ifdef HAVE_WINDOWS_H
 
-static int GetLocalIPs(unsigned int *pIP, int max)
+static int GetLocalIPs(int32_t *pIP, int max)
 {
     char hostname[100], **hlist;
     struct hostent *h = NULL;
@@ -35,7 +35,7 @@ static int GetLocalIPs(unsigned int *pIP, int max)
     hlist = h->h_addr_list;
     while (*hlist != NULL && n<max)
     {
-	pIP[n] = *(unsigned int*)(*hlist);
+	pIP[n] = *(int32_t*)(*hlist);
 
 	/*{	
 	unsigned int a, b, c, d;
@@ -86,7 +86,7 @@ static int GetLocalIPs(unsigned int *pIP, int max)
 #include <errno.h>
 #endif
 
-static int GetLocalIPs(unsigned int *pIP, int max)
+static int GetLocalIPs(int32_t *pIP, int max)
 {
     int					fd;
     char *				buf_ptr;
@@ -197,7 +197,7 @@ static int GetLocalIPs(unsigned int *pIP, int max)
 
 int MPIDI_CH3I_Get_business_card(char *value, int length)
 {
-    unsigned int local_ip[MAX_NUM_NICS];
+    int32_t local_ip[MAX_NUM_NICS];
     unsigned int a, b, c, d;
     int num_nics, i;
     char *value_orig;
@@ -223,7 +223,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 	if (a != 127)
 	{
 	    h = gethostbyaddr((const char *)&local_ip[i], sizeof(int), AF_INET);
-	    if (h->h_name != NULL)
+	    if (h && h->h_name != NULL)
 		value += sprintf(value, "%s:%u.%u.%u.%u:%d:", 
 				 h->h_name, 
 				 a, b, c, d,
