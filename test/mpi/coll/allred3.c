@@ -60,12 +60,14 @@ void uop( void *cinPtr, void *coutPtr, int *count, MPI_Datatype *dtype )
 }
 
 /* Initialize the integer matrix as a permutation of rank with rank+1.
-   If we call this matrix P_r, we know that product of P_0 P_1 ... P_{size-1}
-   is the identity I.
+   If we call this matrix P_r, we know that product of P_0 P_1 ... P_{size-2}
+   is the the matrix representing the permutation that shifts left by one.
+   As the final matrix (in the size-1 position), we use the matrix that
+   shifts RIGHT by one
 */   
 static void initMat( MPI_Comm comm, int mat[] )
 {
-    int i, size, rank;
+    int i, j, size, rank;
     int offset;
     
     MPI_Comm_rank( comm, &rank );
@@ -76,29 +78,43 @@ static void initMat( MPI_Comm comm, int mat[] )
 	mat[i] = 0;
     }
 
-    for (i=0; i<size; i++) {
-	if (i == rank) {
-	    offset = ((i+1)%size) + i * size;
-	    assert(offset < max_offset);
-	    mat[offset] = 1;
+    if (rank < size-1) {
+	/* Create the permutation matrix that exchanges r with r+1 */
+	for (i=0; i<size; i++) {
+	    if (i == rank) {
+		offset = ((i+1)%size) + i * size;
+		assert(offset < max_offset);
+		mat[offset] = 1;
+	    }
+	    else if (i == ((rank + 1)%size)) {
+		offset = ((i+size-1)%size) + i * size;
+		assert(offset < max_offset);
+		mat[offset] = 1;
+	    }
+	    else {
+		offset = i+i*size;
+		assert(offset < max_offset);
+		mat[offset] = 1;
+	    }
 	}
-	else if (i == ((rank + 1)%size)) {
-	    offset = ((i+size-1)%size) + i * size;
-	    assert(offset < max_offset);
-	    mat[offset] = 1;
+    }
+    else {
+	/* Create the permutation matrix that shifts right by one */
+	for (i=0; i<size; i++) {
+	    for (j=0; j<size; j++) {
+		offset = j + i * size;  /* location of c(i,j) */
+		mat[offset] = 0;
+		if ( ((j-i+size)%size) == 1 ) mat[offset] = 1;
+	    }
 	}
-	else {
-	    offset = i+i*size;
-	    assert(offset < max_offset);
-	    mat[offset] = 1;
-	}
+	
     }
 }
 
 /* Compare a matrix with the identity matrix */
 static int isIdentity( MPI_Comm comm, int mat[] )
 {
-    int i, j, size, rank, errs = 0;
+    int i, j, size, rank, lerrs = 0;
     int offset;
     
     MPI_Comm_rank( comm, &rank );
@@ -110,8 +126,8 @@ static int isIdentity( MPI_Comm comm, int mat[] )
 		offset = j+i*size;
 		assert(offset < max_offset);
 		if (mat[offset] != 1) {
-		    errs++;
-		    if (errs < 10) {
+		    lerrs++;
+		    if (errs + lerrs< 10) {
 			printf( "[%d] mat[%d,%d] = %d, expected 1 for comm %s\n", 
 				rank, i,j, mat[offset], MTestGetIntracommName() );
 		    }
@@ -121,8 +137,8 @@ static int isIdentity( MPI_Comm comm, int mat[] )
 		offset = j+i*size;
 		assert(offset < max_offset);
 		if (mat[offset] != 0) {
-		    errs++;
-		    if (errs < 10) {
+		    lerrs++;
+		    if (errs + lerrs< 10) {
 			printf( "[%d] mat[%d,%d] = %d, expected 0 for comm %s\n", 
 				rank, i,j, mat[offset], MTestGetIntracommName() );
 		    }
@@ -130,7 +146,7 @@ static int isIdentity( MPI_Comm comm, int mat[] )
 	    }
 	}
     }
-    return errs;
+    return lerrs;
 }
 
 int main( int argc, char *argv[] )
