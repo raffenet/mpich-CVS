@@ -1109,7 +1109,7 @@ define(PAC_FUNC_STRERROR,[
      }
 EOF
   rm -f a.out
-  $CC $USER_CFLAGS conftest.c > /dev/null 2>&1
+  $CC $USER_CFLAGS conftest.c >> config.log 2>&1
   if test -x a.out ; then
      AC_MSG_RESULT(yes)
      AC_DEFINE(__HAVE_STRERROR)
@@ -1128,7 +1128,7 @@ changequote(,)
 EOF
 changequote([,])
      rm -f a.out
-     $CC $USER_CFLAGS conftest.c > /dev/null 2>&1
+     $CC $USER_CFLAGS conftest.c > config.log 2>&1
      if test -x a.out ; then
         AC_MSG_RESULT(yes)
         AC_DEFINE(__HAVE_SYSERRLIST)

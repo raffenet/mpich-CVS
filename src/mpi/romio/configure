@@ -1,7 +1,4 @@
-
-
-
-#!/bin/sh
+#! /bin/sh
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf.
 # Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
@@ -302,6 +299,7 @@ esac
 done
 
 #
+rm -f config.log
 trap 'rm -fr conftest* confdefs* core; exit 1' 1 3 15
 trap 'rm -f confdefs*' 0
 
@@ -3000,6 +2998,126 @@ fi
 
    fi
 fi
+#
+
+  if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking for strerror()""... $ac_c"
+else
+echo $ac_n "checking for strerror()""... $ac_c" 1>&1
+fi
+  rm -f conftest.c
+  cat > conftest.c <<EOF
+#include <string.h>
+     main()
+     {
+        char *s = strerror(5);
+     }
+EOF
+  rm -f a.out
+  $CC $USER_CFLAGS conftest.c >> config.log 2>&1
+  if test -x a.out ; then
+     if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""yes"
+else
+echo "$ac_t""yes" 1>&1
+fi
+     
+{
+test -n "$verbose" && \
+echo "	defining __HAVE_STRERROR"
+echo "#define" __HAVE_STRERROR 1 >> confdefs.h
+DEFS="$DEFS -D__HAVE_STRERROR=1"
+}
+
+  else
+     if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""no"
+else
+echo "$ac_t""no" 1>&1
+fi
+     if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking for sys_errlist""... $ac_c"
+else
+echo $ac_n "checking for sys_errlist""... $ac_c" 1>&1
+fi
+     rm -f conftest.c
+
+     cat > conftest.c <<EOF
+#include <stdio.h>
+        main()
+        {
+           extern char *sys_errlist[];
+	   printf("%s\n", sys_errlist[34]);
+        }
+EOF
+
+     rm -f a.out
+     $CC $USER_CFLAGS conftest.c > config.log 2>&1
+     if test -x a.out ; then
+        if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""yes"
+else
+echo "$ac_t""yes" 1>&1
+fi
+        
+{
+test -n "$verbose" && \
+echo "	defining __HAVE_SYSERRLIST"
+echo "#define" __HAVE_SYSERRLIST 1 >> confdefs.h
+DEFS="$DEFS -D__HAVE_SYSERRLIST=1"
+}
+
+     else
+        if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""no"
+else
+echo "$ac_t""no" 1>&1
+fi
+     fi
+  fi
+  rm -f a.out conftest.c
+
+#
 # Find the home directory if not specified
 if test "X$srcdir" != "X." -a -s $srcdir/mpi-io/Makefile.in ; then 
     ROMIO_HOME_TRIAL=$srcdir
@@ -3218,125 +3336,6 @@ if test $MPI != "mpich" ; then
    CFLAGS="$CFLAGS -D__PRINT_ERR_MSG"
 fi
 #
-
-  if test -z "$ac_echo_n" ; then
-ac_echo_n=yes
-if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
-  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
-    ac_n= ac_c='
-' ac_t='	'
-  else
-    ac_n=-n ac_c= ac_t=
-  fi
-else
-  ac_n= ac_c='\c' ac_t=
-fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
-
-fi
-if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo $ac_n "checking for strerror()""... $ac_c"
-else
-echo $ac_n "checking for strerror()""... $ac_c" 1>&1
-fi
-  rm -f conftest.c
-  cat > conftest.c <<EOF
-#include <string.h>
-     main()
-     {
-        char *s = strerror(5);
-     }
-EOF
-  rm -f a.out
-  $CC $USER_CFLAGS conftest.c > /dev/null 2>&1
-  if test -x a.out ; then
-     if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo "$ac_t""yes"
-else
-echo "$ac_t""yes" 1>&1
-fi
-     
-{
-test -n "$verbose" && \
-echo "	defining __HAVE_STRERROR"
-echo "#define" __HAVE_STRERROR 1 >> confdefs.h
-DEFS="$DEFS -D__HAVE_STRERROR=1"
-}
-
-  else
-     if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo "$ac_t""no"
-else
-echo "$ac_t""no" 1>&1
-fi
-     if test -z "$ac_echo_n" ; then
-ac_echo_n=yes
-if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
-  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
-    ac_n= ac_c='
-' ac_t='	'
-  else
-    ac_n=-n ac_c= ac_t=
-  fi
-else
-  ac_n= ac_c='\c' ac_t=
-fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
-
-fi
-if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo $ac_n "checking for sys_errlist""... $ac_c"
-else
-echo $ac_n "checking for sys_errlist""... $ac_c" 1>&1
-fi
-     rm -f conftest.c
-
-     cat > conftest.c <<EOF
-#include <stdio.h>
-        main()
-        {
-           extern char *sys_errlist[];
-	   printf("%s\n", sys_errlist[34]);
-        }
-EOF
-
-     rm -f a.out
-     $CC $USER_CFLAGS conftest.c > /dev/null 2>&1
-     if test -x a.out ; then
-        if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo "$ac_t""yes"
-else
-echo "$ac_t""yes" 1>&1
-fi
-        
-{
-test -n "$verbose" && \
-echo "	defining __HAVE_SYSERRLIST"
-echo "#define" __HAVE_SYSERRLIST 1 >> confdefs.h
-DEFS="$DEFS -D__HAVE_SYSERRLIST=1"
-}
-
-     else
-        if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo "$ac_t""no"
-else
-echo "$ac_t""no" 1>&1
-fi
-     fi
-  fi
-  rm -f a.out conftest.c
-
-#
 if test -z "$TEST_CC" ; then
    TEST_CC="$CC"
 fi
@@ -3537,7 +3536,7 @@ for file in .. ${CONFIG_FILES}; do if test "x$file" != x..; then
   echo creating $file
   rm -f $file
   echo "# Generated automatically from `echo $file|sed 's|.*/||'`.in by configure." > $file
-  sed -e "
+cat $top_srcdir/${file}.in | sed -e "
 $prsub
 $extrasub
 s%@VPATH@%$VPATH%g
@@ -3579,7 +3578,7 @@ s%@BUILD_MPI_ARRAY@%$BUILD_MPI_ARRAY%g
 s%@DEFINE_MPI_OFFSET@%$DEFINE_MPI_OFFSET%g
 s%@MPI_FINFO1@%$MPI_FINFO1%g
 s%@MPI_FINFO2@%$MPI_FINFO2%g
-s%@MPI_FINFO3@%$MPI_FINFO3%g
+s%@MPI_FINFO3@%$MPI_FINFO3%g" | sed -e "
 s%@MPI_FINFO4@%$MPI_FINFO4%g
 s%@MPI_FARRAY1@%$MPI_FARRAY1%g
 s%@MPI_FARRAY2@%$MPI_FARRAY2%g
@@ -3602,14 +3601,14 @@ s%@MPIRUN@%$MPIRUN%g
 s%@FORTRAN_TEST@%$FORTRAN_TEST%g
 s%@LIBS@%$LIBS%g
 s%@DEFS@%$DEFS%
-" $top_srcdir/${file}.in >> $file
+" >> $file
 fi; done
 
 
 exit 0
 EOF
 chmod +x config.status
-${CONFIG_SHELL-/bin/sh} config.status
+${CONFIG_SHELL-/bin/sh} ./config.status
 
 if test "$NOF77" = 0; then
     CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/pfcoll_test.f test/fperf.f"
