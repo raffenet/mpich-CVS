@@ -324,19 +324,22 @@ save_IFS="$IFS"
 IFS=","
 for option in $enable_g ; do
     case "$option" in 
-    no|non)
-    ;;
-    handle)
-    AC_DEFINE(MPICH_DEBUG_HANDLES,,[Define to enable handle checking])
-    ;;
-    mem|all|yes)
-    AC_DEFINE(USE_MEMORY_TRACING,,[Define to enable memory tracing])
-    enable_g_mem=yes
-    CFLAGS="$CFLAGS -g"
-    ;;
-    *)
-    AC_MSG_WARN([Unknown value $enable_g for enable-g])
-    ;;
+        debug|dbg)
+	CFLAGS="$CFLAGS -g"
+	;;
+        no|non)
+	;;
+	handle)
+	AC_DEFINE(MPICH_DEBUG_HANDLES,,[Define to enable handle checking])
+	;;
+	mem|all|yes)
+	AC_DEFINE(USE_MEMORY_TRACING,,[Define to enable memory tracing])
+	enable_g_mem=yes
+	CFLAGS="$CFLAGS -g"
+	;;
+	*)
+	AC_MSG_WARN([Unknown value $enable_g for enable-g])
+	;;
     esac
 done
 IFS="$save_IFS"
@@ -886,9 +889,12 @@ AC_SUBST(EXTRA_STATUS_DECL)
 dnl
 dnl Get the value of MPI_MAX_PROCESSOR_NAME
 if test -s src/mpid/$device_name/Makefile ; then
-    maxproc="`${MAKE} -f src/mpid/$device_name/Makefile echomaxprocname`"
+    maxproc="`(cd src/mpid/$device_name ; ${MAKE} echomaxprocname)`"
     # Note: if this is more than one line, there will be problems with
-    # the final step.  
+    # the final step.  That may happen if MAKE is acting in some wierd
+    # way, such as echoing all directory changes (even if the only
+    # directory change is a result of the -f command !).  To avoid that,
+    # we just run make in the device directory
 fi
 if test -z "$maxproc" ; then
     maxproc=128

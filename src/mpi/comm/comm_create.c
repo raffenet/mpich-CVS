@@ -172,13 +172,13 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	       rank in the input communicator */
 	    MPID_VCR_Dup( comm_ptr->vcr[mapping[i]], &newcomm_ptr->vcr[i] );
 	    
-	    printf( "[%d] mapping[%d] = %d\n", comm_ptr->rank, i, mapping[i] );
+	    /* printf( "[%d] mapping[%d] = %d\n", comm_ptr->rank, i, mapping[i] ); */
 	}
 
 	/* Notify the device of this new communicator */
-	printf( "about to notify device\n" );
+	/*printf( "about to notify device\n" ); */
 	MPID_Dev_comm_create_hook( newcomm_ptr );
-	printf( "about to return from comm_create\n" );
+	/*printf( "about to return from comm_create\n" ); */
 	
 	*newcomm = newcomm_ptr->handle;
     }
