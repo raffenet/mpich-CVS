@@ -6,31 +6,30 @@
 
 #include "mpidi_ch3_impl.h"
 
-static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, int iov_offset, int nb)
-{
-    int i;
-    MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST);
-    
-    /* memcpy(sreq->ch3.iov, iov, iov_count * sizeof(MPID_IOV)); */
-    for (i = 0; i < iov_count; i++)
-    {
-	sreq->ch3.iov[i] = iov[i];
-    }
-    if (iov_offset == 0)
-    {
-	/* memcpy(&sreq->ssm.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */
-	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));
-	sreq->ssm.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
-	sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->ssm.pkt;
-    }
-    sreq->ch3.iov[iov_offset].MPID_IOV_BUF = (char *) sreq->ch3.iov[iov_offset].MPID_IOV_BUF + nb;
-    sreq->ch3.iov[iov_offset].MPID_IOV_LEN -= nb;
-    sreq->ssm.iov_offset = iov_offset;
-    sreq->ch3.iov_count = iov_count;
-
-    MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST);
+/*static void update_request(MPID_Request * sreq, MPID_IOV * iov, int count, int offset, int nb)*/
+#undef update_request
+#define update_request(sreq, iov, count, offset, nb) \
+{ \
+    int i; \
+    MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST); \
+    MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST); \
+    /* memcpy(sreq->ch3.iov, iov, count * sizeof(MPID_IOV)); */ \
+    for (i = 0; i < count; i++) \
+    { \
+	sreq->ch3.iov[i] = iov[i]; \
+    } \
+    if (offset == 0) \
+    { \
+	/* memcpy(&sreq->ssm.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */ \
+	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t)); \
+	sreq->ssm.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
+	sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->ssm.pkt; \
+    } \
+    sreq->ch3.iov[offset].MPID_IOV_BUF = (char *) sreq->ch3.iov[offset].MPID_IOV_BUF + nb; \
+    sreq->ch3.iov[offset].MPID_IOV_LEN -= nb; \
+    sreq->ssm.iov_offset = offset; \
+    sreq->ch3.iov_count = count; \
+    MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST); \
 }
 
 #undef FUNCNAME
@@ -39,6 +38,7 @@ static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, i
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
@@ -56,7 +56,6 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
 	    int nb;
-	    int rc;
 
 	    MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
 	    
@@ -67,13 +66,37 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
                as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
 	    if (vc->ssm.bShm)
 	    {
-		rc = MPIDI_CH3I_SHM_writev(vc, iov, n_iov, &nb);
+		mpi_errno = MPIDI_CH3I_SHM_writev(vc, iov, n_iov, &nb);
 	    }
 	    else
 	    {
-		rc = sock_writev(vc->ssm.sock, iov, n_iov, &nb);
+		mpi_errno = sock_writev(vc->ssm.sock, iov, n_iov, &nb);
 	    }
-	    if (rc == SOCK_SUCCESS)
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ssmwritev", 0);
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
+		return mpi_errno;
+#if 0
+		if (mpi_errno == SOCK_ERR_NOMEM)
+		{
+		    MPIDI_DBG_PRINTF((55, FCNAME, "write failed, out of memory"));
+		    sreq->status.MPI_ERROR = MPIR_ERR_MEMALLOCFAILED;
+		}
+		else
+		{
+		    MPIDI_DBG_PRINTF((55, FCNAME, "write failed, rc=%d", mpi_errno));
+		    /* Connection just failed.  Mark the request complete and return an error. */
+		    vc->ssm.state = MPIDI_CH3I_VC_STATE_FAILED;
+		    /* TODO: Create an appropriate error message based on the return value (rc) */
+		    sreq->status.MPI_ERROR = MPI_ERR_INTERN;
+		    /* MT - CH3U_Request_complete performs write barrier */
+		    MPIDI_CH3U_Request_complete(sreq);
+		}
+#endif
+	    }
+
+	    if (nb > 0)
 	    {
 		int offset = 0;
 
@@ -110,19 +133,23 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 		    }
 		}
 	    }
-	    else if (rc == SOCK_ERR_NOMEM)
+	    else if (nb == 0)
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "write failed, out of memory"));
-		sreq->status.MPI_ERROR = MPIR_ERR_MEMALLOCFAILED;
+		MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
+		update_request(sreq, iov, n_iov, 0, 0);
+		MPIDI_CH3I_SendQ_enqueue(vc, sreq);
+		if (vc->ssm.bShm)
+		    vc->ssm.send_active = sreq;
+		else
+		    MPIDI_CH3I_SSM_VC_post_write(vc, sreq);
 	    }
 	    else
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "write failed, rc=%d", rc));
 		/* Connection just failed.  Mark the request complete and return an error. */
 		vc->ssm.state = MPIDI_CH3I_VC_STATE_FAILED;
-		/* TODO: Create an appropriate error message based on the return value (rc) */
+		/* TODO: Create an appropriate error message based on the value of errno */
 		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
-		 /* MT - CH3U_Request_complete performs write barrier */
+		/* MT - CH3U_Request_complete performs write barrier */
 		MPIDI_CH3U_Request_complete(sreq);
 	    }
 	}
