@@ -30,5 +30,12 @@ typedef struct MPIR_Topology {
 
 MPIR_Topology *MPIR_Topology_get( MPID_Comm * );
 int MPIR_Topology_put( MPID_Comm *, MPIR_Topology * );
+int MPIR_Cart_create( const MPID_Comm *, int, const int [], 
+		      const int [], int, MPI_Comm * );
+int MPIR_Graph_create( const MPID_Comm *, int, 
+		       const int[], const int[], int, 
+		       MPI_Comm *);
+int MPIR_Dims_create( int, int, int * );
+int MPIR_Graph_map( const MPID_Comm *, int, const int[], const int[], int* );
 
 #define MAX_CART_DIM 16

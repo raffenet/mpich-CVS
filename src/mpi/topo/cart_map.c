@@ -92,7 +92,6 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     static const char FCNAME[] = "MPI_Cart_map";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    int i, nranks, rank, size;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_MAP);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();

@@ -50,25 +50,35 @@ int MPIR_Cart_create( const MPID_Comm *comm_ptr, int ndims, const int dims[],
 			 MPI_ERR_ARG, "**cartdim",
 			 "**cartdim %d %d", comm_ptr->remote_size, newsize);
 
+
     /* Create a new communicator as a duplicate of the input communicator
        (but do not duplicate the attributes) */
-
-    mpi_errno = MPIR_Comm_copy( (MPID_Comm *)comm_ptr, newsize, &newcomm_ptr );
-    if (mpi_errno) goto fn_fail;
-
     if (reorder) {
+	MPI_Comm ncomm;
 	/* Allow the cart map routine to remap the assignment of ranks to 
 	   processes */
 	MPIR_Nest_incr();
-	mpi_errno = NMPI_Cart_map( comm_ptr->handle, ndims, dims, periods, 
-				   &rank );
+	mpi_errno = NMPI_Cart_map( comm_ptr->handle, ndims, (int *)dims, 
+				   (int *)periods, &rank );
+	/* Create the new communicator with split, since we need to reorder
+	   the ranks (including the related internals, such as the connection
+	   tables */
+	if (mpi_errno == 0) {
+	    mpi_errno = NMPI_Comm_split( comm_ptr->handle, 
+				rank == MPI_UNDEFINED ? MPI_UNDEFINED : 1,
+				rank, &ncomm );
+	    if (!mpi_errno) {
+		MPID_Comm_get_ptr( ncomm, newcomm_ptr );
+	    }
+	}
 	MPIR_Nest_decr();
-	if (rank == MPI_UNDEFINED)
-	    rank = comm_ptr->rank;
     }
     else {
+	mpi_errno = MPIR_Comm_copy( (MPID_Comm *)comm_ptr, newsize, 
+				    &newcomm_ptr );
 	rank   = comm_ptr->rank;
     }
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* If this process is not in the resulting communicator, return a 
        null communicator and exit */
@@ -161,10 +171,8 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 		    int reorder, MPI_Comm *comm_cart)
 {
     static const char FCNAME[] = "MPI_Cart_create";
-    int mpi_errno = MPI_SUCCESS;
-    int newsize, rank, nranks, i;
-    MPID_Comm *comm_ptr = NULL, *newcomm_ptr;
-    MPIR_Topology *cart_ptr;
+    int       mpi_errno = MPI_SUCCESS;
+    MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_CREATE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
