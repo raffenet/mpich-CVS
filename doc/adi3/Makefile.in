@@ -86,7 +86,7 @@ adi3man/adi3man.htm: adi3man.tex adi3.c adi3.h Makefile
 #	tohtml -default adi3new.tex
 #	tohtml -default adi3new.tex
 
-ADI3NEWFILES = adi3new.tex adi3.c adi3.h adi-ov.eps blockdiag.eps layers.eps mpiddir.eps Makefile adi3man/MPID_Init.tex refman.sty
+ADI3NEWFILES = adi3new.tex adi3.c adi3.h adi-ov.eps blockdiag.eps layers.eps Makefile adi3man/MPID_Init.tex refman.sty
 # We simply copy the eps files in the VPATH case
 adi3new.ps: $(ADI3NEWFILES)
 	if [ "`(pwd)`" != "`(cd $(srcdir) && pwd)`" ] ; then \
@@ -196,8 +196,6 @@ lists: findmod
 	-fig2dev -L eps -l landscape $*.fig > $*.eps
 	if [ ! -s $*.eps ] ; then \
 		fig2dev -L ps -l landscape $*.fig > $*.eps ; fi
-
-goals.dvi: goals.tex adi-ov.eps
 
 install-devdocs: adi3new.pdf tcpadi3.pdf
 	if [ ! -d "$(DEV_INSTALL_PREFIX)" ] ; then \

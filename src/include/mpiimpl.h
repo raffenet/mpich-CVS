@@ -2851,8 +2851,9 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr);
   
   The progress state variable must be specific to the thread calling it.  If at
   all possible, the state should be declared as an auto variable and thus
-  allocated on thread's stack.  Thread specific storage could be used instead,
-  but doing such would incur additional (and typically unnecessary) overhead.
+  allocated on the stack of the current thread.  Thread specific storage could
+  be used instead, but doing such would incur additional (and typically
+  unnecessary) overhead.
   
   This routine is needed to properly implement blocking tests when
   multithreaded progress engines are used.  In a single-threaded implementation
