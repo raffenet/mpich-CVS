@@ -385,11 +385,11 @@ def mpdrun():
 	            msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
 	            mpd_send_one_msg(manSocket,msgToSend)
                     # next code because no longer exiting
-	            del socketsToSelect[manSocket]
-	            # manSocket.close()
-                    tempManSocket = manSocket
-	            manSocket = 0
-                    done += 1
+	            ### del socketsToSelect[manSocket]
+	            ### # manSocket.close()
+                    ### tempManSocket = manSocket
+	            ### manSocket = 0
+                    ### done += 1
 	        # exit(-1)
 	    elif errmsg.args == 'SIGTSTP':
 	        if manSocket:
