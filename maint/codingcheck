@@ -35,6 +35,7 @@ $line_num = 0;
 $allowRomioNames = 1;
 $withinRomio = 0;
 $skipTest = 1; 
+$removeFileMissingCopyright = 0;
 # Check for special args
 @files = ();
 #
@@ -60,6 +61,11 @@ foreach $arg (@ARGV) {
 	$checkFunctions = 0;
 	$checkDefines   = 0;
 	$checkStyle     = 0;
+	# Remove files that are missing a copyright so that the 
+        # distribution can continue
+        # DO NOT CHANGE THIS.  Files should have a copyright or be on the
+        # list of foreign files.
+	$removeFileMissingCopyright = 1;
     }
     else {
 	print "Adding $arg to files\n" if $debug;
@@ -369,11 +375,14 @@ foreach $file (@files) {
     }
 }
 
-if ($missingCopyright) {
+if ($missingCopyright && $removeFileMissingCopyright == 0) {
     print STDERR "Some files are missing the copyright statement\n";
     exit 1;
 }
 
+exit 0;
+
+# ----------------------------------------------------------------------------
 sub ProcessDir {
     my $DIR = "DIR$depth"; $depth++;
     my $dir = $_[0]; $dir =~ s/\/$//;
@@ -548,6 +557,10 @@ sub ReportOnPreamble {
 	&PrintCurrentDirectory;
 	print "Copyright statement missing from $filename\n";
 	$missingCopyright ++;
+	if ($removeFileMissingCopyright) {
+	    print "Removing $filename\n";
+	    unlink $filename;
+	}
     }
 }
 # --------------------------------------------------------------------------
