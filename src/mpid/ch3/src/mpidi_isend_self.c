@@ -61,6 +61,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	rreq->status.count = data_sz;
 	MPID_Request_set_complete(rreq);
 	MPID_Request_release(rreq);
+	/* sreq has never been seen by the user or outside this thread, so it is safe to reset ref_count and cc */
 	sreq->ref_count = 1;
 	sreq->cc = 0;
     }
@@ -74,12 +75,16 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	{
 	    MPIDI_DBG_PRINTF((15, FCNAME, "ready send unable to find matching recv req"));
 	    sreq->status.MPI_ERROR = MPI_ERR_UNKNOWN; /* FIXME */
-	    MPID_Request_set_complete(sreq);
-	    /* sreq is released by matching MPI_Recv/Irecv() */
+	    rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN; /* FIXME */
+	    rreq->status.count = 0;
+	    /* sreq has never been seen by the user or outside this thread, so it is safe to reset ref_count and cc */
+	    sreq->ref_count = 1;
+	    sreq->cc = 0;
 	}
 	    
 	MPIDI_Request_set_msg_type(rreq, MPIDI_REQUEST_SELF_MSG);
 	rreq->partner_request = sreq;
+	rreq->ch3.sender_req_id = sreq->handle;
     }
 
   fn_exit:

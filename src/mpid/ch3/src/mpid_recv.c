@@ -128,7 +128,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 	{
 	    MPID_Request * const sreq = rreq->partner_request;
 
-	    if (MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_RSEND)
+	    if (sreq != NULL)
 	    {
 		MPIDI_msg_sz_t data_sz;
 		
@@ -136,11 +136,12 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 				       buf, count, datatype, &data_sz, &rreq->status.MPI_ERROR);
 		rreq->status.count = data_sz;
 		MPID_Request_set_complete(sreq);
+		MPID_Request_release(sreq);
 	    }
 	    else
 	    {
-		rreq->status.count = 0;
-		rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN; /* FIXME */
+		/* The sreq is missing which means an error occurred.  rreq->status.MPI_ERROR should have been set when the
+		   error was detected. */
 	    }
 
 	    if (status != MPI_STATUS_IGNORE)
@@ -148,9 +149,9 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 		*status = rreq->status;
 	    }
 
-	    MPID_Request_release(sreq);
-	    MPID_Request_set_complete(rreq);
-	    MPID_Request_release(rreq);
+	    /* no other thread can possibly be waiting on rreq, so it is safe to reset ref_count and cc */
+	    rreq->cc = 0;
+	    rreq->ref_count = 1;
 	}
 	else
 	{
