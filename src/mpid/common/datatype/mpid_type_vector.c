@@ -137,6 +137,7 @@ int MPID_Type_vector(int count,
 	    dlp->loop_params.v_t.stride = stride * oldsize; /* convert to bytes */
 	dlp->el_extent                  = oldsize;
 	dlp->el_size                    = oldsize;
+	dlp->el_type                    = oldtype;
     }
     else /* user-defined base type */ {
 	int new_loopsize;
@@ -199,6 +200,7 @@ int MPID_Type_vector(int count,
 	    dlp->loop_params.v_t.stride = stride * old_dtp->extent; /* convert to bytes */
 	dlp->el_extent                  = old_dtp->extent;
 	dlp->el_size                    = old_dtp->size;
+	dlp->el_type                    = old_dtp->eltype;
 
 	/* copy in old dataloop */
 	curpos = (char *) dlp; /* NEED TO PAD? */

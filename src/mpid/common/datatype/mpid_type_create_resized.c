@@ -67,6 +67,7 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 	dlp->loop_params.c_t.count      = 1;
 	dlp->el_size                    = oldsize;
 	dlp->el_extent                  = extent;
+	dlp->el_type                    = oldtype;
     }
     else /* user-defined base type */ {
 	MPID_Datatype *old_dtp;
@@ -101,6 +102,7 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 	/* make a copy of the dataloop from the old type (no changes) */
 	curpos = (char *) dlp;
 	MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
+	dlp->handle = new_dtp->handle;
     }
 
     *newtype_p = new_dtp->handle;

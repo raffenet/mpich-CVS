@@ -85,6 +85,7 @@ int MPID_Type_contiguous(int count,
 	dlp->loop_params.c_t.count      = count;
 	dlp->el_size                    = oldsize;
 	dlp->el_extent                  = oldsize;
+	dlp->el_type                    = oldtype;
     }
     else /* user-defined base type */ {
 	int new_loopsize;
@@ -129,6 +130,7 @@ int MPID_Type_contiguous(int count,
 	dlp->loop_params.c_t.count = count;
 	dlp->el_extent             = old_dtp->extent;
 	dlp->el_size               = old_dtp->size;
+	dlp->el_type               = old_dtp->eltype;
 
 	/* copy in old dataloop */
 	curpos = (char *) dlp; /* NEED TO PAD? */

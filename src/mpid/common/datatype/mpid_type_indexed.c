@@ -160,6 +160,7 @@ int MPID_Type_indexed(int count,
 	    dlp->handle    = new_dtp->handle;
 	    dlp->el_extent = el_extent;
 	    dlp->el_size   = el_size;
+	    dlp->el_type   = new_dtp->eltype;
 
 	    /* count up total size of data */
 	    for (i=0; i < count; i++) tot_blks += blocklength_array[i];
@@ -289,6 +290,7 @@ int MPID_Type_indexed(int count,
 	    dlp->handle    = new_dtp->handle; /* filled in by MPIU_Handle_obj_alloc */
 	    dlp->el_extent = el_extent;
 	    dlp->el_size   = el_size;
+	    dlp->el_type   = new_dtp->eltype;
 	    
 	    /* count up total size of data */
 	    for (i=0; i < count; i++) tot_blks += blocklength_array[i];
@@ -323,6 +325,7 @@ int MPID_Type_indexed(int count,
 	    dlp->loop_params.i_t.count = contig_count;
 	    dlp->el_extent             = el_extent;
 	    dlp->el_size               = el_size;
+	    dlp->el_type               = new_dtp->eltype;
 	    
 	    /* copy in old dataloop */
 	    curpos = (char *) dlp; /* NEED TO PAD? */
