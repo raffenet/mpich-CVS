@@ -33,7 +33,7 @@ typedef enum DLOG_RECORD_TYPE
     DLOG_INVALID_TYPE = 0,
     DLOG_ENDLOG_TYPE,
     DLOG_EVENT_TYPE,
-    DLOG_SENDRECV_TYPE,
+    DLOG_ARROW_TYPE,
     DLOG_STATE_TYPE,
     DLOG_COMM_TYPE
 } DLOG_RECORD_TYPE;
@@ -63,13 +63,13 @@ typedef struct DLOG_EVENT
     int data;
 } DLOG_EVENT;
 
-typedef struct DLOG_SENDRECV
+typedef struct DLOG_ARROW
 {
     int event;
     int data;
     int tag;
     int length;
-} DLOG_SENDRECV;
+} DLOG_ARROW;
 
 typedef struct DLOG_COMM
 {
@@ -85,7 +85,7 @@ typedef struct DLOG_IOStruct
     {
 	DLOG_STATE state;
 	DLOG_EVENT event;
-	DLOG_SENDRECV sr;
+	DLOG_ARROW arrow;
 	DLOG_COMM comm;
     } record;
     char *pCurHeader;

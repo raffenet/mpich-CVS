@@ -574,8 +574,8 @@ int DLOG_makeSLOG(char *filename)
 		return D2S_ERROR;
 	    }
 	    break;
-	case DLOG_SENDRECV_TYPE:
-	    if (logMsgEvent(&pInput->header, pInput->record.sr.event, pInput->record.sr.data) == D2S_ERROR)
+	case DLOG_ARROW_TYPE:
+	    if (logMsgEvent(&pInput->header, pInput->record.arrow.event, pInput->record.arrow.data) == D2S_ERROR)
 	    {
 		DLOG_CloseInputStruct(&pInput);
 		return D2S_ERROR;
@@ -619,9 +619,9 @@ static int logEvent(DLOG_HEADER *headr, DLOG_IOStruct *pInput)
 	event = pInput->record.event.event;
 	data = pInput->record.event.data;
 	break;
-    case DLOG_SENDRECV_TYPE:
-	event = pInput->record.sr.event;
-	data = pInput->record.sr.data;
+    case DLOG_ARROW_TYPE:
+	event = pInput->record.arrow.event;
+	data = pInput->record.arrow.data;
 	break;
     default:
 	printf("invalid record type passed to logEvent: %d\n", headr->type);
