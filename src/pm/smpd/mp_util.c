@@ -99,15 +99,9 @@ int handle_command(smpd_context_t *context)
 	result = sock_post_close(context->sock);
 	if (result != SOCK_SUCCESS)
 	{
-	    mp_err_printf("unable to post a close of the sock, sock error:\n%s\n",
-		get_sock_error_string(result));
-	    return SMPD_FAIL;
-	}
-	result = sock_post_close(context->sock);
-	if (result != SOCK_SUCCESS)
-	{
-	    mp_err_printf("unable to post a close of the sock after receiving a 'closed' command, sock error:\n%s\n",
-		get_sock_error_string(result));
+	    mp_err_printf("unable to post a close of the sock after receiving a '%s' command, sock error:\n%s\n",
+		cmd->cmd_str, get_sock_error_string(result));
+	    mp_dbg_printf("exiting handle_command.\n");
 	    return SMPD_FAIL;
 	}
 	mp_dbg_printf("exiting handle_command.\n");
@@ -230,14 +224,16 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
 	    }
 	    mp_dbg_printf("read command: \"%s\"\n", context->read_cmd.cmd);
 	    ret_val = handle_command(context);
-	    if (ret_val != SMPD_SUCCESS && ret_val != SMPD_CLOSE)
+	    if (ret_val == SMPD_SUCCESS)
 	    {
-		mp_err_printf("unable to handle the command: \"%s\"\n", context->read_cmd.cmd);
+		ret_val = smpd_post_read_command(context);
 	    }
 	    else
 	    {
 		if (ret_val != SMPD_CLOSE)
-		    ret_val = smpd_post_read_command(context);
+		{
+		    mp_err_printf("unable to handle the command: \"%s\"\n", context->read_cmd.cmd);
+		}
 	    }
 	    break;
 	case SMPD_CMD_WRITING_CMD:

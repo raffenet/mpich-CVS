@@ -20,7 +20,8 @@ int smpd_command_destination(int dest, smpd_context_t **dest_context)
     /* get the source */
     src = smpd_process.id;
 
-    smpd_dbg_printf("determining destination context for %d -> %d\n", src, dest);
+    /*smpd_dbg_printf("determining destination context for %d -> %d\n", src, dest);*/
+
     /* determine the route and return the context */
     if (src == dest)
     {

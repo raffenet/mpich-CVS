@@ -138,7 +138,7 @@ int handle_command(smpd_context_t *context)
 	    if (smpd_process.right_context)
 	    {
 		smpd_dbg_printf("exiting handle_command.\n");
-		return SMPD_SUCCESS;
+		return SMPD_CLOSE;
 	    }
 	}
 	else if (context == smpd_process.right_context)
@@ -150,7 +150,7 @@ int handle_command(smpd_context_t *context)
 	    if (smpd_process.left_context)
 	    {
 		smpd_dbg_printf("exiting handle_command.\n");
-		return SMPD_SUCCESS;
+		return SMPD_CLOSE;
 	    }
 	}
 	else
@@ -175,6 +175,8 @@ int handle_command(smpd_context_t *context)
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("posted closed command to parent.\n");
+	smpd_dbg_printf("exiting handle_command.\n");
+	return SMPD_CLOSE;
     }
     else if (strcmp(cmd->cmd_str, "launch") == 0)
     {
@@ -688,7 +690,7 @@ int smpd_session(sock_set_t set, sock_t sock)
 		    smpd_dbg_printf("exiting smpd_session.\n");
 		    return SMPD_FAIL;
 		}
-		smpd_dbg_printf("exiting smpd_session.\n");
+		smpd_dbg_printf("**** EXITING SMPD_SESSION ****\n");
 		return SMPD_SUCCESS;
 	    }
 	    else if (context == smpd_process.left_context)
