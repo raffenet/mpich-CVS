@@ -1161,7 +1161,6 @@ if test -n "$file_system_nfs" ; then
    # we suggest tha the user run maint/nfslock.c
    AC_MSG_WARN([File locks may not work with NFS.  See the Installation and
 users manual for instructions on testing and if necessary fixing this])
-    fi
 fi
 if test -n "$file_system_nfs"; then
     AC_DEFINE(NFS,1,[Define for NFS])
