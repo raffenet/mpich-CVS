@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
- *
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -50,7 +49,7 @@ void MPIDU_Process_lock_init( MPIDU_Process_lock_t *lock )
     *lock = CreateMutex(NULL, FALSE, NULL);
     if (*lock == NULL)
     {
-        printf("error in mutex_init: %d\n", GetLastError());
+        MPIU_Error_printf("error in mutex_init: %d\n", GetLastError());
     }
 #elif defined(HAVE_PTHREAD_H)
     /* should be called by one process only */
@@ -61,19 +60,19 @@ void MPIDU_Process_lock_init( MPIDU_Process_lock_t *lock )
 #ifdef HAVE_PTHREAD_MUTEXATTR_INIT
     err = pthread_mutexattr_init(&attr);
     if (err != 0)
-      printf("error in pthread_mutexattr_init: %s\n", strerror(err));
+      MPIU_Error_printf("error in pthread_mutexattr_init: %s\n", strerror(err));
 #endif
 #ifdef HAVE_PTHREAD_MUTEXATTR_SETPSHARED
     err = pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
     if (err != 0)
-      printf("error in pthread_mutexattr_setpshared: %s\n", strerror(err));
+      MPIU_Error_printf("error in pthread_mutexattr_setpshared: %s\n", strerror(err));
 
     err = pthread_mutex_init( lock, &attr );
 #else
     err = pthread_mutex_init( lock, NULL );
 #endif
     if ( err != 0 ) 
-        printf( "error in mutex_init: %s\n", strerror(err) );
+        MPIU_Error_printf( "error in mutex_init: %s\n", strerror(err) );
 #else
 #error Locking functions not defined
 #endif
@@ -99,9 +98,9 @@ void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
     if (dwRetVal != WAIT_OBJECT_0)
     {
         if (dwRetVal == WAIT_FAILED)
-            printf("error in mutex_lock: %s\n", strerror(GetLastError()));
+            MPIU_Error_printf("error in mutex_lock: %s\n", strerror(GetLastError()));
         else
-            printf("error in mutex_lock: %d\n", GetLastError());
+            MPIU_Error_printf("error in mutex_lock: %d\n", GetLastError());
     }
     /*printf("lock: Handle = %u\n", (unsigned long)*lock);*/
 #elif defined(HAVE_PTHREAD_H)
@@ -111,7 +110,7 @@ void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_PROCESS_LOCK);
     err = pthread_mutex_lock( lock );
     if ( err != 0 ) 
-        printf( "error in mutex_lock: %s\n", strerror(err) );
+        MPIU_Error_printf( "error in mutex_lock: %s\n", strerror(err) );
 #else
 #error Locking functions not defined
 #endif
@@ -133,8 +132,8 @@ void MPIDU_Process_unlock( MPIDU_Process_lock_t *lock )
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_PROCESS_UNLOCK);
     if (!ReleaseMutex(*lock))
     {
-        printf("error in mutex_unlock: %d\n", GetLastError());
-        printf("Handle = %u\n", (unsigned long)*lock);
+        MPIU_Error_printf("error in mutex_unlock: %d\n", GetLastError());
+        MPIU_Error_printf("Handle = %u\n", (unsigned long)*lock);
     }
     /*printf("unlock: Handle = %u\n", (unsigned long)*lock);*/
 #elif defined(HAVE_PTHREAD_H)
@@ -143,7 +142,7 @@ void MPIDU_Process_unlock( MPIDU_Process_lock_t *lock )
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_PROCESS_UNLOCK);
     err = pthread_mutex_unlock( lock );
     if ( err != 0 ) 
-        printf( "error in mutex_unlock: %s\n", strerror(err) );
+        MPIU_Error_printf( "error in mutex_unlock: %s\n", strerror(err) );
 #else
 #error Locking functions not defined
 #endif
@@ -189,7 +188,7 @@ void MPIDU_Process_lock_free( MPIDU_Process_lock_t *lock )
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_PROCESS_LOCK_FREE);
     err = pthread_mutex_destroy( lock );
     if ( err != 0 ) 
-    printf( "error in mutex_destroy: %s\n", strerror(err) );
+	MPIU_Error_printf( "error in mutex_destroy: %s\n", strerror(err) );
 #else
 #error Locking functions not defined
 #endif
