@@ -530,7 +530,7 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
     MPI_Comm C;
     MPI_Info I;
     MPI_Datatype D;
-    /*MPI_File F;*/
+    MPI_File F;
     MPI_Win W;
     MPI_Group G;
     MPI_Op O;
@@ -593,37 +593,84 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
 	    break;
 	case (int)'I':
 	    I = va_arg(list, MPI_Info);
-	    MPIU_Snprintf(str, maxlen, "info=0x%x", I);
+	    if (I == MPI_INFO_NULL)
+	    {
+		MPIU_Strncpy(str, "MPI_INFO_NULL", maxlen);
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "info=0x%x", I);
+	    }
 	    break;
 	case (int)'D':
 	    D = va_arg(list, MPI_Datatype);
 	    MPIU_Snprintf(str, maxlen, "%s", GetDTypeString(D));
 	    break;
-#if 0
 	case (int)'F':
 	    F = va_arg(list, MPI_File);
-	    MPIU_Snprintf(str, maxlen, "file=0x%x", F);
+	    if (F == MPI_FILE_NULL)
+	    {
+		MPIU_Strncpy(str, "MPI_FILE_NULL", maxlen);
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "file=0x%x", (unsigned long)F);
+	    }
 	    break;
-#endif
 	case (int)'W':
 	    W = va_arg(list, MPI_Win);
-	    MPIU_Snprintf(str, maxlen, "win=0x%x", W);
+	    if (W == MPI_WIN_NULL)
+	    {
+		MPIU_Strncpy(str, "MPI_WIN_NULL", maxlen);
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "win=0x%x", W);
+	    }
 	    break;
 	case (int)'G':
 	    G = va_arg(list, MPI_Group);
-	    MPIU_Snprintf(str, maxlen, "group=0x%x", G);
+	    if (G == MPI_GROUP_NULL)
+	    {
+		MPIU_Strncpy(str, "MPI_GROUP_NULL", maxlen);
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "group=0x%x", G);
+	    }
 	    break;
 	case (int)'O':
 	    O = va_arg(list, MPI_Op);
-	    MPIU_Snprintf(str, maxlen, "op=0x%x", O);
+	    if (O == MPI_OP_NULL)
+	    {
+		MPIU_Strncpy(str, "MPI_OP_NULL", maxlen);
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "op=0x%x", O);
+	    }
 	    break;
 	case (int)'R':
 	    R = va_arg(list, MPI_Request);
-	    MPIU_Snprintf(str, maxlen, "req=0x%x", R);
+	    if (R == MPI_REQUEST_NULL)
+	    {
+		MPIU_Strncpy(str, "MPI_REQUEST_NULL", maxlen);
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "req=0x%x", R);
+	    }
 	    break;
 	case (int)'E':
 	    E = va_arg(list, MPI_Errhandler);
-	    MPIU_Snprintf(str, maxlen, "errh=0x%x", E);
+	    if (E == MPI_ERRHANDLER_NULL)
+	    {
+		MPIU_Strncpy(str, "MPI_ERRHANDLER_NULL", maxlen);
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "errh=0x%x", E);
+	    }
 	    break;
 	default:
 	    /* Error: unhandled output type */
