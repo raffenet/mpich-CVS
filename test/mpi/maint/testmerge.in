@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#! @PERL@
 #
 #
 # This file provides a way to merge a template file with a set of
@@ -32,7 +32,12 @@
 #    
 # ----------------------------------------------------------------------------
 # Global variables
-$debug = 1;
+$debug = 0;
+
+$lang = "Fortran";   
+%knownLang = ( "Fortran" => 1, "C" => 1, "C++" => 1 );
+#$lang = "C";
+#$lang = "C++";
 
 # Definitions
 %Definitions = ();
@@ -78,13 +83,23 @@ sub ReadGlobalDefinitions {
     my $filename = $_[0];
     # Save Definitions, if any
     my %saveDefinitions = %Definitions;
+    # Reset Definitions to hold the current global set
+    %Definitions = %GlobalDefinitions;
 
     my $DFD = "DFD";
     open $DFD, "<$filename" || die "Could not open global definition file $filename\n";
+    print "Opening $filename..\n";
     &ReadDefinition( $DFD );
     close $DFD;
     %GlobalDefinitions = %Definitions;
     %Definitions = %saveDefinitions;
+    # Print the new definitions if requested.
+    if ($debug) {
+	foreach my $key (keys(%GlobalDefinitions)) {
+	    my $val = $GlobalDefinitions{$key};
+	    print "$key => $val\n";
+	}
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -115,7 +130,7 @@ sub MergeTemplate {
 		}
 		chop $newdefn;
 		print "Replacing <$name> with |$newdefn|\n" if $debug;
-		s/<$name\/>/$newdefn/;   # Only do one at a time
+		s/$indent<$name\/>/$newdefn/;   # Only do one at a time
 	    }
 	    elsif (defined($GlobalDefinitions{$name})) {
 		# local definitions can override any global definitions
@@ -127,7 +142,7 @@ sub MergeTemplate {
 		}
 		print "Replacing <$name> with |$newdefn|\n" if $debug;
 		chop $newdefn;
-		s/<$name\/>/$newdefn/;   # Only do one at a time
+		s/$indent<$name\/>/$newdefn/;   # Only do one at a time
 	    }
 	    else {
 		# Unknown name!
@@ -135,7 +150,7 @@ sub MergeTemplate {
 		last;
 	    }
 	}
-	print OFD $_;
+	&printLine( OFD, $_ );
     }
     close OFD;
     close IFD;
@@ -165,6 +180,7 @@ sub ReadAndMerge {
 	    # read this as a global definition
 	    while (<$DFD>) {
 		if (/<\/$name>/) { last; }
+		s/\r//;
 		$defn .= $_;
 	    }
 	    $GlobalDefinitions{$name} = $defn;
@@ -186,18 +202,80 @@ sub PrintDefinitions {
     }
 }
 # --------------------------------------------------------------------------
+# printLine handles any continuation conventions
+if ($lang eq "Fortran") {
+    $maxPrintLine = 72;
+    $postLine     = "  &";
+    $preLine      = "     &";
+}
+elsif ($lang eq "C" || $lang eq "C++") {
+    $maxPrintLine = 180;
+    $postLine     = "";
+    $preLine      = "\t";
+}
+# printLine ( FD, lines )
+# Note that a very simple approach works for Fortran because blanks
+ # are ignored.  However, we will try to make the code easier to read
+sub printLine {
+    my $OFD   = $_[0];
+    my $lines = $_[1];
+    
+    foreach my $line (split(/\n/,$lines)) {
+	# Compute length
+	my $length = length($line);
+	while ($length > $maxPrintLine) {
+	    my $subline = substr $line, 0, $maxPrintLine;
+	    $line = substr $line, $maxPrintLine;
+	    $line = $preLine . $line;
+	    $length = length($line);
+	    print $OFD $subline . $postLine . "\n";
+	}
+        print $OFD $line . "\n";
+    }
+}
+# --------------------------------------------------------------------------
 # Process the file
 # Still to do:
 #   Allow multiple definition files, to allow for common definitions
 #   for such things as headers
-if ($#ARGV < 1 || $#ARGV > 2) {
-    print STDERR "testmerge defintion-file template-file [ global-def-file ]\n";
+my $defnFile = "";
+my $tmplFile = "";
+my $posCount = 0;
+for (@ARGV) {
+    if (/-defn=(.*)/) {
+	my $extraFile = $1;
+	&ReadGlobalDefinitions( $extraFile );
+    }
+    elsif (/-lang=(.*)/) {
+	$lang = $1;
+	if (!defined($knownLang{$lang})) {
+	    print STDERR "Unknown language $lang\n";
+	    exit 1;
+	}
+    }
+    elsif (/^-/) {
+	print STDERR "Unrecognized argument $_\n";
+	exit 1;
+    }
+    else {
+	if ($posCount == 0) {
+	    $defnFile = $_;
+	}
+	elsif ($posCount == 1) {
+	    $tmplFile = $_;
+	}
+	else {
+	    print STDERR "Too many arguments ($_)\n";
+	    exit 1;
+	}
+	$posCount ++;
+    }
+}
+
+if ($defnFile eq "" || $tmplFile eq "") {
+    print STDERR "testmerge [ -defn=name ] defintion-file template-file \n";
     exit 1;
 }
 
-if ($ARGV[2] ne "") {
-    &ReadGlobalDefinitions( $ARGV[2] );
-}
-
-&ReadAndMerge( $ARGV[0], $ARGV[1] );
+&ReadAndMerge( $defnFile, $tmplFile );
 
