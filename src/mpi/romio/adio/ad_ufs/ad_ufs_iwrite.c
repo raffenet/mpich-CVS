@@ -13,7 +13,7 @@ void ADIOI_UFS_IwriteContig(ADIO_File fd, void *buf, int count,
                 ADIO_Offset offset, ADIO_Request *request, int *error_code)  
 {
     int len, typesize;
-#ifdef NO_AIO
+#ifndef ROMIO_HAVE_WORKING_AIO
     ADIO_Status status;
 #else
     int aio_errno = 0;
@@ -28,19 +28,19 @@ void ADIOI_UFS_IwriteContig(ADIO_File fd, void *buf, int count,
     MPI_Type_size(datatype, &typesize);
     len = count * typesize;
 
-#ifdef NO_AIO
+#ifndef ROMIO_HAVE_WORKING_AIO
     /* HP, FreeBSD, Linux */
     /* no support for nonblocking I/O. Use blocking I/O. */
 
     ADIO_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, 
 		     &status, error_code);  
     (*request)->queued = 0;
-#ifdef HAVE_STATUS_SET_BYTES
+# ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
 	MPI_Get_elements(&status, MPI_BYTE, &len);
 	(*request)->nbytes = len;
     }
-#endif
+# endif
 
     fd->fp_sys_posn = -1;
 
@@ -68,92 +68,60 @@ void ADIOI_UFS_IwriteContig(ADIO_File fd, void *buf, int count,
 }
 
 
-
 /* This function is for implementation convenience. It is not user-visible.
  * It takes care of the differences in the interface for nonblocking I/O
  * on various Unix machines! If wr==1 write, wr==0 read.
  *
  * Returns 0 on success, -errno on failure.
  */
-
+#ifdef ROMIO_HAVE_WORKING_AIO
 int ADIOI_UFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		  int wr, void *handle)
 {
     int err=-1, fd_sys;
 
-#ifndef NO_AIO
     int error_code;
     struct aiocb *aiocbp;
-#endif
 
     fd_sys = fd->fd_sys;
 
-#ifdef NO_FD_IN_AIOCB
-/* IBM */
-    aiocbp = (struct aiocb *) ADIOI_Malloc(sizeof(struct aiocb));
-    aiocbp->aio_whence = SEEK_SET;
-    aiocbp->aio_offset = offset;
-    aiocbp->aio_buf = buf;
-    aiocbp->aio_nbytes = len;
-    if (wr) err = aio_write(fd_sys, aiocbp);
-    else err = aio_read(fd_sys, aiocbp);
-
-    if (err == -1) {
-	if (errno == EAGAIN) {
-        /* exceeded the max. no. of outstanding requests.
-          complete all previous async. requests and try again. */
-
-	    ADIOI_Complete_async(&error_code);
-	    if (error_code != MPI_SUCCESS) return -EIO;
-
-	    if (wr) err = aio_write(fd_sys, aiocbp);
-	    else err = aio_read(fd_sys, aiocbp);
-
-            while (err == -1) {
-                if (errno == EAGAIN) {
-                    /* sleep and try again */
-                    sleep(1);
-		    if (wr) err = aio_write(fd_sys, aiocbp);
-		    else err = aio_read(fd_sys, aiocbp);
-		}
-                else {
-		    return -errno;
-                }
-            }
-	}
-        else {
-	    return -errno;
-        }
-    }
-
-    *((struct aiocb **) handle) = aiocbp;
-
-#elif !defined(NO_AIO)
-/* DEC, SGI IRIX 5 and 6 */
-
     aiocbp = (struct aiocb *) ADIOI_Calloc(sizeof(struct aiocb), 1);
-    aiocbp->aio_fildes = fd_sys;
     aiocbp->aio_offset = offset;
-    aiocbp->aio_buf = buf;
+    aiocbp->aio_buf    = buf;
     aiocbp->aio_nbytes = len;
 
-#ifdef AIO_PRIORITY_DEFAULT
-/* DEC */
-    aiocbp->aio_reqprio = AIO_PRIO_DFL;   /* not needed in DEC Unix 4.0 */
-    aiocbp->aio_sigevent.sigev_signo = 0;
-#else
-    aiocbp->aio_reqprio = 0;
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_WHENCE
+    aiocbp->aio_whence = SEEK_SET;
 #endif
-
-#ifdef AIO_SIGNOTIFY_NONE
-/* SGI IRIX 6 */
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES
+    aiocbp->aio_fildes = fd_sys;
+#endif
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_SIGEVENT
+# ifdef AIO_SIGNOTIFY_NONE
     aiocbp->aio_sigevent.sigev_notify = SIGEV_NONE;
+# endif
+    aiocbp->aio_sigevent.sigev_signo = 0;
+#endif
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_REQPRIO
+# ifdef AIO_PRIO_DFL
+    aiocbp->aio_reqprio = AIO_PRIO_DFL;   /* not needed in DEC Unix 4.0 */
+# else
+    aiocbp->aio_reqprio = 0;
+# endif
+#endif
+
 #else
     aiocbp->aio_sigevent.sigev_signo = 0;
 #endif
 
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES
     if (wr) err = aio_write(aiocbp);
     else err = aio_read(aiocbp);
+#else
+    /* Broken IBM interface */
+    if (wr) err = aio_write(fd_sys, aiocbp);
+    else err = aio_read(fd_sys, aiocbp);
+#endif
 
     if (err == -1) {
 	if (errno == EAGAIN) {
@@ -163,17 +131,23 @@ int ADIOI_UFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 	    ADIOI_Complete_async(&error_code);
 	    if (error_code != MPI_SUCCESS) return -EIO;
 
-	    if (wr) err = aio_write(aiocbp);
-	    else err = aio_read(aiocbp);
+	    while (err == -1 && errno == EAGAIN) {
 
-	    while (err == -1) {
-		if (errno == EAGAIN) {
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES
+		if (wr) err = aio_write(aiocbp);
+		else err = aio_read(aiocbp);
+#else
+		/* Broken IBM interface */
+		if (wr) err = aio_write(fd_sys, aiocbp);
+		else err = aio_read(fd_sys, aiocbp);
+#endif
+
+		if (err == -1 && errno == EAGAIN) {
 		    /* sleep and try again */
 		    sleep(1);
-		    if (wr) err = aio_write(aiocbp);
-		    else err = aio_read(aiocbp);
 		}
-		else {
+		else if (err == -1) {
+		    /* real error */
 		    return -errno;
 		}
 	    }
@@ -184,7 +158,7 @@ int ADIOI_UFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
     }
 
     *((struct aiocb **) handle) = aiocbp;
-#endif
 
     return 0;
 }
+#endif

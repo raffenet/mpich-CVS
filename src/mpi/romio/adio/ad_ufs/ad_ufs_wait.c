@@ -8,11 +8,12 @@
 
 #include "ad_ufs.h"
 
-void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
+void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status,
+			    int *error_code)  
 {
-#ifndef NO_AIO
+#ifdef ROMIO_HAVE_WORKING_AIO
     int err;
-#ifdef AIO_HANDLE_IN_AIOCB
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
     struct aiocb *tmp1;
 #endif
 #endif
@@ -23,7 +24,7 @@ void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 	return;
     }
     
-#ifdef AIO_HANDLE_IN_AIOCB
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
 /* IBM */
     if ((*request)->queued) {
 	do {
@@ -59,11 +60,11 @@ void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
 #endif
 
-#elif !defined(NO_AIO)
+#elif defined(ROMIO_HAVE_WORKING_AIO)
 /* DEC, SGI IRIX 5 and 6 */
     if ((*request)->queued) {
 	do {
-	    err = aio_suspend((const aiocb_t **) &((*request)->handle), 1, 0);
+	    err = aio_suspend((const struct aiocb **) &((*request)->handle), 1, 0);
 	} while ((err == -1) && (errno == EINTR));
 
 	if (err != -1) {
@@ -89,7 +90,7 @@ void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 #endif
 #endif
 
-#ifndef NO_AIO
+#ifdef ROMIO_HAVE_WORKING_AIO
     if ((*request)->queued != -1) {
 
 	/* queued = -1 is an internal hack used when the request must

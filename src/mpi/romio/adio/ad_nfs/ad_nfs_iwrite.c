@@ -13,7 +13,7 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count,
                 ADIO_Offset offset, ADIO_Request *request, int *error_code)  
 {
     int len, typesize;
-#ifdef NO_AIO
+#ifndef ROMIO_HAVE_WORKING_AIO
     ADIO_Status status;
 #else
     int aio_errno = 0;
@@ -28,7 +28,7 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count,
     MPI_Type_size(datatype, &typesize);
     len = count * typesize;
 
-#ifdef NO_AIO
+#ifndef ROMIO_HAVE_WORKING_AIO
     /* HP, FreeBSD, Linux */
     /* no support for nonblocking I/O. Use blocking I/O. */
 
@@ -74,125 +74,63 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count,
  *
  * Returns 0 on success, -errno on failure.
  */
-
+#ifdef ROMIO_HAVE_WORKING_AIO
 int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		  int wr, void *handle)
 {
     int err=-1, fd_sys;
     int error_code, this_errno;
 
-#ifndef NO_AIO
     struct aiocb *aiocbp;
-#endif
     
     fd_sys = fd->fd_sys;
 
-#ifdef NO_FD_IN_AIOCB
-/* IBM */
-    aiocbp = (struct aiocb *) ADIOI_Malloc(sizeof(struct aiocb));
-    aiocbp->aio_whence = SEEK_SET;
-    aiocbp->aio_offset = offset;
-    aiocbp->aio_buf = buf;
-    aiocbp->aio_nbytes = len;
-    if (wr) {
-	ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
-	err = aio_write(fd_sys, aiocbp);
-        this_errno = errno;
-	ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-    }
-    else {
-	ADIOI_READ_LOCK(fd, offset, SEEK_SET, len);
-	err = aio_read(fd_sys, aiocbp);
-        this_errno = errno;
-	ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-    }
 
-    if (err == -1) {
-	if (this_errno == EAGAIN) {
-        /* exceeded the max. no. of outstanding requests.
-          complete all previous async. requests and try again. */
-
-	    ADIOI_Complete_async(&error_code);
-	    if (error_code != MPI_SUCCESS) return -EIO;
-
-	    if (wr) {
-		ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
-		err = aio_write(fd_sys, aiocbp);
-		this_errno = errno;
-		ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-	    }
-	    else {
-		ADIOI_READ_LOCK(fd, offset, SEEK_SET, len);
-		err = aio_read(fd_sys, aiocbp);
-		this_errno = errno;
-		ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-	    }
-
-            while (err == -1) {
-                if (this_errno == EAGAIN) {
-                    /* sleep and try again */
-                    sleep(1);
-		    if (wr) {
-			ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
-			err = aio_write(fd_sys, aiocbp);
-			this_errno = errno;
-			ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-		    }
-		    else {
-			ADIOI_READ_LOCK(fd, offset, SEEK_SET, len);
-			err = aio_read(fd_sys, aiocbp);
-			this_errno = errno;
-			ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-		    }
-		}
-                else {
-		    return -this_errno;
-                }
-            }
-	}
-        else {
-	    return -this_errno;
-        }
-    }
-
-    *((struct aiocb **) handle) = aiocbp;
-
-#elif !defined(NO_AIO)
-/* DEC, SGI IRIX 5 and 6 */
 
     aiocbp = (struct aiocb *) ADIOI_Calloc(sizeof(struct aiocb), 1);
-    aiocbp->aio_fildes = fd_sys;
     aiocbp->aio_offset = offset;
-    aiocbp->aio_buf = buf;
+    aiocbp->aio_buf    = buf;
     aiocbp->aio_nbytes = len;
 
-#ifdef AIO_PRIORITY_DEFAULT
-/* DEC */
-    aiocbp->aio_reqprio = AIO_PRIO_DFL;   /* not needed DEC Unix 4.0 */
-    aiocbp->aio_sigevent.sigev_signo = 0;
-#else
-    aiocbp->aio_reqprio = 0;
+    /* This madness is mostly here to deal with IBM AIO implementation */
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_WHENCE
+    aiocbp->aio_whence = SEEK_SET;
 #endif
-
-#ifdef AIO_SIGNOTIFY_NONE
-/* SGI IRIX 6 */
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES
+    aiocbp->aio_fildes = fd_sys;
+#endif
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_SIGEVENT
+# ifdef AIO_SIGNOTIFY_NONE
     aiocbp->aio_sigevent.sigev_notify = SIGEV_NONE;
+# endif
+    aiocbp->aio_sigevent.sigev_signo = 0;
+#endif
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_REQPRIO
+# ifdef AIO_PRIO_DFL
+    aiocbp->aio_reqprio = AIO_PRIO_DFL;   /* not needed in DEC Unix 4.0 */
+# else
+    aiocbp->aio_reqprio = 0;
+# endif
+#endif
+
 #else
     aiocbp->aio_sigevent.sigev_signo = 0;
 #endif
 
-    if (wr) {
-	ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
-	err = aio_write(aiocbp);
-	this_errno = errno;
-	ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-    }
-    else {
-	ADIOI_READ_LOCK(fd, offset, SEEK_SET, len);
-	err = aio_read(aiocbp);
-	this_errno = errno;
-	ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-    }
+    if (wr) ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
+    else ADIOI_READ_LOCK(fd, offset, SEEK_SET, len);
+
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES
+    if (wr) err = aio_write(aiocbp);
+    else err = aio_read(aiocbp);
+#else
+    /* Broken IBM interface */
+    if (wr) err = aio_write(fd_sys, aiocbp);
+    else err = aio_read(fd_sys, aiocbp);
+#endif
+
+    this_errno = errno;
+    ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
 
     if (err == -1) {
 	if (this_errno == EAGAIN) {
@@ -202,38 +140,29 @@ int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 	    ADIOI_Complete_async(&error_code);
 	    if (error_code != MPI_SUCCESS) return -EIO;
 
-	    if (wr) {
-		ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
-		err = aio_write(aiocbp);
-		this_errno = errno;
-		ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-	    }
-	    else {
-		ADIOI_READ_LOCK(fd, offset, SEEK_SET, len);
-		err = aio_read(aiocbp);
-		this_errno = errno;
-		ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-	    }
+	    while (err == -1 && this_errno == EAGAIN) {
 
-	    while (err == -1) {
-		if (this_errno == EAGAIN) {
+		if (wr) ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
+		else ADIOI_READ_LOCK(fd, offset, SEEK_SET, len);
+
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES
+		if (wr) err = aio_write(aiocbp);
+		else err = aio_read(aiocbp);
+#else
+		/* Broken IBM interface */
+		if (wr) err = aio_write(fd_sys, aiocbp);
+		else err = aio_read(fd_sys, aiocbp);
+#endif
+		this_errno = errno;
+		ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
+
+		if (err == -1 && this_errno == EAGAIN) {
 		    /* sleep and try again */
 		    sleep(1);
-		    if (wr) {
-			ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
-			err = aio_write(aiocbp);
-			this_errno = errno;
-			ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-		    }
-		    else {
-			ADIOI_READ_LOCK(fd, offset, SEEK_SET, len);
-			err = aio_read(aiocbp);
-			this_errno = errno;
-			ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-		    }
 		}
-		else {
-		    return -this_errno;
+		else if (err == -1) {
+		    /* real error */
+		    return -errno;
 		}
 	    }
         }
@@ -243,7 +172,7 @@ int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
     }
 
     *((struct aiocb **) handle) = aiocbp;
-#endif
 
-    return ((err == 0) ? 0 : -this_errno);
+    return 0;
 }
+#endif

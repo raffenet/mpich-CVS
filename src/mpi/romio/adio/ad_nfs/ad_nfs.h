@@ -14,11 +14,11 @@
 #include <fcntl.h>
 #include "adio.h"
 
-#ifndef NO_AIO
-#include <aio.h>
-#ifdef NEEDS_ADIOCB_T
-typedef struct adiocb adiocb_t;
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
 #endif
+#ifdef HAVE_AIO_H
+#include <aio.h>
 #endif
 
 int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,

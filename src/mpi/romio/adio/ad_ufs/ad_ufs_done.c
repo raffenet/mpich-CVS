@@ -8,12 +8,13 @@
 
 #include "ad_ufs.h"
 
-int ADIOI_UFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_code)  
+int ADIOI_UFS_ReadDone(ADIO_Request *request, ADIO_Status *status,
+		       int *error_code)  
 {
-#ifndef NO_AIO
+#ifdef ROMIO_HAVE_WORKING_AIO
     int done=0;
     int err;
-#ifdef AIO_HANDLE_IN_AIOCB
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
     struct aiocb *tmp1;
 #endif
 #endif
@@ -24,8 +25,7 @@ int ADIOI_UFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 	return 1;
     }
 
-#ifdef NO_AIO
-/* HP, FreeBSD, Linux */
+#ifndef ROMIO_HAVE_WORKING_AIO
 #ifdef HAVE_STATUS_SET_BYTES
     MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
 #endif
@@ -36,7 +36,7 @@ int ADIOI_UFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
     return 1;
 #endif    
 
-#ifdef AIO_HANDLE_IN_AIOCB
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
 /* IBM */
     if ((*request)->queued) {
 	tmp1 = (struct aiocb *) (*request)->handle;
@@ -72,7 +72,7 @@ int ADIOI_UFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
 #endif
 
-#elif !defined(NO_AIO)
+#elif defined(ROMIO_HAVE_WORKING_AIO)
 /* DEC, SGI IRIX 5 and 6 */
     if ((*request)->queued) {
 	errno = aio_error((const struct aiocb *) (*request)->handle);
@@ -109,7 +109,7 @@ int ADIOI_UFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 
 #endif
 
-#ifndef NO_AIO
+#ifdef ROMIO_HAVE_WORKING_AIO
     if (done) {
 	/* if request is still queued in the system, it is also there
            on ADIOI_Async_list. Delete it from there. */
@@ -126,7 +126,8 @@ int ADIOI_UFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 }
 
 
-int ADIOI_UFS_WriteDone(ADIO_Request *request, ADIO_Status *status, int *error_code)  
+int ADIOI_UFS_WriteDone(ADIO_Request *request, ADIO_Status *status,
+			int *error_code)
 {
     return ADIOI_UFS_ReadDone(request, status, error_code);
 } 

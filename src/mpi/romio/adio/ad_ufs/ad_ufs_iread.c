@@ -13,7 +13,7 @@ void ADIOI_UFS_IreadContig(ADIO_File fd, void *buf, int count,
                 ADIO_Offset offset, ADIO_Request *request, int *error_code)  
 {
     int len, typesize;
-#ifdef NO_AIO
+#ifndef ROMIO_HAVE_WORKING_AIO
     ADIO_Status status;
 #else
     int aio_errno = 0;
@@ -28,7 +28,7 @@ void ADIOI_UFS_IreadContig(ADIO_File fd, void *buf, int count,
     MPI_Type_size(datatype, &typesize);
     len = count * typesize;
 
-#ifdef NO_AIO
+#ifdef ROMIO_HAVE_WORKING_AIO
     /* HP, FreeBSD, Linux */
     /* no support for nonblocking I/O. Use blocking I/O. */
 
