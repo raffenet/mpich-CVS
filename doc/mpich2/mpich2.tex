@@ -462,7 +462,8 @@ possible, use atomic operations (such as atomic increment, provided by
 timer (and any profiling) with \code{MPID_MPI_FUNC_EXIT}.  There are
 several variations on this described in Section~\ref{sec:builtin-timing}.
 \item The return always gives \code{MPI_SUCCESS} explicitly.  Any return that
-  might return an error code should use \code{MPIR_Return} instead.  
+  might return an error code should use \code{MPIR_Err_return_comm} (or
+  \code{MPIR_Err_return_win} or \code{MPIR_Err_return_file}) instead.  
 \end{enumerate}
 
 \begin{verbatim}
@@ -540,7 +541,7 @@ int MPI_Foo( MPI_Comm comm, int a )
             if (!comm_ptr) { comm_ptr = MPIR_Process.comm_world; }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
-                return MPIR_Return( comm_ptr->errhandler, mpi_errno );
+                return MPIR_Err_return_comm( comm_ptr, mpi_errno, FCNAME );
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -986,8 +987,8 @@ A return may be prefered for some fault-tolerant applications.
 \item Check if executing inside a layered routine (i.e., an MPI routine called
   within the implementation of another MPI routine).  If so, return error
   code; do not invoke the error handler.  See
-  Section~\ref{sec:err-handling-nested}; the \code{MPIR_Return} macro makes
-  this test.
+  Section~\ref{sec:err-handling-nested}; the \code{MPIR_Err_return_xxx} routine
+  makes this test.
 
 \item If the routine has a valid \code{MPI_Comm}, \code{MPI_File}, or
   \code{MPI_Win}, use the error handler from that object.  Note that there is
@@ -1029,10 +1030,12 @@ communicator, file, or window can include the predefined name block
   \mpidconst{MPIR_File_errhandler}. 
 \end{enumerate}
 
-When the error handler has been determined, it should be invoked with the
-\code{MPIR_Return} handler:
+When the object holding the correct error handler has been determined, it
+should be invoked with the 
+\code{MPIR_Err_return_xxx} handler (where \code{xxx} is \code{comm},
+\code{win}, or \code{file}): %
 \begin{verbatim}
-    return MPIR_Return( errhandler, error_code );
+    return MPIR_Err_return_comm( comm_ptr, error_code, FCNAME );
 \end{verbatim}
 This allows nested MPI calls to invoke the correct error handler (see
 Section~\ref{sec:err-handling-nested}).  
@@ -1058,9 +1061,9 @@ handler is invoked, the nesting level is tested.  If the level is different
 from zero, the error code is returned.  The interface is
 \index{MPIR_Nest_incr}\index{MPIR_Nest_decr}\index{MPIR_Nest_value}
 \begin{verbatim}
-void MPIR_Nest_incr()
-void MPIR_Nest_decr()
-int MPIR_Nest_value()
+void MPIR_Nest_incr(void)
+void MPIR_Nest_decr(void)
+int MPIR_Nest_value(void)
 \end{verbatim}
 
 See Section~\ref{sec:perthread} for details on the thread-specific storage.
@@ -1447,17 +1450,17 @@ declared within the routine.  A typical use might be
     MALLOC_STK(sizeof(MPID_Dataloop)*n,new->dataloops);
     if (!new->dataloops) {
         FREE_STK;
-        MPIR_Return( ... );
+        return MPIR_Err_return_comm( ... );
     }
     MALLOC_STK(m,new->other);
     if (!new->other) {
         FREE_STK;
-        MPIR_Return( ... );
+        return MPIR_Err_return_comm( ... );
     }
     ...
     if (count < 0) {
         FREE_STK; 
-        MPIR_Return( ... );
+        return MPIR_Err_return_comm( ... );
     }
 \end{verbatim}
 % [BRT] The statement 'memstack.n_alloc = 0;' should be an init macro to allow
@@ -5345,7 +5348,7 @@ typedef struct {
 
 #define MAX_FINALIZE_FUNC 16
 Finalize_func_t fstack[MAX_FINALIZE_FUNC];
-fstack_sp = 0;  /* First free entry */
+int fstack_sp = 0;  /* First free entry */
 
 void MPIR_Add_finalize( int (*f)( void * ), void *extra_data )
 {
