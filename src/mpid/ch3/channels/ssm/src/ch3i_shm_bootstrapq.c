@@ -16,6 +16,7 @@ typedef struct mqshm_msg_t
 typedef struct mqshm_t
 {
     MPIDU_Process_lock_t lock;
+    /*int inuse;*/ /* use to test that the lock is working */
     int first;
     int last;
     int next_free;
@@ -104,6 +105,7 @@ int MPIDI_CH3I_mqshm_create(const char *name, const int initialize, int *id)
 	node->q_ptr->first = MQSHM_END;
 	node->q_ptr->last = MQSHM_END;
 	node->q_ptr->next_free = 0;
+	/*node->q_ptr->inuse = 0;*/
 	MPIDU_Process_lock_init(&node->q_ptr->lock);
     }
 
@@ -203,9 +205,18 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
     do
     {
 	MPIDU_Process_lock(&q_ptr->lock);
+	/*
+	if (q_ptr->inuse)
+	{
+	    printf("Error, multiple processes acquired the lock.\n");
+	    fflush(stdout);
+	}
+	q_ptr->inuse = 1;
+	*/
 	index = q_ptr->next_free;
 	if (index != MQSHM_END)
 	{
+	    q_ptr->next_free = q_ptr->msg[index].next;
 	    /*printf("[%d] send: writing %d bytes to index %d with tag %d\n", MPIR_Process.comm_world->rank, length, index, tag);fflush(stdout);*/
 	    memcpy(q_ptr->msg[index].data, buffer, length);
 	    q_ptr->msg[index].tag = tag;
@@ -225,10 +236,12 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 		q_ptr->last = index;
 	    }
 	    *num_sent = length;
+	    /*q_ptr->inuse = 0;*/
 	    MPIDU_Process_unlock(&q_ptr->lock);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
 	    return MPI_SUCCESS;
 	}
+	/*q_ptr->inuse = 0;*/
 	MPIDU_Process_unlock(&q_ptr->lock);
 	MPIDU_Yield();
     } while (blocking);
@@ -260,6 +273,14 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
     do
     {
 	MPIDU_Process_lock(&q_ptr->lock);
+	/*
+	if (q_ptr->inuse)
+	{
+	    printf("Error, multiple processes acquired the lock.\n");
+	    fflush(stdout);
+	}
+	q_ptr->inuse = 1;
+	*/
 	index = q_ptr->first;
 	while (index != MQSHM_END)
 	{
@@ -281,6 +302,7 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 		/* validate the message */
 		if (maxlen < q_ptr->msg[index].length)
 		{
+		    /*q_ptr->inuse = 0;*/
 		    MPIDU_Process_unlock(&q_ptr->lock);
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE);
@@ -292,6 +314,7 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 		/* add the node to the free list */
 		q_ptr->msg[index].next = q_ptr->next_free;
 		q_ptr->next_free = index;
+		/*q_ptr->inuse = 0;*/
 		MPIDU_Process_unlock(&q_ptr->lock);
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE);
 		return mpi_errno;
@@ -299,6 +322,7 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 	    last_index = index;
 	    index = q_ptr->msg[index].next;
 	}
+	/*q_ptr->inuse = 0;*/
 	MPIDU_Process_unlock(&q_ptr->lock);
 	/*printf("<%d>", MPIR_Process.comm_world->rank);*/
 	MPIDU_Yield();
