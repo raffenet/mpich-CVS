@@ -508,7 +508,7 @@ lock that is held is a potential problem for fault-tolerant code.
 That is, if we support the loss of an MPI process, then if a process
 dies while holding a lock, it is difficult to recover.  Where
 possible, use atomic operations (such as atomic increment, provided by
-\code{MPID_Object_add_ref} etc.) instead of lock/unlock.  
+\code{MPIU_Object_add_ref} etc.) instead of lock/unlock.  
 % [BRT] Again, I like to see the code protected by a mutex explicitly placed
 % in a separate block to make it clear what is protected and what is
 % not.
@@ -1048,7 +1048,7 @@ is (known to be) invalid.
 Note that most of the opaque objects have reference count semantics.
 Be sure to increment and decrement the reference count as necessary,
 using the routines for atomically modifying the reference count (i.e.,
-\code{MPID_Object_add_ref} or \code{MPID_Object_release_ref}). 
+\code{MPIU_Object_add_ref} or \code{MPIU_Object_release_ref}). 
 
 Question: are there any objects where some elements might not have
 pointers?  For example, if basic datatypes are encoded into the
@@ -1808,6 +1808,16 @@ Memory tests are enabled by the configure option
 % Question: what is the configure command to enable memory tracing, and
 % what are the command-line/environment variables that are used to
 % control the level of detail when tracing is enabled?
+
+\subsection{Naming Rules}
+(not written; covers how to name routines)
+
+\paragraph{Creating and Destroying Structures.}
+This section should explain the new/delete, alloc/free, create/destroy set of
+names, and mention that the MPI ``free'' routines tend only to decrement a
+reference count and free if zero.  To avoid conflicts with the first two pairs
+of names, we use create/destroy for routines that create and recover data
+structures.
 
 \subsection{Runtime Parameters}
 \label{sec:runtime-params}
@@ -3093,7 +3103,7 @@ erroneous user programs, we can use the same strategy as used for the
 \mpiconst{MPI_Info} routines.
 
 \subsubsection{\mpifunc{MPI_TYPE_FREE}}
-This first calls \mpidfunc{MPID_Object_release_ref}.  If
+This first calls \mpidfunc{MPIU_Object_release_ref}.  If
 the returned value is zero, it should free the contents of \code{dataloop} and
 then call \mpidfunc{MPIR_Datatype_free}.  Invoke the common attribute list
 delete code.
@@ -3711,14 +3721,14 @@ structures.  Calls \mpidfunc{MPID_Comm_free}.
 
 \subsubsection{\mpifunc{MPI_COMM_GROUP}}
   Returns a duplicate (shallow copy) of the local group.  Calls
-  \mpidfunc{MPID_Object_add_ref} to do this. 
+  \mpidfunc{MPIU_Object_add_ref} to do this. 
 
 \subsubsection{\mpifunc{MPI_COMM_RANK}}
 Return the \mpids{MPI_Comm}{rank} field.
 
 \subsubsection{\mpifunc{MPI_COMM_REMOTE_GROUP}}
   Return a duplicate (shallow copy) of the remote group.  Call
-  \mpidfunc{MPID_Object_add_ref}. 
+  \mpidfunc{MPIU_Object_add_ref}. 
 
 \subsubsection{\mpifunc{MPI_COMM_REMOTE_SIZE}}
 See \code{MPI_COMM_SIZE}.  This is actually not an unusual operation,
@@ -6931,6 +6941,11 @@ better integration:
 % \mpiconst{MPI_SEEK_END}
 % \mpiconst{MPI_SEEK_SET}
 % \mpiconst{MPI_DISPLACEMENT_CURRENT}
+
+\subsection{Utility Routines}
+This section should contain some of the discussion from adi3man.tex on data
+structures and constants, particularly the handle allocator, and the reference
+count routines.  
 
 \section{Portability}
 \label{sec:portability}
