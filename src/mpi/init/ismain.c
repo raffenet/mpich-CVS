@@ -66,7 +66,7 @@ int MPI_Is_thread_main( int *flag )
 #if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_FUNNELED
     *flag = 1;
 #else
-    *flag = (MPIR_Process.master_thread == MPID_GetThreadId());
+    *flag = (MPIR_Process.master_thread == MPID_Thread_get_id());
 #endif
     /* ... end of body of routine ... */
 

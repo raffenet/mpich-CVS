@@ -37,13 +37,14 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     int has_env;
     int thread_provided;
 
-#ifdef MPICH_SINGLE_THREADED
-#else
-    MPIR_Process.thread_key    = MPID_GetThreadKey();
-    MPIR_Process.master_thread = MPID_GetThreadId();
-    MPID_Thread_lock_init( MPIR_Process.common_lock );
-    MPID_Thread_lock_init( MPIR_Process.allocation_lock );
-#endif    
+#   if !defined(MPICH_SINGLE_THREADED)
+    {
+	MPID_Thread_key_create(&MPIR_Process.thread_key) ;
+	MPIR_Process.master_thread = MPID_Thread_get_id();
+	MPID_Thread_lock_init(&MPIR_Process.common_lock);
+	MPID_Thread_lock_init(&MPIR_Process.allocation_lock);
+    }
+#   endif    
 
 #ifdef HAVE_ERROR_CHECKING
     /* Eventually this will support commandline and environment options
