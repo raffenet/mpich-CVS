@@ -11,6 +11,7 @@
 \def_{{\tt \char`\_}}
 \catcode`\_=11
 \def\code#1{\texttt{#1}}
+\let\file=\code
 
 \begin{document}
 
@@ -18,9 +19,9 @@
 \author{}
 \maketitle
 
-\begin{abstract}
-
-\end{abstract}
+%\begin{abstract}
+%
+%\end{abstract}
 
 \section{Introduction}
 The goal of the MPICH-2 ADI-3 is to provide routines to support MPI-1
@@ -53,7 +54,7 @@ MPI-2 introduced additional operations including remote memory access (RMA),
 dynamic process management, and parallel I/O.  Remote memory
 access (also called one-sided communication) provides a way to express
 put, get, and accumulate operations into memory in a remote process.
-In MPI, these operations are all non-blocking; to ensure that these
+In MPI, these operations are all nonblocking; to ensure that these
 operations are locally complete, an additional MPI routine must be
 called.  MPI provides two ``flavors'' of RMA completion: \emph{active target}
 and \emph{passive target}.  In active target, the target process of an
@@ -163,7 +164,7 @@ that describes the communication between two processes a \emph{connection},
 and show a simplified block diagram of the objects used by the ADI in
 Figure~\ref{fig:adi-overview}.
 On each connection, we assume that the low-level communication is
-\emph{non-blocking}, thus there are queues of pending send operations and
+\emph{nonblocking}, thus there are queues of pending send operations and
 ordered lists of receive operations.  The lines show communication paths; note
 that data may be moved from user memory to user memory without passing through
 the send or receive agents.  This allows the ADI to support so-called
@@ -185,7 +186,7 @@ the ADI and MPI layers.
 \begin{figure}
 \centerline{\psfig{file=adi-ov.eps,width=4in}}
 \caption{Simplified block diagram of the communication paths on a connection
-  between two processes.  The dotted lines separate the four communication
+  between two processes.  The dashed lines separate the four communication
   types described below.} 
 \label{fig:adi-overview}
 \end{figure}
@@ -411,7 +412,7 @@ look something like the following:
 MPID_Send( buf, count, datatype, tag, <communicator info>, &request )
 MPID_Isend( buf, count, datatype, tag, <communicator info>, &request )
 MPID_Issend(...)
-... 
+... similarly for other point-to-point functions
 \end{verbatim}
 \end{small}
 
@@ -779,7 +780,7 @@ the MPI level will keep track of returned context ids (made available
 by freeing a communicator) so that the ADI can be told when a context
 id is available again.
 
-\subsection{Starting and Stopping MPI}
+\subsection{Dynamic Processes}
 There are two major goals here for the ADI:  scale to large but not
 necessarily enormous numbers of processes and maintain modularity so
 that it is relatively easy to maintain and extend the implementation.
@@ -801,11 +802,11 @@ operations are implemented above the ADI, we do not discuss them here.
 
 \section{ADI Layers}
 \label{sec:layers}
-\textbf{This section has not been written}
 
 It is expected that implementations of the ADI will be \emph{layered},
 building the four types of communication described in
 Section~\ref{sec:comm-types} in terms of simpler communication methods.
+This section outlines several possible implementations.
 
 \subsection{Socket (TCP) communication}
 Socket-based communication provides a two-party communication similar
@@ -844,8 +845,9 @@ asynchronous communication agent.  One easy way to do this is to take
 the progress engine and place it in a separate thread.  The operating
 system then guarantees that the progress engine is called often enough
 to ensure that the locally completing communication operations make
-the necessary progress.  However, to illustrate the advantages of this
-approach, consider a different version where there are two sockets
+the necessary progress.  However, to illustrate the advantages of the
+ADI design (in terms of four separate communication types), consider a
+different version where there are two sockets   
 between communicating pairs of processes.  The first socket is used in
 a polling mode for point-to-point and active target communication
 (types 1 and 3).  This provides the low-latency associated with
@@ -858,26 +860,28 @@ Of course, other approaches are possible, including one that uses a
 mix of polling and nonpolling even on type 1 and type 3 communication.
 
 \subsection{Remote Put}
+\textbf{Not yet written}
 
 \subsection{Shared Memory}
+\textbf{Not yet written}
 
-\textbf{Old text describing the plan for this section}
-This section describes 3 layered implementations.  First, just
-implement the TCP part.  Build the rest in terms of special messages.
-The TCP implementation has two important sub cases: pure polling
-(doesn't implement cancel-send; passive-RMA) 
-and mixed (separate receive-agent thread for those messages).  
+% \textbf{Old text describing the plan for this section}
+% This section describes 3 layered implementations.  First, just
+% implement the TCP part.  Build the rest in terms of special messages.
+% The TCP implementation has two important sub cases: pure polling
+% (doesn't implement cancel-send; passive-RMA) 
+% and mixed (separate receive-agent thread for those messages).  
 
-Second, include VIA-style remote put, only for contiguous put.  Show
-growth direction.  Passive RMA in terms of the AM handler.
+% Second, include VIA-style remote put, only for contiguous put.  Show
+% growth direction.  Passive RMA in terms of the AM handler.
 
-Third, direct shared memory for passive operations: direct operation
-on memory.
+% Third, direct shared memory for passive operations: direct operation
+% on memory.
 
 \section{Summary}
 \label{sec:adi-summary}
 This section provides a short summary of the ADI routines.  Complete details
-are (will be) provided in the ADI-3 reference manual.
+are provided in the ADI-3 reference manual.
 
 \subsection{Point to point communication}
 Each simple MPI communication operation has its counterpart here:
@@ -894,6 +898,8 @@ MPID_Irecv
 MPID_Request_free
 MPID_Cancel_send
 MPID_Cancel_recv
+MPID_Iprobe
+MPID_Probe
 \end{verbatim}
 Note that these do not include the buffered send nor the two send-receive
 operations (\code{MPI_Sendrecv} and \code{MPI_Sendrecv_replace}).
@@ -901,6 +907,25 @@ Send-receive operations are described in terms of separate send and receive
 operations; buffered send may use the optional \code{MPID_tBsend} or may
 simply use \code{MPID_Isend} with the sample implementation described in the
 MPI-1 standard.
+
+In addition, the persistent communication routines have MPID equivalents:
+\begin{verbatim}
+MPID_Send_init
+MPID_Ssend_init
+MPID_Rsend_init
+MPID_Recv_init
+MPID_Startall
+\end{verbatim}
+These are provided so that the device can effectively manage the
+persistent request, which may require allocating a device-specific
+request either when an init routine (e.g., \code{MPID_Send_init}) is
+called or when the request is started with \code{MPID_Startall}.  
+
+Note that there is no direct access to the message queues by the MPI
+layer.  We recommend that the device implement the message queue
+interface defined for external tools and used by Totalview.  This
+interface is described in \cite{pvmmpi99-totalview} and the files
+\file{mpich/src/infoexport/} in MPICH-1.
 
 \subsection{Completion of Point to point communication}
 Completion of nonblocking (or incomplete in the case of a request
@@ -914,13 +939,19 @@ MPID_Progress_end
 MPID_Progress_test
 MPID_Progress_wait
 \end{verbatim}
+In addition, there is a routine that indicate \emph{polling points};
+places in the MPI code where a polling implementation should check for
+incoming messages.  This routine is nonblocking and is 
+\begin{verbatim}
+MPID_Progress_poke
+\end{verbatim}
 
 \subsection{Starting and stopping}
 The routines to start and stop the ADI match the MPI counterparts.
 Note however that there are no calls to implement ``is initialized'';
 this is managed entirely at the MPI level.
 \begin{verbatim}
-MPID_Init_thread
+MPID_Init
 MPID_Finalize
 \end{verbatim}
 
@@ -960,6 +991,19 @@ The MPID routines are similar to the MPI routines.  Undecided: does
 the MPI layer or the ADI layer setup the communicator?  The ADI layer
 needs only provide the pointers to the connection structure; the MPI
 layer could build the communicators and access the context id values.
+
+\subsection{Device Hooks}
+To allow the device to track the creation and destruction of MPI
+objects (other than requests), the device may define hook routines.
+These have the form
+\begin{verbatim}
+MPID_Dev_xxx_create_hook
+MPID_Dev_xxx_destroy_hook
+\end{verbatim}
+where \code{xxx} is the object type, such as \code{comm},
+\code{datatype}, \code{group}, etc.  Many devices will define these as
+C preprocessor macros that expand to nothing, thus eliminating any
+function calls.
 
 %\bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp,/home/gropp/papers/MPI/mpich2-coding/mpich2}
 %\bibliographystyle{plain}
