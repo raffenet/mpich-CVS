@@ -25,16 +25,20 @@ For help:
     mpdcheck -h (or --help)
         prints this message
 
-In the following modes, the -v option provides long messages.
+In the following modes, the -v (verbose) option provides info about what
+mpdcheck is doing; the -l (long messages) option causes long informational
+messages to print in situations where problems are spotted.
 
 The three major modes of operation for this program are:
 
-    mpdcheck [-v]
+    mpdcheck
         prints info about 'this' host
 
-    mpdcheck [-v] some_remote_hostname
-        prints info about 'this' host and locatability info about the
-        remote one as well
+    mpdcheck -f some_file [-ssh]
+        prints info about 'this' host and locatability info about the ones
+        listed in some_file as well (note the file might be mpd.hosts);
+        the -ssh option can be used in conjunction with the -f option to
+        cause ssh tests to be run to each remote host
 
     mpdcheck -s
         runs this program as a server on one host
@@ -48,57 +52,89 @@ __date__ = ctime()
 __version__ = "$Revision$"
 __credits__ = ""
 
-from sys    import argv, exit
+from sys    import argv, exit, stdout
+from os     import path, kill
+from signal import SIGKILL
 from socket import gethostname, getfqdn, gethostbyname_ex, gethostbyaddr, socket
+from popen2 import Popen3
+from select import select, error
 
-msg_to_server = 'hello_from_client_to_server'
 
-if len(argv) > 1  and  (argv[1] == '-h' or argv[1] == '--help'):
-    print __doc__
-    exit(-1)
+do_ssh = 0
+fullDirName = path.abspath(path.split(argv[0])[0])  # normalize
+hostsFromFile = []
+verbose = 0
+long_messsages = 0
+argidx = 1
+while argidx < len(argv):
+    if argv[argidx] == '-h'  or argv[argidx] == '--help':
+        print __doc__
+        exit(0)
+    elif argv[argidx] == '-s':
+        lsock = socket()
+        lsock.bind((gethostname(),0)) # anonymous port
+        lsock.listen(5)
+        print "server listening on: %s %s" % (gethostname(),lsock.getsockname()[1])
+        stdout.flush()
+        (tsock,taddr) = lsock.accept()
+        print "server has conn on %s from %s" % (tsock,taddr)
+        msg = tsock.recv(64)
+        if not msg:
+            print "*** server failed to recv msg from client"
+        else:
+            print "server successfully recvd msg from client: %s" % (msg)
+        tsock.sendall('ack_from_server_to_client')
+        tsock.close()
+        lsock.close()
+        exit(0)
+    elif argv[argidx] == '-c':
+        sock = socket()
+        sock.connect((argv[argidx+1],int(argv[argidx+2])))  # note double parens
+        sock.sendall('hello_from_client_to_server')
+        msg = sock.recv(64)
+        if not msg:
+            print "*** client failed to recv ack from server"
+        else:
+            print "client successfully recvd ack from server: %s" % (msg)
+            stdout.flush()
+        sock.close()
+        exit(0)
+    elif argv[argidx] == '-v':
+        verbose = 1
+        argidx += 1
+    elif argv[argidx] == '-l':
+        long_messages = 1
+        argidx += 1
+    elif argv[argidx] == '-f':
+        try:
+            hostsFile = open(argv[argidx+1])
+        except:
+            print 'unable to open file ', argv[argidx+1]
+            exit(-1)
+        for host in hostsFile:
+            host = host.rstrip()
+            if host != ''  and  host[0] != '#':
+                if ':' in host:
+                    (host,ncpus) = host.split(':')
+            hostsFromFile.append(host)
+        argidx += 2
+    elif argv[argidx] == '-ssh':
+        do_ssh = 1
+        argidx += 1
 
-if len(argv) == 2  and  argv[1] == '-s':
-    lsock = socket()
-    lsock.bind((gethostname(),0)) # anonymous port
-    lsock.listen(5)
-    print "server listening on: %s %s" % (gethostname(),lsock.getsockname()[1])
-    (tsock,taddr) = lsock.accept()
-    print "server has conn on %s from %s" % (tsock,taddr)
-    msg = tsock.recv(64)
-    if not msg:
-        print "*** server failed to recv msg from client"
-    else:
-        print "server successfully recvd msg from client: %s" % (msg)
-    tsock.sendall('ack_from_server_to_client')
-    tsock.close()
-    exit(0)
-
-if len(argv) == 4   and  argv[1] == '-c':
-    sock = socket()
-    sock.connect((argv[2],int(argv[3])))  # note double parens
-    sock.sendall(msg_to_server)
-    msg = sock.recv(64)
-    if not msg:
-        print "*** client failed to recv ack from server"
-    else:
-        print "client successfully recvd ack from server: %s" % (msg)
-    sock.close()
-    exit(0)
-
-# ELSE, check out this host and optional one mentioned on cmd-line
-
-if '-v' in argv:
-    verbose = 1
-else:
-    verbose = 0
 
 # See if we can do gethostXXX, etc. for this host
+if verbose:
+    print 'obtaining hostname via gethostname and getfqdn'
 uqhn1 = gethostname()
 fqhn1 = getfqdn()
-print "gethostname gives ", uqhn1
-print "getfqdn gives ", fqhn1
+if verbose:
+    print "gethostname gives ", uqhn1
+    print "getfqdn gives ", fqhn1
+if verbose:
+    print 'checking out unqualified hostname; make sure is not "localhost", etc.'
 if uqhn1.startswith('localhost'):
-    if verbose:
+    if long_messages:
         msg = """
         **********
         The unqualified hostname seems to be localhost. This generally
@@ -115,7 +151,7 @@ if uqhn1.startswith('localhost'):
         msg = "*** the uq hostname seems to be localhost"
     print msg.strip().replace('        ','')
 elif uqhn1 == '':
-    if verbose:
+    if long_messages:
         msg = """
         **********
         The unqualified hostname seems to be blank. This generally
@@ -131,8 +167,10 @@ elif uqhn1 == '':
     else:
         msg = "*** the uq hostname seems to be localhost"
     print msg.replace('        ','')
+if verbose:
+    print 'checking out qualified hostname; make sure is not "localhost", etc.'
 if fqhn1.startswith('localhost'):
-    if verbose:
+    if long_messages:
         msg = """
         **********
         Your fully qualified hostname seems to be set to 'localhost'.
@@ -148,7 +186,7 @@ if fqhn1.startswith('localhost'):
         msg =  "*** the fq hostname seems to be localhost"
     print msg.rstrip().replace('        ','')
 elif fqhn1 == '':
-    if verbose:
+    if long_messages:
         msg = """
         **********
         Your fully qualified hostname seems to be blank.
@@ -158,13 +196,17 @@ elif fqhn1 == '':
         msg = "*** the fq hostname is blank"
     print msg.replace('        ','')
 
+if verbose:
+    print 'obtain IP addrs via qualified and unqualified hostnames;',
+    print ' make sure other than 127.0.0.1'
 uipaddr1 = 0
 try:
     ghbnu = gethostbyname_ex(uqhn1)
-    print "gethostbyname_ex: ", ghbnu
+    if verbose:
+        print "gethostbyname_ex: ", ghbnu
     uipaddr1 = ghbnu[2][0]
     if uipaddr1.startswith('127'):
-        if verbose:
+        if long_messages:
             msg = """
             **********
             Your unqualified hostname resolves to 127.0.0.1, which is
@@ -183,7 +225,7 @@ try:
     except:
         print "*** gethostbyaddr failed for this hosts's IP %s" % (uipaddr1)
 except:
-    if verbose:
+    if long_messages:
         msg = """
         **********
         The system call gethostbyname(3) failed to resolve your
@@ -211,7 +253,8 @@ except:
 fipaddr1 = 0
 try:
     ghbnf = gethostbyname_ex(fqhn1)
-    print "gethostbyname_ex: ", ghbnf
+    if verbose:
+        print "gethostbyname_ex: ", ghbnf
     fipaddr1 = ghbnf[2][0]
     if fipaddr1.startswith('127'):
         msg = """
@@ -229,7 +272,7 @@ try:
     except:
         print "*** gethostbyaddr failed for this hosts's IP %s" % (uipaddr1)
 except:
-    if verbose:
+    if long_messages:
         msg = """
         **********
         The system call gethostbyname(3) failed to resolve your
@@ -251,9 +294,11 @@ except:
         **********
         """
     else:
-        msg = "*** gethostbyname_ex failed for this host %s" % (fqhn1)
+        msg = "*** gethostbyname_ex failed for host %s" % (fqhn1)
     print msg.replace('        ','')
 
+if verbose:
+    print 'checking that IP addrs resolve to same host'
 if uipaddr1 and fipaddr1 and uipaddr1 != fipaddr1:
     msg = """
         **********
@@ -266,16 +311,20 @@ if uipaddr1 and fipaddr1 and uipaddr1 != fipaddr1:
         """
     print msg.replace('        ','')
 
-# See if we can do gethostXXX, etc. for the remote host
-for argidx in range(1,len(argv)):
-    if argv[argidx] == '-v':    # skip verbose
-        continue
-    uqhn2 = argv[argidx]
+
+if verbose:
+    print 'now do some gethostbyaddr and gethostbyname_ex for machines in hosts file'
+# See if we can do gethostXXX, etc. for hosts in hostsFromFile
+for host in hostsFromFile:
+    uqhn2 = host
     fqhn2 = getfqdn(uqhn2)
     uipaddr2 = 0
+    if verbose:
+        print 'checking gethostbyXXX for unqualified %s' % (uqhn2)
     try:
         ghbnu = gethostbyname_ex(uqhn2)
-        print "gethostbyname_ex: ", ghbnu
+        if verbose:
+            print "gethostbyname_ex: ", ghbnu
         uipaddr2 = ghbnu[2][0]
         try:
             ghbau = gethostbyaddr(uipaddr2)
@@ -283,9 +332,12 @@ for argidx in range(1,len(argv)):
             print "*** gethostbyaddr failed for remote hosts's IP %s" % (fipaddr2)
     except:
         print "*** gethostbyname_ex failed for host %s" % (fqhn2)
+    if verbose:
+        print 'checking gethostbyXXX for qualified %s' % (uqhn2)
     try:
         ghbnf = gethostbyname_ex(fqhn2)
-        print "gethostbyname_ex: ", ghbnf
+        if verbose:
+            print "gethostbyname_ex: ", ghbnf
         fipaddr2 = ghbnf[2][0]
         if uipaddr2  and  fipaddr2 != uipaddr2:
             print "*** ipaddr via uqn (%s) does not match via fqn (%s)" % (uipaddr2,fipaddr2)
@@ -294,5 +346,193 @@ for argidx in range(1,len(argv)):
         except:
             print "*** gethostbyaddr failed for remote hosts's IP %s" % (fipaddr2)
     except:
-        print "*** gethostbyname_ex failed for this host %s" % (fqhn2)
+        print "*** gethostbyname_ex failed for host %s" % (fqhn2)
 
+
+# see if we can run /bin/date on remote hosts
+if not do_ssh:
+    exit(0)
+
+for host in hostsFromFile:
+    cmd = "ssh %s -x -n /bin/echo hello" % (host)
+    if verbose:
+        print 'trying: %s' % (cmd)
+    runner = Popen3(cmd,1,0)
+    runout = runner.fromchild
+    runerr = runner.childerr
+    runin  = runner.tochild
+    runpid = runner.pid
+    try:
+        (readyFDs,unused1,unused2) = select([runout],[],[],9)
+    except Exception, data:
+        print 'select 1 error: %s ; %s' % ( data.__class__, data)
+        exit(-1)
+    if len(readyFDs) == 0:
+        print '** ssh timed out to %s' % (host)
+    line = ''
+    failed = 0
+    if runout in readyFDs:
+        line = runout.readline()
+        if not line.startswith('hello'):
+            failed = 1
+    else:
+        failed = 1
+    if failed:
+        print '** ssh failed to %s' % (host)
+        print '** here is the output:'
+        if line:
+            print line,
+        done = 0
+        fds = [runout,runerr]
+        while not done:
+            try:
+                (readyFDs,unused1,unused2) = select(fds,[],[],1)
+            except Exception, data:
+                print 'select 2 error: %s ; %s' % ( data.__class__, data)
+                exit(-1)
+            if runout in readyFDs:
+                line = runout.readline()
+                if line:
+                    print line,
+                else:
+                    fds.remove(runout)
+            elif runerr in readyFDs:
+                line = runerr.readline()
+                if line:
+                    print line,
+                else:
+                    fds.remove(runerr)
+            else:
+                done = 1
+    try:
+        kill(runpid,SIGKILL)
+        runout.close()
+        runerr.close()
+        runin.close()
+    except:
+        pass
+    if failed:
+        exit(-1)
+
+# see if we can run mpdcheck on remote hosts
+for host in hostsFromFile:
+    cmd1 = "%s/mpdcheck.py -s" % (fullDirName)
+    if verbose:
+        print 'starting server: %s' % (cmd1)
+    runner1 = Popen3(cmd1,1,0)
+    runout1 = runner1.fromchild
+    runerr1 = runner1.childerr
+    runin1  = runner1.tochild
+    runpid1 = runner1.pid
+    try:
+        (readyFDs,unused1,unused2) = select([runout1],[],[],9)
+    except Exception, data:
+        print 'select 3 error: %s ; %s' % ( data.__class__, data)
+        exit(-1)
+    if len(readyFDs) == 0:
+        print '** timed out waiting for local server to produce output'
+    line = ''
+    failed = 0
+    port = 0
+    if runout1 in readyFDs:
+        line = runout1.readline()
+        if line.startswith('server listening on:'):
+            port = line.rstrip().split(' ')[-1]
+        else:
+            failed = 1
+    else:
+        failed = 1
+    if failed:
+        print 'could not start mpdcheck server'
+        print 'here is the output:'
+        if line:
+            print line,
+        done = 0
+        fds = [runout1,runerr1]
+        while not done:
+            try:
+                (readyFDs,unused1,unused2) = select(fds,[],[],1)
+            except Exception, data:
+                print 'select 4 error: %s ; %s' % ( data.__class__, data)
+                exit(-1)
+            if runout in readyFDs:
+                line = runout.readline()
+                if line:
+                    print line,
+                else:
+                    fds.remove(runout)
+            elif runerr in readyFDs:
+                line = runerr.readline()
+                if line:
+                    print line,
+                else:
+                    fds.remove(runerr)
+            else:
+                done = 1
+    if failed:
+        try:
+            kill(runpid1,SIGKILL)
+        except:
+            pass
+        exit(-1)
+    cmd2 = "ssh %s -x -n %s/mpdcheck.py -c %s %s" % (host,fullDirName,fqhn1,port)
+    if verbose:
+        print 'starting client: %s' % (cmd2)
+    runner2 = Popen3(cmd2,1,0)
+    runout2 = runner2.fromchild
+    runerr2 = runner2.childerr
+    runin2  = runner2.tochild
+    runpid2 = runner2.pid
+    try:
+        (readyFDs,unused1,unused2) = select([runout2],[],[],9)
+    except Exception, data:
+        print 'select 3 error: %s ; %s' % ( data.__class__, data)
+        exit(-1)
+    if len(readyFDs) == 0:
+        print '** timed out waiting for client on %s to produce output' % (host)
+    line = ''
+    failed = 0
+    port = 0
+    if runout2 in readyFDs:
+        line = runout2.readline()
+        if not line.startswith('client successfully recvd'):
+            failed = 1
+    else:
+        failed = 1
+    if failed:
+        print 'client on %s failed to access the server' % (host)
+        print 'here is the output:'
+        if line:
+            print line,
+        done = 0
+        fds = [runout2,runerr2]
+        while not done:
+            try:
+                (readyFDs,unused1,unused2) = select(fds,[],[],1)
+            except Exception, data:
+                print 'select 4 error: %s ; %s' % ( data.__class__, data)
+                exit(-1)
+            if runout2 in readyFDs:
+                line = runout2.readline()
+                if line:
+                    print line,
+                else:
+                    fds.remove(runout2)
+            elif runerr2 in readyFDs:
+                line = runerr2.readline()
+                if line:
+                    print line,
+                else:
+                    fds.remove(runerr2)
+            else:
+                done = 1
+    try:
+        kill(runpid2,SIGKILL)
+    except:
+        pass
+    if failed:
+        try:
+            kill(runpid1,SIGKILL)
+        except:
+            pass
+        exit(-1)
