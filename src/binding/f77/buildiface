@@ -1034,7 +1034,7 @@ sub build_specials {
     &print_args( $OUTFD, $args );
     &print_attr;
     print $OUTFD "{\n";
-    print $OUTFD "    *ierr = MPI_Pcontrol( v1 );\n";
+    print $OUTFD "    *ierr = MPI_Pcontrol( (int)*v1 );\n";
     print $OUTFD "}\n";
     close ($OUTFD);
     if ($build_prototypes) {
