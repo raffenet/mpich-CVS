@@ -11,6 +11,7 @@ mpiexec -file filename             # filename contains XML job description
 mpiexec [global args] [local args] executable [args]
    where global args may be
       -l                           # line labels by MPI rank
+      -if                          # network interface to use locally
       -bnr                         # MPICH1 compatibility mode
       -g<local arg name>           # global version of local arg (below)
     and local args may be
@@ -56,6 +57,7 @@ def mpiexec():
     global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
 
     validGlobalArgs = { '-l' : 0, '-usize' : 1, '-gdb' : 0, '-bnr' : 0, '-tv' : 0,
+                        '-if' : 1,
                         '-gn' : 1, '-gnp' : 1, '-ghost' : 1, '-gpath' : 1, '-gwdir' : 1,
 			'-gsoft' : 1, '-garch' : 1, '-gexec' : 1,
 			'-genvall' : 0, '-genv' : 2, '-genvnone' : 0,
@@ -111,6 +113,8 @@ def mpiexec():
         xmlCPG.setAttribute('totalprocs', str(totalProcs) )  # after handling argsets
         if globalArgs['-l']:
             xmlCPG.setAttribute('output', 'label')
+        if globalArgs['-if']:
+            xmlCPG.setAttribute('net_interface', globalArgs['-if'])
         if globalArgs['-bnr']:
             xmlCPG.setAttribute('doing_bnr', '1')
         if globalArgs['-gdb']:
@@ -142,6 +146,7 @@ def mpiexec():
 def collect_args(args):
     global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
     globalArgs['-l']        = 0
+    globalArgs['-if']       = ''
     globalArgs['-usize']    = 0
     globalArgs['-gdb']      = 0
     globalArgs['-bnr']      = 0

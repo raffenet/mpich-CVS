@@ -18,6 +18,7 @@ usage: mpdrun [args] pgm_to_execute [pgm_args]
        (-s means send stdin to all processes; not just first)
        (-g means assume user will be running gdb and send some initial setup;
            implies -m and -l and initially -s );
+       (-if is the interface to use on the local machine)
 or:    mpdrun -f input_xml_filename [-r output_xml_exit_codes_filename]
    where filename contains all the arguments in xml format
 """
@@ -68,7 +69,7 @@ global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
 global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd, totalview
 global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
 global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
-global singinitPID, singinitPORT, doingBNR
+global singinitPID, singinitPORT, doingBNR, myHost, myIP
 
 
 def mpdrun():
@@ -77,7 +78,7 @@ def mpdrun():
     global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd, totalview
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
-    global singinitPID, singinitPORT, doingBNR
+    global singinitPID, singinitPORT, doingBNR, myHost, myIP
 
     mpd_set_my_id('mpdrun_' + `getpid()`)
     pgm = ''
@@ -102,6 +103,7 @@ def mpdrun():
     singinitPORT = 0
     doingBNR = 0
     totalview = 0
+    myHost = gethostname()   # default; may be chgd by -if arg
     known_rlimit_types = ['core','cpu','fsize','data','stack','rss',
                           'nproc','nofile','ofile','memlock','as','vmem']
     username = mpd_get_my_username()
@@ -165,6 +167,12 @@ def mpdrun():
 
     if argsFilename:    # get these after we have a conn to mpd
         get_args_from_file()
+    try:
+        hostinfo = gethostbyname_ex(myHost)
+    except:
+        print 'mpd failed: gethostbyname_ex failed for %s' % (myHost)
+        exit(-1)
+    myIP = hostinfo[2][0]
     if gdbAttachJobid:
         get_vals_for_attach()
     elif not argsFilename:    # if only had cmd-line args
@@ -218,8 +226,8 @@ def mpdrun():
         linesPerRank[i] = []
 
     msgToSend = { 'cmd' : 'mpdrun',
-                  'conhost'  : gethostname(),
-                  'conip'    : gethostbyname_ex(gethostname())[2][0],
+                  'conhost'  : myHost,
+                  'conip'    : myIP,
                   'conport'  : listenPort,
                   'spawned'  : 0,
                   'nstarted' : 0,
@@ -598,7 +606,7 @@ def get_args_from_cmdline():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, try0Locally, \
            lineLabels, jobAlias, stdinGoesToWho, hostsFile, jobid, mergingOutput, totalview
     global outXmlDoc, outXmlEC, outXmlFile, gdb, gdbAttachJobid
-    global singinitPID, singinitPORT, doingBNR
+    global singinitPID, singinitPORT, doingBNR, myHost, myIP
 
     hostsFile = ''
     if len(argv) < 3:
@@ -668,6 +676,9 @@ def get_args_from_cmdline():
                 elif argv[argidx] == '-a':
                     jobAlias = argv[argidx+1]
                     argidx += 2
+                elif argv[argidx] == '-if':
+                    myHost = argv[argidx+1]
+                    argidx += 2
                 elif argv[argidx] == '-hf':
                     hostsFilename = argv[argidx+1]
                     argidx += 2
@@ -724,7 +735,7 @@ def get_args_from_file():
     global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd, totalview
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
-    global singinitPID, singinitPORT, doingBNR
+    global singinitPID, singinitPORT, doingBNR, myHost, myIP
 
     try:
         argsFile = open(argsFilename,'r')
@@ -759,6 +770,8 @@ def get_args_from_file():
     if createReq.hasAttribute('output')  and  \
        createReq.getAttribute('output') == 'label':
         lineLabels = 1
+    if createReq.hasAttribute('net_interface'):
+        myHost = createReq.getAttribute('net_interface')
     if createReq.hasAttribute('pgid'):    # our jobalias
         jobAlias = createReq.getAttribute('pgid')
     if createReq.hasAttribute('stdin_goes_to_who'):
@@ -789,7 +802,7 @@ def get_args_from_file():
                         myExitStatus = -1  # used in main
                         exit(myExitStatus) # really forces jump back into main
                     if ipaddr.startswith('127.0.0'):
-                        hostList.append(gethostname())
+                        hostList.append(myHost)
                     else:
                         hostList.append(ipaddr)
     if hostSpec and hostSpec[0].hasAttribute('check'):
@@ -927,7 +940,7 @@ def get_vals_for_attach():
     global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd, totalview
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
-    global singinitPID, singinitPORT, doingBNR
+    global singinitPID, singinitPORT, doingBNR, myHost, myIP
 
     sjobid = gdbAttachJobid.split('@')    # jobnum and originating host
     msgToSend = { 'cmd' : 'mpdlistjobs' }

@@ -7,7 +7,7 @@
 """
 usage: mpd [--host=<host> --port=<portnum>] [--noconsole] \ 
            [--trace] [--echo] [--daemon] [--bulletproof] \ 
-           [--idmyhost=<hostname>] [--listenport=<listenport>]' 
+           [--if <interface/hostname>] [--listenport <listenport>]' 
 
 Long parameter names may be abbreviated to their first letters by using
   only one hyphen and no equal sign:
@@ -24,8 +24,8 @@ Long parameter names may be abbreviated to their first letters by using
 --echo causes the mpd echo its listener port by which other mpds may connect
 --daemon causes mpd to run backgrounded, with no controlling tty
 --bulletproof says to turn bulletproofing on (experimental)
---idmyhost specifies an alternate hostname for the host this mpd is running on;
-  e.g. may be used to specify the alias for an interface other than default
+--if specifies an alternate interface/hostname for the host this mpd is running
+  on; e.g. may be used to specify the alias for an interface other than default
 --listenport specifies a port for this mpd to listen on; by default it will
   acquire one from the system
 
@@ -1286,14 +1286,14 @@ def _process_cmdline_args():
     g.bulletproof  = 0
     g.listenPort   = 0
     g.NCPUs        = 1
-    if g.configParams.has_key('idmyhost'):
-        g.myHost   = g.configParams['idmyhost']
+    if g.configParams.has_key('if'):
+        g.myHost   = g.configParams['if']
     else:
         g.myHost   = gethostname()
     try:
         (opts,args) = getopt(argv[1:],
                              'h:p:i:l:tnedb',
-                             ['host=','port=','idmyhost=','listenport=','ncpus=',
+                             ['host=','port=','if=','listenport=','ncpus=',
                               'trace','noconsole','echo','daemon','bulletproof'])
     except:
         usage()
@@ -1304,7 +1304,7 @@ def _process_cmdline_args():
             g.entryIP = gethostbyname_ex(g.entryHost)[2][0]
         elif opt[0] == '-p'  or  opt[0] == '--port':
             g.entryPort = int(opt[1])
-        elif opt[0] == '-i'  or  opt[0] == '--idmyhost':
+        elif opt[0] == '-i'  or  opt[0] == '--if':
             g.myHost = opt[1]
         elif opt[0] == '-l'  or  opt[0] == '--listenport':
             g.listenPort = int(opt[1])

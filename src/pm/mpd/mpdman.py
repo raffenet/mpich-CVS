@@ -152,6 +152,9 @@ def mpdman():
 
     if myRank == 0:
         conSocket = mpd_get_inet_socket_and_connect(conIP,conPort)  # for cntl msgs
+	if not conSocket:
+            mpd_print(1,'failed to obtain conSocket')
+            exit(-1)
         socketsToSelect[conSocket] = 1
         if spawned:
             msgToSend = { 'cmd' : 'spawned_child_is_up',

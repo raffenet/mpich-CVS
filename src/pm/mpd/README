@@ -124,7 +124,7 @@ Here is the usage information for all of the mpd commands:
  
 usage: mpd [--host=<host> --port=<portnum>] [--noconsole] \ 
            [--trace] [--echo] [--daemon] [--bulletproof] \ 
-           [--idmyhost=<hostname>] [--listenport=<listenport>]
+           [--if <interface/hostname>] [--listenport <listenport>]
 
 Long parameter names may be abbreviated to their first letters by using
   only one hyphen and no equal sign:
@@ -142,7 +142,7 @@ Long parameter names may be abbreviated to their first letters by using
 --echo causes the mpd echo its listener port by which other mpds may connect
 --daemon causes mpd to run backgrounded, with no controlling tty
 --bulletproof says to turn bulletproofing on (experimental)
---idmyhost specifies an alternate hostname for the host this mpd is running on
+--if specifies an alternate hostname for the host this mpd is running on
 --listenport specifies a port for this mpd to listen on; by default it will
   acquire one from the system.
 
