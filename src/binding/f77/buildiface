@@ -1608,12 +1608,13 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
  * DO NOT EDIT
  */
 #include \"mpi_fortimpl.h\"
+#include \"mpiimpl.h\"
 int MPI_Status_f2c( MPI_Fint *f_status, MPI_Status *c_status )
 {
     int mpi_errno = MPI_SUCCESS;
     /* This code assumes that the ints are the same size */
     if (f_status == MPI_F_STATUS_IGNORE) {
-	/* The call is erroneous (se 4.12.5 in MPI-2) */
+	/* The call is erroneous (see 4.12.5 in MPI-2) */
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, \"**notfstatignore\", 0 );
 	return MPIR_Err_return_comm( 0, \"MPI_Status_f2c\",  mpi_errno );
     }
@@ -1635,13 +1636,14 @@ int MPI_Status_f2c( MPI_Fint *f_status, MPI_Status *c_status )
  * DO NOT EDIT
  */
 #include \"mpi_fortimpl.h\"
+#include \"mpiimpl.h\"
 int MPI_Status_c2f( MPI_Status *c_status, MPI_Fint *f_status )
 {
     int mpi_errno = MPI_SUCCESS;
     /* This code assumes that the ints are the same size */
     if (c_status == MPI_STATUS_IGNORE ||
 	c_status == MPI_STATUSES_IGNORE) {
-	/* The call is erroneous (se 4.12.5 in MPI-2) */
+	/* The call is erroneous (see 4.12.5 in MPI-2) */
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, \"**notcstatignore\", 0 );
 	return MPIR_Err_return_comm( 0, \"MPI_Status_c2f\",  mpi_errno );
     }
@@ -1707,7 +1709,7 @@ sub ReadAndProcessInterface {
 	    # remove qualifiers from args
 	    $args =~ s/\s*const\s+//g;
 	    # Convert MPIO_Request to MPI_Request (temporary)
-	    $args =~ s/MPIO_Request/MPI_Request/g;
+#	    $args =~ s/MPIO_Request/MPI_Request/g;
 	    $lcname = lc($routine_name);
 	    # Eventually, we'll create a new file here.  
 	    # For C++, we may create similar files by looking up 
