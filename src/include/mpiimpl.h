@@ -113,15 +113,11 @@ typedef MPIU_INT32_T int32_t;
 #endif
 
 #ifndef HAVE_INT64_T
-#ifdef HAVE_WINDOWS_H
-typedef __int64 int64_t;
-#else
 #ifdef MPIU_INT64_T
 typedef MPIU_INT64_T int64_t;
 #else
 /* Don't define a 64 bit integer type if we didn't find one, but 
    allow the code to compile as long as we don't need that type */
-#endif
 #endif
 #endif
 
