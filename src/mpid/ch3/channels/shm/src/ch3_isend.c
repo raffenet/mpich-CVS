@@ -113,4 +113,3 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND);
     return MPI_SUCCESS;
 }
-
