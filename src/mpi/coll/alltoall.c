@@ -87,6 +87,8 @@ PMPI_LOCAL int MPIR_Alltoall(
     MPI_Request *reqarray;
     MPI_Status *starray;
     
+    if (sendcount == 0) return MPI_SUCCESS;
+    
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;

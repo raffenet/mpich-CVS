@@ -146,6 +146,11 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
         total_count += recvcnts[i];
     }
     
+    if (total_count == 0) {
+        MPIU_Free(disps);
+        return MPI_SUCCESS;
+    }
+
     /* Lock for collective operation */
     MPID_Comm_thread_lock( comm_ptr );
     MPIR_Nest_incr();
@@ -380,7 +385,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             
             /* allocate temporary buffer to store incoming data */
             tmp_recvbuf =
-                MPIU_Malloc(recvcnts[rank]*(MPIR_MAX(true_extent,extent))); 
+                MPIU_Malloc(recvcnts[rank]*(MPIR_MAX(true_extent,extent))+1); 
             if (!tmp_recvbuf) {
                 mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**nomem", 0);
                 return mpi_errno;
