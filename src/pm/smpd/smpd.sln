@@ -13,6 +13,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "smpd_util", "smpd_util.vcpr
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pmi", "..\..\pmi\smpd\pmi.vcproj", "{97B727A6-0F41-4E8E-A524-FC0F30D3AC8A}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -31,6 +35,10 @@ Global
 		{0703FA94-8B8C-49AC-BFCE-91F67B599E51}.Debug.Build.0 = Debug|Win32
 		{0703FA94-8B8C-49AC-BFCE-91F67B599E51}.Release.ActiveCfg = Release|Win32
 		{0703FA94-8B8C-49AC-BFCE-91F67B599E51}.Release.Build.0 = Release|Win32
+		{97B727A6-0F41-4E8E-A524-FC0F30D3AC8A}.Debug.ActiveCfg = Debug|Win32
+		{97B727A6-0F41-4E8E-A524-FC0F30D3AC8A}.Debug.Build.0 = Debug|Win32
+		{97B727A6-0F41-4E8E-A524-FC0F30D3AC8A}.Release.ActiveCfg = Release|Win32
+		{97B727A6-0F41-4E8E-A524-FC0F30D3AC8A}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

@@ -86,12 +86,18 @@ char * smpd_get_context_str(smpd_context_t *context)
 	return "right";
     case SMPD_CONTEXT_CHILD:
 	return "child";
+    case SMPD_CONTEXT_LISTENER:
+	return "listener";
+    case SMPD_CONTEXT_SMPD:
+	return "smpd";
+    case SMPD_CONTEXT_PMI:
+	return "pmi";
+    case SMPD_CONTEXT_UNDETERMINED:
+	return "undetermined";
     case SMPD_CONTEXT_FREED:
 	return "freed";
-    default:
-	return "unknown";
     }
-    return "error";
+    return "unknown";
 }
 
 int smpd_init_printf(void)
