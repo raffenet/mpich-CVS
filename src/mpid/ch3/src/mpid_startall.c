@@ -82,7 +82,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 		}
 		else
 		{
-		    rc = MPIR_ERR_MEMALLOCFAILED;
+		    rc = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
 		}
 		
 		break;
@@ -90,7 +90,8 @@ int MPID_Startall(int count, MPID_Request * requests[])
 
 	    default:
 	    {
-		abort();
+		rc = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_INTERN, "**ch3|badreqtype",
+					  "**ch3|badreqtype %d", MPIDI_Request_get_type(preq));
 	    }
 	}
 	

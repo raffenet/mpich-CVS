@@ -38,7 +38,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	MPIU_Object_set_ref(sreq, 0);
 	MPIDI_CH3_Request_destroy(sreq);
 	sreq = NULL;
-	mpi_errno = MPIR_ERR_MEMALLOCFAILED;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_NO_MEM, "**nomem", 0);
 	goto fn_exit;
     }
 
@@ -81,8 +81,9 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	else
 	{
 	    MPIDI_DBG_PRINTF((15, FCNAME, "ready send unable to find matching recv req"));
-	    sreq->status.MPI_ERROR = MPI_ERR_UNKNOWN; /* FIXME */
-	    rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN; /* FIXME */
+	    sreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
+							  "**rsendnomatch", "**rsendnomatch %d %d", rank, tag);
+	    rreq->status.MPI_ERROR = sreq->status.MPI_ERROR;
 	    
 	    rreq->partner_request = NULL;
 	    rreq->ch3.sender_req_id = MPI_REQUEST_NULL;

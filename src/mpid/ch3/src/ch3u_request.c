@@ -58,7 +58,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
 	    if (sreq->ch3.tmpbuf_sz == 0)
 	    {
 		MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
-		mpi_errno = MPIR_ERR_MEMALLOCFAILED;
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
 		sreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
 	    }
@@ -161,7 +161,9 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	{
 	    /* If the data can't be unpacked, the we have a mis-match between the datatype and the amount of data received.  Adjust
 	       the segment info so that the remaining data is received and thrown away. */
-	    rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN;
+	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE,
+							  "**dtypemismatch", 0);
+	    rreq->status.count = rreq->ch3.segment_first;
 	    rreq->ch3.segment_size = rreq->ch3.segment_first;
 	    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
 	    goto fn_exit;
@@ -191,7 +193,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 		/* FIXME - we should drain the data off the pipe here, but we don't have a buffer to drain it into.  should this be
 		   a fatal error? */
 		MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
-		mpi_errno = MPIR_ERR_MEMALLOCFAILED;
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
 		rreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
 	    }
@@ -202,8 +204,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
     }
     else
     {
-	/* receive and toss any extra data that does not fit in the user's
-           buffer */
+	/* receive and toss any extra data that does not fit in the user's buffer */
 	MPIDI_msg_sz_t data_sz;
 
 	data_sz = rreq->ch3.recv_data_sz - rreq->ch3.segment_first;
@@ -213,7 +214,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    if (rreq->ch3.tmpbuf_sz == 0)
 	    {
 		MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
-		mpi_errno = MPIR_ERR_MEMALLOCFAILED;
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
 		rreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
 	    }
@@ -271,10 +272,11 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
     {
 	/* If no data can be unpacked, then we have a datatype processing problem.  Adjust the segment info so that the remaining
 	   data is received and thrown away. */
-	rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN;
 	rreq->status.count = rreq->ch3.segment_first;
 	rreq->ch3.segment_size = rreq->ch3.segment_first;
 	rreq->ch3.segment_first += tmpbuf_last;
+	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE,
+						      "**dtypemismatch", 0);
     }
     else if (tmpbuf_last == rreq->ch3.segment_size)
     {
@@ -286,7 +288,8 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
 	    rreq->status.count = last;
 	    rreq->ch3.segment_size = last;
 	    rreq->ch3.segment_first = tmpbuf_last;
-	    mpi_errno = MPI_ERR_UNKNOWN;
+	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE,
+							  "**dtypemismatch", 0);
 	}
     }
     else
@@ -302,7 +305,7 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_SRBUF);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
 /*
@@ -337,8 +340,8 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 			  MPIDI_MSG_SZ_FMT, rreq->ch3.recv_data_sz, userbuf_sz));
 	unpack_sz = userbuf_sz;
 	rreq->status.count = userbuf_sz;
-	rreq->status.MPI_ERROR = MPI_ERR_TRUNCATE;
-	mpi_errno = MPI_ERR_TRUNCATE;
+	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TRUNCATE,
+						      "**truncate", 0);
     }
 
     if (unpack_sz > 0)
@@ -357,17 +360,17 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 	    MPID_Segment_init(rreq->ch3.user_buf, rreq->ch3.user_count, rreq->ch3.datatype, &seg);
 	    last = unpack_sz;
 	    MPID_Segment_unpack(&seg, 0, &last, rreq->ch3.tmpbuf);
-	    if (last != unpack_sz && mpi_errno == MPI_SUCCESS)
+	    if (last != unpack_sz)
 	    {
 		/* received data was not entirely consumed by unpack() because too few bytes remained to fill the next basic
 		   datatype */
 		rreq->status.count = last;
-		rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN;
-		mpi_errno = MPI_ERR_UNKNOWN;
+		rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE,
+							      "**dtypemismatch", 0);
 	    }
 	}
     }
-    
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
     return mpi_errno;
 }

@@ -84,7 +84,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
-						     "**ch3|mpid_cancel_send|cancelrndv", 0);
+						     "**ch3|cancelrndv", 0);
 		    goto fn_exit;
 		}
 		
@@ -107,7 +107,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
-						 "**ch3|mpid_cancel_send|canceleager", 0);
+						 "**ch3|canceleager", 0);
 		goto fn_exit;
 	    }
 	    if (cancelled)
@@ -151,7 +151,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
-					     "**ch3|mpid_cancel_send|cancelmsg", 0);
+					     "**ch3|cancelreq", 0);
 	    goto fn_exit;
 	}
 	if (csr_sreq != NULL)

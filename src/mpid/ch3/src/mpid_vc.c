@@ -25,9 +25,14 @@ typedef struct MPIDI_VCRT
 MPIDI_VCRT;
 
 
+#undef FUNCNAME
+#define FUNCNAME MPID_VCRT_Create
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
 {
     MPIDI_VCRT * vcrt;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCRT_CREATE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCRT_CREATE);
@@ -38,17 +43,19 @@ int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
 	MPIU_Object_set_ref(vcrt, 1);
 	vcrt->size = size;
 	*vcrt_ptr = vcrt;
-	MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_CREATE);
-	return MPI_SUCCESS;
     }
     else
     {
-	MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_CREATE);
-	return MPIR_ERR_MEMALLOCFAILED;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
     }
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_CREATE);
+    return mpi_errno;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_VCRT_Add_ref
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCRT_ADD_REF);
@@ -59,6 +66,10 @@ int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
     return MPI_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_VCRT_Release
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_VCRT_Release(MPID_VCRT vcrt)
 {
     int count;
@@ -82,6 +93,10 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
     return MPI_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_VCRT_Get_ptr
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCRT_GET_PTR);
@@ -92,6 +107,10 @@ int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
     return MPI_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_VCR_Dup
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCR_DUP);
@@ -103,6 +122,10 @@ int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr)
     return MPI_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_VCR_Release
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_VCR_Release(MPID_VCR vcr)
 {
     int count;
@@ -115,6 +138,10 @@ int MPID_VCR_Release(MPID_VCR vcr)
     return MPI_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_VCR_Get_lpid
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCR_GET_LPID);

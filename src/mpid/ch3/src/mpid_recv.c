@@ -34,7 +34,6 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
     rreq = MPIDI_CH3U_Recvq_FDU_or_AEP(rank, tag, comm->context_id + context_offset, &found);
     if (rreq == NULL)
     {
-	/*mpi_errno = MPIR_ERR_MEMALLOCFAILED;*/
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_NO_MEM, "**nomem", 0);
 	goto fn_exit;
     }
@@ -128,6 +127,8 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 	    mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|ctspkt", 0);
+		goto fn_exit;
 	    }
 	    if (cts_req != NULL)
 	    {

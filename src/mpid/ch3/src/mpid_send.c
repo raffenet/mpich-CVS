@@ -77,6 +77,11 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	mpi_errno = MPIDI_CH3_iStartMsg(vc, eager_pkt, sizeof(*eager_pkt), &sreq);
 	if (mpi_errno != MPI_SUCCESS)
 	{
+	    /* FIXME: this is a fatal error because a sequence number has already been allocated.  If sequence numbers are not
+	       being used then this could be a recoverable error.  A check needs to be added that sets the error to fatal or
+	       recoverable depending on the use of sequence numbers. */
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
+	    goto fn_exit;
 	}
 	if (sreq != NULL)
 	{
@@ -120,6 +125,8 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	    mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, 2, &sreq);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
+		goto fn_exit;
 	    }
 	    if (sreq != NULL)
 	    {
@@ -156,16 +163,26 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 		if (sreq->ch3.ca != MPIDI_CH3_CA_COMPLETE)
 		{
 		    /* sreq->ch3.datatype_ptr = dt_ptr;
-		       MPID_Datatype_add_ref(dt_ptr); -- no necessary for blocking functions */
+		       MPID_Datatype_add_ref(dt_ptr); -- not necessary for blocking functions */
 		}
 		
-		MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
+		mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    MPIU_Object_set_ref(sreq, 0);
+		    MPIDI_CH3_Request_destroy(sreq);
+		    sreq = NULL;
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
+		    goto fn_exit;
+		}
 	    }
 	    else
 	    {
 		MPIU_Object_set_ref(sreq, 0);
 		MPIDI_CH3_Request_destroy(sreq);
 		sreq = NULL;
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|loadsendiov", 0);
+		goto fn_exit;
 	    }
 	}
     }
@@ -200,6 +217,11 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	mpi_errno = MPIDI_CH3_iStartMsg(vc, rts_pkt, sizeof(*rts_pkt), &rts_sreq);
 	if (mpi_errno != MPI_SUCCESS)
 	{
+	    MPIU_Object_set_ref(sreq, 0);
+	    MPIDI_CH3_Request_destroy(sreq);
+	    sreq = NULL;
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|rtspkt", 0);
+	    goto fn_exit;
 	}
 	if (rts_sreq != NULL)
 	{
@@ -220,19 +242,23 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 
   fn_exit:
     *request = sreq;
-#ifdef MPICH_DBG_OUTPUT
-    if (mpi_errno == MPI_SUCCESS)
+    
+#   if defined(MPICH_DBG_OUTPUT)
     {
-	if (sreq)
+	if (mpi_errno == MPI_SUCCESS)
 	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "request allocated, handle=0x%08x", sreq->handle));
-	}
-	else
-	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "operation complete, no requests allocated"));
+	    if (sreq)
+	    {
+		MPIDI_DBG_PRINTF((15, FCNAME, "request allocated, handle=0x%08x", sreq->handle));
+	    }
+	    else
+	    {
+		MPIDI_DBG_PRINTF((15, FCNAME, "operation complete, no requests allocated"));
+	    }
 	}
     }
-#endif
+#   endif
+    
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEND);
     return mpi_errno;

@@ -69,6 +69,8 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	mpi_errno = MPIDI_CH3_iStartMsg(vc, ready_pkt, sizeof(*ready_pkt), &sreq);
 	if (mpi_errno != MPI_SUCCESS)
 	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
+	    goto fn_exit;
 	}
 	if (sreq != NULL)
 	{
@@ -98,6 +100,8 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, 2, &sreq);
 	if (mpi_errno != MPI_SUCCESS)
 	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
+	    goto fn_exit;
 	}
 	if (sreq != NULL)
 	{
@@ -136,31 +140,45 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 		   MPID_Datatype_add_ref(dt_ptr); -- not needed for blocking operations */
 	    }
 	    
-	    MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
+	    mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		MPIU_Object_set_ref(sreq, 0);
+		MPIDI_CH3_Request_destroy(sreq);
+		sreq = NULL;
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
+		goto fn_exit;
+	    }
 	}
 	else
 	{
 	    MPIU_Object_set_ref(sreq, 0);
 	    MPIDI_CH3_Request_destroy(sreq);
 	    sreq = NULL;
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|loadsendiov", 0);
+	    goto fn_exit;
 	}
     }
 
   fn_exit:
     *request = sreq;
-#ifdef MPICH_DBG_OUTPUT
-    if (mpi_errno == MPI_SUCCESS)
+    
+#   if defined(MPICH_DBG_OUTPUT)
     {
-	if (sreq)
+	if (mpi_errno == MPI_SUCCESS)
 	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "request allocated, handle=0x%08x", sreq->handle));
-	}
-	else
-	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "operation complete, no requests allocated"));
+	    if (sreq)
+	    {
+		MPIDI_DBG_PRINTF((15, FCNAME, "request allocated, handle=0x%08x", sreq->handle));
+	    }
+	    else
+	    {
+		MPIDI_DBG_PRINTF((15, FCNAME, "operation complete, no requests allocated"));
+	    }
 	}
     }
-#endif
+#   endif
+    
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_RSEND);
     return mpi_errno;

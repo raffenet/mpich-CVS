@@ -21,6 +21,7 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ);
@@ -39,18 +40,18 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 	
 	case MPIDI_CH3_CA_RELOAD_IOV:
 	{
-	    int mpi_errno;
-
 	    sreq->ch3.iov_count = MPID_IOV_LIMIT;
 	    mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, sreq->ch3.iov, &sreq->ch3.iov_count);
-	    if (mpi_errno == MPI_SUCCESS)
+	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		MPIDI_CH3_iWrite(vc, sreq);
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|loadsendiov", 0);
+		goto fn_exit;
 	    }
-	    else
+	    mpi_errno = MPIDI_CH3_iWrite(vc, sreq);
+	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		MPIDI_ERR_PRINTF((FCNAME, "MPIDI_CH3_CA_RELOAD_IOV failed"));
-		MPID_Abort(NULL, mpi_errno);
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|senddata", 0);
+		goto fn_exit;
 	    }
 	    
 	    break;
@@ -58,11 +59,14 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 	
 	default:
 	{
-	    MPIDI_ERR_PRINTF((FCNAME, "action %d UNIMPLEMENTED", sreq->ch3.ca));
-	    MPID_Abort(NULL, MPI_ERR_INTERN);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_INTERN, "**ch3|badca",
+					     "**ch3|badca %d", sreq->ch3.ca);
+	    break;
 	}
     }
+
+  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 

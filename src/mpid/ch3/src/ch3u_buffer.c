@@ -36,10 +36,10 @@ void MPIDI_CH3U_Buffer_copy(
 
     if (sdata_sz > rdata_sz)
     {
-	MPIDI_DBG_PRINTF((15, FCNAME, "message truncated, sdata_sz=" MPIDI_MSG_SZ_FMT " rdata_sz=", MPIDI_MSG_SZ_FMT,
+	MPIDI_DBG_PRINTF((15, FCNAME, "message truncated, sdata_sz=" MPIDI_MSG_SZ_FMT " rdata_sz=" MPIDI_MSG_SZ_FMT,
 			  sdata_sz, rdata_sz));
 	sdata_sz = rdata_sz;
-	*rmpi_errno = MPI_ERR_TRUNCATE;
+	*rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TRUNCATE, "**truncate", 0);
     }
     
     if (sdata_sz == 0)
@@ -65,8 +65,7 @@ void MPIDI_CH3U_Buffer_copy(
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-unpack last=" MPIDI_MSG_SZ_FMT, last ));
 	if (last != sdata_sz)
 	{
-	    *smpi_errno = MPI_ERR_UNKNOWN;
-	    *rmpi_errno = MPI_ERR_UNKNOWN;
+	    *rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE, "**dtypemismatch", 0);
 	}
 
 	*rsz = last;
@@ -83,8 +82,7 @@ void MPIDI_CH3U_Buffer_copy(
 	MPIDI_DBG_PRINTF((40, FCNAME, "post-pack last=" MPIDI_MSG_SZ_FMT, last ));
 	if (last != sdata_sz)
 	{
-	    *smpi_errno = MPI_ERR_UNKNOWN;
-	    *rmpi_errno = MPI_ERR_UNKNOWN;
+	    *rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE, "**dtypemismatch", 0);
 	}
 
 	*rsz = last;
@@ -102,8 +100,8 @@ void MPIDI_CH3U_Buffer_copy(
 	if (buf == NULL)
 	{
 	    MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
-	    *smpi_errno = MPIR_ERR_MEMALLOCFAILED;
-	    *rmpi_errno = MPIR_ERR_MEMALLOCFAILED;
+	    *smpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
+	    *rmpi_errno = *smpi_errno;
 	    *rsz = 0;
 	    goto fn_exit;
 	}
@@ -153,7 +151,7 @@ void MPIDI_CH3U_Buffer_copy(
 	    if (sfirst == sdata_sz)
 	    {
 		/* datatype mismatch -- remaining bytes could not be unpacked */
-		*rmpi_errno = MPI_ERR_UNKNOWN;
+		*rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE, "**dtypemismatch", 0);
 		break;
 	    }
 	    

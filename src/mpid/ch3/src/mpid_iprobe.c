@@ -14,6 +14,7 @@ int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int context_offset, int *
 {
     MPID_Request * rreq;
     const int context = comm->context_id + context_offset;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_IPROBE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_IPROBE);
@@ -29,10 +30,10 @@ int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int context_offset, int *
     }
     else
     {
-	MPID_Progress_poke();
+	mpi_errno = MPID_Progress_poke();
 	*flag = FALSE;
     }
     
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_IPROBE);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
