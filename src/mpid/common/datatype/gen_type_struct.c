@@ -353,7 +353,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 	    new_dlp->loop_params.s_t.blocksize_array[loop_idx] = 1;
 	    new_dlp->loop_params.s_t.el_extent_array[loop_idx] =
 		blklen_array[i] * dummy_dlp->el_extent;
-	    PREPEND_PREFIX(Dataloop_free)(dummy_dlp);
+	    PREPEND_PREFIX(Dataloop_free)(&dummy_dlp);
 	}
 	else
 	{
