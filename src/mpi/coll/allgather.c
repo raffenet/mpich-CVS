@@ -36,7 +36,7 @@
    it's still a logarithmic algorithm.) 
 
    It is interesting to note that this algorithm for MPI_Allgather has
-   the same cost as the MST algorithm for MPI_Gather!
+   the same cost as the binary tree algorithm for MPI_Gather!
 
    Possible improvements: 
 

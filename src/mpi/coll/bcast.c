@@ -26,11 +26,11 @@
    
    Algorithm: MPI_Bcast
 
-   For short messages, we use a minimum spanning tree (MST) algorithm. 
+   For short messages, we use a binary tree algorithm. 
    Cost = lgp.alpha + n.lgp.beta
 
    For long messages, we do a scatter followed by an allgather. 
-   We first scatter the buffer using an MST algorithm. This costs
+   We first scatter the buffer using a binary tree algorithm. This costs
    lgp.alpha + n.((p-1)/p).beta
    If the datatype is contiguous and the communicator is homogeneous,
    we treat the data as bytes and divide (scatter) it among processes
@@ -46,7 +46,7 @@
    it's still a logarithmic algorithm.) Therefore, for long messages
    Total Cost = 2.lgp.alpha + 2.n.((p-1)/p).beta
 
-   Note that this algorithm has twice the latency as the MST algorithm
+   Note that this algorithm has twice the latency as the tree algorithm
    we use for short messages, but requires lower bandwidth: 2.n.beta
    versus n.lgp.beta. Therefore, for long messages and when lgp > 2,
    this algorithm will perform better.
@@ -198,12 +198,12 @@ int MPIR_Bcast (
   }
 
   else { 
-      /* use long message algorithm: MST scatter followed by an allgather */
+      /* use long message algorithm: binary tree scatter followed by an allgather */
 
       /* The scatter algorithm divides the buffer into nprocs pieces and
          scatters them among the processes. Root gets the first piece,
-         root+1 gets the second piece, and so forth. Uses the same minimum
-         spanning tree (MST) algorithm as above. Ceiling division
+         root+1 gets the second piece, and so forth. Uses the same binary
+         tree algorithm as above. Ceiling division
          is used to compute the size of each piece. This means some
          processes may not get any data. For example if bufsize = 97 and
          nprocs = 16, ranks 15 and 16 will get 0 data. On each process, the

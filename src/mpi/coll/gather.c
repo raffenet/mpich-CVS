@@ -25,7 +25,7 @@
    
    Algorithm: MPI_Gather
 
-   We use a minimum spanning tree (MST) algorithm for both short and
+   We use a binary tree algorithm for both short and
    long messages. At nodes other than leaf nodes we need to allocate
    a temporary buffer to store the incoming message. If the root is
    not rank 0, we receive data in a temporary buffer on the root and
@@ -76,7 +76,7 @@ int MPIR_Gather (
     /* Lock for collective operation */
     MPID_Comm_thread_lock( comm_ptr );
     
-/* Use MST algorithm. */
+/* Use binary tree algorithm. */
     
     relative_rank = (rank >= root) ? rank - root : rank - root + comm_size;
     

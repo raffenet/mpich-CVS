@@ -26,7 +26,7 @@
    
    Algorithm: MPI_Scatter
 
-   We use a minimum spanning tree (MST) algorithm for both short and
+   We use a binary tree algorithm for both short and
    long messages. At nodes other than leaf nodes we need to allocate
    a temporary buffer to store the incoming message. If the root is
    not rank 0, we reorder the sendbuf in order of relative ranks by 
@@ -75,7 +75,7 @@ PMPI_LOCAL int MPIR_Scatter (
         is_homogeneous = 0;
 #endif
 
-/* Use MST algorithm */
+/* Use binary tree algorithm */
     
     if (rank == root) 
         MPID_Datatype_get_extent_macro(sendtype, extent);
@@ -368,7 +368,7 @@ PMPI_LOCAL int MPIR_Scatter_inter (
 {
 /*  Intercommunicator scatter.
     For short messages, root sends to rank 0 in remote group. rank 0
-    does local intracommunicator scatter (MST). 
+    does local intracommunicator scatter (binary tree). 
     Cost: (lgp+1).alpha + n.((p-1)/p).beta + n.beta
    
     For long messages, we use linear scatter to avoid the extra n.beta.
