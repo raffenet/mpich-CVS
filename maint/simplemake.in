@@ -537,6 +537,12 @@ sub ReadMfile {
 	elsif (/^LDADD\s*=\s*(.*)\s*$/) {
 	    $ldadd_all = $1;
 	}
+	elsif (/^([\w-]*)_DEPADD\s*=\s*(.*)\s*$/) {
+	    $pgm_depadd{$1} = $2;
+	}
+	elsif (/^DEPADD\s*=\s*(.*)\s*$/) {
+	    $depadd_all = $1;
+	}
 	elsif (/^([\w-]*)\s*=\s*(.*)\s*$/) {
 	    $other_vars .= "$origline";
 	    # Save all variable names
@@ -1019,6 +1025,8 @@ sub ClearVars {
     %programs = ();
     %pgm_ldadd = ();
     $ldadd_all = "";
+    %pgm_depadd = ();
+    $depadd_all = "";
     # Variables
     %makevars = ();
     # Information about program targets
@@ -1518,6 +1526,14 @@ sub TargetPrograms {
 	        &print_make_line( FD, " $libdir/lib$libname.a" );
             }
 	}
+	$otherdep = $pgm_depadd{pgm};
+	if (defined($otherdep)) {
+	    &print_make_line( FD, " $otherdep" );
+	}
+	if (defined($depadd_all)) {
+	    &print_make_line( FD, " $depadd_all" );
+	}
+
 	# Use the link rule appropriate for this program type
 	$pgmtype = $pgmsrctype{$pgm};
 	&print_make_endline( FD );

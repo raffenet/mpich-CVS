@@ -1,4 +1,5 @@
 LDADD = -L ../../../lib
+DEPADD = ../../../lib/libmpich.a
 grouptest_SOURCES = grouptest.c
 grouptest2_SOURCES = grouptest2.c
 groupcreate_SOURCES = groupcreate.c

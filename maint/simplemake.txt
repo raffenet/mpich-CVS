@@ -82,6 +82,10 @@ lib<name>_a_DIR     = directory in which lib<name> will exist
 		      -L<path> string is present.  If external libraries
 		      are also needed (e.g., -lm), mark these with
 		      the EXTERNAL_LIBS variable
+LDADD               = names of LD options to add to all programs
+<name>_DEP          = Additional dependencies for a program (e.g., libraries)
+DEPALL              = Additional dependencies for *all* programs
+
 SUBDIRS             = names of subsidiary directories
 EXTRA_PROGRAMS      = names of programs that should *not* be built by default
 install_<type>      = names of files to install when "make install" is
