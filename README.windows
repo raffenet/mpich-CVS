@@ -31,7 +31,7 @@ the mpich2 import libraries in mpich2\lib
 8) Place your executable along with the mpich2 dlls somewhere accessable to
 all the machines.
 
-9) Execute a job by running "mpirun -np 3 myapp.exe".
+9) Execute a job by running "mpirun -mpich2 -np 3 myapp.exe".
 
 Read the user's guide for complete options to mpirun and mpd.
 Email bugs and error reports to mpich2-maint@mcs.anl.gov.
