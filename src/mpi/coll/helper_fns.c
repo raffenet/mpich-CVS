@@ -57,7 +57,6 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                   MPI_Comm comm, MPI_Status *status) 
 {
     MPID_Request *recv_req_ptr=NULL, *send_req_ptr=NULL;
-    MPI_Request recv_req;
     int mpi_errno;
     MPID_Comm *comm_ptr = NULL;
 

@@ -70,12 +70,17 @@ typedef struct RLOG_EVENT
     double end_time;
 } RLOG_EVENT;
 
+#define RLOG_ARROW_LEFT  1
+#define RLOG_ARROW_RIGHT 0
+
 typedef struct RLOG_ARROW
 {
     int src;
     int dest;
     int tag;
     int length;
+    int leftright;
+    int pad;
     double start_time;
     double end_time;
 } RLOG_ARROW;
