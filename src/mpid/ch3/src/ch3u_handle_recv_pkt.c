@@ -1372,7 +1372,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 
 		resp_pkt->type = MPIDI_CH3_PKT_CLOSE;
 		resp_pkt->ack = TRUE;
-		    
+
+		/*printf("sending close(TRUE) to %d\n", vc->pg_rank);fflush(stdout);*/
 		mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), &resp_sreq);
 		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS)
@@ -1393,20 +1394,24 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 	    {
 		if (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE)
 		{
+		    /*printf("received close(FALSE) from %d, moving to CLOSE_ACKED.\n", vc->pg_rank);fflush(stdout);*/
 		    vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		}
 		else /* (vc->state == MPIDI_VC_STATE_ACTIVE) */
-		{ 
+		{
+		    /*printf("received close(FALSE) from %d, moving to REMOTE_CLOSE.\n", vc->pg_rank);fflush(stdout);*/
 		    vc->state = MPIDI_VC_STATE_REMOTE_CLOSE;
 		}
 	    }
 	    else
 	    {
+		/*printf("received close(TRUE) from %d, moving to CLOSE_ACKED.\n", vc->pg_rank);fflush(stdout);*/
 		MPIU_Assert (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE || vc->state == MPIDI_VC_STATE_CLOSE_ACKED);
 		vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		mpi_errno = MPIDI_CH3_Connection_terminate(vc);
 	    }
-	    
+
+	    *rreqp = NULL;
 	    break;
 	}
 	
