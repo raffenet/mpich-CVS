@@ -50,7 +50,7 @@ int ib_handle_read(MPIDI_VC *vc_ptr, void *mem_ptr, int num_bytes)
     if (vc_ptr->data.ib.reading_header)
     {
 	MPIU_dbg_printf("ib_handle_read() received header - %d bytes\n", num_bytes);
-	memcpy(&vc_ptr->pkt_car, mem_ptr, num_bytes);
+	memcpy(&vc_ptr->pkt_car.msg_header.pkt, mem_ptr, num_bytes);
 	BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);
 	mm_cq_enqueue(&vc_ptr->pkt_car);
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ);
