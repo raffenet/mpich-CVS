@@ -33,6 +33,16 @@ struct MPID_Segment_piece_params {
             int length;
         } pack_vector;
         struct {
+	    DLOOP_Offset *offp;
+	    int *sizep; /* see notes in Segment_flatten header */
+            int index;
+            int length;
+        } flatten;
+	struct {
+	    char *last_loc;
+	    int count;
+	} contig_blocks;
+        struct {
             char *unpack_buffer;
         } unpack;
         struct {
@@ -133,6 +143,27 @@ static int MPID_Segment_contig_pack_to_buf(int *blocks_p,
 					   void *bufp,
 					   void *v_paramp);
 
+static int MPID_Segment_contig_count_block(int *blocks_p,
+					   int el_size,
+					   DLOOP_Offset rel_off,
+					   void *bufp,
+					   void *v_paramp);
+
+static int MPID_Segment_contig_flatten(int *blocks_p,
+				       int el_size,
+				       DLOOP_Offset rel_off,
+				       void *bufp,
+				       void *v_paramp);
+
+static int MPID_Segment_vector_flatten(int *blocks_p,
+				       int count,
+				       int blksz,
+				       DLOOP_Offset stride,
+				       int basic_size,
+				       DLOOP_Offset rel_off, /* offset into buffer */
+				       void *bufp, /* start of buffer */
+				       void *v_paramp);
+
 /* Segment_pack - we need to implement this if for no other reason
  * than for performance testing
  *
@@ -198,6 +229,69 @@ void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
     /* last value already handled by MPID_Segment_manipulate */
     *lengthp = packvec_params.u.pack_vector.index;
     return;
+}
+
+/* MPID_Segment_flatten
+ *
+ * offp    - pointer to array to fill in with offsets
+ * sizep   - pointer to array to fill in with sizes
+ * lengthp - pointer to value holding size of arrays; # used is returned
+ *
+ * Internally, index is used to store the index of next array value to fill in.
+ *
+ * TODO: MAKE SIZES Aints IN ROMIO, CHANGE THIS TO USE INTS TOO.
+ */
+void MPID_Segment_flatten(struct DLOOP_Segment *segp,
+			  DLOOP_Offset first,
+			  DLOOP_Offset *lastp,
+			  DLOOP_Offset *offp,
+			  int *sizep,
+			  DLOOP_Offset *lengthp)
+{
+    struct MPID_Segment_piece_params packvec_params;
+
+    packvec_params.u.flatten.offp = offp;
+    packvec_params.u.flatten.sizep = sizep;
+    packvec_params.u.flatten.index   = 0;
+    packvec_params.u.flatten.length  = *lengthp;
+
+    assert(*lengthp > 0);
+
+    MPID_Segment_manipulate(segp,
+			    first,
+			    lastp, 
+			    MPID_Segment_contig_flatten, 
+			    MPID_Segment_vector_flatten,
+			    &packvec_params);
+
+    /* last value already handled by MPID_Segment_manipulate */
+    *lengthp = packvec_params.u.flatten.index;
+    return;
+}
+
+
+/* MPID_Segment_count_contig_blocks()
+ *
+ * Count number of contiguous regions in segment between first and last.
+ */
+void MPID_Segment_count_contig_blocks(struct DLOOP_Segment *segp,
+				      DLOOP_Offset first,
+				      DLOOP_Offset *lastp,
+				      DLOOP_Offset *countp)
+{
+    struct MPID_Segment_piece_params packvec_params;
+
+    packvec_params.u.contig_blocks.last_loc = NULL;
+    packvec_params.u.contig_blocks.count    = 0;
+
+    MPID_Segment_manipulate(segp,
+			    first,
+			    lastp,
+			    MPID_Segment_contig_count_block,
+			    NULL,
+			    &packvec_params);
+
+    *countp = packvec_params.u.contig_blocks.count;
 }
 
 /* Segment_unpack
@@ -275,6 +369,66 @@ static int MPID_Segment_vector_pack_to_iov(int *blocks_p,
     return 0;
 }
 
+/* MPID_Segment_vector_flatten
+ *
+ * Notes: 
+ * - this is only called when the starting position is at the beginning
+ *   of a whole block in a vector type.
+ * - this was a virtual copy of MPID_Segment_pack_to_iov; now it has improvements
+ *   that MPID_Segment_pack_to_iov needs.
+ * - we return the number of blocks that we did process in region pointed to by
+ *   blocks_p.
+ */
+static int MPID_Segment_vector_flatten(int *blocks_p,
+				       int count,
+				       int blksz,
+				       DLOOP_Offset stride,
+				       int basic_size,
+				       DLOOP_Offset rel_off, /* offset into buffer */
+				       void *bufp, /* start of buffer */
+				       void *v_paramp)
+{
+    int i, size, blocks_left;
+    struct MPID_Segment_piece_params *paramp = v_paramp;
+
+    blocks_left = *blocks_p;
+
+    for (i=0; i < count && blocks_left > 0; i++) {
+	int index = paramp->u.flatten.index;
+
+	if (blocks_left > blksz) {
+	    size = blksz * basic_size;
+	    blocks_left -= blksz;
+	}
+	else {
+	    /* last pass */
+	    size = blocks_left * basic_size;
+	    blocks_left = 0;
+	}
+
+	if (index > 0 && ((DLOOP_Offset) bufp + rel_off) ==
+	    ((paramp->u.flatten.offp[index - 1]) + (DLOOP_Offset) paramp->u.flatten.sizep[index - 1]))
+	{
+	    /* add this size to the last region rather than using up another one */
+	    paramp->u.flatten.sizep[index - 1] += size;
+	}
+	else if (index < paramp->u.flatten.length) {
+	    /* take up another region */
+	    paramp->u.flatten.offp[index]  = (DLOOP_Offset) bufp + rel_off;
+	    paramp->u.flatten.sizep[index] = size;
+	    paramp->u.flatten.index++;
+	}
+	else {
+	    /* we tried to add to the end of the last region and failed; add blocks back in */
+	    *blocks_p = *blocks_p - blocks_left + (size / basic_size);
+	    return 1;
+	}
+	rel_off += stride;
+
+    }
+    assert(blocks_left == 0);
+    return 0;
+}
 
 /* MPID_Segment_contig_pack_to_iov
  */
@@ -311,6 +465,79 @@ static int MPID_Segment_contig_pack_to_iov(int *blocks_p,
 	paramp->u.pack_vector.index++;
 	/* check to see if we have used our entire vector buffer, and if so return 1 to stop processing */
 	if (paramp->u.pack_vector.index == paramp->u.pack_vector.length) return 1;
+    }
+    return 0;
+}
+
+/* MPID_Segment_contig_flatten
+ */
+static int MPID_Segment_contig_flatten(int *blocks_p,
+				       int el_size,
+				       DLOOP_Offset rel_off,
+				       void *bufp,
+				       void *v_paramp)
+{
+    int size, index;
+    struct MPID_Segment_piece_params *paramp = v_paramp;
+
+    size = *blocks_p * el_size;
+    index = paramp->u.flatten.index;
+
+#ifdef MPID_SP_VERBOSE
+    MPIU_dbg_printf("\t[index = %d, loc = (%x + %x) = %x, size = %d]\n",
+		    index,
+		    (unsigned) bufp,
+		    (unsigned) rel_off,
+		    (unsigned) bufp + rel_off,
+		    size);
+#endif
+    
+    if (paramp->u.flatten.index > 0 && ((DLOOP_Offset) bufp + rel_off) ==
+	((paramp->u.flatten.offp[index - 1]) + (DLOOP_Offset) paramp->u.flatten.sizep[index - 1]))
+    {
+	/* add this size to the last vector rather than using up another one */
+	paramp->u.flatten.sizep[index - 1] += size;
+    }
+    else {
+	paramp->u.flatten.offp[index] = (DLOOP_Offset) bufp + rel_off;
+	paramp->u.flatten.sizep[index] = size;
+
+	paramp->u.flatten.index++;
+	/* check to see if we have used our entire vector buffer, and if so return 1 to stop processing */
+	if (paramp->u.flatten.index == paramp->u.flatten.length) return 1;
+    }
+    return 0;
+}
+
+/* MPID_Segment_contig_count_block
+ */
+static int MPID_Segment_contig_count_block(int *blocks_p,
+					   int el_size,
+					   DLOOP_Offset rel_off,
+					   void *bufp,
+					   void *v_paramp)
+{
+    int size;
+    struct MPID_Segment_piece_params *paramp = v_paramp;
+
+    size = *blocks_p * el_size;
+
+#ifdef MPID_SP_VERBOSE
+    MPIU_dbg_printf("count = %d, buf+off = %d, lastloc = %d\n",
+		    (int) paramp->u.contig_blocks.count,
+		    (int) ((char *) bufp + rel_off),
+		    (int) paramp->u.contig_blocks.last_loc);
+#endif
+
+    if (paramp->u.contig_blocks.count > 0 && ((char *) bufp + rel_off) == paramp->u.contig_blocks.last_loc)
+    {
+	/* this region is adjacent to the last */
+	paramp->u.contig_blocks.last_loc += size;
+    }
+    else {
+	/* new region */
+	paramp->u.contig_blocks.last_loc = (char *) bufp + rel_off + size;
+	paramp->u.contig_blocks.count++;
     }
     return 0;
 }

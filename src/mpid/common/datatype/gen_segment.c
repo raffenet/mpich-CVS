@@ -372,7 +372,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 #endif
 
 	    /* ??? SHOULD THIS BE >= FOR SOME REASON ??? */
-	    if (stream_off + myblocks * basic_size > last) {
+	    if (last != SEGMENT_IGNORE_LAST && stream_off + myblocks * basic_size > last) {
 		/* Cannot process the entire "piece" -- round down */
 		myblocks = ((last - stream_off) / basic_size);
 #ifdef DLOOP_M_VERBOSE

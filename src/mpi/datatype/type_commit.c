@@ -68,8 +68,10 @@ int MPI_Type_commit(MPI_Datatype *datatype)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
-    if (HANDLE_GET_KIND(*datatype) != HANDLE_KIND_BUILTIN) datatype_ptr->is_committed = 1;
+    mpi_errno = MPID_Type_commit(datatype);
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_COMMIT);
-    return MPI_SUCCESS;
+
+    if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
+    else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }

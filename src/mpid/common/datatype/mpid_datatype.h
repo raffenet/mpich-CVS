@@ -159,6 +159,7 @@ typedef struct MPID_Datatype {
     volatile int  ref_count;
     int           is_contig;     /* True if data is contiguous (even with 
                                     a (count,datatype) pair) */
+    int           n_contig_blocks; /* number of contiguous blocks in one instance of this type */
     int           size;          /* Q: maybe this should be in the dataloop? */
     MPI_Aint      extent;        /* MPI-2 allows a type to be created by
                                     resizing (the extent of) an existing 
@@ -278,6 +279,8 @@ do {												\
 } while (0)
 
 /* Datatype functions */
+int MPID_Type_commit(MPI_Datatype *type);
+
 int MPID_Type_dup(MPI_Datatype oldtype,
 		  MPI_Datatype *newtype);
 
@@ -360,6 +363,18 @@ void MPID_Segment_unpack_vector(struct DLOOP_Segment *segp,
 				DLOOP_Offset *lastp,
 				DLOOP_VECTOR *vector,
 				DLOOP_Offset *lengthp);
+
+void MPID_Segment_count_contig_blocks(struct DLOOP_Segment *segp,
+				      DLOOP_Offset first,
+				      DLOOP_Offset *lastp,
+				      DLOOP_Offset *countp);
+
+void MPID_Segment_flatten(struct DLOOP_Segment *segp,
+			  DLOOP_Offset first,
+			  DLOOP_Offset *lastp,
+			  DLOOP_Offset *offp,
+			  int *sizep,
+			  DLOOP_Offset *lengthp);
 
 /* misc */
 int MPID_Datatype_set_contents(struct MPID_Datatype *ptr,
