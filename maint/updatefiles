@@ -231,9 +231,9 @@ if [ $? = 0 ] ; then has_unix_find=yes ; else has_unix_find=no ; fi
 if [ "$has_unix_find" = "yes" ] ; then
     for dir in `find . -name 'configure.in' -print` ; do
         dir=`dirname $dir`
-	echo $dir
+	#echo $dir
 	if [ -s $dir/Makefile.in ] ; then 
-            echo "Found $dir/configure.in"
+            #echo "Found $dir/configure.in"
 	    #
 	    # Check for known problems
 	    if [ $dir = "./src/binding/f77" -a \
@@ -267,17 +267,24 @@ EOF
 	        # There is a version 1 and version 2 configure in this
 	        # directory.  
 	        if [ $dir = "./src/mpi/romio" ] ; then
+		    echo $dir
 		    (cd $dir ; \
 		     autoheader -l ../../../confdb configure2.in > adio/include/romioconf.h ; \
 		     autoconf -l ../../../confdb configure2.in > configure )
 		fi
 	        continue
 	    fi
+	    # The make -q checks whether the target is upto date first;
+	    # if it isn't, we remake it.
             (cd $dir ; rm -f mf.tmp ; \
 	    sed -e 's%^SHELL[ 	]*=.*%SHELL = /bin/sh%' \
 		-e "s%@srcdir@%.%g" \
 		-e '/@SET_MAKE@/d' Makefile.in > mf.tmp ;\
-	    make -f mf.tmp configure ; rm -f mf.tmp )
+		if make -q -f mf.tmp configure 2>&1 >/dev/null ; then \
+            : ; else \
+	    echo "Found $dir/configure.in" ; \
+	    make -f mf.tmp configure ; fi ; rm -f mf.tmp  \
+	    )
 	    #
             # Under cygwin, sometimes (?) configure ends up containing \^M
 	    # (that <ctrl>-M).  We may need to add this sed step

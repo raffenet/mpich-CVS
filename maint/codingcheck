@@ -112,6 +112,7 @@ sub ProcessFile {
 	if (/\/\//) {
 	    $cxx_comments_found ++;
 	    if ($cxx_comments_found == 1 && ! $cxx_header) {
+		&PrintCurrentDirectory;
 		print "C++ comment found in $filename:\n";
 		my $line = $_;
 		if (/(.*)\n/) {
@@ -148,9 +149,11 @@ sub ProcessFile {
     }
     # Output summary messages
     foreach $key (keys(%warningmsgs)) {
+	&PrintCurrentDirectory;
 	print "$key ($warningmsgs{$key} times)\n";
     }
     if ($cxx_comments_found > 1 && !$cxx_header) {
+	&PrintCurrentDirectory;
 	print "$cxx_comments_found C++ comments found in $filename\n";
     }
     &ReportOnPreamble( $filename );
@@ -189,6 +192,7 @@ sub CheckForBadSubs {
     # and allow the ones that are properly guarded.
     foreach $subname (@guardedsubs) {
 	if (/$subname\s*\(/ && !defined($AllowedRoutines{$subname})) {
+	    &PrintCurrentDirectory;
 	    print "Caution: found reference to routine $subname in $filename\n";
 	}
     }
@@ -279,6 +283,7 @@ sub CheckForBadDefines {
 	    print "$defname\n" if $debug;
 	    if (! defined($AllowedDefines{$defname}) && 
 		&CheckName( $defname ) ) {
+		&PrintCurrentDirectory;
 		print "Warning: ifdef name $defname used in $filename is nonstandard\n"
 	    }
 	}
@@ -288,6 +293,7 @@ sub CheckForBadDefines {
 		   print "$defname\n" if $debug;
 		   if (! defined($AllowedDefines{$defname}) && 
 		       &CheckName( $defname ) ) {
+		       &PrintCurrentDirectory;
 		       print "Warning: ifdef name $defname used in $filename is nonstandard\n"
 		       }
 		   $curline =~ s/defined\($defname\)//g;
@@ -324,7 +330,7 @@ sub ProcessDir {
 	print "processing $file\n" if ($verbose);
 	if (-d "$curdir/$file") {
 	    if (! ($file =~ /^\./) && ! ($file =~ /CVS/) ) { 
-		print "Directory $curdir/$file\n";
+		&SetCurrentDirectory( "$curdir/$file" );
 		&ProcessDir( $file );
 	    }
 	}
@@ -362,12 +368,14 @@ sub CheckForMismatchedStates {
 	$statename = $1;
 	$funcstatename = "MPID_STATE_".$funcname;
 	if ($funcname ne "" && $statename ne $funcstatename) {
+	    &PrintCurrentDirectory;
 	    print "Warning: State name \"$statename\" does not match function name \"$funcname\"\n";
 	}
     }
     elsif ($curline =~ /MPID_MPI_[A-Z0-9_]*FUNC_EXIT\(\s*([^\s]*)\s*\)/) {
 	$endname = $1;
 	if ($statename ne $endname && $endname ne "stateid") {
+	    &PrintCurrentDirectory;
 	    print "Warning: State $statename ended with $endname in $filename\[$line_num\]\n";
 	}
     }
@@ -400,6 +408,7 @@ sub CheckForNested {
 	my $name = $1;
 	if (!$nested_seen && $name ne "Abort") {
 	    # Don't warn about NMPI_Abort
+	    &PrintCurrentDirectory;
 	    print "Error: NMPI_$name called without MPIR_Nest_incr in $filename\[$line_num\]\n";
 	}
     }
@@ -431,6 +440,7 @@ sub CheckForPMPI {
     }
     if ($curline =~ /PMPI_([A-Za-z0-9_]*)/) {
 	$name = $1;
+	&PrintCurrentDirectory;
 	print "Error: PMPI_$name called in $filename\[$line_num\]\n";
     }
 }
@@ -464,10 +474,29 @@ sub ReportOnPreamble {
     # Is this a derived file?
     if (-s "$filename.in") { return 0; }
     if (! $saw_c_style && !$saw_cxx_style) {
+	&PrintCurrentDirectory;
 	print "C style header (c-basic-offset:4) missing in $filename\n";
     }
     if (! $saw_copyright) {
+	&PrintCurrentDirectory;
 	print "Copyright statement missing from $filename\n";
+    }
+}
+# --------------------------------------------------------------------------
+# These routines ensure that the current directory is printed before any
+# warning messages.  This is used to reduce the amount of noise that
+# comes out of the codingcheck
+# --------------------------------------------------------------------------
+$currentDirectory = "";
+$directoryPrinted = 0;
+sub SetCurrentDirectory {
+    $currentDirectory =  $_[0];
+    $directoryPrinted = 0;
+}
+sub PrintCurrentDirectory {
+    if (!$directoryPrinted) {
+	$directoryPrinted = 1;
+	print "Directory $currentDirectory\n";
     }
 }
 #
