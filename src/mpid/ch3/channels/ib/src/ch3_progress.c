@@ -195,7 +195,9 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
     MPIDI_VC_t *vc_ptr;
     int num_bytes;
     ibu_op_t wait_result;
+#ifdef MPICH_DBG_OUTPUT
     unsigned register count;
+#endif
     unsigned completions = MPIDI_CH3I_progress_completion_count;
     int i;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
@@ -337,20 +339,6 @@ int MPIDI_CH3I_Progress_finalize()
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
 
-    /*
-     * Wait for any pending communication to complete.  This prevents another process from hanging if it performs a send and then
-     * attempts to cancel it.
-     */
-    MPIR_Nest_incr();
-    {
-	mpi_errno = NMPI_Barrier(MPI_COMM_WORLD);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_finalize", 0);
-	}
-    }
-    MPIR_Nest_decr();
-    
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
     return mpi_errno;
