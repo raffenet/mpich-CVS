@@ -3728,7 +3728,7 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const
     smpd_sspi_client_context_t *sspi_context;
     char account[SMPD_MAX_ACCOUNT_LENGTH] = "";
     char domain[SMPD_MAX_ACCOUNT_LENGTH] = "";
-    char *target, target_[SMPD_MAX_ACCOUNT_LENGTH] = "";
+    char *target, target_[SMPD_MAX_NAME_LENGTH] = "";
     target = target_;
 
     smpd_enter_fn(FCNAME);
