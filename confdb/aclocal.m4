@@ -13,5 +13,5 @@ builtin(include,aclocal_make.m4)
 builtin(include,aclocal_mpi.m4)
 builtin(include,aclocal_web.m4)
 dnl builtin(include,aclocal_tcl.m4)
-dnl buildin(include,aclocal_java.m4)
+builtin(include,aclocal_java.m4)
 
