@@ -36,7 +36,7 @@ def mpiexec():
     usize         = 1                   # default universe size for MPI
     appnum        = 0                   # appnum counter for MPI
     gEnv          = {}
-    gHost         = ''                  # default
+    gHost         = '_any_'                  # default
     gWDIR         = path.abspath(getcwd())   # default
     gPath         = environ['PATH'] # default ; avoid name conflict with python path module
     gNProcs       = 1                   # default
@@ -112,14 +112,15 @@ def mpiexec():
         xmlDOC = xml.dom.minidom.Document()
         xmlCPG = xmlDOC.createElement('create-process-group')
         xmlDOC.appendChild(xmlCPG)
-        xmlHOSTSPEC = xmlDOC.createElement('host-spec')    # append to CPG after proc-specs
+        # xmlHOSTSPEC = xmlDOC.createElement('host-spec')    # append to CPG after proc-specs
         argset = get_next_argset()
         while argset:
             xmlPROCSPEC = xmlDOC.createElement('process-spec')
             xmlCPG.appendChild(xmlPROCSPEC)
-	    handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC)
+	    # handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC)
+	    handle_argset(argset,xmlDOC,xmlPROCSPEC)
             argset = get_next_argset()
-        xmlCPG.appendChild(xmlHOSTSPEC)
+        # xmlCPG.appendChild(xmlHOSTSPEC)
         xmlCPG.setAttribute('totalprocs', str(totalProcs) )  # after handling argsets
         if linelabels:
             xmlCPG.setAttribute('output', 'label')
@@ -163,7 +164,8 @@ def get_next_argset():
 	    except: colonPos = -1
     return argset
 
-def handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC):
+# def handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC):
+def handle_argset(argset,xmlDOC,xmlPROCSPEC):
     global totalProcs, nextRange, setenvall, appnum, usize
     global gEnv, gHost, gWDIR, gPath, gNProcs
     host   = gHost
@@ -210,14 +212,15 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC):
     nextRange += nProcs
     totalProcs += nProcs
 
-    if host:
-        xmlHOSTNAME = xmlDOC.createTextNode(host)
-        xmlHOSTSPEC.appendChild(xmlHOSTNAME)
+    # if host:
+        # xmlHOSTNAME = xmlDOC.createTextNode(host)
+        # xmlHOSTSPEC.appendChild(xmlHOSTNAME)
 
     xmlPROCSPEC.setAttribute('user',getpwuid(getuid())[0])
     xmlPROCSPEC.setAttribute('exec',cmdAndArgs[0])
     xmlPROCSPEC.setAttribute('path',wpath)
     xmlPROCSPEC.setAttribute('cwd',wdir)
+    xmlPROCSPEC.setAttribute('host',host)
     xmlPROCSPEC.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]))
 
     for i in xrange(1,len(cmdAndArgs[1:])+1):

@@ -123,18 +123,19 @@ def mpdrun():
 
         nextHost = 0
         hostSpec = createReq.getElementsByTagName('host-spec')
-        for hostname in hostSpec[0].childNodes:
-            hostname = hostname.data.strip()
-            if hostname:
-                try:
-                    ipaddr = gethostbyname_ex(hostname)[2][0]
-                except:
-                    print 'unable to determine IP info for host %s' % (hostname)
-                    exit(-1)
-                if ipaddr.startswith('127.0.0'):
-                    hostList.append(gethostname())
-                else:
-                    hostList.append(ipaddr)
+        if hostSpec:
+            for hostname in hostSpec[0].childNodes:
+                hostname = hostname.data.strip()
+                if hostname:
+                    try:
+                        ipaddr = gethostbyname_ex(hostname)[2][0]
+                    except:
+                        print 'unable to determine IP info for host %s' % (hostname)
+                        exit(-1)
+                    if ipaddr.startswith('127.0.0'):
+                        hostList.append(gethostname())
+                    else:
+                        hostList.append(ipaddr)
 
         execs   = {}
         users   = {}
@@ -182,6 +183,13 @@ def mpdrun():
                 paths[(loRange,hiRange)] = p.getAttribute('path')
             else:
                 paths[(loRange,hiRange)] = environ['PATH']
+            if p.hasAttribute('host'):
+                hosts[(loRange,hiRange)] = p.getAttribute('host')
+            else:
+                if hostList:
+                    hosts[(loRange,hiRange)] = '_any_from_pool_'
+                else:
+                    hosts[(loRange,hiRange)] = '_any_'
 
             argDict = {}
             argList = p.getElementsByTagName('arg')
@@ -199,12 +207,6 @@ def mpdrun():
                 envval = envVarElem.getAttribute('value')
                 envVals[envkey] = envval
             envvars[(loRange,hiRange)] = envVals
-
-            if hostList:
-                # NOTE: we will later have the option to designate a host for a process
-                hosts[(loRange,hiRange)] = '_any_from_pool_'
-            else:
-                hosts[(loRange,hiRange)] = '_any_'
 
         ## exit(-1)    #####  RMB TEMP
 
