@@ -889,7 +889,7 @@ int smpd_handle_read(smpd_context_t *context)
 	}
 
 	/* send the stdout command */
-	result = smpd_post_write_command(context, temp_cmd);
+	result = smpd_post_write_command(smpd_process.parent_context, temp_cmd);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the stdout command.\n");
