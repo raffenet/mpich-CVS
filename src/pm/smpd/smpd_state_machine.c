@@ -4912,7 +4912,6 @@ int smpd_state_reading_timeout(smpd_context_t *context, MPIDU_Sock_event_t *even
 int smpd_state_reading_mpiexec_abort(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 {
     int result;
-    char *name;
 
     smpd_enter_fn(FCNAME);
     SMPD_UNREFERENCED_ARG(context);
@@ -4924,10 +4923,14 @@ int smpd_state_reading_mpiexec_abort(smpd_context_t *context, MPIDU_Sock_event_t
 	return SMPD_FAIL;
     }
 
-    name = (smpd_process.pg_list) ? name = smpd_process.pg_list->kvs : "";
-    result = smpd_abort_job(name, 0, "mpiexec aborting job");
+    if (smpd_process.pg_list == NULL)
+    {
+	/* no processes have been started yet, so exit here */
+	smpd_exit(-1);
+    }
+    result = smpd_abort_job(smpd_process.pg_list->kvs, 0, "mpiexec aborting job");
 
-    /* abort_job is not supposed to return */
+    /* return failure here and the mpiexec_abort context will be closed */
     smpd_exit_fn(FCNAME);
     return SMPD_FAIL;
 }
