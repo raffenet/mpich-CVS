@@ -72,6 +72,82 @@ sections are not complete yet.  However, there should be enough here to
 get you started with MPICH2.
 
 
+\section{Migrating to MPICH2 from MPICH1}
+\label{sec:migrating}
+
+If you have been using MPICH 1.2.x (1.2.6 is the latest version), you
+will find a number of things about MPICH2 that are different (and
+hopefully better in every case.)  Your MPI application programs need not
+change, of course, but a number of things about how you run them will be
+different.
+
+MPICH2 is an all-new implementation of the MPI Standard, designed to
+implement all of the MPI-2 additions to MPI (dynamic process management,
+one-sided operations, parallel I/O, and other extensions) and to apply
+the lessons learned in implementing MPICH1 to make MPICH2 more robust,
+efficient, and convenient to use.
+
+
+\subsection{Default Runtime Environment}
+\label{sec:default-environment}
+
+In MPICH1, the default configuration used the now-old \texttt{p4}
+portable programming environment.  Processes were started via remote
+shell commands (\texttt{rsh} or \texttt{ssh}) and the information
+necessary for processes to find and connect with one another over
+sockets was collected and then distributed at startup time in a
+non-scalable fashion.  Furthermore, the entanglement of process
+managment functionality with the communication mechanism led to
+confusing behavior of the system when things went wrong.
+
+MPICH2 provides a separation of process management and communication.
+The default runtime environment consists of a set of daemons, called
+mpd's, that establish communication among the machines to be used before
+application process startup, thus providing a clearer picture of what is
+wrong when communication cannot be established and providing a fast and
+scalable startup mechanism when parallel jobs are
+started. Section~\ref{sec:managing-mpd} describes the MPD process
+management system in more detail.
+
+\subsection{Starting Parallel Jobs}
+\label{sec:startup}
+
+MPICH1 provided the \texttt{mpirun} command to start MPICH1 jobs.  The
+MPI-2 Forum recommended a standard, portable command, called
+\texttt{mpiexec}, for this purpose.  MPICH2 implements \texttt{mpiexec}
+and all of its standard arguments, together with some extensions.  See
+Section~\ref{sec:mpiexec-standard} for standard arguments to
+\texttt{mpiexec} and various subsections of Section~\ref{sec:mpiexec}
+for extensions particular to various process management systems.
+
+MPICH2 also provides an \texttt{mpirun} command for simple backward
+compatibility, but MPICH2's \texttt{mpirun} does not provide all the
+options of \texttt{mpiexec} or all of the options of MPICH1's
+\texttt{mpirun}. 
+
+
+\subsection{Command-Line Arguments in Fortran}
+\label{sec:fortran-command-line}
+
+MPICH1 (more precisely) MPICH1's \texttt{mpirun}) required access to
+command line arguments in all application programs, including Fortran
+ones, and MPICH1's \texttt{configure} devoted some effort to finding the
+right versions of \texttt{iargc} and \texttt{getarg} and placing them in
+the library.  Since MPICH2 does not require access to command line
+arguments to applications, these functions are optional, and
+\texttt{configure} does nothing special with them.  If you need them in
+your applications, you will have to ensure that they are available in
+the Fortran environment you are using.
+
+
+\subsection{Configure Options}
+\label{sec:configure-options}
+
+The arguments to \texttt{configure} are different in MPICH1 and MPICH2;
+the \texttt{Installer's Guide} discusses \texttt{configure}.  In
+particular, MPICH2 is aware of newer compilers.
+
+
 \section{Setting Paths}
 \label{sec:paths}
 
@@ -102,7 +178,7 @@ did
 \end{verbatim}
 for \texttt{tcsh} and \texttt{csh}, or 
 \begin{verbatim}
-    expoert PATH=/home/you/mpich2-installed/bin:$PATH
+    export PATH=/home/you/mpich2-installed/bin:$PATH
 \end{verbatim}
 for \texttt{bash} or \texttt{sh}.
 Then to run an MPI program, albeit only on one machine, you can do:
@@ -160,7 +236,8 @@ The MPI-2 Standard describes \texttt{mpiexec} as a suggested way to run
 MPI programs.  MPICH2 implements the \texttt{mpiexec} standard, and also
 provides some extensions.  MPICH2 provides \texttt{mpirun} for backward
 compatibility with existing scripts, but it does not support the same or
-as many options as \texttt{mpiexec}.  
+as many options as \texttt{mpiexec} or all of the options of MPICH1's
+\texttt{mpirun}.   
 
 \subsection{Standard \texttt{mpiexec}}
 \label{sec:mpiexec-standard}
@@ -236,7 +313,7 @@ Now you are ready to run a program with \texttt{mpiexec}.  Let us assume
 that you have compiled and linked the program \texttt{cpi} (in the
 \texttt{installdir/examples} directory and that this directory is in your
 \texttt{PATH}.  Or that is your current working directory and
-'\texttt{.}' (``dot'') is in your PATH.   The simplest thing to do is
+`\texttt{.}' (``dot'') is in your PATH.   The simplest thing to do is
 \begin{verbatim}
     mpiexec -n 5 cpi
 \end{verbatim}
