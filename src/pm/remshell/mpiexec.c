@@ -433,17 +433,22 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 
 	    if (!useRemshell) {
 		/* Use environment variables to pass information to the
-		   process, including the fd used for the PMI calls */
-		char envvar[65];
-		MPIU_Snprintf( envvar, 64, "PMI_RANK=%d", i );
-		if (putenv( envvar )) {
+		   process, including the fd used for the PMI calls.
+		   Note that putenv retains the argument passed into it
+		   (it becomes part of the environment), so separate 
+		   strings must be allocated for each process and for each
+		   environment variable */
+		char envvar1[65], envvar2[65], envvar3[65];
+
+		MPIU_Snprintf( envvar1, 64, "PMI_RANK=%d", i );
+		if (putenv( envvar1 )) {
 		    MPIU_Internal_error_printf( "Could not set environment PMI_RANK" );	    }
-		MPIU_Snprintf( envvar, 64, "PMI_SIZE=%d", ptable->nProcesses );
-		if (putenv( envvar )) {
+		MPIU_Snprintf( envvar2, 64, "PMI_SIZE=%d", ptable->nProcesses );
+		if (putenv( envvar2 )) {
 		    MPIU_Internal_error_printf( "Could not set environment PMI_SIZE" );
 		}
-		MPIU_Snprintf( envvar, 64, "PMI_FD=%d", pmi_pipe[1] );
-		if (putenv( envvar )) {
+		MPIU_Snprintf( envvar3, 64, "PMI_FD=%d", pmi_pipe[1] );
+		if (putenv( envvar3 )) {
 		    MPIU_Internal_error_printf( "Could not set environment PMI_FD" );
 		}
 		close( pmi_pipe[0] );

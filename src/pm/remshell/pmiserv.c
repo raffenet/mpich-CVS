@@ -408,6 +408,7 @@ static void fPMI_Handle_get( PMI_Process *pentry )
     snprintf( outbuf, PMIU_MAXLINE, "cmd=get_result rc=%d msg=%s value=%s\n",
 	      rc, message, value );
     PMIU_writeline( pentry->fd, outbuf );
+    printf( "%s", outbuf );
 }
 
 /* Handle an incoming get_my_kvsname command */
