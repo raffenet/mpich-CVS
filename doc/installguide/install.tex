@@ -624,14 +624,6 @@ host until smpd is started again.
 Running basic tests in the examples directory, the MPICH2 tests,
 obtaining and running the assorted test suites.  
 
-\subsection{Using the MPICH2 Test Suite}
-\label{sec:mpich2-testing}
-After installing MPICH2, you can run the tests with the standard testing
-target: 
-\begin{verbatim}
-    make testing
-\end{verbatim}
-
 
 \subsection{Using the Intel Test Suite}
 \label{sec:intel}
@@ -935,7 +927,7 @@ Only gcc is currently supported
 \label{sec:getting-started}
 
 \texttt{mpd} stands for multi-purpose daemon.  We sometimes use the term
-mpd to refer to the mpd daemon and other helper programs that
+mpd to refer to the combination of mpd daemon and its helper programs that
 collectively form a process management system for executing
 parallel jobs, including mpich jobs.  The mpd daemon must
 run on each host where you wish to execute parallel programs.
@@ -963,7 +955,7 @@ If you get something like:
 \begin{small}
 \begin{verbatim}
     configuration file /home/you/.mpd.conf not found
-    A file named .mpd.conf file must be present in the users home
+    A file named .mpd.conf must be present in the users home
     directory (/etc/mpd.conf if root) with read and write access
     only for the user, and must contain at least a line with:
     secretword=<secretword>
@@ -1003,7 +995,7 @@ This should print something like:
 where the 1234 is a port number that mpd is using to listen for
 connections from other mpds.
 
-\item Try to run a parallel (non-mpi) job:
+\item Try to run a parallel (non-MPI) job:
 \begin{verbatim}
     $ mpiexec -n 2 hostname    
 \end{verbatim}
@@ -1025,16 +1017,18 @@ machines is configured properly to support a ring of mpd's.
 So, before trying to start a whole set of mpd's on a collection of
 machines with \texttt{mpdboot}, we have found that it is typically a
 very good idea to run a few tests with \texttt{mpdcheck} that help to ensure
-later success.
+later success.  If you are troubleshooting, it would be a good idea to 
+select two machines for which you are having problems connecting into
+an mpd ring, and use the pair to do debugging with mpdcheck.
 
 \begin{enumerate}
-\item \verb+ \$ mpdcheck -h +
+\item \verb+ $ mpdcheck -h +
 
 This prints a fairly long help message but gives you some
 idea about what mpdcheck might do for you and an
 explanation of some of the runs we will do here.
 
-\item \$ mpdcheck
+\item \verb+ $ mpdcheck +
 
 With no args, mpdcheck tries to determine if there seem to
 be configuration problems with the current machine that
@@ -1042,7 +1036,8 @@ would cause issues when mpd's on multiple hosts try to
 connect and communicate.  The goal here is to get no
 output.  Output indicates potential problems.  If you find
 the messages too short/cryptic, you can use the \texttt{-l} option
-(long messages) and get better info.
+(long messages) and get better info.  You will probably want to run
+this once on each of the pair of machines which you are debugging.
 
 \item Create an \texttt{mpd.hosts} file using an editor.  For now, just
     list the local machine's name on one line and the name of
@@ -1060,9 +1055,11 @@ discover the other host, and with the \texttt{-ssh} option try to
 run some \texttt{ssh} tests between the 2 machines to make sure
 that those kinds of things work also.
 
-\item If all above went fine, you can probably skip this step.
-But, it might help to be safe.  On your two machines in
-the \texttt{mpd.hosts} file (call them m1 and m2), try the following:
+\item If all above went fine above, you can probably skip this step.
+This step was attempted automatically in the previous one.  But,
+if there were propblems, you may find it useful to re-run by hand and
+keep the output.  On your two machines in the \texttt{mpd.hosts}
+file (call them m1 and m2), try the following:
 
 Do this on m1 and read the output for host and port:
 \begin{verbatim}
@@ -1097,6 +1094,13 @@ you should be able to run a parallel job:
     $ mpiexec -n 2 hostname        
 \end{verbatim}
 and see both hostnames printed.
+
+\item \verb+ $ mpdcheck -pc +
+With the -pc arg, mpdcheck prints configuration files and other
+info on the current machine.  This output, along with some of the previous
+ones mentioned, may be useful info to provide if you are planning to request
+debugging help.
+
 \end{enumerate}
 
 
