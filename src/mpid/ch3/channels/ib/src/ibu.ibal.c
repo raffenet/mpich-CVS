@@ -117,6 +117,7 @@ typedef struct ibu_state_t
 #define IBU_ACK_WATER_LEVEL        32
 
 typedef struct IBU_Global {
+    ib_al_handle_t   al_handle;
     ib_ca_handle_t   hca_handle;
     ib_pd_handle_t   pd_handle;
     ib_net16_t       lid;
@@ -237,9 +238,10 @@ static ib_api_status_t modifyQP( ibu_t ibu, ib_qp_state_t qp_state )
     if (qp_state == IB_QPS_INIT)
     {
 	qp_mod.req_state = IB_QPS_INIT;
+	qp_mod.state.init.qkey = qkey;
 	qp_mod.state.init.pkey_index = 0;
 	qp_mod.state.init.primary_port = 1;
-	qp_mod.state.init.access_ctrl = IB_AC_LOCAL_WRITE /*| IB_AC_MW_BIND*/;
+	qp_mod.state.init.access_ctrl = IB_AC_LOCAL_WRITE | IB_AC_MW_BIND;
     }
     else if (qp_state == IB_QPS_RTR) 
     {
@@ -280,7 +282,7 @@ static ib_api_status_t modifyQP( ibu_t ibu, ib_qp_state_t qp_state )
 	qp_mod.state.rtr.primary_av.conn.rnr_retry_cnt = 7;
 	qp_mod.state.rtr.resp_res = 7;
 
-	qp_mod.state.rtr.opts = 0; /*IB_MOD_QP_PKEY;*/
+	qp_mod.state.rtr.opts = /*0;*/ /*IB_MOD_QP_PKEY;*/ IB_MOD_QP_PRIMARY_AV;
 /*
 IB_MOD_QP_ALTERNATE_AV
 IB_MOD_QP_PKEY
@@ -318,7 +320,7 @@ IB_MOD_QP_RQ_DEPTH
 	qp_mod.state.rts.sq_psn = 0;
 	qp_mod.state.rts.retry_cnt = 7;
 	qp_mod.state.rts.rnr_retry_cnt = 7;
-	qp_mod.state.rts.rnr_nak_timeout = 0;
+	qp_mod.state.rts.rnr_nak_timeout = 7;
 	qp_mod.state.rts.local_ack_timeout = 7; /*0x20;*/
 	qp_mod.state.rts.init_depth = 3;
 
@@ -376,7 +378,7 @@ static ib_api_status_t createQP(ibu_t ibu, ibu_set_t set)
     qp_init_attr.rq_sge = 8;
     qp_init_attr.h_sq_cq = set;
     qp_init_attr.h_rq_cq = set;
-    qp_init_attr.sq_signaled = /*FALSE;*/ TRUE;
+    qp_init_attr.sq_signaled = FALSE; /*TRUE;*/
 
     status = ib_create_qp(IBU_Process.pd_handle, &qp_init_attr, NULL, NULL, &ibu->qp_handle);
     if (status != IB_SUCCESS)
@@ -427,7 +429,7 @@ static void *ib_malloc_register(size_t size)
     }
     mem.vaddr = ptr;
     mem.length = (uint64_t)size;
-    mem.access_ctrl = IB_AC_LOCAL_WRITE;
+    mem.access_ctrl = IB_AC_LOCAL_WRITE | IB_AC_MW_BIND;
     status = ib_reg_mem(IBU_Process.pd_handle, &mem, &s_lkey, &rkey, &s_mr_handle);
     if (status != IBU_SUCCESS)
     {
@@ -947,10 +949,132 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 }
 
 #undef FUNCNAME
+#define FUNCNAME ibui_get_first_active_ca
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int ibui_get_first_active_ca()
+{
+    int mpi_errno;
+    ib_api_status_t	status;
+    intn_t		guid_count;
+    intn_t		i;
+    uint32_t		port;
+    ib_net64_t		p_ca_guid_array[12];
+    ib_ca_attr_t	*p_ca_attr;
+    size_t		bsize;
+    ib_port_attr_t      *p_port_attr;
+    ib_ca_handle_t      hca_handle;
+
+    status = ib_get_ca_guids( IBU_Process.al_handle, NULL, &guid_count );
+    if(status != IB_INSUFFICIENT_MEMORY)
+    {
+	printf( "[%d] ib_get_ca_guids failed [%s]\n", __LINE__, ib_get_err_str(status));
+	return status;
+    }
+    
+    printf("Total number of CA's = %d\n", (uint32_t)guid_count);
+	
+    if(guid_count == 0) 
+    {
+	MPIU_Internal_error_printf("no channel adapters available.\n");
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**noca", 0);
+	return mpi_errno;
+    }
+    if (guid_count > 12)
+    {
+	guid_count = 12;
+    }
+
+    status = ib_get_ca_guids(IBU_Process.al_handle, p_ca_guid_array, &guid_count);
+    if( status != IB_SUCCESS )
+    {
+	MPIU_Internal_error_printf("[%d] ib_get_ca_guids failed [%s]\n", __LINE__, ib_get_err_str(status));
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ca_guids", "**ca_guids %s", ib_get_err_str(status));
+	return mpi_errno;
+    }
+
+    /* walk guid table */
+    for( i = 0; i < guid_count; i++ )
+    {
+	status = ib_open_ca( IBU_Process.al_handle, p_ca_guid_array[i], 
+				NULL, NULL, &hca_handle );
+	if(status != IB_SUCCESS)
+	{
+	    MPIU_Internal_error_printf( "[%d] ib_open_ca failed [%s]\n", __LINE__, 
+		    ib_get_err_str(status));
+	    continue;
+	}		
+
+	printf( "GUID = %"PRIx64"\n", p_ca_guid_array[i]);
+
+	/* Query the CA */
+	bsize = 0;
+	status = ib_query_ca( hca_handle, NULL, &bsize );
+	if(status != IB_INSUFFICIENT_MEMORY)
+	{
+	    MPIU_Internal_error_printf( "[%d] ib_query_ca failed [%s]\n", __LINE__, 
+		    ib_get_err_str(status));
+	    ib_close_ca(hca_handle, NULL);
+	    continue;
+	}
+
+	/* Allocate the memory needed for query_ca */
+	p_ca_attr = (ib_ca_attr_t *)cl_zalloc( bsize );
+	if( !p_ca_attr )
+	{
+	    MPIU_Internal_error_printf( "[%d] not enough memory\n", __LINE__); 
+	    ib_close_ca(hca_handle, NULL);
+	    continue;
+	}
+		
+	status = ib_query_ca( hca_handle, p_ca_attr, &bsize );
+	if(status != IB_SUCCESS)
+	{
+	    MPIU_Internal_error_printf( "[%d] ib_query_ca failed [%s]\n", __LINE__,
+			ib_get_err_str(status));
+	    ib_close_ca(hca_handle, NULL);
+	    cl_free( p_ca_attr );
+	    continue;
+	}
+
+	/* scan for active port */
+	for( port = 0; port < p_ca_attr->num_ports; port++ )
+	{
+	    p_port_attr = &p_ca_attr->p_port_attr[port];
+	    
+	    /* is there an active port? */
+	    if( p_port_attr->link_state == IB_LINK_ACTIVE )
+	    {
+		/* yes, is there a port_guid or lid we should attach to? */
+		printf("port %d active with lid %d\n", 
+		       p_port_attr->port_num,
+		       cl_ntoh16(p_port_attr->lid));
+		fflush(stdout);
+		/*
+		p_root->p_ca_attr = p_ca_attr;
+		p_root->p_port_attr = p_port_attr;
+		*/
+		cl_free( p_ca_attr );
+		IBU_Process.hca_handle = hca_handle;
+		return MPI_SUCCESS;
+	    }
+	}
+
+	/* free allocated mem */
+	cl_free( p_ca_attr );
+	ib_close_ca(hca_handle, NULL);
+	
+    }
+
+    MPIU_Internal_error_printf("no channel adapters available.\n");
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**noca", 0);
+    return mpi_errno;
+}
+
+#undef FUNCNAME
 #define FUNCNAME ibu_init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static ib_al_handle_t s_al_handle;
 int ibu_init()
 {
     ib_api_status_t status;
@@ -964,29 +1088,26 @@ int ibu_init()
     MPIU_DBG_PRINTF(("entering ibu_init\n"));
 
     /* Initialize globals */
+
     /* get a handle to the host channel adapter */
-    status = ib_open_al(&s_al_handle);
+    status = ib_open_al(&IBU_Process.al_handle);
     if (status != IB_SUCCESS)
     {
 	MPIU_Internal_error_printf("ibu_init: ib_open_al failed, status %s\n", ib_get_err_str(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
-    num_guids = 1;
-    ib_get_ca_guids(s_al_handle, &al_guid, &num_guids);
-    if (status != IB_SUCCESS)
+    /* wait for 50 ms before querying al. This fixes a potential race 
+       condition in al where ib_query is not ready with port information
+       on faster systems
+    */
+    cl_thread_suspend( 50 );
+    status = ibui_get_first_active_ca();
+    if (status != MPI_SUCCESS)
     {
-	MPIU_Internal_error_printf("ibu_init: ib_get_ca_guids failed, status %s\n", ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
-	return status;
+	return IBU_FAIL;
     }
-    status = ib_open_ca(s_al_handle, al_guid, NULL, NULL, &IBU_Process.hca_handle);
-    if (status != IB_SUCCESS)
-    {
-	MPIU_Internal_error_printf("ibu_init: ib_open_ca failed, status %s\n", ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
-	return status;
-    }
+
     /* get a protection domain handle */
     status = ib_alloc_pd(IBU_Process.hca_handle, IB_PDT_NORMAL, NULL, &IBU_Process.pd_handle);
     if (status != IB_SUCCESS)
@@ -1021,7 +1142,13 @@ int ibu_init()
 		     ((ib_ca_attr_t*)ca_attr_ptr)->max_cqes,
 		     ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->max_msg_size,
 		     ib_get_port_state_str(((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->link_state)));
-
+    status = ib_close_ca(IBU_Process.hca_handle, NULL);
+    if (status != IB_SUCCESS)
+    {
+	MPIU_Internal_error_printf("ibu_init: ib_close_ca failed, status %s\n", ib_get_err_str(status));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
+	return status;
+    }
     /* non infiniband initialization */
     IBU_Process.unex_finished_list = NULL;
 #ifndef HAVE_32BIT_POINTERS
@@ -1045,7 +1172,7 @@ int ibu_finalize()
 #ifdef HAVE_32BIT_POINTERS
     ibuBlockAllocFinalize(&g_workAllocator);
 #endif
-    ib_close_al(s_al_handle);
+    ib_close_al(IBU_Process.al_handle);
     MPIU_DBG_PRINTF(("exiting ibu_finalize\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);
     return IBU_SUCCESS;
