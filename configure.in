@@ -152,6 +152,12 @@ if test -z "$top_srcdir" ; then
 else
    use_top_srcdir=$top_srcdir
 fi
+if test -z "$master_top_srcdir" ; then 
+    master_top_srcdir=$use_top_srcdir
+fi
+AC_SUBST(master_top_srcdir)
+export master_top_srcdir
+dnl
 if test ! -d $use_top_srcdir/src/mpid/$device_name ; then
 dnl     WAIT UNTIL WE INCLUDE A DEVICE
 dnl     AC_MSG_ERROR([Device $device_name is unknown)]

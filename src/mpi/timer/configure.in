@@ -20,6 +20,18 @@ AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],
 CFLAGS="$CFLAGS -O -Wall -Wstrict-prototypes -Wmissing-prototypes")
 dnl
 dnl
+dnl Get the "master" top srcdir if we are a subdir configure
+if test -z "$top_srcdir" ; then
+   use_top_srcdir=$srcdir   
+else
+   use_top_srcdir=$top_srcdir
+fi
+if test -z "$master_top_srcdir" ; then 
+    master_top_srcdir=$use_top_srcdir
+fi
+AC_SUBST(master_top_srcdir)
+export master_top_srcdir
+dnl
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
 dnl     check for libraries
