@@ -19,7 +19,8 @@ MPIU_Object_alloc_t MPID_Group_mem = { 0, 0, 0, 0, MPID_GROUP,
 				       MPID_GROUP_PREALLOC};
 
 /* 
- * Allocate a new group and the group lrank to lpid array
+ * Allocate a new group and the group lrank to lpid array.  Does *not* 
+ * initialize any arrays, but does set the reference count.
  */
 int MPIR_Group_create( int nproc, MPID_Group **new_group_ptr )
 {
@@ -43,20 +44,40 @@ int MPIR_Group_create( int nproc, MPID_Group **new_group_ptr )
 }
 /*
  * return value is the first index in the list
+ *
+ * This sorts an lpid array by lpid value, using a simple merge sort
+ * algorithm.
+ *
  */
 static int MPIR_Mergesort_lpidarray( MPID_Group_pmap_t maparray[], int n )
 {
-    int idx1, idx2, first_idx, cur_idx;
+    int idx1, idx2, first_idx, cur_idx, next_lpid;
 
+    if (n == 2) {
+	if (maparray[0].lpid > maparray[1].lpid) {
+	    first_idx = 1;
+	    maparray[0].next_lpid = -1;
+	    maparray[1].next_lpid = 0;
+	}
+	else {
+	    first_idx = 0;
+	    maparray[0].next_lpid = 1;
+	    maparray[1].next_lpid = -1;
+	}
+	printf( "n==2 return %d\n", first_idx );
+	return first_idx;
+    }
     if (n == 1) {
 	maparray[0].next_lpid = -1;
+	printf( "n==1 return 0\n" );
 	return 0;
     }
 
     /* Sort each half */
     idx1 = MPIR_Mergesort_lpidarray( maparray, n/2 );
-    idx2 = MPIR_Mergesort_lpidarray( maparray + n/2 + 1, n - n/2 ) + n/2 + 1;
-
+    idx2 = MPIR_Mergesort_lpidarray( maparray + n/2, n - n/2 ) + n/2;
+    printf( "idx1 = %d idx2 = %d\n", idx1, idx2 );
+    printf( "n = %d, n/2 + 1 = %d\n", n, n/2 + 1 );
     /* merge the results */
     first_idx = idx1;
     if (maparray[idx1].lpid > maparray[idx2].lpid) first_idx = idx2;
@@ -64,14 +85,16 @@ static int MPIR_Mergesort_lpidarray( MPID_Group_pmap_t maparray[], int n )
     cur_idx = first_idx;
     while ( idx1 >= 0 && idx2 >= 0) {
 	if (maparray[idx1].lpid > maparray[idx2].lpid) {
+	    next_lpid = maparray[idx2].next_lpid;
 	    maparray[cur_idx].next_lpid = idx2;
 	    cur_idx = idx2;
-	    idx2 = maparray[idx2].next_lpid;
+	    idx2    = next_lpid;
 	}
 	else {
+	    next_lpid = maparray[idx1].next_lpid;
 	    maparray[cur_idx].next_lpid = idx1;
 	    cur_idx = idx1;
-	    idx1 = maparray[idx1].next_lpid;
+	    idx1    = next_lpid;
 	}
     }
 
@@ -111,6 +134,10 @@ void MPIR_Group_setup_lpid_pairs( MPID_Group *group_ptr1,
 }
 
 #ifdef HAVE_ERROR_CHECKING
+/* 
+ * The following routines are needed only for error checking
+ */
+
 /*
  * This routine is for error checking for a valid ranks array, used
  * by Group_incl and Group_excl
@@ -221,4 +248,4 @@ int MPIR_Group_check_valid_ranges( MPID_Group *group_ptr,
 
     return mpi_errno;
 }
-#endif
+#endif  /* HAVE_ERROR_CHECKING */
