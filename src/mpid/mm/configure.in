@@ -6,6 +6,9 @@ dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 AC_CONFIG_HEADER(include/mpidconf.h)
 dnl
+echo "RUNNING CONFIGURE FOR THE MultiMethod DEVICE"
+dnl
+dnl
 dnl Enable better caching control
 PAC_ARG_CACHING
 dnl

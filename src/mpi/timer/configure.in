@@ -10,6 +10,9 @@ dnl Definitions will be placed in this file rather than in the DEFS variable
 AC_CONFIG_HEADER(timerconf.h)
 AC_CONFIG_AUX_DIR(../../../confdb)
 dnl
+echo "RUNNING CONFIGURE FOR TIMER"
+dnl
+dnl
 dnl Use AC_ARG_ENABLE to look for --enable-feature and AC_ARG_WITH to look for
 dnl --with-capability
 dnl Enable better caching control
