@@ -55,6 +55,8 @@ XMODE=0755
 replace=1
 # set failmode to soft to let failures accumulate
 failmode="hard"
+# set copymode to "all" (out of all, core, optional) to install everything
+copymode="all"
 # chmod can fail for various reasons.  Let it?
 chmodfailmode="hard"
 Show=eval
@@ -101,6 +103,9 @@ for arg in "$@" ; do
         -xmode=*)
             XMODE=`echo $arg | sed -e 's/-xmode=//g'`
             ;;
+        -copymode=*)
+            copymode=`echo $arg | sed -e 's/-copymode=//g'`
+            ;;
         -echo)                    set -x ;;
         -noreplace|-no_replace)   replace=0 ;;
         -replace)                 replace=1 ;;
@@ -114,8 +119,11 @@ cat <<EOF
 Install ${pkgname} into $prefix.
 -prefix=path     - Destination directory.
 -uninstall=file  - File to append uninstall information to
--mode=nnnn       - mode for regular files.  Default is $MODE .
--xmode=nnnn      - mode for execuables and directories.  Default is $XMODE .
+-mode=nnnn       - permission mode for regular files.  Default is $MODE .
+-xmode=nnnn      - permission mode for execuables and directories.
+                   Default is $XMODE .
+-copymode=xxx    - copy mode for files and directories.  Possible values are
+                   {all, core, optional}.
 -noreplace       - Do not replace files found in the installation directory
 -soft		 - Do not abort on failure
 -softchmod       - Do not abort on failure of chmod
@@ -364,54 +372,87 @@ if [ "$prefix_override" = 1 ] ; then
     fi
 fi
 
+if [ $appendUninstall = 0 ] ; then
+    if [ "$copymode" = "core" -o "$copymode" = "optional" ] ; then
+        UNINSTALLFILE="/dev/null"
+    fi
+fi
+
 # echo "UNINSTALLFILE = $UNINSTALLFILE"
 
-echo "Creating ${pkgname}'s sbin"
-MkDir $sbindir
+# check if $UNINSTALLFILE lives under $sbindir
+uninstall_basename=`echo $UNINSTALLFILE | sed -e "s%^$sbindir%%"`
+if [ "$UNINSTALLFILE" != "$uninstall_basename" ] ; then
+    echo "Creating ${pkgname}'s sbin"
+    MkDir $sbindir
+fi
 
-for type in lib doc etc share logfiles ; do
-    fromdir_name=${type}build_dir
-    todir_name=${type}dir
-    eval fromdir_value=\$"$fromdir_name"
-    eval todir_value=\$"$todir_name"
-    if [ -n "$fromdir_value" ] ; then
-        if [ -d $fromdir_value ] ; then
-            echo "Copying ${pkgname}'s $type"
-            if [ $verbose = 1 ] ; then
-                echo "$fromdir_value -> $todir_value"
+if [ "$copymode" = "all" -o "$copymode" = "core" ] ; then
+    for type in lib doc logfiles etc ; do
+        fromdir_name=${type}build_dir
+        todir_name=${type}dir
+        eval fromdir_value=\$"$fromdir_name"
+        eval todir_value=\$"$todir_name"
+        if [ -n "$fromdir_value" ] ; then
+            if [ -d $fromdir_value ] ; then
+                echo "Copying ${pkgname}'s $type"
+                if [ $verbose = 1 ] ; then
+                    echo "$fromdir_value -> $todir_value"
+                fi
+                CopyDirRecurP $fromdir_value $todir_value $MODE
             fi
-            CopyDirRecurP $fromdir_value $todir_value $MODE
+        fi 
+    done
+fi
+
+if [ "$copymode" = "all" ] ; then
+    if [ -n "$PKGS" ] ; then
+        if [ ! -d $sharedir ] ; then
+            echo "Creating ${pkgname}'s share"
+            MkDir $sharedir
         fi
-    fi 
-done
+    fi
 
-EXEFILES="@EXEFILES@"
-
-if [ -n "$binbuild_dir" ] ; then
-    if [ -d $binbuild_dir ] ; then
-        echo "Creating ${pkgname}'s bin"
-        MkDir $bindir
-        for exefile in $EXEFILES ; do
-            if [ -x $binbuild_dir/$exefile ] ; then
-                FixupFileForInstall $binbuild_dir/$exefile $bindir/$exefile \
-                                    $XMODE
+    for type in share ; do
+        fromdir_name=${type}build_dir
+        todir_name=${type}dir
+        eval fromdir_value=\$"$fromdir_name"
+        eval todir_value=\$"$todir_name"
+        if [ -n "$fromdir_value" ] ; then
+            if [ -d $fromdir_value ] ; then
+                echo "Copying ${pkgname}'s $type"
+                if [ $verbose = 1 ] ; then
+                    echo "$fromdir_value -> $todir_value"
+                fi
+                CopyDirRecurP $fromdir_value $todir_value $MODE
             fi
-        done
-    fi
+        fi
+    done
 fi
 
-if [ -n "$PKGS" ] ; then
-    if [ ! -d $sharedir ] ; then
-        echo "Creating ${pkgname}'s share"
-        MkDir $sharedir
+if [ "$copymode" = "all" -o "$copymode" = "core" ] ; then
+    EXEFILES="@EXEFILES@"
+    if [ -n "$binbuild_dir" ] ; then
+        if [ -d $binbuild_dir ] ; then
+            echo "Creating ${pkgname}'s bin"
+            MkDir $bindir
+            for exefile in $EXEFILES ; do
+                if [ -x $binbuild_dir/$exefile ] ; then
+                    FixupFileForInstall $binbuild_dir/$exefile \
+                                        $bindir/$exefile $XMODE
+                fi
+            done
+        fi
     fi
 fi
-
-CopyFileP $top_srcdir/COPYRIGHT           $prefix
-CopyFileP $top_srcdir/CHANGES             $prefix
-CopyFileP $top_srcdir/FAQ                 $prefix
-CopyFileP $top_srcdir/README.sdk          $prefix
-CopyFileP $top_srcdir/README.rte          $prefix
+    
+if [ "$copymode" = "all" -o "$copymode" = "optional" ] ; then
+    CopyFileP $top_srcdir/COPYRIGHT           $prefix
+    CopyFileP $top_srcdir/CHANGES             $prefix
+    CopyFileP $top_srcdir/FAQ                 $prefix
+    CopyFileP $top_srcdir/README.sdk          $prefix
+    CopyFileP $top_srcdir/README.rte          $prefix
+fi
 
 # Remove old uninstall file & Prepare the UNINSTALLFILE for appending
 if [ $appendUninstall = 0 -a -f $UNINSTALLFILE ] ; then
@@ -426,19 +467,47 @@ set -x
 EOF
 fi
 
-chmod u+x $UNINSTALLFILE
+if [ "$UNINSTALLFILE" != "/dev/null" ] ; then
+    chmod u+x $UNINSTALLFILE
+fi
 
 # Install subpackages as specified in $PKGS
-for pkg in $PKGS ; do
-    if [ -d $binbuild_dir/../$pkg ] ; then
-        ( cd $binbuild_dir/../$pkg ; \
-          if [ -x ./sbin/install-package ] ; then \
-              ./sbin/install-package -prefix=$sharedir/$pkg \
-                                     -uninstall=$UNINSTALLFILE \
-                                     -mode=$MODE -xmode=$XMODE ; \
-          fi )
-    fi
-done
+if [ "$copymode" = "core" ] ; then
+    for pkg in $PKGS ; do
+        if [ -d $binbuild_dir/../$pkg ] ; then
+            if [ "X$pkg" = "Xtrace_rlog" ] ; then
+                ( cd $binbuild_dir/../$pkg ; \
+                  if [ -x ./sbin/install-package ] ; then \
+                      ./sbin/install-package -prefix=$prefix \
+                                             -uninstall=$UNINSTALLFILE \
+                                             -mode=$MODE -xmode=$XMODE ; \
+                  fi )
+            fi
+        fi
+    done
+fi
+
+if [ "$copymode" = "all" ] ; then
+    for pkg in $PKGS ; do
+        if [ -d $binbuild_dir/../$pkg ] ; then
+            if [ "X$pkg" = "Xtrace_rlog" ] ; then
+                ( cd $binbuild_dir/../$pkg ; \
+                  if [ -x ./sbin/install-package ] ; then \
+                      ./sbin/install-package -prefix=$prefix \
+                                             -uninstall=$UNINSTALLFILE \
+                                             -mode=$MODE -xmode=$XMODE ; \
+                  fi )
+            else
+                ( cd $binbuild_dir/../$pkg ; \
+                  if [ -x ./sbin/install-package -a -d $sharedir ] ; then \
+                      ./sbin/install-package -prefix=$sharedir/$pkg \
+                                             -uninstall=$UNINSTALLFILE \
+                                             -mode=$MODE -xmode=$XMODE ; \
+                  fi )
+            fi
+        fi
+    done
+fi
 
 # Add the files to be removed to the UNINSTALLFILE
 for file in $filelist ; do
