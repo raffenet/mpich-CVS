@@ -71,7 +71,7 @@ distclean: clean
 
 
 maintainer-clean: distclean
-	/bin/rm -f configure
+	/bin/rm -f configure mpdconf.h.in
 
 configure: configure.in
 	./makeconfigure
