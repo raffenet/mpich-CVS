@@ -59,6 +59,9 @@ Output Parameters:
  Note that the caller should free the memory located at the pointer returned
  after the string is no longer needed.
 */
+#ifndef PATH_MAX
+#define PATH_MAX 65535
+#endif
 static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep)
 {
     int err;
@@ -81,8 +84,8 @@ static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep)
 	 */
 	char *linkbuf;
 
-	linkbuf = ADIOI_Malloc(MAXPATHLEN+1);
-	err = readlink(filename, linkbuf, MAXPATHLEN+1);
+	linkbuf = ADIOI_Malloc(PATH_MAX+1);
+	err = readlink(filename, linkbuf, PATH_MAX+1);
 	if (err) {
 	    /* something strange has happened between the time that
 	     * we determined that this was a link and the time that
