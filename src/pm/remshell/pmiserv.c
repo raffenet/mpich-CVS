@@ -30,7 +30,7 @@
 
 #include "simple_pmiutil.h"
 #include "pmiserv.h"
-
+#define DBG_PRINTF printf
 /*
  * The following structures and arrays are used to implement the PMI 
  * interface.  The global variables are declared static so that they'll
