@@ -16,7 +16,7 @@ AC_SUBST(VERSION)
 CONFIGURE_ARGUMENTS="$*"
 AC_SUBST(CONFIGURE_ARGUMENTS)
 dnl
-if test -n "$@" ; then
+if test -n "$*" ; then
     echo "Configuring MPICH2 version $VERSION with $@"
 else 
     echo "Configuring MPICH2 version $VERSION"
@@ -557,6 +557,7 @@ dnl
 if test "$enable_f77" = "yes" ; then
    # We must add the include directories.  We have to wait until here
    # so that the paths will be defined.
+   # FIXME: We should not need this
    CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/src/binding/f77 -I`pwd`/src/binding/f77"
 fi
 #
@@ -712,6 +713,16 @@ AC_SUBST(bindings)
 # Bindings dirs is used for the installation target
 AC_SUBST(bindings_dirs)
 #
+# A few final exports
+# Some users use FC, others F77 for the Fortran compiler.  The following
+# tests makes us consistent
+if test -z "$FC" -a -n "$F77" ; then FC="$F77" ; export FC ; fi
+if test -z "$F77" -a -n "$FC" ; then F77="$FC" ; export F77 ; fi
+#
+# ----------------------------------------------------------------------------
+# Done with the basic argument processing and decisions about which 
+# subsystems to build
+# ----------------------------------------------------------------------------
 dnl
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
