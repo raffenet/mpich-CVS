@@ -67,7 +67,7 @@ PMPI_LOCAL int MPIR_Alltoall(
     
     if (comm_ptr->comm_kind == MPID_INTERCOMM) {
         printf("ERROR: MPI_Alltoall for intercommunicators not yet implemented.\n"); 
-        MPI_Abort(MPI_COMM_WORLD, 1);
+        NMPI_Abort(MPI_COMM_WORLD, 1);
     }
     
     comm = comm_ptr->handle;
