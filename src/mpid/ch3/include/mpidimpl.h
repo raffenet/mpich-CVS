@@ -35,6 +35,7 @@ extern MPIDI_Process_t MPIDI_Process;
     req->status.MPI_SOURCE = MPI_UNDEFINED;			\
     req->status.MPI_TAG = MPI_UNDEFINED;			\
     req->status.MPI_ERROR = MPI_SUCCESS;			\
+    req->status.count = 0;					\
     req->status.cancelled = FALSE;				\
     MPIDI_Request_state_init(req);				\
     req->comm = NULL;						\
@@ -142,6 +143,24 @@ extern MPIDI_Process_t MPIDI_Process;
     req->ch3.state |= (flag << MPIDI_REQUEST_SYNC_SEND_SHIFT)	\
 	& MPIDI_REQUEST_SYNC_SEND_MASK;				\
 }
+
+#define MPIDI_REQUEST_PERSISTENT_MASK (0x3 << MPIDI_REQUEST_PERSISTENT_SHIFT)
+#define MPIDI_REQUEST_PERSISTENT_SHIFT 4
+#define MPIDI_REQUEST_PERSISTENT_RECV 0
+#define MPIDI_REQUEST_PERSISTENT_SEND 1
+#define MPIDI_REQUEST_PERSISTENT_RSEND 2
+#define MPIDI_REQUEST_PERSISTENT_SSEND 3
+#define MPIDI_Request_get_persistent_type(req)		\
+((req->ch3.state & MPIDI_REQUEST_PERSISTENT_MASK) >>	\
+ MPIDI_REQUEST_PERSISTENT_SHIFT)
+
+#define MPIDI_Request_set_persistent_type(req, type)		\
+{								\
+    req->ch3.state &= ~MPIDI_REQUEST_PERSISTENT_MASK;		\
+    req->ch3.state |= (type << MPIDI_REQUEST_PERSISTENT_SHIFT)	\
+	& MPIDI_REQUEST_PERSISTENT_MASK;			\
+}
+
 
 /*
  * Send/Receive buffer macros
