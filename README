@@ -1,6 +1,6 @@
 
 
-			  MPICH2 Release 0.94
+			  MPICH2 Release 0.96
 
 MPICH2 is an all-new implementation of MPI from the group at Argonne
 National Laboratory.  It shares many goals with the original MPICH but
@@ -19,6 +19,15 @@ http://www.mcs.anl.gov/mpi/mpich2 will also have information on
 bug fixes and new releases.  This release does not include user or 
 installation manuals.
 
+The only supported device in this release is ch3 (which is the default)
+and the only channel is the socket channel (also the default).  This 
+version does not support the shared-memory (shm) or shared-memory and socket
+(ssm) channels.  Support for these channels, and additional channels and
+devices, will be included in a subsequent release.  
+
+This release adds support for dynamic process management and contains many
+bug fixes from the 0.94n and the 0.95 Supercomputing'03 release.
+
 Getting Started
 ===============
 
@@ -35,7 +44,8 @@ later, in the section "Alternative configurations".
 	sufficient) 
       A C++ compiler for the C++ MPI bindings (g++ is sufficient)
       Python 2.2 or later (for the default MPD process manager)
-      PyXML and an XML parser like expat (in order to use mpiexec)
+      PyXML and an XML parser like expat (in order to use mpiexec with
+      the MPD process manager)
 
     Configure will check for these prerequisites and try to work around
     deficiencies if possible.  (If you don't have Fortran, you will
@@ -44,13 +54,13 @@ later, in the section "Alternative configurations".
 2.  Unpack the tar file and go to the top level directory:
 
       tar xfz mpich2.tar.gz
-      cd mpich2-0.94
+      cd mpich2-0.96
 
     If your tar doesn't accept the z option, use
 
       gunzip mpich2.tar.gz
       tar xf mpich2.tar
-      cd mpich2-0.94
+      cd mpich2-0.96
 
 3.  Choose an installation directory (the default is /usr/local/bin):
 
@@ -311,6 +321,7 @@ manager is still under development.
 
 Alternative channels and devices
 --------------------------------
+NOTE: The 0.96 release does not support any alternative channels
 
 The communication mechanisms in MPICH2 are called "devices", paired with
 specific "channels".  The most thoroughly tested device is the "ch3"
