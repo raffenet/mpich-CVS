@@ -23,16 +23,16 @@ int MPIDI_CH3I_active_flag = 0;
 #define FUNCNAME MPIDI_CH3_Progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Progress(int is_blocking)
+int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 {
     int mpi_errno = MPI_SUCCESS;
     int rc;
     int register count, bShmProgressMade;
     MPIDU_Sock_event_t event;
-    unsigned completions = MPIDI_CH3I_progress_completions;
+    unsigned completions = MPIDI_CH3I_progress_completion_count;
     MPIDI_CH3I_Shmem_queue_info info;
     int num_bytes;
-    MPIDI_VC *vc_ptr;
+    MPIDI_VC_t *vc_ptr;
     static int spin_count = 1;
     static int msg_queue_count = 0;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
@@ -105,7 +105,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	mpi_errno = MPIDU_Sock_wait(sock_set, 0, &event);
 	if (mpi_errno == MPI_SUCCESS)
 	{
-	    mpi_errno = handle_sock_op(&event);
+	    mpi_errno = MPIDI_CH3I_Progress_handle_sock_event(&event);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_handle_sock_op", 0);
@@ -126,7 +126,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	/*if ((msg_queue_count++ % MPIDI_CH3I_MSGQ_ITERATIONS) == 0)*/
 	{
 	    /* check for new shmem queue connection requests */
-	    rc = MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_Process.pg->bootstrapQ, &info, sizeof(info), &num_bytes, FALSE);
+	    rc = MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_Process.my_pg->ch.bootstrapQ, &info, sizeof(info), &num_bytes, FALSE);
 	    if (rc != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_recv", 0);
@@ -142,7 +142,11 @@ int MPIDI_CH3I_Progress(int is_blocking)
 #endif
 	    if (num_bytes)
 	    {
-		vc_ptr = &MPIDI_CH3I_Process.pg->vc_table[info.pg_rank];
+		MPIDI_PG_t *pg;
+
+		MPIDI_PG_Find(info.pg_id, &pg);
+		MPIDI_PG_Get_vc(pg, info.pg_rank, &vc_ptr);
+		/*vc_ptr = &MPIDI_Process.my_pg->ch.vc_table[info.pg_rank];*/
 		rc = MPIDI_CH3I_SHM_Attach_to_mem(&info.info, &vc_ptr->ch.shm_read_queue_info);
 		if (rc != MPI_SUCCESS)
 		{
@@ -161,11 +165,11 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	    }
 	}
     }
-    while (completions == MPIDI_CH3I_progress_completions && is_blocking);
+    while (completions == MPIDI_CH3I_progress_completion_count && is_blocking);
 
 fn_exit:
 #ifdef MPICH_DBG_OUTPUT
-    count = MPIDI_CH3I_progress_completions - completions;
+    count = MPIDI_CH3I_progress_completion_count - completions;
     if (is_blocking)
     {
 	MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", count));
@@ -196,16 +200,16 @@ fn_exit:
 #define FUNCNAME MPIDI_CH3_Progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Progress(int is_blocking)
+int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 {
     int mpi_errno = MPI_SUCCESS;
     int rc;
     int register count, bShmProgressMade;
     MPIDU_Sock_event_t event;
-    unsigned completions = MPIDI_CH3I_progress_completions;
+    unsigned completions = MPIDI_CH3I_progress_completion_count;
     MPIDI_CH3I_Shmem_queue_info info;
     int num_bytes;
-    MPIDI_VC *vc_ptr;
+    MPIDI_VC_t *vc_ptr;
     static int spin_count = 1;
     static int msg_queue_count = 0;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
@@ -282,10 +286,10 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	}
 #endif
 
-	if (spin_count >= MPIDI_CH3I_Process.pg->nShmWaitSpinCount)
+	if (spin_count >= MPIDI_Process.my_pg->ch.nShmWaitSpinCount)
 	{
 #ifdef USE_SLEEP_YIELD
-	    if (spin_count >= MPIDI_CH3I_Process.pg->nShmWaitYieldCount)
+	    if (spin_count >= MPIDI_Process.my_pg->ch.nShmWaitYieldCount)
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SLEEP_YIELD);
 		MPIDU_Sleep_yield();
@@ -307,14 +311,14 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	else MPIDU_Yield(); /* always yield for now */
 	spin_count++;
 
-	if (spin_count > (MPIDI_CH3I_Process.pg->nShmWaitSpinCount >> 1) )
+	if (spin_count > (MPIDI_Process.my_pg->ch.nShmWaitSpinCount >> 1) )
 	{
 	    /* make progress on the sockets */
 
 	    mpi_errno = MPIDU_Sock_wait(sock_set, 0, &event);
 	    if (mpi_errno == MPI_SUCCESS)
 	    {
-		mpi_errno = handle_sock_op(&event);
+		mpi_errno = MPIDI_CH3I_Progress_handle_sock_event(&event);
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_handle_sock_op", 0);
@@ -336,7 +340,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	if ((msg_queue_count++ % MPIDI_CH3I_MSGQ_ITERATIONS) == 0)
 	{
 	    /* check for new shmem queue connection requests */
-	    rc = MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_Process.pg->bootstrapQ, &info, sizeof(info), &num_bytes, FALSE);
+	    rc = MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_Process.my_pg->ch.bootstrapQ, &info, sizeof(info), &num_bytes, FALSE);
 	    if (rc != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_recv", 0);
@@ -352,7 +356,11 @@ int MPIDI_CH3I_Progress(int is_blocking)
 #endif
 	    if (num_bytes)
 	    {
-		vc_ptr = &MPIDI_CH3I_Process.pg->vc_table[info.pg_rank];
+		MPIDI_PG_t *pg;
+
+		MPIDI_PG_Find(info.pg_id, &pg);
+		MPIDI_PG_Get_vc(pg, info.pg_rank, &vc_ptr);
+		/*vc_ptr = &MPIDI_Process.my_pg->ch.vc_table[info.pg_rank];*/
 		rc = MPIDI_CH3I_SHM_Attach_to_mem(&info.info, &vc_ptr->ch.shm_read_queue_info);
 		if (rc != MPI_SUCCESS)
 		{
@@ -371,11 +379,11 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	    }
 	}
     }
-    while (completions == MPIDI_CH3I_progress_completions && is_blocking);
+    while (completions == MPIDI_CH3I_progress_completion_count && is_blocking);
 
 fn_exit:
 #ifdef MPICH_DBG_OUTPUT
-    count = MPIDI_CH3I_progress_completions - completions;
+    count = MPIDI_CH3I_progress_completion_count - completions;
     if (is_blocking)
     {
 	MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", count));
@@ -412,13 +420,13 @@ int MPIDI_CH3I_Message_queue_progress()
 {
     MPIDI_CH3I_Shmem_queue_info info;
     int num_bytes;
-    MPIDI_VC *vc_ptr;
+    MPIDI_VC_t *vc_ptr;
     int mpi_errno;
 
     /* check for new shmem queue connection requests */
     /*printf("<%dR>", MPIR_Process.comm_world->rank);fflush(stdout);*/
     mpi_errno = MPIDI_CH3I_BootstrapQ_recv_msg(
-	MPIDI_CH3I_Process.pg->bootstrapQ, &info, sizeof(info), 
+	MPIDI_Process.my_pg->ch.bootstrapQ, &info, sizeof(info), 
 	&num_bytes, FALSE);
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -435,7 +443,11 @@ int MPIDI_CH3I_Message_queue_progress()
 #endif
     if (num_bytes)
     {
-	vc_ptr = &MPIDI_CH3I_Process.pg->vc_table[info.pg_rank];
+	MPIDI_PG_t *pg;
+
+	MPIDI_PG_Find(info.pg_id, &pg);
+	MPIDI_PG_Get_vc(pg, info.pg_rank, &vc_ptr);
+	/*vc_ptr = &MPIDI_Process.my_pg->ch.vc_table[info.pg_rank];*/
 	/*printf("rank %d attaching to shm(%s) from rank %d\n", MPIR_Process.comm_world->rank, info.info.name, info.pg_rank);fflush(stdout);*/
 	mpi_errno = MPIDI_CH3I_SHM_Attach_to_mem(
 	    &info.info, &vc_ptr->ch.shm_read_queue_info);
@@ -475,7 +487,7 @@ int MPIDI_CH3_Progress_test()
     int rc;
     MPIDU_Sock_event_t event;
     int num_bytes;
-    MPIDI_VC *vc_ptr;
+    MPIDI_VC_t *vc_ptr;
 #if 0
     static int msgqIter = 0;
 #endif
@@ -523,7 +535,7 @@ int MPIDI_CH3_Progress_test()
     mpi_errno = MPIDU_Sock_wait(sock_set, 0, &event);
     if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = handle_sock_op(&event);
+	mpi_errno = MPIDI_CH3I_Progress_handle_sock_event(&event);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**handle_sock_op", 0);
@@ -570,14 +582,14 @@ fn_exit:
 #define FUNCNAME MPIDI_CH3_Progress_wait
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Progress_wait()
+int MPIDI_CH3_Progress_wait(MPID_Progress_state *state)
 {
     int mpi_errno = MPI_SUCCESS;
     int rc;
     MPIDU_Sock_event_t event;
-    unsigned completions = MPIDI_CH3I_progress_completions;
+    unsigned completions = MPIDI_CH3I_progress_completion_count;
     int num_bytes;
-    MPIDI_VC *vc_ptr;
+    MPIDI_VC_t *vc_ptr;
 
     /*static int active = 0;*/
     static int updateIter = 0;
@@ -643,7 +655,7 @@ int MPIDI_CH3_Progress_wait()
 		}
 		if (MPIDI_CH3I_shm_read_active)
 		    spin_count = 1;
-		if (completions != MPIDI_CH3I_progress_completions)
+		if (completions != MPIDI_CH3I_progress_completion_count)
 		{
 		    MPIDI_CH3I_active_flag |= MPID_CH3I_SHM_BIT;
 		    /*
@@ -667,7 +679,7 @@ int MPIDI_CH3_Progress_wait()
 			if (rc == MPI_SUCCESS)
 			{
 			    /*active = active | MPID_CH3I_SHM_BIT;*/
-			    if (completions != MPIDI_CH3I_progress_completions)
+			    if (completions != MPIDI_CH3I_progress_completion_count)
 			    {
 				MPIDI_CH3I_active_flag |= MPID_CH3I_SHM_BIT;
 				spin_count = 1;
@@ -686,7 +698,7 @@ int MPIDI_CH3_Progress_wait()
 		}
 	    }
 /*
-	    if (spin_count++ >= MPIDI_CH3I_Process.pg->nShmWaitSpinCount)
+	    if (spin_count++ >= MPIDI_Process.my_pg->ch.nShmWaitSpinCount)
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 		MPIDU_Yield();
@@ -716,7 +728,7 @@ skip_shm_loop:
 	    mpi_errno = MPIDU_Sock_wait(sock_set, 0, &event);
 	    if (mpi_errno == MPI_SUCCESS)
 	    {
-		mpi_errno = handle_sock_op(&event);
+		mpi_errno = MPIDI_CH3I_Progress_handle_sock_event(&event);
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_sock_wait", 0);
@@ -736,7 +748,7 @@ skip_shm_loop:
 		mpi_errno = MPI_SUCCESS;
 		MPIDU_Yield();
 	    }
-	    if (completions != MPIDI_CH3I_progress_completions)
+	    if (completions != MPIDI_CH3I_progress_completion_count)
 	    {
 		sockIter++;
 		sockTotalReps++;
@@ -857,10 +869,10 @@ skip_sock_loop:
 	    /* printf("%d",2*MPIR_Process.comm_world->rank+1); */
 	}
     }
-    while (completions == MPIDI_CH3I_progress_completions);
+    while (completions == MPIDI_CH3I_progress_completion_count);
 
 fn_exit:
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", MPIDI_CH3I_progress_completions - completions));
+    MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", MPIDI_CH3I_progress_completion_count - completions));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS);
     return mpi_errno;
 }
@@ -888,12 +900,12 @@ int MPIDI_CH3I_Message_queue_progress()
 {
     MPIDI_CH3I_Shmem_queue_info info;
     int num_bytes;
-    MPIDI_VC *vc_ptr;
+    MPIDI_VC_t *vc_ptr;
     int rc, mpi_errno;
 
     /* check for new shmem queue connection requests */
     rc = MPIDI_CH3I_BootstrapQ_recv_msg(
-	MPIDI_CH3I_Process.pg->bootstrapQ, &info, sizeof(info), 
+	MPIDI_Process.my_pg->ch.bootstrapQ, &info, sizeof(info), 
 	&num_bytes, FALSE);
     if (rc != MPI_SUCCESS)
     {
@@ -910,7 +922,11 @@ int MPIDI_CH3I_Message_queue_progress()
 #endif
     if (num_bytes)
     {
-	vc_ptr = &MPIDI_CH3I_Process.pg->vc_table[info.pg_rank];
+	MPIDI_PG_t *pg;
+
+	MPIDI_PG_Find(info.pg_id, &pg);
+	MPIDI_PG_Get_vc(pg, info.pg_rank, &vc_ptr);
+	/*vc_ptr = &MPIDI_Process.my_pg->ch.vc_table[info.pg_rank];*/
 	rc = MPIDI_CH3I_SHM_Attach_to_mem(
 	    &info.info, &vc_ptr->ch.shm_read_queue_info);
 	if (rc != MPI_SUCCESS)
@@ -935,14 +951,14 @@ int MPIDI_CH3I_Message_queue_progress()
 #define FUNCNAME MPIDI_CH3_Progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Progress(int is_blocking)
+int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 {
     int mpi_errno = MPI_SUCCESS;
     int rc;
     MPIDU_Sock_event_t event;
-    unsigned completions = MPIDI_CH3I_progress_completions;
+    unsigned completions = MPIDI_CH3I_progress_completion_count;
     int num_bytes;
-    MPIDI_VC *vc_ptr;
+    MPIDI_VC_t *vc_ptr;
 
     /*static int active = 0;*/
     static int updateIter = 0;
@@ -1013,7 +1029,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		}
 		if (MPIDI_CH3I_shm_read_active)
 		    spin_count = 1;
-		if (completions != MPIDI_CH3I_progress_completions)
+		if (completions != MPIDI_CH3I_progress_completion_count)
 		{
 		    MPIDI_CH3I_active_flag |= MPID_CH3I_SHM_BIT;
 		    /*
@@ -1037,7 +1053,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 			if (rc == MPI_SUCCESS)
 			{
 			    /*active = active | MPID_CH3I_SHM_BIT;*/
-			    if (completions != MPIDI_CH3I_progress_completions)
+			    if (completions != MPIDI_CH3I_progress_completion_count)
 			    {
 				MPIDI_CH3I_active_flag |= MPID_CH3I_SHM_BIT;
 				spin_count = 1;
@@ -1056,7 +1072,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		}
 	    }
 	    /*
-	    if (spin_count++ >= MPIDI_CH3I_Process.pg->nShmWaitSpinCount)
+	    if (spin_count++ >= MPIDI_Process.my_pg->ch.nShmWaitSpinCount)
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 		MPIDU_Yield();
@@ -1086,7 +1102,7 @@ skip_shm_loop:
 	    mpi_errno = MPIDU_Sock_wait(sock_set, 0, &event);
 	    if (mpi_errno == MPI_SUCCESS)
 	    {
-		mpi_errno = handle_sock_op(&event);
+		mpi_errno = MPIDI_CH3I_Progress_handle_sock_event(&event);
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**handle_sock_op", 0);
@@ -1105,7 +1121,7 @@ skip_shm_loop:
 		mpi_errno = MPI_SUCCESS;
 		MPIDU_Yield();
 	    }
-	    if (completions != MPIDI_CH3I_progress_completions)
+	    if (completions != MPIDI_CH3I_progress_completion_count)
 	    {
 		sockIter++;
 		sockTotalReps++;
@@ -1201,24 +1217,24 @@ skip_sock_loop:
 	    }
 	}
     }
-    while (completions == MPIDI_CH3I_progress_completions && is_blocking);
+    while (completions == MPIDI_CH3I_progress_completion_count && is_blocking);
 
 fn_exit:
 #ifdef MPICH_DBG_OUTPUT
     if (is_blocking)
     {
-	MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", MPIDI_CH3I_progress_completions - completions));
+	MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", MPIDI_CH3I_progress_completion_count - completions));
     }
     else
     {
-	if (MPIDI_CH3I_progress_completions - completions > 0)
+	if (MPIDI_CH3I_progress_completion_count - completions > 0)
 	{
-	    MPIDI_DBG_PRINTF((50, FCNAME, "exiting (non-blocking), count=%d", MPIDI_CH3I_progress_completions - completions));
+	    MPIDI_DBG_PRINTF((50, FCNAME, "exiting (non-blocking), count=%d", MPIDI_CH3I_progress_completion_count - completions));
 	}
     }
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS);
-    /*return MPIDI_CH3I_progress_completions - completions;*/
+    /*return MPIDI_CH3I_progress_completion_count - completions;*/
     return mpi_errno;
 }
 
@@ -1245,7 +1261,7 @@ int MPIDI_CH3_Progress_poke()
 #define FUNCNAME MPIDI_CH3_Progress_start
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_Progress_start()
+void MPIDI_CH3_Progress_start(MPID_Progress_state *state)
 {
     /* MT - This function is empty for the single-threaded implementation */
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_START);
@@ -1260,7 +1276,7 @@ void MPIDI_CH3_Progress_start()
 #define FUNCNAME MPIDI_CH3_Progress_end
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_Progress_end()
+void MPIDI_CH3_Progress_end(MPID_Progress_state *state)
 {
     /* MT: This function is empty for the single-threaded implementation */
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_END);
@@ -1300,26 +1316,26 @@ int MPIDI_CH3I_Progress_init()
     }
 
     /* establish non-blocking listener */
-    listener_conn = connection_alloc();
-    if (listener_conn == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	goto fn_exit;
-    }
-    listener_conn->sock = NULL;
-    listener_conn->vc = NULL;
-    listener_conn->state = CONN_STATE_LISTENING;
-    listener_conn->send_active = NULL;
-    listener_conn->recv_active = NULL;
-
-    mpi_errno = MPIDU_Sock_listen(sock_set, listener_conn, &listener_port, &sock);
+    mpi_errno = connection_alloc(&MPIDI_CH3I_listener_conn);
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_init", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
 	goto fn_exit;
     }
+    MPIDI_CH3I_listener_conn->sock = NULL;
+    MPIDI_CH3I_listener_conn->vc = NULL;
+    MPIDI_CH3I_listener_conn->state = CONN_STATE_LISTENING;
+    MPIDI_CH3I_listener_conn->send_active = NULL;
+    MPIDI_CH3I_listener_conn->recv_active = NULL;
 
-    listener_conn->sock = sock;
+    mpi_errno = MPIDU_Sock_listen(sock_set, MPIDI_CH3I_listener_conn, &MPIDI_CH3I_listener_port, &sock);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
+	goto fn_exit;
+    }
+ 
+    MPIDI_CH3I_listener_conn->sock = sock;
 
 fn_exit:
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
@@ -1333,16 +1349,14 @@ fn_exit:
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Progress_finalize()
 {
-    /* MT: in a multi-threaded environment, finalize() should signal any thread(s) blocking on sock_wait() and wait for those
-       threads to complete before destroying the progress engine data structures.  We may need to add a function to the sock
-       interface for this. */
-
     int mpi_errno = MPI_SUCCESS;
+    MPID_Progress_state progress_state;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
+#if 0
     MPIR_Nest_incr();
     {
 	NMPI_Barrier(MPI_COMM_WORLD); /* FIXME: this barrier may not be necessary */
@@ -1350,21 +1364,30 @@ int MPIDI_CH3I_Progress_finalize()
 	NMPI_Barrier(MPI_COMM_WORLD);
     }
     MPIR_Nest_decr();
+#endif
 
     /* Shut down the listener */
-    mpi_errno = MPIDU_Sock_post_close(listener_conn->sock);
+    mpi_errno = MPIDU_Sock_post_close(MPIDI_CH3I_listener_conn->sock);
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pfinal_sockclose", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
+	goto fn_exit;
     }
-
-    /* XXX: Wait for listener sock to close */
+    
+    MPID_Progress_start(&progress_state);
+    while(MPIDI_CH3I_listener_conn != NULL)
+    {
+	mpi_errno = MPID_Progress_wait(&progress_state);
+	
+    }
+    MPID_Progress_end(&progress_state);
 
     /* FIXME: Cleanly shutdown other socks and MPIU_Free connection structures. (close protocol?) */
 
     MPIDU_Sock_destroy_set(sock_set);
     MPIDU_Sock_finalize();
 
+fn_exit:
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
     return mpi_errno;

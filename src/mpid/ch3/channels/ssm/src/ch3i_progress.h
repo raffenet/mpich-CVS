@@ -63,7 +63,7 @@ typedef enum MPIDI_CH3I_Conn_state
 
 typedef struct MPIDI_CH3I_Connection
 {
-    MPIDI_VC * vc;
+    MPIDI_VC_t * vc;
     MPIDU_Sock_t sock;
     MPIDI_CH3I_Conn_state state;
     MPID_Request * send_active;
@@ -74,22 +74,24 @@ typedef struct MPIDI_CH3I_Connection
 } MPIDI_CH3I_Connection_t;
 
 extern MPIDU_Sock_set_t sock_set;
-extern int listener_port;
-extern MPIDI_CH3I_Connection_t * listener_conn;
+extern int MPIDI_CH3I_listener_port /*= 0*/;
+extern MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn /*= NULL*/;
 
 extern int shutting_down;
 
-MPIDI_CH3I_Connection_t * connection_alloc(void);
+int connection_alloc(MPIDI_CH3I_Connection_t **);
 void connection_free(MPIDI_CH3I_Connection_t * conn);
-void connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn);
-void connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn);
-void connection_post_recv_pkt(MPIDI_CH3I_Connection_t * conn);
-void connection_send_fail(MPIDI_CH3I_Connection_t * conn, int mpi_errno);
-void connection_recv_fail(MPIDI_CH3I_Connection_t * conn, int mpi_errno);
+int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn);
+int connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn);
+int connection_post_recv_pkt(MPIDI_CH3I_Connection_t * conn);
+int connection_send_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno);
+int connection_recv_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno);
+void connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * conn);
+int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb);
 
-int handle_sock_op(MPIDU_Sock_event_t *event_ptr);
+int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event);
 
-int handle_shm_read(MPIDI_VC *vc, int nb);
-int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc);
+int handle_shm_read(MPIDI_VC_t *vc, int nb);
+int MPIDI_CH3I_SHM_write_progress(MPIDI_VC_t * vc);
 
 #endif

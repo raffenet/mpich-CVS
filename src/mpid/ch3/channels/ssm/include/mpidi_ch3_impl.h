@@ -144,8 +144,8 @@ typedef struct MPIDI_CH3I_SHM_Queue_t
 
 typedef struct MPIDI_CH3I_Process_s
 {
-    MPIDI_CH3I_Process_group_t * pg;
-    MPIDI_VC *shm_reading_list, *shm_writing_list;
+    char * parent_port_name;
+    MPIDI_VC_t *shm_reading_list, *shm_writing_list;
     int num_cpus;
     MPIDI_CH3I_Acceptq_t * acceptq_head;
     MPIDI_CH3I_Acceptq_t * acceptq_tail;
@@ -281,14 +281,15 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
 #define MPIDI_CH3I_SendQ_empty(vc) (vc->ch.sendq_head == NULL)
 
-int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC *vc);
-int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC **vc);
+int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t *vc);
+int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t **vc);
 
 #define MPIDU_MAX_SHM_BLOCK_SIZE ((unsigned int)2*1024*1024*1024)
 
 typedef struct MPIDI_CH3I_Shmem_queue_info
 {
-    int pg_id, pg_rank, pid;
+    int /*pg_id, */pg_rank, pid;
+    char pg_id[100];
     int type;
     MPIDI_CH3I_Shmem_block_request_result info;
 } MPIDI_CH3I_Shmem_queue_info;
@@ -296,9 +297,9 @@ typedef struct MPIDI_CH3I_Shmem_queue_info
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_Listener_get_port(void);
-int MPIDI_CH3I_VC_post_connect(MPIDI_VC *);
-int MPIDI_CH3I_SSM_VC_post_read(MPIDI_VC *, MPID_Request *);
-int MPIDI_CH3I_SSM_VC_post_write(MPIDI_VC *, MPID_Request *);
+int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
+int MPIDI_CH3I_SSM_VC_post_read(MPIDI_VC_t *, MPID_Request *);
+int MPIDI_CH3I_SSM_VC_post_write(MPIDI_VC_t *, MPID_Request *);
 int MPIDI_CH3I_Get_business_card(char *value, int length);
 
 #define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
@@ -330,13 +331,13 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
 int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, MPIDI_CH3I_Shmem_block_request_result *pOutput);
 int MPIDI_CH3I_SHM_Unlink_mem(MPIDI_CH3I_Shmem_block_request_result *p);
 int MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Shmem_block_request_result *p);
-int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr);
-int MPIDI_CH3I_SHM_post_read(MPIDI_VC *vc, void *buf, int len, int (*read_progress_update)(int, void*));
-int MPIDI_CH3I_SHM_post_readv(MPIDI_VC *vc, MPID_IOV *iov, int n, int (*read_progress_update)(int, void*));
-int MPIDI_CH3I_SHM_write(MPIDI_VC *vc, void *buf, int len, int *num_bytes_ptr);
-int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr);
-int MPIDI_CH3I_SHM_read(MPIDI_VC *vc, void *buf, int len);
-int MPIDI_CH3I_SHM_readv(MPIDI_VC *vc, MPID_IOV *iov, int n);
+int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc_pptr, int *num_bytes_ptr);
+int MPIDI_CH3I_SHM_post_read(MPIDI_VC_t *vc, void *buf, int len, int (*read_progress_update)(int, void*));
+int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int (*read_progress_update)(int, void*));
+int MPIDI_CH3I_SHM_write(MPIDI_VC_t *vc, void *buf, int len, int *num_bytes_ptr);
+int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_ptr);
+int MPIDI_CH3I_SHM_read(MPIDI_VC_t *vc, void *buf, int len);
+int MPIDI_CH3I_SHM_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n);
 
 /*int MPIDI_CH3I_sock_errno_to_mpi_errno(int sock_errno, const char *fcname);*/
 
