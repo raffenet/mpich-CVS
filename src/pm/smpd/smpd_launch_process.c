@@ -1059,14 +1059,14 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 
 	/* send the result back */
 	smpd_package_command(cmd_ptr);
-	result = smpd_write(pmi_pipe_fds[1], cmd_ptr->cmd_hdr_str, SMPD_CMD_HDR_LENGTH);
-	if (result != SMPD_SUCCESS)
+	result = write(pmi_pipe_fds[1], cmd_ptr->cmd_hdr_str, SMPD_CMD_HDR_LENGTH);
+	if (result != SMPD_CMD_HDR_LENGTH)
 	{
 	    smpd_err_printf("unable to write the abort command header in response to failed launch command: '%s'\n", process->exe);
 	    exit(-1);
 	}
-	result = smpd_write(pmi_pipe_fds[1], cmd_ptr->cmd, cmd_ptr->length);
-	if (result != SMPD_SUCCESS)
+	result = write(pmi_pipe_fds[1], cmd_ptr->cmd, cmd_ptr->length);
+	if (result != cmd_ptr->length)
 	{
 	    smpd_err_printf("unable to write the abort command in response to failed launch command: '%s'\n", process->exe);
 	    exit(-1);
