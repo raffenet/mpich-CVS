@@ -172,6 +172,57 @@ public class InfoBox extends TimeBoundingBox
         }
     }
 
+    private String[]  infokeys = null;
+
+    // for slog2print. External handle to get a hold of InfoBuffer's content
+    public int    getInfoLength()
+    {
+        int      max_length, infokeys_length, infovals_length;
+
+        this.decodeInfoBuffer();
+        if ( type != null ) {
+            infokeys = type.getInfoKeys();
+            if (    ( infokeys != null && infokeys.length > 0 )
+                 || ( infovals != null && infovals.length > 0 ) ) {
+                if ( infokeys != null )
+                    infokeys_length = infokeys.length;
+                else
+                    infokeys_length = 0;
+                if ( infovals != null )
+                    infovals_length = infovals.length;
+                else
+                    infovals_length = 0;
+                max_length = Math.max( infokeys_length, infovals_length );
+                return max_length;
+            }
+         }
+         return 0;
+    }
+
+    // for slog2print. External handle to get a hold of InfoBuffer's content
+    public String getInfoKey( int idx )
+    {
+        this.decodeInfoBuffer();
+        if ( infokeys != null && idx < infokeys.length )
+            return infokeys[ idx ];
+        if ( type != null ) {
+            infokeys = type.getInfoKeys();
+            if ( infokeys != null && idx < infokeys.length )
+                return infokeys[ idx ];
+        }
+        return null;
+    }
+
+    // for slog2print. External handle to get a hold of InfoBuffer's content
+    public InfoValue getInfoValue( int idx )
+    {
+        this.decodeInfoBuffer();
+        if ( infovals != null && idx < infovals.length )
+            return infovals[ idx ];
+        else
+            return null;
+    }
+
 
 
     public int getByteSize()
@@ -233,9 +284,8 @@ public class InfoBox extends TimeBoundingBox
 
     public String toInfoBoxString()
     {
-        String[] infokeys;
-        StringBuffer rep;
-        int  max_length, infokeys_length, infovals_length;
+        StringBuffer  rep;
+        int           max_length, infokeys_length, infovals_length;
 
         rep = new StringBuffer();
         this.decodeInfoBuffer();
@@ -272,9 +322,8 @@ public class InfoBox extends TimeBoundingBox
 
     public String toString()
     {
-        String[] infokeys;
-        StringBuffer rep;
-        int  max_length, infokeys_length, infovals_length;
+        StringBuffer  rep;
+        int           max_length, infokeys_length, infovals_length;
 
         rep = new StringBuffer( "infobox[ " + super.toString() + " " );
         if ( type != null )

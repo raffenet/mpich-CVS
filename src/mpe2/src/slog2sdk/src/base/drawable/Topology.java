@@ -65,7 +65,8 @@ public class Topology
 
     public boolean isPrimitive()
     {
-        return    index == this.STATE_ID || index == this.ARROW_ID
+        return    index == this.STATE_ID
+               || index == this.ARROW_ID
                || index == this.EVENT_ID;
     }
 

@@ -35,6 +35,12 @@ public class InfoValue
         value  = in_value;
     }
 
+    //  for slog2print
+    public InfoType  getType()
+    {
+        return type;
+    }
+
     public Object getValue()
     {
         return value;
