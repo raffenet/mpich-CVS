@@ -95,7 +95,7 @@ typedef int MPIU_BOOL;
 int MPIU_Str_get_string_arg(const char *str, const char *key, char *val, 
 			    int maxlen);
 int MPIU_Str_get_binary_arg(const char *str, const char *key, char *buffer, 
-			    int maxlen);
+			    int maxlen, int *out_length);
 int MPIU_Str_get_int_arg(const char *str, const char *key, int *val_ptr);
 int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *key, 
 			    const char *val);

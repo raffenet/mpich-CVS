@@ -446,7 +446,8 @@ int MPIU_Str_get_string_arg(const char *str, const char *flag, char *val, int ma
 -   maxlen - Maximum total length of 'buffer'
 
     Output Parameter:
-.   buffer - output buffer
++   buffer - output buffer
+-   out_length - output length
 
     Return value:
     MPIU_STR_SUCCESS, MPIU_STR_NOMEM, MPIU_STR_FAIL
@@ -458,9 +459,8 @@ int MPIU_Str_get_string_arg(const char *str, const char *flag, char *val, int ma
   Module:
   Utility
   @*/
-int MPIU_Str_get_binary_arg(const char *str, const char *flag, char *buffer, int maxlen)
+int MPIU_Str_get_binary_arg(const char *str, const char *flag, char *buffer, int maxlen, int *out_length)
 {
-    int num_decoded;
     if (maxlen < 1)
 	return MPIU_STR_FAIL;
 
@@ -480,7 +480,7 @@ int MPIU_Str_get_binary_arg(const char *str, const char *flag, char *buffer, int
 		str = next_token(str);
 		if (str == NULL)
 		    return MPIU_STR_FAIL;
-		return decode_buffer(str, buffer, maxlen, &num_decoded);
+		return decode_buffer(str, buffer, maxlen, out_length);
 	    }
 	}
 	else
