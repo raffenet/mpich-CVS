@@ -490,7 +490,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 
 	    if (recv_vc_ptr->ch.shm_reading_pkt)
 	    {
-		MPIU_DBG_PRINTF(("shm_read_progress: reading header from shm packet %d\n", index));
+		MPIU_DBG_PRINTF(("shm_read_progress: reading %d byte header from shm packet %d\n", sizeof(MPIDI_CH3_Pkt_t), index));
 		mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
 		if (mpi_errno != MPI_SUCCESS)
 		{
