@@ -1,6 +1,0 @@
-INCLUDES = -I../../../include -I${master_top_srcdir}/src/include -I..
-     
-LDADD = -L.. -L../../../../lib
-LIBS = -lmpiexec -lmpich
-iotest_SOURCES = iotest.c
-annote_SOURCES = annote.c
