@@ -47,12 +47,12 @@ int main( int argc, char *argv[] )
     error = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     check_error(error, "MPI_Comm_rank");
 
-    /* TEMPORARY FIX
-       This test hangs.  Cause it to abort so that we remember to fix it 
-    */
-    fprintf( stderr, "Aborting test because it may hang.\n" );
-    MPI_Abort( MPI_COMM_WORLD, 1 );
-    /* END OF TEMPORARY FIX */
+
+    /* commenting this out because this test no longer hangs with 
+       the sock channel */
+
+/*    fprintf( stderr, "Aborting test because it may hang.\n" );
+      MPI_Abort( MPI_COMM_WORLD, 1 ); */
 
     if (size < 2)
     {
