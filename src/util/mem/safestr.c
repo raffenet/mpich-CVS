@@ -22,6 +22,9 @@
  *
  * If n characters are copied without reaching a null, return an error.
  * Otherwise, return 0.
+ *
+ * Question: should we provide a way to request the length of the string,
+ * since we know it?
  */
 int MPIU_Strncpy( char *dest, const char *src, size_t n )
 {
@@ -42,6 +45,38 @@ int MPIU_Strncpy( char *dest, const char *src, size_t n )
 	/* We may want to force an error message here, at least in the
 	   debugging version */
 	return 1;
+}
+
+/* Append src to dest, but only allow dest to contain n characters (including
+   any null, which is always added to the end of the line */
+int MPIU_Strnapp( char *dest, const char *src, size_t n )
+{
+    char * restrict d_ptr = dest;
+    const char * restrict s_ptr = src;
+    register int i;
+
+    /* Get to the end of dest */
+    i = n;
+    while (i-- > 0 && *d_ptr++) ;
+    
+    /* Append */
+    while (i-- > 0 && *s_ptr) {
+	*d_ptr++ = *s_ptr++;
+    }
+
+    if (i > 0) { 
+	*d_ptr = 0;
+	return 0;
+    }
+    else {
+	/* Force the null at the end */
+	d_ptr--;
+	*d_ptr = 0;
+    
+	/* We may want to force an error message here, at least in the
+	   debugging version */
+	return 1;
+    }
 }
 
 #ifndef HAVE_STRDUP
