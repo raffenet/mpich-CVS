@@ -482,7 +482,32 @@ CH3_iStartRead
 
 -------------------------------------------------
 
-PMI functions
+PMI functions - Forker implementation
+
+PMI_Init,done,,,,Rusty
+PMI_Get_size,done,,,,Rusty
+PMI_Get_rank,done,,,,Rusty
+PMI_Barrier,done,,,,Rusty
+PMI_Finalize,done,,,,Rusty
+
+PMI_KVS_Get_my_name,done,,,,Rusty
+PMI_KVS_Get_name_length_max,done,,,,Rusty
+PMI_KVS_Get_key_length_max,done,,,,Rusty
+PMI_KVS_Get_value_length_max,done,,,,Rusty
+PMI_KVS_Create,done,,,,Rusty
+PMI_KVS_Destroy,done,,,,Rusty
+PMI_KVS_Put,done,,,,Rusty
+PMI_KVS_Commit,done,,,,Rusty
+PMI_KVS_Get,done,,,,Rusty
+PMI_KVS_iter_first,done,,,,Rusty
+PMI_KVS_iter_next,done,,,,Rusty
+
+PMI_Spawn_multiple,2,6,4,2,Rusty,other PMI fcns
+PMI_Args_to_info,1,3,2,Rusty
+
+-------------------------------------------------
+
+PMI functions - MPD implementation (Python MPD or C MPD?)
 
 PMI_Init
 PMI_Get_size
