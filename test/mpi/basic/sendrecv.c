@@ -9,6 +9,10 @@ int main(int argc, char *argv[])
     /*MPI_Request request;*/
     MPI_Status status;
     int tag = 1;
+    int reps = 1;
+    int i;
+
+    printf("Simple Send/Recv test.\n");fflush(stdout);
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -21,20 +25,35 @@ int main(int argc, char *argv[])
 	return 0;
     }
 
+    if (argc > 1)
+      {
+	reps = atoi(argv[1]);
+	if (reps < 1)
+	  reps = 1;
+      }
+
     if (rank == 0)
     {
       printf("Rank 0: sending message to process 1.\n");fflush(stdout);
 	strcpy(buffer, "Hello process one.");
-	/*MPI_Isend(buffer, 100, MPI_BYTE, 1, tag, MPI_COMM_WORLD, &request);
-	MPI_Wait(&request, &status);*/
-	MPI_Send(buffer, 100, MPI_BYTE, 1, tag, MPI_COMM_WORLD);
+	for (i=0; i<reps; i++)
+	  {
+	    /*MPI_Isend(buffer, 100, MPI_BYTE, 1, tag, MPI_COMM_WORLD, &request);
+	      MPI_Wait(&request, &status);*/
+	    MPI_Send(buffer, 100, MPI_BYTE, 1, tag, MPI_COMM_WORLD);
+	    MPI_Recv(buffer, 100, MPI_BYTE, 1, tag, MPI_COMM_WORLD, &status);
+	  }
     }
     else if (rank == 1)
     {
       printf("Rank 1: receiving message from process 0.\n");fflush(stdout);
-	/*MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag, MPI_COMM_WORLD, &request);
-	MPI_Wait(&request, &status);*/
-	MPI_Recv(buffer, 100, MPI_BYTE, 0, tag, MPI_COMM_WORLD, &status);
+      for (i=0; i<reps; i++)
+	{
+	  /*MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag, MPI_COMM_WORLD, &request);
+	    MPI_Wait(&request, &status);*/
+	  MPI_Recv(buffer, 100, MPI_BYTE, 0, tag, MPI_COMM_WORLD, &status);
+	  MPI_Send(buffer, 100, MPI_BYTE, 0, tag, MPI_COMM_WORLD);
+	}
 	printf("Rank 1: received message '%s'\n", buffer);fflush(stdout);
     }
     else
