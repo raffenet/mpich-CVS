@@ -18,6 +18,7 @@
 # Setup global variables
 $buildfiles = 1;
 $build_prototypes = 1;
+$prototype_header_file = "fproto.h";
 $build_io = 1;
 $print_line_len = 0;
 $write_mpif = 1;
@@ -407,7 +408,7 @@ if ($definition_file ne "") {
 
 $arg_string = join( ' ', @ARGV );
 if ($build_prototypes) {
-    open( PROTOFD, ">fproto.h" ) || die "Cannot open fproto.h\n";
+    open( PROTOFD, ">$prototype_header_file" ) || die "Cannot open $prototype_header_file\n";
     print PROTOFD "/* -*- Mode: C; c-basic-offset:4 ; -*- */\
 /*  \
  *  (C) 2001 by Argonne National Laboratory.\
@@ -465,7 +466,7 @@ print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources} setbotf.f \
 profilelib_\${MPILIBNAME} = p\${MPILIBNAME}\
 INCLUDES = -I../../include -I\${master_top_srcdir}/src/include\
 maint-clean:\
-\trm -f \${mpi_sources} fproto.h\n";
+\trm -f \${mpi_sources} $prototype_header_file\n";
 
 print MAKEFD "install_INCLUDE = mpif.h\n";
 print MAKEFD "install_BIN     = mpif77\n";
@@ -637,9 +638,12 @@ sub print_name_map_block {
     if ($do_profiling) {
 	print $OUTFD "
 #endif /* MPICH_MPI_FROM_PMPI */
-
+";
+    }
+    if ($build_prototypes) {
+	print $OUTFD "
 /* Prototypes for the Fortran interfaces */
-#include \"fproto.h\"
+#include \"$prototype_header_file\"
 ";
     }
 }
@@ -653,8 +657,9 @@ sub print_args {
     my $prototype_only = $_[2];
     my $routine = $_[3];
 
-    # Clear the @arg_addresses array.
+    # Clear the @arg_addresses and $arg_qualifiers array.
     $#arg_addresses = -1;
+    $#arg_qualifiers = -1;
 
     # Special case: if the only parm is "void", remove it from the list
     print STDERR "Nparms = $#parms, parms = " . join(',',@parms) . "\n" if $debug;
@@ -666,8 +671,14 @@ sub print_args {
 	# Match type to replacement
 	print "parm = :$parm:\n" if $debug;
 	# Remove qualifiers from the parm
-	$parm =~ s/^const\s//;
-	$parm =~ s/restrict\s//;
+	if ($parm =~ /^const\s/) {
+	    $parm =~ s/^const\s//;
+	    $arg_qualifiers[$count] .= "const ";
+	}
+	if ($parm =~ /^restrict\s/) {
+	    $parm =~ s/restrict\s//;
+	    $arg_qualifiers[$count] .= "restrict ";
+	}
 	# Remove arg names from array types
 	if ($parm =~ /(\w*)\s+\w*\[\]/) {
 	    # Assume that this is <type> <name>[]; convert to
@@ -796,6 +807,13 @@ sub print_call_args {
     }
 
     foreach $parm (@parms) {
+	$parm =~ s/^const\s//;  # Remove const if present
+	# Remove variable name if present in an array arg
+	if ($parm =~ /(.*)\s(\w*)\[\]/) {
+	    $parm = "$1 \[\]";
+	}
+	# Compress multiple spaces
+	$parm =~ s/\s\s/ /g;
 	if (!$first) { print $OUTFD ", "; } else { $first = 0; }
 
 	if (defined($special_args{"${routine_name}-$count"})) {
@@ -804,12 +822,14 @@ sub print_call_args {
 	}
 	else {
 	    # Convert to/from object type as required.  
-	    if (defined($argsneedcast{$parm})) {
+	    #print "TMP: parm = $arg_qualifiers[$count]$parm\n";
+	    $fullparm="$arg_qualifiers[$count]$parm";
+	    if (defined($argsneedcast{$fullparm})) {
 		$argval = "v$count";
 		if ($arg_addresses[$count] > 0) {
 		    $argval = "*$argval";
 		}
-		$callparm = $argsneedcast{$parm};
+		$callparm = $argsneedcast{$fullparm};
 		$callparm =~ s/ARG/$argval/;
 		print $OUTFD "$callparm";
 	    }
@@ -2021,7 +2041,8 @@ sub ReadAndProcessInterface {
 	    $args =~ s/\)\s*;//g;
 	    $args =~ s/[\r\n]*//g;
 	    # remove qualifiers from args
-	    $args =~ s/\s*const\s+//g;
+### TEMP - REMEMBER const because we may need it later	    
+	    #$args =~ s/\s*const\s+//g;
 	    # Convert MPIO_Request to MPI_Request (temporary)
 #	    $args =~ s/MPIO_Request/MPI_Request/g;
 
