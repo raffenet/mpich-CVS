@@ -391,11 +391,7 @@ int MPIO_Err_return_comm(MPI_Comm mpi_comm, int error_code);
 /* handling header file can be included. */
 #define MPIR_ERR_FATAL 1
 #define MPIR_ERR_RECOVERABLE 0
-#if 0
-int MPIR_Err_return_file( MPI_File file_ptr, const char fcname[], int errcode );
-int MPIR_Err_create_code( int, int, const char [], int, int, const char [], const char [], ... );
-int MPIR_Err_is_fatal(int);
-#endif
+
 typedef int (* MPIR_Err_get_class_string_func_t)(int error, char *str, int length);
 void MPIR_Err_get_string(int, char *, int, MPIR_Err_get_class_string_func_t );
 void MPIR_Err_print_stack(FILE *, int);

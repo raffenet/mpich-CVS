@@ -9,9 +9,6 @@
 #include "adio.h"
 #include "adio_extern.h"
 #include "adio_cb_config_list.h"
-/* #ifdef MPISGI
-#include "mpisgi2.h"
-#endif */
 
 static int is_aggregator(int rank, ADIO_File fd);
 

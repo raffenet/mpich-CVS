@@ -7,7 +7,10 @@
  */
 
 #include "adio.h"
-#include "adio_extern.h"
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 void ADIOI_GEN_ReadContig(ADIO_File fd, void *buf, int count, 
 			  MPI_Datatype datatype, int file_ptr_type,

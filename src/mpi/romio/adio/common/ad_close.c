@@ -11,6 +11,10 @@
 #include "mpisgi2.h"
 #endif */
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef PROFILE
 #include "mpe.h"
 #endif
