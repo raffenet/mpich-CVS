@@ -29,9 +29,10 @@
 #endif
 #endif
 
-smpd_process_t smpd_process = 
+smpd_global_t smpd_process = 
     { -1, -1, -1, 
       NULL, NULL, NULL, NULL,
+      NULL,
       SMPD_FALSE, SMPD_FALSE,
       SOCK_INVALID_SET,
       "", "",
@@ -100,6 +101,99 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
 
     /* create the socket */
     *pWrite = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+    if (*pWrite == INVALID_SOCKET)
+    {
+	error = WSAGetLastError();
+	mp_err_printf("WSASocket failed, error %d\n", error);
+	closesocket(sock);
+	*pRead = INVALID_SOCKET;
+	*pWrite = INVALID_SOCKET;
+	return error;
+    }
+
+    /* set the nodelay option */
+    b = TRUE;
+    setsockopt(*pWrite, IPPROTO_TCP, TCP_NODELAY, (char*)&b, sizeof(BOOL));
+
+    /* Set the linger on close option */
+    linger.l_onoff = 1 ;
+    linger.l_linger = 60;
+    setsockopt(*pWrite, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof(linger));
+
+    sockAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+    /* connect to myself */
+    if (connect(*pWrite, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
+    {
+	error = WSAGetLastError();
+	closesocket(*pWrite);
+	closesocket(sock);
+	*pRead = INVALID_SOCKET;
+	*pWrite = INVALID_SOCKET;
+	return error;
+    }
+
+    /* Accept the connection from myself */
+    len = sizeof(sockAddr);
+    *pRead = accept(sock, (SOCKADDR*)&sockAddr, &len);
+
+    closesocket(sock);
+    return 0;
+}
+
+int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWrite, int write_overlapped)
+{
+    SOCKET sock;
+    char host[100];
+    int port;
+    int len;
+    LINGER linger;
+    BOOL b;
+    SOCKADDR_IN sockAddr;
+    int error;
+    DWORD flag;
+
+    /* Create a listener */
+
+    /* create the socket */
+    flag = read_overlapped ? WSA_FLAG_OVERLAPPED : 0;
+    sock = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, flag);
+    if (sock == INVALID_SOCKET)
+    {
+	*pRead = INVALID_SOCKET;
+	*pWrite = INVALID_SOCKET;
+	return WSAGetLastError();
+    }
+
+    memset(&sockAddr,0,sizeof(sockAddr));
+    
+    sockAddr.sin_family = AF_INET;
+    sockAddr.sin_addr.s_addr = INADDR_ANY;
+    sockAddr.sin_port = htons((unsigned short)ADDR_ANY);
+
+    if (bind(sock, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
+    {
+	error = WSAGetLastError();
+	mp_err_printf("bind failed: error %d\n", error);
+	*pRead = INVALID_SOCKET;
+	*pWrite = INVALID_SOCKET;
+	return error;
+    }
+    
+    /* listen */
+    listen(sock, 2);
+
+    /* get the host and port where we're listening */
+    len = sizeof(sockAddr);
+    getsockname(sock, (struct sockaddr*)&sockAddr, &len);
+    port = ntohs(sockAddr.sin_port);
+    gethostname(host, 100);
+
+    /* Connect to myself */
+
+    /* create the socket */
+    flag = write_overlapped ? WSA_FLAG_OVERLAPPED : 0;
+    *pWrite = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, flag);
     if (*pWrite == INVALID_SOCKET)
     {
 	error = WSAGetLastError();

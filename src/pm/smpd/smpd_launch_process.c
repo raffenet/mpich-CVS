@@ -407,7 +407,8 @@ int smpd_priority_to_win_priority(int *priority)
 }
 
 /* Windows code */
-int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int priorityClass, int priority, int dbg, sock_set_t set, sock_t *sock_in, sock_t *sock_out, sock_t *sock_err, int *pid_ptr)
+
+int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set)
 {
     HANDLE hStdin, hStdout, hStderr;
     SOCKET hSockStdinR = INVALID_SOCKET, hSockStdinW = INVALID_SOCKET;
@@ -418,9 +419,10 @@ int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int 
     PROCESS_INFORMATION psInfo;
     void *pEnv=NULL;
     char tSavedPath[MAX_PATH] = ".";
-    HANDLE hRetVal = INVALID_HANDLE_VALUE;
     DWORD launch_flag;
-    int nError;
+    int nError, result;
+    unsigned long blocking_flag;
+    sock_t sock_in, sock_out, sock_err;
 
     smpd_enter_fn("smpd_launch_process");
 
@@ -440,17 +442,17 @@ int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int 
     }
 
     /* Create sockets for stdin, stdout, and stderr */
-    if (nError = smpd_make_socket_loop(&hSockStdinR, &hSockStdinW))
+    if (nError = smpd_make_socket_loop_choose(&hSockStdinR, SMPD_FALSE, &hSockStdinW, SMPD_TRUE))
     {
 	smpd_err_printf("smpd_make_socket_loop failed, error %d\n", nError);
 	goto CLEANUP;
     }
-    if (nError = smpd_make_socket_loop(&hSockStdoutR, &hSockStdoutW))
+    if (nError = smpd_make_socket_loop_choose(&hSockStdoutR, SMPD_TRUE, &hSockStdoutW, SMPD_FALSE))
     {
 	smpd_err_printf("smpd_make_socket_loop failed, error %d\n", nError);
 	goto CLEANUP;
     }
-    if (nError = smpd_make_socket_loop(&hSockStderrR, &hSockStderrW))
+    if (nError = smpd_make_socket_loop_choose(&hSockStderrR, SMPD_TRUE, &hSockStderrW, SMPD_FALSE))
     {
 	smpd_err_printf("smpd_make_socket_loop failed, error %d\n", nError);
 	goto CLEANUP;
@@ -478,6 +480,14 @@ int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int 
 	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
 	goto CLEANUP;
     }
+
+    /* make the ends used by the spawned process blocking */
+    blocking_flag = 0;
+    ioctlsocket(hSockStdinR, FIONBIO, &blocking_flag);
+    blocking_flag = 0;
+    ioctlsocket(hSockStdoutW, FIONBIO, &blocking_flag);
+    blocking_flag = 0;
+    ioctlsocket(hSockStderrW, FIONBIO, &blocking_flag);
 
     /* Set stdin, stdout, and stderr to the ends of the pipe the created process will use */
     if (!SetStdHandle(STD_INPUT_HANDLE, (HANDLE)hSockStdinR))
@@ -507,20 +517,21 @@ int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int 
     saInfo.hStdOutput = (HANDLE)hSockStdoutW;
     saInfo.dwFlags = STARTF_USESTDHANDLES;
 
-    SetEnvironmentVariables(env);
+    SetEnvironmentVariables(process->env);
     pEnv = GetEnvironmentStrings();
 
     GetCurrentDirectory(MAX_PATH, tSavedPath);
-    SetCurrentDirectory(dir);
+    SetCurrentDirectory(process->dir);
 
     launch_flag = 
 	CREATE_SUSPENDED | CREATE_NO_WINDOW | priorityClass;
     if (dbg)
 	launch_flag = launch_flag | DEBUG_PROCESS;
 
+    psInfo.hProcess = INVALID_HANDLE_VALUE;
     if (CreateProcess(
 	NULL,
-	cmd,
+	process->exe,
 	NULL, NULL, TRUE,
 	launch_flag,
 	pEnv,
@@ -529,11 +540,13 @@ int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int 
     {
 	SetThreadPriority(psInfo.hThread, priority);
 
+	/*
 	ResumeThread(psInfo.hThread);
-	hRetVal = psInfo.hProcess;
-	*pid_ptr = psInfo.dwProcessId;
+	psInfo.hProcess;
+	*/
+	process->pid = psInfo.dwProcessId;
 
-	CloseHandle(psInfo.hThread);
+	/*CloseHandle(psInfo.hThread);*/
     }
     else
     {
@@ -543,24 +556,32 @@ int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int 
 
     FreeEnvironmentStrings((TCHAR*)pEnv);
     SetCurrentDirectory(tSavedPath);
-    RemoveEnvironmentVariables(env);
+    RemoveEnvironmentVariables(process->env);
 
     /* make sock structures out of the sockets */
-    nError = sock_native_to_sock(set, hIn, NULL, sock_in);
+    nError = sock_native_to_sock(set, hIn, NULL, &sock_in);
     if (nError != SOCK_SUCCESS)
     {
 	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
     }
-    nError = sock_native_to_sock(set, hOut, NULL, sock_out);
+    nError = sock_native_to_sock(set, hOut, NULL, &sock_out);
     if (nError != SOCK_SUCCESS)
     {
 	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
     }
-    nError = sock_native_to_sock(set, hErr, NULL, sock_err);
+    nError = sock_native_to_sock(set, hErr, NULL, &sock_err);
     if (nError != SOCK_SUCCESS)
     {
 	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
     }
+
+    process->in->sock = sock_in;
+    process->out->sock = sock_out;
+    process->err->sock = sock_err;
+    process->pid = process->in->id = process->out->id = process->err->id = psInfo.dwProcessId;
+    sock_set_user_ptr(sock_in, process->in);
+    sock_set_user_ptr(sock_out, process->out);
+    sock_set_user_ptr(sock_err, process->err);
 
 RESTORE_CLEANUP:
     /* Restore stdin, stdout, stderr */
@@ -573,203 +594,35 @@ CLEANUP:
     CloseHandle((HANDLE)hSockStdoutW);
     CloseHandle((HANDLE)hSockStderrW);
 
-    if (hRetVal != INVALID_HANDLE_VALUE)
+    if (psInfo.hProcess != INVALID_HANDLE_VALUE)
     {
-        CloseHandle(hRetVal);
+	result = sock_post_read(sock_out, process->out->read_cmd.cmd, 1, NULL);
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("posting first read from stdout context failed, sock error: %s\n",
+		get_sock_error_string(result));
+	    smpd_exit_fn("smpd_launch_process");
+	    return SMPD_FAIL;
+	}
+	result = sock_post_read(sock_err, process->err->read_cmd.cmd, 1, NULL);
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("posting first read from stderr context failed, sock error: %s\n",
+		get_sock_error_string(result));
+	    smpd_exit_fn("smpd_launch_process");
+	    return SMPD_FAIL;
+	}
+	ResumeThread(psInfo.hThread);
+        /*CloseHandle(psInfo.hProcess);*/
+	process->wait = process->in->wait = process->out->wait = process->err->wait = psInfo.hProcess;
+	CloseHandle(psInfo.hThread);
 	smpd_exit_fn("smpd_launch_process");
 	return SMPD_SUCCESS;
     }
+
     smpd_exit_fn("smpd_launch_process");
     return SMPD_FAIL;
 }
-
-#if 0
-HANDLE LaunchProcess(char *cmd, char *env, char *dir, int priorityClass, int priority, HANDLE *hIn, HANDLE *hOut, HANDLE *hErr, int *pdwPid, int *nError, char *pszError, bool bDebug)
-{
-    HANDLE hStdin, hStdout, hStderr;
-    HANDLE hPipeStdinR=NULL, hPipeStdinW=NULL;
-    HANDLE hPipeStdoutR=NULL, hPipeStdoutW=NULL;
-    HANDLE hPipeStderrR=NULL, hPipeStderrW=NULL;
-    STARTUPINFO saInfo;
-    PROCESS_INFORMATION psInfo;
-    void *pEnv=NULL;
-    char tSavedPath[MAX_PATH] = ".";
-    HANDLE hRetVal = INVALID_HANDLE_VALUE;
-    DWORD launch_flag;
-    
-    /* Launching of the client processes must be synchronized because
-       stdin,out,err are redirected for the entire process, not just this thread.*/
-    WaitForSingleObject(g_hLaunchMutex, INFINITE);
-    
-    /* Don't handle errors, just let the process die.
-       In the future this will be configurable to allow various debugging options.*/
-#ifdef USE_SET_ERROR_MODE
-    DWORD dwOriginalErrorMode;
-    dwOriginalErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
-#endif
-    
-    /* Save stdin, stdout, and stderr */
-    hStdin = GetStdHandle(STD_INPUT_HANDLE);
-    hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    hStderr = GetStdHandle(STD_ERROR_HANDLE);
-    if (hStdin == INVALID_HANDLE_VALUE || hStdout == INVALID_HANDLE_VALUE  || hStderr == INVALID_HANDLE_VALUE)
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "GetStdHandle failed, ");
-	ReleaseMutex(g_hLaunchMutex);
-	return INVALID_HANDLE_VALUE;
-    }
-    
-    /* Set the security attributes to allow handles to be inherited */
-    SECURITY_ATTRIBUTES saAttr;
-    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-    saAttr.lpSecurityDescriptor = NULL;
-    saAttr.bInheritHandle = TRUE;
-    
-    /* Create pipes for stdin, stdout, and stderr */
-    if (!CreatePipe(&hPipeStdinR, &hPipeStdinW, &saAttr, 0))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "CreatePipe failed, ");
-	goto CLEANUP;
-    }
-    if (!CreatePipe(&hPipeStdoutR, &hPipeStdoutW, &saAttr, 0))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "CreatePipe failed, ");
-	goto CLEANUP;
-    }
-    if (!CreatePipe(&hPipeStderrR, &hPipeStderrW, &saAttr, 0))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "CreatePipe failed, ");
-	goto CLEANUP;
-    }
-    
-    /* Make the ends of the pipes that this process will use not inheritable */
-    if (!DuplicateHandle(GetCurrentProcess(), hPipeStdinW, GetCurrentProcess(), hIn, 
-	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "DuplicateHandle failed, ");
-	goto CLEANUP;
-    }
-    if (!DuplicateHandle(GetCurrentProcess(), hPipeStdoutR, GetCurrentProcess(), hOut, 
-	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "DuplicateHandle failed, ");
-	goto CLEANUP;
-    }
-    if (!DuplicateHandle(GetCurrentProcess(), hPipeStderrR, GetCurrentProcess(), hErr, 
-	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "DuplicateHandle failed, ");
-	goto CLEANUP;
-    }
-    
-    /* Set stdin, stdout, and stderr to the ends of the pipe the created process will use */
-    if (!SetStdHandle(STD_INPUT_HANDLE, hPipeStdinR))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "SetStdHandle failed, ");
-	goto CLEANUP;
-    }
-    if (!SetStdHandle(STD_OUTPUT_HANDLE, hPipeStdoutW))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "SetStdHandle failed, ");
-	goto RESTORE_CLEANUP;
-    }
-    if (!SetStdHandle(STD_ERROR_HANDLE, hPipeStderrW))
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "SetStdHandle failed, ");
-	goto RESTORE_CLEANUP;
-    }
-    
-    /* Create the process */
-    memset(&saInfo, 0, sizeof(STARTUPINFO));
-    saInfo.cb = sizeof(STARTUPINFO);
-    saInfo.hStdError = hPipeStderrW;
-    saInfo.hStdInput = hPipeStdinR;
-    saInfo.hStdOutput = hPipeStdoutW;
-    saInfo.dwFlags = STARTF_USESTDHANDLES;
-    /*saInfo.lpDesktop = "WinSta0\\Default";*/
-    /*saInfo.wShowWindow = SW_SHOW;*/
-    
-    SetEnvironmentVariables(env);
-    pEnv = GetEnvironmentStrings();
-    
-    GetCurrentDirectory(MAX_PATH, tSavedPath);
-    SetCurrentDirectory(dir);
-    
-    launch_flag = 
-	/*
-	DETACHED_PROCESS | IDLE_PRIORITY_CLASS;
-	CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS;
-	CREATE_NO_WINDOW | BELOW_NORMAL_PRIORITY_CLASS;
-	CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP;
-	DETACHED_PROCESS | IDLE_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP;
-	CREATE_NO_WINDOW | IDLE_PRIORITY_CLASS | CREATE_SUSPENDED;
-	*/
-	CREATE_SUSPENDED | CREATE_NO_WINDOW | priorityClass;
-    if (bDebug)
-	launch_flag = launch_flag | DEBUG_PROCESS;
-
-    /*PrintPriorities(priorityClass, priority);*/
-    if (CreateProcess(
-	NULL,
-	cmd,
-	NULL, NULL, TRUE,
-	launch_flag,
-	pEnv,
-	NULL,
-	&saInfo, &psInfo))
-    {
-	SetThreadPriority(psInfo.hThread, priority);
-
-	DWORD dwClass, dwPriority;
-	dwClass = GetPriorityClass(psInfo.hProcess);
-	dwPriority = GetThreadPriority(psInfo.hThread);
-	PrintPriorities(dwClass, dwPriority);
-
-	ResumeThread(psInfo.hThread);
-	hRetVal = psInfo.hProcess;
-	*pdwPid = psInfo.dwProcessId;
-
-	CloseHandle(psInfo.hThread);
-    }
-    else
-    {
-	*nError = GetLastError();
-	strcpy(pszError, "CreateProcess failed, ");
-    }
-    
-    FreeEnvironmentStrings((TCHAR*)pEnv);
-    SetCurrentDirectory(tSavedPath);
-    RemoveEnvironmentVariables(env);
-    
-RESTORE_CLEANUP:
-    /* Restore stdin, stdout, stderr */
-    SetStdHandle(STD_INPUT_HANDLE, hStdin);
-    SetStdHandle(STD_OUTPUT_HANDLE, hStdout);
-    SetStdHandle(STD_ERROR_HANDLE, hStderr);
-    
-CLEANUP:
-    ReleaseMutex(g_hLaunchMutex);
-    CloseHandle(hPipeStdinR);
-    CloseHandle(hPipeStdoutW);
-    CloseHandle(hPipeStderrW);
-    
-#ifdef USE_SET_ERROR_MODE
-    SetErrorMode(dwOriginalErrorMode);
-#endif
-
-    return hRetVal;
-}
-#endif
 
 void smpd_parse_account_domain(char *domain_account, char *account, char *domain)
 {
@@ -803,11 +656,18 @@ void smpd_parse_account_domain(char *domain_account, char *account, char *domain
 #else
 
 /* Unix code */
-int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int priorityClass, int priority, int dbg, sock_set_t set, sock_t *sock_in, sock_t *sock_out, sock_t *sock_err, int *pid_ptr)
+
+/*
+int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir,
+			int priorityClass, int priority, int dbg,
+			sock_set_t set, sock_t *sock_in, sock_t *sock_out, sock_t *sock_err, int *pid_ptr)
+			*/
+int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set)
 {
     int result;
     int stdin_pipe_fds[2], stdout_pipe_fds[2], stderr_pipe_fds[2];
     int pid;
+    sock_t sock_in, sock_out, sock_err;
 
     smpd_enter_fn("smpd_launch_process");
 
@@ -846,44 +706,68 @@ int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int 
 
 	/*sprintf( env_path_for_exec, "PATH=%s", getenv( "PATH" ) );*/
 	/*strcpy( pwd_for_exec, getenv( "PWD" ) );*/
-	result = chdir( dir );
+	result = chdir( process->dir );
 	if (result < 0)
 	    chdir( getenv( "HOME" ) );
 
-	result = execvp( cmd, NULL );
+	result = execvp( process->exe, NULL );
 
 	smpd_err_printf("execvp failed, exiting.\n");
 	smpd_exit_fn("smpd_launch_process");
 	exit(-1);
     }
-    else
-    {
-	/* parent process */
-	*pid_ptr = pid;
-	close(stdin_pipe_fds[0]);
-	close(stdout_pipe_fds[1]);
-	close(stderr_pipe_fds[1]);
 
-	/* make sock structures out of the sockets */
-	result = sock_native_to_sock(set, stdin_pipe_fds[1], NULL, sock_in);
-	if (result != SOCK_SUCCESS)
-	{
-	    smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
-	}
-	result = sock_native_to_sock(set, stdout_pipe_fds[0], NULL, sock_out);
-	if (result != SOCK_SUCCESS)
-	{
-	    smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
-	}
-	result = sock_native_to_sock(set, stderr_pipe_fds[0], NULL, sock_err);
-	if (result != SOCK_SUCCESS)
-	{
-	    smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
-	}
+    /* parent process */
+    process->pid = pid;
+    close(stdin_pipe_fds[0]);
+    close(stdout_pipe_fds[1]);
+    close(stderr_pipe_fds[1]);
+
+    /* make sock structures out of the sockets */
+    result = sock_native_to_sock(set, stdin_pipe_fds[1], NULL, sock_in);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
     }
+    result = sock_native_to_sock(set, stdout_pipe_fds[0], NULL, sock_out);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
+    }
+    result = sock_native_to_sock(set, stderr_pipe_fds[0], NULL, sock_err);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
+    }
+    process->in->sock = sock_in;
+    process->out->sock = sock_out;
+    process->err->sock = sock_err;
+    process->pid = process->in->id = process->out->id = process->err->id = pid;
+    sock_set_user_ptr(sock_in, process->in);
+    sock_set_user_ptr(sock_out, process->out);
+    sock_set_user_ptr(sock_err, process->err);
 
     smpd_exit_fn("smpd_launch_process");
     return SMPD_SUCCESS;
 }
 
 #endif
+
+int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
+{
+#ifdef HAVE_WINDOWS_H
+    int result;
+    WaitForSingleObject(wait, INFINITE);
+    result = GetExitCodeProcess(wait, exit_code_ptr);
+    CloseHandle(wait);
+    if (result)
+	return SMPD_SUCCESS;
+    *exit_code_ptr = -1;
+    return SMPD_FAIL;
+#else
+    int status;
+    waitpid(wait, &status, 0);
+    *exit_code_ptr = (WIFEXITED(status)) ? WEXITSTATUS(status) : -1;
+    return SMPD_SUCCESS;
+#endif
+}

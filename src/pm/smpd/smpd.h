@@ -11,6 +11,12 @@
 #endif
 #include "sock.h"
 #include <stdio.h>
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_WAIT_H
+#include <sys/wait.h>
+#endif
 
 #define SMPD_LISTENER_PORT               8676
 
@@ -123,11 +129,18 @@ typedef struct smpd_command_t
     int freed; /* debugging to see if freed more than once */
 } smpd_command_t;
 
+#ifdef HAVE_WINDOWS_H
+typedef HANDLE smpd_pwait_t;
+#else
+typedef pid_t smpd_pwait_t;
+#endif
+
 typedef struct smpd_context_t
 {
     smpd_context_type_t type;
     char host[SMPD_MAX_HOST_LENGTH];
     int id, rank;
+    smpd_pwait_t wait;
     sock_set_t set;
     sock_t sock;
     smpd_command_t read_cmd;
@@ -136,13 +149,29 @@ typedef struct smpd_context_t
     struct smpd_context_t *next;
 } smpd_context_t;
 
+typedef struct smpd_process_t
+{
+    int num_valid_contexts;
+    smpd_context_t *in, *out, *err;
+    int pid;
+    char exe[SMPD_MAX_EXE_LENGTH];
+    char env[SMPD_MAX_ENV_LENGTH];
+    char dir[SMPD_MAX_EXE_LENGTH];
+    char path[SMPD_MAX_EXE_LENGTH];
+    int rank;
+    smpd_pwait_t wait;
+    int exitcode;
+    struct smpd_process_t *next;
+} smpd_process_t;
+
 /* If you add elements to the process structure you must add the appropriate
    initializer in smpd_connect.c where the global variable, smpd_process, lives */
-typedef struct smpd_process_t
+typedef struct smpd_global_t
 {
     int id, parent_id;
     int level;
     smpd_context_t *left_context, *right_context, *parent_context, *context_list;
+    smpd_process_t *process_list;
     int closing;
     int root_smpd;
     sock_set_t set;
@@ -156,9 +185,9 @@ typedef struct smpd_process_t
     int cur_tag;
     int dbg_state;
     FILE *dbg_fout;
-} smpd_process_t;
+} smpd_global_t;
 
-extern smpd_process_t smpd_process;
+extern smpd_global_t smpd_process;
 
 /* smpd */
 int smpd_parse_command_args(int *argcp, char **argvp[]);
@@ -170,6 +199,7 @@ HANDLE smpd_decode_handle(char *str);
 #endif
 
 /* smpd_util */
+int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr);
 int smpd_init_process(void);
 int smpd_init_printf(void);
 int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_set_t set, sock_t sock, int id);
@@ -219,6 +249,7 @@ int smpd_get_opt_string(int *argc, char ***argv, char * flag, char *str, int len
 void smpd_parse_account_domain(char *domain_account, char *account, char *domain);
 int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *handle_ptr);
 int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite);
+int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWrite, int write_overlapped);
 #endif
 int smpd_generate_session_header(char *str, int session_id);
 int smpd_interpret_session_header(char *str);
@@ -228,8 +259,20 @@ int smpd_get_string_arg(char *str, char *flag, char *val, int maxlen);
 int smpd_get_int_arg(char *str, char *flag, int *val_ptr);
 int smpd_command_destination(int dest, smpd_context_t **dest_context);
 int smpd_forward_command(smpd_context_t *src, smpd_context_t *dest);
-int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int priorityClass, int priority, int dbg, sock_set_t set, sock_t *sock_in, sock_t *sock_out, sock_t *sock_err, int *pid_ptr);
+#if 0
+/*int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int priorityClass, int priority, int dbg, sock_set_t set, sock_t *sock_in, sock_t *sock_out, sock_t *sock_err, int *pid_ptr, smpd_pwait_t *pwait);*/
+int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir, int priorityClass, int priority, int dbg,
+			sock_set_t set,
+			/*sock_t *sock_in, sock_t *sock_out, sock_t *sock_err,*/
+			smpd_context_t *context_in,
+			smpd_context_t *context_out,
+			smpd_context_t *context_err,
+			int *pid_ptr);
+#endif
+int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set);
 int smpd_encode_buffer(char *dest, int dest_length, char *src, int src_length, int *num_encoded);
 int smpd_decode_buffer(char *str, char *dest, int length, int *num_decoded);
+int smpd_create_process(int rank, smpd_process_t **process_ptr);
+int smpd_free_process(smpd_process_t *process);
 
 #endif
