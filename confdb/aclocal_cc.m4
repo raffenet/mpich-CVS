@@ -832,6 +832,78 @@ correctly set error code when a fatal error occurs])
 fi
 ])
 dnl
+dnl/*D 
+dnl PAC_PROG_C_MULTIPLE_WEAK_SYMBOLS - Test whether C and the
+dnl linker allow multiple weak symbols.
+dnl
+dnl Synopsis
+dnl PAC_PROG_C_MULTIPLE_WEAK_SYMBOLS(action-if-true,action-if-false)
+dnl
+dnl 
+dnl D*/
+AC_DEFUN(PAC_PROG_C_MULTIPLE_WEAK_SYMBOLS,[
+AC_CACHE_CHECK([for multiple weak symbol support],
+pac_cv_prog_c_multiple_weak_symbols,[
+# Test for multiple weak symbol support...
+#
+rm -f conftest*
+cat >>conftest1.c <<EOF
+extern int PFoo(int);
+extern int PFoo_(int);
+extern int pfoo_(int);
+#pragma weak PFoo = Foo
+#pragma weak PFoo_ = Foo
+#pragma weak pfoo_ = Foo
+int Foo(int);
+int Foo(a) { return a; }
+EOF
+cat >>conftest2.c <<EOF
+extern int PFoo(int), PFoo_(int), pfoo_(int);
+int main() {
+return PFoo(0) + PFoo_(1) + pfoo_(2);}
+EOF
+ac_link2='${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest1.c conftest2.c $LIBS >conftest.out 2>&1'
+if eval $ac_link2 ; then
+    pac_cv_prog_c_multiple_weak_symbols="yes"
+else
+    echo "$ac_link2" >>config.log
+    echo "Failed program was" >>config.log
+    cat conftest1.c >>config.log
+    cat conftest2.c >>config.log
+    if test -s conftest.out ; then cat conftest.out >> config.log ; fi
+fi
+rm -f conftest*
+dnl
+])
+if test "$pac_cv_prog_c_multiple_weak_symbols" = "yes" ; then
+    ifelse([$1],,:,[$1])
+else
+    ifelse([$2],,:,[$2])
+fi
+])
+
+#
+# This is a replacement that checks that FAILURES are signaled as well
+# (later configure macros look for the .o file, not just success from the
+# compiler, but they should not HAVE to
+#
+dnl --- insert 2.52 compatibility here ---
+dnl 2.52 does not have AC_PROG_CC_WORKS
+ifdef([AC_PROG_CC_WORKS],,[AC_DEFUN([AC_PROG_CC_WORKS],)])
+dnl
+AC_DEFUN(PAC_PROG_CC_WORKS,
+[AC_PROG_CC_WORKS
+AC_MSG_CHECKING([whether the C compiler sets its return status correctly])
+AC_LANG_SAVE
+AC_LANG_C
+AC_TRY_COMPILE(,[int a = bzzzt;],notbroken=no,notbroken=yes)
+AC_MSG_RESULT($notbroken)
+if test "$notbroken" = "no" ; then
+    AC_MSG_ERROR([installation or configuration problem: C compiler does not
+correctly set error code when a fatal error occurs])
+fi
+])
+dnl
 dnl/*D
 dnl PAC_FUNC_CRYPT - Check that the function crypt is defined
 dnl
