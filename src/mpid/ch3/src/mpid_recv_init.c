@@ -31,6 +31,7 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
     MPIU_Object_set_ref(rreq, 1);
     rreq->kind = MPID_PREQUEST_RECV;
     rreq->comm = comm;
+    MPIR_Comm_add_ref(comm);
     rreq->ch3.match.rank = rank;
     rreq->ch3.match.tag = tag;
     rreq->ch3.match.context_id = comm->context_id + context_offset;

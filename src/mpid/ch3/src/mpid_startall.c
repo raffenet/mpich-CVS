@@ -71,7 +71,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 		    sreq->kind = MPID_REQUEST_SEND;
 		    sreq->cc   = 0;
 		    sreq->comm = preq->comm;
-		    
+		    MPIR_Comm_add_ref(sreq->comm);
 		    
 		    rc = MPIR_Bsend_isend(preq->ch3.user_buf, preq->ch3.user_count, preq->ch3.datatype, preq->ch3.match.rank,
 					  preq->ch3.match.tag, preq->comm, BSEND_INIT, &preq->partner_request);
