@@ -15,14 +15,6 @@
 #include "adio.h"
 
 void ADIOI_SFS_Open(ADIO_File fd, int *error_code);
-int ADIOI_SFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int
-		       *error_code);
-int ADIOI_SFS_WriteDone(ADIO_Request *request, ADIO_Status *status, int
-		       *error_code);
-void ADIOI_SFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int
-		       *error_code); 
-void ADIOI_SFS_WriteComplete(ADIO_Request *request, ADIO_Status *status,
-			int *error_code); 
 void ADIOI_SFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int
 		*error_code); 
 void ADIOI_SFS_Flush(ADIO_File fd, int *error_code);
