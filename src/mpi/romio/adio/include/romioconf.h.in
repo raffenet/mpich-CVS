@@ -36,7 +36,6 @@
 #undef HAVE_PRAGMA_WEAK
 #undef HAVE_PREAD64
 #undef HAVE_STATUS_SET_BYTES
-#undef HAVE_MPI_GREQUEST
 #undef HAVE_STRERROR
 #undef HAVE_SYSERRLIST
 #undef HAVE_WEAK_SYMBOLS
@@ -68,6 +67,7 @@
 #undef UFS
 #undef XFS
 #undef NEEDS_AIOCB_T
+#undef HAVE_MPI_GREQUEST
 
 /* Define if you have memalign.  */
 #undef HAVE_MEMALIGN
