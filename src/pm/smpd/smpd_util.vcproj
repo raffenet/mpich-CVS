@@ -20,7 +20,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\include,..\..\include\win32"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HAVE_WINDOWS_H;USE_WINCONF_H;_WIN32_WINNT=0x0501"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HAVE_WINDOWS_H;USE_WINCONF_H;_WIN32_WINNT=0x0500"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -64,7 +64,7 @@
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\include,..\..\include\win32"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HAVE_WINDOWS_H;USE_WINCONF_H;_WIN32_WINNT=0x0501"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HAVE_WINDOWS_H;USE_WINCONF_H;_WIN32_WINNT=0x0500"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -112,13 +112,13 @@
 					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="UNICODE;_UNICODE;_WIN32_WINNT=0x0501"/>
+						PreprocessorDefinitions="UNICODE;_UNICODE;_WIN32_WINNT=0x0500"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="UNICODE;_UNICODE;_WIN32_WINNT=0x0501"/>
+						PreprocessorDefinitions="UNICODE;_UNICODE;_WIN32_WINNT=0x0500"/>
 				</FileConfiguration>
 			</File>
 			<File
