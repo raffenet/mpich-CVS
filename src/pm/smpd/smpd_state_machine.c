@@ -3511,8 +3511,22 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 	    result = smpd_handle_op_connect(context, &event);
 	    if (result != SMPD_SUCCESS || event.error != SOCK_SUCCESS)
 	    {
-		smpd_dbg_printf("SOCK_OP_CONNECT failed, closing %d context.\n", smpd_get_context_str(context));
 		context->state = SMPD_CLOSING;
+		if (context->state == SMPD_MPIEXEC_CONNECTING_TREE)
+		{
+		    if (smpd_process.id == 0)
+		    {
+			context->state = SMPD_EXITING;
+		    }
+		    else
+		    {
+			if (context->connect_to)
+			    smpd_post_abort_command("unable to connect to %s", context->connect_to->host);
+			else
+			    smpd_post_abort_command("connect failure");
+		    }
+		}
+		smpd_dbg_printf("SOCK_OP_CONNECT failed, closing %d context.\n", smpd_get_context_str(context));
 		result = sock_post_close(context->sock);
 		if (result != SOCK_SUCCESS)
 		{
