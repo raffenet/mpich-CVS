@@ -287,6 +287,9 @@
 				RelativePath="mp_parse_command_line.c">
 			</File>
 			<File
+				RelativePath=".\mp_parse_oldconfig.c">
+			</File>
+			<File
 				RelativePath="mpiexec.c">
 			</File>
 			<File

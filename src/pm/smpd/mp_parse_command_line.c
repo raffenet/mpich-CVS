@@ -30,14 +30,14 @@ void mp_print_options(void)
     printf("Usage:\n");
     printf("mpiexec -n <maxprocs> [options] executable [args ...]\n");
     printf("mpiexec [options] executable [args ...] : [options] exe [args] : ...\n");
-    printf("mpiexec -file <configfile>\n");
+    printf("mpiexec -configfile <configfile>\n");
     printf("\n");
     printf("options:\n");
     printf("\n");
     printf("standard:\n");
     printf("-n <maxprocs>\n");
     printf("-wdir <working directory>\n");
-    printf("-file <filename> -\n");
+    printf("-configfile <filename> -\n");
     printf("       each line contains a complete set of mpiexec options\n");
     printf("       including the executable and arguments\n");
     printf("-host <hostname>\n");
@@ -60,6 +60,12 @@ void mp_print_options(void)
     printf("-localonly <numprocs>\n");
     printf("-nompi - processes never call any MPI functions\n");
     printf("-exitcodes - print the exit codes of processes as they exit\n");
+    printf("-genvall - pass all env vars in current environment\n");
+    printf("-genvnone - pass no env vars\n");
+    printf("-genvlist <list of env var names> - pass current values of these vars\n");
+    printf("-genv <name> <value> - pass this value of this env var\n");
+    printf("-g<local arg name> - global version of local options\n");
+    printf("  gwdir, ghost, gpath\n");
     printf("\n");
     printf("examples:\n");
     printf("mpiexec -n 4 cpi\n");
@@ -152,6 +158,82 @@ void mp_print_extra_options(void)
     printf("  timeout for the job.\n");
 }
 
+#ifdef HAVE_WINDOWS_H
+
+/* check to see if a path is on a network mapped drive and would need to be mapped on a remote system */
+SMPD_BOOL NeedToMap(char *pszFullPath, char *pDrive, char *pszShare)
+{
+    DWORD dwResult;
+    DWORD dwLength;
+    char pBuffer[4096];
+    REMOTE_NAME_INFO *info = (REMOTE_NAME_INFO*)pBuffer;
+    char pszTemp[SMPD_MAX_EXE_LENGTH];
+
+    if (*pszFullPath == '"')
+    {
+	strncpy(pszTemp, &pszFullPath[1], SMPD_MAX_EXE_LENGTH);
+	pszTemp[SMPD_MAX_EXE_LENGTH-1] = '\0';
+	if (pszTemp[strlen(pszTemp)-1] == '"')
+	    pszTemp[strlen(pszTemp)-1] = '\0';
+	pszFullPath = pszTemp;
+    }
+    dwLength = 4096;
+    info->lpConnectionName = NULL;
+    info->lpRemainingPath = NULL;
+    info->lpUniversalName = NULL;
+    dwResult = WNetGetUniversalName(pszFullPath, REMOTE_NAME_INFO_LEVEL, info, &dwLength);
+    if (dwResult == NO_ERROR)
+    {
+	*pDrive = *pszFullPath;
+	strcpy(pszShare, info->lpConnectionName);
+	return SMPD_TRUE;
+    }
+
+    /*printf("WNetGetUniversalName: '%s'\n error %d\n", pszExe, dwResult);*/
+    return SMPD_FALSE;
+}
+
+/* convert an executable name to a universal naming convention version so that it can be used on a remote system */
+void ExeToUnc(char *pszExe, int length)
+{
+    DWORD dwResult;
+    DWORD dwLength;
+    char pBuffer[4096];
+    REMOTE_NAME_INFO *info = (REMOTE_NAME_INFO*)pBuffer;
+    char pszTemp[SMPD_MAX_EXE_LENGTH];
+    SMPD_BOOL bQuoted = SMPD_FALSE;
+    char *pszOriginal;
+
+    pszOriginal = pszExe;
+
+    if (*pszExe == '"')
+    {
+	bQuoted = SMPD_TRUE;
+	strncpy(pszTemp, &pszExe[1], SMPD_MAX_EXE_LENGTH);
+	pszTemp[SMPD_MAX_EXE_LENGTH-1] = '\0';
+	if (pszTemp[strlen(pszTemp)-1] == '"')
+	    pszTemp[strlen(pszTemp)-1] = '\0';
+	pszExe = pszTemp;
+    }
+    dwLength = 4096;
+    info->lpConnectionName = NULL;
+    info->lpRemainingPath = NULL;
+    info->lpUniversalName = NULL;
+    dwResult = WNetGetUniversalName(pszExe, REMOTE_NAME_INFO_LEVEL, info, &dwLength);
+    if (dwResult == NO_ERROR)
+    {
+	if (bQuoted)
+	    snprintf(pszOriginal, length, "\"%s\"", info->lpUniversalName);
+	else
+	{
+	    strncpy(pszOriginal, info->lpUniversalName, length);
+	    pszOriginal[length-1] = '\0';
+	}
+    }
+}
+
+#endif
+
 static int strip_args(int *argcp, char **argvp[], int n)
 {
     int i;
@@ -213,7 +295,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     int n_priority_class, n_priority, use_priorities;
     int index, i;
     char configfilename[SMPD_MAX_FILENAME];
-    int use_configfile;
+    int use_configfile, delete_configfile;
     char exe[SMPD_MAX_EXE_LENGTH], *exe_iter;
     char exe_path[SMPD_MAX_EXE_LENGTH], *namepart;
     smpd_launch_node_t *launch_node, *launch_node_iter;
@@ -351,7 +433,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
      * -wdir <working directory>
      * -path <search path for executable>
      * -arch <architecture> - sun, linux, rs6000, ...
-     * -file <filename> - each line contains a complete set of mpiexec options, #commented
+     * -configfile <filename> - each line contains a complete set of mpiexec options, #commented
      *
      * Extensions:
      * -env <variable=value>
@@ -364,6 +446,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
      * -exitcodes - print the exit codes of processes as they exit
      * -verbose - same as setting environment variable to SMPD_DBG_OUTPUT=stdout
      * -quiet_abort - minimize the output when a job is aborted
+     * -file - mpich1 job configuration file
      * 
      * Windows extensions:
      * -map <drive:\\host\share>
@@ -409,6 +492,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 
 	/* reset block global variables */
 	use_configfile = SMPD_FALSE;
+	delete_configfile = SMPD_FALSE;
 configfile_loop:
 	nproc = 0;
 	drive_map_list = NULL;
@@ -422,7 +506,7 @@ configfile_loop:
 	use_machine_file = SMPD_FALSE;
 	path[0] = '\0';
 
-	/* Check for the -file option.  It must be the first and only option in a group. */
+	/* Check for the -configfile option.  It must be the first and only option in a group. */
 	if ((*argvp)[1] && (*argvp)[1][0] == '-')
 	{
 	    if ((*argvp)[1][1] == '-')
@@ -436,21 +520,47 @@ configfile_loop:
 		}
 		(*argvp)[1][index-1] = '\0';
 	    }
-	    if (strcmp(&(*argvp)[1][1], "file") == 0)
+	    if (strcmp(&(*argvp)[1][1], "configfile") == 0)
 	    {
 		if (use_configfile)
 		{
-		    printf("Error: -file option is not valid from within a configuration file.\n");
+		    printf("Error: -configfile option is not valid from within a configuration file.\n");
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
+		if (argc < 3)
+		{
+		    printf("Error: no filename specifed after -configfile option.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		strncpy(configfilename, (*argvp)[2], SMPD_MAX_FILENAME);
+		use_configfile = SMPD_TRUE;
+		fin_config = fopen(configfilename, "r");
+		if (fin_config == NULL)
+		{
+		    printf("Error: unable to open config file '%s'\n", configfilename);
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		if (!smpd_get_argcv_from_file(fin_config, argcp, argvp))
+		{
+		    fclose(fin_config);
+		    printf("Error: unable to parse config file '%s'\n", configfilename);
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+	    }
+	    if (strcmp(&(*argvp)[1][1], "file") == 0)
+	    {
 		if (argc < 3)
 		{
 		    printf("Error: no filename specifed after -file option.\n");
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-		strncpy(configfilename, (*argvp)[2], SMPD_MAX_FILENAME);
+		mp_parse_mpich1_configfile((*argvp)[2], configfilename, SMPD_MAX_FILENAME);
+		delete_configfile = SMPD_TRUE;
 		use_configfile = SMPD_TRUE;
 		fin_config = fopen(configfilename, "r");
 		if (fin_config == NULL)
@@ -622,6 +732,18 @@ configfile_loop:
 		strncpy(wdir, (*argvp)[2], SMPD_MAX_DIR_LENGTH);
 		num_args_to_strip = 2;
 	    }
+	    else if ( (strcmp(&(*argvp)[1][1], "gdir") == 0) || (strcmp(&(*argvp)[1][1], "gwdir") == 0) )
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no directory after %s option\n", (*argvp)[1]);
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		/*strncpy(wdir, (*argvp)[2], SMPD_MAX_DIR_LENGTH);*/
+		printf("%s option not implemented\n", (*argvp)[1]);
+		num_args_to_strip = 2;
+	    }
 	    else if (strcmp(&(*argvp)[1][1], "env") == 0)
 	    {
 		/*
@@ -672,6 +794,49 @@ configfile_loop:
 		env_list = env_node;
 		num_args_to_strip = 3;
 	    }
+	    else if (strcmp(&(*argvp)[1][1], "genv") == 0)
+	    {
+		if (argc < 4)
+		{
+		    printf("Error: no environment variables after -genv option\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		/*
+		env_node = (smpd_env_node_t*)malloc(sizeof(smpd_env_node_t));
+		if (env_node == NULL)
+		{
+		    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		strncpy(env_node->name, (*argvp)[2], SMPD_MAX_NAME_LENGTH);
+		strncpy(env_node->value, (*argvp)[3], SMPD_MAX_VALUE_LENGTH);
+		env_node->next = env_list;
+		env_list = env_node;
+		*/
+		printf("-genv option not implemented\n");
+		num_args_to_strip = 3;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "genvall") == 0)
+	    {
+		printf("-genvall option not implemented\n");
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "genvnone") == 0)
+	    {
+		printf("-genvnone option not implemented\n");
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "genvlist") == 0)
+	    {
+		if (argc < 4)
+		{
+		    printf("Error: no environment variables after -genvlist option\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		printf("-genvlist option not implemented\n");
+		num_args_to_strip = 3;
+	    }
 	    else if (strcmp(&(*argvp)[1][1], "logon") == 0)
 	    {
 		smpd_process.logon = SMPD_TRUE;
@@ -692,6 +857,23 @@ configfile_loop:
 		strncpy(pwd_file_name, (*argvp)[2], SMPD_MAX_FILENAME);
 		smpd_get_pwd_from_file(pwd_file_name);
 		num_args_to_strip = 2;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "configfile") == 0)
+	    {
+		printf("Error: The -configfile option must be the first and only option specified in a block.\n");
+		smpd_exit_fn("mp_parse_command_args");
+		return SMPD_FAIL;
+		/*
+		if (argc < 3)
+		{
+		    printf("Error: no filename specifed after -configfile option.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		strncpy(configfilename, (*argvp)[2], SMPD_MAX_FILENAME);
+		use_configfile = SMPD_TRUE;
+		num_args_to_strip = 2;
+		*/
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "file") == 0)
 	    {
@@ -737,6 +919,39 @@ configfile_loop:
 		host_list->connected = SMPD_FALSE;
 		host_list->nproc = -1;
 		strncpy(host_list->host, (*argvp)[2], SMPD_MAX_HOST_LENGTH);
+		num_args_to_strip = 2;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "ghost") == 0)
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no host specified after -ghost option.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+#if 0
+		if (host_list != NULL)
+		{
+		    printf("Error: -host option can only be called once and it cannot be combined with -hosts.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		/* create a host list of one and set nproc to -1 to be replaced by
+		   nproc after parsing the block */
+		host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+		if (host_list == NULL)
+		{
+		    printf("failed to allocate memory for a host node.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		host_list->next = NULL;
+		host_list->connected = SMPD_FALSE;
+		host_list->nproc = -1;
+		strncpy(host_list->host, (*argvp)[2], SMPD_MAX_HOST_LENGTH);
+#else
+		printf("-ghost option not implemented\n");
+#endif
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "hosts") == 0)
@@ -851,8 +1066,7 @@ configfile_loop:
 		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 #endif
 	    }
-	    /* catch -help, -?, and --help */
-	    else if (strcmp(&(*argvp)[1][1], "help") == 0 || (*argvp)[1][1] == '?' || strcmp(&(*argvp)[1][1], "-help") == 0)
+	    else if (strcmp(&(*argvp)[1][1], "help") == 0 || (*argvp)[1][1] == '?')
 	    {
 		mp_print_options();
 		exit(0);
@@ -944,6 +1158,18 @@ configfile_loop:
 		    return SMPD_FAIL;
 		}
 		strncpy(path, (*argvp)[2], SMPD_MAX_PATH_LENGTH);
+		num_args_to_strip = 2;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "gpath") == 0)
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no path specifed after -gpath option.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		/*strncpy(path, (*argvp)[2], SMPD_MAX_PATH_LENGTH);*/
+		printf("-gpath option not implemented\n");
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "noprompt") == 0)
@@ -1149,7 +1375,33 @@ configfile_loop:
 	else
 	{
 	    /* an absolute path was specified */
+#ifdef HAVE_WINDOWS_H
+	    char *pTemp = (char*)malloc(SMPD_MAX_EXE_LENGTH);
+	    if (pTemp == NULL)
+	    {
+		smpd_exit_fn("mp_parse_command_args");
+		return SMPD_FAIL;
+	    }
+	    strncpy(pTemp, (*argvp)[1], SMPD_MAX_EXE_LENGTH);
+	    pTemp[SMPD_MAX_EXE_LENGTH-1] = '\0';
+	    ExeToUnc(pTemp, SMPD_MAX_EXE_LENGTH);
+	    result = MPIU_Str_add_string(&exe_iter, &exe_len_remaining, pTemp);
+	    free(pTemp);
+	    if (result != MPIU_STR_SUCCESS)
+	    {
+		printf("Error: insufficient buffer space for the command line.\n");
+		smpd_exit_fn("mp_parse_command_args");
+		return SMPD_FAIL;
+	    }
+#else
 	    result = MPIU_Str_add_string(&exe_iter, &exe_len_remaining, (*argvp)[1]);
+	    if (result != MPIU_STR_SUCCESS)
+	    {
+		printf("Error: insufficient buffer space for the command line.\n");
+		smpd_exit_fn("mp_parse_command_args");
+		return SMPD_FAIL;
+	    }
+#endif
 	}
 	for (i=2; i<argc; i++)
 	{
@@ -1276,6 +1528,10 @@ configfile_loop:
 	    if (smpd_get_argcv_from_file(fin_config, argcp, argvp))
 		goto configfile_loop;
 	    fclose(fin_config);
+	    if (delete_configfile)
+	    {
+		unlink(configfilename);
+	    }
 	}
 
 	/* move to the next block */
