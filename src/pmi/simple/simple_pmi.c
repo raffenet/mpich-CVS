@@ -320,6 +320,13 @@ int PMI_Finalize( )
 #else
 	PMIU_writeline( PMI_fd, "cmd=finalize\n" );
 #endif
+	PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
+	PMIU_parse_keyvals( buf );
+	PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
+	if ( strncmp( cmd, "finalize_ack", PMIU_MAXLINE ) != 0 ) {
+	    PMIU_printf( 1, "expecting cmd=finalize_ack, got %s\n", buf );
+	    return( -1 );
+	}
 	shutdown( PMI_fd, SHUT_RDWR );
 	close( PMI_fd );
     }

@@ -930,6 +930,8 @@ def mpdman():
                     jobEndingEarly = 0
                     pmiCollectiveJob = 0
                     spawnedCnt = 0
+                    pmiMsgToSend = 'cmd=finalize_ack\n'
+                    mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 elif parsedMsg['cmd'] == 'client_bnr_fence_in':    ## BNR
                     pmiBarrierInRecvd = 1
                     if myRank == 0  or  holdingPMIBarrierLoop1:
