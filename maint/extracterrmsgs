@@ -338,11 +338,17 @@ sub CreateErrMsgMapping {
 #
 sub AddTestCall {
 
+    # Ensure that the class is specified.  There are a few places
+    # where this is a variable
+    $errclass = $_[0];
+    if (! ($errclass =~ /MPI_ERR/) ) {
+	$errclass = "MPI_ERR_OTHER";
+    }
     # Generic message (first instance only)
     if (!defined($testmsg{$_[1]})) {
 	print TESTFD "    /* $filename */\n";
-	print TESTFD "    err = MPIR_Err_create_code( @_[0], @_[1], 0 );\n";
-	print TESTFD "    ChkMsg( err, $_[0], $_[1] );\n";
+	print TESTFD "    err = MPIR_Err_create_code( $errclass, @_[1], 0 );\n";
+	print TESTFD "    ChkMsg( err, $errclass, $_[1] );\n";
 	$testmsg{$_[1]} = $filename;
     }
 
@@ -376,12 +382,12 @@ sub AddTestCall {
 	if ($actargs != $narg) {
 	    print STDERR "Error: Format $fullformat provides $narg arguments but call has $actargs in $filename\n";
 	}
-	print TESTFD "     err = MPIR_Err_create_code( @_[0], @_[1], @_[2]";
+	print TESTFD "     err = MPIR_Err_create_code( $errclass, @_[1], @_[2]";
 	foreach my $arg (@args) {
 	    print TESTFD ", $arg";
 	}
 	print TESTFD " );\n";
-	print TESTFD "    ChkMsg( err, $_[0], $_[2] );\n    }\n";
+	print TESTFD "    ChkMsg( err, $errclass, $_[2] );\n    }\n";
 	# ToDo: pass another string to ChkMsg that contains the 
 	# names of the variables, as a single string (comma separated).
 	# This allows us to review the source of the values for the args.
