@@ -30,13 +30,20 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #ifdef SPPUX
 #include <sys/cnx_fcntl.h>
+#endif
+
+#ifdef NTFS
+#include <winsock2.h>
+#include <windows.h>
+#define FDTYPE HANDLE
+#else
+#define FDTYPE int
 #endif
 
 #ifdef MPI_OFFSET_IS_INT
@@ -49,6 +56,9 @@
 #  else
 #     define ADIO_OFFSET MPI_DOUBLE
 #  endif
+#elif defined(HAVE_INT64)
+   typedef __int64 ADIO_Offset;
+#  define ADIO_OFFSET MPI_DOUBLE
 #else
    typedef long ADIO_Offset;
 #  define ADIO_OFFSET MPI_LONG
@@ -118,7 +128,7 @@ typedef struct ADIOI_Fns_struct ADIOI_Fns;
 
 struct ADIOI_FileD {
     int cookie;              /* for error checking */
-    int fd_sys;              /* system file descriptor */
+    FDTYPE fd_sys;              /* system file descriptor */
 #ifdef XFS
     int fd_direct;           /* On XFS, this is used for direct I/O; 
                                 fd_sys is used for buffered I/O */
@@ -213,7 +223,8 @@ typedef struct {
 #define ADIO_HFS                 155   /* HP/Convex */
 #define ADIO_SFS                 156   /* NEC */
 #define ADIO_PVFS                157   /* PVFS for Linux Clusters from Clemson Univ. */
-#define ADIO_TESTFS              158   /* fake file system for testing */
+#define ADIO_NTFS                158   /* NTFS for Windows NT */
+#define ADIO_TESTFS              159   /* fake file system for testing */
 
 #define ADIO_SEEK_SET            SEEK_SET
 #define ADIO_SEEK_CUR            SEEK_CUR
