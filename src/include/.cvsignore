@@ -1,8 +1,5 @@
 mpi.h
-mpichconf.h
-mpichconf.h.in
+*conf.h
+*conf.h.in
 mpichtimer.h
 pmi.h
-mpidconf.h
-winmpichconf.h
-winmpidconf.h

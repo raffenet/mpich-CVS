@@ -424,7 +424,7 @@ dnl AC_SUBST(EXTRA_STATUS_DECL)
 dnl
 dnl TEMPORARY: copy bnr.h to the source include directory
 dnl In the future bnr's configure will do this
-dnl AC_OUTPUT_COMMANDS(cp src/bnr/include/bnr.h src/include)
+AC_OUTPUT_COMMANDS(cp include/mpidconf.h ../../include)
 dnl
 dnl Generate the Makefiles from Makefile.in
 dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
