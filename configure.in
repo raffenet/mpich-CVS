@@ -536,6 +536,10 @@ for pm_name in `echo $with_pm | sed -e 's/:/ /g'` ; do
         pm_name=""
     else
         subsystems="$subsystems src/pm/$pm_name"
+	if test -f src/pm/$pm_name/setup_pm ; then
+	    echo sourcing src/pm/$pm_name/setup_pm
+	    . src/pm/$pm_name/setup_pm
+	fi
     fi
 done
 dnl pm_name is the *primary* pm
@@ -1232,11 +1236,11 @@ elif test -f $use_top_srcdir/src/mpid/$device_name/localdefs ; then
     . $use_top_srcdir/src/mpid/$device_name/localdefs
 fi
 
-PAC_CONFIG_SUBDIRS_IMMEDIATE($subsystems $TOPLEVEL_SUBDIRS)
+PAC_CONFIG_SUBDIRS_IMMEDIATE($subsystems)
 #
 # Get any localdefs that the subsystems created. Use a guard in case
 # the list is empty
-for dir in $subsystems $TOPLEVEL_SUBDIRS /dev/null ; do 
+for dir in $subsystems /dev/null ; do 
     if test -f $dir/localdefs ; then
         . $dir/localdefs
     fi
