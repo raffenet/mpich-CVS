@@ -90,10 +90,19 @@ elif test "$enable_threads" = "no" ; then
     enable_threads=single
 fi
 dnl
+dnl NOT YET COMPLETE: make use of this value to turn MPI_Wtime into
+dnl a macro in mpi.h.  
+AC_ARG_ENABLE(mpi-macros,
+[--enable-mpi-macros - Implement MPI_Wtime and MPI_Wtick as C macros
+The default is no.],
+,enable_mpi_macros=no)
+dnl
+dnl
 AC_ARG_ENABLE(g,
 [--enable-g=option - Control the level of debugging support in the MPICH
 implementation.  option may be a list of common separated names including
     none     - No debugging
+    mem      - Memory usage tracing
     handle   - Trace handle operations
     dbg      - Add compiler -g flags
     meminit  - Preinitialize memory associated structures and unions to
@@ -103,6 +112,10 @@ dnl
 dnl
 dnl --enable-sharedlibs=kind is set with the PAC_ARG_SHAREDLIBS macro 
 dnl sharedlibs support has been withdrawn
+dnl
+AC_ARG_ENABLE(internat,
+[--enable-internat - Enable internationalization of messages.
+ Not yet supported])
 dnl
 dnl --enable-fast
 AC_ARG_ENABLE(fast,
@@ -116,10 +129,16 @@ AC_ARG_ENABLE(f90,
 [--enable-f90 - Enable Fortran 90 bindings],,enable_f90=no)
 AC_ARG_ENABLE(cxx,
 [--enable-cxx - Enable C++ bindings],,enable_cxx=yes)
+dnl AC_ARG_ENABLE(csharp,
+dnl [--enable-cxx - Enable C# bindings],,enable_csharp=no)
 dnl
 AC_ARG_ENABLE(romio,
 [--enable-romio - Enable ROMIO MPI I/O implementation],
 ,enable_romio=yes)
+dnl
+AC_ARG_ENABLE(debuginfo,
+[--enable-debuginfo - Enable support for debuggers],
+,enable_debuginfo=no)
 dnl
 AC_ARG_ENABLE(nmpi-as-mpi,
 [--enable-nmpi-as-mpi - Use MPI rather than PMPI routines for MPI routines,
@@ -444,9 +463,16 @@ for option in $enable_g ; do
 	meminit)
 	perform_meminit=yes
 	;;
+	nesting)
+	perform_nesttesting=yes
+	;;	
+	mem)
+	perform_memtracing=yes
+	;;
 	all|yes)
+	perform_memtracing=yes
+	perform_nesttesting=yes
 	AC_DEFINE(MPICH_DEBUG_INTERNAL,1,[Define to compile in optional debugging tests and output])
-	AC_DEFINE(MPICH_DEBUG_NESTING,1,[Define to check nesting level on exit])
 	CFLAGS="$CFLAGS -g"
 	perform_meminit=yes
 	;;
@@ -459,7 +485,38 @@ IFS="$save_IFS"
 if test -n "$perform_meminit" ; then
     AC_DEFINE(MPICH_DEBUG_MEMINIT,1,[Define to enable preinitialization of memory used by structures and unions])
 fi
+if test -n "$perform_memtracing" ; then
+    enable_g_mem=yes
+    AC_DEFINE(USE_MEMORY_TRACING,1,[Define to enable memory tracing])
+fi
+if test -n "$perform_nesttesting" ; then
+    AC_DEFINE(MPICH_DEBUG_NESTING,1,[Define to check nesting level on exit])
+fi
 
+if test "$enable_f90" = "yes" -a "$enable_f77" != "yes" ; then
+   # Fortran 90 support requires compatible Fortran 77 support
+   AC_MSG_WARN([Fortran 90 support requires compatible Fortran 77 support])
+   enable_f77=yes
+fi
+if test "$enable_debuginfo" = "yes" ; then
+    debugger_dir=debugger
+    AC_DEFINE(HAVE_DEBUGGER_SUPPORT,1,[Define if debugger support is included])
+    # The debugger support requires a shared library.  This is handled 
+    # below, after we check for compiler support for shared libraries
+    # Note: if libdir contains exec_prefix, handle the fact that the
+    # default exec_prefix is NONE, which (much later in configure)
+    # gets turned into the value of prefix
+    if test "x$exec_prefix" = xNONE ; then
+        saveExecPrefix=$exec_prefix
+	exec_prefix=$prefix
+        eval dlldir=$libdir/libtvmpich.so
+	exec_prefix=$saveExecPrefix
+    else
+        eval dlldir=$libdir/libtvmpich.so
+    fi
+    dlldir='"'$dlldir'"'
+    AC_DEFINE_UNQUOTED(MPICH_INFODLL_LOC,$dlldir,[Define as the name of the debugger support library])
+fi
 AC_SUBST(debugger_dir)
 pac_cross_compiling=no
 if test "$with_cross" != "no" ; then
@@ -472,7 +529,7 @@ if test "$with_cross" != "no" ; then
 	cross_compiling=yes
 	ac_cv_prog_cc_cross=yes
 	ac_cv_prog_f77_cross=yes
-dnl 	ac_cv_prog_f90_cross=yes
+ 	ac_cv_prog_f90_cross=yes
         ac_cv_prog_cxx_cross=yes
         export cross_compiling
 	# Export all cross variables.  Any subsidiary configure should also
@@ -488,6 +545,11 @@ fi
 if test "$enable_nmpi_as_mpi" = yes ; then
    AC_DEFINE(USE_MPI_FOR_NMPI,1,[Define if the NMPI names should use MPI instead of PMPI])
 fi
+
+if test "$enable_mpi_macros" = yes ; then
+    AC_DEFINE(USE_MACROS_FOR_WTIME,1,[Define if macros may be used for MPI_Wtime and MPI_Wtick])
+fi
+
 #
 # Set the defaults for directories that are not included in configure's
 # repetoire
@@ -740,6 +802,13 @@ if test "$enable_cxx" = "yes" ; then
    AC_DEFINE(HAVE_CXX_BINDING,1,[Define if C++ is supported])
 fi
 
+dnl if test "$enable_csharp" = "yes" ; then
+dnl    bindingsubsystems="$bindingsubsystems src/binding/csharp"
+dnl    bindings="$bindings csharp"
+dnl    bindings_dirs="$bindings_dirs src/binding/csharp"
+dnl    AC_DEFINE(HAVE_CSHARP_BINDING,1,[Define if C# is supported])
+dnl fi
+
 AC_SUBST(bindings)
 # Bindings dirs is used for the installation target
 AC_SUBST(bindings_dirs)
@@ -837,15 +906,51 @@ if test "$ENABLE_SHLIB" != "none" -a "$os_type" != "linux" ; then
     AC_MSG_ERROR([Building shared libraries is only supported on Linux])
 fi
 
-AC_SUBST(ENABLE_SHLIB)
-AC_SUBST(C_LINKPATH_SHL)
-
 # 
 # Add the steps for debugger support
 BUILD_TVDLL=no
-AC_SUBST(BUILD_TVDLL)
-AC_SUBST(CC_SHL_DBG)
-AC_SUBST(C_LINK_SHL_DBG)
+if test "$enable_debugginfo" = "yes" ; then
+   # We can build the Totalview interface DLL only if we know how to build
+   # shared libraries.  For now, require that enable_sharedlibs is not none
+   # Also, we may want to put some of this into a configure in the debugger
+   # directory
+   if test "$ENABLE_SHLIB" != "none" ; then
+        BUILD_TVDLL=yes
+	CC_SHL_DBG="$CC_SHL"
+	C_LINK_SHL_DBG="$C_LINK_SHL"
+   else
+        # Try to determine how to build the tv shared library
+	AC_MSG_CHECKING([for how to build shared library for debugger interface])
+        PAC_CC_SHAREDLIBS(,CC_SHL_DBG,C_LINK_SHL_DBG)
+	if test "$CC_SHL_DBG" = true ; then
+	    AC_MSG_RESULT([none found])
+            AC_MSG_WARN([Debugger support requires shared libraries])      
+	else
+	    AC_MSG_RESULT($CC_SHL_DBG)
+	    BUILD_TVDLL=yes
+        fi
+   fi
+   # One more nasty problem.  Totalview relies on debugger symbols 
+   # being present in the executable.  Some experimental versions of
+   # gcc (3.2 20020329 for ia64) do *not* include the object symbols
+   # when debugging.  For HPUX, the necessary linking options are
+   #    +noobjdebug
+   # for C, Fortran, and C++.  We don't have a good test for this yet,
+   # so we add a warning
+   if test "$ac_cv_prog_gcc" = "yes" ; then
+       AC_MSG_WARN([Some versions of gcc do not include debugging information
+within the executable.  Totalview requires this information to detect
+an MPICH code.  If you have trouble, try linking with the additional
+option 
+    +noobjdebug
+on all link lines (consider adding it to LDFLAGS)])
+   fi
+   AC_SUBST(BUILD_TVDLL)
+   AC_SUBST(CC_SHL_DBG)
+   AC_SUBST(C_LINK_SHL_DBG)
+fi
+AC_SUBST(ENABLE_SHLIB)
+AC_SUBST(C_LINKPATH_SHL)
 
 
 # We need the full path to perl since we'll use it as the interpreter for
@@ -1613,6 +1718,8 @@ if test "$enable_coverage" = "yes" ; then
     fi
     # Test for the routines that we need to use to ensure that the
     # data files are (usually) written out
+    # FIXME: Some versions of Linux provide usleep, but it rounds times
+    # up to the next second (!)
     AC_CHECK_FUNCS(usleep)
     AC_DEFINE(USE_COVERAGE,1,[Define if performing coverage tests])
 fi
@@ -1685,10 +1792,49 @@ void foo1( char *fmt, ... ) {
     fi
 fi
 dnl
-AC_CHECK_FUNCS(strdup)
-if test "$ac_cv_func_strdup" = "yes" ; then
-    # Do we need to declare strdup?
-    PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
+dnl If internationalization selected, try to find the needed functions
+if test "$enable_internat" = "yes" ; then
+    AC_CHECK_HEADERS(libintl.h)
+    AC_CHECK_FUNCS(gettext dgettext)
+    if test "$ac_cv_header_libintl" = "yes" -a \
+	    "$ac_cv_func_gettext" = "yes" -a \
+	    "$ac_cv_func_dgettext" = "yes" ; then
+	AC_DEFINE(USE_GETTEXT,1,[Define if messages should use gettext])
+    else
+        AC_MSG_WARN([Cannot use internationalization because necessary headers and functions are not available])
+    fi
+fi
+# Check for alloca function.  May set HAVE_ALLOCA_H and HAVE_ALLOCA
+AC_FUNC_ALLOCA
+
+if test "$enable_g_mem" != "yes" ; then
+    dnl Strdup is needed only if memory tracing is not enabled.
+    AC_CHECK_FUNCS(strdup)
+    if test "$ac_cv_func_strdup" = "yes" ; then
+        # Do we need to declare strdup?
+        PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
+    fi
+else
+    dnl search.h is used for fancier output from trmem.  Disabled for now,
+    dnl since the tsearch routines have problematic prototypes.
+    AC_CHECK_HEADERS(search)
+    AC_CHECK_FUNCS(tsearch)
+    dnl Check that we can compile tsearch without error.  Try to compile
+    dnl it with the header and the char * args
+    if test "$ac_cv_func_tsearch" = "yes" ; then
+        AC_CACHE_CHECK([whether tsearch requires char* args],
+	               pac_cv_tsearch_charp,[
+        AC_TRY_COMPILE([#include <search.h>
+    char *tsearch( char *k, char **r, (int (*)())compare ) { return k; }],
+    [int f=0;],pac_cv_tsearch_charp=yes,pac_cv_tsearch_charp=no)])
+        if test "$pac_cv_tsearch_charp" = "yes" ; then
+	    # this should consider defining a name with the argument type
+	    # so that no further ifdefs are needed
+	    AC_DEFINE(USE_TSEARCH_WITH_CHARP,1,[Define if tsearch requires char pointers])
+	fi
+    fi
+    dnl Note that HPUX and AIX may require _INCLUDE_XOPEN_SOURCE or
+    dnl _XOPEN_SOURCE be defined respectively.
 fi
 dnl
 dnl Specific checks that a function works correctly
@@ -2098,6 +2244,7 @@ AC_OUTPUT(Makefile src/Makefile \
 	  src/util/instrm/Makefile \
 	  src/util/mem/Makefile \
 	  src/util/msgs/Makefile \
+	  src/util/param/Makefile \
 	  src/util/thread/Makefile \
           src/util/dbg/Makefile \
           src/include/mpi.h \
