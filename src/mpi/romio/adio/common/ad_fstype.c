@@ -12,45 +12,78 @@
 
 #include "adio.h"
 
-#if (defined(HPUX) || defined(SPPUX) || defined(IRIX) || defined(SOLARIS) || defined(AIX) || defined(DEC) || defined(CRAY))
-#include <sys/statvfs.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 
-#ifdef LINUX
-#include <sys/vfs.h>
-/* #include <linux/nfs_fs.h> this file is broken in newer versions of linux */
-#define NFS_SUPER_MAGIC 0x6969
-/* XXX: any way to do this so we don't need the magic number here? */
-#define PVFS2_SUPER_MAGIC 0x20030528
-#endif
-
-#ifdef FREEBSD
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
-#include <sys/mount.h>
-#endif
-
-#ifdef PARAGON
-#include <nx.h>
-#include <pfs/pfs.h>
-#include <sys/mount.h>
-#endif
-
-#ifdef SX4
-#include <sys/stat.h>
 #endif
 
 #ifdef HAVE_PVFS_H
 #include "pvfs.h"
-#include <sys/param.h>
 #endif
 
-#ifdef tflops
-#include <sys/mount.h>
+/* Notes on detection process:
+ *
+ * There are three more "general" mechanisms that we use for detecting
+ * file system type:
+ * - struct statfs's f_type field
+ * - struct statvfs's f_basetype field
+ * - struct stat's st_fstype field
+ *
+ * Otherwise we'll fall back on some OS-specific approach.
+ */
+
+#ifdef HAVE_STRUCT_STATFS
+# ifdef HAVE_SYS_VFS_H
+# include <sys/vfs.h>
+# endif
+# ifdef HAVE_SYS_STATVFS_H
+# include <sys/statvfs.h>
+# endif
+# ifdef HAVE_SYS_PARAM_H
+# include <sys/param.h>
+# endif
+# ifdef HAVE_SYS_MOUNT_H
+# include <sys/mount.h>
+# endif
+ /* On Linux platforms, linux/nfs_fs.h is all messed up and cannot be
+  * reliably included.
+  */
+# if defined(ROMIO_NFS) && !defined(NFS_SUPER_MAGIC)
+# define NFS_SUPER_MAGIC 0x6969
+# endif
 #endif
 
-#ifdef HAVE_UNISTD_H
-/* Needed for readlink */
-#include <unistd.h>
+#ifdef ROMIO_HAVE_STRUCT_STATVFS_WITH_F_BASETYPE
+# ifdef HAVE_SYS_STATVFS_H
+# include <sys/statvfs.h>
+# endif
+# ifdef HAVE_SYS_VFS_H
+# include <sys/vfs.h>
+# endif
+# ifdef HAVE_SYS_PARAM_H
+# include <sys/param.h>
+# endif
+# ifdef HAVE_SYS_MOUNT_H
+# include <sys/mount.h>
+# endif
+#endif
+
+#ifdef ROMIO_HAVE_STRUCT_STAT_WITH_ST_FSTYPE
+# ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+# endif
+# ifdef HAVE_SYS_STAT_H
+# include <sys/stat.h>
+# endif
+#endif
+
+#ifdef PARAGON
+# include <nx.h>
+# include <pfs/pfs.h>
+# include <sys/mount.h>
 #endif
 
 #ifndef ROMIO_NTFS
@@ -166,22 +199,23 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
     char *dir;
     int err;
 #endif
-#if (defined(HPUX) || defined(SPPUX) || defined(IRIX) || defined(SOLARIS) || defined(AIX) || defined(DEC) || defined(CRAY))
+
+#ifdef ROMIO_HAVE_STRUCT_STATVFS_WITH_F_BASETYPE
     struct statvfs vfsbuf;
 #endif
-#if (defined(LINUX) || defined(FREEBSD) || defined(tflops))
+#ifdef HAVE_STRUCT_STATFS
     struct statfs fsbuf;
+#endif
+#ifdef ROMIO_HAVE_STRUCT_STAT_WITH_ST_FSTYPE
+    struct stat sbuf;
 #endif
 #ifdef PARAGON
     struct estatfs ebuf;
 #endif
-#ifdef SX4
-    struct stat sbuf;
-#endif
 
     *error_code = MPI_SUCCESS;
 
-#if (defined(HPUX) || defined(SPPUX) || defined(IRIX) || defined(SOLARIS) || defined(AIX) || defined(DEC) || defined(CRAY))
+#ifdef ROMIO_HAVE_STRUCT_STATVFS_WITH_F_BASETYPE
     do {
 	err = statvfs(filename, &vfsbuf);
     } while (err && (errno == ESTALE));
@@ -192,26 +226,37 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	free(dir);
     }
 
-    if (err) *error_code = MPI_ERR_UNKNOWN;
-    else {
-	/* FPRINTF(stderr, "%s\n", vfsbuf.f_basetype); */
-	if (!strncmp(vfsbuf.f_basetype, "nfs", 3)) *fstype = ADIO_NFS;
-	else {
-# if (defined(HPUX) || defined(SPPUX))
-#    ifdef HFS
-	    *fstype = ADIO_HFS;
-#    else
-            *fstype = ADIO_UFS;
-#    endif
-# else
-	    if (!strncmp(vfsbuf.f_basetype, "xfs", 3)) *fstype = ADIO_XFS;
-	    else if (!strncmp(vfsbuf.f_basetype, "piofs", 4)) *fstype = ADIO_PIOFS;
-	    else *fstype = ADIO_UFS;
-# endif
-	}
+    /* --BEGIN ERROR HANDLING-- */
+    if (err) {
+	/* TODO: CREATE ERROR CODE */
+	*error_code = MPI_ERR_UNKNOWN;
+	return;
+    }
+    /* --END ERROR HANDLING-- */
+
+    /* FPRINTF(stderr, "%s\n", vfsbuf.f_basetype); */
+    if (!strncmp(vfsbuf.f_basetype, "nfs", 3)) {
+	*fstype = ADIO_NFS;
+	return;
+    }
+    if (!strncmp(vfsbuf.f_basetype, "xfs", 3)) {
+	*fstype = ADIO_XFS;
+	return;
     }
 
-#elif defined(LINUX)
+# ifdef ROMIO_UFS
+    /* if UFS support is enabled, default to that */
+    *fstype = ADIO_UFS;
+    return;
+# endif
+
+    /* --BEGIN ERROR HANDLING-- */
+    /* TODO: CREATE ERROR CODE */
+    *error_code = MPI_ERR_UNKNOWN;
+    /* --END ERROR HANDLING-- */
+#endif /* STATVFS APPROACH */
+
+#ifdef HAVE_STRUCT_STATFS
     do {
 	err = statfs(filename, &fsbuf);
     } while (err && (errno == ESTALE));
@@ -222,40 +267,85 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	free(dir);
     }
 
-    if (err) *error_code = MPI_ERR_UNKNOWN;
-    else {
-	/* FPRINTF(stderr, "%d\n", fsbuf.f_type);*/
-	if (fsbuf.f_type == NFS_SUPER_MAGIC) *fstype = ADIO_NFS;
-# if defined(ROMIO_PVFS)
-	else if (fsbuf.f_type == PVFS_SUPER_MAGIC) *fstype = ADIO_PVFS;
-# endif
-# if defined(ROMIO_PVFS2)
-	else if (fsbuf.f_type == PVFS2_SUPER_MAGIC) fprintf(stderr, "specify 'pvfs2': for now!!!\n");
-#endif
-
-	else *fstype = ADIO_UFS;
+    /* --BEGIN ERROR HANDLING-- */
+    if (err) {
+	*error_code = MPI_ERR_UNKNOWN;
+	return;
     }
-#elif (defined(FREEBSD) && defined(HAVE_MOUNT_NFS))
+    /* --END ERROR HANDLING-- */
+
+# ifdef ROMIO_HAVE_STRUCT_STATFS_WITH_F_FSTYPENAME
+    if ( !strncmp("nfs",fsbuf.f_fstypename,3) ) {
+	*fstype = ADIO_NFS;
+	return;
+    }
+# endif
+    /* FPRINTF(stderr, "%d\n", fsbuf.f_type);*/
+# ifdef NFS_SUPER_MAGIC
+    if (fsbuf.f_type == NFS_SUPER_MAGIC) {
+	*fstype = ADIO_NFS;
+	return;
+    }
+# endif
+
+# ifdef MOUNT_NFS
+    if (fsbuf.f_type == MOUNT_NFS) {
+	*fstype = ADIO_NFS;
+	return;
+    }
+# endif
+
+# ifdef MOUNT_PFS
+    if (fsbuf.f_type == MOUNT_PFS) {
+	*fstype = ADIO_PFS;
+	return;
+    }
+# endif
+
+# ifdef PVFS_SUPER_MAGIC
+    if (fsbuf.f_type == PVFS_SUPER_MAGIC) {
+	*fstype = ADIO_PVFS;
+	return;
+    }
+# endif
+
+# ifdef PVFS2_SUPER_MAGIC
+    if (fsbuf.f_type == PVFS2_SUPER_MAGIC) {
+	*fstype = ADIO_PVFS2;
+	return;
+    }
+# endif
+
+# ifdef ROMIO_UFS
+    /* if UFS support is enabled, default to that */
+    *fstype = ADIO_UFS;
+    return;
+# endif
+    /* --BEGIN ERROR HANDLING-- */
+    /* TODO: CREATE ERROR CODE */
+    *error_code = MPI_ERR_UNKNOWN;
+    /* --END ERROR HANDLING-- */
+#endif /* STATFS APPROACH */
+
+#ifdef ROMIO_HAVE_STRUCT_STAT_WITH_ST_FSTYPE
     do {
-	err = statfs(filename, &fsbuf);
+	err = stat(filename, &sbuf);
     } while (err && (errno == ESTALE));
 
     if (err && (errno == ENOENT)) {
 	ADIO_FileSysType_parentdir(filename, &dir);
-	err = statfs(dir, &fsbuf);
+	err = stat(dir, &sbuf);
 	free(dir);
     }
-
+    
     if (err) *error_code = MPI_ERR_UNKNOWN;
     else {
-# if ROMIO_HAVE_STATFS_F_FSTYPENAME
-	if ( !strncmp("nfs",fsbuf.f_fstypename,3) ) *fstype = ADIO_NFS;
-# else
-	if (fsbuf.f_type == MOUNT_NFS) *fstype = ADIO_NFS;
-# endif
-	else *fstype = ADIO_UFS;
+	if (!strcmp(sbuf.st_fstype, "nfs")) *fstype = ADIO_NFS;
+	else *fstype = ADIO_SFS; /* assuming SX4 for now */
     }
-#elif defined(PARAGON)
+#endif /* STAT APPROACH */
+
+#if defined(PARAGON)
     do {
 	err = statpfs(filename, &ebuf, 0, 0);
     } while (err && (errno == ESTALE));
@@ -272,48 +362,25 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	else if (ebuf.f_type == MOUNT_PFS) *fstype = ADIO_PFS;
 	else *fstype = ADIO_UFS;
     }
-#elif defined(tflops)
-    do {
-	err = statfs(filename, &fsbuf);
-    } while (err && (errno == ESTALE));
-
-    if (err && (errno == ENOENT)) {
-	ADIO_FileSysType_parentdir(filename, &dir);
-	err = statfs(dir, &fsbuf);
-	free(dir);
-    }
-
-    if (err) *error_code = MPI_ERR_UNKNOWN;
-    else {
-	if (fsbuf.f_type == MOUNT_NFS) *fstype = ADIO_NFS;
-	else if (fsbuf.f_type == MOUNT_PFS) *fstype = ADIO_PFS;
-	else *fstype = ADIO_UFS;
-    }
-#elif defined(SX4)
-    do {
-	err = stat(filename, &sbuf);
-    } while (err && (errno == ESTALE));
-
-    if (err && (errno == ENOENT)) {
-	ADIO_FileSysType_parentdir(filename, &dir);
-	err = stat(dir, &sbuf);
-	free(dir);
-    }
-    
-    if (err) *error_code = MPI_ERR_UNKNOWN;
-    else {
-	if (!strcmp(sbuf.st_fstype, "nfs")) *fstype = ADIO_NFS;
-	else *fstype = ADIO_SFS;
-    }
-#else
-    /* on other systems, make NFS the default */
-# ifdef ROMIO_NTFS
-    *fstype = ADIO_NTFS;
-# else
-    *fstype = ADIO_NFS;   
-# endif
-    *error_code = MPI_SUCCESS;
+    return;
 #endif
+
+#ifdef ROMIO_NTFS
+    *fstype = ADIO_NTFS; /* only supported FS on Windows */
+    return;
+#endif
+
+#ifdef ROMIO_NFS
+    *fstype = ADIO_NFS;
+    return;
+#endif
+
+#ifdef ROMIO_UFS
+    *fstype = ADIO_UFS;
+    return;
+#endif
+
+    *error_code = MPI_ERR_UNKNOWN;
 }
 
 /*
@@ -439,7 +506,7 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 
     /* verify that we support this file system type and set ops pointer */
     if (file_system == ADIO_PFS) {
-#ifndef PFS
+#ifndef ROMIO_PFS
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__, MPI_ERR_IO,
 					   "**iofstypeunsupported", 0);
@@ -449,7 +516,7 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 #endif
     }
     if (file_system == ADIO_PIOFS) {
-#ifndef PIOFS
+#ifndef ROMIO_PIOFS
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__, MPI_ERR_IO,
 					   "**iofstypeunsupported", 0);
@@ -459,7 +526,7 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 #endif
     }
     if (file_system == ADIO_UFS) {
-#ifndef UFS
+#ifndef ROMIO_UFS
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__, MPI_ERR_IO,
 					   "**iofstypeunsupported", 0);
@@ -469,7 +536,7 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 #endif
     }
     if (file_system == ADIO_NFS) {
-#ifndef NFS
+#ifndef ROMIO_NFS
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__, MPI_ERR_IO,
 					   "**iofstypeunsupported", 0);
@@ -479,7 +546,7 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 #endif
     }
     if (file_system == ADIO_HFS) {
-#ifndef HFS
+#ifndef ROMIO_HFS
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__, MPI_ERR_IO,
 					   "**iofstypeunsupported", 0);
@@ -489,7 +556,7 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 #endif
     }
     if (file_system == ADIO_XFS) {
-#ifndef XFS
+#ifndef ROMIO_XFS
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__, MPI_ERR_IO,
 					   "**iofstypeunsupported", 0);
@@ -499,7 +566,7 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 #endif
     }
     if (file_system == ADIO_SFS) {
-#ifndef SFS
+#ifndef ROMIO_SFS
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__, MPI_ERR_IO,
 					   "**iofstypeunsupported", 0);

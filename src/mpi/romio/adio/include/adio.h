@@ -168,7 +168,7 @@ typedef struct ADIOI_Hints_struct ADIOI_Hints;
 typedef struct ADIOI_FileD {
     int cookie;              /* for error checking */
     FDTYPE fd_sys;              /* system file descriptor */
-#ifdef XFS
+#ifdef ROMIO_XFS
     int fd_direct;           /* On XFS, this is used for direct I/O; 
                                 fd_sys is used for buffered I/O */
     int direct_read;         /* flag; 1 means use direct read */

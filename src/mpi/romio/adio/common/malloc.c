@@ -34,7 +34,7 @@ void *ADIOI_Malloc_fn(size_t size, int lineno, char *fname)
 {
     void *new;
 
-#ifdef XFS
+#ifdef ROMIO_XFS
     new = (void *) memalign(XFS_MEMALIGN, size);
 #else
     new = (void *) malloc(size);

@@ -486,7 +486,7 @@ int MPIOI_File_iread(MPI_File fh,
 
 /* Unix-style file locking */
 
-#if (defined(HFS) || defined(XFS))
+#if (defined(ROMIO_HFS) || defined(ROMIO_XFS))
 
 # define ADIOI_WRITE_LOCK(fd, offset, whence, len) \
    if (((fd)->file_system == ADIO_XFS) || ((fd)->file_system == ADIO_HFS)) \

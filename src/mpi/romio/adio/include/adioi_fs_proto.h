@@ -10,37 +10,37 @@
 #ifndef ADIO_PROTO
 #define ADIO_PROTO
 
-#ifdef NFS
+#ifdef ROMIO_NFS
 extern struct ADIOI_Fns_struct ADIO_NFS_operations;
 /* prototypes are in adio/ad_nfs/ad_nfs.h */
 #endif
 
-#ifdef PFS
+#ifdef ROMIO_PFS
 extern struct ADIOI_Fns_struct ADIO_PFS_operations;
 /* prototypes are in adio/ad_pfs/ad_pfs.h */
 #endif
 
-#ifdef PIOFS
+#ifdef ROMIO_PIOFS
 extern struct ADIOI_Fns_struct ADIO_PIOFS_operations;
 /* prototypes are in adio/ad_piofs/ad_piofs.h */
 #endif
 
-#ifdef UFS
+#ifdef ROMIO_UFS
 extern struct ADIOI_Fns_struct ADIO_UFS_operations;
 /* prototypes are in adio/ad_ufs/ad_ufs.h */
 #endif
 
-#ifdef HFS
+#ifdef ROMIO_HFS
 extern struct ADIOI_Fns_struct ADIO_HFS_operations;
 /* prototypes are in adio/ad_hfs/ad_hfs.h */
 #endif
 
-#ifdef XFS
+#ifdef ROMIO_XFS
 extern struct ADIOI_Fns_struct ADIO_XFS_operations;
 /* prototypes are in adio/ad_xfs/ad_xfs.h */
 #endif
 
-#ifdef SFS
+#ifdef ROMIO_SFS
 extern struct ADIOI_Fns_struct ADIO_SFS_operations;
 /* prototypes are in adio/ad_sfs/ad_sfs.h */
 #endif

@@ -16,7 +16,7 @@ void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code)
     ADIO_Status status;
     MPI_Comm dupcommself;
 
-#ifdef NFS
+#ifdef ROMIO_NFS
     if (fd->file_system == ADIO_NFS) {
 	ADIOI_NFS_Set_shared_fp(fd, offset, error_code);
 	return;

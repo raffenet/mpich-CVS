@@ -20,7 +20,7 @@ void ADIO_Get_shared_fp(ADIO_File fd, int incr, ADIO_Offset *shared_fp,
     ADIO_Offset new_fp;
     MPI_Comm dupcommself;
 
-#ifdef NFS
+#ifdef ROMIO_NFS
     if (fd->file_system == ADIO_NFS) {
 	ADIOI_NFS_Get_shared_fp(fd, incr, shared_fp, error_code);
 	return;

@@ -36,7 +36,7 @@ MPI_Info *MPIR_Infotable = NULL;
 int MPIR_Infotable_ptr = 0, MPIR_Infotable_max = 0;
 #endif
 
-#ifdef XFS
+#ifdef ROMIO_XFS
 int ADIOI_Direct_read = 0, ADIOI_Direct_write = 0;
 #endif
 
@@ -46,7 +46,7 @@ MPI_Errhandler ADIOI_DFLT_ERR_HANDLER = MPI_ERRORS_RETURN;
 
 void ADIO_Init(int *argc, char ***argv, int *error_code)
 {
-#ifdef XFS
+#ifdef ROMIO_XFS
     char *c;
 #endif
 
@@ -57,7 +57,7 @@ void ADIO_Init(int *argc, char ***argv, int *error_code)
     ADIOI_Flatlist->blocklens = NULL;
     ADIOI_Flatlist->indices = NULL;
 
-#ifdef XFS
+#ifdef ROMIO_XFS
     c = getenv("MPIO_DIRECT_READ");
     if (c && (!strcmp(c, "true") || !strcmp(c, "TRUE"))) 
 	ADIOI_Direct_read = 1;
