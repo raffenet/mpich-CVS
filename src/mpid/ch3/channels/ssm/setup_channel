@@ -24,6 +24,8 @@ for path in $pathlist ; do
     CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/${path}"
 done
 
+devsubsystems="$devsubsystems src/mpid/common/locks"
+
 #
 # Use the sock implementation found in the common directory
 #

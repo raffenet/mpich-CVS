@@ -1,4 +1,4 @@
-EXTRA_DIRS = ../../../common/sock
+EXTRA_DIRS = ../../../common/sock ../../../common/locks
 SUBDIRS = src .
 
 distclean-local:
