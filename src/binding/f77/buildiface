@@ -2121,6 +2121,10 @@ if ($write_mpif) {
     # ensure that these are passed as routines, not implicitly-defined 
     # variables
     print MPIFFD "       EXTERNAL MPI_DUP_FN, MPI_NULL_DELETE_FN, MPI_NULL_COPY_FN\n";
+    # Note that pmpi_wtime can cause problems with some Fortran compilers
+    # if the corresponding routines aren't available (even if not used)
+    print MPIFFD "       EXTERNAL MPI_WTIME, MPI_WTICK\n";
+    print MPIFFD "       EXTERNAL PMPI_WTIME, PMPI_WTICK\n";
     # Add the external names for the MPI-2 attribute functions
     print MPIFFD "       EXTERNAL MPI_COMM_DUP_FN, MPI_COMM_NULL_DELETE_FN\n";
     print MPIFFD "       EXTERNAL MPI_COMM_NULL_COPY_FN\n";
