@@ -37,6 +37,30 @@
 typedef short int16_t;
 #endif
 
+/* Thread basics */
+#ifdef MPICH_SINGLE_THREADED
+typedef int MPID_Thread_key_t;
+typedef int MPID_Thread_id_t;
+typedef int MPID_Thread_lock_t;
+#define MPID_GetPerThread(p) p = &MPIR_Thread
+#else /* Assumes pthreads for simplicity */
+#if defined HAVE_PTHREAD_CREATE
+#include <pthread.h>
+typedef pthread_key_t MPID_Thread_key_t;
+typedef pthread_t MPID_Thread_id_t;
+typedef pthread_mutex_t MPID_Thread_lock_t;
+#define MPID_GetPerThread(p) {\
+     p = (MPICH_PerThread_t*)pthread_getspecific( MPIR_Process.thread_key ); \
+     if (!p) { p = MPIU_Calloc( 1, sizeof(MPICH_PerThread_t ) );\
+               pthread_setspecific( MPIR_Process.thread_key, p );}}
+#define MPID_Thread_lock( a ) pthread_mutex_lock( a )
+#define MPID_Thread_unlock( a ) pthread_mutex_unlock( a )
+#define MPID_Thread_lock_init( a ) pthread_mutex_init( a, 0 )
+#else
+#error No Thread Package Chosen
+#endif
+#endif
+
 /* Memory allocation */
 #ifdef USE_MEMORY_TRACING
 #define MPIU_Malloc(a)    MPIU_trmalloc((unsigned)(a),__LINE__,__FILE__)
@@ -132,6 +156,8 @@ typedef enum {
 /* Index size is bewtween 1 and 65536 *elements* */
 #define HANDLE_BLOCK_INDEX_SIZE 1024
 
+#define PREDEFINED_HANDLE(name,index) \
+     (CONSTRUCT_DIRECT << 30) | (MPID_##name <<27) | index
 /* Handles conversion */
 /* Question.  Should this do ptr=0 first, particularly if doing --enable-strict
    complication? */
@@ -142,7 +168,7 @@ typedef enum {
          case CONSTRUCT_DIRECT: ptr=MPID_##kind##_direct+HANDLE_INDEX(a);break;\
          case CONSTRUCT_INDIRECT: ptr=MPID_##kind##_Get_ptr_indirect(a);break;\
      }
-#define MPID_Comm_get_ptr(a,ptr)
+#define MPID_Comm_get_ptr(a,ptr) MPID_Get_ptr(Comm,a,ptr)
 #define MPID_Group_get_ptr(a,ptr)
 #define MPID_Datatype_get_ptr(a,ptr)
 #define MPID_File_get_ptr(a,ptr)
@@ -155,8 +181,9 @@ typedef enum {
 /* This test is lame.  Should eventually include cookie test 
    and in-range addresses */
 #define MPID_Valid_ptr(kind,ptr,err) if (!(ptr)) { err = 1; }
-#define MPID_Comm_valid_ptr(ptr,err) if (!(ptr)) { err = 1; }
 #define MPID_Info_valid_ptr(ptr,err) MPID_Valid_ptr(Info,ptr,err)
+#define MPID_Comm_valid_ptr(ptr,err) MPID_Valid_ptr(Comm,ptr,err)
+#define MPID_Datatype_valid_ptr(ptr,err) MPID_Valid_ptr(Datatype,ptr,err)
 
 /* Info */
 typedef struct MPID_Info_s {
@@ -252,6 +279,9 @@ typedef struct {
 				    same for intra communicators */
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
+#ifndef MPICH_SINGLE_THREADED
+    MPID_Thread_lock_t access_lock;
+#endif
   /* other, device-specific information */
     int           is_singlemethod; /* An example, device-specific field,
 				      this is used in a multi-method
@@ -259,6 +289,58 @@ typedef struct {
 				      in this communicator belong to the
 				      same method */
 } MPID_Comm;
+/* Preallocated comm objects */
+extern MPID_Comm MPID_Comm_direct[];
+/* Function to access indirect objects */
+extern MPID_Comm *MPID_Comm_Get_ptr_indirect( int handle );
+
+/* Datatypes */
+
+typedef struct MPID_Datatype_st { 
+    int           id;            /* value of MPI_Datatype for structure */
+    volatile int  ref_count;
+    int           is_contig;     /* True if data is contiguous (even with 
+                                    a (count,datatype) pair) */
+    int           is_perm;       /* True if datatype is a predefined type */
+    struct MPID_Dataloop_st *opt_loopinfo;  /* "optimized" loopinfo.  Filled in at 
+				    create
+                                    time; not touched by MPI calls.  This will
+                                    be for the homogeneous case until further
+                                    notice */
+
+    int           size;          /* Q: maybe this should be in the dataloop? */
+    MPI_Aint      extent;        /* MPI-2 allows a type to created by
+                                    resizing (the extent of) an existing 
+                                    type */
+    int           true_lb;       /* lb of datatype if no LB in effect */
+    int           alignsize;     /* size of datatype to align (affects pad) */
+    /* The remaining fields are required but less frequently used, and
+       are placed after the more commonly used fields */
+    int loopsize; /* size of loops for this datatype in bytes; derived value */
+    struct MPID_Dataloop_st *loopinfo; /* Original loopinfo, used when 
+					  creating and when getting contents */
+    int           has_mpi1_ub;   /* The MPI_UB and MPI_LB are sticky */
+    int           has_mpi1_lb;
+    int           is_permanent;  /* */
+    int           is_committed;  /* */
+
+    int           loopinfo_depth; /* Depth of dataloop stack needed
+                                     to process this datatype.  This 
+                                     information is used to ensure that
+                                     no datatype is constructed that
+                                     cannot be processed (see MPID_Segment) */
+    /* int opt_loopinfo_depth ??? */
+
+    MPID_List     attributes;    /* MPI-2 adds datatype attributes */
+
+    int32_t       cache_id;      /* These are used to track which processes */
+    /* MPID_Lpidmask mask; */         /* have cached values of this datatype */
+
+    char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
+
+  /* The following describes a generate datatype */
+  /* other, device-specific information */
+} MPID_Datatype;
 
 /* Time stamps */
 /* Get the timer definitions.  The source file for this include is
@@ -283,28 +365,12 @@ typedef struct {
 
 #ifdef MPICH_SINGLE_THREADED
 extern MPICH_PerThread_t MPIR_Thread;
-typedef int MPID_Thread_key_t;
-typedef int MPID_Thread_id_t;
-typedef int MPID_Thread_lock_t;
-#define MPID_GetPerThread(p) p = &MPIR_Thread
-#else /* Assumes pthreads for simplicity */
-#if defined HAVE_PTHREAD_CREATE
-#include <pthread.h>
-typedef pthread_key_t MPID_Thread_key_t;
-typedef pthread_t MPID_Thread_id_t;
-typedef pthread_mutex_t MPID_Thread_lock_t;
-#define MPID_GetPerThread(p) {\
-     p = (MPICH_PerThread_t*)pthread_getspecific( MPIR_Process.thread_key ); \
-     if (!p) { p = MPIU_Calloc( 1, sizeof(MPICH_PerThread_t ) );\
-               pthread_setspecific( MPIR_Process.thread_key, p );}}
-#define MPID_Thread_lock( a ) pthread_mutex_lock( a )
-#define MPID_Thread_unlock( a ) pthread_mutex_unlock( a )
-#define MPID_Thread_lock_init( a ) pthread_mutex_init( a, 0 )
+#define MPID_Comm_thread_lock( ptr )
+#define MPID_Comm_thread_unlock( ptr )
 #else
-#error No Thread Package Chosen
+#define MPID_Comm_thread_lock() MPID_Thread_lock( &ptr->access_lock)
+#define MPID_Comm_thread_unlock() MPID_Thread_unlock( &ptr->access_lock )
 #endif
-#endif
-
 
 /* Per process data */
 typedef enum { MPICH_PRE_INIT=0, MPICH_WITHIN_MPI=1,

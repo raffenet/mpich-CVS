@@ -1,3 +1,7 @@
+#include "mpi.h"
+#include "mpiimpl.h"
+#include "../../../src/mpi/datatype/dataloop.h"
+
 /* 
  * Simple segment test, including timing code
  */
@@ -29,14 +33,19 @@
 /*
  *  Contig
  */
-MPID_Dataloop *ct;
+MPID_Dataloop *MPID_Dataloop_init_contig( int count )
+{
+    MPID_Dataloop *ct;
+    
+    ct = (MPID_Dataloop *)MPIU_Malloc( sizeof(MPID_Dataloop ) );
+    ct->kind                     = MPID_CONTIG | DATALOOP_FINAL_MASK;
+    ct->loop_params.c_t.count    = count;
+    ct->loop_params.c_t.datatype = 0;
+    ct->extent                   = count;
+    ct->id                       = 0;
 
-ct = (MPID_Dataloop *)MPIU_Malloc( sizeof(MPID_Dataloop );
-ct.kind                     = MPID_CONTIG;
-ct.loop_params.c_t.count    = count;
-ct.loop_params.c_t.datatype = 0;
-ct.extent                   = count;
-ct.id                       = 0;
+    return ct;
+}
 
 /*
  * Vector
@@ -44,8 +53,10 @@ ct.id                       = 0;
 MPID_Dataloop *MPID_Dataloop_init_vector( int count, int blocksize, 
 					  int stride )
 {
+    MPID_Dataloop *v;
+
     v = (MPID_Dataloop *)MPIU_Malloc( sizeof(MPID_Dataloop) );
-    v->kind                      = MPID_VECTOR;
+    v->kind                      = MPID_VECTOR | DATALOOP_FINAL_MASK;
     v->loop_params.v_t.count     = count;
     v->loop_params.v_t.blocksize = blocksize;
     v->loop_params.v_t.stride    = stride;
@@ -63,13 +74,15 @@ MPID_Dataloop *MPID_Dataloop_init_blockindexed( int count, int blocksize,
 						MPI_Aint *offset )
 {
     MPID_Dataloop *bi;
+    MPI_Aint      extent;
+    int           i;
 
     bi = (MPID_Dataloop *)MPIU_Malloc( sizeof(MPID_Dataloop) );
-    bi->kind                       = MPID_BLOCKINDEXED;
+    bi->kind                       = MPID_BLOCKINDEXED | DATALOOP_FINAL_MASK;
     bi->loop_params.bi_t.count     = count;
     bi->loop_params.bi_t.blocksize = blocksize;
     bi->loop_params.bi_t.offset    = 
-	(MPI_Aint *)MPIU_MALLOC( sizeof(MPI_Aint) * count );
+	(MPI_Aint *)MPIU_Malloc( sizeof(MPI_Aint) * count );
     for (i=0; i<count; i++) {
 	bi->loop_params.bi_t.offset[i] = offset[i];
 	if (offset[i] + blocksize > extent) 
@@ -90,9 +103,10 @@ MPID_Dataloop *MPID_Dataloop_init_indexed( int count, int *blocksize,
 {
     MPID_Dataloop *it;
     MPI_Aint      extent = 0;
+    int           i;
 
     it = (MPID_Dataloop *)MPIU_Malloc( sizeof(MPID_Dataloop) );
-    it->kind                      = MPID_INDEXED;
+    it->kind                      = MPID_INDEXED | DATALOOP_FINAL_MASK;
     it->loop_params.i_t.count     = count;
     it->loop_params.i_t.blocksize = (int *)MPIU_Malloc( sizeof(int) * count );
     it->loop_params.i_t.offset    = 
@@ -109,3 +123,82 @@ MPID_Dataloop *MPID_Dataloop_init_indexed( int count, int *blocksize,
 
     return it;
 }
+
+int main( int argc, char **argv )
+{
+    MPID_Dataloop *vecloop;
+    int count=200, blocksize=4, stride = 7*4;
+    char *src_buf, *dest_buf;
+    int  i,j,k;
+    double r1, r2;
+
+    MPI_Init( &argc, &argv );
+    
+    vecloop = MPID_Dataloop_init_vector( count, blocksize, stride );
+
+    /* Initialize the data */
+    src_buf = (char *)MPIU_Malloc( (count - 1) * stride + blocksize );
+    for (i=0; i<(count-1)*stride+blocksize; i++) 
+	src_buf[i] = -i;
+    for (i=0; i<count; i++) {
+	for (j=0; j<blocksize; j++) 
+	    src_buf[i*stride+j] = i*blocksize + j;
+    }
+    dest_buf = (char *)MPIU_Malloc( count*blocksize );
+    for (i=0; i<count*blocksize; i++) {
+	dest_buf[i] = -i;
+    }
+    r1 = MPI_Wtime();
+    for (i=0; i<100; i++) 
+	MPID_Segment_pack( vecloop, src_buf, dest_buf );
+    r2 = MPI_Wtime();
+    printf( "Timer for vector pack is %e\n", (r2-r1)/100 );
+    for (i=0; i<count*blocksize; i++) {
+	if (dest_buf[i] != (char)i) { 
+	    printf( "Error at location %d\n", i );
+	}
+    }
+    r1 = MPI_Wtime();
+    for (k=0; k<100; k++) {
+	char *dest=dest_buf, *src=src_buf;
+	for (i=0; i<count; i++) {
+	    for (j=0; j<blocksize; j++) 
+		*dest++ = src[j];
+	    src+= stride;
+	}
+    }
+    r2 = MPI_Wtime();
+    printf( "Timer for hand vector pack is %e\n", (r2-r1)/100 );
+
+    r1 = MPI_Wtime();
+    for (k=0; k<100; k++) {
+	int *dest=(int*)dest_buf, *src=(int*)src_buf;
+	int bsize = blocksize >> 2;
+	int istride = stride >> 2;
+	if (bsize == 1) { 
+	    for (i=0; i<count; i++) {
+		*dest++ = *src;
+		src+= istride;
+	    }
+	}
+	else {
+	    for (i=0; i<count; i++) {
+		for (j=0; j<bsize; j++) 
+		    *dest++ = src[j];
+		src+= istride;
+	    }
+	}
+    }
+    r2 = MPI_Wtime();
+    printf( "Timer for hand vector pack (int) is %e\n", (r2-r1)/100 );
+    
+    MPI_Finalize();
+}
+
+/*
+ * Nested vector.
+ *   The y-z subface is
+ *   Type_vector( ey-sy+1, 1, nx, MPI_DOUBLE, &newx1 );
+ *   Type_hvector( ez-sz+1, 1, nx*ny_sizeof(double), newx1, &newx );
+ * This gives the a(i,sy:ey,sz:ez) of a(nx,ny,nz) (in Fortran notation)
+ */

@@ -1,2 +1,2 @@
-lib${MPILIBNAME}_a_SOURCES = allreduce.c bcast.c
+lib${MPILIBNAME}_a_SOURCES = getcount.c dataloop.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include

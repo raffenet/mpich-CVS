@@ -1,0 +1,4 @@
+# This is temporary until the tests have their own configure
+segtest_SOURCES = segtest.c
+segtest_LDADD = ../util/mtest.o -L ../../../lib -lmpich
+INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include

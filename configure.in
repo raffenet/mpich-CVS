@@ -267,7 +267,8 @@ dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
 dnl from the file.
 AC_OUTPUT(Makefile src/Makefile \
           src/mpi/Makefile \
-          src/mpi/coll/Makefile \
+	  src/mpi/coll/Makefile src/mpi/comm/Makefile \
+	  src/mpi/datatype/Makefile \
           src/mpi/init/Makefile src/mpi/errhan/Makefile \
           src/mpi/spawn/Makefile \
 	  src/util/Makefile \
@@ -277,5 +278,8 @@ AC_OUTPUT(Makefile src/Makefile \
           src/include/mpi.h \
 	  test/Makefile test/util/Makefile \
 	  test/util/info/Makefile \
+	  test/mpi/Makefile \
+	  test/mpi/util/Makefile \
+	  test/mpi/datatype/Makefile \
 	  examples/Makefile )
 PAC_SUBDIR_CACHE_CLEANUP

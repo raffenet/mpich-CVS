@@ -63,6 +63,12 @@ int MPIR_Init_thread( int required, int *provided )
     MPIR_Process.attrs.universe        = 1;
     MPIR_Process.attrs.wtime_is_global = 0;
 
+    /* Create the initial communicators */
+    /* 
+    MPI_COMM_WORLD = PREDEFINED_HANDLE(COMM,0);
+    MPI_COMM_SELF  = PREDEFINED_HANDLE(COMM,1);
+    */
+
     MPIR_Process.initialized           = MPICH_WITHIN_MPI;
     return 0;
 }

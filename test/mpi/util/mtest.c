@@ -4,7 +4,7 @@
 /* 
  * Initialize and Finalize MTest
  */
-void MTest_Init( int *argc, char *(*argv)[] )
+void MTest_Init( int *argc, char ***argv )
 {
     int flag;
 
@@ -38,18 +38,19 @@ void MTest_Finalize( int errs )
  *
  */
 static int datatype_index = 0;
+
 int MTest_Get_datatypes( MTest_Datatype *sendtype, MTest_Datatype *recvtype )
 {
     /* Use datatype_index to choose a datatype to use.  If at the end of the
        list, return 0 */
     switch (datatype_index) {
     case 0:
-	sendtype->InitBuf  = ;
-	sendtype->FreeBuf  = ;
-	sendtype->datatype = ;
-	recvtype->InitBuf  = ;
-	recvtype->FreeBuf  = ;
-	recvtype->datatype = ;
+	sendtype->InitBuf  = 0;
+	sendtype->FreeBuf  = 0;
+	sendtype->datatype = 0;
+	recvtype->InitBuf  = 0;
+	recvtype->FreeBuf  = 0;
+	recvtype->datatype = 0;
 	break;
     case 1:
 	break;

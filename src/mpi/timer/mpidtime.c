@@ -29,6 +29,7 @@ void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
 }
 void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
+    *val = ((double) t->tv_sec + 1.0e-9 * (double) t->tv_nsec );
 }
 #elif MPICH_TIMER_KIND == USE_GETTIMEOFDAY
 void MPID_Wtime( MPID_Time_t *tval )

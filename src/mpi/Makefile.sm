@@ -1,1 +1,1 @@
-SUBDIRS = coll errhan init spawn timer .
+SUBDIRS = coll comm datatype errhan init timer .
