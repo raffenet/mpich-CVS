@@ -236,7 +236,9 @@ fi
 if test "X$srcdir" != "X." -a -s $srcdir/mpi-io/Makefile.in ; then 
     ROMIO_HOME_TRIAL=$srcdir
 else
-    PAC_GETWD(ROMIO_HOME_TRIAL,mpi-io/Makefile.in)
+    # Take advantage of autoconf2 features
+    ROMIO_HOME_TRIAL=$ac_srcdir
+    dnl PAC_GETWD(ROMIO_HOME_TRIAL,mpi-io/Makefile.in)
 fi
 echo "ROMIO home directory is $ROMIO_HOME_TRIAL"
 ROMIO_HOME=$ROMIO_HOME_TRIAL
@@ -874,14 +876,27 @@ if test -n "$arch_IRIX"; then
    MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
 fi
 
+#
+# If we haven't found an architecture, try for a default
+if test -z "$CC" ; then
+    AC_PROG_CC
+    AC_PROG_F77
+    if test -z "$FILE_SYSTEM" ; then
+        FILE_SYSTEM="ufs"
+    fi
+    AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
+fi
+
 AC_HAVE_FUNCS(memalign)
 
 if test $NOF77 = 0 ; then
     echo "checking Fortran external names"
-    PAC_GET_FORTNAMES
-    if test -n "$WDEF" ; then
-        CFLAGS="$CFLAGS $WDEF"
-    fi
+    dnl PAC_GET_FORTNAMES
+    dnl if test -n "$WDEF" ; then
+    dnl     CFLAGS="$CFLAGS $WDEF"
+    dnl fi
+    PAC_PROG_F77_NAME_MANGLE
+    dnl (need to set the new name format)
     rm -f test/mpif.h
     if test "$MPI_INCLUDE_DIR" != "." && test $FROM_MPICH = 0 && \
        test $FROM_MPICH2 = 0 ; then
@@ -960,7 +975,7 @@ fi
 #
 if test -n "$longlongsize"; then
    if test $FROM_MPICH = 0 -a $FROM_MPICH2 = 0 ; then
-       PAC_MPI_LONG_LONG_INT()
+       PAC_MPI_LONG_LONG_INT
    else
        AC_DEFINE(HAVE_MPI_LONG_LONG_INT,,[Define if supports long long int])
    fi
@@ -971,17 +986,17 @@ if test -n "$OFFSET_KIND" -a "A$MPI_OFFSET_KIND1" = "A!" ; then
   MPI_OFFSET_KIND2="        PARAMETER (MPI_OFFSET_KIND=$OFFSET_KIND)"
 else
  if test "$FORTRAN_MPI_OFFSET" = "integer*8" && test "A$MPI_OFFSET_KIND2" = "A!" && test $NOF77 = 0 ; then
-   PAC_MPI_OFFSET_KIND()
+   PAC_MPI_OFFSET_KIND
  fi
  #
   if test "$FORTRAN_MPI_OFFSET" = "integer" && test "A$MPI_OFFSET_KIND2" = "A!" && test $NOF77 = 0 ; then
-   PAC_MPI_OFFSET_KIND_4BYTE()
+   PAC_MPI_OFFSET_KIND_4BYTE
   fi
 fi
 #
 # check if MPI_Info functions are defined in the MPI implementation
 if test $FROM_MPICH = 0 -a $FROM_MPICH2 = 0 ; then
-   PAC_MPI_INFO()
+   PAC_MPI_INFO
 else
    AC_DEFINE(HAVE_MPI_INFO,,[Define if MPI Info is available])
    HAVE_MPI_INFO="#define HAVE_MPI_INFO"
@@ -1002,7 +1017,7 @@ fi
 #
 # check if darray and subarray constructors are defined in the MPI implementation
 if test $FROM_MPICH = 0 ; then
-   PAC_MPI_DARRAY_SUBARRAY()
+   PAC_MPI_DARRAY_SUBARRAY
 else
    AC_DEFINE(HAVE_MPI_DARRAY_SUBARRAY,,[Define if Darray is available])
    HAVE_MPI_DARRAY_SUBARRAY="#define HAVE_MPI_DARRAY_SUBARRAY"
@@ -1398,6 +1413,9 @@ AC_SUBST(ROMIO_TCPPFLAGS)
 AC_SUBST(ROMIO_TFFLAGS)
 AC_SUBST(MPIRUN)
 AC_SUBST(FORTRAN_TEST)
+dnl
+dnl Dependency handling
+AC_SUBST(MAKE_DEPEND_C)
 if test ! -d adio ; then mkdir adio ; fi
 if test ! -d adio/include ; then mkdir adio/include ; fi
 if test ! -d mpi2-other ; then mkdir mpi2-other ; fi
