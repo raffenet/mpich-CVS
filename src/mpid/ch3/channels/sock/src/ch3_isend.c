@@ -55,7 +55,8 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_s
 		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %ld bytes", (unsigned long) nb));
 		
 		if (nb == hdr_sz)
-		{ 
+		{
+		    MPIDI_DBG_PRINTF((55, FCNAME, "iSend sent all %d bytes\n", nb));
 		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    MPIDI_CH3U_Handle_send_req(vc, sreq);
@@ -76,12 +77,12 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_s
 	    }
 	    else if (rc == SOCK_ERR_NOMEM)
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "write failed, out of memory"));
+		MPIDI_DBG_PRINTF((55, FCNAME, "sock_write failed, out of memory"));
 		sreq->status.MPI_ERROR = MPIR_ERR_MEMALLOCFAILED;
 	    }
 	    else
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "write failed, rc=%d", rc));
+		MPIDI_DBG_PRINTF((55, FCNAME, "sock_write failed, rc=%d", rc));
 		/* Connection just failed. Mark the request complete and return an error. */
 		vc->sc.state = MPIDI_CH3I_VC_STATE_FAILED;
 		/* TODO: Create an appropriate error message based on the return value (rc) */
