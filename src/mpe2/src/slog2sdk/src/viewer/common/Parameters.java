@@ -24,12 +24,13 @@ import base.topology.Arrow;
 import base.topology.StateBorder;
 import base.topology.State;
 import base.topology.PreviewState;
+import base.topology.SummaryState;
 import base.drawable.Shadow;
 import base.drawable.NestingStacks;
 
 public class Parameters
 {
-    private static final String       VERSION_INFO             = "1.0.0.11";
+    private static final String       VERSION_INFO             = "1.0.0.12";
     private static       String       setupfile_path           = null;
 
     // Options for Legend window
@@ -70,7 +71,11 @@ public class Parameters
                                       = StateBorder.COLOR_XOR_BORDER;
     public  static       int          PREVIEW_STATE_BORDER_W   = 3;
     public  static       int          PREVIEW_STATE_BORDER_H   = 0;
-    public  static       float        PREVIEW_ARROW_LINE_W     = 3.0f;
+    public  static       int          PREVIEW_ARROW_LOG_BASE   = 5;
+
+    public  static       boolean      HISTOGRAM_ZERO_ORIGIN    = true;
+    public  static       StateBorder  SUMMARY_STATE_BORDER
+                                      = StateBorder.COLOR_RAISED_BORDER;
 
     public  static       int          MIN_WIDTH_TO_DRAG        = 4;
     public  static       int          SEARCH_ARROW_LENGTH      = 20;
@@ -102,12 +107,14 @@ public class Parameters
         PreviewState.setBorderStyle( Parameters.PREVIEW_STATE_BORDER );
         PreviewState.setDisplayType( Parameters.PREVIEW_STATE_DISPLAY );
         PreviewState.setMinCategoryHeight( Parameters.PREVIEW_STATE_LEGEND_H );
+        SummaryState.setBorderStyle( Parameters.SUMMARY_STATE_BORDER );
 
         // Define Shadow State's insets dimension
         Shadow.setStateInsetsDimension( Parameters.PREVIEW_STATE_BORDER_W,
                                         Parameters.PREVIEW_STATE_BORDER_H );
         // Define Shadow Arrow's thickness
-        Shadow.setArrowLineThickness( Parameters.PREVIEW_ARROW_LINE_W );
+        Shadow.setBaseOfLogOfObjectNumToArrowWidth(
+               Parameters.PREVIEW_ARROW_LOG_BASE );
         // Define all nesting related properties
         NestingStacks.setInitialNestingHeight(
                       Parameters.STATE_HEIGHT_FACTOR );
@@ -179,8 +186,10 @@ public class Parameters
                            String.valueOf( PREVIEW_STATE_BORDER_W ) );
         pptys.setProperty( "PREVIEW_STATE_BORDER_H",
                            String.valueOf( PREVIEW_STATE_BORDER_H ) );
-        pptys.setProperty( "PREVIEW_ARROW_LINE_W",
-                           String.valueOf( PREVIEW_ARROW_LINE_W ) );
+        pptys.setProperty( "PREVIEW_ARROW_LOG_BASE",
+                           String.valueOf( PREVIEW_ARROW_LOG_BASE ) );
+        pptys.setProperty( "SUMMARY_STATE_BORDER",
+                           String.valueOf( SUMMARY_STATE_BORDER ) );
 
         pptys.setProperty( "MIN_WIDTH_TO_DRAG",
                            String.valueOf( MIN_WIDTH_TO_DRAG ) );
@@ -331,9 +340,12 @@ public class Parameters
         ppty_val = pptys.getProperty( "PREVIEW_STATE_BORDER_H" );
         if ( ppty_val != null )
             PREVIEW_STATE_BORDER_H = Integer.parseInt( ppty_val );
-        ppty_val = pptys.getProperty( "PREVIEW_ARROW_LINE_W" );
+        ppty_val = pptys.getProperty( "PREVIEW_ARROW_LOG_BASE" );
         if ( ppty_val != null )
-            PREVIEW_ARROW_LINE_W = Float.parseFloat( ppty_val );
+            PREVIEW_ARROW_LOG_BASE = Integer.parseInt( ppty_val );
+        ppty_val = pptys.getProperty( "SUMMARY_STATE_BORDER" );
+        if ( ppty_val != null )
+            SUMMARY_STATE_BORDER = StateBorder.parseString( ppty_val );
 
         ppty_val = pptys.getProperty( "MIN_WIDTH_TO_DRAG" );
         if ( ppty_val != null )
@@ -389,7 +401,8 @@ public class Parameters
         rep.append( "PREVIEW_STATE_LEGEND_H = "+ PREVIEW_STATE_LEGEND_H+ "\n" );
         rep.append( "PREVIEW_STATE_BORDER_W = "+ PREVIEW_STATE_BORDER_W+ "\n" );
         rep.append( "PREVIEW_STATE_BORDER_H = "+ PREVIEW_STATE_BORDER_H+ "\n" );
-        rep.append( "PREVIEW_ARROW_LINE_W = "  + PREVIEW_ARROW_LINE_W  + "\n" );
+        rep.append( "PREVIEW_ARROW_LOG_BASE = "+ PREVIEW_ARROW_LOG_BASE+ "\n" );
+        rep.append( "SUMMARY_STATE_BORDER = "  + SUMMARY_STATE_BORDER  + "\n" );
 
         rep.append( "MIN_WIDTH_TO_DRAG = "     + MIN_WIDTH_TO_DRAG     + "\n" );
         rep.append( "SEARCH_ARROW_LENGTH = "   + SEARCH_ARROW_LENGTH   + "\n" );

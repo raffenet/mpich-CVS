@@ -15,6 +15,7 @@ import javax.swing.*;
 
 import base.topology.StateBorder;
 import base.topology.PreviewState;
+import base.topology.SummaryState;
 
 public class PreferencePanel extends JPanel
 {
@@ -48,7 +49,8 @@ public class PreferencePanel extends JPanel
     private        LabeledTextField       fld_PREVIEW_STATE_LEGEND_H;
     private        LabeledTextField       fld_PREVIEW_STATE_BORDER_W;
     private        LabeledTextField       fld_PREVIEW_STATE_BORDER_H;
-    private        LabeledTextField       fld_PREVIEW_ARROW_LINE_W;
+    private        LabeledTextField       fld_PREVIEW_ARROW_LOG_BASE;
+    private        LabeledComboBox        lst_SUMMARY_STATE_BORDER;
 
     private        LabeledTextField       fld_MIN_WIDTH_TO_DRAG;
     private        LabeledTextField       fld_SEARCH_ARROW_LENGTH;
@@ -344,15 +346,28 @@ public class PreferencePanel extends JPanel
         fld_PREVIEW_STATE_BORDER_H.setEditable( true );
         super.add( fld_PREVIEW_STATE_BORDER_H );
 
-        fld_PREVIEW_ARROW_LINE_W = new LabeledTextField( true,
-                                       "PREVIEW_ARROW_LINE_W",
-                                       Const.FLOAT_FORMAT );
-        fld_PREVIEW_ARROW_LINE_W.setToolTipText(
-        "The line thickness in pixel for the Preview arrow." );
-        fld_PREVIEW_ARROW_LINE_W.setHorizontalAlignment( JTextField.CENTER );
-        fld_PREVIEW_ARROW_LINE_W.addSelfDocumentListener();
-        fld_PREVIEW_ARROW_LINE_W.setEditable( true );
-        super.add( fld_PREVIEW_ARROW_LINE_W );
+        fld_PREVIEW_ARROW_LOG_BASE = new LabeledTextField( true,
+                                         "PREVIEW_ARROW_LOG_BASE",
+                                         Const.INTEGER_FORMAT );
+        fld_PREVIEW_ARROW_LOG_BASE.setToolTipText(
+        "The base of the logarithm of number of real arrows in Preview arrow.\nThis determines the Preview arrow's width." );
+        fld_PREVIEW_ARROW_LOG_BASE.setHorizontalAlignment( JTextField.CENTER );
+        fld_PREVIEW_ARROW_LOG_BASE.addSelfDocumentListener();
+        fld_PREVIEW_ARROW_LOG_BASE.setEditable( true );
+        super.add( fld_PREVIEW_ARROW_LOG_BASE );
+
+        lst_SUMMARY_STATE_BORDER = new LabeledComboBox(
+                                       "SUMMARY_STATE_BORDER" );
+        lst_SUMMARY_STATE_BORDER.addItem( StateBorder.COLOR_XOR_BORDER );
+        lst_SUMMARY_STATE_BORDER.addItem( StateBorder.COLOR_RAISED_BORDER );
+        lst_SUMMARY_STATE_BORDER.addItem( StateBorder.COLOR_LOWERED_BORDER );
+        lst_SUMMARY_STATE_BORDER.addItem( StateBorder.WHITE_RAISED_BORDER );
+        lst_SUMMARY_STATE_BORDER.addItem( StateBorder.WHITE_LOWERED_BORDER );
+        lst_SUMMARY_STATE_BORDER.addItem( StateBorder.WHITE_PLAIN_BORDER );
+        lst_SUMMARY_STATE_BORDER.addItem( StateBorder.EMPTY_BORDER );
+        lst_SUMMARY_STATE_BORDER.setToolTipText(
+        "Border style of Summary state, i.e. part of a histogram." );
+        super.add( lst_SUMMARY_STATE_BORDER );
 
         super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
 
@@ -452,8 +467,10 @@ public class PreferencePanel extends JPanel
                                    Parameters.PREVIEW_STATE_BORDER_W );
         fld_PREVIEW_STATE_BORDER_H.setInteger(
                                    Parameters.PREVIEW_STATE_BORDER_H );
-        fld_PREVIEW_ARROW_LINE_W.setFloat(
-                                 Parameters.PREVIEW_ARROW_LINE_W );
+        fld_PREVIEW_ARROW_LOG_BASE.setInteger(
+                                   Parameters.PREVIEW_ARROW_LOG_BASE );
+        lst_SUMMARY_STATE_BORDER.setSelectedItem(
+                                 Parameters.SUMMARY_STATE_BORDER );
 
         fld_MIN_WIDTH_TO_DRAG.setInteger( Parameters.MIN_WIDTH_TO_DRAG );
         fld_SEARCH_ARROW_LENGTH.setInteger( Parameters.SEARCH_ARROW_LENGTH );
@@ -521,8 +538,10 @@ public class PreferencePanel extends JPanel
                   = fld_PREVIEW_STATE_BORDER_W.getInteger();
         Parameters.PREVIEW_STATE_BORDER_H
                   = fld_PREVIEW_STATE_BORDER_H.getInteger();
-        Parameters.PREVIEW_ARROW_LINE_W
-                  = fld_PREVIEW_ARROW_LINE_W.getFloat();
+        Parameters.PREVIEW_ARROW_LOG_BASE
+                  = fld_PREVIEW_ARROW_LOG_BASE.getInteger();
+        Parameters.SUMMARY_STATE_BORDER
+                  = (StateBorder) lst_SUMMARY_STATE_BORDER.getSelectedItem();
 
         Parameters.MIN_WIDTH_TO_DRAG
                   = fld_MIN_WIDTH_TO_DRAG.getInteger();
