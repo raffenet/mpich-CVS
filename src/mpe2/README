@@ -1,7 +1,7 @@
                       MPE (Multi-Processing Environment)
                       ----------------------------------
 
-                          Version 2.0.0. March, 2004
+                          Version 2.1.0. September, 2004
 
                     Mathematics and Computer Science Division
                            Argonne National Laboratory
@@ -280,7 +280,7 @@ implementations.
 
 
 
-III. a)  Configuring as part of the MPICH-1 configure
+III. a)  Configuring as part of the MPICH-X configure
 -----------------------------------------------------
 
 The configure in the MPICH directory will try to determine the necessary 
@@ -614,27 +614,56 @@ VI. c) ENVIRONMENTAL VARIABLES
 There are 2 environmental variables, TMPDIR and MPE_LOGFILE_PREFIX, that user 
 may need to set before the generation of logfiles :
 
+CLOG_BLOCK_SIZE: The integer value determines the clog2 buffer block size
+                 which set the least minimum clog2 file size.  If
+                 CLOG_BLOCK_SIZE is not set, 64K per block is assumed.
+
+CLOG_BUFFERED_BLOCKS: The integer value determines the number of blocks
+                      witin the CLOG-2.1's internal buffer.  Together with
+                      CLOG_BLOCK_SIZE, CLOG_BUFFERED_BLOCKS determines how
+                      often the internal buffer is flushed to the disk.  
+                      The total buffer size is determined by the product of
+                      CLOG_BLOCK_SIZE and CLOG_BUFFERED_BLOCKS.  These 2
+                      environmental variables allows user to minimize MPE2
+                      logging overhead when large local memory is available.
+                      The default value is 128.
+
+MPE_TMPDIR : MPE_TMPDIR takes precedence over TMPDIR.  It specifies a
+             directory to be used as temporary storage for each process.
+             By default, when MPE_TMPDIR and TMPDIR are NOT set,
+             /tmp will be used.  When user needs to generate a very large
+             logfile for long-running MPI job, user needs to make sure that
+             MPE_TMPDIR(or TMPDIR) is big enough to hold the temporary local
+             logfile which will be deleted if the merged logfile can be
+             created successfully.  In order to minimize the overhead of the
+             logging to the MPI program, it is highly recommended user to
+             use a *local* file system for TMPDIR.
+
+             Note : The final merged logfile will be written back to the 
+                    file system where process 0 is.
+
+MPE_DELETE_LOCALFILE:  The boolean value determines whether to delete local
+                       clog2 file.  This allows user to launch a separate
+                       process to merge the local clog2 files in case 
+                       MPI_Finalize() fails due to user program overwritten
+                       to MPE/MPI internal data structures
+                       (No clog_mpimeger yet)
+
+MPE_CLOCKS_SYNC: The boolean value determines the behavior of
+                 MPE_Log_sync_clocks()
+
 MPE_LOGFILE_PREFIX : specifies the filename prefix of the output logfile.
                      The file extension will be determined by the output
                      logfile format, i.e. MPE_LOG_FORMAT.
-
-TMPDIR : specifies a directory to be used as temporary storage for each
-         process.  By default, when TMPDIR is NOT set, /tmp will be used.
-         When user needs to generate a very large logfile for long-running
-         MPI job, user needs to make sure that TMPDIR is big enough to
-         hold the temporary logfile which will be deleted if the
-         merged logfile can be created successfully.  In order to
-         minimize the overhead of the logging to the MPI program, it is
-         highly recommended user to use a *local* file system for TMPDIR.
-
-         Note : The final merged logfile will be written back to the 
-                file system where process 0 is.
 
 
 MPE_LOG_FORMAT : determines the format of the logfile generated from the 
                  execution of application linked with MPE logging libraries.  
                  The allowed value for MPE_LOG_FORMAT is CLOG2 only.
                  So there is no need to use this variable at the moment.
+
+Possible boolean values are "true", "false", "yes" and "no" in either
+all lower or upper cases.
 
 
 
