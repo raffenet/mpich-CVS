@@ -93,10 +93,12 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
     if (!comm_ptr->local_group) {
 	n = comm_ptr->local_size;
 	mpi_errno = MPIR_Group_create( n, &group_ptr );
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno)
 	{
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
 
 	/* Make sure that we get the correct group */
 	if (comm_ptr->comm_kind == MPID_INTERCOMM) {

@@ -102,10 +102,12 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
        this must be the local size */
     mpi_errno = MPIR_Comm_copy( comm_ptr, comm_ptr->local_size, 
 				&newcomm_ptr );
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
     {
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     /* Copy attributes, executing the attribute copy functions */
     /* This accesses the attribute dup function through the perprocess

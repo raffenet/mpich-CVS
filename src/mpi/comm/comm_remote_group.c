@@ -80,10 +80,12 @@ int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
     if (!comm_ptr->remote_group) {
 	n = comm_ptr->remote_size;
 	mpi_errno = MPIR_Group_create( n, &group_ptr );
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno)
 	{
 	    goto fn_fail;
 	}
+	/* --END ERROR HANDLING-- */
 	
 	for (i=0; i<n; i++) {
 	    group_ptr->lrank_to_lpid[i].lrank = i;

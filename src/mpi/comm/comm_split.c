@@ -155,10 +155,12 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     /* Must collectively create the communicator but we
        can recover the storage for color == MPI_UNDEFINED */
     mpi_errno = MPIR_Comm_create( comm_ptr, &newcomm_ptr );
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
     {
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
     if (color != MPI_UNDEFINED) {
 	newcomm_ptr->remote_size = new_size;
 	newcomm_ptr->local_size  = new_size;
