@@ -247,7 +247,6 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
     MPIDI_CH3I_SHM_Packet_t *pkt_ptr;
     MPIDI_CH3I_SHM_Queue_t *shm_ptr;
     register int index, working;
-    BOOL bSetPacket;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
@@ -281,15 +280,15 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 
 	    mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
 	    num_bytes = pkt_ptr->num_bytes;
-	    /*recv_vc_ptr = &vc->ch.pg->vc_table[i];*/ /* This should be some GetVC function with a complete context */
 
 	    if (recv_vc_ptr->ch.shm_reading_pkt)
 	    {
-		/*assert(num_bytes > sizeof(packet));*/
 		MPIDI_DBG_PRINTF((60, FCNAME, "reading header(%d bytes) from read_shmq %08p packet[%d]", sizeof(MPIDI_CH3_Pkt_t), shm_ptr, index));
-		pkt_ptr->offset += sizeof(MPIDI_CH3_Pkt_t);
-		pkt_ptr->num_bytes = num_bytes - sizeof(MPIDI_CH3_Pkt_t);
-		bSetPacket = pkt_ptr->num_bytes == 0 ? TRUE : FALSE;
+		if (num_bytes > sizeof(MPIDI_CH3_Pkt_t))
+		{
+		    pkt_ptr->offset += sizeof(MPIDI_CH3_Pkt_t);
+		    pkt_ptr->num_bytes = num_bytes - sizeof(MPIDI_CH3_Pkt_t);
+		}
 
 		mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
 		if (mpi_errno != MPI_SUCCESS)
@@ -300,27 +299,17 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 		}
 		if (recv_vc_ptr->ch.recv_active == NULL)
 		{
-		    /*printf("reading next packet\n");fflush(stdout);*/
 		    recv_vc_ptr->ch.shm_reading_pkt = TRUE;
 		}
 		else
 		{
 		    mpi_errno = MPIDI_CH3I_SHM_post_readv(recv_vc_ptr, recv_vc_ptr->ch.recv_active->dev.iov, recv_vc_ptr->ch.recv_active->dev.iov_count, NULL);
 		}
-		if (bSetPacket)
+		if (num_bytes == sizeof(MPIDI_CH3_Pkt_t))
 		{
 		    pkt_ptr->offset = 0;
 		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 		    pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
-#ifdef MPICH_DBG_OUTPUT
-		    /*assert(&shm_ptr->packet[index] == pkt_ptr);*/
-		    if (&shm_ptr->packet[index] != pkt_ptr)
-		    {
-			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_ptr", "**pkt_ptr %p %p", &shm_ptr->packet[index], pkt_ptr);
-			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
-			return mpi_errno;
-		    }
-#endif
 		    shm_ptr->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		    MPIDI_DBG_PRINTF((60, FCNAME, "read_shmq head = %d", shm_ptr->head_index));
 		}

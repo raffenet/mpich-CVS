@@ -74,8 +74,6 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
 	if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	{
 	    /* Read operation complete */
-	    MPIDI_CA_t ca = req->dev.ca;
-	    
 	    mpi_errno = MPIDI_CH3U_Handle_recv_req(vc, req, &complete);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
@@ -95,7 +93,6 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
 	else
 	{
 #ifdef MPICH_DBG_OUTPUT
-	    /*assert(req->ch.iov_offset < req->dev.iov_count);*/
 	    if (req->ch.iov_offset >= req->dev.iov_count)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ch.iov_offset, req->dev.iov_count);
@@ -143,7 +140,6 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE_PROGRESS);
 	    return mpi_errno;
 	}
-	/*assert(req->ch.iov_offset < req->dev.iov_count);*/
 #endif
 	/* Check here or inside shm_writev?
 	if (vc->ch.write_shmq->packet[vc->ch.write_shmq->tail_index].avail == MPIDI_CH3I_PKT_EMPTY)
