@@ -1958,7 +1958,7 @@ extern int MPID_THREAD_LEVEL;
 - priority - Indicates the priority of this callback and controls the order
   in which callbacks are executed.  Use a priority of zero for most handlers;
   higher priorities will be executed first.
- @*/
+@*/
 void MPIR_Add_finalize( int (*routine)( void * ), void *extra, int priority );
 
 /* For no error checking, we could define MPIR_Nest_incr/decr as empty */
@@ -2012,9 +2012,6 @@ int MPIR_Request_get_error(MPID_Request *);
   Output Parameter:
 + provided - Provided level of thread support.  May be less than the 
   requested level of support.
-. parent_comm - 'MPID_Comm' of parent.  This is null for all MPI-1 uses and 
-  for processes that are `not` started with 'MPI_Comm_spawn' or 
-  'MPI_Comm_spawn_multiple'.
 . has_args - Set to true if 'argc_p' and 'argv_p' contain the command
   line arguments.  See below.
 - has_env  - Set to true if the environment of the process has been 
@@ -2056,8 +2053,6 @@ int MPIR_Request_get_error(MPID_Request *);
   Setting the environment requires a 'setenv' function.  Some
   systems may not have this.  In that case, the documentation must make 
   clear that the environment may not be propagated to the generated processes.
-
-  The 'parent_comm' argument may not be the right interface.  
 
   Module:
   MPID_CORE
@@ -2143,9 +2138,8 @@ int MPIR_Request_get_error(MPID_Request *);
   will need to use different algorithms and most fatal errors detected by the 
   MPI implementation should abort only the affected process, not all processes.
   @*/
-int MPID_Init( int *argc_p, char ***argv_p, 
-	       int requested, int *provided,
-	       /* MPID_Comm **parent_comm,*/ int *has_args, int *has_env );
+int MPID_Init( int *argc_p, char ***argv_p, int requested,
+	       int *provided, int *has_args, int *has_env );
 
 /*@
   MPID_Finalize - Perform the device-specific termination of an MPI job
