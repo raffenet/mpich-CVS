@@ -142,6 +142,11 @@ foreach $_ (@ARGV) {
 	$use_rand_args = 0;
 	$env_args .= "--env-$1 ";
     }
+    elsif (/-configarg=(.*)/) {
+	# Use this to add a special arg (such as -host) to the 
+	# configure call
+	$config_args .= "$1 ";
+    }
     elsif (/-help/) {
 	print STDERR "\
 checkbuilds [ -enable-n=d ] [ -with-n=d ] [ -show ] [-envopt=name;value;... ]
@@ -225,7 +230,7 @@ sub RunTest {
     $install_status = "none";
     $test_status    = "none";
     if ($show) {
-	print "Configure: $enable_args $with_args\n";
+	print "Configure: $enable_args $with_args $config_args\n";
 	if ($envset ne "") {
 	    print "Environment = $envset\n";
 	}
@@ -235,7 +240,7 @@ sub RunTest {
 	print $OUTFD $TestStart;
 	unlink "Makefile";
 	print $OUTFD $ConfigStart;
-	@config = split( /\s+/, "$srcdir/configure --prefix=$instdir $enable_args $with_args" );
+	@config = split( /\s+/, "$srcdir/configure --prefix=$instdir $enable_args $with_args $config_args" );
 	print $OUTFD "Configure: " . join(" ", @config) . "\n";
 	if ($envset ne "") {
 	    print $OUTFD "Environment = $envset\n";
