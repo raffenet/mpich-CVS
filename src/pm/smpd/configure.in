@@ -127,4 +127,4 @@ dnl
 . ../../pmi/smpd/localdefs
 dnl
 dnl Generate the Makefiles from Makefile.in
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile localdefs)
