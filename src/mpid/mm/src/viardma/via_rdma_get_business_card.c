@@ -11,6 +11,6 @@ int via_rdma_get_business_card(char *value, int length)
     {
 	return -1;
     }
-    *value = '\0';
+    snprintf(value, length, "none");
     return MPI_SUCCESS;
 }

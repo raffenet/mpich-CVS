@@ -93,7 +93,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
 
     MPID_Segment_init(buf, count, dtype, &pRequest->mm.segment);
 
-    /* setup the read car */
+    /* set up the read car */
     if (bNeedHeader)
     {
 	pRequest->mm.rcar[0].type = MM_HEAD_CAR | MM_READ_CAR;
