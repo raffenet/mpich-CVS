@@ -64,7 +64,10 @@ int tcp_accept_connection()
 	/* add the new connection to the read set */
 	TCP_Process.max_bfd = BFD_MAX(bfd, TCP_Process.max_bfd);
 	if (!BFD_ISSET(bfd, &TCP_Process.readset))
+	{
 	    BFD_SET(bfd, &TCP_Process.readset);
+	    TCP_Process.num_readers++;
+	}
 	vc_ptr->read_next_ptr = TCP_Process.read_list;
 	TCP_Process.read_list = vc_ptr;
 
@@ -97,10 +100,16 @@ int tcp_accept_connection()
 	{
 	    /* close the old socket and keep the new */
 	    if (BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.readset))
+	    {
 		BFD_CLR(vc_ptr->data.tcp.bfd, &TCP_Process.readset);
+		TCP_Process.num_readers--;
+	    }
 	    inwriteset = BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
 	    if (inwriteset)
+	    {
 		BFD_CLR(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
+		TCP_Process.num_writers--;
+	    }
 
 	    /* if tcp_read hasn't read the reject ack already, do so here and then close the socket. */
 	    if (!vc_ptr->data.tcp.reject_received)
@@ -118,9 +127,15 @@ int tcp_accept_connection()
 	    /* add the new connection to the read set and possibly the write set */
 	    TCP_Process.max_bfd = BFD_MAX(bfd, TCP_Process.max_bfd);
 	    if (!BFD_ISSET(bfd, &TCP_Process.readset))
+	    {
 		BFD_SET(bfd, &TCP_Process.readset);
+		TCP_Process.num_readers++;
+	    }
 	    if (inwriteset)
+	    {
 		BFD_SET(bfd, &TCP_Process.writeset);
+		TCP_Process.num_writers++;
+	    }
 	}
 	else
 	{
@@ -157,6 +172,13 @@ int tcp_make_progress()
 
     MM_ENTER_FUNC(TCP_MAKE_PROGRESS);
 
+    if ((TCP_Process.num_readers == 0) &&
+	(TCP_Process.num_writers == 0))
+    {
+	MM_EXIT_FUNC(TCP_MAKE_PROCESS);
+	return MPI_SUCCESS;
+    }
+
     tv.tv_sec = 0;
     tv.tv_usec = 1;
     
@@ -164,7 +186,10 @@ int tcp_make_progress()
     writeset = TCP_Process.writeset;
 
     MM_ENTER_FUNC(BSELECT);
-    nready = bselect(TCP_Process.max_bfd, &readset, &writeset, NULL, &tv);
+    nready = bselect(TCP_Process.max_bfd, 
+	TCP_Process.num_readers ? &readset : NULL,
+	TCP_Process.num_writers ? &writeset : NULL,
+	NULL, &tv);
     MM_EXIT_FUNC(BSELECT);
 
     if (nready == 0)

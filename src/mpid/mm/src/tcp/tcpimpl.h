@@ -28,6 +28,8 @@ typedef struct TCP_PerProcess {
 	           int max_bfd;
 		   int error;
 		  char err_msg[TCP_ERROR_MSG_LENGTH];
+		   int num_readers;
+		   int num_writers;
 } TCP_PerProcess;
 
 extern TCP_PerProcess TCP_Process;

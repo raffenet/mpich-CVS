@@ -74,7 +74,10 @@ int tcp_car_head_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	{
 	    TCP_Process.max_bfd = BFD_MAX(vc_ptr->data.tcp.bfd, TCP_Process.max_bfd);
 	    if (!BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset))
+	    {
 		BFD_SET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
+		TCP_Process.num_writers++;
+	    }
 	    vc_ptr->write_next_ptr = TCP_Process.write_list;
 	    TCP_Process.write_list = vc_ptr;
 	}
@@ -119,7 +122,10 @@ int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	{
 	    TCP_Process.max_bfd = BFD_MAX(vc_ptr->data.tcp.bfd, TCP_Process.max_bfd);
 	    if (!BFD_ISSET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset))
+	    {
 		BFD_SET(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
+		TCP_Process.num_writers++;
+	    }
 	    vc_ptr->write_next_ptr = TCP_Process.write_list;
 	    TCP_Process.write_list = vc_ptr;
 	}
@@ -174,6 +180,7 @@ static int tcp_vc_dequeue_write(MPIDI_VC *vc_ptr)
 {
     MPIDI_VC *iter_ptr;
     BFD_CLR(vc_ptr->data.tcp.bfd, &TCP_Process.writeset);
+    TCP_Process.num_writers--;
     if (vc_ptr == TCP_Process.write_list)
     {
 	TCP_Process.write_list = vc_ptr->write_next_ptr;
