@@ -73,7 +73,10 @@ int MPI_Unpack(void *inbuf,
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+		MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+		MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+	    }
 	    MPIR_ERRTEST_COUNT(insize,mpi_errno);
 	    MPIR_ERRTEST_COUNT(outcount,mpi_errno);
 	    /* If comm_ptr is not valid, it will be reset to null */

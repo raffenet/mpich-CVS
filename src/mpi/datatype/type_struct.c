@@ -51,7 +51,8 @@ int MPI_Type_struct(int count,
 		    MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_struct";
-    int mpi_errno = MPI_SUCCESS;
+    int mpi_errno = MPI_SUCCESS, i;
+    MPID_Datatype *datatype_ptr;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_STRUCT);
 #   ifdef HAVE_ERROR_CHECKING
@@ -60,6 +61,17 @@ int MPI_Type_struct(int count,
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COUNT(count,mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(blocklens, "blocklens", mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(indices, "indices", mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(old_types, "types", mpi_errno);
+	    if (mpi_errno == MPI_SUCCESS) {
+		/* verify that all blocklengths are > 0 (0 isn't ok is it?) */
+		for (i=0; i < count; i++) {
+		    MPIR_ERRTEST_ARGNONPOS(blocklens, "blocklen", mpi_errno);
+		    MPID_Datatype_get_ptr(old_types[i], datatype_ptr);
+		    MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+		}
+	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_STRUCT);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );

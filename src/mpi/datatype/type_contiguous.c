@@ -78,6 +78,7 @@ int MPI_Type_contiguous(int count,
             if (HANDLE_GET_KIND(old_type) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(old_type, datatype_ptr);
                 MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+		MPIR_ERRTEST_COUNT(count, mpi_errno);
                 if (mpi_errno != MPI_SUCCESS) {
                     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_TYPE_CONTIGUOUS);
                     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);

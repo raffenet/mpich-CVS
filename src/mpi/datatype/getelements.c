@@ -85,7 +85,10 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
                             "**initialized", 0 );
             }
             /* Validate datatype_ptr */
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+		MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+		MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_ELEMENTS);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );

@@ -1,3 +1,5 @@
+**argnonpos:Invalid argument; must be positive
+**argnonpos %s %d:Invalid value for %s; must be positive but is %d
 **argneg:Invalid argument; must be non-negative
 **argneg %s %d:Invalid value for %s, must be non-negative but is %d
 **countneg:Negative count

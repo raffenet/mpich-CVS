@@ -59,7 +59,7 @@ int MPI_Type_commit(MPI_Datatype *datatype)
                             "**initialized", 0 );
             }
             /* Validate datatype_ptr */
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+            MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_COMMIT);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -68,6 +68,7 @@ int MPI_Type_commit(MPI_Datatype *datatype)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+    if (HANDLE_GET_KIND(*datatype) != HANDLE_KIND_BUILTIN) datatype_ptr->is_committed = 1;
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_COMMIT);
     return MPI_SUCCESS;

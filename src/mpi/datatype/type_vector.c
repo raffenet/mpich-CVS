@@ -77,13 +77,13 @@ int MPI_Type_vector(int count,
 	    }
 	    /* If old_ptr is not valid, it will be reset to null */
 	    /* Validate other arguments */
-	    if (count < 0) 
+	    if (count <= 0) 
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_COUNT, "**countneg",
 						  "**countneg %d", count );
-	    if (blocklength < 0) 
+	    if (blocklength <= 0) 
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, "**argneg",
 						  "**argneg %s %d", 
-						  "blocklength", blocklength );
+						  "blocklen", blocklength );
 	    /* MPICH 1 code also checked for old type equal to MPI_UB or LB.
 	       We may want to check on length 0 datatypes */
 

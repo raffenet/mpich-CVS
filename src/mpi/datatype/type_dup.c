@@ -35,6 +35,7 @@
 -  MPI_Datatype *newtype - new datatype
 
    Notes:
+   This is an MPI-2 function.
 
 .N Fortran
 

@@ -564,6 +564,17 @@ do {                                                                    \
 #define MPID_Request_valid_ptr(ptr,err) MPID_Valid_ptr_class(Request,ptr,MPI_ERR_REQUEST,err)
 #define MPID_Keyval_valid_ptr(ptr,err) MPID_Valid_ptr_class(Keyval,ptr,MPI_ERR_KEYVAL,err)
 
+/* to be used only after MPID_Datatype_valid_ptr(); the check on
+ * err == MPI_SUCCESS ensures that we won't try to dereference the
+ * pointer if something has already been detected as wrong.
+ */
+#define MPID_Datatype_committed_ptr(ptr,err)				\
+do {									\
+    if (err == MPI_SUCCESS && !(ptr)->is_committed)			\
+        err = MPIR_Err_create_code(MPI_ERR_TYPE, "**dtypecommit", 0);	\
+} while (0)
+
+
 /* Generic pointer test.  This is applied to any address, not just one from
    an MPI object.
    Currently unimplemented (returns success except for null pointers.
@@ -1218,7 +1229,10 @@ extern int MPID_THREAD_LEVEL;
        err = MPIR_Err_create_code( MPI_ERR_ARG, "**nullptr", "**nullptr %s", arg_name ); } 
 #define MPIR_ERRTEST_ARGNEG(arg,arg_name,err) \
    if ((arg) < 0) {\
-       err = MPIR_Err_create_code( MPI_ERR_ARG, "**argneg", "**argneg %s %d", arg_name, arg ); } 
+       err = MPIR_Err_create_code( MPI_ERR_ARG, "**argneg", "**argneg %s %d", arg_name, arg ); }
+#define MPIR_ERRTEST_ARGNONPOS(arg,arg_name,err) \
+   if ((arg) <= 0) {\
+       err = MPIR_Err_create_code( MPI_ERR_ARG, "**argnonpos", "**argnonpos %s %d", arg_name, arg ); } 
 /* An intracommunicator must have a root between 0 and local_size-1. */
 /* intercomm can be between MPI_PROC_NULL (or MPI_ROOT) and local_size-1 */
 #define MPIR_ERRTEST_INTRA_ROOT(comm_ptr,root,err) \

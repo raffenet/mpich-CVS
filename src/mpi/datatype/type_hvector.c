@@ -66,7 +66,7 @@ int MPI_Type_hvector(int count,
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    MPIR_ERRTEST_COUNT(count,mpi_errno);
-	    MPIR_ERRTEST_ARGNEG(blocklen,"blocklen",mpi_errno);
+	    MPIR_ERRTEST_ARGNONPOS(blocklen,"blocklen",mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HVECTOR);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );

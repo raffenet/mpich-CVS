@@ -93,7 +93,10 @@ int MPI_Pack(void *inbuf,
             /* Validate comm_ptr */
 	    /* If comm_ptr is not valid, it will be reset to null */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+		MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+		MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+	    }
 	    MPIR_ERRTEST_COUNT(incount,mpi_errno);
 	    MPIR_ERRTEST_COUNT(outcount,mpi_errno);
             if (mpi_errno) {
@@ -107,6 +110,19 @@ int MPI_Pack(void *inbuf,
 
     /* ... body of routine ...  */
 
+#ifdef HAVE_ERROR_CHECKING /* IMPLEMENTATION-SPECIFIC ERROR CHECKS */
+    {
+	MPID_BEGIN_ERROR_CHECKS;
+	/* Verify that there is space in the buffer to pack the type */
+	if (datatype_ptr->size * incount > outcount - *position) {
+	    mpi_errno = MPIR_Err_create_code(MPI_ERR_ARG, "**arg", 0);
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK);
+	    return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+	}
+	MPID_END_ERROR_CHECKS;
+    }
+#endif /* HAVE_ERROR_CHECKING */
+    
     /* TODO: CHECK RETURN VALUES?? */
     /* TODO: SHOULD THIS ALL BE IN A MPID_PACK??? */
     segp = MPID_Segment_alloc();

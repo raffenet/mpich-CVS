@@ -21,6 +21,8 @@
 
   NOTE: This call assumes that oldtype is not a builtin!!!
 
+  SHOULD WE RENAME THIS TO TYPE COPY OR SOMETHING?
+
   Return Value:
   0 on success, -1 on failure.
 @*/
@@ -43,7 +45,7 @@ int MPID_Type_dup(MPI_Datatype oldtype,
     MPID_Datatype_get_ptr(oldtype, old_dtp); /* fills in old_dtp */
 
     /* fill in datatype */
-    new_dtp->ref_count     = 1; /* NOTE: is this already filled in by allocator? */
+    /* new_dtp->ref_count     = 1; NOTE: is this already filled in by allocator? */
     new_dtp->is_contig     = old_dtp->is_contig;
     new_dtp->size          = old_dtp->size;
     new_dtp->extent        = old_dtp->extent;
@@ -56,6 +58,7 @@ int MPID_Type_dup(MPI_Datatype oldtype,
     new_dtp->has_sticky_ub = old_dtp->has_sticky_ub;
     new_dtp->has_sticky_lb = old_dtp->has_sticky_lb;
     new_dtp->is_permanent  = old_dtp->is_permanent;
+    new_dtp->is_committed  = old_dtp->is_committed;
     new_dtp->attributes    = NULL; /* ??? */
     new_dtp->cache_id      = -1; /* ??? */
     /*    new_dtp->name          =  ??? */
