@@ -387,7 +387,7 @@ EOF
     AC_MSG_CHECKING([if ${F77-f77} $flags $libs works with GETARG and IARGC])
     if AC_TRY_EVAL(ac_fcompilelink) && test -x conftest ; then
 	if test "$ac_cv_prog_f77_cross" = "no" ; then
-	    if conftest >/dev/null 2>&1 ; then
+	    if ./conftest >/dev/null 2>&1 ; then
 		found_answer="yes"
 	        FXX_MODULE="$fxx_module"
 		F77_GETARGDECL="$f77_getargdecl"
@@ -612,13 +612,14 @@ EOF
 		found_answer="no"
                 if AC_TRY_EVAL(ac_fcompilelink_test) && test -x conftest ; then
 		    if test "$ac_cv_prog_f77_cross" = "no" ; then
-			if conftest >/dev/null 2>&1 ; then
+			if ./conftest >/dev/null 2>&1 ; then
 			    found_answer="yes"
 			fi
 		    else 
 			found_answer="yes"
 		    fi
-		IFS=" 
+                fi
+	        IFS=" 
 "
 		if test "$found_answer" = "yes" ; then
 	            AC_MSG_RESULT([yes])
@@ -630,7 +631,6 @@ EOF
                     AC_MSG_RESULT([no])
 		    echo "configure: failed program was:" >&AC_FD_CC
                     cat conftest.f >&AC_FD_CC
-	        fi
 	        fi
             done
         done
