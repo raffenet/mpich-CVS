@@ -49,7 +49,7 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(int, int, int, int *);
 int MPIDI_CH3U_Request_DP(MPID_Request *);
 MPID_Request * MPIDI_CH3U_Request_FDP(MPIDI_Message_match *);
 MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(MPIDI_Message_match *, int *);
-void MPIDI_CH3U_Request_incrementt_cc(MPID_Request *);
+void MPIDI_CH3U_Request_increment_cc(MPID_Request *);
 void MPIDI_CH3U_Request_decrement_cc(MPID_Request *, int *);
 int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const, MPID_IOV * const, int * const);
 int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const);
