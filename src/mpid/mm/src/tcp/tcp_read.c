@@ -263,6 +263,8 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_BUF +
 			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_LEN +
 			num_left;
+		    car_ptr->data.tcp.buf.vec_read.num_read_at_cur_index = 
+			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_LEN + num_left;
 		    car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_LEN = -num_left;
 		}
 	    }

@@ -128,6 +128,8 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
     /* copy the rest of the vectors until the segment is completely copied or cur_pos runs off the end of the array */
     while ((cur_pos < MPID_VECTOR_LIMIT) && num_avail)
     {
+	if (num_avail < 0)
+	    err_printf("Error: tcp_stuff_vector_vec - num_avail is negative: %d\n", num_avail);
 	vec[cur_pos].MPID_VECTOR_BUF = buf_ptr->vec.vec[cur_index].MPID_VECTOR_BUF;
 	vec[cur_pos].MPID_VECTOR_LEN = buf_ptr->vec.vec[cur_index].MPID_VECTOR_LEN;
 	num_avail -= buf_ptr->vec.vec[cur_index].MPID_VECTOR_LEN;
