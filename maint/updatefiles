@@ -422,7 +422,7 @@ if [ "$has_unix_find" = "yes" -a "$do_build_configure" = "yes" ] ; then
 	#echo $dir
 	qmpe2dir=`echo $dir | sed -e 's%.*src/mpe2.*%FOUNDMPE2%'`
 	if [ "$qmpe2dir" = "FOUNDMPE2" ] ; then
-	    echo "Found MPE2 directory; skipping"
+	    # echo "Found MPE2 directory; skipping"
 	    # MPE2 has its own updatefiles script, which should 
 	    # be used instead of this one.
 	    continue
