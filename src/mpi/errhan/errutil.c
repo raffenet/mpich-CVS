@@ -178,6 +178,7 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[],
 /* 
  * MPI routines that detect errors on files use this to report errors 
  */
+#if 0
 int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[], 
 			  int errcode )
 {
@@ -233,6 +234,7 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
     }
     return errcode;
 }
+#endif
 
 #if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS
 /* Given a message string abbreviation (e.g., one that starts "**"), 
