@@ -180,7 +180,7 @@ int ConnectToMPD(char *host, int port, char *inphrase, int *pbfd)
     if (beasy_connect(bfd, host, port) == SOCKET_ERROR)
     {
 	error = beasy_getlasterror();
-	dbg_printf("beasy_connect failed: error %d\n", error);fflush(stdout);
+	dbg_printf("beasy_connect(%s:%d) failed: error %d\n", host, port, error);fflush(stdout);
 	beasy_closesocket(bfd);
 	return error;
     }
