@@ -27,7 +27,9 @@ collective I/O.  MPICH will provide the additional \code{MPI_Info} key name
 \begin{description}
 \item[\texttt{cb_config_list}]specifies a comma-separated list of strings,
   each string specifying a particular node and an optional limit on the number
-  of processes to be used for collective buffering on this node.  
+  of processes to be used for collective buffering on this node.  Here, node
+  refers to a particular processing element with a unit of I/O connectivity;
+  typically, this is a single SMP unit.
 \end{description}
 This refers to the same processes that \code{cb_nodes} refers to, but
 specifies the available nodes more precisely.
@@ -49,6 +51,14 @@ name returned by \code{MPI_Get_processor_name}\footnote{The MPI standard
 The value \code{*} matches all processors.  The value of \code{maxprocesses}
 may be any nonnegative integer (zero is allowed).
 % The footnote is for SGI
+
+Question: There is a conflict between our use of node and the processor name
+returned by \code{MPI_Get_processor_name}.  An implementation that identified
+the processor within the SMP would conform to the MPI specification but would
+not meet our requirements above.  We may want to change the discussion above
+to indicate that it will use \code{MPI_Get_processor_name}, but that a second
+routine, \code{MPIR_Get_node_name} may be used instead.  This routine would
+identify a ``node'' according to the above definition.
 
 The value \code{maxprocesses} specifies the maximum number of processes that
 may be used for collective buffering on the specified host.
@@ -91,6 +101,12 @@ should be performed but \code{cb_nodes} specifies a smaller number, an
 implementation is encouraged to use only \code{cb_nodes}.  If
 \code{cb_config_list} specifies fewer processes than \code{cb_nodes}, only the
 number in \code{cb_config_list} should be used.
+
+The processors specified by \code{cb_config_list} may include processors that
+are not part of the MPI job.  In this case, the MPI implementation may ignore
+those processors.  This allows a single \code{cb_config_list} specification to
+identify all prefered I/O nodes, without requiring the user to first restrict
+that list to those nodes available to the MPI job.
 
 The implementation is also encouraged to assign processes in the order that
 they are listed in \code{cb_config_list}.  
