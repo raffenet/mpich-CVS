@@ -10,6 +10,19 @@
 
 #include "mpichconf.h"
 
+/* FIXME!!!  TODO!!!  FOO!!!  DO THIS!!!  DETECT ME!!!
+ *
+ * Include mpiimpl.h up here too, taking it out of mpid_ext32_segment.c
+ *
+ * Consider using MPIU_INT64_T etc. types instead of the
+ * EIGHT_BYTE_BASIC_TYPE stuff, or put #defines at the top of this file
+ * assigning them in a simple manner.
+ *
+ * Doing that might require that we create MPIU_UINT64_T types (etc),
+ * because it looks like we really want to have unsigned types for the
+ * various convert functions below.
+ */
+
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
