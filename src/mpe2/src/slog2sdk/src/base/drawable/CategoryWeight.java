@@ -27,11 +27,14 @@ public class CategoryWeight
     private Category   type;
     private float      weight;
 
+    private int        height;   // pixel height, for SLOG-2 Input & Jumpshot
+
     public CategoryWeight()
     {
         type     = null;
         type_idx = INVALID_INDEX;
         weight   = 0.0f;
+        height   = 0;
     }
 
     // For SLOG-2 Output
@@ -48,6 +51,16 @@ public class CategoryWeight
         this.type     = type_wgt.type;
         this.type_idx = type_wgt.type_idx;
         this.weight   = type_wgt.weight;
+    }
+
+    public void setPixelHeight( int hgt )
+    {
+        height = hgt;
+    }
+
+    public int getPixelHeight()
+    {
+        return height;
     }
 
     public Category getCategory()
