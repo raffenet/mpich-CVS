@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 	}
 	else {
 	    argv++;
-	    len = strlen(*argv);
+	    len = (int)strlen(*argv);
 	    filename = (char *) malloc(len+10);
 	    strcpy(filename, *argv);
 	}

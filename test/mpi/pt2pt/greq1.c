@@ -46,7 +46,7 @@ int cancel_fn( void *extra_state, int complete )
  */
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int counter, flag;
     MPI_Status    status;
     MPI_Request   request;

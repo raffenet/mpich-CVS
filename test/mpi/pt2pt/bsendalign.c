@@ -61,7 +61,7 @@ int main( int argc, char *argv[] )
 	MPI_Buffer_detach( &bptr, &bl );
 	if (bptr != buf+align) {
 	    errs++;
-	    printf( "Did not recieve the same buffer on detach that was provided on init (%lx vs %lx)\n", (long)bptr, (long)buf );
+	    printf( "Did not recieve the same buffer on detach that was provided on init (%p vs %p)\n", bptr, buf );
 	}
     }
 

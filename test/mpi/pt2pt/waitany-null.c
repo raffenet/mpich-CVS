@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
 
 int parse_args(int argc, char **argv)
 {
+    /*
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)
@@ -60,5 +61,8 @@ int parse_args(int argc, char **argv)
 		break;
 	}
     }
+    */
+    if (argc > 1 && strcmp(argv[1], "-v") == 0)
+	verbose = 1;
     return 0;
 }
