@@ -92,6 +92,28 @@ if [ $at_top = "no" ] ; then
     exit 1
 fi
 #
+# Check that you have a working autoconf.  Autoconf 2.57 is not compatible with
+# previous versions of autoconf (!!), even 2.52 (!!!).  
+if test ! -d .tmp ; then
+    mkdir .tmp 2>&1 >/dev/null
+fi
+rm -f .tmp/configure.in
+cat >.tmp/configure.in <<EOF
+AC_PREREQ(2.57)
+EOF
+if (cd .tmp && autoconf >/dev/null 2>&1 ) ; then 
+    cat <<EOF
+You either do not have autoconf in your path or you may have autoconf
+version 2.57 or later.  Autoconf 2.57 is not compatible with previous
+versions of autoconf, including autoconf 2.52 .  You can use
+     autoconf --version
+to see the version of autoconf (unfortunately, there is no standard 
+format for the version output and it changes between autoconf versions).
+EOF
+fi
+rm -rf .tmp
+
+#
 # Create the bindings if necessary 
 if [ $do_bindings = "yes" ] ; then
     if [ ! -s src/binding/f77/abortf.c ] ; then 
