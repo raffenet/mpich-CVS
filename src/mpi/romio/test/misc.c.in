@@ -88,7 +88,7 @@ int main(int argc, char **argv)
     MPI_Type_commit(&newtype);
 
     MPI_File_set_view(fh, 1000, MPI_INT, newtype, "native", MPI_INFO_NULL);
-#ifdef VERBOSE
+#if VERBOSE
     if (!mynod) fprintf(stderr, "testing MPI_File_get_view\n");
 #endif
     MPI_File_get_view(fh, &disp, &etype, &filetype, datarep);
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 	errs++;
 	fprintf(stderr, "disp = @LL@, datarep = %s, should be 1000, native\n\n", disp, datarep);
     }
-#ifdef VERBOSE
+#if VERBOSE
     if (!mynod) fprintf(stderr, "testing MPI_File_get_byte_offset\n");
 #endif
     MPI_File_get_byte_offset(fh, 10, &disp);
