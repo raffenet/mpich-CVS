@@ -15,8 +15,19 @@
 
 #include "adio.h"
 #include "mpio.h"
+#ifdef MPICH2
 #include "mpiimpl.h"
 #include "mpiimplthread.h"
+#else
+/* Any MPI implementation that wishes to follow the thread-safety and
+   error reporting features provided by MPICH2 must implement these 
+   four functions.  Defining these as empty should not change the behavior 
+   of correct programs */
+#define MPID_CS_EXIT()
+#define MPID_CS_ENTER()
+#define MPIR_Nest_incr()
+#define MPIR_Nest_decr()
+#endif
 
 /* info is a linked list of these structures */
 struct MPIR_Info {
