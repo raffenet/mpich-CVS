@@ -1,15 +1,56 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 #include "mpi.h"
 #include <winsock2.h>
 #include <windows.h>
 #include "mpichconf.h"
 #include "mpichtimer.h"
+#include <stdio.h>
 
-#define MPI_ENV_DLL_NAME     "MPI_DLL_NAME"
+/*
+ * Windows only mpi binding
+ *
+ * This file implements an mpi binding that calls another dynamically loaded mpi binding.
+ * The environment variable MPI_DLL_NAME controls which library should be loaded.
+ * The default library is mpich2.dll or mpich2d.dll.
+ *
+ * The motivation for this binding is to allow compiled mpi applications to be able
+ * to use different implementations of mpich2 at run-time without re-linking the application.
+ * This way mpiexec or the user can choose the best channel to use at run-time.
+ *
+ * For example, mpiexec may choose the shm channel for less than 8 processes on a single node
+ * and sshm for more than 8 processes on a single node and the sock channel for multi-node
+ * jobs.
+ * Example 2: A user has an infiniband cluster and wants the ib channel to be the default.
+ * So the user sets the mpiexec option to use the ib channel as the default and then all
+ * jobs run on the cluster use the ib channel without modification or re-linking.
+ *
+ * A side benefit to this binding is the ability to switch to a profiled or logged mpi
+ * implementation at run-time.  The user can run a job and then decide he wants to run
+ * the job again and produce a log file.  All he has to do is specify the logged version
+ * of the mpich2 channel and a log file will be produced.
+ * Examples:
+ * mpiexec -n 4 cpi
+ * mpiexec -env MPI_DLL_NAME mpich2p.dll -n 4 cpi
+ * mpiexec -env MPICH2_CHANNEL ib -n 4 cpi
+ *
+ */
+
+#define MPI_ENV_DLL_NAME      "MPI_DLL_NAME"
+#define MPI_ENV_CHANNEL_NAME  "MPICH2_CHANNEL"
 #ifdef _DEBUG
-#define MPI_DEFAULT_DLL_NAME "mpich2d.dll"
+#define MPI_DEFAULT_DLL_NAME  "mpich2d.dll"
+#define DEBUG_POSTFIX         "d"
 #else
-#define MPI_DEFAULT_DLL_NAME "mpich2.dll"
+#define MPI_DEFAULT_DLL_NAME  "mpich2.dll"
+#define DEBUG_POSTFIX         ""
 #endif
+#define MAX_DLL_NAME          100
 
 static struct fn_table
 {
@@ -1276,16 +1317,33 @@ static BOOL LoadFunctions(const char *dll_name)
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
-    char *dll_name;
+    char *dll_name, *channel;
+    char name[MAX_DLL_NAME];
     BOOL result = TRUE;
 
     switch (fdwReason)
     {
         case DLL_PROCESS_ATTACH:
+	    /* precedence goes to the dll name so check for it first */
 	    dll_name = getenv(MPI_ENV_DLL_NAME);
 	    if (!dll_name)
 	    {
-		dll_name = MPI_DEFAULT_DLL_NAME;
+		/* no dll name specified so check for a channel */
+		channel = getenv(MPI_ENV_CHANNEL_NAME);
+		if (channel != NULL)
+		{
+		    /* ignore the sock channel since it is the default and is not named mpich2sock.dll */
+		    if (strncmp(channel, "sock", 5))
+		    {
+			snprintf(name, MAX_DLL_NAME, "mpich2%s%s.dll", channel, DEBUG_POSTFIX);
+			dll_name = name;
+		    }
+		}
+		/* no dll or channel specified so use the default */
+		if (!dll_name)
+		{
+		    dll_name = MPI_DEFAULT_DLL_NAME;
+		}
 	    }
 	    result = LoadFunctions(dll_name);
             break;
