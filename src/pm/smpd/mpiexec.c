@@ -7,8 +7,11 @@
 #include <stdio.h>
 #include "mpiexec.h"
 #include "smpd.h"
-#ifndef HAVE_WINDOWS_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifdef HAVE_STDARG_H
+#include <stdarg.h>
 #endif
 
 int mp_err_printf(char *str, ...)
