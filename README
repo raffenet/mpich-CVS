@@ -15,6 +15,11 @@ To build MPICH2 with the TCP channel, do the following:
     ./configure
     make
 
+(If your tar does not support the z option, use
+   gunzip -c mpich2-devsnapshot.tar.gz | tar xf -
+for the first line)
+(VPATH builds are supported as well; see below).
+
 You should now have a complete build of MPICH2.  If you wish to
 install MPICH2, you should build MPICH2 as follows.
 
@@ -26,9 +31,13 @@ Example and test programs (both source and executables) can be found
 in ./examples and ./test/mpi/basic, respectively.  To run any of these
 programs, you will need to start MPD.
 
-   echo "password=<YOUR_MPD_PASSWORD_HERE>" >~/.mpd.conf
+   touch ~/.mpd.conf
    chmod 600 ~/.mpd.conf
+   echo "password=<YOUR_MPD_PASSWORD_HERE>" >>~/.mpd.conf
    ./bin/mpd &
+
+The password should *not* be the same as any other password that you use;
+this password is used exclusively within the MPD system.
 
 Should you wish to setup a MPD ring across multiple machines, more
 advanced instructions for MPD can be found in ./src/pm/mpd/README.
@@ -39,11 +48,35 @@ follows.
     cd examples
     ../bin/mpiexec -np 2 hellow
 
-What compiles but doesn't work:
+To shut MPD down, run
+
+    ./bin/mpdallexit
+
+What compiles but doesn't work
+------------------------------
 We don't guarantee that *anything* works yet.  However, we have run parts of 
 the MPICH-1 test suite and some of the tests included with this release.
 Among the routines that compile but that are known not to work yet are:
 
-MPI_Bsend and friends
-MPI_Dims_create
+MPI_Intercomm_create and MPI_Intercomm_merge
+MPI_Sendrecv_replace
 
+VPATH Builds
+------------
+MPICH2 supports building MPICH in a different directory tree than the one
+where the MPICH2 source is installed.  This often allows faster building, as
+the sources can be placed in a shared filesystem and the builds done in a
+local (and hence usually much faster) filesystem.  To make this clear,
+the following example assumes that the sources are placed in 
+/usr/me/mpich2-10-25-02, the build is done in /tmp/me/mpich2, and the 
+installed version goes into /usr/local/mpich2-test:
+
+    cd /usr/me
+    tar xzf mpich2-devsnapshot.tar.gz
+    cd /tmp/me
+    # Assume /tmp/me already exists
+    mkdir mpich2
+    cd mpich2
+    /usr/me/mpich2-10-25-02/configure --prefix=/usr/local/mpich2-test
+    make
+    make install
