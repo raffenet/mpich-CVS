@@ -13,7 +13,7 @@ dnl Set the directory that contains support scripts such as install-sh and
 dnl config.guess
 AC_CONFIG_AUX_DIR(../../../confdb)
 dnl
-echo "RUNNING CONFIGURE FOR THE FORKER PM"
+echo "RUNNING CONFIGURE FOR THE GFORKER PM"
 dnl
 dnl Use AC_ARG_ENABLE to look for --enable-feature and AC_ARG_WITH to look for
 dnl --with-capability
@@ -92,8 +92,8 @@ PAC_CC_STRICT
 AC_PROG_INSTALL
 PAC_PROG_MKDIR_P
 PAC_PROG_MAKE
-AC_CHECK_PROGS(AR,ar)
-AC_PROG_RANLIB
+dnl AC_CHECK_PROGS(AR,ar)
+dnl AC_PROG_RANLIB
 # Turn off creating shared libraries for any utility routines.  If we *are*
 # building shared libaries, make sure that we create a static executable
 case "$ENABLE_SHLIB" in 
@@ -117,7 +117,7 @@ PAC_C_RESTRICT
 AC_C_INLINE
 dnl
 dnl check for library functions
-AC_CHECK_FUNCS(strtol time gettimeofday)
+dnl AC_CHECK_FUNCS(strtol time gettimeofday)
 AC_CHECK_FUNCS(snprintf)
 if test "$ac_cv_func_snprintf" = "yes" ; then
     PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
@@ -222,7 +222,7 @@ dnl         cache_file=$cachedir/$fname
 dnl     fi
 dnl fi
 dnl See setup_pm.  The pm/util directory must also be configured
-dnl AC_CONFIG_SUBDIRS(../util)
+AC_CONFIG_SUBDIRS(../util)
 
 AC_CHECK_HEADERS(string.h sys/time.h unistd.h stdlib.h sys/socket.h wait.h errno.h)
 
