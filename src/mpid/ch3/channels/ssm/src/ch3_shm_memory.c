@@ -3,7 +3,9 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-
+/* We use the proper autoconf test for mmap, so we let the coding style
+   checker know */
+/* style: allow:mmap:3 sig:0 */
 #include "mpidi_ch3_impl.h"
 
 static void generate_shm_string(char *str)
