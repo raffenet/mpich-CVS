@@ -96,6 +96,13 @@ int main(int argc, char* argv[])
 	smpd_err_printf("state machine failed.\n");
     }
 
+    result = sock_destroy_set(set);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("unable to destroy the set, error:\n%s\n",
+	    get_sock_error_string(result));
+    }
+
     result = sock_finalize();
     if (result != SOCK_SUCCESS)
     {

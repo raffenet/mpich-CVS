@@ -448,6 +448,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	no_drive_mapping = SMPD_FALSE;
 	use_priorities = SMPD_FALSE;
 	use_configfile = SMPD_FALSE;
+	use_machine_file = SMPD_FALSE;
 
 	/* parse the current block */
 
