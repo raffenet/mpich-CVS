@@ -285,7 +285,7 @@ void ADIOI_Calc_my_req(ADIO_File fd, ADIO_Offset *offset_list, int *len_list,
 				     fd_start, fd_end);
 
 	/* for each separate contiguous access from this process */
-	if (buf_idx[proc] == -1) buf_idx[proc] = curr_idx;
+	if (buf_idx[proc] == -1) buf_idx[proc] = (int) curr_idx;
 
 	l = my_req[proc].count;
 	curr_idx += (int) fd_len; /* NOTE: Why is curr_idx an int?  Fix? */
@@ -307,7 +307,7 @@ void ADIOI_Calc_my_req(ADIO_File fd, ADIO_Offset *offset_list, int *len_list,
 	    proc = ADIOI_Calc_aggregator(fd, off, min_st_offset, &fd_len, 
 					 fd_size, fd_start, fd_end);
 
-	    if (buf_idx[proc] == -1) buf_idx[proc] = curr_idx;
+	    if (buf_idx[proc] == -1) buf_idx[proc] = (int) curr_idx;
 
 	    l = my_req[proc].count;
 	    curr_idx += fd_len;
