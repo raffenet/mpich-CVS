@@ -33,4 +33,5 @@
   @*/
 int MPIU_Param_init( int *argc_p, char *argv_p[], const char def_file[] )
 {
+    return 0;
 }
