@@ -166,16 +166,25 @@ AC_SUBST(MPILIBNAME)
 # and use MPI programs, not to build the MPI library itself.
 AC_SUBST(MPI_F90FLAGS)
 AC_SUBST(MPI_LDFLAGS)
+if test -z "$top_build_dir" ; then
+    top_build_dir=`cd ../../.. ; pwd`
+fi
+if test -z "$includebuild_dir" ; then
+    includebuild_dir=$top_build_dir/src/include
+fi
+if test -z "$libbuild_dir" ; then
+    libbuild_dir=$top_build_dir/lib
+fi
 
-export includebuild_dir
-export libbuild_dir
 AC_OUTPUT_COMMANDS([if test "$enable_echo" ; then set -x ; fi ;
    chmod a+x mpif90 ;
    if test ! -d ../../../bin  ; then mkdir ../../../bin ; fi 
    sed -e 's%includedir=.*%includedir='$includebuild_dir% \
        -e 's%libdir=.*%libdir='$libbuild_dir% mpif90 > ../../../bin/mpif90 ;
-   chmod a+x ../../../bin/mpif90 
-])
+   chmod a+x ../../../bin/mpif90 ],
+includebuild_dir=$includebuild_dir
+libbuild_dir=$libbuild_dir
+)
 
 AC_OUTPUT(Makefile mpif90.conf mpif90)
 

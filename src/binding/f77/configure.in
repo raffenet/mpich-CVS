@@ -1160,8 +1160,6 @@ fi
 if test -z "$libbuild_dir" ; then
     libbuild_dir=$top_build_dir/lib
 fi
-export includebuild_dir
-export libbuild_dir
 dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
@@ -1172,7 +1170,10 @@ AC_OUTPUT_COMMANDS([chmod a+x mpif77 ;
    if test ! -d ../../../bin  ; then mkdir ../../../bin ; fi 
    sed -e 's%includedir=.*%includedir='$includebuild_dir% \
        -e 's%libdir=.*%libdir='$libbuild_dir% mpif77 > ../../../bin/mpif77 ;
-   chmod a+x ../../../bin/mpif77 ])
+   chmod a+x ../../../bin/mpif77 ],
+includebuild_dir=$includebuild_dir
+libbuild_dir=$libbuild_dir
+)
 AC_OUTPUT_COMMANDS([cp mpif.h ../../../src/include])
 AC_OUTPUT(Makefile mpif.h mpif77.conf mpif77 setbotf.f)
 exit 0
