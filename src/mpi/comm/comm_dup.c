@@ -71,7 +71,10 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 
     /* ... body of routine ...  */
     /* Generate a new context value and a new communicator structure */ 
-    mpi_errno = MPIR_Comm_copy( comm_ptr, comm_ptr->remote_size, 
+    /* We must use the local size, because this is compared to the 
+       rank of the process in the communicator.  For intercomms, 
+       this must be the local size */
+    mpi_errno = MPIR_Comm_copy( comm_ptr, comm_ptr->local_size, 
 				&newcomm_ptr );
     if (mpi_errno) {
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP );

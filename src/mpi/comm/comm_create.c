@@ -164,7 +164,8 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
 	MPIU_Object_set_ref( newcomm_ptr, 1 );
-	newcomm_ptr->context_id = new_context_id;
+	newcomm_ptr->attributes  = 0;
+	newcomm_ptr->context_id  = new_context_id;
 	newcomm_ptr->remote_size = newcomm_ptr->local_size = n;
 	newcomm_ptr->rank        = group_ptr->rank;
 	newcomm_ptr->comm_kind   = MPID_INTRACOMM;

@@ -217,6 +217,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     }
 
     MPIU_Object_set_ref( newcomm_ptr, 1 );
+    newcomm_ptr->attributes   = 0;
     newcomm_ptr->context_id   = final_context_id;
     newcomm_ptr->remote_size  = remote_size;
     newcomm_ptr->local_size   = comm_ptr->local_size;
