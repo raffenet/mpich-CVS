@@ -3102,10 +3102,18 @@ End If
 ' Report any errors
 '
 If unhandled_definitions <> "" Then
-	MsgBox "Unhandled definitions:" & vbNewLine & unhandled_definitions
+	If bEcho Then
+		WScript.Echo "Unhandled definitions:" & vbNewLine & unhandled_definitions
+	else
+		MsgBox "Unhandled definitions:" & vbNewLine & unhandled_definitions
+	End If
 End If
 If unhandled_ats <> "" Then
-	MsgBox "Unhandled @foo@'s:" & vbNewLine & unhandled_ats
+	If bEcho Then
+		WScript.Echo "Unhandled @foo@'s:" & vbNewLine & unhandled_ats
+	else
+		MsgBox "Unhandled @foo@'s:" & vbNewLine & unhandled_ats
+	End If
 End If
 
 </script>
