@@ -14,6 +14,12 @@ TCP_PerProcess TCP_Process;
 @*/
 int tcp_init()
 {
+    int error;
+    error = bsocket_init();
+    if (error)
+    {
+	err_printf("tcp_init: bsocket_init failed, error %d\n", error);
+    }
     if (beasy_create(&TCP_Process.listener, ADDR_ANY, INADDR_ANY) == SOCKET_ERROR)
     {
 	TCP_Process.error = beasy_getlasterror();

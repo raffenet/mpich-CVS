@@ -37,22 +37,16 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     MPID_Thread_lock_init(MPID_Process.qlock);
     MPID_Thread_lock_init(MPID_Process.lock);
 
-    /****pmi****/ printf("calling PMI_Init\n");fflush(stdout);
     PMI_Init(&spawned);
-    /****pmi****/ printf("calling PMI_Get_rank\n");fflush(stdout);
     PMI_Get_rank(&MPIR_Process.comm_world->rank);
-    /****pmi****/ printf("calling PMI_Get_size\n");fflush(stdout);
     PMI_Get_size(&MPIR_Process.comm_world->local_size);
     MPIR_Process.comm_world->remote_size = MPIR_Process.comm_world->local_size;
-    /****pmi****/ printf("calling PMI_KVS_Get_my_name\n");fflush(stdout);
     PMI_KVS_Get_my_name(MPID_Process.pmi_kvsname);
     MPIR_Process.comm_world->mm.pmi_kvsname = MPID_Process.pmi_kvsname;
-    /****pmi****/ printf("calling PMI_Barrier\n");fflush(stdout);
     PMI_Barrier();
 
     if (spawned)
     {
-	/****pmi****/ printf("calling PMI_KVS_Get(MPICH_PARENT_PORT_KEY)\n");fflush(stdout);
 	PMI_KVS_Get(MPID_Process.pmi_kvsname, MPICH_PARENT_PORT_KEY, pszPortName);
 	/*PMPI_Comm_connect(pszPortName, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &MPID_Process.comm_parent); */
     }
@@ -98,14 +92,12 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     strncat(sCapabilities, "shm ", 5);
     shm_get_business_card(value, value_len);
     snprintf(key, 100, "business_card_shm:%d", MPIR_Process.comm_world->rank);
-    /****pmi****/ printf("calling PMI_KVS_Put\n");fflush(stdout);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
 #ifdef WITH_METHOD_TCP
     strncat(sCapabilities, "tcp ", 5);
     tcp_get_business_card(value, value_len);
     snprintf(key, 100, "business_card_tcp:%d", MPIR_Process.comm_world->rank);
-    /****pmi****/ printf("calling PMI_KVS_Put\n");fflush(stdout);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
 #ifdef WITH_METHOD_VIA
@@ -130,12 +122,9 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     MPIU_Free(value);
 
     sprintf(key, "businesscard:%d", MPIR_Process.comm_world->rank);
-    /****pmi****/ printf("calling PMI_KVS_Put\n");fflush(stdout);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, sCapabilities);
 
-    /****pmi****/ printf("calling PMI_KVS_Commit\n");fflush(stdout);
     PMI_KVS_Commit(MPID_Process.pmi_kvsname);
-    /****pmi****/ printf("calling PMI_Barrier\n");fflush(stdout);
     PMI_Barrier();
 
     return MPI_SUCCESS;
