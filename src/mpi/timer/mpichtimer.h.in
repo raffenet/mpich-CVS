@@ -28,6 +28,11 @@
 #include <sys/time.h>
 #elif MPICH_TIMER_KIND == USE_CLOCK_GETTIME
 #include <time.h>
+#ifdef NEEDS_SYS_TIME_H
+/* Some OS'es mistakenly require sys/time.h to get the definition of 
+   CLOCK_REALTIME (POSIX requires the definition to be in time.h) */
+#include <sys/time.h> 
+#endif
 #elif MPICH_TIMER_KIND == USE_GETTIMEOFDAY
 #include <sys/types.h>
 #include <sys/time.h>

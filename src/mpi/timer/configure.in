@@ -151,7 +151,11 @@ case "$timer_type" in
 
     clock_gettime)
     missing_function=no
+    # Solaris places clock_gettime in the rt library
     AC_CHECK_FUNC(clock_gettime,,[missing_function=yes])
+    if test "$missing_function" = yes ; then
+        AC_SEARCH_LIBS(clock_gettime,rt,missing_function=no)
+    fi
     AC_CHECK_FUNC(clock_getres,,[missing_function=yes])
     if test "$missing_function" = yes ; then
         AC_MSG_ERROR([Requested timer clock_gettime (POSIX) is not available])
@@ -166,7 +170,20 @@ case "$timer_type" in
     clockid_t cid = CLOCK_REALTIME;],pac_cv_posix_clock_realtime=yes,
 pac_cv_posix_clock_realtime=no)])
     if test "$pac_cv_posix_clock_realtime" = "no" ; then
-         AC_MSG_ERROR([POSIX timer requires definitions in time.h])
+         AC_MSG_WARN([POSIX timer requires definitions in time.h])
+	 # Check for the definition in sys/time.h, which is where
+	 # OpenBSD and FreeBSD have put it by mistake
+         AC_TRY_COMPILE([
+#include <time.h>
+#include <sys/time.h>],[
+    clockid_t cid = CLOCK_REALTIME;],pac_cv_posix_clock_realtime=yes,
+pac_cv_posix_clock_realtime=no)
+	if test "$pac_cv_posix_clock_realtime" = yes ; then
+	    AC_MSG_WARN([sys/time.h required for POSIX timer])
+	    AC_DEFINE(NEEDS_SYS_TIME_H,1,[Define if sys/time.h is required to get timer definitions])
+	else
+	    AC_MSG_ERROR([Cannot find the definition of CLOCK_REALTIME for the POSIX timer])
+	fi
     fi
     ;;
 
