@@ -23,7 +23,6 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
     req->sc.iov_offset = 0;
     
     mpi_errno = MPIDI_CH3I_VC_post_write(vc, req);
-    MPID_Abort(NULL, mpi_errno);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);
     return mpi_errno;

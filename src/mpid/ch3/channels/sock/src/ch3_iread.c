@@ -39,10 +39,6 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 		rreq->ch3.iov[rreq->sc.iov_offset].MPID_IOV_BUF = (char *) rreq->ch3.iov[rreq->sc.iov_offset].MPID_IOV_BUF + nb;
 		rreq->ch3.iov[rreq->sc.iov_offset].MPID_IOV_LEN -= nb;
 		mpi_errno = MPIDI_CH3I_VC_post_read(vc, rreq);
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    MPID_Abort(NULL, mpi_errno);
-		}
 		goto fn_exit;
 	    }
 	}
@@ -52,10 +48,7 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     }
     else
     {
-	int mpi_errno;
-
 	mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(FCNAME, sock_errno);
-	MPID_Abort(NULL, mpi_errno);
     }
 
   fn_exit:
