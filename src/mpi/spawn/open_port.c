@@ -68,12 +68,13 @@ int MPI_Open_port(MPI_Info info, char *port_name)
     MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     /* Get handles to MPI objects. */
+    /* Note that a NULL info is allowed */
 #   ifdef HAVE_ERROR_CHECKING
     {
 	MPID_Info_get_ptr( info, info_ptr );
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPID_Info_valid_ptr(info_ptr,mpi_errno);
+	    /* FIXME: If info_ptr is non-null, we should validate it */
 	    MPIR_ERRTEST_ARGNULL(port_name,"port_name",mpi_errno);
             if (mpi_errno) goto fn_fail;
         }
