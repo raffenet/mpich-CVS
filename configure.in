@@ -398,6 +398,7 @@ if test "$with_cross" != "no" ; then
 	cross_compiling=yes
 	ac_cv_prog_cc_cross=yes
 	ac_cv_prog_f77_cross=yes
+	ac_cv_prog_f90_cross=yes
         ac_cv_prog_cxx_cross=yes
         export cross_compiling
 	# Export all cross variables.  Any subsidiary configure should also
@@ -1418,6 +1419,17 @@ MPI_CFLAGS="$MPI_CFLAGS $CFLAGS"
 MPI_LDFLAGS="$MPI_LDFLAGS $LDFLAGS"
 AC_SUBST(MPI_CFLAGS)
 AC_SUBST(MPI_LDFLAGS)
+
+# Get and save the MPIVERSION 
+AC_SUBST(MPIVERSION)
+# Get the locatin of the CVS repository, if present
+if test -s CVS/Root ; then
+    MPICVSHOME=`cat CVS/Root`
+    # We can use this test (for CVS/Root) for creating maintainer targets
+    # as well, and tests for maintainer-required software, such as 
+    # doctext
+fi
+AC_SUBST(MPICVSHOME)
 
 AC_CONFIG_SUBDIRS(test/mpi)
 dnl
