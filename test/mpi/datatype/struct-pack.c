@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 #include "mpi.h"
 
 static int verbose = 0;
@@ -10,7 +11,7 @@ int main(int argc, char *argv[]);
 int parse_args(int argc, char **argv);
 int single_struct_test(void);
 int array_of_structs_test(void);
-
+int struct_of_structs_test(void);
 
 struct test_struct_1 {
     int a,b;
@@ -32,6 +33,10 @@ int main(int argc, char *argv[])
 
     err = array_of_structs_test();
     if (verbose && err) fprintf(stderr, "error in array_of_structs_test\n");
+    errs += err;
+
+    err = struct_of_structs_test();
+    if (verbose && err) fprintf(stderr, "error in struct_of_structs_test\n");
     errs += err;
 
     /* print message and exit */
@@ -256,6 +261,139 @@ int array_of_structs_test(void)
     return errs;
 }
 
+int struct_of_structs_test(void)
+{
+    int i, j, err, errs = 0, bufsize, position;
+
+    char buf[50], buf2[50], *packbuf;
+
+    MPI_Aint disps[3] = {0, 3, 0};
+    int blks[3] = {2, 1, 0};
+    MPI_Datatype types[3], chartype, tiletype1, tiletype2, finaltype;
+
+    /* build a contig of one char to try to keep optimizations
+     * from being applied.
+     */
+    err = MPI_Type_contiguous(1, MPI_CHAR, &chartype);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) {
+	    fprintf(stderr, "chartype create failed\n");
+	}
+	return errs;
+    }
+
+    /* build a type that we can tile a few times */
+    types[0] = MPI_CHAR;
+    types[1] = chartype;
+
+    err = MPI_Type_struct(2, blks, disps, types, &tiletype1);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) {
+	    fprintf(stderr, "tiletype1 create failed\n");
+	}
+	return errs;
+    }
+
+    /* build the same type again, again to avoid optimizations */
+    err = MPI_Type_struct(2, blks, disps, types, &tiletype2);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) {
+	    fprintf(stderr, "tiletype2 create failed\n");
+	}
+	return errs;
+    }
+
+    /* build a combination of those two tiletypes */
+    disps[0] = 0;
+    disps[1] = 5;
+    disps[2] = 10;
+    blks[0]  = 1;
+    blks[1]  = 1;
+    blks[2]  = 1;
+    types[0] = tiletype1;
+    types[1] = tiletype2;
+    types[2] = MPI_UB;
+    err = MPI_Type_struct(3, blks, disps, types, &finaltype);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) {
+	    fprintf(stderr, "finaltype create failed\n");
+	}
+	return errs;
+    }
+
+    MPI_Type_commit(&finaltype);
+    MPI_Type_free(&chartype);
+    MPI_Type_free(&tiletype1);
+    MPI_Type_free(&tiletype2);
+
+    MPI_Pack_size(5, finaltype, MPI_COMM_WORLD, &bufsize);
+
+    packbuf = malloc(bufsize);
+    if (packbuf == NULL) {
+	errs++;
+	if (verbose) {
+	    fprintf(stderr, "pack buffer allocation (%d bytes) failed\n", bufsize);
+	}
+	return errs;
+    }
+
+    for (j=0; j < 10; j++) {
+	for (i=0; i < 5; i++) {
+	    if (i == 2 || i == 4) buf[5*j + i] = 0;
+	    else                  buf[5*j + i] = i;
+	}
+    }
+
+    position = 0;
+    err = MPI_Pack(buf, 5, finaltype, packbuf, bufsize, &position, MPI_COMM_WORLD);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) {
+	    fprintf(stderr, "pack failed\n");
+	}
+	return errs;
+    }
+
+#if 0
+    for (i=0; i < bufsize; i++) {
+	printf("%d : %d\n", i, (int) packbuf[i]);
+    }
+#endif
+
+    memset(buf2, 0, 50);
+    position = 0;
+    err = MPI_Unpack(packbuf, bufsize, &position, buf2, 5, finaltype, MPI_COMM_WORLD);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) {
+	    fprintf(stderr, "unpack failed\n");
+	}
+	return errs;
+    }
+
+    for (j=0; j < 10; j++) {
+	for (i=0; i < 5; i++) {
+	    if (buf[5*j + i] != buf2[5*j + i]) {
+		errs++;
+		if (verbose) {
+		    fprintf(stderr,
+			    "buf2[%d] = %d; should be %d\n",
+			    5*j + i,
+			    (int) buf2[5*j+i],
+			    (int) buf[5*j+i]);
+		}
+	    }
+	}
+    }
+
+    free(packbuf);
+    MPI_Type_free(&finaltype);
+    return errs;
+}
 
 int parse_args(int argc, char **argv)
 {
