@@ -1181,6 +1181,9 @@ vbLessThan = "<"
 vbGreaterThan = ">"
 path_to_mpich = f.GetAbsolutePathName("winconfigure.wsf")
 path_to_mpich = Left(path_to_mpich, Len(path_to_mpich) - 16)
+If Not f.FolderExists("bin") Then
+	f.CreateFolder("bin")
+End If
 Set fout = f.CreateTextFile("bin\mpicc.wsf")
 fout.WriteLine(vbLessThan & "package" & vbGreaterThan)
 fout.WriteLine(vbLessThan & "job id=""mpicc""" & vbGreaterThan)
