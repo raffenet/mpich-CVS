@@ -20,7 +20,7 @@ typedef struct OpenPortNode {
 
 typedef struct {
     MPID_Thread_lock_t lock;
-    char              pmi_dbname[100];
+    char              pmi_kvsname[100];
     MPID_Comm         *comm_parent;
     OpenPortNode_t    *port_list;
 } MPID_PerProcess_t;
