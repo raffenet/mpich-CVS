@@ -151,6 +151,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 #endif
 #ifdef WITH_METHOD_TCP
     case MM_TCP_METHOD:
+	vc_ptr->post_read = tcp_post_read;
 	vc_ptr->merge_post_read = tcp_merge_post_read;
 	vc_ptr->post_write = tcp_post_write;
 	break;

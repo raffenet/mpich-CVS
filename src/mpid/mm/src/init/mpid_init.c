@@ -53,7 +53,7 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
 
     PMI_Init(&spawned);
     PMI_Get_rank(&MPIR_Process.comm_world->rank);
-    PMI_Get_size(&MPIR_Process.comm_world->size);
+    PMI_Get_size(&MPIR_Process.comm_world->remote_size);
     PMI_KVS_Get_my_name(MPID_Process.pmi_kvsname);
     PMI_Barrier();
 
