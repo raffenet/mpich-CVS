@@ -142,6 +142,18 @@ AC_ARG_WITH(flavor,
 [--with-flavor=name - Set the name to associate with this flavor of MPICH],,)
 dnl
 dnl
+dnl
+AC_ARG_WITH(namepublisher,
+[--with-namepublisher=name - Choose the system that will support 
+                             MPI_PUBLISH_NAME and MPI_LOOKUP_NAME.  Options
+                             include
+                               no (no service available)
+                               mpd  (service only within the same MPD ring)
+                               ldap:ldapservername
+                             Only no has been implemented so far.],,
+with_namepublisher=no)
+dnl
+dnl
 dnl First check that we have a clean build if we are doing a VPATH build
 if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
     AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
@@ -404,6 +416,28 @@ if test "$with_cross" != "no" ; then
     fi
 fi
 dnl
+if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
+    case "$with_namepublisher" in 
+    none|no) ;;
+    ldap*)
+	# Look for ldap libraries and header files
+	AC_CHECK_HEADERS(lber.h ldap.h)
+	have_ldap_lib=no
+	AC_SEARCH_LIBS(ldap_open,ldap,have_ldap_lib=yes)
+	# If we have the headers and the library, then we can specify
+	# ldap
+	if test "$ac_cv_header_lber_h" = yes -a \
+	        "$ac_cv_header_ldap_h" = yes -a \
+		"$have_ldap_lib" = yes ; then
+	    AC_DEFINE(USE_LDAP,,[Define if ldap should be used for name publishing])
+	fi
+
+    ;;
+    mpd)
+    ;;
+    esac    
+fi
+
 PAC_ARG_SHAREDLIBS
 ENABLE_SHLIB=$enable_sharedlibs
 if test -z "$ENABLE_SHLIB" ; then
@@ -677,8 +711,14 @@ PAC_CHECK_SIZEOF_DERIVED(short int,[struct { short a; int b; }],$CROSS_SIZEOF_SH
 PAC_CHECK_SIZEOF_DERIVED(2 int,[struct { int a; int b; }],$CROSS_SIZEOF_2_INT)
 PAC_CHECK_SIZEOF_DERIVED(long double int,[struct { long double a; int b; }],$CROSS_SIZEOF_FLOAT_INT)
 dnl
+# sys/bitypes.h defines the int16_t etc. on some systems (e.g., OSF1).
+# Include it when testing for these types
+AC_CHECK_HEADER(sys/bitypes.h,[use_bitypes="#include <sys/bitypes.h>"
+AC_DEFINE(HAVE_SYS_BITYPES_H,,[Define if sys/bitypes.h exists])])
 AC_CACHE_CHECK([for int16_t],pac_cv_int16_t,[
-AC_TRY_COMPILE([#include <sys/types.h>],[int16_t a=0;],
+AC_TRY_COMPILE([#include <sys/types.h>
+$use_bitypes
+],[int16_t a=0;],
 pac_cv_int16_t=yes,pac_cv_int16_t=no)])
 dnl
 dnl If there is not int16_t, try to define one
@@ -695,7 +735,9 @@ else
     AC_DEFINE(HAVE_INT16_T,,[Define if int16_t is supported by the C compiler])
 fi
 AC_CACHE_CHECK([for int32_t],pac_cv_int32_t,[
-AC_TRY_COMPILE([#include <sys/types.h>],[int32_t a=0;],
+AC_TRY_COMPILE([#include <sys/types.h>
+$use_bitypes
+],[int32_t a=0;],
 pac_cv_int32_t=yes,pac_cv_int32_t=no)])
 dnl
 dnl If there is not int32_t, try to define one
@@ -713,18 +755,25 @@ else
     AC_DEFINE(HAVE_INT32_T,,[Define if int32_t is supported by the C compiler])
 fi
 AC_CACHE_CHECK([for int64_t],pac_cv_int64_t,[
-AC_TRY_COMPILE([#include <sys/types.h>],[int64_t a=0;],
+AC_TRY_COMPILE([#include <sys/types.h>
+$use_bitypes
+],[int64_t a=0;],
 pac_cv_int64_t=yes,pac_cv_int64_t=no)])
 dnl
 dnl If there is not int64_t, try to define one
 if test "$pac_cv_int64_t" = "no" ; then
     if test -z "$CROSS_SIZEOF_LONG_LONG" ; then CROSS_SIZEOF_LONG_LONG=8 ; fi
-    AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_LONG_LONG)
-    if test "$ac_cv_sizeof_long_long" = 8 ; then 
-        INT64_T=long long
+    AC_CHECK_SIZEOF(long,$CROSS_SIZEOF_LONG)
+    if test "$ac_cv_sizeof_long" = 8 ; then 
+        INT64_T="long"
     else
-        # No good alternative
-        INT64_T=long long
+        AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
+        if test "$ac_cv_sizeof_long_long" = 8 ; then 
+            INT64_T="long long"
+        else
+            # No good alternative
+            INT64_T="long long"
+        fi
     fi
     AC_SUBST(INT64_T)
 else
