@@ -110,6 +110,7 @@ typedef volatile long MPIDU_Process_lock_t;
 #ifdef HAVE_NT_LOCKS
 typedef HANDLE MPIDU_Process_lock_t;
 #elif defined(HAVE_PTHREAD_H)
+#include <pthread.h>
 typedef pthread_mutex_t MPIDU_Process_lock_t;  
 #else
 #error *** No locking mechanism for shared memory.specified ***
