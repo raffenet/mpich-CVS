@@ -100,7 +100,7 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
   T*/
 
 /*E
-  MPID_Obj_kind - Object kind (communicator, window, or file)
+  MPID_Object_kind - Object kind (communicator, window, or file)
 
   Notes:
   This enum is used by keyvals and errhandlers to indicate the type of
@@ -110,7 +110,7 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
   errors return).
   E*/
 typedef enum { 
-  MPID_COMM=1, MPID_WIN=2, MPID_FILE=4, MPID_DATATYPE=8 } MPID_Obj_kind;
+  MPID_COMM=1, MPID_WIN=2, MPID_FILE=4, MPID_DATATYPE=8 } MPID_Object_kind;
 
 /*E
   MPID_Copy_function - MPID Structure to hold an attribute copy function
@@ -130,7 +130,7 @@ typedef union {
   int  (*C_CommCopyFunction)( MPI_Comm, int, void *, void *, void *, int * );
   void (*F77_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
 			      MPI_Fint *, MPI_Fint *, MPI_Fint * );
-  void (*F90_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *
+  void (*F90_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *,
 			      MPI_Aint *, MPI_Fint *, MPI_Fint * );
   int (*C_FileCopyFunction) ( MPI_Comm, int, void *, void *, void *, int * );
   int (*C_TypeCopyFunction) ( MPI_Datatype, int, 
@@ -559,11 +559,11 @@ typedef struct {
 
   What is the interface for the Fortran version of the error handler?  
   E*/
-typdef union {
-   void (C_Comm_Handler_function) ( MPI_Comm *, int *, ... );
-   void (F77_Handler_function) ( MPI_Fint *, MPI_Fint *, ... );
-   void (C_Win_Handler_function) ( MPI_Win *, int *, ... );
-   void (C_File_Handler_function) ( MPI_File *, int *, ... );
+typedef union {
+   void (*C_Comm_Handler_function) ( MPI_Comm *, int *, ... );
+   void (*F77_Handler_function) ( MPI_Fint *, MPI_Fint *, ... );
+   void (*C_Win_Handler_function) ( MPI_Win *, int *, ... );
+   void (*C_File_Handler_function) ( MPI_File *, int *, ... );
 } MPID_Errhandler_fn;
 
 /*S
