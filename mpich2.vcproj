@@ -2496,9 +2496,6 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 				RelativePath=".\src\mpi\pt2pt\mpir_pt2pt.h">
 			</File>
 			<File
-				RelativePath=".\src\include\mpistates.h">
-			</File>
-			<File
 				RelativePath=".\src\include\mpitimerimpl.h">
 			</File>
 			<File
