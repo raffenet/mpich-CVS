@@ -163,6 +163,10 @@ int MPIR_Bsend_detach( void *bufferp, int *size )
     if (BsendBuffer.pending) {
 	return MPIR_Err_create_code( MPI_ERR_OTHER, "**notimpl", 0 );
     }
+    if (BsendBuffer.buffer == 0) {
+	/* Error - detaching an already detached buffer */
+	return MPIR_Err_create_code( MPI_ERR_OTHER, "**bsendnobuf", 0 );
+    }
     if (BsendBuffer.active) {
 	/* Loop through each active element and wait on it */
 	BsendData_t *p = BsendBuffer.active;
@@ -176,10 +180,12 @@ int MPIR_Bsend_detach( void *bufferp, int *size )
 	MPIR_Nest_decr();
     }
 
-    *(void **) bufferp = BsendBuffer.buffer;
+    *(void **) bufferp  = BsendBuffer.buffer;
     *size = BsendBuffer.buffer_size;
-    BsendBuffer.buffer = 0;
-    BsendBuffer.avail  = 0;
+    BsendBuffer.buffer  = 0;
+    BsendBuffer.avail   = 0;
+    BsendBuffer.active  = 0;
+    BsendBuffer.pending = 0;
 
     return MPI_SUCCESS;
 }

@@ -122,14 +122,13 @@ be in the range 0 to %d
 **bufbsend:Insufficient space in Bsend buffer
 **bufbsend %d %d:Insufficient space in Bsend buffer; requested %d; total\
  buffer size is %d
+**bsendnobuf:No buffer to detach. 
 #---- The messages below this line haven't been used yet.
-
 **buffer:Invalid buffer pointer
 **bufalias:Buffers must not be aliased
 **bufalias %s %s:Buffer parameters %s and %s must not be aliased 
 **bufsize:Invalid buffer size
 **bufsize %d:Invalid buffer size (value is %d)
-**bsendnobuf:No buffer to detach. 
 **countarray:Invalid count in count array 
 **countarray %d %d:Invalid count in the %d element of the count array; value\
 is %d
