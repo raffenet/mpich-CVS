@@ -188,6 +188,20 @@ if [ $do_bindings = "yes" ] ; then
 	( cd src/binding/cxx && chmod a+x ./buildiface &&
 	  ./buildiface -nosep $otherarg )
     fi
+
+    # Check for the f90 interface
+    if [ ! -s src/binding/f90/mpi.f90 ] ; then 
+	build_f90=yes
+    elif find -name 'src/binding/f90/buildiface' -newer 'src/binding/f90/mpi.f90' ; then
+	build_f90=yes
+    else
+	build_f90=no
+    fi
+    if [ $build_f90 = "yes" ] ; then
+	echo "Building F90 interface"
+	( cd src/binding/f90 && chmod a+x ./buildiface &&
+	  ./buildiface $otherarg )
+    fi
 fi
 #
 # Capture the error messages
