@@ -231,6 +231,7 @@ static VAPI_ret_t modifyQP( ibu_t ibu, VAPI_qp_state_t qp_state )
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_MODIFYQP);
 
+    MPIU_DBG_PRINTF(("entering modifyQP\n"));
     if (qp_state == VAPI_INIT)
     {
 	QP_ATTR_MASK_CLR_ALL(qp_attr_mask);
@@ -281,7 +282,7 @@ static VAPI_ret_t modifyQP( ibu_t ibu, VAPI_qp_state_t qp_state )
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_RETRY_COUNT);
 	qp_attr.rnr_retry        = 1;
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_RNR_RETRY);
-	qp_attr.ous_dst_rd_atom  = 10000;
+	qp_attr.ous_dst_rd_atom  = 255;
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_OUS_DST_RD_ATOM);
     }
     else if (qp_state == VAPI_RESET)
@@ -307,6 +308,7 @@ static VAPI_ret_t modifyQP( ibu_t ibu, VAPI_qp_state_t qp_state )
 	return status;
     }
 
+    MPIU_DBG_PRINTF(("exiting modifyQP\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_MODIFYQP);
     return IBU_SUCCESS;
 }
@@ -319,6 +321,7 @@ static VAPI_ret_t createQP(ibu_t ibu, ibu_set_t set)
     MPIDI_STATE_DECL(MPID_STATE_IBU_CREATEQP);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_CREATEQP);
+    MPIU_DBG_PRINTF(("entering createQP\n"));
     qp_init_attr.cap.max_oust_wr_rq = 10000; /*DEFAULT_MAX_WQE;*/
     qp_init_attr.cap.max_oust_wr_sq = 10000; /*DEFAULT_MAX_WQE;*/
     qp_init_attr.cap.max_sg_size_rq = 8;
@@ -327,8 +330,8 @@ static VAPI_ret_t createQP(ibu_t ibu, ibu_set_t set)
     qp_init_attr.rdd_hndl = 0;
     qp_init_attr.rq_cq_hndl = set;
     qp_init_attr.sq_cq_hndl = set;
-    qp_init_attr.rq_sig_type = VAPI_SIGNAL_ALL_WR; /*VAPI_SIGNAL_REQ_WR;*/
-    qp_init_attr.sq_sig_type = VAPI_SIGNAL_ALL_WR; /*VAPI_SIGNAL_REQ_WR;*/
+    qp_init_attr.rq_sig_type = /*VAPI_SIGNAL_ALL_WR;*/ VAPI_SIGNAL_REQ_WR;
+    qp_init_attr.sq_sig_type = /*VAPI_SIGNAL_ALL_WR;*/ VAPI_SIGNAL_REQ_WR;
     qp_init_attr.ts_type = IB_TS_RC;
 
     status = VAPI_create_qp(IBU_Process.hca_handle, &qp_init_attr, &ibu->qp_handle, &qp_prop);
@@ -338,6 +341,7 @@ static VAPI_ret_t createQP(ibu_t ibu, ibu_set_t set)
 	return status;
     }
     ibu->dest_qp_num = qp_prop.qp_num;
+    MPIU_DBG_PRINTF(("exiting createQP\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATEQP);
     return IBU_SUCCESS;
 }
@@ -348,7 +352,7 @@ static VAPI_ret_t createQP(ibu_t ibu, ibu_set_t set)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static VAPI_mr_hndl_t s_mr_handle;
 static VAPI_lkey_t    s_lkey;
-static void *ib_malloc_register(size_t size)
+static void *ib_malloc_register(unsigned int size)
 {
     VAPI_ret_t status;
     void *ptr;
@@ -357,6 +361,7 @@ static void *ib_malloc_register(size_t size)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_MALLOC_REGISTER);
 
+    MPIU_DBG_PRINTF(("entering ib_malloc_register\n"));
     ptr = MPIU_Malloc(size);
     if (ptr == NULL)
     {
@@ -366,10 +371,10 @@ static void *ib_malloc_register(size_t size)
     }
     memset(&mem, 0, sizeof(mem));
     mem.type = VAPI_MR;
-    mem.start = ptr;
+    mem.start = (VAPI_virt_addr_t)ptr;
     mem.size = size;
     mem.pd_hndl = IBU_Process.pd_handle;
-    mem.acl = VAPI_EN_LOCAL_WRITE;
+    mem.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE;
     status = VAPI_register_mr(
 	IBU_Process.hca_handle,
 	&mem,
@@ -383,6 +388,7 @@ static void *ib_malloc_register(size_t size)
     }
     s_lkey = mem_out.l_key;
 
+    MPIU_DBG_PRINTF(("exiting ib_malloc_register\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
     return ptr;
 }
@@ -396,7 +402,9 @@ static void ib_free_deregister(void *p)
     MPIDI_STATE_DECL(MPID_STATE_IB_FREE_DEREGISTER);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_FREE_DEREGISTER);
+    MPIU_DBG_PRINTF(("entering ib_free_derigister\n"));
     MPIU_Free(p);
+    MPIU_DBG_PRINTF(("exiting ib_free_derigster\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IB_FREE_DEREGISTER);
 }
 
@@ -413,6 +421,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_CREATE_QP);
 
+    MPIU_DBG_PRINTF(("entering ibu_create_qp\n"));
     p = (ibu_t)MPIU_Malloc(sizeof(ibu_state_t));
     if (p == NULL)
     {
@@ -472,7 +481,8 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
 	p->nAvailRemote++; /* assumes the other side is executing this same code */
     }
     p->nAvailRemote--; /* remove one from nAvailRemote so a ack packet can always get through */
-    
+
+    MPIU_DBG_PRINTF(("exiting ibu_create_qp\n"));    
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
     return p;
 }
@@ -491,20 +501,21 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     VAPI_sg_lst_entry_t data;
     VAPI_rr_desc_t work_req;
     void *mem_ptr;
-    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_RECEIVE);
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE);
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 
+    MPIU_DBG_PRINTF(("entering ibui_post_receive_unacked\n"));
     mem_ptr = ibuBlockAlloc(ibu->allocator);
     if (mem_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL"));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 	return IBU_FAIL;
     }
     assert(mem_ptr);
 
 #ifdef HAVE_32BIT_POINTERS
-    /* This isn't going to work because mem_ptr is 64 bits */
     ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
 #else
@@ -512,6 +523,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     if ((void*)work_req.id == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 	return IBU_FAIL;
     }
     ((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
@@ -521,7 +533,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     work_req.comp_type = VAPI_SIGNALED;
     work_req.sg_lst_p = &data;
     work_req.sg_lst_len = 1;
-    data.addr = mem_ptr;
+    data.addr = (VAPI_virt_addr_t)mem_ptr;
     data.len = IBU_PACKET_SIZE;
     data.lkey = ibu->lkey;
 
@@ -534,11 +546,12 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     {
 	MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
 	err_printf("%s: Error: failed to post ib receive, status = %d\n", FCNAME, status);
-	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 	return status;
     }
 
-    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
+    MPIU_DBG_PRINTF(("exiting ibui_post_receive_unacked\n"));
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
     return IBU_SUCCESS;
 }
 
@@ -556,16 +569,17 @@ static int ibui_post_receive(ibu_t ibu)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE);
 
+    MPIU_DBG_PRINTF(("entering ibui_post_receive\n"));
     mem_ptr = ibuBlockAlloc(ibu->allocator);
     if (mem_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL"));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return IBU_FAIL;
     }
     assert(mem_ptr);
 
 #ifdef HAVE_32BIT_POINTERS
-    /* This isn't going to work because mem_ptr is 64 bits */
     ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
 #else
@@ -573,6 +587,7 @@ static int ibui_post_receive(ibu_t ibu)
     if ((void*)work_req.id == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return IBU_FAIL;
     }
     ((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
@@ -582,7 +597,7 @@ static int ibui_post_receive(ibu_t ibu)
     work_req.comp_type = VAPI_SIGNALED;
     work_req.sg_lst_p = &data;
     work_req.sg_lst_len = 1;
-    data.addr = mem_ptr;
+    data.addr = (VAPI_virt_addr_t)mem_ptr;
     data.len = IBU_PACKET_SIZE;
     data.lkey = ibu->lkey;
 
@@ -603,6 +618,7 @@ static int ibui_post_receive(ibu_t ibu)
 	ibui_post_ack_write(ibu);
     }
 
+    MPIU_DBG_PRINTF(("exiting ibui_post_receive\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
     return IBU_SUCCESS;
 }
@@ -619,6 +635,7 @@ static int ibui_post_ack_write(ibu_t ibu)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_ACK_WRITE);
 
+    MPIU_DBG_PRINTF(("entering ibui_post_ack_write\n"));
     work_req.opcode = VAPI_SEND_WITH_IMM;
     work_req.comp_type = VAPI_SIGNALED;
     work_req.sg_lst_p = NULL;
@@ -643,6 +660,7 @@ static int ibui_post_ack_write(ibu_t ibu)
     if ((void*)work_req.id == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_POST_ACK_WRITE);
 	return IBU_FAIL;
     }
     ((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
@@ -662,6 +680,7 @@ static int ibui_post_ack_write(ibu_t ibu)
     }
     ibu->nUnacked = 0;
 
+    MPIU_DBG_PRINTF(("exiting ibui_post_ack_write\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
     return IBU_SUCCESS;
 }
@@ -683,7 +702,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
     MPIDI_STATE_DECL(MPID_STATE_IBU_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITE);
-
+    MPIU_DBG_PRINTF(("entering ibu_write\n"));
     while (len)
     {
 	length = min(len, IBU_PACKET_SIZE);
@@ -712,7 +731,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	g_cur_write_stack_index++;
 
 	data.len = length;
-	data.addr = mem_ptr;
+	data.addr = (VAPI_virt_addr_t)mem_ptr;
 	data.lkey = ibu->lkey;
 	
 	work_req.opcode = VAPI_SEND;
@@ -741,6 +760,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	if ((void*)work_req.id == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return IBU_FAIL;
 	}
 	((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
@@ -763,6 +783,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	buf = (char*)buf + length;
     }
 
+    MPIU_DBG_PRINTF(("exiting ibu_write\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
     return total;
 }
@@ -787,6 +808,7 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
     MPIDI_STATE_DECL(MPID_STATE_IBU_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITEV);
+    MPIU_DBG_PRINTF(("entering ibu_writev\n"));
 
     cur_index = 0;
     cur_len = iov[0].IBU_IOV_LEN;
@@ -838,7 +860,7 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	g_cur_write_stack_index++;
 	
 	data.len = msg_size;
-	data.addr = mem_ptr;
+	data.addr = (VAPI_virt_addr_t)mem_ptr;
 	data.lkey = ibu->lkey;
 	
 	work_req.opcode = VAPI_SEND;
@@ -867,6 +889,7 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	if ((void*)work_req.id == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return IBU_FAIL;
 	}
 	((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
@@ -887,7 +910,8 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	ibu->nAvailRemote--;
 	
     } while (cur_index < n);
-    
+
+    MPIU_DBG_PRINTF(("exiting ibu_writev\n"));    
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
     return total;
 }
@@ -905,6 +929,7 @@ int ibu_init()
     MPIDI_STATE_DECL(MPID_STATE_IBU_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_INIT);
+    MPIU_DBG_PRINTF(("entering ibu_init\n"));
 
     /* Initialize globals */
     /* get a handle to the host channel adapter */
@@ -953,6 +978,16 @@ int ibu_init()
     }
     IBU_Process.lid = IBU_Process.hca_port.lid;
 
+#if 0
+    status = VAPI_set_comp_event_handler(IBU_Process.hca_handle, NULL, NULL);
+    if (status != VAPI_OK)
+    {
+	err_printf("ibu_init: VAPI_set_comp_event_handler failed, status %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
+	return status;
+    }
+#endif
+
     /*
     MPIU_DBG_PRINTF(("infiniband:\n mtu: %d\n msg_size: %d\n",
 	IBU_Process.attr_p->port_static_info_p->mtu,
@@ -964,6 +999,7 @@ int ibu_init()
 #ifndef HAVE_32BIT_POINTERS
     g_workAllocator = ibuBlockAllocInit(sizeof(ibu_work_id_handle_t), 256, 256, malloc, free);
 #endif
+    MPIU_DBG_PRINTF(("exiting ibu_init\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
     return IBU_SUCCESS;
 }
@@ -977,11 +1013,19 @@ int ibu_finalize()
     MPIDI_STATE_DECL(MPID_STATE_IBU_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINALIZE);
+    MPIU_DBG_PRINTF(("entering ibu_finalize\n"));
 #ifdef HAVE_32BIT_POINTERS
     ibuBlockAllocFinalize(&g_workAllocator);
 #endif
+    MPIU_DBG_PRINTF(("exiting ibu_finalize\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);
     return IBU_SUCCESS;
+}
+
+void FooBar(VAPI_hca_hndl_t hca_handle, VAPI_cq_hndl_t cq_handle, void *p)
+{
+    printf("Help me I'm drowning\n");
+    fflush(stdout);
 }
 
 #undef FUNCNAME
@@ -992,9 +1036,11 @@ int ibu_create_set(ibu_set_t *set)
 {
     VAPI_ret_t status;
     VAPI_cqe_num_t max_cq_entries = IBU_MAX_CQ_ENTRIES+1;
+    EVAPI_compl_handler_hndl_t ch;
     MPIDI_STATE_DECL(MPID_STATE_IBU_CREATE_SET);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_CREATE_SET);
+    MPIU_DBG_PRINTF(("entering ibu_create_set\n"));
     /* create the completion queue */
     status = VAPI_create_cq(
 	IBU_Process.hca_handle, 
@@ -1003,8 +1049,25 @@ int ibu_create_set(ibu_set_t *set)
 	&max_cq_entries);
     if (status != VAPI_OK)
     {
-	err_printf("ibu_init: VAPI_create_cq failed, error %d\n", status);
+	err_printf("ibu_create_set: VAPI_create_cq failed, error %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
+	return status;
     }
+    status = EVAPI_set_comp_eventh(IBU_Process.hca_handle, *set, FooBar, NULL, &ch);
+    if (status != VAPI_OK)
+    {
+	err_printf("ibu_create_set: VAPI_set_comp_evenh failed, status %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
+	return status;
+    }
+    status = EVAPI_clear_comp_eventh(IBU_Process.hca_handle, ch);
+    if (status != VAPI_OK)
+    {
+	err_printf("ibu_create_set: VAPI_clear_comp_eventh failed, status %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
+	return status;
+    }
+    MPIU_DBG_PRINTF(("exiting ibu_create_set\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
     return status;
 }
@@ -1019,7 +1082,9 @@ int ibu_destroy_set(ibu_set_t set)
     MPIDI_STATE_DECL(MPID_STATE_IBU_DESTROY_SET);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_DESTROY_SET);
+    MPIU_DBG_PRINTF(("entering ibu_destroy_set\n"));
     status = VAPI_destroy_cq(IBU_Process.hca_handle, set);
+    MPIU_DBG_PRINTF(("exiting ibu_destroy_set\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_DESTROY_SET);
     return status;
 }
@@ -1034,6 +1099,7 @@ static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int offset, 
     MPIDI_STATE_DECL(MPID_STATE_IBUI_BUFFER_UNEX_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_BUFFER_UNEX_READ);
+    MPIU_DBG_PRINTF(("entering ibui_buffer_unex_read\n"));
 
     MPIDI_DBG_PRINTF((60, FCNAME, "%d bytes\n", num_bytes));
 
@@ -1044,6 +1110,7 @@ static int ibui_buffer_unex_read(ibu_t ibu, void *mem_ptr, unsigned int offset, 
     p->next = ibu->unex_list;
     ibu->unex_list = p;
 
+    MPIU_DBG_PRINTF(("exiting ibui_buffer_unex_read\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_BUFFER_UNEX_READ);
     return IBU_SUCCESS;
 }
@@ -1059,8 +1126,8 @@ static int ibui_read_unex(ibu_t ibu)
     MPIDI_STATE_DECL(MPID_STATE_IBUI_READ_UNEX);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_READ_UNEX);
+    MPIU_DBG_PRINTF(("entering ibui_read_unex\n"));
 
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
     assert(ibu->unex_list);
 
     /* copy the received data */
@@ -1112,6 +1179,7 @@ static int ibui_read_unex(ibu_t ibu)
 	ibu->read.progress_update(num_bytes, ibu->user_ptr);
 	*/
     }
+    MPIU_DBG_PRINTF(("exiting ibui_read_unex\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READ_UNEX);
     return IBU_SUCCESS;
 }
@@ -1127,8 +1195,7 @@ int ibui_readv_unex(ibu_t ibu)
     MPIDI_STATE_DECL(MPID_STATE_IBUI_READV_UNEX);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_READV_UNEX);
-
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
+    MPIU_DBG_PRINTF(("entering ibui_readv_unex"));
 
     while (ibu->unex_list)
     {
@@ -1185,9 +1252,17 @@ int ibui_readv_unex(ibu_t ibu)
 	ibu->read.progress_update(num_bytes, ibu->user_ptr);
 	*/
     }
+    MPIU_DBG_PRINTF(("exiting ibui_readv_unex\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READV_UNEX);
     return IBU_SUCCESS;
 }
+
+/*#define PRINT_IBU_WAIT*/
+#ifdef PRINT_IBU_WAIT
+#define MPIU_DBG_PRINTFX(a) MPIU_DBG_PRINTF(a)
+#else
+#define MPIU_DBG_PRINTFX(a)
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME ibu_wait
@@ -1206,7 +1281,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
     MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WAIT);
-    /*MPIDI_DBG_PRINTF((60, FCNAME, "entering"));*/
+    MPIU_DBG_PRINTFX(("entering ibu_wait\n"));
     for (;;) 
     {
 	if (IBU_Process.unex_finished_list)
@@ -1225,6 +1300,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    {
 		ibu = IBU_INVALID_QP;
 	    }
+	    MPIU_DBG_PRINTFX(("exiting ibu_wait 1\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_SUCCESS;
 	}
@@ -1243,6 +1319,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		out->error = 0;
 		out->user_ptr = NULL;
 		out->op_type = IBU_OP_TIMEOUT;
+		MPIU_DBG_PRINTFX(("exiting ibu_wait 2\n"));
 		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 		return IBU_SUCCESS;
 	    }
@@ -1251,6 +1328,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	if (status != VAPI_OK)
 	{
 	    err_printf("%s: error: VAPI_poll_cq did not return VAPI_OK, %d\n", FCNAME, status);
+	    MPIU_DBG_PRINTFX(("exiting ibu_wait 3\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
 	}
@@ -1258,12 +1336,12 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	{
 	    err_printf("%s: error: status = %d != VAPI_SUCCESS\n", 
 		FCNAME, completion_data.status);
+	    MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
 	}
 
 #ifdef HAVE_32BIT_POINTERS
-	/* Once again, this is not going to work because data.mem is 32bits and mem_ptr is 64bits. */
 	ibu = (ibu_t)(((ibu_work_id_handle_t*)&completion_data.id)->data.ptr);
 	mem_ptr = (void*)(((ibu_work_id_handle_t*)&completion_data.id)->data.mem);
 #else
@@ -1277,7 +1355,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	case VAPI_SEND_WITH_IMM:
 	    break;
 	case VAPI_SEND:
-	    if ((int)mem_ptr == -1)
+	    if (mem_ptr == (void*)-1)
 	    {
 		/* flow control ack completed, no user data so break out here */
 		break;
@@ -1311,6 +1389,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    out->num_bytes = num_bytes;
 	    out->op_type = IBU_OP_WRITE;
 	    out->user_ptr = ibu->user_ptr;
+	    MPIU_DBG_PRINTFX(("exiting ibu_wait 5\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_SUCCESS;
 	    break;
@@ -1318,7 +1397,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    if (completion_data.imm_data_valid)
 	    {
 		ibu->nAvailRemote += completion_data.imm_data;
-		MPIDI_DBG_PRINTF((60, FCNAME, "%d packets acked, nAvailRemote now = %d", completion_data.immediate_data, ibu->nAvailRemote));
+		MPIDI_DBG_PRINTF((60, FCNAME, "%d packets acked, nAvailRemote now = %d", completion_data.imm_data, ibu->nAvailRemote));
 		ibuBlockFree(ibu->allocator, mem_ptr);
 		ibui_post_receive_unacked(ibu);
 		assert(completion_data.byte_len == 0); /* check this after the printfs to see if the immediate data is correct */
@@ -1389,6 +1468,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 			MPIDI_DBG_PRINTF((60, FCNAME, "closing ibuet after iov read completed."));
 			ibu = IBU_INVALID_QP;
 		    }
+		    MPIU_DBG_PRINTFX(("exiting ibu_wait 6\n"));
 		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 		    return IBU_SUCCESS;
 		}
@@ -1431,6 +1511,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 			ibu = IBU_INVALID_QP;
 		    }
 		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+		    MPIU_DBG_PRINTFX(("exiting ibu_wait 7\n"));
 		    return IBU_SUCCESS;
 		}
 		/* make the user upcall */
@@ -1444,7 +1525,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	}
     }
 
+    MPIU_DBG_PRINTFX(("exiting ibu_wait 8\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+    return MPI_SUCCESS;
 }
 
 #undef FUNCNAME
@@ -1456,13 +1539,14 @@ int ibu_set_user_ptr(ibu_t ibu, void *user_ptr)
     MPIDI_STATE_DECL(MPID_STATE_IBU_SET_USER_PTR);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_SET_USER_PTR);
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
+    MPIU_DBG_PRINTF(("entering ibu_set_user_ptr\n"));
     if (ibu == IBU_INVALID_QP)
     {
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_SET_USER_PTR);
 	return IBU_FAIL;
     }
     ibu->user_ptr = user_ptr;
+    MPIU_DBG_PRINTF(("exiting ibu_set_user_ptr\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_SET_USER_PTR);
     return IBU_SUCCESS;
 }
@@ -1478,7 +1562,7 @@ int ibu_post_read(ibu_t ibu, void *buf, int len, int (*rfn)(int, void*))
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_READ);
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
+    MPIU_DBG_PRINTF(("entering ibu_post_read\n"));
     ibu->read.total = 0;
     ibu->read.buffer = buf;
     ibu->read.bufflen = len;
@@ -1489,6 +1573,7 @@ int ibu_post_read(ibu_t ibu, void *buf, int len, int (*rfn)(int, void*))
     /* copy any pre-received data into the buffer */
     if (ibu->unex_list)
 	ibui_read_unex(ibu);
+    MPIU_DBG_PRINTF(("exiting ibu_post_read\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_READ);
     return IBU_SUCCESS;
 }
@@ -1507,6 +1592,7 @@ int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*rfn)(int, void*))
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_READV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_READV);
+    MPIU_DBG_PRINTF(("entering ibu_post_readv\n"));
 #ifdef MPICH_DBG_OUTPUT
     s = &str[16];
     for (i=0; i<n; i++)
@@ -1528,6 +1614,7 @@ int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*rfn)(int, void*))
     /* copy any pre-received data into the iov */
     if (ibu->unex_list)
 	ibui_readv_unex(ibu);
+    MPIU_DBG_PRINTF(("exiting ibu_post_readv\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_READV);
     return IBU_SUCCESS;
 }
@@ -1543,7 +1630,7 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*wfn)(int, void*))
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_WRITE);
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
+    MPIU_DBG_PRINTF(("entering ibu_post_write\n"));
     /*
     ibu->write.total = 0;
     ibu->write.buffer = buf;
@@ -1573,7 +1660,7 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_WRITEV);
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
+    MPIU_DBG_PRINTF(("entering ibu_post_writev\n"));
     /* This isn't necessary if we require the iov to be valid for the duration of the operation */
     /*ibu->write.iov = iov;*/
     /*
@@ -1596,6 +1683,7 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
     }
     */
     num_bytes = ibui_post_writev(ibu, iov, n, wfn);
+    MPIU_DBG_PRINTF(("exiting ibu_post_writev\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITEV);
     return IBU_SUCCESS;
 }
