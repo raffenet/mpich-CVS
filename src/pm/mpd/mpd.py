@@ -121,12 +121,13 @@ def _mpd_init():
 
 def _mpd():
     global stdout
+    g.pulse_ctr = 0
     # Main Loop
     done = 0
     while not done:
         socketsToSelect = g.activeSockets.keys()
         try:
-            (inReadySockets,None,None) = select(socketsToSelect,[],[],30)
+            (inReadySockets,None,None) = select(socketsToSelect,[],[],3)
         except error, data:
             if data[0] == EINTR:        # will come here if receive SIGCHLD, for example
                 continue
@@ -134,6 +135,19 @@ def _mpd():
                 mpd_raise('select error: %s' % strerror(data[0]))
         except Exception, data:
             mpd_raise('other error after select %s :%s:' % ( data.__class__, data) )
+        if not inReadySockets:
+            if g.pulse_ctr == 0  and  g.rhsSocket:
+                mpd_send_one_msg(g.rhsSocket,{'cmd':'pulse'})
+            g.pulse_ctr += 1
+        if g.pulse_ctr >= 4:
+            if g.activeSockets.has_key(g.rhsSocket):   # rhs must have disappeared
+                del g.activeSockets[g.rhsSocket]
+                g.rhsSocket.close()
+            if g.activeSockets.has_key(g.lhsSocket):
+                del g.activeSockets[g.lhsSocket]
+                g.lhsSocket.close()
+            reenter_ring()
+            g.pulse_ctr = 0
         for readySocket in inReadySockets:
             if readySocket not in g.activeSockets.keys():  # deleted on another iteration ?
                 continue
@@ -186,7 +200,7 @@ def _handle_console_input():
         return
     if not msg.has_key('cmd'):
         mpd_print(1, 'console sent bad msg :%s:' % msg)
-        mpd_send_one_msg(g.rhsSocket,'cmd','invalid_msg_received_from_you')
+        mpd_send_one_msg(g.rhsSocket,{ 'cmd':'invalid_msg_received_from_you' })
         del g.activeSockets[g.conSocket]
         g.conSocket.close()
         g.conSocket = 0
@@ -201,8 +215,8 @@ def _handle_console_input():
             mpd_send_one_msg(g.rhsSocket,msg)
         # send ack after job is going
     elif msg['cmd'] == 'get_mpd_version':
-        msg = { 'cmd' : 'mpd_version_response', 'mpd_version' : mpd_version }
-        mpd_send_one_msg(g.conSocket,msg)
+        msgToSend = { 'cmd' : 'mpd_version_response', 'mpd_version' : mpd_version }
+        mpd_send_one_msg(g.conSocket,msgToSend)
     elif msg['cmd'] == 'mpdtrace':
         msgToSend = { 'cmd'  : 'mpdtrace_info',
                       'dest' : g.myId,
@@ -392,6 +406,8 @@ def _handle_lhs_input():
                 for manPid in g.activeJobs[jobid].keys():
                     kill(manPid * (-1), SIGKILL)  # neg manPid -> group
                 # del g.activeJobs[jobid]  ## handled when child goes away
+    elif msg['cmd'] == 'pulse':
+        mpd_send_one_msg(g.lhsSocket,{'cmd':'pulse_ack'})
     else:
         mpd_print(1, 'unrecognized cmd from lhs: %s' % (msg) )
 
@@ -535,7 +551,7 @@ def _do_mpdrun(msg):
             # print 'profiling the manager'
             # profile.run('mpdman()')
             mpdman()
-            exit(0)  # do NOT do cleanup    ## RMB TEMP DEBUG
+            exit(0)  # do NOT do cleanup
         else:
             tempSocket.close()
             toMpdSocket.close()
@@ -550,6 +566,20 @@ def _do_mpdrun(msg):
     mpd_print(0000, "FORWARDING MSG=:%s:" % msg)
     mpd_send_one_msg(g.rhsSocket,msg)  # forward it on around
 
+def reenter_ring():
+    if g.entryHost:
+        inRing = 0
+        numTries = 5
+        while not inRing  and  numTries > 0:
+            rc = _enter_existing_ring()
+            if rc < 0:    # fails if next g.generation <= current
+                sleep(2)
+            else:
+                inRing = 1
+            numTries -= 1
+    else:
+        _create_ring_of_one_mpd()
+
 def _handle_rhs_input():
     if g.allExiting:
         return
@@ -561,20 +591,12 @@ def _handle_rhs_input():
             del g.activeSockets[g.lhsSocket]
             g.lhsSocket.close()
         mpd_print(0000, 're-entering the ring' )
-        if g.entryHost:
-            inRing = 0
-            numTries = 5
-            while not inRing  and  numTries > 0:
-                rc = _enter_existing_ring()
-                if rc < 0:    # fails if next g.generation <= current
-                    sleep(2)
-                else:
-                    inRing = 1
-                numTries -= 1
-        else:
-            _create_ring_of_one_mpd()
+        reenter_ring()
         return 1
-    mpd_print(1, 'unexpected from rhs; msg=:%s:' % (msg) )
+    if msg['cmd'] == 'pulse_ack':
+        g.pulse_ctr = 0
+    else:
+        mpd_print(1, 'unexpected from rhs; msg=:%s:' % (msg) )
     return 0
 
 def _handle_new_connection():
