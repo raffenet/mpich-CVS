@@ -12,7 +12,6 @@
 #include "ibu.h"
 #include "iba.h"
 #include "psc_iba.h"
-#include "blockallocator.h"
 #include <stdio.h>
 
 typedef union ibu_work_id_handle_t
