@@ -4,7 +4,7 @@ INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../../include \
 LDADD = ../util/mtest.o 
 DEPADD = ../util/mtest.o
 
-commname_SOURCES = commname.cxx
+commname2_SOURCES = commname2.cxx
 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o )
