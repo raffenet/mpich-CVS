@@ -7,6 +7,8 @@
 
 #define MAX_NUM_NICS 10
 
+#ifdef HAVE_WINDOWS_H
+
 static int GetLocalIPs(unsigned int *pIP, int max)
 {
     char hostname[100], **hlist;
@@ -43,6 +45,130 @@ static int GetLocalIPs(unsigned int *pIP, int max)
     }
     return n;
 }
+
+#else /* HAVE_WINDOWS_H */
+
+#define NUM_IFREQS 10
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#if defined(HAVE_SYS_IOCTL_H)
+#   include <sys/ioctl.h>
+#endif
+#if defined(HAVE_SYS_SOCKIO_H)
+#   include <sys/sockio.h>
+#endif
+#include <errno.h>
+
+static int GetLocalIPs(unsigned int *pIP, int max)
+{
+    int					fd;
+    char *				buf_ptr;
+    int					buf_len;
+    int					buf_len_prev;
+    char *				ptr;
+    int n = 0;
+    
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd < 0)
+	return 0;
+
+    /*
+     * Obtain the interface information from the operating system
+     *
+     * Note: much of this code is borrowed from W. Richard Stevens' book
+     * entitled "UNIX Network Programming", Volume 1, Second Edition.  See
+     * section 16.6 for details.
+     */
+    buf_len = NUM_IFREQS * sizeof(struct ifreq);
+    buf_len_prev = 0;
+
+    for(;;)
+    {
+	struct ifconf			ifconf;
+	int				rc;
+
+	buf_ptr = (char *) malloc(buf_len);
+	if (buf_ptr == NULL)
+	    return 0;
+	
+	ifconf.ifc_buf = buf_ptr;
+	ifconf.ifc_len = buf_len;
+
+	rc = ioctl(fd, SIOCGIFCONF, &ifconf);
+	if (rc < 0)
+	{
+	    if (errno != EINVAL || buf_len_prev != 0)
+		return 0;
+	}
+        else
+	{
+	    if (ifconf.ifc_len == buf_len_prev)
+	    {
+		buf_len = ifconf.ifc_len;
+		break;
+	    }
+
+	    buf_len_prev = ifconf.ifc_len;
+	}
+	
+	free(buf_ptr);
+	buf_len += NUM_IFREQS * sizeof(struct ifreq);
+    }
+	
+    /*
+     * Now that we've got the interface information, we need to run through
+     * the interfaces and save the ip addresses
+     */
+    ptr = buf_ptr;
+
+    while(ptr < buf_ptr + buf_len)
+    {
+	struct ifreq *			ifreq;
+
+	ifreq = (struct ifreq *) ptr;
+	
+	if (ifreq->ifr_addr.sa_family == AF_INET)
+	{
+	    struct in_addr		addr;
+
+	    addr = ((struct sockaddr_in *) &(ifreq->ifr_addr))->sin_addr;
+/*	    
+	    if ((addr.s_addr & net_mask_p->s_addr) ==
+		(net_addr_p->s_addr & net_mask_p->s_addr))
+	    {
+		*if_addr_p = addr;
+		break;
+	    }
+*/
+	    pIP[n] = addr.s_addr;
+	    n++;
+	}
+
+	/*
+	 *  Increment pointer to the next ifreq; some adjustment may be
+	 *  required if the address is an IPv6 address
+	 */
+	ptr += sizeof(struct ifreq);
+	
+#	if defined(AF_INET6)
+	{
+	    if (ifreq->ifr_addr.sa_family == AF_INET6)
+	    {
+		ptr += sizeof(struct sockaddr_in6) - sizeof(struct sockaddr);
+	    }
+	}
+#	endif
+    }
+
+    free(buf_ptr);
+    close(fd);
+
+    return n;
+}
+
+#endif /* HAVE_WINDOWS_H */
 
 int tcp_get_business_card(char *value, int length)
 {
