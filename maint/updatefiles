@@ -87,6 +87,15 @@ if [ -x maint/extracterrmsgs -a $do_geterrmsgs = "yes" ] ; then
     if [ -s .tmp -a "$update_errdefs" = "yes" ] ; then
         mv .tmp src/mpi/errhan/defmsg.h
     fi
+    if [ ! -s src/mpi/errhan/defmsg.h ] ; then
+        echo "Creating a dummy defmsg.h file"
+	cat > src/mpi/errhan/defmsg.h <<EOF
+typedef struct { const char *short_name, *long_name; } msgpair;
+static msgpair generic_err_msgs[] { {0,0}, };
+static msgpair specific_err_msgs[] {  {0,0}, };
+static int class_to_index[] = { 0, };
+EOF
+    fi
 fi
 # Build simplemake if necessary
 made_simplemake=no
