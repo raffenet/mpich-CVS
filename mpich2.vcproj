@@ -5625,6 +5625,9 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				RelativePath=".\src\mpi\pt2pt\mpir_wait.c">
 			</File>
 			<File
+				RelativePath="src\util\msgs\msgprint.c">
+			</File>
+			<File
 				RelativePath=".\src\mpi\coll\op_create.c">
 			</File>
 			<File
