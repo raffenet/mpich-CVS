@@ -777,7 +777,8 @@ dnl
 dnl In Solaris, the crypt function is not defined in unistd unless 
 dnl _XOPEN_SOURCE is defines and _XOPEN_VERSION is 4 or greater.
 dnl We test by looking for a missing crypt by defining our own
-dnl incompatible one and trying to compile it
+dnl incompatible one and trying to compile it.
+dnl Defines NEED_CRYPT_PROTOTYPE if no prototype is found.
 dnlD*/
 AC_DEFUN(PAC_FUNC_CRYPT,[
 AC_CACHE_CHECK([if crypt defined in unistd.h],
@@ -815,6 +816,12 @@ dnl If the compiler is 'gcc', 'COPTIONS' is set to include
 dnl.vb
 dnl	-O -Wall -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL
 dnl.ve
+dnl
+dnl If the value 'all' is given to '--enable-strict', additional warning
+dnl options are included.  These are
+dnl.vb
+dnl -Wunused -Wshadow -Wmissing-declarations -Wno-long-long -Wpointer-arith
+dnl.ve
 dnl 
 dnl This only works where 'gcc' is available.
 dnl In addition, it exports the variable 'enable_strict_done'. This
@@ -833,13 +840,23 @@ AC_ARG_ENABLE(strict,
 [--enable-strict  - Turn on strict compilation testing when using gcc])
 export enable_strict_done
 export COPTIONS
-if test "$enable_strict" = "yes" -a "$enable_strict_done" != "yes" ; then
-    enable_strict_done="yes"
-    if test -z "CC" ; then
-        AC_CHECK_PROGS(CC,gcc)
-        if test "$CC" = "gcc" ; then 
-            COPTIONS="${COPTIONS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL"
-    	fi
+if test "$enable_strict_done" != "yes" ; then
+    if test "$enable_strict" = "yes" ; then
+        enable_strict_done="yes"
+        if test -z "CC" ; then
+            AC_CHECK_PROGS(CC,gcc)
+            if test "$CC" = "gcc" ; then 
+                COPTIONS="${COPTIONS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL"
+    	    fi
+        fi
+    elif test "$enable_strict" = "all" ; then
+        enable_strict_done="yes"
+        if test -z "CC" ; then
+            AC_CHECK_PROGS(CC,gcc)
+            if test "$CC" = "gcc" ; then 
+                COPTIONS="${COPTIONS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wno-long-long"
+    	    fi
+        fi
     fi
 fi
 ])
@@ -897,3 +914,26 @@ AC_DEFUN(PAC_ARG_CC_COMMON,[
 PAC_ARG_CC_G
 PAC_ARG_STRICT
 ])
+dnl
+dnl Eventually, this can be used instead of the funky Fortran stuff to 
+dnl access the command line from a C routine.
+dnl #
+dnl # Under IRIX (some version) __Argc and __Argv gave the argc,argv values
+dnl #Under linux, __libc_argv and __libc_argc
+dnl AC_MSG_CHECKING([for alternative argc,argv names])
+dnl AC_TRY_LINK([
+dnl extern int __Argc; extern char **__Argv;],[return __Argc;],
+dnl alt_argv="__Argv")
+dnl if test -z "$alt_argv" ; then
+dnl    AC_TRY_LINK([
+dnl extern int __libc_argc; extern char **__libc_argv;],[return __lib_argc;],
+dnl alt_argv="__lib_argv")
+dnl fi
+dnl if test -z "$alt_argv" ; then
+dnl   AC_MSG_RESULT(none found)) 
+dnl else 
+dnl   AC_MSG_RESULT($alt_argv) 
+dnl fi
+dnl 
+dnl
+dnl
