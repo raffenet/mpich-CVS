@@ -1,3 +1,10 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 /*
    Test the group routines
    (some tested elsewere)
@@ -22,6 +29,7 @@ int main( int argc, char **argv )
     int errs=0, toterr;
     MPI_Group basegroup;
     MPI_Group g1, g2, g3, g4, g5, g6, g7, g8, g9, g10;
+    MPI_Group g3a, g3b;
     MPI_Comm  comm, newcomm, splitcomm, dupcomm;
     int       i, grp_rank, rank, grp_size, size, result;
     int       nranks, *ranks, *ranks_out;
@@ -90,6 +98,20 @@ int main( int argc, char **argv )
 	fprintf( stdout, "Group compare should have been unequal, was %d\n",
 		 result );
     }
+
+    /* Build two groups that have this process and one other, but do not
+       have the same processes */
+    ranks[0] = rank;
+    ranks[1] = (rank + 1) % size;
+    MPI_Group_incl( basegroup, 2, ranks, &g3a );
+    ranks[1] = (rank + size - 1) % size;
+    MPI_Group_incl( basegroup, 2, ranks, &g3b );
+    MPI_Group_compare( g3a, g3b, &result );
+    if (result != MPI_UNEQUAL) {
+        errs++;
+	fprintf( stdout, "Group compare of equal sized but different groups should have been unequal, was %d\n", result );
+    }
+    
 
 /* Build two new groups by excluding members; use Union to put them
    together again */
@@ -191,6 +213,8 @@ int main( int argc, char **argv )
     MPI_Group_free( &g1 );
     MPI_Group_free( &g2 );
     MPI_Group_free( &g3 );
+    MPI_Group_free( &g3a );
+    MPI_Group_free( &g3b );
     MPI_Group_free( &g4 );
     MPI_Group_free( &g5 );
     MPI_Group_free( &g6 );
