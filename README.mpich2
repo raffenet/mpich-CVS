@@ -16,7 +16,7 @@ mpich2-maint@mcs.anl.gov; we are interested in incorporating user
 experiences as quickly as possible.
 
 Getting Started
----------------
+===============
 
 The following instructions take you through a sequence of steps to get
 the default configuration (TCP communication, MPD process management) of
@@ -149,6 +149,12 @@ later, in the section "Alternative configurations".
 
 11. Start the daemons on (some of) the hosts in the file mpd.hosts
 
+      mpdboot
+
+    By default, mpdboot starts one mpd on each of the machines in the
+    file mpd.hosts, plus one on the local machine even if it is not in
+    the file.  You can start fewer by doing:
+
       mpdboot -n <number to start>  
 
     The number to start can be less than 1 + number of hosts in the
@@ -175,7 +181,8 @@ later, in the section "Alternative configurations".
        mpdtrace
 
     to see which machines are in the ring so far.  More details on
-    options for starting the mpd's are in mpich2/src/pm/mpd/README.
+    mpdboot and other options for starting the mpd's are in
+    mpich2/src/pm/mpd/README.
 
 
 12. Test the ring you have just created:
@@ -242,7 +249,7 @@ If you have completed all of the above steps, you have successfully
 installed MPICH2 and run an MPI example.  
 
 Alternatives
-------------
+============
 
 The above steps utilized the MPICH2 defaults, which included choosing
 TCP for communication (the "sock" channel) and the MPD process manager.
@@ -251,4 +258,69 @@ alternatives with
 
    ./configure --help
 
-in the mpich2 directory.
+in the mpich2 directory.  The alternatives described below are
+configured by adding arguments to the configure step
+
+Alternate process managers:
+
+forker
+------
+
+Forker is a process manager that creates processes on a single machine,
+by having mpiexec itself fork and exec them.  It is useful for
+shared-memory multiprocessors (SMPs) where you want to create all the
+processes on the same machine, and also for debugging, where it is often
+convenient to run all the processes on a single machine, since parallel
+performance is less important.  The forker version of mpiexec may not
+support all the standard options and arguments.
+
+specify that you want to use forker by doing 
+
+  --with-pm=forker  
+
+on the configure command line.
+
+remsh
+
+Remsh is a process manager that starts the processes via remote shell.
+It does not require any pre-existing user daemons, since it uses the
+remote shell daemon.  It does not provide as scalable a startup speed as
+MPD, and its version of mpiexec may not support all of the standard
+options and arguments.  It is useful if you are having difficulties with
+MPD, since it does not require a python installation.
+
+
+Alternative channels and devices
+--------------------------------
+
+The communication mechanisms in MPICH2 are called "devices", paired with
+specific "channels".  The most thoroughly tested device is the "ch3"
+device.  The default configuration chooses the "sock" channel in the ch3
+device (all communication goes over TCP sockets), which would be
+specified explicitly by putting
+
+  --with-device=ch3:sock
+
+on the configure command line.  The ch3 device has two other channels:
+"shm" (shared memory) for use on SMPs (all communication goes through
+shared memory instead of over TCP sockets) and "ssm" (sockets and shared
+memory) for use on clusters of SMPs (communication between processes on
+the same machine goes through shared memory; communication between
+processes on different machines goes over sockets).  Configure these by
+putting
+
+  --with-device=ch3:shm
+
+or 
+
+  --with-device=ch3:ssm
+
+on the configure command line.
+
+A third channel in the ch3 device is the "rdma" channel, which is still
+experimental.  To specify it, use
+
+  --with-device=ch3:rdma --with-rdma=shm
+   
+on the configure command line.  
+
