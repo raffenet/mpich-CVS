@@ -248,10 +248,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     if (strtok(pg->shm_hostname, ":") == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_strtok_host", "**init_strtok_host %s", val);
-	/*MPIDI_err_printf("MPIDI_CH3_Init", "ch3_init: unable to get the host name from the businesscard - %s\n", val);*/
 	return mpi_errno;
     }
-    /*printf("sock_businesscard: %s\n", val);fflush(stdout);*/
 
 #   if defined(DEBUG)
     {
@@ -260,14 +258,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     }
 #   endif
 
-    /* put the shmem business card */
-    mpi_errno = snprintf(key, key_max_sz, "P%d-shm_businesscard", pg_rank);
-    if (mpi_errno < 0 || mpi_errno > key_max_sz)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
-	return mpi_errno;
-    }
 #ifdef USE_MQSHM
+
+    strcpy(key, "bootstrapQ_name");
     if (pg_rank == 0)
     {
 	mpi_errno = MPIDI_CH3I_BootstrapQ_create_unique_name(queue_name, 100);
@@ -276,28 +269,48 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
 	    return mpi_errno;
 	}
-	PMI_KVS_Put(pg->kvs_name, "bootstrapQ_name", queue_name);
-	PMI_KVS_Commit(pg->kvs_name);
-	PMI_Barrier();
+	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg->bootstrapQ, queue_name, 1);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
+	    return mpi_errno;
+	}
+	/*printf("root process created bootQ: '%s'\n", queue_name);*/
+	strcpy(val, queue_name);
+	mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
+	mpi_errno = PMI_KVS_Commit(pg->kvs_name);
+	mpi_errno = PMI_Barrier();
     }
     else
     {
-	PMI_Barrier();
-	PMI_KVS_Get(pg->kvs_name, "bootstrapQ_name", queue_name);
+	mpi_errno = PMI_Barrier();
+	mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val);
+	strcpy(queue_name, val);
+	/*printf("process %d got bootQ name: '%s'\n", pg_rank, queue_name);*/
+	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg->bootstrapQ, queue_name, 1);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
+	    return mpi_errno;
+	}
     }
-    mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg->bootstrapQ, queue_name);
+    PMI_Barrier();
+    mpi_errno = MPIDI_CH3I_BootstrapQ_unlink(pg->bootstrapQ);
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_unlink", 0);
 	return mpi_errno;
     }
+
 #else
+
     mpi_errno = MPIDI_CH3I_BootstrapQ_create(&pg->bootstrapQ);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
 	return mpi_errno;
     }
+
 #endif
     queue_name[0] = '\0';
     mpi_errno = MPIDI_CH3I_BootstrapQ_tostring(pg->bootstrapQ, queue_name, 100);
@@ -306,7 +319,15 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_tostring", 0);
 	return mpi_errno;
     }
+    /* put the shmem business card */
+    mpi_errno = snprintf(key, key_max_sz, "P%d-shm_businesscard", pg_rank);
+    if (mpi_errno < 0 || mpi_errno > key_max_sz)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
+	return mpi_errno;
+    }
     MPIU_Snprintf(val, val_max_sz, "%s:%s", pg->shm_hostname, queue_name);
+    /*printf("putting kvs_name: %s, key: %s, val: %s\n", pg->kvs_name, key, val);fflush(stdout);*/
     mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
     if (mpi_errno != MPI_SUCCESS)
     {

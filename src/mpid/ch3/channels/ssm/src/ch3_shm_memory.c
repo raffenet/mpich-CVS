@@ -91,9 +91,9 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
 
     if (size == 0 || size > MPIDU_MAX_SHM_BLOCK_SIZE )
     {
-	MPIDI_err_printf("MPIDI_CH3I_SHM_Get_mem", "Error: unable to allocate %u bytes of shared memory.n", size);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
-	return -1;
+	return mpi_errno;
     }
 
     /* Create the shared memory object */
@@ -113,7 +113,14 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	return mpi_errno;
     }
-    ftruncate(pOutput->id, size);
+    strcpy(pOutput->name, pOutput->key);
+    if (ftruncate(pOutput->id, size) == -1)
+    {
+	pOutput->error = errno;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ftruncate", "**ftruncate %s %d %d", pOutput->key, size, pOutput->error);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+	return mpi_errno;
+    }
 #elif defined (USE_SYSV_SHM)
     srand(getpid());
     for (i=0; i<10; i++)
@@ -181,9 +188,9 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
     if (pOutput->addr == NULL)
     {
 	pOutput->error = GetLastError();
-	MPIDI_err_printf("MPIDI_CH3I_SHM_Get_mem", "Error in MapViewOfFileEx, %d\n", pOutput->error);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MapViewOfFileEx", "**MapViewOfFileEx %d", pOutput->error);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
-	return -1;
+	return mpi_errno;
     }
 #else
 #error No shared memory subsystem defined
@@ -206,44 +213,55 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
    Notes:
 @*/
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3I_SHM_Get_mem
+#define FUNCNAME MPIDI_CH3I_SHM_Get_mem_named
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result *pOutput)
 {
     int mpi_errno = MPI_SUCCESS;
-#if defined (USE_POSIX_SHM) || defined (USE_SYSV_SHM)
+#if defined (USE_POSIX_SHM)
     int i;
+#elif defined (USE_SYSV_SHM)
+    int i;
+    char tmp_filename[100];
 #endif
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
 
     if (size == 0 || size > MPIDU_MAX_SHM_BLOCK_SIZE )
     {
-	MPIDI_err_printf("MPIDI_CH3I_SHM_Get_mem", "Error: unable to allocate %u bytes of shared memory.n", size);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
-	return -1;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
+	return mpi_errno;
     }
 
     /* Create the shared memory object */
 #ifdef USE_POSIX_SHM
-    pOutput->id = shm_open(pOutput->key, O_RDWR | O_CREAT, 0600);
+    /*printf("[%d] creating a named shm object: '%s'\n", MPIR_Process.comm_world->rank, pOutput->name);*/
+    pOutput->id = shm_open(pOutput->name, O_RDWR | O_CREAT, 0600);
     if (pOutput->id == -1)
     {
 	pOutput->error = errno;
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_open", "**shm_open %s %d", pOutput->key, pOutput->error);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_open", "**shm_open %s %d", pOutput->name, pOutput->error);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
 	return mpi_errno;
     }
-    ftruncate(pOutput->id, size);
+    if (ftruncate(pOutput->id, size) == -1)
+    {
+	pOutput->error = errno;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ftruncate", "**ftruncate %s %d %d", pOutput->name, size, pOutput->error);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
+	return mpi_errno;
+    }
 #elif defined (USE_SYSV_SHM)
+    /* Insert code here to convert the name into a key */
     pOutput->id = shmget(pOutput->key, size, IPC_EXCL | IPC_CREAT | SHM_R | SHM_W);
     if (pOutput->id == -1)
     {
 	pOutput->error = errno;
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmget", "**shmget %d", pOutput->error); /*"Error in shmget, %d", pOutput->error);*/
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
 	return mpi_errno;
     }
 #elif defined (USE_WINDOWS_SHM)
@@ -253,18 +271,19 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
 	PAGE_READWRITE,
 	0, 
 	size,
-	pOutput->key);
+	pOutput->name);
     if (pOutput->id == NULL) 
     {
 	pOutput->error = GetLastError();
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**CreateFileMapping", "**CreateFileMapping %d", pOutput->error); /*"Error in CreateFileMapping, %d", pOutput->error);*/
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
 	return mpi_errno;
     }
 #else
 #error No shared memory subsystem defined
 #endif
 
+    /*printf("[%d] mmapping the shared memory object\n", MPIR_Process.comm_world->rank);fflush(stdout);*/
     pOutput->addr = NULL;
 #ifdef USE_POSIX_SHM
     pOutput->addr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED /* | MAP_NORESERVE*/, pOutput->id, 0);
@@ -272,7 +291,7 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**mmap", "**mmap %d", errno);
 	pOutput->addr = NULL;
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
 	return mpi_errno;
     }
 #elif defined (USE_SYSV_SHM)
@@ -282,7 +301,7 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
 	pOutput->error = errno;
 	pOutput->addr = NULL;
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmat", "**shmat %d", pOutput->error); /*"Error from shmat %d", pOutput->error);*/
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
 	return mpi_errno;
     }
 #elif defined(USE_WINDOWS_SHM)
@@ -296,9 +315,9 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
     if (pOutput->addr == NULL)
     {
 	pOutput->error = GetLastError();
-	MPIDI_err_printf("MPIDI_CH3I_SHM_Get_mem", "Error in MapViewOfFileEx, %d\n", pOutput->error);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
-	return -1;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MapViewOfFileEx", "**MapViewOfFileEx *d", pOutput->error);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
+	return mpi_errno;
     }
 #else
 #error No shared memory subsystem defined
@@ -307,7 +326,7 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
     pOutput->size = size;
     pOutput->error = MPI_SUCCESS;
 
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
     return MPI_SUCCESS;
 }
 
@@ -321,6 +340,10 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
    Notes:
    The shared memory segment is unlinked after attaching so only one process can call this function.
 @*/
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Attach_to_mem
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, MPIDI_CH3I_Shmem_block_request_result *pOutput)
 {
     int mpi_errno;
@@ -399,8 +422,7 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
     if (pOutput->addr == NULL)
     {
 	pOutput->error = GetLastError();
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MapViewOfFileEx", "**MapViewOfFileEx %d", pOutput->error); /*"MPIDI_CH3I_SHM_Get_mem: Error in MapViewOfFileEx, %d", pOutput->error);*/
-	MPIDI_ERR_PRINTF(("MPIDI_CH3I_SHM_Get_mem", "Error in MapViewOfFileEx, %d\n", pOutput->error));
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MapViewOfFileEx", "**MapViewOfFileEx %d", pOutput->error);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ATTACH_TO_MEM);
 	return mpi_errno;
     }
@@ -419,23 +441,41 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
 
    Notes:
 @*/
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Unlink_mem
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_SHM_Unlink_mem(MPIDI_CH3I_Shmem_block_request_result *p)
 {
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
+    int ret_val, mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_UNLINK_MEM);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_UNLINK_MEM);
 
 #ifdef USE_POSIX_SHM
-    shm_unlink(p->key);
+    /*printf("unlinking '%s'\n", p->name);*/
+    ret_val = shm_unlink(p->name);
+    if (ret_val == -1)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_unlink", "**shm_unlink %s %d", p->key, ret_val);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_UNLINK_MEM);
+	return mpi_errno;
+    }
 #elif defined (USE_SYSV_SHM)
-    shmctl(p->id, IPC_RMID, NULL);
+    ret_val = shmctl(p->id, IPC_RMID, NULL);
+    if (ret_val == -1)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmctl", "**shmctl %d %d", p->id, ret_val);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_UNLINK_MEM);
+	return mpi_errno;
+    }
 #elif defined (USE_WINDOWS_SHM)
 #else
 #error No shared memory subsystem defined
 #endif
 
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
-    return MPI_SUCCESS;
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_UNLINK_MEM);
+    return mpi_errno;
 }
 
 /*@
@@ -443,6 +483,10 @@ int MPIDI_CH3I_SHM_Unlink_mem(MPIDI_CH3I_Shmem_block_request_result *p)
 
    Notes:
 @*/
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Release_mem
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Shmem_block_request_result *p)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);

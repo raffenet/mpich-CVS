@@ -38,6 +38,7 @@ static mqshm_t * id_to_queue(const int id)
     mqshm_node_t *iter = q_list;
     while (iter)
     {
+	/*printf("[%d] id_to_queue checking %d == %d\n", MPIR_Process.comm_world->rank, id, iter->id);fflush(stdout);*/
 	if (iter->id == id)
 	    return iter->q_ptr;
 	iter = iter->next;
@@ -49,7 +50,7 @@ static mqshm_t * id_to_queue(const int id)
 #define FUNCNAME MPIDI_CH3I_mqshm_create
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_mqshm_create(const char *name, int *id)
+int MPIDI_CH3I_mqshm_create(const char *name, const int initialize, int *id)
 {
     int mpi_errno = MPI_SUCCESS;
     mqshm_node_t *node;
@@ -65,7 +66,8 @@ int MPIDI_CH3I_mqshm_create(const char *name, int *id)
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_CREATE);
 	return mpi_errno;
     }
-    strcpy(node->shm_info.key, name);
+    /*printf("[%d] allocated %d bytes for a mqshm_node_t\n", MPIR_Process.comm_world->rank, sizeof(mqshm_node_t));fflush(stdout);*/
+    sprintf(node->shm_info.name, "/%s", name);
     /* allocate the shared memory for the queue */
     mpi_errno = MPIDI_CH3I_SHM_Get_mem_named(sizeof(mqshm_t), &node->shm_info);
     if (mpi_errno != MPI_SUCCESS)
@@ -74,22 +76,36 @@ int MPIDI_CH3I_mqshm_create(const char *name, int *id)
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_CREATE);
 	return mpi_errno;
     }
+    /*printf("[%d] shm_info.addr = %p, shm_info.size = %u, name = %s\n", MPIR_Process.comm_world->rank, node->shm_info.addr, node->shm_info.size, name);fflush(stdout);*/
     node->q_ptr = (mqshm_t*)node->shm_info.addr;
     node->id = next_id++;
     node->next = q_list;
     q_list = node;
     *id = node->id;
+    /*printf("[%d] q_list node: q_ptr = %p, id = %d, next = %p\n",
+	   MPIR_Process.comm_world->rank, node->q_ptr, node->id, node->next);
+	   fflush(stdout);*/
 
-    /* initialize the queue */
-    for (i=0; i<BOOTSTRAP_MAX_NUM_MSGS; i++)
+    if (initialize)
     {
-	node->q_ptr->msg[i].next = i+1;
+	/* initialize the queue */
+	for (i=0; i<BOOTSTRAP_MAX_NUM_MSGS-1; i++)
+	{
+	    node->q_ptr->msg[i].next = i+1;
+	    /*printf("[%d] msg[%d].next = %d\n",
+	      MPIR_Process.comm_world->rank, i, node->q_ptr->msg[i].next);*/
+	}
+	node->q_ptr->msg[BOOTSTRAP_MAX_NUM_MSGS-1].next = MQSHM_END;
+	/*printf("[%d] msg[%d].next = %d\n",
+	       MPIR_Process.comm_world->rank,
+	       BOOTSTRAP_MAX_NUM_MSGS-1,
+	       node->q_ptr->msg[BOOTSTRAP_MAX_NUM_MSGS-1].next);
+	       fflush(stdout);*/
+	node->q_ptr->first = MQSHM_END;
+	node->q_ptr->last = MQSHM_END;
+	node->q_ptr->next_free = 0;
+	MPIDU_Process_lock_init(&node->q_ptr->lock);
     }
-    node->q_ptr->msg[BOOTSTRAP_MAX_NUM_MSGS-1].next = MQSHM_END;
-    node->q_ptr->first = MQSHM_END;
-    node->q_ptr->last = MQSHM_END;
-    node->q_ptr->next_free = 0;
-    MPIDU_Process_lock_init(&node->q_ptr->lock);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_CREATE);
     return MPI_SUCCESS;
@@ -145,7 +161,9 @@ int MPIDI_CH3I_mqshm_unlink(int id)
     {
 	if (iter->id == id)
 	{
-	    MPIDI_CH3I_SHM_Unlink_mem(&iter->shm_info);
+	    mpi_errno = MPIDI_CH3I_SHM_Unlink_mem(&iter->shm_info);
+	    if (mpi_errno != MPI_SUCCESS)
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**mqshm_unlink", 0);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_UNLINK);
 	    return MPI_SUCCESS;
 	}
@@ -173,7 +191,9 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
 	return mpi_errno;
     }
+    /*printf("[%d] send: looking up id %d\n", MPIR_Process.comm_world->rank, id);fflush(stdout);*/
     q_ptr = id_to_queue(id);
+    /*printf("[%d] send: id %d -> %p\n", MPIR_Process.comm_world->rank, id, q_ptr);fflush(stdout);*/
     if (q_ptr == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
@@ -186,17 +206,21 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 	index = q_ptr->next_free;
 	if (index != MQSHM_END)
 	{
+	    /*printf("[%d] send: writing %d bytes to index %d with tag %d\n", MPIR_Process.comm_world->rank, length, index, tag);fflush(stdout);*/
 	    memcpy(q_ptr->msg[index].data, buffer, length);
 	    q_ptr->msg[index].tag = tag;
 	    q_ptr->msg[index].length = length;
 	    q_ptr->msg[index].next = MQSHM_END;
 	    if (q_ptr->first == MQSHM_END)
 	    {
+		/*printf("[%d] send: setting first and last to %d\n", MPIR_Process.comm_world->rank, index);fflush(stdout);*/
 		q_ptr->first = index;
 		q_ptr->last = index;
 	    }
 	    else
 	    {
+		/*printf("[%d] send: old_last = %d, new last = %d\n",
+		  MPIR_Process.comm_world->rank, q_ptr->last, index);fflush(stdout);*/
 		q_ptr->msg[q_ptr->last].next = index;
 		q_ptr->last = index;
 	    }
@@ -224,7 +248,9 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
     int index, last_index = MQSHM_END;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE);
+    /*printf("[%d] recv: looking up id %d\n", MPIR_Process.comm_world->rank, id);fflush(stdout);*/
     q_ptr = id_to_queue(id);
+    /*printf("[%d] recv: id %d -> %p\n", MPIR_Process.comm_world->rank, id, q_ptr);fflush(stdout);*/
     if (q_ptr == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
@@ -237,15 +263,19 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 	index = q_ptr->first;
 	while (index != MQSHM_END)
 	{
+	    /*printf("[%d] recv: checking if msg[%d].tag %d == %d\n",
+	      MPIR_Process.comm_world->rank, index, q_ptr->msg[index].tag, tag);fflush(stdout);*/
 	    if (q_ptr->msg[index].tag == tag)
 	    {
 		/* remove the node from the queue */
 		if (last_index == MQSHM_END)
 		{
+		    /*printf("[%d] recv: removing index %d from the head\n", MPIR_Process.comm_world->rank, index);fflush(stdout);*/
 		    q_ptr->first = q_ptr->msg[index].next;
 		}
 		else
 		{
+		    /*printf("[%d] recv: removing index %d\n", MPIR_Process.comm_world->rank, index);fflush(stdout);*/
 		    q_ptr->msg[last_index].next = q_ptr->msg[index].next;
 		}
 		/* validate the message */
@@ -270,6 +300,7 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 	    index = q_ptr->msg[index].next;
 	}
 	MPIDU_Process_unlock(&q_ptr->lock);
+	/*printf("<%d>", MPIR_Process.comm_world->rank);*/
 	MPIDU_Yield();
     } while (blocking);
     *length = 0; /* zero length signals no message received? */
