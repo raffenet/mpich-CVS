@@ -177,7 +177,7 @@ int MPIR_Bsend_detach( void *p, int *size )
  */
 int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype, 
 		      int dest, int tag, MPID_Comm *comm_ptr, 
-		      MPID_Request **request  )
+		      MPID_Request **request )
 {
     BsendData_t *p;
     int packsize, mpi_errno, pass;

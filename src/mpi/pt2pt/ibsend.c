@@ -95,7 +95,24 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     mpi_errno = MPIR_Bsend_isend( buf, count, datatype, dest, tag, comm_ptr, 
 				  &request_ptr );
     if (!mpi_errno) {
-	*request = request_ptr->handle;
+	/* FIXME.  For now, we'll assume that the all the message has
+	   been copied, so we can return a created request here */
+	if (request_ptr) 
+	    *request = request_ptr->handle;
+	else {
+	    /* Create a completed request */
+	    request_ptr = MPID_Request_create();
+	    if (!request_ptr) {
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IBSEND);
+		return MPIR_ERR_MEMALLOCFAILED;
+	    }
+	    request_ptr->kind                 = MPID_REQUEST_SEND;
+	    MPIU_Object_set_ref( request_ptr, 1 );
+	    request_ptr->cc_ptr               = &request_ptr->cc;
+	    request_ptr->cc                   = 0;
+	    request_ptr->comm                 = NULL;
+	    *request = request_ptr->handle;
+	}
     }
     else {
 	*request = MPI_REQUEST_NULL;
