@@ -101,11 +101,13 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	vc_table[p].shm.sendq_head = NULL;
 	vc_table[p].shm.sendq_tail = NULL;
 	vc_table[p].shm.req = (MPID_Request*)MPIU_Malloc(sizeof(MPID_Request));
-	vc_table[p].shm.state = MPIDI_CH3I_VC_STATE_CONNECTED;
+	vc_table[p].shm.shm_state = 0; /*MPIDI_CH3I_VC_STATE_CONNECTED;*/
 	vc_table[p].shm.recv_active = NULL;
 	vc_table[p].shm.send_active = NULL;
+#ifdef USE_SHM_UNEX
 	vc_table[p].shm.unex_finished_next = NULL;
 	vc_table[p].shm.unex_list = NULL;
+#endif
 	vc_table[p].shm.shm = NULL;
     }
     pg->vc_table = vc_table;

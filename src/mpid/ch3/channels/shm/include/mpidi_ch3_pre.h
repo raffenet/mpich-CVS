@@ -80,6 +80,7 @@ typedef struct MPIDI_CH3_Pkt_max_size_aligned
 #define MPIDI_CH3_PKT_ENUM
 #define MPIDI_CH3_PKT_DEFS
 
+/*
 typedef enum MPIDI_CH3I_VC_state
 {
     MPIDI_CH3I_VC_STATE_UNCONNECTED,
@@ -87,6 +88,7 @@ typedef enum MPIDI_CH3I_VC_state
     MPIDI_CH3I_VC_STATE_FAILED
 }
 MPIDI_CH3I_VC_state_t;
+*/
 
 /* This structure requires the iovec structure macros to be defined */
 typedef struct MPIDI_CH3I_SHM_Buffer_t
@@ -124,11 +126,13 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_Request * send_active;
     struct MPID_Request * recv_active;
     struct MPID_Request * req;
-    MPIDI_CH3I_VC_state_t state;
+/*    MPIDI_CH3I_VC_state_t state;*/
+    int shm_state;
     MPIDI_CH3I_SHM_Buffer_t read;
+#ifdef USE_SHM_UNEX
     MPIDI_CH3I_SHM_Unex_read_t *unex_list;
     struct MPIDI_VC *unex_finished_next;
-    /*MPIDI_CH3I_SHM_Buffer_t write;*/
+#endif
 #ifdef HAVE_SHARED_PROCESS_READ
 #ifdef HAVE_WINDOWS_H
     HANDLE hSharedProcessHandle;

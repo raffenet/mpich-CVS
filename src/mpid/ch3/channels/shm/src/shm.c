@@ -13,8 +13,9 @@
 #define USE_IOV_LEN_2_SHORTCUT
 
 typedef int SHM_STATE;
-#define SHM_READING    0x0008
-#define SHM_WRITING    0x0010
+#define SHM_READING_HDR_BIT 0x0004
+#define SHM_READING_BIT     0x0008
+#define SHM_WRITING_BIT     0x0010
 
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -238,6 +239,8 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 
 #endif /* USE_SHM_WRITE_FOR_SHM_WRITEV */
 
+#ifdef USE_SHM_UNEX
+
 #undef FUNCNAME
 #define FUNCNAME shmi_buffer_unex_read
 #undef FCNAME
@@ -311,7 +314,7 @@ static int shmi_read_unex(MPIDI_VC *vc_ptr)
 	{
 	    /* place this vc_ptr in the finished list so it will be 
 	       completed by shm_wait */
-	    vc_ptr->shm.state &= ~SHM_READING;
+	    vc_ptr->shm.shm_state &= ~SHM_READING_BIT;
 	    vc_ptr->shm.unex_finished_next = MPIDI_CH3I_Process.unex_finished_list;
 	    MPIDI_CH3I_Process.unex_finished_list = vc_ptr;
 	    MPIDI_FUNC_EXIT(MPID_STATE_SHMI_READ_UNEX);
@@ -376,7 +379,7 @@ int shmi_readv_unex(MPIDI_VC *vc_ptr)
 	
 	if (vc_ptr->shm.read.iovlen == 0)
 	{
-	    vc_ptr->shm.state &= ~SHM_READING;
+	    vc_ptr->shm.shm_state &= ~SHM_READING_BIT;
 	    vc_ptr->shm.unex_finished_next = MPIDI_CH3I_Process.unex_finished_list;
 	    MPIDI_CH3I_Process.unex_finished_list = vc_ptr;
 	    MPIDI_DBG_PRINTF((60, FCNAME, "finished read saved in MPIDI_CH3I_Process.unex_finished_list\n"));
@@ -387,6 +390,8 @@ int shmi_readv_unex(MPIDI_VC *vc_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_SHMI_READV_UNEX);
     return SHM_SUCCESS;
 }
+
+#endif /* USE_SHM_UNEX */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_SHM_wait
@@ -402,7 +407,9 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
     MPIDI_CH3I_SHM_Packet_t *pkt_ptr;
     int i;
     register int index, working;
+#ifdef USE_SHM_UNEX
     MPIDI_VC *temp_vc_ptr;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
@@ -410,6 +417,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 
     for (;;) 
     {
+#ifdef USE_SHM_UNEX
 	if (MPIDI_CH3I_Process.unex_finished_list)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "returning previously received %d bytes", MPIDI_CH3I_Process.unex_finished_list->shm.read.total));
@@ -425,6 +433,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 	    return SHM_WAIT_READ;
 	}
+#endif /* USE_SHM_UNEX */
 
 	working = FALSE;
 
@@ -449,10 +458,12 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes\n", num_bytes));
 	    /*MPIDI_DBG_PRINTF((60, FCNAME, "shm_wait(recv finished %d bytes)", num_bytes));*/
-	    if (!(recv_vc_ptr->shm.state & SHM_READING))
+	    if (!(recv_vc_ptr->shm.shm_state & SHM_READING_BIT))
 	    {
+#ifdef USE_SHM_UNEX
 		/* Should we buffer unexpected messages or leave them in the shmem queue? */
 		/*shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, 0, num_bytes);*/
+#endif
 		continue;
 	    }
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read update, total = %d + %d = %d\n", recv_vc_ptr->shm.read.total, num_bytes, recv_vc_ptr->shm.read.total + num_bytes));
@@ -508,7 +519,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		}
 		if (recv_vc_ptr->shm.read.iovlen == 0)
 		{
-		    recv_vc_ptr->shm.state &= ~SHM_READING;
+		    recv_vc_ptr->shm.shm_state &= ~SHM_READING_BIT;
 		    *num_bytes_ptr = recv_vc_ptr->shm.read.total;
 		    *vc_pptr = recv_vc_ptr;
 		    *error_ptr = 0;
@@ -547,7 +558,7 @@ shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC *
 		}
 		if (recv_vc_ptr->shm.read.bufflen == 0)
 		{
-		    recv_vc_ptr->shm.state &= ~SHM_READING;
+		    recv_vc_ptr->shm.shm_state &= ~SHM_READING_BIT;
 		    *num_bytes_ptr = recv_vc_ptr->shm.read.total;
 		    *vc_pptr = recv_vc_ptr;
 		    *error_ptr = 0;
@@ -583,9 +594,11 @@ int MPIDI_CH3I_SHM_post_read(MPIDI_VC *vc, void *buf, int len, int (*rfn)(int, v
     vc->shm.read.buffer = buf;
     vc->shm.read.bufflen = len;
     vc->shm.read.use_iov = FALSE;
-    vc->shm.state |= SHM_READING;
+    vc->shm.shm_state |= SHM_READING_BIT;
+#ifdef USE_SHM_UNEX
     if (vc->shm.unex_list)
 	shmi_read_unex(vc);
+#endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_POST_READ);
     return SHM_SUCCESS;
 }
@@ -614,9 +627,11 @@ int MPIDI_CH3I_SHM_post_readv(MPIDI_VC *vc, MPID_IOV *iov, int n, int (*rfn)(int
     vc->shm.read.iovlen = n;
     vc->shm.read.index = 0;
     vc->shm.read.use_iov = TRUE;
-    vc->shm.state |= SHM_READING;
+    vc->shm.shm_state |= SHM_READING_BIT;
+#ifdef USE_SHM_UNEX
     if (vc->shm.unex_list)
 	shmi_readv_unex(vc);
+#endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
     return SHM_SUCCESS;
 }
