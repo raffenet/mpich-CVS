@@ -4,15 +4,14 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "mpidi_ch3_impl.h"
+#include "pmi.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-
-#include "mpidi_ch3_impl.h"
-#include "pmi.h"
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
@@ -46,7 +45,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
      * MPI_COMM_WORLD, and MPI_COMM_SELF
      */
     mpi_errno = PMI_Init(has_parent);
-
     if (mpi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_init", "**pmi_init %d", mpi_errno);
@@ -192,7 +190,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
     if (mpi_errno != 0)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
 	return mpi_errno;
     }
 
