@@ -79,7 +79,8 @@
 #define FALSE (0==1)
 #endif
 
-#ifdef OLD_STYLE_CPP_CONCAT
+#ifdef HAVE_OLD_STYLE_CPP_CONCAT
+/* Define HAVE_OLD_STYLE_CPP_CONCAT only if pre-ANSI compiler used */
 #define concat(a,b) a/**/b
 #define stringize(a) "a"
 #else
