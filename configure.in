@@ -416,34 +416,7 @@ if test "$with_cross" != "no" ; then
     fi
 fi
 dnl
-if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
-    case "$with_namepublisher" in 
-    none|no) ;;
-    ldap*)
-	# Look for ldap libraries and header files
-	AC_CHECK_HEADERS(lber.h ldap.h)
-	have_ldap_lib=no
-	AC_SEARCH_LIBS(ldap_open,ldap,have_ldap_lib=yes)
-	# If we have the headers and the library, then we can specify
-	# ldap
-	if test "$ac_cv_header_lber_h" = yes -a \
-	        "$ac_cv_header_ldap_h" = yes -a \
-		"$have_ldap_lib" = yes ; then
-	    AC_DEFINE(USE_LDAP,,[Define if ldap should be used for name publishing])
-	fi
 
-    ;;
-    mpd)
-    ;;
-    esac    
-fi
-
-PAC_ARG_SHAREDLIBS
-ENABLE_SHLIB=$enable_sharedlibs
-if test -z "$ENABLE_SHLIB" ; then
-    ENABLE_SHLIB=none
-fi
-AC_SUBST(ENABLE_SHLIB)
 dnl
 dnl CC_SHL=true
 dnl C_LINK_SHL=true
@@ -611,9 +584,41 @@ AC_PROG_INSTALL
 # We also need mkdir -p.
 PAC_PROG_MKDIR_P
 
+# Don't setup the shared libraries until we know which compiler we will be
+# using
+dnl PAC_ARG_SHAREDLIBS
+ENABLE_SHLIB=$enable_sharedlibs
+if test -z "$ENABLE_SHLIB" ; then
+    ENABLE_SHLIB=none
+fi
+AC_SUBST(ENABLE_SHLIB)
+
 # We need the full path to perl since we'll use it as the interpreter for
 # a shell script.
 AC_PATH_PROG(PERL5,perl)
+
+if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
+    case "$with_namepublisher" in 
+    none|no) ;;
+    ldap*)
+	# Look for ldap libraries and header files
+	AC_CHECK_HEADERS(lber.h ldap.h)
+	have_ldap_lib=no
+	AC_SEARCH_LIBS(ldap_open,ldap,have_ldap_lib=yes)
+	# If we have the headers and the library, then we can specify
+	# ldap
+	if test "$ac_cv_header_lber_h" = yes -a \
+	        "$ac_cv_header_ldap_h" = yes -a \
+		"$have_ldap_lib" = yes ; then
+	    AC_DEFINE(USE_LDAP,,[Define if ldap should be used for name publishing])
+	fi
+
+    ;;
+    mpd)
+    ;;
+    esac    
+fi
+
 dnl
 dnl Now that CC is defined, get these values 
 dnl eval C_LINK_SHL=$C_LINK_SHL
@@ -728,6 +733,7 @@ if test "$pac_cv_int16_t" = "no" ; then
     if test "$ac_cv_sizeof_short" = 2 ; then 
         INT16_T=short
     else
+        # No good option
         INT16_T=int
     fi
     AC_SUBST(INT16_T)
