@@ -36,11 +36,13 @@ def mpdringtest():
     mpd_send_one_msg(conSocket,msgToSend)
     msg = mpd_recv_one_msg(conSocket)
     etime = time() - starttime
-    if not msg or msg['cmd'] != 'mpdringtest_done':
+    if not msg:
+        print 'mpdringtest terminated early'
+    elif msg['cmd'] != 'mpdringtest_done':
         if msg['cmd'] == 'already_have_a_console':
-            mpd_raise('mpd already has a console (e.g. for long ringtest); try later')
+            print 'mpd already has a console (e.g. for long ringtest); try later'
         else:
-            mpd_raise('unexpected message from mpd: %s' % (msg) )
+            print 'unexpected message from mpd: %s' % (msg)
     else:
 	print 'time for %d loops =' % numLoops, etime, 'seconds' 
 

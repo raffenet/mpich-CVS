@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 
-from os     import environ, getpid, pipe, fork, fdopen, read, write, close, dup2, \
-                   chdir, execvpe, kill, waitpid, _exit
-from sys    import exit
-from socket import gethostname, fromfd, AF_INET, SOCK_STREAM
-from select import select, error
-from re     import findall, sub
-from signal import signal, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_DFL, SIG_IGN
-from md5    import new
-from mpdlib import mpd_set_my_id, mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
-                   mpd_send_one_line, mpd_recv_one_line, mpd_send_one_msg, mpd_recv_one_msg, \
+from os      import environ, getpid, pipe, fork, fdopen, read, write, close, dup2, \
+                    chdir, execvpe, kill, waitpid, _exit
+from sys     import exit
+from socket  import gethostname, fromfd, AF_INET, SOCK_STREAM
+from select  import select, error
+from re      import findall, sub
+from signal  import signal, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_DFL, SIG_IGN
+from md5     import new
+from cPickle import dumps, loads
+from mpdlib  import mpd_set_my_id, mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
+                   mpd_send_one_msg, mpd_recv_one_msg, \
+                   mpd_send_one_line, mpd_recv_one_line, \
                    mpd_get_inet_listen_socket, mpd_get_inet_socket_and_connect, \
                    mpd_get_my_username, mpd_raise, mpdError, mpd_version
 
@@ -35,9 +37,7 @@ def mpdman():
         errmsg =  '%s: invalid dir: %s' % (myId,environ['MPDMAN_CWD'])
         # print errmsg    ## may syslog it in some cases ?
     clientPgm = environ['MPDMAN_CLI_PGM']
-    clientPgmArgs = environ['MPDMAN_PGM_ARGS']
-    clientPgmArgs = findall('\S+',clientPgmArgs)
-    mpd_print(0000, "ARGS=", clientPgmArgs )
+    clientPgmArgs = loads(environ['MPDMAN_PGM_ARGS'])
     clientPgmEnv = environ['MPDMAN_PGM_ENVVARS']
     clientPgmEnv = findall('\S+',clientPgmEnv)
     mpd_print(0000, 'entering mpdman to exec %s' % (clientPgm) )
@@ -55,6 +55,7 @@ def mpdman():
     myPort = int(environ['MPDMAN_MY_LISTEN_PORT'])
     listenFD = int(environ['MPDMAN_MY_LISTEN_FD'])
     mpd_print(0000, "lhost=%s lport=%d h0=%s p0=%d" % (lhsHost,lhsPort,host0,port0) )
+    stdinGoesToWho = int(environ['MPDMAN_STDIN_GOES_TO_WHO'])
     listenSocket = fromfd(listenFD,AF_INET,SOCK_STREAM)
     close(listenFD)
     socketsToSelect = { listenSocket : 1 }
@@ -113,6 +114,7 @@ def mpdman():
         conSocket = 0
 
     (clientListenSocket,clientListenPort) = mpd_get_inet_listen_socket('',0)
+    (pipe_read_cli_stdin, pipe_write_cli_stdin )  = pipe()
     (pipe_read_cli_stdout,pipe_write_cli_stdout) = pipe()
     (pipe_read_cli_stderr,pipe_write_cli_stderr) = pipe()
     (pipe_cli_end,pipe_man_end) = pipe()
@@ -124,6 +126,9 @@ def mpdman():
         listenSocket.close()
         if conSocket:
             conSocket.close()
+
+        close(pipe_write_cli_stdin)
+        dup2(pipe_read_cli_stdin,0)  # closes fd 0 (stdin) if open
 
         # to simply print on the mpd's tty:
         #     comment out the next lines
@@ -161,6 +166,7 @@ def mpdman():
             print '%s: could not run %s; probably executable file not found' % (myId,clientPgm)
             exit(0)
         _exit(0)  # just in case (does no cleanup)
+    close(pipe_read_cli_stdin)
     close(pipe_write_cli_stdout)
     close(pipe_write_cli_stderr)
     clientStdoutFD = pipe_read_cli_stdout
@@ -409,6 +415,10 @@ def mpdman():
                             kill(clientPid,SIGKILL)
 			except:
 			    pass    # client may already be gone
+                elif msg['cmd'] == 'stdin_from_user':
+		    if msg['src'] != myId:
+                        mpd_send_one_msg(rhsSocket,msg)
+                        write(pipe_write_cli_stdin,msg['line'])
                 else:
                     mpd_print(1, 'unexpected msg recvd on lhsSocket :%s:' % msg )
             elif readySocket == rhsSocket:
@@ -714,6 +724,14 @@ def mpdman():
                         msg['dest'] = myId
                         mpd_send_one_msg(rhsSocket,msg)
                         kill(clientPid,SIGCONT)
+                elif msg['cmd'] == 'stdin_from_user':
+                    if stdinGoesToWho == 1:    # 1 -> all processes
+                        msg['src'] = myId
+                        mpd_send_one_msg(rhsSocket,msg)
+		    try:
+                        write(pipe_write_cli_stdin,msg['line'])
+		    except:
+		        mpd_print(1, 'cannot send stdin to client')
                 else:
                     mpd_print(1, 'unexpected msg recvd on conSocket :%s:' % msg )
             elif readySocket == mpdSocket:

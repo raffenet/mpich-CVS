@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from sys             import argv, exit, stdout, stderr
+from sys             import argv, exit, stdin, stdout, stderr
 from os              import environ, fork, execvpe, getuid, getpid, path, getcwd, \
                             close, wait, waitpid, kill, _exit,  \
 			    WIFSIGNALED, WEXITSTATUS
@@ -18,12 +18,12 @@ class mpdrunInterrupted(Exception):
         self.args = args
 
 global nprocs, pgm, pgmArgs, mship, rship, argsFilename, try0Locally, lineLabels
-global manSocket, timeout, sigExitDueToTimeout
+global manSocket, timeout, sigExitDueToTimeout, stdinGoesToWho
 
 
 def mpdrun():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, try0Locally, lineLabels, jobalias
-    global manSocket, timeout, sigExitDueToTimeout
+    global manSocket, timeout, sigExitDueToTimeout, stdinGoesToWho
 
     mpd_set_my_id('mpdrun_' + `getpid()`)
     pgm = ''
@@ -34,6 +34,7 @@ def mpdrun():
     argsFilename = ''
     try0Locally = 1
     lineLabels = 0
+    stdinGoesToWho = 0
     process_cmdline_args()
     sigExitDueToTimeout = 1
     (listenSocket,listenPort) = mpd_get_inet_listen_socket('',0)
@@ -84,6 +85,8 @@ def mpdrun():
 	    lineLabels = 1
         if createReq.hasAttribute('jobalias'):
             jobalias = createReq.getAttribute('jobalias')
+        if createReq.hasAttribute('stdin_goes_to_all'):
+            stdinGoesToWho = int(createReq.getAttribute('stdin_goes_to_all'))
 
 	hosts  = extract_from_xml(createReq,'host','name','_any_')
 	execs  = extract_from_xml(createReq,'exec','name','')
@@ -112,12 +115,12 @@ def mpdrun():
 		    print '*** exiting; rank %d is multiply covered for args' % (i)
 		    exit(-1)
 	        covered[i] = 1
-            argStr = ''
+            argVals = []
             argList = elem.getElementsByTagName('arg')
             for argElem in argList:
                 arg = argElem.getAttribute('value')
-                argStr = argStr + ' ' + arg
-            args[ranks] = argStr
+                argVals.append(arg)
+            args[ranks] = argVals
         i = 0
         while i < len(covered):
 	    if not covered[i]:
@@ -221,6 +224,7 @@ def mpdrun():
         msgToSend['rship'] = rship
         msgToSend['mship_host'] = gethostname()
         msgToSend['mship_port'] = mshipPort
+    msgToSend['stdin_goes_to_who'] = str(stdinGoesToWho)
     mpd_send_one_msg(conSocket,msgToSend)
     msg = mpd_recv_one_msg(conSocket)
     if not msg:
@@ -249,7 +253,8 @@ def mpdrun():
 
     (manCliStdoutSocket,addr) = listenSocket.accept()
     (manCliStderrSocket,addr) = listenSocket.accept()
-    socketsToSelect = { manSocket : 1, manCliStdoutSocket : 1, manCliStderrSocket : 1 }
+    socketsToSelect = { manSocket : 1, manCliStdoutSocket : 1, manCliStderrSocket : 1,
+                        stdin : 1 }
     done = 0
     while done < 3:    # man, client stdout, and client stderr
         try:
@@ -305,6 +310,15 @@ def mpdrun():
                         print >>stderr, msg,
                         # print >>stderr, 'MS: %s' % (msg.strip())
                         stderr.flush()
+                elif readySocket == stdin:
+                    lineToSend = stdin.readline()
+                    if lineToSend:    # EOF
+                        if manSocket:
+                            msgToSend = { 'cmd' : 'stdin_from_user', 'line' : lineToSend }
+                            mpd_send_one_msg(manSocket,msgToSend)
+                    else:
+                        del socketsToSelect[stdin]
+                        stdin.close()
                 else:
                     mpd_raise('unrecognized ready socket :%s:' % (readySocket) )
         except mpdError, errmsg:
@@ -355,7 +369,8 @@ def sig_handler(signum,frame):
 	exit(-1)
 
 def process_cmdline_args():
-    global nprocs, pgm, pgmArgs, mship, rship, argsFilename, try0Locally, lineLabels, jobalias
+    global nprocs, pgm, pgmArgs, mship, rship, argsFilename, try0Locally, \
+           lineLabels, jobalias, stdinGoesToWho
 
     if len(argv) < 3:
         usage()
@@ -394,16 +409,18 @@ def process_cmdline_args():
                 elif argv[argidx] == '-1':
                     try0Locally = 0
                     argidx += 1
+                elif argv[argidx] == '-s':
+                    stdinGoesToWho = 1   # 1 -> all processes
+                    argidx += 1
                 else:
                     usage()
             else:
                 pgm = argv[argidx]
                 argidx += 1
-    pgmArgs = ''
+    pgmArgs = []
     while argidx < len(argv):
-        pgmArgs = pgmArgs + argv[argidx] + ' '
+        pgmArgs.append(argv[argidx])
         argidx += 1
-    pgmArgs = pgmArgs.strip()
 
 def extract_from_xml(createReq,attr,name,defaultVal):
     global nprocs
@@ -440,10 +457,11 @@ def extract_from_xml(createReq,attr,name,defaultVal):
 def usage():
     print 'mpdrun for mpd version: %s' % str(mpd_version)
     print 'usage: mpdrun [args] pgm_to_execute [pgm_args]'
-    print '   where args may be: -a alias -np nprocs -cpm master_copgm -cpr remote_copgm -l -1'
+    print '   where args may be: -a alias -np nprocs -cpm master_copgm -cpr remote_copgm -l -1 -s'
     print '       (-l means attach line labels identifying which client prints each line)'
     print '       (-1 means do NOT start the first process locally)'
     print '       (-a means assign this alias to the job)'
+    print '       (-s means send stdin to all processes; not just first)'
     print 'or:    mpdrun -f filename'
     print '   where filename contains all the arguments in xml format'
     exit(-1)

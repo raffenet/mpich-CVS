@@ -17,6 +17,7 @@ from random    import seed, randrange
 from syslog    import syslog
 from md5       import new
 from threading import Thread
+from cPickle   import dumps, loads
 from mpdlib    import mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
                       mpd_send_one_msg, mpd_recv_one_msg, \
                       mpd_get_inet_listen_socket, mpd_get_inet_socket_and_connect, \
@@ -97,7 +98,7 @@ def _mpd_init():
             # mpd_raise('an mpd is already running with console at %s' %  (g.conListenName) )
             print 'An mpd is already running with console at %s on %s. ' %  (g.conListenName, g.myHost) 
             print 'Start mpd with the -n option for second mpd on same host.'
-            _exit(0)
+            exit(0)
         g.conListenSocket = socket(AF_UNIX,SOCK_STREAM)  # UNIX
         g.conListenSocket.bind(g.conListenName)
         g.conListenSocket.listen(1)
@@ -326,7 +327,8 @@ def _handle_lhs_input():
                 msg['numloops'] = numLoops
                 mpd_send_one_msg(g.rhsSocket, msg)
             else:
-                mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdringtest_done' })
+                if g.conSocket:    # may have closed it if user did ^C at console
+                    mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdringtest_done' })
     elif msg['cmd'] == 'mpdsigjob':
         if msg['src'] == g.myId:
             mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdsigjob_ack' })
@@ -439,13 +441,13 @@ def _do_mpdrun(msg):
         for ranks in args.keys():
             (lo,hi) = ranks
             if currRank >= lo  and  currRank <= hi:
-                pgmargs = args[ranks]
+		pgmArgs = dumps(args[ranks])
                 break
         envvars = msg['envvars']
         for ranks in envvars.keys():
             (lo,hi) = ranks
             if currRank >= lo  and  currRank <= hi:
-                pgmenvvars = envvars[ranks]
+                pgmEnvVars = envvars[ranks]
                 break
         cwds = msg['cwds']
         for ranks in cwds.keys():
@@ -463,8 +465,8 @@ def _do_mpdrun(msg):
             environ['MPDMAN_JOBID'] = jobid
             environ['MPDMAN_CLI_PGM'] = pgm
             environ['MPDMAN_CLI_PATH'] = pathForExec
-            environ['MPDMAN_PGM_ARGS'] = pgmargs
-            environ['MPDMAN_PGM_ENVVARS'] = pgmenvvars
+            environ['MPDMAN_PGM_ARGS'] = pgmArgs
+            environ['MPDMAN_PGM_ENVVARS'] = pgmEnvVars
             environ['MPDMAN_CWD'] = cwd
             environ['MPDMAN_SPAWNED'] = str(msg['spawned'])
             environ['MPDMAN_NPROCS'] = str(msg['nprocs'])
@@ -479,6 +481,7 @@ def _do_mpdrun(msg):
             environ['MPDMAN_PORT0'] = str(manPort0)
             environ['MPDMAN_MY_LISTEN_PORT'] = str(tempPort)
             environ['MPDMAN_MY_LISTEN_FD'] = str(tempSocket.fileno())
+            environ['MPDMAN_STDIN_GOES_TO_WHO'] = msg['stdin_goes_to_who']
             if msg.has_key('line_labels'):
                 environ['MPDMAN_LINE_LABELS'] = '1'
             else:
@@ -781,12 +784,12 @@ def _process_configfile_params():
     if not mode:
         # mpd_raise('%s: config file not found' % (configFilename) )
         print 'configuration file %s not found' % (configFilename)
-        _exit(0)
+        exit(0)
     if  (mode & 0x3f):
         # mpd_raise('%s: config file accessible by others' % (configFilename) )
         print 'configuration file %s is accessible by others' % (configFilename)
         print 'change permissions to allow read and write access only by you'
-        _exit(0)
+        exit(0)
     configFile = open(configFilename,'r')
     g.configParams = {}
     for line in configFile:
