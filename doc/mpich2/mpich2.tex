@@ -7,16 +7,17 @@
 \usepackage{/home/gropp/data/share/refman}
 \usepackage{/home/gropp/sowing-proj/sowing/docs/doctext/tpage}
 \usepackage{epsf}
-\textheight=9in
-\textwidth=6.1in
-\oddsidemargin=.2in
-\topmargin=-.50in
-\newread\testfile
+\usepackage{mpidoc}
+% \textheight=9in
+% \textwidth=6.1in
+% \oddsidemargin=.2in
+% \topmargin=-.50in
+% \newread\testfile
 
-%
-% Modify the way titles are handled for no breaks between pages
-%\def\mantitle#1#2#3{\pagerule\nobreak
-%\ifmancontents\addcontentsline{toc}{subsection}{#1}\fi}
+% %
+% % Modify the way titles are handled for no breaks between pages
+% %\def\mantitle#1#2#3{\pagerule\nobreak
+% %\ifmancontents\addcontentsline{toc}{subsection}{#1}\fi}
 
 \makeindex
 
@@ -24,49 +25,49 @@
 
 \markright{MPICH Design Document}
 
-\def\nopound{\catcode`\#=13}
-{\nopound\gdef#{{\tt \char`\#}}}
-\catcode`\_=13
-\def_{{\tt \char`\_}}
-\catcode`\_=11
-\def\code#1{{\tt #1}}
-\def\makeuscore{\catcode`\_=13}
-\def\onespace{\hskip 1em}
-{\catcode`\ =13
-\gdef\makespaceactive{\catcode`\ =13\let =\onespace}}
-\def\mpifunc#1{\code{#1}\index{#1}}
-% We may want to separate the MPI and MPID index entries
-\def\mpidfunc#1{\code{#1}\index{#1}}
-% ditto for constants
-\def\mpiconst#1{\code{#1}\index{#1}}
-\def\mpidconst#1{\code{#1}\index{#1}}
-% MPI data structure element.  For example, 
-% \mpids{MPI_Comm}{rank}.  Prints the second argument.
-\def\mpids#1#2{\code{#2}\index{#1!#2}}
-% Environment variables
-\def\eindex#1{\index{#1}}
-% Configure option and related topics
-\def\cfgindex#1{\index{#1}}
-\def\cfgoption#1{\code{#1}\cfgindex{#1}}
-% 
-% These provide environments to describe the implementation of each routine
-%
-\newenvironment{adi3}{\begin{quote}\textbf{ADI3:}\\}{\end{quote}}
-\newenvironment{mmadi}{\begin{quote}\textbf{MMADI:}\\}{\end{quote}}
-\newenvironment{core}{\begin{quote}\textbf{Core:}\\}{\end{quote}}
+% \def\nopound{\catcode`\#=13}
+% {\nopound\gdef#{{\tt \char`\#}}}
+% \catcode`\_=13
+% \def_{{\tt \char`\_}}
+% \catcode`\_=11
+% \def\code#1{{\tt #1}}
+% \def\makeuscore{\catcode`\_=13}
+% \def\onespace{\hskip 1em}
+% {\catcode`\ =13
+% \gdef\makespaceactive{\catcode`\ =13\let =\onespace}}
+% \def\mpifunc#1{\code{#1}\index{#1}}
+% % We may want to separate the MPI and MPID index entries
+% \def\mpidfunc#1{\code{#1}\index{#1}}
+% % ditto for constants
+% \def\mpiconst#1{\code{#1}\index{#1}}
+% \def\mpidconst#1{\code{#1}\index{#1}}
+% % MPI data structure element.  For example, 
+% % \mpids{MPI_Comm}{rank}.  Prints the second argument.
+% \def\mpids#1#2{\code{#2}\index{#1!#2}}
+% % Environment variables
+% \def\eindex#1{\index{#1}}
+% % Configure option and related topics
+% \def\cfgindex#1{\index{#1}}
+% \def\cfgoption#1{\code{#1}\cfgindex{#1}}
+% % 
+% % These provide environments to describe the implementation of each routine
+% %
+% \newenvironment{adi3}{\begin{quote}\textbf{ADI3:}\\}{\end{quote}}
+% \newenvironment{mmadi}{\begin{quote}\textbf{MMADI:}\\}{\end{quote}}
+% \newenvironment{core}{\begin{quote}\textbf{Core:}\\}{\end{quote}}
 
-%
-% For rma, there are these three kinds:
-\newcommand\tcpname{Twosided}
-\newcommand\shmemname{SharedMem}
-\newcommand\vianame{RemoteMem}
-\newenvironment{tcp}{\begin{quote}\textbf{\tcpname:}\\}{\end{quote}}
-\newenvironment{shmem}{\begin{quote}\textbf{\shmemname:}\\}{\end{quote}}
-\newenvironment{via}{\begin{quote}\textbf{\vianame:}\\}{\end{quote}}
+% %
+% % For rma, there are these three kinds:
+% \newcommand\tcpname{Twosided}
+% \newcommand\shmemname{SharedMem}
+% \newcommand\vianame{RemoteMem}
+% \newenvironment{tcp}{\begin{quote}\textbf{\tcpname:}\\}{\end{quote}}
+% \newenvironment{shmem}{\begin{quote}\textbf{\shmemname:}\\}{\end{quote}}
+% \newenvironment{via}{\begin{quote}\textbf{\vianame:}\\}{\end{quote}}
 
-%
-% Algorithm
-\newenvironment{algorithm}{\begingroup\obeylines\obeyspaces\makeuscore\noindent\makespaceactive}{\endgroup}
+% %
+% % Algorithm
+% \newenvironment{algorithm}{\begingroup\obeylines\obeyspaces\makeuscore\noindent\makespaceactive}{\endgroup}
 
 %\tpageoneskip
 \ANLTMTitle{MPICH2 Design Document\\
@@ -2258,6 +2259,8 @@ Question:  There are a number of flags that we may want to check in order to
 drop into a special optimized case.  Should we set things up so that a single
 int of flags, where the ``good'' case is a zero bit for each flag, can be
 tested with a single compare against zero?
+
+\input{pt2ptdesc}
 
 \subsubsection{\mpidfunc{MPID_Rhcv}}
 This function is not part of MPI but is a critical part of the ADI.

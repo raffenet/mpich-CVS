@@ -1,0 +1,26 @@
+%
+% Design document for MPICH2
+%
+% This document should be used with the ADI3 document
+\documentclass{article}
+\usepackage{psfig}
+\usepackage{/home/gropp/data/share/refman}
+\usepackage{/home/gropp/sowing-proj/sowing/docs/doctext/tpage}
+\usepackage{epsf}
+\usepackage{mpidoc}
+\makeindex
+
+\begin{document}
+
+\markright{MPICH Design Document}
+
+\raggedright
+\pagenumbering{arabic}
+\pagestyle{headings}
+
+\let\@subsubsection@=\@newsubsubsection@
+\let\@subsection@=\@newsubsection@
+\let\@section@=\@newsection@
+\input{@dummy@}
+
+\end{document}

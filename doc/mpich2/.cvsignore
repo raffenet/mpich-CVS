@@ -9,3 +9,6 @@ mpich2.ps
 *.ind
 *.ilg
 scanpattern.eps
+template.tex
+errcodes.ps
+pt2ptdesc.ps

@@ -12,7 +12,8 @@ SHELL = /bin/sh
 #	-latex $*
 
 # We touch mpich2.ind to work around a LaTeX bug in accessing the index file
-mpich2.ps: mpich2.tex Makefile fixupindex scanpattern.eps
+mpich2.ps: mpich2.tex errcodes.tex pt2ptdesc.tex \
+	Makefile fixupindex scanpattern.eps
 	touch mpich2.ind
 	latex mpich2
 	-bibtex mpich2
@@ -32,6 +33,30 @@ mpich2.ps: mpich2.tex Makefile fixupindex scanpattern.eps
 	latex mpich2
 	dvips mpich2
 
+errcodes.dvi: errcodes.tex
+	sed -e s/@dummy@/errcodes.tex/ \
+	    -e s/@subsubsection@/subsubsection/g \
+	    -e s/@newsubsubsection@/section/g \
+	    -e s/@subsection@/subsection/g \
+	    -e s/@newsubsection@/relax/g \
+	    -e s/@section@/section/g \
+	    -e s/@newsection@/relax/g \
+	template.orig > template.tex
+	latex template
+	mv template.dvi errcodes.dvi
+
+pt2ptdesc.dvi: pt2ptdesc.tex
+	sed -e s/@dummy@/pt2ptdesc.tex/ \
+	    -e s/@subsubsection@/subsubsection/g \
+	    -e s/@newsubsubsection@/section/g \
+	    -e s/@subsection@/subsection/g \
+	    -e s/@newsubsection@/relax/g \
+	    -e s/@section@/section/g \
+	    -e s/@newsection@/relax/g \
+	    template.orig > template.tex
+	latex template
+	mv template.dvi pt2ptdesc.dvi
+
 # This uses the full-featured date program in Linux
 install-web: mpich2.ps
 	cp mpich2.ps /mcs/www-unix/mpi/mpich/adi3
@@ -41,7 +66,8 @@ install-web: mpich2.ps
 	rm -f .foo
 
 clean:
-	rm -f *.log *.aux *.dvi *.bbl mpich2.ps *~ *.toc
+	rm -f *.log *.aux *.dvi *.bbl mpich2.ps *~ *.toc errcodes.ps \
+		pt2ptdesc.ps
 
 .fig.eps:
 	fig2dev -L ps -l landscape $*.fig > $*.eps
