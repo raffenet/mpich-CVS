@@ -3,30 +3,40 @@ BUILDING MPICH2 under Windows
 requirements:
 MS Visual Studio .NET
 administrative privileges on your machines.
+bash shell (cygwin) to generate mpi.h
 
 1) unzip the package.
 2) cd into the mpich2 directory
-3) run bash (from cygwin) and execute winconfigure to generate mpi.h
+3) run bash and execute winconfigure to generate mpi.h
+For example:
+bash
+% winconfigure
+exit
 
 4) build the process launcher, mpd.exe, and its supporting libraries.
-This solution is found in mpich2\src\pm\winmpd\winmpd.sln.  Install mpd.exe 
+This solution is found in mpich2\src\pm\winmpd\mpi2.sln.  Install mpd.exe 
 on each machine by copying mpd.exe to a local directory on each machine and
 executing "mpd -install" while logged on as a user with adminstrator privileges.
 Use mpd.exe from the smpd project not the mpd project.
 
-5) build the mpich2 dlls and mpirun for mpich2.
+5) build mpirun.exe
+This solution is found in mpich2\src\pm\winmpd\mpich1\mpich1.sln
+
+6) build the mpich2 dlls and import libraries.
 This solution is found in mpich2\mpich2.sln.
+The mpich2 dlls can be built to use shared memory communication, tcp socket communication,
+or both.
 Select the ch3sockDebug or ch3sockRelease configurations to build the sockets only dlls.
 Select the ch3shmDebug or ch3shmRelease configurations to build the shmem only dlls.
-Select the ch3mmDebug or ch3mmRelease configurations to build the sockets/shmem dlls.
-mpirun.exe is temporarily found in mpich2\src\mpid\mm\src\mpiexec\mpirun\Debug or Release.
+Select the ch3mmDebug or ch3mmRelease configurations to build the sockets+shmem dlls.
 
-6) compile an mpi application.  Use mpi.h from mpich2\src\include and 
-the mpich2 link libraries in mpich2\lib
+7) compile an mpi application.  Use mpi.h from mpich2\src\include and 
+the mpich2 import libraries in mpich2\lib
 
-7) Place your executable along with the mpich2 dlls somewhere accessable to
+8) Place your executable along with the mpich2 dlls somewhere accessable to
 all the machines.
 
-8) Execute a job by running "mpirun -np 3 myapp.exe".  Mpirun for mpich2 is not
-as complete as mpirun for mpich1.  It supports configuration files, the -np 
-option, and the -hosts option.
+9) Execute a job by running "mpirun -np 3 myapp.exe".
+
+Read the user's guide for complete options to mpirun and mpd.
+Email bugs and error reports to mpich2-maint@mcs.anl.gov.
