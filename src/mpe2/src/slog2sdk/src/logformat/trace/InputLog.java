@@ -110,10 +110,17 @@ public class InputLog // implements drawable.InputAPI
     public Category  getShadowCategoryForTopology( final Topology aTopo )
     {
         Category    type;
-        ColorAlpha  white_color = new ColorAlpha( 255, 255, 255 );
+        ColorAlpha  white_opaque  = new ColorAlpha( ColorAlpha.white,
+                                                    ColorAlpha.OPAQUE );
+        ColorAlpha  white_semi    = new ColorAlpha( ColorAlpha.white,
+                                                    ColorAlpha.HALF_OPAQUE );
+        ColorAlpha  yellow_opaque = new ColorAlpha( ColorAlpha.yellow,
+                                                    ColorAlpha.OPAQUE );
+        ColorAlpha  yellow_semi   = new ColorAlpha( ColorAlpha.yellow,
+                                                    ColorAlpha.HALF_OPAQUE );
         if ( aTopo.isEvent() ) {
             type = new Category( -1, "Shadow_" + aTopo.toString(),
-                                 aTopo, white_color, 5 );
+                                 aTopo, white_semi, 5 );
             /*
             type.setInfoKeys( "num_real_objs=%d\ntime_error=%E\n" );
             */
@@ -121,7 +128,7 @@ public class InputLog // implements drawable.InputAPI
         }
         else if ( aTopo.isArrow() ) {
             type = new Category( -2, "Shadow_" + aTopo.toString(),
-                                 aTopo, white_color, 5 );
+                                 aTopo, yellow_opaque, 5 );
             /*
             type.setInfoKeys( "num_real_objs=%d\ntime_error=%E\nmsg_size=%d\n" );
             */
@@ -129,7 +136,7 @@ public class InputLog // implements drawable.InputAPI
         }
         else if ( aTopo.isState() ) {
             type = new Category( -3, "Shadow_" + aTopo.toString(),
-                                 aTopo, white_color, 5 );
+                                 aTopo, white_semi, 5 );
             /*
             type.setInfoKeys( "num_real_objs=%d\ntime_error=%E\n" );
             */

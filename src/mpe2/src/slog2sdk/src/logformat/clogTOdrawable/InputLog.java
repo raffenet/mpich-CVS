@@ -288,12 +288,14 @@ public class InputLog extends logformat.clog.InputLog
     public Category getShadowCategoryForTopology( final Topology aTopo )
     {
         Category    type;
-        ColorAlpha  white_semi    = ColorNameMap.getColorAlpha( "white" );
-        ColorAlpha  white_opaque  = new ColorAlpha( white_semi,
+        ColorAlpha  white_opaque  = new ColorAlpha( ColorAlpha.white,
                                                     ColorAlpha.OPAQUE );
-        ColorAlpha  yellow_semi   = ColorNameMap.getColorAlpha( "yellow" );
-        ColorAlpha  yellow_opaque = new ColorAlpha( yellow_semi,
-                                                   ColorAlpha.OPAQUE );
+        ColorAlpha  white_semi    = new ColorAlpha( ColorAlpha.white,
+                                                    ColorAlpha.QUARTER_OPAQUE );
+        ColorAlpha  yellow_opaque = new ColorAlpha( ColorAlpha.yellow,
+                                                    ColorAlpha.OPAQUE );
+        ColorAlpha  yellow_semi   = new ColorAlpha( ColorAlpha.yellow,
+                                                    ColorAlpha.QUARTER_OPAQUE );
         if ( aTopo.isEvent() ) {
             type = new Category( -1, "Shadow_" + aTopo.toString(),
                                  aTopo, white_semi, 5 );
