@@ -100,7 +100,7 @@ MPI_Allreduce,1,3,2,3,Bill,MPID_Segment_pack and unpack
 MPI_Reduce_scatter,1,3,2,4,Bill,MPID_Segment_pack and unpack
 MPI_Scan,1,3,2,4,Bill,MPID_Segment_pack and unpack
 
-Groups, Contexts, Communicators
+Groups; Contexts; Communicators
 
 MPI_Group_size
 MPI_Group_rank
