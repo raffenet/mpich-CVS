@@ -278,7 +278,8 @@ def mpdrun():
         cwds    = { (0,nprocs-1) : cwd }
         paths   = { (0,nprocs-1) : environ['PATH'] }
         args    = { (0,nprocs-1) : pgmArgs }
-        envvars = { (0,nprocs-1) : {} }
+        cli_environ = {} ; cli_environ.update(environ)
+        envvars = { (0,nprocs-1) : cli_environ }
         if hostsFile:
             hosts = {}
             hostNames = hostsFile.readlines()

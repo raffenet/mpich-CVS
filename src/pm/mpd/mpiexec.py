@@ -31,7 +31,7 @@ def mpiexec():
     configIdx     = 0
     xmlForArgsets = []
     defaultArgs   = []
-    setenvall     = 0
+    setenvall     = 1  # default is now to send whole thing
     linelabels    = 0
     usize         = 0 # MPI_UNIVERSE_SIZE now defaults to ringsize
     appnum        = 0                   # appnum counter for MPI
@@ -78,7 +78,7 @@ def mpiexec():
             gargIdx = 0
             while gargIdx < len(defaultArgs):
                 if defaultArgs[gargIdx] == '-setenvall':
-                    setenvall = 1
+                    setenvall = 1  # may reverse the meaning of this later
                     gargIdx += 1
                 elif defaultArgs[gargIdx] == '-env':
                     if len(defaultArgs) < (gargIdx+3):

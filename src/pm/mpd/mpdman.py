@@ -75,11 +75,12 @@ def mpdman():
     default_kvsname = sub('\.','_',default_kvsname)  # chg magpie.cs to magpie_cs
     default_kvsname = sub('\-','_',default_kvsname)  # chg node-0 to node_0
     KVSs[default_kvsname] = {}
+    cli_environ = {}
     for k in clientPgmEnv.keys():
         if k.startswith('MPI_APPNUM'):
             KVSs[default_kvsname][k] = clientPgmEnv[k]
-        elif k.startswith('MPI_UNIVERSE_SIZE'):
-            environ[k] = clientPgmEnv[k]
+        else:
+            cli_environ[k] = clientPgmEnv[k]
     kvs_next_id = 1
     jobEndingEarly = 0
     pmiCollectiveJob = 0
@@ -192,28 +193,24 @@ def mpdman():
         close(pipe_cli_end)
 
         clientPgmArgs = [clientPgm] + clientPgmArgs
-        environ['PATH'] = environ['MPDMAN_CLI_PATH']
-        environ['PMI_FD'] = str(pmiSocketClientEnd.fileno())
-        environ['PMI_SIZE'] = str(nprocs)
-        environ['PMI_RANK'] = str(myRank)
-        environ['PMI_DEBUG'] = str(0)
+        cli_environ['PATH'] = environ['MPDMAN_CLI_PATH']
+        cli_environ['PMI_FD'] = str(pmiSocketClientEnd.fileno())
+        cli_environ['PMI_SIZE'] = str(nprocs)
+        cli_environ['PMI_RANK'] = str(myRank)
+        cli_environ['PMI_DEBUG'] = str(0)
         if spawned:
-            environ['PMI_SPAWNED'] = '1'
+            cli_environ['PMI_SPAWNED'] = '1'
         else:
-            environ['PMI_SPAWNED'] = '0'
-        environ['MPD_TVDEBUG'] = str(0)                                    ## BNR
-        environ['MPD_JID'] = environ['MPDMAN_JOBID']                       ## BNR
-        environ['MPD_JSIZE'] = str(nprocs)                                 ## BNR
-        environ['MPD_JRANK'] = str(myRank)                                 ## BNR
-        environ['MAN_MSGS_FD'] = environ['PMI_FD']                         ## BNR
-        environ['CLIENT_LISTENER_FD'] = str(clientListenSocket.fileno())   ## BNR
-        environ.update(clientPgmEnv)
-        for key in environ.keys():
-            if key.startswith('MPDMAN_'):
-                del environ[key]
+            cli_environ['PMI_SPAWNED'] = '0'
+        cli_environ['MPD_TVDEBUG'] = str(0)                                    ## BNR
+        cli_environ['MPD_JID'] = environ['MPDMAN_JOBID']                       ## BNR
+        cli_environ['MPD_JSIZE'] = str(nprocs)                                 ## BNR
+        cli_environ['MPD_JRANK'] = str(myRank)                                 ## BNR
+        cli_environ['MAN_MSGS_FD'] = cli_environ['PMI_FD'] # same as PMI_FD    ## BNR
+        cli_environ['CLIENT_LISTENER_FD'] = str(clientListenSocket.fileno())   ## BNR
         try:
             mpd_print(0000, 'execing clientPgm=:%s:' % (clientPgm) )
-            execvpe(clientPgm,clientPgmArgs,environ)    # client
+            execvpe(clientPgm,clientPgmArgs,cli_environ)    # client
         except Exception, errmsg:
             ## mpd_raise('execvpe failed for client %s; errmsg=:%s:' % (clientPgm,errmsg) )
             # print '%s: could not run %s; probably executable file not found' % (myId,clientPgm)
