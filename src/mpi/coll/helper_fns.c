@@ -44,14 +44,16 @@ int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	MPIDI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SEND);
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
     if (request_ptr) {
         mpi_errno = MPIC_Wait(request_ptr);
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS) {
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	}
         MPID_Request_release(request_ptr);
+	/* --END ERROR HANDLING-- */
     }
-    /* --END ERROR HANDLING-- */
     MPIDI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SEND);
     return mpi_errno;
 }
