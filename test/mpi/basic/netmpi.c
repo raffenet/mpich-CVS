@@ -97,6 +97,7 @@ void PrintOptions()
     printf("       -headtohead\n");
     printf("       -pert\n");
     printf("       -noprint\n");
+    printf("       -onebuffer largest_buffer_size\n");
     printf("Requires exactly two processes\n");
     printf("\n");
 }
@@ -122,6 +123,9 @@ int main(int argc, char *argv[])
 	end = MAXINT,		/* Ending value for signature curve		*/
 	streamopt = 0,		/* Streaming mode flag				*/
 	printopt = 1;		/* Debug print statements flag			*/
+    int one_buffer = 0;
+    int onebuffersize = 100*1024*1024;
+    int quit = 0;
     
     ArgStruct	args;		/* Argumentsfor all the calls			*/
     
@@ -155,6 +159,18 @@ int main(int argc, char *argv[])
     GetOptInt(&argc, &argv, "-reps", &g_NSAMP);
     GetOptInt(&argc, &argv, "-start", &start);
     GetOptInt(&argc, &argv, "-end", &end);
+    one_buffer = GetOptInt(&argc, &argv, "-onebuffer", &onebuffersize);
+    if (one_buffer)
+    {
+	if (onebuffersize < 1)
+	{
+	    one_buffer = 0;
+	}
+	else
+	{
+	    onebuffersize += bufalign;
+	}
+    }
     bNoCache = GetOpt(&argc, &argv, "-nocache");
     bHeadToHead = GetOpt(&argc, &argv, "-headtohead");
     bUseMegaBytes = GetOpt(&argc, &argv, "-mb");
@@ -212,10 +228,16 @@ int main(int argc, char *argv[])
     tlast = latency;
     inc = (start > 1 && !detailflag) ? start/2: inc;
     args.bufflen = start;
-    
+
+    if (one_buffer)
+    {
+	args.buff = (char *)malloc(onebuffersize);
+	args.buff1 = (char*)malloc(onebuffersize);
+    }
+
     /* Main loop of benchmark */
     for (nq = n = 0, len = start; 
-         n < g_NSAMP && tlast < g_STOPTM && len <= end; 
+         n < g_NSAMP && tlast < g_STOPTM && len <= end && !quit; 
 	 len = len + inc, nq++)
     {
 	if (nq > 2 && !detailflag)
@@ -223,7 +245,7 @@ int main(int argc, char *argv[])
 	
 	/* This is a perturbation loop to test nearby values */
 	for (ipert = 0, pert = (!detailflag && inc > PERT + 1)? -PERT: 0;
-	     pert <= PERT; 
+	     pert <= PERT && !quit; 
 	     ipert++, n++, pert += (!detailflag && inc > PERT + 1)? PERT: PERT + 1)
 	{
 	    
@@ -245,31 +267,57 @@ int main(int argc, char *argv[])
 	    
 	    /* Allocate the buffer */
 	    args.bufflen = len + pert;
-	    /* printf("allocating %d bytes\n", args.bufflen * nrepeat + bufalign); */
-	    if (bNoCache)
+	    if (one_buffer)
 	    {
-		if ((args.buff = (char *)malloc(args.bufflen * nrepeat + bufalign)) == (char *)NULL)
+		if (bNoCache)
 		{
-		    fprintf(stdout,"Couldn't allocate memory\n");
-		    fflush(stdout);
-		    break;
+		    if (args.bufflen * nrepeat + bufalign > onebuffersize)
+		    {
+			fprintf(stdout, "Exceeded user specified buffer size\n");
+			fflush(stdout);
+			quit = 1;
+			break;
+		    }
+		}
+		else
+		{
+		    if (args.bufflen + bufalign > onebuffersize)
+		    {
+			fprintf(stdout, "Exceeded user specified buffer size\n");
+			fflush(stdout);
+			quit = 1;
+			break;
+		    }
 		}
 	    }
 	    else
 	    {
-		if ((args.buff = (char *)malloc(args.bufflen + bufalign)) == (char *)NULL)
+		/* printf("allocating %d bytes\n", args.bufflen * nrepeat + bufalign); */
+		if (bNoCache)
+		{
+		    if ((args.buff = (char *)malloc(args.bufflen * nrepeat + bufalign)) == (char *)NULL)
+		    {
+			fprintf(stdout,"Couldn't allocate memory\n");
+			fflush(stdout);
+			break;
+		    }
+		}
+		else
+		{
+		    if ((args.buff = (char *)malloc(args.bufflen + bufalign)) == (char *)NULL)
+		    {
+			fprintf(stdout,"Couldn't allocate memory\n");
+			fflush(stdout);
+			break;
+		    }
+		}
+		/* if ((args.buff1 = (char *)malloc(args.bufflen * nrepeat + bufalign)) == (char *)NULL) */
+		if ((args.buff1 = (char *)malloc(args.bufflen + bufalign)) == (char *)NULL)
 		{
 		    fprintf(stdout,"Couldn't allocate memory\n");
 		    fflush(stdout);
 		    break;
 		}
-	    }
-	    /* if ((args.buff1 = (char *)malloc(args.bufflen * nrepeat + bufalign)) == (char *)NULL) */
-	    if ((args.buff1 = (char *)malloc(args.bufflen + bufalign)) == (char *)NULL)
-	    {
-		fprintf(stdout,"Couldn't allocate memory\n");
-		fflush(stdout);
-		break;
 	    }
 	    /* Possibly align the data buffer */
 	    memtmp = args.buff;
@@ -425,10 +473,11 @@ int main(int argc, char *argv[])
 		    fflush(out);
 		}
 	    }
-	    
-	    free(memtmp);
-	    free(memtmp1);
-	    
+	    if (!one_buffer)
+	    {
+		free(memtmp);
+		free(memtmp1);
+	    }
 	    if (args.tr && printopt)
 	    {
 		if (bUseMegaBytes)
