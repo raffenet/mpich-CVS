@@ -97,7 +97,7 @@ fproto.h
 free_memf.c
 gatherf.c
 gathervf.c
-get_addressf.c
+getaddressf.c
 get_countf.c
 get_elementsf.c
 get_versionf.c

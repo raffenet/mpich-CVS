@@ -2340,6 +2340,38 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
 	print PROTOFD ";\n";
     }
 
+    $OUTFD = "GETADDRESSFFD";
+    open ($OUTFD, ">getaddressf.c" ) || die "Cannot open getaddressf.c\n";
+    $files[$#files+1] = "getaddressf.c";
+    $args = "void *, MPI_Aint *";
+    $saveAINT = $tof77{"MPI_Aint*"};
+    undef $tof77{"MPI_Aint*"};
+    &print_header( "MPI_Get_address", "get_address", $args );
+    # Add the definitions needed for error reporting
+    # (We could use mpiimpl.h, but mpierrs.h should be sufficient)
+    # mpierror.h references FILE *, so needs stdio.h
+    print $OUTFD "#include \"mpierrs.h\"\n"; 
+    print $OUTFD "#include <stdio.h>\n"; 
+    print $OUTFD "#include \"mpierror.h\"\n"; 
+    &print_routine_type_decl( $OUTFD, "get_address" );
+    &print_args( $OUTFD, $args, 0, "get_address" );
+    #&print_attr;
+    print $OUTFD "{
+    MPI_Aint a;
+    *ierr = MPI_Get_address( v1, &a );
+#ifndef USE_POINTER_FOR_BOTTOM
+    a = a - (MPI_Aint) MPIR_F_MPI_BOTTOM;
+#endif
+    *v2 =  a;
+}\n";
+    close ($OUTFD);
+    if ($build_prototypes) {
+	&print_routine_type_decl( PROTOFD, "get_address" );
+	&print_args( PROTOFD, $args, 1, "get_address" );
+	print PROTOFD ";\n";
+    }
+    $tof77{"MPI_Aint*"} =  $saveAINT;
+
     $OUTFD = "WTIMEFD";
     open( $OUTFD, ">wtimef.c" ) || die "Cannot open wtimef.c\n";
     $files[$#files+1] = "wtimef.c";
