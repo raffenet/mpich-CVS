@@ -45,6 +45,24 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_14EDFEC445E84BFB85D0F259C13BDDB0"
+        "OwnerKey" = "8:_55B5CAEEC65B41548EFC545A48218F87"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_14EDFEC445E84BFB85D0F259C13BDDB0"
+        "OwnerKey" = "8:_AD63A10BAE3B42AE9BA9DDBE274523EE"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_14EDFEC445E84BFB85D0F259C13BDDB0"
+        "OwnerKey" = "8:_9456918885EA443184468C81D254F3F3"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_18284BA670D94FB4B543537D61A1E538"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -225,18 +243,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_7BB8634B4C464666A540F85D51BB88E2"
-        "OwnerKey" = "8:_55B5CAEEC65B41548EFC545A48218F87"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7BB8634B4C464666A540F85D51BB88E2"
-        "OwnerKey" = "8:_9456918885EA443184468C81D254F3F3"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_7D15CDC776C240AA932A815EE652EABE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -340,6 +346,12 @@
         "Entry"
         {
         "MsmKey" = "8:_AB1800DBD885401F9E56CB8052D9FA36"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_AD63A10BAE3B42AE9BA9DDBE274523EE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1188,7 +1200,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:wmpiexec, Version=1.0.1788.39460, Culture=neutral"
+            "AssemblyAsmDisplayName" = "8:wmpiexec, Version=1.0.1798.6781, Culture=neutral"
                 "ScatterAssemblies"
                 {
                     "_55B5CAEEC65B41548EFC545A48218F87"
@@ -1439,7 +1451,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:wmpiregister, Version=1.0.1788.39460, Culture=neutral"
+            "AssemblyAsmDisplayName" = "8:wmpiregister, Version=1.0.1798.6783, Culture=neutral"
                 "ScatterAssemblies"
                 {
                     "_9456918885EA443184468C81D254F3F3"
@@ -1672,6 +1684,37 @@
             "TargetName" = "8:mped.lib"
             "Tag" = "8:"
             "Folder" = "8:_B167421D29EE4EAFA108A852DB65BD75"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{FB480208-1853-44D0-9ABD-A3B734C3FAAA}:_AD63A10BAE3B42AE9BA9DDBE274523EE"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:wmpiconfig, Version=1.0.1798.6783, Culture=neutral"
+                "ScatterAssemblies"
+                {
+                    "_AD63A10BAE3B42AE9BA9DDBE274523EE"
+                    {
+                    "Name" = "8:wmpiconfig.exe"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:..\\src\\pm\\smpd\\wmpiconfig\\bin\\Release\\wmpiconfig.exe"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_09BC5ABDFA834ABD9D1000DD1EDD4212"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2523,7 +2566,7 @@
             {
             "Name" = "8:Jumpshot"
             "Arguments" = "8:"
-            "Description" = "8:"
+            "Description" = "8:Launch the jumpshot logfile viewer"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
@@ -2531,6 +2574,20 @@
             "Folder" = "8:_A197F3C53A7E44ADAE8C8687CB0A39FD"
             "WorkingFolder" = "8:_09BC5ABDFA834ABD9D1000DD1EDD4212"
             "Icon" = "8:"
+            "Feature" = "8:"
+            }
+            "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_45C281086CBD483981D418D5847B7F1C"
+            {
+            "Name" = "8:wmpiconfig"
+            "Arguments" = "8:"
+            "Description" = "8:Get and Set user settings for MPICH2"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:32512"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_AD63A10BAE3B42AE9BA9DDBE274523EE"
+            "Folder" = "8:_A197F3C53A7E44ADAE8C8687CB0A39FD"
+            "WorkingFolder" = "8:_09BC5ABDFA834ABD9D1000DD1EDD4212"
+            "Icon" = "8:_AD63A10BAE3B42AE9BA9DDBE274523EE"
             "Feature" = "8:"
             }
             "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_6EE48973B8CD43728DF421C93746EBAE"
@@ -2551,28 +2608,28 @@
             {
             "Name" = "8:wmpiregister"
             "Arguments" = "8:"
-            "Description" = "8:"
+            "Description" = "8:Register user credentials with the MPICH2 process manager"
             "ShowCmd" = "3:1"
-            "IconIndex" = "3:0"
+            "IconIndex" = "3:32512"
             "Transitive" = "11:FALSE"
             "Target" = "8:_9456918885EA443184468C81D254F3F3"
             "Folder" = "8:_A197F3C53A7E44ADAE8C8687CB0A39FD"
             "WorkingFolder" = "8:_09BC5ABDFA834ABD9D1000DD1EDD4212"
-            "Icon" = "8:"
+            "Icon" = "8:_9456918885EA443184468C81D254F3F3"
             "Feature" = "8:"
             }
             "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_8A00CAAF564649DA8B7A850174CB4BDD"
             {
             "Name" = "8:wmpiexec"
             "Arguments" = "8:"
-            "Description" = "8:"
+            "Description" = "8:GUI wrapper to the mpiexec job launcher"
             "ShowCmd" = "3:1"
-            "IconIndex" = "3:0"
+            "IconIndex" = "3:32512"
             "Transitive" = "11:FALSE"
             "Target" = "8:_55B5CAEEC65B41548EFC545A48218F87"
             "Folder" = "8:_A197F3C53A7E44ADAE8C8687CB0A39FD"
             "WorkingFolder" = "8:_09BC5ABDFA834ABD9D1000DD1EDD4212"
-            "Icon" = "8:"
+            "Icon" = "8:_55B5CAEEC65B41548EFC545A48218F87"
             "Feature" = "8:"
             }
         }
@@ -3415,7 +3472,7 @@
         }
         "MergeModule"
         {
-            "{35A69C6E-5BA4-440D-803D-762B59A45393}:_7BB8634B4C464666A540F85D51BB88E2"
+            "{35A69C6E-5BA4-440D-803D-762B59A45393}:_14EDFEC445E84BFB85D0F259C13BDDB0"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
