@@ -14,14 +14,18 @@ int mm_post_rndv_data_send(MM_Car *rndv_cts_car_ptr)
     MM_ENTER_FUNC(MM_POST_RNDV_DATA_SEND);
 
     /* convert the sender car into a rndv data car */
+#ifdef MPICH_DEV_BUILD
     if ((unsigned long)rndv_cts_car_ptr->msg_header.pkt.u.cts.sender_car_ptr < 1000)
-	msg_printf("Error: mm_post_rndv_data_send setting invalid send_car_ptr: %u\n", rndv_cts_car_ptr->msg_header.pkt.u.cts.sender_car_ptr);
+	err_printf("Error: mm_post_rndv_data_send setting invalid send_car_ptr: %u\n", rndv_cts_car_ptr->msg_header.pkt.u.cts.sender_car_ptr);
+#endif
     sender_car_ptr = rndv_cts_car_ptr->msg_header.pkt.u.cts.sender_car_ptr;
 
     /* set up the rndv data header packet */
     rndv_data_ptr = &sender_car_ptr->msg_header.pkt.u.rdata;
+#ifdef MPICH_DEV_BUILD
     if ((unsigned long)rndv_cts_car_ptr->msg_header.pkt.u.cts.receiver_car_ptr < 1000)
-	msg_printf("Error: mm_post_rndv_data_send setting invalid receiver_car_ptr: %u\n", rndv_cts_car_ptr->msg_header.pkt.u.cts.receiver_car_ptr);
+	err_printf("Error: mm_post_rndv_data_send setting invalid receiver_car_ptr: %u\n", rndv_cts_car_ptr->msg_header.pkt.u.cts.receiver_car_ptr);
+#endif
     rndv_data_ptr->receiver_car_ptr = rndv_cts_car_ptr->msg_header.pkt.u.cts.receiver_car_ptr;
     rndv_data_ptr->size = 0; /* How do I figure out this value? */
     rndv_data_ptr->type = MPID_RNDV_DATA_PKT;
