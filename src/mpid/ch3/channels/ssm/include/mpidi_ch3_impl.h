@@ -66,7 +66,10 @@
 #include <sys/mman.h>
 #endif
 #ifdef HAVE_MQUEUE_H
-#include <mqueueu.h>
+#include <mqueue.h>
+#endif
+#ifdef HAVE_UUID_UUID_H
+#include <uuid/uuid.h>
 #endif
 
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
